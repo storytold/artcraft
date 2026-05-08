@@ -1,3 +1,6 @@
+use std::fmt::Debug;
+use std::sync::Arc;
+
 use crate::client::router_fal_client::RouterFalClient;
 use crate::errors::artcraft_router_error::ArtcraftRouterError;
 use crate::errors::provider_error::ProviderError;
@@ -33,55 +36,61 @@ pub async fn execute_fal_veo_3p1_fast(
 ) -> Result<GenerateVideoResponse, ArtcraftRouterError> {
   let inner = &plan.inner;
 
-  let webhook_response = match &inner.mode {
+  let (webhook_response, outbound_request) = match &inner.mode {
     FalVeo3p1Mode::TextToVideo => {
+      let request = EnqueueVeo3p1FastTextToVideoRequest {
+        prompt: inner.prompt.clone(),
+        duration: inner.duration.map(to_t2v_duration),
+        aspect_ratio: inner.aspect_ratio.map(to_t2v_aspect_ratio),
+        resolution: inner.resolution.map(to_t2v_resolution),
+        generate_audio: inner.generate_audio,
+        enhance_prompt: None,
+        negative_prompt: inner.negative_prompt.clone(),
+        seed: None,
+        auto_fix: None,
+      };
+      let outbound: Arc<dyn Debug + Send + Sync> = Arc::new(request.clone());
       let args = EnqueueVeo3p1FastTextToVideoArgs {
-        request: EnqueueVeo3p1FastTextToVideoRequest {
-          prompt: inner.prompt.clone(),
-          duration: inner.duration.map(to_t2v_duration),
-          aspect_ratio: inner.aspect_ratio.map(to_t2v_aspect_ratio),
-          resolution: inner.resolution.map(to_t2v_resolution),
-          generate_audio: inner.generate_audio,
-          enhance_prompt: None,
-          negative_prompt: inner.negative_prompt.clone(),
-          seed: None,
-          auto_fix: None,
-        },
+        request,
         webhook_url: fal_client.webhook_url.as_str(),
         api_key: &fal_client.api_key,
       };
-      enqueue_veo_3p1_fast_text_to_video_webhook(args).await
+      (enqueue_veo_3p1_fast_text_to_video_webhook(args).await, outbound)
     }
     FalVeo3p1Mode::ImageToVideo { start_frame_url } => {
+      let request = EnqueueVeo3p1FastImageToVideoRequest {
+        prompt: inner.prompt.clone(),
+        image_url: start_frame_url.clone(),
+        duration: inner.duration.map(to_i2v_duration),
+        aspect_ratio: inner.aspect_ratio.map(to_i2v_aspect_ratio),
+        resolution: inner.resolution.map(to_i2v_resolution),
+        generate_audio: inner.generate_audio,
+      };
+      let outbound: Arc<dyn Debug + Send + Sync> = Arc::new(request.clone());
       let args = EnqueueVeo3p1FastImageToVideoArgs {
-        request: EnqueueVeo3p1FastImageToVideoRequest {
-          prompt: inner.prompt.clone(),
-          image_url: start_frame_url.clone(),
-          duration: inner.duration.map(to_i2v_duration),
-          aspect_ratio: inner.aspect_ratio.map(to_i2v_aspect_ratio),
-          resolution: inner.resolution.map(to_i2v_resolution),
-          generate_audio: inner.generate_audio,
-        },
+        request,
         webhook_url: fal_client.webhook_url.as_str(),
         api_key: &fal_client.api_key,
       };
-      enqueue_veo_3p1_fast_image_to_video_webhook(args).await
+      (enqueue_veo_3p1_fast_image_to_video_webhook(args).await, outbound)
     }
     FalVeo3p1Mode::FirstLastFrame { first_frame_url, last_frame_url } => {
+      let request = EnqueueVeo3p1FastFirstLastFrameImageToVideoRequest {
+        prompt: inner.prompt.clone(),
+        first_frame_url: first_frame_url.clone(),
+        last_frame_url: last_frame_url.clone(),
+        duration: inner.duration.map(to_flf_duration),
+        aspect_ratio: inner.aspect_ratio.map(to_flf_aspect_ratio),
+        resolution: inner.resolution.map(to_flf_resolution),
+        generate_audio: inner.generate_audio,
+      };
+      let outbound: Arc<dyn Debug + Send + Sync> = Arc::new(request.clone());
       let args = EnqueueVeo3p1FastFirstLastFrameImageToVideoArgs {
-        request: EnqueueVeo3p1FastFirstLastFrameImageToVideoRequest {
-          prompt: inner.prompt.clone(),
-          first_frame_url: first_frame_url.clone(),
-          last_frame_url: last_frame_url.clone(),
-          duration: inner.duration.map(to_flf_duration),
-          aspect_ratio: inner.aspect_ratio.map(to_flf_aspect_ratio),
-          resolution: inner.resolution.map(to_flf_resolution),
-          generate_audio: inner.generate_audio,
-        },
+        request,
         webhook_url: fal_client.webhook_url.as_str(),
         api_key: &fal_client.api_key,
       };
-      enqueue_veo_3p1_fast_first_last_frame_image_to_video_webhook(args).await
+      (enqueue_veo_3p1_fast_first_last_frame_image_to_video_webhook(args).await, outbound)
     }
   };
 
@@ -91,6 +100,7 @@ pub async fn execute_fal_veo_3p1_fast(
   Ok(GenerateVideoResponse::Fal(FalVideoResponsePayload {
     request_id: webhook_response.request_id,
     gateway_request_id: webhook_response.gateway_request_id,
+    maybe_outbound_request: Some(outbound_request),
   }))
 }
 

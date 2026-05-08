@@ -1,3 +1,6 @@
+use std::fmt::Debug;
+use std::sync::Arc;
+
 use crate::client::router_fal_client::RouterFalClient;
 use crate::errors::artcraft_router_error::ArtcraftRouterError;
 use crate::errors::provider_error::ProviderError;
@@ -71,45 +74,52 @@ pub async fn execute_fal_veo_3(
   plan: &PlanFalVeo3,
   fal_client: &RouterFalClient,
 ) -> Result<GenerateVideoResponse, ArtcraftRouterError> {
-  let webhook_response = match &plan.mode {
+  let (webhook_response, outbound_request) = match &plan.mode {
     FalVeo3Mode::TextToVideo => {
+      let request = Veo3TextToVideoRequest {
+        prompt: plan.prompt.clone(),
+        negative_prompt: plan.negative_prompt.clone(),
+        duration: to_t2v_duration(plan.duration),
+        aspect_ratio: plan.t2v_aspect_ratio.map(to_t2v_aspect_ratio).unwrap_or(Veo3T2vAspectRatio::Default),
+        resolution: to_t2v_resolution(plan.resolution),
+        generate_audio: plan.generate_audio,
+      };
+      let outbound: Arc<dyn Debug + Send + Sync> = Arc::new(request.clone());
       let args = Veo3TextToVideoArgs {
-        request: Veo3TextToVideoRequest {
-          prompt: plan.prompt.clone(),
-          negative_prompt: plan.negative_prompt.clone(),
-          duration: to_t2v_duration(plan.duration),
-          aspect_ratio: plan.t2v_aspect_ratio.map(to_t2v_aspect_ratio).unwrap_or(Veo3T2vAspectRatio::Default),
-          resolution: to_t2v_resolution(plan.resolution),
-          generate_audio: plan.generate_audio,
-        },
+        request,
         api_key: &fal_client.api_key,
         webhook_url: fal_client.webhook_url.as_str(),
       };
-      enqueue_veo_3_text_to_video_webhook(args)
+      let resp = enqueue_veo_3_text_to_video_webhook(args)
         .await
-        .map_err(|e| ArtcraftRouterError::Provider(ProviderError::Fal(e)))?
+        .map_err(|e| ArtcraftRouterError::Provider(ProviderError::Fal(e)))?;
+      (resp, outbound)
     }
     FalVeo3Mode::ImageToVideo { image_url } => {
+      let request = Veo3Request {
+        image_url: image_url.to_string(),
+        prompt: plan.prompt.clone(),
+        duration: to_i2v_duration(plan.duration),
+        aspect_ratio: plan.i2v_aspect_ratio.map(to_i2v_aspect_ratio).unwrap_or(Veo3I2vAspectRatio::Auto),
+        resolution: to_i2v_resolution(plan.resolution),
+        generate_audio: plan.generate_audio,
+      };
+      let outbound: Arc<dyn Debug + Send + Sync> = Arc::new(request.clone());
       let args = Veo3Args {
-        request: Veo3Request {
-          image_url: image_url.to_string(),
-          prompt: plan.prompt.clone(),
-          duration: to_i2v_duration(plan.duration),
-          aspect_ratio: plan.i2v_aspect_ratio.map(to_i2v_aspect_ratio).unwrap_or(Veo3I2vAspectRatio::Auto),
-          resolution: to_i2v_resolution(plan.resolution),
-          generate_audio: plan.generate_audio,
-        },
+        request,
         api_key: &fal_client.api_key,
         webhook_url: fal_client.webhook_url.as_str(),
       };
-      enqueue_veo_3_image_to_video_webhook(args)
+      let resp = enqueue_veo_3_image_to_video_webhook(args)
         .await
-        .map_err(|e| ArtcraftRouterError::Provider(ProviderError::Fal(e)))?
+        .map_err(|e| ArtcraftRouterError::Provider(ProviderError::Fal(e)))?;
+      (resp, outbound)
     }
   };
 
   Ok(GenerateVideoResponse::Fal(FalVideoResponsePayload {
     request_id: webhook_response.request_id,
     gateway_request_id: webhook_response.gateway_request_id,
+    maybe_outbound_request: Some(outbound_request),
   }))
 }

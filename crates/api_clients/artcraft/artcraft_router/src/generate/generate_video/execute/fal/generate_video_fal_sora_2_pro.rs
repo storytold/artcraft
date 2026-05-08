@@ -1,3 +1,6 @@
+use std::fmt::Debug;
+use std::sync::Arc;
+
 use crate::client::router_fal_client::RouterFalClient;
 use crate::errors::artcraft_router_error::ArtcraftRouterError;
 use crate::errors::provider_error::ProviderError;
@@ -23,34 +26,38 @@ pub async fn execute_fal_sora_2_pro(
   plan: &PlanFalSora2Pro,
   fal_client: &RouterFalClient,
 ) -> Result<GenerateVideoResponse, ArtcraftRouterError> {
-  let webhook_response = match &plan.mode {
+  let (webhook_response, outbound_request) = match &plan.mode {
     FalSora2ProMode::TextToVideo => {
       // Text-to-video does not support Auto aspect ratio or Auto resolution.
+      let request = EnqueueSora2ProTextToVideoRequest {
+        prompt: plan.prompt.clone(),
+        resolution: plan.resolution.and_then(to_t2v_resolution),
+        duration: plan.duration.map(to_t2v_duration),
+        aspect_ratio: plan.aspect_ratio.and_then(to_t2v_aspect_ratio),
+      };
+      let outbound: Arc<dyn Debug + Send + Sync> = Arc::new(request.clone());
       let args = EnqueueSora2ProTextToVideoArgs {
-        request: EnqueueSora2ProTextToVideoRequest {
-          prompt: plan.prompt.clone(),
-          resolution: plan.resolution.and_then(to_t2v_resolution),
-          duration: plan.duration.map(to_t2v_duration),
-          aspect_ratio: plan.aspect_ratio.and_then(to_t2v_aspect_ratio),
-        },
+        request,
         webhook_url: fal_client.webhook_url.as_str(),
         api_key: &fal_client.api_key,
       };
-      enqueue_sora_2_pro_text_to_video_webhook(args).await
+      (enqueue_sora_2_pro_text_to_video_webhook(args).await, outbound)
     }
     FalSora2ProMode::ImageToVideo { image_url } => {
+      let request = EnqueueSora2ProImageToVideoRequest {
+        prompt: plan.prompt.clone(),
+        image_url: image_url.clone(),
+        duration: plan.duration.map(to_i2v_duration),
+        resolution: plan.resolution.map(to_i2v_resolution),
+        aspect_ratio: plan.aspect_ratio.map(to_i2v_aspect_ratio),
+      };
+      let outbound: Arc<dyn Debug + Send + Sync> = Arc::new(request.clone());
       let args = EnqueueSora2ProImageToVideoArgs {
-        request: EnqueueSora2ProImageToVideoRequest {
-          prompt: plan.prompt.clone(),
-          image_url: image_url.clone(),
-          duration: plan.duration.map(to_i2v_duration),
-          resolution: plan.resolution.map(to_i2v_resolution),
-          aspect_ratio: plan.aspect_ratio.map(to_i2v_aspect_ratio),
-        },
+        request,
         webhook_url: fal_client.webhook_url.as_str(),
         api_key: &fal_client.api_key,
       };
-      enqueue_sora_2_pro_image_to_video_webhook(args).await
+      (enqueue_sora_2_pro_image_to_video_webhook(args).await, outbound)
     }
   };
 
@@ -60,6 +67,7 @@ pub async fn execute_fal_sora_2_pro(
   Ok(GenerateVideoResponse::Fal(FalVideoResponsePayload {
     request_id: webhook_response.request_id,
     gateway_request_id: webhook_response.gateway_request_id,
+    maybe_outbound_request: Some(outbound_request),
   }))
 }
 

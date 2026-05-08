@@ -1,3 +1,6 @@
+use std::fmt::Debug;
+use std::sync::Arc;
+
 use crate::client::router_fal_client::RouterFalClient;
 use crate::errors::artcraft_router_error::ArtcraftRouterError;
 use crate::errors::provider_error::ProviderError;
@@ -13,15 +16,19 @@ pub async fn execute_fal_veo_3_fast(
   plan: &PlanFalVeo3Fast,
   fal_client: &RouterFalClient,
 ) -> Result<GenerateVideoResponse, ArtcraftRouterError> {
+  let request = Veo3FastRequest {
+    prompt: plan.prompt.clone(),
+    image_url: plan.start_frame_url.clone(),
+    aspect_ratio: plan.aspect_ratio,
+    duration: plan.duration,
+    resolution: plan.resolution,
+    generate_audio: plan.generate_audio,
+  };
+  
+  let outbound_request: Arc<dyn Debug + Send + Sync> = Arc::new(request.clone());
+  
   let args = Veo3FastArgs {
-    request: Veo3FastRequest {
-      prompt: plan.prompt.clone(),
-      image_url: plan.start_frame_url.clone(),
-      aspect_ratio: plan.aspect_ratio,
-      duration: plan.duration,
-      resolution: plan.resolution,
-      generate_audio: plan.generate_audio,
-    },
+    request,
     api_key: &fal_client.api_key,
     webhook_url: fal_client.webhook_url.as_str(),
   };
@@ -33,5 +40,6 @@ pub async fn execute_fal_veo_3_fast(
   Ok(GenerateVideoResponse::Fal(FalVideoResponsePayload {
     request_id: webhook_response.request_id,
     gateway_request_id: webhook_response.gateway_request_id,
+    maybe_outbound_request: Some(outbound_request),
   }))
 }

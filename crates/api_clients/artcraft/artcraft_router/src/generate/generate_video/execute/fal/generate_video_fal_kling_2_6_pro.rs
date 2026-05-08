@@ -1,3 +1,6 @@
+use std::fmt::Debug;
+use std::sync::Arc;
+
 use crate::client::router_fal_client::RouterFalClient;
 use crate::errors::artcraft_router_error::ArtcraftRouterError;
 use crate::errors::provider_error::ProviderError;
@@ -21,34 +24,38 @@ pub async fn execute_fal_kling_2_6_pro(
   plan: &PlanFalKling2p6Pro,
   fal_client: &RouterFalClient,
 ) -> Result<GenerateVideoResponse, ArtcraftRouterError> {
-  let webhook_response = match &plan.mode {
+  let (webhook_response, outbound_request) = match &plan.mode {
     FalKling2p6ProMode::TextToVideo => {
+      let request = EnqueueKlingV2p6ProTextToVideoRequest {
+        prompt: plan.prompt.clone(),
+        generate_audio: plan.generate_audio,
+        negative_prompt: plan.negative_prompt.clone(),
+        duration: plan.duration.map(to_t2v_duration),
+        aspect_ratio: plan.aspect_ratio.map(to_t2v_aspect_ratio),
+      };
+      let outbound: Arc<dyn Debug + Send + Sync> = Arc::new(request.clone());
       let args = EnqueueKlingV2p6ProTextToVideoArgs {
-        request: EnqueueKlingV2p6ProTextToVideoRequest {
-          prompt: plan.prompt.clone(),
-          generate_audio: plan.generate_audio,
-          negative_prompt: plan.negative_prompt.clone(),
-          duration: plan.duration.map(to_t2v_duration),
-          aspect_ratio: plan.aspect_ratio.map(to_t2v_aspect_ratio),
-        },
+        request,
         webhook_url: fal_client.webhook_url.as_str(),
         api_key: &fal_client.api_key,
       };
-      enqueue_kling_v2p6_pro_text_to_video_webhook(args).await
+      (enqueue_kling_v2p6_pro_text_to_video_webhook(args).await, outbound)
     }
     FalKling2p6ProMode::ImageToVideo { image_url } => {
+      let request = EnqueueKlingV2p6ProImageToVideoRequest {
+        prompt: plan.prompt.clone(),
+        image_url: image_url.clone(),
+        generate_audio: plan.generate_audio,
+        negative_prompt: plan.negative_prompt.clone(),
+        duration: plan.duration.map(to_i2v_duration),
+      };
+      let outbound: Arc<dyn Debug + Send + Sync> = Arc::new(request.clone());
       let args = EnqueueKlingV2p6ProImageToVideoArgs {
-        request: EnqueueKlingV2p6ProImageToVideoRequest {
-          prompt: plan.prompt.clone(),
-          image_url: image_url.clone(),
-          generate_audio: plan.generate_audio,
-          negative_prompt: plan.negative_prompt.clone(),
-          duration: plan.duration.map(to_i2v_duration),
-        },
+        request,
         webhook_url: fal_client.webhook_url.as_str(),
         api_key: &fal_client.api_key,
       };
-      enqueue_kling_v2p6_pro_image_to_video_webhook(args).await
+      (enqueue_kling_v2p6_pro_image_to_video_webhook(args).await, outbound)
     }
   };
 
@@ -58,6 +65,7 @@ pub async fn execute_fal_kling_2_6_pro(
   Ok(GenerateVideoResponse::Fal(FalVideoResponsePayload {
     request_id: webhook_response.request_id,
     gateway_request_id: webhook_response.gateway_request_id,
+    maybe_outbound_request: Some(outbound_request),
   }))
 }
 
