@@ -40,7 +40,6 @@ interface Props {
   };
   onClose: () => void;
   onUploadProgress: (newState: UploaderState) => void;
-  onLocalBytes: (bytes: ArrayBuffer, shouldFlip: boolean) => void;
 }
 
 export const UploadFilesSplat = ({

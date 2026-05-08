@@ -2,7 +2,7 @@ import type { HeadersFunction } from "@remix-run/deno";
 import { useParams } from "react-router-dom";
 
 import { withProtectionRoute } from "~/hoc/withProtectedRoute";
-import { PageEnigma } from "~/pages/PageEnigma";
+import { PageScene } from "~/pages/PageScene";
 // import { Page404 } from "~/pages/Page404";
 
 // NB(bt): Netlify's custom directives cannot set headers for pages served by Remix,
@@ -33,12 +33,12 @@ export const headers: HeadersFunction = ({
 
 const Index = withProtectionRoute(() => {
   const params = useParams();
-  return <PageEnigma sceneToken={params.sceneToken} />;
+  return <PageScene sceneToken={params.sceneToken} />;
 
   //NOTE: wil: CODE SAMPLE FOR ROUTING 404
   //           PLEAE DO NOT DELETE THE BELOW
   // if (params.sceneToken && params.sceneToken.slice(0,2) === "m_" && params.sceneToken.length === 32){
-  //   return ( <PageEnigma sceneToken={params.sceneToken} />);
+  //   return ( <PageScene sceneToken={params.sceneToken} />);
   // }else{
   //   return (<Page404 />);
   // }

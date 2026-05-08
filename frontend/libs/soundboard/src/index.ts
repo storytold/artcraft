@@ -1,3 +1,2 @@
-
-export * from './lib/SoundEffect';
-export * from './lib/SoundRegistry';
+export { SoundManager } from './lib/SoundManager';
+export type { SoundOption } from './lib/SoundManager';

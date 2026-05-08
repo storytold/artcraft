@@ -44,6 +44,9 @@
   ],
   "references": [
     {
+      "path": "../../common/tsconfig.lib.json"
+    },
+    {
       "path": "../slider-v2/tsconfig.lib.json"
     },
     {

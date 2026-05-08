@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { SoundRegistry } from "@storyteller/soundboard";
+import { SoundManager } from "@storyteller/soundboard";
 import { Button } from "@storyteller/ui-button";
 import { faPlay } from "@fortawesome/pro-solid-svg-icons";
 import {
@@ -10,35 +10,6 @@ import { PreferenceName, UpdateAppPreferences } from "@storyteller/tauri-api";
 import { Select, SelectValue } from "@storyteller/ui-select";
 import { Switch } from "@storyteller/ui-switch";
 import { Label } from "@storyteller/ui-label";
-
-// TODO: This is maintained in two places. Here and InstallSounds.
-const SOUND_OPTIONS = [
-  { value: "none", label: "None (Silent)" }, // NB: MUST BE FIRST
-
-  // Other options
-  { label: "Click", value: "click" },
-  { label: "Correct", value: "correct" },
-  { label: "Crumble", value: "crumble" },
-  { label: "Dialog Done", value: "done" },
-  { label: "Dialog Next", value: "next" },
-  { label: "Error Chirp", value: "error_chirp" },
-  { label: "Flower", value: "flower" },
-  { label: "Ghost", value: "ghost" },
-  { label: "Sci-Fi Alert", value: "scifi_alert" },
-  { label: "Sci-Fi Menu Beep 1", value: "scifi_menu_beep_1" },
-  { label: "Sci-Fi Menu Beep 2", value: "scifi_menu_beep_2" },
-  { label: "Sci-Fi Menu Close", value: "scifi_menu_close" },
-  { label: "Sci-Fi Menu Open", value: "scifi_menu_open" },
-  { label: "Sci-Fi Menu Select", value: "scifi_menu_select" },
-  { label: "Sci-Fi Shrill Alert", value: "scifi_shrill_alert" },
-  { label: "Select", value: "select" },
-  { label: "Shell Kick", value: "giant_shell_kick" },
-  { label: "Special Alert", value: "special_alert" },
-  { label: "Special Flower", value: "special_flower" },
-  { label: "Spike Throw", value: "spike_throw" },
-  { label: "Trash", value: "trash" },
-  { label: "Wrong", value: "wrong" },
-];
 
 interface AudioSettingsPaneProps {}
 
@@ -83,7 +54,7 @@ export const AudioSettingsPane = (args: AudioSettingsPaneProps) => {
       preference: PreferenceName.DeleteFileSound,
       value: sendVal,
     });
-    SoundRegistry.getInstance().playSound(val);
+    SoundManager.playPreview(val);
     await reloadPreferences();
   };
 
@@ -93,7 +64,7 @@ export const AudioSettingsPane = (args: AudioSettingsPaneProps) => {
       preference: PreferenceName.EnqueueSuccessSound,
       value: sendVal,
     });
-    SoundRegistry.getInstance().playSound(val);
+    SoundManager.playPreview(val);
     await reloadPreferences();
   };
 
@@ -103,7 +74,7 @@ export const AudioSettingsPane = (args: AudioSettingsPaneProps) => {
       preference: PreferenceName.EnqueueFailureSound,
       value: sendVal,
     });
-    SoundRegistry.getInstance().playSound(val);
+    SoundManager.playPreview(val);
     await reloadPreferences();
   };
 
@@ -113,7 +84,7 @@ export const AudioSettingsPane = (args: AudioSettingsPaneProps) => {
       preference: PreferenceName.GenerationSuccessSound,
       value: sendVal,
     });
-    SoundRegistry.getInstance().playSound(val);
+    SoundManager.playPreview(val);
     await reloadPreferences();
   };
 
@@ -123,13 +94,13 @@ export const AudioSettingsPane = (args: AudioSettingsPaneProps) => {
       preference: PreferenceName.GenerationFailureSound,
       value: sendVal,
     });
-    SoundRegistry.getInstance().playSound(val);
+    SoundManager.playPreview(val);
     await reloadPreferences();
   };
 
   const playSound = (val?: string) => {
     if (val !== undefined && val !== "none") {
-      SoundRegistry.getInstance().playSound(val);
+      SoundManager.playPreview(val);
     }
   };
 
@@ -150,7 +121,7 @@ export const AudioSettingsPane = (args: AudioSettingsPaneProps) => {
               id="success-sound"
               value={deleteFileSound}
               onChange={(val: SelectValue) => setDeleteFileSound(val as string)}
-              options={SOUND_OPTIONS}
+              options={SoundManager.OPTIONS}
               className="grow"
             />
             <Button
@@ -169,7 +140,7 @@ export const AudioSettingsPane = (args: AudioSettingsPaneProps) => {
               id="success-sound"
               value={enqueueSuccessSound}
               onChange={(val: SelectValue) => setEnqueueSuccessSound(val as string)}
-              options={SOUND_OPTIONS}
+              options={SoundManager.OPTIONS}
               className="grow"
             />
             <Button
@@ -188,7 +159,7 @@ export const AudioSettingsPane = (args: AudioSettingsPaneProps) => {
               id="success-sound"
               value={enqueueFailureSound}
               onChange={(val: SelectValue) => setEnqueueFailureSound(val as string)}
-              options={SOUND_OPTIONS}
+              options={SoundManager.OPTIONS}
               className="grow"
             />
             <Button
@@ -207,7 +178,7 @@ export const AudioSettingsPane = (args: AudioSettingsPaneProps) => {
               id="success-sound"
               value={generationSuccessSound}
               onChange={(val: SelectValue) => setSuccessSound(val as string)}
-              options={SOUND_OPTIONS}
+              options={SoundManager.OPTIONS}
               className="grow"
             />
             <Button
@@ -226,7 +197,7 @@ export const AudioSettingsPane = (args: AudioSettingsPaneProps) => {
               id="failure-sound"
               value={generationFailureSound}
               onChange={(val: SelectValue) => setFailureSound(val as string)}
-              options={SOUND_OPTIONS}
+              options={SoundManager.OPTIONS}
               className="grow"
             />
             <Button

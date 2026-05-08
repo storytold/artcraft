@@ -6,9 +6,6 @@
       "path": "../components/toaster"
     },
     {
-      "path": "../tauri-api"
-    },
-    {
       "path": "../soundboard"
     },
     {

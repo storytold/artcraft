@@ -1,7 +1,6 @@
 import { useEffect } from "react";
 import { listen, UnlistenFn } from '@tauri-apps/api/event';
-import { SoundRegistry } from "@storyteller/soundboard";
-import { GetAppPreferences } from "@storyteller/tauri-api";
+import { SoundManager } from "@storyteller/soundboard";
 import { toast } from "@storyteller/ui-toaster";
 import { GenerationAction, GenerationModel, GenerationServiceProvider } from "./common";
 import { BasicEventWrapper } from "../../common/BasicEventWrapper";
@@ -21,12 +20,7 @@ export const useGenerationFailedEvent = () => {
     const setup = async () => {
       unlisten = listen<BasicEventWrapper<GenerationFailedEvent>>('generation-failed-event', async (event) => {
         console.log("Generation failed event received:", event);
-        const prefs = await GetAppPreferences();
-        const soundName = prefs.preferences?.generation_failure_sound;
-        if (soundName !== undefined) {
-          const registry = SoundRegistry.getInstance();
-          registry.playSound(soundName);
-        }
+        await SoundManager.playGenerationFailure();
         const message = makeMessage(event.payload.data);
         toast.error(message);
       });

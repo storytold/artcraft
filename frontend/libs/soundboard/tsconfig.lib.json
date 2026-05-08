@@ -44,5 +44,10 @@
     "src/**/*.jsx",
     "src/**/*.ts",
     "src/**/*.tsx"
+  ],
+  "references": [
+    {
+      "path": "../tauri-api/tsconfig.lib.json"
+    }
   ]
 }

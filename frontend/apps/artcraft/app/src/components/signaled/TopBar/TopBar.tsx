@@ -82,11 +82,8 @@ import toast from "react-hot-toast";
 import { APP_DESCRIPTORS, goToApp } from "~/config/appMenu";
 import { useStoryboardStore } from "~/pages/PageStoryboard";
 import { useSceneStore } from "@storyteller/ui-pagedraw";
-import {
-  is3DEditorInitialized,
-  is3DSceneLoaded,
-  set3DPageMounted,
-} from "~/pages/PageEnigma/Editor/editor";
+import { set3DPageMounted } from "~/pages/PageScene/engine/editor";
+import { usePageSceneStore } from "~/pages/PageScene/PageSceneStore";
 import { useImageTo3DStore } from "~/pages/PageImageTo3DObject/ImageTo3DStore";
 import { useImageTo3DWorldStore } from "~/pages/PageImageTo3DWorld/ImageTo3DWorldStore";
 import { useRemoveBackgroundStore } from "~/pages/PageRemoveBackground/RemoveBackgroundStore";
@@ -243,8 +240,8 @@ export const TopBar = ({ pageName }: Props) => {
 
   const tabStore = useTabStore();
 
-  const is3DSceneReady = is3DSceneLoaded.value;
-  const is3DEditorReady = is3DEditorInitialized.value;
+  const is3DSceneReady = usePageSceneStore((s) => s.is3DSceneLoaded);
+  const is3DEditorReady = usePageSceneStore((s) => s.is3DEditorInitialized);
   const [disableSwitcher, setDisableSwitcher] = useState(false);
   const switcherThrottle = useRef(false);
 

@@ -1,0 +1,31 @@
+import * as THREE from "three";
+import type Editor from "../engine/editor";
+import { MediaItem } from "../models";
+import { usePageSceneStore } from "../PageSceneStore";
+import { CreateAction } from "../engine/editor/actions/CreateAction";
+
+export async function addCharacter(
+  editor: Editor,
+  item: MediaItem,
+  position?: THREE.Vector3,
+): Promise<string | undefined> {
+  const obj = await editor.sceneManager?.create(
+    item.media_id,
+    item.name ?? "character",
+    position ?? new THREE.Vector3(),
+  );
+  if (!obj) return undefined;
+
+  obj.userData.isCharacter = true;
+
+  editor.history.record(new CreateAction(editor, obj));
+
+  usePageSceneStore.getState().addCharacter({
+    id: obj.uuid,
+    kind: "character",
+    name: obj.name || (item.name ?? "character"),
+    mediaId: item.media_id,
+  });
+  editor.selection.refreshOutliner();
+  return obj.uuid;
+}

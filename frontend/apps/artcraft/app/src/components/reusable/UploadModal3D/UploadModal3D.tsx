@@ -73,17 +73,6 @@ export function UploadModal3D(props: Props) {
     }
   }, [isOpen]);
 
-  useEffect(() => {
-    if (uploaderState.status === UploaderStates.success) {
-      // Automatically open the global Gallery modal after a successful upload
-      galleryModalVisibleViewMode.value = true;
-      galleryModalVisibleDuringDrag.value = true;
-
-      onSuccess(selectedCategory);
-      onClose();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [uploaderState.status]);
 
   const UploaderModalContent = () => {
     switch (uploaderState.status) {
@@ -130,8 +119,12 @@ export function UploadModal3D(props: Props) {
           <UploadSuccess
             title="3D model"
             onOk={() => {
-              onClose();
+              // Open the gallery so the user can drag the freshly
+              // uploaded model onto the canvas.
+              galleryModalVisibleViewMode.value = true;
+              galleryModalVisibleDuringDrag.value = true;
               onSuccess(selectedCategory);
+              onClose();
             }}
           />
         );
@@ -172,7 +165,8 @@ export function UploadModal3D(props: Props) {
       className="max-w-xl"
       showClose={true}
     >
-      <UploaderModalContent />
+      {/* Inline call — `<Comp />` would be a fresh component reference each render, remounting the dropzone mid-click and breaking the file picker. */}
+      {UploaderModalContent()}
     </Modal>
   );
 }

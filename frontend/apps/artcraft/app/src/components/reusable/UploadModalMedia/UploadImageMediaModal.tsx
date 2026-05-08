@@ -113,7 +113,8 @@ export function UploadImageMediaModal({
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={title}>
-      <UploaderModalContent />
+      {/* Inline call — `<Comp />` would be a fresh component reference each render, remounting the dropzone mid-click and breaking the file picker. */}
+      {UploaderModalContent()}
     </Modal>
   );
 }

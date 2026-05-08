@@ -1,7 +1,7 @@
 import { ApiManager, ApiResponse } from "./ApiManager";
 import { authentication } from "~/signals";
 import { Weight } from "~/models";
-import { Pagination, PaginationInfinite } from "~/pages/PageEnigma/models";
+import { Pagination, PaginationInfinite } from "~/pages/PageScene/models";
 import {
   FilterEngineCategories,
   FilterMediaClasses,

@@ -18,7 +18,7 @@ import { UploadFilesSplat } from "./UploadFilesSplat";
 
 interface Props {
   onClose: () => void;
-  onSuccess: (splatArrayBuffer: ArrayBuffer, shouldFlip: boolean) => void;
+  onSuccess: (category: FilterEngineCategories) => void;
   isOpen: boolean;
   title: string;
   titleIcon: IconDefinition;
@@ -52,17 +52,6 @@ export function UploadModalSplat(props: Props) {
     }
   }, [isOpen]);
 
-  useEffect(() => {
-    if (uploaderState.status === UploaderStates.success) {
-      // Automatically open the global Gallery modal after a successful upload
-      // galleryModalVisibleViewMode.value = true;
-      // galleryModalVisibleDuringDrag.value = true;
-
-      // onSuccess(selectedCategory);
-      onClose();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [uploaderState.status]);
 
   const UploaderModalContent = () => {
     switch (uploaderState.status) {
@@ -79,7 +68,6 @@ export function UploadModalSplat(props: Props) {
               }}
               onClose={onClose}
               onUploadProgress={updateUploaderState}
-              onLocalBytes={(buffer, shouldFlip) => { onSuccess(buffer, shouldFlip); }}
             />
           </div>
         );
@@ -103,8 +91,12 @@ export function UploadModalSplat(props: Props) {
           <UploadSuccess
             title="Splat"
             onOk={() => {
+              // Open the gallery so the user can drag the freshly
+              // uploaded splat onto the canvas.
+              galleryModalVisibleViewMode.value = true;
+              galleryModalVisibleDuringDrag.value = true;
+              onSuccess(selectedCategory);
               onClose();
-              // onSuccess(selectedCategory);
             }}
           />
         );
@@ -145,7 +137,8 @@ export function UploadModalSplat(props: Props) {
       className="max-w-xl"
       showClose={true}
     >
-      <UploaderModalContent />
+      {/* Inline call — `<Comp />` would be a fresh component reference each render, remounting the dropzone mid-click and breaking the file picker. */}
+      {UploaderModalContent()}
     </Modal>
   );
 }

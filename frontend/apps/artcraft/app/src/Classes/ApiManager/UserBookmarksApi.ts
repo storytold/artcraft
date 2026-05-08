@@ -4,7 +4,7 @@ import {
   UserBookmarkBatch,
   UserBookmarkByEntity,
   UserBookmarkByUser,
-} from "~/pages/PageEnigma/models";
+} from "~/pages/PageScene/models";
 import { authentication } from "~/signals";
 
 export enum ScopedEntityTypes {
