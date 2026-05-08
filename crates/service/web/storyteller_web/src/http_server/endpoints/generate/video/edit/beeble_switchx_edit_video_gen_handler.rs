@@ -13,6 +13,7 @@ use beeble_client::requests::start_generation::start_generation::{
   start_generation, BeebleAlphaMode, BeebleGenerationType, StartGenerationArgs,
   StartGenerationRequest,
 };
+use enums::by_table::prompt_context_items::prompt_context_semantic_type::PromptContextSemanticType;
 use enums::by_table::prompts::prompt_type::PromptType;
 use enums::common::generation::common_generation_mode::CommonGenerationMode;
 use enums::common::generation::common_model_type::CommonModelType;
@@ -24,6 +25,9 @@ use mysql_queries::queries::generic_inference::beeble::insert_generic_inference_
   InsertGenericInferenceForBeebleWithAprioriJobTokenArgs,
 };
 use mysql_queries::queries::idepotency_tokens::insert_idempotency_token::insert_idempotency_token;
+use mysql_queries::queries::prompt_context_items::insert_batch_prompt_context_items::{
+  insert_batch_prompt_context_items, InsertBatchArgs, PromptContextItem,
+};
 use mysql_queries::queries::prompts::insert_prompt::{insert_prompt, InsertPromptArgs};
 use tokens::tokens::generic_inference_jobs::InferenceJobToken;
 use tokens::tokens::media_files::MediaFileToken;
@@ -151,8 +155,9 @@ pub async fn beeble_switchx_edit_video_gen_handler(
     .extension()
     .and_then(|e| e.to_str())
     .unwrap_or("mp4");
-  
+
   let video_filename = format!("{}.{}", source_video_media_token.as_str(), video_extension);
+
   let video_content_type = match video_extension {
     "mp4" => "video/mp4",
     "mov" => "video/quicktime",
@@ -255,6 +260,33 @@ pub async fn beeble_switchx_edit_video_gen_handler(
       None
     }
   };
+
+  // -- Prompt context items --
+  if let Some(token) = prompt_token.as_ref() {
+    let mut context_items: Vec<PromptContextItem> = Vec::new();
+
+    context_items.push(PromptContextItem {
+      media_token: source_video_media_token.clone(),
+      context_semantic_type: PromptContextSemanticType::VidRef,
+    });
+
+    if let Some(ref_token) = &request.reference_image_media_token {
+      context_items.push(PromptContextItem {
+        media_token: ref_token.clone(),
+        context_semantic_type: PromptContextSemanticType::Imgref,
+      });
+    }
+
+    if !context_items.is_empty() {
+      if let Err(err) = insert_batch_prompt_context_items(InsertBatchArgs {
+        prompt_token: token.clone(),
+        items: context_items,
+        transaction: &mut transaction,
+      }).await {
+        warn!("Error inserting batch prompt context items: {:?}", err);
+      }
+    }
+  }
 
   // -- Inference job --
   let db_result = insert_generic_inference_job_for_beeble_queue_with_apriori_job_token(
