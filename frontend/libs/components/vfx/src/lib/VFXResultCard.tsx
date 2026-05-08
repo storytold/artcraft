@@ -51,7 +51,7 @@ export const VFXResultCard = ({
         className,
       )}
     >
-      <div className="relative aspect-video max-h-[calc(100vh-500px)] w-full overflow-hidden rounded-xl bg-black ring-1 ring-white/10">
+      <div className="relative aspect-video w-full overflow-hidden rounded-xl bg-black ring-1 ring-white/10">
         {data.status === "complete" && data.outputUrl ? (
           <video
             src={data.outputUrl}

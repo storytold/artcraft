@@ -295,15 +295,17 @@ export default function CreateVFX() {
   }
 
   return (
-    <div className="relative flex h-screen w-full flex-col bg-[#101014] text-white">
+    <div className="relative min-h-screen w-full bg-[#101014] text-white">
       <Seo
         title="Background Change - ArtCraft"
         description="Swap the backdrop of a video using a reference image."
       />
 
+      {/* Truchet pattern is fixed to the viewport so it stays put as the
+          page scrolls behind the (also fixed) navbar. */}
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-0 z-0"
+        className="pointer-events-none fixed inset-0 z-0"
         style={{
           maskImage:
             "radial-gradient(ellipse 70% 60% at 50% 45%, black 25%, transparent 85%)",
@@ -317,11 +319,9 @@ export default function CreateVFX() {
         />
       </div>
 
-      <div className="pt-[60px] sm:pt-[78px]" />
-
       {history.length === 0 ? (
         <div
-          className="relative z-10 flex flex-1 items-center justify-center px-3 sm:px-6"
+          className="relative z-10 flex min-h-screen items-center justify-center px-3 sm:px-6"
           style={{ paddingBottom: Math.max(promptBoxHeight + 32, 240) }}
         >
           <EmptyState
@@ -331,10 +331,13 @@ export default function CreateVFX() {
         </div>
       ) : (
         <div
-          className="relative z-10 flex-1 overflow-y-auto"
-          style={{ paddingBottom: Math.max(promptBoxHeight + 32, 240) }}
+          className="relative z-10"
+          style={{
+            paddingTop: 60 + 24,
+            paddingBottom: Math.max(promptBoxHeight + 32, 240),
+          }}
         >
-          <div className="flex flex-col items-center gap-10 px-3 pt-6 sm:px-6">
+          <div className="flex flex-col items-center gap-10 px-3 sm:px-6 sm:pt-[18px]">
             {history.map((r) => (
               <VFXResultCard
                 key={r.id}
