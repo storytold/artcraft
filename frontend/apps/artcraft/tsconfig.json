@@ -29,16 +29,13 @@
   },
   "references": [
     {
-      "path": "../../libs/components/button-icon"
-    },
-    {
       "path": "../../libs/components/label"
     },
     {
-      "path": "../../libs/components/button-icon-select"
+      "path": "../../libs/components/button-dropdown"
     },
     {
-      "path": "../../libs/components/button-dropdown"
+      "path": "../../libs/components/button-icon-select"
     },
     {
       "path": "../../libs/components/toaster"
@@ -53,19 +50,19 @@
       "path": "../../libs/components/slider-v2"
     },
     {
-      "path": "../../libs/soundboard"
+      "path": "../../libs/components/loading-spinner"
     },
     {
-      "path": "../../libs/components/pagedraw"
+      "path": "../../libs/soundboard"
     },
     {
       "path": "../../libs/components/pagescene"
     },
     {
-      "path": "../../libs/components/settings-modal"
+      "path": "../../libs/components/pagedraw"
     },
     {
-      "path": "../../libs/components/loading-spinner"
+      "path": "../../libs/components/settings-modal"
     },
     {
       "path": "../../libs/components/promptbox"

@@ -3,6 +3,27 @@
   "include": [],
   "references": [
     {
+      "path": "../button-icon"
+    },
+    {
+      "path": "../tooltip"
+    },
+    {
+      "path": "../close-button"
+    },
+    {
+      "path": "../label"
+    },
+    {
+      "path": "../button"
+    },
+    {
+      "path": "../input"
+    },
+    {
+      "path": "../button-dropdown"
+    },
+    {
       "path": "../../api-enums"
     },
     {
