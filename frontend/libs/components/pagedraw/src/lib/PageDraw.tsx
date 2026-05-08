@@ -717,15 +717,17 @@ const PageDraw = ({ adapter }: PageDrawProps) => {
     }, 300);
   }, [runCompositeBake]);
 
-  // Invalidate + reschedule on any change that affects what `getCompositeCanvasFile`
-  // would render. `baseImageInfo` and `baseImageBitmap` change at different times
-  // (info syncs immediately on selection, bitmap arrives async after the image
-  // loads — see SceneState.ts setBaseImageInfo), so both must be listed.
+  // Invalidate + reschedule on any change that affects what's actually rendered.
+  // `baseImageInfo` updates synchronously when the user picks a new base, but
+  // the canvas keeps showing the old bitmap until `baseImageBitmap` swaps in
+  // (see setBaseImageInfo in SceneState.ts) — so `baseImageBitmap` is the right
+  // trigger. The Generate button is gated separately on bitmap presence so we
+  // never bake or fire a generate against a not-yet-loaded base.
   useEffect(() => {
     bakeDirtyRef.current = true;
     bakedCompositeRef.current = null;
     scheduleCompositeBake();
-  }, [drawNodes, baseImageBitmap, baseImageInfo, scheduleCompositeBake]);
+  }, [drawNodes, baseImageBitmap, scheduleCompositeBake]);
 
   useEffect(
     () => () => {
