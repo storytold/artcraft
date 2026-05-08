@@ -45,61 +45,13 @@
   ],
   "references": [
     {
-      "path": "../../common/tsconfig.lib.json"
-    },
-    {
-      "path": "../../api/tsconfig.lib.json"
-    },
-    {
       "path": "../../api-enums/tsconfig.lib.json"
     },
     {
       "path": "../../model-list/tsconfig.lib.json"
     },
     {
-      "path": "../../soundboard/tsconfig.lib.json"
-    },
-    {
-      "path": "../promptbox/tsconfig.lib.json"
-    },
-    {
-      "path": "../popover/tsconfig.lib.json"
-    },
-    {
-      "path": "../loading/tsconfig.lib.json"
-    },
-    {
-      "path": "../toaster/tsconfig.lib.json"
-    },
-    {
-      "path": "../gallery-modal/tsconfig.lib.json"
-    },
-    {
-      "path": "../model-selector/tsconfig.lib.json"
-    },
-    {
-      "path": "../help-menu/tsconfig.lib.json"
-    },
-    {
-      "path": "../login-modal/tsconfig.lib.json"
-    },
-    {
-      "path": "../settings-modal/tsconfig.lib.json"
-    },
-    {
-      "path": "../modal/tsconfig.lib.json"
-    },
-    {
-      "path": "../tooltip/tsconfig.lib.json"
-    },
-    {
-      "path": "../button/tsconfig.lib.json"
-    },
-    {
-      "path": "../input/tsconfig.lib.json"
-    },
-    {
-      "path": "../slider-v2/tsconfig.lib.json"
+      "path": "../../common/tsconfig.lib.json"
     }
   ]
 }

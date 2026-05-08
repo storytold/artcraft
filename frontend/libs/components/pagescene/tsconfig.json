@@ -3,61 +3,13 @@
   "include": [],
   "references": [
     {
-      "path": "../../common"
-    },
-    {
-      "path": "../../api"
-    },
-    {
       "path": "../../api-enums"
     },
     {
       "path": "../../model-list"
     },
     {
-      "path": "../../soundboard"
-    },
-    {
-      "path": "../promptbox"
-    },
-    {
-      "path": "../popover"
-    },
-    {
-      "path": "../loading"
-    },
-    {
-      "path": "../toaster"
-    },
-    {
-      "path": "../gallery-modal"
-    },
-    {
-      "path": "../model-selector"
-    },
-    {
-      "path": "../help-menu"
-    },
-    {
-      "path": "../login-modal"
-    },
-    {
-      "path": "../settings-modal"
-    },
-    {
-      "path": "../modal"
-    },
-    {
-      "path": "../tooltip"
-    },
-    {
-      "path": "../button"
-    },
-    {
-      "path": "../input"
-    },
-    {
-      "path": "../slider-v2"
+      "path": "../../common"
     },
     {
       "path": "./tsconfig.lib.json"

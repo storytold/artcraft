@@ -56,6 +56,9 @@
       "path": "../toaster/tsconfig.lib.json"
     },
     {
+      "path": "../gravatar/tsconfig.lib.json"
+    },
+    {
       "path": "../../api/tsconfig.lib.json"
     },
     {
