@@ -328,6 +328,7 @@ pub struct FalData {
 #[derive(Clone)]
 pub struct BeebleData {
   pub api_key: BeebleApiKey,
+  pub webhook_url: String,
 }
 
 /// Seedance 2 Pro integration

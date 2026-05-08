@@ -214,7 +214,7 @@ pub async fn beeble_switchx_edit_video_gen_handler(
       reference_image_uri: maybe_reference_beeble_uri,
       alpha_uri: None,
       max_resolution: Some(1080),
-      callback_url: None,
+      callback_url: Some(server_state.beeble.webhook_url.clone()),
       idempotency_key: Some(request.uuid_idempotency_token.clone()),
     },
   }).await.map_err(|err| {

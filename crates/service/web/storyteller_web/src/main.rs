@@ -479,6 +479,7 @@ async fn main() -> AnyhowResult<()> {
       api_key: beeble_client::creds::beeble_api_key::BeebleApiKey::new(
         easyenv::get_env_string_required("BEEBLE_API_KEY")?,
       ),
+      webhook_url: easyenv::get_env_string_required("BEEBLE_WEBHOOK_URL")?,
     },
     fal: FalData {
       api_key: fal_api_key,
