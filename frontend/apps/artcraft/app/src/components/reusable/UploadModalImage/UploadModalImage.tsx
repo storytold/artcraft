@@ -129,7 +129,7 @@ export function UploadModalImage(props: Props) {
       className="max-w-xl"
       showClose={true}
     >
-      {/* Inline call — `<Comp />` would be a fresh component reference each render and remount the subtree. */}
+      {/* Inline call — `<Comp />` would be a fresh component reference each render, remounting the dropzone mid-click and breaking the file picker. */}
       {UploaderModalContent()}
     </Modal>
   );

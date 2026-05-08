@@ -83,12 +83,6 @@ export const PageEditor = () => {
   const { triggerRecheck } = useLoginModalStore();
   const { status } = authentication;
 
-  // TEMP debug: render counter — see whether PageEditor re-renders mid-click.
-  const _peRenderCount = useRef(0);
-  _peRenderCount.current += 1;
-  // eslint-disable-next-line no-console
-  console.debug(`[render-trace] PageEditor #${_peRenderCount.current}`);
-
   useEffect(() => {
     if (status.value === AUTH_STATUS.LOGGED_OUT) {
       triggerRecheck();
