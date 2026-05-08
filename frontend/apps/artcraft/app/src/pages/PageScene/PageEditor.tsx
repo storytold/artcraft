@@ -11,7 +11,7 @@ import { TabbedPages } from "./TabbedPages";
 
 import { DomLevels } from "~/pages/PageScene/PageSceneStore";
 import { setCameraAspect } from "~/pages/PageScene/actions";
-import { GridVisibleChangedEvent } from "~/pages/PageScene/engine/events/EngineEvent";
+import { GridVisibleChangedEvent, pickDropPosition } from "@storyteller/ui-pagescene";
 import { EditorCanvas } from "./comps/EngineCanvases";
 import { SceneContainer } from "./comps/SceneContainer";
 import { useEditorCanvas } from "./hooks/useEditorCanvas";
@@ -36,7 +36,6 @@ import { AssetType, AUTH_STATUS } from "~/enums";
 import { v4 as uuidv4 } from "uuid";
 import { MediaItem } from "~/pages/PageScene/models";
 import { UploaderState } from "~/models";
-import { pickDropPosition } from "./engine/pickDropPosition";
 import {
   GalleryItem,
   onImageDrop,
