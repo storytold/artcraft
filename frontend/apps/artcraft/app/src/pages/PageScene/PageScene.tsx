@@ -32,6 +32,7 @@ import { useGenerationFailedEvent } from "@storyteller/tauri-events";
 import { useTextToImageGenerationCompleteEvent } from "@storyteller/tauri-events";
 import { useTextToImageStore } from "~/pages/PageImage/TextToImageStore";
 import { SoundManager } from "@storyteller/soundboard";
+import { useTauriPageSceneAdapter } from "./useTauriPageSceneAdapter";
 
 export const PageScene = ({ sceneToken }: { sceneToken?: string }) => {
   useSignals();
@@ -48,6 +49,11 @@ export const PageScene = ({ sceneToken }: { sceneToken?: string }) => {
   const onSceneSerialized = (json: string) => {
     tabStore.updateTabData("3D", json);
   };
+  const adapter = useTauriPageSceneAdapter({
+    initialSceneToken: sceneToken,
+    cacheJsonString,
+    onSceneSerialized,
+  });
 
   // Credits modal state (must be before any early returns)
   const { isOpen: isCreditsOpen, closeModal: closeCreditsModal } =
@@ -129,6 +135,7 @@ export const PageScene = ({ sceneToken }: { sceneToken?: string }) => {
   return (
     <EngineProvider
       sceneToken={sceneToken}
+      adapter={adapter}
       cacheJsonString={cacheJsonString}
       onSceneSerialized={onSceneSerialized}
     >

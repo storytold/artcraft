@@ -1,12 +1,19 @@
 import { ReactNode, useEffect, useRef, useState } from "react";
 import { EngineContext, setActiveEditor } from "./EngineContext";
 
-import Editor from "~/pages/PageScene/engine/editor";
+import {
+  Editor,
+  type PageSceneAdapter,
+} from "@storyteller/ui-pagescene";
 import { getSceneGenerationMetaData } from "../../sceneMetadata";
 import { usePageSceneStore } from "~/pages/PageScene/PageSceneStore";
 
 interface Props {
   sceneToken?: string;
+  // The platform-abstraction surface the lib's Editor needs. Built by
+  // the artcraft wrapper from Tauri APIs (FetchProxy, GenerateImage,
+  // MediaFilesApi, useTabStore for tab cache, etc.) and threaded down.
+  adapter: PageSceneAdapter;
   // In-memory restore: if provided, the engine deserializes this on
   // mount instead of fetching the scene by token. Host-supplied (e.g.
   // artcraft sources it from useTabStore so tab switches preserve the
@@ -26,6 +33,7 @@ interface Props {
 // PageSceneStore drive the cleanup branch of this effect.
 export const EngineProvider = ({
   sceneToken,
+  adapter,
   cacheJsonString,
   onSceneSerialized,
   children,
@@ -39,6 +47,10 @@ export const EngineProvider = ({
   cacheRef.current = cacheJsonString;
   const onSerializeRef = useRef(onSceneSerialized);
   onSerializeRef.current = onSceneSerialized;
+  // Adapter is read at engine-construction time only; ref guards
+  // against host-side identity changes triggering unwanted rebuilds.
+  const adapterRef = useRef(adapter);
+  adapterRef.current = adapter;
 
   const sceneContainer = usePageSceneStore((s) => s.sceneContainerEl);
   const editorCanvas = usePageSceneStore((s) => s.editorCanvasEl);
@@ -51,7 +63,7 @@ export const EngineProvider = ({
     // them to null on unmount).
     if (!sceneContainer || !editorCanvas || !camViewCanvas) return;
 
-    const newEditor = new Editor();
+    const newEditor = new Editor(adapterRef.current);
     newEditor.initialize({
       sceneToken: sceneToken || "",
       sceneContainerEl: sceneContainer,
