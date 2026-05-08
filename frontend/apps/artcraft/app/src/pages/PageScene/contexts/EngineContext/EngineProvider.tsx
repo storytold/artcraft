@@ -2,80 +2,90 @@ import { ReactNode, useEffect, useRef, useState } from "react";
 import { EngineContext, setActiveEditor } from "./EngineContext";
 
 import Editor from "~/pages/PageScene/engine/editor";
-import { useTabStore } from "../../../Stores/TabState";
 import { getSceneGenerationMetaData } from "../../sceneMetadata";
 import { usePageSceneStore } from "~/pages/PageScene/PageSceneStore";
+
 interface Props {
   sceneToken?: string;
+  // In-memory restore: if provided, the engine deserializes this on
+  // mount instead of fetching the scene by token. Host-supplied (e.g.
+  // artcraft sources it from useTabStore so tab switches preserve the
+  // scene without an HTTP roundtrip).
+  cacheJsonString?: string;
+  // In-memory save: called on unmount with the serialized scene JSON.
+  // The host stashes it wherever it likes (tabStore, localStorage,
+  // nowhere) — the lib stays storage-agnostic.
+  onSceneSerialized?: (json: string) => void;
   children: ReactNode;
 }
 
-export const EngineProvider = ({ sceneToken, children }: Props) => {
+// Drives the Editor lifecycle from React mount/unmount + the
+// availability of the canvas DOM nodes. No tab knowledge — the host
+// decides when this provider is mounted (e.g. only when the 3D tab is
+// active). When the canvases unmount, callback refs nulled in
+// PageSceneStore drive the cleanup branch of this effect.
+export const EngineProvider = ({
+  sceneToken,
+  cacheJsonString,
+  onSceneSerialized,
+  children,
+}: Props) => {
   const [editor, setEditor] = useState<Editor | null>(null);
   const activeEditorRef = useRef<Editor | null>(null);
-
-  const createEditor = () => {
-    return new Editor();
-  };
-  const tabStore = useTabStore();
-  const tab = tabStore.activeTabId;
+  // Hold the latest cache + serialize callback in refs so the engine
+  // lifecycle effect can read them in cleanup without re-running on
+  // every prop change.
+  const cacheRef = useRef(cacheJsonString);
+  cacheRef.current = cacheJsonString;
+  const onSerializeRef = useRef(onSceneSerialized);
+  onSerializeRef.current = onSceneSerialized;
 
   const sceneContainer = usePageSceneStore((s) => s.sceneContainerEl);
   const editorCanvas = usePageSceneStore((s) => s.editorCanvasEl);
   const camViewCanvas = usePageSceneStore((s) => s.camViewCanvasEl);
+
   useEffect(() => {
-    if (sceneContainer && editorCanvas && camViewCanvas && tab === "3D") {
-      // DO NOTHING if another useEffect already created one and hasn't been removed
-      if (activeEditorRef.current) {
-        return;
-      }
+    // Engine construction happens once all three DOM nodes are
+    // available; callback refs in SceneContainer / EditorCanvas /
+    // CameraViewCanvas drive this by setting their nodes (and clearing
+    // them to null on unmount).
+    if (!sceneContainer || !editorCanvas || !camViewCanvas) return;
+    if (activeEditorRef.current) return;
 
-      const newEditor = createEditor();
-      console.warn("Creating new Editor instance", newEditor);
-      activeEditorRef.current = newEditor;
+    const newEditor = new Editor();
+    activeEditorRef.current = newEditor;
 
-      // Check if we have a cached state
-      const cacheString = tabStore.getTabData("3D") as string;
+    newEditor.initialize({
+      sceneToken: sceneToken || "",
+      sceneContainerEl: sceneContainer,
+      editorCanvasEl: editorCanvas,
+      camViewCanvasEl: camViewCanvas,
+      cacheJsonString: cacheRef.current,
+    });
+    setEditor(newEditor);
+    setActiveEditor(newEditor);
 
-      newEditor.initialize({
-        sceneToken: sceneToken || "",
-        sceneContainerEl: sceneContainer,
-        editorCanvasEl: editorCanvas,
-        camViewCanvasEl: camViewCanvas,
-        cacheJsonString: cacheString,
-      });
-      setEditor(newEditor);
-      setActiveEditor(newEditor);
-    } else if (tab !== "3D") {
-      if (!activeEditorRef.current) {
-        return;
-      }
+    return () => {
+      const live = activeEditorRef.current;
+      if (!live) return;
 
-      // If the tab is changed, cache state, unmount the editor and clear all input params
-      // This condition makes sure the editor saves a fully loaded scene so it doesn't lose data
-      // If the load was incomplete, we'll preserve the last cache anyway.
-      // FIX: Only save the JSON if the engine scene was loaded and has valid data to be saved
-      if (activeEditorRef.current.isEngineDataLoaded()) {
-        const sceneGenerationMetadata = getSceneGenerationMetaData(
-          activeEditorRef.current,
-        );
-        const cacheJson = activeEditorRef.current.save_manager.getSceneJson({
-          sceneGenerationMetadata: sceneGenerationMetadata,
+      // Snapshot scene to host-managed cache so we can restore it on
+      // remount. Skip if the scene never finished loading; the host's
+      // last-known-good cache is preserved on its side.
+      if (live.isEngineDataLoaded()) {
+        const sceneGenerationMetadata = getSceneGenerationMetaData(live);
+        const cacheJson = live.save_manager.getSceneJson({
+          sceneGenerationMetadata,
         });
-        const cacheString = JSON.stringify(cacheJson);
-        tabStore.updateTabData("3D", cacheString);
+        onSerializeRef.current?.(JSON.stringify(cacheJson));
       }
 
-      // Unmount/Destructor flow
-      activeEditorRef.current?.unmountEngine();
+      live.unmountEngine();
       activeEditorRef.current = null;
+      setEditor(null);
       setActiveEditor(null);
-      const store = usePageSceneStore.getState();
-      store.setSceneContainerEl(null);
-      store.setEditorCanvasEl(null);
-      store.setCamViewCanvasEl(null);
-    }
-  }, [sceneToken, editorCanvas, camViewCanvas, setEditor, sceneContainer, tab]);
+    };
+  }, [sceneToken, sceneContainer, editorCanvas, camViewCanvas]);
 
   return (
     <EngineContext.Provider value={editor}>{children}</EngineContext.Provider>

@@ -1,5 +1,6 @@
 import { DragComponent } from "~/pages/PageScene/comps/DragComponent/DragComponent";
 import { EngineProvider } from "./contexts/EngineContext";
+import { useTabStore } from "~/pages/Stores/TabState";
 import { useActiveJobs } from "~/hooks/useActiveJobs";
 import { useBackgroundLoadingMedia } from "~/hooks/useBackgroundLoadingMedia";
 import { ErrorDialog } from "~/components";
@@ -36,6 +37,17 @@ export const PageScene = ({ sceneToken }: { sceneToken?: string }) => {
   useSignals();
   useActiveJobs();
   useBackgroundLoadingMedia();
+
+  // Tab-cache plumbing lives at this layer (not inside EngineProvider).
+  // The provider only knows about its own React lifecycle; the host
+  // decides where the in-memory cache string lives. Reading the
+  // current value once on render is fine — the provider snapshots it
+  // on mount, and the cache is per-mount, not per-render.
+  const tabStore = useTabStore();
+  const cacheJsonString = tabStore.getTabData("3D") as string | undefined;
+  const onSceneSerialized = (json: string) => {
+    tabStore.updateTabData("3D", json);
+  };
 
   // Credits modal state (must be before any early returns)
   const { isOpen: isCreditsOpen, closeModal: closeCreditsModal } =
@@ -115,7 +127,11 @@ export const PageScene = ({ sceneToken }: { sceneToken?: string }) => {
   const currentReminderModalProps = actionReminderProps.value;
 
   return (
-    <EngineProvider sceneToken={sceneToken}>
+    <EngineProvider
+      sceneToken={sceneToken}
+      cacheJsonString={cacheJsonString}
+      onSceneSerialized={onSceneSerialized}
+    >
       <PageEditor />
       <DragComponent />
       <GalleryDragComponent />

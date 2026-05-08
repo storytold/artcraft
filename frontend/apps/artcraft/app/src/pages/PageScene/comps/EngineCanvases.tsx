@@ -1,12 +1,16 @@
 import { useCallback } from "react";
 import { usePageSceneStore } from "~/pages/PageScene/PageSceneStore";
 
+// Canvas refs flow through PageSceneStore so the EngineProvider effect
+// can react to mount/unmount. The callbacks intentionally pass `null`
+// through on unmount so the engine-lifecycle effect can dispose the
+// Editor when the canvases go away (e.g. on tab switch). A previous
+// `if (node)` filter dropped null and leaked the Editor.
+
 export const EditorCanvas = () => {
   const canvasCallbackRef = useCallback(
-    (node: HTMLCanvasElement) => {
-      if (node) {
-        usePageSceneStore.getState().setEditorCanvasEl(node);
-      }
+    (node: HTMLCanvasElement | null) => {
+      usePageSceneStore.getState().setEditorCanvasEl(node);
     },
     [],
   );
@@ -23,10 +27,8 @@ export const EditorCanvas = () => {
 
 export const CameraViewCanvas = ({ className }: { className?: string }) => {
   const canvasCallbackRef = useCallback(
-    (node: HTMLCanvasElement) => {
-      if (node) {
-        usePageSceneStore.getState().setCamViewCanvasEl(node);
-      }
+    (node: HTMLCanvasElement | null) => {
+      usePageSceneStore.getState().setCamViewCanvasEl(node);
     },
     [],
   );

@@ -10,10 +10,12 @@ export const SceneContainer = ({ children }: { children: React.ReactNode }) => {
   const containerWidth = pageWidth.value;
   const containerHeight = pageHeight.value - 56;
 
-  const callbackRef = useCallback((node: HTMLDivElement) => {
-    if (node) {
-      usePageSceneStore.getState().setSceneContainerEl(node);
-    }
+  // Sets the DOM node both on mount (truthy) and unmount (null) so the
+  // engine lifecycle effect can react to the canvas unmounting when the
+  // tab switches away from 3D. The previous `if (node)` filter swallowed
+  // the unmount case and leaked the Editor instance.
+  const callbackRef = useCallback((node: HTMLDivElement | null) => {
+    usePageSceneStore.getState().setSceneContainerEl(node);
   }, []);
 
   return (
