@@ -7,18 +7,7 @@ import { ControlPanelSceneObject } from "./comps/ControlPanelSceneObject";
 import { PreviewEngineCamera } from "./comps/PreviewEngineCamera";
 import { authentication, pageHeight, pageWidth } from "~/signals";
 import { PoseModeSelector } from "./comps/PoseModeSelector";
-import ImageToVideo from "../PageVideo/ImageToVideo";
-import TextToImage from "../PageImage/TextToImage";
-import { AppsIndexPage } from "../PageApps/AppsIndexPage";
-import { VideoFrameExtractor } from "../PageVideoFrameExtractor";
-import { VideoWatermarkRemover } from "../PageVideoWatermarkRemover";
-import { ImageWatermarkRemover } from "../PageImageWatermarkRemover";
-import { ImageTo3DObject } from "../PageImageTo3DObject";
-import { ImageTo3DWorld } from "../PageImageTo3DWorld";
-import { RemoveBackground } from "../PageRemoveBackground";
-import { Angles } from "../PageAngles";
-import { Storyboard } from "../PageStoryboard";
-import { useStoryboardPageEnabled } from "@storyteller/ui-settings-modal";
+import { TabbedPages } from "./TabbedPages";
 
 import { DomLevels } from "~/pages/PageScene/PageSceneStore";
 import { setCameraAspect } from "~/pages/PageScene/actions";
@@ -40,10 +29,6 @@ import { FocalLengthDisplay } from "./comps/FocalLengthDisplay/FocalLengthDispla
 import { uploadImage } from "~/components/reusable/UploadModalMedia/uploadImage";
 import { EngineContext } from "./contexts/EngineContext";
 
-import {
-  topNavMediaId,
-  topNavMediaUrl,
-} from "~/components/signaled/TopBar/TopBar";
 import { uploadPlaneFromMediaToken } from "~/components/reusable/UploadModalMedia/uploadPlane";
 import { addObject, addCharacter } from "./actions";
 import { usePageSceneStore } from "./PageSceneStore";
@@ -67,7 +52,6 @@ import {
   //PROVIDER_LOOKUP_BY_PAGE,
 } from "@storyteller/ui-model-selector";
 import { LoginModal, useLoginModalStore } from "@storyteller/ui-login-modal";
-import PageDraw from "../PageDraw/PageDraw";
 import { useTabStore } from "../Stores/TabState";
 import { ImageModel } from "@storyteller/model-list";
 import { HelpMenuButton } from "@storyteller/ui-help-menu";
@@ -91,7 +75,6 @@ export const PageEditor = () => {
   }, [status.value, triggerRecheck]);
 
   const tabStore = useTabStore();
-  const storyboardPageEnabled = useStoryboardPageEnabled();
   const camAspect = usePageSceneStore((s) => s.cameraAspectRatio);
   const outlinerShowing = usePageSceneStore((s) => s.outlinerShowing);
   const editorLoader = usePageSceneStore((s) => s.editorLoader);
@@ -592,69 +575,7 @@ export const PageEditor = () => {
           </div>
         </div>
       )}
-      {tabStore.activeTabId == "APPS" && (
-        <div>
-          <AppsIndexPage />
-        </div>
-      )}
-      {tabStore.activeTabId == "2D" && (
-        <div>
-          <PageDraw />
-        </div>
-      )}
-      {tabStore.activeTabId == "IMAGE" && (
-        <div>
-          <TextToImage
-            imageMediaId={topNavMediaId.value}
-            imageUrl={topNavMediaUrl.value}
-          />
-        </div>
-      )}
-      {tabStore.activeTabId == "VIDEO" && (
-        <div>
-          <ImageToVideo />
-        </div>
-      )}
-      {tabStore.activeTabId == "VIDEO_FRAME_EXTRACTOR" && (
-        <div>
-          <VideoFrameExtractor />
-        </div>
-      )}
-      {tabStore.activeTabId == "VIDEO_WATERMARK_REMOVAL" && (
-        <div>
-          <VideoWatermarkRemover />
-        </div>
-      )}
-      {tabStore.activeTabId == "IMAGE_WATERMARK_REMOVAL" && (
-        <div>
-          <ImageWatermarkRemover />
-        </div>
-      )}
-      {tabStore.activeTabId == "IMAGE_TO_3D_OBJECT" && (
-        <div>
-          <ImageTo3DObject />
-        </div>
-      )}
-      {tabStore.activeTabId == "IMAGE_TO_3D_WORLD" && (
-        <div>
-          <ImageTo3DWorld />
-        </div>
-      )}
-      {tabStore.activeTabId == "REMOVE_BACKGROUND" && (
-        <div>
-          <RemoveBackground />
-        </div>
-      )}
-      {tabStore.activeTabId == "ANGLES" && (
-        <div>
-          <Angles />
-        </div>
-      )}
-      {tabStore.activeTabId == "STORYBOARD" && storyboardPageEnabled && (
-        <div>
-          <Storyboard />
-        </div>
-      )}
+      <TabbedPages />
     </div>
   );
 };
