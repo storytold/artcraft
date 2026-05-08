@@ -6,7 +6,9 @@ import {
   type FreeCamControlState,
 } from "../cameraMath";
 import { CameraAspectRatio, EditorStates } from "~/pages/PageScene/enums";
-import { usePageSceneStore } from "~/pages/PageScene/PageSceneStore";
+import type { Camera } from "@storyteller/common";
+import type { EngineEventBus } from "../events/EngineEventBus";
+import { CameraUpdatedEvent } from "../events/EngineEvent";
 
 export type RenderDimensions = {
   width: number;
@@ -24,6 +26,12 @@ export type CameraControllerDeps = {
   setSelected: (obj: THREE.Object3D | null) => void;
   setEditorState: (state: EditorStates) => void;
   hideObjectPanel: () => void;
+  // Camera-list reads from the Zustand store happen at the engine
+  // boundary; CameraController stays store-agnostic.
+  getCameras: () => Camera[];
+  getSelectedCameraId: () => string;
+  // Typed event bus — every engine→store write goes through here.
+  bus: EngineEventBus;
 };
 
 // Owns the editor's camera-related state: the live PerspectiveCameras,
@@ -186,10 +194,11 @@ export class CameraController {
   // camera, mirrors the active camera's transform to cam_obj (or vice
   // versa in camera-person mode), and syncs render_camera to cam_obj.
   tickPerFrame(deltaSeconds: number) {
-    const store = usePageSceneStore.getState();
+    const selectedCameraId = this.deps.getSelectedCameraId();
 
-    if (store.selectedCameraId && this.camera) {
-      const camData = store.cameras.find((c) => c.id === store.selectedCameraId);
+    if (selectedCameraId && this.camera) {
+      const cameras = this.deps.getCameras();
+      const camData = cameras.find((c) => c.id === selectedCameraId);
       if (camData) {
         const fov = this.focalLengthToFov(camData.focalLength);
         if (this.camera.fov !== fov) {
@@ -207,15 +216,17 @@ export class CameraController {
       );
       // Mirror the active camera's transform back into the store so
       // PromptBox3D and the camera-list UI stay in sync.
-      if (moved && store.selectedCameraId) {
+      if (moved && selectedCameraId) {
         const lookAt = lookAtFromCamera(this.camera);
         const pos = this.camera.position;
         const rot = this.camera.rotation;
-        store.updateCamera(store.selectedCameraId, {
-          position: { x: pos.x, y: pos.y, z: pos.z },
-          rotation: { x: rot.x, y: rot.y, z: rot.z },
-          lookAt: { x: lookAt.x, y: lookAt.y, z: lookAt.z },
-        });
+        this.deps.bus.emit(
+          new CameraUpdatedEvent(selectedCameraId, {
+            position: { x: pos.x, y: pos.y, z: pos.z },
+            rotation: { x: rot.x, y: rot.y, z: rot.z },
+            lookAt: { x: lookAt.x, y: lookAt.y, z: lookAt.z },
+          }),
+        );
       }
     }
 

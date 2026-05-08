@@ -22,6 +22,7 @@ import { useStoryboardPageEnabled } from "@storyteller/ui-settings-modal";
 
 import { DomLevels } from "~/pages/PageScene/PageSceneStore";
 import { setCameraAspect } from "~/pages/PageScene/actions";
+import { GridVisibleChangedEvent } from "~/pages/PageScene/engine/events/EngineEvent";
 import { EditorCanvas } from "./comps/EngineCanvases";
 import { SceneContainer } from "./comps/SceneContainer";
 import { useEditorCanvas } from "./hooks/useEditorCanvas";
@@ -107,7 +108,6 @@ export const PageEditor = () => {
     (s) => s.setIsPromptBoxFocused,
   );
   const gridVisible = usePageSceneStore((s) => s.gridVisible);
-  const setGridVisible = usePageSceneStore((s) => s.setGridVisible);
   const addCamera = usePageSceneStore((s) => s.addCamera);
   const updateCamera = usePageSceneStore((s) => s.updateCamera);
   const deleteCamera = usePageSceneStore((s) => s.deleteCamera);
@@ -532,7 +532,11 @@ export const PageEditor = () => {
                   disableHotkeyInput={disableHotkeyInput}
                   enableHotkeyInput={enableHotkeyInput}
                   gridVisibility={gridVisible}
-                  setGridVisibility={setGridVisible}
+                  setGridVisibility={(visible: boolean) =>
+                    editorEngine?.bus.emit(
+                      new GridVisibleChangedEvent(visible),
+                    )
+                  }
                   selectedCameraId={selectedCameraId}
                   deleteCamera={deleteCamera}
                   focalLengthDragging={focalLengthDragging}

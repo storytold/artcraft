@@ -1,6 +1,6 @@
 import type Editor from "../engine/editor";
 import { VisibilityAction } from "../engine/editor/actions/VisibilityAction";
-import { usePageSceneStore } from "../PageSceneStore";
+import { OutlinerItemVisibilityToggledEvent } from "../engine/events/EngineEvent";
 
 // Toggle the visibility of an object: flips obj.visible +
 // userData.visible, syncs the outliner row icon in the Zustand store,
@@ -13,7 +13,7 @@ export function toggleObjectVisibility(editor: Editor, uuid: string): void {
   const obj = editor.activeScene.scene.getObjectByProperty("uuid", uuid);
   if (!obj) return;
   const before = obj.visible;
-  usePageSceneStore.getState().toggleOutlinerVisibility(uuid);
+  editor.bus.emit(new OutlinerItemVisibilityToggledEvent(uuid));
   editor.sceneManager?.hideObject(uuid);
   editor.history.record(
     new VisibilityAction(editor, uuid, before, !before),

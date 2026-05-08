@@ -82,7 +82,7 @@ import toast from "react-hot-toast";
 import { APP_DESCRIPTORS, goToApp } from "~/config/appMenu";
 import { useStoryboardStore } from "~/pages/PageStoryboard";
 import { useSceneStore } from "@storyteller/ui-pagedraw";
-import { set3DPageMounted } from "~/pages/PageScene/engine/editor";
+import { set3DPageMounted } from "~/pages/PageScene/engineLifecycle";
 import { usePageSceneStore } from "~/pages/PageScene/PageSceneStore";
 import { useImageTo3DStore } from "~/pages/PageImageTo3DObject/ImageTo3DStore";
 import { useImageTo3DWorldStore } from "~/pages/PageImageTo3DWorld/ImageTo3DWorldStore";

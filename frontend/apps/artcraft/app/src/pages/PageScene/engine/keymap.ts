@@ -1,6 +1,12 @@
 import type Editor from "~/pages/PageScene/engine/editor";
-import { usePageSceneStore } from "~/pages/PageScene/PageSceneStore";
 import { CreateAction } from "~/pages/PageScene/engine/editor/actions/CreateAction";
+import {
+  AssetModalVisibilityChangedEvent,
+  PoseControlsVisibilityChangedEvent,
+  SelectedModeChangedEvent,
+  TransformModeChangedEvent,
+} from "~/pages/PageScene/engine/events/EngineEvent";
+import type { PoseMode } from "~/pages/PageScene/PageSceneStore";
 
 // One declarative table for every viewport keyboard shortcut.
 // useViewportKeyboard dispatches against this list; a future Ctrl-hold
@@ -28,8 +34,8 @@ const setGizmoMode = (
   storeMode: "move" | "rotate" | "scale",
 ) => {
   editor.gizmo.changeMode(gizmoMode);
-  usePageSceneStore.getState().setTransformMode(storeMode);
-  usePageSceneStore.getState().setSelectedMode(storeMode);
+  editor.bus.emit(new TransformModeChangedEvent(storeMode));
+  editor.bus.emit(new SelectedModeChangedEvent(storeMode));
 };
 
 const deleteSelected = (editor: Editor) => {
@@ -42,18 +48,18 @@ const deleteSelected = (editor: Editor) => {
   });
   mc.selected = [];
   mc.removeTransformControls();
-  usePageSceneStore.getState().setShowPoseControls(false);
+  editor.bus.emit(new PoseControlsVisibilityChangedEvent(false));
 };
 
 const onEscape = (editor: Editor) => {
-  const store = usePageSceneStore.getState();
-  if (store.poseMode === "pose") {
+  const poseMode: PoseMode = editor.getPoseMode();
+  if (poseMode === "pose") {
     editor.mouse_controls?.toggleFKMode();
     return;
   }
   if (editor.mouse_controls?.selected?.length) {
     editor.mouse_controls.removeTransformControls();
-    store.setShowPoseControls(false);
+    editor.bus.emit(new PoseControlsVisibilityChangedEvent(false));
   }
 };
 
@@ -66,10 +72,8 @@ const focusSelected = (editor: Editor) => {
   }
 };
 
-const openAssetModal = () => {
-  const store = usePageSceneStore.getState();
-  store.setAssetModalVisible(true);
-  store.setAssetModalVisibleDuringDrag(true);
+const openAssetModal = (editor: Editor) => {
+  editor.bus.emit(new AssetModalVisibilityChangedEvent(true, true));
 };
 
 const toggleCameraView = (editor: Editor) => {

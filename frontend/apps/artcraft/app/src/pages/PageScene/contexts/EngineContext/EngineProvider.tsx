@@ -3,7 +3,7 @@ import { EngineContext, setActiveEditor } from "./EngineContext";
 
 import Editor from "~/pages/PageScene/engine/editor";
 import { useTabStore } from "../../../Stores/TabState";
-import { getSceneGenerationMetaData } from "../../engine/SceneMetadata";
+import { getSceneGenerationMetaData } from "../../sceneMetadata";
 import { usePageSceneStore } from "~/pages/PageScene/PageSceneStore";
 interface Props {
   sceneToken?: string;

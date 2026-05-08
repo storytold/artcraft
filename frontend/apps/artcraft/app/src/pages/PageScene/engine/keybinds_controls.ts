@@ -1,5 +1,4 @@
 import * as THREE from "three";
-import { usePageSceneStore } from "../PageSceneStore";
 import {
   OrbitControls,
   OutlinePass,
@@ -11,6 +10,17 @@ import { isPointerLockSupported } from "./browserChecks";
 import type { FreeCamControlState } from "./cameraMath";
 import { FKHelper } from "./KinHelpers/FKHelper";
 import { Euler } from "three";
+import type { EngineEventBus } from "./events/EngineEventBus";
+import {
+  AssetModalVisibilityChangedEvent,
+  InspectorPanelChangedEvent,
+  OutlinerSelectedItemChangedEvent,
+  PoseControlsVisibilityChangedEvent,
+  PoseModeChangedEvent,
+  SelectedModeChangedEvent,
+  TransformSpaceChangedEvent,
+} from "./events/EngineEvent";
+import type { PoseMode, TransformSpace } from "../PageSceneStore";
 
 const EDITABLE_INPUT_TYPES = new Set([
   "text",
@@ -50,6 +60,43 @@ export enum KinMode {
   NONE,
 }
 
+// Capabilities MouseControls needs from outside its own state. Editor
+// wires these in inline at construction (Phase 2 idiom — same shape as
+// CameraControllerDeps, SaveManagerDeps, etc.). Replaces the prior
+// 20-positional-arg constructor; new fields go here, not in a 21st
+// positional slot.
+export type MouseControlsDeps = {
+  camera: THREE.PerspectiveCamera | null;
+  camera_person_mode: boolean;
+  cameraViewControls: FreeCamControlState | null;
+  lockControls: PointerLockControls | undefined;
+  camera_last_pos: THREE.Vector3;
+  deleteObject: Function;
+  canvReference: HTMLCanvasElement | null;
+  mouse: THREE.Vector2 | undefined;
+  timeline_mouse: THREE.Vector2 | undefined;
+  raycaster: THREE.Raycaster | undefined;
+  control: TransformControls | undefined;
+  outlinePass: OutlinePass | undefined;
+  scene: THREE.Scene;
+  publishSelect: Function;
+  updateSelectedUI: Function;
+  transform_interaction: boolean;
+  last_selected: THREE.Object3D | undefined;
+  getAssetType: Function;
+  setSelected: Function;
+  isMovable: Function;
+  enable_stats: Function;
+
+  // Typed event bus — every engine→store write goes through here.
+  bus: EngineEventBus;
+  // Reads from the store happen at the boundary (Editor wires these up).
+  // The class itself stays store-agnostic.
+  getPoseMode: () => PoseMode;
+  isHotkeyDisabled: () => boolean;
+  getTransformSpace: () => TransformSpace;
+};
+
 export class MouseControls {
   camera: THREE.PerspectiveCamera | null;
   camera_person_mode: boolean;
@@ -83,55 +130,39 @@ export class MouseControls {
   private isBoneDragged: boolean = false;
   private ignoreNextClick: boolean = false;
 
-  constructor(
-    camera: THREE.PerspectiveCamera,
-    camera_person_mode: boolean,
-    cameraViewControls: FreeCamControlState | null,
-    lockControls: PointerLockControls | undefined,
-    camera_last_pos: THREE.Vector3,
-    deleteObject: Function,
-    canvReference: HTMLCanvasElement | null,
-    mouse: THREE.Vector2 | undefined,
-    timeline_mouse: THREE.Vector2 | undefined,
-    raycaster: THREE.Raycaster | undefined,
-    control: TransformControls,
-    outlinePass: OutlinePass | undefined,
-    scene: THREE.Scene,
-    publishSelect: Function,
-    updateSelectedUI: Function,
-    transform_interaction: boolean,
-    last_selected: THREE.Object3D | undefined,
-    getAssetType: Function,
-    setSelected: Function,
-    isMovable: Function,
-    enable_stats: Function,
-  ) {
-    this.camera = camera;
-    this.camera_person_mode = camera_person_mode;
-    this.cameraViewControls = cameraViewControls;
-    this.lockControls = lockControls;
-    this.camera_last_pos = camera_last_pos;
+  // Deps held for read callbacks + bus emissions throughout the class.
+  // Constructor still copies primitive fields onto `this.x` for the
+  // existing internals; new code reads through `this.deps` directly.
+  private deps: MouseControlsDeps;
+
+  constructor(deps: MouseControlsDeps) {
+    this.deps = deps;
+    this.camera = deps.camera;
+    this.camera_person_mode = deps.camera_person_mode;
+    this.cameraViewControls = deps.cameraViewControls;
+    this.lockControls = deps.lockControls;
+    this.camera_last_pos = deps.camera_last_pos;
     this.selected = [];
-    this.deleteObject = deleteObject;
-    this.canvReference = canvReference;
-    this.mouse = mouse;
-    this.timeline_mouse = timeline_mouse;
-    this.raycaster = raycaster;
-    this.control = control;
-    this.outlinePass = outlinePass;
-    this.scene = scene;
-    this.publishSelect = publishSelect;
-    this.updateSelectedUI = updateSelectedUI;
-    this.transform_interaction = transform_interaction;
+    this.deleteObject = deps.deleteObject;
+    this.canvReference = deps.canvReference;
+    this.mouse = deps.mouse;
+    this.timeline_mouse = deps.timeline_mouse;
+    this.raycaster = deps.raycaster;
+    this.control = deps.control;
+    this.outlinePass = deps.outlinePass;
+    this.scene = deps.scene;
+    this.publishSelect = deps.publishSelect;
+    this.updateSelectedUI = deps.updateSelectedUI;
+    this.transform_interaction = deps.transform_interaction;
     this.last_selected = [];
-    this.getAssetType = getAssetType;
-    this.setSelected = setSelected;
+    this.getAssetType = deps.getAssetType;
+    this.setSelected = deps.setSelected;
     this.sceneManager = undefined;
-    this.isMovable = isMovable;
-    this.enable_stats = enable_stats;
+    this.isMovable = deps.isMovable;
+    this.enable_stats = deps.enable_stats;
     this.fkHelper = new FKHelper({
-      camera: this.camera,
-      domElement: this.control.domElement,
+      camera: this.camera!,
+      domElement: this.control!.domElement,
       scene: this.scene,
       onDragChange: this.onFKControlsDragging.bind(this),
     });
@@ -199,7 +230,7 @@ export class MouseControls {
     this.publishSelect();
 
     if (currentObject.userData.isCharacter) {
-      usePageSceneStore.getState().setShowPoseControls(true);
+      this.deps.bus.emit(new PoseControlsVisibilityChangedEvent(true));
     }
 
     // Normal selection behavior
@@ -212,8 +243,9 @@ export class MouseControls {
       this.outlinePass.selectedObjects = this.selected;
     }
     this.transform_interaction = true;
-    // Contact react land
-    usePageSceneStore.getState().showObjectPanel();
+    // Contact react land — updateSelectedUI emits InspectorPanelChangedEvent
+    // with the panel data, which the bridge translates into both
+    // updateObjectPanel + showObjectPanel store calls.
     this.updateSelectedUI();
   }
 
@@ -264,8 +296,8 @@ export class MouseControls {
       this.fkHelper.clear();
       this.kinMode = KinMode.NONE;
       this.reattachTransformControls();
-      if (usePageSceneStore.getState().poseMode === "pose") {
-        usePageSceneStore.getState().setPoseMode("select");
+      if (this.deps.getPoseMode() === "pose") {
+        this.deps.bus.emit(new PoseModeChangedEvent("select"));
       }
       console.log("FK mode off");
       return;
@@ -287,8 +319,8 @@ export class MouseControls {
     this.hideTransformControls();
     this.kinMode = KinMode.FK;
     this.fkHelper.setTarget(this.selected[0]);
-    if (usePageSceneStore.getState().poseMode === "select") {
-      usePageSceneStore.getState().setPoseMode("pose");
+    if (this.deps.getPoseMode() === "select") {
+      this.deps.bus.emit(new PoseModeChangedEvent("pose"));
     }
     console.log("FK mode on");
     return;
@@ -299,7 +331,7 @@ export class MouseControls {
       return;
     }
 
-    if (usePageSceneStore.getState().hotkeyStatus.disabled) {
+    if (this.deps.isHotkeyDisabled()) {
       return;
     } else if (event.key === "f" && this.selected && this.lockControls) {
       this.focus();
@@ -313,49 +345,43 @@ export class MouseControls {
             this.toggleFKMode();
           }
           this.removeTransformControls();
-          usePageSceneStore.getState().setShowPoseControls(false);
+          this.deps.bus.emit(new PoseControlsVisibilityChangedEvent(false));
         });
       }
       return;
     } else if (event.key === "t") {
       // transform
       this.control?.setMode("translate");
-      const ts = usePageSceneStore.getState().transformSpace;
+      const ts = this.deps.getTransformSpace();
       if (this.control) this.control.space = ts;
-      usePageSceneStore.getState().setSelectedMode("move");
+      this.deps.bus.emit(new SelectedModeChangedEvent("move"));
       return;
     } else if (event.key === "x") {
       // toggle world/local space (blocked in scale mode)
       if (this.control?.mode === "scale") return;
-      const next =
-        usePageSceneStore.getState().transformSpace === "world"
-          ? "local"
-          : "world";
-      usePageSceneStore.getState().setTransformSpace(next);
+      const next: TransformSpace =
+        this.deps.getTransformSpace() === "world" ? "local" : "world";
+      this.deps.bus.emit(new TransformSpaceChangedEvent(next));
       if (this.control) this.control.space = next;
       return;
     } else if (event.key === "r" && !event.ctrlKey) {
       // rotate
       this.control?.setMode("rotate");
-      if (this.control)
-        this.control.space = usePageSceneStore.getState().transformSpace;
-      usePageSceneStore.getState().setSelectedMode("rotate");
+      if (this.control) this.control.space = this.deps.getTransformSpace();
+      this.deps.bus.emit(new SelectedModeChangedEvent("rotate"));
       return;
     } else if (event.key === "g") {
       // scale
       this.control?.setMode("scale");
-      if (this.control)
-        this.control.space = usePageSceneStore.getState().transformSpace;
-      usePageSceneStore.getState().setSelectedMode("scale");
+      if (this.control) this.control.space = this.deps.getTransformSpace();
+      this.deps.bus.emit(new SelectedModeChangedEvent("scale"));
       return;
     } else if (event.key === "k") {
       this.toggleFKMode();
       return;
     } else if (event.key === "b") {
       // Open asset modal
-      const store = usePageSceneStore.getState();
-      store.setAssetModalVisible(true);
-      store.setAssetModalVisibleDuringDrag(true);
+      this.deps.bus.emit(new AssetModalVisibilityChangedEvent(true, true));
       return;
     }
 
@@ -434,13 +460,13 @@ export class MouseControls {
     }
 
     if (event.key === "Escape") {
-      if (usePageSceneStore.getState().poseMode === "pose") {
+      if (this.deps.getPoseMode() === "pose") {
         this.toggleFKMode();
         return;
       } else if (this.selected && this.selected.length > 0) {
         this.removeTransformControls();
-        usePageSceneStore.getState().hideObjectPanel();
-        usePageSceneStore.getState().setShowPoseControls(false);
+        this.deps.bus.emit(new InspectorPanelChangedEvent(null));
+        this.deps.bus.emit(new PoseControlsVisibilityChangedEvent(false));
       }
     }
   }
@@ -599,13 +625,13 @@ export class MouseControls {
       this.selected = [];
       this.setSelected(this.selected);
       this.removeTransformControls();
-      usePageSceneStore.getState().hideObjectPanel();
-      usePageSceneStore.getState().setShowPoseControls(false);
+      this.deps.bus.emit(new InspectorPanelChangedEvent(null));
+      this.deps.bus.emit(new PoseControlsVisibilityChangedEvent(false));
     }
 
     if (this.sceneManager) {
       const selected: SceneObject | null = this.sceneManager.selected();
-      usePageSceneStore.getState().setOutlinerSelectedItem(selected);
+      this.deps.bus.emit(new OutlinerSelectedItemChangedEvent(selected));
     }
   }
 }

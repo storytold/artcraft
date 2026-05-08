@@ -4,6 +4,7 @@ import Scene from "./scene.js";
 import { APIManager } from "./api_manager.js";
 import { PointerLockControls } from "three/addons/controls/PointerLockControls.js";
 import { CameraAspectRatio } from "~/pages/PageScene/enums";
+import { ClipGroup } from "~/enums";
 import { SceneUtils } from "./helper";
 import { MouseControls } from "./keybinds_controls";
 import { SaveManager } from "./save_manager";
@@ -29,6 +30,17 @@ import { TransformAction } from "./editor/actions/TransformAction";
 import Stats from "three/examples/jsm/libs/stats.module.js";
 import { SparkRenderer } from "@sparkjsdev/spark";
 import { usePageSceneStore } from "../PageSceneStore";
+import { EngineEventBus } from "./events/EngineEventBus";
+import { EngineStoreBridge } from "./EngineStoreBridge";
+import {
+  EditorStateChangedEvent,
+  EngineInitializedEvent,
+  GridVisibleChangedEvent,
+  InspectorPanelChangedEvent,
+  SceneLoadedEvent,
+  SceneResetEvent,
+  TransformSpaceChangedEvent,
+} from "./events/EngineEvent";
 
 export type EditorInitializeConfig = {
   sceneToken: string;
@@ -37,15 +49,6 @@ export type EditorInitializeConfig = {
   sceneContainerEl: HTMLDivElement;
   cacheJsonString?: string;
 };
-
-// Lifecycle flags now live on PageSceneStore. These re-exports preserve
-// the call sites that already consume the setters by name (TopBar, etc).
-export const set3DPageMounted = (isMounted: boolean) =>
-  usePageSceneStore.getState().set3DPageMounted(isMounted);
-export const setIs3DEditorInitialized = (isInitialized: boolean) =>
-  usePageSceneStore.getState().setIs3DEditorInitialized(isInitialized);
-export const setIs3DSceneLoaded = (isLoaded: boolean) =>
-  usePageSceneStore.getState().setIs3DSceneLoaded(isLoaded);
 
 class Editor {
   version: number;
@@ -86,6 +89,15 @@ class Editor {
   // engine/editor/actions/ encapsulates its own apply/revert.
   history: HistoryManager;
 
+  // Typed event bus the engine emits onto. EngineStoreBridge subscribes
+  // once at construction and is the only file under engine/ that
+  // imports the Zustand store.
+  bus: EngineEventBus;
+  private storeBridge: EngineStoreBridge;
+  // Store→engine reactor for grid visibility (toggling the gridHelper
+  // mesh in/out of the THREE.js scene). Cleared on unmountEngine.
+  private gridSubscription: () => void;
+
   // Holds the in-flight transform action between gizmo dragstart and
   // dragend. Null whenever no drag is in progress.
   private activeTransform: TransformAction | null = null;
@@ -93,6 +105,13 @@ class Editor {
   // Forwarding getter — ControlPanelSceneObject reads `editor.selected`.
   get selected(): THREE.Object3D | undefined {
     return this.selection.selected;
+  }
+
+  // Read-side facade for engine-internal callers (keymap, hooks) that
+  // need to consult the store without importing it directly. Keeps the
+  // store import scoped to Editor + EngineStoreBridge.
+  getPoseMode(): "select" | "pose" {
+    return usePageSceneStore.getState().poseMode;
   }
 
   utils: SceneUtils;
@@ -145,13 +164,28 @@ class Editor {
     this.version = 2.0;
     // Clock, scene and camera essentials.
 
+    // Bus + bridge must exist before any subsystem that emits events.
+    // The bridge is the only file under engine/ that imports the Zustand
+    // store; every other engine→store write goes through `this.bus.emit`.
+    this.bus = new EngineEventBus();
+    this.storeBridge = new EngineStoreBridge({ bus: this.bus });
+
+    // Engine-side reactor for grid visibility. Keeps the write flow
+    // strictly one-way: UI toggles emit GridVisibleChangedEvent on the
+    // bus → bridge updates the store + this subscriber updates the
+    // THREE.js gridHelper. No "store→engine" subscription anywhere.
+    this.gridSubscription = this.bus.subscribe(
+      GridVisibleChangedEvent,
+      (e) => this.activeScene?.applyGridVisibility(e.visible),
+    );
+
     // PostProcessingPipeline must exist before Scene because Scene's
     // load paths invoke updateSurfaceIdAttributeToMesh as a callback.
     this.postProcessing = new PostProcessingPipeline();
     this.gizmo = new GizmoController({
       getTransformSpace: () => usePageSceneStore.getState().transformSpace,
       setTransformSpace: (space) =>
-        usePageSceneStore.getState().setTransformSpace(space),
+        this.bus.emit(new TransformSpaceChangedEvent(space)),
     });
     this.cameraController = new CameraController({
       getThreeScene: () => this.activeScene.scene,
@@ -163,8 +197,13 @@ class Editor {
         this.selection.updateSelectedUI();
       },
       setEditorState: (state) =>
-        usePageSceneStore.getState().setEditorState(state),
-      hideObjectPanel: () => usePageSceneStore.getState().hideObjectPanel(),
+        this.bus.emit(new EditorStateChangedEvent(state)),
+      hideObjectPanel: () =>
+        this.bus.emit(new InspectorPanelChangedEvent(null)),
+      getCameras: () => usePageSceneStore.getState().cameras,
+      getSelectedCameraId: () =>
+        usePageSceneStore.getState().selectedCameraId,
+      bus: this.bus,
     });
     this.selection = new SelectionBridge({
       getSceneManager: () => this.sceneManager,
@@ -181,6 +220,15 @@ class Editor {
         const selected = this.sceneManager?.selected_objects?.[0];
         if (selected) this.gizmo.attach(selected);
       },
+      bus: this.bus,
+      getCharactersByUuid: () => {
+        const characters = usePageSceneStore.getState().characters;
+        const result: { [uuid: string]: ClipGroup } = {};
+        for (const c of characters) result[c.id] = ClipGroup.CHARACTER;
+        return result;
+      },
+      isCharacterUuid: (uuid) =>
+        usePageSceneStore.getState().characters.some((c) => c.id === uuid),
     });
 
     this.activeScene = new Scene(
@@ -189,6 +237,11 @@ class Editor {
       (scene: THREE.Scene) =>
         this.postProcessing.updateSurfaceIdAttributeToMesh(scene),
       this.version,
+      {
+        getCameras: () => usePageSceneStore.getState().cameras,
+        getSelectedCameraId: () =>
+          usePageSceneStore.getState().selectedCameraId,
+      },
     );
     this.activeScene.initialize();
     this.api_manager = new APIManager();
@@ -214,6 +267,7 @@ class Editor {
       getCameraName: () => this.cameraController.camera_name,
       getSelectedObject: () => this.sceneManager?.selected_objects?.[0],
       getThreeScene: () => this.activeScene.scene,
+      bus: this.bus,
     });
     this.save_manager = new SaveManager({
       getVersion: () => this.version,
@@ -233,6 +287,10 @@ class Editor {
       },
       saveSceneState: (args) => this.api_manager.saveSceneState(args),
       loadSceneState: (token) => this.api_manager.loadSceneState(token),
+      getCameras: () => usePageSceneStore.getState().cameras,
+      getSelectedCameraId: () =>
+        usePageSceneStore.getState().selectedCameraId,
+      bus: this.bus,
     });
     this.viewport = new ViewportController({
       getCamera: () => this.cameraController.camera,
@@ -425,34 +483,42 @@ class Editor {
 
     this.cameraController.refreshCamObj(this.activeScene.scene);
 
-    this.mouse_controls = new MouseControls(
-      this.cameraController.camera,
-      this.cameraController.getCameraPersonMode.bind(this.cameraController),
-      this.cameraController.freeCamState,
-      this.cameraController.lockControls,
-      this.cameraController.camera_last_pos,
-      this.deleteObject.bind(this),
-      this.viewport.canvReference,
-      this.mouse,
-      this.mouse,
-      this.raycaster,
-      this.gizmo.control,
-      this.postProcessing.outlinePass,
-      this.activeScene.scene,
-      this.selection.publishSelect.bind(this.selection),
-      this.selection.updateSelectedUI.bind(this.selection),
-      false,
-      undefined,
-      this.selection.getAssetType.bind(this.selection),
-      this.selection.setSelected.bind(this.selection),
-      this.isMovable.bind(this),
-      this.enable_stats.bind(this),
-    );
+    this.mouse_controls = new MouseControls({
+      camera: this.cameraController.camera,
+      camera_person_mode: this.cameraController.getCameraPersonMode.bind(
+        this.cameraController,
+      ) as unknown as boolean,
+      cameraViewControls: this.cameraController.freeCamState,
+      lockControls: this.cameraController.lockControls,
+      camera_last_pos: this.cameraController.camera_last_pos,
+      deleteObject: this.deleteObject.bind(this),
+      canvReference: this.viewport.canvReference,
+      mouse: this.mouse,
+      timeline_mouse: this.mouse,
+      raycaster: this.raycaster,
+      control: this.gizmo.control,
+      outlinePass: this.postProcessing.outlinePass,
+      scene: this.activeScene.scene,
+      publishSelect: this.selection.publishSelect.bind(this.selection),
+      updateSelectedUI: this.selection.updateSelectedUI.bind(this.selection),
+      transform_interaction: false,
+      last_selected: undefined,
+      getAssetType: this.selection.getAssetType.bind(this.selection),
+      setSelected: this.selection.setSelected.bind(this.selection),
+      isMovable: this.isMovable.bind(this),
+      enable_stats: this.enable_stats.bind(this),
+      bus: this.bus,
+      getPoseMode: () => usePageSceneStore.getState().poseMode,
+      isHotkeyDisabled: () =>
+        usePageSceneStore.getState().hotkeyStatus.disabled,
+      getTransformSpace: () => usePageSceneStore.getState().transformSpace,
+    });
 
     this.sceneManager = new SceneManager(
       this.version,
       this.mouse_controls,
       this.activeScene,
+      this.bus,
     );
     this.mouse_controls.sceneManager = this.sceneManager;
 
@@ -466,7 +532,7 @@ class Editor {
 
       this.selection.refreshOutliner();
 
-      setIs3DSceneLoaded(true);
+      this.bus.emit(new SceneLoadedEvent(true));
     };
 
     if (!this.utils.isEmpty(cacheJson)) {
@@ -497,7 +563,7 @@ class Editor {
     };
     loadingBarIsShowing.value = false;
 
-    setIs3DEditorInitialized(true);
+    this.bus.emit(new EngineInitializedEvent(true));
 
     // This will enable all event and render loops
     // We'll disable it here so the UI events can control is manually
@@ -525,9 +591,11 @@ class Editor {
     const store = usePageSceneStore.getState();
     const currentAspectRatio = store.cameraAspectRatio;
 
-    // Store grid visibility state and hide grid
+    // Store grid visibility state and hide grid for the snapshot. The
+    // store is the source of truth (Scene's subscriber re-syncs the
+    // gridHelper); we emit through the bus to keep the boundary clean.
     const wasGridVisible = store.gridVisible;
-    store.setGridVisible(false);
+    this.bus.emit(new GridVisibleChangedEvent(false));
 
     // Store and hide transform controls
     const wasControlVisible = this.gizmo.isVisible();
@@ -634,7 +702,7 @@ class Editor {
     }
 
     // Restore grid visibility
-    usePageSceneStore.getState().setGridVisible(wasGridVisible);
+    this.bus.emit(new GridVisibleChangedEvent(wasGridVisible));
 
     // Restore transform controls visibility
     this.gizmo.setVisible(wasControlVisible);
@@ -678,7 +746,7 @@ class Editor {
       ownerToken: authentication.userInfo.value?.user_token,
       isModified: false,
     });
-    usePageSceneStore.getState().resetScene();
+    this.bus.emit(new SceneResetEvent());
 
     this.selection.refreshOutliner();
   }
@@ -831,7 +899,7 @@ class Editor {
   }
 
   unmountEngine() {
-    setIs3DSceneLoaded(false);
+    this.bus.emit(new SceneLoadedEvent(false));
     this.stopRenderLoop();
 
     // Fix: dispose 3D contexts
@@ -840,7 +908,9 @@ class Editor {
     this.rawRenderer?.dispose();
 
     this.isMounted = false;
-    setIs3DEditorInitialized(false);
+    this.bus.emit(new EngineInitializedEvent(false));
+    this.gridSubscription();
+    this.storeBridge.dispose();
     console.log("3D Editor Engine unmounted");
   }
 }

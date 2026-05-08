@@ -10,8 +10,13 @@
 
 import * as THREE from "three";
 import { AssetType, ClipGroup } from "~/enums";
-import { usePageSceneStore } from "../../PageSceneStore";
 import type { SceneManager } from "../scene_manager_api";
+import type { EngineEventBus } from "../events/EngineEventBus";
+import {
+  InspectorPanelChangedEvent,
+  OutlinerRefreshedEvent,
+  SelectionChangedEvent,
+} from "../events/EngineEvent";
 
 export type SelectionBridgeDeps = {
   // Lazy: SceneManager is created in Editor.initialize, after the bridge.
@@ -30,6 +35,13 @@ export type SelectionBridgeDeps = {
   isObjectLocked: (uuid: string) => boolean;
   removeTransformControls: () => void;
   attachGizmoToCurrentSelection: () => void;
+
+  // Typed event bus — every engine→store write goes through here.
+  bus: EngineEventBus;
+  // Character roster — read from the store at the boundary; the bridge
+  // stays store-agnostic.
+  getCharactersByUuid: () => { [uuid: string]: ClipGroup };
+  isCharacterUuid: (uuid: string) => boolean;
 };
 
 export class SelectionBridge {
@@ -88,14 +100,15 @@ export class SelectionBridge {
   // global "what's selected?" state used by toolbars, panels, etc.
   publishSelect() {
     const target = this.engine.getSceneManager()?.selected_objects?.[0];
-    const store = usePageSceneStore.getState();
     if (target) {
-      store.setSelectedObject({
-        type: this.getAssetType(target),
-        id: target.uuid,
-      });
+      this.engine.bus.emit(
+        new SelectionChangedEvent({
+          type: this.getAssetType(target),
+          id: target.uuid,
+        }),
+      );
     } else {
-      store.setSelectedObject(null);
+      this.engine.bus.emit(new SelectionChangedEvent(null));
     }
   }
 
@@ -111,34 +124,36 @@ export class SelectionBridge {
     const rot = mainSelected.rotation;
     const scale = mainSelected.scale;
 
-    usePageSceneStore.getState().updateObjectPanel({
-      // TODO: add metadata to determine whether this is a camera, an
-      // object, or a character into prefab clips.
-      group:
-        mainSelected.name === this.engine.cameraName
-          ? ClipGroup.CAMERA
-          : ClipGroup.OBJECT,
-      object_uuid: mainSelected.uuid,
-      object_name: mainSelected.name,
-      version: String(this.engine.version),
-      objectVectors: {
-        position: {
-          x: parseFloat(pos.x.toFixed(2)),
-          y: parseFloat(pos.y.toFixed(2)),
-          z: parseFloat(pos.z.toFixed(2)),
+    this.engine.bus.emit(
+      new InspectorPanelChangedEvent({
+        // TODO: add metadata to determine whether this is a camera, an
+        // object, or a character into prefab clips.
+        group:
+          mainSelected.name === this.engine.cameraName
+            ? ClipGroup.CAMERA
+            : ClipGroup.OBJECT,
+        object_uuid: mainSelected.uuid,
+        object_name: mainSelected.name,
+        version: String(this.engine.version),
+        objectVectors: {
+          position: {
+            x: parseFloat(pos.x.toFixed(2)),
+            y: parseFloat(pos.y.toFixed(2)),
+            z: parseFloat(pos.z.toFixed(2)),
+          },
+          rotation: {
+            x: parseFloat(THREE.MathUtils.radToDeg(rot.x).toFixed(2)),
+            y: parseFloat(THREE.MathUtils.radToDeg(rot.y).toFixed(2)),
+            z: parseFloat(THREE.MathUtils.radToDeg(rot.z).toFixed(2)),
+          },
+          scale: {
+            x: parseFloat(scale.x.toFixed(6)),
+            y: parseFloat(scale.y.toFixed(6)),
+            z: parseFloat(scale.z.toFixed(6)),
+          },
         },
-        rotation: {
-          x: parseFloat(THREE.MathUtils.radToDeg(rot.x).toFixed(2)),
-          y: parseFloat(THREE.MathUtils.radToDeg(rot.y).toFixed(2)),
-          z: parseFloat(THREE.MathUtils.radToDeg(rot.z).toFixed(2)),
-        },
-        scale: {
-          x: parseFloat(scale.x.toFixed(6)),
-          y: parseFloat(scale.y.toFixed(6)),
-          z: parseFloat(scale.z.toFixed(6)),
-        },
-      },
-    });
+      }),
+    );
   }
 
   // Recompute outliner rows and push them into the store. Replaces the
@@ -147,8 +162,8 @@ export class SelectionBridge {
   refreshOutliner() {
     const result = this.engine
       .getSceneManager()
-      ?.render_outliner(this.getCharactersByUuid());
-    if (result) usePageSceneStore.getState().setOutlinerItems(result.items);
+      ?.render_outliner(this.engine.getCharactersByUuid());
+    if (result) this.engine.bus.emit(new OutlinerRefreshedEvent(result.items));
   }
 
   // Refresh outliner and inspector together — used after operations
@@ -169,20 +184,16 @@ export class SelectionBridge {
 
   // Replaces the deleted Timeline.characters (a Record<uuid, ClipGroup>) —
   // used by SceneManager.render_outliner to know which scene objects to
-  // render as characters.
+  // render as characters. The store is read at the boundary (Editor's
+  // SelectionBridgeDeps wiring) — the bridge stays store-agnostic.
   getCharactersByUuid(): { [uuid: string]: ClipGroup } {
-    const characters = usePageSceneStore.getState().characters;
-    const result: { [uuid: string]: ClipGroup } = {};
-    for (const c of characters) {
-      result[c.id] = ClipGroup.CHARACTER;
-    }
-    return result;
+    return this.engine.getCharactersByUuid();
   }
 
   // Replaces the deleted Timeline.isCharacter — checks the Zustand
-  // store's character list, which is the source of truth for which
-  // scene objects are characters.
+  // store's character list (read via deps callback), which is the
+  // source of truth for which scene objects are characters.
   isCharacterUuid(uuid: string): boolean {
-    return usePageSceneStore.getState().characters.some((c) => c.id === uuid);
+    return this.engine.isCharacterUuid(uuid);
   }
 }

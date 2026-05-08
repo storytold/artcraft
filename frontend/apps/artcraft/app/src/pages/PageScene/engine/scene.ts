@@ -9,8 +9,17 @@ import { MMDAnimationHelper, Water } from "three/examples/jsm/Addons.js";
 import { MediaFileType } from "../enums";
 import { ChromaKeyMaterial } from "./chromakey";
 import { LoadWithoutCors } from "@storyteller/tauri-api";
-import { usePageSceneStore } from "../PageSceneStore";
 import { InfiniteGridHelper } from "./InfiniteGridHelper";
+import type { Camera } from "@storyteller/common";
+
+// Capabilities Scene needs from outside its own state. Editor wires
+// these in inline at construction (Phase 2 idiom — same shape as
+// SceneUtilsDeps, SaveManagerDeps, etc.). Scene does NOT import the
+// Zustand store directly; reads happen through these callbacks.
+export type SceneDeps = {
+  getCameras: () => Camera[];
+  getSelectedCameraId: () => string;
+};
 import { MediaFilesApi } from "@storyteller/api";
 import toast from "react-hot-toast";
 import { SplatMesh } from "@sparkjsdev/spark";
@@ -51,11 +60,13 @@ class Scene {
   // This allows us to reprompt things quickly. This is only written when a snap shot is taken.
   // Which guarentees that the scene is availible.
   current_scene_checksum: string;
+  private deps: SceneDeps;
   constructor(
     name: string,
     camera_name: string,
     updateSurfaceIdAttributeToMesh: Function,
     version: number,
+    deps: SceneDeps,
   ) {
     this.version = version;
     this.name = name;
@@ -73,6 +84,7 @@ class Scene {
     this.placeholder_manager = undefined;
     this.mediaFilesApi = new MediaFilesApi();
     this.updateSurfaceIdAttributeToMesh = updateSurfaceIdAttributeToMesh;
+    this.deps = deps;
 
     this.current_scene_checksum = "";
   }
@@ -89,18 +101,20 @@ class Scene {
 
     this.helper = new MMDAnimationHelper({ afterglow: 0.0 });
     this.scene.userData["helper"] = this.helper;
+  }
 
-    // Subscribe to grid visibility changes from the store
-    usePageSceneStore.subscribe((state, prev) => {
-      if (state.gridVisible === prev.gridVisible || !this.gridHelper) return;
-      if (state.gridVisible) {
-        if (!this.scene.children.includes(this.gridHelper)) {
-          this.scene.add(this.gridHelper);
-        }
-      } else {
-        this.scene.remove(this.gridHelper);
+  // Apply a grid visibility change. Pure THREE-side mutation — the
+  // store subscription that drives this lives at the engine boundary
+  // (editor.ts), not inside Scene itself.
+  applyGridVisibility(visible: boolean) {
+    if (!this.gridHelper) return;
+    if (visible) {
+      if (!this.scene.children.includes(this.gridHelper)) {
+        this.scene.add(this.gridHelper);
       }
-    });
+    } else {
+      this.scene.remove(this.gridHelper);
+    }
   }
 
   clear() {
@@ -376,7 +390,8 @@ class Scene {
   }
 
   async _create_camera_obj() {
-    const { cameras, selectedCameraId } = usePageSceneStore.getState();
+    const cameras = this.deps.getCameras();
+    const selectedCameraId = this.deps.getSelectedCameraId();
     cameras.forEach((cameraConfig) => {
       const camera_position = new THREE.Vector3(
         cameraConfig.position.x,
@@ -1097,17 +1112,6 @@ class Scene {
     this.scene.add(this.groundPlane);
   }
 
-  // Update grid visibility based on the store
-  updateGridVisibility() {
-    if (usePageSceneStore.getState().gridVisible) {
-      if (!this.scene.children.includes(this.gridHelper)) {
-        this.scene.add(this.gridHelper);
-      }
-    } else {
-      this.scene.remove(this.gridHelper);
-    }
-    // Keep the ground plane regardless of grid visibility
-  }
 }
 
 export default Scene;

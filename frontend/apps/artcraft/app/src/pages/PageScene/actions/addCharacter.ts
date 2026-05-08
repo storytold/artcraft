@@ -1,8 +1,8 @@
 import * as THREE from "three";
 import type Editor from "../engine/editor";
 import { MediaItem } from "../models";
-import { usePageSceneStore } from "../PageSceneStore";
 import { CreateAction } from "../engine/editor/actions/CreateAction";
+import { ObjectAddedEvent } from "../engine/events/EngineEvent";
 
 export async function addCharacter(
   editor: Editor,
@@ -20,12 +20,14 @@ export async function addCharacter(
 
   editor.history.record(new CreateAction(editor, obj));
 
-  usePageSceneStore.getState().addCharacter({
-    id: obj.uuid,
-    kind: "character",
-    name: obj.name || (item.name ?? "character"),
-    mediaId: item.media_id,
-  });
+  editor.bus.emit(
+    new ObjectAddedEvent({
+      id: obj.uuid,
+      kind: "character",
+      name: obj.name || (item.name ?? "character"),
+      mediaId: item.media_id,
+    }),
+  );
   editor.selection.refreshOutliner();
   return obj.uuid;
 }

@@ -17,7 +17,7 @@ import {
   useStoryboardPageEnabled,
 } from "@storyteller/ui-settings-modal";
 import { useTabStore, TabId } from "~/pages/Stores/TabState";
-import { set3DPageMounted } from "~/pages/PageScene/engine/editor";
+import { set3DPageMounted } from "~/pages/PageScene/engineLifecycle";
 
 export type AppId =
   | "IMAGE"

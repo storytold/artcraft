@@ -3,7 +3,11 @@ import type { OutlinePass } from "three/addons/postprocessing/OutlinePass.js";
 import type { TransformControls } from "./TransformControls.js";
 
 import Scene from "./scene";
-import { usePageSceneStore } from "../PageSceneStore";
+import type { EngineEventBus } from "./events/EngineEventBus";
+import {
+  InspectorPanelChangedEvent,
+  ObjectRemovedEvent,
+} from "./events/EngineEvent";
 
 // Capabilities SceneUtils needs from outside its own state. Editor
 // wires these in inline at construction (Phase 2 idiom — same shape
@@ -26,6 +30,8 @@ export type SceneUtilsDeps = {
   getSelectedObject: () => THREE.Object3D | undefined;
   // Three scene root (used by deleteObject + removeTransformControls)
   getThreeScene: () => THREE.Scene;
+  // Typed event bus — every engine→store write goes through here.
+  bus: EngineEventBus;
 };
 
 export class SceneUtils {
@@ -176,9 +182,9 @@ function removeObject3D(object3D) {
       (obj as THREE.Mesh).geometry.dispose()
     }
 
-    usePageSceneStore.getState().removeSceneObject(uuid);
+    this.deps.bus.emit(new ObjectRemovedEvent(uuid));
     this.deps.clearSelected();
     this.deps.publishSelect();
-    usePageSceneStore.getState().hideObjectPanel();
+    this.deps.bus.emit(new InspectorPanelChangedEvent(null));
   }
 }

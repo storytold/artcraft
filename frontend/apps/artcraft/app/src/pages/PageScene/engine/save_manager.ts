@@ -3,14 +3,15 @@ import { Camera } from "@storyteller/common";
 
 import { SceneGenereationMetaData } from "../models/sceneGenerationMetadata";
 import { StoryTellerProxyScene } from "../proxy/storyteller_proxy_scene";
-import { usePageSceneStore } from "../PageSceneStore";
 import { CameraAspectRatio } from "../enums";
 import type Scene from "./scene";
-
-const showEditorLoader = (message?: string) =>
-  usePageSceneStore.getState().showEditorLoader(message);
-const hideEditorLoader = () =>
-  usePageSceneStore.getState().hideEditorLoader();
+import type { EngineEventBus } from "./events/EngineEventBus";
+import {
+  CameraAspectRatioChangedEvent,
+  CamerasReplacedEvent,
+  EditorLoaderEvent,
+  SelectedCameraChangedEvent,
+} from "./events/EngineEvent";
 
 export type EditorInitializeConfig = {
   sceneToken: string;
@@ -56,6 +57,14 @@ export type SaveManagerDeps = {
   // Backend API.
   saveSceneState: (args: SaveSceneStateArgs) => Promise<string>;
   loadSceneState: (token: string) => Promise<unknown>;
+
+  // Camera state. Reads happen at the engine→store boundary so the
+  // SaveManager itself stays store-agnostic.
+  getCameras: () => Camera[];
+  getSelectedCameraId: () => string;
+
+  // Typed event bus — every engine→store write goes through here.
+  bus: EngineEventBus;
 };
 
 export class SaveManager {
@@ -76,8 +85,7 @@ export class SaveManager {
     const proxyScene = new StoryTellerProxyScene(version, scene);
     const scene_json = proxyScene.saveToScene(version);
 
-    const sceneState = usePageSceneStore.getState();
-    const camerasData = sceneState.cameras.map((cam: Camera) => ({
+    const camerasData = this.deps.getCameras().map((cam: Camera) => ({
       id: cam.id,
       label: cam.label,
       focalLength: cam.focalLength,
@@ -97,7 +105,7 @@ export class SaveManager {
         rotation: camera?.rotation,
       },
       cameras: camerasData,
-      selectedCameraId: sceneState.selectedCameraId,
+      selectedCameraId: this.deps.getSelectedCameraId(),
     };
   }
 
@@ -111,7 +119,7 @@ export class SaveManager {
     sceneGenerationMetadata: SceneGenereationMetaData;
   }): Promise<string> {
     this.deps.removeTransformControls();
-    showEditorLoader();
+    this.deps.bus.emit(new EditorLoaderEvent(true));
 
     const sceneJson = this.getSceneJson({ sceneGenerationMetadata });
 
@@ -130,29 +138,29 @@ export class SaveManager {
       sceneThumbnail,
     });
 
-    hideEditorLoader();
+    this.deps.bus.emit(new EditorLoaderEvent(false));
     console.debug("Save Scene Result: ", result);
     return result;
   }
 
   public async loadCache(cacheJson: string) {
-    showEditorLoader();
+    this.deps.bus.emit(new EditorLoaderEvent(true));
     const scene_json = JSON.parse(cacheJson);
     await this.loadFromJson(scene_json);
-    hideEditorLoader();
+    this.deps.bus.emit(new EditorLoaderEvent(false));
   }
 
   public async loadScene(scene_media_token: string) {
-    showEditorLoader();
+    this.deps.bus.emit(new EditorLoaderEvent(true));
     this.currentSceneMediaToken = scene_media_token;
     const scene_json = await this.deps
       .loadSceneState(this.currentSceneMediaToken)
       .catch((err) => {
-        hideEditorLoader();
+        this.deps.bus.emit(new EditorLoaderEvent(false));
         throw err;
       });
     await this.loadFromJson(scene_json);
-    hideEditorLoader();
+    this.deps.bus.emit(new EditorLoaderEvent(false));
   }
 
   private async loadFromJson(scene_json: any) {
@@ -184,13 +192,13 @@ export class SaveManager {
         rotation: cam.rotation,
         lookAt: cam.lookAt,
       }));
-      usePageSceneStore.setState({ cameras: restored });
+      this.deps.bus.emit(new CamerasReplacedEvent(restored));
     }
 
     if (scene_json.selectedCameraId) {
-      usePageSceneStore
-        .getState()
-        .setSelectedCameraId(scene_json.selectedCameraId);
+      this.deps.bus.emit(
+        new SelectedCameraChangedEvent(scene_json.selectedCameraId),
+      );
     }
 
     if (scene_json.positivePrompt) {
@@ -198,9 +206,9 @@ export class SaveManager {
     }
     if (scene_json.cameraAspectRatio) {
       this.deps.changeRenderCameraAspectRatio(scene_json.cameraAspectRatio);
-      usePageSceneStore
-        .getState()
-        .setCameraAspectRatio(scene_json.cameraAspectRatio);
+      this.deps.bus.emit(
+        new CameraAspectRatioChangedEvent(scene_json.cameraAspectRatio),
+      );
     }
 
     this.deps.setVersion(scene_json["version"]);

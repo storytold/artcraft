@@ -1,8 +1,8 @@
 import * as THREE from "three";
 import type Editor from "../engine/editor";
 import { MediaItem } from "../models";
-import { usePageSceneStore } from "../PageSceneStore";
 import { CreateAction } from "../engine/editor/actions/CreateAction";
+import { ObjectAddedEvent } from "../engine/events/EngineEvent";
 
 export async function addShape(
   editor: Editor,
@@ -23,12 +23,14 @@ export async function addShape(
 
   editor.history.record(new CreateAction(editor, obj));
 
-  usePageSceneStore.getState().addShape({
-    id: obj.uuid,
-    kind: "shape",
-    name: obj.name,
-    mediaId: item.media_id,
-  });
+  editor.bus.emit(
+    new ObjectAddedEvent({
+      id: obj.uuid,
+      kind: "shape",
+      name: obj.name,
+      mediaId: item.media_id,
+    }),
+  );
   editor.selection.refreshOutliner();
   return obj.uuid;
 }

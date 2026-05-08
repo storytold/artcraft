@@ -10,7 +10,8 @@ import { MouseControls } from "./keybinds_controls";
 import { ClipGroup } from "~/enums";
 import { AssetType } from "~/enums";
 import { XYZ } from "../datastructures/common";
-import { usePageSceneStore } from "~/pages/PageScene/PageSceneStore";
+import type { EngineEventBus } from "./events/EngineEventBus";
+import { ObjectAddedEvent } from "./events/EngineEvent";
 
 export type SceneObject = {
   id: string;
@@ -42,11 +43,18 @@ export class SceneManager implements SceneManagerAPI {
   version: number;
   selected_objects: THREE.Object3D[] | undefined;
   private copiedObject: THREE.Object3D | undefined;
+  private bus: EngineEventBus;
 
-  constructor(version: number, mouse_controls: MouseControls, scene: Scene) {
+  constructor(
+    version: number,
+    mouse_controls: MouseControls,
+    scene: Scene,
+    bus: EngineEventBus,
+  ) {
     this.mouse_controls = mouse_controls;
     this.scene = scene;
     this.version = version;
+    this.bus = bus;
   }
 
   public async create(
@@ -239,22 +247,14 @@ export class SceneManager implements SceneManagerAPI {
 
       this.mouse_controls.selectObject(obj);
 
-      const store = usePageSceneStore.getState();
-      if (wasCharacter) {
-        store.addCharacter({
+      this.bus.emit(
+        new ObjectAddedEvent({
           id: obj.uuid,
-          kind: "character",
+          kind: wasCharacter ? "character" : "object",
           name,
           mediaId: media_id,
-        });
-      } else {
-        store.addObject({
-          id: obj.uuid,
-          kind: "object",
-          name,
-          mediaId: media_id,
-        });
-      }
+        }),
+      );
 
       await this.copy();
       return obj;
