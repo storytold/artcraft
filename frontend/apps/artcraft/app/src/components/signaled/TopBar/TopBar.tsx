@@ -17,7 +17,11 @@ import {
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { signal } from "@preact/signals-react";
 import { useSignals } from "@preact/signals-react/runtime";
-import { FilterMediaClasses } from "@storyteller/api";
+import {
+  FilterMediaClasses,
+  downloadUrlToPath,
+  promptDownloadLocationIfNeeded,
+} from "@storyteller/api";
 import {
   getCreatorIcon,
   ModelCreator,
@@ -288,8 +292,16 @@ export const TopBar = ({ pageName }: Props) => {
 
   const downloadFile = async (url: string, mediaClass?: string) => {
     try {
-      //await downloadFileFromUrl(url);
-      await DownloadUrl(url);
+      const chosenPath = await promptDownloadLocationIfNeeded(url);
+      if (chosenPath === null) {
+        // User dismissed the picker.
+        return;
+      }
+      if (typeof chosenPath === "string") {
+        await downloadUrlToPath(url, chosenPath);
+      } else {
+        await DownloadUrl(url);
+      }
       if (mediaClass === FilterMediaClasses.DIMENSIONAL) {
         toast.success(`Downloaded 3D model`);
       } else {

@@ -18,6 +18,10 @@ import {
   faRotateLeft,
 } from "@fortawesome/pro-solid-svg-icons";
 import { useEnterToGenerateStore } from "@storyteller/ui-promptbox";
+import {
+  getAskLocationBeforeDownload,
+  setAskLocationBeforeDownload,
+} from "@storyteller/api";
 
 interface MiscSettingsPaneProps {}
 
@@ -28,6 +32,14 @@ export const MiscSettingsPane = (args: MiscSettingsPaneProps) => {
 
   const enterToGenerate = useEnterToGenerateStore((s) => s.enabled);
   const setEnterToGenerate = useEnterToGenerateStore((s) => s.setEnabled);
+
+  const [askLocationBeforeDownload, setAskLocationBeforeDownloadState] =
+    useState<boolean>(() => getAskLocationBeforeDownload());
+
+  const toggleAskLocationBeforeDownload = (enabled: boolean) => {
+    setAskLocationBeforeDownload(enabled);
+    setAskLocationBeforeDownloadState(enabled);
+  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -112,6 +124,23 @@ export const MiscSettingsPane = (args: MiscSettingsPaneProps) => {
           <FontAwesomeIcon icon={faMagnifyingGlass} />
           Show Directory
         </Button>
+      </div>
+      <div className="flex flex-col gap-2 pt-3">
+        <div className="flex flex-col gap-0.5">
+          <Label htmlFor="ask-location-before-download">
+            Ask location before download
+          </Label>
+          <p className="text-xs opacity-70">
+            When on, a system file picker appears every time you download from
+            the lightbox or anywhere in the app, letting you choose the save
+            location for that file. When off, downloads go straight to the
+            default download directory above.
+          </p>
+        </div>
+        <Switch
+          enabled={askLocationBeforeDownload}
+          setEnabled={toggleAskLocationBeforeDownload}
+        />
       </div>
       <div className="flex flex-col gap-2 pt-3">
         <div className="flex flex-col gap-0.5">
