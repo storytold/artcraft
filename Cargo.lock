@@ -1408,12 +1408,14 @@ dependencies = [
 name = "beeble_client"
 version = "0.0.1"
 dependencies = [
+ "anyhow",
  "errors",
  "log",
  "reqwest 0.12.23",
  "serde",
  "serde_derive",
  "serde_json",
+ "test_data",
  "tokio",
  "workspace-build-acceleration",
 ]

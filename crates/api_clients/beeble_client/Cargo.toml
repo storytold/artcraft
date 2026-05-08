@@ -26,4 +26,6 @@ serde_derive.workspace = true
 serde_json.workspace = true
 
 [dev-dependencies]
+anyhow.workspace = true
+test_data.workspace = true
 tokio = { version = "1", features = ["full"] }

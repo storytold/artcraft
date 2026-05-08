@@ -289,4 +289,114 @@ mod tests {
     assert!(result.id.starts_with("swx_"));
     Ok(())
   }
+
+  // ── Helpers for end-to-end tests ──
+
+  async fn download_bytes(url: &str) -> errors::AnyhowResult<Vec<u8>> {
+    let response = reqwest::get(url).await?;
+    let bytes = response.bytes().await?;
+    Ok(bytes.to_vec())
+  }
+
+  fn guess_content_type(filename: &str) -> &'static str {
+    if filename.ends_with(".mp4") { "video/mp4" }
+    else if filename.ends_with(".mov") { "video/quicktime" }
+    else if filename.ends_with(".png") { "image/png" }
+    else if filename.ends_with(".jpg") || filename.ends_with(".jpeg") { "image/jpeg" }
+    else if filename.ends_with(".webp") { "image/webp" }
+    else { "application/octet-stream" }
+  }
+
+  async fn upload_asset_bytes(
+    api_key: &crate::creds::beeble_api_key::BeebleApiKey,
+    filename: &str,
+    bytes: Vec<u8>,
+  ) -> errors::AnyhowResult<crate::requests::create_upload_url::create_upload_url::CreateUploadUrlSuccess> {
+    use crate::requests::create_upload_url::create_upload_url::{
+      create_upload_url, CreateUploadUrlArgs,
+    };
+
+    // 1. Get presigned upload URL.
+    let upload = create_upload_url(CreateUploadUrlArgs {
+      api_key: api_key.clone(),
+      filename: filename.to_string(),
+    }).await.map_err(|e| anyhow::anyhow!("create_upload_url failed: {:?}", e))?;
+
+    println!("Upload ID: {}", upload.id);
+    println!("Upload URL: {}", upload.upload_url);
+    println!("Beeble URI: {}", upload.beeble_uri);
+
+    // 2. PUT file bytes to the presigned URL with correct Content-Type.
+    let content_type = guess_content_type(filename);
+    println!("Uploading {} bytes with Content-Type: {}", bytes.len(), content_type);
+
+    let client = reqwest::Client::new();
+    let put_response = client.put(&upload.upload_url)
+      .header("Content-Type", content_type)
+      .body(bytes)
+      .send()
+      .await?;
+
+    let put_status = put_response.status();
+    let put_body = put_response.text().await.unwrap_or_default();
+    println!("PUT upload status: {} body: {}", put_status, put_body);
+    assert!(put_status.is_success(), "PUT upload failed: {} body: {}", put_status, put_body);
+
+    Ok(upload)
+  }
+
+  #[tokio::test]
+  #[ignore] // manually test — requires real API key, downloads files, incurs costs
+  async fn test_end_to_end_video_generation() -> errors::AnyhowResult<()> {
+    use crate::test_utils::get_test_api_key::get_test_api_key;
+    use test_data::web::image_urls::FOREST_BACKDROP_IMAGE_URL;
+    use test_data::web::video_urls::ANGRY_SHIBA_VIDEO_URL;
+
+    let api_key = get_test_api_key()?;
+
+    // 1. Download the source video.
+    println!("Downloading video...");
+    let video_bytes = download_bytes(ANGRY_SHIBA_VIDEO_URL).await?;
+    println!("Downloaded video: {} bytes", video_bytes.len());
+
+    // 2. Download the reference image.
+    println!("Downloading image...");
+    let image_bytes = download_bytes(FOREST_BACKDROP_IMAGE_URL).await?;
+    println!("Downloaded image: {} bytes", image_bytes.len());
+
+    // 3. Upload the video.
+    println!("Uploading video...");
+    let video_upload = upload_asset_bytes(&api_key, "shiba.mp4", video_bytes).await?;
+
+    // 4. Upload the reference image.
+    println!("Uploading image...");
+    let image_upload = upload_asset_bytes(&api_key, "forest.jpg", image_bytes).await?;
+
+    // 5. Start generation.
+    println!("Starting generation...");
+    let result = start_generation(StartGenerationArgs {
+      api_key,
+      request: StartGenerationRequest {
+        generation_type: BeebleGenerationType::Video,
+        source_uri: video_upload.beeble_uri,
+        alpha_mode: BeebleAlphaMode::Auto,
+        prompt: Some("Place the dog in a forest setting".to_string()),
+        reference_image_uri: Some(image_upload.beeble_uri),
+        alpha_uri: None,
+        max_resolution: Some(720),
+        callback_url: None,
+        idempotency_key: None,
+      },
+    }).await.map_err(|e| anyhow::anyhow!("start_generation failed: {:?}", e))?;
+
+    println!("Job ID: {}", result.id);
+    println!("Status: {}", result.status);
+    println!("Progress: {:?}", result.progress);
+    assert!(result.id.starts_with("swx_"));
+
+    // NB: We don't poll to completion here — that would take too long for a test.
+    // Use get_job_status to poll manually if needed.
+
+    Ok(())
+  }
 }
