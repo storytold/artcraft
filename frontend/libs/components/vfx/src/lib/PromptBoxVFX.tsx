@@ -285,138 +285,142 @@ export const PromptBoxVFX = ({
         </div>
       )}
 
-    <div
-      className={twMerge(
-        "glass flex w-full flex-col gap-3 sm:gap-4 rounded-2xl p-3 sm:p-4 shadow-2xl",
-        containerClassName,
-      )}
-    >
-      <input
-        ref={sourceInputRef}
-        type="file"
-        className="hidden"
-        accept="video/mp4,.mp4"
-        onChange={handleSourceUpload}
-      />
-      <input
-        ref={maskInputRef}
-        type="file"
-        className="hidden"
-        accept="image/*"
-        onChange={(e) => handleImageUpload(e, "mask")}
-      />
-      <input
-        ref={referenceInputRef}
-        type="file"
-        className="hidden"
-        accept="image/*"
-        onChange={(e) => handleImageUpload(e, "reference")}
-      />
-
-      {/* Primary inputs — centered, all aspect-video. Source + Reference are required, Mask is optional */}
-      <div className="flex flex-wrap items-end justify-center gap-3">
-        <UploadTile
-          label="Source Video"
-          icon={faVideo}
-          previewUrl={source?.url}
-          isVideo
-          uploading={sourceUploading}
-          onUpload={() => triggerUpload("source")}
-          onPickFromLibrary={() => openGallery("source")}
-          onClear={() => setSource(undefined)}
-          tileClassName="h-24 aspect-video"
-          required
+      <div
+        className={twMerge(
+          "glass flex w-full flex-col gap-3 sm:gap-4 rounded-2xl p-3 sm:p-4 shadow-2xl",
+          containerClassName,
+        )}
+      >
+        <input
+          ref={sourceInputRef}
+          type="file"
+          className="hidden"
+          accept="video/mp4,.mp4"
+          onChange={handleSourceUpload}
         />
-        {/* Mask is hidden for now — backend endpoint doesn't accept it yet. */}
-        <UploadTile
-          label="Reference Image"
-          icon={faImage}
-          previewUrl={reference?.url}
-          uploading={referenceUploading}
-          onUpload={() => triggerUpload("reference")}
-          onPickFromLibrary={() => openGallery("reference")}
-          onClear={() => setReference(undefined)}
-          tileClassName="h-24 aspect-video"
-          required
+        <input
+          ref={maskInputRef}
+          type="file"
+          className="hidden"
+          accept="image/*"
+          onChange={(e) => handleImageUpload(e, "mask")}
         />
-      </div>
+        <input
+          ref={referenceInputRef}
+          type="file"
+          className="hidden"
+          accept="image/*"
+          onChange={(e) => handleImageUpload(e, "reference")}
+        />
 
-      {/* Bottom row: model + resolution chips on left, prompt toggle + Generate on right */}
-      <div className="flex items-center gap-2">
-        <Tooltip content="Model" position="top" closeOnClick>
-          <PopoverMenu
-            items={modelItems}
-            onSelect={handleModelSelect}
-            mode="toggle"
-            panelTitle="Model"
-            triggerIcon={
-              <FontAwesomeIcon icon={faSparkles} className="h-3 w-3" />
-            }
-            triggerLabel={selectedModel.label}
+        {/* Primary inputs — centered, all aspect-video. Source + Reference are required, Mask is optional */}
+        <div className="flex items-end justify-center gap-3">
+          <UploadTile
+            label="Source Video"
+            icon={faVideo}
+            previewUrl={source?.url}
+            isVideo
+            uploading={sourceUploading}
+            onUpload={() => triggerUpload("source")}
+            onPickFromLibrary={() => openGallery("source")}
+            onClear={() => setSource(undefined)}
+            tileClassName="h-20 aspect-video sm:h-24"
+            required
           />
-        </Tooltip>
-        <Tooltip content="Resolution" position="top" closeOnClick>
-          <PopoverMenu
-            items={resolutionItems}
-            onSelect={handleResolutionSelect}
-            mode="toggle"
-            panelTitle="Resolution"
-            triggerLabel={resolution}
+          {/* Mask is hidden for now — backend endpoint doesn't accept it yet. */}
+          <UploadTile
+            label="Reference Image"
+            icon={faImage}
+            previewUrl={reference?.url}
+            uploading={referenceUploading}
+            onUpload={() => triggerUpload("reference")}
+            onPickFromLibrary={() => openGallery("reference")}
+            onClear={() => setReference(undefined)}
+            tileClassName="h-20 aspect-video sm:h-24"
+            required
           />
-        </Tooltip>
-
-        <Tooltip
-          content={hasPrompt ? "Edit prompt" : "Add an optional prompt"}
-          position="top"
-        >
-          <button
-            type="button"
-            onClick={() => setShowPromptPopover((v) => !v)}
-            className={twMerge(
-              "flex items-center gap-2 rounded-lg border border-ui-controls-border bg-ui-controls px-3 py-1.5 text-sm font-medium text-base-fg shadow-sm outline-none transition-all duration-150 hover:bg-ui-controls/80 active:scale-95",
-              showPromptPopover && "bg-base-fg/15",
-              hasPrompt &&
-                "border-primary/30 bg-primary/15 text-primary-300 hover:bg-primary/20",
-            )}
-          >
-            <FontAwesomeIcon
-              icon={hasPrompt ? faPenToSquare : faPlus}
-              className="h-3 w-3"
-            />
-            <span className="truncate">
-              {hasPrompt ? "Prompt" : "Add prompt"}
-            </span>
-          </button>
-        </Tooltip>
-
-        <div className="ml-auto">
-          <GenerateButton
-            onClick={onSubmit}
-            disabled={!canSubmit}
-            loading={isSubmitting}
-            className="border-none bg-primary px-4 text-sm text-white disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            Generate
-          </GenerateButton>
         </div>
-      </div>
 
-      <GalleryModal
-        key={galleryTarget}
-        isOpen={galleryOpen}
-        onClose={() => {
-          setGalleryOpen(false);
-          setGallerySelected([]);
-        }}
-        mode="select"
-        selectedItemIds={gallerySelected}
-        onSelectItem={handleGallerySelectItem}
-        maxSelections={1}
-        onUseSelected={handleGalleryUseSelected}
-        forceFilter={galleryTarget === "source" ? "video" : "image"}
-        hideFilter
-      />
-    </div>
+        {/* Bottom row: model + resolution chips on left, prompt toggle + Generate on right.
+            Wraps on narrow widths so Generate stays visible on mobile. */}
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-2">
+          <Tooltip content="Model" position="top" closeOnClick>
+            <PopoverMenu
+              items={modelItems}
+              onSelect={handleModelSelect}
+              mode="toggle"
+              panelTitle="Model"
+              triggerIcon={
+                <FontAwesomeIcon icon={faSparkles} className="h-3 w-3" />
+              }
+              triggerLabel={selectedModel.label}
+            />
+          </Tooltip>
+          <Tooltip content="Resolution" position="top" closeOnClick>
+            <PopoverMenu
+              items={resolutionItems}
+              onSelect={handleResolutionSelect}
+              mode="toggle"
+              panelTitle="Resolution"
+              triggerLabel={resolution}
+            />
+          </Tooltip>
+
+          <Tooltip
+            content={hasPrompt ? "Edit prompt" : "Add an optional prompt"}
+            position="top"
+          >
+            <button
+              type="button"
+              onClick={() => setShowPromptPopover((v) => !v)}
+              className={twMerge(
+                "flex items-center gap-2 rounded-lg border border-ui-controls-border bg-ui-controls px-3 py-1.5 text-sm font-medium text-base-fg shadow-sm outline-none transition-all duration-150 hover:bg-ui-controls/80 active:scale-95",
+                showPromptPopover && "bg-base-fg/15",
+                hasPrompt &&
+                  "border-primary/30 bg-primary/15 text-primary-300 hover:bg-primary/20",
+              )}
+            >
+              <FontAwesomeIcon
+                icon={hasPrompt ? faPenToSquare : faPlus}
+                className="hidden h-3 w-3 sm:inline-block"
+              />
+              <span className="truncate">
+                <span className="sm:hidden">Prompt</span>
+                <span className="hidden sm:inline">
+                  {hasPrompt ? "Prompt" : "Add prompt"}
+                </span>
+              </span>
+            </button>
+          </Tooltip>
+
+          <div className="ml-auto">
+            <GenerateButton
+              onClick={onSubmit}
+              disabled={!canSubmit}
+              loading={isSubmitting}
+              className="border-none bg-primary px-4 text-sm text-white disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              Generate
+            </GenerateButton>
+          </div>
+        </div>
+
+        <GalleryModal
+          key={galleryTarget}
+          isOpen={galleryOpen}
+          onClose={() => {
+            setGalleryOpen(false);
+            setGallerySelected([]);
+          }}
+          mode="select"
+          selectedItemIds={gallerySelected}
+          onSelectItem={handleGallerySelectItem}
+          maxSelections={1}
+          onUseSelected={handleGalleryUseSelected}
+          forceFilter={galleryTarget === "source" ? "video" : "image"}
+          hideFilter
+        />
+      </div>
     </div>
   );
 };
