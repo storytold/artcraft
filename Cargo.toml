@@ -16,6 +16,7 @@ members = [
   "crates/api_clients/grok_client",
   "crates/api_clients/midjourney_client",
   "crates/api_clients/muapi_client",
+  "crates/api_clients/beeble_client",
   "crates/api_clients/openai_sora_client",
   "crates/api_clients/openart_client",
   "crates/api_clients/rootly_client",
@@ -244,6 +245,7 @@ fal_client = { path = "crates/api_clients/fal_client" }
 ffmpeg_utils = { path = "crates/lib/ffmpeg_utils" }
 file_to_base64_url = { path = "crates/lib/files/file_to_base64_url" }
 filesys = { path = "crates/lib/files/filesys" }
+beeble_client = { path = "crates/api_clients/beeble_client" }
 grok_client = { path = "crates/api_clients/grok_client" }
 rootly_client = { path = "crates/api_clients/rootly_client" }
 rootly_config = { path = "crates/schema/config/rootly_config" }

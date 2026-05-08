@@ -1405,6 +1405,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "beeble_client"
+version = "0.0.1"
+dependencies = [
+ "errors",
+ "log",
+ "reqwest 0.12.23",
+ "serde",
+ "serde_derive",
+ "serde_json",
+ "tokio",
+ "workspace-build-acceleration",
+]
+
+[[package]]
 name = "bigdecimal"
 version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
