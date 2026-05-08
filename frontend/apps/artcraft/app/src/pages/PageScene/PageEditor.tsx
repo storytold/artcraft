@@ -10,14 +10,14 @@ import { PoseModeSelector } from "./comps/PoseModeSelector";
 import { TabbedPages } from "./TabbedPages";
 
 import { DomLevels } from "~/pages/PageScene/PageSceneStore";
-import { setCameraAspect } from "~/pages/PageScene/actions";
+import { setCameraAspect } from "@storyteller/ui-pagescene";
 import { GridVisibleChangedEvent, pickDropPosition } from "@storyteller/ui-pagescene";
 import { EditorCanvas } from "./comps/EngineCanvases";
 import { SceneContainer } from "./comps/SceneContainer";
-import { useEditorCanvas } from "./hooks/useEditorCanvas";
-import { useFreeCam } from "./hooks/useFreeCam";
-import { useViewportPointer } from "./hooks/useViewportPointer";
-import { useViewportKeyboard } from "./hooks/useViewportKeyboard";
+import { useEditorCanvas } from "@storyteller/ui-pagescene";
+import { useFreeCam } from "@storyteller/ui-pagescene";
+import { useViewportPointer } from "@storyteller/ui-pagescene";
+import { useViewportKeyboard } from "@storyteller/ui-pagescene";
 import { Outliner } from "./comps/Outliner";
 import { CameraAspectRatio } from "./enums";
 import { PromptBox3D, commonToCameraAspect } from "@storyteller/ui-promptbox";
@@ -27,10 +27,10 @@ import { OnboardingHelper } from "./comps/OnboardingHelper";
 import { FocalLengthDisplay } from "./comps/FocalLengthDisplay/FocalLengthDisplay";
 
 import { uploadImage } from "~/components/reusable/UploadModalMedia/uploadImage";
-import { EngineContext } from "./contexts/EngineContext";
+import { EngineContext } from "@storyteller/ui-pagescene";
 
 import { uploadPlaneFromMediaToken } from "~/components/reusable/UploadModalMedia/uploadPlane";
-import { addObject, addCharacter } from "./actions";
+import { addObject, addCharacter } from "@storyteller/ui-pagescene";
 import { usePageSceneStore } from "./PageSceneStore";
 import { AssetType, AUTH_STATUS } from "~/enums";
 import { v4 as uuidv4 } from "uuid";

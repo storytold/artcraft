@@ -1,5 +1,5 @@
 import { DragComponent } from "~/pages/PageScene/comps/DragComponent/DragComponent";
-import { EngineProvider } from "./contexts/EngineContext";
+import { EngineProvider } from "@storyteller/ui-pagescene";
 import { useTabStore } from "~/pages/Stores/TabState";
 import { useActiveJobs } from "~/hooks/useActiveJobs";
 import { useBackgroundLoadingMedia } from "~/hooks/useBackgroundLoadingMedia";

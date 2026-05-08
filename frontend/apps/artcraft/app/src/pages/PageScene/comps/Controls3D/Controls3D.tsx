@@ -12,7 +12,7 @@ import { ButtonIconSelect } from "@storyteller/ui-button-icon-select";
 import { Button } from "@storyteller/ui-button";
 import { Tooltip } from "@storyteller/ui-tooltip";
 import { SettingsModal } from "@storyteller/ui-settings-modal";
-import { EngineContext } from "../../contexts/EngineContext";
+import { EngineContext } from "@storyteller/ui-pagescene";
 import { useContext, useEffect, useState } from "react";
 import { useShallow } from "zustand/shallow";
 import { usePageSceneStore } from "../../PageSceneStore";
@@ -23,7 +23,7 @@ import { useTabStore } from "~/pages/Stores/TabState";
 // eslint-disable-next-line import/no-unresolved
 // import { AssetType } from "~/enums";
 import { AssetModal } from "../AssetMenu/AssetModal";
-import { setTransformMode } from "../../actions";
+import { setTransformMode } from "@storyteller/ui-pagescene";
 import { TransformMode } from "../../PageSceneStore";
 import { useSignals } from "@preact/signals-react/runtime";
 // eslint-disable-next-line import/no-unresolved

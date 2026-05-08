@@ -1,8 +1,10 @@
 // TODO: Move into shared component.
 import { useContext } from "react";
 import { MediaItem } from "~/pages/PageScene/models";
-import DndAsset from "~/pages/PageScene/DragAndDrop/DndAsset";
-import { EngineContext } from "~/pages/PageScene/contexts/EngineContext";
+import {
+  dragAndDrop as DndAsset,
+  EngineContext,
+} from "@storyteller/ui-pagescene";
 import { Badge } from "@storyteller/ui-badge";
 import { AssetType } from "~/enums";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";

@@ -97,7 +97,10 @@ export { SceneManager } from "./lib/engine/scene_manager_api";
 export { MouseControls } from "./lib/engine/keybinds_controls";
 export type { MouseControlsDeps } from "./lib/engine/keybinds_controls";
 export { buildKeymap, dispatchBinding } from "./lib/engine/keymap";
-export type { KeyBinding, KeyGroup } from "./lib/engine/keymap";
+export type {
+  KeyBinding,
+  KeyGroup as KeymapKeyGroup,
+} from "./lib/engine/keymap";
 
 // Engine subsystems
 export { HistoryManager } from "./lib/engine/editor/HistoryManager";
