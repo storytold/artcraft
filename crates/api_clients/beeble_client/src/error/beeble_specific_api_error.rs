@@ -18,6 +18,12 @@ pub enum BeebleSpecificApiError {
 
   /// The generation job failed with a reported error message.
   GenerationFailed(String),
+
+  /// 400 Bad Request — the callback_url is not a valid publicly-reachable HTTPS URL.
+  BadWebhookUrl {
+    message: String,
+    webhook_url: String,
+  },
 }
 
 impl Error for BeebleSpecificApiError {}
@@ -30,6 +36,9 @@ impl Display for BeebleSpecificApiError {
       Self::IdempotencyConflict => write!(f, "Beeble API: Idempotency conflict"),
       Self::RateLimited => write!(f, "Beeble API: Rate limited"),
       Self::GenerationFailed(msg) => write!(f, "Beeble API: Generation failed: {}", msg),
+      Self::BadWebhookUrl { message, webhook_url } => {
+        write!(f, "Beeble API: Bad webhook URL '{}': {}", webhook_url, message)
+      }
     }
   }
 }
