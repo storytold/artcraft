@@ -59,6 +59,9 @@
       "path": "../../libs/components/pagedraw"
     },
     {
+      "path": "../../libs/components/pagescene"
+    },
+    {
       "path": "../../libs/components/settings-modal"
     },
     {
