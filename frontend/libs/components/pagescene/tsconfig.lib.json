@@ -11,7 +11,9 @@
     ],
     "rootDir": "src",
     "jsx": "react-jsx",
-    "tsBuildInfoFile": "dist/tsconfig.lib.tsbuildinfo"
+    "tsBuildInfoFile": "dist/tsconfig.lib.tsbuildinfo",
+    "allowJs": true,
+    "checkJs": false
   },
   "exclude": [
     "out-tsc",
