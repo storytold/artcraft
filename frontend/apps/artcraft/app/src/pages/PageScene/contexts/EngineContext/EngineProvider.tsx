@@ -31,10 +31,10 @@ export const EngineProvider = ({
   children,
 }: Props) => {
   const [editor, setEditor] = useState<Editor | null>(null);
-  const activeEditorRef = useRef<Editor | null>(null);
   // Hold the latest cache + serialize callback in refs so the engine
   // lifecycle effect can read them in cleanup without re-running on
-  // every prop change.
+  // every prop change. (The editor itself doesn't need a mirror ref —
+  // closure capture of the local `newEditor` handles cleanup.)
   const cacheRef = useRef(cacheJsonString);
   cacheRef.current = cacheJsonString;
   const onSerializeRef = useRef(onSceneSerialized);
@@ -50,11 +50,8 @@ export const EngineProvider = ({
     // CameraViewCanvas drive this by setting their nodes (and clearing
     // them to null on unmount).
     if (!sceneContainer || !editorCanvas || !camViewCanvas) return;
-    if (activeEditorRef.current) return;
 
     const newEditor = new Editor();
-    activeEditorRef.current = newEditor;
-
     newEditor.initialize({
       sceneToken: sceneToken || "",
       sceneContainerEl: sceneContainer,
@@ -66,22 +63,18 @@ export const EngineProvider = ({
     setActiveEditor(newEditor);
 
     return () => {
-      const live = activeEditorRef.current;
-      if (!live) return;
-
       // Snapshot scene to host-managed cache so we can restore it on
       // remount. Skip if the scene never finished loading; the host's
       // last-known-good cache is preserved on its side.
-      if (live.isEngineDataLoaded()) {
-        const sceneGenerationMetadata = getSceneGenerationMetaData(live);
-        const cacheJson = live.save_manager.getSceneJson({
+      if (newEditor.isEngineDataLoaded()) {
+        const sceneGenerationMetadata = getSceneGenerationMetaData(newEditor);
+        const cacheJson = newEditor.save_manager.getSceneJson({
           sceneGenerationMetadata,
         });
         onSerializeRef.current?.(JSON.stringify(cacheJson));
       }
 
-      live.unmountEngine();
-      activeEditorRef.current = null;
+      newEditor.unmountEngine();
       setEditor(null);
       setActiveEditor(null);
     };
