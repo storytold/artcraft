@@ -82,6 +82,47 @@ export { LockAction } from "./lib/engine/editor/actions/LockAction";
 export { TransformAction } from "./lib/engine/editor/actions/TransformAction";
 export { VisibilityAction } from "./lib/engine/editor/actions/VisibilityAction";
 
+// Action dispatchers — host UI calls these to manipulate the scene
+// (drop assets, transform objects, color picks, etc.).
+export {
+  addCharacter,
+  addObject,
+  addShape,
+  deleteObject,
+  selectObject,
+  deselectObject,
+  setCameraAspect,
+  setObjectColor,
+  beginColorSession,
+  setTransformMode,
+  toggleObjectLock,
+  toggleObjectVisibility,
+  beginTransformSession,
+} from "./lib/actions";
+export type { ColorSession, TransformSession } from "./lib/actions";
+
+// Hooks — engine + DOM glue used by the lib's React components and
+// any host that mounts custom UI inside the editor.
+export { useEditorCanvas, useCamViewCanvas } from "./lib/hooks/useEditorCanvas";
+export { useFreeCam } from "./lib/hooks/useFreeCam";
+export { useViewportPointer } from "./lib/hooks/useViewportPointer";
+export { useViewportKeyboard } from "./lib/hooks/useViewportKeyboard";
+
+// Engine context — React tree access to the live Editor instance.
+export {
+  EngineContext,
+  setActiveEditor,
+  getActiveEditor,
+} from "./lib/contexts/EngineContext/EngineContext";
+export type { EditorExpandedI } from "./lib/contexts/EngineContext/EngineContext";
+export { EngineProvider } from "./lib/contexts/EngineContext/EngineProvider";
+
+// Drag-and-drop singleton (used by AssetMenu items + GalleryDragComponent).
+export { default as dragAndDrop } from "./lib/DragAndDrop/DndAsset";
+
+// Scene-generation metadata helper (used by save flow + cache snapshot).
+export { getSceneGenerationMetaData } from "./lib/sceneMetadata";
+
 // Engine utilities exported for host wrappers + hooks.
 export { pickDropPosition } from "./lib/engine/pickDropPosition";
 export {

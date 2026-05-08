@@ -22,7 +22,12 @@ import {
 } from "@storyteller/api";
 import type { PageSceneAdapter } from "@storyteller/ui-pagescene";
 import { GetCdnOrigin } from "~/api/GetCdnOrigin";
-import { authentication, signalScene } from "~/signals";
+import {
+  authentication,
+  pageHeight,
+  pageWidth,
+  signalScene,
+} from "~/signals";
 
 const apiHost = () =>
   StorytellerApiHostStore.getInstance().getApiSchemeAndHost();
@@ -233,6 +238,11 @@ export const useTauriPageSceneAdapter = (
       },
 
       onSceneTitleChange: (meta) => signalScene(meta as never),
+
+      getViewportSize: () => ({
+        width: pageWidth.value,
+        height: pageHeight.value,
+      }),
 
       // Slot renderers — host-owned UI for asset browser + scene
       // loader. Today these are still rendered inside PageEditor's own

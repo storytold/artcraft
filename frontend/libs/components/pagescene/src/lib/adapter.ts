@@ -68,6 +68,13 @@ export interface PageSceneAdapter {
   // when they only have the token, not the full URL.
   getMediaUrlByToken(token: string): Promise<string>;
 
+  // Visual viewport dimensions. Used by DnD asset-drop hit-testing
+  // to detect "is this drop over the 3D canvas?" — the artcraft host
+  // wires its `pageWidth`/`pageHeight` signals through; web hosts
+  // without those signals can omit, and the lib falls back to
+  // window.innerWidth/innerHeight.
+  getViewportSize?(): { width: number; height: number };
+
   // Slot renders for host-owned UI. The library renders these inside
   // its own AssetMenu / scene-load modal containers — same shape as
   // PageDrawAdapter.renderBaseImageSelector.
