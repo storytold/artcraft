@@ -6,7 +6,6 @@ import {
   faSpinnerThird,
   faVideo,
   faImage,
-  faMask,
   faXmark,
   faSparkles,
   faPlus,
@@ -53,7 +52,6 @@ export const PromptBoxVFX = ({
   containerClassName,
 }: PromptBoxVFXProps) => {
   const source = useVFXStore((s) => s.source);
-  const mask = useVFXStore((s) => s.mask);
   const reference = useVFXStore((s) => s.reference);
   const prompt = useVFXStore((s) => s.prompt);
   const resolution = useVFXStore((s) => s.resolution);
@@ -329,17 +327,7 @@ export const PromptBoxVFX = ({
           tileClassName="h-24 aspect-video"
           required
         />
-        <UploadTile
-          label="Mask"
-          icon={faMask}
-          previewUrl={mask?.url}
-          uploading={maskUploading}
-          onUpload={() => triggerUpload("mask")}
-          onPickFromLibrary={() => openGallery("mask")}
-          onClear={() => setMask(undefined)}
-          tileClassName="h-24 aspect-video"
-          optional
-        />
+        {/* Mask is hidden for now — backend endpoint doesn't accept it yet. */}
         <UploadTile
           label="Reference Image"
           icon={faImage}

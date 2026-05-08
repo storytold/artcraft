@@ -5,41 +5,37 @@ import { faSpinnerThird, faSparkles } from "@fortawesome/pro-solid-svg-icons";
 import { Button } from "@storyteller/ui-button";
 import {
   PromptBoxVFX,
-  SubTabStrip,
+  TruchetPattern,
   VFXResultCard,
-  VFXShowcaseView,
-  newIdempotencyToken,
-  submitVFXJob,
   useVFXStore,
-  VFX_NOT_AVAILABLE_ERROR,
-  VFX_SHOWCASE,
 } from "@storyteller/ui-vfx";
 import Seo from "../../components/seo";
 import { useAuthCheck } from "../../components/generation-gallery";
 import { toast } from "../../components/toast/toast";
 import { uploadImage } from "../../components/prompt-box/upload-image";
 import { uploadVideo } from "../../components/prompt-box/upload-media";
+import {
+  enqueueBackgroundChangeGeneration,
+  startBackgroundChangePolling,
+} from "./generate-background-change-api";
 
 export default function CreateVFX() {
   const { user, authChecked } = useAuthCheck();
 
-  const subTab = useVFXStore((s) => s.subTab);
-  const setSubTab = useVFXStore((s) => s.setSubTab);
   const history = useVFXStore((s) => s.history);
   const startResult = useVFXStore((s) => s.startResult);
+  const attachJobToken = useVFXStore((s) => s.attachJobToken);
+  const completeResult = useVFXStore((s) => s.completeResult);
   const failResult = useVFXStore((s) => s.failResult);
   const dismissResult = useVFXStore((s) => s.dismissResult);
-  const loadFromShowcase = useVFXStore((s) => s.loadFromShowcase);
-  const selectedShowcaseId = useVFXStore((s) => s.selectedShowcaseId);
   const source = useVFXStore((s) => s.source);
-  const mask = useVFXStore((s) => s.mask);
   const reference = useVFXStore((s) => s.reference);
   const prompt = useVFXStore((s) => s.prompt);
-  const resolution = useVFXStore((s) => s.resolution);
 
   const promptBoxRef = useRef<HTMLDivElement>(null);
   const [promptBoxHeight, setPromptBoxHeight] = useState(96);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const pollersRef = useRef(new Map<string, () => void>());
 
   useEffect(() => {
     const el = promptBoxRef.current;
@@ -51,71 +47,62 @@ export default function CreateVFX() {
     return () => ro.disconnect();
   }, []);
 
+  useEffect(() => {
+    const pollers = pollersRef.current;
+    return () => {
+      pollers.forEach((cancel) => cancel());
+      pollers.clear();
+    };
+  }, []);
+
+
   const handleSubmit = useCallback(async () => {
     if (!source || !reference || isSubmitting) return;
     setIsSubmitting(true);
     const id = startResult();
-    const result = await submitVFXJob({
-      source_video_media_token: source.mediaToken,
-      mask_media_token: mask?.mediaToken ?? null,
-      reference_image_media_token: reference.mediaToken,
-      prompt: prompt.trim(),
-      resolution,
-      uuid_idempotency_token: newIdempotencyToken(),
+    const enqueueResult = await enqueueBackgroundChangeGeneration({
+      sourceVideoMediaToken: source.mediaToken,
+      referenceImageMediaToken: reference.mediaToken,
+      prompt: prompt.trim() || null,
     });
     setIsSubmitting(false);
 
-    if (!result.success) {
-      const isExpected = result.error_code_str === VFX_NOT_AVAILABLE_ERROR;
-      const message = isExpected
+    if (!enqueueResult.success) {
+      const message = enqueueResult.backendUnavailable
         ? "Background change backend coming soon. Your inputs are saved."
-        : result.error_message || "Failed to submit background change job.";
+        : enqueueResult.error;
       failResult(id, message);
-      if (isExpected) {
+      if (enqueueResult.backendUnavailable) {
         toast.success(message);
       } else {
         toast.error(message);
       }
+      return;
     }
+
+    attachJobToken(id, enqueueResult.jobToken);
+    const cancel = startBackgroundChangePolling(
+      enqueueResult.jobToken,
+      (output) => {
+        completeResult(id, output.cdn_url);
+        pollersRef.current.delete(id);
+      },
+      (reason) => {
+        failResult(id, reason);
+        pollersRef.current.delete(id);
+      },
+    );
+    pollersRef.current.set(id, cancel);
   }, [
     source,
     reference,
-    mask,
     prompt,
-    resolution,
     isSubmitting,
     startResult,
+    attachJobToken,
+    completeResult,
     failResult,
   ]);
-
-  const handleTryShowcase = useCallback(() => {
-    const entry = VFX_SHOWCASE.find((e) => e.id === selectedShowcaseId);
-    if (!entry) return;
-    loadFromShowcase({
-      prompt: entry.prompt,
-      resolution: entry.resolution,
-      source: {
-        id: entry.source.mediaToken,
-        url: entry.source.url,
-        mediaToken: entry.source.mediaToken,
-      },
-      mask: entry.mask
-        ? {
-            id: entry.mask.mediaToken,
-            url: entry.mask.url,
-            mediaToken: entry.mask.mediaToken,
-          }
-        : undefined,
-      reference: entry.reference
-        ? {
-            id: entry.reference.mediaToken,
-            url: entry.reference.url,
-            mediaToken: entry.reference.mediaToken,
-          }
-        : undefined,
-    });
-    toast.success("Loaded showcase. Edit and Generate.");
-  }, [selectedShowcaseId, loadFromShowcase]);
 
   if (!authChecked) {
     return (
@@ -171,26 +158,33 @@ export default function CreateVFX() {
   }
 
   return (
-    <div className="flex h-screen w-full flex-col bg-[#101014] text-white">
+    <div className="relative flex h-screen w-full flex-col bg-[#101014] text-white">
       <Seo
         title="Background Change - ArtCraft"
         description="Swap the backdrop of a video using a reference image."
       />
 
-      <div className="pt-[60px] sm:pt-[78px]">
-        <SubTabStrip activeTab={subTab} onChange={setSubTab} />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 z-0"
+        style={{
+          maskImage:
+            "radial-gradient(ellipse 70% 60% at 50% 45%, black 25%, transparent 85%)",
+          WebkitMaskImage:
+            "radial-gradient(ellipse 70% 60% at 50% 45%, black 25%, transparent 85%)",
+        }}
+      >
+        <TruchetPattern
+          intensity={0.7}
+          className="absolute inset-0 h-full w-full"
+        />
       </div>
 
-      {subTab === "showcase" ? (
+      <div className="pt-[60px] sm:pt-[78px]" />
+
+      {history.length === 0 ? (
         <div
-          className="min-h-0 flex-1 overflow-hidden"
-          style={{ paddingBottom: Math.max(promptBoxHeight + 32, 240) }}
-        >
-          <VFXShowcaseView onTryThis={handleTryShowcase} />
-        </div>
-      ) : history.length === 0 ? (
-        <div
-          className="flex flex-1 items-center justify-center px-3 sm:px-6"
+          className="relative z-10 flex flex-1 items-center justify-center px-3 sm:px-6"
           style={{ paddingBottom: Math.max(promptBoxHeight + 32, 240) }}
         >
           <EmptyState
@@ -200,10 +194,10 @@ export default function CreateVFX() {
         </div>
       ) : (
         <div
-          className="flex-1 overflow-y-auto"
+          className="relative z-10 flex-1 overflow-y-auto"
           style={{ paddingBottom: Math.max(promptBoxHeight + 32, 240) }}
         >
-          <div className="flex flex-col gap-10 px-3 pt-6 sm:px-6">
+          <div className="flex flex-col items-center gap-10 px-3 pt-6 sm:px-6">
             {history.map((r) => (
               <VFXResultCard
                 key={r.id}
@@ -218,6 +212,7 @@ export default function CreateVFX() {
                   failureReason: r.failureReason,
                 }}
                 onDismiss={() => dismissResult(r.id)}
+                className="w-[min(960px,calc(100vw-32px))]"
               />
             ))}
           </div>

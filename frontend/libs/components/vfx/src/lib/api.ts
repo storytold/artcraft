@@ -1,12 +1,7 @@
-import type { VFXResolution } from "./types";
-
 export type SubmitVFXJobRequest = {
   source_video_media_token: string;
-  mask_media_token: string | null;
-  reference_image_media_token: string;
-  prompt: string;
-  resolution: VFXResolution;
-  uuid_idempotency_token: string;
+  reference_image_media_token: string | null;
+  prompt: string | null;
 };
 
 export type SubmitVFXJobResponse =
@@ -20,7 +15,7 @@ export type SubmitVFXJobResponse =
 
 export const VFX_NOT_AVAILABLE_ERROR = "vfx_not_yet_available";
 
-const VFX_ENDPOINT = "/v1/generate/video/vfx";
+const VFX_ENDPOINT = "/v1/generate/video/edit/beeble_switchx";
 
 export async function submitVFXJob(
   req: SubmitVFXJobRequest,
@@ -38,7 +33,7 @@ export async function submitVFXJob(
         success: false,
         error_code: res.status,
         error_code_str: VFX_NOT_AVAILABLE_ERROR,
-        error_message: "VFX backend is not yet available.",
+        error_message: "Background change backend is not yet available.",
       };
     }
 

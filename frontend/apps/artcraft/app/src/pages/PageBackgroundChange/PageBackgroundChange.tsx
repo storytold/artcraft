@@ -9,7 +9,6 @@ import {
   TruchetPattern,
   VFXResultCard,
   VFXShowcaseView,
-  newIdempotencyToken,
   submitVFXJob,
   useVFXStore,
   VFX_NOT_AVAILABLE_ERROR,
@@ -49,13 +48,11 @@ export const PageBackgroundChange = () => {
     if (!source || !reference || isSubmitting) return;
     setIsSubmitting(true);
     const id = startResult();
+    const trimmed = prompt.trim();
     const result = await submitVFXJob({
       source_video_media_token: source.mediaToken,
-      mask_media_token: mask?.mediaToken ?? null,
       reference_image_media_token: reference.mediaToken,
-      prompt: prompt.trim(),
-      resolution,
-      uuid_idempotency_token: newIdempotencyToken(),
+      prompt: trimmed.length > 0 ? trimmed : null,
     });
     setIsSubmitting(false);
 
@@ -68,16 +65,7 @@ export const PageBackgroundChange = () => {
       if (isExpected) toast(message);
       else toast.error(message);
     }
-  }, [
-    source,
-    reference,
-    mask,
-    prompt,
-    resolution,
-    isSubmitting,
-    startResult,
-    failResult,
-  ]);
+  }, [source, reference, prompt, isSubmitting, startResult, failResult]);
 
   const handleTryShowcase = useCallback(() => {
     const entry = VFX_SHOWCASE.find((e) => e.id === selectedShowcaseId);

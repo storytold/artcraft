@@ -227,9 +227,12 @@ export const useVisibleApps = (): FullAppItem[] => {
   const storyboardEnabled = useStoryboardPageEnabled();
   return useMemo(
     () =>
-      ALL_APPS.filter((app) =>
-        app.action === "STORYBOARD" ? storyboardEnabled : true,
-      ),
+      ALL_APPS.filter((app) => {
+        // Background Change is hidden in the desktop app for now.
+        if (app.action === "BACKGROUND_CHANGE") return false;
+        if (app.action === "STORYBOARD") return storyboardEnabled;
+        return true;
+      }),
     [storyboardEnabled],
   );
 };

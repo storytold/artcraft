@@ -36,6 +36,7 @@ type VFXState = {
     reference?: VFXMediaRef;
   }) => void;
   startResult: () => string;
+  attachJobToken: (id: string, token: string) => void;
   completeResult: (id: string, outputUrl: string) => void;
   failResult: (id: string, reason: string) => void;
   dismissResult: (id: string) => void;
@@ -87,6 +88,14 @@ export const useVFXStore = create<VFXState>((set, get) => ({
     };
     set((s) => ({ history: [result, ...s.history], subTab: "history" }));
     return id;
+  },
+
+  attachJobToken: (id, token) => {
+    set((s) => ({
+      history: s.history.map((r) =>
+        r.id === id ? { ...r, inferenceJobToken: token } : r,
+      ),
+    }));
   },
 
   completeResult: (id, outputUrl) => {
