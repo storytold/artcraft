@@ -144,6 +144,15 @@ export { ControlPanelSceneObject } from "./lib/comps/ControlPanelSceneObject";
 export { SceneContainer } from "./lib/comps/SceneContainer";
 export { PreviewEngineCamera } from "./lib/comps/PreviewEngineCamera";
 export { PreviewImages } from "./lib/comps/PreviewImages";
+export { OnboardingHelper } from "./lib/comps/OnboardingHelper";
+export {
+  Help,
+  Key,
+  KeyGroup,
+  Mouse,
+  Plus,
+  ShortcutsGroup,
+} from "./lib/comps/ControlsTopButtons/Help/Help";
 
 // Viewport-size hook (also useful to host code that wants the same
 // reactivity contract the lib comps use).
