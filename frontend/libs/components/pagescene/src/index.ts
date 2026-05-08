@@ -123,6 +123,21 @@ export { default as dragAndDrop } from "./lib/DragAndDrop/DndAsset";
 // Scene-generation metadata helper (used by save flow + cache snapshot).
 export { getSceneGenerationMetaData } from "./lib/sceneMetadata";
 
+// Pure-3D React UI components — no host coupling beyond the lib's
+// own store/adapter. Host-coupled comps (AssetMenu, ControlsTopButtons,
+// Controls3D, EditorLoadingBar, Outliner, ControlPanelSceneObject,
+// SceneContainer, PreviewImages, PreviewEngineCamera) stay in the
+// artcraft host until their dependencies (UploadModal3D,
+// MediaFilesApi, signalScene, addToast, pageHeight/Width signals
+// etc.) are either surfaced via adapter slots or replaced with
+// lib-internal state.
+export { DragComponent } from "./lib/comps/DragComponent/DragComponent";
+export { PrecisionSelector } from "./lib/comps/PrecisionSelector/PrecisionSelector";
+export { FocalLengthDisplay } from "./lib/comps/FocalLengthDisplay/FocalLengthDisplay";
+export { AspectRatioMenu } from "./lib/comps/AspectRatioMenu/AspectRatioMenu";
+export { PoseModeSelector } from "./lib/comps/PoseModeSelector";
+export { EditorCanvas, CameraViewCanvas } from "./lib/comps/EngineCanvases";
+
 // Engine utilities exported for host wrappers + hooks.
 export { pickDropPosition } from "./lib/engine/pickDropPosition";
 export {
