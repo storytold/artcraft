@@ -145,6 +145,7 @@ export { SceneContainer } from "./lib/comps/SceneContainer";
 export { PreviewEngineCamera } from "./lib/comps/PreviewEngineCamera";
 export { PreviewImages } from "./lib/comps/PreviewImages";
 export { OnboardingHelper } from "./lib/comps/OnboardingHelper";
+export { EditorLoadingBar } from "./lib/comps/EditorLoadingBar";
 export {
   Help,
   Key,
