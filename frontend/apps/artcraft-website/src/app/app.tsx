@@ -55,8 +55,7 @@ export function App() {
         <Route path="/landing3" element={<Landing3 />} />
         <Route path="/create-image" element={<CreateImage />} />
         <Route path="/create-video" element={<CreateVideo />} />
-        <Route path="/create-vfx" element={<CreateVFX />} />
-        <Route path="/vfx" element={<Navigate to="/create-vfx" replace />} />
+        <Route path="/background-change" element={<CreateVFX />} />
         <Route path="/seedance-2" element={<LandingSD2 />} />
         <Route path="/download" element={<Download />} />
         <Route path="/media" element={<Media />} />

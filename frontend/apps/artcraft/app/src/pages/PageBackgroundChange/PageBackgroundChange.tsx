@@ -9,6 +9,7 @@ import {
   TruchetPattern,
   VFXResultCard,
   VFXShowcaseView,
+  newIdempotencyToken,
   submitVFXJob,
   useVFXStore,
   VFX_NOT_AVAILABLE_ERROR,
@@ -53,6 +54,7 @@ export const PageBackgroundChange = () => {
       source_video_media_token: source.mediaToken,
       reference_image_media_token: reference.mediaToken,
       prompt: trimmed.length > 0 ? trimmed : null,
+      uuid_idempotency_token: newIdempotencyToken(),
     });
     setIsSubmitting(false);
 

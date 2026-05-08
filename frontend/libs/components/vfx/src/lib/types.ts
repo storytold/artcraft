@@ -30,7 +30,7 @@ export const DEFAULT_RESOLUTION: VFXResolution = "720p";
 
 export const MAX_SOURCE_DURATION_S = 15;
 
-export type VFXModelId = "beeble";
+export type VFXModelId = "beeble_switchx";
 
 export interface VFXModel {
   id: VFXModelId;
@@ -40,10 +40,10 @@ export interface VFXModel {
 
 export const VFX_MODELS: VFXModel[] = [
   {
-    id: "beeble",
-    label: "Beeble",
+    id: "beeble_switchx",
+    label: "Beeble SwitchX",
     description: "Relight, change location, swap objects.",
   },
 ];
 
-export const DEFAULT_MODEL_ID: VFXModelId = "beeble";
+export const DEFAULT_MODEL_ID: VFXModelId = "beeble_switchx";

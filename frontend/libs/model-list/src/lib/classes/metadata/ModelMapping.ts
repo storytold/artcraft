@@ -245,6 +245,12 @@ export const getModelDisplayName = (modelType: string): string => {
     // Angles
     flux_2_lora_angles: "Flux 2 LoRA Angles",
     qwen_edit_2511_angles: "Qwen Edit 2511 Angles",
+
+    // Beeble (Background Change / VFX)
+    beeble_switchx: "Beeble SwitchX",
+    // Backend may emit either form — keep both keyed.
+    switch_x: "Beeble SwitchX",
+    switchx: "Beeble SwitchX",
   };
 
   const key = normalizeModelKey(modelType);

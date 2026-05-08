@@ -16,6 +16,7 @@ import { uploadImage } from "../../components/prompt-box/upload-image";
 import { uploadVideo } from "../../components/prompt-box/upload-media";
 import {
   enqueueBackgroundChangeGeneration,
+  listSessionBackgroundChangeJobs,
   startBackgroundChangePolling,
 } from "./generate-background-change-api";
 
@@ -28,6 +29,8 @@ export default function CreateVFX() {
   const completeResult = useVFXStore((s) => s.completeResult);
   const failResult = useVFXStore((s) => s.failResult);
   const dismissResult = useVFXStore((s) => s.dismissResult);
+  const seedFromSession = useVFXStore((s) => s.seedFromSession);
+  const updateMediaForResult = useVFXStore((s) => s.updateMediaForResult);
   const source = useVFXStore((s) => s.source);
   const reference = useVFXStore((s) => s.reference);
   const prompt = useVFXStore((s) => s.prompt);
@@ -55,6 +58,137 @@ export default function CreateVFX() {
     };
   }, []);
 
+  // On mount, reconcile against the server: pull recent SwitchX jobs from the
+  // session so the page shows in-progress / completed / failed cards across
+  // refreshes and devices, not just from localStorage. Then resume polling
+  // for anything that's still pending.
+  useEffect(() => {
+    if (!user) return;
+
+    let cancelled = false;
+    const pollers = pollersRef.current;
+
+    const startPollFor = (
+      resultId: string,
+      jobToken: string,
+    ) => {
+      if (pollers.has(resultId)) return;
+      const cancel = startBackgroundChangePolling(
+        jobToken,
+        (output) => {
+          completeResult(resultId, output.cdn_url);
+          pollers.delete(resultId);
+          window.dispatchEvent(new Event("task-queue-update"));
+        },
+        (reason) => {
+          failResult(resultId, reason);
+          pollers.delete(resultId);
+          window.dispatchEvent(new Event("task-queue-update"));
+        },
+      );
+      pollers.set(resultId, cancel);
+    };
+
+    (async () => {
+      try {
+        const sessionJobs = await listSessionBackgroundChangeJobs();
+        if (cancelled) return;
+
+        const existing = useVFXStore.getState().history;
+        const existingByToken = new Map(
+          existing
+            .filter((r) => r.inferenceJobToken)
+            .map((r) => [r.inferenceJobToken!, r] as const),
+        );
+
+        for (const job of sessionJobs) {
+          const found = existingByToken.get(job.jobToken);
+          if (found) {
+            // Server may know more than we do (e.g. completed while we were
+            // away). Reconcile terminal states.
+            if (found.status === "pending" && job.status === "complete" && job.outputUrl) {
+              completeResult(found.id, job.outputUrl);
+            } else if (found.status === "pending" && job.status === "failed") {
+              failResult(found.id, job.failureReason ?? "Generation failed");
+            }
+            // Patch in CDN media + prompt from the batch-prompt response so
+            // dead blob: URLs (from a prior session) are replaced.
+            updateMediaForResult(found.id, {
+              source: job.source
+                ? {
+                    id: job.source.mediaToken,
+                    url: job.source.url,
+                    mediaToken: job.source.mediaToken,
+                  }
+                : undefined,
+              reference: job.reference
+                ? {
+                    id: job.reference.mediaToken,
+                    url: job.reference.url,
+                    mediaToken: job.reference.mediaToken,
+                  }
+                : undefined,
+              prompt: job.prompt,
+            });
+            continue;
+          }
+          // Missing locally — seed it.
+          const id =
+            typeof crypto !== "undefined" && crypto.randomUUID
+              ? crypto.randomUUID()
+              : Math.random().toString(36).slice(2);
+          seedFromSession({
+            id,
+            status: job.status,
+            prompt: job.prompt,
+            resolution: "720p",
+            source: job.source
+              ? {
+                  id: job.source.mediaToken,
+                  url: job.source.url,
+                  mediaToken: job.source.mediaToken,
+                }
+              : undefined,
+            reference: job.reference
+              ? {
+                  id: job.reference.mediaToken,
+                  url: job.reference.url,
+                  mediaToken: job.reference.mediaToken,
+                }
+              : undefined,
+            inferenceJobToken: job.jobToken,
+            outputUrl: job.outputUrl,
+            failureReason: job.failureReason,
+            createdAt: job.createdAt,
+          });
+        }
+
+        if (cancelled) return;
+
+        // Resume polling for everything still pending (local + freshly seeded).
+        const pending = useVFXStore
+          .getState()
+          .history.filter((r) => r.status === "pending" && r.inferenceJobToken);
+        for (const item of pending) {
+          startPollFor(item.id, item.inferenceJobToken!);
+        }
+      } catch {
+        // Network errors during session reconciliation are non-fatal — fall
+        // back to local-only behavior by polling whatever localStorage had.
+        if (cancelled) return;
+        const pending = useVFXStore
+          .getState()
+          .history.filter((r) => r.status === "pending" && r.inferenceJobToken);
+        for (const item of pending) {
+          startPollFor(item.id, item.inferenceJobToken!);
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [user, completeResult, failResult, seedFromSession, updateMediaForResult]);
 
   const handleSubmit = useCallback(async () => {
     if (!source || !reference || isSubmitting) return;
@@ -81,15 +215,18 @@ export default function CreateVFX() {
     }
 
     attachJobToken(id, enqueueResult.jobToken);
+    window.dispatchEvent(new Event("task-queue-update"));
     const cancel = startBackgroundChangePolling(
       enqueueResult.jobToken,
       (output) => {
         completeResult(id, output.cdn_url);
         pollersRef.current.delete(id);
+        window.dispatchEvent(new Event("task-queue-update"));
       },
       (reason) => {
         failResult(id, reason);
         pollersRef.current.delete(id);
+        window.dispatchEvent(new Event("task-queue-update"));
       },
     );
     pollersRef.current.set(id, cancel);
@@ -250,10 +387,10 @@ interface EmptyStateProps {
 
 const EmptyState = ({ title, subtitle }: EmptyStateProps) => (
   <div className="flex max-w-md flex-col items-center gap-4 text-center">
-    <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-white/5 ring-1 ring-white/10">
-      <FontAwesomeIcon icon={faSparkles} className="h-9 w-9 text-white/40" />
+    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/5 ring-1 ring-white/10">
+      <FontAwesomeIcon icon={faSparkles} className="text-2xl text-white/40" />
     </div>
     <h3 className="text-2xl font-bold text-white">{title}</h3>
-    <p className="text-sm text-white/60">{subtitle}</p>
+    <p className="text-sm text-white/60 max-w-xs">{subtitle}</p>
   </div>
 );

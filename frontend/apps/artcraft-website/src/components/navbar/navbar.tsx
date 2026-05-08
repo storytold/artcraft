@@ -42,7 +42,7 @@ const NAV_ITEMS: NavEntry[] = [
   { name: "Home", href: "/" },
   { name: "Image", href: "/create-image" },
   { name: "Video", href: "/create-video" },
-  { name: "BG Swap", href: "/create-vfx" },
+  { name: "BG Change", href: "/background-change" },
   {
     name: "Resources",
     children: [

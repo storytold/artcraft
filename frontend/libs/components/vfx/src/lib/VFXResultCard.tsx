@@ -39,7 +39,7 @@ export const VFXResultCard = ({
   onTryThis,
   onDismiss,
   className,
-  panelGlassClassName = "bg-white/5 ring-1 ring-white/10",
+  panelGlassClassName = "bg-white/5 ring-1 ring-white/10 backdrop-blur-sm",
   promptTextClassName = "text-white/85 line-clamp-2",
   promptLabelClassName = "text-white/50",
   tryButtonClassName = "border-primary/40 bg-primary/15 text-white hover:bg-primary/25",
@@ -51,7 +51,7 @@ export const VFXResultCard = ({
         className,
       )}
     >
-      <div className="relative aspect-video max-h-[calc(100vh-500px)] w-full overflow-hidden rounded-xl bg-black/40 ring-1 ring-white/10">
+      <div className="relative aspect-video max-h-[calc(100vh-500px)] w-full overflow-hidden rounded-xl bg-black ring-1 ring-white/10">
         {data.status === "complete" && data.outputUrl ? (
           <video
             src={data.outputUrl}
@@ -99,24 +99,26 @@ export const VFXResultCard = ({
         {data.reference && (
           <SidePanelMedia label="Reference" url={data.reference.url} />
         )}
-        <div
-          className={twMerge(
-            "group relative max-h-44 min-h-0 overflow-y-auto rounded-lg px-3 py-2 text-xs",
-            panelGlassClassName,
-            promptTextClassName,
-          )}
-        >
+        {data.prompt && data.prompt.trim().length > 0 && (
           <div
             className={twMerge(
-              "mb-1 flex items-center justify-between gap-2 text-[10px] font-semibold uppercase tracking-wider",
-              promptLabelClassName,
+              "group relative max-h-44 min-h-0 overflow-y-auto rounded-lg px-3 py-2 text-xs",
+              panelGlassClassName,
+              promptTextClassName,
             )}
           >
-            <span>Prompt</span>
-            <CopyPromptButton text={data.prompt} />
+            <div
+              className={twMerge(
+                "mb-1 flex items-center justify-between gap-2 text-[10px] font-semibold uppercase tracking-wider",
+                promptLabelClassName,
+              )}
+            >
+              <span>Prompt</span>
+              <CopyPromptButton text={data.prompt} />
+            </div>
+            <div className="leading-relaxed">{data.prompt}</div>
           </div>
-          <div className="leading-relaxed">{data.prompt}</div>
-        </div>
+        )}
         {onTryThis && (
           <button
             onClick={onTryThis}

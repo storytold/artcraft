@@ -250,7 +250,7 @@ export const PromptBoxVFX = ({
     <div className="relative w-full">
       {showPromptPopover && (
         <div className="absolute bottom-full left-1/2 mb-2 w-full -translate-x-1/2">
-          <div className="glass flex flex-col gap-1.5 rounded-2xl px-3 py-2 shadow-2xl sm:px-4">
+          <div className="glass flex flex-col gap-1.5 rounded-2xl px-3 py-2 shadow-2xl sm:px-4 sm:py-3">
             <div className="flex items-center justify-between">
               <span className="text-[10px] font-semibold uppercase tracking-wider text-base-fg/60">
                 Prompt (optional)
@@ -258,10 +258,10 @@ export const PromptBoxVFX = ({
               <button
                 type="button"
                 onClick={() => setShowPromptPopover(false)}
-                className="flex h-5 w-5 items-center justify-center rounded text-base-fg/50 hover:bg-base-fg/10 hover:text-base-fg"
+                className="flex h-5 w-5 items-center justify-center rounded-full text-base-fg/50 hover:bg-base-fg/10 hover:text-base-fg"
                 aria-label="Close prompt"
               >
-                <FontAwesomeIcon icon={faXmark} className="h-2.5 w-2.5" />
+                <FontAwesomeIcon icon={faXmark} className="h-3 w-3" />
               </button>
             </div>
             <textarea

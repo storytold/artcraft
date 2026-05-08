@@ -513,6 +513,19 @@ function formatTitleParts(job: Job, promptsMap?: Map<string, Prompts>) {
 // Cache per-task durations so model changes don't affect existing progress bars
 const taskDurationCache = new Map<string, number>();
 
+// Per-model duration overrides for jobs whose models aren't (yet) in
+// ALL_MODELS_LIST. Each entry returns ms, or `undefined` if it doesn't apply.
+const MODEL_DURATION_OVERRIDES: Array<
+  (normalizedKey: string) => number | undefined
+> = [
+  // Beeble SwitchX (background change). Matches switch_x, switchx,
+  // beeble_switchx, beeble_switch_x, etc.
+  (key) =>
+    key.includes("switchx") || key.includes("switch_x")
+      ? 5 * 60 * 1000
+      : undefined,
+];
+
 function jobsToInProgress(
   jobs: Job[],
   promptsMap: Map<string, Prompts>,
@@ -537,12 +550,29 @@ function jobsToInProgress(
       // Look up per-model estimated duration, cache per task
       let duration = taskDurationCache.get(j.job_token);
       if (!duration) {
-        const model = modelType
-          ? ALL_MODELS_LIST.find(
-            (m) => m.tauriId === modelType || m.id === modelType,
-          )
-          : undefined;
-        duration = model?.progressBarTime ?? (isVideo ? 900000 : 30000);
+        const normalizedKey = modelType
+          ? modelType.toLowerCase().replace(/\./g, "_")
+          : "";
+        let override: number | undefined;
+        if (normalizedKey) {
+          for (const matcher of MODEL_DURATION_OVERRIDES) {
+            const ms = matcher(normalizedKey);
+            if (ms !== undefined) {
+              override = ms;
+              break;
+            }
+          }
+        }
+        if (override !== undefined) {
+          duration = override;
+        } else {
+          const model = modelType
+            ? ALL_MODELS_LIST.find(
+              (m) => m.tauriId === modelType || m.id === modelType,
+            )
+            : undefined;
+          duration = model?.progressBarTime ?? (isVideo ? 900000 : 30000);
+        }
         taskDurationCache.set(j.job_token, duration);
       }
 

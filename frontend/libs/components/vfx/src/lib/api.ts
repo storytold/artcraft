@@ -2,6 +2,7 @@ export type SubmitVFXJobRequest = {
   source_video_media_token: string;
   reference_image_media_token: string | null;
   prompt: string | null;
+  uuid_idempotency_token: string;
 };
 
 export type SubmitVFXJobResponse =
