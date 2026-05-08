@@ -188,6 +188,23 @@ pub async fn omni_gen_image_generate_handler(
       AdvancedCommonWebError::from_error(e)
     })?;
 
+  // ==================== DEBUG LOG: FAL REQUEST ==================== //
+
+  if let GenerateImageResponse::Fal(ref fal_payload) = generation_response {
+    if let Some(ref outbound_request) = fal_payload.maybe_outbound_request {
+      if let Err(err) = insert_debug_log(InsertDebugLogArgs {
+        apriori_debug_log_event_token: Some(&debug_log_event_token),
+        maybe_creator_user_token: Some(user_token),
+        debug_log_type: DebugLogType::FalRequest,
+        message: &format!("{:#?}", outbound_request),
+        mysql_executor: &mut *mysql_connection,
+        phantom: Default::default(),
+      }).await {
+        warn!("Failed to insert Fal request debug log: {:?}", err);
+      }
+    }
+  }
+
   let external_job_id = match &generation_response {
     GenerateImageResponse::Artcraft(p) => {
       p.inference_job_token.as_str().to_string()
