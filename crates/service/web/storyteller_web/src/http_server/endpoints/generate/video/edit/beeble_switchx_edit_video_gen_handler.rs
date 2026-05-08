@@ -13,7 +13,6 @@ use beeble_client::requests::start_generation::start_generation::{
   start_generation, BeebleAlphaMode, BeebleGenerationType, StartGenerationArgs,
   StartGenerationRequest,
 };
-use bucket_paths::legacy::typified_paths::public::media_files::bucket_file_path::MediaFileBucketPath;
 use enums::by_table::prompts::prompt_type::PromptType;
 use enums::common::generation::common_generation_mode::CommonGenerationMode;
 use enums::common::generation::common_model_type::CommonModelType;
@@ -25,17 +24,16 @@ use mysql_queries::queries::generic_inference::beeble::insert_generic_inference_
   InsertGenericInferenceForBeebleWithAprioriJobTokenArgs,
 };
 use mysql_queries::queries::idepotency_tokens::insert_idempotency_token::insert_idempotency_token;
-use mysql_queries::queries::media_files::get::get_media_file::get_media_file_with_connection;
 use mysql_queries::queries::prompts::insert_prompt::{insert_prompt, InsertPromptArgs};
 use tokens::tokens::generic_inference_jobs::InferenceJobToken;
+use tokens::tokens::media_files::MediaFileToken;
 
 use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
-use crate::http_server::common_responses::media::media_links_builder::MediaLinksBuilder;
 use crate::http_server::endpoints::generate::common::payments_error_test::payments_error_test;
-use crate::http_server::endpoints::media_files::helpers::get_media_domain::get_media_domain;
 use crate::http_server::validations::validate_idempotency_token_format::validate_idempotency_token_format;
 use crate::state::server_state::ServerState;
 use crate::util::http_download_url_to_bytes::http_download_url_to_bytes;
+use crate::util::lookup::lookup_image_urls_as_map::lookup_image_urls_as_map;
 
 /// Beeble SwitchX Video Edit
 #[utoipa::path(
@@ -99,54 +97,41 @@ pub async fn beeble_switchx_edit_video_gen_handler(
       AdvancedCommonWebError::BadInputWithSimpleMessage("repeated idempotency token".to_string())
     })?;
 
-  // ==================== LOOKUP MEDIA FILES ==================== //
+  // ==================== LOOKUP MEDIA FILES (BATCH) ==================== //
 
-  const IS_MOD: bool = false;
-  let media_domain = get_media_domain(&http_request);
+  let mut tokens_to_lookup: Vec<MediaFileToken> = vec![source_video_media_token.clone()];
 
-  // Source video (required)
-  let source_video_file = get_media_file_with_connection(
-    source_video_media_token, IS_MOD, &mut mysql_connection,
-  ).await
-    .map_err(|err| {
-      warn!("Error looking up source video: {:?}", err);
-      AdvancedCommonWebError::from_anyhow_error(err)
+  if let Some(ref_token) = &request.reference_image_media_token {
+    tokens_to_lookup.push(ref_token.clone());
+  }
+
+  let cdn_url_map = lookup_image_urls_as_map(
+    &http_request,
+    &mut mysql_connection,
+    server_state.server_environment,
+    &tokens_to_lookup,
+  ).await.map_err(|err| {
+    warn!("Error looking up media files: {:?}", err);
+    AdvancedCommonWebError::from(err)
+  })?;
+
+  let source_video_cdn_url = cdn_url_map.get(source_video_media_token)
+    .ok_or_else(|| {
+      warn!("Source video media file not found: {:?}", source_video_media_token);
+      AdvancedCommonWebError::NotFound
     })?
-    .ok_or(AdvancedCommonWebError::NotFound)?;
+    .clone();
 
-  let source_video_cdn_url = {
-    let path = MediaFileBucketPath::from_object_hash(
-      &source_video_file.public_bucket_directory_hash,
-      source_video_file.maybe_public_bucket_prefix.as_deref(),
-      source_video_file.maybe_public_bucket_extension.as_deref(),
-    );
-    MediaLinksBuilder::from_media_path_and_env(media_domain, server_state.server_environment, &path)
-      .cdn_url.to_string()
-  };
-
-  // Reference image (optional)
-  let maybe_reference_image_cdn_url = if let Some(ref_token) = &request.reference_image_media_token {
-    let ref_file = get_media_file_with_connection(ref_token, IS_MOD, &mut mysql_connection)
-      .await
-      .map_err(|err| {
-        warn!("Error looking up reference image: {:?}", err);
-        AdvancedCommonWebError::from_anyhow_error(err)
-      })?
-      .ok_or(AdvancedCommonWebError::NotFound)?;
-
-    let path = MediaFileBucketPath::from_object_hash(
-      &ref_file.public_bucket_directory_hash,
-      ref_file.maybe_public_bucket_prefix.as_deref(),
-      ref_file.maybe_public_bucket_extension.as_deref(),
-    );
-
-    Some(
-      MediaLinksBuilder::from_media_path_and_env(media_domain, server_state.server_environment, &path)
-        .cdn_url.to_string()
-    )
-  } else {
-    None
-  };
+  let maybe_reference_image_cdn_url = request.reference_image_media_token.as_ref()
+    .map(|ref_token| {
+      cdn_url_map.get(ref_token)
+        .cloned()
+        .ok_or_else(|| {
+          warn!("Reference image media file not found: {:?}", ref_token);
+          AdvancedCommonWebError::NotFound
+        })
+    })
+    .transpose()?;
 
   // ==================== DOWNLOAD & UPLOAD TO BEEBLE ==================== //
 
@@ -162,8 +147,11 @@ pub async fn beeble_switchx_edit_video_gen_handler(
 
   info!("Downloaded source video: {} bytes", video_bytes.len());
 
-  let video_extension = source_video_file.maybe_public_bucket_extension
-    .as_deref().unwrap_or("mp4");
+  let video_extension = std::path::Path::new(&source_video_cdn_url)
+    .extension()
+    .and_then(|e| e.to_str())
+    .unwrap_or("mp4");
+  
   let video_filename = format!("{}.{}", source_video_media_token.as_str(), video_extension);
   let video_content_type = match video_extension {
     "mp4" => "video/mp4",

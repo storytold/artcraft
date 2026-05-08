@@ -11250,6 +11250,7 @@ dependencies = [
  "async-stripe 0.26.0",
  "async-trait",
  "base64 0.22.1",
+ "beeble_client",
  "billing_artcraft_component",
  "billing_component",
  "bootstrap",
