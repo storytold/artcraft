@@ -225,6 +225,23 @@ pub async fn omni_gen_video_generate_handler(
     warn!("Failed to insert HTTP request debug log: {:?}", err);
   }
 
+  // ==================== DEBUG LOG: FAL REQUEST ==================== //
+
+  if let GenerateVideoResponse::Fal(ref fal_payload) = pipeline_result.response {
+    if let Some(ref outbound_request) = fal_payload.maybe_outbound_request {
+      if let Err(err) = insert_debug_log(InsertDebugLogArgs {
+        apriori_debug_log_event_token: Some(&debug_log_event_token),
+        maybe_creator_user_token: Some(user_token),
+        debug_log_type: DebugLogType::FalRequest,
+        message: &format!("{:#?}", outbound_request),
+        mysql_executor: &mut *mysql_connection,
+        phantom: Default::default(),
+      }).await {
+        warn!("Failed to insert Fal request debug log: {:?}", err);
+      }
+    }
+  }
+
   // ==================== WRITE RESULT ==================== //
 
   let ip_address = get_request_ip(&http_request);
