@@ -1,10 +1,18 @@
-export * from "./ArtStyle";
-export * from "./EditorState";
-export * from "./FetchStatus";
-export * from "./GenerateTtsAudioErrorType";
-export * from "./JobState";
-export * from "./MediaFileClass";
-export * from "./MediaFileType";
-export * from "./Visibility";
-export * from "./WeightCategory";
-export * from "./WeightType";
+// Re-export shim. The PageScene-specific enums (CameraAspectRatio,
+// EditorStates, MediaFileType+Subtype, MediaFileClass, WeightCategory,
+// WeightType, Visibility, FetchStatus, GenerateTtsAudioErrorType,
+// JobState, ArtStyle) all live in @storyteller/ui-pagescene.
+export {
+  CameraAspectRatio,
+  EditorStates,
+  MediaFileType,
+  MediaFileSubtype,
+  MediaFileClass,
+  WeightCategory,
+  WeightType,
+  Visibility,
+  FetchStatus,
+  GenerateTtsAudioErrorType,
+  JobState,
+  ArtStyle,
+} from "@storyteller/ui-pagescene";
