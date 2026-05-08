@@ -21,6 +21,7 @@ import { TransformAction } from "./editor/actions/TransformAction";
 import Stats from "three/examples/jsm/libs/stats.module.js";
 import { SparkRenderer } from "@sparkjsdev/spark";
 import { usePageSceneStore } from "../PageSceneStore";
+import { ensureAmmoLoaded } from "./ammoLoader";
 import { EngineEventBus } from "./events/EngineEventBus";
 import { EngineStoreBridge } from "./EngineStoreBridge";
 import {
@@ -144,17 +145,10 @@ class Editor {
     this.adapter = adapter;
     this.can_initialize = true;
     this.stats = new Stats();
-    // TODO: REMOVE LATER WITH BETTER FIX FOR IMPORTING AMMOJS
-    document.body.appendChild(
-      Object.assign(document.createElement("script"), {
-        src: "jsm/libs/ammo.wasm.js",
-      }),
-    );
-
-    const newElement = document.createElement("div");
-    newElement.id = "created-one-element";
-    document.body.appendChild(newElement);
-    // life cycle fix
+    // Ammo.js WASM is a global side-effect script the physics path
+    // depends on. The singleton ensures it's appended to document.body
+    // exactly once, even across Editor re-construction.
+    ensureAmmoLoaded();
 
     // Version and name.
     this.version = 2.0;
