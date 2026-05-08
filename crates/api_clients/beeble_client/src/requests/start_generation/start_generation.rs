@@ -4,7 +4,7 @@ use crate::creds::beeble_api_key::BeebleApiKey;
 use crate::error::beeble_client_error::BeebleClientError;
 use crate::error::beeble_error::BeebleError;
 use crate::error::beeble_generic_api_error::BeebleGenericApiError;
-use crate::error::beeble_specific_api_error::BeebleSpecificApiError;
+use crate::requests::start_generation::handle_error_response::{handle_error_response, ErrorContext};
 use crate::requests::start_generation::request_types::*;
 
 const BEEBLE_API_BASE_URL: &str = "https://api.beeble.ai/v1";
@@ -94,8 +94,6 @@ pub async fn start_generation(args: StartGenerationArgs) -> Result<StartGenerati
 
   info!("Starting Beeble generation: type={:?}, alpha_mode={:?}", req.generation_type, req.alpha_mode);
 
-  let callback_url_for_error = req.callback_url.clone().unwrap_or_default();
-
   let request_body = StartGenerationRequestBody {
     generation_type: match req.generation_type {
       BeebleGenerationType::Image => "image".to_string(),
@@ -112,7 +110,7 @@ pub async fn start_generation(args: StartGenerationArgs) -> Result<StartGenerati
     reference_image_uri: req.reference_image_uri,
     alpha_uri: req.alpha_uri,
     max_resolution: req.max_resolution,
-    callback_url: req.callback_url,
+    callback_url: req.callback_url.clone(),
     idempotency_key: req.idempotency_key,
   };
 
@@ -129,45 +127,23 @@ pub async fn start_generation(args: StartGenerationArgs) -> Result<StartGenerati
     .map_err(|err| BeebleGenericApiError::ReqwestError(err))?;
 
   let status = response.status();
+
   let response_body = response.text()
     .await
     .map_err(|err| BeebleGenericApiError::ReqwestError(err))?;
 
   info!("Beeble start generation response: status={}", status);
 
-  match status.as_u16() {
-    401 => return Err(BeebleSpecificApiError::Unauthorized.into()),
-    402 => return Err(BeebleSpecificApiError::InsufficientCredits.into()),
-    400 if response_body.contains("INVALID_CALLBACK_URL") => {
-      let message = extract_error_message(&response_body)
-        .unwrap_or_else(|| "callback_url must be a valid, publicly-reachable HTTPS URL".to_string());
-      return Err(BeebleSpecificApiError::BadWebhookUrl {
-        message,
-        webhook_url: callback_url_for_error,
-      }.into());
-    }
-    409 => return Err(BeebleSpecificApiError::IdempotencyConflict.into()),
-    429 => return Err(BeebleSpecificApiError::RateLimited.into()),
-    _ if !status.is_success() => {
-      return Err(BeebleGenericApiError::UncategorizedBadResponseWithStatusAndBody {
-        status_code: status,
-        body: response_body,
-      }.into());
-    }
-    _ => {}
+  if !status.is_success() {
+    return handle_error_response(status, &response_body, &ErrorContext {
+      maybe_callback_url: req.callback_url.as_deref(),
+    });
   }
 
   let parsed: GenerationJobResponseBody = serde_json::from_str(&response_body)
     .map_err(|err| BeebleGenericApiError::SerdeResponseParseError(err, response_body.clone()))?;
 
   Ok(map_job_response(parsed))
-}
-
-/// Try to extract the "message" field from a Beeble error response body.
-/// Beeble errors look like: `{"error":{"message":"...","code":"..."}}`
-fn extract_error_message(body: &str) -> Option<String> {
-  let parsed: serde_json::Value = serde_json::from_str(body).ok()?;
-  parsed.get("error")?.get("message")?.as_str().map(|s| s.to_string())
 }
 
 pub(crate) fn map_job_response(parsed: GenerationJobResponseBody) -> StartGenerationSuccess {
