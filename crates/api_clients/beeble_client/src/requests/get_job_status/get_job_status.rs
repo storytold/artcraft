@@ -67,24 +67,33 @@ pub async fn get_job_status(args: GetJobStatusArgs) -> Result<StartGenerationSuc
 #[cfg(test)]
 mod tests {
   use super::*;
+  use crate::test_utils::get_test_api_key::get_test_api_key;
+
+  const TEST_JOB_ID: &str = "swx_uZAcwMjRZpDesqfp3pKkF";
 
   #[tokio::test]
-  #[ignore] // manually test — requires real API key and an existing job ID
-  async fn test_poll_job_status() -> errors::AnyhowResult<()> {
-    use crate::test_utils::get_test_api_key::get_test_api_key;
-
+  #[ignore] // manually test — requires real API key
+  async fn test_poll_known_job() -> errors::AnyhowResult<()> {
     let api_key = get_test_api_key()?;
     let result = get_job_status(GetJobStatusArgs {
       api_key,
-      job_id: "swx_REPLACE_WITH_REAL_JOB_ID".to_string(),
+      job_id: TEST_JOB_ID.to_string(),
     }).await?;
 
     println!("Job ID: {}", result.id);
     println!("Status: {}", result.status);
     println!("Progress: {:?}", result.progress);
+    println!("Generation type: {:?}", result.generation_type);
+    println!("Alpha mode: {:?}", result.alpha_mode);
+    println!("Error: {:?}", result.error);
+    println!("Created at: {:?}", result.created_at);
     if let Some(output) = &result.output {
       println!("Render URL: {:?}", output.render);
+      println!("Source URL: {:?}", output.source);
+      println!("Alpha URL: {:?}", output.alpha);
     }
+
+    assert_eq!(result.id, TEST_JOB_ID);
     Ok(())
   }
 }
