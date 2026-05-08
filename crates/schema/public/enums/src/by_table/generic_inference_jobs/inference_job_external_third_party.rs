@@ -12,6 +12,10 @@ use strum::EnumIter;
 #[derive(Clone, Copy, Eq, PartialEq, Hash, Ord, PartialOrd, Deserialize, Serialize, Default, utoipa::ToSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum InferenceJobExternalThirdParty {
+  /// Beeble jobs
+  #[serde(rename = "beeble")]
+  Beeble,
+
   /// Fal jobs
   #[serde(rename = "fal")]
   #[default]
@@ -34,6 +38,7 @@ impl_mysql_enum_coders!(InferenceJobExternalThirdParty);
 impl InferenceJobExternalThirdParty {
   pub fn to_str(&self) -> &'static str {
     match self {
+      Self::Beeble => "beeble",
       Self::Fal => "fal",
       Self::Seedance2Pro => "seedance2pro",
       Self::Worldlabs => "worldlabs",
@@ -42,6 +47,7 @@ impl InferenceJobExternalThirdParty {
 
   pub fn from_str(value: &str) -> Result<Self, String> {
     match value {
+      "beeble" => Ok(Self::Beeble),
       "fal" => Ok(Self::Fal),
       "seedance2pro" => Ok(Self::Seedance2Pro),
       "worldlabs" => Ok(Self::Worldlabs),
@@ -53,6 +59,7 @@ impl InferenceJobExternalThirdParty {
     // NB: BTreeSet is sorted
     // NB: BTreeSet::from() isn't const, but not worth using LazyStatic, etc.
     BTreeSet::from([
+      Self::Beeble,
       Self::Fal,
       Self::Seedance2Pro,
       Self::Worldlabs,
@@ -70,6 +77,7 @@ mod tests {
 
     #[test]
     fn test_serialization() {
+      assert_serialization(InferenceJobExternalThirdParty::Beeble, "beeble");
       assert_serialization(InferenceJobExternalThirdParty::Fal, "fal");
       assert_serialization(InferenceJobExternalThirdParty::Seedance2Pro, "seedance2pro");
       assert_serialization(InferenceJobExternalThirdParty::Worldlabs, "worldlabs");
@@ -77,6 +85,7 @@ mod tests {
 
     #[test]
     fn to_str() {
+      assert_eq!(InferenceJobExternalThirdParty::Beeble.to_str(), "beeble");
       assert_eq!(InferenceJobExternalThirdParty::Fal.to_str(), "fal");
       assert_eq!(InferenceJobExternalThirdParty::Seedance2Pro.to_str(), "seedance2pro");
       assert_eq!(InferenceJobExternalThirdParty::Worldlabs.to_str(), "worldlabs");
@@ -84,6 +93,7 @@ mod tests {
 
     #[test]
     fn from_str() {
+      assert_eq!(InferenceJobExternalThirdParty::from_str("beeble").unwrap(), InferenceJobExternalThirdParty::Beeble);
       assert_eq!(InferenceJobExternalThirdParty::from_str("fal").unwrap(), InferenceJobExternalThirdParty::Fal);
       assert_eq!(InferenceJobExternalThirdParty::from_str("seedance2pro").unwrap(), InferenceJobExternalThirdParty::Seedance2Pro);
       assert_eq!(InferenceJobExternalThirdParty::from_str("worldlabs").unwrap(), InferenceJobExternalThirdParty::Worldlabs);
@@ -92,7 +102,7 @@ mod tests {
     #[test]
     fn all_variants() {
       // Static check
-      const EXPECTED_COUNT : usize = 3;
+      const EXPECTED_COUNT : usize = 4;
       
       assert_eq!(InferenceJobExternalThirdParty::all_variants().len(), EXPECTED_COUNT);
       assert_eq!(InferenceJobExternalThirdParty::iter().len(), EXPECTED_COUNT);

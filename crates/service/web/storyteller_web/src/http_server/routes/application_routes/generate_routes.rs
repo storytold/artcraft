@@ -1,3 +1,4 @@
+use crate::http_server::endpoints::generate::video::edit::beeble_switchx_edit_video_gen_handler::beeble_switchx_edit_video_gen_handler;
 use crate::http_server::endpoints::generate::cost_estimate::image::estimate_image_cost_handler::estimate_image_cost_handler;
 use crate::http_server::endpoints::generate::cost_estimate::splat::estimate_splat_cost_handler::estimate_splat_cost_handler;
 use crate::http_server::endpoints::generate::cost_estimate::video::estimate_video_cost_handler::estimate_video_cost_handler;
@@ -248,6 +249,12 @@ where
           )
           .service(web::resource("/veo_3_fast_image_to_video")
               .route(web::post().to(generate_veo_3_fast_image_to_video_handler))
+              .route(web::head().to(|| HttpResponse::Ok()))
+          )
+      )
+      .service(web::scope("/edit")
+          .service(web::resource("/beeble_switchx")
+              .route(web::post().to(beeble_switchx_edit_video_gen_handler))
               .route(web::head().to(|| HttpResponse::Ok()))
           )
       )

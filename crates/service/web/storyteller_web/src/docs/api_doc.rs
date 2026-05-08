@@ -85,6 +85,7 @@ use crate::http_server::endpoints::media_files::upsert_upload::write_engine_asse
 use crate::http_server::endpoints::media_files::upsert_upload::write_error::MediaFileWriteError;
 use crate::http_server::endpoints::media_files::upsert_upload::write_scene_file::write_scene_file_media_file_handler::*;
 use crate::http_server::endpoints::model_download::enqueue_gptsovits_model_download_handler::*;
+use artcraft_api_defs::generate::video::edit::beeble_switchx_edit_video::*;
 use crate::http_server::endpoints::moderation::debug_logs::moderation_list_debug_logs_for_token_handler::*;
 use crate::http_server::endpoints::moderation::jobs::moderation_get_job_by_token_handler::*;
 use crate::http_server::endpoints::moderation::user_feature_flags::moderator_edit_user_feature_flags_handler::*;
@@ -365,6 +366,7 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     crate::http_server::endpoints::generate::video::image::generate_kling_2_1_master_video_handler::generate_kling_2_1_master_video_handler,
     crate::http_server::endpoints::generate::video::image::generate_kling_2_1_pro_video_handler::generate_kling_2_1_pro_video_handler,
     crate::http_server::endpoints::generate::video::image::generate_seedance_1_0_lite_image_to_video_handler::generate_seedance_1_0_lite_image_to_video_handler,
+    crate::http_server::endpoints::generate::video::edit::beeble_switchx_edit_video_gen_handler::beeble_switchx_edit_video_gen_handler,
     crate::http_server::endpoints::generate::video::image::generate_veo_2_image_to_video_handler::generate_veo_2_image_to_video_handler,
     crate::http_server::endpoints::image_studio::upload::upload_snapshot_media_file_handler::upload_snapshot_media_file_handler,
     crate::http_server::endpoints::inference_job::delete::dismiss_finished_session_jobs_handler::dismiss_finished_session_jobs_handler,
@@ -860,6 +862,8 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     GenerateSeedance10LiteImageToVideoResponse,
     GenerateSeedance10LiteResolution,
     GenerateVeo2AspectRatio,
+    BeebleSwitchXEditVideoRequest,
+    BeebleSwitchXEditVideoResponse,
     GenerateVeo2Duration,
     GenerateVeo2ImageToVideoRequest,
     GenerateVeo2ImageToVideoResponse,

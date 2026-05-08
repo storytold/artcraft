@@ -1,2 +1,3 @@
+pub mod edit;
 pub mod image;
 pub mod multi_function;

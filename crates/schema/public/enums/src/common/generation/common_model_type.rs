@@ -144,6 +144,8 @@ pub enum CommonModelType {
   Veo3p1,
   #[serde(rename = "veo_3p1_fast")]
   Veo3p1Fast,
+  #[serde(rename = "switch_x")]
+  SwitchX,
 
   // 3D Object generation models
   #[serde(rename = "hunyuan_3d_2p0")]
@@ -224,6 +226,7 @@ impl CommonModelType {
       Self::Veo3Fast => "veo_3_fast",
       Self::Veo3p1 => "veo_3p1",
       Self::Veo3p1Fast => "veo_3p1_fast",
+      Self::SwitchX => "switch_x",
 
       // 3D Object generation models
       Self::Hunyuan3d2_0 => "hunyuan_3d_2p0",
@@ -293,6 +296,7 @@ impl CommonModelType {
       "veo_3_fast" => Ok(Self::Veo3Fast),
       "veo_3p1" => Ok(Self::Veo3p1),
       "veo_3p1_fast" => Ok(Self::Veo3p1Fast),
+      "switch_x" => Ok(Self::SwitchX),
 
       // 3D Object generation models
       "hunyuan_3d_2p0" => Ok(Self::Hunyuan3d2_0),
@@ -366,6 +370,7 @@ impl CommonModelType {
       Self::Veo3Fast,
       Self::Veo3p1,
       Self::Veo3p1Fast,
+      Self::SwitchX,
 
       // 3D Object generation models
       Self::Hunyuan3d2_0,
@@ -436,6 +441,7 @@ impl CommonModelType {
       Self::Veo3Fast => CommonModelClass::Video,
       Self::Veo3p1 => CommonModelClass::Video,
       Self::Veo3p1Fast => CommonModelClass::Video,
+      Self::SwitchX => CommonModelClass::Video,
 
       // 3D Object generation models (mesh)
       Self::Hunyuan3d2_0 => CommonModelClass::DimensionalMesh,
@@ -515,6 +521,7 @@ mod tests {
       assert_serialization(CommonModelType::Veo3Fast, "veo_3_fast");
       assert_serialization(CommonModelType::Veo3p1, "veo_3p1");
       assert_serialization(CommonModelType::Veo3p1Fast, "veo_3p1_fast");
+      assert_serialization(CommonModelType::SwitchX, "switch_x");
       // 3D Object generation models
       assert_serialization(CommonModelType::Hunyuan3d2_0, "hunyuan_3d_2p0");
       assert_serialization(CommonModelType::Hunyuan3d2_1, "hunyuan_3d_2p1");
@@ -581,6 +588,7 @@ mod tests {
       assert_eq!(CommonModelType::Veo3Fast.to_str(), "veo_3_fast");
       assert_eq!(CommonModelType::Veo3p1.to_str(), "veo_3p1");
       assert_eq!(CommonModelType::Veo3p1Fast.to_str(), "veo_3p1_fast");
+      assert_eq!(CommonModelType::SwitchX.to_str(), "switch_x");
 
       // 3D Object generation models
       assert_eq!(CommonModelType::Hunyuan3d2_0.to_str(), "hunyuan_3d_2p0");
@@ -647,7 +655,8 @@ mod tests {
       assert_eq!(CommonModelType::from_str("veo_3_fast").unwrap(), CommonModelType::Veo3Fast);
       assert_eq!(CommonModelType::from_str("veo_3p1").unwrap(), CommonModelType::Veo3p1);
       assert_eq!(CommonModelType::from_str("veo_3p1_fast").unwrap(), CommonModelType::Veo3p1Fast);
-      
+      assert_eq!(CommonModelType::from_str("switch_x").unwrap(), CommonModelType::SwitchX);
+
       // 3D Object generation models
       assert_eq!(CommonModelType::from_str("hunyuan_3d_2p0").unwrap(), CommonModelType::Hunyuan3d2_0);
       assert_eq!(CommonModelType::from_str("hunyuan_3d_2p1").unwrap(), CommonModelType::Hunyuan3d2_1);
@@ -660,7 +669,7 @@ mod tests {
     #[test]
     fn all_variants() {
       let mut variants = CommonModelType::all_variants();
-      assert_eq!(variants.len(), 57);
+      assert_eq!(variants.len(), 58);
       // Image models
       assert_eq!(variants.pop_first(), Some(CommonModelType::Flux1Dev));
       assert_eq!(variants.pop_first(), Some(CommonModelType::Flux1Schnell));
@@ -715,6 +724,7 @@ mod tests {
       assert_eq!(variants.pop_first(), Some(CommonModelType::Veo3Fast));
       assert_eq!(variants.pop_first(), Some(CommonModelType::Veo3p1));
       assert_eq!(variants.pop_first(), Some(CommonModelType::Veo3p1Fast));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::SwitchX));
       // 3D Object generation models
       assert_eq!(variants.pop_first(), Some(CommonModelType::Hunyuan3d2_0));
       assert_eq!(variants.pop_first(), Some(CommonModelType::Hunyuan3d2_1));

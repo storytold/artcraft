@@ -80,7 +80,7 @@ use crate::http_server::web_utils::scoped_temp_dir_creator::ScopedTempDirCreator
 use crate::startup::build_pager::build_pager;
 use crate::state::certs::google_sign_in_cert::GoogleSignInCert;
 use crate::state::memory_cache::model_token_to_info_cache::ModelTokenToInfoCache;
-use crate::state::server_state::{DurableInMemoryCaches, EnvConfig, EphemeralInMemoryCaches, FalData, InMemoryCaches, OpenAiData, ResendData, Seedance2ProData, ServerInfo, ServerState, StaticFeatureFlags, StripeSettings, TrollBans, WorldLabsData};
+use crate::state::server_state::{BeebleData, DurableInMemoryCaches, EnvConfig, EphemeralInMemoryCaches, FalData, InMemoryCaches, OpenAiData, ResendData, Seedance2ProData, ServerInfo, ServerState, StaticFeatureFlags, StripeSettings, TrollBans, WorldLabsData};
 use crate::threads::db_health_checker_thread::db_health_check_status::HealthCheckStatus;
 use crate::threads::db_health_checker_thread::db_health_checker_thread::db_health_checker_thread;
 use crate::threads::poll_ip_banlist_thread::poll_ip_bans;
@@ -475,6 +475,11 @@ async fn main() -> AnyhowResult<()> {
     sort_key_crypto,
     opaque_cursors: opaque_cursor_encoder,
     static_api_token_set,
+    beeble: BeebleData {
+      api_key: beeble_client::creds::beeble_api_key::BeebleApiKey::new(
+        easyenv::get_env_string_required("BEEBLE_API_KEY")?,
+      ),
+    },
     fal: FalData {
       api_key: fal_api_key,
       webhook_url: fal_webhook_url,

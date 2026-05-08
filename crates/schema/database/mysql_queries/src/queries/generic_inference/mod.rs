@@ -1,3 +1,4 @@
+pub mod beeble;
 pub mod fal;
 pub mod job;
 pub mod moderation;

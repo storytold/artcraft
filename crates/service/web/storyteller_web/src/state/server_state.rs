@@ -25,6 +25,7 @@ use billing_component::stripe::stripe_config::StripeConfig;
 use chrono::{DateTime, Utc};
 use cloud_storage::bucket_client::BucketClient;
 use elasticsearch::Elasticsearch;
+use beeble_client::creds::beeble_api_key::BeebleApiKey;
 use fal_client::creds::fal_api_key::FalApiKey;
 use memory_caching::arc_ttl_sieve::ArcTtlSieve;
 use memory_caching::single_item_ttl_cache::SingleItemTtlCache;
@@ -94,6 +95,8 @@ pub struct ServerState {
   pub auto_gc_bucket_client: BucketClient,
 
   pub fal: FalData,
+
+  pub beeble: BeebleData,
 
   pub seedance2pro: Seedance2ProData,
 
@@ -319,6 +322,12 @@ pub struct TrollBans {
 pub struct FalData {
   pub api_key: FalApiKey,
   pub webhook_url: String,
+}
+
+/// Beeble SwitchX integration
+#[derive(Clone)]
+pub struct BeebleData {
+  pub api_key: BeebleApiKey,
 }
 
 /// Seedance 2 Pro integration
