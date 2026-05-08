@@ -69,7 +69,11 @@ mod tests {
   use super::*;
   use crate::test_utils::get_test_api_key::get_test_api_key;
 
-  const TEST_JOB_ID: &str = "swx_uZAcwMjRZpDesqfp3pKkF";
+  //const TEST_JOB_ID: &str = "swx_uZAcwMjRZpDesqfp3pKkF"; // Production
+  //const TEST_JOB_ID: &str = "swx_Ontb6KfbfdY24Cz8DZ9c8"; // Dev
+  //const TEST_JOB_ID: &str = "swx_k5SmgdFcesuE05BE8VqFb"; // Dev
+  const TEST_JOB_ID: &str = "swx_snkg7Et8EOvWaQ0QgoZlZ"; // Dev
+  //const TEST_JOB_ID: &str = "swx_9Cbr7coiW9ZOayIrKGe0v"; // Prod
 
   #[tokio::test]
   #[ignore] // manually test — requires real API key
