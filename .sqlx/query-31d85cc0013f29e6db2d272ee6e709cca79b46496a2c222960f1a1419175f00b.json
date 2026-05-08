@@ -1,0 +1,135 @@
+{
+  "db_name": "MySQL",
+  "query": "\nSELECT\n    jobs.token as `job_token: tokens::tokens::generic_inference_jobs::InferenceJobToken`,\n\n    jobs.status as `status: enums::common::job_status_plus::JobStatusPlus`,\n\n    jobs.maybe_external_third_party as `external_third_party: enums::by_table::generic_inference_jobs::inference_job_external_third_party::InferenceJobExternalThirdParty`,\n    jobs.maybe_external_third_party_id as `external_third_party_id`,\n\n    jobs.maybe_creator_user_token as `maybe_creator_user_token: tokens::tokens::users::UserToken`,\n    jobs.maybe_creator_anonymous_visitor_token as `maybe_creator_anonymous_visitor_token: tokens::tokens::anonymous_visitor_tracking::AnonymousVisitorTrackingToken`,\n    jobs.creator_ip_address,\n\n    jobs.maybe_prompt_token as `maybe_prompt_token: tokens::tokens::prompts::PromptToken`,\n    jobs.maybe_debug_log_event_token as `maybe_debug_log_event_token: tokens::tokens::non_unique::debug_logs_event_token::DebugLogEventToken`,\n\n    jobs.created_at,\n    jobs.updated_at\n\nFROM generic_inference_jobs as jobs\n\nWHERE jobs.maybe_external_third_party = ?\nAND jobs.maybe_external_third_party_id = ?\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "job_token: tokens::tokens::generic_inference_jobs::InferenceJobToken",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NOT_NULL | UNIQUE_KEY | BINARY | NO_DEFAULT_VALUE",
+          "char_set": 224,
+          "max_size": 128
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "status: enums::common::job_status_plus::JobStatusPlus",
+        "type_info": {
+          "type": "String",
+          "flags": "NOT_NULL | MULTIPLE_KEY | BINARY | ENUM",
+          "char_set": 224,
+          "max_size": 76
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "external_third_party: enums::by_table::generic_inference_jobs::inference_job_external_third_party::InferenceJobExternalThirdParty",
+        "type_info": {
+          "type": "VarString",
+          "flags": "MULTIPLE_KEY | BINARY",
+          "char_set": 224,
+          "max_size": 64
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "external_third_party_id",
+        "type_info": {
+          "type": "VarString",
+          "flags": "MULTIPLE_KEY | BINARY",
+          "char_set": 224,
+          "max_size": 256
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "maybe_creator_user_token: tokens::tokens::users::UserToken",
+        "type_info": {
+          "type": "VarString",
+          "flags": "MULTIPLE_KEY | BINARY",
+          "char_set": 224,
+          "max_size": 128
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "maybe_creator_anonymous_visitor_token: tokens::tokens::anonymous_visitor_tracking::AnonymousVisitorTrackingToken",
+        "type_info": {
+          "type": "VarString",
+          "flags": "MULTIPLE_KEY | BINARY",
+          "char_set": 224,
+          "max_size": 128
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "creator_ip_address",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NOT_NULL | MULTIPLE_KEY | BINARY | NO_DEFAULT_VALUE",
+          "char_set": 224,
+          "max_size": 160
+        }
+      },
+      {
+        "ordinal": 7,
+        "name": "maybe_prompt_token: tokens::tokens::prompts::PromptToken",
+        "type_info": {
+          "type": "VarString",
+          "flags": "BINARY",
+          "char_set": 224,
+          "max_size": 128
+        }
+      },
+      {
+        "ordinal": 8,
+        "name": "maybe_debug_log_event_token: tokens::tokens::non_unique::debug_logs_event_token::DebugLogEventToken",
+        "type_info": {
+          "type": "VarString",
+          "flags": "BINARY",
+          "char_set": 224,
+          "max_size": 128
+        }
+      },
+      {
+        "ordinal": 9,
+        "name": "created_at",
+        "type_info": {
+          "type": "Timestamp",
+          "flags": "NOT_NULL | MULTIPLE_KEY | BINARY | TIMESTAMP",
+          "char_set": 63,
+          "max_size": 19
+        }
+      },
+      {
+        "ordinal": 10,
+        "name": "updated_at",
+        "type_info": {
+          "type": "Timestamp",
+          "flags": "NOT_NULL | BINARY | TIMESTAMP | ON_UPDATE_NOW",
+          "char_set": 63,
+          "max_size": 19
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": [
+      false,
+      false,
+      true,
+      true,
+      true,
+      true,
+      false,
+      true,
+      true,
+      false,
+      false
+    ]
+  },
+  "hash": "31d85cc0013f29e6db2d272ee6e709cca79b46496a2c222960f1a1419175f00b"
+}
