@@ -1,6 +1,6 @@
 // TODO: Move into shared component.
 import { useContext } from "react";
-import { MediaItem } from "~/pages/PageScene/models";
+import type { MediaItem } from "@storyteller/ui-pagescene";
 import {
   dragAndDrop as DndAsset,
   EngineContext,

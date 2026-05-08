@@ -1,16 +1,18 @@
-import { DragComponent } from "~/pages/PageScene/comps/DragComponent/DragComponent";
-import { EngineProvider } from "@storyteller/ui-pagescene";
+import {
+  DragComponent,
+  EditorLoadingBar,
+  EngineProvider,
+  PrecisionSelector,
+} from "@storyteller/ui-pagescene";
 import { useTabStore } from "~/pages/Stores/TabState";
 import { useActiveJobs } from "~/hooks/useActiveJobs";
 import { useBackgroundLoadingMedia } from "~/hooks/useBackgroundLoadingMedia";
 import { ErrorDialog } from "~/components";
 import { toast, Toaster } from "@storyteller/ui-toaster";
-import { EditorLoadingBar } from "./comps/EditorLoadingBar";
 import { useSignals } from "@preact/signals-react/runtime";
 import { useEffect, useState } from "react";
 import * as gpu from "detect-gpu";
 import { UsersApi } from "~/Classes/ApiManager";
-import { PrecisionSelector } from "./comps/PrecisionSelector/PrecisionSelector";
 import { PageEditor } from "~/pages/PageScene/PageEditor";
 import { GalleryDragComponent } from "@storyteller/ui-gallery-modal";
 import {

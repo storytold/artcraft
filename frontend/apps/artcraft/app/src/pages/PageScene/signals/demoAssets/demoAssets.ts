@@ -1,4 +1,4 @@
-import { MediaItem } from "~/pages/PageScene/models";
+import type { MediaItem } from "@storyteller/ui-pagescene";
 import { AssetType } from "~/enums";
 
 // export const cameraItems = signal<MediaItem[]>([

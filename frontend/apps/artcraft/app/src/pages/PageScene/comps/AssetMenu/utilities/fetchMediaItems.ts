@@ -1,12 +1,12 @@
 import { FilterEngineCategories, FilterMediaType, ToastTypes } from "~/enums";
 import { addToast } from "~/signals";
-import { FetchStatus } from "~/pages/PageScene/enums";
+import { FetchStatus } from "@storyteller/ui-pagescene";
 import { MediaFilesApi } from "~/Classes/ApiManager";
-import {
+import type {
   MediaItem,
   Pagination,
   PaginationInfinite,
-} from "~/pages/PageScene/models";
+} from "@storyteller/ui-pagescene";
 
 import { responseMapping } from "./misc";
 

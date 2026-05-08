@@ -34,8 +34,8 @@ import {
   demoMemeItems,
 } from "../../signals";
 import { useShallow } from "zustand/shallow";
-import { usePageSceneStore } from "../../PageSceneStore";
-import { MediaItem } from "../../models";
+import { usePageSceneStore } from "@storyteller/ui-pagescene";
+import type { MediaItem } from "@storyteller/ui-pagescene";
 import { useUserObjects, useFeaturedObjects } from "./hooks";
 import { FilterEngineCategories, FilterMediaType } from "~/enums";
 import { twMerge } from "tailwind-merge";

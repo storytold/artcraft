@@ -3,7 +3,7 @@ import { useShallow } from "zustand/shallow";
 
 import { Modal } from "@storyteller/ui-modal";
 import { Button } from "@storyteller/ui-button";
-import { usePageSceneStore } from "~/pages/PageScene/PageSceneStore";
+import { usePageSceneStore } from "@storyteller/ui-pagescene";
 
 export function ErrorDialog() {
   const { showErrorDialog, errorDialogTitle, errorDialogMessage, setShowErrorDialog } =

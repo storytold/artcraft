@@ -12,6 +12,9 @@
       "path": "../close-button"
     },
     {
+      "path": "../loading"
+    },
+    {
       "path": "../label"
     },
     {

@@ -25,11 +25,10 @@ import {
 import { toast } from "react-hot-toast";
 import { v4 as uuidv4 } from "uuid";
 import { useTabStore } from "../../pages/Stores/TabState";
-import { addObject } from "../../pages/PageScene/actions";
-import { getActiveEditor } from "../../pages/PageScene/contexts/EngineContext";
+import { addObject, getActiveEditor } from "@storyteller/ui-pagescene";
+import type { MediaItem } from "@storyteller/ui-pagescene";
 import { set3DPageMounted } from "../../pages/PageScene/engineLifecycle";
 import { AssetType } from "~/enums";
-import type { MediaItem } from "../../pages/PageScene/models";
 import { SPLAT_MODELS } from "@storyteller/model-list";
 import {
   ClassyModelSelector,

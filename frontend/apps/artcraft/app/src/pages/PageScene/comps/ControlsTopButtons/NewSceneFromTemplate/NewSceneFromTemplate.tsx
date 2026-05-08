@@ -7,7 +7,7 @@ import {
 } from "react";
 import dayjs from "dayjs";
 
-import { MediaInfo } from "~/pages/PageScene/models";
+import type { MediaInfo } from "@storyteller/ui-pagescene";
 import { FilterEngineCategories, ToastTypes } from "~/enums";
 
 import { ScenePicker, SceneTypes } from "../ScenePicker";

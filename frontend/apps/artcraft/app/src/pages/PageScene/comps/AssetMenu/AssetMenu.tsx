@@ -3,7 +3,7 @@ import { Tooltip } from "~/components";
 import { Button } from "@storyteller/ui-button";
 import { useState } from "react";
 import { AssetModal } from "./AssetModal";
-import { usePageSceneStore } from "../../PageSceneStore";
+import { usePageSceneStore } from "@storyteller/ui-pagescene";
 
 export const AssetMenu = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);

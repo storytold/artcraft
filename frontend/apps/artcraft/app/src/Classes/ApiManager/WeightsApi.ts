@@ -1,7 +1,7 @@
 import { ApiManager, ApiResponse } from "./ApiManager";
 import { authentication } from "~/signals";
 import { Weight } from "~/models";
-import { Pagination, PaginationInfinite } from "~/pages/PageScene/models";
+import type { Pagination, PaginationInfinite } from "@storyteller/ui-pagescene";
 import {
   FilterEngineCategories,
   FilterMediaClasses,

@@ -1,1 +1,0 @@
-export { ControlPanelSceneObject } from './ControlPanelSceneObject';

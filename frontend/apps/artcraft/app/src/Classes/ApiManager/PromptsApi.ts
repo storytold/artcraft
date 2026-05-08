@@ -1,5 +1,5 @@
 import { ApiManager, ApiResponse } from "./ApiManager";
-import { Prompts } from "~/pages/PageScene/models";
+import type { Prompts } from "@storyteller/ui-pagescene";
 
 export class PromptsApi extends ApiManager {
   public GetPromptsByToken({

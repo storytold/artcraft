@@ -4,7 +4,7 @@ import { useSignals } from "@preact/signals-react/runtime";
 import { faPencil, faSpinnerThird } from "@fortawesome/pro-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { scene, signalScene, authentication } from "~/signals";
-import { usePageSceneStore } from "~/pages/PageScene/PageSceneStore";
+import { usePageSceneStore } from "@storyteller/ui-pagescene";
 import { Input } from "@storyteller/ui-input";
 import { MediaFilesApi } from "~/Classes/ApiManager/MediaFilesApi";
 import { getCreatorIcon, ModelCreator } from "@storyteller/model-list";

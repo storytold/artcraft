@@ -12,19 +12,16 @@ import { ButtonIconSelect } from "@storyteller/ui-button-icon-select";
 import { Button } from "@storyteller/ui-button";
 import { Tooltip } from "@storyteller/ui-tooltip";
 import { SettingsModal } from "@storyteller/ui-settings-modal";
-import { EngineContext } from "@storyteller/ui-pagescene";
+import {
+  EngineContext,
+  setTransformMode,
+  usePageSceneStore,
+} from "@storyteller/ui-pagescene";
+import type { TransformMode } from "@storyteller/ui-pagescene";
 import { useContext, useEffect, useState } from "react";
 import { useShallow } from "zustand/shallow";
-import { usePageSceneStore } from "../../PageSceneStore";
 import { useTabStore } from "~/pages/Stores/TabState";
-// import { v4 as uuidv4 } from "uuid";
-// import { addObject } from "../../signals/objectGroup/addObject";
-// import { MediaItem } from "../../models/assets";
-// eslint-disable-next-line import/no-unresolved
-// import { AssetType } from "~/enums";
 import { AssetModal } from "../AssetMenu/AssetModal";
-import { setTransformMode } from "@storyteller/ui-pagescene";
-import { TransformMode } from "../../PageSceneStore";
 import { useSignals } from "@preact/signals-react/runtime";
 // eslint-disable-next-line import/no-unresolved
 import { setLogoutStates } from "~/signals/authentication/utilities";

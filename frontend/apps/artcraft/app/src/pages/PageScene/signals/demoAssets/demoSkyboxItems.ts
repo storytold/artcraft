@@ -1,4 +1,4 @@
-import { MediaItem } from "../../models";
+import type { MediaItem } from "@storyteller/ui-pagescene";
 import { AssetType } from "~/enums";
 
 export const demoSkyboxItems: MediaItem[] = [

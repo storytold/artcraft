@@ -1,6 +1,6 @@
 import { AssetType, FilterEngineCategories } from "~/enums";
-import { FetchStatus } from "~/pages/PageScene/enums";
-import { MediaInfo, MediaItem } from "~/pages/PageScene/models";
+import { FetchStatus } from "@storyteller/ui-pagescene";
+import type { MediaInfo, MediaItem } from "@storyteller/ui-pagescene";
 import { BucketConfig } from "~/api/BucketConfig";
 
 export const isAnyStatusFetching = (statuses: FetchStatus[]): boolean => {

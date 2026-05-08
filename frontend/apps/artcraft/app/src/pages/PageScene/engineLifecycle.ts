@@ -5,7 +5,7 @@
 // to forward to PageSceneStore actions. Engine internals should emit
 // EngineEvents on the bus instead of calling these.
 
-import { usePageSceneStore } from "./PageSceneStore";
+import { usePageSceneStore } from "@storyteller/ui-pagescene";
 
 export const set3DPageMounted = (isMounted: boolean) =>
   usePageSceneStore.getState().set3DPageMounted(isMounted);

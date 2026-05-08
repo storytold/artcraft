@@ -1,5 +1,5 @@
 import { ItemElement } from "./ItemElement";
-import { MediaItem } from "~/pages/PageScene/models";
+import type { MediaItem } from "@storyteller/ui-pagescene";
 import { LoadingDots } from "@storyteller/ui-loading";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faEmptySet } from "@fortawesome/pro-solid-svg-icons";

@@ -1,5 +1,4 @@
-import { MediaInfo } from "~/pages/PageScene/models/movies";
-import { AudioMediaItem } from "~/pages/PageScene/models";
+import type { MediaInfo, AudioMediaItem } from "@storyteller/ui-pagescene";
 import { AssetType } from "~/enums";
 
 export const remapResponseToAudioMediaItems = (

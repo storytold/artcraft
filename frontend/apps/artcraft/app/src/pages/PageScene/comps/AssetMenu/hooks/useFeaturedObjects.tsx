@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState, useRef } from "react";
-import { FetchStatus } from "~/pages/PageScene/enums";
+import { FetchStatus } from "@storyteller/ui-pagescene";
 import { FetchMediaItemStates, fetchFeaturedMediaItems } from "../utilities";
 import { FilterEngineCategories, FilterMediaType } from "~/enums";
 import { MAX_FAILED_FETCHES } from "~/constants";

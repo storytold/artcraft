@@ -7,7 +7,6 @@ import {
   faKeyboard,
   faSquare,
 } from "@fortawesome/pro-solid-svg-icons";
-import { EngineContext } from "~/pages/PageScene/contexts/EngineContext";
 import { ToastTypes } from "~/enums";
 import { scene, signalScene, authentication, addToast } from "~/signals";
 import { ButtonDropdown } from "@storyteller/ui-button-dropdown";
@@ -15,12 +14,15 @@ import { Input } from "@storyteller/ui-input";
 import { Button } from "@storyteller/ui-button";
 import { LoadUserScenes } from "./LoadUserScenes";
 import { getCurrentLocationWithoutParams, isNumberString } from "~/utilities";
-import { usePageSceneStore } from "~/pages/PageScene/PageSceneStore";
-import { CameraAspectRatio } from "~/pages/PageScene/enums";
+import {
+  CameraAspectRatio,
+  EngineContext,
+  getSceneGenerationMetaData,
+  usePageSceneStore,
+} from "@storyteller/ui-pagescene";
 import { twMerge } from "tailwind-merge";
 import { Help } from "./Help";
 import { Modal } from "@storyteller/ui-modal";
-import { getSceneGenerationMetaData } from "@storyteller/ui-pagescene";
 
 export const ControlsTopButtons = () => {
   useSignals();

@@ -3,38 +3,41 @@ import { useSignals } from "@preact/signals-react/runtime";
 import { TopBar } from "~/components";
 import { Controls3D } from "./comps/Controls3D";
 import { ControlsTopButtons } from "./comps/ControlsTopButtons";
-import { ControlPanelSceneObject } from "./comps/ControlPanelSceneObject";
-import { PreviewEngineCamera } from "./comps/PreviewEngineCamera";
 import { authentication, pageHeight, pageWidth } from "~/signals";
-import { PoseModeSelector } from "./comps/PoseModeSelector";
 import { TabbedPages } from "./TabbedPages";
 
-import { DomLevels } from "~/pages/PageScene/PageSceneStore";
-import { setCameraAspect } from "@storyteller/ui-pagescene";
-import { GridVisibleChangedEvent, pickDropPosition } from "@storyteller/ui-pagescene";
-import { EditorCanvas } from "./comps/EngineCanvases";
-import { SceneContainer } from "./comps/SceneContainer";
-import { useEditorCanvas } from "@storyteller/ui-pagescene";
-import { useFreeCam } from "@storyteller/ui-pagescene";
-import { useViewportPointer } from "@storyteller/ui-pagescene";
-import { useViewportKeyboard } from "@storyteller/ui-pagescene";
-import { Outliner } from "./comps/Outliner";
-import { CameraAspectRatio } from "./enums";
+import {
+  CameraAspectRatio,
+  ControlPanelSceneObject,
+  DomLevels,
+  EditorCanvas,
+  EngineContext,
+  FocalLengthDisplay,
+  GridVisibleChangedEvent,
+  OnboardingHelper,
+  Outliner,
+  PoseModeSelector,
+  PreviewEngineCamera,
+  SceneContainer,
+  addCharacter,
+  addObject,
+  pickDropPosition,
+  setCameraAspect,
+  useEditorCanvas,
+  useFreeCam,
+  usePageSceneStore,
+  useViewportKeyboard,
+  useViewportPointer,
+} from "@storyteller/ui-pagescene";
+import type { MediaItem } from "@storyteller/ui-pagescene";
 import { PromptBox3D, commonToCameraAspect } from "@storyteller/ui-promptbox";
 import { PopoverItem } from "@storyteller/ui-popover";
 import { LoadingDots } from "@storyteller/ui-loading";
-import { OnboardingHelper } from "./comps/OnboardingHelper";
-import { FocalLengthDisplay } from "./comps/FocalLengthDisplay/FocalLengthDisplay";
 
 import { uploadImage } from "~/components/reusable/UploadModalMedia/uploadImage";
-import { EngineContext } from "@storyteller/ui-pagescene";
-
 import { uploadPlaneFromMediaToken } from "~/components/reusable/UploadModalMedia/uploadPlane";
-import { addObject, addCharacter } from "@storyteller/ui-pagescene";
-import { usePageSceneStore } from "./PageSceneStore";
 import { AssetType, AUTH_STATUS } from "~/enums";
 import { v4 as uuidv4 } from "uuid";
-import { MediaItem } from "~/pages/PageScene/models";
 import { UploaderState } from "~/models";
 import {
   GalleryItem,

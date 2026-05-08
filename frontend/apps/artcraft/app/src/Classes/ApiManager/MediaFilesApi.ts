@@ -1,9 +1,9 @@
-import {
+import type {
   MediaFile,
   MediaInfo,
   Pagination,
   PaginationInfinite,
-} from "~/pages/PageScene/models";
+} from "@storyteller/ui-pagescene";
 import { ApiManager, ApiResponse } from "./ApiManager";
 import { authentication } from "~/signals";
 import type { Property } from "csstype";

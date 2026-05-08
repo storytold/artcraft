@@ -1,5 +1,5 @@
 import { ApiManager, ApiResponse } from "./ApiManager";
-import { GenerateTtsAudioErrorType } from "~/pages/PageScene/enums";
+import { GenerateTtsAudioErrorType } from "@storyteller/ui-pagescene";
 import { Visibility } from "~/enums";
 
 export interface GenerateTtsAudioRequest {
