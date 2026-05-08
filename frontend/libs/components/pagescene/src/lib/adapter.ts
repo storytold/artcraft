@@ -63,6 +63,11 @@ export interface PageSceneAdapter {
   getApiSchemeAndHost(): string;
   getCurrentUserToken?(): string | undefined;
 
+  // Resolve a media_file_token to its CDN URL. Wraps the host's
+  // MediaFilesApi.GetMediaFileByToken. Used by Scene's asset loaders
+  // when they only have the token, not the full URL.
+  getMediaUrlByToken(token: string): Promise<string>;
+
   // Slot renders for host-owned UI. The library renders these inside
   // its own AssetMenu / scene-load modal containers — same shape as
   // PageDrawAdapter.renderBaseImageSelector.

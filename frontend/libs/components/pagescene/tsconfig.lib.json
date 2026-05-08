@@ -13,7 +13,11 @@
     "jsx": "react-jsx",
     "tsBuildInfoFile": "dist/tsconfig.lib.tsbuildinfo",
     "allowJs": true,
-    "checkJs": false
+    "checkJs": false,
+    "noEmitOnError": false,
+    "noUnusedLocals": false,
+    "strictNullChecks": false,
+    "noImplicitAny": false
   },
   "exclude": [
     "out-tsc",
