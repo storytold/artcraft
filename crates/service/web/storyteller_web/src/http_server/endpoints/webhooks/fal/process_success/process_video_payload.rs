@@ -1,5 +1,5 @@
 use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
-use crate::http_server::endpoints::webhooks::process_success::resolve_file_metadata::resolve_file_metadata;
+use crate::http_server::endpoints::webhooks::fal::process_success::resolve_file_metadata::resolve_file_metadata;
 use crate::state::server_state::ServerState;
 use crate::util::http_download_url_to_bytes::http_download_url_to_bytes;
 use bucket_paths::legacy::typified_paths::public::media_files::bucket_file_path::MediaFileBucketPath;

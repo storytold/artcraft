@@ -1,8 +1,8 @@
 use std::sync::Arc;
 
 use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
-use crate::http_server::endpoints::webhooks::process_failure::handle_failed_fal_webhook::handle_failed_fal_webhook;
-use crate::http_server::endpoints::webhooks::process_success::handle_successful_fal_webhook::handle_successful_fal_webhook;
+use crate::http_server::endpoints::webhooks::fal::process_failure::handle_failed_fal_webhook::handle_failed_fal_webhook;
+use crate::http_server::endpoints::webhooks::fal::process_success::handle_successful_fal_webhook::handle_successful_fal_webhook;
 use crate::state::server_state::ServerState;
 use actix_web::web::Bytes;
 use actix_web::web::Json;
