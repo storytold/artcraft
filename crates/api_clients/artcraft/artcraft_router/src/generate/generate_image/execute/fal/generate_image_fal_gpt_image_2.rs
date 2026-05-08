@@ -1,3 +1,6 @@
+use std::fmt::Debug;
+use std::sync::Arc;
+
 use crate::client::router_fal_client::RouterFalClient;
 use crate::errors::artcraft_router_error::ArtcraftRouterError;
 use crate::errors::provider_error::ProviderError;
@@ -18,7 +21,7 @@ pub async fn execute_fal_gpt_image_2(
   plan: &PlanFalGptImage2,
   fal_client: &RouterFalClient,
 ) -> Result<GenerateImageResponse, ArtcraftRouterError> {
-  let (webhook_response, outbound_debug) = if plan.image_urls.is_empty() {
+  let (webhook_response, outbound_request) = if plan.image_urls.is_empty() {
     let request = EnqueueGptImage2TextToImageRequest {
       prompt: plan.prompt.as_deref().unwrap_or("").to_string(),
       num_images: plan.num_images.to_t2i(),
@@ -26,7 +29,7 @@ pub async fn execute_fal_gpt_image_2(
       quality: Some(plan.quality.to_t2i()),
       output_format: None,
     };
-    let debug = format!("{:?}", request);
+    let outbound: Arc<dyn Debug + Send + Sync> = Arc::new(request.clone());
     let args = EnqueueGptImage2TextToImageArgs {
       request,
       webhook_url: fal_client.webhook_url.as_str(),
@@ -35,7 +38,7 @@ pub async fn execute_fal_gpt_image_2(
     let resp = enqueue_gpt_image_2_text_to_image_webhook(args)
       .await
       .map_err(|e| ArtcraftRouterError::Provider(ProviderError::Fal(e)))?;
-    (resp, debug)
+    (resp, outbound)
   } else {
     let request = EnqueueGptImage2EditImageRequest {
       prompt: plan.prompt.as_deref().unwrap_or("").to_string(),
@@ -46,7 +49,7 @@ pub async fn execute_fal_gpt_image_2(
       quality: Some(plan.quality.to_edit()),
       output_format: None,
     };
-    let debug = format!("{:?}", request);
+    let outbound: Arc<dyn Debug + Send + Sync> = Arc::new(request.clone());
     let args = EnqueueGptImage2EditImageArgs {
       request,
       webhook_url: fal_client.webhook_url.as_str(),
@@ -55,13 +58,13 @@ pub async fn execute_fal_gpt_image_2(
     let resp = enqueue_gpt_image_2_edit_image_webhook(args)
       .await
       .map_err(|e| ArtcraftRouterError::Provider(ProviderError::Fal(e)))?;
-    (resp, debug)
+    (resp, outbound)
   };
 
   Ok(GenerateImageResponse::Fal(FalImageResponsePayload {
     request_id: webhook_response.request_id,
     gateway_request_id: webhook_response.gateway_request_id,
-    maybe_outbound_request_debug: Some(outbound_debug),
+    maybe_outbound_request: Some(outbound_request),
   }))
 }
 
