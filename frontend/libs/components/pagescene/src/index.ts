@@ -39,9 +39,38 @@ export {
 // Datastructures
 export type { XYZ, Simple3DVector } from "./lib/datastructures/common";
 
-// Models
+// Models — full scene-related model surface. Host modules that
+// previously imported from apps/.../PageScene/models can switch
+// to importing from here.
 export type { MediaItem, AudioMediaItem } from "./lib/models/assets";
 export type { SceneGenereationMetaData } from "./lib/models/sceneGenerationMetadata";
+export type {
+  MediaInfo,
+  MaybeResult,
+  Request,
+  Status,
+  ActiveJob,
+} from "./lib/models/mediaInfo";
+export type {
+  Pagination,
+  PaginationInfinite,
+} from "./lib/models/pagination";
+export type { Prompts } from "./lib/models/prompts";
+export type {
+  UserDetailsLight,
+  DefaultAvatarInfo,
+  MediaFile,
+  GetMediaListResponse,
+  GetMediaFileResponse,
+  VoiceConversionModelListItem,
+  VoiceConversionModelListResponse,
+  CreatorDetails,
+} from "./lib/models/types";
+export type {
+  UserBookmarkBatch,
+  UserBookmarkByEntity,
+  UserBookmarkByUser,
+} from "./lib/models/userBookmark";
 
 // Engine — main entry point for hosts. Editor takes a PageSceneAdapter
 // at construction; everything platform-specific (HTTP, signals, auth)
