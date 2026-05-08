@@ -123,13 +123,15 @@ export { default as dragAndDrop } from "./lib/DragAndDrop/DndAsset";
 // Scene-generation metadata helper (used by save flow + cache snapshot).
 export { getSceneGenerationMetaData } from "./lib/sceneMetadata";
 
-// Pure-3D React UI components — no host coupling beyond the lib's
-// own store/adapter. Host-coupled comps (AssetMenu, ControlsTopButtons,
-// Controls3D, EditorLoadingBar, Outliner, ControlPanelSceneObject,
-// SceneContainer, PreviewImages, PreviewEngineCamera) stay in the
-// artcraft host until their dependencies (UploadModal3D,
-// MediaFilesApi, signalScene, addToast, pageHeight/Width signals
-// etc.) are either surfaced via adapter slots or replaced with
+// React UI components. Viewport-dependent comps read viewport size
+// through useViewportSize, which falls back to window.innerWidth/
+// innerHeight when no host adapter is available.
+//
+// Host-coupled comps (AssetMenu, ControlsTopButtons, Controls3D,
+// EditorLoadingBar, OnboardingHelper) stay in the artcraft host
+// until their dependencies (UploadModal3D, MediaFilesApi,
+// signalScene, addToast, loadingBarData/IsShowing signals, etc.)
+// are either surfaced via adapter slots or replaced with
 // lib-internal state.
 export { DragComponent } from "./lib/comps/DragComponent/DragComponent";
 export { PrecisionSelector } from "./lib/comps/PrecisionSelector/PrecisionSelector";
@@ -137,6 +139,15 @@ export { FocalLengthDisplay } from "./lib/comps/FocalLengthDisplay/FocalLengthDi
 export { AspectRatioMenu } from "./lib/comps/AspectRatioMenu/AspectRatioMenu";
 export { PoseModeSelector } from "./lib/comps/PoseModeSelector";
 export { EditorCanvas, CameraViewCanvas } from "./lib/comps/EngineCanvases";
+export { Outliner } from "./lib/comps/Outliner";
+export { ControlPanelSceneObject } from "./lib/comps/ControlPanelSceneObject";
+export { SceneContainer } from "./lib/comps/SceneContainer";
+export { PreviewEngineCamera } from "./lib/comps/PreviewEngineCamera";
+export { PreviewImages } from "./lib/comps/PreviewImages";
+
+// Viewport-size hook (also useful to host code that wants the same
+// reactivity contract the lib comps use).
+export { useViewportSize } from "./lib/hooks/useViewportSize";
 
 // Engine utilities exported for host wrappers + hooks.
 export { pickDropPosition } from "./lib/engine/pickDropPosition";
