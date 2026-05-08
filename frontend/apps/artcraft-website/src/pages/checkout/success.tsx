@@ -12,6 +12,7 @@ import { isMobile, isMacOs } from "react-device-detect";
 import { DOWNLOAD_LINKS } from "../../config/github_download_links";
 import { SOCIAL_LINKS } from "../../config/links";
 import Seo from "../../components/seo";
+import { PagePatternBackdrop } from "../../components/truchet-pattern";
 import { UsersApi } from "@storyteller/api";
 import { useEffect, useState } from "react";
 
@@ -78,6 +79,8 @@ const CheckoutSuccess = () => {
         description="Your ArtCraft subscription is now active. Download and start creating!"
       />
 
+      <PagePatternBackdrop variant="auth" />
+
       {/* Background gradient - celebratory green/purple */}
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-0">
         <div className="w-[900px] h-[900px] rounded-full bg-gradient-to-br from-green-500/40 via-primary/30 to-purple-600/20 opacity-40 blur-[120px]"></div>
@@ -98,7 +101,7 @@ const CheckoutSuccess = () => {
             </div>
 
             {/* Header */}
-            <h1 className="text-3xl md:text-4xl font-bold mb-4 text-white">
+            <h1 className="text-3xl md:text-4xl font-medium mb-4 text-white">
               Thank You for Your Support!
             </h1>
             <p className="text-lg text-white/70 mb-8 max-w-md mx-auto">
@@ -116,7 +119,7 @@ const CheckoutSuccess = () => {
                     className="text-primary text-sm"
                   />
                 </div>
-                <h2 className="text-lg font-bold text-white">Next Steps</h2>
+                <h2 className="text-lg font-medium text-white">Next Steps</h2>
               </div>
 
               <div className="space-y-3">
@@ -142,7 +145,7 @@ const CheckoutSuccess = () => {
                 <Button
                   as="link"
                   href={downloadUrl}
-                  className="bg-primary hover:bg-primary-600 px-8 py-3 text-sm font-bold rounded-xl justify-center"
+                  className="rounded-full bg-primary hover:bg-primary-600 px-8 py-3 text-sm font-bold rounded-xl justify-center"
                 >
                   <FontAwesomeIcon icon={faDownload} className="mr-2" />
                   Download ArtCraft
@@ -189,7 +192,7 @@ const CheckoutSuccess = () => {
                 as="link"
                 href={SOCIAL_LINKS.DISCORD}
                 target="_blank"
-                className="bg-white text-black hover:bg-white/80 px-4 py-2 text-sm font-bold rounded-xl justify-center border-transparent"
+                className="rounded-full bg-white text-black hover:bg-white/80 px-4 py-2 text-sm font-bold rounded-xl justify-center border-transparent"
               >
                 <FontAwesomeIcon icon={faDiscord} />
                 Join Discord

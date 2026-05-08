@@ -94,6 +94,7 @@ fn build_omni_gen_video_models() -> Vec<OmniGenVideoModelDetails> {
     character_references_supported: Some(true),
     character_references_max: Some(9),
     aspect_ratio_options: Some(vec![
+      CommonAspectRatio::WideTwentyOneByNine,
       CommonAspectRatio::WideSixteenByNine,
       CommonAspectRatio::WideFourByThree,
       CommonAspectRatio::Square,
@@ -133,6 +134,7 @@ fn build_omni_gen_video_models() -> Vec<OmniGenVideoModelDetails> {
     character_references_supported: Some(true),
     character_references_max: Some(9),
     aspect_ratio_options: Some(vec![
+      CommonAspectRatio::WideTwentyOneByNine,
       CommonAspectRatio::WideSixteenByNine,
       CommonAspectRatio::WideFourByThree,
       CommonAspectRatio::Square,

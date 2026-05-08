@@ -10,6 +10,7 @@ export interface PendingCardProps {
   prompt: string;
   progress?: number;
   estimatedTimeLeftMs?: number;
+  batchCount?: number;
 }
 
 const formatTimeLeft = (ms: number): string => {
@@ -29,6 +30,7 @@ export const PendingCard = memo(function PendingCard({
   prompt,
   progress,
   estimatedTimeLeftMs,
+  batchCount,
 }: PendingCardProps) {
   const progressPercent =
     progress != null ? Math.max(0, Math.min(100, Math.round(progress))) : null;
@@ -44,6 +46,11 @@ export const PendingCard = memo(function PendingCard({
   return (
     <div className="relative aspect-square w-full overflow-hidden rounded-lg bg-white/[0.03]">
       <div className="animate-shimmer h-full w-full" />
+      {batchCount != null && batchCount > 1 && (
+        <div className="absolute left-2 right-2 top-2 z-10 rounded-md bg-black/60 px-2.5 py-1.5 text-center text-[10px] leading-snug text-white/70 backdrop-blur-sm">
+          Generating {batchCount} videos · Results may appear one at a time
+        </div>
+      )}
       <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
         <FontAwesomeIcon
           icon={faSpinnerThird}

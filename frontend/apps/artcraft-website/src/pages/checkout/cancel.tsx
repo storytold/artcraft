@@ -5,6 +5,7 @@ import { Button } from "@storyteller/ui-button";
 import { Link, useSearchParams } from "react-router-dom";
 import { SOCIAL_LINKS } from "../../config/links";
 import Seo from "../../components/seo";
+import { PagePatternBackdrop } from "../../components/truchet-pattern";
 import { useEffect, useState } from "react";
 import { UsersApi } from "@storyteller/api";
 
@@ -67,6 +68,8 @@ const CheckoutCancel = () => {
         description="Your checkout was cancelled. No payment was made."
       />
 
+      <PagePatternBackdrop variant="auth" />
+
       {/* Background gradient - subtle/neutral */}
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-0">
         <div className="w-[900px] h-[900px] rounded-full bg-gradient-to-br from-gray-500/20 via-gray-600/10 to-gray-700/5 opacity-40 blur-[120px]"></div>
@@ -87,7 +90,7 @@ const CheckoutCancel = () => {
             </div>
 
             {/* Header */}
-            <h1 className="text-3xl md:text-4xl font-bold mb-4 text-white">
+            <h1 className="text-3xl md:text-4xl font-medium mb-4 text-white">
               Checkout Cancelled
             </h1>
             <p className="text-lg text-white/60 mb-8 max-w-md mx-auto">
@@ -111,7 +114,7 @@ const CheckoutCancel = () => {
               <Button
                 as="link"
                 href="/pricing"
-                className="bg-primary hover:bg-primary-600 px-8 py-3 text-sm font-bold rounded-xl justify-center"
+                className="rounded-full bg-primary hover:bg-primary-600 px-8 py-3 text-sm font-bold rounded-xl justify-center"
               >
                 View Plans Again
               </Button>
@@ -128,7 +131,7 @@ const CheckoutCancel = () => {
                 as="link"
                 href={SOCIAL_LINKS.DISCORD}
                 target="_blank"
-                className="bg-white text-black hover:bg-white/80 px-4 py-2 text-sm font-bold rounded-xl justify-center border-transparent"
+                className="rounded-full bg-white text-black hover:bg-white/80 px-4 py-2 text-sm font-bold rounded-xl justify-center border-transparent"
               >
                 <FontAwesomeIcon icon={faDiscord} />
                 Join Discord

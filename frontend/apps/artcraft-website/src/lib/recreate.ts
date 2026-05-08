@@ -4,7 +4,7 @@ import {
   PromptsApi,
   type Prompts,
 } from "@storyteller/api";
-import { toast } from "@storyteller/ui-toaster";
+import { toast } from "../components/toast/toast";
 import type {
   RefAudio,
   RefImage,

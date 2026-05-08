@@ -49,9 +49,11 @@ interface UploadedImage {
 interface PendingCharacter {
   name: string;
   previewUrl?: string;
+  createdAt: number;
 }
 
 const POLL_INTERVAL_MS = 5000;
+const PENDING_STALE_MS = 3 * 60 * 1000;
 
 export const CharactersModal = ({
   isOpen,
@@ -84,8 +86,11 @@ export const CharactersModal = ({
     setRefreshKey((k) => k + 1);
   };
 
-  const handleCreated = (pending: PendingCharacter) => {
-    setPendingCharacters((prev) => [pending, ...prev]);
+  const handleCreated = (pending: { name: string; previewUrl?: string }) => {
+    setPendingCharacters((prev) => [
+      { ...pending, createdAt: Date.now() },
+      ...prev,
+    ]);
     setView("list");
     setRefreshKey((k) => k + 1);
   };
@@ -93,6 +98,58 @@ export const CharactersModal = ({
   const removePending = useCallback((name: string) => {
     setPendingCharacters((prev) => prev.filter((p) => p.name !== name));
   }, []);
+
+  // Poll the server while the modal is open and any creation is pending, so
+  // a creation that finishes while the user is on the create/edit view still
+  // gets cleaned up — preventing the duplicate (real + pending) card.
+  useEffect(() => {
+    if (!isOpen || pendingCharacters.length === 0) return;
+
+    const interval = setInterval(async () => {
+      try {
+        const api = new CharactersApi();
+        const res = await api.ListAllCharacters();
+        if (!res.success || !res.data) return;
+
+        const serverNames = new Set(res.data.map((c) => c.name));
+        let resolved = false;
+        setPendingCharacters((prev) =>
+          prev.filter((p) => {
+            if (serverNames.has(p.name)) {
+              resolved = true;
+              return false;
+            }
+            return true;
+          }),
+        );
+        if (resolved) setRefreshKey((k) => k + 1);
+      } catch {
+        // retry next tick
+      }
+    }, POLL_INTERVAL_MS);
+
+    return () => clearInterval(interval);
+  }, [isOpen, pendingCharacters.length]);
+
+  // Time out failed creations so the "Creating..." card never sticks forever.
+  useEffect(() => {
+    if (pendingCharacters.length === 0) return;
+
+    const timers = pendingCharacters.map((pending) =>
+      setTimeout(
+        () => {
+          setPendingCharacters((prev) => {
+            if (!prev.some((p) => p.name === pending.name)) return prev;
+            toast.error(`Character "${pending.name}" failed to create`);
+            return prev.filter((p) => p.name !== pending.name);
+          });
+        },
+        Math.max(0, PENDING_STALE_MS - (Date.now() - pending.createdAt)),
+      ),
+    );
+
+    return () => timers.forEach(clearTimeout);
+  }, [pendingCharacters]);
 
   return (
     <Modal
@@ -158,11 +215,7 @@ const CharacterListView = ({
 }) => {
   const [characters, setCharacters] = useState<Character[]>([]);
   const [loading, setLoading] = useState(true);
-  const [hasMore, setHasMore] = useState(false);
-  const [cursor, setCursor] = useState<number | undefined>(undefined);
 
-  const sentinelRef = useRef<HTMLDivElement>(null);
-  const loadingMoreRef = useRef(false);
   const storeSetCharacters = useCharactersStore((s) => s.setCharacters);
   const storeSetLoaded = useCharactersStore((s) => s.setLoaded);
   const storeRemoveCharacter = useCharactersStore((s) => s.removeCharacter);
@@ -181,83 +234,33 @@ const CharacterListView = ({
     [storeSetCharacters, storeSetLoaded],
   );
 
-  const fetchCharacters = useCallback(
-    async (nextCursor?: number) => {
-      if (loadingMoreRef.current) return;
-      loadingMoreRef.current = true;
-
-      try {
-        const api = new CharactersApi();
-        const res = await api.ListCharacters({
-          cursor: nextCursor,
-        });
-
-        if (res.success && res.data) {
-          setCharacters((prev) => {
-            const updated = nextCursor ? [...prev, ...res.data!] : res.data!;
-            syncToStore(updated);
-            return updated;
-          });
-          const nextPage = res.pagination?.next_cursor;
-          setCursor(nextPage ?? undefined);
-          setHasMore(!!nextPage);
-        }
-      } catch {
-        storeSetLoaded(true);
-      } finally {
-        setLoading(false);
-        loadingMoreRef.current = false;
+  const fetchCharacters = useCallback(async () => {
+    try {
+      const api = new CharactersApi();
+      const res = await api.ListAllCharacters();
+      if (res.success && res.data) {
+        setCharacters(res.data);
+        syncToStore(res.data);
       }
-    },
-    [syncToStore, storeSetLoaded],
-  );
+    } catch {
+      storeSetLoaded(true);
+    } finally {
+      setLoading(false);
+    }
+  }, [syncToStore, storeSetLoaded]);
 
   useEffect(() => {
     fetchCharacters();
   }, [fetchCharacters]);
 
-  // Poll for pending characters becoming active
+  // Drop pendings already represented in the fetched list (no duplicate cards)
   useEffect(() => {
     if (pendingCharacters.length === 0) return;
-
-    const interval = setInterval(async () => {
-      try {
-        const api = new CharactersApi();
-        const res = await api.ListCharacters({});
-        if (res.success && res.data) {
-          const serverNames = new Set(res.data.map((c) => c.name));
-          // Resolve any pending characters that now appear in the server list
-          for (const pending of pendingCharacters) {
-            if (serverNames.has(pending.name)) {
-              onPendingResolved(pending.name);
-            }
-          }
-          // Update the list with fresh server data
-          setCharacters(res.data);
-          syncToStore(res.data);
-        }
-      } catch {
-        // Silently retry on next interval
-      }
-    }, POLL_INTERVAL_MS);
-
-    return () => clearInterval(interval);
-  }, [pendingCharacters, onPendingResolved, syncToStore]);
-
-  // Infinite scroll via IntersectionObserver
-  useEffect(() => {
-    if (!sentinelRef.current || !hasMore) return;
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0]?.isIntersecting && hasMore && cursor) {
-          fetchCharacters(cursor);
-        }
-      },
-      { threshold: 0.1 },
-    );
-    observer.observe(sentinelRef.current);
-    return () => observer.disconnect();
-  }, [hasMore, cursor, fetchCharacters]);
+    const names = new Set(characters.map((c) => c.name));
+    for (const pending of pendingCharacters) {
+      if (names.has(pending.name)) onPendingResolved(pending.name);
+    }
+  }, [characters, pendingCharacters, onPendingResolved]);
 
   const handleDelete = (character: Character) => {
     showActionReminder({
@@ -455,15 +458,6 @@ const CharacterListView = ({
         </div>
       )}
 
-      {/* Sentinel for infinite scroll */}
-      {hasMore && (
-        <div ref={sentinelRef} className="flex justify-center py-4">
-          <FontAwesomeIcon
-            icon={faSpinnerThird}
-            className="text-base-fg/30 animate-spin"
-          />
-        </div>
-      )}
     </div>
   );
 };
@@ -608,7 +602,7 @@ const NewCharacterView = ({
   onCreated,
 }: {
   onBack: () => void;
-  onCreated: (pending: PendingCharacter) => void;
+  onCreated: (pending: { name: string; previewUrl?: string }) => void;
 }) => {
   const addCharacterToStore = useCharactersStore((s) => s.addCharacter);
   const [name, setName] = useState("");

@@ -6,13 +6,16 @@ use crate::requests::api::webhook_response::WebhookResponse;
 use reqwest::IntoUrl;
 
 pub struct Flux1DevEditImageArgs<'a, U: IntoUrl> {
-  pub prompt: &'a str,
-  pub image_url: String,
-  pub num_images: Flux1DevEditImageNumImages,
-
-  // Fulfillment
+  pub request: Flux1DevEditImageRequest,
   pub webhook_url: U,
   pub api_key: &'a FalApiKey,
+}
+
+#[derive(Clone, Debug)]
+pub struct Flux1DevEditImageRequest {
+  pub prompt: String,
+  pub image_url: String,
+  pub num_images: Flux1DevEditImageNumImages,
 }
 
 #[derive(Copy, Clone, Debug)]
@@ -26,7 +29,9 @@ pub enum Flux1DevEditImageNumImages {
 pub async fn enqueue_flux_1_dev_edit_image_webhook<U: IntoUrl>(
   args: Flux1DevEditImageArgs<'_, U>
 ) -> Result<WebhookResponse, FalErrorPlus> {
-  let num_images = match args.num_images {
+  let req = args.request;
+
+  let num_images = match req.num_images {
     Flux1DevEditImageNumImages::One => 1,
     Flux1DevEditImageNumImages::Two => 2,
     Flux1DevEditImageNumImages::Three => 3,
@@ -34,8 +39,8 @@ pub async fn enqueue_flux_1_dev_edit_image_webhook<U: IntoUrl>(
   };
 
   let request = Flux1DevEditImageInput {
-    prompt: args.prompt.to_string(),
-    image_url: args.image_url,
+    prompt: req.prompt,
+    image_url: req.image_url,
     num_images: Some(num_images),
     enable_safety_checker: Some(false),
     output_format: Some("png".to_string()),
@@ -55,6 +60,7 @@ mod tests {
   use crate::creds::fal_api_key::FalApiKey;
   use crate::requests::webhook::image::edit::enqueue_flux_1_dev_edit_image_webhook::{
     enqueue_flux_1_dev_edit_image_webhook, Flux1DevEditImageArgs, Flux1DevEditImageNumImages,
+    Flux1DevEditImageRequest,
   };
   use errors::AnyhowResult;
   use std::fs::read_to_string;
@@ -67,9 +73,11 @@ mod tests {
     let api_key = FalApiKey::from_str(&secret);
 
     let args = Flux1DevEditImageArgs {
-      prompt: "make this image look like a watercolor painting",
-      image_url: GHOST_IMAGE_URL.to_string(),
-      num_images: Flux1DevEditImageNumImages::One,
+      request: Flux1DevEditImageRequest {
+        prompt: "make this image look like a watercolor painting".to_string(),
+        image_url: GHOST_IMAGE_URL.to_string(),
+        num_images: Flux1DevEditImageNumImages::One,
+      },
       api_key: &api_key,
       webhook_url: "https://example.com/webhook",
     };
@@ -86,9 +94,11 @@ mod tests {
     let api_key = FalApiKey::from_str(&secret);
 
     let args = Flux1DevEditImageArgs {
-      prompt: "turn this into a cyberpunk scene with neon lights",
-      image_url: GHOST_IMAGE_URL.to_string(),
-      num_images: Flux1DevEditImageNumImages::Two,
+      request: Flux1DevEditImageRequest {
+        prompt: "turn this into a cyberpunk scene with neon lights".to_string(),
+        image_url: GHOST_IMAGE_URL.to_string(),
+        num_images: Flux1DevEditImageNumImages::Two,
+      },
       api_key: &api_key,
       webhook_url: "https://example.com/webhook",
     };

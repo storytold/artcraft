@@ -53,17 +53,22 @@ pub async fn fal_webhook_handler(
   // Step 3: Hydrate the webhook contents.
   let hydrated_contents = hydrate_webhook_contents(&webhook_payload);
 
+  // Step 3.5: Acquire a MySQL connection for the handlers.
+  let mut mysql_connection = server_state.mysql_pool.acquire().await?;
+
   // Step 4 & 5: Branch on the inner payload type.
   let result = match hydrated_contents {
     HydratedWebhookContents::Success(success_data) => {
-      handle_successful_fal_webhook(&server_state, request_id, &success_data, &server_state.pager).await
+      handle_successful_fal_webhook(&server_state, &mut mysql_connection, request_id, &success_data, &raw_body, &server_state.pager).await
     }
     HydratedWebhookContents::Error(error_data) => {
       handle_failed_fal_webhook(
         &server_state,
+        &mut mysql_connection,
         request_id,
         &error_data,
         webhook_payload.error.as_deref(),
+        &raw_body,
       ).await
     }
     HydratedWebhookContents::PayloadError(payload_error_data) => {

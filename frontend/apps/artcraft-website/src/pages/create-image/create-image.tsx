@@ -141,7 +141,7 @@ export default function CreateImage() {
   const pollingCleanupsRef = useRef<Map<string, () => void>>(new Map());
 
   // Jobs + gallery
-  const jobs = useGenerationJobs({ mediaType: "image" });
+  const jobs = useGenerationJobs({ mediaType: "image", enabled: !!user });
   const gallery = useGalleryData({
     username: user?.username ?? null,
     filterMediaClasses: IMAGE_FILTER,

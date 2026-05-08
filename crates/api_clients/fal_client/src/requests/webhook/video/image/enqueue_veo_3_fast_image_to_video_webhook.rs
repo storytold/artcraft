@@ -6,15 +6,20 @@ use crate::requests::http::video::image::http_veo_3_fast_image_to_video::{veo_3_
 use crate::requests::api::webhook_response::WebhookResponse;
 use reqwest::IntoUrl;
 
-pub struct Veo3FastArgs<'a, U: IntoUrl, V: IntoUrl> {
-  pub prompt: &'a str,
-  pub image_url: U,
+pub struct Veo3FastArgs<'a, R: IntoUrl> {
+  pub request: Veo3FastRequest,
+  pub webhook_url: R,
+  pub api_key: &'a FalApiKey,
+}
+
+#[derive(Clone, Debug)]
+pub struct Veo3FastRequest {
+  pub prompt: String,
+  pub image_url: String,
   pub aspect_ratio: Veo3FastAspectRatio,
   pub duration: Veo3FastDuration,
-  pub api_key: &'a FalApiKey,
   pub resolution: Veo3FastResolution,
   pub generate_audio: bool,
-  pub webhook_url: V,
 }
 
 #[derive(Copy, Clone, Debug)]
@@ -39,7 +44,7 @@ pub enum Veo3FastResolution {
   TenEightyP,
 }
 
-impl <U: IntoUrl, V: IntoUrl> FalRequestCostCalculator for Veo3FastArgs<'_, U, V> {
+impl FalRequestCostCalculator for Veo3FastRequest {
   fn calculate_cost_in_cents(&self) -> UsdCents {
     // "For every second of video you generated, you will be charged
     // $0.10 (audio off) or $0.15 (audio on).
@@ -60,37 +65,37 @@ impl <U: IntoUrl, V: IntoUrl> FalRequestCostCalculator for Veo3FastArgs<'_, U, V
 
 /// Veo 3 Fast Image-to-Video
 /// https://fal.ai/models/fal-ai/veo3/fast/image-to-video
-pub async fn enqueue_veo_3_fast_image_to_video_webhook<U: IntoUrl, V: IntoUrl>(
-  args: Veo3FastArgs<'_, U, V>
+pub async fn enqueue_veo_3_fast_image_to_video_webhook<R: IntoUrl>(
+  args: Veo3FastArgs<'_, R>
 ) -> Result<WebhookResponse, FalErrorPlus> {
-  let duration = match args.duration {
+  let req = args.request;
+
+  let duration = match req.duration {
     Veo3FastDuration::Default => None, // NB: Defaults to 8.
     Veo3FastDuration::FourSeconds => Some("4s".to_string()),
     Veo3FastDuration::SixSeconds => Some("6s".to_string()),
     Veo3FastDuration::EightSeconds => Some("8s".to_string()),
   };
-  
-  let aspect_ratio = match args.aspect_ratio {
+
+  let aspect_ratio = match req.aspect_ratio {
     Veo3FastAspectRatio::Auto => Some("auto".to_string()),
     Veo3FastAspectRatio::WideSixteenNine => Some("16:9".to_string()),
     Veo3FastAspectRatio::TallNineSixteen => Some("9:16".to_string()),
   };
 
-  let resolution = match args.resolution {
+  let resolution = match req.resolution {
     Veo3FastResolution::Default => None,
     Veo3FastResolution::SevenTwentyP => Some("720p".to_string()),
     Veo3FastResolution::TenEightyP => Some("1080p".to_string()),
   };
 
-  let image_url = args.image_url.as_str().to_string();
-
   let request = Veo3FastImageToVideoInput {
-    image_url,
-    prompt: args.prompt.to_string(),
+    image_url: req.image_url,
+    prompt: req.prompt,
     aspect_ratio,
     resolution,
     duration,
-    generate_audio: Some(args.generate_audio),
+    generate_audio: Some(req.generate_audio),
   };
 
   let result = veo_3_fast_image_to_video(request)
@@ -105,7 +110,7 @@ pub async fn enqueue_veo_3_fast_image_to_video_webhook<U: IntoUrl, V: IntoUrl>(
 #[cfg(test)]
 mod tests {
   use crate::creds::fal_api_key::FalApiKey;
-  use crate::requests::webhook::video::image::enqueue_veo_3_fast_image_to_video_webhook::{enqueue_veo_3_fast_image_to_video_webhook, Veo3FastArgs, Veo3FastAspectRatio, Veo3FastDuration, Veo3FastResolution};
+  use crate::requests::webhook::video::image::enqueue_veo_3_fast_image_to_video_webhook::{enqueue_veo_3_fast_image_to_video_webhook, Veo3FastArgs, Veo3FastAspectRatio, Veo3FastDuration, Veo3FastRequest, Veo3FastResolution};
   use errors::AnyhowResult;
   use std::fs::read_to_string;
   use test_data::web::image_urls::ERNEST_GHOST_TREX_IMAGE_URL;
@@ -121,13 +126,15 @@ mod tests {
     let api_key = FalApiKey::from_str(&secret);
 
     let args = Veo3FastArgs {
-      image_url: image_url,
-      prompt: "man is standing next to a ghost and t-rex, they begin to chase him as the camera pulls back to show the wider scene",
+      request: Veo3FastRequest {
+        image_url: image_url.to_string(),
+        prompt: "man is standing next to a ghost and t-rex, they begin to chase him as the camera pulls back to show the wider scene".to_string(),
+        aspect_ratio: Veo3FastAspectRatio::WideSixteenNine,
+        duration: Veo3FastDuration::EightSeconds,
+        generate_audio: true,
+        resolution: Veo3FastResolution::TenEightyP,
+      },
       api_key: &api_key,
-      aspect_ratio: Veo3FastAspectRatio::WideSixteenNine,
-      duration: Veo3FastDuration::EightSeconds,
-      generate_audio: true,
-      resolution: Veo3FastResolution::TenEightyP,
       webhook_url: "https://example.com/webhook",
     };
 

@@ -9,6 +9,7 @@ import { Button } from "@storyteller/ui-button";
 import { type PopoverItem } from "@storyteller/ui-popover";
 import Seo from "../../components/seo";
 import Footer from "../../components/footer";
+import { TruchetPattern } from "../truchet-pattern";
 
 interface CreateMediaPageShellProps {
   // SEO
@@ -69,6 +70,22 @@ export function CreateMediaPageShell({
     return (
       <div className="relative min-h-screen overflow-x-hidden bg-[#101014] text-white">
         <Seo title={title} description={description} />
+        <div
+          aria-hidden
+          className="pointer-events-none fixed inset-0 z-0"
+          style={{
+            maskImage:
+              "radial-gradient(ellipse 70% 60% at 50% 50%, black 20%, transparent 80%)",
+            WebkitMaskImage:
+              "radial-gradient(ellipse 70% 60% at 50% 50%, black 20%, transparent 80%)",
+          }}
+        >
+          <TruchetPattern
+            variant="auth"
+            intensity={0.5}
+            className="absolute inset-0 h-full w-full"
+          />
+        </div>
         <div className="pointer-events-none absolute inset-x-0 top-0 z-0 flex justify-center">
           <div className="h-[600px] w-[600px] rounded-full bg-gradient-to-br from-primary/30 via-blue-500/20 to-teal-400/10 opacity-40 blur-[120px]" />
         </div>
@@ -77,7 +94,7 @@ export function CreateMediaPageShell({
             icon={heroIcon}
             className="mb-6 text-5xl text-white/20"
           />
-          <h1 className="mb-3 text-4xl font-bold">{heroTitle}</h1>
+          <h1 className="mb-3 text-4xl font-semibold">{heroTitle}</h1>
           <p className="mb-8 max-w-md text-center text-lg text-white/60">
             {heroSubtitle}
           </p>
@@ -119,12 +136,32 @@ export function CreateMediaPageShell({
           </div>
         ))}
 
+      {/* Subtle truchet pattern — only on empty state */}
+      {!hasContent && (
+        <div
+          aria-hidden
+          className="pointer-events-none fixed inset-0 z-0"
+          style={{
+            maskImage:
+              "radial-gradient(ellipse 70% 60% at 50% 50%, black 20%, transparent 80%)",
+            WebkitMaskImage:
+              "radial-gradient(ellipse 70% 60% at 50% 50%, black 20%, transparent 80%)",
+          }}
+        >
+          <TruchetPattern
+            variant="content"
+            intensity={0.5}
+            className="absolute inset-0 h-full w-full"
+          />
+        </div>
+      )}
+
       <div className="relative z-[1] h-full w-full">
         <div className="flex h-full w-full flex-col">
           {!hasContent && (
             <div className="flex flex-1 items-center justify-center">
               <div className="animate-fade-in-up relative z-20 mb-32 flex flex-col items-center justify-center text-center drop-shadow-xl">
-                <h1 className="text-5xl font-bold text-white md:text-7xl">
+                <h1 className="text-5xl font-semibold text-white md:text-7xl">
                   {emptyStateTitle}
                 </h1>
                 <span className="pt-2 text-lg text-white/80 md:text-xl">

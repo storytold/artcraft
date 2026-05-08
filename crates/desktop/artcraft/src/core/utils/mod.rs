@@ -11,4 +11,5 @@ pub mod save_base64_image_to_temp_dir;
 pub mod simple_http_download;
 pub mod simple_http_download_to_tempfile;
 pub mod task_database_pending_statuses;
+pub mod upload_bytes_to_media_file;
 pub mod window;

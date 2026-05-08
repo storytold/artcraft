@@ -23,8 +23,8 @@ use enums::common::generation_provider::GenerationProvider;
 use enums::common::visibility::Visibility;
 use fal_client::creds::open_ai_api_key::OpenAiApiKey;
 use fal_client::requests::traits::fal_request_cost_calculator_trait::FalRequestCostCalculator;
-use fal_client::requests::webhook::video::image::enqueue_kling_3p0_standard_image_to_video_webhook::{enqueue_kling_3p0_standard_image_to_video_webhook, EnqueueKling3p0StandardImageToVideoArgs, EnqueueKling3p0StandardImageToVideoAspectRatio, EnqueueKling3p0StandardImageToVideoDuration};
-use fal_client::requests::webhook::video::text::enqueue_kling_3p0_standard_text_to_video_webhook::{enqueue_kling_3p0_standard_text_to_video_webhook, EnqueueKling3p0StandardTextToVideoArgs, EnqueueKling3p0StandardTextToVideoAspectRatio, EnqueueKling3p0StandardTextToVideoDuration};
+use fal_client::requests::webhook::video::image::enqueue_kling_3p0_standard_image_to_video_webhook::{enqueue_kling_3p0_standard_image_to_video_webhook, EnqueueKling3p0StandardImageToVideoArgs, EnqueueKling3p0StandardImageToVideoRequest, EnqueueKling3p0StandardImageToVideoAspectRatio, EnqueueKling3p0StandardImageToVideoDuration};
+use fal_client::requests::webhook::video::text::enqueue_kling_3p0_standard_text_to_video_webhook::{enqueue_kling_3p0_standard_text_to_video_webhook, EnqueueKling3p0StandardTextToVideoArgs, EnqueueKling3p0StandardTextToVideoRequest, EnqueueKling3p0StandardTextToVideoAspectRatio, EnqueueKling3p0StandardTextToVideoDuration};
 use http_server_common::request::get_request_ip::get_request_ip;
 use log::{error, info, warn};
 use mysql_queries::queries::generic_inference::fal::insert_generic_inference_job_for_fal_queue::FalCategory;
@@ -160,7 +160,7 @@ pub async fn kling_3p0_standard_multi_function_video_gen_handler(
     let duration = map_duration_i2v(request.duration);
     let aspect_ratio = map_aspect_ratio_i2v(request.aspect_ratio);
 
-    let args = EnqueueKling3p0StandardImageToVideoArgs {
+    let fal_request = EnqueueKling3p0StandardImageToVideoRequest {
       prompt: request.prompt.as_deref().unwrap_or("").to_string(),
       image_url: start_frame_url,
       end_image_url: maybe_end_frame_image_url,
@@ -169,11 +169,15 @@ pub async fn kling_3p0_standard_multi_function_video_gen_handler(
       duration: Some(duration),
       aspect_ratio,
       shot_type: None,
+    };
+
+    let cost = fal_request.calculate_cost_in_cents();
+
+    let args = EnqueueKling3p0StandardImageToVideoArgs {
+      request: fal_request,
       webhook_url: &server_state.fal.webhook_url,
       api_key: &server_state.fal.api_key,
     };
-
-    let cost = args.calculate_cost_in_cents();
 
     info!("Charging wallet: {}", cost);
 
@@ -199,18 +203,22 @@ pub async fn kling_3p0_standard_multi_function_video_gen_handler(
 
     let aspect_ratio = map_aspect_ratio_t2v(request.aspect_ratio);
 
-    let args = EnqueueKling3p0StandardTextToVideoArgs {
+    let t2v_request = EnqueueKling3p0StandardTextToVideoRequest {
       prompt: request.prompt.as_deref().unwrap_or("").to_string(),
       negative_prompt: request.negative_prompt.clone(),
       generate_audio: Some(generate_audio),
       duration: Some(duration),
       aspect_ratio: Some(aspect_ratio),
       shot_type: None,
+    };
+
+    let cost = t2v_request.calculate_cost_in_cents();
+
+    let args = EnqueueKling3p0StandardTextToVideoArgs {
+      request: t2v_request,
       webhook_url: &server_state.fal.webhook_url,
       api_key: &server_state.fal.api_key,
     };
-
-    let cost = args.calculate_cost_in_cents();
 
     info!("Charging wallet...");
 
@@ -342,6 +350,7 @@ pub async fn kling_3p0_standard_multi_function_video_gen_handler(
     starting_job_status_override: None,
     maybe_frontend_failure_category: None,
     maybe_failure_reason: None,
+      maybe_debug_log_event_token: None,
     phantom: Default::default(),
   }).await;
 

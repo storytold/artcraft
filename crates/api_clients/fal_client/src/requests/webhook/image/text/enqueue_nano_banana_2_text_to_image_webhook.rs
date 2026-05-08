@@ -7,17 +7,20 @@ use crate::requests::api::webhook_response::WebhookResponse;
 use reqwest::IntoUrl;
 
 pub struct EnqueueNanoBanana2TextToImageArgs<'a, R: IntoUrl> {
-  // Request required
-  pub prompt: &'a str,
-  pub num_images: EnqueueNanoBanana2TextToImageNumImages,
-
-  // Optional args
-  pub resolution: Option<EnqueueNanoBanana2TextToImageResolution>,
-  pub aspect_ratio: Option<EnqueueNanoBanana2TextToImageAspectRatio>,
-
-  // Fulfillment
+  pub request: EnqueueNanoBanana2TextToImageRequest,
   pub webhook_url: R,
   pub api_key: &'a FalApiKey,
+}
+
+#[derive(Clone, Debug)]
+pub struct EnqueueNanoBanana2TextToImageRequest {
+  // Required
+  pub prompt: String,
+  pub num_images: EnqueueNanoBanana2TextToImageNumImages,
+
+  // Optional
+  pub resolution: Option<EnqueueNanoBanana2TextToImageResolution>,
+  pub aspect_ratio: Option<EnqueueNanoBanana2TextToImageAspectRatio>,
 }
 
 #[derive(Copy, Clone, Debug)]
@@ -58,7 +61,7 @@ pub enum EnqueueNanoBanana2TextToImageAspectRatio {
 }
 
 
-impl <U: IntoUrl> FalRequestCostCalculator for EnqueueNanoBanana2TextToImageArgs<'_, U> {
+impl FalRequestCostCalculator for EnqueueNanoBanana2TextToImageRequest {
   fn calculate_cost_in_cents(&self) -> UsdCents {
     // TODO(bt): Verify actual pricing for Nano Banana 2 on fal.ai.
     // 4K outputs may be charged at double the standard rate.
@@ -84,14 +87,16 @@ pub async fn enqueue_nano_banana_2_text_to_image_webhook<R: IntoUrl>(
   args: EnqueueNanoBanana2TextToImageArgs<'_, R>
 ) -> Result<WebhookResponse, FalErrorPlus> {
 
-  let num_images = match args.num_images {
+  let req = args.request;
+
+  let num_images = match req.num_images {
     EnqueueNanoBanana2TextToImageNumImages::One => 1,
     EnqueueNanoBanana2TextToImageNumImages::Two => 2,
     EnqueueNanoBanana2TextToImageNumImages::Three => 3,
     EnqueueNanoBanana2TextToImageNumImages::Four => 4,
   };
 
-  let resolution = args.resolution
+  let resolution = req.resolution
       .map(|resolution| match resolution {
         EnqueueNanoBanana2TextToImageResolution::HalfK => "0.5K",
         EnqueueNanoBanana2TextToImageResolution::OneK => "1K",
@@ -100,7 +105,7 @@ pub async fn enqueue_nano_banana_2_text_to_image_webhook<R: IntoUrl>(
       })
       .map(|r| r.to_string());
 
-  let aspect_ratio = args.aspect_ratio
+  let aspect_ratio = req.aspect_ratio
       .map(|ar| match ar {
         // Auto
         EnqueueNanoBanana2TextToImageAspectRatio::Auto => "auto",
@@ -121,7 +126,7 @@ pub async fn enqueue_nano_banana_2_text_to_image_webhook<R: IntoUrl>(
       .map(|ar| ar.to_string());
 
   let request = NanoBanana2TextToImageInput {
-    prompt: args.prompt.to_string(),
+    prompt: req.prompt,
     num_images: Some(num_images),
     // Optionals
     aspect_ratio,
@@ -145,7 +150,7 @@ pub async fn enqueue_nano_banana_2_text_to_image_webhook<R: IntoUrl>(
 #[cfg(test)]
 mod tests {
   use crate::creds::fal_api_key::FalApiKey;
-  use crate::requests::webhook::image::text::enqueue_nano_banana_2_text_to_image_webhook::{enqueue_nano_banana_2_text_to_image_webhook, EnqueueNanoBanana2TextToImageArgs, EnqueueNanoBanana2TextToImageAspectRatio, EnqueueNanoBanana2TextToImageNumImages, EnqueueNanoBanana2TextToImageResolution};
+  use crate::requests::webhook::image::text::enqueue_nano_banana_2_text_to_image_webhook::{enqueue_nano_banana_2_text_to_image_webhook, EnqueueNanoBanana2TextToImageArgs, EnqueueNanoBanana2TextToImageAspectRatio, EnqueueNanoBanana2TextToImageNumImages, EnqueueNanoBanana2TextToImageRequest, EnqueueNanoBanana2TextToImageResolution};
   use errors::AnyhowResult;
   use std::fs::read_to_string;
 
@@ -158,10 +163,12 @@ mod tests {
     let api_key = FalApiKey::from_str(&secret);
 
     let args = EnqueueNanoBanana2TextToImageArgs {
-      prompt: "an anime girl riding on the back of a t-rex",
-      num_images: EnqueueNanoBanana2TextToImageNumImages::One,
-      aspect_ratio: Some(EnqueueNanoBanana2TextToImageAspectRatio::SixteenByNine),
-      resolution: Some(EnqueueNanoBanana2TextToImageResolution::TwoK),
+      request: EnqueueNanoBanana2TextToImageRequest {
+        prompt: "an anime girl riding on the back of a t-rex".to_string(),
+        num_images: EnqueueNanoBanana2TextToImageNumImages::One,
+        aspect_ratio: Some(EnqueueNanoBanana2TextToImageAspectRatio::SixteenByNine),
+        resolution: Some(EnqueueNanoBanana2TextToImageResolution::TwoK),
+      },
       api_key: &api_key,
       webhook_url: "https://example.com/webhook",
     };

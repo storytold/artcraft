@@ -8,8 +8,8 @@ import { Tooltip } from "@storyteller/ui-tooltip";
 import { ToggleButton, GenerateButton } from "@storyteller/ui-button";
 import { Modal } from "@storyteller/ui-modal";
 import {
-  EnqueueImageToVideo,
-  EnqueueImageToVideoRequest,
+  GenerateVideo,
+  GenerateVideoRequest,
 } from "@storyteller/tauri-api";
 import {
   faWaveformLines,
@@ -154,7 +154,7 @@ export const PromptBoxVideo = ({
     if (charactersLoaded) return;
     const api = new CharactersApi();
     api
-      .ListCharacters()
+      .ListAllCharacters()
       .then((res) => {
         if (res.success && res.data) {
           storeSetCharacters(
@@ -703,10 +703,10 @@ export const PromptBoxVideo = ({
       setIsEnqueueing(false);
     }, 10000);
 
-    const buildRequest = (subscriberId: string): EnqueueImageToVideoRequest => {
-      let request: EnqueueImageToVideoRequest = {
+    const buildRequest = (subscriberId: string): GenerateVideoRequest => {
+      let request: GenerateVideoRequest = {
         model: selectedModel,
-        image_media_token: imageMediaToken,
+        start_frame_image_media_token: imageMediaToken,
         prompt: prompt,
         end_frame_image_media_token: isRefMode
           ? undefined
@@ -816,7 +816,7 @@ export const PromptBoxVideo = ({
         ? crypto.randomUUID()
         : Math.random().toString(36).slice(2);
       subscriberIds.push(subscriberId);
-      enqueuePromises.push(EnqueueImageToVideo(buildRequest(subscriberId)));
+      enqueuePromises.push(GenerateVideo(buildRequest(subscriberId)));
     }
 
     try {
@@ -865,7 +865,7 @@ export const PromptBoxVideo = ({
     }
 
     if (e.key !== "Enter") return;
-    const isSubmitCombo = enterToGenerate ? !e.shiftKey : e.shiftKey;
+    const isSubmitCombo = enterToGenerate && !e.shiftKey;
     if (isSubmitCombo) {
       e.preventDefault();
 
@@ -991,9 +991,7 @@ export const PromptBoxVideo = ({
                   className="promptbox-scrollbar text-md relative mb-2 min-h-[2.5em] w-full resize-y overflow-y-auto rounded bg-transparent pb-2 pr-2 pt-1 text-base-fg"
                   onKeyDown={(e) => {
                     if (e.key !== "Enter") return;
-                    const isSubmitCombo = enterToGenerate
-                      ? !e.shiftKey
-                      : e.shiftKey;
+                    const isSubmitCombo = enterToGenerate && !e.shiftKey;
                     if (isSubmitCombo) {
                       e.preventDefault();
                       if (

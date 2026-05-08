@@ -1,4 +1,11 @@
-import { Route, Routes, Navigate } from "react-router-dom";
+import { useEffect } from "react";
+import {
+  Route,
+  Routes,
+  Navigate,
+  useLocation,
+  useNavigationType,
+} from "react-router-dom";
 import Download from "../pages/download";
 import Media from "../pages/media";
 import PressKit from "../pages/press-kit";
@@ -6,7 +13,8 @@ import Navbar from "../components/navbar";
 import { ToastContainer } from "../components/toast/toast";
 import CreateImage from "../pages/create-image";
 import CreateVideo from "../pages/create-video";
-import Landing2 from "../pages/landing2";
+//import Landing2 from "../pages/landing2";
+import Landing3 from "../pages/landing3";
 import LandingSD2 from "../pages/landing-sd2";
 import TutorialsPage from "../pages/tutorials";
 import TutorialsArticle from "../pages/tutorials/article";
@@ -15,6 +23,7 @@ import FaqArticle from "../pages/faq/article";
 import NewsIndex from "../pages/news/news-index";
 import NewsPost from "../pages/news/news-post";
 import Pricing from "../pages/pricing";
+import Support from "../pages/support/support";
 import Login from "../pages/login";
 import Signup from "../pages/signup";
 import ForgotPassword, { VerifyReset } from "../pages/forgot-password";
@@ -23,13 +32,26 @@ import Onboarding from "../pages/onboarding";
 import Library from "../pages/library";
 import { CheckoutSuccess, CheckoutCancel } from "../pages/checkout";
 
+function ScrollToTop() {
+  const { pathname } = useLocation();
+  const navType = useNavigationType();
+  useEffect(() => {
+    if (navType !== "POP") {
+      window.scrollTo(0, 0);
+    }
+  }, [pathname, navType]);
+  return null;
+}
+
 export function App() {
   return (
     <div className="relative">
+      <ScrollToTop />
       <Navbar />
 
       <Routes>
-        <Route path="/" element={<Landing2 />} />
+        <Route path="/" element={<Landing3 />} />
+        <Route path="/landing3" element={<Landing3 />} />
         <Route path="/create-image" element={<CreateImage />} />
         <Route path="/create-video" element={<CreateVideo />} />
         <Route path="/seedance-2" element={<LandingSD2 />} />
@@ -41,6 +63,7 @@ export function App() {
         <Route path="/tutorials/:slug" element={<TutorialsArticle />} />
         <Route path="/faq" element={<FaqIndex />} />
         <Route path="/faq/:slug" element={<FaqArticle />} />
+        <Route path="/support" element={<Support />} />
         <Route path="/news" element={<NewsIndex basePath="/news" />} />
         <Route path="/news/:slug" element={<NewsPost basePath="/news" />} />
         <Route path="/library" element={<Library />} />

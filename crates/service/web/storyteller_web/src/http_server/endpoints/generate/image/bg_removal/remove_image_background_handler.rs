@@ -11,7 +11,7 @@ use artcraft_api_defs::generate::image::bg_removal::remove_image_background::Rem
 use artcraft_api_defs::generate::image::bg_removal::remove_image_background::RemoveImageBackgroundResponse;
 use bucket_paths::legacy::typified_paths::public::media_files::bucket_file_path::MediaFileBucketPath;
 use enums::common::visibility::Visibility;
-use fal_client::requests::webhook::image::background::remove_background_rembg_webhook::{remove_background_rembg_webhook, RemoveBackgroundRembgWebhookArgs};
+use fal_client::requests::webhook::image::background::remove_background_rembg_webhook::{remove_background_rembg_webhook, RemoveBackgroundRembgWebhookArgs, RemoveBackgroundRembgWebhookRequest};
 use http_server_common::request::get_request_ip::get_request_ip;
 use log::{error, info, warn};
 use mysql_queries::queries::generic_inference::fal::insert_generic_inference_job_for_fal_queue::insert_generic_inference_job_for_fal_queue;
@@ -124,7 +124,9 @@ pub async fn remove_image_background_handler(
   info!("Fal webhook URL: {}", server_state.fal.webhook_url);
   
   let args = RemoveBackgroundRembgWebhookArgs {
-    image_url: media_links.cdn_url,
+    request: RemoveBackgroundRembgWebhookRequest {
+      image_url: media_links.cdn_url.to_string(),
+    },
     webhook_url: &server_state.fal.webhook_url,
     api_key: &server_state.fal.api_key,
   };

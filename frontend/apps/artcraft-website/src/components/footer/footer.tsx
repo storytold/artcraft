@@ -63,7 +63,7 @@ const navigation = {
 export default function Example() {
   return (
     <footer className="bg-transparent z-20">
-      <div className="mx-auto max-w-7xl overflow-hidden px-6 py-16 sm:py-16 lg:px-8 flex flex-col gap-12 items-center">
+      <div className="mx-auto max-w-7xl overflow-hidden px-4 sm:px-6 py-16 sm:py-16 lg:px-8 flex flex-col gap-12 items-center">
         {/* <Button
           icon={faArrowDownToLine}
           className="w-fit"
@@ -86,7 +86,7 @@ export default function Example() {
           ))}
         </nav> */}
         <div className="w-full flex flex-col items-center gap-10">
-          <div className="flex justify-center gap-x-10 mb-8">
+          <div className="flex flex-wrap justify-center gap-x-6 gap-y-4 sm:gap-x-10 mb-8">
             {navigation.social.map((item) => (
               <a
                 key={item.name}
@@ -108,11 +108,32 @@ export default function Example() {
               <Link to="/" className="text-gray-400 hover:text-white">
                 Home
               </Link>
+              <Link
+                to="/create-image"
+                className="text-gray-400 hover:text-white"
+              >
+                Image
+              </Link>
+              <Link
+                to="/create-video"
+                className="text-gray-400 hover:text-white"
+              >
+                Video
+              </Link>
+              <Link to="/download" className="text-gray-400 hover:text-white">
+                Download
+              </Link>
+              <Link to="/pricing" className="text-gray-400 hover:text-white">
+                Pricing
+              </Link>
               <Link to="/news" className="text-gray-400 hover:text-white">
                 News
               </Link>
               <Link to="/press-kit" className="text-gray-400 hover:text-white">
                 Press Kit
+              </Link>
+              <Link to="/support" className="text-gray-400 hover:text-white">
+                Support
               </Link>
             </div>
             <div className="flex flex-col items-center sm:items-start gap-2">

@@ -1,14 +1,7 @@
-use std::fmt;
 use std::sync::Arc;
 
-use crate::http_server::common_responses::media::media_links_builder::MediaLinksBuilder;
-use crate::http_server::endpoints::media_files::helpers::get_media_domain::get_media_domain;
-use crate::http_server::web_utils::response_error_helpers::to_simple_json_error;
-use crate::state::server_state::ServerState;
-use actix_web::error::ResponseError;
-use actix_web::http::StatusCode;
-use actix_web::web::Path;
-use actix_web::{web, HttpMessage, HttpRequest, HttpResponse};
+use actix_web::web::{Json, Path};
+use actix_web::{web, HttpMessage, HttpRequest};
 use artcraft_api_defs::prompts::get_prompt::{
   GetPromptImageContextItem, GetPromptPathInfo, GetPromptSuccessResponse,
   PromptInfo, PromptInfoModeratorFields,
@@ -18,38 +11,11 @@ use enums::by_table::prompt_context_items::prompt_context_semantic_type::PromptC
 use log::{error, warn};
 use mysql_queries::queries::prompt_context_items::list_prompt_context_items::list_prompt_context_items;
 use mysql_queries::queries::prompts::get_prompt::get_prompt_from_connection;
-use utoipa::ToSchema;
 
-#[derive(Debug, ToSchema)]
-pub enum GetPromptError {
-  ServerError,
-  NotFound,
-}
-
-impl ResponseError for GetPromptError {
-  fn status_code(&self) -> StatusCode {
-    match *self {
-      GetPromptError::ServerError => StatusCode::INTERNAL_SERVER_ERROR,
-      GetPromptError::NotFound => StatusCode::NOT_FOUND,
-    }
-  }
-
-  fn error_response(&self) -> HttpResponse {
-    let error_reason = match self {
-      GetPromptError::ServerError => "server error".to_string(),
-      GetPromptError::NotFound => "not found".to_string(),
-    };
-
-    to_simple_json_error(&error_reason, self.status_code())
-  }
-}
-
-// NB: Not using derive_more::Display since Clion doesn't understand it.
-impl fmt::Display for GetPromptError {
-  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-    write!(f, "{:?}", self)
-  }
-}
+use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
+use crate::http_server::common_responses::media::media_links_builder::MediaLinksBuilder;
+use crate::http_server::endpoints::media_files::helpers::get_media_domain::get_media_domain;
+use crate::state::server_state::ServerState;
 
 /// Get details on a prompt.
 #[utoipa::path(
@@ -58,8 +24,8 @@ impl fmt::Display for GetPromptError {
   path = "/v1/prompts/{token}",
   responses(
     (status = 200, description = "Found", body = GetPromptSuccessResponse),
-    (status = 404, description = "Not found", body = GetPromptError),
-    (status = 500, description = "Server error", body = GetPromptError),
+    (status = 404, description = "Not found"),
+    (status = 500, description = "Server error"),
   ),
   params(
     ("path" = GetPromptPathInfo, description = "Path for Request")
@@ -68,44 +34,32 @@ impl fmt::Display for GetPromptError {
 pub async fn get_prompt_handler(
   http_request: HttpRequest,
   path: Path<GetPromptPathInfo>,
-  server_state: web::Data<Arc<ServerState>>) -> Result<HttpResponse, GetPromptError>
-{
-  let mut mysql_connection = server_state.mysql_pool
-      .acquire()
-      .await
-      .map_err(|err| {
-        error!("Error acquiring MySQL connection: {:?}", err);
-        GetPromptError::ServerError
-      })?;
+  server_state: web::Data<Arc<ServerState>>,
+) -> Result<Json<GetPromptSuccessResponse>, AdvancedCommonWebError> {
+  let mut mysql_connection = server_state.mysql_pool.acquire().await?;
 
   let maybe_user_session = server_state
-      .session_checker
-      .maybe_get_user_session_from_connection(&http_request, &mut mysql_connection)
-      .await
-      .map_err(|e| {
-        warn!("Session checker error: {:?}", e);
-        GetPromptError::ServerError
-      })?;
+    .session_checker
+    .maybe_get_user_session_from_connection(&http_request, &mut mysql_connection)
+    .await
+    .map_err(|e| {
+      warn!("Session checker error: {:?}", e);
+      AdvancedCommonWebError::from(e)
+    })?;
 
   let is_moderator = maybe_user_session
-      .map(|session| session.can_ban_users)
-      .unwrap_or(false);
+    .map(|session| session.can_ban_users)
+    .unwrap_or(false);
 
   let prompt_token = path.into_inner().token;
 
-  let result = get_prompt_from_connection(
-    &prompt_token,
-    &mut mysql_connection
-  ).await;
-
-  let result = match result {
-    Err(e) => {
-      warn!("query error: {:?}", e);
-      return Err(GetPromptError::ServerError);
-    }
-    Ok(None) => return Err(GetPromptError::NotFound),
-    Ok(Some(result)) => result,
-  };
+  let result = get_prompt_from_connection(&prompt_token, &mut mysql_connection)
+    .await
+    .map_err(|err| {
+      warn!("query error: {:?}", err);
+      AdvancedCommonWebError::from(err)
+    })?
+    .ok_or(AdvancedCommonWebError::NotFound)?;
 
   let mut maybe_style_name = None;
   let mut maybe_strength = None;
@@ -114,14 +68,12 @@ pub async fn get_prompt_handler(
   let mut maybe_travel_prompt = None;
   let mut maybe_frame_skip = None;
 
-  // Flags
   let mut used_face_detailer = false;
   let mut used_upscaler = false;
   let mut lipsync_enabled = false;
   let mut lcm_disabled = false;
   let mut use_cinematic = false;
 
-  // Moderator fields
   let mut main_ipa_workflow = None;
   let mut face_detailer_workflow = None;
   let mut upscaler_workflow = None;
@@ -136,14 +88,12 @@ pub async fn get_prompt_handler(
     maybe_travel_prompt = inner_payload.travel_prompt.clone();
     maybe_frame_skip = inner_payload.frame_skip;
 
-    // Flags
     used_face_detailer = inner_payload.used_face_detailer.unwrap_or(false);
     used_upscaler = inner_payload.used_upscaler.unwrap_or(false);
     lipsync_enabled = inner_payload.lipsync_enabled.unwrap_or(false);
     lcm_disabled = inner_payload.disable_lcm.unwrap_or(false);
     use_cinematic = inner_payload.use_cinematic.unwrap_or(false);
 
-    // Moderator fields
     main_ipa_workflow = inner_payload.main_ipa_workflow.clone();
     face_detailer_workflow = inner_payload.face_detailer_workflow.clone();
     upscaler_workflow = inner_payload.upscaler_workflow.clone();
@@ -164,7 +114,7 @@ pub async fn get_prompt_handler(
 
   let items_result = list_prompt_context_items(
     &result.token,
-    &mut mysql_connection
+    &mut mysql_connection,
   ).await;
 
   let items = items_result.unwrap_or_else(|e| {
@@ -189,7 +139,8 @@ pub async fn get_prompt_handler(
     let bucket_path = MediaFileBucketPath::from_object_hash(
       &item.public_bucket_directory_hash,
       item.maybe_public_bucket_prefix.as_deref(),
-      item.maybe_public_bucket_extension.as_deref());
+      item.maybe_public_bucket_extension.as_deref(),
+    );
 
     Some(GetPromptImageContextItem {
       media_token: item.media_token.clone(),
@@ -208,7 +159,7 @@ pub async fn get_prompt_handler(
     Some(items)
   };
 
-  let response = GetPromptSuccessResponse {
+  Ok(Json(GetPromptSuccessResponse {
     success: true,
     prompt: PromptInfo {
       token: result.token,
@@ -239,12 +190,5 @@ pub async fn get_prompt_handler(
       maybe_global_ipa_image_token,
       maybe_frame_skip,
     },
-  };
-
-  let body = serde_json::to_string(&response)
-    .map_err(|e| GetPromptError::ServerError)?;
-
-  Ok(HttpResponse::Ok()
-    .content_type("application/json")
-    .body(body))
+  }))
 }

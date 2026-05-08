@@ -15,22 +15,29 @@ export const uploadVideo: UploadMediaFn = async ({
   const api = new MediaUploadApi();
   progressCallback({ status: UploaderStates.uploadingImage });
 
-  const response = await api.UploadNewVideo({
-    uuid: crypto.randomUUID(),
-    blob: assetFile,
-    fileName: assetFile.name || `reference-video-${Date.now()}`,
-    maybe_title: `ref_video_${title}`,
-  });
+  try {
+    const response = await api.UploadNewVideo({
+      uuid: crypto.randomUUID(),
+      blob: assetFile,
+      fileName: assetFile.name || `reference-video-${Date.now()}`,
+      maybe_title: `ref_video_${title}`,
+    });
 
-  if (!response?.success || !response.data) {
+    if (!response?.success || !response.data) {
+      progressCallback({
+        status: UploaderStates.imageCreateError,
+        errorMessage: response?.errorMessage ?? "Could not upload video",
+      });
+      return;
+    }
+
+    progressCallback({ status: UploaderStates.success, data: response.data });
+  } catch (err) {
     progressCallback({
       status: UploaderStates.imageCreateError,
-      errorMessage: response?.errorMessage ?? "Could not upload video",
+      errorMessage: err instanceof Error ? err.message : "Could not upload video",
     });
-    return;
   }
-
-  progressCallback({ status: UploaderStates.success, data: response.data });
 };
 
 export const uploadAudio: UploadMediaFn = async ({
@@ -41,22 +48,29 @@ export const uploadAudio: UploadMediaFn = async ({
   const api = new MediaUploadApi();
   progressCallback({ status: UploaderStates.uploadingImage });
 
-  const response = await api.UploadAudio({
-    uuid: crypto.randomUUID(),
-    blob: assetFile,
-    fileName: assetFile.name || `reference-audio-${Date.now()}`,
-    maybe_title: `ref_audio_${title}`,
-  });
+  try {
+    const response = await api.UploadAudio({
+      uuid: crypto.randomUUID(),
+      blob: assetFile,
+      fileName: assetFile.name || `reference-audio-${Date.now()}`,
+      maybe_title: `ref_audio_${title}`,
+    });
 
-  if (!response?.success || !response.data) {
+    if (!response?.success || !response.data) {
+      progressCallback({
+        status: UploaderStates.imageCreateError,
+        errorMessage: response?.errorMessage ?? "Could not upload audio",
+      });
+      return;
+    }
+
+    progressCallback({ status: UploaderStates.success, data: response.data });
+  } catch (err) {
     progressCallback({
       status: UploaderStates.imageCreateError,
-      errorMessage: response?.errorMessage ?? "Could not upload audio",
+      errorMessage: err instanceof Error ? err.message : "Could not upload audio",
     });
-    return;
   }
-
-  progressCallback({ status: UploaderStates.success, data: response.data });
 };
 
 export const getVideoDuration = (file: File): Promise<number> =>

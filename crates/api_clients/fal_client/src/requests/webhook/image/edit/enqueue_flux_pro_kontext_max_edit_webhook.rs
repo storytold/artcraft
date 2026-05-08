@@ -5,15 +5,17 @@ use crate::requests::http::image::edit::http_flux_pro_kontext_max_edit::{flux_pr
 use crate::requests::api::webhook_response::WebhookResponse;
 use reqwest::IntoUrl;
 
-pub struct FluxProKontextMaxArgs<'a, U: IntoUrl, R: IntoUrl> {
-  // Request
-  pub prompt: &'a str,
-  pub image_url: U,
-  pub num_images: FluxProKontextMaxNumImages,
-
-  // Fulfillment
+pub struct FluxProKontextMaxArgs<'a, R: IntoUrl> {
+  pub request: FluxProKontextMaxRequest,
   pub webhook_url: R,
   pub api_key: &'a FalApiKey,
+}
+
+#[derive(Clone, Debug)]
+pub struct FluxProKontextMaxRequest {
+  pub prompt: String,
+  pub image_url: String,
+  pub num_images: FluxProKontextMaxNumImages,
 }
 
 #[derive(Copy, Clone, Debug)]
@@ -24,11 +26,12 @@ pub enum FluxProKontextMaxNumImages {
   Four,
 }
 
-pub async fn enqueue_flux_pro_kontext_max_edit_webhook<U: IntoUrl, R: IntoUrl>(
-  args: FluxProKontextMaxArgs<'_, U, R>
+pub async fn enqueue_flux_pro_kontext_max_edit_webhook<R: IntoUrl>(
+  args: FluxProKontextMaxArgs<'_, R>
 ) -> Result<WebhookResponse, FalErrorPlus> {
+  let req = args.request;
 
-  let num_images = match args.num_images {
+  let num_images = match req.num_images {
     FluxProKontextMaxNumImages::One => 1,
     FluxProKontextMaxNumImages::Two => 2,
     FluxProKontextMaxNumImages::Three => 3,
@@ -36,8 +39,8 @@ pub async fn enqueue_flux_pro_kontext_max_edit_webhook<U: IntoUrl, R: IntoUrl>(
   };
 
   let request = FluxProKontextMaxEditInput {
-    prompt: args.prompt.to_string(),
-    image_url: args.image_url.as_str().to_string(),
+    prompt: req.prompt,
+    image_url: req.image_url,
     num_images: Some(num_images),
 
     // Maybe expose
@@ -61,7 +64,7 @@ pub async fn enqueue_flux_pro_kontext_max_edit_webhook<U: IntoUrl, R: IntoUrl>(
 #[cfg(test)]
 mod tests {
   use crate::creds::fal_api_key::FalApiKey;
-  use crate::requests::webhook::image::edit::enqueue_flux_pro_kontext_max_edit_webhook::{enqueue_flux_pro_kontext_max_edit_webhook, FluxProKontextMaxArgs, FluxProKontextMaxNumImages};
+  use crate::requests::webhook::image::edit::enqueue_flux_pro_kontext_max_edit_webhook::{enqueue_flux_pro_kontext_max_edit_webhook, FluxProKontextMaxArgs, FluxProKontextMaxNumImages, FluxProKontextMaxRequest};
   use errors::AnyhowResult;
   use std::fs::read_to_string;
   use test_data::web::image_urls::TALL_MOCHI_WITH_GLASSES_IMAGE_URL;
@@ -75,11 +78,13 @@ mod tests {
     let api_key = FalApiKey::from_str(&secret);
 
     let args = FluxProKontextMaxArgs {
-      image_url: TALL_MOCHI_WITH_GLASSES_IMAGE_URL,
-      prompt: "turn the glasses into sunglasses, make them sleek sunglasses with black rims, square shaped",
+      request: FluxProKontextMaxRequest {
+        prompt: "turn the glasses into sunglasses, make them sleek sunglasses with black rims, square shaped".to_string(),
+        image_url: TALL_MOCHI_WITH_GLASSES_IMAGE_URL.to_string(),
+        num_images: FluxProKontextMaxNumImages::One,
+      },
       api_key: &api_key,
       webhook_url: "https://example.com/webhook",
-      num_images: FluxProKontextMaxNumImages::One,
     };
 
     let result = enqueue_flux_pro_kontext_max_edit_webhook(args).await?;

@@ -7,18 +7,21 @@ use crate::requests::api::webhook_response::WebhookResponse;
 use reqwest::IntoUrl;
 
 pub struct EnqueueGptImage2TextToImageArgs<'a, R: IntoUrl> {
-  // Request required
-  pub prompt: &'a str,
+  pub request: EnqueueGptImage2TextToImageRequest,
+  pub webhook_url: R,
+  pub api_key: &'a FalApiKey,
+}
+
+#[derive(Clone, Debug)]
+pub struct EnqueueGptImage2TextToImageRequest {
+  // Required
+  pub prompt: String,
   pub num_images: EnqueueGptImage2TextToImageNumImages,
 
-  // Optional args
+  // Optional
   pub image_size: Option<EnqueueGptImage2TextToImageSize>,
   pub quality: Option<EnqueueGptImage2TextToImageQuality>,
   pub output_format: Option<EnqueueGptImage2TextToImageOutputFormat>,
-
-  // Fulfillment
-  pub webhook_url: R,
-  pub api_key: &'a FalApiKey,
 }
 
 #[derive(Copy, Clone, Debug)]
@@ -54,7 +57,7 @@ pub enum EnqueueGptImage2TextToImageOutputFormat {
 }
 
 
-impl <U: IntoUrl> FalRequestCostCalculator for EnqueueGptImage2TextToImageArgs<'_, U> {
+impl FalRequestCostCalculator for EnqueueGptImage2TextToImageRequest {
   fn calculate_cost_in_cents(&self) -> UsdCents {
     // Cost table (per image) by approximate pixel dimensions:
     //
@@ -97,14 +100,16 @@ pub async fn enqueue_gpt_image_2_text_to_image_webhook<R: IntoUrl>(
   args: EnqueueGptImage2TextToImageArgs<'_, R>
 ) -> Result<WebhookResponse, FalErrorPlus> {
 
-  let num_images = match args.num_images {
+  let req = args.request;
+
+  let num_images = match req.num_images {
     EnqueueGptImage2TextToImageNumImages::One => 1,
     EnqueueGptImage2TextToImageNumImages::Two => 2,
     EnqueueGptImage2TextToImageNumImages::Three => 3,
     EnqueueGptImage2TextToImageNumImages::Four => 4,
   };
 
-  let image_size = args.image_size
+  let image_size = req.image_size
       .map(|s| match s {
         EnqueueGptImage2TextToImageSize::SquareHd => "square_hd",
         EnqueueGptImage2TextToImageSize::Square => "square",
@@ -115,7 +120,7 @@ pub async fn enqueue_gpt_image_2_text_to_image_webhook<R: IntoUrl>(
       })
       .map(|size| size.to_string());
 
-  let quality = args.quality
+  let quality = req.quality
       .map(|s| match s {
         EnqueueGptImage2TextToImageQuality::Low => "low",
         EnqueueGptImage2TextToImageQuality::Medium => "medium",
@@ -123,7 +128,7 @@ pub async fn enqueue_gpt_image_2_text_to_image_webhook<R: IntoUrl>(
       })
       .map(|quality| quality.to_string());
 
-  let output_format = args.output_format
+  let output_format = req.output_format
       .map(|s| match s {
         EnqueueGptImage2TextToImageOutputFormat::Jpeg => "jpeg",
         EnqueueGptImage2TextToImageOutputFormat::Png => "png",
@@ -133,7 +138,7 @@ pub async fn enqueue_gpt_image_2_text_to_image_webhook<R: IntoUrl>(
       .unwrap_or_else(|| "png".to_string());
 
   let request = GptImage2TextToImageInput {
-    prompt: args.prompt.to_string(),
+    prompt: req.prompt,
     num_images: Some(num_images),
     output_format: Some(output_format),
     // Optionals
@@ -152,7 +157,7 @@ pub async fn enqueue_gpt_image_2_text_to_image_webhook<R: IntoUrl>(
 #[cfg(test)]
 mod tests {
   use crate::creds::fal_api_key::FalApiKey;
-  use crate::requests::webhook::image::text::enqueue_gpt_image_2_text_to_image_webhook::{enqueue_gpt_image_2_text_to_image_webhook, EnqueueGptImage2TextToImageArgs, EnqueueGptImage2TextToImageNumImages};
+  use crate::requests::webhook::image::text::enqueue_gpt_image_2_text_to_image_webhook::{enqueue_gpt_image_2_text_to_image_webhook, EnqueueGptImage2TextToImageArgs, EnqueueGptImage2TextToImageNumImages, EnqueueGptImage2TextToImageRequest};
   use errors::AnyhowResult;
   use std::fs::read_to_string;
 
@@ -165,13 +170,15 @@ mod tests {
     let api_key = FalApiKey::from_str(&secret);
 
     let args = EnqueueGptImage2TextToImageArgs {
-      prompt: "an anime girl riding on the back of a t-rex",
-      num_images: EnqueueGptImage2TextToImageNumImages::Two,
-      image_size: None,
-      quality: None,
+      request: EnqueueGptImage2TextToImageRequest {
+        prompt: "an anime girl riding on the back of a t-rex".to_string(),
+        num_images: EnqueueGptImage2TextToImageNumImages::Two,
+        image_size: None,
+        quality: None,
+        output_format: None,
+      },
       api_key: &api_key,
       webhook_url: "https://example.com/webhook",
-      output_format: None,
     };
 
     let result = enqueue_gpt_image_2_text_to_image_webhook(args).await?;

@@ -7,6 +7,13 @@ use crate::requests::api::webhook_response::WebhookResponse;
 use reqwest::IntoUrl;
 
 pub struct EnqueueKling3p0StandardTextToVideoArgs<'a, R: IntoUrl> {
+  pub request: EnqueueKling3p0StandardTextToVideoRequest,
+  pub webhook_url: R,
+  pub api_key: &'a FalApiKey,
+}
+
+#[derive(Clone, Debug)]
+pub struct EnqueueKling3p0StandardTextToVideoRequest {
   pub prompt: String,
 
   // Optional args
@@ -15,10 +22,6 @@ pub struct EnqueueKling3p0StandardTextToVideoArgs<'a, R: IntoUrl> {
   pub duration: Option<EnqueueKling3p0StandardTextToVideoDuration>,
   pub aspect_ratio: Option<EnqueueKling3p0StandardTextToVideoAspectRatio>,
   pub shot_type: Option<EnqueueKling3p0StandardTextToVideoShotType>,
-
-  // Fulfillment
-  pub webhook_url: R,
-  pub api_key: &'a FalApiKey,
 }
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq, strum::EnumIter)]
@@ -89,7 +92,7 @@ pub enum EnqueueKling3p0StandardTextToVideoShotType {
   Intelligent,
 }
 
-impl <U: IntoUrl> FalRequestCostCalculator for EnqueueKling3p0StandardTextToVideoArgs<'_, U> {
+impl FalRequestCostCalculator for EnqueueKling3p0StandardTextToVideoRequest {
   fn calculate_cost_in_cents(&self) -> UsdCents {
     // Kling 3.0 Standard pricing:
     //   Audio off: $0.168/second
@@ -111,10 +114,12 @@ pub async fn enqueue_kling_3p0_standard_text_to_video_webhook<R: IntoUrl>(
   args: EnqueueKling3p0StandardTextToVideoArgs<'_, R>
 ) -> Result<WebhookResponse, FalErrorPlus> {
 
-  let duration = args.duration
+  let req = args.request;
+
+  let duration = req.duration
       .map(|d| d.to_str().to_string());
 
-  let aspect_ratio = args.aspect_ratio
+  let aspect_ratio = req.aspect_ratio
       .map(|aspect| match aspect {
         EnqueueKling3p0StandardTextToVideoAspectRatio::Square => "1:1",
         EnqueueKling3p0StandardTextToVideoAspectRatio::SixteenByNine => "16:9",
@@ -122,7 +127,7 @@ pub async fn enqueue_kling_3p0_standard_text_to_video_webhook<R: IntoUrl>(
       })
       .map(|s| s.to_string());
 
-  let shot_type = args.shot_type
+  let shot_type = req.shot_type
       .map(|st| match st {
         EnqueueKling3p0StandardTextToVideoShotType::Customize => "customize",
         EnqueueKling3p0StandardTextToVideoShotType::Intelligent => "intelligent",
@@ -130,11 +135,11 @@ pub async fn enqueue_kling_3p0_standard_text_to_video_webhook<R: IntoUrl>(
       .map(|s| s.to_string());
 
   let request = Kling3p0StandardTextToVideoInput {
-    prompt: args.prompt,
-    generate_audio: args.generate_audio,
+    prompt: req.prompt,
+    generate_audio: req.generate_audio,
     duration,
     aspect_ratio,
-    negative_prompt: args.negative_prompt,
+    negative_prompt: req.negative_prompt,
     shot_type,
     cfg_scale: None,
   };
@@ -158,49 +163,45 @@ mod tests {
 
   #[test]
   fn test_cost() {
-    let api_key = FalApiKey::from_str("");
-
-    let mut args = EnqueueKling3p0StandardTextToVideoArgs {
+    let mut req = EnqueueKling3p0StandardTextToVideoRequest {
       prompt: "a cat sitting on a windowsill watching rain".to_string(),
       generate_audio: Some(false),
       negative_prompt: None,
       duration: Some(EnqueueKling3p0StandardTextToVideoDuration::FiveSeconds),
       aspect_ratio: None,
       shot_type: None,
-      webhook_url: "https://example.com/webhook",
-      api_key: &api_key,
     };
 
     // Audio off: $0.168/sec
     // 5s: (168 * 5 + 9) / 10 = 849 / 10 = 84
-    assert_eq!(args.calculate_cost_in_cents(), 84);
+    assert_eq!(req.calculate_cost_in_cents(), 84);
 
     // 3s: (168 * 3 + 9) / 10 = 513 / 10 = 51
-    args.duration = Some(EnqueueKling3p0StandardTextToVideoDuration::ThreeSeconds);
-    assert_eq!(args.calculate_cost_in_cents(), 51);
+    req.duration = Some(EnqueueKling3p0StandardTextToVideoDuration::ThreeSeconds);
+    assert_eq!(req.calculate_cost_in_cents(), 51);
 
     // 10s: (168 * 10 + 9) / 10 = 1689 / 10 = 168
-    args.duration = Some(EnqueueKling3p0StandardTextToVideoDuration::TenSeconds);
-    assert_eq!(args.calculate_cost_in_cents(), 168);
+    req.duration = Some(EnqueueKling3p0StandardTextToVideoDuration::TenSeconds);
+    assert_eq!(req.calculate_cost_in_cents(), 168);
 
     // 15s: (168 * 15 + 9) / 10 = 2529 / 10 = 252
-    args.duration = Some(EnqueueKling3p0StandardTextToVideoDuration::FifteenSeconds);
-    assert_eq!(args.calculate_cost_in_cents(), 252);
+    req.duration = Some(EnqueueKling3p0StandardTextToVideoDuration::FifteenSeconds);
+    assert_eq!(req.calculate_cost_in_cents(), 252);
 
     // Audio on: $0.252/sec
-    args.generate_audio = Some(true);
+    req.generate_audio = Some(true);
 
     // 5s: (252 * 5 + 9) / 10 = 1269 / 10 = 126
-    args.duration = Some(EnqueueKling3p0StandardTextToVideoDuration::FiveSeconds);
-    assert_eq!(args.calculate_cost_in_cents(), 126);
+    req.duration = Some(EnqueueKling3p0StandardTextToVideoDuration::FiveSeconds);
+    assert_eq!(req.calculate_cost_in_cents(), 126);
 
     // 10s: (252 * 10 + 9) / 10 = 2529 / 10 = 252
-    args.duration = Some(EnqueueKling3p0StandardTextToVideoDuration::TenSeconds);
-    assert_eq!(args.calculate_cost_in_cents(), 252);
+    req.duration = Some(EnqueueKling3p0StandardTextToVideoDuration::TenSeconds);
+    assert_eq!(req.calculate_cost_in_cents(), 252);
 
     // 15s: (252 * 15 + 9) / 10 = 3789 / 10 = 378
-    args.duration = Some(EnqueueKling3p0StandardTextToVideoDuration::FifteenSeconds);
-    assert_eq!(args.calculate_cost_in_cents(), 378);
+    req.duration = Some(EnqueueKling3p0StandardTextToVideoDuration::FifteenSeconds);
+    assert_eq!(req.calculate_cost_in_cents(), 378);
   }
 
   #[tokio::test]
@@ -210,12 +211,14 @@ mod tests {
     let api_key = FalApiKey::from_str(&secret);
 
     let args = EnqueueKling3p0StandardTextToVideoArgs {
-      prompt: "a golden retriever puppy chases butterflies through a sunlit meadow, cinematic slow motion".to_string(),
-      generate_audio: Some(true),
-      negative_prompt: None,
-      duration: Some(EnqueueKling3p0StandardTextToVideoDuration::FiveSeconds),
-      aspect_ratio: Some(EnqueueKling3p0StandardTextToVideoAspectRatio::SixteenByNine),
-      shot_type: None,
+      request: EnqueueKling3p0StandardTextToVideoRequest {
+        prompt: "a golden retriever puppy chases butterflies through a sunlit meadow, cinematic slow motion".to_string(),
+        generate_audio: Some(true),
+        negative_prompt: None,
+        duration: Some(EnqueueKling3p0StandardTextToVideoDuration::FiveSeconds),
+        aspect_ratio: Some(EnqueueKling3p0StandardTextToVideoAspectRatio::SixteenByNine),
+        shot_type: None,
+      },
       api_key: &api_key,
       webhook_url: "https://example.com/webhook",
     };
@@ -235,12 +238,14 @@ mod tests {
     for ar in EnqueueKling3p0StandardTextToVideoAspectRatio::iter() {
       println!("--- aspect ratio: {:?} ---", ar);
       let args = EnqueueKling3p0StandardTextToVideoArgs {
-        prompt: "a wave crashes against a rocky shoreline at sunset".to_string(),
-        generate_audio: Some(true),
-        negative_prompt: None,
-        duration: Some(EnqueueKling3p0StandardTextToVideoDuration::ThreeSeconds),
-        aspect_ratio: Some(ar),
-        shot_type: None,
+        request: EnqueueKling3p0StandardTextToVideoRequest {
+          prompt: "a wave crashes against a rocky shoreline at sunset".to_string(),
+          generate_audio: Some(true),
+          negative_prompt: None,
+          duration: Some(EnqueueKling3p0StandardTextToVideoDuration::ThreeSeconds),
+          aspect_ratio: Some(ar),
+          shot_type: None,
+        },
         api_key: &api_key,
         webhook_url: "https://example.com/webhook",
       };
@@ -260,12 +265,14 @@ mod tests {
     for dur in EnqueueKling3p0StandardTextToVideoDuration::iter() {
       println!("--- duration: {:?} ---", dur);
       let args = EnqueueKling3p0StandardTextToVideoArgs {
-        prompt: "a candle flame flickers in a dark room".to_string(),
-        generate_audio: Some(false),
-        negative_prompt: None,
-        duration: Some(dur),
-        aspect_ratio: Some(EnqueueKling3p0StandardTextToVideoAspectRatio::SixteenByNine),
-        shot_type: None,
+        request: EnqueueKling3p0StandardTextToVideoRequest {
+          prompt: "a candle flame flickers in a dark room".to_string(),
+          generate_audio: Some(false),
+          negative_prompt: None,
+          duration: Some(dur),
+          aspect_ratio: Some(EnqueueKling3p0StandardTextToVideoAspectRatio::SixteenByNine),
+          shot_type: None,
+        },
         api_key: &api_key,
         webhook_url: "https://example.com/webhook",
       };
@@ -285,12 +292,14 @@ mod tests {
     for st in EnqueueKling3p0StandardTextToVideoShotType::iter() {
       println!("--- shot type: {:?} ---", st);
       let args = EnqueueKling3p0StandardTextToVideoArgs {
-        prompt: "a bird takes flight from a tree branch".to_string(),
-        generate_audio: Some(true),
-        negative_prompt: None,
-        duration: Some(EnqueueKling3p0StandardTextToVideoDuration::FiveSeconds),
-        aspect_ratio: Some(EnqueueKling3p0StandardTextToVideoAspectRatio::SixteenByNine),
-        shot_type: Some(st),
+        request: EnqueueKling3p0StandardTextToVideoRequest {
+          prompt: "a bird takes flight from a tree branch".to_string(),
+          generate_audio: Some(true),
+          negative_prompt: None,
+          duration: Some(EnqueueKling3p0StandardTextToVideoDuration::FiveSeconds),
+          aspect_ratio: Some(EnqueueKling3p0StandardTextToVideoAspectRatio::SixteenByNine),
+          shot_type: Some(st),
+        },
         api_key: &api_key,
         webhook_url: "https://example.com/webhook",
       };

@@ -1,22 +1,28 @@
 use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
 use crate::state::server_state::ServerState;
 use actix_web::web::Json;
+use enums::by_table::debug_logs::debug_log_type::DebugLogType;
 use enums::by_table::generic_inference_jobs::frontend_failure_category::FrontendFailureCategory;
 use fal_client::webhook_api::raw::webhook_error_type::WebhookErrorType;
 use fal_client::webhook_api::hydrated::hydrated_webhook_contents::ErrorData;
 use http_server_common::response::response_success_helpers::SimpleGenericJsonSuccess;
 use log::{error, info, warn};
-use mysql_queries::queries::generic_inference::fal::get_inference_job_by_fal_id::get_inference_job_by_fal_id;
-use mysql_queries::queries::generic_inference::job::mark_job_failed_by_token::{mark_job_failed_by_token, MarkJobFailedByTokenArgs};
+use mysql_queries::queries::debug_logs::insert_debug_log::{insert_debug_log, InsertDebugLogArgs};
+use mysql_queries::queries::generic_inference::fal::get_inference_job_by_fal_id::get_inference_job_by_fal_id_from_connection;
+use mysql_queries::queries::generic_inference::job::mark_job_failed_by_token::{mark_job_failed_by_token_from_connection, MarkJobFailedByTokenFromConnectionArgs};
+use sqlx::pool::PoolConnection;
+use sqlx::MySql;
 
 /// Handle a FAL webhook with status ERROR.
 ///
 /// Looks up the job by request_id and marks it as failed using the parsed error data.
 pub async fn handle_failed_fal_webhook(
   server_state: &ServerState,
+  mysql_connection: &mut PoolConnection<MySql>,
   request_id: &str,
   error_data: &ErrorData,
   maybe_top_level_error: Option<&str>,
+  raw_body: &str,
 ) -> Result<Json<SimpleGenericJsonSuccess>, AdvancedCommonWebError> {
 
   info!(
@@ -28,7 +34,7 @@ pub async fn handle_failed_fal_webhook(
   );
 
   // Look up the job record.
-  let job = match get_inference_job_by_fal_id(request_id, &server_state.mysql_pool).await {
+  let job = match get_inference_job_by_fal_id_from_connection(request_id, mysql_connection).await {
     Ok(Some(record)) => record,
     Ok(None) => {
       warn!("Could not find job record by fal request_id: {}", request_id);
@@ -39,6 +45,20 @@ pub async fn handle_failed_fal_webhook(
       return Err(AdvancedCommonWebError::from_anyhow_error(err));
     }
   };
+
+  // Insert debug log for the webhook payload.
+  if let Some(debug_log_event_token) = &job.maybe_debug_log_event_token {
+    if let Err(err) = insert_debug_log(InsertDebugLogArgs {
+      apriori_debug_log_event_token: Some(debug_log_event_token),
+      maybe_creator_user_token: job.maybe_creator_user_token.as_ref(),
+      debug_log_type: DebugLogType::FalWebhook,
+      message: raw_body,
+      mysql_executor: &mut **mysql_connection,
+      phantom: Default::default(),
+    }).await {
+      warn!("Failed to insert Fal webhook debug log: {:?}", err);
+    }
+  }
 
   // Build a failure reason from the error data or the top-level error string.
   let public_failure_reason = if let Some(msg) = &error_data.message {
@@ -67,8 +87,8 @@ pub async fn handle_failed_fal_webhook(
     public_failure_reason,
   );
 
-  if let Err(err) = mark_job_failed_by_token(MarkJobFailedByTokenArgs {
-    pool: &server_state.mysql_pool,
+  if let Err(err) = mark_job_failed_by_token_from_connection(MarkJobFailedByTokenFromConnectionArgs {
+    mysql_connection,
     job_token: &job.job_token,
     maybe_public_failure_reason: Some(&public_failure_reason),
     internal_debugging_failure_reason: &internal_failure_reason,

@@ -17,7 +17,7 @@ use enums::common::generation::common_model_type::CommonModelType;
 use enums::common::visibility::Visibility;
 use enums::common::generation::common_generation_mode::CommonGenerationMode;
 use fal_client::creds::open_ai_api_key::OpenAiApiKey;
-use fal_client::requests::webhook::image::edit::enqueue_seededit_v3_edit_webhook::{enqueue_seededit_v3_edit_webhook, SeedEditV3EditArgs};
+use fal_client::requests::webhook::image::edit::enqueue_seededit_v3_edit_webhook::{enqueue_seededit_v3_edit_webhook, SeedEditV3EditArgs, SeedEditV3EditRequest};
 use http_server_common::request::get_request_ip::get_request_ip;
 use log::{error, info, warn};
 use mysql_queries::queries::generic_inference::fal::insert_generic_inference_job_for_fal_queue::insert_generic_inference_job_for_fal_queue;
@@ -137,10 +137,12 @@ pub async fn seededit_3_edit_image_handler(
   info!("Fal webhook URL: {}", server_state.fal.webhook_url);
 
   let args = SeedEditV3EditArgs {
-    prompt: request.prompt.as_deref().unwrap_or(""),
+    request: SeedEditV3EditRequest {
+      prompt: request.prompt.as_deref().unwrap_or("").to_string(),
+      image_url: image_url.to_string(),
+    },
     webhook_url: &server_state.fal.webhook_url,
     api_key: &server_state.fal.api_key,
-    image_url: image_url,
   };
 
   let fal_result = enqueue_seededit_v3_edit_webhook(args)

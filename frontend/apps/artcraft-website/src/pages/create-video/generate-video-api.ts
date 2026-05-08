@@ -50,6 +50,8 @@ export async function enqueueVideoGeneration(
       : null,
   };
 
+  console.log("[generate-video] raw request body", body);
+
   try {
     const api = new OmniGenApi();
     const response = await api.generateVideo(body);

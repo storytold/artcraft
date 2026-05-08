@@ -11,9 +11,10 @@ import {
   faSpinnerThird,
   faVideo,
 } from "@fortawesome/pro-solid-svg-icons";
-import { addCorsParam, PLACEHOLDER_IMAGES } from "@storyteller/common";
+import { PLACEHOLDER_IMAGES } from "@storyteller/common";
 import { Tooltip } from "@storyteller/ui-tooltip";
-import { toast } from "@storyteller/ui-toaster";
+import { toast } from "../toast/toast";
+import { downloadMediaFile } from "../../lib/download-media";
 import {
   getModelCreatorIconPath,
   getModelDisplayName,
@@ -119,6 +120,7 @@ export const GalleryCard = memo(function GalleryCard({
   const [ratio, setRatio] = useState<number | undefined>(cached);
   const [shareCopied, setShareCopied] = useState(false);
   const [isRecreating, setIsRecreating] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
   const isVideo = item.mediaClass === "video";
   const is3D = item.mediaClass === "dimensional";
   const recreateMediaClass: RecreateMediaClass | null = isVideo
@@ -277,9 +279,23 @@ export const GalleryCard = memo(function GalleryCard({
     [item, onClick],
   );
 
-  const downloadHref = item.fullImage
-    ? addCorsParam(item.fullImage) || item.fullImage
-    : undefined;
+  const handleDownload = useCallback(
+    async (e: React.MouseEvent) => {
+      e.stopPropagation();
+      if (!item.fullImage || isDownloading) return;
+      setIsDownloading(true);
+      try {
+        await downloadMediaFile({
+          url: item.fullImage,
+          filename: `artcraft-${item.id}`,
+          mediaClass: item.mediaClass,
+        });
+      } finally {
+        setIsDownloading(false);
+      }
+    },
+    [item.fullImage, item.id, item.mediaClass, isDownloading],
+  );
 
   return (
     <div
@@ -385,19 +401,20 @@ export const GalleryCard = memo(function GalleryCard({
               />
             </button>
           </Tooltip>
-          {downloadHref && (
+          {item.fullImage && (
             <Tooltip content="Download" position="top">
-              <a
-                href={downloadHref}
-                download={`artcraft-${item.id}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={(e) => e.stopPropagation()}
-                className="flex h-7 w-7 items-center justify-center rounded-md text-white/85 transition-colors hover:bg-white/15 hover:text-white"
+              <button
+                type="button"
+                onClick={handleDownload}
+                disabled={isDownloading}
+                className="flex h-7 w-7 items-center justify-center rounded-md text-white/85 transition-colors hover:bg-white/15 hover:text-white disabled:opacity-60"
                 aria-label="Download"
               >
-                <FontAwesomeIcon icon={faArrowDownToLine} className="text-sm" />
-              </a>
+                <FontAwesomeIcon
+                  icon={isDownloading ? faSpinnerThird : faArrowDownToLine}
+                  className={`text-sm ${isDownloading ? "animate-spin" : ""}`}
+                />
+              </button>
             </Tooltip>
           )}
         </div>

@@ -1,3 +1,6 @@
+use std::fmt::Debug;
+use std::sync::Arc;
+
 use muapi_client::api_types::request_id::RequestId as MuapiRequestId;
 use tokens::tokens::generic_inference_jobs::InferenceJobToken;
 
@@ -24,6 +27,11 @@ pub struct Seedance2proVideoResponsePayload {
 pub struct FalVideoResponsePayload {
   pub request_id: Option<String>,
   pub gateway_request_id: Option<String>,
+
+  /// The outbound request that was sent to Fal.
+  /// Stored as a trait object so any Request type can be captured.
+  /// Use `format!("{:?}", ...)` or `format!("{:#?}", ...)` to print.
+  pub maybe_outbound_request: Option<Arc<dyn Debug + Send + Sync>>,
 }
 
 #[derive(Clone, Debug)]

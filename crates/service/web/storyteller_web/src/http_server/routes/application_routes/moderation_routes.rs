@@ -36,6 +36,8 @@ use crate::http_server::endpoints::moderation::user::moderator_user_lookup_by_st
 use crate::http_server::endpoints::moderation::user::moderator_user_lookup_handler::moderator_user_lookup_handler;
 use crate::http_server::endpoints::moderation::alerts::moderation_send_alert_handler::moderation_send_alert_handler;
 use crate::http_server::endpoints::moderation::staff_audit_logs::moderator_list_staff_audit_logs_handler::moderator_list_staff_audit_logs_handler;
+use crate::http_server::endpoints::moderation::debug_logs::moderation_list_debug_logs_for_token_handler::moderation_list_debug_logs_for_token_handler;
+use crate::http_server::endpoints::moderation::jobs::moderation_get_job_by_token_handler::moderation_get_job_by_token_handler;
 use crate::http_server::endpoints::moderation::user_feature_flags::moderator_edit_user_feature_flags_handler::moderator_edit_user_feature_flags_handler;
 use crate::http_server::endpoints::moderation::user_feature_flags::moderator_list_all_available_user_feature_flags_handler::moderator_list_all_available_user_feature_flags_handler;
 use crate::http_server::endpoints::moderation::user_feature_flags::moderator_list_user_feature_flags_handler::moderator_list_user_feature_flags_handler;
@@ -58,6 +60,12 @@ pub fn add_moderator_routes<T, B> (app: App<T>) -> App<T>
         .service(web::scope("/alerts")
             .service(web::resource("/send")
                 .route(web::post().to(moderation_send_alert_handler))
+                .route(web::head().to(|| HttpResponse::Ok()))
+            )
+        )
+        .service(web::scope("/debug_logs")
+            .service(web::resource("/list/{token}")
+                .route(web::get().to(moderation_list_debug_logs_for_token_handler))
                 .route(web::head().to(|| HttpResponse::Ok()))
             )
         )
@@ -87,6 +95,10 @@ pub fn add_moderator_routes<T, B> (app: App<T>) -> App<T>
                 .route(web::post().to(moderator_list_subscribing_users_by_signup_date_handler))
                 .route(web::head().to(|| HttpResponse::Ok()))
             )
+        )
+        .service(web::resource("/job/{token}")
+            .route(web::get().to(moderation_get_job_by_token_handler))
+            .route(web::head().to(|| HttpResponse::Ok()))
         )
         .service(web::scope("/jobs")
             .service(web::resource("/user/{user_token}/list")

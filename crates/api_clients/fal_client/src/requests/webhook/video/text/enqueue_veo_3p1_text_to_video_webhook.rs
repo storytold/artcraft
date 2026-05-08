@@ -7,10 +7,14 @@ use crate::requests::api::webhook_response::WebhookResponse;
 use reqwest::IntoUrl;
 
 pub struct EnqueueVeo3p1TextToVideoArgs<'a, R: IntoUrl> {
-  // Request required
-  pub prompt: String,
+  pub request: EnqueueVeo3p1TextToVideoRequest,
+  pub webhook_url: R,
+  pub api_key: &'a FalApiKey,
+}
 
-  // Optional args
+#[derive(Clone, Debug)]
+pub struct EnqueueVeo3p1TextToVideoRequest {
+  pub prompt: String,
   pub duration: Option<EnqueueVeo3p1TextToVideoDurationSeconds>,
   pub aspect_ratio: Option<EnqueueVeo3p1TextToVideoAspectRatio>,
   pub resolution: Option<EnqueueVeo3p1TextToVideoResolution>,
@@ -19,10 +23,6 @@ pub struct EnqueueVeo3p1TextToVideoArgs<'a, R: IntoUrl> {
   pub negative_prompt: Option<String>,
   pub seed: Option<i64>,
   pub auto_fix: Option<bool>,
-
-  // Fulfillment
-  pub webhook_url: R,
-  pub api_key: &'a FalApiKey,
 }
 
 #[derive(Copy, Clone, Debug)]
@@ -46,7 +46,7 @@ pub enum EnqueueVeo3p1TextToVideoResolution {
 }
 
 
-impl <R: IntoUrl> FalRequestCostCalculator for EnqueueVeo3p1TextToVideoArgs<'_, R> {
+impl FalRequestCostCalculator for EnqueueVeo3p1TextToVideoRequest {
   fn calculate_cost_in_cents(&self) -> UsdCents {
     // "For every second of video you generated, you will be charged
     //  $0.20 (audio off) or
@@ -74,8 +74,9 @@ impl <R: IntoUrl> FalRequestCostCalculator for EnqueueVeo3p1TextToVideoArgs<'_, 
 pub async fn enqueue_veo_3p1_text_to_video_webhook<R: IntoUrl>(
   args: EnqueueVeo3p1TextToVideoArgs<'_, R>
 ) -> Result<WebhookResponse, FalErrorPlus> {
+  let req = args.request;
 
-  let duration = args.duration
+  let duration = req.duration
       .map(|resolution| match resolution {
         EnqueueVeo3p1TextToVideoDurationSeconds::Four => "4s",
         EnqueueVeo3p1TextToVideoDurationSeconds::Six => "6s",
@@ -83,7 +84,7 @@ pub async fn enqueue_veo_3p1_text_to_video_webhook<R: IntoUrl>(
       })
       .map(|s| s.to_string());
 
-  let aspect_ratio = args.aspect_ratio
+  let aspect_ratio = req.aspect_ratio
       .map(|aspect_ratio| match aspect_ratio {
         EnqueueVeo3p1TextToVideoAspectRatio::Auto => "auto",
         EnqueueVeo3p1TextToVideoAspectRatio::SixteenByNine => "16:9",
@@ -91,7 +92,7 @@ pub async fn enqueue_veo_3p1_text_to_video_webhook<R: IntoUrl>(
       })
       .map(|s| s.to_string());
 
-  let resolution = args.resolution
+  let resolution = req.resolution
       .map(|resolution| match resolution {
         EnqueueVeo3p1TextToVideoResolution::SevenTwentyP => "720p",
         EnqueueVeo3p1TextToVideoResolution::TenEightyP => "1080p",
@@ -99,16 +100,16 @@ pub async fn enqueue_veo_3p1_text_to_video_webhook<R: IntoUrl>(
       .map(|s| s.to_string());
 
   let request = Veo3p1TextToVideoInput {
-    prompt: args.prompt,
+    prompt: req.prompt,
     // Optionals
     duration,
     aspect_ratio,
     resolution,
-    negative_prompt: args.negative_prompt,
-    generate_audio: args.generate_audio,
-    enhance_prompt: args.enhance_prompt,
-    seed: args.seed,
-    auto_fix: args.auto_fix,
+    negative_prompt: req.negative_prompt,
+    generate_audio: req.generate_audio,
+    enhance_prompt: req.enhance_prompt,
+    seed: req.seed,
+    auto_fix: req.auto_fix,
   };
 
   let result = veo_3p1_text_to_video(request)
@@ -122,7 +123,7 @@ pub async fn enqueue_veo_3p1_text_to_video_webhook<R: IntoUrl>(
 #[cfg(test)]
 mod tests {
   use crate::creds::fal_api_key::FalApiKey;
-  use crate::requests::webhook::video::text::enqueue_veo_3p1_text_to_video_webhook::{enqueue_veo_3p1_text_to_video_webhook, EnqueueVeo3p1TextToVideoArgs, EnqueueVeo3p1TextToVideoAspectRatio, EnqueueVeo3p1TextToVideoDurationSeconds, EnqueueVeo3p1TextToVideoResolution};
+  use crate::requests::webhook::video::text::enqueue_veo_3p1_text_to_video_webhook::{enqueue_veo_3p1_text_to_video_webhook, EnqueueVeo3p1TextToVideoArgs, EnqueueVeo3p1TextToVideoRequest, EnqueueVeo3p1TextToVideoAspectRatio, EnqueueVeo3p1TextToVideoDurationSeconds, EnqueueVeo3p1TextToVideoResolution};
   use errors::AnyhowResult;
   use std::fs::read_to_string;
 
@@ -135,15 +136,17 @@ mod tests {
     let api_key = FalApiKey::from_str(&secret);
 
     let args = EnqueueVeo3p1TextToVideoArgs {
-      prompt: "An alien space ship hovers over new york city. it looks ominous, ready to attack. suddenly, it drops a bunch of ping pong balls on the city".to_string(),
-      duration: Some(EnqueueVeo3p1TextToVideoDurationSeconds::Eight),
-      aspect_ratio: Some(EnqueueVeo3p1TextToVideoAspectRatio::SixteenByNine),
-      resolution: Some(EnqueueVeo3p1TextToVideoResolution::TenEightyP),
-      generate_audio: Some(true),
-      negative_prompt: None,
-      enhance_prompt: Some(true),
-      auto_fix: Some(true),
-      seed: None,
+      request: EnqueueVeo3p1TextToVideoRequest {
+        prompt: "An alien space ship hovers over new york city. it looks ominous, ready to attack. suddenly, it drops a bunch of ping pong balls on the city".to_string(),
+        duration: Some(EnqueueVeo3p1TextToVideoDurationSeconds::Eight),
+        aspect_ratio: Some(EnqueueVeo3p1TextToVideoAspectRatio::SixteenByNine),
+        resolution: Some(EnqueueVeo3p1TextToVideoResolution::TenEightyP),
+        generate_audio: Some(true),
+        negative_prompt: None,
+        enhance_prompt: Some(true),
+        auto_fix: Some(true),
+        seed: None,
+      },
       api_key: &api_key,
       webhook_url: "https://example.com/webhook",
     };

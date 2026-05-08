@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { persist } from "zustand/middleware";
 import type { RecreatePayload } from "../../lib/recreate";
 import type {
   RefImage,
@@ -21,6 +22,7 @@ export type VideoBatch = {
   modelLabel: string;
   jobToken?: string;
   failureReason?: string;
+  batchCount?: number;
 };
 
 export type VideoInputMode = "keyframe" | "reference";
@@ -52,7 +54,7 @@ type CreateVideoState = {
   setRefs: (patch: Partial<VideoRefsState>) => void;
   setPendingRecreate: (payload: RecreatePayload | null) => void;
   consumePendingRecreate: () => RecreatePayload | null;
-  startBatch: (prompt: string, modelLabel: string) => string;
+  startBatch: (prompt: string, modelLabel: string, batchCount?: number) => string;
   setBatchJobToken: (batchId: string, jobToken: string) => void;
   completeBatch: (batchId: string, video: GeneratedVideo) => void;
   failBatch: (batchId: string, reason?: string) => void;
@@ -79,76 +81,87 @@ const DEFAULT_REFS: VideoRefsState = {
   referenceAudios: [],
 };
 
-export const useCreateVideoStore = create<CreateVideoState>((set, get) => ({
-  batches: [],
-  ui: { ...DEFAULT_UI },
-  refs: { ...DEFAULT_REFS },
-  pendingRecreate: null,
+export const useCreateVideoStore = create<CreateVideoState>()(
+  persist(
+    (set, get) => ({
+      batches: [],
+      ui: { ...DEFAULT_UI },
+      refs: { ...DEFAULT_REFS },
+      pendingRecreate: null,
 
-  setUi: (patch) =>
-    set((s) => ({ ui: { ...s.ui, ...patch } })),
+      setUi: (patch) =>
+        set((s) => ({ ui: { ...s.ui, ...patch } })),
 
-  setRefs: (patch) =>
-    set((s) => ({ refs: { ...s.refs, ...patch } })),
+      setRefs: (patch) =>
+        set((s) => ({ refs: { ...s.refs, ...patch } })),
 
-  setPendingRecreate: (payload) => set({ pendingRecreate: payload }),
+      setPendingRecreate: (payload) => set({ pendingRecreate: payload }),
 
-  consumePendingRecreate: () => {
-    const payload = get().pendingRecreate;
-    if (payload) set({ pendingRecreate: null });
-    return payload;
-  },
+      consumePendingRecreate: () => {
+        const payload = get().pendingRecreate;
+        if (payload) set({ pendingRecreate: null });
+        return payload;
+      },
 
-  startBatch: (prompt, modelLabel) => {
-    const id = crypto.randomUUID();
-    const batch: VideoBatch = {
-      id,
-      prompt,
-      status: "pending",
-      createdAt: Date.now(),
-      modelLabel,
-    };
-    set((s) => ({ batches: [...s.batches, batch] }));
-    return id;
-  },
+      startBatch: (prompt, modelLabel, batchCount) => {
+        const id = crypto.randomUUID();
+        const batch: VideoBatch = {
+          id,
+          prompt,
+          status: "pending",
+          createdAt: Date.now(),
+          modelLabel,
+          batchCount,
+        };
+        set((s) => ({ batches: [...s.batches, batch] }));
+        return id;
+      },
 
-  setBatchJobToken: (batchId, jobToken) => {
-    set((s) => ({
-      batches: s.batches.map((b) =>
-        b.id === batchId ? { ...b, jobToken } : b,
-      ),
-    }));
-  },
+      setBatchJobToken: (batchId, jobToken) => {
+        set((s) => ({
+          batches: s.batches.map((b) =>
+            b.id === batchId ? { ...b, jobToken } : b,
+          ),
+        }));
+      },
 
-  completeBatch: (batchId, video) => {
-    set((s) => ({
-      batches: s.batches.map((b) =>
-        b.id === batchId
-          ? { ...b, status: "complete" as const, video }
-          : b,
-      ),
-    }));
-  },
+      completeBatch: (batchId, video) => {
+        set((s) => ({
+          batches: s.batches.map((b) =>
+            b.id === batchId
+              ? { ...b, status: "complete" as const, video }
+              : b,
+          ),
+        }));
+      },
 
-  failBatch: (batchId, reason) => {
-    set((s) => ({
-      batches: s.batches.map((b) =>
-        b.id === batchId
-          ? { ...b, status: "failed" as const, failureReason: reason }
-          : b,
-      ),
-    }));
-  },
+      failBatch: (batchId, reason) => {
+        set((s) => ({
+          batches: s.batches.map((b) =>
+            b.id === batchId
+              ? { ...b, status: "failed" as const, failureReason: reason }
+              : b,
+          ),
+        }));
+      },
 
-  dismissBatch: (id) => {
-    set((s) => ({ batches: s.batches.filter((b) => b.id !== id) }));
-  },
+      dismissBatch: (id) => {
+        set((s) => ({ batches: s.batches.filter((b) => b.id !== id) }));
+      },
 
-  clearCompleted: () => {
-    set((s) => ({
-      batches: s.batches.filter((b) => b.status !== "complete"),
-    }));
-  },
+      clearCompleted: () => {
+        set((s) => ({
+          batches: s.batches.filter((b) => b.status !== "complete"),
+        }));
+      },
 
-  reset: () => set({ batches: [] }),
-}));
+      reset: () => set({ batches: [] }),
+    }),
+    {
+      name: "artcraft-video-batches",
+      partialize: (state) => ({
+        batches: state.batches.filter((b) => b.status === "pending"),
+      }),
+    },
+  ),
+);

@@ -85,6 +85,8 @@ use crate::http_server::endpoints::media_files::upsert_upload::write_engine_asse
 use crate::http_server::endpoints::media_files::upsert_upload::write_error::MediaFileWriteError;
 use crate::http_server::endpoints::media_files::upsert_upload::write_scene_file::write_scene_file_media_file_handler::*;
 use crate::http_server::endpoints::model_download::enqueue_gptsovits_model_download_handler::*;
+use crate::http_server::endpoints::moderation::debug_logs::moderation_list_debug_logs_for_token_handler::*;
+use crate::http_server::endpoints::moderation::jobs::moderation_get_job_by_token_handler::*;
 use crate::http_server::endpoints::moderation::user_feature_flags::moderator_edit_user_feature_flags_handler::*;
 use crate::http_server::endpoints::moderation::user_feature_flags::moderator_list_all_available_user_feature_flags_handler::*;
 use crate::http_server::endpoints::moderation::user_feature_flags::moderator_list_user_feature_flags_handler::*;
@@ -155,6 +157,7 @@ use artcraft_api_defs::media_file::delete_media_file::DeleteMediaFilePathInfo;
 use artcraft_api_defs::media_file::delete_media_file::DeleteMediaFileRequest;
 use artcraft_api_defs::prompts::create_prompt::CreatePromptRequest;
 use artcraft_api_defs::prompts::create_prompt::CreatePromptResponse;
+use artcraft_api_defs::prompts::batch_get_prompts::*;
 use artcraft_api_defs::prompts::get_prompt::*;
 use artcraft_api_defs::users::change_password::{ChangePasswordRequest, ChangePasswordResponse};
 use artcraft_api_defs::users::edit_email::{EditEmailRequest, EditEmailResponse};
@@ -220,6 +223,7 @@ use enums::by_table::user_bookmarks::user_bookmark_entity_type::UserBookmarkEnti
 use enums::by_table::user_ratings::entity_type::UserRatingEntityType;
 use enums::by_table::user_ratings::rating_value::UserRatingValue;
 use enums::by_table::users::user_feature_flag::UserFeatureFlag;
+use enums::common::generation::common_model_class::CommonModelClass;
 use enums::common::generation::common_model_type::CommonModelType;
 use enums::common::generation::common_aspect_ratio::CommonAspectRatio;
 use enums::common::generation::common_generation_mode::CommonGenerationMode;
@@ -402,6 +406,7 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     crate::http_server::endpoints::moderation::user_feature_flags::moderator_edit_user_feature_flags_handler::moderator_edit_user_feature_flags_handler,
     crate::http_server::endpoints::moderation::user_feature_flags::moderator_list_all_available_user_feature_flags_handler::moderator_list_all_available_user_feature_flags_handler,
     crate::http_server::endpoints::moderation::user_feature_flags::moderator_list_user_feature_flags_handler::moderator_list_user_feature_flags_handler,
+    crate::http_server::endpoints::prompts::batch_get_prompts_handler::batch_get_prompts_handler,
     crate::http_server::endpoints::prompts::create_prompt_handler::create_prompt_handler,
     crate::http_server::endpoints::prompts::get_prompt_handler::get_prompt_handler,
     crate::http_server::endpoints::service::status_alert_handler::status_alert_handler,
@@ -516,6 +521,8 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     crate::http_server::endpoints::moderation::wallets::moderator_add_banked_balance_to_wallet_handler::moderator_add_banked_balance_to_wallet_handler,
     crate::http_server::endpoints::moderation::wallets::moderator_create_wallet_for_user_handler::moderator_create_wallet_for_user_handler,
     crate::http_server::endpoints::moderation::wallets::moderator_get_wallet_handler::moderator_get_wallet_handler,
+    crate::http_server::endpoints::moderation::debug_logs::moderation_list_debug_logs_for_token_handler::moderation_list_debug_logs_for_token_handler,
+    crate::http_server::endpoints::moderation::jobs::moderation_get_job_by_token_handler::moderation_get_job_by_token_handler,
     crate::http_server::endpoints::moderation::staff_audit_logs::moderator_list_staff_audit_logs_handler::moderator_list_staff_audit_logs_handler,
     crate::http_server::endpoints::moderation::user_bans::moderation_ban_user_handler::moderation_ban_user_handler,
     crate::http_server::endpoints::moderation::user_sessions::moderator_list_user_session_impersonation_requests_for_user_handler::moderator_list_user_session_impersonation_requests_for_user_handler,
@@ -559,6 +566,7 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     MediaFileOriginProductCategory,
     MediaFileSubtype,
     MediaFileType,
+    CommonModelClass,
     CommonModelType,
     CommonAspectRatio,
     CommonGenerationMode,
@@ -621,6 +629,9 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     BatchGetInferenceJobStatusQueryParams,
     BatchGetInferenceJobStatusSuccessResponse,
     BatchGetMediaFilesModelInfo,
+    BatchGetPromptsQuery,
+    BatchGetPromptsResponse,
+    BatchPromptInfo,
     CreatePromptRequest,
     CreatePromptResponse,
     BatchGetMediaFilesQueryParams,
@@ -862,7 +873,6 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     GetMediaFilePathInfo,
     GetMediaFileSuccessResponse,
     GetProfilePathInfo,
-    GetPromptError,
     GetPromptPathInfo,
     GetPromptSuccessResponse,
     GetUnifiedQueueStatsError,
@@ -903,6 +913,13 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     ListAllImpersonationRequestsQueryParams,
     ListAllImpersonationRequestsSuccessResponse,
     ListImpersonationRequestsPathInfo,
+    GetJobByTokenPathInfo,
+    GetJobByTokenSuccessResponse,
+    ModerationJobResponse,
+    ListDebugLogsPathInfo,
+    ListDebugLogsQueryParams,
+    ListDebugLogsSuccessResponse,
+    DebugLogEntry,
     ListStaffAuditLogsQueryParams,
     ListStaffAuditLogsSuccessResponse,
     ListImpersonationRequestsQueryParams,

@@ -5,23 +5,26 @@ use crate::requests::http::image::edit::http_seededit_v3_edit::{seededit_v3_edit
 use crate::requests::api::webhook_response::WebhookResponse;
 use reqwest::IntoUrl;
 
-pub struct SeedEditV3EditArgs<'a, U: IntoUrl, R: IntoUrl> {
-  // Request required
-  pub prompt: &'a str,
-  pub image_url: U,
-  
-  // Fulfillment
+pub struct SeedEditV3EditArgs<'a, R: IntoUrl> {
+  pub request: SeedEditV3EditRequest,
   pub webhook_url: R,
   pub api_key: &'a FalApiKey,
 }
 
-pub async fn enqueue_seededit_v3_edit_webhook<U: IntoUrl, R: IntoUrl>(
-  args: SeedEditV3EditArgs<'_, U, R>
+#[derive(Clone, Debug)]
+pub struct SeedEditV3EditRequest {
+  pub prompt: String,
+  pub image_url: String,
+}
+
+pub async fn enqueue_seededit_v3_edit_webhook<R: IntoUrl>(
+  args: SeedEditV3EditArgs<'_, R>
 ) -> Result<WebhookResponse, FalErrorPlus> {
+  let req = args.request;
 
   let request = SeedEditV3EditInput {
-    prompt: args.prompt.to_string(),
-    image_url: args.image_url.as_str().to_string(),
+    prompt: req.prompt,
+    image_url: req.image_url,
 
     // Constants
     guidance_scale: None,
@@ -39,7 +42,7 @@ pub async fn enqueue_seededit_v3_edit_webhook<U: IntoUrl, R: IntoUrl>(
 #[cfg(test)]
 mod tests {
   use crate::creds::fal_api_key::FalApiKey;
-  use crate::requests::webhook::image::edit::enqueue_seededit_v3_edit_webhook::{enqueue_seededit_v3_edit_webhook, SeedEditV3EditArgs};
+  use crate::requests::webhook::image::edit::enqueue_seededit_v3_edit_webhook::{enqueue_seededit_v3_edit_webhook, SeedEditV3EditArgs, SeedEditV3EditRequest};
   use errors::AnyhowResult;
   use std::fs::read_to_string;
   use test_data::web::image_urls::MOUNTAIN_TREE_IMAGE_URL;
@@ -53,8 +56,10 @@ mod tests {
     let api_key = FalApiKey::from_str(&secret);
 
     let args = SeedEditV3EditArgs {
-      image_url: MOUNTAIN_TREE_IMAGE_URL,
-      prompt: "put christmas lights on the tree, add snow to the mountains",
+      request: SeedEditV3EditRequest {
+        prompt: "put christmas lights on the tree, add snow to the mountains".to_string(),
+        image_url: MOUNTAIN_TREE_IMAGE_URL.to_string(),
+      },
       api_key: &api_key,
       webhook_url: "https://example.com/webhook",
     };

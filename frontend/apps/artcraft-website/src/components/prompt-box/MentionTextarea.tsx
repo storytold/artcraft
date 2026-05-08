@@ -529,9 +529,13 @@ export const MentionTextarea = forwardRef<HTMLDivElement, MentionTextareaProps>(
         const el = editorRef.current;
         if (!el) return;
 
-        const caretPos = getCaretOffset(el);
+        // Use the known mention bounds — `getCaretOffset` can return 0 when the
+        // dropdown click collapses the selection out of the editor, which would
+        // leave the typed query in the prompt alongside the inserted label.
+        const queryEnd =
+          mentionState.triggerIndex + mentionState.query.length;
         const before = value.slice(0, mentionState.triggerIndex);
-        const after = value.slice(caretPos);
+        const after = value.slice(queryEnd);
         const mention = `${item.label} `;
         const newValue = before + mention + after;
 
@@ -550,7 +554,7 @@ export const MentionTextarea = forwardRef<HTMLDivElement, MentionTextareaProps>(
           el.focus();
         });
       },
-      [value, mentionState.triggerIndex, onChange],
+      [value, mentionState.triggerIndex, mentionState.query, onChange],
     );
 
     const handleKeyDown = useCallback(
@@ -587,10 +591,7 @@ export const MentionTextarea = forwardRef<HTMLDivElement, MentionTextareaProps>(
           }
         }
 
-        // Default: plain Enter inserts a newline (instead of letting the
-        // contentEditable create a <div>). Shift/Cmd+Enter falls through to
-        // externalOnKeyDown so the host can submit.
-        if (e.key === "Enter" && !e.shiftKey && !e.metaKey) {
+        if (e.key === "Enter") {
           e.preventDefault();
           document.execCommand("insertLineBreak");
           handleInput();

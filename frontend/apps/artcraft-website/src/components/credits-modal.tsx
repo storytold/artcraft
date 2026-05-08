@@ -4,7 +4,7 @@ import { Button } from "@storyteller/ui-button";
 import { faCoins } from "@fortawesome/pro-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { BillingApi } from "@storyteller/api";
-import { toast } from "@storyteller/ui-toaster";
+import { toast } from "./toast/toast";
 
 interface CreditPack {
   id: string;
@@ -101,7 +101,7 @@ export function CreditsModal({ isOpen, onClose }: CreditsModalProps) {
                 </span>
                 <Button
                   variant="primary"
-                  className="pointer-events-none rounded-lg px-5 py-2 text-sm font-semibold"
+                  className="rounded-full pointer-events-none rounded-lg px-5 py-2 text-sm font-semibold"
                   disabled={purchasingId !== null}
                 >
                   {purchasingId === pack.id ? "Loading..." : "Purchase"}

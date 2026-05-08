@@ -7,6 +7,13 @@ use crate::requests::api::webhook_response::WebhookResponse;
 use reqwest::IntoUrl;
 
 pub struct EnqueueFlux2LoraEditImageAngleArgs<'a, R: IntoUrl> {
+  pub request: EnqueueFlux2LoraEditImageAngleRequest,
+  pub webhook_url: R,
+  pub api_key: &'a FalApiKey,
+}
+
+#[derive(Clone, Debug)]
+pub struct EnqueueFlux2LoraEditImageAngleRequest {
   // Request required
   pub image_urls: Vec<String>,
 
@@ -21,10 +28,6 @@ pub struct EnqueueFlux2LoraEditImageAngleArgs<'a, R: IntoUrl> {
   pub lora_scale: Option<f64>,
   pub guidance_scale: Option<f64>,
   pub num_inference_steps: Option<u32>,
-
-  // Fulfillment
-  pub webhook_url: R,
-  pub api_key: &'a FalApiKey,
 }
 
 #[derive(Copy, Clone, Debug)]
@@ -45,7 +48,7 @@ pub enum EnqueueFlux2LoraAngleImageSize {
   LandscapeSixteenNine,
 }
 
-impl <U: IntoUrl> FalRequestCostCalculator for EnqueueFlux2LoraEditImageAngleArgs<'_, U> {
+impl FalRequestCostCalculator for EnqueueFlux2LoraEditImageAngleRequest {
   fn calculate_cost_in_cents(&self) -> UsdCents {
     // Pricing: $0.021 per megapixel.
     // For a 1024x1024 image (~1 MP), that's ~2 cents per image.
@@ -65,7 +68,9 @@ pub async fn enqueue_flux_2_lora_edit_image_angle_webhook<R: IntoUrl>(
   args: EnqueueFlux2LoraEditImageAngleArgs<'_, R>
 ) -> Result<WebhookResponse, FalErrorPlus> {
 
-  let num_images = args.num_images
+  let req = args.request;
+
+  let num_images = req.num_images
       .map(|n| match n {
         EnqueueFlux2LoraAngleNumImages::One => 1,
         EnqueueFlux2LoraAngleNumImages::Two => 2,
@@ -73,7 +78,7 @@ pub async fn enqueue_flux_2_lora_edit_image_angle_webhook<R: IntoUrl>(
         EnqueueFlux2LoraAngleNumImages::Four => 4,
       });
 
-  let image_size = args.image_size
+  let image_size = req.image_size
       .map(|s| match s {
         EnqueueFlux2LoraAngleImageSize::Square => "square",
         EnqueueFlux2LoraAngleImageSize::SquareHd => "square_hd",
@@ -85,14 +90,14 @@ pub async fn enqueue_flux_2_lora_edit_image_angle_webhook<R: IntoUrl>(
       .map(|s| s.to_string());
 
   let request = Flux2LoraEditImageAngleInput {
-    image_urls: args.image_urls,
-    horizontal_angle: args.horizontal_angle,
-    vertical_angle: args.vertical_angle,
-    zoom: args.zoom,
-    lora_scale: args.lora_scale,
+    image_urls: req.image_urls,
+    horizontal_angle: req.horizontal_angle,
+    vertical_angle: req.vertical_angle,
+    zoom: req.zoom,
+    lora_scale: req.lora_scale,
     image_size,
-    guidance_scale: args.guidance_scale,
-    num_inference_steps: args.num_inference_steps,
+    guidance_scale: req.guidance_scale,
+    num_inference_steps: req.num_inference_steps,
     num_images,
     // Constants
     enable_safety_checker: Some(false),
@@ -112,7 +117,7 @@ pub async fn enqueue_flux_2_lora_edit_image_angle_webhook<R: IntoUrl>(
 #[cfg(test)]
 mod tests {
   use crate::creds::fal_api_key::FalApiKey;
-  use crate::requests::webhook::image::angle::enqueue_flux_2_lora_edit_image_angle_webhook::{enqueue_flux_2_lora_edit_image_angle_webhook, EnqueueFlux2LoraEditImageAngleArgs, EnqueueFlux2LoraAngleNumImages, EnqueueFlux2LoraAngleImageSize};
+  use crate::requests::webhook::image::angle::enqueue_flux_2_lora_edit_image_angle_webhook::{enqueue_flux_2_lora_edit_image_angle_webhook, EnqueueFlux2LoraEditImageAngleArgs, EnqueueFlux2LoraEditImageAngleRequest, EnqueueFlux2LoraAngleNumImages, EnqueueFlux2LoraAngleImageSize};
   use errors::AnyhowResult;
   use std::fs::read_to_string;
   use test_data::web::image_urls::JUNO_AT_LAKE_IMAGE_URL;
@@ -124,15 +129,17 @@ mod tests {
     let api_key = FalApiKey::from_str(&secret);
 
     let args = EnqueueFlux2LoraEditImageAngleArgs {
-      image_urls: vec![JUNO_AT_LAKE_IMAGE_URL.to_string()],
-      horizontal_angle: Some(45.0),
-      vertical_angle: Some(15.0),
-      zoom: Some(5.0),
-      num_images: Some(EnqueueFlux2LoraAngleNumImages::One),
-      image_size: Some(EnqueueFlux2LoraAngleImageSize::SquareHd),
-      lora_scale: None,
-      guidance_scale: None,
-      num_inference_steps: None,
+      request: EnqueueFlux2LoraEditImageAngleRequest {
+        image_urls: vec![JUNO_AT_LAKE_IMAGE_URL.to_string()],
+        horizontal_angle: Some(45.0),
+        vertical_angle: Some(15.0),
+        zoom: Some(5.0),
+        num_images: Some(EnqueueFlux2LoraAngleNumImages::One),
+        image_size: Some(EnqueueFlux2LoraAngleImageSize::SquareHd),
+        lora_scale: None,
+        guidance_scale: None,
+        num_inference_steps: None,
+      },
       api_key: &api_key,
       webhook_url: "https://example.com/webhook",
     };
@@ -141,7 +148,7 @@ mod tests {
     Ok(())
   }
 
-  /// Enqueues 27 angle combinations: 3 horizontal × 3 vertical × 3 zoom levels.
+  /// Enqueues 27 angle combinations: 3 horizontal x 3 vertical x 3 zoom levels.
   #[tokio::test]
   #[ignore]
   async fn test_angle_grid() -> AnyhowResult<()> {
@@ -156,15 +163,17 @@ mod tests {
       for &v in &vertical_angles {
         for &z in &zoom_levels {
           let args = EnqueueFlux2LoraEditImageAngleArgs {
-            image_urls: vec![JUNO_AT_LAKE_IMAGE_URL.to_string()],
-            horizontal_angle: Some(h),
-            vertical_angle: Some(v),
-            zoom: Some(z),
-            num_images: Some(EnqueueFlux2LoraAngleNumImages::One),
-            image_size: Some(EnqueueFlux2LoraAngleImageSize::SquareHd),
-            lora_scale: None,
-            guidance_scale: None,
-            num_inference_steps: None,
+            request: EnqueueFlux2LoraEditImageAngleRequest {
+              image_urls: vec![JUNO_AT_LAKE_IMAGE_URL.to_string()],
+              horizontal_angle: Some(h),
+              vertical_angle: Some(v),
+              zoom: Some(z),
+              num_images: Some(EnqueueFlux2LoraAngleNumImages::One),
+              image_size: Some(EnqueueFlux2LoraAngleImageSize::SquareHd),
+              lora_scale: None,
+              guidance_scale: None,
+              num_inference_steps: None,
+            },
             api_key: &api_key,
             webhook_url: "https://example.com/webhook",
           };

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import dayjs from "dayjs";
 import { Button } from "@storyteller/ui-button";
-import { toast } from "@storyteller/ui-toaster";
+import { toast } from "../toast/toast";
 import { Gravatar } from "@storyteller/ui-gravatar";
 import type { UserInfo } from "@storyteller/api";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -14,12 +14,12 @@ import {
   faImage,
   faLink,
   faPencil,
+  faSpinnerThird,
   faTrashCan,
   faUser,
   faXmark,
 } from "@fortawesome/pro-solid-svg-icons";
 import {
-  addCorsParam,
   getContextImageThumbnail,
   THUMBNAIL_SIZES,
 } from "@storyteller/common";
@@ -29,6 +29,7 @@ import {
   getProviderDisplayName,
   getProviderIconByName,
 } from "@storyteller/model-list";
+import { downloadMediaFile } from "../../lib/download-media";
 import {
   formatAspectRatio,
   formatDuration,
@@ -88,6 +89,7 @@ export function LightboxDetails({
 }: LightboxDetailsProps) {
   const promptCopy = useCopyFeedback();
   const shareCopy = useCopyFeedback();
+  const [isDownloading, setIsDownloading] = useState(false);
 
   const [isPromptExpanded, setIsPromptExpanded] = useState(false);
   const [isPromptClamped, setIsPromptClamped] = useState(false);
@@ -95,6 +97,7 @@ export function LightboxDetails({
 
   useEffect(() => {
     setIsPromptExpanded(false);
+    setIsDownloading(false);
   }, [mediaToken]);
 
   useEffect(() => {
@@ -348,7 +351,7 @@ export function LightboxDetails({
                   {createdAt && (
                     <InfoRow
                       label="Created"
-                      value={dayjs(createdAt).format("MMMM D, YYYY")}
+                      value={dayjs(createdAt).format("MMMM D, YYYY h:mm:ss A")}
                     />
                   )}
                 </div>
@@ -368,23 +371,33 @@ export function LightboxDetails({
           >
             {shareCopy.copied ? "Copied" : "Share"}
           </Button>
-          <a
+          <button
+            type="button"
+            disabled={!mediaUrl || isDownloading}
+            onClick={async () => {
+              if (!mediaUrl || isDownloading) return;
+              setIsDownloading(true);
+              try {
+                await downloadMediaFile({
+                  url: mediaUrl,
+                  filename: `artcraft-${mediaToken || "media"}`,
+                });
+              } finally {
+                setIsDownloading(false);
+              }
+            }}
             className={`w-full inline-flex items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors border border-ui-panel-border ${
               mediaUrl
-                ? "bg-ui-controls/40 hover:bg-ui-controls/60 text-white"
-                : "bg-ui-controls/20 text-white/60 cursor-not-allowed pointer-events-none"
+                ? "bg-ui-controls/40 hover:bg-ui-controls/60 text-white disabled:opacity-60"
+                : "bg-ui-controls/20 text-white/60 cursor-not-allowed"
             }`}
-            href={mediaUrl ? addCorsParam(mediaUrl) || mediaUrl : undefined}
-            download={
-              mediaUrl ? `artcraft-${mediaToken || "media"}` : undefined
-            }
-            aria-disabled={!mediaUrl}
-            target="_blank"
-            rel="noopener noreferrer"
           >
-            <FontAwesomeIcon icon={faArrowDownToLine} />
-            Download
-          </a>
+            <FontAwesomeIcon
+              icon={isDownloading ? faSpinnerThird : faArrowDownToLine}
+              className={isDownloading ? "animate-spin" : ""}
+            />
+            {isDownloading ? "Downloading…" : "Download"}
+          </button>
         </div>
         {onRecreate && promptData.hasToken && (
           <Button

@@ -11,8 +11,12 @@ path = "src/main.rs"
 easyenv.workspace = true
 
 # Internal
+artcraft_api_defs.workspace = true
+artcraft_client.workspace = true
+enums.workspace = true
 errors.workspace = true
 seedance2pro_client.workspace = true
+tokens.workspace = true
 
 # External
 anyhow.workspace = true
@@ -20,3 +24,4 @@ clap.workspace = true
 log.workspace = true
 serde_json.workspace = true
 tokio.workspace = true
+uuid = { version = "1.8.0", features = ["v4"] }

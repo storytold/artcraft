@@ -13,6 +13,7 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { PasswordResetApi, BillingApi } from "@storyteller/api";
 
 import Seo from "../../components/seo";
+import { PagePatternBackdrop } from "../../components/truchet-pattern";
 
 const VerifyReset = () => {
   const navigate = useNavigate();
@@ -102,19 +103,27 @@ const VerifyReset = () => {
   };
 
   return (
-    <div className="relative min-h-screen bg-[#101014] text-white bg-dots flex flex-col">
+    <div className="relative min-h-screen bg-[#101014] text-white overflow-hidden flex flex-col">
       <Seo
         title="Verify Password Reset - ArtCraft"
         description="Enter your verification code and new password."
       />
-      <div className="dotted-pattern absolute inset-0 z-[0] opacity-30" />
+      <PagePatternBackdrop variant="auth" />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-x-0 top-0 h-[700px] z-0"
+        style={{
+          background:
+            "radial-gradient(ellipse 60% 50% at 50% 0%, rgba(45,129,255,0.18) 0%, transparent 70%)",
+        }}
+      />
 
       <main className="relative z-10 flex-1 flex items-center justify-center p-4">
         <div className="w-full max-w-md bg-[#1C1C20] border border-white/10 rounded-2xl p-6 py-8 shadow-2xl">
           {!success ? (
             <>
               <div className="text-center mb-8">
-                <h1 className="text-2xl font-bold mb-2">
+                <h1 className="text-2xl font-semibold mb-2">
                   Password Reset Verification
                 </h1>
                 <p className="text-white/60 text-sm">
@@ -225,7 +234,7 @@ const VerifyReset = () => {
                 <div className="pt-2">
                   <Button
                     id="change-password-btn"
-                    className="w-full bg-primary hover:bg-primary-600 text-white border-none justify-center font-bold h-10"
+                    className="rounded-full w-full bg-primary hover:bg-primary-600 text-white border-none justify-center font-bold h-10"
                     type="submit"
                     disabled={isLoading}
                   >
@@ -256,7 +265,7 @@ const VerifyReset = () => {
                 <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-4 text-green-500">
                   <FontAwesomeIcon icon={faCheckCircle} className="text-2xl" />
                 </div>
-                <h3 className="text-xl font-bold mb-2">
+                <h3 className="text-xl font-medium mb-2">
                   Password Reset Successfully
                 </h3>
                 <p className="text-white/60 text-sm mb-8">
@@ -265,7 +274,7 @@ const VerifyReset = () => {
                 </p>
                 <Button
                   id="back-to-homepage-btn"
-                  className="w-full bg-primary hover:bg-primary-600 text-white border-none justify-center font-bold h-10"
+                  className="rounded-full w-full bg-primary hover:bg-primary-600 text-white border-none justify-center font-bold h-10"
                   onClick={() => navigate(redirectTo)}
                 >
                   {redirectLabel}

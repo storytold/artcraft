@@ -207,6 +207,7 @@ fn db_record_to_response_payload(
     job_token: record.job_token,
     request: ListSessionRequestDetailsResponse {
       inference_category: record.request_details.inference_category,
+      maybe_prompt_token: record.request_details.maybe_prompt_token,
       maybe_model_type: maybe_filter_model_name(record.request_details.maybe_model_type.as_deref()),
       maybe_model_token: record.request_details.maybe_model_token,
       maybe_model_title: record.request_details.maybe_model_title,

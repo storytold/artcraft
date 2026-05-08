@@ -5,20 +5,25 @@ use crate::requests::http::image::background::http_rembg_remove_background::{rem
 use crate::requests::api::webhook_response::WebhookResponse;
 use reqwest::IntoUrl;
 
-pub struct RemoveBackgroundRembgWebhookArgs<'a, U: IntoUrl, V: IntoUrl> {
-  pub image_url: U, 
+pub struct RemoveBackgroundRembgWebhookArgs<'a, V: IntoUrl> {
+  pub request: RemoveBackgroundRembgWebhookRequest,
   pub webhook_url: V,
   pub api_key: &'a FalApiKey
 }
 
-pub async fn remove_background_rembg_webhook<U: IntoUrl, V: IntoUrl>(
-  args: RemoveBackgroundRembgWebhookArgs<'_, U, V>
+#[derive(Clone, Debug)]
+pub struct RemoveBackgroundRembgWebhookRequest {
+  pub image_url: String,
+}
+
+pub async fn remove_background_rembg_webhook<V: IntoUrl>(
+  args: RemoveBackgroundRembgWebhookArgs<'_, V>
 ) -> Result<WebhookResponse, FalErrorPlus> {
 
-  let image_url = args.image_url.into_url()?;
-  
+  let req = args.request;
+
   let request = RembgRemoveBackgroundInput {
-    image_url: image_url.to_string(),
+    image_url: req.image_url,
     crop_to_bbox: None,
     sync_mode: None
   };
@@ -35,7 +40,7 @@ pub async fn remove_background_rembg_webhook<U: IntoUrl, V: IntoUrl>(
 mod tests {
   use crate::creds::fal_api_key::FalApiKey;
   use crate::requests::webhook::image::background::remove_background_rembg_webhook::remove_background_rembg_webhook;
-  use crate::requests::webhook::image::background::remove_background_rembg_webhook::RemoveBackgroundRembgWebhookArgs;
+  use crate::requests::webhook::image::background::remove_background_rembg_webhook::{RemoveBackgroundRembgWebhookArgs, RemoveBackgroundRembgWebhookRequest};
   use std::fs::read_to_string;
   use test_data::web::image_urls::ERNEST_SCARED_STUPID_IMAGE_URL;
 
@@ -45,13 +50,15 @@ mod tests {
     // XXX: Don't commit secrets!
     let api_key = read_to_string("/Users/bt/Artcraft/credentials/fal_api_key.txt")?;
     let api_key = FalApiKey::from_str(&api_key);
-    
+
     let args = RemoveBackgroundRembgWebhookArgs {
-      image_url: ERNEST_SCARED_STUPID_IMAGE_URL,
+      request: RemoveBackgroundRembgWebhookRequest {
+        image_url: ERNEST_SCARED_STUPID_IMAGE_URL.to_string(),
+      },
       webhook_url: "https://api.storyteller.ai/webhook",
       api_key: &api_key,
     };
-    
+
     let response = remove_background_rembg_webhook(args).await?;
 
     println!("{:?}", response);

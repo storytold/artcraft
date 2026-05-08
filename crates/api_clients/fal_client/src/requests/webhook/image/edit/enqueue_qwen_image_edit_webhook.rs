@@ -6,11 +6,17 @@ use crate::requests::http::image::edit::http_qwen_image_edit::{qwen_image_edit, 
 use crate::requests::api::webhook_response::WebhookResponse;
 use reqwest::IntoUrl;
 
-pub struct QwenImageEditArgs<'a, U: IntoUrl, R: IntoUrl> {
-  // Request required
-  pub prompt: &'a str,
-  pub image_url: U,
-  
+pub struct QwenImageEditArgs<'a, R: IntoUrl> {
+  pub request: QwenImageEditRequest,
+  pub webhook_url: R,
+  pub api_key: &'a FalApiKey,
+}
+
+#[derive(Clone, Debug)]
+pub struct QwenImageEditRequest {
+  pub prompt: String,
+  pub image_url: String,
+
   // Request optional
   pub num_images: Option<QwenImageEditNumImages>,
   pub image_size: Option<QwenImageEditSize>,
@@ -21,10 +27,6 @@ pub struct QwenImageEditArgs<'a, U: IntoUrl, R: IntoUrl> {
   /// Options: 'none', 'regular'. Higher acceleration increases speed.
   /// 'regular' balances speed and quality. Default value: "none"
   pub acceleration: Option<String>,
-
-  // Fulfillment
-  pub webhook_url: R,
-  pub api_key: &'a FalApiKey,
 }
 
 #[derive(Copy, Clone, Debug)]
@@ -47,7 +49,7 @@ pub enum QwenImageEditSize {
 }
 
 
-impl <U: IntoUrl, R: IntoUrl> FalRequestCostCalculator for QwenImageEditArgs<'_, U, R> {
+impl FalRequestCostCalculator for QwenImageEditRequest {
   fn calculate_cost_in_cents(&self) -> UsdCents {
     // Your request will cost $0.03 per megapixel. -- Ugh, not calculating that
     let base_cost = 3;
@@ -63,11 +65,12 @@ impl <U: IntoUrl, R: IntoUrl> FalRequestCostCalculator for QwenImageEditArgs<'_,
 }
 
 
-pub async fn enqueue_qwen_image_edit_webhook<U: IntoUrl, R: IntoUrl>(
-  args: QwenImageEditArgs<'_, U, R>
+pub async fn enqueue_qwen_image_edit_webhook<R: IntoUrl>(
+  args: QwenImageEditArgs<'_, R>
 ) -> Result<WebhookResponse, FalErrorPlus> {
+  let req = args.request;
 
-  let num_images = args.num_images
+  let num_images = req.num_images
       .map(|num| match num {
         QwenImageEditNumImages::One => 1,
         QwenImageEditNumImages::Two => 2,
@@ -75,7 +78,7 @@ pub async fn enqueue_qwen_image_edit_webhook<U: IntoUrl, R: IntoUrl>(
         QwenImageEditNumImages::Four => 4,
       });
 
-  let image_size = args.image_size
+  let image_size = req.image_size
       .map(|size| match size {
         QwenImageEditSize::Square => "square",
         QwenImageEditSize::SquareHd => "square_hd",
@@ -87,8 +90,8 @@ pub async fn enqueue_qwen_image_edit_webhook<U: IntoUrl, R: IntoUrl>(
       .map(|size| size.to_string());
 
   let request = QwenImageEditInput {
-    prompt: args.prompt.to_string(),
-    image_url: args.image_url.as_str().to_string(),
+    prompt: req.prompt,
+    image_url: req.image_url,
     image_size,
     num_images,
 
@@ -116,7 +119,7 @@ pub async fn enqueue_qwen_image_edit_webhook<U: IntoUrl, R: IntoUrl>(
 #[cfg(test)]
 mod tests {
   use crate::creds::fal_api_key::FalApiKey;
-  use crate::requests::webhook::image::edit::enqueue_qwen_image_edit_webhook::{enqueue_qwen_image_edit_webhook, QwenImageEditArgs, QwenImageEditNumImages};
+  use crate::requests::webhook::image::edit::enqueue_qwen_image_edit_webhook::{enqueue_qwen_image_edit_webhook, QwenImageEditArgs, QwenImageEditNumImages, QwenImageEditRequest};
   use errors::AnyhowResult;
   use std::fs::read_to_string;
   use test_data::web::image_urls::MOUNTAIN_TREE_IMAGE_URL;
@@ -130,12 +133,14 @@ mod tests {
     let api_key = FalApiKey::from_str(&secret);
 
     let args = QwenImageEditArgs {
-      image_url: MOUNTAIN_TREE_IMAGE_URL,
-      prompt: "put christmas lights on the tree, add snow to the mountains",
-      num_images: Some(QwenImageEditNumImages::One),
-      image_size: None,
-      negative_prompt: None,
-      acceleration: None,
+      request: QwenImageEditRequest {
+        prompt: "put christmas lights on the tree, add snow to the mountains".to_string(),
+        image_url: MOUNTAIN_TREE_IMAGE_URL.to_string(),
+        num_images: Some(QwenImageEditNumImages::One),
+        image_size: None,
+        negative_prompt: None,
+        acceleration: None,
+      },
       api_key: &api_key,
       webhook_url: "https://example.com/webhook",
     };

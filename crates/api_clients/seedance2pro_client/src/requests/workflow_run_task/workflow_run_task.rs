@@ -181,6 +181,8 @@ impl WorkflowRunTaskRequest {
 pub enum KinoviAspectRatioRaw {
   /// 16:9 landscape (1280x720)
   Landscape16x9,
+  /// 21:9 ultra-wide (1280x540)
+  UltraWide21x9,
   /// 9:16 portrait (720x1280)
   Portrait9x16,
   /// 1:1 square (720x720)
@@ -195,6 +197,7 @@ impl KinoviAspectRatioRaw {
   fn as_str(&self) -> &'static str {
     match self {
       Self::Landscape16x9 => "1280x720",
+      Self::UltraWide21x9 => "1280x540",
       Self::Portrait9x16 => "720x1280",
       Self::Square1x1 => "720x720",
       Self::Landscape4x3 => "960x720",

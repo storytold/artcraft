@@ -1,16 +1,17 @@
 use crate::common::responses::job_details::{JobDetailsLipsyncRequest, JobDetailsLivePortraitRequest};
 use crate::common::responses::media_links::MediaLinks;
 use chrono::{DateTime, Utc};
+use enums::api_safe::by_table::generic_inference_jobs::frontend_failure_category_for_api_clients::FrontendFailureCategoryForApiClients;
+use enums::api_safe::by_table::generic_inference_jobs::frontend_failure_category_for_old_clients::FrontendFailureCategoryForOldClients;
 use enums::by_table::generic_inference_jobs::inference_category::InferenceCategory;
 use enums::common::job_status_plus::JobStatusPlus;
 use enums::no_table::style_transfer::style_transfer_name::StyleTransferName;
 use serde::Deserialize;
 use serde::Serialize;
-use tokens::tokens::generic_inference_jobs::InferenceJobToken;
-use utoipa::{IntoParams, ToSchema};
-use enums::api_safe::by_table::generic_inference_jobs::frontend_failure_category_for_api_clients::FrontendFailureCategoryForApiClients;
-use enums::api_safe::by_table::generic_inference_jobs::frontend_failure_category_for_old_clients::FrontendFailureCategoryForOldClients;
 use tokens::tokens::batch_generations::BatchGenerationToken;
+use tokens::tokens::generic_inference_jobs::InferenceJobToken;
+use tokens::tokens::prompts::PromptToken;
+use utoipa::{IntoParams, ToSchema};
 
 pub const LIST_SESSION_JOBS_URL_PATH: &str = "/v1/jobs/session";
 
@@ -53,6 +54,9 @@ pub struct ListSessionJobsItem {
 #[derive(Serialize, Deserialize, ToSchema)]
 pub struct ListSessionRequestDetailsResponse {
   pub inference_category: InferenceCategory,
+
+  pub maybe_prompt_token: Option<PromptToken>,
+
   pub maybe_model_type: Option<String>,
   pub maybe_model_token: Option<String>,
 

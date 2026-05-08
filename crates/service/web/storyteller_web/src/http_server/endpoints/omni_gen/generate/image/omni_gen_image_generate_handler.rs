@@ -9,6 +9,10 @@ use url::Url;
 
 use artcraft_api_defs::omni_gen::cost_and_generate_requests::omni_gen_image_cost_and_generate_request::OmniGenImageCostAndGenerateRequest;
 use artcraft_api_defs::omni_gen::generate_response::omni_gen_image_generate_response::OmniGenImageGenerateResponse;
+use artcraft_router::client::router_client::RouterClient;
+use artcraft_router::client::router_fal_client::RouterFalClient;
+use artcraft_router::generate::generate_image::generate_image_response::GenerateImageResponse;
+use enums::by_table::debug_logs::debug_log_type::DebugLogType;
 use enums::by_table::prompt_context_items::prompt_context_semantic_type::PromptContextSemanticType;
 use enums::by_table::prompts::prompt_type::PromptType;
 use enums::common::generation::common_generation_mode::CommonGenerationMode;
@@ -16,11 +20,12 @@ use enums::common::generation::common_model_type::CommonModelType;
 use enums::common::generation_provider::GenerationProvider;
 use enums::common::visibility::Visibility;
 use http_server_common::request::get_request_ip::get_request_ip;
+use mysql_queries::queries::debug_logs::insert_debug_log::{insert_debug_log, InsertDebugLogArgs};
+use mysql_queries::queries::generic_inference::fal::insert_generic_inference_job_for_fal_queue::FalCategory;
 use mysql_queries::queries::generic_inference::fal::insert_generic_inference_job_for_fal_queue_with_apriori_job_token::{
   insert_generic_inference_job_for_fal_queue_with_apriori_job_token,
   InsertGenericInferenceForFalWithAprioriJobTokenArgs,
 };
-use mysql_queries::queries::generic_inference::fal::insert_generic_inference_job_for_fal_queue::FalCategory;
 use mysql_queries::queries::idepotency_tokens::insert_idempotency_token::insert_idempotency_token;
 use mysql_queries::queries::prompt_context_items::insert_batch_prompt_context_items::{
   insert_batch_prompt_context_items, InsertBatchArgs, PromptContextItem,
@@ -28,6 +33,7 @@ use mysql_queries::queries::prompt_context_items::insert_batch_prompt_context_it
 use mysql_queries::queries::prompts::insert_prompt::{insert_prompt, InsertPromptArgs};
 use tokens::tokens::generic_inference_jobs::InferenceJobToken;
 use tokens::tokens::media_files::MediaFileToken;
+use tokens::tokens::non_unique::debug_logs_event_token::DebugLogEventToken;
 
 use crate::billing::wallets::attempt_wallet_deduction::attempt_wallet_deduction_else_common_web_error;
 use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
@@ -59,6 +65,8 @@ pub async fn omni_gen_image_generate_handler(
 ) -> Result<Json<OmniGenImageGenerateResponse>, AdvancedCommonWebError> {
 
   payments_error_test(&request.prompt.as_deref().unwrap_or(""))?;
+
+  let debug_log_event_token = DebugLogEventToken::generate();
 
   let maybe_prompt_model_type: Option<CommonModelType> = request.model
     .as_ref()
@@ -151,14 +159,27 @@ pub async fn omni_gen_image_generate_handler(
     ).await?;
   }
 
+  // ==================== DEBUG LOG: HTTP REQUEST ==================== //
+
+  if let Err(err) = insert_debug_log(InsertDebugLogArgs {
+    apriori_debug_log_event_token: Some(&debug_log_event_token),
+    maybe_creator_user_token: Some(user_token),
+    debug_log_type: DebugLogType::HttpRequest,
+    message: &serde_json::to_string(&*request).unwrap_or_default(),
+    mysql_executor: &mut *mysql_connection,
+    phantom: Default::default(),
+  }).await {
+    warn!("Failed to insert HTTP request debug log: {:?}", err);
+  }
+
   // ==================== EXECUTE GENERATION ==================== //
 
-  let fal_client = artcraft_router::client::router_fal_client::RouterFalClient::new(
+  let fal_client = RouterFalClient::new(
     server_state.fal.api_key.clone(),
     server_state.fal.webhook_url.clone(),
   );
 
-  let router_client = artcraft_router::client::router_client::RouterClient::Fal(fal_client);
+  let router_client = RouterClient::Fal(fal_client);
 
   let generation_response = distilled.plan().generate_image(&router_client)
     .await
@@ -167,11 +188,28 @@ pub async fn omni_gen_image_generate_handler(
       AdvancedCommonWebError::from_error(e)
     })?;
 
+  // ==================== DEBUG LOG: FAL REQUEST ==================== //
+
+  if let GenerateImageResponse::Fal(ref fal_payload) = generation_response {
+    if let Some(ref outbound_request) = fal_payload.maybe_outbound_request {
+      if let Err(err) = insert_debug_log(InsertDebugLogArgs {
+        apriori_debug_log_event_token: Some(&debug_log_event_token),
+        maybe_creator_user_token: Some(user_token),
+        debug_log_type: DebugLogType::FalRequest,
+        message: &format!("{:#?}", outbound_request),
+        mysql_executor: &mut *mysql_connection,
+        phantom: Default::default(),
+      }).await {
+        warn!("Failed to insert Fal request debug log: {:?}", err);
+      }
+    }
+  }
+
   let external_job_id = match &generation_response {
-    artcraft_router::generate::generate_image::generate_image_response::GenerateImageResponse::Artcraft(p) => {
+    GenerateImageResponse::Artcraft(p) => {
       p.inference_job_token.as_str().to_string()
     }
-    artcraft_router::generate::generate_image::generate_image_response::GenerateImageResponse::Fal(p) => {
+    GenerateImageResponse::Fal(p) => {
       p.request_id.clone().unwrap_or_default()
     }
   };
@@ -206,11 +244,11 @@ pub async fn omni_gen_image_generate_handler(
     maybe_negative_prompt: None,
     maybe_other_args: None,
     maybe_generation_mode: Some(generation_mode),
-    maybe_aspect_ratio: None,
-    maybe_resolution: None,
+    maybe_aspect_ratio: request.aspect_ratio, // TODO: should be saved from router's decision as it could have changed
+    maybe_resolution: request.resolution,// TODO: should be saved from router's decision as it could have changed
     maybe_batch_count: request.image_batch_count.map(|c| c as u8),
-    maybe_generate_audio: None,
-    maybe_duration_seconds: None,
+    maybe_generate_audio: None, // NB: Images, not video
+    maybe_duration_seconds: None, // NB: Images, not video
     creator_ip_address: &ip_address,
     mysql_executor: &mut *transaction,
     phantom: Default::default(),
@@ -233,7 +271,7 @@ pub async fn omni_gen_image_generate_handler(
       for media_token in ref_tokens {
         context_items.push(PromptContextItem {
           media_token: media_token.clone(),
-          context_semantic_type: PromptContextSemanticType::Imgsrc,
+          context_semantic_type: PromptContextSemanticType::Imgref,
         });
       }
     }
@@ -263,6 +301,7 @@ pub async fn omni_gen_image_generate_handler(
       maybe_avt_token: maybe_avt_token.as_ref(),
       creator_ip_address: &ip_address,
       creator_set_visibility: Visibility::Public,
+      maybe_debug_log_event_token: Some(&debug_log_event_token),
       mysql_executor: &mut *transaction,
       starting_job_status_override: None,
       maybe_frontend_failure_category: None,

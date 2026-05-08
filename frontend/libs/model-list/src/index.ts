@@ -7,6 +7,7 @@ export * from "./lib/classes/properties/CommonQuality.js";
 export * from "./lib/classes/metadata/ModelCreator.js";
 export * from "./lib/classes/metadata/ModelCreatorIcons.js";
 export * from "./lib/classes/metadata/ModelMapping.js";
+export * from "./lib/classes/metadata/PromptFormatters.js";
 export * from "./lib/classes/metadata/ModelTag.js";
 export * from "./lib/classes/metadata/SizeOption.js";
 export * from "./lib/legacy/ModelConfig.js";
@@ -18,5 +19,7 @@ export * from "./lib/lists/ImageModels.js";
 export * from "./lib/lists/VideoModels.js";
 export * from "./lib/classes/SplatModel.js";
 export * from "./lib/lists/SplatModels.js";
+export * from "./lib/classes/Object3DModel.js";
+export * from "./lib/lists/Object3DModels.js";
 
 

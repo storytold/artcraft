@@ -9,20 +9,23 @@ use crate::requests::webhook::image::edit::enqueue_gpt_image_2_edit_image_webhoo
 use crate::requests::webhook::image::edit::enqueue_gpt_image_2_edit_image_webhook::EnqueueGptImage2EditImageSize::SquareHd;
 
 pub struct EnqueueGptImage2EditImageArgs<'a, R: IntoUrl> {
-  // Request required
-  pub prompt: &'a str,
+  pub request: EnqueueGptImage2EditImageRequest,
+  pub webhook_url: R,
+  pub api_key: &'a FalApiKey,
+}
+
+#[derive(Clone, Debug)]
+pub struct EnqueueGptImage2EditImageRequest {
+  // Required
+  pub prompt: String,
   pub image_urls: Vec<String>,
   pub num_images: EnqueueGptImage2EditImageNumImages,
 
-  // Optional args
+  // Optional
   pub mask_url: Option<String>,
   pub image_size: Option<EnqueueGptImage2EditImageSize>,
   pub quality: Option<EnqueueGptImage2EditImageQuality>,
   pub output_format: Option<EnqueueGptImage2EditImageOutputFormat>,
-
-  // Fulfillment
-  pub webhook_url: R,
-  pub api_key: &'a FalApiKey,
 }
 
 #[derive(Copy, Clone, Debug)]
@@ -58,8 +61,7 @@ pub enum EnqueueGptImage2EditImageOutputFormat {
   Webp,
 }
 
-
-impl <U: IntoUrl> FalRequestCostCalculator for EnqueueGptImage2EditImageArgs<'_, U> {
+impl FalRequestCostCalculator for EnqueueGptImage2EditImageRequest {
   fn calculate_cost_in_cents(&self) -> UsdCents {
     // Cost table (per image) by approximate pixel dimensions:
     //
@@ -99,19 +101,19 @@ impl <U: IntoUrl> FalRequestCostCalculator for EnqueueGptImage2EditImageArgs<'_,
   }
 }
 
-
 pub async fn enqueue_gpt_image_2_edit_image_webhook<R: IntoUrl>(
   args: EnqueueGptImage2EditImageArgs<'_, R>
 ) -> Result<WebhookResponse, FalErrorPlus> {
+  let req = args.request;
 
-  let num_images = match args.num_images {
+  let num_images = match req.num_images {
     EnqueueGptImage2EditImageNumImages::One => 1,
     EnqueueGptImage2EditImageNumImages::Two => 2,
     EnqueueGptImage2EditImageNumImages::Three => 3,
     EnqueueGptImage2EditImageNumImages::Four => 4,
   };
 
-  let image_size = args.image_size
+  let image_size = req.image_size
       .map(|s| match s {
         EnqueueGptImage2EditImageSize::SquareHd => "square_hd",
         EnqueueGptImage2EditImageSize::Square => "square",
@@ -123,7 +125,7 @@ pub async fn enqueue_gpt_image_2_edit_image_webhook<R: IntoUrl>(
       })
       .map(|size| size.to_string());
 
-  let quality = args.quality
+  let quality = req.quality
       .map(|s| match s {
         EnqueueGptImage2EditImageQuality::Low => "low",
         EnqueueGptImage2EditImageQuality::Medium => "medium",
@@ -131,7 +133,7 @@ pub async fn enqueue_gpt_image_2_edit_image_webhook<R: IntoUrl>(
       })
       .map(|quality| quality.to_string());
 
-  let output_format = args.output_format
+  let output_format = req.output_format
       .map(|s| match s {
         EnqueueGptImage2EditImageOutputFormat::Jpeg => "jpeg",
         EnqueueGptImage2EditImageOutputFormat::Png => "png",
@@ -141,12 +143,12 @@ pub async fn enqueue_gpt_image_2_edit_image_webhook<R: IntoUrl>(
       .unwrap_or_else(|| "png".to_string());
 
   let request = GptImage2EditImageInput {
-    prompt: args.prompt.to_string(),
-    image_urls: args.image_urls,
+    prompt: req.prompt,
+    image_urls: req.image_urls,
     num_images: Some(num_images),
     output_format: Some(output_format),
     // Optionals
-    mask_url: args.mask_url,
+    mask_url: req.mask_url,
     image_size,
     quality,
   };
@@ -162,7 +164,10 @@ pub async fn enqueue_gpt_image_2_edit_image_webhook<R: IntoUrl>(
 #[cfg(test)]
 mod tests {
   use crate::creds::fal_api_key::FalApiKey;
-  use crate::requests::webhook::image::edit::enqueue_gpt_image_2_edit_image_webhook::{enqueue_gpt_image_2_edit_image_webhook, EnqueueGptImage2EditImageArgs, EnqueueGptImage2EditImageNumImages};
+  use crate::requests::webhook::image::edit::enqueue_gpt_image_2_edit_image_webhook::{
+    enqueue_gpt_image_2_edit_image_webhook, EnqueueGptImage2EditImageArgs,
+    EnqueueGptImage2EditImageNumImages, EnqueueGptImage2EditImageRequest,
+  };
   use errors::AnyhowResult;
   use std::fs::read_to_string;
   use test_data::web::image_urls::{ERNEST_SCARED_STUPID_IMAGE_URL, GHOST_IMAGE_URL, TREX_SKELETON_IMAGE_URL};
@@ -176,19 +181,21 @@ mod tests {
     let api_key = FalApiKey::from_str(&secret);
 
     let args = EnqueueGptImage2EditImageArgs {
-      image_urls: vec![
-        GHOST_IMAGE_URL.to_string(),
-        TREX_SKELETON_IMAGE_URL.to_string(),
-        ERNEST_SCARED_STUPID_IMAGE_URL.to_string(),
-      ],
-      prompt: "add the ghost and scared man to the image of the t-rex skeleton, make it look spooky but friendly",
-      num_images: EnqueueGptImage2EditImageNumImages::Two,
-      mask_url: None,
-      image_size: None,
-      quality: None,
+      request: EnqueueGptImage2EditImageRequest {
+        image_urls: vec![
+          GHOST_IMAGE_URL.to_string(),
+          TREX_SKELETON_IMAGE_URL.to_string(),
+          ERNEST_SCARED_STUPID_IMAGE_URL.to_string(),
+        ],
+        prompt: "add the ghost and scared man to the image of the t-rex skeleton, make it look spooky but friendly".to_string(),
+        num_images: EnqueueGptImage2EditImageNumImages::Two,
+        mask_url: None,
+        image_size: None,
+        quality: None,
+        output_format: None,
+      },
       api_key: &api_key,
       webhook_url: "https://example.com/webhook",
-      output_format: None,
     };
 
     let result = enqueue_gpt_image_2_edit_image_webhook(args).await?;

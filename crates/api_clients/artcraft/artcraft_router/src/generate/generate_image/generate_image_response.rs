@@ -1,3 +1,6 @@
+use std::fmt::Debug;
+use std::sync::Arc;
+
 use tokens::tokens::generic_inference_jobs::InferenceJobToken;
 
 #[derive(Clone, Debug)]
@@ -9,6 +12,11 @@ pub struct ArtcraftImageResponsePayload {
 pub struct FalImageResponsePayload {
   pub request_id: Option<String>,
   pub gateway_request_id: Option<String>,
+
+  /// The outbound request that was sent to Fal.
+  /// Stored as a trait object so any Request type can be captured.
+  /// Use `format!("{:?}", ...)` or `format!("{:#?}", ...)` to print.
+  pub maybe_outbound_request: Option<Arc<dyn Debug + Send + Sync>>,
 }
 
 #[derive(Clone, Debug)]

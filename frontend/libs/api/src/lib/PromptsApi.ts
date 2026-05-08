@@ -190,6 +190,32 @@ export class PromptsApi extends ApiManager {
       });
   }
 
+  public BatchGetPrompts({
+    tokens,
+  }: {
+    tokens: string[];
+  }): Promise<ApiResponse<Prompts[]>> {
+    if (tokens.length === 0) {
+      return Promise.resolve({ success: true, data: [] });
+    }
+    const query = tokens
+      .map((t) => `tokens=${encodeURIComponent(t)}`)
+      .join("&");
+    const endpoint = `${this.getApiSchemeAndHost()}/v1/prompt/batch?${query}`;
+
+    return this.get<{
+      success: boolean;
+      prompts: Prompts[];
+    }>({ endpoint })
+      .then((response) => ({
+        success: response.success,
+        data: response.prompts,
+      }))
+      .catch((err) => {
+        return { success: false, errorMessage: err.message };
+      });
+  }
+
   public async uploadSceneSnapshot({
     screenshot,
     sceneMediaToken,

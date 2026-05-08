@@ -23,8 +23,8 @@ use enums::common::generation::common_generation_mode::CommonGenerationMode;
 use enums::common::generation::common_aspect_ratio::CommonAspectRatio;
 use fal_client::creds::open_ai_api_key::OpenAiApiKey;
 use fal_client::requests::traits::fal_request_cost_calculator_trait::FalRequestCostCalculator;
-use fal_client::requests::webhook::image::edit::enqueue_gpt_image_1p5_edit_image_webhook::{enqueue_gpt_image_1p5_image_edit_webhook, EnqueueGptImage1p5EditImageArgs, EnqueueGptImage1p5EditImageBackground, EnqueueGptImage1p5EditImageInputFidelity, EnqueueGptImage1p5EditImageNumImages, EnqueueGptImage1p5EditImageQuality, EnqueueGptImage1p5EditImageSize};
-use fal_client::requests::webhook::image::text::enqueue_gpt_image_1p5_text_to_image_webhook::{enqueue_gpt_image_1p5_text_to_image_webhook, EnqueueGptImage1p5TextToImageArgs, EnqueueGptImage1p5TextToImageBackground, EnqueueGptImage1p5TextToImageNumImages, EnqueueGptImage1p5TextToImageQuality, EnqueueGptImage1p5TextToImageSize};
+use fal_client::requests::webhook::image::edit::enqueue_gpt_image_1p5_edit_image_webhook::{enqueue_gpt_image_1p5_image_edit_webhook, EnqueueGptImage1p5EditImageArgs, EnqueueGptImage1p5EditImageBackground, EnqueueGptImage1p5EditImageInputFidelity, EnqueueGptImage1p5EditImageNumImages, EnqueueGptImage1p5EditImageQuality, EnqueueGptImage1p5EditImageRequest, EnqueueGptImage1p5EditImageSize};
+use fal_client::requests::webhook::image::text::enqueue_gpt_image_1p5_text_to_image_webhook::{enqueue_gpt_image_1p5_text_to_image_webhook, EnqueueGptImage1p5TextToImageArgs, EnqueueGptImage1p5TextToImageBackground, EnqueueGptImage1p5TextToImageNumImages, EnqueueGptImage1p5TextToImageQuality, EnqueueGptImage1p5TextToImageRequest, EnqueueGptImage1p5TextToImageSize};
 use http_server_common::request::get_request_ip::get_request_ip;
 use log::{error, info, warn};
 use mysql_queries::queries::generic_inference::fal::insert_generic_inference_job_for_fal_queue::insert_generic_inference_job_for_fal_queue;
@@ -190,8 +190,8 @@ pub async fn gpt_image_1p5_multi_function_image_gen_handler(
       None => EnqueueGptImage1p5EditImageInputFidelity::High,
     };
 
-    let args = EnqueueGptImage1p5EditImageArgs {
-      prompt: request.prompt.as_deref().unwrap_or(""),
+    let edit_request = EnqueueGptImage1p5EditImageRequest {
+      prompt: request.prompt.as_deref().unwrap_or("").to_string(),
       image_urls: input_image_urls.to_owned(),
       num_images,
       mask_image_url: maybe_mask_url,
@@ -200,11 +200,15 @@ pub async fn gpt_image_1p5_multi_function_image_gen_handler(
       quality: Some(quality),
       input_fidelity: Some(input_fidelity),
       output_format: None,
+    };
+
+    let cost = edit_request.calculate_cost_in_cents();
+
+    let args = EnqueueGptImage1p5EditImageArgs {
+      request: edit_request,
       webhook_url: &server_state.fal.webhook_url,
       api_key: &server_state.fal.api_key,
     };
-
-    let cost = args.calculate_cost_in_cents();
 
     info!("Charging wallet: {}", cost);
 
@@ -255,18 +259,22 @@ pub async fn gpt_image_1p5_multi_function_image_gen_handler(
       None => EnqueueGptImage1p5TextToImageQuality::High,
     };
 
-    let args = EnqueueGptImage1p5TextToImageArgs {
-      prompt: request.prompt.as_deref().unwrap_or(""),
+    let t2i_request = EnqueueGptImage1p5TextToImageRequest {
+      prompt: request.prompt.as_deref().unwrap_or("").to_string(),
       num_images,
       output_format: None,
       image_size: Some(image_size),
       background: Some(background),
       quality: Some(quality),
+    };
+
+    let cost = t2i_request.calculate_cost_in_cents();
+
+    let args = EnqueueGptImage1p5TextToImageArgs {
+      request: t2i_request,
       webhook_url: &server_state.fal.webhook_url,
       api_key: &server_state.fal.api_key,
     };
-
-    let cost = args.calculate_cost_in_cents();
 
     info!("Charging wallet: {}", cost);
 
@@ -382,6 +390,7 @@ pub async fn gpt_image_1p5_multi_function_image_gen_handler(
     starting_job_status_override: None,
     maybe_frontend_failure_category: None,
     maybe_failure_reason: None,
+      maybe_debug_log_event_token: None,
     phantom: Default::default(),
   }).await;
 

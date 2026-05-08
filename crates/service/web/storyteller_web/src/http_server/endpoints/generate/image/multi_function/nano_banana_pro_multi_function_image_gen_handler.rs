@@ -24,8 +24,8 @@ use enums::common::generation::common_aspect_ratio::CommonAspectRatio;
 use enums::common::generation::common_resolution::CommonResolution;
 use fal_client::creds::open_ai_api_key::OpenAiApiKey;
 use fal_client::requests::traits::fal_request_cost_calculator_trait::FalRequestCostCalculator;
-use fal_client::requests::webhook::image::edit::enqueue_nano_banana_pro_edit_image_webhook::{enqueue_nano_banana_pro_image_edit_webhook, EnqueueNanoBananaProEditImageArgs, EnqueueNanoBananaProEditImageAspectRatio, EnqueueNanoBananaProEditImageNumImages, EnqueueNanoBananaProEditImageResolution};
-use fal_client::requests::webhook::image::text::enqueue_nano_banana_pro_text_to_image_webhook::{enqueue_nano_banana_pro_text_to_image_webhook, EnqueueNanoBananaProTextToImageArgs, EnqueueNanoBananaProTextToImageAspectRatio, EnqueueNanoBananaProTextToImageNumImages, EnqueueNanoBananaProTextToImageResolution};
+use fal_client::requests::webhook::image::edit::enqueue_nano_banana_pro_edit_image_webhook::{enqueue_nano_banana_pro_image_edit_webhook, EnqueueNanoBananaProEditImageArgs, EnqueueNanoBananaProEditImageAspectRatio, EnqueueNanoBananaProEditImageNumImages, EnqueueNanoBananaProEditImageRequest, EnqueueNanoBananaProEditImageResolution};
+use fal_client::requests::webhook::image::text::enqueue_nano_banana_pro_text_to_image_webhook::{enqueue_nano_banana_pro_text_to_image_webhook, EnqueueNanoBananaProTextToImageArgs, EnqueueNanoBananaProTextToImageAspectRatio, EnqueueNanoBananaProTextToImageNumImages, EnqueueNanoBananaProTextToImageRequest, EnqueueNanoBananaProTextToImageResolution};
 use http_server_common::request::get_request_ip::get_request_ip;
 use log::{error, info, warn};
 use mysql_queries::queries::generic_inference::fal::insert_generic_inference_job_for_fal_queue::insert_generic_inference_job_for_fal_queue;
@@ -153,16 +153,18 @@ pub async fn nano_banana_pro_multi_function_image_gen_handler(
     };
 
     let args = EnqueueNanoBananaProEditImageArgs {
-      prompt: request.prompt.as_deref().unwrap_or(""),
-      image_urls: input_image_urls.to_owned(),
-      num_images,
-      resolution: Some(resolution),
-      aspect_ratio: Some(aspect_ratio),
+      request: EnqueueNanoBananaProEditImageRequest {
+        prompt: request.prompt.as_deref().unwrap_or("").to_string(),
+        image_urls: input_image_urls.to_owned(),
+        num_images,
+        resolution: Some(resolution),
+        aspect_ratio: Some(aspect_ratio),
+      },
       webhook_url: &server_state.fal.webhook_url,
       api_key: &server_state.fal.api_key,
     };
 
-    let cost = args.calculate_cost_in_cents();
+    let cost = args.request.calculate_cost_in_cents();
 
     info!("Charging wallet: {}", cost);
 
@@ -214,16 +216,20 @@ pub async fn nano_banana_pro_multi_function_image_gen_handler(
       None => EnqueueNanoBananaProTextToImageAspectRatio::OneByOne,
     };
 
-    let args = EnqueueNanoBananaProTextToImageArgs {
-      prompt: request.prompt.as_deref().unwrap_or(""),
+    let t2i_request = EnqueueNanoBananaProTextToImageRequest {
+      prompt: request.prompt.as_deref().unwrap_or("").to_string(),
       num_images,
       resolution: Some(resolution),
       aspect_ratio: Some(aspect_ratio),
+    };
+
+    let cost = t2i_request.calculate_cost_in_cents();
+
+    let args = EnqueueNanoBananaProTextToImageArgs {
+      request: t2i_request,
       webhook_url: &server_state.fal.webhook_url,
       api_key: &server_state.fal.api_key,
     };
-
-    let cost = args.calculate_cost_in_cents();
 
     info!("Charging wallet: {}", cost);
 
@@ -354,6 +360,7 @@ pub async fn nano_banana_pro_multi_function_image_gen_handler(
     starting_job_status_override: None,
     maybe_frontend_failure_category: None,
     maybe_failure_reason: None,
+      maybe_debug_log_event_token: None,
     phantom: Default::default(),
   }).await;
 

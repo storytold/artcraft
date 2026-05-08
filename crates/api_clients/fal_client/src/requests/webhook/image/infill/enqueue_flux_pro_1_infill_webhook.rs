@@ -5,16 +5,18 @@ use crate::requests::http::image::infill::http_flux_pro_1_infill::{flux_pro_1_in
 use crate::requests::api::webhook_response::WebhookResponse;
 use reqwest::IntoUrl;
 
-pub struct FluxPro1InfillArgs<'a, U: IntoUrl, R: IntoUrl, L: IntoUrl> {
-  // Request
-  pub prompt: &'a str,
-  pub image_url: U,
-  pub mask_url: R,
-  pub num_images: FluxPro1InfillNumImages,
-
-  // Fulfillment
-  pub webhook_url: L,
+pub struct FluxPro1InfillArgs<'a, R: IntoUrl> {
+  pub request: FluxPro1InfillRequest,
+  pub webhook_url: R,
   pub api_key: &'a FalApiKey,
+}
+
+#[derive(Clone, Debug)]
+pub struct FluxPro1InfillRequest {
+  pub prompt: String,
+  pub image_url: String,
+  pub mask_url: String,
+  pub num_images: FluxPro1InfillNumImages,
 }
 
 #[derive(Copy, Clone, Debug)]
@@ -25,11 +27,13 @@ pub enum FluxPro1InfillNumImages {
   Four,
 }
 
-pub async fn enqueue_flux_pro_1_infill_webhook<U: IntoUrl, R: IntoUrl, L: IntoUrl>(
-  args: FluxPro1InfillArgs<'_, U, R, L>
+pub async fn enqueue_flux_pro_1_infill_webhook<R: IntoUrl>(
+  args: FluxPro1InfillArgs<'_, R>
 ) -> Result<WebhookResponse, FalErrorPlus> {
 
-  let num_images = match args.num_images {
+  let req = args.request;
+
+  let num_images = match req.num_images {
     FluxPro1InfillNumImages::One => 1,
     FluxPro1InfillNumImages::Two => 2,
     FluxPro1InfillNumImages::Three => 3,
@@ -37,9 +41,9 @@ pub async fn enqueue_flux_pro_1_infill_webhook<U: IntoUrl, R: IntoUrl, L: IntoUr
   };
 
   let request = FluxPro1InfillInput {
-    prompt: args.prompt.to_string(),
-    image_url: args.image_url.as_str().to_string(),
-    mask_url: args.mask_url.as_str().to_string(),
+    prompt: req.prompt,
+    image_url: req.image_url,
+    mask_url: req.mask_url,
     num_images: Some(num_images),
 
     // Maybe expose
@@ -62,7 +66,7 @@ pub async fn enqueue_flux_pro_1_infill_webhook<U: IntoUrl, R: IntoUrl, L: IntoUr
 #[cfg(test)]
 mod tests {
   use crate::creds::fal_api_key::FalApiKey;
-  use crate::requests::webhook::image::infill::enqueue_flux_pro_1_infill_webhook::{enqueue_flux_pro_1_infill_webhook, FluxPro1InfillArgs, FluxPro1InfillNumImages};
+  use crate::requests::webhook::image::infill::enqueue_flux_pro_1_infill_webhook::{enqueue_flux_pro_1_infill_webhook, FluxPro1InfillArgs, FluxPro1InfillRequest, FluxPro1InfillNumImages};
   use errors::AnyhowResult;
   use std::fs::read_to_string;
   use test_data::web::image_urls::{TALL_MOCHI_WITH_GLASSES_GLASSES_MASK_IMAGE_URL, TALL_MOCHI_WITH_GLASSES_IMAGE_URL};
@@ -76,12 +80,14 @@ mod tests {
     let api_key = FalApiKey::from_str(&secret);
 
     let args = FluxPro1InfillArgs {
-      image_url: TALL_MOCHI_WITH_GLASSES_IMAGE_URL,
-      mask_url: TALL_MOCHI_WITH_GLASSES_GLASSES_MASK_IMAGE_URL,
-      prompt: "slick sunglasses, cool glasses, reflection in glasses lenses",
+      request: FluxPro1InfillRequest {
+        image_url: TALL_MOCHI_WITH_GLASSES_IMAGE_URL.to_string(),
+        mask_url: TALL_MOCHI_WITH_GLASSES_GLASSES_MASK_IMAGE_URL.to_string(),
+        prompt: "slick sunglasses, cool glasses, reflection in glasses lenses".to_string(),
+        num_images: FluxPro1InfillNumImages::One,
+      },
       api_key: &api_key,
       webhook_url: "https://example.com/webhook",
-      num_images: FluxPro1InfillNumImages::One,
     };
 
     let result = enqueue_flux_pro_1_infill_webhook(args).await?;

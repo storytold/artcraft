@@ -117,7 +117,7 @@ export const SignupForm = ({
         )}
 
         <div className="space-y-2">
-          <label className="text-xs font-bold text-white/60 uppercase tracking-wide ml-1">
+          <label className="text-xs font-semibold text-white/70 ml-1">
             Email
           </label>
           <Input
@@ -131,7 +131,7 @@ export const SignupForm = ({
         </div>
 
         <div className="space-y-2">
-          <label className="text-xs font-bold text-white/60 uppercase tracking-wide ml-1">
+          <label className="text-xs font-semibold text-white/70 ml-1">
             Password
           </label>
           <div className="relative">
@@ -155,7 +155,7 @@ export const SignupForm = ({
 
         <div className="pt-2">
           <Button
-            className="w-full bg-primary hover:bg-primary-600 text-white border-none justify-center font-bold h-10"
+            className="rounded-full w-full bg-primary hover:bg-primary-600 text-white border-none justify-center font-bold h-10"
             type="submit"
             disabled={isLoading}
           >

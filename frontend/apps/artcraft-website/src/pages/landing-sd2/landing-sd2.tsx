@@ -247,7 +247,7 @@ const LandingSD2 = () => {
           <div className="w-full max-w-[1200px] mx-auto text-center flex flex-col items-center">
             {/* Main Heading */}
             <h1
-              className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-bold leading-tight mb-4 sm:mb-6 drop-shadow-[0_4px_32px_rgba(80,80,255,0.25)]"
+              className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-medium leading-tight mb-4 sm:mb-6 drop-shadow-[0_4px_32px_rgba(80,80,255,0.25)]"
               data-animate
             >
               <span className="text-white">
@@ -324,7 +324,7 @@ const LandingSD2 = () => {
             <h2 className="text-primary font-bold text-sm md:text-base mb-6 tracking-widest uppercase">
               Advanced Crafting Features
             </h2>
-            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold leading-[1.1] mb-8">
+            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-medium leading-[1.1] mb-8">
               We're Pulling You <br />{" "}
               <span className="text-white">Out of Prompting</span>
             </h1>
@@ -393,7 +393,7 @@ const LandingSD2 = () => {
               ref={mobileDescRef}
               className="bg-white/5 border border-white/10 rounded-2xl p-5"
             >
-              <h3 className="text-lg font-bold text-white mb-2">
+              <h3 className="text-lg font-medium text-white mb-2">
                 {features[activeFeature].title}
               </h3>
               <p className="text-white/70 text-sm leading-relaxed">
@@ -429,7 +429,7 @@ const LandingSD2 = () => {
                         <FontAwesomeIcon icon={feature.icon} />
                       </div>
                       <h3
-                        className={`text-3xl xl:text-4xl font-bold mb-6 transition-all duration-500 ${
+                        className={`text-3xl xl:text-4xl font-medium mb-6 transition-all duration-500 ${
                           activeFeature === index
                             ? "text-white"
                             : "text-white/40"
@@ -503,7 +503,7 @@ const LandingSD2 = () => {
           data-animate
         >
           <div className="relative">
-            <h1 className="relative mb-4 sm:mb-6 md:mb-10 font-bold text-3xl sm:text-4xl md:text-[3rem] lg:text-[4rem] xl:text-[4.5rem] !leading-tight text-shadow-lg">
+            <h1 className="relative mb-4 sm:mb-6 md:mb-10 font-medium text-3xl sm:text-4xl md:text-[3rem] lg:text-[4rem] xl:text-[4.5rem] !leading-tight text-shadow-lg">
               <span
                 className="text-primary"
                 style={{ textShadow: "0 0 15px var(--color-primary)" }}
@@ -545,7 +545,7 @@ const LandingSD2 = () => {
                 </div>
                 <div className="flex flex-col justify-between">
                   <div>
-                    <h3 className="font-bold text-xl sm:text-2xl lg:text-3xl mb-3 sm:mb-4 leading-tight">
+                    <h3 className="font-medium text-xl sm:text-2xl lg:text-3xl mb-3 sm:mb-4 leading-tight">
                       Text Prompting Sucks
                     </h3>
                     <p className="text-white/80 text-sm sm:text-base lg:text-lg leading-relaxed">
@@ -563,7 +563,7 @@ const LandingSD2 = () => {
             {/* Reason #2 - Medium Box */}
             <div className="xl:col-span-6 bg-[#28282C] rounded-2xl sm:rounded-3xl p-6 lg:p-8 pb-0 lg:pb-0 shadow-2xl transition-all duration-300 group">
               <div className="relative flex flex-col h-full">
-                <h3 className="font-bold text-xl sm:text-2xl lg:text-3xl mb-3 sm:mb-4 leading-tight ">
+                <h3 className="font-medium text-xl sm:text-2xl lg:text-3xl mb-3 sm:mb-4 leading-tight ">
                   Desktop App
                 </h3>
                 <p className="text-white/80 text-sm sm:text-base mb-4 sm:mb-6 lg:text-lg leading-relaxed">
@@ -602,7 +602,7 @@ const LandingSD2 = () => {
             {/* Reason #3 - Medium Box */}
             <div className="xl:col-span-4 bg-[#28282C] rounded-2xl sm:rounded-3xl p-6 lg:p-8 shadow-2xl transition-all duration-300 group">
               <div className="flex flex-col h-full">
-                <h3 className="font-bold text-xl sm:text-2xl lg:text-3xl mb-3 sm:mb-4 leading-tight">
+                <h3 className="font-medium text-xl sm:text-2xl lg:text-3xl mb-3 sm:mb-4 leading-tight">
                   It's Open Source
                 </h3>
                 <p className="text-white/80 text-sm sm:text-base lg:text-lg mb-4 sm:mb-6 leading-relaxed flex-1">
@@ -632,7 +632,7 @@ const LandingSD2 = () => {
             <div className="xl:col-span-8 bg-[#28282C] rounded-2xl sm:rounded-3xl shadow-2xl transition-all duration-300 group overflow-hidden">
               <div className="lg:flex-1 flex flex-col justify-between">
                 <div className="p-6 lg:p-8">
-                  <h3 className="font-bold text-xl sm:text-2xl lg:text-3xl mb-3 sm:mb-4 leading-tight">
+                  <h3 className="font-medium text-xl sm:text-2xl lg:text-3xl mb-3 sm:mb-4 leading-tight">
                     Use Every Model
                   </h3>
                   <p className="text-white/80 text-sm sm:text-base lg:text-lg leading-relaxed">
@@ -655,7 +655,7 @@ const LandingSD2 = () => {
             <div className="xl:col-span-12 md:col-span-2 bg-[#28282C] rounded-2xl sm:rounded-3xl p-6 lg:p-8 shadow-2xl transition-all duration-300 group">
               <div className="flex flex-col lg:flex-row gap-4 lg:gap-8 items-center">
                 <div className="lg:flex-1">
-                  <h3 className="font-bold text-xl sm:text-2xl lg:text-3xl mb-3 sm:mb-4 leading-tight">
+                  <h3 className="font-medium text-xl sm:text-2xl lg:text-3xl mb-3 sm:mb-4 leading-tight">
                     Created by Artists and Filmmakers
                   </h3>
                   <p className="text-white/80 text-sm sm:text-base lg:text-lg leading-relaxed">
@@ -701,7 +701,7 @@ const LandingSD2 = () => {
         {/* Videos Section */}
         <div className="space-y-12" data-animate>
           <div className="text-center">
-            <h1 className="md:mb-8 text-3xl sm:text-4xl md:text-6xl font-bold mb-4">
+            <h1 className="md:mb-8 text-3xl sm:text-4xl md:text-6xl font-medium mb-4">
               Made using{" "}
               <span className="relative after:absolute after:bottom-0 after:left-0 after:w-full after:h-[5px] md:after:h-[12px] after:bg-primary/60 after:mb-1">
                 ArtCraft
@@ -767,7 +767,7 @@ const LandingSD2 = () => {
             className="flex flex-col items-center justify-center text-center p-8 sm:p-12 lg:p-16 rounded-[24px] sm:rounded-[40px] bg-[#1a1b36] backdrop-blur-lg border-[3px] sm:border-[6px] border-[#3f415c] shadow-2xl"
             data-animate
           >
-            <h2 className="relative mb-4 sm:mb-6 font-bold text-2xl sm:text-3xl lg:text-4xl max-w-lg !leading-tight text-white">
+            <h2 className="relative mb-4 sm:mb-6 font-medium text-2xl sm:text-3xl lg:text-4xl max-w-lg !leading-tight text-white">
               Join the Discord
             </h2>
             <p className="text-base sm:text-lg text-[#aab3c9] mb-6 sm:mb-8 max-w-md leading-relaxed">
@@ -782,7 +782,7 @@ const LandingSD2 = () => {
             className="flex flex-col items-center justify-center text-center p-8 sm:p-12 rounded-[24px] sm:rounded-[40px] bg-[#161b22] backdrop-blur-lg border-[3px] sm:border-[6px] border-[#30363d] shadow-2xl"
             data-animate
           >
-            <h2 className="relative mb-4 sm:mb-6 font-bold text-2xl sm:text-3xl lg:text-4xl max-w-lg !leading-tight text-white">
+            <h2 className="relative mb-4 sm:mb-6 font-medium text-2xl sm:text-3xl lg:text-4xl max-w-lg !leading-tight text-white">
               We're Open Source
             </h2>
             <p className="text-base sm:text-lg text-[#8b949e] mb-6 sm:mb-8 max-w-md leading-relaxed">
@@ -809,7 +809,7 @@ const LandingSD2 = () => {
             <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-transparent to-purple-500/20 opacity-30 pointer-events-none" />
             <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-white/20 to-transparent" />
 
-            <h2 className="relative mb-4 sm:mb-6 font-bold text-3xl sm:text-4xl lg:text-5xl max-w-2xl !leading-tight text-white z-10">
+            <h2 className="relative mb-4 sm:mb-6 font-medium text-3xl sm:text-4xl lg:text-5xl max-w-2xl !leading-tight text-white z-10">
               Ready to Create?
             </h2>
             <p className="text-base sm:text-l md:text-xl text-white/90 mb-8 sm:mb-10 max-w-xl leading-relaxed z-10">

@@ -5,20 +5,24 @@ use crate::requests::http::object::http_hunyuan3d_v2_image_to_3d::{hunyuan3d_v2_
 use crate::requests::api::webhook_response::WebhookResponse;
 use reqwest::IntoUrl;
 
-pub struct Hunyuan3d2Args<'a, U: IntoUrl, V: IntoUrl> {
-  pub image_url: U,
-  pub webhook_url: V,
+pub struct Hunyuan3d2Args<'a, R: IntoUrl> {
+  pub request: Hunyuan3d2Request,
+  pub webhook_url: R,
   pub api_key: &'a FalApiKey,
 }
 
-pub async fn enqueue_hunyuan_3d_2_image_to_3d_webhook<U: IntoUrl, V: IntoUrl>(
-  args: Hunyuan3d2Args<'_, U, V>
+#[derive(Clone, Debug)]
+pub struct Hunyuan3d2Request {
+  pub image_url: String,
+}
+
+pub async fn enqueue_hunyuan_3d_2_image_to_3d_webhook<R: IntoUrl>(
+  args: Hunyuan3d2Args<'_, R>
 ) -> Result<WebhookResponse, FalErrorPlus> {
-  
-  let image_url = args.image_url.as_str().to_string();
+  let req = args.request;
 
   let request = Hunyuan3dV2ImageTo3dInput {
-    input_image_url: image_url,
+    input_image_url: req.image_url,
     textured_mesh: Some(true),
     guidance_scale: None,
     num_inference_steps: None,

@@ -7,3 +7,5 @@ export const SOCIAL_LINKS = {
   LINKEDIN: "https://www.linkedin.com/company/artcraft-ai",
   REDDIT: "https://www.reddit.com/r/ArtCraftAI/",
 } as const;
+
+export const SUPPORT_EMAIL = "hello@storyteller.ai";

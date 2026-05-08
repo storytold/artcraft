@@ -11,6 +11,7 @@ import { isMobile, isMacOs } from "react-device-detect";
 import { DOWNLOAD_LINKS } from "../../config/github_download_links";
 import Seo from "../../components/seo";
 import { PricingTable } from "../../components/pricing-table";
+import { PagePatternBackdrop } from "../../components/truchet-pattern";
 
 const Welcome = () => {
   const downloadUrl = isMacOs ? DOWNLOAD_LINKS.MACOS : DOWNLOAD_LINKS.WINDOWS;
@@ -21,6 +22,8 @@ const Welcome = () => {
         title="Welcome - ArtCraft"
         description="Welcome to ArtCraft. Get started with your subscription."
       />
+
+      <PagePatternBackdrop variant="landing" />
 
       {/* Background gradient */}
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-0">
@@ -40,7 +43,7 @@ const Welcome = () => {
             </span>
           </div>
 
-          <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold mb-4 tracking-tight">
+          <h1 className="text-4xl sm:text-5xl md:text-6xl font-medium mb-4 tracking-tight">
             Welcome to <span className="text-primary">ArtCraft</span>
           </h1>
           <p className="text-xl text-white/70 max-w-2xl mx-auto">
@@ -68,7 +71,7 @@ const Welcome = () => {
                   className="text-primary text-lg"
                 />
               </div>
-              <h2 className="text-2xl font-bold text-white">Getting Started</h2>
+              <h2 className="text-2xl font-medium text-white">Getting Started</h2>
             </div>
 
             <p className="text-white/60 mb-6">
@@ -106,7 +109,7 @@ const Welcome = () => {
                     <Button
                       as="link"
                       href={downloadUrl}
-                      className="bg-white text-black hover:bg-gray-100 dark:bg-white dark:text-black dark:hover:bg-gray-200 px-6 py-2.5 text-sm font-bold rounded-xl"
+                      className="rounded-full bg-white text-black hover:bg-gray-100 dark:bg-white dark:text-black dark:hover:bg-gray-200 px-6 py-2.5 text-sm font-bold rounded-xl"
                     >
                       <FontAwesomeIcon icon={faDownload} className="mr-2" />
                       Download for {isMacOs ? "Mac" : "Windows"}

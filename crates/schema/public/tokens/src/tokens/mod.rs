@@ -47,3 +47,6 @@ pub mod wallets;
 pub mod zs_voice_dataset_samples;
 pub mod zs_voice_datasets;
 pub mod zs_voices;
+
+// Non-unique tokens (used as indices, not primary keys)
+pub mod non_unique;

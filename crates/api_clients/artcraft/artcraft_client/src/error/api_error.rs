@@ -1,5 +1,6 @@
 use cloudflare_errors::cloudflare_error::CloudflareError;
 use errors::AnyhowError;
+use reqwest::StatusCode;
 use std::error::Error;
 use std::fmt::{Display, Formatter};
 use std::io;
@@ -28,6 +29,12 @@ pub enum ApiError {
   InternalServerError {
     body: String,
     backend_hostname: Option<String>,
+  },
+
+  /// An uncategorized bad HTTP response with status code and body.
+  UncategorizedBadResponseWithStatusAndBody {
+    status_code: StatusCode,
+    body: String,
   },
 
   /// Cloudflare errors.
@@ -66,6 +73,8 @@ impl Display for ApiError {
       ApiError::TooManyRequests(msg) => write!(f, "Too many requests to Storyteller backend: {}", msg),
       ApiError::InternalServerError {body, backend_hostname} => 
         write!(f, "Internal Server Error; backend hostname: {:?} ; body: {}; ", backend_hostname, body),
+      ApiError::UncategorizedBadResponseWithStatusAndBody { status_code, body } => 
+        write!(f, "Uncategorized bad response with status code {} and body: {}", status_code, body),
       // Server response handling errors
       ApiError::DeserializationError(error) => write!(f, "Deserialization error: {}", error),
       // Network errors

@@ -9,6 +9,9 @@
       "path": "../../libs/components/gallery-modal"
     },
     {
+      "path": "../../libs/components/switch"
+    },
+    {
       "path": "../../libs/components/tab-selector"
     },
     {
@@ -43,9 +46,6 @@
     },
     {
       "path": "../../libs/markdown-content"
-    },
-    {
-      "path": "../../libs/components/toaster"
     },
     {
       "path": "../../libs/components/modal"

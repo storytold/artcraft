@@ -1,3 +1,6 @@
+use std::fmt::Debug;
+use std::sync::Arc;
+
 use crate::client::router_fal_client::RouterFalClient;
 use crate::errors::artcraft_router_error::ArtcraftRouterError;
 use crate::errors::provider_error::ProviderError;
@@ -10,12 +13,66 @@ use crate::generate::generate_video::plan::fal::plan_generate_video_fal_veo_3::{
 };
 use fal_client::requests::webhook::video::image::enqueue_veo_3_image_to_video_webhook::{
   enqueue_veo_3_image_to_video_webhook, Veo3Args, Veo3I2vAspectRatio, Veo3I2vDuration,
-  Veo3I2vResolution,
+  Veo3I2vResolution, Veo3Request,
 };
 use fal_client::requests::webhook::video::text::enqueue_veo_3_text_to_video_webhook::{
   enqueue_veo_3_text_to_video_webhook, Veo3T2vAspectRatio, Veo3T2vDuration, Veo3T2vResolution,
-  Veo3TextToVideoArgs,
+  Veo3TextToVideoArgs, Veo3TextToVideoRequest,
 };
+
+pub async fn execute_fal_veo_3(
+  plan: &PlanFalVeo3,
+  fal_client: &RouterFalClient,
+) -> Result<GenerateVideoResponse, ArtcraftRouterError> {
+  let (webhook_response, outbound_request) = match &plan.mode {
+    FalVeo3Mode::TextToVideo => {
+      let request = Veo3TextToVideoRequest {
+        prompt: plan.prompt.clone(),
+        negative_prompt: plan.negative_prompt.clone(),
+        duration: to_t2v_duration(plan.duration),
+        aspect_ratio: plan.t2v_aspect_ratio.map(to_t2v_aspect_ratio).unwrap_or(Veo3T2vAspectRatio::Default),
+        resolution: to_t2v_resolution(plan.resolution),
+        generate_audio: plan.generate_audio,
+      };
+      let outbound: Arc<dyn Debug + Send + Sync> = Arc::new(request.clone());
+      let args = Veo3TextToVideoArgs {
+        request,
+        api_key: &fal_client.api_key,
+        webhook_url: fal_client.webhook_url.as_str(),
+      };
+      let resp = enqueue_veo_3_text_to_video_webhook(args)
+        .await
+        .map_err(|e| ArtcraftRouterError::Provider(ProviderError::Fal(e)))?;
+      (resp, outbound)
+    }
+    FalVeo3Mode::ImageToVideo { image_url } => {
+      let request = Veo3Request {
+        image_url: image_url.to_string(),
+        prompt: plan.prompt.clone(),
+        duration: to_i2v_duration(plan.duration),
+        aspect_ratio: plan.i2v_aspect_ratio.map(to_i2v_aspect_ratio).unwrap_or(Veo3I2vAspectRatio::Auto),
+        resolution: to_i2v_resolution(plan.resolution),
+        generate_audio: plan.generate_audio,
+      };
+      let outbound: Arc<dyn Debug + Send + Sync> = Arc::new(request.clone());
+      let args = Veo3Args {
+        request,
+        api_key: &fal_client.api_key,
+        webhook_url: fal_client.webhook_url.as_str(),
+      };
+      let resp = enqueue_veo_3_image_to_video_webhook(args)
+        .await
+        .map_err(|e| ArtcraftRouterError::Provider(ProviderError::Fal(e)))?;
+      (resp, outbound)
+    }
+  };
+
+  Ok(GenerateVideoResponse::Fal(FalVideoResponsePayload {
+    request_id: webhook_response.request_id,
+    gateway_request_id: webhook_response.gateway_request_id,
+    maybe_outbound_request: Some(outbound_request),
+  }))
+}
 
 fn to_i2v_duration(d: FalVeo3Duration) -> Veo3I2vDuration {
   match d {
@@ -65,47 +122,4 @@ fn to_i2v_aspect_ratio(ar: FalVeo3I2vAspectRatio) -> Veo3I2vAspectRatio {
     FalVeo3I2vAspectRatio::WideSixteenNine => Veo3I2vAspectRatio::WideSixteenNine,
     FalVeo3I2vAspectRatio::TallNineSixteen => Veo3I2vAspectRatio::TallNineSixteen,
   }
-}
-
-pub async fn execute_fal_veo_3(
-  plan: &PlanFalVeo3,
-  fal_client: &RouterFalClient,
-) -> Result<GenerateVideoResponse, ArtcraftRouterError> {
-  let webhook_response = match &plan.mode {
-    FalVeo3Mode::TextToVideo => {
-      let args = Veo3TextToVideoArgs {
-        prompt: plan.prompt.as_str(),
-        negative_prompt: plan.negative_prompt.as_deref(),
-        api_key: &fal_client.api_key,
-        duration: to_t2v_duration(plan.duration),
-        aspect_ratio: plan.t2v_aspect_ratio.map(to_t2v_aspect_ratio).unwrap_or(Veo3T2vAspectRatio::Default),
-        resolution: to_t2v_resolution(plan.resolution),
-        generate_audio: plan.generate_audio,
-        webhook_url: fal_client.webhook_url.as_str(),
-      };
-      enqueue_veo_3_text_to_video_webhook(args)
-        .await
-        .map_err(|e| ArtcraftRouterError::Provider(ProviderError::Fal(e)))?
-    }
-    FalVeo3Mode::ImageToVideo { image_url } => {
-      let args = Veo3Args {
-        image_url: image_url.as_str(),
-        prompt: plan.prompt.as_str(),
-        duration: to_i2v_duration(plan.duration),
-        aspect_ratio: plan.i2v_aspect_ratio.map(to_i2v_aspect_ratio).unwrap_or(Veo3I2vAspectRatio::Auto),
-        resolution: to_i2v_resolution(plan.resolution),
-        generate_audio: plan.generate_audio,
-        api_key: &fal_client.api_key,
-        webhook_url: fal_client.webhook_url.as_str(),
-      };
-      enqueue_veo_3_image_to_video_webhook(args)
-        .await
-        .map_err(|e| ArtcraftRouterError::Provider(ProviderError::Fal(e)))?
-    }
-  };
-
-  Ok(GenerateVideoResponse::Fal(FalVideoResponsePayload {
-    request_id: webhook_response.request_id,
-    gateway_request_id: webhook_response.gateway_request_id,
-  }))
 }

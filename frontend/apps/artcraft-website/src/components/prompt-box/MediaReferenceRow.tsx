@@ -11,6 +11,7 @@ import {
 } from "@fortawesome/pro-solid-svg-icons";
 import { twMerge } from "tailwind-merge";
 import { UploaderStates } from "@storyteller/common";
+import { toast } from "../toast/toast";
 import type { RefVideo, RefAudio } from "./types";
 import {
   uploadVideo,
@@ -47,11 +48,6 @@ export const MediaReferenceRow = ({
   const [uploadingVideo, setUploadingVideo] = useState(false);
   const [uploadingAudio, setUploadingAudio] = useState(false);
 
-  const referenceVideosRef = useRef(referenceVideos);
-  referenceVideosRef.current = referenceVideos;
-  const referenceAudiosRef = useRef(referenceAudios);
-  referenceAudiosRef.current = referenceAudios;
-
   const totalVideoDuration = referenceVideos.reduce(
     (sum, v) => sum + v.duration,
     0,
@@ -61,24 +57,42 @@ export const MediaReferenceRow = ({
     0,
   );
 
-  const canAddVideo = referenceVideos.length < maxVideoCount && !uploadingVideo;
-  const canAddAudio = referenceAudios.length < maxAudioCount && !uploadingAudio;
+  const canAddVideo =
+    referenceVideos.length < maxVideoCount &&
+    totalVideoDuration < maxVideoRefDuration &&
+    !uploadingVideo;
+  const canAddAudio =
+    referenceAudios.length < maxAudioCount &&
+    totalAudioDuration < maxAudioRefDuration &&
+    !uploadingAudio;
 
-  const handleVideoUpload = useCallback(
-    async (e: React.ChangeEvent<HTMLInputElement>) => {
-      const files = Array.from(e.target.files || []);
-      if (files.length === 0) return;
+  const handleVideoUpload = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const files = Array.from(e.target.files || []);
+    if (videoInputRef.current) videoInputRef.current.value = "";
+    if (files.length === 0) return;
 
-      const file = files[0];
-      const duration = await getVideoDuration(file);
+    // Snapshot at call time so a stale read inside the async callback can't overwrite a remove.
+    const baseVideos = [...referenceVideos];
 
-      if (totalVideoDuration + duration > maxVideoRefDuration) {
-        if (videoInputRef.current) videoInputRef.current.value = "";
-        return;
-      }
+    const file = files[0];
+    const duration = await getVideoDuration(file);
 
-      setUploadingVideo(true);
+    if (duration <= 0) {
+      toast.error("Could not read video file");
+      return;
+    }
+    const currentTotal = baseVideos.reduce((sum, v) => sum + v.duration, 0);
+    if (currentTotal + duration > maxVideoRefDuration) {
+      toast.error(
+        `Video too long — max ${maxVideoRefDuration}s total (${maxVideoRefDuration - currentTotal}s remaining)`,
+      );
+      return;
+    }
 
+    setUploadingVideo(true);
+    try {
       await uploadVideo({
         title: `reference-video-${Math.random().toString(36).substring(2, 15)}`,
         assetFile: file,
@@ -91,37 +105,50 @@ export const MediaReferenceRow = ({
               mediaToken: newState.data,
               duration,
             };
-            onReferenceVideosChange([...referenceVideosRef.current, refVideo]);
-            setUploadingVideo(false);
+            onReferenceVideosChange([...baseVideos, refVideo]);
           } else if (
             newState.status === UploaderStates.assetError ||
             newState.status === UploaderStates.imageCreateError
           ) {
-            setUploadingVideo(false);
+            toast.error(newState.errorMessage || "Could not upload video");
           }
         },
       });
+    } catch (err) {
+      toast.error(
+        err instanceof Error ? err.message : "Could not upload video",
+      );
+    } finally {
+      setUploadingVideo(false);
+    }
+  };
 
-      if (videoInputRef.current) videoInputRef.current.value = "";
-    },
-    [totalVideoDuration, maxVideoRefDuration, onReferenceVideosChange],
-  );
+  const handleAudioUpload = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const files = Array.from(e.target.files || []);
+    if (audioInputRef.current) audioInputRef.current.value = "";
+    if (files.length === 0) return;
 
-  const handleAudioUpload = useCallback(
-    async (e: React.ChangeEvent<HTMLInputElement>) => {
-      const files = Array.from(e.target.files || []);
-      if (files.length === 0) return;
+    const baseAudios = [...referenceAudios];
 
-      const file = files[0];
-      const duration = await getAudioDuration(file);
+    const file = files[0];
+    const duration = await getAudioDuration(file);
 
-      if (totalAudioDuration + duration > maxAudioRefDuration) {
-        if (audioInputRef.current) audioInputRef.current.value = "";
-        return;
-      }
+    if (duration <= 0) {
+      toast.error("Could not read audio file");
+      return;
+    }
+    const currentTotal = baseAudios.reduce((sum, a) => sum + a.duration, 0);
+    if (currentTotal + duration > maxAudioRefDuration) {
+      toast.error(
+        `Audio too long — max ${maxAudioRefDuration}s total (${maxAudioRefDuration - currentTotal}s remaining)`,
+      );
+      return;
+    }
 
-      setUploadingAudio(true);
-
+    setUploadingAudio(true);
+    try {
       await uploadAudio({
         title: `reference-audio-${Math.random().toString(36).substring(2, 15)}`,
         assetFile: file,
@@ -134,21 +161,23 @@ export const MediaReferenceRow = ({
               mediaToken: newState.data,
               duration,
             };
-            onReferenceAudiosChange([...referenceAudiosRef.current, refAudio]);
-            setUploadingAudio(false);
+            onReferenceAudiosChange([...baseAudios, refAudio]);
           } else if (
             newState.status === UploaderStates.assetError ||
             newState.status === UploaderStates.imageCreateError
           ) {
-            setUploadingAudio(false);
+            toast.error(newState.errorMessage || "Could not upload audio");
           }
         },
       });
-
-      if (audioInputRef.current) audioInputRef.current.value = "";
-    },
-    [totalAudioDuration, maxAudioRefDuration, onReferenceAudiosChange],
-  );
+    } catch (err) {
+      toast.error(
+        err instanceof Error ? err.message : "Could not upload audio",
+      );
+    } finally {
+      setUploadingAudio(false);
+    }
+  };
 
   const removeVideo = (id: string) => {
     const video = referenceVideos.find((v) => v.id === id);

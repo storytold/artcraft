@@ -81,6 +81,7 @@ fn plan_aspect_ratio(
     }
     Some(CommonAspectRatio::WideFourByThree) => Ok(Some(CommonAspectRatioEnum::WideFourByThree)),
     Some(CommonAspectRatio::TallThreeByFour) => Ok(Some(CommonAspectRatioEnum::TallThreeByFour)),
+    Some(CommonAspectRatio::WideTwentyOneByNine) => Ok(Some(CommonAspectRatioEnum::WideTwentyOneByNine)),
 
     // Mismatches
     Some(unsupported) => match strategy {
@@ -102,7 +103,6 @@ fn nearest_aspect_ratio(aspect_ratio: CommonAspectRatio) -> CommonAspectRatioEnu
   match aspect_ratio {
     CommonAspectRatio::WideFiveByFour => CommonAspectRatioEnum::WideFourByThree,
     CommonAspectRatio::WideThreeByTwo => CommonAspectRatioEnum::WideFourByThree,
-    CommonAspectRatio::WideTwentyOneByNine => CommonAspectRatioEnum::WideSixteenByNine,
     CommonAspectRatio::TallFourByFive => CommonAspectRatioEnum::TallThreeByFour,
     CommonAspectRatio::TallTwoByThree => CommonAspectRatioEnum::TallThreeByFour,
     CommonAspectRatio::TallNineByTwentyOne => CommonAspectRatioEnum::TallNineBySixteen,

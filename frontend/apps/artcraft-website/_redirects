@@ -25,6 +25,10 @@
 /create-video/ /index.html 200
 /create-video/* /index.html 200
 
+/support /index.html 200
+/support/ /index.html 200
+/support/* /index.html 200
+
 /library /index.html 200
 /library/ /index.html 200
 /library/* /index.html 200

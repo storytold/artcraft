@@ -109,7 +109,7 @@ CREATE TABLE generic_inference_jobs (
   -- If we pre-constructed a prompt, this will be copied to the resultant media generated.
   -- This is especially important for Fal-related jobs and endpoints. We need this for keeping
   -- track of all the prompt details, context images, etc.
-  maybe_prompt_token VARCHAR(30) DEFAULT NULL,
+  maybe_prompt_token VARCHAR(32) DEFAULT NULL,
 
   -- A migration flag we can control from the backend API service which will tell
   -- the worker where to store the results. If false, GCP. If true, AWS.
@@ -203,6 +203,10 @@ CREATE TABLE generic_inference_jobs (
   -- is enqueued. In practice, this means we can canary deploy or cordon
   -- off special workers to handle certain jobs.
   maybe_routing_tag VARCHAR(64) DEFAULT NULL,
+
+  -- Foreign key to the debug_logs table (event_token column).
+  -- Multiple debug_logs rows can share the same event token.
+  maybe_debug_log_event_token VARCHAR(32) DEFAULT NULL,
 
   -- ========== JOB SYSTEM DETAILS ==========
 

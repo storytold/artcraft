@@ -8,6 +8,7 @@ import {
   IMAGE_MODELS,
   IMAGE_MODELS_BY_ID,
   SPLAT_MODELS,
+  OBJECT_3D_MODELS,
 } from "@storyteller/model-list";
 import { ModelTag } from "@storyteller/model-list";
 
@@ -129,5 +130,11 @@ export const ANGLES_PAGE_MODEL_LIST: ModelList =
 export const IMAGE_TO_3D_WORLD_PAGE_MODEL_LIST: ModelList =
   buildItems(
     SPLAT_MODELS as Model[],
+    <FontAwesomeIcon icon={faCube} className="h-4 w-4" />
+  );
+
+export const IMAGE_TO_3D_OBJECT_PAGE_MODEL_LIST: ModelList =
+  buildItems(
+    OBJECT_3D_MODELS as Model[],
     <FontAwesomeIcon icon={faCube} className="h-4 w-4" />
   );

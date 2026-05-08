@@ -1,7 +1,6 @@
-use fal_client::creds::fal_api_key::FalApiKey;
 use fal_client::requests::traits::fal_request_cost_calculator_trait::FalRequestCostCalculator;
 use fal_client::requests::webhook::video::text::enqueue_seedance_1p5_pro_text_to_video_webhook::{
-  EnqueueSeedance1p5ProTextToVideoArgs, EnqueueSeedance1p5ProTextToVideoDuration,
+  EnqueueSeedance1p5ProTextToVideoRequest, EnqueueSeedance1p5ProTextToVideoDuration,
   EnqueueSeedance1p5ProTextToVideoResolution,
 };
 
@@ -15,18 +14,15 @@ pub(crate) fn estimate_video_cost_fal_seedance_1p5_pro(
 ) -> VideoGenerationCostEstimate {
   // Seedance 1.5 Pro t2v and i2v have identical pricing; delegate to the t2v
   // calculator to guarantee parity with billing.
-  let api_key = FalApiKey::from_str("");
-  let args = EnqueueSeedance1p5ProTextToVideoArgs {
+  let req = EnqueueSeedance1p5ProTextToVideoRequest {
     prompt: String::new(),
     resolution: plan.resolution.map(to_t2v_resolution),
     duration: plan.duration.map(to_t2v_duration),
     aspect_ratio: None,
     generate_audio: plan.generate_audio,
-    webhook_url: "https://example.com",
-    api_key: &api_key,
   };
 
-  let cost_in_usd_cents = args.calculate_cost_in_cents();
+  let cost_in_usd_cents = req.calculate_cost_in_cents();
 
   VideoGenerationCostEstimate {
     cost_in_credits: Some(cost_in_usd_cents),

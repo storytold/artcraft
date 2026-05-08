@@ -144,12 +144,14 @@ export function GenerationGalleryGrid({
                 modelLabel={entry.job.modelLabel}
                 progress={entry.job.progress}
                 estimatedTimeLeftMs={entry.job.estimatedTimeLeftMs}
+                batchCount={entry.job.batchCount}
               />
             )}
             {entry.kind === "failed" && (
               <FailedCard
                 id={entry.job.id}
                 prompt={entry.job.prompt}
+                modelId={entry.job.modelId}
                 modelLabel={entry.job.modelLabel}
                 failureReason={entry.job.failureReason}
                 failureMessage={entry.job.failureMessage}

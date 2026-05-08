@@ -7,6 +7,13 @@ use crate::requests::api::webhook_response::WebhookResponse;
 use reqwest::IntoUrl;
 
 pub struct EnqueueQwenEdit2511EditImageAngleArgs<'a, R: IntoUrl> {
+  pub request: EnqueueQwenEdit2511EditImageAngleRequest,
+  pub webhook_url: R,
+  pub api_key: &'a FalApiKey,
+}
+
+#[derive(Clone, Debug)]
+pub struct EnqueueQwenEdit2511EditImageAngleRequest {
   // Request required
   pub image_urls: Vec<String>,
 
@@ -16,16 +23,12 @@ pub struct EnqueueQwenEdit2511EditImageAngleArgs<'a, R: IntoUrl> {
   pub zoom: Option<f64>,
 
   // Optional args
-  pub additional_prompt: Option<&'a str>,
+  pub additional_prompt: Option<String>,
   pub num_images: Option<EnqueueQwenEdit2511AngleNumImages>,
   pub image_size: Option<EnqueueQwenEdit2511AngleImageSize>,
   pub lora_scale: Option<f64>,
   pub guidance_scale: Option<f64>,
   pub num_inference_steps: Option<u32>,
-
-  // Fulfillment
-  pub webhook_url: R,
-  pub api_key: &'a FalApiKey,
 }
 
 #[derive(Copy, Clone, Debug)]
@@ -46,7 +49,7 @@ pub enum EnqueueQwenEdit2511AngleImageSize {
   LandscapeSixteenNine,
 }
 
-impl <U: IntoUrl> FalRequestCostCalculator for EnqueueQwenEdit2511EditImageAngleArgs<'_, U> {
+impl FalRequestCostCalculator for EnqueueQwenEdit2511EditImageAngleRequest {
   fn calculate_cost_in_cents(&self) -> UsdCents {
     // Pricing: $0.035 per megapixel.
     // For a 1024x1024 image (~1 MP), that's ~4 cents per image.
@@ -66,7 +69,9 @@ pub async fn enqueue_qwen_edit_2511_edit_image_angle_webhook<R: IntoUrl>(
   args: EnqueueQwenEdit2511EditImageAngleArgs<'_, R>
 ) -> Result<WebhookResponse, FalErrorPlus> {
 
-  let num_images = args.num_images
+  let req = args.request;
+
+  let num_images = req.num_images
       .map(|n| match n {
         EnqueueQwenEdit2511AngleNumImages::One => 1,
         EnqueueQwenEdit2511AngleNumImages::Two => 2,
@@ -74,7 +79,7 @@ pub async fn enqueue_qwen_edit_2511_edit_image_angle_webhook<R: IntoUrl>(
         EnqueueQwenEdit2511AngleNumImages::Four => 4,
       });
 
-  let image_size = args.image_size
+  let image_size = req.image_size
       .map(|s| match s {
         EnqueueQwenEdit2511AngleImageSize::Square => "square",
         EnqueueQwenEdit2511AngleImageSize::SquareHd => "square_hd",
@@ -86,15 +91,15 @@ pub async fn enqueue_qwen_edit_2511_edit_image_angle_webhook<R: IntoUrl>(
       .map(|s| s.to_string());
 
   let request = QwenEdit2511EditImageAngleInput {
-    image_urls: args.image_urls,
-    horizontal_angle: args.horizontal_angle,
-    vertical_angle: args.vertical_angle,
-    zoom: args.zoom,
-    additional_prompt: args.additional_prompt.map(|s| s.to_string()),
-    lora_scale: args.lora_scale,
+    image_urls: req.image_urls,
+    horizontal_angle: req.horizontal_angle,
+    vertical_angle: req.vertical_angle,
+    zoom: req.zoom,
+    additional_prompt: req.additional_prompt,
+    lora_scale: req.lora_scale,
     image_size,
-    guidance_scale: args.guidance_scale,
-    num_inference_steps: args.num_inference_steps,
+    guidance_scale: req.guidance_scale,
+    num_inference_steps: req.num_inference_steps,
     num_images,
     // Constants
     enable_safety_checker: Some(false),
@@ -115,7 +120,7 @@ pub async fn enqueue_qwen_edit_2511_edit_image_angle_webhook<R: IntoUrl>(
 #[cfg(test)]
 mod tests {
   use crate::creds::fal_api_key::FalApiKey;
-  use crate::requests::webhook::image::angle::enqueue_qwen_edit_2511_edit_image_angle_webhook::{enqueue_qwen_edit_2511_edit_image_angle_webhook, EnqueueQwenEdit2511EditImageAngleArgs, EnqueueQwenEdit2511AngleNumImages, EnqueueQwenEdit2511AngleImageSize};
+  use crate::requests::webhook::image::angle::enqueue_qwen_edit_2511_edit_image_angle_webhook::{enqueue_qwen_edit_2511_edit_image_angle_webhook, EnqueueQwenEdit2511EditImageAngleArgs, EnqueueQwenEdit2511EditImageAngleRequest, EnqueueQwenEdit2511AngleNumImages, EnqueueQwenEdit2511AngleImageSize};
   use errors::AnyhowResult;
   use std::fs::read_to_string;
   use test_data::web::image_urls::JUNO_AT_LAKE_IMAGE_URL;
@@ -128,16 +133,18 @@ mod tests {
     let api_key = FalApiKey::from_str(&secret);
 
     let args = EnqueueQwenEdit2511EditImageAngleArgs {
-      image_urls: vec![JUNO_AT_LAKE_IMAGE_URL.to_string()],
-      horizontal_angle: Some(45.0),
-      vertical_angle: Some(15.0),
-      zoom: Some(5.0),
-      additional_prompt: Some("cinematic lighting"),
-      num_images: Some(EnqueueQwenEdit2511AngleNumImages::One),
-      image_size: Some(EnqueueQwenEdit2511AngleImageSize::SquareHd),
-      lora_scale: None,
-      guidance_scale: None,
-      num_inference_steps: None,
+      request: EnqueueQwenEdit2511EditImageAngleRequest {
+        image_urls: vec![JUNO_AT_LAKE_IMAGE_URL.to_string()],
+        horizontal_angle: Some(45.0),
+        vertical_angle: Some(15.0),
+        zoom: Some(5.0),
+        additional_prompt: Some("cinematic lighting".to_string()),
+        num_images: Some(EnqueueQwenEdit2511AngleNumImages::One),
+        image_size: Some(EnqueueQwenEdit2511AngleImageSize::SquareHd),
+        lora_scale: None,
+        guidance_scale: None,
+        num_inference_steps: None,
+      },
       api_key: &api_key,
       webhook_url: "https://example.com/webhook",
     };
@@ -146,7 +153,7 @@ mod tests {
     Ok(())
   }
 
-  /// Enqueues 9 angle combinations: 3 horizontal × 3 vertical × 3 zoom levels.
+  /// Enqueues 9 angle combinations: 3 horizontal x 3 vertical x 3 zoom levels.
   /// Each combination generates one image, for a total of 27 enqueued requests.
   #[tokio::test]
   #[ignore]
@@ -162,16 +169,18 @@ mod tests {
       for &v in &vertical_angles {
         for &z in &zoom_levels {
           let args = EnqueueQwenEdit2511EditImageAngleArgs {
-            image_urls: vec![JUNO_AT_LAKE_IMAGE_URL.to_string()],
-            horizontal_angle: Some(h),
-            vertical_angle: Some(v),
-            zoom: Some(z),
-            additional_prompt: None,
-            num_images: Some(EnqueueQwenEdit2511AngleNumImages::One),
-            image_size: Some(EnqueueQwenEdit2511AngleImageSize::SquareHd),
-            lora_scale: None,
-            guidance_scale: None,
-            num_inference_steps: None,
+            request: EnqueueQwenEdit2511EditImageAngleRequest {
+              image_urls: vec![JUNO_AT_LAKE_IMAGE_URL.to_string()],
+              horizontal_angle: Some(h),
+              vertical_angle: Some(v),
+              zoom: Some(z),
+              additional_prompt: None,
+              num_images: Some(EnqueueQwenEdit2511AngleNumImages::One),
+              image_size: Some(EnqueueQwenEdit2511AngleImageSize::SquareHd),
+              lora_scale: None,
+              guidance_scale: None,
+              num_inference_steps: None,
+            },
             api_key: &api_key,
             webhook_url: "https://example.com/webhook",
           };

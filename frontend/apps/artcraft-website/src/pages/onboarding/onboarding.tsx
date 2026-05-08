@@ -317,7 +317,7 @@ const Onboarding = () => {
                 />
               </div>
             </div>
-            <h1 className="text-3xl md:text-4xl font-bold mb-4 text-white">
+            <h1 className="text-3xl md:text-4xl font-medium mb-4 text-white">
               All Set!
             </h1>
             <p className="text-lg text-white/70 mb-8">{getRedirectMessage()}</p>
@@ -347,7 +347,7 @@ const Onboarding = () => {
                 className="text-blue-400 mt-1 flex-shrink-0 text-lg"
               />
               <div>
-                <h3 className="text-blue-200 font-semibold mb-1">
+                <h3 className="text-blue-200 font-medium mb-1">
                   Account Created
                 </h3>
                 <p className="text-blue-300/80 text-sm leading-relaxed">
@@ -360,7 +360,7 @@ const Onboarding = () => {
 
           <div className="bg-[#1C1C20] border border-white/10 rounded-2xl p-6 py-8 shadow-2xl">
             <div className="text-center mb-8">
-              <h1 className="text-2xl font-bold mb-2">
+              <h1 className="text-2xl font-semibold mb-2">
                 {currentStep === "password" &&
                   (isNewAccount ? "Secure Your Account" : "Set Your Password")}
                 {currentStep === "email" &&

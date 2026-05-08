@@ -1,0 +1,4 @@
+pub mod artcraft_flux_2_lora_angles;
+pub mod artcraft_flux_dev_juggernaut_inpaint;
+pub mod artcraft_flux_pro_kontext_edit;
+pub mod artcraft_qwen_edit_2511_angles;

@@ -258,7 +258,7 @@ export default function CreateVideo() {
     if (charactersLoaded) return;
     const api = new CharactersApi();
     api
-      .ListCharacters()
+      .ListAllCharacters()
       .then((res) => {
         if (res.success && res.data) {
           storeSetCharacters(
@@ -275,6 +275,7 @@ export default function CreateVideo() {
   }, [charactersLoaded, storeSetCharacters, storeSetLoaded]);
 
   // Batch store (enqueue flow only)
+  const batches = useCreateVideoStore((s) => s.batches);
   const startBatch = useCreateVideoStore((s) => s.startBatch);
   const setBatchJobToken = useCreateVideoStore((s) => s.setBatchJobToken);
   const completeBatch = useCreateVideoStore((s) => s.completeBatch);
@@ -303,12 +304,32 @@ export default function CreateVideo() {
     !!selectedModel?.starting_keyframe_required && referenceImages.length === 0;
 
   // Jobs + gallery
-  const jobs = useGenerationJobs({ mediaType: "video" });
+  const jobs = useGenerationJobs({ mediaType: "video", enabled: !!user });
   const gallery = useGalleryData({
     username: user?.username ?? null,
     filterMediaClasses: VIDEO_FILTER,
     excludeUploads: true,
   });
+
+  // Map job token → batch count so PendingCard can show "N videos generating"
+  const jobTokenToBatchCount = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const batch of batches) {
+      if (batch.jobToken && batch.batchCount && batch.batchCount > 1) {
+        map.set(batch.jobToken, batch.batchCount);
+      }
+    }
+    return map;
+  }, [batches]);
+
+  const enrichedInProgress = useMemo(
+    () =>
+      jobs.inProgress.map((job) => {
+        const batchCount = jobTokenToBatchCount.get(job.id);
+        return batchCount ? { ...job, batchCount } : job;
+      }),
+    [jobs.inProgress, jobTokenToBatchCount],
+  );
 
   const newlyCompletedTokens = useMemo(
     () => new Set(jobs.newlyCompleted.map((i) => i.id)),
@@ -690,8 +711,20 @@ export default function CreateVideo() {
       needsImage ||
       !selectedModel
     ) {
+      console.log("[generate-video] blocked", {
+        hasPrompt: !!prompt.trim(),
+        isGenerating: isGeneratingRef.current,
+        needsImage,
+        hasModel: !!selectedModel,
+      });
       return;
     }
+    console.log("[generate-video] starting", {
+      model: selectedModel.model,
+      numVideos,
+      inputMode,
+      isReferenceMode,
+    });
     isGeneratingRef.current = true;
     setIsGenerating(true);
 
@@ -743,7 +776,7 @@ export default function CreateVideo() {
     const baseParams = {
       prompt: prompt.trim(),
       model: selectedModel.model,
-      numVideos: 1,
+      numVideos,
       aspectRatio: selectedSize,
       duration: duration ?? selectedModel.duration_seconds_default ?? undefined,
       resolution: hasResolutionOptions
@@ -767,45 +800,53 @@ export default function CreateVideo() {
         : undefined,
       referenceCharacterTokens,
     };
+    console.log("[generate-video] params", baseParams);
 
-    // Enqueue each video as a separate job so they complete independently
     const modelLabel = selectedModel.full_name ?? selectedModel.model;
-    const count = Math.max(1, numVideos);
+    const batchId = startBatch(prompt, modelLabel, numVideos > 1 ? numVideos : undefined);
 
-    for (let i = 0; i < count; i++) {
-      const batchId = startBatch(prompt, modelLabel);
+    try {
+      console.log("[generate-video] enqueueing job...");
+      const result = await enqueueVideoGeneration(baseParams);
+      console.log("[generate-video] enqueue result", result);
 
-      try {
-        const result = await enqueueVideoGeneration(baseParams);
-
-        if (!result.success || !result.jobToken) {
-          failBatch(batchId, result.error ?? "Failed to start generation");
-          continue;
-        }
-
+      if (!result.success || !result.jobToken) {
+        console.warn("[generate-video] enqueue failed", result.error);
+        failBatch(batchId, result.error ?? "Failed to start generation");
+      } else {
         setBatchJobToken(batchId, result.jobToken);
+        console.log("[generate-video] polling started", {
+          jobToken: result.jobToken,
+        });
 
         const stopPolling = startVideoPolling(
           result.jobToken,
           (video) => {
+            console.log("[generate-video] complete", {
+              batchId,
+              media_token: video.media_token,
+            });
             completeBatch(batchId, video);
             pollingCleanupsRef.current.delete(batchId);
             window.dispatchEvent(new Event("task-queue-update"));
           },
           (reason) => {
+            console.warn("[generate-video] poll failed", { batchId, reason });
             failBatch(batchId, reason);
             pollingCleanupsRef.current.delete(batchId);
             window.dispatchEvent(new Event("task-queue-update"));
           },
         );
         pollingCleanupsRef.current.set(batchId, stopPolling);
-      } catch {
-        failBatch(batchId, "Network error - please try again");
       }
+    } catch (err) {
+      console.error("[generate-video] unexpected error", err);
+      failBatch(batchId, "Network error - please try again");
     }
 
     window.dispatchEvent(new Event("credits-change"));
     window.dispatchEvent(new Event("task-queue-update"));
+    console.log("[generate-video] done enqueuing");
     setIsGenerating(false);
     isGeneratingRef.current = false;
   }, [
@@ -861,7 +902,7 @@ export default function CreateVideo() {
       glowOrbs={videoGlowOrbs}
       gridContent={
         <GenerationGalleryGrid
-          inProgressJobs={jobs.inProgress}
+          inProgressJobs={enrichedInProgress}
           failedJobs={jobs.failed}
           onDismissFailed={jobs.dismissFailed}
           newlyCompletedItems={jobs.newlyCompleted}

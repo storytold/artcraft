@@ -1,3 +1,6 @@
+use std::fmt::Debug;
+use std::sync::Arc;
+
 use crate::client::router_fal_client::RouterFalClient;
 use crate::errors::artcraft_router_error::ArtcraftRouterError;
 use crate::errors::provider_error::ProviderError;
@@ -9,33 +12,39 @@ use crate::generate::generate_video::plan::fal::plan_generate_video_fal_kling_3p
 };
 use fal_client::requests::webhook::video::image::enqueue_kling_3p0_pro_image_to_video_webhook::{
   enqueue_kling_3p0_pro_image_to_video_webhook, EnqueueKling3p0ProImageToVideoArgs,
-  EnqueueKling3p0ProImageToVideoAspectRatio, EnqueueKling3p0ProImageToVideoDuration,
+  EnqueueKling3p0ProImageToVideoRequest, EnqueueKling3p0ProImageToVideoAspectRatio,
+  EnqueueKling3p0ProImageToVideoDuration,
 };
 use fal_client::requests::webhook::video::text::enqueue_kling_3p0_pro_text_to_video_webhook::{
   enqueue_kling_3p0_pro_text_to_video_webhook, EnqueueKling3p0ProTextToVideoArgs,
-  EnqueueKling3p0ProTextToVideoAspectRatio, EnqueueKling3p0ProTextToVideoDuration,
+  EnqueueKling3p0ProTextToVideoRequest, EnqueueKling3p0ProTextToVideoAspectRatio,
+  EnqueueKling3p0ProTextToVideoDuration,
 };
 
 pub async fn execute_fal_kling_3p0_pro(
   plan: &PlanFalKling3p0Pro,
   fal_client: &RouterFalClient,
 ) -> Result<GenerateVideoResponse, ArtcraftRouterError> {
-  let webhook_response = match &plan.mode {
+  let (webhook_response, outbound_request) = match &plan.mode {
     FalKling3p0Mode::TextToVideo => {
-      let args = EnqueueKling3p0ProTextToVideoArgs {
+      let request = EnqueueKling3p0ProTextToVideoRequest {
         prompt: plan.prompt.clone(),
         generate_audio: plan.generate_audio,
         negative_prompt: plan.negative_prompt.clone(),
         duration: plan.duration.map(to_t2v_duration),
         aspect_ratio: plan.aspect_ratio.map(to_t2v_aspect_ratio),
         shot_type: None,
+      };
+      let outbound: Arc<dyn Debug + Send + Sync> = Arc::new(request.clone());
+      let args = EnqueueKling3p0ProTextToVideoArgs {
+        request,
         webhook_url: fal_client.webhook_url.as_str(),
         api_key: &fal_client.api_key,
       };
-      enqueue_kling_3p0_pro_text_to_video_webhook(args).await
+      (enqueue_kling_3p0_pro_text_to_video_webhook(args).await, outbound)
     }
     FalKling3p0Mode::ImageToVideo { image_url, end_image_url } => {
-      let args = EnqueueKling3p0ProImageToVideoArgs {
+      let request = EnqueueKling3p0ProImageToVideoRequest {
         prompt: plan.prompt.clone(),
         image_url: image_url.clone(),
         end_image_url: end_image_url.clone(),
@@ -44,10 +53,14 @@ pub async fn execute_fal_kling_3p0_pro(
         duration: plan.duration.map(to_i2v_duration),
         aspect_ratio: plan.aspect_ratio.map(to_i2v_aspect_ratio),
         shot_type: None,
+      };
+      let outbound: Arc<dyn Debug + Send + Sync> = Arc::new(request.clone());
+      let args = EnqueueKling3p0ProImageToVideoArgs {
+        request,
         webhook_url: fal_client.webhook_url.as_str(),
         api_key: &fal_client.api_key,
       };
-      enqueue_kling_3p0_pro_image_to_video_webhook(args).await
+      (enqueue_kling_3p0_pro_image_to_video_webhook(args).await, outbound)
     }
   };
 
@@ -57,6 +70,7 @@ pub async fn execute_fal_kling_3p0_pro(
   Ok(GenerateVideoResponse::Fal(FalVideoResponsePayload {
     request_id: webhook_response.request_id,
     gateway_request_id: webhook_response.gateway_request_id,
+    maybe_outbound_request: Some(outbound_request),
   }))
 }
 

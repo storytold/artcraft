@@ -7,17 +7,20 @@ use crate::requests::api::webhook_response::WebhookResponse;
 use reqwest::IntoUrl;
 
 pub struct EnqueueBytedanceSeedreamV5LiteTextToImageArgs<'a, R: IntoUrl> {
+  pub request: EnqueueBytedanceSeedreamV5LiteTextToImageRequest,
+  pub webhook_url: R,
+  pub api_key: &'a FalApiKey,
+}
+
+#[derive(Clone, Debug)]
+pub struct EnqueueBytedanceSeedreamV5LiteTextToImageRequest {
   // Request required
-  pub prompt: &'a str,
+  pub prompt: String,
 
   // Optional args
   pub num_images: Option<EnqueueBytedanceSeedreamV5LiteTextToImageNumImages>,
   pub max_images: Option<EnqueueBytedanceSeedreamV5LiteTextToImageMaxImages>,
   pub image_size: Option<EnqueueBytedanceSeedreamV5LiteTextToImageSize>,
-
-  // Fulfillment
-  pub webhook_url: R,
-  pub api_key: &'a FalApiKey,
 }
 
 #[derive(Copy, Clone, Debug)]
@@ -53,7 +56,7 @@ pub enum EnqueueBytedanceSeedreamV5LiteTextToImageSize {
 }
 
 
-impl <U: IntoUrl> FalRequestCostCalculator for EnqueueBytedanceSeedreamV5LiteTextToImageArgs<'_, U> {
+impl FalRequestCostCalculator for EnqueueBytedanceSeedreamV5LiteTextToImageRequest {
   fn calculate_cost_in_cents(&self) -> UsdCents {
     // TODO(bt): Verify actual pricing for Seedream v5 Lite on fal.ai.
     let unit_cost = 4;
@@ -73,7 +76,9 @@ pub async fn enqueue_bytedance_seedream_v5_lite_text_to_image_webhook<R: IntoUrl
   args: EnqueueBytedanceSeedreamV5LiteTextToImageArgs<'_, R>
 ) -> Result<WebhookResponse, FalErrorPlus> {
 
-  let num_images = args.num_images
+  let req = args.request;
+
+  let num_images = req.num_images
       .map(|n| match n {
         EnqueueBytedanceSeedreamV5LiteTextToImageNumImages::One => 1,
         EnqueueBytedanceSeedreamV5LiteTextToImageNumImages::Two => 2,
@@ -81,7 +86,7 @@ pub async fn enqueue_bytedance_seedream_v5_lite_text_to_image_webhook<R: IntoUrl
         EnqueueBytedanceSeedreamV5LiteTextToImageNumImages::Four => 4,
       });
 
-  let max_images = args.max_images
+  let max_images = req.max_images
       .map(|n| match n {
         EnqueueBytedanceSeedreamV5LiteTextToImageMaxImages::One => 1,
         EnqueueBytedanceSeedreamV5LiteTextToImageMaxImages::Two => 2,
@@ -89,7 +94,7 @@ pub async fn enqueue_bytedance_seedream_v5_lite_text_to_image_webhook<R: IntoUrl
         EnqueueBytedanceSeedreamV5LiteTextToImageMaxImages::Four => 4,
       });
 
-  let image_size = args.image_size
+  let image_size = req.image_size
       .map(|s| match s {
         EnqueueBytedanceSeedreamV5LiteTextToImageSize::Square => "square",
         EnqueueBytedanceSeedreamV5LiteTextToImageSize::SquareHd => "square_hd",
@@ -103,7 +108,7 @@ pub async fn enqueue_bytedance_seedream_v5_lite_text_to_image_webhook<R: IntoUrl
       .map(|s| s.to_string());
 
   let request = SeedreamV5LiteTextToImageInput {
-    prompt: args.prompt.to_string(),
+    prompt: req.prompt,
     // Optionals
     num_images,
     max_images,
@@ -123,7 +128,7 @@ pub async fn enqueue_bytedance_seedream_v5_lite_text_to_image_webhook<R: IntoUrl
 #[cfg(test)]
 mod tests {
   use crate::creds::fal_api_key::FalApiKey;
-  use crate::requests::webhook::image::text::enqueue_bytedance_seedream_v5_lite_text_to_image_webhook::{enqueue_bytedance_seedream_v5_lite_text_to_image_webhook, EnqueueBytedanceSeedreamV5LiteTextToImageArgs, EnqueueBytedanceSeedreamV5LiteTextToImageMaxImages, EnqueueBytedanceSeedreamV5LiteTextToImageNumImages, EnqueueBytedanceSeedreamV5LiteTextToImageSize};
+  use crate::requests::webhook::image::text::enqueue_bytedance_seedream_v5_lite_text_to_image_webhook::{enqueue_bytedance_seedream_v5_lite_text_to_image_webhook, EnqueueBytedanceSeedreamV5LiteTextToImageArgs, EnqueueBytedanceSeedreamV5LiteTextToImageMaxImages, EnqueueBytedanceSeedreamV5LiteTextToImageNumImages, EnqueueBytedanceSeedreamV5LiteTextToImageRequest, EnqueueBytedanceSeedreamV5LiteTextToImageSize};
   use errors::AnyhowResult;
   use std::fs::read_to_string;
 
@@ -136,10 +141,12 @@ mod tests {
     let api_key = FalApiKey::from_str(&secret);
 
     let args = EnqueueBytedanceSeedreamV5LiteTextToImageArgs {
-      prompt: "an anime girl is riding a t-rex in the forest",
-      num_images: Some(EnqueueBytedanceSeedreamV5LiteTextToImageNumImages::Two),
-      max_images: Some(EnqueueBytedanceSeedreamV5LiteTextToImageMaxImages::Two),
-      image_size: Some(EnqueueBytedanceSeedreamV5LiteTextToImageSize::LandscapeSixteenNine),
+      request: EnqueueBytedanceSeedreamV5LiteTextToImageRequest {
+        prompt: "an anime girl is riding a t-rex in the forest".to_string(),
+        num_images: Some(EnqueueBytedanceSeedreamV5LiteTextToImageNumImages::Two),
+        max_images: Some(EnqueueBytedanceSeedreamV5LiteTextToImageMaxImages::Two),
+        image_size: Some(EnqueueBytedanceSeedreamV5LiteTextToImageSize::LandscapeSixteenNine),
+      },
       api_key: &api_key,
       webhook_url: "https://example.com/webhook",
     };

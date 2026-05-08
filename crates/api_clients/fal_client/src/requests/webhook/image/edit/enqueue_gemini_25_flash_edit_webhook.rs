@@ -7,17 +7,19 @@ use crate::requests::api::webhook_response::WebhookResponse;
 use reqwest::IntoUrl;
 
 pub struct Gemini25FlashEditArgs<'a, R: IntoUrl> {
-  // Request required
-  pub prompt: &'a str,
-  pub image_urls: Vec<String>,
-  pub num_images: Gemini25FlashEditNumImages,
-  
-  // Optional
-  pub aspect_ratio: Option<Gemini25FlashEditAspectRatio>,
-
-  // Fulfillment
+  pub request: Gemini25FlashEditRequest,
   pub webhook_url: R,
   pub api_key: &'a FalApiKey,
+}
+
+#[derive(Clone, Debug)]
+pub struct Gemini25FlashEditRequest {
+  pub prompt: String,
+  pub image_urls: Vec<String>,
+  pub num_images: Gemini25FlashEditNumImages,
+
+  // Optional
+  pub aspect_ratio: Option<Gemini25FlashEditAspectRatio>,
 }
 
 #[derive(Copy, Clone, Debug)]
@@ -50,7 +52,7 @@ pub enum Gemini25FlashEditAspectRatio {
 }
 
 
-impl <U: IntoUrl> FalRequestCostCalculator for Gemini25FlashEditArgs<'_, U> {
+impl FalRequestCostCalculator for Gemini25FlashEditRequest {
   fn calculate_cost_in_cents(&self) -> UsdCents {
     // Your request will cost $0.039 per image. For $1.00, you can run this model 25 times.
     match self.num_images {
@@ -66,15 +68,16 @@ impl <U: IntoUrl> FalRequestCostCalculator for Gemini25FlashEditArgs<'_, U> {
 pub async fn enqueue_gemini_25_flash_edit_webhook<R: IntoUrl>(
   args: Gemini25FlashEditArgs<'_, R>
 ) -> Result<WebhookResponse, FalErrorPlus> {
+  let req = args.request;
 
-  let num_images = match args.num_images {
+  let num_images = match req.num_images {
     Gemini25FlashEditNumImages::One => 1,
     Gemini25FlashEditNumImages::Two => 2,
     Gemini25FlashEditNumImages::Three => 3,
     Gemini25FlashEditNumImages::Four => 4,
   };
 
-  let aspect_ratio = args.aspect_ratio
+  let aspect_ratio = req.aspect_ratio
       .map(|aspect_ratio| match aspect_ratio {
         // Auto
         Gemini25FlashEditAspectRatio::Auto => "auto",
@@ -95,8 +98,8 @@ pub async fn enqueue_gemini_25_flash_edit_webhook<R: IntoUrl>(
       .map(|aspect_ratio| aspect_ratio.to_string());
 
   let request = Gemini25FlashEditInput {
-    prompt: args.prompt.to_string(),
-    image_urls: args.image_urls,
+    prompt: req.prompt,
+    image_urls: req.image_urls,
     aspect_ratio,
     // Constants
     num_images: Some(num_images),
@@ -114,7 +117,7 @@ pub async fn enqueue_gemini_25_flash_edit_webhook<R: IntoUrl>(
 #[cfg(test)]
 mod tests {
   use crate::creds::fal_api_key::FalApiKey;
-  use crate::requests::webhook::image::edit::enqueue_gemini_25_flash_edit_webhook::{enqueue_gemini_25_flash_edit_webhook, Gemini25FlashEditArgs, Gemini25FlashEditNumImages};
+  use crate::requests::webhook::image::edit::enqueue_gemini_25_flash_edit_webhook::{enqueue_gemini_25_flash_edit_webhook, Gemini25FlashEditArgs, Gemini25FlashEditNumImages, Gemini25FlashEditRequest};
   use errors::AnyhowResult;
   use std::fs::read_to_string;
   use test_data::web::image_urls::{GHOST_IMAGE_URL, TREX_SKELETON_IMAGE_URL};
@@ -128,13 +131,15 @@ mod tests {
     let api_key = FalApiKey::from_str(&secret);
 
     let args = Gemini25FlashEditArgs {
-      image_urls: vec![
-        GHOST_IMAGE_URL.to_string(),
-        TREX_SKELETON_IMAGE_URL.to_string(),
-      ],
-      num_images: Gemini25FlashEditNumImages::Two,
-      aspect_ratio: None,
-      prompt: "add the ghost to the image of the t-rex skeleton, make it look spooky but friendly",
+      request: Gemini25FlashEditRequest {
+        image_urls: vec![
+          GHOST_IMAGE_URL.to_string(),
+          TREX_SKELETON_IMAGE_URL.to_string(),
+        ],
+        num_images: Gemini25FlashEditNumImages::Two,
+        aspect_ratio: None,
+        prompt: "add the ghost to the image of the t-rex skeleton, make it look spooky but friendly".to_string(),
+      },
       api_key: &api_key,
       webhook_url: "https://example.com/webhook",
     };

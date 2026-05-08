@@ -1,3 +1,6 @@
+use std::fmt::Debug;
+use std::sync::Arc;
+
 use crate::client::router_fal_client::RouterFalClient;
 use crate::errors::artcraft_router_error::ArtcraftRouterError;
 use crate::errors::provider_error::ProviderError;
@@ -7,32 +10,39 @@ use crate::generate::generate_image::generate_image_response::{
 use crate::generate::generate_image::plan::fal::plan_generate_image_fal_gpt_image_1::PlanFalGptImage1;
 use fal_client::requests::webhook::image::edit::enqueue_gpt_image_1_edit_image_webhook::{
   enqueue_gpt_image_1_edit_image_webhook, EnqueueGptImage1EditImageArgs,
+  EnqueueGptImage1EditImageRequest,
 };
 use fal_client::requests::webhook::image::text::enqueue_gpt_image_1_text_to_image_webhook::{
   enqueue_gpt_image_1_text_to_image_webhook, EnqueueGptImage1TextToImageArgs,
+  EnqueueGptImage1TextToImageRequest,
 };
 
 pub async fn execute_fal_gpt_image_1(
   plan: &PlanFalGptImage1,
   fal_client: &RouterFalClient,
 ) -> Result<GenerateImageResponse, ArtcraftRouterError> {
-  let webhook_response = if plan.image_urls.is_empty() {
-    let args = EnqueueGptImage1TextToImageArgs {
-      prompt: plan.prompt.as_deref().unwrap_or(""),
+  let (webhook_response, outbound_request) = if plan.image_urls.is_empty() {
+    let request = EnqueueGptImage1TextToImageRequest {
+      prompt: plan.prompt.as_deref().unwrap_or("").to_string(),
       num_images: plan.num_images.to_t2i(),
       image_size: plan.image_size.map(|s| s.to_t2i()),
       quality: Some(plan.quality.to_t2i()),
       background: None,
       output_format: None,
+    };
+    let outbound: Arc<dyn Debug + Send + Sync> = Arc::new(request.clone());
+    let args = EnqueueGptImage1TextToImageArgs {
+      request,
       webhook_url: fal_client.webhook_url.as_str(),
       api_key: &fal_client.api_key,
     };
-    enqueue_gpt_image_1_text_to_image_webhook(args)
+    let resp = enqueue_gpt_image_1_text_to_image_webhook(args)
       .await
-      .map_err(|e| ArtcraftRouterError::Provider(ProviderError::Fal(e)))?
+      .map_err(|e| ArtcraftRouterError::Provider(ProviderError::Fal(e)))?;
+    (resp, outbound)
   } else {
-    let args = EnqueueGptImage1EditImageArgs {
-      prompt: plan.prompt.as_deref().unwrap_or(""),
+    let request = EnqueueGptImage1EditImageRequest {
+      prompt: plan.prompt.as_deref().unwrap_or("").to_string(),
       image_urls: plan.image_urls.clone(),
       num_images: plan.num_images.to_edit(),
       mask_image_url: None,
@@ -41,17 +51,23 @@ pub async fn execute_fal_gpt_image_1(
       input_fidelity: None,
       background: None,
       output_format: None,
+    };
+    let outbound: Arc<dyn Debug + Send + Sync> = Arc::new(request.clone());
+    let args = EnqueueGptImage1EditImageArgs {
+      request,
       webhook_url: fal_client.webhook_url.as_str(),
       api_key: &fal_client.api_key,
     };
-    enqueue_gpt_image_1_edit_image_webhook(args)
+    let resp = enqueue_gpt_image_1_edit_image_webhook(args)
       .await
-      .map_err(|e| ArtcraftRouterError::Provider(ProviderError::Fal(e)))?
+      .map_err(|e| ArtcraftRouterError::Provider(ProviderError::Fal(e)))?;
+    (resp, outbound)
   };
 
   Ok(GenerateImageResponse::Fal(FalImageResponsePayload {
     request_id: webhook_response.request_id,
     gateway_request_id: webhook_response.gateway_request_id,
+    maybe_outbound_request: Some(outbound_request),
   }))
 }
 

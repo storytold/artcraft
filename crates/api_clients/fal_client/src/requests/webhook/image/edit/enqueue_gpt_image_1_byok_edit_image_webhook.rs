@@ -13,17 +13,21 @@ use crate::requests::api::webhook_response::WebhookResponse;
 use reqwest::IntoUrl;
 
 pub struct GptEditImageByokArgs<'a, V: IntoUrl> {
-  // Request
-  pub image_urls: Vec<String>,
-  pub prompt: &'a str,
-  pub image_size: GptEditImageSize,
-  pub num_images: GptEditImageNumImages,
-  pub quality: GptEditImageQuality,
+  pub request: GptEditImageByokRequest,
 
   // Fulfillment
   pub api_key: &'a FalApiKey,
   pub openai_api_key: &'a OpenAiApiKey,
   pub webhook_url: V,
+}
+
+#[derive(Clone, Debug)]
+pub struct GptEditImageByokRequest {
+  pub image_urls: Vec<String>,
+  pub prompt: String,
+  pub image_size: GptEditImageSize,
+  pub num_images: GptEditImageNumImages,
+  pub quality: GptEditImageQuality,
 }
 
 #[derive(Copy, Clone, Debug)]
@@ -52,7 +56,7 @@ pub enum GptEditImageNumImages{
 
 
 // NB: These are BYOK, so they're not Fal's prices
-impl <U: IntoUrl> FalRequestCostCalculator for GptEditImageByokArgs<'_, U> {
+impl FalRequestCostCalculator for GptEditImageByokRequest {
   fn calculate_cost_in_cents(&self) -> UsdCents {
     let base_cost = match self.quality {
       GptEditImageQuality::Auto => 17,
@@ -74,22 +78,23 @@ impl <U: IntoUrl> FalRequestCostCalculator for GptEditImageByokArgs<'_, U> {
 pub async fn enqueue_gpt_image_1_byok_edit_image_webhook<V: IntoUrl>(
   args: GptEditImageByokArgs<'_, V>
 ) -> Result<WebhookResponse, FalErrorPlus> {
+  let req = args.request;
 
-  let image_size = match args.image_size {
+  let image_size = match req.image_size {
     GptEditImageSize::Auto => "auto",
     GptEditImageSize::Square => "1024x1024",
     GptEditImageSize::Horizontal => "1536x1024",
     GptEditImageSize::Vertical => "1024x1536",
   };
 
-  let quality = match args.quality {
+  let quality = match req.quality {
     GptEditImageQuality::Auto => "auto",
     GptEditImageQuality::Low => "low",
     GptEditImageQuality::Medium => "medium",
     GptEditImageQuality::High => "high",
   };
 
-  let num_images = match args.num_images {
+  let num_images = match req.num_images {
     GptEditImageNumImages::One => 1,
     GptEditImageNumImages::Two => 2,
     GptEditImageNumImages::Three => 3,
@@ -97,8 +102,8 @@ pub async fn enqueue_gpt_image_1_byok_edit_image_webhook<V: IntoUrl>(
   };
 
   let request = GptImage1EditImageInput {
-    image_urls: args.image_urls,
-    prompt: args.prompt.to_string(),
+    image_urls: req.image_urls,
+    prompt: req.prompt,
     image_size: image_size.to_string(),
     num_images,
     quality: quality.to_string(),
@@ -118,8 +123,8 @@ mod tests {
   use crate::creds::fal_api_key::FalApiKey;
   use crate::creds::open_ai_api_key::OpenAiApiKey;
   use crate::requests::webhook::image::edit::enqueue_gpt_image_1_byok_edit_image_webhook::{
-    enqueue_gpt_image_1_byok_edit_image_webhook, GptEditImageByokArgs, GptEditImageNumImages,
-    GptEditImageQuality, GptEditImageSize,
+    enqueue_gpt_image_1_byok_edit_image_webhook, GptEditImageByokArgs, GptEditImageByokRequest,
+    GptEditImageNumImages, GptEditImageQuality, GptEditImageSize,
   };
   use errors::AnyhowResult;
   use std::fs::read_to_string;
@@ -138,15 +143,17 @@ mod tests {
     let openai_api_key = OpenAiApiKey::from_str(&openai_secret);
 
     let args = GptEditImageByokArgs {
-      image_urls: vec![
-        GHOST_IMAGE_URL.to_string(),
-        TREX_SKELETON_IMAGE_URL.to_string(),
-        ERNEST_SCARED_STUPID_IMAGE_URL.to_string(),
-      ],
-      prompt: "add the ghost and scared man to the image of the t-rex skeleton, make it look spooky but friendly",
-      image_size: GptEditImageSize::Horizontal,
-      num_images: GptEditImageNumImages::One,
-      quality: GptEditImageQuality::High,
+      request: GptEditImageByokRequest {
+        image_urls: vec![
+          GHOST_IMAGE_URL.to_string(),
+          TREX_SKELETON_IMAGE_URL.to_string(),
+          ERNEST_SCARED_STUPID_IMAGE_URL.to_string(),
+        ],
+        prompt: "add the ghost and scared man to the image of the t-rex skeleton, make it look spooky but friendly".to_string(),
+        image_size: GptEditImageSize::Horizontal,
+        num_images: GptEditImageNumImages::One,
+        quality: GptEditImageQuality::High,
+      },
       api_key: &fal_api_key,
       openai_api_key: &openai_api_key,
       webhook_url: "https://example.com/webhook",

@@ -1,5 +1,6 @@
 use anyhow::anyhow;
-use sqlx::MySqlPool;
+use sqlx::pool::PoolConnection;
+use sqlx::{MySql, MySqlPool};
 
 use enums::by_table::generic_inference_jobs::frontend_failure_category::FrontendFailureCategory;
 use enums::common::job_status_plus::JobStatusPlus;
@@ -14,10 +15,52 @@ pub struct MarkJobFailedByTokenArgs<'a> {
   pub maybe_frontend_failure_category: Option<FrontendFailureCategory>,
 }
 
+pub struct MarkJobFailedByTokenFromConnectionArgs<'a> {
+  pub mysql_connection: &'a mut PoolConnection<MySql>,
+  pub job_token: &'a InferenceJobToken,
+  pub maybe_public_failure_reason: Option<&'a str>,
+  pub internal_debugging_failure_reason: &'a str,
+  pub maybe_frontend_failure_category: Option<FrontendFailureCategory>,
+}
+
 /// Permanently mark an inference job as failed, looked up by its token.
-/// Unlike `mark_generic_inference_job_failure`, this does not allow retries —
-/// the job will always land in `complete_failure`.
+/// Uses a pool to acquire a connection.
 pub async fn mark_job_failed_by_token(args: MarkJobFailedByTokenArgs<'_>) -> AnyhowResult<()> {
+  execute_mark_failed(ExecuteMarkJobFailedByTokenArgs {
+    executor: args.pool,
+    job_token: args.job_token,
+    maybe_public_failure_reason: args.maybe_public_failure_reason,
+    internal_debugging_failure_reason: args.internal_debugging_failure_reason,
+    maybe_frontend_failure_category: args.maybe_frontend_failure_category,
+  }).await
+}
+
+/// Permanently mark an inference job as failed, looked up by its token.
+/// Uses an existing connection.
+pub async fn mark_job_failed_by_token_from_connection(args: MarkJobFailedByTokenFromConnectionArgs<'_>) -> AnyhowResult<()> {
+  execute_mark_failed(ExecuteMarkJobFailedByTokenArgs {
+    executor: &mut **args.mysql_connection,
+    job_token: args.job_token,
+    maybe_public_failure_reason: args.maybe_public_failure_reason,
+    internal_debugging_failure_reason: args.internal_debugging_failure_reason,
+    maybe_frontend_failure_category: args.maybe_frontend_failure_category,
+  }).await
+}
+
+struct ExecuteMarkJobFailedByTokenArgs<'a, E> {
+  executor: E,
+  job_token: &'a InferenceJobToken,
+  maybe_public_failure_reason: Option<&'a str>,
+  internal_debugging_failure_reason: &'a str,
+  maybe_frontend_failure_category: Option<FrontendFailureCategory>,
+}
+
+async fn execute_mark_failed<'e, E>(
+  args: ExecuteMarkJobFailedByTokenArgs<'_, E>,
+) -> AnyhowResult<()>
+where
+  E: sqlx::Executor<'e, Database = MySql>,
+{
   let maybe_public_failure_reason = args.maybe_public_failure_reason.map(|reason| {
     let mut reason = reason.trim().to_string();
     reason.truncate(512);
@@ -46,7 +89,7 @@ WHERE token = ?
     args.maybe_frontend_failure_category,
     args.job_token.as_str()
   )
-    .execute(args.pool)
+    .execute(args.executor)
     .await;
 
   match query_result {

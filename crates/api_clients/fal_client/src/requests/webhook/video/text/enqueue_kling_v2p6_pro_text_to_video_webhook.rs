@@ -7,6 +7,13 @@ use crate::requests::api::webhook_response::WebhookResponse;
 use reqwest::IntoUrl;
 
 pub struct EnqueueKlingV2p6ProTextToVideoArgs<'a, R: IntoUrl> {
+  pub request: EnqueueKlingV2p6ProTextToVideoRequest,
+  pub webhook_url: R,
+  pub api_key: &'a FalApiKey,
+}
+
+#[derive(Clone, Debug)]
+pub struct EnqueueKlingV2p6ProTextToVideoRequest {
   // Request required
   pub prompt: String,
 
@@ -15,10 +22,6 @@ pub struct EnqueueKlingV2p6ProTextToVideoArgs<'a, R: IntoUrl> {
   pub negative_prompt: Option<String>,
   pub duration: Option<EnqueueKlingV2p6ProTextToVideoDurationSeconds>,
   pub aspect_ratio: Option<EnqueueKlingV2p6ProTextToVideoAspectRatio>,
-
-  // Fulfillment
-  pub webhook_url: R,
-  pub api_key: &'a FalApiKey,
 }
 
 #[derive(Copy, Clone, Debug)]
@@ -34,7 +37,7 @@ pub enum EnqueueKlingV2p6ProTextToVideoAspectRatio {
   NineBySixteen,
 }
 
-impl <U: IntoUrl> FalRequestCostCalculator for EnqueueKlingV2p6ProTextToVideoArgs<'_, U> {
+impl FalRequestCostCalculator for EnqueueKlingV2p6ProTextToVideoRequest {
   fn calculate_cost_in_cents(&self) -> UsdCents {
     // "For every second of video you generated, you will be
     //  charged $0.07 (audio off) or $0.14 (audio on).
@@ -58,14 +61,16 @@ pub async fn enqueue_kling_v2p6_pro_text_to_video_webhook<R: IntoUrl>(
   args: EnqueueKlingV2p6ProTextToVideoArgs<'_, R>
 ) -> Result<WebhookResponse, FalErrorPlus> {
 
-  let duration = args.duration
+  let req = args.request;
+
+  let duration = req.duration
       .map(|resolution| match resolution {
         EnqueueKlingV2p6ProTextToVideoDurationSeconds::Five => "5",
         EnqueueKlingV2p6ProTextToVideoDurationSeconds::Ten => "10",
       })
       .map(|s| s.to_string());
-  
-  let aspect_ratio = args.aspect_ratio
+
+  let aspect_ratio = req.aspect_ratio
       .map(|aspect| match aspect {
         EnqueueKlingV2p6ProTextToVideoAspectRatio::Square => "1:1",
         EnqueueKlingV2p6ProTextToVideoAspectRatio::SixteenByNine => "16:9",
@@ -74,12 +79,12 @@ pub async fn enqueue_kling_v2p6_pro_text_to_video_webhook<R: IntoUrl>(
       .map(|s| s.to_string());
 
   let request = KlingV2p6ProTextToVideoInput {
-    prompt: args.prompt,
+    prompt: req.prompt,
     // Optionals
-    generate_audio: args.generate_audio,
+    generate_audio: req.generate_audio,
     duration,
     aspect_ratio,
-    negative_prompt: args.negative_prompt,
+    negative_prompt: req.negative_prompt,
     // Constants
     cfg_scale: None,
   };
@@ -95,7 +100,7 @@ pub async fn enqueue_kling_v2p6_pro_text_to_video_webhook<R: IntoUrl>(
 #[cfg(test)]
 mod tests {
   use crate::creds::fal_api_key::FalApiKey;
-  use crate::requests::webhook::video::text::enqueue_kling_v2p6_pro_text_to_video_webhook::{enqueue_kling_v2p6_pro_text_to_video_webhook, EnqueueKlingV2p6ProTextToVideoArgs, EnqueueKlingV2p6ProTextToVideoAspectRatio, EnqueueKlingV2p6ProTextToVideoDurationSeconds};
+  use crate::requests::webhook::video::text::enqueue_kling_v2p6_pro_text_to_video_webhook::{enqueue_kling_v2p6_pro_text_to_video_webhook, EnqueueKlingV2p6ProTextToVideoArgs, EnqueueKlingV2p6ProTextToVideoRequest, EnqueueKlingV2p6ProTextToVideoAspectRatio, EnqueueKlingV2p6ProTextToVideoDurationSeconds};
   use errors::AnyhowResult;
   use std::fs::read_to_string;
 
@@ -108,11 +113,13 @@ mod tests {
     let api_key = FalApiKey::from_str(&secret);
 
     let args = EnqueueKlingV2p6ProTextToVideoArgs {
-      prompt: "a humanoid lizard creature walks around on the surface of an alien planet. the sky is purple and there are yellow plants. The lizard says, 'You should consider day trading'. Suddenly a giant t-rex comes in from off screen and eats the lizard creature.".to_string(),
-      negative_prompt: None,
-      aspect_ratio: Some(EnqueueKlingV2p6ProTextToVideoAspectRatio::SixteenByNine),
-      duration: Some(EnqueueKlingV2p6ProTextToVideoDurationSeconds::Ten),
-      generate_audio: Some(true),
+      request: EnqueueKlingV2p6ProTextToVideoRequest {
+        prompt: "a humanoid lizard creature walks around on the surface of an alien planet. the sky is purple and there are yellow plants. The lizard says, 'You should consider day trading'. Suddenly a giant t-rex comes in from off screen and eats the lizard creature.".to_string(),
+        negative_prompt: None,
+        aspect_ratio: Some(EnqueueKlingV2p6ProTextToVideoAspectRatio::SixteenByNine),
+        duration: Some(EnqueueKlingV2p6ProTextToVideoDurationSeconds::Ten),
+        generate_audio: Some(true),
+      },
       api_key: &api_key,
       webhook_url: "https://example.com/webhook",
     };

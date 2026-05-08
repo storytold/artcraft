@@ -10,7 +10,7 @@ export const OwnershipComparison = () => {
        
       <div className="text-center mb-12 sm:mb-16 relative" data-animate>
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-32 bg-[#ef4444]/20 blur-[40px] md:blur-[80px] pointer-events-none transform-gpu" />
-        <h2 className="relative text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-6 !leading-tight">
+        <h2 className="relative text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-medium mb-6 !leading-tight">
            <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#ff7979] to-[#ff7979]">Stop Renting </span>
            <br className="sm:hidden" />
            <span>From Websites</span>
@@ -57,7 +57,7 @@ export const OwnershipComparison = () => {
                   })}
                </div>
 
-               <h3 className="text-2xl sm:text-4xl font-bold mb-4 text-[#ff7979] md:scale-105">
+               <h3 className="text-2xl sm:text-4xl font-medium mb-4 text-[#ff7979] md:scale-105">
                   The Rental Trap
                </h3>
                
@@ -93,7 +93,7 @@ export const OwnershipComparison = () => {
                    </div>
                 </div>
 
-                <h3 className="text-2xl sm:text-4xl font-bold text-primary-300 mb-4 md:scale-105">
+                <h3 className="text-2xl sm:text-4xl font-medium text-primary-300 mb-4 md:scale-105">
                    Complete Ownership
                 </h3>
 

@@ -7,6 +7,13 @@ use crate::requests::api::webhook_response::WebhookResponse;
 use reqwest::IntoUrl;
 
 pub struct EnqueueKling3p0StandardImageToVideoArgs<'a, R: IntoUrl> {
+  pub request: EnqueueKling3p0StandardImageToVideoRequest,
+  pub webhook_url: R,
+  pub api_key: &'a FalApiKey,
+}
+
+#[derive(Clone, Debug)]
+pub struct EnqueueKling3p0StandardImageToVideoRequest {
   // Request required
   pub prompt: String,
   pub image_url: String,
@@ -18,10 +25,6 @@ pub struct EnqueueKling3p0StandardImageToVideoArgs<'a, R: IntoUrl> {
   pub duration: Option<EnqueueKling3p0StandardImageToVideoDuration>,
   pub aspect_ratio: Option<EnqueueKling3p0StandardImageToVideoAspectRatio>,
   pub shot_type: Option<EnqueueKling3p0StandardImageToVideoShotType>,
-
-  // Fulfillment
-  pub webhook_url: R,
-  pub api_key: &'a FalApiKey,
 }
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq, strum::EnumIter)]
@@ -92,7 +95,7 @@ pub enum EnqueueKling3p0StandardImageToVideoShotType {
   Intelligent,
 }
 
-impl <U: IntoUrl> FalRequestCostCalculator for EnqueueKling3p0StandardImageToVideoArgs<'_, U> {
+impl FalRequestCostCalculator for EnqueueKling3p0StandardImageToVideoRequest {
   fn calculate_cost_in_cents(&self) -> UsdCents {
     // Same pricing as text-to-video for Kling 3.0 Standard:
     //   Audio off: $0.168/second
@@ -113,10 +116,12 @@ pub async fn enqueue_kling_3p0_standard_image_to_video_webhook<R: IntoUrl>(
   args: EnqueueKling3p0StandardImageToVideoArgs<'_, R>
 ) -> Result<WebhookResponse, FalErrorPlus> {
 
-  let duration = args.duration
+  let req = args.request;
+
+  let duration = req.duration
       .map(|d| d.to_str().to_string());
 
-  let aspect_ratio = args.aspect_ratio
+  let aspect_ratio = req.aspect_ratio
       .map(|ar| match ar {
         EnqueueKling3p0StandardImageToVideoAspectRatio::Square => "1:1",
         EnqueueKling3p0StandardImageToVideoAspectRatio::SixteenByNine => "16:9",
@@ -124,7 +129,7 @@ pub async fn enqueue_kling_3p0_standard_image_to_video_webhook<R: IntoUrl>(
       })
       .map(|s| s.to_string());
 
-  let shot_type = args.shot_type
+  let shot_type = req.shot_type
       .map(|st| match st {
         EnqueueKling3p0StandardImageToVideoShotType::Customize => "customize",
         EnqueueKling3p0StandardImageToVideoShotType::Intelligent => "intelligent",
@@ -132,13 +137,13 @@ pub async fn enqueue_kling_3p0_standard_image_to_video_webhook<R: IntoUrl>(
       .map(|s| s.to_string());
 
   let request = Kling3p0StandardImageToVideoInput {
-    prompt: args.prompt,
-    image_url: args.image_url,
-    end_image_url: args.end_image_url,
+    prompt: req.prompt,
+    image_url: req.image_url,
+    end_image_url: req.end_image_url,
     aspect_ratio,
-    generate_audio: args.generate_audio,
+    generate_audio: req.generate_audio,
     duration,
-    negative_prompt: args.negative_prompt,
+    negative_prompt: req.negative_prompt,
     shot_type,
     cfg_scale: None,
   };
@@ -163,9 +168,7 @@ mod tests {
 
   #[test]
   fn test_cost() {
-    let api_key = FalApiKey::from_str("");
-
-    let mut args = EnqueueKling3p0StandardImageToVideoArgs {
+    let mut req = EnqueueKling3p0StandardImageToVideoRequest {
       prompt: "the t-rex skeleton comes alive and roars".to_string(),
       image_url: TREX_SKELETON_IMAGE_URL.to_string(),
       end_image_url: None,
@@ -174,32 +177,30 @@ mod tests {
       duration: Some(EnqueueKling3p0StandardImageToVideoDuration::FiveSeconds),
       aspect_ratio: None,
       shot_type: None,
-      webhook_url: "https://example.com/webhook",
-      api_key: &api_key,
     };
 
     // Audio off: $0.168/sec
     // 5s: (168 * 5 + 9) / 10 = 849 / 10 = 84
-    assert_eq!(args.calculate_cost_in_cents(), 84);
+    assert_eq!(req.calculate_cost_in_cents(), 84);
 
     // 10s: (168 * 10 + 9) / 10 = 1689 / 10 = 168
-    args.duration = Some(EnqueueKling3p0StandardImageToVideoDuration::TenSeconds);
-    assert_eq!(args.calculate_cost_in_cents(), 168);
+    req.duration = Some(EnqueueKling3p0StandardImageToVideoDuration::TenSeconds);
+    assert_eq!(req.calculate_cost_in_cents(), 168);
 
     // 15s: (168 * 15 + 9) / 10 = 2529 / 10 = 252
-    args.duration = Some(EnqueueKling3p0StandardImageToVideoDuration::FifteenSeconds);
-    assert_eq!(args.calculate_cost_in_cents(), 252);
+    req.duration = Some(EnqueueKling3p0StandardImageToVideoDuration::FifteenSeconds);
+    assert_eq!(req.calculate_cost_in_cents(), 252);
 
     // Audio on: $0.252/sec
-    args.generate_audio = Some(true);
+    req.generate_audio = Some(true);
 
     // 5s: (252 * 5 + 9) / 10 = 1269 / 10 = 126
-    args.duration = Some(EnqueueKling3p0StandardImageToVideoDuration::FiveSeconds);
-    assert_eq!(args.calculate_cost_in_cents(), 126);
+    req.duration = Some(EnqueueKling3p0StandardImageToVideoDuration::FiveSeconds);
+    assert_eq!(req.calculate_cost_in_cents(), 126);
 
     // 10s: (252 * 10 + 9) / 10 = 2529 / 10 = 252
-    args.duration = Some(EnqueueKling3p0StandardImageToVideoDuration::TenSeconds);
-    assert_eq!(args.calculate_cost_in_cents(), 252);
+    req.duration = Some(EnqueueKling3p0StandardImageToVideoDuration::TenSeconds);
+    assert_eq!(req.calculate_cost_in_cents(), 252);
   }
 
   #[tokio::test]
@@ -209,14 +210,16 @@ mod tests {
     let api_key = FalApiKey::from_str(&secret);
 
     let args = EnqueueKling3p0StandardImageToVideoArgs {
-      image_url: TREX_SKELETON_IMAGE_URL.to_string(),
-      prompt: "the t-rex skeleton gets off the podium and begins walking toward the camera".to_string(),
-      duration: Some(EnqueueKling3p0StandardImageToVideoDuration::FiveSeconds),
-      aspect_ratio: Some(EnqueueKling3p0StandardImageToVideoAspectRatio::SixteenByNine),
-      generate_audio: Some(true),
-      negative_prompt: None,
-      end_image_url: None,
-      shot_type: None,
+      request: EnqueueKling3p0StandardImageToVideoRequest {
+        image_url: TREX_SKELETON_IMAGE_URL.to_string(),
+        prompt: "the t-rex skeleton gets off the podium and begins walking toward the camera".to_string(),
+        duration: Some(EnqueueKling3p0StandardImageToVideoDuration::FiveSeconds),
+        aspect_ratio: Some(EnqueueKling3p0StandardImageToVideoAspectRatio::SixteenByNine),
+        generate_audio: Some(true),
+        negative_prompt: None,
+        end_image_url: None,
+        shot_type: None,
+      },
       api_key: &api_key,
       webhook_url: "https://example.com/webhook",
     };
@@ -236,14 +239,16 @@ mod tests {
     for ar in EnqueueKling3p0StandardImageToVideoAspectRatio::iter() {
       println!("--- aspect ratio: {:?} ---", ar);
       let args = EnqueueKling3p0StandardImageToVideoArgs {
-        image_url: TREX_SKELETON_IMAGE_URL.to_string(),
-        prompt: "the skeleton comes alive and roars at the camera".to_string(),
-        duration: Some(EnqueueKling3p0StandardImageToVideoDuration::ThreeSeconds),
-        aspect_ratio: Some(ar),
-        generate_audio: Some(false),
-        negative_prompt: None,
-        end_image_url: None,
-        shot_type: None,
+        request: EnqueueKling3p0StandardImageToVideoRequest {
+          image_url: TREX_SKELETON_IMAGE_URL.to_string(),
+          prompt: "the skeleton comes alive and roars at the camera".to_string(),
+          duration: Some(EnqueueKling3p0StandardImageToVideoDuration::ThreeSeconds),
+          aspect_ratio: Some(ar),
+          generate_audio: Some(false),
+          negative_prompt: None,
+          end_image_url: None,
+          shot_type: None,
+        },
         api_key: &api_key,
         webhook_url: "https://example.com/webhook",
       };
@@ -263,14 +268,16 @@ mod tests {
     for dur in EnqueueKling3p0StandardImageToVideoDuration::iter() {
       println!("--- duration: {:?} ---", dur);
       let args = EnqueueKling3p0StandardImageToVideoArgs {
-        image_url: TREX_SKELETON_IMAGE_URL.to_string(),
-        prompt: "the skeleton slowly turns its head and opens its jaw".to_string(),
-        duration: Some(dur),
-        aspect_ratio: Some(EnqueueKling3p0StandardImageToVideoAspectRatio::SixteenByNine),
-        generate_audio: Some(false),
-        negative_prompt: None,
-        end_image_url: None,
-        shot_type: None,
+        request: EnqueueKling3p0StandardImageToVideoRequest {
+          image_url: TREX_SKELETON_IMAGE_URL.to_string(),
+          prompt: "the skeleton slowly turns its head and opens its jaw".to_string(),
+          duration: Some(dur),
+          aspect_ratio: Some(EnqueueKling3p0StandardImageToVideoAspectRatio::SixteenByNine),
+          generate_audio: Some(false),
+          negative_prompt: None,
+          end_image_url: None,
+          shot_type: None,
+        },
         api_key: &api_key,
         webhook_url: "https://example.com/webhook",
       };
@@ -290,14 +297,16 @@ mod tests {
     for st in EnqueueKling3p0StandardImageToVideoShotType::iter() {
       println!("--- shot type: {:?} ---", st);
       let args = EnqueueKling3p0StandardImageToVideoArgs {
-        image_url: TREX_SKELETON_IMAGE_URL.to_string(),
-        prompt: "the skeleton lurches forward dramatically".to_string(),
-        duration: Some(EnqueueKling3p0StandardImageToVideoDuration::FiveSeconds),
-        aspect_ratio: Some(EnqueueKling3p0StandardImageToVideoAspectRatio::SixteenByNine),
-        generate_audio: Some(true),
-        negative_prompt: None,
-        end_image_url: None,
-        shot_type: Some(st),
+        request: EnqueueKling3p0StandardImageToVideoRequest {
+          image_url: TREX_SKELETON_IMAGE_URL.to_string(),
+          prompt: "the skeleton lurches forward dramatically".to_string(),
+          duration: Some(EnqueueKling3p0StandardImageToVideoDuration::FiveSeconds),
+          aspect_ratio: Some(EnqueueKling3p0StandardImageToVideoAspectRatio::SixteenByNine),
+          generate_audio: Some(true),
+          negative_prompt: None,
+          end_image_url: None,
+          shot_type: Some(st),
+        },
         api_key: &api_key,
         webhook_url: "https://example.com/webhook",
       };

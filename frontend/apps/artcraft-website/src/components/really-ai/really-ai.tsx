@@ -11,7 +11,7 @@ export const ReallyAI = () => {
           data-animate
         >
           <div className="relative">
-            <h1 className="relative mb-4 sm:mb-6 md:mb-10 font-bold text-3xl sm:text-4xl md:text-[3rem] lg:text-[4rem] xl:text-[5rem] !leading-none text-shadow-lg">
+            <h1 className="relative mb-4 sm:mb-6 md:mb-10 font-medium text-3xl sm:text-4xl md:text-[3rem] lg:text-[4rem] xl:text-[5rem] !leading-none text-shadow-lg">
               <span
                 className="text-primary"
                 style={{ textShadow: "0 0 15px var(--color-primary)" }}

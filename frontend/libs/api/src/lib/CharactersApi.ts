@@ -125,4 +125,25 @@ export class CharactersApi extends ApiManager {
         errorMessage: err.message,
       }));
   }
+
+  public async ListAllCharacters(): Promise<ApiResponse<Character[]>> {
+    const all: Character[] = [];
+    let cursor: number | undefined = undefined;
+
+    while (true) {
+      const res: ApiResponse<Character[], { next_cursor?: number | null }> =
+        await this.ListCharacters({ cursor });
+      if (!res.success || !res.data) {
+        return all.length > 0
+          ? { success: true, data: all }
+          : { success: false, errorMessage: res.errorMessage };
+      }
+      all.push(...res.data);
+      const next = res.pagination?.next_cursor;
+      if (!next) break;
+      cursor = next;
+    }
+
+    return { success: true, data: all };
+  }
 }

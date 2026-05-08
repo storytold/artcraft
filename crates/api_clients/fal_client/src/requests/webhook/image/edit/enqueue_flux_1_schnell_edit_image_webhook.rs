@@ -6,13 +6,16 @@ use crate::requests::api::webhook_response::WebhookResponse;
 use reqwest::IntoUrl;
 
 pub struct Flux1SchnellEditImageArgs<'a, U: IntoUrl> {
+  pub request: Flux1SchnellEditImageRequest,
+  pub webhook_url: U,
+  pub api_key: &'a FalApiKey,
+}
+
+#[derive(Clone, Debug)]
+pub struct Flux1SchnellEditImageRequest {
   pub image_url: String,
   pub num_images: Flux1SchnellEditImageNumImages,
   pub image_size: Option<Flux1SchnellEditImageSize>,
-
-  // Fulfillment
-  pub webhook_url: U,
-  pub api_key: &'a FalApiKey,
 }
 
 #[derive(Copy, Clone, Debug)]
@@ -36,14 +39,16 @@ pub enum Flux1SchnellEditImageSize {
 pub async fn enqueue_flux_1_schnell_edit_image_webhook<U: IntoUrl>(
   args: Flux1SchnellEditImageArgs<'_, U>
 ) -> Result<WebhookResponse, FalErrorPlus> {
-  let num_images = match args.num_images {
+  let req = args.request;
+
+  let num_images = match req.num_images {
     Flux1SchnellEditImageNumImages::One => 1,
     Flux1SchnellEditImageNumImages::Two => 2,
     Flux1SchnellEditImageNumImages::Three => 3,
     Flux1SchnellEditImageNumImages::Four => 4,
   };
 
-  let image_size = args.image_size.map(|s| match s {
+  let image_size = req.image_size.map(|s| match s {
     Flux1SchnellEditImageSize::Square => "square",
     Flux1SchnellEditImageSize::SquareHd => "square_hd",
     Flux1SchnellEditImageSize::LandscapeFourByThree => "landscape_4_3",
@@ -53,7 +58,7 @@ pub async fn enqueue_flux_1_schnell_edit_image_webhook<U: IntoUrl>(
   }.to_string());
 
   let request = Flux1SchnellEditImageInput {
-    image_url: args.image_url,
+    image_url: req.image_url,
     num_images: Some(num_images),
     image_size,
     enable_safety_checker: Some(false),
@@ -74,7 +79,7 @@ mod tests {
   use crate::creds::fal_api_key::FalApiKey;
   use crate::requests::webhook::image::edit::enqueue_flux_1_schnell_edit_image_webhook::{
     enqueue_flux_1_schnell_edit_image_webhook, Flux1SchnellEditImageArgs,
-    Flux1SchnellEditImageNumImages, Flux1SchnellEditImageSize,
+    Flux1SchnellEditImageNumImages, Flux1SchnellEditImageRequest, Flux1SchnellEditImageSize,
   };
   use errors::AnyhowResult;
   use std::fs::read_to_string;
@@ -87,9 +92,11 @@ mod tests {
     let api_key = FalApiKey::from_str(&secret);
 
     let args = Flux1SchnellEditImageArgs {
-      image_url: GHOST_IMAGE_URL.to_string(),
-      num_images: Flux1SchnellEditImageNumImages::One,
-      image_size: None,
+      request: Flux1SchnellEditImageRequest {
+        image_url: GHOST_IMAGE_URL.to_string(),
+        num_images: Flux1SchnellEditImageNumImages::One,
+        image_size: None,
+      },
       api_key: &api_key,
       webhook_url: "https://example.com/webhook",
     };
@@ -106,9 +113,11 @@ mod tests {
     let api_key = FalApiKey::from_str(&secret);
 
     let args = Flux1SchnellEditImageArgs {
-      image_url: GHOST_IMAGE_URL.to_string(),
-      num_images: Flux1SchnellEditImageNumImages::Two,
-      image_size: Some(Flux1SchnellEditImageSize::LandscapeSixteenByNine),
+      request: Flux1SchnellEditImageRequest {
+        image_url: GHOST_IMAGE_URL.to_string(),
+        num_images: Flux1SchnellEditImageNumImages::Two,
+        image_size: Some(Flux1SchnellEditImageSize::LandscapeSixteenByNine),
+      },
       api_key: &api_key,
       webhook_url: "https://example.com/webhook",
     };

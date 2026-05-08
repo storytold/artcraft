@@ -7,6 +7,13 @@ use crate::requests::api::webhook_response::WebhookResponse;
 use reqwest::IntoUrl;
 
 pub struct EnqueueVeo3p1FirstLastFrameImageToVideoArgs<'a, R: IntoUrl> {
+  pub request: EnqueueVeo3p1FirstLastFrameImageToVideoRequest,
+  pub webhook_url: R,
+  pub api_key: &'a FalApiKey,
+}
+
+#[derive(Clone, Debug)]
+pub struct EnqueueVeo3p1FirstLastFrameImageToVideoRequest {
   // Request required
   pub prompt: String,
 
@@ -21,10 +28,6 @@ pub struct EnqueueVeo3p1FirstLastFrameImageToVideoArgs<'a, R: IntoUrl> {
   pub aspect_ratio: Option<EnqueueVeo3p1FirstLastFrameImageToVideoAspectRatio>,
   pub resolution: Option<EnqueueVeo3p1FirstLastFrameImageToVideoResolution>,
   pub generate_audio: Option<bool>,
-
-  // Fulfillment
-  pub webhook_url: R,
-  pub api_key: &'a FalApiKey,
 }
 
 #[derive(Copy, Clone, Debug)]
@@ -47,7 +50,7 @@ pub enum EnqueueVeo3p1FirstLastFrameImageToVideoResolution {
   TenEightyP,
 }
 
-impl <R: IntoUrl> FalRequestCostCalculator for EnqueueVeo3p1FirstLastFrameImageToVideoArgs<'_, R> {
+impl FalRequestCostCalculator for EnqueueVeo3p1FirstLastFrameImageToVideoRequest {
   fn calculate_cost_in_cents(&self) -> UsdCents {
     // "For every second of video you generated, you will be charged
     //  $0.20 (audio off) or
@@ -75,8 +78,9 @@ impl <R: IntoUrl> FalRequestCostCalculator for EnqueueVeo3p1FirstLastFrameImageT
 pub async fn enqueue_veo_3p1_first_last_frame_image_to_video_webhook<R: IntoUrl>(
   args: EnqueueVeo3p1FirstLastFrameImageToVideoArgs<'_, R>
 ) -> Result<WebhookResponse, FalErrorPlus> {
+  let req = args.request;
 
-  let duration = args.duration
+  let duration = req.duration
       .map(|resolution| match resolution {
         EnqueueVeo3p1FirstLastFrameImageToVideoDurationSeconds::Four => "4s",
         EnqueueVeo3p1FirstLastFrameImageToVideoDurationSeconds::Six => "6s",
@@ -84,7 +88,7 @@ pub async fn enqueue_veo_3p1_first_last_frame_image_to_video_webhook<R: IntoUrl>
       })
       .map(|s| s.to_string());
 
-  let aspect_ratio = args.aspect_ratio
+  let aspect_ratio = req.aspect_ratio
       .map(|aspect_ratio| match aspect_ratio {
         EnqueueVeo3p1FirstLastFrameImageToVideoAspectRatio::Auto => "auto",
         EnqueueVeo3p1FirstLastFrameImageToVideoAspectRatio::SixteenByNine => "16:9",
@@ -92,7 +96,7 @@ pub async fn enqueue_veo_3p1_first_last_frame_image_to_video_webhook<R: IntoUrl>
       })
       .map(|s| s.to_string());
 
-  let resolution = args.resolution
+  let resolution = req.resolution
       .map(|resolution| match resolution {
         EnqueueVeo3p1FirstLastFrameImageToVideoResolution::SevenTwentyP => "720p",
         EnqueueVeo3p1FirstLastFrameImageToVideoResolution::TenEightyP => "1080p",
@@ -100,10 +104,10 @@ pub async fn enqueue_veo_3p1_first_last_frame_image_to_video_webhook<R: IntoUrl>
       .map(|s| s.to_string());
 
   let request = Veo3p1FirstLastFrameImageToVideoInput {
-    prompt: args.prompt,
-    first_frame_url: args.first_frame_url,
-    last_frame_url: args.last_frame_url,
-    generate_audio: args.generate_audio,
+    prompt: req.prompt,
+    first_frame_url: req.first_frame_url,
+    last_frame_url: req.last_frame_url,
+    generate_audio: req.generate_audio,
     // Optionals
     duration,
     aspect_ratio,
@@ -121,7 +125,7 @@ pub async fn enqueue_veo_3p1_first_last_frame_image_to_video_webhook<R: IntoUrl>
 #[cfg(test)]
 mod tests {
   use crate::creds::fal_api_key::FalApiKey;
-  use crate::requests::webhook::video::image::enqueue_veo_3p1_first_last_frame_image_to_video_webhook::{enqueue_veo_3p1_first_last_frame_image_to_video_webhook, EnqueueVeo3p1FirstLastFrameImageToVideoArgs, EnqueueVeo3p1FirstLastFrameImageToVideoAspectRatio, EnqueueVeo3p1FirstLastFrameImageToVideoDurationSeconds, EnqueueVeo3p1FirstLastFrameImageToVideoResolution};
+  use crate::requests::webhook::video::image::enqueue_veo_3p1_first_last_frame_image_to_video_webhook::{enqueue_veo_3p1_first_last_frame_image_to_video_webhook, EnqueueVeo3p1FirstLastFrameImageToVideoArgs, EnqueueVeo3p1FirstLastFrameImageToVideoAspectRatio, EnqueueVeo3p1FirstLastFrameImageToVideoDurationSeconds, EnqueueVeo3p1FirstLastFrameImageToVideoRequest, EnqueueVeo3p1FirstLastFrameImageToVideoResolution};
   use errors::AnyhowResult;
   use std::fs::read_to_string;
   use test_data::web::image_urls::{TALL_CORGI_SHIBA_TREASURE_OCEAN_URL, TALL_CORGI_SHIBA_TREASURE_SKY_URL};
@@ -135,13 +139,15 @@ mod tests {
     let api_key = FalApiKey::from_str(&secret);
 
     let args = EnqueueVeo3p1FirstLastFrameImageToVideoArgs {
-      first_frame_url: TALL_CORGI_SHIBA_TREASURE_OCEAN_URL.to_string(),
-      last_frame_url: TALL_CORGI_SHIBA_TREASURE_SKY_URL.to_string(),
-      prompt: "There is a tiny ocean island with a corgi and shiba and treasure chest on it. The corgi and shiba are barking at the chest, when suddenly the island launches itself into the air. The camera tracks the island and follows it up high in the sky. The sun beams over the horizon. The dogs are happy and bark. The gold coins gleam in the sun.".to_string(),
-      duration: Some(EnqueueVeo3p1FirstLastFrameImageToVideoDurationSeconds::Eight),
-      aspect_ratio: Some(EnqueueVeo3p1FirstLastFrameImageToVideoAspectRatio::NineBySixteen),
-      resolution: Some(EnqueueVeo3p1FirstLastFrameImageToVideoResolution::TenEightyP),
-      generate_audio: Some(true),
+      request: EnqueueVeo3p1FirstLastFrameImageToVideoRequest {
+        first_frame_url: TALL_CORGI_SHIBA_TREASURE_OCEAN_URL.to_string(),
+        last_frame_url: TALL_CORGI_SHIBA_TREASURE_SKY_URL.to_string(),
+        prompt: "There is a tiny ocean island with a corgi and shiba and treasure chest on it. The corgi and shiba are barking at the chest, when suddenly the island launches itself into the air. The camera tracks the island and follows it up high in the sky. The sun beams over the horizon. The dogs are happy and bark. The gold coins gleam in the sun.".to_string(),
+        duration: Some(EnqueueVeo3p1FirstLastFrameImageToVideoDurationSeconds::Eight),
+        aspect_ratio: Some(EnqueueVeo3p1FirstLastFrameImageToVideoAspectRatio::NineBySixteen),
+        resolution: Some(EnqueueVeo3p1FirstLastFrameImageToVideoResolution::TenEightyP),
+        generate_audio: Some(true),
+      },
       api_key: &api_key,
       webhook_url: "https://example.com/webhook",
     };

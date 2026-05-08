@@ -10,10 +10,12 @@ import { Button } from "@storyteller/ui-button";
 import { DOWNLOAD_LINKS } from "../../config/github_download_links";
 import { isMobile, isMacOs } from "react-device-detect";
 import { useState, useEffect } from "react";
+import Lenis from "lenis";
 import { UsersApi } from "@storyteller/api";
 import { DownloadModal } from "../../components/download-modal";
 import Seo from "../../components/seo";
 import Footer from "../../components/footer";
+import { PagePatternBackdrop } from "../../components/truchet-pattern";
 
 const SYSTEMS = [
   {
@@ -54,6 +56,26 @@ const Download = () => {
     checkSession();
   }, []);
 
+  useEffect(() => {
+    if (isMobile) return;
+    const lenis = new Lenis({
+      duration: 1.2,
+      easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+      smoothWheel: true,
+      lerp: 0.1,
+    });
+    let rafId: number;
+    const raf = (time: number) => {
+      lenis.raf(time);
+      rafId = requestAnimationFrame(raf);
+    };
+    rafId = requestAnimationFrame(raf);
+    return () => {
+      cancelAnimationFrame(rafId);
+      lenis.destroy();
+    };
+  }, []);
+
   const onDownloadClick = (e: React.MouseEvent) => {
     if (isLoggedIn) return;
     setShowDownloadModal(true);
@@ -61,22 +83,27 @@ const Download = () => {
   };
 
   return (
-    <div className="relative min-h-screen bg-[#101014] text-white bg-dots">
+    <div className="relative min-h-screen bg-[#101014] text-white overflow-hidden">
       <Seo
         title="Download ArtCraft - Windows and macOS"
         description="Download ArtCraft for Windows and macOS. Start creating AI artwork today."
       />
 
-      {/* Background effects */}
-      <div className="dotted-pattern absolute inset-0 z-[0] opacity-50 pointer-events-none" />
-      <div className="absolute top-0 inset-x-0 flex justify-center pointer-events-none z-0">
-        <div className="w-[900px] h-[900px] -mt-[200px] rounded-full bg-gradient-to-br from-blue-700 via-blue-500 to-[#00AABA] opacity-20 blur-[120px]" />
-      </div>
+      <PagePatternBackdrop variant="content" />
+
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-x-0 top-0 h-[700px] z-0"
+        style={{
+          background:
+            "radial-gradient(ellipse 60% 50% at 50% 0%, rgba(45,129,255,0.18) 0%, transparent 70%)",
+        }}
+      />
 
       <div className="relative w-full max-w-6xl mx-auto px-6 sm:px-10 pt-36 sm:pt-40 pb-24">
         {/* Hero */}
         <div className="text-center mb-16 sm:mb-20">
-          <h1 className="font-bold text-4xl sm:text-5xl lg:text-7xl mb-6 drop-shadow-[0_4px_32px_rgba(80,80,255,0.25)]">
+          <h1 className="font-medium text-4xl sm:text-5xl lg:text-7xl mb-6 drop-shadow-[0_4px_32px_rgba(80,80,255,0.25)]">
             Download ArtCraft
           </h1>
           <p className="max-w-xl mx-auto text-lg lg:text-xl leading-relaxed text-white/70">
@@ -88,14 +115,14 @@ const Download = () => {
           <div className="mt-10 flex items-center justify-center">
             {isMobile ? (
               <Button
-                className="text-lg font-semibold rounded-xl shadow-lg"
+                className="rounded-full text-lg font-semibold rounded-xl shadow-lg"
                 disabled
               >
                 Download on a desktop
               </Button>
             ) : (
               <Button
-                className="glow-border-animated text-md px-8 py-4 text-lg font-semibold rounded-xl shadow-lg gap-3 transition-all duration-300 hover:scale-105 hover:shadow-primary/25 bg-white text-black hover:bg-white/90"
+                className="rounded-full glow-border-animated text-md px-8 py-4 text-lg font-semibold rounded-xl shadow-lg gap-3 transition-all duration-300 hover:scale-105 hover:shadow-primary/25 bg-white text-black hover:bg-white/90"
                 as="link"
                 href={detectedLink}
                 onClick={onDownloadClick}
@@ -121,7 +148,7 @@ const Download = () => {
 
         {/* Platform cards */}
         <div className="mb-20 sm:mb-24">
-          <h2 className="text-2xl sm:text-3xl font-bold text-center mb-10">
+          <h2 className="text-2xl sm:text-3xl font-medium text-center mb-10">
             Available Platforms
           </h2>
 
@@ -151,7 +178,7 @@ const Download = () => {
                       icon={system.icon}
                       className="text-2xl text-white/80"
                     />
-                    <h3 className="text-xl font-bold">{system.os}</h3>
+                    <h3 className="text-xl font-medium">{system.os}</h3>
                   </div>
 
                   <ul className="space-y-3 mb-8 flex-1">
@@ -171,14 +198,14 @@ const Download = () => {
 
                   {isMobile ? (
                     <Button
-                      className="w-full justify-center font-semibold"
+                      className="rounded-full w-full justify-center font-semibold"
                       disabled
                     >
                       Desktop only
                     </Button>
                   ) : (
                     <Button
-                      className="w-full justify-center font-semibold gap-2"
+                      className="rounded-full w-full justify-center font-semibold gap-2"
                       as="link"
                       href={system.link}
                       icon={faArrowDownToLine}
@@ -195,7 +222,7 @@ const Download = () => {
 
         {/* Quick-start steps */}
         <div>
-          <h2 className="text-2xl sm:text-3xl font-bold text-center mb-10">
+          <h2 className="text-2xl sm:text-3xl font-medium text-center mb-10">
             Get Started in Minutes
           </h2>
 
@@ -224,7 +251,7 @@ const Download = () => {
                 <div className="w-10 h-10 rounded-full bg-primary/20 text-primary font-bold text-sm flex items-center justify-center mx-auto mb-4">
                   {item.step}
                 </div>
-                <h3 className="font-semibold text-lg mb-2">{item.title}</h3>
+                <h3 className="font-medium text-lg mb-2">{item.title}</h3>
                 <p className="text-white/50 text-sm">{item.desc}</p>
               </div>
             ))}

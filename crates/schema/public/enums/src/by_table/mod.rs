@@ -4,6 +4,7 @@ pub mod batch_generations;
 pub mod characters;
 pub mod beta_keys;
 pub mod comments;
+pub mod debug_logs;
 pub mod email_sender_jobs;
 pub mod entity_stats;
 pub mod featured_items;

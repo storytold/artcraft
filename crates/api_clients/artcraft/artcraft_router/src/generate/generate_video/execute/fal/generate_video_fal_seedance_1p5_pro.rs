@@ -1,3 +1,6 @@
+use std::fmt::Debug;
+use std::sync::Arc;
+
 use crate::client::router_fal_client::RouterFalClient;
 use crate::errors::artcraft_router_error::ArtcraftRouterError;
 use crate::errors::provider_error::ProviderError;
@@ -11,33 +14,37 @@ use crate::generate::generate_video::plan::fal::plan_generate_video_fal_seedance
 use fal_client::requests::webhook::video::image::enqueue_seedance_1p5_pro_image_to_video_webhook::{
   enqueue_seedance_1p5_pro_image_to_video_webhook, EnqueueSeedance1p5ProImageToVideoArgs,
   EnqueueSeedance1p5ProImageToVideoAspectRatio, EnqueueSeedance1p5ProImageToVideoDuration,
-  EnqueueSeedance1p5ProImageToVideoResolution,
+  EnqueueSeedance1p5ProImageToVideoRequest, EnqueueSeedance1p5ProImageToVideoResolution,
 };
 use fal_client::requests::webhook::video::text::enqueue_seedance_1p5_pro_text_to_video_webhook::{
   enqueue_seedance_1p5_pro_text_to_video_webhook, EnqueueSeedance1p5ProTextToVideoArgs,
-  EnqueueSeedance1p5ProTextToVideoAspectRatio, EnqueueSeedance1p5ProTextToVideoDuration,
-  EnqueueSeedance1p5ProTextToVideoResolution,
+  EnqueueSeedance1p5ProTextToVideoRequest, EnqueueSeedance1p5ProTextToVideoAspectRatio,
+  EnqueueSeedance1p5ProTextToVideoDuration, EnqueueSeedance1p5ProTextToVideoResolution,
 };
 
 pub async fn execute_fal_seedance_1p5_pro(
   plan: &PlanFalSeedance1p5Pro,
   fal_client: &RouterFalClient,
 ) -> Result<GenerateVideoResponse, ArtcraftRouterError> {
-  let webhook_response = match &plan.mode {
+  let (webhook_response, outbound_request) = match &plan.mode {
     FalSeedance1p5ProMode::TextToVideo => {
-      let args = EnqueueSeedance1p5ProTextToVideoArgs {
+      let request = EnqueueSeedance1p5ProTextToVideoRequest {
         prompt: plan.prompt.clone(),
         resolution: plan.resolution.map(to_t2v_resolution),
         duration: plan.duration.map(to_t2v_duration),
         aspect_ratio: plan.aspect_ratio.map(to_t2v_aspect_ratio),
         generate_audio: plan.generate_audio,
+      };
+      let outbound: Arc<dyn Debug + Send + Sync> = Arc::new(request.clone());
+      let args = EnqueueSeedance1p5ProTextToVideoArgs {
+        request,
         webhook_url: fal_client.webhook_url.as_str(),
         api_key: &fal_client.api_key,
       };
-      enqueue_seedance_1p5_pro_text_to_video_webhook(args).await
+      (enqueue_seedance_1p5_pro_text_to_video_webhook(args).await, outbound)
     }
     FalSeedance1p5ProMode::ImageToVideo { image_url, end_image_url } => {
-      let args = EnqueueSeedance1p5ProImageToVideoArgs {
+      let request = EnqueueSeedance1p5ProImageToVideoRequest {
         prompt: plan.prompt.clone(),
         image_url: image_url.clone(),
         end_image_url: end_image_url.clone(),
@@ -45,10 +52,14 @@ pub async fn execute_fal_seedance_1p5_pro(
         duration: plan.duration.map(to_i2v_duration),
         aspect_ratio: plan.aspect_ratio.map(to_i2v_aspect_ratio),
         generate_audio: plan.generate_audio,
+      };
+      let outbound: Arc<dyn Debug + Send + Sync> = Arc::new(request.clone());
+      let args = EnqueueSeedance1p5ProImageToVideoArgs {
+        request,
         webhook_url: fal_client.webhook_url.as_str(),
         api_key: &fal_client.api_key,
       };
-      enqueue_seedance_1p5_pro_image_to_video_webhook(args).await
+      (enqueue_seedance_1p5_pro_image_to_video_webhook(args).await, outbound)
     }
   };
 
@@ -58,6 +69,7 @@ pub async fn execute_fal_seedance_1p5_pro(
   Ok(GenerateVideoResponse::Fal(FalVideoResponsePayload {
     request_id: webhook_response.request_id,
     gateway_request_id: webhook_response.gateway_request_id,
+    maybe_outbound_request: Some(outbound_request),
   }))
 }
 

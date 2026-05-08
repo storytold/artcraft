@@ -34,6 +34,7 @@ pub async fn insert_fal_job(args: InsertFalJobArgs<'_, '_>) -> Result<InferenceJ
       maybe_avt_token: shared.maybe_avt_token,
       creator_ip_address: shared.ip_address,
       creator_set_visibility: Visibility::Public,
+      maybe_debug_log_event_token: shared.maybe_debug_log_event_token,
       mysql_executor: &mut **shared.transaction,
       maybe_inference_args: None,
       starting_job_status_override: None,

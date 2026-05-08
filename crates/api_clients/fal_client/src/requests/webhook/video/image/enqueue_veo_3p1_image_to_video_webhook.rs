@@ -7,6 +7,13 @@ use crate::requests::api::webhook_response::WebhookResponse;
 use reqwest::IntoUrl;
 
 pub struct EnqueueVeo3p1ImageToVideoArgs<'a, R: IntoUrl> {
+  pub request: EnqueueVeo3p1ImageToVideoRequest,
+  pub webhook_url: R,
+  pub api_key: &'a FalApiKey,
+}
+
+#[derive(Clone, Debug)]
+pub struct EnqueueVeo3p1ImageToVideoRequest {
   // Request required
   pub prompt: String,
 
@@ -18,10 +25,6 @@ pub struct EnqueueVeo3p1ImageToVideoArgs<'a, R: IntoUrl> {
   pub aspect_ratio: Option<EnqueueVeo3p1ImageToVideoAspectRatio>,
   pub resolution: Option<EnqueueVeo3p1ImageToVideoResolution>,
   pub generate_audio: Option<bool>,
-
-  // Fulfillment
-  pub webhook_url: R,
-  pub api_key: &'a FalApiKey,
 }
 
 #[derive(Copy, Clone, Debug)]
@@ -44,7 +47,7 @@ pub enum EnqueueVeo3p1ImageToVideoResolution {
   TenEightyP,
 }
 
-impl <R: IntoUrl> FalRequestCostCalculator for EnqueueVeo3p1ImageToVideoArgs<'_, R> {
+impl FalRequestCostCalculator for EnqueueVeo3p1ImageToVideoRequest {
   fn calculate_cost_in_cents(&self) -> UsdCents {
     // "For every second of video you generated, you will be charged
     //  $0.20 (audio off) or
@@ -72,8 +75,9 @@ impl <R: IntoUrl> FalRequestCostCalculator for EnqueueVeo3p1ImageToVideoArgs<'_,
 pub async fn enqueue_veo_3p1_image_to_video_webhook<R: IntoUrl>(
   args: EnqueueVeo3p1ImageToVideoArgs<'_, R>
 ) -> Result<WebhookResponse, FalErrorPlus> {
+  let req = args.request;
 
-  let duration = args.duration
+  let duration = req.duration
       .map(|resolution| match resolution {
         EnqueueVeo3p1ImageToVideoDurationSeconds::Four => "4s",
         EnqueueVeo3p1ImageToVideoDurationSeconds::Six => "6s",
@@ -81,7 +85,7 @@ pub async fn enqueue_veo_3p1_image_to_video_webhook<R: IntoUrl>(
       })
       .map(|s| s.to_string());
 
-  let aspect_ratio = args.aspect_ratio
+  let aspect_ratio = req.aspect_ratio
       .map(|aspect_ratio| match aspect_ratio {
         EnqueueVeo3p1ImageToVideoAspectRatio::Auto => "auto",
         EnqueueVeo3p1ImageToVideoAspectRatio::SixteenByNine => "16:9",
@@ -89,7 +93,7 @@ pub async fn enqueue_veo_3p1_image_to_video_webhook<R: IntoUrl>(
       })
       .map(|s| s.to_string());
 
-  let resolution = args.resolution
+  let resolution = req.resolution
       .map(|resolution| match resolution {
         EnqueueVeo3p1ImageToVideoResolution::SevenTwentyP => "720p",
         EnqueueVeo3p1ImageToVideoResolution::TenEightyP => "1080p",
@@ -97,9 +101,9 @@ pub async fn enqueue_veo_3p1_image_to_video_webhook<R: IntoUrl>(
       .map(|s| s.to_string());
 
   let request = Veo3p1ImageToVideoInput {
-    prompt: args.prompt,
-    image_url: args.image_url,
-    generate_audio: args.generate_audio,
+    prompt: req.prompt,
+    image_url: req.image_url,
+    generate_audio: req.generate_audio,
     // Optionals
     duration,
     aspect_ratio,
@@ -117,7 +121,7 @@ pub async fn enqueue_veo_3p1_image_to_video_webhook<R: IntoUrl>(
 #[cfg(test)]
 mod tests {
   use crate::creds::fal_api_key::FalApiKey;
-  use crate::requests::webhook::video::image::enqueue_veo_3p1_image_to_video_webhook::{enqueue_veo_3p1_image_to_video_webhook, EnqueueVeo3p1ImageToVideoArgs, EnqueueVeo3p1ImageToVideoAspectRatio, EnqueueVeo3p1ImageToVideoDurationSeconds, EnqueueVeo3p1ImageToVideoResolution};
+  use crate::requests::webhook::video::image::enqueue_veo_3p1_image_to_video_webhook::{enqueue_veo_3p1_image_to_video_webhook, EnqueueVeo3p1ImageToVideoArgs, EnqueueVeo3p1ImageToVideoAspectRatio, EnqueueVeo3p1ImageToVideoDurationSeconds, EnqueueVeo3p1ImageToVideoRequest, EnqueueVeo3p1ImageToVideoResolution};
   use errors::AnyhowResult;
   use std::fs::read_to_string;
   use test_data::web::image_urls::TALL_CORGI_SHIBA_TREASURE_OCEAN_URL;
@@ -131,12 +135,14 @@ mod tests {
     let api_key = FalApiKey::from_str(&secret);
 
     let args = EnqueueVeo3p1ImageToVideoArgs {
-      image_url: TALL_CORGI_SHIBA_TREASURE_OCEAN_URL.to_string(),
-      prompt: "There is a tiny ocean island with a corgi and shiba and treasure chest on it. The corgi and shiba are barking at the chest, when suddenly the island launches itself into the air. The camera tracks the island and follows it up high in the sky. The sun beams over the horizon. The dogs are happy and bark. The gold coins gleam in the sun.".to_string(),
-      duration: Some(EnqueueVeo3p1ImageToVideoDurationSeconds::Eight),
-      aspect_ratio: Some(EnqueueVeo3p1ImageToVideoAspectRatio::NineBySixteen),
-      resolution: Some(EnqueueVeo3p1ImageToVideoResolution::TenEightyP),
-      generate_audio: Some(true),
+      request: EnqueueVeo3p1ImageToVideoRequest {
+        image_url: TALL_CORGI_SHIBA_TREASURE_OCEAN_URL.to_string(),
+        prompt: "There is a tiny ocean island with a corgi and shiba and treasure chest on it. The corgi and shiba are barking at the chest, when suddenly the island launches itself into the air. The camera tracks the island and follows it up high in the sky. The sun beams over the horizon. The dogs are happy and bark. The gold coins gleam in the sun.".to_string(),
+        duration: Some(EnqueueVeo3p1ImageToVideoDurationSeconds::Eight),
+        aspect_ratio: Some(EnqueueVeo3p1ImageToVideoAspectRatio::NineBySixteen),
+        resolution: Some(EnqueueVeo3p1ImageToVideoResolution::TenEightyP),
+        generate_audio: Some(true),
+      },
       api_key: &api_key,
       webhook_url: "https://example.com/webhook",
     };

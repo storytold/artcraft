@@ -13,12 +13,10 @@ use crate::core::commands::download::download_directory_reveal_command::download
 use crate::core::commands::download::download_media_file_command::download_media_file_command;
 use crate::core::commands::download::download_url_command::download_url_command;
 use crate::core::commands::enqueue::image_bg_removal::enqueue_image_bg_removal_command::enqueue_image_bg_removal_command;
-use crate::core::commands::enqueue::image_edit::enqueue_edit_image_command::enqueue_edit_image_command;
-use crate::core::commands::enqueue::image_inpaint::enqueue_image_inpaint_command::enqueue_image_inpaint_command;
 use crate::core::commands::enqueue::image_to_gaussian::enqueue_image_to_gaussian_command::enqueue_image_to_gaussian_command;
 use crate::core::commands::enqueue::image_to_object::enqueue_image_to_3d_object_command::enqueue_image_to_3d_object_command;
-use crate::core::commands::enqueue::image_to_video::enqueue_image_to_video_command::enqueue_image_to_video_command;
-use crate::core::commands::enqueue::text_to_image::enqueue_text_to_image_command::enqueue_text_to_image_command;
+use crate::core::commands::generate::generate_image::generate_image_command::generate_image_command;
+use crate::core::commands::generate::generate_video::generate_video_command::generate_video_command;
 use crate::core::commands::flip_image::flip_image;
 use crate::core::commands::get_app_info_command::get_app_info_command;
 use crate::core::commands::load_without_cors_command::load_without_cors_command;
@@ -207,17 +205,15 @@ pub fn run() {
     download_directory_reveal_command,
     download_media_file_command,
     download_url_command,
-    enqueue_edit_image_command,
     enqueue_image_bg_removal_command,
-    enqueue_image_inpaint_command,
     enqueue_image_to_3d_object_command,
     enqueue_image_to_gaussian_command,
-    enqueue_image_to_video_command,
-    enqueue_text_to_image_command,
     estimate_image_cost_command,
     estimate_splat_cost_command,
     estimate_video_cost_command,
     flip_image,
+    generate_image_command,
+    generate_video_command,
     get_app_info_command,
     get_app_preferences_command,
     get_provider_order_command,

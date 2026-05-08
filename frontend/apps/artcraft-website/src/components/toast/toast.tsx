@@ -35,6 +35,13 @@ export function showToast(type: ToastType, message: string, duration?: number) {
   );
 }
 
+export const toast = {
+  success: (message: string, opts?: { duration?: number }) =>
+    showToast("success", message, opts?.duration),
+  error: (message: string, opts?: { duration?: number }) =>
+    showToast("error", message, opts?.duration),
+};
+
 // ── Component ──────────────────────────────────────────────────────────────
 
 const DEFAULT_DURATION = 6000;

@@ -30,6 +30,7 @@ pub(crate) enum TokenPrefix {
   BrowserSessionLog,
   Character,
   Comment,
+  DebugLogEvent,
   DownloadJob,
   EmailSenderJob,
   GoogleSignInAccount,
@@ -116,6 +117,7 @@ impl PrefixGenerator for TokenPrefix {
       Self::BrowserSessionLog => "bsl_",
       Self::Character => "character_",
       Self::Comment => "comment_",
+      Self::DebugLogEvent => "dbg_",
       Self::DownloadJob => "jdown_", // NB: Previously "JGUP:"
       Self::EmailSenderJob => "email_job_",
       Self::GoogleSignInAccount => "gsi_",

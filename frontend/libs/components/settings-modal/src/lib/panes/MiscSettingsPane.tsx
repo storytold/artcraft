@@ -12,10 +12,18 @@ import { Label } from "@storyteller/ui-label";
 import { Switch } from "@storyteller/ui-switch";
 import { DownloadDirectoryReveal } from "@storyteller/tauri-api";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faFolder, faMagnifyingGlass, faRotateLeft } from "@fortawesome/pro-solid-svg-icons";
+import {
+  faFolder,
+  faMagnifyingGlass,
+  faRotateLeft,
+} from "@fortawesome/pro-solid-svg-icons";
 import { useEnterToGenerateStore } from "@storyteller/ui-promptbox";
+import {
+  getAskLocationBeforeDownload,
+  setAskLocationBeforeDownload,
+} from "@storyteller/api";
 
-interface MiscSettingsPaneProps { }
+interface MiscSettingsPaneProps {}
 
 export const MiscSettingsPane = (args: MiscSettingsPaneProps) => {
   const [preferences, setPreferences] = useState<
@@ -24,6 +32,14 @@ export const MiscSettingsPane = (args: MiscSettingsPaneProps) => {
 
   const enterToGenerate = useEnterToGenerateStore((s) => s.enabled);
   const setEnterToGenerate = useEnterToGenerateStore((s) => s.setEnabled);
+
+  const [askLocationBeforeDownload, setAskLocationBeforeDownloadState] =
+    useState<boolean>(() => getAskLocationBeforeDownload());
+
+  const toggleAskLocationBeforeDownload = (enabled: boolean) => {
+    setAskLocationBeforeDownload(enabled);
+    setAskLocationBeforeDownloadState(enabled);
+  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -111,11 +127,28 @@ export const MiscSettingsPane = (args: MiscSettingsPaneProps) => {
       </div>
       <div className="flex flex-col gap-2 pt-3">
         <div className="flex flex-col gap-0.5">
+          <Label htmlFor="ask-location-before-download">
+            Ask location before download
+          </Label>
+          <p className="text-xs opacity-70">
+            When on, a system file picker appears every time you download from
+            the lightbox or anywhere in the app, letting you choose the save
+            location for that file. When off, downloads go straight to the
+            default download directory above.
+          </p>
+        </div>
+        <Switch
+          enabled={askLocationBeforeDownload}
+          setEnabled={toggleAskLocationBeforeDownload}
+        />
+      </div>
+      <div className="flex flex-col gap-2 pt-3">
+        <div className="flex flex-col gap-0.5">
           <Label htmlFor="enter-to-generate">Enter to generate</Label>
           <p className="text-xs opacity-70">
             When on, pressing Enter submits the prompt and Shift+Enter adds a
-            new line. When off (default), Enter adds a new line and Shift+Enter
-            submits.
+            new line. When off (default), both Enter and Shift+Enter add a new
+            line - use only the button to submit.
           </p>
         </div>
         <Switch enabled={enterToGenerate} setEnabled={setEnterToGenerate} />

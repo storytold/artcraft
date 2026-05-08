@@ -13,16 +13,20 @@ use crate::requests::api::webhook_response::WebhookResponse;
 use reqwest::IntoUrl;
 
 pub struct GptTextToImageByokArgs<'a, V: IntoUrl> {
-  // Request
-  pub prompt: &'a str,
-  pub image_size: GptTextToImageSize,
-  pub num_images: GptTextToImageNumImages,
-  pub quality: GptTextToImageQuality,
+  pub request: GptTextToImageByokRequest,
 
   // Fulfillment
   pub api_key: &'a FalApiKey,
   pub openai_api_key: &'a OpenAiApiKey,
   pub webhook_url: V,
+}
+
+#[derive(Clone, Debug)]
+pub struct GptTextToImageByokRequest {
+  pub prompt: String,
+  pub image_size: GptTextToImageSize,
+  pub num_images: GptTextToImageNumImages,
+  pub quality: GptTextToImageQuality,
 }
 
 #[derive(Copy, Clone, Debug)]
@@ -51,7 +55,7 @@ pub enum GptTextToImageNumImages{
 
 
 // NB: These are BYOK, so they're not Fal's prices
-impl <U: IntoUrl> FalRequestCostCalculator for GptTextToImageByokArgs<'_, U> {
+impl FalRequestCostCalculator for GptTextToImageByokRequest {
   fn calculate_cost_in_cents(&self) -> UsdCents {
     // Can't find details, so using this: https://www.reddit.com/r/OpenAI/comments/1krfwa1/pricing_gpt_image_1_model/
     // Prompts are billed similarly to other GPT models. Image outputs cost approximately $0.01 (low), $0.04 (medium),
@@ -78,22 +82,24 @@ pub async fn enqueue_gpt_image_1_byok_text_to_image_webhook<V: IntoUrl>(
   args: GptTextToImageByokArgs<'_, V>
 ) -> Result<WebhookResponse, FalErrorPlus> {
 
+  let req = args.request;
+
   // auto, 1024x1024, 1536x1024, 1024x1536
-  let image_size = match args.image_size {
+  let image_size = match req.image_size {
     GptTextToImageSize::Auto => "auto",
     GptTextToImageSize::Square => "1024x1024",
     GptTextToImageSize::Horizontal => "1536x1024",
     GptTextToImageSize::Vertical => "1024x1536",
   };
 
-  let quality = match args.quality {
+  let quality = match req.quality {
     GptTextToImageQuality::Auto => "auto",
     GptTextToImageQuality::Low => "low",
     GptTextToImageQuality::Medium => "medium",
     GptTextToImageQuality::High => "high",
   };
 
-  let num_images = match args.num_images {
+  let num_images = match req.num_images {
     GptTextToImageNumImages::One => 1,
     GptTextToImageNumImages::Two => 2,
     GptTextToImageNumImages::Three => 3,
@@ -101,7 +107,7 @@ pub async fn enqueue_gpt_image_1_byok_text_to_image_webhook<V: IntoUrl>(
   };
 
   let request = GptImage1TextToImageInput {
-    prompt: args.prompt.to_string(),
+    prompt: req.prompt,
     image_size: image_size.to_string(),
     num_images,
     quality: quality.to_string(),
@@ -122,7 +128,8 @@ mod tests {
   use crate::creds::open_ai_api_key::OpenAiApiKey;
   use crate::requests::webhook::image::text::enqueue_gpt_image_1_byok_text_to_image_webhook::{
     enqueue_gpt_image_1_byok_text_to_image_webhook, GptTextToImageByokArgs,
-    GptTextToImageNumImages, GptTextToImageQuality, GptTextToImageSize,
+    GptTextToImageByokRequest, GptTextToImageNumImages, GptTextToImageQuality,
+    GptTextToImageSize,
   };
   use errors::AnyhowResult;
   use std::fs::read_to_string;
@@ -138,10 +145,12 @@ mod tests {
     let openai_api_key = OpenAiApiKey::from_str(&openai_secret);
 
     let args = GptTextToImageByokArgs {
-      prompt: "an anime girl riding on the back of a t-rex",
-      image_size: GptTextToImageSize::Horizontal,
-      num_images: GptTextToImageNumImages::One,
-      quality: GptTextToImageQuality::High,
+      request: GptTextToImageByokRequest {
+        prompt: "an anime girl riding on the back of a t-rex".to_string(),
+        image_size: GptTextToImageSize::Horizontal,
+        num_images: GptTextToImageNumImages::One,
+        quality: GptTextToImageQuality::High,
+      },
       api_key: &fal_api_key,
       openai_api_key: &openai_api_key,
       webhook_url: "https://example.com/webhook",

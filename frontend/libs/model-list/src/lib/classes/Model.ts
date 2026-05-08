@@ -3,7 +3,12 @@ import { ModelCategory, ModelConfig } from "../legacy/ModelConfig.js";
 import { ModelTag } from "./metadata/ModelTag.js";
 import { GenerationProvider } from "@storyteller/api-enums";
 
-export type ModelKind = "model" | "image_model" | "video_model" | "gaussian_model";
+export type ModelKind =
+  | "model"
+  | "image_model"
+  | "video_model"
+  | "gaussian_model"
+  | "3d_object_model";
 
 // NB: Do not create instances of this class directly, use subclasses.
 export class Model {
