@@ -1,9 +1,9 @@
 use serde_json::Value;
 
-use crate::webhook_api::raw::webhook_error_type::WebhookErrorType;
-use crate::webhook_api::hydrated::hydrated_webhook_contents::{ErrorData, PayloadErrorData, WebhookSuccessData, HydratedWebhookContents};
-use crate::webhook_api::raw::raw_webhook_payload::{RawWebhookPayload, RawWebhookStatus};
-use crate::webhook_api::hydrated::success_case_extractors::extract_contents_from_payload;
+use crate::webhook_payload::raw::webhook_error_type::WebhookErrorType;
+use crate::webhook_payload::hydrated::hydrated_webhook_contents::{ErrorData, PayloadErrorData, WebhookSuccessData, HydratedWebhookContents};
+use crate::webhook_payload::raw::raw_webhook_payload::{RawWebhookPayload, RawWebhookStatus};
+use crate::webhook_payload::hydrated::success_case_extractors::extract_contents_from_payload;
 
 /// Parse the inner payload of a FAL webhook into one of three cases.
 ///

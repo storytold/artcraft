@@ -7,7 +7,7 @@ pub mod extract_thumbnail_payload;
 
 use serde_json::Value;
 
-use crate::webhook_api::hydrated::hydrated_webhook_contents::ExtractedContents;
+use crate::webhook_payload::hydrated::hydrated_webhook_contents::ExtractedContents;
 
 /// Try to extract known content keys from a success payload.
 ///

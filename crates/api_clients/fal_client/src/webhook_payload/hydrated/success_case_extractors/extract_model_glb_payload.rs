@@ -1,6 +1,6 @@
 use serde_json::{Map, Value};
 
-use crate::webhook_api::hydrated::hydrated_webhook_contents::ModelGlbData;
+use crate::webhook_payload::hydrated::hydrated_webhook_contents::ModelGlbData;
 
 /// Extract and deserialize the `model_glb` key from a webhook success payload.
 pub (crate) fn extract_model_glb(obj: &Map<String, Value>) -> Option<ModelGlbData> {
@@ -11,9 +11,9 @@ pub (crate) fn extract_model_glb(obj: &Map<String, Value>) -> Option<ModelGlbDat
 #[cfg(test)]
 mod tests {
   use super::*;
-  use crate::webhook_api::hydrate_webhook_contents::hydrate_webhook_contents;
-  use crate::webhook_api::hydrated::hydrated_webhook_contents::HydratedWebhookContents;
-  use crate::webhook_api::raw::raw_webhook_payload::RawWebhookPayload;
+  use crate::webhook_payload::hydrate_webhook_contents::hydrate_webhook_contents;
+  use crate::webhook_payload::hydrated::hydrated_webhook_contents::HydratedWebhookContents;
+  use crate::webhook_payload::raw::raw_webhook_payload::RawWebhookPayload;
 
   fn load_test_webhook(filename: &str) -> RawWebhookPayload {
     let path = format!("test_data/webhooks/{}", filename);

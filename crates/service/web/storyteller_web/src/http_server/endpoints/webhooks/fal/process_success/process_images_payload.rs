@@ -6,7 +6,7 @@ use bucket_paths::legacy::typified_paths::public::media_files::bucket_file_path:
 use enums::by_table::media_files::media_file_class::MediaFileClass;
 use enums::by_table::media_files::media_file_origin_category::MediaFileOriginCategory;
 use enums::by_table::media_files::media_file_type::MediaFileType;
-use fal_client::webhook_api::hydrated::hydrated_webhook_contents::ImagesData;
+use fal_client::webhook_payload::hydrated::hydrated_webhook_contents::ImagesData;
 use hashing::sha256::sha256_hash_bytes::sha256_hash_bytes;
 use images::encoding::webp_bytes_to_png_bytes::webp_bytes_to_png_bytes;
 use images::image_info::image_info::ImageInfo;

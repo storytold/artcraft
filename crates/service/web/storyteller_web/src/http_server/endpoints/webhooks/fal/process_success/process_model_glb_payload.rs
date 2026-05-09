@@ -7,7 +7,7 @@ use enums::by_table::media_files::media_file_class::MediaFileClass;
 use enums::by_table::media_files::media_file_engine_category::MediaFileEngineCategory;
 use enums::by_table::media_files::media_file_origin_category::MediaFileOriginCategory;
 use enums::by_table::media_files::media_file_type::MediaFileType;
-use fal_client::webhook_api::hydrated::hydrated_webhook_contents::{ModelGlbData, ThumbnailData};
+use fal_client::webhook_payload::hydrated::hydrated_webhook_contents::{ModelGlbData, ThumbnailData};
 use hashing::sha256::sha256_hash_bytes::sha256_hash_bytes;
 use log::{info, warn};
 use mysql_queries::queries::generic_inference::fal::get_inference_job_by_fal_id::FalJobDetails;

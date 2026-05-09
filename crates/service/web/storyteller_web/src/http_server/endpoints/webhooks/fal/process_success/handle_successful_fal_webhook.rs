@@ -1,6 +1,6 @@
 use actix_web::web::Json;
 use enums::by_table::debug_logs::debug_log_type::DebugLogType;
-use fal_client::webhook_api::hydrated::hydrated_webhook_contents::WebhookSuccessData;
+use fal_client::webhook_payload::hydrated::hydrated_webhook_contents::WebhookSuccessData;
 use http_server_common::response::response_success_helpers::SimpleGenericJsonSuccess;
 use log::{info, warn};
 use mysql_queries::queries::debug_logs::insert_debug_log::{insert_debug_log, InsertDebugLogArgs};

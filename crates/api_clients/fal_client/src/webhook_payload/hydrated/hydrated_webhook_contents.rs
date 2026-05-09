@@ -1,7 +1,7 @@
 use serde::Deserialize;
 use serde_json::Value;
 
-use crate::webhook_api::raw::webhook_error_type::WebhookErrorType;
+use crate::webhook_payload::raw::webhook_error_type::WebhookErrorType;
 
 /// The parsed inner payload of a FAL webhook.
 #[derive(Debug)]
