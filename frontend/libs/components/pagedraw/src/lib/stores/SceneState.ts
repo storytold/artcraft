@@ -1384,7 +1384,7 @@ export const useSceneStore = create<SceneState>((set, get, store) => ({
     // on completion (see imgBitmap.onload / onerror below).
     const myGen = ++baseImageLoadGen;
     if (!image) {
-      set({ baseImageInfo: null });
+      set({ baseImageInfo: null, baseImageBitmap: null });
       return;
     }
 

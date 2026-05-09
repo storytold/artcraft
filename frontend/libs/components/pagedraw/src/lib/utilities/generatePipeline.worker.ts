@@ -43,20 +43,17 @@ self.addEventListener("message", async (event: MessageEvent<WorkerRequest>) => {
       const ctx = ctxOf(canvas);
       if (req.baseBitmap) {
         ctx.drawImage(req.baseBitmap, 0, 0, req.width, req.height);
-        req.baseBitmap.close();
       } else {
         ctx.fillStyle = "white";
         ctx.fillRect(0, 0, req.width, req.height);
       }
       ctx.drawImage(req.markerBitmap, 0, 0, req.width, req.height);
-      req.markerBitmap.close();
       const blob = await canvas.convertToBlob({ type: "image/png" });
       post({ id: req.id, ok: true, type: "composite", blob });
     } else if (req.type === "mask") {
       const canvas = new OffscreenCanvas(req.width, req.height);
       const ctx = ctxOf(canvas);
       ctx.drawImage(req.markerBitmap, 0, 0, req.width, req.height);
-      req.markerBitmap.close();
       const blob = await canvas.convertToBlob({ type: "image/png" });
       const buffer = await blob.arrayBuffer();
       const bytes = new Uint8Array(buffer);
@@ -68,6 +65,16 @@ self.addEventListener("message", async (event: MessageEvent<WorkerRequest>) => {
       ok: false,
       error: err instanceof Error ? err.message : String(err),
     });
+  } finally {
+    // Always release transferred ImageBitmaps regardless of success/failure
+    // path. Without this, a throw mid-pipeline (e.g. an OOM during drawImage
+    // on a 4K canvas) would leak ~67MB of bitmap data per failed bake.
+    if (req.type === "composite") {
+      req.baseBitmap?.close();
+      req.markerBitmap.close();
+    } else if (req.type === "mask") {
+      req.markerBitmap.close();
+    }
   }
 });
 

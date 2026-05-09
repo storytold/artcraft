@@ -757,6 +757,16 @@ const PageDraw = ({ adapter }: PageDrawProps) => {
           return;
         }
 
+        // Defense in depth: the visual gate (PromptEditor's isDisabled) is the
+        // primary user-facing guard, but a programmatic dispatch or future
+        // alternate trigger could still land here while the bitmap for the
+        // current baseImageInfo isn't loaded yet. Bail rather than snapshot
+        // stale pixels.
+        if (!baseImageBitmap && !baseImageInfo?.isBlankCanvas) {
+          console.error("Base image bitmap not yet loaded");
+          return;
+        }
+
         const subscriberId: string =
           crypto?.randomUUID?.() ??
           `inpaint-${Date.now()}-${Math.random().toString(36).slice(2)}`;
@@ -870,6 +880,7 @@ const PageDraw = ({ adapter }: PageDrawProps) => {
       getMaskArrayBuffer,
       selectedImageModel,
       adapter,
+      baseImageBitmap,
       baseImageInfo,
       addPendingGeneration,
       useSystemPrompt,

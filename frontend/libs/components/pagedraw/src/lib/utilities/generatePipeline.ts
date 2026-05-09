@@ -39,6 +39,24 @@ const ensureWorker = (): Worker => {
   return worker;
 };
 
+// postMessage can throw synchronously (data not structured-cloneable, a
+// transferable already detached, etc). Without this, the pendingRequests
+// entry would stay registered forever and the returned Promise would hang.
+const postOrReject = (
+  worker: Worker,
+  id: number,
+  message: unknown,
+  transfer: Transferable[],
+  reject: (err: Error) => void,
+): void => {
+  try {
+    worker.postMessage(message, transfer);
+  } catch (err) {
+    pendingRequests.delete(id);
+    reject(err instanceof Error ? err : new Error(String(err)));
+  }
+};
+
 export const compositeInWorker = (params: {
   markerBitmap: ImageBitmap;
   baseBitmap?: ImageBitmap;
@@ -60,7 +78,13 @@ export const compositeInWorker = (params: {
       },
       reject,
     });
-    worker.postMessage({ id, type: "composite", ...params }, transfer);
+    postOrReject(
+      worker,
+      id,
+      { id, type: "composite", ...params },
+      transfer,
+      reject,
+    );
   });
 };
 
@@ -82,6 +106,12 @@ export const maskInWorker = (params: {
       },
       reject,
     });
-    worker.postMessage({ id, type: "mask", ...params }, [params.markerBitmap]);
+    postOrReject(
+      worker,
+      id,
+      { id, type: "mask", ...params },
+      [params.markerBitmap],
+      reject,
+    );
   });
 };
