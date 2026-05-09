@@ -1,15 +1,12 @@
 import React, { useContext, useEffect, useRef } from "react";
 import { useSignals } from "@preact/signals-react/runtime";
-import { TopBar } from "~/components";
 import { Controls3D } from "./comps/Controls3D";
 import { ControlsTopButtons } from "./comps/ControlsTopButtons";
-import { authentication, pageHeight, pageWidth } from "~/signals";
-import { TabbedPages } from "./TabbedPages";
+import { pageHeight, pageWidth } from "~/signals";
 
 import {
   CameraAspectRatio,
   ControlPanelSceneObject,
-  DomLevels,
   EditorCanvas,
   EngineContext,
   FocalLengthDisplay,
@@ -36,7 +33,7 @@ import { LoadingDots } from "@storyteller/ui-loading";
 
 import { uploadImage } from "~/components/reusable/UploadModalMedia/uploadImage";
 import { uploadPlaneFromMediaToken } from "~/components/reusable/UploadModalMedia/uploadPlane";
-import { AssetType, AUTH_STATUS } from "~/enums";
+import { AssetType } from "~/enums";
 import { v4 as uuidv4 } from "uuid";
 import { UploaderState } from "~/models";
 import {
@@ -50,11 +47,7 @@ import {
   useSelectedImageModel,
   useSelectedProviderForModel,
   ClassyModelSelector,
-  //ProviderSelector,
-  //PROVIDER_LOOKUP_BY_PAGE,
 } from "@storyteller/ui-model-selector";
-import { LoginModal, useLoginModalStore } from "@storyteller/ui-login-modal";
-import { useTabStore } from "../Stores/TabState";
 import { ImageModel } from "@storyteller/model-list";
 import { HelpMenuButton } from "@storyteller/ui-help-menu";
 import {
@@ -67,16 +60,7 @@ const PAGE_ID: ModelPage = ModelPage.Stage3D;
 
 export const PageEditor = () => {
   useSignals();
-  const { triggerRecheck } = useLoginModalStore();
-  const { status } = authentication;
 
-  useEffect(() => {
-    if (status.value === AUTH_STATUS.LOGGED_OUT) {
-      triggerRecheck();
-    }
-  }, [status.value, triggerRecheck]);
-
-  const tabStore = useTabStore();
   const camAspect = usePageSceneStore((s) => s.cameraAspectRatio);
   const outlinerShowing = usePageSceneStore((s) => s.outlinerShowing);
   const editorLoader = usePageSceneStore((s) => s.editorLoader);
@@ -304,280 +288,193 @@ export const PageEditor = () => {
     didColdSyncRef.current = true;
   }, [editorEngine, selectedImageModel]);
 
-  // MOVE THIS don't throw this in here
-  // Image drop from gallery/library modal logic
+  // Gallery → 3D scene drop handler. PageEditor now only mounts on the
+  // 3D tab, so we don't need the previous activeTabId branch — the
+  // subscription is implicitly 3D-only by virtue of where it lives.
   useEffect(() => {
-    let handler: unknown;
-    // 3D Drag and Drop Logic
-
-    if (tabStore.activeTabId === "3D") {
-      handler = onImageDrop(
-        (item: GalleryItem, position: { x: number; y: number }) => {
-          (async () => {
-            if (!editorEngine) {
-              console.warn("Cannot drop asset: editor engine not ready");
-              return;
-            }
-            const worldPosition = pickDropPosition(
-              {
-                getCamera: () => editorEngine.cameraController.camera,
-                getCanvas: () => editorEngine.renderer?.domElement,
-                getRaycastTargets: () =>
-                  editorEngine.activeScene.scene.children,
-                removeTransformControls: () =>
-                  editorEngine.utils.removeTransformControls(true),
-              },
-              position.x,
-              position.y,
-            );
-            try {
-              if (item.mediaClass === "dimensional") {
-                const isCharacter = item.assetType === "character";
-                const mediaItem: MediaItem = {
-                  version: 1,
-                  type: isCharacter ? AssetType.CHARACTER : AssetType.OBJECT,
-                  media_id: item.id || uuidv4(),
-                  name: item.label || (isCharacter ? "Character" : "3D Object"),
-                };
-                if (isCharacter) {
-                  await addCharacter(editorEngine, mediaItem, worldPosition);
-                } else {
-                  await addObject(editorEngine, mediaItem, worldPosition);
-                }
+    const handler = onImageDrop(
+      (item: GalleryItem, position: { x: number; y: number }) => {
+        (async () => {
+          if (!editorEngine) {
+            console.warn("Cannot drop asset: editor engine not ready");
+            return;
+          }
+          const worldPosition = pickDropPosition(
+            {
+              getCamera: () => editorEngine.cameraController.camera,
+              getCanvas: () => editorEngine.renderer?.domElement,
+              getRaycastTargets: () =>
+                editorEngine.activeScene.scene.children,
+              removeTransformControls: () =>
+                editorEngine.utils.removeTransformControls(true),
+            },
+            position.x,
+            position.y,
+          );
+          try {
+            if (item.mediaClass === "dimensional") {
+              const isCharacter = item.assetType === "character";
+              const mediaItem: MediaItem = {
+                version: 1,
+                type: isCharacter ? AssetType.CHARACTER : AssetType.OBJECT,
+                media_id: item.id || uuidv4(),
+                name: item.label || (isCharacter ? "Character" : "3D Object"),
+              };
+              if (isCharacter) {
+                await addCharacter(editorEngine, mediaItem, worldPosition);
               } else {
-                const mediaItem: MediaItem = {
-                  version: 1,
-                  type: AssetType.OBJECT,
-                  media_id: item.id || uuidv4(),
-                  name: item.label || "Image Plane",
-                };
                 await addObject(editorEngine, mediaItem, worldPosition);
-
-                await uploadPlaneFromMediaToken({
-                  title: item.label || "Image Plane",
-                  mediaToken: item.id,
-                  progressCallback: (state: UploaderState) => {
-                    if (state.status)
-                      console.log("Upload status:", state.status);
-                  },
-                });
               }
-            } catch (err) {
-              console.error("Failed to add object to scene:", err);
-            }
-          })();
-        },
-      );
+            } else {
+              const mediaItem: MediaItem = {
+                version: 1,
+                type: AssetType.OBJECT,
+                media_id: item.id || uuidv4(),
+                name: item.label || "Image Plane",
+              };
+              await addObject(editorEngine, mediaItem, worldPosition);
 
-      // 2D Drag and Drop Logic
-    } else if (tabStore.activeTabId === "2D") {
-      handler = onImageDrop(
-        (item: GalleryItem, position: { x: number; y: number }) => {
-          console.log("2D Drop debug (event):", {
-            item,
-            position,
-          });
-
-          // Find the main Konva canvas element - get the first canvas (left panel)
-          const canvasElements = document.querySelectorAll("canvas");
-          const canvasElement = canvasElements[0]; // Get the main drawing canvas (left panel)
-          if (!canvasElement) {
-            console.error("Could not find canvas element for 2D drop");
-            return;
-          }
-
-          const rect = canvasElement.getBoundingClientRect();
-
-          // Convert screen coordinates to canvas coordinates
-          const canvasX = position.x - rect.left;
-          const canvasY = position.y - rect.top;
-
-          // Ensure the drop position is within canvas bounds
-          if (
-            canvasX < 0 ||
-            canvasY < 0 ||
-            canvasX > rect.width ||
-            canvasY > rect.height
-          ) {
-            console.log("Drop position outside canvas bounds");
-            return;
-          }
-
-          console.log("Canvas drop position:", { canvasX, canvasY });
-
-          (async () => {
-            try {
-              // event that PageDraw listens for
-              const dropEvent = new CustomEvent("gallery-2d-drop", {
-                detail: {
-                  item,
-                  canvasPosition: { x: canvasX, y: canvasY },
+              await uploadPlaneFromMediaToken({
+                title: item.label || "Image Plane",
+                mediaToken: item.id,
+                progressCallback: (state: UploaderState) => {
+                  if (state.status)
+                    console.log("Upload status:", state.status);
                 },
               });
-              window.dispatchEvent(dropEvent);
-            } catch (err) {
-              console.error("Failed to add image to 2D canvas:", err);
             }
-          })();
-        },
-      );
-    }
+          } catch (err) {
+            console.error("Failed to add object to scene:", err);
+          }
+        })();
+      },
+    );
 
     return () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       if (handler) removeImageDropListener(handler as any);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tabStore.activeTabId, editorEngine]);
+  }, [editorEngine]);
 
   return (
-    <div className="w-screen">
-      <TopBar
-        loginSignUpPressed={() => {
-          console.log("PRESSED");
-          triggerRecheck();
-        }}
-        pageName="Edit Scene"
-      />
-      <LoginModal
-        videoSrc2D="/resources/videos/artcraft-canvas-demo.mp4"
-        videoSrc3D="/resources/videos/artcraft-3d-demo.mp4"
-        onOpenChange={(isOpen: boolean) => {
-          if (isOpen) {
-            disableHotkeyInput(DomLevels.DIALOGUE);
-          } else {
-            enableHotkeyInput(DomLevels.DIALOGUE);
-          }
-        }}
-        onArtCraftAuthSuccess={(userInfo: any) => {
-          authentication.status.value = AUTH_STATUS.LOGGED_IN;
-          authentication.userInfo.value = userInfo;
-        }}
-      />
-      {tabStore.activeTabId == "3D" && (
-        <div>
-          <OnboardingHelper />
+    <div>
+      <OnboardingHelper />
 
-          <div
-            className="relative flex w-screen"
-            style={{ height: "calc(100vh - 68px)" }}
-          >
-            {/* Engine section/side panel */}
+      <div
+        className="relative flex w-screen"
+        style={{ height: "calc(100vh - 68px)" }}
+      >
+        {/* Engine section/side panel */}
+        <div
+          id="engine-n-panels-wrapper"
+          className="flex"
+          style={{
+            height,
+          }}
+        >
+          <div className="relative w-full overflow-hidden bg-transparent">
+            <SceneContainer>
+              <EditorCanvas />
+            </SceneContainer>
+
+            {/* Focal Length Display */}
+            <FocalLengthDisplay />
+
+            {/* Pose Mode Selector */}
+            <PoseModeSelector />
+
+            {/* Top controls */}
             <div
-              id="engine-n-panels-wrapper"
-              className="flex"
-              style={{
-                height,
-              }}
+              className="absolute left-0 top-0 w-full"
+              onClick={handleOverlayClick}
             >
-              <div className="relative w-full overflow-hidden bg-transparent">
-                <SceneContainer>
-                  <EditorCanvas />
-                </SceneContainer>
-
-                {/* Focal Length Display */}
-                <FocalLengthDisplay />
-
-                {/* Pose Mode Selector */}
-                <PoseModeSelector />
-
-                {/* Top controls */}
-                <div
-                  className="absolute left-0 top-0 w-full"
-                  onClick={handleOverlayClick}
-                >
-                  <div className="grid grid-cols-3 gap-4">
-                    <ControlsTopButtons />
-                    <Controls3D />
-                  </div>
-                </div>
-
-                {/* Bottom controls */}
-                <div
-                  className="absolute bottom-0 left-0"
-                  style={{
-                    width: pageWidth.value,
-                  }}
-                  onClick={handleOverlayClick}
-                >
-                  <div
-                    className="absolute bottom-20 mb-4 ml-4 flex origin-bottom-left flex-col gap-2"
-                    style={{ transform: `scale(${getScale()})` }}
-                  >
-                    <Outliner />
-                    <PreviewEngineCamera />
-                  </div>
-
-                  <ControlPanelSceneObject />
-                </div>
-
-                <PromptBox3D
-                  cameras={cameras}
-                  cameraAspectRatio={camAspect}
-                  disableHotkeyInput={disableHotkeyInput}
-                  enableHotkeyInput={enableHotkeyInput}
-                  gridVisibility={gridVisible}
-                  setGridVisibility={(visible: boolean) =>
-                    editorEngine?.bus.emit(
-                      new GridVisibleChangedEvent(visible),
-                    )
-                  }
-                  selectedCameraId={selectedCameraId}
-                  deleteCamera={deleteCamera}
-                  focalLengthDragging={focalLengthDragging}
-                  setFocalLengthDragging={setFocalLengthDragging}
-                  isPromptBoxFocused={isPromptBoxFocused}
-                  setIsPromptBoxFocused={setIsPromptBoxFocused}
-                  uploadImage={uploadImage}
-                  handleCameraSelect={handleCameraSelect}
-                  handleAddCamera={handleAddCamera}
-                  handleCameraNameChange={handleCameraNameChange}
-                  handleCameraFocalLengthChange={handleCameraFocalLengthChange}
-                  onAspectRatioSelect={onAspectRatioSelect}
-                  selectedImageModel={selectedImageModel}
-                  selectedProvider={selectedProvider}
-                  credits={imageCredits}
-                  setEnginePrompt={(prompt) => {
-                    console.log("setEnginePrompt", prompt);
-                    if (!editorEngine) {
-                      console.log("editorEngine is not available");
-                      return;
-                    }
-                    editorEngine!.positive_prompt = prompt;
-                  }}
-                  snapshotCurrentFrame={editorEngine?.snapShotOfCurrentFrame.bind(
-                    editorEngine,
-                  )}
-                />
-
-                <LoadingDots
-                  className="absolute left-0 top-0 z-50"
-                  isShowing={editorLoader.isShowing}
-                  type="bricks"
-                  message={editorLoader.message}
-                />
-
-                <div className="absolute bottom-6 left-6 z-20 flex items-center gap-3">
-                  <ClassyModelSelector
-                    items={STAGE_3D_PAGE_MODEL_LIST}
-                    page={PAGE_ID}
-                    panelTitle="Select Model"
-                    panelClassName="min-w-[300px]"
-                    buttonClassName="bg-transparent p-0 text-lg hover:bg-transparent text-white/80 hover:text-white"
-                    showIconsInList
-                    triggerLabel="Model"
-                  />
-                </div>
-                <div className="absolute bottom-6 right-6 z-20 flex items-center gap-2">
-                  <CostCalculatorButton modelPage={PAGE_ID} />
-                  <HelpMenuButton />
-                </div>
+              <div className="grid grid-cols-3 gap-4">
+                <ControlsTopButtons />
+                <Controls3D />
               </div>
+            </div>
+
+            {/* Bottom controls */}
+            <div
+              className="absolute bottom-0 left-0"
+              style={{
+                width: pageWidth.value,
+              }}
+              onClick={handleOverlayClick}
+            >
+              <div
+                className="absolute bottom-20 mb-4 ml-4 flex origin-bottom-left flex-col gap-2"
+                style={{ transform: `scale(${getScale()})` }}
+              >
+                <Outliner />
+                <PreviewEngineCamera />
+              </div>
+
+              <ControlPanelSceneObject />
+            </div>
+
+            <PromptBox3D
+              cameras={cameras}
+              cameraAspectRatio={camAspect}
+              disableHotkeyInput={disableHotkeyInput}
+              enableHotkeyInput={enableHotkeyInput}
+              gridVisibility={gridVisible}
+              setGridVisibility={(visible: boolean) =>
+                editorEngine?.bus.emit(new GridVisibleChangedEvent(visible))
+              }
+              selectedCameraId={selectedCameraId}
+              deleteCamera={deleteCamera}
+              focalLengthDragging={focalLengthDragging}
+              setFocalLengthDragging={setFocalLengthDragging}
+              isPromptBoxFocused={isPromptBoxFocused}
+              setIsPromptBoxFocused={setIsPromptBoxFocused}
+              uploadImage={uploadImage}
+              handleCameraSelect={handleCameraSelect}
+              handleAddCamera={handleAddCamera}
+              handleCameraNameChange={handleCameraNameChange}
+              handleCameraFocalLengthChange={handleCameraFocalLengthChange}
+              onAspectRatioSelect={onAspectRatioSelect}
+              selectedImageModel={selectedImageModel}
+              selectedProvider={selectedProvider}
+              credits={imageCredits}
+              setEnginePrompt={(prompt) => {
+                console.log("setEnginePrompt", prompt);
+                if (!editorEngine) {
+                  console.log("editorEngine is not available");
+                  return;
+                }
+                editorEngine!.positive_prompt = prompt;
+              }}
+              snapshotCurrentFrame={editorEngine?.snapShotOfCurrentFrame.bind(
+                editorEngine,
+              )}
+            />
+
+            <LoadingDots
+              className="absolute left-0 top-0 z-50"
+              isShowing={editorLoader.isShowing}
+              type="bricks"
+              message={editorLoader.message}
+            />
+
+            <div className="absolute bottom-6 left-6 z-20 flex items-center gap-3">
+              <ClassyModelSelector
+                items={STAGE_3D_PAGE_MODEL_LIST}
+                page={PAGE_ID}
+                panelTitle="Select Model"
+                panelClassName="min-w-[300px]"
+                buttonClassName="bg-transparent p-0 text-lg hover:bg-transparent text-white/80 hover:text-white"
+                showIconsInList
+                triggerLabel="Model"
+              />
+            </div>
+            <div className="absolute bottom-6 right-6 z-20 flex items-center gap-2">
+              <CostCalculatorButton modelPage={PAGE_ID} />
+              <HelpMenuButton />
             </div>
           </div>
         </div>
-      )}
-      <TabbedPages />
+      </div>
     </div>
   );
 };

@@ -1,6 +1,6 @@
 import type { HeadersFunction } from "@remix-run/deno";
 import { withProtectionRoute } from "~/hoc/withProtectedRoute";
-import { PageScene } from "~/pages/PageScene";
+import { MainApp } from "~/pages/MainApp";
 
 // NB(bt): Netlify's custom directives cannot set headers for pages served by Remix,
 // so we must specify them here instead. Netlify header rules (in either _headers or
@@ -28,6 +28,6 @@ export const headers: HeadersFunction = ({
   // "Cross-Origin-Opener-Policy": "same-origin",
 });
 
-const Index = withProtectionRoute(() => <PageScene />);
+const Index = withProtectionRoute(() => <MainApp />);
 
 export default Index;

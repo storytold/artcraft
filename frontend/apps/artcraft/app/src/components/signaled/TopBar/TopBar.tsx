@@ -82,7 +82,6 @@ import toast from "react-hot-toast";
 import { APP_DESCRIPTORS, goToApp } from "~/config/appMenu";
 import { useStoryboardStore } from "~/pages/PageStoryboard";
 import { useSceneStore } from "@storyteller/ui-pagedraw";
-import { set3DPageMounted } from "~/pages/PageScene/engineLifecycle";
 import { usePageSceneStore } from "@storyteller/ui-pagescene";
 import { useImageTo3DStore } from "~/pages/PageImageTo3DObject/ImageTo3DStore";
 import { useImageTo3DWorldStore } from "~/pages/PageImageTo3DWorld/ImageTo3DWorldStore";
@@ -658,7 +657,6 @@ export const TopBar = ({ pageName }: Props) => {
                 setDisableSwitcher(true);
 
                 if (tabId === "APPS") {
-                  set3DPageMounted(false);
                   useTabStore.getState().setActiveTab("APPS");
                   setTimeout(() => {
                     switcherThrottle.current = false;
@@ -667,12 +665,8 @@ export const TopBar = ({ pageName }: Props) => {
                   return;
                 }
 
-                // Disable 3d engine to prevent memory leak.
-                if (tabId === "3D") {
-                  set3DPageMounted(true);
-                } else {
-                  set3DPageMounted(false);
-                }
+                // PageScene's mount/unmount in MainApp drives the
+                // engine lifecycle now — no manual flag flips needed.
                 useTabStore.getState().setActiveTab(tabId as TabId);
                 setTimeout(() => {
                   // Clear the throttle

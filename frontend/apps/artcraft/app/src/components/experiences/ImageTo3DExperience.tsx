@@ -27,7 +27,6 @@ import { v4 as uuidv4 } from "uuid";
 import { useTabStore } from "../../pages/Stores/TabState";
 import { addObject, getActiveEditor } from "@storyteller/ui-pagescene";
 import type { MediaItem } from "@storyteller/ui-pagescene";
-import { set3DPageMounted } from "../../pages/PageScene/engineLifecycle";
 import { AssetType } from "~/enums";
 import { SPLAT_MODELS } from "@storyteller/model-list";
 import {
@@ -974,7 +973,6 @@ export const ImageTo3DExperience = ({
                     variant="primary"
                     className="min-w-[120px]"
                     onClick={() => {
-                      set3DPageMounted(true);
                       useTabStore.getState().setActiveTab("3D");
                       setTimeout(() => {
                         const mediaItem = {

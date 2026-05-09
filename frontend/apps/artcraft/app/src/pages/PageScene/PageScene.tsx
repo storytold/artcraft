@@ -1,138 +1,50 @@
+// 3D editor route — mounted by MainApp's tab switch only when
+// activeTabId === "3D". React mount/unmount drives the engine
+// lifecycle: provider mounts → engine constructs once canvas refs
+// are populated; provider unmounts → engine tears down via the
+// EngineProvider cleanup. The host's tab cache (useTabStore) holds
+// the serialized scene JSON across mount/unmount so we don't lose
+// scene state when the user briefly visits another tab.
+
+import { useEffect } from "react";
 import {
   DragComponent,
   EditorLoadingBar,
   EngineProvider,
   PrecisionSelector,
+  usePageSceneStore,
 } from "@storyteller/ui-pagescene";
 import { useTabStore } from "~/pages/Stores/TabState";
-import { useActiveJobs } from "~/hooks/useActiveJobs";
-import { useBackgroundLoadingMedia } from "~/hooks/useBackgroundLoadingMedia";
-import { ErrorDialog } from "~/components";
-import { toast, Toaster } from "@storyteller/ui-toaster";
-import { useSignals } from "@preact/signals-react/runtime";
-import { useEffect, useState } from "react";
-import * as gpu from "detect-gpu";
-import { UsersApi } from "~/Classes/ApiManager";
 import { PageEditor } from "~/pages/PageScene/PageEditor";
-import { GalleryDragComponent } from "@storyteller/ui-gallery-modal";
-import {
-  PricingModal,
-  CreditsModal,
-  useCreditsModalStore,
-} from "@storyteller/ui-pricing-modal";
-import {
-  isActionReminderOpen,
-  actionReminderProps,
-  ActionReminderModal,
-} from "@storyteller/ui-action-reminder-modal";
-import { useFlashFileDownloadErrorEvent, useFlashUserInputErrorEvent, useMediaFileDeletedEvent } from "@storyteller/tauri-events";
-import { useGenerationCompleteEvent } from "@storyteller/tauri-events";
-import { useGenerationEnqueueFailureEvent } from "@storyteller/tauri-events";
-import { useGenerationEnqueueSuccessEvent } from "@storyteller/tauri-events";
-
-import { useGenerationFailedEvent } from "@storyteller/tauri-events";
-import { useTextToImageGenerationCompleteEvent } from "@storyteller/tauri-events";
-import { useTextToImageStore } from "~/pages/PageImage/TextToImageStore";
-import { SoundManager } from "@storyteller/soundboard";
 import { useTauriPageSceneAdapter } from "./useTauriPageSceneAdapter";
 
 export const PageScene = ({ sceneToken }: { sceneToken?: string }) => {
-  useSignals();
-  useActiveJobs();
-  useBackgroundLoadingMedia();
-
-  // Tab-cache plumbing lives at this layer (not inside EngineProvider).
-  // The provider only knows about its own React lifecycle; the host
-  // decides where the in-memory cache string lives. Reading the
-  // current value once on render is fine — the provider snapshots it
-  // on mount, and the cache is per-mount, not per-render.
+  // Tab-cache plumbing. The provider only knows about its own React
+  // lifecycle; the host decides where the in-memory cache string
+  // lives. Reading the current value once on render is fine — the
+  // provider snapshots it on mount, and the cache is per-mount.
   const tabStore = useTabStore();
   const cacheJsonString = tabStore.getTabData("3D") as string | undefined;
   const onSceneSerialized = (json: string) => {
     tabStore.updateTabData("3D", json);
   };
+
   const adapter = useTauriPageSceneAdapter({
     initialSceneToken: sceneToken,
     cacheJsonString,
     onSceneSerialized,
   });
 
-  // Credits modal state (must be before any early returns)
-  const { isOpen: isCreditsOpen, closeModal: closeCreditsModal } =
-    useCreditsModalStore();
-
-  const [validGpu, setValidGpu] = useState("unknown");
-
+  // The 3D-page-mounted flag is read by the engine's remountEngine()
+  // gate. With MainApp's tab switch, our React mount IS the signal —
+  // no need for callers (TopBar, appMenu, ImageTo3DExperience) to
+  // imperatively flip it.
   useEffect(() => {
-    const usersApi = new UsersApi();
-    const sessionResponse = usersApi.GetSession();
-    sessionResponse.then((result) => {
-      console.log(
-        `User Info | Username: ${result.data?.user?.username}, Token: ${result.data?.user?.user_token}`,
-      );
-    });
-  });
-
-  useEffect(() => {
-    const { getGPUTier } = gpu;
-    getGPUTier().then((gpuTier) => {
-      console.log("GPU tier", gpuTier);
-
-      let isValid = false;
-
-      const fps = gpuTier.fps || 0;
-
-      if (gpuTier.tier > 1) {
-        isValid = true;
-      }
-
-      if (fps > 15) {
-        isValid = true;
-      }
-
-      switch (gpuTier.gpu) {
-        case "apple gpu (Apple GPU)":
-          isValid = true;
-          break;
-        default:
-          break;
-      }
-
-      setValidGpu(isValid ? "valid" : "error");
-    });
-  });
-
-  useGenerationEnqueueSuccessEvent();
-  useGenerationEnqueueFailureEvent();
-  useGenerationCompleteEvent();
-
-  useGenerationFailedEvent();
-
-  const completeBatch = useTextToImageStore((s) => s.completeBatch);
-  useTextToImageGenerationCompleteEvent(async (event) => {
-    completeBatch(
-      event.generated_images || [],
-      event.maybe_frontend_subscriber_id,
-    );
-  });
-
-  useFlashUserInputErrorEvent(async (event) => {
-    console.log("Flash user input error event received:", event);
-    toast.error(event.message);
-  });
-
-  useFlashFileDownloadErrorEvent(async (event) => {
-    console.log("Flash file download error event received:", event);
-    toast.error(event.message || "File download failed");
-  });
-
-  useMediaFileDeletedEvent(async (event) => {
-    console.log("Media file deleted event received:", event);
-    await SoundManager.playFileDeleted();
-    toast.error("File deleted.");
-  });
-
-  const currentReminderModalProps = actionReminderProps.value;
+    usePageSceneStore.getState().set3DPageMounted(true);
+    return () => {
+      usePageSceneStore.getState().set3DPageMounted(false);
+    };
+  }, []);
 
   return (
     <EngineProvider
@@ -143,35 +55,8 @@ export const PageScene = ({ sceneToken }: { sceneToken?: string }) => {
     >
       <PageEditor />
       <DragComponent />
-      <GalleryDragComponent />
       <PrecisionSelector />
-      <ErrorDialog />
-
       <EditorLoadingBar />
-      <Toaster offsetTop={70} offsetRight={12} zIndex={9999} />
-
-      {currentReminderModalProps && (
-        <ActionReminderModal
-          isOpen={isActionReminderOpen.value}
-          onClose={currentReminderModalProps.onClose}
-          reminderType={currentReminderModalProps.reminderType}
-          onPrimaryAction={currentReminderModalProps.onPrimaryAction}
-          title={currentReminderModalProps.title}
-          message={currentReminderModalProps.message}
-          primaryActionText={currentReminderModalProps.primaryActionText}
-          secondaryActionText={currentReminderModalProps.secondaryActionText}
-          onSecondaryAction={currentReminderModalProps.onSecondaryAction}
-          isLoading={currentReminderModalProps.isLoading}
-          openAiLogo={currentReminderModalProps.openAiLogo}
-          primaryActionIcon={currentReminderModalProps.primaryActionIcon}
-          primaryActionBtnClassName={
-            currentReminderModalProps.primaryActionBtnClassName
-          }
-        />
-      )}
-
-      <PricingModal />
-      <CreditsModal isOpen={isCreditsOpen} onClose={closeCreditsModal} />
     </EngineProvider>
   );
 };
