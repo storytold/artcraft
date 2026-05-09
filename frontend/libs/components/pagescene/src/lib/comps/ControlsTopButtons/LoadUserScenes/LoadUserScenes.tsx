@@ -1,73 +1,57 @@
 import {
   useCallback,
+  useContext,
   useEffect,
   useLayoutEffect,
   useRef,
   useState,
 } from "react";
 import dayjs from "dayjs";
-import type { MediaInfo } from "@storyteller/ui-pagescene";
-import { FilterEngineCategories, ToastTypes } from "~/enums";
-import { addToast } from "~/signals";
-import { ScenePicker, SceneTypes } from "../ScenePicker";
 import { LoadingSpinner } from "@storyteller/ui-loading-spinner";
 import { Label } from "@storyteller/ui-label";
-import { MediaFilesApi } from "~/Classes/ApiManager/MediaFilesApi";
+import { EngineContext } from "../../../contexts/EngineContext/EngineContext";
+import { FilterEngineCategories, ToastTypes } from "../../../enums";
+import type { MediaInfo } from "../../../models";
+import { ScenePicker, SceneTypes } from "../ScenePicker";
 
 interface LoadSceneProps {
   onSceneSelect: (token: string) => void;
 }
 
-export enum FetchStatus {
-  paused,
-  // ready triggers a new fetch
-  ready,
-  in_progress,
-  success,
-  error,
-}
-
-export enum Filters {
-  Featured,
-  Mine,
-  Bookmarked,
-}
-
 export const LoadUserScenes = ({ onSceneSelect }: LoadSceneProps) => {
+  const editor = useContext(EngineContext);
   const [scenes, setScenes] = useState<SceneTypes[] | undefined>(undefined);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [bottomGradientOpacity, setBottomGradientOpacity] = useState(1);
 
   const getScenesByUser = useCallback(async () => {
-    const modMediaInfoToScenes = (results: MediaInfo[]) =>
-      results.map((scene: MediaInfo) => ({
-        token: scene.token,
-        name: scene.maybe_title ?? "Untitled",
-        updated_at: dayjs(scene.updated_at).format("MMM D, YYYY HH:mm:ss"),
-        thumbnail: scene.cover_image.maybe_cover_image_public_bucket_path
-          ? scene.cover_image.maybe_cover_image_public_bucket_path
-          : undefined,
+    if (!editor) return;
+    const modMediaInfoToScenes = (results: MediaInfo[]): SceneTypes[] =>
+      results.map((s) => ({
+        token: s.token,
+        name: s.maybe_title ?? "Untitled",
+        updated_at: dayjs(s.updated_at).format("MMM D, YYYY HH:mm:ss"),
+        thumbnail: s.cover_image.maybe_cover_image_public_bucket_path
+          ? s.cover_image.maybe_cover_image_public_bucket_path
+          : "",
       }));
 
-    const mediaFilesApi = new MediaFilesApi();
-    const response = await mediaFilesApi.ListUserMediaFiles({
-      filter_engine_categories: [FilterEngineCategories.SCENE],
+    const response = await editor.adapter.listUserMediaFiles({
+      pageSize: 100,
+      filterEngineCategories: [FilterEngineCategories.SCENE],
     });
     if (response.success && response.data) {
       setScenes(modMediaInfoToScenes(response.data));
       return;
     }
-    addToast(
+    editor.adapter.showToast(
       ToastTypes.ERROR,
       response.errorMessage || "Unknown Error in Loading User Scenes",
     );
-  }, []);
+  }, [editor]);
 
   useEffect(() => {
-    if (scenes) {
-      //only call once on mount
-      return;
-    }
+    if (scenes) return;
     getScenesByUser();
   }, [scenes, getScenesByUser]);
 
@@ -81,7 +65,6 @@ export const LoadUserScenes = ({ onSceneSelect }: LoadSceneProps) => {
       const atBottom =
         element.scrollHeight - element.scrollTop <= element.clientHeight + 1;
       const hasOverflow = element.scrollHeight > element.clientHeight;
-
       setBottomGradientOpacity(hasOverflow && !atBottom ? 1 : 0);
     }
   };
@@ -92,12 +75,10 @@ export const LoadUserScenes = ({ onSceneSelect }: LoadSceneProps) => {
       if (element) {
         handleScroll();
         element.addEventListener("scroll", handleScroll);
-
-        return () => {
-          element.removeEventListener("scroll", handleScroll);
-        };
+        return () => element.removeEventListener("scroll", handleScroll);
       }
     }
+    return undefined;
   }, [scenes]);
 
   return (

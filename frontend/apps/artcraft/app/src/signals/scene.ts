@@ -1,4 +1,5 @@
 import { signal } from "@preact/signals-core";
+import { usePageSceneStore } from "@storyteller/ui-pagescene";
 
 export interface SceneSignal {
   isInitializing?: boolean;
@@ -16,13 +17,24 @@ export const scene = signal<SceneSignal>({
 });
 
 export const signalScene = (data: SceneSignal) => {
-  scene.value = {
+  const next = {
     ...data,
     isInitializing: false,
     isModified: true,
     //TODO: MILES: implement flagging of isModified
     // from editor side, and take this out after
   };
+  scene.value = next;
+  // Mirror into the lib's PageSceneStore so ControlsTopButtons (and
+  // any other lib component) can read scene metadata reactively
+  // without depending on the host's signal system.
+  usePageSceneStore.getState().setSceneMeta({
+    title: next.title,
+    token: next.token,
+    ownerToken: next.ownerToken,
+    isModified: next.isModified,
+    isInitializing: next.isInitializing,
+  });
 };
 
 export const getSceneSignals = (): SceneSignal => {

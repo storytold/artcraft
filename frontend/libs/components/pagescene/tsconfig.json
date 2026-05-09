@@ -6,6 +6,9 @@
       "path": "../button-icon"
     },
     {
+      "path": "../loading-spinner"
+    },
+    {
       "path": "../label"
     },
     {

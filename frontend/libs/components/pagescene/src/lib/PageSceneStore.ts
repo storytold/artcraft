@@ -13,6 +13,17 @@ import { Simple3DVector } from "./datastructures/common";
 
 export type { Camera, FocalLengthDragging };
 
+// Scene metadata — what host tracks in its `signalScene`. Mirrored
+// into the store so ControlsTopButtons (lib-resident) can read it
+// reactively. Host calls `setSceneMeta` whenever its signal changes.
+export interface SceneMeta {
+  title: string | undefined;
+  token: string | undefined;
+  ownerToken: string | undefined;
+  isModified: boolean | undefined;
+  isInitializing: boolean;
+}
+
 export type SceneObjectKind = "object" | "character" | "shape";
 
 export interface SceneObject {
@@ -164,6 +175,14 @@ interface PageSceneState {
   is3DEditorInitialized: boolean;
   is3DSceneLoaded: boolean;
 
+  // scene metadata — title/token/owner/dirty state. Mirrors what the
+  // host's signalScene tracks so ControlsTopButtons (lib-resident)
+  // can read it reactively without depending on host signals.
+  sceneMeta: SceneMeta;
+  // Current logged-in user (read from host auth signal). Used for
+  // ownership permission checks in ControlsTopButtons.
+  currentUserToken: string | undefined;
+
   // canvas DOM refs (set by canvas components on mount; consumed by
   // the engine + hooks)
   sceneContainerEl: HTMLDivElement | null;
@@ -245,6 +264,12 @@ interface PageSceneState {
   setIs3DEditorInitialized: (initialized: boolean) => void;
   setIs3DSceneLoaded: (loaded: boolean) => void;
 
+  // scene metadata + auth — driven by host via lifecycle effects in
+  // the host wrapper (e.g. apps/.../PageScene.tsx mirrors signalScene
+  // and authentication.userInfo into these).
+  setSceneMeta: (meta: Partial<SceneMeta>) => void;
+  setCurrentUserToken: (token: string | undefined) => void;
+
   // canvas refs
   setSceneContainerEl: (el: HTMLDivElement | null) => void;
   setEditorCanvasEl: (el: HTMLCanvasElement | null) => void;
@@ -304,6 +329,15 @@ export const usePageSceneStore = create<PageSceneState>((set, get) => ({
   is3DPageMounted: false,
   is3DEditorInitialized: false,
   is3DSceneLoaded: false,
+
+  sceneMeta: {
+    title: undefined,
+    token: undefined,
+    ownerToken: undefined,
+    isModified: undefined,
+    isInitializing: true,
+  },
+  currentUserToken: undefined,
 
   sceneContainerEl: null,
   editorCanvasEl: null,
@@ -447,6 +481,10 @@ export const usePageSceneStore = create<PageSceneState>((set, get) => ({
   setIs3DEditorInitialized: (initialized) =>
     set({ is3DEditorInitialized: initialized }),
   setIs3DSceneLoaded: (loaded) => set({ is3DSceneLoaded: loaded }),
+
+  setSceneMeta: (meta) =>
+    set((s) => ({ sceneMeta: { ...s.sceneMeta, ...meta } })),
+  setCurrentUserToken: (token) => set({ currentUserToken: token }),
 
   setSceneContainerEl: (el) => set({ sceneContainerEl: el }),
   setEditorCanvasEl: (el) => set({ editorCanvasEl: el }),

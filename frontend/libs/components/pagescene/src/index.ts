@@ -15,6 +15,7 @@ export { usePageSceneStore } from "./lib/PageSceneStore";
 export type {
   Camera,
   FocalLengthDragging,
+  SceneMeta,
   SceneObject,
   SceneObjectKind,
   OutlinerItem,
@@ -183,6 +184,7 @@ export { getSceneGenerationMetaData } from "./lib/sceneMetadata";
 // are either surfaced via adapter slots or replaced with
 // lib-internal state.
 export { AssetMenu, AssetModal } from "./lib/comps/AssetMenu";
+export { ControlsTopButtons } from "./lib/comps/ControlsTopButtons";
 export { DragComponent } from "./lib/comps/DragComponent/DragComponent";
 export { PrecisionSelector } from "./lib/comps/PrecisionSelector/PrecisionSelector";
 export { FocalLengthDisplay } from "./lib/comps/FocalLengthDisplay/FocalLengthDisplay";

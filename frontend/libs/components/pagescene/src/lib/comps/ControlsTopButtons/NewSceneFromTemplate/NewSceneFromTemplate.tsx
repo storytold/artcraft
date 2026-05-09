@@ -1,20 +1,17 @@
 import {
   useCallback,
+  useContext,
   useEffect,
   useLayoutEffect,
   useRef,
   useState,
 } from "react";
 import dayjs from "dayjs";
-
-import type { MediaInfo } from "@storyteller/ui-pagescene";
-import { FilterEngineCategories, ToastTypes } from "~/enums";
-
+import { LoadingSpinner } from "@storyteller/ui-loading-spinner";
+import { EngineContext } from "../../../contexts/EngineContext/EngineContext";
+import { FilterEngineCategories, ToastTypes } from "../../../enums";
+import type { MediaInfo } from "../../../models";
 import { ScenePicker, SceneTypes } from "../ScenePicker";
-import { LoadingSpinner } from "~/components";
-
-import { MediaFilesApi } from "~/Classes/ApiManager/MediaFilesApi";
-import { addToast } from "~/signals";
 
 interface NewSceneFromTemplateProps {
   onSceneSelect: (token: string) => void;
@@ -23,15 +20,15 @@ interface NewSceneFromTemplateProps {
 export const NewSceneFromTemplate = ({
   onSceneSelect,
 }: NewSceneFromTemplateProps) => {
-  const [featuredScenes, setFeaturedScenes] = useState<
-    SceneTypes[] | undefined
-  >(undefined);
+  const editor = useContext(EngineContext);
+  const [featuredScenes, setFeaturedScenes] = useState<SceneTypes[] | undefined>(
+    undefined,
+  );
   const [bottomGradientOpacity, setBottomGradientOpacity] = useState(1);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   const listFeaturedScenes = useCallback(async () => {
-    const mediaFilesApi = new MediaFilesApi();
-    // Hard coded scenes
+    if (!editor) return;
 
     const dummyScenes: SceneTypes[] = [
       {
@@ -40,17 +37,18 @@ export const NewSceneFromTemplate = ({
         thumbnail: "/resources/placeholders/scene_placeholder.png",
       },
     ];
-    const modMediaInfoToScenes = (results: MediaInfo[]) =>
-      results.map((scene: MediaInfo) => ({
-        token: scene.token,
-        name: scene.maybe_title ?? "Untitled",
-        updated_at: dayjs(scene.updated_at).format("MMM D, YYYY HH:mm:ss"),
-        thumbnail: scene.cover_image.maybe_cover_image_public_bucket_path
-          ? scene.cover_image.maybe_cover_image_public_bucket_path
-          : undefined,
+    const modMediaInfoToScenes = (results: MediaInfo[]): SceneTypes[] =>
+      results.map((s) => ({
+        token: s.token,
+        name: s.maybe_title ?? "Untitled",
+        updated_at: dayjs(s.updated_at).format("MMM D, YYYY HH:mm:ss"),
+        thumbnail: s.cover_image.maybe_cover_image_public_bucket_path
+          ? s.cover_image.maybe_cover_image_public_bucket_path
+          : "",
       }));
-    const response = await mediaFilesApi.ListFeaturedMediaFiles({
-      filter_engine_categories: [FilterEngineCategories.SCENE],
+    const response = await editor.adapter.listFeaturedMediaFiles({
+      pageSize: 100,
+      filterEngineCategories: [FilterEngineCategories.SCENE],
     });
     if (response.success && response.data) {
       setFeaturedScenes([
@@ -60,16 +58,14 @@ export const NewSceneFromTemplate = ({
       return;
     }
     setFeaturedScenes(dummyScenes);
-    addToast(
+    editor.adapter.showToast(
       ToastTypes.ERROR,
       response.errorMessage || "Unknown Error in Listing Feature Scenes",
     );
-  }, []);
+  }, [editor]);
+
   useEffect(() => {
-    if (featuredScenes) {
-      //only call once on mount
-      return;
-    }
+    if (featuredScenes) return;
     listFeaturedScenes();
   }, [featuredScenes, listFeaturedScenes]);
 
@@ -83,7 +79,6 @@ export const NewSceneFromTemplate = ({
       const atBottom =
         element.scrollHeight - element.scrollTop <= element.clientHeight + 1;
       const hasOverflow = element.scrollHeight > element.clientHeight;
-
       setBottomGradientOpacity(hasOverflow && !atBottom ? 1 : 0);
     }
   };
@@ -93,11 +88,9 @@ export const NewSceneFromTemplate = ({
     if (element) {
       handleScroll();
       element.addEventListener("scroll", handleScroll);
-
-      return () => {
-        element.removeEventListener("scroll", handleScroll);
-      };
+      return () => element.removeEventListener("scroll", handleScroll);
     }
+    return undefined;
   }, []);
 
   return (

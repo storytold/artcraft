@@ -1,6 +1,6 @@
-import React, { useRef, useState } from "react";
-import { BucketConfig } from "~/api/BucketConfig";
+import React, { useContext, useState } from "react";
 import { twMerge } from "tailwind-merge";
+import { EngineContext } from "../../../contexts/EngineContext/EngineContext";
 
 export type SceneTypes = {
   token: string;
@@ -22,17 +22,17 @@ export const SceneCard: React.FC<SceneCardProps> = ({
   selectedSceneId,
   showDate,
 }) => {
-  // console.log(scene);
+  const editor = useContext(EngineContext);
   const [loadError, setLoadError] = useState(false);
 
-  const handleSelected = (scene: SceneTypes) => {
-    onSceneSelect(scene);
+  const handleSelected = (s: SceneTypes) => {
+    onSceneSelect(s);
   };
 
-  const bucketConfig = useRef(new BucketConfig());
   const imageThumbnailUrl =
-    scene.thumbnail && bucketConfig.current.getCdnUrl(scene.thumbnail, 360, 20);
-  // thumbnail will be replaced with 3d scene screenshots
+    scene.thumbnail && editor
+      ? editor.adapter.getCdnUrl(scene.thumbnail, 360, 20)
+      : undefined;
   const tempThumbnail = "/resources/placeholders/scene_placeholder.png";
 
   return (
@@ -58,7 +58,7 @@ export const SceneCard: React.FC<SceneCardProps> = ({
       />
       <div className="absolute left-0 top-0 h-full w-full bg-gradient-to-t from-black/80 to-transparent" />
       <div className="absolute bottom-[8px] left-[10px] text-start text-sm drop-shadow-md">
-        <div className="flex  flex-col">
+        <div className="flex flex-col">
           <span className="w-60 truncate text-sm font-medium">
             {scene.name}
           </span>

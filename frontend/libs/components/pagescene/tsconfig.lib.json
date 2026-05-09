@@ -54,6 +54,9 @@
       "path": "../button-icon/tsconfig.lib.json"
     },
     {
+      "path": "../loading-spinner/tsconfig.lib.json"
+    },
+    {
       "path": "../label/tsconfig.lib.json"
     },
     {

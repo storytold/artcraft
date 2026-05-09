@@ -1,39 +1,46 @@
-import { useContext, useState, useCallback } from "react";
-import { useParams, useLocation, useNavigate } from "react-router-dom";
-import { useSignals, useSignalEffect } from "@preact/signals-react/runtime";
+import React, { useCallback, useContext, useState } from "react";
 import {
   faCheckSquare,
   faFile,
   faKeyboard,
   faSquare,
 } from "@fortawesome/pro-solid-svg-icons";
-import { ToastTypes } from "~/enums";
-import { scene, signalScene, authentication, addToast } from "~/signals";
 import { ButtonDropdown } from "@storyteller/ui-button-dropdown";
 import { Input } from "@storyteller/ui-input";
 import { Button } from "@storyteller/ui-button";
-import { LoadUserScenes } from "./LoadUserScenes";
-import { getCurrentLocationWithoutParams, isNumberString } from "~/utilities";
-import {
-  CameraAspectRatio,
-  EngineContext,
-  getSceneGenerationMetaData,
-  usePageSceneStore,
-} from "@storyteller/ui-pagescene";
-import { twMerge } from "tailwind-merge";
-import { Help } from "./Help";
 import { Modal } from "@storyteller/ui-modal";
+import { twMerge } from "tailwind-merge";
+
+import { EngineContext } from "../../contexts/EngineContext/EngineContext";
+import { usePageSceneStore } from "../../PageSceneStore";
+import { CameraAspectRatio, ToastTypes } from "../../enums";
+import { getSceneGenerationMetaData } from "../../sceneMetadata";
+import { LoadUserScenes } from "./LoadUserScenes";
+import { Help } from "./Help/Help";
+
+const isNumberString = (s: string): boolean => /^\d+$/.test(s);
 
 export const ControlsTopButtons = () => {
-  useSignals();
-  const params = useParams();
-  const location = useLocation();
-  const navigate = useNavigate();
+  const editor = useContext(EngineContext);
   const [shortcutsIsShowing, setShortcutsIsShowing] = useState(false);
-  const editorEngine = useContext(EngineContext);
 
-  const [sceneTitleInput, setSceneTitleInput] = useState<string>("");
+  const sceneMeta = usePageSceneStore((s) => s.sceneMeta);
+  const currentUserToken = usePageSceneStore((s) => s.currentUserToken);
+  const outlinerShowing = usePageSceneStore((s) => s.outlinerShowing);
+
+  const [sceneTitleInput, setSceneTitleInput] = useState<string>(
+    sceneMeta.title || "",
+  );
   const [sceneTokenSelected, setSceneTokenSelected] = useState<string>("");
+
+  // Keep the scene-title input in sync with the loaded scene's title.
+  // The host wrapper (PageScene.tsx) drives the URL ↔ token bookkeeping;
+  // here we only mirror the title for the Save-as-copy dialog.
+  React.useEffect(() => {
+    if (!sceneMeta.isInitializing && sceneMeta.title !== undefined) {
+      setSceneTitleInput(sceneMeta.title);
+    }
+  }, [sceneMeta.isInitializing, sceneMeta.title]);
 
   const handleChangeSceneTitleInput = (
     e: React.ChangeEvent<HTMLInputElement>,
@@ -42,65 +49,67 @@ export const ControlsTopButtons = () => {
   };
 
   const handleResetScene = () => {
-    editorEngine?.cameraController.changeRenderCameraAspectRatio(
+    editor?.cameraController.changeRenderCameraAspectRatio(
       CameraAspectRatio.HORIZONTAL_3_2,
     );
   };
 
   const handleButtonSave = async () => {
-    if (!editorEngine) {
-      addToast(ToastTypes.ERROR, "No Engine Error in Saving Scenes");
+    if (!editor) {
+      // No-op without an editor; the toast is informational only.
       return;
     }
-    const sceneGenerationMetadata = getSceneGenerationMetaData(editorEngine);
+    const sceneGenerationMetadata = getSceneGenerationMetaData(editor);
 
-    const retSceneMediaToken = await editorEngine.saveScene({
-      sceneTitle: scene.value.title || "",
-      sceneToken: scene.value.token,
+    const retSceneMediaToken = await editor.saveScene({
+      sceneTitle: sceneMeta.title || "",
+      sceneToken: sceneMeta.token,
       sceneGenerationMetadata,
     });
 
     if (retSceneMediaToken === "") {
-      addToast(ToastTypes.ERROR, "Failed to Save Scene Try again Later!");
+      editor.adapter.showToast(
+        ToastTypes.ERROR,
+        "Failed to Save Scene Try again Later!",
+      );
     }
 
     if (retSceneMediaToken) {
-      addToast(ToastTypes.SUCCESS, retSceneMediaToken);
-      if (!scene.value.token) {
-        signalScene({
-          ...scene.value,
+      editor.adapter.showToast(ToastTypes.SUCCESS, retSceneMediaToken);
+      if (!sceneMeta.token) {
+        editor.adapter.onSceneTitleChange?.({
+          title: sceneMeta.title || "",
           token: retSceneMediaToken,
+          ownerToken: sceneMeta.ownerToken,
+          isModified: false,
         });
       }
     }
   };
 
   const handleButtonSaveAsCopy = useCallback(async () => {
-    if (!editorEngine) {
-      addToast(ToastTypes.ERROR, "No Engine Error in Saving Scenes");
-      return;
-    }
-    const sceneGenerationMetadata = getSceneGenerationMetaData(editorEngine);
-    const retSceneMediaToken = await editorEngine.saveScene({
+    if (!editor) return;
+    const sceneGenerationMetadata = getSceneGenerationMetaData(editor);
+    const retSceneMediaToken = await editor.saveScene({
       sceneTitle: sceneTitleInput,
       sceneToken: undefined,
       sceneGenerationMetadata,
     });
     if (retSceneMediaToken) {
-      addToast(ToastTypes.SUCCESS, retSceneMediaToken);
-      signalScene({
-        ...scene.value,
-        token: retSceneMediaToken,
-        ownerToken: authentication.userInfo.value?.user_token,
+      editor.adapter.showToast(ToastTypes.SUCCESS, retSceneMediaToken);
+      editor.adapter.onSceneTitleChange?.({
         title: sceneTitleInput,
+        token: retSceneMediaToken,
+        ownerToken: currentUserToken,
+        isModified: false,
       });
     }
-  }, [sceneTitleInput, editorEngine, getSceneGenerationMetaData]);
+  }, [sceneTitleInput, editor, currentUserToken]);
 
   const handleButtonLoadScene = () => {
     handleResetScene();
-    editorEngine?.loadScene(sceneTokenSelected).catch((err) => {
-      addToast(ToastTypes.ERROR, err.message);
+    editor?.loadScene(sceneTokenSelected).catch((err) => {
+      editor.adapter.showToast(ToastTypes.ERROR, err.message);
     });
   };
 
@@ -108,39 +117,14 @@ export const ControlsTopButtons = () => {
     setSceneTokenSelected(token);
   };
 
-  useSignalEffect(() => {
-    //TODO: USE SIGNAL EFFECT SHOULD BE PERFORM ELSEWHERE
-    // WHERE THIS OPERATION IS EXPECTED
-    if (!scene.value.isInitializing) {
-      setSceneTitleInput(scene.value.title || "");
-      const currentLocation = getCurrentLocationWithoutParams(
-        location.pathname,
-        params,
-      );
-      if (scene.value.token === undefined) {
-        if (params.sceneToken) {
-          //case of create new scene from existing scene
-          history.pushState({}, "", currentLocation);
-        }
-        //case of create new scene from unsaved scene
-        navigate(currentLocation, { replace: true });
-      } else if (scene.value.token) {
-        if (params.sceneToken && scene.value.token !== params.sceneToken) {
-          //case of loading existing scene from existing scene
-          history.pushState({}, "", currentLocation + scene.value.token);
-        }
-        //case of loading existing scene from unsaved new scene
-        //or case of updating existing scene
-        navigate(currentLocation + scene.value.token, { replace: true });
-      }
-    }
-  });
-
-  const outlinerShowing = usePageSceneStore((s) => s.outlinerShowing);
-
   const handleShowOutliner = () => {
     usePageSceneStore.getState().setOutlinerShowing(!outlinerShowing);
   };
+
+  const canSave =
+    sceneMeta.isModified &&
+    (sceneMeta.ownerToken === undefined ||
+      sceneMeta.ownerToken === currentUserToken);
 
   return (
     <div className="flex flex-col gap-2 pl-2 pt-2">
@@ -157,24 +141,20 @@ export const ControlsTopButtons = () => {
                 title: "Create New Scene",
                 content: (
                   <h4>
-                    Make sure you&apos;ve saved your scene. Unsaved changes will
-                    be lost. Continue?
+                    Make sure you&apos;ve saved your scene. Unsaved changes
+                    will be lost. Continue?
                   </h4>
                 ),
                 confirmButtonProps: {
                   label: "Create new scene",
                   onClick: async () => {
                     handleResetScene();
-
                     const defaultTitle = "Untitled New Scene";
                     setSceneTitleInput(defaultTitle);
-
-                    await editorEngine?.newScene(defaultTitle);
+                    await editor?.newScene(defaultTitle);
                   },
                 },
-                closeButtonProps: {
-                  label: "Cancel",
-                },
+                closeButtonProps: { label: "Cancel" },
                 showClose: true,
               },
             },
@@ -191,51 +171,37 @@ export const ControlsTopButtons = () => {
                   disabled: sceneTokenSelected === "",
                   onClick: handleButtonLoadScene,
                 },
-                closeButtonProps: {
-                  label: "Cancel",
-                },
+                closeButtonProps: { label: "Cancel" },
                 showClose: true,
                 className: "max-w-5xl",
               },
             },
             {
-              disabled: !(
-                scene.value.isModified &&
-                (scene.value.ownerToken === undefined ||
-                  scene.value.ownerToken ===
-                    authentication.userInfo.value?.user_token)
-              ),
-              // save scene should be disabled if there are no changes
+              disabled: !canSave,
               label: "Save scene",
               description: "Ctrl+S",
-              ...(scene.value.token
-                ? {
-                    // Existing scene → save directly without dialog
-                    onClick: handleButtonSave,
-                  }
+              ...(sceneMeta.token
+                ? { onClick: handleButtonSave }
                 : {
-                    // New (unsaved) scene → ask for confirmation first
                     dialogProps: {
                       title: "Save Scene",
                       content: (
                         <h4>
-                          Save scene to <b>{scene.value.title}</b>?
+                          Save scene to <b>{sceneMeta.title}</b>?
                         </h4>
                       ),
                       confirmButtonProps: {
                         label: "Save",
                         onClick: handleButtonSave,
                       },
-                      closeButtonProps: {
-                        label: "Cancel",
-                      },
+                      closeButtonProps: { label: "Cancel" },
                       showClose: true,
                     },
                   }),
               divider: true,
             },
             {
-              disabled: !scene.value.isModified || !scene.value.token,
+              disabled: !sceneMeta.isModified || !sceneMeta.token,
               label: "Save scene as copy",
               description: "Ctrl+Shift+S",
               onDialogOpen: () => {
@@ -266,9 +232,7 @@ export const ControlsTopButtons = () => {
                   disabled: sceneTitleInput === "",
                   onClick: handleButtonSaveAsCopy,
                 },
-                closeButtonProps: {
-                  label: "Cancel",
-                },
+                closeButtonProps: { label: "Cancel" },
                 showClose: true,
               },
             },
@@ -305,8 +269,6 @@ export const ControlsTopButtons = () => {
       >
         <Help />
       </Modal>
-
-      
     </div>
   );
 };

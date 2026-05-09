@@ -1,12 +1,7 @@
 import React, { useEffect, useState } from "react";
-import { SceneCard } from "~/pages/PageScene/comps/ControlsTopButtons/ScenePicker/SceneCard";
+import { SceneCard, SceneTypes } from "./SceneCard";
 
-export type SceneTypes = {
-  token: string;
-  name: string;
-  updated_at?: string;
-  thumbnail: string | undefined;
-};
+export type { SceneTypes };
 
 interface ScenePickerProps {
   scenes: SceneTypes[];
@@ -24,7 +19,7 @@ export const ScenePicker: React.FC<ScenePickerProps> = ({
   useEffect(() => {
     if (scenes.length > 0 && !selectedSceneId) {
       setSelectedSceneId(scenes[0].token);
-      onSceneSelect(scenes[0]); // Trigger the callback with the first scene
+      onSceneSelect(scenes[0]);
     }
   }, [scenes, onSceneSelect, selectedSceneId]);
 
