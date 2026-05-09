@@ -48,6 +48,7 @@ import { useEditorCanvas } from "./hooks/useEditorCanvas";
 import { useFreeCam } from "./hooks/useFreeCam";
 import { useViewportPointer } from "./hooks/useViewportPointer";
 import { useViewportKeyboard } from "./hooks/useViewportKeyboard";
+import { useViewportSize } from "./hooks/useViewportSize";
 import { GridVisibleChangedEvent } from "./engine/events/EngineEvent";
 import { pickDropPosition } from "./engine/pickDropPosition";
 import { AssetType, CameraAspectRatio } from "./enums";
@@ -102,13 +103,11 @@ export const Stage3DBody = () => {
 
   const editor = useContext(EngineContext);
 
-  // Viewport-driven layout sizing. Falls back to window.innerWidth/
-  // innerHeight when the host doesn't supply getViewportSize.
-  const viewportFallback =
-    typeof window !== "undefined"
-      ? { width: window.innerWidth, height: window.innerHeight }
-      : { width: 0, height: 0 };
-  const viewport = editor?.adapter.getViewportSize?.() ?? viewportFallback;
+  // Reactive viewport sizing. useViewportSize listens to window
+  // resize and re-renders the component. Falls back to
+  // window.innerWidth/innerHeight when the host adapter doesn't
+  // supply getViewportSize, so the layout always has sane values.
+  const viewport = useViewportSize();
   const height = viewport.height - 56;
 
   const getScale = () => {
