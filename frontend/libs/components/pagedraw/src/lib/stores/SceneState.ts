@@ -1449,7 +1449,14 @@ export const useSceneStore = create<SceneState>((set, get, store) => ({
       return;
     }
 
-    set({ baseImageInfo: image });
+    // Clear baseImageBitmap synchronously so consumers can distinguish
+    // "loaded for current info" from "stale from previous info" purely by
+    // checking truthiness. Without this, baseImageInfo points at the new
+    // image while baseImageBitmap still holds the previous one, and any code
+    // gating on bitmap presence (e.g. PageDraw's Generate button) would let
+    // through a click that snapshots the previous pixels with the new
+    // image's mediaToken. applyImageNodes will repopulate it on onload.
+    set({ baseImageInfo: image, baseImageBitmap: null });
 
     const imgBitmap = new Image();
     imgBitmap.onload = () => {
