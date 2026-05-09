@@ -1,22 +1,5 @@
-import type { MediaItem } from "@storyteller/ui-pagescene";
-import { AssetType } from "~/enums";
-
-// export const cameraItems = signal<MediaItem[]>([
-//   {
-//     version: 1,
-//     media_id: uuid.v4(),
-//     type: AssetType.CAMERA,
-//     name: "Portrait Zoom Out",
-//     thumbnail: "/resources/placeholders/placeholder.png",
-//   },
-//   {
-//     version: 1,
-//     media_id: uuid.v4(),
-//     type: AssetType.CAMERA,
-//     name: "Pan Left and Right",
-//     thumbnail: "/resources/placeholders/placeholder.png",
-//   },
-// ]);
+import type { MediaItem } from "../../models/assets";
+import { AssetType } from "../../enums";
 
 export const demoObjectItems: MediaItem[] = [
   {
@@ -49,7 +32,6 @@ export const demoObjectItems: MediaItem[] = [
   },
 ];
 
-// In the future these will have shape id's
 export const demoShapeItems: MediaItem[] = [
   {
     version: 1,

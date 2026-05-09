@@ -54,22 +54,31 @@
       "path": "../button-icon/tsconfig.lib.json"
     },
     {
-      "path": "../tooltip/tsconfig.lib.json"
-    },
-    {
-      "path": "../close-button/tsconfig.lib.json"
+      "path": "../label/tsconfig.lib.json"
     },
     {
       "path": "../loading/tsconfig.lib.json"
     },
     {
-      "path": "../label/tsconfig.lib.json"
-    },
-    {
-      "path": "../button/tsconfig.lib.json"
+      "path": "../badge/tsconfig.lib.json"
     },
     {
       "path": "../input/tsconfig.lib.json"
+    },
+    {
+      "path": "../close-button/tsconfig.lib.json"
+    },
+    {
+      "path": "../modal/tsconfig.lib.json"
+    },
+    {
+      "path": "../checkbox/tsconfig.lib.json"
+    },
+    {
+      "path": "../tooltip/tsconfig.lib.json"
+    },
+    {
+      "path": "../button/tsconfig.lib.json"
     },
     {
       "path": "../button-dropdown/tsconfig.lib.json"

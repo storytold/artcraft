@@ -1,15 +1,16 @@
-import { faCube, faMagicWandSparkles } from "@fortawesome/pro-solid-svg-icons";
-import { Tooltip } from "~/components";
-import { Button } from "@storyteller/ui-button";
 import { useState } from "react";
+import { faCube, faMagicWandSparkles } from "@fortawesome/pro-solid-svg-icons";
+import { Button } from "@storyteller/ui-button";
+import { Tooltip } from "@storyteller/ui-tooltip";
 import { AssetModal } from "./AssetModal";
-import { usePageSceneStore } from "@storyteller/ui-pagescene";
+import { usePageSceneStore } from "../../PageSceneStore";
 
 export const AssetMenu = () => {
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [, setIsModalOpen] = useState(false);
 
   const handleOpenModal = () => {
     usePageSceneStore.getState().setAssetModalVisibleDuringDrag(true);
+    usePageSceneStore.getState().setAssetModalVisible(true);
     setIsModalOpen(true);
   };
 
@@ -38,7 +39,7 @@ export const AssetMenu = () => {
         </Tooltip>
       </div>
 
-      <AssetModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
+      <AssetModal />
     </>
   );
 };

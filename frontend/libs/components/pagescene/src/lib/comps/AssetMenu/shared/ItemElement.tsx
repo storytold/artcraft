@@ -1,21 +1,18 @@
-// TODO: Move into shared component.
 import { useContext } from "react";
-import type { MediaItem } from "@storyteller/ui-pagescene";
-import {
-  dragAndDrop as DndAsset,
-  EngineContext,
-} from "@storyteller/ui-pagescene";
 import { Badge } from "@storyteller/ui-badge";
-import { AssetType } from "~/enums";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faUpDownLeftRight } from "@fortawesome/pro-solid-svg-icons";
+import { EngineContext } from "../../../contexts/EngineContext/EngineContext";
+import dragAndDrop from "../../../DragAndDrop/DndAsset";
+import { AssetType } from "../../../enums";
+import type { MediaItem } from "../../../models/assets";
 
 interface Props {
   debug?: string;
   item: MediaItem;
 }
 
-const mapCharacterObejctType = (mediaType: string) => {
+const mapCharacterObjectType = (mediaType: string) => {
   const typeCased = mediaType.toLowerCase();
   switch (typeCased) {
     case "fbx":
@@ -47,7 +44,7 @@ export const ItemElement = ({ item }: Props) => {
         <Badge
           label={
             item.type === AssetType.CHARACTER
-              ? mapCharacterObejctType(item.media_type)
+              ? mapCharacterObjectType(item.media_type)
               : item.type === AssetType.EXPRESSION
                 ? patchExpressionObjectType(item.media_type)
                 : item.media_type.toUpperCase()
@@ -58,7 +55,7 @@ export const ItemElement = ({ item }: Props) => {
 
       <div
         className="pointer-events-none relative aspect-[16/12] w-full select-none overflow-hidden rounded-xl border-[3px] border-white/5 bg-brand-secondary-600 object-cover object-center transition-all group-hover:border-brand-primary"
-        onPointerDown={(event) => DndAsset.onPointerDown(event, item, editor)}
+        onPointerDown={(event) => dragAndDrop.onPointerDown(event, item, editor)}
         style={{ cursor: "grab", pointerEvents: "auto" }}
       >
         <img

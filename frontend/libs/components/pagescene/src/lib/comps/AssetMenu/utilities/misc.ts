@@ -1,18 +1,26 @@
-import { AssetType, FilterEngineCategories } from "~/enums";
-import { FetchStatus } from "@storyteller/ui-pagescene";
-import type { MediaInfo, MediaItem } from "@storyteller/ui-pagescene";
-import { BucketConfig } from "~/api/BucketConfig";
+import type { PageSceneAdapter } from "../../../adapter";
+import {
+  AssetType,
+  FetchStatus,
+  FilterEngineCategories,
+} from "../../../enums";
+import type { MediaInfo } from "../../../models/mediaInfo";
+import type { MediaItem } from "../../../models/assets";
 
 export const isAnyStatusFetching = (statuses: FetchStatus[]): boolean => {
   return statuses.some((status) => status === FetchStatus.IN_PROGRESS);
 };
 
+// Maps a MediaInfo[] (raw API shape) to MediaItem[] (engine shape).
+// adapter.getCdnUrl is needed to compose thumbnail URLs at the right
+// width/quality for the AssetMenu grid.
 export const responseMapping = (
   data: MediaInfo[],
   filterEngineCategories: FilterEngineCategories[],
+  adapter: PageSceneAdapter,
 ): MediaItem[] => {
-  //TODO: ASSET TYPES and ENGINE CATEGORIES NEED TO MATCH!!!!
-  //TODO: GET RID OF ASSET TYPES!!
+  // TODO: ASSET TYPES and ENGINE CATEGORIES NEED TO MATCH!!!!
+  // TODO: GET RID OF ASSET TYPES!!
   const objectCategories = [
     FilterEngineCategories.CREATURE,
     FilterEngineCategories.IMAGE_PLANE,
@@ -27,8 +35,7 @@ export const responseMapping = (
     : filterEngineCategories[0];
 
   return data.map((item) => {
-    const bucketConfig = new BucketConfig();
-    const itemThumb = bucketConfig.getCdnUrl(
+    const itemThumb = adapter.getCdnUrl(
       item.cover_image.maybe_cover_image_public_bucket_path ?? "",
       600,
       100,

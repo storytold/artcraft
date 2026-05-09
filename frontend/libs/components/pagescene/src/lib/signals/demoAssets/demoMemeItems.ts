@@ -1,5 +1,5 @@
-import type { MediaItem } from "@storyteller/ui-pagescene";
-import { AssetType } from "~/enums";
+import type { MediaItem } from "../../models/assets";
+import { AssetType } from "../../enums";
 
 export const demoMemeItems: MediaItem[] = [
   {

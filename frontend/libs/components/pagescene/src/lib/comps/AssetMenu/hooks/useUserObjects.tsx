@@ -1,9 +1,14 @@
-import { useCallback, useState, useRef } from "react";
-import { FetchStatus } from "@storyteller/ui-pagescene";
-import { FetchMediaItemStates, fetchUserMediaItems } from "../utilities";
-import { FilterEngineCategories, FilterMediaType } from "~/enums";
-
-// import { MAX_FAILED_FETCHES } from "~/constants";
+import { useCallback, useContext, useState, useRef } from "react";
+import { EngineContext } from "../../../contexts/EngineContext/EngineContext";
+import { FetchStatus } from "../../../enums";
+import type {
+  FilterEngineCategories,
+  FilterMediaType,
+} from "../../../enums";
+import {
+  FetchMediaItemStates,
+  fetchUserMediaItems,
+} from "../utilities/fetchMediaItems";
 
 interface useUserObjectsProps {
   defaultErrorMessage: string;
@@ -12,6 +17,7 @@ interface useUserObjectsProps {
 }
 
 export const useUserObjects = (props: useUserObjectsProps) => {
+  const editor = useContext(EngineContext);
   const failedFetches = useRef<number>(0);
   const firstFetch = useRef<FetchStatus>(FetchStatus.READY);
 
@@ -29,6 +35,7 @@ export const useUserObjects = (props: useUserObjectsProps) => {
 
   const fetchUserObjects = useCallback(
     async (nextPageIndex?: number) => {
+      if (!editor) return;
       let breakFlag = false;
       setUserFetch((curr) => {
         if (curr.status === FetchStatus.IN_PROGRESS) {
@@ -46,12 +53,15 @@ export const useUserObjects = (props: useUserObjectsProps) => {
 
       const { filterEngineCategories, filterMediaTypes, defaultErrorMessage } =
         props;
-      const result = await fetchUserMediaItems({
-        filterEngineCategories: filterEngineCategories,
-        filterMediaType: filterMediaTypes,
-        defaultErrorMessage: defaultErrorMessage,
-        nextPageIndex: nextPageIndex,
-      });
+      const result = await fetchUserMediaItems(
+        {
+          filterEngineCategories,
+          filterMediaType: filterMediaTypes,
+          defaultErrorMessage,
+          nextPageIndex,
+        },
+        editor.adapter,
+      );
 
       if (result.status === FetchStatus.ERROR) {
         failedFetches.current = failedFetches.current + 1;
@@ -71,18 +81,8 @@ export const useUserObjects = (props: useUserObjectsProps) => {
           : curr.mediaItems,
       }));
     },
-    [props],
+    [props, editor],
   );
-
-  // useEffect(() => {
-  //   if (
-  //     (firstFetch.current === FetchStatus.READY ||
-  //       firstFetch.current === FetchStatus.ERROR) &&
-  //     failedFetches.current <= MAX_FAILED_FETCHES
-  //   ) {
-  //     fetchUserObjects();
-  //   }
-  // }, [fetchUserObjects]);
 
   return {
     userObjects,

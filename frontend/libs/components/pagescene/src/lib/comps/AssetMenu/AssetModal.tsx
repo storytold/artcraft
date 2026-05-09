@@ -1,6 +1,5 @@
 import { Checkbox } from "@storyteller/ui-checkbox";
 import { Modal } from "@storyteller/ui-modal";
-import { UploadModal3D } from "~/components/reusable/UploadModal3D";
 import {
   faSearch,
   faChevronLeft,
@@ -18,28 +17,30 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Button } from "@storyteller/ui-button";
 import { CloseButton } from "@storyteller/ui-close-button";
 import { Input } from "@storyteller/ui-input";
-// import { TabSelector } from "@storyteller/ui-tab-selector";
 import React, {
-  useState,
+  ChangeEvent,
+  useContext,
   useEffect,
   useMemo,
   useRef,
-  ChangeEvent,
+  useState,
 } from "react";
+import { useShallow } from "zustand/shallow";
+import { twMerge } from "tailwind-merge";
+
+import { EngineContext } from "../../contexts/EngineContext/EngineContext";
 import { ItemElements } from "./shared/ItemElements";
+import { useUserObjects, useFeaturedObjects } from "./hooks";
+import { isAnyStatusFetching } from "./utilities/misc";
+import { FilterEngineCategories, FilterMediaType } from "../../enums";
 import {
   demoSkyboxItems,
   demoShapeItems,
   demoCharacterItems,
   demoMemeItems,
-} from "../../signals";
-import { useShallow } from "zustand/shallow";
-import { usePageSceneStore } from "@storyteller/ui-pagescene";
-import type { MediaItem } from "@storyteller/ui-pagescene";
-import { useUserObjects, useFeaturedObjects } from "./hooks";
-import { FilterEngineCategories, FilterMediaType } from "~/enums";
-import { twMerge } from "tailwind-merge";
-import { isAnyStatusFetching } from "./utilities";
+} from "../../signals/demoAssets";
+import { usePageSceneStore } from "../../PageSceneStore";
+import type { MediaItem } from "../../models/assets";
 
 type AssetTab = {
   id: string;
@@ -81,27 +82,28 @@ const AllTabSection = ({
   </div>
 );
 
-const categoryToTabIdMap: Record<FilterEngineCategories, string> = {
+// Mapping from upload category to AssetTab id, so the modal can
+// auto-switch the user to the tab matching what they just uploaded.
+const categoryToTabIdMap: Partial<Record<FilterEngineCategories, string>> = {
   [FilterEngineCategories.CHARACTER]: "characters",
   [FilterEngineCategories.CREATURE]: "creatures",
   [FilterEngineCategories.IMAGE_PLANE]: "image-planes",
   [FilterEngineCategories.LOCATION]: "sets",
   [FilterEngineCategories.OBJECT]: "objects",
   [FilterEngineCategories.SKYBOX]: "skybox",
-  [FilterEngineCategories.ANIMATION]: "all",
-  [FilterEngineCategories.AUDIO]: "all",
-  [FilterEngineCategories.EXPRESSION]: "all",
-  [FilterEngineCategories.SCENE]: "all",
-  [FilterEngineCategories.SET_DRESSING]: "all",
-  [FilterEngineCategories.VIDEO_PLANE]: "all",
 };
 
-// Names (lowercase) to pin to the front of the characters list, in order.
-const CHARACTER_PRIORITY_ORDER = ["storyboy", "story girl", "knight", "news anchor"];
-// Names (lowercase) of featured characters that should appear in Memes instead.
+const CHARACTER_PRIORITY_ORDER = [
+  "storyboy",
+  "story girl",
+  "knight",
+  "news anchor",
+];
 const MEME_OVERRIDES = ["ai trump"];
 
 export const AssetModal = () => {
+  const editor = useContext(EngineContext);
+
   const {
     assetModalVisible,
     assetModalVisibleDuringDrag,
@@ -117,18 +119,14 @@ export const AssetModal = () => {
       setReopenAfterDrag: s.setReopenAfterDrag,
     })),
   );
-  const [activeLibraryTab, setActiveLibraryTab] = useState("library");
+  const [activeLibraryTab] = useState("library");
   const [activeAssetTab, setActiveAssetTab] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
-  const [selectedCategory, setSelectedCategory] =
-    useState<FilterEngineCategories | null>(null);
-  const [isSelectVisible, setIsSelectVisible] = useState(true);
 
   const handleReopenChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.checked;
-    // Force the update to be asynchronous
     setTimeout(() => {
       setReopenAfterDrag(newValue);
     }, 0);
@@ -144,29 +142,21 @@ export const AssetModal = () => {
 
   useEffect(() => {
     if (assetModalVisible) {
-      // Check for stored category and tab from upload
       const lastUploadedTab = sessionStorage.getItem("lastUploadedTab");
       if (lastUploadedTab) {
-        setActiveLibraryTab("mine");
         setActiveAssetTab(lastUploadedTab);
-        // Clear the stored values
         sessionStorage.removeItem("lastUploadedTab");
         sessionStorage.removeItem("lastUploadedCategory");
       }
-      // Small delay to ensure the modal is fully mounted
       const timer = setTimeout(() => {
         searchInputRef.current?.focus();
       }, 100);
-      return () => {
-        clearTimeout(timer);
-        // Ensure no side effects remain
-      };
+      return () => clearTimeout(timer);
     }
     return undefined;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [assetModalVisible]);
 
-  // Fetch objects for different categories
   const {
     userObjects: userCharacters,
     userFetchStatus: userCharactersFetchStatus,
@@ -266,18 +256,12 @@ export const AssetModal = () => {
     featuredImagePlanesFetchStatus,
   ]);
 
-  // const libraryTabs = [
-  //   { id: "library", label: "Library" },
-  //   { id: "mine", label: "Mine" },
-  // ];
-
   const assetTabs = useMemo<AssetTab[]>(() => {
     const allCharacterCandidates =
       activeLibraryTab === "library"
         ? [...demoCharacterItems, ...(featuredCharacters ?? [])]
         : (userCharacters ?? []);
 
-    // Split out items that belong in Memes
     const memeOverrideItems = allCharacterCandidates.filter((item) =>
       MEME_OVERRIDES.includes(item.name?.toLowerCase() ?? ""),
     );
@@ -285,7 +269,6 @@ export const AssetModal = () => {
       (item) => !MEME_OVERRIDES.includes(item.name?.toLowerCase() ?? ""),
     );
 
-    // Reorder: priority names first (in specified order), then the rest
     const priorityCharacters: MediaItem[] = [];
     for (const name of CHARACTER_PRIORITY_ORDER) {
       const found = characterCandidates.find(
@@ -360,26 +343,11 @@ export const AssetModal = () => {
         icon: faSun,
         items: activeLibraryTab === "library" ? demoSkyboxItems : [],
       },
-      // {
-      //   id: "image-planes",
-      //   label: "Image Planes",
-      //   labelSingle: "Image Plane",
-      //   icon: faImage,
-      //   engineCategory: FilterEngineCategories.IMAGE_PLANE,
-      //   items:
-      //     activeLibraryTab === "library"
-      //       ? (featuredImagePlanes ?? [])
-      //       : (userImagePlanes ?? []),
-      // },
     ];
   },
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [
       activeLibraryTab,
-      demoCharacterItems,
-      demoShapeItems,
-      demoSkyboxItems,
-      demoMemeItems,
       featuredCharacters,
       featuredCreatures,
       featuredObjects,
@@ -393,30 +361,19 @@ export const AssetModal = () => {
     ],
   );
 
-  // Combine all items for the "All" tab
   const allItems = useMemo(() => {
-    const items = assetTabs
+    return assetTabs
       .filter((tab) => tab.id !== "all")
       .flatMap((tab) => tab.items);
-    // console.log("All items:", items);
-    // console.log("Active library tab:", activeLibraryTab);
-    // console.log("User creatures:", userCreatures);
-    // console.log("User objects:", userObjects);
-    return items;
   }, [assetTabs]);
 
-  // Update the items array for the "All" tab
   assetTabs[0].items = allItems;
 
   const currentTab =
     assetTabs.find((tab) => tab.id === activeAssetTab) || assetTabs[0];
 
-  // Filter items based on search term
   const displayedItems = useMemo(() => {
-    if (!searchTerm) {
-      return currentTab.items;
-    }
-
+    if (!searchTerm) return currentTab.items;
     const searchLower = searchTerm.toLowerCase();
     return currentTab.items.filter(
       (item) =>
@@ -425,7 +382,6 @@ export const AssetModal = () => {
     );
   }, [currentTab.items, searchTerm]);
 
-  // Switch to "All" tab when searching
   useEffect(() => {
     if (searchTerm && activeAssetTab !== "all") {
       setActiveAssetTab("all");
@@ -433,15 +389,12 @@ export const AssetModal = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchTerm]);
 
-  // Clear search term when tab changes
   useEffect(() => {
     setSearchTerm("");
   }, [activeAssetTab]);
 
-  // Refresh user content when switching to mine tab
   useEffect(() => {
     if (activeLibraryTab === "mine") {
-      // Trigger a refetch of user content
       fetchUserCharacters();
       fetchUserObjects();
       fetchUserSets();
@@ -453,13 +406,11 @@ export const AssetModal = () => {
 
   const renderContent = () => {
     if (activeAssetTab === "all" && !searchTerm) {
-      // Filter out empty categories when in "mine" tab
       const tabsToShow = assetTabs
         .slice(1)
         .filter(
           (tab) => activeLibraryTab === "library" || tab.items.length > 0,
         );
-
       return (
         <div className="h-full space-y-2 overflow-y-auto">
           {tabsToShow.map((tab) => (
@@ -473,7 +424,6 @@ export const AssetModal = () => {
         </div>
       );
     }
-
     return (
       <ItemElements
         items={displayedItems}
@@ -483,41 +433,18 @@ export const AssetModal = () => {
     );
   };
 
-  // const handleAddAsset = () => {
-  //   handleClose();
-  //   setIsUploadModalOpen(true);
-  //   setSelectedCategory(null);
-  //   setIsSelectVisible(true);
-  // };
-
-  // const handleAddSpecificAsset = (category: FilterEngineCategories) => {
-  //   handleClose();
-  //   setIsUploadModalOpen(true);
-  //   setSelectedCategory(category);
-  //   setIsSelectVisible(false);
-  // };
-
   const handleUploadSuccess = (category: FilterEngineCategories) => {
     if (reopenAfterDrag) {
-      // Small delay to allow the modal to close and reopen
-      setTimeout(() => {
-        handleClose();
-      }, 100);
+      setTimeout(() => handleClose(), 100);
     } else {
       handleClose();
     }
-
-    // Use the provided category to find the AssetTab ID
     const lastUploadedTabId = categoryToTabIdMap[category] || "all";
-
-    // Close the upload modal
     setTimeout(() => {
       sessionStorage.setItem("lastUploadedTab", lastUploadedTabId);
-      console.log("AssetModal: lastUploadedTabId set to:", lastUploadedTabId);
       setIsUploadModalOpen(false);
       handleOpen();
     }, 300);
-
     fetchUserCharacters();
     fetchUserObjects();
     fetchUserSets();
@@ -526,11 +453,6 @@ export const AssetModal = () => {
   };
 
   const clearSearch = () => setSearchTerm("");
-
-  const getArticle = (word: string | undefined) => {
-    if (!word) return "a";
-    return /^[aeiou]/i.test(word) ? "an" : "a";
-  };
 
   return (
     <>
@@ -544,10 +466,6 @@ export const AssetModal = () => {
         draggable={true}
         closeOnOutsideClick={false}
         allowBackgroundInteraction={true}
-        // initialPosition={{
-        //   x: 100,
-        //   y: typeof window !== "undefined" ? (window.innerHeight - 640) / 2 : 0,
-        // }}
       >
         <Modal.DragHandle>
           <div className="absolute left-0 top-0 z-[50] h-[46px] w-full cursor-move" />
@@ -558,31 +476,9 @@ export const AssetModal = () => {
               <h2 className="text-[18px] font-semibold opacity-80">
                 ArtCraft Presets
               </h2>
-              {/* <Tooltip content="Upload model" position="top" delay={200}>
-                <Button
-                  className="flex h-7 w-7 items-center justify-center rounded-md border-none bg-primary/50 text-white/70 transition-colors hover:bg-primary/70 hover:text-white/100"
-                  onClick={handleAddAsset}
-                >
-                  <FontAwesomeIcon icon={faPlus} className="text-lg" />
-                </Button>
-              </Tooltip> */}
             </div>
             <hr className="my-2 w-full border-white/10" />
             <div className="flex h-full flex-col space-y-2">
-              {/* <Button
-                variant="primary"
-                className={twMerge(
-                  "w-full justify-start rounded-xl border border-white/[2%] bg-white/[4%] px-3.5 py-2.5 text-left hover:bg-white/15",
-                  "border-primary bg-primary/70 hover:bg-primary",
-                )}
-                onClick={handleAddAsset}
-              >
-                <FontAwesomeIcon
-                  icon={faUpFromLine}
-                  className="mr-2 text-lg opacity-70"
-                />
-                Upload an asset
-              </Button> */}
               {assetTabs.map((tab) => (
                 <Button
                   key={tab.id}
@@ -615,12 +511,6 @@ export const AssetModal = () => {
             <div className="flex h-full flex-col">
               <div className="h-full">
                 <div className="flex items-center gap-4">
-                  {/* <TabSelector
-                    tabs={libraryTabs}
-                    activeTab={activeLibraryTab}
-                    onTabChange={setActiveLibraryTab}
-                    className="relative z-[51] w-auto"
-                  /> */}
                   <div className="relative grow">
                     <Input
                       ref={searchInputRef}
@@ -667,22 +557,6 @@ export const AssetModal = () => {
                         </Button>
                         {currentTab.label}
                       </div>
-                      {/* {activeAssetTab !== "skybox" &&
-                        activeAssetTab !== "all" && (
-                          <Button
-                            icon={faUpFromLine}
-                            onClick={() =>
-                              handleAddSpecificAsset(
-                                currentTab.engineCategory ||
-                                  FilterEngineCategories.OBJECT,
-                              )
-                            }
-                            className="border-primary bg-primary/70 px-2 py-1 text-xs transition-colors hover:bg-primary"
-                          >
-                            Upload {getArticle(currentTab.labelSingle)}{" "}
-                            {currentTab.labelSingle}
-                          </Button>
-                        )} */}
                     </div>
                   )}
                   {renderContent()}
@@ -692,17 +566,15 @@ export const AssetModal = () => {
           </div>
         </div>
       </Modal>
-      <UploadModal3D
-        onClose={() => {
-          setIsUploadModalOpen(false);
-        }}
-        onSuccess={(category) => handleUploadSuccess(category)}
-        isOpen={isUploadModalOpen}
-        title={`Upload ${selectedCategory ? (selectedCategory.toLowerCase().replace(/_/g, " ") === "location" ? "sets" : selectedCategory.toLowerCase().replace(/_/g, " ")) : "3D Asset"}`}
-        titleIcon={!isSelectVisible ? currentTab.icon : faUpFromLine}
-        preselectedCategory={selectedCategory || FilterEngineCategories.OBJECT}
-        isSelectVisible={isSelectVisible}
-      />
+      {/* Host-rendered upload modal — wired through the adapter slot. */}
+      {editor &&
+        editor.adapter.renderAssetUploader({
+          isOpen: isUploadModalOpen,
+          onClose: () => setIsUploadModalOpen(false),
+          onSuccess: handleUploadSuccess,
+          title: "Upload 3D Asset",
+          titleIcon: faUpFromLine,
+        })}
     </>
   );
 };

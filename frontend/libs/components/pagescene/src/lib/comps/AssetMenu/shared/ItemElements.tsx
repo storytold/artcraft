@@ -1,5 +1,5 @@
 import { ItemElement } from "./ItemElement";
-import type { MediaItem } from "@storyteller/ui-pagescene";
+import type { MediaItem } from "../../../models/assets";
 import { LoadingDots } from "@storyteller/ui-loading";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faEmptySet } from "@fortawesome/pro-solid-svg-icons";
@@ -44,7 +44,6 @@ export const ItemElements = ({
     const index = rowIndex * COLUMN_COUNT + columnIndex;
     if (index >= items.length) return null;
 
-    // Calculate dimensions for the container
     const containerWidth = (style.width as number) - GRID_GAP;
     const containerHeight = (style.height as number) - GRID_GAP;
 
@@ -107,7 +106,6 @@ export const ItemElements = ({
     <div className={`h-full w-full ${className || ""}`}>
       <AutoSizer className="w-full">
         {({ height, width }) => {
-          // Calculate cell width accounting for gaps
           const cellWidth = Math.floor(
             (width - GRID_GAP * (COLUMN_COUNT + 1)) / COLUMN_COUNT,
           );

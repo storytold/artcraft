@@ -182,6 +182,7 @@ export { getSceneGenerationMetaData } from "./lib/sceneMetadata";
 // signalScene, addToast, loadingBarData/IsShowing signals, etc.)
 // are either surfaced via adapter slots or replaced with
 // lib-internal state.
+export { AssetMenu, AssetModal } from "./lib/comps/AssetMenu";
 export { DragComponent } from "./lib/comps/DragComponent/DragComponent";
 export { PrecisionSelector } from "./lib/comps/PrecisionSelector/PrecisionSelector";
 export { FocalLengthDisplay } from "./lib/comps/FocalLengthDisplay/FocalLengthDisplay";

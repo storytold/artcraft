@@ -1,8 +1,16 @@
-import { useCallback, useEffect, useState, useRef } from "react";
-import { FetchStatus } from "@storyteller/ui-pagescene";
-import { FetchMediaItemStates, fetchFeaturedMediaItems } from "../utilities";
-import { FilterEngineCategories, FilterMediaType } from "~/enums";
-import { MAX_FAILED_FETCHES } from "~/constants";
+import { useCallback, useContext, useEffect, useState, useRef } from "react";
+import { EngineContext } from "../../../contexts/EngineContext/EngineContext";
+import { FetchStatus } from "../../../enums";
+import type {
+  FilterEngineCategories,
+  FilterMediaType,
+} from "../../../enums";
+import {
+  FetchMediaItemStates,
+  fetchFeaturedMediaItems,
+} from "../utilities/fetchMediaItems";
+
+const MAX_FAILED_FETCHES = 5;
 
 interface useFeaturedObjectsProps {
   defaultErrorMessage: string;
@@ -11,6 +19,7 @@ interface useFeaturedObjectsProps {
 }
 
 export const useFeaturedObjects = (props: useFeaturedObjectsProps) => {
+  const editor = useContext(EngineContext);
   const failedFetches = useRef<number>(0);
   const firstFetch = useRef<FetchStatus>(FetchStatus.READY);
 
@@ -29,6 +38,7 @@ export const useFeaturedObjects = (props: useFeaturedObjectsProps) => {
   const nextPageCursor = nextFeaturedObjects?.maybe_next;
 
   const fetchFeaturedObjects = useCallback(async () => {
+    if (!editor) return;
     let breakFlag = false;
     setFeaturedFetch((curr) => {
       if (curr.status === FetchStatus.IN_PROGRESS) {
@@ -46,12 +56,15 @@ export const useFeaturedObjects = (props: useFeaturedObjectsProps) => {
     const { filterEngineCategories, filterMediaTypes, defaultErrorMessage } =
       props;
 
-    const result = await fetchFeaturedMediaItems({
-      filterEngineCategories: filterEngineCategories,
-      filterMediaType: filterMediaTypes,
-      defaultErrorMessage: defaultErrorMessage,
-      nextPageCursor: nextPageCursor,
-    });
+    const result = await fetchFeaturedMediaItems(
+      {
+        filterEngineCategories,
+        filterMediaType: filterMediaTypes,
+        defaultErrorMessage,
+        nextPageCursor,
+      },
+      editor.adapter,
+    );
 
     if (result.status === FetchStatus.ERROR) {
       failedFetches.current = failedFetches.current + 1;
@@ -71,7 +84,7 @@ export const useFeaturedObjects = (props: useFeaturedObjectsProps) => {
         : curr.mediaItems,
       nextPageInf: result.nextPageInf,
     }));
-  }, [nextPageCursor, props]);
+  }, [nextPageCursor, props, editor]);
 
   useEffect(() => {
     if (

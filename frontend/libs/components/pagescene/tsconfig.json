@@ -6,22 +6,31 @@
       "path": "../button-icon"
     },
     {
-      "path": "../tooltip"
-    },
-    {
-      "path": "../close-button"
+      "path": "../label"
     },
     {
       "path": "../loading"
     },
     {
-      "path": "../label"
-    },
-    {
-      "path": "../button"
+      "path": "../badge"
     },
     {
       "path": "../input"
+    },
+    {
+      "path": "../close-button"
+    },
+    {
+      "path": "../modal"
+    },
+    {
+      "path": "../checkbox"
+    },
+    {
+      "path": "../tooltip"
+    },
+    {
+      "path": "../button"
     },
     {
       "path": "../button-dropdown"

@@ -1,13 +1,15 @@
-import { FilterEngineCategories, FilterMediaType, ToastTypes } from "~/enums";
-import { addToast } from "~/signals";
-import { FetchStatus } from "@storyteller/ui-pagescene";
-import { MediaFilesApi } from "~/Classes/ApiManager";
+import type { PageSceneAdapter } from "../../../adapter";
+import {
+  FetchStatus,
+  FilterEngineCategories,
+  FilterMediaType,
+  ToastTypes,
+} from "../../../enums";
 import type {
   MediaItem,
   Pagination,
   PaginationInfinite,
-} from "@storyteller/ui-pagescene";
-
+} from "../../../models";
 import { responseMapping } from "./misc";
 
 export interface FetchMediaItemStates {
@@ -25,32 +27,36 @@ interface fetchMediaItemsInterface {
   nextPageIndex?: number; // for user item's normal pagination
 }
 
-export const fetchUserMediaItems = async ({
-  filterEngineCategories,
-  filterMediaType,
-  defaultErrorMessage,
-  nextPageIndex,
-}: fetchMediaItemsInterface): Promise<FetchMediaItemStates> => {
-  const mediaFilesApi = new MediaFilesApi();
+export const fetchUserMediaItems = async (
+  args: fetchMediaItemsInterface,
+  adapter: PageSceneAdapter,
+): Promise<FetchMediaItemStates> => {
+  const {
+    filterEngineCategories,
+    filterMediaType,
+    defaultErrorMessage,
+    nextPageIndex,
+  } = args;
 
-  const response = await mediaFilesApi.ListUserMediaFiles({
-    page_size: 100,
-    page_index: nextPageIndex,
-    filter_engine_categories: filterEngineCategories,
-    filter_media_type: filterMediaType,
+  const response = await adapter.listUserMediaFiles({
+    pageSize: 100,
+    pageIndex: nextPageIndex,
+    filterEngineCategories,
+    filterMediaTypes: filterMediaType,
   });
 
   if (response.success && response.data) {
     const newSetObjects = responseMapping(
       response.data,
       filterEngineCategories,
+      adapter,
     );
     return {
       mediaItems: newSetObjects,
       status: FetchStatus.SUCCESS,
     };
   }
-  addToast(
+  adapter.showToast(
     ToastTypes.ERROR,
     response.errorMessage ??
       defaultErrorMessage ??
@@ -59,24 +65,29 @@ export const fetchUserMediaItems = async ({
   return { status: FetchStatus.ERROR };
 };
 
-export const fetchFeaturedMediaItems = async ({
-  filterMediaType,
-  filterEngineCategories,
-  defaultErrorMessage,
-  nextPageCursor,
-}: fetchMediaItemsInterface): Promise<FetchMediaItemStates> => {
-  const mediaFilesApi = new MediaFilesApi();
-  const response = await mediaFilesApi.ListFeaturedMediaFiles({
-    page_size: 100,
-    filter_engine_categories: filterEngineCategories,
-    filter_media_type: filterMediaType,
+export const fetchFeaturedMediaItems = async (
+  args: fetchMediaItemsInterface,
+  adapter: PageSceneAdapter,
+): Promise<FetchMediaItemStates> => {
+  const {
+    filterMediaType,
+    filterEngineCategories,
+    defaultErrorMessage,
+    nextPageCursor,
+  } = args;
+
+  const response = await adapter.listFeaturedMediaFiles({
+    pageSize: 100,
     cursor: nextPageCursor,
+    filterEngineCategories,
+    filterMediaTypes: filterMediaType,
   });
 
   if (response.success && response.data) {
     const newSetObjects = responseMapping(
       response.data,
       filterEngineCategories,
+      adapter,
     );
     return {
       mediaItems: newSetObjects,
@@ -84,7 +95,7 @@ export const fetchFeaturedMediaItems = async ({
       nextPageInf: response.pagination,
     };
   }
-  addToast(
+  adapter.showToast(
     ToastTypes.ERROR,
     response.errorMessage ??
       defaultErrorMessage ??

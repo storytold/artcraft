@@ -21,7 +21,7 @@ import type { TransformMode } from "@storyteller/ui-pagescene";
 import { useContext, useEffect, useState } from "react";
 import { useShallow } from "zustand/shallow";
 import { useTabStore } from "~/pages/Stores/TabState";
-import { AssetModal } from "../AssetMenu/AssetModal";
+import { AssetModal } from "@storyteller/ui-pagescene";
 import { useSignals } from "@preact/signals-react/runtime";
 // eslint-disable-next-line import/no-unresolved
 import { setLogoutStates } from "~/signals/authentication/utilities";
