@@ -39,6 +39,12 @@ export class StorytellerApiHostStore {
     return instance;
   }
 
+  /** Convert an API path to a full URL using the configured scheme and host. */
+  public pathToFullUrl(path: string): string {
+    const trimmedPath = path.startsWith("/") ? path.slice(1) : path;
+    return `${this.apiSchemeAndHost}/${trimmedPath}`;
+  }
+
   /** Get the API scheme and host. */
   public getApiSchemeAndHost(): string {
     console.debug("StorytellerApiHostStore.getApiSchemeAndHost()", this.apiSchemeAndHost, this.constructor.name);
