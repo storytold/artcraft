@@ -382,19 +382,18 @@ async fn download_and_upload_video(
 
   info!("Video media file uploaded with token: {}", media_token);
 
-  let thumbnail_task_result =
-      ThumbnailTaskBuilder::new_for_source_mimetype(ThumbnailTaskInputMimeType::MP4)
-          .with_bucket(server_state.public_bucket_client.bucket_name().as_str())
-          .with_path(&*path_to_string(public_upload_path.to_full_object_pathbuf()))
-          .with_output_suffix("thumb")
-          .with_event_id(&media_token.to_string())
-          .send_all()
-          .await;
-
-  if let Err(err) = thumbnail_task_result {
-    // Fail open
-    error!("Failed to create some/all thumbnail tasks: {:?}", err);
-  }
+  // let thumbnail_task_result =
+  //     ThumbnailTaskBuilder::new_for_source_mimetype(ThumbnailTaskInputMimeType::MP4)
+  //         .with_bucket(server_state.public_bucket_client.bucket_name().as_str())
+  //         .with_path(&*path_to_string(public_upload_path.to_full_object_pathbuf()))
+  //         .with_output_suffix("thumb")
+  //         .with_event_id(&media_token.to_string())
+  //         .send_all()
+  //         .await;
+  // if let Err(err) = thumbnail_task_result {
+  //   // Fail open
+  //   error!("Failed to create some/all thumbnail tasks: {:?}", err);
+  // }
 
   Ok(media_token)
 }
