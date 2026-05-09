@@ -1,3 +1,6 @@
+import { useContext, useEffect, useState } from "react";
+import { useShallow } from "zustand/shallow";
+import { useSignals } from "@preact/signals-react/runtime";
 import {
   faArrowsRotate,
   faArrowsUpDownLeftRight,
@@ -12,20 +15,6 @@ import { ButtonIconSelect } from "@storyteller/ui-button-icon-select";
 import { Button } from "@storyteller/ui-button";
 import { Tooltip } from "@storyteller/ui-tooltip";
 import { SettingsModal } from "@storyteller/ui-settings-modal";
-import {
-  EngineContext,
-  setTransformMode,
-  usePageSceneStore,
-} from "@storyteller/ui-pagescene";
-import type { TransformMode } from "@storyteller/ui-pagescene";
-import { useContext, useEffect, useState } from "react";
-import { useShallow } from "zustand/shallow";
-import { useTabStore } from "~/pages/Stores/TabState";
-import { AssetModal } from "@storyteller/ui-pagescene";
-import { useSignals } from "@preact/signals-react/runtime";
-// eslint-disable-next-line import/no-unresolved
-import { setLogoutStates } from "~/signals/authentication/utilities";
-import { UploadModal3D } from "../../../../components/reusable/UploadModal3D/UploadModal3D";
 import { PopoverMenu } from "@storyteller/ui-popover";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -33,12 +22,18 @@ import {
   galleryModalVisibleDuringDrag,
 } from "@storyteller/ui-gallery-modal";
 import { twMerge } from "tailwind-merge";
-import { UploadModalImage } from "../../../../components/reusable/UploadModalImage";
-import { UploadModalSplat } from "~/components/reusable/UploadModalSplat";
+
+import { EngineContext } from "../../contexts/EngineContext/EngineContext";
+import { setTransformMode } from "../../actions";
+import {
+  usePageSceneStore,
+  type TransformMode,
+} from "../../PageSceneStore";
+import { AssetModal } from "../AssetMenu";
 
 export const Controls3D = () => {
   useSignals();
-  const editorEngine = useContext(EngineContext);
+  const editor = useContext(EngineContext);
   const {
     assetModalVisible,
     setAssetModalVisible,
@@ -55,13 +50,11 @@ export const Controls3D = () => {
     })),
   );
   const [showEmptySceneTooltip, setShowEmptySceneTooltip] = useState(false);
-  // Action reminder is now handled through signals
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [upload3DIsShowing, setUpload3DIsShowing] = useState(false);
   const [isAddAssetPopoverOpen, setIsAddAssetPopoverOpen] = useState(false);
   const [uploadImageIsShowing, setUploadImageIsShowing] = useState(false);
   const [uploadSplatIsShowing, setUploadSplatIsShowing] = useState(false);
-
 
   const outlinerItemCount = usePageSceneStore((s) => s.outlinerItems.length);
 
@@ -88,36 +81,11 @@ export const Controls3D = () => {
   ]);
 
   const handleModeChange = (value: string) => {
-    if (!editorEngine) return;
+    if (!editor) return;
     if (value === "move" || value === "rotate" || value === "scale") {
-      setTransformMode(editorEngine, value as TransformMode);
+      setTransformMode(editor, value as TransformMode);
     }
   };
-
-  // ----- TODO LATER - BFlat for auto add 3d model to scene -----
-
-  // Function to add the generated 3D model to the scene
-  // const addGeneratedModelToScene = useCallback((mediaToken: string) => {
-  //   console.log("[DEBUG] addGeneratedModelToScene called with token:", mediaToken);
-
-  //   // Create a MediaItem object for the 3D model
-  //   const mediaItem: MediaItem = {
-  //     version: 1,
-  //     type: AssetType.OBJECT,
-  //     media_id: mediaToken,
-  //     name: "3D Model",
-  //     object_uuid: uuidv4(),
-  //   };
-
-  //   // Add the object to the scene
-  //   console.log("[DEBUG] Calling addObject with:", mediaItem);
-  //   try {
-  //     addObject(mediaItem);
-  //     console.log("[DEBUG] addObject called successfully");
-  //   } catch (error) {
-  //     console.error("[DEBUG] Error in addObject:", error);
-  //   }
-  // }, []);
 
   const handleOpenModal = () => {
     setAssetModalVisibleDuringDrag(true);
@@ -125,10 +93,9 @@ export const Controls3D = () => {
   };
 
   const handleOpenCreate3dModal = () => {
-    useTabStore.getState().setActiveTab("IMAGE_TO_3D_OBJECT");
+    editor?.adapter.navigateToImageTo3D();
   };
 
-  // Open global Gallery modal
   const handleOpenGalleryModal = () => {
     galleryModalVisibleViewMode.value = true;
     galleryModalVisibleDuringDrag.value = true;
@@ -263,10 +230,11 @@ export const Controls3D = () => {
                     ]}
                     onPanelAction={handleAddAssetAction}
                     showIconsInList
-                    buttonClassName={`h-9 w-9 rounded-[10px] text-lg ${showEmptySceneTooltip
-                      ? "bg-primary/90 hover:bg-primary/70"
-                      : "border-transparent bg-primary/90 hover:bg-primary/70"
-                      }`}
+                    buttonClassName={`h-9 w-9 rounded-[10px] text-lg ${
+                      showEmptySceneTooltip
+                        ? "bg-primary/90 hover:bg-primary/70"
+                        : "border-transparent bg-primary/90 hover:bg-primary/70"
+                    }`}
                     triggerIcon={
                       <FontAwesomeIcon icon={faPlus} className="text-xl" />
                     }
@@ -315,7 +283,7 @@ export const Controls3D = () => {
               >
                 <button
                   className="h-9 rounded-[10px] px-2.5 text-[10px] font-semibold font-mono bg-white/15 hover:bg-white/25 transition-colors uppercase tracking-wide"
-                  onClick={() => editorEngine?.gizmo.toggleTransformSpace()}
+                  onClick={() => editor?.gizmo.toggleTransformSpace()}
                 >
                   {transformSpace === "world" ? "World" : "Local"}
                 </button>
@@ -330,33 +298,36 @@ export const Controls3D = () => {
       <SettingsModal
         isOpen={isSettingsModalOpen}
         onClose={() => setIsSettingsModalOpen(false)}
-        globalAccountLogoutCallback={() => setLogoutStates()}
+        globalAccountLogoutCallback={() => editor?.adapter.performLogout()}
         initialSection="accounts"
       />
 
-      <UploadModal3D
-        isOpen={upload3DIsShowing}
-        onClose={() => setUpload3DIsShowing(false)}
-        onSuccess={() => setUpload3DIsShowing(false)}
-        title="Upload a 3D Model"
-        titleIcon={faCube}
-      />
+      {editor &&
+        editor.adapter.renderAssetUploader({
+          isOpen: upload3DIsShowing,
+          onClose: () => setUpload3DIsShowing(false),
+          onSuccess: () => setUpload3DIsShowing(false),
+          title: "Upload a 3D Model",
+          titleIcon: faCube,
+        })}
 
-      <UploadModalImage
-        isOpen={uploadImageIsShowing}
-        onClose={() => setUploadImageIsShowing(false)}
-        onSuccess={() => setUploadImageIsShowing(false)}
-        title="Upload an Image"
-        titleIcon={faImages}
-      />
+      {editor &&
+        editor.adapter.renderImageUploader({
+          isOpen: uploadImageIsShowing,
+          onClose: () => setUploadImageIsShowing(false),
+          onSuccess: () => setUploadImageIsShowing(false),
+          title: "Upload an Image",
+          titleIcon: faImages,
+        })}
 
-      <UploadModalSplat
-        isOpen={uploadSplatIsShowing}
-        onClose={() => setUploadSplatIsShowing(false)}
-        onSuccess={() => setUploadSplatIsShowing(false)}
-        title="Upload an spz file"
-        titleIcon={faCube}
-      />
+      {editor &&
+        editor.adapter.renderSplatUploader({
+          isOpen: uploadSplatIsShowing,
+          onClose: () => setUploadSplatIsShowing(false),
+          onSuccess: () => setUploadSplatIsShowing(false),
+          title: "Upload an spz file",
+          titleIcon: faCube,
+        })}
     </>
   );
 };

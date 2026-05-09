@@ -60,6 +60,18 @@
       "path": "../label/tsconfig.lib.json"
     },
     {
+      "path": "../gallery-modal/tsconfig.lib.json"
+    },
+    {
+      "path": "../popover/tsconfig.lib.json"
+    },
+    {
+      "path": "../settings-modal/tsconfig.lib.json"
+    },
+    {
+      "path": "../button-icon-select/tsconfig.lib.json"
+    },
+    {
       "path": "../loading/tsconfig.lib.json"
     },
     {

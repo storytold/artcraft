@@ -29,21 +29,6 @@
   },
   "references": [
     {
-      "path": "../../libs/components/label"
-    },
-    {
-      "path": "../../libs/components/button-dropdown"
-    },
-    {
-      "path": "../../libs/components/button-icon-select"
-    },
-    {
-      "path": "../../libs/components/toaster"
-    },
-    {
-      "path": "../../libs/components/login-modal"
-    },
-    {
       "path": "../../libs/components/badge"
     },
     {
@@ -53,10 +38,13 @@
       "path": "../../libs/components/loading-spinner"
     },
     {
-      "path": "../../libs/soundboard"
+      "path": "../../libs/components/toaster"
     },
     {
-      "path": "../../libs/components/pagescene"
+      "path": "../../libs/components/login-modal"
+    },
+    {
+      "path": "../../libs/soundboard"
     },
     {
       "path": "../../libs/components/pagedraw"
@@ -159,6 +147,9 @@
     },
     {
       "path": "../../libs/tauri-api"
+    },
+    {
+      "path": "../../libs/components/pagescene"
     },
     {
       "path": "../../libs/tauri-utils"

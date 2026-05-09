@@ -12,6 +12,18 @@
       "path": "../label"
     },
     {
+      "path": "../gallery-modal"
+    },
+    {
+      "path": "../popover"
+    },
+    {
+      "path": "../settings-modal"
+    },
+    {
+      "path": "../button-icon-select"
+    },
+    {
       "path": "../loading"
     },
     {

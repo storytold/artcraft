@@ -184,6 +184,7 @@ export { getSceneGenerationMetaData } from "./lib/sceneMetadata";
 // are either surfaced via adapter slots or replaced with
 // lib-internal state.
 export { AssetMenu, AssetModal } from "./lib/comps/AssetMenu";
+export { Controls3D } from "./lib/comps/Controls3D";
 export { ControlsTopButtons } from "./lib/comps/ControlsTopButtons";
 export { DragComponent } from "./lib/comps/DragComponent/DragComponent";
 export { PrecisionSelector } from "./lib/comps/PrecisionSelector/PrecisionSelector";

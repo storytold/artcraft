@@ -1,11 +1,11 @@
 import React, { useContext, useEffect, useRef } from "react";
 import { useSignals } from "@preact/signals-react/runtime";
-import { Controls3D } from "./comps/Controls3D";
 import { pageHeight, pageWidth } from "~/signals";
 
 import {
   CameraAspectRatio,
   ControlPanelSceneObject,
+  Controls3D,
   ControlsTopButtons,
   EditorCanvas,
   EngineContext,
