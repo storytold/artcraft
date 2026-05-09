@@ -96,7 +96,6 @@ export function CostBreakdownModal({ activeTabId }: CostBreakdownModalProps) {
   const {
     currency,
     setCurrency,
-    currencyOption,
     formatPrice,
     currencyOptions,
   } = useCurrency();

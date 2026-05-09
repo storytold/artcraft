@@ -48,15 +48,15 @@ export function ProviderSelector({
   useEffect(() => {
     if (!modelId) return;
     if (!selectedProvider && allowedProviders.length > 0) {
-      setSelectedProvider(page, modelId, allowedProviders[0]);
+      setSelectedProvider(page, modelId, allowedProviders[0] as any);
     }
   }, [page, modelId, selectedProvider, allowedProviders, setSelectedProvider]);
 
   const items: Omit<PopoverItem, "selected">[] = useMemo(
     () =>
       allowedProviders.map((p) => ({
-        label: getProviderDisplayName(p),
-        icon: getProviderIcon(p),
+        label: getProviderDisplayName(p as any),
+        icon: getProviderIcon(p as any),
         model: undefined,
         provider: p,
       })),
@@ -78,7 +78,7 @@ export function ProviderSelector({
       | Provider
       | undefined;
     if (!prov) return;
-    setSelectedProvider(page, modelId, prov);
+    setSelectedProvider(page, modelId, prov as any);
   };
 
   return (

@@ -6,7 +6,6 @@ import {
   Model,
   VIDEO_MODELS,
   IMAGE_MODELS,
-  IMAGE_MODELS_BY_ID,
   SPLAT_MODELS,
   OBJECT_3D_MODELS,
 } from "@storyteller/model-list";
