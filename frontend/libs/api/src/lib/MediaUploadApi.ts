@@ -4,10 +4,15 @@ import { FilterEngineCategories } from "./enums/QueryFilters.js";
 import { Visibility } from "./enums/Visibility.js";
 import { EIntermediateFile } from "./enums/EIntermediateFile.js";
 import { UploaderStates, UploaderState } from "@storyteller/common";
+
+type GetSessionTokenForUploadStuioShotResult =
+  | { success: true; data?: string }
+  | { success: false; errorMessage?: any };
+
 export class MediaUploadApi extends ApiManager {
   private sessionToken = "";
 
-  private async getSessionTokenForUploadStudioShot() {
+  private async getSessionTokenForUploadStudioShot(): Promise<GetSessionTokenForUploadStuioShotResult> {
     const endpoint = `${this.getApiSchemeAndHost()}/v1/session_token`;
     return await this.get<{
       maybe_signed_session: string;

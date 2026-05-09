@@ -106,7 +106,6 @@ export class PromptsApi extends ApiManager {
     console.log(response);
 
     const success = response.success ?? false;
-    const status = response.status ?? "";
     const errorMessage = response.BadInput;
 
     return {
