@@ -1,31 +1,7 @@
-export enum FilterMediaClasses {
-  AUDIO = "audio",
-  IMAGE = "image",
-  VIDEO = "video",
-  DIMENSIONAL = "dimensional",
-}
-
-export enum FilterMediaType {
-  SCENE_JSON = "scene_json",
-  GLB = "glb",
-  GLTF = "gltf",
-  PMX = "pmx",
-  PMD = "pmd",
-  VMD = "vmd",
-}
-
-export enum FilterEngineCategories {
-  ANIMATION = "animation",
-  AUDIO = "audio",
-  CHARACTER = "character",
-  CREATURE = "creature",
-  EXPRESSION = "expression",
-  IMAGE_PLANE = "image_plane",
-  LOCATION = "location",
-  OBJECT = "object",
-  SPLAT = "splat",
-  SCENE = "scene",
-  SET_DRESSING = "set_dressing",
-  SKYBOX = "skybox",
-  VIDEO_PLANE = "video_plane",
-}
+// Single source of truth lives in @storyteller/ui-pagescene; this
+// re-export keeps the artcraft `~/enums` surface stable.
+export {
+  FilterEngineCategories,
+  FilterMediaClasses,
+  FilterMediaType,
+} from "@storyteller/ui-pagescene";
