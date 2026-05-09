@@ -17,6 +17,7 @@ use enums::by_table::debug_logs::debug_log_type::DebugLogType;
 use enums::by_table::generic_inference_jobs::frontend_failure_category::FrontendFailureCategory;
 use enums::by_table::media_files::media_file_class::MediaFileClass;
 use enums::by_table::media_files::media_file_origin_category::MediaFileOriginCategory;
+use enums::by_table::media_files::media_file_origin_product_category::MediaFileOriginProductCategory;
 use enums::by_table::media_files::media_file_type::MediaFileType;
 use ffmpeg_utils::ffprobe::ffprobe_get_info::ffprobe_get_info;
 use filesys::path_to_string::path_to_string;
@@ -366,6 +367,7 @@ async fn download_and_upload_video(
       .media_file_class(MediaFileClass::Video)
       .media_file_type(media_file_type)
       .media_file_origin_category(MediaFileOriginCategory::Inference)
+      .media_file_origin_product_category(MediaFileOriginProductCategory::VideoEdit)
       .mime_type(mime_type)
       .file_size_bytes(file_size_bytes as u64)
       .maybe_frame_width(maybe_frame_width)
