@@ -212,6 +212,15 @@ export const ControlPanelSceneObject = () => {
     };
   }, [isShowing]);
 
+  // Must come before the early return below — hooks have to run in
+  // the same order every render or React errors with "rendered more
+  // hooks than during the previous render".
+  const viewport = useViewportSize();
+  const getScale = () => {
+    const height = viewport.height - 56;
+    return height < 620 ? height / 620 : 1;
+  };
+
   if (!currentSceneObject) {
     return null;
   }
@@ -274,12 +283,6 @@ export const ControlPanelSceneObject = () => {
 
   const handleDeleteObject = () => {
     editorEngine?.deleteObject(currentSceneObject.object_uuid);
-  };
-
-  const viewport = useViewportSize();
-  const getScale = () => {
-    const height = viewport.height - 56;
-    return height < 620 ? height / 620 : 1;
   };
 
   return (
