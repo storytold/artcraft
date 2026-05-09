@@ -1,3 +1,5 @@
+import { StorytellerApiHostStore } from "@storyteller/api";
+
 export type SubmitVFXJobRequest = {
   source_video_media_token: string;
   reference_image_media_token: string | null;
@@ -22,7 +24,9 @@ export async function submitVFXJob(
   req: SubmitVFXJobRequest,
 ): Promise<SubmitVFXJobResponse> {
   try {
-    const res = await fetch(VFX_ENDPOINT, {
+    const url = StorytellerApiHostStore.getInstance().pathToFullUrl(VFX_ENDPOINT);
+
+    const res = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
