@@ -121,7 +121,6 @@ export class StoryTellerProxyScene {
     skybox_media_id: string,
     version: number,
   ) {
-    console.log(scene_json);
     if (scene_json != null && this.scene != null) {
       while (this.scene.scene.children.length > 0) {
         this.scene.scene.remove(this.scene.scene.children[0]);
@@ -131,9 +130,17 @@ export class StoryTellerProxyScene {
         let obj;
         switch (token) {
           case "Parim": {
-            const newScene = await this.scene.instantiate(
-              json_object.object_name,
-            );
+            // The display name ("Cube", "Point Light") doesn't match
+            // Scene.instantiate's geometry switch — that switch wants
+            // the geometry key ("Box", "PointLight"). addShape stashes
+            // the original key in userData.shapeKey so we can recover it
+            // here; without this, instantiate falls through to its else
+            // branch and returns an empty Mesh with undefined geometry,
+            // which renders invisibly and isn't raycast-pickable.
+            const shapeKey =
+              (json_object.user_data?.shapeKey as string | undefined) ??
+              json_object.object_name;
+            const newScene = await this.scene.instantiate(shapeKey);
             const prim_uuid = newScene.uuid;
             obj = this.scene.get_object_by_uuid(prim_uuid);
             break;
@@ -201,7 +208,12 @@ export class StoryTellerProxyScene {
           obj.userData["shininess"] = json_object.shininess;
           obj.userData["specular"] = json_object.specular;
           obj.userData["media_file_type"] = json_object.media_file_type;
-          //console.log(obj)
+          // Re-stash the geometry key on the recreated shape so the
+          // next save round-trip survives — the wholesale userData
+          // copy that the m_* branch does isn't applied here.
+          if (json_object.user_data?.shapeKey) {
+            obj.userData.shapeKey = json_object.user_data.shapeKey;
+          }
 
           if (json_object.visible !== undefined) {
             this.scene.setVisible(obj.uuid, json_object.visible);
