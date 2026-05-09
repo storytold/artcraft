@@ -212,38 +212,45 @@ const TabBody = ({ sceneToken }: { sceneToken?: string }) => {
   const tabStore = useTabStore();
   const storyboardPageEnabled = useStoryboardPageEnabled();
 
+  // The 3D case stays unwrapped because Stage3DBody (lib) already
+  // returns a <div> wrapper. Every other page is a fragment whose
+  // top-level children may use position: fixed (e.g. PageDraw); the
+  // wrapping <div> scopes them so they don't stack as siblings of
+  // the TopBar at the MainApp root.
   switch (tabStore.activeTabId) {
     case "3D":
       return <PageScene sceneToken={sceneToken} />;
     case "APPS":
-      return <AppsIndexPage />;
+      return <div><AppsIndexPage /></div>;
     case "2D":
-      return <PageDrawWithGalleryDrop />;
+      return <div><PageDrawWithGalleryDrop /></div>;
     case "IMAGE":
       return (
-        <TextToImage
-          imageMediaId={topNavMediaId.value}
-          imageUrl={topNavMediaUrl.value}
-        />
+        <div>
+          <TextToImage
+            imageMediaId={topNavMediaId.value}
+            imageUrl={topNavMediaUrl.value}
+          />
+        </div>
       );
     case "VIDEO":
-      return <ImageToVideo />;
+      return <div><ImageToVideo /></div>;
     case "VIDEO_FRAME_EXTRACTOR":
-      return <VideoFrameExtractor />;
+      return <div><VideoFrameExtractor /></div>;
     case "VIDEO_WATERMARK_REMOVAL":
-      return <VideoWatermarkRemover />;
+      return <div><VideoWatermarkRemover /></div>;
     case "IMAGE_WATERMARK_REMOVAL":
-      return <ImageWatermarkRemover />;
+      return <div><ImageWatermarkRemover /></div>;
     case "IMAGE_TO_3D_OBJECT":
-      return <ImageTo3DObject />;
+      return <div><ImageTo3DObject /></div>;
     case "IMAGE_TO_3D_WORLD":
-      return <ImageTo3DWorld />;
+      return <div><ImageTo3DWorld /></div>;
     case "REMOVE_BACKGROUND":
-      return <RemoveBackground />;
+      return <div><RemoveBackground /></div>;
     case "ANGLES":
-      return <Angles />;
+      return <div><Angles /></div>;
     case "STORYBOARD":
-      return storyboardPageEnabled ? <Storyboard /> : null;
+      return storyboardPageEnabled ? <div><Storyboard /></div> : null;
     default:
       return null;
   }

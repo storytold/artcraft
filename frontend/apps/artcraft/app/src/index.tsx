@@ -1,7 +1,7 @@
 import { StrictMode, useEffect } from "react";
 import { useSignals, useSignalEffect } from "@preact/signals-react/runtime";
 import { BrowserRouter } from "react-router-dom";
-import { PageScene } from "./pages/PageScene/PageScene";
+import { MainApp } from "./pages/MainApp";
 import { GlobalFileDropHandler } from "./components/GlobalFileDropHandler/GlobalFileDropHandler";
 import { createRoot } from "react-dom/client";
 import "./styles/normalize.css";
@@ -99,7 +99,7 @@ createRoot(document.getElementById("root")!).render(
       <BrowserRouter>
         <GlobalSettingsManager env={ENV} />
         <div className="topbar-spacer" data-tauri-drag-region={true} />
-        <PageScene />
+        <MainApp />
         <GlobalFileDropHandler />
       </BrowserRouter>
     </StrictMode>
