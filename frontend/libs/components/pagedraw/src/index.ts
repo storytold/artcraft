@@ -3,6 +3,7 @@
 // Main component
 export { default as PageDraw } from "./lib/PageDraw";
 export { BlankCanvasModal } from "./lib/BlankCanvasModal";
+export { BaseImageSelector } from "./lib/BaseImageSelector";
 export { HistoryStack } from "./lib/HistoryStack";
 
 // Store

@@ -34,6 +34,7 @@ import { HelpMenuButton } from "@storyteller/ui-help-menu";
 import { CostCalculatorButton } from "@storyteller/ui-pricing-modal";
 import { GenerationProvider } from "@storyteller/api-enums";
 import { HistoryStack } from "./HistoryStack";
+import { BaseImageSelector } from "./BaseImageSelector";
 import { type BaseSelectorImage } from "./types";
 import { EncodeImageBitmapToBase64 } from "./utilities/EncodeImageBitmapToBase64";
 import { compositeInWorker, maskInWorker } from "./utilities/generatePipeline";
@@ -198,7 +199,7 @@ function DragScrubButton({
 interface Edit3DScrubControlsProps {
   nodeId: string;
   stageRef: { current: Konva.Stage };
-  overlayHandle: React.RefObject<Model3DOverlayHandle>;
+  overlayHandle: React.RefObject<Model3DOverlayHandle | null>;
 }
 
 const Edit3DScrubControls = memo(function Edit3DScrubControls({
@@ -351,7 +352,6 @@ const PageDraw = ({ adapter }: PageDrawProps) => {
     historyImageBundles,
     pendingGenerations,
     getAspectRatioDimensions,
-    finishRemoveBackground,
     createImageFromUrl,
     createImageFromFile,
     createImageFrom3DModel,
@@ -361,7 +361,6 @@ const PageDraw = ({ adapter }: PageDrawProps) => {
     removeHistoryImage,
     addHistoryImageBundle,
     addPendingGeneration,
-    resolvePendingGeneration,
     removePendingGeneration,
     clearPendingGenerations,
     setAspectRatioType,
@@ -391,8 +390,6 @@ const PageDraw = ({ adapter }: PageDrawProps) => {
     (state) => state.setGenerationCount,
   );
   const useSystemPrompt = promptStoreProvider((state) => state.useSystemPrompt);
-  const referenceImages = promptStoreProvider((state) => state.referenceImages);
-  const prompt = promptStoreProvider((state) => state.prompt);
 
   const baseImageKonvaRef = useRef<Konva.Image>({} as Konva.Image);
   const baseImageUrl = baseImageInfo?.url;
@@ -524,13 +521,13 @@ const PageDraw = ({ adapter }: PageDrawProps) => {
 
     window.addEventListener(
       "gallery-2d-drop",
-      handleGallery2DDrop as EventListener,
+      handleGallery2DDrop as unknown as EventListener,
     );
 
     return () => {
       window.removeEventListener(
         "gallery-2d-drop",
-        handleGallery2DDrop as EventListener,
+        handleGallery2DDrop as unknown as EventListener,
       );
     };
   }, [createImageFromUrl, createImageFrom3DModel]);
@@ -1113,6 +1110,16 @@ const PageDraw = ({ adapter }: PageDrawProps) => {
   // Display image selector on launch, otherwise hide it.
   // Also show the selector when a non-blank-canvas image is set but the bitmap is still loading.
   if (!baseImageInfo || (!baseImageBitmap && !baseImageInfo.isBlankCanvas)) {
+    const selectorProps = {
+      onImageSelect: (image: BaseSelectorImage) => {
+        addHistoryImageBundle({ images: [image] });
+        setBaseImageInfo(image);
+      },
+      showLoading:
+        baseImageInfo !== null &&
+        baseImageBitmap === null &&
+        !baseImageInfo.isBlankCanvas,
+    };
     return (
       <div
         className={
@@ -1121,16 +1128,11 @@ const PageDraw = ({ adapter }: PageDrawProps) => {
       >
         <div className="w-full max-w-5xl">
           <div className="aspect-video overflow-hidden rounded-2xl border border-ui-panel-border bg-ui-background shadow-lg">
-            {adapter.renderBaseImageSelector({
-              onImageSelect: (image: BaseSelectorImage) => {
-                addHistoryImageBundle({ images: [image] });
-                setBaseImageInfo(image);
-              },
-              showLoading:
-                baseImageInfo !== null &&
-                baseImageBitmap === null &&
-                !baseImageInfo.isBlankCanvas,
-            })}
+            {adapter.renderBaseImageSelector ? (
+              adapter.renderBaseImageSelector(selectorProps)
+            ) : (
+              <BaseImageSelector adapter={adapter} {...selectorProps} />
+            )}
           </div>
         </div>
       </div>

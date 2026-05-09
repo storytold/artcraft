@@ -15,7 +15,7 @@ import {
 import { CommonAspectRatio, CommonResolution } from "@storyteller/model-list";
 import { useTextToImageGenerationCompleteEvent } from "@storyteller/tauri-events";
 import { UploadImageMedia } from "@storyteller/api";
-import { BaseImageSelector } from "./BaseImageSelector";
+import toast from "react-hot-toast";
 
 // ─── Aspect ratio / resolution mappers ────────────────────────────────────────
 const mapAspectRatio = (ratio?: string): CommonAspectRatio | undefined => {
@@ -140,12 +140,11 @@ const useTauriAdapter = (): PageDrawAdapter => {
 
       onEnqueueMeta: (meta) => (window as any).__storeTaskEnqueueMeta?.(meta),
 
-      renderBaseImageSelector: ({ onImageSelect, showLoading }) => (
-        <BaseImageSelector
-          onImageSelect={onImageSelect}
-          showLoading={showLoading}
-        />
-      ),
+      showToast: (type, message) => {
+        if (type === "error") toast.error(message);
+        else if (type === "success") toast.success(message);
+        else toast(message);
+      },
     }),
     [],
   );

@@ -82,6 +82,9 @@
     },
     {
       "path": "../modal/tsconfig.lib.json"
+    },
+    {
+      "path": "../gallery-modal/tsconfig.lib.json"
     }
   ]
 }

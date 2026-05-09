@@ -44,11 +44,23 @@ export interface PageDrawAdapter {
   /** Platform's image upload function, compatible with PromptBox2D's uploadImage prop. */
   uploadImage?: UploadMediaFn;
 
-  /** Renders the "no base image selected" state — upload card, gallery picker, etc. */
-  renderBaseImageSelector(props: {
+  /**
+   * Optional override for the "no base image selected" view. When omitted,
+   * the lib renders its built-in BaseImageSelector (upload + gallery + blank
+   * canvas). Hosts only need to provide this when they want fully custom
+   * chrome around the selector.
+   */
+  renderBaseImageSelector?: (props: {
     onImageSelect: (image: BaseSelectorImage) => void;
     showLoading: boolean;
-  }): ReactNode;
+  }) => ReactNode;
+
+  /**
+   * Optional toast hook so the lib can surface upload / generation messages
+   * without picking a host's toast library. When omitted, messages fall back
+   * to console logging.
+   */
+  showToast?: (type: "success" | "error" | "info", message: string) => void;
 
   /** Optional telemetry hook called just before an enqueue. */
   onEnqueueMeta?: (meta: {
