@@ -1,3 +1,4 @@
+pub mod edit;
 pub mod generate_kling_16_pro_image_to_video;
 pub mod generate_kling_21_master_image_to_video;
 pub mod generate_kling_21_pro_image_to_video;

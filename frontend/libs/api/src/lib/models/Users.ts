@@ -1,4 +1,4 @@
-import { USER_FEATURE_FLAGS } from "../../libs/api/src/lib/enums/UserFeatures";
+import { USER_FEATURE_FLAGS } from "../enums/UserFeatures";
 
 export interface CoreInfo {
   default_avatar: {

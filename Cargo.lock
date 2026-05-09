@@ -1405,6 +1405,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "beeble_client"
+version = "0.0.1"
+dependencies = [
+ "anyhow",
+ "errors",
+ "log",
+ "reqwest 0.12.23",
+ "serde",
+ "serde_derive",
+ "serde_json",
+ "test_data",
+ "tokio",
+ "workspace-build-acceleration",
+]
+
+[[package]]
 name = "bigdecimal"
 version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -11234,6 +11250,7 @@ dependencies = [
  "async-stripe 0.26.0",
  "async-trait",
  "base64 0.22.1",
+ "beeble_client",
  "billing_artcraft_component",
  "billing_component",
  "bootstrap",

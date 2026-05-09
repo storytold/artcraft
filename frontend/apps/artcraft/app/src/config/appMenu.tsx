@@ -10,6 +10,7 @@ import {
   faWandMagicSparkles,
   faPenNib,
   faCrosshairs,
+  faSparkles,
 } from "@fortawesome/pro-solid-svg-icons";
 import { useMemo } from "react";
 import {
@@ -31,7 +32,8 @@ export type AppId =
   | "IMAGE_TO_3D_WORLD"
   | "REMOVE_BACKGROUND"
   | "ANGLES"
-  | "STORYBOARD";
+  | "STORYBOARD"
+  | "BACKGROUND_CHANGE";
 
 export interface AppDescriptor {
   id: AppId;
@@ -186,6 +188,16 @@ export const ALL_APPS: FullAppItem[] = [
     badge: "NEW",
   },
   {
+    id: "background-change",
+    label: "Background Change",
+    description: "Swap the backdrop of a video using a reference image",
+    icon: faSparkles,
+    category: "edit",
+    action: "BACKGROUND_CHANGE",
+    color: "bg-orange-500/40",
+    badge: "NEW",
+  },
+  {
     id: "2d-canvas",
     label: "Image Editor",
     description: "Easy edits. Great for graphic design.",
@@ -214,9 +226,12 @@ export const useVisibleApps = (): FullAppItem[] => {
   const storyboardEnabled = useStoryboardPageEnabled();
   return useMemo(
     () =>
-      ALL_APPS.filter((app) =>
-        app.action === "STORYBOARD" ? storyboardEnabled : true,
-      ),
+      ALL_APPS.filter((app) => {
+        // Background Change is hidden in the desktop app for now.
+        if (app.action === "BACKGROUND_CHANGE") return false;
+        if (app.action === "STORYBOARD") return storyboardEnabled;
+        return true;
+      }),
     [storyboardEnabled],
   );
 };
@@ -266,6 +281,7 @@ export const goToApp = (action?: string) => {
       "REMOVE_BACKGROUND",
       "ANGLES",
       "STORYBOARD",
+      "BACKGROUND_CHANGE",
     ].includes(action)
   ) {
     if (action === "STORYBOARD") {

@@ -13,7 +13,6 @@ export * from "./lib/enqueue/EnqueueImageTo3dObject.js";
 export * from "./lib/enqueue/EnqueueImageTo3dWorld.js";
 export * from "./lib/enqueue/EnqueueImageToGaussian.js";
 export * from "./lib/enqueue/EnqueueImageToVideo.js";
-export * from "./lib/enqueue/GenerateVideoCommand.js";
 export * from "./lib/enqueue/EnqueueTextToImage.js";
 export * from "./lib/generate/GenerateImage.js";
 export * from "./lib/generate/GenerateVideo.js";

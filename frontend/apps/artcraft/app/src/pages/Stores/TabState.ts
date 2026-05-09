@@ -15,7 +15,8 @@ export type TabId =
   | "IMAGE_TO_3D_WORLD"
   | "REMOVE_BACKGROUND"
   | "ANGLES"
-  | "STORYBOARD";
+  | "STORYBOARD"
+  | "BACKGROUND_CHANGE";
 
 const DEFAULT_TAB: TabId = "IMAGE";
 

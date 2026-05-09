@@ -1,4 +1,11 @@
-import React, { useState, useRef, useEffect, useCallback, useMemo, memo } from "react";
+import React, {
+  useState,
+  useRef,
+  useEffect,
+  useCallback,
+  useMemo,
+  memo,
+} from "react";
 import { useShallow } from "zustand/react/shallow";
 import { DRAW_LAYER_ID, INPAINT_LAYER_ID, PaintSurface } from "./PaintSurface";
 import "./pagedraw.css";
@@ -28,8 +35,8 @@ import { CostCalculatorButton } from "@storyteller/ui-pricing-modal";
 import { GenerationProvider } from "@storyteller/api-enums";
 import { HistoryStack } from "./HistoryStack";
 import { type BaseSelectorImage } from "./types";
-import { normalizeCanvas } from "./utilities/canvasHelpers";
 import { EncodeImageBitmapToBase64 } from "./utilities/EncodeImageBitmapToBase64";
+import { compositeInWorker, maskInWorker } from "./utilities/generatePipeline";
 import { RefImage, usePrompt2DStore } from "@storyteller/ui-promptbox";
 import { PromptsApi } from "@storyteller/api";
 import toast from "react-hot-toast";
@@ -106,13 +113,23 @@ const Edit3DButton = memo(function Edit3DButton({
     const transformers = stage.find("Transformer");
     transformers.forEach((tr) => {
       tr.on(`transformstart${ns}`, () => setInteracting(true));
-      tr.on(`transformend${ns}`, () => requestAnimationFrame(() => { setInteracting(false); bump(); }));
+      tr.on(`transformend${ns}`, () =>
+        requestAnimationFrame(() => {
+          setInteracting(false);
+          bump();
+        }),
+      );
     });
 
     const konvaNode = stage.findOne("#" + nodeId);
     if (konvaNode) {
       konvaNode.on(`dragstart${ns}`, () => setInteracting(true));
-      konvaNode.on(`dragend${ns}`, () => requestAnimationFrame(() => { setInteracting(false); bump(); }));
+      konvaNode.on(`dragend${ns}`, () =>
+        requestAnimationFrame(() => {
+          setInteracting(false);
+          bump();
+        }),
+      );
     }
 
     return () => {
@@ -380,6 +397,13 @@ const PageDraw = ({ adapter }: PageDrawProps) => {
   const baseImageKonvaRef = useRef<Konva.Image>({} as Konva.Image);
   const baseImageUrl = baseImageInfo?.url;
 
+  // Synchronous re-entry guard for the Generate flow. A ref (not state) is the
+  // safety belt against duplicate paid generations: it flips before the first
+  // await so a panic-clicked second click sees the in-flight value immediately,
+  // independent of React state batching. The state below is only for the UI.
+  const generateInFlightRef = useRef(false);
+  const [isGenerating, setIsGenerating] = useState(false);
+
   const selectedImageModel: ImageModel | undefined =
     useSelectedImageModel(PAGE_ID);
 
@@ -396,8 +420,12 @@ const PageDraw = ({ adapter }: PageDrawProps) => {
     onPaste: pasteItems,
   });
 
-  // Create a function to use the left layer ref and download the bitmap from it
-  const getMaskArrayBuffer = async (): Promise<Uint8Array> => {
+  // Read the inpaint mask off the Konva layer and encode it on a worker thread.
+  // The Konva readback itself runs on main (Konva is DOM-bound), but everything
+  // downstream — drawImage to an exact-size canvas, PNG encoding, byte transfer —
+  // happens off the main thread. Stable: only touches refs, so handleGenerate
+  // can list it as a dep without churning per render.
+  const getMaskArrayBuffer = useCallback(async (): Promise<Uint8Array> => {
     if (!stageRef.current || !baseImageKonvaRef.current) {
       console.error("Stage or left panel ref is not available");
       throw new Error("Stage or left panel or base image ref is not available");
@@ -416,17 +444,13 @@ const PageDraw = ({ adapter }: PageDrawProps) => {
       pixelRatio: 1 / stageRef.current.scaleX(),
     });
 
-    const fittedCanvas = normalizeCanvas(
-      layerCrop,
-      rect.width(),
-      rect.height(),
-    );
-
-    const blob = await fittedCanvas.convertToBlob({ type: "image/png" });
-    const arrayBuffer = await blob.arrayBuffer();
-
-    return new Uint8Array(arrayBuffer);
-  };
+    const markerBitmap = await createImageBitmap(layerCrop);
+    return maskInWorker({
+      markerBitmap,
+      width: rect.width(),
+      height: rect.height(),
+    });
+  }, []);
 
   // Listen for gallery drag and drop events
   useEffect(() => {
@@ -469,7 +493,11 @@ const PageDraw = ({ adapter }: PageDrawProps) => {
               stagePoint.y - displayH / 2,
               dataUrl,
               modelUrl,
-              { ...DEFAULT_MODEL3D_PARAMS, nativeWidth: img.width, nativeHeight: img.height },
+              {
+                ...DEFAULT_MODEL3D_PARAMS,
+                nativeWidth: img.width,
+                nativeHeight: img.height,
+              },
               displayW,
               displayH,
             );
@@ -540,33 +568,44 @@ const PageDraw = ({ adapter }: PageDrawProps) => {
     [drawNodes, editing3DNodeId],
   );
 
-  const handleImageUpload = useCallback(async (files: File[]): Promise<void> => {
-    const { width: canvasW, height: canvasH } = getAspectRatioDimensions();
+  const handleImageUpload = useCallback(
+    async (files: File[]): Promise<void> => {
+      const { width: canvasW, height: canvasH } = getAspectRatioDimensions();
 
-    const maxW = canvasW * 0.85;
-    const maxH = canvasH * 0.85;
+      const maxW = canvasW * 0.85;
+      const maxH = canvasH * 0.85;
 
-    for (const file of files) {
-      const img = new Image();
-      img.onload = () => {
-        const { naturalWidth, naturalHeight } = img;
+      for (const file of files) {
+        const img = new Image();
+        img.onload = () => {
+          const { naturalWidth, naturalHeight } = img;
 
-        const scale = Math.min(maxW / naturalWidth, maxH / naturalHeight, 1);
-        const displayW = naturalWidth * scale;
-        const displayH = naturalHeight * scale;
+          const scale = Math.min(maxW / naturalWidth, maxH / naturalHeight, 1);
+          const displayW = naturalWidth * scale;
+          const displayH = naturalHeight * scale;
 
-        const x = (canvasW - displayW) / 2;
-        const y = (canvasH - displayH) / 2;
+          const x = (canvasW - displayW) / 2;
+          const y = (canvasH - displayH) / 2;
 
-        createImageFromFile(x, y, file, displayW, displayH);
-      };
-      img.src = URL.createObjectURL(file);
-    }
-  }, [getAspectRatioDimensions, createImageFromFile]);
+          createImageFromFile(x, y, file, displayW, displayH);
+        };
+        img.src = URL.createObjectURL(file);
+      }
+    },
+    [getAspectRatioDimensions, createImageFromFile],
+  );
 
+  // Stable: reads base state imperatively from the Zustand store so deps stay
+  // empty and the bake chain (runCompositeBake → getCompositeFile /
+  // scheduleCompositeBake → handleGenerate) doesn't recreate on every
+  // base-image swap. `useSceneStore.getState()` always returns the latest
+  // store snapshot, so deferred bakes pick up the current bitmap at run time
+  // (not the one captured at schedule time).
   const getCompositeCanvasFile = useCallback(async (): Promise<File | null> => {
+    const { baseImageBitmap: baseBitmapNow, baseImageInfo: baseInfoNow } =
+      useSceneStore.getState();
     if (!stageRef.current || !baseImageKonvaRef.current) return null;
-    if (!baseImageInfo?.isBlankCanvas && !baseImageBitmap) return null;
+    if (!baseInfoNow?.isBlankCanvas && !baseBitmapNow) return null;
 
     const editsLayer = stageRef.current
       .getLayers()
@@ -581,17 +620,6 @@ const PageDraw = ({ adapter }: PageDrawProps) => {
     const width = rect.width();
     const height = rect.height();
 
-    const canvas = new OffscreenCanvas(width, height);
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return null;
-
-    if (baseImageBitmap) {
-      ctx.drawImage(baseImageBitmap, 0, 0, width, height);
-    } else {
-      ctx.fillStyle = "white";
-      ctx.fillRect(0, 0, width, height);
-    }
-
     const markerLayerCanvas = editsLayer.toCanvas({
       x: stageRef.current.x(),
       y: stageRef.current.y(),
@@ -599,17 +627,108 @@ const PageDraw = ({ adapter }: PageDrawProps) => {
       height: rect.height() * stageRef.current.scaleY(),
       pixelRatio: 1 / stageRef.current.scaleX(),
     });
-    const fittedMarkerCanvas = normalizeCanvas(
-      markerLayerCanvas,
+
+    // Move the marker pixels and a clone of the base bitmap off the main
+    // thread. The worker handles the exact-size resize, compositing, and PNG
+    // encoding. Each bake carries its own base atomically; we don't try to
+    // cache it across bakes — pre-baking on idle (see runCompositeBake) hides
+    // the per-bake clone cost on the click path, and the atomic-per-call
+    // contract avoids any race where concurrent bakes leave a stale base in a
+    // worker-side cache.
+    const [markerBitmap, baseBitmap] = await Promise.all([
+      createImageBitmap(markerLayerCanvas),
+      baseBitmapNow
+        ? createImageBitmap(baseBitmapNow)
+        : Promise.resolve(undefined),
+    ]);
+
+    const blob = await compositeInWorker({
+      markerBitmap,
+      baseBitmap,
       width,
       height,
-    );
-    ctx.drawImage(fittedMarkerCanvas, 0, 0, width, height);
-
-    const blob = await canvas.convertToBlob({ type: "image/png" });
+    });
     const uuid = crypto.randomUUID();
     return new File([blob], `${uuid}.png`, { type: "image/png" });
-  }, [baseImageBitmap, baseImageInfo]);
+  }, []);
+
+  // Pre-bake the composite File on idle so the Generate click path is
+  // near-instant in the common case (user pauses >300ms before clicking). The
+  // bake itself still freezes the main thread for the Konva readback, but it
+  // happens between user actions instead of on click. A generation counter
+  // makes concurrent bakes correct: only the latest bake commits its result,
+  // and only if no canvas change happened mid-bake.
+  const bakedCompositeRef = useRef<File | null>(null);
+  const bakeDirtyRef = useRef(true);
+  const bakeInFlightRef = useRef<Promise<File | null> | null>(null);
+  const bakeGenRef = useRef(0);
+  const bakeTimeoutRef = useRef<number | null>(null);
+
+  const runCompositeBake = useCallback((): Promise<File | null> => {
+    const myGen = ++bakeGenRef.current;
+    bakeDirtyRef.current = false;
+    const promise = (async () => {
+      try {
+        const file = await getCompositeCanvasFile();
+        if (myGen === bakeGenRef.current && !bakeDirtyRef.current) {
+          bakedCompositeRef.current = file;
+        }
+        return file;
+      } catch (err) {
+        if (myGen === bakeGenRef.current) bakeDirtyRef.current = true;
+        console.error("Composite pre-bake failed:", err);
+        return null;
+      } finally {
+        // Only the latest bake clears the in-flight slot. Older bakes that
+        // finish after a newer one has started leave the newer one's promise
+        // in place.
+        if (myGen === bakeGenRef.current) bakeInFlightRef.current = null;
+      }
+    })();
+    bakeInFlightRef.current = promise;
+    return promise;
+  }, [getCompositeCanvasFile]);
+
+  const getCompositeFile = useCallback((): Promise<File | null> => {
+    if (!bakeDirtyRef.current) {
+      if (bakedCompositeRef.current) {
+        return Promise.resolve(bakedCompositeRef.current);
+      }
+      if (bakeInFlightRef.current) return bakeInFlightRef.current;
+    }
+    return runCompositeBake();
+  }, [runCompositeBake]);
+
+  const scheduleCompositeBake = useCallback(() => {
+    if (bakeTimeoutRef.current !== null) {
+      window.clearTimeout(bakeTimeoutRef.current);
+    }
+    bakeTimeoutRef.current = window.setTimeout(() => {
+      bakeTimeoutRef.current = null;
+      runCompositeBake().catch(() => {});
+    }, 300);
+  }, [runCompositeBake]);
+
+  // Invalidate + reschedule on any change that affects what's actually rendered.
+  // `baseImageInfo` updates synchronously when the user picks a new base, but
+  // the canvas keeps showing the old bitmap until `baseImageBitmap` swaps in
+  // (see setBaseImageInfo in SceneState.ts) — so `baseImageBitmap` is the right
+  // trigger. The Generate button is gated separately on bitmap presence so we
+  // never bake or fire a generate against a not-yet-loaded base.
+  useEffect(() => {
+    bakeDirtyRef.current = true;
+    bakedCompositeRef.current = null;
+    scheduleCompositeBake();
+  }, [drawNodes, baseImageBitmap, scheduleCompositeBake]);
+
+  useEffect(
+    () => () => {
+      if (bakeTimeoutRef.current !== null) {
+        window.clearTimeout(bakeTimeoutRef.current);
+      }
+    },
+    [],
+  );
 
   const handleGenerate = useCallback(
     async (
@@ -621,28 +740,47 @@ const PageDraw = ({ adapter }: PageDrawProps) => {
         selectedProvider?: GenerationProvider;
       },
     ) => {
-      const editedImageToken = baseImageInfo?.mediaToken;
-
-      if (!editedImageToken) {
-        console.error("Base image is not available");
-        return;
-      }
-
-      const subscriberId: string =
-        crypto?.randomUUID?.() ??
-        `inpaint-${Date.now()}-${Math.random().toString(36).slice(2)}`;
-
-      adapter.onEnqueueMeta?.({
-        prompt,
-        refImageUrls: (options?.images || [])
-          .map((img) => img.url)
-          .filter(Boolean),
-        modelType:
-          (selectedImageModel as any)?.tauriId || String(selectedImageModel),
-        timestamp: Date.now(),
-      });
-
+      if (generateInFlightRef.current) return;
+      generateInFlightRef.current = true;
+      setIsGenerating(true);
       try {
+        // Yield once so React paints the disabled button before the heavy
+        // canvas readback / encode / upload runs and locks the main thread.
+        await new Promise<void>((resolve) =>
+          requestAnimationFrame(() => resolve()),
+        );
+
+        const editedImageToken = baseImageInfo?.mediaToken;
+
+        if (!editedImageToken) {
+          console.error("Base image is not available");
+          return;
+        }
+
+        // Defense in depth: the visual gate (PromptEditor's isDisabled) is the
+        // primary user-facing guard, but a programmatic dispatch or future
+        // alternate trigger could still land here while the bitmap for the
+        // current baseImageInfo isn't loaded yet. Bail rather than snapshot
+        // stale pixels.
+        if (!baseImageBitmap && !baseImageInfo?.isBlankCanvas) {
+          console.error("Base image bitmap not yet loaded");
+          return;
+        }
+
+        const subscriberId: string =
+          crypto?.randomUUID?.() ??
+          `inpaint-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+
+        adapter.onEnqueueMeta?.({
+          prompt,
+          refImageUrls: (options?.images || [])
+            .map((img) => img.url)
+            .filter(Boolean),
+          modelType:
+            (selectedImageModel as any)?.tauriId || String(selectedImageModel),
+          timestamp: Date.now(),
+        });
+
         let result;
 
         if (selectedImageModel?.editingIsInpainting) {
@@ -660,7 +798,7 @@ const PageDraw = ({ adapter }: PageDrawProps) => {
           });
         } else if (selectedImageModel?.isNanoBananaModel()) {
           // CASE 2 - NANO BANANA
-          const compositeFile = await getCompositeCanvasFile();
+          const compositeFile = await getCompositeFile();
 
           if (!compositeFile) {
             console.error("Failed to create composite canvas");
@@ -680,7 +818,7 @@ const PageDraw = ({ adapter }: PageDrawProps) => {
           const imgs = options?.images || [];
           result = await adapter.enqueueEditImage({
             model: selectedImageModel,
-            sceneImageMediaToken: snapshotResult.data,
+            canvasImageMediaToken: snapshotResult.data,
             imageMediaTokens: imgs
               .map((img) => img.mediaToken)
               .filter((t) => t.length > 0),
@@ -694,7 +832,7 @@ const PageDraw = ({ adapter }: PageDrawProps) => {
           });
         } else {
           // CASE 3 - DEFAULT
-          const compositeFile = await getCompositeCanvasFile();
+          const compositeFile = await getCompositeFile();
 
           if (!compositeFile) {
             console.error("Failed to create composite canvas");
@@ -714,7 +852,7 @@ const PageDraw = ({ adapter }: PageDrawProps) => {
           const imgs = options?.images || [];
           result = await adapter.enqueueEditImage({
             model: selectedImageModel,
-            sceneImageMediaToken: snapshotResult.data,
+            canvasImageMediaToken: snapshotResult.data,
             imageMediaTokens: imgs
               .map((img) => img.mediaToken)
               .filter((t) => t.length > 0),
@@ -731,15 +869,18 @@ const PageDraw = ({ adapter }: PageDrawProps) => {
         if (result?.status === "success") {
           addPendingGeneration(subscriberId, generationCount);
         }
-      } catch (error) {
-        throw error;
+      } finally {
+        generateInFlightRef.current = false;
+        setIsGenerating(false);
       }
     },
     [
       generationCount,
-      getCompositeCanvasFile,
+      getCompositeFile,
+      getMaskArrayBuffer,
       selectedImageModel,
       adapter,
+      baseImageBitmap,
       baseImageInfo,
       addPendingGeneration,
       useSystemPrompt,
@@ -815,7 +956,10 @@ const PageDraw = ({ adapter }: PageDrawProps) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [baseImageBitmap, baseImageInfo?.isBlankCanvas]);
 
-  const handleSelectTool = useCallback(() => setActiveTool("select"), [setActiveTool]);
+  const handleSelectTool = useCallback(
+    () => setActiveTool("select"),
+    [setActiveTool],
+  );
 
   const handleActivateShapeTool = useCallback(
     (shape: "rectangle" | "circle" | "triangle") => {
@@ -838,7 +982,9 @@ const PageDraw = ({ adapter }: PageDrawProps) => {
   );
 
   const handleCanvasBackground = useCallback(
-    (hex: string) => { setFillColor(hex); },
+    (hex: string) => {
+      setFillColor(hex);
+    },
     [setFillColor],
   );
 
@@ -867,10 +1013,14 @@ const PageDraw = ({ adapter }: PageDrawProps) => {
     async (ratio: string) => {
       const ratioToType = (r: string): AspectRatioType => {
         switch (r) {
-          case "tall":   return AspectRatioType.PORTRAIT;
-          case "wide":   return AspectRatioType.LANDSCAPE;
-          case "square": return AspectRatioType.SQUARE;
-          default:       return AspectRatioType.NONE;
+          case "tall":
+            return AspectRatioType.PORTRAIT;
+          case "wide":
+            return AspectRatioType.LANDSCAPE;
+          case "square":
+            return AspectRatioType.SQUARE;
+          default:
+            return AspectRatioType.NONE;
         }
       };
       setAspectRatioType(ratioToType(ratio));
@@ -883,7 +1033,9 @@ const PageDraw = ({ adapter }: PageDrawProps) => {
   const handleMenuAction = useCallback(
     async (action: string) => {
       switch (action) {
-        case "LOCK":              toggleLock(selectedNodeIds); break;
+        case "LOCK":
+          toggleLock(selectedNodeIds);
+          break;
         case "REMOVE_BACKGROUND": {
           const result = await beginRemoveBackground(selectedNodeIds);
           if (result) {
@@ -891,26 +1043,51 @@ const PageDraw = ({ adapter }: PageDrawProps) => {
           }
           break;
         }
-        case "BRING_TO_FRONT":    bringToFront(selectedNodeIds); break;
-        case "BRING_FORWARD":     bringForward(selectedNodeIds); break;
-        case "SEND_BACKWARD":     sendBackward(selectedNodeIds); break;
-        case "SEND_TO_BACK":      sendToBack(selectedNodeIds); break;
-        case "DUPLICATE":         copySelectedItems(); pasteItems(); break;
-        case "DELETE":            deleteSelectedItems(); break;
-        default: break;
+        case "BRING_TO_FRONT":
+          bringToFront(selectedNodeIds);
+          break;
+        case "BRING_FORWARD":
+          bringForward(selectedNodeIds);
+          break;
+        case "SEND_BACKWARD":
+          sendBackward(selectedNodeIds);
+          break;
+        case "SEND_TO_BACK":
+          sendToBack(selectedNodeIds);
+          break;
+        case "DUPLICATE":
+          copySelectedItems();
+          pasteItems();
+          break;
+        case "DELETE":
+          deleteSelectedItems();
+          break;
+        default:
+          break;
       }
     },
     [
-      selectedNodeIds, toggleLock, beginRemoveBackground, adapter, bringToFront,
-      bringForward, sendBackward, sendToBack, copySelectedItems, pasteItems,
+      selectedNodeIds,
+      toggleLock,
+      beginRemoveBackground,
+      adapter,
+      bringToFront,
+      bringForward,
+      sendBackward,
+      sendToBack,
+      copySelectedItems,
+      pasteItems,
       deleteSelectedItems,
     ],
   );
 
-  const handleCanvasSizeChange = useCallback((width: number, height: number) => {
-    canvasWidth.current = width;
-    canvasHeight.current = height;
-  }, []);
+  const handleCanvasSizeChange = useCallback(
+    (width: number, height: number) => {
+      canvasWidth.current = width;
+      canvasHeight.current = height;
+    },
+    [],
+  );
 
   const isLocked = useMemo(
     () =>
@@ -927,14 +1104,11 @@ const PageDraw = ({ adapter }: PageDrawProps) => {
     return n?.type !== "line" ? n : null;
   }, [selectedNodeIds, drawNodes]);
 
-  const editingNode = useMemo(
-    () => {
-      if (!editing3DNodeId) return null;
-      const n = drawNodes.find((n) => n.id === editing3DNodeId);
-      return n?.type !== "line" ? n : null;
-    },
-    [editing3DNodeId, drawNodes],
-  );
+  const editingNode = useMemo(() => {
+    if (!editing3DNodeId) return null;
+    const n = drawNodes.find((n) => n.id === editing3DNodeId);
+    return n?.type !== "line" ? n : null;
+  }, [editing3DNodeId, drawNodes]);
 
   // Display image selector on launch, otherwise hide it.
   // Also show the selector when a non-blank-canvas image is set but the bitmap is still loading.
@@ -952,7 +1126,10 @@ const PageDraw = ({ adapter }: PageDrawProps) => {
                 addHistoryImageBundle({ images: [image] });
                 setBaseImageInfo(image);
               },
-              showLoading: baseImageInfo !== null && baseImageBitmap === null && !baseImageInfo.isBlankCanvas,
+              showLoading:
+                baseImageInfo !== null &&
+                baseImageBitmap === null &&
+                !baseImageInfo.isBlankCanvas,
             })}
           </div>
         </div>
@@ -1005,7 +1182,8 @@ const PageDraw = ({ adapter }: PageDrawProps) => {
           EncodeImageBitmapToBase64={EncodeImageBitmapToBase64}
           onGenerateClick={handleGenerate}
           onFitPressed={onFitPressed}
-          isDisabled={false}
+          isDisabled={!baseImageBitmap && !baseImageInfo?.isBlankCanvas}
+          isEnqueueing={isGenerating}
           generationCount={generationCount}
           onGenerationCountChange={setGenerationCount}
           selectedImageModel={selectedImageModel}

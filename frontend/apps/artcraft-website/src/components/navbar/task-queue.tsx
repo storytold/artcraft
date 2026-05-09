@@ -23,7 +23,7 @@ import { Button } from "@storyteller/ui-button";
 import {
   getProviderDisplayName,
   getModelDisplayName,
-  ALL_MODELS_LIST,
+  findModelByKey,
 } from "@storyteller/model-list";
 import { CloseButton } from "@storyteller/ui-close-button";
 import dayjs from "dayjs";
@@ -157,10 +157,10 @@ const PromptLine = ({
           style={
             marqueePlaying
               ? {
-                animation: "marquee 6.5s linear infinite",
-                animationDelay: "0.5s",
-                animationFillMode: "both",
-              }
+                  animation: "marquee 6.5s linear infinite",
+                  animationDelay: "0.5s",
+                  animationFillMode: "both",
+                }
               : undefined
           }
         >
@@ -468,9 +468,7 @@ function getPrompt(job: Job, promptsMap?: Map<string, Prompts>): string {
     ? (promptsMap?.get(promptToken) ?? getCachedPrompt(promptToken))
     : undefined;
   return (
-    cached?.maybe_positive_prompt ||
-    job.request.maybe_raw_inference_text ||
-    ""
+    cached?.maybe_positive_prompt || job.request.maybe_raw_inference_text || ""
   );
 }
 
@@ -483,8 +481,7 @@ function formatTitleParts(job: Job, promptsMap?: Map<string, Prompts>) {
   const taskTypeStr = job.request.inference_category?.toLowerCase() ?? "";
   const modelTypeStr =
     cachedPrompt?.maybe_model_type ?? job.request.maybe_model_type ?? "";
-  const providerKey =
-    cachedPrompt?.maybe_generation_provider ?? modelTypeStr;
+  const providerKey = cachedPrompt?.maybe_generation_provider ?? modelTypeStr;
 
   let kind: string | undefined;
   if (taskTypeStr.includes("video")) {
@@ -532,18 +529,24 @@ function jobsToInProgress(
       const parts = formatTitleParts(j, promptsMap);
       const isVideo =
         j.request.inference_category?.toLowerCase().includes("video") ?? false;
-      const modelType = j.request.maybe_model_type;
 
-      // Look up per-model estimated duration, cache per task
+      const promptToken = j.request.maybe_prompt_token;
+      const cachedPrompt = promptToken
+        ? (promptsMap.get(promptToken) ?? getCachedPrompt(promptToken))
+        : undefined;
+      const modelType =
+        cachedPrompt?.maybe_model_type ?? j.request.maybe_model_type;
+
+      // Look up per-model estimated duration from the model list, cache per
+      // task. Cache only once `modelType` is resolved so a transient
+      // "prompt not loaded yet" render doesn't lock in the wrong fallback.
       let duration = taskDurationCache.get(j.job_token);
-      if (!duration) {
-        const model = modelType
-          ? ALL_MODELS_LIST.find(
-            (m) => m.tauriId === modelType || m.id === modelType,
-          )
-          : undefined;
+      if (duration === undefined) {
+        const model = findModelByKey(modelType);
         duration = model?.progressBarTime ?? (isVideo ? 900000 : 30000);
-        taskDurationCache.set(j.job_token, duration);
+        if (modelType) {
+          taskDurationCache.set(j.job_token, duration);
+        }
       }
 
       // Always use time-based fake progress (matching desktop app behavior)
@@ -663,7 +666,8 @@ export const TaskQueue = () => {
   const promptTokens = useMemo(() => {
     const tokens: string[] = [];
     for (const j of jobs) {
-      if (j.request.maybe_prompt_token) tokens.push(j.request.maybe_prompt_token);
+      if (j.request.maybe_prompt_token)
+        tokens.push(j.request.maybe_prompt_token);
     }
     return tokens;
   }, [jobs]);
@@ -710,7 +714,7 @@ export const TaskQueue = () => {
     primaryActionText: "",
     primaryActionIcon: faTrashAlt,
     primaryActionBtnClassName: "",
-    onConfirm: async () => { },
+    onConfirm: async () => {},
   });
 
   // ── Confirmation handlers ──────────────────────────────────────────
@@ -814,7 +818,9 @@ export const TaskQueue = () => {
         const failedJobs = fetchedJobs.filter((j) =>
           FAILED_STATUSES.has(j.status.status),
         );
-        const newCompletedIdSet = new Set(completedJobs.map((j) => j.job_token));
+        const newCompletedIdSet = new Set(
+          completedJobs.map((j) => j.job_token),
+        );
         const newFailedIdSet = new Set(failedJobs.map((j) => j.job_token));
 
         if (!initialLoadDoneRef.current) {

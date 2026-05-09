@@ -557,6 +557,21 @@ export const VIDEO_MODELS: VideoModel[] = [
     progressBarTime: 100000,
     maxPromptLength: 5000,
   }),
+  new VideoModel({
+    id: "switch_x",
+    tauriId: "switch_x",
+    fullName: "Beeble SwitchX",
+    category: "video",
+    creator: ModelCreator.Beeble,
+    selectorName: "Beeble SwitchX",
+    selectorDescription: "Relight, change location, swap objects.",
+    selectorBadges: ["5 min."],
+    startFrame: false,
+    endFrame: false,
+    requiresImage: true,
+    progressBarTime: 5 * 60 * 1000,
+    maxPromptLength: 2000,
+  }),
 ];
 
 export const VIDEO_MODELS_BY_ID: Map<string, VideoModel> = new Map(

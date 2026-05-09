@@ -509,7 +509,7 @@ export const PromptBox2D = ({
                 className="flex items-center border-none bg-primary px-3 text-sm text-white disabled:cursor-not-allowed disabled:opacity-50"
                 icon={undefined}
                 onClick={handleGenerate}
-                disabled={isEnqueueing || !prompt.trim()}
+                disabled={isEnqueueing || isDisabled || !prompt.trim()}
                 loading={isEnqueueing}
               >
                 Generate

@@ -320,7 +320,7 @@ export const PopoverMenu = ({
   };
 
   const className = twMerge(
-    "text-sm font-medium rounded-lg px-3 py-2 shadow-sm",
+    "text-sm font-medium rounded-lg px-2.5 py-1.5 shadow-sm",
     "flex gap-2 items-center justify-center outline-none",
     "transition-all duration-150",
     "bg-ui-controls px-3 text-base-fg hover:bg-ui-controls/80 border border-ui-controls-border",
@@ -609,10 +609,10 @@ export const PopoverMenu = ({
                           style={
                             maxListHeight
                               ? {
-                                  maxHeight: maxListHeight,
-                                  overflowY: "auto",
-                                  opacity: scrollReady ? 1 : 0,
-                                }
+                                maxHeight: maxListHeight,
+                                overflowY: "auto",
+                                opacity: scrollReady ? 1 : 0,
+                              }
                               : undefined
                           }
                         >
@@ -620,10 +620,10 @@ export const PopoverMenu = ({
                             const tooltipContent =
                               typeof item.hoverTooltip === "function"
                                 ? (
-                                    item.hoverTooltip as (
-                                      close: () => void,
-                                    ) => ReactNode
-                                  )(close)
+                                  item.hoverTooltip as (
+                                    close: () => void,
+                                  ) => ReactNode
+                                )(close)
                                 : item.hoverTooltip;
 
                             const itemRow = (
@@ -789,10 +789,10 @@ export const PopoverMenu = ({
                                 content={
                                   typeof item.hoverTooltip === "function"
                                     ? (
-                                        item.hoverTooltip as (
-                                          close: () => void,
-                                        ) => ReactNode
-                                      )(close)
+                                      item.hoverTooltip as (
+                                        close: () => void,
+                                      ) => ReactNode
+                                    )(close)
                                     : item.hoverTooltip
                                 }
                                 position="right"

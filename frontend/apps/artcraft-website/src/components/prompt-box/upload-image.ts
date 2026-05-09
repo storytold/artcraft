@@ -1,4 +1,4 @@
-import { MediaUploadApi } from "@storyteller/api";
+import { EIntermediateFile, MediaUploadApi } from "@storyteller/api";
 import { UploaderState, UploaderStates } from "@storyteller/common";
 
 export type UploadImageFn = (args: {
@@ -21,6 +21,9 @@ export const uploadImage: UploadImageFn = async ({
     blob: assetFile,
     fileName: assetFile.name || `reference-${Date.now()}`,
     maybe_title: `ref_image_${title}`,
+    // User-uploaded reference images should appear in their library, not be
+    // hidden as intermediate system files.
+    is_intermediate_system_file: EIntermediateFile.false,
   });
 
   if (!response?.success || !response.data) {

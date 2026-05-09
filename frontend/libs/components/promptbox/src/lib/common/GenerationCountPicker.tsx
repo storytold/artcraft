@@ -61,7 +61,6 @@ export const GenerationCountPicker = ({
         mode="toggle"
         panelTitle="No. of images"
         triggerIcon={<FontAwesomeIcon icon={faCopy} className="h-4 w-4" />}
-        buttonClassName="h-9"
       />
     </Tooltip>
   );

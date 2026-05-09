@@ -1,0 +1,23 @@
+$kind: http-request
+name: Beeble SwitchX Edit Video
+url: "{{api_host}}/v1/generate/video/edit/beeble_switchx"
+method: POST
+headers:
+  - key: Accept
+    value: application/json
+  - key: Session
+    value: ""
+    disabled: true
+body:
+  type: json
+  content: >-
+    {
+        "uuid_idempotency_token": "{{$randomUUID}}",
+        //"source_video_media_token": "m_6vve5gffn2r4rajyvy8z2380x15kqc", // two corgis (dev)
+        "source_video_media_token": "m_rkgdk7qw0a7gz4mrzfv0q78ax57kbx", // corgi cowboy (dev)
+        //"source_video_media_token": "m_1k19k6dgdny253zag8g3jqf3bgemss", // corgi watermellon (prod)
+        "reference_image_media_token": "m_pf310vdhc4v98n7r8mz70bz9geest3"  // tornado (dev)
+        //"reference_image_media_token": "m_z4y097t9pdmbyatf70z0qb8zvfphvm"  // cactus (prod)
+        //"prompt": "Stormy skies, there's a rotating tornado in the background"
+    }
+order: 1778262498846

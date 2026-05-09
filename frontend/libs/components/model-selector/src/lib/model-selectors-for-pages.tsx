@@ -105,7 +105,11 @@ export const IMAGE_TO_VIDEO_PAGE_MODEL_LIST: ModelList =
   buildItems(
     (function (): Model[] {
       const set: Set<Model> = new Set();
-      VIDEO_MODELS.forEach((m) => set.add(m));
+      // SwitchX is a VFX/background-change model with its own page; keep it
+      // out of the general video selector.
+      VIDEO_MODELS.filter((m) => m.id !== "switch_x").forEach((m) =>
+        set.add(m),
+      );
       const list = Array.from(set);
       list.sort((a, b) => a.selectorName?.localeCompare(b.selectorName));
       return list;

@@ -9,7 +9,7 @@ body:
         // hanashi : password (dev)
         //"username_or_email": "hanashi",
         //"password": "hanashi"
-        "username_or_email": "newuser2",
-        "password": "newuser2"
+        "username_or_email": "newuser4",
+        "password": "newuser4"
     }
 order: 1000

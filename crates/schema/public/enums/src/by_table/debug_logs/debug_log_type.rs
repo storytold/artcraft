@@ -22,6 +22,7 @@ pub enum DebugLogType {
   FalRequest,
   KinoviRequest,
   FalWebhook,
+  BeebleWebhook,
 }
 
 impl_enum_display_and_debug_using_to_str!(DebugLogType);
@@ -35,6 +36,7 @@ impl DebugLogType {
       Self::FalRequest => "fal_request",
       Self::KinoviRequest => "kinovi_request",
       Self::FalWebhook => "fal_webhook",
+      Self::BeebleWebhook => "beeble_webhook",
     }
   }
 
@@ -44,6 +46,7 @@ impl DebugLogType {
       "fal_request" => Ok(Self::FalRequest),
       "kinovi_request" => Ok(Self::KinoviRequest),
       "fal_webhook" => Ok(Self::FalWebhook),
+      "beeble_webhook" => Ok(Self::BeebleWebhook),
       _ => Err(EnumError::CouldNotConvertFromString(value.to_string())),
     }
   }
@@ -54,6 +57,7 @@ impl DebugLogType {
       Self::FalRequest,
       Self::KinoviRequest,
       Self::FalWebhook,
+      Self::BeebleWebhook,
     ])
   }
 }
@@ -74,6 +78,7 @@ mod tests {
       assert_serialization(DebugLogType::FalRequest, "fal_request");
       assert_serialization(DebugLogType::KinoviRequest, "kinovi_request");
       assert_serialization(DebugLogType::FalWebhook, "fal_webhook");
+      assert_serialization(DebugLogType::BeebleWebhook, "beeble_webhook");
     }
 
     #[test]
@@ -82,6 +87,7 @@ mod tests {
       assert_eq!(DebugLogType::FalRequest.to_str(), "fal_request");
       assert_eq!(DebugLogType::KinoviRequest.to_str(), "kinovi_request");
       assert_eq!(DebugLogType::FalWebhook.to_str(), "fal_webhook");
+      assert_eq!(DebugLogType::BeebleWebhook.to_str(), "beeble_webhook");
     }
 
     #[test]
@@ -90,6 +96,7 @@ mod tests {
       assert_eq!(DebugLogType::from_str("fal_request").unwrap(), DebugLogType::FalRequest);
       assert_eq!(DebugLogType::from_str("kinovi_request").unwrap(), DebugLogType::KinoviRequest);
       assert_eq!(DebugLogType::from_str("fal_webhook").unwrap(), DebugLogType::FalWebhook);
+      assert_eq!(DebugLogType::from_str("beeble_webhook").unwrap(), DebugLogType::BeebleWebhook);
     }
 
     #[test]
@@ -106,11 +113,12 @@ mod tests {
     #[test]
     fn all_variants() {
       let mut variants = DebugLogType::all_variants();
-      assert_eq!(variants.len(), 4);
+      assert_eq!(variants.len(), 5);
       assert_eq!(variants.pop_first(), Some(DebugLogType::HttpRequest));
       assert_eq!(variants.pop_first(), Some(DebugLogType::FalRequest));
       assert_eq!(variants.pop_first(), Some(DebugLogType::KinoviRequest));
       assert_eq!(variants.pop_first(), Some(DebugLogType::FalWebhook));
+      assert_eq!(variants.pop_first(), Some(DebugLogType::BeebleWebhook));
       assert_eq!(variants.pop_first(), None);
     }
   }

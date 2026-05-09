@@ -71,6 +71,7 @@ import { ImageTo3DWorld } from "./PageImageTo3DWorld";
 import { RemoveBackground } from "./PageRemoveBackground";
 import { Angles } from "./PageAngles";
 import { Storyboard } from "./PageStoryboard";
+import { PageBackgroundChange } from "./PageBackgroundChange";
 import { PageScene } from "./PageScene";
 import {
   topNavMediaId,
@@ -251,6 +252,8 @@ const TabBody = ({ sceneToken }: { sceneToken?: string }) => {
       return <div><Angles /></div>;
     case "STORYBOARD":
       return storyboardPageEnabled ? <div><Storyboard /></div> : null;
+    case "BACKGROUND_CHANGE":
+      return <div><PageBackgroundChange /></div>;
     default:
       return null;
   }
