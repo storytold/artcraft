@@ -16,6 +16,7 @@ import type {
   ImageModel,
 } from "@storyteller/model-list";
 import type { GenerationProvider } from "@storyteller/api-enums";
+import type { UploadImageArgs } from "@storyteller/common";
 import type {
   FilterEngineCategories,
   FilterMediaType,
@@ -154,6 +155,53 @@ export interface PageSceneAdapter {
     title: string;
     titleIcon: IconDefinition;
   }): ReactNode;
+
+  // Image upload modal — distinct from renderAssetUploader because
+  // image-plane uploads use a different host pipeline (image
+  // processing, no GLB/splat conversion). Triggered from Controls3D.
+  renderImageUploader(props: {
+    isOpen: boolean;
+    onClose: () => void;
+    onSuccess: () => void;
+    title: string;
+    titleIcon: IconDefinition;
+  }): ReactNode;
+
+  // Splat (.spz) upload modal — triggered from Controls3D for the
+  // gaussian-splat upload path.
+  renderSplatUploader(props: {
+    isOpen: boolean;
+    onClose: () => void;
+    onSuccess: () => void;
+    title: string;
+    titleIcon: IconDefinition;
+  }): ReactNode;
+
+  // Upload an image File and emit upload-progress states. Wraps the
+  // host's UploadImageMedia / UploadModalMedia.uploadImage pipeline.
+  // Used by PromptBox3D for reference-image uploads. Signature
+  // matches @storyteller/common's UploadImageArgs so it can pass
+  // through to PromptBox3D.uploadImage as-is.
+  uploadImage(args: UploadImageArgs): Promise<void>;
+
+  // Upload an image-plane keyed by an existing media token. Used by
+  // the gallery-drop handler when the user drags a non-3D gallery
+  // item onto the 3D scene. Wraps host's uploadPlaneFromMediaToken.
+  uploadPlaneFromMediaToken(args: {
+    title: string;
+    mediaToken: string;
+    progressCallback: UploadImageArgs["progressCallback"];
+  }): Promise<void>;
+
+  // Cross-page navigation hook. Today the lib only needs one
+  // destination ("create 3D model from image"), so it's a single
+  // named action; add more as the lib grows page-aware UI. Tauri host
+  // implements via useTabStore.setActiveTab; web host via router push.
+  navigateToImageTo3D(): void;
+
+  // Auth/logout — the SettingsModal in Controls3D needs a logout
+  // callback. Tauri host: setLogoutStates. Web host: web auth flow.
+  performLogout(): void;
 
   // Optional event hooks — telemetry, host-side modals, tab title sync.
   onSelectionChange?(

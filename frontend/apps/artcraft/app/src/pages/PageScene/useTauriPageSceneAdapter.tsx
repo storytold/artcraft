@@ -26,6 +26,12 @@ import { GetCdnOrigin } from "~/api/GetCdnOrigin";
 import { BucketConfig } from "~/api/BucketConfig";
 import { MediaFilesApi as ArtcraftMediaFilesApi } from "~/Classes/ApiManager";
 import { UploadModal3D } from "~/components/reusable/UploadModal3D";
+import { UploadModalImage } from "~/components/reusable/UploadModalImage";
+import { UploadModalSplat } from "~/components/reusable/UploadModalSplat";
+import { uploadImage as hostUploadImage } from "~/components/reusable/UploadModalMedia/uploadImage";
+import { uploadPlaneFromMediaToken as hostUploadPlaneFromMediaToken } from "~/components/reusable/UploadModalMedia/uploadPlane";
+import { useTabStore } from "~/pages/Stores/TabState";
+import { setLogoutStates } from "~/signals/authentication/utilities";
 import {
   addToast,
   authentication,
@@ -303,6 +309,35 @@ export const useTauriPageSceneAdapter = (
           titleIcon={props.titleIcon}
         />
       ),
+
+      renderImageUploader: (props) => (
+        <UploadModalImage
+          isOpen={props.isOpen}
+          onClose={props.onClose}
+          onSuccess={props.onSuccess}
+          title={props.title}
+          titleIcon={props.titleIcon}
+        />
+      ),
+
+      renderSplatUploader: (props) => (
+        <UploadModalSplat
+          isOpen={props.isOpen}
+          onClose={props.onClose}
+          onSuccess={props.onSuccess}
+          title={props.title}
+          titleIcon={props.titleIcon}
+        />
+      ),
+
+      uploadImage: hostUploadImage,
+      uploadPlaneFromMediaToken: hostUploadPlaneFromMediaToken,
+
+      navigateToImageTo3D: () => {
+        useTabStore.getState().setActiveTab("IMAGE_TO_3D_OBJECT");
+      },
+
+      performLogout: () => setLogoutStates(),
 
       initialSceneToken,
       cacheJsonString,
