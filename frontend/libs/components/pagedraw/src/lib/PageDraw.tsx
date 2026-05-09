@@ -404,17 +404,6 @@ const PageDraw = ({ adapter }: PageDrawProps) => {
   const generateInFlightRef = useRef(false);
   const [isGenerating, setIsGenerating] = useState(false);
 
-  // Latest-ref mirrors of base-image state. Read from `*.current` inside any
-  // useCallback whose deps would otherwise have to list these and cascade
-  // recreation through the bake/generate chain. Updated after every render
-  // (no deps) so callbacks always see fresh values.
-  const baseImageBitmapRef = useRef(baseImageBitmap);
-  const baseImageInfoRef = useRef(baseImageInfo);
-  useEffect(() => {
-    baseImageBitmapRef.current = baseImageBitmap;
-    baseImageInfoRef.current = baseImageInfo;
-  });
-
   const selectedImageModel: ImageModel | undefined =
     useSelectedImageModel(PAGE_ID);
 
@@ -606,12 +595,15 @@ const PageDraw = ({ adapter }: PageDrawProps) => {
     [getAspectRatioDimensions, createImageFromFile],
   );
 
-  // Stable: reads base state via latest-refs so deps stay empty and the bake
-  // chain (runCompositeBake → getCompositeFile / scheduleCompositeBake →
-  // handleGenerate) doesn't recreate on every base-image swap.
+  // Stable: reads base state imperatively from the Zustand store so deps stay
+  // empty and the bake chain (runCompositeBake → getCompositeFile /
+  // scheduleCompositeBake → handleGenerate) doesn't recreate on every
+  // base-image swap. `useSceneStore.getState()` always returns the latest
+  // store snapshot, so deferred bakes pick up the current bitmap at run time
+  // (not the one captured at schedule time).
   const getCompositeCanvasFile = useCallback(async (): Promise<File | null> => {
-    const baseBitmapNow = baseImageBitmapRef.current;
-    const baseInfoNow = baseImageInfoRef.current;
+    const { baseImageBitmap: baseBitmapNow, baseImageInfo: baseInfoNow } =
+      useSceneStore.getState();
     if (!stageRef.current || !baseImageKonvaRef.current) return null;
     if (!baseInfoNow?.isBlankCanvas && !baseBitmapNow) return null;
 
@@ -1179,7 +1171,7 @@ const PageDraw = ({ adapter }: PageDrawProps) => {
           EncodeImageBitmapToBase64={EncodeImageBitmapToBase64}
           onGenerateClick={handleGenerate}
           onFitPressed={onFitPressed}
-          isDisabled={false}
+          isDisabled={!baseImageBitmap && !baseImageInfo?.isBlankCanvas}
           isEnqueueing={isGenerating}
           generationCount={generationCount}
           onGenerationCountChange={setGenerationCount}

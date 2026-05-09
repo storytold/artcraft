@@ -3,6 +3,14 @@ import { Node, NodeType } from "../Node";
 import { ImageBundle, BaseSelectorImage } from "../types";
 import { Model3DParams } from "../utilities/render3DModel";
 
+// Generation counter for in-flight base-image loads. Incremented on every
+// setBaseImageInfo call so that a stale `<img>.onload` from a superseded
+// selection (e.g. rapid HistoryStack navigation while the previous image is
+// still in flight) becomes a no-op. Without this guard, A's onload could fire
+// after B was selected and overwrite baseImageBitmap (and via applyImageNodes,
+// even drawNodes) with A's content.
+let baseImageLoadGen = 0;
+
 // LineNode type — ordering in PageDraw is by position in drawNodes array (zIndex ignored there)
 export type LineNode = {
   id: string;
@@ -1372,6 +1380,9 @@ export const useSceneStore = create<SceneState>((set, get, store) => ({
   },
 
   setBaseImageInfo: (image: BaseSelectorImage | null) => {
+    // Bump first so any in-flight load from a previous call invalidates itself
+    // on completion (see imgBitmap.onload / onerror below).
+    const myGen = ++baseImageLoadGen;
     if (!image) {
       set({ baseImageInfo: null });
       return;
@@ -1442,9 +1453,11 @@ export const useSceneStore = create<SceneState>((set, get, store) => ({
 
     const imgBitmap = new Image();
     imgBitmap.onload = () => {
+      if (myGen !== baseImageLoadGen) return; // superseded by a newer setBaseImageInfo
       applyImageNodes(imgBitmap);
     };
     imgBitmap.onerror = (event) => {
+      if (myGen !== baseImageLoadGen) return;
       console.error("Failed to load base image, discarding", event);
       set({ baseImageInfo: null, baseImageBitmap: null });
       imgBitmap.onload = null;
