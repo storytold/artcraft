@@ -1,41 +1,13 @@
+// 3D editor body — the visual composition of canvas, controls,
+// outliner, prompt box, model selector, etc. Mounted by <Stage3D />
+// inside an EngineProvider; consumes the active editor via context
+// and host plumbing via the adapter on `editor.adapter`.
+//
+// Lib-resident so artcraft Tauri and artcraft-website share the
+// exact same 3D editor UX. Only the platform-specific PageSceneAdapter
+// implementation differs between hosts.
+
 import React, { useContext, useEffect, useRef } from "react";
-import { useSignals } from "@preact/signals-react/runtime";
-import { pageHeight, pageWidth } from "~/signals";
-
-import {
-  CameraAspectRatio,
-  ControlPanelSceneObject,
-  Controls3D,
-  ControlsTopButtons,
-  EditorCanvas,
-  EngineContext,
-  FocalLengthDisplay,
-  GridVisibleChangedEvent,
-  OnboardingHelper,
-  Outliner,
-  PoseModeSelector,
-  PreviewEngineCamera,
-  SceneContainer,
-  addCharacter,
-  addObject,
-  pickDropPosition,
-  setCameraAspect,
-  useEditorCanvas,
-  useFreeCam,
-  usePageSceneStore,
-  useViewportKeyboard,
-  useViewportPointer,
-} from "@storyteller/ui-pagescene";
-import type { MediaItem } from "@storyteller/ui-pagescene";
-import { PromptBox3D, commonToCameraAspect } from "@storyteller/ui-promptbox";
-import { PopoverItem } from "@storyteller/ui-popover";
-import { LoadingDots } from "@storyteller/ui-loading";
-
-import { uploadImage } from "~/components/reusable/UploadModalMedia/uploadImage";
-import { uploadPlaneFromMediaToken } from "~/components/reusable/UploadModalMedia/uploadPlane";
-import { AssetType } from "~/enums";
-import { v4 as uuidv4 } from "uuid";
-import { UploaderState } from "~/models";
 import {
   GalleryItem,
   onImageDrop,
@@ -48,19 +20,43 @@ import {
   useSelectedProviderForModel,
   ClassyModelSelector,
 } from "@storyteller/ui-model-selector";
-import { ImageModel } from "@storyteller/model-list";
+import type { ImageModel } from "@storyteller/model-list";
+import type { GenerationProvider } from "@storyteller/api-enums";
 import { HelpMenuButton } from "@storyteller/ui-help-menu";
 import {
   CostCalculatorButton,
   useCostBreakdownModalStore,
 } from "@storyteller/ui-pricing-modal";
-import { GenerationProvider } from "@storyteller/api-enums";
+import { LoadingDots } from "@storyteller/ui-loading";
+import { PromptBox3D, commonToCameraAspect } from "@storyteller/ui-promptbox";
+import type { PopoverItem } from "@storyteller/ui-popover";
+import { v4 as uuidv4 } from "uuid";
+
+import { EngineContext } from "./contexts/EngineContext/EngineContext";
+import { ControlPanelSceneObject } from "./comps/ControlPanelSceneObject";
+import { Controls3D } from "./comps/Controls3D";
+import { ControlsTopButtons } from "./comps/ControlsTopButtons";
+import { EditorCanvas } from "./comps/EngineCanvases";
+import { FocalLengthDisplay } from "./comps/FocalLengthDisplay/FocalLengthDisplay";
+import { OnboardingHelper } from "./comps/OnboardingHelper";
+import { Outliner } from "./comps/Outliner";
+import { PoseModeSelector } from "./comps/PoseModeSelector";
+import { PreviewEngineCamera } from "./comps/PreviewEngineCamera";
+import { SceneContainer } from "./comps/SceneContainer";
+import { addCharacter, addObject, setCameraAspect } from "./actions";
+import { useEditorCanvas } from "./hooks/useEditorCanvas";
+import { useFreeCam } from "./hooks/useFreeCam";
+import { useViewportPointer } from "./hooks/useViewportPointer";
+import { useViewportKeyboard } from "./hooks/useViewportKeyboard";
+import { GridVisibleChangedEvent } from "./engine/events/EngineEvent";
+import { pickDropPosition } from "./engine/pickDropPosition";
+import { AssetType, CameraAspectRatio } from "./enums";
+import { usePageSceneStore } from "./PageSceneStore";
+import type { MediaItem } from "./models/assets";
 
 const PAGE_ID: ModelPage = ModelPage.Stage3D;
 
-export const PageEditor = () => {
-  useSignals();
-
+export const Stage3DBody = () => {
   const camAspect = usePageSceneStore((s) => s.cameraAspectRatio);
   const outlinerShowing = usePageSceneStore((s) => s.outlinerShowing);
   const editorLoader = usePageSceneStore((s) => s.editorLoader);
@@ -81,11 +77,7 @@ export const PageEditor = () => {
   const updateCamera = usePageSceneStore((s) => s.updateCamera);
   const deleteCamera = usePageSceneStore((s) => s.deleteCamera);
   const setSelectedCameraId = usePageSceneStore((s) => s.setSelectedCameraId);
-  // Only stops propagation for clicks on the overlay div itself (the
-  // transparent gaps between control buttons). Clicks that bubbled up
-  // from child controls pass through untouched, so React-tree-portal'd
-  // modals further down the JSX (the upload modals inside Controls3D)
-  // aren't silenced when the user clicks inside them.
+
   const handleOverlayClick = (event: React.MouseEvent<HTMLDivElement>) => {
     if (event.target === event.currentTarget) {
       event.stopPropagation();
@@ -108,48 +100,48 @@ export const PageEditor = () => {
     (s) => s.estimatedCreditsByPage[PAGE_ID],
   );
 
-  const height = pageHeight.value - 56;
+  const editor = useContext(EngineContext);
+
+  // Viewport-driven layout sizing. Falls back to window.innerWidth/
+  // innerHeight when the host doesn't supply getViewportSize.
+  const viewportFallback =
+    typeof window !== "undefined"
+      ? { width: window.innerWidth, height: window.innerHeight }
+      : { width: 0, height: 0 };
+  const viewport = editor?.adapter.getViewportSize?.() ?? viewportFallback;
+  const height = viewport.height - 56;
 
   const getScale = () => {
-    const height = pageHeight.value - 56;
-    const scaleHeight = height < 610 ? height / 610 : 1;
-
+    const h = viewport.height - 56;
+    const scaleHeight = h < 610 ? h / 610 : 1;
     if (
       camAspect === CameraAspectRatio.VERTICAL_9_16 &&
       outlinerShowing &&
-      height < 900
+      h < 900
     ) {
-      if (pageWidth.value > 2000) {
-        return scaleHeight;
-      }
+      if (viewport.width > 2000) return scaleHeight;
       return scaleHeight * 0.78;
     }
-
     if (
       camAspect === CameraAspectRatio.SQUARE_1_1 &&
-      pageWidth.value < 2000
+      viewport.width < 2000
     ) {
       return scaleHeight * 0.85;
     }
-
     return scaleHeight;
   };
 
-  // These are callbacks required by promptbox
-  const editorEngine = useContext(EngineContext);
   const editorCanvas = useEditorCanvas();
-  useFreeCam(editorCanvas, editorEngine);
-  useViewportPointer(editorCanvas, editorEngine);
-  useViewportKeyboard(editorEngine);
+  useFreeCam(editorCanvas, editor);
+  useViewportPointer(editorCanvas, editor);
+  useViewportKeyboard(editor);
+
   const handleCameraSelect = (selectedItem: PopoverItem) => {
     const selectedCamera = cameras.find(
       (cam) => cam.label === selectedItem.label,
     );
-    if (selectedCamera && editorEngine) {
+    if (selectedCamera && editor) {
       setSelectedCameraId(selectedCamera.id);
-
-      // Show focal length display temporarily
-      // TODO: Rename dragging to visible - BFlat
       setFocalLengthDragging({
         isDragging: true,
         focalLength: selectedCamera.focalLength,
@@ -161,8 +153,7 @@ export const PageEditor = () => {
         });
       }, 1500);
 
-      // Update the main camera to match the selected camera's properties
-      const cam = editorEngine.cameraController.camera;
+      const cam = editor.cameraController.camera;
       if (cam) {
         cam.position.set(
           selectedCamera.position.x,
@@ -174,22 +165,16 @@ export const PageEditor = () => {
           selectedCamera.lookAt.y,
           selectedCamera.lookAt.z,
         );
-
-        cam.fov = editorEngine.cameraController.focalLengthToFov(
+        cam.fov = editor.cameraController.focalLengthToFov(
           selectedCamera.focalLength,
         );
         cam.updateProjectionMatrix();
-
-        // Reset free-cam motion so a switch doesn't carry over a
-        // half-applied drag from the previous camera.
-        if (editorEngine.cameraController.freeCamState) {
-          editorEngine.cameraController.freeCamState.velocity.set(0, 0, 0);
+        if (editor.cameraController.freeCamState) {
+          editor.cameraController.freeCamState.velocity.set(0, 0, 0);
         }
-
-        editorEngine.renderScene();
+        editor.renderScene();
       }
 
-      // Force update camera properties in the state
       updateCamera(selectedCamera.id, {
         focalLength: selectedCamera.focalLength,
         position: selectedCamera.position,
@@ -200,56 +185,39 @@ export const PageEditor = () => {
   };
 
   const handleAddCamera = () => {
-    // Check if we've reached the maximum number of cameras
     if (cameras.length >= 6) {
       console.warn("Maximum number of cameras (6) reached");
       return;
     }
-
     const newIndex = cameras.length + 1;
     const newId = `cam${newIndex}`;
-
-    // This is for generating random orbital position for the new camera using spherical coordinates
-    const radius = Math.random() * 5 + 7; // Distance from center: 7 to 12 units
-    const theta = Math.random() * Math.PI * 2; // Azimuthal angle: 0 to 2π
-    const phi = Math.PI / 3 + (Math.random() * Math.PI) / 6; // Polar angle: π/3 to π/2 (60° to 90° from horizontal)
-
-    // Convert spherical coordinates to Cartesian coordinates
+    const radius = Math.random() * 5 + 7;
+    const theta = Math.random() * Math.PI * 2;
+    const phi = Math.PI / 3 + (Math.random() * Math.PI) / 6;
     const randomX = radius * Math.sin(phi) * Math.cos(theta);
-    const randomY = Math.abs(radius * Math.cos(phi)) + 2; // Ensure Y is positive and at least 2 units up
+    const randomY = Math.abs(radius * Math.cos(phi)) + 2;
     const randomZ = radius * Math.sin(phi) * Math.sin(theta);
 
     addCamera({
       id: newId,
       label: `Camera ${newIndex}`,
       focalLength: 24,
-      position: {
-        x: randomX,
-        y: randomY,
-        z: randomZ,
-      },
+      position: { x: randomX, y: randomY, z: randomZ },
       rotation: { x: 0, y: 0, z: 0 },
       lookAt: { x: 0, y: 0, z: 0 },
     });
-
-    // Switch to the newly created camera
     setSelectedCameraId(newId);
 
-    // Update the engine camera to match the new camera's properties
-    const cam = editorEngine?.cameraController.camera;
-    if (editorEngine && cam) {
+    const cam = editor?.cameraController.camera;
+    if (editor && cam) {
       cam.position.set(randomX, randomY, randomZ);
       cam.lookAt(0, 0, 0);
-      cam.fov = editorEngine.cameraController.focalLengthToFov(24);
+      cam.fov = editor.cameraController.focalLengthToFov(24);
       cam.updateProjectionMatrix();
-
-      // Reset free-cam motion so the camera doesn't drift after
-      // teleport.
-      if (editorEngine.cameraController.freeCamState) {
-        editorEngine.cameraController.freeCamState.velocity.set(0, 0, 0);
+      if (editor.cameraController.freeCamState) {
+        editor.cameraController.freeCamState.velocity.set(0, 0, 0);
       }
-
-      editorEngine.renderScene();
+      editor.renderScene();
     }
   };
 
@@ -265,48 +233,44 @@ export const PageEditor = () => {
   };
 
   const onAspectRatioSelect = (newRatio: CameraAspectRatio) => {
-    if (!editorEngine) return;
-    setCameraAspect(editorEngine, newRatio);
+    if (!editor) return;
+    setCameraAspect(editor, newRatio);
   };
 
   // Cold-load sync: align the editor letterbox with the picker's
-  // initial display (which falls back to `model.defaultAspectRatio`).
-  // Fires once when the engine and a `supportsNewAspectRatio()` model
-  // are both ready, then never again — every later change goes through
-  // user picks. We can't sync per-model-switch because almost every
-  // model declares `defaultAspectRatio: Square`, which would force the
-  // letterbox to Square on every swap and override the user's pick.
+  // initial display once when the engine + a `supportsNewAspectRatio()`
+  // model are both ready. Per-model-switch sync is intentionally NOT
+  // done because every model defaults to Square, which would override
+  // the user's pick.
   const didColdSyncRef = useRef(false);
   useEffect(() => {
     if (didColdSyncRef.current) return;
-    if (!editorEngine || !selectedImageModel?.supportsNewAspectRatio()) return;
+    if (!editor || !selectedImageModel?.supportsNewAspectRatio()) return;
     const def = selectedImageModel.defaultAspectRatio;
     if (!def) return;
     const mapped = commonToCameraAspect(def);
     if (!mapped) return;
-    setCameraAspect(editorEngine, mapped);
+    setCameraAspect(editor, mapped);
     didColdSyncRef.current = true;
-  }, [editorEngine, selectedImageModel]);
+  }, [editor, selectedImageModel]);
 
-  // Gallery → 3D scene drop handler. PageEditor now only mounts on the
-  // 3D tab, so we don't need the previous activeTabId branch — the
-  // subscription is implicitly 3D-only by virtue of where it lives.
+  // Gallery → 3D scene drop handler. Stage3D mounts only when 3D is
+  // active so this is implicitly 3D-only.
   useEffect(() => {
     const handler = onImageDrop(
       (item: GalleryItem, position: { x: number; y: number }) => {
         (async () => {
-          if (!editorEngine) {
+          if (!editor) {
             console.warn("Cannot drop asset: editor engine not ready");
             return;
           }
           const worldPosition = pickDropPosition(
             {
-              getCamera: () => editorEngine.cameraController.camera,
-              getCanvas: () => editorEngine.renderer?.domElement,
-              getRaycastTargets: () =>
-                editorEngine.activeScene.scene.children,
+              getCamera: () => editor.cameraController.camera,
+              getCanvas: () => editor.renderer?.domElement,
+              getRaycastTargets: () => editor.activeScene.scene.children,
               removeTransformControls: () =>
-                editorEngine.utils.removeTransformControls(true),
+                editor.utils.removeTransformControls(true),
             },
             position.x,
             position.y,
@@ -321,9 +285,9 @@ export const PageEditor = () => {
                 name: item.label || (isCharacter ? "Character" : "3D Object"),
               };
               if (isCharacter) {
-                await addCharacter(editorEngine, mediaItem, worldPosition);
+                await addCharacter(editor, mediaItem, worldPosition);
               } else {
-                await addObject(editorEngine, mediaItem, worldPosition);
+                await addObject(editor, mediaItem, worldPosition);
               }
             } else {
               const mediaItem: MediaItem = {
@@ -332,12 +296,12 @@ export const PageEditor = () => {
                 media_id: item.id || uuidv4(),
                 name: item.label || "Image Plane",
               };
-              await addObject(editorEngine, mediaItem, worldPosition);
+              await addObject(editor, mediaItem, worldPosition);
 
-              await uploadPlaneFromMediaToken({
+              await editor.adapter.uploadPlaneFromMediaToken({
                 title: item.label || "Image Plane",
                 mediaToken: item.id,
-                progressCallback: (state: UploaderState) => {
+                progressCallback: (state) => {
                   if (state.status)
                     console.log("Upload status:", state.status);
                 },
@@ -354,7 +318,7 @@ export const PageEditor = () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       if (handler) removeImageDropListener(handler as any);
     };
-  }, [editorEngine]);
+  }, [editor]);
 
   return (
     <div>
@@ -364,26 +328,19 @@ export const PageEditor = () => {
         className="relative flex w-screen"
         style={{ height: "calc(100vh - 68px)" }}
       >
-        {/* Engine section/side panel */}
         <div
           id="engine-n-panels-wrapper"
           className="flex"
-          style={{
-            height,
-          }}
+          style={{ height }}
         >
           <div className="relative w-full overflow-hidden bg-transparent">
             <SceneContainer>
               <EditorCanvas />
             </SceneContainer>
 
-            {/* Focal Length Display */}
             <FocalLengthDisplay />
-
-            {/* Pose Mode Selector */}
             <PoseModeSelector />
 
-            {/* Top controls */}
             <div
               className="absolute left-0 top-0 w-full"
               onClick={handleOverlayClick}
@@ -394,12 +351,9 @@ export const PageEditor = () => {
               </div>
             </div>
 
-            {/* Bottom controls */}
             <div
               className="absolute bottom-0 left-0"
-              style={{
-                width: pageWidth.value,
-              }}
+              style={{ width: viewport.width }}
               onClick={handleOverlayClick}
             >
               <div
@@ -420,7 +374,7 @@ export const PageEditor = () => {
               enableHotkeyInput={enableHotkeyInput}
               gridVisibility={gridVisible}
               setGridVisibility={(visible: boolean) =>
-                editorEngine?.bus.emit(new GridVisibleChangedEvent(visible))
+                editor?.bus.emit(new GridVisibleChangedEvent(visible))
               }
               selectedCameraId={selectedCameraId}
               deleteCamera={deleteCamera}
@@ -428,7 +382,12 @@ export const PageEditor = () => {
               setFocalLengthDragging={setFocalLengthDragging}
               isPromptBoxFocused={isPromptBoxFocused}
               setIsPromptBoxFocused={setIsPromptBoxFocused}
-              uploadImage={uploadImage}
+              uploadImage={
+                editor
+                  ? (((arg: Parameters<typeof editor.adapter.uploadImage>[0]) =>
+                      editor.adapter.uploadImage(arg)) as never)
+                  : undefined
+              }
               handleCameraSelect={handleCameraSelect}
               handleAddCamera={handleAddCamera}
               handleCameraNameChange={handleCameraNameChange}
@@ -438,16 +397,10 @@ export const PageEditor = () => {
               selectedProvider={selectedProvider}
               credits={imageCredits}
               setEnginePrompt={(prompt) => {
-                console.log("setEnginePrompt", prompt);
-                if (!editorEngine) {
-                  console.log("editorEngine is not available");
-                  return;
-                }
-                editorEngine!.positive_prompt = prompt;
+                if (!editor) return;
+                editor.positive_prompt = prompt;
               }}
-              snapshotCurrentFrame={editorEngine?.snapShotOfCurrentFrame.bind(
-                editorEngine,
-              )}
+              snapshotCurrentFrame={editor?.snapShotOfCurrentFrame.bind(editor)}
             />
 
             <LoadingDots

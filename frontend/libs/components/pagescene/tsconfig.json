@@ -12,19 +12,10 @@
       "path": "../label"
     },
     {
-      "path": "../gallery-modal"
-    },
-    {
-      "path": "../popover"
-    },
-    {
       "path": "../settings-modal"
     },
     {
       "path": "../button-icon-select"
-    },
-    {
-      "path": "../loading"
     },
     {
       "path": "../badge"
@@ -51,10 +42,31 @@
       "path": "../button-dropdown"
     },
     {
+      "path": "../popover"
+    },
+    {
+      "path": "../promptbox"
+    },
+    {
+      "path": "../loading"
+    },
+    {
+      "path": "../pricing-modal"
+    },
+    {
+      "path": "../help-menu"
+    },
+    {
       "path": "../../api-enums"
     },
     {
       "path": "../../model-list"
+    },
+    {
+      "path": "../model-selector"
+    },
+    {
+      "path": "../gallery-modal"
     },
     {
       "path": "../../common"

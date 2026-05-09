@@ -1,5 +1,9 @@
 // Public API for @storyteller/ui-pagescene.
 
+// Top-level component — the host mounts this inside its route/tab.
+export { Stage3D } from "./lib/Stage3D";
+export type { Stage3DProps } from "./lib/Stage3D";
+
 // Adapter (platform abstraction)
 export type {
   PageSceneAdapter,

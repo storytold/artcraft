@@ -1,39 +1,21 @@
-// 3D editor route — mounted by MainApp's tab switch only when
-// activeTabId === "3D". React mount/unmount drives the engine
-// lifecycle: provider mounts → engine constructs once canvas refs
-// are populated; provider unmounts → engine tears down via the
-// EngineProvider cleanup. The host's tab cache (useTabStore) holds
-// the serialized scene JSON across mount/unmount so we don't lose
-// scene state when the user briefly visits another tab.
+// Artcraft Tauri-specific 3D editor route. Mounts the lib's Stage3D
+// with a Tauri-built adapter; manages tab-cache and the URL ↔ scene
+// token sync (both are host-platform concerns the lib stays out of).
+//
+// The website host mounts the same Stage3D with a web-built adapter
+// and its own router-flavored equivalents of these effects.
 
-import { useEffect } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { useSignalEffect } from "@preact/signals-react/runtime";
-import {
-  DragComponent,
-  EditorLoadingBar,
-  EngineProvider,
-  PrecisionSelector,
-  usePageSceneStore,
-} from "@storyteller/ui-pagescene";
+import { Stage3D, usePageSceneStore } from "@storyteller/ui-pagescene";
 import { useTabStore } from "~/pages/Stores/TabState";
 import { authentication, scene } from "~/signals";
 import { getCurrentLocationWithoutParams } from "~/utilities";
-import { PageEditor } from "~/pages/PageScene/PageEditor";
 import { useTauriPageSceneAdapter } from "./useTauriPageSceneAdapter";
 
 export const PageScene = ({ sceneToken }: { sceneToken?: string }) => {
-  // Route-aware bookkeeping — lifted out of ControlsTopButtons so the
-  // lib stays router-agnostic. Keeps the URL in sync with the
-  // currently loaded scene's token so a refresh / share preserves
-  // the scene selection.
-  const params = useParams();
-  const location = useLocation();
-  const navigate = useNavigate();
-  // Tab-cache plumbing. The provider only knows about its own React
-  // lifecycle; the host decides where the in-memory cache string
-  // lives. Reading the current value once on render is fine — the
-  // provider snapshots it on mount, and the cache is per-mount.
+  // Tab-cache plumbing. Stage3D is single-instance and tab-agnostic;
+  // the host decides where the in-memory cache string lives.
   const tabStore = useTabStore();
   const cacheJsonString = tabStore.getTabData("3D") as string | undefined;
   const onSceneSerialized = (json: string) => {
@@ -46,29 +28,19 @@ export const PageScene = ({ sceneToken }: { sceneToken?: string }) => {
     onSceneSerialized,
   });
 
-  // The 3D-page-mounted flag is read by the engine's remountEngine()
-  // gate. With MainApp's tab switch, our React mount IS the signal —
-  // no need for callers (TopBar, appMenu, ImageTo3DExperience) to
-  // imperatively flip it.
-  useEffect(() => {
-    usePageSceneStore.getState().set3DPageMounted(true);
-    return () => {
-      usePageSceneStore.getState().set3DPageMounted(false);
-    };
-  }, []);
-
   // Mirror the host's authentication signal into the lib store so
-  // lib-resident UI (ControlsTopButtons) can do ownership permission
-  // checks without depending on the host's signal system.
+  // ControlsTopButtons can do ownership permission checks reactively.
   useSignalEffect(() => {
     usePageSceneStore
       .getState()
       .setCurrentUserToken(authentication.userInfo.value?.user_token);
   });
 
-  // URL ↔ loaded scene sync. Mirrors the previous useSignalEffect
-  // that lived inside ControlsTopButtons; lives here so the lib
-  // doesn't need react-router-dom.
+  // URL ↔ loaded scene sync. Lives in the host wrapper so the lib
+  // stays router-agnostic.
+  const params = useParams();
+  const location = useLocation();
+  const navigate = useNavigate();
   useSignalEffect(() => {
     if (scene.value.isInitializing) return;
     const currentLocation = getCurrentLocationWithoutParams(
@@ -89,16 +61,11 @@ export const PageScene = ({ sceneToken }: { sceneToken?: string }) => {
   });
 
   return (
-    <EngineProvider
-      sceneToken={sceneToken}
+    <Stage3D
       adapter={adapter}
+      sceneToken={sceneToken}
       cacheJsonString={cacheJsonString}
       onSceneSerialized={onSceneSerialized}
-    >
-      <PageEditor />
-      <DragComponent />
-      <PrecisionSelector />
-      <EditorLoadingBar />
-    </EngineProvider>
+    />
   );
 };
