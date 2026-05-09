@@ -130,6 +130,14 @@ export class MouseControls {
   private isBoneDragged: boolean = false;
   private ignoreNextClick: boolean = false;
 
+  // Snapshot of the camera quaternion taken in onMouseUp right before
+  // lockControls.unlock(). The unlock listener in editor.ts restores
+  // this value to neutralize the synthetic mousemove Chromium fires
+  // while pointer-lock is releasing — that synthetic move would
+  // otherwise be processed by PointerLockControls and lurch the camera
+  // back by the cursor's "trip home" delta, producing a visible snap.
+  quatAtUnlockRequest: THREE.Quaternion | null = null;
+
   // Deps held for read callbacks + bus emissions throughout the class.
   // Constructor still copies primitive fields onto `this.x` for the
   // existing internals; new code reads through `this.deps` directly.
@@ -273,6 +281,13 @@ export class MouseControls {
 
   onMouseUp(event: any) {
     if (event.button === 0 || event.button === 1) {
+      // Snapshot the quaternion the user actually ended on. The unlock
+      // listener in editor.ts will restore this once Chromium's
+      // synthetic-mousemove window has closed, so the camera doesn't
+      // lurch by the cursor's trip-home delta.
+      if (this.camera) {
+        this.quatAtUnlockRequest = this.camera.quaternion.clone();
+      }
       this.lockControls?.unlock();
       this.isMouseClicked = false;
     }

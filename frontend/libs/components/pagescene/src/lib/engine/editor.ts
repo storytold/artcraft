@@ -425,6 +425,25 @@ class Editor {
         this.cameraController.camera,
         this.renderer.domElement,
       );
+      // Restore the quaternion captured at mouseup. Chromium synthesizes
+      // one final `mousemove` while exiting pointer lock so it can
+      // reposition the cursor; PLC reads that synthesized delta and
+      // rotates the camera by it because `isLocked` is still true at
+      // that moment. By the time the `unlock` event fires here, that
+      // synthetic move has already been applied — overwriting it with
+      // the pre-unlock snapshot keeps the camera at the orientation the
+      // user actually released on.
+      this.cameraController.lockControls.addEventListener("unlock", () => {
+        const snap = this.mouse_controls?.quatAtUnlockRequest;
+        const cam = this.cameraController.camera;
+        if (snap && cam) {
+          cam.quaternion.copy(snap);
+          cam.updateMatrixWorld();
+        }
+        if (this.mouse_controls) {
+          this.mouse_controls.quatAtUnlockRequest = null;
+        }
+      });
     }
     // FreeCam math + listeners now live in hooks/useFreeCam.ts; the
     // editor reads `cameraController.freeCamState` (set by that hook) on
