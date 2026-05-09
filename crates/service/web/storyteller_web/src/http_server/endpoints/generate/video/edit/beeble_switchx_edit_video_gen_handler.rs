@@ -8,6 +8,8 @@ use sqlx::Acquire;
 use artcraft_api_defs::generate::video::edit::beeble_switchx_edit_video::{
   BeebleSwitchXEditVideoRequest, BeebleSwitchXEditVideoResponse,
 };
+use beeble_client::error::beeble_error::BeebleError;
+use beeble_client::error::beeble_specific_api_error::BeebleSpecificApiError;
 use beeble_client::requests::create_upload_url::upload_bytes::upload_bytes_to_beeble;
 use beeble_client::requests::start_generation::start_generation::{
   start_generation, BeebleAlphaMode, BeebleGenerationType, StartGenerationArgs,
@@ -218,8 +220,22 @@ pub async fn beeble_switchx_edit_video_gen_handler(
       idempotency_key: Some(request.uuid_idempotency_token.clone()),
     },
   }).await.map_err(|err| {
-    error!("Beeble start_generation failed: {:?}", err);
-    AdvancedCommonWebError::from_error(err)
+    warn!("Beeble start_generation failed: {:?}", err);
+    match err {
+      BeebleError::ApiSpecific(BeebleSpecificApiError::VideoHasTooManyFrames {
+        max_frames,
+        detected_frames,
+        ref message,
+      }) => {
+        AdvancedCommonWebError::BadInputWithSimpleMessage(format!(
+          "Video has too many frames: {} (max: {}); {}",
+          detected_frames, max_frames, message
+        ))
+      },
+      _ => {
+        AdvancedCommonWebError::from_error(err)
+      }
+    }
   })?;
 
   let external_job_id = &beeble_result.id;
