@@ -2,7 +2,7 @@ use crate::creds::fal_api_key::FalApiKey;
 use crate::error::classify_fal_error::classify_fal_error;
 use crate::error::fal_error_plus::FalErrorPlus;
 use crate::requests::http::image::text::http_flux_1_schnell_text_to_image::{flux_1_schnell_text_to_image, Flux1SchnellTextToImageInput};
-use crate::requests::api::webhook_response::WebhookResponse;
+use crate::requests::core_api::webhook_response::WebhookResponse;
 use reqwest::IntoUrl;
 
 pub struct Flux1SchnellArgs<'a, U: IntoUrl> {

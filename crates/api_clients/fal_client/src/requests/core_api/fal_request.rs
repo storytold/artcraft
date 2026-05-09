@@ -5,9 +5,9 @@ use serde::{de::DeserializeOwned, Serialize};
 use log::info;
 
 use crate::error::fal_error::FalError;
-use crate::requests::api::queue::Queue;
-use crate::requests::api::queue_response::QueueResponse;
-use crate::requests::api::webhook_response::WebhookResponse;
+use crate::requests::core_api::queue::Queue;
+use crate::requests::core_api::queue_response::QueueResponse;
+use crate::requests::core_api::webhook_response::WebhookResponse;
 
 /// A request to the FAL API.
 ///

@@ -1,7 +1,7 @@
 use crate::creds::fal_api_key::FalApiKey;
 use crate::error::classify_fal_error::classify_fal_error;
 use crate::error::fal_error_plus::FalErrorPlus;
-use crate::requests::api::webhook_response::WebhookResponse;
+use crate::requests::core_api::webhook_response::WebhookResponse;
 use crate::requests::http::video::text::http_veo_3_text_to_video::{
   veo_3_text_to_video, Veo3TextToVideoInput,
 };

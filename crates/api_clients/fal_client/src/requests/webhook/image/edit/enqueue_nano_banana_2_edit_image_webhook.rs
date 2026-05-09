@@ -3,7 +3,7 @@ use crate::error::classify_fal_error::classify_fal_error;
 use crate::error::fal_error_plus::FalErrorPlus;
 use crate::requests::http::image::edit::http_nano_banana_2_edit_image::{nano_banana_2_edit_image, NanoBanana2EditImageInput};
 use crate::requests::traits::fal_request_cost_calculator_trait::{FalRequestCostCalculator, UsdCents};
-use crate::requests::api::webhook_response::WebhookResponse;
+use crate::requests::core_api::webhook_response::WebhookResponse;
 use reqwest::IntoUrl;
 
 pub struct EnqueueNanoBanana2EditImageArgs<'a, R: IntoUrl> {

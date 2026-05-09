@@ -1,4 +1,4 @@
-use crate::requests::api::queue_response::QueueResponse;
+use crate::requests::core_api::queue_response::QueueResponse;
 
 pub fn clone_queue_response(response: &QueueResponse) -> QueueResponse {
   QueueResponse {

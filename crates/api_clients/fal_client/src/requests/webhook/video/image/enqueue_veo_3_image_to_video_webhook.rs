@@ -3,7 +3,7 @@ use crate::error::classify_fal_error::classify_fal_error;
 use crate::error::fal_error_plus::FalErrorPlus;
 use crate::requests::traits::fal_request_cost_calculator_trait::{FalRequestCostCalculator, UsdCents};
 use crate::requests::http::video::image::http_veo_3_image_to_video::{veo_3_image_to_video, Veo3ImageToVideoInput};
-use crate::requests::api::webhook_response::WebhookResponse;
+use crate::requests::core_api::webhook_response::WebhookResponse;
 use reqwest::IntoUrl;
 
 pub struct Veo3Args<'a, R: IntoUrl> {

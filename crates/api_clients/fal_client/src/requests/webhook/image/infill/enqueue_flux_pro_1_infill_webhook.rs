@@ -2,7 +2,7 @@ use crate::creds::fal_api_key::FalApiKey;
 use crate::error::classify_fal_error::classify_fal_error;
 use crate::error::fal_error_plus::FalErrorPlus;
 use crate::requests::http::image::infill::http_flux_pro_1_infill::{flux_pro_1_infill, FluxPro1InfillInput};
-use crate::requests::api::webhook_response::WebhookResponse;
+use crate::requests::core_api::webhook_response::WebhookResponse;
 use reqwest::IntoUrl;
 
 pub struct FluxPro1InfillArgs<'a, R: IntoUrl> {

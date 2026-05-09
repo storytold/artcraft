@@ -1,4 +1,4 @@
-use crate::requests::api::fal_request::FalRequest;
+use crate::requests::core_api::fal_request::FalRequest;
 use serde::{Deserialize, Serialize};
 
 /// Non-BYOK text-to-image binding for `fal-ai/gpt-image-1/text-to-image`.

@@ -2,7 +2,7 @@ use crate::creds::fal_api_key::FalApiKey;
 use crate::error::classify_fal_error::classify_fal_error;
 use crate::error::fal_error_plus::FalErrorPlus;
 use crate::requests::http::image::edit::http_flux_pro_kontext_max_edit::{flux_pro_kontext_max_edit, FluxProKontextMaxEditInput};
-use crate::requests::api::webhook_response::WebhookResponse;
+use crate::requests::core_api::webhook_response::WebhookResponse;
 use reqwest::IntoUrl;
 
 pub struct FluxProKontextMaxArgs<'a, R: IntoUrl> {

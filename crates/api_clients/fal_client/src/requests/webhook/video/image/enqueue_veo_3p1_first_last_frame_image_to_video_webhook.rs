@@ -3,7 +3,7 @@ use crate::error::classify_fal_error::classify_fal_error;
 use crate::error::fal_error_plus::FalErrorPlus;
 use crate::requests::traits::fal_request_cost_calculator_trait::{FalRequestCostCalculator, UsdCents};
 use crate::requests::http::video::image::http_veo_3p1_first_last_frame_image_to_video::{veo_3p1_first_last_frame_image_to_video, Veo3p1FirstLastFrameImageToVideoInput};
-use crate::requests::api::webhook_response::WebhookResponse;
+use crate::requests::core_api::webhook_response::WebhookResponse;
 use reqwest::IntoUrl;
 
 pub struct EnqueueVeo3p1FirstLastFrameImageToVideoArgs<'a, R: IntoUrl> {

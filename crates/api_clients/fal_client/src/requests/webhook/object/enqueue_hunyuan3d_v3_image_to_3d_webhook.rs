@@ -4,7 +4,7 @@ use crate::error::fal_error_plus::FalErrorPlus;
 use crate::requests::traits::fal_request_cost_calculator_trait::{FalRequestCostCalculator, UsdCents};
 use crate::requests::http::object::http_hunyuan3d_v3_image_to_3d::{hunyuan3d_v3_image_to_3d, Hunyuan3dV3ImageTo3dInput};
 
-use crate::requests::api::webhook_response::WebhookResponse;
+use crate::requests::core_api::webhook_response::WebhookResponse;
 use reqwest::IntoUrl;
 
 pub struct EnqueueHunyuan3dV3ImageTo3dArgs<'a, R: IntoUrl> {

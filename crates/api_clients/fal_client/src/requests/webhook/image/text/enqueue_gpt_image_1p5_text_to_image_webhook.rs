@@ -3,7 +3,7 @@ use crate::error::classify_fal_error::classify_fal_error;
 use crate::error::fal_error_plus::FalErrorPlus;
 use crate::requests::traits::fal_request_cost_calculator_trait::{FalRequestCostCalculator, UsdCents};
 use crate::requests::http::image::text::http_gpt_image_1p5_text_to_image::{gpt_image_1p5_text_to_image, GptImage1p5TextToImageInput};
-use crate::requests::api::webhook_response::WebhookResponse;
+use crate::requests::core_api::webhook_response::WebhookResponse;
 use reqwest::IntoUrl;
 
 pub struct EnqueueGptImage1p5TextToImageArgs<'a, R: IntoUrl> {

@@ -3,8 +3,8 @@ use std::marker::PhantomData;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 
 use crate::error::fal_error::FalError;
-use crate::requests::api::queue_response::QueueResponse;
-use crate::requests::api::queue_status::QueueStatus;
+use crate::requests::core_api::queue_response::QueueResponse;
+use crate::requests::core_api::queue_status::QueueStatus;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Queue<Response: DeserializeOwned> {

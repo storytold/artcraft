@@ -1,5 +1,5 @@
-use crate::requests::api::queue::Queue;
-use crate::requests::api::queue_response::QueueResponse;
+use crate::requests::core_api::queue::Queue;
+use crate::requests::core_api::queue_response::QueueResponse;
 use crate::utils::clone_queue_response::clone_queue_response;
 use serde::de::DeserializeOwned;
 

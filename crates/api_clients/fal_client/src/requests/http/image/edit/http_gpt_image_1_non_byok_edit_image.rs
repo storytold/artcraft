@@ -1,4 +1,4 @@
-use crate::requests::api::fal_request::FalRequest;
+use crate::requests::core_api::fal_request::FalRequest;
 use serde::{Deserialize, Serialize};
 
 /// Non-BYOK edit-image (image-to-image) binding for

@@ -3,7 +3,7 @@ use crate::error::classify_fal_error::classify_fal_error;
 use crate::error::fal_error_plus::FalErrorPlus;
 use crate::requests::traits::fal_request_cost_calculator_trait::{FalRequestCostCalculator, UsdCents};
 use crate::requests::http::video::text::http_hailuo_v2p3_pro_text_to_video::{hailuo_v2p3_pro_text_to_video, HailuoV2p3ProTextToVideoInput};
-use crate::requests::api::webhook_response::WebhookResponse;
+use crate::requests::core_api::webhook_response::WebhookResponse;
 use reqwest::IntoUrl;
 
 pub struct EnqueueHailuoV2p3ProTextToVideoArgs<'a, R: IntoUrl> {

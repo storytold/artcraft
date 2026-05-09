@@ -3,7 +3,7 @@ use crate::error::classify_fal_error::classify_fal_error;
 use crate::error::fal_error_plus::FalErrorPlus;
 use crate::requests::http::video::text::http_seedance_1p5_pro_text_to_video::{seedance_1p5_pro_text_to_video, Seedance1p5ProTextToVideoInput};
 use crate::requests::traits::fal_request_cost_calculator_trait::{FalRequestCostCalculator, UsdCents};
-use crate::requests::api::webhook_response::WebhookResponse;
+use crate::requests::core_api::webhook_response::WebhookResponse;
 use reqwest::IntoUrl;
 
 pub struct EnqueueSeedance1p5ProTextToVideoArgs<'a, R: IntoUrl> {
