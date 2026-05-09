@@ -15,6 +15,13 @@ import type {
   ImageModel,
 } from "@storyteller/model-list";
 import type { GenerationProvider } from "@storyteller/api-enums";
+import type {
+  FilterEngineCategories,
+  FilterMediaType,
+  ToastTypes,
+} from "./enums";
+import type { MediaInfo } from "./models/mediaInfo";
+import type { Pagination, PaginationInfinite } from "./models/pagination";
 
 // ─── Generation ────────────────────────────────────────────────────────
 
@@ -29,6 +36,30 @@ export interface PageSceneGenerateRequest {
   resolution?: CommonResolution;
   frontendCaller?: string;
   frontendSubscriberId?: string;
+}
+
+// ─── Media listing (AssetMenu) ─────────────────────────────────────────
+
+export interface ListMediaFilesQuery {
+  pageSize: number;
+  pageIndex?: number;        // user-list pagination
+  cursor?: string;           // featured-list infinite pagination
+  filterEngineCategories: FilterEngineCategories[];
+  filterMediaTypes?: FilterMediaType[];
+}
+
+export interface ListUserMediaFilesResult {
+  success: boolean;
+  data?: MediaInfo[];
+  pagination?: Pagination;
+  errorMessage?: string;
+}
+
+export interface ListFeaturedMediaFilesResult {
+  success: boolean;
+  data?: MediaInfo[];
+  pagination?: PaginationInfinite;
+  errorMessage?: string;
 }
 
 // ─── Scene I/O ─────────────────────────────────────────────────────────
@@ -62,6 +93,28 @@ export interface PageSceneAdapter {
   getCdnOrigin(): string;
   getApiSchemeAndHost(): string;
   getCurrentUserToken?(): string | undefined;
+
+  // Compose a CDN URL for a bucket path with optional width/quality
+  // resize hints. Wraps the host's BucketConfig.getCdnUrl. AssetMenu
+  // uses this to build asset thumbnails at small sizes.
+  getCdnUrl(bucketPath: string, width?: number, quality?: number): string;
+
+  // Paginated media-file listing — backs AssetMenu's "My objects" tab.
+  // Wraps the host's MediaFilesApi.ListUserMediaFiles.
+  listUserMediaFiles(
+    query: ListMediaFilesQuery,
+  ): Promise<ListUserMediaFilesResult>;
+
+  // Cursor-paginated featured listing — backs AssetMenu's "Featured"
+  // tabs (skybox, character, location, etc.). Wraps the host's
+  // MediaFilesApi.ListFeaturedMediaFiles.
+  listFeaturedMediaFiles(
+    query: ListMediaFilesQuery,
+  ): Promise<ListFeaturedMediaFilesResult>;
+
+  // Toast notifications. Wraps the host's addToast / react-hot-toast
+  // pipeline; the lib stays free of toast-library imports.
+  showToast(level: ToastTypes, message: string): void;
 
   // Resolve a media_file_token to its CDN URL. Wraps the host's
   // MediaFilesApi.GetMediaFileByToken. Used by Scene's asset loaders

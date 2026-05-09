@@ -21,8 +21,12 @@ import {
   UploadImageMedia,
 } from "@storyteller/api";
 import type { PageSceneAdapter } from "@storyteller/ui-pagescene";
+import { ToastTypes } from "@storyteller/ui-pagescene";
 import { GetCdnOrigin } from "~/api/GetCdnOrigin";
+import { BucketConfig } from "~/api/BucketConfig";
+import { MediaFilesApi as ArtcraftMediaFilesApi } from "~/Classes/ApiManager";
 import {
+  addToast,
   authentication,
   pageHeight,
   pageWidth,
@@ -228,6 +232,44 @@ export const useTauriPageSceneAdapter = (
       getApiSchemeAndHost: apiHost,
       getCurrentUserToken: () =>
         authentication.userInfo.value?.user_token,
+
+      getCdnUrl: (bucketPath, width, quality) =>
+        new BucketConfig().getCdnUrl(bucketPath, width, quality),
+
+      listUserMediaFiles: async (query) => {
+        const api = new ArtcraftMediaFilesApi();
+        const response = await api.ListUserMediaFiles({
+          page_size: query.pageSize,
+          page_index: query.pageIndex,
+          filter_engine_categories: query.filterEngineCategories,
+          filter_media_type: query.filterMediaTypes,
+        });
+        return {
+          success: response.success,
+          data: response.data,
+          pagination: response.pagination,
+          errorMessage: response.errorMessage,
+        };
+      },
+
+      listFeaturedMediaFiles: async (query) => {
+        const api = new ArtcraftMediaFilesApi();
+        const response = await api.ListFeaturedMediaFiles({
+          page_size: query.pageSize,
+          cursor: query.cursor,
+          filter_engine_categories: query.filterEngineCategories,
+          filter_media_type: query.filterMediaTypes,
+        });
+        return {
+          success: response.success,
+          data: response.data,
+          pagination: response.pagination,
+          errorMessage: response.errorMessage,
+        };
+      },
+
+      showToast: (level: ToastTypes, message: string) =>
+        addToast(level, message),
 
       getMediaUrlByToken: async (token) => {
         const mediaFilesApi = new MediaFilesApi();

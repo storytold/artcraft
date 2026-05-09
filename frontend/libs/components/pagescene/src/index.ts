@@ -5,6 +5,9 @@ export type {
   PageSceneAdapter,
   PageSceneGenerateRequest,
   PageSceneSavePayload,
+  ListMediaFilesQuery,
+  ListUserMediaFilesResult,
+  ListFeaturedMediaFilesResult,
 } from "./lib/adapter";
 
 // Store
