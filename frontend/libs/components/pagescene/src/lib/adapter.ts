@@ -9,6 +9,7 @@
 // host wrapper and passed to <PageScene adapter={adapter} />.
 
 import type { ReactNode } from "react";
+import type { IconDefinition } from "@fortawesome/fontawesome-common-types";
 import type {
   CommonAspectRatio,
   CommonResolution,
@@ -140,6 +141,18 @@ export interface PageSceneAdapter {
   }): ReactNode;
   renderSceneLoader(props: {
     onSceneSelect: (token: string) => void;
+  }): ReactNode;
+
+  // "Upload your own model" host modal. Rendered from inside the lib's
+  // AssetModal — the lib owns the trigger button + modal control state,
+  // the host owns the actual upload UI (file picker, validation,
+  // progress, splat conversion, etc.).
+  renderAssetUploader(props: {
+    isOpen: boolean;
+    onClose: () => void;
+    onSuccess: (category: FilterEngineCategories) => void;
+    title: string;
+    titleIcon: IconDefinition;
   }): ReactNode;
 
   // Optional event hooks — telemetry, host-side modals, tab title sync.

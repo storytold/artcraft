@@ -25,6 +25,7 @@ import { ToastTypes } from "@storyteller/ui-pagescene";
 import { GetCdnOrigin } from "~/api/GetCdnOrigin";
 import { BucketConfig } from "~/api/BucketConfig";
 import { MediaFilesApi as ArtcraftMediaFilesApi } from "~/Classes/ApiManager";
+import { UploadModal3D } from "~/components/reusable/UploadModal3D";
 import {
   addToast,
   authentication,
@@ -292,6 +293,16 @@ export const useTauriPageSceneAdapter = (
       // these renderers from inside its own AssetMenu container.
       renderAssetBrowser: () => null,
       renderSceneLoader: () => null,
+
+      renderAssetUploader: (props) => (
+        <UploadModal3D
+          isOpen={props.isOpen}
+          onClose={props.onClose}
+          onSuccess={props.onSuccess}
+          title={props.title}
+          titleIcon={props.titleIcon}
+        />
+      ),
 
       initialSceneToken,
       cacheJsonString,
