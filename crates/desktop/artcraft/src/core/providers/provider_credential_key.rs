@@ -1,7 +1,7 @@
 use serde_derive::{Deserialize, Serialize};
 use crate::core::providers::provider_credential_type::ProviderCredentialType;
 
-#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum ProviderCredentialKey {
 
