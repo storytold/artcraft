@@ -7,6 +7,7 @@ use std::path::Path;
 
 const CURRENT_VERSION: u8 = 1;
 
+#[derive(Clone)]
 pub struct WebLoginData {
   pub cookies_header: Option<String>,
   pub additional_headers: Option<HashMap<String, String>>,

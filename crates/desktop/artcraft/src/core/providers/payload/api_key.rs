@@ -2,6 +2,7 @@ use std::error::Error;
 use std::fmt::Display;
 use std::path::Path;
 
+#[derive(Clone)]
 pub struct ApiKeyData(String);
 
 impl ApiKeyData {
