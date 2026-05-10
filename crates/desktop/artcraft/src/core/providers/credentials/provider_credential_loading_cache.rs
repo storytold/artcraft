@@ -139,6 +139,19 @@ impl ProviderCredentialLoadingCache {
       cache.remove(&key);
     }
   }
+  
+  pub fn delete_credentials(&self, key: ProviderCredentialKey) -> Result<(), ProviderCredentialLoadingCacheError> {
+    let file_path = self.app_data_root.credentials_dir().path().join(key.get_filename());
+    
+    if file_path.exists() {
+      std::fs::remove_file(file_path)
+          .map_err(|e| ProviderCredentialLoadingCacheError::IoError(e))?;
+    }
+    
+    self.invalidate(key);
+    
+    Ok(())
+  }
 }
 
 #[derive(Debug)]

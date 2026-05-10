@@ -24,6 +24,9 @@ use crate::core::commands::media_files::media_file_delete_command::media_file_de
 use crate::core::commands::platform_info_command::platform_info_command;
 use crate::core::commands::providers::deprecated::get_provider_order_command::get_provider_order_command;
 use crate::core::commands::providers::deprecated::set_provider_order_command::set_provider_order_command;
+use crate::core::commands::providers::provider_clear_command::provider_clear_command;
+use crate::core::commands::providers::provider_list_command::provider_list_command;
+use crate::core::commands::providers::provider_set_api_key_command::provider_set_api_key_command;
 use crate::core::commands::task_queue::get_task_queue_command::get_task_queue_command;
 use crate::core::commands::task_queue::mark_task_as_dismissed_command::mark_task_as_dismissed_command;
 use crate::core::commands::task_queue::tasks_nuke_all_command::tasks_nuke_all_command;
@@ -93,6 +96,8 @@ pub fn run() {
   println!("Loading app preferences...");
   let app_preferences = load_app_preferences_or_default(&app_data_root);
   
+  let provider_credential_cache = crate::core::providers::credentials::provider_credential_loading_cache::ProviderCredentialLoadingCache::new(app_data_root.clone());
+
   // NB: tauri-plugin-http stores the credentials on disk, so we can defer to that for now.
   // println!("Attempting to read existing artcraft credentials...");
   // let storyteller_creds_manager = StorytellerCredentialManager::initialize_from_disk_infallible(&app_data_root);
@@ -196,6 +201,7 @@ pub fn run() {
     .manage(sora_task_queue)
     .manage(storyteller_creds_manager_3)
     .manage(worldlabs_bearer_bridge)
+    .manage(provider_credential_cache)
     .manage(worldlabs_creds_manager);
 
   // TODO: Break this out into another module, because RustRover/IntelliJ lags with these macros.
@@ -218,6 +224,9 @@ pub fn run() {
     get_app_preferences_command,
     get_provider_order_command,
     get_task_queue_command,
+    provider_clear_command,
+    provider_list_command,
+    provider_set_api_key_command,
     grok_clear_credentials_command,
     grok_get_credential_info_command,
     grok_open_login_command,
