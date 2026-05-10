@@ -1,12 +1,6 @@
-use crate::error::classify_fal_error::classify_fal_error;
 use crate::error::fal_error_plus::FalErrorPlus;
-use crate::requests::api::image::angle::flux_2_lora_edit_image_angle::http::Flux2LoraEditImageAngleOutput;
-use crate::requests::core_api::fal_request::FalRequest;
-use crate::requests::core_api::webhook_response::WebhookResponse;
-use crate::requests::http::image::angle::http_flux_2_lora_edit_image_angle::{http_flux_2_lora_edit_image_angle, Flux2LoraEditImageAngleInput};
+use crate::requests::api::image::angle::flux_2_lora_edit_image_angle::raw_request::{Flux2LoraEditImageAngleInput, Flux2LoraEditImageAngleOutput};
 use crate::requests::traits::fal_endpoint_trait::FalEndpoint;
-use crate::requests::traits::fal_request_cost_calculator_trait::FalRequestCostCalculator;
-use reqwest::IntoUrl;
 
 
 #[derive(Clone, Debug)]
@@ -51,10 +45,6 @@ impl FalEndpoint for Flux2LoraEditImageAngleRequest {
   type RawRequest = Flux2LoraEditImageAngleInput;
   type RawResponse = Flux2LoraEditImageAngleOutput;
 
-  fn get_endpoint() -> &'static str {
-    ENDPOINT
-  }
-
   fn to_raw_request(&self) -> Result<Self::RawRequest, FalErrorPlus> {
     let num_images = self.num_images
         .map(|n| match n {
@@ -75,7 +65,7 @@ impl FalEndpoint for Flux2LoraEditImageAngleRequest {
         })
         .map(|s| s.to_string());
 
-    Ok(Flux2LoraEditImageAngleInput {
+    Ok(Self::RawRequest {
       image_urls: self.image_urls.clone(),
       horizontal_angle: self.horizontal_angle,
       vertical_angle: self.vertical_angle,
@@ -92,23 +82,8 @@ impl FalEndpoint for Flux2LoraEditImageAngleRequest {
       seed: None,
     })
   }
-  
-  fn to_request(&self) -> Result<FalRequest<Self::RawRequest, Self::RawResponse>, FalErrorPlus> {
-    let fal_request = FalRequest::new(ENDPOINT, self.to_raw_request()?);
-    Ok(fal_request)
-  }
 }
 
-
-pub async fn enqueue_flux_2_lora_edit_image_angle_webhook<R: IntoUrl>(
-  args: EnqueueFlux2LoraEditImageAngleArgs<'_, R>
-) -> Result<WebhookResponse, FalErrorPlus> {
-
-  let req = args.request;
-
-
-  result.map_err(|err| classify_fal_error(err))
-}
 
 #[cfg(test)]
 mod tests {

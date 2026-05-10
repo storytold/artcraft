@@ -1,4 +1,3 @@
-use crate::requests::core_api::fal_request::FalRequest;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize, Default)]
@@ -73,10 +72,4 @@ pub struct Flux2LoraEditImageAngleOutput {
   pub images: Vec<Flux2LoraEditImageAngleFile>,
   pub seed: u64,
   pub prompt: Option<String>,
-}
-
-pub fn http_flux_2_lora_edit_image_angle(
-  params: Flux2LoraEditImageAngleInput,
-) -> FalRequest<Flux2LoraEditImageAngleInput, Flux2LoraEditImageAngleOutput> {
-  FalRequest::new(, params)
 }
