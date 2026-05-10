@@ -1,5 +1,5 @@
 use serde_derive::{Deserialize, Serialize};
-use crate::core::providers::provider_credential_type::ProviderCredentialType;
+use crate::core::providers::credentials::provider_credential_type::ProviderCredentialType;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]

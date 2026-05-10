@@ -6,11 +6,11 @@ use std::time::{Duration, Instant};
 
 use log::{info, warn};
 
-use crate::core::providers::payload::api_key::{ApiKeyData, ApiKeyDataError};
-use crate::core::providers::payload::provider_credential_payload::ProviderCredentialPayload;
-use crate::core::providers::payload::web_login::{WebLoginData, WebLoginDataError};
-use crate::core::providers::provider_credential_key::ProviderCredentialKey;
-use crate::core::providers::provider_credential_type::ProviderCredentialType;
+use crate::core::providers::credentials::payload::api_key::{ApiKeyData, ApiKeyDataError};
+use crate::core::providers::credentials::payload::provider_credential_payload::ProviderCredentialPayload;
+use crate::core::providers::credentials::payload::web_login::{WebLoginData, WebLoginDataError};
+use crate::core::providers::credentials::provider_credential_key::ProviderCredentialKey;
+use crate::core::providers::credentials::provider_credential_type::ProviderCredentialType;
 use crate::core::state::data_dir::app_data_root::AppDataRoot;
 use crate::core::state::data_dir::trait_data_subdir::DataSubdir;
 

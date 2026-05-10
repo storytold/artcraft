@@ -1,5 +1,5 @@
-use crate::core::providers::payload::api_key::ApiKeyData;
-use crate::core::providers::payload::web_login::WebLoginData;
+use crate::core::providers::credentials::payload::api_key::ApiKeyData;
+use crate::core::providers::credentials::payload::web_login::WebLoginData;
 
 #[derive(Clone)]
 pub enum ProviderCredentialPayload {
