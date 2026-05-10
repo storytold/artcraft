@@ -46,3 +46,54 @@ impl Display for ApiKeyDataError {
     }
   }
 }
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+  use tempfile::NamedTempFile;
+  use std::io::Write;
+
+  #[test]
+  fn load_trims_whitespace() {
+    let mut file = NamedTempFile::new().unwrap();
+    write!(file, "  sk-abc123  \n").unwrap();
+
+    let data = ApiKeyData::load_from_file(file.path()).unwrap();
+    assert_eq!(data.as_str(), "sk-abc123");
+  }
+
+  #[test]
+  fn load_trims_newlines() {
+    let mut file = NamedTempFile::new().unwrap();
+    write!(file, "\nmy_secret_key\n\n").unwrap();
+
+    let data = ApiKeyData::load_from_file(file.path()).unwrap();
+    assert_eq!(data.as_str(), "my_secret_key");
+  }
+
+  #[test]
+  fn save_trims_whitespace() {
+    let file = NamedTempFile::new().unwrap();
+    let data = ApiKeyData::from_str("  sk-padded  ");
+    data.save_to_file(file.path()).unwrap();
+
+    let contents = std::fs::read_to_string(file.path()).unwrap();
+    assert_eq!(contents, "sk-padded");
+  }
+
+  #[test]
+  fn round_trip() {
+    let file = NamedTempFile::new().unwrap();
+    let original = ApiKeyData::from_str("sk-round-trip-test-key");
+    original.save_to_file(file.path()).unwrap();
+
+    let loaded = ApiKeyData::load_from_file(file.path()).unwrap();
+    assert_eq!(loaded.as_str(), "sk-round-trip-test-key");
+  }
+
+  #[test]
+  fn load_nonexistent_file_returns_io_error() {
+    let result = ApiKeyData::load_from_file("/tmp/nonexistent_api_key_file_12345.txt");
+    assert!(result.is_err());
+  }
+}
