@@ -132,4 +132,29 @@ impl<Params: Serialize, Response: DeserializeOwned> FalRequest<Params, Response>
 
     Ok(payload)
   }
+
+  /// Submit the request to the Fal queue system.
+  pub async fn queue_request(self) -> Result<QueueResponse, FalError> {
+    let key = self
+        .api_key
+        .expect("No fal API key provided, and FAL_API_KEY environment variable is not set");
+
+    let response = self
+        .client
+        .post(format!("https://queue.fal.run/{}", self.endpoint))
+        .json(&self.params)
+        .header("Authorization", format!("Key {}", &key))
+        .header("Content-Type", "application/json")
+        .send()
+        .await?;
+
+    if response.status() != 200 {
+      let error = response.text().await?;
+      return Err(error.into());
+    }
+
+    let payload: QueueResponse = response.error_for_status()?.json().await?;
+
+    Ok(payload)
+  }
 }
