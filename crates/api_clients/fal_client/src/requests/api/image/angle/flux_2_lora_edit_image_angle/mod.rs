@@ -1,3 +1,3 @@
-pub mod api;
 mod raw_request;
-mod cost;
+pub mod api;
+pub mod cost;
