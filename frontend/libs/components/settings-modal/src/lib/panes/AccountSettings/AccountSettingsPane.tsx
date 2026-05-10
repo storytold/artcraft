@@ -2,6 +2,7 @@ import { SoraAccountBlock } from "./SoraAccountBlock";
 import { ArtcraftAccountBlock } from "./ArtcraftAccountBlock";
 import { MidjourneyAccountBlock } from "./MidjourneyAccountBlock";
 import { GrokAccountBlock } from "./GrokAccountBlock";
+import { ProviderCredentialsGroupBlock } from "./ProviderCredentialsGroupBlock";
 import { WorldLabsAccountBlock } from "./WorldLabsAccountBlock";
 
 interface AccountSettingsPaneProps {
@@ -42,6 +43,7 @@ export const AccountSettingsPane = ({
         <ArtcraftAccountBlock
           globalAccountLogoutCallback={globalAccountLogoutCallback}
         />
+        <ProviderCredentialsGroupBlock />
         <GrokAccountBlock />
         <MidjourneyAccountBlock />
         <SoraAccountBlock />
