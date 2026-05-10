@@ -111,7 +111,10 @@ mod tests {
   use crate::requests::traits::fal_endpoint_trait::FalEndpoint;
   use errors::AnyhowResult;
   use std::fs::read_to_string;
-  use test_data::web::image_urls::GHOST_IMAGE_URL;
+  use test_data::web::image_urls::{
+    ERNEST_SCARED_STUPID_IMAGE_URL, GHOST_IMAGE_URL, TREX_SKELETON_IMAGE_URL,
+    WHITE_HOUSE_SUNSET_IMAGE_URL,
+  };
 
   #[tokio::test]
   #[ignore] // manually test — requires real API key, incurs costs
@@ -125,6 +128,54 @@ mod tests {
       num_images: NanoBanana2EditImageNumImages::One,
       resolution: Some(NanoBanana2EditImageResolution::OneK),
       aspect_ratio: None,
+    };
+
+    let result = request.send_queue_request(&api_key).await?;
+    println!("Request ID: {}", result.request_id);
+    assert!(!result.request_id.is_empty());
+    Ok(())
+  }
+
+  #[tokio::test]
+  #[ignore] // manually test — requires real API key, incurs costs
+  async fn test_edit_multi_image_spooky() -> AnyhowResult<()> {
+    let secret = read_to_string("/Users/bt/Artcraft/credentials/fal_api_key.txt")?;
+    let api_key = FalApiKey::from_str(&secret);
+
+    let request = NanoBanana2EditImageRequest {
+      prompt: "add the ghost and scared man to the image of the t-rex skeleton, make it look spooky but friendly".to_string(),
+      image_urls: vec![
+        GHOST_IMAGE_URL.to_string(),
+        TREX_SKELETON_IMAGE_URL.to_string(),
+        ERNEST_SCARED_STUPID_IMAGE_URL.to_string(),
+      ],
+      num_images: NanoBanana2EditImageNumImages::Two,
+      resolution: Some(NanoBanana2EditImageResolution::TwoK),
+      aspect_ratio: Some(NanoBanana2EditImageAspectRatio::SixteenByNine),
+    };
+
+    let result = request.send_queue_request(&api_key).await?;
+    println!("Request ID: {}", result.request_id);
+    assert!(!result.request_id.is_empty());
+    Ok(())
+  }
+
+  #[tokio::test]
+  #[ignore] // manually test — requires real API key, incurs costs
+  async fn test_edit_multi_image_white_house() -> AnyhowResult<()> {
+    let secret = read_to_string("/Users/bt/Artcraft/credentials/fal_api_key.txt")?;
+    let api_key = FalApiKey::from_str(&secret);
+
+    let request = NanoBanana2EditImageRequest {
+      prompt: "Put the scared man and the t-rex in front of the white house scene. Make the man afraid of the t-rex.".to_string(),
+      image_urls: vec![
+        WHITE_HOUSE_SUNSET_IMAGE_URL.to_string(),
+        TREX_SKELETON_IMAGE_URL.to_string(),
+        ERNEST_SCARED_STUPID_IMAGE_URL.to_string(),
+      ],
+      num_images: NanoBanana2EditImageNumImages::Two,
+      resolution: Some(NanoBanana2EditImageResolution::TwoK),
+      aspect_ratio: Some(NanoBanana2EditImageAspectRatio::SixteenByNine),
     };
 
     let result = request.send_queue_request(&api_key).await?;

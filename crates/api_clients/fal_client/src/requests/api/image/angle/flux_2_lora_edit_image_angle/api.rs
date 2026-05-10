@@ -151,4 +151,6 @@ mod tests {
 
     Ok(())
   }
+
+  // NB: Pricing tests are in cost.rs
 }
