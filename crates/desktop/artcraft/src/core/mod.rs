@@ -3,6 +3,7 @@ pub mod artcraft_error;
 pub mod commands;
 pub mod events;
 pub mod lifecycle;
+pub mod providers;
 pub mod state;
 pub mod threads;
 pub mod utils;
