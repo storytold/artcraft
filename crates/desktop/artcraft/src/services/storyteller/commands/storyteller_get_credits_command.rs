@@ -15,7 +15,7 @@ use log::{error, info};
 use serde_derive::{Deserialize, Serialize};
 use artcraft_client::endpoints::credits::get_session_credits::get_session_credits;
 use tauri::{AppHandle, State};
-use crate::core::commands::providers::get_provider_order_command::GetProviderOrderResponse;
+use crate::core::commands::providers::deprecated::get_provider_order_command::GetProviderOrderResponse;
 use crate::core::commands::response::success_response_wrapper::SerializeMarker;
 // TODO(bt,2025-09-12): Cache credits and clear cache on generate calls.
 
