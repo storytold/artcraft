@@ -13,6 +13,7 @@ type ProviderCredentialKey =
 
 interface ProviderCredentialDetails {
   maybe_key_start: string | null;
+  maybe_full_key: string | null;
   maybe_email_address: string | null;
   maybe_username: string | null;
 }
@@ -34,36 +35,62 @@ interface ApiKeyRowProps {
   label: string;
   credentialKey: ProviderCredentialKey;
   initialRedactedValue: string;
-  hasCredentials: boolean;
+  initialFullKey: string;
 }
 
 const ApiKeyRow = ({
   label,
   credentialKey,
   initialRedactedValue,
-  hasCredentials,
+  initialFullKey,
 }: ApiKeyRowProps) => {
-  const [value, setValue] = useState("");
+  // The actual key value (editable).
+  const [fullKey, setFullKey] = useState(initialFullKey);
+  // The redacted display value.
+  const [redacted, setRedacted] = useState(initialRedactedValue);
+  // Whether the input is focused (show real value vs redacted).
+  const [isFocused, setIsFocused] = useState(false);
+  // Track if user changed something since last save.
+  const [isDirty, setIsDirty] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.value;
-    console.log(`[ProviderCredentials] onChange fired for ${credentialKey}: "${newValue}"`);
-    setValue(newValue);
+    setFullKey(newValue);
+    setIsDirty(true);
+  };
 
-    if (newValue.trim() === "") {
-      console.log(`[ProviderCredentials] Clearing ${credentialKey}...`);
+  const handleFocus = () => {
+    setIsFocused(true);
+  };
+
+  const handleBlur = () => {
+    setIsFocused(false);
+
+    if (!isDirty) return;
+    setIsDirty(false);
+
+    const trimmed = fullKey.trim();
+
+    if (trimmed === "") {
       invoke("provider_clear_command", {
         request: { provider_credential: credentialKey },
       }).then(() => {
+        setFullKey("");
+        setRedacted("");
         console.log(`[ProviderCredentials] Cleared ${credentialKey}`);
       }).catch((e) => {
         console.error(`[ProviderCredentials] Error clearing ${credentialKey}:`, e);
       });
     } else {
-      console.log(`[ProviderCredentials] Saving ${credentialKey}...`);
       invoke("provider_set_api_key_command", {
-        request: { provider_credential: credentialKey, api_key: newValue },
+        request: { provider_credential: credentialKey, api_key: trimmed },
       }).then(() => {
+        setFullKey(trimmed);
+        setRedacted(
+          trimmed.length > 6
+            ? trimmed.substring(0, 6) + "********"
+            : "********"
+        );
         console.log(`[ProviderCredentials] Saved ${credentialKey}`);
       }).catch((e) => {
         console.error(`[ProviderCredentials] Error saving ${credentialKey}:`, e);
@@ -71,15 +98,27 @@ const ApiKeyRow = ({
     }
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      (e.target as HTMLInputElement).blur();
+    }
+  };
+
+  const hasKey = isFocused ? fullKey.length > 0 : redacted.length > 0;
+
   return (
     <div>
       <label className="mb-1 block text-sm">{label}</label>
       <input
-        type="password"
-        value={value}
+        type={isFocused ? "text" : "password"}
+        value={isFocused ? fullKey : (redacted || "")}
         onChange={handleChange}
-        placeholder={hasCredentials ? initialRedactedValue : "Enter API Key"}
-        className="h-10 w-full rounded-lg px-3 py-2.5 outline-none bg-ui-panel text-base-fg placeholder-base-fg/50 border border-ui-panel-border"
+        onFocus={handleFocus}
+        onBlur={handleBlur}
+        onKeyDown={handleKeyDown}
+        placeholder="Enter API Key"
+        className="h-10 w-full rounded-lg px-3 py-2.5 outline-none bg-ui-panel text-base-fg placeholder-base-fg/50 border border-ui-panel-border transition-all duration-150 ease-in-out hover:border-primary/60 focus:border-primary"
+        readOnly={!isFocused}
       />
     </div>
   );
@@ -94,11 +133,9 @@ export const ProviderCredentialsGroupBlock = () => {
   useEffect(() => {
     const fetchProviders = async () => {
       try {
-        console.log("[ProviderCredentials] Fetching provider list...");
         const result = (await invoke("provider_list_command")) as {
           payload: ProviderListResponse;
         };
-        console.log("[ProviderCredentials] Got providers:", result.payload.providers);
         setProviders(result.payload.providers);
       } catch (e) {
         console.error("[ProviderCredentials] Error fetching provider list:", e);
@@ -128,7 +165,9 @@ export const ProviderCredentialsGroupBlock = () => {
         initialRedactedValue={
           falProvider?.maybe_details?.maybe_key_start ?? ""
         }
-        hasCredentials={falProvider?.has_credentials ?? false}
+        initialFullKey={
+          falProvider?.maybe_details?.maybe_full_key ?? ""
+        }
       />
       <ApiKeyRow
         label="Replicate API Key (optional)"
@@ -136,7 +175,9 @@ export const ProviderCredentialsGroupBlock = () => {
         initialRedactedValue={
           replicateProvider?.maybe_details?.maybe_key_start ?? ""
         }
-        hasCredentials={replicateProvider?.has_credentials ?? false}
+        initialFullKey={
+          replicateProvider?.maybe_details?.maybe_full_key ?? ""
+        }
       />
     </div>
   );

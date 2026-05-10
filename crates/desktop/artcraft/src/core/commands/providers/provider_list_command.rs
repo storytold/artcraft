@@ -39,6 +39,8 @@ pub struct ProviderListEntry {
 pub struct ProviderCredentialDetails {
   /// For API keys: the first few characters followed by asterisks.
   pub maybe_key_start: Option<String>,
+  /// For API keys: the full key value.
+  pub maybe_full_key: Option<String>,
   /// For web logins: the email address if available.
   pub maybe_email_address: Option<String>,
   /// For web logins: the username if available.
@@ -68,6 +70,7 @@ pub async fn provider_list_command(
       ProviderCredentialPayload::ApiKey(data) => {
         ProviderCredentialDetails {
           maybe_key_start: Some(redact_key(data.as_str())),
+          maybe_full_key: Some(data.as_str().to_string()),
           maybe_email_address: None,
           maybe_username: None,
         }
@@ -75,6 +78,7 @@ pub async fn provider_list_command(
       ProviderCredentialPayload::WebLogin(data) => {
         ProviderCredentialDetails {
           maybe_key_start: None,
+          maybe_full_key: None,
           maybe_email_address: data.email_address,
           maybe_username: data.username,
         }
