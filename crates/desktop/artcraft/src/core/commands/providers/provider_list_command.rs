@@ -1,5 +1,6 @@
 use crate::core::commands::response::shorthand::ResponseOrErrorMessage;
 use crate::core::commands::response::success_response_wrapper::SerializeMarker;
+use crate::core::providers::credentials::payload::provider_credential_payload::ProviderCredentialPayload;
 use crate::core::providers::credentials::provider_credential_key::ProviderCredentialKey;
 use crate::core::providers::credentials::provider_credential_loading_cache::ProviderCredentialLoadingCache;
 use crate::core::providers::credentials::provider_credential_type::ProviderCredentialType;
@@ -17,6 +18,8 @@ const ALL_KEYS: &[ProviderCredentialKey] = &[
   ProviderCredentialKey::RunwayWebLogin,
 ];
 
+const REDACTED_KEY_VISIBLE_CHARS: usize = 6;
+
 #[derive(Serialize)]
 pub struct ProviderListResponse {
   pub providers: Vec<ProviderListEntry>,
@@ -26,9 +29,20 @@ impl SerializeMarker for ProviderListResponse {}
 
 #[derive(Serialize)]
 pub struct ProviderListEntry {
-  pub key: ProviderCredentialKey,
+  pub provider_credential: ProviderCredentialKey,
   pub credential_type: ProviderCredentialType,
   pub has_credentials: bool,
+  pub maybe_details: Option<ProviderCredentialDetails>,
+}
+
+#[derive(Serialize)]
+pub struct ProviderCredentialDetails {
+  /// For API keys: the first few characters followed by asterisks.
+  pub maybe_key_start: Option<String>,
+  /// For web logins: the email address if available.
+  pub maybe_email_address: Option<String>,
+  /// For web logins: the username if available.
+  pub maybe_username: Option<String>,
 }
 
 #[tauri::command]
@@ -40,21 +54,49 @@ pub async fn provider_list_command(
   let mut providers = Vec::with_capacity(ALL_KEYS.len());
 
   for &key in ALL_KEYS {
-    let has_credentials = match credential_cache.get_credentials(key) {
-      Ok(Some(_)) => true,
-      Ok(None) => false,
+    let maybe_payload = match credential_cache.get_credentials(key) {
+      Ok(payload) => payload,
       Err(err) => {
         warn!("Error checking credential for {:?}: {:?}", key, err);
-        false
+        None
       }
     };
 
+    let has_credentials = maybe_payload.is_some();
+
+    let maybe_details = maybe_payload.map(|payload| match payload {
+      ProviderCredentialPayload::ApiKey(data) => {
+        ProviderCredentialDetails {
+          maybe_key_start: Some(redact_key(data.as_str())),
+          maybe_email_address: None,
+          maybe_username: None,
+        }
+      }
+      ProviderCredentialPayload::WebLogin(data) => {
+        ProviderCredentialDetails {
+          maybe_key_start: None,
+          maybe_email_address: data.email_address,
+          maybe_username: data.username,
+        }
+      }
+    });
+
     providers.push(ProviderListEntry {
-      key,
+      provider_credential: key,
       credential_type: key.get_type(),
       has_credentials,
+      maybe_details,
     });
   }
 
   Ok(ProviderListResponse { providers }.into())
+}
+
+fn redact_key(key: &str) -> String {
+  if key.len() <= REDACTED_KEY_VISIBLE_CHARS {
+    "********".to_string()
+  } else {
+    let visible = &key[..REDACTED_KEY_VISIBLE_CHARS];
+    format!("{}********", visible)
+  }
 }
