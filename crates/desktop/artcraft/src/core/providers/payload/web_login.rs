@@ -3,6 +3,7 @@ use std::error::Error;
 use std::fmt::Display;
 use std::path::Path;
 use chrono::{DateTime, Utc};
+use serde_derive::{Deserialize, Serialize};
 use crate::core::artcraft_error::ArtcraftError;
 
 const CURRENT_VERSION: u8 = 1;
@@ -56,15 +57,26 @@ impl Display for WebLoginDataError {
   } 
 }
 
+#[derive(Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
 struct WebLoginDataSerializable {
   version: u8,
   
+  #[serde(skip_serializing_if = "Option::is_none")]
   cookies_header: Option<String>,
+  
+  #[serde(skip_serializing_if = "Option::is_none")]
   additional_headers: Option<HashMap<String, String>>,
 
+  #[serde(skip_serializing_if = "Option::is_none")]
   username: Option<String>,
+  
+  #[serde(skip_serializing_if = "Option::is_none")]
   email_address: Option<String>,
 
+  #[serde(skip_serializing_if = "Option::is_none")]
   created_at: Option<DateTime<Utc>>,
+  
+  #[serde(skip_serializing_if = "Option::is_none")]
   updated_at: Option<DateTime<Utc>>,
 }
