@@ -87,8 +87,9 @@ impl FalEndpoint for Flux2LoraEditImageAngleRequest {
 
 #[cfg(test)]
 mod tests {
+  use super::*;
   use crate::creds::fal_api_key::FalApiKey;
-  use crate::requests::webhook::image::angle::enqueue_flux_2_lora_edit_image_angle_webhook::{enqueue_flux_2_lora_edit_image_angle_webhook, EnqueueFlux2LoraAngleImageSize, EnqueueFlux2LoraAngleNumImages, EnqueueFlux2LoraEditImageAngleArgs, EnqueueFlux2LoraEditImageAngleRequest};
+  use crate::requests::traits::fal_endpoint_trait::FalEndpoint;
   use errors::AnyhowResult;
   use std::fs::read_to_string;
   use test_data::web::image_urls::JUNO_AT_LAKE_IMAGE_URL;
@@ -99,23 +100,20 @@ mod tests {
     let secret = read_to_string("/Users/bt/Artcraft/credentials/fal_api_key.txt")?;
     let api_key = FalApiKey::from_str(&secret);
 
-    let args = EnqueueFlux2LoraEditImageAngleArgs {
-      request: EnqueueFlux2LoraEditImageAngleRequest {
-        image_urls: vec![JUNO_AT_LAKE_IMAGE_URL.to_string()],
-        horizontal_angle: Some(45.0),
-        vertical_angle: Some(15.0),
-        zoom: Some(5.0),
-        num_images: Some(EnqueueFlux2LoraAngleNumImages::One),
-        image_size: Some(EnqueueFlux2LoraAngleImageSize::SquareHd),
-        lora_scale: None,
-        guidance_scale: None,
-        num_inference_steps: None,
-      },
-      api_key: &api_key,
-      webhook_url: "https://example.com/webhook",
+    let request = Flux2LoraEditImageAngleRequest {
+      image_urls: vec![JUNO_AT_LAKE_IMAGE_URL.to_string()],
+      horizontal_angle: Some(45.0),
+      vertical_angle: Some(15.0),
+      zoom: Some(5.0),
+      num_images: Some(Flux2LoraAngleNumImages::One),
+      image_size: Some(Flux2LoraAngleImageSize::SquareHd),
+      lora_scale: None,
+      guidance_scale: None,
+      num_inference_steps: None,
     };
 
-    let _result = enqueue_flux_2_lora_edit_image_angle_webhook(args).await?;
+    let result = request.send_queue_request(&api_key).await?;
+    println!("Request ID: {:?}", result.request_id);
     Ok(())
   }
 
@@ -133,24 +131,20 @@ mod tests {
     for &h in &horizontal_angles {
       for &v in &vertical_angles {
         for &z in &zoom_levels {
-          let args = EnqueueFlux2LoraEditImageAngleArgs {
-            request: EnqueueFlux2LoraEditImageAngleRequest {
-              image_urls: vec![JUNO_AT_LAKE_IMAGE_URL.to_string()],
-              horizontal_angle: Some(h),
-              vertical_angle: Some(v),
-              zoom: Some(z),
-              num_images: Some(EnqueueFlux2LoraAngleNumImages::One),
-              image_size: Some(EnqueueFlux2LoraAngleImageSize::SquareHd),
-              lora_scale: None,
-              guidance_scale: None,
-              num_inference_steps: None,
-            },
-            api_key: &api_key,
-            webhook_url: "https://example.com/webhook",
+          let request = Flux2LoraEditImageAngleRequest {
+            image_urls: vec![JUNO_AT_LAKE_IMAGE_URL.to_string()],
+            horizontal_angle: Some(h),
+            vertical_angle: Some(v),
+            zoom: Some(z),
+            num_images: Some(Flux2LoraAngleNumImages::One),
+            image_size: Some(Flux2LoraAngleImageSize::SquareHd),
+            lora_scale: None,
+            guidance_scale: None,
+            num_inference_steps: None,
           };
 
-          let _result = enqueue_flux_2_lora_edit_image_angle_webhook(args).await?;
-          println!("Enqueued: h={}, v={}, z={}", h, v, z);
+          let result = request.send_queue_request(&api_key).await?;
+          println!("Enqueued: h={}, v={}, z={}, request_id={:?}", h, v, z, result.request_id);
         }
       }
     }
