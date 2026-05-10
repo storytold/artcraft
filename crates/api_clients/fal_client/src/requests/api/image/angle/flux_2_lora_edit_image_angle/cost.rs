@@ -1,4 +1,4 @@
-use crate::requests::api::image::angle::flux_2_lora_edit_image_angle::api_request::{Flux2LoraAngleNumImages, Flux2LoraEditImageAngleRequest};
+use crate::requests::api::image::angle::flux_2_lora_edit_image_angle::api::{Flux2LoraAngleNumImages, Flux2LoraEditImageAngleRequest};
 use crate::requests::traits::fal_request_cost_calculator_trait::{FalRequestCostCalculator, UsdCents};
 
 impl FalRequestCostCalculator for Flux2LoraEditImageAngleRequest {

@@ -41,7 +41,7 @@ pub enum Flux2LoraAngleImageSize {
 
 impl FalEndpoint for Flux2LoraEditImageAngleRequest {
   const ENDPOINT : &str = "fal-ai/flux-2-lora-gallery/multiple-angles";
-  
+
   type RawRequest = Flux2LoraEditImageAngleInput;
   type RawResponse = Flux2LoraEditImageAngleOutput;
 
