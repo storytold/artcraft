@@ -8,7 +8,6 @@ use crate::requests::traits::fal_endpoint_trait::FalEndpoint;
 use crate::requests::traits::fal_request_cost_calculator_trait::FalRequestCostCalculator;
 use reqwest::IntoUrl;
 
-const ENDPOINT : &str = "fal-ai/flux-2-lora-gallery/multiple-angles";
 
 #[derive(Clone, Debug)]
 pub struct Flux2LoraEditImageAngleRequest {
@@ -47,6 +46,8 @@ pub enum Flux2LoraAngleImageSize {
 }
 
 impl FalEndpoint for Flux2LoraEditImageAngleRequest {
+  const ENDPOINT : &str = "fal-ai/flux-2-lora-gallery/multiple-angles";
+  
   type RawRequest = Flux2LoraEditImageAngleInput;
   type RawResponse = Flux2LoraEditImageAngleOutput;
 
@@ -54,7 +55,7 @@ impl FalEndpoint for Flux2LoraEditImageAngleRequest {
     ENDPOINT
   }
 
-  fn to_request(&self) -> Result<FalRequest<Self::RawRequest, Self::RawResponse>, FalErrorPlus> {
+  fn to_raw_request(&self) -> Result<Self::RawRequest, FalErrorPlus> {
     let num_images = self.num_images
         .map(|n| match n {
           Flux2LoraAngleNumImages::One => 1,
@@ -63,7 +64,7 @@ impl FalEndpoint for Flux2LoraEditImageAngleRequest {
           Flux2LoraAngleNumImages::Four => 4,
         });
 
-    let image_size = req.image_size
+    let image_size = self.image_size
         .map(|s| match s {
           Flux2LoraAngleImageSize::Square => "square",
           Flux2LoraAngleImageSize::SquareHd => "square_hd",
@@ -74,27 +75,27 @@ impl FalEndpoint for Flux2LoraEditImageAngleRequest {
         })
         .map(|s| s.to_string());
 
-    let request = Flux2LoraEditImageAngleInput {
-      image_urls: req.image_urls,
-      horizontal_angle: req.horizontal_angle,
-      vertical_angle: req.vertical_angle,
-      zoom: req.zoom,
-      lora_scale: req.lora_scale,
+    Ok(Flux2LoraEditImageAngleInput {
+      image_urls: self.image_urls.clone(),
+      horizontal_angle: self.horizontal_angle,
+      vertical_angle: self.vertical_angle,
+      zoom: self.zoom,
+      lora_scale: self.lora_scale,
+      guidance_scale: self.guidance_scale,
+      num_inference_steps: self.num_inference_steps,
       image_size,
-      guidance_scale: req.guidance_scale,
-      num_inference_steps: req.num_inference_steps,
       num_images,
       // Constants
       enable_safety_checker: Some(false),
       output_format: Some("png".to_string()),
       // Unused
       seed: None,
-    };
-
-    let result = http_flux_2_lora_edit_image_angle(request)
-        .with_api_key(&args.api_key.0)
-        .queue_webhook(args.webhook_url)
-        .await;
+    })
+  }
+  
+  fn to_request(&self) -> Result<FalRequest<Self::RawRequest, Self::RawResponse>, FalErrorPlus> {
+    let fal_request = FalRequest::new(ENDPOINT, self.to_raw_request()?);
+    Ok(fal_request)
   }
 }
 
