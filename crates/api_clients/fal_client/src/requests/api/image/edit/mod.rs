@@ -1,1 +1,2 @@
 pub mod flux_1_dev_edit_image;
+pub mod flux_1_schnell_edit_image;
