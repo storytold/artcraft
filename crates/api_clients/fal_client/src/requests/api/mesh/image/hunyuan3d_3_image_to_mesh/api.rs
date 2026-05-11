@@ -110,7 +110,7 @@ mod tests {
   #[tokio::test]
   #[ignore] // manually run — fires a real API request and incurs cost
   async fn test_image_to_mesh_queue() -> AnyhowResult<()> {
-    let secret = read_to_string("/Users/bt/Artcraft/credentials/fal_api_key.txt")?;
+    let secret = read_to_string("/Users/bt/Artcraft/credentials/fal.api_key.txt")?;
     let api_key = FalApiKey::from_str(&secret);
 
     let request = Hunyuan3d3ImageToMeshRequest {
