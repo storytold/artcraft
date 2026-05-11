@@ -84,4 +84,23 @@ mod tests {
     let parsed = Url::parse("https://queue.fal.run/fal-ai/flux/requests/019e18d8-8c36-7bc1-aa77-2bc2f70268c6").unwrap();
     assert_eq!(parsed.host_str(), Some(EXPECTED_HOST));
   }
+
+  #[tokio::test]
+  #[ignore] // requires real API key
+  async fn poll_real_job() {
+    let secret = std::fs::read_to_string("/Users/bt/Artcraft/credentials/fal.api_key.txt")
+      .expect("Failed to read fal.api_key.txt");
+    let api_key = FalApiKey::from_str(secret.trim());
+
+    let args = PollJobStatusArgs {
+      status_url: "https://queue.fal.run/fal-ai/flux/requests/019e18d8-8c36-7bc1-aa77-2bc2f70268c6",
+      api_key: &api_key,
+    };
+
+    let result = poll_job_status(args).await;
+    println!("Poll result: {:?}", result);
+    let body = result.expect("poll should succeed");
+    assert!(!body.is_empty());
+    println!("Response body: {}", body);
+  }
 }
