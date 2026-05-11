@@ -1,0 +1,1220 @@
+import { Tooltip } from "@storyteller/ui-tooltip";
+import { PopoverMenu } from "@storyteller/ui-popover";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import {
+  faListCheck,
+  faSpinnerThird,
+  faXmark,
+  faTrashAlt,
+  faTasks,
+  faBroom,
+  faBomb,
+  faCircleExclamation,
+  faTriangleExclamation,
+  faCopy,
+  faCheck,
+} from "@fortawesome/pro-solid-svg-icons";
+import { Modal } from "@storyteller/ui-modal";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { JobsApi, JobStatus } from "@storyteller/api";
+import type { Job, Prompts } from "@storyteller/api";
+import { getCachedPrompt, usePrompts } from "../../lib/prompts-cache";
+import { Button } from "@storyteller/ui-button";
+import {
+  getProviderDisplayName,
+  getModelDisplayName,
+  findModelByKey,
+} from "@storyteller/model-list";
+import { CloseButton } from "@storyteller/ui-close-button";
+import dayjs from "dayjs";
+import { ActionReminderModal } from "@storyteller/ui-action-reminder-modal";
+import { Lightbox } from "../lightbox/lightbox";
+import { showToast } from "../toast/toast";
+import { getModelCreatorIconPath } from "../../lib/omni-gen-hooks";
+import { getMediaThumbnail, THUMBNAIL_SIZES } from "@storyteller/common";
+import { twMerge } from "tailwind-merge";
+
+// ── Types ──────────────────────────────────────────────────────────────────
+
+type InProgressTask = {
+  id: string;
+  title: string;
+  subtitle?: string;
+  progress: number;
+  updatedAt?: Date;
+  canDismiss?: boolean;
+  estimatedTimeLeftMs?: number;
+  modelType?: string;
+  prompt?: string;
+};
+
+type CompletedTask = {
+  id: string;
+  title: string;
+  subtitle?: string;
+  thumbnailUrl?: string;
+  completedAt?: Date;
+  updatedAt?: Date;
+  imageUrls?: string[];
+  mediaTokens?: string[];
+  prompt?: string;
+};
+
+type FailedTask = {
+  id: string;
+  title: string;
+  subtitle?: string;
+  failedAt?: Date;
+  status: string;
+  failureReason?: string;
+  failureMessage?: string;
+  prompt?: string;
+};
+
+// ── Helpers ────────────────────────────────────────────────────────────────
+
+const formatTimeLeft = (ms: number): string => {
+  const totalSeconds = Math.ceil(ms / 1000);
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+
+  if (hours > 0 && minutes > 0) return `~ ${hours}h ${minutes}m left`;
+  if (hours > 0) return `~ ${hours}h left`;
+  if (minutes > 0) return `~ ${minutes}m left`;
+  return `~ ${seconds}s left`;
+};
+
+const FAILED_STATUS_LABEL: Record<string, string> = {
+  [JobStatus.COMPLETE_FAILURE]: "Failed",
+  [JobStatus.ATTEMPT_FAILED]: "Failed",
+  [JobStatus.DEAD]: "Failed",
+  [JobStatus.CANCELLED_BY_USER]: "Cancelled",
+  [JobStatus.CANCELLED_BY_SYSTEM]: "Cancelled",
+};
+
+const FAILURE_REASON_LABEL: Record<string, string> = {
+  rule_bans_user_image: "Image violates content policy",
+  rule_bans_user_image_with_faces: "Images with faces are not allowed",
+  rule_bans_user_text_prompt: "Text prompt violates content policy",
+  rule_bans_user_content: "Content violates content policy",
+  rule_bans_generated_video: "Generated video flagged by content policy",
+  rule_bans_generated_audio: "Generated audio flagged by content policy",
+  rule_bans_generated_content: "Generated content flagged by content policy",
+  generation_failed: "Generation failed",
+  unknown: "An unknown error occurred",
+};
+
+const IN_PROGRESS_STATUSES = new Set([JobStatus.PENDING, JobStatus.STARTED]);
+const COMPLETED_STATUSES = new Set([JobStatus.COMPLETE_SUCCESS]);
+const FAILED_STATUSES = new Set([
+  JobStatus.ATTEMPT_FAILED,
+  JobStatus.COMPLETE_FAILURE,
+  JobStatus.DEAD,
+  JobStatus.CANCELLED_BY_USER,
+  JobStatus.CANCELLED_BY_SYSTEM,
+]);
+
+// ── Shared sub-components ─────────────────────────────────────────────────
+
+const PromptLine = ({
+  prompt,
+  className,
+}: {
+  prompt: string;
+  className?: string;
+}) => {
+  const [marqueePlaying, setMarqueePlaying] = useState(false);
+  const [promptOverflows, setPromptOverflows] = useState(false);
+  const promptRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = promptRef.current;
+    if (el) setPromptOverflows(el.scrollWidth > el.clientWidth);
+  }, [prompt]);
+
+  return (
+    <Tooltip
+      content={prompt.length > 300 ? prompt.slice(0, 300) + "\u2026" : prompt}
+      position="bottom"
+      strategy="fixed"
+      className="max-w-[280px] text-wrap text-xs"
+      zIndex={50}
+      delay={400}
+    >
+      <div
+        className={twMerge("mt-1 overflow-hidden", className)}
+        onMouseEnter={
+          promptOverflows ? () => setMarqueePlaying(true) : undefined
+        }
+        onMouseLeave={
+          promptOverflows ? () => setMarqueePlaying(false) : undefined
+        }
+      >
+        <div
+          ref={promptRef}
+          key={marqueePlaying ? "playing" : "idle"}
+          className="whitespace-nowrap text-[11px] italic text-base-fg/40"
+          style={
+            marqueePlaying
+              ? {
+                  animation: "marquee 6.5s linear infinite",
+                  animationDelay: "0.5s",
+                  animationFillMode: "both",
+                }
+              : undefined
+          }
+        >
+          {prompt}
+        </div>
+      </div>
+    </Tooltip>
+  );
+};
+
+const CopyPromptButton = ({ prompt }: { prompt: string }) => {
+  const [copied, setCopied] = useState(false);
+  return (
+    <Tooltip
+      content={copied ? "Copied!" : "Copy prompt"}
+      position="bottom"
+      strategy="fixed"
+      className="text-xs"
+      zIndex={50}
+      delay={300}
+    >
+      <button
+        className="flex h-6 w-6 items-center justify-center rounded-full text-base-fg/60 hover:bg-ui-controls"
+        aria-label="Copy prompt"
+        onClick={(e) => {
+          e.stopPropagation();
+          navigator.clipboard.writeText(prompt);
+          setCopied(true);
+          setTimeout(() => setCopied(false), 3000);
+        }}
+      >
+        <FontAwesomeIcon
+          icon={copied ? faCheck : faCopy}
+          className={copied ? "text-green-400" : ""}
+        />
+      </button>
+    </Tooltip>
+  );
+};
+
+// ── Card Components ────────────────────────────────────────────────────────
+
+const InProgressCard = ({
+  task,
+  onDismiss,
+}: {
+  task: InProgressTask;
+  onDismiss?: () => void;
+}) => {
+  const progressPercent = Math.max(0, Math.min(100, Math.round(task.progress)));
+  const isAlmostDone = task.progress >= 95;
+  const timeLabel = isAlmostDone
+    ? "Almost done..."
+    : task.estimatedTimeLeftMs != null && task.estimatedTimeLeftMs > 0
+      ? formatTimeLeft(task.estimatedTimeLeftMs)
+      : null;
+  const isSeedance2 = task.modelType === "seedance_2p0";
+  const modelIconPath = task.modelType
+    ? getModelCreatorIconPath(task.modelType)
+    : null;
+
+  return (
+    <div className="rounded-md p-2 transition-colors hover:bg-ui-controls/40">
+      <div className="flex items-center gap-2.5">
+        <div className="flex h-[72px] w-[72px] shrink-0 items-center justify-center overflow-hidden rounded bg-ui-controls">
+          <FontAwesomeIcon
+            icon={faSpinnerThird}
+            className="animate-spin text-base-fg/60"
+            size="lg"
+          />
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center justify-between text-sm">
+            <div className="flex items-center gap-1.5 truncate font-medium text-base-fg/90">
+              {modelIconPath && (
+                <img
+                  src={modelIconPath}
+                  alt=""
+                  className="h-3.5 w-3.5 flex-shrink-0 icon-auto-contrast"
+                />
+              )}
+              {task.title}
+              {isSeedance2 && (
+                <Tooltip
+                  content="Seedance 2.0 is in Early Alpha. Generations may be slow and may experience outages."
+                  position="top"
+                  strategy="fixed"
+                  className="w-[200px] text-wrap bg-yellow-400/60 backdrop-blur-3xl"
+                  zIndex={50}
+                  delay={100}
+                >
+                  <FontAwesomeIcon
+                    icon={faTriangleExclamation}
+                    className="h-3 w-3 shrink-0 text-yellow-400/60 transition-all hover:text-yellow-400"
+                  />
+                </Tooltip>
+              )}
+            </div>
+            <div className="ml-2 shrink-0 text-xs tabular-nums text-base-fg/60">
+              {progressPercent}%
+            </div>
+          </div>
+          {task.subtitle && (
+            <div className="mt-0.5 truncate text-xs text-base-fg opacity-60">
+              {task.subtitle}
+            </div>
+          )}
+          <div className="mt-1.5 flex items-center gap-2">
+            <div className="h-1.5 min-w-0 flex-1 rounded bg-ui-controls">
+              <div
+                className="h-1.5 rounded bg-primary-400"
+                style={{
+                  width: `${Math.max(0, Math.min(100, task.progress))}%`,
+                }}
+              />
+            </div>
+          </div>
+          {timeLabel && (
+            <div className="mt-1 text-xs text-base-fg/50">{timeLabel}</div>
+          )}
+          {task.prompt && <PromptLine prompt={task.prompt} className="mt-0" />}
+        </div>
+        <div className="ml-auto flex shrink-0 items-center gap-1">
+          {task.prompt && <CopyPromptButton prompt={task.prompt} />}
+          {onDismiss && (
+            <button
+              className="flex h-6 w-6 items-center justify-center rounded-full text-base-fg/60 hover:bg-ui-controls"
+              aria-label="Dismiss"
+              onClick={(e) => {
+                e.stopPropagation();
+                onDismiss();
+              }}
+            >
+              <FontAwesomeIcon icon={faXmark} />
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const CompletedCard = ({
+  task,
+  onClick,
+  onDismiss,
+}: {
+  task: CompletedTask;
+  onClick?: () => void;
+  onDismiss?: () => void;
+}) => {
+  return (
+    <div
+      className="flex cursor-pointer items-center gap-2.5 rounded-md p-2 transition-colors hover:bg-ui-controls/40"
+      onClick={onClick}
+      role={onClick ? "button" : undefined}
+      tabIndex={onClick ? 0 : -1}
+    >
+      <div className="h-[72px] w-[72px] shrink-0 overflow-hidden rounded bg-ui-controls">
+        {task.thumbnailUrl ? (
+          <img
+            src={task.thumbnailUrl}
+            alt={task.title}
+            onError={(e) => {
+              e.currentTarget.style.display = "none";
+            }}
+            className="h-full w-full object-cover"
+          />
+        ) : (
+          <div className="flex h-full w-full items-center justify-center text-[10px] text-base-fg/40">
+            Done
+          </div>
+        )}
+      </div>
+      <div className="min-w-0 flex-1">
+        <div className="truncate text-sm font-medium text-base-fg/90">
+          {task.title}
+        </div>
+        {task.subtitle && (
+          <div className="mt-0.5 truncate text-xs text-base-fg opacity-60">
+            {task.subtitle}
+          </div>
+        )}
+        {task.completedAt && (
+          <div className="text-xs text-base-fg opacity-60">
+            {dayjs(task.completedAt).format("MMM D, h:mm A")}
+          </div>
+        )}
+        {task.prompt && <PromptLine prompt={task.prompt} />}
+      </div>
+      <div className="ml-auto flex shrink-0 items-center gap-1">
+        {task.prompt && <CopyPromptButton prompt={task.prompt} />}
+        {onDismiss && (
+          <button
+            className="flex h-6 w-6 items-center justify-center rounded-full text-base-fg/60 hover:bg-ui-controls"
+            aria-label="Dismiss"
+            onClick={(e) => {
+              e.stopPropagation();
+              onDismiss();
+            }}
+          >
+            <FontAwesomeIcon icon={faXmark} />
+          </button>
+        )}
+      </div>
+    </div>
+  );
+};
+
+const FailedCard = ({
+  task,
+  onDismiss,
+}: {
+  task: FailedTask;
+  onDismiss?: () => void;
+}) => {
+  const statusLabel = FAILED_STATUS_LABEL[task.status] || "Failed";
+  return (
+    <div className="rounded-md p-2 transition-colors hover:bg-ui-controls/40">
+      <div className="flex items-center gap-2.5">
+        <div className="flex h-[72px] w-[72px] shrink-0 items-center justify-center overflow-hidden rounded bg-red-500/10">
+          <FontAwesomeIcon
+            icon={faCircleExclamation}
+            className="text-red-400"
+            size="lg"
+          />
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center justify-between text-sm">
+            <div className="truncate font-medium text-base-fg/90">
+              {task.title}
+            </div>
+          </div>
+          {task.subtitle && (
+            <div className="mt-0.5 truncate text-xs text-base-fg opacity-60">
+              {task.subtitle}
+            </div>
+          )}
+          <div className="mt-1 flex min-w-0 items-center gap-1.5 overflow-hidden">
+            <span className="shrink-0 rounded bg-red-500/15 px-1.5 py-0 text-[11px] font-medium text-red-400">
+              {statusLabel}
+            </span>
+            {task.failureReason && (
+              <div className="min-w-0 overflow-hidden">
+                <Tooltip
+                  content={
+                    task.failureMessage ? (
+                      <div>
+                        <div className="font-semibold">
+                          {task.failureReason}
+                        </div>
+                        <div className="mt-0.5 font-normal opacity-80">
+                          {task.failureMessage}
+                        </div>
+                      </div>
+                    ) : (
+                      task.failureReason
+                    )
+                  }
+                  position="bottom"
+                  strategy="fixed"
+                  className="max-w-[280px] text-wrap bg-danger text-xs"
+                  zIndex={50}
+                  delay={300}
+                >
+                  <div className="cursor-default truncate text-[11px] text-red-400/80 underline decoration-red-400/30 decoration-dashed underline-offset-2">
+                    {task.failureReason}
+                  </div>
+                </Tooltip>
+              </div>
+            )}
+          </div>
+          {task.prompt && <PromptLine prompt={task.prompt} />}
+          {task.failedAt && (
+            <div className="mt-0.5 text-[11px] text-base-fg/40">
+              {dayjs(task.failedAt).format("MMM D, h:mm A")}
+            </div>
+          )}
+        </div>
+        <div className="ml-auto flex shrink-0 items-center gap-1">
+          {task.prompt && <CopyPromptButton prompt={task.prompt} />}
+          {onDismiss && (
+            <button
+              className="flex h-6 w-6 items-center justify-center rounded-full text-base-fg/60 hover:bg-ui-controls"
+              aria-label="Dismiss"
+              onClick={(e) => {
+                e.stopPropagation();
+                onDismiss();
+              }}
+            >
+              <FontAwesomeIcon icon={faXmark} />
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ── Job → Task transformers ────────────────────────────────────────────────
+
+function getPrompt(job: Job, promptsMap?: Map<string, Prompts>): string {
+  const promptToken = job.request.maybe_prompt_token;
+  const cached = promptToken
+    ? (promptsMap?.get(promptToken) ?? getCachedPrompt(promptToken))
+    : undefined;
+  return (
+    cached?.maybe_positive_prompt || job.request.maybe_raw_inference_text || ""
+  );
+}
+
+function formatTitleParts(job: Job, promptsMap?: Map<string, Prompts>) {
+  const promptToken = job.request.maybe_prompt_token;
+  const cachedPrompt = promptToken
+    ? (promptsMap?.get(promptToken) ?? getCachedPrompt(promptToken))
+    : undefined;
+
+  const taskTypeStr = job.request.inference_category?.toLowerCase() ?? "";
+  const modelTypeStr =
+    cachedPrompt?.maybe_model_type ?? job.request.maybe_model_type ?? "";
+  const providerKey = cachedPrompt?.maybe_generation_provider ?? modelTypeStr;
+
+  let kind: string | undefined;
+  if (taskTypeStr.includes("video")) {
+    kind = "Video";
+  } else if (taskTypeStr.includes("image")) {
+    kind = "Image";
+  } else if (taskTypeStr.includes("character")) {
+    kind = "Character";
+  }
+
+  const modelDisplay = modelTypeStr
+    ? getModelDisplayName(modelTypeStr)
+    : undefined;
+  const provider = providerKey
+    ? getProviderDisplayName(providerKey.toLowerCase())
+    : undefined;
+
+  const title = kind || "Task";
+  const subtitle =
+    modelDisplay && provider
+      ? `${modelDisplay} · ${provider}`
+      : modelDisplay || provider || undefined;
+  return { title, subtitle, kind };
+}
+
+// Cache per-task durations so model changes don't affect existing progress bars
+const taskDurationCache = new Map<string, number>();
+
+function jobsToInProgress(
+  jobs: Job[],
+  promptsMap: Map<string, Prompts>,
+): InProgressTask[] {
+  const now = Date.now();
+  const activeIds = new Set<string>();
+
+  const result = jobs
+    .filter((j) => IN_PROGRESS_STATUSES.has(j.status.status))
+    .sort(
+      (a, b) =>
+        new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime(),
+    )
+    .map((j): InProgressTask => {
+      activeIds.add(j.job_token);
+      const createdMs = new Date(j.created_at).getTime();
+      const parts = formatTitleParts(j, promptsMap);
+      const isVideo =
+        j.request.inference_category?.toLowerCase().includes("video") ?? false;
+
+      const promptToken = j.request.maybe_prompt_token;
+      const cachedPrompt = promptToken
+        ? (promptsMap.get(promptToken) ?? getCachedPrompt(promptToken))
+        : undefined;
+      const modelType =
+        cachedPrompt?.maybe_model_type ?? j.request.maybe_model_type;
+
+      // Look up per-model estimated duration from the model list, cache per
+      // task. Cache only once `modelType` is resolved so a transient
+      // "prompt not loaded yet" render doesn't lock in the wrong fallback.
+      let duration = taskDurationCache.get(j.job_token);
+      if (duration === undefined) {
+        const model = findModelByKey(modelType);
+        duration = model?.progressBarTime ?? (isVideo ? 900000 : 30000);
+        if (modelType) {
+          taskDurationCache.set(j.job_token, duration);
+        }
+      }
+
+      // Always use time-based fake progress (matching desktop app behavior)
+      const elapsed = now - createdMs;
+      const progress = Math.min(95, (elapsed / duration) * 100);
+      const estimatedTimeLeftMs = Math.max(0, duration - elapsed);
+
+      const canDismiss = now - createdMs > 5 * 60 * 1000;
+
+      return {
+        id: j.job_token,
+        title: `Generating ${parts.kind || "Task"}...`,
+        subtitle: parts.subtitle,
+        progress,
+        updatedAt: new Date(j.updated_at),
+        canDismiss,
+        estimatedTimeLeftMs,
+        modelType: modelType ?? undefined,
+        prompt: getPrompt(j, promptsMap) || undefined,
+      };
+    });
+
+  // Prune cached durations for tasks no longer in progress
+  for (const id of taskDurationCache.keys()) {
+    if (!activeIds.has(id)) taskDurationCache.delete(id);
+  }
+
+  return result;
+}
+
+function jobsToCompleted(
+  jobs: Job[],
+  promptsMap: Map<string, Prompts>,
+): CompletedTask[] {
+  return jobs
+    .filter((j) => COMPLETED_STATUSES.has(j.status.status))
+    .sort(
+      (a, b) =>
+        new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime(),
+    )
+    .map((j): CompletedTask => {
+      const cdnUrl = j.maybe_result?.media_links?.cdn_url;
+      const mediaClass = j.request.inference_category
+        ?.toLowerCase()
+        .includes("video")
+        ? "video"
+        : "image";
+      const thumbnailUrl =
+        getMediaThumbnail(j.maybe_result?.media_links, mediaClass, {
+          size: THUMBNAIL_SIZES.MEDIUM,
+        }) ?? cdnUrl;
+      const parts = formatTitleParts(j, promptsMap);
+
+      return {
+        id: j.job_token,
+        title: parts.title,
+        subtitle: parts.subtitle,
+        thumbnailUrl,
+        completedAt: j.maybe_result?.maybe_successfully_completed_at
+          ? new Date(j.maybe_result.maybe_successfully_completed_at)
+          : new Date(j.updated_at),
+        updatedAt: new Date(j.updated_at),
+        imageUrls: cdnUrl ? [cdnUrl] : [],
+        mediaTokens: j.maybe_result?.entity_token
+          ? [j.maybe_result.entity_token]
+          : [],
+        prompt: getPrompt(j, promptsMap) || undefined,
+      };
+    });
+}
+
+function jobsToFailed(
+  jobs: Job[],
+  promptsMap: Map<string, Prompts>,
+): FailedTask[] {
+  return jobs
+    .filter((j) => FAILED_STATUSES.has(j.status.status))
+    .sort(
+      (a, b) =>
+        new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime(),
+    )
+    .map((j): FailedTask => {
+      const parts = formatTitleParts(j, promptsMap);
+      const failureCategory =
+        j.status.maybe_failure_category_updated ||
+        j.status.maybe_failure_category;
+      const rawMessage =
+        j.status.maybe_failure_message ||
+        j.status.maybe_extra_status_description;
+      const failureReason = failureCategory
+        ? FAILURE_REASON_LABEL[failureCategory] || rawMessage || undefined
+        : rawMessage || undefined;
+      const failureMessage =
+        rawMessage && failureCategory !== "unknown" ? rawMessage : undefined;
+
+      return {
+        id: j.job_token,
+        title: parts.title || "Task",
+        subtitle: parts.subtitle,
+        failedAt: new Date(j.updated_at),
+        status: j.status.status,
+        failureReason,
+        failureMessage,
+        prompt: getPrompt(j, promptsMap) || undefined,
+      };
+    });
+}
+
+// ── Main Component ─────────────────────────────────────────────────────────
+
+export const TaskQueue = () => {
+  const [isModalOpen, setModalOpen] = useState(false);
+  const [jobs, setJobs] = useState<Job[]>([]);
+  const [isPopoverOpen, setIsPopoverOpen] = useState(false);
+  const [unreadCompletedIds, setUnreadCompletedIds] = useState<string[]>([]);
+
+  const promptTokens = useMemo(() => {
+    const tokens: string[] = [];
+    for (const j of jobs) {
+      if (j.request.maybe_prompt_token)
+        tokens.push(j.request.maybe_prompt_token);
+    }
+    return tokens;
+  }, [jobs]);
+  const promptsMap = usePrompts(promptTokens);
+
+  const inProgress = useMemo(
+    () => jobsToInProgress(jobs, promptsMap),
+    [jobs, promptsMap],
+  );
+  const completed = useMemo(
+    () => jobsToCompleted(jobs, promptsMap),
+    [jobs, promptsMap],
+  );
+  const failed = useMemo(
+    () => jobsToFailed(jobs, promptsMap),
+    [jobs, promptsMap],
+  );
+
+  // Lightbox state
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [lightboxMediaToken, setLightboxMediaToken] = useState<
+    string | undefined
+  >();
+  const [lightboxCdnUrl, setLightboxCdnUrl] = useState<string | undefined>();
+  const prevCompletedIdsRef = useRef<Set<string>>(new Set());
+  const prevFailedIdsRef = useRef<Set<string>>(new Set());
+  // On first load we seed the "seen" sets with whatever is already on the
+  // server so we don't blast the user with toasts for jobs completed during
+  // a previous session.
+  const initialLoadDoneRef = useRef(false);
+
+  const [confirmationConfig, setConfirmationConfig] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: React.ReactNode;
+    primaryActionText: string;
+    primaryActionIcon: any;
+    primaryActionBtnClassName: string;
+    onConfirm: () => Promise<void>;
+  }>({
+    isOpen: false,
+    title: "",
+    message: null,
+    primaryActionText: "",
+    primaryActionIcon: faTrashAlt,
+    primaryActionBtnClassName: "",
+    onConfirm: async () => {},
+  });
+
+  // ── Confirmation handlers ──────────────────────────────────────────
+
+  const handleClearCompleted = () => {
+    setConfirmationConfig({
+      isOpen: true,
+      title: "Clear completed tasks?",
+      message: (
+        <span className="text-sm text-white/80">
+          This will remove all completed tasks from the task queue.
+        </span>
+      ),
+      primaryActionText: "Clear completed",
+      primaryActionIcon: faBroom,
+      primaryActionBtnClassName:
+        "bg-green-500/10 hover:bg-green-500/20 text-green-500",
+      onConfirm: async () => {
+        await dismissCompleted();
+      },
+    });
+  };
+
+  const handleClearStale = () => {
+    setConfirmationConfig({
+      isOpen: true,
+      title: "Clear stale tasks?",
+      message: (
+        <span className="text-sm text-white/80">
+          This will remove all stale/stuck in-progress tasks from the queue.
+        </span>
+      ),
+      primaryActionText: "Clear stale",
+      primaryActionIcon: faTrashAlt,
+      primaryActionBtnClassName:
+        "bg-orange-500/10 hover:bg-orange-500/20 text-orange-500",
+      onConfirm: async () => {
+        await dismissStale();
+      },
+    });
+  };
+
+  const handleClearFailed = () => {
+    setConfirmationConfig({
+      isOpen: true,
+      title: "Clear failed tasks?",
+      message: (
+        <span className="text-sm text-white/80">
+          This will remove all failed/cancelled tasks from the queue.
+        </span>
+      ),
+      primaryActionText: "Clear failed",
+      primaryActionIcon: faTrashAlt,
+      primaryActionBtnClassName:
+        "bg-red-500/10 hover:bg-red-500/20 text-red-500",
+      onConfirm: async () => {
+        await dismissFailed();
+      },
+    });
+  };
+
+  const handleRemoveAll = () => {
+    setConfirmationConfig({
+      isOpen: true,
+      title: "Remove all tasks?",
+      message: (
+        <span className="text-sm text-white/80">
+          This will remove ALL tasks (completed and in-progress) from the queue.
+          This cannot be undone.
+        </span>
+      ),
+      primaryActionText: "Nuke all",
+      primaryActionIcon: faBomb,
+      primaryActionBtnClassName:
+        "bg-red-500/10 hover:bg-red-500/20 text-red-500",
+      onConfirm: async () => {
+        await dismissAll();
+      },
+    });
+  };
+
+  // ── Data loading ───────────────────────────────────────────────────
+
+  useEffect(() => {
+    let cancelled = false;
+    const api = new JobsApi();
+
+    const load = async () => {
+      try {
+        const response = await api.ListRecentJobs();
+        if (cancelled || !response.success || !response.data) return;
+
+        const fetchedJobs: Job[] = response.data;
+        setJobs(fetchedJobs);
+
+        // Toast titles use formatTitleParts directly so we don't depend on
+        // the prompt cache being populated here.
+        const completedJobs = fetchedJobs.filter((j) =>
+          COMPLETED_STATUSES.has(j.status.status),
+        );
+        const failedJobs = fetchedJobs.filter((j) =>
+          FAILED_STATUSES.has(j.status.status),
+        );
+        const newCompletedIdSet = new Set(
+          completedJobs.map((j) => j.job_token),
+        );
+        const newFailedIdSet = new Set(failedJobs.map((j) => j.job_token));
+
+        if (!initialLoadDoneRef.current) {
+          // First load: seed the "seen" sets without toasting.
+          prevCompletedIdsRef.current = newCompletedIdSet;
+          prevFailedIdsRef.current = newFailedIdSet;
+          initialLoadDoneRef.current = true;
+        } else {
+          const newlyCompletedJobs = completedJobs.filter(
+            (j) => !prevCompletedIdsRef.current.has(j.job_token),
+          );
+          prevCompletedIdsRef.current = newCompletedIdSet;
+
+          if (newlyCompletedJobs.length > 0) {
+            for (const job of newlyCompletedJobs) {
+              const parts = formatTitleParts(job);
+              showToast("success", `${parts.title} creation complete`);
+            }
+            if (!isPopoverOpen) {
+              setUnreadCompletedIds((prev) =>
+                Array.from(
+                  new Set([
+                    ...(prev ?? []),
+                    ...newlyCompletedJobs.map((j) => j.job_token),
+                  ]),
+                ),
+              );
+            }
+          }
+
+          const newlyFailedJobs = failedJobs.filter(
+            (j) => !prevFailedIdsRef.current.has(j.job_token),
+          );
+          prevFailedIdsRef.current = newFailedIdSet;
+
+          for (const job of newlyFailedJobs) {
+            const parts = formatTitleParts(job);
+            const failureCategory =
+              job.status.maybe_failure_category_updated ||
+              job.status.maybe_failure_category;
+            const rawMessage =
+              job.status.maybe_failure_message ||
+              job.status.maybe_extra_status_description;
+            const failureReason = failureCategory
+              ? FAILURE_REASON_LABEL[failureCategory] || rawMessage || undefined
+              : rawMessage || undefined;
+            showToast(
+              "error",
+              `${parts.title} creation failed${failureReason ? ` — ${failureReason}` : ""}`,
+            );
+          }
+        }
+      } catch {
+        // ignore
+      }
+    };
+
+    load();
+    const intervalId = setInterval(load, 5000);
+
+    const handleTaskUpdate = () => {
+      if (!cancelled) load();
+    };
+    window.addEventListener("task-queue-update", handleTaskUpdate);
+
+    return () => {
+      cancelled = true;
+      clearInterval(intervalId);
+      window.removeEventListener("task-queue-update", handleTaskUpdate);
+    };
+  }, [isPopoverOpen]);
+
+  // ── Derived state ──────────────────────────────────────────────────
+
+  const hasNothing = useMemo(
+    () =>
+      inProgress.length === 0 && completed.length === 0 && failed.length === 0,
+    [inProgress.length, completed.length, failed.length],
+  );
+
+  const inProgressCount = inProgress.length;
+  const badgeCount = inProgressCount + (unreadCompletedIds?.length ?? 0);
+
+  const handleOpenChange = (open: boolean) => {
+    setIsPopoverOpen(open);
+    if (open) {
+      setUnreadCompletedIds([]);
+    }
+  };
+
+  // ── Dismiss handlers ──────────────────────────────────────────────
+
+  const dismissTask = async (id: string) => {
+    try {
+      const api = new JobsApi();
+      await api.DeleteJobByToken(id);
+      setJobs((prev) => prev.filter((j) => j.job_token !== id));
+      setUnreadCompletedIds((prev) => (prev ?? []).filter((x) => x !== id));
+    } catch {
+      // ignore
+    }
+  };
+
+  const dismissCompleted = async () => {
+    const ids = completed.map((t) => t.id);
+    try {
+      await Promise.allSettled(
+        ids.map((id) => new JobsApi().DeleteJobByToken(id)),
+      );
+    } catch {
+      // ignore
+    } finally {
+      const idSet = new Set(ids);
+      setJobs((prev) => prev.filter((j) => !idSet.has(j.job_token)));
+      setUnreadCompletedIds([]);
+    }
+  };
+
+  const dismissFailed = async () => {
+    const ids = failed.map((t) => t.id);
+    try {
+      await Promise.allSettled(
+        ids.map((id) => new JobsApi().DeleteJobByToken(id)),
+      );
+    } catch {
+      // ignore
+    } finally {
+      const idSet = new Set(ids);
+      setJobs((prev) => prev.filter((j) => !idSet.has(j.job_token)));
+    }
+  };
+
+  const dismissStale = async () => {
+    const staleIds = inProgress.filter((t) => t.canDismiss).map((t) => t.id);
+    try {
+      await Promise.allSettled(
+        staleIds.map((id) => new JobsApi().DeleteJobByToken(id)),
+      );
+      const idSet = new Set(staleIds);
+      setJobs((prev) => prev.filter((j) => !idSet.has(j.job_token)));
+    } catch {
+      // ignore
+    }
+  };
+
+  const dismissAll = async () => {
+    const allIds = [
+      ...inProgress.map((t) => t.id),
+      ...completed.map((t) => t.id),
+      ...failed.map((t) => t.id),
+    ];
+    try {
+      await Promise.allSettled(
+        allIds.map((id) => new JobsApi().DeleteJobByToken(id)),
+      );
+    } catch {
+      // ignore
+    } finally {
+      setJobs([]);
+      setUnreadCompletedIds([]);
+    }
+  };
+
+  // ── Shared task list renderer ──────────────────────────────────────
+
+  const renderTaskList = (onCloseAction: () => void) => (
+    <>
+      {hasNothing ? (
+        <div className="flex w-full flex-col items-center justify-center p-5 text-base-fg/60">
+          <div className="flex items-center gap-2.5 text-sm opacity-60">
+            <FontAwesomeIcon icon={faTasks} /> No tasks yet
+          </div>
+        </div>
+      ) : (
+        <div>
+          {inProgress.length > 0 && (
+            <div className="mb-4">
+              <div className="mb-1 px-1 text-xs uppercase tracking-wide text-base-fg/50">
+                In Progress
+              </div>
+              {inProgress.map((t) => (
+                <InProgressCard
+                  key={t.id}
+                  task={t}
+                  onDismiss={t.canDismiss ? () => dismissTask(t.id) : undefined}
+                />
+              ))}
+            </div>
+          )}
+          {failed.length > 0 && (
+            <div className="mb-4">
+              <div className="mb-1 flex items-center justify-between px-1">
+                <div className="text-xs font-semibold uppercase tracking-wide text-red-400/70">
+                  Failed
+                </div>
+                <button
+                  className="text-xs tracking-wide text-red-400/70 transition-colors hover:text-red-300"
+                  onClick={() => handleClearFailed()}
+                >
+                  <FontAwesomeIcon icon={faXmark} className="mr-1" />
+                  Clear failed
+                </button>
+              </div>
+              {failed.map((t) => (
+                <FailedCard
+                  key={t.id}
+                  task={t}
+                  onDismiss={() => dismissTask(t.id)}
+                />
+              ))}
+            </div>
+          )}
+          {completed.length > 0 && (
+            <div>
+              <div className="mb-1 flex items-center justify-between px-1">
+                <div className="text-xs font-semibold uppercase tracking-wide text-base-fg/50">
+                  Completed
+                </div>
+                <button
+                  className="text-xs tracking-wide text-base-fg/50 transition-colors hover:text-base-fg/100"
+                  onClick={() => handleClearCompleted()}
+                >
+                  <FontAwesomeIcon icon={faXmark} className="mr-1" />
+                  Clear completed
+                </button>
+              </div>
+              {completed.map((t) => (
+                <CompletedCard
+                  key={t.id}
+                  task={t}
+                  onClick={() => {
+                    const mediaToken = t.mediaTokens?.[0];
+                    const cdnUrl = t.imageUrls?.[0];
+                    if (mediaToken || cdnUrl) {
+                      setLightboxMediaToken(mediaToken);
+                      setLightboxCdnUrl(cdnUrl);
+                      setLightboxOpen(true);
+                    }
+                    onCloseAction();
+                  }}
+                  onDismiss={() => dismissTask(t.id)}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </>
+  );
+
+  // ── Render ─────────────────────────────────────────────────────────
+
+  return (
+    <>
+      <Tooltip content="Task Queue" position="bottom" closeOnClick={true}>
+        <div className="relative task-queue-trigger">
+          {badgeCount > 0 && (
+            <div className="absolute -right-1 -top-1 z-20 flex h-[15px] min-w-[15px] items-center justify-center rounded-full bg-primary-400 px-1 text-[10px] font-semibold text-white ring-2 ring-[#121212]">
+              {badgeCount}
+            </div>
+          )}
+          <PopoverMenu
+            mode="default"
+            buttonClassName="h-8 w-8 !p-0 relative bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] text-white/80 rounded-lg shadow-none"
+            panelClassName="w-[calc(100vw-5rem)] sm:w-[400px] p-2 bg-[#1a1a1a] border border-white/[0.08] mt-2 rounded-xl"
+            position="bottom"
+            align="end"
+            triggerIcon={
+              inProgressCount > 0 ? (
+                <FontAwesomeIcon
+                  icon={faSpinnerThird}
+                  className="animate-spin text-[11px]"
+                />
+              ) : (
+                <FontAwesomeIcon icon={faListCheck} className="text-[11px]" />
+              )
+            }
+            onOpenChange={handleOpenChange}
+          >
+            {(close: () => void) => (
+              <div className="flex max-h-[80vh] flex-col">
+                <div className="max-h-[80vh] overflow-y-auto p-1">
+                  {renderTaskList(close)}
+                </div>
+                <div className="pt-3">
+                  <div className="flex items-center justify-center">
+                    <Button
+                      className="grow border-none bg-white/5 text-white/70 hover:bg-white/10"
+                      variant="ghost"
+                      onClick={() => {
+                        setModalOpen(true);
+                        close();
+                      }}
+                    >
+                      Show all
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </PopoverMenu>
+        </div>
+      </Tooltip>
+
+      <Modal
+        isOpen={isModalOpen}
+        onClose={() => setModalOpen(false)}
+        className="h-[520px] max-w-3xl"
+        showClose={false}
+      >
+        <div className="flex h-full flex-col">
+          <div className="rounded-t-xl border-ui-panel-border bg-ui-panel">
+            <div className="flex items-center justify-between p-3">
+              <h2 className="text-lg font-semibold">Task Queue</h2>
+              <div className="flex items-center gap-2">
+                <Button
+                  className="rounded-full flex h-9 items-center justify-center bg-green-500/10 px-3 text-green-500 hover:bg-green-500/20"
+                  onClick={() => handleClearCompleted()}
+                >
+                  <FontAwesomeIcon icon={faBroom} className="mr-1.5" />
+                  Clear completed
+                </Button>
+                <Button
+                  className="rounded-full flex h-9 items-center justify-center bg-orange-500/10 px-3 text-orange-500 hover:bg-orange-500/20"
+                  onClick={() => handleClearStale()}
+                >
+                  <FontAwesomeIcon icon={faTrashAlt} className="mr-1.5" />
+                  Clear stale
+                </Button>
+                <Button
+                  className="rounded-full flex h-9 items-center justify-center bg-red-500/10 px-3 text-red-400 hover:bg-red-500/20"
+                  onClick={() => handleClearFailed()}
+                >
+                  <FontAwesomeIcon icon={faTrashAlt} className="mr-1.5" />
+                  Clear failed
+                </Button>
+                <Button
+                  className="rounded-full flex h-9 items-center justify-center bg-red-500/10 px-3 text-red-500 hover:bg-red-500/20"
+                  onClick={() => handleRemoveAll()}
+                >
+                  <FontAwesomeIcon icon={faBomb} className="mr-1.5" />
+                  Remove all
+                </Button>
+                <div className="mr-2 h-4 w-[1px] bg-base-fg/10" />
+                <CloseButton onClick={() => setModalOpen(false)} />
+              </div>
+            </div>
+          </div>
+          <div className="flex-1 overflow-y-auto p-2">
+            {renderTaskList(() => setModalOpen(false))}
+          </div>
+        </div>
+      </Modal>
+
+      <ActionReminderModal
+        isOpen={confirmationConfig.isOpen}
+        onClose={() =>
+          setConfirmationConfig((prev) => ({ ...prev, isOpen: false }))
+        }
+        title={confirmationConfig.title}
+        message={confirmationConfig.message}
+        onPrimaryAction={async () => {
+          await confirmationConfig.onConfirm();
+          setConfirmationConfig((prev) => ({ ...prev, isOpen: false }));
+        }}
+        primaryActionText={confirmationConfig.primaryActionText}
+        secondaryActionText="Cancel"
+        primaryActionIcon={confirmationConfig.primaryActionIcon}
+        primaryActionBtnClassName={confirmationConfig.primaryActionBtnClassName}
+      />
+
+      <Lightbox
+        isOpen={lightboxOpen}
+        onClose={() => {
+          setLightboxOpen(false);
+          setLightboxMediaToken(undefined);
+          setLightboxCdnUrl(undefined);
+        }}
+        mediaToken={lightboxMediaToken}
+        cdnUrl={lightboxCdnUrl}
+      />
+
+      {/* On mobile, make the PopoverMenu's wrapper static so the absolute
+          panel positions against the fixed navbar (full width), then pin
+          the panel to viewport edges with left/right insets. */}
+      <style>{`
+        @media (max-width: 639px) {
+          .task-queue-trigger .relative.inline-block {
+            position: static !important;
+          }
+        }
+      `}</style>
+    </>
+  );
+};
+
+export default TaskQueue;

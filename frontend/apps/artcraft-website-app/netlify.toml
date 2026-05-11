@@ -1,0 +1,23 @@
+[build]
+command = "./apps/artcraft-website/script/netlify_build.sh"
+publish = "apps/artcraft-website/dist/"
+
+[[headers]]
+for = "/build/*"
+
+[headers.values]
+"Cache-Control" = "public, max-age=31560000, immutable"
+
+# [[redirects]]
+#   from = "/ingest/static/*"
+#   to = "https://us-assets.i.posthog.com/static/:splat"
+#   host = "us-assets.i.posthog.com"
+#   status = 200
+#   force = true
+# 
+# [[redirects]]
+#   from = "/ingest/*"
+#   to = "https://us.i.posthog.com/:splat"
+#   host = "us.i.posthog.com"
+#   status = 200
+#   force = true
