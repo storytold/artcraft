@@ -5,7 +5,7 @@ use fal_client::requests::api::image::edit::nano_banana_pro_edit_image::api::Nan
 use fal_client::requests::api::image::text::nano_banana_pro_text_to_image::api::NanoBananaProTextToImageRequest;
 use fal_client::requests::traits::fal_endpoint_trait::FalEndpoint;
 
-use crate::client::router_fal_client::RouterFalClient;
+use crate::client::router_fal_webhook_optional_client::RouterFalWebhookOptionalClient;
 use crate::errors::artcraft_router_error::ArtcraftRouterError;
 use crate::errors::provider_error::ProviderError;
 use crate::generate::generate_image::generate_image_response::{
@@ -19,32 +19,59 @@ pub enum FalNanoBananaProRequestState {
 }
 
 impl FalNanoBananaProRequestState {
-  pub async fn send(&self, client: &RouterFalClient) -> Result<GenerateImageResponse, ArtcraftRouterError> {
+  pub async fn send(&self, client: &RouterFalWebhookOptionalClient) -> Result<GenerateImageResponse, ArtcraftRouterError> {
     match self {
       Self::TextToImage(request) => {
         let outbound: Arc<dyn Debug + Send + Sync> = Arc::new(request.clone());
-        let response = request
-          .send_webhook_request(&client.api_key, &client.webhook_url)
-          .await
-          .map_err(|e| ArtcraftRouterError::Provider(ProviderError::Fal(e)))?;
+        let payload = send_fal_request(request, client).await?;
         Ok(GenerateImageResponse::Fal(FalImageResponsePayload {
-          request_id: response.request_id,
-          gateway_request_id: response.gateway_request_id,
+          request_id: payload.request_id,
+          gateway_request_id: payload.gateway_request_id,
           maybe_outbound_request: Some(outbound),
         }))
       }
       Self::EditImage(request) => {
         let outbound: Arc<dyn Debug + Send + Sync> = Arc::new(request.clone());
-        let response = request
-          .send_webhook_request(&client.api_key, &client.webhook_url)
-          .await
-          .map_err(|e| ArtcraftRouterError::Provider(ProviderError::Fal(e)))?;
+        let payload = send_fal_request(request, client).await?;
         Ok(GenerateImageResponse::Fal(FalImageResponsePayload {
-          request_id: response.request_id,
-          gateway_request_id: response.gateway_request_id,
+          request_id: payload.request_id,
+          gateway_request_id: payload.gateway_request_id,
           maybe_outbound_request: Some(outbound),
         }))
       }
     }
+  }
+}
+
+// ── Helpers ──
+
+struct FalResponseIds {
+  request_id: Option<String>,
+  gateway_request_id: Option<String>,
+}
+
+/// Send a FAL request via webhook (if URL present) or queue (if not).
+async fn send_fal_request<T: FalEndpoint>(
+  request: &T,
+  client: &RouterFalWebhookOptionalClient,
+) -> Result<FalResponseIds, ArtcraftRouterError> {
+  if let Some(webhook_url) = &client.webhook_url {
+    let response = request
+      .send_webhook_request(&client.api_key, webhook_url)
+      .await
+      .map_err(|e| ArtcraftRouterError::Provider(ProviderError::Fal(e)))?;
+    Ok(FalResponseIds {
+      request_id: response.request_id,
+      gateway_request_id: response.gateway_request_id,
+    })
+  } else {
+    let response = request
+      .send_queue_request(&client.api_key)
+      .await
+      .map_err(|e| ArtcraftRouterError::Provider(ProviderError::Fal(e)))?;
+    Ok(FalResponseIds {
+      request_id: Some(response.request_id),
+      gateway_request_id: None,
+    })
   }
 }

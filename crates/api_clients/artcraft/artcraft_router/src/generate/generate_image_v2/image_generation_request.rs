@@ -29,7 +29,7 @@ impl ImageGenerationRequest {
   pub async fn send_request(&self, client: &RouterClient) -> Result<GenerateImageResponse, ArtcraftRouterError> {
     match self {
       Self::FalNanoBananaPro(request) => {
-        let fal_client = client.get_fal_client_ref()?;
+        let fal_client = client.get_fal_webhook_optional_client_ref()?;
         request.send(fal_client).await
       }
     }
