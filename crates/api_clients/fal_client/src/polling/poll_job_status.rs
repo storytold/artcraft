@@ -87,7 +87,7 @@ mod tests {
 
   #[tokio::test]
   #[ignore] // requires real API key
-  async fn poll_real_job() {
+  async fn poll_single_image_job() {
     let secret = std::fs::read_to_string("/Users/bt/Artcraft/credentials/fal.api_key.txt")
       .expect("Failed to read fal.api_key.txt");
     let api_key = FalApiKey::from_str(secret.trim());
