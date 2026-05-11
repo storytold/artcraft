@@ -7,6 +7,7 @@ use tokens::tokens::media_files::MediaFileToken;
 pub enum ClientType {
   Artcraft,
   Fal,
+  FalWebhookOptional,
   Muapi,
   Seedance2Pro,
 }
@@ -16,6 +17,7 @@ impl Display for ClientType {
     match self {
       Self::Artcraft => write!(f, "Artcraft"),
       Self::Fal => write!(f, "Fal"),
+      Self::FalWebhookOptional => write!(f, "FalWebhookOptional"),
       Self::Muapi => write!(f, "Muapi"),
       Self::Seedance2Pro => write!(f, "Seedance2Pro"),
     }

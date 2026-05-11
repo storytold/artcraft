@@ -1,12 +1,14 @@
 use crate::client::multi_router_client::MultiRouterClient;
 use crate::client::router_artcraft_client::RouterArtcraftClient;
 use crate::client::router_fal_client::RouterFalClient;
+use crate::client::router_fal_webhook_optional_client::RouterFalWebhookOptionalClient;
 use crate::client::router_muapi_client::RouterMuapiClient;
 use crate::client::router_seedance2pro_client::RouterSeedance2ProClient;
 
 pub struct MultiRouterClientBuilder {
   artcraft_client: Option<RouterArtcraftClient>,
   fal_client: Option<RouterFalClient>,
+  fal_webhook_optional_client: Option<RouterFalWebhookOptionalClient>,
   muapi_client: Option<RouterMuapiClient>,
   seedance2pro_client: Option<RouterSeedance2ProClient>,
 }
@@ -16,6 +18,7 @@ impl MultiRouterClientBuilder {
     Self {
       artcraft_client: None,
       fal_client: None,
+      fal_webhook_optional_client: None,
       muapi_client: None,
       seedance2pro_client: None,
     }
@@ -28,6 +31,11 @@ impl MultiRouterClientBuilder {
 
   pub fn set_fal_client(mut self, client: RouterFalClient) -> Self {
     self.fal_client = Some(client);
+    self
+  }
+  
+  pub fn set_fal_webhook_optional_client(mut self, client: RouterFalWebhookOptionalClient) -> Self {
+    self.fal_webhook_optional_client = Some(client);
     self
   }
 
@@ -45,6 +53,7 @@ impl MultiRouterClientBuilder {
     MultiRouterClient {
       artcraft_client: self.artcraft_client,
       fal_client: self.fal_client,
+      fal_webhook_optional_client: self.fal_webhook_optional_client,
       muapi_client: self.muapi_client,
       seedance2pro_client: self.seedance2pro_client,
     }
