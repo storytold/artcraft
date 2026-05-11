@@ -9,6 +9,8 @@ use crate::client::request_mismatch_mitigation_strategy::RequestMismatchMitigati
 use crate::errors::artcraft_router_error::ArtcraftRouterError;
 use crate::errors::client_error::ClientError;
 use crate::generate::generate_image::image_generation_plan::ImageGenerationPlan;
+use crate::generate::generate_image_v2::image_generation_draft_or_request::ImageGenerationDraftOrRequest;
+use crate::generate::generate_image_v2::providers::fal::nano_banana_pro::build::build_fal_nano_banana_pro;
 use crate::generate::generate_image::plan::artcraft::plan_generate_image_artcraft_flux_1_dev::plan_generate_image_artcraft_flux_1_dev;
 use crate::generate::generate_image::plan::artcraft::plan_generate_image_artcraft_flux_1_schnell::plan_generate_image_artcraft_flux_1_schnell;
 use crate::generate::generate_image::plan::artcraft::plan_generate_image_artcraft_flux_2_lora_angles::plan_generate_image_artcraft_flux_2_lora_angles;
@@ -89,6 +91,21 @@ pub struct GenerateImageRequestBuilder {
 }
 
 impl GenerateImageRequestBuilder {
+
+  pub fn use_new_builder(&self) -> bool {
+    match (self.provider, self.model) {
+      (Provider::Fal, CommonImageModel::NanoBananaPro) => true,
+      _ => false,
+    }
+  }
+
+  pub fn build2(self) -> Result<ImageGenerationDraftOrRequest, ArtcraftRouterError> {
+    match (self.provider, self.model) {
+      (Provider::Fal, CommonImageModel::NanoBananaPro) => build_fal_nano_banana_pro(self),
+      _ => self.unsupported_provider_and_model(),
+    }
+  }
+
   /// Read the image generation request, construct a plan, then yield a means to execute it.
   pub fn build(&self) -> Result<ImageGenerationPlan, ArtcraftRouterError> {
     match self.provider {
@@ -146,6 +163,12 @@ impl GenerateImageRequestBuilder {
   fn unsupported_provider(&self) -> Result<ImageGenerationPlan, ArtcraftRouterError> {
     Err(ArtcraftRouterError::UnsupportedModel(
       format!("Image generation for model `{:?}` is not supported for provider {:?}", self.model, self.provider)
+    ))
+  }
+
+  fn unsupported_provider_and_model(&self) -> Result<ImageGenerationDraftOrRequest, ArtcraftRouterError> {
+    Err(ArtcraftRouterError::UnsupportedProviderAndModelForNewApi(
+      format!("Image generation for model `{:?}` is not supported for provider {:?} using the new API", self.model, self.provider)
     ))
   }
 
