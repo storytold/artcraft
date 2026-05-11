@@ -1,11 +1,11 @@
+use artcraft_client::utils::api_host::ApiHost;
 use artcraft_router::api::image_list_ref::ImageListRef;
 use artcraft_router::api::provider::Provider;
 use artcraft_router::client::request_mismatch_mitigation_strategy::RequestMismatchMitigationStrategy;
 use artcraft_router::client::router_client::RouterClient;
 use artcraft_router::client::router_fal_client::RouterFalClient;
-use artcraft_router::generate::generate_image::generate_image_request::GenerateImageRequest;
+use artcraft_router::generate::generate_image::generate_image_request_builder::GenerateImageRequestBuilder;
 use artcraft_router::generate::generate_image::generate_image_response::GenerateImageResponse;
-use artcraft_client::utils::api_host::ApiHost;
 use enums::common::generation_provider::GenerationProvider;
 use enums::tauri::tasks::task_type::TaskType;
 use log::info;
@@ -19,9 +19,30 @@ use crate::core::commands::generate::generate_image::providers::router::utils::c
 use crate::core::commands::generate::generate_image::providers::router::utils::map_media_files_to_urls::map_media_file_tokens_to_cdn_urls;
 use crate::core::commands::generate::generate_image::tauri_generate_image_request::TauriGenerateImageRequest;
 use crate::core::commands::generate::generate_image::tauri_image_model::TauriImageModel;
+use crate::core::state::app_env_configs::app_env_configs::AppEnvConfigs;
 
-/// Handle image generation via FAL using the user's own API key.
-pub async fn handle_fal(
+/// Handle image generation for providers that authenticate via API key.
+pub async fn handle_api_key_provider(
+  request: &TauriGenerateImageRequest,
+  provider: GenerationProvider,
+  api_key: &str,
+  app_env_configs: &AppEnvConfigs,
+) -> Result<TaskEnqueueSuccess, GenerateError> {
+  match provider {
+    GenerationProvider::Fal => {
+      handle_fal(request, api_key, &app_env_configs.storyteller_host).await
+    }
+    _ => {
+      Err(GenerateError::NotYetImplemented(
+        format!("API key provider {:?} is not yet supported via the router path", provider),
+      ))
+    }
+  }
+}
+
+// ── FAL ──
+
+async fn handle_fal(
   request: &TauriGenerateImageRequest,
   api_key: &str,
   api_host: &ApiHost,
@@ -38,7 +59,7 @@ pub async fn handle_fal(
 
   let webhook_url = build_fal_webhook_url(api_host);
 
-  let router_request = GenerateImageRequest {
+  let router_request = GenerateImageRequestBuilder {
     model: router_model,
     provider: Provider::Fal,
     prompt: request.prompt.clone(),
@@ -69,10 +90,6 @@ pub async fn handle_fal(
 
 // ── Helpers ──
 
-/// Collect media file tokens from the request and resolve them to CDN URLs.
-///
-/// FAL accepts image URLs directly, so we map our media file tokens to their
-/// CDN URLs rather than downloading the bytes locally.
 async fn resolve_image_inputs(
   request: &TauriGenerateImageRequest,
   api_host: &ApiHost,

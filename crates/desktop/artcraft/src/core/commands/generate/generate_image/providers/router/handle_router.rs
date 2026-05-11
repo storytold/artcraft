@@ -3,7 +3,7 @@ use log::info;
 
 use crate::core::commands::enqueue::generate_error::{GenerateError, MissingCredentialsReason};
 use crate::core::commands::enqueue::task_enqueue_success::TaskEnqueueSuccess;
-use crate::core::commands::generate::generate_image::providers::router::handle_api_providers::handle_fal;
+use crate::core::commands::generate::generate_image::providers::router::handle_api_providers::handle_api_key_provider;
 use crate::core::commands::generate::generate_image::providers::router::handle_web_login_providers::handle_web_login_provider;
 use crate::core::commands::generate::generate_image::tauri_generate_image_request::TauriGenerateImageRequest;
 use crate::core::providers::credentials::payload::provider_credential_payload::ProviderCredentialPayload;
@@ -42,24 +42,6 @@ pub async fn handle_router(
 }
 
 // ── Helpers ──
-
-async fn handle_api_key_provider(
-  request: &TauriGenerateImageRequest,
-  provider: GenerationProvider,
-  api_key: &str,
-  app_env_configs: &AppEnvConfigs,
-) -> Result<TaskEnqueueSuccess, GenerateError> {
-  match provider {
-    GenerationProvider::Fal => {
-      handle_fal(request, api_key, &app_env_configs.storyteller_host).await
-    }
-    _ => {
-      Err(GenerateError::NotYetImplemented(
-        format!("API key provider {:?} is not yet supported via the router path", provider),
-      ))
-    }
-  }
-}
 
 fn map_provider_to_credential_key(
   provider: GenerationProvider,
