@@ -1,14 +1,17 @@
 use artcraft_client::utils::api_host::ApiHost;
 use artcraft_router::api::image_list_ref::ImageListRef;
 use artcraft_router::api::provider::Provider;
+use artcraft_router::client::generation_mode_mismatch_strategy::GenerationModeMismatchStrategy;
 use artcraft_router::client::request_mismatch_mitigation_strategy::RequestMismatchMitigationStrategy;
 use artcraft_router::client::router_client::RouterClient;
 use artcraft_router::client::router_fal_client::RouterFalClient;
+use artcraft_router::client::router_fal_webhook_optional_client::RouterFalWebhookOptionalClient;
 use artcraft_router::generate::generate_image::generate_image_request_builder::GenerateImageRequestBuilder;
 use artcraft_router::generate::generate_image::generate_image_response::GenerateImageResponse;
+use artcraft_router::generate::generate_image_v2::image_generation_draft_or_request::ImageGenerationDraftOrRequest;
 use enums::common::generation_provider::GenerationProvider;
 use enums::tauri::tasks::task_type::TaskType;
-use log::info;
+use log::{info, warn};
 use tokens::tokens::media_files::MediaFileToken;
 
 use crate::core::api_adapters::models::image::tauri_image_model_to_generation_model::tauri_image_model_to_generation_model;
@@ -57,8 +60,6 @@ async fn handle_fal(
   // Collect all media file tokens that need resolving.
   let image_inputs = resolve_image_inputs(request, api_host).await?;
 
-  let webhook_url = build_fal_webhook_url(api_host);
-
   let router_request = GenerateImageRequestBuilder {
     model: router_model,
     provider: Provider::Fal,
@@ -71,19 +72,31 @@ async fn handle_fal(
     horizontal_angle: request.adjust_horizontal_angle,
     vertical_angle: request.adjust_vertical_angle,
     zoom: request.adjust_zoom,
-    request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::ErrorOut,
-    generation_mode_mismatch_strategy: None,
+    request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::PayMoreUpgrade,
+    generation_mode_mismatch_strategy: Some(GenerationModeMismatchStrategy::GenerateAnyway),
     idempotency_token: None,
   };
 
+  let fal_client = RouterFalWebhookOptionalClient::from_str(api_key);
+  let client = RouterClient::FalWebhookOptional(fal_client);
+  
   info!("Building FAL image generation plan: model={:?}", router_model);
-  let plan = router_request.build()?;
 
-  let fal_client = RouterFalClient::new_from_raw_key(api_key, webhook_url);
-  let client = RouterClient::Fal(fal_client);
+  let request = match router_request.build2() {
+    Ok(ImageGenerationDraftOrRequest::Request(request)) => request,
+    Ok(ImageGenerationDraftOrRequest::Draft(draft)) => {
+      warn!("Fal is trying to send draft request: {:?}", draft);
+      return Err(GenerateError::NotYetImplemented("Fal should not be sending draft requests".to_string()));
+    },
+    Err(err) => {
+      warn!("Could not use FAL: {:?}", err);
+      return Err(GenerateError::NotYetImplemented("Error Message: TODO".to_string()));
+    }
+  };
 
-  info!("Executing FAL image generation...");
-  let response = plan.generate_image(&client).await?;
+  info!("Executing FAL image generation. Request: {:?}", request);
+  
+  let response = request.send_request(&client).await?;
 
   build_task_enqueue_success(tauri_model, response)
 }
@@ -114,11 +127,6 @@ async fn resolve_image_inputs(
 
   let urls = map_media_file_tokens_to_cdn_urls(&tokens, api_host).await?;
   Ok(Some(ImageListRef::Urls(urls)))
-}
-
-fn build_fal_webhook_url(api_host: &ApiHost) -> String {
-  let base = api_host.to_api_hostname_and_scheme();
-  format!("{}/v1/webhooks/fal", base)
 }
 
 fn build_task_enqueue_success(

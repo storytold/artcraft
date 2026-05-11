@@ -9,6 +9,9 @@ impl RouterFalWebhookOptionalClient {
   pub fn new(api_key: FalApiKey) -> Self {
     Self { api_key, webhook_url: None }
   }
+  pub fn from_str(api_key: &str) -> Self {
+    Self::new(FalApiKey::from_str(api_key))
+  }
 
   pub fn new_with_webhook(api_key: FalApiKey, webhook_url: String) -> Self {
     Self { 
