@@ -23,7 +23,10 @@ import {
   type PromptData,
 } from "./shared";
 import { LightboxDetails } from "./LightboxDetails";
-import { applyRecreateFromMediaToken } from "../../lib/recreate";
+import {
+  applyMakeVideoFromImage,
+  applyRecreateFromMediaToken,
+} from "../../lib/recreate";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -324,6 +327,13 @@ export function Lightbox({
     );
   }, [selectedMediaToken, recreateMediaClass, navigate, onClose]);
 
+  const canMakeVideo = !isVideo && !is3D;
+  const handleMakeVideo = useCallback(() => {
+    if (!selectedMediaToken || !selectedImageUrl || !canMakeVideo) return;
+    onClose();
+    applyMakeVideoFromImage(selectedMediaToken, selectedImageUrl, navigate);
+  }, [selectedMediaToken, selectedImageUrl, canMakeVideo, navigate, onClose]);
+
   return (
     <>
       <Modal
@@ -490,6 +500,11 @@ export function Lightbox({
             creator={creator}
             onClose={onClose}
             onRecreate={recreateMediaClass ? handleRecreate : undefined}
+            onMakeVideo={
+              canMakeVideo && selectedMediaToken && selectedImageUrl
+                ? handleMakeVideo
+                : undefined
+            }
             onDelete={
               selectedMediaToken
                 ? () => setConfirmDeleteOpen(true)

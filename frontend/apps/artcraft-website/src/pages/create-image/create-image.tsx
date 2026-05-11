@@ -382,6 +382,7 @@ export default function CreateImage() {
           isInitialLoading={gallery.isInitialLoading}
           onLoadMore={gallery.loadMore}
           onGalleryItemClick={lightbox.handleGalleryItemClick}
+          enableMakeVideo
         />
       }
       promptBox={

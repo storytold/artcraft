@@ -35,6 +35,7 @@ interface GenerationGalleryGridProps {
   isInitialLoading: boolean;
   onLoadMore: () => void;
   onGalleryItemClick: (item: GalleryItem) => void;
+  enableMakeVideo?: boolean;
 }
 
 // ── Component ──────────────────────────────────────────────────────────────
@@ -51,6 +52,7 @@ export function GenerationGalleryGrid({
   isInitialLoading,
   onLoadMore,
   onGalleryItemClick,
+  enableMakeVideo,
 }: GenerationGalleryGridProps) {
   const sentinelRef = useRef<HTMLDivElement>(null);
 
@@ -159,7 +161,11 @@ export function GenerationGalleryGrid({
               />
             )}
             {entry.kind === "gallery" && (
-              <GalleryCard item={entry.item} onClick={onGalleryItemClick} />
+              <GalleryCard
+                item={entry.item}
+                onClick={onGalleryItemClick}
+                enableMakeVideo={enableMakeVideo}
+              />
             )}
           </div>
         ))}

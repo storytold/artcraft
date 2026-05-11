@@ -17,6 +17,7 @@ import {
   faSpinnerThird,
   faTrashCan,
   faUser,
+  faVideo,
   faXmark,
 } from "@fortawesome/pro-solid-svg-icons";
 import {
@@ -70,6 +71,7 @@ export interface LightboxDetailsProps {
   creator?: UserInfo | null;
   onClose?: () => void;
   onRecreate?: () => void;
+  onMakeVideo?: () => void;
   onDelete?: () => void;
   showDownloadAppCta?: boolean;
 }
@@ -84,6 +86,7 @@ export function LightboxDetails({
   creator,
   onClose,
   onRecreate,
+  onMakeVideo,
   onDelete,
   showDownloadAppCta,
 }: LightboxDetailsProps) {
@@ -399,6 +402,16 @@ export function LightboxDetails({
             {isDownloading ? "Downloading…" : "Download"}
           </button>
         </div>
+        {onMakeVideo && (
+          <Button
+            icon={faVideo}
+            className="w-full shadow-lg shadow-brand-primary/20"
+            variant="primary"
+            onClick={onMakeVideo}
+          >
+            Make Video
+          </Button>
+        )}
         {onRecreate && promptData.hasToken && (
           <Button
             icon={faArrowRotateRight}

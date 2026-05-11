@@ -37,6 +37,31 @@ export interface RecreatePayload {
 
 // ── Public API ─────────────────────────────────────────────────────────────
 
+// Seeds the video page with an image as the sole reference and navigates there.
+// Shares the existing `pendingRecreate` slot on the video store so the create-
+// video page's consume-effect handles wiring it into the prompt box.
+export function applyMakeVideoFromImage(
+  mediaToken: string,
+  mediaUrl: string,
+  navigate: NavigateFunction,
+): void {
+  useCreateVideoStore.getState().setPendingRecreate({
+    prompt: "",
+    referenceImages: [
+      {
+        id: crypto.randomUUID(),
+        url: mediaUrl,
+        file: new File([], "make-video-ref"),
+        mediaToken,
+      },
+    ],
+    referenceVideos: [],
+    referenceAudios: [],
+    inputMode: "reference",
+  });
+  navigate("/create-video");
+}
+
 export async function applyRecreateFromMediaToken(
   mediaToken: string,
   fallbackMediaClass: RecreateMediaClass,

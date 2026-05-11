@@ -20,6 +20,7 @@ import {
   getModelDisplayName,
 } from "../../lib/omni-gen-hooks";
 import {
+  applyMakeVideoFromImage,
   applyRecreateFromMediaToken,
   type RecreateMediaClass,
 } from "../../lib/recreate";
@@ -107,12 +108,17 @@ interface GalleryCardProps {
   // "auto" = dynamic aspect ratio from the loaded image (masonry layouts).
   // "square" = fixed 1:1; skips the ratio measurement path (uniform grids).
   shape?: "auto" | "square";
+  // When true, image cards show a "Make Video" quick action that seeds the
+  // create-video page with the image as a reference. Enabled on the create
+  // image page only.
+  enableMakeVideo?: boolean;
 }
 
 export const GalleryCard = memo(function GalleryCard({
   item,
   onClick,
   shape = "auto",
+  enableMakeVideo = false,
 }: GalleryCardProps) {
   const isSquare = shape === "square";
   const navigate = useNavigate();
@@ -250,6 +256,17 @@ export const GalleryCard = memo(function GalleryCard({
     [item.id, recreateMediaClass, navigate, isRecreating],
   );
 
+  const canMakeVideo = enableMakeVideo && !isVideo && !is3D;
+  const handleMakeVideo = useCallback(
+    (e: React.MouseEvent) => {
+      e.stopPropagation();
+      const url = item.fullImage || item.thumbnail;
+      if (!url) return;
+      applyMakeVideoFromImage(item.id, url, navigate);
+    },
+    [item.id, item.fullImage, item.thumbnail, navigate],
+  );
+
   const handleShare = useCallback(
     async (e: React.MouseEvent) => {
       e.stopPropagation();
@@ -385,6 +402,18 @@ export const GalleryCard = memo(function GalleryCard({
                   icon={isRecreating ? faSpinnerThird : faArrowRotateRight}
                   className={`text-sm ${isRecreating ? "animate-spin" : ""}`}
                 />
+              </button>
+            </Tooltip>
+          )}
+          {canMakeVideo && (
+            <Tooltip content="Make Video" position="top">
+              <button
+                type="button"
+                className="flex h-7 w-7 items-center justify-center rounded-md text-white/85 transition-colors hover:bg-white/15 hover:text-white"
+                onClick={handleMakeVideo}
+                aria-label="Make Video"
+              >
+                <FontAwesomeIcon icon={faVideo} className="text-sm" />
               </button>
             </Tooltip>
           )}
