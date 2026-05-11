@@ -1,4 +1,6 @@
 use crate::creds::fal_api_key::FalApiKey;
+use crate::error::api_generic_error::FalGenericApiError;
+use crate::error::client_error::FalClientError;
 use crate::error::fal_error_plus::FalErrorPlus;
 use crate::polling::poll_job_status::raw_response::RawPollJobStatusResponse;
 use log::info;
@@ -7,7 +9,10 @@ use url::Url;
 const EXPECTED_HOST: &str = "queue.fal.run";
 
 pub struct PollJobStatusArgs<'a> {
+  /// This is the "status" URL, not the "response" URL. 
+  /// This only gives us the progress of the job, not details of the final results upon completion.
   pub status_url: &'a str,
+  
   pub api_key: &'a FalApiKey,
 }
 
@@ -48,13 +53,14 @@ pub async fn poll_job_status(args: PollJobStatusArgs<'_>) -> Result<PollJobStatu
   let parsed = Url::parse(args.status_url)?;
 
   let host = parsed.host_str().unwrap_or("");
+  
   if host != EXPECTED_HOST {
-    return Err(FalErrorPlus::InvalidPollingUrl(format!(
+    return Err(FalErrorPlus::ClientError(FalClientError::InvalidUrl(format!(
       "Expected host '{}' but got '{}' in status URL: {}",
       EXPECTED_HOST,
       host,
       args.status_url,
-    )));
+    ))));
   }
 
   info!("Polling FAL job status: {}", args.status_url);
@@ -69,19 +75,21 @@ pub async fn poll_job_status(args: PollJobStatusArgs<'_>) -> Result<PollJobStatu
   let body = response.text().await?;
 
   if !http_status.is_success() {
-    return Err(FalErrorPlus::AnyhowError(anyhow::anyhow!(
-      "FAL poll returned HTTP {}: {}",
-      http_status,
-      body,
-    )));
+    return Err(FalErrorPlus::ApiGeneric(
+      FalGenericApiError::UncategorizedBadResponseWithStatusAndBody {
+        status_code: http_status,
+        body,
+      },
+    ));
   }
 
   let raw: RawPollJobStatusResponse = serde_json::from_str(&body)
-    .map_err(|err| FalErrorPlus::AnyhowError(anyhow::anyhow!(
-      "Failed to parse FAL status response: {}. Body: {}",
-      err,
-      body,
-    )))?;
+    .map_err(|err| FalErrorPlus::ApiGeneric(
+      FalGenericApiError::SerdeResponseParseErrorWithBody {
+        error: err,
+        body: body.clone(),
+      },
+    ))?;
 
   let status = match raw.status.as_str() {
     "IN_QUEUE" => FalJobStatus::InQueue,

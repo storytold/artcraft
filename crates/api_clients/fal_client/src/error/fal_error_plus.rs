@@ -1,4 +1,6 @@
+use crate::error::api_generic_error::FalGenericApiError;
 use crate::error::classify_fal_error::classify_fal_error;
+use crate::error::client_error::FalClientError;
 use crate::error::fal_error::FalError;
 use std::error::Error;
 use std::fmt::{Display, Formatter};
@@ -6,6 +8,16 @@ use std::fmt::{Display, Formatter};
 /// Additional errors that aren't included in `crate::error::fal_error::FalError`.
 #[derive(Debug)]
 pub enum FalErrorPlus {
+  // =============== Newer error types ===============
+
+  /// A client-side error (invalid input, bad URL, etc.).
+  ClientError(FalClientError),
+
+  /// A generic API error (bad response, parse failure, etc.).
+  ApiGeneric(FalGenericApiError),
+
+  // =============== Older error types (gradually replace these) ===============
+
   /// An error arising in the `fal` crate.
   FalError(crate::error::fal_error::FalError),
   /// The fal API key is invalid.
@@ -27,6 +39,8 @@ pub enum FalErrorPlus {
 impl Display for FalErrorPlus {
   fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
     match self {
+      Self::ClientError(err) => write!(f, "FalErrorPlus::ClientError: {}", err),
+      Self::ApiGeneric(err) => write!(f, "FalErrorPlus::ApiGeneric: {}", err),
       Self::FalError(err) => write!(f, "FalErrorPlus::FalError: {:?}", err),
       Self::FalApiKeyError(reason) => write!(f, "FalErrorPlus::FalApiKeyError: {}", reason),
       Self::FalBillingError(reason) => write!(f, "FalErrorPlus::FalBillingError: {}", reason),
