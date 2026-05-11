@@ -75,3 +75,114 @@ async fn send_fal_request<T: FalEndpoint>(
     })
   }
 }
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+  use fal_client::creds::fal_api_key::FalApiKey;
+  use fal_client::requests::api::image::edit::nano_banana_pro_edit_image::api::{
+    NanoBananaProEditImageAspectRatio, NanoBananaProEditImageNumImages,
+    NanoBananaProEditImageResolution,
+  };
+  use fal_client::requests::api::image::text::nano_banana_pro_text_to_image::api::{
+    NanoBananaProTextToImageAspectRatio, NanoBananaProTextToImageNumImages,
+    NanoBananaProTextToImageResolution,
+  };
+  use test_data::web::image_urls::JUNO_AT_LAKE_IMAGE_URL;
+
+  fn read_fal_api_key() -> FalApiKey {
+    let secret = std::fs::read_to_string("/Users/bt/Artcraft/credentials/fal_api_key.txt")
+      .expect("Failed to read fal_api_key.txt");
+    FalApiKey::from_str(secret.trim())
+  }
+
+  fn client_with_webhook() -> RouterFalWebhookOptionalClient {
+    RouterFalWebhookOptionalClient::new_with_webhook(
+      read_fal_api_key(),
+      "https://example.com/fal-webhook-test".to_string(),
+    )
+  }
+
+  fn client_without_webhook() -> RouterFalWebhookOptionalClient {
+    RouterFalWebhookOptionalClient::new(read_fal_api_key())
+  }
+
+  // ── Text-to-image ──
+
+  mod text_to_image {
+    use super::*;
+
+    fn t2i_request() -> FalNanoBananaProRequestState {
+      FalNanoBananaProRequestState::TextToImage(NanoBananaProTextToImageRequest {
+        prompt: "a corgi wearing sunglasses on a surfboard".to_string(),
+        num_images: NanoBananaProTextToImageNumImages::One,
+        resolution: Some(NanoBananaProTextToImageResolution::OneK),
+        aspect_ratio: Some(NanoBananaProTextToImageAspectRatio::SixteenByNine),
+      })
+    }
+
+    #[tokio::test]
+    #[ignore] // requires real API key, incurs cost
+    async fn send_via_webhook() {
+      let client = client_with_webhook();
+      let state = t2i_request();
+      let response = state.send(&client).await.expect("send should succeed");
+      let payload = response.get_fal_payload().expect("expected Fal payload");
+      println!("Webhook t2i — request_id: {:?}, gateway_request_id: {:?}", payload.request_id, payload.gateway_request_id);
+      assert!(payload.request_id.is_some() || payload.gateway_request_id.is_some());
+    }
+
+    #[tokio::test]
+    #[ignore] // requires real API key, incurs cost
+    async fn send_via_queue() {
+      let client = client_without_webhook();
+      let state = t2i_request();
+      let response = state.send(&client).await.expect("send should succeed");
+      let payload = response.get_fal_payload().expect("expected Fal payload");
+      println!("Queue t2i — request_id: {:?}", payload.request_id);
+      assert!(payload.request_id.is_some());
+    }
+  }
+
+  // ── Edit image ──
+
+  mod edit_image {
+    use super::*;
+    use test_data::web::image_urls::WHITE_HOUSE_SUNSET_IMAGE_URL;
+
+    fn edit_request() -> FalNanoBananaProRequestState {
+      FalNanoBananaProRequestState::EditImage(NanoBananaProEditImageRequest {
+        prompt: "add a party hat to the dog, and put the dog in front of the location".to_string(),
+        image_urls: vec![
+          JUNO_AT_LAKE_IMAGE_URL.to_string(),
+          WHITE_HOUSE_SUNSET_IMAGE_URL.to_string(),
+        ],
+        num_images: NanoBananaProEditImageNumImages::One,
+        resolution: Some(NanoBananaProEditImageResolution::OneK),
+        aspect_ratio: Some(NanoBananaProEditImageAspectRatio::SixteenByNine),
+      })
+    }
+
+    #[tokio::test]
+    #[ignore] // requires real API key, incurs cost
+    async fn send_via_webhook() {
+      let client = client_with_webhook();
+      let state = edit_request();
+      let response = state.send(&client).await.expect("send should succeed");
+      let payload = response.get_fal_payload().expect("expected Fal payload");
+      println!("Webhook edit — request_id: {:?}, gateway_request_id: {:?}", payload.request_id, payload.gateway_request_id);
+      assert!(payload.request_id.is_some() || payload.gateway_request_id.is_some());
+    }
+
+    #[tokio::test]
+    #[ignore] // requires real API key, incurs cost
+    async fn send_via_queue() {
+      let client = client_without_webhook();
+      let state = edit_request();
+      let response = state.send(&client).await.expect("send should succeed");
+      let payload = response.get_fal_payload().expect("expected Fal payload");
+      println!("Queue edit — request_id: {:?}", payload.request_id);
+      assert!(payload.request_id.is_some());
+    }
+  }
+}
