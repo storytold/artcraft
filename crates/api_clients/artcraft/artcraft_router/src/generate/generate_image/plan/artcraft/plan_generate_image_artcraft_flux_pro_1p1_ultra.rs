@@ -3,7 +3,7 @@ use crate::client::generation_mode_mismatch_strategy::GenerationModeMismatchStra
 use crate::client::request_mismatch_mitigation_strategy::RequestMismatchMitigationStrategy;
 use crate::errors::artcraft_router_error::ArtcraftRouterError;
 use crate::errors::client_error::ClientError;
-use crate::generate::generate_image::generate_image_request::GenerateImageRequest;
+use crate::generate::generate_image::generate_image_request_builder::GenerateImageRequestBuilder;
 use crate::generate::generate_image::image_generation_plan::ImageGenerationPlan;
 use artcraft_api_defs::generate::image::text::generate_flux_pro_11_ultra_text_to_image::{
   GenerateFluxPro11UltraTextToImageAspectRatio, GenerateFluxPro11UltraTextToImageNumImages,
@@ -18,7 +18,7 @@ pub struct PlanArtcraftFluxPro11Ultra {
 }
 
 pub fn plan_generate_image_artcraft_flux_pro_1p1_ultra(
-  request: &GenerateImageRequest,
+  request: &GenerateImageRequestBuilder,
 ) -> Result<ImageGenerationPlan, ArtcraftRouterError> {
   // Flux Pro 1.1 Ultra is text-to-image only. Abort if image inputs are provided and
   // the caller has opted into strict mode.
@@ -137,7 +137,7 @@ mod tests {
   use crate::client::generation_mode_mismatch_strategy::GenerationModeMismatchStrategy;
   use crate::errors::artcraft_router_error::ArtcraftRouterError;
   use crate::errors::client_error::ClientError;
-  use crate::generate::generate_image::generate_image_request::GenerateImageRequest;
+  use crate::generate::generate_image::generate_image_request_builder::GenerateImageRequestBuilder;
   use crate::test_helpers::base_flux_pro_1p1_ultra_image_request;
   use artcraft_api_defs::generate::image::text::generate_flux_pro_11_ultra_text_to_image::{
     GenerateFluxPro11UltraTextToImageAspectRatio as FlAr,
@@ -149,7 +149,7 @@ mod tests {
   #[test]
   fn image_inputs_with_abort_returns_error() {
     let tokens = vec![];
-    let request = GenerateImageRequest {
+    let request = GenerateImageRequestBuilder {
       image_inputs: Some(ImageListRef::MediaFileTokens(tokens.clone())),
       generation_mode_mismatch_strategy: Some(GenerationModeMismatchStrategy::AbortGeneration),
       ..base_flux_pro_1p1_ultra_image_request()
@@ -164,7 +164,7 @@ mod tests {
   #[test]
   fn image_inputs_with_generate_anyway_succeeds() {
     let tokens = vec![];
-    let request = GenerateImageRequest {
+    let request = GenerateImageRequestBuilder {
       image_inputs: Some(ImageListRef::MediaFileTokens(tokens.clone())),
       generation_mode_mismatch_strategy: Some(GenerationModeMismatchStrategy::GenerateAnyway),
       ..base_flux_pro_1p1_ultra_image_request()
@@ -175,7 +175,7 @@ mod tests {
   #[test]
   fn image_inputs_with_none_strategy_succeeds() {
     let tokens = vec![];
-    let request = GenerateImageRequest {
+    let request = GenerateImageRequestBuilder {
       image_inputs: Some(ImageListRef::MediaFileTokens(tokens.clone())),
       generation_mode_mismatch_strategy: None,
       ..base_flux_pro_1p1_ultra_image_request()
@@ -187,7 +187,7 @@ mod tests {
 
   #[test]
   fn aspect_ratio_none_is_none() {
-    let request = GenerateImageRequest { aspect_ratio: None, ..base_flux_pro_1p1_ultra_image_request() };
+    let request = GenerateImageRequestBuilder { aspect_ratio: None, ..base_flux_pro_1p1_ultra_image_request() };
     let ImageGenerationPlan::ArtcraftFluxPro11Ultra(plan) = request.build().unwrap() else { panic!("expected ArtcraftFluxPro11Ultra") };
     assert!(plan.aspect_ratio.is_none());
   }
@@ -200,7 +200,7 @@ mod tests {
       CommonAspectRatio::Auto4k,
       CommonAspectRatio::SquareHd,
     ] {
-      let request = GenerateImageRequest { aspect_ratio: Some(ar), ..base_flux_pro_1p1_ultra_image_request() };
+      let request = GenerateImageRequestBuilder { aspect_ratio: Some(ar), ..base_flux_pro_1p1_ultra_image_request() };
       let ImageGenerationPlan::ArtcraftFluxPro11Ultra(plan) = request.build().unwrap() else { panic!("expected ArtcraftFluxPro11Ultra") };
       assert!(matches!(plan.aspect_ratio, Some(FlAr::Square)), "expected Square for {:?}", ar);
     }
@@ -223,7 +223,7 @@ mod tests {
       (CommonAspectRatio::TallNineByTwentyOne, FlAr::PortraitNineByTwentyOne),
     ];
     for (common, expected) in cases {
-      let request = GenerateImageRequest { aspect_ratio: Some(common), ..base_flux_pro_1p1_ultra_image_request() };
+      let request = GenerateImageRequestBuilder { aspect_ratio: Some(common), ..base_flux_pro_1p1_ultra_image_request() };
       let ImageGenerationPlan::ArtcraftFluxPro11Ultra(plan) = request.build().unwrap() else { panic!("expected ArtcraftFluxPro11Ultra") };
       assert!(
         matches!(plan.aspect_ratio, Some(ar) if std::mem::discriminant(&ar) == std::mem::discriminant(&expected)),
@@ -234,7 +234,7 @@ mod tests {
 
   #[test]
   fn aspect_ratio_unsupported_error_out() {
-    let request = GenerateImageRequest {
+    let request = GenerateImageRequestBuilder {
       aspect_ratio: Some(CommonAspectRatio::TallFourByFive),
       request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::ErrorOut,
       ..base_flux_pro_1p1_ultra_image_request()
@@ -251,7 +251,7 @@ mod tests {
       RequestMismatchMitigationStrategy::PayMoreUpgrade,
       RequestMismatchMitigationStrategy::PayLessDowngrade,
     ] {
-      let request = GenerateImageRequest {
+      let request = GenerateImageRequestBuilder {
         aspect_ratio: Some(CommonAspectRatio::TallFourByFive),
         request_mismatch_mitigation_strategy: strategy,
         ..base_flux_pro_1p1_ultra_image_request()
@@ -270,7 +270,7 @@ mod tests {
       RequestMismatchMitigationStrategy::PayMoreUpgrade,
       RequestMismatchMitigationStrategy::PayLessDowngrade,
     ] {
-      let request = GenerateImageRequest {
+      let request = GenerateImageRequestBuilder {
         quality: None,
         image_batch_count: Some(0),
         request_mismatch_mitigation_strategy: strategy,
@@ -287,7 +287,7 @@ mod tests {
   fn num_images_direct_mapping() {
     let cases = [(1, FlN::One), (2, FlN::Two), (3, FlN::Three), (4, FlN::Four)];
     for (count, expected) in cases {
-      let request = GenerateImageRequest { image_batch_count: Some(count), ..base_flux_pro_1p1_ultra_image_request() };
+      let request = GenerateImageRequestBuilder { image_batch_count: Some(count), ..base_flux_pro_1p1_ultra_image_request() };
       let ImageGenerationPlan::ArtcraftFluxPro11Ultra(plan) = request.build().unwrap() else { panic!("expected ArtcraftFluxPro11Ultra") };
       assert!(
         std::mem::discriminant(&plan.num_images) == std::mem::discriminant(&expected),
@@ -298,7 +298,7 @@ mod tests {
 
   #[test]
   fn num_images_out_of_range_error_out() {
-    let request = GenerateImageRequest {
+    let request = GenerateImageRequestBuilder {
       quality: None,
       image_batch_count: Some(5),
       request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::ErrorOut,
@@ -316,7 +316,7 @@ mod tests {
       RequestMismatchMitigationStrategy::PayMoreUpgrade,
       RequestMismatchMitigationStrategy::PayLessDowngrade,
     ] {
-      let request = GenerateImageRequest {
+      let request = GenerateImageRequestBuilder {
         quality: None,
         image_batch_count: Some(5),
         request_mismatch_mitigation_strategy: strategy,

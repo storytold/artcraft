@@ -6,7 +6,7 @@ use artcraft_router::api::common_resolution::CommonResolution as CommonResolutio
 use artcraft_router::api::image_list_ref::ImageListRef;
 use artcraft_router::api::provider::Provider;
 use artcraft_router::client::request_mismatch_mitigation_strategy::RequestMismatchMitigationStrategy;
-use artcraft_router::generate::generate_image::generate_image_request::GenerateImageRequest;
+use artcraft_router::generate::generate_image::generate_image_request_builder::GenerateImageRequestBuilder;
 use enums::common::generation::common_aspect_ratio::CommonAspectRatio as CommonAspectRatioEnum;
 use enums::common::generation::common_image_model::CommonImageModel as CommonImageModelEnum;
 use enums::common::generation::common_quality::CommonQuality as CommonQualityEnum;
@@ -60,7 +60,7 @@ fn convert_quality(
 
 pub fn hydrate_to_router_request(
   request: &OmniGenImageCostAndGenerateRequest,
-) -> Result<GenerateImageRequest, AdvancedCommonWebError> {
+) -> Result<GenerateImageRequestBuilder, AdvancedCommonWebError> {
   let api_model = request.model.as_ref()
     .ok_or_else(|| AdvancedCommonWebError::BadInputWithSimpleMessage(
       "model is required".to_string(),
@@ -80,7 +80,7 @@ pub fn hydrate_to_router_request(
     .map(convert_quality)
     .transpose()?;
 
-  Ok(GenerateImageRequest {
+  Ok(GenerateImageRequestBuilder {
     model,
     provider: Provider::Artcraft,
     prompt: request.prompt.clone(),

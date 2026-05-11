@@ -4,7 +4,7 @@ use crate::api::image_list_ref::ImageListRef;
 use crate::client::request_mismatch_mitigation_strategy::RequestMismatchMitigationStrategy;
 use crate::errors::artcraft_router_error::ArtcraftRouterError;
 use crate::errors::client_error::ClientError;
-use crate::generate::generate_image::generate_image_request::GenerateImageRequest;
+use crate::generate::generate_image::generate_image_request_builder::GenerateImageRequestBuilder;
 use crate::generate::generate_image::image_generation_plan::ImageGenerationPlan;
 use fal_client::requests::webhook::image::edit::enqueue_nano_banana_2_edit_image_webhook::EnqueueNanoBanana2EditImageAspectRatio;
 use fal_client::requests::webhook::image::text::enqueue_nano_banana_2_text_to_image_webhook::EnqueueNanoBanana2TextToImageAspectRatio;
@@ -43,7 +43,7 @@ pub struct PlanFalNanaBanana2 {
 }
 
 pub fn plan_generate_image_fal_nano_banana_2(
-  request: &GenerateImageRequest,
+  request: &GenerateImageRequestBuilder,
 ) -> Result<ImageGenerationPlan, ArtcraftRouterError> {
   let strategy = request.request_mismatch_mitigation_strategy;
   let is_edit_mode = request.image_inputs.is_some();

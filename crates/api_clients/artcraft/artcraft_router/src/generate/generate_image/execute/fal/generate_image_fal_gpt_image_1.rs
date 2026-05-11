@@ -79,12 +79,12 @@ mod tests {
   use crate::api::image_list_ref::ImageListRef;
   use crate::api::provider::Provider;
   use crate::client::request_mismatch_mitigation_strategy::RequestMismatchMitigationStrategy;
-  use crate::generate::generate_image::generate_image_request::GenerateImageRequest;
+  use crate::generate::generate_image::generate_image_request_builder::GenerateImageRequestBuilder;
   use crate::generate::generate_image::image_generation_plan::ImageGenerationPlan;
   use crate::test_helpers::get_fal_client;
 
-  fn base_fal_request() -> GenerateImageRequest {
-    GenerateImageRequest {
+  fn base_fal_request() -> GenerateImageRequestBuilder {
+    GenerateImageRequestBuilder {
       model: CommonImageModel::GptImage1,
       provider: Provider::Fal,
       prompt: Some("a cat in space".to_string()),
@@ -105,7 +105,7 @@ mod tests {
   // Build-only smoke test (no network I/O).
   #[test]
   fn build_text_to_image_plan_smoke() {
-    let request = GenerateImageRequest {
+    let request = GenerateImageRequestBuilder {
       aspect_ratio: Some(CommonAspectRatio::Square),
       image_batch_count: Some(1),
       ..base_fal_request()
@@ -121,7 +121,7 @@ mod tests {
   #[test]
   fn build_edit_image_plan_smoke() {
     let urls = vec!["https://example.com/img.jpg".to_string()];
-    let request = GenerateImageRequest {
+    let request = GenerateImageRequestBuilder {
       image_inputs: Some(ImageListRef::Urls(urls.clone())),
       ..base_fal_request()
     };
@@ -136,7 +136,7 @@ mod tests {
   #[ignore] // manually run — fires a real fal API request and incurs cost
   async fn test_text_to_image_gpt_image_1_fal() {
     let client = get_fal_client();
-    let request = GenerateImageRequest {
+    let request = GenerateImageRequestBuilder {
       aspect_ratio: Some(CommonAspectRatio::WideSixteenByNine),
       image_batch_count: Some(1),
       prompt: Some("a horse walking through a cyberpunk city at night".to_string()),
@@ -158,7 +158,7 @@ mod tests {
     let urls = vec![
       TREX_SKELETON_IMAGE_URL.to_string(),
     ];
-    let request = GenerateImageRequest {
+    let request = GenerateImageRequestBuilder {
       image_inputs: Some(ImageListRef::Urls(urls.clone())),
       aspect_ratio: Some(CommonAspectRatio::Square),
       image_batch_count: Some(1),

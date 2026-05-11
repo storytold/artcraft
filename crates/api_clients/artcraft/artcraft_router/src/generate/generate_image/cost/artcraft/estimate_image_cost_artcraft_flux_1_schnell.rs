@@ -20,11 +20,11 @@ mod tests {
   use crate::api::common_image_model::CommonImageModel;
   use crate::api::provider::Provider;
   use crate::client::request_mismatch_mitigation_strategy::RequestMismatchMitigationStrategy;
-  use crate::generate::generate_image::generate_image_request::GenerateImageRequest;
+  use crate::generate::generate_image::generate_image_request_builder::GenerateImageRequestBuilder;
 
   #[test]
   fn test_estimate_cost_is_none() {
-    let request = GenerateImageRequest {
+    let request = GenerateImageRequestBuilder {
       model: CommonImageModel::Flux1Schnell,
       provider: Provider::Artcraft,
       prompt: None,

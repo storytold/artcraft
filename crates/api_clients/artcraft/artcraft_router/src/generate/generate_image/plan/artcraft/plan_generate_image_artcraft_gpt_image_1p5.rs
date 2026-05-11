@@ -4,7 +4,7 @@ use crate::api::image_list_ref::ImageListRef;
 use crate::client::request_mismatch_mitigation_strategy::RequestMismatchMitigationStrategy;
 use crate::errors::artcraft_router_error::ArtcraftRouterError;
 use crate::errors::client_error::ClientError;
-use crate::generate::generate_image::generate_image_request::GenerateImageRequest;
+use crate::generate::generate_image::generate_image_request_builder::GenerateImageRequestBuilder;
 use crate::generate::generate_image::image_generation_plan::ImageGenerationPlan;
 use artcraft_api_defs::generate::image::multi_function::gpt_image_1p5_multi_function_image_gen::{
   GptImage1p5MultiFunctionImageGenNumImages, GptImage1p5MultiFunctionImageGenQuality,
@@ -25,7 +25,7 @@ pub struct PlanArtcraftGptImage1p5 {
 }
 
 pub fn plan_generate_image_artcraft_gpt_image_1p5(
-  request: &GenerateImageRequest,
+  request: &GenerateImageRequestBuilder,
 ) -> Result<ImageGenerationPlan, ArtcraftRouterError> {
   let strategy = request.request_mismatch_mitigation_strategy;
 
@@ -148,7 +148,7 @@ mod tests {
 
   #[test]
   fn image_size_none_is_none() {
-    let request = GenerateImageRequest { aspect_ratio: None, ..base_gpt_image_1p5_image_request() };
+    let request = GenerateImageRequestBuilder { aspect_ratio: None, ..base_gpt_image_1p5_image_request() };
     let ImageGenerationPlan::ArtcraftGptImage1p5(plan) = request.build().unwrap() else { panic!("expected ArtcraftGptImage1p5") };
     assert!(plan.image_size.is_none());
   }
@@ -156,7 +156,7 @@ mod tests {
   #[test]
   fn image_size_auto_variants_yield_none() {
     for auto_ar in [CommonAspectRatio::Auto, CommonAspectRatio::Auto2k, CommonAspectRatio::Auto4k] {
-      let request = GenerateImageRequest { aspect_ratio: Some(auto_ar), ..base_gpt_image_1p5_image_request() };
+      let request = GenerateImageRequestBuilder { aspect_ratio: Some(auto_ar), ..base_gpt_image_1p5_image_request() };
       let ImageGenerationPlan::ArtcraftGptImage1p5(plan) = request.build().unwrap() else { panic!("expected ArtcraftGptImage1p5") };
       assert!(plan.image_size.is_none(), "expected None for {:?}", auto_ar);
     }
@@ -165,7 +165,7 @@ mod tests {
   #[test]
   fn image_size_square_variants() {
     for ar in [CommonAspectRatio::Square, CommonAspectRatio::SquareHd] {
-      let request = GenerateImageRequest { aspect_ratio: Some(ar), ..base_gpt_image_1p5_image_request() };
+      let request = GenerateImageRequestBuilder { aspect_ratio: Some(ar), ..base_gpt_image_1p5_image_request() };
       let ImageGenerationPlan::ArtcraftGptImage1p5(plan) = request.build().unwrap() else { panic!("expected ArtcraftGptImage1p5") };
       assert!(matches!(plan.image_size, Some(GS::Square)), "expected Square for {:?}", ar);
     }
@@ -182,7 +182,7 @@ mod tests {
       CommonAspectRatio::Wide,
     ];
     for ar in wide_ars {
-      let request = GenerateImageRequest { aspect_ratio: Some(ar), ..base_gpt_image_1p5_image_request() };
+      let request = GenerateImageRequestBuilder { aspect_ratio: Some(ar), ..base_gpt_image_1p5_image_request() };
       let ImageGenerationPlan::ArtcraftGptImage1p5(plan) = request.build().unwrap() else { panic!("expected ArtcraftGptImage1p5") };
       assert!(matches!(plan.image_size, Some(GS::Wide)), "expected Wide for {:?}", ar);
     }
@@ -199,7 +199,7 @@ mod tests {
       CommonAspectRatio::Tall,
     ];
     for ar in tall_ars {
-      let request = GenerateImageRequest { aspect_ratio: Some(ar), ..base_gpt_image_1p5_image_request() };
+      let request = GenerateImageRequestBuilder { aspect_ratio: Some(ar), ..base_gpt_image_1p5_image_request() };
       let ImageGenerationPlan::ArtcraftGptImage1p5(plan) = request.build().unwrap() else { panic!("expected ArtcraftGptImage1p5") };
       assert!(matches!(plan.image_size, Some(GS::Tall)), "expected Tall for {:?}", ar);
     }
@@ -223,7 +223,7 @@ mod tests {
       RequestMismatchMitigationStrategy::PayMoreUpgrade,
       RequestMismatchMitigationStrategy::PayLessDowngrade,
     ] {
-      let request = GenerateImageRequest {
+      let request = GenerateImageRequestBuilder {
         image_batch_count: Some(0),
         request_mismatch_mitigation_strategy: strategy,
         ..base_gpt_image_1p5_image_request()
@@ -245,7 +245,7 @@ mod tests {
       (4, GN::Four),
     ];
     for (count, expected) in cases {
-      let request = GenerateImageRequest { image_batch_count: Some(count), ..base_gpt_image_1p5_image_request() };
+      let request = GenerateImageRequestBuilder { image_batch_count: Some(count), ..base_gpt_image_1p5_image_request() };
       let ImageGenerationPlan::ArtcraftGptImage1p5(plan) = request.build().unwrap() else { panic!("expected ArtcraftGptImage1p5") };
       assert!(
         std::mem::discriminant(&plan.num_images) == std::mem::discriminant(&expected),
@@ -256,7 +256,7 @@ mod tests {
 
   #[test]
   fn num_images_out_of_range_error_out() {
-    let request = GenerateImageRequest {
+    let request = GenerateImageRequestBuilder {
       image_batch_count: Some(5),
       request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::ErrorOut,
       ..base_gpt_image_1p5_image_request()
@@ -274,7 +274,7 @@ mod tests {
       RequestMismatchMitigationStrategy::PayMoreUpgrade,
       RequestMismatchMitigationStrategy::PayLessDowngrade,
     ] {
-      let request = GenerateImageRequest {
+      let request = GenerateImageRequestBuilder {
         image_batch_count: Some(5),
         request_mismatch_mitigation_strategy: strategy,
         ..base_gpt_image_1p5_image_request()
@@ -292,7 +292,7 @@ mod tests {
   #[test]
   fn url_image_inputs_are_accepted_for_cost_path() {
     let urls = vec!["https://example.com/image.jpg".to_string()];
-    let request = GenerateImageRequest {
+    let request = GenerateImageRequestBuilder {
       image_inputs: Some(ImageListRef::Urls(urls.clone())),
       ..base_gpt_image_1p5_image_request()
     };
@@ -304,7 +304,7 @@ mod tests {
 
   #[test]
   fn no_image_inputs_is_text_to_image_mode() {
-    let request = GenerateImageRequest { image_inputs: None, ..base_gpt_image_1p5_image_request() };
+    let request = GenerateImageRequestBuilder { image_inputs: None, ..base_gpt_image_1p5_image_request() };
     let ImageGenerationPlan::ArtcraftGptImage1p5(plan) = request.build().unwrap() else { panic!("expected ArtcraftGptImage1p5") };
     assert!(plan.image_inputs.is_none());
   }
@@ -312,7 +312,7 @@ mod tests {
   #[test]
   fn media_token_image_inputs_is_edit_mode() {
     let tokens = vec![];
-    let request = GenerateImageRequest {
+    let request = GenerateImageRequestBuilder {
       image_inputs: Some(ImageListRef::MediaFileTokens(tokens.clone())),
       ..base_gpt_image_1p5_image_request()
     };

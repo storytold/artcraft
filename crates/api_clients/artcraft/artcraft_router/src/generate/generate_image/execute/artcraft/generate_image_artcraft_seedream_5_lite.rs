@@ -37,7 +37,7 @@ pub async fn execute_artcraft_seedream_5_lite(
 #[cfg(test)]
 mod tests {
   use crate::api::common_aspect_ratio::CommonAspectRatio;
-  use crate::generate::generate_image::generate_image_request::GenerateImageRequest;
+  use crate::generate::generate_image::generate_image_request_builder::GenerateImageRequestBuilder;
   use crate::generate::generate_image::image_generation_plan::ImageGenerationPlan;
   use crate::test_helpers::{base_seedream_5_lite_image_request, get_artcraft_client};
 
@@ -45,7 +45,7 @@ mod tests {
   #[ignore] // manually run — fires a real API request and incurs cost
   async fn test_text_to_image_seedream_5_lite() {
     let client = get_artcraft_client();
-    let request = GenerateImageRequest {
+    let request = GenerateImageRequestBuilder {
       aspect_ratio: Some(CommonAspectRatio::WideSixteenByNine),
       quality: None,
       image_batch_count: Some(1),

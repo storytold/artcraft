@@ -7,15 +7,15 @@ use sqlx::MySql;
 
 use artcraft_api_defs::omni_gen::cost_and_generate_requests::omni_gen_image_cost_and_generate_request::OmniGenImageCostAndGenerateRequest;
 use artcraft_router::api::image_list_ref::ImageListRef;
-use artcraft_router::generate::generate_image::generate_image_request::GenerateImageRequest;
+use artcraft_router::generate::generate_image::generate_image_request_builder::GenerateImageRequestBuilder;
 use tokens::tokens::media_files::MediaFileToken;
 
 use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
 use crate::util::lookup::lookup_image_urls_as_map::lookup_image_urls_as_map;
 use server_environment::ServerEnvironment;
 
-/// Resolved media URLs that can be referenced by a GenerateImageRequest.
-/// The owned Vecs here outlive the request so the GenerateImageRequest can borrow them.
+/// Resolved media URLs that can be referenced by a GenerateImageRequestBuilder.
+/// The owned Vecs here outlive the request so the GenerateImageRequestBuilder can borrow them.
 pub struct ResolvedImageMedia {
   pub url_map: HashMap<MediaFileToken, String>,
   pub image_input_urls: Vec<String>,
@@ -61,9 +61,9 @@ pub async fn resolve_media_tokens(
   })
 }
 
-/// Apply resolved media URLs to a GenerateImageRequest, replacing MediaFileToken refs with URL refs.
+/// Apply resolved media URLs to a GenerateImageRequestBuilder, replacing MediaFileToken refs with URL refs.
 pub fn apply_resolved_media(
-  request: &mut GenerateImageRequest,
+  request: &mut GenerateImageRequestBuilder,
   resolved: &ResolvedImageMedia,
 ) {
   if !resolved.image_input_urls.is_empty() {

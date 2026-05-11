@@ -76,7 +76,7 @@ mod tests {
   use crate::api::image_list_ref::ImageListRef;
   use crate::api::provider::Provider;
   use crate::client::request_mismatch_mitigation_strategy::RequestMismatchMitigationStrategy;
-  use crate::generate::generate_image::generate_image_request::GenerateImageRequest;
+  use crate::generate::generate_image::generate_image_request_builder::GenerateImageRequestBuilder;
   use crate::generate::generate_image::image_generation_plan::ImageGenerationPlan;
   use crate::test_helpers::get_fal_client;
 
@@ -87,7 +87,7 @@ mod tests {
 
     #[test]
     fn text_to_image_plan() {
-      let request = GenerateImageRequest {
+      let request = GenerateImageRequestBuilder {
         aspect_ratio: Some(CommonAspectRatio::Square),
         image_batch_count: Some(1),
         ..base_request()
@@ -105,7 +105,7 @@ mod tests {
         JUNO_AT_LAKE_IMAGE_URL.to_string(),
         GHOST_IMAGE_URL.to_string(),
       ];
-      let request = GenerateImageRequest {
+      let request = GenerateImageRequestBuilder {
         prompt: Some("dog running from a scary ghost".to_string()),
         image_inputs: Some(ImageListRef::Urls(urls.clone())),
         ..base_request()
@@ -127,7 +127,7 @@ mod tests {
     #[ignore] // manually run — fires a real fal API request and incurs cost
     async fn text_to_image() {
       let client = get_fal_client();
-      let request = GenerateImageRequest {
+      let request = GenerateImageRequestBuilder {
         aspect_ratio: Some(CommonAspectRatio::WideSixteenByNine),
         image_batch_count: Some(1),
         prompt: Some("a horse walking through a cyberpunk city at night".to_string()),
@@ -147,7 +147,7 @@ mod tests {
     #[ignore] // manually run — fires a real fal API request and incurs cost
     async fn edit_image() {
       let client = get_fal_client();
-      let request = GenerateImageRequest {
+      let request = GenerateImageRequestBuilder {
         prompt: Some("dog running from a scary ghost".to_string()),
         image_inputs: Some(ImageListRef::Urls(vec![
           JUNO_AT_LAKE_IMAGE_URL.to_string(),
@@ -170,8 +170,8 @@ mod tests {
 
   // ── Helpers ──
 
-  fn base_request() -> GenerateImageRequest {
-    GenerateImageRequest {
+  fn base_request() -> GenerateImageRequestBuilder {
+    GenerateImageRequestBuilder {
       model: CommonImageModel::GptImage2,
       provider: Provider::Fal,
       prompt: Some("a cat in space".to_string()),

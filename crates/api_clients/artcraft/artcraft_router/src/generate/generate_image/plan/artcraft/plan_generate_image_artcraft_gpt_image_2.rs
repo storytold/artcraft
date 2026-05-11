@@ -4,7 +4,7 @@ use crate::api::image_list_ref::ImageListRef;
 use crate::client::request_mismatch_mitigation_strategy::RequestMismatchMitigationStrategy;
 use crate::errors::artcraft_router_error::ArtcraftRouterError;
 use crate::errors::client_error::ClientError;
-use crate::generate::generate_image::generate_image_request::GenerateImageRequest;
+use crate::generate::generate_image::generate_image_request_builder::GenerateImageRequestBuilder;
 use crate::generate::generate_image::image_generation_plan::ImageGenerationPlan;
 use enums::common::generation::common_aspect_ratio::CommonAspectRatio as CommonAspectRatioEnum;
 use enums::common::generation::common_quality::CommonQuality as CommonQualityEnum;
@@ -49,7 +49,7 @@ pub struct PlanArtcraftGptImage2 {
 }
 
 pub fn plan_generate_image_artcraft_gpt_image_2(
-  request: &GenerateImageRequest,
+  request: &GenerateImageRequestBuilder,
 ) -> Result<ImageGenerationPlan, ArtcraftRouterError> {
   let strategy = request.request_mismatch_mitigation_strategy;
 
@@ -199,7 +199,7 @@ mod tests {
 
     #[test]
     fn no_image_inputs_yields_none() {
-      let plan = build_plan(&GenerateImageRequest { image_inputs: None, ..base_request() });
+      let plan = build_plan(&GenerateImageRequestBuilder { image_inputs: None, ..base_request() });
       assert!(plan.image_inputs.is_none());
     }
 
@@ -209,7 +209,7 @@ mod tests {
         MediaFileToken::new_from_str("mf_test_a"),
         MediaFileToken::new_from_str("mf_test_b"),
       ];
-      let plan = build_plan(&GenerateImageRequest {
+      let plan = build_plan(&GenerateImageRequestBuilder {
         image_inputs: Some(ImageListRef::MediaFileTokens(tokens.clone())),
         ..base_request()
       });
@@ -220,7 +220,7 @@ mod tests {
     #[test]
     fn url_inputs_are_accepted_for_cost_path() {
       let urls = vec!["https://example.com/a.jpg".to_string()];
-      let plan = build_plan(&GenerateImageRequest {
+      let plan = build_plan(&GenerateImageRequestBuilder {
         image_inputs: Some(ImageListRef::Urls(urls)),
         ..base_request()
       });
@@ -241,19 +241,19 @@ mod tests {
 
     #[test]
     fn low() {
-      let plan = build_plan(&GenerateImageRequest { quality: Some(CommonQuality::Low), ..base_request() });
+      let plan = build_plan(&GenerateImageRequestBuilder { quality: Some(CommonQuality::Low), ..base_request() });
       assert!(matches!(plan.quality, ArtcraftGptImage2Quality::Low));
     }
 
     #[test]
     fn medium() {
-      let plan = build_plan(&GenerateImageRequest { quality: Some(CommonQuality::Medium), ..base_request() });
+      let plan = build_plan(&GenerateImageRequestBuilder { quality: Some(CommonQuality::Medium), ..base_request() });
       assert!(matches!(plan.quality, ArtcraftGptImage2Quality::Medium));
     }
 
     #[test]
     fn high() {
-      let plan = build_plan(&GenerateImageRequest { quality: Some(CommonQuality::High), ..base_request() });
+      let plan = build_plan(&GenerateImageRequestBuilder { quality: Some(CommonQuality::High), ..base_request() });
       assert!(matches!(plan.quality, ArtcraftGptImage2Quality::High));
     }
   }
@@ -265,34 +265,34 @@ mod tests {
 
     #[test]
     fn none_yields_auto() {
-      let plan = build_plan(&GenerateImageRequest { aspect_ratio: None, ..base_request() });
+      let plan = build_plan(&GenerateImageRequestBuilder { aspect_ratio: None, ..base_request() });
       assert!(matches!(plan.image_size, Some(ArtcraftGptImage2ImageSize::Auto)));
     }
 
     #[test]
     fn auto_variants_yield_auto() {
       for ar in [CommonAspectRatio::Auto, CommonAspectRatio::Auto2k, CommonAspectRatio::Auto4k] {
-        let plan = build_plan(&GenerateImageRequest { aspect_ratio: Some(ar), ..base_request() });
+        let plan = build_plan(&GenerateImageRequestBuilder { aspect_ratio: Some(ar), ..base_request() });
         assert!(matches!(plan.image_size, Some(ArtcraftGptImage2ImageSize::Auto)), "expected Auto for {:?}", ar);
       }
     }
 
     #[test]
     fn square() {
-      let plan = build_plan(&GenerateImageRequest { aspect_ratio: Some(CommonAspectRatio::Square), ..base_request() });
+      let plan = build_plan(&GenerateImageRequestBuilder { aspect_ratio: Some(CommonAspectRatio::Square), ..base_request() });
       assert!(matches!(plan.image_size, Some(ArtcraftGptImage2ImageSize::Square)));
     }
 
     #[test]
     fn square_hd() {
-      let plan = build_plan(&GenerateImageRequest { aspect_ratio: Some(CommonAspectRatio::SquareHd), ..base_request() });
+      let plan = build_plan(&GenerateImageRequestBuilder { aspect_ratio: Some(CommonAspectRatio::SquareHd), ..base_request() });
       assert!(matches!(plan.image_size, Some(ArtcraftGptImage2ImageSize::SquareHd)));
     }
 
     #[test]
     fn landscape_4x3_variants() {
       for ar in [CommonAspectRatio::WideFourByThree, CommonAspectRatio::WideFiveByFour] {
-        let plan = build_plan(&GenerateImageRequest { aspect_ratio: Some(ar), ..base_request() });
+        let plan = build_plan(&GenerateImageRequestBuilder { aspect_ratio: Some(ar), ..base_request() });
         assert!(matches!(plan.image_size, Some(ArtcraftGptImage2ImageSize::Landscape4x3)), "expected Landscape4x3 for {:?}", ar);
       }
     }
@@ -305,7 +305,7 @@ mod tests {
         CommonAspectRatio::WideTwentyOneByNine,
         CommonAspectRatio::Wide,
       ] {
-        let plan = build_plan(&GenerateImageRequest { aspect_ratio: Some(ar), ..base_request() });
+        let plan = build_plan(&GenerateImageRequestBuilder { aspect_ratio: Some(ar), ..base_request() });
         assert!(matches!(plan.image_size, Some(ArtcraftGptImage2ImageSize::Landscape16x9)), "expected Landscape16x9 for {:?}", ar);
       }
     }
@@ -313,7 +313,7 @@ mod tests {
     #[test]
     fn portrait_4x3_variants() {
       for ar in [CommonAspectRatio::TallThreeByFour, CommonAspectRatio::TallFourByFive] {
-        let plan = build_plan(&GenerateImageRequest { aspect_ratio: Some(ar), ..base_request() });
+        let plan = build_plan(&GenerateImageRequestBuilder { aspect_ratio: Some(ar), ..base_request() });
         assert!(matches!(plan.image_size, Some(ArtcraftGptImage2ImageSize::Portrait4x3)), "expected Portrait4x3 for {:?}", ar);
       }
     }
@@ -326,7 +326,7 @@ mod tests {
         CommonAspectRatio::TallNineByTwentyOne,
         CommonAspectRatio::Tall,
       ] {
-        let plan = build_plan(&GenerateImageRequest { aspect_ratio: Some(ar), ..base_request() });
+        let plan = build_plan(&GenerateImageRequestBuilder { aspect_ratio: Some(ar), ..base_request() });
         assert!(matches!(plan.image_size, Some(ArtcraftGptImage2ImageSize::Portrait16x9)), "expected Portrait16x9 for {:?}", ar);
       }
     }
@@ -339,14 +339,14 @@ mod tests {
 
     #[test]
     fn default_is_one() {
-      let plan = build_plan(&GenerateImageRequest { image_batch_count: None, ..base_request() });
+      let plan = build_plan(&GenerateImageRequestBuilder { image_batch_count: None, ..base_request() });
       assert!(matches!(plan.num_images, ArtcraftGptImage2NumImages::One));
     }
 
     #[test]
     fn direct_mapping() {
       for (count, expected) in [(1, 1), (2, 2), (3, 3), (4, 4)] {
-        let plan = build_plan(&GenerateImageRequest { image_batch_count: Some(count), ..base_request() });
+        let plan = build_plan(&GenerateImageRequestBuilder { image_batch_count: Some(count), ..base_request() });
         assert_eq!(plan.num_images.as_u64(), expected);
       }
     }
@@ -358,7 +358,7 @@ mod tests {
         RequestMismatchMitigationStrategy::PayMoreUpgrade,
         RequestMismatchMitigationStrategy::PayLessDowngrade,
       ] {
-        let result = plan_generate_image_artcraft_gpt_image_2(&GenerateImageRequest {
+        let result = plan_generate_image_artcraft_gpt_image_2(&GenerateImageRequestBuilder {
           image_batch_count: Some(0),
           request_mismatch_mitigation_strategy: strategy,
           ..base_request()
@@ -369,7 +369,7 @@ mod tests {
 
     #[test]
     fn out_of_range_error_out() {
-      let result = plan_generate_image_artcraft_gpt_image_2(&GenerateImageRequest {
+      let result = plan_generate_image_artcraft_gpt_image_2(&GenerateImageRequestBuilder {
         image_batch_count: Some(5),
         request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::ErrorOut,
         ..base_request()
@@ -383,7 +383,7 @@ mod tests {
         RequestMismatchMitigationStrategy::PayMoreUpgrade,
         RequestMismatchMitigationStrategy::PayLessDowngrade,
       ] {
-        let plan = build_plan(&GenerateImageRequest {
+        let plan = build_plan(&GenerateImageRequestBuilder {
           image_batch_count: Some(9),
           request_mismatch_mitigation_strategy: strategy,
           ..base_request()
@@ -405,8 +405,8 @@ mod tests {
 
   // ── Helpers ──
 
-  fn base_request() -> GenerateImageRequest {
-    GenerateImageRequest {
+  fn base_request() -> GenerateImageRequestBuilder {
+    GenerateImageRequestBuilder {
       model: CommonImageModel::GptImage2,
       provider: Provider::Artcraft,
       prompt: Some("a cat in space".to_string()),
@@ -424,7 +424,7 @@ mod tests {
     }
   }
 
-  fn build_plan(request: &GenerateImageRequest) -> PlanArtcraftGptImage2 {
+  fn build_plan(request: &GenerateImageRequestBuilder) -> PlanArtcraftGptImage2 {
     let ImageGenerationPlan::ArtcraftGptImage2(plan) =
       plan_generate_image_artcraft_gpt_image_2(request).expect("plan should succeed")
     else {

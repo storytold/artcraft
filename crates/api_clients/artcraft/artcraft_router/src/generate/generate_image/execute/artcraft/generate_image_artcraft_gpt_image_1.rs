@@ -64,7 +64,7 @@ pub async fn execute_artcraft_gpt_image_1(
 mod tests {
   use crate::api::common_aspect_ratio::CommonAspectRatio;
   use crate::api::image_list_ref::ImageListRef;
-  use crate::generate::generate_image::generate_image_request::GenerateImageRequest;
+  use crate::generate::generate_image::generate_image_request_builder::GenerateImageRequestBuilder;
   use crate::generate::generate_image::image_generation_plan::ImageGenerationPlan;
   use crate::test_helpers::{base_gpt_image_1_image_request, get_artcraft_client};
   use tokens::tokens::media_files::MediaFileToken;
@@ -73,7 +73,7 @@ mod tests {
   // (no network I/O — we never call generate_image).
   #[test]
   fn build_text_to_image_plan_smoke() {
-    let request = GenerateImageRequest {
+    let request = GenerateImageRequestBuilder {
       aspect_ratio: Some(CommonAspectRatio::Square),
       image_batch_count: Some(1),
       ..base_gpt_image_1_image_request()
@@ -88,7 +88,7 @@ mod tests {
   #[test]
   fn build_edit_image_plan_smoke() {
     let tokens = vec![MediaFileToken::new_from_str("mf_test00000000000000000000000000")];
-    let request = GenerateImageRequest {
+    let request = GenerateImageRequestBuilder {
       image_inputs: Some(ImageListRef::MediaFileTokens(tokens.clone())),
       ..base_gpt_image_1_image_request()
     };
@@ -103,7 +103,7 @@ mod tests {
   #[ignore] // manually run — fires a real API request and incurs cost
   async fn test_text_to_image_gpt_image_1() {
     let client = get_artcraft_client();
-    let request = GenerateImageRequest {
+    let request = GenerateImageRequestBuilder {
       aspect_ratio: Some(CommonAspectRatio::WideSixteenByNine),
       image_batch_count: Some(1),
       prompt: Some("a horse walking through a cyberpunk city at night".to_string()),
@@ -128,7 +128,7 @@ mod tests {
       MediaFileToken::new_from_str("m_r45apt2swza6wp8j2z10237t92kkr8"),
     ];
 
-    let request = GenerateImageRequest {
+    let request = GenerateImageRequestBuilder {
       prompt: Some("Change the background to a desert with cacti".to_string()),
       image_inputs: Some(ImageListRef::MediaFileTokens(image_tokens.clone())),
       aspect_ratio: Some(CommonAspectRatio::Square),

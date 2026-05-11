@@ -38,7 +38,7 @@ mod tests {
   use crate::api::common_aspect_ratio::CommonAspectRatio;
   use crate::api::image_list_ref::ImageListRef;
   use crate::client::request_mismatch_mitigation_strategy::RequestMismatchMitigationStrategy;
-  use crate::generate::generate_image::generate_image_request::GenerateImageRequest;
+  use crate::generate::generate_image::generate_image_request_builder::GenerateImageRequestBuilder;
   use crate::generate::generate_image::image_generation_plan::ImageGenerationPlan;
   use crate::test_helpers::{base_nano_banana_image_request, get_artcraft_client};
   use strum::IntoEnumIterator;
@@ -48,7 +48,7 @@ mod tests {
   #[ignore] // manually run — fires a real API request and incurs cost
   async fn test_text_to_image_nano_banana() {
     let client = get_artcraft_client();
-    let request = GenerateImageRequest {
+    let request = GenerateImageRequestBuilder {
       aspect_ratio: Some(CommonAspectRatio::WideSixteenByNine),
       quality: None,
       image_batch_count: Some(1),
@@ -76,7 +76,7 @@ mod tests {
       MediaFileToken::new_from_str("m_r45apt2swza6wp8j2z10237t92kkr8"),
     ];
 
-    let request = GenerateImageRequest {
+    let request = GenerateImageRequestBuilder {
       prompt: Some("Change the background to a sunny beach".to_string()),
       image_inputs: Some(ImageListRef::MediaFileTokens(image_tokens.clone())),
       aspect_ratio: Some(CommonAspectRatio::Auto),
@@ -103,7 +103,7 @@ mod tests {
 
     for ar in CommonAspectRatio::iter() {
       println!("--- text-to-image aspect ratio: {:?} ---", ar);
-      let request = GenerateImageRequest {
+      let request = GenerateImageRequestBuilder {
         aspect_ratio: Some(ar),
         quality: None,
         image_batch_count: Some(1),
@@ -137,7 +137,7 @@ mod tests {
 
     for ar in CommonAspectRatio::iter() {
       println!("--- image-edit aspect ratio: {:?} ---", ar);
-      let request = GenerateImageRequest {
+      let request = GenerateImageRequestBuilder {
         prompt: Some("Change the background to a sunny beach".to_string()),
         image_inputs: Some(ImageListRef::MediaFileTokens(image_tokens.clone())),
         aspect_ratio: Some(ar),

@@ -7,7 +7,7 @@ use artcraft_router::api::provider::Provider;
 use artcraft_router::client::request_mismatch_mitigation_strategy::RequestMismatchMitigationStrategy;
 use artcraft_router::client::router_artcraft_client::RouterArtcraftClient;
 use artcraft_router::client::router_client::RouterClient;
-use artcraft_router::generate::generate_image::generate_image_request::GenerateImageRequest;
+use artcraft_router::generate::generate_image::generate_image_request_builder::GenerateImageRequestBuilder;
 use enums::common::generation_provider::GenerationProvider;
 use enums::tauri::tasks::task_type::TaskType;
 
@@ -32,7 +32,7 @@ pub async fn handle_qwen_edit_2511_angles(
 
   let image_inputs = build_image_inputs(request, semantic_media_files);
 
-  let router_request = GenerateImageRequest {
+  let router_request = GenerateImageRequestBuilder {
     model: CommonImageModel::QwenEdit2511Angles,
     provider: Provider::Artcraft,
     prompt: request.prompt.clone(),

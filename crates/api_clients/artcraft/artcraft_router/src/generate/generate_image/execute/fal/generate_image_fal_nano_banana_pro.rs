@@ -109,7 +109,7 @@ mod tests {
   use crate::api::common_aspect_ratio::CommonAspectRatio;
   use crate::api::common_resolution::CommonResolution;
   use crate::api::image_list_ref::ImageListRef;
-  use crate::generate::generate_image::generate_image_request::GenerateImageRequest;
+  use crate::generate::generate_image::generate_image_request_builder::GenerateImageRequestBuilder;
   use crate::generate::generate_image::image_generation_plan::ImageGenerationPlan;
   use crate::test_helpers::{base_fal_image_request, get_fal_client};
   use test_data::web::image_urls::{GHOST_IMAGE_URL, TREX_SKELETON_IMAGE_URL};
@@ -118,7 +118,7 @@ mod tests {
   #[ignore] // manually run — fires a real Fal API request
   async fn test_text_to_image_fal_nano_banana_pro() {
     let client = get_fal_client();
-    let request = GenerateImageRequest {
+    let request = GenerateImageRequestBuilder {
       aspect_ratio: Some(CommonAspectRatio::WideSixteenByNine),
       resolution: Some(CommonResolution::TwoK),
       quality: None,
@@ -143,7 +143,7 @@ mod tests {
   #[ignore] // manually run — fires a real Fal API request
   async fn test_text_to_image_fal_nano_banana_pro_batch_four() {
     let client = get_fal_client();
-    let request = GenerateImageRequest {
+    let request = GenerateImageRequestBuilder {
       aspect_ratio: Some(CommonAspectRatio::Square),
       resolution: Some(CommonResolution::OneK),
       quality: None,
@@ -174,7 +174,7 @@ mod tests {
       TREX_SKELETON_IMAGE_URL.to_string(),
     ];
 
-    let request = GenerateImageRequest {
+    let request = GenerateImageRequestBuilder {
       prompt: Some("Add the ghost from the first image hovering above the T-Rex skeleton in the second image, make it look spooky but friendly".to_string()),
       image_inputs: Some(ImageListRef::Urls(image_urls.clone())),
       aspect_ratio: Some(CommonAspectRatio::Auto), // edit mode: preserve source dimensions

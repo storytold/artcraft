@@ -64,14 +64,14 @@ mod tests {
   use crate::api::common_quality::CommonQuality;
   use crate::api::provider::Provider;
   use crate::client::request_mismatch_mitigation_strategy::RequestMismatchMitigationStrategy;
-  use crate::generate::generate_image::generate_image_request::GenerateImageRequest;
+  use crate::generate::generate_image::generate_image_request_builder::GenerateImageRequestBuilder;
 
   fn estimate(
     quality: Option<CommonQuality>,
     aspect_ratio: Option<CommonAspectRatio>,
     batch: u16,
   ) -> u64 {
-    let request = GenerateImageRequest {
+    let request = GenerateImageRequestBuilder {
       model: CommonImageModel::GptImage1p5,
       provider: Provider::Artcraft,
       prompt: None,

@@ -48,13 +48,13 @@ mod tests {
   use crate::api::common_quality::CommonQuality;
   use crate::api::image_list_ref::ImageListRef;
   use crate::client::request_mismatch_mitigation_strategy::RequestMismatchMitigationStrategy;
-  use crate::generate::generate_image::generate_image_request::GenerateImageRequest;
+  use crate::generate::generate_image::generate_image_request_builder::GenerateImageRequestBuilder;
   use crate::generate::generate_image::image_generation_plan::ImageGenerationPlan;
   use crate::test_helpers::{get_artcraft_client, get_artcraft_client_for_env};
   use tokens::tokens::media_files::MediaFileToken;
 
-  fn base_gpt_image_2_request() -> GenerateImageRequest {
-    GenerateImageRequest {
+  fn base_gpt_image_2_request() -> GenerateImageRequestBuilder {
+    GenerateImageRequestBuilder {
       model: crate::api::common_image_model::CommonImageModel::GptImage2,
       provider: crate::api::provider::Provider::Artcraft,
       prompt: Some("a t-rex walking through a cyberpunk city at night".to_string()),
@@ -76,7 +76,7 @@ mod tests {
   #[ignore] // manually run — fires a real API request and incurs cost
   async fn test_text_to_image_gpt_image_2() {
     let client = get_artcraft_client_for_env(ApiHost::Localhost { port: 12345 });
-    let request = GenerateImageRequest {
+    let request = GenerateImageRequestBuilder {
       aspect_ratio: Some(CommonAspectRatio::WideSixteenByNine),
       image_batch_count: Some(1),
       ..base_gpt_image_2_request()
@@ -102,7 +102,7 @@ mod tests {
       MediaFileToken::new_from_str("m_r45apt2swza6wp8j2z10237t92kkr8"),
     ];
 
-    let request = GenerateImageRequest {
+    let request = GenerateImageRequestBuilder {
       prompt: Some("Change the background to a desert with cacti".to_string()),
       image_inputs: Some(ImageListRef::MediaFileTokens(image_tokens)),
       aspect_ratio: Some(CommonAspectRatio::Auto),
@@ -125,7 +125,7 @@ mod tests {
   #[ignore] // manually run — fires a real API request and incurs cost
   async fn test_text_to_image_gpt_image_2_high_quality() {
     let client = get_artcraft_client();
-    let request = GenerateImageRequest {
+    let request = GenerateImageRequestBuilder {
       aspect_ratio: Some(CommonAspectRatio::Square),
       quality: Some(CommonQuality::High),
       image_batch_count: Some(1),

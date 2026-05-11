@@ -4,7 +4,7 @@ use crate::api::image_list_ref::ImageListRef;
 use crate::client::request_mismatch_mitigation_strategy::RequestMismatchMitigationStrategy;
 use crate::errors::artcraft_router_error::ArtcraftRouterError;
 use crate::errors::client_error::ClientError;
-use crate::generate::generate_image::generate_image_request::GenerateImageRequest;
+use crate::generate::generate_image::generate_image_request_builder::GenerateImageRequestBuilder;
 use crate::generate::generate_image::image_generation_plan::ImageGenerationPlan;
 use fal_client::requests::webhook::image::edit::enqueue_bytedance_seedream_v5_lite_edit_image_webhook::{
   EnqueueBytedanceSeedreamV5LiteEditImageNumImages, EnqueueBytedanceSeedreamV5LiteEditImageSize,
@@ -43,7 +43,7 @@ pub struct PlanFalSeedream5Lite {
 }
 
 pub fn plan_generate_image_fal_seedream_5_lite(
-  request: &GenerateImageRequest,
+  request: &GenerateImageRequestBuilder,
 ) -> Result<ImageGenerationPlan, ArtcraftRouterError> {
   let strategy = request.request_mismatch_mitigation_strategy;
   let image_urls = resolve_image_list_ref(request.image_inputs.clone())?;

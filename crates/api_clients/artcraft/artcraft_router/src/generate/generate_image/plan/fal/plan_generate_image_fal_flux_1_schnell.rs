@@ -3,7 +3,7 @@ use crate::api::image_list_ref::ImageListRef;
 use crate::client::request_mismatch_mitigation_strategy::RequestMismatchMitigationStrategy;
 use crate::errors::artcraft_router_error::ArtcraftRouterError;
 use crate::errors::client_error::ClientError;
-use crate::generate::generate_image::generate_image_request::GenerateImageRequest;
+use crate::generate::generate_image::generate_image_request_builder::GenerateImageRequestBuilder;
 use crate::generate::generate_image::image_generation_plan::ImageGenerationPlan;
 use fal_client::requests::webhook::image::edit::enqueue_flux_1_schnell_edit_image_webhook::{
   Flux1SchnellEditImageNumImages, Flux1SchnellEditImageSize,
@@ -32,7 +32,7 @@ pub struct PlanFalFlux1Schnell {
 }
 
 pub fn plan_generate_image_fal_flux_1_schnell(
-  request: &GenerateImageRequest,
+  request: &GenerateImageRequestBuilder,
 ) -> Result<ImageGenerationPlan, ArtcraftRouterError> {
   let strategy = request.request_mismatch_mitigation_strategy;
   let maybe_image_url = resolve_single_image_url(request.image_inputs.clone())?;

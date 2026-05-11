@@ -4,7 +4,7 @@ use crate::api::image_list_ref::ImageListRef;
 use crate::client::request_mismatch_mitigation_strategy::RequestMismatchMitigationStrategy;
 use crate::errors::artcraft_router_error::ArtcraftRouterError;
 use crate::errors::client_error::ClientError;
-use crate::generate::generate_image::generate_image_request::GenerateImageRequest;
+use crate::generate::generate_image::generate_image_request_builder::GenerateImageRequestBuilder;
 use crate::generate::generate_image::image_generation_plan::ImageGenerationPlan;
 use fal_client::requests::webhook::image::edit::enqueue_nano_banana_pro_edit_image_webhook::EnqueueNanoBananaProEditImageAspectRatio;
 use fal_client::requests::webhook::image::text::enqueue_nano_banana_pro_text_to_image_webhook::EnqueueNanoBananaProTextToImageAspectRatio;
@@ -44,7 +44,7 @@ pub struct PlanFalNanaBananaPro {
 }
 
 pub fn plan_generate_image_fal_nano_banana_pro(
-  request: &GenerateImageRequest,
+  request: &GenerateImageRequestBuilder,
 ) -> Result<ImageGenerationPlan, ArtcraftRouterError> {
   let strategy = request.request_mismatch_mitigation_strategy;
   let is_edit_mode = request.image_inputs.is_some();
@@ -244,12 +244,12 @@ mod tests {
   use crate::api::provider::Provider;
   use crate::errors::artcraft_router_error::ArtcraftRouterError;
   use crate::errors::client_error::ClientError;
-  use crate::generate::generate_image::generate_image_request::GenerateImageRequest;
+  use crate::generate::generate_image::generate_image_request_builder::GenerateImageRequestBuilder;
   use fal_client::requests::webhook::image::edit::enqueue_nano_banana_pro_edit_image_webhook::EnqueueNanoBananaProEditImageAspectRatio as EditAr;
   use fal_client::requests::webhook::image::text::enqueue_nano_banana_pro_text_to_image_webhook::EnqueueNanoBananaProTextToImageAspectRatio as T2iAr;
 
-  fn base_fal_request() -> GenerateImageRequest {
-    GenerateImageRequest {
+  fn base_fal_request() -> GenerateImageRequestBuilder {
+    GenerateImageRequestBuilder {
       model: CommonImageModel::NanoBananaPro,
       provider: Provider::Fal,
       prompt: Some("a cat in space".to_string()),
@@ -268,7 +268,7 @@ mod tests {
   }
 
   fn build_plan(
-    request: &GenerateImageRequest,
+    request: &GenerateImageRequestBuilder,
   ) -> PlanFalNanaBananaPro {
     let ImageGenerationPlan::FalNanaBananaPro(plan) = plan_generate_image_fal_nano_banana_pro(request).expect("plan should succeed") else {
       panic!("expected FalNanaBananaPro variant")
@@ -280,7 +280,7 @@ mod tests {
 
   #[test]
   fn no_image_inputs_yields_empty_urls() {
-    let request = GenerateImageRequest { image_inputs: None, ..base_fal_request() };
+    let request = GenerateImageRequestBuilder { image_inputs: None, ..base_fal_request() };
     let plan = build_plan(&request);
     assert!(plan.image_urls.is_empty());
   }
@@ -291,7 +291,7 @@ mod tests {
       "https://example.com/a.jpg".to_string(),
       "https://example.com/b.jpg".to_string(),
     ];
-    let request = GenerateImageRequest {
+    let request = GenerateImageRequestBuilder {
       image_inputs: Some(ImageListRef::Urls(urls.clone())),
       ..base_fal_request()
     };
@@ -302,7 +302,7 @@ mod tests {
   #[test]
   fn media_token_inputs_return_error() {
     let tokens = vec![];
-    let request = GenerateImageRequest {
+    let request = GenerateImageRequestBuilder {
       image_inputs: Some(ImageListRef::MediaFileTokens(tokens.clone())),
       ..base_fal_request()
     };
@@ -317,7 +317,7 @@ mod tests {
 
   #[test]
   fn t2i_aspect_ratio_none_is_none() {
-    let request = GenerateImageRequest { aspect_ratio: None, ..base_fal_request() };
+    let request = GenerateImageRequestBuilder { aspect_ratio: None, ..base_fal_request() };
     let plan = build_plan(&request);
     assert!(plan.t2i_aspect_ratio.is_none());
   }
@@ -325,7 +325,7 @@ mod tests {
   #[test]
   fn t2i_aspect_ratio_auto_falls_back_to_square() {
     for auto_ar in [CommonAspectRatio::Auto, CommonAspectRatio::Auto2k, CommonAspectRatio::Auto4k] {
-      let request = GenerateImageRequest {
+      let request = GenerateImageRequestBuilder {
         aspect_ratio: Some(auto_ar),
         image_inputs: None,
         ..base_fal_request()
@@ -356,7 +356,7 @@ mod tests {
       (CommonAspectRatio::Tall, T2iAr::NineBySixteen),
     ];
     for (common, expected) in cases {
-      let request = GenerateImageRequest { aspect_ratio: Some(common), ..base_fal_request() };
+      let request = GenerateImageRequestBuilder { aspect_ratio: Some(common), ..base_fal_request() };
       let plan = build_plan(&request);
       assert!(
         matches!(plan.t2i_aspect_ratio, Some(ar) if std::mem::discriminant(&ar) == std::mem::discriminant(&expected)),
@@ -367,7 +367,7 @@ mod tests {
 
   #[test]
   fn t2i_aspect_ratio_unsupported_error_out() {
-    let request = GenerateImageRequest {
+    let request = GenerateImageRequestBuilder {
       aspect_ratio: Some(CommonAspectRatio::TallNineByTwentyOne),
       request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::ErrorOut,
       ..base_fal_request()
@@ -385,7 +385,7 @@ mod tests {
       RequestMismatchMitigationStrategy::PayMoreUpgrade,
       RequestMismatchMitigationStrategy::PayLessDowngrade,
     ] {
-      let request = GenerateImageRequest {
+      let request = GenerateImageRequestBuilder {
         aspect_ratio: Some(CommonAspectRatio::TallNineByTwentyOne),
         request_mismatch_mitigation_strategy: strategy,
         ..base_fal_request()
@@ -404,7 +404,7 @@ mod tests {
   fn edit_aspect_ratio_auto_in_edit_mode_yields_auto() {
     let urls = vec!["https://example.com/img.jpg".to_string()];
     for auto_ar in [CommonAspectRatio::Auto, CommonAspectRatio::Auto2k, CommonAspectRatio::Auto4k] {
-      let request = GenerateImageRequest {
+      let request = GenerateImageRequestBuilder {
         aspect_ratio: Some(auto_ar),
         image_inputs: Some(ImageListRef::Urls(urls.clone())),
         ..base_fal_request()
@@ -420,7 +420,7 @@ mod tests {
   #[test]
   fn edit_aspect_ratio_auto_in_text_to_image_falls_back_to_square() {
     for auto_ar in [CommonAspectRatio::Auto, CommonAspectRatio::Auto2k, CommonAspectRatio::Auto4k] {
-      let request = GenerateImageRequest {
+      let request = GenerateImageRequestBuilder {
         aspect_ratio: Some(auto_ar),
         image_inputs: None,
         ..base_fal_request()
@@ -437,7 +437,7 @@ mod tests {
 
   #[test]
   fn resolution_none_is_none() {
-    let request = GenerateImageRequest { resolution: None, ..base_fal_request() };
+    let request = GenerateImageRequestBuilder { resolution: None, ..base_fal_request() };
     let plan = build_plan(&request);
     assert!(plan.resolution.is_none());
   }
@@ -450,7 +450,7 @@ mod tests {
       (CommonResolution::FourK, FalNbpResolution::FourK),
     ];
     for (common, expected) in cases {
-      let request = GenerateImageRequest { resolution: Some(common), ..base_fal_request() };
+      let request = GenerateImageRequestBuilder { resolution: Some(common), ..base_fal_request() };
       let plan = build_plan(&request);
       assert!(
         matches!(plan.resolution, Some(r) if std::mem::discriminant(&r) == std::mem::discriminant(&expected)),
@@ -461,7 +461,7 @@ mod tests {
 
   #[test]
   fn resolution_three_k_falls_back_to_two_k() {
-    let request = GenerateImageRequest {
+    let request = GenerateImageRequestBuilder {
       resolution: Some(CommonResolution::ThreeK),
       ..base_fal_request()
     };
@@ -478,7 +478,7 @@ mod tests {
       RequestMismatchMitigationStrategy::PayMoreUpgrade,
       RequestMismatchMitigationStrategy::PayLessDowngrade,
     ] {
-      let request = GenerateImageRequest {
+      let request = GenerateImageRequestBuilder {
         quality: None,
       image_batch_count: Some(0),
         request_mismatch_mitigation_strategy: strategy,
@@ -501,7 +501,7 @@ mod tests {
       (4, FalNbpNumImages::Four),
     ];
     for (count, expected) in cases {
-      let request = GenerateImageRequest { image_batch_count: Some(count), ..base_fal_request() };
+      let request = GenerateImageRequestBuilder { image_batch_count: Some(count), ..base_fal_request() };
       let plan = build_plan(&request);
       assert!(
         std::mem::discriminant(&plan.num_images) == std::mem::discriminant(&expected),
@@ -512,7 +512,7 @@ mod tests {
 
   #[test]
   fn num_images_out_of_range_error_out() {
-    let request = GenerateImageRequest {
+    let request = GenerateImageRequestBuilder {
       quality: None,
       image_batch_count: Some(5),
       request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::ErrorOut,
@@ -531,7 +531,7 @@ mod tests {
       RequestMismatchMitigationStrategy::PayMoreUpgrade,
       RequestMismatchMitigationStrategy::PayLessDowngrade,
     ] {
-      let request = GenerateImageRequest {
+      let request = GenerateImageRequestBuilder {
         quality: None,
       image_batch_count: Some(5),
         request_mismatch_mitigation_strategy: strategy,

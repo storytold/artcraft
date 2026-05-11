@@ -4,7 +4,7 @@ use crate::api::image_list_ref::ImageListRef;
 use crate::client::request_mismatch_mitigation_strategy::RequestMismatchMitigationStrategy;
 use crate::errors::artcraft_router_error::ArtcraftRouterError;
 use crate::errors::client_error::ClientError;
-use crate::generate::generate_image::generate_image_request::GenerateImageRequest;
+use crate::generate::generate_image::generate_image_request_builder::GenerateImageRequestBuilder;
 use crate::generate::generate_image::image_generation_plan::ImageGenerationPlan;
 use artcraft_api_defs::generate::image::multi_function::nano_banana_pro_multi_function_image_gen::{
   NanoBananaProMultiFunctionImageGenAspectRatio, NanoBananaProMultiFunctionImageGenImageResolution,
@@ -24,7 +24,7 @@ pub struct PlanArtcraftNanaBananaPro {
 }
 
 pub fn plan_generate_image_artcraft_nano_banana_pro(
-  request: &GenerateImageRequest,
+  request: &GenerateImageRequestBuilder,
 ) -> Result<ImageGenerationPlan, ArtcraftRouterError> {
   let strategy = request.request_mismatch_mitigation_strategy;
 
@@ -189,7 +189,7 @@ mod tests {
 
   #[test]
   fn aspect_ratio_none_is_none() {
-    let request = GenerateImageRequest { aspect_ratio: None, ..base_image_request() };
+    let request = GenerateImageRequestBuilder { aspect_ratio: None, ..base_image_request() };
     let ImageGenerationPlan::ArtcraftNanaBananaPro(plan) = request.build().unwrap() else { panic!("expected ArtcraftNanaBananaPro") };
     assert!(plan.aspect_ratio.is_none());
   }
@@ -197,7 +197,7 @@ mod tests {
   #[test]
   fn aspect_ratio_direct_square() {
     for ar in [CommonAspectRatio::Square, CommonAspectRatio::SquareHd] {
-      let request = GenerateImageRequest { aspect_ratio: Some(ar), ..base_image_request() };
+      let request = GenerateImageRequestBuilder { aspect_ratio: Some(ar), ..base_image_request() };
       let ImageGenerationPlan::ArtcraftNanaBananaPro(plan) = request.build().unwrap() else { panic!("expected ArtcraftNanaBananaPro") };
       assert!(matches!(plan.aspect_ratio, Some(NbpAr::OneByOne)), "expected OneByOne for {:?}", ar);
     }
@@ -214,7 +214,7 @@ mod tests {
       (CommonAspectRatio::WideTwentyOneByNine, NbpAr::TwentyOneByNine),
     ];
     for (common, expected) in cases {
-      let request = GenerateImageRequest { aspect_ratio: Some(common), ..base_image_request() };
+      let request = GenerateImageRequestBuilder { aspect_ratio: Some(common), ..base_image_request() };
       let ImageGenerationPlan::ArtcraftNanaBananaPro(plan) = request.build().unwrap() else { panic!("expected ArtcraftNanaBananaPro") };
       assert!(
         matches!(plan.aspect_ratio, Some(ar) if std::mem::discriminant(&ar) == std::mem::discriminant(&expected)),
@@ -233,7 +233,7 @@ mod tests {
       (CommonAspectRatio::Tall, NbpAr::NineBySixteen),
     ];
     for (common, expected) in cases {
-      let request = GenerateImageRequest { aspect_ratio: Some(common), ..base_image_request() };
+      let request = GenerateImageRequestBuilder { aspect_ratio: Some(common), ..base_image_request() };
       let ImageGenerationPlan::ArtcraftNanaBananaPro(plan) = request.build().unwrap() else { panic!("expected ArtcraftNanaBananaPro") };
       assert!(
         matches!(plan.aspect_ratio, Some(ar) if std::mem::discriminant(&ar) == std::mem::discriminant(&expected)),
@@ -247,7 +247,7 @@ mod tests {
     // Auto is only valid for edit mode (image_inputs present)
     for auto_ar in [CommonAspectRatio::Auto, CommonAspectRatio::Auto2k, CommonAspectRatio::Auto4k] {
       let tokens = vec![];
-      let request = GenerateImageRequest {
+      let request = GenerateImageRequestBuilder {
         aspect_ratio: Some(auto_ar),
         image_inputs: Some(ImageListRef::MediaFileTokens(tokens.clone())),
         ..base_image_request()
@@ -263,7 +263,7 @@ mod tests {
   #[test]
   fn aspect_ratio_auto_in_text_to_image_mode_falls_back_to_square() {
     for auto_ar in [CommonAspectRatio::Auto, CommonAspectRatio::Auto2k, CommonAspectRatio::Auto4k] {
-      let request = GenerateImageRequest {
+      let request = GenerateImageRequestBuilder {
         aspect_ratio: Some(auto_ar),
         image_inputs: None,
         ..base_image_request()
@@ -279,7 +279,7 @@ mod tests {
   #[test]
   fn aspect_ratio_unsupported_error_out() {
     // TallNineByTwentyOne has no direct equivalent
-    let request = GenerateImageRequest {
+    let request = GenerateImageRequestBuilder {
       aspect_ratio: Some(CommonAspectRatio::TallNineByTwentyOne),
       request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::ErrorOut,
       ..base_image_request()
@@ -298,7 +298,7 @@ mod tests {
       RequestMismatchMitigationStrategy::PayMoreUpgrade,
       RequestMismatchMitigationStrategy::PayLessDowngrade,
     ] {
-      let request = GenerateImageRequest {
+      let request = GenerateImageRequestBuilder {
         aspect_ratio: Some(CommonAspectRatio::TallNineByTwentyOne),
         request_mismatch_mitigation_strategy: strategy,
         ..base_image_request()
@@ -315,7 +315,7 @@ mod tests {
 
   #[test]
   fn resolution_none_is_none() {
-    let request = GenerateImageRequest { resolution: None, ..base_image_request() };
+    let request = GenerateImageRequestBuilder { resolution: None, ..base_image_request() };
     let ImageGenerationPlan::ArtcraftNanaBananaPro(plan) = request.build().unwrap() else { panic!("expected ArtcraftNanaBananaPro") };
     assert!(plan.resolution.is_none());
   }
@@ -328,7 +328,7 @@ mod tests {
       (CommonResolution::FourK, NbpRes::FourK),
     ];
     for (common, expected) in cases {
-      let request = GenerateImageRequest { resolution: Some(common), ..base_image_request() };
+      let request = GenerateImageRequestBuilder { resolution: Some(common), ..base_image_request() };
       let ImageGenerationPlan::ArtcraftNanaBananaPro(plan) = request.build().unwrap() else { panic!("expected ArtcraftNanaBananaPro") };
       assert!(
         matches!(plan.resolution, Some(r) if std::mem::discriminant(&r) == std::mem::discriminant(&expected)),
@@ -339,7 +339,7 @@ mod tests {
 
   #[test]
   fn resolution_three_k_falls_back_to_two_k() {
-    let request = GenerateImageRequest {
+    let request = GenerateImageRequestBuilder {
       resolution: Some(CommonResolution::ThreeK),
       ..base_image_request()
     };
@@ -356,7 +356,7 @@ mod tests {
       RequestMismatchMitigationStrategy::PayMoreUpgrade,
       RequestMismatchMitigationStrategy::PayLessDowngrade,
     ] {
-      let request = GenerateImageRequest {
+      let request = GenerateImageRequestBuilder {
         quality: None,
         image_batch_count: Some(0),
         request_mismatch_mitigation_strategy: strategy,
@@ -379,7 +379,7 @@ mod tests {
       (4, NbpN::Four),
     ];
     for (count, expected) in cases {
-      let request = GenerateImageRequest { image_batch_count: Some(count), ..base_image_request() };
+      let request = GenerateImageRequestBuilder { image_batch_count: Some(count), ..base_image_request() };
       let ImageGenerationPlan::ArtcraftNanaBananaPro(plan) = request.build().unwrap() else { panic!("expected ArtcraftNanaBananaPro") };
       assert!(
         std::mem::discriminant(&plan.num_images) == std::mem::discriminant(&expected),
@@ -390,7 +390,7 @@ mod tests {
 
   #[test]
   fn num_images_out_of_range_error_out() {
-    let request = GenerateImageRequest {
+    let request = GenerateImageRequestBuilder {
       quality: None,
       image_batch_count: Some(5),
       request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::ErrorOut,
@@ -409,7 +409,7 @@ mod tests {
       RequestMismatchMitigationStrategy::PayMoreUpgrade,
       RequestMismatchMitigationStrategy::PayLessDowngrade,
     ] {
-      let request = GenerateImageRequest {
+      let request = GenerateImageRequestBuilder {
         quality: None,
         image_batch_count: Some(5),
         request_mismatch_mitigation_strategy: strategy,
@@ -431,7 +431,7 @@ mod tests {
     // cost estimation against Artcraft. URLs are accepted (and dropped) since
     // cost only depends on num_images + resolution + is_edit_mode.
     let urls = vec!["https://example.com/image.jpg".to_string()];
-    let request = GenerateImageRequest {
+    let request = GenerateImageRequestBuilder {
       image_inputs: Some(ImageListRef::Urls(urls.clone())),
       ..base_image_request()
     };
@@ -443,7 +443,7 @@ mod tests {
 
   #[test]
   fn no_image_inputs_is_text_to_image_mode() {
-    let request = GenerateImageRequest { image_inputs: None, ..base_image_request() };
+    let request = GenerateImageRequestBuilder { image_inputs: None, ..base_image_request() };
     let ImageGenerationPlan::ArtcraftNanaBananaPro(plan) = request.build().unwrap() else { panic!("expected ArtcraftNanaBananaPro") };
     assert!(plan.image_inputs.is_none());
   }
@@ -451,7 +451,7 @@ mod tests {
   #[test]
   fn media_token_image_inputs_is_edit_mode() {
     let tokens = vec![];
-    let request = GenerateImageRequest {
+    let request = GenerateImageRequestBuilder {
       image_inputs: Some(ImageListRef::MediaFileTokens(tokens.clone())),
       ..base_image_request()
     };

@@ -38,7 +38,7 @@ pub async fn execute_artcraft_nano_banana_2(
 mod tests {
   use crate::api::common_aspect_ratio::CommonAspectRatio;
   use crate::api::common_resolution::CommonResolution;
-  use crate::generate::generate_image::generate_image_request::GenerateImageRequest;
+  use crate::generate::generate_image::generate_image_request_builder::GenerateImageRequestBuilder;
   use crate::generate::generate_image::image_generation_plan::ImageGenerationPlan;
   use crate::test_helpers::{base_nano_banana_2_image_request, get_artcraft_client};
 
@@ -46,7 +46,7 @@ mod tests {
   #[ignore] // manually run — fires a real API request and incurs cost
   async fn test_text_to_image_nano_banana_2() {
     let client = get_artcraft_client();
-    let request = GenerateImageRequest {
+    let request = GenerateImageRequestBuilder {
       aspect_ratio: Some(CommonAspectRatio::WideSixteenByNine),
       resolution: Some(CommonResolution::OneK),
       quality: None,

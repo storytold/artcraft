@@ -3,7 +3,7 @@ use crate::api::image_list_ref::ImageListRef;
 use crate::client::request_mismatch_mitigation_strategy::RequestMismatchMitigationStrategy;
 use crate::errors::artcraft_router_error::ArtcraftRouterError;
 use crate::errors::client_error::ClientError;
-use crate::generate::generate_image::generate_image_request::GenerateImageRequest;
+use crate::generate::generate_image::generate_image_request_builder::GenerateImageRequestBuilder;
 use crate::generate::generate_image::image_generation_plan::ImageGenerationPlan;
 use artcraft_api_defs::generate::image::multi_function::bytedance_seedream_5_lite_multi_function_image_gen::{
   BytedanceSeedream5LiteMultiFunctionImageGenImageSize,
@@ -22,7 +22,7 @@ pub struct PlanArtcraftSeedream5Lite {
 }
 
 pub fn plan_generate_image_artcraft_seedream_5_lite(
-  request: &GenerateImageRequest,
+  request: &GenerateImageRequestBuilder,
 ) -> Result<ImageGenerationPlan, ArtcraftRouterError> {
   let strategy = request.request_mismatch_mitigation_strategy;
 
@@ -157,7 +157,7 @@ mod tests {
 
   #[test]
   fn image_size_none_is_none() {
-    let request = GenerateImageRequest { aspect_ratio: None, ..base_seedream_5_lite_image_request() };
+    let request = GenerateImageRequestBuilder { aspect_ratio: None, ..base_seedream_5_lite_image_request() };
     let ImageGenerationPlan::ArtcraftSeedream5Lite(plan) = request.build().unwrap() else { panic!("expected ArtcraftSeedream5Lite") };
     assert!(plan.image_size.is_none());
   }
@@ -165,7 +165,7 @@ mod tests {
   #[test]
   fn image_size_auto_in_edit_mode_yields_auto2k() {
     let tokens = vec![];
-    let request = GenerateImageRequest {
+    let request = GenerateImageRequestBuilder {
       aspect_ratio: Some(CommonAspectRatio::Auto),
       image_inputs: Some(ImageListRef::MediaFileTokens(tokens.clone())),
       ..base_seedream_5_lite_image_request()
@@ -176,7 +176,7 @@ mod tests {
 
   #[test]
   fn image_size_auto_in_text_to_image_yields_square() {
-    let request = GenerateImageRequest {
+    let request = GenerateImageRequestBuilder {
       aspect_ratio: Some(CommonAspectRatio::Auto),
       image_inputs: None,
       ..base_seedream_5_lite_image_request()
@@ -188,7 +188,7 @@ mod tests {
   #[test]
   fn auto4k_is_mapped_to_auto3k() {
     // 5 Lite only supports up to auto_3K; auto_4K is downgraded
-    let request = GenerateImageRequest {
+    let request = GenerateImageRequestBuilder {
       aspect_ratio: Some(CommonAspectRatio::Auto4k),
       ..base_seedream_5_lite_image_request()
     };
@@ -200,7 +200,7 @@ mod tests {
   fn num_images_direct_mapping() {
     let cases = [(1, N::One), (2, N::Two), (3, N::Three), (4, N::Four)];
     for (count, expected) in cases {
-      let request = GenerateImageRequest { image_batch_count: Some(count), ..base_seedream_5_lite_image_request() };
+      let request = GenerateImageRequestBuilder { image_batch_count: Some(count), ..base_seedream_5_lite_image_request() };
       let ImageGenerationPlan::ArtcraftSeedream5Lite(plan) = request.build().unwrap() else { panic!("expected ArtcraftSeedream5Lite") };
       assert!(
         std::mem::discriminant(&plan.num_images) == std::mem::discriminant(&expected),

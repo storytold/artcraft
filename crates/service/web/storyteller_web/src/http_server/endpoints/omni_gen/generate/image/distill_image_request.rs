@@ -15,7 +15,7 @@ use url::Url;
 use artcraft_api_defs::omni_gen::cost_and_generate_requests::omni_gen_image_cost_and_generate_request::OmniGenImageCostAndGenerateRequest;
 use artcraft_router::api::image_list_ref::ImageListRef;
 use artcraft_router::api::provider::Provider;
-use artcraft_router::generate::generate_image::generate_image_request::GenerateImageRequest;
+use artcraft_router::generate::generate_image::generate_image_request_builder::GenerateImageRequestBuilder;
 use artcraft_router::generate::generate_image::image_generation_cost_estimate::ImageGenerationCostEstimate;
 use artcraft_router::generate::generate_image::image_generation_plan::ImageGenerationPlan;
 use tokens::tokens::media_files::MediaFileToken;
@@ -29,7 +29,7 @@ use super::distill_helper::hydrate_to_router_request::hydrate_to_router_request;
 /// plan, all in one place.
 pub struct DistilledImageRequest {
   /// The fully-built router request.
-  pub request: GenerateImageRequest,
+  pub request: GenerateImageRequestBuilder,
 
   /// Cost estimate as computed by the Artcraft provider — this is what we bill on.
   pub cost: ImageGenerationCostEstimate,
@@ -46,7 +46,7 @@ impl DistilledImageRequest {
 
   /// Borrow the underlying router request. Useful for tests / debugging.
   #[allow(dead_code)]
-  pub(crate) fn request(&self) -> &GenerateImageRequest {
+  pub(crate) fn request(&self) -> &GenerateImageRequestBuilder {
     &self.request
   }
 }
@@ -81,7 +81,7 @@ pub fn distill_image_request(
 
   // 4. Cost estimate. Always use the Artcraft provider for billing regardless
   //    of which provider executes the request.
-  let cost_request = GenerateImageRequest {
+  let cost_request = GenerateImageRequestBuilder {
     provider: Provider::Artcraft,
     ..fal_request.clone()
   };

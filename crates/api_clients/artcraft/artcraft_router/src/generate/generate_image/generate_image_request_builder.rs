@@ -39,7 +39,7 @@ use crate::generate::generate_image::plan::fal::plan_generate_image_fal_nano_ban
 use crate::generate::generate_image::plan::fal::plan_generate_image_fal_nano_banana_pro::plan_generate_image_fal_nano_banana_pro;
 
 #[derive(Clone, Debug)]
-pub struct GenerateImageRequest {
+pub struct GenerateImageRequestBuilder {
   /// Which model to use.
   pub model: CommonImageModel,
 
@@ -88,7 +88,7 @@ pub struct GenerateImageRequest {
   pub idempotency_token: Option<String>,
 }
 
-impl GenerateImageRequest {
+impl GenerateImageRequestBuilder {
   /// Read the image generation request, construct a plan, then yield a means to execute it.
   pub fn build(&self) -> Result<ImageGenerationPlan, ArtcraftRouterError> {
     match self.provider {

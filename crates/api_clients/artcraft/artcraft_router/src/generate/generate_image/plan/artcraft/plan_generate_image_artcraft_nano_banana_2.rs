@@ -4,7 +4,7 @@ use crate::api::image_list_ref::ImageListRef;
 use crate::client::request_mismatch_mitigation_strategy::RequestMismatchMitigationStrategy;
 use crate::errors::artcraft_router_error::ArtcraftRouterError;
 use crate::errors::client_error::ClientError;
-use crate::generate::generate_image::generate_image_request::GenerateImageRequest;
+use crate::generate::generate_image::generate_image_request_builder::GenerateImageRequestBuilder;
 use crate::generate::generate_image::image_generation_plan::ImageGenerationPlan;
 use artcraft_api_defs::generate::image::multi_function::nano_banana_2_multi_function_image_gen::{
   NanaBanana2MultiFunctionImageGenAspectRatio, NanaBanana2MultiFunctionImageGenImageResolution,
@@ -24,7 +24,7 @@ pub struct PlanArtcraftNanaBanana2 {
 }
 
 pub fn plan_generate_image_artcraft_nano_banana_2(
-  request: &GenerateImageRequest,
+  request: &GenerateImageRequestBuilder,
 ) -> Result<ImageGenerationPlan, ArtcraftRouterError> {
   let strategy = request.request_mismatch_mitigation_strategy;
 
@@ -191,7 +191,7 @@ mod tests {
 
   #[test]
   fn aspect_ratio_none_is_none() {
-    let request = GenerateImageRequest { aspect_ratio: None, ..base_nano_banana_2_image_request() };
+    let request = GenerateImageRequestBuilder { aspect_ratio: None, ..base_nano_banana_2_image_request() };
     let ImageGenerationPlan::ArtcraftNanaBanana2(plan) = request.build().unwrap() else { panic!("expected ArtcraftNanaBanana2") };
     assert!(plan.aspect_ratio.is_none());
   }
@@ -199,7 +199,7 @@ mod tests {
   #[test]
   fn aspect_ratio_direct_square() {
     for ar in [CommonAspectRatio::Square, CommonAspectRatio::SquareHd] {
-      let request = GenerateImageRequest { aspect_ratio: Some(ar), ..base_nano_banana_2_image_request() };
+      let request = GenerateImageRequestBuilder { aspect_ratio: Some(ar), ..base_nano_banana_2_image_request() };
       let ImageGenerationPlan::ArtcraftNanaBanana2(plan) = request.build().unwrap() else { panic!("expected ArtcraftNanaBanana2") };
       assert!(matches!(plan.aspect_ratio, Some(Nb2Ar::OneByOne)), "expected OneByOne for {:?}", ar);
     }
@@ -209,7 +209,7 @@ mod tests {
   fn aspect_ratio_auto_in_edit_mode_yields_auto() {
     for auto_ar in [CommonAspectRatio::Auto, CommonAspectRatio::Auto2k, CommonAspectRatio::Auto4k] {
       let tokens = vec![];
-      let request = GenerateImageRequest {
+      let request = GenerateImageRequestBuilder {
         aspect_ratio: Some(auto_ar),
         image_inputs: Some(ImageListRef::MediaFileTokens(tokens.clone())),
         ..base_nano_banana_2_image_request()
@@ -225,7 +225,7 @@ mod tests {
   #[test]
   fn aspect_ratio_auto_in_text_to_image_falls_back_to_square() {
     for auto_ar in [CommonAspectRatio::Auto, CommonAspectRatio::Auto2k, CommonAspectRatio::Auto4k] {
-      let request = GenerateImageRequest {
+      let request = GenerateImageRequestBuilder {
         aspect_ratio: Some(auto_ar),
         image_inputs: None,
         ..base_nano_banana_2_image_request()
@@ -242,7 +242,7 @@ mod tests {
 
   #[test]
   fn resolution_none_is_none() {
-    let request = GenerateImageRequest { resolution: None, ..base_nano_banana_2_image_request() };
+    let request = GenerateImageRequestBuilder { resolution: None, ..base_nano_banana_2_image_request() };
     let ImageGenerationPlan::ArtcraftNanaBanana2(plan) = request.build().unwrap() else { panic!("expected ArtcraftNanaBanana2") };
     assert!(plan.resolution.is_none());
   }
@@ -255,7 +255,7 @@ mod tests {
       (CommonResolution::FourK, Nb2Res::FourK),
     ];
     for (common, expected) in cases {
-      let request = GenerateImageRequest { resolution: Some(common), ..base_nano_banana_2_image_request() };
+      let request = GenerateImageRequestBuilder { resolution: Some(common), ..base_nano_banana_2_image_request() };
       let ImageGenerationPlan::ArtcraftNanaBanana2(plan) = request.build().unwrap() else { panic!("expected ArtcraftNanaBanana2") };
       assert!(
         matches!(plan.resolution, Some(r) if std::mem::discriminant(&r) == std::mem::discriminant(&expected)),
@@ -266,7 +266,7 @@ mod tests {
 
   #[test]
   fn resolution_three_k_falls_back_to_two_k() {
-    let request = GenerateImageRequest {
+    let request = GenerateImageRequestBuilder {
       resolution: Some(CommonResolution::ThreeK),
       ..base_nano_banana_2_image_request()
     };
@@ -285,7 +285,7 @@ mod tests {
       (4, Nb2N::Four),
     ];
     for (count, expected) in cases {
-      let request = GenerateImageRequest { image_batch_count: Some(count), ..base_nano_banana_2_image_request() };
+      let request = GenerateImageRequestBuilder { image_batch_count: Some(count), ..base_nano_banana_2_image_request() };
       let ImageGenerationPlan::ArtcraftNanaBanana2(plan) = request.build().unwrap() else { panic!("expected ArtcraftNanaBanana2") };
       assert!(
         std::mem::discriminant(&plan.num_images) == std::mem::discriminant(&expected),

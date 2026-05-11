@@ -2,7 +2,7 @@ use crate::api::common_aspect_ratio::CommonAspectRatio;
 use crate::client::request_mismatch_mitigation_strategy::RequestMismatchMitigationStrategy;
 use crate::errors::artcraft_router_error::ArtcraftRouterError;
 use crate::errors::client_error::ClientError;
-use crate::generate::generate_image::generate_image_request::GenerateImageRequest;
+use crate::generate::generate_image::generate_image_request_builder::GenerateImageRequestBuilder;
 use crate::generate::generate_image::image_generation_plan::ImageGenerationPlan;
 use fal_client::requests::webhook::image::text::enqueue_flux_pro_11_text_to_image_webhook::{
   FluxPro11AspectRatio, FluxPro11NumImages,
@@ -24,7 +24,7 @@ pub struct PlanFalFluxPro11 {
 }
 
 pub fn plan_generate_image_fal_flux_pro_1p1(
-  request: &GenerateImageRequest,
+  request: &GenerateImageRequestBuilder,
 ) -> Result<ImageGenerationPlan, ArtcraftRouterError> {
   let strategy = request.request_mismatch_mitigation_strategy;
 

@@ -4,7 +4,7 @@ use crate::api::image_list_ref::ImageListRef;
 use crate::client::request_mismatch_mitigation_strategy::RequestMismatchMitigationStrategy;
 use crate::errors::artcraft_router_error::ArtcraftRouterError;
 use crate::errors::client_error::ClientError;
-use crate::generate::generate_image::generate_image_request::GenerateImageRequest;
+use crate::generate::generate_image::generate_image_request_builder::GenerateImageRequestBuilder;
 use crate::generate::generate_image::image_generation_plan::ImageGenerationPlan;
 use fal_client::requests::webhook::image::edit::enqueue_gpt_image_2_edit_image_webhook::{
   EnqueueGptImage2EditImageNumImages, EnqueueGptImage2EditImageQuality,
@@ -53,7 +53,7 @@ pub struct PlanFalGptImage2 {
 }
 
 pub fn plan_generate_image_fal_gpt_image_2(
-  request: &GenerateImageRequest,
+  request: &GenerateImageRequestBuilder,
 ) -> Result<ImageGenerationPlan, ArtcraftRouterError> {
   let strategy = request.request_mismatch_mitigation_strategy;
   let image_urls = resolve_image_list_ref(request.image_inputs.clone())?;
@@ -236,7 +236,7 @@ mod tests {
 
     #[test]
     fn no_image_inputs_yields_empty_urls() {
-      let plan = build_plan(&GenerateImageRequest { image_inputs: None, ..base_request() });
+      let plan = build_plan(&GenerateImageRequestBuilder { image_inputs: None, ..base_request() });
       assert!(plan.image_urls.is_empty());
     }
 
@@ -246,7 +246,7 @@ mod tests {
         "https://example.com/a.jpg".to_string(),
         "https://example.com/b.jpg".to_string(),
       ];
-      let plan = build_plan(&GenerateImageRequest {
+      let plan = build_plan(&GenerateImageRequestBuilder {
         image_inputs: Some(ImageListRef::Urls(urls.clone())),
         ..base_request()
       });
@@ -255,7 +255,7 @@ mod tests {
 
     #[test]
     fn media_token_inputs_return_error() {
-      let result = plan_generate_image_fal_gpt_image_2(&GenerateImageRequest {
+      let result = plan_generate_image_fal_gpt_image_2(&GenerateImageRequestBuilder {
         image_inputs: Some(ImageListRef::MediaFileTokens(vec![])),
         ..base_request()
       });
@@ -276,19 +276,19 @@ mod tests {
 
     #[test]
     fn low() {
-      let plan = build_plan(&GenerateImageRequest { quality: Some(CommonQuality::Low), ..base_request() });
+      let plan = build_plan(&GenerateImageRequestBuilder { quality: Some(CommonQuality::Low), ..base_request() });
       assert!(matches!(plan.quality, FalGptImage2Quality::Low));
     }
 
     #[test]
     fn medium() {
-      let plan = build_plan(&GenerateImageRequest { quality: Some(CommonQuality::Medium), ..base_request() });
+      let plan = build_plan(&GenerateImageRequestBuilder { quality: Some(CommonQuality::Medium), ..base_request() });
       assert!(matches!(plan.quality, FalGptImage2Quality::Medium));
     }
 
     #[test]
     fn high() {
-      let plan = build_plan(&GenerateImageRequest { quality: Some(CommonQuality::High), ..base_request() });
+      let plan = build_plan(&GenerateImageRequestBuilder { quality: Some(CommonQuality::High), ..base_request() });
       assert!(matches!(plan.quality, FalGptImage2Quality::High));
     }
   }
@@ -300,34 +300,34 @@ mod tests {
 
     #[test]
     fn none_yields_auto() {
-      let plan = build_plan(&GenerateImageRequest { aspect_ratio: None, ..base_request() });
+      let plan = build_plan(&GenerateImageRequestBuilder { aspect_ratio: None, ..base_request() });
       assert!(matches!(plan.image_size, Some(FalGptImage2ImageSize::Auto)));
     }
 
     #[test]
     fn auto_variants_yield_auto() {
       for ar in [CommonAspectRatio::Auto, CommonAspectRatio::Auto2k, CommonAspectRatio::Auto4k] {
-        let plan = build_plan(&GenerateImageRequest { aspect_ratio: Some(ar), ..base_request() });
+        let plan = build_plan(&GenerateImageRequestBuilder { aspect_ratio: Some(ar), ..base_request() });
         assert!(matches!(plan.image_size, Some(FalGptImage2ImageSize::Auto)), "expected Auto for {:?}", ar);
       }
     }
 
     #[test]
     fn square() {
-      let plan = build_plan(&GenerateImageRequest { aspect_ratio: Some(CommonAspectRatio::Square), ..base_request() });
+      let plan = build_plan(&GenerateImageRequestBuilder { aspect_ratio: Some(CommonAspectRatio::Square), ..base_request() });
       assert!(matches!(plan.image_size, Some(FalGptImage2ImageSize::Square)));
     }
 
     #[test]
     fn square_hd() {
-      let plan = build_plan(&GenerateImageRequest { aspect_ratio: Some(CommonAspectRatio::SquareHd), ..base_request() });
+      let plan = build_plan(&GenerateImageRequestBuilder { aspect_ratio: Some(CommonAspectRatio::SquareHd), ..base_request() });
       assert!(matches!(plan.image_size, Some(FalGptImage2ImageSize::SquareHd)));
     }
 
     #[test]
     fn landscape_4x3_variants() {
       for ar in [CommonAspectRatio::WideFourByThree, CommonAspectRatio::WideFiveByFour] {
-        let plan = build_plan(&GenerateImageRequest { aspect_ratio: Some(ar), ..base_request() });
+        let plan = build_plan(&GenerateImageRequestBuilder { aspect_ratio: Some(ar), ..base_request() });
         assert!(matches!(plan.image_size, Some(FalGptImage2ImageSize::Landscape4x3)), "expected Landscape4x3 for {:?}", ar);
       }
     }
@@ -340,7 +340,7 @@ mod tests {
         CommonAspectRatio::WideTwentyOneByNine,
         CommonAspectRatio::Wide,
       ] {
-        let plan = build_plan(&GenerateImageRequest { aspect_ratio: Some(ar), ..base_request() });
+        let plan = build_plan(&GenerateImageRequestBuilder { aspect_ratio: Some(ar), ..base_request() });
         assert!(matches!(plan.image_size, Some(FalGptImage2ImageSize::Landscape16x9)), "expected Landscape16x9 for {:?}", ar);
       }
     }
@@ -348,7 +348,7 @@ mod tests {
     #[test]
     fn portrait_4x3_variants() {
       for ar in [CommonAspectRatio::TallThreeByFour, CommonAspectRatio::TallFourByFive] {
-        let plan = build_plan(&GenerateImageRequest { aspect_ratio: Some(ar), ..base_request() });
+        let plan = build_plan(&GenerateImageRequestBuilder { aspect_ratio: Some(ar), ..base_request() });
         assert!(matches!(plan.image_size, Some(FalGptImage2ImageSize::Portrait4x3)), "expected Portrait4x3 for {:?}", ar);
       }
     }
@@ -361,7 +361,7 @@ mod tests {
         CommonAspectRatio::TallNineByTwentyOne,
         CommonAspectRatio::Tall,
       ] {
-        let plan = build_plan(&GenerateImageRequest { aspect_ratio: Some(ar), ..base_request() });
+        let plan = build_plan(&GenerateImageRequestBuilder { aspect_ratio: Some(ar), ..base_request() });
         assert!(matches!(plan.image_size, Some(FalGptImage2ImageSize::Portrait16x9)), "expected Portrait16x9 for {:?}", ar);
       }
     }
@@ -374,14 +374,14 @@ mod tests {
 
     #[test]
     fn default_is_one() {
-      let plan = build_plan(&GenerateImageRequest { image_batch_count: None, ..base_request() });
+      let plan = build_plan(&GenerateImageRequestBuilder { image_batch_count: None, ..base_request() });
       assert!(matches!(plan.num_images, FalGptImage2NumImages::One));
     }
 
     #[test]
     fn direct_mapping() {
       for (count, expected) in [(1, 1), (2, 2), (3, 3), (4, 4)] {
-        let plan = build_plan(&GenerateImageRequest { image_batch_count: Some(count), ..base_request() });
+        let plan = build_plan(&GenerateImageRequestBuilder { image_batch_count: Some(count), ..base_request() });
         assert_eq!(plan.num_images.as_u64(), expected);
       }
     }
@@ -393,7 +393,7 @@ mod tests {
         RequestMismatchMitigationStrategy::PayMoreUpgrade,
         RequestMismatchMitigationStrategy::PayLessDowngrade,
       ] {
-        let result = plan_generate_image_fal_gpt_image_2(&GenerateImageRequest {
+        let result = plan_generate_image_fal_gpt_image_2(&GenerateImageRequestBuilder {
           image_batch_count: Some(0),
           request_mismatch_mitigation_strategy: strategy,
           ..base_request()
@@ -404,7 +404,7 @@ mod tests {
 
     #[test]
     fn out_of_range_error_out() {
-      let result = plan_generate_image_fal_gpt_image_2(&GenerateImageRequest {
+      let result = plan_generate_image_fal_gpt_image_2(&GenerateImageRequestBuilder {
         image_batch_count: Some(5),
         request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::ErrorOut,
         ..base_request()
@@ -418,7 +418,7 @@ mod tests {
         RequestMismatchMitigationStrategy::PayMoreUpgrade,
         RequestMismatchMitigationStrategy::PayLessDowngrade,
       ] {
-        let plan = build_plan(&GenerateImageRequest {
+        let plan = build_plan(&GenerateImageRequestBuilder {
           image_batch_count: Some(9),
           request_mismatch_mitigation_strategy: strategy,
           ..base_request()
@@ -505,8 +505,8 @@ mod tests {
 
   // ── Helpers ──
 
-  fn base_request() -> GenerateImageRequest {
-    GenerateImageRequest {
+  fn base_request() -> GenerateImageRequestBuilder {
+    GenerateImageRequestBuilder {
       model: CommonImageModel::GptImage2,
       provider: Provider::Fal,
       prompt: Some("a cat in space".to_string()),
@@ -524,7 +524,7 @@ mod tests {
     }
   }
 
-  fn build_plan(request: &GenerateImageRequest) -> PlanFalGptImage2 {
+  fn build_plan(request: &GenerateImageRequestBuilder) -> PlanFalGptImage2 {
     let ImageGenerationPlan::FalGptImage2(plan) =
       plan_generate_image_fal_gpt_image_2(request).expect("plan should succeed")
     else {

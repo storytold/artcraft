@@ -39,7 +39,7 @@ pub async fn execute_artcraft_flux_2_lora_angles(
 mod tests {
   use crate::api::common_aspect_ratio::CommonAspectRatio;
   use crate::api::image_list_ref::ImageListRef;
-  use crate::generate::generate_image::generate_image_request::GenerateImageRequest;
+  use crate::generate::generate_image::generate_image_request_builder::GenerateImageRequestBuilder;
   use crate::generate::generate_image::image_generation_plan::ImageGenerationPlan;
   use crate::test_helpers::{base_flux_2_lora_angles_image_request, get_artcraft_client};
   use tokens::tokens::media_files::MediaFileToken;
@@ -49,7 +49,7 @@ mod tests {
   async fn test_angle_edit_flux_2_lora() {
     let client = get_artcraft_client();
     let tokens = vec![MediaFileToken::new_from_str("m_r45apt2swza6wp8j2z10237t92kkr8")];
-    let request = GenerateImageRequest {
+    let request = GenerateImageRequestBuilder {
       aspect_ratio: Some(CommonAspectRatio::SquareHd),
       quality: None,
       image_batch_count: Some(1),

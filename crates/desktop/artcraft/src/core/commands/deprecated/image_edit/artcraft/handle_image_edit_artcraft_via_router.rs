@@ -15,7 +15,7 @@ use artcraft_router::api::provider::Provider;
 use artcraft_router::client::request_mismatch_mitigation_strategy::RequestMismatchMitigationStrategy;
 use artcraft_router::client::router_artcraft_client::RouterArtcraftClient;
 use artcraft_router::client::router_client::RouterClient;
-use artcraft_router::generate::generate_image::generate_image_request::GenerateImageRequest;
+use artcraft_router::generate::generate_image::generate_image_request_builder::GenerateImageRequestBuilder;
 use enums::common::generation_provider::GenerationProvider;
 use enums::tauri::tasks::task_type::TaskType;
 use log::{error, info};
@@ -65,7 +65,7 @@ pub(super) async fn handle_image_edit_artcraft_via_router(
   let aspect_ratio = get_aspect_ratio_edit(request);
   let resolution = get_resolution_edit(request);
 
-  let router_request = GenerateImageRequest {
+  let router_request = GenerateImageRequestBuilder {
     model,
     provider: Provider::Artcraft,
     prompt: Some(request.prompt.clone()),

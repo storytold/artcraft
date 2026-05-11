@@ -3,7 +3,7 @@ use crate::api::image_list_ref::ImageListRef;
 use crate::client::request_mismatch_mitigation_strategy::RequestMismatchMitigationStrategy;
 use crate::errors::artcraft_router_error::ArtcraftRouterError;
 use crate::errors::client_error::ClientError;
-use crate::generate::generate_image::generate_image_request::GenerateImageRequest;
+use crate::generate::generate_image::generate_image_request_builder::GenerateImageRequestBuilder;
 use crate::generate::generate_image::image_generation_plan::ImageGenerationPlan;
 use artcraft_api_defs::generate::image::multi_function::bytedance_seedream_v4p5_multi_function_image_gen::{
   BytedanceSeedreamV4p5MultiFunctionImageGenImageSize,
@@ -22,7 +22,7 @@ pub struct PlanArtcraftSeedream4p5 {
 }
 
 pub fn plan_generate_image_artcraft_seedream_4p5(
-  request: &GenerateImageRequest,
+  request: &GenerateImageRequestBuilder,
 ) -> Result<ImageGenerationPlan, ArtcraftRouterError> {
   let strategy = request.request_mismatch_mitigation_strategy;
 
@@ -159,7 +159,7 @@ mod tests {
 
   #[test]
   fn image_size_none_is_none() {
-    let request = GenerateImageRequest { aspect_ratio: None, ..base_seedream_4p5_image_request() };
+    let request = GenerateImageRequestBuilder { aspect_ratio: None, ..base_seedream_4p5_image_request() };
     let ImageGenerationPlan::ArtcraftSeedream4p5(plan) = request.build().unwrap() else { panic!("expected ArtcraftSeedream4p5") };
     assert!(plan.image_size.is_none());
   }
@@ -167,7 +167,7 @@ mod tests {
   #[test]
   fn image_size_square() {
     for ar in [CommonAspectRatio::Square, CommonAspectRatio::SquareHd] {
-      let request = GenerateImageRequest { aspect_ratio: Some(ar), ..base_seedream_4p5_image_request() };
+      let request = GenerateImageRequestBuilder { aspect_ratio: Some(ar), ..base_seedream_4p5_image_request() };
       let ImageGenerationPlan::ArtcraftSeedream4p5(plan) = request.build().unwrap() else { panic!("expected ArtcraftSeedream4p5") };
       let expected = match ar {
         CommonAspectRatio::Square => S::Square,
@@ -189,7 +189,7 @@ mod tests {
       (CommonAspectRatio::WideFourByThree, S::LandscapeFourThree),
     ];
     for (ar, expected) in cases {
-      let request = GenerateImageRequest { aspect_ratio: Some(ar), ..base_seedream_4p5_image_request() };
+      let request = GenerateImageRequestBuilder { aspect_ratio: Some(ar), ..base_seedream_4p5_image_request() };
       let ImageGenerationPlan::ArtcraftSeedream4p5(plan) = request.build().unwrap() else { panic!("expected ArtcraftSeedream4p5") };
       assert!(
         matches!(plan.image_size, Some(s) if std::mem::discriminant(&s) == std::mem::discriminant(&expected)),
@@ -206,7 +206,7 @@ mod tests {
       (CommonAspectRatio::TallThreeByFour, S::PortraitFourThree),
     ];
     for (ar, expected) in cases {
-      let request = GenerateImageRequest { aspect_ratio: Some(ar), ..base_seedream_4p5_image_request() };
+      let request = GenerateImageRequestBuilder { aspect_ratio: Some(ar), ..base_seedream_4p5_image_request() };
       let ImageGenerationPlan::ArtcraftSeedream4p5(plan) = request.build().unwrap() else { panic!("expected ArtcraftSeedream4p5") };
       assert!(
         matches!(plan.image_size, Some(s) if std::mem::discriminant(&s) == std::mem::discriminant(&expected)),
@@ -219,7 +219,7 @@ mod tests {
   fn image_size_auto_in_edit_mode_yields_auto2k() {
     // V4.5 has no bare Auto; falls back to Auto2k in edit mode
     let tokens = vec![];
-    let request = GenerateImageRequest {
+    let request = GenerateImageRequestBuilder {
       aspect_ratio: Some(CommonAspectRatio::Auto),
       image_inputs: Some(ImageListRef::MediaFileTokens(tokens.clone())),
       ..base_seedream_4p5_image_request()
@@ -230,7 +230,7 @@ mod tests {
 
   #[test]
   fn image_size_auto_in_text_to_image_yields_square() {
-    let request = GenerateImageRequest {
+    let request = GenerateImageRequestBuilder {
       aspect_ratio: Some(CommonAspectRatio::Auto),
       image_inputs: None,
       ..base_seedream_4p5_image_request()
@@ -242,7 +242,7 @@ mod tests {
   #[test]
   fn image_size_auto2k_and_auto4k() {
     for (ar, expected) in [(CommonAspectRatio::Auto2k, S::Auto2k), (CommonAspectRatio::Auto4k, S::Auto4k)] {
-      let request = GenerateImageRequest { aspect_ratio: Some(ar), ..base_seedream_4p5_image_request() };
+      let request = GenerateImageRequestBuilder { aspect_ratio: Some(ar), ..base_seedream_4p5_image_request() };
       let ImageGenerationPlan::ArtcraftSeedream4p5(plan) = request.build().unwrap() else { panic!("expected ArtcraftSeedream4p5") };
       assert!(
         matches!(plan.image_size, Some(s) if std::mem::discriminant(&s) == std::mem::discriminant(&expected)),
@@ -254,7 +254,7 @@ mod tests {
   #[test]
   fn image_size_unsupported_error_out() {
     for ar in [CommonAspectRatio::WideFiveByFour, CommonAspectRatio::TallFourByFive] {
-      let request = GenerateImageRequest {
+      let request = GenerateImageRequestBuilder {
         aspect_ratio: Some(ar),
         request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::ErrorOut,
         ..base_seedream_4p5_image_request()
@@ -269,7 +269,7 @@ mod tests {
   #[test]
   fn image_size_unsupported_nearest_match() {
     for strategy in [RequestMismatchMitigationStrategy::PayMoreUpgrade, RequestMismatchMitigationStrategy::PayLessDowngrade] {
-      let request = GenerateImageRequest {
+      let request = GenerateImageRequestBuilder {
         aspect_ratio: Some(CommonAspectRatio::WideFiveByFour),
         request_mismatch_mitigation_strategy: strategy,
         ..base_seedream_4p5_image_request()
@@ -277,7 +277,7 @@ mod tests {
       let ImageGenerationPlan::ArtcraftSeedream4p5(plan) = request.build().unwrap() else { panic!("expected ArtcraftSeedream4p5") };
       assert!(matches!(plan.image_size, Some(S::LandscapeSixteenNine)), "expected LandscapeSixteenNine with {:?}", strategy);
 
-      let request = GenerateImageRequest {
+      let request = GenerateImageRequestBuilder {
         aspect_ratio: Some(CommonAspectRatio::TallFourByFive),
         request_mismatch_mitigation_strategy: strategy,
         ..base_seedream_4p5_image_request()
@@ -296,7 +296,7 @@ mod tests {
       RequestMismatchMitigationStrategy::PayMoreUpgrade,
       RequestMismatchMitigationStrategy::PayLessDowngrade,
     ] {
-      let request = GenerateImageRequest {
+      let request = GenerateImageRequestBuilder {
         quality: None,
         image_batch_count: Some(0),
         request_mismatch_mitigation_strategy: strategy,
@@ -313,7 +313,7 @@ mod tests {
   fn num_images_direct_mapping() {
     let cases = [(1, N::One), (2, N::Two), (3, N::Three), (4, N::Four)];
     for (count, expected) in cases {
-      let request = GenerateImageRequest { image_batch_count: Some(count), ..base_seedream_4p5_image_request() };
+      let request = GenerateImageRequestBuilder { image_batch_count: Some(count), ..base_seedream_4p5_image_request() };
       let ImageGenerationPlan::ArtcraftSeedream4p5(plan) = request.build().unwrap() else { panic!("expected ArtcraftSeedream4p5") };
       assert!(
         std::mem::discriminant(&plan.num_images) == std::mem::discriminant(&expected),
@@ -324,7 +324,7 @@ mod tests {
 
   #[test]
   fn num_images_out_of_range_error_out() {
-    let request = GenerateImageRequest {
+    let request = GenerateImageRequestBuilder {
       quality: None,
       image_batch_count: Some(5),
       request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::ErrorOut,
@@ -339,7 +339,7 @@ mod tests {
   #[test]
   fn num_images_out_of_range_clamps_to_four() {
     for strategy in [RequestMismatchMitigationStrategy::PayMoreUpgrade, RequestMismatchMitigationStrategy::PayLessDowngrade] {
-      let request = GenerateImageRequest {
+      let request = GenerateImageRequestBuilder {
         quality: None,
         image_batch_count: Some(5),
         request_mismatch_mitigation_strategy: strategy,
@@ -355,7 +355,7 @@ mod tests {
   #[test]
   fn url_image_inputs_are_accepted_for_cost_path() {
     let urls = vec!["https://example.com/image.jpg".to_string()];
-    let request = GenerateImageRequest {
+    let request = GenerateImageRequestBuilder {
       image_inputs: Some(ImageListRef::Urls(urls.clone())),
       ..base_seedream_4p5_image_request()
     };
@@ -367,7 +367,7 @@ mod tests {
 
   #[test]
   fn no_image_inputs_is_text_to_image_mode() {
-    let request = GenerateImageRequest { image_inputs: None, ..base_seedream_4p5_image_request() };
+    let request = GenerateImageRequestBuilder { image_inputs: None, ..base_seedream_4p5_image_request() };
     let ImageGenerationPlan::ArtcraftSeedream4p5(plan) = request.build().unwrap() else { panic!("expected ArtcraftSeedream4p5") };
     assert!(plan.image_inputs.is_none());
   }
@@ -375,7 +375,7 @@ mod tests {
   #[test]
   fn media_token_image_inputs_is_edit_mode() {
     let tokens = vec![];
-    let request = GenerateImageRequest {
+    let request = GenerateImageRequestBuilder {
       image_inputs: Some(ImageListRef::MediaFileTokens(tokens.clone())),
       ..base_seedream_4p5_image_request()
     };

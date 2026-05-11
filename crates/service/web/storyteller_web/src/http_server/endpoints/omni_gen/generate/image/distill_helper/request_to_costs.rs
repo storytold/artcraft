@@ -1,5 +1,5 @@
 use artcraft_router::api::provider::Provider;
-use artcraft_router::generate::generate_image::generate_image_request::GenerateImageRequest;
+use artcraft_router::generate::generate_image::generate_image_request_builder::GenerateImageRequestBuilder;
 use artcraft_router::generate::generate_image::image_generation_cost_estimate::ImageGenerationCostEstimate;
 use log::warn;
 
@@ -9,9 +9,9 @@ use crate::http_server::common_responses::advanced_common_web_error::AdvancedCom
 /// Always uses the Artcraft provider for costing regardless of the execution provider.
 /// (Because we're the ones doing the billing.)
 pub fn request_to_costs(
-  request: &GenerateImageRequest,
+  request: &GenerateImageRequestBuilder,
 ) -> Result<ImageGenerationCostEstimate, AdvancedCommonWebError> {
-  let cost_request = GenerateImageRequest {
+  let cost_request = GenerateImageRequestBuilder {
     provider: Provider::Artcraft,
     ..request.clone()
   };

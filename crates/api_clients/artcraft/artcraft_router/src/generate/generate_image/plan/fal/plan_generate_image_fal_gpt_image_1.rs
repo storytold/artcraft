@@ -4,7 +4,7 @@ use crate::api::image_list_ref::ImageListRef;
 use crate::client::request_mismatch_mitigation_strategy::RequestMismatchMitigationStrategy;
 use crate::errors::artcraft_router_error::ArtcraftRouterError;
 use crate::errors::client_error::ClientError;
-use crate::generate::generate_image::generate_image_request::GenerateImageRequest;
+use crate::generate::generate_image::generate_image_request_builder::GenerateImageRequestBuilder;
 use crate::generate::generate_image::image_generation_plan::ImageGenerationPlan;
 use fal_client::requests::webhook::image::edit::enqueue_gpt_image_1_edit_image_webhook::{
   EnqueueGptImage1EditImageNumImages, EnqueueGptImage1EditImageQuality,
@@ -52,7 +52,7 @@ pub struct PlanFalGptImage1 {
 }
 
 pub fn plan_generate_image_fal_gpt_image_1(
-  request: &GenerateImageRequest,
+  request: &GenerateImageRequestBuilder,
 ) -> Result<ImageGenerationPlan, ArtcraftRouterError> {
   let strategy = request.request_mismatch_mitigation_strategy;
   let image_urls = resolve_image_list_ref(request.image_inputs.clone())?;
@@ -219,8 +219,8 @@ mod tests {
   use crate::api::common_image_model::CommonImageModel;
   use crate::api::provider::Provider;
 
-  fn base_fal_request() -> GenerateImageRequest {
-    GenerateImageRequest {
+  fn base_fal_request() -> GenerateImageRequestBuilder {
+    GenerateImageRequestBuilder {
       model: CommonImageModel::GptImage1,
       provider: Provider::Fal,
       prompt: Some("a cat in space".to_string()),
@@ -238,7 +238,7 @@ mod tests {
     }
   }
 
-  fn build_plan(request: &GenerateImageRequest) -> PlanFalGptImage1 {
+  fn build_plan(request: &GenerateImageRequestBuilder) -> PlanFalGptImage1 {
     let ImageGenerationPlan::FalGptImage1(plan) =
       plan_generate_image_fal_gpt_image_1(request).expect("plan should succeed")
     else {
@@ -251,7 +251,7 @@ mod tests {
 
   #[test]
   fn no_image_inputs_yields_empty_urls() {
-    let request = GenerateImageRequest { image_inputs: None, ..base_fal_request() };
+    let request = GenerateImageRequestBuilder { image_inputs: None, ..base_fal_request() };
     let plan = build_plan(&request);
     assert!(plan.image_urls.is_empty());
   }
@@ -262,7 +262,7 @@ mod tests {
       "https://example.com/a.jpg".to_string(),
       "https://example.com/b.jpg".to_string(),
     ];
-    let request = GenerateImageRequest {
+    let request = GenerateImageRequestBuilder {
       image_inputs: Some(ImageListRef::Urls(urls.clone())),
       ..base_fal_request()
     };
@@ -273,7 +273,7 @@ mod tests {
   #[test]
   fn media_token_inputs_return_error() {
     let tokens = vec![];
-    let request = GenerateImageRequest {
+    let request = GenerateImageRequestBuilder {
       image_inputs: Some(ImageListRef::MediaFileTokens(tokens.clone())),
       ..base_fal_request()
     };
@@ -297,7 +297,7 @@ mod tests {
 
   #[test]
   fn image_size_none_is_none() {
-    let request = GenerateImageRequest { aspect_ratio: None, ..base_fal_request() };
+    let request = GenerateImageRequestBuilder { aspect_ratio: None, ..base_fal_request() };
     let plan = build_plan(&request);
     assert!(plan.image_size.is_none());
   }
@@ -305,7 +305,7 @@ mod tests {
   #[test]
   fn image_size_auto_variants_yield_none() {
     for auto_ar in [CommonAspectRatio::Auto, CommonAspectRatio::Auto2k, CommonAspectRatio::Auto4k] {
-      let request = GenerateImageRequest { aspect_ratio: Some(auto_ar), ..base_fal_request() };
+      let request = GenerateImageRequestBuilder { aspect_ratio: Some(auto_ar), ..base_fal_request() };
       let plan = build_plan(&request);
       assert!(plan.image_size.is_none(), "expected None for {:?}", auto_ar);
     }
@@ -314,7 +314,7 @@ mod tests {
   #[test]
   fn image_size_square_variants() {
     for ar in [CommonAspectRatio::Square, CommonAspectRatio::SquareHd] {
-      let request = GenerateImageRequest { aspect_ratio: Some(ar), ..base_fal_request() };
+      let request = GenerateImageRequestBuilder { aspect_ratio: Some(ar), ..base_fal_request() };
       let plan = build_plan(&request);
       assert!(matches!(plan.image_size, Some(FalGptImage1ImageSize::Square)), "expected Square for {:?}", ar);
     }
@@ -331,7 +331,7 @@ mod tests {
       CommonAspectRatio::Wide,
     ];
     for ar in wide_ars {
-      let request = GenerateImageRequest { aspect_ratio: Some(ar), ..base_fal_request() };
+      let request = GenerateImageRequestBuilder { aspect_ratio: Some(ar), ..base_fal_request() };
       let plan = build_plan(&request);
       assert!(matches!(plan.image_size, Some(FalGptImage1ImageSize::Horizontal)), "expected Horizontal for {:?}", ar);
     }
@@ -348,7 +348,7 @@ mod tests {
       CommonAspectRatio::Tall,
     ];
     for ar in tall_ars {
-      let request = GenerateImageRequest { aspect_ratio: Some(ar), ..base_fal_request() };
+      let request = GenerateImageRequestBuilder { aspect_ratio: Some(ar), ..base_fal_request() };
       let plan = build_plan(&request);
       assert!(matches!(plan.image_size, Some(FalGptImage1ImageSize::Vertical)), "expected Vertical for {:?}", ar);
     }
@@ -363,7 +363,7 @@ mod tests {
       RequestMismatchMitigationStrategy::PayMoreUpgrade,
       RequestMismatchMitigationStrategy::PayLessDowngrade,
     ] {
-      let request = GenerateImageRequest {
+      let request = GenerateImageRequestBuilder {
         image_batch_count: Some(0),
         request_mismatch_mitigation_strategy: strategy,
         ..base_fal_request()
@@ -378,7 +378,7 @@ mod tests {
 
   #[test]
   fn num_images_default_is_one() {
-    let request = GenerateImageRequest { image_batch_count: None, ..base_fal_request() };
+    let request = GenerateImageRequestBuilder { image_batch_count: None, ..base_fal_request() };
     let plan = build_plan(&request);
     assert!(matches!(plan.num_images, FalGptImage1NumImages::One));
   }
@@ -392,7 +392,7 @@ mod tests {
       (4, FalGptImage1NumImages::Four),
     ];
     for (count, expected) in cases {
-      let request = GenerateImageRequest { image_batch_count: Some(count), ..base_fal_request() };
+      let request = GenerateImageRequestBuilder { image_batch_count: Some(count), ..base_fal_request() };
       let plan = build_plan(&request);
       assert!(
         std::mem::discriminant(&plan.num_images) == std::mem::discriminant(&expected),
@@ -403,7 +403,7 @@ mod tests {
 
   #[test]
   fn num_images_out_of_range_error_out() {
-    let request = GenerateImageRequest {
+    let request = GenerateImageRequestBuilder {
       image_batch_count: Some(5),
       request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::ErrorOut,
       ..base_fal_request()
@@ -421,7 +421,7 @@ mod tests {
       RequestMismatchMitigationStrategy::PayMoreUpgrade,
       RequestMismatchMitigationStrategy::PayLessDowngrade,
     ] {
-      let request = GenerateImageRequest {
+      let request = GenerateImageRequestBuilder {
         image_batch_count: Some(9),
         request_mismatch_mitigation_strategy: strategy,
         ..base_fal_request()

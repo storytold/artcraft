@@ -39,7 +39,7 @@ mod tests {
   use crate::api::common_aspect_ratio::CommonAspectRatio;
   use crate::api::common_resolution::CommonResolution;
   use crate::api::image_list_ref::ImageListRef;
-  use crate::generate::generate_image::generate_image_request::GenerateImageRequest;
+  use crate::generate::generate_image::generate_image_request_builder::GenerateImageRequestBuilder;
   use crate::generate::generate_image::image_generation_plan::ImageGenerationPlan;
   use crate::test_helpers::{base_image_request, get_artcraft_client};
   use tokens::tokens::media_files::MediaFileToken;
@@ -48,7 +48,7 @@ mod tests {
   #[ignore] // manually run — fires a real API request and incurs cost
   async fn test_text_to_image_nano_banana_pro() {
     let client = get_artcraft_client();
-    let request = GenerateImageRequest {
+    let request = GenerateImageRequestBuilder {
       aspect_ratio: Some(CommonAspectRatio::WideSixteenByNine),
       resolution: Some(CommonResolution::OneK),
       quality: None,
@@ -72,7 +72,7 @@ mod tests {
   #[ignore] // manually run — fires a real API request and incurs cost
   async fn test_text_to_image_nano_banana_pro_batch_four() {
     let client = get_artcraft_client();
-    let request = GenerateImageRequest {
+    let request = GenerateImageRequestBuilder {
       aspect_ratio: Some(CommonAspectRatio::Square),
       resolution: Some(CommonResolution::OneK),
       quality: None,
@@ -103,7 +103,7 @@ mod tests {
       MediaFileToken::new_from_str("m_2220d5we3masng5hvzg5zz68ywbdqd"),
     ];
 
-    let request = GenerateImageRequest {
+    let request = GenerateImageRequestBuilder {
       prompt: Some("Add the man in the first image into the fantasy scene in the second image. Keep his hoodie and attire, but match the vibe of the fantasy scene.".to_string()),
       image_inputs: Some(ImageListRef::MediaFileTokens(image_tokens.clone())),
       aspect_ratio: Some(CommonAspectRatio::Auto), // edit mode: preserve source dimensions

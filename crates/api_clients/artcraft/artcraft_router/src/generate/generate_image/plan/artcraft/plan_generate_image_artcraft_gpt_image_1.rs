@@ -4,7 +4,7 @@ use crate::api::image_list_ref::ImageListRef;
 use crate::client::request_mismatch_mitigation_strategy::RequestMismatchMitigationStrategy;
 use crate::errors::artcraft_router_error::ArtcraftRouterError;
 use crate::errors::client_error::ClientError;
-use crate::generate::generate_image::generate_image_request::GenerateImageRequest;
+use crate::generate::generate_image::generate_image_request_builder::GenerateImageRequestBuilder;
 use crate::generate::generate_image::image_generation_plan::ImageGenerationPlan;
 use artcraft_api_defs::generate::image::edit::gpt_image_1_edit_image::{
   GptImage1EditImageImageQuality, GptImage1EditImageImageSize, GptImage1EditImageNumImages,
@@ -60,7 +60,7 @@ pub struct PlanArtcraftGptImage1 {
 }
 
 pub fn plan_generate_image_artcraft_gpt_image_1(
-  request: &GenerateImageRequest,
+  request: &GenerateImageRequestBuilder,
 ) -> Result<ImageGenerationPlan, ArtcraftRouterError> {
   let strategy = request.request_mismatch_mitigation_strategy;
 
@@ -256,7 +256,7 @@ mod tests {
 
   #[test]
   fn image_size_none_is_none() {
-    let request = GenerateImageRequest { aspect_ratio: None, ..base_gpt_image_1_image_request() };
+    let request = GenerateImageRequestBuilder { aspect_ratio: None, ..base_gpt_image_1_image_request() };
     let ImageGenerationPlan::ArtcraftGptImage1(plan) = request.build().unwrap() else {
       panic!("expected ArtcraftGptImage1")
     };
@@ -266,7 +266,7 @@ mod tests {
   #[test]
   fn image_size_auto_variants_yield_none() {
     for auto_ar in [CommonAspectRatio::Auto, CommonAspectRatio::Auto2k, CommonAspectRatio::Auto4k] {
-      let request = GenerateImageRequest { aspect_ratio: Some(auto_ar), ..base_gpt_image_1_image_request() };
+      let request = GenerateImageRequestBuilder { aspect_ratio: Some(auto_ar), ..base_gpt_image_1_image_request() };
       let ImageGenerationPlan::ArtcraftGptImage1(plan) = request.build().unwrap() else {
         panic!("expected ArtcraftGptImage1")
       };
@@ -277,7 +277,7 @@ mod tests {
   #[test]
   fn image_size_square_variants() {
     for ar in [CommonAspectRatio::Square, CommonAspectRatio::SquareHd] {
-      let request = GenerateImageRequest { aspect_ratio: Some(ar), ..base_gpt_image_1_image_request() };
+      let request = GenerateImageRequestBuilder { aspect_ratio: Some(ar), ..base_gpt_image_1_image_request() };
       let ImageGenerationPlan::ArtcraftGptImage1(plan) = request.build().unwrap() else {
         panic!("expected ArtcraftGptImage1")
       };
@@ -296,7 +296,7 @@ mod tests {
       CommonAspectRatio::Wide,
     ];
     for ar in wide_ars {
-      let request = GenerateImageRequest { aspect_ratio: Some(ar), ..base_gpt_image_1_image_request() };
+      let request = GenerateImageRequestBuilder { aspect_ratio: Some(ar), ..base_gpt_image_1_image_request() };
       let ImageGenerationPlan::ArtcraftGptImage1(plan) = request.build().unwrap() else {
         panic!("expected ArtcraftGptImage1")
       };
@@ -315,7 +315,7 @@ mod tests {
       CommonAspectRatio::Tall,
     ];
     for ar in tall_ars {
-      let request = GenerateImageRequest { aspect_ratio: Some(ar), ..base_gpt_image_1_image_request() };
+      let request = GenerateImageRequestBuilder { aspect_ratio: Some(ar), ..base_gpt_image_1_image_request() };
       let ImageGenerationPlan::ArtcraftGptImage1(plan) = request.build().unwrap() else {
         panic!("expected ArtcraftGptImage1")
       };
@@ -343,7 +343,7 @@ mod tests {
       RequestMismatchMitigationStrategy::PayMoreUpgrade,
       RequestMismatchMitigationStrategy::PayLessDowngrade,
     ] {
-      let request = GenerateImageRequest {
+      let request = GenerateImageRequestBuilder {
         image_batch_count: Some(0),
         request_mismatch_mitigation_strategy: strategy,
         ..base_gpt_image_1_image_request()
@@ -358,7 +358,7 @@ mod tests {
 
   #[test]
   fn num_images_default_is_one() {
-    let request = GenerateImageRequest { image_batch_count: None, ..base_gpt_image_1_image_request() };
+    let request = GenerateImageRequestBuilder { image_batch_count: None, ..base_gpt_image_1_image_request() };
     let ImageGenerationPlan::ArtcraftGptImage1(plan) = request.build().unwrap() else {
       panic!("expected ArtcraftGptImage1")
     };
@@ -374,7 +374,7 @@ mod tests {
       (4, ArtcraftGptImage1NumImages::Four),
     ];
     for (count, expected) in cases {
-      let request = GenerateImageRequest { image_batch_count: Some(count), ..base_gpt_image_1_image_request() };
+      let request = GenerateImageRequestBuilder { image_batch_count: Some(count), ..base_gpt_image_1_image_request() };
       let ImageGenerationPlan::ArtcraftGptImage1(plan) = request.build().unwrap() else {
         panic!("expected ArtcraftGptImage1")
       };
@@ -387,7 +387,7 @@ mod tests {
 
   #[test]
   fn num_images_out_of_range_error_out() {
-    let request = GenerateImageRequest {
+    let request = GenerateImageRequestBuilder {
       image_batch_count: Some(5),
       request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::ErrorOut,
       ..base_gpt_image_1_image_request()
@@ -405,7 +405,7 @@ mod tests {
       RequestMismatchMitigationStrategy::PayMoreUpgrade,
       RequestMismatchMitigationStrategy::PayLessDowngrade,
     ] {
-      let request = GenerateImageRequest {
+      let request = GenerateImageRequestBuilder {
         image_batch_count: Some(9),
         request_mismatch_mitigation_strategy: strategy,
         ..base_gpt_image_1_image_request()
@@ -424,7 +424,7 @@ mod tests {
 
   #[test]
   fn no_image_inputs_is_text_to_image_mode() {
-    let request = GenerateImageRequest { image_inputs: None, ..base_gpt_image_1_image_request() };
+    let request = GenerateImageRequestBuilder { image_inputs: None, ..base_gpt_image_1_image_request() };
     let ImageGenerationPlan::ArtcraftGptImage1(plan) = request.build().unwrap() else {
       panic!("expected ArtcraftGptImage1")
     };
@@ -434,7 +434,7 @@ mod tests {
   #[test]
   fn media_token_image_inputs_is_edit_mode() {
     let tokens = vec![];
-    let request = GenerateImageRequest {
+    let request = GenerateImageRequestBuilder {
       image_inputs: Some(ImageListRef::MediaFileTokens(tokens.clone())),
       ..base_gpt_image_1_image_request()
     };
@@ -450,7 +450,7 @@ mod tests {
     // cost estimation against Artcraft. URLs are accepted (and dropped) since
     // cost only depends on quality + size + num_images.
     let urls = vec!["https://example.com/image.jpg".to_string()];
-    let request = GenerateImageRequest {
+    let request = GenerateImageRequestBuilder {
       image_inputs: Some(ImageListRef::Urls(urls.clone())),
       ..base_gpt_image_1_image_request()
     };
@@ -474,7 +474,7 @@ mod tests {
   #[test]
   fn idempotency_token_passthrough() {
     let token = "11111111-1111-1111-1111-111111111111";
-    let request = GenerateImageRequest { idempotency_token: Some(token.to_string()), ..base_gpt_image_1_image_request() };
+    let request = GenerateImageRequestBuilder { idempotency_token: Some(token.to_string()), ..base_gpt_image_1_image_request() };
     let ImageGenerationPlan::ArtcraftGptImage1(plan) = request.build().unwrap() else {
       panic!("expected ArtcraftGptImage1")
     };

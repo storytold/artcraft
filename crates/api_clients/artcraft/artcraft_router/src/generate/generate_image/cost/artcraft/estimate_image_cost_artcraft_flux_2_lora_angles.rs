@@ -34,12 +34,12 @@ mod tests {
   use crate::api::image_list_ref::ImageListRef;
   use crate::api::provider::Provider;
   use crate::client::request_mismatch_mitigation_strategy::RequestMismatchMitigationStrategy;
-  use crate::generate::generate_image::generate_image_request::GenerateImageRequest;
+  use crate::generate::generate_image::generate_image_request_builder::GenerateImageRequestBuilder;
   use tokens::tokens::media_files::MediaFileToken;
 
   fn estimate_usd_cents(image_batch_count: u16) -> u64 {
     let tokens = vec![MediaFileToken::new_from_str("test_token")];
-    let request = GenerateImageRequest {
+    let request = GenerateImageRequestBuilder {
       model: CommonImageModel::Flux2LoraAngles,
       provider: Provider::Artcraft,
       prompt: None,

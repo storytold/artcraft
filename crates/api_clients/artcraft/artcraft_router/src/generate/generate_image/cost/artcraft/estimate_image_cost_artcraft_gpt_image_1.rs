@@ -59,11 +59,11 @@ mod tests {
   use crate::api::image_list_ref::ImageListRef;
   use crate::api::provider::Provider;
   use crate::client::request_mismatch_mitigation_strategy::RequestMismatchMitigationStrategy;
-  use crate::generate::generate_image::generate_image_request::GenerateImageRequest;
+  use crate::generate::generate_image::generate_image_request_builder::GenerateImageRequestBuilder;
   use tokens::tokens::media_files::MediaFileToken;
 
-  fn base() -> GenerateImageRequest {
-    GenerateImageRequest {
+  fn base() -> GenerateImageRequestBuilder {
+    GenerateImageRequestBuilder {
       model: CommonImageModel::GptImage1,
       provider: Provider::Artcraft,
       prompt: None,
@@ -86,7 +86,7 @@ mod tests {
     aspect_ratio: Option<CommonAspectRatio>,
     batch: u16,
   ) -> u64 {
-    let request = GenerateImageRequest {
+    let request = GenerateImageRequestBuilder {
       quality,
       aspect_ratio,
       image_batch_count: Some(batch),
@@ -105,7 +105,7 @@ mod tests {
     let tokens: Vec<MediaFileToken> = (0..num_input_images)
       .map(|i| MediaFileToken::new_from_str(&format!("mf_test{:028}", i)))
       .collect();
-    let request = GenerateImageRequest {
+    let request = GenerateImageRequestBuilder {
       quality,
       aspect_ratio,
       image_batch_count: Some(batch),

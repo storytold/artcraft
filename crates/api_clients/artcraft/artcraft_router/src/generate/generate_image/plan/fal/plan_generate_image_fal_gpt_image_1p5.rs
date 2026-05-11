@@ -4,7 +4,7 @@ use crate::api::image_list_ref::ImageListRef;
 use crate::client::request_mismatch_mitigation_strategy::RequestMismatchMitigationStrategy;
 use crate::errors::artcraft_router_error::ArtcraftRouterError;
 use crate::errors::client_error::ClientError;
-use crate::generate::generate_image::generate_image_request::GenerateImageRequest;
+use crate::generate::generate_image::generate_image_request_builder::GenerateImageRequestBuilder;
 use crate::generate::generate_image::image_generation_plan::ImageGenerationPlan;
 use fal_client::requests::webhook::image::edit::enqueue_gpt_image_1p5_edit_image_webhook::{
   EnqueueGptImage1p5EditImageNumImages, EnqueueGptImage1p5EditImageQuality,
@@ -49,7 +49,7 @@ pub struct PlanFalGptImage1p5 {
 }
 
 pub fn plan_generate_image_fal_gpt_image_1p5(
-  request: &GenerateImageRequest,
+  request: &GenerateImageRequestBuilder,
 ) -> Result<ImageGenerationPlan, ArtcraftRouterError> {
   let strategy = request.request_mismatch_mitigation_strategy;
   let image_urls = resolve_image_list_ref(request.image_inputs.clone())?;

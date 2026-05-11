@@ -3,7 +3,7 @@ use crate::api::image_list_ref::ImageListRef;
 use crate::client::request_mismatch_mitigation_strategy::RequestMismatchMitigationStrategy;
 use crate::errors::artcraft_router_error::ArtcraftRouterError;
 use crate::errors::client_error::ClientError;
-use crate::generate::generate_image::generate_image_request::GenerateImageRequest;
+use crate::generate::generate_image::generate_image_request_builder::GenerateImageRequestBuilder;
 use crate::generate::generate_image::image_generation_plan::ImageGenerationPlan;
 use artcraft_api_defs::generate::image::angle::flux_2_lora_edit_image_angle::{
   Flux2LoraEditImageAngleImageSize,
@@ -23,7 +23,7 @@ pub struct PlanArtcraftFlux2LoraAngles {
 }
 
 pub fn plan_generate_image_artcraft_flux_2_lora_angles(
-  request: &GenerateImageRequest,
+  request: &GenerateImageRequestBuilder,
 ) -> Result<ImageGenerationPlan, ArtcraftRouterError> {
   let strategy = request.request_mismatch_mitigation_strategy;
 
@@ -153,7 +153,7 @@ mod tests {
 
   #[test]
   fn requires_image_input() {
-    let request = GenerateImageRequest {
+    let request = GenerateImageRequestBuilder {
       image_inputs: None,
       ..base_flux_2_lora_angles_image_request()
     };
@@ -164,7 +164,7 @@ mod tests {
   #[test]
   fn rejects_urls() {
     let urls = vec!["https://example.com/img.png".to_string()];
-    let request = GenerateImageRequest {
+    let request = GenerateImageRequestBuilder {
       image_inputs: Some(ImageListRef::Urls(urls.clone())),
       ..base_flux_2_lora_angles_image_request()
     };
@@ -175,7 +175,7 @@ mod tests {
   #[test]
   fn accepts_single_media_token() {
     let tokens = vec![make_token()];
-    let request = GenerateImageRequest {
+    let request = GenerateImageRequestBuilder {
       image_inputs: Some(ImageListRef::MediaFileTokens(tokens.clone())),
       ..base_flux_2_lora_angles_image_request()
     };
@@ -186,7 +186,7 @@ mod tests {
   #[test]
   fn rejects_multiple_media_tokens() {
     let tokens = vec![make_token(), make_token()];
-    let request = GenerateImageRequest {
+    let request = GenerateImageRequestBuilder {
       image_inputs: Some(ImageListRef::MediaFileTokens(tokens.clone())),
       ..base_flux_2_lora_angles_image_request()
     };
@@ -197,7 +197,7 @@ mod tests {
   #[test]
   fn image_size_none_is_none() {
     let tokens = vec![make_token()];
-    let request = GenerateImageRequest {
+    let request = GenerateImageRequestBuilder {
       aspect_ratio: None,
       image_inputs: Some(ImageListRef::MediaFileTokens(tokens.clone())),
       ..base_flux_2_lora_angles_image_request()
@@ -209,7 +209,7 @@ mod tests {
   #[test]
   fn image_size_square_maps_directly() {
     let tokens = vec![make_token()];
-    let request = GenerateImageRequest {
+    let request = GenerateImageRequestBuilder {
       aspect_ratio: Some(CommonAspectRatio::Square),
       image_inputs: Some(ImageListRef::MediaFileTokens(tokens.clone())),
       ..base_flux_2_lora_angles_image_request()
@@ -223,7 +223,7 @@ mod tests {
     let tokens = vec![make_token()];
     let cases = [(1, N::One), (2, N::Two), (3, N::Three), (4, N::Four)];
     for (count, expected) in cases {
-      let request = GenerateImageRequest {
+      let request = GenerateImageRequestBuilder {
         quality: None,
         image_batch_count: Some(count),
         image_inputs: Some(ImageListRef::MediaFileTokens(tokens.clone())),
@@ -240,7 +240,7 @@ mod tests {
   #[test]
   fn angle_fields_are_passed_through() {
     let tokens = vec![make_token()];
-    let request = GenerateImageRequest {
+    let request = GenerateImageRequestBuilder {
       horizontal_angle: Some(45.0),
       vertical_angle: Some(-30.0),
       zoom: Some(1.5),

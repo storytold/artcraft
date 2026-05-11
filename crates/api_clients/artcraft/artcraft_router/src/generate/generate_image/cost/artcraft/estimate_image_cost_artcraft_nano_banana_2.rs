@@ -46,10 +46,10 @@ mod tests {
   use crate::api::common_resolution::CommonResolution;
   use crate::api::provider::Provider;
   use crate::client::request_mismatch_mitigation_strategy::RequestMismatchMitigationStrategy;
-  use crate::generate::generate_image::generate_image_request::GenerateImageRequest;
+  use crate::generate::generate_image::generate_image_request_builder::GenerateImageRequestBuilder;
 
   fn estimate_usd_cents(resolution: Option<CommonResolution>, image_batch_count: u16) -> u64 {
-    let request = GenerateImageRequest {
+    let request = GenerateImageRequestBuilder {
       model: CommonImageModel::NanoBanana2,
       provider: Provider::Artcraft,
       prompt: None,
