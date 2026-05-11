@@ -9,6 +9,7 @@ const GENERATION_PROVIDER_TO_CREATOR: Partial<Record<GenerationProvider, ModelCr
   [GenerationProvider.Midjourney]: ModelCreator.Midjourney,
   [GenerationProvider.Sora]: ModelCreator.OpenAi,
   [GenerationProvider.WorldLabs]: ModelCreator.WorldLabs,
+  [GenerationProvider.Fal]: ModelCreator.Fal,
 };
 
 export const getProviderIcon = (
@@ -34,6 +35,8 @@ export const getProviderDisplayName = (provider: GenerationProvider): string => 
   switch (provider) {
     case GenerationProvider.Artcraft:
       return "ArtCraft";
+    case GenerationProvider.Fal:
+      return "FAL";
     case GenerationProvider.Grok:
       return "Grok";
     case GenerationProvider.Midjourney:

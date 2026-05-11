@@ -8,6 +8,5 @@ export enum GenerationProvider {
   Midjourney = "midjourney",
   Sora = "sora",
   WorldLabs = "world_labs",
-  // NB: We should build our own open source Fal
-  //Fal = "fal",
+  Fal = "fal",
 }

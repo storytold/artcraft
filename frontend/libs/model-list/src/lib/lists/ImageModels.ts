@@ -116,6 +116,10 @@ export const IMAGE_MODELS: ImageModel[] = [
     fullName: "Flux 1 Dev",
     category: "image",
     creator: ModelCreator.BlackForestLabs,
+    providers: [
+      GenerationProvider.Artcraft,
+      GenerationProvider.Fal,
+    ],
     selectorName: "Flux 1 Dev",
     selectorDescription: "Fast, but lower quality",
     selectorBadges: ["10 sec."],
@@ -142,6 +146,10 @@ export const IMAGE_MODELS: ImageModel[] = [
     fullName: "Flux 1 Schnell",
     category: "image",
     creator: ModelCreator.BlackForestLabs,
+    providers: [
+      GenerationProvider.Artcraft,
+      GenerationProvider.Fal,
+    ],
     selectorName: "Flux 1 Schnell",
     selectorDescription: "Fastest image gen, but lowest quality",
     selectorBadges: ["10 sec."],
@@ -203,6 +211,10 @@ export const IMAGE_MODELS: ImageModel[] = [
     fullName: "Nano Banana 2",
     category: "image",
     creator: ModelCreator.Google,
+    providers: [
+      GenerationProvider.Artcraft,
+      GenerationProvider.Fal,
+    ],
     selectorName: "Nano Banana 2",
     selectorDescription: "Fast instructive editing",
     selectorBadges: ["25 sec."],
@@ -243,6 +255,10 @@ export const IMAGE_MODELS: ImageModel[] = [
     fullName: "Nano Banana Pro",
     category: "image",
     creator: ModelCreator.Google,
+    providers: [
+      GenerationProvider.Artcraft,
+      GenerationProvider.Fal,
+    ],
     selectorName: "Nano Banana Pro",
     selectorDescription: "Powerful instructive editing",
     selectorBadges: ["30 sec."],
