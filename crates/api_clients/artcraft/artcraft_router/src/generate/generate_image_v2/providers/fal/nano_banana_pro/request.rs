@@ -58,8 +58,7 @@ async fn send_fal_request<T: FalEndpoint>(
   if let Some(webhook_url) = &client.webhook_url {
     let response = request
       .send_webhook_request(&client.api_key, webhook_url)
-      .await
-      .map_err(|e| ArtcraftRouterError::Provider(ProviderError::Fal(e)))?;
+      .await?;
     Ok(FalResponseIds {
       request_id: response.request_id,
       gateway_request_id: response.gateway_request_id,
@@ -67,8 +66,7 @@ async fn send_fal_request<T: FalEndpoint>(
   } else {
     let response = request
       .send_queue_request(&client.api_key)
-      .await
-      .map_err(|e| ArtcraftRouterError::Provider(ProviderError::Fal(e)))?;
+      .await?;
     Ok(FalResponseIds {
       request_id: Some(response.request_id),
       gateway_request_id: None,

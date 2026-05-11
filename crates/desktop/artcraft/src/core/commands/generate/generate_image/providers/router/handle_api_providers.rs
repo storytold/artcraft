@@ -102,7 +102,7 @@ async fn handle_fal(
     },
     Err(err) => {
       warn!("Fal image generation failed: {:?}", err);
-      Err(GenerateError::ArtcraftRouterNotYetSupportedProvider("error message todo"))
+      Err(err.into())
     }
   }
 }

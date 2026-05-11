@@ -76,3 +76,12 @@ impl From<ProviderError> for ArtcraftRouterError {
     }
   }
 }
+
+impl From<FalErrorPlus> for ArtcraftRouterError {
+  fn from(error: FalErrorPlus) -> Self {
+    match &error {
+      FalErrorPlus::FalBillingError(e) => ArtcraftRouterError::ProviderBillingError(ProviderError::Fal(error)),
+      _ => ArtcraftRouterError::Provider(ProviderError::Fal(error)),
+    }
+  }
+}
