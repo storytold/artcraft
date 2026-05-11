@@ -1,0 +1,1 @@
+pub mod kling_3p0_standard_image_to_video;
