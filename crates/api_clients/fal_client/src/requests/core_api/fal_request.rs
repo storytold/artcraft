@@ -153,7 +153,11 @@ impl<Params: Serialize, Response: DeserializeOwned> FalRequest<Params, Response>
       return Err(error.into());
     }
 
-    let payload: QueueResponse = response.error_for_status()?.json().await?;
+    let body = response.text().await?;
+
+    println!("Queue response: {}", body);
+
+    let payload: QueueResponse = serde_json::from_str(&body)?;
 
     Ok(payload)
   }
