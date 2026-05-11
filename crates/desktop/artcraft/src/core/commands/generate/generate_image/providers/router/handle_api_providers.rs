@@ -79,7 +79,7 @@ async fn handle_fal(
 
   let fal_client = RouterFalWebhookOptionalClient::from_str(api_key);
   let client = RouterClient::FalWebhookOptional(fal_client);
-  
+
   info!("Building FAL image generation plan: model={:?}", router_model);
 
   let request = match router_request.build2() {
@@ -95,10 +95,16 @@ async fn handle_fal(
   };
 
   info!("Executing FAL image generation. Request: {:?}", request);
-  
-  let response = request.send_request(&client).await?;
 
-  build_task_enqueue_success(tauri_model, response)
+  match request.send_request(&client).await {
+    Ok(response) => {
+      build_task_enqueue_success(tauri_model, response)
+    },
+    Err(err) => {
+      warn!("Fal image generation failed: {:?}", err);
+      Err(GenerateError::ArtcraftRouterNotYetSupportedProvider("error message todo"))
+    }
+  }
 }
 
 // ── Helpers ──

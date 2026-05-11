@@ -68,7 +68,7 @@ export const PromptBoxImage = ({
 }: PromptBoxImageProps) => {
   useSignals();
 
-  console.debug("Selected model:", selectedModel);
+  console.debug("Selected model and provider:", selectedModel, selectedProvider);
 
   useEffect(() => {
     if (imageMediaId && url) {
@@ -334,6 +334,8 @@ export const PromptBoxImage = ({
         modelType: (selectedModel as any)?.tauriId || String(selectedModel),
         timestamp: Date.now(),
       });
+
+      console.debug("Image Generation Request", request);
 
       const generateResponse = await GenerateImage(request);
       console.debug("PromptBoxImage - generateResponse", generateResponse);
