@@ -110,7 +110,7 @@ const ApiKeyRow = ({
     <div>
       <label className="mb-1 block text-sm">{label}</label>
       <input
-        type={isFocused ? "text" : "password"}
+        type="text"
         value={isFocused ? fullKey : (redacted || "")}
         onChange={handleChange}
         onFocus={handleFocus}
