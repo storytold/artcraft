@@ -181,22 +181,6 @@ export const PromptBox3D = ({
     if (mapped) onAspectRatioSelect(mapped);
   };
 
-  // When the user switches to a model whose `aspectRatios` doesn't
-  // include the currently-picked `commonAspectRatio`, the picker's
-  // selected item disappears (PopoverMenu's toggle mode finds no match
-  // and renders no label). Reset to the new model's default so the
-  // trigger always shows a valid label.
-  useEffect(() => {
-    if (!selectedImageModel?.supportsNewAspectRatio()) return;
-    if (commonAspectRatio === undefined) return;
-    const supported = selectedImageModel.aspectRatios ?? [];
-    if (supported.includes(commonAspectRatio)) return;
-    const def = selectedImageModel.defaultAspectRatio;
-    if (!def) return;
-    handleCommonAspectRatioSelect(def);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedImageModel]);
-
   useEffect(() => {
     if (textareaRef.current && !isExpanded) {
       textareaRef.current.style.height = "auto";
