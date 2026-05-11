@@ -28,10 +28,12 @@ fn billing_error(
   reason: &BillingIssueReason,
 ) {
   let provider = match reason.provider {
+    BillingProvider::Artcraft => GenerationProvider::Artcraft,
     BillingProvider::Fal => GenerationProvider::Fal,
+    BillingProvider::Kinovi => GenerationProvider::Artcraft, // NB: We don't support Kinovi yet.
     BillingProvider::Midjourney => GenerationProvider::Midjourney,
+    BillingProvider::Muapi=> GenerationProvider::Artcraft, // NB: We don't support Muapi yet.
     BillingProvider::Sora => GenerationProvider::Sora,
-    BillingProvider::Storyteller => GenerationProvider::Artcraft,
   };
   warn!("Billing issue with: {:?}", provider);
   ShowProviderBillingModalEvent::send_for_provider(provider, app);

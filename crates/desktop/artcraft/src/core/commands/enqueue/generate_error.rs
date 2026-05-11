@@ -93,10 +93,12 @@ pub struct BillingIssueReason {
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 pub enum BillingProvider {
+  Artcraft,
   Fal,
+  Kinovi,
   Midjourney,
+  Muapi,
   Sora,
-  Storyteller,
 }
 
 #[derive(Debug)]
@@ -230,6 +232,15 @@ impl From<ArtcraftRouterError> for GenerateError {
       ArtcraftRouterError::Client(e) => Self::BadInput(BadInputReason::WrongImageArguments(e.to_string())),
       ArtcraftRouterError::Download(e) => Self::ArtcraftRouterDownloadError(e),
       ArtcraftRouterError::InvalidInput(msg) => Self::BadInput(BadInputReason::WrongImageArguments(msg)),
+      ArtcraftRouterError::ProviderBillingError(err) => {
+        let provider = match err {
+          ProviderError::Fal(_) => BillingProvider::Fal,
+          ProviderError::Muapi(_) => BillingProvider::Muapi,
+          ProviderError::Seedance2Pro(_) => BillingProvider::Kinovi,
+          ProviderError::Storyteller(_) => BillingProvider::Artcraft,
+        };
+        Self::BillingIssue(BillingIssueReason { provider })
+      },
       ArtcraftRouterError::Provider(ProviderError::Storyteller(e)) => Self::ProviderFailure(ProviderFailureReason::StorytellerError(e)),
       ArtcraftRouterError::Provider(ProviderError::Fal(_)) => Self::FalNoLongerSupported,
       ArtcraftRouterError::Provider(ProviderError::Muapi(_)) => Self::ArtcraftRouterNotYetSupportedProvider("muapi"),
