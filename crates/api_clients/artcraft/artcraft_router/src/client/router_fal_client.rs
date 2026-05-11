@@ -9,4 +9,11 @@ impl RouterFalClient {
   pub fn new(api_key: FalApiKey, webhook_url: String) -> Self {
     Self { api_key, webhook_url }
   }
+
+  pub fn new_from_raw_key(api_key: &str, webhook_url: String) -> Self {
+    Self {
+      api_key: FalApiKey::from_str(api_key),
+      webhook_url,
+    }
+  }
 }

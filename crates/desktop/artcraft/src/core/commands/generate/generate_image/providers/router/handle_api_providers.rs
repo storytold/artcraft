@@ -1,0 +1,126 @@
+use artcraft_router::api::image_list_ref::ImageListRef;
+use artcraft_router::api::provider::Provider;
+use artcraft_router::client::request_mismatch_mitigation_strategy::RequestMismatchMitigationStrategy;
+use artcraft_router::client::router_client::RouterClient;
+use artcraft_router::client::router_fal_client::RouterFalClient;
+use artcraft_router::generate::generate_image::generate_image_request::GenerateImageRequest;
+use artcraft_router::generate::generate_image::generate_image_response::GenerateImageResponse;
+use artcraft_client::utils::api_host::ApiHost;
+use enums::common::generation_provider::GenerationProvider;
+use enums::tauri::tasks::task_type::TaskType;
+use log::info;
+use tokens::tokens::media_files::MediaFileToken;
+
+use crate::core::api_adapters::models::image::tauri_image_model_to_generation_model::tauri_image_model_to_generation_model;
+use crate::core::api_adapters::models::image::tauri_image_model_to_router_model::tauri_image_model_to_router_model;
+use crate::core::commands::enqueue::generate_error::GenerateError;
+use crate::core::commands::enqueue::task_enqueue_success::TaskEnqueueSuccess;
+use crate::core::commands::generate::generate_image::providers::router::utils::convert_enums_to_router::{convert_aspect_ratio, convert_quality, convert_resolution};
+use crate::core::commands::generate::generate_image::providers::router::utils::map_media_files_to_urls::map_media_file_tokens_to_cdn_urls;
+use crate::core::commands::generate::generate_image::tauri_generate_image_request::TauriGenerateImageRequest;
+use crate::core::commands::generate::generate_image::tauri_image_model::TauriImageModel;
+
+/// Handle image generation via FAL using the user's own API key.
+pub async fn handle_fal(
+  request: &TauriGenerateImageRequest,
+  api_key: &str,
+  api_host: &ApiHost,
+) -> Result<TaskEnqueueSuccess, GenerateError> {
+  let tauri_model = request.model.ok_or(GenerateError::no_model_specified())?;
+
+  let router_model = tauri_image_model_to_router_model(tauri_model)
+    .ok_or(GenerateError::NotYetImplemented(
+      format!("Model {:?} is not supported via the FAL router path", tauri_model),
+    ))?;
+
+  // Collect all media file tokens that need resolving.
+  let image_inputs = resolve_image_inputs(request, api_host).await?;
+
+  let webhook_url = build_fal_webhook_url(api_host);
+
+  let router_request = GenerateImageRequest {
+    model: router_model,
+    provider: Provider::Fal,
+    prompt: request.prompt.clone(),
+    image_inputs,
+    resolution: request.resolution.map(convert_resolution),
+    aspect_ratio: request.aspect_ratio.map(convert_aspect_ratio),
+    quality: request.quality.map(convert_quality),
+    image_batch_count: request.batch_size.map(|n| n as u16),
+    horizontal_angle: request.adjust_horizontal_angle,
+    vertical_angle: request.adjust_vertical_angle,
+    zoom: request.adjust_zoom,
+    request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::ErrorOut,
+    generation_mode_mismatch_strategy: None,
+    idempotency_token: None,
+  };
+
+  info!("Building FAL image generation plan: model={:?}", router_model);
+  let plan = router_request.build()?;
+
+  let fal_client = RouterFalClient::new_from_raw_key(api_key, webhook_url);
+  let client = RouterClient::Fal(fal_client);
+
+  info!("Executing FAL image generation...");
+  let response = plan.generate_image(&client).await?;
+
+  build_task_enqueue_success(tauri_model, response)
+}
+
+// ── Helpers ──
+
+/// Collect media file tokens from the request and resolve them to CDN URLs.
+///
+/// FAL accepts image URLs directly, so we map our media file tokens to their
+/// CDN URLs rather than downloading the bytes locally.
+async fn resolve_image_inputs(
+  request: &TauriGenerateImageRequest,
+  api_host: &ApiHost,
+) -> Result<Option<ImageListRef>, GenerateError> {
+  let mut tokens: Vec<MediaFileToken> = Vec::new();
+
+  if let Some(canvas_token) = &request.canvas_image_media_token {
+    tokens.push(canvas_token.clone());
+  }
+
+  if let Some(scene_token) = &request.scene_image_media_token {
+    tokens.push(scene_token.clone());
+  }
+
+  if let Some(media_tokens) = &request.image_media_tokens {
+    tokens.extend(media_tokens.clone());
+  }
+
+  if tokens.is_empty() {
+    return Ok(None);
+  }
+
+  let urls = map_media_file_tokens_to_cdn_urls(&tokens, api_host).await?;
+  Ok(Some(ImageListRef::Urls(urls)))
+}
+
+fn build_fal_webhook_url(api_host: &ApiHost) -> String {
+  let base = api_host.to_api_hostname_and_scheme();
+  format!("{}/v1/webhooks/fal", base)
+}
+
+fn build_task_enqueue_success(
+  tauri_model: TauriImageModel,
+  response: GenerateImageResponse,
+) -> Result<TaskEnqueueSuccess, GenerateError> {
+  let fal_payload = response.get_fal_payload()
+    .ok_or(GenerateError::ResponseHadNoJobTokens)?;
+
+  let provider_job_id = fal_payload.request_id
+    .or(fal_payload.gateway_request_id)
+    .ok_or(GenerateError::ResponseHadNoJobTokens)?;
+
+  let generation_model = tauri_image_model_to_generation_model(tauri_model);
+
+  Ok(TaskEnqueueSuccess {
+    task_type: TaskType::ImageGeneration,
+    model: Some(generation_model),
+    provider: GenerationProvider::Fal,
+    provider_job_id: Some(provider_job_id),
+  })
+}

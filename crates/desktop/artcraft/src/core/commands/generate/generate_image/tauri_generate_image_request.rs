@@ -116,6 +116,8 @@ pub enum TauriGenerateImageErrorType {
   ServerError,
   /// Needs to be logged into Artcraft
   NeedsStorytellerCredentials,
+  /// Needs a FAL API key
+  NeedsFalApiKey,
   /// Needs Grok credentials
   NeedsGrokCredentials,
   /// Billing issue
