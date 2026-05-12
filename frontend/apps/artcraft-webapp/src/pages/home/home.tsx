@@ -43,9 +43,8 @@ const APPS: AppCard[] = [
 export function Home() {
   return (
     <div className="min-h-full px-6 sm:px-10 py-10 sm:py-16 max-w-6xl mx-auto w-full">
-      <h1 className="text-center font-display text-4xl sm:text-6xl sm:max-w-lg mx-auto font-semibold tracking-tight">
-        What would you like to <span className="text-primary">create</span>{" "}
-        today?
+      <h1 className="text-center font-display text-4xl sm:text-6xl mx-auto font-semibold tracking-tight">
+        What will you <span className="text-primary">craft</span> today?
       </h1>
 
       <section className="mt-12">

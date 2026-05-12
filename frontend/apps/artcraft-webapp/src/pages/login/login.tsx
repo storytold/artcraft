@@ -10,6 +10,7 @@ import { useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { UsersApi } from "@storyteller/api";
 import Seo from "../../components/seo";
+import { refreshSession } from "../../lib/session";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -36,7 +37,10 @@ const Login = () => {
     setIsLoading(false);
 
     if (response.success) {
-      window.dispatchEvent(new Event("auth-change"));
+      // Wait for the session store to actually reflect the new cookie before
+      // navigating — otherwise RequireAuth on the destination sees loggedIn=false
+      // and bounces straight back to /login?from=…
+      await refreshSession(true);
       navigate(redirectTo);
     } else {
       setError(response.errorMessage || "Invalid credentials");

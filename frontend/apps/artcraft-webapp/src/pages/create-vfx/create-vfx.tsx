@@ -294,7 +294,7 @@ export default function CreateVFX() {
   }
 
   return (
-    <div className="relative min-h-screen w-full bg-[#101014] text-white">
+    <div className="relative h-full w-full bg-[#101014] text-white">
       <Seo
         title="Background Change - ArtCraft"
         description="Swap the backdrop of a video using a reference image."
@@ -302,7 +302,7 @@ export default function CreateVFX() {
 
       {history.length === 0 ? (
         <div
-          className="relative z-10 flex min-h-screen items-center justify-center px-3 sm:px-6"
+          className="relative z-10 flex h-full items-center justify-center px-3 sm:px-6"
           style={{ paddingBottom: Math.max(promptBoxHeight + 32, 240) }}
         >
           <EmptyState
