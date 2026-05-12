@@ -97,6 +97,7 @@ pub fn run() {
   let app_preferences = load_app_preferences_or_default(&app_data_root);
   
   let provider_credential_cache = crate::core::providers::credentials::provider_credential_loading_cache::ProviderCredentialLoadingCache::new(app_data_root.clone());
+  let provider_credential_cache_2 = provider_credential_cache.clone();
 
   // NB: tauri-plugin-http stores the credentials on disk, so we can defer to that for now.
   // println!("Attempting to read existing artcraft credentials...");
@@ -179,6 +180,7 @@ pub fn run() {
           grok_prompt_queue_2,
           worldlabs_bearer_bridge_2,
           worldlabs_creds_manager_2,
+          provider_credential_cache_2,
         ).await;
 
         if let Err(err) = result {

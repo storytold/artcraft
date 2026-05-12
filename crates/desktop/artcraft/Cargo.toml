@@ -33,6 +33,7 @@ build_metadata.workspace = true
 cookie_store.workspace = true
 enums.workspace = true
 errors.workspace = true
+fal_client.workspace = true
 filesys.workspace = true
 grok_client.workspace = true
 uuid_utils.workspace = true
