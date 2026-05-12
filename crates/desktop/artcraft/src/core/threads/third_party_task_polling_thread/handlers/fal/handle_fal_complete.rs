@@ -6,7 +6,6 @@ use crate::core::state::data_dir::app_data_root::AppDataRoot;
 use crate::core::state::data_dir::trait_data_subdir::DataSubdir;
 use crate::core::state::task_database::TaskDatabase;
 use crate::services::storyteller::state::storyteller_credential_manager::StorytellerCredentialManager;
-use artcraft_api_defs::prompts::create_prompt::CreatePromptRequest;
 use artcraft_api_defs::utils::media_links_to_thumbnail_template::media_links_to_thumbnail_template;
 use artcraft_client::credentials::storyteller_credential_set::StorytellerCredentialSet;
 use artcraft_client::error::api_error::ApiError;
@@ -21,7 +20,6 @@ use artcraft_client::endpoints::media_files::upload_image_media_file_from_file::
 use artcraft_client::endpoints::media_files::upload_video_media_file_from_file::{
   upload_video_media_file_from_file, UploadVideoFromFileArgs,
 };
-use artcraft_client::endpoints::prompts::create_prompt::create_prompt;
 use enums::common::generation_provider::GenerationProvider;
 use enums::tauri::tasks::task_media_file_class::TaskMediaFileClass;
 use enums::tauri::tasks::task_type::TaskType;
@@ -39,6 +37,7 @@ use std::time::Duration;
 use tauri::AppHandle;
 use tokens::tokens::batch_generations::BatchGenerationToken;
 use tokens::tokens::media_files::MediaFileToken;
+use tokens::tokens::prompts::PromptToken;
 use uuid_utils::uuid::generate_random_uuid;
 
 pub async fn handle_fal_complete(
@@ -90,26 +89,15 @@ async fn handle_fal_complete_inner(
     return Ok(());
   }
 
-  // Create a prompt record
-  let prompt_response = create_prompt(
-    &app_env_configs.storyteller_host,
-    Some(&creds),
-    CreatePromptRequest {
-      uuid_idempotency_token: generate_random_uuid(),
-      positive_prompt: None,
-      negative_prompt: None,
-      model_type: None,
-      generation_provider: Some(GenerationProvider::Fal),
-      maybe_generation_mode: None,
-      maybe_aspect_ratio: None,
-      maybe_resolution: None,
-      maybe_batch_count: None,
-      maybe_generate_audio: None,
-      maybe_duration_seconds: None,
-    },
-  ).await?;
+  // Use the prompt token from the task record (created at generation time).
+  let maybe_prompt_token = task.prompt_token.as_ref()
+    .map(|s| PromptToken::new_from_str(s));
 
-  info!("[FalComplete] Created prompt: {:?}", prompt_response.prompt_token);
+  if maybe_prompt_token.is_some() {
+    info!("[FalComplete] Using prompt token from task: {:?}", maybe_prompt_token);
+  } else {
+    warn!("[FalComplete] Task {} has no prompt token, uploading without prompt association", task.id.as_str());
+  }
 
   let maybe_batch_token = if urls.len() > 1 {
     let token = BatchGenerationToken::generate();
@@ -132,7 +120,7 @@ async fn handle_fal_complete_inner(
       &creds,
       app_env_configs,
       &download_path,
-      &prompt_response.prompt_token,
+      maybe_prompt_token.as_ref(),
       maybe_batch_token.as_ref(),
       media_class,
     ).await?;
@@ -261,14 +249,14 @@ async fn upload_to_backend(
   creds: &StorytellerCredentialSet,
   app_env_configs: &AppEnvConfigs,
   download_path: &PathBuf,
-  prompt_token: &tokens::tokens::prompts::PromptToken,
+  maybe_prompt_token: Option<&PromptToken>,
   maybe_batch_token: Option<&BatchGenerationToken>,
   media_class: TaskMediaFileClass,
 ) -> Result<MediaFileToken, Box<dyn std::error::Error>> {
   let mut retry_delay_secs = INITIAL_RETRY_DELAY_SECS;
 
   for attempt in 0..MAX_UPLOAD_RETRIES {
-    let result = try_upload(creds, app_env_configs, download_path, prompt_token, maybe_batch_token, media_class).await;
+    let result = try_upload(creds, app_env_configs, download_path, maybe_prompt_token, maybe_batch_token, media_class).await;
 
     match result {
       Ok(token) => return Ok(token),
@@ -300,7 +288,7 @@ async fn try_upload(
   creds: &StorytellerCredentialSet,
   app_env_configs: &AppEnvConfigs,
   download_path: &PathBuf,
-  prompt_token: &tokens::tokens::prompts::PromptToken,
+  maybe_prompt_token: Option<&PromptToken>,
   maybe_batch_token: Option<&BatchGenerationToken>,
   media_class: TaskMediaFileClass,
 ) -> Result<MediaFileToken, StorytellerError> {
@@ -310,7 +298,7 @@ async fn try_upload(
         api_host: &app_env_configs.storyteller_host,
         maybe_creds: Some(creds),
         path: download_path,
-        maybe_prompt_token: Some(prompt_token),
+        maybe_prompt_token,
       }).await?;
       result.media_file_token
     }
@@ -328,7 +316,7 @@ async fn try_upload(
         maybe_creds: Some(creds),
         path: download_path,
         is_intermediate_system_file: false,
-        maybe_prompt_token: Some(prompt_token),
+        maybe_prompt_token,
         maybe_batch_token,
       }).await?;
       result.media_file_token

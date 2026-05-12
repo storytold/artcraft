@@ -35,6 +35,7 @@ pub async fn get_task_by_provider_and_provider_job_id(
       frontend_caller,
       queue_status_url,
       queue_response_url,
+      prompt_token,
       frontend_subscriber_id,
       frontend_subscriber_payload
     FROM tasks
@@ -73,6 +74,7 @@ pub async fn get_task_by_provider_and_provider_job_id(
     provider_job_id: record.provider_job_id,
     queue_status_url: record.queue_status_url,
     queue_response_url: record.queue_response_url,
+    prompt_token: record.prompt_token,
     frontend_caller: record.frontend_caller
         .map(|caller| TauriCommandCaller::from_str(&caller))
         .transpose()?,
