@@ -80,6 +80,7 @@ pub async fn handle_generic_bg_removal_artcraft(
     provider_job_id: Some(success_result.inference_job_token.to_string()),
     model: None,
     maybe_queue_status_url: None,
+    maybe_prompt_token: None,
     maybe_queue_response_url: None,
   })
 }

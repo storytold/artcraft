@@ -16,6 +16,7 @@ pub struct TaskEnqueueSuccess {
   pub provider_job_id: Option<String>,
   pub maybe_queue_status_url: Option<String>,
   pub maybe_queue_response_url: Option<String>,
+  pub maybe_prompt_token: Option<String>,
 }
 
 impl TaskEnqueueSuccess{
@@ -124,6 +125,7 @@ impl TaskEnqueueSuccess{
       provider_job_id: self.provider_job_id.as_deref(),
       queue_status_url: self.maybe_queue_status_url.as_deref(),
       queue_response_url: self.maybe_queue_response_url.as_deref(),
+      prompt_token: self.maybe_prompt_token.as_deref(),
       frontend_caller,
       frontend_subscriber_id,
       frontend_subscriber_payload,

@@ -88,6 +88,7 @@ pub(super) async fn handle_text_to_image_artcraft_via_router(
     provider: GenerationProvider::Artcraft,
     provider_job_id: Some(job_id),
     maybe_queue_status_url: None,
+    maybe_prompt_token: None,
     maybe_queue_response_url: None,
   })
 }

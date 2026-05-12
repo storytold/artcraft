@@ -97,6 +97,7 @@ pub async fn handle_grok_video(
     provider_job_id: Some(post_id.to_string()),
     task_type: TaskType::VideoGeneration,
     maybe_queue_status_url: None,
+    maybe_prompt_token: None,
     maybe_queue_response_url: None,
   })
 }

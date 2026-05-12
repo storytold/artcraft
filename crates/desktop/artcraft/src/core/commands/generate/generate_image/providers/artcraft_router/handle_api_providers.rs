@@ -85,7 +85,7 @@ async fn handle_fal(
   };
 
   // Create a prompt record before sending the generation request.
-  let _maybe_prompt_token = create_prompt_record(
+  let maybe_prompt_token = create_prompt_record(
     &router_request,
     api_host,
     storyteller_creds_manager,
@@ -112,7 +112,7 @@ async fn handle_fal(
 
   match request.send_request(&client).await {
     Ok(response) => {
-      build_task_enqueue_success(tauri_model, response)
+      build_task_enqueue_success(tauri_model, response, maybe_prompt_token)
     },
     Err(err) => {
       warn!("Fal image generation failed: {:?}", err);
@@ -181,6 +181,7 @@ async fn create_prompt_record(
 fn build_task_enqueue_success(
   tauri_model: TauriImageModel,
   response: GenerateImageResponse,
+  maybe_prompt_token: Option<PromptToken>,
 ) -> Result<TaskEnqueueSuccess, GenerateError> {
   let fal_payload = response.get_fal_payload()
     .ok_or(GenerateError::ResponseHadNoJobTokens)?;
@@ -198,5 +199,6 @@ fn build_task_enqueue_success(
     provider_job_id: Some(provider_job_id),
     maybe_queue_status_url: fal_payload.maybe_status_url,
     maybe_queue_response_url: fal_payload.maybe_response_url,
+    maybe_prompt_token: maybe_prompt_token.map(|t| t.to_string()),
   })
 }

@@ -69,6 +69,7 @@ pub async fn handle_grok(
     provider_job_id: Some(job_id),
     task_type: TaskType::ImageGeneration,
     maybe_queue_status_url: None,
+    maybe_prompt_token: None,
     maybe_queue_response_url: None,
   })
 }

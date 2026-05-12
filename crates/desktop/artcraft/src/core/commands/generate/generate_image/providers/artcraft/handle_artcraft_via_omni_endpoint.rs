@@ -66,6 +66,7 @@ pub async fn handle_artcraft_via_omni_endpoint(
     provider: GenerationProvider::Artcraft,
     provider_job_id: Some(response.inference_job_token.to_string()),
     maybe_queue_status_url: None,
+    maybe_prompt_token: None,
     maybe_queue_response_url: None,
   })
 }

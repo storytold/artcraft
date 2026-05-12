@@ -75,6 +75,7 @@ pub async fn handle_flux_pro_kontext_edit(
     provider: GenerationProvider::Artcraft,
     provider_job_id: Some(response.inference_job_token.to_string()),
     maybe_queue_status_url: None,
+    maybe_prompt_token: None,
     maybe_queue_response_url: None,
   })
 }

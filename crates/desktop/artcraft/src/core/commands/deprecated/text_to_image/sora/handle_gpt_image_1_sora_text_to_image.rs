@@ -112,6 +112,7 @@ pub async fn handle_gpt_image_1_sora_text_to_image(
     model: Some(GenerationModel::GptImage1),
     provider_job_id: Some(response.task_id.to_string()),
     maybe_queue_status_url: None,
+    maybe_prompt_token: None,
     maybe_queue_response_url: None,
   })
 }

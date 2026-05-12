@@ -71,6 +71,7 @@ pub (super) async fn handle_artcraft_kling_2p5_turbo_pro(
     provider: GenerationProvider::Artcraft,
     provider_job_id: Some(job_token.to_string()),
     maybe_queue_status_url: None,
+    maybe_prompt_token: None,
     maybe_queue_response_url: None,
   })
 }
