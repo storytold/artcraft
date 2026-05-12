@@ -299,6 +299,7 @@ async fn try_upload(
         maybe_creds: Some(creds),
         path: download_path,
         maybe_prompt_token,
+        maybe_generation_provider: Some(GenerationProvider::Fal),
       }).await?;
       result.media_file_token
     }
@@ -307,6 +308,7 @@ async fn try_upload(
         api_host: &app_env_configs.storyteller_host,
         maybe_creds: Some(creds),
         path: download_path,
+        maybe_generation_provider: Some(GenerationProvider::Fal),
       }).await?;
       result.media_file_token
     }
@@ -318,6 +320,7 @@ async fn try_upload(
         is_intermediate_system_file: false,
         maybe_prompt_token,
         maybe_batch_token,
+        maybe_generation_provider: Some(GenerationProvider::Fal),
       }).await?;
       result.media_file_token
     }

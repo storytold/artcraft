@@ -36,6 +36,7 @@ pub async fn upload_mask_image_bytes_as_media_file(
     image_bytes: normalized.0,
     image_type: ImageType::Png,
     is_intermediate_system_file: true,
+      maybe_generation_provider: None,
   }).await.map_err(|err| {
     error!("Failed to upload mask image bytes: {:?}", err);
     GenerateError::from(err)

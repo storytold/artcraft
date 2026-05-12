@@ -4,6 +4,7 @@ use crate::utils::api_host::ApiHost;
 use crate::utils::constants::{APPLICATION_JSON, USER_AGENT};
 use crate::utils::filter_bad_response::filter_bad_response;
 use crate::utils::http_get_anonymous::http_get_anonymous;
+use enums::common::generation_provider::GenerationProvider;
 use chrono::{DateTime, Utc};
 use uuid_utils::uuid::generate_random_uuid;
 use log::debug;
@@ -31,9 +32,8 @@ pub struct UploadVideoFromFileArgs<'a, P: AsRef<Path>> {
   /// NOTE: Cannot set `is_intermediate_system_file = true` if this is set.
   pub maybe_prompt_token: Option<&'a PromptToken>,
 
-  // /// If provided, this is the service provider that created the image.
-  // /// NOTE: Cannot set `is_intermediate_system_file = true` if this is set.
-  // pub maybe_generation_provider: Option<GenerationProvider>,
+  /// If provided, the third-party provider that generated this file.
+  pub maybe_generation_provider: Option<GenerationProvider>,
 
   // /// If provided, this groups the file into a batch
   // /// TODO: This shouldn't be set clientside without the backend generating the token 
@@ -71,6 +71,10 @@ pub async fn upload_video_media_file_from_file<P: AsRef<Path>>(
 
   if let Some(prompt_token) = &args.maybe_prompt_token {
     form = form.text("maybe_prompt_token", prompt_token.to_string());
+  }
+
+  if let Some(provider) = &args.maybe_generation_provider {
+    form = form.text("maybe_generation_provider", provider.to_str().to_string());
   }
 
   let mut request_builder = client.post(url)

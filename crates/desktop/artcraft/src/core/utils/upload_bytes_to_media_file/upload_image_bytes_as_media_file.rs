@@ -26,6 +26,7 @@ pub async fn upload_image_bytes_as_media_file(
     image_bytes,
     image_type: ImageType::Png,
     is_intermediate_system_file: false,
+      maybe_generation_provider: None,
   }).await.map_err(|err| {
     log::error!("Failed to upload image bytes as media file: {:?}", err);
     GenerateError::from(err)

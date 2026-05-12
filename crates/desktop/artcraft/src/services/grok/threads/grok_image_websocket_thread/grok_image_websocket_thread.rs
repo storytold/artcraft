@@ -219,6 +219,7 @@ async fn upload_images_to_storyteller(
           is_intermediate_system_file: false,
           maybe_prompt_token: Some(&prompt_response.prompt_token),
           maybe_batch_token: Some(&batch_token),
+          maybe_generation_provider: Some(GenerationProvider::Grok),
         }).await;
 
         match result {

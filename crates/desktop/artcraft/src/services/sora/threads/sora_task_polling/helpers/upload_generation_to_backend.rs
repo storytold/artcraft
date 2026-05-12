@@ -6,6 +6,7 @@ use artcraft_client::credentials::storyteller_credential_set::StorytellerCredent
 use artcraft_client::endpoints::media_files::upload_image_media_file_from_file::{upload_image_media_file_from_file, UploadImageFromFileArgs};
 use artcraft_client::endpoints::media_files::upload_video_media_file_from_file::{upload_video_media_file_from_file, UploadVideoFromFileArgs};
 use artcraft_client::utils::api_host::ApiHost;
+use enums::common::generation_provider::GenerationProvider;
 use tokens::tokens::batch_generations::BatchGenerationToken;
 use tokens::tokens::media_files::MediaFileToken;
 use tokens::tokens::prompts::PromptToken;
@@ -47,6 +48,7 @@ pub(super) async fn upload_generation_to_backend<P: AsRef<Path>>(args: UploadGen
         is_intermediate_system_file: false,
         maybe_prompt_token: args.maybe_prompt_token,
         maybe_batch_token: None, // TODO: This should be added soon.
+        maybe_generation_provider: Some(GenerationProvider::Sora),
       }).await?;
 
       info!("Uploaded image to API backend: {:?}", result.media_file_token);
@@ -58,6 +60,7 @@ pub(super) async fn upload_generation_to_backend<P: AsRef<Path>>(args: UploadGen
         maybe_creds: Some(&args.storyteller_creds),
         path: args.upload_path,
         maybe_prompt_token: args.maybe_prompt_token,
+        maybe_generation_provider: Some(GenerationProvider::Sora),
       }).await?;
 
       info!("Uploaded video to API backend: {:?}", result.media_file_token);

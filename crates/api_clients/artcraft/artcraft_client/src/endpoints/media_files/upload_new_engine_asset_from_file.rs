@@ -4,6 +4,7 @@ use crate::utils::api_host::ApiHost;
 use crate::utils::constants::{APPLICATION_JSON, USER_AGENT};
 use crate::utils::filter_bad_response::filter_bad_response;
 use crate::utils::http_get_anonymous::http_get_anonymous;
+use enums::common::generation_provider::GenerationProvider;
 use chrono::{DateTime, Utc};
 use uuid_utils::uuid::generate_random_uuid;
 use log::debug;
@@ -24,6 +25,7 @@ pub async fn upload_new_engine_asset_from_file<P: AsRef<Path>>(
   api_host: &ApiHost,
   maybe_creds: Option<&StorytellerCredentialSet>,
   path: P,
+  maybe_generation_provider: Option<GenerationProvider>,
 ) -> Result<UploadImageMediaFileSuccessResponse, ApiError> {
 
   let url = get_route(api_host);
@@ -37,10 +39,14 @@ pub async fn upload_new_engine_asset_from_file<P: AsRef<Path>>(
   let file_bytes = std::fs::read(path.as_ref())?;
   let file_name = path.as_ref().file_name()
       .and_then(|n| n.to_str()).unwrap_or("file").to_string();
-  let form = Form::new()
+  let mut form = Form::new()
       .text("uuid_idempotency_token", generate_random_uuid())
       .text("engine_category", "object") // TODO: Which type should we use?
       .part("file", Part::bytes(file_bytes).file_name(file_name));
+
+  if let Some(provider) = &maybe_generation_provider {
+    form = form.text("maybe_generation_provider", provider.to_str().to_string());
+  }
 
   let mut request_builder = client.post(url)
       .header("User-Agent", USER_AGENT)

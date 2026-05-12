@@ -309,6 +309,7 @@ async fn upload_midjourney_batch(
         is_intermediate_system_file: false,
         maybe_prompt_token: Some(&prompt_response.prompt_token),
         maybe_batch_token: Some(&batch_token),
+        maybe_generation_provider: Some(GenerationProvider::Midjourney),
       }).await;
 
       match result {

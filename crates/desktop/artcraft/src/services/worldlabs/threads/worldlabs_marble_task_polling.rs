@@ -266,6 +266,7 @@ async fn upload_spz_splat(
       api_host: &app_env_configs.storyteller_host,
       maybe_creds: Some(&storyteller_creds),
       path: &spz_download_filename,
+      maybe_generation_provider: Some(GenerationProvider::WorldLabs),
     }).await;
 
     match result {

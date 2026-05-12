@@ -150,6 +150,7 @@ async fn get_mask(
     image_bytes: image_bytes.0,
     image_type: ImageType::Png,
     is_intermediate_system_file: true,
+      maybe_generation_provider: None,
   }).await
       .map_err(|err| {
         error!("Failed to upload image media file: {:?}", err);

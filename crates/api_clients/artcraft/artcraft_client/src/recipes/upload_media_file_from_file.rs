@@ -33,7 +33,7 @@ pub async fn upload_media_file_from_file<P: AsRef<Path>>(
   
   match maybe_type {
     Some(FileExtension::Glb) => {
-      match upload_new_engine_asset_from_file(api_host, maybe_creds, path).await {
+      match upload_new_engine_asset_from_file(api_host, maybe_creds, path, None).await {
         Ok(result) => Ok(UploadMediaFileSuccessResponse {
           success: result.success,
           media_file_token: result.media_file_token,
@@ -46,7 +46,8 @@ pub async fn upload_media_file_from_file<P: AsRef<Path>>(
         api_host,
         maybe_creds, 
         path,
-        maybe_prompt_token
+        maybe_prompt_token,
+        maybe_generation_provider: None,
       }).await {
         Ok(result) => Ok(UploadMediaFileSuccessResponse {
           success: result.success,
@@ -63,6 +64,7 @@ pub async fn upload_media_file_from_file<P: AsRef<Path>>(
         is_intermediate_system_file: false,
         maybe_prompt_token,
         maybe_batch_token: None,
+        maybe_generation_provider: None,
       }).await;
       match result {
         Ok(result) => Ok(UploadMediaFileSuccessResponse {

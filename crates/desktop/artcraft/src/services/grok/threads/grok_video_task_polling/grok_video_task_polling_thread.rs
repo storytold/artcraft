@@ -277,6 +277,7 @@ async fn upload_grok_video(
       maybe_creds: Some(&storyteller_creds),
       path: &download_path,
       maybe_prompt_token: Some(&prompt_response.prompt_token),
+      maybe_generation_provider: Some(GenerationProvider::Grok),
     }).await;
 
     match result {

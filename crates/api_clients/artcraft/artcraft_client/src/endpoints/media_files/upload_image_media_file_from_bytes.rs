@@ -6,6 +6,7 @@ use crate::utils::api_host::ApiHost;
 use crate::utils::constants::{APPLICATION_JSON, USER_AGENT};
 use crate::utils::filter_bad_response::filter_bad_response;
 use crate::utils::http_get_anonymous::http_get_anonymous;
+use enums::common::generation_provider::GenerationProvider;
 use chrono::{DateTime, Utc};
 use uuid_utils::uuid::generate_random_uuid;
 use log::debug;
@@ -31,6 +32,9 @@ pub struct UploadImageBytesArgs<'a> {
   
   /// If true, we should hide the image from the user's gallery.
   pub is_intermediate_system_file: bool,
+
+  /// If provided, the third-party provider that generated this file.
+  pub maybe_generation_provider: Option<GenerationProvider>,
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -84,6 +88,10 @@ pub async fn upload_image_media_file_from_bytes(
   
   if args.is_intermediate_system_file {
     form = form.text("is_intermediate_system_file", "true");
+  }
+
+  if let Some(provider) = &args.maybe_generation_provider {
+    form = form.text("maybe_generation_provider", provider.to_str().to_string());
   }
 
   let mut request_builder = client.post(url)
