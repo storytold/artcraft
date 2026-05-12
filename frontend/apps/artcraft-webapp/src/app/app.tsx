@@ -121,8 +121,8 @@ export function App() {
           <Route path="/create-image" element={<CreateImage />} />
           <Route path="/create-video" element={<CreateVideo />} />
           <Route path="/background-change" element={<CreateVFX />} />
-          <Route path="/pagescene" element={<PageScene />} />
-          <Route path="/pagescene/:sceneToken" element={<PageScene />} />
+          <Route path="/edit-3d" element={<PageScene />} />
+          <Route path="/edit-3d/:sceneToken" element={<PageScene />} />
           <Route path="/support" element={<Support />} />
           <Route path="/pricing" element={<Pricing />} />
 

@@ -42,8 +42,8 @@ const PRIMARY_ITEMS: NavItem[] = [{ label: "Home", href: "/", icon: faHouse }];
 
 const CREATE_ITEMS: NavItem[] = [
   { label: "Image", href: "/create-image", icon: faImage },
-  { label: "Edit 3D", href: "/pagescene", icon: faCube },
   { label: "Video", href: "/create-video", icon: faVideo },
+  { label: "Edit 3D", href: "/edit-3d", icon: faCube },
   {
     label: "BG Change",
     href: "/background-change",
