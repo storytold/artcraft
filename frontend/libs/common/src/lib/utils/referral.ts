@@ -16,9 +16,13 @@ const APEX_DOMAINS = ["getartcraft.com"];
 
 /**
  * Capture referral username (`?r=`), landing URL (`window.location.href`), and
- * referrer (`document.referrer`) on first visit. Subsequent visits don't
- * overwrite, so the original attribution survives navigation within and
- * between getartcraft.com and app.getartcraft.com.
+ * referrer (`document.referrer`).
+ *
+ * - Referral username: a fresh `?r=` always wins so the latest referrer gets
+ *   credit, but a page load without `?r=` leaves the existing value alone.
+ * - Landing URL and referrer: first visit wins, so the original entry point
+ *   survives navigation within and between getartcraft.com and
+ *   app.getartcraft.com.
  */
 export function captureLandingContext(): void {
   try {
@@ -28,7 +32,7 @@ export function captureLandingContext(): void {
     const sanitizedReferralUsername = rawReferralUsername
       ? sanitizeReferralUsername(rawReferralUsername)
       : undefined;
-    if (sanitizedReferralUsername && !getReferralUsername()) {
+    if (sanitizedReferralUsername) {
       persist(REFERRAL_USERNAME_KEY, sanitizedReferralUsername);
     }
 
