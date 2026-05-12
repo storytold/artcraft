@@ -70,6 +70,8 @@ pub async fn handle_qwen_edit_2511_angles(
     model: Some(GenerationModel::QwenEdit2511Angles),
     provider: GenerationProvider::Artcraft,
     provider_job_id: Some(job_id),
+    maybe_queue_status_url: None,
+    maybe_queue_response_url: None,
   })
 }
 

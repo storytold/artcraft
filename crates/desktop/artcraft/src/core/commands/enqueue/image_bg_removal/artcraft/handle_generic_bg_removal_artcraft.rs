@@ -79,6 +79,8 @@ pub async fn handle_generic_bg_removal_artcraft(
     task_type: TaskType::BackgroundRemoval,
     provider_job_id: Some(success_result.inference_job_token.to_string()),
     model: None,
+    maybe_queue_status_url: None,
+    maybe_queue_response_url: None,
   })
 }
 

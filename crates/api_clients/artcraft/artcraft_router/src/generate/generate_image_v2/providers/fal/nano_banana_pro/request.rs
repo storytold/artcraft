@@ -27,6 +27,8 @@ impl FalNanoBananaProRequestState {
         Ok(GenerateImageResponse::Fal(FalImageResponsePayload {
           request_id: payload.request_id,
           gateway_request_id: payload.gateway_request_id,
+          maybe_status_url: payload.status_url,
+          maybe_response_url: payload.response_url,
           maybe_outbound_request: Some(outbound),
         }))
       }
@@ -36,6 +38,8 @@ impl FalNanoBananaProRequestState {
         Ok(GenerateImageResponse::Fal(FalImageResponsePayload {
           request_id: payload.request_id,
           gateway_request_id: payload.gateway_request_id,
+          maybe_status_url: payload.status_url,
+          maybe_response_url: payload.response_url,
           maybe_outbound_request: Some(outbound),
         }))
       }
@@ -48,6 +52,8 @@ impl FalNanoBananaProRequestState {
 struct FalResponseIds {
   request_id: Option<String>,
   gateway_request_id: Option<String>,
+  status_url: Option<String>,
+  response_url: Option<String>,
 }
 
 /// Send a FAL request via webhook (if URL present) or queue (if not).
@@ -62,6 +68,8 @@ async fn send_fal_request<T: FalEndpoint>(
     Ok(FalResponseIds {
       request_id: response.request_id,
       gateway_request_id: response.gateway_request_id,
+      status_url: None,
+      response_url: None,
     })
   } else {
     let response = request
@@ -70,6 +78,8 @@ async fn send_fal_request<T: FalEndpoint>(
     Ok(FalResponseIds {
       request_id: Some(response.request_id),
       gateway_request_id: None,
+      status_url: Some(response.status_url),
+      response_url: Some(response.response_url),
     })
   }
 }

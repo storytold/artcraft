@@ -13,6 +13,12 @@ pub struct FalImageResponsePayload {
   pub request_id: Option<String>,
   pub gateway_request_id: Option<String>,
 
+  /// The queue status URL (for polling job progress).
+  pub maybe_status_url: Option<String>,
+
+  /// The queue response URL (for fetching completed results).
+  pub maybe_response_url: Option<String>,
+
   /// The outbound request that was sent to Fal.
   /// Stored as a trait object so any Request type can be captured.
   /// Use `format!("{:?}", ...)` or `format!("{:#?}", ...)` to print.

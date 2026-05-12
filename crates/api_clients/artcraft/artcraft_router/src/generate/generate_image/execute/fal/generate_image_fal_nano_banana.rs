@@ -63,6 +63,8 @@ pub async fn execute_fal_nano_banana(
   Ok(GenerateImageResponse::Fal(FalImageResponsePayload {
     request_id: webhook_response.request_id,
     gateway_request_id: webhook_response.gateway_request_id,
+    maybe_status_url: None,
+    maybe_response_url: None,
     maybe_outbound_request: Some(outbound_request),
   }))
 }

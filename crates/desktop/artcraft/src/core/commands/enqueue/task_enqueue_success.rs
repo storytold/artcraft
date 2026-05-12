@@ -14,7 +14,8 @@ pub struct TaskEnqueueSuccess {
   pub model: Option<GenerationModel>,
   pub provider: GenerationProvider,
   pub provider_job_id: Option<String>,
-  // TODO: We may want to change the `model` type - this has weird ownership and semantics
+  pub maybe_queue_status_url: Option<String>,
+  pub maybe_queue_response_url: Option<String>,
 }
 
 impl TaskEnqueueSuccess{
@@ -121,6 +122,8 @@ impl TaskEnqueueSuccess{
       model_type,
       provider: self.provider,
       provider_job_id: self.provider_job_id.as_deref(),
+      queue_status_url: self.maybe_queue_status_url.as_deref(),
+      queue_response_url: self.maybe_queue_response_url.as_deref(),
       frontend_caller,
       frontend_subscriber_id,
       frontend_subscriber_payload,

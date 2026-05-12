@@ -111,6 +111,8 @@ pub async fn handle_midjourney(
     model: Some(GenerationModel::Midjourney),
     provider_job_id: Some(job_id),
     task_type: TaskType::ImageGeneration,
+    maybe_queue_status_url: None,
+    maybe_queue_response_url: None,
   })
 }
 

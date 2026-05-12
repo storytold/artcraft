@@ -112,6 +112,8 @@ pub async fn handle_artcraft_flux_pro_1_inpaint(
     model: Some(GenerationModel::FluxPro1),
     provider_job_id: Some(job_id.to_string()),
     task_type: TaskType::ImageInpaintEdit,
+    maybe_queue_status_url: None,
+    maybe_queue_response_url: None,
   })
 }
 

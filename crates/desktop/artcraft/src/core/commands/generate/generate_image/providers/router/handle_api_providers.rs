@@ -153,5 +153,7 @@ fn build_task_enqueue_success(
     model: Some(generation_model),
     provider: GenerationProvider::Fal,
     provider_job_id: Some(provider_job_id),
+    maybe_queue_status_url: fal_payload.maybe_status_url,
+    maybe_queue_response_url: fal_payload.maybe_response_url,
   })
 }

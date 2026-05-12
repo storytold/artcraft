@@ -14,6 +14,8 @@ pub struct CreateTaskArgs<'a> {
   pub model_type: Option<TaskModelType>,
   pub provider: GenerationProvider,
   pub provider_job_id: Option<&'a str>,
+  pub queue_status_url: Option<&'a str>,
+  pub queue_response_url: Option<&'a str>,
   pub frontend_caller: Option<TauriCommandCaller>,
   pub frontend_subscriber_id: Option<&'a str>,
   pub frontend_subscriber_payload: Option<&'a str>,
@@ -40,11 +42,13 @@ pub async fn create_task(
       model_type,
       provider,
       provider_job_id,
+      queue_status_url,
+      queue_response_url,
       frontend_caller,
       frontend_subscriber_id,
       frontend_subscriber_payload
     )
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   "#,
       task_id_temp,
       status_temp,
@@ -52,6 +56,8 @@ pub async fn create_task(
       model_type_temp,
       provider_temp,
       args.provider_job_id,
+      args.queue_status_url,
+      args.queue_response_url,
       frontend_caller_temp,
       args.frontend_subscriber_id,
       args.frontend_subscriber_payload

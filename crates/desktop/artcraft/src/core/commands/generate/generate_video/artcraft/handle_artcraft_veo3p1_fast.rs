@@ -74,5 +74,7 @@ pub (super) async fn handle_artcraft_veo3p1_fast(
     model: Some(GenerationModel::Veo3p1Fast),
     provider: GenerationProvider::Artcraft,
     provider_job_id: Some(job_token.to_string()),
+    maybe_queue_status_url: None,
+    maybe_queue_response_url: None,
   })
 }

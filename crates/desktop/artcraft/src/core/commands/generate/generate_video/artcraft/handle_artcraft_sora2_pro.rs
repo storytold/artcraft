@@ -71,5 +71,7 @@ pub (super) async fn handle_artcraft_sora2_pro(
     model: Some(GenerationModel::Sora2Pro),
     provider: GenerationProvider::Artcraft,
     provider_job_id: Some(job_token.to_string()),
+    maybe_queue_status_url: None,
+    maybe_queue_response_url: None,
   })
 }
