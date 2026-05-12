@@ -31,6 +31,7 @@ use std::fs::File;
 use std::io::Write;
 use std::path::PathBuf;
 use tauri::AppHandle;
+use tokens::tokens::batch_generations::BatchGenerationToken;
 use tokens::tokens::media_files::MediaFileToken;
 use uuid_utils::uuid::generate_random_uuid;
 
@@ -104,6 +105,14 @@ async fn handle_fal_complete_inner(
 
   info!("[FalComplete] Created prompt: {:?}", prompt_response.prompt_token);
 
+  let maybe_batch_token = if urls.len() > 1 {
+    let token = BatchGenerationToken::generate();
+    info!("[FalComplete] Using batch token for {} files: {:?}", urls.len(), token);
+    Some(token)
+  } else {
+    None
+  };
+
   let mut maybe_primary_media_file_token: Option<MediaFileToken> = None;
 
   for (i, url) in urls.iter().enumerate() {
@@ -118,6 +127,7 @@ async fn handle_fal_complete_inner(
       app_env_configs,
       &download_path,
       &prompt_response.prompt_token,
+      maybe_batch_token.as_ref(),
       media_class,
     ).await?;
 
@@ -149,7 +159,7 @@ async fn handle_fal_complete_inner(
   let updated = update_successful_task_status_with_metadata(UpdateSuccessfulTaskArgs {
     db: task_database.get_connection(),
     task_id: &task.id,
-    maybe_batch_token: None,
+    maybe_batch_token: maybe_batch_token.as_ref(),
     maybe_primary_media_file_token: maybe_primary_media_file_token.as_ref(),
     maybe_primary_media_file_class: Some(media_class),
     maybe_primary_media_file_cdn_url: maybe_cdn_url.as_deref(),
@@ -244,6 +254,7 @@ async fn upload_to_backend(
   app_env_configs: &AppEnvConfigs,
   download_path: &PathBuf,
   prompt_token: &tokens::tokens::prompts::PromptToken,
+  maybe_batch_token: Option<&BatchGenerationToken>,
   media_class: TaskMediaFileClass,
 ) -> Result<MediaFileToken, Box<dyn std::error::Error>> {
   let media_token = match media_class {
@@ -263,7 +274,7 @@ async fn upload_to_backend(
         path: download_path,
         is_intermediate_system_file: false,
         maybe_prompt_token: Some(prompt_token),
-        maybe_batch_token: None,
+        maybe_batch_token,
       }).await?;
       result.media_file_token
     }
