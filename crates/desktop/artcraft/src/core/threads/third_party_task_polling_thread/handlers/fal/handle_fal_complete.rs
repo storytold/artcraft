@@ -10,6 +10,9 @@ use artcraft_api_defs::prompts::create_prompt::CreatePromptRequest;
 use artcraft_api_defs::utils::media_links_to_thumbnail_template::media_links_to_thumbnail_template;
 use artcraft_client::credentials::storyteller_credential_set::StorytellerCredentialSet;
 use artcraft_client::endpoints::media_files::get_media_file::get_media_file;
+use artcraft_client::endpoints::media_files::legacy_upload_media_file_from_file::{
+  legacy_upload_media_file_from_file, LegacyUploadMediaFileFromFileArgs,
+};
 use artcraft_client::endpoints::media_files::upload_image_media_file_from_file::{
   upload_image_media_file_from_file, UploadImageFromFileArgs,
 };
@@ -219,8 +222,7 @@ fn collect_media_urls(
   // 3D model (GLB)
   if let Some(glb) = &extracted.model_glb {
     if let Some(url) = &glb.url {
-      // TODO: We may want a TaskMediaFileClass::Mesh variant
-      return Ok((vec![url.clone()], TaskMediaFileClass::Image, GenerationAction::ImageTo3d));
+      return Ok((vec![url.clone()], TaskMediaFileClass::Dimensional, GenerationAction::ImageTo3d));
     }
   }
 
@@ -264,6 +266,14 @@ async fn upload_to_backend(
         maybe_creds: Some(creds),
         path: download_path,
         maybe_prompt_token: Some(prompt_token),
+      }).await?;
+      result.media_file_token
+    }
+    TaskMediaFileClass::Dimensional => {
+      let result = legacy_upload_media_file_from_file(LegacyUploadMediaFileFromFileArgs {
+        api_host: &app_env_configs.storyteller_host,
+        maybe_creds: Some(creds),
+        path: download_path,
       }).await?;
       result.media_file_token
     }
