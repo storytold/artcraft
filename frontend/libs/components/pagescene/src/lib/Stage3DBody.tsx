@@ -108,7 +108,6 @@ export const Stage3DBody = () => {
   // window.innerWidth/innerHeight when the host adapter doesn't
   // supply getViewportSize, so the layout always has sane values.
   const viewport = useViewportSize();
-  const height = viewport.height - 56;
 
   const getScale = () => {
     const h = viewport.height - 56;
@@ -320,17 +319,13 @@ export const Stage3DBody = () => {
   }, [editor]);
 
   return (
-    <div>
+    <div className="h-full w-full">
       <OnboardingHelper />
 
-      <div
-        className="relative flex w-screen"
-        style={{ height: "calc(100vh - 68px)" }}
-      >
+      <div className="relative flex h-full w-full">
         <div
           id="engine-n-panels-wrapper"
-          className="flex"
-          style={{ height }}
+          className="flex h-full w-full"
         >
           <div className="relative w-full overflow-hidden bg-transparent">
             <SceneContainer>

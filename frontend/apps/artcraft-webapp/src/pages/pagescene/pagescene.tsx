@@ -5,31 +5,22 @@ import { useSession } from "../../lib/session";
 import { useSidebar } from "../../components/ui/sidebar";
 import { useWebAppPageSceneAdapter } from "./web-adapter";
 
-// Stage3D was designed for the Tauri host: its outermost div is
-// `w-screen` × `calc(100vh - 68px)` and SceneContainer subtracts a
-// hardcoded 56px from the adapter-supplied viewport height to leave
-// room for the host's TopBar. The webapp lives inside a sidebar +
-// topbar shell that already takes its slice out of the viewport, so
-// this wrapper translates the lib's assumptions into webapp space:
+// Stage3D fills its parent box; this wrapper is that box. It clamps
+// the editor to the SidebarInset area and feeds the lib its rect:
 //
-//   - `overflow-hidden h-full w-full` clamps the lib's viewport-sized
-//     chrome to the area SidebarInset gives us, so the inset never
-//     grows a scrollbar around the editor.
-//   - `getViewportSize` reads the wrapper's current rect on every call
-//     and adds the lib's hardcoded 56px topbar compensation, so the
-//     SceneContainer's `height - 56` math lands on the wrapper rect.
+//   - `overflow-hidden h-full w-full` sizes Stage3D to the inset and
+//     prevents the inset from growing a scrollbar around the editor.
+//   - `getViewportSize` reports the wrapper's current rect. Consumers
+//     in the lib (getScale, absolute-positioned chrome) read it via
+//     `useViewportSize`.
 //   - The lib's `useViewportSize` only re-reads on `window` resize, so
 //     a ResizeObserver here dispatches a synthetic resize whenever our
-//     rect changes (sidebar collapse, peer mounts, browser resize) and
-//     once on mount (the lib's `useState` initializer ran before any
-//     refs were attached and saw the window-size fallback).
+//     rect changes (sidebar collapse, browser resize).
 //   - `transform: translateZ(0)` makes this div a containing block
 //     for the lib's `position: fixed` overlays so they scope here.
 //
 // On entry the sidebar auto-collapses on desktop to give the lib's
 // 100vw-leaning layout the room it expects.
-
-const LIB_TOP_BAR_COMPENSATION_PX = 56;
 
 export default function PageScene() {
   const { sceneToken } = useParams<{ sceneToken?: string }>();
@@ -78,7 +69,7 @@ export default function PageScene() {
     }
     return {
       width: node.clientWidth,
-      height: node.clientHeight + LIB_TOP_BAR_COMPENSATION_PX,
+      height: node.clientHeight,
     };
   }, []);
 

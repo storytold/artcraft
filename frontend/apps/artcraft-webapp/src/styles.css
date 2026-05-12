@@ -176,9 +176,11 @@
   }
 }
 
-.glass {
-  @apply relative border border-white/10 shadow-lg backdrop-blur-xl transition-colors duration-300;
-  @apply bg-ui-controls/85 !important;
+@layer components {
+  .glass {
+    @apply relative border border-white/10 shadow-lg backdrop-blur-xl transition-colors duration-300;
+    @apply bg-ui-controls/85 !important;
+  }
 }
 
 .liquid-glass {
