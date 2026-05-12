@@ -19,7 +19,8 @@
 --   tasks_v6.sqlite - added two fields:
 --      on_failure_type
 --      on_failure_message
---   tasks_v7.sqlite - added two fields (for fal):
+--   tasks_v7.sqlite - added prompt token + two fields (for fal):
+--      prompt_token
 --      queue_status_url
 --      queue_response_url
 
@@ -48,6 +49,11 @@ CREATE TABLE tasks (
 
     -- The primary key for the job in the provider's system.
     provider_job_id TEXT,
+
+    -- OPTIONAL.
+    -- For third party jobs, we need to record the prompt details upfront.
+    -- We create a prompt record and store the token to associate once the task completes.
+    prompt_token TEXT,
 
     -- OPTIONAL.
     -- Tell the job system which caller initiated the task.
