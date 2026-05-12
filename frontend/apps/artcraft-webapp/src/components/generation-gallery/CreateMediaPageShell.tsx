@@ -1,11 +1,6 @@
 import { type ReactNode } from "react";
-import { Link } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faSpinnerThird,
-  type IconDefinition,
-} from "@fortawesome/pro-solid-svg-icons";
-import { Button } from "@storyteller/ui-button";
+import { faSpinnerThird } from "@fortawesome/pro-solid-svg-icons";
 import { type PopoverItem } from "@storyteller/ui-popover";
 import Seo from "../../components/seo";
 
@@ -13,13 +8,10 @@ interface CreateMediaPageShellProps {
   // SEO
   title: string;
   description: string;
-  // Auth state
+  // Auth state — `authChecked` gates the initial spinner so we don't flash
+  // logged-out chrome while the session resolves. Pages stay viewable for
+  // logged-out users; the signup CTA modal is triggered at generate time.
   authChecked: boolean;
-  isLoggedIn: boolean;
-  // Unauthenticated state
-  heroIcon: IconDefinition;
-  heroTitle: string;
-  heroSubtitle: string;
   // Content
   hasContent: boolean;
   emptyStateTitle: string;
@@ -40,10 +32,6 @@ export function CreateMediaPageShell({
   title,
   description,
   authChecked,
-  isLoggedIn,
-  heroIcon,
-  heroTitle,
-  heroSubtitle,
   hasContent,
   emptyStateTitle,
   emptyStateSubtitle,
@@ -60,45 +48,6 @@ export function CreateMediaPageShell({
           icon={faSpinnerThird}
           className="animate-spin text-4xl text-primary/80"
         />
-      </div>
-    );
-  }
-
-  if (!isLoggedIn) {
-    return (
-      <div className="relative h-full overflow-x-hidden bg-[#101014] text-white">
-        <Seo title={title} description={description} />
-        <div className="pointer-events-none absolute inset-x-0 top-0 z-0 flex justify-center">
-          <div className="h-[600px] w-[600px] rounded-full bg-gradient-to-br from-primary/30 via-blue-500/20 to-teal-400/10 opacity-40 blur-[120px]" />
-        </div>
-        <div className="relative z-10 flex h-full flex-col items-center justify-center px-4">
-          <FontAwesomeIcon
-            icon={heroIcon}
-            className="mb-6 text-5xl text-white/20"
-          />
-          <h1 className="mb-3 text-4xl font-semibold">{heroTitle}</h1>
-          <p className="mb-8 max-w-md text-center text-lg text-white/60">
-            {heroSubtitle}
-          </p>
-          <div className="flex gap-3">
-            <Link to="/login">
-              <Button
-                variant="primary"
-                className="bg-white px-6 py-2.5 font-semibold text-black shadow-md hover:bg-white/90"
-              >
-                Login
-              </Button>
-            </Link>
-            <Link to="/signup">
-              <Button
-                variant="primary"
-                className="px-6 py-2.5 font-semibold shadow-md"
-              >
-                Sign up
-              </Button>
-            </Link>
-          </div>
-        </div>
       </div>
     );
   }

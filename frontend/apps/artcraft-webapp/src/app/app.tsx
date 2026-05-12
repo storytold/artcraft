@@ -31,6 +31,7 @@ import {
 } from "../components/ui/sidebar";
 import { AppSidebar } from "../components/sidebar/app-sidebar";
 import { TopBar } from "../components/topbar/topbar";
+import { SignupCtaModal } from "../components/signup-cta-modal";
 import { useSession } from "../lib/session";
 
 function ScrollToTop() {
@@ -112,19 +113,22 @@ export function App() {
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/forgot-password/verify" element={<VerifyReset />} />
 
-        {/* Protected — auth gate + sidebar/topbar chrome */}
-        <Route element={<RequireAuth />}>
-          <Route element={<ProtectedLayout />}>
-            <Route path="/" element={<Home />} />
-            <Route path="/create-image" element={<CreateImage />} />
-            <Route path="/create-video" element={<CreateVideo />} />
-            <Route path="/background-change" element={<CreateVFX />} />
+        {/* Public — sidebar/topbar chrome, but no auth gate. Generate actions
+            inside the create pages pop a signup CTA modal for logged-out users. */}
+        <Route element={<ProtectedLayout />}>
+          <Route path="/" element={<Home />} />
+          <Route path="/create-image" element={<CreateImage />} />
+          <Route path="/create-video" element={<CreateVideo />} />
+          <Route path="/background-change" element={<CreateVFX />} />
+          <Route path="/support" element={<Support />} />
+          <Route path="/pricing" element={<Pricing />} />
+
+          {/* Protected — sign-in required (user-owned content / billing flows) */}
+          <Route element={<RequireAuth />}>
             <Route path="/media" element={<Media />} />
             <Route path="/media/:id" element={<Media />} />
-            <Route path="/support" element={<Support />} />
             <Route path="/library" element={<Library />} />
             <Route path="/library/:filter" element={<Library />} />
-            <Route path="/pricing" element={<Pricing />} />
             <Route path="/welcome" element={<Welcome />} />
             <Route path="/onboarding" element={<Onboarding />} />
             <Route path="/checkout/success" element={<CheckoutSuccess />} />
@@ -141,11 +145,13 @@ export function App() {
               path="/portal_closed"
               element={<Navigate to="/checkout/cancel" replace />}
             />
-            <Route path="*" element={<Navigate to="/" replace />} />
           </Route>
+
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Route>
       </Routes>
       <ToastContainer />
+      <SignupCtaModal />
     </>
   );
 }

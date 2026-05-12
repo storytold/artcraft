@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { faImage } from "@fortawesome/pro-solid-svg-icons";
 import { FilterMediaClasses } from "@storyteller/api";
 import type { OmniGenImageModelInfo } from "@storyteller/api";
 import { PopoverMenu, type PopoverItem } from "@storyteller/ui-popover";
@@ -30,6 +29,7 @@ import {
   useOmniGenImageModels,
   getModelCreatorIconPath,
 } from "../../lib/omni-gen-hooks";
+import { useSignupCta } from "../../components/signup-cta-modal";
 
 // ── Constants ────────────────────────────────────────────────────────────
 
@@ -63,6 +63,7 @@ function buildModelPopoverItems(
 
 export default function CreateImage() {
   const { user, authChecked } = useAuthCheck();
+  const { loggedIn, openSignupCta } = useSignupCta();
   const { promptBoxRef, promptHeight } = usePromptHeight();
 
   // Fetch models from API
@@ -277,6 +278,10 @@ export default function CreateImage() {
   );
 
   const handleGenerate = useCallback(async () => {
+    if (!loggedIn) {
+      openSignupCta();
+      return;
+    }
     if (!prompt.trim() || isGenerating || !selectedModel) return;
 
     setIsGenerating(true);
@@ -335,6 +340,8 @@ export default function CreateImage() {
       setIsGenerating(false);
     }
   }, [
+    loggedIn,
+    openSignupCta,
     prompt,
     isGenerating,
     selectedModel,
@@ -358,10 +365,6 @@ export default function CreateImage() {
       title="Create Image - ArtCraft"
       description="Generate stunning AI images with ArtCraft"
       authChecked={authChecked}
-      isLoggedIn={!!user}
-      heroIcon={faImage}
-      heroTitle="Create Image"
-      heroSubtitle="Sign in to generate stunning AI images with multiple models"
       hasContent={hasContent}
       emptyStateTitle="Generate Image"
       emptyStateSubtitle="Add a prompt, then generate"

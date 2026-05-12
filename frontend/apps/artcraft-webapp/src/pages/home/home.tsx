@@ -14,6 +14,8 @@ type AppCard = {
   href: string;
   icon: IconDefinition;
   accent: string;
+  iconBg: string;
+  iconColor: string;
 };
 
 const APPS: AppCard[] = [
@@ -23,6 +25,8 @@ const APPS: AppCard[] = [
     href: "/create-image",
     icon: faImage,
     accent: "from-blue-500/20 to-blue-500/0",
+    iconBg: "bg-blue-500/25 border-blue-400/30",
+    iconColor: "text-blue-300",
   },
   {
     label: "Video",
@@ -30,6 +34,8 @@ const APPS: AppCard[] = [
     href: "/create-video",
     icon: faVideo,
     accent: "from-purple-500/20 to-purple-500/0",
+    iconBg: "bg-purple-500/25 border-purple-400/30",
+    iconColor: "text-purple-300",
   },
   {
     label: "Background Change",
@@ -37,6 +43,8 @@ const APPS: AppCard[] = [
     href: "/background-change",
     icon: faWandMagicSparkles,
     accent: "from-emerald-500/20 to-emerald-500/0",
+    iconBg: "bg-emerald-500/25 border-emerald-400/30",
+    iconColor: "text-emerald-300",
   },
 ];
 
@@ -54,14 +62,16 @@ export function Home() {
             <Link
               key={app.href}
               to={app.href}
-              className="group relative overflow-hidden rounded-2xl border border-white/[0.06] bg-white/[0.02] hover:bg-white/[0.04] hover:border-white/[0.12] transition-all p-5"
+              className="bg-ui-controls/50 group relative overflow-hidden rounded-2xl p-5 hover:border-white/20 hover:bg-ui-controls"
             >
               <div
                 className={`absolute -inset-px rounded-2xl bg-gradient-to-br ${app.accent} opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none`}
                 aria-hidden
               />
               <div className="relative flex items-start gap-4">
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white/[0.06] border border-white/[0.06] text-white/85">
+                <div
+                  className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border ${app.iconBg} ${app.iconColor}`}
+                >
                   <FontAwesomeIcon icon={app.icon} className="text-base" />
                 </div>
                 <div className="min-w-0 flex-1">
@@ -71,7 +81,7 @@ export function Home() {
                     </h3>
                     <FontAwesomeIcon
                       icon={faArrowRight}
-                      className="text-[11px] text-white/40 group-hover:text-white/70 group-hover:translate-x-0.5 transition-all"
+                      className="text-sm text-white/40 group-hover:text-white/70 group-hover:translate-x-0.5 transition-all"
                     />
                   </div>
                   <p className="mt-1 text-sm text-white/55 leading-snug">

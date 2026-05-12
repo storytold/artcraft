@@ -120,14 +120,19 @@ export function useGalleryData(options: {
     [username, filterMediaClasses, pageIndex, api, mapApiItem, excludeUploads],
   );
 
-  // Initial load + filter change
+  // Initial load + filter change. When logged out (no username), clear the
+  // loading flag so the shell renders the empty state instead of a spinner.
   useEffect(() => {
-    if (!username) return;
     setItems([]);
     setPageIndex(0);
+    isLoadingRef.current = false;
+    if (!username) {
+      setHasMore(false);
+      setIsInitialLoading(false);
+      return;
+    }
     setHasMore(true);
     setIsInitialLoading(true);
-    isLoadingRef.current = false;
     loadItems(true);
   }, [username, JSON.stringify(filterMediaClasses)]); // eslint-disable-line react-hooks/exhaustive-deps
 

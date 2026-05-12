@@ -3,7 +3,6 @@ import { flushSync } from "react-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faClock,
-  faFilm,
   faWaveformLines,
 } from "@fortawesome/pro-solid-svg-icons";
 import { CharactersApi, FilterMediaClasses } from "@storyteller/api";
@@ -48,6 +47,7 @@ import {
   useOmniGenVideoModels,
   getModelCreatorIconPath,
 } from "../../lib/omni-gen-hooks";
+import { useSignupCta } from "../../components/signup-cta-modal";
 
 // ── Constants ────────────────────────────────────────────────────────────
 
@@ -162,6 +162,7 @@ function resolveDurationForModel(
 
 export default function CreateVideo() {
   const { user, authChecked } = useAuthCheck();
+  const { loggedIn, openSignupCta } = useSignupCta();
   const { promptBoxRef, promptHeight } = usePromptHeight();
 
   // Fetch models from API
@@ -704,6 +705,10 @@ export default function CreateVideo() {
   }, []);
 
   const handleGenerate = useCallback(async () => {
+    if (!loggedIn) {
+      openSignupCta();
+      return;
+    }
     if (
       !prompt.trim() ||
       isGeneratingRef.current ||
@@ -849,6 +854,8 @@ export default function CreateVideo() {
     setIsGenerating(false);
     isGeneratingRef.current = false;
   }, [
+    loggedIn,
+    openSignupCta,
     prompt,
     needsImage,
     isReferenceMode,
@@ -888,10 +895,6 @@ export default function CreateVideo() {
       title="Create Video - ArtCraft"
       description="Generate stunning AI videos with ArtCraft"
       authChecked={authChecked}
-      isLoggedIn={!!user}
-      heroIcon={faFilm}
-      heroTitle="Create Video"
-      heroSubtitle="Sign in to generate stunning AI videos with multiple models"
       hasContent={hasContent}
       emptyStateTitle="Generate Video"
       emptyStateSubtitle="Add a prompt, then generate"

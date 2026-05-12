@@ -1,8 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Link } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSpinnerThird, faSparkles } from "@fortawesome/pro-solid-svg-icons";
-import { Button } from "@storyteller/ui-button";
 import {
   PromptBoxVFX,
   VFXResultCard,
@@ -10,6 +8,7 @@ import {
 } from "@storyteller/ui-vfx";
 import Seo from "../../components/seo";
 import { useAuthCheck } from "../../components/generation-gallery";
+import { useSignupCta } from "../../components/signup-cta-modal";
 import { toast } from "../../components/toast/toast";
 import { uploadImage } from "../../components/prompt-box/upload-image";
 import { uploadVideo } from "../../components/prompt-box/upload-media";
@@ -21,6 +20,7 @@ import {
 
 export default function CreateVFX() {
   const { user, authChecked } = useAuthCheck();
+  const { loggedIn, openSignupCta } = useSignupCta();
 
   const history = useVFXStore((s) => s.history);
   const startResult = useVFXStore((s) => s.startResult);
@@ -190,6 +190,10 @@ export default function CreateVFX() {
   }, [user, completeResult, failResult, seedFromSession, updateMediaForResult]);
 
   const handleSubmit = useCallback(async () => {
+    if (!loggedIn) {
+      openSignupCta();
+      return;
+    }
     if (!source || !reference || isSubmitting) return;
     setIsSubmitting(true);
     const id = startResult();
@@ -230,6 +234,8 @@ export default function CreateVFX() {
     );
     pollersRef.current.set(id, cancel);
   }, [
+    loggedIn,
+    openSignupCta,
     source,
     reference,
     prompt,
@@ -247,48 +253,6 @@ export default function CreateVFX() {
           icon={faSpinnerThird}
           className="animate-spin text-4xl text-primary/80"
         />
-      </div>
-    );
-  }
-
-  if (!user) {
-    return (
-      <div className="relative min-h-screen overflow-x-hidden bg-[#101014] text-white">
-        <Seo
-          title="Background Change - ArtCraft"
-          description="Swap the backdrop of a video using a reference image."
-        />
-        <div className="pointer-events-none absolute inset-x-0 top-0 z-0 flex justify-center">
-          <div className="h-[600px] w-[600px] rounded-full bg-gradient-to-br from-primary/30 via-blue-500/20 to-teal-400/10 opacity-40 blur-[120px]" />
-        </div>
-        <div className="relative z-10 flex min-h-screen flex-col items-center justify-center px-4">
-          <FontAwesomeIcon
-            icon={faSparkles}
-            className="mb-6 text-5xl text-white/20"
-          />
-          <h1 className="mb-3 text-4xl font-bold">Background Change</h1>
-          <p className="mb-8 max-w-md text-center text-lg text-white/60">
-            Sign in to swap the backdrop of a video using a reference image.
-          </p>
-          <div className="flex gap-3">
-            <Link to="/login">
-              <Button
-                variant="primary"
-                className="bg-white px-6 py-2.5 font-semibold text-black shadow-md hover:bg-white/90"
-              >
-                Login
-              </Button>
-            </Link>
-            <Link to="/signup">
-              <Button
-                variant="primary"
-                className="px-6 py-2.5 font-semibold shadow-md"
-              >
-                Sign up
-              </Button>
-            </Link>
-          </div>
-        </div>
       </div>
     );
   }
