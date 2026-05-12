@@ -10,6 +10,7 @@ use crate::core::providers::credentials::payload::provider_credential_payload::P
 use crate::core::providers::credentials::provider_credential_key::ProviderCredentialKey;
 use crate::core::providers::credentials::provider_credential_loading_cache::ProviderCredentialLoadingCache;
 use crate::core::state::app_env_configs::app_env_configs::AppEnvConfigs;
+use crate::services::storyteller::state::storyteller_credential_manager::StorytellerCredentialManager;
 
 /// Dispatch an image generation request to a third-party provider via the router.
 ///
@@ -20,6 +21,7 @@ pub async fn handle_router(
   provider: GenerationProvider,
   app_env_configs: &AppEnvConfigs,
   credential_cache: &ProviderCredentialLoadingCache,
+  storyteller_creds_manager: &StorytellerCredentialManager,
 ) -> Result<TaskEnqueueSuccess, GenerateError> {
   let credential_key = map_provider_to_credential_key(provider)?;
 
@@ -33,7 +35,7 @@ pub async fn handle_router(
 
   match payload {
     ProviderCredentialPayload::ApiKey(api_key_data) => {
-      handle_api_key_provider(request, provider, api_key_data.as_str(), app_env_configs).await
+      handle_api_key_provider(request, provider, api_key_data.as_str(), app_env_configs, storyteller_creds_manager).await
     }
     ProviderCredentialPayload::WebLogin(web_login_data) => {
       handle_web_login_provider(request, provider, &web_login_data).await

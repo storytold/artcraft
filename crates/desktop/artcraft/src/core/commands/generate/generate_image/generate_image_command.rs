@@ -54,6 +54,7 @@ pub async fn generate_image_command(
         other,
         &app_env_configs,
         &credential_cache,
+        &storyteller_creds_manager,
       ).await
     }
   };

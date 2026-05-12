@@ -1,3 +1,5 @@
+use artcraft_api_defs::prompts::create_prompt::CreatePromptRequest;
+use artcraft_client::endpoints::prompts::create_prompt::create_prompt;
 use artcraft_client::utils::api_host::ApiHost;
 use artcraft_router::api::image_list_ref::ImageListRef;
 use artcraft_router::api::provider::Provider;
@@ -11,8 +13,10 @@ use artcraft_router::generate::generate_image::generate_image_response::Generate
 use artcraft_router::generate::generate_image_v2::image_generation_draft_or_request::ImageGenerationDraftOrRequest;
 use enums::common::generation_provider::GenerationProvider;
 use enums::tauri::tasks::task_type::TaskType;
-use log::{info, warn};
+use log::{error, info, warn};
 use tokens::tokens::media_files::MediaFileToken;
+use tokens::tokens::prompts::PromptToken;
+use uuid_utils::uuid::generate_random_uuid;
 
 use crate::core::api_adapters::models::image::tauri_image_model_to_generation_model::tauri_image_model_to_generation_model;
 use crate::core::api_adapters::models::image::tauri_image_model_to_router_model::tauri_image_model_to_router_model;
@@ -23,6 +27,7 @@ use crate::core::commands::generate::generate_image::providers::artcraft_router:
 use crate::core::commands::generate::generate_image::tauri_generate_image_request::TauriGenerateImageRequest;
 use crate::core::commands::generate::generate_image::tauri_image_model::TauriImageModel;
 use crate::core::state::app_env_configs::app_env_configs::AppEnvConfigs;
+use crate::services::storyteller::state::storyteller_credential_manager::StorytellerCredentialManager;
 
 /// Handle image generation for providers that authenticate via API key.
 pub async fn handle_api_key_provider(
@@ -30,10 +35,11 @@ pub async fn handle_api_key_provider(
   provider: GenerationProvider,
   api_key: &str,
   app_env_configs: &AppEnvConfigs,
+  storyteller_creds_manager: &StorytellerCredentialManager,
 ) -> Result<TaskEnqueueSuccess, GenerateError> {
   match provider {
     GenerationProvider::Fal => {
-      handle_fal(request, api_key, &app_env_configs.storyteller_host).await
+      handle_fal(request, api_key, app_env_configs, storyteller_creds_manager).await
     }
     _ => {
       Err(GenerateError::NotYetImplemented(
@@ -48,9 +54,11 @@ pub async fn handle_api_key_provider(
 async fn handle_fal(
   request: &TauriGenerateImageRequest,
   api_key: &str,
-  api_host: &ApiHost,
+  app_env_configs: &AppEnvConfigs,
+  storyteller_creds_manager: &StorytellerCredentialManager,
 ) -> Result<TaskEnqueueSuccess, GenerateError> {
   let tauri_model = request.model.ok_or(GenerateError::no_model_specified())?;
+  let api_host = &app_env_configs.storyteller_host;
 
   let router_model = tauri_image_model_to_router_model(tauri_model)
     .ok_or(GenerateError::NotYetImplemented(
@@ -59,6 +67,13 @@ async fn handle_fal(
 
   // Collect all media file tokens that need resolving.
   let image_inputs = resolve_image_inputs(request, api_host).await?;
+
+  // Create a prompt record before sending the generation request.
+  let maybe_prompt_token = create_prompt_record(
+    request,
+    api_host,
+    storyteller_creds_manager,
+  ).await;
 
   let router_request = GenerateImageRequestBuilder {
     model: router_model,
@@ -133,6 +148,50 @@ async fn resolve_image_inputs(
 
   let urls = map_media_file_tokens_to_cdn_urls(&tokens, api_host).await?;
   Ok(Some(ImageListRef::Urls(urls)))
+}
+
+/// Create a prompt record in the Artcraft backend before sending the generation request.
+/// Fails open: if prompt creation fails, we log and return None rather than blocking generation.
+async fn create_prompt_record(
+  request: &TauriGenerateImageRequest,
+  api_host: &ApiHost,
+  storyteller_creds_manager: &StorytellerCredentialManager,
+) -> Option<PromptToken> {
+  let creds = match storyteller_creds_manager.get_credentials() {
+    Ok(Some(creds)) => creds,
+    _ => {
+      warn!("[FalRouter] No Storyteller credentials available, skipping prompt creation");
+      return None;
+    }
+  };
+
+  let model_type = request.model
+    .map(|m| m.to_common_model_type());
+
+  let prompt_request = CreatePromptRequest {
+    uuid_idempotency_token: generate_random_uuid(),
+    positive_prompt: request.prompt.clone(),
+    negative_prompt: None,
+    model_type,
+    generation_provider: Some(GenerationProvider::Fal),
+    maybe_generation_mode: None,
+    maybe_aspect_ratio: None,
+    maybe_resolution: None,
+    maybe_batch_count: request.batch_size.map(|n| n as u8),
+    maybe_generate_audio: None,
+    maybe_duration_seconds: None,
+  };
+
+  match create_prompt(api_host, Some(&creds), prompt_request).await {
+    Ok(response) => {
+      info!("[FalRouter] Created prompt: {:?}", response.prompt_token);
+      Some(response.prompt_token)
+    }
+    Err(err) => {
+      error!("[FalRouter] Failed to create prompt (continuing anyway): {:?}", err);
+      None
+    }
+  }
 }
 
 fn build_task_enqueue_success(
