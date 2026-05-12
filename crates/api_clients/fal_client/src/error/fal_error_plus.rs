@@ -1,4 +1,5 @@
 use crate::error::api_generic_error::FalGenericApiError;
+use crate::error::api_specific_error::FalSpecificApiError;
 use crate::error::classify_fal_error::classify_fal_error;
 use crate::error::client_error::FalClientError;
 use crate::error::fal_error::FalError;
@@ -15,6 +16,9 @@ pub enum FalErrorPlus {
 
   /// A generic API error (bad response, parse failure, etc.).
   ApiGeneric(FalGenericApiError),
+
+  /// A specific, categorized API error (incomplete job, etc.).
+  ApiSpecific(FalSpecificApiError),
 
   // =============== Older error types (gradually replace these) ===============
 
@@ -41,6 +45,7 @@ impl Display for FalErrorPlus {
     match self {
       Self::ClientError(err) => write!(f, "FalErrorPlus::ClientError: {}", err),
       Self::ApiGeneric(err) => write!(f, "FalErrorPlus::ApiGeneric: {}", err),
+      Self::ApiSpecific(err) => write!(f, "FalErrorPlus::ApiSpecific: {}", err),
       Self::FalError(err) => write!(f, "FalErrorPlus::FalError: {:?}", err),
       Self::FalApiKeyError(reason) => write!(f, "FalErrorPlus::FalApiKeyError: {}", reason),
       Self::FalBillingError(reason) => write!(f, "FalErrorPlus::FalBillingError: {}", reason),
