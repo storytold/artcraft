@@ -16,6 +16,7 @@ const EXPECTED_HOST: &str = "queue.fal.run";
 pub struct PollJobResponseArgs<'a> {
   /// This is the "response" URL (not the "status" URL).
   /// This fetches the actual results of a completed job.
+  /// If the job is not complete, this call will fail in error.
   pub response_url: &'a str,
 
   pub api_key: &'a FalApiKey,
@@ -206,6 +207,67 @@ mod tests {
       let value: Value = serde_json::from_str(json).unwrap();
       assert!(extract_contents_from_response(&value).is_none());
     }
+
+    #[test]
+    fn parse_real_image_response_offline() {
+      let json = r#"{"images":[{"url":"https://v3b.fal.media/files/b/0a99d392/qzx8aXgWTbf5tVcYEF0S8.jpg","width":1024,"height":768,"content_type":"image/jpeg"}],"timings":{"inference":1.1978995269964798},"seed":1248735483,"has_nsfw_concepts":[false],"prompt":"a giant robot fighting a dragon in a futuristic city"}"#;
+      let value: Value = serde_json::from_str(json).unwrap();
+      let extracted = extract_contents_from_response(&value).expect("should extract contents");
+
+      // Should have images, not video or mesh
+      assert!(extracted.video.is_none());
+      assert!(extracted.model_glb.is_none());
+      assert!(extracted.thumbnail.is_none());
+
+      let images = extracted.images.expect("should have images");
+      assert_eq!(images.len(), 1);
+
+      let image = &images[0];
+      assert_eq!(image.url.as_deref(), Some("https://v3b.fal.media/files/b/0a99d392/qzx8aXgWTbf5tVcYEF0S8.jpg"));
+      assert_eq!(image.width, Some(1024));
+      assert_eq!(image.height, Some(768));
+      assert_eq!(image.content_type.as_deref(), Some("image/jpeg"));
+
+      // Verify raw payload also has seed, prompt, timings
+      assert_eq!(value.get("seed").and_then(|v| v.as_u64()), Some(1248735483));
+      assert_eq!(value.get("prompt").and_then(|v| v.as_str()), Some("a giant robot fighting a dragon in a futuristic city"));
+      let inference_time = value.get("timings").and_then(|v| v.get("inference")).and_then(|v| v.as_f64()).unwrap();
+      assert!((inference_time - 1.198).abs() < 0.001);
+    }
+
+    #[test]
+    fn parse_real_mesh_response_offline() {
+      let json = r#"{"model_glb":{"url":"https://v3b.fal.media/files/b/0a99d693/98becABi5mxR6w5Svy4oB_model.glb","content_type":"model/gltf-binary","file_name":"model.glb","file_size":33352724},"thumbnail":{"url":"https://v3b.fal.media/files/b/0a99d693/_wB78l-a_WmrlAzaKyTWy_preview.png","content_type":"image/png","file_name":"preview.png","file_size":99797},"model_urls":{"glb":{"url":"https://v3b.fal.media/files/b/0a99d693/98becABi5mxR6w5Svy4oB_model.glb","content_type":"model/gltf-binary","file_name":"model.glb","file_size":33352724},"fbx":null,"obj":{"url":"https://v3b.fal.media/files/b/0a99d693/_sxg6RiOiz_N9Eut1uFQo_model.obj","content_type":"text/plain","file_name":"model.obj","file_size":26194790},"usdz":null},"seed":null}"#;
+      let value: Value = serde_json::from_str(json).unwrap();
+      let extracted = extract_contents_from_response(&value).expect("should extract contents");
+
+      // Should have model_glb + thumbnail, not images or video
+      assert!(extracted.images.is_none());
+      assert!(extracted.video.is_none());
+
+      let glb = extracted.model_glb.expect("should have model_glb");
+      assert_eq!(glb.url.as_deref(), Some("https://v3b.fal.media/files/b/0a99d693/98becABi5mxR6w5Svy4oB_model.glb"));
+      assert_eq!(glb.content_type.as_deref(), Some("model/gltf-binary"));
+      assert_eq!(glb.file_name.as_deref(), Some("model.glb"));
+      assert_eq!(glb.file_size, Some(33352724));
+
+      let thumbnail = extracted.thumbnail.expect("should have thumbnail");
+      assert_eq!(thumbnail.url.as_deref(), Some("https://v3b.fal.media/files/b/0a99d693/_wB78l-a_WmrlAzaKyTWy_preview.png"));
+      assert_eq!(thumbnail.content_type.as_deref(), Some("image/png"));
+      assert_eq!(thumbnail.file_name.as_deref(), Some("preview.png"));
+      assert_eq!(thumbnail.file_size, Some(99797));
+
+      // Verify raw payload also has model_urls with OBJ
+      let obj = value.get("model_urls").and_then(|v| v.get("obj")).unwrap();
+      assert_eq!(obj.get("url").and_then(|v| v.as_str()), Some("https://v3b.fal.media/files/b/0a99d693/_sxg6RiOiz_N9Eut1uFQo_model.obj"));
+      assert_eq!(obj.get("content_type").and_then(|v| v.as_str()), Some("text/plain"));
+      assert_eq!(obj.get("file_name").and_then(|v| v.as_str()), Some("model.obj"));
+      assert_eq!(obj.get("file_size").and_then(|v| v.as_u64()), Some(26194790));
+
+      // FBX and USDZ are null
+      assert!(value.get("model_urls").and_then(|v| v.get("fbx")).and_then(|v| v.as_object()).is_none());
+      assert!(value.get("model_urls").and_then(|v| v.get("usdz")).and_then(|v| v.as_object()).is_none());
+    }
   }
 
   // ── Live tests ──
@@ -223,13 +285,21 @@ mod tests {
     };
 
     let result = poll_job_response(args).await.expect("poll should succeed");
-    println!("Extracted contents: {:?}", result.extracted_contents);
+    let extracted = result.extracted_contents.expect("should have extracted contents");
 
-    let extracted = result.extracted_contents.unwrap();
-    let images = extracted.images.unwrap();
-    assert!(!images.is_empty());
-    assert!(images[0].url.is_some());
-    println!("Image URL: {}", images[0].url.as_ref().unwrap());
+    // Should have images, not video or mesh
+    assert!(extracted.video.is_none());
+    assert!(extracted.model_glb.is_none());
+    assert!(extracted.thumbnail.is_none());
+
+    let images = extracted.images.expect("should have images");
+    assert_eq!(images.len(), 1);
+
+    let image = &images[0];
+    assert_eq!(image.url.as_deref(), Some("https://v3b.fal.media/files/b/0a99d392/qzx8aXgWTbf5tVcYEF0S8.jpg"));
+    assert_eq!(image.width, Some(1024));
+    assert_eq!(image.height, Some(768));
+    assert_eq!(image.content_type.as_deref(), Some("image/jpeg"));
   }
 
   #[tokio::test]
@@ -245,11 +315,22 @@ mod tests {
     };
 
     let result = poll_job_response(args).await.expect("poll should succeed");
-    println!("Extracted contents: {:?}", result.extracted_contents);
+    let extracted = result.extracted_contents.expect("should have extracted contents");
 
-    let extracted = result.extracted_contents.unwrap();
-    let glb = extracted.model_glb.unwrap();
-    assert!(glb.url.is_some());
-    println!("GLB URL: {}", glb.url.as_ref().unwrap());
+    // Should have model_glb + thumbnail, not images or video
+    assert!(extracted.images.is_none());
+    assert!(extracted.video.is_none());
+
+    let glb = extracted.model_glb.expect("should have model_glb");
+    assert_eq!(glb.url.as_deref(), Some("https://v3b.fal.media/files/b/0a99d693/98becABi5mxR6w5Svy4oB_model.glb"));
+    assert_eq!(glb.content_type.as_deref(), Some("model/gltf-binary"));
+    assert_eq!(glb.file_name.as_deref(), Some("model.glb"));
+    assert_eq!(glb.file_size, Some(33352724));
+
+    let thumbnail = extracted.thumbnail.expect("should have thumbnail");
+    assert_eq!(thumbnail.url.as_deref(), Some("https://v3b.fal.media/files/b/0a99d693/_wB78l-a_WmrlAzaKyTWy_preview.png"));
+    assert_eq!(thumbnail.content_type.as_deref(), Some("image/png"));
+    assert_eq!(thumbnail.file_name.as_deref(), Some("preview.png"));
+    assert_eq!(thumbnail.file_size, Some(99797));
   }
 }
