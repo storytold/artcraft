@@ -38,6 +38,12 @@
   ],
   "references": [
     {
+      "path": "../../libs/components/upload-modal/tsconfig.lib.json"
+    },
+    {
+      "path": "../../libs/components/pagescene/tsconfig.lib.json"
+    },
+    {
       "path": "../../libs/components/slider-v2/tsconfig.lib.json"
     },
     {

@@ -6,25 +6,13 @@
       "path": "../slider-v2"
     },
     {
+      "path": "../../api"
+    },
+    {
       "path": "../promptbox"
     },
     {
       "path": "../../api-enums"
-    },
-    {
-      "path": "../../model-list"
-    },
-    {
-      "path": "../action-reminder-modal"
-    },
-    {
-      "path": "../tooltip"
-    },
-    {
-      "path": "../modal"
-    },
-    {
-      "path": "../model-selector"
     },
     {
       "path": "../pricing-modal"
@@ -33,16 +21,25 @@
       "path": "../help-menu"
     },
     {
+      "path": "../model-selector"
+    },
+    {
+      "path": "../../model-list"
+    },
+    {
       "path": "../../common"
     },
     {
-      "path": "../../api"
+      "path": "../action-reminder-modal"
     },
     {
-      "path": "../gallery-modal"
+      "path": "../tooltip"
     },
     {
       "path": "../button"
+    },
+    {
+      "path": "../modal"
     },
     {
       "path": "./tsconfig.lib.json"
