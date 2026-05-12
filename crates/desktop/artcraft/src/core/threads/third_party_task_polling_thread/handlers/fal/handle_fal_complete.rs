@@ -2,6 +2,9 @@ use crate::core::events::basic_sendable_event_trait::BasicSendableEvent;
 use crate::core::events::generation_events::common::{GenerationAction, GenerationServiceProvider};
 use crate::core::events::generation_events::generation_complete_event::GenerationCompleteEvent;
 use crate::core::state::app_env_configs::app_env_configs::AppEnvConfigs;
+use crate::core::threads::third_party_task_polling_thread::events::notify_frontend_of_completion::{
+  notify_frontend_of_completion, CompletionData,
+};
 use crate::core::state::data_dir::app_data_root::AppDataRoot;
 use crate::core::state::data_dir::trait_data_subdir::DataSubdir;
 use crate::core::state::task_database::TaskDatabase;
@@ -133,13 +136,15 @@ async fn handle_fal_complete_inner(
   }
 
   // Look up CDN/thumbnail URLs for the primary media file
-  let mut maybe_cdn_url = None;
+  let mut maybe_cdn_url: Option<reqwest::Url> = None;
+  let mut maybe_cdn_url_str: Option<String> = None;
   let mut maybe_thumbnail_url_template = None;
 
   if let Some(media_file_token) = maybe_primary_media_file_token.as_ref() {
     match get_media_file(&app_env_configs.storyteller_host, media_file_token).await {
       Ok(response) => {
-        maybe_cdn_url = Some(response.media_file.media_links.cdn_url.to_string());
+        maybe_cdn_url = Some(response.media_file.media_links.cdn_url.clone());
+        maybe_cdn_url_str = Some(response.media_file.media_links.cdn_url.to_string());
         maybe_thumbnail_url_template = media_links_to_thumbnail_template(&response.media_file.media_links)
           .map(|s| s.to_string());
       }
@@ -149,24 +154,44 @@ async fn handle_fal_complete_inner(
     }
   }
 
-  // Mark the task as completed
+  // Mark the task as completed in the local database
   let updated = update_successful_task_status_with_metadata(UpdateSuccessfulTaskArgs {
     db: task_database.get_connection(),
     task_id: &task.id,
     maybe_batch_token: maybe_batch_token.as_ref(),
     maybe_primary_media_file_token: maybe_primary_media_file_token.as_ref(),
     maybe_primary_media_file_class: Some(media_class),
-    maybe_primary_media_file_cdn_url: maybe_cdn_url.as_deref(),
+    maybe_primary_media_file_cdn_url: maybe_cdn_url_str.as_deref(),
     maybe_primary_media_file_thumbnail_url_template: maybe_thumbnail_url_template.as_deref(),
   }).await?;
 
   if updated {
+    // Fire the generic generation-complete event (for the task queue UI)
     let event = GenerationCompleteEvent {
       action: Some(generation_action),
       service: GenerationServiceProvider::Fal,
       model: None,
     };
     event.send_infallible(app_handle);
+
+    // Fire the typed frontend notification (for the specific page/component that initiated the job)
+    if let Some(primary_token) = maybe_primary_media_file_token {
+      let completion = CompletionData {
+        primary_media_file_token: primary_token,
+        maybe_cdn_url,
+        maybe_thumbnail_url_template,
+        maybe_batch_token,
+        media_class,
+      };
+
+      notify_frontend_of_completion(
+        app_handle,
+        &app_env_configs.storyteller_host,
+        Some(&creds),
+        task,
+        &completion,
+      ).await;
+    }
   }
 
   info!("[FalComplete] Task {} fully handled", task.id.as_str());
