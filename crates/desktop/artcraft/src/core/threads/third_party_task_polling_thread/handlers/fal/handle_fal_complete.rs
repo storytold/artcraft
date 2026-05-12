@@ -9,6 +9,8 @@ use crate::services::storyteller::state::storyteller_credential_manager::Storyte
 use artcraft_api_defs::prompts::create_prompt::CreatePromptRequest;
 use artcraft_api_defs::utils::media_links_to_thumbnail_template::media_links_to_thumbnail_template;
 use artcraft_client::credentials::storyteller_credential_set::StorytellerCredentialSet;
+use artcraft_client::error::api_error::ApiError;
+use artcraft_client::error::storyteller_error::StorytellerError;
 use artcraft_client::endpoints::media_files::get_media_file::get_media_file;
 use artcraft_client::endpoints::media_files::legacy_upload_media_file_from_file::{
   legacy_upload_media_file_from_file, LegacyUploadMediaFileFromFileArgs,
@@ -33,6 +35,7 @@ use sqlite_tasks::queries::update_successful_task_status_with_metadata::{
 use std::fs::File;
 use std::io::Write;
 use std::path::PathBuf;
+use std::time::Duration;
 use tauri::AppHandle;
 use tokens::tokens::batch_generations::BatchGenerationToken;
 use tokens::tokens::media_files::MediaFileToken;
@@ -251,6 +254,9 @@ async fn download_file(
   Ok(download_path)
 }
 
+const MAX_UPLOAD_RETRIES: u32 = 5;
+const INITIAL_RETRY_DELAY_SECS: u64 = 10;
+
 async fn upload_to_backend(
   creds: &StorytellerCredentialSet,
   app_env_configs: &AppEnvConfigs,
@@ -259,6 +265,45 @@ async fn upload_to_backend(
   maybe_batch_token: Option<&BatchGenerationToken>,
   media_class: TaskMediaFileClass,
 ) -> Result<MediaFileToken, Box<dyn std::error::Error>> {
+  let mut retry_delay_secs = INITIAL_RETRY_DELAY_SECS;
+
+  for attempt in 0..MAX_UPLOAD_RETRIES {
+    let result = try_upload(creds, app_env_configs, download_path, prompt_token, maybe_batch_token, media_class).await;
+
+    match result {
+      Ok(token) => return Ok(token),
+      Err(StorytellerError::Api(ApiError::TooManyRequests(_))) => {
+        if attempt + 1 < MAX_UPLOAD_RETRIES {
+          warn!(
+            "[FalComplete] Upload rate-limited (429), retrying in {}s (attempt {}/{})",
+            retry_delay_secs,
+            attempt + 1,
+            MAX_UPLOAD_RETRIES,
+          );
+          tokio::time::sleep(Duration::from_secs(retry_delay_secs)).await;
+          retry_delay_secs = (retry_delay_secs * 2).min(60);
+        } else {
+          error!("[FalComplete] Upload rate-limited after {} attempts, giving up", MAX_UPLOAD_RETRIES);
+          return Err(Box::new(StorytellerError::Api(ApiError::TooManyRequests(
+            "Max retries exceeded".to_string(),
+          ))));
+        }
+      }
+      Err(err) => return Err(Box::new(err)),
+    }
+  }
+
+  unreachable!()
+}
+
+async fn try_upload(
+  creds: &StorytellerCredentialSet,
+  app_env_configs: &AppEnvConfigs,
+  download_path: &PathBuf,
+  prompt_token: &tokens::tokens::prompts::PromptToken,
+  maybe_batch_token: Option<&BatchGenerationToken>,
+  media_class: TaskMediaFileClass,
+) -> Result<MediaFileToken, StorytellerError> {
   let media_token = match media_class {
     TaskMediaFileClass::Video => {
       let result = upload_video_media_file_from_file(UploadVideoFromFileArgs {
