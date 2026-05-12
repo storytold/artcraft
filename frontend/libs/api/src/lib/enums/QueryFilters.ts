@@ -23,6 +23,7 @@ export enum FilterEngineCategories {
   IMAGE_PLANE = "image_plane",
   LOCATION = "location",
   OBJECT = "object",
+  SPLAT = "splat",
   SCENE = "scene",
   SET_DRESSING = "set_dressing",
   SKYBOX = "skybox",
