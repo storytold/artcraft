@@ -11,7 +11,6 @@ import { Link } from "react-router-dom";
 import { PasswordResetApi } from "@storyteller/api";
 
 import Seo from "../../components/seo";
-import { PagePatternBackdrop } from "../../components/truchet-pattern";
 
 const ForgotPassword = () => {
   const [email, setEmail] = useState("");
@@ -52,7 +51,6 @@ const ForgotPassword = () => {
         title="Reset Password - ArtCraft"
         description="Reset your ArtCraft password."
       />
-      <PagePatternBackdrop variant="auth" />
       <div
         aria-hidden
         className="pointer-events-none absolute inset-x-0 top-0 h-[700px] z-0"

@@ -5,7 +5,6 @@ import { Button } from "@storyteller/ui-button";
 import { Link, useSearchParams } from "react-router-dom";
 import { SOCIAL_LINKS } from "../../config/links";
 import Seo from "../../components/seo";
-import { PagePatternBackdrop } from "../../components/truchet-pattern";
 import { useEffect, useState } from "react";
 import { UsersApi } from "@storyteller/api";
 
@@ -67,8 +66,6 @@ const CheckoutCancel = () => {
         title="Checkout Cancelled - ArtCraft"
         description="Your checkout was cancelled. No payment was made."
       />
-
-      <PagePatternBackdrop variant="auth" />
 
       {/* Background gradient - subtle/neutral */}
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-0">

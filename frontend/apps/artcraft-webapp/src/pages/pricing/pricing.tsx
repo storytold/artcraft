@@ -1,7 +1,5 @@
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { isMobile } from "react-device-detect";
-import Lenis from "lenis";
 import { faCoins } from "@fortawesome/pro-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Button } from "@storyteller/ui-button";
@@ -9,7 +7,6 @@ import { UsersApi } from "@storyteller/api";
 import Seo from "../../components/seo";
 import { PricingTable } from "../../components/pricing-table";
 import { CreditsModal } from "../../components/credits-modal";
-import { TruchetPattern } from "../../components/truchet-pattern";
 
 const SeedanceBanner = () => (
   <div className="flex flex-col gap-5">
@@ -24,8 +21,7 @@ const SeedanceBanner = () => (
 
     <div>
       <h1 className="text-3xl md:text-4xl lg:text-5xl tracking-[-0.035em] font-medium leading-[1.05] mb-3">
-        Seedance 2.0 is{" "}
-        <span className="font-serif-italic">here</span>
+        Seedance 2.0 is <span className="font-serif-italic">here</span>
       </h1>
       <p className="text-white/55 text-base md:text-lg leading-relaxed">
         Generate jaw-dropping AI videos with Seedance 2.0 before it's available
@@ -78,34 +74,12 @@ const Pricing = () => {
       try {
         const api = new UsersApi();
         const res = await api.GetSession();
-        setIsLoggedIn(
-          res.success && !!res.data?.loggedIn && !!res.data?.user,
-        );
+        setIsLoggedIn(res.success && !!res.data?.loggedIn && !!res.data?.user);
       } catch {
         // not logged in
       }
     };
     check();
-  }, []);
-
-  useEffect(() => {
-    if (isMobile) return;
-    const lenis = new Lenis({
-      duration: 1.2,
-      easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
-      smoothWheel: true,
-      lerp: 0.1,
-    });
-    let rafId: number;
-    const raf = (time: number) => {
-      lenis.raf(time);
-      rafId = requestAnimationFrame(raf);
-    };
-    rafId = requestAnimationFrame(raf);
-    return () => {
-      cancelAnimationFrame(rafId);
-      lenis.destroy();
-    };
   }, []);
 
   return (
@@ -124,43 +98,7 @@ const Pricing = () => {
         }}
       />
 
-      {/* Truchet pattern flourish, top of page */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-x-0 top-0 h-[1100px] z-0"
-        style={{
-          maskImage:
-            "radial-gradient(ellipse 80% 60% at 50% 35%, black 25%, transparent 80%)",
-          WebkitMaskImage:
-            "radial-gradient(ellipse 80% 60% at 50% 35%, black 25%, transparent 80%)",
-        }}
-      >
-        <TruchetPattern
-          variant="pricing"
-          intensity={0.5}
-          className="absolute inset-0 w-full h-full"
-        />
-      </div>
-
-      {/* Truchet pattern flourish, lower section */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-x-0 bottom-0 h-[800px] z-0"
-        style={{
-          maskImage:
-            "radial-gradient(ellipse 75% 60% at 50% 60%, black 20%, transparent 80%)",
-          WebkitMaskImage:
-            "radial-gradient(ellipse 75% 60% at 50% 60%, black 20%, transparent 80%)",
-        }}
-      >
-        <TruchetPattern
-          variant="pricing"
-          intensity={0.5}
-          className="absolute inset-0 w-full h-full"
-        />
-      </div>
-
-      <main className="relative z-10 px-4 sm:px-8 pt-28 sm:pt-32 pb-16">
+      <main className="relative z-10 px-4 sm:px-8 pt-10">
         {isSeedanceRef ? (
           <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-[5fr_7fr] gap-8 xl:gap-12 items-start">
             <SeedanceBanner />
@@ -177,15 +115,15 @@ const Pricing = () => {
         ) : (
           <div className="max-w-6xl mx-auto">
             <div className="text-center mb-14" data-reveal>
-              <span className="inline-block text-xs font-semibold uppercase tracking-[0.18em] text-primary mb-5">
+              <span className="inline-block text-sm font-semibold uppercase tracking-[0.18em] text-primary mb-3">
                 Plans
               </span>
               <h1 className="text-4xl sm:text-5xl md:text-6xl tracking-[-0.035em] font-medium leading-[1.02] mb-5">
                 Invest in <span className="font-serif-italic">yourself</span>.
               </h1>
               <p className="max-w-xl mx-auto text-base sm:text-lg text-white/55 leading-relaxed">
-                Get a ton of generations and invest in a tool you'll always
-                own. Your subscription helps keep ArtCraft free and open for
+                Get a ton of generations and invest in a tool you'll always own.
+                Your subscription helps keep ArtCraft free and open for
                 everyone.
               </p>
             </div>
@@ -214,7 +152,10 @@ const Pricing = () => {
             className="mt-4 gap-2 rounded-full border border-white/[0.1] bg-white/[0.06] hover:bg-white/[0.1] px-5 py-2 h-11 text-[14px] font-semibold text-white"
             onClick={() => setCreditsModalOpen(true)}
           >
-            <FontAwesomeIcon icon={faCoins} className="text-primary text-[13px]" />
+            <FontAwesomeIcon
+              icon={faCoins}
+              className="text-primary text-[13px]"
+            />
             Buy Credits
           </Button>
         </div>

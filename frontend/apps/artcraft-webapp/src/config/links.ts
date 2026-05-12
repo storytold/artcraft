@@ -9,3 +9,5 @@ export const SOCIAL_LINKS = {
 } as const;
 
 export const SUPPORT_EMAIL = "hello@storyteller.ai";
+
+export const MARKETING_SITE = "https://getartcraft.com";

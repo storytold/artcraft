@@ -11,7 +11,6 @@ import { isMobile, isMacOs } from "react-device-detect";
 import { DOWNLOAD_LINKS } from "../../config/github_download_links";
 import Seo from "../../components/seo";
 import { PricingTable } from "../../components/pricing-table";
-import { PagePatternBackdrop } from "../../components/truchet-pattern";
 
 const Welcome = () => {
   const downloadUrl = isMacOs ? DOWNLOAD_LINKS.MACOS : DOWNLOAD_LINKS.WINDOWS;
@@ -22,8 +21,6 @@ const Welcome = () => {
         title="Welcome - ArtCraft"
         description="Welcome to ArtCraft. Get started with your subscription."
       />
-
-      <PagePatternBackdrop variant="landing" />
 
       {/* Background gradient */}
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-0">

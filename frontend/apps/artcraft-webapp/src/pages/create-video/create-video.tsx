@@ -917,8 +917,11 @@ export default function CreateVideo() {
       promptBox={
         <div
           ref={promptBoxRef}
-          className="animate-fade-in-up fixed bottom-2 sm:bottom-3 left-0 right-0 z-30 mx-auto w-full max-w-[900px] px-2 sm:px-4"
-          style={{ animationDelay: "150ms" }}
+          className="animate-fade-in-up fixed bottom-2 sm:bottom-3 right-0 z-30 mx-auto w-full max-w-[900px] px-2 sm:px-4 transition-[left] duration-200 ease-linear"
+          style={{
+            animationDelay: "150ms",
+            left: "var(--ac-sidebar-offset, 0px)",
+          }}
         >
           {/* {selectedModel?.model === "seedance_2p0" && (
             <div className="mb-2 flex items-start gap-2.5 rounded-lg border border-yellow-500/40 px-3.5 py-2.5 text-xs text-yellow-200 shadow-lg backdrop-blur-xl bg-yellow-800/60">

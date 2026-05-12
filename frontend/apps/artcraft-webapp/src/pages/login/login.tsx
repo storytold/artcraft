@@ -7,12 +7,15 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Button } from "@storyteller/ui-button";
 import { Input } from "@storyteller/ui-input";
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { UsersApi } from "@storyteller/api";
 import Seo from "../../components/seo";
 
 const Login = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const fromParam = searchParams.get("from");
+  const redirectTo = fromParam && fromParam.startsWith("/") ? fromParam : "/";
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -34,7 +37,7 @@ const Login = () => {
 
     if (response.success) {
       window.dispatchEvent(new Event("auth-change"));
-      navigate("/");
+      navigate(redirectTo);
     } else {
       setError(response.errorMessage || "Invalid credentials");
     }

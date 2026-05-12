@@ -13,7 +13,6 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { PasswordResetApi, BillingApi } from "@storyteller/api";
 
 import Seo from "../../components/seo";
-import { PagePatternBackdrop } from "../../components/truchet-pattern";
 
 const VerifyReset = () => {
   const navigate = useNavigate();
@@ -108,7 +107,6 @@ const VerifyReset = () => {
         title="Verify Password Reset - ArtCraft"
         description="Enter your verification code and new password."
       />
-      <PagePatternBackdrop variant="auth" />
       <div
         aria-hidden
         className="pointer-events-none absolute inset-x-0 top-0 h-[700px] z-0"

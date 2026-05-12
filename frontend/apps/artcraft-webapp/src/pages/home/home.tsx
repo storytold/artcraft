@@ -43,16 +43,10 @@ const APPS: AppCard[] = [
 export function Home() {
   return (
     <div className="min-h-full px-6 sm:px-10 py-10 sm:py-16 max-w-6xl mx-auto w-full">
-      <h1 className="text-center font-display text-4xl sm:text-5xl font-semibold tracking-tight">
-        What would you like to{" "}
-        <span className="bg-gradient-to-r from-primary-300 to-pink-400 bg-clip-text text-transparent">
-          create
-        </span>{" "}
+      <h1 className="text-center font-display text-4xl sm:text-6xl sm:max-w-lg mx-auto font-semibold tracking-tight">
+        What would you like to <span className="text-primary">create</span>{" "}
         today?
       </h1>
-      <p className="mt-3 text-center text-white/55 text-sm sm:text-base">
-        Pick an app to get started.
-      </p>
 
       <section className="mt-12">
         <h2 className="text-sm font-semibold text-white/85 mb-4">Create</h2>

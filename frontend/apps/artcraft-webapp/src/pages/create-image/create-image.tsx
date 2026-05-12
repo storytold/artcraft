@@ -387,8 +387,11 @@ export default function CreateImage() {
       promptBox={
         <div
           ref={promptBoxRef}
-          className="animate-fade-in-up fixed bottom-2 sm:bottom-3 left-0 right-0 z-30 mx-auto w-full max-w-[900px] px-2 sm:px-4"
-          style={{ animationDelay: "150ms" }}
+          className="animate-fade-in-up fixed bottom-2 sm:bottom-3 right-0 z-30 mx-auto w-full max-w-[900px] px-2 sm:px-4 transition-[left] duration-200 ease-linear"
+          style={{
+            animationDelay: "150ms",
+            left: "var(--ac-sidebar-offset, 0px)",
+          }}
         >
           <PromptBox
             prompt={prompt}

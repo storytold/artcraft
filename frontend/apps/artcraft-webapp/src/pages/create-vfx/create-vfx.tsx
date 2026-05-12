@@ -5,7 +5,6 @@ import { faSpinnerThird, faSparkles } from "@fortawesome/pro-solid-svg-icons";
 import { Button } from "@storyteller/ui-button";
 import {
   PromptBoxVFX,
-  TruchetPattern,
   VFXResultCard,
   useVFXStore,
 } from "@storyteller/ui-vfx";
@@ -301,24 +300,6 @@ export default function CreateVFX() {
         description="Swap the backdrop of a video using a reference image."
       />
 
-      {/* Truchet pattern is fixed to the viewport so it stays put as the
-          page scrolls behind the (also fixed) navbar. */}
-      <div
-        aria-hidden
-        className="pointer-events-none fixed inset-0 z-0"
-        style={{
-          maskImage:
-            "radial-gradient(ellipse 70% 60% at 50% 45%, black 25%, transparent 85%)",
-          WebkitMaskImage:
-            "radial-gradient(ellipse 70% 60% at 50% 45%, black 25%, transparent 85%)",
-        }}
-      >
-        <TruchetPattern
-          intensity={0.7}
-          className="absolute inset-0 h-full w-full"
-        />
-      </div>
-
       {history.length === 0 ? (
         <div
           className="relative z-10 flex min-h-screen items-center justify-center px-3 sm:px-6"
@@ -361,13 +342,17 @@ export default function CreateVFX() {
 
       <div
         aria-hidden
-        className="pointer-events-none fixed bottom-0 left-0 right-0 z-20 h-72 bg-gradient-to-t from-[#101014] via-[#101014]/85 to-transparent"
+        className="pointer-events-none fixed bottom-0 right-0 z-20 h-72 bg-gradient-to-t from-[#101014] via-[#101014]/85 to-transparent transition-[left] duration-200 ease-linear"
+        style={{ left: "var(--ac-sidebar-offset, 0px)" }}
       />
 
       <div
         ref={promptBoxRef}
-        className="animate-fade-in-up pointer-events-none fixed bottom-2 left-1/2 z-30 -translate-x-1/2 sm:bottom-3"
-        style={{ animationDelay: "150ms" }}
+        className="animate-fade-in-up pointer-events-none fixed bottom-2 z-30 -translate-x-1/2 sm:bottom-3 transition-[left] duration-200 ease-linear"
+        style={{
+          animationDelay: "150ms",
+          left: "calc(50% + var(--ac-sidebar-offset, 0px) / 2)",
+        }}
       >
         <div className="pointer-events-auto w-[min(620px,calc(100vw-32px))]">
           <PromptBoxVFX

@@ -1,12 +1,17 @@
 import { Fragment, useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Menu, MenuButton, MenuItem, MenuItems, Transition } from "@headlessui/react";
+import {
+  Menu,
+  MenuButton,
+  MenuItem,
+  MenuItems,
+  Transition,
+} from "@headlessui/react";
 import { twMerge } from "tailwind-merge";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faCoins,
   faGem,
-  faGrid2,
   faCog,
   faLifeRing,
 } from "@fortawesome/pro-solid-svg-icons";
@@ -19,7 +24,7 @@ import { SOCIAL_LINKS } from "../../config/links";
 import { CreditsModal } from "../credits-modal";
 import { SettingsModal } from "../settings-modal/SettingsModal";
 import { TaskQueue } from "./task-queue";
-import { SidebarTrigger } from "../ui/sidebar";
+import { SidebarTrigger, useSidebar } from "../ui/sidebar";
 import { Breadcrumbs } from "./breadcrumbs";
 
 async function fetchCredits(): Promise<number | null> {
@@ -114,6 +119,8 @@ function CreditsChip({
 export function TopBar() {
   const navigate = useNavigate();
   const { user, authChecked } = useSession();
+  const { state, isMobile } = useSidebar();
+  const showTopbarLogo = isMobile || state === "collapsed";
   const [credits, setCredits] = useState<number | null>(null);
   const [hasPaidPlan, setHasPaidPlan] = useState<boolean | null>(null);
   const [creditsModalOpen, setCreditsModalOpen] = useState(false);
@@ -143,33 +150,23 @@ export function TopBar() {
     window.location.href = "/";
   };
 
-  const workspaceLabel = user
-    ? `${user.display_name || user.username}'s workspace`
-    : "Workspace";
-
   return (
-    <header className="sticky top-0 z-20 flex h-12 items-center gap-3 border-b border-white/[0.06] bg-[#121212]/80 backdrop-blur-md px-3">
-      {/* Left: sidebar trigger + workspace + breadcrumbs */}
+    <header className="sticky top-0 z-20 flex items-center gap-3 border-b border-white/[0.06] bg-[#121212]/80 backdrop-blur-md px-3 pb-4 pt-3 sm:pt-6">
+      {/* Left: sidebar trigger (mobile only) + logo (when sidebar closed) + breadcrumbs */}
       <div className="flex items-center gap-2 min-w-0 flex-1">
-        <SidebarTrigger />
-
-        {user && (
-          <button
-            type="button"
-            className="hidden md:flex items-center gap-2 h-8 rounded-lg px-2 text-sm font-medium text-white/85 hover:bg-white/[0.04] transition-colors min-w-0"
-          >
-            <img
-              src={`https://www.gravatar.com/avatar/${user.email_gravatar_hash}?d=mp`}
-              alt=""
-              className="h-5 w-5 rounded-full shrink-0"
-            />
-            <span className="truncate max-w-[180px]">{workspaceLabel}</span>
-          </button>
-        )}
-
-        {user && <span className="hidden md:block text-white/15">|</span>}
-
-        <Breadcrumbs />
+        <SidebarTrigger className="md:hidden" />
+        <div className="flex gap-6">
+          {showTopbarLogo && (
+            <Link to="/" className="flex items-center shrink-0">
+              <img
+                src="/images/artcraft-logo.png"
+                alt="ArtCraft"
+                className="h-4 sm:h-5 w-auto"
+              />
+            </Link>
+          )}
+          <Breadcrumbs />
+        </div>
       </div>
 
       {/* Right: credits / upgrade / library / avatar */}
@@ -202,14 +199,6 @@ export function TopBar() {
                 Upgrade
               </Button>
             )}
-
-            <Link
-              to="/library"
-              className="hidden sm:flex h-8 items-center gap-1.5 rounded-lg px-3 text-sm font-medium text-white/80 bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] transition-all"
-            >
-              <FontAwesomeIcon icon={faGrid2} className="text-[11px]" />
-              Library
-            </Link>
 
             <TaskQueue />
 

@@ -12,7 +12,6 @@ import { isMobile, isMacOs } from "react-device-detect";
 import { DOWNLOAD_LINKS } from "../../config/github_download_links";
 import { SOCIAL_LINKS } from "../../config/links";
 import Seo from "../../components/seo";
-import { PagePatternBackdrop } from "../../components/truchet-pattern";
 import { UsersApi } from "@storyteller/api";
 import { useEffect, useState } from "react";
 
@@ -78,8 +77,6 @@ const CheckoutSuccess = () => {
         title="Payment Successful - ArtCraft"
         description="Your ArtCraft subscription is now active. Download and start creating!"
       />
-
-      <PagePatternBackdrop variant="auth" />
 
       {/* Background gradient - celebratory green/purple */}
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-0">

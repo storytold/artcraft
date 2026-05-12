@@ -278,7 +278,7 @@ export default function Library() {
             <Link to="/login">
               <Button
                 variant="primary"
-                className="rounded-full bg-white text-black hover:bg-white/90 text-sm font-semibold px-6 py-2.5 rounded-lg"
+                className="rounded-full bg-white text-black hover:bg-white/90 text-sm font-semibold px-6 py-2.5"
               >
                 Login
               </Button>
@@ -286,7 +286,7 @@ export default function Library() {
             <Link to="/signup">
               <Button
                 variant="primary"
-                className="rounded-full text-sm font-semibold px-6 py-2.5 rounded-lg"
+                className="rounded-full text-sm font-semibold px-6 py-2.5"
               >
                 Sign up
               </Button>
@@ -307,10 +307,10 @@ export default function Library() {
   }
 
   return (
-    <div className="relative min-h-screen w-full bg-[#101014] pt-14 sm:pt-20 pb-8 px-3 sm:px-4 md:px-8 lg:px-12">
+    <div className="relative min-h-screen w-full bg-[#101014] pb-8 px-3 sm:px-4 md:px-8 lg:px-12">
       <div className="mx-auto max-w-[1600px]">
         {/* Header — sticky below navbar */}
-        <div className="sticky top-12 sm:top-16 z-10 -mx-3 sm:-mx-4 md:-mx-8 lg:-mx-12 px-3 sm:px-4 md:px-8 lg:px-12 pb-3 pt-3 bg-[#101014]">
+        <div className="sticky top-0 z-10 -mx-3 sm:-mx-4 md:-mx-8 lg:-mx-12 px-3 sm:px-4 md:px-8 lg:px-12 pb-3 pt-3 bg-[#101014]">
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-2 shrink-0">
               <h1 className="text-lg sm:text-2xl font-medium text-white">
@@ -390,7 +390,10 @@ export default function Library() {
               <p className="text-white/40 text-sm mb-4">No items yet.</p>
               <div className="flex gap-3">
                 <Link to="/create-image">
-                  <Button variant="primary" className="rounded-full text-sm px-4 py-2">
+                  <Button
+                    variant="primary"
+                    className="rounded-full text-sm px-4 py-2"
+                  >
                     Create Image
                   </Button>
                 </Link>
