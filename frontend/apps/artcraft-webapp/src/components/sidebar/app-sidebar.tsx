@@ -43,7 +43,7 @@ const CREATE_ITEMS: NavItem[] = [
   { label: "Image", href: "/create-image", icon: faImage },
   { label: "Video", href: "/create-video", icon: faVideo },
   {
-    label: "Background Change",
+    label: "BG Change",
     href: "/background-change",
     icon: faWandMagicSparkles,
   },
