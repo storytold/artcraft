@@ -8,7 +8,6 @@ import {
 import { faDiscord } from "@fortawesome/free-brands-svg-icons";
 import type { IconDefinition } from "@fortawesome/fontawesome-svg-core";
 import Seo from "../../components/seo";
-import Footer from "../../components/footer";
 import { SOCIAL_LINKS, SUPPORT_EMAIL } from "../../config/links";
 
 type SupportRow = {
@@ -72,8 +71,6 @@ const Support = () => {
           ))}
         </ul>
       </main>
-
-      <Footer />
     </div>
   );
 };

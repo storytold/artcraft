@@ -90,6 +90,14 @@ module.exports = {
         950: "#3E3E41",
       },
       "base-fg": "rgb(255 255 255 / <alpha-value>)",
+      sidebar: {
+        DEFAULT: "var(--sidebar-bg)",
+        foreground: "var(--sidebar-fg)",
+        border: "var(--sidebar-border)",
+        accent: "var(--sidebar-accent)",
+        "accent-foreground": "var(--sidebar-accent-fg)",
+        ring: "var(--sidebar-ring)",
+      },
       ui: {
         // Aligned with artcraft app's theme-gray (frontend/apps/artcraft/app/src/styles/base.css)
         background: "#242424",

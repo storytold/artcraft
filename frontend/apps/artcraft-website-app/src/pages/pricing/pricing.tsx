@@ -6,7 +6,6 @@ import { faCoins } from "@fortawesome/pro-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Button } from "@storyteller/ui-button";
 import { UsersApi } from "@storyteller/api";
-import Footer from "../../components/footer";
 import Seo from "../../components/seo";
 import { PricingTable } from "../../components/pricing-table";
 import { CreditsModal } from "../../components/credits-modal";
@@ -236,8 +235,6 @@ const Pricing = () => {
           onClose={() => setCreditsModalOpen(false)}
         />
       )}
-
-      <Footer />
     </div>
   );
 };

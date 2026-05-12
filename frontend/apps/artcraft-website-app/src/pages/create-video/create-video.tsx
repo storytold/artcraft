@@ -33,7 +33,6 @@ import {
   CreateMediaPageShell,
 } from "../../components/generation-gallery";
 import { Lightbox } from "../../components/lightbox/lightbox";
-import { AppDownloadCta } from "../../components/app-download-cta/AppDownloadCta";
 import { useCreateVideoStore } from "./create-video-store";
 import {
   enqueueVideoGeneration,
@@ -930,7 +929,6 @@ export default function CreateVideo() {
               </span>
             </div>
           )} */}
-          <AppDownloadCta />
           <PromptBox
             prompt={prompt}
             onPromptChange={setPrompt}

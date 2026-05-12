@@ -8,7 +8,6 @@ import {
 import { Button } from "@storyteller/ui-button";
 import { type PopoverItem } from "@storyteller/ui-popover";
 import Seo from "../../components/seo";
-import Footer from "../../components/footer";
 import { TruchetPattern } from "../truchet-pattern";
 
 interface CreateMediaPageShellProps {
@@ -117,7 +116,6 @@ export function CreateMediaPageShell({
             </Link>
           </div>
         </div>
-        <Footer />
       </div>
     );
   }

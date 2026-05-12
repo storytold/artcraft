@@ -19,7 +19,6 @@ import {
   CreateMediaPageShell,
 } from "../../components/generation-gallery";
 import { Lightbox } from "../../components/lightbox/lightbox";
-import { AppDownloadCta } from "../../components/app-download-cta/AppDownloadCta";
 import { useCreateImageStore } from "./create-image-store";
 import { enqueueImageGeneration, startPolling } from "./generate-image-api";
 import { AspectRatioPicker } from "./components/AspectRatioPicker";
@@ -391,7 +390,6 @@ export default function CreateImage() {
           className="animate-fade-in-up fixed bottom-2 sm:bottom-3 left-0 right-0 z-30 mx-auto w-full max-w-[900px] px-2 sm:px-4"
           style={{ animationDelay: "150ms" }}
         >
-          <AppDownloadCta />
           <PromptBox
             prompt={prompt}
             onPromptChange={setPrompt}

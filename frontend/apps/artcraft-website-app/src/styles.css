@@ -2,6 +2,19 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer base {
+  :root {
+    /* Sidebar tokens (consumed by tailwind colors in tailwind.config.js).
+       Stored as raw hex so we can reference them via theme() if needed. */
+    --sidebar-bg: #1a1a1a;
+    --sidebar-fg: rgba(255, 255, 255, 0.72);
+    --sidebar-border: rgba(255, 255, 255, 0.06);
+    --sidebar-accent: rgba(255, 255, 255, 0.06);
+    --sidebar-accent-fg: #ffffff;
+    --sidebar-ring: rgba(45, 129, 255, 0.4);
+  }
+}
+
 * {
   scrollbar-width: thin;
   scrollbar-color: #363636 #171717;
