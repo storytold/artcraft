@@ -255,6 +255,7 @@ pub async fn upload_snapshot_media_file_handler(
     maybe_title: Some("Snapshot"),
     maybe_scene_source_media_file_token: None,
     is_intermediate_system_file: true,
+    maybe_generation_provider: None,
     public_bucket_directory_hash: public_upload_path.get_object_hash(),
     maybe_public_bucket_prefix: PREFIX,
     maybe_public_bucket_extension: Some(&extension),

@@ -1,3 +1,4 @@
+pub mod common_utils;
 pub mod upload_audio_media_file_handler;
 pub mod upload_engine_asset;
 pub mod upload_error;

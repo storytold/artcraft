@@ -24,6 +24,7 @@ use mysql_queries::queries::media_files::create::specialized_insert::insert_medi
 use tokens::tokens::media_files::MediaFileToken;
 
 use crate::http_server::endpoints::media_files::upload::upload_error::MediaFileUploadError;
+use crate::http_server::endpoints::media_files::upload::common_utils::try_parse_generation_provider::try_parse_generation_provider;
 use crate::http_server::validations::validate_idempotency_token_format::validate_idempotency_token_format;
 use crate::state::server_state::ServerState;
 
@@ -56,6 +57,11 @@ pub struct UploadSpzMediaFileForm {
   #[multipart(limit = "2 KiB")]
   #[schema(value_type = Option<String>, format = Binary)]
   maybe_visibility: Option<Text<Visibility>>,
+
+  /// Optional: The third-party generation provider (e.g. "fal", "replicate").
+  #[multipart(limit = "2 KiB")]
+  #[schema(value_type = Option<String>, format = Binary)]
+  maybe_generation_provider: Option<Text<String>>,
 }
 
 #[derive(Serialize, ToSchema)]
@@ -241,6 +247,11 @@ pub async fn upload_spz_media_file_handler(
         warn!("Upload SPZ bytes to bucket error: {:?}", e);
         MediaFileUploadError::ServerError
       })?;
+
+  // TODO: Pass maybe_generation_provider to MediaFileInsertBuilder once it supports it.
+  let _maybe_generation_provider = form.maybe_generation_provider
+      .as_ref()
+      .and_then(|text| try_parse_generation_provider(text.as_ref()));
 
   let media_token = MediaFileInsertBuilder::new()
       .media_file_class(MediaFileClass::Dimensional)

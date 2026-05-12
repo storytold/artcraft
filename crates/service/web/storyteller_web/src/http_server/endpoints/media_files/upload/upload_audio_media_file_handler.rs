@@ -26,6 +26,7 @@ use mysql_queries::queries::media_files::create::specialized_insert::insert_medi
 use tokens::tokens::media_files::MediaFileToken;
 
 use crate::http_server::endpoints::media_files::upload::upload_error::MediaFileUploadError;
+use crate::http_server::endpoints::media_files::upload::common_utils::try_parse_generation_provider::try_parse_generation_provider;
 use crate::http_server::validations::validate_idempotency_token_format::validate_idempotency_token_format;
 use crate::state::server_state::ServerState;
 
@@ -55,6 +56,12 @@ pub struct UploadAudioMediaFileForm {
   #[multipart(limit = "2 KiB")]
   #[schema(value_type = Option<Visibility>, format = Binary)]
   maybe_visibility: Option<Text<Visibility>>,
+
+  /// Optional: The third-party generation provider (e.g. "fal", "replicate").
+  /// If set, `is_user_upload` will be false and `is_intermediate_system_file` will be forced false.
+  #[multipart(limit = "2 KiB")]
+  #[schema(value_type = Option<String>, format = Binary)]
+  maybe_generation_provider: Option<Text<String>>,
 }
 
 // Unlike the "upload" endpoints, which are pure inserts, these endpoints are *upserts*.
@@ -314,6 +321,16 @@ pub async fn upload_audio_media_file_handler(
         MediaFileUploadError::ServerError
       })?;
 
+  let maybe_generation_provider = form.maybe_generation_provider
+      .as_ref()
+      .and_then(|text| try_parse_generation_provider(text.as_ref()));
+
+  let upload_type = if maybe_generation_provider.is_some() {
+    UploadType::ThirdPartyInference
+  } else {
+    UploadType::Filesystem
+  };
+
   let (token, record_id) = insert_media_file_from_file_upload(InsertMediaFileFromUploadArgs {
     maybe_media_class: Some(MediaFileClass::Audio),
     media_file_type: MediaFileType::Audio,
@@ -321,7 +338,7 @@ pub async fn upload_audio_media_file_handler(
     maybe_creator_anonymous_visitor_token: maybe_avt_token.as_ref(),
     creator_ip_address: &ip_address,
     creator_set_visibility,
-    upload_type: UploadType::Filesystem, // TODO(bt,2024-05-02): This should be a parameter and a well-known enum.
+    upload_type,
     maybe_engine_category: None,
     maybe_animation_type: None,
     maybe_prompt_token: None,
@@ -333,6 +350,7 @@ pub async fn upload_audio_media_file_handler(
     maybe_title: maybe_title.as_deref(),
     maybe_scene_source_media_file_token: None,
     is_intermediate_system_file: false, // NB: is_user_upload = true
+    maybe_generation_provider,
     public_bucket_directory_hash: public_upload_path.get_object_hash(),
     maybe_public_bucket_prefix: PREFIX,
     maybe_public_bucket_extension: Some(&extension),

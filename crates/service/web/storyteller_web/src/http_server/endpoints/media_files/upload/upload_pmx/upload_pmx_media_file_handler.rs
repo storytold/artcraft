@@ -272,6 +272,7 @@ pub async fn upload_pmx_media_file_handler(
     sha256_checksum: &pmx_details.sha256_checksum,
     maybe_scene_source_media_file_token: None,
     is_intermediate_system_file: false, // NB: is_user_upload = TRUE
+    maybe_generation_provider: None,
     maybe_title: maybe_title.as_deref(),
     public_bucket_directory_hash: pmx_details.pmx_public_upload_path.get_object_hash(),
     maybe_public_bucket_prefix: PREFIX,

@@ -213,6 +213,7 @@ pub async fn create_scene_handler(
     maybe_title: upload_media_request.title.as_deref(),
     maybe_scene_source_media_file_token: None,
     is_intermediate_system_file: false,
+    maybe_generation_provider: None,
     public_bucket_directory_hash: public_upload_path.get_object_hash(),
     maybe_public_bucket_prefix: PREFIX,
     maybe_public_bucket_extension: SUFFIX,

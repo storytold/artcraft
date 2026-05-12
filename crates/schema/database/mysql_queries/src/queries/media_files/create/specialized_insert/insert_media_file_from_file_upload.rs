@@ -9,6 +9,7 @@ use enums::by_table::media_files::media_file_engine_category::MediaFileEngineCat
 use enums::by_table::media_files::media_file_origin_category::MediaFileOriginCategory;
 use enums::by_table::media_files::media_file_origin_product_category::MediaFileOriginProductCategory;
 use enums::by_table::media_files::media_file_type::MediaFileType;
+use enums::common::generation_provider::GenerationProvider;
 use enums::common::visibility::Visibility;
 use errors::AnyhowResult;
 use tokens::tokens::anonymous_visitor_tracking::AnonymousVisitorTrackingToken;
@@ -20,6 +21,7 @@ use tokens::tokens::users::UserToken;
 use crate::queries::generic_synthetic_ids::transactional_increment_generic_synthetic_id::transactional_increment_generic_synthetic_id;
 
 pub enum UploadType {
+  ThirdPartyInference,
   Filesystem,
   DeviceCaptureApi,
   StorytellerEngine,
@@ -54,6 +56,10 @@ pub struct InsertMediaFileFromUploadArgs<'a> {
   pub maybe_scene_source_media_file_token: Option<&'a MediaFileToken>,
   pub is_intermediate_system_file: bool,
 
+  /// If provided, the third-party provider that generated this file.
+  /// When set, `is_user_upload` and `is_intermediate_system_file` will be set to false.
+  pub maybe_generation_provider: Option<GenerationProvider>,
+
   pub public_bucket_directory_hash: &'a str,
   pub maybe_public_bucket_prefix: Option<&'a str>,
   pub maybe_public_bucket_extension: Option<&'a str>,
@@ -65,11 +71,24 @@ pub async fn insert_media_file_from_file_upload(
 {
   let token = MediaFileToken::generate();
 
-  let origin_category = match args.upload_type {
+  let mut origin_category = match args.upload_type {
+    UploadType::ThirdPartyInference => MediaFileOriginCategory::ThirdPartyInference,
     UploadType::Filesystem => MediaFileOriginCategory::Upload,
     UploadType::DeviceCaptureApi => MediaFileOriginCategory::DeviceApi,
     UploadType::StorytellerEngine => MediaFileOriginCategory::StorytellerStudio,
   };
+
+  let mut maybe_generation_provider_str = None;
+  let mut is_intermediate_system_file = args.is_intermediate_system_file;
+  let mut is_user_upload = true;
+
+  // Overrides if we state we're using a generation provider
+  if let Some(generation_provider) = args.maybe_generation_provider {
+    origin_category = MediaFileOriginCategory::ThirdPartyInference;
+    maybe_generation_provider_str = Some(generation_provider.to_str());
+    is_intermediate_system_file = false;
+    is_user_upload = false;
+  }
 
   let mut maybe_creator_file_synthetic_id : Option<u64> = None;
   let mut maybe_creator_category_synthetic_id : Option<u64> = None;
@@ -134,12 +153,14 @@ SET
   creator_set_visibility = ?,
 
   maybe_scene_source_media_file_token = ?,
+
   is_intermediate_system_file = ?,
+  is_user_upload = ?,
+
+  maybe_generation_provider = ?,
 
   maybe_creator_file_synthetic_id = ?,
   maybe_creator_category_synthetic_id = ?,
-
-  is_user_upload = TRUE,
 
   maybe_origin_model_type = NULL,
   maybe_origin_model_token = NULL
@@ -180,7 +201,11 @@ SET
       args.creator_set_visibility.to_str(),
 
       args.maybe_scene_source_media_file_token.map(|t| t.as_str()),
-      args.is_intermediate_system_file,
+
+      is_intermediate_system_file,
+      is_user_upload,
+
+      maybe_generation_provider_str,
 
       maybe_creator_file_synthetic_id,
       maybe_creator_category_synthetic_id,

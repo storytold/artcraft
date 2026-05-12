@@ -236,6 +236,7 @@ pub async fn upload_scene_snapshot_media_file_handler(
     maybe_scene_source_media_file_token: maybe_scene_source_media_file_token.as_ref(),
     // NB: is_user_upload = TRUE
     is_intermediate_system_file: true, // NB: This is a snapshot, so we shouldn't show it off in lists.
+    maybe_generation_provider: None,
     public_bucket_directory_hash: public_upload_path.get_object_hash(),
     maybe_public_bucket_prefix: PREFIX,
     maybe_public_bucket_extension: Some(SUFFIX),
