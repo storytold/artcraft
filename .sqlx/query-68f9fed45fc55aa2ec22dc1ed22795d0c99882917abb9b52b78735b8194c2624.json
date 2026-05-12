@@ -1,6 +1,6 @@
 {
   "db_name": "SQLite",
-  "query": "\n    SELECT\n      id,\n      task_status,\n      task_type,\n      model_type,\n      provider,\n      provider_job_id,\n      frontend_caller,\n      frontend_subscriber_id,\n      frontend_subscriber_payload\n    FROM tasks\n    WHERE\n      provider = ?\n      AND provider_job_id = ?\n  ",
+  "query": "\n    SELECT\n      id,\n      task_status,\n      task_type,\n      model_type,\n      provider,\n      provider_job_id,\n      frontend_caller,\n      queue_status_url,\n      queue_response_url,\n      frontend_subscriber_id,\n      frontend_subscriber_payload\n    FROM tasks\n    WHERE\n      provider = ?\n      AND provider_job_id = ?\n  ",
   "describe": {
     "columns": [
       {
@@ -39,13 +39,23 @@
         "type_info": "Text"
       },
       {
-        "name": "frontend_subscriber_id",
+        "name": "queue_status_url",
         "ordinal": 7,
         "type_info": "Text"
       },
       {
-        "name": "frontend_subscriber_payload",
+        "name": "queue_response_url",
         "ordinal": 8,
+        "type_info": "Text"
+      },
+      {
+        "name": "frontend_subscriber_id",
+        "ordinal": 9,
+        "type_info": "Text"
+      },
+      {
+        "name": "frontend_subscriber_payload",
+        "ordinal": 10,
         "type_info": "Text"
       }
     ],
@@ -61,8 +71,10 @@
       true,
       true,
       true,
+      true,
+      true,
       true
     ]
   },
-  "hash": "38ff2df237b16f077865711dd81261de1b5fa05a9787679ce9ccd4ac576b1069"
+  "hash": "68f9fed45fc55aa2ec22dc1ed22795d0c99882917abb9b52b78735b8194c2624"
 }
