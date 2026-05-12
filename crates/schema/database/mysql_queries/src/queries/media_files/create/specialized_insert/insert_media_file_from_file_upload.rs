@@ -84,7 +84,6 @@ pub async fn insert_media_file_from_file_upload(
 
   if let Some(generation_provider) = args.maybe_generation_provider {
     // Overrides if we're using a generation provider
-    origin_category = MediaFileOriginCategory::ThirdPartyInference;
     maybe_generation_provider_str = Some(generation_provider.to_str());
     is_intermediate_system_file = false;
     is_user_upload = false;
