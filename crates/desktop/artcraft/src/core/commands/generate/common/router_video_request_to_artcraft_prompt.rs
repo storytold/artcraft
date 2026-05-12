@@ -5,6 +5,7 @@ use artcraft_router::api::common_video_model::CommonVideoModel;
 use artcraft_router::api::provider::Provider;
 use artcraft_router::generate::generate_video::generate_video_request_builder::GenerateVideoRequestBuilder;
 use enums::common::generation::common_aspect_ratio::CommonAspectRatio as EnumsAspectRatio;
+use enums::common::generation::common_generation_mode::CommonGenerationMode;
 use enums::common::generation::common_model_type::CommonModelType;
 use enums::common::generation::common_resolution::CommonResolution as EnumsResolution;
 use enums::common::generation_provider::GenerationProvider;
@@ -19,7 +20,7 @@ pub fn router_video_request_to_artcraft_prompt(
     negative_prompt: request.negative_prompt.clone(),
     model_type: video_model_to_common_model_type(request.model),
     generation_provider: Some(provider_to_generation_provider(request.provider)),
-    maybe_generation_mode: None,
+    maybe_generation_mode: Some(determine_video_generation_mode(request)),
     maybe_aspect_ratio: request.aspect_ratio.map(router_aspect_ratio_to_enums),
     maybe_resolution: request.resolution.map(router_resolution_to_enums),
     maybe_batch_count: request.video_batch_count.map(|n| n.min(255) as u8),
@@ -29,6 +30,21 @@ pub fn router_video_request_to_artcraft_prompt(
 }
 
 // ── Converters ──
+
+fn determine_video_generation_mode(request: &GenerateVideoRequestBuilder) -> CommonGenerationMode {
+  let has_keyframes = request.start_frame.is_some() || request.end_frame.is_some();
+  let has_references = request.reference_images.is_some()
+    || request.reference_videos.is_some()
+    || request.reference_audio.is_some();
+
+  if has_keyframes {
+    CommonGenerationMode::Keyframe
+  } else if has_references {
+    CommonGenerationMode::Reference
+  } else {
+    CommonGenerationMode::Text
+  }
+}
 
 fn video_model_to_common_model_type(model: CommonVideoModel) -> Option<CommonModelType> {
   match model {
@@ -135,6 +151,7 @@ mod tests {
     assert_eq!(prompt.positive_prompt.as_deref(), Some("a dog running on the beach"));
     assert_eq!(prompt.model_type, Some(CommonModelType::Kling3p0Standard));
     assert_eq!(prompt.generation_provider, Some(GenerationProvider::Fal));
+    assert_eq!(prompt.maybe_generation_mode, Some(CommonGenerationMode::Text));
     assert!(prompt.negative_prompt.is_none());
     assert!(prompt.maybe_aspect_ratio.is_none());
     assert!(prompt.maybe_resolution.is_none());
@@ -161,6 +178,59 @@ mod tests {
     assert_eq!(prompt.maybe_duration_seconds, Some(10));
     assert_eq!(prompt.maybe_batch_count, Some(2));
     assert_eq!(prompt.maybe_generate_audio, Some(true));
+  }
+
+  #[test]
+  fn text_mode_when_no_references() {
+    let builder = base_builder();
+    let prompt = router_video_request_to_artcraft_prompt(&builder);
+    assert_eq!(prompt.maybe_generation_mode, Some(CommonGenerationMode::Text));
+  }
+
+  #[test]
+  fn keyframe_mode_with_start_frame() {
+    use artcraft_router::api::image_ref::ImageRef;
+    let builder = GenerateVideoRequestBuilder {
+      start_frame: Some(ImageRef::Url("https://example.com/frame.jpg".to_string())),
+      ..base_builder()
+    };
+    let prompt = router_video_request_to_artcraft_prompt(&builder);
+    assert_eq!(prompt.maybe_generation_mode, Some(CommonGenerationMode::Keyframe));
+  }
+
+  #[test]
+  fn keyframe_mode_with_end_frame() {
+    use artcraft_router::api::image_ref::ImageRef;
+    let builder = GenerateVideoRequestBuilder {
+      end_frame: Some(ImageRef::Url("https://example.com/frame.jpg".to_string())),
+      ..base_builder()
+    };
+    let prompt = router_video_request_to_artcraft_prompt(&builder);
+    assert_eq!(prompt.maybe_generation_mode, Some(CommonGenerationMode::Keyframe));
+  }
+
+  #[test]
+  fn reference_mode_with_reference_images() {
+    use artcraft_router::api::image_list_ref::ImageListRef;
+    let builder = GenerateVideoRequestBuilder {
+      reference_images: Some(ImageListRef::Urls(vec!["https://example.com/ref.jpg".to_string()])),
+      ..base_builder()
+    };
+    let prompt = router_video_request_to_artcraft_prompt(&builder);
+    assert_eq!(prompt.maybe_generation_mode, Some(CommonGenerationMode::Reference));
+  }
+
+  #[test]
+  fn keyframe_takes_priority_over_reference() {
+    use artcraft_router::api::image_ref::ImageRef;
+    use artcraft_router::api::image_list_ref::ImageListRef;
+    let builder = GenerateVideoRequestBuilder {
+      start_frame: Some(ImageRef::Url("https://example.com/frame.jpg".to_string())),
+      reference_images: Some(ImageListRef::Urls(vec!["https://example.com/ref.jpg".to_string()])),
+      ..base_builder()
+    };
+    let prompt = router_video_request_to_artcraft_prompt(&builder);
+    assert_eq!(prompt.maybe_generation_mode, Some(CommonGenerationMode::Keyframe));
   }
 
   #[test]

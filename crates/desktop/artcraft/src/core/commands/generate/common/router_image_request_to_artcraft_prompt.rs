@@ -5,6 +5,7 @@ use artcraft_router::api::common_resolution::CommonResolution as RouterResolutio
 use artcraft_router::api::provider::Provider;
 use artcraft_router::generate::generate_image::generate_image_request_builder::GenerateImageRequestBuilder;
 use enums::common::generation::common_aspect_ratio::CommonAspectRatio as EnumsAspectRatio;
+use enums::common::generation::common_generation_mode::CommonGenerationMode;
 use enums::common::generation::common_model_type::CommonModelType;
 use enums::common::generation::common_resolution::CommonResolution as EnumsResolution;
 use enums::common::generation_provider::GenerationProvider;
@@ -19,7 +20,7 @@ pub fn router_image_request_to_artcraft_prompt(
     negative_prompt: None,
     model_type: image_model_to_common_model_type(request.model),
     generation_provider: Some(provider_to_generation_provider(request.provider)),
-    maybe_generation_mode: None,
+    maybe_generation_mode: Some(determine_image_generation_mode(request)),
     maybe_aspect_ratio: request.aspect_ratio.map(router_aspect_ratio_to_enums),
     maybe_resolution: request.resolution.map(router_resolution_to_enums),
     maybe_batch_count: request.image_batch_count.map(|n| n.min(255) as u8),
@@ -29,6 +30,14 @@ pub fn router_image_request_to_artcraft_prompt(
 }
 
 // ── Converters ──
+
+fn determine_image_generation_mode(request: &GenerateImageRequestBuilder) -> CommonGenerationMode {
+  if request.image_inputs.is_some() {
+    CommonGenerationMode::Edit
+  } else {
+    CommonGenerationMode::Text
+  }
+}
 
 fn image_model_to_common_model_type(model: CommonImageModel) -> Option<CommonModelType> {
   match model {
@@ -127,11 +136,30 @@ mod tests {
     assert_eq!(prompt.positive_prompt.as_deref(), Some("a cat in space"));
     assert_eq!(prompt.model_type, Some(CommonModelType::NanoBananaPro));
     assert_eq!(prompt.generation_provider, Some(GenerationProvider::Fal));
+    assert_eq!(prompt.maybe_generation_mode, Some(CommonGenerationMode::Text));
     assert!(prompt.negative_prompt.is_none());
     assert!(prompt.maybe_aspect_ratio.is_none());
     assert!(prompt.maybe_resolution.is_none());
     assert!(prompt.maybe_batch_count.is_none());
     assert!(!prompt.uuid_idempotency_token.is_empty());
+  }
+
+  #[test]
+  fn text_mode_when_no_images() {
+    let builder = base_builder();
+    let prompt = router_image_request_to_artcraft_prompt(&builder);
+    assert_eq!(prompt.maybe_generation_mode, Some(CommonGenerationMode::Text));
+  }
+
+  #[test]
+  fn edit_mode_when_images_present() {
+    use artcraft_router::api::image_list_ref::ImageListRef;
+    let builder = GenerateImageRequestBuilder {
+      image_inputs: Some(ImageListRef::Urls(vec!["https://example.com/img.jpg".to_string()])),
+      ..base_builder()
+    };
+    let prompt = router_image_request_to_artcraft_prompt(&builder);
+    assert_eq!(prompt.maybe_generation_mode, Some(CommonGenerationMode::Edit));
   }
 
   #[test]
