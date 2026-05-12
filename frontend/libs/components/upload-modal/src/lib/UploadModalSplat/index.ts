@@ -1,0 +1,1 @@
+export { UploadModalSplat } from "./UploadModalSplat";

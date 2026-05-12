@@ -44,19 +44,19 @@
   ],
   "references": [
     {
+      "path": "../gallery-modal/tsconfig.lib.json"
+    },
+    {
       "path": "../modal/tsconfig.lib.json"
     },
     {
       "path": "../loading/tsconfig.lib.json"
     },
     {
-      "path": "../../common/tsconfig.lib.json"
+      "path": "../checkbox/tsconfig.lib.json"
     },
     {
       "path": "../file-uploader/tsconfig.lib.json"
-    },
-    {
-      "path": "../input/tsconfig.lib.json"
     },
     {
       "path": "../list-dropdown/tsconfig.lib.json"
