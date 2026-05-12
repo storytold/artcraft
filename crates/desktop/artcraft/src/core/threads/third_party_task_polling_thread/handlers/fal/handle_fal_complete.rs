@@ -1,6 +1,3 @@
-use crate::core::events::basic_sendable_event_trait::BasicSendableEvent;
-use crate::core::events::generation_events::common::{GenerationAction, GenerationServiceProvider};
-use crate::core::events::generation_events::generation_complete_event::GenerationCompleteEvent;
 use crate::core::state::app_env_configs::app_env_configs::AppEnvConfigs;
 use crate::core::threads::third_party_task_polling_thread::events::notify_frontend_of_completion::{
   notify_frontend_of_completion, CompletionData,
@@ -84,7 +81,7 @@ async fn handle_fal_complete_inner(
   let extracted = job_response.extracted_contents;
 
   // Determine what kind of media we got and collect download URLs.
-  let (urls, media_class, generation_action) = collect_media_urls(task, &extracted)?;
+  let (urls, media_class) = collect_media_urls(task, &extracted)?;
 
   if urls.is_empty() {
     warn!("[FalComplete] Task {} completed but no downloadable media found in response", task.id.as_str());
@@ -166,15 +163,6 @@ async fn handle_fal_complete_inner(
   }).await?;
 
   if updated {
-    // Fire the generic generation-complete event (for the task queue UI)
-    let event = GenerationCompleteEvent {
-      action: Some(generation_action),
-      service: GenerationServiceProvider::Fal,
-      model: None,
-    };
-    event.send_infallible(app_handle);
-
-    // Fire the typed frontend notification (for the specific page/component that initiated the job)
     if let Some(primary_token) = maybe_primary_media_file_token {
       let completion = CompletionData {
         primary_media_file_token: primary_token,
@@ -205,10 +193,10 @@ async fn handle_fal_complete_inner(
 fn collect_media_urls(
   task: &Task,
   extracted: &Option<PollResponseExtractedContents>,
-) -> Result<(Vec<String>, TaskMediaFileClass, GenerationAction), Box<dyn std::error::Error>> {
+) -> Result<(Vec<String>, TaskMediaFileClass), Box<dyn std::error::Error>> {
   let extracted = match extracted {
     Some(e) => e,
-    None => return Ok((vec![], TaskMediaFileClass::Image, GenerationAction::GenerateImage)),
+    None => return Ok((vec![], TaskMediaFileClass::Image)),
   };
 
   // Images (batch)
@@ -217,32 +205,32 @@ fn collect_media_urls(
       .filter_map(|img| img.url.clone())
       .collect();
     if !urls.is_empty() {
-      return Ok((urls, TaskMediaFileClass::Image, GenerationAction::GenerateImage));
+      return Ok((urls, TaskMediaFileClass::Image));
     }
   }
 
   // Single image (e.g. background removal)
   if let Some(image) = &extracted.image {
     if let Some(url) = &image.url {
-      return Ok((vec![url.clone()], TaskMediaFileClass::Image, GenerationAction::GenerateImage));
+      return Ok((vec![url.clone()], TaskMediaFileClass::Image));
     }
   }
 
   // Video
   if let Some(video) = &extracted.video {
     if let Some(url) = &video.url {
-      return Ok((vec![url.clone()], TaskMediaFileClass::Video, GenerationAction::GenerateVideo));
+      return Ok((vec![url.clone()], TaskMediaFileClass::Video));
     }
   }
 
   // 3D model (GLB)
   if let Some(glb) = &extracted.model_glb {
     if let Some(url) = &glb.url {
-      return Ok((vec![url.clone()], TaskMediaFileClass::Dimensional, GenerationAction::ImageTo3d));
+      return Ok((vec![url.clone()], TaskMediaFileClass::Dimensional));
     }
   }
 
-  Ok((vec![], TaskMediaFileClass::Image, GenerationAction::GenerateImage))
+  Ok((vec![], TaskMediaFileClass::Image))
 }
 
 async fn download_file(
@@ -353,3 +341,4 @@ async fn try_upload(
 
   Ok(media_token)
 }
+
