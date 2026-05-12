@@ -7,6 +7,7 @@ use enums::tauri::tasks::task_type::TaskType;
 use enums::tauri::ux::tauri_command_caller::TauriCommandCaller;
 use sqlite_tasks::error::SqliteTasksError;
 use sqlite_tasks::queries::create_task::{create_task, CreateTaskArgs};
+use tokens::tokens::prompts::PromptToken;
 use tokens::tokens::sqlite::tasks::TaskId;
 
 pub struct TaskEnqueueSuccess {
@@ -16,7 +17,7 @@ pub struct TaskEnqueueSuccess {
   pub provider_job_id: Option<String>,
   pub maybe_queue_status_url: Option<String>,
   pub maybe_queue_response_url: Option<String>,
-  pub maybe_prompt_token: Option<String>,
+  pub maybe_prompt_token: Option<PromptToken>,
 }
 
 impl TaskEnqueueSuccess{
@@ -125,7 +126,7 @@ impl TaskEnqueueSuccess{
       provider_job_id: self.provider_job_id.as_deref(),
       queue_status_url: self.maybe_queue_status_url.as_deref(),
       queue_response_url: self.maybe_queue_response_url.as_deref(),
-      prompt_token: self.maybe_prompt_token.as_deref(),
+      prompt_token: self.maybe_prompt_token.as_ref(),
       frontend_caller,
       frontend_subscriber_id,
       frontend_subscriber_payload,

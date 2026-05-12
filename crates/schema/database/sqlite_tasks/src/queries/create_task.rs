@@ -5,6 +5,7 @@ use enums::tauri::tasks::task_model_type::TaskModelType;
 use enums::tauri::tasks::task_status::TaskStatus;
 use enums::tauri::tasks::task_type::TaskType;
 use enums::tauri::ux::tauri_command_caller::TauriCommandCaller;
+use tokens::tokens::prompts::PromptToken;
 use tokens::tokens::sqlite::tasks::TaskId;
 
 pub struct CreateTaskArgs<'a> {
@@ -16,7 +17,7 @@ pub struct CreateTaskArgs<'a> {
   pub provider_job_id: Option<&'a str>,
   pub queue_status_url: Option<&'a str>,
   pub queue_response_url: Option<&'a str>,
-  pub prompt_token: Option<&'a str>,
+  pub prompt_token: Option<&'a PromptToken>,
   pub frontend_caller: Option<TauriCommandCaller>,
   pub frontend_subscriber_id: Option<&'a str>,
   pub frontend_subscriber_payload: Option<&'a str>,
@@ -33,6 +34,7 @@ pub async fn create_task(
   let task_type_temp = args.task_type.to_str();
   let model_type_temp = args.model_type.map(|s| s.to_str());
   let provider_temp = args.provider.to_string();
+  let prompt_token_temp = args.prompt_token.map(|t| t.as_str());
   let frontend_caller_temp = args.frontend_caller.map(|s| s.to_str());
 
   let query = sqlx::query!(r#"
@@ -60,7 +62,7 @@ pub async fn create_task(
       args.provider_job_id,
       args.queue_status_url,
       args.queue_response_url,
-      args.prompt_token,
+      prompt_token_temp,
       frontend_caller_temp,
       args.frontend_subscriber_id,
       args.frontend_subscriber_payload

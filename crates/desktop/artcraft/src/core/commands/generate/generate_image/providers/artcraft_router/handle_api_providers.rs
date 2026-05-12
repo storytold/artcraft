@@ -199,6 +199,6 @@ fn build_task_enqueue_success(
     provider_job_id: Some(provider_job_id),
     maybe_queue_status_url: fal_payload.maybe_status_url,
     maybe_queue_response_url: fal_payload.maybe_response_url,
-    maybe_prompt_token: maybe_prompt_token.map(|t| t.to_string()),
+    maybe_prompt_token,
   })
 }
