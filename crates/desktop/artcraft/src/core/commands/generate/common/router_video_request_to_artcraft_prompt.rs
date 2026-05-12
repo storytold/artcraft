@@ -1,0 +1,180 @@
+use artcraft_api_defs::prompts::create_prompt::CreatePromptRequest;
+use artcraft_router::api::common_aspect_ratio::CommonAspectRatio as RouterAspectRatio;
+use artcraft_router::api::common_resolution::CommonResolution as RouterResolution;
+use artcraft_router::api::common_video_model::CommonVideoModel;
+use artcraft_router::api::provider::Provider;
+use artcraft_router::generate::generate_video::generate_video_request_builder::GenerateVideoRequestBuilder;
+use enums::common::generation::common_aspect_ratio::CommonAspectRatio as EnumsAspectRatio;
+use enums::common::generation::common_model_type::CommonModelType;
+use enums::common::generation::common_resolution::CommonResolution as EnumsResolution;
+use enums::common::generation_provider::GenerationProvider;
+use uuid_utils::uuid::generate_random_uuid;
+
+pub fn router_video_request_to_artcraft_prompt(
+  request: &GenerateVideoRequestBuilder,
+) -> CreatePromptRequest {
+  CreatePromptRequest {
+    uuid_idempotency_token: generate_random_uuid(),
+    positive_prompt: request.prompt.clone(),
+    negative_prompt: request.negative_prompt.clone(),
+    model_type: video_model_to_common_model_type(request.model),
+    generation_provider: Some(provider_to_generation_provider(request.provider)),
+    maybe_generation_mode: None,
+    maybe_aspect_ratio: request.aspect_ratio.map(router_aspect_ratio_to_enums),
+    maybe_resolution: request.resolution.map(router_resolution_to_enums),
+    maybe_batch_count: request.video_batch_count.map(|n| n.min(255) as u8),
+    maybe_generate_audio: request.generate_audio,
+    maybe_duration_seconds: request.duration_seconds.map(|d| d as u32),
+  }
+}
+
+// ── Converters ──
+
+fn video_model_to_common_model_type(model: CommonVideoModel) -> Option<CommonModelType> {
+  match model {
+    CommonVideoModel::GrokVideo => Some(CommonModelType::GrokVideo),
+    CommonVideoModel::Kling16Pro => Some(CommonModelType::Kling16Pro),
+    CommonVideoModel::Kling21Pro => Some(CommonModelType::Kling21Pro),
+    CommonVideoModel::Kling21Master => Some(CommonModelType::Kling21Master),
+    CommonVideoModel::Kling2p5TurboPro => Some(CommonModelType::Kling2p5TurboPro),
+    CommonVideoModel::Kling2p6Pro => Some(CommonModelType::Kling2p6Pro),
+    CommonVideoModel::Kling3p0Standard => Some(CommonModelType::Kling3p0Standard),
+    CommonVideoModel::Kling3p0Pro => Some(CommonModelType::Kling3p0Pro),
+    CommonVideoModel::Seedance10Lite => Some(CommonModelType::Seedance10Lite),
+    CommonVideoModel::Seedance1p5Pro => Some(CommonModelType::Seedance1p5Pro),
+    CommonVideoModel::Seedance2p0 => Some(CommonModelType::Seedance2p0),
+    CommonVideoModel::Seedance2p0Fast => Some(CommonModelType::Seedance2p0Fast),
+    CommonVideoModel::HappyHorse1p0 => Some(CommonModelType::HappyHorse1p0),
+    CommonVideoModel::Sora2 => Some(CommonModelType::Sora2),
+    CommonVideoModel::Sora2Pro => Some(CommonModelType::Sora2Pro),
+    CommonVideoModel::Veo2 => Some(CommonModelType::Veo2),
+    CommonVideoModel::Veo3 => Some(CommonModelType::Veo3),
+    CommonVideoModel::Veo3Fast => Some(CommonModelType::Veo3Fast),
+    CommonVideoModel::Veo3p1 => Some(CommonModelType::Veo3p1),
+    CommonVideoModel::Veo3p1Fast => Some(CommonModelType::Veo3p1Fast),
+  }
+}
+
+fn provider_to_generation_provider(provider: Provider) -> GenerationProvider {
+  match provider {
+    Provider::Artcraft => GenerationProvider::Artcraft,
+    Provider::Fal => GenerationProvider::Fal,
+    // Unused providers -> ArtCraft
+    Provider::Muapi => GenerationProvider::Artcraft,
+    Provider::Seedance2Pro => GenerationProvider::Artcraft ,
+  }
+}
+
+fn router_aspect_ratio_to_enums(ar: RouterAspectRatio) -> EnumsAspectRatio {
+  match ar {
+    RouterAspectRatio::Auto => EnumsAspectRatio::Auto,
+    RouterAspectRatio::Square => EnumsAspectRatio::Square,
+    RouterAspectRatio::WideThreeByTwo => EnumsAspectRatio::WideThreeByTwo,
+    RouterAspectRatio::WideFourByThree => EnumsAspectRatio::WideFourByThree,
+    RouterAspectRatio::WideFiveByFour => EnumsAspectRatio::WideFiveByFour,
+    RouterAspectRatio::WideSixteenByNine => EnumsAspectRatio::WideSixteenByNine,
+    RouterAspectRatio::WideTwentyOneByNine => EnumsAspectRatio::WideTwentyOneByNine,
+    RouterAspectRatio::TallTwoByThree => EnumsAspectRatio::TallTwoByThree,
+    RouterAspectRatio::TallThreeByFour => EnumsAspectRatio::TallThreeByFour,
+    RouterAspectRatio::TallFourByFive => EnumsAspectRatio::TallFourByFive,
+    RouterAspectRatio::TallNineBySixteen => EnumsAspectRatio::TallNineBySixteen,
+    RouterAspectRatio::TallNineByTwentyOne => EnumsAspectRatio::TallNineByTwentyOne,
+    RouterAspectRatio::Wide => EnumsAspectRatio::Wide,
+    RouterAspectRatio::Tall => EnumsAspectRatio::Tall,
+    RouterAspectRatio::Auto2k => EnumsAspectRatio::Auto2k,
+    RouterAspectRatio::Auto3k => EnumsAspectRatio::Auto3k,
+    RouterAspectRatio::Auto4k => EnumsAspectRatio::Auto4k,
+    RouterAspectRatio::SquareHd => EnumsAspectRatio::SquareHd,
+  }
+}
+
+fn router_resolution_to_enums(res: RouterResolution) -> EnumsResolution {
+  match res {
+    RouterResolution::OneK => EnumsResolution::OneK,
+    RouterResolution::TwoK => EnumsResolution::TwoK,
+    RouterResolution::ThreeK => EnumsResolution::ThreeK,
+    RouterResolution::FourK => EnumsResolution::FourK,
+    RouterResolution::HalfK => EnumsResolution::HalfK,
+    RouterResolution::FourEightyP => EnumsResolution::FourEightyP,
+    RouterResolution::SevenTwentyP => EnumsResolution::SevenTwentyP,
+    RouterResolution::TenEightyP => EnumsResolution::TenEightyP,
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  fn base_builder() -> GenerateVideoRequestBuilder {
+    GenerateVideoRequestBuilder {
+      model: CommonVideoModel::Kling3p0Standard,
+      provider: Provider::Fal,
+      prompt: Some("a dog running on the beach".to_string()),
+      negative_prompt: None,
+      start_frame: None,
+      end_frame: None,
+      reference_images: None,
+      reference_videos: None,
+      reference_audio: None,
+      reference_character_tokens: None,
+      resolution: None,
+      aspect_ratio: None,
+      duration_seconds: None,
+      video_batch_count: None,
+      generate_audio: None,
+      request_mismatch_mitigation_strategy:
+        artcraft_router::client::request_mismatch_mitigation_strategy::RequestMismatchMitigationStrategy::ErrorOut,
+      idempotency_token: None,
+    }
+  }
+
+  #[test]
+  fn basic_conversion() {
+    let builder = base_builder();
+    let prompt = router_video_request_to_artcraft_prompt(&builder);
+    assert_eq!(prompt.positive_prompt.as_deref(), Some("a dog running on the beach"));
+    assert_eq!(prompt.model_type, Some(CommonModelType::Kling3p0Standard));
+    assert_eq!(prompt.generation_provider, Some(GenerationProvider::Fal));
+    assert!(prompt.negative_prompt.is_none());
+    assert!(prompt.maybe_aspect_ratio.is_none());
+    assert!(prompt.maybe_resolution.is_none());
+    assert!(prompt.maybe_batch_count.is_none());
+    assert!(prompt.maybe_generate_audio.is_none());
+    assert!(prompt.maybe_duration_seconds.is_none());
+  }
+
+  #[test]
+  fn with_video_fields() {
+    let builder = GenerateVideoRequestBuilder {
+      negative_prompt: Some("blurry".to_string()),
+      aspect_ratio: Some(RouterAspectRatio::WideSixteenByNine),
+      resolution: Some(RouterResolution::TenEightyP),
+      duration_seconds: Some(10),
+      video_batch_count: Some(2),
+      generate_audio: Some(true),
+      ..base_builder()
+    };
+    let prompt = router_video_request_to_artcraft_prompt(&builder);
+    assert_eq!(prompt.negative_prompt.as_deref(), Some("blurry"));
+    assert_eq!(prompt.maybe_aspect_ratio, Some(EnumsAspectRatio::WideSixteenByNine));
+    assert_eq!(prompt.maybe_resolution, Some(EnumsResolution::TenEightyP));
+    assert_eq!(prompt.maybe_duration_seconds, Some(10));
+    assert_eq!(prompt.maybe_batch_count, Some(2));
+    assert_eq!(prompt.maybe_generate_audio, Some(true));
+  }
+
+  #[test]
+  fn video_model_mapping() {
+    let models = [
+      (CommonVideoModel::Kling3p0Standard, CommonModelType::Kling3p0Standard),
+      (CommonVideoModel::Veo3, CommonModelType::Veo3),
+      (CommonVideoModel::Seedance2p0, CommonModelType::Seedance2p0),
+      (CommonVideoModel::Sora2, CommonModelType::Sora2),
+    ];
+    for (router_model, expected) in models {
+      let builder = GenerateVideoRequestBuilder { model: router_model, ..base_builder() };
+      let prompt = router_video_request_to_artcraft_prompt(&builder);
+      assert_eq!(prompt.model_type, Some(expected));
+    }
+  }
+}
