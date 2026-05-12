@@ -2,7 +2,7 @@ use crate::core::commands::enqueue::common::notify_frontend_of_errors::notify_fr
 use crate::core::commands::enqueue::generate_error::{GenerateError, MissingCredentialsReason};
 use crate::core::commands::enqueue::task_enqueue_success::TaskEnqueueSuccess;
 use crate::core::commands::generate::generate_image::providers::artcraft::handle_artcraft;
-use crate::core::commands::generate::generate_image::providers::router::handle_router::handle_router;
+use crate::core::commands::generate::generate_image::providers::artcraft_router::handle_router::handle_router;
 use crate::core::commands::generate::generate_image::tauri_generate_image_request::{
   TauriGenerateImageErrorType, TauriGenerateImageRequest, TauriGenerateImageResponse,
 };

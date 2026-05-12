@@ -3,8 +3,8 @@ use log::info;
 
 use crate::core::commands::enqueue::generate_error::{GenerateError, MissingCredentialsReason};
 use crate::core::commands::enqueue::task_enqueue_success::TaskEnqueueSuccess;
-use crate::core::commands::generate::generate_image::providers::router::handle_api_providers::handle_api_key_provider;
-use crate::core::commands::generate::generate_image::providers::router::handle_web_login_providers::handle_web_login_provider;
+use crate::core::commands::generate::generate_image::providers::artcraft_router::handle_api_providers::handle_api_key_provider;
+use crate::core::commands::generate::generate_image::providers::artcraft_router::handle_web_login_providers::handle_web_login_provider;
 use crate::core::commands::generate::generate_image::tauri_generate_image_request::TauriGenerateImageRequest;
 use crate::core::providers::credentials::payload::provider_credential_payload::ProviderCredentialPayload;
 use crate::core::providers::credentials::provider_credential_key::ProviderCredentialKey;
