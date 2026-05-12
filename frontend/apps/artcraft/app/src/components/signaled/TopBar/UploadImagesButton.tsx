@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Button } from "@storyteller/ui-button";
 import { Tooltip } from "@storyteller/ui-tooltip";
 import { faUpload, faImages } from "@fortawesome/pro-solid-svg-icons";
-import { UploadModalImage } from "../../reusable/UploadModalImage/UploadModalImage";
+import { UploadModalImage } from "@storyteller/ui-upload-modal";
 
 interface Props {
   className?: string;

@@ -2,9 +2,11 @@ import { useEffect, useRef, useState } from "react";
 import { toast } from "react-hot-toast";
 import { faCube, faImages, faUpRightAndDownLeftFromCenter } from "@fortawesome/pro-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { UploadModal3D } from "../reusable/UploadModal3D/UploadModal3D";
-import { UploadModalImage } from "../reusable/UploadModalImage/UploadModalImage";
-import { UploadModalSplat } from "../reusable/UploadModalSplat/UploadModalSplat";
+import {
+  UploadModal3D,
+  UploadModalImage,
+  UploadModalSplat,
+} from "@storyteller/ui-upload-modal";
 import { FilterEngineCategories } from "../../enums";
 
 type ModalType = "3d" | "image" | "splat" | null;

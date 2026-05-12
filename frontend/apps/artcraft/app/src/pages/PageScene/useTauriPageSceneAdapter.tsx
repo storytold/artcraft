@@ -25,9 +25,11 @@ import { ToastTypes } from "@storyteller/ui-pagescene";
 import { GetCdnOrigin } from "~/api/GetCdnOrigin";
 import { BucketConfig } from "~/api/BucketConfig";
 import { MediaFilesApi as ArtcraftMediaFilesApi } from "~/Classes/ApiManager";
-import { UploadModal3D } from "~/components/reusable/UploadModal3D";
-import { UploadModalImage } from "~/components/reusable/UploadModalImage";
-import { UploadModalSplat } from "~/components/reusable/UploadModalSplat";
+import {
+  UploadModal3D,
+  UploadModalImage,
+  UploadModalSplat,
+} from "@storyteller/ui-upload-modal";
 import { uploadImage as hostUploadImage } from "~/components/reusable/UploadModalMedia/uploadImage";
 import { uploadPlaneFromMediaToken as hostUploadPlaneFromMediaToken } from "~/components/reusable/UploadModalMedia/uploadPlane";
 import { useTabStore } from "~/pages/Stores/TabState";
