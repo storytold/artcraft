@@ -7,7 +7,10 @@ const ROUTE_CRUMBS: Record<string, Crumb[]> = {
   "/": [{ label: "Home" }],
   "/create-image": [{ label: "Create", href: "/" }, { label: "Image" }],
   "/create-video": [{ label: "Create", href: "/" }, { label: "Video" }],
-  "/background-change": [{ label: "Create", href: "/" }, { label: "BG Change" }],
+  "/background-change": [
+    { label: "Create", href: "/" },
+    { label: "Background Change" },
+  ],
   "/library": [{ label: "Library" }],
   "/media": [{ label: "Library", href: "/library" }, { label: "Media" }],
   "/pricing": [{ label: "Pricing" }],
@@ -17,8 +20,14 @@ const ROUTE_CRUMBS: Record<string, Crumb[]> = {
   "/forgot-password": [{ label: "Forgot password" }],
   "/welcome": [{ label: "Welcome" }],
   "/onboarding": [{ label: "Onboarding" }],
-  "/checkout/success": [{ label: "Checkout", href: "/pricing" }, { label: "Success" }],
-  "/checkout/cancel": [{ label: "Checkout", href: "/pricing" }, { label: "Cancelled" }],
+  "/checkout/success": [
+    { label: "Checkout", href: "/pricing" },
+    { label: "Success" },
+  ],
+  "/checkout/cancel": [
+    { label: "Checkout", href: "/pricing" },
+    { label: "Cancelled" },
+  ],
 };
 
 function resolveCrumbs(pathname: string): Crumb[] {

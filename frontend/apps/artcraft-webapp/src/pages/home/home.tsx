@@ -32,7 +32,7 @@ const APPS: AppCard[] = [
     accent: "from-purple-500/20 to-purple-500/0",
   },
   {
-    label: "BG Change",
+    label: "Background Change",
     description: "Swap or remove backgrounds with AI VFX.",
     href: "/background-change",
     icon: faWandMagicSparkles,

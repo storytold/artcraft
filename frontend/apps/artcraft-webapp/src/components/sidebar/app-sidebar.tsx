@@ -42,7 +42,11 @@ const PRIMARY_ITEMS: NavItem[] = [{ label: "Home", href: "/", icon: faHouse }];
 const CREATE_ITEMS: NavItem[] = [
   { label: "Image", href: "/create-image", icon: faImage },
   { label: "Video", href: "/create-video", icon: faVideo },
-  { label: "BG Change", href: "/background-change", icon: faWandMagicSparkles },
+  {
+    label: "Background Change",
+    href: "/background-change",
+    icon: faWandMagicSparkles,
+  },
 ];
 
 const ASSETS_ITEMS: NavItem[] = [
