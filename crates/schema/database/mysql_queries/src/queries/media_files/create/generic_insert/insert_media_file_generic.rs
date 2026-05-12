@@ -9,6 +9,7 @@ use enums::by_table::media_files::media_file_origin_category::MediaFileOriginCat
 use enums::by_table::media_files::media_file_origin_model_type::MediaFileOriginModelType;
 use enums::by_table::media_files::media_file_origin_product_category::MediaFileOriginProductCategory;
 use enums::by_table::media_files::media_file_type::MediaFileType;
+use enums::common::generation_provider::GenerationProvider;
 use enums::common::visibility::Visibility;
 use errors::AnyhowResult;
 use tokens::tokens::anonymous_visitor_tracking::AnonymousVisitorTrackingToken;
@@ -88,6 +89,9 @@ pub struct InsertArgs<'a> {
     pub generated_by_worker: Option<&'a str>,
     pub generated_by_cluster: Option<&'a str>,
 
+    /// If provided, the third-party provider that generated this file.
+    pub maybe_generation_provider: Option<GenerationProvider>,
+
     // Cover image (e.g. thumbnail for 3D splats)
     pub maybe_cover_image_media_file_token: Option<&'a MediaFileToken>,
 
@@ -109,6 +113,22 @@ pub async fn insert_media_file_generic(
     let mut maybe_creator_category_synthetic_id : Option<u64> = None;
 
     let is_batch_generated = args.maybe_batch_token.is_some();
+
+    let mut maybe_generation_provider_str = None;
+    let mut is_intermediate_system_file = args.is_intermediate_system_file;
+    let mut is_user_upload = args.is_user_upload;
+    let mut origin_category = args.origin_category;
+
+    if let Some(generation_provider) = args.maybe_generation_provider {
+        // Overrides if we're using a generation provider
+        maybe_generation_provider_str = Some(generation_provider.to_str());
+        is_intermediate_system_file = false;
+        is_user_upload = false;
+        if generation_provider != GenerationProvider::Artcraft {
+            origin_category = MediaFileOriginCategory::ThirdPartyInference;
+        }
+    }
+
 
     let mut transaction = args.pool.begin().await?;
     
@@ -182,6 +202,8 @@ pub async fn insert_media_file_generic(
 
             extra_file_modification_info = ?,
 
+            maybe_generation_provider = ?,
+
             maybe_cover_image_media_file_token = ?,
 
             maybe_mod_user_token = ?,
@@ -194,10 +216,10 @@ pub async fn insert_media_file_generic(
         args.media_class.to_str(),
         args.media_type.to_str(),
 
-        args.is_user_upload,
-        args.is_intermediate_system_file,
+        is_user_upload,
+        is_intermediate_system_file,
 
-        args.origin_category.to_str(),
+        origin_category.to_str(),
         args.origin_product_category.to_str(),
         args.maybe_origin_model_type.map(|e| e.to_str()),
         args.maybe_origin_model_token.map(|t| t.to_string()),
@@ -237,6 +259,8 @@ pub async fn insert_media_file_generic(
         maybe_creator_category_synthetic_id,
 
         extra_file_modification_info,
+
+        maybe_generation_provider_str,
 
         args.maybe_cover_image_media_file_token.map(|t| t.as_str()),
 

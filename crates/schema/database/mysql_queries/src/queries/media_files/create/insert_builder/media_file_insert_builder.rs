@@ -82,8 +82,6 @@ pub struct MediaFileInsertBuilder {
 
   // Generation details
   maybe_generation_provider: Option<GenerationProvider>,
-  
-  // Remaining fields...
 }
 
 impl MediaFileInsertBuilder {
@@ -296,8 +294,8 @@ impl MediaFileInsertBuilder {
     let mut is_intermediate_system_file = self.is_intermediate_system_file;
     let mut is_user_upload = self.is_user_upload;
 
-    // Overrides if we state we're using a generation provider
     if let Some(generation_provider) = self.maybe_generation_provider {
+      // Overrides if we're using a generation provider
       maybe_generation_provider_str = Some(generation_provider.to_str());
       is_intermediate_system_file = false;
       is_user_upload = false;
@@ -342,6 +340,7 @@ impl MediaFileInsertBuilder {
       maybe_creator_file_synthetic_id_category: IdCategory::MediaFile, // TODO: Remove this
       maybe_creator_category_synthetic_id_category: IdCategory::FileUpload, // TODO: Remove this
       maybe_extra_media_info: None, // TODO
+      maybe_generation_provider: self.maybe_generation_provider,
       maybe_cover_image_media_file_token: self.maybe_cover_image_media_file_token.as_ref(),
       is_generated_on_prem: false, // TODO
       generated_by_worker: None, // TODO

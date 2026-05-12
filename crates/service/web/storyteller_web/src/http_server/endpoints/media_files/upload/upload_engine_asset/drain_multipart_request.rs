@@ -6,8 +6,9 @@ use log::warn;
 
 use enums::by_table::media_files::media_file_animation_type::MediaFileAnimationType;
 use enums::by_table::media_files::media_file_engine_category::MediaFileEngineCategory;
+use enums::common::generation_provider::GenerationProvider;
 use errors::AnyhowResult;
-
+use crate::http_server::endpoints::media_files::upload::common_utils::try_parse_generation_provider::try_parse_generation_provider;
 use crate::http_server::web_utils::read_multipart_field_bytes::{checked_read_multipart_bytes, read_multipart_field_as_text};
 
 pub struct MediaFileUploadData {
@@ -26,6 +27,9 @@ pub struct MediaFileUploadData {
 
   // Optional: visibility
   pub maybe_animation_type: Option<MediaFileAnimationType>,
+
+  // Optional: The third-party generation provider (e.g. "fal", "replicate").
+  pub maybe_generation_provider: Option<GenerationProvider>,
 }
 
 /// Pull common parts out of multipart media HTTP requests, typically for handling file uploads.
@@ -37,6 +41,7 @@ pub async fn drain_multipart_request(mut multipart_payload: Multipart) -> Anyhow
   let mut visibility = None;
   let mut maybe_engine_category = None;
   let mut maybe_animation_type = None;
+  let mut generation_provider = None;
 
   while let Ok(Some(mut field)) = multipart_payload.try_next().await {
     let mut field_name = None;
@@ -105,9 +110,20 @@ pub async fn drain_multipart_request(mut multipart_payload: Multipart) -> Anyhow
               e
             })?;
       },
+      Some("maybe_generation_provider") => {
+        generation_provider = read_multipart_field_as_text(&mut field).await
+            .map_err(|e| {
+              warn!("Error reading maybe_generation_provider: {:}", &e);
+              e
+            })?;
+      },
       _ => continue,
     }
   }
+
+  let maybe_generation_provider = generation_provider.as_deref()
+      .map(|s| try_parse_generation_provider(s))
+      .flatten();
 
   Ok(MediaFileUploadData {
     uuid_idempotency_token,
@@ -117,5 +133,6 @@ pub async fn drain_multipart_request(mut multipart_payload: Multipart) -> Anyhow
     maybe_visibility: visibility,
     maybe_engine_category,
     maybe_animation_type,
+    maybe_generation_provider,
   })
 }

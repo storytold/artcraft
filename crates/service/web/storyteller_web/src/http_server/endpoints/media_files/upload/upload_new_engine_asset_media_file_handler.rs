@@ -22,7 +22,7 @@ use mysql_queries::queries::idepotency_tokens::insert_idempotency_token::insert_
 use mysql_queries::queries::media_files::create::specialized_insert::insert_media_file_from_file_upload::{insert_media_file_from_file_upload, InsertMediaFileFromUploadArgs, UploadType};
 use mysql_queries::queries::users::user_sessions::get_user_session_by_token::SessionUserRecord;
 use tokens::tokens::media_files::MediaFileToken;
-
+use crate::http_server::endpoints::media_files::upload::common_utils::try_parse_generation_provider::try_parse_generation_provider;
 use crate::http_server::endpoints::media_files::upload::upload_error::MediaFileUploadError;
 use crate::http_server::validations::validate_idempotency_token_format::validate_idempotency_token_format;
 use crate::state::server_state::ServerState;
@@ -70,6 +70,12 @@ pub struct UploadNewEngineAssetFileForm {
   #[multipart(limit = "2 KiB")]
   #[schema(value_type = Option<u64>, format = Binary)]
   maybe_duration_millis: Option<Text<u64>>,
+
+  /// Optional: The third-party generation provider (e.g. "fal", "replicate").
+  /// If set, `is_user_upload` will be false and `is_intermediate_system_file` will be forced false.
+  #[multipart(limit = "2 KiB")]
+  #[schema(value_type = Option<String>, format = Binary)]
+  maybe_generation_provider: Option<Text<String>>,
 }
 
 #[derive(Serialize, ToSchema)]
@@ -177,6 +183,10 @@ pub async fn upload_new_engine_asset_media_file_handler(
 
   // ==================== FILE DATA ==================== //
 
+  let maybe_generation_provider = form.maybe_generation_provider
+      .as_ref()
+      .and_then(|text| try_parse_generation_provider(text.as_ref()));
+
   let file_info = validate_and_process_form(maybe_user_session.as_ref(), form)?;
 
   // ==================== UPLOAD AND SAVE ==================== //
@@ -216,7 +226,7 @@ pub async fn upload_new_engine_asset_media_file_handler(
     sha256_checksum: &file_info.sha256_checksum,
     maybe_scene_source_media_file_token: None,
     is_intermediate_system_file: false, // NB: is_user_upload = TRUE
-    maybe_generation_provider: None,
+    maybe_generation_provider,
     maybe_title: file_info.maybe_title.as_deref(),
     public_bucket_directory_hash: public_upload_path.get_object_hash(),
     maybe_public_bucket_prefix: PREFIX,

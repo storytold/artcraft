@@ -248,8 +248,7 @@ pub async fn upload_spz_media_file_handler(
         MediaFileUploadError::ServerError
       })?;
 
-  // TODO: Pass maybe_generation_provider to MediaFileInsertBuilder once it supports it.
-  let _maybe_generation_provider = form.maybe_generation_provider
+  let maybe_generation_provider = form.maybe_generation_provider
       .as_ref()
       .and_then(|text| try_parse_generation_provider(text.as_ref()));
 
@@ -268,6 +267,7 @@ pub async fn upload_spz_media_file_handler(
       .is_intermediate_system_file(false)
       .public_bucket_directory_hash(&public_upload_path)
       .maybe_origin_filename(form.file.file_name.as_deref())
+      .maybe_generation_provider(maybe_generation_provider)
       .insert_pool(&server_state.mysql_pool)
       .await
       .map_err(|err| {

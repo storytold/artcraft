@@ -1,0 +1,12 @@
+{
+  "db_name": "MySQL",
+  "query": "\nINSERT INTO media_files\nSET\n  token = ?,\n\n  media_class = ?,\n  media_type = ?,\n\n  origin_category = ?,\n  origin_product_category = ?,\n\n  maybe_engine_category = ?,\n  maybe_animation_type = ?,\n\n  maybe_mime_type = ?,\n  file_size_bytes = ?,\n\n  checksum_sha2 = ?,\n\n  maybe_prompt_token = ?,\n  maybe_batch_token = ?,\n\n  maybe_title = ?,\n  maybe_duration_millis = ?,\n\n  public_bucket_directory_hash = ?,\n  maybe_public_bucket_prefix = ?,\n  maybe_public_bucket_extension = ?,\n\n  maybe_creator_user_token = ?,\n  maybe_creator_anonymous_visitor_token = ?,\n  creator_ip_address = ?,\n\n  creator_set_visibility = ?,\n\n  maybe_scene_source_media_file_token = ?,\n\n  is_intermediate_system_file = ?,\n  is_user_upload = ?,\n\n  maybe_generation_provider = ?,\n\n  maybe_creator_file_synthetic_id = ?,\n  maybe_creator_category_synthetic_id = ?,\n\n  maybe_origin_model_type = NULL,\n  maybe_origin_model_token = NULL\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 27
+    },
+    "nullable": []
+  },
+  "hash": "7369b2f3fd9e7c1e968dc5501ef9bea7e1610fd7a044a0f9ad8b908dfada2b6a"
+}

@@ -111,6 +111,7 @@ pub async fn insert_media_file_from_studio_scene_render(
     maybe_prompt_token: None,
     maybe_mod_user_token: None,
     maybe_engine_category: None,
+    maybe_generation_provider: None,
     maybe_cover_image_media_file_token: None,
   }).await?;
 
