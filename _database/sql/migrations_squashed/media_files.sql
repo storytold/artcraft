@@ -28,6 +28,7 @@ CREATE TABLE media_files (
   -- There is an index on this column.
   -- Broad "category" for where the file came from:
   --   * 'inference' for inference output
+  --   * 'inference_third' for inference output
   --   * 'processed' for processed file (eg. mp3 encoding, stem splitting, etc.)
   --   * 'upload' for direct user upload (from the filesystem)
   --   * 'device_api' for direct user uploads recorded using Browser/Device APIs.
