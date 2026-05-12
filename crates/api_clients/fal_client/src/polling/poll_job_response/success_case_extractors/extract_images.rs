@@ -7,6 +7,8 @@ pub struct PollResponseImageEntry {
   pub width: Option<u64>,
   pub height: Option<u64>,
   pub content_type: Option<String>,
+  pub file_name: Option<String>,
+  pub file_size: Option<u64>,
 }
 
 pub fn extract_images(value: &Value) -> Option<Vec<PollResponseImageEntry>> {

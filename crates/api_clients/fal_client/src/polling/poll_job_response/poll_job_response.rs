@@ -268,6 +268,98 @@ mod tests {
       assert!(value.get("model_urls").and_then(|v| v.get("fbx")).and_then(|v| v.as_object()).is_none());
       assert!(value.get("model_urls").and_then(|v| v.get("usdz")).and_then(|v| v.as_object()).is_none());
     }
+
+    #[test]
+    fn parse_real_kling3_video_response_offline() {
+      let json = r#"{"video":{"url":"https://v3b.fal.media/files/b/0a99d90a/v1tQEfvnY2bVcn38IvmfD_output.mp4","content_type":"video/mp4","file_name":"output.mp4","file_size":3096422}}"#;
+      let value: Value = serde_json::from_str(json).unwrap();
+      let extracted = extract_contents_from_response(&value).expect("should extract contents");
+
+      // Should have video, not images or mesh
+      assert!(extracted.image.is_none());
+      assert!(extracted.images.is_none());
+      assert!(extracted.model_glb.is_none());
+      assert!(extracted.thumbnail.is_none());
+
+      let video = extracted.video.expect("should have video");
+      assert_eq!(video.url.as_deref(), Some("https://v3b.fal.media/files/b/0a99d90a/v1tQEfvnY2bVcn38IvmfD_output.mp4"));
+      assert_eq!(video.content_type.as_deref(), Some("video/mp4"));
+      assert_eq!(video.file_name.as_deref(), Some("output.mp4"));
+      assert_eq!(video.file_size, Some(3096422));
+    }
+
+    #[test]
+    fn parse_real_nano_banana_pro_edit_response_offline() {
+      let json = r#"{"images":[{"url":"https://v3b.fal.media/files/b/0a99d90e/IXN1B_4MHnozvltxEHfvX_BwTMO9xM.png","content_type":"image/png","file_name":"IXN1B_4MHnozvltxEHfvX_BwTMO9xM.png","file_size":null,"width":null,"height":null},{"url":"https://v3b.fal.media/files/b/0a99d90e/aj_Xu0cIUoVSZ6qSSxaZf_wy3l60NO.png","content_type":"image/png","file_name":"aj_Xu0cIUoVSZ6qSSxaZf_wy3l60NO.png","file_size":null,"width":null,"height":null}],"description":"**Developing Spooky Atmosphere**\n\ntest description"}"#;
+      let value: Value = serde_json::from_str(json).unwrap();
+      let extracted = extract_contents_from_response(&value).expect("should extract contents");
+
+      // Should have images, not video or mesh
+      assert!(extracted.image.is_none());
+      assert!(extracted.video.is_none());
+      assert!(extracted.model_glb.is_none());
+      assert!(extracted.thumbnail.is_none());
+
+      let images = extracted.images.expect("should have images");
+      assert_eq!(images.len(), 2);
+
+      assert_eq!(images[0].url.as_deref(), Some("https://v3b.fal.media/files/b/0a99d90e/IXN1B_4MHnozvltxEHfvX_BwTMO9xM.png"));
+      assert_eq!(images[0].content_type.as_deref(), Some("image/png"));
+      assert!(images[0].width.is_none(), "nano banana pro edit returns null width");
+      assert!(images[0].height.is_none(), "nano banana pro edit returns null height");
+      assert!(images[0].file_size.is_none(), "nano banana pro edit returns null file_size");
+
+      assert_eq!(images[1].url.as_deref(), Some("https://v3b.fal.media/files/b/0a99d90e/aj_Xu0cIUoVSZ6qSSxaZf_wy3l60NO.png"));
+      assert_eq!(images[1].content_type.as_deref(), Some("image/png"));
+    }
+
+    #[test]
+    fn parse_real_flux_angle_lora_response_offline() {
+      let json = r#"{"images":[{"url":"https://v3b.fal.media/files/b/0a99d915/_61CGILQXk8A7A6FrAbdu_uytUbw2B.png","content_type":"image/png","file_name":"_61CGILQXk8A7A6FrAbdu_uytUbw2B.png","file_size":null,"width":1024,"height":1024}],"seed":225652535,"prompt":"<sks> front-right quarter view elevated shot medium shot"}"#;
+      let value: Value = serde_json::from_str(json).unwrap();
+      let extracted = extract_contents_from_response(&value).expect("should extract contents");
+
+      // Should have images, not video or mesh
+      assert!(extracted.image.is_none());
+      assert!(extracted.video.is_none());
+      assert!(extracted.model_glb.is_none());
+      assert!(extracted.thumbnail.is_none());
+
+      let images = extracted.images.expect("should have images");
+      assert_eq!(images.len(), 1);
+
+      let image = &images[0];
+      assert_eq!(image.url.as_deref(), Some("https://v3b.fal.media/files/b/0a99d915/_61CGILQXk8A7A6FrAbdu_uytUbw2B.png"));
+      assert_eq!(image.content_type.as_deref(), Some("image/png"));
+      assert_eq!(image.width, Some(1024));
+      assert_eq!(image.height, Some(1024));
+      assert!(image.file_size.is_none());
+
+      // Verify raw payload fields
+      assert_eq!(value.get("seed").and_then(|v| v.as_u64()), Some(225652535));
+      assert_eq!(value.get("prompt").and_then(|v| v.as_str()), Some("<sks> front-right quarter view elevated shot medium shot"));
+    }
+
+    #[test]
+    fn parse_real_remove_bg_response_offline() {
+      let json = r#"{"image":{"url":"https://v3b.fal.media/files/b/0a99d916/J7OyBamMKRI_RUbkUxnJE_f5b8faa705534b19ad87bc3d48b5c6c5.png","content_type":"image/png","file_name":"f5b8faa705534b19ad87bc3d48b5c6c5.png","file_size":496291,"width":1000,"height":664}}"#;
+      let value: Value = serde_json::from_str(json).unwrap();
+      let extracted = extract_contents_from_response(&value).expect("should extract contents");
+
+      // Should have single image, not images (plural), video, or mesh
+      assert!(extracted.images.is_none());
+      assert!(extracted.video.is_none());
+      assert!(extracted.model_glb.is_none());
+      assert!(extracted.thumbnail.is_none());
+
+      let image = extracted.image.expect("should have single image");
+      assert_eq!(image.url.as_deref(), Some("https://v3b.fal.media/files/b/0a99d916/J7OyBamMKRI_RUbkUxnJE_f5b8faa705534b19ad87bc3d48b5c6c5.png"));
+      assert_eq!(image.content_type.as_deref(), Some("image/png"));
+      assert_eq!(image.file_name.as_deref(), Some("f5b8faa705534b19ad87bc3d48b5c6c5.png"));
+      assert_eq!(image.file_size, Some(496291));
+      assert_eq!(image.width, Some(1000));
+      assert_eq!(image.height, Some(664));
+    }
   }
 
   // ── Live tests ──
