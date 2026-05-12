@@ -15,6 +15,7 @@ import CreateImage from "../pages/create-image";
 import CreateVideo from "../pages/create-video";
 import CreateVFX from "../pages/create-vfx";
 import PageDraw from "../pages/pagedraw";
+import PageScene from "../pages/pagescene";
 //import Landing2 from "../pages/landing2";
 import Landing3 from "../pages/landing3";
 import LandingSD2 from "../pages/landing-sd2";
@@ -58,6 +59,8 @@ export function App() {
         <Route path="/create-video" element={<CreateVideo />} />
         <Route path="/background-change" element={<CreateVFX />} />
         <Route path="/pagedraw" element={<PageDraw />} />
+        <Route path="/pagescene" element={<PageScene />} />
+        <Route path="/pagescene/:sceneToken" element={<PageScene />} />
         <Route path="/seedance-2" element={<LandingSD2 />} />
         <Route path="/download" element={<Download />} />
         <Route path="/media" element={<Media />} />

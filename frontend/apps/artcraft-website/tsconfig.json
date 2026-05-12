@@ -3,6 +3,15 @@
   "include": [],
   "references": [
     {
+      "path": "../../libs/components/upload-modal"
+    },
+    {
+      "path": "../../libs/components/pagescene"
+    },
+    {
+      "path": "../../libs/components/pagedraw"
+    },
+    {
       "path": "../../libs/components/slider-v2"
     },
     {

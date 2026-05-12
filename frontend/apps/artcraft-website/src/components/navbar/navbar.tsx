@@ -42,6 +42,7 @@ const NAV_ITEMS: NavEntry[] = [
   { name: "Home", href: "/" },
   { name: "Image", href: "/create-image" },
   { name: "Edit 2D", href: "/pagedraw" },
+  { name: "Edit 3D", href: "/pagescene" },
   { name: "Video", href: "/create-video" },
   { name: "BG Change", href: "/background-change" },
   {
