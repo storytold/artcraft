@@ -94,7 +94,8 @@ pub async fn handle_classic_successful_generations(
       maybe_resolution: None,
       maybe_batch_count: None,
       maybe_generate_audio: None,
-    maybe_duration_seconds: None,    };
+      maybe_duration_seconds: None,
+    };
 
     let prompt_response = create_prompt(
       &app_env_configs.storyteller_host,
