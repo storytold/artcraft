@@ -1,11 +1,11 @@
+use crate::http_server::endpoints::media_files::upload::common_utils::try_parse_generation_provider::try_parse_generation_provider;
+use crate::http_server::web_utils::read_multipart_field_bytes::{checked_read_multipart_bytes, read_multipart_field_as_text};
 use actix_multipart::Multipart;
 use actix_web::web::BytesMut;
+use enums::common::generation_provider::GenerationProvider;
+use errors::AnyhowResult;
 use futures::TryStreamExt;
 use log::warn;
-
-use errors::AnyhowResult;
-
-use crate::http_server::web_utils::read_multipart_field_bytes::{checked_read_multipart_bytes, read_multipart_field_as_text};
 
 pub struct MediaFileUploadData {
   pub uuid_idempotency_token: Option<String>,
@@ -18,6 +18,9 @@ pub struct MediaFileUploadData {
 
   // Optional: visibility
   pub visibility: Option<String>,
+
+  // Optional: The third-party generation provider (e.g. "fal", "replicate").
+  pub maybe_generation_provider: Option<GenerationProvider>,
 }
 
 /// Where the frontend tells us the file came from.
@@ -38,6 +41,7 @@ pub async fn drain_multipart_request(mut multipart_payload: Multipart) -> Anyhow
   let mut media_source = None;
   let mut title = None;
   let mut visibility = None;
+  let mut generation_provider = None;
 
   while let Ok(Some(mut field)) = multipart_payload.try_next().await {
     let mut field_name = None;
@@ -54,7 +58,7 @@ pub async fn drain_multipart_request(mut multipart_payload: Multipart) -> Anyhow
       Some("uuid_idempotency_token") => {
         uuid_idempotency_token = read_multipart_field_as_text(&mut field).await
             .map_err(|e| {
-              warn!("Error reading idempotency token: {:}", &e);
+              warn!("Error reading uuid_idempotency_token: {:}", &e);
               e
             })?;
       },
@@ -62,7 +66,7 @@ pub async fn drain_multipart_request(mut multipart_payload: Multipart) -> Anyhow
         file_name = field_filename.clone();
         file_bytes = checked_read_multipart_bytes(&mut field).await
             .map_err(|e| {
-              warn!("Error reading audio upload: {:}", &e);
+              warn!("Error reading file: {:}", &e);
               e
             })?;
       },
@@ -83,7 +87,14 @@ pub async fn drain_multipart_request(mut multipart_payload: Multipart) -> Anyhow
       Some("visibility") => {
         visibility = read_multipart_field_as_text(&mut field).await
             .map_err(|e| {
-              warn!("Error reading title: {:}", &e);
+              warn!("Error reading visibility: {:}", &e);
+              e
+            })?;
+      },
+      Some("maybe_generation_provider") => {
+        generation_provider = read_multipart_field_as_text(&mut field).await
+            .map_err(|e| {
+              warn!("Error reading maybe_generation_provider: {:}", &e);
               e
             })?;
       },
@@ -103,6 +114,10 @@ pub async fn drain_multipart_request(mut multipart_payload: Multipart) -> Anyhow
     },
   };
 
+  let maybe_generation_provider = generation_provider.as_deref()
+      .map(|s| try_parse_generation_provider(s))
+      .flatten();
+
   Ok(MediaFileUploadData {
     uuid_idempotency_token,
     file_name,
@@ -110,5 +125,6 @@ pub async fn drain_multipart_request(mut multipart_payload: Multipart) -> Anyhow
     media_source,
     title,
     visibility,
+    maybe_generation_provider,
   })
 }

@@ -88,6 +88,9 @@ pub async fn insert_media_file_from_file_upload(
     maybe_generation_provider_str = Some(generation_provider.to_str());
     is_intermediate_system_file = false;
     is_user_upload = false;
+    if generation_provider != GenerationProvider::Artcraft {
+      origin_category = MediaFileOriginCategory::ThirdPartyInference;
+    }
   }
 
   let mut maybe_creator_file_synthetic_id : Option<u64> = None;

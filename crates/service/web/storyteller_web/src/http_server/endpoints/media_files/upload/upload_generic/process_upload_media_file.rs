@@ -405,6 +405,7 @@ pub async fn process_upload_media_file(
       .checksum_sha2(&hash)
       .maybe_title(upload_media_request.title.as_deref())
       .maybe_origin_filename(upload_media_request.file_name.as_deref())
+      .maybe_generation_provider(upload_media_request.maybe_generation_provider)
       .is_intermediate_system_file(false)
       .insert_pool(&server_state.mysql_pool)
       .await
