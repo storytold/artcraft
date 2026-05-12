@@ -1,0 +1,105 @@
+/background-change /index.html 200
+/background-change/ /index.html 200
+/background-change/* /index.html 200
+
+/checkout_cancel /index.html 200
+/checkout_cancel/ /index.html 200
+/checkout_cancel/* /index.html 200
+
+/onboarding /index.html 200
+/onboarding/ /index.html 200
+/onboarding/* /index.html 200
+
+/portal_closed /index.html 200
+/portal_closed/ /index.html 200
+/portal_closed/* /index.html 200
+
+/checkout_success /index.html 200
+/checkout_success/ /index.html 200
+/checkout_success/* /index.html 200
+
+/checkout* /index.html 200
+/checkout/* /index.html 200
+
+/create-image /index.html 200
+/create-image/ /index.html 200
+/create-image/* /index.html 200
+
+/create-video /index.html 200
+/create-video/ /index.html 200
+/create-video/* /index.html 200
+
+/support /index.html 200
+/support/ /index.html 200
+/support/* /index.html 200
+
+/library /index.html 200
+/library/ /index.html 200
+/library/* /index.html 200
+
+/download /index.html 200
+/download/ /index.html 200
+
+/tutorials /index.html 200
+/tutorials/ /index.html 200
+
+/login /index.html 200
+/login/ /index.html 200
+/login/* /index.html 200
+
+/media /index.html 200
+/media/ /index.html 200
+/media/* /index.html 200
+
+/pricing /index.html 200
+/pricing/ /index.html 200
+/pricing/* /index.html 200
+
+/faq /index.html 200
+/faq/ /index.html 200
+/faq/* /index.html 200
+
+/news /index.html 200
+/news/ /index.html 200
+/news/* /index.html 200
+
+/press-kit /index.html 200
+/press-kit/ /index.html 200
+/press-kit/* /index.html 200
+
+# Redirects for growth measurement
+/reddit /?utm_source=reddit 301
+
+/news.json /index.html 200
+
+/signup /index.html 200
+/signup/ /index.html 200
+/signup/* /index.html 200
+
+/forgot-password /index.html 200
+/forgot-password/ /index.html 200
+/forgot-password/* /index.html 200
+
+/welcome /index.html 200
+/welcome/ /index.html 200
+/welcome/* /index.html 200
+
+/password-reset /index.html 200
+/password-reset/ /index.html 200
+/password-reset/* /index.html 200
+
+/seedance-2 /index.html 200
+/seedance-2/ /index.html 200
+/seedance-2/* /index.html 200
+
+# Google ads breakage
+/seedance-2{ignore}      /seedance-2 301
+/seedance-2{ignore}*     /seedance-2 301
+/seedance-2%7Bignore%7D  /seedance-2 301
+/seedance-2%7Bignore%7D* /seedance-2 301
+
+# Similar URLs
+/seedance2       /seedance-2 301
+/seedance2*      /seedance-2 301
+/seedance-2.0    /seedance-2 301
+/seedance-2.0*   /seedance-2 301
