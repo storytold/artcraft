@@ -4,6 +4,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faUser,
   faCog,
+  faKey,
   faVolumeHigh,
   faCircleInfo,
   faCreditCard,
@@ -19,6 +20,7 @@ import { ProviderPrioritySettingsPane } from "./panes/ProviderPrioritySettingsPa
 import { ExperimentalSettingsPane } from "./panes/ExperimentalSettingsPane";
 import { gtagEvent } from "@storyteller/google-analytics";
 import { BillingSettingsPane } from "./panes/BillingSettingsPane";
+import { ApiSettingsPane } from "./panes/ApiSettingsPane";
 import { AppearanceSettingsPane } from "./panes/AppearanceSettingsPane";
 import { Button } from "@storyteller/ui-button";
 import { useExperimentalStore } from "./experimental-store";
@@ -36,6 +38,7 @@ type SettingsSection =
   | "general"
   | "appearance"
   | "accounts"
+  | "api_keys"
   | "alerts"
   | "about"
   | "provider_priority"
@@ -74,6 +77,7 @@ export const SettingsModal = ({
     { id: "general" as const, label: "General", icon: faCog },
 
     { id: "accounts" as const, label: "Accounts", icon: faUser },
+    { id: "api_keys" as const, label: "API Keys", icon: faKey },
     { id: "billing" as const, label: "Plan & Credits", icon: faCreditCard },
 
     /* {
@@ -105,6 +109,8 @@ export const SettingsModal = ({
             globalAccountLogoutCallback={globalAccountLogoutCallback}
           />
         );
+      case "api_keys":
+        return <ApiSettingsPane />;
       case "about":
         return <AboutSettingsPane />;
       case "provider_priority":
