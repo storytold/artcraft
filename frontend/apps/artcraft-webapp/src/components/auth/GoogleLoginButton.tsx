@@ -1,5 +1,10 @@
 import { GoogleLogin, CredentialResponse } from "@react-oauth/google";
 import { UsersApi } from "@storyteller/api";
+import {
+  getLandingUrl,
+  getReferralUsername,
+  getReferrer,
+} from "@storyteller/common";
 import { faSpinnerThird } from "@fortawesome/pro-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useState } from "react";
@@ -32,8 +37,9 @@ export function GoogleLoginButton({
       const api = new UsersApi();
       const result = await api.GoogleSSO({
         credential: credentialResponse.credential,
-        maybeReferralUrl: (window as any).cached_referrer,
-        maybeLandingUrl: (window as any).cached_landing_url,
+        maybeReferralUrl: getReferrer(),
+        maybeLandingUrl: getLandingUrl(),
+        maybeReferralUsername: getReferralUsername(),
       });
       if (result.success) {
         window.dispatchEvent(new Event("auth-change"));

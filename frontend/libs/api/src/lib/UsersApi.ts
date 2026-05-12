@@ -10,6 +10,7 @@ interface SignupRequest {
   signup_source?: string;
   maybe_referral_url?: string;
   maybe_landing_url?: string;
+  maybe_referral_username?: string;
 }
 
 export class UsersApi extends ApiManager {
@@ -208,6 +209,7 @@ export class UsersApi extends ApiManager {
     signupSource,
     maybeReferralUrl,
     maybeLandingUrl,
+    maybeReferralUsername,
   }: {
     username: string;
     email: string;
@@ -216,6 +218,7 @@ export class UsersApi extends ApiManager {
     signupSource?: string;
     maybeReferralUrl?: string;
     maybeLandingUrl?: string;
+    maybeReferralUsername?: string;
   }): Promise<ApiResponse<{ signedSession?: string }>> {
     const endpoint = `${this.getApiSchemeAndHost()}/v1/create_account`;
     const body: SignupRequest = {
@@ -232,6 +235,9 @@ export class UsersApi extends ApiManager {
     }
     if (maybeLandingUrl) {
       body.maybe_landing_url = maybeLandingUrl;
+    }
+    if (maybeReferralUsername) {
+      body.maybe_referral_username = maybeReferralUsername;
     }
 
     try {
@@ -273,13 +279,20 @@ export class UsersApi extends ApiManager {
     credential,
     maybeReferralUrl,
     maybeLandingUrl,
+    maybeReferralUsername,
   }: {
     credential: string;
     maybeReferralUrl?: string;
     maybeLandingUrl?: string;
+    maybeReferralUsername?: string;
   }): Promise<ApiResponse<{ usernameNotYetCustomized?: boolean }>> {
     const endpoint = `${this.getApiSchemeAndHost()}/v1/accounts/google_sso`;
-    const body: { google_credential: string; maybe_referral_url?: string; maybe_landing_url?: string } = {
+    const body: {
+      google_credential: string;
+      maybe_referral_url?: string;
+      maybe_landing_url?: string;
+      maybe_referral_username?: string;
+    } = {
       google_credential: credential,
     };
     if (maybeReferralUrl) {
@@ -287,6 +300,9 @@ export class UsersApi extends ApiManager {
     }
     if (maybeLandingUrl) {
       body.maybe_landing_url = maybeLandingUrl;
+    }
+    if (maybeReferralUsername) {
+      body.maybe_referral_username = maybeReferralUsername;
     }
 
     try {

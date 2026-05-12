@@ -8,6 +8,11 @@ import { Button } from "@storyteller/ui-button";
 import { Input } from "@storyteller/ui-input";
 import { useState } from "react";
 import { UsersApi } from "@storyteller/api";
+import {
+  getLandingUrl,
+  getReferralUsername,
+  getReferrer,
+} from "@storyteller/common";
 
 interface SignupFormProps {
   onSuccess: (isNewUser?: boolean) => void;
@@ -59,8 +64,9 @@ export const SignupForm = ({
       password,
       passwordConfirmation: password,
       signupSource,
-      maybeReferralUrl: (window as any).cached_referrer,
-      maybeLandingUrl: (window as any).cached_landing_url,
+      maybeReferralUrl: getReferrer(),
+      maybeLandingUrl: getLandingUrl(),
+      maybeReferralUsername: getReferralUsername(),
     });
 
     setIsLoading(false);
