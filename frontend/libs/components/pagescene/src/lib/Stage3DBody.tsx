@@ -22,6 +22,7 @@ import {
 import {
   STAGE_3D_PAGE_MODEL_LIST,
   ModelPage,
+  defaultModelForPage,
   useClassyModelSelectorStore,
   useSelectedImageModel,
   useSelectedProviderForModel,
@@ -132,6 +133,22 @@ export const Stage3DBody = ({
   const setSelectedModel = useClassyModelSelectorStore(
     (s) => s.setSelectedModel,
   );
+
+  // Seed the default model on mount when we're the only model picker
+  // on the page. ClassyModelSelector does this itself on mount, but in
+  // the prompt-box placement we don't render it — so without this
+  // effect the store stays empty and the trigger has no icon until the
+  // user opens the popover and picks a model manually.
+  useEffect(() => {
+    if (modelSelectorPlacement !== "prompt-box") return;
+    if (selectedImageModel) return;
+    const models = STAGE_3D_PAGE_MODEL_LIST.map((i) => i.model).filter(
+      (m): m is NonNullable<typeof m> => m !== undefined,
+    );
+    const def = defaultModelForPage(models, PAGE_ID);
+    if (def) setSelectedModel(PAGE_ID, def);
+  }, [modelSelectorPlacement, selectedImageModel, setSelectedModel]);
+
   const inlineModelItems: PopoverItem[] = useMemo(
     () =>
       STAGE_3D_PAGE_MODEL_LIST.map((item) => ({
