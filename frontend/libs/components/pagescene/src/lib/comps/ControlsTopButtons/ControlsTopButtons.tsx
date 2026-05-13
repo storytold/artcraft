@@ -12,7 +12,7 @@ import { Modal } from "@storyteller/ui-modal";
 import { twMerge } from "tailwind-merge";
 
 import { EngineContext } from "../../contexts/EngineContext/EngineContext";
-import { usePageSceneStore } from "../../PageSceneStore";
+import { usePageSceneStore, useIsVisitingOthersScene } from "../../PageSceneStore";
 import { CameraAspectRatio, ToastTypes } from "../../enums";
 import { getSceneGenerationMetaData } from "../../sceneMetadata";
 import { LoadUserScenes } from "./LoadUserScenes";
@@ -27,6 +27,7 @@ export const ControlsTopButtons = () => {
   const sceneMeta = usePageSceneStore((s) => s.sceneMeta);
   const currentUserToken = usePageSceneStore((s) => s.currentUserToken);
   const outlinerShowing = usePageSceneStore((s) => s.outlinerShowing);
+  const isVisitingOthersScene = useIsVisitingOthersScene();
 
   const [sceneTitleInput, setSceneTitleInput] = useState<string>(
     sceneMeta.title || "",
@@ -129,10 +130,50 @@ export const ControlsTopButtons = () => {
     usePageSceneStore.getState().setOutlinerShowing(!outlinerShowing);
   };
 
-  const canSave =
-    sceneMeta.isModified &&
-    (sceneMeta.ownerToken === undefined ||
-      sceneMeta.ownerToken === currentUserToken);
+  // Visitors of someone else's scene can save too — the action just
+  // routes through Save-as-copy (fork to their own account) instead of
+  // overwriting the owner's copy. Forking even an unmodified scene is
+  // valid ("favorite to my account"), so visitors get Save enabled
+  // unconditionally; owners still need an unsaved edit to save.
+  const canSave = isVisitingOthersScene || sceneMeta.isModified;
+
+  // The Save-as-copy "(1)" rename hint runs onDialogOpen for both the
+  // visitor's primary "Save copy" item AND the owner's standalone
+  // "Save scene as copy" item, so it lives in a single closure.
+  const bumpCopyCountInTitle = () => {
+    const copyCountStr = sceneTitleInput.substring(
+      sceneTitleInput.lastIndexOf("(") + 1,
+      sceneTitleInput.length - 1,
+    );
+    if (isNumberString(copyCountStr)) {
+      const newCopyCountStr = String(Number(copyCountStr) + 1);
+      setSceneTitleInput(
+        sceneTitleInput.replace(copyCountStr, newCopyCountStr),
+      );
+    } else {
+      setSceneTitleInput(sceneTitleInput + " (1)");
+    }
+  };
+
+  const saveAsCopyDialogProps = {
+    title: isVisitingOthersScene
+      ? "Save a copy to your account"
+      : "Save Scene as Copy",
+    content: (
+      <Input
+        value={sceneTitleInput}
+        label="Please enter a name for your scene"
+        onChange={handleChangeSceneTitleInput}
+      />
+    ),
+    confirmButtonProps: {
+      label: "Save",
+      disabled: sceneTitleInput === "",
+      onClick: handleButtonSaveAsCopy,
+    },
+    closeButtonProps: { label: "Cancel" },
+    showClose: true,
+  };
 
   return (
     <div className="flex flex-col gap-2 pl-2 pt-2">
@@ -190,66 +231,59 @@ export const ControlsTopButtons = () => {
                     onClick: () => editor?.adapter.promptSignup?.("load"),
                   }),
             },
+            // Primary Save item. For visitors of someone else's scene
+            // it relabels to "Save copy" and reuses the Save-as-copy
+            // dialog (forks the scene to the visitor's account). Anon
+            // skips the dialog entirely and goes straight to the
+            // signup CTA, so we wire onClick instead of dialogProps in
+            // that branch.
             {
               disabled: !canSave,
-              label: "Save scene",
+              label: isVisitingOthersScene ? "Save copy" : "Save scene",
               description: "Ctrl+S",
-              ...(sceneMeta.token
-                ? { onClick: handleButtonSave }
-                : {
-                    dialogProps: {
-                      title: "Save Scene",
-                      content: (
-                        <h4>
-                          Save scene to <b>{sceneMeta.title}</b>?
-                        </h4>
-                      ),
-                      confirmButtonProps: {
-                        label: "Save",
-                        onClick: handleButtonSave,
-                      },
-                      closeButtonProps: { label: "Cancel" },
-                      showClose: true,
-                    },
-                  }),
+              ...(!currentUserToken
+                ? {
+                    onClick: () => editor?.adapter.promptSignup?.("save"),
+                  }
+                : isVisitingOthersScene
+                  ? {
+                      onDialogOpen: bumpCopyCountInTitle,
+                      dialogProps: saveAsCopyDialogProps,
+                    }
+                  : sceneMeta.token
+                    ? { onClick: handleButtonSave }
+                    : {
+                        dialogProps: {
+                          title: "Save Scene",
+                          content: (
+                            <h4>
+                              Save scene to <b>{sceneMeta.title}</b>?
+                            </h4>
+                          ),
+                          confirmButtonProps: {
+                            label: "Save",
+                            onClick: handleButtonSave,
+                          },
+                          closeButtonProps: { label: "Cancel" },
+                          showClose: true,
+                        },
+                      }),
               divider: true,
             },
-            {
-              disabled: !sceneMeta.isModified || !sceneMeta.token,
-              label: "Save scene as copy",
-              description: "Ctrl+Shift+S",
-              onDialogOpen: () => {
-                const copyCountStr = sceneTitleInput.substring(
-                  sceneTitleInput.lastIndexOf("(") + 1,
-                  sceneTitleInput.length - 1,
-                );
-                if (isNumberString(copyCountStr)) {
-                  const newCopyCountStr = String(Number(copyCountStr) + 1);
-                  setSceneTitleInput(
-                    sceneTitleInput.replace(copyCountStr, newCopyCountStr),
-                  );
-                } else {
-                  setSceneTitleInput(sceneTitleInput + " (1)");
-                }
-              },
-              dialogProps: {
-                title: "Save Scene as Copy",
-                content: (
-                  <Input
-                    value={sceneTitleInput}
-                    label="Please enter a name for your scene"
-                    onChange={handleChangeSceneTitleInput}
-                  />
-                ),
-                confirmButtonProps: {
-                  label: "Save",
-                  disabled: sceneTitleInput === "",
-                  onClick: handleButtonSaveAsCopy,
-                },
-                closeButtonProps: { label: "Cancel" },
-                showClose: true,
-              },
-            },
+            // Standalone "Save scene as copy" — owners only. Visitors
+            // already get this behavior from the primary Save item;
+            // showing both would be redundant.
+            ...(isVisitingOthersScene
+              ? []
+              : [
+                  {
+                    disabled: !sceneMeta.isModified || !sceneMeta.token,
+                    label: "Save scene as copy",
+                    description: "Ctrl+Shift+S",
+                    onDialogOpen: bumpCopyCountInTitle,
+                    dialogProps: saveAsCopyDialogProps,
+                  },
+                ]),
           ]}
         />
 
