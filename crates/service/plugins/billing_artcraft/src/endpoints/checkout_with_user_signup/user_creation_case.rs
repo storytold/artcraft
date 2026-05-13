@@ -12,8 +12,7 @@ use log::{error, info, warn};
 use mysql_queries::queries::users::user::create::create_account_error::CreateAccountError;
 use mysql_queries::queries::users::user::create::create_account_from_google_sso::{create_account_from_google_sso, CreateAccountFromGoogleSsoArgs};
 use mysql_queries::queries::users::user::create::create_account_from_stripe_checkout::{create_account_from_stripe_checkout, CreateAccountFromStripeCheckoutArgs};
-use mysql_queries::queries::users::user_sessions::create_user_session_with_transactor::create_user_session_with_transactor;
-use mysql_queries::utils::transactor::Transactor;
+use mysql_queries::queries::users::user_sessions::create_user_session_with_executor::create_user_session_with_executor;
 use sqlx::pool::PoolConnection;
 use sqlx::{Acquire, MySql};
 use std::collections::HashMap;
@@ -92,7 +91,7 @@ pub (super) async fn user_creation_case(
         maybe_referral_partner: maybe_referral_partner.clone(),
         maybe_referral_user_token: maybe_referral_user_token.as_ref(),
       },
-      Transactor::for_transaction(&mut transaction),
+      &mut *transaction,
     ).await;
 
     match result {
@@ -140,10 +139,10 @@ pub (super) async fn user_creation_case(
         CommonWebError::ServerError
       })?;
 
-  let session_token = create_user_session_with_transactor(
+  let session_token = create_user_session_with_executor(
     &final_user_token,
     &ip_address,
-    Transactor::for_connection(mysql_connection))
+    &mut **mysql_connection)
       .await
       .map_err(|e| {
         warn!("error creating user session: {:?}", e);

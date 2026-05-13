@@ -5,9 +5,9 @@
 
 use crate::queries::users::user::create::create_account_error::CreateAccountError;
 use crate::queries::users::user::create::create_account_generic::{create_account_generic, GenericCreateAccountArgs};
-use crate::utils::transactor::Transactor;
 use enums::by_table::users::user_signup_method::UserSignupMethod;
 use enums::by_table::users::user_signup_source::UserSignupSource;
+use sqlx::{Executor, MySql};
 use tokens::tokens::users::UserToken;
 
 /// SSO accounts do not have passwords at account creation
@@ -38,10 +38,12 @@ pub struct CreateAccountFromGoogleSsoArgs<'a> {
   pub maybe_referral_user_token: Option<&'a UserToken>,
 }
 
-pub async fn create_account_from_google_sso(
+pub async fn create_account_from_google_sso<'e, 'c: 'e, E>(
   args: CreateAccountFromGoogleSsoArgs<'_>,
-  transactor: Transactor<'_, '_>,
+  mysql_executor: E,
 ) -> Result<UserToken, CreateAccountError>
+where
+  E: 'e + Executor<'c, Database = MySql>,
 {
   let result= create_account_generic(
     GenericCreateAccountArgs {
@@ -79,7 +81,7 @@ pub async fn create_account_from_google_sso(
       email_is_synthetic: false,
       was_eagerly_provisioned: false,
     },
-    transactor,
+    mysql_executor,
   ).await?;
 
   Ok(result.user_token)

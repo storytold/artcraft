@@ -4,11 +4,11 @@
 #![forbid(unused_variables)]
 
 use crate::queries::users::user::create::create_account_error::CreateAccountError;
-use crate::utils::transactor::Transactor;
 use enums::by_table::users::user_signup_method::UserSignupMethod;
 use enums::by_table::users::user_signup_source::UserSignupSource;
 use log::warn;
 use sqlx::error::Error::Database;
+use sqlx::{Executor, MySql};
 use tokens::tokens::users::UserToken;
 
 pub struct GenericCreateAccountArgs<'a> {
@@ -88,10 +88,12 @@ pub struct CreateAccountSuccessResult {
   pub user_id: u64,
 }
 
-pub async fn create_account_generic(
+pub async fn create_account_generic<'e, 'c: 'e, E>(
   args: GenericCreateAccountArgs<'_>,
-  transactor: Transactor<'_, '_>,
+  mysql_executor: E,
 ) -> Result<CreateAccountSuccessResult, CreateAccountError>
+where
+  E: 'e + Executor<'c, Database = MySql>,
 {
   const INITIAL_PROFILE_MARKDOWN : &str = "";
   const INITIAL_PROFILE_RENDERED_HTML : &str = "";
@@ -193,7 +195,7 @@ SET
     );
 
 
-  let query_result = transactor.execute(query).await;
+  let query_result = query.execute(mysql_executor).await;
 
   let record_id = match query_result {
     Ok(res) => {

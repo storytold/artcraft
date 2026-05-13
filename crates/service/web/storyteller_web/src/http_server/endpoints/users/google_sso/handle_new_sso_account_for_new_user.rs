@@ -10,7 +10,6 @@ use log::{error, info, warn};
 use mysql_queries::queries::google_sign_in_accounts::insert_google_sign_in_account::{insert_google_sign_in_account, InsertGoogleSignInArgs};
 use mysql_queries::queries::users::user::create::create_account_error::CreateAccountError;
 use mysql_queries::queries::users::user::create::create_account_from_google_sso::{create_account_from_google_sso, CreateAccountFromGoogleSsoArgs};
-use mysql_queries::utils::transactor::Transactor;
 use sqlx::pool::PoolConnection;
 use sqlx::{Acquire, MySql};
 use users::email::email_to_gravatar_hash::email_to_gravatar_hash;
@@ -74,7 +73,7 @@ pub async fn handle_new_sso_account_for_new_user(
         maybe_landing_url: args.maybe_landing_url.clone(),
         maybe_referral_user_token: args.maybe_referral_user_token.as_ref(),
       },
-      Transactor::for_transaction(&mut transaction),
+      &mut *transaction,
     ).await;
 
     match result {
