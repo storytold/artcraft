@@ -179,10 +179,13 @@ pub async fn login_handler(
         UserSessionFeatureFlags::new(user.maybe_feature_flags.as_deref());
 
     // NB: Enroll new users in studio for a while.
-    enroll_in_studio(&user.token, &ip_address, &mysql_pool, Some(&user_feature_flags)).await
+    // TODO: Refactor login handler to use a connection throughout instead of the pool.
+    if let Ok(mut conn) = mysql_pool.acquire().await {
+      enroll_in_studio(&user.token, &ip_address, &mut conn, Some(&user_feature_flags)).await
         .map_err(|e| {
           warn!("error enrolling in studio: {:?}", e);
         }).ok();
+    }
 
     UserSessionToken::new_from_str(&token)
   } else {

@@ -8,7 +8,8 @@ use crate::queries::users::user::create::create_account_generic::{create_account
 use crate::utils::transactor::Transactor;
 use enums::by_table::users::user_signup_method::UserSignupMethod;
 use enums::by_table::users::user_signup_source::UserSignupSource;
-use sqlx::MySqlPool;
+use sqlx::pool::PoolConnection;
+use sqlx::MySql;
 use tokens::tokens::users::UserToken;
 
 pub struct CreateAccountFromEmailPasswordArgs<'a> {
@@ -48,8 +49,8 @@ pub struct CreateAccountSuccessResult {
 
 
 pub async fn create_account_from_email_and_password(
-  mysql_pool: &MySqlPool,
   args: CreateAccountFromEmailPasswordArgs<'_>,
+  mysql_connection: &mut PoolConnection<MySql>,
 ) -> Result<CreateAccountSuccessResult, CreateAccountError>
 {
   let result= create_account_generic(
@@ -90,7 +91,7 @@ pub async fn create_account_from_email_and_password(
       email_is_synthetic: false,
       was_eagerly_provisioned: false,
     },
-    Transactor::for_pool(mysql_pool),
+    Transactor::for_connection(&mut *mysql_connection),
   ).await?;
 
   Ok(CreateAccountSuccessResult {

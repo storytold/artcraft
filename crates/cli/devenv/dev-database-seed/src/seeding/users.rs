@@ -54,20 +54,26 @@ async fn seed_user(
   let email_gravatar_hash = email_to_gravatar_hash(&email_address);
   let password_hash = bcrypt_password_hash(password)?;
 
-  create_account_from_email_and_password(mysql_pool, CreateAccountFromEmailPasswordArgs {
-    username: &username,
-    display_name,
-    email_address: &email_address,
-    email_gravatar_hash: &email_gravatar_hash,
-    password_hash: &password_hash,
-    ip_address: "127.0.0.1",
-    maybe_source: None,
-    maybe_referral_url: None,
-    maybe_landing_url: None,
-    maybe_referral_partner: None,
-    maybe_referral_user_token: None,
-    maybe_user_token: maybe_user_token.as_ref(),
-  }).await.map_err(|err| anyhow!("err: {:?}", err))?;
+  let mut mysql_connection = mysql_pool.acquire().await
+    .map_err(|err| anyhow!("pool acquire error: {:?}", err))?;
+
+  create_account_from_email_and_password(
+    CreateAccountFromEmailPasswordArgs {
+      username: &username,
+      display_name,
+      email_address: &email_address,
+      email_gravatar_hash: &email_gravatar_hash,
+      password_hash: &password_hash,
+      ip_address: "127.0.0.1",
+      maybe_source: None,
+      maybe_referral_url: None,
+      maybe_landing_url: None,
+      maybe_referral_partner: None,
+      maybe_referral_user_token: None,
+      maybe_user_token: maybe_user_token.as_ref(),
+    },
+    &mut mysql_connection,
+  ).await.map_err(|err| anyhow!("err: {:?}", err))?;
 
   Ok(())
 }

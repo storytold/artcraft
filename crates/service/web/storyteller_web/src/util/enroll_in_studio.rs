@@ -1,4 +1,5 @@
-use sqlx::MySqlPool;
+use sqlx::pool::PoolConnection;
+use sqlx::{Acquire, MySql};
 
 use enums::by_table::users::user_feature_flag::UserFeatureFlag;
 use errors::AnyhowResult;
@@ -11,7 +12,7 @@ use crate::http_server::session::lookup::user_session_feature_flags::UserSession
 pub async fn enroll_in_studio(
   user_token: &UserToken,
   ip_address: &str,
-  mysql_pool: &MySqlPool,
+  mysql_connection: &mut PoolConnection<MySql>,
   maybe_existing_feature_flags: Option<&UserSessionFeatureFlags>
 ) -> AnyhowResult<()> {
 
@@ -29,7 +30,7 @@ pub async fn enroll_in_studio(
     UserFeatureFlag::VideoStyleTransfer,
   ]);
 
-  let mut transaction = mysql_pool.begin().await?;
+  let mut transaction = mysql_connection.begin().await?;
 
   set_user_feature_flags_transactional(SetUserFeatureFlagTransactionalArgs {
     subject_user_token: user_token,

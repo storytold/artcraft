@@ -25,10 +25,9 @@ use log::{info, warn};
 use mysql_queries::mediators::firehose_publisher::FirehosePublisher;
 use mysql_queries::queries::users::user::create::create_account_error::CreateAccountError;
 use mysql_queries::queries::users::user::create::create_account_from_email_and_password::{create_account_from_email_and_password, CreateAccountFromEmailPasswordArgs};
-use mysql_queries::queries::users::user_sessions::create_user_session::create_user_session;
+use mysql_queries::queries::users::user_sessions::create_user_session_with_executor::create_user_session_with_executor;
 use password::bcrypt_hash_password::bcrypt_hash_password;
 use sqlx::MySqlPool;
-use tokens::tokens::user_sessions::UserSessionToken;
 use user_input_common::check_for_slurs::contains_slurs;
 use users::email::email_to_gravatar_hash::email_to_gravatar_hash;
 use utoipa::ToSchema;
@@ -218,6 +217,13 @@ pub async fn create_account_handler(
 
   let maybe_landing_url = request.maybe_landing_url.clone();
 
+  // Acquire a single connection for pre-creation lookups.
+  let mut mysql_connection = mysql_pool.acquire().await
+    .map_err(|err| {
+      warn!("MySql pool error: {:?}", err);
+      CreateAccountErrorResponse::server_error()
+    })?;
+
   // Look up referring user by username (optional, fail-open).
   let maybe_referral_user_token = match request.maybe_referral_username.as_deref() {
     Some(raw) => {
@@ -225,7 +231,7 @@ pub async fn create_account_handler(
       if lookup_username.is_empty() {
         None
       } else {
-        match get_user_token_by_username_with_executor(&lookup_username, &**mysql_pool).await {
+        match get_user_token_by_username_with_executor(&lookup_username, &mut *mysql_connection).await {
           Ok(token) => token,
           Err(err) => {
             warn!("Referral user lookup failed (continuing): {:?}", err);
@@ -238,7 +244,6 @@ pub async fn create_account_handler(
   };
 
   let create_account_result = create_account_from_email_and_password(
-    &mysql_pool,
     CreateAccountFromEmailPasswordArgs {
       username: &username,
       display_name: &display_name,
@@ -252,7 +257,8 @@ pub async fn create_account_handler(
       maybe_referral_partner: request.maybe_referral_username.as_deref().and_then(sanitize_referral_username),
       maybe_referral_user_token: maybe_referral_user_token.as_ref(),
       maybe_user_token: None, // NB: This parameter is for internal testing only
-    }
+    },
+    &mut mysql_connection,
   ).await;
 
   let new_user_data = match create_account_result {
@@ -285,19 +291,15 @@ pub async fn create_account_handler(
 
   info!("new user id: {}", new_user_data.user_id);
 
-  let create_session_result = create_user_session(
-    new_user_data.user_token.as_str(),
+  let session_token = create_user_session_with_executor(
+    &new_user_data.user_token,
     &ip_address,
-    &mysql_pool
-  ).await;
-
-  let session_token = match create_session_result {
-    Ok(token) => token,
-    Err(e) => {
+    &mut *mysql_connection,
+  ).await
+    .map_err(|e| {
       warn!("create account session creation error : {:?}", e);
-      return Err(CreateAccountErrorResponse::server_error());
-    }
-  };
+      CreateAccountErrorResponse::server_error()
+    })?;
 
   info!("new user session created");
 
@@ -309,12 +311,10 @@ pub async fn create_account_handler(
     })?;
 
   // NB: Enroll new users in studio for a while.
-  enroll_in_studio(&new_user_data.user_token, &ip_address, &mysql_pool, None).await
+  enroll_in_studio(&new_user_data.user_token, &ip_address, &mut mysql_connection, None).await
     .map_err(|e| {
       warn!("error enrolling in studio: {:?}", e);
     }).ok();
-
-  let session_token = UserSessionToken::new_from_str(&session_token);
 
   let session_cookie = match session_cookie_manager.create_cookie(&session_token, &new_user_data.user_token) {
     Ok(cookie) => cookie,
