@@ -190,10 +190,7 @@ export const Stage3DBody = ({
       if (viewport.width > 2000) return scaleHeight;
       return scaleHeight * 0.78;
     }
-    if (
-      camAspect === CameraAspectRatio.SQUARE_1_1 &&
-      viewport.width < 2000
-    ) {
+    if (camAspect === CameraAspectRatio.SQUARE_1_1 && viewport.width < 2000) {
       return scaleHeight * 0.85;
     }
     return scaleHeight;
@@ -370,8 +367,7 @@ export const Stage3DBody = ({
                 title: item.label || "Image Plane",
                 mediaToken: item.id,
                 progressCallback: (state) => {
-                  if (state.status)
-                    console.log("Upload status:", state.status);
+                  if (state.status) console.log("Upload status:", state.status);
                 },
               });
             }
@@ -393,10 +389,7 @@ export const Stage3DBody = ({
       <OnboardingHelper />
 
       <div className="relative flex h-full w-full">
-        <div
-          id="engine-n-panels-wrapper"
-          className="flex h-full w-full"
-        >
+        <div id="engine-n-panels-wrapper" className="flex h-full w-full">
           <div className="relative w-full overflow-hidden bg-transparent">
             <SceneContainer>
               <EditorCanvas />
@@ -416,8 +409,7 @@ export const Stage3DBody = ({
             </div>
 
             <div
-              className="absolute bottom-0 left-0"
-              style={{ width: viewport.width }}
+              className="absolute bottom-0 left-0 right-0"
               onClick={handleOverlayClick}
             >
               <div
