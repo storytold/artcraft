@@ -31,6 +31,7 @@ pub mod twitch_oauth_tokens_grouping;
 pub mod twitch_oauth_tokens_internal;
 pub mod user_bookmarks;
 pub mod user_impersonation_requests;
+pub mod user_referral_codes;
 pub mod user_sessions;
 pub mod user_subscriptions;
 pub mod users;

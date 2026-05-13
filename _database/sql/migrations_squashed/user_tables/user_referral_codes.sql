@@ -11,6 +11,9 @@ CREATE TABLE user_referral_codes (
   -- The human-readable referral code (e.g. a username or custom code).
   code VARCHAR(32) NOT NULL,
 
+  -- Lowercased version of `code` for case-insensitive uniqueness lookups.
+  code_lowercase VARCHAR(32) NOT NULL,
+
   -- The user who owns this referral code.
   owner_user_token VARCHAR(32) NOT NULL,
 
@@ -23,7 +26,7 @@ CREATE TABLE user_referral_codes (
   -- INDICES --
   PRIMARY KEY (id),
   UNIQUE KEY unique_token (token),
-  UNIQUE KEY unique_code (code),
+  UNIQUE KEY unique_code_lowercase (code_lowercase),
   KEY index_owner_user_token (owner_user_token)
 
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
