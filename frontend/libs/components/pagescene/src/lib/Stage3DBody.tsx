@@ -64,7 +64,7 @@ import { useViewportSize } from "./hooks/useViewportSize";
 import { GridVisibleChangedEvent } from "./engine/events/EngineEvent";
 import { pickDropPosition } from "./engine/pickDropPosition";
 import { AssetType, CameraAspectRatio } from "./enums";
-import { usePageSceneStore, useIsViewOnly } from "./PageSceneStore";
+import { usePageSceneStore, useIsVisitingOthersScene } from "./PageSceneStore";
 import type { MediaItem } from "./models/assets";
 
 const PAGE_ID: ModelPage = ModelPage.Stage3D;
@@ -107,7 +107,7 @@ export const Stage3DBody = ({
   );
   const gridVisible = usePageSceneStore((s) => s.gridVisible);
   const previewImageUrl = usePageSceneStore((s) => s.sceneMeta.previewImageUrl);
-  const isViewOnly = useIsViewOnly();
+  const isVisitingOthersScene = useIsVisitingOthersScene();
   const addCamera = usePageSceneStore((s) => s.addCamera);
   const updateCamera = usePageSceneStore((s) => s.updateCamera);
   const deleteCamera = usePageSceneStore((s) => s.deleteCamera);
@@ -407,7 +407,7 @@ export const Stage3DBody = ({
 
   return (
     <div className="h-full w-full">
-      {!isViewOnly && <OnboardingHelper />}
+      <OnboardingHelper />
 
       <div className="relative flex h-full w-full">
         <div id="engine-n-panels-wrapper" className="flex h-full w-full">
@@ -417,22 +417,20 @@ export const Stage3DBody = ({
             </SceneContainer>
 
             <FocalLengthDisplay />
-            {!isViewOnly && <PoseModeSelector />}
+            <PoseModeSelector />
 
-            {!isViewOnly && (
-              <div
-                className="absolute left-0 top-0 w-full"
-                onClick={handleOverlayClick}
-              >
-                <div className="grid grid-cols-3 gap-4">
-                  <ControlsTopButtons />
-                  <Controls3D showImageTo3DButton={showImageTo3DButton} />
-                  <div className="flex items-start justify-end gap-2 pr-2 pt-2">
-                    <AnonHintChip />
-                  </div>
+            <div
+              className="absolute left-0 top-0 w-full"
+              onClick={handleOverlayClick}
+            >
+              <div className="grid grid-cols-3 gap-4">
+                <ControlsTopButtons />
+                <Controls3D showImageTo3DButton={showImageTo3DButton} />
+                <div className="flex items-start justify-end gap-2 pr-2 pt-2">
+                  <AnonHintChip />
                 </div>
               </div>
-            )}
+            </div>
 
             <div
               className="absolute bottom-0 left-0 right-0"
@@ -446,12 +444,12 @@ export const Stage3DBody = ({
                 <PreviewEngineCamera />
               </div>
 
-              {!isViewOnly && <ControlPanelSceneObject />}
+              <ControlPanelSceneObject />
             </div>
 
-            {isViewOnly && <PreviewBox imageUrl={previewImageUrl} />}
+            {isVisitingOthersScene && <PreviewBox imageUrl={previewImageUrl} />}
 
-            {!isViewOnly && <PromptBox3D
+            <PromptBox3D
               cameras={cameras}
               cameraAspectRatio={camAspect}
               disableHotkeyInput={disableHotkeyInput}
@@ -495,7 +493,7 @@ export const Stage3DBody = ({
                 }
                 return true;
               }}
-            />}
+            />
 
             <LoadingDots
               className="absolute left-0 top-0 z-50"
@@ -504,7 +502,7 @@ export const Stage3DBody = ({
               message={editorLoader.message}
             />
 
-            {!isViewOnly && modelSelectorPlacement === "bottom-left" && (
+            {modelSelectorPlacement === "bottom-left" && (
               <div className="absolute bottom-6 left-6 z-20 flex items-center gap-3">
                 <ClassyModelSelector
                   items={STAGE_3D_PAGE_MODEL_LIST}
@@ -519,7 +517,7 @@ export const Stage3DBody = ({
             )}
             {(showCostCalculator || showHelpMenu) && (
               <div className="absolute bottom-6 right-6 z-20 flex items-center gap-2">
-                {showCostCalculator && !isViewOnly && (
+                {showCostCalculator && (
                   <CostCalculatorButton modelPage={PAGE_ID} />
                 )}
                 {showHelpMenu && <HelpMenuButton />}

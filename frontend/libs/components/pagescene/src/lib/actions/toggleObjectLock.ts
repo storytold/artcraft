@@ -1,7 +1,6 @@
 import type Editor from "../engine/editor";
 import { LockAction } from "../engine/editor/actions/LockAction";
 import { OutlinerItemLockToggledEvent } from "../engine/events/EngineEvent";
-import { getIsViewOnly } from "../PageSceneStore";
 
 // Toggle the locked state of an object: flips userData.locked, runs
 // the gizmo attach/detach side effect, syncs the outliner row icon in
@@ -10,7 +9,6 @@ import { getIsViewOnly } from "../PageSceneStore";
 // View callers (Outliner) only need to provide editor + uuid; the
 // action handles the engine + store + history orchestration.
 export function toggleObjectLock(editor: Editor, uuid: string): void {
-  if (getIsViewOnly()) return;
   const before = editor.selection.isObjectLocked(uuid);
   editor.bus.emit(new OutlinerItemLockToggledEvent(uuid));
   editor.selection.lockUnlockObject(uuid);

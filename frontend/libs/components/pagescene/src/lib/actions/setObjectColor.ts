@@ -1,6 +1,5 @@
 import type Editor from "../engine/editor";
 import { ColorAction } from "../engine/editor/actions/ColorAction";
-import { getIsViewOnly } from "../PageSceneStore";
 
 // One-shot apply: use when the change is atomic (e.g. a button click
 // or programmatic setter). Records a single ColorAction.
@@ -15,7 +14,6 @@ export function setObjectColor(
   uuid: string,
   color: string,
 ): void {
-  if (getIsViewOnly()) return;
   const obj = editor.activeScene.scene.getObjectByProperty("uuid", uuid);
   if (!obj) return;
   const before = (obj.userData.color as string) ?? "#ffffff";
@@ -38,9 +36,6 @@ export function beginColorSession(
   editor: Editor,
   uuid: string,
 ): ColorSession {
-  if (getIsViewOnly()) {
-    return { apply() {}, commit() {} };
-  }
   const startObj = editor.activeScene.scene.getObjectByProperty(
     "uuid",
     uuid,

@@ -3,14 +3,12 @@ import type Editor from "../engine/editor";
 import { MediaItem } from "../models";
 import { CreateAction } from "../engine/editor/actions/CreateAction";
 import { ObjectAddedEvent } from "../engine/events/EngineEvent";
-import { getIsViewOnly } from "../PageSceneStore";
 
 export async function addShape(
   editor: Editor,
   item: MediaItem,
   position?: THREE.Vector3,
 ): Promise<string | undefined> {
-  if (getIsViewOnly()) return undefined;
   const obj = await editor.sceneManager?.create(
     "Parim",
     item.media_id,

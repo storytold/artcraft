@@ -2,13 +2,14 @@ import { useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faXmark } from "@fortawesome/pro-solid-svg-icons";
 
-// Small fixed-position card shown next to the camera in view-only mode.
-// Renders the author's generation result so a visitor can see what the
-// scene was made to produce. Today this is scaffolding only — the URL
-// data path (likely a new field returned by adapter.loadScene's response
-// payload, propagated into sceneMeta.previewImageUrl) is wired up in a
-// follow-up PR. Renders null when no URL is supplied, so it's safe to
-// mount unconditionally inside the isViewOnly branch.
+// Small fixed-position card shown next to the camera when a visitor is
+// looking at someone else's scene. Renders the author's generation
+// result so a visitor can see what the scene was made to produce. Today
+// this is scaffolding only — the URL data path (likely a new field
+// returned by adapter.loadScene's response payload, propagated into
+// sceneMeta.previewImageUrl) is wired up in a follow-up PR. Renders
+// null when no URL is supplied, so it's safe to mount unconditionally
+// inside the isVisitingOthersScene branch.
 export interface PreviewBoxProps {
   imageUrl?: string;
 }

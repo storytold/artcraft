@@ -21,7 +21,6 @@ import {
   TransformSpaceChangedEvent,
 } from "./events/EngineEvent";
 import type { PoseMode, TransformSpace } from "../PageSceneStore";
-import { getIsViewOnly } from "../PageSceneStore";
 
 const EDITABLE_INPUT_TYPES = new Set([
   "text",
@@ -345,7 +344,6 @@ export class MouseControls {
       this.focus();
       return;
     } else if (event.key === "Backspace" || event.key === "Delete") {
-      if (getIsViewOnly()) return;
       if (this.selected) {
         this.selected.forEach((selected) => {
           this.deleteObject(selected.uuid);
@@ -386,18 +384,15 @@ export class MouseControls {
       this.deps.bus.emit(new SelectedModeChangedEvent("scale"));
       return;
     } else if (event.key === "k") {
-      if (getIsViewOnly()) return;
       this.toggleFKMode();
       return;
     } else if (event.key === "b") {
-      if (getIsViewOnly()) return;
       // Open asset modal
       this.deps.bus.emit(new AssetModalVisibilityChangedEvent(true, true));
       return;
     }
 
     if ((event.ctrlKey || event.metaKey) && !this.isProcessing) {
-      if (getIsViewOnly()) return;
       const keyLower = event.key.toLowerCase();
       if (keyLower === "z" && !event.shiftKey) {
         // undo

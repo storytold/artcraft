@@ -2,19 +2,17 @@ import { useContext } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faArrowRightToBracket } from "@fortawesome/pro-solid-svg-icons";
 import { EngineContext } from "../../contexts/EngineContext/EngineContext";
-import { usePageSceneStore, useIsViewOnly } from "../../PageSceneStore";
+import { usePageSceneStore } from "../../PageSceneStore";
 
-// Quiet "you're signed out" affordance shown in the editor playground for
-// anonymous visitors. Hidden in view-only mode (the visitor is consuming
-// someone else's scene; no upsell pressure needed). The actual per-action
-// signup CTAs (Save, Generate, Upload) still fire when the user clicks
-// those buttons — this chip just sets expectations up front.
+// Quiet "you're signed out" affordance shown in the editor for anonymous
+// visitors — playground or someone else's scene alike. The actual
+// per-action signup CTAs (Save, Generate, Upload) still fire when the
+// user clicks those buttons; this chip just sets expectations up front.
 export const AnonHintChip = () => {
   const editor = useContext(EngineContext);
   const currentUserToken = usePageSceneStore((s) => s.currentUserToken);
-  const isViewOnly = useIsViewOnly();
 
-  if (currentUserToken || isViewOnly) return null;
+  if (currentUserToken) return null;
 
   const handleClick = () => {
     editor?.adapter.promptSignup?.("hint");

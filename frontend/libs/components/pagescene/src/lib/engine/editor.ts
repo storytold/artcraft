@@ -20,7 +20,7 @@ import { TransformAction } from "./editor/actions/TransformAction";
 
 import Stats from "three/examples/jsm/libs/stats.module.js";
 import { SparkRenderer } from "@sparkjsdev/spark";
-import { usePageSceneStore, getIsViewOnly } from "../PageSceneStore";
+import { usePageSceneStore } from "../PageSceneStore";
 import { ensureAmmoLoaded } from "./ammoLoader";
 import { EngineEventBus } from "./events/EngineEventBus";
 import { EngineStoreBridge } from "./EngineStoreBridge";
@@ -787,7 +787,6 @@ class Editor {
   }
 
   deleteObject(uuid: string) {
-    if (getIsViewOnly()) return;
     const obj = this.activeScene.scene.getObjectByProperty("uuid", uuid);
     if (obj) this.history.record(new DeleteAction(this, obj));
     this.mouse_controls?.clearFKVisuals();

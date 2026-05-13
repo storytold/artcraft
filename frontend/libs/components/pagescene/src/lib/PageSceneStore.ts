@@ -495,15 +495,21 @@ export const usePageSceneStore = create<PageSceneState>((set, get) => ({
   setCamViewCanvasEl: (el) => set({ camViewCanvasEl: el }),
 }));
 
-// View-only mode: visitor is looking at someone else's scene (owner is
+// True when the visitor is looking at someone else's scene (owner is
 // known and isn't them). A blank scene has no owner so this returns
 // false; the scene owner viewing their own scene returns false too.
-const computeIsViewOnly = (s: PageSceneState): boolean =>
+//
+// This no longer gates mutations — visitors can fully interact with
+// the scene. It only drives ownership-aware UI: the primary Save
+// button switches to "Save copy" (forks the scene to the visitor's
+// account on confirm) and the PreviewBox shows the author's
+// generation result.
+const computeIsVisitingOthersScene = (s: PageSceneState): boolean =>
   s.sceneMeta.ownerToken !== undefined &&
   s.sceneMeta.ownerToken !== s.currentUserToken;
 
-export const useIsViewOnly = (): boolean =>
-  usePageSceneStore(computeIsViewOnly);
+export const useIsVisitingOthersScene = (): boolean =>
+  usePageSceneStore(computeIsVisitingOthersScene);
 
-export const getIsViewOnly = (): boolean =>
-  computeIsViewOnly(usePageSceneStore.getState());
+export const getIsVisitingOthersScene = (): boolean =>
+  computeIsVisitingOthersScene(usePageSceneStore.getState());
