@@ -109,6 +109,8 @@ function PageSceneEditor() {
         sceneToken={sceneToken}
         showCostCalculator={false}
         showImageTo3DButton={false}
+        showHelpMenu={false}
+        modelSelectorPlacement="prompt-box"
       />
       {/* Controls3D's "My Library" popup item flips the
           galleryModalVisibleViewMode signal — the modal below subscribes

@@ -7,7 +7,13 @@
 // exact same 3D editor UX. Only the platform-specific PageSceneAdapter
 // implementation differs between hosts.
 
-import React, { useContext, useEffect, useRef } from "react";
+import React, {
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+} from "react";
 import {
   GalleryItem,
   onImageDrop,
@@ -16,10 +22,13 @@ import {
 import {
   STAGE_3D_PAGE_MODEL_LIST,
   ModelPage,
+  useClassyModelSelectorStore,
   useSelectedImageModel,
   useSelectedProviderForModel,
   ClassyModelSelector,
 } from "@storyteller/ui-model-selector";
+import { PopoverMenu } from "@storyteller/ui-popover";
+import { Tooltip } from "@storyteller/ui-tooltip";
 import type { ImageModel } from "@storyteller/model-list";
 import type { GenerationProvider } from "@storyteller/api-enums";
 import { HelpMenuButton } from "@storyteller/ui-help-menu";
@@ -62,11 +71,21 @@ export interface Stage3DBodyProps {
   showCostCalculator?: boolean;
   /** Show the top-bar "Create 3D model from image" magic-wand button. */
   showImageTo3DButton?: boolean;
+  /** Show the bottom-right help menu button. */
+  showHelpMenu?: boolean;
+  /** Where to render the model picker. `"bottom-left"` (default) keeps
+   *  the existing ClassyModelSelector floating in the editor corner —
+   *  used by Tauri. `"prompt-box"` hides the corner selector and
+   *  renders a compact popover inside the prompt-box toolbar instead,
+   *  matching the webapp's other prompt boxes. */
+  modelSelectorPlacement?: "bottom-left" | "prompt-box";
 }
 
 export const Stage3DBody = ({
   showCostCalculator = true,
   showImageTo3DButton = true,
+  showHelpMenu = true,
+  modelSelectorPlacement = "bottom-left",
 }: Stage3DBodyProps = {}) => {
   const camAspect = usePageSceneStore((s) => s.cameraAspectRatio);
   const outlinerShowing = usePageSceneStore((s) => s.outlinerShowing);
@@ -106,6 +125,47 @@ export const Stage3DBody = ({
 
   const selectedProvider: GenerationProvider | undefined =
     useSelectedProviderForModel(PAGE_ID, selectedImageModel?.id);
+
+  // Inline (prompt-box) model selector. Built here rather than in
+  // PromptBox3D so the promptbox lib doesn't take a new dep on
+  // model-selector; the selector is just plumbed in as a ReactNode slot.
+  const setSelectedModel = useClassyModelSelectorStore(
+    (s) => s.setSelectedModel,
+  );
+  const inlineModelItems: PopoverItem[] = useMemo(
+    () =>
+      STAGE_3D_PAGE_MODEL_LIST.map((item) => ({
+        ...item,
+        selected: item.model === selectedImageModel,
+      })),
+    [selectedImageModel],
+  );
+  const handleInlineModelSelect = useCallback(
+    (item: PopoverItem) => {
+      if (item.model) setSelectedModel(PAGE_ID, item.model);
+    },
+    [setSelectedModel],
+  );
+  const selectedModelIcon = useMemo(
+    () =>
+      STAGE_3D_PAGE_MODEL_LIST.find((i) => i.model === selectedImageModel)
+        ?.icon,
+    [selectedImageModel],
+  );
+  const inlineModelSelector =
+    modelSelectorPlacement === "prompt-box" ? (
+      <Tooltip content="Model" position="top" className="z-50" closeOnClick>
+        <PopoverMenu
+          items={inlineModelItems}
+          onSelect={handleInlineModelSelect}
+          mode="toggle"
+          panelTitle="Select Model"
+          panelClassName="min-w-[260px]"
+          showIconsInList
+          triggerIcon={selectedModelIcon}
+        />
+      </Tooltip>
+    ) : undefined;
 
   const imageCredits = useCostBreakdownModalStore(
     (s) => s.estimatedCreditsByPage[PAGE_ID],
@@ -405,6 +465,7 @@ export const Stage3DBody = ({
                 editor.positive_prompt = prompt;
               }}
               snapshotCurrentFrame={editor?.snapShotOfCurrentFrame.bind(editor)}
+              modelSelector={inlineModelSelector}
             />
 
             <LoadingDots
@@ -414,21 +475,27 @@ export const Stage3DBody = ({
               message={editorLoader.message}
             />
 
-            <div className="absolute bottom-6 left-6 z-20 flex items-center gap-3">
-              <ClassyModelSelector
-                items={STAGE_3D_PAGE_MODEL_LIST}
-                page={PAGE_ID}
-                panelTitle="Select Model"
-                panelClassName="min-w-[300px]"
-                buttonClassName="bg-transparent p-0 text-lg hover:bg-transparent text-white/80 hover:text-white"
-                showIconsInList
-                triggerLabel="Model"
-              />
-            </div>
-            <div className="absolute bottom-6 right-6 z-20 flex items-center gap-2">
-              {showCostCalculator && <CostCalculatorButton modelPage={PAGE_ID} />}
-              <HelpMenuButton />
-            </div>
+            {modelSelectorPlacement === "bottom-left" && (
+              <div className="absolute bottom-6 left-6 z-20 flex items-center gap-3">
+                <ClassyModelSelector
+                  items={STAGE_3D_PAGE_MODEL_LIST}
+                  page={PAGE_ID}
+                  panelTitle="Select Model"
+                  panelClassName="min-w-[300px]"
+                  buttonClassName="bg-transparent p-0 text-lg hover:bg-transparent text-white/80 hover:text-white"
+                  showIconsInList
+                  triggerLabel="Model"
+                />
+              </div>
+            )}
+            {(showCostCalculator || showHelpMenu) && (
+              <div className="absolute bottom-6 right-6 z-20 flex items-center gap-2">
+                {showCostCalculator && (
+                  <CostCalculatorButton modelPage={PAGE_ID} />
+                )}
+                {showHelpMenu && <HelpMenuButton />}
+              </div>
+            )}
           </div>
         </div>
       </div>
