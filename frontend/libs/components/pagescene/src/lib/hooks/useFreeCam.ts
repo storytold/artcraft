@@ -47,6 +47,16 @@ const isEventFromEditableElement = (event: KeyboardEvent): boolean => {
   return target.isContentEditable;
 };
 
+// Hold-Shift boost matches the help-dialog "Speed Boost" shortcut.
+// 3x is what the legacy MouseControls.onkeydown path used (and which
+// never got wired up to a listener in the React refactor), so we
+// preserve that feel here.
+const BASE_MOVEMENT_SPEED = 1.15;
+const BOOSTED_MOVEMENT_SPEED = BASE_MOVEMENT_SPEED * 3;
+
+const isShiftKey = (code: string) =>
+  code === "ShiftLeft" || code === "ShiftRight";
+
 export const useFreeCam = (
   canvas: HTMLCanvasElement | null,
   editor: Editor | null,
@@ -74,6 +84,9 @@ export const useFreeCam = (
     const onKeyDown = (e: KeyboardEvent) => {
       if (usePageSceneStore.getState().isPromptBoxFocused) return;
       if (isEventFromEditableElement(e)) return;
+      if (isShiftKey(e.code)) {
+        state.movementSpeed = BOOSTED_MOVEMENT_SPEED;
+      }
       const moveSlot = moveSlotForKeyCode(e.code);
       if (moveSlot) state.moveKeys[moveSlot] = 1;
       const rotateSlot = rotateSlotForKeyCode(e.code);
@@ -83,6 +96,9 @@ export const useFreeCam = (
     const onKeyUp = (e: KeyboardEvent) => {
       if (usePageSceneStore.getState().isPromptBoxFocused) return;
       if (isEventFromEditableElement(e)) return;
+      if (isShiftKey(e.code)) {
+        state.movementSpeed = BASE_MOVEMENT_SPEED;
+      }
       const moveSlot = moveSlotForKeyCode(e.code);
       if (moveSlot) state.moveKeys[moveSlot] = 0;
       const rotateSlot = rotateSlotForKeyCode(e.code);
@@ -138,6 +154,15 @@ export const useFreeCam = (
 
     const onContextMenu = (e: Event) => e.preventDefault();
 
+    // Reset on blur — if the user holds Shift, switches tabs/windows,
+    // then releases, the keyup never reaches us and the boost would
+    // otherwise stay stuck on. Same goes for any held movement keys.
+    const onBlur = () => {
+      state.movementSpeed = BASE_MOVEMENT_SPEED;
+      state.moveKeys = emptyMoveKeys();
+      state.rotateKeys = emptyRotateKeys();
+    };
+
     canvas.addEventListener("pointerdown", onPointerDown);
     canvas.addEventListener("pointerup", onPointerUp);
     canvas.addEventListener("pointermove", onPointerMove);
@@ -145,9 +170,11 @@ export const useFreeCam = (
     canvas.addEventListener("contextmenu", onContextMenu);
     document.addEventListener("keydown", onKeyDown);
     document.addEventListener("keyup", onKeyUp);
+    window.addEventListener("blur", onBlur);
 
     return () => {
       state.enabled = false;
+      state.movementSpeed = BASE_MOVEMENT_SPEED;
       state.moveKeys = emptyMoveKeys();
       state.rotateKeys = emptyRotateKeys();
       state.velocity.set(0, 0, 0);
@@ -159,6 +186,7 @@ export const useFreeCam = (
       canvas.removeEventListener("contextmenu", onContextMenu);
       document.removeEventListener("keydown", onKeyDown);
       document.removeEventListener("keyup", onKeyUp);
+      window.removeEventListener("blur", onBlur);
     };
   }, [canvas, editor]);
 };

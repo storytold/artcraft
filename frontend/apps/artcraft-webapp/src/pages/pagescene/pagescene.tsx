@@ -1,6 +1,13 @@
 import { useCallback, useEffect, useRef } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faDesktop, faHouse } from "@fortawesome/pro-solid-svg-icons";
+import { Button } from "@storyteller/ui-button";
 import { Stage3D, usePageSceneStore } from "@storyteller/ui-pagescene";
+import {
+  GalleryModal,
+  GalleryDragComponent,
+} from "@storyteller/ui-gallery-modal";
 import { useSession } from "../../lib/session";
 import { useSidebar } from "../../components/ui/sidebar";
 import { useWebAppPageSceneAdapter } from "./web-adapter";
@@ -22,19 +29,30 @@ import { useWebAppPageSceneAdapter } from "./web-adapter";
 // On entry the sidebar auto-collapses on desktop to give the lib's
 // 100vw-leaning layout the room it expects.
 
+// Gate the editor on mobile. The lib's layout is built around a
+// 100vw-leaning 3D viewport and pointer-precision controls (right-
+// click drag pan, WASD fly cam, gizmo handles), none of which work
+// on touch. The conditional is at the top level so that the editor's
+// heavier hooks (adapter construction, ResizeObserver, engine mount
+// inside Stage3D) never run on mobile.
 export default function PageScene() {
+  const { isMobile } = useSidebar();
+  if (isMobile) return <MobileGate />;
+  return <PageSceneEditor />;
+}
+
+function PageSceneEditor() {
   const { sceneToken } = useParams<{ sceneToken?: string }>();
   const { user } = useSession();
   const navigate = useNavigate();
-  const { setOpen, isMobile } = useSidebar();
+  const { setOpen } = useSidebar();
 
   const didAutoCollapseRef = useRef(false);
   useEffect(() => {
     if (didAutoCollapseRef.current) return;
-    if (isMobile) return;
     setOpen(false);
     didAutoCollapseRef.current = true;
-  }, [isMobile, setOpen]);
+  }, [setOpen]);
 
   useEffect(() => {
     usePageSceneStore.getState().setCurrentUserToken(user?.user_token);
@@ -92,6 +110,38 @@ export default function PageScene() {
         showCostCalculator={false}
         showImageTo3DButton={false}
       />
+      {/* Controls3D's "My Library" popup item flips the
+          galleryModalVisibleViewMode signal — the modal below subscribes
+          to that signal, and items inside it dispatch onto galleryDnd
+          which Stage3DBody's onImageDrop handler converts into scene
+          adds. Both components portal themselves out of this wrapper. */}
+      <GalleryModal mode="view" />
+      <GalleryDragComponent />
+    </div>
+  );
+}
+
+function MobileGate() {
+  return (
+    <div className="flex h-full w-full items-center justify-center p-6">
+      <div className="flex max-w-sm flex-col items-center gap-4 text-center">
+        <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-amber-400/30 bg-amber-500/25 text-amber-300">
+          <FontAwesomeIcon icon={faDesktop} className="text-xl" />
+        </div>
+        <h1 className="text-xl font-semibold text-white">
+          Edit 3D is desktop-only
+        </h1>
+        <p className="text-sm text-white/60 leading-relaxed">
+          The 3D editor needs a mouse and keyboard for camera flight, gizmo
+          handles, and precision selection. Open this page on a desktop or
+          laptop to start editing.
+        </p>
+        <Link to="/" className="mt-2">
+          <Button variant="primary" icon={faHouse}>
+            Back to home
+          </Button>
+        </Link>
+      </div>
     </div>
   );
 }
