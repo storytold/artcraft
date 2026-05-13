@@ -40,6 +40,7 @@ module.exports = {
       red: { ...colors.red, DEFAULT: "#D33242" },
       blue: { ...colors.blue, DEFAULT: "#2E70FF" },
       orange: colors.orange,
+      amber: colors.amber,
       green: { ...colors.green, DEFAULT: "#308752" },
       emerald: colors.emerald,
       teal: colors.teal,

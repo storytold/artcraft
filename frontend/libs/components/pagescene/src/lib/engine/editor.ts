@@ -164,9 +164,8 @@ class Editor {
     // strictly one-way: UI toggles emit GridVisibleChangedEvent on the
     // bus → bridge updates the store + this subscriber updates the
     // THREE.js gridHelper. No "store→engine" subscription anywhere.
-    this.gridSubscription = this.bus.subscribe(
-      GridVisibleChangedEvent,
-      (e) => this.activeScene?.applyGridVisibility(e.visible),
+    this.gridSubscription = this.bus.subscribe(GridVisibleChangedEvent, (e) =>
+      this.activeScene?.applyGridVisibility(e.visible),
     );
 
     // PostProcessingPipeline must exist before Scene because Scene's
@@ -191,8 +190,7 @@ class Editor {
       hideObjectPanel: () =>
         this.bus.emit(new InspectorPanelChangedEvent(null)),
       getCameras: () => usePageSceneStore.getState().cameras,
-      getSelectedCameraId: () =>
-        usePageSceneStore.getState().selectedCameraId,
+      getSelectedCameraId: () => usePageSceneStore.getState().selectedCameraId,
       bus: this.bus,
     });
     this.selection = new SelectionBridge({
@@ -203,8 +201,7 @@ class Editor {
       setObjectLocked: (uuid, locked) =>
         this.utils.setObjectLocked(uuid, locked),
       isObjectLocked: (uuid) => this.utils.isObjectLocked(uuid),
-      removeTransformControls: () =>
-        this.utils.removeTransformControls(false),
+      removeTransformControls: () => this.utils.removeTransformControls(false),
       attachGizmoToCurrentSelection: () => {
         this.gizmo.addToScene(this.activeScene.scene);
         const selected = this.sceneManager?.selected_objects?.[0];
@@ -232,8 +229,7 @@ class Editor {
         getSelectedCameraId: () =>
           usePageSceneStore.getState().selectedCameraId,
         fetchAsset: (url) => this.adapter.fetchAsset(url),
-        getMediaUrlByToken: (token) =>
-          this.adapter.getMediaUrlByToken(token),
+        getMediaUrlByToken: (token) => this.adapter.getMediaUrlByToken(token),
       },
     );
     this.activeScene.initialize();
@@ -280,8 +276,7 @@ class Editor {
       saveSceneState: (args) => this.adapter.saveScene(args),
       loadSceneState: (token) => this.adapter.loadScene(token),
       getCameras: () => usePageSceneStore.getState().cameras,
-      getSelectedCameraId: () =>
-        usePageSceneStore.getState().selectedCameraId,
+      getSelectedCameraId: () => usePageSceneStore.getState().selectedCameraId,
       bus: this.bus,
     });
     this.viewport = new ViewportController({
@@ -291,6 +286,13 @@ class Editor {
       getRenderAspectRatio: () =>
         this.cameraController.getRenderDimensions().aspectRatio,
       resizePostProcessing: (w, h) => this.postProcessing.resize(w, h),
+      renderScene: () => {
+        // Fire-and-forget: renderScene is async only for optional
+        // post-processing branches; the underlying Three.js render is
+        // synchronous and that's all the viewport needs to avoid a
+        // blank frame after setSize.
+        void this.renderScene();
+      },
     });
 
     // Action classes under engine/editor/actions/ encapsulate their own
@@ -581,7 +583,6 @@ class Editor {
     document.body.appendChild(this.stats.dom);
   }
 
-
   // Captures the scene without the grid
   public snapShotOfCurrentFrame(shouldDownload: boolean = true) {
     const camera = this.cameraController.camera;
@@ -790,7 +791,8 @@ class Editor {
 
   // Render the scene to the camera, this is called in the update.
   async renderScene() {
-    const { render_camera, render_width, render_height } = this.cameraController;
+    const { render_camera, render_width, render_height } =
+      this.cameraController;
     if (
       this.postProcessing.composer != null &&
       this.rawRenderer &&
@@ -810,12 +812,14 @@ class Editor {
 
     if (this.viewport.container) {
       if (
-        this.viewport.container.clientWidth + this.viewport.container.clientHeight !==
+        this.viewport.container.clientWidth +
+          this.viewport.container.clientHeight !==
         this.viewport.lastCanvasSize
       ) {
         this.viewport.onWindowResize();
         this.viewport.lastCanvasSize =
-          this.viewport.container.clientWidth + this.viewport.container.clientHeight;
+          this.viewport.container.clientWidth +
+          this.viewport.container.clientHeight;
       }
     }
 
