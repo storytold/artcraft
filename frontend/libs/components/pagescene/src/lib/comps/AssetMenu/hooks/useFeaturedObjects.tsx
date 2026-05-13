@@ -87,6 +87,12 @@ export const useFeaturedObjects = (props: useFeaturedObjectsProps) => {
   }, [nextPageCursor, props, editor]);
 
   useEffect(() => {
+    // Wait for the editor instance before claiming first-fetch ownership.
+    // Otherwise the IN_PROGRESS flip below would burn the slot on a no-op
+    // call (fetchFeaturedObjects bails at !editor), and the subsequent
+    // re-run after editor becomes available would see IN_PROGRESS and
+    // skip the actual fetch forever. See PR #1492 regression.
+    if (!editor) return;
     if (
       (firstFetch.current === FetchStatus.READY ||
         firstFetch.current === FetchStatus.ERROR) &&
@@ -95,7 +101,7 @@ export const useFeaturedObjects = (props: useFeaturedObjectsProps) => {
       firstFetch.current = FetchStatus.IN_PROGRESS;
       fetchFeaturedObjects();
     }
-  }, [fetchFeaturedObjects]);
+  }, [editor, fetchFeaturedObjects]);
 
   return {
     featuredObjects,
