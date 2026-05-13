@@ -20,8 +20,7 @@ use http_server_common::request::get_request_ip::get_request_ip;
 use http_server_common::response::serialize_as_json_error::serialize_as_json_error;
 use log::{info, warn};
 use mysql_queries::queries::google_sign_in_accounts::get_google_sign_in_account_by_subject::get_google_sign_in_account;
-use mysql_queries::queries::users::user::get::get_user_token_by_username_with_executor::{get_user_token_by_username_with_executor, GetUserTokenByUsernameArgs};
-use std::marker::PhantomData;
+use mysql_queries::queries::users::user::get::get_user_token_by_username_with_executor::get_user_token_by_username_with_executor;
 use mysql_queries::queries::users::user_sessions::create_user_session_with_transactor::create_user_session_with_transactor;
 use mysql_queries::utils::transactor::Transactor;
 use sqlx::{Acquire, MySqlPool};
@@ -267,11 +266,7 @@ pub async fn google_sso_handler(
           if lookup_username.is_empty() {
             None
           } else {
-            match get_user_token_by_username_with_executor(GetUserTokenByUsernameArgs {
-              username: &lookup_username,
-              mysql_executor: &mut *mysql_connection,
-              phantom: PhantomData,
-            }).await {
+            match get_user_token_by_username_with_executor(&lookup_username, &mut *mysql_connection).await {
               Ok(token) => token,
               Err(err) => {
                 warn!("Referral user lookup failed (continuing): {:?}", err);

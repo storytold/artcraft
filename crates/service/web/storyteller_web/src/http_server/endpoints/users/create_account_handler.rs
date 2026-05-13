@@ -9,8 +9,7 @@ use std::fmt::Formatter;
 
 use crate::util::cleaners::sanitize_referral_username::sanitize_referral_username;
 use crate::http_server::validations::is_reserved_username::is_reserved_username;
-use mysql_queries::queries::users::user::get::get_user_token_by_username_with_executor::{get_user_token_by_username_with_executor, GetUserTokenByUsernameArgs};
-use std::marker::PhantomData;
+use mysql_queries::queries::users::user::get::get_user_token_by_username_with_executor::get_user_token_by_username_with_executor;
 use crate::http_server::validations::validate_passwords::validate_passwords;
 use crate::http_server::validations::validate_username::validate_username;
 use crate::util::enroll_in_studio::enroll_in_studio;
@@ -226,11 +225,7 @@ pub async fn create_account_handler(
       if lookup_username.is_empty() {
         None
       } else {
-        match get_user_token_by_username_with_executor(GetUserTokenByUsernameArgs {
-          username: &lookup_username,
-          mysql_executor: &**mysql_pool,
-          phantom: PhantomData,
-        }).await {
+        match get_user_token_by_username_with_executor(&lookup_username, &**mysql_pool).await {
           Ok(token) => token,
           Err(err) => {
             warn!("Referral user lookup failed (continuing): {:?}", err);
