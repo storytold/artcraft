@@ -333,9 +333,15 @@ class Editor {
     // Find the container element
     this.viewport.container = sceneContainerEl;
 
-    // Use the container's dimensions
-    const width = this.viewport.container.offsetWidth;
-    const height = this.viewport.container.offsetHeight;
+    // Use the container's dimensions. Clamp to ≥1 because the host's
+    // flex chain isn't always laid out by the time we initialize (e.g.
+    // the webapp's SidebarInset settles a frame after first render),
+    // and a 0-sized renderer leaks INVALID_FRAMEBUFFER_OPERATION warnings
+    // from the post-processing pipeline until the next resize event
+    // recovers. The next resize cascade re-sizes the renderer to the
+    // real dimensions, so this is just guard rails for the first frame.
+    const width = Math.max(1, this.viewport.container.offsetWidth);
+    const height = Math.max(1, this.viewport.container.offsetHeight);
 
     // Sets up camera and base position using camera configurations from the store.
     const mainCameraConfig = usePageSceneStore
@@ -417,8 +423,8 @@ class Editor {
       this.renderer,
       this.activeScene.scene,
       this.cameraController.camera,
-      this.viewport.canvReference?.width ?? 0,
-      this.viewport.canvReference?.height ?? 0,
+      this.viewport.canvReference?.width || 1,
+      this.viewport.canvReference?.height || 1,
     );
     // Controls and movement.
 
@@ -564,8 +570,8 @@ class Editor {
       this.rawRenderer,
       this.activeScene.scene,
       this.cameraController.render_camera,
-      this.viewport.canvasRenderCamReference?.width ?? 0,
-      this.viewport.canvasRenderCamReference?.height ?? 0,
+      this.viewport.canvasRenderCamReference?.width || 1,
+      this.viewport.canvasRenderCamReference?.height || 1,
     );
 
     this.bus.emit(new EngineInitializedEvent(true));
