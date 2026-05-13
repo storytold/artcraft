@@ -14,7 +14,6 @@ import {
 import { ButtonIconSelect } from "@storyteller/ui-button-icon-select";
 import { Button } from "@storyteller/ui-button";
 import { Tooltip } from "@storyteller/ui-tooltip";
-import { SettingsModal } from "@storyteller/ui-settings-modal";
 import { PopoverMenu } from "@storyteller/ui-popover";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -52,7 +51,6 @@ export const Controls3D = () => {
     })),
   );
   const [showEmptySceneTooltip, setShowEmptySceneTooltip] = useState(false);
-  const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [upload3DIsShowing, setUpload3DIsShowing] = useState(false);
   const [isAddAssetPopoverOpen, setIsAddAssetPopoverOpen] = useState(false);
   const [uploadImageIsShowing, setUploadImageIsShowing] = useState(false);
@@ -305,13 +303,6 @@ export const Controls3D = () => {
       </div>
 
       <AssetModal />
-
-      <SettingsModal
-        isOpen={isSettingsModalOpen}
-        onClose={() => setIsSettingsModalOpen(false)}
-        globalAccountLogoutCallback={() => editor?.adapter.performLogout()}
-        initialSection="accounts"
-      />
 
       {editor &&
         editor.adapter.renderAssetUploader({

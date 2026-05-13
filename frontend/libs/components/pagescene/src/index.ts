@@ -187,6 +187,7 @@ export { getSceneGenerationMetaData } from "./lib/sceneMetadata";
 // signalScene, addToast, loadingBarData/IsShowing signals, etc.)
 // are either surfaced via adapter slots or replaced with
 // lib-internal state.
+export { AnonHintChip } from "./lib/comps/AnonHintChip";
 export { AssetMenu, AssetModal } from "./lib/comps/AssetMenu";
 export { Controls3D } from "./lib/comps/Controls3D";
 export { ControlsTopButtons } from "./lib/comps/ControlsTopButtons";
@@ -199,6 +200,8 @@ export { EditorCanvas, CameraViewCanvas } from "./lib/comps/EngineCanvases";
 export { Outliner } from "./lib/comps/Outliner";
 export { ControlPanelSceneObject } from "./lib/comps/ControlPanelSceneObject";
 export { SceneContainer } from "./lib/comps/SceneContainer";
+export { PreviewBox } from "./lib/comps/PreviewBox";
+export type { PreviewBoxProps } from "./lib/comps/PreviewBox";
 export { PreviewEngineCamera } from "./lib/comps/PreviewEngineCamera";
 export { PreviewImages } from "./lib/comps/PreviewImages";
 export { OnboardingHelper } from "./lib/comps/OnboardingHelper";

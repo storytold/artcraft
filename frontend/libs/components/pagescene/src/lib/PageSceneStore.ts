@@ -22,6 +22,10 @@ export interface SceneMeta {
   ownerToken: string | undefined;
   isModified: boolean | undefined;
   isInitializing: boolean;
+  // URL to the author's generation result for this scene, shown in
+  // view-only mode's PreviewBox. Host populates this from the
+  // adapter.loadScene response. Optional; absent ⇒ no preview rendered.
+  previewImageUrl?: string;
 }
 
 export type SceneObjectKind = "object" | "character" | "shape";

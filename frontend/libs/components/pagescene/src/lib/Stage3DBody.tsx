@@ -33,6 +33,7 @@ import type { PopoverItem } from "@storyteller/ui-popover";
 import { v4 as uuidv4 } from "uuid";
 
 import { EngineContext } from "./contexts/EngineContext/EngineContext";
+import { AnonHintChip } from "./comps/AnonHintChip";
 import { ControlPanelSceneObject } from "./comps/ControlPanelSceneObject";
 import { Controls3D } from "./comps/Controls3D";
 import { ControlsTopButtons } from "./comps/ControlsTopButtons";
@@ -41,6 +42,7 @@ import { FocalLengthDisplay } from "./comps/FocalLengthDisplay/FocalLengthDispla
 import { OnboardingHelper } from "./comps/OnboardingHelper";
 import { Outliner } from "./comps/Outliner";
 import { PoseModeSelector } from "./comps/PoseModeSelector";
+import { PreviewBox } from "./comps/PreviewBox";
 import { PreviewEngineCamera } from "./comps/PreviewEngineCamera";
 import { SceneContainer } from "./comps/SceneContainer";
 import { addCharacter, addObject, setCameraAspect } from "./actions";
@@ -74,6 +76,7 @@ export const Stage3DBody = () => {
     (s) => s.setIsPromptBoxFocused,
   );
   const gridVisible = usePageSceneStore((s) => s.gridVisible);
+  const previewImageUrl = usePageSceneStore((s) => s.sceneMeta.previewImageUrl);
   const isViewOnly = useIsViewOnly();
   const addCamera = usePageSceneStore((s) => s.addCamera);
   const updateCamera = usePageSceneStore((s) => s.updateCamera);
@@ -344,6 +347,9 @@ export const Stage3DBody = () => {
                 <div className="grid grid-cols-3 gap-4">
                   <ControlsTopButtons />
                   <Controls3D />
+                  <div className="flex items-start justify-end gap-2 pr-2 pt-2">
+                    <AnonHintChip />
+                  </div>
                 </div>
               </div>
             )}
@@ -364,8 +370,7 @@ export const Stage3DBody = () => {
               {!isViewOnly && <ControlPanelSceneObject />}
             </div>
 
-            {/* Future: <PreviewBox /> slot when isViewOnly — shows the
-                author's generated still next to the camera. */}
+            {isViewOnly && <PreviewBox imageUrl={previewImageUrl} />}
 
             {!isViewOnly && <PromptBox3D
               cameras={cameras}

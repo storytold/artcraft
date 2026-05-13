@@ -169,20 +169,26 @@ export const ControlsTopButtons = () => {
             {
               label: "Load my scene",
               description: "Ctrl+O",
-              dialogProps: {
-                title: "Load a Saved Scene",
-                content: (
-                  <LoadUserScenes onSceneSelect={handleSceneSelection} />
-                ),
-                confirmButtonProps: {
-                  label: "Load",
-                  disabled: sceneTokenSelected === "",
-                  onClick: handleButtonLoadScene,
-                },
-                closeButtonProps: { label: "Cancel" },
-                showClose: true,
-                className: "max-w-5xl",
-              },
+              ...(currentUserToken
+                ? {
+                    dialogProps: {
+                      title: "Load a Saved Scene",
+                      content: (
+                        <LoadUserScenes onSceneSelect={handleSceneSelection} />
+                      ),
+                      confirmButtonProps: {
+                        label: "Load",
+                        disabled: sceneTokenSelected === "",
+                        onClick: handleButtonLoadScene,
+                      },
+                      closeButtonProps: { label: "Cancel" },
+                      showClose: true,
+                      className: "max-w-5xl",
+                    },
+                  }
+                : {
+                    onClick: () => editor?.adapter.promptSignup?.("load"),
+                  }),
             },
             {
               disabled: !canSave,
