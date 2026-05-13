@@ -19,7 +19,7 @@ import {
   UsersApi,
 } from "@storyteller/api";
 import type { PageSceneAdapter } from "@storyteller/ui-pagescene";
-import { ToastTypes } from "@storyteller/ui-pagescene";
+import { getActiveEditor, ToastTypes } from "@storyteller/ui-pagescene";
 import {
   UploadModal3D,
   UploadModalImage,
@@ -28,6 +28,7 @@ import {
 } from "@storyteller/ui-upload-modal";
 import { showToast } from "../../components/toast/toast";
 import { invalidateSession } from "../../lib/session";
+import { useSceneCacheStore } from "./scene-cache-store";
 
 const apiHost = () =>
   StorytellerApiHostStore.getInstance().getApiSchemeAndHost();
@@ -90,6 +91,16 @@ const loadSceneViaApi = async (token: string): Promise<unknown> => {
   const fileResp = await fetch(cdnUrl);
   if (!fileResp.ok) throw new Error(`Scene fetch HTTP ${fileResp.status}`);
   const text = await fileResp.text();
+
+  // Seed the scene cache's `original` snapshot on first fetch so the
+  // destructive "Reset to original" menu item has something to revert
+  // to without going back over the network. Cache-hit reloads skip
+  // this path entirely (Editor.initialize uses cacheJsonString).
+  const cache = useSceneCacheStore.getState();
+  if (!cache.getEntry(token)?.original) {
+    cache.setOriginal(token, text);
+  }
+
   return JSON.parse(text);
 };
 
@@ -268,6 +279,25 @@ export const useWebAppPageSceneAdapter = (
       navigateToImageTo3D,
 
       promptSignup,
+
+      // Powers the lib's "Reset to original" menu item. The cache has
+      // the server's snapshot we seeded on first load; pipe it back
+      // through `Editor.applyJson` (which clears undo history and
+      // re-renders) and mirror `current = original` in the cache so a
+      // pre-serialization reload doesn't drag the edits back.
+      resetToOriginal: async () => {
+        if (!initialSceneToken) return;
+        const editor = getActiveEditor();
+        if (!editor) return;
+        const entry = useSceneCacheStore
+          .getState()
+          .getEntry(initialSceneToken);
+        if (!entry?.original) return;
+        await editor.applyJson(entry.original);
+        useSceneCacheStore
+          .getState()
+          .resetCurrentToOriginal(initialSceneToken);
+      },
 
       performLogout: async () => {
         try {

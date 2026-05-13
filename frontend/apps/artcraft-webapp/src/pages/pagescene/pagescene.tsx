@@ -108,15 +108,19 @@ function PageSceneEditor() {
   // onSceneSerialized callback on unmount. Mirrors how Tauri stashes
   // per-tab scene JSON via useTabStore.
   //
-  // Scoped to the no-token playground: when sceneToken is in the URL
-  // the server-loaded scene is the source of truth, so we neither
-  // restore from cache (would override the shared scene) nor write the
-  // session back into it.
-  const setCacheJsonString = useSceneCacheStore((s) => s.setCacheJsonString);
-  const cacheJsonString = sceneToken
-    ? undefined
-    : useSceneCacheStore.getState().cacheJsonString;
-  const onSceneSerialized = sceneToken ? undefined : setCacheJsonString;
+  // Keyed by sceneToken so each scene (and the playground) gets its own
+  // slot — visiting /edit-3d/A, /edit-3d/B, /edit-3d/A round-trips back
+  // to A's in-progress state rather than B's or the server's. Cache
+  // hits short-circuit the lib's loadScene path (Editor.initialize
+  // prefers cacheJsonString over the sceneToken).
+  const setCurrent = useSceneCacheStore((s) => s.setCurrent);
+  const cacheJsonString = useSceneCacheStore
+    .getState()
+    .getEntry(sceneToken)?.current;
+  const onSceneSerialized = useCallback(
+    (json: string) => setCurrent(sceneToken, json),
+    [sceneToken, setCurrent],
+  );
 
   return (
     <div
