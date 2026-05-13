@@ -161,7 +161,7 @@ export const ControlPanelSceneObject = () => {
     setLocked(
       editorEngine.selection.isObjectLocked(editorEngine?.selected?.uuid || ""),
     );
-    setColor(editorEngine?.selected?.userData.color);
+    setColor(editorEngine?.selected?.userData.color ?? "#ffffff");
     // No cleanup function — uuid-change commit lives in the body
     // above. Unmount commit is handled by the separate effect below.
   }, [currentSceneObject, editorEngine]);
@@ -327,42 +327,49 @@ export const ControlPanelSceneObject = () => {
       >
         <div className="flex flex-col gap-1">
           <p className="font-semibold text-sm">Color</p>
-          <input
-            className="h-0 w-0 cursor-pointer opacity-0"
-            id={colorInputId}
-            type="color"
-            value={color}
-            disabled={locked}
-            onFocus={() => {
-              // Picker is opening — open a session that captures the
-              // before-state once. apply()/commit() handle visual
-              // feedback during the drag and the final undo entry on
-              // close.
-              const uuid = editorEngine?.selected?.uuid;
-              if (uuid && editorEngine) {
-                colorSessionRef.current = beginColorSession(editorEngine, uuid);
-              }
-            }}
-            onChange={(e: ChangeEvent<HTMLInputElement>) => {
-              // Native color picker fires per-pixel during slider
-              // drag. apply() updates the engine for visual feedback
-              // but does NOT record. Recording happens once on blur.
-              const after = e.target.value;
-              colorSessionRef.current?.apply(after);
-              setColor(after);
-            }}
-            onBlur={() => {
-              colorSessionRef.current?.commit();
-              colorSessionRef.current = null;
-            }}
-          />
+          {/* Native <input type="color"> is nested INSIDE the Button's
+              <label> so Safari opens the picker reliably. Safari refuses
+              to open a color picker triggered via label[htmlFor]→input
+              when the input has no layout box (the prior h-0 w-0 setup).
+              Positioning it absolute over the swatch keeps the click
+              area identical to the visible button. */}
           <Button
-            className="cursor-pointer p-3.5 w-full"
+            className="cursor-pointer p-3.5 w-full relative overflow-hidden"
             htmlFor={colorInputId}
             style={{
               backgroundColor: color,
             }}
-          ></Button>
+          >
+            <input
+              className="absolute inset-0 cursor-pointer opacity-0"
+              id={colorInputId}
+              type="color"
+              value={color ?? "#ffffff"}
+              disabled={locked}
+              onFocus={() => {
+                // Picker is opening — open a session that captures the
+                // before-state once. apply()/commit() handle visual
+                // feedback during the drag and the final undo entry on
+                // close.
+                const uuid = editorEngine?.selected?.uuid;
+                if (uuid && editorEngine) {
+                  colorSessionRef.current = beginColorSession(editorEngine, uuid);
+                }
+              }}
+              onChange={(e: ChangeEvent<HTMLInputElement>) => {
+                // Native color picker fires per-pixel during slider
+                // drag. apply() updates the engine for visual feedback
+                // but does NOT record. Recording happens once on blur.
+                const after = e.target.value;
+                colorSessionRef.current?.apply(after);
+                setColor(after);
+              }}
+              onBlur={() => {
+                colorSessionRef.current?.commit();
+                colorSessionRef.current = null;
+              }}
+            />
+          </Button>
         </div>
         <div className="flex flex-col gap-2">
           <p className="font-semibold text-sm">Location</p>
