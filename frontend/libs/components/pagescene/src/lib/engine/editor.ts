@@ -770,6 +770,18 @@ class Editor {
     this.selection.refreshOutliner();
   }
 
+  // Replace the active scene with the provided serialized JSON, clear
+  // the undo stack, and fire SceneResetEvent. Used by the Reset-to-
+  // original flow so the user can't "undo" the reset back into their
+  // edits. Delegates to save_manager.loadCache which already owns the
+  // JSON-string deserialization path used on initial mount.
+  public async applyJson(jsonString: string) {
+    await this.save_manager.loadCache(jsonString);
+    this.history.clear();
+    this.bus.emit(new SceneResetEvent());
+    this.selection.refreshOutliner();
+  }
+
   public async saveScene({
     sceneTitle,
     sceneToken,

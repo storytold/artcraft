@@ -209,6 +209,15 @@ export interface PageSceneAdapter {
   // is always signed in. Webapp host wires this to its auth modal.
   promptSignup?(reason?: string): void;
 
+  // Roll the current editor session back to the original scene the
+  // host loaded. Called when the user confirms the destructive Reset
+  // modal in the File menu. Implementations typically pull the
+  // original scene JSON from a host-side cache and feed it back
+  // through `editor.applyJson(json)`. When undefined the Reset menu
+  // item is hidden — Tauri leaves it off; webapp wires it to its
+  // per-token cache's stored `original` snapshot.
+  resetToOriginal?(): Promise<void> | void;
+
   // Optional event hooks — telemetry, host-side modals, tab title sync.
   onSelectionChange?(
     sel: { uuid: string; assetType: string } | null,

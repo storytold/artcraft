@@ -284,6 +284,41 @@ export const ControlsTopButtons = () => {
                     dialogProps: saveAsCopyDialogProps,
                   },
                 ]),
+            // Reset-to-original — destructive, only meaningful when a
+            // sceneToken is in play (URL-loaded scene) AND the host
+            // implements the reset adapter (the webapp does via its
+            // per-token cache; Tauri leaves it undefined and the item
+            // simply doesn't render).
+            ...(sceneMeta.token && editor?.adapter.resetToOriginal
+              ? [
+                  {
+                    label: "Reset to original",
+                    className:
+                      "text-error-400 hover:bg-error-500/15 focus:bg-error-500/15",
+                    divider: true,
+                    dialogProps: {
+                      title: "Reset scene to original?",
+                      content: (
+                        <h4>
+                          This will discard every change you&apos;ve made
+                          in this session and restore the scene to the
+                          version the author shared. This cannot be
+                          undone.
+                        </h4>
+                      ),
+                      confirmButtonProps: {
+                        label: "Reset",
+                        variant: "destructive" as const,
+                        onClick: async () => {
+                          await editor.adapter.resetToOriginal?.();
+                        },
+                      },
+                      closeButtonProps: { label: "Cancel" },
+                      showClose: true,
+                    },
+                  },
+                ]
+              : []),
           ]}
         />
 
