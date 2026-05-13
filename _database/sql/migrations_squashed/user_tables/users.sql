@@ -202,9 +202,20 @@ CREATE TABLE users (
 
   -- ========== TRACKING ==========
 
-  -- Where the user signed up from (NOT NECESSARILY AN ENUM!)
-  -- For now this will be "artcraft", "fakeyou", or "storyteller", 
-  -- though we may extend or overload this to handle other cases or metadata.
+  -- Where the user signed up from
+  --
+  -- ArtCraft Values:
+  --  - "artcraft"         - (deprecated)
+  --  - "artcraft_app"     - Signup with the ArtCraft app
+  --  - "artcraft_get_web" - Signup with ArtCraft website signup flow
+  --  - "artcraft_get_s"   - Signup with ArtCraft website Stripe Checkout Flow
+  --  - "artcraft_ai_s"    - Signup with Artcraft.ai website Stripe checkout flow
+  --  - "artcraft_get_web" - Signup with ArtCraft.ai website signup flow
+  --
+  -- Other Sources:
+  --  - "fakeyou" - FakeYou signup
+  --  - "storyteller" - Storyteller.ai signup
+  --
   maybe_source VARCHAR(255) DEFAULT NULL,
 
   -- How users created their account
