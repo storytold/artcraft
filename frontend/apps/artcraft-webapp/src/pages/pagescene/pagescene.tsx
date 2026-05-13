@@ -11,6 +11,7 @@ import {
 import { useSession } from "../../lib/session";
 import { useSidebar } from "../../components/ui/sidebar";
 import { useSignupCta } from "../../components/signup-cta-modal";
+import { useSceneCacheStore } from "./scene-cache-store";
 import { useWebAppPageSceneAdapter } from "./web-adapter";
 
 // Stage3D fills its parent box; this wrapper is that box. It clamps
@@ -101,6 +102,22 @@ function PageSceneEditor() {
     promptSignup: openSignupCta,
   });
 
+  // Editor state survives navigating to other webapp pages: read the
+  // cached serialized JSON once on mount (so re-renders don't restart
+  // the engine), and store the next snapshot via the lib's
+  // onSceneSerialized callback on unmount. Mirrors how Tauri stashes
+  // per-tab scene JSON via useTabStore.
+  //
+  // Scoped to the no-token playground: when sceneToken is in the URL
+  // the server-loaded scene is the source of truth, so we neither
+  // restore from cache (would override the shared scene) nor write the
+  // session back into it.
+  const setCacheJsonString = useSceneCacheStore((s) => s.setCacheJsonString);
+  const cacheJsonString = sceneToken
+    ? undefined
+    : useSceneCacheStore.getState().cacheJsonString;
+  const onSceneSerialized = sceneToken ? undefined : setCacheJsonString;
+
   return (
     <div
       ref={wrapperRef}
@@ -110,6 +127,8 @@ function PageSceneEditor() {
       <Stage3D
         adapter={adapter}
         sceneToken={sceneToken}
+        cacheJsonString={cacheJsonString}
+        onSceneSerialized={onSceneSerialized}
         showCostCalculator={false}
         showImageTo3DButton={false}
         showHelpMenu={false}
