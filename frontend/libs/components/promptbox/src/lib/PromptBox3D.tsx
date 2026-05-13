@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, type ReactNode } from "react";
 import { IsDesktopApp } from "@storyteller/tauri-utils";
 import {
   faCamera,
@@ -74,6 +74,12 @@ interface PromptBox3DProps {
   } | null)
   | undefined;
   credits?: number | null;
+  /** Optional model-picker slot rendered at the start of the toolbar
+   *  (left of the aspect-ratio picker). Tauri leaves this unset and
+   *  renders ClassyModelSelector outside the prompt box; the webapp
+   *  passes a compact selector here so the chrome matches its other
+   *  prompt boxes. */
+  modelSelector?: ReactNode;
   // Optional pre-submit gate. Returns false to abort the generation
   // (e.g. host wants to open a signup modal for anon visitors).
   onBeforeSubmit?: () => boolean;
@@ -103,6 +109,7 @@ export const PromptBox3D = ({
   selectedProvider,
   snapshotCurrentFrame,
   credits,
+  modelSelector,
   onBeforeSubmit,
 }: PromptBox3DProps) => {
   //const fileInputRef = useRef<HTMLInputElement>(null);
@@ -651,6 +658,7 @@ export const PromptBox3D = ({
           </div>
           <div className="mt-2 flex items-center justify-between gap-2">
             <div className="flex items-center gap-2">
+              {modelSelector}
               {selectedImageModel?.supportsNewAspectRatio() && (
                 <AspectRatioPicker
                   model={selectedImageModel}

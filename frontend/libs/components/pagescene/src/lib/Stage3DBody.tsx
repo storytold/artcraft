@@ -7,7 +7,13 @@
 // exact same 3D editor UX. Only the platform-specific PageSceneAdapter
 // implementation differs between hosts.
 
-import React, { useContext, useEffect, useRef } from "react";
+import React, {
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+} from "react";
 import {
   GalleryItem,
   onImageDrop,
@@ -16,10 +22,14 @@ import {
 import {
   STAGE_3D_PAGE_MODEL_LIST,
   ModelPage,
+  defaultModelForPage,
+  useClassyModelSelectorStore,
   useSelectedImageModel,
   useSelectedProviderForModel,
   ClassyModelSelector,
 } from "@storyteller/ui-model-selector";
+import { PopoverMenu } from "@storyteller/ui-popover";
+import { Tooltip } from "@storyteller/ui-tooltip";
 import type { ImageModel } from "@storyteller/model-list";
 import type { GenerationProvider } from "@storyteller/api-enums";
 import { HelpMenuButton } from "@storyteller/ui-help-menu";
@@ -59,7 +69,27 @@ import type { MediaItem } from "./models/assets";
 
 const PAGE_ID: ModelPage = ModelPage.Stage3D;
 
-export const Stage3DBody = () => {
+export interface Stage3DBodyProps {
+  /** Show the bottom-right "Costs" cost-calculator button. */
+  showCostCalculator?: boolean;
+  /** Show the top-bar "Create 3D model from image" magic-wand button. */
+  showImageTo3DButton?: boolean;
+  /** Show the bottom-right help menu button. */
+  showHelpMenu?: boolean;
+  /** Where to render the model picker. `"bottom-left"` (default) keeps
+   *  the existing ClassyModelSelector floating in the editor corner —
+   *  used by Tauri. `"prompt-box"` hides the corner selector and
+   *  renders a compact popover inside the prompt-box toolbar instead,
+   *  matching the webapp's other prompt boxes. */
+  modelSelectorPlacement?: "bottom-left" | "prompt-box";
+}
+
+export const Stage3DBody = ({
+  showCostCalculator = true,
+  showImageTo3DButton = true,
+  showHelpMenu = true,
+  modelSelectorPlacement = "bottom-left",
+}: Stage3DBodyProps = {}) => {
   const camAspect = usePageSceneStore((s) => s.cameraAspectRatio);
   const outlinerShowing = usePageSceneStore((s) => s.outlinerShowing);
   const editorLoader = usePageSceneStore((s) => s.editorLoader);
@@ -101,6 +131,63 @@ export const Stage3DBody = () => {
   const selectedProvider: GenerationProvider | undefined =
     useSelectedProviderForModel(PAGE_ID, selectedImageModel?.id);
 
+  // Inline (prompt-box) model selector. Built here rather than in
+  // PromptBox3D so the promptbox lib doesn't take a new dep on
+  // model-selector; the selector is just plumbed in as a ReactNode slot.
+  const setSelectedModel = useClassyModelSelectorStore(
+    (s) => s.setSelectedModel,
+  );
+
+  // Seed the default model on mount when we're the only model picker
+  // on the page. ClassyModelSelector does this itself on mount, but in
+  // the prompt-box placement we don't render it — so without this
+  // effect the store stays empty and the trigger has no icon until the
+  // user opens the popover and picks a model manually.
+  useEffect(() => {
+    if (modelSelectorPlacement !== "prompt-box") return;
+    if (selectedImageModel) return;
+    const models = STAGE_3D_PAGE_MODEL_LIST.map((i) => i.model).filter(
+      (m): m is NonNullable<typeof m> => m !== undefined,
+    );
+    const def = defaultModelForPage(models, PAGE_ID);
+    if (def) setSelectedModel(PAGE_ID, def);
+  }, [modelSelectorPlacement, selectedImageModel, setSelectedModel]);
+
+  const inlineModelItems: PopoverItem[] = useMemo(
+    () =>
+      STAGE_3D_PAGE_MODEL_LIST.map((item) => ({
+        ...item,
+        selected: item.model === selectedImageModel,
+      })),
+    [selectedImageModel],
+  );
+  const handleInlineModelSelect = useCallback(
+    (item: PopoverItem) => {
+      if (item.model) setSelectedModel(PAGE_ID, item.model);
+    },
+    [setSelectedModel],
+  );
+  const selectedModelIcon = useMemo(
+    () =>
+      STAGE_3D_PAGE_MODEL_LIST.find((i) => i.model === selectedImageModel)
+        ?.icon,
+    [selectedImageModel],
+  );
+  const inlineModelSelector =
+    modelSelectorPlacement === "prompt-box" ? (
+      <Tooltip content="Model" position="top" className="z-50" closeOnClick>
+        <PopoverMenu
+          items={inlineModelItems}
+          onSelect={handleInlineModelSelect}
+          mode="toggle"
+          panelTitle="Select Model"
+          panelClassName="min-w-[260px]"
+          showIconsInList
+          triggerIcon={selectedModelIcon}
+        />
+      </Tooltip>
+    ) : undefined;
+
   const imageCredits = useCostBreakdownModalStore(
     (s) => s.estimatedCreditsByPage[PAGE_ID],
   );
@@ -124,10 +211,7 @@ export const Stage3DBody = () => {
       if (viewport.width > 2000) return scaleHeight;
       return scaleHeight * 0.78;
     }
-    if (
-      camAspect === CameraAspectRatio.SQUARE_1_1 &&
-      viewport.width < 2000
-    ) {
+    if (camAspect === CameraAspectRatio.SQUARE_1_1 && viewport.width < 2000) {
       return scaleHeight * 0.85;
     }
     return scaleHeight;
@@ -304,8 +388,7 @@ export const Stage3DBody = () => {
                 title: item.label || "Image Plane",
                 mediaToken: item.id,
                 progressCallback: (state) => {
-                  if (state.status)
-                    console.log("Upload status:", state.status);
+                  if (state.status) console.log("Upload status:", state.status);
                 },
               });
             }
@@ -327,10 +410,7 @@ export const Stage3DBody = () => {
       {!isViewOnly && <OnboardingHelper />}
 
       <div className="relative flex h-full w-full">
-        <div
-          id="engine-n-panels-wrapper"
-          className="flex h-full w-full"
-        >
+        <div id="engine-n-panels-wrapper" className="flex h-full w-full">
           <div className="relative w-full overflow-hidden bg-transparent">
             <SceneContainer>
               <EditorCanvas />
@@ -346,7 +426,7 @@ export const Stage3DBody = () => {
               >
                 <div className="grid grid-cols-3 gap-4">
                   <ControlsTopButtons />
-                  <Controls3D />
+                  <Controls3D showImageTo3DButton={showImageTo3DButton} />
                   <div className="flex items-start justify-end gap-2 pr-2 pt-2">
                     <AnonHintChip />
                   </div>
@@ -355,8 +435,7 @@ export const Stage3DBody = () => {
             )}
 
             <div
-              className="absolute bottom-0 left-0"
-              style={{ width: viewport.width }}
+              className="absolute bottom-0 left-0 right-0"
               onClick={handleOverlayClick}
             >
               <div
@@ -406,6 +485,7 @@ export const Stage3DBody = () => {
                 editor.positive_prompt = prompt;
               }}
               snapshotCurrentFrame={editor?.snapShotOfCurrentFrame.bind(editor)}
+              modelSelector={inlineModelSelector}
               onBeforeSubmit={() => {
                 const currentUserToken =
                   usePageSceneStore.getState().currentUserToken;
@@ -424,7 +504,7 @@ export const Stage3DBody = () => {
               message={editorLoader.message}
             />
 
-            {!isViewOnly && (
+            {!isViewOnly && modelSelectorPlacement === "bottom-left" && (
               <div className="absolute bottom-6 left-6 z-20 flex items-center gap-3">
                 <ClassyModelSelector
                   items={STAGE_3D_PAGE_MODEL_LIST}
@@ -437,10 +517,14 @@ export const Stage3DBody = () => {
                 />
               </div>
             )}
-            <div className="absolute bottom-6 right-6 z-20 flex items-center gap-2">
-              {!isViewOnly && <CostCalculatorButton modelPage={PAGE_ID} />}
-              <HelpMenuButton />
-            </div>
+            {(showCostCalculator || showHelpMenu) && (
+              <div className="absolute bottom-6 right-6 z-20 flex items-center gap-2">
+                {showCostCalculator && !isViewOnly && (
+                  <CostCalculatorButton modelPage={PAGE_ID} />
+                )}
+                {showHelpMenu && <HelpMenuButton />}
+              </div>
+            )}
           </div>
         </div>
       </div>

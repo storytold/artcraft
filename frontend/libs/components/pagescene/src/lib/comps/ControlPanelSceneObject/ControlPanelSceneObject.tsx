@@ -25,10 +25,7 @@ import { objectMismatch } from "./utils/objectMismatch";
 import { XYZ } from "../../datastructures/common";
 import { useViewportSize } from "../../hooks/useViewportSize";
 import { DraggablePrecisionMutator } from "./DraggablePrecisionMutator";
-import {
-  beginColorSession,
-  ColorSession,
-} from "../../actions/setObjectColor";
+import { beginColorSession, ColorSession } from "../../actions/setObjectColor";
 import {
   beginTransformSession,
   TransformSession,
@@ -161,7 +158,9 @@ export const ControlPanelSceneObject = () => {
     setLocalRotation(engineToLocal(vectors.rotation));
     setLocalScale(engineToLocal(vectors.scale));
 
-    setLocked(editorEngine.selection.isObjectLocked(editorEngine?.selected?.uuid || ""));
+    setLocked(
+      editorEngine.selection.isObjectLocked(editorEngine?.selected?.uuid || ""),
+    );
     setColor(editorEngine?.selected?.userData.color);
     // No cleanup function — uuid-change commit lives in the body
     // above. Unmount commit is handled by the separate effect below.
@@ -327,7 +326,7 @@ export const ControlPanelSceneObject = () => {
         className={"flex flex-col gap-2 overflow-y-auto"}
       >
         <div className="flex flex-col gap-1">
-          <h5>Color</h5>
+          <p className="font-semibold text-sm">Color</p>
           <input
             className="h-0 w-0 cursor-pointer opacity-0"
             id={colorInputId}
@@ -341,10 +340,7 @@ export const ControlPanelSceneObject = () => {
               // close.
               const uuid = editorEngine?.selected?.uuid;
               if (uuid && editorEngine) {
-                colorSessionRef.current = beginColorSession(
-                  editorEngine,
-                  uuid,
-                );
+                colorSessionRef.current = beginColorSession(editorEngine, uuid);
               }
             }}
             onChange={(e: ChangeEvent<HTMLInputElement>) => {
@@ -361,15 +357,15 @@ export const ControlPanelSceneObject = () => {
             }}
           />
           <Button
-            className="cursor-pointer p-3.5"
+            className="cursor-pointer p-3.5 w-full"
             htmlFor={colorInputId}
             style={{
               backgroundColor: color,
             }}
           ></Button>
         </div>
-        <div className="flex flex-col gap-1">
-          <h5>Location</h5>
+        <div className="flex flex-col gap-2">
+          <p className="font-semibold text-sm">Location</p>
           <InputVector
             x={localPosition.x.toString()}
             y={localPosition.y.toString()}
@@ -381,8 +377,8 @@ export const ControlPanelSceneObject = () => {
           />
         </div>
 
-        <div className="flex flex-col gap-1">
-          <h5>Rotation</h5>
+        <div className="flex flex-col gap-2">
+          <p className="font-semibold text-sm">Rotation</p>
           <InputVector
             x={localRotation.x.toString()}
             y={localRotation.y.toString()}
@@ -395,9 +391,9 @@ export const ControlPanelSceneObject = () => {
           />
         </div>
 
-        <div className="mb-1 flex flex-col gap-1">
+        <div className="mb-1 flex flex-col gap-2">
           <DraggablePrecisionMutator onChange={handleUniformScaleChange}>
-            <h5>Scale</h5>
+            <p className="font-semibold text-sm">Scale</p>
           </DraggablePrecisionMutator>
           <InputVector
             x={localScale.x.toString()}

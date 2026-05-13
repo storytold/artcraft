@@ -30,7 +30,15 @@ import {
 } from "../../PageSceneStore";
 import { AssetModal } from "../AssetMenu";
 
-export const Controls3D = () => {
+export interface Controls3DProps {
+  /** Show the magic-wand "Create 3D model from image" shortcut next
+   *  to the add-asset button. */
+  showImageTo3DButton?: boolean;
+}
+
+export const Controls3D = ({
+  showImageTo3DButton = true,
+}: Controls3DProps = {}) => {
   useSignals();
   const editor = useContext(EngineContext);
   const {
@@ -250,19 +258,21 @@ export const Controls3D = () => {
                   />
                 </Tooltip>
               </div>
-              <Tooltip
-                content="Create 3D model from image"
-                position="bottom"
-                delay={300}
-                closeOnClick
-              >
-                <Button
-                  icon={faMagicWandSparkles}
-                  className="text-md h-9 w-9 rounded-[10px] bg-white/15 transition-colors hover:bg-white/25"
-                  variant="secondary"
-                  onClick={handleOpenCreate3dModal}
-                />
-              </Tooltip>
+              {showImageTo3DButton && (
+                <Tooltip
+                  content="Create 3D model from image"
+                  position="bottom"
+                  delay={300}
+                  closeOnClick
+                >
+                  <Button
+                    icon={faMagicWandSparkles}
+                    className="text-md h-9 w-9 rounded-[10px] bg-white/15 transition-colors hover:bg-white/25"
+                    variant="secondary"
+                    onClick={handleOpenCreate3dModal}
+                  />
+                </Tooltip>
+              )}
             </div>
 
             <span className="opacity-20">|</span>

@@ -20,6 +20,12 @@ export type ViewportEngineRefs = {
   getRenderer: () => THREE.WebGLRenderer | undefined;
   getRenderAspectRatio: () => number;
   resizePostProcessing: (width: number, height: number) => void;
+  // Called synchronously after a setSize cascade so the canvas gets a
+  // fresh draw before the next browser paint. Three.js's setSize clears
+  // the canvas backing buffer; without an immediate redraw the browser
+  // can paint an empty canvas for one frame, which shows up as flicker
+  // when the container is animating (e.g. sidebar collapse).
+  renderScene: () => void;
 };
 
 export class ViewportController {
@@ -65,12 +71,16 @@ export class ViewportController {
   }
 
   // Observed resizes from the ResizeObserver use a narrower update —
-  // camera + renderer.setSize + setPixelRatio only — preserved from the
-  // original editor.ts behaviour. Post-processing is intentionally
-  // skipped here, matching the pre-refactor code.
+  // camera + renderer.setSize only — preserved from the original
+  // editor.ts behaviour. Post-processing is intentionally skipped here,
+  // matching the pre-refactor code. setPixelRatio runs once at setup
+  // since DPR doesn't change for the lifetime of the page short of the
+  // user dragging the window across monitors with different scaling.
   setupResizeObserver() {
     this.containerMayReset();
     if (!this.container) return;
+
+    this.engine.getRenderer()?.setPixelRatio(window.devicePixelRatio);
 
     this.observer = new ResizeObserver((entries) => {
       for (const entry of entries) {
@@ -81,8 +91,11 @@ export class ViewportController {
           camera.updateProjectionMatrix();
         }
         const renderer = this.engine.getRenderer();
-        renderer?.setSize(width, height);
-        renderer?.setPixelRatio(window.devicePixelRatio);
+        if (!renderer) continue;
+        renderer.setSize(width, height);
+        // setSize wipes the canvas backing buffer. Redraw synchronously
+        // so the next browser paint isn't an empty frame.
+        this.engine.renderScene();
       }
     });
     this.observer.observe(this.container);
