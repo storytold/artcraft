@@ -9,6 +9,7 @@ use std::fmt::Formatter;
 
 use crate::util::cleaners::sanitize_referral_username::sanitize_referral_username;
 use crate::http_server::validations::is_reserved_username::is_reserved_username;
+use mysql_queries::queries::users::user::get::get_user_token_by_username::get_user_token_by_username;
 use crate::http_server::validations::validate_passwords::validate_passwords;
 use crate::http_server::validations::validate_username::validate_username;
 use crate::util::enroll_in_studio::enroll_in_studio;
@@ -217,6 +218,25 @@ pub async fn create_account_handler(
 
   let maybe_landing_url = request.maybe_landing_url.clone();
 
+  // Look up referring user by username (optional, fail-open).
+  let maybe_referral_user_token = match request.maybe_referral_username.as_deref() {
+    Some(raw) => {
+      let lookup_username = raw.trim().to_lowercase();
+      if lookup_username.is_empty() {
+        None
+      } else {
+        match get_user_token_by_username(&lookup_username, &mysql_pool).await {
+          Ok(token) => token,
+          Err(err) => {
+            warn!("Referral user lookup failed (continuing): {:?}", err);
+            None
+          }
+        }
+      }
+    }
+    None => None,
+  };
+
   let create_account_result = create_account_from_email_and_password(
     &mysql_pool,
     CreateAccountFromEmailPasswordArgs {
@@ -230,6 +250,7 @@ pub async fn create_account_handler(
       maybe_referral_url,
       maybe_landing_url,
       maybe_referral_partner: request.maybe_referral_username.as_deref().and_then(sanitize_referral_username),
+      maybe_referral_user_token: maybe_referral_user_token.as_ref(),
       maybe_user_token: None, // NB: This parameter is for internal testing only
     }
   ).await;

@@ -14,6 +14,7 @@ use mysql_queries::utils::transactor::Transactor;
 use sqlx::pool::PoolConnection;
 use sqlx::{Acquire, MySql};
 use users::email::email_to_gravatar_hash::email_to_gravatar_hash;
+use tokens::tokens::users::UserToken;
 use users::username::generate_random_username::generate_random_username;
 
 pub struct CreateArgs<'a> {
@@ -26,6 +27,7 @@ pub struct CreateArgs<'a> {
   pub maybe_referral_partner: Option<String>,
   pub maybe_referral_url: Option<String>,
   pub maybe_landing_url: Option<String>,
+  pub maybe_referral_user_token: Option<UserToken>,
 }
 pub async fn handle_new_sso_account_for_new_user(
   args: CreateArgs<'_>
@@ -70,6 +72,7 @@ pub async fn handle_new_sso_account_for_new_user(
         maybe_referral_partner: args.maybe_referral_partner.clone(),
         maybe_referral_url: args.maybe_referral_url.clone(),
         maybe_landing_url: args.maybe_landing_url.clone(),
+        maybe_referral_user_token: args.maybe_referral_user_token.as_ref(),
       },
       Transactor::for_transaction(&mut transaction),
     ).await;

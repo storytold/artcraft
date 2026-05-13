@@ -20,6 +20,7 @@ pub struct NewSsoArgs<'a> {
   pub maybe_referral_url: Option<String>,
   pub maybe_landing_url: Option<String>,
   pub maybe_referral_partner: Option<String>,
+  pub maybe_referral_user_token: Option<UserToken>,
 }
 
 pub struct NewSsoAccountInfo {
@@ -69,6 +70,7 @@ pub async fn handle_new_sso_account(
         maybe_referral_url: args.maybe_referral_url,
         maybe_landing_url: args.maybe_landing_url,
         maybe_referral_partner: args.maybe_referral_partner,
+        maybe_referral_user_token: args.maybe_referral_user_token,
       }).await
     },
   }

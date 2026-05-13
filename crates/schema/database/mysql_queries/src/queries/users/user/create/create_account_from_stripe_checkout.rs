@@ -34,6 +34,9 @@ pub struct CreateAccountFromStripeCheckoutArgs<'a> {
 
   /// If a user referred this user, this is the raw username or referral code.
   pub maybe_referral_partner: Option<String>,
+
+  /// If a user referred this user, this is the user token of the referrer.
+  pub maybe_referral_user_token: Option<&'a UserToken>,
 }
 
 pub async fn create_account_from_stripe_checkout(
@@ -76,6 +79,7 @@ pub async fn create_account_from_stripe_checkout(
       maybe_referral_url: args.maybe_referral_url,
       maybe_landing_url: args.maybe_landing_url,
       maybe_referral_partner: args.maybe_referral_partner,
+      maybe_referral_user_token: args.maybe_referral_user_token,
 
       // NB: This is just for testing.
       maybe_user_token: None,
