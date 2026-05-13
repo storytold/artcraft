@@ -5,7 +5,8 @@ use crate::endpoints::checkout_with_user_signup::user_creation_case::user_creati
 use crate::endpoints::checkout_with_user_signup::user_exists_case::user_exists_case;
 use crate::utils::artcraft_stripe_config::ArtcraftStripeConfigWithClient;
 use crate::utils::common_web_error::CommonWebError;
-use mysql_queries::queries::users::user::get::get_user_token_by_username::get_user_token_by_username;
+use mysql_queries::queries::users::user::get::get_user_token_by_username_with_executor::{get_user_token_by_username_with_executor, GetUserTokenByUsernameArgs};
+use std::marker::PhantomData;
 use actix_artcraft::sessions::user_sessions::http_user_session_manager::HttpUserSessionManager;
 use actix_web::web::{Data, Json};
 use actix_web::{web, HttpRequest, HttpResponse};
@@ -105,7 +106,11 @@ pub async fn stripe_artcraft_create_subscription_checkout_with_user_signup_handl
       if lookup_username.is_empty() {
         None
       } else {
-        match get_user_token_by_username(&lookup_username, &mysql_pool).await {
+        match get_user_token_by_username_with_executor(GetUserTokenByUsernameArgs {
+          username: &lookup_username,
+          mysql_executor: &mut *mysql_connection,
+          phantom: PhantomData,
+        }).await {
           Ok(token) => token,
           Err(err) => {
             warn!("Referral user lookup failed (continuing): {:?}", err);

@@ -1,0 +1,25 @@
+{
+  "db_name": "MySQL",
+  "query": "\nSELECT\n  token as `token: tokens::tokens::users::UserToken`\nFROM users\n  WHERE username = ?\nLIMIT 1\n    ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "token: tokens::tokens::users::UserToken",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NOT_NULL | UNIQUE_KEY | BINARY | NO_DEFAULT_VALUE",
+          "char_set": 224,
+          "max_size": 128
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "566a2d56735180e0f17484789d0debd03c68bda20354882e111476bab6132723"
+}
