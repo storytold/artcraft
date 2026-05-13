@@ -229,7 +229,7 @@ pub async fn create_account_handler(
       maybe_source,
       maybe_referral_url,
       maybe_landing_url,
-      maybe_referral_partner: sanitize_referral_username(request.maybe_referral_username.as_deref()),
+      maybe_referral_partner: request.maybe_referral_username.as_deref().and_then(sanitize_referral_username),
       maybe_user_token: None, // NB: This parameter is for internal testing only
     }
   ).await;

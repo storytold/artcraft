@@ -243,7 +243,7 @@ pub async fn google_sso_handler(
         claims_subject: &claims_subject,
         claims_email_address: &claims_email_address,
         mysql_connection: &mut mysql_connection,
-        maybe_referral_partner: sanitize_referral_username(request.maybe_referral_username.as_deref()),
+        maybe_referral_partner: request.maybe_referral_username.as_deref().and_then(sanitize_referral_username),
       }).await?;
 
       user_token = result.user_token;
