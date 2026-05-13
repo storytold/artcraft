@@ -57,7 +57,17 @@ import type { MediaItem } from "./models/assets";
 
 const PAGE_ID: ModelPage = ModelPage.Stage3D;
 
-export const Stage3DBody = () => {
+export interface Stage3DBodyProps {
+  /** Show the bottom-right "Costs" cost-calculator button. */
+  showCostCalculator?: boolean;
+  /** Show the top-bar "Create 3D model from image" magic-wand button. */
+  showImageTo3DButton?: boolean;
+}
+
+export const Stage3DBody = ({
+  showCostCalculator = true,
+  showImageTo3DButton = true,
+}: Stage3DBodyProps = {}) => {
   const camAspect = usePageSceneStore((s) => s.cameraAspectRatio);
   const outlinerShowing = usePageSceneStore((s) => s.outlinerShowing);
   const editorLoader = usePageSceneStore((s) => s.editorLoader);
@@ -341,7 +351,7 @@ export const Stage3DBody = () => {
             >
               <div className="grid grid-cols-3 gap-4">
                 <ControlsTopButtons />
-                <Controls3D />
+                <Controls3D showImageTo3DButton={showImageTo3DButton} />
               </div>
             </div>
 
@@ -416,7 +426,7 @@ export const Stage3DBody = () => {
               />
             </div>
             <div className="absolute bottom-6 right-6 z-20 flex items-center gap-2">
-              <CostCalculatorButton modelPage={PAGE_ID} />
+              {showCostCalculator && <CostCalculatorButton modelPage={PAGE_ID} />}
               <HelpMenuButton />
             </div>
           </div>

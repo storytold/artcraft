@@ -86,7 +86,12 @@ export default function PageScene() {
       className="relative h-full w-full overflow-hidden"
       style={{ transform: "translateZ(0)" }}
     >
-      <Stage3D adapter={adapter} sceneToken={sceneToken} />
+      <Stage3D
+        adapter={adapter}
+        sceneToken={sceneToken}
+        showCostCalculator={false}
+        showImageTo3DButton={false}
+      />
     </div>
   );
 }
