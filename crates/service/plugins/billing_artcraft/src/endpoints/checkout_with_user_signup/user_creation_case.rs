@@ -30,6 +30,7 @@ pub (super) async fn user_creation_case(
   stripe_config: &ArtcraftStripeConfigWithClient,
   maybe_referral_url: Option<String>,
   maybe_landing_url: Option<String>,
+  maybe_referral_partner: Option<String>,
 ) -> Result<CreationPayload, CommonWebError> {
 
   let mut transaction = mysql_connection.begin()
@@ -86,6 +87,7 @@ pub (super) async fn user_creation_case(
         maybe_source,
         maybe_referral_url: maybe_referral_url.clone(),
         maybe_landing_url: maybe_landing_url.clone(),
+        maybe_referral_partner: maybe_referral_partner.clone(),
       },
       Transactor::for_transaction(&mut transaction),
     ).await;

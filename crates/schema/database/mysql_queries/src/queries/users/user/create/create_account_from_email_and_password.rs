@@ -29,6 +29,9 @@ pub struct CreateAccountFromEmailPasswordArgs<'a> {
   /// We can grab this from `window.location.href`.
   pub maybe_landing_url: Option<String>,
 
+  /// If a user referred this user, this is the raw username or referral code.
+  pub maybe_referral_partner: Option<String>,
+
   /// In production code, send this as `None`.
   /// Only provide an external user token for db integration tests and db seeding tools.
   /// This allows for knowing the user token a priori.
@@ -73,6 +76,7 @@ pub async fn create_account_from_email_and_password(
 
       maybe_referral_url: args.maybe_referral_url,
       maybe_landing_url: args.maybe_landing_url,
+      maybe_referral_partner: args.maybe_referral_partner,
 
       // NB: This is just for testing.
       maybe_user_token: args.maybe_user_token,

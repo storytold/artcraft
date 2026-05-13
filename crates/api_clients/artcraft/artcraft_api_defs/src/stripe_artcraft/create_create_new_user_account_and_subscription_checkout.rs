@@ -20,6 +20,9 @@ pub struct StripeArtcraftCreateSubscriptionCheckoutWithUserSignupRequest {
   /// Optional: The URL where the user landed when they first arrived, prior to navigation and signing up.
   /// The browser can send `window.location.href` to the backend so we know how people are finding us.
   pub maybe_landing_url: Option<String>,
+
+  /// Optional: A referral username or code from a referring user.
+  pub maybe_referral_username: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, ToSchema, Debug, Copy, Clone)]

@@ -17,6 +17,7 @@ pub struct NewSsoArgs<'a> {
   pub claims_subject: &'a str,
   pub claims_email_address: &'a str,
   pub mysql_connection: &'a mut PoolConnection<MySql>,
+  pub maybe_referral_partner: Option<String>,
 }
 
 pub struct NewSsoAccountInfo {
@@ -63,6 +64,7 @@ pub async fn handle_new_sso_account(
         claims_email_address: &args.claims_email_address,
         user_email_address: &user_email_address,
         mysql_connection: args.mysql_connection,
+        maybe_referral_partner: args.maybe_referral_partner,
       }).await
     },
   }

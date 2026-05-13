@@ -92,6 +92,11 @@ pub async fn stripe_artcraft_create_subscription_checkout_with_user_signup_handl
 
   let maybe_landing_url = request.maybe_landing_url.clone();
 
+  let maybe_referral_partner = request.maybe_referral_username.as_deref()
+    .map(|s| s.trim())
+    .filter(|s| !s.is_empty())
+    .map(|s| s[..s.len().min(32)].to_string());
+
   let maybe_user_metadata = internal_user_lookup
       .lookup_user_from_http_request_and_mysql_connection(&http_request, &mut mysql_connection)
       .await
@@ -110,6 +115,7 @@ pub async fn stripe_artcraft_create_subscription_checkout_with_user_signup_handl
         &stripe_config,
         maybe_referral_url,
         maybe_landing_url,
+        maybe_referral_partner,
       ).await?
     },
     Some(user_metadata) => {

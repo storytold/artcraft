@@ -64,6 +64,7 @@ async fn seed_user(
     maybe_source: None,
     maybe_referral_url: None,
     maybe_landing_url: None,
+    maybe_referral_partner: None,
     maybe_user_token: maybe_user_token.as_ref(),
   }).await.map_err(|err| anyhow!("err: {:?}", err))?;
 

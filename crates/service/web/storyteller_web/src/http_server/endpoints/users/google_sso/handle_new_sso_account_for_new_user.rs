@@ -23,6 +23,7 @@ pub struct CreateArgs<'a> {
   pub claims_email_address: &'a str,
   pub user_email_address: &'a str,
   pub mysql_connection: &'a mut PoolConnection<MySql>,
+  pub maybe_referral_partner: Option<String>,
 }
 pub async fn handle_new_sso_account_for_new_user(
   args: CreateArgs<'_>
@@ -64,6 +65,7 @@ pub async fn handle_new_sso_account_for_new_user(
         maybe_feature_flags: user_feature_flags.as_deref(),
         ip_address: &ip_address,
         maybe_source,
+        maybe_referral_partner: args.maybe_referral_partner.clone(),
       },
       Transactor::for_transaction(&mut transaction),
     ).await;

@@ -27,6 +27,9 @@ pub struct CreateAccountFromGoogleSsoArgs<'a> {
 
   /// Comma separated string of feature flags.
   pub maybe_feature_flags: Option<&'a str>,
+
+  /// If a user referred this user, this is the raw username or referral code.
+  pub maybe_referral_partner: Option<String>,
 }
 
 pub async fn create_account_from_google_sso(
@@ -57,9 +60,9 @@ pub async fn create_account_from_google_sso(
       password_hash: SSO_PASSWORD,
       is_without_password: true,
 
-      // TODO: Necessary? We're not doing SSO for now.
       maybe_referral_url: None,
       maybe_landing_url: None,
+      maybe_referral_partner: args.maybe_referral_partner,
 
       // NB: This is just for testing.
       maybe_user_token: None,

@@ -6,6 +6,7 @@
 use std::fmt;
 use std::fmt::Formatter;
 
+use crate::util::cleaners::sanitize_referral_username::sanitize_referral_username;
 use crate::http_server::endpoints::users::google_sso::check_claims::check_claims;
 use crate::http_server::endpoints::users::google_sso::handle_existing_sso_account::{handle_existing_sso_account, ExistingAccountArgs};
 use crate::http_server::endpoints::users::google_sso::handle_new_sso_account::{handle_new_sso_account, NewSsoArgs};
@@ -79,6 +80,9 @@ use utoipa::ToSchema;
 #[derive(ToSchema, Deserialize)]
 pub struct GoogleCreateAccountRequest {
   pub google_credential: String,
+
+  /// Optional: A referral username or code from a referring user.
+  pub maybe_referral_username: Option<String>,
 }
 
 #[derive(ToSchema, Serialize)]
@@ -239,6 +243,7 @@ pub async fn google_sso_handler(
         claims_subject: &claims_subject,
         claims_email_address: &claims_email_address,
         mysql_connection: &mut mysql_connection,
+        maybe_referral_partner: sanitize_referral_username(request.maybe_referral_username.as_deref()),
       }).await?;
 
       user_token = result.user_token;

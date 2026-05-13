@@ -7,6 +7,7 @@ use std::collections::HashMap;
 use std::fmt;
 use std::fmt::Formatter;
 
+use crate::util::cleaners::sanitize_referral_username::sanitize_referral_username;
 use crate::http_server::validations::is_reserved_username::is_reserved_username;
 use crate::http_server::validations::validate_passwords::validate_passwords;
 use crate::http_server::validations::validate_username::validate_username;
@@ -50,6 +51,9 @@ pub struct CreateAccountRequest {
   /// Optional: The URL where the user landed when they first arrived, prior to navigation and signing up.
   /// The browser can send `window.location.href` to the backend so we know how people are finding us.
   pub maybe_landing_url: Option<String>,
+
+  /// Optional: A referral username or code from a referring user.
+  pub maybe_referral_username: Option<String>,
 }
 
 #[derive(ToSchema, Serialize)]
@@ -225,6 +229,7 @@ pub async fn create_account_handler(
       maybe_source,
       maybe_referral_url,
       maybe_landing_url,
+      maybe_referral_partner: sanitize_referral_username(request.maybe_referral_username.as_deref()),
       maybe_user_token: None, // NB: This parameter is for internal testing only
     }
   ).await;
