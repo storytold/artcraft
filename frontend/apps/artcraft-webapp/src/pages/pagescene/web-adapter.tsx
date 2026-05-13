@@ -102,16 +102,27 @@ export interface WebAppPageSceneAdapterOptions {
   // Wrapper size — kept in a ref so the closure sees live values without
   // rebuilding the adapter on every resize.
   getViewportSize: () => { width: number; height: number };
+  // Open the host's signup CTA modal. Called from inside the lib when an
+  // anonymous visitor clicks Save / Generate / Upload / My Library.
+  promptSignup: (reason?: string) => void;
 }
 
 export const useWebAppPageSceneAdapter = (
   options: WebAppPageSceneAdapterOptions,
 ): PageSceneAdapter => {
-  const { userToken, initialSceneToken, navigateToImageTo3D, getViewportSize } = options;
+  const { userToken, initialSceneToken, navigateToImageTo3D, getViewportSize, promptSignup } = options;
 
   return useMemo<PageSceneAdapter>(
     () => ({
-      enqueueGeneration: async () => ({ status: "fail" }),
+      enqueueGeneration: async () => {
+        if (!userToken) {
+          promptSignup("generate");
+          return { status: "fail" };
+        }
+        // Generation through the webapp adapter isn't wired up yet —
+        // signed-in users still hit this path during the editor port.
+        return { status: "fail" };
+      },
 
       saveScene: ({ saveJson, sceneTitle, sceneToken, sceneThumbnail }) =>
         saveSceneViaApi(saveJson, sceneTitle, sceneToken, sceneThumbnail),
@@ -124,8 +135,17 @@ export const useWebAppPageSceneAdapter = (
       getApiSchemeAndHost: apiHost,
       getCurrentUserToken: () => userToken,
 
-      getCdnUrl: (bucketPath, _width, _quality) =>
-        `${GetCdnOrigin()}${bucketPath}`,
+      getCdnUrl: (bucketPath, width, quality) => {
+        const base = GetCdnOrigin();
+        const path = bucketPath?.startsWith("/")
+          ? bucketPath
+          : `/${bucketPath ?? ""}`;
+        const params: string[] = [];
+        if (width) params.push(`width=${width}`);
+        if (quality) params.push(`quality=${quality}`);
+        if (params.length === 0) return `${base}${path}`;
+        return `${base}/cdn-cgi/image/${params.join(",")}${path}`;
+      },
 
       // The wrapper around <Stage3D> creates a fixed-positioning containing
       // block sized via the webapp's SidebarInset flex layout. Return its
@@ -247,6 +267,8 @@ export const useWebAppPageSceneAdapter = (
 
       navigateToImageTo3D,
 
+      promptSignup,
+
       performLogout: async () => {
         try {
           await new UsersApi().Logout();
@@ -259,6 +281,6 @@ export const useWebAppPageSceneAdapter = (
 
       initialSceneToken,
     }),
-    [userToken, initialSceneToken, navigateToImageTo3D, getViewportSize],
+    [userToken, initialSceneToken, navigateToImageTo3D, getViewportSize, promptSignup],
   );
 };

@@ -490,3 +490,16 @@ export const usePageSceneStore = create<PageSceneState>((set, get) => ({
   setEditorCanvasEl: (el) => set({ editorCanvasEl: el }),
   setCamViewCanvasEl: (el) => set({ camViewCanvasEl: el }),
 }));
+
+// View-only mode: visitor is looking at someone else's scene (owner is
+// known and isn't them). A blank scene has no owner so this returns
+// false; the scene owner viewing their own scene returns false too.
+const computeIsViewOnly = (s: PageSceneState): boolean =>
+  s.sceneMeta.ownerToken !== undefined &&
+  s.sceneMeta.ownerToken !== s.currentUserToken;
+
+export const useIsViewOnly = (): boolean =>
+  usePageSceneStore(computeIsViewOnly);
+
+export const getIsViewOnly = (): boolean =>
+  computeIsViewOnly(usePageSceneStore.getState());

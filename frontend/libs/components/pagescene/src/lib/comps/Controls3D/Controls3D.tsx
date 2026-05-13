@@ -40,6 +40,7 @@ export const Controls3D = () => {
     setAssetModalVisibleDuringDrag,
     selectedMode,
     transformSpace,
+    currentUserToken,
   } = usePageSceneStore(
     useShallow((s) => ({
       assetModalVisible: s.assetModalVisible,
@@ -47,6 +48,7 @@ export const Controls3D = () => {
       setAssetModalVisibleDuringDrag: s.setAssetModalVisibleDuringDrag,
       selectedMode: s.selectedMode,
       transformSpace: s.transformSpace,
+      currentUserToken: s.currentUserToken,
     })),
   );
   const [showEmptySceneTooltip, setShowEmptySceneTooltip] = useState(false);
@@ -102,6 +104,15 @@ export const Controls3D = () => {
   };
 
   const handleAddAssetAction = (action: string) => {
+    const requiresAuth =
+      action === "library" ||
+      action === "upload-3d" ||
+      action === "upload-image" ||
+      action === "upload-splat";
+    if (requiresAuth && !currentUserToken && editor?.adapter.promptSignup) {
+      editor.adapter.promptSignup(action);
+      return;
+    }
     switch (action) {
       case "presets":
         handleOpenModal();

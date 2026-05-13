@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { Stage3D, usePageSceneStore } from "@storyteller/ui-pagescene";
 import { useSession } from "../../lib/session";
 import { useSidebar } from "../../components/ui/sidebar";
+import { useSignupCta } from "../../components/signup-cta-modal";
 import { useWebAppPageSceneAdapter } from "./web-adapter";
 
 // Stage3D fills its parent box; this wrapper is that box. It clamps
@@ -27,6 +28,7 @@ export default function PageScene() {
   const { user } = useSession();
   const navigate = useNavigate();
   const { setOpen, isMobile } = useSidebar();
+  const { openSignupCta } = useSignupCta();
 
   const didAutoCollapseRef = useRef(false);
   useEffect(() => {
@@ -78,6 +80,7 @@ export default function PageScene() {
     initialSceneToken: sceneToken,
     navigateToImageTo3D,
     getViewportSize,
+    promptSignup: openSignupCta,
   });
 
   return (

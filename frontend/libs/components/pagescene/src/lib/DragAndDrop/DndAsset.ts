@@ -1,6 +1,6 @@
 import React from "react";
 import { MediaItem } from "../models";
-import { usePageSceneStore } from "../PageSceneStore";
+import { usePageSceneStore, getIsViewOnly } from "../PageSceneStore";
 import { AssetType } from "../enums";
 import type Editor from "../engine/editor";
 import { pickDropPosition } from "../engine/pickDropPosition";
@@ -37,6 +37,7 @@ class DndAsset {
     item: MediaItem,
     editor: Editor | null,
   ) {
+    if (getIsViewOnly()) return;
     if (event.button === 0) {
       this.editor = editor;
       const store = usePageSceneStore.getState();

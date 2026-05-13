@@ -1,5 +1,6 @@
 import type Editor from "../engine/editor";
 import { TransformAction } from "../engine/editor/actions/TransformAction";
+import { getIsViewOnly } from "../PageSceneStore";
 
 // A transform "session" — opened on the first edit of a multi-input
 // editing flow (e.g. Object Panel position/rotation/scale text fields),
@@ -24,6 +25,9 @@ export function beginTransformSession(
   editor: Editor,
   uuid: string,
 ): TransformSession {
+  if (getIsViewOnly()) {
+    return { commit() {} };
+  }
   const action = new TransformAction(editor, uuid);
   return {
     commit() {

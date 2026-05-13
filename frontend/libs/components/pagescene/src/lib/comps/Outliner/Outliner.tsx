@@ -15,7 +15,7 @@ import { Transition } from "@headlessui/react";
 import { twMerge } from "tailwind-merge";
 import { useSignals } from "@preact/signals-react/runtime";
 import { EngineContext } from "../../contexts/EngineContext";
-import { OutlinerItem, usePageSceneStore } from "../../PageSceneStore";
+import { OutlinerItem, usePageSceneStore, useIsViewOnly } from "../../PageSceneStore";
 import { useViewportSize } from "../../hooks/useViewportSize";
 import { CameraAspectRatio } from "../../enums";
 import { toggleObjectLock } from "../../actions/toggleObjectLock";
@@ -26,6 +26,7 @@ const OutlinerRow = ({ item }: { item: OutlinerItem }) => {
   const isSelected = usePageSceneStore(
     (s) => s.outlinerSelectedItem?.id === item.id,
   );
+  const isViewOnly = useIsViewOnly();
 
   const editorEngine = useContext(EngineContext);
 
@@ -79,37 +80,39 @@ const OutlinerRow = ({ item }: { item: OutlinerItem }) => {
         </div>
         {item.name}
       </span>
-      <div className="flex gap-3">
-        <button
-          onClick={handleToggleLock}
-          style={{
-            opacity: hovered || item.locked ? 1 : 0,
-          }}
-        >
-          <div className="w-3">
-            <FontAwesomeIcon
-              icon={item.locked ? faLock : faLockOpen}
-              className="opacity-80 transition-opacity duration-100 hover:opacity-100"
-            />
-          </div>
-        </button>
-        <button
-          onClick={handleToggleVisibility}
-          style={{
-            opacity: hovered || !item.visible ? 1 : 0,
-          }}
-        >
-          <div className="w-4">
-            <FontAwesomeIcon
-              icon={item.visible ? faEye : faEyeSlash}
-              className={twMerge(
-                "opacity-80 transition-opacity duration-100 hover:opacity-100",
-                item.locked && "text-white/90",
-              )}
-            />
-          </div>
-        </button>
-      </div>
+      {!isViewOnly && (
+        <div className="flex gap-3">
+          <button
+            onClick={handleToggleLock}
+            style={{
+              opacity: hovered || item.locked ? 1 : 0,
+            }}
+          >
+            <div className="w-3">
+              <FontAwesomeIcon
+                icon={item.locked ? faLock : faLockOpen}
+                className="opacity-80 transition-opacity duration-100 hover:opacity-100"
+              />
+            </div>
+          </button>
+          <button
+            onClick={handleToggleVisibility}
+            style={{
+              opacity: hovered || !item.visible ? 1 : 0,
+            }}
+          >
+            <div className="w-4">
+              <FontAwesomeIcon
+                icon={item.visible ? faEye : faEyeSlash}
+                className={twMerge(
+                  "opacity-80 transition-opacity duration-100 hover:opacity-100",
+                  item.locked && "text-white/90",
+                )}
+              />
+            </div>
+          </button>
+        </div>
+      )}
     </div>
   );
 };

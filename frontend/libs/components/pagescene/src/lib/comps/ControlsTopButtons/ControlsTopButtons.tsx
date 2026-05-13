@@ -59,6 +59,10 @@ export const ControlsTopButtons = () => {
       // No-op without an editor; the toast is informational only.
       return;
     }
+    if (!currentUserToken && editor.adapter.promptSignup) {
+      editor.adapter.promptSignup("save");
+      return;
+    }
     const sceneGenerationMetadata = getSceneGenerationMetaData(editor);
 
     const retSceneMediaToken = await editor.saveScene({
@@ -89,6 +93,10 @@ export const ControlsTopButtons = () => {
 
   const handleButtonSaveAsCopy = useCallback(async () => {
     if (!editor) return;
+    if (!currentUserToken && editor.adapter.promptSignup) {
+      editor.adapter.promptSignup("save");
+      return;
+    }
     const sceneGenerationMetadata = getSceneGenerationMetaData(editor);
     const retSceneMediaToken = await editor.saveScene({
       sceneTitle: sceneTitleInput,

@@ -203,6 +203,12 @@ export interface PageSceneAdapter {
   // callback. Tauri host: setLogoutStates. Web host: web auth flow.
   performLogout(): void;
 
+  // Open the host's signup/login modal. Called when an anonymous
+  // visitor clicks a feature that requires an account (Save, Generate,
+  // Upload, "My Library"). Tauri host leaves it undefined — its user
+  // is always signed in. Webapp host wires this to its auth modal.
+  promptSignup?(reason?: string): void;
+
   // Optional event hooks — telemetry, host-side modals, tab title sync.
   onSelectionChange?(
     sel: { uuid: string; assetType: string } | null,

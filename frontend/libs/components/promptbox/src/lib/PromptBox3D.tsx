@@ -74,6 +74,9 @@ interface PromptBox3DProps {
   } | null)
   | undefined;
   credits?: number | null;
+  // Optional pre-submit gate. Returns false to abort the generation
+  // (e.g. host wants to open a signup modal for anon visitors).
+  onBeforeSubmit?: () => boolean;
 }
 
 export const PromptBox3D = ({
@@ -100,6 +103,7 @@ export const PromptBox3D = ({
   selectedProvider,
   snapshotCurrentFrame,
   credits,
+  onBeforeSubmit,
 }: PromptBox3DProps) => {
   //const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -275,6 +279,9 @@ export const PromptBox3D = ({
   const maxLen = selectedImageModel?.maxPromptLength ?? 1000;
 
   const handleEnqueue = async () => {
+    if (onBeforeSubmit && !onBeforeSubmit()) {
+      return;
+    }
     if (isFinite(maxLen) && prompt.length > maxLen) {
       toast.error(`Prompt exceeds the ${maxLen} character limit for this model`);
       return;

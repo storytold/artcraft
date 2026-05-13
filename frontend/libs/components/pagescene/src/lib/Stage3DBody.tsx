@@ -52,7 +52,7 @@ import { useViewportSize } from "./hooks/useViewportSize";
 import { GridVisibleChangedEvent } from "./engine/events/EngineEvent";
 import { pickDropPosition } from "./engine/pickDropPosition";
 import { AssetType, CameraAspectRatio } from "./enums";
-import { usePageSceneStore } from "./PageSceneStore";
+import { usePageSceneStore, useIsViewOnly } from "./PageSceneStore";
 import type { MediaItem } from "./models/assets";
 
 const PAGE_ID: ModelPage = ModelPage.Stage3D;
@@ -74,6 +74,7 @@ export const Stage3DBody = () => {
     (s) => s.setIsPromptBoxFocused,
   );
   const gridVisible = usePageSceneStore((s) => s.gridVisible);
+  const isViewOnly = useIsViewOnly();
   const addCamera = usePageSceneStore((s) => s.addCamera);
   const updateCamera = usePageSceneStore((s) => s.updateCamera);
   const deleteCamera = usePageSceneStore((s) => s.deleteCamera);
@@ -320,7 +321,7 @@ export const Stage3DBody = () => {
 
   return (
     <div className="h-full w-full">
-      <OnboardingHelper />
+      {!isViewOnly && <OnboardingHelper />}
 
       <div className="relative flex h-full w-full">
         <div
@@ -333,17 +334,19 @@ export const Stage3DBody = () => {
             </SceneContainer>
 
             <FocalLengthDisplay />
-            <PoseModeSelector />
+            {!isViewOnly && <PoseModeSelector />}
 
-            <div
-              className="absolute left-0 top-0 w-full"
-              onClick={handleOverlayClick}
-            >
-              <div className="grid grid-cols-3 gap-4">
-                <ControlsTopButtons />
-                <Controls3D />
+            {!isViewOnly && (
+              <div
+                className="absolute left-0 top-0 w-full"
+                onClick={handleOverlayClick}
+              >
+                <div className="grid grid-cols-3 gap-4">
+                  <ControlsTopButtons />
+                  <Controls3D />
+                </div>
               </div>
-            </div>
+            )}
 
             <div
               className="absolute bottom-0 left-0"
@@ -358,10 +361,13 @@ export const Stage3DBody = () => {
                 <PreviewEngineCamera />
               </div>
 
-              <ControlPanelSceneObject />
+              {!isViewOnly && <ControlPanelSceneObject />}
             </div>
 
-            <PromptBox3D
+            {/* Future: <PreviewBox /> slot when isViewOnly — shows the
+                author's generated still next to the camera. */}
+
+            {!isViewOnly && <PromptBox3D
               cameras={cameras}
               cameraAspectRatio={camAspect}
               disableHotkeyInput={disableHotkeyInput}
@@ -395,7 +401,16 @@ export const Stage3DBody = () => {
                 editor.positive_prompt = prompt;
               }}
               snapshotCurrentFrame={editor?.snapShotOfCurrentFrame.bind(editor)}
-            />
+              onBeforeSubmit={() => {
+                const currentUserToken =
+                  usePageSceneStore.getState().currentUserToken;
+                if (!currentUserToken && editor?.adapter.promptSignup) {
+                  editor.adapter.promptSignup("generate");
+                  return false;
+                }
+                return true;
+              }}
+            />}
 
             <LoadingDots
               className="absolute left-0 top-0 z-50"
@@ -404,19 +419,21 @@ export const Stage3DBody = () => {
               message={editorLoader.message}
             />
 
-            <div className="absolute bottom-6 left-6 z-20 flex items-center gap-3">
-              <ClassyModelSelector
-                items={STAGE_3D_PAGE_MODEL_LIST}
-                page={PAGE_ID}
-                panelTitle="Select Model"
-                panelClassName="min-w-[300px]"
-                buttonClassName="bg-transparent p-0 text-lg hover:bg-transparent text-white/80 hover:text-white"
-                showIconsInList
-                triggerLabel="Model"
-              />
-            </div>
+            {!isViewOnly && (
+              <div className="absolute bottom-6 left-6 z-20 flex items-center gap-3">
+                <ClassyModelSelector
+                  items={STAGE_3D_PAGE_MODEL_LIST}
+                  page={PAGE_ID}
+                  panelTitle="Select Model"
+                  panelClassName="min-w-[300px]"
+                  buttonClassName="bg-transparent p-0 text-lg hover:bg-transparent text-white/80 hover:text-white"
+                  showIconsInList
+                  triggerLabel="Model"
+                />
+              </div>
+            )}
             <div className="absolute bottom-6 right-6 z-20 flex items-center gap-2">
-              <CostCalculatorButton modelPage={PAGE_ID} />
+              {!isViewOnly && <CostCalculatorButton modelPage={PAGE_ID} />}
               <HelpMenuButton />
             </div>
           </div>

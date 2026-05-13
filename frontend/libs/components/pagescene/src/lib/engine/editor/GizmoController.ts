@@ -9,6 +9,7 @@
 
 import type * as THREE from "three";
 import { TransformControls } from "../TransformControls.js";
+import { getIsViewOnly } from "../../PageSceneStore";
 
 export type TransformMode = "translate" | "rotate" | "scale";
 export type TransformSpace = "world" | "local";
@@ -90,6 +91,7 @@ export class GizmoController {
   }
 
   attach(object: THREE.Object3D) {
+    if (getIsViewOnly()) return;
     this.control?.attach(object);
   }
 

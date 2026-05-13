@@ -15,7 +15,7 @@ export type {
 } from "./lib/adapter";
 
 // Store
-export { usePageSceneStore } from "./lib/PageSceneStore";
+export { usePageSceneStore, useIsViewOnly, getIsViewOnly } from "./lib/PageSceneStore";
 export type {
   Camera,
   FocalLengthDragging,
