@@ -81,6 +81,15 @@ use utoipa::ToSchema;
 pub struct GoogleCreateAccountRequest {
   pub google_credential: String,
 
+  /// Optional: The referral URL the user arrived from when first hitting the site.
+  /// The browser can send `document.referrer` to the backend.
+  /// If not provided, we'll try the `referer` header.
+  pub maybe_referral_url: Option<String>,
+
+  /// Optional: The URL where the user landed when they first arrived.
+  /// The browser can send `window.location.href`.
+  pub maybe_landing_url: Option<String>,
+
   /// Optional: A referral username or code from a referring user.
   pub maybe_referral_username: Option<String>,
 }
@@ -237,13 +246,27 @@ pub async fn google_sso_handler(
       username_not_yet_customized = false;
     },
     None => {
+      let maybe_referral_url = request.maybe_referral_url.clone()
+        .or_else(|| {
+          http_request.headers().get("referer")
+            .and_then(|v| v.to_str().ok())
+            .map(|s| s.to_string())
+        });
+
+      let maybe_landing_url = request.maybe_landing_url.clone();
+
+      let maybe_referral_partner = request.maybe_referral_username.as_deref()
+          .and_then(sanitize_referral_username);
+
       let result = handle_new_sso_account(NewSsoArgs {
         http_request: &http_request,
         claims,
         claims_subject: &claims_subject,
         claims_email_address: &claims_email_address,
         mysql_connection: &mut mysql_connection,
-        maybe_referral_partner: request.maybe_referral_username.as_deref().and_then(sanitize_referral_username),
+        maybe_referral_url,
+        maybe_landing_url,
+        maybe_referral_partner,
       }).await?;
 
       user_token = result.user_token;
