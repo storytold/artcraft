@@ -240,6 +240,13 @@ CREATE TABLE users (
   -- This helps us know what marketing is effective.
   maybe_landing_url VARCHAR(255) DEFAULT NULL,
 
+  -- If a user referred this user, this is either the raw username or raw "referral code"
+  -- that this user used to sign up. This is not verified and can be used for debugging.
+  maybe_referral_partner VARCHAR(32) DEFAULT NULL,
+
+  -- If a user referred this user, we record the user token of the referrer.
+  maybe_referral_user_token VARCHAR(32) DEFAULT NULL,
+
   -- ========== MODERATION DETAILS ==========
 
   -- Different than deleted.
