@@ -2,7 +2,7 @@ use crate::creds::fal_api_key::FalApiKey;
 use crate::error::classify_fal_error::classify_fal_error;
 use crate::error::fal_error_plus::FalErrorPlus;
 use crate::requests::core_api::webhook_response::WebhookResponse;
-use crate::requests::http::image::edit::http_gpt_image_1_non_byok_edit_image::{
+use crate::requests::http::image::edit::http_gpt_image_1_edit_image::{
   gpt_image_1_non_byok_edit_image, GptImage1NonByokEditImageInput,
 };
 use crate::requests::traits::fal_request_cost_calculator_trait::{
