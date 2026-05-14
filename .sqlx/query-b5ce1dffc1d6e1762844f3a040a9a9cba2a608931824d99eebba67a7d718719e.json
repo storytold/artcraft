@@ -28,7 +28,7 @@
         "name": "code_lowercase",
         "type_info": {
           "type": "VarString",
-          "flags": "NOT_NULL | BINARY | NO_DEFAULT_VALUE",
+          "flags": "NOT_NULL | UNIQUE_KEY | BINARY | NO_DEFAULT_VALUE",
           "char_set": 224,
           "max_size": 128
         }
@@ -38,9 +38,9 @@
         "name": "created_at",
         "type_info": {
           "type": "Datetime",
-          "flags": "NOT_NULL | BINARY | NO_DEFAULT_VALUE",
+          "flags": "NOT_NULL | BINARY",
           "char_set": 63,
-          "max_size": 26
+          "max_size": 19
         }
       },
       {
@@ -48,9 +48,9 @@
         "name": "updated_at",
         "type_info": {
           "type": "Datetime",
-          "flags": "NOT_NULL | BINARY | NO_DEFAULT_VALUE",
+          "flags": "NOT_NULL | BINARY",
           "char_set": 63,
-          "max_size": 26
+          "max_size": 19
         }
       }
     ],

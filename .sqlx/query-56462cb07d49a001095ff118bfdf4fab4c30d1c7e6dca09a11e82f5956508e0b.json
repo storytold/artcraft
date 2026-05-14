@@ -18,7 +18,7 @@
         "name": "owner_user_token: UserToken",
         "type_info": {
           "type": "VarString",
-          "flags": "NOT_NULL | BINARY | NO_DEFAULT_VALUE",
+          "flags": "NOT_NULL | MULTIPLE_KEY | BINARY | NO_DEFAULT_VALUE",
           "char_set": 224,
           "max_size": 128
         }
@@ -38,7 +38,7 @@
         "name": "code_lowercase",
         "type_info": {
           "type": "VarString",
-          "flags": "NOT_NULL | BINARY | NO_DEFAULT_VALUE",
+          "flags": "NOT_NULL | UNIQUE_KEY | BINARY | NO_DEFAULT_VALUE",
           "char_set": 224,
           "max_size": 128
         }
