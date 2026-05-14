@@ -42,6 +42,8 @@ use crate::http_server::endpoints::moderation::user_feature_flags::moderator_edi
 use crate::http_server::endpoints::moderation::user_feature_flags::moderator_list_all_available_user_feature_flags_handler::moderator_list_all_available_user_feature_flags_handler;
 use crate::http_server::endpoints::moderation::user_feature_flags::moderator_list_user_feature_flags_handler::moderator_list_user_feature_flags_handler;
 use crate::http_server::endpoints::moderation::user_sessions::moderator_list_user_session_impersonation_requests_for_user_handler::moderator_list_user_session_impersonation_requests_for_user_handler;
+use crate::http_server::endpoints::moderation::user_referrals::moderator_list_global_user_referrals_handler::moderator_list_global_user_referrals_handler;
+use crate::http_server::endpoints::moderation::user_referrals::moderator_list_user_referrals_for_user_handler::moderator_list_user_referrals_for_user_handler;
 use crate::http_server::endpoints::moderation::user_sessions::moderator_list_user_session_impersonation_requests_handler::moderator_list_user_session_impersonation_requests_handler;
 use crate::http_server::endpoints::moderation::user_sessions::moderator_user_session_impersonation_request_handler::moderator_user_session_impersonation_request_handler;
 
@@ -129,6 +131,16 @@ pub fn add_moderator_routes<T, B> (app: App<T>) -> App<T>
         .service(web::scope("/staff_audit_logs")
             .service(web::resource("/list")
                 .route(web::get().to(moderator_list_staff_audit_logs_handler))
+                .route(web::head().to(|| HttpResponse::Ok()))
+            )
+        )
+        .service(web::scope("/user_referrals")
+            .service(web::resource("/list")
+                .route(web::get().to(moderator_list_global_user_referrals_handler))
+                .route(web::head().to(|| HttpResponse::Ok()))
+            )
+            .service(web::resource("/user/{username}/list")
+                .route(web::get().to(moderator_list_user_referrals_for_user_handler))
                 .route(web::head().to(|| HttpResponse::Ok()))
             )
         )

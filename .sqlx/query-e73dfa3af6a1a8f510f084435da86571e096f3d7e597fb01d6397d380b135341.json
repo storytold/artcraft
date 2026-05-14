@@ -1,0 +1,146 @@
+{
+  "db_name": "MySQL",
+  "query": "\nSELECT\n  ur.id as `id: u64`,\n  ur.invited_user_token as `invited_user_token: UserToken`,\n  invited.username as `invited_username: String`,\n  invited.display_name as `invited_display_name: String`,\n  invited.email_address as `invited_email_address: String`,\n  ur.referrer_user_token as `referrer_user_token: UserToken`,\n  referrer.username as `referrer_username: String`,\n  referrer.display_name as `referrer_display_name: String`,\n  ur.maybe_referral_code_token as `maybe_referral_code_token: UserReferralCodeToken`,\n  ur.maybe_referral_url,\n  ur.maybe_landing_url,\n  ur.created_at\nFROM user_referrals ur\nJOIN users invited ON invited.token = ur.invited_user_token\nJOIN users referrer ON referrer.token = ur.referrer_user_token\nWHERE referrer.username = ?\nORDER BY ur.id DESC\nLIMIT ?\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id: u64",
+        "type_info": {
+          "type": "LongLong",
+          "flags": "NOT_NULL | PRIMARY_KEY | UNSIGNED | AUTO_INCREMENT",
+          "char_set": 63,
+          "max_size": 20
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "invited_user_token: UserToken",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NOT_NULL | UNIQUE_KEY | BINARY | NO_DEFAULT_VALUE",
+          "char_set": 224,
+          "max_size": 128
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "invited_username: String",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NOT_NULL | UNIQUE_KEY | BINARY | NO_DEFAULT_VALUE",
+          "char_set": 224,
+          "max_size": 80
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "invited_display_name: String",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NOT_NULL | BINARY | NO_DEFAULT_VALUE",
+          "char_set": 224,
+          "max_size": 80
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "invited_email_address: String",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NOT_NULL | UNIQUE_KEY | BINARY | NO_DEFAULT_VALUE",
+          "char_set": 224,
+          "max_size": 1020
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "referrer_user_token: UserToken",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NOT_NULL | MULTIPLE_KEY | BINARY | NO_DEFAULT_VALUE",
+          "char_set": 224,
+          "max_size": 128
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "referrer_username: String",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NOT_NULL | UNIQUE_KEY | BINARY | NO_DEFAULT_VALUE",
+          "char_set": 224,
+          "max_size": 80
+        }
+      },
+      {
+        "ordinal": 7,
+        "name": "referrer_display_name: String",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NOT_NULL | BINARY | NO_DEFAULT_VALUE",
+          "char_set": 224,
+          "max_size": 80
+        }
+      },
+      {
+        "ordinal": 8,
+        "name": "maybe_referral_code_token: UserReferralCodeToken",
+        "type_info": {
+          "type": "VarString",
+          "flags": "BINARY",
+          "char_set": 224,
+          "max_size": 128
+        }
+      },
+      {
+        "ordinal": 9,
+        "name": "maybe_referral_url",
+        "type_info": {
+          "type": "VarString",
+          "flags": "BINARY",
+          "char_set": 224,
+          "max_size": 1020
+        }
+      },
+      {
+        "ordinal": 10,
+        "name": "maybe_landing_url",
+        "type_info": {
+          "type": "VarString",
+          "flags": "BINARY",
+          "char_set": 224,
+          "max_size": 1020
+        }
+      },
+      {
+        "ordinal": 11,
+        "name": "created_at",
+        "type_info": {
+          "type": "Datetime",
+          "flags": "NOT_NULL | MULTIPLE_KEY | BINARY",
+          "char_set": 63,
+          "max_size": 19
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      true,
+      false
+    ]
+  },
+  "hash": "e73dfa3af6a1a8f510f084435da86571e096f3d7e597fb01d6397d380b135341"
+}
