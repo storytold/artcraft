@@ -40,6 +40,10 @@ pub enum UserFeatureFlag {
   /// Access to Happy Horse (with a rate limit)
   #[serde(rename = "hh_rl")]
   HappyHorseRateLimit,
+
+  /// Access to the referrals program
+  #[serde(rename = "referrals")]
+  ReferralsProgram,
 }
 
 // TODO(bt, 2022-12-21): This desperately needs MySQL integration tests!
@@ -58,6 +62,7 @@ impl UserFeatureFlag {
       Self::SeedanceWhitelist => "sd_wl",
       Self::HappyHorse => "hh",
       Self::HappyHorseRateLimit => "hh_rl",
+      Self::ReferralsProgram => "referrals",
     }
   }
 
@@ -70,6 +75,7 @@ impl UserFeatureFlag {
       "sd_wl" => Ok(Self::SeedanceWhitelist),
       "hh" => Ok(Self::HappyHorse),
       "hh_rl" => Ok(Self::HappyHorseRateLimit),
+      "referrals" => Ok(Self::ReferralsProgram),
       _ => Err(format!("invalid value: {:?}", value)),
     }
   }
@@ -83,6 +89,7 @@ impl UserFeatureFlag {
       Self::SeedanceWhitelist => "DO NOT USE: Seedance Whitelist (legacy)",
       Self::HappyHorse => "Happy Horse (no Rate Limit)",
       Self::HappyHorseRateLimit => "Happy Horse (with Rate Limit)",
+      Self::ReferralsProgram => "Referrals Program",
     }
   }
 
@@ -95,6 +102,7 @@ impl UserFeatureFlag {
       Self::SeedanceWhitelist => "DO NOT USE THIS. IT WILL BREAK ACCOUNTS.",
       Self::HappyHorse => "Access to Happy Horse (without a rate limit - dangerous)",
       Self::HappyHorseRateLimit => "Access to Happy Horse (with a rate limit)",
+      Self::ReferralsProgram => "Access to the referrals program",
     }
   }
 
@@ -109,6 +117,7 @@ impl UserFeatureFlag {
       Self::SeedanceWhitelist,
       Self::HappyHorse,
       Self::HappyHorseRateLimit,
+      Self::ReferralsProgram,
     ])
   }
 }
@@ -130,6 +139,7 @@ mod tests {
       assert_serialization(UserFeatureFlag::SeedanceWhitelist, "sd_wl");
       assert_serialization(UserFeatureFlag::HappyHorse, "hh");
       assert_serialization(UserFeatureFlag::HappyHorseRateLimit, "hh_rl");
+      assert_serialization(UserFeatureFlag::ReferralsProgram, "referrals");
     }
 
     #[test]
@@ -141,6 +151,7 @@ mod tests {
       assert_eq!(UserFeatureFlag::SeedanceWhitelist.to_str(), "sd_wl");
       assert_eq!(UserFeatureFlag::HappyHorse.to_str(), "hh");
       assert_eq!(UserFeatureFlag::HappyHorseRateLimit.to_str(), "hh_rl");
+      assert_eq!(UserFeatureFlag::ReferralsProgram.to_str(), "referrals");
     }
 
     #[test]
@@ -152,13 +163,14 @@ mod tests {
       assert_eq!(UserFeatureFlag::from_str("sd_wl").unwrap(), UserFeatureFlag::SeedanceWhitelist);
       assert_eq!(UserFeatureFlag::from_str("hh").unwrap(), UserFeatureFlag::HappyHorse);
       assert_eq!(UserFeatureFlag::from_str("hh_rl").unwrap(), UserFeatureFlag::HappyHorseRateLimit);
+      assert_eq!(UserFeatureFlag::from_str("referrals").unwrap(), UserFeatureFlag::ReferralsProgram);
       assert!(UserFeatureFlag::from_str("foo").is_err());
     }
 
     #[test]
     fn all_variants() {
       let mut variants = UserFeatureFlag::all_variants();
-      assert_eq!(variants.len(), 7);
+      assert_eq!(variants.len(), 8);
       assert_eq!(variants.pop_first(), Some(UserFeatureFlag::ExploreMedia));
       assert_eq!(variants.pop_first(), Some(UserFeatureFlag::Studio));
       assert_eq!(variants.pop_first(), Some(UserFeatureFlag::Upload3d));
@@ -166,6 +178,7 @@ mod tests {
       assert_eq!(variants.pop_first(), Some(UserFeatureFlag::SeedanceWhitelist));
       assert_eq!(variants.pop_first(), Some(UserFeatureFlag::HappyHorse));
       assert_eq!(variants.pop_first(), Some(UserFeatureFlag::HappyHorseRateLimit));
+      assert_eq!(variants.pop_first(), Some(UserFeatureFlag::ReferralsProgram));
       assert_eq!(variants.pop_first(), None);
     }
   }

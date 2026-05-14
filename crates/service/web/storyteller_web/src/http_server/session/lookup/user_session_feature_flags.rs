@@ -97,6 +97,10 @@ impl UserSessionFeatureFlags {
   pub fn can_use_happy_horse_rate_limited(&self) -> bool {
     self.feature_flags.contains(&UserFeatureFlag::HappyHorseRateLimit)
   }
+
+  pub fn can_use_referrals_program(&self) -> bool {
+    self.feature_flags.contains(&UserFeatureFlag::ReferralsProgram)
+  }
 }
 
 #[cfg(test)]

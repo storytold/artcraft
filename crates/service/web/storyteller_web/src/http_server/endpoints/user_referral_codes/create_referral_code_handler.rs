@@ -7,6 +7,7 @@ use utoipa::ToSchema;
 
 use artcraft_api_defs::user_referral_codes::create_referral_code::{CreateReferralCodeRequest, CreateReferralCodeResponse};
 use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
+use crate::http_server::session::lookup::user_session_feature_flags::UserSessionFeatureFlags;
 use crate::state::server_state::ServerState;
 use mysql_queries::errors::database_insert_error::DatabaseInsertError;
 use mysql_queries::queries::user_referral_codes::create_referral_code::{create_referral_code, CreateReferralCodeArgs};
@@ -48,6 +49,11 @@ pub async fn create_referral_code_handler(
     Some(session) if !session.is_banned => session,
     _ => return Err(AdvancedCommonWebError::NotAuthorized),
   };
+
+  let feature_flags = UserSessionFeatureFlags::new(user_session.maybe_feature_flags.as_deref());
+  if !feature_flags.can_use_referrals_program() {
+    return Err(AdvancedCommonWebError::NotAuthorized);
+  }
 
   let user_token = &user_session.user_token;
 
