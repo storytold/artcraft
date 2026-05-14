@@ -12,6 +12,7 @@ import { InfiniteGridHelper } from "./InfiniteGridHelper";
 import type { Camera } from "@storyteller/common";
 import toast from "react-hot-toast";
 import { SplatMesh } from "@sparkjsdev/spark";
+import { ensureInternalBbox } from "./internalBbox";
 
 // Capabilities Scene needs from outside its own state. Editor wires
 // these in inline at construction (Phase 2 idiom — same shape as
@@ -733,6 +734,19 @@ class Scene {
     splat.position.copy(position);
     splat.userData["media_id"] = media_id;
     splat.userData["media_file_type"] = MediaFileType.SPZ;
+
+    // Build the selection bbox child once. SplatMesh.initialized
+    // resolves after the gaussian data is fully ready, so
+    // getBoundingBox() returns real local-space extents. The wireframe
+    // is hidden by default; SelectionOutlinePass flips its visibility
+    // on select/deselect. ensureInternalBbox no-ops if an identical
+    // child is already present.
+    try {
+      await splat.initialized;
+      ensureInternalBbox(splat, splat.getBoundingBox());
+    } catch (e) {
+      console.warn("Splat bbox skipped: initialized promise rejected", e);
+    }
 
     if (auto_add) {
       this.scene.add(splat);

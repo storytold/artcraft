@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import type { OutlinePass } from "three/addons/postprocessing/OutlinePass.js";
+import type { SelectionOutlinePass } from "./SelectionOutlinePass";
 import type { TransformControls } from "./TransformControls.js";
 
 import Scene from "./scene";
@@ -19,8 +19,8 @@ export type SceneUtilsDeps = {
   getGizmoControl: () => TransformControls | undefined;
   detachGizmo: () => void;
   removeGizmoFromScene: () => void;
-  // Outline pass (used by removeTransformControls)
-  getOutlinePass: () => OutlinePass | undefined;
+  // Selection outline pass (used by removeTransformControls)
+  getSelectionPass: () => SelectionOutlinePass | undefined;
   // Selection sync (used by removeTransformControls + deleteObject)
   publishSelect: () => void;
   clearSelected: () => void;
@@ -87,17 +87,17 @@ export class SceneUtils {
     if (this.deps.getGizmoControl() == undefined) {
       return;
     }
-    const outlinePass = this.deps.getOutlinePass();
-    if (outlinePass == undefined) {
+    const selectionPass = this.deps.getSelectionPass();
+    if (selectionPass == undefined) {
       return;
     }
     if (remove_outline) {
-      outlinePass.selectedObjects = [];
+      selectionPass.setSelectedObjects([]);
       this.deps.publishSelect();
     }
     this.deps.detachGizmo();
     this.deps.removeGizmoFromScene();
-    if (remove_outline) outlinePass.selectedObjects = [];
+    if (remove_outline) selectionPass.setSelectedObjects([]);
   }
 
   // Returns the "check sum" of the editor's selected object.

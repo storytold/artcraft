@@ -1,8 +1,23 @@
 // Owns both EffectComposer chains (main + raw) and the post-process
-// passes the editor actually uses today: OutputPass + RenderPass on each
-// composer, OutlinePass on the main one (created for selection
-// highlighting in MouseControls and SceneUtils, not currently added to
-// the composer), and CustomOutlinePass + FindSurfaces on the raw one.
+// passes the editor actually uses today.
+//
+// Main composer:
+//   SelectionOutlinePass -> OutputPass
+//
+//   SelectionOutlinePass internally branches on selection state — no
+//   selection takes a single forward render path, a non-splat selection
+//   does a two-pass scene-minus-selected + selected-only render and
+//   composites them with a silhouette outline, and a splat selection
+//   falls back to the single render path with an attached BoxHelper.
+//   See SelectionOutlinePass for the full pipeline notes.
+//
+// Raw composer:
+//   RenderPass -> CustomOutlinePass -> OutputPass
+//
+//   Used by the render-camera output (not the editor view). Untouched
+//   by this pass — CustomOutlinePass renders feature edges via surface
+//   IDs for the final-output look, which is a separate concern from
+//   selection highlighting.
 //
 // Deliberately small surface — no `editor` reference, no circular import.
 // Editor passes the renderer / scene / camera / dimensions explicitly to
@@ -15,15 +30,17 @@
 import * as THREE from "three";
 import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
 import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
-import { OutlinePass } from "three/addons/postprocessing/OutlinePass.js";
 import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
+import { SelectionOutlinePass } from "../SelectionOutlinePass";
 import { CustomOutlinePass } from "../CustomOutlinePass.js";
 import FindSurfaces from "../FindSurfaces.js";
 
 export class PostProcessingPipeline {
   composer: EffectComposer | undefined;
   render_composer: EffectComposer | undefined;
-  outlinePass: OutlinePass | undefined;
+  // Set by MouseControls / SceneUtils on every selection change.
+  // The pass partitions the array into splat vs. non-splat at render time.
+  selectionPass: SelectionOutlinePass | undefined;
   customOutlinerPass: CustomOutlinePass | undefined;
   private surfaceFinder: FindSurfaces | undefined;
 
@@ -36,16 +53,9 @@ export class PostProcessingPipeline {
   ) {
     if (renderer == undefined || camera == undefined) return;
     this.composer = new EffectComposer(renderer);
-    this.composer.addPass(new RenderPass(scene, camera));
 
-    // Created for MouseControls / SceneUtils.removeTransformControls to
-    // mutate `selectedObjects`. Not currently added to the composer (the
-    // historical addPass call is commented out in the original code).
-    this.outlinePass = new OutlinePass(
-      new THREE.Vector2(width / 10, height / 10),
-      scene,
-      camera,
-    );
+    this.selectionPass = new SelectionOutlinePass(scene, camera, width, height);
+    this.composer.addPass(this.selectionPass);
 
     this.composer.addPass(new OutputPass());
   }
@@ -101,6 +111,7 @@ export class PostProcessingPipeline {
   dispose() {
     this.composer?.dispose();
     this.render_composer?.dispose();
+    this.selectionPass?.dispose();
   }
 
   // Bound through Editor's Scene callback; called on each asset load.

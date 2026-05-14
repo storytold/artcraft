@@ -11,6 +11,7 @@ import { ClipGroup, AssetType } from "../enums";
 import { XYZ } from "../datastructures/common";
 import type { EngineEventBus } from "./events/EngineEventBus";
 import { ObjectAddedEvent } from "./events/EngineEvent";
+import { isInternalBbox } from "./internalBbox";
 
 export type SceneObject = {
   id: string;
@@ -104,6 +105,11 @@ export class SceneManager implements SceneManagerAPI {
     const selected_item = this.selected();
     const signal_items: SceneObject[] = [];
     this.scene.scene.children.forEach((child) => {
+      // Internal selection-bbox helpers (children of splats) shouldn't
+      // appear in the outliner. They're parented under the splat, so
+      // top-level enumeration already skips them in practice — this
+      // guard hardens the boundary in case anyone ever promotes one.
+      if (isInternalBbox(child)) return;
       const converted = this.convert_object(child, timeline_characters);
       if (converted.name !== "") {
         signal_items.push(converted);
