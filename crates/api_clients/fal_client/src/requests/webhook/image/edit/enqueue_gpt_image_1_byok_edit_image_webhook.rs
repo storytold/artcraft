@@ -8,7 +8,7 @@ use crate::creds::open_ai_api_key::OpenAiApiKey;
 use crate::error::classify_fal_error::classify_fal_error;
 use crate::error::fal_error_plus::FalErrorPlus;
 use crate::requests::traits::fal_request_cost_calculator_trait::{FalRequestCostCalculator, UsdCents};
-use crate::requests::http::image::edit::http_gpt_image_1_edit_image::{gpt_image_1_edit_image, GptImage1EditImageInput};
+use crate::requests::http::image::edit::http_gpt_image_1_byok_edit_image::{gpt_image_1_edit_image, GptImage1EditImageInput};
 use crate::requests::core_api::webhook_response::WebhookResponse;
 use reqwest::IntoUrl;
 
