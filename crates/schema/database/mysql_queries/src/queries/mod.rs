@@ -37,6 +37,7 @@ pub mod twitch;
 pub mod unsubscribe_reason;
 pub mod user_impersonation_requests;
 pub mod user_referral_codes;
+pub mod user_referrals;
 pub mod users;
 pub mod vocoder;
 pub mod voice_clone_requests;

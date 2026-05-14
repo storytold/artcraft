@@ -129,6 +129,7 @@ pub async fn handle_new_sso_account_for_new_user(
     user_token,
     user_display_name,
     username_is_not_customized: true, // New account with random username
+    is_new_account: true,
   })
 }
 

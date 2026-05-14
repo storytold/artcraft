@@ -7,6 +7,7 @@ use std::fmt;
 use std::fmt::Formatter;
 
 use crate::util::lookup::resolve_referral_info::resolve_referral_info;
+use mysql_queries::queries::user_referrals::insert_user_referral::{insert_user_referral, InsertUserReferralArgs};
 use crate::http_server::endpoints::users::google_sso::check_claims::check_claims;
 use crate::http_server::endpoints::users::google_sso::handle_existing_sso_account::{handle_existing_sso_account, ExistingAccountArgs};
 use crate::http_server::endpoints::users::google_sso::handle_new_sso_account::{handle_new_sso_account, NewSsoArgs};
@@ -272,11 +273,29 @@ pub async fn google_sso_handler(
         claims_subject: &claims_subject,
         claims_email_address: &claims_email_address,
         mysql_connection: &mut mysql_connection,
-        maybe_referral_url,
-        maybe_landing_url,
+        maybe_referral_url: maybe_referral_url.clone(),
+        maybe_landing_url: maybe_landing_url.clone(),
         maybe_referral_partner: referral_info.maybe_referral_partner,
-        maybe_referral_user_token: referral_info.maybe_referral_user_token,
+        maybe_referral_user_token: referral_info.maybe_referral_user_token.clone(),
       }).await?;
+
+      // Record the referral relationship if this is a genuinely new account.
+      if result.is_new_account {
+        if let Some(referrer_user_token) = &referral_info.maybe_referral_user_token {
+          if let Err(err) = insert_user_referral(
+            InsertUserReferralArgs {
+              invited_user_token: &result.user_token,
+              referrer_user_token,
+              maybe_referral_code_token: referral_info.maybe_referral_code_token.as_ref(),
+              maybe_referral_url: maybe_referral_url.as_deref(),
+              maybe_landing_url: maybe_landing_url.as_deref(),
+            },
+            &mut *mysql_connection,
+          ).await {
+            warn!("Failed to insert user_referral record (continuing): {:?}", err);
+          }
+        }
+      }
 
       user_token = result.user_token;
       maybe_user_display_name = Some(result.user_display_name);

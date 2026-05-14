@@ -23,6 +23,7 @@ use http_server_common::response::serialize_as_json_error::serialize_as_json_err
 use log::{info, warn};
 use mysql_queries::mediators::firehose_publisher::FirehosePublisher;
 use mysql_queries::queries::users::user::create::create_account_error::CreateAccountError;
+use mysql_queries::queries::user_referrals::insert_user_referral::{insert_user_referral, InsertUserReferralArgs};
 use mysql_queries::queries::users::user::create::create_account_from_email_and_password::{create_account_from_email_and_password, CreateAccountFromEmailPasswordArgs};
 use mysql_queries::queries::users::user_sessions::create_user_session_with_executor::create_user_session_with_executor;
 use password::bcrypt_hash_password::bcrypt_hash_password;
@@ -243,8 +244,8 @@ pub async fn create_account_handler(
       password_hash: &password_hash,
       ip_address: &ip_address,
       maybe_source,
-      maybe_referral_url,
-      maybe_landing_url,
+      maybe_referral_url: maybe_referral_url.clone(),
+      maybe_landing_url: maybe_landing_url.clone(),
       maybe_referral_partner: referral_info.maybe_referral_partner,
       maybe_referral_user_token: referral_info.maybe_referral_user_token.as_ref(),
       maybe_user_token: None, // NB: This parameter is for internal testing only
@@ -281,6 +282,22 @@ pub async fn create_account_handler(
   };
 
   info!("new user id: {}", new_user_data.user_id);
+
+  // Record the referral relationship if we resolved a referrer.
+  if let Some(referrer_user_token) = &referral_info.maybe_referral_user_token {
+    if let Err(err) = insert_user_referral(
+      InsertUserReferralArgs {
+        invited_user_token: &new_user_data.user_token,
+        referrer_user_token,
+        maybe_referral_code_token: referral_info.maybe_referral_code_token.as_ref(),
+        maybe_referral_url: maybe_referral_url.as_deref(),
+        maybe_landing_url: maybe_landing_url.as_deref(),
+      },
+      &mut *mysql_connection,
+    ).await {
+      warn!("Failed to insert user_referral record (continuing): {:?}", err);
+    }
+  }
 
   let session_token = create_user_session_with_executor(
     &new_user_data.user_token,

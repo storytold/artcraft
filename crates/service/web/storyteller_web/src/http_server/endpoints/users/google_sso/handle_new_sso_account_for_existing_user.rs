@@ -58,5 +58,6 @@ pub async fn handle_new_sso_account_for_existing_user(
     user_token: args.user_account.token,
     user_display_name: args.user_account.display_name,
     username_is_not_customized: args.user_account.username_is_not_customized,
+    is_new_account: false,
   })
 }

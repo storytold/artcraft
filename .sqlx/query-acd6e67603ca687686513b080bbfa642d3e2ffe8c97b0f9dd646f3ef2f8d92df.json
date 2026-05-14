@@ -1,0 +1,12 @@
+{
+  "db_name": "MySQL",
+  "query": "\nINSERT INTO user_referrals (\n  invited_user_token,\n  referrer_user_token,\n  maybe_referral_code_token,\n  maybe_referral_url,\n  maybe_landing_url\n)\nVALUES (?, ?, ?, ?, ?)\n    ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 5
+    },
+    "nullable": []
+  },
+  "hash": "acd6e67603ca687686513b080bbfa642d3e2ffe8c97b0f9dd646f3ef2f8d92df"
+}

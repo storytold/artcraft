@@ -27,6 +27,7 @@ pub struct NewSsoAccountInfo {
   pub user_token: UserToken,
   pub user_display_name: String,
   pub username_is_not_customized: bool,
+  pub is_new_account: bool,
 }
 
 pub async fn handle_new_sso_account(

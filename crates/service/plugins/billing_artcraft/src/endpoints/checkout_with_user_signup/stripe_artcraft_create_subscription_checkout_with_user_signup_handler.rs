@@ -5,8 +5,10 @@ use crate::endpoints::checkout_with_user_signup::user_creation_case::user_creati
 use crate::endpoints::checkout_with_user_signup::user_exists_case::user_exists_case;
 use crate::utils::artcraft_stripe_config::ArtcraftStripeConfigWithClient;
 use crate::utils::common_web_error::CommonWebError;
-use mysql_queries::queries::users::user::get::get_user_token_by_username_with_executor::get_user_token_by_username_with_executor;
 use mysql_queries::queries::user_referral_codes::lookup_referral_code_by_code::lookup_referral_code_by_code;
+use mysql_queries::queries::user_referrals::insert_user_referral::{insert_user_referral, InsertUserReferralArgs};
+use mysql_queries::queries::users::user::get::get_user_token_by_username_with_executor::get_user_token_by_username_with_executor;
+use tokens::tokens::user_referral_codes::UserReferralCodeToken;
 use tokens::tokens::users::UserToken;
 use actix_artcraft::sessions::user_sessions::http_user_session_manager::HttpUserSessionManager;
 use actix_web::web::{Data, Json};
@@ -96,7 +98,7 @@ pub async fn stripe_artcraft_create_subscription_checkout_with_user_signup_handl
   let maybe_landing_url = request.maybe_landing_url.clone();
 
   // Resolve referral info from code (preferred) or username (fallback).
-  let (maybe_referral_partner, maybe_referral_user_token) = resolve_referral_info(
+  let referral_info = resolve_referral_info(
     request.maybe_referral_code.as_deref(),
     request.maybe_referral_username.as_deref(),
     &mut mysql_connection,
@@ -113,16 +115,34 @@ pub async fn stripe_artcraft_create_subscription_checkout_with_user_signup_handl
   let creation_payload= match maybe_user_metadata {
     None => {
       info!("Creating new user, then creating checkout session...");
-      user_creation_case(
+      let payload = user_creation_case(
         &http_request,
         &price_id,
         &mut mysql_connection,
         &stripe_config,
-        maybe_referral_url,
-        maybe_landing_url,
-        maybe_referral_partner,
-        maybe_referral_user_token,
-      ).await?
+        maybe_referral_url.clone(),
+        maybe_landing_url.clone(),
+        referral_info.maybe_referral_partner,
+        referral_info.maybe_referral_user_token.clone(),
+      ).await?;
+
+      // Record the referral relationship if we resolved a referrer.
+      if let (Some(new_user), Some(referrer_user_token)) = (&payload.maybe_new_user_metadata, &referral_info.maybe_referral_user_token) {
+        if let Err(err) = insert_user_referral(
+          InsertUserReferralArgs {
+            invited_user_token: &new_user.user_token,
+            referrer_user_token,
+            maybe_referral_code_token: referral_info.maybe_referral_code_token.as_ref(),
+            maybe_referral_url: maybe_referral_url.as_deref(),
+            maybe_landing_url: maybe_landing_url.as_deref(),
+          },
+          &mut *mysql_connection,
+        ).await {
+          warn!("Failed to insert user_referral record (continuing): {:?}", err);
+        }
+      }
+
+      payload
     },
     Some(user_metadata) => {
       info!("Creating checkout session for user: {:?}", user_metadata.user_token_typed);
@@ -215,13 +235,18 @@ pub fn create_http_response_new_user(
       .body(body))
 }
 
+struct ResolvedReferralInfo {
+  maybe_referral_partner: Option<String>,
+  maybe_referral_user_token: Option<UserToken>,
+  maybe_referral_code_token: Option<UserReferralCodeToken>,
+}
+
 /// Resolve referral info from code (preferred) or username (fallback).
-/// Returns (maybe_referral_partner, maybe_referral_user_token).
 async fn resolve_referral_info(
   maybe_referral_code: Option<&str>,
   maybe_referral_username: Option<&str>,
   mysql_connection: &mut sqlx::pool::PoolConnection<sqlx::MySql>,
-) -> (Option<String>, Option<UserToken>) {
+) -> ResolvedReferralInfo {
   // Try referral code first.
   if let Some(raw_code) = maybe_referral_code {
     let trimmed = raw_code.trim();
@@ -230,7 +255,11 @@ async fn resolve_referral_info(
       match lookup_referral_code_by_code(&code_lowercase, &mut **mysql_connection).await {
         Ok(Some(result)) => {
           let partner = trimmed[..trimmed.len().min(32)].to_string();
-          return (Some(partner), Some(result.owner_user_token));
+          return ResolvedReferralInfo {
+            maybe_referral_partner: Some(partner),
+            maybe_referral_user_token: Some(result.owner_user_token),
+            maybe_referral_code_token: Some(result.token),
+          };
         }
         Ok(None) => {
           // Code not found — fall through to username lookup.
@@ -264,8 +293,16 @@ async fn resolve_referral_info(
       }
     };
 
-    return (maybe_partner, maybe_user_token);
+    return ResolvedReferralInfo {
+      maybe_referral_partner: maybe_partner,
+      maybe_referral_user_token: maybe_user_token,
+      maybe_referral_code_token: None,
+    };
   }
 
-  (None, None)
+  ResolvedReferralInfo {
+    maybe_referral_partner: None,
+    maybe_referral_user_token: None,
+    maybe_referral_code_token: None,
+  }
 }

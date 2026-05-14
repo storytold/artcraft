@@ -3,6 +3,7 @@ use mysql_queries::queries::user_referral_codes::lookup_referral_code_by_code::l
 use mysql_queries::queries::users::user::get::get_user_token_by_username_with_executor::get_user_token_by_username_with_executor;
 use sqlx::pool::PoolConnection;
 use sqlx::MySql;
+use tokens::tokens::user_referral_codes::UserReferralCodeToken;
 use tokens::tokens::users::UserToken;
 
 use crate::util::cleaners::sanitize_referral_code::sanitize_referral_code;
@@ -15,6 +16,9 @@ pub struct ResolvedReferralInfo {
 
   /// The resolved user token of the referrer for `users.maybe_referral_user_token`.
   pub maybe_referral_user_token: Option<UserToken>,
+
+  /// The referral code token used, if the referral was resolved via a code.
+  pub maybe_referral_code_token: Option<UserReferralCodeToken>,
 }
 
 /// Resolve referral info from either a referral code or a referral username.
@@ -45,6 +49,7 @@ pub async fn resolve_referral_info(
           return ResolvedReferralInfo {
             maybe_referral_partner: partner,
             maybe_referral_user_token: Some(result.owner_user_token),
+            maybe_referral_code_token: Some(result.token),
           };
         }
         Ok(None) => {
@@ -77,11 +82,13 @@ pub async fn resolve_referral_info(
     return ResolvedReferralInfo {
       maybe_referral_partner,
       maybe_referral_user_token,
+      maybe_referral_code_token: None,
     };
   }
 
   ResolvedReferralInfo {
     maybe_referral_partner: None,
     maybe_referral_user_token: None,
+    maybe_referral_code_token: None,
   }
 }
