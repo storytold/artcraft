@@ -6,6 +6,7 @@ import {
 } from "./storyteller_proxy_3d_object";
 import Scene from "../engine/scene";
 import { BoneJSONHelper } from "../engine/KinHelpers/BoneJSONHelper";
+import type { LoadTicket } from "../engine/save_manager";
 
 interface LookUpDictionary {
   [key: string]: StoryTellerProxy3DObject;
@@ -120,6 +121,7 @@ export class StoryTellerProxyScene {
     scene_json: ObjectJSON[],
     skybox_media_id: string,
     version: number,
+    ticket?: LoadTicket,
   ) {
     if (scene_json == null || this.scene == null) return;
 
@@ -137,6 +139,7 @@ export class StoryTellerProxyScene {
     if (mediaTokens.length > 0) {
       await this.scene.warmMediaURLs(mediaTokens);
     }
+    if (ticket?.cancelled) return;
 
     // Build per-object load tasks. Each task creates its Object3D
     // (network calls happen here, in parallel across tasks) and
@@ -179,6 +182,7 @@ export class StoryTellerProxyScene {
             true,
             new THREE.Vector3(-0.5, 1.5, 0),
             version,
+            ticket?.signal,
           );
           obj.userData = json_object.user_data;
           if (json_object.rigData) {
@@ -211,6 +215,7 @@ export class StoryTellerProxyScene {
     );
 
     const settled = await Promise.allSettled(tasks);
+    if (ticket?.cancelled) return;
 
     // Synchronous transform-application pass. We walk results in
     // original JSON order to preserve scene.children insertion
@@ -218,7 +223,12 @@ export class StoryTellerProxyScene {
     // export, etc.).
     for (const result of settled) {
       if (result.status === "rejected") {
-        console.error("Scene load: object failed to load", result.reason);
+        // Swallow aborts from cancelled loads — they're expected and
+        // don't represent a real failure.
+        const reason = result.reason as { name?: string } | undefined;
+        if (reason?.name !== "AbortError") {
+          console.error("Scene load: object failed to load", result.reason);
+        }
         continue;
       }
       const { obj, json_object } = result.value;

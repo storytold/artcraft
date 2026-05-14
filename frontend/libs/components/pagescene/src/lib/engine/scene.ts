@@ -22,7 +22,13 @@ import { SplatMesh } from "@sparkjsdev/spark";
 export type SceneDeps = {
   getCameras: () => Camera[];
   getSelectedCameraId: () => string;
-  fetchAsset: (url: string) => Promise<Response>;
+  // Adapter-supplied binary fetch. Optional `init.signal` lets the
+  // scene loader cancel in-flight downloads when its load is
+  // superseded.
+  fetchAsset: (
+    url: string,
+    init?: { signal?: AbortSignal },
+  ) => Promise<Response>;
   getMediaUrlByToken: (token: string) => Promise<string>;
   // Optional batch resolver — when provided, the proxy scene loader
   // warms a URL cache with one roundtrip instead of N. When absent,
@@ -619,6 +625,7 @@ class Scene {
     auto_add: boolean = true,
     position: THREE.Vector3 = new THREE.Vector3(-0.5, 1.5, 0),
     version: number = 1.0,
+    signal?: AbortSignal,
   ): Promise<THREE.Object3D> {
     const url = await this.getMediaURL(media_id);
 
@@ -651,6 +658,7 @@ class Scene {
         name,
         auto_add,
         position,
+        signal,
       );
     }
 
@@ -660,6 +668,7 @@ class Scene {
       auto_add,
       position,
       version,
+      signal,
     );
   }
 
@@ -690,6 +699,7 @@ class Scene {
     name: string,
     auto_add: boolean = true,
     position: THREE.Vector3 = new THREE.Vector3(-0.5, 1.5, 0),
+    signal?: AbortSignal,
   ): Promise<THREE.Object3D> {
     if (this.placeholder_manager === undefined) {
       throw Error("Place holder Manager is undefined");
@@ -707,11 +717,15 @@ class Scene {
         }
         await this.placeholder_manager.remove(key);
       },
+      signal,
     ).catch(async (error) => {
       if (this.placeholder_manager !== undefined) {
         await this.placeholder_manager.remove(key);
       }
-      toast.error("Failed to load splat.");
+      // Don't toast aborts — those are us cancelling a superseded load.
+      if ((error as { name?: string })?.name !== "AbortError") {
+        toast.error("Failed to load splat.");
+      }
       throw error;
     });
 
@@ -733,6 +747,7 @@ class Scene {
     auto_add: boolean = true,
     position: THREE.Vector3 = new THREE.Vector3(-0.5, 1.5, 0),
     load_version: number = 1.0,
+    signal?: AbortSignal,
   ): Promise<THREE.Object3D> {
     if (this.placeholder_manager === undefined) {
       throw Error("Place holder Manager is undefined");
@@ -765,16 +780,23 @@ class Scene {
     //   throw error;
     // });
 
-    const glb = await this.load_glb_wrapped_no_cors(url, async () => {
-      if (this.placeholder_manager === undefined) {
-        throw Error("Place holder Manager is undefined");
-      }
-      await this.placeholder_manager.remove(key);
-    }).catch(async (error) => {
+    const glb = await this.load_glb_wrapped_no_cors(
+      url,
+      async () => {
+        if (this.placeholder_manager === undefined) {
+          throw Error("Place holder Manager is undefined");
+        }
+        await this.placeholder_manager.remove(key);
+      },
+      signal,
+    ).catch(async (error) => {
       if (this.placeholder_manager !== undefined) {
         await this.placeholder_manager.remove(key);
       }
-      toast.error("Failed to load 3D asset.");
+      // Don't toast aborts — those are us cancelling a superseded load.
+      if ((error as { name?: string })?.name !== "AbortError") {
+        toast.error("Failed to load 3D asset.");
+      }
       throw error;
     });
 
@@ -863,15 +885,20 @@ class Scene {
   private async load_glb_wrapped_no_cors(
     media_url: string,
     onComplete: () => void,
+    signal?: AbortSignal,
   ) {
     return new Promise(async (resolve, reject) => {
       let buffer;
       try {
         // Host-supplied CORS-bypassed binary fetch (FetchProxy under
         // Tauri; plain fetch under web hosts that allow it).
-        buffer = await (await this.deps.fetchAsset(media_url)).arrayBuffer();
+        buffer = await (
+          await this.deps.fetchAsset(media_url, { signal })
+        ).arrayBuffer();
       } catch (error) {
-        console.error("load GLB from Tauri error:", error);
+        if ((error as { name?: string })?.name !== "AbortError") {
+          console.error("load GLB from Tauri error:", error);
+        }
         reject(error);
         return;
       }
@@ -900,15 +927,20 @@ class Scene {
   private async load_splat_wrapped_no_cors(
     media_url: string,
     onComplete: () => void,
+    signal?: AbortSignal,
   ): Promise<SplatMesh> {
     return new Promise(async (resolve, reject) => {
       let buffer;
       try {
         // Host-supplied CORS-bypassed binary fetch (FetchProxy under
         // Tauri; plain fetch under web hosts that allow it).
-        buffer = await (await this.deps.fetchAsset(media_url)).arrayBuffer();
+        buffer = await (
+          await this.deps.fetchAsset(media_url, { signal })
+        ).arrayBuffer();
       } catch (error) {
-        console.error("load Splat from Tauri error:", error);
+        if ((error as { name?: string })?.name !== "AbortError") {
+          console.error("load Splat from Tauri error:", error);
+        }
         reject(error);
         return;
       }

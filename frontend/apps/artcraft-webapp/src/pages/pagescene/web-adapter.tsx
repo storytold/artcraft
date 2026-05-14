@@ -151,7 +151,8 @@ export const useWebAppPageSceneAdapter = (
 
       loadScene: loadSceneViaApi,
 
-      fetchAsset: (url: string) => fetch(url, { mode: "cors" }),
+      fetchAsset: (url: string, init?: { signal?: AbortSignal }) =>
+        fetch(url, { mode: "cors", signal: init?.signal }),
 
       getCdnOrigin: () => GetCdnOrigin(),
       getApiSchemeAndHost: apiHost,

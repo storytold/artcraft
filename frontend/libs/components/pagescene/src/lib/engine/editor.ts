@@ -228,7 +228,7 @@ class Editor {
         getCameras: () => usePageSceneStore.getState().cameras,
         getSelectedCameraId: () =>
           usePageSceneStore.getState().selectedCameraId,
-        fetchAsset: (url) => this.adapter.fetchAsset(url),
+        fetchAsset: (url, init) => this.adapter.fetchAsset(url, init),
         getMediaUrlByToken: (token) => this.adapter.getMediaUrlByToken(token),
         getMediaUrlsByTokens: this.adapter.getMediaUrlsByTokens
           ? (tokens) => this.adapter.getMediaUrlsByTokens!(tokens)
@@ -555,10 +555,19 @@ class Editor {
       this.bus.emit(new SceneLoadedEvent(true));
     };
 
+    // Only flip the loaded flag when the load actually applied — a
+    // load that was superseded by a newer one (rapid remount or
+    // unmount-during-load) resolves with applied=false and must NOT
+    // touch engine state, otherwise EngineProvider's unmount handler
+    // would try to serialize a half-loaded scene back into the cache.
+    const applyIfLoaded = (result: { applied: boolean }) => {
+      if (result.applied) onloadCallback();
+    };
+
     if (!this.utils.isEmpty(cacheJson)) {
-      this.loadCache(cacheJson).then(onloadCallback);
+      this.save_manager.loadCache(cacheJson).then(applyIfLoaded);
     } else if (!this.utils.isEmpty(sceneToken)) {
-      this.loadScene(sceneToken).then(onloadCallback);
+      this.save_manager.loadScene(sceneToken).then(applyIfLoaded);
     } else {
       this.adapter.onSceneTitleChange?.({
         title: "Untitled New Scene",
@@ -764,13 +773,16 @@ class Editor {
     this.selection.refreshOutliner();
   }
 
-  public async loadCache(cacheJson: string) {
-    await this.save_manager.loadCache(cacheJson);
+  public async loadCache(cacheJson: string): Promise<{ applied: boolean }> {
+    return await this.save_manager.loadCache(cacheJson);
   }
 
-  public async loadScene(scene_media_token: string) {
-    await this.save_manager.loadScene(scene_media_token);
-    this.selection.refreshOutliner();
+  public async loadScene(
+    scene_media_token: string,
+  ): Promise<{ applied: boolean }> {
+    const result = await this.save_manager.loadScene(scene_media_token);
+    if (result.applied) this.selection.refreshOutliner();
+    return result;
   }
 
   // Replace the active scene with the provided serialized JSON, clear
@@ -779,7 +791,8 @@ class Editor {
   // edits. Delegates to save_manager.loadCache which already owns the
   // JSON-string deserialization path used on initial mount.
   public async applyJson(jsonString: string) {
-    await this.save_manager.loadCache(jsonString);
+    const result = await this.save_manager.loadCache(jsonString);
+    if (!result.applied) return;
     this.history.clear();
     this.bus.emit(new SceneResetEvent());
     this.selection.refreshOutliner();
@@ -927,6 +940,11 @@ class Editor {
   }
 
   unmountEngine() {
+    // Cancel any in-flight load so late-arriving asset promises bail
+    // at their next checkpoint instead of mutating the about-to-be-
+    // disposed scene. Also aborts in-flight asset downloads.
+    this.save_manager.cancelCurrentLoad();
+
     this.bus.emit(new SceneLoadedEvent(false));
     this.stopRenderLoop();
 

@@ -88,7 +88,15 @@ export interface PageSceneAdapter {
   loadScene(token: string): Promise<unknown>;
   // Wraps Tauri-flavored CORS-bypassed fetches. Used by Scene's GLTF
   // loader paths that resolve CDN URLs the browser can't fetch directly.
-  fetchAsset(url: string): Promise<Response>;
+  // Accepts an optional AbortSignal so the scene loader can cancel
+  // in-flight asset downloads when its load is superseded (rapid tab
+  // switches, applyJson during loadScene). Adapters that can't honor
+  // cancellation may ignore the signal — the lib's ticket guard still
+  // protects state correctness.
+  fetchAsset(
+    url: string,
+    init?: { signal?: AbortSignal },
+  ): Promise<Response>;
 
   // Hosts. Engine builds CDN URLs (`${cdnOrigin}${bucket_path}`) and
   // API URLs (`${apiSchemeAndHost}/v1/...`); the host supplies both.
