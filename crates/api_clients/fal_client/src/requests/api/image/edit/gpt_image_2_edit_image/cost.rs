@@ -60,6 +60,7 @@ mod tests {
       mask_url: None,
       image_size,
       quality,
+      resolution: None,
       output_format: None,
     }
   }

@@ -56,6 +56,7 @@ mod tests {
       num_images,
       image_size,
       quality,
+      resolution: None,
       output_format: None,
     }
   }

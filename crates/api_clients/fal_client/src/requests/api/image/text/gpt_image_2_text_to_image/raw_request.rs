@@ -1,12 +1,23 @@
 use serde::{Deserialize, Serialize};
+use crate::requests::api::image::common::gpt_image_2_resolution::CustomImageSize;
 
-#[derive(Debug, Serialize, Deserialize, Default)]
+/// The `image_size` field can be either a string enum value (e.g. "square")
+/// or a custom object with explicit width/height.
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(untagged)]
+pub enum ImageSizeParam {
+  Preset(String),
+  Custom(CustomImageSize),
+}
+
+#[derive(Debug, Serialize, Deserialize)]
 pub struct GptImage2TextToImageInput {
   pub prompt: String,
 
   /// square_hd, square, portrait_4_3, portrait_16_9, landscape_4_3, landscape_16_9
+  /// OR a custom { width, height } object.
   #[serde(skip_serializing_if = "Option::is_none")]
-  pub image_size: Option<String>,
+  pub image_size: Option<ImageSizeParam>,
 
   /// "low", "medium", "high"
   #[serde(skip_serializing_if = "Option::is_none")]
