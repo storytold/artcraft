@@ -38,17 +38,22 @@
 // same behavior as three.js' stock OutlinePass and considered acceptable.
 
 import * as THREE from "three";
-import {
-  Pass,
-  FullScreenQuad,
-} from "three/addons/postprocessing/Pass.js";
+import { Pass, FullScreenQuad } from "three/addons/postprocessing/Pass.js";
 import { SplatMesh } from "@sparkjsdev/spark";
 import { MediaFileType } from "../enums";
 import { findInternalBbox } from "./internalBbox";
+import {
+  SELECTION_OUTLINE_COLOR,
+  SELECTION_OUTLINE_ACCENT_COLOR,
+} from "./selectionColors";
 
-const SELECTION_OUTLINE_COLOR = 0xffffff;
+// Two-color pulse so the outline reads as motion. Pale-orange ↔ dark-
+// orange in the Blender editor selection style — both ends sit in a
+// warm hue that stands out against typical scene neutrals.
+// Pulse period (seconds). Angular freq baked into the uniform.
+const SELECTION_PULSE_PERIOD_SEC = 3.0;
 // Sample radius for the silhouette edge detect, in screen pixels.
-const OUTLINE_THICKNESS = 1.5;
+const OUTLINE_THICKNESS = 1;
 // Depth value at the far plane after clear. Anything below means
 // "selected geometry rasterized here."
 const FAR_DEPTH_THRESHOLD = 0.999999;
@@ -207,9 +212,11 @@ export class SelectionOutlinePass extends Pass {
     // Step 3: silhouette overlay quad. Reads selectedTarget.depthTexture,
     // paints outline color where the 3x3 neighborhood straddles selected/
     // not-selected, discards otherwise. autoClear=false preserves
-    // writeBuffer from step 1.
+    // writeBuffer from step 1. `uTime` (seconds) drives the color pulse
+    // inside the fragment shader.
     this.outlineMaterial.uniforms["selectedDepth"].value =
       this.selectedTarget.depthTexture;
+    this.outlineMaterial.uniforms["uTime"].value = performance.now() * 0.001;
     const prevAutoClear = renderer.autoClear;
     renderer.autoClear = false;
     renderer.setRenderTarget(writeBuffer);
@@ -251,6 +258,17 @@ export class SelectionOutlinePass extends Pass {
         outlineColor: {
           value: new THREE.Color(SELECTION_OUTLINE_COLOR),
         },
+        outlineAccentColor: {
+          value: new THREE.Color(SELECTION_OUTLINE_ACCENT_COLOR),
+        },
+        // Angular frequency for the pulse: 2π / period.
+        // Multiply by uTime (seconds) inside the shader.
+        pulseAngularFreq: {
+          value: (2 * Math.PI) / SELECTION_PULSE_PERIOD_SEC,
+        },
+        // Seconds since some arbitrary origin. Updated each render()
+        // from `performance.now() * 0.001`.
+        uTime: { value: 0 },
         outlineThickness: { value: OUTLINE_THICKNESS },
       },
       vertexShader: /* glsl */ `
@@ -264,13 +282,22 @@ export class SelectionOutlinePass extends Pass {
       //   selectedDepth.x < ${FAR_DEPTH_THRESHOLD} encodes "selected
       //   geometry rasterized here." Sample a 3x3 neighborhood; if any
       //   neighbor's selected-presence differs from the center's, the
-      //   fragment is on the silhouette. Paint outlineColor there;
-      //   discard otherwise so the quad blends onto writeBuffer
-      //   without overwriting non-silhouette pixels.
+      //   fragment is on the silhouette. Non-silhouette fragments
+      //   discard so the quad blends onto writeBuffer without
+      //   overwriting non-silhouette pixels.
+      //
+      //   Silhouette pixels mix between outlineColor and
+      //   outlineAccentColor via a 0..1 sine driven by uTime. Two
+      //   colors (rather than a single intensity pulse) so the outline
+      //   remains visible against backgrounds of either tone — a pure
+      //   white pulse is easy to lose against white scene edges.
       fragmentShader: /* glsl */ `
         uniform sampler2D selectedDepth;
         uniform vec4 screenSize;
         uniform vec3 outlineColor;
+        uniform vec3 outlineAccentColor;
+        uniform float pulseAngularFreq;
+        uniform float uTime;
         uniform float outlineThickness;
 
         varying vec2 vUv;
@@ -295,7 +322,9 @@ export class SelectionOutlinePass extends Pass {
           }
 
           if (!edge) discard;
-          gl_FragColor = vec4(outlineColor, 1.0);
+          float pulse = sin(uTime * pulseAngularFreq) * 0.5 + 0.5;
+          vec3 col = mix(outlineColor, outlineAccentColor, pulse);
+          gl_FragColor = vec4(col, 1.0);
         }
       `,
     });

@@ -11,6 +11,7 @@
 // don't write the literal string inline anywhere.
 
 import * as THREE from "three";
+import { SELECTION_OUTLINE_ACCENT_COLOR } from "./selectionColors";
 
 export const BBOX_INTERNAL_KEY = "__bbox_internal";
 
@@ -65,7 +66,10 @@ function createInternalBbox(localBox: THREE.Box3): THREE.LineSegments {
   boxGeo.dispose();
   const lines = new THREE.LineSegments(
     edges,
-    new THREE.LineBasicMaterial({ color: 0xffffff }),
+    // Static dark orange — matches the outline pulse's trough color so
+    // the splat selection cue reads in the same visual family as the
+    // mesh-selection halo. No animation on the bbox itself.
+    new THREE.LineBasicMaterial({ color: SELECTION_OUTLINE_ACCENT_COLOR }),
   );
   lines.position.copy(center);
   lines.userData[BBOX_INTERNAL_KEY] = true;
