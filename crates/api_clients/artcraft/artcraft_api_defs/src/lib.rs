@@ -10,6 +10,7 @@ pub mod omni_gen;
 pub mod prompts;
 pub mod stripe_artcraft;
 pub mod subscriptions;
+pub mod user_referral_codes;
 pub mod users;
 pub mod utils;
 pub mod web_referrals;

@@ -316,6 +316,9 @@ use artcraft_api_defs::moderation::wallets::list_user_wallets::*;
 use artcraft_api_defs::moderation::wallets::moderator_add_banked_balance_to_wallet::*;
 use artcraft_api_defs::moderation::wallets::moderator_create_wallet_for_user::*;
 use artcraft_api_defs::moderation::wallets::moderator_get_wallet::*;
+use artcraft_api_defs::user_referral_codes::create_referral_code::*;
+use artcraft_api_defs::user_referral_codes::delete_referral_code::*;
+use artcraft_api_defs::user_referral_codes::list_referral_codes::*;
 use artcraft_api_defs::web_referrals::log_web_referral::*;
 use crate::http_server::endpoints::web_referrals::log_web_referral_handler::*;
 use crate::http_server::endpoints::image_studio::update_gpt_image_job_status_handler::*;
@@ -536,6 +539,10 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     crate::http_server::endpoints::subscriptions::get_session_subscription_handler::get_session_subscription_handler,
     // Web Referrals
     crate::http_server::endpoints::web_referrals::log_web_referral_handler::log_web_referral_handler,
+    // User Referral Codes
+    crate::http_server::endpoints::user_referral_codes::create_referral_code_handler::create_referral_code_handler,
+    crate::http_server::endpoints::user_referral_codes::list_referral_codes_handler::list_referral_codes_handler,
+    crate::http_server::endpoints::user_referral_codes::delete_referral_code_handler::delete_referral_code_handler,
     // Image Studio
     crate::http_server::endpoints::image_studio::update_gpt_image_job_status_handler::update_gpt_image_job_status_handler,
   ),
@@ -1210,6 +1217,14 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     // Web Referrals
     LogWebReferralRequest,
     LogWebReferralResponse,
+
+    // User Referral Codes
+    CreateReferralCodeRequest,
+    CreateReferralCodeResponse,
+    ListReferralCodesResponse,
+    ReferralCodeEntry,
+    DeleteReferralCodePathInfo,
+    DeleteReferralCodeResponse,
   ))
 )]
 pub struct ApiDoc;

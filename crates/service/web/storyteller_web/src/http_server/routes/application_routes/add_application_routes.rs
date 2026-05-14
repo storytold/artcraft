@@ -15,6 +15,7 @@ use crate::http_server::routes::application_routes::subscription_routes::add_sub
 use crate::http_server::routes::application_routes::tag_routes::add_tag_routes;
 use crate::http_server::routes::application_routes::user_bookmarks_routes::add_user_bookmarks_routes;
 use crate::http_server::routes::application_routes::user_rating_routes::add_user_rating_routes;
+use crate::http_server::routes::application_routes::user_referral_code_routes::add_user_referral_code_routes;
 use crate::http_server::routes::application_routes::user_routes::add_user_routes;
 use crate::http_server::routes::application_routes::wallet_routes::add_wallet_routes;
 use crate::http_server::routes::application_routes::web_referrals_routes::add_web_referrals_routes;
@@ -67,6 +68,7 @@ where
   app = add_comments_routes(app); // /v1/comments/...
   app = add_user_bookmarks_routes(app); // /v1/user_bookmarks/...
   app = add_user_rating_routes(app); // /v1/user_rating/...
+  app = add_user_referral_code_routes(app); // /v1/user_referral_codes/...
   app = add_user_routes(app); // /create_account, /session, /login, /logout, etc.
 
   // Artcraft Billing pieces

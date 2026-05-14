@@ -25,6 +25,7 @@ pub mod trending;
 pub mod tts;
 pub mod user_bookmarks;
 pub mod user_ratings;
+pub mod user_referral_codes;
 pub mod user_wallets;
 pub mod users;
 pub mod voice_clone_requests;
