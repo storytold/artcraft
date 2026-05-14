@@ -178,10 +178,9 @@ export function AppSidebar() {
   const { user } = useSession();
   const showSidebarLogo = state === "expanded" || isMobile;
 
-  // TEMP: feature flag check bypassed for testing.
-  // Revert to: !!user?.maybe_feature_flags?.includes(USER_FEATURE_FLAGS.REFERRALS)
-  void USER_FEATURE_FLAGS;
-  const hasReferralsFlag = !!user;
+  const hasReferralsFlag = !!user?.maybe_feature_flags?.includes(
+    USER_FEATURE_FLAGS.REFERRALS,
+  );
 
   const handleNavClick = () => {
     if (isMobile) setOpenMobile(false);

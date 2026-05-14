@@ -39,10 +39,9 @@ export default function Referrals() {
 
   const api = useMemo(() => new UserReferralCodesApi(), []);
 
-  // TEMP: bypass the feature flag check while testing the page.
-  // Revert to: !!user?.maybe_feature_flags?.includes(USER_FEATURE_FLAGS.REFERRALS)
-  void USER_FEATURE_FLAGS;
-  const hasReferralsFlag = !!user;
+  const hasReferralsFlag = !!user?.maybe_feature_flags?.includes(
+    USER_FEATURE_FLAGS.REFERRALS,
+  );
 
   useEffect(() => {
     if (!authChecked) return;
