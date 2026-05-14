@@ -194,8 +194,14 @@ function Card({
       <div className="relative aspect-video w-full bg-black/60">{children}</div>
       {promptText && (
         <div
-          className="line-clamp-2 border-t border-white/10 px-3 py-2 text-[11px] leading-relaxed text-white/70"
+          className="border-t border-white/10 px-3 py-2 text-[11px] leading-snug text-white/70"
           title={promptText}
+          style={{
+            display: "-webkit-box",
+            WebkitLineClamp: 2,
+            WebkitBoxOrient: "vertical",
+            overflow: "hidden",
+          }}
         >
           {promptText}
         </div>
