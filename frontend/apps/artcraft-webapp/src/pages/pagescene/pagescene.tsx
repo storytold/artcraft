@@ -1,5 +1,10 @@
 import { useCallback, useEffect, useRef } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import {
+  Link,
+  useNavigate,
+  useParams,
+  useSearchParams,
+} from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faDesktop, faHouse } from "@fortawesome/pro-solid-svg-icons";
 import { Button } from "@storyteller/ui-button";
@@ -11,6 +16,7 @@ import {
 import { useSession } from "../../lib/session";
 import { useSidebar } from "../../components/ui/sidebar";
 import { useSignupCta } from "../../components/signup-cta-modal";
+import { DemoOutputOverlay } from "./demo-output-overlay";
 import { useSceneCacheStore } from "./scene-cache-store";
 import { useWebAppPageSceneAdapter } from "./web-adapter";
 
@@ -45,6 +51,12 @@ export default function PageScene() {
 
 function PageSceneEditor() {
   const { sceneToken } = useParams<{ sceneToken?: string }>();
+  const [searchParams] = useSearchParams();
+  // `?output=<media_token>` (alias `?demo=`) flips the editor into demo
+  // mode: the named output media renders in a top-right picture-in-picture
+  // card alongside the live scene. Empty string is normalized to null.
+  const demoOutputToken =
+    searchParams.get("output") || searchParams.get("demo") || null;
   const { user } = useSession();
   const navigate = useNavigate();
   const { setOpen } = useSidebar();
@@ -145,6 +157,7 @@ function PageSceneEditor() {
           adds. Both components portal themselves out of this wrapper. */}
       <GalleryModal mode="view" />
       <GalleryDragComponent />
+      {demoOutputToken && <DemoOutputOverlay outputToken={demoOutputToken} />}
     </div>
   );
 }
