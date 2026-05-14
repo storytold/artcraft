@@ -14,7 +14,12 @@ import { useEffect, useState, Fragment } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@storyteller/ui-button";
 import { PopoverMenu } from "@storyteller/ui-popover";
-import { UsersApi, CreditsApi, BillingApi } from "@storyteller/api";
+import {
+  UsersApi,
+  CreditsApi,
+  BillingApi,
+  USER_FEATURE_FLAGS,
+} from "@storyteller/api";
 import { useSession, invalidateSession } from "../../lib/session";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -23,6 +28,7 @@ import {
   faBars,
   faXmark,
   faGem,
+  faGift,
   faCog,
   faArrowRight,
   faChevronDown,
@@ -423,6 +429,27 @@ export default function Navbar() {
                                 </button>
                               )}
                             </MenuItem>
+                            {user.maybe_feature_flags?.includes(
+                              USER_FEATURE_FLAGS.REFERRALS,
+                            ) && (
+                              <MenuItem>
+                                {({ active }) => (
+                                  <button
+                                    onClick={() => navigate("/referrals")}
+                                    className={twMerge(
+                                      active ? "bg-white/[0.04]" : "",
+                                      "flex w-full items-center gap-2 px-4 py-2 text-sm text-white/70 transition-colors",
+                                    )}
+                                  >
+                                    <FontAwesomeIcon
+                                      icon={faGift}
+                                      className="text-[11px] text-white/50"
+                                    />
+                                    Referrals
+                                  </button>
+                                )}
+                              </MenuItem>
+                            )}
                             <MenuItem>
                               {({ active }) => (
                                 <button
@@ -651,6 +678,21 @@ export default function Navbar() {
                           />
                           Settings
                         </DisclosureButton>
+                        {user.maybe_feature_flags?.includes(
+                          USER_FEATURE_FLAGS.REFERRALS,
+                        ) && (
+                          <DisclosureButton
+                            as={Link}
+                            to="/referrals"
+                            className="flex h-8 items-center gap-1.5 rounded-lg px-2.5 text-[12px] font-medium text-white/70 bg-white/[0.06] active:bg-white/10 transition-colors"
+                          >
+                            <FontAwesomeIcon
+                              icon={faGift}
+                              className="text-[10px]"
+                            />
+                            Referrals
+                          </DisclosureButton>
+                        )}
                         <DisclosureButton
                           as="a"
                           href={SOCIAL_LINKS.DISCORD}

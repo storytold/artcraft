@@ -10,9 +10,12 @@ import {
   faNewspaper,
   faCircleQuestion,
   faDownload,
+  faGift,
 } from "@fortawesome/pro-solid-svg-icons";
 import { faDiscord } from "@fortawesome/free-brands-svg-icons";
 import { Button } from "@storyteller/ui-button";
+import { USER_FEATURE_FLAGS } from "@storyteller/api";
+import { useSession } from "../../lib/session";
 import {
   Sidebar,
   SidebarContent,
@@ -52,6 +55,12 @@ const CREATE_ITEMS: NavItem[] = [
 const ASSETS_ITEMS: NavItem[] = [
   { label: "Library", href: "/library", icon: faGrid2 },
 ];
+
+const REFERRALS_ITEM: NavItem = {
+  label: "Referrals",
+  href: "/referrals",
+  icon: faGift,
+};
 
 const RESOURCES_ITEMS: NavItem[] = [
   {
@@ -166,7 +175,13 @@ function NavSection({
 export function AppSidebar() {
   const { pathname } = useLocation();
   const { isMobile, setOpenMobile, state } = useSidebar();
+  const { user } = useSession();
   const showSidebarLogo = state === "expanded" || isMobile;
+
+  // TEMP: feature flag check bypassed for testing.
+  // Revert to: !!user?.maybe_feature_flags?.includes(USER_FEATURE_FLAGS.REFERRALS)
+  void USER_FEATURE_FLAGS;
+  const hasReferralsFlag = !!user;
 
   const handleNavClick = () => {
     if (isMobile) setOpenMobile(false);
@@ -212,6 +227,14 @@ export function AppSidebar() {
           pathname={pathname}
           onClick={handleNavClick}
         />
+        {hasReferralsFlag && (
+          <NavSection
+            label="Invite"
+            items={[REFERRALS_ITEM]}
+            pathname={pathname}
+            onClick={handleNavClick}
+          />
+        )}
         <NavSection
           label="Resources"
           items={RESOURCES_ITEMS}

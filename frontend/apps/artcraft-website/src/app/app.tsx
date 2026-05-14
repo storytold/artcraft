@@ -31,6 +31,7 @@ import ForgotPassword, { VerifyReset } from "../pages/forgot-password";
 import Welcome from "../pages/welcome";
 import Onboarding from "../pages/onboarding";
 import Library from "../pages/library";
+import Referrals from "../pages/referrals";
 import { CheckoutSuccess, CheckoutCancel } from "../pages/checkout";
 
 function ScrollToTop() {
@@ -70,6 +71,7 @@ export function App() {
         <Route path="/news/:slug" element={<NewsPost basePath="/news" />} />
         <Route path="/library" element={<Library />} />
         <Route path="/library/:filter" element={<Library />} />
+        <Route path="/referrals" element={<Referrals />} />
         <Route path="/pricing" element={<Pricing />} />
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
