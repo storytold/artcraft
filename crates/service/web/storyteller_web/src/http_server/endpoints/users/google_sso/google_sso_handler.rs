@@ -6,7 +6,7 @@
 use std::fmt;
 use std::fmt::Formatter;
 
-use crate::util::cleaners::sanitize_referral_username::sanitize_referral_username;
+use crate::util::lookup::resolve_referral_info::resolve_referral_info;
 use crate::http_server::endpoints::users::google_sso::check_claims::check_claims;
 use crate::http_server::endpoints::users::google_sso::handle_existing_sso_account::{handle_existing_sso_account, ExistingAccountArgs};
 use crate::http_server::endpoints::users::google_sso::handle_new_sso_account::{handle_new_sso_account, NewSsoArgs};
@@ -20,7 +20,6 @@ use http_server_common::request::get_request_ip::get_request_ip;
 use http_server_common::response::serialize_as_json_error::serialize_as_json_error;
 use log::{info, warn};
 use mysql_queries::queries::google_sign_in_accounts::get_google_sign_in_account_by_subject::get_google_sign_in_account;
-use mysql_queries::queries::users::user::get::get_user_token_by_username_with_executor::get_user_token_by_username_with_executor;
 use mysql_queries::queries::users::user_sessions::create_user_session_with_transactor::create_user_session_with_transactor;
 use mysql_queries::utils::transactor::Transactor;
 use sqlx::{Acquire, MySqlPool};
@@ -93,6 +92,10 @@ pub struct GoogleCreateAccountRequest {
 
   /// Optional: A referral username or code from a referring user.
   pub maybe_referral_username: Option<String>,
+
+  /// Optional: A referral code created by another user. If present, takes priority over
+  /// `maybe_referral_username` for resolving the referring user.
+  pub maybe_referral_code: Option<String>,
 }
 
 #[derive(ToSchema, Serialize)]
@@ -256,27 +259,12 @@ pub async fn google_sso_handler(
 
       let maybe_landing_url = request.maybe_landing_url.clone();
 
-      let maybe_referral_partner = request.maybe_referral_username.as_deref()
-          .and_then(sanitize_referral_username);
-
-      // Look up referring user by username (optional, fail-open).
-      let maybe_referral_user_token = match request.maybe_referral_username.as_deref() {
-        Some(raw) => {
-          let lookup_username = raw.trim().to_lowercase();
-          if lookup_username.is_empty() {
-            None
-          } else {
-            match get_user_token_by_username_with_executor(&lookup_username, &mut *mysql_connection).await {
-              Ok(token) => token,
-              Err(err) => {
-                warn!("Referral user lookup failed (continuing): {:?}", err);
-                None
-              }
-            }
-          }
-        }
-        None => None,
-      };
+      // Resolve referral info from code (preferred) or username (fallback).
+      let referral_info = resolve_referral_info(
+        request.maybe_referral_code.as_deref(),
+        request.maybe_referral_username.as_deref(),
+        &mut mysql_connection,
+      ).await;
 
       let result = handle_new_sso_account(NewSsoArgs {
         http_request: &http_request,
@@ -286,8 +274,8 @@ pub async fn google_sso_handler(
         mysql_connection: &mut mysql_connection,
         maybe_referral_url,
         maybe_landing_url,
-        maybe_referral_partner,
-        maybe_referral_user_token,
+        maybe_referral_partner: referral_info.maybe_referral_partner,
+        maybe_referral_user_token: referral_info.maybe_referral_user_token,
       }).await?;
 
       user_token = result.user_token;

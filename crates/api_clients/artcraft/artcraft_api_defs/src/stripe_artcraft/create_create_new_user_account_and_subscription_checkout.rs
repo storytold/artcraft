@@ -23,6 +23,10 @@ pub struct StripeArtcraftCreateSubscriptionCheckoutWithUserSignupRequest {
 
   /// Optional: A referral username or code from a referring user.
   pub maybe_referral_username: Option<String>,
+
+  /// Optional: A referral code created by another user. If present, takes priority over
+  /// `maybe_referral_username` for resolving the referring user.
+  pub maybe_referral_code: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, ToSchema, Debug, Copy, Clone)]

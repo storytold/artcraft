@@ -7,9 +7,8 @@ use std::collections::HashMap;
 use std::fmt;
 use std::fmt::Formatter;
 
-use crate::util::cleaners::sanitize_referral_username::sanitize_referral_username;
+use crate::util::lookup::resolve_referral_info::resolve_referral_info;
 use crate::http_server::validations::is_reserved_username::is_reserved_username;
-use mysql_queries::queries::users::user::get::get_user_token_by_username_with_executor::get_user_token_by_username_with_executor;
 use crate::http_server::validations::validate_passwords::validate_passwords;
 use crate::http_server::validations::validate_username::validate_username;
 use crate::util::enroll_in_studio::enroll_in_studio;
@@ -54,6 +53,10 @@ pub struct CreateAccountRequest {
 
   /// Optional: A referral username or code from a referring user.
   pub maybe_referral_username: Option<String>,
+
+  /// Optional: A referral code created by another user. If present, takes priority over
+  /// `maybe_referral_username` for resolving the referring user.
+  pub maybe_referral_code: Option<String>,
 }
 
 #[derive(ToSchema, Serialize)]
@@ -224,24 +227,12 @@ pub async fn create_account_handler(
       CreateAccountErrorResponse::server_error()
     })?;
 
-  // Look up referring user by username (optional, fail-open).
-  let maybe_referral_user_token = match request.maybe_referral_username.as_deref() {
-    Some(raw) => {
-      let lookup_username = raw.trim().to_lowercase();
-      if lookup_username.is_empty() {
-        None
-      } else {
-        match get_user_token_by_username_with_executor(&lookup_username, &mut *mysql_connection).await {
-          Ok(token) => token,
-          Err(err) => {
-            warn!("Referral user lookup failed (continuing): {:?}", err);
-            None
-          }
-        }
-      }
-    }
-    None => None,
-  };
+  // Resolve referral info from code (preferred) or username (fallback).
+  let referral_info = resolve_referral_info(
+    request.maybe_referral_code.as_deref(),
+    request.maybe_referral_username.as_deref(),
+    &mut mysql_connection,
+  ).await;
 
   let create_account_result = create_account_from_email_and_password(
     CreateAccountFromEmailPasswordArgs {
@@ -254,8 +245,8 @@ pub async fn create_account_handler(
       maybe_source,
       maybe_referral_url,
       maybe_landing_url,
-      maybe_referral_partner: request.maybe_referral_username.as_deref().and_then(sanitize_referral_username),
-      maybe_referral_user_token: maybe_referral_user_token.as_ref(),
+      maybe_referral_partner: referral_info.maybe_referral_partner,
+      maybe_referral_user_token: referral_info.maybe_referral_user_token.as_ref(),
       maybe_user_token: None, // NB: This parameter is for internal testing only
     },
     &mut mysql_connection,
