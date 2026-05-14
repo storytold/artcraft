@@ -8,7 +8,7 @@ use crate::creds::open_ai_api_key::OpenAiApiKey;
 use crate::error::classify_fal_error::classify_fal_error;
 use crate::error::fal_error_plus::FalErrorPlus;
 use crate::requests::traits::fal_request_cost_calculator_trait::{FalRequestCostCalculator, UsdCents};
-use crate::requests::http::image::text::http_gpt_image_1_byok_text_to_image::{gpt_image_1_text_to_image, GptImage1TextToImageInput};
+use crate::requests::http::image::text::http_gpt_image_1_byok_text_to_image::{gpt_image_1_byok_text_to_image, GptImage1ByokTextToImageInput};
 use crate::requests::core_api::webhook_response::WebhookResponse;
 use reqwest::IntoUrl;
 
@@ -106,7 +106,7 @@ pub async fn enqueue_gpt_image_1_byok_text_to_image_webhook<V: IntoUrl>(
     GptTextToImageNumImages::Four => 4,
   };
 
-  let request = GptImage1TextToImageInput {
+  let request = GptImage1ByokTextToImageInput {
     prompt: req.prompt,
     image_size: image_size.to_string(),
     num_images,
@@ -114,7 +114,7 @@ pub async fn enqueue_gpt_image_1_byok_text_to_image_webhook<V: IntoUrl>(
     openai_api_key: args.openai_api_key.0.to_string(),
   };
 
-  let result = gpt_image_1_text_to_image(request)
+  let result = gpt_image_1_byok_text_to_image(request)
       .with_api_key(&args.api_key.0)
       .queue_webhook(args.webhook_url)
       .await;

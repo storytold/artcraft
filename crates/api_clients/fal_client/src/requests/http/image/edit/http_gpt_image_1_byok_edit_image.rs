@@ -2,7 +2,7 @@ use crate::requests::core_api::fal_request::FalRequest;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize, Default)]
-pub struct GptImage1EditImageInput {
+pub struct GptImage1ByokEditImageInput {
   pub prompt: String,
 
   pub image_urls: Vec<String>,
@@ -21,12 +21,12 @@ pub struct GptImage1EditImageInput {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct GptImage1EditImageOutput {
+pub struct GptImage1ByokEditImageOutput {
   // Response fields parsed elsewhere
 }
 
-pub fn gpt_image_1_edit_image(
-  params: GptImage1EditImageInput,
-) -> FalRequest<GptImage1EditImageInput, GptImage1EditImageOutput> {
+pub fn gpt_image_1_byok_edit_image(
+  params: GptImage1ByokEditImageInput,
+) -> FalRequest<GptImage1ByokEditImageInput, GptImage1ByokEditImageOutput> {
   FalRequest::new("fal-ai/gpt-image-1/edit-image/byok", params)
 }

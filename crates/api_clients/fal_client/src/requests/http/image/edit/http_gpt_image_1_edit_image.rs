@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 /// `fal-ai/gpt-image-1/edit-image`. Fal hosts this model directly; pricing is
 /// billed by Fal at their published rates.
 #[derive(Debug, Serialize, Deserialize, Default)]
-pub struct GptImage1NonByokEditImageInput {
+pub struct GptImage1EditImageInput {
   pub prompt: String,
 
   pub image_urls: Vec<String>,
@@ -41,17 +41,17 @@ pub struct GptImage1NonByokEditImageInput {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct GptImage1NonByokEditImageFile {
+pub struct GptImage1EditImageFile {
   pub url: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct GptImage1NonByokEditImageOutput {
-  pub images: Vec<GptImage1NonByokEditImageFile>,
+pub struct GptImage1EditImageOutput {
+  pub images: Vec<GptImage1EditImageFile>,
 }
 
-pub fn gpt_image_1_non_byok_edit_image(
-  params: GptImage1NonByokEditImageInput,
-) -> FalRequest<GptImage1NonByokEditImageInput, GptImage1NonByokEditImageOutput> {
+pub fn gpt_image_1_edit_image(
+  params: GptImage1EditImageInput,
+) -> FalRequest<GptImage1EditImageInput, GptImage1EditImageOutput> {
   FalRequest::new("fal-ai/gpt-image-1/edit-image", params)
 }

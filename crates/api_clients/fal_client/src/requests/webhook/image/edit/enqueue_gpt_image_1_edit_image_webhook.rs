@@ -3,7 +3,7 @@ use crate::error::classify_fal_error::classify_fal_error;
 use crate::error::fal_error_plus::FalErrorPlus;
 use crate::requests::core_api::webhook_response::WebhookResponse;
 use crate::requests::http::image::edit::http_gpt_image_1_edit_image::{
-  gpt_image_1_non_byok_edit_image, GptImage1NonByokEditImageInput,
+  gpt_image_1_edit_image, GptImage1EditImageInput,
 };
 use crate::requests::traits::fal_request_cost_calculator_trait::{
   FalRequestCostCalculator, UsdCents,
@@ -172,7 +172,7 @@ pub async fn enqueue_gpt_image_1_edit_image_webhook<R: IntoUrl>(
     .to_string()
   });
 
-  let request = GptImage1NonByokEditImageInput {
+  let request = GptImage1EditImageInput {
     prompt: req.prompt,
     image_urls: req.image_urls,
     mask_image_url: req.mask_image_url,
@@ -184,7 +184,7 @@ pub async fn enqueue_gpt_image_1_edit_image_webhook<R: IntoUrl>(
     output_format,
   };
 
-  let result = gpt_image_1_non_byok_edit_image(request)
+  let result = gpt_image_1_edit_image(request)
     .with_api_key(&args.api_key.0)
     .queue_webhook(args.webhook_url)
     .await;
