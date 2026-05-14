@@ -28,6 +28,7 @@ CREATE TABLE user_referral_codes (
   PRIMARY KEY (id),
   UNIQUE KEY unique_token (token),
   UNIQUE KEY unique_code_lowercase (code_lowercase),
-  KEY index_owner_user_token (owner_user_token)
+  KEY index_owner_user_token (owner_user_token),
+  KEY index_deleted_at (deleted_at)
 
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
