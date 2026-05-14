@@ -1,3 +1,4 @@
+use crate::errors::database_insert_error::DatabaseInsertError;
 use sqlx::{Executor, MySql};
 use tokens::tokens::user_referral_codes::UserReferralCodeToken;
 use tokens::tokens::users::UserToken;
@@ -11,7 +12,7 @@ pub struct CreateReferralCodeArgs<'a> {
 pub async fn create_referral_code<'e, 'c: 'e, E>(
   args: CreateReferralCodeArgs<'_>,
   mysql_executor: E,
-) -> Result<UserReferralCodeToken, sqlx::Error>
+) -> Result<UserReferralCodeToken, DatabaseInsertError>
 where
   E: 'e + Executor<'c, Database = MySql>,
 {
@@ -33,7 +34,8 @@ VALUES (?, ?, ?, ?)
     args.owner_user_token.as_str(),
   )
     .execute(mysql_executor)
-    .await?;
+    .await
+    .map_err(DatabaseInsertError::from)?;
 
   Ok(token)
 }

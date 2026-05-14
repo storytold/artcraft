@@ -13,6 +13,7 @@ pub enum DatabaseInsertError {
 
   /// An uncategorized non-database error occurred.
   /// This will likely result in a 500 for the user.
+  #[deprecated(note = "This is not very semantic. Get rid of it. Stop using it.")]
   AnyhowError(anyhow::Error),
 }
 

@@ -8,6 +8,7 @@ use utoipa::ToSchema;
 use artcraft_api_defs::user_referral_codes::create_referral_code::{CreateReferralCodeRequest, CreateReferralCodeResponse};
 use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
 use crate::state::server_state::ServerState;
+use mysql_queries::errors::database_insert_error::DatabaseInsertError;
 use mysql_queries::queries::user_referral_codes::create_referral_code::{create_referral_code, CreateReferralCodeArgs};
 use mysql_queries::queries::user_referral_codes::list_referral_codes_for_user::list_referral_codes_for_user;
 
@@ -84,7 +85,7 @@ pub async fn create_referral_code_handler(
   }
 
   // Insert the code. If code_lowercase is already taken, we get a duplicate key error.
-  let token = create_referral_code(
+  let result = create_referral_code(
     CreateReferralCodeArgs {
       owner_user_token: user_token,
       code: &code,
@@ -93,18 +94,23 @@ pub async fn create_referral_code_handler(
     &mut *mysql_connection,
   ).await;
 
-  match token {
-    Ok(token) => Ok(Json(CreateReferralCodeResponse {
-      success: true,
-      token,
-      code,
-      code_lowercase,
-    })),
-    Err(sqlx::Error::Database(db_err)) if db_err.code().as_deref() == Some("23000") => {
-      Err(AdvancedCommonWebError::BadInputWithSimpleMessage(
-        "This referral code is already in use".to_string(),
-      ))
-    }
-    Err(e) => Err(AdvancedCommonWebError::from(e)),
-  }
+  let token = match result {
+    Ok(token) => token,
+    Err(err) => return match err {
+      DatabaseInsertError::DuplicateKeyError => {
+        return Err(AdvancedCommonWebError::BadInputWithSimpleMessage(
+          "This referral code is already in use".to_string(),
+        ));
+      },
+      DatabaseInsertError::SqlxError(e) => Err(AdvancedCommonWebError::from(e)),
+      DatabaseInsertError::AnyhowError(e) => Err(AdvancedCommonWebError::from_anyhow_error(e)),
+    },
+  };
+
+  Ok(Json(CreateReferralCodeResponse {
+    success: true,
+    token,
+    code,
+    code_lowercase,
+  }))
 }
