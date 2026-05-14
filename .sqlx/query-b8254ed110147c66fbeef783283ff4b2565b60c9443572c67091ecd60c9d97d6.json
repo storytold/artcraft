@@ -1,0 +1,12 @@
+{
+  "db_name": "MySQL",
+  "query": "\nUPDATE user_referral_codes\nSET\n  deleted_at = CURRENT_TIMESTAMP,\n  code_lowercase = ?\nWHERE token = ?\n  AND owner_user_token = ?\n  AND deleted_at IS NULL\n    ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 3
+    },
+    "nullable": []
+  },
+  "hash": "b8254ed110147c66fbeef783283ff4b2565b60c9443572c67091ecd60c9d97d6"
+}
