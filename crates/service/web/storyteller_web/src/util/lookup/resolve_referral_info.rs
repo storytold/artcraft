@@ -5,6 +5,7 @@ use sqlx::pool::PoolConnection;
 use sqlx::MySql;
 use tokens::tokens::users::UserToken;
 
+use crate::util::cleaners::sanitize_referral_code::sanitize_referral_code;
 use crate::util::cleaners::sanitize_referral_username::sanitize_referral_username;
 
 /// The resolved referral information to store on the new user record.
@@ -40,7 +41,7 @@ pub async fn resolve_referral_info(
 
       match lookup_referral_code_by_code(&code_lowercase, &mut **mysql_connection).await {
         Ok(Some(result)) => {
-          let partner = sanitize_referral_username(trimmed);
+          let partner = sanitize_referral_code(trimmed);
           return ResolvedReferralInfo {
             maybe_referral_partner: partner,
             maybe_referral_user_token: Some(result.owner_user_token),
