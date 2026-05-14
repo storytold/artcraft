@@ -20,7 +20,7 @@ CREATE TABLE user_referrals (
   -- OPTIONAL. The landing URL the invited user first visited.
   maybe_landing_url VARCHAR(255) DEFAULT NULL,
 
-  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
   -- INDICES --
   PRIMARY KEY (id),
