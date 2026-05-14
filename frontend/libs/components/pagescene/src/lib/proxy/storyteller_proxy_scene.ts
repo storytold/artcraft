@@ -7,6 +7,7 @@ import {
 import Scene from "../engine/scene";
 import { BoneJSONHelper } from "../engine/KinHelpers/BoneJSONHelper";
 import type { LoadTicket } from "../engine/save_manager";
+import { BBOX_INTERNAL_KEY, isInternalBbox } from "../engine/internalBbox";
 
 interface LookUpDictionary {
   [key: string]: StoryTellerProxy3DObject;
@@ -63,6 +64,7 @@ export class StoryTellerProxyScene {
     const results: ObjectJSON[] = [];
     if (this.scene.scene != null) {
       for (const child of this.scene.scene.children) {
+        if (isInternalBbox(child)) continue;
         if (child.userData["media_id"] != undefined) {
           if (this.lookUpDictionary[child.uuid] == null) {
             this.lookUpDictionary[child.uuid] = new StoryTellerProxy3DObject(
@@ -100,6 +102,7 @@ export class StoryTellerProxyScene {
     const results: ObjectJSON[] = [];
     if (this.scene.scene != null) {
       for (const pchild of this.scene.scene.children) {
+        if (isInternalBbox(pchild)) continue;
         if (this.version >= 1.0) {
           if (pchild.userData["media_id"] != undefined) {
             console.debug("Object JSON:", pchild.toJSON());
@@ -153,6 +156,12 @@ export class StoryTellerProxyScene {
         json_object: ObjectJSON;
         obj: THREE.Object3D | undefined;
       }> => {
+        // Defensive: __bbox_internal helpers are rebuilt at splat
+        // load and shouldn't appear in saved JSON, but skip any that
+        // sneak in from hand-edited or pre-fix snapshots.
+        if (json_object.user_data?.[BBOX_INTERNAL_KEY] === true) {
+          return { json_object, obj: undefined };
+        }
         const token = json_object.media_file_token;
         if (token === "Parim") {
           // The display name ("Cube", "Point Light") doesn't match

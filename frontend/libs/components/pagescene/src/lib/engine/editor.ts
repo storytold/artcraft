@@ -250,7 +250,7 @@ class Editor {
       detachGizmo: () => this.gizmo.detach(),
       removeGizmoFromScene: () =>
         this.gizmo.removeFromScene(this.activeScene.scene),
-      getOutlinePass: () => this.postProcessing.outlinePass,
+      getSelectionPass: () => this.postProcessing.selectionPass,
       publishSelect: () => this.selection.publishSelect(),
       clearSelected: () => {
         this.selection.selected = undefined;
@@ -517,7 +517,7 @@ class Editor {
       timeline_mouse: this.mouse,
       raycaster: this.raycaster,
       control: this.gizmo.control,
-      outlinePass: this.postProcessing.outlinePass,
+      selectionPass: this.postProcessing.selectionPass,
       scene: this.activeScene.scene,
       publishSelect: this.selection.publishSelect.bind(this.selection),
       updateSelectedUI: this.selection.updateSelectedUI.bind(this.selection),
@@ -623,11 +623,12 @@ class Editor {
     const wasControlVisible = this.gizmo.isVisible();
     this.gizmo.setVisible(false);
 
-    // Store and disable outline pass
-    const outlinePass = this.postProcessing.outlinePass;
-    const wasOutlineEnabled = outlinePass?.enabled ?? false;
-    if (outlinePass) {
-      outlinePass.enabled = false;
+    // Store and disable selection outline pass so snapshots don't capture
+    // the halo around the active selection.
+    const selectionPass = this.postProcessing.selectionPass;
+    const wasOutlineEnabled = selectionPass?.enabled ?? false;
+    if (selectionPass) {
+      selectionPass.enabled = false;
     }
 
     // High quality dimensions for each aspect ratio
@@ -730,8 +731,8 @@ class Editor {
     this.gizmo.setVisible(wasControlVisible);
 
     // Restore outline pass
-    if (outlinePass) {
-      outlinePass.enabled = wasOutlineEnabled;
+    if (selectionPass) {
+      selectionPass.enabled = wasOutlineEnabled;
     }
 
     if (shouldDownload) {
