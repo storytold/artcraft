@@ -61,25 +61,36 @@ const saveSceneViaApi = async (
   }
 
   const newToken = uploadResp.data;
+  // Cover image is best-effort and the backend treats it as an
+  // independent mutation — kick it off in the background so the save
+  // spinner dismisses immediately after the scene JSON lands.
   if (sceneThumbnail) {
-    try {
-      const coverResp = await uploadApi.UploadImage({
-        blob: sceneThumbnail,
-        fileName: "render.png",
-        uuid: crypto.randomUUID(),
-        maybe_title: "Screenshot",
-      });
-      if (coverResp.success && coverResp.data) {
-        await new MediaFilesApi().UpdateCoverImage({
-          mediaFileToken: newToken,
-          imageToken: coverResp.data,
-        });
-      }
-    } catch {
-      // Cover image is best-effort — the scene is still saved.
-    }
+    void uploadCoverImageInBackground(uploadApi, newToken, sceneThumbnail);
   }
   return newToken;
+};
+
+const uploadCoverImageInBackground = async (
+  uploadApi: MediaUploadApi,
+  sceneToken: string,
+  sceneThumbnail: Blob,
+): Promise<void> => {
+  try {
+    const coverResp = await uploadApi.UploadImage({
+      blob: sceneThumbnail,
+      fileName: "render.png",
+      uuid: crypto.randomUUID(),
+      maybe_title: "Screenshot",
+    });
+    if (coverResp.success && coverResp.data) {
+      await new MediaFilesApi().UpdateCoverImage({
+        mediaFileToken: sceneToken,
+        imageToken: coverResp.data,
+      });
+    }
+  } catch {
+    // Best-effort — the scene is already saved, so we don't toast here.
+  }
 };
 
 const loadSceneViaApi = async (token: string): Promise<unknown> => {

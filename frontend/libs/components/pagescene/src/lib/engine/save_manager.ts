@@ -123,16 +123,18 @@ export class SaveManager {
 
     const sceneJson = this.getSceneJson({ sceneGenerationMetadata });
 
-    let sceneThumbnail: Blob | undefined = undefined;
-    const renderer = this.deps.getRenderer();
-    if (renderer) {
-      const imgData = renderer.domElement.toDataURL();
-      const response = await fetch(imgData);
-      sceneThumbnail = await response.blob();
-    }
+    // Capture the thumbnail in parallel with the JSON.stringify of the
+    // scene. canvas.toBlob yields a Blob directly, no toDataURL →
+    // fetch → blob roundtrip. Adapters fire-and-forget the cover-image
+    // PATCH internally, so this doesn't extend the save's critical path.
+    const sceneThumbnailPromise = captureCanvasThumbnail(
+      this.deps.getRenderer(),
+    );
+    const saveJson = JSON.stringify(sceneJson);
+    const sceneThumbnail = await sceneThumbnailPromise;
 
     const result = await this.deps.saveSceneState({
-      saveJson: JSON.stringify(sceneJson),
+      saveJson,
       sceneTitle,
       sceneToken,
       sceneThumbnail,
@@ -214,4 +216,17 @@ export class SaveManager {
     this.deps.setVersion(scene_json["version"]);
     this.deps.refreshCamObj();
   }
+}
+
+// Snapshot the renderer's canvas as a PNG Blob. canvas.toBlob hands us
+// the image asynchronously without the toDataURL → base64 → fetch →
+// blob roundtrip the previous code path used, and yields the main
+// thread to the browser during encoding.
+function captureCanvasThumbnail(
+  renderer: THREE.WebGLRenderer | undefined,
+): Promise<Blob | undefined> {
+  if (!renderer) return Promise.resolve(undefined);
+  return new Promise((resolve) => {
+    renderer.domElement.toBlob((blob) => resolve(blob ?? undefined), "image/png");
+  });
 }
