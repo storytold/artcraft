@@ -230,6 +230,9 @@ class Editor {
           usePageSceneStore.getState().selectedCameraId,
         fetchAsset: (url) => this.adapter.fetchAsset(url),
         getMediaUrlByToken: (token) => this.adapter.getMediaUrlByToken(token),
+        getMediaUrlsByTokens: this.adapter.getMediaUrlsByTokens
+          ? (tokens) => this.adapter.getMediaUrlsByTokens!(tokens)
+          : undefined,
       },
     );
     this.activeScene.initialize();

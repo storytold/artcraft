@@ -123,6 +123,14 @@ export interface PageSceneAdapter {
   // when they only have the token, not the full URL.
   getMediaUrlByToken(token: string): Promise<string>;
 
+  // Resolve many tokens in one batch. Used by the scene loader to warm
+  // a URL cache up front so it can fire all asset downloads in parallel
+  // instead of doing an N+1 metadata roundtrip. Optional: when absent
+  // the lib falls back to Promise.all of getMediaUrlByToken.
+  // Hosts that wrap MediaFilesApi can implement this with
+  // ListMediaFilesByTokens (GET /v1/media_files/batch).
+  getMediaUrlsByTokens?(tokens: string[]): Promise<Record<string, string>>;
+
   // Visual viewport dimensions. Used by DnD asset-drop hit-testing
   // to detect "is this drop over the 3D canvas?" — the artcraft host
   // wires its `pageWidth`/`pageHeight` signals through; web hosts

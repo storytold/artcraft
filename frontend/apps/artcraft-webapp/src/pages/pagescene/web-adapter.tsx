@@ -215,6 +215,23 @@ export const useWebAppPageSceneAdapter = (
         return response.data?.media_links?.cdn_url ?? "";
       },
 
+      // Batch URL resolution — backs the scene loader's warm cache so
+      // it can fire all per-asset binary fetches in parallel after a
+      // single metadata roundtrip. Hits GET /v1/media_files/batch.
+      getMediaUrlsByTokens: async (tokens: string[]) => {
+        if (tokens.length === 0) return {};
+        const api = new MediaFilesApi();
+        const response = await api.ListMediaFilesByTokens({
+          mediaTokens: tokens,
+        });
+        const urls: Record<string, string> = {};
+        for (const file of response.data ?? []) {
+          const cdn = file?.media_links?.cdn_url;
+          if (cdn) urls[file.token] = cdn;
+        }
+        return urls;
+      },
+
       renderAssetBrowser: () => null,
       renderSceneLoader: () => null,
       renderAssetUploader: (props) => (
