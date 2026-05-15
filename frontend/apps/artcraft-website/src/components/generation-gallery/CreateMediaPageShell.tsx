@@ -1,0 +1,190 @@
+import { type ReactNode } from "react";
+import { Link } from "react-router-dom";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import {
+  faSpinnerThird,
+  type IconDefinition,
+} from "@fortawesome/pro-solid-svg-icons";
+import { Button } from "@storyteller/ui-button";
+import { type PopoverItem } from "@storyteller/ui-popover";
+import Seo from "../../components/seo";
+import Footer from "../../components/footer";
+import { TruchetPattern } from "../truchet-pattern";
+
+interface CreateMediaPageShellProps {
+  // SEO
+  title: string;
+  description: string;
+  // Auth state
+  authChecked: boolean;
+  isLoggedIn: boolean;
+  // Unauthenticated state
+  heroIcon: IconDefinition;
+  heroTitle: string;
+  heroSubtitle: string;
+  // Content
+  hasContent: boolean;
+  emptyStateTitle: string;
+  emptyStateSubtitle: string;
+  bottomOffset: number;
+  // Model selector
+  modelItems: PopoverItem[];
+  onModelChange: (item: PopoverItem) => void;
+  // Glow orb overrides (optional - defaults provided)
+  glowOrbs?: ReactNode;
+  // Children slots
+  gridContent: ReactNode;
+  promptBox: ReactNode;
+  modals: ReactNode;
+}
+
+export function CreateMediaPageShell({
+  title,
+  description,
+  authChecked,
+  isLoggedIn,
+  heroIcon,
+  heroTitle,
+  heroSubtitle,
+  hasContent,
+  emptyStateTitle,
+  emptyStateSubtitle,
+  bottomOffset,
+  glowOrbs,
+  gridContent,
+  promptBox,
+  modals,
+}: CreateMediaPageShellProps) {
+  if (!authChecked) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-[#101014]">
+        <FontAwesomeIcon
+          icon={faSpinnerThird}
+          className="animate-spin text-4xl text-primary/80"
+        />
+      </div>
+    );
+  }
+
+  if (!isLoggedIn) {
+    return (
+      <div className="relative min-h-screen overflow-x-hidden bg-[#101014] text-white">
+        <Seo title={title} description={description} />
+        <div
+          aria-hidden
+          className="pointer-events-none fixed inset-0 z-0"
+          style={{
+            maskImage:
+              "radial-gradient(ellipse 70% 60% at 50% 50%, black 20%, transparent 80%)",
+            WebkitMaskImage:
+              "radial-gradient(ellipse 70% 60% at 50% 50%, black 20%, transparent 80%)",
+          }}
+        >
+          <TruchetPattern
+            variant="auth"
+            intensity={0.5}
+            className="absolute inset-0 h-full w-full"
+          />
+        </div>
+        <div className="pointer-events-none absolute inset-x-0 top-0 z-0 flex justify-center">
+          <div className="h-[600px] w-[600px] rounded-full bg-gradient-to-br from-primary/30 via-blue-500/20 to-teal-400/10 opacity-40 blur-[120px]" />
+        </div>
+        <div className="relative z-10 flex min-h-screen flex-col items-center justify-center px-4">
+          <FontAwesomeIcon
+            icon={heroIcon}
+            className="mb-6 text-5xl text-white/20"
+          />
+          <h1 className="mb-3 text-4xl font-semibold">{heroTitle}</h1>
+          <p className="mb-8 max-w-md text-center text-lg text-white/60">
+            {heroSubtitle}
+          </p>
+          <div className="flex gap-3">
+            <Link to="/login">
+              <Button
+                variant="primary"
+                className="bg-white px-6 py-2.5 font-semibold text-black shadow-md hover:bg-white/90"
+              >
+                Login
+              </Button>
+            </Link>
+            <Link to="/signup">
+              <Button
+                variant="primary"
+                className="px-6 py-2.5 font-semibold shadow-md"
+              >
+                Sign up
+              </Button>
+            </Link>
+          </div>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex h-screen w-full bg-[#101014] text-white">
+      <Seo title={title} description={description} />
+
+      {/* Glow orbs — only show on empty state, hide when gallery has content */}
+      {!hasContent &&
+        (glowOrbs ?? (
+          <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
+            <div className="absolute left-1/2 top-[-10%] h-[700px] w-[700px] -translate-x-1/2 rounded-full bg-gradient-to-br from-blue-700 via-blue-500 to-[#00AABA] opacity-[0.12] blur-[120px] transform-gpu" />
+            <div className="absolute bottom-[-15%] right-[-10%] h-[500px] w-[500px] rounded-full bg-gradient-to-br from-purple-600 via-blue-500 to-[#00AABA] opacity-[0.08] blur-[120px] transform-gpu" />
+            <div className="absolute bottom-[20%] left-[-10%] h-[400px] w-[400px] rounded-full bg-gradient-to-br from-blue-600 to-pink-500 opacity-[0.06] blur-[140px] transform-gpu" />
+          </div>
+        ))}
+
+      {/* Subtle truchet pattern — only on empty state */}
+      {!hasContent && (
+        <div
+          aria-hidden
+          className="pointer-events-none fixed inset-0 z-0"
+          style={{
+            maskImage:
+              "radial-gradient(ellipse 70% 60% at 50% 50%, black 20%, transparent 80%)",
+            WebkitMaskImage:
+              "radial-gradient(ellipse 70% 60% at 50% 50%, black 20%, transparent 80%)",
+          }}
+        >
+          <TruchetPattern
+            variant="content"
+            intensity={0.5}
+            className="absolute inset-0 h-full w-full"
+          />
+        </div>
+      )}
+
+      <div className="relative z-[1] h-full w-full">
+        <div className="flex h-full w-full flex-col">
+          {!hasContent && (
+            <div className="flex flex-1 items-center justify-center">
+              <div className="animate-fade-in-up relative z-20 mb-32 flex flex-col items-center justify-center text-center drop-shadow-xl">
+                <h1 className="text-5xl font-semibold text-white md:text-7xl">
+                  {emptyStateTitle}
+                </h1>
+                <span className="pt-2 text-lg text-white/80 md:text-xl">
+                  {emptyStateSubtitle}
+                </span>
+              </div>
+            </div>
+          )}
+
+          {hasContent && (
+            <div
+              className="h-full w-full overflow-y-auto pt-[60px] sm:pt-[78px]"
+              style={{ paddingBottom: bottomOffset }}
+            >
+              <div className="px-3">{gridContent}</div>
+            </div>
+          )}
+
+          {promptBox}
+        </div>
+      </div>
+
+      {modals}
+    </div>
+  );
+}

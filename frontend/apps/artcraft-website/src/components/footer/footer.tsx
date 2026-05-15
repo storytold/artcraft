@@ -8,7 +8,10 @@ import {
   faInstagram,
   faRedditAlien,
 } from "@fortawesome/free-brands-svg-icons";
-import { SOCIAL_LINKS } from "../../config/links";
+import {
+  SOCIAL_LINKS,
+  USE_WEBAPP_FOR_APP_FEATURES,
+} from "../../config/links";
 import { getFaqItems, getTutorialItems } from "@storyteller/markdown-content";
 import { Link } from "react-router-dom";
 
@@ -108,6 +111,22 @@ export default function Example() {
               <Link to="/" className="text-gray-400 hover:text-white">
                 Home
               </Link>
+              {!USE_WEBAPP_FOR_APP_FEATURES && (
+                <>
+                  <Link
+                    to="/create-image"
+                    className="text-gray-400 hover:text-white"
+                  >
+                    Image
+                  </Link>
+                  <Link
+                    to="/create-video"
+                    className="text-gray-400 hover:text-white"
+                  >
+                    Video
+                  </Link>
+                </>
+              )}
               <Link to="/download" className="text-gray-400 hover:text-white">
                 Download
               </Link>

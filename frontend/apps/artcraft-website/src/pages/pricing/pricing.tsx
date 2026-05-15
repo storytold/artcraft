@@ -1,10 +1,15 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { isMobile } from "react-device-detect";
 import Lenis from "lenis";
+import { faCoins } from "@fortawesome/pro-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { Button } from "@storyteller/ui-button";
+import { UsersApi } from "@storyteller/api";
 import Footer from "../../components/footer";
 import Seo from "../../components/seo";
 import { PricingTable } from "../../components/pricing-table";
+import { CreditsModal } from "../../components/credits-modal";
 import { TruchetPattern } from "../../components/truchet-pattern";
 
 const SeedanceBanner = () => (
@@ -66,6 +71,23 @@ const SeedanceBanner = () => (
 const Pricing = () => {
   const [searchParams] = useSearchParams();
   const isSeedanceRef = searchParams.get("ref") === "sd2fakeyou";
+  const [creditsModalOpen, setCreditsModalOpen] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  useEffect(() => {
+    const check = async () => {
+      try {
+        const api = new UsersApi();
+        const res = await api.GetSession();
+        setIsLoggedIn(
+          res.success && !!res.data?.loggedIn && !!res.data?.user,
+        );
+      } catch {
+        // not logged in
+      }
+    };
+    check();
+  }, []);
 
   useEffect(() => {
     if (isMobile) return;
@@ -178,6 +200,27 @@ const Pricing = () => {
         )}
       </main>
 
+      {isLoggedIn && (
+        <div className="relative z-10 flex flex-col items-center px-4 pb-12 sm:px-8">
+          <div className="inline-flex items-center gap-2 text-white/40">
+            <div className="h-px w-8 bg-white/20" />
+            <span className="text-sm">Or</span>
+            <div className="h-px w-8 bg-white/20" />
+          </div>
+          <p className="mt-3 text-base text-white/65">
+            Purchase one-time credit packs
+          </p>
+          <Button
+            variant="secondary"
+            className="mt-4 gap-2 rounded-full border border-white/[0.1] bg-white/[0.06] hover:bg-white/[0.1] px-5 py-2 h-11 text-[14px] font-semibold text-white"
+            onClick={() => setCreditsModalOpen(true)}
+          >
+            <FontAwesomeIcon icon={faCoins} className="text-primary text-[13px]" />
+            Buy Credits
+          </Button>
+        </div>
+      )}
+
       {/* Footnote */}
       <div className="relative z-10 max-w-3xl mx-auto px-4 sm:px-8 pb-16 text-center">
         <p className="text-sm text-white/45 leading-relaxed">
@@ -186,6 +229,13 @@ const Pricing = () => {
           you'll subscribe, though, as that helps accelerate our development.
         </p>
       </div>
+
+      {isLoggedIn && (
+        <CreditsModal
+          isOpen={creditsModalOpen}
+          onClose={() => setCreditsModalOpen(false)}
+        />
+      )}
 
       <Footer />
     </div>

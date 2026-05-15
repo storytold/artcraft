@@ -19,12 +19,17 @@ import {
   faBars,
   faXmark,
   faGem,
+  faArrowRight,
   faChevronDown,
   faLifeRing,
   faRocket,
 } from "@fortawesome/pro-solid-svg-icons";
 import { faDiscord } from "@fortawesome/free-brands-svg-icons";
-import { SOCIAL_LINKS, WEBAPP_URL } from "../../config/links";
+import {
+  SOCIAL_LINKS,
+  USE_WEBAPP_FOR_APP_FEATURES,
+  WEBAPP_URL,
+} from "../../config/links";
 
 type NavLeaf = { name: string; href: string };
 type NavGroup = { name: string; href?: string; children: NavLeaf[] };
@@ -209,13 +214,18 @@ export default function Navbar() {
                       Pricing
                     </Link>
 
-                    <a
-                      href={WEBAPP_URL}
-                      className="group h-8 flex items-center gap-1.5 px-3.5 rounded-full text-sm font-semibold text-black bg-white hover:bg-white/90 transition-all shadow-sm"
-                    >
-                      <FontAwesomeIcon icon={faRocket} className="text-[10px]" />
-                      Launch App
-                    </a>
+                    {USE_WEBAPP_FOR_APP_FEATURES && (
+                      <a
+                        href={WEBAPP_URL}
+                        className="group h-8 flex items-center gap-1.5 px-3.5 rounded-full text-sm font-semibold text-black bg-white hover:bg-white/90 transition-all shadow-sm"
+                      >
+                        <FontAwesomeIcon
+                          icon={faRocket}
+                          className="text-[10px]"
+                        />
+                        Launch App
+                      </a>
+                    )}
 
                     <Menu as="div" className="relative ml-1">
                       <MenuButton className="flex h-8 w-8 rounded-full overflow-hidden focus:outline-none focus:ring-2 focus:ring-primary/40 ring-offset-2 ring-offset-[#121212]">
@@ -306,13 +316,37 @@ export default function Navbar() {
                       <FontAwesomeIcon icon={faGem} className="text-[11px]" />
                       Pricing
                     </Link>
-                    <a
-                      href={WEBAPP_URL}
-                      className="group h-8 flex items-center gap-1.5 px-3.5 rounded-full text-sm font-semibold text-black bg-white hover:bg-white/90 transition-all shadow-sm"
-                    >
-                      <FontAwesomeIcon icon={faRocket} className="text-[10px]" />
-                      Launch App
-                    </a>
+                    {USE_WEBAPP_FOR_APP_FEATURES ? (
+                      <a
+                        href={WEBAPP_URL}
+                        className="group h-8 flex items-center gap-1.5 px-3.5 rounded-full text-sm font-semibold text-black bg-white hover:bg-white/90 transition-all shadow-sm"
+                      >
+                        <FontAwesomeIcon
+                          icon={faRocket}
+                          className="text-[10px]"
+                        />
+                        Launch App
+                      </a>
+                    ) : (
+                      <>
+                        <Link
+                          to="/login"
+                          className="h-8 flex items-center px-3 rounded-lg text-sm font-medium text-white/80 hover:text-white hover:bg-white/[0.04] transition-all"
+                        >
+                          Login
+                        </Link>
+                        <Link
+                          to="/signup"
+                          className="group h-8 flex items-center gap-1.5 px-3.5 rounded-full text-sm font-semibold text-black bg-white hover:bg-white/90 transition-all shadow-sm"
+                        >
+                          Sign up
+                          <FontAwesomeIcon
+                            icon={faArrowRight}
+                            className="text-[10px] transition-transform group-hover:translate-x-0.5"
+                          />
+                        </Link>
+                      </>
+                    )}
                   </div>
                 )}
 
@@ -420,14 +454,19 @@ export default function Navbar() {
 
                 {!isLoading && user ? (
                   <div className="flex flex-col gap-3">
-                    <DisclosureButton
-                      as="a"
-                      href={WEBAPP_URL}
-                      className="group h-10 flex items-center justify-center gap-1.5 px-3.5 rounded-full text-sm font-semibold text-black bg-white active:bg-white/90 transition-all shadow-sm"
-                    >
-                      <FontAwesomeIcon icon={faRocket} className="text-[10px]" />
-                      Launch App
-                    </DisclosureButton>
+                    {USE_WEBAPP_FOR_APP_FEATURES && (
+                      <DisclosureButton
+                        as="a"
+                        href={WEBAPP_URL}
+                        className="group h-10 flex items-center justify-center gap-1.5 px-3.5 rounded-full text-sm font-semibold text-black bg-white active:bg-white/90 transition-all shadow-sm"
+                      >
+                        <FontAwesomeIcon
+                          icon={faRocket}
+                          className="text-[10px]"
+                        />
+                        Launch App
+                      </DisclosureButton>
+                    )}
                     <div className="flex items-center gap-1.5 flex-wrap">
                       <DisclosureButton
                         as={Link}
@@ -473,14 +512,33 @@ export default function Navbar() {
                     </div>
                   </div>
                 ) : !isLoading ? (
-                  <DisclosureButton
-                    as="a"
-                    href={WEBAPP_URL}
-                    className="group h-10 flex items-center justify-center gap-1.5 px-3.5 rounded-full text-sm font-semibold text-black bg-white active:bg-white/90 transition-all shadow-sm"
-                  >
-                    <FontAwesomeIcon icon={faRocket} className="text-[10px]" />
-                    Launch App
-                  </DisclosureButton>
+                  USE_WEBAPP_FOR_APP_FEATURES ? (
+                    <DisclosureButton
+                      as="a"
+                      href={WEBAPP_URL}
+                      className="group h-10 flex items-center justify-center gap-1.5 px-3.5 rounded-full text-sm font-semibold text-black bg-white active:bg-white/90 transition-all shadow-sm"
+                    >
+                      <FontAwesomeIcon icon={faRocket} className="text-[10px]" />
+                      Launch App
+                    </DisclosureButton>
+                  ) : (
+                    <div className="flex gap-2">
+                      <DisclosureButton
+                        as={Link}
+                        to="/login"
+                        className="flex-1 h-9 rounded-lg text-sm font-semibold text-white/80 bg-white/[0.06] active:bg-white/10 transition-colors flex items-center justify-center"
+                      >
+                        Login
+                      </DisclosureButton>
+                      <DisclosureButton
+                        as={Link}
+                        to="/signup"
+                        className="flex-1 h-9 rounded-lg text-sm font-semibold text-black bg-white active:bg-white/90 transition-colors flex items-center justify-center"
+                      >
+                        Sign up
+                      </DisclosureButton>
+                    </div>
+                  )
                 ) : null}
               </DisclosurePanel>
             </Transition>
