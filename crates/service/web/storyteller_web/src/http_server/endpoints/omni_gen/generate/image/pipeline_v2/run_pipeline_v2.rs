@@ -47,9 +47,10 @@ pub async fn run_pipeline_v2(
     router_builder,
     resolved_media,
   );
+  
+  let cost = estimate_cost_in_credits(&router_builder)?;
 
   let draft_or_request = build_execution_request(&hydrated_builder)?;
-  let cost = estimate_cost_in_credits(&hydrated_builder)?;
 
   info!("Charging wallet: {} credits", cost);
 
