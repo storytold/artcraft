@@ -34,7 +34,7 @@ use tokens::tokens::non_unique::debug_logs_event_token::DebugLogEventToken;
 
 use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
 use crate::http_server::endpoints::generate::common::payments_error_test::payments_error_test;
-use crate::http_server::endpoints::omni_gen::generate::image::pipeline_v1::distill_helper::hydrate_to_router_request::hydrate_to_router_request;
+use crate::http_server::endpoints::omni_gen::generate::image::hydrate_to_router_request::hydrate_to_router_request;
 use crate::http_server::endpoints::omni_gen::generate::image::pipeline_v1::run_pipeline_v1::{run_pipeline_v1, RunPipelineV1Args};
 use crate::http_server::endpoints::omni_gen::generate::image::pipeline_v2::run_pipeline_v2::{run_pipeline_v2, should_use_pipeline_v2, RunPipelineV2Args};
 use crate::http_server::validations::validate_idempotency_token_format::validate_idempotency_token_format;
