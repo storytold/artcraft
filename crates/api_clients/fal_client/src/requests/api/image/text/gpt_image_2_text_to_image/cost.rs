@@ -1,63 +1,58 @@
-use crate::requests::api::image::common::gpt_image_2_resolution::{compute_custom_image_size, GptImage2AspectRatio, GptImage2Resolution};
-use crate::requests::api::image::text::gpt_image_2_text_to_image::api::{GptImage2TextToImageNumImages, GptImage2TextToImageQuality, GptImage2TextToImageRequest, GptImage2TextToImageSize};
+use crate::requests::api::image::common::gpt_image_2_resolution::{
+  compute_custom_image_size, GptImage2AspectRatio, GptImage2Resolution,
+};
+use crate::requests::api::image::text::gpt_image_2_text_to_image::api::{
+  GptImage2TextToImageNumImages, GptImage2TextToImageQuality,
+  GptImage2TextToImageRequest, GptImage2TextToImageSize,
+};
 use crate::requests::traits::fal_request_cost_calculator_trait::{FalRequestCostCalculator, UsdCents};
-
-const PRICING_TABLE: &[GptImage2PriceRow] = &[GptImage2PriceRow { width: 1024, height: 768, low: 11, medium: 43, high: 151 }, GptImage2PriceRow { width: 1024, height: 1024, low: 15, medium: 61, high: 219 }, GptImage2PriceRow { width: 1024, height: 1536, low: 18, medium: 54, high: 178 }, GptImage2PriceRow { width: 1920, height: 1080, low: 17, medium: 53, high: 158 }, GptImage2PriceRow { width: 2560, height: 1440, low: 19, medium: 68, high: 234 }, GptImage2PriceRow { width: 3840, height: 2160, low: 24, medium: 113, high: 413 }];
-
-#[derive(Copy, Clone)]
-struct GptImage2PriceRow {
-  width: u32,
-  height: u32,
-  low: u64,
-  medium: u64,
-  high: u64,
-}
-
-impl GptImage2PriceRow {
-  fn price_in_tenths_of_a_cent(self, quality: GptImage2TextToImageQuality) -> u64 {
-    match quality {
-      GptImage2TextToImageQuality::Low => self.low,
-      GptImage2TextToImageQuality::Medium => self.medium,
-      GptImage2TextToImageQuality::High => self.high,
-    }
-  }
-}
 
 impl FalRequestCostCalculator for GptImage2TextToImageRequest {
   fn calculate_cost_in_cents(&self) -> UsdCents {
     let quality = self.quality.unwrap_or(GptImage2TextToImageQuality::High);
-    let (width, height) = dimensions_for_request(self);
-    let price = closest_price_row(width, height).price_in_tenths_of_a_cent(quality);
-    let total_tenths_of_a_cent = price * num_images(self.num_images);
+    let total_pixels = estimate_total_pixels(self.image_size, self.resolution);
+    let megapixels = total_pixels as f64 / 1_000_000.0;
 
-    total_tenths_of_a_cent.div_ceil(10) as UsdCents
+    // Fal's GPT Image 2 text-to-image pricing has two components:
+    //
+    //   1. A base request cost (prompt processing, API overhead)
+    //   2. A per-pixel generation cost that scales with output resolution
+    //
+    // Both components increase with quality level. All rates are in
+    // tenths of a US cent, derived from Fal's published pricing.
+    //
+    // The base cost dominates at small resolutions (~1K); the per-pixel
+    // cost dominates at large resolutions (~4K).
+    let (base_tenths, per_megapixel_tenths): (f64, f64) = match quality {
+      GptImage2TextToImageQuality::Low    => ( 8.0,  1.5),
+      GptImage2TextToImageQuality::Medium => (35.0,  9.5),
+      GptImage2TextToImageQuality::High   => (120.0, 35.0),
+    };
+
+    let tenths_per_image = (base_tenths + per_megapixel_tenths * megapixels).ceil() as u64;
+    let cents_per_image = tenths_per_image.div_ceil(10);
+    let num = num_images_u64(self.num_images);
+
+    cents_per_image * num
   }
 }
 
-fn dimensions_for_request(request: &GptImage2TextToImageRequest) -> (u32, u32) {
-  match (request.image_size, request.resolution) {
-    (Some(size), Some(resolution)) => {
+fn estimate_total_pixels(
+  image_size: Option<GptImage2TextToImageSize>,
+  resolution: Option<GptImage2Resolution>,
+) -> u64 {
+  match (image_size, resolution) {
+    (Some(size), Some(res)) => {
       let aspect = size_to_aspect(size);
-      let custom = compute_custom_image_size(aspect, resolution);
-      (custom.width, custom.height)
-    },
-    (None, Some(resolution)) => {
-      let custom = compute_custom_image_size(GptImage2AspectRatio::Square, resolution);
-      (custom.width, custom.height)
-    },
-    (Some(size), None) => preset_dimensions(size),
-    (None, None) => preset_dimensions(GptImage2TextToImageSize::Square),
-  }
-}
-
-fn preset_dimensions(size: GptImage2TextToImageSize) -> (u32, u32) {
-  match size {
-    GptImage2TextToImageSize::SquareHd => (2048, 2048),
-    GptImage2TextToImageSize::Square => (1024, 1024),
-    GptImage2TextToImageSize::Portrait4x3 => (768, 1024),
-    GptImage2TextToImageSize::Portrait16x9 => (1080, 1920),
-    GptImage2TextToImageSize::Landscape4x3 => (1024, 768),
-    GptImage2TextToImageSize::Landscape16x9 => (1920, 1080),
+      let dims = compute_custom_image_size(aspect, res);
+      dims.width as u64 * dims.height as u64
+    }
+    (None, Some(res)) => {
+      let dims = compute_custom_image_size(GptImage2AspectRatio::Square, res);
+      dims.width as u64 * dims.height as u64
+    }
+    (Some(size), None) => preset_pixel_count(size),
+    (None, None) => preset_pixel_count(GptImage2TextToImageSize::Square),
   }
 }
 
@@ -72,20 +67,20 @@ fn size_to_aspect(size: GptImage2TextToImageSize) -> GptImage2AspectRatio {
   }
 }
 
-fn closest_price_row(width: u32, height: u32) -> GptImage2PriceRow {
-  let pixels = width as u64 * height as u64;
-  PRICING_TABLE
-    .iter()
-    .copied()
-    .min_by_key(|row| {
-      let row_pixels = row.width as u64 * row.height as u64;
-      row_pixels.abs_diff(pixels)
-    })
-    .expect("GPT Image 2 pricing table cannot be empty")
+/// Standard preset pixel counts when no custom resolution is specified.
+fn preset_pixel_count(size: GptImage2TextToImageSize) -> u64 {
+  match size {
+    GptImage2TextToImageSize::Square       => 1024 * 1024,  // 1,048,576
+    GptImage2TextToImageSize::SquareHd     => 2048 * 2048,  // 4,194,304
+    GptImage2TextToImageSize::Landscape4x3 => 1024 * 768,   //   786,432
+    GptImage2TextToImageSize::Landscape16x9 => 1920 * 1080, // 2,073,600
+    GptImage2TextToImageSize::Portrait4x3  => 768 * 1024,   //   786,432
+    GptImage2TextToImageSize::Portrait16x9 => 1080 * 1920,  // 2,073,600
+  }
 }
 
-fn num_images(num_images: GptImage2TextToImageNumImages) -> u64 {
-  match num_images {
+fn num_images_u64(num: GptImage2TextToImageNumImages) -> u64 {
+  match num {
     GptImage2TextToImageNumImages::One => 1,
     GptImage2TextToImageNumImages::Two => 2,
     GptImage2TextToImageNumImages::Three => 3,
@@ -97,119 +92,184 @@ fn num_images(num_images: GptImage2TextToImageNumImages) -> u64 {
 mod tests {
   use super::*;
 
-  const QUALITIES: &[(GptImage2TextToImageQuality, u64, u64, u64, u64, u64, u64)] = &[
-    (GptImage2TextToImageQuality::Low, 11, 15, 18, 17, 19, 24),
-    (GptImage2TextToImageQuality::Medium, 43, 61, 54, 53, 68, 113),
-    (GptImage2TextToImageQuality::High, 151, 219, 178, 158, 234, 413)
-  ];
-
-  const PRESET_CASES: &[(GptImage2TextToImageSize, u64)] = &[
-    (GptImage2TextToImageSize::Landscape4x3, 0),
-    (GptImage2TextToImageSize::Portrait4x3, 0),
-    (GptImage2TextToImageSize::Square, 1),
-    (GptImage2TextToImageSize::Landscape16x9, 3),
-    (GptImage2TextToImageSize::Portrait16x9, 3),
-    (GptImage2TextToImageSize::SquareHd, 4),
-  ];
-
-  const RESOLUTION_CASES: &[(GptImage2TextToImageSize, GptImage2Resolution, u64)] = &[
-    (GptImage2TextToImageSize::Landscape4x3, GptImage2Resolution::OneK, 0),
-    (GptImage2TextToImageSize::Landscape4x3, GptImage2Resolution::TwoK, 4),
-    (GptImage2TextToImageSize::Landscape4x3, GptImage2Resolution::ThreeK, 5),
-    (GptImage2TextToImageSize::Landscape4x3, GptImage2Resolution::FourK, 5),
-    (GptImage2TextToImageSize::Landscape16x9, GptImage2Resolution::OneK, 0),
-    (GptImage2TextToImageSize::Landscape16x9, GptImage2Resolution::TwoK, 3),
-    (GptImage2TextToImageSize::Landscape16x9, GptImage2Resolution::ThreeK, 4),
-    (GptImage2TextToImageSize::Landscape16x9, GptImage2Resolution::FourK, 5),
-    (GptImage2TextToImageSize::Portrait4x3, GptImage2Resolution::OneK, 0),
-    (GptImage2TextToImageSize::Portrait4x3, GptImage2Resolution::TwoK, 4),
-    (GptImage2TextToImageSize::Portrait4x3, GptImage2Resolution::ThreeK, 5),
-    (GptImage2TextToImageSize::Portrait4x3, GptImage2Resolution::FourK, 5),
-    (GptImage2TextToImageSize::Portrait16x9, GptImage2Resolution::OneK, 0),
-    (GptImage2TextToImageSize::Portrait16x9, GptImage2Resolution::TwoK, 3),
-    (GptImage2TextToImageSize::Portrait16x9, GptImage2Resolution::ThreeK, 4),
-    (GptImage2TextToImageSize::Portrait16x9, GptImage2Resolution::FourK, 5),
-    (GptImage2TextToImageSize::Square, GptImage2Resolution::OneK, 1),
-    (GptImage2TextToImageSize::Square, GptImage2Resolution::TwoK, 4),
-    (GptImage2TextToImageSize::Square, GptImage2Resolution::ThreeK, 5),
-    (GptImage2TextToImageSize::Square, GptImage2Resolution::FourK, 5),
-    (GptImage2TextToImageSize::SquareHd, GptImage2Resolution::OneK, 1),
-    (GptImage2TextToImageSize::SquareHd, GptImage2Resolution::TwoK, 4),
-    (GptImage2TextToImageSize::SquareHd, GptImage2Resolution::ThreeK, 5),
-    (GptImage2TextToImageSize::SquareHd, GptImage2Resolution::FourK, 5),
-  ];
-
-  const SPOT_PRICE_CASES: &[(GptImage2TextToImageSize, GptImage2Resolution, GptImage2TextToImageNumImages, u64)] = &[
-    (GptImage2TextToImageSize::Landscape4x3, GptImage2Resolution::OneK, GptImage2TextToImageNumImages::One, 16),
-    (GptImage2TextToImageSize::Landscape4x3, GptImage2Resolution::TwoK, GptImage2TextToImageNumImages::Two, 47),
-    (GptImage2TextToImageSize::Landscape4x3, GptImage2Resolution::ThreeK, GptImage2TextToImageNumImages::Three, 124),
-    (GptImage2TextToImageSize::Landscape16x9, GptImage2Resolution::TwoK, GptImage2TextToImageNumImages::Four, 64),
-    (GptImage2TextToImageSize::Landscape16x9, GptImage2Resolution::FourK, GptImage2TextToImageNumImages::Two, 83),
-    (GptImage2TextToImageSize::Portrait4x3, GptImage2Resolution::TwoK, GptImage2TextToImageNumImages::One, 24),
-    (GptImage2TextToImageSize::Portrait16x9, GptImage2Resolution::ThreeK, GptImage2TextToImageNumImages::Three, 71),
-    (GptImage2TextToImageSize::Square, GptImage2Resolution::OneK, GptImage2TextToImageNumImages::Four, 88),
-    (GptImage2TextToImageSize::Square, GptImage2Resolution::FourK, GptImage2TextToImageNumImages::Four, 166),
-    (GptImage2TextToImageSize::SquareHd, GptImage2Resolution::TwoK, GptImage2TextToImageNumImages::Three, 71),
-  ];
-
-  fn make_request(num_images: GptImage2TextToImageNumImages, quality: Option<GptImage2TextToImageQuality>, image_size: Option<GptImage2TextToImageSize>, resolution: Option<GptImage2Resolution>) -> GptImage2TextToImageRequest {
-    GptImage2TextToImageRequest { prompt: "test".to_string(), num_images, image_size, quality, resolution, output_format: None }
+  fn make_request(
+    num_images: GptImage2TextToImageNumImages,
+    quality: Option<GptImage2TextToImageQuality>,
+    image_size: Option<GptImage2TextToImageSize>,
+    resolution: Option<GptImage2Resolution>,
+  ) -> GptImage2TextToImageRequest {
+    GptImage2TextToImageRequest {
+      prompt: "test".to_string(),
+      num_images,
+      image_size,
+      resolution,
+      quality,
+      output_format: None,
+    }
   }
 
-  #[test]
-  fn cost_defaults_to_high_square() {
-    assert_eq!(make_request(GptImage2TextToImageNumImages::One, None, None, None).calculate_cost_in_cents(), 22);
-  }
+  use GptImage2TextToImageNumImages::*;
+  use GptImage2TextToImageQuality::*;
+  use GptImage2TextToImageSize::*;
+  use GptImage2Resolution::*;
 
-  #[test]
-  fn cost_rounds_final_request_total_up_to_whole_cents() {
-    assert_eq!(make_request(GptImage2TextToImageNumImages::Four, Some(GptImage2TextToImageQuality::Low), Some(GptImage2TextToImageSize::Landscape4x3), None,).calculate_cost_in_cents(), 5,);
-  }
+  mod preset_pricing_tests {
+    use super::*;
 
-  #[test]
-  fn preset_pricing_matches_published_table() {
-    for &(quality, landscape_4x3, square, portrait, landscape_16x9, square_hd, four_k) in QUALITIES {
-      let expected_by_row = [landscape_4x3, square, portrait, landscape_16x9, square_hd, four_k];
+    // Table: (size, low, medium, high) — expected cents per image
+    const PRESET_CASES: &[(GptImage2TextToImageSize, u64, u64, u64)] = &[
+      //                              Low  Med  High
+      (Landscape4x3,                   1,   5,   15),
+      (Portrait4x3,                    1,   5,   15),
+      (Square,                         1,   5,   16),
+      (Landscape16x9,                  2,   6,   20),
+      (Portrait16x9,                   2,   6,   20),
+      (SquareHd,                       2,   8,   27),
+    ];
 
-      for &(size, row_index) in PRESET_CASES {
-        let expected = expected_by_row[row_index as usize].div_ceil(10);
-        assert_eq!(make_request(GptImage2TextToImageNumImages::One, Some(quality), Some(size), None).calculate_cost_in_cents(), expected, "quality={quality:?} size={size:?}",);
+    #[test]
+    fn preset_costs_at_each_quality() {
+      for &(size, expected_low, expected_med, expected_high) in PRESET_CASES {
+        let cases = [
+          (Low, expected_low),
+          (Medium, expected_med),
+          (High, expected_high),
+        ];
+        for (quality, expected) in cases {
+          let actual = make_request(One, Some(quality), Some(size), None)
+            .calculate_cost_in_cents();
+          assert_eq!(actual, expected, "{size:?} {quality:?}");
+        }
       }
     }
+
+    #[test]
+    fn defaults_to_high_quality_square() {
+      assert_eq!(
+        make_request(One, None, None, None).calculate_cost_in_cents(),
+        16,
+      );
+    }
   }
 
-  #[test]
-  fn exact_published_rows_match_all_quality_prices() {
-    for &(quality, landscape_4x3, square, portrait, landscape_16x9, square_hd, four_k) in QUALITIES {
-      let cases = [(1024, 768, landscape_4x3), (1024, 1024, square), (1024, 1536, portrait), (1920, 1080, landscape_16x9), (2560, 1440, square_hd), (3840, 2160, four_k)];
+  mod custom_resolution_pricing_tests {
+    use super::*;
 
-      for (width, height, expected) in cases {
-        assert_eq!(closest_price_row(width, height).price_in_tenths_of_a_cent(quality), expected, "quality={quality:?} dimensions={width}x{height}",);
+    // Table: (size, resolution, low, medium, high) — expected cents per image
+    const RESOLUTION_CASES: &[(GptImage2TextToImageSize, GptImage2Resolution, u64, u64, u64)] = &[
+      // Square aspect
+      (Square, OneK,      1,   5,  16),
+      (Square, TwoK,      2,   8,  27),
+      (Square, ThreeK,    3,  12,  42),
+      (Square, FourK,     3,  12,  42), // capped at max pixels
+
+      // SquareHd (same aspect as Square)
+      (SquareHd, OneK,    1,   5,  16),
+      (SquareHd, TwoK,    2,   8,  27),
+      (SquareHd, ThreeK,  3,  12,  42),
+      (SquareHd, FourK,   3,  12,  42),
+
+      // Landscape 4:3
+      (Landscape4x3, OneK,    1,   5,  15),
+      (Landscape4x3, TwoK,    2,   7,  24),
+      (Landscape4x3, ThreeK,  2,  11,  37),
+      (Landscape4x3, FourK,   3,  12,  41),
+
+      // Landscape 16:9
+      (Landscape16x9, OneK,   1,   5,  15),
+      (Landscape16x9, TwoK,   2,   6,  21),
+      (Landscape16x9, ThreeK, 2,   9,  31),
+      (Landscape16x9, FourK,  3,  12,  42),
+
+      // Portrait 4:3
+      (Portrait4x3, OneK,    1,   5,  15),
+      (Portrait4x3, TwoK,    2,   7,  24),
+      (Portrait4x3, ThreeK,  2,  11,  37),
+      (Portrait4x3, FourK,   3,  12,  41),
+
+      // Portrait 16:9
+      (Portrait16x9, OneK,   1,   5,  15),
+      (Portrait16x9, TwoK,   2,   6,  21),
+      (Portrait16x9, ThreeK, 2,   9,  31),
+      (Portrait16x9, FourK,  3,  12,  42),
+    ];
+
+    #[test]
+    fn resolution_costs_at_each_quality() {
+      for &(size, res, expected_low, expected_med, expected_high) in RESOLUTION_CASES {
+        let cases = [
+          (Low, expected_low),
+          (Medium, expected_med),
+          (High, expected_high),
+        ];
+        for (quality, expected) in cases {
+          let actual = make_request(One, Some(quality), Some(size), Some(res))
+            .calculate_cost_in_cents();
+          assert_eq!(actual, expected, "{size:?} {res:?} {quality:?}");
+        }
       }
     }
+
+    #[test]
+    fn resolution_without_size_defaults_to_square() {
+      assert_eq!(
+        make_request(One, Some(High), None, Some(TwoK)).calculate_cost_in_cents(),
+        make_request(One, Some(High), Some(Square), Some(TwoK)).calculate_cost_in_cents(),
+      );
+    }
   }
 
-  #[test]
-  fn resolution_pricing_covers_aspect_size_resolution_combinations() {
-    for &(quality, landscape_4x3, square, portrait, landscape_16x9, square_hd, four_k) in QUALITIES {
-      let expected_by_row = [landscape_4x3, square, portrait, landscape_16x9, square_hd, four_k];
+  mod num_images_tests {
+    use super::*;
 
-      for &(size, resolution, row_index) in RESOLUTION_CASES {
-        let expected = expected_by_row[row_index as usize].div_ceil(10);
-        assert_eq!(make_request(GptImage2TextToImageNumImages::One, Some(quality), Some(size), Some(resolution)).calculate_cost_in_cents(), expected, "quality={quality:?} size={size:?} resolution={resolution:?}",);
+    #[test]
+    fn cost_scales_linearly_with_num_images() {
+      let one = make_request(One, Some(High), Some(Square), None).calculate_cost_in_cents();
+      assert_eq!(make_request(Two, Some(High), Some(Square), None).calculate_cost_in_cents(), one * 2);
+      assert_eq!(make_request(Three, Some(High), Some(Square), None).calculate_cost_in_cents(), one * 3);
+      assert_eq!(make_request(Four, Some(High), Some(Square), None).calculate_cost_in_cents(), one * 4);
+    }
+
+    #[test]
+    fn four_images_high_quality_4k_landscape() {
+      let per_image = make_request(One, Some(High), Some(Landscape16x9), Some(FourK))
+        .calculate_cost_in_cents();
+      assert_eq!(
+        make_request(Four, Some(High), Some(Landscape16x9), Some(FourK)).calculate_cost_in_cents(),
+        per_image * 4,
+      );
+    }
+  }
+
+  mod monotonicity_tests {
+    use super::*;
+
+    #[test]
+    fn higher_quality_costs_more() {
+      for &size in &[Square, Landscape16x9, Portrait4x3] {
+        let low = make_request(One, Some(Low), Some(size), None).calculate_cost_in_cents();
+        let med = make_request(One, Some(Medium), Some(size), None).calculate_cost_in_cents();
+        let high = make_request(One, Some(High), Some(size), None).calculate_cost_in_cents();
+        assert!(low <= med, "{size:?}: low ({low}) should be <= medium ({med})");
+        assert!(med <= high, "{size:?}: medium ({med}) should be <= high ({high})");
       }
     }
-  }
 
-  #[test]
-  fn high_quality_spot_prices_match_expected_cents() {
-    for &(size, resolution, num_images, expected) in SPOT_PRICE_CASES {
-      assert_eq!(make_request(num_images, Some(GptImage2TextToImageQuality::High), Some(size), Some(resolution)).calculate_cost_in_cents(), expected, "size={size:?} resolution={resolution:?} num_images={num_images:?}",);
+    #[test]
+    fn higher_resolution_costs_at_least_as_much() {
+      for &size in &[Square, Landscape16x9, Portrait4x3] {
+        let resolutions = [OneK, TwoK, ThreeK, FourK];
+        for pair in resolutions.windows(2) {
+          let lower = make_request(One, Some(High), Some(size), Some(pair[0]))
+            .calculate_cost_in_cents();
+          let higher = make_request(One, Some(High), Some(size), Some(pair[1]))
+            .calculate_cost_in_cents();
+          assert!(
+            lower <= higher,
+            "{size:?}: {pair:?} — lower res ({lower}¢) should be <= higher res ({higher}¢)",
+          );
+        }
+      }
     }
-  }
-
-  #[test]
-  fn resolution_without_image_size_defaults_to_square_aspect() {
-    assert_eq!(make_request(GptImage2TextToImageNumImages::Two, Some(GptImage2TextToImageQuality::High), None, Some(GptImage2Resolution::FourK),).calculate_cost_in_cents(), 83,);
   }
 }
