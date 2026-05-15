@@ -16,7 +16,7 @@ const Welcome = () => {
   const downloadUrl = isMacOs ? DOWNLOAD_LINKS.MACOS : DOWNLOAD_LINKS.WINDOWS;
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-[#101014] text-white">
+    <div className="relative min-h-full overflow-hidden bg-[#101014] text-white">
       <Seo
         title="Welcome - ArtCraft"
         description="Welcome to ArtCraft. Get started with your subscription."

@@ -2,7 +2,6 @@ import { useEffect } from "react";
 import {
   Route,
   Routes,
-  Navigate,
   useLocation,
   useNavigationType,
 } from "react-router-dom";
@@ -11,9 +10,7 @@ import Media from "../pages/media";
 import PressKit from "../pages/press-kit";
 import Navbar from "../components/navbar";
 import { ToastContainer } from "../components/toast/toast";
-import CreateImage from "../pages/create-image";
-import CreateVideo from "../pages/create-video";
-import CreateVFX from "../pages/create-vfx";
+import { WebappRedirect } from "../components/webapp-redirect";
 //import Landing2 from "../pages/landing2";
 import Landing3 from "../pages/landing3";
 import LandingSD2 from "../pages/landing-sd2";
@@ -25,14 +22,6 @@ import NewsIndex from "../pages/news/news-index";
 import NewsPost from "../pages/news/news-post";
 import Pricing from "../pages/pricing";
 import Support from "../pages/support/support";
-import Login from "../pages/login";
-import Signup from "../pages/signup";
-import ForgotPassword, { VerifyReset } from "../pages/forgot-password";
-import Welcome from "../pages/welcome";
-import Onboarding from "../pages/onboarding";
-import Library from "../pages/library";
-import Referrals from "../pages/referrals";
-import { CheckoutSuccess, CheckoutCancel } from "../pages/checkout";
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -54,9 +43,6 @@ export function App() {
       <Routes>
         <Route path="/" element={<Landing3 />} />
         <Route path="/landing3" element={<Landing3 />} />
-        <Route path="/create-image" element={<CreateImage />} />
-        <Route path="/create-video" element={<CreateVideo />} />
-        <Route path="/background-change" element={<CreateVFX />} />
         <Route path="/seedance-2" element={<LandingSD2 />} />
         <Route path="/download" element={<Download />} />
         <Route path="/media" element={<Media />} />
@@ -69,30 +55,62 @@ export function App() {
         <Route path="/support" element={<Support />} />
         <Route path="/news" element={<NewsIndex basePath="/news" />} />
         <Route path="/news/:slug" element={<NewsPost basePath="/news" />} />
-        <Route path="/library" element={<Library />} />
-        <Route path="/library/:filter" element={<Library />} />
-        <Route path="/referrals" element={<Referrals />} />
         <Route path="/pricing" element={<Pricing />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/signup" element={<Signup />} />
-        <Route path="/forgot-password" element={<ForgotPassword />} />
-        <Route path="/forgot-password/verify" element={<VerifyReset />} />
-        <Route path="/welcome" element={<Welcome />} />
-        <Route path="/onboarding" element={<Onboarding />} />
-        <Route path="/checkout/success" element={<CheckoutSuccess />} />
-        <Route path="/checkout/cancel" element={<CheckoutCancel />} />
-        {/* Redirects for underscore-based URLs (legacy Stripe config) */}
+
+        {/* Legacy paths now hosted on the webapp — preserve query/hash so
+            referral, Stripe return, and email-link tokens survive the hop. */}
+        <Route path="/login" element={<WebappRedirect to="/login" />} />
+        <Route path="/signup" element={<WebappRedirect to="/signup" />} />
+        <Route
+          path="/forgot-password"
+          element={<WebappRedirect to="/forgot-password" />}
+        />
+        <Route
+          path="/forgot-password/verify"
+          element={<WebappRedirect to="/forgot-password/verify" />}
+        />
+        <Route
+          path="/create-image"
+          element={<WebappRedirect to="/create-image" />}
+        />
+        <Route
+          path="/create-video"
+          element={<WebappRedirect to="/create-video" />}
+        />
+        <Route
+          path="/background-change"
+          element={<WebappRedirect to="/background-change" />}
+        />
+        <Route path="/library" element={<WebappRedirect to="/library" />} />
+        <Route
+          path="/library/:filter"
+          element={<WebappRedirect to="/library/:filter" />}
+        />
+        <Route path="/referrals" element={<WebappRedirect to="/referrals" />} />
+        <Route path="/welcome" element={<WebappRedirect to="/welcome" />} />
+        <Route
+          path="/onboarding"
+          element={<WebappRedirect to="/onboarding" />}
+        />
+        <Route
+          path="/checkout/success"
+          element={<WebappRedirect to="/checkout/success" />}
+        />
+        <Route
+          path="/checkout/cancel"
+          element={<WebappRedirect to="/checkout/cancel" />}
+        />
         <Route
           path="/checkout_success"
-          element={<Navigate to="/checkout/success" replace />}
+          element={<WebappRedirect to="/checkout/success" />}
         />
         <Route
           path="/checkout_cancel"
-          element={<Navigate to="/checkout/cancel" replace />}
+          element={<WebappRedirect to="/checkout/cancel" />}
         />
         <Route
           path="/portal_closed"
-          element={<Navigate to="/checkout/cancel" replace />}
+          element={<WebappRedirect to="/checkout/cancel" />}
         />
       </Routes>
       <ToastContainer />

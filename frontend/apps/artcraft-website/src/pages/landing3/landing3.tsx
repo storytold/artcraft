@@ -35,7 +35,7 @@ import { DownloadModal } from "../../components/download-modal";
 import ModelBadgeGrid from "../../components/model-badge-grid";
 import { getSession } from "../../lib/session";
 import { DOWNLOAD_LINKS } from "../../config/github_download_links";
-import { SOCIAL_LINKS } from "../../config/links";
+import { SOCIAL_LINKS, webappUrl } from "../../config/links";
 import { Button } from "@storyteller/ui-button";
 import { Tooltip } from "@storyteller/ui-tooltip";
 import { Link } from "react-router-dom";
@@ -588,19 +588,19 @@ const Landing3 = () => {
             data-reveal
           >
             <span>or generate in your browser:</span>
-            <Link
-              to="/create-image"
+            <a
+              href={webappUrl("/create-image")}
               className="group inline-flex items-center gap-1 text-white/65 hover:text-white underline-offset-4 hover:underline transition-colors"
             >
               Image
-            </Link>
+            </a>
             <span className="text-white/25">·</span>
-            <Link
-              to="/create-video"
+            <a
+              href={webappUrl("/create-video")}
               className="group inline-flex items-center gap-1 text-white/65 hover:text-white underline-offset-4 hover:underline transition-colors"
             >
               Video
-            </Link>
+            </a>
           </div>
 
           {/* Hero video */}
@@ -1270,19 +1270,19 @@ const Landing3 = () => {
               {!isMobile && (
                 <div className="mt-6 flex items-center justify-center gap-3 text-[13px] text-white/45">
                   <span>or generate in your browser:</span>
-                  <Link
-                    to="/create-image"
+                  <a
+                    href={webappUrl("/create-image")}
                     className="group inline-flex items-center gap-1 text-white/65 hover:text-white underline-offset-4 hover:underline transition-colors"
                   >
                     Image
-                  </Link>
+                  </a>
                   <span className="text-white/25">·</span>
-                  <Link
-                    to="/create-video"
+                  <a
+                    href={webappUrl("/create-video")}
                     className="group inline-flex items-center gap-1 text-white/65 hover:text-white underline-offset-4 hover:underline transition-colors"
                   >
                     Video
-                  </Link>
+                  </a>
                 </div>
               )}
             </div>

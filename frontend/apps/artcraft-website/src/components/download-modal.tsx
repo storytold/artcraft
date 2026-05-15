@@ -1,14 +1,13 @@
 import {
   faTimes,
   faEnvelope,
-  faArrowLeft,
+  faArrowRight,
 } from "@fortawesome/pro-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { Button } from "@storyteller/ui-button";
-import { useNavigate } from "react-router-dom";
-import { SignupForm } from "./auth";
+import { webappUrl } from "../config/links";
 
 interface DownloadModalProps {
   isOpen: boolean;
@@ -16,10 +15,8 @@ interface DownloadModalProps {
 }
 
 export const DownloadModal = ({ isOpen, onClose }: DownloadModalProps) => {
-  const navigate = useNavigate();
   const [isMounted, setIsMounted] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
-  const [view, setView] = useState<"menu" | "signup">("menu");
 
   useEffect(() => {
     setIsMounted(true);
@@ -33,8 +30,6 @@ export const DownloadModal = ({ isOpen, onClose }: DownloadModalProps) => {
     } else {
       const timer = setTimeout(() => {
         setIsVisible(false);
-        // Reset state after animation
-        setView("menu");
       }, 300);
       document.body.style.overflow = "unset";
       return () => clearTimeout(timer);
@@ -72,15 +67,6 @@ export const DownloadModal = ({ isOpen, onClose }: DownloadModalProps) => {
           <FontAwesomeIcon icon={faTimes} />
         </button>
 
-        {view === "signup" && (
-          <button
-            onClick={() => setView("menu")}
-            className="absolute top-4 left-4 w-8 h-8 flex items-center justify-center rounded-full bg-white/5 hover:bg-white/10 text-white/40 hover:text-white/80 transition-colors z-20"
-          >
-            <FontAwesomeIcon icon={faArrowLeft} />
-          </button>
-        )}
-
         <div className="text-center mb-8">
           <div className="w-16 h-16 bg-primary/20 rounded-2xl flex items-center justify-center mx-auto mb-6 text-primary">
             <svg
@@ -108,43 +94,25 @@ export const DownloadModal = ({ isOpen, onClose }: DownloadModalProps) => {
           </p>
         </div>
 
-        {view === "menu" ? (
-          <div className="space-y-3">
-            {/* <Button
-              className="rounded-full w-full bg-white text-black hover:bg-gray-100 border-none justify-center gap-3 font-medium h-12"
-              onClick={() => {}} // Dummy op
-            >
-              <FontAwesomeIcon icon={faGoogle} className="text-lg" />
-              Continue with Google
-            </Button> */}
-
-            <Button
-              className="rounded-full w-full bg-white/5 hover:bg-white/10 text-white border-white/10 justify-center gap-3 font-medium h-12"
-              onClick={() => setView("signup")}
-            >
-              <FontAwesomeIcon icon={faEnvelope} className="text-lg" />
-              Sign up with Email
-            </Button>
-          </div>
-        ) : (
-          <SignupForm
-            onSuccess={() => {
-              onClose();
-              navigate("/welcome");
-            }}
-            signupSource="artcraft"
-            showGoogleButton={false}
-            autoFocus={true}
-          />
-        )}
+        <div className="space-y-3">
+          <Button
+            as="link"
+            href={webappUrl("/signup")}
+            className="rounded-full w-full bg-white/5 hover:bg-white/10 text-white border-white/10 justify-center gap-3 font-medium h-12"
+          >
+            <FontAwesomeIcon icon={faEnvelope} className="text-lg" />
+            Sign up
+            <FontAwesomeIcon icon={faArrowRight} className="text-xs" />
+          </Button>
+        </div>
 
         <div className="mt-8 text-center pt-6 border-t border-white/5">
-          <button
-            onClick={onClose}
+          <a
+            href={webappUrl("/login")}
             className="text-white/40 text-xs hover:text-white/60 transition-colors font-medium"
           >
             I already have an account
-          </button>
+          </a>
         </div>
       </div>
     </div>,

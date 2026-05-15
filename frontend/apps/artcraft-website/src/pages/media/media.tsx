@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { useParams, useSearchParams } from "react-router-dom";
 import { LoadingSpinner } from "@storyteller/ui-loading-spinner";
 import { toast } from "../../components/toast/toast";
 import { MediaFilesApi, PromptsApi, type UserInfo } from "@storyteller/api";
@@ -14,7 +14,7 @@ import {
   isVideoUrl,
   type PromptData,
 } from "../../components/lightbox/shared";
-import { applyRecreateFromMediaToken } from "../../lib/recreate";
+import { WEBAPP_URL } from "../../config/links";
 
 interface MediaData {
   url: string | null;
@@ -41,7 +41,6 @@ const EMPTY_MEDIA: MediaData = {
 export default function MediaPage() {
   const { id: routeId } = useParams<{ id?: string }>();
   const [searchParams] = useSearchParams();
-  const navigate = useNavigate();
   const mediaIdParam = routeId || searchParams.get("media") || undefined;
 
   const [media, setMedia] = useState<MediaData>(EMPTY_MEDIA);
@@ -111,16 +110,12 @@ export default function MediaPage() {
     }
   }, [mediaIdParam, loadMedia]);
 
-  const recreateMediaClass: "image" | "video" | null = media.isVideo
-    ? "video"
-    : media.is3D
-      ? null
-      : "image";
+  const canRecreate = !media.is3D;
 
-  const handleRecreate = useCallback(async () => {
-    if (!media.token || !recreateMediaClass) return;
-    await applyRecreateFromMediaToken(media.token, recreateMediaClass, navigate);
-  }, [media.token, recreateMediaClass, navigate]);
+  const handleRecreate = useCallback(() => {
+    if (!media.token || !canRecreate) return;
+    window.location.href = `${WEBAPP_URL}media/${media.token}`;
+  }, [media.token, canRecreate]);
 
   return (
     <div className="relative min-h-screen w-full p-4 pt-16 bg-dots flex items-start lg:items-center justify-center">
@@ -216,7 +211,7 @@ export default function MediaPage() {
             mediaHeight={media.height}
             createdAt={media.createdAt}
             creator={media.creator}
-            onRecreate={recreateMediaClass ? handleRecreate : undefined}
+            onRecreate={canRecreate ? handleRecreate : undefined}
             showDownloadAppCta
           />
         </div>

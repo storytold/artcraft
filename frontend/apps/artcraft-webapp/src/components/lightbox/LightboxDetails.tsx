@@ -267,7 +267,7 @@ export function LightboxDetails({
                     return (
                       <a
                         key={contextImage.media_token}
-                        href={`/media/${contextImage.media_token}`}
+                        href={`${SHARE_URL_BASE}${contextImage.media_token}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="relative aspect-square overflow-hidden rounded-lg border border-white/10 hover:border-white/40 transition-colors block"
