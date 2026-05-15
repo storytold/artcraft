@@ -186,26 +186,37 @@ export const ControlsTopButtons = () => {
             {
               label: "New scene",
               description: "Ctrl+N",
-              dialogProps: {
-                title: "Create New Scene",
-                content: (
-                  <h4>
-                    Make sure you&apos;ve saved your scene. Unsaved changes
-                    will be lost. Continue?
-                  </h4>
-                ),
-                confirmButtonProps: {
-                  label: "Create new scene",
-                  onClick: async () => {
-                    handleResetScene();
-                    const defaultTitle = "Untitled New Scene";
-                    setSceneTitleInput(defaultTitle);
-                    await editor?.newScene(defaultTitle);
-                  },
-                },
-                closeButtonProps: { label: "Cancel" },
-                showClose: true,
-              },
+              // Hosts that own a New-Scene chooser (e.g. the webapp's
+              // splash modal) wire `onRequestNewSceneSelector` and take
+              // over confirm + action. Without it (Tauri), we fall back
+              // to the inline confirm dialog.
+              ...(editor?.adapter.onRequestNewSceneSelector
+                ? {
+                    onClick: () =>
+                      editor.adapter.onRequestNewSceneSelector?.(),
+                  }
+                : {
+                    dialogProps: {
+                      title: "Create New Scene",
+                      content: (
+                        <h4>
+                          Make sure you&apos;ve saved your scene. Unsaved
+                          changes will be lost. Continue?
+                        </h4>
+                      ),
+                      confirmButtonProps: {
+                        label: "Create new scene",
+                        onClick: async () => {
+                          handleResetScene();
+                          const defaultTitle = "Untitled New Scene";
+                          setSceneTitleInput(defaultTitle);
+                          await editor?.newScene(defaultTitle);
+                        },
+                      },
+                      closeButtonProps: { label: "Cancel" },
+                      showClose: true,
+                    },
+                  }),
             },
             {
               label: "Load my scene",

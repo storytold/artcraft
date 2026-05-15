@@ -19,6 +19,12 @@ import { useSignupCta } from "../../components/signup-cta-modal";
 import { DemoOutputOverlay } from "./demo-output-overlay";
 import { useSceneCacheStore } from "./scene-cache-store";
 import { useWebAppPageSceneAdapter } from "./web-adapter";
+import {
+  SceneSplashModal,
+  useSceneSplashAutoOpen,
+  useSceneSplashLibSync,
+  useSceneSplashStore,
+} from "./splash";
 
 // Stage3D fills its parent box; this wrapper is that box. It clamps
 // the editor to the SidebarInset area and feeds the lib its rect:
@@ -73,6 +79,10 @@ function PageSceneEditor() {
     usePageSceneStore.getState().setCurrentUserToken(user?.user_token);
   }, [user?.user_token]);
 
+  useSceneSplashAutoOpen(sceneToken);
+  useSceneSplashLibSync();
+  const openSceneSplash = useSceneSplashStore((s) => s.open);
+
   const navigateToImageTo3D = useCallback(() => {
     navigate("/create-image");
   }, [navigate]);
@@ -112,6 +122,7 @@ function PageSceneEditor() {
     navigateToImageTo3D,
     getViewportSize,
     promptSignup: openSignupCta,
+    onRequestNewSceneSelector: openSceneSplash,
   });
 
   // Editor state survives navigating to other webapp pages: read the
@@ -158,6 +169,7 @@ function PageSceneEditor() {
       <GalleryModal mode="view" />
       <GalleryDragComponent />
       {demoOutputToken && <DemoOutputOverlay outputToken={demoOutputToken} />}
+      <SceneSplashModal currentSceneToken={sceneToken} />
     </div>
   );
 }

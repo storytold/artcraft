@@ -3,7 +3,9 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faCompress,
   faExpand,
+  faImage,
   faWandMagicSparkles,
+  faXmark,
 } from "@fortawesome/pro-solid-svg-icons";
 import { MediaFilesApi, PromptsApi } from "@storyteller/api";
 import { addCorsParam, PLACEHOLDER_IMAGES } from "@storyteller/common";
@@ -47,6 +49,7 @@ export function DemoOutputOverlay({ outputToken }: DemoOutputOverlayProps) {
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isExpanded, setIsExpanded] = useState(false);
+  const [isHidden, setIsHidden] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -108,10 +111,25 @@ export function DemoOutputOverlay({ outputToken }: DemoOutputOverlayProps) {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [isExpanded]);
 
+  if (isHidden) {
+    return <ShowOutputPill onClick={() => setIsHidden(false)} />;
+  }
+
+  // The X button steps down one level: expanded → PIP, PIP → hidden.
+  // Lets users escape full-screen without losing the corner card.
+  const handleStepDown = () => {
+    if (isExpanded) {
+      setIsExpanded(false);
+      return;
+    }
+    setIsHidden(true);
+  };
+
   const body = (
     <Card
       isExpanded={isExpanded}
       onToggleExpanded={() => setIsExpanded((v) => !v)}
+      onHide={handleStepDown}
       promptText={promptText}
     >
       {loading ? (
@@ -143,15 +161,30 @@ export function DemoOutputOverlay({ outputToken }: DemoOutputOverlayProps) {
   }
 
   return (
-    <div className="pointer-events-none absolute right-4 top-4 z-30 w-[30%] min-w-[260px] max-w-lg animate-in fade-in slide-in-from-right-8 duration-500">
+    <div className="pointer-events-none absolute right-2 top-2 z-30 w-[30%] min-w-[260px] max-w-lg animate-in fade-in slide-in-from-right-8 duration-500">
       {body}
     </div>
+  );
+}
+
+function ShowOutputPill({ onClick }: { onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label="Show rendered output"
+      className="pointer-events-auto absolute right-2 top-2 z-30 flex items-center gap-2 rounded-xl border border-ui-controls-border bg-ui-controls px-3 py-1.5 text-sm font-medium text-base-fg shadow-xl transition-colors duration-150 hover:bg-ui-controls/80 animate-in fade-in slide-in-from-right-4"
+    >
+      <FontAwesomeIcon icon={faImage} className="h-3 w-3 text-primary" />
+      Show output
+    </button>
   );
 }
 
 interface CardProps {
   isExpanded: boolean;
   onToggleExpanded: () => void;
+  onHide: () => void;
   promptText: string | null;
   children: React.ReactNode;
 }
@@ -159,31 +192,61 @@ interface CardProps {
 function Card({
   isExpanded,
   onToggleExpanded,
+  onHide,
   promptText,
   children,
 }: CardProps) {
   return (
-    <div className="pointer-events-auto overflow-hidden rounded-xl border border-white/10 bg-black/50 shadow-2xl ring-1 ring-blue-500/20 backdrop-blur-lg">
-      <div className="flex items-center justify-between gap-3 border-b border-white/10 bg-gradient-to-r from-blue-500/10 via-transparent to-transparent px-3 py-2">
+    <div className="glass pointer-events-auto overflow-hidden rounded-xl shadow-xl border-2 border-primary">
+      <div className="flex items-center justify-between gap-3 border-b border-ui-controls-border/60 px-3 py-2">
         <div className="flex min-w-0 items-center gap-2">
           <FontAwesomeIcon
             icon={faWandMagicSparkles}
-            className="h-3 w-3 shrink-0 text-blue-300"
+            className="h-3 w-3 shrink-0 text-primary"
           />
           <div className="min-w-0 leading-tight">
-            <div className="text-xs font-semibold uppercase tracking-wider text-white">
+            <div className="text-xs font-semibold uppercase tracking-wider text-base-fg">
               Rendered Output
             </div>
-            <div className="truncate text-[10px] text-white/50">
+            <div className="truncate text-[10px] text-base-fg/50">
               Generated from this scene
             </div>
           </div>
         </div>
         <button
           type="button"
-          onClick={onToggleExpanded}
+          onClick={onHide}
+          aria-label={
+            isExpanded ? "Collapse to picture-in-picture" : "Hide rendered output"
+          }
+          className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-base-fg/60 transition-colors hover:bg-ui-controls hover:text-base-fg"
+        >
+          <FontAwesomeIcon icon={faXmark} className="h-4 w-4" />
+        </button>
+      </div>
+      <div
+        role="button"
+        tabIndex={0}
+        aria-label={isExpanded ? "Collapse output view" : "Expand output view"}
+        onClick={onToggleExpanded}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            onToggleExpanded();
+          }
+        }}
+        className={`relative aspect-video w-full bg-black/40 ${isExpanded ? "cursor-zoom-out" : "cursor-zoom-in"
+          }`}
+      >
+        {children}
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onToggleExpanded();
+          }}
           aria-label={isExpanded ? "Collapse output view" : "Expand output view"}
-          className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-white/60 transition hover:bg-white/10 hover:text-white"
+          className="absolute bottom-2 right-2 flex h-7 w-7 items-center justify-center rounded-md border border-white/10 bg-black/60 text-white/80 shadow-lg backdrop-blur-md transition-colors duration-150 hover:bg-black/80 hover:text-white"
         >
           <FontAwesomeIcon
             icon={isExpanded ? faCompress : faExpand}
@@ -191,16 +254,16 @@ function Card({
           />
         </button>
       </div>
-      <div className="relative aspect-video w-full bg-black/60">{children}</div>
       {promptText && (
         <div
-          className="border-t border-white/10 px-3 py-2 text-[11px] leading-snug text-white/70"
+          className="border-t border-ui-controls-border/60 px-3 py-2 text-[11px] leading-[15px] text-base-fg/70"
           title={promptText}
           style={{
             display: "-webkit-box",
             WebkitLineClamp: 2,
             WebkitBoxOrient: "vertical",
             overflow: "hidden",
+            maxHeight: "47px",
           }}
         >
           {promptText}
@@ -231,7 +294,8 @@ function OverlayMediaView({ media }: { media: OverlayMedia }) {
     <img
       src={src}
       alt="Rendered output"
-      className="h-full w-full object-contain"
+      draggable={false}
+      className="h-full w-full select-none object-contain"
       onError={(e) => {
         (e.currentTarget as HTMLImageElement).src = PLACEHOLDER_IMAGES.DEFAULT;
       }}

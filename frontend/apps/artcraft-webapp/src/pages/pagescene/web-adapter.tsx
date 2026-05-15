@@ -127,12 +127,22 @@ export interface WebAppPageSceneAdapterOptions {
   // Open the host's signup CTA modal. Called from inside the lib when an
   // anonymous visitor clicks Save / Generate / Upload / My Library.
   promptSignup: (reason?: string) => void;
+  // Open the host's splash modal. Called from the lib's File > New Scene
+  // menu item; replaces the lib's inline confirm dialog.
+  onRequestNewSceneSelector: () => void;
 }
 
 export const useWebAppPageSceneAdapter = (
   options: WebAppPageSceneAdapterOptions,
 ): PageSceneAdapter => {
-  const { userToken, initialSceneToken, navigateToImageTo3D, getViewportSize, promptSignup } = options;
+  const {
+    userToken,
+    initialSceneToken,
+    navigateToImageTo3D,
+    getViewportSize,
+    promptSignup,
+    onRequestNewSceneSelector,
+  } = options;
 
   return useMemo<PageSceneAdapter>(
     () => ({
@@ -309,6 +319,8 @@ export const useWebAppPageSceneAdapter = (
 
       promptSignup,
 
+      onRequestNewSceneSelector,
+
       // Powers the lib's "Reset to original" menu item. The cache has
       // the server's snapshot we seeded on first load; pipe it back
       // through `Editor.applyJson` (which clears undo history and
@@ -340,6 +352,13 @@ export const useWebAppPageSceneAdapter = (
 
       initialSceneToken,
     }),
-    [userToken, initialSceneToken, navigateToImageTo3D, getViewportSize, promptSignup],
+    [
+      userToken,
+      initialSceneToken,
+      navigateToImageTo3D,
+      getViewportSize,
+      promptSignup,
+      onRequestNewSceneSelector,
+    ],
   );
 };
