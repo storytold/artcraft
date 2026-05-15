@@ -17,8 +17,12 @@ use server_environment::ServerEnvironment;
 /// Resolved media URLs that can be referenced by a GenerateImageRequestBuilder.
 /// The owned Vecs here outlive the request so the GenerateImageRequestBuilder can borrow them.
 pub struct ResolvedImageMedia {
+  /// Input media tokens -> URL
   pub url_map: HashMap<MediaFileToken, String>,
-  pub image_input_urls: Vec<String>,
+
+  /// Input media tokens as URLs in order.
+  /// The order matters for the prompt, as the prompt might mention "first image", etc.
+  pub ordered_image_input_urls: Vec<String>,
 }
 
 /// Collect all media file tokens from the raw HTTP request, query them from the database,
@@ -38,7 +42,7 @@ pub async fn resolve_media_tokens(
   if all_tokens.is_empty() {
     return Ok(ResolvedImageMedia {
       url_map: HashMap::new(),
-      image_input_urls: Vec::new(),
+      ordered_image_input_urls: Vec::new(),
     });
   }
 
@@ -57,7 +61,7 @@ pub async fn resolve_media_tokens(
 
   Ok(ResolvedImageMedia {
     url_map,
-    image_input_urls,
+    ordered_image_input_urls: image_input_urls,
   })
 }
 
@@ -66,8 +70,8 @@ pub fn apply_resolved_media(
   request: &mut GenerateImageRequestBuilder,
   resolved: &ResolvedImageMedia,
 ) {
-  if !resolved.image_input_urls.is_empty() {
-    request.image_inputs = Some(ImageListRef::Urls(resolved.image_input_urls.clone()));
+  if !resolved.ordered_image_input_urls.is_empty() {
+    request.image_inputs = Some(ImageListRef::Urls(resolved.ordered_image_input_urls.clone()));
   } else {
     request.image_inputs = None;
   }
