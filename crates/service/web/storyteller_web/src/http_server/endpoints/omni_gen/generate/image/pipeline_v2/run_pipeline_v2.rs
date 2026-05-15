@@ -109,8 +109,23 @@ fn estimate_cost_in_credits(
   let mut cost_builder = router_builder.clone();
   cost_builder.provider = Provider::Artcraft;
 
+  // Attempt pipeline_v2 cost
+  match cost_builder.clone().build2() {
+    Err(err) => {
+      warn!("Failed to build image cost plan for v2 pipeline: {}", err);
+    },
+    Ok(request) => {
+      let cost_plan = request.estimate_cost().map_err(|e| {
+        warn!("Failed to build image cost plan for v2 pipeline: {}", e);
+        AdvancedCommonWebError::from_error(e)
+      })?;
+      return Ok(cost_plan.cost_in_credits.unwrap_or(0));
+    },
+  }
+  
+  // Fall back to pipeline_v1 cost
   let cost_plan = cost_builder.build().map_err(|e| {
-    warn!("Failed to build image cost plan for v2 pipeline: {}", e);
+    warn!("Failed to build image cost plan for v1 pipeline: {}", e);
     AdvancedCommonWebError::from_error(e)
   })?;
 
