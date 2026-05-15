@@ -278,6 +278,137 @@ mod tests {
     }
   }
 
+  mod exhaustive_preset_batch_tests {
+    use super::*;
+
+    // (size, quality, num_images, expected_cents)
+    const CASES: &[(GptImage2EditImageSize, GptImage2EditImageQuality, GptImage2EditImageNumImages, u64)] = &[
+      (Square, Low, One, 1), (Square, Low, Two, 2), (Square, Low, Three, 3), (Square, Low, Four, 4),
+      (Square, Medium, One, 4), (Square, Medium, Two, 8), (Square, Medium, Three, 12), (Square, Medium, Four, 16),
+      (Square, High, One, 15), (Square, High, Two, 30), (Square, High, Three, 45), (Square, High, Four, 60),
+      (SquareHd, Low, One, 1), (SquareHd, Low, Two, 2), (SquareHd, Low, Three, 3), (SquareHd, Low, Four, 4),
+      (SquareHd, Medium, One, 7), (SquareHd, Medium, Two, 14), (SquareHd, Medium, Three, 21), (SquareHd, Medium, Four, 28),
+      (SquareHd, High, One, 26), (SquareHd, High, Two, 52), (SquareHd, High, Three, 78), (SquareHd, High, Four, 104),
+      (Landscape4x3, Low, One, 1), (Landscape4x3, Low, Two, 2), (Landscape4x3, Low, Three, 3), (Landscape4x3, Low, Four, 4),
+      (Landscape4x3, Medium, One, 4), (Landscape4x3, Medium, Two, 8), (Landscape4x3, Medium, Three, 12), (Landscape4x3, Medium, Four, 16),
+      (Landscape4x3, High, One, 14), (Landscape4x3, High, Two, 28), (Landscape4x3, High, Three, 42), (Landscape4x3, High, Four, 56),
+      (Landscape16x9, Low, One, 1), (Landscape16x9, Low, Two, 2), (Landscape16x9, Low, Three, 3), (Landscape16x9, Low, Four, 4),
+      (Landscape16x9, Medium, One, 5), (Landscape16x9, Medium, Two, 10), (Landscape16x9, Medium, Three, 15), (Landscape16x9, Medium, Four, 20),
+      (Landscape16x9, High, One, 19), (Landscape16x9, High, Two, 38), (Landscape16x9, High, Three, 57), (Landscape16x9, High, Four, 76),
+      (Portrait4x3, Low, One, 1), (Portrait4x3, Low, Two, 2), (Portrait4x3, Low, Three, 3), (Portrait4x3, Low, Four, 4),
+      (Portrait4x3, Medium, One, 4), (Portrait4x3, Medium, Two, 8), (Portrait4x3, Medium, Three, 12), (Portrait4x3, Medium, Four, 16),
+      (Portrait4x3, High, One, 14), (Portrait4x3, High, Two, 28), (Portrait4x3, High, Three, 42), (Portrait4x3, High, Four, 56),
+      (Portrait16x9, Low, One, 1), (Portrait16x9, Low, Two, 2), (Portrait16x9, Low, Three, 3), (Portrait16x9, Low, Four, 4),
+      (Portrait16x9, Medium, One, 5), (Portrait16x9, Medium, Two, 10), (Portrait16x9, Medium, Three, 15), (Portrait16x9, Medium, Four, 20),
+      (Portrait16x9, High, One, 19), (Portrait16x9, High, Two, 38), (Portrait16x9, High, Three, 57), (Portrait16x9, High, Four, 76),
+      (Auto, Low, One, 2), (Auto, Low, Two, 4), (Auto, Low, Three, 6), (Auto, Low, Four, 8),
+      (Auto, Medium, One, 10), (Auto, Medium, Two, 20), (Auto, Medium, Three, 30), (Auto, Medium, Four, 40),
+      (Auto, High, One, 41), (Auto, High, Two, 82), (Auto, High, Three, 123), (Auto, High, Four, 164),
+    ];
+
+    #[test]
+    fn all_preset_batch_costs() {
+      for &(size, quality, num, expected) in CASES {
+        let actual = make_request(num, Some(quality), Some(size), None).calculate_cost_in_cents();
+        assert_eq!(actual, expected, "{size:?} {quality:?} {num:?}");
+      }
+    }
+  }
+
+  mod exhaustive_resolution_batch_tests {
+    use super::*;
+
+    // (size, resolution, quality, num_images, expected_cents)
+    const CASES: &[(GptImage2EditImageSize, GptImage2Resolution, GptImage2EditImageQuality, GptImage2EditImageNumImages, u64)] = &[
+      // Square
+      (Square, OneK, Low, One, 1), (Square, OneK, Low, Two, 2), (Square, OneK, Low, Three, 3), (Square, OneK, Low, Four, 4),
+      (Square, OneK, Medium, One, 4), (Square, OneK, Medium, Two, 8), (Square, OneK, Medium, Three, 12), (Square, OneK, Medium, Four, 16),
+      (Square, OneK, High, One, 15), (Square, OneK, High, Two, 30), (Square, OneK, High, Three, 45), (Square, OneK, High, Four, 60),
+      (Square, TwoK, Low, One, 1), (Square, TwoK, Low, Two, 2), (Square, TwoK, Low, Three, 3), (Square, TwoK, Low, Four, 4),
+      (Square, TwoK, Medium, One, 7), (Square, TwoK, Medium, Two, 14), (Square, TwoK, Medium, Three, 21), (Square, TwoK, Medium, Four, 28),
+      (Square, TwoK, High, One, 26), (Square, TwoK, High, Two, 52), (Square, TwoK, High, Three, 78), (Square, TwoK, High, Four, 104),
+      (Square, ThreeK, Low, One, 2), (Square, ThreeK, Low, Two, 4), (Square, ThreeK, Low, Three, 6), (Square, ThreeK, Low, Four, 8),
+      (Square, ThreeK, Medium, One, 10), (Square, ThreeK, Medium, Two, 20), (Square, ThreeK, Medium, Three, 30), (Square, ThreeK, Medium, Four, 40),
+      (Square, ThreeK, High, One, 41), (Square, ThreeK, High, Two, 82), (Square, ThreeK, High, Three, 123), (Square, ThreeK, High, Four, 164),
+      (Square, FourK, Low, One, 2), (Square, FourK, Low, Two, 4), (Square, FourK, Low, Three, 6), (Square, FourK, Low, Four, 8),
+      (Square, FourK, Medium, One, 10), (Square, FourK, Medium, Two, 20), (Square, FourK, Medium, Three, 30), (Square, FourK, Medium, Four, 40),
+      (Square, FourK, High, One, 41), (Square, FourK, High, Two, 82), (Square, FourK, High, Three, 123), (Square, FourK, High, Four, 164),
+      // SquareHd
+      (SquareHd, OneK, Low, One, 1), (SquareHd, OneK, Low, Two, 2), (SquareHd, OneK, Low, Three, 3), (SquareHd, OneK, Low, Four, 4),
+      (SquareHd, OneK, Medium, One, 4), (SquareHd, OneK, Medium, Two, 8), (SquareHd, OneK, Medium, Three, 12), (SquareHd, OneK, Medium, Four, 16),
+      (SquareHd, OneK, High, One, 15), (SquareHd, OneK, High, Two, 30), (SquareHd, OneK, High, Three, 45), (SquareHd, OneK, High, Four, 60),
+      (SquareHd, TwoK, Low, One, 1), (SquareHd, TwoK, Low, Two, 2), (SquareHd, TwoK, Low, Three, 3), (SquareHd, TwoK, Low, Four, 4),
+      (SquareHd, TwoK, Medium, One, 7), (SquareHd, TwoK, Medium, Two, 14), (SquareHd, TwoK, Medium, Three, 21), (SquareHd, TwoK, Medium, Four, 28),
+      (SquareHd, TwoK, High, One, 26), (SquareHd, TwoK, High, Two, 52), (SquareHd, TwoK, High, Three, 78), (SquareHd, TwoK, High, Four, 104),
+      (SquareHd, ThreeK, Low, One, 2), (SquareHd, ThreeK, Low, Two, 4), (SquareHd, ThreeK, Low, Three, 6), (SquareHd, ThreeK, Low, Four, 8),
+      (SquareHd, ThreeK, Medium, One, 10), (SquareHd, ThreeK, Medium, Two, 20), (SquareHd, ThreeK, Medium, Three, 30), (SquareHd, ThreeK, Medium, Four, 40),
+      (SquareHd, ThreeK, High, One, 41), (SquareHd, ThreeK, High, Two, 82), (SquareHd, ThreeK, High, Three, 123), (SquareHd, ThreeK, High, Four, 164),
+      (SquareHd, FourK, Low, One, 2), (SquareHd, FourK, Low, Two, 4), (SquareHd, FourK, Low, Three, 6), (SquareHd, FourK, Low, Four, 8),
+      (SquareHd, FourK, Medium, One, 10), (SquareHd, FourK, Medium, Two, 20), (SquareHd, FourK, Medium, Three, 30), (SquareHd, FourK, Medium, Four, 40),
+      (SquareHd, FourK, High, One, 41), (SquareHd, FourK, High, Two, 82), (SquareHd, FourK, High, Three, 123), (SquareHd, FourK, High, Four, 164),
+      // Landscape4x3
+      (Landscape4x3, OneK, Low, One, 1), (Landscape4x3, OneK, Low, Two, 2), (Landscape4x3, OneK, Low, Three, 3), (Landscape4x3, OneK, Low, Four, 4),
+      (Landscape4x3, OneK, Medium, One, 4), (Landscape4x3, OneK, Medium, Two, 8), (Landscape4x3, OneK, Medium, Three, 12), (Landscape4x3, OneK, Medium, Four, 16),
+      (Landscape4x3, OneK, High, One, 14), (Landscape4x3, OneK, High, Two, 28), (Landscape4x3, OneK, High, Three, 42), (Landscape4x3, OneK, High, Four, 56),
+      (Landscape4x3, TwoK, Low, One, 1), (Landscape4x3, TwoK, Low, Two, 2), (Landscape4x3, TwoK, Low, Three, 3), (Landscape4x3, TwoK, Low, Four, 4),
+      (Landscape4x3, TwoK, Medium, One, 6), (Landscape4x3, TwoK, Medium, Two, 12), (Landscape4x3, TwoK, Medium, Three, 18), (Landscape4x3, TwoK, Medium, Four, 24),
+      (Landscape4x3, TwoK, High, One, 23), (Landscape4x3, TwoK, High, Two, 46), (Landscape4x3, TwoK, High, Three, 69), (Landscape4x3, TwoK, High, Four, 92),
+      (Landscape4x3, ThreeK, Low, One, 2), (Landscape4x3, ThreeK, Low, Two, 4), (Landscape4x3, ThreeK, Low, Three, 6), (Landscape4x3, ThreeK, Low, Four, 8),
+      (Landscape4x3, ThreeK, Medium, One, 9), (Landscape4x3, ThreeK, Medium, Two, 18), (Landscape4x3, ThreeK, Medium, Three, 27), (Landscape4x3, ThreeK, Medium, Four, 36),
+      (Landscape4x3, ThreeK, High, One, 36), (Landscape4x3, ThreeK, High, Two, 72), (Landscape4x3, ThreeK, High, Three, 108), (Landscape4x3, ThreeK, High, Four, 144),
+      (Landscape4x3, FourK, Low, One, 2), (Landscape4x3, FourK, Low, Two, 4), (Landscape4x3, FourK, Low, Three, 6), (Landscape4x3, FourK, Low, Four, 8),
+      (Landscape4x3, FourK, Medium, One, 10), (Landscape4x3, FourK, Medium, Two, 20), (Landscape4x3, FourK, Medium, Three, 30), (Landscape4x3, FourK, Medium, Four, 40),
+      (Landscape4x3, FourK, High, One, 40), (Landscape4x3, FourK, High, Two, 80), (Landscape4x3, FourK, High, Three, 120), (Landscape4x3, FourK, High, Four, 160),
+      // Landscape16x9
+      (Landscape16x9, OneK, Low, One, 1), (Landscape16x9, OneK, Low, Two, 2), (Landscape16x9, OneK, Low, Three, 3), (Landscape16x9, OneK, Low, Four, 4),
+      (Landscape16x9, OneK, Medium, One, 4), (Landscape16x9, OneK, Medium, Two, 8), (Landscape16x9, OneK, Medium, Three, 12), (Landscape16x9, OneK, Medium, Four, 16),
+      (Landscape16x9, OneK, High, One, 14), (Landscape16x9, OneK, High, Two, 28), (Landscape16x9, OneK, High, Three, 42), (Landscape16x9, OneK, High, Four, 56),
+      (Landscape16x9, TwoK, Low, One, 1), (Landscape16x9, TwoK, Low, Two, 2), (Landscape16x9, TwoK, Low, Three, 3), (Landscape16x9, TwoK, Low, Four, 4),
+      (Landscape16x9, TwoK, Medium, One, 5), (Landscape16x9, TwoK, Medium, Two, 10), (Landscape16x9, TwoK, Medium, Three, 15), (Landscape16x9, TwoK, Medium, Four, 20),
+      (Landscape16x9, TwoK, High, One, 20), (Landscape16x9, TwoK, High, Two, 40), (Landscape16x9, TwoK, High, Three, 60), (Landscape16x9, TwoK, High, Four, 80),
+      (Landscape16x9, ThreeK, Low, One, 1), (Landscape16x9, ThreeK, Low, Two, 2), (Landscape16x9, ThreeK, Low, Three, 3), (Landscape16x9, ThreeK, Low, Four, 4),
+      (Landscape16x9, ThreeK, Medium, One, 8), (Landscape16x9, ThreeK, Medium, Two, 16), (Landscape16x9, ThreeK, Medium, Three, 24), (Landscape16x9, ThreeK, Medium, Four, 32),
+      (Landscape16x9, ThreeK, High, One, 30), (Landscape16x9, ThreeK, High, Two, 60), (Landscape16x9, ThreeK, High, Three, 90), (Landscape16x9, ThreeK, High, Four, 120),
+      (Landscape16x9, FourK, Low, One, 2), (Landscape16x9, FourK, Low, Two, 4), (Landscape16x9, FourK, Low, Three, 6), (Landscape16x9, FourK, Low, Four, 8),
+      (Landscape16x9, FourK, Medium, One, 10), (Landscape16x9, FourK, Medium, Two, 20), (Landscape16x9, FourK, Medium, Three, 30), (Landscape16x9, FourK, Medium, Four, 40),
+      (Landscape16x9, FourK, High, One, 41), (Landscape16x9, FourK, High, Two, 82), (Landscape16x9, FourK, High, Three, 123), (Landscape16x9, FourK, High, Four, 164),
+      // Portrait4x3
+      (Portrait4x3, OneK, Low, One, 1), (Portrait4x3, OneK, Low, Two, 2), (Portrait4x3, OneK, Low, Three, 3), (Portrait4x3, OneK, Low, Four, 4),
+      (Portrait4x3, OneK, Medium, One, 4), (Portrait4x3, OneK, Medium, Two, 8), (Portrait4x3, OneK, Medium, Three, 12), (Portrait4x3, OneK, Medium, Four, 16),
+      (Portrait4x3, OneK, High, One, 14), (Portrait4x3, OneK, High, Two, 28), (Portrait4x3, OneK, High, Three, 42), (Portrait4x3, OneK, High, Four, 56),
+      (Portrait4x3, TwoK, Low, One, 1), (Portrait4x3, TwoK, Low, Two, 2), (Portrait4x3, TwoK, Low, Three, 3), (Portrait4x3, TwoK, Low, Four, 4),
+      (Portrait4x3, TwoK, Medium, One, 6), (Portrait4x3, TwoK, Medium, Two, 12), (Portrait4x3, TwoK, Medium, Three, 18), (Portrait4x3, TwoK, Medium, Four, 24),
+      (Portrait4x3, TwoK, High, One, 23), (Portrait4x3, TwoK, High, Two, 46), (Portrait4x3, TwoK, High, Three, 69), (Portrait4x3, TwoK, High, Four, 92),
+      (Portrait4x3, ThreeK, Low, One, 2), (Portrait4x3, ThreeK, Low, Two, 4), (Portrait4x3, ThreeK, Low, Three, 6), (Portrait4x3, ThreeK, Low, Four, 8),
+      (Portrait4x3, ThreeK, Medium, One, 9), (Portrait4x3, ThreeK, Medium, Two, 18), (Portrait4x3, ThreeK, Medium, Three, 27), (Portrait4x3, ThreeK, Medium, Four, 36),
+      (Portrait4x3, ThreeK, High, One, 36), (Portrait4x3, ThreeK, High, Two, 72), (Portrait4x3, ThreeK, High, Three, 108), (Portrait4x3, ThreeK, High, Four, 144),
+      (Portrait4x3, FourK, Low, One, 2), (Portrait4x3, FourK, Low, Two, 4), (Portrait4x3, FourK, Low, Three, 6), (Portrait4x3, FourK, Low, Four, 8),
+      (Portrait4x3, FourK, Medium, One, 10), (Portrait4x3, FourK, Medium, Two, 20), (Portrait4x3, FourK, Medium, Three, 30), (Portrait4x3, FourK, Medium, Four, 40),
+      (Portrait4x3, FourK, High, One, 40), (Portrait4x3, FourK, High, Two, 80), (Portrait4x3, FourK, High, Three, 120), (Portrait4x3, FourK, High, Four, 160),
+      // Portrait16x9
+      (Portrait16x9, OneK, Low, One, 1), (Portrait16x9, OneK, Low, Two, 2), (Portrait16x9, OneK, Low, Three, 3), (Portrait16x9, OneK, Low, Four, 4),
+      (Portrait16x9, OneK, Medium, One, 4), (Portrait16x9, OneK, Medium, Two, 8), (Portrait16x9, OneK, Medium, Three, 12), (Portrait16x9, OneK, Medium, Four, 16),
+      (Portrait16x9, OneK, High, One, 14), (Portrait16x9, OneK, High, Two, 28), (Portrait16x9, OneK, High, Three, 42), (Portrait16x9, OneK, High, Four, 56),
+      (Portrait16x9, TwoK, Low, One, 1), (Portrait16x9, TwoK, Low, Two, 2), (Portrait16x9, TwoK, Low, Three, 3), (Portrait16x9, TwoK, Low, Four, 4),
+      (Portrait16x9, TwoK, Medium, One, 5), (Portrait16x9, TwoK, Medium, Two, 10), (Portrait16x9, TwoK, Medium, Three, 15), (Portrait16x9, TwoK, Medium, Four, 20),
+      (Portrait16x9, TwoK, High, One, 20), (Portrait16x9, TwoK, High, Two, 40), (Portrait16x9, TwoK, High, Three, 60), (Portrait16x9, TwoK, High, Four, 80),
+      (Portrait16x9, ThreeK, Low, One, 1), (Portrait16x9, ThreeK, Low, Two, 2), (Portrait16x9, ThreeK, Low, Three, 3), (Portrait16x9, ThreeK, Low, Four, 4),
+      (Portrait16x9, ThreeK, Medium, One, 8), (Portrait16x9, ThreeK, Medium, Two, 16), (Portrait16x9, ThreeK, Medium, Three, 24), (Portrait16x9, ThreeK, Medium, Four, 32),
+      (Portrait16x9, ThreeK, High, One, 30), (Portrait16x9, ThreeK, High, Two, 60), (Portrait16x9, ThreeK, High, Three, 90), (Portrait16x9, ThreeK, High, Four, 120),
+      (Portrait16x9, FourK, Low, One, 2), (Portrait16x9, FourK, Low, Two, 4), (Portrait16x9, FourK, Low, Three, 6), (Portrait16x9, FourK, Low, Four, 8),
+      (Portrait16x9, FourK, Medium, One, 10), (Portrait16x9, FourK, Medium, Two, 20), (Portrait16x9, FourK, Medium, Three, 30), (Portrait16x9, FourK, Medium, Four, 40),
+      (Portrait16x9, FourK, High, One, 41), (Portrait16x9, FourK, High, Two, 82), (Portrait16x9, FourK, High, Three, 123), (Portrait16x9, FourK, High, Four, 164),
+    ];
+
+    #[test]
+    fn all_resolution_batch_costs() {
+      for &(size, res, quality, num, expected) in CASES {
+        let actual = make_request(num, Some(quality), Some(size), Some(res)).calculate_cost_in_cents();
+        assert_eq!(actual, expected, "{size:?} {res:?} {quality:?} {num:?}");
+      }
+    }
+  }
+
   mod monotonicity_tests {
     use super::*;
 
