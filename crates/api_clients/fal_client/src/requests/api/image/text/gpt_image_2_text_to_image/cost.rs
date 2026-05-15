@@ -222,22 +222,42 @@ mod tests {
   mod num_images_tests {
     use super::*;
 
+    const ALL_BATCH_SIZES: &[(GptImage2TextToImageNumImages, u64)] = &[
+      (One, 1), (Two, 2), (Three, 3), (Four, 4),
+    ];
+
+    const ALL_SIZES: &[GptImage2TextToImageSize] = &[
+      Square, SquareHd, Landscape4x3, Landscape16x9, Portrait4x3, Portrait16x9,
+    ];
+
+    const ALL_RESOLUTIONS: &[GptImage2Resolution] = &[OneK, TwoK, ThreeK, FourK];
+
     #[test]
-    fn cost_scales_linearly_with_num_images() {
-      let one = make_request(One, Some(High), Some(Square), None).calculate_cost_in_cents();
-      assert_eq!(make_request(Two, Some(High), Some(Square), None).calculate_cost_in_cents(), one * 2);
-      assert_eq!(make_request(Three, Some(High), Some(Square), None).calculate_cost_in_cents(), one * 3);
-      assert_eq!(make_request(Four, Some(High), Some(Square), None).calculate_cost_in_cents(), one * 4);
+    fn batch_scales_linearly_for_all_presets() {
+      for &size in ALL_SIZES {
+        let per_image = make_request(One, Some(High), Some(size), None)
+          .calculate_cost_in_cents();
+        for &(num, n) in ALL_BATCH_SIZES {
+          let actual = make_request(num, Some(High), Some(size), None)
+            .calculate_cost_in_cents();
+          assert_eq!(actual, per_image * n, "{size:?} x{n}");
+        }
+      }
     }
 
     #[test]
-    fn four_images_high_quality_4k_landscape() {
-      let per_image = make_request(One, Some(High), Some(Landscape16x9), Some(FourK))
-        .calculate_cost_in_cents();
-      assert_eq!(
-        make_request(Four, Some(High), Some(Landscape16x9), Some(FourK)).calculate_cost_in_cents(),
-        per_image * 4,
-      );
+    fn batch_scales_linearly_for_all_resolutions() {
+      for &size in ALL_SIZES {
+        for &res in ALL_RESOLUTIONS {
+          let per_image = make_request(One, Some(High), Some(size), Some(res))
+            .calculate_cost_in_cents();
+          for &(num, n) in ALL_BATCH_SIZES {
+            let actual = make_request(num, Some(High), Some(size), Some(res))
+              .calculate_cost_in_cents();
+            assert_eq!(actual, per_image * n, "{size:?} {res:?} x{n}");
+          }
+        }
+      }
     }
   }
 
