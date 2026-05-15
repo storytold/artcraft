@@ -12,6 +12,9 @@ use crate::generate::generate_image::image_generation_plan::ImageGenerationPlan;
 use crate::generate::generate_image_v2::image_generation_draft_or_request::ImageGenerationDraftOrRequest;
 use crate::generate::generate_image_v2::providers::fal::flux_1_dev::build::build_fal_flux_1_dev;
 use crate::generate::generate_image_v2::providers::fal::flux_1_schnell::build::build_fal_flux_1_schnell;
+use crate::generate::generate_image_v2::providers::fal::gpt_image_1::build::build_fal_gpt_image_1;
+use crate::generate::generate_image_v2::providers::fal::gpt_image_1p5::build::build_fal_gpt_image_1p5;
+use crate::generate::generate_image_v2::providers::fal::gpt_image_2::build::build_fal_gpt_image_2;
 use crate::generate::generate_image_v2::providers::fal::nano_banana_2::build::build_fal_nano_banana_2;
 use crate::generate::generate_image_v2::providers::fal::nano_banana_pro::build::build_fal_nano_banana_pro;
 use crate::generate::generate_image::plan::artcraft::plan_generate_image_artcraft_flux_1_dev::plan_generate_image_artcraft_flux_1_dev;
@@ -99,6 +102,9 @@ impl GenerateImageRequestBuilder {
     match (self.provider, self.model) {
       (Provider::Fal, CommonImageModel::Flux1Dev) => true,
       (Provider::Fal, CommonImageModel::Flux1Schnell) => true,
+      (Provider::Fal, CommonImageModel::GptImage1) => true,
+      (Provider::Fal, CommonImageModel::GptImage1p5) => true,
+      (Provider::Fal, CommonImageModel::GptImage2) => true,
       (Provider::Fal, CommonImageModel::NanoBanana2) => true,
       (Provider::Fal, CommonImageModel::NanoBananaPro) => true,
       _ => false,
@@ -109,6 +115,9 @@ impl GenerateImageRequestBuilder {
     match (self.provider, self.model) {
       (Provider::Fal, CommonImageModel::Flux1Dev) => build_fal_flux_1_dev(self),
       (Provider::Fal, CommonImageModel::Flux1Schnell) => build_fal_flux_1_schnell(self),
+      (Provider::Fal, CommonImageModel::GptImage1) => build_fal_gpt_image_1(self),
+      (Provider::Fal, CommonImageModel::GptImage1p5) => build_fal_gpt_image_1p5(self),
+      (Provider::Fal, CommonImageModel::GptImage2) => build_fal_gpt_image_2(self),
       (Provider::Fal, CommonImageModel::NanoBanana2) => build_fal_nano_banana_2(self),
       (Provider::Fal, CommonImageModel::NanoBananaPro) => build_fal_nano_banana_pro(self),
       _ => self.unsupported_provider_and_model(),
