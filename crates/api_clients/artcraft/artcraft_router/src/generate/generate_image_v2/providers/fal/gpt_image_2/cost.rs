@@ -65,25 +65,27 @@ mod tests {
 
   fn text_to_image_price_cases() -> Vec<TextPriceCase> {
     let mut cases = vec![
-      (None, None, None, [22, 44, 66, 88]),
-      (Some(GptImage2TextToImageQuality::Low), Some(GptImage2TextToImageSize::Landscape4x3), None, [2, 3, 4, 5]),
-      (Some(GptImage2TextToImageQuality::Low), Some(GptImage2TextToImageSize::Portrait4x3), None, [2, 3, 4, 5]),
-      (Some(GptImage2TextToImageQuality::Low), Some(GptImage2TextToImageSize::Square), None, [2, 3, 5, 6]),
-      (Some(GptImage2TextToImageQuality::Low), Some(GptImage2TextToImageSize::Landscape16x9), None, [2, 4, 6, 7]),
-      (Some(GptImage2TextToImageQuality::Low), Some(GptImage2TextToImageSize::Portrait16x9), None, [2, 4, 6, 7]),
+      // Default: High quality, Square
+      (None, None, None, [16, 32, 48, 64]),
+      // Presets (no resolution)
+      (Some(GptImage2TextToImageQuality::Low), Some(GptImage2TextToImageSize::Landscape4x3), None, [1, 2, 3, 4]),
+      (Some(GptImage2TextToImageQuality::Low), Some(GptImage2TextToImageSize::Portrait4x3), None, [1, 2, 3, 4]),
+      (Some(GptImage2TextToImageQuality::Low), Some(GptImage2TextToImageSize::Square), None, [1, 2, 3, 4]),
+      (Some(GptImage2TextToImageQuality::Low), Some(GptImage2TextToImageSize::Landscape16x9), None, [2, 4, 6, 8]),
+      (Some(GptImage2TextToImageQuality::Low), Some(GptImage2TextToImageSize::Portrait16x9), None, [2, 4, 6, 8]),
       (Some(GptImage2TextToImageQuality::Low), Some(GptImage2TextToImageSize::SquareHd), None, [2, 4, 6, 8]),
-      (Some(GptImage2TextToImageQuality::Medium), Some(GptImage2TextToImageSize::Landscape4x3), None, [5, 9, 13, 18]),
-      (Some(GptImage2TextToImageQuality::Medium), Some(GptImage2TextToImageSize::Portrait4x3), None, [5, 9, 13, 18]),
-      (Some(GptImage2TextToImageQuality::Medium), Some(GptImage2TextToImageSize::Square), None, [7, 13, 19, 25]),
-      (Some(GptImage2TextToImageQuality::Medium), Some(GptImage2TextToImageSize::Landscape16x9), None, [6, 11, 16, 22]),
-      (Some(GptImage2TextToImageQuality::Medium), Some(GptImage2TextToImageSize::Portrait16x9), None, [6, 11, 16, 22]),
-      (Some(GptImage2TextToImageQuality::Medium), Some(GptImage2TextToImageSize::SquareHd), None, [7, 14, 21, 28]),
-      (Some(GptImage2TextToImageQuality::High), Some(GptImage2TextToImageSize::Landscape4x3), None, [16, 31, 46, 61]),
-      (Some(GptImage2TextToImageQuality::High), Some(GptImage2TextToImageSize::Portrait4x3), None, [16, 31, 46, 61]),
-      (Some(GptImage2TextToImageQuality::High), Some(GptImage2TextToImageSize::Square), None, [22, 44, 66, 88]),
-      (Some(GptImage2TextToImageQuality::High), Some(GptImage2TextToImageSize::Landscape16x9), None, [16, 32, 48, 64]),
-      (Some(GptImage2TextToImageQuality::High), Some(GptImage2TextToImageSize::Portrait16x9), None, [16, 32, 48, 64]),
-      (Some(GptImage2TextToImageQuality::High), Some(GptImage2TextToImageSize::SquareHd), None, [24, 47, 71, 94]),
+      (Some(GptImage2TextToImageQuality::Medium), Some(GptImage2TextToImageSize::Landscape4x3), None, [5, 10, 15, 20]),
+      (Some(GptImage2TextToImageQuality::Medium), Some(GptImage2TextToImageSize::Portrait4x3), None, [5, 10, 15, 20]),
+      (Some(GptImage2TextToImageQuality::Medium), Some(GptImage2TextToImageSize::Square), None, [5, 10, 15, 20]),
+      (Some(GptImage2TextToImageQuality::Medium), Some(GptImage2TextToImageSize::Landscape16x9), None, [6, 12, 18, 24]),
+      (Some(GptImage2TextToImageQuality::Medium), Some(GptImage2TextToImageSize::Portrait16x9), None, [6, 12, 18, 24]),
+      (Some(GptImage2TextToImageQuality::Medium), Some(GptImage2TextToImageSize::SquareHd), None, [8, 16, 24, 32]),
+      (Some(GptImage2TextToImageQuality::High), Some(GptImage2TextToImageSize::Landscape4x3), None, [15, 30, 45, 60]),
+      (Some(GptImage2TextToImageQuality::High), Some(GptImage2TextToImageSize::Portrait4x3), None, [15, 30, 45, 60]),
+      (Some(GptImage2TextToImageQuality::High), Some(GptImage2TextToImageSize::Square), None, [16, 32, 48, 64]),
+      (Some(GptImage2TextToImageQuality::High), Some(GptImage2TextToImageSize::Landscape16x9), None, [20, 40, 60, 80]),
+      (Some(GptImage2TextToImageQuality::High), Some(GptImage2TextToImageSize::Portrait16x9), None, [20, 40, 60, 80]),
+      (Some(GptImage2TextToImageQuality::High), Some(GptImage2TextToImageSize::SquareHd), None, [27, 54, 81, 108]),
     ];
 
     for (size, resolution, low, medium, high) in text_to_image_resolution_price_cases() {
@@ -97,31 +99,34 @@ mod tests {
 
   fn edit_image_price_cases() -> Vec<EditPriceCase> {
     let mut cases = vec![
-      (None, None, None, [22, 44, 66, 88]),
-      (Some(GptImage2EditImageQuality::Low), Some(GptImage2EditImageSize::Auto), None, [3, 5, 8, 10]),
-      (Some(GptImage2EditImageQuality::Medium), Some(GptImage2EditImageSize::Auto), None, [12, 23, 34, 46]),
-      (Some(GptImage2EditImageQuality::High), Some(GptImage2EditImageSize::Auto), None, [42, 83, 124, 166]),
-      (Some(GptImage2EditImageQuality::Low), Some(GptImage2EditImageSize::Auto), Some(GptImage2Resolution::OneK), [3, 5, 8, 10]),
-      (Some(GptImage2EditImageQuality::Medium), Some(GptImage2EditImageSize::Auto), Some(GptImage2Resolution::OneK), [12, 23, 34, 46]),
-      (Some(GptImage2EditImageQuality::High), Some(GptImage2EditImageSize::Auto), Some(GptImage2Resolution::OneK), [42, 83, 124, 166]),
-      (Some(GptImage2EditImageQuality::Low), Some(GptImage2EditImageSize::Landscape4x3), None, [2, 3, 4, 5]),
-      (Some(GptImage2EditImageQuality::Low), Some(GptImage2EditImageSize::Portrait4x3), None, [2, 3, 4, 5]),
-      (Some(GptImage2EditImageQuality::Low), Some(GptImage2EditImageSize::Square), None, [2, 3, 5, 6]),
-      (Some(GptImage2EditImageQuality::Low), Some(GptImage2EditImageSize::Landscape16x9), None, [2, 4, 6, 7]),
-      (Some(GptImage2EditImageQuality::Low), Some(GptImage2EditImageSize::Portrait16x9), None, [2, 4, 6, 7]),
-      (Some(GptImage2EditImageQuality::Low), Some(GptImage2EditImageSize::SquareHd), None, [2, 4, 6, 8]),
-      (Some(GptImage2EditImageQuality::Medium), Some(GptImage2EditImageSize::Landscape4x3), None, [5, 9, 13, 18]),
-      (Some(GptImage2EditImageQuality::Medium), Some(GptImage2EditImageSize::Portrait4x3), None, [5, 9, 13, 18]),
-      (Some(GptImage2EditImageQuality::Medium), Some(GptImage2EditImageSize::Square), None, [7, 13, 19, 25]),
-      (Some(GptImage2EditImageQuality::Medium), Some(GptImage2EditImageSize::Landscape16x9), None, [6, 11, 16, 22]),
-      (Some(GptImage2EditImageQuality::Medium), Some(GptImage2EditImageSize::Portrait16x9), None, [6, 11, 16, 22]),
+      // Default: High quality, Square
+      (None, None, None, [15, 30, 45, 60]),
+      // Auto (with and without resolution — same cost, conservative max)
+      (Some(GptImage2EditImageQuality::Low), Some(GptImage2EditImageSize::Auto), None, [2, 4, 6, 8]),
+      (Some(GptImage2EditImageQuality::Medium), Some(GptImage2EditImageSize::Auto), None, [10, 20, 30, 40]),
+      (Some(GptImage2EditImageQuality::High), Some(GptImage2EditImageSize::Auto), None, [41, 82, 123, 164]),
+      (Some(GptImage2EditImageQuality::Low), Some(GptImage2EditImageSize::Auto), Some(GptImage2Resolution::OneK), [2, 4, 6, 8]),
+      (Some(GptImage2EditImageQuality::Medium), Some(GptImage2EditImageSize::Auto), Some(GptImage2Resolution::OneK), [10, 20, 30, 40]),
+      (Some(GptImage2EditImageQuality::High), Some(GptImage2EditImageSize::Auto), Some(GptImage2Resolution::OneK), [41, 82, 123, 164]),
+      // Presets (no resolution)
+      (Some(GptImage2EditImageQuality::Low), Some(GptImage2EditImageSize::Landscape4x3), None, [1, 2, 3, 4]),
+      (Some(GptImage2EditImageQuality::Low), Some(GptImage2EditImageSize::Portrait4x3), None, [1, 2, 3, 4]),
+      (Some(GptImage2EditImageQuality::Low), Some(GptImage2EditImageSize::Square), None, [1, 2, 3, 4]),
+      (Some(GptImage2EditImageQuality::Low), Some(GptImage2EditImageSize::Landscape16x9), None, [1, 2, 3, 4]),
+      (Some(GptImage2EditImageQuality::Low), Some(GptImage2EditImageSize::Portrait16x9), None, [1, 2, 3, 4]),
+      (Some(GptImage2EditImageQuality::Low), Some(GptImage2EditImageSize::SquareHd), None, [1, 2, 3, 4]),
+      (Some(GptImage2EditImageQuality::Medium), Some(GptImage2EditImageSize::Landscape4x3), None, [4, 8, 12, 16]),
+      (Some(GptImage2EditImageQuality::Medium), Some(GptImage2EditImageSize::Portrait4x3), None, [4, 8, 12, 16]),
+      (Some(GptImage2EditImageQuality::Medium), Some(GptImage2EditImageSize::Square), None, [4, 8, 12, 16]),
+      (Some(GptImage2EditImageQuality::Medium), Some(GptImage2EditImageSize::Landscape16x9), None, [5, 10, 15, 20]),
+      (Some(GptImage2EditImageQuality::Medium), Some(GptImage2EditImageSize::Portrait16x9), None, [5, 10, 15, 20]),
       (Some(GptImage2EditImageQuality::Medium), Some(GptImage2EditImageSize::SquareHd), None, [7, 14, 21, 28]),
-      (Some(GptImage2EditImageQuality::High), Some(GptImage2EditImageSize::Landscape4x3), None, [16, 31, 46, 61]),
-      (Some(GptImage2EditImageQuality::High), Some(GptImage2EditImageSize::Portrait4x3), None, [16, 31, 46, 61]),
-      (Some(GptImage2EditImageQuality::High), Some(GptImage2EditImageSize::Square), None, [22, 44, 66, 88]),
-      (Some(GptImage2EditImageQuality::High), Some(GptImage2EditImageSize::Landscape16x9), None, [16, 32, 48, 64]),
-      (Some(GptImage2EditImageQuality::High), Some(GptImage2EditImageSize::Portrait16x9), None, [16, 32, 48, 64]),
-      (Some(GptImage2EditImageQuality::High), Some(GptImage2EditImageSize::SquareHd), None, [24, 47, 71, 94]),
+      (Some(GptImage2EditImageQuality::High), Some(GptImage2EditImageSize::Landscape4x3), None, [14, 28, 42, 56]),
+      (Some(GptImage2EditImageQuality::High), Some(GptImage2EditImageSize::Portrait4x3), None, [14, 28, 42, 56]),
+      (Some(GptImage2EditImageQuality::High), Some(GptImage2EditImageSize::Square), None, [15, 30, 45, 60]),
+      (Some(GptImage2EditImageQuality::High), Some(GptImage2EditImageSize::Landscape16x9), None, [19, 38, 57, 76]),
+      (Some(GptImage2EditImageQuality::High), Some(GptImage2EditImageSize::Portrait16x9), None, [19, 38, 57, 76]),
+      (Some(GptImage2EditImageQuality::High), Some(GptImage2EditImageSize::SquareHd), None, [26, 52, 78, 104]),
     ];
 
     for (size, resolution, low, medium, high) in edit_image_resolution_price_cases() {
@@ -135,48 +140,60 @@ mod tests {
 
   fn text_to_image_resolution_price_cases() -> Vec<(GptImage2TextToImageSize, GptImage2Resolution, [u64; 4], [u64; 4], [u64; 4])> {
     vec![
-      (GptImage2TextToImageSize::Landscape4x3, GptImage2Resolution::OneK, [2, 3, 4, 5], [5, 9, 13, 18], [16, 31, 46, 61]),
-      (GptImage2TextToImageSize::Landscape4x3, GptImage2Resolution::TwoK, [2, 4, 6, 8], [7, 14, 21, 28], [24, 47, 71, 94]),
-      (GptImage2TextToImageSize::Landscape4x3, GptImage2Resolution::ThreeK, [3, 5, 8, 10], [12, 23, 34, 46], [42, 83, 124, 166]),
-      (GptImage2TextToImageSize::Landscape4x3, GptImage2Resolution::FourK, [3, 5, 8, 10], [12, 23, 34, 46], [42, 83, 124, 166]),
-      (GptImage2TextToImageSize::Landscape16x9, GptImage2Resolution::OneK, [2, 3, 4, 5], [5, 9, 13, 18], [16, 31, 46, 61]),
-      (GptImage2TextToImageSize::Landscape16x9, GptImage2Resolution::TwoK, [2, 4, 6, 7], [6, 11, 16, 22], [16, 32, 48, 64]),
-      (GptImage2TextToImageSize::Landscape16x9, GptImage2Resolution::ThreeK, [2, 4, 6, 8], [7, 14, 21, 28], [24, 47, 71, 94]),
-      (GptImage2TextToImageSize::Landscape16x9, GptImage2Resolution::FourK, [3, 5, 8, 10], [12, 23, 34, 46], [42, 83, 124, 166]),
-      (GptImage2TextToImageSize::Portrait4x3, GptImage2Resolution::OneK, [2, 3, 4, 5], [5, 9, 13, 18], [16, 31, 46, 61]),
-      (GptImage2TextToImageSize::Portrait4x3, GptImage2Resolution::TwoK, [2, 4, 6, 8], [7, 14, 21, 28], [24, 47, 71, 94]),
-      (GptImage2TextToImageSize::Portrait4x3, GptImage2Resolution::ThreeK, [3, 5, 8, 10], [12, 23, 34, 46], [42, 83, 124, 166]),
-      (GptImage2TextToImageSize::Portrait4x3, GptImage2Resolution::FourK, [3, 5, 8, 10], [12, 23, 34, 46], [42, 83, 124, 166]),
-      (GptImage2TextToImageSize::Portrait16x9, GptImage2Resolution::OneK, [2, 3, 4, 5], [5, 9, 13, 18], [16, 31, 46, 61]),
-      (GptImage2TextToImageSize::Portrait16x9, GptImage2Resolution::TwoK, [2, 4, 6, 7], [6, 11, 16, 22], [16, 32, 48, 64]),
-      (GptImage2TextToImageSize::Portrait16x9, GptImage2Resolution::ThreeK, [2, 4, 6, 8], [7, 14, 21, 28], [24, 47, 71, 94]),
-      (GptImage2TextToImageSize::Portrait16x9, GptImage2Resolution::FourK, [3, 5, 8, 10], [12, 23, 34, 46], [42, 83, 124, 166]),
-      (GptImage2TextToImageSize::Square, GptImage2Resolution::OneK, [2, 3, 5, 6], [7, 13, 19, 25], [22, 44, 66, 88]),
-      (GptImage2TextToImageSize::Square, GptImage2Resolution::TwoK, [2, 4, 6, 8], [7, 14, 21, 28], [24, 47, 71, 94]),
-      (GptImage2TextToImageSize::Square, GptImage2Resolution::ThreeK, [3, 5, 8, 10], [12, 23, 34, 46], [42, 83, 124, 166]),
-      (GptImage2TextToImageSize::Square, GptImage2Resolution::FourK, [3, 5, 8, 10], [12, 23, 34, 46], [42, 83, 124, 166]),
-      (GptImage2TextToImageSize::SquareHd, GptImage2Resolution::OneK, [2, 3, 5, 6], [7, 13, 19, 25], [22, 44, 66, 88]),
-      (GptImage2TextToImageSize::SquareHd, GptImage2Resolution::TwoK, [2, 4, 6, 8], [7, 14, 21, 28], [24, 47, 71, 94]),
-      (GptImage2TextToImageSize::SquareHd, GptImage2Resolution::ThreeK, [3, 5, 8, 10], [12, 23, 34, 46], [42, 83, 124, 166]),
-      (GptImage2TextToImageSize::SquareHd, GptImage2Resolution::FourK, [3, 5, 8, 10], [12, 23, 34, 46], [42, 83, 124, 166]),
+      (GptImage2TextToImageSize::Landscape4x3, GptImage2Resolution::OneK, [1, 2, 3, 4], [5, 10, 15, 20], [15, 30, 45, 60]),
+      (GptImage2TextToImageSize::Landscape4x3, GptImage2Resolution::TwoK, [2, 4, 6, 8], [7, 14, 21, 28], [24, 48, 72, 96]),
+      (GptImage2TextToImageSize::Landscape4x3, GptImage2Resolution::ThreeK, [2, 4, 6, 8], [11, 22, 33, 44], [37, 74, 111, 148]),
+      (GptImage2TextToImageSize::Landscape4x3, GptImage2Resolution::FourK, [3, 6, 9, 12], [12, 24, 36, 48], [41, 82, 123, 164]),
+      (GptImage2TextToImageSize::Landscape16x9, GptImage2Resolution::OneK, [1, 2, 3, 4], [5, 10, 15, 20], [15, 30, 45, 60]),
+      (GptImage2TextToImageSize::Landscape16x9, GptImage2Resolution::TwoK, [2, 4, 6, 8], [6, 12, 18, 24], [21, 42, 63, 84]),
+      (GptImage2TextToImageSize::Landscape16x9, GptImage2Resolution::ThreeK, [2, 4, 6, 8], [9, 18, 27, 36], [31, 62, 93, 124]),
+      (GptImage2TextToImageSize::Landscape16x9, GptImage2Resolution::FourK, [3, 6, 9, 12], [12, 24, 36, 48], [42, 84, 126, 168]),
+      (GptImage2TextToImageSize::Portrait4x3, GptImage2Resolution::OneK, [1, 2, 3, 4], [5, 10, 15, 20], [15, 30, 45, 60]),
+      (GptImage2TextToImageSize::Portrait4x3, GptImage2Resolution::TwoK, [2, 4, 6, 8], [7, 14, 21, 28], [24, 48, 72, 96]),
+      (GptImage2TextToImageSize::Portrait4x3, GptImage2Resolution::ThreeK, [2, 4, 6, 8], [11, 22, 33, 44], [37, 74, 111, 148]),
+      (GptImage2TextToImageSize::Portrait4x3, GptImage2Resolution::FourK, [3, 6, 9, 12], [12, 24, 36, 48], [41, 82, 123, 164]),
+      (GptImage2TextToImageSize::Portrait16x9, GptImage2Resolution::OneK, [1, 2, 3, 4], [5, 10, 15, 20], [15, 30, 45, 60]),
+      (GptImage2TextToImageSize::Portrait16x9, GptImage2Resolution::TwoK, [2, 4, 6, 8], [6, 12, 18, 24], [21, 42, 63, 84]),
+      (GptImage2TextToImageSize::Portrait16x9, GptImage2Resolution::ThreeK, [2, 4, 6, 8], [9, 18, 27, 36], [31, 62, 93, 124]),
+      (GptImage2TextToImageSize::Portrait16x9, GptImage2Resolution::FourK, [3, 6, 9, 12], [12, 24, 36, 48], [42, 84, 126, 168]),
+      (GptImage2TextToImageSize::Square, GptImage2Resolution::OneK, [1, 2, 3, 4], [5, 10, 15, 20], [16, 32, 48, 64]),
+      (GptImage2TextToImageSize::Square, GptImage2Resolution::TwoK, [2, 4, 6, 8], [8, 16, 24, 32], [27, 54, 81, 108]),
+      (GptImage2TextToImageSize::Square, GptImage2Resolution::ThreeK, [3, 6, 9, 12], [12, 24, 36, 48], [42, 84, 126, 168]),
+      (GptImage2TextToImageSize::Square, GptImage2Resolution::FourK, [3, 6, 9, 12], [12, 24, 36, 48], [42, 84, 126, 168]),
+      (GptImage2TextToImageSize::SquareHd, GptImage2Resolution::OneK, [1, 2, 3, 4], [5, 10, 15, 20], [16, 32, 48, 64]),
+      (GptImage2TextToImageSize::SquareHd, GptImage2Resolution::TwoK, [2, 4, 6, 8], [8, 16, 24, 32], [27, 54, 81, 108]),
+      (GptImage2TextToImageSize::SquareHd, GptImage2Resolution::ThreeK, [3, 6, 9, 12], [12, 24, 36, 48], [42, 84, 126, 168]),
+      (GptImage2TextToImageSize::SquareHd, GptImage2Resolution::FourK, [3, 6, 9, 12], [12, 24, 36, 48], [42, 84, 126, 168]),
     ]
   }
 
   fn edit_image_resolution_price_cases() -> Vec<(GptImage2EditImageSize, GptImage2Resolution, [u64; 4], [u64; 4], [u64; 4])> {
-    text_to_image_resolution_price_cases()
-      .into_iter()
-      .map(|(size, resolution, low, medium, high)| {
-        let edit_size = match size {
-          GptImage2TextToImageSize::SquareHd => GptImage2EditImageSize::SquareHd,
-          GptImage2TextToImageSize::Square => GptImage2EditImageSize::Square,
-          GptImage2TextToImageSize::Portrait4x3 => GptImage2EditImageSize::Portrait4x3,
-          GptImage2TextToImageSize::Portrait16x9 => GptImage2EditImageSize::Portrait16x9,
-          GptImage2TextToImageSize::Landscape4x3 => GptImage2EditImageSize::Landscape4x3,
-          GptImage2TextToImageSize::Landscape16x9 => GptImage2EditImageSize::Landscape16x9,
-        };
-        (edit_size, resolution, low, medium, high)
-      })
-      .collect()
+    vec![
+      (GptImage2EditImageSize::Landscape4x3, GptImage2Resolution::OneK, [1, 2, 3, 4], [4, 8, 12, 16], [14, 28, 42, 56]),
+      (GptImage2EditImageSize::Landscape4x3, GptImage2Resolution::TwoK, [1, 2, 3, 4], [6, 12, 18, 24], [23, 46, 69, 92]),
+      (GptImage2EditImageSize::Landscape4x3, GptImage2Resolution::ThreeK, [2, 4, 6, 8], [9, 18, 27, 36], [36, 72, 108, 144]),
+      (GptImage2EditImageSize::Landscape4x3, GptImage2Resolution::FourK, [2, 4, 6, 8], [10, 20, 30, 40], [40, 80, 120, 160]),
+      (GptImage2EditImageSize::Landscape16x9, GptImage2Resolution::OneK, [1, 2, 3, 4], [4, 8, 12, 16], [14, 28, 42, 56]),
+      (GptImage2EditImageSize::Landscape16x9, GptImage2Resolution::TwoK, [1, 2, 3, 4], [5, 10, 15, 20], [20, 40, 60, 80]),
+      (GptImage2EditImageSize::Landscape16x9, GptImage2Resolution::ThreeK, [1, 2, 3, 4], [8, 16, 24, 32], [30, 60, 90, 120]),
+      (GptImage2EditImageSize::Landscape16x9, GptImage2Resolution::FourK, [2, 4, 6, 8], [10, 20, 30, 40], [41, 82, 123, 164]),
+      (GptImage2EditImageSize::Portrait4x3, GptImage2Resolution::OneK, [1, 2, 3, 4], [4, 8, 12, 16], [14, 28, 42, 56]),
+      (GptImage2EditImageSize::Portrait4x3, GptImage2Resolution::TwoK, [1, 2, 3, 4], [6, 12, 18, 24], [23, 46, 69, 92]),
+      (GptImage2EditImageSize::Portrait4x3, GptImage2Resolution::ThreeK, [2, 4, 6, 8], [9, 18, 27, 36], [36, 72, 108, 144]),
+      (GptImage2EditImageSize::Portrait4x3, GptImage2Resolution::FourK, [2, 4, 6, 8], [10, 20, 30, 40], [40, 80, 120, 160]),
+      (GptImage2EditImageSize::Portrait16x9, GptImage2Resolution::OneK, [1, 2, 3, 4], [4, 8, 12, 16], [14, 28, 42, 56]),
+      (GptImage2EditImageSize::Portrait16x9, GptImage2Resolution::TwoK, [1, 2, 3, 4], [5, 10, 15, 20], [20, 40, 60, 80]),
+      (GptImage2EditImageSize::Portrait16x9, GptImage2Resolution::ThreeK, [1, 2, 3, 4], [8, 16, 24, 32], [30, 60, 90, 120]),
+      (GptImage2EditImageSize::Portrait16x9, GptImage2Resolution::FourK, [2, 4, 6, 8], [10, 20, 30, 40], [41, 82, 123, 164]),
+      (GptImage2EditImageSize::Square, GptImage2Resolution::OneK, [1, 2, 3, 4], [4, 8, 12, 16], [15, 30, 45, 60]),
+      (GptImage2EditImageSize::Square, GptImage2Resolution::TwoK, [1, 2, 3, 4], [7, 14, 21, 28], [26, 52, 78, 104]),
+      (GptImage2EditImageSize::Square, GptImage2Resolution::ThreeK, [2, 4, 6, 8], [10, 20, 30, 40], [41, 82, 123, 164]),
+      (GptImage2EditImageSize::Square, GptImage2Resolution::FourK, [2, 4, 6, 8], [10, 20, 30, 40], [41, 82, 123, 164]),
+      (GptImage2EditImageSize::SquareHd, GptImage2Resolution::OneK, [1, 2, 3, 4], [4, 8, 12, 16], [15, 30, 45, 60]),
+      (GptImage2EditImageSize::SquareHd, GptImage2Resolution::TwoK, [1, 2, 3, 4], [7, 14, 21, 28], [26, 52, 78, 104]),
+      (GptImage2EditImageSize::SquareHd, GptImage2Resolution::ThreeK, [2, 4, 6, 8], [10, 20, 30, 40], [41, 82, 123, 164]),
+      (GptImage2EditImageSize::SquareHd, GptImage2Resolution::FourK, [2, 4, 6, 8], [10, 20, 30, 40], [41, 82, 123, 164]),
+    ]
   }
 
   fn text_to_image_num_image_cases(expected_by_count: [u64; 4]) -> [(GptImage2TextToImageNumImages, u64); 4] {

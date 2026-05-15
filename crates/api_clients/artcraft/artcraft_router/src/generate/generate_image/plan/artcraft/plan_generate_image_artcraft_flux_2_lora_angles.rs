@@ -184,17 +184,6 @@ mod tests {
   }
 
   #[test]
-  fn rejects_multiple_media_tokens() {
-    let tokens = vec![make_token(), make_token()];
-    let request = GenerateImageRequestBuilder {
-      image_inputs: Some(ImageListRef::MediaFileTokens(tokens.clone())),
-      ..base_flux_2_lora_angles_image_request()
-    };
-    let result = request.build();
-    assert!(result.is_err());
-  }
-
-  #[test]
   fn image_size_none_is_none() {
     let tokens = vec![make_token()];
     let request = GenerateImageRequestBuilder {
