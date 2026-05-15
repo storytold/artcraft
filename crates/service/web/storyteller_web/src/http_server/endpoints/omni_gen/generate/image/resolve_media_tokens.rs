@@ -1,10 +1,9 @@
 use std::collections::HashMap;
 
 use actix_web::HttpRequest;
-use log::{info, warn};
+use log::info;
 use sqlx::pool::PoolConnection;
 use sqlx::MySql;
-use url::Url;
 
 use artcraft_api_defs::omni_gen::cost_and_generate_requests::omni_gen_image_cost_and_generate_request::OmniGenImageCostAndGenerateRequest;
 use artcraft_router::api::image_list_ref::ImageListRef;
@@ -18,12 +17,12 @@ use server_environment::ServerEnvironment;
 /// Resolved media URLs that can be referenced by a GenerateImageRequestBuilder.
 /// The owned Vecs here outlive the request so the GenerateImageRequestBuilder can borrow them.
 pub struct ResolvedImageMedia {
-  /// Input media tokens -> URL
-  pub url_map: HashMap<MediaFileToken, String>,
-
   /// Input media tokens as URLs in order.
   /// The order matters for the prompt, as the prompt might mention "first image", etc.
   pub ordered_image_input_urls: Vec<String>,
+
+  /// Input media tokens -> URL
+  pub url_map: HashMap<MediaFileToken, String>,
 }
 
 /// Collect all media file tokens from the raw HTTP request, query them from the database,
@@ -42,29 +41,19 @@ pub async fn resolve_media_tokens(
 
   if all_tokens.is_empty() {
     return Ok(ResolvedImageMedia {
-      url_map: HashMap::new(),
       ordered_image_input_urls: Vec::new(),
+      url_map: HashMap::new(),
     });
   }
 
   info!("Resolving {} media file tokens to CDN URLs", all_tokens.len());
 
-  let raw_url_map = lookup_image_urls_as_map(
+  let url_map = lookup_image_urls_as_map(
     http_request,
     mysql_connection,
     server_environment,
     &all_tokens,
   ).await?;
-
-  let url_map: HashMap<MediaFileToken, String> = raw_url_map.into_iter()
-    .filter_map(|(token, url_str)| match Url::parse(&url_str) {
-      Ok(url) => Some((token, url.to_string())),
-      Err(err) => {
-        warn!("Failed to parse media file URL {:?}: {:?}", url_str, err);
-        None
-      }
-    })
-    .collect();
 
   let image_input_urls = omni_request.image_media_tokens.as_ref()
     .map(|tokens| tokens.iter().filter_map(|t| url_map.get(t).cloned()).collect())
@@ -74,16 +63,4 @@ pub async fn resolve_media_tokens(
     url_map,
     ordered_image_input_urls: image_input_urls,
   })
-}
-
-/// Apply resolved media URLs to a GenerateImageRequestBuilder, replacing MediaFileToken refs with URL refs.
-pub fn apply_resolved_media(
-  request: &mut GenerateImageRequestBuilder,
-  resolved: &ResolvedImageMedia,
-) {
-  if !resolved.ordered_image_input_urls.is_empty() {
-    request.image_inputs = Some(ImageListRef::Urls(resolved.ordered_image_input_urls.clone()));
-  } else {
-    request.image_inputs = None;
-  }
 }
