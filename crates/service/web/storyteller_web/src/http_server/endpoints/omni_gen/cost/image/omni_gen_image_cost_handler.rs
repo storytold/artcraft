@@ -4,6 +4,7 @@ use actix_web::web::Json;
 use actix_web::{web, HttpRequest};
 use artcraft_api_defs::omni_gen::cost_and_generate_requests::omni_gen_image_cost_and_generate_request::OmniGenImageCostAndGenerateRequest;
 use artcraft_api_defs::omni_gen::cost_response::omni_gen_image_cost_response::OmniGenImageCostResponse;
+use artcraft_router::api::image_list_ref::ImageListRef;
 use artcraft_router::api::provider::Provider;
 use artcraft_router::generate::generate_image::generate_image_request_builder::GenerateImageRequestBuilder;
 use artcraft_router::generate::generate_image::image_generation_cost_estimate::ImageGenerationCostEstimate;
@@ -90,6 +91,16 @@ fn estimate_pipeline_v2_cost(
   //  to kill in the future.
 
   builder.provider = Provider::Fal;
+
+  // Fal cost estimation doesn't work with media file tokens.
+  // We don't need to look them up (though, technically, image size does impact cost with
+  // some providers). Let's just fill the list with dummy URLs in that case.
+  if let Some(ImageListRef::MediaFileTokens(tokens)) = builder.image_inputs.as_ref() {
+    builder.image_inputs = Some(ImageListRef::Urls(vec![
+      "https://example.com/image.png".to_string();
+      tokens.len()
+    ]));
+  }
 
   let mut cost = builder.build2()
     .map_err(|e| {
