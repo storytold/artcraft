@@ -90,8 +90,13 @@ fn apply_hydrated_media_inputs(
 ) -> GenerateImageRequestBuilder {
   let mut hydrated_builder = router_builder.clone();
 
-  if matches!(hydrated_builder.image_inputs.as_ref(), Some(ImageListRef::MediaFileTokens(tokens)) if !tokens.is_empty()) {
-    hydrated_builder.image_inputs = Some(ImageListRef::Urls(resolved_media.ordered_url_list.clone()));
+  match hydrated_builder.image_inputs.as_ref() {
+    Some(ImageListRef::MediaFileTokens(tokens)) if !tokens.is_empty() => {
+      hydrated_builder.image_inputs = Some(ImageListRef::Urls(
+        resolved_media.ordered_url_list.clone(),
+      ));
+    },
+    _ => {},
   }
 
   hydrated_builder
