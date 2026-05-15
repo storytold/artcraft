@@ -225,6 +225,12 @@ export interface PageSceneAdapter {
   // is always signed in. Webapp host wires this to its auth modal.
   promptSignup?(reason?: string): void;
 
+  // Open the host's New-Scene chooser (e.g. webapp's splash modal). When
+  // defined, the lib's File > New Scene item delegates here instead of
+  // showing its inline confirm dialog. Tauri host leaves it undefined and
+  // keeps the existing behavior.
+  onRequestNewSceneSelector?(): void;
+
   // Roll the current editor session back to the original scene the
   // host loaded. Called when the user confirms the destructive Reset
   // modal in the File menu. Implementations typically pull the

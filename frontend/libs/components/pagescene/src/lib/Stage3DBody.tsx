@@ -467,7 +467,7 @@ export const Stage3DBody = ({
               uploadImage={
                 editor
                   ? (((arg: Parameters<typeof editor.adapter.uploadImage>[0]) =>
-                      editor.adapter.uploadImage(arg)) as never)
+                    editor.adapter.uploadImage(arg)) as never)
                   : undefined
               }
               handleCameraSelect={handleCameraSelect}

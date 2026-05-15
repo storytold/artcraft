@@ -186,6 +186,12 @@ interface PageSceneState {
   // Current logged-in user (read from host auth signal). Used for
   // ownership permission checks in ControlsTopButtons.
   currentUserToken: string | undefined;
+  // Host-owned full-screen overlay (e.g. webapp's splash modal) is
+  // open. Lib components use this to suppress in-editor affordances
+  // that would otherwise bleed visually through or behind the modal
+  // (the empty-scene "Click + to add" bouncing hint, etc.). The host
+  // toggles this via setHostOverlayVisible from its own modal store.
+  hostOverlayVisible: boolean;
 
   // canvas DOM refs (set by canvas components on mount; consumed by
   // the engine + hooks)
@@ -273,6 +279,7 @@ interface PageSceneState {
   // and authentication.userInfo into these).
   setSceneMeta: (meta: Partial<SceneMeta>) => void;
   setCurrentUserToken: (token: string | undefined) => void;
+  setHostOverlayVisible: (visible: boolean) => void;
 
   // canvas refs
   setSceneContainerEl: (el: HTMLDivElement | null) => void;
@@ -342,6 +349,7 @@ export const usePageSceneStore = create<PageSceneState>((set, get) => ({
     isInitializing: true,
   },
   currentUserToken: undefined,
+  hostOverlayVisible: false,
 
   sceneContainerEl: null,
   editorCanvasEl: null,
@@ -489,6 +497,7 @@ export const usePageSceneStore = create<PageSceneState>((set, get) => ({
   setSceneMeta: (meta) =>
     set((s) => ({ sceneMeta: { ...s.sceneMeta, ...meta } })),
   setCurrentUserToken: (token) => set({ currentUserToken: token }),
+  setHostOverlayVisible: (visible) => set({ hostOverlayVisible: visible }),
 
   setSceneContainerEl: (el) => set({ sceneContainerEl: el }),
   setEditorCanvasEl: (el) => set({ editorCanvasEl: el }),
