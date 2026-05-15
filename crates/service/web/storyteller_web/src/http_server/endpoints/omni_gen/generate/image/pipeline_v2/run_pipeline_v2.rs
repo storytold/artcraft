@@ -1,7 +1,4 @@
-use std::collections::HashMap;
-
 use log::{info, warn};
-use url::Url;
 
 use artcraft_router::api::image_list_ref::ImageListRef;
 use artcraft_router::api::provider::Provider;
@@ -13,12 +10,12 @@ use artcraft_router::generate::generate_image_v2::image_generation_draft_context
 use artcraft_router::generate::generate_image_v2::image_generation_draft_or_request::ImageGenerationDraftOrRequest;
 use artcraft_router::generate::generate_image_v2::image_generation_request::ImageGenerationRequest;
 use tokens::tokens::generic_inference_jobs::InferenceJobToken;
-use tokens::tokens::media_files::MediaFileToken;
 use tokens::tokens::users::UserToken;
 
 use crate::billing::wallets::attempt_wallet_deduction::attempt_wallet_deduction_else_common_web_error;
 use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
 use crate::http_server::endpoints::omni_gen::generate::image::pipeline_result::ImagePipelineResult;
+use crate::http_server::endpoints::omni_gen::generate::image::resolve_media_tokens::ResolvedImageMedia;
 use crate::state::server_state::ServerState;
 
 pub struct RunPipelineV2Args<'a> {
@@ -26,7 +23,7 @@ pub struct RunPipelineV2Args<'a> {
   pub server_state: &'a ServerState,
   pub mysql_connection: &'a mut sqlx::pool::PoolConnection<sqlx::MySql>,
   pub user_token: &'a UserToken,
-  pub media_file_hydration_map: &'a Option<HashMap<MediaFileToken, Url>>,
+  pub resolved_media: &'a ResolvedImageMedia,
 }
 
 pub fn should_use_pipeline_v2(router_builder: &GenerateImageRequestBuilder) -> bool {
@@ -43,12 +40,12 @@ pub async fn run_pipeline_v2(
     server_state,
     mysql_connection,
     user_token,
-    media_file_hydration_map,
+    resolved_media,
   } = args;
 
   let hydrated_builder = apply_hydrated_media_inputs(
     router_builder,
-    media_file_hydration_map.as_ref(),
+    resolved_media,
   )?;
 
   let draft_or_request = build_execution_request(&hydrated_builder)?;
@@ -89,12 +86,12 @@ fn build_execution_request(
 
 fn apply_hydrated_media_inputs(
   router_builder: &GenerateImageRequestBuilder,
-  media_file_hydration_map: Option<&HashMap<MediaFileToken, Url>>,
+  resolved_media: &ResolvedImageMedia,
 ) -> Result<GenerateImageRequestBuilder, AdvancedCommonWebError> {
   let mut hydrated_builder = router_builder.clone();
   let image_input_urls = build_image_input_urls(
     hydrated_builder.image_inputs.as_ref(),
-    media_file_hydration_map,
+    resolved_media,
   )?;
 
   if let Some(urls) = image_input_urls {
@@ -106,23 +103,17 @@ fn apply_hydrated_media_inputs(
 
 fn build_image_input_urls(
   image_inputs: Option<&ImageListRef>,
-  hydration_map: Option<&HashMap<MediaFileToken, Url>>,
+  resolved_media: &ResolvedImageMedia,
 ) -> Result<Option<Vec<String>>, AdvancedCommonWebError> {
   let tokens = match image_inputs {
     Some(ImageListRef::MediaFileTokens(tokens)) if !tokens.is_empty() => tokens,
     _ => return Ok(None),
   };
 
-  let map = hydration_map.ok_or_else(|| {
-    AdvancedCommonWebError::BadInputWithSimpleMessage(
-      "image_media_tokens supplied but no hydration map was provided".to_string(),
-    )
-  })?;
-
   let mut urls: Vec<String> = Vec::with_capacity(tokens.len());
   for token in tokens {
-    match map.get(token) {
-      Some(url) => urls.push(url.to_string()),
+    match resolved_media.url_map.get(token) {
+      Some(url) => urls.push(url.clone()),
       None => {
         return Err(AdvancedCommonWebError::BadInputWithSimpleMessage(format!(
           "Image media token not found in hydration map: {:?}",

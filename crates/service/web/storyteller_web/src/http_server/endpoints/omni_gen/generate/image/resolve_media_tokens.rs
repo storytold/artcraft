@@ -1,9 +1,10 @@
 use std::collections::HashMap;
 
 use actix_web::HttpRequest;
-use log::info;
+use log::{info, warn};
 use sqlx::pool::PoolConnection;
 use sqlx::MySql;
+use url::Url;
 
 use artcraft_api_defs::omni_gen::cost_and_generate_requests::omni_gen_image_cost_and_generate_request::OmniGenImageCostAndGenerateRequest;
 use artcraft_router::api::image_list_ref::ImageListRef;
@@ -48,12 +49,22 @@ pub async fn resolve_media_tokens(
 
   info!("Resolving {} media file tokens to CDN URLs", all_tokens.len());
 
-  let url_map = lookup_image_urls_as_map(
+  let raw_url_map = lookup_image_urls_as_map(
     http_request,
     mysql_connection,
     server_environment,
     &all_tokens,
   ).await?;
+
+  let url_map: HashMap<MediaFileToken, String> = raw_url_map.into_iter()
+    .filter_map(|(token, url_str)| match Url::parse(&url_str) {
+      Ok(url) => Some((token, url.to_string())),
+      Err(err) => {
+        warn!("Failed to parse media file URL {:?}: {:?}", url_str, err);
+        None
+      }
+    })
+    .collect();
 
   let image_input_urls = omni_request.image_media_tokens.as_ref()
     .map(|tokens| tokens.iter().filter_map(|t| url_map.get(t).cloned()).collect())

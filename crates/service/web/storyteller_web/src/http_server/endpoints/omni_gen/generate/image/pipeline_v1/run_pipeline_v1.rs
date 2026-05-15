@@ -1,19 +1,16 @@
-use std::collections::HashMap;
-
 use log::{info, warn};
-use url::Url;
 
 use artcraft_router::client::router_client::RouterClient;
 use artcraft_router::client::router_fal_client::RouterFalClient;
 use artcraft_router::generate::generate_image::generate_image_request_builder::GenerateImageRequestBuilder;
 use tokens::tokens::generic_inference_jobs::InferenceJobToken;
-use tokens::tokens::media_files::MediaFileToken;
 use tokens::tokens::users::UserToken;
 
 use crate::billing::wallets::attempt_wallet_deduction::attempt_wallet_deduction_else_common_web_error;
 use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
 use crate::http_server::endpoints::omni_gen::generate::image::pipeline_result::ImagePipelineResult;
 use crate::http_server::endpoints::omni_gen::generate::image::pipeline_v1::distill_image_request::distill_image_request;
+use crate::http_server::endpoints::omni_gen::generate::image::resolve_media_tokens::ResolvedImageMedia;
 use crate::state::server_state::ServerState;
 
 pub struct RunPipelineV1Args<'a> {
@@ -21,7 +18,7 @@ pub struct RunPipelineV1Args<'a> {
   pub server_state: &'a ServerState,
   pub mysql_connection: &'a mut sqlx::pool::PoolConnection<sqlx::MySql>,
   pub user_token: &'a UserToken,
-  pub media_file_hydration_map: &'a Option<HashMap<MediaFileToken, Url>>,
+  pub resolved_media: &'a ResolvedImageMedia,
 }
 
 pub async fn run_pipeline_v1(
@@ -32,12 +29,12 @@ pub async fn run_pipeline_v1(
     server_state,
     mysql_connection,
     user_token,
-    media_file_hydration_map,
+    resolved_media,
   } = args;
 
   let distilled = distill_image_request(
     router_builder,
-    media_file_hydration_map.as_ref(),
+    Some(resolved_media),
   )?;
 
   let cost = distilled.cost.cost_in_credits.unwrap_or(0);

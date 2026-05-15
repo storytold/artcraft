@@ -1,15 +1,17 @@
 //! Distillation step for the omni-gen image endpoints.
 //!
-//! Takes a hydrated [`GenerateImageRequestBuilder`] plus a (pre-computed)
-//! `MediaFileToken -> Url` map and produces a fully self-contained
+//! Takes a hydrated [`GenerateImageRequestBuilder`] plus pre-resolved
+//! media URLs and produces a fully self-contained
 //! [`DistilledImageRequest`] holding:
 //!   - the (private) router request, kept for inspection in tests / debugging
 //!   - the [`ImageGenerationCostEstimate`] (Artcraft provider, what we bill on)
 //!   - the [`ImageGenerationPlan`] (Fal provider, what we actually execute)
 
+#[cfg(test)]
 use std::collections::HashMap;
 
 use log::warn;
+#[cfg(test)]
 use url::Url;
 
 #[cfg(test)]
@@ -24,6 +26,7 @@ use tokens::tokens::media_files::MediaFileToken;
 use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
 #[cfg(test)]
 use crate::http_server::endpoints::omni_gen::generate::image::hydrate_to_router_request::hydrate_to_router_request;
+use crate::http_server::endpoints::omni_gen::generate::image::resolve_media_tokens::ResolvedImageMedia;
 
 pub(crate) trait DistillImageRequestInput {
   fn to_router_builder(&self) -> Result<GenerateImageRequestBuilder, AdvancedCommonWebError>;
@@ -39,6 +42,23 @@ impl DistillImageRequestInput for GenerateImageRequestBuilder {
 impl DistillImageRequestInput for OmniGenImageCostAndGenerateRequest {
   fn to_router_builder(&self) -> Result<GenerateImageRequestBuilder, AdvancedCommonWebError> {
     hydrate_to_router_request(self)
+  }
+}
+
+pub(crate) trait DistillImageMediaInput {
+  fn image_url_for_token(&self, token: &MediaFileToken) -> Option<String>;
+}
+
+impl DistillImageMediaInput for ResolvedImageMedia {
+  fn image_url_for_token(&self, token: &MediaFileToken) -> Option<String> {
+    self.url_map.get(token).cloned()
+  }
+}
+
+#[cfg(test)]
+impl DistillImageMediaInput for HashMap<MediaFileToken, Url> {
+  fn image_url_for_token(&self, token: &MediaFileToken) -> Option<String> {
+    self.get(token).map(|url| url.to_string())
   }
 }
 
@@ -70,16 +90,15 @@ impl DistilledImageRequest {
 }
 
 /// Build a [`DistilledImageRequest`] from an already-hydrated router request
-/// and a pre-computed `MediaFileToken -> Url` hydration map.
+/// and pre-resolved media URLs.
 ///
-/// The hydration map should already have been resolved by the caller (via
-/// `lookup_image_urls_as_map` or equivalent) — distillation does no I/O.
+/// Media should already have been resolved by the caller. Distillation does no I/O.
 ///
 /// Returns `BadInputWithSimpleMessage` if any image media token referenced by
 /// the request is missing from the hydration map.
-pub(crate) fn distill_image_request(
+pub(crate) fn distill_image_request<M: DistillImageMediaInput>(
   request: &impl DistillImageRequestInput,
-  media_file_hydration_map: Option<&HashMap<MediaFileToken, Url>>,
+  media_file_hydration_map: Option<&M>,
 ) -> Result<DistilledImageRequest, AdvancedCommonWebError> {
   // 1. Start from the router request built by the shared handler layer.
   let mut initial = request.to_router_builder()?;
@@ -127,7 +146,7 @@ pub(crate) fn distill_image_request(
 /// from the hydration map.
 fn build_image_input_urls(
   image_inputs: Option<&ImageListRef>,
-  hydration_map: Option<&HashMap<MediaFileToken, Url>>,
+  hydration_map: Option<&impl DistillImageMediaInput>,
 ) -> Result<Option<Vec<String>>, AdvancedCommonWebError> {
   let tokens = match image_inputs {
     Some(ImageListRef::MediaFileTokens(tokens)) if !tokens.is_empty() => tokens,
@@ -142,8 +161,8 @@ fn build_image_input_urls(
 
   let mut urls: Vec<String> = Vec::with_capacity(tokens.len());
   for token in tokens {
-    match map.get(token) {
-      Some(url) => urls.push(url.to_string()),
+    match map.image_url_for_token(token) {
+      Some(url) => urls.push(url),
       None => {
         return Err(AdvancedCommonWebError::BadInputWithSimpleMessage(format!(
           "Image media token not found in hydration map: {:?}",
