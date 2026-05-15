@@ -1,6 +1,7 @@
 pub mod omni_gen_image_generate_handler;
-pub(crate) mod distill_helper;
-pub(crate) mod distill_image_request;
+pub(crate) mod pipeline_result;
+pub mod pipeline_v1;
+pub mod pipeline_v2;
 mod resolve_media_tokens;
 
 #[cfg(test)]
