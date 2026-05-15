@@ -68,3 +68,58 @@ async fn send_fal_request<T: FalEndpoint>(
     })
   }
 }
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+  use fal_client::creds::fal_api_key::FalApiKey;
+  use fal_client::requests::api::image::common::gpt_image_2_resolution::GptImage2Resolution;
+  use fal_client::requests::api::image::edit::gpt_image_2_edit_image::api::{
+    GptImage2EditImageNumImages, GptImage2EditImageQuality, GptImage2EditImageSize,
+  };
+  use fal_client::requests::api::image::text::gpt_image_2_text_to_image::api::{
+    GptImage2TextToImageNumImages, GptImage2TextToImageQuality,
+    GptImage2TextToImageSize,
+  };
+  use test_data::web::image_urls::JUNO_AT_LAKE_IMAGE_URL;
+
+  fn client_without_webhook() -> RouterFalWebhookOptionalClient {
+    let secret = std::fs::read_to_string("/Users/bt/Artcraft/credentials/fal_api_key.txt")
+      .expect("Failed to read fal_api_key.txt");
+    RouterFalWebhookOptionalClient::new(FalApiKey::from_str(secret.trim()))
+  }
+
+  #[tokio::test]
+  #[ignore] // requires real API key, incurs cost
+  async fn send_text_to_image_queue() {
+    let request = FalGptImage2RequestState::TextToImage(GptImage2TextToImageRequest {
+      prompt: "a polished product photo of a glass compass".to_string(),
+      num_images: GptImage2TextToImageNumImages::One,
+      image_size: Some(GptImage2TextToImageSize::Square),
+      resolution: Some(GptImage2Resolution::OneK),
+      quality: Some(GptImage2TextToImageQuality::Low),
+      output_format: None,
+    });
+    let response = request.send(&client_without_webhook()).await.expect("send should succeed");
+    let payload = response.get_fal_payload().expect("expected Fal payload");
+    assert!(payload.request_id.is_some());
+  }
+
+  #[tokio::test]
+  #[ignore] // requires real API key, incurs cost
+  async fn send_edit_image_queue() {
+    let request = FalGptImage2RequestState::EditImage(GptImage2EditImageRequest {
+      prompt: "make this look like an elegant magazine cover image".to_string(),
+      image_urls: vec![JUNO_AT_LAKE_IMAGE_URL.to_string()],
+      num_images: GptImage2EditImageNumImages::One,
+      mask_url: None,
+      image_size: Some(GptImage2EditImageSize::Square),
+      resolution: Some(GptImage2Resolution::OneK),
+      quality: Some(GptImage2EditImageQuality::Low),
+      output_format: None,
+    });
+    let response = request.send(&client_without_webhook()).await.expect("send should succeed");
+    let payload = response.get_fal_payload().expect("expected Fal payload");
+    assert!(payload.request_id.is_some());
+  }
+}

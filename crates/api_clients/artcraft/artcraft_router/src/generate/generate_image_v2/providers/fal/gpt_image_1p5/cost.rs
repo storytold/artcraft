@@ -29,3 +29,93 @@ impl FalGptImage1p5CostState {
     }
   }
 }
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+  use fal_client::requests::api::image::edit::gpt_image_1p5_edit_image::api::{
+    GptImage1p5EditImageNumImages, GptImage1p5EditImageQuality,
+    GptImage1p5EditImageRequest, GptImage1p5EditImageSize,
+  };
+  use fal_client::requests::api::image::text::gpt_image_1p5_text_to_image::api::{
+    GptImage1p5TextToImageNumImages, GptImage1p5TextToImageQuality,
+    GptImage1p5TextToImageRequest, GptImage1p5TextToImageSize,
+  };
+
+  #[test]
+  fn text_to_image_cost_spots() {
+    let cases = [
+      (
+        GptImage1p5TextToImageNumImages::One,
+        Some(GptImage1p5TextToImageQuality::High),
+        Some(GptImage1p5TextToImageSize::Square),
+        13,
+      ),
+      (
+        GptImage1p5TextToImageNumImages::Three,
+        Some(GptImage1p5TextToImageQuality::Medium),
+        Some(GptImage1p5TextToImageSize::Wide),
+        15,
+      ),
+      (
+        GptImage1p5TextToImageNumImages::Four,
+        Some(GptImage1p5TextToImageQuality::Low),
+        Some(GptImage1p5TextToImageSize::Tall),
+        4,
+      ),
+    ];
+
+    for (num_images, quality, image_size, expected) in cases {
+      let request = FalGptImage1p5RequestState::TextToImage(GptImage1p5TextToImageRequest {
+        prompt: "test".to_string(),
+        num_images,
+        image_size,
+        background: None,
+        quality,
+        output_format: None,
+      });
+      let cost = FalGptImage1p5CostState::from_request(&request).estimate_cost();
+      assert_eq!(cost.cost_in_usd_cents, Some(expected));
+    }
+  }
+
+  #[test]
+  fn edit_image_cost_spots() {
+    let cases = [
+      (
+        GptImage1p5EditImageNumImages::One,
+        Some(GptImage1p5EditImageQuality::High),
+        Some(GptImage1p5EditImageSize::Wide),
+        20,
+      ),
+      (
+        GptImage1p5EditImageNumImages::Two,
+        Some(GptImage1p5EditImageQuality::Medium),
+        Some(GptImage1p5EditImageSize::Square),
+        6,
+      ),
+      (
+        GptImage1p5EditImageNumImages::Four,
+        Some(GptImage1p5EditImageQuality::Low),
+        Some(GptImage1p5EditImageSize::Tall),
+        4,
+      ),
+    ];
+
+    for (num_images, quality, image_size, expected) in cases {
+      let request = FalGptImage1p5RequestState::EditImage(GptImage1p5EditImageRequest {
+        prompt: "test".to_string(),
+        image_urls: vec!["https://example.com/image.png".to_string()],
+        num_images,
+        mask_image_url: None,
+        image_size,
+        background: None,
+        quality,
+        input_fidelity: None,
+        output_format: None,
+      });
+      let cost = FalGptImage1p5CostState::from_request(&request).estimate_cost();
+      assert_eq!(cost.cost_in_usd_cents, Some(expected));
+    }
+  }
+}

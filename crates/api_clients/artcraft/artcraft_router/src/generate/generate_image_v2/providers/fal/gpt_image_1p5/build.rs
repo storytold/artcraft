@@ -194,3 +194,208 @@ fn resolve_image_urls(
     }
   }
 }
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+  use std::fmt::Debug;
+
+  use crate::api::common_image_model::CommonImageModel;
+  use crate::api::provider::Provider;
+
+  fn base_builder() -> GenerateImageRequestBuilder {
+    GenerateImageRequestBuilder {
+      model: CommonImageModel::GptImage1p5,
+      provider: Provider::Fal,
+      prompt: Some("a cat in space".to_string()),
+      image_inputs: None,
+      resolution: None,
+      aspect_ratio: None,
+      quality: None,
+      image_batch_count: None,
+      horizontal_angle: None,
+      vertical_angle: None,
+      zoom: None,
+      request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::ErrorOut,
+      generation_mode_mismatch_strategy: None,
+      idempotency_token: None,
+    }
+  }
+
+  fn unwrap_t2i(result: Result<ImageGenerationDraftOrRequest, ArtcraftRouterError>) -> GptImage1p5TextToImageRequest {
+    let ImageGenerationDraftOrRequest::Request(
+      ImageGenerationRequest::FalGptImage1p5(
+        FalGptImage1p5RequestState::TextToImage(req)
+      )
+    ) = result.expect("build should succeed") else {
+      panic!("expected GPT Image 1.5 text-to-image request")
+    };
+    req
+  }
+
+  fn unwrap_edit(result: Result<ImageGenerationDraftOrRequest, ArtcraftRouterError>) -> GptImage1p5EditImageRequest {
+    let ImageGenerationDraftOrRequest::Request(
+      ImageGenerationRequest::FalGptImage1p5(
+        FalGptImage1p5RequestState::EditImage(req)
+      )
+    ) = result.expect("build should succeed") else {
+      panic!("expected GPT Image 1.5 edit-image request")
+    };
+    req
+  }
+
+  fn assert_debug<T: Debug>(actual: T, expected: &str) {
+    assert_eq!(format!("{:?}", actual), expected);
+  }
+
+  #[test]
+  fn build2_routes_to_gpt_image_1p5_request() {
+    let req = unwrap_t2i(base_builder().build2());
+    assert_eq!(req.prompt, "a cat in space");
+  }
+
+  #[test]
+  fn mode_detection_is_based_on_image_urls() {
+    let text_req = unwrap_t2i(build_fal_gpt_image_1p5(base_builder()));
+    assert_eq!(text_req.prompt, "a cat in space");
+
+    let edit_req = unwrap_edit(build_fal_gpt_image_1p5(GenerateImageRequestBuilder {
+      image_inputs: Some(ImageListRef::Urls(vec!["https://example.com/img.jpg".to_string()])),
+      ..base_builder()
+    }));
+    assert_eq!(edit_req.image_urls, vec!["https://example.com/img.jpg"]);
+  }
+
+  #[test]
+  fn media_file_tokens_are_rejected() {
+    let result = build_fal_gpt_image_1p5(GenerateImageRequestBuilder {
+      image_inputs: Some(ImageListRef::MediaFileTokens(vec![])),
+      ..base_builder()
+    });
+    assert!(matches!(
+      result,
+      Err(ArtcraftRouterError::Client(ClientError::FalOnlySupportsUrls))
+    ));
+  }
+
+  #[test]
+  fn num_images_maps_exhaustively_for_text_and_edit() {
+    let cases = [
+      (1, "One"),
+      (2, "Two"),
+      (3, "Three"),
+      (4, "Four"),
+    ];
+
+    for (count, expected) in cases {
+      let req = unwrap_t2i(build_fal_gpt_image_1p5(GenerateImageRequestBuilder {
+        image_batch_count: Some(count),
+        ..base_builder()
+      }));
+      assert_debug(req.num_images, expected);
+    }
+
+    for (count, expected) in cases {
+      let req = unwrap_edit(build_fal_gpt_image_1p5(GenerateImageRequestBuilder {
+        image_inputs: Some(ImageListRef::Urls(vec!["https://example.com/img.jpg".to_string()])),
+        image_batch_count: Some(count),
+        ..base_builder()
+      }));
+      assert_debug(req.num_images, expected);
+    }
+  }
+
+  #[test]
+  fn num_images_rejects_zero_and_handles_overflow_by_strategy() {
+    assert!(matches!(
+      build_fal_gpt_image_1p5(GenerateImageRequestBuilder {
+        image_batch_count: Some(0),
+        ..base_builder()
+      }),
+      Err(ArtcraftRouterError::Client(ClientError::UserRequestedZeroGenerations))
+    ));
+    assert!(matches!(
+      build_fal_gpt_image_1p5(GenerateImageRequestBuilder {
+        image_batch_count: Some(5),
+        ..base_builder()
+      }),
+      Err(ArtcraftRouterError::Client(ClientError::ModelDoesNotSupportOption { .. }))
+    ));
+
+    let req = unwrap_t2i(build_fal_gpt_image_1p5(GenerateImageRequestBuilder {
+      image_batch_count: Some(5),
+      request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::PayMoreUpgrade,
+      ..base_builder()
+    }));
+    assert_debug(req.num_images, "Four");
+  }
+
+  #[test]
+  fn quality_maps_exhaustively_for_text_and_edit() {
+    let cases = [
+      (None, "Some(High)"),
+      (Some(CommonQuality::Low), "Some(Low)"),
+      (Some(CommonQuality::Medium), "Some(Medium)"),
+      (Some(CommonQuality::High), "Some(High)"),
+    ];
+
+    for (quality, expected) in cases {
+      let req = unwrap_t2i(build_fal_gpt_image_1p5(GenerateImageRequestBuilder {
+        quality,
+        ..base_builder()
+      }));
+      assert_debug(req.quality, expected);
+    }
+
+    for (quality, expected) in cases {
+      let req = unwrap_edit(build_fal_gpt_image_1p5(GenerateImageRequestBuilder {
+        image_inputs: Some(ImageListRef::Urls(vec!["https://example.com/img.jpg".to_string()])),
+        quality,
+        ..base_builder()
+      }));
+      assert_debug(req.quality, expected);
+    }
+  }
+
+  #[test]
+  fn aspect_ratio_maps_exhaustively_for_text_and_edit() {
+    let cases = [
+      (None, "None"),
+      (Some(CommonAspectRatio::Auto), "None"),
+      (Some(CommonAspectRatio::Auto2k), "None"),
+      (Some(CommonAspectRatio::Auto3k), "None"),
+      (Some(CommonAspectRatio::Auto4k), "None"),
+      (Some(CommonAspectRatio::Square), "Some(Square)"),
+      (Some(CommonAspectRatio::SquareHd), "Some(Square)"),
+      (Some(CommonAspectRatio::WideThreeByTwo), "Some(Wide)"),
+      (Some(CommonAspectRatio::WideFourByThree), "Some(Wide)"),
+      (Some(CommonAspectRatio::WideFiveByFour), "Some(Wide)"),
+      (Some(CommonAspectRatio::WideSixteenByNine), "Some(Wide)"),
+      (Some(CommonAspectRatio::WideTwentyOneByNine), "Some(Wide)"),
+      (Some(CommonAspectRatio::Wide), "Some(Wide)"),
+      (Some(CommonAspectRatio::TallTwoByThree), "Some(Tall)"),
+      (Some(CommonAspectRatio::TallThreeByFour), "Some(Tall)"),
+      (Some(CommonAspectRatio::TallFourByFive), "Some(Tall)"),
+      (Some(CommonAspectRatio::TallNineBySixteen), "Some(Tall)"),
+      (Some(CommonAspectRatio::TallNineByTwentyOne), "Some(Tall)"),
+      (Some(CommonAspectRatio::Tall), "Some(Tall)"),
+    ];
+
+    for (aspect_ratio, expected) in cases {
+      let req = unwrap_t2i(build_fal_gpt_image_1p5(GenerateImageRequestBuilder {
+        aspect_ratio,
+        ..base_builder()
+      }));
+      assert_debug(req.image_size, expected);
+    }
+
+    for (aspect_ratio, expected) in cases {
+      let req = unwrap_edit(build_fal_gpt_image_1p5(GenerateImageRequestBuilder {
+        image_inputs: Some(ImageListRef::Urls(vec!["https://example.com/img.jpg".to_string()])),
+        aspect_ratio,
+        ..base_builder()
+      }));
+      assert_debug(req.image_size, expected);
+    }
+  }
+}
