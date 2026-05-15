@@ -64,6 +64,7 @@ pub async fn lookup_media_files_as_cdn_url_list_and_map(
   }
 
   let media_domain = get_media_domain(http_request);
+
   let mut ordered_url_list = Vec::with_capacity(media_files.len());
   let mut token_to_url_map = HashMap::with_capacity(media_files.len());
 

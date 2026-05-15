@@ -10,15 +10,15 @@ use crate::billing::wallets::attempt_wallet_deduction::attempt_wallet_deduction_
 use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
 use crate::http_server::endpoints::omni_gen::generate::image::pipeline_result::ImagePipelineResult;
 use crate::http_server::endpoints::omni_gen::generate::image::pipeline_v1::distill_image_request::distill_image_request;
-use crate::http_server::endpoints::omni_gen::generate::image::resolve_media_tokens::ResolvedImageMedia;
 use crate::state::server_state::ServerState;
+use crate::util::lookup::lookup_media_files_as_cdn_url_list_and_map::MediaFilesAsCdnUrlListAndMap;
 
 pub struct RunPipelineV1Args<'a> {
   pub router_builder: &'a GenerateImageRequestBuilder,
   pub server_state: &'a ServerState,
   pub mysql_connection: &'a mut sqlx::pool::PoolConnection<sqlx::MySql>,
   pub user_token: &'a UserToken,
-  pub resolved_media: &'a ResolvedImageMedia,
+  pub resolved_media: &'a MediaFilesAsCdnUrlListAndMap,
 }
 
 pub async fn run_pipeline_v1(

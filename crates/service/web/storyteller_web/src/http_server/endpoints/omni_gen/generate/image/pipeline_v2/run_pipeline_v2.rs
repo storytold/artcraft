@@ -15,15 +15,15 @@ use tokens::tokens::users::UserToken;
 use crate::billing::wallets::attempt_wallet_deduction::attempt_wallet_deduction_else_common_web_error;
 use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
 use crate::http_server::endpoints::omni_gen::generate::image::pipeline_result::ImagePipelineResult;
-use crate::http_server::endpoints::omni_gen::generate::image::resolve_media_tokens::ResolvedImageMedia;
 use crate::state::server_state::ServerState;
+use crate::util::lookup::lookup_media_files_as_cdn_url_list_and_map::MediaFilesAsCdnUrlListAndMap;
 
 pub struct RunPipelineV2Args<'a> {
   pub router_builder: &'a GenerateImageRequestBuilder,
   pub server_state: &'a ServerState,
   pub mysql_connection: &'a mut sqlx::pool::PoolConnection<sqlx::MySql>,
   pub user_token: &'a UserToken,
-  pub resolved_media: &'a ResolvedImageMedia,
+  pub resolved_media: &'a MediaFilesAsCdnUrlListAndMap,
 }
 
 pub fn should_use_pipeline_v2(router_builder: &GenerateImageRequestBuilder) -> bool {
@@ -86,7 +86,7 @@ fn build_execution_request(
 
 fn apply_hydrated_media_inputs(
   router_builder: &GenerateImageRequestBuilder,
-  resolved_media: &ResolvedImageMedia,
+  resolved_media: &MediaFilesAsCdnUrlListAndMap,
 ) -> Result<GenerateImageRequestBuilder, AdvancedCommonWebError> {
   let mut hydrated_builder = router_builder.clone();
   let image_input_urls = build_image_input_urls(
@@ -103,7 +103,7 @@ fn apply_hydrated_media_inputs(
 
 fn build_image_input_urls(
   image_inputs: Option<&ImageListRef>,
-  resolved_media: &ResolvedImageMedia,
+  resolved_media: &MediaFilesAsCdnUrlListAndMap,
 ) -> Result<Option<Vec<String>>, AdvancedCommonWebError> {
   let tokens = match image_inputs {
     Some(ImageListRef::MediaFileTokens(tokens)) if !tokens.is_empty() => tokens,

@@ -34,9 +34,9 @@ use crate::http_server::endpoints::generate::common::payments_error_test::paymen
 use crate::http_server::endpoints::omni_gen::generate::image::hydrate_to_router_request::hydrate_to_router_request;
 use crate::http_server::endpoints::omni_gen::generate::image::pipeline_v1::run_pipeline_v1::{run_pipeline_v1, RunPipelineV1Args};
 use crate::http_server::endpoints::omni_gen::generate::image::pipeline_v2::run_pipeline_v2::{run_pipeline_v2, should_use_pipeline_v2, RunPipelineV2Args};
-use crate::http_server::endpoints::omni_gen::generate::image::resolve_media_tokens::resolve_media_tokens;
 use crate::http_server::validations::validate_idempotency_token_format::validate_idempotency_token_format;
 use crate::state::server_state::ServerState;
+use crate::util::lookup::lookup_media_files_as_cdn_url_list_and_map::lookup_media_files_as_cdn_url_list_and_map;
 
 /// Generate an image using the omni-gen unified endpoint.
 #[utoipa::path(
@@ -108,11 +108,11 @@ pub async fn omni_gen_image_generate_handler(
   // ==================== RESOLVE MEDIA TOKENS ==================== //
 
   // Look up media file tokens BEFORE distilling. Pipeline execution should not do I/O.
-  let resolved_media = resolve_media_tokens(
-    &request,
+  let resolved_media = lookup_media_files_as_cdn_url_list_and_map(
     &http_request,
     &mut mysql_connection,
     server_state.server_environment,
+    request.image_media_tokens.as_deref().unwrap_or(&[]),
   ).await?;
 
   // ==================== HYDRATE ROUTER REQUEST ==================== //

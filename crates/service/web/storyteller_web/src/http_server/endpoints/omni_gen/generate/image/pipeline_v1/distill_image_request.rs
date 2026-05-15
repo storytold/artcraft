@@ -26,7 +26,7 @@ use tokens::tokens::media_files::MediaFileToken;
 use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
 #[cfg(test)]
 use crate::http_server::endpoints::omni_gen::generate::image::hydrate_to_router_request::hydrate_to_router_request;
-use crate::http_server::endpoints::omni_gen::generate::image::resolve_media_tokens::ResolvedImageMedia;
+use crate::util::lookup::lookup_media_files_as_cdn_url_list_and_map::MediaFilesAsCdnUrlListAndMap;
 
 pub(crate) trait DistillImageRequestInput {
   fn to_router_builder(&self) -> Result<GenerateImageRequestBuilder, AdvancedCommonWebError>;
@@ -49,7 +49,7 @@ pub(crate) trait DistillImageMediaInput {
   fn image_url_for_token(&self, token: &MediaFileToken) -> Option<String>;
 }
 
-impl DistillImageMediaInput for ResolvedImageMedia {
+impl DistillImageMediaInput for MediaFilesAsCdnUrlListAndMap {
   fn image_url_for_token(&self, token: &MediaFileToken) -> Option<String> {
     self.token_to_url_map.get(token).cloned()
   }
