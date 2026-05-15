@@ -14,6 +14,7 @@ import {
   GalleryDragComponent,
 } from "@storyteller/ui-gallery-modal";
 import { useSession } from "../../lib/session";
+import { useStage3DCostEstimate } from "../../lib/cost-estimate-api";
 import { useSidebar } from "../../components/ui/sidebar";
 import { useSignupCta } from "../../components/signup-cta-modal";
 import { DemoOutputOverlay } from "./demo-output-overlay";
@@ -82,6 +83,11 @@ function PageSceneEditor() {
   useSceneSplashAutoOpen(sceneToken);
   useSceneSplashLibSync();
   const openSceneSplash = useSceneSplashStore((s) => s.open);
+
+  // Live-update the Generate button's credit badge as the user changes the
+  // selected model, resolution, or reference images. Mirrors the cost
+  // estimate UX on the create-image / create-video promptboxes.
+  useStage3DCostEstimate();
 
   const navigateToImageTo3D = useCallback(() => {
     navigate("/create-image");
