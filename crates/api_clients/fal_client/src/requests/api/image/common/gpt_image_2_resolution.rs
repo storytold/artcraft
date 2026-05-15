@@ -53,10 +53,7 @@ const MAX_EDGE: u32 = 3840;
 /// Given an aspect ratio and a resolution tier, compute a concrete
 /// `CustomImageSize`. The returned dimensions are guaranteed to satisfy all
 /// GPT Image 2 constraints.
-pub fn compute_custom_image_size(
-  aspect: GptImage2AspectRatio,
-  resolution: GptImage2Resolution,
-) -> CustomImageSize {
+pub fn compute_custom_image_size(aspect: GptImage2AspectRatio, resolution: GptImage2Resolution) -> CustomImageSize {
   // Aspect ratio as (w_ratio, h_ratio)
   let (w_ratio, h_ratio): (u32, u32) = match aspect {
     GptImage2AspectRatio::Square | GptImage2AspectRatio::SquareHd => (1, 1),
@@ -149,33 +146,12 @@ mod tests {
         let max_edge = size.width.max(size.height);
         let min_edge = size.width.min(size.height);
 
-        assert!(
-          size.width % 16 == 0,
-          "width {} not multiple of 16 for {:?} {:?}", size.width, aspect, resolution
-        );
-        assert!(
-          size.height % 16 == 0,
-          "height {} not multiple of 16 for {:?} {:?}", size.height, aspect, resolution
-        );
-        assert!(
-          max_edge <= MAX_EDGE,
-          "max edge {} exceeds 3840 for {:?} {:?}", max_edge, aspect, resolution
-        );
-        assert!(
-          max_edge as f64 / min_edge as f64 <= 3.0,
-          "ratio {:.2} exceeds 3:1 for {:?} {:?} ({}x{})",
-          max_edge as f64 / min_edge as f64, aspect, resolution, size.width, size.height
-        );
-        assert!(
-          pixels >= MIN_PIXELS,
-          "pixels {} < 655360 for {:?} {:?} ({}x{})",
-          pixels, aspect, resolution, size.width, size.height
-        );
-        assert!(
-          pixels <= MAX_PIXELS,
-          "pixels {} > 8294400 for {:?} {:?} ({}x{})",
-          pixels, aspect, resolution, size.width, size.height
-        );
+        assert!(size.width % 16 == 0, "width {} not multiple of 16 for {:?} {:?}", size.width, aspect, resolution);
+        assert!(size.height % 16 == 0, "height {} not multiple of 16 for {:?} {:?}", size.height, aspect, resolution);
+        assert!(max_edge <= MAX_EDGE, "max edge {} exceeds 3840 for {:?} {:?}", max_edge, aspect, resolution);
+        assert!(max_edge as f64 / min_edge as f64 <= 3.0, "ratio {:.2} exceeds 3:1 for {:?} {:?} ({}x{})", max_edge as f64 / min_edge as f64, aspect, resolution, size.width, size.height);
+        assert!(pixels >= MIN_PIXELS, "pixels {} < 655360 for {:?} {:?} ({}x{})", pixels, aspect, resolution, size.width, size.height);
+        assert!(pixels <= MAX_PIXELS, "pixels {} > 8294400 for {:?} {:?} ({}x{})", pixels, aspect, resolution, size.width, size.height);
       }
     }
   }
@@ -187,10 +163,7 @@ mod tests {
       for &resolution in ALL_RESOLUTIONS {
         let size = compute_custom_image_size(aspect, resolution);
         let pixels = size.width as u64 * size.height as u64;
-        println!(
-          "{:?} + {:?} => {}x{} ({} pixels)",
-          aspect, resolution, size.width, size.height, pixels
-        );
+        println!("{:?} + {:?} => {}x{} ({} pixels)", aspect, resolution, size.width, size.height, pixels);
       }
     }
   }
