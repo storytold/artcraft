@@ -14,21 +14,21 @@ use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::common_responses::media::media_links_builder::MediaLinksBuilder;
 use crate::http_server::endpoints::media_files::helpers::get_media_domain::get_media_domain;
 
-pub struct ImageMediaFilesAsUrlListAndMap {
+pub struct MediaFilesAsCdnUrlListAndMap {
   pub ordered_url_list: Vec<String>,
   pub token_to_url_map: HashMap<MediaFileToken, String>,
 }
 
-pub async fn lookup_image_media_files_as_url_list_and_map(
+pub async fn lookup_media_files_as_cdn_url_list_and_map(
   http_request: &HttpRequest,
   mysql_connection: &mut PoolConnection<MySql>,
   server_environment: ServerEnvironment,
   tokens: &[MediaFileToken],
-) -> Result<ImageMediaFilesAsUrlListAndMap, CommonWebError> {
+) -> Result<MediaFilesAsCdnUrlListAndMap, CommonWebError> {
   const CAN_SEE_DELETED: bool = false;
 
   if tokens.is_empty() {
-    return Ok(ImageMediaFilesAsUrlListAndMap {
+    return Ok(MediaFilesAsCdnUrlListAndMap {
       ordered_url_list: Vec::new(),
       token_to_url_map: HashMap::new(),
     });
@@ -84,7 +84,7 @@ pub async fn lookup_image_media_files_as_url_list_and_map(
     token_to_url_map.insert(file.token, url);
   }
 
-  Ok(ImageMediaFilesAsUrlListAndMap {
+  Ok(MediaFilesAsCdnUrlListAndMap {
     ordered_url_list,
     token_to_url_map,
   })
