@@ -113,6 +113,7 @@ pub(crate) fn distill_image_request<M: DistillImageMediaInput>(
   if let Some(urls) = image_input_urls {
     initial.image_inputs = Some(ImageListRef::Urls(urls));
   }
+
   initial.provider = Provider::Fal;
   let fal_request = initial;
 

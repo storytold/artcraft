@@ -15,7 +15,11 @@ use crate::http_server::common_responses::media::media_links_builder::MediaLinks
 use crate::http_server::endpoints::media_files::helpers::get_media_domain::get_media_domain;
 
 pub struct MediaFilesAsCdnUrlListAndMap {
+  /// This is an in-order list of all the media files as their asset URLs.
+  /// This is in the order they were requested.
   pub ordered_url_list: Vec<String>,
+
+  /// This is an unordered map of media file token to asset URL.
   pub token_to_url_map: HashMap<MediaFileToken, String>,
 }
 

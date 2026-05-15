@@ -46,7 +46,7 @@ pub async fn run_pipeline_v2(
   let hydrated_builder = apply_hydrated_media_inputs(
     router_builder,
     resolved_media,
-  )?;
+  );
 
   let draft_or_request = build_execution_request(&hydrated_builder)?;
   let cost = estimate_cost_in_credits(&hydrated_builder)?;
@@ -87,43 +87,14 @@ fn build_execution_request(
 fn apply_hydrated_media_inputs(
   router_builder: &GenerateImageRequestBuilder,
   resolved_media: &MediaFilesAsCdnUrlListAndMap,
-) -> Result<GenerateImageRequestBuilder, AdvancedCommonWebError> {
+) -> GenerateImageRequestBuilder {
   let mut hydrated_builder = router_builder.clone();
-  let image_input_urls = build_image_input_urls(
-    hydrated_builder.image_inputs.as_ref(),
-    resolved_media,
-  )?;
 
-  if let Some(urls) = image_input_urls {
-    hydrated_builder.image_inputs = Some(ImageListRef::Urls(urls));
+  if matches!(hydrated_builder.image_inputs.as_ref(), Some(ImageListRef::MediaFileTokens(tokens)) if !tokens.is_empty()) {
+    hydrated_builder.image_inputs = Some(ImageListRef::Urls(resolved_media.ordered_url_list.clone()));
   }
 
-  Ok(hydrated_builder)
-}
-
-fn build_image_input_urls(
-  image_inputs: Option<&ImageListRef>,
-  resolved_media: &MediaFilesAsCdnUrlListAndMap,
-) -> Result<Option<Vec<String>>, AdvancedCommonWebError> {
-  let tokens = match image_inputs {
-    Some(ImageListRef::MediaFileTokens(tokens)) if !tokens.is_empty() => tokens,
-    _ => return Ok(None),
-  };
-
-  let mut urls: Vec<String> = Vec::with_capacity(tokens.len());
-  for token in tokens {
-    match resolved_media.token_to_url_map.get(token) {
-      Some(url) => urls.push(url.clone()),
-      None => {
-        return Err(AdvancedCommonWebError::BadInputWithSimpleMessage(format!(
-          "Image media token not found in hydration map: {:?}",
-          token
-        )));
-      },
-    }
-  }
-
-  Ok(Some(urls))
+  hydrated_builder
 }
 
 fn estimate_cost_in_credits(
