@@ -14,6 +14,7 @@ members = [
   "crates/api_clients/google_drive_downloader",
   "crates/api_clients/google_sign_in",
   "crates/api_clients/grok_client",
+  "crates/api_clients/gmicloud_client",
   "crates/api_clients/midjourney_client",
   "crates/api_clients/muapi_client",
   "crates/api_clients/beeble_client",
@@ -242,6 +243,7 @@ enums = { path = "crates/schema/public/enums" }
 error_utils = { path = "crates/lib/error_utils" }
 errors = { path = "crates/lib/errors" }
 fal_client = { path = "crates/api_clients/fal_client" }
+gmicloud_client = { path = "crates/api_clients/gmicloud_client" }
 ffmpeg_utils = { path = "crates/lib/ffmpeg_utils" }
 file_to_base64_url = { path = "crates/lib/files/file_to_base64_url" }
 filesys = { path = "crates/lib/files/filesys" }
