@@ -33,6 +33,7 @@ pub async fn omni_gen_image_cost_handler(
   let mut generate_request = hydrate_to_router_request(&request)?;
   generate_request.provider = Provider::Artcraft; // NB: Explicitly spell this out.
 
+  // TODO(bt,2026-05-15): Get rid of this as soon as we can (there are even worse hacks below).
   let estimate = if should_use_pipeline_v2(&generate_request) {
     estimate_pipeline_v2_cost(&generate_request)?
   } else {
@@ -84,7 +85,9 @@ fn estimate_pipeline_v2_cost(
     }
   }
 
-  // For models that aren't fully migrated (don't have artcraft cost calculators)
+  // TODO(bt,2026-05-15): This is a horrible hack for models that aren't fully migrated
+  //  to pipeline_v2 (don't have artcraft cost calculators). This is an awful hack we need
+  //  to kill in the future.
 
   builder.provider = Provider::Fal;
 
