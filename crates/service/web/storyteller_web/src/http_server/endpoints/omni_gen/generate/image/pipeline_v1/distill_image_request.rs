@@ -51,7 +51,7 @@ pub(crate) trait DistillImageMediaInput {
 
 impl DistillImageMediaInput for ResolvedImageMedia {
   fn image_url_for_token(&self, token: &MediaFileToken) -> Option<String> {
-    self.url_map.get(token).cloned()
+    self.token_to_url_map.get(token).cloned()
   }
 }
 

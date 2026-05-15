@@ -112,7 +112,7 @@ fn build_image_input_urls(
 
   let mut urls: Vec<String> = Vec::with_capacity(tokens.len());
   for token in tokens {
-    match resolved_media.url_map.get(token) {
+    match resolved_media.token_to_url_map.get(token) {
       Some(url) => urls.push(url.clone()),
       None => {
         return Err(AdvancedCommonWebError::BadInputWithSimpleMessage(format!(
