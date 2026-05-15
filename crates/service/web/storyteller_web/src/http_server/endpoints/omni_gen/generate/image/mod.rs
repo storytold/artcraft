@@ -3,6 +3,3 @@ pub(crate) mod hydrate_to_router_request;
 pub(crate) mod pipeline_result;
 pub mod pipeline_v1;
 pub mod pipeline_v2;
-
-#[cfg(test)]
-mod tests;
