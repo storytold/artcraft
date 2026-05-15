@@ -86,7 +86,7 @@ export type MouseControlsDeps = {
   getAssetType: Function;
   setSelected: Function;
   isMovable: Function;
-  enable_stats: Function;
+  toggle_stats: Function;
 
   // Typed event bus — every engine→store write goes through here.
   bus: EngineEventBus;
@@ -123,7 +123,7 @@ export class MouseControls {
   private cameraViewControls: FreeCamControlState | null;
   private isMouseClicked: boolean = false;
   private isMovable: Function;
-  enable_stats: Function;
+  toggle_stats: Function;
 
   private kinMode: KinMode = KinMode.NONE;
   private fkHelper: FKHelper;
@@ -167,7 +167,7 @@ export class MouseControls {
     this.setSelected = deps.setSelected;
     this.sceneManager = undefined;
     this.isMovable = deps.isMovable;
-    this.enable_stats = deps.enable_stats;
+    this.toggle_stats = deps.toggle_stats;
     this.fkHelper = new FKHelper({
       camera: this.camera!,
       domElement: this.control!.domElement,
@@ -441,9 +441,6 @@ export class MouseControls {
         } finally {
           this.isProcessing = false;
         }
-      } else if (event.key === "0") {
-        // Stats Menu
-        this.enable_stats();
       }
     }
 

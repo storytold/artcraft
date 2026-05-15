@@ -526,7 +526,7 @@ class Editor {
       getAssetType: this.selection.getAssetType.bind(this.selection),
       setSelected: this.selection.setSelected.bind(this.selection),
       isMovable: this.isMovable.bind(this),
-      enable_stats: this.enable_stats.bind(this),
+      toggle_stats: this.toggle_stats.bind(this),
       bus: this.bus,
       getPoseMode: () => usePageSceneStore.getState().poseMode,
       isHotkeyDisabled: () =>
@@ -597,8 +597,14 @@ class Editor {
     return this.focused;
   }
 
-  public enable_stats() {
-    document.body.appendChild(this.stats.dom);
+  // Toggle the three.js Stats panel (FPS / ms / mb). Bound to the
+  // backtick key in MouseControls. The flag lives in the Zustand
+  // store; <PerfStatsOverlay/> mounted inside PageScene watches it and
+  // attaches/detaches `this.stats.dom` to a React-managed container,
+  // so the panel is scoped to the PageScene route rather than the
+  // document body.
+  public toggle_stats() {
+    usePageSceneStore.getState().toggleStats();
   }
 
   // Captures the scene without the grid

@@ -150,6 +150,10 @@ interface PageSceneState {
   // overlays
   editorLoader: EditorLoader;
   editorLetterBox: boolean;
+  // Three.js perf stats panel (FPS / ms / mb). Toggled via the
+  // backtick keybind. Owned by React (PerfStatsOverlay) so the panel
+  // only renders inside PageScene and never leaks into other routes.
+  statsVisible: boolean;
   showErrorDialog: boolean;
   errorDialogTitle: string;
   errorDialogMessage: string;
@@ -226,6 +230,7 @@ interface PageSceneState {
   setPoseMode: (mode: PoseMode) => void;
   setShowPoseControls: (visible: boolean) => void;
   setGridVisible: (visible: boolean) => void;
+  toggleStats: () => void;
   setIgnoreKeyDelete: (ignore: boolean) => void;
   disableHotkeyInput: (level: DomLevels) => void;
   enableHotkeyInput: (level: DomLevels) => void;
@@ -317,6 +322,7 @@ export const usePageSceneStore = create<PageSceneState>((set, get) => ({
 
   editorLoader: { isShowing: false, message: "Loading Editor Engine 🦊" },
   editorLetterBox: true,
+  statsVisible: false,
   showErrorDialog: false,
   errorDialogTitle: "Error!",
   errorDialogMessage: "Something went wrong.",
@@ -400,6 +406,7 @@ export const usePageSceneStore = create<PageSceneState>((set, get) => ({
   setPoseMode: (mode) => set({ poseMode: mode }),
   setShowPoseControls: (visible) => set({ showPoseControls: visible }),
   setGridVisible: (visible) => set({ gridVisible: visible }),
+  toggleStats: () => set((s) => ({ statsVisible: !s.statsVisible })),
   setIgnoreKeyDelete: (ignore) => set({ ignoreKeyDelete: ignore }),
   disableHotkeyInput: (level) => {
     const status = get().hotkeyStatus;
