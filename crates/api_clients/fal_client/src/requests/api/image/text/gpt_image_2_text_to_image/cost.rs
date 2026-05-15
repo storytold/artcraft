@@ -139,6 +139,19 @@ mod tests {
     (GptImage2TextToImageSize::SquareHd, GptImage2Resolution::FourK, 5),
   ];
 
+  const SPOT_PRICE_CASES: &[(GptImage2TextToImageSize, GptImage2Resolution, GptImage2TextToImageNumImages, u64)] = &[
+    (GptImage2TextToImageSize::Landscape4x3, GptImage2Resolution::OneK, GptImage2TextToImageNumImages::One, 16),
+    (GptImage2TextToImageSize::Landscape4x3, GptImage2Resolution::TwoK, GptImage2TextToImageNumImages::Two, 47),
+    (GptImage2TextToImageSize::Landscape4x3, GptImage2Resolution::ThreeK, GptImage2TextToImageNumImages::Three, 124),
+    (GptImage2TextToImageSize::Landscape16x9, GptImage2Resolution::TwoK, GptImage2TextToImageNumImages::Four, 64),
+    (GptImage2TextToImageSize::Landscape16x9, GptImage2Resolution::FourK, GptImage2TextToImageNumImages::Two, 83),
+    (GptImage2TextToImageSize::Portrait4x3, GptImage2Resolution::TwoK, GptImage2TextToImageNumImages::One, 24),
+    (GptImage2TextToImageSize::Portrait16x9, GptImage2Resolution::ThreeK, GptImage2TextToImageNumImages::Three, 71),
+    (GptImage2TextToImageSize::Square, GptImage2Resolution::OneK, GptImage2TextToImageNumImages::Four, 88),
+    (GptImage2TextToImageSize::Square, GptImage2Resolution::FourK, GptImage2TextToImageNumImages::Four, 166),
+    (GptImage2TextToImageSize::SquareHd, GptImage2Resolution::TwoK, GptImage2TextToImageNumImages::Three, 71),
+  ];
+
   fn make_request(num_images: GptImage2TextToImageNumImages, quality: Option<GptImage2TextToImageQuality>, image_size: Option<GptImage2TextToImageSize>, resolution: Option<GptImage2Resolution>) -> GptImage2TextToImageRequest {
     GptImage2TextToImageRequest { prompt: "test".to_string(), num_images, image_size, quality, resolution, output_format: None }
   }
@@ -185,6 +198,13 @@ mod tests {
         let expected = expected_by_row[row_index as usize].div_ceil(10);
         assert_eq!(make_request(GptImage2TextToImageNumImages::One, Some(quality), Some(size), Some(resolution)).calculate_cost_in_cents(), expected, "quality={quality:?} size={size:?} resolution={resolution:?}",);
       }
+    }
+  }
+
+  #[test]
+  fn high_quality_spot_prices_match_expected_cents() {
+    for &(size, resolution, num_images, expected) in SPOT_PRICE_CASES {
+      assert_eq!(make_request(num_images, Some(GptImage2TextToImageQuality::High), Some(size), Some(resolution)).calculate_cost_in_cents(), expected, "size={size:?} resolution={resolution:?} num_images={num_images:?}",);
     }
   }
 
