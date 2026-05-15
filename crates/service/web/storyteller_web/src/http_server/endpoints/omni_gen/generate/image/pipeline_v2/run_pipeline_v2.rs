@@ -138,6 +138,7 @@ fn build_image_input_urls(
 fn estimate_cost_in_credits(
   router_builder: &GenerateImageRequestBuilder,
 ) -> Result<u64, AdvancedCommonWebError> {
+  // TODO(bt,2026-05-15): This might not be 1:1 with new Fal costs, eg. Gpt-image-2
   let mut cost_builder = router_builder.clone();
   cost_builder.provider = Provider::Artcraft;
 

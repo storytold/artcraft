@@ -166,7 +166,7 @@ pub async fn omni_gen_image_generate_handler(
   } else {
     info!("Using image pipeline v1");
     run_pipeline_v1(RunPipelineV1Args {
-      request: &request,
+      router_builder: &router_builder,
       server_state: &server_state,
       mysql_connection: &mut mysql_connection,
       user_token,
