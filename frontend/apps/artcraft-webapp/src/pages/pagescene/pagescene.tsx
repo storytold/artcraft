@@ -18,6 +18,7 @@ import { useStage3DCostEstimate } from "../../lib/cost-estimate-api";
 import { useSidebar } from "../../components/ui/sidebar";
 import { useSignupCta } from "../../components/signup-cta-modal";
 import { DemoOutputOverlay } from "./demo-output-overlay";
+import { usePromptPrefillFromOutput } from "./use-prompt-prefill-from-output";
 import { useSceneCacheStore } from "./scene-cache-store";
 import { useWebAppPageSceneAdapter } from "./web-adapter";
 import {
@@ -88,6 +89,15 @@ function PageSceneEditor() {
   // selected model, resolution, or reference images. Mirrors the cost
   // estimate UX on the create-image / create-video promptboxes.
   useStage3DCostEstimate();
+
+  // When the URL carries `?output=<media_token>` (the demo flow used by
+  // splash examples + the lightbox "Open in 3D" handoff), seed the prompt
+  // box with the prompt, model, and camera aspect ratio that produced
+  // that output so the user lands in a working starting point. Without a
+  // `?output=`, Stage3DBody's cold-sync handles the default letterbox by
+  // reading the selected model's defaultAspectRatio (now 16:9 for the
+  // InstructiveEdit-tagged models that populate STAGE_3D_PAGE_MODEL_LIST).
+  usePromptPrefillFromOutput(demoOutputToken);
 
   const navigateToImageTo3D = useCallback(() => {
     navigate("/create-image");

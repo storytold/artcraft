@@ -22,9 +22,9 @@ export function SceneSplashModal({
     <Modal
       isOpen={isOpen}
       onClose={close}
-      className="rounded-2xl w-full max-w-4xl overflow-hidden border border-white/10 bg-[#161618] p-0 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.6)]"
+      className="rounded-2xl w-full max-w-3xl overflow-hidden border border-white/10 bg-[#161618] p-0 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.6)]"
       childPadding={false}
-      backdropClassName="bg-black/80"
+      backdropClassName="!bg-black/80"
       closeOnOutsideClick
       showClose
       accessibleTitle="Start a new scene"
@@ -47,7 +47,7 @@ export function SceneSplashModal({
             Open a blank stage or pick an example to get oriented.
           </p>
 
-          <div className="mt-7 grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <div className="mt-7 grid grid-cols-2 gap-5 sm:grid-cols-2">
             <SceneSplashCard
               variant="blank"
               title="Blank scene"
@@ -61,6 +61,7 @@ export function SceneSplashModal({
                 title={scene.title}
                 description={scene.description}
                 accentClass={scene.accentClass}
+                outputToken={scene.outputToken}
                 onClick={() => pickExample(scene)}
               />
             ))}
