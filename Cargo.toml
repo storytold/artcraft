@@ -124,6 +124,7 @@ members = [
   "crates/schema/public/tokens",
 
   # Services: API servers, jobs, workers, etc.
+  "crates/service/job/gmicloud_job",
   "crates/service/job/seedance2_pro_job",
   "crates/service/job/video_thumbnail_job",
   "crates/service/job/worldlabs_job",

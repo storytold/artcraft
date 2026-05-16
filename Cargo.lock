@@ -4692,6 +4692,37 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d2fabcfbdc87f4758337ca535fb41a6d701b65693ce38287d856d1674551ec9b"
 
 [[package]]
+name = "gmicloud-job"
+version = "0.0.1"
+dependencies = [
+ "actix-web",
+ "actix_helpers",
+ "anyhow",
+ "bootstrap",
+ "bucket_paths",
+ "cloud_storage",
+ "concurrency",
+ "easyenv",
+ "enums",
+ "errors",
+ "gmicloud_client",
+ "hashing",
+ "jobs_common",
+ "log",
+ "mysql_queries",
+ "reqwest 0.12.23",
+ "serde",
+ "serde_derive",
+ "serde_json",
+ "server_environment",
+ "shared_env_var_config",
+ "sqlx",
+ "tokens",
+ "tokio",
+ "workspace-build-acceleration",
+]
+
+[[package]]
 name = "gmicloud_client"
 version = "0.0.1"
 dependencies = [
