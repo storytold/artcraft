@@ -327,6 +327,10 @@ mod tests {
       assert_eq!(result.model, MODEL_ID);
     }
 
+    // Balance was $49.75 before running this.
+    // [480p] Request ID: 4a0efe0d-990f-480d-9792-5bb71dd26b85
+    // Balance was $49.51 after running this.
+    // 24 cents = 2.4 cents per second
     #[tokio::test]
     #[ignore] // requires real API key, incurs costs
     async fn test_image_to_video_480p() {
@@ -342,6 +346,10 @@ mod tests {
       assert_eq!(result.model, MODEL_ID);
     }
 
+    // Balance was $49.51 before running this.
+    // [720p] Request ID: 40f63632-dd9d-4725-ab73-5bb764e773be
+    // Balance was $48.99 after running this.
+    // 52 cents = 5.2 cents per second
     #[tokio::test]
     #[ignore] // requires real API key, incurs costs
     async fn test_image_to_video_720p() {
@@ -357,6 +365,9 @@ mod tests {
       assert_eq!(result.model, MODEL_ID);
     }
 
+    // Balance was $48.99 before running this.
+    // Balance is $47.83 after running this
+    // 116 cents = 11.6 cents per second
     #[tokio::test]
     #[ignore] // requires real API key, incurs costs
     async fn test_image_to_video_1080p() {

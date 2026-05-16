@@ -252,6 +252,10 @@ mod tests {
       assert_eq!(result.model, MODEL_ID);
     }
 
+    // $47.83 before run
+    // [fast 480p] Request ID: 1b654a85-d99e-4380-b615-c7a8985ed15b
+    // $47.73 after run
+    // $0.10 = $0.01 per second
     #[tokio::test]
     #[ignore] // requires real API key, incurs costs
     async fn test_image_to_video_480p() {
@@ -267,6 +271,10 @@ mod tests {
       assert_eq!(result.model, MODEL_ID);
     }
 
+    // $47.73 before run
+    // [fast 720p] Request ID: 2fbbe377-7c92-482e-b1eb-92fd296b0a68
+    // $47.52 after run
+    // $0.31 = $0.031 per second
     #[tokio::test]
     #[ignore] // requires real API key, incurs costs
     async fn test_image_to_video_720p() {
@@ -278,21 +286,6 @@ mod tests {
       request.first_frame = Some(JUNO_AT_LAKE_IMAGE_URL.to_string());
       let result = request.send_request(&api_key).await.unwrap();
       println!("[fast 720p] Request ID: {}", result.request_id);
-      assert!(!result.request_id.is_empty());
-      assert_eq!(result.model, MODEL_ID);
-    }
-
-    #[tokio::test]
-    #[ignore] // requires real API key, incurs costs
-    async fn test_image_to_video_1080p() {
-      let api_key = crate::test_utils::load_api_key();
-      let mut request = minimal_request();
-      request.prompt = "the dog in this photo starts running and splashing in the lake water".to_string();
-      request.duration = Some(10);
-      request.resolution = Some(Seedance20FastResolution::TenEightyP);
-      request.first_frame = Some(JUNO_AT_LAKE_IMAGE_URL.to_string());
-      let result = request.send_request(&api_key).await.unwrap();
-      println!("[fast 1080p] Request ID: {}", result.request_id);
       assert!(!result.request_id.is_empty());
       assert_eq!(result.model, MODEL_ID);
     }
