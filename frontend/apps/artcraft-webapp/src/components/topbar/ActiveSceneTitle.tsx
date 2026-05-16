@@ -1,10 +1,11 @@
 // Header scene-title display for the /edit-3d* routes.
 //
-// Renders the active scene's title in the topbar's middle slot as plain,
-// prominent text. Renaming is a deliberate action: the title itself is
-// NOT clickable — a separate, dimmed pencil button (owner-only, and only
-// once the scene has a token to rename against) enters edit mode. This
-// prevents accidental renames from a stray click on the title.
+// Mirrors the artcraft Tauri desktop app's SceneTitleInput: a dimmed
+// "Edit Scene /" prefix followed by the scene title rendered as a
+// clickable pill. Owners see a pencil icon inside the pill; clicking
+// anywhere on the pill enters edit mode. The input is centered, fixed
+// width, with a brand-primary focus outline and a brand-secondary
+// outline while a rename is in flight.
 //
 // sceneMeta (the lib's Zustand store) is the single source of truth.
 // Local state exists only while editing; a failed rename just discards
@@ -17,13 +18,15 @@
 import { useEffect, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faPen } from "@fortawesome/pro-solid-svg-icons";
+import { faPencil, faSpinnerThird } from "@fortawesome/pro-solid-svg-icons";
+import { twMerge } from "tailwind-merge";
 import { MediaFilesApi } from "@storyteller/api";
 import { usePageSceneStore } from "@storyteller/ui-pagescene";
 import { showToast } from "../toast/toast";
 
 const PAGESCENE_ROUTE_PREFIX = "/edit-3d";
 const DEFAULT_TITLE = "Untitled Scene";
+const PAGE_NAME = "Edit Scene";
 
 export function ActiveSceneTitle() {
   const { pathname } = useLocation();
@@ -34,11 +37,12 @@ export function ActiveSceneTitle() {
   const [isEditing, setIsEditing] = useState(false);
   const [draft, setDraft] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isValid, setIsValid] = useState(true);
   const inputRef = useRef<HTMLInputElement | null>(null);
 
   // Focus + select-all exactly once when entering edit mode. Keyed on
   // isEditing (NOT draft) so it does not re-fire and re-select on every
-  // keystroke — that was the source of the typing jank.
+  // keystroke, which was the source of the typing jank.
   useEffect(() => {
     if (!isEditing) return;
     inputRef.current?.focus();
@@ -65,19 +69,26 @@ export function ActiveSceneTitle() {
   const startEdit = () => {
     if (!canRename) return;
     setDraft(title);
+    setIsValid(true);
     setIsEditing(true);
   };
 
   const cancelEdit = () => {
     setIsEditing(false);
     setDraft("");
+    setIsValid(true);
   };
 
   const commit = async () => {
     if (!isEditing) return;
     const trimmed = draft.trim();
-    // No-op cases: empty, unchanged, or missing token → just exit edit.
-    if (!trimmed || trimmed === title || !sceneMeta.token) {
+    if (!trimmed) {
+      setIsValid(false);
+      showToast("error", "Scene name cannot be empty.");
+      inputRef.current?.focus();
+      return;
+    }
+    if (trimmed === title || !sceneMeta.token) {
       cancelEdit();
       return;
     }
@@ -92,7 +103,6 @@ export function ActiveSceneTitle() {
         cancelEdit();
         return;
       }
-      // Single-source-of-truth write; local edit state is discarded.
       setSceneMeta({ title: trimmed });
       cancelEdit();
     } catch {
@@ -103,44 +113,69 @@ export function ActiveSceneTitle() {
     }
   };
 
-  if (isEditing) {
-    return (
-      <input
-        ref={inputRef}
-        value={draft}
-        onChange={(e) => setDraft(e.target.value)}
-        onBlur={() => void commit()}
-        onKeyDown={(e) => {
-          if (e.key === "Enter") {
-            e.preventDefault();
-            void commit();
-          } else if (e.key === "Escape") {
-            e.preventDefault();
-            cancelEdit();
-          }
-        }}
-        disabled={isSubmitting}
-        maxLength={120}
-        className="h-8 max-w-[28rem] truncate rounded-md border border-white/[0.08] bg-white/[0.04] px-2 text-sm font-semibold text-white outline-none focus:border-white/20"
-      />
-    );
-  }
-
   return (
-    <div className="group flex min-w-0 items-center gap-2">
-      <span className="truncate text-sm font-semibold text-white">
-        {title}
-      </span>
-      {canRename && (
-        <button
-          type="button"
-          onClick={startEdit}
-          title="Rename scene"
-          aria-label="Rename scene"
-          className="shrink-0 rounded p-1 text-white/30 transition-colors group-hover:text-white/70 hover:!text-white hover:bg-white/[0.06]"
-        >
-          <FontAwesomeIcon icon={faPen} className="text-[11px]" />
-        </button>
+    <div className="flex min-w-0 items-center justify-center gap-1.5">
+      {!isEditing && (
+        <div className="flex min-w-0 items-center gap-2.5">
+          <span className="text-nowrap text-sm opacity-60">{PAGE_NAME}</span>
+          <span className="text-sm opacity-60">/</span>
+          {canRename ? (
+            <button
+              type="button"
+              onClick={startEdit}
+              title="Rename scene"
+              aria-label="Rename scene"
+              className="-ml-1 flex min-w-0 items-center rounded-md px-2 py-1 text-sm font-semibold text-white transition-all hover:cursor-text hover:bg-white/[0.08]"
+            >
+              <span className="truncate">{title}</span>
+              <FontAwesomeIcon
+                icon={faPencil}
+                className="ml-2 shrink-0 text-sm opacity-50"
+              />
+            </button>
+          ) : (
+            <div className="-ml-1 truncate rounded-md px-2 py-1 text-sm font-semibold text-white">
+              {title}
+            </div>
+          )}
+        </div>
+      )}
+
+      {isEditing && (
+        <input
+          ref={inputRef}
+          value={draft}
+          onChange={(e) => {
+            setDraft(e.target.value);
+            if (e.target.value.trim() !== "") setIsValid(true);
+          }}
+          onBlur={() => void commit()}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              (e.target as HTMLInputElement).blur();
+            } else if (e.key === "Escape") {
+              e.preventDefault();
+              cancelEdit();
+            }
+          }}
+          disabled={isSubmitting}
+          maxLength={120}
+          className={twMerge(
+            "h-8 w-[420px] max-w-full rounded-md border border-white/[0.12] bg-white/[0.04] px-2 text-center text-sm font-semibold text-white outline-none focus:outline focus:outline-2 focus:outline-brand-primary",
+            isSubmitting && "outline outline-2 outline-brand-secondary",
+            !isValid &&
+              "border-danger focus:outline-danger focus:outline-2",
+          )}
+        />
+      )}
+
+      {isSubmitting && (
+        <FontAwesomeIcon
+          icon={faSpinnerThird}
+          spin
+          className="shrink-0 text-sm opacity-70"
+        />
       )}
     </div>
   );

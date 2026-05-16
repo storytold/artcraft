@@ -108,6 +108,7 @@ export const SceneTitleInput = ({ pageName }: Props) => {
             <button
               className="ml-0.5 rounded-md px-2 py-1 transition-all hover:cursor-text hover:bg-white/[8%]"
               onClick={handleShowInput}
+              data-tauri-drag-region="false"
             >
               {scene.value.title || ""}
               <FontAwesomeIcon

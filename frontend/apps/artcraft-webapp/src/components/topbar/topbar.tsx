@@ -152,7 +152,7 @@ export function TopBar() {
   };
 
   return (
-    <header className="sticky top-0 z-20 flex items-center gap-3 border-b border-white/[0.06] bg-[#121212]/80 backdrop-blur-md px-3 pb-4 pt-3 sm:pt-6">
+    <header className="sticky top-0 z-20 relative flex items-center gap-3 border-b border-white/[0.06] bg-[#121212]/80 backdrop-blur-md px-3 pb-4 pt-3 sm:pt-6">
       {/* Left: sidebar trigger (mobile only) + logo (when sidebar closed) + breadcrumbs */}
       <div className="flex items-center gap-2 min-w-0 shrink-0">
         <SidebarTrigger className="md:hidden" />
@@ -171,13 +171,20 @@ export function TopBar() {
       </div>
 
       {/* Middle: route-scoped chrome (scene title on /edit-3d, empty
-          elsewhere). flex-1 claims the space between left and right. */}
-      <div className="flex min-w-0 flex-1 items-center justify-center">
-        <ActiveSceneTitle />
+          elsewhere). Absolutely centered to the topbar (which already
+          spans only the canvas area, since it sits beside the sidebar)
+          so the title aligns horizontally with the Controls3D bar
+          regardless of the left/right widths. pointer-events:none on
+          the overlay lets clicks pass through to whatever's beneath;
+          the inner wrapper re-enables pointer-events for the title. */}
+      <div className="pointer-events-none absolute inset-x-0 inset-y-0 flex items-center justify-center pb-4 pt-3 sm:pt-6">
+        <div className="pointer-events-auto">
+          <ActiveSceneTitle />
+        </div>
       </div>
 
       {/* Right: credits / upgrade / library / avatar */}
-      <div className="flex items-center gap-2 shrink-0">
+      <div className="ml-auto flex items-center gap-2 shrink-0">
         {!authChecked ? null : user ? (
           <>
             <Link
