@@ -236,6 +236,7 @@ mod tests {
 
   mod live_api_tests {
     use super::*;
+    use test_data::web::image_urls::JUNO_AT_LAKE_IMAGE_URL;
 
     #[tokio::test]
     #[ignore] // requires real API key, incurs costs
@@ -247,6 +248,51 @@ mod tests {
       request.ratio = Some(Seedance20FastRatio::Landscape16x9);
       let result = request.send_request(&api_key).await.unwrap();
       println!("Request ID: {}", result.request_id);
+      assert!(!result.request_id.is_empty());
+      assert_eq!(result.model, MODEL_ID);
+    }
+
+    #[tokio::test]
+    #[ignore] // requires real API key, incurs costs
+    async fn test_image_to_video_480p() {
+      let api_key = crate::test_utils::load_api_key();
+      let mut request = minimal_request();
+      request.prompt = "the dog in this photo starts running and splashing in the lake water".to_string();
+      request.duration = Some(10);
+      request.resolution = Some(Seedance20FastResolution::FourEightyP);
+      request.first_frame = Some(JUNO_AT_LAKE_IMAGE_URL.to_string());
+      let result = request.send_request(&api_key).await.unwrap();
+      println!("[fast 480p] Request ID: {}", result.request_id);
+      assert!(!result.request_id.is_empty());
+      assert_eq!(result.model, MODEL_ID);
+    }
+
+    #[tokio::test]
+    #[ignore] // requires real API key, incurs costs
+    async fn test_image_to_video_720p() {
+      let api_key = crate::test_utils::load_api_key();
+      let mut request = minimal_request();
+      request.prompt = "the dog in this photo starts running and splashing in the lake water".to_string();
+      request.duration = Some(10);
+      request.resolution = Some(Seedance20FastResolution::SevenTwentyP);
+      request.first_frame = Some(JUNO_AT_LAKE_IMAGE_URL.to_string());
+      let result = request.send_request(&api_key).await.unwrap();
+      println!("[fast 720p] Request ID: {}", result.request_id);
+      assert!(!result.request_id.is_empty());
+      assert_eq!(result.model, MODEL_ID);
+    }
+
+    #[tokio::test]
+    #[ignore] // requires real API key, incurs costs
+    async fn test_image_to_video_1080p() {
+      let api_key = crate::test_utils::load_api_key();
+      let mut request = minimal_request();
+      request.prompt = "the dog in this photo starts running and splashing in the lake water".to_string();
+      request.duration = Some(10);
+      request.resolution = Some(Seedance20FastResolution::TenEightyP);
+      request.first_frame = Some(JUNO_AT_LAKE_IMAGE_URL.to_string());
+      let result = request.send_request(&api_key).await.unwrap();
+      println!("[fast 1080p] Request ID: {}", result.request_id);
       assert!(!result.request_id.is_empty());
       assert_eq!(result.model, MODEL_ID);
     }
