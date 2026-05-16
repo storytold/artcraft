@@ -22,6 +22,7 @@ pub(crate) fn estimate_splat_cost_artcraft_marble_0p1_plus(
     is_unlimited: false,
     is_rate_limited: false,
     has_watermark: false,
+    failures_are_refunded: None,
   }
 }
 

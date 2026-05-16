@@ -54,6 +54,7 @@ pub(crate) fn estimate_image_cost_artcraft_gpt_image_1p5(
     is_unlimited: false,
     is_rate_limited: false,
     has_watermark: false,
+    failures_are_refunded: None,
   }
 }
 

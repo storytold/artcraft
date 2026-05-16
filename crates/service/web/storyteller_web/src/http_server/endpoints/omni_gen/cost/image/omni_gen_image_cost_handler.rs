@@ -49,6 +49,7 @@ pub async fn omni_gen_image_cost_handler(
     is_unlimited: estimate.is_unlimited,
     is_rate_limited: estimate.is_rate_limited,
     has_watermark: estimate.has_watermark,
+    failures_are_refunded: estimate.failures_are_refunded,
   }))
 }
 

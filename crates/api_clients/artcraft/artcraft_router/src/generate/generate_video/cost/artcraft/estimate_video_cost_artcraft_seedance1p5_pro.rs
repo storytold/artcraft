@@ -50,6 +50,7 @@ pub(crate) fn estimate_video_cost_artcraft_seedance1p5_pro(
     is_unlimited: false,
     is_rate_limited: false,
     has_watermark: false,
+    failures_are_refunded: None,
   }
 }
 

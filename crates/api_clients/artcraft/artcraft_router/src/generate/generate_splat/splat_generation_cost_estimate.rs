@@ -6,4 +6,5 @@ pub struct SplatGenerationCostEstimate {
   pub is_unlimited: bool,
   pub is_rate_limited: bool,
   pub has_watermark: bool,
+  pub failures_are_refunded: Option<bool>,
 }

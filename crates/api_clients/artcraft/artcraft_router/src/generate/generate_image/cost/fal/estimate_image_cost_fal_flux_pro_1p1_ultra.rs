@@ -16,5 +16,6 @@ pub(crate) fn estimate_image_cost_fal_flux_pro_1p1_ultra(
     is_unlimited: false,
     is_rate_limited: false,
     has_watermark: false,
+    failures_are_refunded: None,
   }
 }
