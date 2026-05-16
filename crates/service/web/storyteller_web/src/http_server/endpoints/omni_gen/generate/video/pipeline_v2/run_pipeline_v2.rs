@@ -42,6 +42,8 @@ pub async fn run_pipeline_v2(args: RunPipelineV2Args<'_>) -> Result<PipelineResu
     CommonVideoModel::HappyHorse1p0 => Provider::Seedance2Pro,
     CommonVideoModel::Seedance2p0 => Provider::Seedance2Pro,
     CommonVideoModel::Seedance2p0Fast => Provider::Seedance2Pro,
+    CommonVideoModel::Seedance2p0Global => Provider::GmiCloud,
+    CommonVideoModel::Seedance2p0FastGlobal => Provider::GmiCloud,
     _ => Provider::Fal,
   };
 
@@ -55,22 +57,34 @@ pub async fn run_pipeline_v2(args: RunPipelineV2Args<'_>) -> Result<PipelineResu
         AdvancedCommonWebError::from_error(e)
       })?;
 
-  // 2. Calculate cost (swap provider to Artcraft for billing)
-  let mut cost_builder = router_builder.clone();
-  cost_builder.provider = Provider::Artcraft;
+  // 2. Calculate cost.
+  //    For Artcraft-billable models, swap provider to Artcraft so credits = cents.
+  //    For GmiCloud, use the execution request's cost directly (no Artcraft equivalent).
+  let cost = if matches!(provider, Provider::GmiCloud) {
+    draft_or_request.estimate_cost()
+      .map_err(|e| {
+        warn!("Failed to estimate cost for v2 (GmiCloud): {}", e);
+        AdvancedCommonWebError::from_error(e)
+      })?
+      .cost_in_usd_cents
+      .unwrap_or(0)
+  } else {
+    let mut cost_builder = router_builder.clone();
+    cost_builder.provider = Provider::Artcraft;
 
-  let cost = cost_builder.build2()
-    .map_err(|e| {
-      warn!("Failed to build2 cost estimate for v2: {}", e);
-      AdvancedCommonWebError::from_error(e)
-    })?
-    .estimate_cost()
-    .map_err(|e| {
-      warn!("Failed to estimate cost for v2: {}", e);
-      AdvancedCommonWebError::from_error(e)
-    })?
-    .cost_in_credits
-    .unwrap_or(0);
+    cost_builder.build2()
+      .map_err(|e| {
+        warn!("Failed to build2 cost estimate for v2: {}", e);
+        AdvancedCommonWebError::from_error(e)
+      })?
+      .estimate_cost()
+      .map_err(|e| {
+        warn!("Failed to estimate cost for v2: {}", e);
+        AdvancedCommonWebError::from_error(e)
+      })?
+      .cost_in_credits
+      .unwrap_or(0)
+  };
 
   info!("v2 estimated cost: {} credits", cost);
 

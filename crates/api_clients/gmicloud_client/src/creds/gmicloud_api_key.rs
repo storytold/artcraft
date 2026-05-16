@@ -1,4 +1,5 @@
 /// A GmiCloud API key used for Bearer token authentication.
+#[derive(Clone)]
 pub struct GmiCloudApiKey(pub String);
 
 impl GmiCloudApiKey {

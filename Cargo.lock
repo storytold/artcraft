@@ -11296,6 +11296,7 @@ dependencies = [
  "futures 0.1.31",
  "futures 0.3.32",
  "futures-util",
+ "gmicloud_client",
  "google_sign_in",
  "hashing",
  "hostname 0.4.0",

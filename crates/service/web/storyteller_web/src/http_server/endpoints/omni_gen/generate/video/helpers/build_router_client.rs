@@ -3,6 +3,7 @@
 use artcraft_router::api::provider::Provider;
 use artcraft_router::client::router_client::RouterClient;
 use artcraft_router::client::router_fal_client::RouterFalClient;
+use artcraft_router::client::router_gmicloud_client::RouterGmiCloudClient;
 use artcraft_router::client::router_seedance2pro_client::RouterSeedance2ProClient;
 use seedance2pro_client::creds::seedance2pro_session::Seedance2ProSession;
 
@@ -26,6 +27,11 @@ pub fn build_router_client(
         server_state.fal.webhook_url.clone(),
       );
       Ok(RouterClient::Fal(fal_client))
+    }
+    Provider::GmiCloud => {
+      Ok(RouterClient::GmiCloud(RouterGmiCloudClient::new(
+        server_state.gmicloud.api_key.clone(),
+      )))
     }
     other => {
       Err(AdvancedCommonWebError::server_error_with_message(
