@@ -92,6 +92,43 @@ export const ControlsTopButtons = () => {
     }
   };
 
+  // In-place save that takes the name from the prompt input rather than
+  // sceneMeta.title. Used for brand-new scenes (sceneMeta.token
+  // undefined → UploadNewScene) and for saved scenes that never got a
+  // real title. Mirrors the saved meta back through onSceneTitleChange
+  // so the store/header pick up the new name + token.
+  const handleButtonSaveWithName = async () => {
+    if (!editor) return;
+    if (!currentUserToken && editor.adapter.promptSignup) {
+      editor.adapter.promptSignup("save");
+      return;
+    }
+    const sceneGenerationMetadata = getSceneGenerationMetaData(editor);
+    const retSceneMediaToken = await editor.saveScene({
+      sceneTitle: sceneTitleInput,
+      sceneToken: sceneMeta.token,
+      sceneGenerationMetadata,
+    });
+
+    if (retSceneMediaToken === "") {
+      editor.adapter.showToast(
+        ToastTypes.ERROR,
+        "Failed to Save Scene Try again Later!",
+      );
+      return;
+    }
+
+    if (retSceneMediaToken) {
+      editor.adapter.showToast(ToastTypes.SUCCESS, retSceneMediaToken);
+      editor.adapter.onSceneTitleChange?.({
+        title: sceneTitleInput,
+        token: retSceneMediaToken,
+        ownerToken: sceneMeta.ownerToken ?? currentUserToken,
+        isModified: false,
+      });
+    }
+  };
+
   const handleButtonSaveAsCopy = useCallback(async () => {
     if (!editor) return;
     if (!currentUserToken && editor.adapter.promptSignup) {
@@ -130,12 +167,18 @@ export const ControlsTopButtons = () => {
     usePageSceneStore.getState().setOutlinerShowing(!outlinerShowing);
   };
 
-  // Visitors of someone else's scene can save too — the action just
-  // routes through Save-as-copy (fork to their own account) instead of
-  // overwriting the owner's copy. Forking even an unmodified scene is
-  // valid ("favorite to my account"), so visitors get Save enabled
-  // unconditionally; owners still need an unsaved edit to save.
-  const canSave = isVisitingOthersScene || sceneMeta.isModified;
+  // Any logged-in user can save — saving an unmodified scene is valid
+  // (re-save, "favorite to my account" fork via Save-as-copy for
+  // visitors). We deliberately do NOT require sceneMeta.isModified;
+  // dirty-tracking isn't plumbed end-to-end and saving shouldn't depend
+  // on it. Anon still falls through to the signup CTA branch below.
+  const canSave = !!currentUserToken;
+
+  // A scene needs a name prompt before saving when it's brand-new (no
+  // token) or has no usable title yet. Already-named saved scenes save
+  // silently in place.
+  const sceneHasName = !!sceneMeta.title && sceneMeta.title.trim() !== "";
+  const needsNameToSave = !sceneMeta.token || !sceneHasName;
 
   // The Save-as-copy "(1)" rename hint runs onDialogOpen for both the
   // visitor's primary "Save copy" item AND the owner's standalone
@@ -170,6 +213,27 @@ export const ControlsTopButtons = () => {
       label: "Save",
       disabled: sceneTitleInput === "",
       onClick: handleButtonSaveAsCopy,
+    },
+    closeButtonProps: { label: "Cancel" },
+    showClose: true,
+  };
+
+  // Name prompt for the owner's first save of a new/unnamed scene.
+  // Same input as the copy dialog, but the confirm performs the
+  // in-place save under sceneMeta.token (undefined → create new).
+  const saveWithNameDialogProps = {
+    title: "Save Scene",
+    content: (
+      <Input
+        value={sceneTitleInput}
+        label="Please enter a name for your scene"
+        onChange={handleChangeSceneTitleInput}
+      />
+    ),
+    confirmButtonProps: {
+      label: "Save",
+      disabled: sceneTitleInput.trim() === "",
+      onClick: handleButtonSaveWithName,
     },
     closeButtonProps: { label: "Cancel" },
     showClose: true,
@@ -261,24 +325,9 @@ export const ControlsTopButtons = () => {
                       onDialogOpen: bumpCopyCountInTitle,
                       dialogProps: saveAsCopyDialogProps,
                     }
-                  : sceneMeta.token
-                    ? { onClick: handleButtonSave }
-                    : {
-                        dialogProps: {
-                          title: "Save Scene",
-                          content: (
-                            <h4>
-                              Save scene to <b>{sceneMeta.title}</b>?
-                            </h4>
-                          ),
-                          confirmButtonProps: {
-                            label: "Save",
-                            onClick: handleButtonSave,
-                          },
-                          closeButtonProps: { label: "Cancel" },
-                          showClose: true,
-                        },
-                      }),
+                  : needsNameToSave
+                    ? { dialogProps: saveWithNameDialogProps }
+                    : { onClick: handleButtonSave }),
               divider: true,
             },
             // Standalone "Save scene as copy" — owners only. Visitors
@@ -288,7 +337,7 @@ export const ControlsTopButtons = () => {
               ? []
               : [
                   {
-                    disabled: !sceneMeta.isModified || !sceneMeta.token,
+                    disabled: !currentUserToken || !sceneMeta.token,
                     label: "Save scene as copy",
                     description: "Ctrl+Shift+S",
                     onDialogOpen: bumpCopyCountInTitle,
