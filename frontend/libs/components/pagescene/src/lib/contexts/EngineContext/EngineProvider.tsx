@@ -72,6 +72,16 @@ export const EngineProvider = ({
     setEditor(newEditor);
     setActiveEditor(newEditor);
 
+    // Capture the serialize callback NOW, before any subsequent render
+    // can re-point onSerializeRef.current. Hosts typically rebuild this
+    // callback whenever sceneToken changes (closing over the new token
+    // for the cache write); on an A→B navigation, refs are mutated
+    // during the B render BEFORE this effect's cleanup runs. Reading
+    // through the ref at cleanup time would call the B-bound callback
+    // with A's JSON, writing scene A's content under cache[B] — which
+    // surfaces as "wrong scene loaded" on the next revisit to B.
+    const onSerializeForThisScene = onSerializeRef.current;
+
     return () => {
       // Snapshot scene to host-managed cache so we can restore it on
       // remount. Skip if the scene never finished loading; the host's
@@ -81,7 +91,7 @@ export const EngineProvider = ({
         const cacheJson = newEditor.save_manager.getSceneJson({
           sceneGenerationMetadata,
         });
-        onSerializeRef.current?.(JSON.stringify(cacheJson));
+        onSerializeForThisScene?.(JSON.stringify(cacheJson));
       }
 
       newEditor.unmountEngine();

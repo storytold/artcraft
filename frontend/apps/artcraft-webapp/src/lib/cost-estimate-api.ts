@@ -1,6 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import { OmniGenApi } from "@storyteller/api";
 import type { OmniGenImageRequest, OmniGenVideoRequest } from "@storyteller/api";
+import {
+  ModelPage,
+  useSelectedImageModel,
+} from "@storyteller/ui-model-selector";
+import { usePrompt3DStore } from "@storyteller/ui-promptbox";
+import { useCostBreakdownModalStore } from "@storyteller/ui-pricing-modal";
 
 // ── Image cost estimate hook ─────────────────────────────────────────────
 
@@ -62,6 +68,46 @@ export function useImageCostEstimate(params: ImageCostParams): number | null {
   ]);
 
   return credits;
+}
+
+// ── Stage 3D cost estimate hook ──────────────────────────────────────────
+
+// PromptBox3D's resolution picker stores the UI shorthand ("1k" / "2k" /
+// "4k"), but the OmniGen cost endpoint deserializes a CommonResolution enum
+// whose variants are "one_k" / "two_k" / "four_k". Map before sending so
+// the backend doesn't reject the body with "unknown variant `1k`".
+const PROMPT_3D_RESOLUTION_TO_OMNI_GEN: Record<string, string> = {
+  "1k": "one_k",
+  "2k": "two_k",
+  "4k": "four_k",
+};
+
+// Stage3DBody pulls credits from useCostBreakdownModalStore keyed by
+// ModelPage.Stage3D and passes them down to PromptBox3D's GenerateButton.
+// On Tauri this store is fed by lib-internal `useImageCostEstimate` (which
+// calls a Tauri invoke). The webapp has no Tauri runtime, so this hook
+// fills the same slot via the OmniGen HTTP cost endpoint.
+export function useStage3DCostEstimate(): void {
+  const selectedModel = useSelectedImageModel(ModelPage.Stage3D);
+  const resolution = usePrompt3DStore((s) => s.resolution);
+  const referenceImageCount = usePrompt3DStore((s) => s.referenceImages.length);
+  const setEstimatedCreditsForPage = useCostBreakdownModalStore(
+    (s) => s.setEstimatedCreditsForPage,
+  );
+
+  const credits = useImageCostEstimate({
+    model: selectedModel?.id ?? "",
+    resolution: selectedModel?.canChangeResolution
+      ? PROMPT_3D_RESOLUTION_TO_OMNI_GEN[resolution]
+      : undefined,
+    numImages: 1,
+    hasReferenceImages: referenceImageCount > 0,
+    imageMediaTokenCount: referenceImageCount,
+  });
+
+  useEffect(() => {
+    setEstimatedCreditsForPage(ModelPage.Stage3D, credits);
+  }, [credits, setEstimatedCreditsForPage]);
 }
 
 // ── Video cost estimate hook ─────────────────────────────────────────────
