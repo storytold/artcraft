@@ -12,12 +12,16 @@ pub async fn main_loop(job_dependencies: JobDependencies) {
   while !job_dependencies.application_shutdown.get() {
     let result = run_poll_iteration(&job_dependencies).await;
 
-    if let Err(err) = result {
-      error!("Error in poll iteration: {:?}", err);
-      let _ = job_dependencies.job_stats.increment_failure_count();
-    }
+    let sleep_millis = match result {
+      Ok(_) => job_dependencies.poll_interval_success_millis,
+      Err(err) => {
+        error!("Error in poll iteration: {:?}", err);
+        let _ = job_dependencies.job_stats.increment_failure_count();
+        job_dependencies.poll_interval_failure_millis
+      }
+    };
 
-    tokio::time::sleep(Duration::from_millis(job_dependencies.poll_interval_millis)).await;
+    tokio::time::sleep(Duration::from_millis(sleep_millis)).await;
   }
 
   warn!("GmiCloud job runner main loop is shut down.");

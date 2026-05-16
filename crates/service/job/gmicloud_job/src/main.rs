@@ -102,9 +102,15 @@ async fn main() -> AnyhowResult<()> {
   let gmicloud_api_key_str = easyenv::get_env_string_required(ENV_GMICLOUD_API_KEY)?;
   let gmicloud_api_key = GmiCloudApiKey::new(gmicloud_api_key_str);
 
-  // How often to poll for results (default: 15 seconds)
-  let poll_interval_millis: u64 = easyenv::get_env_num(
-    "GMICLOUD_POLL_INTERVAL_MILLIS",
+  // How often to poll after a successful iteration (default: 3 seconds)
+  let poll_interval_success_millis: u64 = easyenv::get_env_num(
+    "GMICLOUD_POLL_INTERVAL_SUCCESS_MILLIS",
+    3_000,
+  )?;
+
+  // How often to poll after a failed iteration (default: 15 seconds)
+  let poll_interval_failure_millis: u64 = easyenv::get_env_num(
+    "GMICLOUD_POLL_INTERVAL_FAILURE_MILLIS",
     15_000,
   )?;
 
@@ -133,7 +139,8 @@ async fn main() -> AnyhowResult<()> {
     server_environment,
     pager,
     job_stats,
-    poll_interval_millis,
+    poll_interval_success_millis,
+    poll_interval_failure_millis,
     application_shutdown: application_shutdown.clone(),
   };
 

@@ -21,8 +21,11 @@ pub struct JobDependencies {
 
   pub job_stats: JobStats,
 
-  /// How long to sleep between poll iterations (milliseconds).
-  pub poll_interval_millis: u64,
+  /// How long to sleep after a successful poll iteration (milliseconds).
+  pub poll_interval_success_millis: u64,
+
+  /// How long to sleep after a failed poll iteration (milliseconds).
+  pub poll_interval_failure_millis: u64,
 
   /// Set to `true` from another thread to trigger graceful shutdown.
   pub application_shutdown: RelaxedAtomicBool,
