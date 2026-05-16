@@ -31,7 +31,7 @@ import {
   UploaderStates,
 } from "@storyteller/ui-upload-modal";
 import { showToast } from "../../components/toast/toast";
-import { invalidateSession } from "../../lib/session";
+import { invalidateSession, useSessionStore } from "../../lib/session";
 import { useSceneCacheStore } from "./scene-cache-store";
 
 const apiHost = () =>
@@ -163,10 +163,18 @@ export const useWebAppPageSceneAdapter = (
     onRequestNewSceneSelector,
   } = options;
 
+  // Read the session live at call time rather than through the memoized
+  // closure. EngineProvider captures the adapter exactly once at engine
+  // construction (adapter is intentionally excluded from its effect deps);
+  // the webapp session resolves async, so the engine usually captures an
+  // adapter built before `userToken` is known. A live store read keeps
+  // user-dependent methods correct regardless of capture timing.
+  const getLiveUser = () => useSessionStore.getState().user;
+
   return useMemo<PageSceneAdapter>(
     () => ({
       enqueueGeneration: async () => {
-        if (!userToken) {
+        if (!getLiveUser()) {
           promptSignup("generate");
           return { status: "fail" };
         }
@@ -202,7 +210,7 @@ export const useWebAppPageSceneAdapter = (
 
       getCdnOrigin: () => GetCdnOrigin(),
       getApiSchemeAndHost: apiHost,
-      getCurrentUserToken: () => userToken,
+      getCurrentUserToken: () => getLiveUser()?.user_token,
 
       getCdnUrl: (bucketPath, width, quality) => {
         const base = GetCdnOrigin();
@@ -223,12 +231,22 @@ export const useWebAppPageSceneAdapter = (
       getViewportSize,
 
       listUserMediaFiles: async (query) => {
-        if (!userToken) {
-          return { success: false, data: [], pagination: undefined };
+        const user = getLiveUser();
+        if (!user) {
+          return {
+            success: false,
+            data: [],
+            pagination: undefined,
+            errorMessage: "Sign in to load your saved scenes.",
+          };
         }
         const api = new MediaFilesApi();
         const response = await api.ListUserMediaFiles({
-          username: userToken,
+          username: user.username,
+          // Saved scenes are persisted with is_user_upload = TRUE; the
+          // list endpoint excludes uploads unless this is set (matches
+          // the Tauri adapter's ArtcraftMediaFilesApi behavior).
+          include_user_uploads: true,
           page_size: query.pageSize,
           page_index: query.pageIndex,
           // Lib's FilterEngineCategories has a SPLAT variant that the API
