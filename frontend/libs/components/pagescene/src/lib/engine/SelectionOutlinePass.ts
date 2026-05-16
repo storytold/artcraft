@@ -87,6 +87,11 @@ export class SelectionOutlinePass extends Pass {
   // Kept so we can hide it again when the selection changes.
   private activeSplatBbox: THREE.Object3D | undefined;
 
+  // When true, render() still does the Step-1 forward scene render but
+  // skips the outline overlay (and the splat bbox is hidden). Used by
+  // the snapshot path — see setOutlineSuppressed.
+  private suppressOutline = false;
+
   // Off-screen target for step 2. Only the depth attachment is read by
   // the silhouette shader; the color attachment exists because WebGL
   // requires a complete framebuffer.
@@ -138,6 +143,16 @@ export class SelectionOutlinePass extends Pass {
     this.toggleSplatBbox(splatTarget);
   }
 
+  // Snapshot hook: keep the Step-1 scene render but drop the outline
+  // overlay AND the selected splat's __bbox_internal wireframe, so the
+  // captured reference frame is clean. Toggling the whole pass off would
+  // skip Step 1 (EffectComposer skips disabled passes) and leave the
+  // composer with an empty buffer -> a flat gray snapshot.
+  setOutlineSuppressed(suppressed: boolean): void {
+    this.suppressOutline = suppressed;
+    if (this.activeSplatBbox) this.activeSplatBbox.visible = !suppressed;
+  }
+
   override setSize(width: number, height: number) {
     this.selectedTarget.setSize(width, height);
     this.outlineMaterial.uniforms["screenSize"].value.set(
@@ -177,8 +192,9 @@ export class SelectionOutlinePass extends Pass {
     renderer.clear();
     renderer.render(this.scene, this.camera);
 
-    // Nothing to outline -> stop after step 1.
-    if (!this.outlineTarget) return;
+    // Outline suppressed (snapshot) or nothing to outline -> stop after
+    // step 1. The scene is already in writeBuffer either way.
+    if (this.suppressOutline || !this.outlineTarget) return;
 
     // Step 2: selected-only depth -> selectedTarget. Build a keep set
     // for the selected subtree plus its ancestors (Object3D.visible is

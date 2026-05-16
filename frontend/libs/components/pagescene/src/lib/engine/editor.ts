@@ -629,13 +629,11 @@ class Editor {
     const wasControlVisible = this.gizmo.isVisible();
     this.gizmo.setVisible(false);
 
-    // Store and disable selection outline pass so snapshots don't capture
-    // the halo around the active selection.
+    // Suppress the selection outline overlay (and splat bbox) so the
+    // snapshot is clean. We can't disable the pass outright — it now owns
+    // the forward scene render, so a disabled pass yields a gray frame.
     const selectionPass = this.postProcessing.selectionPass;
-    const wasOutlineEnabled = selectionPass?.enabled ?? false;
-    if (selectionPass) {
-      selectionPass.enabled = false;
-    }
+    selectionPass?.setOutlineSuppressed(true);
 
     // High quality dimensions for each aspect ratio
     let targetWidth: number;
@@ -736,10 +734,8 @@ class Editor {
     // Restore transform controls visibility
     this.gizmo.setVisible(wasControlVisible);
 
-    // Restore outline pass
-    if (selectionPass) {
-      selectionPass.enabled = wasOutlineEnabled;
-    }
+    // Restore outline overlay + splat bbox
+    selectionPass?.setOutlineSuppressed(false);
 
     if (shouldDownload) {
       const link = document.createElement("a");
