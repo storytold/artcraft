@@ -49,6 +49,7 @@ mod tests {
       duration_seconds: Some(5),
       ..gmicloud_fast_builder()
     }).await;
+    println!("response: {:?}", response);
     assert!(matches!(response, GenerateVideoResponse::GmiCloud(_)));
   }
 
@@ -62,6 +63,7 @@ mod tests {
       duration_seconds: Some(5),
       ..gmicloud_fast_builder()
     }).await;
+    println!("response: {:?}", response);
     assert!(matches!(response, GenerateVideoResponse::GmiCloud(_)));
   }
 
