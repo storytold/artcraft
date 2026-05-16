@@ -2,6 +2,7 @@ use crate::client::multi_router_client::MultiRouterClient;
 use crate::client::router_artcraft_client::RouterArtcraftClient;
 use crate::client::router_fal_client::RouterFalClient;
 use crate::client::router_fal_webhook_optional_client::RouterFalWebhookOptionalClient;
+use crate::client::router_gmicloud_client::RouterGmiCloudClient;
 use crate::client::router_muapi_client::RouterMuapiClient;
 use crate::client::router_seedance2pro_client::RouterSeedance2ProClient;
 use crate::errors::client_error::{ClientError, ClientType};
@@ -11,6 +12,7 @@ pub enum RouterClient {
   Artcraft(RouterArtcraftClient),
   Fal(RouterFalClient),
   FalWebhookOptional(RouterFalWebhookOptionalClient),
+  GmiCloud(RouterGmiCloudClient),
   Muapi(RouterMuapiClient),
   Seedance2Pro(RouterSeedance2ProClient),
 }
@@ -37,6 +39,14 @@ impl RouterClient {
       RouterClient::FalWebhookOptional(client) => Ok(client),
       RouterClient::Multi(multi) => multi.get_fal_webhook_optional_client_ref(),
       _ => Err(ClientError::ClientNotConfigured(ClientType::Fal)),
+    }
+  }
+
+  pub fn get_gmicloud_client_ref(&self) -> Result<&RouterGmiCloudClient, ClientError> {
+    match self {
+      RouterClient::GmiCloud(client) => Ok(client),
+      RouterClient::Multi(multi) => multi.get_gmicloud_client_ref(),
+      _ => Err(ClientError::ClientNotConfigured(ClientType::GmiCloud)),
     }
   }
 

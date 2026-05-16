@@ -2,6 +2,7 @@ use std::error::Error;
 use std::fmt::{Display, Formatter};
 use artcraft_client::error::storyteller_error::StorytellerError;
 use fal_client::error::fal_error_plus::FalErrorPlus;
+use gmicloud_client::error::gmicloud_error::GmiCloudError;
 use muapi_client::error::muapi_error::MuapiError;
 use seedance2pro_client::error::seedance2pro_error::Seedance2ProError;
 
@@ -9,6 +10,7 @@ use seedance2pro_client::error::seedance2pro_error::Seedance2ProError;
 pub enum ProviderError {
   Storyteller(StorytellerError),
   Fal(FalErrorPlus),
+  GmiCloud(GmiCloudError),
   Muapi(MuapiError),
   Seedance2Pro(Seedance2ProError),
 }
@@ -20,6 +22,7 @@ impl Display for ProviderError {
     match self {
       Self::Storyteller(e) => write!(f, "Storyteller provider error: {}", e),
       Self::Fal(e) => write!(f, "Fal provider error: {}", e),
+      Self::GmiCloud(e) => write!(f, "GmiCloud provider error: {}", e),
       Self::Muapi(e) => write!(f, "Muapi provider error: {}", e),
       Self::Seedance2Pro(e) => write!(f, "Seedance2Pro provider error: {}", e),
     }
@@ -35,6 +38,12 @@ impl From<StorytellerError> for ProviderError {
 impl From<FalErrorPlus> for ProviderError {
   fn from(error: FalErrorPlus) -> Self {
     Self::Fal(error)
+  }
+}
+
+impl From<GmiCloudError> for ProviderError {
+  fn from(error: GmiCloudError) -> Self {
+    Self::GmiCloud(error)
   }
 }
 

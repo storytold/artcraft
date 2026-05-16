@@ -6,6 +6,7 @@ use serde_derive::{Deserialize, Serialize};
 pub enum Provider {
   Artcraft,
   Fal,
+  GmiCloud,
   Muapi,
   Seedance2Pro,
 }
