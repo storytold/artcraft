@@ -86,6 +86,12 @@ export class SelectionOutlinePass extends Pass {
   // The currently-visible __bbox_internal child of a selected splat.
   // Kept so we can hide it again when the selection changes.
   private activeSplatBbox: THREE.Object3D | undefined;
+  // While true, render() returns after step 1 so the snapshot path
+  // gets a clean scene render with no outline halo or splat bbox.
+  // Disabling the whole pass via `this.enabled = false` would also
+  // skip step 1, leaving the composer with an empty writeBuffer
+  // (which then surfaces as a blank PNG download / generate input).
+  private suppressOverlay = false;
 
   // Off-screen target for step 2. Only the depth attachment is read by
   // the silhouette shader; the color attachment exists because WebGL
@@ -138,6 +144,16 @@ export class SelectionOutlinePass extends Pass {
     this.toggleSplatBbox(splatTarget);
   }
 
+  // Snapshot hook. Hides the selection chrome (outline overlay +
+  // splat bbox) without disabling step 1's forward scene render.
+  // Caller is responsible for restoring with setOverlaySuppressed(false).
+  setOverlaySuppressed(suppressed: boolean) {
+    this.suppressOverlay = suppressed;
+    if (this.activeSplatBbox) {
+      this.activeSplatBbox.visible = !suppressed;
+    }
+  }
+
   override setSize(width: number, height: number) {
     this.selectedTarget.setSize(width, height);
     this.outlineMaterial.uniforms["screenSize"].value.set(
@@ -179,6 +195,8 @@ export class SelectionOutlinePass extends Pass {
 
     // Nothing to outline -> stop after step 1.
     if (!this.outlineTarget) return;
+    // Snapshot path wants the scene render but no selection chrome.
+    if (this.suppressOverlay) return;
 
     // Step 2: selected-only depth -> selectedTarget. Build a keep set
     // for the selected subtree plus its ancestors (Object3D.visible is
