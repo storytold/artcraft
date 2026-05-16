@@ -57,7 +57,6 @@ pub struct Seedance20FastRequest {
 pub enum Seedance20FastResolution {
   FourEightyP,
   SevenTwentyP,
-  TenEightyP,
 }
 
 #[derive(Copy, Clone, Debug)]
@@ -86,7 +85,6 @@ impl Seedance20FastRequest {
       resolution: self.resolution.map(|r| match r {
         Seedance20FastResolution::FourEightyP => "480p",
         Seedance20FastResolution::SevenTwentyP => "720p",
-        Seedance20FastResolution::TenEightyP => "1080p",
       }.to_string()),
       ratio: self.ratio.map(|r| match r {
         Seedance20FastRatio::Landscape16x9 => "16:9",
