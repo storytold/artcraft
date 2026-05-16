@@ -1,0 +1,113 @@
+use log::{error, info, warn};
+
+use enums::by_table::generic_inference_jobs::frontend_failure_category::FrontendFailureCategory;
+use mysql_queries::queries::generic_inference::job::mark_job_failed_by_token::{mark_job_failed_by_token, MarkJobFailedByTokenArgs};
+use mysql_queries::queries::generic_inference::gmicloud::list_pending_gmicloud_jobs::PendingGmiCloudJob;
+use mysql_queries::queries::wallets::refund::try_to_refund_ledger_entry::{try_to_refund_ledger_entry, WalletRefundOutcome};
+
+use crate::job_dependencies::JobDependencies;
+
+pub async fn process_failed_job(
+  deps: &JobDependencies,
+  job: &PendingGmiCloudJob,
+  reason: &str,
+) {
+  // --- Step 1: Attempt the refund before touching the job status. ---
+  //
+  // Refund first so a crash between refund and status update never leaves
+  // a failed job without a refund. If the refund fails, bail out early:
+  // the job stays pending and will be retried on the next poll cycle.
+
+  match &job.maybe_wallet_ledger_entry_token {
+    None => {
+      warn!(
+        "Job {} has no wallet ledger entry token; skipping refund.",
+        job.job_token.as_str()
+      );
+    }
+    Some(ledger_token) => {
+      let mut transaction = match deps.mysql_pool.begin().await {
+        Ok(tx) => tx,
+        Err(err) => {
+          error!(
+            "Failed to begin refund transaction for job {} (ledger {}): {:?}. \
+             Job will NOT be marked failed yet and will be retried next poll.",
+            job.job_token.as_str(), ledger_token.as_str(), err
+          );
+          return;
+        }
+      };
+
+      match try_to_refund_ledger_entry(ledger_token, &mut transaction).await {
+        Ok(WalletRefundOutcome::Refunded(summary)) => {
+          info!(
+            "Refunded {} credits for failed job {} (ledger {} -> refund ledger {}).",
+            summary.refund_amount,
+            job.job_token.as_str(),
+            ledger_token.as_str(),
+            summary.refund_ledger_entry_token.as_str(),
+          );
+          if let Err(err) = transaction.commit().await {
+            error!(
+              "Failed to commit refund transaction for job {} (ledger {}): {:?}. \
+               Job will NOT be marked failed yet and will be retried next poll.",
+              job.job_token.as_str(), ledger_token.as_str(), err
+            );
+            return;
+          }
+        }
+        Ok(WalletRefundOutcome::AlreadyRefunded) => {
+          info!(
+            "Ledger entry {} for job {} was already refunded; proceeding to mark job failed.",
+            ledger_token.as_str(), job.job_token.as_str(),
+          );
+          let _ = transaction.rollback().await;
+        }
+        Err(err) => {
+          error!(
+            "Failed to refund ledger entry {} for job {}: {:?}. \
+             Job will NOT be marked failed yet and will be retried next poll.",
+            ledger_token.as_str(), job.job_token.as_str(), err,
+          );
+          let _ = transaction.rollback().await;
+          return;
+        }
+      }
+    }
+  }
+
+  // --- Step 2: Mark the job record as failed. ---
+
+  let reason_lower = reason.to_lowercase();
+
+  let platform_rules_violation = reason_lower.contains("violates")
+    || reason_lower.contains("platform rules")
+    || reason_lower.contains("please modify")
+    || reason_lower.contains("content policy");
+
+  let frontend_failure_category = if platform_rules_violation {
+    Some(FrontendFailureCategory::ModelRulesViolation)
+  } else {
+    None
+  };
+
+  warn!(
+    "Request for job {} failed: {}. Marking job failed.",
+    job.job_token.as_str(), reason
+  );
+
+  let mark_failed_result = mark_job_failed_by_token(MarkJobFailedByTokenArgs {
+    pool: &deps.mysql_pool,
+    job_token: &job.job_token,
+    maybe_public_failure_reason: Some(reason),
+    internal_debugging_failure_reason: reason,
+    maybe_frontend_failure_category: frontend_failure_category,
+  }).await;
+
+  if let Err(err) = mark_failed_result {
+    error!(
+      "Error marking job {} as failed: {:?}",
+      job.job_token.as_str(), err
+    );
+  }
+}
