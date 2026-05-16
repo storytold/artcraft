@@ -30,6 +30,11 @@ pub enum InferenceJobProductCategory {
   FalObject,
   FalBgRemoval,
 
+  // =============== GMICLOUD ===============
+
+  #[serde(rename = "gmicloud_video")]
+  GmiCloudVideo,
+
   // =============== BEEBLE ===============
 
   #[serde(rename = "beeble_video")]
@@ -144,6 +149,7 @@ impl InferenceJobProductCategory {
       Self::FalVideo => "fal_video",
       Self::FalObject => "fal_object",
       Self::FalBgRemoval => "fal_bg_removal",
+      Self::GmiCloudVideo => "gmicloud_video",
       Self::BeebleVideo => "beeble_video",
       Self::Seedance2ProVideo => "seedance2pro_video",
       Self::Seedance2ProCharacter => "seedance2pro_character",
@@ -180,6 +186,7 @@ impl InferenceJobProductCategory {
       "fal_video" => Ok(Self::FalVideo),
       "fal_object" => Ok(Self::FalObject),
       "fal_bg_removal" => Ok(Self::FalBgRemoval),
+      "gmicloud_video" => Ok(Self::GmiCloudVideo),
       "beeble_video" => Ok(Self::BeebleVideo),
       "seedance2pro_video" => Ok(Self::Seedance2ProVideo),
       "seedance2pro_character" => Ok(Self::Seedance2ProCharacter),
@@ -219,6 +226,7 @@ impl InferenceJobProductCategory {
       Self::FalVideo,
       Self::FalObject,
       Self::FalBgRemoval,
+      Self::GmiCloudVideo,
       Self::BeebleVideo,
       Self::Seedance2ProVideo,
       Self::Seedance2ProCharacter,
@@ -264,6 +272,7 @@ mod tests {
       assert_serialization(InferenceJobProductCategory::FalVideo, "fal_video");
       assert_serialization(InferenceJobProductCategory::FalObject, "fal_object");
       assert_serialization(InferenceJobProductCategory::FalBgRemoval, "fal_bg_removal");
+      assert_serialization(InferenceJobProductCategory::GmiCloudVideo, "gmicloud_video");
       assert_serialization(InferenceJobProductCategory::BeebleVideo, "beeble_video");
       assert_serialization(InferenceJobProductCategory::Seedance2ProVideo, "seedance2pro_video");
       assert_serialization(InferenceJobProductCategory::Seedance2ProCharacter, "seedance2pro_character");
@@ -299,6 +308,7 @@ mod tests {
       assert_eq!(InferenceJobProductCategory::FalVideo.to_str(), "fal_video");
       assert_eq!(InferenceJobProductCategory::FalObject.to_str(), "fal_object");
       assert_eq!(InferenceJobProductCategory::FalBgRemoval.to_str(), "fal_bg_removal");
+      assert_eq!(InferenceJobProductCategory::GmiCloudVideo.to_str(), "gmicloud_video");
       assert_eq!(InferenceJobProductCategory::BeebleVideo.to_str(), "beeble_video");
       assert_eq!(InferenceJobProductCategory::Seedance2ProVideo.to_str(), "seedance2pro_video");
       assert_eq!(InferenceJobProductCategory::Seedance2ProCharacter.to_str(), "seedance2pro_character");
@@ -333,6 +343,7 @@ mod tests {
       assert_eq!(InferenceJobProductCategory::from_str("fal_video").unwrap(), InferenceJobProductCategory::FalVideo);
       assert_eq!(InferenceJobProductCategory::from_str("fal_object").unwrap(), InferenceJobProductCategory::FalObject);
       assert_eq!(InferenceJobProductCategory::from_str("fal_bg_removal").unwrap(), InferenceJobProductCategory::FalBgRemoval);
+      assert_eq!(InferenceJobProductCategory::from_str("gmicloud_video").unwrap(), InferenceJobProductCategory::GmiCloudVideo);
       assert_eq!(InferenceJobProductCategory::from_str("beeble_video").unwrap(), InferenceJobProductCategory::BeebleVideo);
       assert_eq!(InferenceJobProductCategory::from_str("seedance2pro_video").unwrap(), InferenceJobProductCategory::Seedance2ProVideo);
       assert_eq!(InferenceJobProductCategory::from_str("seedance2pro_character").unwrap(), InferenceJobProductCategory::Seedance2ProCharacter);
@@ -363,7 +374,7 @@ mod tests {
     #[test]
     fn all_variants() {
       // Static check
-      const EXPECTED_COUNT : usize = 31;
+      const EXPECTED_COUNT : usize = 32;
 
       assert_eq!(InferenceJobProductCategory::all_variants().len(), EXPECTED_COUNT);
       assert_eq!(InferenceJobProductCategory::iter().len(), EXPECTED_COUNT);
