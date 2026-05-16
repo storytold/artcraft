@@ -53,14 +53,14 @@ pub struct Seedance20Request {
   pub reference_asset_ids: Option<Vec<String>>,
 }
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub enum Seedance20Resolution {
   FourEightyP,
   SevenTwentyP,
   TenEightyP,
 }
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub enum Seedance20Ratio {
   /// 16:9 (landscape)
   Landscape16x9,

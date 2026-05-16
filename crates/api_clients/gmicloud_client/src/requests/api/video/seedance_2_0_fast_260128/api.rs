@@ -53,13 +53,13 @@ pub struct Seedance20FastRequest {
   pub reference_asset_ids: Option<Vec<String>>,
 }
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub enum Seedance20FastResolution {
   FourEightyP,
   SevenTwentyP,
 }
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub enum Seedance20FastRatio {
   /// 16:9 (landscape)
   Landscape16x9,

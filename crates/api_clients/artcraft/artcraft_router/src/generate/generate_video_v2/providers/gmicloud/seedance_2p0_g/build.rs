@@ -134,6 +134,211 @@ fn resolve_url_list_from_videos(
   }
 }
 
+#[cfg(test)]
+mod tests {
+  use gmicloud_client::requests::api::video::seedance_2_0_260128::api::{
+    Seedance20Ratio, Seedance20Resolution,
+  };
+  use tokens::tokens::media_files::MediaFileToken;
+
+  use crate::api::common_aspect_ratio::CommonAspectRatio;
+  use crate::api::common_resolution::CommonResolution;
+  use crate::api::common_video_model::CommonVideoModel;
+  use crate::api::image_list_ref::ImageListRef;
+  use crate::api::image_ref::ImageRef;
+  use crate::api::provider::Provider;
+  use crate::api::video_list_ref::VideoListRef;
+  use crate::api::audio_list_ref::AudioListRef;
+  use crate::generate::generate_video::generate_video_request_builder::GenerateVideoRequestBuilder;
+  use crate::generate::generate_video_v2::video_generation_draft_or_request::VideoGenerationDraftOrRequest;
+  use crate::generate::generate_video_v2::video_generation_request::VideoGenerationRequest;
+
+  use super::*;
+
+  mod field_conversions {
+    use super::*;
+
+    #[test]
+    fn prompt_passed_through() {
+      let req = unwrap_request(make_builder(|b| { b.prompt = Some("test prompt".to_string()); }));
+      assert_eq!(req.request.prompt, "test prompt");
+    }
+
+    #[test]
+    fn duration_passed_through() {
+      let req = unwrap_request(make_builder(|b| { b.duration_seconds = Some(10); }));
+      assert_eq!(req.request.duration, Some(10));
+    }
+
+    #[test]
+    fn duration_clamped_to_min() {
+      let req = unwrap_request(make_builder(|b| { b.duration_seconds = Some(1); }));
+      assert_eq!(req.request.duration, Some(4));
+    }
+
+    #[test]
+    fn duration_clamped_to_max() {
+      let req = unwrap_request(make_builder(|b| { b.duration_seconds = Some(99); }));
+      assert_eq!(req.request.duration, Some(15));
+    }
+
+    #[test]
+    fn duration_none_stays_none() {
+      let req = unwrap_request(make_builder(|b| { b.duration_seconds = None; }));
+      assert_eq!(req.request.duration, None);
+    }
+  }
+
+  mod aspect_ratio_tests {
+    use super::*;
+
+    #[test]
+    fn landscape_16x9() {
+      let req = unwrap_request(make_builder(|b| { b.aspect_ratio = Some(CommonAspectRatio::WideSixteenByNine); }));
+      assert_eq!(req.request.ratio, Some(Seedance20Ratio::Landscape16x9));
+    }
+
+    #[test]
+    fn portrait_9x16() {
+      let req = unwrap_request(make_builder(|b| { b.aspect_ratio = Some(CommonAspectRatio::TallNineBySixteen); }));
+      assert_eq!(req.request.ratio, Some(Seedance20Ratio::Portrait9x16));
+    }
+
+    #[test]
+    fn square() {
+      let req = unwrap_request(make_builder(|b| { b.aspect_ratio = Some(CommonAspectRatio::Square); }));
+      assert_eq!(req.request.ratio, Some(Seedance20Ratio::Square));
+    }
+
+    #[test]
+    fn four_by_three() {
+      let req = unwrap_request(make_builder(|b| { b.aspect_ratio = Some(CommonAspectRatio::WideFourByThree); }));
+      assert_eq!(req.request.ratio, Some(Seedance20Ratio::Standard4x3));
+    }
+
+    #[test]
+    fn unsupported_maps_to_adaptive() {
+      let req = unwrap_request(make_builder(|b| { b.aspect_ratio = Some(CommonAspectRatio::WideThreeByTwo); }));
+      assert_eq!(req.request.ratio, Some(Seedance20Ratio::Adaptive));
+    }
+
+    #[test]
+    fn auto_maps_to_none() {
+      let req = unwrap_request(make_builder(|b| { b.aspect_ratio = Some(CommonAspectRatio::Auto); }));
+      assert_eq!(req.request.ratio, None);
+    }
+  }
+
+  mod resolution_tests {
+    use super::*;
+
+    #[test]
+    fn res_480p() {
+      let req = unwrap_request(make_builder(|b| { b.resolution = Some(CommonResolution::FourEightyP); }));
+      assert_eq!(req.request.resolution, Some(Seedance20Resolution::FourEightyP));
+    }
+
+    #[test]
+    fn res_720p() {
+      let req = unwrap_request(make_builder(|b| { b.resolution = Some(CommonResolution::SevenTwentyP); }));
+      assert_eq!(req.request.resolution, Some(Seedance20Resolution::SevenTwentyP));
+    }
+
+    #[test]
+    fn res_1080p() {
+      let req = unwrap_request(make_builder(|b| { b.resolution = Some(CommonResolution::TenEightyP); }));
+      assert_eq!(req.request.resolution, Some(Seedance20Resolution::TenEightyP));
+    }
+
+    #[test]
+    fn none_stays_none() {
+      let req = unwrap_request(make_builder(|_| {}));
+      assert!(req.request.resolution.is_none());
+    }
+  }
+
+  mod media_url_tests {
+    use super::*;
+
+    #[test]
+    fn start_frame_url_passed_through() {
+      let req = unwrap_request(make_builder(|b| {
+        b.start_frame = Some(ImageRef::Url("https://example.com/start.png".to_string()));
+      }));
+      assert_eq!(req.request.first_frame, Some("https://example.com/start.png".to_string()));
+    }
+
+    #[test]
+    fn media_file_token_rejected_for_start_frame() {
+      let result = build_gmicloud_seedance_2p0_g(GenerateVideoRequestBuilder {
+        start_frame: Some(ImageRef::MediaFileToken(MediaFileToken::new("mf_test".to_string()))),
+        ..base_builder()
+      });
+      assert!(result.is_err());
+    }
+
+    #[test]
+    fn reference_image_urls_passed_through() {
+      let urls = vec!["https://example.com/a.png".to_string(), "https://example.com/b.png".to_string()];
+      let req = unwrap_request(make_builder(|b| {
+        b.reference_images = Some(ImageListRef::Urls(urls.clone()));
+      }));
+      assert_eq!(req.request.reference_images, Some(urls));
+    }
+
+    #[test]
+    fn reference_image_tokens_rejected() {
+      let result = build_gmicloud_seedance_2p0_g(GenerateVideoRequestBuilder {
+        reference_images: Some(ImageListRef::MediaFileTokens(vec![MediaFileToken::new("mf_a".to_string())])),
+        ..base_builder()
+      });
+      assert!(result.is_err());
+    }
+
+    #[test]
+    fn reference_video_urls_passed_through() {
+      let urls = vec!["https://example.com/v.mp4".to_string()];
+      let req = unwrap_request(make_builder(|b| {
+        b.reference_videos = Some(VideoListRef::Urls(urls.clone()));
+      }));
+      assert_eq!(req.request.reference_videos, Some(urls));
+    }
+
+    #[test]
+    fn reference_audio_urls_passed_through() {
+      let urls = vec!["https://example.com/a.wav".to_string()];
+      let req = unwrap_request(make_builder(|b| {
+        b.reference_audio = Some(AudioListRef::Urls(urls.clone()));
+      }));
+      assert_eq!(req.request.reference_audios, Some(urls));
+    }
+  }
+
+  fn base_builder() -> GenerateVideoRequestBuilder {
+    GenerateVideoRequestBuilder {
+      model: CommonVideoModel::Seedance2p0Global,
+      provider: Provider::GmiCloud,
+      duration_seconds: Some(5),
+      video_batch_count: Some(1),
+      ..Default::default()
+    }
+  }
+
+  fn make_builder(f: impl FnOnce(&mut GenerateVideoRequestBuilder)) -> GenerateVideoRequestBuilder {
+    let mut builder = base_builder();
+    f(&mut builder);
+    builder
+  }
+
+  fn unwrap_request(builder: GenerateVideoRequestBuilder) -> GmiCloudSeedance2p0GRequestState {
+    let result = build_gmicloud_seedance_2p0_g(builder).expect("build should succeed");
+    match result {
+      VideoGenerationDraftOrRequest::Request(VideoGenerationRequest::GmiCloudSeedance2p0G(state)) => state,
+      _ => panic!("expected GmiCloudSeedance2p0G request"),
+    }
+  }
+}
+
 fn resolve_url_list_from_audios(
   list_ref: Option<AudioListRef>,
 ) -> Result<Option<Vec<String>>, ArtcraftRouterError> {
