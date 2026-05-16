@@ -2,6 +2,7 @@ use cloud_storage::bucket_client::BucketClient;
 use concurrency::relaxed_atomic_bool::RelaxedAtomicBool;
 use gmicloud_client::creds::gmicloud_api_key::GmiCloudApiKey;
 use jobs_common::job_stats::JobStats;
+use pager::client::pager::Pager;
 use server_environment::ServerEnvironment;
 use sqlx::MySqlPool;
 
@@ -15,6 +16,8 @@ pub struct JobDependencies {
   pub gmicloud_api_key: GmiCloudApiKey,
 
   pub server_environment: ServerEnvironment,
+
+  pub pager: Pager,
 
   pub job_stats: JobStats,
 

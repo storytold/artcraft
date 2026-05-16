@@ -1,3 +1,4 @@
+use std::sync::Arc;
 use anyhow::anyhow;
 use log::{error, info, warn};
 
@@ -14,6 +15,7 @@ use mysql_queries::queries::media_files::create::insert_builder::media_file_inse
 use mysql_queries::queries::generic_inference::web::mark_generic_inference_job_successfully_done_by_token::mark_generic_inference_job_successfully_done_by_token;
 use tokens::tokens::media_files::MediaFileToken;
 
+use crate::alert_on_error::alert_pager_and_return_err;
 use crate::job_dependencies::JobDependencies;
 
 const VIDEO_PREFIX: &str = "artcraft_";
@@ -29,37 +31,55 @@ pub async fn process_successful_job(
   maybe_thumbnail_url: Option<&str>,
 ) -> AnyhowResult<()> {
 
-//  // --- Step 1: Download and upload thumbnail as cover image (if available). ---
-//
-//  let maybe_cover_token = match maybe_thumbnail_url {
-//    Some(thumbnail_url) => {
-//      match download_and_upload_thumbnail(deps, job, thumbnail_url).await {
-//        Ok(token) => Some(token),
-//        Err(err) => {
-//          warn!(
-//            "Failed to create thumbnail for job {}: {:?}. Continuing without cover.",
-//            job.job_token.as_str(), err
-//          );
-//          None
-//        }
-//      }
-//    }
-//    None => None,
-//  };
+  // --- Step 1: Download and upload thumbnail as cover image (if available). ---
 
-  // --- Step 2: Download and upload the video. ---
+  let maybe_cover_token = match maybe_thumbnail_url {
+    Some(thumbnail_url) => {
+      match download_and_upload_thumbnail(deps, job, thumbnail_url).await {
+        Ok(token) => Some(token),
+        Err(err) => {
+          warn!(
+            "Failed to create thumbnail for job {}: {:?}. Continuing without cover.",
+            job.job_token.as_str(), err
+          );
+          None
+        }
+      }
+    }
+    None => None,
+  };
+
+  // --- Step 2: Download the video. ---
 
   info!("Downloading video for job {} from: {}", job.job_token.as_str(), video_url);
 
-  let video_bytes: Vec<u8> = reqwest::get(video_url)
-    .await
-    .map_err(|err| anyhow!("reqwest error downloading video: {:?}", err))?
-    .bytes()
-    .await
-    .map_err(|err| anyhow!("error reading video bytes: {:?}", err))?
-    .to_vec();
+  let video_bytes: Vec<u8> = match reqwest::get(video_url).await {
+    Ok(resp) => match resp.bytes().await {
+      Ok(bytes) => bytes.to_vec(),
+      Err(err) => {
+        error!("Error reading video bytes for job {}: {:?}", job.job_token.as_str(), err);
+        return alert_pager_and_return_err(
+          &deps.pager,
+          "GmiCloud video download failed",
+          err.into(),
+          Some(job),
+        );
+      }
+    },
+    Err(err) => {
+      error!("Error downloading video for job {}: {:?}", job.job_token.as_str(), err);
+      return alert_pager_and_return_err(
+        &deps.pager,
+        "GmiCloud video download failed",
+        err.into(),
+        Some(job),
+      );
+    }
+  };
 
   info!("Downloaded {} bytes for job {}", video_bytes.len(), job.job_token.as_str());
+
+  // --- Step 3: Hash and upload. ---
 
   let checksum = sha256_hash_bytes(&video_bytes)
     .map_err(|err| anyhow!("error hashing video: {:?}", err))?;
@@ -69,15 +89,26 @@ pub async fn process_successful_job(
 
   info!("Uploading video to public bucket at path: {}", object_path);
 
-  deps
+  let upload_result = deps
     .public_bucket_client
     .upload_file_with_content_type_process(object_path, &video_bytes, "video/mp4")
-    .await
-    .map_err(|err| anyhow!("error uploading video to bucket: {:?}", err))?;
+    .await;
+
+  if let Err(err) = upload_result {
+    error!("Error uploading video for job {}: {:?}", job.job_token.as_str(), err);
+    return alert_pager_and_return_err(
+      &deps.pager,
+      "GmiCloud bucket upload failed",
+      err.into(),
+      Some(job),
+    );
+  }
 
   info!("Uploaded video for job {}. Creating media file record.", job.job_token.as_str());
 
-  let media_file_token = MediaFileInsertBuilder::new()
+  // --- Step 4: Create media file record. ---
+
+  let media_file_result = MediaFileInsertBuilder::new()
     .maybe_creator_user(job.maybe_creator_user_token.as_ref())
     .maybe_creator_anonymous_visitor(job.maybe_creator_anonymous_visitor_token.as_ref())
     .creator_ip_address(&job.creator_ip_address)
@@ -90,29 +121,47 @@ pub async fn process_successful_job(
     .file_size_bytes(video_bytes.len() as u64)
     .checksum_sha2(&checksum)
     .maybe_prompt_token(job.maybe_prompt_token.as_ref())
+    .maybe_cover_image_media_file_token(maybe_cover_token.as_ref())
     .public_bucket_directory_hash(&bucket_path)
     .insert_pool(&deps.mysql_pool)
-    .await
-    .map_err(|err| anyhow!("error inserting media file record: {:?}", err))?;
+    .await;
+
+  let media_file_token = match media_file_result {
+    Ok(token) => token,
+    Err(err) => {
+      error!("Error inserting media file record for job {}: {:?}", job.job_token.as_str(), err);
+      return alert_pager_and_return_err(
+        &deps.pager,
+        "GmiCloud media file insert failed",
+        err.into(),
+        Some(job),
+      );
+    }
+  };
 
   info!(
     "Created media file {} for job {}. Marking job complete.",
     media_file_token.as_str(), job.job_token.as_str()
   );
 
-  mark_generic_inference_job_successfully_done_by_token(
+  // --- Step 5: Mark job as done. ---
+
+  if let Err(err) = mark_generic_inference_job_successfully_done_by_token(
     &deps.mysql_pool,
     &job.job_token,
     Some(InferenceResultType::MediaFile),
     Some(media_file_token.as_str()),
     None,
     None,
-  )
-    .await
-    .map_err(|err| {
-      error!("Error marking job {} done: {:?}", job.job_token.as_str(), err);
-      anyhow!("error marking job done: {:?}", err)
-    })?;
+  ).await {
+    error!("Error marking job {} done: {:?}", job.job_token.as_str(), err);
+    return alert_pager_and_return_err(
+      &deps.pager,
+      "GmiCloud job completion update failed",
+      err.into(),
+      Some(job),
+    );
+  }
 
   info!("Job {} completed successfully.", job.job_token.as_str());
 
