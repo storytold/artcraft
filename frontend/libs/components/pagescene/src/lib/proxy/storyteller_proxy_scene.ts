@@ -272,6 +272,15 @@ export class StoryTellerProxyScene {
       if (json_object.user_data?.shapeKey) {
         obj.userData.shapeKey = json_object.user_data.shapeKey;
       }
+      // Restore the persisted shape marker that setColor classifies on.
+      // instantiate already re-sets these on the "Parim" branch; this is
+      // explicit parity with shapeKey and future-proofs any other path.
+      if (json_object.user_data?.isShape !== undefined) {
+        obj.userData["isShape"] = json_object.user_data.isShape;
+      }
+      if (json_object.user_data?.shapeType !== undefined) {
+        obj.userData["shapeType"] = json_object.user_data.shapeType;
+      }
       if (json_object.visible !== undefined) {
         this.scene.setVisible(obj.uuid, json_object.visible);
       }

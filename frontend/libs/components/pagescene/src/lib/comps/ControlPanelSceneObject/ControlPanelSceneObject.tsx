@@ -100,6 +100,24 @@ export const ControlPanelSceneObject = () => {
 
   const colorInputId = useId();
 
+  // Single source of truth for "which object the panel is acting on" —
+  // the same store slice the transform path uses. The color path used
+  // to read editorEngine?.selected?.* instead, which can be undefined/
+  // stale relative to objectPanelCurrent, so picks silently no-oped.
+  const selectedUuid = currentSceneObject?.object_uuid;
+
+  // Guarantee an active color session before applying. Don't rely on
+  // the hidden color input's onFocus firing (it's opacity-0/absolute,
+  // and a missed onFocus would make apply() a no-op). beginColorSession
+  // snapshots the before-state on first call, so a lazily-created
+  // session still records a single correct undo entry.
+  const ensureColorSession = () => {
+    if (!editorEngine || !selectedUuid) return;
+    if (!colorSessionRef.current) {
+      colorSessionRef.current = beginColorSession(editorEngine, selectedUuid);
+    }
+  };
+
   const toggleCollapse = () => {
     setIsCollapsed(!isCollapsed);
   };
@@ -158,10 +176,13 @@ export const ControlPanelSceneObject = () => {
     setLocalRotation(engineToLocal(vectors.rotation));
     setLocalScale(engineToLocal(vectors.scale));
 
-    setLocked(
-      editorEngine.selection.isObjectLocked(editorEngine?.selected?.uuid || ""),
-    );
-    setColor(editorEngine?.selected?.userData.color ?? "#ffffff");
+    setLocked(editorEngine.selection.isObjectLocked(selectedUuid || ""));
+    // Read the swatch from the panel's actual object (same uuid the
+    // write path uses), not editorEngine.selected which can be stale.
+    const selectedObj = selectedUuid
+      ? editorEngine.activeScene?.get_object_by_uuid(selectedUuid)
+      : undefined;
+    setColor((selectedObj?.userData?.color as string) ?? "#ffffff");
     // No cleanup function — uuid-change commit lives in the body
     // above. Unmount commit is handled by the separate effect below.
   }, [currentSceneObject, editorEngine]);
@@ -345,22 +366,19 @@ export const ControlPanelSceneObject = () => {
               id={colorInputId}
               type="color"
               value={color ?? "#ffffff"}
-              disabled={locked}
+              disabled={locked || !selectedUuid}
               onFocus={() => {
-                // Picker is opening — open a session that captures the
-                // before-state once. apply()/commit() handle visual
-                // feedback during the drag and the final undo entry on
-                // close.
-                const uuid = editorEngine?.selected?.uuid;
-                if (uuid && editorEngine) {
-                  colorSessionRef.current = beginColorSession(editorEngine, uuid);
-                }
+                // Normal path: picker opening → start the session that
+                // captures the before-state once.
+                ensureColorSession();
               }}
               onChange={(e: ChangeEvent<HTMLInputElement>) => {
                 // Native color picker fires per-pixel during slider
-                // drag. apply() updates the engine for visual feedback
-                // but does NOT record. Recording happens once on blur.
+                // drag. ensureColorSession() guarantees apply() reaches
+                // editor.activeScene.setColor even if onFocus didn't
+                // fire. Recording happens once on blur.
                 const after = e.target.value;
+                ensureColorSession();
                 colorSessionRef.current?.apply(after);
                 setColor(after);
               }}

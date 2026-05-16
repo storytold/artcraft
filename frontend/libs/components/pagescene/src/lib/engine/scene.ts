@@ -258,6 +258,17 @@ class Scene {
     obj.userData["specular"] = 0.0;
     obj.userData["locked"] = false;
     obj.userData["media_file_type"] = MediaFileType.None;
+    // Dedicated, persisted shape marker. `media_id === "Parim"` is set
+    // by every geometric primitive (Box/Cone/Cylinder/Sphere/Donut/
+    // PointLight/Water) and NOT by Image::/video planes, so this tags
+    // exactly the constant-color shapes. setColor reads userData.isShape
+    // to decide constant-color (shapes) vs leave-textures (everything
+    // else). instantiate is the single creation chokepoint (fresh add,
+    // paste, undo/redo, proxy load), so this is always present.
+    if (obj.userData["media_id"] === "Parim") {
+      obj.userData["isShape"] = true;
+      obj.userData["shapeType"] = name;
+    }
 
     this.scene.add(obj);
 
@@ -505,35 +516,34 @@ class Scene {
 
   setColor(object_uuid: string, hex_color: string) {
     const object = this.get_object_by_uuid(object_uuid);
-    if (object) {
-      object.userData["color"] = hex_color;
-      object.traverse((c: THREE.Object3D) => {
-        if (c instanceof THREE.Mesh) {
-          if (c.userData["water"]) {
-            c.material.uniforms.waterColor.value = new THREE.Color(hex_color);
-          } else if (c.material.color !== undefined) {
-            if (c.userData["base"] === undefined) {
-              c.userData["base"] = c.material.color.getHex();
-            }
-            if (c.material.map === undefined || c.material.map === null) {
-              const currentColor = new THREE.Color(c.userData["base"]);
-              const tint = new THREE.Color(hex_color);
-              currentColor.multiply(tint);
-              c.material.color.set(new THREE.Color(currentColor));
-            } else {
-              c.material.color.set(new THREE.Color(hex_color));
-            }
-
-            if (c.name == "PointLight") {
-              const light = this.get_object_by_uuid(c.userData["light"]);
-              if (light) {
-                (light as THREE.PointLight).color = new THREE.Color(hex_color);
-              }
-            }
-          }
+    if (!object) return;
+    object.userData["color"] = hex_color;
+    // Deterministic, classification-based color (see instantiate, where
+    // the persisted userData.isShape / shapeType marker is set):
+    //   shape → exact constant solid color (incl. white). No heuristic.
+    //   non-shape (character/GLB/MMD/image) → leave its own
+    //     texture/material colors untouched; the picker does not flatten
+    //     it. userData.color is still recorded so the inspector swatch
+    //     stays controlled.
+    //   water → its dedicated shader-uniform path, unchanged.
+    const isShape = object.userData["isShape"] === true;
+    const picked = new THREE.Color(hex_color);
+    object.traverse((c: THREE.Object3D) => {
+      if (!(c instanceof THREE.Mesh)) return;
+      if (c.userData["water"]) {
+        c.material.uniforms.waterColor.value = new THREE.Color(hex_color);
+        return;
+      }
+      if (!isShape) return;
+      if (c.material.color === undefined) return;
+      c.material.color.set(picked);
+      if (c.name == "PointLight") {
+        const light = this.get_object_by_uuid(c.userData["light"]);
+        if (light) {
+          (light as THREE.PointLight).color = new THREE.Color(hex_color);
         }
-      });
-    }
+      }
+    });
   }
 
   setVisible(object_uuid: string, visible: boolean) {
