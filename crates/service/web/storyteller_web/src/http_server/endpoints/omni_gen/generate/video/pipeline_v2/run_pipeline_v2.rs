@@ -72,6 +72,7 @@ pub async fn run_pipeline_v2(args: RunPipelineV2Args<'_>) -> Result<PipelineResu
     cost_builder.provider = Provider::Artcraft;
 
     if matches!(provider, Provider::GmiCloud) {
+      // We bill global Seedance 2.0 at the same rate (for now) as regular Seedance 2.0
       match cost_builder.model {
         CommonVideoModel::Seedance2p0Global => cost_builder.model = CommonVideoModel::Seedance2p0,
         CommonVideoModel::Seedance2p0FastGlobal => cost_builder.model = CommonVideoModel::Seedance2p0Fast,
