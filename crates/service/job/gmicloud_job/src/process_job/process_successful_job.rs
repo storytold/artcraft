@@ -29,23 +29,23 @@ pub async fn process_successful_job(
   maybe_thumbnail_url: Option<&str>,
 ) -> AnyhowResult<()> {
 
-  // --- Step 1: Download and upload thumbnail as cover image (if available). ---
-
-  let maybe_cover_token = match maybe_thumbnail_url {
-    Some(thumbnail_url) => {
-      match download_and_upload_thumbnail(deps, job, thumbnail_url).await {
-        Ok(token) => Some(token),
-        Err(err) => {
-          warn!(
-            "Failed to create thumbnail for job {}: {:?}. Continuing without cover.",
-            job.job_token.as_str(), err
-          );
-          None
-        }
-      }
-    }
-    None => None,
-  };
+//  // --- Step 1: Download and upload thumbnail as cover image (if available). ---
+//
+//  let maybe_cover_token = match maybe_thumbnail_url {
+//    Some(thumbnail_url) => {
+//      match download_and_upload_thumbnail(deps, job, thumbnail_url).await {
+//        Ok(token) => Some(token),
+//        Err(err) => {
+//          warn!(
+//            "Failed to create thumbnail for job {}: {:?}. Continuing without cover.",
+//            job.job_token.as_str(), err
+//          );
+//          None
+//        }
+//      }
+//    }
+//    None => None,
+//  };
 
   // --- Step 2: Download and upload the video. ---
 
@@ -90,7 +90,6 @@ pub async fn process_successful_job(
     .file_size_bytes(video_bytes.len() as u64)
     .checksum_sha2(&checksum)
     .maybe_prompt_token(job.maybe_prompt_token.as_ref())
-    .maybe_cover_image_media_file_token(maybe_cover_token.as_ref())
     .public_bucket_directory_hash(&bucket_path)
     .insert_pool(&deps.mysql_pool)
     .await
