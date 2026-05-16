@@ -89,7 +89,7 @@ SET
     "#,
     args.apriori_job_token.as_str(),
     args.uuid_idempotency_token,
-    InferenceJobType::FalQueue.to_str(),
+    InferenceJobType::GmiCloudQueue.to_str(),
     InferenceJobExternalThirdParty::GmiCloud.to_str(),
     args.external_request_id,
     InferenceJobProductCategory::GmiCloudVideo.to_str(),

@@ -19,6 +19,10 @@ pub enum InferenceJobType {
   /// Instead, we receive web hook updates from Fal.
   FalQueue,
 
+  /// GmiCloud jobs. We poll for results.
+  #[serde(rename = "gmicloud_queue")]
+  GmiCloudQueue,
+
   /// Seedance 2 Pro jobs. We poll for results.
   #[serde(rename = "seedance2pro_queue")]
   Seedance2ProQueue,
@@ -126,6 +130,7 @@ impl InferenceJobType {
   pub fn to_str(&self) -> &'static str {
     match self {
       Self::FalQueue => "fal_queue",
+      Self::GmiCloudQueue => "gmicloud_queue",
       Self::BeebleQueue => "beeble_queue",
       Self::Seedance2ProQueue => "seedance2pro_queue",
       Self::Seedance2ProCharacter => "seedance2pro_character",
@@ -156,6 +161,7 @@ impl InferenceJobType {
   pub fn from_str(value: &str) -> Result<Self, String> {
     match value {
       "fal_queue" => Ok(Self::FalQueue),
+      "gmicloud_queue" => Ok(Self::GmiCloudQueue),
       "beeble_queue" => Ok(Self::BeebleQueue),
       "seedance2pro_queue" => Ok(Self::Seedance2ProQueue),
       "seedance2pro_character" => Ok(Self::Seedance2ProCharacter),
@@ -189,6 +195,7 @@ impl InferenceJobType {
     // NB: BTreeSet::from() isn't const, but not worth using LazyStatic, etc.
     BTreeSet::from([
       Self::FalQueue,
+      Self::GmiCloudQueue,
       Self::BeebleQueue,
       Self::Seedance2ProQueue,
       Self::Seedance2ProCharacter,
@@ -233,6 +240,7 @@ mod tests {
     #[test]
     fn test_serialization() {
       assert_serialization(InferenceJobType::FalQueue, "fal_queue");
+      assert_serialization(InferenceJobType::GmiCloudQueue, "gmicloud_queue");
       assert_serialization(InferenceJobType::BeebleQueue, "beeble_queue");
       assert_serialization(InferenceJobType::Seedance2ProQueue, "seedance2pro_queue");
       assert_serialization(InferenceJobType::Seedance2ProCharacter, "seedance2pro_character");
@@ -262,6 +270,7 @@ mod tests {
     #[test]
     fn to_str() {
       assert_eq!(InferenceJobType::FalQueue.to_str(), "fal_queue");
+      assert_eq!(InferenceJobType::GmiCloudQueue.to_str(), "gmicloud_queue");
       assert_eq!(InferenceJobType::BeebleQueue.to_str(), "beeble_queue");
       assert_eq!(InferenceJobType::Seedance2ProQueue.to_str(), "seedance2pro_queue");
       assert_eq!(InferenceJobType::Seedance2ProCharacter.to_str(), "seedance2pro_character");
@@ -291,6 +300,7 @@ mod tests {
     #[test]
     fn from_str() {
       assert_eq!(InferenceJobType::from_str("fal_queue").unwrap(), InferenceJobType::FalQueue);
+      assert_eq!(InferenceJobType::from_str("gmicloud_queue").unwrap(), InferenceJobType::GmiCloudQueue);
       assert_eq!(InferenceJobType::from_str("beeble_queue").unwrap(), InferenceJobType::BeebleQueue);
       assert_eq!(InferenceJobType::from_str("seedance2pro_queue").unwrap(), InferenceJobType::Seedance2ProQueue);
       assert_eq!(InferenceJobType::from_str("seedance2pro_character").unwrap(), InferenceJobType::Seedance2ProCharacter);
@@ -320,7 +330,7 @@ mod tests {
     #[test]
     fn all_variants() {
       // Static check
-      const EXPECTED_COUNT : usize = 25;
+      const EXPECTED_COUNT : usize = 26;
       
       assert_eq!(InferenceJobType::all_variants().len(), EXPECTED_COUNT);
       assert_eq!(InferenceJobType::iter().len(), EXPECTED_COUNT);
