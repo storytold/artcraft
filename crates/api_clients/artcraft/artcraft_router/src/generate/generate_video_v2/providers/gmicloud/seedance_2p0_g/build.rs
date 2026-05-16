@@ -2,9 +2,12 @@ use gmicloud_client::requests::api::video::seedance_2_0_260128::api::{
   Seedance20Ratio, Seedance20Request, Seedance20Resolution,
 };
 
+use crate::api::audio_list_ref::AudioListRef;
 use crate::api::common_aspect_ratio::CommonAspectRatio;
 use crate::api::common_resolution::CommonResolution;
+use crate::api::image_list_ref::ImageListRef;
 use crate::api::image_ref::ImageRef;
+use crate::api::video_list_ref::VideoListRef;
 use crate::client::request_mismatch_mitigation_strategy::RequestMismatchMitigationStrategy;
 use crate::errors::artcraft_router_error::ArtcraftRouterError;
 use crate::errors::client_error::ClientError;
@@ -25,6 +28,9 @@ pub fn build_gmicloud_seedance_2p0_g(
 
   let first_frame = resolve_url(builder.start_frame.take())?;
   let last_frame = resolve_url(builder.end_frame.take())?;
+  let reference_images = resolve_url_list_from_images(builder.reference_images.take())?;
+  let reference_videos = resolve_url_list_from_videos(builder.reference_videos.take())?;
+  let reference_audios = resolve_url_list_from_audios(builder.reference_audio.take())?;
 
   let request = Seedance20Request {
     prompt,
@@ -32,14 +38,14 @@ pub fn build_gmicloud_seedance_2p0_g(
     resolution,
     ratio,
     seed: None,
-    watermark: None,
-    generate_audio: None,
+    watermark: Some(false),
+    generate_audio: Some(true),
     web_search: None,
     first_frame,
     last_frame,
-    reference_images: None,
-    reference_videos: None,
-    reference_audios: None,
+    reference_images,
+    reference_videos,
+    reference_audios,
     reference_asset_ids: None,
   };
 
@@ -93,6 +99,51 @@ fn resolve_url(image_ref: Option<ImageRef>) -> Result<Option<String>, ArtcraftRo
       Err(ArtcraftRouterError::Client(ClientError::ModelDoesNotSupportOption {
         field: "start_frame/end_frame",
         value: "GmiCloud only supports image URLs, not media file tokens".to_string(),
+      }))
+    }
+  }
+}
+
+fn resolve_url_list_from_images(
+  list_ref: Option<ImageListRef>,
+) -> Result<Option<Vec<String>>, ArtcraftRouterError> {
+  match list_ref {
+    None => Ok(None),
+    Some(ImageListRef::Urls(urls)) => Ok(Some(urls)),
+    Some(ImageListRef::MediaFileTokens(_)) => {
+      Err(ArtcraftRouterError::Client(ClientError::ModelDoesNotSupportOption {
+        field: "reference_images",
+        value: "GmiCloud only supports image URLs, not media file tokens".to_string(),
+      }))
+    }
+  }
+}
+
+fn resolve_url_list_from_videos(
+  list_ref: Option<VideoListRef>,
+) -> Result<Option<Vec<String>>, ArtcraftRouterError> {
+  match list_ref {
+    None => Ok(None),
+    Some(VideoListRef::Urls(urls)) => Ok(Some(urls)),
+    Some(VideoListRef::MediaFileTokens(_)) => {
+      Err(ArtcraftRouterError::Client(ClientError::ModelDoesNotSupportOption {
+        field: "reference_videos",
+        value: "GmiCloud only supports video URLs, not media file tokens".to_string(),
+      }))
+    }
+  }
+}
+
+fn resolve_url_list_from_audios(
+  list_ref: Option<AudioListRef>,
+) -> Result<Option<Vec<String>>, ArtcraftRouterError> {
+  match list_ref {
+    None => Ok(None),
+    Some(AudioListRef::Urls(urls)) => Ok(Some(urls)),
+    Some(AudioListRef::MediaFileTokens(_)) => {
+      Err(ArtcraftRouterError::Client(ClientError::ModelDoesNotSupportOption {
+        field: "reference_audios",
+        value: "GmiCloud only supports audio URLs, not media file tokens".to_string(),
       }))
     }
   }
