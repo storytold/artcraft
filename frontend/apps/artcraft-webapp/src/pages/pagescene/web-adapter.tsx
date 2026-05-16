@@ -19,7 +19,11 @@ import {
   UsersApi,
 } from "@storyteller/api";
 import type { PageSceneAdapter } from "@storyteller/ui-pagescene";
-import { getActiveEditor, ToastTypes } from "@storyteller/ui-pagescene";
+import {
+  getActiveEditor,
+  ToastTypes,
+  usePageSceneStore,
+} from "@storyteller/ui-pagescene";
 import {
   UploadModal3D,
   UploadModalImage,
@@ -99,6 +103,21 @@ const loadSceneViaApi = async (token: string): Promise<unknown> => {
   const cdnUrl = meta.data?.media_links?.cdn_url;
   if (!cdnUrl) throw new Error("Scene CDN URL missing");
 
+  // Mirror the loaded scene's metadata into the lib's store. Several
+  // lib surfaces gate on these fields — the File menu's "Reset to
+  // original" item needs `sceneMeta.token`, the visitor-vs-owner gate
+  // needs `sceneMeta.ownerToken`, and the webapp's header title
+  // display reads `sceneMeta.title`. The lib doesn't emit
+  // onSceneTitleChange on the load path (only on init/new), so we
+  // populate it from the metadata fetch we're already doing here.
+  usePageSceneStore.getState().setSceneMeta({
+    title: meta.data?.maybe_title ?? undefined,
+    token,
+    ownerToken: meta.data?.maybe_creator_user?.user_token ?? undefined,
+    isModified: false,
+    isInitializing: false,
+  });
+
   const fileResp = await fetch(cdnUrl);
   if (!fileResp.ok) throw new Error(`Scene fetch HTTP ${fileResp.status}`);
   const text = await fileResp.text();
@@ -160,6 +179,23 @@ export const useWebAppPageSceneAdapter = (
         saveSceneViaApi(saveJson, sceneTitle, sceneToken, sceneThumbnail),
 
       loadScene: loadSceneViaApi,
+
+      // Engine-driven scene-meta transitions (new scene on init,
+      // editor.newScene() user action). Mirrors the data straight into
+      // the store so the lib's surfaces (File menu, visitor gate) and
+      // the webapp's header title display all read consistent state.
+      // Scene-load metadata is populated separately inside
+      // loadSceneViaApi above — the lib doesn't emit this callback on
+      // the load path.
+      onSceneTitleChange: (meta) => {
+        usePageSceneStore.getState().setSceneMeta({
+          title: meta.title,
+          token: meta.token,
+          ownerToken: meta.ownerToken,
+          isModified: meta.isModified,
+          isInitializing: false,
+        });
+      },
 
       fetchAsset: (url: string, init?: { signal?: AbortSignal }) =>
         fetch(url, { mode: "cors", signal: init?.signal }),

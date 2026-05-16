@@ -35,6 +35,13 @@ interface SceneCacheStore {
   setCurrent: (token: string | undefined, current: string) => void;
   resetCurrentToOriginal: (token: string) => void;
   clearToken: (token: string | undefined) => void;
+  // Most recent scene token the user actually visited via URL. Used by
+  // the sidebar's "Edit 3D" link so clicking it after wandering off
+  // returns the user to their last scene rather than the blank-scene
+  // splash. Persists with the rest of this store in sessionStorage —
+  // i.e. same tab only.
+  lastVisitedSceneToken: string | undefined;
+  setLastVisitedSceneToken: (token: string | undefined) => void;
 }
 
 const keyOf = (token: string | undefined) => token ?? PLAYGROUND_KEY;
@@ -90,6 +97,9 @@ export const useSceneCacheStore = create<SceneCacheStore>()(
           delete next[key];
           return { entries: next };
         }),
+      lastVisitedSceneToken: undefined,
+      setLastVisitedSceneToken: (token) =>
+        set({ lastVisitedSceneToken: token }),
     }),
     {
       name: "artcraft-webapp-pagescene-cache",

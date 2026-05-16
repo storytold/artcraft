@@ -26,6 +26,7 @@ import { SettingsModal } from "../settings-modal/SettingsModal";
 import { TaskQueue } from "./task-queue";
 import { SidebarTrigger, useSidebar } from "../ui/sidebar";
 import { Breadcrumbs } from "./breadcrumbs";
+import { ActiveSceneTitle } from "./ActiveSceneTitle";
 
 async function fetchCredits(): Promise<number | null> {
   try {
@@ -153,7 +154,7 @@ export function TopBar() {
   return (
     <header className="sticky top-0 z-20 flex items-center gap-3 border-b border-white/[0.06] bg-[#121212]/80 backdrop-blur-md px-3 pb-4 pt-3 sm:pt-6">
       {/* Left: sidebar trigger (mobile only) + logo (when sidebar closed) + breadcrumbs */}
-      <div className="flex items-center gap-2 min-w-0 flex-1">
+      <div className="flex items-center gap-2 min-w-0 shrink-0">
         <SidebarTrigger className="md:hidden" />
         <div className="flex gap-6">
           {showTopbarLogo && (
@@ -167,6 +168,12 @@ export function TopBar() {
           )}
           <Breadcrumbs />
         </div>
+      </div>
+
+      {/* Middle: route-scoped chrome (scene title on /edit-3d, empty
+          elsewhere). flex-1 claims the space between left and right. */}
+      <div className="flex min-w-0 flex-1 items-center justify-center">
+        <ActiveSceneTitle />
       </div>
 
       {/* Right: credits / upgrade / library / avatar */}

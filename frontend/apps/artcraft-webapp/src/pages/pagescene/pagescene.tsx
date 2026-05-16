@@ -8,6 +8,7 @@ import {
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faDesktop, faHouse } from "@fortawesome/pro-solid-svg-icons";
 import { Button } from "@storyteller/ui-button";
+import { MediaFilesApi } from "@storyteller/api";
 import { Stage3D, usePageSceneStore } from "@storyteller/ui-pagescene";
 import {
   GalleryModal,
@@ -78,6 +79,65 @@ function PageSceneEditor() {
   useEffect(() => {
     usePageSceneStore.getState().setCurrentUserToken(user?.user_token);
   }, [user?.user_token]);
+
+  // Track the last scene token the user actually visited (only when a
+  // real token is in the URL) so the sidebar's "Edit 3D" link can return
+  // them to it on next click. Don't overwrite on the blank `/edit-3d`
+  // path — that would erase the memory whenever they bounce through it.
+  useEffect(() => {
+    if (sceneToken) {
+      useSceneCacheStore.getState().setLastVisitedSceneToken(sceneToken);
+    }
+  }, [sceneToken]);
+
+  // Reset sceneMeta to defaults when entering the blank-scene path so a
+  // stale title/token doesn't leak from a previously-viewed scene into
+  // the header display or File menu gating. The adapter's
+  // onSceneTitleChange + loadSceneViaApi paths repopulate it once a
+  // scene actually loads.
+  useEffect(() => {
+    if (!sceneToken) {
+      usePageSceneStore.getState().setSceneMeta({
+        title: undefined,
+        token: undefined,
+        ownerToken: undefined,
+        isModified: undefined,
+        isInitializing: true,
+      });
+    }
+  }, [sceneToken]);
+
+  // Mirror the URL-token scene's metadata into the lib store. Cache-hit
+  // loads short-circuit the lib's loadScene path (Editor.initialize
+  // prefers cacheJsonString over the sceneToken), so loadSceneViaApi —
+  // the only other writer of sceneMeta.{token,ownerToken,title} — never
+  // runs on a revisit. Without this, the visitor-vs-owner Save gating
+  // and header title break on cache hits. Fetch independently of the
+  // scene-JSON load so it's correct either way.
+  useEffect(() => {
+    if (!sceneToken) return;
+    // Load path already populated it for this token — skip the refetch.
+    if (usePageSceneStore.getState().sceneMeta.token === sceneToken) return;
+    let cancelled = false;
+    void new MediaFilesApi()
+      .GetMediaFileByToken({ mediaFileToken: sceneToken })
+      .then((meta) => {
+        if (cancelled || !meta.data) return;
+        usePageSceneStore.getState().setSceneMeta({
+          title: meta.data.maybe_title ?? undefined,
+          token: sceneToken,
+          ownerToken: meta.data.maybe_creator_user?.user_token ?? undefined,
+          isModified: false,
+          isInitializing: false,
+        });
+      })
+      .catch(() => {
+        // Leave the store as-is; the load path may still populate it.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [sceneToken]);
 
   useSceneSplashAutoOpen(sceneToken);
   useSceneSplashLibSync();

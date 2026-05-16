@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -30,6 +31,7 @@ import {
 } from "../ui/sidebar";
 import type { IconDefinition } from "@fortawesome/fontawesome-svg-core";
 import { MARKETING_SITE, SOCIAL_LINKS } from "../../config/links";
+import { useSceneCacheStore } from "../../pages/pagescene/scene-cache-store";
 
 type NavItem = {
   label: string;
@@ -40,7 +42,10 @@ type NavItem = {
 
 const PRIMARY_ITEMS: NavItem[] = [{ label: "Home", href: "/", icon: faHouse }];
 
-const CREATE_ITEMS: NavItem[] = [
+// "Edit 3D" entry's href is computed at render time from the
+// session-scoped scene-cache store (see useCreateItems below). The other
+// entries stay static.
+const CREATE_ITEMS_STATIC: NavItem[] = [
   { label: "Image", href: "/create-image", icon: faImage },
   { label: "Video", href: "/create-video", icon: faVideo },
   { label: "Edit 3D", href: "/edit-3d", icon: faCube },
@@ -50,6 +55,23 @@ const CREATE_ITEMS: NavItem[] = [
     icon: faWandMagicSparkles,
   },
 ];
+
+// Rewrite the "Edit 3D" item's href to point at the user's last visited
+// scene (if any) so returning to the editor from another sidebar page
+// drops them back into the same scene rather than the blank splash.
+// sessionStorage scope — closes when the tab closes.
+function useCreateItems(): NavItem[] {
+  const lastSceneToken = useSceneCacheStore((s) => s.lastVisitedSceneToken);
+  return useMemo(
+    () =>
+      CREATE_ITEMS_STATIC.map((item) =>
+        item.href === "/edit-3d" && lastSceneToken
+          ? { ...item, href: `/edit-3d/${lastSceneToken}` }
+          : item,
+      ),
+    [lastSceneToken],
+  );
+}
 
 const ASSETS_ITEMS: NavItem[] = [
   { label: "Library", href: "/library", icon: faGrid2 },
@@ -89,6 +111,10 @@ const DOWNLOAD_URL = `${MARKETING_SITE}/download`;
 
 function isActive(pathname: string, href: string): boolean {
   if (href === "/") return pathname === "/";
+  // Treat /edit-3d and /edit-3d/<token> as the same nav target — the
+  // sidebar item's href may carry a remembered token, but we still want
+  // the nav-item to highlight when the user is on any /edit-3d* route.
+  if (href.startsWith("/edit-3d")) return pathname.startsWith("/edit-3d");
   return pathname === href || pathname.startsWith(href + "/");
 }
 
@@ -169,6 +195,7 @@ export function AppSidebar() {
   const { pathname } = useLocation();
   const { isMobile, setOpenMobile, state } = useSidebar();
   const showSidebarLogo = state === "expanded" || isMobile;
+  const createItems = useCreateItems();
 
   const handleNavClick = () => {
     if (isMobile) setOpenMobile(false);
@@ -204,7 +231,7 @@ export function AppSidebar() {
         />
         <NavSection
           label="Create"
-          items={CREATE_ITEMS}
+          items={createItems}
           pathname={pathname}
           onClick={handleNavClick}
         />
