@@ -17,6 +17,7 @@ import { useSession } from "../../lib/session";
 import { useStage3DCostEstimate } from "../../lib/cost-estimate-api";
 import { useSidebar } from "../../components/ui/sidebar";
 import { useSignupCta } from "../../components/signup-cta-modal";
+import Seo from "../../components/seo";
 import { DemoOutputOverlay } from "./demo-output-overlay";
 import { usePromptPrefillFromOutput } from "./use-prompt-prefill-from-output";
 import { useSceneCacheStore } from "./scene-cache-store";
@@ -53,8 +54,15 @@ import {
 // inside Stage3D) never run on mobile.
 export default function PageScene() {
   const { isMobile } = useSidebar();
-  if (isMobile) return <MobileGate />;
-  return <PageSceneEditor />;
+  return (
+    <>
+      <Seo
+        title="Edit 3D - ArtCraft"
+        description="Compose a 3D scene and generate AI images and videos from it."
+      />
+      {isMobile ? <MobileGate /> : <PageSceneEditor />}
+    </>
+  );
 }
 
 function PageSceneEditor() {

@@ -34,7 +34,7 @@ export const Key = (props: { button: string }) => (
 );
 
 export const KeyGroup = (props: { children: React.ReactNode }) => (
-  <div className="flex gap-1">{props.children}</div>
+  <div className="flex items-center gap-1">{props.children}</div>
 );
 
 // Inline SVG instead of /resources/icons/mouse_*.png. The PNGs only
@@ -134,6 +134,13 @@ const ShortcutsView = () => (
         <Shortcut label="Speed Boost">
           <KeyGroup>
             <Key button="Shift" />
+            <span className="ml-1.5 text-sm font-normal opacity-60">(Hold)</span>
+          </KeyGroup>
+        </Shortcut>
+        <Shortcut label="Slow Movement">
+          <KeyGroup>
+            <Key button="Alt" />
+            <span className="ml-1.5 text-sm font-normal opacity-60">(Hold)</span>
           </KeyGroup>
         </Shortcut>
       </ShortcutsGroup>
