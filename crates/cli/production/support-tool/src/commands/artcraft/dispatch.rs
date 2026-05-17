@@ -17,7 +17,7 @@ pub enum ArtcraftCommand {
   GenerateVideo(subcommands::generate_video::GenerateVideoArgs),
 }
 
-pub async fn run(command: ArtcraftCommand) -> anyhow::Result<()> {
+pub async fn dispatch(command: ArtcraftCommand) -> anyhow::Result<()> {
   let cookies_str = easyenv::get_env_string_required("ARTCRAFT_COOKIES")
     .map_err(|err| anyhow!("Missing ARTCRAFT_COOKIES env var: {:?}", err))?;
 

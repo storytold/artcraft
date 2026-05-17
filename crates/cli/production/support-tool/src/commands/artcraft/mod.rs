@@ -3,4 +3,4 @@ mod state;
 mod subcommands;
 
 pub use dispatch::ArtcraftCommand;
-pub use dispatch::run;
+pub use dispatch::dispatch;

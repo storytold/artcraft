@@ -41,7 +41,7 @@ pub async fn run(cli: Cli) -> anyhow::Result<()> {
       seedance2pro::run(command).await
     }
     TopLevelCommand::Artcraft { command } => {
-      artcraft::run(command).await
+      artcraft::dispatch(command).await
     }
   }
 }
