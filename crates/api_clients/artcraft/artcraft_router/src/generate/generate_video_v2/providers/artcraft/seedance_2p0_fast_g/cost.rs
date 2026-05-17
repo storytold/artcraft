@@ -7,14 +7,14 @@ use crate::generate::generate_video_v2::providers::artcraft::seedance_2p0_fast_g
 //
 // Based on GmiCloud Seedance 2.0 Fast costs + 30% margin.
 //
-// GmiCloud rates (tenths of a cent per second):
-//   480p: 1.0 → with 30% margin: 1.3
-//   720p: 3.1 → with 30% margin: 4.03
+// GmiCloud rates (cents per second):
+//   480p: 1.0 ¢/s → with 30% margin: 1.3 ¢/s
+//   720p: 3.1 ¢/s → with 30% margin: 4.03 ¢/s
 //
-// Formula: cost_cents = ceil(ceil(tenths_per_second * duration) / 10) * batch_count
+// Formula: cost_cents = ceil(cents_per_second * duration) * batch_count
 
-const TENTHS_PER_SECOND_480P: f64 = 1.3;
-const TENTHS_PER_SECOND_720P: f64 = 4.03;
+const CENTS_PER_SECOND_480P: f64 = 1.3;
+const CENTS_PER_SECOND_720P: f64 = 4.03;
 
 pub struct ArtcraftSeedance2p0FastGCostState {
   pub resolution: CommonResolution,
@@ -33,14 +33,13 @@ impl ArtcraftSeedance2p0FastGCostState {
   }
 
   pub fn estimate_cost(&self) -> VideoGenerationCostEstimate {
-    let tenths_per_second = match self.resolution {
-      CommonResolution::FourEightyP => TENTHS_PER_SECOND_480P,
+    let cents_per_second = match self.resolution {
+      CommonResolution::FourEightyP => CENTS_PER_SECOND_480P,
       // Fast model doesn't support 1080p; all non-480p resolves to 720p pricing
-      _ => TENTHS_PER_SECOND_720P,
+      _ => CENTS_PER_SECOND_720P,
     };
 
-    let tenths = (tenths_per_second * self.duration_seconds as f64).ceil() as u64;
-    let cents_per_video = tenths.div_ceil(10);
+    let cents_per_video = (cents_per_second * self.duration_seconds as f64).ceil() as u64;
     let usd_cents = cents_per_video * self.batch_count as u64;
 
     VideoGenerationCostEstimate {
@@ -67,27 +66,27 @@ mod tests {
 
     #[test]
     fn batch_1() {
-      // 4.03 * 5 = 20.15 → ceil = 21 tenths → 3¢
-      assert_eq!(cost_cents(Some(CommonResolution::SevenTwentyP), 5, 1), 3);
-      // 4.03 * 10 = 40.3 → ceil = 41 → 5¢
-      assert_eq!(cost_cents(Some(CommonResolution::SevenTwentyP), 10, 1), 5);
-      // 4.03 * 15 = 60.45 → ceil = 61 → 7¢
-      assert_eq!(cost_cents(Some(CommonResolution::SevenTwentyP), 15, 1), 7);
+      // 4.03 * 5 = 20.15 → ceil = 21¢
+      assert_eq!(cost_cents(Some(CommonResolution::SevenTwentyP), 5, 1), 21);
+      // 4.03 * 10 = 40.3 → ceil = 41¢
+      assert_eq!(cost_cents(Some(CommonResolution::SevenTwentyP), 10, 1), 41);
+      // 4.03 * 15 = 60.45 → ceil = 61¢
+      assert_eq!(cost_cents(Some(CommonResolution::SevenTwentyP), 15, 1), 61);
     }
 
     #[test]
     fn batch_2() {
-      assert_eq!(cost_cents(Some(CommonResolution::SevenTwentyP), 10, 2), 10);
+      assert_eq!(cost_cents(Some(CommonResolution::SevenTwentyP), 10, 2), 82);
     }
 
     #[test]
     fn batch_4() {
-      assert_eq!(cost_cents(Some(CommonResolution::SevenTwentyP), 10, 4), 20);
+      assert_eq!(cost_cents(Some(CommonResolution::SevenTwentyP), 10, 4), 164);
     }
 
     #[test]
     fn none_defaults_to_720p() {
-      assert_eq!(cost_cents(None, 5, 1), cost_cents(Some(CommonResolution::SevenTwentyP), 5, 1));
+      assert_eq!(cost_cents(None, 10, 1), cost_cents(Some(CommonResolution::SevenTwentyP), 10, 1));
     }
   }
 
@@ -96,17 +95,17 @@ mod tests {
 
     #[test]
     fn batch_1() {
-      // 1.3 * 5 = 6.5 → ceil = 7 → 1¢
-      assert_eq!(cost_cents(Some(CommonResolution::FourEightyP), 5, 1), 1);
-      // 1.3 * 10 = 13 → ceil = 13 → 2¢
-      assert_eq!(cost_cents(Some(CommonResolution::FourEightyP), 10, 1), 2);
-      // 1.3 * 15 = 19.5 → ceil = 20 → 2¢
-      assert_eq!(cost_cents(Some(CommonResolution::FourEightyP), 15, 1), 2);
+      // 1.3 * 5 = 6.5 → ceil = 7¢
+      assert_eq!(cost_cents(Some(CommonResolution::FourEightyP), 5, 1), 7);
+      // 1.3 * 10 = 13¢
+      assert_eq!(cost_cents(Some(CommonResolution::FourEightyP), 10, 1), 13);
+      // 1.3 * 15 = 19.5 → ceil = 20¢
+      assert_eq!(cost_cents(Some(CommonResolution::FourEightyP), 15, 1), 20);
     }
 
     #[test]
     fn batch_4() {
-      assert_eq!(cost_cents(Some(CommonResolution::FourEightyP), 10, 4), 8);
+      assert_eq!(cost_cents(Some(CommonResolution::FourEightyP), 10, 4), 52);
     }
   }
 
