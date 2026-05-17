@@ -9,6 +9,9 @@ pub enum GmiCloudSpecificApiError {
   /// The request was rejected due to content policy.
   ContentPolicyViolation(String),
 
+  /// The input image was rejected because it may contain a real person.
+  ContentContainsRealPerson(String),
+
   /// The account has insufficient credits or a billing issue.
   BillingError { status_code: u16, body: String },
 }

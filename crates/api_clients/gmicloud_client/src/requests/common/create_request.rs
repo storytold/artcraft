@@ -73,6 +73,12 @@ pub async fn create_gmicloud_request_with_context<P: Serialize>(
 
   if !status.is_success() {
     warn!("GmiCloud API error: status={}, body={}", status, body_text);
+
+    // Detect specific error codes embedded in the response body.
+    if let Some(specific) = classify_error_body(&body_text) {
+      return Err(specific.into());
+    }
+
     return Err(GmiCloudGenericApiError::UncategorizedBadResponseWithStatusAndBody {
       status_code: status.as_u16(),
       body: body_text,
@@ -83,4 +89,29 @@ pub async fn create_gmicloud_request_with_context<P: Serialize>(
     .map_err(|err| GmiCloudGenericApiError::SerdeResponseParseErrorWithBody(err, body_text))?;
 
   Ok(parsed)
+}
+
+/// Attempt to classify an error response body into a specific error type.
+/// GmiCloud sometimes wraps inner API errors as a JSON string within `{"error": "..."}`.
+fn classify_error_body(body: &str) -> Option<GmiCloudSpecificApiError> {
+  if body.contains("InputImageSensitiveContentDetected") {
+    let message = extract_inner_message(body)
+      .unwrap_or_else(|| "Input image may contain a real person".to_string());
+    return Some(GmiCloudSpecificApiError::ContentContainsRealPerson(message));
+  }
+  None
+}
+
+/// Extract the inner `message` field from a doubly-encoded GmiCloud error response.
+/// Expected shape: `{"error":"API request failed with status 400: {\"error\":{\"message\":\"...\"}}"}`
+fn extract_inner_message(body: &str) -> Option<String> {
+  let outer: serde_json::Value = serde_json::from_str(body).ok()?;
+  let error_str = outer.get("error")?.as_str()?;
+
+  // The inner JSON is embedded after "status NNN: "
+  let inner_json_start = error_str.find('{')?;
+  let inner_str = &error_str[inner_json_start..];
+  let inner: serde_json::Value = serde_json::from_str(inner_str).ok()?;
+
+  inner.get("error")?.get("message")?.as_str().map(|s| s.to_string())
 }
