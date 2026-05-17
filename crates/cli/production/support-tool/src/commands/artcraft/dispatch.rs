@@ -42,47 +42,50 @@ pub enum ArtcraftCommand {
 
 pub async fn dispatch(args: ArtcraftArgs) -> anyhow::Result<()> {
   let cookie_path = args.cookie_file.as_deref().unwrap_or(DEFAULT_COOKIE_FILE);
-
-  info!("Reading cookies from: {}", cookie_path);
-
-  let cookies_str = if Path::new(cookie_path).exists() {
-    fs::read_to_string(cookie_path)
-      .map_err(|err| anyhow!("Failed to read cookie file {:?}: {}", cookie_path, err))?
-      .trim()
-      .to_string()
-  } else {
-    warn!("Cookie file {:?} does not exist.", cookie_path);
-    return Err(anyhow!(
-      "Cookie file {:?} not found. Use --cookie-file to specify a path, \
-       or create '{}' in the current directory.",
-      cookie_path, DEFAULT_COOKIE_FILE
-    ));
-  };
+  let cookies_str = load_cookies(cookie_path)?;
 
   let creds = StorytellerCredentialSet::parse_multi_cookie_header(&cookies_str)
     .map_err(|err| anyhow!("Failed to parse cookies: {:?}", err))?
     .ok_or_else(|| anyhow!("Cookie file contained no recognized cookies (expected session=... and/or visitor=...)"))?;
 
-  let api_host = match args.environment.as_str() {
-    "dev" | "development" => {
-      info!("Environment: development (localhost:12345)");
-      ApiHost::Localhost { port: 12345 }
-    }
-    "prod" | "production" => {
-      info!("Environment: production (api.storyteller.ai)");
-      ApiHost::Storyteller
-    }
-    other => {
-      return Err(anyhow!(
-        "Unknown environment '{}'. Use 'dev', 'development', 'prod', or 'production'.",
-        other
-      ));
-    }
-  };
-
+  let api_host = parse_api_host(&args.environment)?;
   let state = ArtcraftState { creds, api_host };
 
   match args.command {
     ArtcraftCommand::GenerateVideo(cmd_args) => subcommands::generate_video::run(&state, cmd_args).await,
+  }
+}
+
+fn load_cookies(cookie_path: &str) -> anyhow::Result<String> {
+  info!("Reading cookies from: {}", cookie_path);
+
+  if Path::new(cookie_path).exists() {
+    let content = fs::read_to_string(cookie_path)
+      .map_err(|err| anyhow!("Failed to read cookie file {:?}: {}", cookie_path, err))?;
+    Ok(content.trim().to_string())
+  } else {
+    warn!("Cookie file {:?} does not exist.", cookie_path);
+    Err(anyhow!(
+      "Cookie file {:?} not found. Use --cookie-file to specify a path, \
+       or create '{}' in the current directory.",
+      cookie_path, DEFAULT_COOKIE_FILE
+    ))
+  }
+}
+
+fn parse_api_host(environment: &str) -> anyhow::Result<ApiHost> {
+  match environment {
+    "dev" | "development" => {
+      info!("Environment: development (localhost:12345)");
+      Ok(ApiHost::Localhost { port: 12345 })
+    }
+    "prod" | "production" => {
+      info!("Environment: production (api.storyteller.ai)");
+      Ok(ApiHost::Storyteller)
+    }
+    other => Err(anyhow!(
+      "Unknown environment '{}'. Use 'dev', 'development', 'prod', or 'production'.",
+      other
+    )),
   }
 }
