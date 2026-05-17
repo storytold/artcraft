@@ -4,15 +4,6 @@ use crate::generate::generate_video::video_generation_cost_estimate::VideoGenera
 use crate::generate::generate_video_v2::providers::artcraft::seedance_2p0_g::request::ArtcraftSeedance2p0GRequestState;
 
 // ── Pricing constants ──
-//
-// Based on GmiCloud Seedance 2.0 costs + 30% margin.
-//
-// GmiCloud rates (cents per second):
-//   480p:  2.4 ¢/s → with 30% margin: 3.12 ¢/s
-//   720p:  5.2 ¢/s → with 30% margin: 6.76 ¢/s
-//   1080p: 11.6 ¢/s → with 30% margin: 15.08 ¢/s
-//
-// Formula: cost_cents = ceil(cents_per_second * duration) * batch_count
 
 const CENTS_PER_SECOND_480P: f64 = 3.12;
 const CENTS_PER_SECOND_720P: f64 = 6.76;
