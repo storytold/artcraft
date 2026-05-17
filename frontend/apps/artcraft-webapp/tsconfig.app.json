@@ -41,9 +41,6 @@
       "path": "../../libs/components/upload-modal/tsconfig.lib.json"
     },
     {
-      "path": "../../libs/components/pagescene/tsconfig.lib.json"
-    },
-    {
       "path": "../../libs/components/slider-v2/tsconfig.lib.json"
     },
     {
@@ -53,7 +50,19 @@
       "path": "../../libs/components/gallery-modal/tsconfig.lib.json"
     },
     {
+      "path": "../../libs/components/pricing-modal/tsconfig.lib.json"
+    },
+    {
+      "path": "../../libs/components/promptbox/tsconfig.lib.json"
+    },
+    {
+      "path": "../../libs/components/model-selector/tsconfig.lib.json"
+    },
+    {
       "path": "../../libs/components/close-button/tsconfig.lib.json"
+    },
+    {
+      "path": "../../libs/components/pagescene/tsconfig.lib.json"
     },
     {
       "path": "../../libs/components/switch/tsconfig.lib.json"
@@ -83,9 +92,6 @@
       "path": "../../libs/components/tooltip/tsconfig.lib.json"
     },
     {
-      "path": "../../libs/common/tsconfig.lib.json"
-    },
-    {
       "path": "../../libs/components/popover/tsconfig.lib.json"
     },
     {
@@ -96,6 +102,9 @@
     },
     {
       "path": "../../libs/components/button/tsconfig.lib.json"
+    },
+    {
+      "path": "../../libs/common/tsconfig.lib.json"
     },
     {
       "path": "../../libs/api/tsconfig.lib.json"

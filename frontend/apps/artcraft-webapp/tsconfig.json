@@ -6,9 +6,6 @@
       "path": "../../libs/components/upload-modal"
     },
     {
-      "path": "../../libs/components/pagescene"
-    },
-    {
       "path": "../../libs/components/slider-v2"
     },
     {
@@ -18,7 +15,19 @@
       "path": "../../libs/components/gallery-modal"
     },
     {
+      "path": "../../libs/components/pricing-modal"
+    },
+    {
+      "path": "../../libs/components/promptbox"
+    },
+    {
+      "path": "../../libs/components/model-selector"
+    },
+    {
       "path": "../../libs/components/close-button"
+    },
+    {
+      "path": "../../libs/components/pagescene"
     },
     {
       "path": "../../libs/components/switch"
@@ -48,9 +57,6 @@
       "path": "../../libs/components/tooltip"
     },
     {
-      "path": "../../libs/common"
-    },
-    {
       "path": "../../libs/components/popover"
     },
     {
@@ -61,6 +67,9 @@
     },
     {
       "path": "../../libs/components/button"
+    },
+    {
+      "path": "../../libs/common"
     },
     {
       "path": "../../libs/api"

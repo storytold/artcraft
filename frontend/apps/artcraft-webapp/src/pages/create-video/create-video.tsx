@@ -683,6 +683,7 @@ export default function CreateVideo() {
         .map((item) => ({
           id: Math.random().toString(36).substring(7),
           url: item.thumbnail || item.fullImage || "",
+          fullUrl: item.fullImage || undefined,
           file: new File([], "library-image"),
           mediaToken: item.id,
         }));
@@ -698,6 +699,7 @@ export default function CreateVideo() {
     setEndFrameImage({
       id: Math.random().toString(36).substring(7),
       url: item.thumbnail || item.fullImage || "",
+      fullUrl: item.fullImage || undefined,
       file: new File([], "library-image"),
       mediaToken: item.id,
     });
@@ -744,15 +746,15 @@ export default function CreateVideo() {
       isReferenceMode && referenceImages.length > 0
         ? referenceImages
             .map((img) => img.mediaToken)
-            .filter((t) => t.length > 0)
+            .filter((t): t is string => typeof t === "string" && t.length > 0)
         : undefined;
     const referenceVideoTokens =
       isReferenceMode && referenceVideos.length > 0
-        ? referenceVideos.map((v) => v.mediaToken).filter((t) => t.length > 0)
+        ? referenceVideos.map((v) => v.mediaToken).filter((t): t is string => typeof t === "string" && t.length > 0)
         : undefined;
     const referenceAudioTokens =
       isReferenceMode && referenceAudios.length > 0
-        ? referenceAudios.map((a) => a.mediaToken).filter((t) => t.length > 0)
+        ? referenceAudios.map((a) => a.mediaToken).filter((t): t is string => typeof t === "string" && t.length > 0)
         : undefined;
 
     // Extract character tokens from @-mentions in the prompt. Match longest
