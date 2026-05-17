@@ -34,13 +34,6 @@ pub async fn omni_gen_video_cost_handler(
 
   builder.provider = Provider::Artcraft;
 
-  // We bill global Seedance 2.0 at the same rate (for now) as regular Seedance 2.0
-  match builder.model {
-    CommonVideoModel::Seedance2p0Global => builder.model = CommonVideoModel::Seedance2p0,
-    CommonVideoModel::Seedance2p0FastGlobal => builder.model = CommonVideoModel::Seedance2p0Fast,
-    _ => {},
-  }
-
   let estimate = if builder.use_new_builder() {
     builder.build2()
       .map_err(|e| {
