@@ -5,9 +5,9 @@ use crate::generate::generate_video_v2::providers::artcraft::seedance_2p0_g::req
 
 // ── Pricing constants ──
 
-const CENTS_PER_SECOND_480P: f64 = 3.12;
-const CENTS_PER_SECOND_720P: f64 = 6.76;
-const CENTS_PER_SECOND_1080P: f64 = 15.08;
+const CENTS_PER_SECOND_480P: f64 = 5.4404;
+const CENTS_PER_SECOND_720P: f64 = 11.2;
+const CENTS_PER_SECOND_1080P: f64 = 32.6424;
 
 pub struct ArtcraftSeedance2p0GCostState {
   pub resolution: CommonResolution,
@@ -59,23 +59,23 @@ mod tests {
 
     #[test]
     fn batch_1() {
-      // 6.76 * 5 = 33.8 → ceil = 34¢
-      assert_eq!(cost_cents(Some(CommonResolution::SevenTwentyP), 5, 1), 34);
-      // 6.76 * 10 = 67.6 → ceil = 68¢
-      assert_eq!(cost_cents(Some(CommonResolution::SevenTwentyP), 10, 1), 68);
-      // 6.76 * 15 = 101.4 → ceil = 102¢
-      assert_eq!(cost_cents(Some(CommonResolution::SevenTwentyP), 15, 1), 102);
+      // 11.2 * 5 = 56¢
+      assert_eq!(cost_cents(Some(CommonResolution::SevenTwentyP), 5, 1), 56);
+      // 11.2 * 10 = 112¢
+      assert_eq!(cost_cents(Some(CommonResolution::SevenTwentyP), 10, 1), 112);
+      // 11.2 * 15 = 168¢
+      assert_eq!(cost_cents(Some(CommonResolution::SevenTwentyP), 15, 1), 168);
     }
 
     #[test]
     fn batch_2() {
-      assert_eq!(cost_cents(Some(CommonResolution::SevenTwentyP), 5, 2), 68);
-      assert_eq!(cost_cents(Some(CommonResolution::SevenTwentyP), 10, 2), 136);
+      assert_eq!(cost_cents(Some(CommonResolution::SevenTwentyP), 5, 2), 112);
+      assert_eq!(cost_cents(Some(CommonResolution::SevenTwentyP), 10, 2), 224);
     }
 
     #[test]
     fn batch_4() {
-      assert_eq!(cost_cents(Some(CommonResolution::SevenTwentyP), 5, 4), 136);
+      assert_eq!(cost_cents(Some(CommonResolution::SevenTwentyP), 5, 4), 224);
     }
 
     #[test]
@@ -89,17 +89,17 @@ mod tests {
 
     #[test]
     fn batch_1() {
-      // 3.12 * 5 = 15.6 → ceil = 16¢
-      assert_eq!(cost_cents(Some(CommonResolution::FourEightyP), 5, 1), 16);
-      // 3.12 * 10 = 31.2 → ceil = 32¢
-      assert_eq!(cost_cents(Some(CommonResolution::FourEightyP), 10, 1), 32);
-      // 3.12 * 15 = 46.8 → ceil = 47¢
-      assert_eq!(cost_cents(Some(CommonResolution::FourEightyP), 15, 1), 47);
+      // 5.4404 * 5 = 27.202 → ceil = 28¢
+      assert_eq!(cost_cents(Some(CommonResolution::FourEightyP), 5, 1), 28);
+      // 5.4404 * 10 = 54.404 → ceil = 55¢
+      assert_eq!(cost_cents(Some(CommonResolution::FourEightyP), 10, 1), 55);
+      // 5.4404 * 15 = 81.606 → ceil = 82¢
+      assert_eq!(cost_cents(Some(CommonResolution::FourEightyP), 15, 1), 82);
     }
 
     #[test]
     fn batch_4() {
-      assert_eq!(cost_cents(Some(CommonResolution::FourEightyP), 10, 4), 128);
+      assert_eq!(cost_cents(Some(CommonResolution::FourEightyP), 10, 4), 220);
     }
   }
 
@@ -108,17 +108,17 @@ mod tests {
 
     #[test]
     fn batch_1() {
-      // 15.08 * 5 = 75.4 → ceil = 76¢
-      assert_eq!(cost_cents(Some(CommonResolution::TenEightyP), 5, 1), 76);
-      // 15.08 * 10 = 150.8 → ceil = 151¢
-      assert_eq!(cost_cents(Some(CommonResolution::TenEightyP), 10, 1), 151);
-      // 15.08 * 15 = 226.2 → ceil = 227¢
-      assert_eq!(cost_cents(Some(CommonResolution::TenEightyP), 15, 1), 227);
+      // 32.6424 * 5 = 163.212 → ceil = 164¢
+      assert_eq!(cost_cents(Some(CommonResolution::TenEightyP), 5, 1), 164);
+      // 32.6424 * 10 = 326.424 → ceil = 327¢
+      assert_eq!(cost_cents(Some(CommonResolution::TenEightyP), 10, 1), 327);
+      // 32.6424 * 15 = 489.636 → ceil = 490¢
+      assert_eq!(cost_cents(Some(CommonResolution::TenEightyP), 15, 1), 490);
     }
 
     #[test]
     fn batch_4() {
-      assert_eq!(cost_cents(Some(CommonResolution::TenEightyP), 10, 4), 604);
+      assert_eq!(cost_cents(Some(CommonResolution::TenEightyP), 10, 4), 1308);
     }
   }
 
