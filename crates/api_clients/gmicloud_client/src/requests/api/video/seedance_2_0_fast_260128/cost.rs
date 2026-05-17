@@ -9,17 +9,16 @@ impl GmiCloudRequestCostCalculator for Seedance20FastRequest {
   fn calculate_cost_in_cents(&self) -> UsdCents {
     let duration_seconds = self.effective_duration_seconds() as u64;
 
-    // Cost per second in tenths of a US cent, by resolution.
+    // Cost per second in US cents, by resolution.
     // Observed from GmiCloud billing:
-    //   480p: $0.01/s  = 1.0 tenths/s
-    //   720p: $0.031/s = 3.1 tenths/s (default)
-    let tenths_per_second: f64 = match self.resolution {
+    //   480p: $0.01/s  = 1.0 ¢/s
+    //   720p: $0.031/s = 3.1 ¢/s (default)
+    let cents_per_second: f64 = match self.resolution {
       Some(Seedance20FastResolution::FourEightyP) => 1.0,
       Some(Seedance20FastResolution::SevenTwentyP) | None => 3.1,
     };
 
-    let tenths = (tenths_per_second * duration_seconds as f64).ceil() as u64;
-    tenths.div_ceil(10)
+    (cents_per_second * duration_seconds as f64).ceil() as u64
   }
 }
 
@@ -52,20 +51,20 @@ mod tests {
 
     #[test]
     fn cost_default_5s() {
-      // 720p default: 3.1 * 5 = 15.5 → ceil = 16 tenths → 2 cents
-      assert_eq!(make_request(None, None).calculate_cost_in_cents(), 2);
+      // 720p: 3.1 * 5 = 15.5 → ceil = 16¢
+      assert_eq!(make_request(None, None).calculate_cost_in_cents(), 16);
     }
 
     #[test]
     fn cost_default_10s() {
-      // 3.1 * 10 = 31 tenths → 4 cents
-      assert_eq!(make_request(Some(10), None).calculate_cost_in_cents(), 4);
+      // 3.1 * 10 = 31¢
+      assert_eq!(make_request(Some(10), None).calculate_cost_in_cents(), 31);
     }
 
     #[test]
     fn cost_default_15s() {
-      // 3.1 * 15 = 46.5 → ceil = 47 tenths → 5 cents
-      assert_eq!(make_request(Some(15), None).calculate_cost_in_cents(), 5);
+      // 3.1 * 15 = 46.5 → ceil = 47¢
+      assert_eq!(make_request(Some(15), None).calculate_cost_in_cents(), 47);
     }
   }
 
@@ -74,20 +73,20 @@ mod tests {
 
     #[test]
     fn cost_480p_5s() {
-      // 1.0 * 5 = 5 tenths → 1 cent
-      assert_eq!(make_request(Some(5), Some(Seedance20FastResolution::FourEightyP)).calculate_cost_in_cents(), 1);
+      // 1.0 * 5 = 5¢
+      assert_eq!(make_request(Some(5), Some(Seedance20FastResolution::FourEightyP)).calculate_cost_in_cents(), 5);
     }
 
     #[test]
     fn cost_480p_10s() {
-      // 1.0 * 10 = 10 tenths → 1 cent
-      assert_eq!(make_request(Some(10), Some(Seedance20FastResolution::FourEightyP)).calculate_cost_in_cents(), 1);
+      // 1.0 * 10 = 10¢
+      assert_eq!(make_request(Some(10), Some(Seedance20FastResolution::FourEightyP)).calculate_cost_in_cents(), 10);
     }
 
     #[test]
     fn cost_480p_15s() {
-      // 1.0 * 15 = 15 tenths → 2 cents
-      assert_eq!(make_request(Some(15), Some(Seedance20FastResolution::FourEightyP)).calculate_cost_in_cents(), 2);
+      // 1.0 * 15 = 15¢
+      assert_eq!(make_request(Some(15), Some(Seedance20FastResolution::FourEightyP)).calculate_cost_in_cents(), 15);
     }
   }
 
@@ -96,20 +95,20 @@ mod tests {
 
     #[test]
     fn cost_720p_5s() {
-      // 3.1 * 5 = 15.5 → ceil = 16 tenths → 2 cents
-      assert_eq!(make_request(Some(5), Some(Seedance20FastResolution::SevenTwentyP)).calculate_cost_in_cents(), 2);
+      // 3.1 * 5 = 15.5 → ceil = 16¢
+      assert_eq!(make_request(Some(5), Some(Seedance20FastResolution::SevenTwentyP)).calculate_cost_in_cents(), 16);
     }
 
     #[test]
     fn cost_720p_10s() {
-      // 3.1 * 10 = 31 tenths → 4 cents
-      assert_eq!(make_request(Some(10), Some(Seedance20FastResolution::SevenTwentyP)).calculate_cost_in_cents(), 4);
+      // 3.1 * 10 = 31¢
+      assert_eq!(make_request(Some(10), Some(Seedance20FastResolution::SevenTwentyP)).calculate_cost_in_cents(), 31);
     }
 
     #[test]
     fn cost_720p_15s() {
-      // 3.1 * 15 = 46.5 → ceil = 47 tenths → 5 cents
-      assert_eq!(make_request(Some(15), Some(Seedance20FastResolution::SevenTwentyP)).calculate_cost_in_cents(), 5);
+      // 3.1 * 15 = 46.5 → ceil = 47¢
+      assert_eq!(make_request(Some(15), Some(Seedance20FastResolution::SevenTwentyP)).calculate_cost_in_cents(), 47);
     }
   }
 

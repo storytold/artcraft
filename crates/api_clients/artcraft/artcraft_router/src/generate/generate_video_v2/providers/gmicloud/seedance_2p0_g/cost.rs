@@ -39,18 +39,18 @@ mod tests {
 
     #[test]
     fn default_5s() {
-      // 720p default: 5.2 tenths/s * 5 = 26 → ceil = 26 → div_ceil(10) = 3¢
-      assert_eq!(cost_cents(None, 5), 3);
+      // 720p: 5.2 ¢/s * 5 = 26¢
+      assert_eq!(cost_cents(None, 5), 26);
     }
 
     #[test]
     fn default_10s() {
-      assert_eq!(cost_cents(None, 10), 6);
+      assert_eq!(cost_cents(None, 10), 52);
     }
 
     #[test]
     fn explicit_720p_5s() {
-      assert_eq!(cost_cents(Some(CommonResolution::SevenTwentyP), 5), 3);
+      assert_eq!(cost_cents(Some(CommonResolution::SevenTwentyP), 5), 26);
     }
   }
 
@@ -59,17 +59,17 @@ mod tests {
 
     #[test]
     fn p480_5s() {
-      assert_eq!(cost_cents(Some(CommonResolution::FourEightyP), 5), 2);
+      assert_eq!(cost_cents(Some(CommonResolution::FourEightyP), 5), 12);
     }
 
     #[test]
     fn p480_10s() {
-      assert_eq!(cost_cents(Some(CommonResolution::FourEightyP), 10), 3);
+      assert_eq!(cost_cents(Some(CommonResolution::FourEightyP), 10), 24);
     }
 
     #[test]
     fn p480_15s() {
-      assert_eq!(cost_cents(Some(CommonResolution::FourEightyP), 15), 4);
+      assert_eq!(cost_cents(Some(CommonResolution::FourEightyP), 15), 36);
     }
   }
 
@@ -78,17 +78,17 @@ mod tests {
 
     #[test]
     fn p1080_5s() {
-      assert_eq!(cost_cents(Some(CommonResolution::TenEightyP), 5), 6);
+      assert_eq!(cost_cents(Some(CommonResolution::TenEightyP), 5), 58);
     }
 
     #[test]
     fn p1080_10s() {
-      assert_eq!(cost_cents(Some(CommonResolution::TenEightyP), 10), 12);
+      assert_eq!(cost_cents(Some(CommonResolution::TenEightyP), 10), 116);
     }
 
     #[test]
     fn p1080_15s() {
-      assert_eq!(cost_cents(Some(CommonResolution::TenEightyP), 15), 18);
+      assert_eq!(cost_cents(Some(CommonResolution::TenEightyP), 15), 174);
     }
   }
 
