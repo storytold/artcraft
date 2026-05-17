@@ -2,8 +2,10 @@ use crate::creds::gmicloud_api_key::GmiCloudApiKey;
 use crate::error::gmicloud_error::GmiCloudError;
 use crate::requests::api::video::seedance_2_0_fast_260128::raw_request::Seedance20FastPayload;
 use crate::requests::common::create_request::{
-  create_gmicloud_request, GmiCloudCreateRequest, GmiCloudCreateResponse,
+  create_gmicloud_request, create_gmicloud_request_with_context,
+  GmiCloudCreateRequest, GmiCloudCreateResponse,
 };
+use crate::requests::context::request_context::RequestContext;
 
 const MODEL_ID: &str = "seedance-2-0-fast-260128";
 
@@ -112,11 +114,22 @@ impl Seedance20FastRequest {
     &self,
     api_key: &GmiCloudApiKey,
   ) -> Result<GmiCloudCreateResponse, GmiCloudError> {
+    let context = RequestContext {
+      api_key,
+      maybe_timeout: None,
+    };
+    self.send_request_with_context(&context).await
+  }
+
+  pub async fn send_request_with_context(
+    &self,
+    context: &RequestContext<'_>,
+  ) -> Result<GmiCloudCreateResponse, GmiCloudError> {
     let body = GmiCloudCreateRequest {
       model: MODEL_ID.to_string(),
       payload: self.to_raw_payload(),
     };
-    create_gmicloud_request(api_key, &body).await
+    create_gmicloud_request_with_context(context, &body).await
   }
 
   pub fn model_id() -> &'static str {
