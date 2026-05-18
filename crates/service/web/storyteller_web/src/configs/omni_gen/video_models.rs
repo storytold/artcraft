@@ -155,10 +155,89 @@ fn build_omni_gen_video_models() -> Vec<OmniGenVideoModelDetails> {
     ..Default::default()
   });
 
+//  models.push(OmniGenVideoModelDetails {
+//    model: CommonVideoModel::Seedance2p0Global,
+//    model_creator: Some(ModelCreator::Bytedance),
+//    full_name: Some("Seedance 2.0 (Global)".to_string()),
+//    text_prompt_supported: Some(true),
+//    starting_keyframe_supported: Some(true),
+//    ending_keyframe_supported: Some(true),
+//    image_references_supported: Some(true),
+//    image_references_max: Some(9),
+//    audio_references_supported: Some(true),
+//    audio_references_max: Some(3),
+//    audio_references_max_total_duration_seconds: Some(15),
+//    video_references_supported: Some(true),
+//    video_references_max: Some(3),
+//    video_references_max_total_duration_seconds: Some(15),
+//    character_references_supported: Some(true),
+//    character_references_max: Some(9),
+//    aspect_ratio_options: Some(vec![
+//      CommonAspectRatio::WideTwentyOneByNine,
+//      CommonAspectRatio::WideSixteenByNine,
+//      CommonAspectRatio::WideFourByThree,
+//      CommonAspectRatio::Square,
+//      CommonAspectRatio::TallThreeByFour,
+//      CommonAspectRatio::TallNineBySixteen,
+//    ]),
+//    aspect_ratio_default: Some(CommonAspectRatio::WideSixteenByNine),
+//    resolution_options: Some(vec![
+//      CommonResolution::FourEightyP,
+//      CommonResolution::SevenTwentyP,
+//      CommonResolution::TenEightyP,
+//    ]),
+//    resolution_default: Some(CommonResolution::SevenTwentyP),
+//    batch_size_options: Some(vec![1, 2, 4]),
+//    batch_size_default: Some(1),
+//    duration_seconds_min: Some(4),
+//    duration_seconds_max: Some(15),
+//    duration_seconds_default: Some(5),
+//    ..Default::default()
+//  });
+//
+//  models.push(OmniGenVideoModelDetails {
+//    model: CommonVideoModel::Seedance2p0FastGlobal,
+//    model_creator: Some(ModelCreator::Bytedance),
+//    full_name: Some("Seedance 2.0 Fast (Global)".to_string()),
+//    text_prompt_supported: Some(true),
+//    starting_keyframe_supported: Some(true),
+//    ending_keyframe_supported: Some(true),
+//    image_references_supported: Some(true),
+//    image_references_max: Some(9),
+//    audio_references_supported: Some(true),
+//    audio_references_max: Some(3),
+//    audio_references_max_total_duration_seconds: Some(15),
+//    video_references_supported: Some(true),
+//    video_references_max: Some(3),
+//    video_references_max_total_duration_seconds: Some(15),
+//    character_references_supported: Some(true),
+//    character_references_max: Some(9),
+//    aspect_ratio_options: Some(vec![
+//      CommonAspectRatio::WideTwentyOneByNine,
+//      CommonAspectRatio::WideSixteenByNine,
+//      CommonAspectRatio::WideFourByThree,
+//      CommonAspectRatio::Square,
+//      CommonAspectRatio::TallThreeByFour,
+//      CommonAspectRatio::TallNineBySixteen,
+//    ]),
+//    aspect_ratio_default: Some(CommonAspectRatio::WideSixteenByNine),
+//    resolution_options: Some(vec![
+//      CommonResolution::FourEightyP,
+//      CommonResolution::SevenTwentyP,
+//    ]),
+//    resolution_default: Some(CommonResolution::SevenTwentyP),
+//    batch_size_options: Some(vec![1, 2, 4]),
+//    batch_size_default: Some(1),
+//    duration_seconds_min: Some(4),
+//    duration_seconds_max: Some(15),
+//    duration_seconds_default: Some(5),
+//    ..Default::default()
+//  });
+
   models.push(OmniGenVideoModelDetails {
-    model: CommonVideoModel::Seedance2p0Global,
-    model_creator: Some(ModelCreator::Bytedance),
-    full_name: Some("Seedance 2.0 (Global)".to_string()),
+    model: CommonVideoModel::PreviewModel,
+    model_creator: None,
+    full_name: Some("Research Preview".to_string()),
     text_prompt_supported: Some(true),
     starting_keyframe_supported: Some(true),
     ending_keyframe_supported: Some(true),
@@ -196,9 +275,9 @@ fn build_omni_gen_video_models() -> Vec<OmniGenVideoModelDetails> {
   });
 
   models.push(OmniGenVideoModelDetails {
-    model: CommonVideoModel::Seedance2p0FastGlobal,
-    model_creator: Some(ModelCreator::Bytedance),
-    full_name: Some("Seedance 2.0 Fast (Global)".to_string()),
+    model: CommonVideoModel::PreviewModelFast,
+    model_creator: None,
+    full_name: Some("Research Preview (Fast)".to_string()),
     text_prompt_supported: Some(true),
     starting_keyframe_supported: Some(true),
     ending_keyframe_supported: Some(true),
