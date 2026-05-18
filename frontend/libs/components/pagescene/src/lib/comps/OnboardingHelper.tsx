@@ -71,7 +71,7 @@ export const OnboardingHelper = () => {
       leaveFrom="opacity-100"
       leaveTo="opacity-0"
     >
-      <div className="glass pointer-events-none absolute left-1/2 bottom-56 z-10 flex -translate-x-1/2 flex-col items-center justify-center gap-1 rounded-xl border border-brand-primary !bg-brand-primary/10 px-3 pr-4 py-2">
+      <div className="glass pointer-events-none absolute left-1/2 bottom-72 z-10 flex -translate-x-1/2 flex-col items-center justify-center gap-1 rounded-xl border-2 border-brand-primary px-3 pr-4 py-2">
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2">
             <div className="scale-75 origin-center -mx-3">
@@ -93,7 +93,10 @@ export const OnboardingHelper = () => {
           </div>
         </div>
         <div className="pointer-events-auto absolute -top-2 -right-2">
-          <CloseButton onClick={handleClose} className="h-5 w-5 bg-black/50 hover:bg-black/80 rounded-full border border-white/10" />
+          <CloseButton
+            onClick={handleClose}
+            className="h-5 w-5 bg-black/50 hover:bg-black/80 rounded-full border border-white/10"
+          />
         </div>
       </div>
     </Transition>

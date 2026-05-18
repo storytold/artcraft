@@ -20,6 +20,7 @@ import { useSidebar } from "../../components/ui/sidebar";
 import { useSignupCta } from "../../components/signup-cta-modal";
 import Seo from "../../components/seo";
 import { DemoOutputOverlay } from "./demo-output-overlay";
+import { OtherScenesOverlay } from "./other-scenes-overlay";
 import { usePromptPrefillFromOutput } from "./use-prompt-prefill-from-output";
 import { useSceneCacheStore } from "./scene-cache-store";
 import { useWebAppPageSceneAdapter } from "./web-adapter";
@@ -29,6 +30,30 @@ import {
   useSceneSplashLibSync,
   useSceneSplashStore,
 } from "./splash";
+
+// Mirror of the lib's private `DEFAULT_CAMERAS` in PageSceneStore.ts.
+// Re-applied to the store on every scene navigation so a stale
+// `cameras` array (from the previous scene) can't drive the new
+// viewport's FOV when the loaded scene's JSON omits camera data — see
+// the camera-reset effect below for the full mechanism.
+const DEFAULT_CAMERAS = [
+  {
+    id: "main",
+    label: "Main View",
+    focalLength: 17,
+    position: { x: -2.5, y: 2.5, z: 2.5 },
+    rotation: { x: 0, y: 0, z: 0 },
+    lookAt: { x: 0, y: 0, z: 0 },
+  },
+  {
+    id: "cam2",
+    label: "Camera 2",
+    focalLength: 10,
+    position: { x: 0, y: 0.6, z: 1.5 },
+    rotation: { x: 0, y: 0, z: 0 },
+    lookAt: { x: 0, y: 0, z: 0 },
+  },
+];
 
 // Stage3D fills its parent box; this wrapper is that box. It clamps
 // the editor to the SidebarInset area and feeds the lib its rect:
@@ -115,6 +140,26 @@ function PageSceneEditor() {
         isInitializing: true,
       });
     }
+  }, [sceneToken]);
+
+  // Reset the lib's camera Zustand state on every scene navigation.
+  // The lib's camera tickPerFrame reads `cameras` + `selectedCameraId`
+  // from this module-global store every frame and applies the matched
+  // entry's `focalLength` to the viewport's THREE.PerspectiveCamera
+  // (CameraController.ts). save_manager only emits CamerasReplacedEvent
+  // when the loaded scene_json includes a `cameras` field — older
+  // saves and some demo scenes don't, so without this reset an A→B
+  // handoff leaves scene A's `cameras` array (and its 60mm focal
+  // length) in the store and the new viewport renders at A's FOV
+  // forever. Re-seeding with the same defaults the store ships with
+  // mirrors the "fresh editor" state; if B's JSON has cameras, the
+  // load path replaces these immediately.
+  useEffect(() => {
+    usePageSceneStore.setState({
+      cameras: DEFAULT_CAMERAS,
+      selectedCameraId: "main",
+      focalLengthDragging: { isDragging: false, focalLength: 35 },
+    });
   }, [sceneToken]);
 
   // Mirror the URL-token scene's metadata into the lib store. Cache-hit
@@ -253,6 +298,11 @@ function PageSceneEditor() {
       <GalleryModal mode="view" />
       <GalleryDragComponent />
       {demoOutputToken && <DemoOutputOverlay outputToken={demoOutputToken} />}
+      <OtherScenesOverlay
+        currentSceneToken={sceneToken}
+        demoOutputToken={demoOutputToken}
+        wrapperRef={wrapperRef}
+      />
       <SceneSplashModal currentSceneToken={sceneToken} />
     </div>
   );
