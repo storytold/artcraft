@@ -189,6 +189,8 @@ pub async fn omni_gen_video_generate_handler(
     Some(CommonVideoModel::Seedance2p0Fast) => true,
     Some(CommonVideoModel::Seedance2p0Global) => true,
     Some(CommonVideoModel::Seedance2p0FastGlobal) => true,
+    Some(CommonVideoModel::PreviewModel) => true,
+    Some(CommonVideoModel::PreviewModelFast) => true,
     _ => false,
   };
 
