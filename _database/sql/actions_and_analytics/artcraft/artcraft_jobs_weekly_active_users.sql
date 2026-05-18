@@ -2,7 +2,7 @@
 -- A "weekly active user" is a user who created at least one ArtCraft inference job that week.
 
 SELECT
-  STR_TO_DATE(CONCAT(YEARWEEK(j.created_at, 1), ' Monday'), '%X%V %W') AS week_start,
+  DATE(DATE_SUB(j.created_at, INTERVAL WEEKDAY(j.created_at) DAY)) AS week_start,
   COUNT(DISTINCT j.maybe_creator_user_token) AS weekly_active_users
 FROM generic_inference_jobs j
 INNER JOIN users u ON u.token = j.maybe_creator_user_token
@@ -19,5 +19,5 @@ WHERE j.created_at >= '2026-01-01'
     'seed_vc',
     'comfy_ui'
   )
-GROUP BY YEARWEEK(j.created_at, 1)
+GROUP BY week_start
 ORDER BY week_start DESC;

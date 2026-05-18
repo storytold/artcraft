@@ -19,5 +19,5 @@ WHERE j.created_at >= '2026-01-01'
     'seed_vc',
     'comfy_ui'
   )
-GROUP BY DATE_FORMAT(j.created_at, '%Y-%m')
+GROUP BY month
 ORDER BY month DESC;
