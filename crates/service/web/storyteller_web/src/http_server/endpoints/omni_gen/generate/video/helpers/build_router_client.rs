@@ -13,13 +13,11 @@ use crate::state::server_state::ServerState;
 pub fn build_router_client(
   provider: Provider,
   server_state: &ServerState,
+  use_alternate_kinovi: bool,
 ) -> Result<RouterClient, AdvancedCommonWebError> {
   match provider {
     Provider::Seedance2Pro => {
-      let session = Seedance2ProSession::from_cookies_string(
-        server_state.seedance2pro.cookies.clone()
-      );
-      Ok(RouterClient::Seedance2Pro(RouterSeedance2ProClient::new(session)))
+      kinovi_provider(server_state, use_alternate_kinovi)
     }
     Provider::Fal => {
       let fal_client = RouterFalClient::new(
@@ -39,4 +37,20 @@ pub fn build_router_client(
       ))
     }
   }
+}
+
+fn kinovi_provider(server_state: &ServerState, use_alternate_kinovi: bool) -> Result<RouterClient, AdvancedCommonWebError> {
+  let session = if use_alternate_kinovi {
+    // Standard Kinovi
+    Seedance2ProSession::from_cookies_string(
+      server_state.seedance2pro.cookies_whitelist.clone()
+    )
+  } else {
+    // Standard Kinovi
+    Seedance2ProSession::from_cookies_string(
+      server_state.seedance2pro.cookies.clone()
+    )
+  };
+  
+  Ok(RouterClient::Seedance2Pro(RouterSeedance2ProClient::new(session)))
 }

@@ -15,7 +15,9 @@ pub(crate) async fn execute_generation_fal(
   plan: &VideoGenerationPlan,
   server_state: &ServerState,
 ) -> Result<GenerateVideoResponse, AdvancedCommonWebError> {
-  let router_client = build_router_client(Provider::Fal, server_state)?;
+  const USE_ALTERNATE_KINOVI: bool = false;
+
+  let router_client = build_router_client(Provider::Fal, server_state, USE_ALTERNATE_KINOVI)?;
 
   let response = plan.generate_video(&router_client)
     .await
