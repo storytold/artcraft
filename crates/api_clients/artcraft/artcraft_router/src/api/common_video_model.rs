@@ -70,4 +70,10 @@ pub enum CommonVideoModel {
 
   #[serde(rename = "veo_3p1_fast")]
   Veo3p1Fast,
+
+  #[serde(rename = "preview_model")]
+  PreviewModel,
+
+  #[serde(rename = "preview_model_fast")]
+  PreviewModelFast,
 }

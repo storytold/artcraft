@@ -70,6 +70,12 @@ pub enum CommonVideoModel {
 
   #[serde(rename = "veo_3p1_fast")]
   Veo3p1Fast,
+
+  #[serde(rename = "preview_model")]
+  PreviewModel,
+
+  #[serde(rename = "preview_model_fast")]
+  PreviewModelFast,
 }
 
 impl CommonVideoModel {
@@ -98,6 +104,8 @@ impl CommonVideoModel {
       Self::Veo3Fast => CommonModelType::Veo3Fast,
       Self::Veo3p1 => CommonModelType::Veo3p1,
       Self::Veo3p1Fast => CommonModelType::Veo3p1Fast,
+      Self::PreviewModel => CommonModelType::PreviewModel,
+      Self::PreviewModelFast => CommonModelType::PreviewModelFast,
     }
   }
 }
@@ -132,6 +140,8 @@ mod tests {
     assert_serialization(CommonVideoModel::Veo3Fast, "veo_3_fast");
     assert_serialization(CommonVideoModel::Veo3p1, "veo_3p1");
     assert_serialization(CommonVideoModel::Veo3p1Fast, "veo_3p1_fast");
+    assert_serialization(CommonVideoModel::PreviewModel, "preview_model");
+    assert_serialization(CommonVideoModel::PreviewModelFast, "preview_model_fast");
   }
 
   #[test]
@@ -159,6 +169,8 @@ mod tests {
       ("veo_3_fast", CommonVideoModel::Veo3Fast),
       ("veo_3p1", CommonVideoModel::Veo3p1),
       ("veo_3p1_fast", CommonVideoModel::Veo3p1Fast),
+      ("preview_model", CommonVideoModel::PreviewModel),
+      ("preview_model_fast", CommonVideoModel::PreviewModelFast),
     ];
     for (json_str, expected) in cases {
       let json = format!("\"{}\"", json_str);
@@ -193,6 +205,8 @@ mod tests {
       CommonVideoModel::Veo3Fast,
       CommonVideoModel::Veo3p1,
       CommonVideoModel::Veo3p1Fast,
+      CommonVideoModel::PreviewModel,
+      CommonVideoModel::PreviewModelFast,
     ];
     for variant in all {
       let json = serde_json::to_string(&variant).unwrap();
@@ -226,6 +240,8 @@ mod tests {
       (CommonVideoModel::Veo3Fast, CommonModelType::Veo3Fast),
       (CommonVideoModel::Veo3p1, CommonModelType::Veo3p1),
       (CommonVideoModel::Veo3p1Fast, CommonModelType::Veo3p1Fast),
+      (CommonVideoModel::PreviewModel, CommonModelType::PreviewModel),
+      (CommonVideoModel::PreviewModelFast, CommonModelType::PreviewModelFast),
     ];
     for (video_model, expected) in models {
       assert_eq!(video_model.to_common_model_type(), expected);
