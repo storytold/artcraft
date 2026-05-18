@@ -1,9 +1,9 @@
--- Daily active users for ArtCraft since January 1st, 2026.
--- A "daily active user" is a user who created at least one ArtCraft inference job that day.
+-- Monthly active users for ArtCraft since January 1st, 2026.
+-- A "monthly active user" is a user who created at least one ArtCraft inference job that month.
 
 SELECT
-  DATE(j.created_at) AS day,
-  COUNT(DISTINCT j.maybe_creator_user_token) AS daily_active_users
+  DATE_FORMAT(j.created_at, '%Y-%m') AS month,
+  COUNT(DISTINCT j.maybe_creator_user_token) AS monthly_active_users
 FROM generic_inference_jobs j
 INNER JOIN users u ON u.token = j.maybe_creator_user_token
 WHERE j.created_at >= '2026-01-01'
@@ -19,6 +19,5 @@ WHERE j.created_at >= '2026-01-01'
     'seed_vc',
     'comfy_ui'
   )
-GROUP BY DATE(j.created_at)
-ORDER BY day DESC;
-
+GROUP BY DATE_FORMAT(j.created_at, '%Y-%m')
+ORDER BY month DESC;
