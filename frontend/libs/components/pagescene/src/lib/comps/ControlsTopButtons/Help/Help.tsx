@@ -34,21 +34,72 @@ export const Key = (props: { button: string }) => (
 );
 
 export const KeyGroup = (props: { children: React.ReactNode }) => (
-  <div className="flex gap-1">{props.children}</div>
+  <div className="flex items-center gap-1">{props.children}</div>
 );
 
+// Inline SVG instead of /resources/icons/mouse_*.png. The PNGs only
+// ship with the Tauri host's public dir, so the webapp host showed a
+// broken-image placeholder. Inlining keeps the lib self-contained and
+// renders identically across both apps.
 export const Mouse = (props: {
   button: "left" | "middle" | "right";
   label?: string;
 }) => (
   <div className="flex items-center gap-2.5">
-    <img
-      alt={`${props.button} mouse`}
-      src={`/resources/icons/mouse_${props.button === "left" ? "lmb" : props.button === "middle" ? "mmb" : "rmb"}.png`}
-      className="h-7 w-auto object-contain"
-    />
+    <MouseIcon active={props.button} />
     <span className="text-sm font-normal opacity-60">{props.label}</span>
   </div>
+);
+
+const MouseIcon = ({ active }: { active: "left" | "middle" | "right" }) => (
+  <svg
+    viewBox="0 0 20 28"
+    aria-hidden
+    className="h-7 w-auto text-white"
+  >
+    <rect
+      x="1.25"
+      y="1.25"
+      width="17.5"
+      height="25.5"
+      rx="8.75"
+      ry="11"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      opacity="0.85"
+    />
+    {active === "left" && (
+      <path
+        d="M9 1.75 V12 H1.5 V10 A8.5 8.5 0 0 1 9 1.75 Z"
+        fill="currentColor"
+      />
+    )}
+    {active === "right" && (
+      <path
+        d="M11 1.75 V12 H18.5 V10 A8.5 8.5 0 0 0 11 1.75 Z"
+        fill="currentColor"
+      />
+    )}
+    <rect
+      x="9"
+      y="4"
+      width="2"
+      height="5"
+      rx="1"
+      fill="currentColor"
+      opacity={active === "middle" ? "1" : "0.5"}
+    />
+    <line
+      x1="1.5"
+      y1="12"
+      x2="18.5"
+      y2="12"
+      stroke="currentColor"
+      strokeWidth="0.75"
+      opacity="0.4"
+    />
+  </svg>
 );
 
 export const Plus = () => <div className="text-xl font-medium">+</div>;
@@ -83,6 +134,13 @@ const ShortcutsView = () => (
         <Shortcut label="Speed Boost">
           <KeyGroup>
             <Key button="Shift" />
+            <span className="ml-1.5 text-sm font-normal opacity-60">(Hold)</span>
+          </KeyGroup>
+        </Shortcut>
+        <Shortcut label="Slow Movement">
+          <KeyGroup>
+            <Key button="Alt" />
+            <span className="ml-1.5 text-sm font-normal opacity-60">(Hold)</span>
           </KeyGroup>
         </Shortcut>
       </ShortcutsGroup>

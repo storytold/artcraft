@@ -24,6 +24,14 @@ export type SaveSceneStateArgs = {
   sceneThumbnail: Blob | undefined;
 };
 
+// Per-load cancellation handle. Captured in closure by every in-flight
+// load task; flipped when the load is superseded (a newer load begins
+// or the editor unmounts). Late-arriving asset promises read `cancelled`
+// at await boundaries and bail without mutating the scene. The
+// `signal` plumbs through to per-asset fetchAsset calls so we also
+// terminate in-flight binary downloads, saving bandwidth.
+export type LoadTicket = { cancelled: boolean; signal: AbortSignal };
+
 // Narrow contract between SaveManager and the rest of the engine. The
 // manager doesn't import Editor — every cross-subsystem reach is a
 // callback or getter on this deps object (Phase 2 idiom).
@@ -72,7 +80,45 @@ export class SaveManager {
   // — nothing outside SaveManager reads it.
   private currentSceneMediaToken: string | null = null;
 
+  // Active load handle, if any. Used to cancel the previous load when
+  // a new one starts (rapid re-load / applyJson during loadScene) or
+  // when the editor unmounts.
+  private currentLoad?: { ticket: LoadTicket; controller: AbortController };
+
   constructor(private readonly deps: SaveManagerDeps) {}
+
+  // Cancel any in-flight load. Called by Editor.unmountEngine so late-
+  // arriving asset promises bail at their next checkpoint and don't
+  // touch the about-to-be-disposed scene.
+  public cancelCurrentLoad() {
+    if (!this.currentLoad) return;
+    this.currentLoad.ticket.cancelled = true;
+    this.currentLoad.controller.abort();
+    this.currentLoad = undefined;
+  }
+
+  // Mint a fresh ticket + AbortController for a new load. Cancels and
+  // replaces any previous in-flight load on this SaveManager so two
+  // overlapping loads can't both apply to the scene.
+  private startLoad(): LoadTicket {
+    if (this.currentLoad) {
+      this.currentLoad.ticket.cancelled = true;
+      this.currentLoad.controller.abort();
+    }
+    const controller = new AbortController();
+    const ticket: LoadTicket = { cancelled: false, signal: controller.signal };
+    this.currentLoad = { ticket, controller };
+    return ticket;
+  }
+
+  // Tear down the load handle if it's still ours. Late-arriving promises
+  // from a *previous* load may have already replaced this.currentLoad —
+  // we mustn't clobber the newer ticket in that case.
+  private endLoad(ticket: LoadTicket) {
+    if (this.currentLoad?.ticket === ticket) {
+      this.currentLoad = undefined;
+    }
+  }
 
   public getSceneJson({
     sceneGenerationMetadata,
@@ -123,16 +169,18 @@ export class SaveManager {
 
     const sceneJson = this.getSceneJson({ sceneGenerationMetadata });
 
-    let sceneThumbnail: Blob | undefined = undefined;
-    const renderer = this.deps.getRenderer();
-    if (renderer) {
-      const imgData = renderer.domElement.toDataURL();
-      const response = await fetch(imgData);
-      sceneThumbnail = await response.blob();
-    }
+    // Capture the thumbnail in parallel with the JSON.stringify of the
+    // scene. canvas.toBlob yields a Blob directly, no toDataURL →
+    // fetch → blob roundtrip. Adapters fire-and-forget the cover-image
+    // PATCH internally, so this doesn't extend the save's critical path.
+    const sceneThumbnailPromise = captureCanvasThumbnail(
+      this.deps.getRenderer(),
+    );
+    const saveJson = JSON.stringify(sceneJson);
+    const sceneThumbnail = await sceneThumbnailPromise;
 
     const result = await this.deps.saveSceneState({
-      saveJson: JSON.stringify(sceneJson),
+      saveJson,
       sceneTitle,
       sceneToken,
       sceneThumbnail,
@@ -143,27 +191,49 @@ export class SaveManager {
     return result;
   }
 
-  public async loadCache(cacheJson: string) {
+  public async loadCache(cacheJson: string): Promise<{ applied: boolean }> {
+    const ticket = this.startLoad();
     this.deps.bus.emit(new EditorLoaderEvent(true));
-    const scene_json = JSON.parse(cacheJson);
-    await this.loadFromJson(scene_json);
-    this.deps.bus.emit(new EditorLoaderEvent(false));
+    try {
+      const scene_json = JSON.parse(cacheJson);
+      const applied = await this.loadFromJson(scene_json, ticket);
+      return { applied };
+    } finally {
+      this.endLoad(ticket);
+      // Only dismiss the spinner if we're not being superseded — the
+      // newer load just emitted its own EditorLoaderEvent(true) and
+      // shouldn't have its spinner ripped away by our trailing emit.
+      if (!ticket.cancelled) {
+        this.deps.bus.emit(new EditorLoaderEvent(false));
+      }
+    }
   }
 
-  public async loadScene(scene_media_token: string) {
+  public async loadScene(
+    scene_media_token: string,
+  ): Promise<{ applied: boolean }> {
+    const ticket = this.startLoad();
     this.deps.bus.emit(new EditorLoaderEvent(true));
     this.currentSceneMediaToken = scene_media_token;
-    const scene_json = await this.deps
-      .loadSceneState(this.currentSceneMediaToken)
-      .catch((err) => {
+    try {
+      const scene_json = await this.deps.loadSceneState(
+        this.currentSceneMediaToken,
+      );
+      if (ticket.cancelled) return { applied: false };
+      const applied = await this.loadFromJson(scene_json, ticket);
+      return { applied };
+    } finally {
+      this.endLoad(ticket);
+      if (!ticket.cancelled) {
         this.deps.bus.emit(new EditorLoaderEvent(false));
-        throw err;
-      });
-    await this.loadFromJson(scene_json);
-    this.deps.bus.emit(new EditorLoaderEvent(false));
+      }
+    }
   }
 
-  private async loadFromJson(scene_json: any) {
+  private async loadFromJson(
+    scene_json: any,
+    ticket: LoadTicket,
+  ): Promise<boolean> {
     const version = this.deps.getVersion();
     const scene = this.deps.getActiveScene();
     const proxyScene = new StoryTellerProxyScene(version, scene);
@@ -172,7 +242,9 @@ export class SaveManager {
       scene_json["scene"],
       scene_json["skybox"],
       scene_json["version"],
+      ticket,
     );
+    if (ticket.cancelled) return false;
 
     const camera_data = scene_json["camera_data"];
     const liveCamera = this.deps.getCamera();
@@ -213,5 +285,19 @@ export class SaveManager {
 
     this.deps.setVersion(scene_json["version"]);
     this.deps.refreshCamObj();
+    return true;
   }
+}
+
+// Snapshot the renderer's canvas as a PNG Blob. canvas.toBlob hands us
+// the image asynchronously without the toDataURL → base64 → fetch →
+// blob roundtrip the previous code path used, and yields the main
+// thread to the browser during encoding.
+function captureCanvasThumbnail(
+  renderer: THREE.WebGLRenderer | undefined,
+): Promise<Blob | undefined> {
+  if (!renderer) return Promise.resolve(undefined);
+  return new Promise((resolve) => {
+    renderer.domElement.toBlob((blob) => resolve(blob ?? undefined), "image/png");
+  });
 }

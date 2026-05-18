@@ -8,6 +8,7 @@ pub enum ClientType {
   Artcraft,
   Fal,
   FalWebhookOptional,
+  GmiCloud,
   Muapi,
   Seedance2Pro,
 }
@@ -18,6 +19,7 @@ impl Display for ClientType {
       Self::Artcraft => write!(f, "Artcraft"),
       Self::Fal => write!(f, "Fal"),
       Self::FalWebhookOptional => write!(f, "FalWebhookOptional"),
+      Self::GmiCloud => write!(f, "GmiCloud"),
       Self::Muapi => write!(f, "Muapi"),
       Self::Seedance2Pro => write!(f, "Seedance2Pro"),
     }

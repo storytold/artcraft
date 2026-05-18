@@ -12,6 +12,7 @@ use std::collections::HashSet;
 use std::iter::FromIterator;
 use tokens::tokens::media_files::MediaFileToken;
 
+#[deprecated(note="I don't think we should be returning Option<T> based on an empty() check at the end. This is weird.")]
 pub async fn lookup_image_urls_as_optional_list(
   http_request: &HttpRequest,
   mysql_connection: &mut PoolConnection<MySql>,

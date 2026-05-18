@@ -98,9 +98,89 @@
   filter: invert(1);
 }
 
-.glass {
-  @apply relative border border-white/10 shadow-lg backdrop-blur-xl transition-colors duration-300;
-  @apply bg-ui-controls/85 !important;
+/* Gradient panel surface used by pagescene + lib components. */
+.bg-ui-panel-gradient {
+  background:
+    radial-gradient(60.68% 60.68% at 50% 0%,
+      rgba(255, 255, 255, 0.08) 0%,
+      rgba(0, 0, 0, 0) 70%),
+    #1f1f1f;
+  background-color: #1f1f1f;
+}
+
+.prevent-select {
+  -webkit-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  pointer-events: none;
+}
+
+/* three-dots loading spinners — used inside upload-modal + pagescene. */
+.dot-typing {
+  position: relative;
+  left: -9999px;
+  width: 10px;
+  height: 10px;
+  border-radius: 5px;
+  background-color: #ffffff30;
+  color: #ffffff30;
+  box-shadow:
+    9984px 0 0 0 #ffffff30,
+    9999px 0 0 0 #ffffff30,
+    10014px 0 0 0 #ffffff30;
+  animation: dot-typing 1.5s infinite linear;
+}
+
+@keyframes dot-typing {
+  0% {
+    box-shadow:
+      9984px 0 0 0 #ffffff30,
+      9999px 0 0 0 #ffffff30,
+      10014px 0 0 0 #ffffff30;
+  }
+  16.667% {
+    box-shadow:
+      9984px -10px 0 0 #ffffff30,
+      9999px 0 0 0 #ffffff30,
+      10014px 0 0 0 #ffffff30;
+  }
+  33.333% {
+    box-shadow:
+      9984px 0 0 0 #ffffff30,
+      9999px 0 0 0 #ffffff30,
+      10014px 0 0 0 #ffffff30;
+  }
+  50% {
+    box-shadow:
+      9984px 0 0 0 #ffffff30,
+      9999px -10px 0 0 #ffffff30,
+      10014px 0 0 0 #ffffff30;
+  }
+  66.667% {
+    box-shadow:
+      9984px 0 0 0 #ffffff30,
+      9999px 0 0 0 #ffffff30,
+      10014px 0 0 0 #ffffff30;
+  }
+  83.333% {
+    box-shadow:
+      9984px 0 0 0 #ffffff30,
+      9999px 0 0 0 #ffffff30,
+      10014px -10px 0 0 #ffffff30;
+  }
+  100% {
+    box-shadow:
+      9984px 0 0 0 #ffffff30,
+      9999px 0 0 0 #ffffff30,
+      10014px 0 0 0 #ffffff30;
+  }
+}
+
+@layer components {
+  .glass {
+    @apply relative border border-white/10 shadow-lg backdrop-blur-xl transition-colors duration-300;
+    @apply bg-ui-controls/85 !important;
+  }
 }
 
 .liquid-glass {

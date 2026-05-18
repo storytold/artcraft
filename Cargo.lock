@@ -773,6 +773,7 @@ dependencies = [
  "artcraft_client",
  "enums",
  "fal_client",
+ "gmicloud_client",
  "log",
  "muapi_client",
  "reqwest 0.12.23",
@@ -4689,6 +4690,56 @@ name = "glob"
 version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d2fabcfbdc87f4758337ca535fb41a6d701b65693ce38287d856d1674551ec9b"
+
+[[package]]
+name = "gmicloud-job"
+version = "0.0.1"
+dependencies = [
+ "actix-web",
+ "actix_helpers",
+ "anyhow",
+ "bootstrap",
+ "bucket_paths",
+ "cloud_storage",
+ "concurrency",
+ "easyenv",
+ "enums",
+ "errors",
+ "gmicloud_client",
+ "hashing",
+ "jobs_common",
+ "log",
+ "mysql_queries",
+ "pager",
+ "reqwest 0.12.23",
+ "rootly_client",
+ "rootly_config",
+ "serde",
+ "serde_derive",
+ "serde_json",
+ "server_environment",
+ "shared_env_var_config",
+ "sqlx",
+ "tokens",
+ "tokio",
+ "workspace-build-acceleration",
+]
+
+[[package]]
+name = "gmicloud_client"
+version = "0.0.1"
+dependencies = [
+ "errors",
+ "log",
+ "reqwest 0.12.23",
+ "serde",
+ "serde_derive",
+ "serde_json",
+ "test_data",
+ "test_utils",
+ "tokio",
+ "workspace-build-acceleration",
+]
 
 [[package]]
 name = "gobject-sys"
@@ -11279,6 +11330,7 @@ dependencies = [
  "futures 0.1.31",
  "futures 0.3.32",
  "futures-util",
+ "gmicloud_client",
  "google_sign_in",
  "hashing",
  "hostname 0.4.0",

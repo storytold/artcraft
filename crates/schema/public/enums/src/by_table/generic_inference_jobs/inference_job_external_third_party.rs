@@ -21,6 +21,10 @@ pub enum InferenceJobExternalThirdParty {
   #[default]
   Fal,
 
+  /// GmiCloud jobs
+  #[serde(rename = "gmicloud")]
+  GmiCloud,
+
   /// Seedance 2 Pro jobs
   #[serde(rename = "seedance2pro")]
   Seedance2Pro,
@@ -40,6 +44,7 @@ impl InferenceJobExternalThirdParty {
     match self {
       Self::Beeble => "beeble",
       Self::Fal => "fal",
+      Self::GmiCloud => "gmicloud",
       Self::Seedance2Pro => "seedance2pro",
       Self::Worldlabs => "worldlabs",
     }
@@ -49,6 +54,7 @@ impl InferenceJobExternalThirdParty {
     match value {
       "beeble" => Ok(Self::Beeble),
       "fal" => Ok(Self::Fal),
+      "gmicloud" => Ok(Self::GmiCloud),
       "seedance2pro" => Ok(Self::Seedance2Pro),
       "worldlabs" => Ok(Self::Worldlabs),
       _ => Err(format!("invalid value: {:?}", value)),
@@ -61,6 +67,7 @@ impl InferenceJobExternalThirdParty {
     BTreeSet::from([
       Self::Beeble,
       Self::Fal,
+      Self::GmiCloud,
       Self::Seedance2Pro,
       Self::Worldlabs,
     ])
@@ -79,6 +86,7 @@ mod tests {
     fn test_serialization() {
       assert_serialization(InferenceJobExternalThirdParty::Beeble, "beeble");
       assert_serialization(InferenceJobExternalThirdParty::Fal, "fal");
+      assert_serialization(InferenceJobExternalThirdParty::GmiCloud, "gmicloud");
       assert_serialization(InferenceJobExternalThirdParty::Seedance2Pro, "seedance2pro");
       assert_serialization(InferenceJobExternalThirdParty::Worldlabs, "worldlabs");
     }
@@ -87,6 +95,7 @@ mod tests {
     fn to_str() {
       assert_eq!(InferenceJobExternalThirdParty::Beeble.to_str(), "beeble");
       assert_eq!(InferenceJobExternalThirdParty::Fal.to_str(), "fal");
+      assert_eq!(InferenceJobExternalThirdParty::GmiCloud.to_str(), "gmicloud");
       assert_eq!(InferenceJobExternalThirdParty::Seedance2Pro.to_str(), "seedance2pro");
       assert_eq!(InferenceJobExternalThirdParty::Worldlabs.to_str(), "worldlabs");
     }
@@ -95,6 +104,7 @@ mod tests {
     fn from_str() {
       assert_eq!(InferenceJobExternalThirdParty::from_str("beeble").unwrap(), InferenceJobExternalThirdParty::Beeble);
       assert_eq!(InferenceJobExternalThirdParty::from_str("fal").unwrap(), InferenceJobExternalThirdParty::Fal);
+      assert_eq!(InferenceJobExternalThirdParty::from_str("gmicloud").unwrap(), InferenceJobExternalThirdParty::GmiCloud);
       assert_eq!(InferenceJobExternalThirdParty::from_str("seedance2pro").unwrap(), InferenceJobExternalThirdParty::Seedance2Pro);
       assert_eq!(InferenceJobExternalThirdParty::from_str("worldlabs").unwrap(), InferenceJobExternalThirdParty::Worldlabs);
     }
@@ -102,7 +112,7 @@ mod tests {
     #[test]
     fn all_variants() {
       // Static check
-      const EXPECTED_COUNT : usize = 4;
+      const EXPECTED_COUNT : usize = 5;
       
       assert_eq!(InferenceJobExternalThirdParty::all_variants().len(), EXPECTED_COUNT);
       assert_eq!(InferenceJobExternalThirdParty::iter().len(), EXPECTED_COUNT);

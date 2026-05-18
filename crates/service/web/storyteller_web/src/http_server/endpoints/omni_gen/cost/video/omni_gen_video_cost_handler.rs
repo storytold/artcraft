@@ -8,7 +8,7 @@ use artcraft_router::api::provider::Provider;
 use artcraft_router::errors::artcraft_router_error::ArtcraftRouterError;
 use artcraft_router::generate::generate_video::video_generation_cost_estimate::VideoGenerationCostEstimate;
 use log::warn;
-
+use artcraft_router::api::common_video_model::CommonVideoModel;
 use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
 use crate::http_server::endpoints::omni_gen::generate::video::helpers::hydrate_router_request::hydrate_to_router_request;
 use crate::state::server_state::ServerState;
@@ -31,6 +31,7 @@ pub async fn omni_gen_video_cost_handler(
   _server_state: web::Data<Arc<ServerState>>,
 ) -> Result<Json<OmniGenVideoCostResponse>, AdvancedCommonWebError> {
   let mut builder = hydrate_to_router_request(&request)?;
+
   builder.provider = Provider::Artcraft;
 
   let estimate = if builder.use_new_builder() {
@@ -71,5 +72,6 @@ pub async fn omni_gen_video_cost_handler(
     is_unlimited: estimate.is_unlimited,
     is_rate_limited: estimate.is_rate_limited,
     has_watermark: estimate.has_watermark,
+    failures_are_refunded: estimate.failures_are_refunded,
   }))
 }

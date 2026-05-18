@@ -33,6 +33,7 @@ use crate::http_server::common_responses::advanced_common_web_error::AdvancedCom
 use crate::http_server::endpoints::generate::common::payments_error_test::payments_error_test;
 use crate::http_server::endpoints::omni_gen::generate::video::helpers::hydrate_router_request::hydrate_to_router_request;
 use crate::http_server::endpoints::omni_gen::generate::video::insert_db_job::insert_fal_job::{insert_fal_job, InsertFalJobArgs};
+use crate::http_server::endpoints::omni_gen::generate::video::insert_db_job::insert_gmicloud_job::{insert_gmicloud_job, InsertGmiCloudJobArgs};
 use crate::http_server::endpoints::omni_gen::generate::video::insert_db_job::insert_seedance2pro_jobs::{insert_seedance2pro_jobs, InsertSeedance2proJobsArgs};
 use crate::http_server::endpoints::omni_gen::generate::video::insert_db_job::shared_job_args::SharedJobArgs;
 use crate::http_server::endpoints::omni_gen::generate::video::pipeline_v1::run_pipeline_v1::{run_pipeline_v1, RunPipelineV1Args};
@@ -186,6 +187,8 @@ pub async fn omni_gen_video_generate_handler(
     Some(CommonVideoModel::HappyHorse1p0) => true,
     Some(CommonVideoModel::Seedance2p0) => true,
     Some(CommonVideoModel::Seedance2p0Fast) => true,
+    Some(CommonVideoModel::Seedance2p0Global) => true,
+    Some(CommonVideoModel::Seedance2p0FastGlobal) => true,
     _ => false,
   };
 
@@ -375,6 +378,27 @@ pub async fn omni_gen_video_generate_handler(
       (
         payload.inference_job_token.clone(),
         vec![payload.inference_job_token.clone()],
+      )
+    }
+    GenerateVideoResponse::GmiCloud(payload) => {
+      info!("Inserting GmiCloud job with token: {:?}", pipeline_result.billing.apriori_job_token);
+      let token = insert_gmicloud_job(InsertGmiCloudJobArgs {
+        external_request_id: &payload.request_id,
+        shared: SharedJobArgs {
+          apriori_job_token: &pipeline_result.billing.apriori_job_token,
+          idempotency_token: &idempotency_token,
+          user_token,
+          maybe_avt_token: maybe_avt_token.as_ref(),
+          maybe_prompt_token: prompt_token.as_ref(),
+          maybe_debug_log_event_token: Some(&debug_log_event_token),
+          ip_address: &ip_address,
+          transaction: &mut transaction,
+        },
+      }).await?;
+
+      (
+        token.clone(),
+        vec![token],
       )
     }
     other => {

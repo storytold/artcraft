@@ -19,5 +19,6 @@ pub(crate) fn estimate_video_cost_fal_kling_3p0_pro(
     is_unlimited: false,
     is_rate_limited: false,
     has_watermark: false,
+    failures_are_refunded: None,
   }
 }

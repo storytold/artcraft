@@ -18,9 +18,15 @@ pub struct OmniGenVideoCostResponse {
   /// Whether the user has unlimited generations.
   pub is_unlimited: bool,
 
-  /// Whether the user is rate limited.
+  /// Whether the user is rate-limited.
   pub is_rate_limited: bool,
 
   /// Whether the output will have a watermark.
   pub has_watermark: bool,
+
+  /// Whether failures are refunded.
+  /// True: 100% yes
+  /// False: 100% no
+  /// None: Unknown or variable
+  pub failures_are_refunded: Option<bool>,
 }

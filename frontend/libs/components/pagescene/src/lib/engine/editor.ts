@@ -164,9 +164,8 @@ class Editor {
     // strictly one-way: UI toggles emit GridVisibleChangedEvent on the
     // bus → bridge updates the store + this subscriber updates the
     // THREE.js gridHelper. No "store→engine" subscription anywhere.
-    this.gridSubscription = this.bus.subscribe(
-      GridVisibleChangedEvent,
-      (e) => this.activeScene?.applyGridVisibility(e.visible),
+    this.gridSubscription = this.bus.subscribe(GridVisibleChangedEvent, (e) =>
+      this.activeScene?.applyGridVisibility(e.visible),
     );
 
     // PostProcessingPipeline must exist before Scene because Scene's
@@ -191,8 +190,7 @@ class Editor {
       hideObjectPanel: () =>
         this.bus.emit(new InspectorPanelChangedEvent(null)),
       getCameras: () => usePageSceneStore.getState().cameras,
-      getSelectedCameraId: () =>
-        usePageSceneStore.getState().selectedCameraId,
+      getSelectedCameraId: () => usePageSceneStore.getState().selectedCameraId,
       bus: this.bus,
     });
     this.selection = new SelectionBridge({
@@ -203,8 +201,7 @@ class Editor {
       setObjectLocked: (uuid, locked) =>
         this.utils.setObjectLocked(uuid, locked),
       isObjectLocked: (uuid) => this.utils.isObjectLocked(uuid),
-      removeTransformControls: () =>
-        this.utils.removeTransformControls(false),
+      removeTransformControls: () => this.utils.removeTransformControls(false),
       attachGizmoToCurrentSelection: () => {
         this.gizmo.addToScene(this.activeScene.scene);
         const selected = this.sceneManager?.selected_objects?.[0];
@@ -231,9 +228,11 @@ class Editor {
         getCameras: () => usePageSceneStore.getState().cameras,
         getSelectedCameraId: () =>
           usePageSceneStore.getState().selectedCameraId,
-        fetchAsset: (url) => this.adapter.fetchAsset(url),
-        getMediaUrlByToken: (token) =>
-          this.adapter.getMediaUrlByToken(token),
+        fetchAsset: (url, init) => this.adapter.fetchAsset(url, init),
+        getMediaUrlByToken: (token) => this.adapter.getMediaUrlByToken(token),
+        getMediaUrlsByTokens: this.adapter.getMediaUrlsByTokens
+          ? (tokens) => this.adapter.getMediaUrlsByTokens!(tokens)
+          : undefined,
       },
     );
     this.activeScene.initialize();
@@ -251,7 +250,7 @@ class Editor {
       detachGizmo: () => this.gizmo.detach(),
       removeGizmoFromScene: () =>
         this.gizmo.removeFromScene(this.activeScene.scene),
-      getOutlinePass: () => this.postProcessing.outlinePass,
+      getSelectionPass: () => this.postProcessing.selectionPass,
       publishSelect: () => this.selection.publishSelect(),
       clearSelected: () => {
         this.selection.selected = undefined;
@@ -280,8 +279,7 @@ class Editor {
       saveSceneState: (args) => this.adapter.saveScene(args),
       loadSceneState: (token) => this.adapter.loadScene(token),
       getCameras: () => usePageSceneStore.getState().cameras,
-      getSelectedCameraId: () =>
-        usePageSceneStore.getState().selectedCameraId,
+      getSelectedCameraId: () => usePageSceneStore.getState().selectedCameraId,
       bus: this.bus,
     });
     this.viewport = new ViewportController({
@@ -291,6 +289,13 @@ class Editor {
       getRenderAspectRatio: () =>
         this.cameraController.getRenderDimensions().aspectRatio,
       resizePostProcessing: (w, h) => this.postProcessing.resize(w, h),
+      renderScene: () => {
+        // Fire-and-forget: renderScene is async only for optional
+        // post-processing branches; the underlying Three.js render is
+        // synchronous and that's all the viewport needs to avoid a
+        // blank frame after setSize.
+        void this.renderScene();
+      },
     });
 
     // Action classes under engine/editor/actions/ encapsulate their own
@@ -331,9 +336,15 @@ class Editor {
     // Find the container element
     this.viewport.container = sceneContainerEl;
 
-    // Use the container's dimensions
-    const width = this.viewport.container.offsetWidth;
-    const height = this.viewport.container.offsetHeight;
+    // Use the container's dimensions. Clamp to ≥1 because the host's
+    // flex chain isn't always laid out by the time we initialize (e.g.
+    // the webapp's SidebarInset settles a frame after first render),
+    // and a 0-sized renderer leaks INVALID_FRAMEBUFFER_OPERATION warnings
+    // from the post-processing pipeline until the next resize event
+    // recovers. The next resize cascade re-sizes the renderer to the
+    // real dimensions, so this is just guard rails for the first frame.
+    const width = Math.max(1, this.viewport.container.offsetWidth);
+    const height = Math.max(1, this.viewport.container.offsetHeight);
 
     // Sets up camera and base position using camera configurations from the store.
     const mainCameraConfig = usePageSceneStore
@@ -415,8 +426,8 @@ class Editor {
       this.renderer,
       this.activeScene.scene,
       this.cameraController.camera,
-      this.viewport.canvReference?.width ?? 0,
-      this.viewport.canvReference?.height ?? 0,
+      this.viewport.canvReference?.width || 1,
+      this.viewport.canvReference?.height || 1,
     );
     // Controls and movement.
 
@@ -506,7 +517,7 @@ class Editor {
       timeline_mouse: this.mouse,
       raycaster: this.raycaster,
       control: this.gizmo.control,
-      outlinePass: this.postProcessing.outlinePass,
+      selectionPass: this.postProcessing.selectionPass,
       scene: this.activeScene.scene,
       publishSelect: this.selection.publishSelect.bind(this.selection),
       updateSelectedUI: this.selection.updateSelectedUI.bind(this.selection),
@@ -515,7 +526,7 @@ class Editor {
       getAssetType: this.selection.getAssetType.bind(this.selection),
       setSelected: this.selection.setSelected.bind(this.selection),
       isMovable: this.isMovable.bind(this),
-      enable_stats: this.enable_stats.bind(this),
+      toggle_stats: this.toggle_stats.bind(this),
       bus: this.bus,
       getPoseMode: () => usePageSceneStore.getState().poseMode,
       isHotkeyDisabled: () =>
@@ -544,10 +555,19 @@ class Editor {
       this.bus.emit(new SceneLoadedEvent(true));
     };
 
+    // Only flip the loaded flag when the load actually applied — a
+    // load that was superseded by a newer one (rapid remount or
+    // unmount-during-load) resolves with applied=false and must NOT
+    // touch engine state, otherwise EngineProvider's unmount handler
+    // would try to serialize a half-loaded scene back into the cache.
+    const applyIfLoaded = (result: { applied: boolean }) => {
+      if (result.applied) onloadCallback();
+    };
+
     if (!this.utils.isEmpty(cacheJson)) {
-      this.loadCache(cacheJson).then(onloadCallback);
+      this.save_manager.loadCache(cacheJson).then(applyIfLoaded);
     } else if (!this.utils.isEmpty(sceneToken)) {
-      this.loadScene(sceneToken).then(onloadCallback);
+      this.save_manager.loadScene(sceneToken).then(applyIfLoaded);
     } else {
       this.adapter.onSceneTitleChange?.({
         title: "Untitled New Scene",
@@ -562,8 +582,8 @@ class Editor {
       this.rawRenderer,
       this.activeScene.scene,
       this.cameraController.render_camera,
-      this.viewport.canvasRenderCamReference?.width ?? 0,
-      this.viewport.canvasRenderCamReference?.height ?? 0,
+      this.viewport.canvasRenderCamReference?.width || 1,
+      this.viewport.canvasRenderCamReference?.height || 1,
     );
 
     this.bus.emit(new EngineInitializedEvent(true));
@@ -577,10 +597,15 @@ class Editor {
     return this.focused;
   }
 
-  public enable_stats() {
-    document.body.appendChild(this.stats.dom);
+  // Toggle the three.js Stats panel (FPS / ms / mb). Bound to the
+  // backtick key in MouseControls. The flag lives in the Zustand
+  // store; <PerfStatsOverlay/> mounted inside PageScene watches it and
+  // attaches/detaches `this.stats.dom` to a React-managed container,
+  // so the panel is scoped to the PageScene route rather than the
+  // document body.
+  public toggle_stats() {
+    usePageSceneStore.getState().toggleStats();
   }
-
 
   // Captures the scene without the grid
   public snapShotOfCurrentFrame(shouldDownload: boolean = true) {
@@ -604,12 +629,11 @@ class Editor {
     const wasControlVisible = this.gizmo.isVisible();
     this.gizmo.setVisible(false);
 
-    // Store and disable outline pass
-    const outlinePass = this.postProcessing.outlinePass;
-    const wasOutlineEnabled = outlinePass?.enabled ?? false;
-    if (outlinePass) {
-      outlinePass.enabled = false;
-    }
+    // Suppress the selection outline overlay (and splat bbox) so the
+    // snapshot is clean. We can't disable the pass outright — it now owns
+    // the forward scene render, so a disabled pass yields a gray frame.
+    const selectionPass = this.postProcessing.selectionPass;
+    selectionPass?.setOutlineSuppressed(true);
 
     // High quality dimensions for each aspect ratio
     let targetWidth: number;
@@ -710,10 +734,8 @@ class Editor {
     // Restore transform controls visibility
     this.gizmo.setVisible(wasControlVisible);
 
-    // Restore outline pass
-    if (outlinePass) {
-      outlinePass.enabled = wasOutlineEnabled;
-    }
+    // Restore outline overlay + splat bbox
+    selectionPass?.setOutlineSuppressed(false);
 
     if (shouldDownload) {
       const link = document.createElement("a");
@@ -754,12 +776,28 @@ class Editor {
     this.selection.refreshOutliner();
   }
 
-  public async loadCache(cacheJson: string) {
-    await this.save_manager.loadCache(cacheJson);
+  public async loadCache(cacheJson: string): Promise<{ applied: boolean }> {
+    return await this.save_manager.loadCache(cacheJson);
   }
 
-  public async loadScene(scene_media_token: string) {
-    await this.save_manager.loadScene(scene_media_token);
+  public async loadScene(
+    scene_media_token: string,
+  ): Promise<{ applied: boolean }> {
+    const result = await this.save_manager.loadScene(scene_media_token);
+    if (result.applied) this.selection.refreshOutliner();
+    return result;
+  }
+
+  // Replace the active scene with the provided serialized JSON, clear
+  // the undo stack, and fire SceneResetEvent. Used by the Reset-to-
+  // original flow so the user can't "undo" the reset back into their
+  // edits. Delegates to save_manager.loadCache which already owns the
+  // JSON-string deserialization path used on initial mount.
+  public async applyJson(jsonString: string) {
+    const result = await this.save_manager.loadCache(jsonString);
+    if (!result.applied) return;
+    this.history.clear();
+    this.bus.emit(new SceneResetEvent());
     this.selection.refreshOutliner();
   }
 
@@ -790,7 +828,8 @@ class Editor {
 
   // Render the scene to the camera, this is called in the update.
   async renderScene() {
-    const { render_camera, render_width, render_height } = this.cameraController;
+    const { render_camera, render_width, render_height } =
+      this.cameraController;
     if (
       this.postProcessing.composer != null &&
       this.rawRenderer &&
@@ -810,12 +849,14 @@ class Editor {
 
     if (this.viewport.container) {
       if (
-        this.viewport.container.clientWidth + this.viewport.container.clientHeight !==
+        this.viewport.container.clientWidth +
+          this.viewport.container.clientHeight !==
         this.viewport.lastCanvasSize
       ) {
         this.viewport.onWindowResize();
         this.viewport.lastCanvasSize =
-          this.viewport.container.clientWidth + this.viewport.container.clientHeight;
+          this.viewport.container.clientWidth +
+          this.viewport.container.clientHeight;
       }
     }
 
@@ -902,6 +943,11 @@ class Editor {
   }
 
   unmountEngine() {
+    // Cancel any in-flight load so late-arriving asset promises bail
+    // at their next checkpoint instead of mutating the about-to-be-
+    // disposed scene. Also aborts in-flight asset downloads.
+    this.save_manager.cancelCurrentLoad();
+
     this.bus.emit(new SceneLoadedEvent(false));
     this.stopRenderLoop();
 

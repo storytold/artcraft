@@ -99,6 +99,10 @@ const paste = async (editor: Editor) => {
   editor.selection.refreshOutliner();
 };
 
+const toggleStats = (editor: Editor) => {
+  editor.toggle_stats();
+};
+
 export const buildKeymap = (): KeyBinding[] => [
   // Transform
   { code: "KeyT", label: "Translate", group: "Transform",
@@ -121,6 +125,8 @@ export const buildKeymap = (): KeyBinding[] => [
     run: toggleCameraView, preventDefault: true },
   { code: "Escape", label: "Clear selection / exit pose", group: "Selection",
     run: onEscape },
+  { code: "Backquote", label: "Toggle perf stats", group: "View",
+    run: toggleStats },
 
   // Edit
   { code: "Backspace", label: "Delete selected", group: "Edit",

@@ -12,6 +12,7 @@ use std::collections::{HashMap, HashSet};
 use std::iter::FromIterator;
 use tokens::tokens::media_files::MediaFileToken;
 
+#[deprecated(note="Try to use `lookup_media_files_as_cdn_url_list_and_map()` instead")]
 pub async fn lookup_image_urls_as_map(
   http_request: &HttpRequest,
   mysql_connection: &mut PoolConnection<MySql>,

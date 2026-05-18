@@ -12,6 +12,7 @@ import { InfiniteGridHelper } from "./InfiniteGridHelper";
 import type { Camera } from "@storyteller/common";
 import toast from "react-hot-toast";
 import { SplatMesh } from "@sparkjsdev/spark";
+import { ensureInternalBbox } from "./internalBbox";
 
 // Capabilities Scene needs from outside its own state. Editor wires
 // these in inline at construction (Phase 2 idiom — same shape as
@@ -22,8 +23,19 @@ import { SplatMesh } from "@sparkjsdev/spark";
 export type SceneDeps = {
   getCameras: () => Camera[];
   getSelectedCameraId: () => string;
-  fetchAsset: (url: string) => Promise<Response>;
+  // Adapter-supplied binary fetch. Optional `init.signal` lets the
+  // scene loader cancel in-flight downloads when its load is
+  // superseded.
+  fetchAsset: (
+    url: string,
+    init?: { signal?: AbortSignal },
+  ) => Promise<Response>;
   getMediaUrlByToken: (token: string) => Promise<string>;
+  // Optional batch resolver — when provided, the proxy scene loader
+  // warms a URL cache with one roundtrip instead of N. When absent,
+  // Scene.warmMediaURLs falls back to Promise.all of the single-token
+  // method.
+  getMediaUrlsByTokens?: (tokens: string[]) => Promise<Record<string, string>>;
 };
 
 class Scene {
@@ -246,6 +258,17 @@ class Scene {
     obj.userData["specular"] = 0.0;
     obj.userData["locked"] = false;
     obj.userData["media_file_type"] = MediaFileType.None;
+    // Dedicated, persisted shape marker. `media_id === "Parim"` is set
+    // by every geometric primitive (Box/Cone/Cylinder/Sphere/Donut/
+    // PointLight/Water) and NOT by Image::/video planes, so this tags
+    // exactly the constant-color shapes. setColor reads userData.isShape
+    // to decide constant-color (shapes) vs leave-textures (everything
+    // else). instantiate is the single creation chokepoint (fresh add,
+    // paste, undo/redo, proxy load), so this is always present.
+    if (obj.userData["media_id"] === "Parim") {
+      obj.userData["isShape"] = true;
+      obj.userData["shapeType"] = name;
+    }
 
     this.scene.add(obj);
 
@@ -442,9 +465,45 @@ class Scene {
     }
   }
 
-  // Resolve a media_file_token to its CDN URL via the host adapter.
+  // URL cache populated by warmMediaURLs() before a scene load. Lets
+  // every per-asset loadObject() skip its own metadata roundtrip. Lives
+  // for the lifetime of the Scene; entries are cheap (string→string).
+  private mediaUrlCache: Map<string, string> = new Map();
+
+  // Resolve a media_file_token to its CDN URL. Reads from the warm
+  // cache first (populated by warmMediaURLs during a scene load) before
+  // falling back to a single-token metadata fetch.
   async getMediaURL(media_id: string) {
+    const cached = this.mediaUrlCache.get(media_id);
+    if (cached !== undefined) return cached;
     return this.deps.getMediaUrlByToken(media_id);
+  }
+
+  // Warm the URL cache for a batch of tokens up front. Uses the host's
+  // batch resolver when available (one roundtrip), otherwise fans out
+  // single-token requests in parallel. Missing tokens (e.g. an asset
+  // was deleted) silently fall through to the per-asset fetch path.
+  async warmMediaURLs(tokens: string[]): Promise<void> {
+    if (tokens.length === 0) return;
+    const unique = Array.from(new Set(tokens));
+    if (this.deps.getMediaUrlsByTokens) {
+      const urls = await this.deps.getMediaUrlsByTokens(unique);
+      for (const [token, url] of Object.entries(urls)) {
+        if (url) this.mediaUrlCache.set(token, url);
+      }
+      return;
+    }
+    const results = await Promise.all(
+      unique.map((token) =>
+        this.deps
+          .getMediaUrlByToken(token)
+          .then((url) => [token, url] as const)
+          .catch(() => [token, ""] as const),
+      ),
+    );
+    for (const [token, url] of results) {
+      if (url) this.mediaUrlCache.set(token, url);
+    }
   }
 
   private floatToPercent(value: number) {
@@ -457,35 +516,34 @@ class Scene {
 
   setColor(object_uuid: string, hex_color: string) {
     const object = this.get_object_by_uuid(object_uuid);
-    if (object) {
-      object.userData["color"] = hex_color;
-      object.traverse((c: THREE.Object3D) => {
-        if (c instanceof THREE.Mesh) {
-          if (c.userData["water"]) {
-            c.material.uniforms.waterColor.value = new THREE.Color(hex_color);
-          } else if (c.material.color !== undefined) {
-            if (c.userData["base"] === undefined) {
-              c.userData["base"] = c.material.color.getHex();
-            }
-            if (c.material.map === undefined || c.material.map === null) {
-              const currentColor = new THREE.Color(c.userData["base"]);
-              const tint = new THREE.Color(hex_color);
-              currentColor.multiply(tint);
-              c.material.color.set(new THREE.Color(currentColor));
-            } else {
-              c.material.color.set(new THREE.Color(hex_color));
-            }
-
-            if (c.name == "PointLight") {
-              const light = this.get_object_by_uuid(c.userData["light"]);
-              if (light) {
-                (light as THREE.PointLight).color = new THREE.Color(hex_color);
-              }
-            }
-          }
+    if (!object) return;
+    object.userData["color"] = hex_color;
+    // Deterministic, classification-based color (see instantiate, where
+    // the persisted userData.isShape / shapeType marker is set):
+    //   shape → exact constant solid color (incl. white). No heuristic.
+    //   non-shape (character/GLB/MMD/image) → leave its own
+    //     texture/material colors untouched; the picker does not flatten
+    //     it. userData.color is still recorded so the inspector swatch
+    //     stays controlled.
+    //   water → its dedicated shader-uniform path, unchanged.
+    const isShape = object.userData["isShape"] === true;
+    const picked = new THREE.Color(hex_color);
+    object.traverse((c: THREE.Object3D) => {
+      if (!(c instanceof THREE.Mesh)) return;
+      if (c.userData["water"]) {
+        c.material.uniforms.waterColor.value = new THREE.Color(hex_color);
+        return;
+      }
+      if (!isShape) return;
+      if (c.material.color === undefined) return;
+      c.material.color.set(picked);
+      if (c.name == "PointLight") {
+        const light = this.get_object_by_uuid(c.userData["light"]);
+        if (light) {
+          (light as THREE.PointLight).color = new THREE.Color(hex_color);
         }
-      });
-    }
+      }
+    });
   }
 
   setVisible(object_uuid: string, visible: boolean) {
@@ -578,6 +636,7 @@ class Scene {
     auto_add: boolean = true,
     position: THREE.Vector3 = new THREE.Vector3(-0.5, 1.5, 0),
     version: number = 1.0,
+    signal?: AbortSignal,
   ): Promise<THREE.Object3D> {
     const url = await this.getMediaURL(media_id);
 
@@ -610,6 +669,7 @@ class Scene {
         name,
         auto_add,
         position,
+        signal,
       );
     }
 
@@ -619,6 +679,7 @@ class Scene {
       auto_add,
       position,
       version,
+      signal,
     );
   }
 
@@ -649,6 +710,7 @@ class Scene {
     name: string,
     auto_add: boolean = true,
     position: THREE.Vector3 = new THREE.Vector3(-0.5, 1.5, 0),
+    signal?: AbortSignal,
   ): Promise<THREE.Object3D> {
     if (this.placeholder_manager === undefined) {
       throw Error("Place holder Manager is undefined");
@@ -666,11 +728,15 @@ class Scene {
         }
         await this.placeholder_manager.remove(key);
       },
+      signal,
     ).catch(async (error) => {
       if (this.placeholder_manager !== undefined) {
         await this.placeholder_manager.remove(key);
       }
-      toast.error("Failed to load splat.");
+      // Don't toast aborts — those are us cancelling a superseded load.
+      if ((error as { name?: string })?.name !== "AbortError") {
+        toast.error("Failed to load splat.");
+      }
       throw error;
     });
 
@@ -678,6 +744,19 @@ class Scene {
     splat.position.copy(position);
     splat.userData["media_id"] = media_id;
     splat.userData["media_file_type"] = MediaFileType.SPZ;
+
+    // Build the selection bbox child once. SplatMesh.initialized
+    // resolves after the gaussian data is fully ready, so
+    // getBoundingBox() returns real local-space extents. The wireframe
+    // is hidden by default; SelectionOutlinePass flips its visibility
+    // on select/deselect. ensureInternalBbox no-ops if an identical
+    // child is already present.
+    try {
+      await splat.initialized;
+      ensureInternalBbox(splat, splat.getBoundingBox());
+    } catch (e) {
+      console.warn("Splat bbox skipped: initialized promise rejected", e);
+    }
 
     if (auto_add) {
       this.scene.add(splat);
@@ -692,6 +771,7 @@ class Scene {
     auto_add: boolean = true,
     position: THREE.Vector3 = new THREE.Vector3(-0.5, 1.5, 0),
     load_version: number = 1.0,
+    signal?: AbortSignal,
   ): Promise<THREE.Object3D> {
     if (this.placeholder_manager === undefined) {
       throw Error("Place holder Manager is undefined");
@@ -724,16 +804,23 @@ class Scene {
     //   throw error;
     // });
 
-    const glb = await this.load_glb_wrapped_no_cors(url, async () => {
-      if (this.placeholder_manager === undefined) {
-        throw Error("Place holder Manager is undefined");
-      }
-      await this.placeholder_manager.remove(key);
-    }).catch(async (error) => {
+    const glb = await this.load_glb_wrapped_no_cors(
+      url,
+      async () => {
+        if (this.placeholder_manager === undefined) {
+          throw Error("Place holder Manager is undefined");
+        }
+        await this.placeholder_manager.remove(key);
+      },
+      signal,
+    ).catch(async (error) => {
       if (this.placeholder_manager !== undefined) {
         await this.placeholder_manager.remove(key);
       }
-      toast.error("Failed to load 3D asset.");
+      // Don't toast aborts — those are us cancelling a superseded load.
+      if ((error as { name?: string })?.name !== "AbortError") {
+        toast.error("Failed to load 3D asset.");
+      }
       throw error;
     });
 
@@ -822,15 +909,20 @@ class Scene {
   private async load_glb_wrapped_no_cors(
     media_url: string,
     onComplete: () => void,
+    signal?: AbortSignal,
   ) {
     return new Promise(async (resolve, reject) => {
       let buffer;
       try {
         // Host-supplied CORS-bypassed binary fetch (FetchProxy under
         // Tauri; plain fetch under web hosts that allow it).
-        buffer = await (await this.deps.fetchAsset(media_url)).arrayBuffer();
+        buffer = await (
+          await this.deps.fetchAsset(media_url, { signal })
+        ).arrayBuffer();
       } catch (error) {
-        console.error("load GLB from Tauri error:", error);
+        if ((error as { name?: string })?.name !== "AbortError") {
+          console.error("load GLB from Tauri error:", error);
+        }
         reject(error);
         return;
       }
@@ -859,15 +951,20 @@ class Scene {
   private async load_splat_wrapped_no_cors(
     media_url: string,
     onComplete: () => void,
+    signal?: AbortSignal,
   ): Promise<SplatMesh> {
     return new Promise(async (resolve, reject) => {
       let buffer;
       try {
         // Host-supplied CORS-bypassed binary fetch (FetchProxy under
         // Tauri; plain fetch under web hosts that allow it).
-        buffer = await (await this.deps.fetchAsset(media_url)).arrayBuffer();
+        buffer = await (
+          await this.deps.fetchAsset(media_url, { signal })
+        ).arrayBuffer();
       } catch (error) {
-        console.error("load Splat from Tauri error:", error);
+        if ((error as { name?: string })?.name !== "AbortError") {
+          console.error("load Splat from Tauri error:", error);
+        }
         reject(error);
         return;
       }

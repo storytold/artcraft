@@ -29,10 +29,7 @@ pub enum TopLevelCommand {
   },
 
   /// ArtCraft support commands (omni API)
-  Artcraft {
-    #[command(subcommand)]
-    command: artcraft::ArtcraftCommand,
-  },
+  Artcraft(artcraft::dispatch::ArtcraftArgs),
 }
 
 pub async fn run(cli: Cli) -> anyhow::Result<()> {
@@ -40,8 +37,8 @@ pub async fn run(cli: Cli) -> anyhow::Result<()> {
     TopLevelCommand::Seedance2pro { command } => {
       seedance2pro::run(command).await
     }
-    TopLevelCommand::Artcraft { command } => {
-      artcraft::run(command).await
+    TopLevelCommand::Artcraft(args) => {
+      artcraft::dispatch(args).await
     }
   }
 }

@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, type ReactNode } from "react";
 import { IsDesktopApp } from "@storyteller/tauri-utils";
 import {
   faCamera,
@@ -26,7 +26,8 @@ import {
   FocalLengthDragging,
   UploadImageArgs,
 } from "@storyteller/common";
-import { PromptsApi } from "@storyteller/api";
+import { OmniGenApi, PromptsApi } from "@storyteller/api";
+import type { OmniGenImageRequest } from "@storyteller/api";
 // import { SoundRegistry } from "@storyteller/soundboard";
 import { toast } from "@storyteller/ui-toaster";
 import { EngineApi } from "@storyteller/api";
@@ -74,6 +75,15 @@ interface PromptBox3DProps {
   } | null)
   | undefined;
   credits?: number | null;
+  /** Optional model-picker slot rendered at the start of the toolbar
+   *  (left of the aspect-ratio picker). Tauri leaves this unset and
+   *  renders ClassyModelSelector outside the prompt box; the webapp
+   *  passes a compact selector here so the chrome matches its other
+   *  prompt boxes. */
+  modelSelector?: ReactNode;
+  // Optional pre-submit gate. Returns false to abort the generation
+  // (e.g. host wants to open a signup modal for anon visitors).
+  onBeforeSubmit?: () => boolean;
 }
 
 export const PromptBox3D = ({
@@ -100,6 +110,8 @@ export const PromptBox3D = ({
   selectedProvider,
   snapshotCurrentFrame,
   credits,
+  modelSelector,
+  onBeforeSubmit,
 }: PromptBox3DProps) => {
   //const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -275,6 +287,9 @@ export const PromptBox3D = ({
   const maxLen = selectedImageModel?.maxPromptLength ?? 1000;
 
   const handleEnqueue = async () => {
+    if (onBeforeSubmit && !onBeforeSubmit()) {
+      return;
+    }
     if (isFinite(maxLen) && prompt.length > maxLen) {
       toast.error(`Prompt exceeds the ${maxLen} character limit for this model`);
       return;
@@ -294,55 +309,88 @@ export const PromptBox3D = ({
   const handleWebEnqueue = async () => {
     if (!prompt.trim()) return;
 
-    setIsEnqueueing(true);
+    // OmniGen's request shape requires a model id. The Tauri path can
+    // fall back on `tauriId`, but the web path goes straight to the
+    // omni-gen backend which keys off the canonical `model` / `id`
+    // string. Bail loudly if nothing is selected.
+    if (!selectedImageModel?.id) {
+      handleError("No model selected");
+      return;
+    }
 
+    setIsEnqueueing(true);
     setEnginePrompt(prompt);
 
-    //const engineApi = new EngineApi();
-    const promptsApi = new PromptsApi();
-
-    if (snapshotCurrentFrame) {
-      const snapshot = snapshotCurrentFrame(false);
-
-      if (snapshot) {
-        const snapshotResult = await promptsApi.uploadSceneSnapshot({
-          screenshot: snapshot.file,
-          sceneMediaToken: "",
-        });
-
-        console.log("(web 3d) useSystemPrompt", useSystemPrompt);
-
-        const response = await promptsApi.enqueueImageGeneration({
-          disableSystemPrompt: !useSystemPrompt,
-          prompt: prompt,
-          snapshotMediaToken: snapshotResult.data || "",
-          additionalImages: referenceImages.map((image) => image.mediaToken),
-        });
-
-        console.log("response", response);
-
-        if (response.errorMessage) {
-          handleError(response.errorMessage);
-          setIsEnqueueing(false);
-          return;
+    try {
+      // Snapshot upload still goes through the legacy /v1/image_studio/
+      // scene_snapshot endpoint — that's the one image_studio route the
+      // Rust backend keeps registered, and it returns the media token we
+      // pass through to OmniGen as the canvas image.
+      let snapshotToken: string | undefined;
+      if (snapshotCurrentFrame) {
+        const snapshot = snapshotCurrentFrame(false);
+        if (snapshot) {
+          const snapshotResult = await new PromptsApi().uploadSceneSnapshot({
+            screenshot: snapshot.file,
+            sceneMediaToken: "",
+          });
+          if (!snapshotResult.success || !snapshotResult.data) {
+            handleError(
+              snapshotResult.errorMessage || "Failed to upload scene snapshot",
+            );
+            return;
+          }
+          snapshotToken = snapshotResult.data;
         }
       }
 
-      try {
-        // Here we would pass both the prompt and reference images to the generation
-        console.log(
-          "(3D.2) Enqueuing with prompt:",
-          prompt,
-          "and reference images:",
-          referenceImages,
-        );
-        await new Promise((resolve) => setTimeout(resolve, 2000));
-      } finally {
-        setIsEnqueueing(false);
-        toast.success("Image added to queue");
+      const referenceTokens = referenceImages
+        .map((image) => image.mediaToken)
+        .filter((t): t is string => !!t && t.length > 0);
+      const imageMediaTokens = [
+        ...(snapshotToken ? [snapshotToken] : []),
+        ...referenceTokens,
+      ];
+
+      const aspectRatio =
+        selectedImageModel.supportsNewAspectRatio() && commonAspectRatio
+          ? commonAspectRatio
+          : getCurrentAspectRatio();
+
+      const request: OmniGenImageRequest = {
+        model: selectedImageModel.id,
+        prompt: prompt,
+        idempotency_token: crypto.randomUUID(),
+        aspect_ratio: aspectRatio ?? null,
+        resolution: getCurrentResolution() ?? null,
+        image_batch_count: 1,
+        image_media_tokens:
+          imageMediaTokens.length > 0 ? imageMediaTokens : null,
+      };
+
+      const response = await new OmniGenApi().generateImage(request);
+      if (!response.success || !response.inference_job_token) {
+        handleError("Generation failed");
+        return;
       }
+
+      window.__storeTaskEnqueueMeta?.({
+        prompt,
+        refImageUrls: referenceImages
+          ?.map((image) => image.url)
+          .filter(Boolean),
+        modelType: selectedImageModel.id,
+        timestamp: Date.now(),
+      });
+
+      toast.success("Image added to queue");
+    } catch (err) {
+      handleError(
+        err instanceof Error ? err.message : "Generation request failed",
+      );
+    } finally {
+      setIsEnqueueing(false);
     }
-    setIsEnqueueing(false);
   };
 
   // Helper to show Sora login reminder and wait for login
@@ -644,6 +692,7 @@ export const PromptBox3D = ({
           </div>
           <div className="mt-2 flex items-center justify-between gap-2">
             <div className="flex items-center gap-2">
+              {modelSelector}
               {selectedImageModel?.supportsNewAspectRatio() && (
                 <AspectRatioPicker
                   model={selectedImageModel}

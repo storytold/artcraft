@@ -14,11 +14,17 @@ import {
   faGem,
   faCog,
   faLifeRing,
+  faGift,
 } from "@fortawesome/pro-solid-svg-icons";
 import { faDiscord } from "@fortawesome/free-brands-svg-icons";
 import { Button } from "@storyteller/ui-button";
 import { PopoverMenu } from "@storyteller/ui-popover";
-import { BillingApi, CreditsApi, UsersApi } from "@storyteller/api";
+import {
+  BillingApi,
+  CreditsApi,
+  USER_FEATURE_FLAGS,
+  UsersApi,
+} from "@storyteller/api";
 import { invalidateSession, useSession } from "../../lib/session";
 import { SOCIAL_LINKS } from "../../config/links";
 import { CreditsModal } from "../credits-modal";
@@ -26,6 +32,7 @@ import { SettingsModal } from "../settings-modal/SettingsModal";
 import { TaskQueue } from "./task-queue";
 import { SidebarTrigger, useSidebar } from "../ui/sidebar";
 import { Breadcrumbs } from "./breadcrumbs";
+import { ActiveSceneTitle } from "./ActiveSceneTitle";
 
 async function fetchCredits(): Promise<number | null> {
   try {
@@ -151,9 +158,9 @@ export function TopBar() {
   };
 
   return (
-    <header className="sticky top-0 z-20 flex items-center gap-3 border-b border-white/[0.06] bg-[#121212]/80 backdrop-blur-md px-3 pb-4 pt-3 sm:pt-6">
+    <header className="sticky top-0 z-20 relative flex items-center gap-3 border-b border-white/[0.06] bg-[#121212]/80 backdrop-blur-md px-3 pb-4 pt-3 sm:pt-6">
       {/* Left: sidebar trigger (mobile only) + logo (when sidebar closed) + breadcrumbs */}
-      <div className="flex items-center gap-2 min-w-0 flex-1">
+      <div className="flex items-center gap-2 min-w-0 shrink-0">
         <SidebarTrigger className="md:hidden" />
         <div className="flex gap-6">
           {showTopbarLogo && (
@@ -169,8 +176,21 @@ export function TopBar() {
         </div>
       </div>
 
+      {/* Middle: route-scoped chrome (scene title on /edit-3d, empty
+          elsewhere). Absolutely centered to the topbar (which already
+          spans only the canvas area, since it sits beside the sidebar)
+          so the title aligns horizontally with the Controls3D bar
+          regardless of the left/right widths. pointer-events:none on
+          the overlay lets clicks pass through to whatever's beneath;
+          the inner wrapper re-enables pointer-events for the title. */}
+      <div className="pointer-events-none absolute inset-x-0 inset-y-0 flex items-center justify-center pb-4 pt-3 sm:pt-6">
+        <div className="pointer-events-auto">
+          <ActiveSceneTitle />
+        </div>
+      </div>
+
       {/* Right: credits / upgrade / library / avatar */}
-      <div className="flex items-center gap-2 shrink-0">
+      <div className="ml-auto flex items-center gap-2 shrink-0">
         {!authChecked ? null : user ? (
           <>
             <Link
@@ -232,23 +252,6 @@ export function TopBar() {
                   <MenuItem>
                     {({ active }) => (
                       <button
-                        onClick={() => navigate("/support")}
-                        className={twMerge(
-                          active ? "bg-white/[0.04]" : "",
-                          "flex w-full items-center gap-2 px-4 py-2 text-sm text-white/70 transition-colors",
-                        )}
-                      >
-                        <FontAwesomeIcon
-                          icon={faLifeRing}
-                          className="text-[11px] text-white/50"
-                        />
-                        Support
-                      </button>
-                    )}
-                  </MenuItem>
-                  <MenuItem>
-                    {({ active }) => (
-                      <button
                         onClick={() => setSettingsOpen(true)}
                         className={twMerge(
                           active ? "bg-white/[0.04]" : "",
@@ -263,6 +266,44 @@ export function TopBar() {
                       </button>
                     )}
                   </MenuItem>
+                  <MenuItem>
+                    {({ active }) => (
+                      <button
+                        onClick={() => navigate("/support")}
+                        className={twMerge(
+                          active ? "bg-white/[0.04]" : "",
+                          "flex w-full items-center gap-2 px-4 py-2 text-sm text-white/70 transition-colors",
+                        )}
+                      >
+                        <FontAwesomeIcon
+                          icon={faLifeRing}
+                          className="text-[11px] text-white/50"
+                        />
+                        Support
+                      </button>
+                    )}
+                  </MenuItem>
+                  {user.maybe_feature_flags?.includes(
+                    USER_FEATURE_FLAGS.REFERRALS,
+                  ) && (
+                    <MenuItem>
+                      {({ active }) => (
+                        <button
+                          onClick={() => navigate("/referrals")}
+                          className={twMerge(
+                            active ? "bg-white/[0.04]" : "",
+                            "flex w-full items-center gap-2 px-4 py-2 text-sm text-white/70 transition-colors",
+                          )}
+                        >
+                          <FontAwesomeIcon
+                            icon={faGift}
+                            className="text-[11px] text-white/50"
+                          />
+                          Referrals
+                        </button>
+                      )}
+                    </MenuItem>
+                  )}
                   <MenuItem>
                     {({ active }) => (
                       <a
@@ -287,8 +328,8 @@ export function TopBar() {
                       <button
                         onClick={handleLogout}
                         className={twMerge(
-                          active ? "bg-white/[0.04]" : "",
-                          "block w-full text-left px-4 py-2 text-sm text-white/70 transition-colors",
+                          active ? "bg-red-500/10" : "",
+                          "block w-full text-left px-4 py-2 text-sm text-red-400 hover:text-red-300 transition-colors",
                         )}
                       >
                         Sign out

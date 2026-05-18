@@ -270,6 +270,15 @@ fn build_omni_gen_image_models() -> Vec<OmniGenImageModelDetails> {
       CommonQuality::Low,
     ]),
     default_quality: Some(CommonQuality::High),
+    // NOTE: Gpt-Image-2 does not have "resolution" natively. We're emulating this.
+    resolution_options: Some(vec![
+      CommonResolution::OneK,
+      CommonResolution::TwoK,
+      CommonResolution::ThreeK,
+      CommonResolution::FourK,
+    ]),
+    // NOTE: Gpt-Image-2 does not have "resolution" natively. We're emulating this.
+    resolution_default: Some(CommonResolution::OneK),
     batch_size_min: Some(1),
     batch_size_max: Some(4),
     batch_size_default: Some(1),

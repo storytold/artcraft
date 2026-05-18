@@ -12,9 +12,6 @@
       "path": "../label"
     },
     {
-      "path": "../settings-modal"
-    },
-    {
       "path": "../button-icon-select"
     },
     {
@@ -33,16 +30,10 @@
       "path": "../checkbox"
     },
     {
-      "path": "../tooltip"
-    },
-    {
       "path": "../button"
     },
     {
       "path": "../button-dropdown"
-    },
-    {
-      "path": "../popover"
     },
     {
       "path": "../promptbox"
@@ -61,6 +52,12 @@
     },
     {
       "path": "../../model-list"
+    },
+    {
+      "path": "../tooltip"
+    },
+    {
+      "path": "../popover"
     },
     {
       "path": "../model-selector"

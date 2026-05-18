@@ -12,6 +12,7 @@ pub(crate) fn estimate_image_cost_artcraft_flux_1_schnell(
     is_unlimited: true,
     is_rate_limited: false,
     has_watermark: false,
+    failures_are_refunded: None,
   }
 }
 

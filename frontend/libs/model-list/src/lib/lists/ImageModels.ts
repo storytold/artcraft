@@ -190,7 +190,7 @@ export const IMAGE_MODELS: ImageModel[] = [
     maxPromptLength: Infinity,
     // canChangeResolution: true,
     canChangeAspectRatio: true,
-    defaultAspectRatio: CommonAspectRatio.Square,
+    defaultAspectRatio: CommonAspectRatio.WideSixteenByNine,
     aspectRatios: [
       CommonAspectRatio.Auto,
       CommonAspectRatio.Square,
@@ -229,7 +229,7 @@ export const IMAGE_MODELS: ImageModel[] = [
     maxPromptLength: Infinity,
     canChangeResolution: true,
     canChangeAspectRatio: true,
-    defaultAspectRatio: CommonAspectRatio.Square,
+    defaultAspectRatio: CommonAspectRatio.WideSixteenByNine,
     aspectRatios: [
       CommonAspectRatio.Auto,
       CommonAspectRatio.Square,
@@ -273,7 +273,7 @@ export const IMAGE_MODELS: ImageModel[] = [
     maxPromptLength: Infinity,
     canChangeResolution: true,
     canChangeAspectRatio: true,
-    defaultAspectRatio: CommonAspectRatio.Square,
+    defaultAspectRatio: CommonAspectRatio.WideSixteenByNine,
     aspectRatios: [
       CommonAspectRatio.Auto,
       CommonAspectRatio.Square,
@@ -368,7 +368,7 @@ export const IMAGE_MODELS: ImageModel[] = [
     progressBarTime: 120000,
     maxPromptLength: Infinity,
     canChangeAspectRatio: true,
-    defaultAspectRatio: CommonAspectRatio.Square,
+    defaultAspectRatio: CommonAspectRatio.WideSixteenByNine,
     aspectRatios: [
       CommonAspectRatio.Auto,
       CommonAspectRatio.Square,
@@ -403,7 +403,7 @@ export const IMAGE_MODELS: ImageModel[] = [
     progressBarTime: 60000,
     maxPromptLength: 4000,
     canChangeAspectRatio: true,
-    defaultAspectRatio: CommonAspectRatio.SquareHd,
+    defaultAspectRatio: CommonAspectRatio.WideSixteenByNine,
     aspectRatios: [
       CommonAspectRatio.Auto2k,
       CommonAspectRatio.Auto4k,
@@ -433,7 +433,7 @@ export const IMAGE_MODELS: ImageModel[] = [
     progressBarTime: 60000,
     maxPromptLength: 4000,
     canChangeAspectRatio: true,
-    defaultAspectRatio: CommonAspectRatio.SquareHd,
+    defaultAspectRatio: CommonAspectRatio.WideSixteenByNine,
     aspectRatios: [
       CommonAspectRatio.Auto2k,
       CommonAspectRatio.Auto4k,
@@ -463,7 +463,7 @@ export const IMAGE_MODELS: ImageModel[] = [
     progressBarTime: 60000,
     maxPromptLength: 4000,
     canChangeAspectRatio: true,
-    defaultAspectRatio: CommonAspectRatio.SquareHd,
+    defaultAspectRatio: CommonAspectRatio.WideSixteenByNine,
     aspectRatios: [
       CommonAspectRatio.Auto2k,
       CommonAspectRatio.Square,

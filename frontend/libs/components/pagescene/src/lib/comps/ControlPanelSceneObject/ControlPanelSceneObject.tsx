@@ -25,10 +25,7 @@ import { objectMismatch } from "./utils/objectMismatch";
 import { XYZ } from "../../datastructures/common";
 import { useViewportSize } from "../../hooks/useViewportSize";
 import { DraggablePrecisionMutator } from "./DraggablePrecisionMutator";
-import {
-  beginColorSession,
-  ColorSession,
-} from "../../actions/setObjectColor";
+import { beginColorSession, ColorSession } from "../../actions/setObjectColor";
 import {
   beginTransformSession,
   TransformSession,
@@ -103,6 +100,24 @@ export const ControlPanelSceneObject = () => {
 
   const colorInputId = useId();
 
+  // Single source of truth for "which object the panel is acting on" —
+  // the same store slice the transform path uses. The color path used
+  // to read editorEngine?.selected?.* instead, which can be undefined/
+  // stale relative to objectPanelCurrent, so picks silently no-oped.
+  const selectedUuid = currentSceneObject?.object_uuid;
+
+  // Guarantee an active color session before applying. Don't rely on
+  // the hidden color input's onFocus firing (it's opacity-0/absolute,
+  // and a missed onFocus would make apply() a no-op). beginColorSession
+  // snapshots the before-state on first call, so a lazily-created
+  // session still records a single correct undo entry.
+  const ensureColorSession = () => {
+    if (!editorEngine || !selectedUuid) return;
+    if (!colorSessionRef.current) {
+      colorSessionRef.current = beginColorSession(editorEngine, selectedUuid);
+    }
+  };
+
   const toggleCollapse = () => {
     setIsCollapsed(!isCollapsed);
   };
@@ -161,8 +176,13 @@ export const ControlPanelSceneObject = () => {
     setLocalRotation(engineToLocal(vectors.rotation));
     setLocalScale(engineToLocal(vectors.scale));
 
-    setLocked(editorEngine.selection.isObjectLocked(editorEngine?.selected?.uuid || ""));
-    setColor(editorEngine?.selected?.userData.color);
+    setLocked(editorEngine.selection.isObjectLocked(selectedUuid || ""));
+    // Read the swatch from the panel's actual object (same uuid the
+    // write path uses), not editorEngine.selected which can be stale.
+    const selectedObj = selectedUuid
+      ? editorEngine.activeScene?.get_object_by_uuid(selectedUuid)
+      : undefined;
+    setColor((selectedObj?.userData?.color as string) ?? "#ffffff");
     // No cleanup function — uuid-change commit lives in the body
     // above. Unmount commit is handled by the separate effect below.
   }, [currentSceneObject, editorEngine]);
@@ -327,49 +347,50 @@ export const ControlPanelSceneObject = () => {
         className={"flex flex-col gap-2 overflow-y-auto"}
       >
         <div className="flex flex-col gap-1">
-          <h5>Color</h5>
-          <input
-            className="h-0 w-0 cursor-pointer opacity-0"
-            id={colorInputId}
-            type="color"
-            value={color}
-            disabled={locked}
-            onFocus={() => {
-              // Picker is opening — open a session that captures the
-              // before-state once. apply()/commit() handle visual
-              // feedback during the drag and the final undo entry on
-              // close.
-              const uuid = editorEngine?.selected?.uuid;
-              if (uuid && editorEngine) {
-                colorSessionRef.current = beginColorSession(
-                  editorEngine,
-                  uuid,
-                );
-              }
-            }}
-            onChange={(e: ChangeEvent<HTMLInputElement>) => {
-              // Native color picker fires per-pixel during slider
-              // drag. apply() updates the engine for visual feedback
-              // but does NOT record. Recording happens once on blur.
-              const after = e.target.value;
-              colorSessionRef.current?.apply(after);
-              setColor(after);
-            }}
-            onBlur={() => {
-              colorSessionRef.current?.commit();
-              colorSessionRef.current = null;
-            }}
-          />
+          <p className="font-semibold text-sm">Color</p>
+          {/* Native <input type="color"> is nested INSIDE the Button's
+              <label> so Safari opens the picker reliably. Safari refuses
+              to open a color picker triggered via label[htmlFor]→input
+              when the input has no layout box (the prior h-0 w-0 setup).
+              Positioning it absolute over the swatch keeps the click
+              area identical to the visible button. */}
           <Button
-            className="cursor-pointer p-3.5"
+            className="cursor-pointer p-3.5 w-full relative overflow-hidden"
             htmlFor={colorInputId}
             style={{
               backgroundColor: color,
             }}
-          ></Button>
+          >
+            <input
+              className="absolute inset-0 cursor-pointer opacity-0"
+              id={colorInputId}
+              type="color"
+              value={color ?? "#ffffff"}
+              disabled={locked || !selectedUuid}
+              onFocus={() => {
+                // Normal path: picker opening → start the session that
+                // captures the before-state once.
+                ensureColorSession();
+              }}
+              onChange={(e: ChangeEvent<HTMLInputElement>) => {
+                // Native color picker fires per-pixel during slider
+                // drag. ensureColorSession() guarantees apply() reaches
+                // editor.activeScene.setColor even if onFocus didn't
+                // fire. Recording happens once on blur.
+                const after = e.target.value;
+                ensureColorSession();
+                colorSessionRef.current?.apply(after);
+                setColor(after);
+              }}
+              onBlur={() => {
+                colorSessionRef.current?.commit();
+                colorSessionRef.current = null;
+              }}
+            />
+          </Button>
         </div>
-        <div className="flex flex-col gap-1">
-          <h5>Location</h5>
+        <div className="flex flex-col gap-2">
+          <p className="font-semibold text-sm">Location</p>
           <InputVector
             x={localPosition.x.toString()}
             y={localPosition.y.toString()}
@@ -381,8 +402,8 @@ export const ControlPanelSceneObject = () => {
           />
         </div>
 
-        <div className="flex flex-col gap-1">
-          <h5>Rotation</h5>
+        <div className="flex flex-col gap-2">
+          <p className="font-semibold text-sm">Rotation</p>
           <InputVector
             x={localRotation.x.toString()}
             y={localRotation.y.toString()}
@@ -395,9 +416,9 @@ export const ControlPanelSceneObject = () => {
           />
         </div>
 
-        <div className="mb-1 flex flex-col gap-1">
+        <div className="mb-1 flex flex-col gap-2">
           <DraggablePrecisionMutator onChange={handleUniformScaleChange}>
-            <h5>Scale</h5>
+            <p className="font-semibold text-sm">Scale</p>
           </DraggablePrecisionMutator>
           <InputVector
             x={localScale.x.toString()}

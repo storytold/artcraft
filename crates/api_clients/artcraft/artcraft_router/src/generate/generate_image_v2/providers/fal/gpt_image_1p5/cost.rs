@@ -26,6 +26,7 @@ impl FalGptImage1p5CostState {
       is_unlimited: false,
       is_rate_limited: false,
       has_watermark: false,
+      failures_are_refunded: None,
     }
   }
 }

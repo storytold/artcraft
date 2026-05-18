@@ -7,7 +7,13 @@
 // exact same 3D editor UX. Only the platform-specific PageSceneAdapter
 // implementation differs between hosts.
 
-import React, { useContext, useEffect, useRef } from "react";
+import React, {
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+} from "react";
 import {
   GalleryItem,
   onImageDrop,
@@ -16,10 +22,14 @@ import {
 import {
   STAGE_3D_PAGE_MODEL_LIST,
   ModelPage,
+  defaultModelForPage,
+  useClassyModelSelectorStore,
   useSelectedImageModel,
   useSelectedProviderForModel,
   ClassyModelSelector,
 } from "@storyteller/ui-model-selector";
+import { PopoverMenu } from "@storyteller/ui-popover";
+import { Tooltip } from "@storyteller/ui-tooltip";
 import type { ImageModel } from "@storyteller/model-list";
 import type { GenerationProvider } from "@storyteller/api-enums";
 import { HelpMenuButton } from "@storyteller/ui-help-menu";
@@ -33,14 +43,17 @@ import type { PopoverItem } from "@storyteller/ui-popover";
 import { v4 as uuidv4 } from "uuid";
 
 import { EngineContext } from "./contexts/EngineContext/EngineContext";
+import { AnonHintChip } from "./comps/AnonHintChip";
 import { ControlPanelSceneObject } from "./comps/ControlPanelSceneObject";
 import { Controls3D } from "./comps/Controls3D";
 import { ControlsTopButtons } from "./comps/ControlsTopButtons";
 import { EditorCanvas } from "./comps/EngineCanvases";
 import { FocalLengthDisplay } from "./comps/FocalLengthDisplay/FocalLengthDisplay";
 import { OnboardingHelper } from "./comps/OnboardingHelper";
+import { PerfStatsOverlay } from "./comps/PerfStatsOverlay";
 import { Outliner } from "./comps/Outliner";
 import { PoseModeSelector } from "./comps/PoseModeSelector";
+import { PreviewBox } from "./comps/PreviewBox";
 import { PreviewEngineCamera } from "./comps/PreviewEngineCamera";
 import { SceneContainer } from "./comps/SceneContainer";
 import { addCharacter, addObject, setCameraAspect } from "./actions";
@@ -52,12 +65,32 @@ import { useViewportSize } from "./hooks/useViewportSize";
 import { GridVisibleChangedEvent } from "./engine/events/EngineEvent";
 import { pickDropPosition } from "./engine/pickDropPosition";
 import { AssetType, CameraAspectRatio } from "./enums";
-import { usePageSceneStore } from "./PageSceneStore";
+import { usePageSceneStore, useIsVisitingOthersScene } from "./PageSceneStore";
 import type { MediaItem } from "./models/assets";
 
 const PAGE_ID: ModelPage = ModelPage.Stage3D;
 
-export const Stage3DBody = () => {
+export interface Stage3DBodyProps {
+  /** Show the bottom-right "Costs" cost-calculator button. */
+  showCostCalculator?: boolean;
+  /** Show the top-bar "Create 3D model from image" magic-wand button. */
+  showImageTo3DButton?: boolean;
+  /** Show the bottom-right help menu button. */
+  showHelpMenu?: boolean;
+  /** Where to render the model picker. `"bottom-left"` (default) keeps
+   *  the existing ClassyModelSelector floating in the editor corner —
+   *  used by Tauri. `"prompt-box"` hides the corner selector and
+   *  renders a compact popover inside the prompt-box toolbar instead,
+   *  matching the webapp's other prompt boxes. */
+  modelSelectorPlacement?: "bottom-left" | "prompt-box";
+}
+
+export const Stage3DBody = ({
+  showCostCalculator = true,
+  showImageTo3DButton = true,
+  showHelpMenu = true,
+  modelSelectorPlacement = "bottom-left",
+}: Stage3DBodyProps = {}) => {
   const camAspect = usePageSceneStore((s) => s.cameraAspectRatio);
   const outlinerShowing = usePageSceneStore((s) => s.outlinerShowing);
   const editorLoader = usePageSceneStore((s) => s.editorLoader);
@@ -74,6 +107,8 @@ export const Stage3DBody = () => {
     (s) => s.setIsPromptBoxFocused,
   );
   const gridVisible = usePageSceneStore((s) => s.gridVisible);
+  const previewImageUrl = usePageSceneStore((s) => s.sceneMeta.previewImageUrl);
+  const isVisitingOthersScene = useIsVisitingOthersScene();
   const addCamera = usePageSceneStore((s) => s.addCamera);
   const updateCamera = usePageSceneStore((s) => s.updateCamera);
   const deleteCamera = usePageSceneStore((s) => s.deleteCamera);
@@ -97,6 +132,63 @@ export const Stage3DBody = () => {
   const selectedProvider: GenerationProvider | undefined =
     useSelectedProviderForModel(PAGE_ID, selectedImageModel?.id);
 
+  // Inline (prompt-box) model selector. Built here rather than in
+  // PromptBox3D so the promptbox lib doesn't take a new dep on
+  // model-selector; the selector is just plumbed in as a ReactNode slot.
+  const setSelectedModel = useClassyModelSelectorStore(
+    (s) => s.setSelectedModel,
+  );
+
+  // Seed the default model on mount when we're the only model picker
+  // on the page. ClassyModelSelector does this itself on mount, but in
+  // the prompt-box placement we don't render it — so without this
+  // effect the store stays empty and the trigger has no icon until the
+  // user opens the popover and picks a model manually.
+  useEffect(() => {
+    if (modelSelectorPlacement !== "prompt-box") return;
+    if (selectedImageModel) return;
+    const models = STAGE_3D_PAGE_MODEL_LIST.map((i) => i.model).filter(
+      (m): m is NonNullable<typeof m> => m !== undefined,
+    );
+    const def = defaultModelForPage(models, PAGE_ID);
+    if (def) setSelectedModel(PAGE_ID, def);
+  }, [modelSelectorPlacement, selectedImageModel, setSelectedModel]);
+
+  const inlineModelItems: PopoverItem[] = useMemo(
+    () =>
+      STAGE_3D_PAGE_MODEL_LIST.map((item) => ({
+        ...item,
+        selected: item.model === selectedImageModel,
+      })),
+    [selectedImageModel],
+  );
+  const handleInlineModelSelect = useCallback(
+    (item: PopoverItem) => {
+      if (item.model) setSelectedModel(PAGE_ID, item.model);
+    },
+    [setSelectedModel],
+  );
+  const selectedModelIcon = useMemo(
+    () =>
+      STAGE_3D_PAGE_MODEL_LIST.find((i) => i.model === selectedImageModel)
+        ?.icon,
+    [selectedImageModel],
+  );
+  const inlineModelSelector =
+    modelSelectorPlacement === "prompt-box" ? (
+      <Tooltip content="Model" position="top" className="z-50" closeOnClick>
+        <PopoverMenu
+          items={inlineModelItems}
+          onSelect={handleInlineModelSelect}
+          mode="toggle"
+          panelTitle="Select Model"
+          panelClassName="min-w-[260px]"
+          showIconsInList
+          triggerIcon={selectedModelIcon}
+        />
+      </Tooltip>
+    ) : undefined;
+
   const imageCredits = useCostBreakdownModalStore(
     (s) => s.estimatedCreditsByPage[PAGE_ID],
   );
@@ -108,7 +200,6 @@ export const Stage3DBody = () => {
   // window.innerWidth/innerHeight when the host adapter doesn't
   // supply getViewportSize, so the layout always has sane values.
   const viewport = useViewportSize();
-  const height = viewport.height - 56;
 
   const getScale = () => {
     const h = viewport.height - 56;
@@ -121,10 +212,7 @@ export const Stage3DBody = () => {
       if (viewport.width > 2000) return scaleHeight;
       return scaleHeight * 0.78;
     }
-    if (
-      camAspect === CameraAspectRatio.SQUARE_1_1 &&
-      viewport.width < 2000
-    ) {
+    if (camAspect === CameraAspectRatio.SQUARE_1_1 && viewport.width < 2000) {
       return scaleHeight * 0.85;
     }
     return scaleHeight;
@@ -301,8 +389,7 @@ export const Stage3DBody = () => {
                 title: item.label || "Image Plane",
                 mediaToken: item.id,
                 progressCallback: (state) => {
-                  if (state.status)
-                    console.log("Upload status:", state.status);
+                  if (state.status) console.log("Upload status:", state.status);
                 },
               });
             }
@@ -320,23 +407,17 @@ export const Stage3DBody = () => {
   }, [editor]);
 
   return (
-    <div>
+    <div className="h-full w-full">
       <OnboardingHelper />
 
-      <div
-        className="relative flex w-screen"
-        style={{ height: "calc(100vh - 68px)" }}
-      >
-        <div
-          id="engine-n-panels-wrapper"
-          className="flex"
-          style={{ height }}
-        >
+      <div className="relative flex h-full w-full">
+        <div id="engine-n-panels-wrapper" className="flex h-full w-full">
           <div className="relative w-full overflow-hidden bg-transparent">
             <SceneContainer>
               <EditorCanvas />
             </SceneContainer>
 
+            <PerfStatsOverlay />
             <FocalLengthDisplay />
             <PoseModeSelector />
 
@@ -346,13 +427,15 @@ export const Stage3DBody = () => {
             >
               <div className="grid grid-cols-3 gap-4">
                 <ControlsTopButtons />
-                <Controls3D />
+                <Controls3D showImageTo3DButton={showImageTo3DButton} />
+                <div className="flex items-start justify-end gap-2 pr-2 pt-2">
+                  <AnonHintChip />
+                </div>
               </div>
             </div>
 
             <div
-              className="absolute bottom-0 left-0"
-              style={{ width: viewport.width }}
+              className="absolute bottom-0 left-0 right-0"
               onClick={handleOverlayClick}
             >
               <div
@@ -365,6 +448,8 @@ export const Stage3DBody = () => {
 
               <ControlPanelSceneObject />
             </div>
+
+            {isVisitingOthersScene && <PreviewBox imageUrl={previewImageUrl} />}
 
             <PromptBox3D
               cameras={cameras}
@@ -384,7 +469,7 @@ export const Stage3DBody = () => {
               uploadImage={
                 editor
                   ? (((arg: Parameters<typeof editor.adapter.uploadImage>[0]) =>
-                      editor.adapter.uploadImage(arg)) as never)
+                    editor.adapter.uploadImage(arg)) as never)
                   : undefined
               }
               handleCameraSelect={handleCameraSelect}
@@ -400,6 +485,16 @@ export const Stage3DBody = () => {
                 editor.positive_prompt = prompt;
               }}
               snapshotCurrentFrame={editor?.snapShotOfCurrentFrame.bind(editor)}
+              modelSelector={inlineModelSelector}
+              onBeforeSubmit={() => {
+                const currentUserToken =
+                  usePageSceneStore.getState().currentUserToken;
+                if (!currentUserToken && editor?.adapter.promptSignup) {
+                  editor.adapter.promptSignup("generate");
+                  return false;
+                }
+                return true;
+              }}
             />
 
             <LoadingDots
@@ -409,21 +504,27 @@ export const Stage3DBody = () => {
               message={editorLoader.message}
             />
 
-            <div className="absolute bottom-6 left-6 z-20 flex items-center gap-3">
-              <ClassyModelSelector
-                items={STAGE_3D_PAGE_MODEL_LIST}
-                page={PAGE_ID}
-                panelTitle="Select Model"
-                panelClassName="min-w-[300px]"
-                buttonClassName="bg-transparent p-0 text-lg hover:bg-transparent text-white/80 hover:text-white"
-                showIconsInList
-                triggerLabel="Model"
-              />
-            </div>
-            <div className="absolute bottom-6 right-6 z-20 flex items-center gap-2">
-              <CostCalculatorButton modelPage={PAGE_ID} />
-              <HelpMenuButton />
-            </div>
+            {modelSelectorPlacement === "bottom-left" && (
+              <div className="absolute bottom-6 left-6 z-20 flex items-center gap-3">
+                <ClassyModelSelector
+                  items={STAGE_3D_PAGE_MODEL_LIST}
+                  page={PAGE_ID}
+                  panelTitle="Select Model"
+                  panelClassName="min-w-[300px]"
+                  buttonClassName="bg-transparent p-0 text-lg hover:bg-transparent text-white/80 hover:text-white"
+                  showIconsInList
+                  triggerLabel="Model"
+                />
+              </div>
+            )}
+            {(showCostCalculator || showHelpMenu) && (
+              <div className="absolute bottom-6 right-6 z-20 flex items-center gap-2">
+                {showCostCalculator && (
+                  <CostCalculatorButton modelPage={PAGE_ID} />
+                )}
+                {showHelpMenu && <HelpMenuButton />}
+              </div>
+            )}
           </div>
         </div>
       </div>

@@ -23,4 +23,10 @@ pub struct OmniGenImageCostResponse {
 
   /// Whether the output will have a watermark.
   pub has_watermark: bool,
+
+  /// Whether failures are refunded.
+  /// True: 100% yes
+  /// False: 100% no
+  /// None: Unknown or variable
+  pub failures_are_refunded: Option<bool>,
 }

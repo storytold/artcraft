@@ -60,12 +60,17 @@ export const PageScene = ({ sceneToken }: { sceneToken?: string }) => {
     }
   });
 
+  // Sized container for Stage3D. The lib fills its parent; the
+  // Tauri host's TopBar lives outside this box, so we reserve space
+  // here. 56px matches the `.topbar-spacer` height in base.css.
   return (
-    <Stage3D
-      adapter={adapter}
-      sceneToken={sceneToken}
-      cacheJsonString={cacheJsonString}
-      onSceneSerialized={onSceneSerialized}
-    />
+    <div className="w-screen" style={{ height: "calc(100vh - 56px)" }}>
+      <Stage3D
+        adapter={adapter}
+        sceneToken={sceneToken}
+        cacheJsonString={cacheJsonString}
+        onSceneSerialized={onSceneSerialized}
+      />
+    </div>
   );
 };

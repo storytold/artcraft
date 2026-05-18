@@ -4,6 +4,7 @@ import { useSignals } from "@preact/signals-react/runtime";
 import {
   faArrowsRotate,
   faArrowsUpDownLeftRight,
+  faGlobe,
   faMagicWandSparkles,
   faPlus,
   faUpRightAndDownLeftFromCenter,
@@ -14,7 +15,6 @@ import {
 import { ButtonIconSelect } from "@storyteller/ui-button-icon-select";
 import { Button } from "@storyteller/ui-button";
 import { Tooltip } from "@storyteller/ui-tooltip";
-import { SettingsModal } from "@storyteller/ui-settings-modal";
 import { PopoverMenu } from "@storyteller/ui-popover";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -31,7 +31,15 @@ import {
 } from "../../PageSceneStore";
 import { AssetModal } from "../AssetMenu";
 
-export const Controls3D = () => {
+export interface Controls3DProps {
+  /** Show the magic-wand "Create 3D model from image" shortcut next
+   *  to the add-asset button. */
+  showImageTo3DButton?: boolean;
+}
+
+export const Controls3D = ({
+  showImageTo3DButton = true,
+}: Controls3DProps = {}) => {
   useSignals();
   const editor = useContext(EngineContext);
   const {
@@ -40,6 +48,8 @@ export const Controls3D = () => {
     setAssetModalVisibleDuringDrag,
     selectedMode,
     transformSpace,
+    currentUserToken,
+    hostOverlayVisible,
   } = usePageSceneStore(
     useShallow((s) => ({
       assetModalVisible: s.assetModalVisible,
@@ -47,10 +57,11 @@ export const Controls3D = () => {
       setAssetModalVisibleDuringDrag: s.setAssetModalVisibleDuringDrag,
       selectedMode: s.selectedMode,
       transformSpace: s.transformSpace,
+      currentUserToken: s.currentUserToken,
+      hostOverlayVisible: s.hostOverlayVisible,
     })),
   );
   const [showEmptySceneTooltip, setShowEmptySceneTooltip] = useState(false);
-  const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [upload3DIsShowing, setUpload3DIsShowing] = useState(false);
   const [isAddAssetPopoverOpen, setIsAddAssetPopoverOpen] = useState(false);
   const [uploadImageIsShowing, setUploadImageIsShowing] = useState(false);
@@ -66,7 +77,8 @@ export const Controls3D = () => {
       !isAddAssetPopoverOpen &&
       !upload3DIsShowing &&
       !uploadImageIsShowing &&
-      !uploadSplatIsShowing;
+      !uploadSplatIsShowing &&
+      !hostOverlayVisible;
 
     setShowEmptySceneTooltip(isSceneEmpty);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -78,6 +90,7 @@ export const Controls3D = () => {
     upload3DIsShowing,
     uploadImageIsShowing,
     uploadSplatIsShowing,
+    hostOverlayVisible,
   ]);
 
   const handleModeChange = (value: string) => {
@@ -102,6 +115,15 @@ export const Controls3D = () => {
   };
 
   const handleAddAssetAction = (action: string) => {
+    const requiresAuth =
+      action === "library" ||
+      action === "upload-3d" ||
+      action === "upload-image" ||
+      action === "upload-splat";
+    if (requiresAuth && !currentUserToken && editor?.adapter.promptSignup) {
+      editor.adapter.promptSignup(action);
+      return;
+    }
     switch (action) {
       case "presets":
         handleOpenModal();
@@ -146,9 +168,9 @@ export const Controls3D = () => {
 
   return (
     <>
-      <div className="flex justify-center">
-        <div className="glass rounded-b-xl p-1.5 pr-2 text-white shadow-md">
-          <div className="flex items-center justify-center gap-2.5">
+      <div className="flex justify-center pt-2">
+        <div className="glass rounded-2xl p-1.5 text-white shadow-xl">
+          <div className="flex items-center justify-center gap-1.5">
             <div className="flex items-center gap-1.5">
               <div className="relative">
                 {showEmptySceneTooltip && (
@@ -230,38 +252,40 @@ export const Controls3D = () => {
                     ]}
                     onPanelAction={handleAddAssetAction}
                     showIconsInList
-                    buttonClassName={`h-9 w-9 rounded-[10px] text-lg ${
-                      showEmptySceneTooltip
-                        ? "bg-primary/90 hover:bg-primary/70"
-                        : "border-transparent bg-primary/90 hover:bg-primary/70"
-                    }`}
+                    buttonClassName={`h-9 w-9 rounded-xl text-lg ${showEmptySceneTooltip
+                      ? "bg-primary/90 hover:bg-primary/70"
+                      : "border-transparent bg-primary/90 hover:bg-primary/70"
+                      }`}
                     triggerIcon={
                       <FontAwesomeIcon icon={faPlus} className="text-xl" />
                     }
                   />
                 </Tooltip>
               </div>
-              <Tooltip
-                content="Create 3D model from image"
-                position="bottom"
-                delay={300}
-                closeOnClick
-              >
-                <Button
-                  icon={faMagicWandSparkles}
-                  className="text-md h-9 w-9 rounded-[10px] bg-white/15 transition-colors hover:bg-white/25"
-                  variant="secondary"
-                  onClick={handleOpenCreate3dModal}
-                />
-              </Tooltip>
+              {showImageTo3DButton && (
+                <Tooltip
+                  content="Create 3D model from image"
+                  position="bottom"
+                  delay={300}
+                  closeOnClick
+                >
+                  <Button
+                    icon={faMagicWandSparkles}
+                    className="text-md h-9 w-9 rounded-[10px] bg-white/15 transition-colors hover:bg-white/25"
+                    variant="secondary"
+                    onClick={handleOpenCreate3dModal}
+                  />
+                </Tooltip>
+              )}
             </div>
 
-            <span className="opacity-20">|</span>
+            <span className="opacity-10">|</span>
             <ButtonIconSelect
               options={modes}
               onOptionChange={handleModeChange}
               selectedOption={selectedMode}
             />
+            <span className="opacity-10">|</span>
             {selectedMode === "scale" ? (
               <Tooltip
                 content="Scale is always in local space"
@@ -270,8 +294,12 @@ export const Controls3D = () => {
               >
                 <button
                   disabled
-                  className="h-9 rounded-[10px] px-2.5 text-[10px] font-semibold font-mono bg-white/15 uppercase tracking-wide opacity-40 cursor-not-allowed"
+                  className="flex min-w-[92px] cursor-not-allowed items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-3 py-1.5 text-sm font-medium text-base-fg opacity-40 transition-colors duration-150"
                 >
+                  <FontAwesomeIcon
+                    icon={faCube}
+                    className="h-3 w-3 text-base-fg/60"
+                  />
                   Local
                 </button>
               </Tooltip>
@@ -282,9 +310,13 @@ export const Controls3D = () => {
                 delay={300}
               >
                 <button
-                  className="h-9 rounded-[10px] px-2.5 text-[10px] font-semibold font-mono bg-white/15 hover:bg-white/25 transition-colors uppercase tracking-wide"
+                  className="flex min-w-[92px] items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-3 py-1.5 text-sm font-medium text-base-fg transition-colors duration-150 hover:bg-white/[0.08]"
                   onClick={() => editor?.gizmo.toggleTransformSpace()}
                 >
+                  <FontAwesomeIcon
+                    icon={transformSpace === "world" ? faGlobe : faCube}
+                    className="h-3 w-3 text-base-fg/60"
+                  />
                   {transformSpace === "world" ? "World" : "Local"}
                 </button>
               </Tooltip>
@@ -294,13 +326,6 @@ export const Controls3D = () => {
       </div>
 
       <AssetModal />
-
-      <SettingsModal
-        isOpen={isSettingsModalOpen}
-        onClose={() => setIsSettingsModalOpen(false)}
-        globalAccountLogoutCallback={() => editor?.adapter.performLogout()}
-        initialSection="accounts"
-      />
 
       {editor &&
         editor.adapter.renderAssetUploader({

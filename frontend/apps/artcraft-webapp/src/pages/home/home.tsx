@@ -4,6 +4,7 @@ import {
   faImage,
   faVideo,
   faWandMagicSparkles,
+  faCube,
   faArrowRight,
 } from "@fortawesome/pro-solid-svg-icons";
 import type { IconDefinition } from "@fortawesome/fontawesome-svg-core";
@@ -38,6 +39,15 @@ const APPS: AppCard[] = [
     iconColor: "text-purple-300",
   },
   {
+    label: "Edit 3D",
+    description: "Compose 3D scenes and render with AI cameras.",
+    href: "/edit-3d",
+    icon: faCube,
+    accent: "from-amber-500/20 to-amber-500/0",
+    iconBg: "bg-amber-500/25 border-amber-400/30",
+    iconColor: "text-amber-300",
+  },
+  {
     label: "Background Change",
     description: "Swap or remove backgrounds with AI VFX.",
     href: "/background-change",
@@ -57,12 +67,12 @@ export function Home() {
 
       <section className="mt-12">
         <h2 className="text-sm font-semibold text-white/85 mb-4">Create</h2>
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-3 auto-rows-fr sm:grid-cols-2 lg:grid-cols-3">
           {APPS.map((app) => (
             <Link
               key={app.href}
               to={app.href}
-              className="bg-ui-controls/50 group relative overflow-hidden rounded-2xl p-5 hover:border-white/20 hover:bg-ui-controls"
+              className="bg-ui-controls/50 group relative h-full overflow-hidden rounded-2xl p-5 hover:border-white/20 hover:bg-ui-controls"
             >
               <div
                 className={`absolute -inset-px rounded-2xl bg-gradient-to-br ${app.accent} opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none`}

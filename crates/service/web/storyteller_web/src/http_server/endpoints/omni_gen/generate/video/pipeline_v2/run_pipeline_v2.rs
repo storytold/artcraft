@@ -17,6 +17,7 @@ use crate::http_server::endpoint_helpers::refund_wallet_after_api_failure::refun
 use crate::http_server::endpoints::omni_gen::generate::video::helpers::bill_wallet::bill_wallet;
 use crate::http_server::endpoints::omni_gen::generate::video::helpers::build_router_client::build_router_client;
 use crate::http_server::endpoints::omni_gen::generate::video::helpers::pipeline_result::PipelineResult;
+use crate::http_server::endpoints::omni_gen::generate::video::helpers::resolve_media_tokens_to_urls::resolve_media_tokens_to_urls;
 use crate::state::server_state::ServerState;
 
 pub struct RunPipelineV2Args<'a> {
@@ -42,6 +43,8 @@ pub async fn run_pipeline_v2(args: RunPipelineV2Args<'_>) -> Result<PipelineResu
     CommonVideoModel::HappyHorse1p0 => Provider::Seedance2Pro,
     CommonVideoModel::Seedance2p0 => Provider::Seedance2Pro,
     CommonVideoModel::Seedance2p0Fast => Provider::Seedance2Pro,
+    CommonVideoModel::Seedance2p0Global => Provider::GmiCloud,
+    CommonVideoModel::Seedance2p0FastGlobal => Provider::GmiCloud,
     _ => Provider::Fal,
   };
 
@@ -49,28 +52,38 @@ pub async fn run_pipeline_v2(args: RunPipelineV2Args<'_>) -> Result<PipelineResu
   let mut exec_builder = router_builder.clone();
   exec_builder.provider = provider;
 
+  // GmiCloud takes URLs directly (like Fal), not media file tokens.
+  // Resolve tokens to URLs before building.
+  if matches!(provider, Provider::GmiCloud) {
+    resolve_media_tokens_to_urls(&mut exec_builder, media_file_to_url_map.as_ref());
+  }
+
   let draft_or_request = exec_builder.build2()
       .map_err(|e| {
         warn!("Failed to build2 for v2 pipeline: {}", e);
         AdvancedCommonWebError::from_error(e)
       })?;
 
-  // 2. Calculate cost (swap provider to Artcraft for billing)
-  let mut cost_builder = router_builder.clone();
-  cost_builder.provider = Provider::Artcraft;
+  // 2. Calculate cost.
+  //    For Artcraft-billable models, swap provider to Artcraft so credits = cents.
+  //    For GmiCloud, use the execution request's cost directly (no Artcraft equivalent).
+  let cost = {
+    let mut cost_builder = router_builder.clone();
+    cost_builder.provider = Provider::Artcraft;
 
-  let cost = cost_builder.build2()
-    .map_err(|e| {
-      warn!("Failed to build2 cost estimate for v2: {}", e);
-      AdvancedCommonWebError::from_error(e)
-    })?
-    .estimate_cost()
-    .map_err(|e| {
-      warn!("Failed to estimate cost for v2: {}", e);
-      AdvancedCommonWebError::from_error(e)
-    })?
-    .cost_in_credits
-    .unwrap_or(0);
+    cost_builder.build2()
+      .map_err(|e| {
+        warn!("Failed to build2 cost estimate for v2: {}", e);
+        AdvancedCommonWebError::from_error(e)
+      })?
+      .estimate_cost()
+      .map_err(|e| {
+        warn!("Failed to estimate cost for v2: {}", e);
+        AdvancedCommonWebError::from_error(e)
+      })?
+      .cost_in_credits
+      .unwrap_or(0)
+  };
 
   info!("v2 estimated cost: {} credits", cost);
 

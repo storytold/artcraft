@@ -22,6 +22,10 @@ export interface SceneMeta {
   ownerToken: string | undefined;
   isModified: boolean | undefined;
   isInitializing: boolean;
+  // URL to the author's generation result for this scene, shown in
+  // view-only mode's PreviewBox. Host populates this from the
+  // adapter.loadScene response. Optional; absent ⇒ no preview rendered.
+  previewImageUrl?: string;
 }
 
 export type SceneObjectKind = "object" | "character" | "shape";
@@ -146,6 +150,10 @@ interface PageSceneState {
   // overlays
   editorLoader: EditorLoader;
   editorLetterBox: boolean;
+  // Three.js perf stats panel (FPS / ms / mb). Toggled via the
+  // backtick keybind. Owned by React (PerfStatsOverlay) so the panel
+  // only renders inside PageScene and never leaks into other routes.
+  statsVisible: boolean;
   showErrorDialog: boolean;
   errorDialogTitle: string;
   errorDialogMessage: string;
@@ -182,6 +190,12 @@ interface PageSceneState {
   // Current logged-in user (read from host auth signal). Used for
   // ownership permission checks in ControlsTopButtons.
   currentUserToken: string | undefined;
+  // Host-owned full-screen overlay (e.g. webapp's splash modal) is
+  // open. Lib components use this to suppress in-editor affordances
+  // that would otherwise bleed visually through or behind the modal
+  // (the empty-scene "Click + to add" bouncing hint, etc.). The host
+  // toggles this via setHostOverlayVisible from its own modal store.
+  hostOverlayVisible: boolean;
 
   // canvas DOM refs (set by canvas components on mount; consumed by
   // the engine + hooks)
@@ -216,6 +230,7 @@ interface PageSceneState {
   setPoseMode: (mode: PoseMode) => void;
   setShowPoseControls: (visible: boolean) => void;
   setGridVisible: (visible: boolean) => void;
+  toggleStats: () => void;
   setIgnoreKeyDelete: (ignore: boolean) => void;
   disableHotkeyInput: (level: DomLevels) => void;
   enableHotkeyInput: (level: DomLevels) => void;
@@ -269,6 +284,7 @@ interface PageSceneState {
   // and authentication.userInfo into these).
   setSceneMeta: (meta: Partial<SceneMeta>) => void;
   setCurrentUserToken: (token: string | undefined) => void;
+  setHostOverlayVisible: (visible: boolean) => void;
 
   // canvas refs
   setSceneContainerEl: (el: HTMLDivElement | null) => void;
@@ -306,6 +322,7 @@ export const usePageSceneStore = create<PageSceneState>((set, get) => ({
 
   editorLoader: { isShowing: false, message: "Loading Editor Engine 🦊" },
   editorLetterBox: true,
+  statsVisible: false,
   showErrorDialog: false,
   errorDialogTitle: "Error!",
   errorDialogMessage: "Something went wrong.",
@@ -338,6 +355,7 @@ export const usePageSceneStore = create<PageSceneState>((set, get) => ({
     isInitializing: true,
   },
   currentUserToken: undefined,
+  hostOverlayVisible: false,
 
   sceneContainerEl: null,
   editorCanvasEl: null,
@@ -388,6 +406,7 @@ export const usePageSceneStore = create<PageSceneState>((set, get) => ({
   setPoseMode: (mode) => set({ poseMode: mode }),
   setShowPoseControls: (visible) => set({ showPoseControls: visible }),
   setGridVisible: (visible) => set({ gridVisible: visible }),
+  toggleStats: () => set((s) => ({ statsVisible: !s.statsVisible })),
   setIgnoreKeyDelete: (ignore) => set({ ignoreKeyDelete: ignore }),
   disableHotkeyInput: (level) => {
     const status = get().hotkeyStatus;
@@ -485,8 +504,28 @@ export const usePageSceneStore = create<PageSceneState>((set, get) => ({
   setSceneMeta: (meta) =>
     set((s) => ({ sceneMeta: { ...s.sceneMeta, ...meta } })),
   setCurrentUserToken: (token) => set({ currentUserToken: token }),
+  setHostOverlayVisible: (visible) => set({ hostOverlayVisible: visible }),
 
   setSceneContainerEl: (el) => set({ sceneContainerEl: el }),
   setEditorCanvasEl: (el) => set({ editorCanvasEl: el }),
   setCamViewCanvasEl: (el) => set({ camViewCanvasEl: el }),
 }));
+
+// True when the visitor is looking at someone else's scene (owner is
+// known and isn't them). A blank scene has no owner so this returns
+// false; the scene owner viewing their own scene returns false too.
+//
+// This no longer gates mutations — visitors can fully interact with
+// the scene. It only drives ownership-aware UI: the primary Save
+// button switches to "Save copy" (forks the scene to the visitor's
+// account on confirm) and the PreviewBox shows the author's
+// generation result.
+const computeIsVisitingOthersScene = (s: PageSceneState): boolean =>
+  s.sceneMeta.ownerToken !== undefined &&
+  s.sceneMeta.ownerToken !== s.currentUserToken;
+
+export const useIsVisitingOthersScene = (): boolean =>
+  usePageSceneStore(computeIsVisitingOthersScene);
+
+export const getIsVisitingOthersScene = (): boolean =>
+  computeIsVisitingOthersScene(usePageSceneStore.getState());

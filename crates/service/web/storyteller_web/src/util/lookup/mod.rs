@@ -1,5 +1,6 @@
 pub mod fetch_all_required_media_files;
 pub mod lookup_image_urls_as_optional_list;
 pub mod lookup_image_urls_as_map;
+pub mod lookup_media_files_as_cdn_url_list_and_map;
 pub mod lookup_media_file_urls_as_map;
 pub mod resolve_referral_info;

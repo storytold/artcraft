@@ -1,16 +1,12 @@
-use std::collections::HashMap;
 use std::sync::Arc;
 
 use actix_web::web::Json;
 use actix_web::{web, HttpRequest};
 use log::{error, info, warn};
 use sqlx::Acquire;
-use url::Url;
 
 use artcraft_api_defs::omni_gen::cost_and_generate_requests::omni_gen_image_cost_and_generate_request::OmniGenImageCostAndGenerateRequest;
 use artcraft_api_defs::omni_gen::generate_response::omni_gen_image_generate_response::OmniGenImageGenerateResponse;
-use artcraft_router::client::router_client::RouterClient;
-use artcraft_router::client::router_fal_client::RouterFalClient;
 use artcraft_router::generate::generate_image::generate_image_response::GenerateImageResponse;
 use enums::by_table::debug_logs::debug_log_type::DebugLogType;
 use enums::by_table::prompt_context_items::prompt_context_semantic_type::PromptContextSemanticType;
@@ -31,18 +27,16 @@ use mysql_queries::queries::prompt_context_items::insert_batch_prompt_context_it
   insert_batch_prompt_context_items, InsertBatchArgs, PromptContextItem,
 };
 use mysql_queries::queries::prompts::insert_prompt::{insert_prompt, InsertPromptArgs};
-use tokens::tokens::generic_inference_jobs::InferenceJobToken;
-use tokens::tokens::media_files::MediaFileToken;
 use tokens::tokens::non_unique::debug_logs_event_token::DebugLogEventToken;
 
-use crate::billing::wallets::attempt_wallet_deduction::attempt_wallet_deduction_else_common_web_error;
 use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
 use crate::http_server::endpoints::generate::common::payments_error_test::payments_error_test;
+use crate::http_server::endpoints::omni_gen::generate::image::hydrate_to_router_request::hydrate_to_router_request;
+use crate::http_server::endpoints::omni_gen::generate::image::pipeline_v1::run_pipeline_v1::{run_pipeline_v1, RunPipelineV1Args};
+use crate::http_server::endpoints::omni_gen::generate::image::pipeline_v2::run_pipeline_v2::{run_pipeline_v2, should_use_pipeline_v2, RunPipelineV2Args};
 use crate::http_server::validations::validate_idempotency_token_format::validate_idempotency_token_format;
 use crate::state::server_state::ServerState;
-use crate::util::lookup::lookup_image_urls_as_map::lookup_image_urls_as_map;
-
-use super::distill_image_request::distill_image_request;
+use crate::util::lookup::lookup_media_files_as_cdn_url_list_and_map::lookup_media_files_as_cdn_url_list_and_map;
 
 /// Generate an image using the omni-gen unified endpoint.
 #[utoipa::path(
@@ -112,52 +106,18 @@ pub async fn omni_gen_image_generate_handler(
     })?;
 
   // ==================== RESOLVE MEDIA TOKENS ==================== //
-  // Look up media file tokens BEFORE distilling. distill_image_request takes
-  // a pre-computed `MediaFileToken -> Url` map and does no I/O of its own.
 
-  let media_file_hydration_map: Option<HashMap<MediaFileToken, Url>> = match request.image_media_tokens.as_ref() {
-    Some(tokens) if !tokens.is_empty() => {
-      info!("Resolving {} image media tokens to CDN URLs", tokens.len());
-      let raw = lookup_image_urls_as_map(
-        &http_request,
-        &mut mysql_connection,
-        server_state.server_environment,
-        tokens,
-      ).await?;
-      let parsed: HashMap<MediaFileToken, Url> = raw.into_iter()
-        .filter_map(|(token, url_str)| match Url::parse(&url_str) {
-          Ok(url) => Some((token, url)),
-          Err(err) => {
-            warn!("Failed to parse media file URL {:?}: {:?}", url_str, err);
-            None
-          }
-        })
-        .collect();
-      Some(parsed)
-    }
-    _ => None,
-  };
+  // Look up media file tokens BEFORE distilling. Pipeline execution should not do I/O.
+  let resolved_media = lookup_media_files_as_cdn_url_list_and_map(
+    &http_request,
+    &mut mysql_connection,
+    server_state.server_environment,
+    request.image_media_tokens.as_deref().unwrap_or(&[]),
+  ).await?;
 
-  // ==================== DISTILL ==================== //
+  // ==================== HYDRATE ROUTER REQUEST ==================== //
 
-  let distilled = distill_image_request(&request, media_file_hydration_map.as_ref())?;
-
-  // ==================== BILLING ==================== //
-
-  let cost = distilled.cost.cost_in_credits.unwrap_or(0);
-
-  info!("Charging wallet: {} credits", cost);
-
-  let apriori_job_token = InferenceJobToken::generate();
-
-  if cost > 0 {
-    attempt_wallet_deduction_else_common_web_error(
-      user_token,
-      Some(apriori_job_token.as_str()),
-      cost,
-      &mut mysql_connection,
-    ).await?;
-  }
+  let router_builder = hydrate_to_router_request(&request)?;
 
   // ==================== DEBUG LOG: HTTP REQUEST ==================== //
 
@@ -172,25 +132,31 @@ pub async fn omni_gen_image_generate_handler(
     warn!("Failed to insert HTTP request debug log: {:?}", err);
   }
 
-  // ==================== EXECUTE GENERATION ==================== //
+  // ==================== PIPELINE DISPATCH ==================== //
 
-  let fal_client = RouterFalClient::new(
-    server_state.fal.api_key.clone(),
-    server_state.fal.webhook_url.clone(),
-  );
-
-  let router_client = RouterClient::Fal(fal_client);
-
-  let generation_response = distilled.plan().generate_image(&router_client)
-    .await
-    .map_err(|e| {
-      warn!("Image generation failed: {:?}", e);
-      AdvancedCommonWebError::from_error(e)
-    })?;
+  let pipeline_result = if should_use_pipeline_v2(&router_builder) {
+    info!("Using image pipeline v2");
+    run_pipeline_v2(RunPipelineV2Args {
+      router_builder: &router_builder,
+      server_state: &server_state,
+      mysql_connection: &mut mysql_connection,
+      user_token,
+      resolved_media: &resolved_media,
+    }).await?
+  } else {
+    info!("Using image pipeline v1");
+    run_pipeline_v1(RunPipelineV1Args {
+      router_builder: &router_builder,
+      server_state: &server_state,
+      mysql_connection: &mut mysql_connection,
+      user_token,
+      resolved_media: &resolved_media,
+    }).await?
+  };
 
   // ==================== DEBUG LOG: FAL REQUEST ==================== //
 
-  if let GenerateImageResponse::Fal(ref fal_payload) = generation_response {
+  if let GenerateImageResponse::Fal(ref fal_payload) = pipeline_result.response {
     if let Some(ref outbound_request) = fal_payload.maybe_outbound_request {
       if let Err(err) = insert_debug_log(InsertDebugLogArgs {
         apriori_debug_log_event_token: Some(&debug_log_event_token),
@@ -205,7 +171,7 @@ pub async fn omni_gen_image_generate_handler(
     }
   }
 
-  let external_job_id = match &generation_response {
+  let external_job_id = match &pipeline_result.response {
     GenerateImageResponse::Artcraft(p) => {
       p.inference_job_token.as_str().to_string()
     }
@@ -291,7 +257,7 @@ pub async fn omni_gen_image_generate_handler(
 
   let db_result = insert_generic_inference_job_for_fal_queue_with_apriori_job_token(
     InsertGenericInferenceForFalWithAprioriJobTokenArgs {
-      apriori_job_token: &apriori_job_token,
+      apriori_job_token: &pipeline_result.apriori_job_token,
       uuid_idempotency_token: &idempotency_token,
       maybe_external_third_party_id: &external_job_id,
       fal_category: FalCategory::ImageGeneration,

@@ -295,8 +295,8 @@ export default function Navbar() {
                               <button
                                 onClick={handleLogout}
                                 className={twMerge(
-                                  active ? "bg-white/[0.04]" : "",
-                                  "block w-full text-left px-4 py-2 text-sm text-white/70 transition-colors",
+                                  active ? "bg-red-500/10" : "",
+                                  "block w-full text-left px-4 py-2 text-sm text-red-400 hover:text-red-300 transition-colors",
                                 )}
                               >
                                 Sign out

@@ -1,8 +1,10 @@
 export interface RefImage {
   id: string;
   url: string;
-  file: File;
-  mediaToken: string;
+  fullUrl?: string;
+  file?: File;
+  mediaToken?: string;
+  isCustom?: boolean;
 }
 
 export interface RefVideo {

@@ -64,6 +64,15 @@ export function invalidateSession(): void {
   cachedAt = 0;
 }
 
+export function updateSessionUser(partial: Partial<UserInfo>): void {
+  const current = useSessionStore.getState().user;
+  if (!current) return;
+  useSessionStore.getState().setSession({
+    user: { ...current, ...partial },
+  });
+  invalidateSession();
+}
+
 // Attach the auth-change listener exactly once per page load. Login/logout/
 // password-reset flows dispatch this event; every consumer shares the resulting
 // store update instead of each re-running its own effect.

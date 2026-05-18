@@ -1,10 +1,10 @@
 import * as THREE from "three";
 import {
   OrbitControls,
-  OutlinePass,
   PointerLockControls,
 } from "three/examples/jsm/Addons.js";
 import { TransformControls } from "./TransformControls";
+import type { SelectionOutlinePass } from "./SelectionOutlinePass";
 import { SceneManager, SceneObject } from "./scene_manager_api";
 import { isPointerLockSupported } from "./browserChecks";
 import type { FreeCamControlState } from "./cameraMath";
@@ -77,7 +77,7 @@ export type MouseControlsDeps = {
   timeline_mouse: THREE.Vector2 | undefined;
   raycaster: THREE.Raycaster | undefined;
   control: TransformControls | undefined;
-  outlinePass: OutlinePass | undefined;
+  selectionPass: SelectionOutlinePass | undefined;
   scene: THREE.Scene;
   publishSelect: Function;
   updateSelectedUI: Function;
@@ -86,7 +86,7 @@ export type MouseControlsDeps = {
   getAssetType: Function;
   setSelected: Function;
   isMovable: Function;
-  enable_stats: Function;
+  toggle_stats: Function;
 
   // Typed event bus — every engine→store write goes through here.
   bus: EngineEventBus;
@@ -110,7 +110,7 @@ export class MouseControls {
   timeline_mouse: THREE.Vector2 | undefined;
   control: TransformControls | undefined;
   raycaster: THREE.Raycaster | undefined;
-  outlinePass: OutlinePass | undefined;
+  selectionPass: SelectionOutlinePass | undefined;
   scene: THREE.Scene;
   publishSelect: Function;
   updateSelectedUI: Function;
@@ -123,7 +123,7 @@ export class MouseControls {
   private cameraViewControls: FreeCamControlState | null;
   private isMouseClicked: boolean = false;
   private isMovable: Function;
-  enable_stats: Function;
+  toggle_stats: Function;
 
   private kinMode: KinMode = KinMode.NONE;
   private fkHelper: FKHelper;
@@ -157,7 +157,7 @@ export class MouseControls {
     this.timeline_mouse = deps.timeline_mouse;
     this.raycaster = deps.raycaster;
     this.control = deps.control;
-    this.outlinePass = deps.outlinePass;
+    this.selectionPass = deps.selectionPass;
     this.scene = deps.scene;
     this.publishSelect = deps.publishSelect;
     this.updateSelectedUI = deps.updateSelectedUI;
@@ -167,7 +167,7 @@ export class MouseControls {
     this.setSelected = deps.setSelected;
     this.sceneManager = undefined;
     this.isMovable = deps.isMovable;
-    this.enable_stats = deps.enable_stats;
+    this.toggle_stats = deps.toggle_stats;
     this.fkHelper = new FKHelper({
       camera: this.camera!,
       domElement: this.control!.domElement,
@@ -202,7 +202,7 @@ export class MouseControls {
     if (this.control == undefined) {
       return;
     }
-    if (this.outlinePass == undefined) {
+    if (this.selectionPass == undefined) {
       return;
     }
     if (remove_outline) {
@@ -211,7 +211,7 @@ export class MouseControls {
       this.publishSelect();
     }
     this.hideTransformControls();
-    if (remove_outline) this.outlinePass.selectedObjects = [];
+    if (remove_outline) this.selectionPass.setSelectedObjects([]);
   }
 
   hideTransformControls() {
@@ -247,8 +247,8 @@ export class MouseControls {
       this.control.attach(currentObject);
     }
 
-    if (this.selected && this.outlinePass) {
-      this.outlinePass.selectedObjects = this.selected;
+    if (this.selected && this.selectionPass) {
+      this.selectionPass.setSelectedObjects(this.selected);
     }
     this.transform_interaction = true;
     // Contact react land — updateSelectedUI emits InspectorPanelChangedEvent
@@ -441,9 +441,6 @@ export class MouseControls {
         } finally {
           this.isProcessing = false;
         }
-      } else if (event.key === "0") {
-        // Stats Menu
-        this.enable_stats();
       }
     }
 
@@ -581,7 +578,7 @@ export class MouseControls {
       this.raycaster == undefined ||
       this.mouse == undefined ||
       this.control == undefined ||
-      this.outlinePass == undefined ||
+      this.selectionPass == undefined ||
       !this.camera_last_pos.equals(camera_pos)
     ) {
       this.camera_last_pos.copy(camera_pos);

@@ -47,6 +47,7 @@ pub(crate) fn estimate_video_cost_artcraft_seedance2p0_fast(
     is_unlimited: false,
     is_rate_limited: false,
     has_watermark: false,
+    failures_are_refunded: None,
   }
 }
 

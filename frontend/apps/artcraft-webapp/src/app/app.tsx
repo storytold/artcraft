@@ -15,6 +15,7 @@ import { ToastContainer } from "../components/toast/toast";
 import CreateImage from "../pages/create-image";
 import CreateVideo from "../pages/create-video";
 import CreateVFX from "../pages/create-vfx";
+import PageScene from "../pages/pagescene";
 import Pricing from "../pages/pricing";
 import Support from "../pages/support/support";
 import Login from "../pages/login";
@@ -121,6 +122,8 @@ export function App() {
           <Route path="/create-image" element={<CreateImage />} />
           <Route path="/create-video" element={<CreateVideo />} />
           <Route path="/background-change" element={<CreateVFX />} />
+          <Route path="/edit-3d" element={<PageScene />} />
+          <Route path="/edit-3d/:sceneToken" element={<PageScene />} />
           <Route path="/support" element={<Support />} />
           <Route path="/pricing" element={<Pricing />} />
 

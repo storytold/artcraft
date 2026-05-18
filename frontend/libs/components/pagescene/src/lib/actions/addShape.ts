@@ -19,6 +19,11 @@ export async function addShape(
   // can re-route through scene.instantiate's name switch. obj.name gets
   // overridden below with the display label ("Cube", "Point Light").
   obj.userData.shapeKey = item.media_id;
+  // Default userData.color so the inspector's color swatch + native
+  // picker always read a valid #RRGGBB (the input would otherwise be
+  // uncontrolled-value=undefined and some browsers refuse to open the
+  // color dialog).
+  obj.userData.color = "#ffffff";
   obj.name = item.name ?? "shape";
 
   editor.history.record(new CreateAction(editor, obj));

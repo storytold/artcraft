@@ -60,9 +60,6 @@
       "path": "../label/tsconfig.lib.json"
     },
     {
-      "path": "../settings-modal/tsconfig.lib.json"
-    },
-    {
       "path": "../button-icon-select/tsconfig.lib.json"
     },
     {
@@ -81,16 +78,10 @@
       "path": "../checkbox/tsconfig.lib.json"
     },
     {
-      "path": "../tooltip/tsconfig.lib.json"
-    },
-    {
       "path": "../button/tsconfig.lib.json"
     },
     {
       "path": "../button-dropdown/tsconfig.lib.json"
-    },
-    {
-      "path": "../popover/tsconfig.lib.json"
     },
     {
       "path": "../promptbox/tsconfig.lib.json"
@@ -109,6 +100,12 @@
     },
     {
       "path": "../../model-list/tsconfig.lib.json"
+    },
+    {
+      "path": "../tooltip/tsconfig.lib.json"
+    },
+    {
+      "path": "../popover/tsconfig.lib.json"
     },
     {
       "path": "../model-selector/tsconfig.lib.json"

@@ -35,8 +35,14 @@ pub struct FalVideoResponsePayload {
 }
 
 #[derive(Clone, Debug)]
+pub struct GmiCloudVideoResponsePayload {
+  pub request_id: String,
+}
+
+#[derive(Clone, Debug)]
 pub enum GenerateVideoResponse {
   Artcraft(ArtcraftVideoResponsePayload),
+  GmiCloud(GmiCloudVideoResponsePayload),
   Muapi(MuapiVideoResponsePayload),
   Seedance2Pro(Seedance2proVideoResponsePayload),
   Fal(FalVideoResponsePayload),
@@ -60,6 +66,13 @@ impl GenerateVideoResponse {
   pub fn get_seedance2pro_payload(&self) -> Option<Seedance2proVideoResponsePayload> {
     match self {
       Self::Seedance2Pro(p) => Some(p.clone()),
+      _ => None,
+    }
+  }
+
+  pub fn get_gmicloud_payload(&self) -> Option<GmiCloudVideoResponsePayload> {
+    match self {
+      Self::GmiCloud(p) => Some(p.clone()),
       _ => None,
     }
   }

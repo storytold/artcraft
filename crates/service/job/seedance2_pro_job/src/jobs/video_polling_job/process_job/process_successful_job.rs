@@ -94,11 +94,12 @@ pub async fn process_successful_job(
   );
 
   // Upload to public bucket.
-  if let Err(err) = deps
+  let upload_result = deps
     .public_bucket_client
     .upload_file_with_content_type_process(object_path, &video_bytes, "video/mp4")
-    .await
-  {
+    .await;
+
+  if let Err(err) = upload_result {
     error!("Error uploading video for order {}: {:?}", order.order_id, err);
     return alert_pager_and_return_err(
       &deps.pager,
@@ -118,7 +119,7 @@ pub async fn process_successful_job(
   let maybe_frame_height = order.results.first().map(|r| r.height);
 
   // Insert media file record.
-  let media_file_token = match MediaFileInsertBuilder::new()
+  let media_file_result = MediaFileInsertBuilder::new()
     .maybe_creator_user(job.maybe_creator_user_token.as_ref())
     .maybe_creator_anonymous_visitor(job.maybe_creator_anonymous_visitor_token.as_ref())
     .creator_ip_address(&job.creator_ip_address)
@@ -135,8 +136,9 @@ pub async fn process_successful_job(
     .maybe_prompt_token(job.maybe_prompt_token.as_ref())
     .public_bucket_directory_hash(&bucket_path)
     .insert_pool(&deps.mysql_pool)
-    .await
-  {
+    .await;
+
+  let media_file_token = match media_file_result {
     Ok(token) => token,
     Err(err) => {
       error!("Error inserting media file record for order {}: {:?}", order.order_id, err);

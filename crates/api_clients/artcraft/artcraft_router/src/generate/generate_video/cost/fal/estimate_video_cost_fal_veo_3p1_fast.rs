@@ -16,5 +16,6 @@ pub(crate) fn estimate_video_cost_fal_veo_3p1_fast(
     is_unlimited: false,
     is_rate_limited: false,
     has_watermark: false,
+    failures_are_refunded: None,
   }
 }

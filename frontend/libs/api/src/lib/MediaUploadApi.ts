@@ -225,6 +225,27 @@ export class MediaUploadApi extends ApiManager {
     return this.Upload({ endpoint, blob: file, fileName, uuid, options });
   }
 
+  public async UploadSpzFile({
+    file,
+    fileName,
+    uuid,
+    maybe_title,
+    maybe_visibility = Visibility.Public,
+  }: {
+    file: File;
+    fileName: string;
+    uuid: string;
+    maybe_title?: string;
+    maybe_visibility?: Visibility;
+  }): Promise<ApiResponse<string>> {
+    const endpoint = `${this.getApiSchemeAndHost()}/v1/media_files/upload/spz`;
+    const options: Record<string, string | number | undefined> = {
+      maybe_title,
+      maybe_visibility: maybe_visibility?.toString(),
+    };
+    return this.Upload({ endpoint, blob: file, fileName, uuid, options });
+  }
+
   public async UploadNewScene({
     blob,
     fileName,

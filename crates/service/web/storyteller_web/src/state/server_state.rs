@@ -96,6 +96,8 @@ pub struct ServerState {
 
   pub fal: FalData,
 
+  pub gmicloud: GmiCloudData,
+
   pub beeble: BeebleData,
 
   pub seedance2pro: Seedance2ProData,
@@ -322,6 +324,12 @@ pub struct TrollBans {
 pub struct FalData {
   pub api_key: FalApiKey,
   pub webhook_url: String,
+}
+
+/// GmiCloud integration
+#[derive(Clone)]
+pub struct GmiCloudData {
+  pub api_key: gmicloud_client::creds::gmicloud_api_key::GmiCloudApiKey,
 }
 
 /// Beeble SwitchX integration

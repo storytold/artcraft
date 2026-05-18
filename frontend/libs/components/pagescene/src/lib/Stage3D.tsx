@@ -26,6 +26,23 @@ export interface Stage3DProps {
   /** Called on unmount with the serialized scene JSON. The host
    *  decides where to put it (tab store, localStorage, nowhere). */
   onSceneSerialized?: (json: string) => void;
+  /** Show the bottom-right "Costs" cost-calculator button. Defaults
+   *  to true so existing hosts (Tauri) keep their current chrome;
+   *  hosts can opt out (e.g. the webapp suppresses it). */
+  showCostCalculator?: boolean;
+  /** Show the top-bar "Create 3D model from image" magic-wand
+   *  shortcut. Defaults to true; hosts without an Image-to-3D
+   *  destination (e.g. the webapp) can hide it. */
+  showImageTo3DButton?: boolean;
+  /** Show the bottom-right help menu button. Defaults to true; hosts
+   *  whose help menu wiring isn't yet plumbed (e.g. the webapp) can
+   *  hide it. */
+  showHelpMenu?: boolean;
+  /** Where to render the model picker. `"bottom-left"` (default) keeps
+   *  the floating ClassyModelSelector that Tauri uses; `"prompt-box"`
+   *  hides it and renders a compact selector inside the prompt-box
+   *  toolbar instead, matching the webapp's other prompt-box chrome. */
+  modelSelectorPlacement?: "bottom-left" | "prompt-box";
 }
 
 export const Stage3D = ({
@@ -33,6 +50,10 @@ export const Stage3D = ({
   sceneToken,
   cacheJsonString,
   onSceneSerialized,
+  showCostCalculator = true,
+  showImageTo3DButton = true,
+  showHelpMenu = true,
+  modelSelectorPlacement = "bottom-left",
 }: Stage3DProps) => {
   // Engine's remountEngine() gate reads is3DPageMounted. With Stage3D
   // mounting only when the host's tab/route puts us on screen, the
@@ -52,7 +73,12 @@ export const Stage3D = ({
       cacheJsonString={cacheJsonString}
       onSceneSerialized={onSceneSerialized}
     >
-      <Stage3DBody />
+      <Stage3DBody
+        showCostCalculator={showCostCalculator}
+        showImageTo3DButton={showImageTo3DButton}
+        showHelpMenu={showHelpMenu}
+        modelSelectorPlacement={modelSelectorPlacement}
+      />
       <DragComponent />
       <PrecisionSelector />
       <EditorLoadingBar />

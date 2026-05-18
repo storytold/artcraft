@@ -7,7 +7,6 @@ use log::info;
 
 use artcraft_api_defs::omni_gen::cost_and_generate_requests::omni_gen_video_cost_and_generate_request::OmniGenVideoCostAndGenerateRequest;
 use artcraft_client::endpoints::omni_gen::generate::video::omni_gen_video::omni_gen_video_generate;
-use artcraft_client::utils::api_host::ApiHost;
 use tokens::tokens::media_files::MediaFileToken;
 
 use crate::utils::parse_video_model::parse_video_model;
@@ -51,9 +50,7 @@ pub struct GenerateVideoArgs {
   #[arg(long)]
   pub audio_reference_tokens: Option<String>,
 
-  /// Use localhost:12345 instead of production API.
   #[arg(long)]
-  pub localhost: bool,
 
   /// Video model to use. Accepts canonical names (eg. "seedance_2p0") or aliases
   /// (eg. "seedance2", "happyhorse", "veo3fast"). [default: seedance2p0]
@@ -77,7 +74,7 @@ pub async fn run(state: &ArtcraftState, args: GenerateVideoArgs) -> anyhow::Resu
     .ok_or_else(|| anyhow!("Unknown model '{}'. Try --help for supported names.", model_str))?;
 
   let prompt = resolve_prompt(&args.prompt)?;
-  let api_host = if args.localhost { ApiHost::Localhost { port: 12345 } } else { ApiHost::Storyteller };
+  let api_host = &state.api_host;
   let duration = args.duration.unwrap_or(5);
 
   info!("Model: {:?}", model);
@@ -131,7 +128,7 @@ pub async fn run(state: &ArtcraftState, args: GenerateVideoArgs) -> anyhow::Resu
   info!("Sending request to omni endpoint (idempotency_token={})...", idempotency_token);
 
   let response = omni_gen_video_generate(
-    &api_host,
+    api_host,
     Some(&state.creds),
     request,
   ).await.map_err(|err| anyhow!("Omni video generation failed: {}", err))?;

@@ -25,9 +25,11 @@ import { ToastTypes } from "@storyteller/ui-pagescene";
 import { GetCdnOrigin } from "~/api/GetCdnOrigin";
 import { BucketConfig } from "~/api/BucketConfig";
 import { MediaFilesApi as ArtcraftMediaFilesApi } from "~/Classes/ApiManager";
-import { UploadModal3D } from "~/components/reusable/UploadModal3D";
-import { UploadModalImage } from "~/components/reusable/UploadModalImage";
-import { UploadModalSplat } from "~/components/reusable/UploadModalSplat";
+import {
+  UploadModal3D,
+  UploadModalImage,
+  UploadModalSplat,
+} from "@storyteller/ui-upload-modal";
 import { uploadImage as hostUploadImage } from "~/components/reusable/UploadModalMedia/uploadImage";
 import { uploadPlaneFromMediaToken as hostUploadPlaneFromMediaToken } from "~/components/reusable/UploadModalMedia/uploadPlane";
 import { useTabStore } from "~/pages/Stores/TabState";
@@ -222,13 +224,25 @@ export const useTauriPageSceneAdapter = (
 
       setSceneCoverImage,
 
-      fetchAsset: async (url: string) => {
+      fetchAsset: async (
+        url: string,
+        init?: { signal?: AbortSignal },
+      ) => {
         // FetchProxy returns a Response; LoadWithoutCors returns
         // ArrayBuffer. Scene's load paths consume `.arrayBuffer()` from
         // the Response, so wrap LoadWithoutCors's result if FetchProxy
         // doesn't fit the URL (CDN media often needs the no-CORS path).
+        //
+        // signal is forwarded to FetchProxy (Tauri's plugin-http honors
+        // it). The Tauri-invoke LoadWithoutCors fallback can't be
+        // cancelled mid-flight — the lib's ticket guard still keeps
+        // late-arriving buffers from polluting the scene, we just lose
+        // the bandwidth saving in that fallback path.
+        if (init?.signal?.aborted) {
+          throw new DOMException("Aborted", "AbortError");
+        }
         try {
-          return await FetchProxy(url, {});
+          return await FetchProxy(url, { signal: init?.signal });
         } catch {
           const buffer = await LoadWithoutCors(url);
           return new Response(buffer);
@@ -284,6 +298,23 @@ export const useTauriPageSceneAdapter = (
           mediaFileToken: token,
         });
         return response.data!.media_links.cdn_url;
+      },
+
+      // Batch URL resolution via GET /v1/media_files/batch — backs the
+      // scene loader's warm cache so it can fire all per-asset binary
+      // fetches in parallel after a single metadata roundtrip.
+      getMediaUrlsByTokens: async (tokens: string[]) => {
+        if (tokens.length === 0) return {};
+        const mediaFilesApi = new MediaFilesApi();
+        const response = await mediaFilesApi.ListMediaFilesByTokens({
+          mediaTokens: tokens,
+        });
+        const urls: Record<string, string> = {};
+        for (const file of response.data ?? []) {
+          const cdn = file?.media_links?.cdn_url;
+          if (cdn) urls[file.token] = cdn;
+        }
+        return urls;
       },
 
       onSceneTitleChange: (meta) => signalScene(meta as never),

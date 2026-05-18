@@ -3,19 +3,19 @@
   "include": [],
   "references": [
     {
+      "path": "../gallery-modal"
+    },
+    {
       "path": "../modal"
     },
     {
       "path": "../loading"
     },
     {
-      "path": "../../common"
+      "path": "../checkbox"
     },
     {
       "path": "../file-uploader"
-    },
-    {
-      "path": "../input"
     },
     {
       "path": "../list-dropdown"

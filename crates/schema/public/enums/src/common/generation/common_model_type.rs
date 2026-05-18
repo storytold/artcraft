@@ -130,6 +130,10 @@ pub enum CommonModelType {
   Seedance2p0,
   #[serde(rename = "seedance_2p0_fast")]
   Seedance2p0Fast,
+  #[serde(rename = "seedance_2p0_g")]
+  Seedance2p0Global,
+  #[serde(rename = "seedance_2p0_fast_g")]
+  Seedance2p0FastGlobal,
   #[serde(rename = "sora_2")]
   Sora2,
   #[serde(rename = "sora_2_pro")]
@@ -219,6 +223,8 @@ impl CommonModelType {
       Self::Seedance1p5Pro => "seedance_1p5_pro",
       Self::Seedance2p0 => "seedance_2p0",
       Self::Seedance2p0Fast => "seedance_2p0_fast",
+      Self::Seedance2p0Global => "seedance_2p0_g",
+      Self::Seedance2p0FastGlobal => "seedance_2p0_fast_g",
       Self::Sora2 => "sora_2",
       Self::Sora2Pro => "sora_2_pro",
       Self::Veo2 => "veo_2",
@@ -289,6 +295,8 @@ impl CommonModelType {
       "seedance_1p5_pro" => Ok(Self::Seedance1p5Pro),
       "seedance_2p0" => Ok(Self::Seedance2p0),
       "seedance_2p0_fast" => Ok(Self::Seedance2p0Fast),
+      "seedance_2p0_g" => Ok(Self::Seedance2p0Global),
+      "seedance_2p0_fast_g" => Ok(Self::Seedance2p0FastGlobal),
       "sora_2" => Ok(Self::Sora2),
       "sora_2_pro" => Ok(Self::Sora2Pro),
       "veo_2" => Ok(Self::Veo2),
@@ -363,6 +371,8 @@ impl CommonModelType {
       Self::Seedance1p5Pro,
       Self::Seedance2p0,
       Self::Seedance2p0Fast,
+      Self::Seedance2p0Global,
+      Self::Seedance2p0FastGlobal,
       Self::Sora2,
       Self::Sora2Pro,
       Self::Veo2,
@@ -434,6 +444,8 @@ impl CommonModelType {
       Self::Seedance1p5Pro => CommonModelClass::Video,
       Self::Seedance2p0 => CommonModelClass::Video,
       Self::Seedance2p0Fast => CommonModelClass::Video,
+      Self::Seedance2p0Global => CommonModelClass::Video,
+      Self::Seedance2p0FastGlobal => CommonModelClass::Video,
       Self::Sora2 => CommonModelClass::Video,
       Self::Sora2Pro => CommonModelClass::Video,
       Self::Veo2 => CommonModelClass::Video,
@@ -514,6 +526,8 @@ mod tests {
       assert_serialization(CommonModelType::Seedance1p5Pro, "seedance_1p5_pro");
       assert_serialization(CommonModelType::Seedance2p0, "seedance_2p0");
       assert_serialization(CommonModelType::Seedance2p0Fast, "seedance_2p0_fast");
+      assert_serialization(CommonModelType::Seedance2p0Global, "seedance_2p0_g");
+      assert_serialization(CommonModelType::Seedance2p0FastGlobal, "seedance_2p0_fast_g");
       assert_serialization(CommonModelType::Sora2, "sora_2");
       assert_serialization(CommonModelType::Sora2Pro, "sora_2_pro");
       assert_serialization(CommonModelType::Veo2, "veo_2");
@@ -581,6 +595,8 @@ mod tests {
       assert_eq!(CommonModelType::Seedance1p5Pro.to_str(), "seedance_1p5_pro");
       assert_eq!(CommonModelType::Seedance2p0.to_str(), "seedance_2p0");
       assert_eq!(CommonModelType::Seedance2p0Fast.to_str(), "seedance_2p0_fast");
+      assert_eq!(CommonModelType::Seedance2p0Global.to_str(), "seedance_2p0_g");
+      assert_eq!(CommonModelType::Seedance2p0FastGlobal.to_str(), "seedance_2p0_fast_g");
       assert_eq!(CommonModelType::Sora2.to_str(), "sora_2");
       assert_eq!(CommonModelType::Sora2Pro.to_str(), "sora_2_pro");
       assert_eq!(CommonModelType::Veo2.to_str(), "veo_2");
@@ -648,6 +664,8 @@ mod tests {
       assert_eq!(CommonModelType::from_str("seedance_1p5_pro").unwrap(), CommonModelType::Seedance1p5Pro);
       assert_eq!(CommonModelType::from_str("seedance_2p0").unwrap(), CommonModelType::Seedance2p0);
       assert_eq!(CommonModelType::from_str("seedance_2p0_fast").unwrap(), CommonModelType::Seedance2p0Fast);
+      assert_eq!(CommonModelType::from_str("seedance_2p0_g").unwrap(), CommonModelType::Seedance2p0Global);
+      assert_eq!(CommonModelType::from_str("seedance_2p0_fast_g").unwrap(), CommonModelType::Seedance2p0FastGlobal);
       assert_eq!(CommonModelType::from_str("sora_2").unwrap(), CommonModelType::Sora2);
       assert_eq!(CommonModelType::from_str("sora_2_pro").unwrap(), CommonModelType::Sora2Pro);
       assert_eq!(CommonModelType::from_str("veo_2").unwrap(), CommonModelType::Veo2);
@@ -669,7 +687,7 @@ mod tests {
     #[test]
     fn all_variants() {
       let mut variants = CommonModelType::all_variants();
-      assert_eq!(variants.len(), 58);
+      assert_eq!(variants.len(), 60);
       // Image models
       assert_eq!(variants.pop_first(), Some(CommonModelType::Flux1Dev));
       assert_eq!(variants.pop_first(), Some(CommonModelType::Flux1Schnell));
@@ -717,6 +735,8 @@ mod tests {
       assert_eq!(variants.pop_first(), Some(CommonModelType::Seedance1p5Pro));
       assert_eq!(variants.pop_first(), Some(CommonModelType::Seedance2p0));
       assert_eq!(variants.pop_first(), Some(CommonModelType::Seedance2p0Fast));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::Seedance2p0Global));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::Seedance2p0FastGlobal));
       assert_eq!(variants.pop_first(), Some(CommonModelType::Sora2));
       assert_eq!(variants.pop_first(), Some(CommonModelType::Sora2Pro));
       assert_eq!(variants.pop_first(), Some(CommonModelType::Veo2));

@@ -6,6 +6,8 @@ import {
 } from "./storyteller_proxy_3d_object";
 import Scene from "../engine/scene";
 import { BoneJSONHelper } from "../engine/KinHelpers/BoneJSONHelper";
+import type { LoadTicket } from "../engine/save_manager";
+import { BBOX_INTERNAL_KEY, isInternalBbox } from "../engine/internalBbox";
 
 interface LookUpDictionary {
   [key: string]: StoryTellerProxy3DObject;
@@ -62,6 +64,7 @@ export class StoryTellerProxyScene {
     const results: ObjectJSON[] = [];
     if (this.scene.scene != null) {
       for (const child of this.scene.scene.children) {
+        if (isInternalBbox(child)) continue;
         if (child.userData["media_id"] != undefined) {
           if (this.lookUpDictionary[child.uuid] == null) {
             this.lookUpDictionary[child.uuid] = new StoryTellerProxy3DObject(
@@ -99,6 +102,7 @@ export class StoryTellerProxyScene {
     const results: ObjectJSON[] = [];
     if (this.scene.scene != null) {
       for (const pchild of this.scene.scene.children) {
+        if (isInternalBbox(pchild)) continue;
         if (this.version >= 1.0) {
           if (pchild.userData["media_id"] != undefined) {
             console.debug("Object JSON:", pchild.toJSON());
@@ -120,109 +124,170 @@ export class StoryTellerProxyScene {
     scene_json: ObjectJSON[],
     skybox_media_id: string,
     version: number,
+    ticket?: LoadTicket,
   ) {
-    if (scene_json != null && this.scene != null) {
-      while (this.scene.scene.children.length > 0) {
-        this.scene.scene.remove(this.scene.scene.children[0]);
-      }
-      for (const json_object of scene_json) {
-        const token: string = json_object.media_file_token;
-        let obj;
-        switch (token) {
-          case "Parim": {
-            // The display name ("Cube", "Point Light") doesn't match
-            // Scene.instantiate's geometry switch — that switch wants
-            // the geometry key ("Box", "PointLight"). addShape stashes
-            // the original key in userData.shapeKey so we can recover it
-            // here; without this, instantiate falls through to its else
-            // branch and returns an empty Mesh with undefined geometry,
-            // which renders invisibly and isn't raycast-pickable.
-            const shapeKey =
-              (json_object.user_data?.shapeKey as string | undefined) ??
-              json_object.object_name;
-            const newScene = await this.scene.instantiate(shapeKey);
-            const prim_uuid = newScene.uuid;
-            obj = this.scene.get_object_by_uuid(prim_uuid);
-            break;
-          }
-          case "DirectionalLight": {
-            obj = this.scene._create_base_lighting();
-            break;
-          }
-          default: {
-            if (token.includes("m_")) {
-              obj = await this.scene.loadObject(
-                token,
-                json_object.object_name,
-                true,
-                new THREE.Vector3(-0.5, 1.5, 0),
-                version,
-              );
-              // Add any missing userdata back to the object
-              obj.userData = json_object.user_data;
+    if (scene_json == null || this.scene == null) return;
 
-              // Add rig data if present
-              if (json_object.rigData) {
-                const boneHelper = new BoneJSONHelper(obj);
-                boneHelper.poseFromBoneJSON(json_object.rigData);
-              } else {
-                console.log("No rig data found");
-              }
-            } else if (token.includes("Point::")) {
-              const keyframe_uuid = token.replace("Point::", "");
-              obj = this.scene.createPoint(
-                new THREE.Vector3(0, 0, 0),
-                new THREE.Vector3(0, 0, 0),
-                new THREE.Vector3(0, 0, 0),
-                keyframe_uuid,
-              );
-            } else if (token.includes("Image::")) {
-              const prim_uuid = (await this.scene.instantiate(token)).uuid;
-              obj = this.scene.get_object_by_uuid(prim_uuid);
-
-              if (obj) {
-                obj.name = json_object.object_name;
-                obj.userData["name"] = json_object.object_name;
-              }
-            }
-            break;
-          }
-        }
-        if (obj) {
-          obj.position.copy(json_object.position);
-          obj.rotation.copy(
-            new THREE.Euler(
-              json_object.rotation.x,
-              json_object.rotation.y,
-              json_object.rotation.z,
-            ),
-          );
-          obj.scale.copy(json_object.scale);
-          obj.name = json_object.object_name;
-          obj.userData.name = json_object.object_user_data_name;
-          obj.uuid = json_object.object_uuid;
-          obj.userData["media_id"] = json_object.media_file_token;
-          obj.userData["locked"] = json_object.locked;
-          obj.userData["color"] = json_object.color;
-          obj.userData["metalness"] = json_object.metalness;
-          obj.userData["shininess"] = json_object.shininess;
-          obj.userData["specular"] = json_object.specular;
-          obj.userData["media_file_type"] = json_object.media_file_type;
-          // Re-stash the geometry key on the recreated shape so the
-          // next save round-trip survives — the wholesale userData
-          // copy that the m_* branch does isn't applied here.
-          if (json_object.user_data?.shapeKey) {
-            obj.userData.shapeKey = json_object.user_data.shapeKey;
-          }
-
-          if (json_object.visible !== undefined) {
-            this.scene.setVisible(obj.uuid, json_object.visible);
-          }
-          this.scene.setColor(obj.uuid, json_object.color);
-        }
-      }
-      this.scene._createGrid();
-      this.scene.updateSkybox(skybox_media_id);
+    while (this.scene.scene.children.length > 0) {
+      this.scene.scene.remove(this.scene.scene.children[0]);
     }
+
+    // Warm Scene's URL cache up front so per-asset loadObject() calls
+    // never hit the network for token→URL resolution. One batch call
+    // (or N parallel singles via the fallback) instead of an N+1
+    // sequential chain.
+    const mediaTokens = scene_json
+      .map((j) => j.media_file_token)
+      .filter((t) => t.startsWith("m_"));
+    if (mediaTokens.length > 0) {
+      await this.scene.warmMediaURLs(mediaTokens);
+    }
+    if (ticket?.cancelled) return;
+
+    // Build per-object load tasks. Each task creates its Object3D
+    // (network calls happen here, in parallel across tasks) and
+    // returns the pair so the post-pass can apply transforms in
+    // original JSON order. Errors don't abort siblings — Promise
+    // .allSettled lets one bad asset land while the rest succeed.
+    const tasks = scene_json.map(
+      async (
+        json_object,
+      ): Promise<{
+        json_object: ObjectJSON;
+        obj: THREE.Object3D | undefined;
+      }> => {
+        // Defensive: __bbox_internal helpers are rebuilt at splat
+        // load and shouldn't appear in saved JSON, but skip any that
+        // sneak in from hand-edited or pre-fix snapshots.
+        if (json_object.user_data?.[BBOX_INTERNAL_KEY] === true) {
+          return { json_object, obj: undefined };
+        }
+        const token = json_object.media_file_token;
+        if (token === "Parim") {
+          // The display name ("Cube", "Point Light") doesn't match
+          // Scene.instantiate's geometry switch — that switch wants
+          // the geometry key ("Box", "PointLight"). addShape stashes
+          // the original key in userData.shapeKey so we can recover
+          // it here; without this, instantiate falls through to its
+          // else branch and returns an empty Mesh with undefined
+          // geometry, which renders invisibly and isn't raycast-
+          // pickable.
+          const shapeKey =
+            (json_object.user_data?.shapeKey as string | undefined) ??
+            json_object.object_name;
+          const newScene = await this.scene.instantiate(shapeKey);
+          return {
+            json_object,
+            obj: this.scene.get_object_by_uuid(newScene.uuid),
+          };
+        }
+        if (token === "DirectionalLight") {
+          return { json_object, obj: this.scene._create_base_lighting() };
+        }
+        if (token.includes("m_")) {
+          const obj = await this.scene.loadObject(
+            token,
+            json_object.object_name,
+            true,
+            new THREE.Vector3(-0.5, 1.5, 0),
+            version,
+            ticket?.signal,
+          );
+          // Older scene JSON may lack a `user_data` field; keep
+          // THREE.Object3D's default `{}` in that case so the
+          // downstream `obj.userData.name = ...` doesn't crash.
+          if (json_object.user_data) {
+            obj.userData = json_object.user_data;
+          }
+          if (json_object.rigData) {
+            const boneHelper = new BoneJSONHelper(obj);
+            boneHelper.poseFromBoneJSON(json_object.rigData);
+          }
+          return { json_object, obj };
+        }
+        if (token.includes("Point::")) {
+          const keyframe_uuid = token.replace("Point::", "");
+          const obj = this.scene.createPoint(
+            new THREE.Vector3(0, 0, 0),
+            new THREE.Vector3(0, 0, 0),
+            new THREE.Vector3(0, 0, 0),
+            keyframe_uuid,
+          );
+          return { json_object, obj };
+        }
+        if (token.includes("Image::")) {
+          const prim = await this.scene.instantiate(token);
+          const obj = this.scene.get_object_by_uuid(prim.uuid);
+          if (obj) {
+            obj.name = json_object.object_name;
+            obj.userData["name"] = json_object.object_name;
+          }
+          return { json_object, obj };
+        }
+        return { json_object, obj: undefined };
+      },
+    );
+
+    const settled = await Promise.allSettled(tasks);
+    if (ticket?.cancelled) return;
+
+    // Synchronous transform-application pass. We walk results in
+    // original JSON order to preserve scene.children insertion
+    // ordering for downstream consumers that rely on it (timeline,
+    // export, etc.).
+    for (const result of settled) {
+      if (result.status === "rejected") {
+        // Swallow aborts from cancelled loads — they're expected and
+        // don't represent a real failure.
+        const reason = result.reason as { name?: string } | undefined;
+        if (reason?.name !== "AbortError") {
+          console.error("Scene load: object failed to load", result.reason);
+        }
+        continue;
+      }
+      const { obj, json_object } = result.value;
+      if (!obj) continue;
+      obj.position.copy(json_object.position);
+      obj.rotation.copy(
+        new THREE.Euler(
+          json_object.rotation.x,
+          json_object.rotation.y,
+          json_object.rotation.z,
+        ),
+      );
+      obj.scale.copy(json_object.scale);
+      obj.name = json_object.object_name;
+      obj.userData.name = json_object.object_user_data_name;
+      obj.uuid = json_object.object_uuid;
+      obj.userData["media_id"] = json_object.media_file_token;
+      obj.userData["locked"] = json_object.locked;
+      obj.userData["color"] = json_object.color;
+      obj.userData["metalness"] = json_object.metalness;
+      obj.userData["shininess"] = json_object.shininess;
+      obj.userData["specular"] = json_object.specular;
+      obj.userData["media_file_type"] = json_object.media_file_type;
+      // Re-stash the geometry key on the recreated shape so the next
+      // save round-trip survives — the wholesale userData copy that
+      // the m_* branch does isn't applied here.
+      if (json_object.user_data?.shapeKey) {
+        obj.userData.shapeKey = json_object.user_data.shapeKey;
+      }
+      // Restore the persisted shape marker that setColor classifies on.
+      // instantiate already re-sets these on the "Parim" branch; this is
+      // explicit parity with shapeKey and future-proofs any other path.
+      if (json_object.user_data?.isShape !== undefined) {
+        obj.userData["isShape"] = json_object.user_data.isShape;
+      }
+      if (json_object.user_data?.shapeType !== undefined) {
+        obj.userData["shapeType"] = json_object.user_data.shapeType;
+      }
+      if (json_object.visible !== undefined) {
+        this.scene.setVisible(obj.uuid, json_object.visible);
+      }
+      this.scene.setColor(obj.uuid, json_object.color);
+    }
+
+    this.scene._createGrid();
+    this.scene.updateSkybox(skybox_media_id);
   }
 }

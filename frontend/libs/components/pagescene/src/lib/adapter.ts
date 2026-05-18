@@ -88,7 +88,15 @@ export interface PageSceneAdapter {
   loadScene(token: string): Promise<unknown>;
   // Wraps Tauri-flavored CORS-bypassed fetches. Used by Scene's GLTF
   // loader paths that resolve CDN URLs the browser can't fetch directly.
-  fetchAsset(url: string): Promise<Response>;
+  // Accepts an optional AbortSignal so the scene loader can cancel
+  // in-flight asset downloads when its load is superseded (rapid tab
+  // switches, applyJson during loadScene). Adapters that can't honor
+  // cancellation may ignore the signal — the lib's ticket guard still
+  // protects state correctness.
+  fetchAsset(
+    url: string,
+    init?: { signal?: AbortSignal },
+  ): Promise<Response>;
 
   // Hosts. Engine builds CDN URLs (`${cdnOrigin}${bucket_path}`) and
   // API URLs (`${apiSchemeAndHost}/v1/...`); the host supplies both.
@@ -122,6 +130,14 @@ export interface PageSceneAdapter {
   // MediaFilesApi.GetMediaFileByToken. Used by Scene's asset loaders
   // when they only have the token, not the full URL.
   getMediaUrlByToken(token: string): Promise<string>;
+
+  // Resolve many tokens in one batch. Used by the scene loader to warm
+  // a URL cache up front so it can fire all asset downloads in parallel
+  // instead of doing an N+1 metadata roundtrip. Optional: when absent
+  // the lib falls back to Promise.all of getMediaUrlByToken.
+  // Hosts that wrap MediaFilesApi can implement this with
+  // ListMediaFilesByTokens (GET /v1/media_files/batch).
+  getMediaUrlsByTokens?(tokens: string[]): Promise<Record<string, string>>;
 
   // Visual viewport dimensions. Used by DnD asset-drop hit-testing
   // to detect "is this drop over the 3D canvas?" — the artcraft host
@@ -202,6 +218,27 @@ export interface PageSceneAdapter {
   // Auth/logout — the SettingsModal in Controls3D needs a logout
   // callback. Tauri host: setLogoutStates. Web host: web auth flow.
   performLogout(): void;
+
+  // Open the host's signup/login modal. Called when an anonymous
+  // visitor clicks a feature that requires an account (Save, Generate,
+  // Upload, "My Library"). Tauri host leaves it undefined — its user
+  // is always signed in. Webapp host wires this to its auth modal.
+  promptSignup?(reason?: string): void;
+
+  // Open the host's New-Scene chooser (e.g. webapp's splash modal). When
+  // defined, the lib's File > New Scene item delegates here instead of
+  // showing its inline confirm dialog. Tauri host leaves it undefined and
+  // keeps the existing behavior.
+  onRequestNewSceneSelector?(): void;
+
+  // Roll the current editor session back to the original scene the
+  // host loaded. Called when the user confirms the destructive Reset
+  // modal in the File menu. Implementations typically pull the
+  // original scene JSON from a host-side cache and feed it back
+  // through `editor.applyJson(json)`. When undefined the Reset menu
+  // item is hidden — Tauri leaves it off; webapp wires it to its
+  // per-token cache's stored `original` snapshot.
+  resetToOriginal?(): Promise<void> | void;
 
   // Optional event hooks — telemetry, host-side modals, tab title sync.
   onSelectionChange?(

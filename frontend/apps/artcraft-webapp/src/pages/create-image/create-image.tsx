@@ -268,6 +268,7 @@ export default function CreateImage() {
         .map((item) => ({
           id: Math.random().toString(36).substring(7),
           url: item.thumbnail || item.fullImage || "",
+          fullUrl: item.fullImage || undefined,
           file: new File([], "library-image"),
           mediaToken: item.id,
         }));
@@ -295,7 +296,7 @@ export default function CreateImage() {
       const imageMediaTokens = selectedModel.image_refs_supported
         ? referenceImages
             .map((img) => img.mediaToken)
-            .filter((t) => t.length > 0)
+            .filter((t): t is string => typeof t === "string" && t.length > 0)
         : undefined;
 
       const result = await enqueueImageGeneration({

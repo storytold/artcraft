@@ -9,13 +9,13 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faImages,
   faPlus,
-  faSpinner,
   faSpinnerThird,
   faXmark,
 } from "@fortawesome/pro-solid-svg-icons";
 import { faImage } from "@fortawesome/pro-regular-svg-icons";
 import { Button } from "@storyteller/ui-button";
 import { Tooltip } from "@storyteller/ui-tooltip";
+import { Modal } from "@storyteller/ui-modal";
 import { twMerge } from "tailwind-merge";
 import { UploaderStates } from "@storyteller/common";
 import {
@@ -75,6 +75,7 @@ export const ImagePromptRow = ({
   const [uploadingImages, setUploadingImages] = useState<
     { id: string; file: File }[]
   >([]);
+  const [previewImage, setPreviewImage] = useState<RefImage | null>(null);
 
   const referenceImagesRef = useRef(referenceImages);
   referenceImagesRef.current = referenceImages;
@@ -273,6 +274,7 @@ export const ImagePromptRow = ({
                         image={image}
                         allowReorder={allowReorder}
                         onRemove={handleRemoveReference}
+                        onPreview={(img) => setPreviewImage(img)}
                       />
                     ))}
                 </SortableContext>
@@ -285,6 +287,7 @@ export const ImagePromptRow = ({
                     key={image.id}
                     image={image}
                     onRemove={handleRemoveReference}
+                    onPreview={(img) => setPreviewImage(img)}
                   />
                 ))
             )}
@@ -371,14 +374,20 @@ export const ImagePromptRow = ({
             </div>
             <div className="flex items-center gap-2">
               {endFrameImage ? (
-                <div className="group relative aspect-square w-10 sm:w-14 overflow-hidden rounded-lg border-2 border-white/30 transition-all hover:border-white/80">
+                <div
+                  className="group relative aspect-square w-10 sm:w-14 overflow-hidden rounded-lg border-2 border-white/30 transition-all cursor-pointer hover:border-white/80"
+                  onClick={() => setPreviewImage(endFrameImage)}
+                >
                   <img
                     src={endFrameImage.url}
                     alt="End frame"
                     className="h-full w-full object-cover"
                   />
                   <button
-                    onClick={() => setEndFrameImage?.(undefined)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setEndFrameImage?.(undefined);
+                    }}
                     className="absolute right-[2px] top-[2px] flex h-5 w-5 cursor-pointer items-center justify-center rounded-full bg-black/50 text-white sm:opacity-0 backdrop-blur-md transition-colors hover:bg-black sm:group-hover:opacity-100"
                   >
                     <FontAwesomeIcon icon={faXmark} className="h-2.5 w-2.5" />
@@ -389,7 +398,7 @@ export const ImagePromptRow = ({
                   <FontAwesomeIcon
                     icon={faSpinnerThird}
                     spin
-                    className="h-6 w-6 text-white"
+                    className="h-5 w-5 text-white"
                   />
                 </div>
               ) : onPickEndFrameFromLibrary ? (
@@ -445,6 +454,25 @@ export const ImagePromptRow = ({
           </div>
         )}
       </div>
+
+      <Modal
+        isOpen={!!previewImage}
+        onClose={() => setPreviewImage(null)}
+        className="w-fit h-fit max-w-none bg-transparent border-0 p-0 shadow-none overflow-visible"
+        backdropClassName="!bg-black/80"
+        showClose={true}
+        closeOnOutsideClick={true}
+      >
+        {previewImage && (
+          <div className="relative flex items-center justify-center">
+            <img
+              src={previewImage.fullUrl || previewImage.url}
+              alt="Preview"
+              className="max-w-[90vw] max-h-[90vh] object-contain drop-shadow-2xl rounded-lg"
+            />
+          </div>
+        )}
+      </Modal>
     </>
   );
 };
@@ -454,11 +482,16 @@ export const ImagePromptRow = ({
 const ImageThumbnail = ({
   image,
   onRemove,
+  onPreview,
 }: {
   image: RefImage;
   onRemove: (id: string) => void;
+  onPreview?: (image: RefImage) => void;
 }) => (
-  <div className="group glass relative aspect-square w-10 sm:w-14 overflow-hidden rounded-lg border-2 border-white/30 transition-all hover:border-white/80">
+  <div
+    className="group glass relative aspect-square w-10 sm:w-14 overflow-hidden rounded-lg border-2 border-white/30 transition-all cursor-pointer hover:border-white/80"
+    onClick={() => onPreview?.(image)}
+  >
     <img
       src={image.url}
       alt="Reference"
@@ -480,10 +513,12 @@ const SortableImage = ({
   image,
   allowReorder,
   onRemove,
+  onPreview,
 }: {
   image: RefImage;
   allowReorder: boolean;
   onRemove: (id: string) => void;
+  onPreview?: (image: RefImage) => void;
 }) => {
   const {
     attributes,
@@ -505,6 +540,7 @@ const SortableImage = ({
       ref={setNodeRef}
       style={style}
       {...(allowReorder ? { ...attributes, ...listeners } : {})}
+      onClick={() => onPreview?.(image)}
       className={twMerge(
         "group glass relative aspect-square w-10 sm:w-14 overflow-hidden rounded-lg border-2 border-white/30 transition-opacity",
         allowReorder
@@ -546,7 +582,7 @@ const UploadingThumbnail = ({ file }: { file: File }) => {
         />
       </div>
       <div className="absolute inset-0 flex items-center justify-center bg-black/20">
-        <FontAwesomeIcon icon={faSpinner} spin className="h-6 w-6 text-white" />
+        <FontAwesomeIcon icon={faSpinnerThird} spin className="h-6 w-6 text-white" />
       </div>
     </div>
   );

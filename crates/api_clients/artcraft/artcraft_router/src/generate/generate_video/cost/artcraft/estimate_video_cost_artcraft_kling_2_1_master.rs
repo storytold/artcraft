@@ -14,5 +14,6 @@ pub(crate) fn estimate_video_cost_artcraft_kling_2_1_master(
     is_unlimited: false,
     is_rate_limited: false,
     has_watermark: false,
+    failures_are_refunded: None,
   }
 }
