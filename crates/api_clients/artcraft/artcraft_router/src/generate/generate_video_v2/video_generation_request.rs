@@ -5,6 +5,10 @@ use crate::generate::generate_video::generate_video_response::GenerateVideoRespo
 use crate::generate::generate_video::video_generation_cost_estimate::VideoGenerationCostEstimate;
 use crate::generate::generate_video_v2::providers::artcraft::happy_horse_1p0::cost::ArtcraftHappyHorse1p0CostState;
 use crate::generate::generate_video_v2::providers::artcraft::happy_horse_1p0::request::ArtcraftHappyHorse1p0RequestState;
+use crate::generate::generate_video_v2::providers::artcraft::preview_model::cost::ArtcraftPreviewModelCostState;
+use crate::generate::generate_video_v2::providers::artcraft::preview_model::request::ArtcraftPreviewModelRequestState;
+use crate::generate::generate_video_v2::providers::artcraft::preview_model_fast::cost::ArtcraftPreviewModelFastCostState;
+use crate::generate::generate_video_v2::providers::artcraft::preview_model_fast::request::ArtcraftPreviewModelFastRequestState;
 use crate::generate::generate_video_v2::providers::artcraft::seedance_2p0::cost::ArtcraftSeedance2p0CostState;
 use crate::generate::generate_video_v2::providers::artcraft::seedance_2p0::request::ArtcraftSeedance2p0RequestState;
 use crate::generate::generate_video_v2::providers::artcraft::seedance_2p0_fast::cost::ArtcraftSeedance2p0FastCostState;
@@ -27,6 +31,8 @@ use crate::generate::generate_video_v2::providers::kinovi::seedance_2p0_fast::re
 #[derive(Clone, Debug)]
 pub enum VideoGenerationRequest {
   ArtcraftHappyHorse1p0(ArtcraftHappyHorse1p0RequestState),
+  ArtcraftPreviewModel(ArtcraftPreviewModelRequestState),
+  ArtcraftPreviewModelFast(ArtcraftPreviewModelFastRequestState),
   ArtcraftSeedance2p0(ArtcraftSeedance2p0RequestState),
   ArtcraftSeedance2p0Fast(ArtcraftSeedance2p0FastRequestState),
   ArtcraftSeedance2p0G(ArtcraftSeedance2p0GRequestState),
@@ -43,6 +49,8 @@ impl VideoGenerationRequest {
   pub fn get_provider(&self) -> Provider {
     match self {
       Self::ArtcraftHappyHorse1p0(_) => Provider::Artcraft,
+      Self::ArtcraftPreviewModel(_) => Provider::Artcraft,
+      Self::ArtcraftPreviewModelFast(_) => Provider::Artcraft,
       Self::ArtcraftSeedance2p0(_) => Provider::Artcraft,
       Self::ArtcraftSeedance2p0Fast(_) => Provider::Artcraft,
       Self::ArtcraftSeedance2p0G(_) => Provider::Artcraft,
@@ -59,6 +67,8 @@ impl VideoGenerationRequest {
   pub fn estimate_cost(&self) -> Result<VideoGenerationCostEstimate, ArtcraftRouterError> {
     match self {
       VideoGenerationRequest::ArtcraftHappyHorse1p0(request) => Ok(ArtcraftHappyHorse1p0CostState::from_request(request).estimate_cost()),
+      VideoGenerationRequest::ArtcraftPreviewModel(request) => Ok(ArtcraftPreviewModelCostState::from_request(request).estimate_cost()),
+      VideoGenerationRequest::ArtcraftPreviewModelFast(request) => Ok(ArtcraftPreviewModelFastCostState::from_request(request).estimate_cost()),
       VideoGenerationRequest::ArtcraftSeedance2p0(request) => Ok(ArtcraftSeedance2p0CostState::from_request(request).estimate_cost()),
       VideoGenerationRequest::ArtcraftSeedance2p0Fast(request) => Ok(ArtcraftSeedance2p0FastCostState::from_request(request).estimate_cost()),
       VideoGenerationRequest::ArtcraftSeedance2p0G(request) => Ok(ArtcraftSeedance2p0GCostState::from_request(request).estimate_cost()),
@@ -76,6 +86,14 @@ impl VideoGenerationRequest {
   pub async fn send_request(&self, client: &RouterClient) -> Result<GenerateVideoResponse, ArtcraftRouterError> {
     match self {
       VideoGenerationRequest::ArtcraftHappyHorse1p0(request) => {
+        let client_ref = client.get_artcraft_client_ref()?;
+        request.send(client_ref).await
+      },
+      VideoGenerationRequest::ArtcraftPreviewModel(request) => {
+        let client_ref = client.get_artcraft_client_ref()?;
+        request.send(client_ref).await
+      },
+      VideoGenerationRequest::ArtcraftPreviewModelFast(request) => {
         let client_ref = client.get_artcraft_client_ref()?;
         request.send(client_ref).await
       },
