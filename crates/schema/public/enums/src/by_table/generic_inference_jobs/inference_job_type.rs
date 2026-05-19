@@ -31,6 +31,10 @@ pub enum InferenceJobType {
   #[serde(rename = "seedance2pro_character")]
   Seedance2ProCharacter,
 
+  /// Seedance 2 Pro Alt jobs. We poll for results.
+  #[serde(rename = "seedance2pro_alt_queue")]
+  Seedance2ProAltQueue,
+
   /// Beeble jobs. We poll for results.
   #[serde(rename = "beeble_queue")]
   BeebleQueue,
@@ -133,6 +137,7 @@ impl InferenceJobType {
       Self::GmiCloudQueue => "gmicloud_queue",
       Self::BeebleQueue => "beeble_queue",
       Self::Seedance2ProQueue => "seedance2pro_queue",
+      Self::Seedance2ProAltQueue => "seedance2pro_alt_queue",
       Self::Seedance2ProCharacter => "seedance2pro_character",
       Self::WorldlabsQueue => "worldlabs_queue",
       Self::VideoRender => "video_render",
@@ -165,6 +170,7 @@ impl InferenceJobType {
       "beeble_queue" => Ok(Self::BeebleQueue),
       "seedance2pro_queue" => Ok(Self::Seedance2ProQueue),
       "seedance2pro_character" => Ok(Self::Seedance2ProCharacter),
+      "seedance2pro_alt_queue" => Ok(Self::Seedance2ProAltQueue),
       "worldlabs_queue" => Ok(Self::WorldlabsQueue),
       "video_render" => Ok(Self::VideoRender),
       "live_portrait" => Ok(Self::LivePortrait),
@@ -199,6 +205,7 @@ impl InferenceJobType {
       Self::BeebleQueue,
       Self::Seedance2ProQueue,
       Self::Seedance2ProCharacter,
+      Self::Seedance2ProAltQueue,
       Self::WorldlabsQueue,
       Self::VideoRender,
       Self::LivePortrait,
@@ -244,6 +251,7 @@ mod tests {
       assert_serialization(InferenceJobType::BeebleQueue, "beeble_queue");
       assert_serialization(InferenceJobType::Seedance2ProQueue, "seedance2pro_queue");
       assert_serialization(InferenceJobType::Seedance2ProCharacter, "seedance2pro_character");
+      assert_serialization(InferenceJobType::Seedance2ProAltQueue, "seedance2pro_alt_queue");
       assert_serialization(InferenceJobType::WorldlabsQueue, "worldlabs_queue");
       assert_serialization(InferenceJobType::VideoRender, "video_render");
       assert_serialization(InferenceJobType::LivePortrait, "live_portrait");
@@ -274,6 +282,7 @@ mod tests {
       assert_eq!(InferenceJobType::BeebleQueue.to_str(), "beeble_queue");
       assert_eq!(InferenceJobType::Seedance2ProQueue.to_str(), "seedance2pro_queue");
       assert_eq!(InferenceJobType::Seedance2ProCharacter.to_str(), "seedance2pro_character");
+      assert_eq!(InferenceJobType::Seedance2ProAltQueue.to_str(), "seedance2pro_alt_queue");
       assert_eq!(InferenceJobType::WorldlabsQueue.to_str(), "worldlabs_queue");
       assert_eq!(InferenceJobType::VideoRender.to_str(), "video_render");
       assert_eq!(InferenceJobType::LivePortrait.to_str(), "live_portrait");
@@ -304,6 +313,7 @@ mod tests {
       assert_eq!(InferenceJobType::from_str("beeble_queue").unwrap(), InferenceJobType::BeebleQueue);
       assert_eq!(InferenceJobType::from_str("seedance2pro_queue").unwrap(), InferenceJobType::Seedance2ProQueue);
       assert_eq!(InferenceJobType::from_str("seedance2pro_character").unwrap(), InferenceJobType::Seedance2ProCharacter);
+      assert_eq!(InferenceJobType::from_str("seedance2pro_alt_queue").unwrap(), InferenceJobType::Seedance2ProAltQueue);
       assert_eq!(InferenceJobType::from_str("worldlabs_queue").unwrap(), InferenceJobType::WorldlabsQueue);
       assert_eq!(InferenceJobType::from_str("video_render").unwrap(), InferenceJobType::VideoRender);
       assert_eq!(InferenceJobType::from_str("live_portrait").unwrap(), InferenceJobType::LivePortrait);
@@ -330,7 +340,7 @@ mod tests {
     #[test]
     fn all_variants() {
       // Static check
-      const EXPECTED_COUNT : usize = 26;
+      const EXPECTED_COUNT : usize = 27;
       
       assert_eq!(InferenceJobType::all_variants().len(), EXPECTED_COUNT);
       assert_eq!(InferenceJobType::iter().len(), EXPECTED_COUNT);

@@ -22,6 +22,9 @@ use crate::payloads::generic_inference_args::generic_inference_args::GenericInfe
 pub struct InsertGenericInferenceForSeedance2ProWithAprioriJobTokenArgs<'e, 'c, E>
   where E: 'e + Executor<'c, Database = MySql>
 {
+  /// Which kinovi queue to use: standard or alternate
+  pub use_alternate_kinovi: bool,
+
   pub uuid_idempotency_token: &'e str,
 
   // NOTE: We'll generate this ahead of time so we can save it with billing info!
@@ -56,11 +59,22 @@ pub async fn insert_generic_inference_job_for_seedance2pro_queue_with_apriori_jo
   let serialized_args_payload = serde_json::ser::to_string(&args.maybe_inference_args)
       .map_err(|_e| anyhow!("could not encode inference args"))?;
 
-  const JOB_TYPE: InferenceJobType = InferenceJobType::Seedance2ProQueue;
   const INFERENCE_CATEGORY: InferenceCategory = InferenceCategory::VideoGeneration;
-  const PRODUCT_CATEGORY: InferenceJobProductCategory = InferenceJobProductCategory::Seedance2ProVideo;
-  const EXTERNAL_THIRD_PARTY: InferenceJobExternalThirdParty = InferenceJobExternalThirdParty::Seedance2Pro;
   const STATUS: JobStatusPlus = JobStatusPlus::Pending;
+
+  let job_type;
+  let external_third_party;
+  let product_category;
+
+  if args.use_alternate_kinovi {
+    job_type = InferenceJobType::Seedance2ProAltQueue;
+    external_third_party = InferenceJobExternalThirdParty::Seedance2ProAlt;
+    product_category = InferenceJobProductCategory::Seedance2ProVideoAlt;
+  } else {
+    job_type = InferenceJobType::Seedance2ProQueue;
+    external_third_party = InferenceJobExternalThirdParty::Seedance2Pro;
+    product_category = InferenceJobProductCategory::Seedance2ProVideo;
+  }
 
   let query = sqlx::query!(
         r#"
@@ -113,12 +127,12 @@ SET
         args.apriori_job_token.as_str(),
         args.uuid_idempotency_token,
 
-        JOB_TYPE.to_str(),
+        job_type.to_str(),
 
-        EXTERNAL_THIRD_PARTY.to_str(),
+        external_third_party.to_str(),
         args.maybe_external_third_party_id,
 
-        PRODUCT_CATEGORY.to_str(),
+        product_category.to_str(),
         INFERENCE_CATEGORY.to_str(),
 
         args.maybe_prompt_token.map(|t| t.to_string()),
