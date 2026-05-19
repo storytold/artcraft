@@ -32,7 +32,7 @@ export function useSceneSplashActions(currentSceneToken: string | undefined) {
       if (loggedIn) markSplashSeen();
       close();
       navigate(
-        `/edit-3d/${scene.sceneToken}?output=${scene.outputToken}`,
+        `/edit-3d/${scene.sceneToken}?image=${scene.outputToken}`,
       );
     },
     [close, loggedIn, navigate],

@@ -14,8 +14,8 @@ import { EXAMPLE_SCENES } from "./splash/example-scenes";
 // pill that fades in below the model. Expanded: an inline panel that
 // grows upward with the same horizontal lane as the promptbox, listing
 // the curated example scenes minus the one the user is on. Clicking a
-// card navigates to that scene's demo URL — same shape as the splash
-// modal's pickExample.
+// card navigates to `/edit-3d/${sceneToken}?image=${outputToken}` —
+// same shape as the splash modal's pickExample.
 //
 // Rendering through the lib's slot (instead of as a separately
 // absolutely-positioned overlay) means the lib's `bottom-4` anchor
@@ -45,7 +45,7 @@ export function OtherScenesOverlay({
 
   const handlePick = (sceneToken: string, outputToken: string) => {
     setIsOpen(false);
-    navigate(`/edit-3d/${sceneToken}?output=${outputToken}`);
+    navigate(`/edit-3d/${sceneToken}?image=${outputToken}`);
   };
 
   return (

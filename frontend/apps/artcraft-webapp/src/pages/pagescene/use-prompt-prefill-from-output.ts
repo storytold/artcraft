@@ -1,8 +1,15 @@
 // Seeds the 3D editor's prompt-box state from the prompt that produced
-// the `?output=<media_token>` media. Used by the splash example flow and
-// by any lightbox/handoff that passes a rendered output through to the
-// 3D editor — opening "Lone Drifter" should drop the user into the same
+// the `?image=<media_token>` media (also accepts the legacy `?output=` /
+// `?demo=` aliases via the caller — see pagescene.tsx's `imageToken`
+// derivation). Used by the splash example flow and by any
+// lightbox/handoff that passes a rendered output through to the 3D
+// editor — opening "Lone Drifter" should drop the user into the same
 // prompt and model the example was generated with.
+//
+// The `?video=` token is intentionally *not* used here: when a demo
+// link carries both an image and a video, the user-facing intent is
+// "this image's prompt is what you'd want to start from"; the video
+// only drives the preview side of the overlay.
 //
 // Aspect ratio is intentionally not restored: Stage3DBody's cold-sync
 // applies the selected model's defaultAspectRatio (16:9 for the

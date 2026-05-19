@@ -94,11 +94,20 @@ export default function PageScene() {
 function PageSceneEditor() {
   const { sceneToken } = useParams<{ sceneToken?: string }>();
   const [searchParams] = useSearchParams();
-  // `?output=<media_token>` (alias `?demo=`) flips the editor into demo
-  // mode: the named output media renders in a top-right picture-in-picture
-  // card alongside the live scene. Empty string is normalized to null.
-  const demoOutputToken =
-    searchParams.get("output") || searchParams.get("demo") || null;
+  // `?image=`, `?video=`, and the legacy `?output=` / `?demo=` aliases
+  // flip the editor into demo mode: the named media renders in a
+  // top-right picture-in-picture card alongside the live scene. `image`
+  // and `output`/`demo` are equivalent — they name the image side of
+  // the preview (the legacy aliases keep existing shared links working).
+  // `video` names a video token shown on the video side. When both sides
+  // are present, the card adds a toggle and starts on video.
+  const imageToken =
+    searchParams.get("image") ||
+    searchParams.get("output") ||
+    searchParams.get("demo") ||
+    null;
+  const videoToken = searchParams.get("video") || null;
+  const demoToken = imageToken || videoToken;
   const { user } = useSession();
   const navigate = useNavigate();
   const { setOpen } = useSidebar();
@@ -210,7 +219,7 @@ function PageSceneEditor() {
   // `?output=`, Stage3DBody's cold-sync handles the default letterbox by
   // reading the selected model's defaultAspectRatio (now 16:9 for the
   // InstructiveEdit-tagged models that populate STAGE_3D_PAGE_MODEL_LIST).
-  usePromptPrefillFromOutput(demoOutputToken);
+  usePromptPrefillFromOutput(imageToken);
 
   const navigateToImageTo3D = useCallback(() => {
     navigate("/create-image");
@@ -292,7 +301,7 @@ function PageSceneEditor() {
         promptboxAboveStackSlot={
           <OtherScenesOverlay
             currentSceneToken={sceneToken}
-            demoOutputToken={demoOutputToken}
+            demoOutputToken={demoToken}
           />
         }
       />
@@ -303,7 +312,9 @@ function PageSceneEditor() {
           adds. Both components portal themselves out of this wrapper. */}
       <GalleryModal mode="view" />
       <GalleryDragComponent />
-      {demoOutputToken && <DemoOutputOverlay outputToken={demoOutputToken} />}
+      {demoToken && (
+        <DemoOutputOverlay imageToken={imageToken} videoToken={videoToken} />
+      )}
       <SceneSplashModal currentSceneToken={sceneToken} />
     </div>
   );

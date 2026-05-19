@@ -1,5 +1,5 @@
 // Example-scene data for the edit-3D splash. Each card opens
-// `/edit-3d/${sceneToken}?output=${outputToken}` so the editor mounts
+// `/edit-3d/${sceneToken}?image=${outputToken}` so the editor mounts
 // the scene and the demo-output overlay renders the AI-generated still
 // next to it. Real per-scene tokens land later; for now every entry
 // points at the same demo pair so the feature is exercised end-to-end.
