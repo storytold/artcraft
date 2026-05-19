@@ -13,7 +13,7 @@ use pager::client::pager::Pager;
 use crate::http_server::endpoints::health_check_handler::get_health_check_handler;
 use crate::http_server::http_server_shared_state::HttpServerSharedState;
 
-const DEFAULT_BIND_ADDRESS: &str = "0.0.0.0:12345";
+const DEFAULT_BIND_ADDRESS: &str = "0.0.0.0:13339";
 const DEFAULT_NUM_WORKERS: usize = 2;
 
 pub struct CreateServerArgs {
