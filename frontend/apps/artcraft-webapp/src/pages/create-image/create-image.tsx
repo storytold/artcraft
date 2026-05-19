@@ -416,6 +416,7 @@ export default function CreateImage() {
                   onSelect={handleModelChange}
                   mode="toggle"
                   panelTitle="Select Model"
+                  panelClassName="w-max"
                   showIconsInList
                   triggerIcon={
                     <img

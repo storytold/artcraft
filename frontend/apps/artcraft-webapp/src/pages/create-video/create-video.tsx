@@ -1,10 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faClock,
-  faWaveformLines,
-} from "@fortawesome/pro-solid-svg-icons";
+import { faClock, faWaveformLines } from "@fortawesome/pro-solid-svg-icons";
 import { CharactersApi, FilterMediaClasses } from "@storyteller/api";
 import type { OmniGenVideoModelInfo } from "@storyteller/api";
 import { ToggleButton } from "@storyteller/ui-button";
@@ -97,6 +94,13 @@ const LABEL_TO_RES: Record<string, string> = Object.fromEntries(
 
 // ── Model lookup ─────────────────────────────────────────────────────────
 
+// Placeholder entries shown in the picker as disabled "SOON" items. These are
+// UI-only — they are not in `_modelLookup`, so the click handler is a no-op
+// (the `disabled` flag also prevents the row from firing).
+const COMING_SOON_MODELS: ReadonlyArray<{ id: string; label: string }> = [
+  { id: "seedance_2p1", label: "Seedance 2.1" },
+];
+
 let _modelLookup = new Map<string, OmniGenVideoModelInfo>();
 
 function buildModelPopoverItems(
@@ -104,7 +108,7 @@ function buildModelPopoverItems(
   selectedId: string,
 ): PopoverItem[] {
   _modelLookup = new Map(models.map((m) => [m.model, m]));
-  return models.map((model) => ({
+  const apiItems: PopoverItem[] = models.map((model) => ({
     label: model.full_name || model.model,
     selected: model.model === selectedId,
     icon: (
@@ -116,6 +120,27 @@ function buildModelPopoverItems(
     ),
     action: model.model,
   }));
+  const comingSoonItems: PopoverItem[] = COMING_SOON_MODELS.map(
+    ({ id, label }) => ({
+      label,
+      selected: false,
+      disabled: true,
+      className: "!ml-0",
+      icon: (
+        <img
+          src={getModelCreatorIconPath(id)}
+          alt={`${id} logo`}
+          className="h-4 w-4 icon-auto-contrast"
+        />
+      ),
+      trailing: (
+        <span className="-ml-3.5 shrink-0 rounded-full bg-white/20 px-2 py-0 text-[10px] font-bold uppercase tracking-wider text-white">
+          Soon
+        </span>
+      ),
+    }),
+  );
+  return [...apiItems, ...comingSoonItems];
 }
 
 function buildSizePopoverItems(
@@ -750,11 +775,15 @@ export default function CreateVideo() {
         : undefined;
     const referenceVideoTokens =
       isReferenceMode && referenceVideos.length > 0
-        ? referenceVideos.map((v) => v.mediaToken).filter((t): t is string => typeof t === "string" && t.length > 0)
+        ? referenceVideos
+            .map((v) => v.mediaToken)
+            .filter((t): t is string => typeof t === "string" && t.length > 0)
         : undefined;
     const referenceAudioTokens =
       isReferenceMode && referenceAudios.length > 0
-        ? referenceAudios.map((a) => a.mediaToken).filter((t): t is string => typeof t === "string" && t.length > 0)
+        ? referenceAudios
+            .map((a) => a.mediaToken)
+            .filter((t): t is string => typeof t === "string" && t.length > 0)
         : undefined;
 
     // Extract character tokens from @-mentions in the prompt. Match longest
@@ -809,7 +838,11 @@ export default function CreateVideo() {
     console.log("[generate-video] params", baseParams);
 
     const modelLabel = selectedModel.full_name ?? selectedModel.model;
-    const batchId = startBatch(prompt, modelLabel, numVideos > 1 ? numVideos : undefined);
+    const batchId = startBatch(
+      prompt,
+      modelLabel,
+      numVideos > 1 ? numVideos : undefined,
+    );
 
     try {
       console.log("[generate-video] enqueueing job...");
@@ -975,6 +1008,7 @@ export default function CreateVideo() {
                   onSelect={handleModelChange}
                   mode="toggle"
                   panelTitle="Select Model"
+                  panelClassName="w-max"
                   showIconsInList
                   triggerIcon={
                     <img
