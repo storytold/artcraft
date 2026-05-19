@@ -20,6 +20,10 @@ pub struct JobDependencies {
   /// Session credentials for polling seedance2-pro.com.
   pub seedance2pro_session: Seedance2ProSession,
 
+  /// When true, this instance polls for alternate-account jobs
+  /// (Seedance2ProAltQueue / Seedance2ProAlt) instead of the primary ones.
+  pub is_alternate_mode: bool,
+
   pub server_environment: ServerEnvironment,
 
   pub job_stats: JobStats,

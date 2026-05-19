@@ -45,7 +45,11 @@ const ENV_SECRET_KEY: &str = "SECRET_KEY";
 const ENV_REGION_NAME: &str = "REGION_NAME";
 const ENV_PUBLIC_BUCKET_NAME: &str = "PUBLIC_BUCKET_NAME";
 const ENV_S3_ENDPOINT: &str = "S3_COMPATIBLE_ENDPOINT_URL";
-const ENV_SEEDANCE2PRO_COOKIES : &str = "SEEDANCE2PRO_COOKIES";
+
+const ENV_SEEDANCE2PRO_ALTERNATE: &str = "SEEDANCE2PRO_ALTERNATE";
+const ENV_SEEDANCE2PRO_COOKIES: &str = "SEEDANCE2PRO_COOKIES";
+const ENV_SEEDANCE2PRO_ALT_COOKIES: &str = "SEEDANCE2PRO_ALT_COOKIES";
+
 const ENV_MAX_JOB_AGE_THRESHOLD_HOURS: &str = "MAX_JOB_AGE_THRESHOLD_HOURS";
 
 #[tokio::main]
@@ -101,8 +105,20 @@ async fn main() -> AnyhowResult<()> {
     Some(bucket_timeout),
   )?;
 
+  // Alternate mode: uses a different Kinovi account, different job types, skips character polling.
+  let is_alternate_mode = easyenv::get_env_string_optional(ENV_SEEDANCE2PRO_ALTERNATE)
+    .map(|v| v.trim().to_lowercase())
+    .map(|v| v == "true" || v == "1")
+    .unwrap_or(false);
+
+  if is_alternate_mode {
+    info!("Running in ALTERNATE mode (SEEDANCE2PRO_ALTERNATE=true).");
+  }
+
   // Seedance2Pro session from cookie string
-  let seedance2pro_cookies = easyenv::get_env_string_required(ENV_SEEDANCE2PRO_COOKIES)?;
+  let cookie_env_var = if is_alternate_mode { ENV_SEEDANCE2PRO_ALT_COOKIES } else { ENV_SEEDANCE2PRO_COOKIES };
+  info!("Reading Seedance2Pro cookies from environment variable: {}", cookie_env_var);
+  let seedance2pro_cookies = easyenv::get_env_string_required(cookie_env_var)?;
   let seedance2pro_session = Seedance2ProSession::from_cookies_string(seedance2pro_cookies);
 
   // How often to poll for results (default: 15 seconds)
@@ -171,6 +187,7 @@ async fn main() -> AnyhowResult<()> {
     mysql_pool,
     public_bucket_client,
     seedance2pro_session,
+    is_alternate_mode,
     server_environment,
     job_stats,
     poll_interval_millis,
@@ -214,23 +231,27 @@ async fn main() -> AnyhowResult<()> {
 
   // Spawn all polling loops as concurrent tasks.
   let video_deps = job_dependencies.clone();
-  let character_deps = job_dependencies.clone();
-  let credits_deps = job_dependencies;
+  let credits_deps = job_dependencies.clone();
 
   let video_handle = tokio::spawn(async move {
     video_polling_main_loop(video_deps).await;
-  });
-
-  let character_handle = tokio::spawn(async move {
-    character_polling_main_loop(character_deps).await;
   });
 
   let credits_handle = tokio::spawn(async move {
     credits_checking_main_loop(credits_deps).await;
   });
 
-  // Wait for all to finish (they exit when application_shutdown is set).
-  let _ = tokio::join!(video_handle, character_handle, credits_handle);
+  if is_alternate_mode {
+    // Alternate mode: skip character polling entirely.
+    info!("Alternate mode: character polling is disabled.");
+    let _ = tokio::join!(video_handle, credits_handle);
+  } else {
+    let character_deps = job_dependencies;
+    let character_handle = tokio::spawn(async move {
+      character_polling_main_loop(character_deps).await;
+    });
+    let _ = tokio::join!(video_handle, character_handle, credits_handle);
+  }
 
   info!("Shutting down pager worker...");
   pager_for_shutdown.shutdown_worker();

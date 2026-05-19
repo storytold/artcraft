@@ -41,7 +41,11 @@ struct RawRecord {
 }
 
 /// Returns all non-terminal Seedance2Pro video jobs that have an associated order_id.
-pub async fn list_pending_seedance2pro_video_jobs(pool: &MySqlPool) -> Result<Vec<PendingSeedance2ProJob>, sqlx::Error> {
+pub async fn list_pending_seedance2pro_video_jobs(
+  pool: &MySqlPool,
+  external_third_party: InferenceJobExternalThirdParty,
+  job_type: InferenceJobType,
+) -> Result<Vec<PendingSeedance2ProJob>, sqlx::Error> {
   let records = sqlx::query_as!(
     RawRecord,
     r#"
@@ -64,8 +68,8 @@ WHERE jobs.maybe_external_third_party = ?
 
 LIMIT 25000
     "#,
-    InferenceJobExternalThirdParty::Seedance2Pro.to_str(),
-    InferenceJobType::Seedance2ProQueue.to_str(),
+    external_third_party.to_str(),
+    job_type.to_str(),
   )
     .fetch_all(pool)
     .await?;
