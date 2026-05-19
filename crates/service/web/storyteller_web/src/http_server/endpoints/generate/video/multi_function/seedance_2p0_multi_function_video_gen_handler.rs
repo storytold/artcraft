@@ -412,6 +412,7 @@ pub async fn seedance_2p0_multi_function_video_gen_handler(
 
     let db_result = insert_generic_inference_job_for_seedance2pro_queue_with_apriori_job_token(
       InsertGenericInferenceForSeedance2ProWithAprioriJobTokenArgs {
+        use_alternate_kinovi: false,
         apriori_job_token: &job_token,
         uuid_idempotency_token: &idempotency_str,
         maybe_external_third_party_id: order_id,
