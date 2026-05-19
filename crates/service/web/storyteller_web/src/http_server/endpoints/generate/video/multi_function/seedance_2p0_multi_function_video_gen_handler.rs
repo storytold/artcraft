@@ -192,7 +192,7 @@ pub async fn seedance_2p0_multi_function_video_gen_handler(
     info!("User {:?} is seedance-whitelisted, trying whitelist session first", user_token);
 
     let whitelist_session = Seedance2ProSession::from_cookies_string(
-      server_state.seedance2pro.cookies_whitelist.clone()
+      server_state.seedance2pro.cookies_byteplus.clone()
     );
 
     let result = upload_and_generate(

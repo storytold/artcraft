@@ -41,9 +41,9 @@ pub fn build_router_client(
 
 fn kinovi_provider(server_state: &ServerState, use_alternate_kinovi: bool) -> Result<RouterClient, AdvancedCommonWebError> {
   let session = if use_alternate_kinovi {
-    // Standard Kinovi
+    // Alternate Kinovi
     Seedance2ProSession::from_cookies_string(
-      server_state.seedance2pro.cookies_whitelist.clone()
+      server_state.seedance2pro.cookies_byteplus.clone()
     )
   } else {
     // Standard Kinovi

@@ -16,6 +16,7 @@ pub struct InsertSeedance2proJobsArgs<'a, 'tx> {
   pub primary_order_id: &'a str,
   pub maybe_additional_order_ids: Option<&'a [String]>,
   pub maybe_wallet_ledger_entry_token: Option<&'a WalletLedgerEntryToken>,
+  pub use_alternate_kinovi: bool,
   pub shared: SharedJobArgs<'a, 'tx>,
 }
 
@@ -29,6 +30,7 @@ pub async fn insert_seedance2pro_jobs(args: InsertSeedance2proJobsArgs<'_, '_>) 
     primary_order_id,
     maybe_additional_order_ids,
     maybe_wallet_ledger_entry_token,
+    use_alternate_kinovi,
     mut shared,
   } = args;
 

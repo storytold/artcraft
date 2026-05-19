@@ -492,7 +492,7 @@ async fn main() -> AnyhowResult<()> {
     },
     seedance2pro: Seedance2ProData {
       cookies: easyenv::get_env_string_required("SEEDANCE2PRO_COOKIES")?,
-      cookies_whitelist: easyenv::get_env_string_required("SEEDANCE2PRO_WHITELIST_COOKIES")?,
+      cookies_byteplus: easyenv::get_env_string_required("SEEDANCE2PRO_WHITELIST_COOKIES")?,
     },
     openai: OpenAiData {
       api_key: openai_api_key,

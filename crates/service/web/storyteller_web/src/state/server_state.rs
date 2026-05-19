@@ -346,7 +346,7 @@ pub struct Seedance2ProData {
   pub cookies: String,
 
   /// Cookie string for seedance2-pro.com (Whitelisted account)
-  pub cookies_whitelist: String,
+  pub cookies_byteplus: String,
 }
 
 /// OpenAI integration

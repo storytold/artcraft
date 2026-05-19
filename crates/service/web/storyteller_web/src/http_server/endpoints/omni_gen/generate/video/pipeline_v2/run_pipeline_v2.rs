@@ -27,6 +27,7 @@ pub struct RunPipelineV2Args<'a> {
   pub user_token: &'a UserToken,
   pub media_file_to_url_map: &'a Option<HashMap<MediaFileToken, String>>,
   pub kinovi_character_id_map: &'a Option<HashMap<CharacterToken, String>>,
+  pub use_alternate_kinovi: bool,
 }
 
 pub async fn run_pipeline_v2(args: RunPipelineV2Args<'_>) -> Result<PipelineResult, AdvancedCommonWebError> {
@@ -37,20 +38,17 @@ pub async fn run_pipeline_v2(args: RunPipelineV2Args<'_>) -> Result<PipelineResu
     user_token,
     media_file_to_url_map,
     kinovi_character_id_map,
+    use_alternate_kinovi,
   } = args;
 
   let mut router_builder = router_builder.clone();
 
-  let mut use_alternate_kinovi = false;
-
   match router_builder.model {
     CommonVideoModel::PreviewModel => {
       router_builder.model = CommonVideoModel::Seedance2p0;
-      use_alternate_kinovi = true;
     },
     CommonVideoModel::PreviewModelFast => {
       router_builder.model = CommonVideoModel::Seedance2p0Fast;
-      use_alternate_kinovi = true;
     },
     _ => {}, // Fall-through
   }
