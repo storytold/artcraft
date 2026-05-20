@@ -52,8 +52,8 @@ use crate::generate::generate_video_v2::providers::artcraft::preview_model::buil
 use crate::generate::generate_video_v2::providers::artcraft::preview_model_fast::build::build_artcraft_preview_model_fast;
 use crate::generate::generate_video_v2::providers::artcraft::seedance_2p0::build::build_artcraft_seedance_2p0;
 use crate::generate::generate_video_v2::providers::artcraft::seedance_2p0_fast::build::build_artcraft_seedance_2p0_fast;
-use crate::generate::generate_video_v2::providers::artcraft::seedance_2p0_g::build::build_artcraft_seedance_2p0_u;
-use crate::generate::generate_video_v2::providers::artcraft::seedance_2p0_fast_g::build::build_artcraft_seedance_2p0_u_fast;
+use crate::generate::generate_video_v2::providers::artcraft::seedance_2p0_u::build::build_artcraft_seedance_2p0_u;
+use crate::generate::generate_video_v2::providers::artcraft::seedance_2p0_u_fast::build::build_artcraft_seedance_2p0_u_fast;
 use crate::generate::generate_video_v2::providers::artcraft::seedance_2p0_bp::build::build_artcraft_seedance_2p0_bp;
 use crate::generate::generate_video_v2::providers::artcraft::seedance_2p0_bp_fast::build::build_artcraft_seedance_2p0_bp_fast;
 use crate::generate::generate_video_v2::providers::kinovi::happy_horse_1p0::build::build_kinovi_happy_horse_1p0;

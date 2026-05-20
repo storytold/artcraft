@@ -5,7 +5,7 @@ use crate::generate::generate_video::generate_video_request_builder::GenerateVid
 use crate::generate::generate_video_v2::providers::artcraft::build_common::{
   build_artcraft_omni_request, SupportedResolutions, UltraWideSupport,
 };
-use crate::generate::generate_video_v2::providers::artcraft::seedance_2p0_g::request::ArtcraftSeedance2p0UltraRequestState;
+use crate::generate::generate_video_v2::providers::artcraft::seedance_2p0_u::request::ArtcraftSeedance2p0UltraRequestState;
 use crate::generate::generate_video_v2::video_generation_draft_or_request::VideoGenerationDraftOrRequest;
 use crate::generate::generate_video_v2::video_generation_request::VideoGenerationRequest;
 

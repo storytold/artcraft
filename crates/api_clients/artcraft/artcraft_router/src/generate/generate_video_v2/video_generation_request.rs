@@ -13,10 +13,10 @@ use crate::generate::generate_video_v2::providers::artcraft::seedance_2p0::cost:
 use crate::generate::generate_video_v2::providers::artcraft::seedance_2p0::request::ArtcraftSeedance2p0RequestState;
 use crate::generate::generate_video_v2::providers::artcraft::seedance_2p0_fast::cost::ArtcraftSeedance2p0FastCostState;
 use crate::generate::generate_video_v2::providers::artcraft::seedance_2p0_fast::request::ArtcraftSeedance2p0FastRequestState;
-use crate::generate::generate_video_v2::providers::artcraft::seedance_2p0_g::cost::ArtcraftSeedance2p0UltraCostState;
-use crate::generate::generate_video_v2::providers::artcraft::seedance_2p0_g::request::ArtcraftSeedance2p0UltraRequestState;
-use crate::generate::generate_video_v2::providers::artcraft::seedance_2p0_fast_g::cost::ArtcraftSeedance2p0UltraFastCostState;
-use crate::generate::generate_video_v2::providers::artcraft::seedance_2p0_fast_g::request::ArtcraftSeedance2p0UltraFastRequestState;
+use crate::generate::generate_video_v2::providers::artcraft::seedance_2p0_u::cost::ArtcraftSeedance2p0UltraCostState;
+use crate::generate::generate_video_v2::providers::artcraft::seedance_2p0_u::request::ArtcraftSeedance2p0UltraRequestState;
+use crate::generate::generate_video_v2::providers::artcraft::seedance_2p0_u_fast::cost::ArtcraftSeedance2p0UltraFastCostState;
+use crate::generate::generate_video_v2::providers::artcraft::seedance_2p0_u_fast::request::ArtcraftSeedance2p0UltraFastRequestState;
 use crate::generate::generate_video_v2::providers::artcraft::seedance_2p0_bp::cost::ArtcraftSeedance2p0BytePlusCostState;
 use crate::generate::generate_video_v2::providers::artcraft::seedance_2p0_bp::request::ArtcraftSeedance2p0BytePlusRequestState;
 use crate::generate::generate_video_v2::providers::artcraft::seedance_2p0_bp_fast::cost::ArtcraftSeedance2p0BytePlusFastCostState;
