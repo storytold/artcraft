@@ -48,7 +48,7 @@ use crate::http_server::middleware::error_alerting_middleware::error_alerting_mi
 use crate::http_server::middleware::pushback_filter_middleware::PushbackFilter;
 use crate::http_server::routes::add_routes::add_routes;
 use crate::http_server::web_utils::handle_multipart_error::handle_multipart_error;
-use crate::startup::setup_dependencies::setup_dependencies;
+use crate::startup::build_dependencies::setup_dependencies;
 use crate::startup::setup_disabled_endpoints::read_disabled_endpoints;
 use crate::state::server_state::ServerState;
 use crate::threads::db_health_checker_thread::db_health_checker_thread::db_health_checker_thread;

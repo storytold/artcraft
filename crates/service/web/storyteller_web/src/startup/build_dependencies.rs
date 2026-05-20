@@ -29,8 +29,8 @@ use crate::configs::connect_to_database::connect_to_database;
 use crate::configs::static_api_tokens::StaticApiTokenSet;
 use crate::http_server::session::session_checker::SessionChecker;
 use crate::http_server::web_utils::scoped_temp_dir_creator::ScopedTempDirCreator;
-use crate::startup::build_pager::build_pager;
-use crate::startup::load_bans::{
+use crate::startup::setup_pager::build_pager;
+use crate::startup::setup_bans::{
   load_cidr_bans, load_ip_address_troll_bans,
   load_static_container_ip_bans, load_troll_user_token_bans,
 };
