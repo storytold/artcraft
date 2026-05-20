@@ -41,6 +41,12 @@ pub enum CommonVideoModel {
   #[serde(rename = "seedance_2p0_fast")]
   Seedance2p0Fast,
 
+  #[serde(rename = "seedance_2p0_p")]
+  Seedance2p0Plus,
+
+  #[serde(rename = "seedance_2p0_p_fast")]
+  Seedance2p0PlusFast,
+
   #[serde(rename = "seedance_2p0_g")]
   Seedance2p0Global,
 

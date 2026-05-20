@@ -44,9 +44,17 @@ pub enum CommonVideoModel {
   #[serde(rename = "seedance_2p0_fast")]
   Seedance2p0Fast,
 
+  #[serde(rename = "seedance_2p0_p")]
+  Seedance2p0Plus,
+
+  #[serde(rename = "seedance_2p0_p_fast")]
+  Seedance2p0PlusFast,
+
+  // NB: Not in use
   #[serde(rename = "seedance_2p0_g")]
   Seedance2p0Global,
 
+  // NB: Not in use
   #[serde(rename = "seedance_2p0_fast_g")]
   Seedance2p0FastGlobal,
 
@@ -71,9 +79,13 @@ pub enum CommonVideoModel {
   #[serde(rename = "veo_3p1_fast")]
   Veo3p1Fast,
 
+  // NB: Temporary model rollout. Previously used for "Seedance 2.0 BytePlus".
+  // This can be reused in the future.
   #[serde(rename = "preview_model")]
   PreviewModel,
 
+  // NB: Temporary model rollout. Previously used for "Seedance 2.0 BytePlus Fast".
+  // This can be reused in the future.
   #[serde(rename = "preview_model_fast")]
   PreviewModelFast,
 }
@@ -95,6 +107,8 @@ impl CommonVideoModel {
       Self::Seedance1p5Pro => CommonModelType::Seedance1p5Pro,
       Self::Seedance2p0 => CommonModelType::Seedance2p0,
       Self::Seedance2p0Fast => CommonModelType::Seedance2p0Fast,
+      Self::Seedance2p0Plus => CommonModelType::Seedance2p0Plus,
+      Self::Seedance2p0PlusFast => CommonModelType::Seedance2p0PlusFast,
       Self::Seedance2p0Global => CommonModelType::Seedance2p0Global,
       Self::Seedance2p0FastGlobal => CommonModelType::Seedance2p0FastGlobal,
       Self::Sora2 => CommonModelType::Sora2,
@@ -131,6 +145,8 @@ mod tests {
     assert_serialization(CommonVideoModel::Seedance1p5Pro, "seedance_1p5_pro");
     assert_serialization(CommonVideoModel::Seedance2p0, "seedance_2p0");
     assert_serialization(CommonVideoModel::Seedance2p0Fast, "seedance_2p0_fast");
+    assert_serialization(CommonVideoModel::Seedance2p0Plus, "seedance_2p0_p");
+    assert_serialization(CommonVideoModel::Seedance2p0PlusFast, "seedance_2p0_p_fast");
     assert_serialization(CommonVideoModel::Seedance2p0Global, "seedance_2p0_g");
     assert_serialization(CommonVideoModel::Seedance2p0FastGlobal, "seedance_2p0_fast_g");
     assert_serialization(CommonVideoModel::Sora2, "sora_2");
@@ -160,6 +176,8 @@ mod tests {
       ("seedance_1p5_pro", CommonVideoModel::Seedance1p5Pro),
       ("seedance_2p0", CommonVideoModel::Seedance2p0),
       ("seedance_2p0_fast", CommonVideoModel::Seedance2p0Fast),
+      ("seedance_2p0_p", CommonVideoModel::Seedance2p0Plus),
+      ("seedance_2p0_p_fast", CommonVideoModel::Seedance2p0PlusFast),
       ("seedance_2p0_g", CommonVideoModel::Seedance2p0Global),
       ("seedance_2p0_fast_g", CommonVideoModel::Seedance2p0FastGlobal),
       ("sora_2", CommonVideoModel::Sora2),
@@ -196,6 +214,8 @@ mod tests {
       CommonVideoModel::Seedance1p5Pro,
       CommonVideoModel::Seedance2p0,
       CommonVideoModel::Seedance2p0Fast,
+      CommonVideoModel::Seedance2p0Plus,
+      CommonVideoModel::Seedance2p0PlusFast,
       CommonVideoModel::Seedance2p0Global,
       CommonVideoModel::Seedance2p0FastGlobal,
       CommonVideoModel::Sora2,
@@ -231,6 +251,8 @@ mod tests {
       (CommonVideoModel::Seedance1p5Pro, CommonModelType::Seedance1p5Pro),
       (CommonVideoModel::Seedance2p0, CommonModelType::Seedance2p0),
       (CommonVideoModel::Seedance2p0Fast, CommonModelType::Seedance2p0Fast),
+      (CommonVideoModel::Seedance2p0Plus, CommonModelType::Seedance2p0Plus),
+      (CommonVideoModel::Seedance2p0PlusFast, CommonModelType::Seedance2p0PlusFast),
       (CommonVideoModel::Seedance2p0Global, CommonModelType::Seedance2p0Global),
       (CommonVideoModel::Seedance2p0FastGlobal, CommonModelType::Seedance2p0FastGlobal),
       (CommonVideoModel::Sora2, CommonModelType::Sora2),
