@@ -78,9 +78,10 @@ use crate::startup::load_bans::{
   load_static_container_ip_bans, load_cidr_bans,
   load_troll_user_token_bans, load_ip_address_troll_bans,
 };
+use crate::startup::setup_static_feature_flags::setup_static_feature_flags;
 use crate::state::certs::google_sign_in_cert::GoogleSignInCert;
 use crate::state::memory_cache::model_token_to_info_cache::ModelTokenToInfoCache;
-use crate::state::server_state::{BeebleData, DurableInMemoryCaches, EnvConfig, EphemeralInMemoryCaches, FalData, GmiCloudData, InMemoryCaches, OpenAiData, ResendData, Seedance2ProData, ServerInfo, ServerState, StaticFeatureFlags, StripeSettings, TrollBans, WorldLabsData};
+use crate::state::server_state::{BeebleData, DurableInMemoryCaches, EnvConfig, EphemeralInMemoryCaches, FalData, GmiCloudData, InMemoryCaches, OpenAiData, ResendData, Seedance2ProData, ServerInfo, ServerState, StripeSettings, TrollBans, WorldLabsData};
 use crate::threads::db_health_checker_thread::db_health_check_status::HealthCheckStatus;
 use crate::threads::db_health_checker_thread::db_health_checker_thread::db_health_checker_thread;
 use crate::threads::poll_ip_banlist_thread::poll_ip_bans;
@@ -137,8 +138,6 @@ async fn main() -> AnyhowResult<()> {
     config_search_directories: &[".", "./config", "crates/service/web/storyteller_web/config"],
     ignore_legacy_dot_env_file: true,
   })?;
-
-
 
   info!("Obtaining hostname...");
 
@@ -366,39 +365,7 @@ async fn main() -> AnyhowResult<()> {
     },
   };
 
-  let service_feature_flags = StaticFeatureFlags {
-    // Permanent (control plane / safety) flags : messaging
-    maybe_status_alert_category: easyenv::get_env_string_optional("FF_STATUS_ALERT_CATEGORY"),
-    maybe_status_alert_custom_message: easyenv::get_env_string_optional("FF_STATUS_ALERT_CUSTOM_MESSAGE"),
-
-    // Permanent (control plane / safety) flags : disabling features
-    global_429_pushback_filter_enabled: easyenv::get_env_bool_or_default("FF_GLOBAL_429_PUSHBACK_FILTER_ENABLED", false),
-    disable_unified_queue_stats_endpoint: easyenv::get_env_bool_or_default("FF_DISABLE_QUEUE_STATS_ENDPOINT", false),
-    disable_inference_queue_length_endpoint: easyenv::get_env_bool_or_default("FF_DISABLE_INFERENCE_QUEUE_LENGTH_ENDPOINT", false),
-    disable_tts_queue_length_endpoint: easyenv::get_env_bool_or_default("FF_DISABLE_TTS_QUEUE_LENGTH_ENDPOINT", false),
-    disable_tts_model_list_endpoint: easyenv::get_env_bool_or_default("FF_DISABLE_TTS_MODEL_LIST_ENDPOINT", false),
-    disable_voice_conversion_model_list_endpoint: easyenv::get_env_bool_or_default("FF_DISABLE_VOICE_CONVERSION_MODEL_LIST_ENDPOINT", false),
-
-    // Refresh rates
-    frontend_unified_queue_stats_refresh_interval_millis: easyenv::get_env_num("FF_FRONTEND_QUEUE_STATS_REFRESH_INTERVAL_MILLIS", 15_000)?,
-    frontend_pending_inference_refresh_interval_millis: easyenv::get_env_num("FF_FRONTEND_PENDING_INFERENCE_REFRESH_INTERVAL_MILLIS", 15_000)?,
-    frontend_pending_tts_refresh_interval_millis: easyenv::get_env_num("FF_FRONTEND_PENDING_TTS_REFRESH_INTERVAL_MILLIS", 15_000)?,
-
-    // Bans
-    troll_ban_user_percent: easyenv::get_env_num("FF_TROLL_BANNED_USER_PERCENT", 0)?,
-
-    // Temporary flags
-    switch_tts_to_model_weights: easyenv::get_env_bool_or_default("FF_SWITCH_TTS_TO_MODEL_WEIGHTS", false),
-    force_session_studio_flags: easyenv::get_env_bool_or_default("FF_FORCE_SESSION_STUDIO_FLAG", false),
-    force_session_video_style_transfer_flags: easyenv::get_env_bool_or_default("FF_FORCE_SESSION_VST_FLAG", false),
-    
-    // Disable voice features
-    disable_tts: easyenv::get_env_bool_or_default("DISABLE_TTS", false),
-    disable_voice_conversion: easyenv::get_env_bool_or_default("DISABLE_VOICE_CONVERSION", false),
-
-    // Paging
-    paging: paging_flags,
-  };
+  let service_feature_flags = setup_static_feature_flags(paging_flags)?;
 
   let third_party_url_redirector = ThirdPartyUrlRedirector::new(server_environment);
 
