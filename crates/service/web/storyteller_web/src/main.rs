@@ -26,9 +26,6 @@ use actix_cors_configs::shared_array_buffer_cors::shared_array_buffer_cors;
 use actix_helpers::middleware::banned_cidr_filter::banned_cidr_filter::BannedCidrFilter;
 use actix_helpers::middleware::banned_ip_filter::banned_ip_filter::BannedIpFilter;
 use actix_helpers::middleware::disabled_endpoint_filter::disabled_endpoint_filter::DisabledEndpointFilter;
-use actix_helpers::middleware::disabled_endpoint_filter::disabled_endpoints::disabled_endpoints::DisabledEndpoints;
-use actix_helpers::middleware::disabled_endpoint_filter::disabled_endpoints::exact_match_disabled_endpoints::ExactMatchDisabledEndpoints;
-use actix_helpers::middleware::disabled_endpoint_filter::disabled_endpoints::prefix_disabled_endpoints::PrefixDisabledEndpoints;
 use actix_multipart::form::MultipartFormConfig;
 use actix_web::middleware::{DefaultHeaders, Logger};
 use actix_web::{middleware, web, App, HttpServer};
@@ -52,6 +49,7 @@ use crate::http_server::middleware::pushback_filter_middleware::PushbackFilter;
 use crate::http_server::routes::add_routes::add_routes;
 use crate::http_server::web_utils::handle_multipart_error::handle_multipart_error;
 use crate::startup::setup_dependencies::setup_dependencies;
+use crate::startup::setup_disabled_endpoints::read_disabled_endpoints;
 use crate::state::server_state::ServerState;
 use crate::threads::db_health_checker_thread::db_health_checker_thread::db_health_checker_thread;
 use crate::threads::poll_ip_banlist_thread::poll_ip_bans;
@@ -141,7 +139,7 @@ async fn main() -> AnyhowResult<()> {
 
   let model_token_info_cache_clone = server_state.caches.durable.model_token_info.clone();
   let mysql_pool_clone = server_state.mysql_pool.clone();
-  
+
   tokio_runtime.spawn(async {
     poll_model_token_info_thread(model_token_info_cache_clone, mysql_pool_clone).await;
   });
@@ -150,27 +148,6 @@ async fn main() -> AnyhowResult<()> {
 
   serve(server_state).await?;
   Ok(())
-}
-
-fn read_disabled_endpoints() -> DisabledEndpoints {
-  let exact_filename = easyenv::get_env_string_or_default(
-    "DISABLED_ENDPOINTS_FILE_EXACT_MATCH",
-    "./includes/container_includes/disabled_endpoints/endpoint_exact_matches.txt");
-
-  let exact = ExactMatchDisabledEndpoints::load_from_file(exact_filename)
-      .unwrap_or(ExactMatchDisabledEndpoints::new()); // NB: Fail open
-
-  let prefix_filename = easyenv::get_env_string_or_default(
-    "DISABLED_ENDPOINTS_FILE_PREFIX_MATCH",
-    "./includes/container_includes/disabled_endpoints/endpoint_prefixes.txt");
-
-  let prefix = PrefixDisabledEndpoints::load_from_file(prefix_filename)
-      .unwrap_or(PrefixDisabledEndpoints::new()); // NB: Fail open
-
-  info!("Disabled endpoints by exact match: {}", exact.len());
-  info!("Disabled endpoints by prefix: {}", prefix.len());
-
-  DisabledEndpoints::new(exact, prefix)
 }
 
 pub async fn serve(server_state: ServerState) -> AnyhowResult<()>
