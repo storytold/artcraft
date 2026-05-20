@@ -59,8 +59,8 @@ pub async fn run_pipeline_v2(args: RunPipelineV2Args<'_>) -> Result<PipelineResu
     CommonVideoModel::HappyHorse1p0 => Provider::Seedance2Pro,
     CommonVideoModel::Seedance2p0 => Provider::Seedance2Pro,
     CommonVideoModel::Seedance2p0Fast => Provider::Seedance2Pro,
-    CommonVideoModel::Seedance2p0Global => Provider::GmiCloud,
-    CommonVideoModel::Seedance2p0FastGlobal => Provider::GmiCloud,
+    CommonVideoModel::Seedance2p0Ultra => Provider::GmiCloud,
+    CommonVideoModel::Seedance2p0UltraFast => Provider::GmiCloud,
     _ => Provider::Fal,
   };
 

@@ -8,11 +8,11 @@ use crate::generate::generate_video::generate_video_response::{
 };
 
 #[derive(Clone, Debug)]
-pub struct GmiCloudSeedance2p0FastGRequestState {
+pub struct GmiCloudSeedance2p0UltraFastRequestState {
   pub request: Seedance20FastRequest,
 }
 
-impl GmiCloudSeedance2p0FastGRequestState {
+impl GmiCloudSeedance2p0UltraFastRequestState {
   pub async fn send(&self, client: &RouterGmiCloudClient) -> Result<GenerateVideoResponse, ArtcraftRouterError> {
     let response = self.request.send_request(&client.api_key)
       .await
@@ -69,7 +69,7 @@ mod tests {
 
   fn gmicloud_fast_builder() -> GenerateVideoRequestBuilder {
     GenerateVideoRequestBuilder {
-      model: CommonVideoModel::Seedance2p0FastGlobal,
+      model: CommonVideoModel::Seedance2p0UltraFast,
       provider: Provider::GmiCloud,
       video_batch_count: Some(1),
       ..Default::default()

@@ -134,10 +134,10 @@ pub enum CommonModelType {
   Seedance2p0BytePlus,
   #[serde(rename = "seedance_2p0_bp_fast")]
   Seedance2p0BytePlusFast,
-  #[serde(rename = "seedance_2p0_g")]
-  Seedance2p0Global,
-  #[serde(rename = "seedance_2p0_fast_g")]
-  Seedance2p0FastGlobal,
+  #[serde(rename = "seedance_2p0_u")]
+  Seedance2p0Ultra,
+  #[serde(rename = "seedance_2p0_u_fast")]
+  Seedance2p0UltraFast,
   #[serde(rename = "sora_2")]
   Sora2,
   #[serde(rename = "sora_2_pro")]
@@ -233,8 +233,8 @@ impl CommonModelType {
       Self::Seedance2p0Fast => "seedance_2p0_fast",
       Self::Seedance2p0BytePlus => "seedance_2p0_bp",
       Self::Seedance2p0BytePlusFast => "seedance_2p0_bp_fast",
-      Self::Seedance2p0Global => "seedance_2p0_g",
-      Self::Seedance2p0FastGlobal => "seedance_2p0_fast_g",
+      Self::Seedance2p0Ultra => "seedance_2p0_u",
+      Self::Seedance2p0UltraFast => "seedance_2p0_u_fast",
       Self::Sora2 => "sora_2",
       Self::Sora2Pro => "sora_2_pro",
       Self::Veo2 => "veo_2",
@@ -309,8 +309,8 @@ impl CommonModelType {
       "seedance_2p0_fast" => Ok(Self::Seedance2p0Fast),
       "seedance_2p0_bp" => Ok(Self::Seedance2p0BytePlus),
       "seedance_2p0_bp_fast" => Ok(Self::Seedance2p0BytePlusFast),
-      "seedance_2p0_g" => Ok(Self::Seedance2p0Global),
-      "seedance_2p0_fast_g" => Ok(Self::Seedance2p0FastGlobal),
+      "seedance_2p0_u" => Ok(Self::Seedance2p0Ultra),
+      "seedance_2p0_u_fast" => Ok(Self::Seedance2p0UltraFast),
       "sora_2" => Ok(Self::Sora2),
       "sora_2_pro" => Ok(Self::Sora2Pro),
       "veo_2" => Ok(Self::Veo2),
@@ -389,8 +389,8 @@ impl CommonModelType {
       Self::Seedance2p0Fast,
       Self::Seedance2p0BytePlus,
       Self::Seedance2p0BytePlusFast,
-      Self::Seedance2p0Global,
-      Self::Seedance2p0FastGlobal,
+      Self::Seedance2p0Ultra,
+      Self::Seedance2p0UltraFast,
       Self::Sora2,
       Self::Sora2Pro,
       Self::Veo2,
@@ -466,8 +466,8 @@ impl CommonModelType {
       Self::Seedance2p0Fast => CommonModelClass::Video,
       Self::Seedance2p0BytePlus => CommonModelClass::Video,
       Self::Seedance2p0BytePlusFast => CommonModelClass::Video,
-      Self::Seedance2p0Global => CommonModelClass::Video,
-      Self::Seedance2p0FastGlobal => CommonModelClass::Video,
+      Self::Seedance2p0Ultra => CommonModelClass::Video,
+      Self::Seedance2p0UltraFast => CommonModelClass::Video,
       Self::Sora2 => CommonModelClass::Video,
       Self::Sora2Pro => CommonModelClass::Video,
       Self::Veo2 => CommonModelClass::Video,
@@ -552,8 +552,8 @@ mod tests {
       assert_serialization(CommonModelType::Seedance2p0Fast, "seedance_2p0_fast");
       assert_serialization(CommonModelType::Seedance2p0BytePlus, "seedance_2p0_bp");
       assert_serialization(CommonModelType::Seedance2p0BytePlusFast, "seedance_2p0_bp_fast");
-      assert_serialization(CommonModelType::Seedance2p0Global, "seedance_2p0_g");
-      assert_serialization(CommonModelType::Seedance2p0FastGlobal, "seedance_2p0_fast_g");
+      assert_serialization(CommonModelType::Seedance2p0Ultra, "seedance_2p0_u");
+      assert_serialization(CommonModelType::Seedance2p0UltraFast, "seedance_2p0_u_fast");
       assert_serialization(CommonModelType::Sora2, "sora_2");
       assert_serialization(CommonModelType::Sora2Pro, "sora_2_pro");
       assert_serialization(CommonModelType::Veo2, "veo_2");
@@ -625,8 +625,8 @@ mod tests {
       assert_eq!(CommonModelType::Seedance2p0Fast.to_str(), "seedance_2p0_fast");
       assert_eq!(CommonModelType::Seedance2p0BytePlus.to_str(), "seedance_2p0_bp");
       assert_eq!(CommonModelType::Seedance2p0BytePlusFast.to_str(), "seedance_2p0_bp_fast");
-      assert_eq!(CommonModelType::Seedance2p0Global.to_str(), "seedance_2p0_g");
-      assert_eq!(CommonModelType::Seedance2p0FastGlobal.to_str(), "seedance_2p0_fast_g");
+      assert_eq!(CommonModelType::Seedance2p0Ultra.to_str(), "seedance_2p0_u");
+      assert_eq!(CommonModelType::Seedance2p0UltraFast.to_str(), "seedance_2p0_u_fast");
       assert_eq!(CommonModelType::Sora2.to_str(), "sora_2");
       assert_eq!(CommonModelType::Sora2Pro.to_str(), "sora_2_pro");
       assert_eq!(CommonModelType::Veo2.to_str(), "veo_2");
@@ -698,8 +698,8 @@ mod tests {
       assert_eq!(CommonModelType::from_str("seedance_2p0_fast").unwrap(), CommonModelType::Seedance2p0Fast);
       assert_eq!(CommonModelType::from_str("seedance_2p0_bp").unwrap(), CommonModelType::Seedance2p0BytePlus);
       assert_eq!(CommonModelType::from_str("seedance_2p0_bp_fast").unwrap(), CommonModelType::Seedance2p0BytePlusFast);
-      assert_eq!(CommonModelType::from_str("seedance_2p0_g").unwrap(), CommonModelType::Seedance2p0Global);
-      assert_eq!(CommonModelType::from_str("seedance_2p0_fast_g").unwrap(), CommonModelType::Seedance2p0FastGlobal);
+      assert_eq!(CommonModelType::from_str("seedance_2p0_u").unwrap(), CommonModelType::Seedance2p0Ultra);
+      assert_eq!(CommonModelType::from_str("seedance_2p0_u_fast").unwrap(), CommonModelType::Seedance2p0UltraFast);
       assert_eq!(CommonModelType::from_str("sora_2").unwrap(), CommonModelType::Sora2);
       assert_eq!(CommonModelType::from_str("sora_2_pro").unwrap(), CommonModelType::Sora2Pro);
       assert_eq!(CommonModelType::from_str("veo_2").unwrap(), CommonModelType::Veo2);
@@ -773,8 +773,8 @@ mod tests {
       assert_eq!(variants.pop_first(), Some(CommonModelType::Seedance2p0Fast));
       assert_eq!(variants.pop_first(), Some(CommonModelType::Seedance2p0BytePlus));
       assert_eq!(variants.pop_first(), Some(CommonModelType::Seedance2p0BytePlusFast));
-      assert_eq!(variants.pop_first(), Some(CommonModelType::Seedance2p0Global));
-      assert_eq!(variants.pop_first(), Some(CommonModelType::Seedance2p0FastGlobal));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::Seedance2p0Ultra));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::Seedance2p0UltraFast));
       assert_eq!(variants.pop_first(), Some(CommonModelType::Sora2));
       assert_eq!(variants.pop_first(), Some(CommonModelType::Sora2Pro));
       assert_eq!(variants.pop_first(), Some(CommonModelType::Veo2));

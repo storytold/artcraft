@@ -12,11 +12,11 @@ use crate::client::request_mismatch_mitigation_strategy::RequestMismatchMitigati
 use crate::errors::artcraft_router_error::ArtcraftRouterError;
 use crate::errors::client_error::ClientError;
 use crate::generate::generate_video::generate_video_request_builder::GenerateVideoRequestBuilder;
-use crate::generate::generate_video_v2::providers::gmicloud::seedance_2p0_g::request::GmiCloudSeedance2p0GRequestState;
+use crate::generate::generate_video_v2::providers::gmicloud::seedance_2p0_g::request::GmiCloudSeedance2p0UltraRequestState;
 use crate::generate::generate_video_v2::video_generation_draft_or_request::VideoGenerationDraftOrRequest;
 use crate::generate::generate_video_v2::video_generation_request::VideoGenerationRequest;
 
-pub fn build_gmicloud_seedance_2p0_g(
+pub fn build_gmicloud_seedance_2p0_u(
   mut builder: GenerateVideoRequestBuilder,
 ) -> Result<VideoGenerationDraftOrRequest, ArtcraftRouterError> {
   let strategy = builder.request_mismatch_mitigation_strategy;
@@ -49,8 +49,8 @@ pub fn build_gmicloud_seedance_2p0_g(
     reference_asset_ids: None,
   };
 
-  let state = GmiCloudSeedance2p0GRequestState { request };
-  Ok(VideoGenerationDraftOrRequest::Request(VideoGenerationRequest::GmiCloudSeedance2p0G(state)))
+  let state = GmiCloudSeedance2p0UltraRequestState { request };
+  Ok(VideoGenerationDraftOrRequest::Request(VideoGenerationRequest::GmiCloudSeedance2p0Ultra(state)))
 }
 
 fn plan_ratio(
@@ -270,7 +270,7 @@ mod tests {
 
     #[test]
     fn media_file_token_rejected_for_start_frame() {
-      let result = build_gmicloud_seedance_2p0_g(GenerateVideoRequestBuilder {
+      let result = build_gmicloud_seedance_2p0_u(GenerateVideoRequestBuilder {
         start_frame: Some(ImageRef::MediaFileToken(MediaFileToken::new("mf_test".to_string()))),
         ..base_builder()
       });
@@ -288,7 +288,7 @@ mod tests {
 
     #[test]
     fn reference_image_tokens_rejected() {
-      let result = build_gmicloud_seedance_2p0_g(GenerateVideoRequestBuilder {
+      let result = build_gmicloud_seedance_2p0_u(GenerateVideoRequestBuilder {
         reference_images: Some(ImageListRef::MediaFileTokens(vec![MediaFileToken::new("mf_a".to_string())])),
         ..base_builder()
       });
@@ -316,7 +316,7 @@ mod tests {
 
   fn base_builder() -> GenerateVideoRequestBuilder {
     GenerateVideoRequestBuilder {
-      model: CommonVideoModel::Seedance2p0Global,
+      model: CommonVideoModel::Seedance2p0Ultra,
       provider: Provider::GmiCloud,
       duration_seconds: Some(5),
       video_batch_count: Some(1),
@@ -330,10 +330,10 @@ mod tests {
     builder
   }
 
-  fn unwrap_request(builder: GenerateVideoRequestBuilder) -> GmiCloudSeedance2p0GRequestState {
-    let result = build_gmicloud_seedance_2p0_g(builder).expect("build should succeed");
+  fn unwrap_request(builder: GenerateVideoRequestBuilder) -> GmiCloudSeedance2p0UltraRequestState {
+    let result = build_gmicloud_seedance_2p0_u(builder).expect("build should succeed");
     match result {
-      VideoGenerationDraftOrRequest::Request(VideoGenerationRequest::GmiCloudSeedance2p0G(state)) => state,
+      VideoGenerationDraftOrRequest::Request(VideoGenerationRequest::GmiCloudSeedance2p0Ultra(state)) => state,
       _ => panic!("expected GmiCloudSeedance2p0G request"),
     }
   }

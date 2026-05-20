@@ -6,11 +6,11 @@ use crate::generate::generate_video::generate_video_response::GenerateVideoRespo
 use crate::generate::generate_video_v2::providers::artcraft::request_common::send_artcraft_omni_request;
 
 #[derive(Clone, Debug)]
-pub struct ArtcraftSeedance2p0GRequestState {
+pub struct ArtcraftSeedance2p0UltraRequestState {
   pub request: OmniGenVideoCostAndGenerateRequest,
 }
 
-impl ArtcraftSeedance2p0GRequestState {
+impl ArtcraftSeedance2p0UltraRequestState {
   pub async fn send(&self, client: &RouterArtcraftClient) -> Result<GenerateVideoResponse, ArtcraftRouterError> {
     send_artcraft_omni_request(&self.request, client).await
   }

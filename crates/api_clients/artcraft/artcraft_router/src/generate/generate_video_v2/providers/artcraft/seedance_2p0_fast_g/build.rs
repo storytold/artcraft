@@ -5,19 +5,19 @@ use crate::generate::generate_video::generate_video_request_builder::GenerateVid
 use crate::generate::generate_video_v2::providers::artcraft::build_common::{
   build_artcraft_omni_request, SupportedResolutions, UltraWideSupport,
 };
-use crate::generate::generate_video_v2::providers::artcraft::seedance_2p0_fast_g::request::ArtcraftSeedance2p0FastGRequestState;
+use crate::generate::generate_video_v2::providers::artcraft::seedance_2p0_fast_g::request::ArtcraftSeedance2p0UltraFastRequestState;
 use crate::generate::generate_video_v2::video_generation_draft_or_request::VideoGenerationDraftOrRequest;
 use crate::generate::generate_video_v2::video_generation_request::VideoGenerationRequest;
 
-pub fn build_artcraft_seedance_2p0_fast_g(builder: GenerateVideoRequestBuilder) -> Result<VideoGenerationDraftOrRequest, ArtcraftRouterError> {
+pub fn build_artcraft_seedance_2p0_u_fast(builder: GenerateVideoRequestBuilder) -> Result<VideoGenerationDraftOrRequest, ArtcraftRouterError> {
   let request = build_artcraft_omni_request(
     builder,
-    CommonVideoModelEnum::Seedance2p0FastGlobal,
+    CommonVideoModelEnum::Seedance2p0UltraFast,
     SupportedResolutions::Fast,
     UltraWideSupport::Supported,
   )?;
-  let state = ArtcraftSeedance2p0FastGRequestState { request };
-  Ok(VideoGenerationDraftOrRequest::Request(VideoGenerationRequest::ArtcraftSeedance2p0FastG(state)))
+  let state = ArtcraftSeedance2p0UltraFastRequestState { request };
+  Ok(VideoGenerationDraftOrRequest::Request(VideoGenerationRequest::ArtcraftSeedance2p0UltraFast(state)))
 }
 
 #[cfg(test)]
@@ -63,7 +63,7 @@ mod tests {
     #[test]
     fn model_is_seedance_2p0_fast() {
       let req = unwrap_request(artcraft_fast_builder_with(|_| {}));
-      assert!(matches!(req.request.model, Some(CommonVideoModelEnum::Seedance2p0FastGlobal)));
+      assert!(matches!(req.request.model, Some(CommonVideoModelEnum::Seedance2p0UltraFast)));
     }
 
     #[test]
@@ -152,8 +152,8 @@ mod tests {
 
     #[test]
     fn res_1080p_error_out() {
-      let result = build_artcraft_seedance_2p0_fast_g(GenerateVideoRequestBuilder {
-        model: CommonVideoModel::Seedance2p0FastGlobal,
+      let result = build_artcraft_seedance_2p0_u_fast(GenerateVideoRequestBuilder {
+        model: CommonVideoModel::Seedance2p0UltraFast,
         provider: Provider::Artcraft,
         resolution: Some(CommonResolution::TenEightyP),
         request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::ErrorOut,
@@ -185,8 +185,8 @@ mod tests {
 
     #[test]
     fn url_start_frame_rejected() {
-      let result = build_artcraft_seedance_2p0_fast_g(GenerateVideoRequestBuilder {
-        model: CommonVideoModel::Seedance2p0FastGlobal,
+      let result = build_artcraft_seedance_2p0_u_fast(GenerateVideoRequestBuilder {
+        model: CommonVideoModel::Seedance2p0UltraFast,
         provider: Provider::Artcraft,
         start_frame: Some(ImageRef::Url("https://example.com".to_string())),
         ..Default::default()
@@ -223,7 +223,7 @@ mod tests {
 
   fn artcraft_fast_builder_with(f: impl FnOnce(&mut GenerateVideoRequestBuilder)) -> GenerateVideoRequestBuilder {
     let mut builder = GenerateVideoRequestBuilder {
-      model: CommonVideoModel::Seedance2p0FastGlobal,
+      model: CommonVideoModel::Seedance2p0UltraFast,
       provider: Provider::Artcraft,
       duration_seconds: Some(5),
       video_batch_count: Some(1),
@@ -233,11 +233,11 @@ mod tests {
     builder
   }
 
-  fn unwrap_request(builder: GenerateVideoRequestBuilder) -> ArtcraftSeedance2p0FastGRequestState {
-    let result = build_artcraft_seedance_2p0_fast_g(builder).expect("build should succeed");
+  fn unwrap_request(builder: GenerateVideoRequestBuilder) -> ArtcraftSeedance2p0UltraFastRequestState {
+    let result = build_artcraft_seedance_2p0_u_fast(builder).expect("build should succeed");
     match result {
       VideoGenerationDraftOrRequest::Request(
-        VideoGenerationRequest::ArtcraftSeedance2p0FastG(state)
+        VideoGenerationRequest::ArtcraftSeedance2p0UltraFast(state)
       ) => state,
       _ => panic!("expected ArtcraftSeedance2p0Fast request"),
     }

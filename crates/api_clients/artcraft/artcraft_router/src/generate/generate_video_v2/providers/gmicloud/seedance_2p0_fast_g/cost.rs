@@ -1,14 +1,14 @@
 use gmicloud_client::traits::gmicloud_request_cost_calculator_trait::GmiCloudRequestCostCalculator;
 
 use crate::generate::generate_video::video_generation_cost_estimate::VideoGenerationCostEstimate;
-use crate::generate::generate_video_v2::providers::gmicloud::seedance_2p0_fast_g::request::GmiCloudSeedance2p0FastGRequestState;
+use crate::generate::generate_video_v2::providers::gmicloud::seedance_2p0_fast_g::request::GmiCloudSeedance2p0UltraFastRequestState;
 
-pub struct GmiCloudSeedance2p0FastGCostState {
-  request: GmiCloudSeedance2p0FastGRequestState,
+pub struct GmiCloudSeedance2p0UltraFastCostState {
+  request: GmiCloudSeedance2p0UltraFastRequestState,
 }
 
-impl GmiCloudSeedance2p0FastGCostState {
-  pub fn from_request(request: &GmiCloudSeedance2p0FastGRequestState) -> Self {
+impl GmiCloudSeedance2p0UltraFastCostState {
+  pub fn from_request(request: &GmiCloudSeedance2p0UltraFastRequestState) -> Self {
     Self { request: request.clone() }
   }
 
@@ -93,7 +93,7 @@ mod tests {
       let fast = cost_cents(Some(CommonResolution::SevenTwentyP), 10);
       let standard = {
         let builder = GenerateVideoRequestBuilder {
-          model: CommonVideoModel::Seedance2p0Global,
+          model: CommonVideoModel::Seedance2p0Ultra,
           provider: Provider::GmiCloud,
           resolution: Some(CommonResolution::SevenTwentyP),
           duration_seconds: Some(10),
@@ -108,7 +108,7 @@ mod tests {
 
   fn cost_cents(resolution: Option<CommonResolution>, duration_seconds: u16) -> u64 {
     let builder = GenerateVideoRequestBuilder {
-      model: CommonVideoModel::Seedance2p0FastGlobal,
+      model: CommonVideoModel::Seedance2p0UltraFast,
       provider: Provider::GmiCloud,
       resolution,
       duration_seconds: Some(duration_seconds),

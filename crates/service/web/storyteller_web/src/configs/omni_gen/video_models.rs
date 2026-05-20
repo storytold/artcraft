@@ -156,7 +156,7 @@ fn build_omni_gen_video_models() -> Vec<OmniGenVideoModelDetails> {
   });
 
 //  models.push(OmniGenVideoModelDetails {
-//    model: CommonVideoModel::Seedance2p0Global,
+//    model: CommonVideoModel::Seedance2p0Ultra,
 //    model_creator: Some(ModelCreator::Bytedance),
 //    full_name: Some("Seedance 2.0 (Global)".to_string()),
 //    text_prompt_supported: Some(true),
@@ -196,7 +196,7 @@ fn build_omni_gen_video_models() -> Vec<OmniGenVideoModelDetails> {
 //  });
 //
 //  models.push(OmniGenVideoModelDetails {
-//    model: CommonVideoModel::Seedance2p0FastGlobal,
+//    model: CommonVideoModel::Seedance2p0UltraFast,
 //    model_creator: Some(ModelCreator::Bytedance),
 //    full_name: Some("Seedance 2.0 Fast (Global)".to_string()),
 //    text_prompt_supported: Some(true),

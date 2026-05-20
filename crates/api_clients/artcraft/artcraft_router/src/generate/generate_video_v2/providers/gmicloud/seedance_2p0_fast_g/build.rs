@@ -12,11 +12,11 @@ use crate::client::request_mismatch_mitigation_strategy::RequestMismatchMitigati
 use crate::errors::artcraft_router_error::ArtcraftRouterError;
 use crate::errors::client_error::ClientError;
 use crate::generate::generate_video::generate_video_request_builder::GenerateVideoRequestBuilder;
-use crate::generate::generate_video_v2::providers::gmicloud::seedance_2p0_fast_g::request::GmiCloudSeedance2p0FastGRequestState;
+use crate::generate::generate_video_v2::providers::gmicloud::seedance_2p0_fast_g::request::GmiCloudSeedance2p0UltraFastRequestState;
 use crate::generate::generate_video_v2::video_generation_draft_or_request::VideoGenerationDraftOrRequest;
 use crate::generate::generate_video_v2::video_generation_request::VideoGenerationRequest;
 
-pub fn build_gmicloud_seedance_2p0_fast_g(
+pub fn build_gmicloud_seedance_2p0_u_fast(
   mut builder: GenerateVideoRequestBuilder,
 ) -> Result<VideoGenerationDraftOrRequest, ArtcraftRouterError> {
   let strategy = builder.request_mismatch_mitigation_strategy;
@@ -49,8 +49,8 @@ pub fn build_gmicloud_seedance_2p0_fast_g(
     reference_asset_ids: None,
   };
 
-  let state = GmiCloudSeedance2p0FastGRequestState { request };
-  Ok(VideoGenerationDraftOrRequest::Request(VideoGenerationRequest::GmiCloudSeedance2p0FastG(state)))
+  let state = GmiCloudSeedance2p0UltraFastRequestState { request };
+  Ok(VideoGenerationDraftOrRequest::Request(VideoGenerationRequest::GmiCloudSeedance2p0UltraFast(state)))
 }
 
 fn plan_ratio(
@@ -247,7 +247,7 @@ mod tests {
 
     #[test]
     fn media_file_token_rejected() {
-      let result = build_gmicloud_seedance_2p0_fast_g(GenerateVideoRequestBuilder {
+      let result = build_gmicloud_seedance_2p0_u_fast(GenerateVideoRequestBuilder {
         start_frame: Some(ImageRef::MediaFileToken(MediaFileToken::new("mf_x".to_string()))),
         ..base_builder()
       });
@@ -284,7 +284,7 @@ mod tests {
 
   fn base_builder() -> GenerateVideoRequestBuilder {
     GenerateVideoRequestBuilder {
-      model: CommonVideoModel::Seedance2p0FastGlobal,
+      model: CommonVideoModel::Seedance2p0UltraFast,
       provider: Provider::GmiCloud,
       duration_seconds: Some(5),
       video_batch_count: Some(1),
@@ -298,10 +298,10 @@ mod tests {
     builder
   }
 
-  fn unwrap_request(builder: GenerateVideoRequestBuilder) -> GmiCloudSeedance2p0FastGRequestState {
-    let result = build_gmicloud_seedance_2p0_fast_g(builder).expect("build should succeed");
+  fn unwrap_request(builder: GenerateVideoRequestBuilder) -> GmiCloudSeedance2p0UltraFastRequestState {
+    let result = build_gmicloud_seedance_2p0_u_fast(builder).expect("build should succeed");
     match result {
-      VideoGenerationDraftOrRequest::Request(VideoGenerationRequest::GmiCloudSeedance2p0FastG(state)) => state,
+      VideoGenerationDraftOrRequest::Request(VideoGenerationRequest::GmiCloudSeedance2p0UltraFast(state)) => state,
       _ => panic!("expected GmiCloudSeedance2p0FastG request"),
     }
   }

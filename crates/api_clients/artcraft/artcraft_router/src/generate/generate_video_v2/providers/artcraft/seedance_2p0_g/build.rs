@@ -5,19 +5,19 @@ use crate::generate::generate_video::generate_video_request_builder::GenerateVid
 use crate::generate::generate_video_v2::providers::artcraft::build_common::{
   build_artcraft_omni_request, SupportedResolutions, UltraWideSupport,
 };
-use crate::generate::generate_video_v2::providers::artcraft::seedance_2p0_g::request::ArtcraftSeedance2p0GRequestState;
+use crate::generate::generate_video_v2::providers::artcraft::seedance_2p0_g::request::ArtcraftSeedance2p0UltraRequestState;
 use crate::generate::generate_video_v2::video_generation_draft_or_request::VideoGenerationDraftOrRequest;
 use crate::generate::generate_video_v2::video_generation_request::VideoGenerationRequest;
 
-pub fn build_artcraft_seedance_2p0_g(builder: GenerateVideoRequestBuilder) -> Result<VideoGenerationDraftOrRequest, ArtcraftRouterError> {
+pub fn build_artcraft_seedance_2p0_u(builder: GenerateVideoRequestBuilder) -> Result<VideoGenerationDraftOrRequest, ArtcraftRouterError> {
   let request = build_artcraft_omni_request(
     builder,
-    CommonVideoModelEnum::Seedance2p0Global,
+    CommonVideoModelEnum::Seedance2p0Ultra,
     SupportedResolutions::Full,
     UltraWideSupport::Supported,
   )?;
-  let state = ArtcraftSeedance2p0GRequestState { request };
-  Ok(VideoGenerationDraftOrRequest::Request(VideoGenerationRequest::ArtcraftSeedance2p0G(state)))
+  let state = ArtcraftSeedance2p0UltraRequestState { request };
+  Ok(VideoGenerationDraftOrRequest::Request(VideoGenerationRequest::ArtcraftSeedance2p0Ultra(state)))
 }
 
 #[cfg(test)]
@@ -46,7 +46,7 @@ mod tests {
     #[test]
     fn model_is_seedance_2p0() {
       let req = unwrap_request(make_builder(|_| {}));
-      assert!(matches!(req.request.model, Some(CommonVideoModelEnum::Seedance2p0Global)));
+      assert!(matches!(req.request.model, Some(CommonVideoModelEnum::Seedance2p0Ultra)));
     }
 
     #[test]
@@ -120,7 +120,7 @@ mod tests {
 
     #[test]
     fn url_start_frame_rejected() {
-      let result = build_artcraft_seedance_2p0_g(GenerateVideoRequestBuilder {
+      let result = build_artcraft_seedance_2p0_u(GenerateVideoRequestBuilder {
         start_frame: Some(ImageRef::Url("https://example.com".to_string())),
         ..base_builder()
       });
@@ -163,11 +163,11 @@ mod tests {
     builder
   }
 
-  fn unwrap_request(builder: GenerateVideoRequestBuilder) -> ArtcraftSeedance2p0GRequestState {
-    let result = build_artcraft_seedance_2p0_g(builder).expect("build should succeed");
+  fn unwrap_request(builder: GenerateVideoRequestBuilder) -> ArtcraftSeedance2p0UltraRequestState {
+    let result = build_artcraft_seedance_2p0_u(builder).expect("build should succeed");
     match result {
       VideoGenerationDraftOrRequest::Request(
-        VideoGenerationRequest::ArtcraftSeedance2p0G(state)
+        VideoGenerationRequest::ArtcraftSeedance2p0Ultra(state)
       ) => state,
       _ => panic!("expected ArtcraftSeedance2p0 request"),
     }

@@ -1,14 +1,14 @@
 use gmicloud_client::traits::gmicloud_request_cost_calculator_trait::GmiCloudRequestCostCalculator;
 
 use crate::generate::generate_video::video_generation_cost_estimate::VideoGenerationCostEstimate;
-use crate::generate::generate_video_v2::providers::gmicloud::seedance_2p0_g::request::GmiCloudSeedance2p0GRequestState;
+use crate::generate::generate_video_v2::providers::gmicloud::seedance_2p0_g::request::GmiCloudSeedance2p0UltraRequestState;
 
-pub struct GmiCloudSeedance2p0GCostState {
-  request: GmiCloudSeedance2p0GRequestState,
+pub struct GmiCloudSeedance2p0UltraCostState {
+  request: GmiCloudSeedance2p0UltraRequestState,
 }
 
-impl GmiCloudSeedance2p0GCostState {
-  pub fn from_request(request: &GmiCloudSeedance2p0GRequestState) -> Self {
+impl GmiCloudSeedance2p0UltraCostState {
+  pub fn from_request(request: &GmiCloudSeedance2p0UltraRequestState) -> Self {
     Self { request: request.clone() }
   }
 
@@ -116,7 +116,7 @@ mod tests {
 
   fn cost_cents(resolution: Option<CommonResolution>, duration_seconds: u16) -> u64 {
     let builder = GenerateVideoRequestBuilder {
-      model: CommonVideoModel::Seedance2p0Global,
+      model: CommonVideoModel::Seedance2p0Ultra,
       provider: Provider::GmiCloud,
       resolution,
       duration_seconds: Some(duration_seconds),

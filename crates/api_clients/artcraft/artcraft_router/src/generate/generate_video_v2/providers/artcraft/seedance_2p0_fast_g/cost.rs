@@ -1,21 +1,21 @@
 use enums::common::generation::common_resolution::CommonResolution;
 
 use crate::generate::generate_video::video_generation_cost_estimate::VideoGenerationCostEstimate;
-use crate::generate::generate_video_v2::providers::artcraft::seedance_2p0_fast_g::request::ArtcraftSeedance2p0FastGRequestState;
+use crate::generate::generate_video_v2::providers::artcraft::seedance_2p0_fast_g::request::ArtcraftSeedance2p0UltraFastRequestState;
 
 // ── Pricing constants ──
 
 const CENTS_PER_SECOND_480P: f64 = 3.6267;
 const CENTS_PER_SECOND_720P: f64 = 8.9089;
 
-pub struct ArtcraftSeedance2p0FastGCostState {
+pub struct ArtcraftSeedance2p0UltraFastCostState {
   pub resolution: CommonResolution,
   pub duration_seconds: u16,
   pub batch_count: u16,
 }
 
-impl ArtcraftSeedance2p0FastGCostState {
-  pub fn from_request(request: &ArtcraftSeedance2p0FastGRequestState) -> Self {
+impl ArtcraftSeedance2p0UltraFastCostState {
+  pub fn from_request(request: &ArtcraftSeedance2p0UltraFastRequestState) -> Self {
     let resolution = request.request.resolution
       .unwrap_or(CommonResolution::SevenTwentyP);
     let duration_seconds = request.request.duration_seconds.unwrap_or(5);
@@ -125,7 +125,7 @@ mod tests {
       let fast = cost_cents(Some(CommonResolution::SevenTwentyP), 10, 1);
       let standard = {
         let builder = GenerateVideoRequestBuilder {
-          model: CommonVideoModel::Seedance2p0Global,
+          model: CommonVideoModel::Seedance2p0Ultra,
           provider: Provider::Artcraft,
           resolution: Some(CommonResolution::SevenTwentyP),
           duration_seconds: Some(10),
@@ -150,7 +150,7 @@ mod tests {
     video_batch_count: u16,
   ) -> crate::generate::generate_video::video_generation_cost_estimate::VideoGenerationCostEstimate {
     let builder = GenerateVideoRequestBuilder {
-      model: CommonVideoModel::Seedance2p0FastGlobal,
+      model: CommonVideoModel::Seedance2p0UltraFast,
       provider: Provider::Artcraft,
       resolution,
       duration_seconds: Some(duration_seconds),
