@@ -99,19 +99,9 @@ async fn main() -> AnyhowResult<()> {
   // ==================== Setup all dependencies ==================== //
 
   let setup = setup_dependencies(&server_hostname).await?;
-
-  let pager_for_health_check = setup.server_state.pager.clone();
-
-  // Destructure to avoid partial-move issues.
   let server_state = setup.server_state;
-  let pager_worker = setup.pager_worker;
-  let health_check_status_clone = setup.health_check_status_clone;
-  let mysql_pool_for_health_check = setup.mysql_pool_for_health_check;
-  let mysql_pool_for_ip_bans = setup.mysql_pool_for_ip_bans;
-  let mysql_pool_for_model_cache = setup.mysql_pool_for_model_cache;
   let health_check_interval = setup.health_check_interval;
-  let ip_ban_list_clone = setup.ip_ban_list_clone;
-  let model_token_info_cache_clone = setup.model_token_info_cache_clone;
+  let pager_worker = setup.pager_worker;
 
   // ==================== Background threads ==================== //
 
@@ -125,25 +115,35 @@ async fn main() -> AnyhowResult<()> {
 
   info!("Spawning DB health checker thread.");
 
+  let health_check_status_clone = server_state.health_check_status.clone();
+  let mysql_pool_clone = server_state.mysql_pool.clone();
+  let pager_clone = server_state.pager.clone();
+
   tokio_runtime.spawn(async move {
     db_health_checker_thread(
       health_check_status_clone,
-      mysql_pool_for_health_check,
+      mysql_pool_clone,
       health_check_interval,
-      pager_for_health_check,
+      pager_clone,
     ).await;
   });
 
   info!("Spawning IP ban polling thread.");
 
+  let ip_ban_list_clone = server_state.ip_ban_list.clone();
+  let mysql_pool_clone = server_state.mysql_pool.clone();
+
   tokio_runtime.spawn(async {
-    poll_ip_bans(ip_ban_list_clone, mysql_pool_for_ip_bans).await;
+    poll_ip_bans(ip_ban_list_clone, mysql_pool_clone).await;
   });
 
   info!("Spawning token info cache polling thread.");
 
+  let model_token_info_cache_clone = server_state.caches.durable.model_token_info.clone();
+  let mysql_pool_clone = server_state.mysql_pool.clone();
+  
   tokio_runtime.spawn(async {
-    poll_model_token_info_thread(model_token_info_cache_clone, mysql_pool_for_model_cache).await;
+    poll_model_token_info_thread(model_token_info_cache_clone, mysql_pool_clone).await;
   });
 
   // ==================== Serve ==================== //

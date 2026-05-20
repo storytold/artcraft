@@ -60,15 +60,7 @@ const ENV_AUDIO_UPLOADS_BUCKET_ROOT: &str = "AUDIO_UPLOADS_BUCKET_ROOT";
 pub struct SetupResult {
   pub server_state: ServerState,
   pub pager_worker: PagerWorker,
-
-  /// Clones needed by background threads.
-  pub health_check_status_clone: HealthCheckStatus,
-  pub mysql_pool_for_health_check: MySqlPool,
-  pub mysql_pool_for_ip_bans: MySqlPool,
-  pub mysql_pool_for_model_cache: MySqlPool,
   pub health_check_interval: Duration,
-  pub ip_ban_list_clone: actix_helpers::middleware::banned_ip_filter::ip_ban_list::ip_ban_list::IpBanList,
-  pub model_token_info_cache_clone: ModelTokenToInfoCache,
 }
 
 pub async fn setup_dependencies(server_hostname: &str) -> AnyhowResult<SetupResult> {
@@ -184,7 +176,6 @@ pub async fn setup_dependencies(server_hostname: &str) -> AnyhowResult<SetupResu
   let static_api_token_set = read_static_api_tokens();
 
   let ip_ban_list = load_static_container_ip_bans();
-  let ip_ban_list_clone = ip_ban_list.clone();
 
   let cidr_ban_set = load_cidr_bans();
 
@@ -192,14 +183,8 @@ pub async fn setup_dependencies(server_hostname: &str) -> AnyhowResult<SetupResu
   let ip_address_troll_bans = load_ip_address_troll_bans();
 
   let model_token_info_cache = ModelTokenToInfoCache::new();
-  let model_token_info_cache_clone = model_token_info_cache.clone();
 
   let health_check_status = HealthCheckStatus::new();
-  let health_check_status_clone = health_check_status.clone();
-
-  let mysql_pool_for_health_check = pool.clone();
-  let mysql_pool_for_ip_bans = pool.clone();
-  let mysql_pool_for_model_cache = pool.clone();
 
   let server_environment = ServerEnvironment::from_str(&easyenv::get_env_string_required("SERVER_ENVIRONMENT")?)
     .ok_or(anyhow!("invalid server environment"))?;
@@ -335,13 +320,7 @@ pub async fn setup_dependencies(server_hostname: &str) -> AnyhowResult<SetupResu
   Ok(SetupResult {
     server_state,
     pager_worker,
-    health_check_status_clone,
-    mysql_pool_for_health_check,
-    mysql_pool_for_ip_bans,
-    mysql_pool_for_model_cache,
     health_check_interval,
-    ip_ban_list_clone,
-    model_token_info_cache_clone,
   })
 }
 
