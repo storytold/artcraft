@@ -44,10 +44,12 @@ pub async fn run_pipeline_v2(args: RunPipelineV2Args<'_>) -> Result<PipelineResu
   let mut router_builder = router_builder.clone();
 
   match router_builder.model {
-    CommonVideoModel::PreviewModel => {
+    CommonVideoModel::PreviewModel |
+    CommonVideoModel::Seedance2p0Plus => {
       router_builder.model = CommonVideoModel::Seedance2p0;
     },
-    CommonVideoModel::PreviewModelFast => {
+    CommonVideoModel::PreviewModelFast |
+    CommonVideoModel::Seedance2p0PlusFast => {
       router_builder.model = CommonVideoModel::Seedance2p0Fast;
     },
     _ => {}, // Fall-through

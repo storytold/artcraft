@@ -189,12 +189,16 @@ pub async fn omni_gen_video_generate_handler(
     Some(CommonVideoModel::Seedance2p0Fast) => true,
     Some(CommonVideoModel::Seedance2p0Global) => true,
     Some(CommonVideoModel::Seedance2p0FastGlobal) => true,
+    Some(CommonVideoModel::Seedance2p0Plus) => true,
+    Some(CommonVideoModel::Seedance2p0PlusFast) => true,
     Some(CommonVideoModel::PreviewModel) => true,
     Some(CommonVideoModel::PreviewModelFast) => true,
     _ => false,
   };
 
   let use_alternate_kinovi = match request.model {
+    Some(CommonVideoModel::Seedance2p0Plus) => true,
+    Some(CommonVideoModel::Seedance2p0PlusFast) => true,
     Some(CommonVideoModel::PreviewModel) => true,
     Some(CommonVideoModel::PreviewModelFast) => true,
     _ => false,
