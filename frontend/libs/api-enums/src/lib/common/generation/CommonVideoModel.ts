@@ -4,6 +4,7 @@
 
 export enum CommonVideoModel {
   GrokVideo = "grok_video",
+  HappyHorse1p0 = "happy_horse_1p0",
   Kling16Pro = "kling_1p6_pro",
   Kling21Pro = "kling_2p1_pro",
   Kling21Master = "kling_2p1_master",
