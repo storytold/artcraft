@@ -50,11 +50,9 @@ pub enum CommonVideoModel {
   #[serde(rename = "seedance_2p0_bp_fast")]
   Seedance2p0BytePlusFast,
 
-  // NB: Not in use
   #[serde(rename = "seedance_2p0_u")]
   Seedance2p0Ultra,
 
-  // NB: Not in use
   #[serde(rename = "seedance_2p0_u_fast")]
   Seedance2p0UltraFast,
 
