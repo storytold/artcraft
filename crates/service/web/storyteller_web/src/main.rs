@@ -34,8 +34,6 @@ use actix_multipart::form::MultipartFormConfig;
 use actix_web::middleware::{DefaultHeaders, Logger};
 use actix_web::{middleware, web, App, HttpServer};
 use anyhow::anyhow;
-use billing_artcraft_component::utils::artcraft_stripe_config::ArtcraftStripeConfig;
-use billing_component::stripe::stripe_config::{FullUrlOrPath, StripeCheckoutConfigs, StripeConfig, StripeCustomerPortalConfigs, StripeSecrets};
 use billing_component::stripe::traits::internal_product_to_stripe_lookup::InternalProductToStripeLookup;
 use billing_component::stripe::traits::internal_subscription_product_lookup::InternalSubscriptionProductLookup;
 use bootstrap::bootstrap::{bootstrap, BootstrapArgs};
@@ -79,9 +77,11 @@ use crate::startup::load_bans::{
   load_troll_user_token_bans, load_ip_address_troll_bans,
 };
 use crate::startup::setup_static_feature_flags::setup_static_feature_flags;
+use crate::startup::setup_stripe_artcraft::setup_stripe_artcraft;
+use crate::startup::setup_stripe_fakeyou::setup_stripe_fakeyou;
 use crate::state::certs::google_sign_in_cert::GoogleSignInCert;
 use crate::state::memory_cache::model_token_to_info_cache::ModelTokenToInfoCache;
-use crate::state::server_state::{BeebleData, DurableInMemoryCaches, EnvConfig, EphemeralInMemoryCaches, FalData, GmiCloudData, InMemoryCaches, OpenAiData, ResendData, Seedance2ProData, ServerInfo, ServerState, StripeSettings, TrollBans, WorldLabsData};
+use crate::state::server_state::{BeebleData, DurableInMemoryCaches, EnvConfig, EphemeralInMemoryCaches, FalData, GmiCloudData, InMemoryCaches, OpenAiData, ResendData, Seedance2ProData, ServerInfo, ServerState, TrollBans, WorldLabsData};
 use crate::threads::db_health_checker_thread::db_health_check_status::HealthCheckStatus;
 use crate::threads::db_health_checker_thread::db_health_checker_thread::db_health_checker_thread;
 use crate::threads::poll_ip_banlist_thread::poll_ip_bans;
@@ -349,30 +349,9 @@ async fn main() -> AnyhowResult<()> {
     poll_model_token_info_thread(model_token_info_cache2, mysql_pool5).await;
   });
 
-  let stripe_configs = StripeConfig {
-    checkout: StripeCheckoutConfigs {
-      success_url: FullUrlOrPath::Path(easyenv::get_env_string_required("STRIPE_CHECKOUT_SUCCESS_URL_PATH")?),
-      cancel_url: FullUrlOrPath::Path(easyenv::get_env_string_required("STRIPE_CHECKOUT_CANCEL_URL_PATH")?),
-    },
-    portal: StripeCustomerPortalConfigs {
-      return_url: FullUrlOrPath::Path(easyenv::get_env_string_required("STRIPE_PORTAL_RETURN_URL_PATH")?),
-      default_portal_config_id: easyenv::get_env_string_required("STRIPE_PORTAL_DEFAULT_CONFIG_ID")?,
-    },
-    secrets: StripeSecrets {
-      publishable_key: easyenv::get_env_string_optional("STRIPE_PUBLISHABLE_KEY"),
-      secret_key: easyenv::get_env_string_required("STRIPE_SECRET_KEY")?,
-      secret_webhook_signing_key: easyenv::get_env_string_required("STRIPE_SECRET_WEBHOOK_SIGNING_KEY")?,
-    },
-  };
-
   let service_feature_flags = setup_static_feature_flags(paging_flags)?;
 
   let third_party_url_redirector = ThirdPartyUrlRedirector::new(server_environment);
-
-  let stripe_client = {
-    let api_secret = stripe_configs.secrets.secret_key.clone();
-    stripe::Client::new(api_secret)
-  };
 
   // NB: Docker creates this file within container builds.
   let build_sha = std::fs::read_to_string("/GIT_SHA")
@@ -405,19 +384,8 @@ async fn main() -> AnyhowResult<()> {
     server_info: ServerInfo {
       build_sha,
     },
-    stripe: StripeSettings {
-      config: stripe_configs,
-      client: stripe_client,
-    },
-    stripe_artcraft: {
-      ArtcraftStripeConfig {
-        secret_key: easyenv::get_env_string_required("STRIPE_ARTCRAFT_SECRET_KEY")?,
-        secret_webhook_signing_key: easyenv::get_env_string_required("STRIPE_ARTCRAFT_SECRET_WEBHOOK_KEY")?,
-        checkout_success_url: easyenv::get_env_string_required("STRIPE_ARTCRAFT_CHECKOUT_SUCCESS_URL")?,
-        checkout_cancel_url: easyenv::get_env_string_required("STRIPE_ARTCRAFT_CHECKOUT_CANCEL_URL")?,
-        portal_return_url: easyenv::get_env_string_required("STRIPE_ARTCRAFT_PORTAL_RETURN_URL")?,
-      }.to_config_with_client()
-    },
+    stripe: setup_stripe_fakeyou()?,
+    stripe_artcraft: setup_stripe_artcraft()?,
     hostname: server_hostname,
     startup_time,
     server_environment_old: server_environment,
