@@ -1,202 +1,23 @@
-use artcraft_api_defs::omni_gen::cost_and_generate_requests::omni_gen_video_cost_and_generate_request::OmniGenVideoCostAndGenerateRequest;
-use enums::common::generation::common_aspect_ratio::CommonAspectRatio as CommonAspectRatioEnum;
-use enums::common::generation::common_resolution::CommonResolution as CommonResolutionEnum;
 use enums::common::generation::common_video_model::CommonVideoModel as CommonVideoModelEnum;
 
-use crate::api::common_aspect_ratio::CommonAspectRatio;
-use crate::api::common_resolution::CommonResolution;
-use crate::client::request_mismatch_mitigation_strategy::RequestMismatchMitigationStrategy;
 use crate::errors::artcraft_router_error::ArtcraftRouterError;
-use crate::errors::client_error::ClientError;
 use crate::generate::generate_video::generate_video_request_builder::GenerateVideoRequestBuilder;
-use crate::generate::generate_video_v2::providers::artcraft::resolve::{
-  resolve_audio_list_ref, resolve_character_list_ref, resolve_image_list_ref,
-  resolve_image_ref, resolve_video_list_ref,
+use crate::generate::generate_video_v2::providers::artcraft::build_common::{
+  build_artcraft_omni_request, SupportedResolutions, UltraWideSupport,
 };
 use crate::generate::generate_video_v2::providers::artcraft::preview_model_fast::request::ArtcraftPreviewModelFastRequestState;
 use crate::generate::generate_video_v2::video_generation_draft_or_request::VideoGenerationDraftOrRequest;
 use crate::generate::generate_video_v2::video_generation_request::VideoGenerationRequest;
 
-pub fn build_artcraft_preview_model_fast(mut builder: GenerateVideoRequestBuilder) -> Result<VideoGenerationDraftOrRequest, ArtcraftRouterError> {
-  let strategy = builder.request_mismatch_mitigation_strategy;
-
-  let aspect_ratio = plan_aspect_ratio(builder.aspect_ratio.take(), strategy)?;
-  let resolution = plan_output_resolution(builder.resolution.take(), strategy)?;
-  let batch_count = plan_batch_count(builder.video_batch_count.take(), strategy)?;
-  let duration_seconds = plan_duration(builder.duration_seconds.take(), strategy)?;
-  let prompt = builder.prompt.take();
-
-  let start_frame = resolve_image_ref(builder.start_frame.take())?;
-  let end_frame = resolve_image_ref(builder.end_frame.take())?;
-  let reference_images = resolve_image_list_ref(builder.reference_images.take())?;
-  let reference_videos = resolve_video_list_ref(builder.reference_videos.take())?;
-  let reference_audio = resolve_audio_list_ref(builder.reference_audio.take())?;
-  let reference_characters = resolve_character_list_ref(builder.reference_character_tokens.take());
-  let idempotency_token = builder.get_or_generate_idempotency_token();
-
-  let request = OmniGenVideoCostAndGenerateRequest {
-    model: Some(CommonVideoModelEnum::PreviewModelFast),
-    idempotency_token: Some(idempotency_token),
-    prompt,
-    start_frame_image_media_token: start_frame,
-    end_frame_image_media_token: end_frame,
-    reference_image_media_tokens: reference_images,
-    reference_video_media_tokens: reference_videos,
-    reference_audio_media_tokens: reference_audio,
-    reference_character_tokens: reference_characters,
-    resolution,
-    aspect_ratio,
-    duration_seconds: duration_seconds.map(|d| d as u16),
-    video_batch_count: Some(batch_count),
-    negative_prompt: None,
-    generate_audio: None,
-    quality: None,
-  };
-
+pub fn build_artcraft_preview_model_fast(builder: GenerateVideoRequestBuilder) -> Result<VideoGenerationDraftOrRequest, ArtcraftRouterError> {
+  let request = build_artcraft_omni_request(
+    builder,
+    CommonVideoModelEnum::PreviewModelFast,
+    SupportedResolutions::Fast,
+    UltraWideSupport::Supported,
+  )?;
   let state = ArtcraftPreviewModelFastRequestState { request };
   Ok(VideoGenerationDraftOrRequest::Request(VideoGenerationRequest::ArtcraftPreviewModelFast(state)))
-}
-
-// -- Plan helpers --
-
-fn plan_aspect_ratio(
-  aspect_ratio: Option<CommonAspectRatio>,
-  strategy: RequestMismatchMitigationStrategy,
-) -> Result<Option<CommonAspectRatioEnum>, ArtcraftRouterError> {
-  match aspect_ratio {
-    None
-    | Some(CommonAspectRatio::Auto)
-    | Some(CommonAspectRatio::Auto2k)
-    | Some(CommonAspectRatio::Auto4k) => Ok(None),
-
-    Some(CommonAspectRatio::WideSixteenByNine) | Some(CommonAspectRatio::Wide) => {
-      Ok(Some(CommonAspectRatioEnum::WideSixteenByNine))
-    }
-    Some(CommonAspectRatio::TallNineBySixteen) | Some(CommonAspectRatio::Tall) => {
-      Ok(Some(CommonAspectRatioEnum::TallNineBySixteen))
-    }
-    Some(CommonAspectRatio::Square) | Some(CommonAspectRatio::SquareHd) => {
-      Ok(Some(CommonAspectRatioEnum::Square))
-    }
-    Some(CommonAspectRatio::WideFourByThree) => Ok(Some(CommonAspectRatioEnum::WideFourByThree)),
-    Some(CommonAspectRatio::TallThreeByFour) => Ok(Some(CommonAspectRatioEnum::TallThreeByFour)),
-    Some(CommonAspectRatio::WideTwentyOneByNine) => Ok(Some(CommonAspectRatioEnum::WideTwentyOneByNine)),
-
-    Some(unsupported) => match strategy {
-      RequestMismatchMitigationStrategy::ErrorOut => {
-        Err(ArtcraftRouterError::Client(ClientError::ModelDoesNotSupportOption {
-          field: "aspect_ratio",
-          value: format!("{:?}", unsupported),
-        }))
-      }
-      RequestMismatchMitigationStrategy::PayMoreUpgrade
-      | RequestMismatchMitigationStrategy::PayLessDowngrade => {
-        Ok(Some(nearest_aspect_ratio(unsupported)))
-      }
-    },
-  }
-}
-
-fn nearest_aspect_ratio(aspect_ratio: CommonAspectRatio) -> CommonAspectRatioEnum {
-  match aspect_ratio {
-    CommonAspectRatio::WideFiveByFour => CommonAspectRatioEnum::WideFourByThree,
-    CommonAspectRatio::WideThreeByTwo => CommonAspectRatioEnum::WideFourByThree,
-    CommonAspectRatio::TallFourByFive => CommonAspectRatioEnum::TallThreeByFour,
-    CommonAspectRatio::TallTwoByThree => CommonAspectRatioEnum::TallThreeByFour,
-    CommonAspectRatio::TallNineByTwentyOne => CommonAspectRatioEnum::TallNineBySixteen,
-    _ => CommonAspectRatioEnum::Square,
-  }
-}
-
-// PreviewModelFast supports output resolutions: 480p and 720p only.
-fn plan_output_resolution(
-  resolution: Option<CommonResolution>,
-  strategy: RequestMismatchMitigationStrategy,
-) -> Result<Option<CommonResolutionEnum>, ArtcraftRouterError> {
-  match resolution {
-    None => Ok(None),
-
-    Some(CommonResolution::FourEightyP) => Ok(Some(CommonResolutionEnum::FourEightyP)),
-    Some(CommonResolution::SevenTwentyP) => Ok(Some(CommonResolutionEnum::SevenTwentyP)),
-
-    // 1080p not supported for Fast
-    Some(CommonResolution::TenEightyP) => match strategy {
-      RequestMismatchMitigationStrategy::ErrorOut => {
-        Err(ArtcraftRouterError::Client(ClientError::ModelDoesNotSupportOption {
-          field: "resolution",
-          value: format!("{:?}", CommonResolution::TenEightyP),
-        }))
-      }
-      _ => Ok(Some(CommonResolutionEnum::SevenTwentyP)),
-    },
-
-    Some(unsupported) => match strategy {
-      RequestMismatchMitigationStrategy::ErrorOut => {
-        Err(ArtcraftRouterError::Client(ClientError::ModelDoesNotSupportOption {
-          field: "resolution",
-          value: format!("{:?}", unsupported),
-        }))
-      }
-      RequestMismatchMitigationStrategy::PayMoreUpgrade => {
-        Ok(Some(match unsupported {
-          CommonResolution::HalfK => CommonResolutionEnum::FourEightyP,
-          _ => CommonResolutionEnum::SevenTwentyP,
-        }))
-      }
-      RequestMismatchMitigationStrategy::PayLessDowngrade => {
-        Ok(Some(match unsupported {
-          CommonResolution::HalfK => CommonResolutionEnum::FourEightyP,
-          _ => CommonResolutionEnum::SevenTwentyP,
-        }))
-      }
-    },
-  }
-}
-
-// Batch counts: 1, 2, 4.
-fn plan_batch_count(
-  video_batch_count: Option<u16>,
-  strategy: RequestMismatchMitigationStrategy,
-) -> Result<u16, ArtcraftRouterError> {
-  let count = video_batch_count.unwrap_or(1);
-  match count {
-    0 => Err(ArtcraftRouterError::Client(ClientError::UserRequestedZeroGenerations)),
-    1 | 2 | 4 => Ok(count),
-    _ => match strategy {
-      RequestMismatchMitigationStrategy::ErrorOut => {
-        Err(ArtcraftRouterError::Client(ClientError::ModelDoesNotSupportOption {
-          field: "video_batch_count",
-          value: format!("{}", count),
-        }))
-      }
-      RequestMismatchMitigationStrategy::PayMoreUpgrade => Ok(4),
-      RequestMismatchMitigationStrategy::PayLessDowngrade => {
-        Ok(if count < 4 { 2 } else { 4 })
-      }
-    },
-  }
-}
-
-// Duration: 4-15 seconds.
-fn plan_duration(
-  duration_seconds: Option<u16>,
-  strategy: RequestMismatchMitigationStrategy,
-) -> Result<Option<u8>, ArtcraftRouterError> {
-  const MIN: u16 = 4;
-  const MAX: u16 = 15;
-  match duration_seconds {
-    None => Ok(None),
-    Some(d) if d >= MIN && d <= MAX => Ok(Some(d as u8)),
-    Some(d) => match strategy {
-      RequestMismatchMitigationStrategy::ErrorOut => {
-        Err(ArtcraftRouterError::Client(ClientError::ModelDoesNotSupportOption {
-          field: "duration_seconds",
-          value: format!("{}", d),
-        }))
-      }
-      _ => Ok(Some(d.clamp(MIN, MAX) as u8)),
-    },
-  }
 }
 
 #[cfg(test)]
