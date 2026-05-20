@@ -54,6 +54,8 @@ use crate::generate::generate_video_v2::providers::artcraft::seedance_2p0::build
 use crate::generate::generate_video_v2::providers::artcraft::seedance_2p0_fast::build::build_artcraft_seedance_2p0_fast;
 use crate::generate::generate_video_v2::providers::artcraft::seedance_2p0_g::build::build_artcraft_seedance_2p0_g;
 use crate::generate::generate_video_v2::providers::artcraft::seedance_2p0_fast_g::build::build_artcraft_seedance_2p0_fast_g;
+use crate::generate::generate_video_v2::providers::artcraft::seedance_2p0_p::build::build_artcraft_seedance_2p0_p;
+use crate::generate::generate_video_v2::providers::artcraft::seedance_2p0_p_fast::build::build_artcraft_seedance_2p0_p_fast;
 use crate::generate::generate_video_v2::providers::kinovi::happy_horse_1p0::build::build_kinovi_happy_horse_1p0;
 use crate::generate::generate_video_v2::providers::kinovi::seedance_2p0::build::build_kinovi_seedance_2p0;
 use crate::generate::generate_video_v2::providers::gmicloud::seedance_2p0_g::build::build_gmicloud_seedance_2p0_g;
@@ -150,16 +152,20 @@ impl GenerateVideoRequestBuilder {
 
   pub fn use_new_builder(&self) -> bool {
     match (self.provider, self.model) {
+      // Artcraft
       (Provider::Artcraft, CommonVideoModel::HappyHorse1p0) => true,
       (Provider::Artcraft, CommonVideoModel::Seedance2p0) => true,
       (Provider::Artcraft, CommonVideoModel::Seedance2p0Fast) => true,
       (Provider::Artcraft, CommonVideoModel::Seedance2p0Global) => true,
       (Provider::Artcraft, CommonVideoModel::Seedance2p0FastGlobal) => true,
+      (Provider::Artcraft, CommonVideoModel::Seedance2p0Plus) => true,
+      (Provider::Artcraft, CommonVideoModel::Seedance2p0PlusFast) => true,
       (Provider::Artcraft, CommonVideoModel::PreviewModel) => true,
       (Provider::Artcraft, CommonVideoModel::PreviewModelFast) => true,
+      // GmiCloud
       (Provider::GmiCloud, CommonVideoModel::Seedance2p0Global) => true,
-
       (Provider::GmiCloud, CommonVideoModel::Seedance2p0FastGlobal) => true,
+      // Kinovi
       (Provider::Seedance2Pro, CommonVideoModel::HappyHorse1p0) => true,
       (Provider::Seedance2Pro, CommonVideoModel::Seedance2p0) => true,
       (Provider::Seedance2Pro, CommonVideoModel::Seedance2p0Fast) => true,
@@ -170,15 +176,20 @@ impl GenerateVideoRequestBuilder {
   // New builder (transitional state)
   pub fn build2(self) -> Result<VideoGenerationDraftOrRequest, ArtcraftRouterError> {
     match (self.provider, self.model) {
+      // Artcraft
       (Provider::Artcraft, CommonVideoModel::HappyHorse1p0) => build_artcraft_happy_horse_1p0(self),
       (Provider::Artcraft, CommonVideoModel::Seedance2p0) => build_artcraft_seedance_2p0(self),
       (Provider::Artcraft, CommonVideoModel::Seedance2p0Fast) => build_artcraft_seedance_2p0_fast(self),
       (Provider::Artcraft, CommonVideoModel::Seedance2p0Global) => build_artcraft_seedance_2p0_g(self),
       (Provider::Artcraft, CommonVideoModel::Seedance2p0FastGlobal) => build_artcraft_seedance_2p0_fast_g(self),
+      (Provider::Artcraft, CommonVideoModel::Seedance2p0Plus) => build_artcraft_seedance_2p0_p(self),
+      (Provider::Artcraft, CommonVideoModel::Seedance2p0PlusFast) => build_artcraft_seedance_2p0_p_fast(self),
       (Provider::Artcraft, CommonVideoModel::PreviewModel) => build_artcraft_preview_model(self),
       (Provider::Artcraft, CommonVideoModel::PreviewModelFast) => build_artcraft_preview_model_fast(self),
+      // GmiCloud
       (Provider::GmiCloud, CommonVideoModel::Seedance2p0Global) => build_gmicloud_seedance_2p0_g(self),
       (Provider::GmiCloud, CommonVideoModel::Seedance2p0FastGlobal) => build_gmicloud_seedance_2p0_fast_g(self),
+      // Kinovi
       (Provider::Seedance2Pro, CommonVideoModel::HappyHorse1p0) => build_kinovi_happy_horse_1p0(self),
       (Provider::Seedance2Pro, CommonVideoModel::Seedance2p0) => build_kinovi_seedance_2p0(self),
       (Provider::Seedance2Pro, CommonVideoModel::Seedance2p0Fast) => build_kinovi_seedance_2p0_fast(self),

@@ -17,6 +17,10 @@ use crate::generate::generate_video_v2::providers::artcraft::seedance_2p0_g::cos
 use crate::generate::generate_video_v2::providers::artcraft::seedance_2p0_g::request::ArtcraftSeedance2p0GRequestState;
 use crate::generate::generate_video_v2::providers::artcraft::seedance_2p0_fast_g::cost::ArtcraftSeedance2p0FastGCostState;
 use crate::generate::generate_video_v2::providers::artcraft::seedance_2p0_fast_g::request::ArtcraftSeedance2p0FastGRequestState;
+use crate::generate::generate_video_v2::providers::artcraft::seedance_2p0_p::cost::ArtcraftSeedance2p0PlusCostState;
+use crate::generate::generate_video_v2::providers::artcraft::seedance_2p0_p::request::ArtcraftSeedance2p0PlusRequestState;
+use crate::generate::generate_video_v2::providers::artcraft::seedance_2p0_p_fast::cost::ArtcraftSeedance2p0PlusFastCostState;
+use crate::generate::generate_video_v2::providers::artcraft::seedance_2p0_p_fast::request::ArtcraftSeedance2p0PlusFastRequestState;
 use crate::generate::generate_video_v2::providers::gmicloud::seedance_2p0_g::cost::GmiCloudSeedance2p0GCostState;
 use crate::generate::generate_video_v2::providers::gmicloud::seedance_2p0_g::request::GmiCloudSeedance2p0GRequestState;
 use crate::generate::generate_video_v2::providers::gmicloud::seedance_2p0_fast_g::cost::GmiCloudSeedance2p0FastGCostState;
@@ -37,6 +41,8 @@ pub enum VideoGenerationRequest {
   ArtcraftSeedance2p0Fast(ArtcraftSeedance2p0FastRequestState),
   ArtcraftSeedance2p0G(ArtcraftSeedance2p0GRequestState),
   ArtcraftSeedance2p0FastG(ArtcraftSeedance2p0FastGRequestState),
+  ArtcraftSeedance2p0Plus(ArtcraftSeedance2p0PlusRequestState),
+  ArtcraftSeedance2p0PlusFast(ArtcraftSeedance2p0PlusFastRequestState),
   GmiCloudSeedance2p0G(GmiCloudSeedance2p0GRequestState),
   GmiCloudSeedance2p0FastG(GmiCloudSeedance2p0FastGRequestState),
   KinoviHappyHorse1p0(KinoviHappyHorse1p0RequestState),
@@ -55,6 +61,8 @@ impl VideoGenerationRequest {
       Self::ArtcraftSeedance2p0Fast(_) => Provider::Artcraft,
       Self::ArtcraftSeedance2p0G(_) => Provider::Artcraft,
       Self::ArtcraftSeedance2p0FastG(_) => Provider::Artcraft,
+      Self::ArtcraftSeedance2p0Plus(_) => Provider::Artcraft,
+      Self::ArtcraftSeedance2p0PlusFast(_) => Provider::Artcraft,
       Self::GmiCloudSeedance2p0G(_) => Provider::GmiCloud,
       Self::GmiCloudSeedance2p0FastG(_) => Provider::GmiCloud,
       Self::KinoviHappyHorse1p0(_) => Provider::Seedance2Pro,
@@ -73,6 +81,8 @@ impl VideoGenerationRequest {
       VideoGenerationRequest::ArtcraftSeedance2p0Fast(request) => Ok(ArtcraftSeedance2p0FastCostState::from_request(request).estimate_cost()),
       VideoGenerationRequest::ArtcraftSeedance2p0G(request) => Ok(ArtcraftSeedance2p0GCostState::from_request(request).estimate_cost()),
       VideoGenerationRequest::ArtcraftSeedance2p0FastG(request) => Ok(ArtcraftSeedance2p0FastGCostState::from_request(request).estimate_cost()),
+      VideoGenerationRequest::ArtcraftSeedance2p0Plus(request) => Ok(ArtcraftSeedance2p0PlusCostState::from_request(request).estimate_cost()),
+      VideoGenerationRequest::ArtcraftSeedance2p0PlusFast(request) => Ok(ArtcraftSeedance2p0PlusFastCostState::from_request(request).estimate_cost()),
       VideoGenerationRequest::GmiCloudSeedance2p0G(request) => Ok(GmiCloudSeedance2p0GCostState::from_request(request).estimate_cost()),
       VideoGenerationRequest::GmiCloudSeedance2p0FastG(request) => Ok(GmiCloudSeedance2p0FastGCostState::from_request(request).estimate_cost()),
       VideoGenerationRequest::KinoviHappyHorse1p0(request) => Ok(KinoviHappyHorse1p0CostState::from_request(request).estimate_cost()),
@@ -110,6 +120,14 @@ impl VideoGenerationRequest {
         request.send(client_ref).await
       },
       VideoGenerationRequest::ArtcraftSeedance2p0FastG(request) => {
+        let client_ref = client.get_artcraft_client_ref()?;
+        request.send(client_ref).await
+      },
+      VideoGenerationRequest::ArtcraftSeedance2p0Plus(request) => {
+        let client_ref = client.get_artcraft_client_ref()?;
+        request.send(client_ref).await
+      },
+      VideoGenerationRequest::ArtcraftSeedance2p0PlusFast(request) => {
         let client_ref = client.get_artcraft_client_ref()?;
         request.send(client_ref).await
       },
