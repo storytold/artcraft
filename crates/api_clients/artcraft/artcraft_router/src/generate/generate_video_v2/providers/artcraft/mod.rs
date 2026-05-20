@@ -8,5 +8,5 @@ pub mod seedance_2p0;
 pub mod seedance_2p0_fast;
 pub mod seedance_2p0_fast_g;
 pub mod seedance_2p0_g;
-pub mod seedance_2p0_p;
-pub mod seedance_2p0_p_fast;
+pub mod seedance_2p0_bp;
+pub mod seedance_2p0_bp_fast;

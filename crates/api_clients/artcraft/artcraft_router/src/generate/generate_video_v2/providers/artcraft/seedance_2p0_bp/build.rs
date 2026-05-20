@@ -5,11 +5,11 @@ use crate::generate::generate_video::generate_video_request_builder::GenerateVid
 use crate::generate::generate_video_v2::providers::artcraft::build_common::{
   build_artcraft_omni_request, SupportedResolutions, UltraWideSupport,
 };
-use crate::generate::generate_video_v2::providers::artcraft::seedance_2p0_p::request::ArtcraftSeedance2p0BytePlusRequestState;
+use crate::generate::generate_video_v2::providers::artcraft::seedance_2p0_bp::request::ArtcraftSeedance2p0BytePlusRequestState;
 use crate::generate::generate_video_v2::video_generation_draft_or_request::VideoGenerationDraftOrRequest;
 use crate::generate::generate_video_v2::video_generation_request::VideoGenerationRequest;
 
-pub fn build_artcraft_seedance_2p0_p(builder: GenerateVideoRequestBuilder) -> Result<VideoGenerationDraftOrRequest, ArtcraftRouterError> {
+pub fn build_artcraft_seedance_2p0_bp(builder: GenerateVideoRequestBuilder) -> Result<VideoGenerationDraftOrRequest, ArtcraftRouterError> {
   let request = build_artcraft_omni_request(
     builder,
     CommonVideoModelEnum::Seedance2p0BytePlus,
@@ -114,7 +114,7 @@ mod tests {
 
     #[test]
     fn url_start_frame_rejected() {
-      let result = build_artcraft_seedance_2p0_p(GenerateVideoRequestBuilder {
+      let result = build_artcraft_seedance_2p0_bp(GenerateVideoRequestBuilder {
         start_frame: Some(ImageRef::Url("https://example.com".to_string())),
         ..base_builder()
       });
@@ -156,7 +156,7 @@ mod tests {
   }
 
   fn unwrap_request(builder: GenerateVideoRequestBuilder) -> ArtcraftSeedance2p0BytePlusRequestState {
-    let result = build_artcraft_seedance_2p0_p(builder).expect("build should succeed");
+    let result = build_artcraft_seedance_2p0_bp(builder).expect("build should succeed");
     match result {
       VideoGenerationDraftOrRequest::Request(
         VideoGenerationRequest::ArtcraftSeedance2p0BytePlus(state)

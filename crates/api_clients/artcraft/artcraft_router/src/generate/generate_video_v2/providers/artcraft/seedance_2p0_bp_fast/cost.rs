@@ -1,24 +1,22 @@
 use enums::common::generation::common_resolution::CommonResolution;
 
 use crate::generate::generate_video::video_generation_cost_estimate::VideoGenerationCostEstimate;
-use crate::generate::generate_video_v2::providers::artcraft::seedance_2p0_p::request::ArtcraftSeedance2p0BytePlusRequestState;
+use crate::generate::generate_video_v2::providers::artcraft::seedance_2p0_bp_fast::request::ArtcraftSeedance2p0BytePlusFastRequestState;
 
 /// USD cents per second by resolution:
-///   480p:  $0.10/s = 10.0 ¢/s
-///   720p:  $0.25/s = 25.0 ¢/s
-///   1080p: $0.50/s = 50.0 ¢/s
-const CENTS_PER_SECOND_480P: f64 = 10.0;
-const CENTS_PER_SECOND_720P: f64 = 25.0;
-const CENTS_PER_SECOND_1080P: f64 = 50.0;
+///   480p:  $0.09/s = 9.0 ¢/s
+///   720p:  $0.20/s = 20.0 ¢/s
+const CENTS_PER_SECOND_480P: f64 = 9.0;
+const CENTS_PER_SECOND_720P: f64 = 20.0;
 
-pub struct ArtcraftSeedance2p0BytePlusCostState {
+pub struct ArtcraftSeedance2p0BytePlusFastCostState {
   pub resolution: CommonResolution,
   pub duration_seconds: u16,
   pub batch_count: u16,
 }
 
-impl ArtcraftSeedance2p0BytePlusCostState {
-  pub fn from_request(request: &ArtcraftSeedance2p0BytePlusRequestState) -> Self {
+impl ArtcraftSeedance2p0BytePlusFastCostState {
+  pub fn from_request(request: &ArtcraftSeedance2p0BytePlusFastRequestState) -> Self {
     let resolution = request.request.resolution
       .unwrap_or(CommonResolution::SevenTwentyP);
     let duration_seconds = request.request.duration_seconds.unwrap_or(5);
@@ -29,7 +27,6 @@ impl ArtcraftSeedance2p0BytePlusCostState {
   pub fn estimate_cost(&self) -> VideoGenerationCostEstimate {
     let cents_per_second = match self.resolution {
       CommonResolution::FourEightyP => CENTS_PER_SECOND_480P,
-      CommonResolution::TenEightyP => CENTS_PER_SECOND_1080P,
       _ => CENTS_PER_SECOND_720P,
     };
 
@@ -59,20 +56,20 @@ mod tests {
 
     #[test]
     fn batch_1() {
-      assert_eq!(cost_cents(Some(CommonResolution::SevenTwentyP), 4, 1), 100);
-      assert_eq!(cost_cents(Some(CommonResolution::SevenTwentyP), 5, 1), 125);
-      assert_eq!(cost_cents(Some(CommonResolution::SevenTwentyP), 10, 1), 250);
-      assert_eq!(cost_cents(Some(CommonResolution::SevenTwentyP), 15, 1), 375);
+      assert_eq!(cost_cents(Some(CommonResolution::SevenTwentyP), 4, 1), 80);
+      assert_eq!(cost_cents(Some(CommonResolution::SevenTwentyP), 5, 1), 100);
+      assert_eq!(cost_cents(Some(CommonResolution::SevenTwentyP), 10, 1), 200);
+      assert_eq!(cost_cents(Some(CommonResolution::SevenTwentyP), 15, 1), 300);
     }
 
     #[test]
     fn batch_2() {
-      assert_eq!(cost_cents(Some(CommonResolution::SevenTwentyP), 5, 2), 250);
+      assert_eq!(cost_cents(Some(CommonResolution::SevenTwentyP), 5, 2), 200);
     }
 
     #[test]
     fn batch_4() {
-      assert_eq!(cost_cents(Some(CommonResolution::SevenTwentyP), 5, 4), 500);
+      assert_eq!(cost_cents(Some(CommonResolution::SevenTwentyP), 5, 4), 400);
     }
 
     #[test]
@@ -86,42 +83,20 @@ mod tests {
 
     #[test]
     fn batch_1() {
-      assert_eq!(cost_cents(Some(CommonResolution::FourEightyP), 4, 1), 40);
-      assert_eq!(cost_cents(Some(CommonResolution::FourEightyP), 5, 1), 50);
-      assert_eq!(cost_cents(Some(CommonResolution::FourEightyP), 10, 1), 100);
-      assert_eq!(cost_cents(Some(CommonResolution::FourEightyP), 15, 1), 150);
+      assert_eq!(cost_cents(Some(CommonResolution::FourEightyP), 4, 1), 36);
+      assert_eq!(cost_cents(Some(CommonResolution::FourEightyP), 5, 1), 45);
+      assert_eq!(cost_cents(Some(CommonResolution::FourEightyP), 10, 1), 90);
+      assert_eq!(cost_cents(Some(CommonResolution::FourEightyP), 15, 1), 135);
     }
 
     #[test]
     fn batch_2() {
-      assert_eq!(cost_cents(Some(CommonResolution::FourEightyP), 5, 2), 100);
+      assert_eq!(cost_cents(Some(CommonResolution::FourEightyP), 5, 2), 90);
     }
 
     #[test]
     fn batch_4() {
-      assert_eq!(cost_cents(Some(CommonResolution::FourEightyP), 5, 4), 200);
-    }
-  }
-
-  mod pricing_1080p {
-    use super::*;
-
-    #[test]
-    fn batch_1() {
-      assert_eq!(cost_cents(Some(CommonResolution::TenEightyP), 4, 1), 200);
-      assert_eq!(cost_cents(Some(CommonResolution::TenEightyP), 5, 1), 250);
-      assert_eq!(cost_cents(Some(CommonResolution::TenEightyP), 10, 1), 500);
-      assert_eq!(cost_cents(Some(CommonResolution::TenEightyP), 15, 1), 750);
-    }
-
-    #[test]
-    fn batch_2() {
-      assert_eq!(cost_cents(Some(CommonResolution::TenEightyP), 5, 2), 500);
-    }
-
-    #[test]
-    fn batch_4() {
-      assert_eq!(cost_cents(Some(CommonResolution::TenEightyP), 5, 4), 1000);
+      assert_eq!(cost_cents(Some(CommonResolution::FourEightyP), 5, 4), 180);
     }
   }
 
@@ -129,12 +104,8 @@ mod tests {
     use super::*;
 
     #[test]
-    fn cost_480p_cheaper_than_720p_cheaper_than_1080p() {
-      let c480 = cost_cents(Some(CommonResolution::FourEightyP), 5, 1);
-      let c720 = cost_cents(Some(CommonResolution::SevenTwentyP), 5, 1);
-      let c1080 = cost_cents(Some(CommonResolution::TenEightyP), 5, 1);
-      assert!(c480 < c720);
-      assert!(c720 < c1080);
+    fn cost_480p_cheaper_than_720p() {
+      assert!(cost_cents(Some(CommonResolution::FourEightyP), 5, 1) < cost_cents(Some(CommonResolution::SevenTwentyP), 5, 1));
     }
   }
 
@@ -143,7 +114,7 @@ mod tests {
 
     #[test]
     fn credits_equal_usd_cents() {
-      for res in [Some(CommonResolution::FourEightyP), Some(CommonResolution::SevenTwentyP), Some(CommonResolution::TenEightyP), None] {
+      for res in [Some(CommonResolution::FourEightyP), Some(CommonResolution::SevenTwentyP), None] {
         for dur in [4, 5, 10, 15] {
           for batch in [1, 2, 4] {
             let cost = build_cost(res, dur, batch);
@@ -160,7 +131,7 @@ mod tests {
     video_batch_count: u16,
   ) -> crate::generate::generate_video::video_generation_cost_estimate::VideoGenerationCostEstimate {
     GenerateVideoRequestBuilder {
-      model: CommonVideoModel::Seedance2p0BytePlus,
+      model: CommonVideoModel::Seedance2p0BytePlusFast,
       provider: Provider::Artcraft,
       resolution,
       duration_seconds: Some(duration_seconds),

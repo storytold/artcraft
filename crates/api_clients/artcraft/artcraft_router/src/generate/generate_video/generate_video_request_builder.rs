@@ -54,8 +54,8 @@ use crate::generate::generate_video_v2::providers::artcraft::seedance_2p0::build
 use crate::generate::generate_video_v2::providers::artcraft::seedance_2p0_fast::build::build_artcraft_seedance_2p0_fast;
 use crate::generate::generate_video_v2::providers::artcraft::seedance_2p0_g::build::build_artcraft_seedance_2p0_g;
 use crate::generate::generate_video_v2::providers::artcraft::seedance_2p0_fast_g::build::build_artcraft_seedance_2p0_fast_g;
-use crate::generate::generate_video_v2::providers::artcraft::seedance_2p0_p::build::build_artcraft_seedance_2p0_p;
-use crate::generate::generate_video_v2::providers::artcraft::seedance_2p0_p_fast::build::build_artcraft_seedance_2p0_p_fast;
+use crate::generate::generate_video_v2::providers::artcraft::seedance_2p0_bp::build::build_artcraft_seedance_2p0_bp;
+use crate::generate::generate_video_v2::providers::artcraft::seedance_2p0_bp_fast::build::build_artcraft_seedance_2p0_bp_fast;
 use crate::generate::generate_video_v2::providers::kinovi::happy_horse_1p0::build::build_kinovi_happy_horse_1p0;
 use crate::generate::generate_video_v2::providers::kinovi::seedance_2p0::build::build_kinovi_seedance_2p0;
 use crate::generate::generate_video_v2::providers::gmicloud::seedance_2p0_g::build::build_gmicloud_seedance_2p0_g;
@@ -182,8 +182,8 @@ impl GenerateVideoRequestBuilder {
       (Provider::Artcraft, CommonVideoModel::Seedance2p0Fast) => build_artcraft_seedance_2p0_fast(self),
       (Provider::Artcraft, CommonVideoModel::Seedance2p0Global) => build_artcraft_seedance_2p0_g(self),
       (Provider::Artcraft, CommonVideoModel::Seedance2p0FastGlobal) => build_artcraft_seedance_2p0_fast_g(self),
-      (Provider::Artcraft, CommonVideoModel::Seedance2p0BytePlus) => build_artcraft_seedance_2p0_p(self),
-      (Provider::Artcraft, CommonVideoModel::Seedance2p0BytePlusFast) => build_artcraft_seedance_2p0_p_fast(self),
+      (Provider::Artcraft, CommonVideoModel::Seedance2p0BytePlus) => build_artcraft_seedance_2p0_bp(self),
+      (Provider::Artcraft, CommonVideoModel::Seedance2p0BytePlusFast) => build_artcraft_seedance_2p0_bp_fast(self),
       (Provider::Artcraft, CommonVideoModel::PreviewModel) => build_artcraft_preview_model(self),
       (Provider::Artcraft, CommonVideoModel::PreviewModelFast) => build_artcraft_preview_model_fast(self),
       // GmiCloud
