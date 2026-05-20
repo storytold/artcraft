@@ -158,8 +158,8 @@ impl GenerateVideoRequestBuilder {
       (Provider::Artcraft, CommonVideoModel::Seedance2p0Fast) => true,
       (Provider::Artcraft, CommonVideoModel::Seedance2p0Global) => true,
       (Provider::Artcraft, CommonVideoModel::Seedance2p0FastGlobal) => true,
-      (Provider::Artcraft, CommonVideoModel::Seedance2p0Plus) => true,
-      (Provider::Artcraft, CommonVideoModel::Seedance2p0PlusFast) => true,
+      (Provider::Artcraft, CommonVideoModel::Seedance2p0BytePlus) => true,
+      (Provider::Artcraft, CommonVideoModel::Seedance2p0BytePlusFast) => true,
       (Provider::Artcraft, CommonVideoModel::PreviewModel) => true,
       (Provider::Artcraft, CommonVideoModel::PreviewModelFast) => true,
       // GmiCloud
@@ -182,8 +182,8 @@ impl GenerateVideoRequestBuilder {
       (Provider::Artcraft, CommonVideoModel::Seedance2p0Fast) => build_artcraft_seedance_2p0_fast(self),
       (Provider::Artcraft, CommonVideoModel::Seedance2p0Global) => build_artcraft_seedance_2p0_g(self),
       (Provider::Artcraft, CommonVideoModel::Seedance2p0FastGlobal) => build_artcraft_seedance_2p0_fast_g(self),
-      (Provider::Artcraft, CommonVideoModel::Seedance2p0Plus) => build_artcraft_seedance_2p0_p(self),
-      (Provider::Artcraft, CommonVideoModel::Seedance2p0PlusFast) => build_artcraft_seedance_2p0_p_fast(self),
+      (Provider::Artcraft, CommonVideoModel::Seedance2p0BytePlus) => build_artcraft_seedance_2p0_p(self),
+      (Provider::Artcraft, CommonVideoModel::Seedance2p0BytePlusFast) => build_artcraft_seedance_2p0_p_fast(self),
       (Provider::Artcraft, CommonVideoModel::PreviewModel) => build_artcraft_preview_model(self),
       (Provider::Artcraft, CommonVideoModel::PreviewModelFast) => build_artcraft_preview_model_fast(self),
       // GmiCloud

@@ -1,7 +1,7 @@
 use enums::common::generation::common_resolution::CommonResolution;
 
 use crate::generate::generate_video::video_generation_cost_estimate::VideoGenerationCostEstimate;
-use crate::generate::generate_video_v2::providers::artcraft::seedance_2p0_p_fast::request::ArtcraftSeedance2p0PlusFastRequestState;
+use crate::generate::generate_video_v2::providers::artcraft::seedance_2p0_p_fast::request::ArtcraftSeedance2p0BytePlusFastRequestState;
 
 /// USD cents per second by resolution:
 ///   480p:  $0.09/s = 9.0 ¢/s
@@ -9,14 +9,14 @@ use crate::generate::generate_video_v2::providers::artcraft::seedance_2p0_p_fast
 const CENTS_PER_SECOND_480P: f64 = 9.0;
 const CENTS_PER_SECOND_720P: f64 = 20.0;
 
-pub struct ArtcraftSeedance2p0PlusFastCostState {
+pub struct ArtcraftSeedance2p0BytePlusFastCostState {
   pub resolution: CommonResolution,
   pub duration_seconds: u16,
   pub batch_count: u16,
 }
 
-impl ArtcraftSeedance2p0PlusFastCostState {
-  pub fn from_request(request: &ArtcraftSeedance2p0PlusFastRequestState) -> Self {
+impl ArtcraftSeedance2p0BytePlusFastCostState {
+  pub fn from_request(request: &ArtcraftSeedance2p0BytePlusFastRequestState) -> Self {
     let resolution = request.request.resolution
       .unwrap_or(CommonResolution::SevenTwentyP);
     let duration_seconds = request.request.duration_seconds.unwrap_or(5);
@@ -131,7 +131,7 @@ mod tests {
     video_batch_count: u16,
   ) -> crate::generate::generate_video::video_generation_cost_estimate::VideoGenerationCostEstimate {
     GenerateVideoRequestBuilder {
-      model: CommonVideoModel::Seedance2p0PlusFast,
+      model: CommonVideoModel::Seedance2p0BytePlusFast,
       provider: Provider::Artcraft,
       resolution,
       duration_seconds: Some(duration_seconds),

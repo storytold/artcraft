@@ -5,19 +5,19 @@ use crate::generate::generate_video::generate_video_request_builder::GenerateVid
 use crate::generate::generate_video_v2::providers::artcraft::build_common::{
   build_artcraft_omni_request, SupportedResolutions, UltraWideSupport,
 };
-use crate::generate::generate_video_v2::providers::artcraft::seedance_2p0_p_fast::request::ArtcraftSeedance2p0PlusFastRequestState;
+use crate::generate::generate_video_v2::providers::artcraft::seedance_2p0_p_fast::request::ArtcraftSeedance2p0BytePlusFastRequestState;
 use crate::generate::generate_video_v2::video_generation_draft_or_request::VideoGenerationDraftOrRequest;
 use crate::generate::generate_video_v2::video_generation_request::VideoGenerationRequest;
 
 pub fn build_artcraft_seedance_2p0_p_fast(builder: GenerateVideoRequestBuilder) -> Result<VideoGenerationDraftOrRequest, ArtcraftRouterError> {
   let request = build_artcraft_omni_request(
     builder,
-    CommonVideoModelEnum::Seedance2p0PlusFast,
+    CommonVideoModelEnum::Seedance2p0BytePlusFast,
     SupportedResolutions::Fast,
     UltraWideSupport::Supported,
   )?;
-  let state = ArtcraftSeedance2p0PlusFastRequestState { request };
-  Ok(VideoGenerationDraftOrRequest::Request(VideoGenerationRequest::ArtcraftSeedance2p0PlusFast(state)))
+  let state = ArtcraftSeedance2p0BytePlusFastRequestState { request };
+  Ok(VideoGenerationDraftOrRequest::Request(VideoGenerationRequest::ArtcraftSeedance2p0BytePlusFast(state)))
 }
 
 #[cfg(test)]
@@ -46,7 +46,7 @@ mod tests {
     #[test]
     fn model_is_seedance_2p0_plus_fast() {
       let req = unwrap_request(make_builder(|_| {}));
-      assert!(matches!(req.request.model, Some(CommonVideoModelEnum::Seedance2p0PlusFast)));
+      assert!(matches!(req.request.model, Some(CommonVideoModelEnum::Seedance2p0BytePlusFast)));
     }
 
     #[test]
@@ -98,7 +98,7 @@ mod tests {
     #[test]
     fn res_1080p_error_out() {
       let result = build_artcraft_seedance_2p0_p_fast(GenerateVideoRequestBuilder {
-        model: CommonVideoModel::Seedance2p0PlusFast,
+        model: CommonVideoModel::Seedance2p0BytePlusFast,
         provider: Provider::Artcraft,
         resolution: Some(CommonResolution::TenEightyP),
         request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::ErrorOut,
@@ -129,7 +129,7 @@ mod tests {
     #[test]
     fn url_start_frame_rejected() {
       let result = build_artcraft_seedance_2p0_p_fast(GenerateVideoRequestBuilder {
-        model: CommonVideoModel::Seedance2p0PlusFast,
+        model: CommonVideoModel::Seedance2p0BytePlusFast,
         provider: Provider::Artcraft,
         start_frame: Some(ImageRef::Url("https://example.com".to_string())),
         ..Default::default()
@@ -158,7 +158,7 @@ mod tests {
 
   fn make_builder(f: impl FnOnce(&mut GenerateVideoRequestBuilder)) -> GenerateVideoRequestBuilder {
     let mut builder = GenerateVideoRequestBuilder {
-      model: CommonVideoModel::Seedance2p0PlusFast,
+      model: CommonVideoModel::Seedance2p0BytePlusFast,
       provider: Provider::Artcraft,
       duration_seconds: Some(5),
       video_batch_count: Some(1),
@@ -168,13 +168,13 @@ mod tests {
     builder
   }
 
-  fn unwrap_request(builder: GenerateVideoRequestBuilder) -> ArtcraftSeedance2p0PlusFastRequestState {
+  fn unwrap_request(builder: GenerateVideoRequestBuilder) -> ArtcraftSeedance2p0BytePlusFastRequestState {
     let result = build_artcraft_seedance_2p0_p_fast(builder).expect("build should succeed");
     match result {
       VideoGenerationDraftOrRequest::Request(
-        VideoGenerationRequest::ArtcraftSeedance2p0PlusFast(state)
+        VideoGenerationRequest::ArtcraftSeedance2p0BytePlusFast(state)
       ) => state,
-      _ => panic!("expected ArtcraftSeedance2p0PlusFast request"),
+      _ => panic!("expected ArtcraftSeedance2p0BytePlusFast request"),
     }
   }
 }
