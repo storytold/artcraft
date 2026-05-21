@@ -11,7 +11,7 @@ use enums::by_table::characters::character_type::CharacterType;
 use enums::common::visibility::Visibility;
 use http_server_common::request::get_request_ip::get_request_ip;
 use mysql_queries::queries::characters::create_pending_character::{create_pending_character, CreatePendingCharacterArgs};
-use mysql_queries::queries::generic_inference::seedance2pro::insert_generic_inference_job_for_seedance2pro_character_with_apriori_job_token::{
+use mysql_queries::queries::generic_inference::api_providers::seedance2pro::insert_generic_inference_job_for_seedance2pro_character_with_apriori_job_token::{
   insert_generic_inference_job_for_seedance2pro_character_with_apriori_job_token,
   InsertGenericInferenceForSeedance2ProCharacterWithAprioriJobTokenArgs,
 };

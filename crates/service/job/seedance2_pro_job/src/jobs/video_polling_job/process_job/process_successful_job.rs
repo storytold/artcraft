@@ -9,7 +9,7 @@ use enums::by_table::media_files::media_file_origin_product_category::MediaFileO
 use enums::by_table::media_files::media_file_type::MediaFileType;
 use errors::AnyhowResult;
 use hashing::sha256::sha256_hash_bytes::sha256_hash_bytes;
-use mysql_queries::queries::generic_inference::seedance2pro::list_pending_seedance2pro_video_jobs::PendingSeedance2ProJob;
+use mysql_queries::queries::generic_inference::api_providers::seedance2pro::list_pending_seedance2pro_video_jobs::PendingSeedance2ProJob;
 use mysql_queries::queries::media_files::create::insert_builder::media_file_insert_builder::MediaFileInsertBuilder;
 use mysql_queries::queries::generic_inference::web::mark_generic_inference_job_successfully_done_by_token::mark_generic_inference_job_successfully_done_by_token;
 use seedance2pro_client::requests::poll_orders::poll_orders::OrderStatus;

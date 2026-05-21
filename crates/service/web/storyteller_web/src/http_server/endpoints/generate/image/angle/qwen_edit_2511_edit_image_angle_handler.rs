@@ -20,8 +20,8 @@ use fal_client::requests::traits::fal_request_cost_calculator_trait::FalRequestC
 use fal_client::requests::webhook::image::angle::enqueue_qwen_edit_2511_edit_image_angle_webhook::{enqueue_qwen_edit_2511_edit_image_angle_webhook, EnqueueQwenEdit2511EditImageAngleArgs, EnqueueQwenEdit2511EditImageAngleRequest, EnqueueQwenEdit2511AngleNumImages, EnqueueQwenEdit2511AngleImageSize};
 use http_server_common::request::get_request_ip::get_request_ip;
 use log::{error, info, warn};
-use mysql_queries::queries::generic_inference::fal::insert_generic_inference_job_for_fal_queue::FalCategory;
-use mysql_queries::queries::generic_inference::fal::insert_generic_inference_job_for_fal_queue_with_apriori_job_token::{insert_generic_inference_job_for_fal_queue_with_apriori_job_token, InsertGenericInferenceForFalWithAprioriJobTokenArgs};
+use mysql_queries::queries::generic_inference::api_providers::fal::insert_generic_inference_job_for_fal_queue::FalCategory;
+use mysql_queries::queries::generic_inference::api_providers::fal::insert_generic_inference_job_for_fal_queue_with_apriori_job_token::{insert_generic_inference_job_for_fal_queue_with_apriori_job_token, InsertGenericInferenceForFalWithAprioriJobTokenArgs};
 use mysql_queries::queries::idepotency_tokens::insert_idempotency_token::insert_idempotency_token;
 use mysql_queries::queries::prompt_context_items::insert_batch_prompt_context_items::{insert_batch_prompt_context_items, InsertBatchArgs, PromptContextItem};
 use mysql_queries::queries::prompts::insert_prompt::{insert_prompt, InsertPromptArgs};

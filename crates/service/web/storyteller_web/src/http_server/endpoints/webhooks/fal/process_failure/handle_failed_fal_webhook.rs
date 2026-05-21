@@ -8,7 +8,7 @@ use fal_client::webhook_payload::hydrated::hydrated_webhook_contents::ErrorData;
 use http_server_common::response::response_success_helpers::SimpleGenericJsonSuccess;
 use log::{error, info, warn};
 use mysql_queries::queries::debug_logs::insert_debug_log::{insert_debug_log, InsertDebugLogArgs};
-use mysql_queries::queries::generic_inference::fal::get_inference_job_by_fal_id::get_inference_job_by_fal_id_from_connection;
+use mysql_queries::queries::generic_inference::api_providers::fal::get_inference_job_by_fal_id::get_inference_job_by_fal_id_from_connection;
 use mysql_queries::queries::generic_inference::job::mark_job_failed_by_token::{mark_job_failed_by_token_from_connection, MarkJobFailedByTokenFromConnectionArgs};
 use sqlx::pool::PoolConnection;
 use sqlx::MySql;

@@ -7,7 +7,7 @@ use enums::by_table::generic_inference_jobs::inference_job_type::InferenceJobTyp
 use log::{error, info, warn};
 use pager::notification::notification_details_builder::NotificationDetailsBuilder;
 use pager::notification::notification_urgency::NotificationUrgency;
-use mysql_queries::queries::generic_inference::seedance2pro::list_pending_seedance2pro_video_jobs::{list_pending_seedance2pro_video_jobs, PendingSeedance2ProJob};
+use mysql_queries::queries::generic_inference::api_providers::seedance2pro::list_pending_seedance2pro_video_jobs::{list_pending_seedance2pro_video_jobs, PendingSeedance2ProJob};
 use seedance2pro_client::requests::poll_orders::poll_orders::{poll_orders, OrderStatus, PollOrdersArgs, PollOrdersResponse, TaskStatus};
 
 use crate::jobs::video_polling_job::alert_on_error::alert_pager_and_return_err;

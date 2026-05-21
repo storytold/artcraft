@@ -22,7 +22,7 @@ use enums::common::generation::common_model_type::CommonModelType;
 use enums::common::generation_provider::GenerationProvider;
 use enums::common::visibility::Visibility;
 use http_server_common::request::get_request_ip::get_request_ip;
-use mysql_queries::queries::generic_inference::beeble::insert_generic_inference_job_for_beeble_queue_with_apriori_job_token::{
+use mysql_queries::queries::generic_inference::api_providers::beeble::insert_generic_inference_job_for_beeble_queue_with_apriori_job_token::{
   insert_generic_inference_job_for_beeble_queue_with_apriori_job_token,
   InsertGenericInferenceForBeebleWithAprioriJobTokenArgs,
 };

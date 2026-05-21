@@ -3,7 +3,7 @@ use std::time::{Duration, Instant};
 
 use log::{error, info, warn};
 
-use mysql_queries::queries::generic_inference::seedance2pro::list_pending_seedance2pro_character_jobs::list_pending_seedance2pro_character_jobs;
+use mysql_queries::queries::generic_inference::api_providers::seedance2pro::list_pending_seedance2pro_character_jobs::list_pending_seedance2pro_character_jobs;
 use seedance2pro_client::requests::poll_characters::poll_characters::{
   poll_characters, CharacterCreationStatus, CharacterStatus, PollCharactersArgs,
 };

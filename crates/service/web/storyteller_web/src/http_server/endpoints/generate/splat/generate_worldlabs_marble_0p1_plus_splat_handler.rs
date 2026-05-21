@@ -18,7 +18,7 @@ use enums::common::generation_provider::GenerationProvider;
 use enums::common::visibility::Visibility;
 use http_server_common::request::get_request_ip::get_request_ip;
 use log::{error, info, warn};
-use mysql_queries::queries::generic_inference::worldlabs::insert_generic_inference_job_for_worldlabs_queue_with_apriori_job_token::{insert_generic_inference_job_for_worldlabs_queue_with_apriori_job_token, InsertGenericInferenceForWorldlabsWithAprioriJobTokenArgs};
+use mysql_queries::queries::generic_inference::api_providers::worldlabs::insert_generic_inference_job_for_worldlabs_queue_with_apriori_job_token::{insert_generic_inference_job_for_worldlabs_queue_with_apriori_job_token, InsertGenericInferenceForWorldlabsWithAprioriJobTokenArgs};
 use mysql_queries::queries::idepotency_tokens::insert_idempotency_token::insert_idempotency_token;
 use mysql_queries::queries::prompt_context_items::insert_batch_prompt_context_items::{insert_batch_prompt_context_items, InsertBatchArgs, PromptContextItem};
 use mysql_queries::queries::prompts::insert_prompt::{insert_prompt, InsertPromptArgs};

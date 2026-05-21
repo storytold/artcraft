@@ -22,10 +22,10 @@ use fal_client::requests::webhook::image::text::enqueue_flux_pro_11_text_to_imag
 use fal_client::requests::webhook::image::text::enqueue_flux_pro_11_text_to_image_webhook::{enqueue_flux_pro_11_text_to_image_webhook, FluxPro11AspectRatio, FluxPro11NumImages, FluxPro11Request};
 use http_server_common::request::get_request_ip::get_request_ip;
 use log::{error, info, warn};
-use mysql_queries::queries::generic_inference::fal::insert_generic_inference_job_for_fal_queue::insert_generic_inference_job_for_fal_queue;
-use mysql_queries::queries::generic_inference::fal::insert_generic_inference_job_for_fal_queue::FalCategory;
-use mysql_queries::queries::generic_inference::fal::insert_generic_inference_job_for_fal_queue::InsertGenericInferenceForFalArgs;
-use mysql_queries::queries::generic_inference::fal::insert_generic_inference_job_for_fal_queue_with_apriori_job_token::{insert_generic_inference_job_for_fal_queue_with_apriori_job_token, InsertGenericInferenceForFalWithAprioriJobTokenArgs};
+use mysql_queries::queries::generic_inference::api_providers::fal::insert_generic_inference_job_for_fal_queue::insert_generic_inference_job_for_fal_queue;
+use mysql_queries::queries::generic_inference::api_providers::fal::insert_generic_inference_job_for_fal_queue::FalCategory;
+use mysql_queries::queries::generic_inference::api_providers::fal::insert_generic_inference_job_for_fal_queue::InsertGenericInferenceForFalArgs;
+use mysql_queries::queries::generic_inference::api_providers::fal::insert_generic_inference_job_for_fal_queue_with_apriori_job_token::{insert_generic_inference_job_for_fal_queue_with_apriori_job_token, InsertGenericInferenceForFalWithAprioriJobTokenArgs};
 use mysql_queries::queries::idepotency_tokens::insert_idempotency_token::insert_idempotency_token;
 use mysql_queries::queries::prompts::insert_prompt::{insert_prompt, InsertPromptArgs};
 use sqlx::Acquire;

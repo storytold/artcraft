@@ -18,9 +18,9 @@ use fal_client::requests::webhook::image::text::enqueue_flux_1_schnell_text_to_i
 use fal_client::requests::webhook::image::text::enqueue_flux_1_schnell_text_to_image_webhook::{Flux1SchnellArgs, Flux1SchnellAspectRatio, Flux1SchnellNumImages, Flux1SchnellRequest};
 use http_server_common::request::get_request_ip::get_request_ip;
 use log::{error, info, warn};
-use mysql_queries::queries::generic_inference::fal::insert_generic_inference_job_for_fal_queue::insert_generic_inference_job_for_fal_queue;
-use mysql_queries::queries::generic_inference::fal::insert_generic_inference_job_for_fal_queue::FalCategory;
-use mysql_queries::queries::generic_inference::fal::insert_generic_inference_job_for_fal_queue::InsertGenericInferenceForFalArgs;
+use mysql_queries::queries::generic_inference::api_providers::fal::insert_generic_inference_job_for_fal_queue::insert_generic_inference_job_for_fal_queue;
+use mysql_queries::queries::generic_inference::api_providers::fal::insert_generic_inference_job_for_fal_queue::FalCategory;
+use mysql_queries::queries::generic_inference::api_providers::fal::insert_generic_inference_job_for_fal_queue::InsertGenericInferenceForFalArgs;
 use mysql_queries::queries::idepotency_tokens::insert_idempotency_token::insert_idempotency_token;
 use mysql_queries::queries::prompts::insert_prompt::{insert_prompt, InsertPromptArgs};
 use sqlx::Acquire;

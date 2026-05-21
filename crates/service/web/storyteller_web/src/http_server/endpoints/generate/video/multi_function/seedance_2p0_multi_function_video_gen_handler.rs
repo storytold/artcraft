@@ -26,7 +26,7 @@ use enums::common::visibility::Visibility;
 use http_server_common::request::get_request_ip::get_request_ip;
 use log::{error, info, warn};
 use mysql_queries::queries::characters::batch_lookup_characters_by_token_for_prompting::batch_lookup_characters_by_token_for_prompting;
-use mysql_queries::queries::generic_inference::seedance2pro::insert_generic_inference_job_for_seedance2pro_queue_with_apriori_job_token::{
+use mysql_queries::queries::generic_inference::api_providers::seedance2pro::insert_generic_inference_job_for_seedance2pro_queue_with_apriori_job_token::{
   insert_generic_inference_job_for_seedance2pro_queue_with_apriori_job_token,
   InsertGenericInferenceForSeedance2ProWithAprioriJobTokenArgs,
 };

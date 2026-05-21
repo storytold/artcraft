@@ -24,10 +24,10 @@ use filesys::path_to_string::path_to_string;
 use hashing::sha256::sha256_hash_bytes::sha256_hash_bytes;
 use http_server_common::response::response_success_helpers::SimpleGenericJsonSuccess;
 use mysql_queries::queries::debug_logs::insert_debug_log::{insert_debug_log, InsertDebugLogArgs};
-use mysql_queries::queries::generic_inference::beeble::get_inference_job_by_beeble_id::{
+use mysql_queries::queries::generic_inference::api_providers::beeble::get_inference_job_by_beeble_id::{
   get_inference_job_by_beeble_id_from_connection, BeebleJobDetails,
 };
-use mysql_queries::queries::generic_inference::fal::mark_fal_generic_inference_job_successfully_done::{
+use mysql_queries::queries::generic_inference::api_providers::fal::mark_fal_generic_inference_job_successfully_done::{
   mark_fal_generic_inference_job_successfully_done, MarkJobArgs,
 };
 use mysql_queries::queries::generic_inference::job::mark_job_failed_by_token::{

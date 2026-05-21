@@ -1,7 +1,7 @@
 use std::time::Duration;
 
 use log::{error, info, warn};
-use mysql_queries::queries::generic_inference::gmicloud::list_pending_gmicloud_jobs::list_pending_gmicloud_jobs;
+use mysql_queries::queries::generic_inference::api_providers::gmicloud::list_pending_gmicloud_jobs::list_pending_gmicloud_jobs;
 use gmicloud_client::requests::poll_request_queue::poll_request_queue::poll_gmicloud_request;
 
 use crate::process_job::process_failed_job::process_failed_job;

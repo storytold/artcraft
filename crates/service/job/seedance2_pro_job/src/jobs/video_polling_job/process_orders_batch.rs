@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use log::{info, warn};
-use mysql_queries::queries::generic_inference::seedance2pro::list_pending_seedance2pro_video_jobs::PendingSeedance2ProJob;
+use mysql_queries::queries::generic_inference::api_providers::seedance2pro::list_pending_seedance2pro_video_jobs::PendingSeedance2ProJob;
 use seedance2pro_client::requests::poll_orders::poll_orders::{OrderStatus, TaskStatus};
 
 use crate::job_dependencies::JobDependencies;

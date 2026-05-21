@@ -4,8 +4,8 @@ use fal_client::webhook_payload::hydrated::hydrated_webhook_contents::WebhookSuc
 use http_server_common::response::response_success_helpers::SimpleGenericJsonSuccess;
 use log::{info, warn};
 use mysql_queries::queries::debug_logs::insert_debug_log::{insert_debug_log, InsertDebugLogArgs};
-use mysql_queries::queries::generic_inference::fal::get_inference_job_by_fal_id::get_inference_job_by_fal_id_from_connection;
-use mysql_queries::queries::generic_inference::fal::mark_fal_generic_inference_job_successfully_done::{mark_fal_generic_inference_job_successfully_done, MarkJobArgs};
+use mysql_queries::queries::generic_inference::api_providers::fal::get_inference_job_by_fal_id::get_inference_job_by_fal_id_from_connection;
+use mysql_queries::queries::generic_inference::api_providers::fal::mark_fal_generic_inference_job_successfully_done::{mark_fal_generic_inference_job_successfully_done, MarkJobArgs};
 use pager::client::pager::Pager;
 use sqlx::pool::PoolConnection;
 use sqlx::MySql;

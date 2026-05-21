@@ -12,7 +12,7 @@ use images::encoding::webp_bytes_to_png_bytes::webp_bytes_to_png_bytes;
 use images::image_info::image_info::ImageInfo;
 use log::{error, info, warn};
 use mimetypes::mimetype_info::file_extension::FileExtension;
-use mysql_queries::queries::generic_inference::fal::get_inference_job_by_fal_id::FalJobDetails;
+use mysql_queries::queries::generic_inference::api_providers::fal::get_inference_job_by_fal_id::FalJobDetails;
 use mysql_queries::queries::media_files::create::insert_builder::media_file_insert_builder::MediaFileInsertBuilder;
 use pager::client::pager::Pager;
 use pager::notification::notification_details_builder::NotificationDetailsBuilder;

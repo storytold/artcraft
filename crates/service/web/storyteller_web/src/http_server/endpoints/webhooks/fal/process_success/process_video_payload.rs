@@ -10,7 +10,7 @@ use fal_client::webhook_payload::hydrated::hydrated_webhook_contents::VideoData;
 use filesys::path_to_string::path_to_string;
 use hashing::sha256::sha256_hash_bytes::sha256_hash_bytes;
 use log::{error, info, warn};
-use mysql_queries::queries::generic_inference::fal::get_inference_job_by_fal_id::FalJobDetails;
+use mysql_queries::queries::generic_inference::api_providers::fal::get_inference_job_by_fal_id::FalJobDetails;
 use mysql_queries::queries::media_files::create::insert_builder::media_file_insert_builder::MediaFileInsertBuilder;
 use std::io::Write;
 use tempfile::NamedTempFile;

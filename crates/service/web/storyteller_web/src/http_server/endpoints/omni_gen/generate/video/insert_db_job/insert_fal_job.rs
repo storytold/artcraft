@@ -1,8 +1,8 @@
 use log::warn;
 
 use enums::common::visibility::Visibility;
-use mysql_queries::queries::generic_inference::fal::insert_generic_inference_job_for_fal_queue::FalCategory;
-use mysql_queries::queries::generic_inference::fal::insert_generic_inference_job_for_fal_queue_with_apriori_job_token::{
+use mysql_queries::queries::generic_inference::api_providers::fal::insert_generic_inference_job_for_fal_queue::FalCategory;
+use mysql_queries::queries::generic_inference::api_providers::fal::insert_generic_inference_job_for_fal_queue_with_apriori_job_token::{
   insert_generic_inference_job_for_fal_queue_with_apriori_job_token,
   InsertGenericInferenceForFalWithAprioriJobTokenArgs,
 };

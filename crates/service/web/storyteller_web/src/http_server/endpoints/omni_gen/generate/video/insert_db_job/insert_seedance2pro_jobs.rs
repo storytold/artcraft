@@ -2,7 +2,7 @@ use log::{error, warn};
 
 use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
 use enums::common::visibility::Visibility;
-use mysql_queries::queries::generic_inference::seedance2pro::insert_generic_inference_job_for_seedance2pro_queue_with_apriori_job_token::{
+use mysql_queries::queries::generic_inference::api_providers::seedance2pro::insert_generic_inference_job_for_seedance2pro_queue_with_apriori_job_token::{
   insert_generic_inference_job_for_seedance2pro_queue_with_apriori_job_token,
   InsertGenericInferenceForSeedance2ProWithAprioriJobTokenArgs,
 };

@@ -11,7 +11,7 @@ use errors::AnyhowResult;
 use hashing::sha256::sha256_hash_bytes::sha256_hash_bytes;
 use mysql_queries::queries::characters::activate_character_with_media::activate_character_with_media;
 use mysql_queries::queries::characters::get_character_token_by_kinovi_id::get_character_token_by_kinovi_id;
-use mysql_queries::queries::generic_inference::seedance2pro::list_pending_seedance2pro_character_jobs::PendingSeedance2ProCharacterJob;
+use mysql_queries::queries::generic_inference::api_providers::seedance2pro::list_pending_seedance2pro_character_jobs::PendingSeedance2ProCharacterJob;
 use mysql_queries::queries::generic_inference::web::mark_generic_inference_job_successfully_done_by_token::mark_generic_inference_job_successfully_done_by_token;
 use mysql_queries::queries::media_files::create::insert_builder::media_file_insert_builder::MediaFileInsertBuilder;
 use seedance2pro_client::requests::poll_characters::poll_characters::CharacterStatus;

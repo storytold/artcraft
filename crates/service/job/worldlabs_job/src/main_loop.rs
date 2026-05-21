@@ -1,7 +1,7 @@
 use std::time::Duration;
 
 use log::{error, info, warn};
-use mysql_queries::queries::generic_inference::worldlabs::list_pending_worldlabs_jobs::list_pending_worldlabs_jobs;
+use mysql_queries::queries::generic_inference::api_providers::worldlabs::list_pending_worldlabs_jobs::list_pending_worldlabs_jobs;
 use worldlabs_api_client::api::api_types::operation_id::OperationId;
 use worldlabs_api_client::api::requests::get_operation::get_operation::{get_operation, GetOperationArgs};
 

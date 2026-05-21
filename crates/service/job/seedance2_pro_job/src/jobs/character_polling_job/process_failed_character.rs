@@ -1,7 +1,7 @@
 use log::{error, info, warn};
 use enums::by_table::generic_inference_jobs::frontend_failure_category::FrontendFailureCategory;
 use mysql_queries::queries::generic_inference::job::mark_job_failed_by_token::{mark_job_failed_by_token, MarkJobFailedByTokenArgs};
-use mysql_queries::queries::generic_inference::seedance2pro::list_pending_seedance2pro_character_jobs::PendingSeedance2ProCharacterJob;
+use mysql_queries::queries::generic_inference::api_providers::seedance2pro::list_pending_seedance2pro_character_jobs::PendingSeedance2ProCharacterJob;
 use seedance2pro_client::requests::poll_characters::poll_characters::CharacterStatus;
 
 use crate::job_dependencies::JobDependencies;

@@ -22,8 +22,8 @@ use fal_client::requests::webhook::video::image::enqueue_seedance_1p5_pro_image_
 use fal_client::requests::webhook::video::text::enqueue_seedance_1p5_pro_text_to_video_webhook::{enqueue_seedance_1p5_pro_text_to_video_webhook, EnqueueSeedance1p5ProTextToVideoArgs, EnqueueSeedance1p5ProTextToVideoRequest, EnqueueSeedance1p5ProTextToVideoAspectRatio, EnqueueSeedance1p5ProTextToVideoDuration, EnqueueSeedance1p5ProTextToVideoResolution};
 use http_server_common::request::get_request_ip::get_request_ip;
 use log::{error, info, warn};
-use mysql_queries::queries::generic_inference::fal::insert_generic_inference_job_for_fal_queue::FalCategory;
-use mysql_queries::queries::generic_inference::fal::insert_generic_inference_job_for_fal_queue_with_apriori_job_token::{insert_generic_inference_job_for_fal_queue_with_apriori_job_token, InsertGenericInferenceForFalWithAprioriJobTokenArgs};
+use mysql_queries::queries::generic_inference::api_providers::fal::insert_generic_inference_job_for_fal_queue::FalCategory;
+use mysql_queries::queries::generic_inference::api_providers::fal::insert_generic_inference_job_for_fal_queue_with_apriori_job_token::{insert_generic_inference_job_for_fal_queue_with_apriori_job_token, InsertGenericInferenceForFalWithAprioriJobTokenArgs};
 use mysql_queries::queries::idepotency_tokens::insert_idempotency_token::insert_idempotency_token;
 use mysql_queries::queries::prompt_context_items::insert_batch_prompt_context_items::{insert_batch_prompt_context_items, InsertBatchArgs, PromptContextItem};
 use mysql_queries::queries::prompts::insert_prompt::{insert_prompt, InsertPromptArgs};

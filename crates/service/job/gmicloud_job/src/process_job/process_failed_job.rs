@@ -2,7 +2,7 @@ use log::{error, warn};
 
 use enums::by_table::generic_inference_jobs::frontend_failure_category::FrontendFailureCategory;
 use mysql_queries::queries::generic_inference::job::mark_job_failed_by_token::{mark_job_failed_by_token, MarkJobFailedByTokenArgs};
-use mysql_queries::queries::generic_inference::gmicloud::list_pending_gmicloud_jobs::PendingGmiCloudJob;
+use mysql_queries::queries::generic_inference::api_providers::gmicloud::list_pending_gmicloud_jobs::PendingGmiCloudJob;
 
 use crate::job_dependencies::JobDependencies;
 

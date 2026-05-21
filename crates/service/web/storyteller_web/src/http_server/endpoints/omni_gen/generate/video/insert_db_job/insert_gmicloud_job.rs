@@ -1,6 +1,6 @@
 use log::warn;
 
-use mysql_queries::queries::generic_inference::gmicloud::insert_generic_inference_job_for_gmicloud::{
+use mysql_queries::queries::generic_inference::api_providers::gmicloud::insert_generic_inference_job_for_gmicloud::{
   insert_generic_inference_job_for_gmicloud, InsertGmiCloudInferenceJobArgs,
 };
 use tokens::tokens::generic_inference_jobs::InferenceJobToken;

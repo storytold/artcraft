@@ -19,7 +19,7 @@ use tokens::tokens::users::UserToken;
 
 use crate::errors::database_query_error::DatabaseQueryError;
 use crate::payloads::generic_inference_args::generic_inference_args::GenericInferenceArgs;
-use crate::queries::generic_inference::fal::insert_generic_inference_job_for_fal_queue::FalCategory;
+use crate::queries::generic_inference::api_providers::fal::insert_generic_inference_job_for_fal_queue::FalCategory;
 
 
 pub struct InsertGenericInferenceForFalWithAprioriJobTokenArgs<'e, 'c, E>

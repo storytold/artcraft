@@ -17,8 +17,8 @@ use enums::common::generation_provider::GenerationProvider;
 use enums::common::visibility::Visibility;
 use http_server_common::request::get_request_ip::get_request_ip;
 use mysql_queries::queries::debug_logs::insert_debug_log::{insert_debug_log, InsertDebugLogArgs};
-use mysql_queries::queries::generic_inference::fal::insert_generic_inference_job_for_fal_queue::FalCategory;
-use mysql_queries::queries::generic_inference::fal::insert_generic_inference_job_for_fal_queue_with_apriori_job_token::{
+use mysql_queries::queries::generic_inference::api_providers::fal::insert_generic_inference_job_for_fal_queue::FalCategory;
+use mysql_queries::queries::generic_inference::api_providers::fal::insert_generic_inference_job_for_fal_queue_with_apriori_job_token::{
   insert_generic_inference_job_for_fal_queue_with_apriori_job_token,
   InsertGenericInferenceForFalWithAprioriJobTokenArgs,
 };

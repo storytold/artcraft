@@ -10,7 +10,7 @@ use enums::by_table::media_files::media_file_type::MediaFileType;
 use fal_client::webhook_payload::hydrated::hydrated_webhook_contents::{ModelGlbData, ThumbnailData};
 use hashing::sha256::sha256_hash_bytes::sha256_hash_bytes;
 use log::{info, warn};
-use mysql_queries::queries::generic_inference::fal::get_inference_job_by_fal_id::FalJobDetails;
+use mysql_queries::queries::generic_inference::api_providers::fal::get_inference_job_by_fal_id::FalJobDetails;
 use mysql_queries::queries::media_files::create::insert_builder::media_file_insert_builder::MediaFileInsertBuilder;
 use mysql_queries::queries::media_files::edit::set_media_file_cover_image::{set_media_file_cover_image, UpdateArgs};
 use tokens::tokens::media_files::MediaFileToken;

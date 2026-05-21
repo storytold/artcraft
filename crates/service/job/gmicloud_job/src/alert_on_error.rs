@@ -1,6 +1,6 @@
 use std::sync::Arc;
 use log::error;
-use mysql_queries::queries::generic_inference::gmicloud::list_pending_gmicloud_jobs::PendingGmiCloudJob;
+use mysql_queries::queries::generic_inference::api_providers::gmicloud::list_pending_gmicloud_jobs::PendingGmiCloudJob;
 use pager::client::pager::Pager;
 use pager::notification::notification_details_builder::NotificationDetailsBuilder;
 use pager::notification::notification_urgency::NotificationUrgency;

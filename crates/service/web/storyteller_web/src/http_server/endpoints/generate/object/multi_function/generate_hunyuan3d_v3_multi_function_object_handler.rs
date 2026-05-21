@@ -34,7 +34,7 @@ use fal_client::requests::webhook::object::enqueue_hunyuan3d_v3_text_to_3d_webho
 };
 use http_server_common::request::get_request_ip::get_request_ip;
 use log::{error, info, warn};
-use mysql_queries::queries::generic_inference::fal::insert_generic_inference_job_for_fal_queue::{
+use mysql_queries::queries::generic_inference::api_providers::fal::insert_generic_inference_job_for_fal_queue::{
   insert_generic_inference_job_for_fal_queue, FalCategory, InsertGenericInferenceForFalArgs,
 };
 use mysql_queries::queries::idepotency_tokens::insert_idempotency_token::insert_idempotency_token;
