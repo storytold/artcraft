@@ -4,7 +4,10 @@ use std::path::{Path, PathBuf};
 
 use serde_derive::{Deserialize, Serialize};
 
-pub const DEFAULT_CONFIG_PATH: &str = "config/notify_config.yaml";
+/// Default config location, resolved at compile time relative to the crate
+/// root so `cargo run` works regardless of CWD.
+pub const DEFAULT_CONFIG_PATH: &str =
+  concat!(env!("CARGO_MANIFEST_DIR"), "/config/notify_config.yaml");
 
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
 pub struct NotifyConfig {
@@ -16,9 +19,13 @@ pub struct NotifyConfig {
 
 impl NotifyConfig {
   pub fn read_from_file<P: AsRef<Path>>(path: P) -> anyhow::Result<Self> {
-    let file = File::open(&path)?;
+    let path = path.as_ref();
+    let file = File::open(path)?;
     let reader = BufReader::new(file);
-    let config: NotifyConfig = serde_yaml::from_reader(reader)?;
+    let mut config: NotifyConfig = serde_yaml::from_reader(reader)?;
+    if let Some(base) = path.parent() {
+      config.resolve_relative_paths(base);
+    }
     Ok(config)
   }
 
@@ -36,6 +43,20 @@ impl NotifyConfig {
         );
         Self::default()
       }
+    }
+  }
+
+  fn resolve_relative_paths(&mut self, base: &Path) {
+    resolve(&mut self.alert_beep_sound, base);
+    resolve(&mut self.alert_done_sound, base);
+    resolve(&mut self.alert_await_user_input_sound, base);
+  }
+}
+
+fn resolve(slot: &mut Option<PathBuf>, base: &Path) {
+  if let Some(p) = slot.as_ref() {
+    if p.is_relative() {
+      *slot = Some(base.join(p));
     }
   }
 }

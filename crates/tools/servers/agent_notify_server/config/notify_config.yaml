@@ -7,7 +7,8 @@
 # looping sound (measured from the moment one play finishes to the moment the
 # next play begins). If omitted, looping sounds replay back-to-back.
 
-alert_beep_sound: "/Users/bt/dev/storyteller/artcraft/frontend/apps/artcraft/app/public/resources/sound/smrpg_ghost.wav"
-alert_done_sound: "/Users/bt/dev/storyteller/artcraft/frontend/apps/artcraft/app/public/resources/sound/smrpg_ghost.wav"
-alert_await_user_input_sound: "/Users/bt/dev/storyteller/artcraft/frontend/apps/artcraft/app/public/resources/sound/smrpg_ghost.wav"
+# Paths can be absolute, or relative to this YAML file's directory.
+alert_beep_sound: test_beep.wav
+alert_done_sound: test_beep.wav
+alert_await_user_input_sound: test_beep.wav
 loop_alert_timeout_millis: 2000
