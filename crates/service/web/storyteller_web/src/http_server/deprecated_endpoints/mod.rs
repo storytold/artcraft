@@ -13,5 +13,4 @@ pub mod mocap;
 pub mod moderation;
 pub mod stubs;
 pub mod vocoders;
-pub mod w2l;
 pub mod workflows;

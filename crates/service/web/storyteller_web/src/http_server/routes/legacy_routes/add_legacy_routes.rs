@@ -28,19 +28,6 @@ use crate::http_server::deprecated_endpoints::media_uploads::upload_media::uploa
 use crate::http_server::deprecated_endpoints::mocap::enqueue_mocapnet::enqueue_mocapnet_handler;
 use crate::http_server::deprecated_endpoints::vocoders::get_vocoder::get_vocoder_handler;
 use crate::http_server::deprecated_endpoints::vocoders::list_vocoders::list_vocoders_handler;
-use crate::http_server::deprecated_endpoints::w2l::delete_w2l_result::delete_w2l_inference_result_handler;
-use crate::http_server::deprecated_endpoints::w2l::delete_w2l_template::delete_w2l_template_handler;
-use crate::http_server::deprecated_endpoints::w2l::edit_w2l_result::edit_w2l_inference_result_handler;
-use crate::http_server::deprecated_endpoints::w2l::edit_w2l_template::edit_w2l_template_handler;
-use crate::http_server::deprecated_endpoints::w2l::enqueue_infer_w2l_with_uploads::enqueue_infer_w2l_with_uploads;
-use crate::http_server::deprecated_endpoints::w2l::enqueue_upload_w2l_template::upload_w2l_template_handler;
-use crate::http_server::deprecated_endpoints::w2l::get_w2l_inference_job_status::get_w2l_inference_job_status_handler;
-use crate::http_server::deprecated_endpoints::w2l::get_w2l_result::get_w2l_inference_result_handler;
-use crate::http_server::deprecated_endpoints::w2l::get_w2l_template::get_w2l_template_handler;
-use crate::http_server::deprecated_endpoints::w2l::get_w2l_template_use_count::get_w2l_template_use_count_handler;
-use crate::http_server::deprecated_endpoints::w2l::get_w2l_upload_template_job_status::get_w2l_upload_template_job_status_handler;
-use crate::http_server::deprecated_endpoints::w2l::list_w2l_templates::list_w2l_templates_handler;
-use crate::http_server::deprecated_endpoints::w2l::set_w2l_template_mod_approval::set_w2l_template_mod_approval_handler;
 use crate::http_server::endpoints::app_state::get_app_state_handler::get_app_state_handler;
 use crate::http_server::endpoints::download_job::enqueue_generic_download::enqueue_generic_download_handler;
 use crate::http_server::endpoints::download_job::get_generic_upload_job_status::get_generic_download_job_status_handler;
@@ -95,9 +82,7 @@ where
       InitError = (),
     >,
 {
-  let mut app = add_w2l_routes(app);
-  
-  app = add_vocoder_routes(app); // /vocoder
+  let mut app = add_vocoder_routes(app); // /vocoder
   app = add_remote_download_routes(app); // /v1/remote_downloads (prev. /retrieval, aka. "generic_download_jobs")
   app = add_category_routes(app); // /category
   app = add_api_token_routes(app); // /api_tokens
@@ -200,90 +185,6 @@ where
         .service(
           web::resource("/model/{token}")
               .route(web::get().to(get_vocoder_handler))
-              .route(web::head().to(|| HttpResponse::Ok()))
-        )
-  )
-}
-
-// ==================== WAV2LIP ROUTES ====================
-
-
-fn add_w2l_routes<T, B> (app: App<T>) -> App<T>
-where
-    B: MessageBody,
-    T: ServiceFactory<
-      ServiceRequest,
-      Config = (),
-      Response = ServiceResponse<B>,
-      Error = Error,
-      InitError = (),
-    >,
-{
-  app.service(
-    web::scope("/w2l")
-        .service(
-          web::resource("/upload")
-              .route(web::post().to(upload_w2l_template_handler))
-              .route(web::head().to(|| HttpResponse::Ok()))
-        )
-        .service(
-          web::resource("/inference")
-              .route(web::post().to(enqueue_infer_w2l_with_uploads))
-              .route(web::head().to(|| HttpResponse::Ok()))
-        )
-        .service(
-          web::resource("/list")
-              .route(web::get().to(list_w2l_templates_handler))
-              .route(web::head().to(|| HttpResponse::Ok()))
-        )
-        .service(
-          web::resource("/template/{token}")
-              .route(web::get().to(get_w2l_template_handler))
-              .route(web::head().to(|| HttpResponse::Ok()))
-        )
-        .service(
-          web::resource("/template/{template_token}/count")
-              .route(web::get().to(get_w2l_template_use_count_handler))
-              .route(web::head().to(|| HttpResponse::Ok()))
-        )
-        .service(
-          web::resource("/template/{template_token}/edit")
-              .route(web::post().to(edit_w2l_template_handler))
-              .route(web::head().to(|| HttpResponse::Ok()))
-        )
-        .service(
-          web::resource("/template/{token}/moderate")
-              .route(web::post().to(set_w2l_template_mod_approval_handler))
-              .route(web::head().to(|| HttpResponse::Ok()))
-        )
-        .service(
-          web::resource("/template/{token}/delete")
-              .route(web::post().to(delete_w2l_template_handler))
-              .route(web::head().to(|| HttpResponse::Ok()))
-        )
-        .service(
-          web::resource("/result/{token}")
-              .route(web::get().to(get_w2l_inference_result_handler))
-              .route(web::head().to(|| HttpResponse::Ok()))
-        )
-        .service(
-          web::resource("/result/{token}/edit")
-              .route(web::post().to(edit_w2l_inference_result_handler))
-              .route(web::head().to(|| HttpResponse::Ok()))
-        )
-        .service(
-          web::resource("/result/{token}/delete")
-              .route(web::post().to(delete_w2l_inference_result_handler))
-              .route(web::head().to(|| HttpResponse::Ok()))
-        )
-        .service(
-          web::resource("/job/{token}")
-              .route(web::get().to(get_w2l_inference_job_status_handler))
-              .route(web::head().to(|| HttpResponse::Ok()))
-        )
-        .service(
-          web::resource("/upload_template_job/{token}")
-              .route(web::get().to(get_w2l_upload_template_job_status_handler))
               .route(web::head().to(|| HttpResponse::Ok()))
         )
   )

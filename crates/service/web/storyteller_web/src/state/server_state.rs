@@ -35,7 +35,6 @@ use mysql_queries::queries::generic_inference::web::get_pending_inference_job_co
 use mysql_queries::queries::media_files::list::list_featured_media_files::FeaturedMediaFileListPage;
 use mysql_queries::queries::model_categories::list_categories_query_builder::CategoryList;
 use mysql_queries::queries::tts::tts_inference_jobs::get_pending_tts_inference_job_count::TtsQueueLengthResult;
-use mysql_queries::queries::w2l::w2l_templates::list_w2l_templates::W2lTemplateRecordForList;
 use opaque_cursors::v2::opaque_cursor_encoder_v2::OpaqueCursorEncoderV2;
 use pager::client::pager::Pager;
 use redis::Client;
@@ -200,9 +199,6 @@ pub struct EphemeralInMemoryCaches {
 
   /// Contains a list of all voice conversion models.
   pub voice_conversion_model_list: SingleItemTtlCache<Vec<VoiceConversionModel>>,
-
-  /// Contains a list of all W2L templates.
-  pub w2l_template_list: SingleItemTtlCache<Vec<W2lTemplateRecordForList>>,
 
   /// Contains a list of all TTS categories in the database
   /// (before any enrichment with synthetic categories)

@@ -4,8 +4,6 @@ use actix_web::dev::{ServiceFactory, ServiceRequest, ServiceResponse};
 use actix_web::error::Error;
 use actix_web::{web, App, HttpResponse};
 
-use crate::http_server::deprecated_endpoints::w2l::list_user_w2l_inference_results::list_user_w2l_inference_results_handler;
-use crate::http_server::deprecated_endpoints::w2l::list_user_w2l_templates::list_user_w2l_templates_handler;
 use crate::http_server::endpoints::tts::list_user_tts_inference_results::list_user_tts_inference_results_handler;
 use crate::http_server::endpoints::tts::list_user_tts_models::list_user_tts_models_handler;
 use crate::http_server::endpoints::users::change_password_handler::change_password_handler;
@@ -148,18 +146,6 @@ pub fn add_user_routes<T, B> (app: App<T>) -> App<T>
           .service(
             web::resource("/{username}/tts_results")
                 .route(web::get().to(list_user_tts_inference_results_handler))
-                .route(web::head().to(|| HttpResponse::Ok()))
-          )
-          // NB: Removed endpoint
-          .service(
-            web::resource("/{username}/w2l_templates")
-                .route(web::get().to(list_user_w2l_templates_handler))
-                .route(web::head().to(|| HttpResponse::Ok()))
-          )
-          // NB: Removed endpoint
-          .service(
-            web::resource("/{username}/w2l_results")
-                .route(web::get().to(list_user_w2l_inference_results_handler))
                 .route(web::head().to(|| HttpResponse::Ok()))
           )
       )

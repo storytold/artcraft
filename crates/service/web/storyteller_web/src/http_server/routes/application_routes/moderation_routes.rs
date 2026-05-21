@@ -3,7 +3,6 @@ use actix_service::ServiceFactory;
 use actix_web::dev::{ServiceRequest, ServiceResponse};
 use actix_web::{web, App, Error, HttpResponse};
 
-use crate::http_server::deprecated_endpoints::moderation::approval::pending_w2l_templates::get_pending_w2l_templates_handler;
 use crate::http_server::deprecated_endpoints::moderation::categories::delete_category::delete_category_handler;
 use crate::http_server::deprecated_endpoints::moderation::categories::edit_category::edit_category_handler;
 use crate::http_server::deprecated_endpoints::moderation::categories::list_tts_categories_for_moderation::list_tts_categories_for_moderation_handler;
@@ -27,7 +26,6 @@ use crate::http_server::endpoints::moderation::wallets::moderator_add_banked_bal
 use crate::http_server::endpoints::moderation::wallets::moderator_create_wallet_for_user_handler::moderator_create_wallet_for_user_handler;
 use crate::http_server::endpoints::moderation::wallets::moderator_get_wallet_handler::moderator_get_wallet_handler;
 use crate::http_server::endpoints::moderation::jobs::get_tts_inference_queue_count::get_tts_inference_queue_count_handler;
-use crate::http_server::endpoints::moderation::jobs::get_w2l_inference_queue_count::get_w2l_inference_queue_count_handler;
 use crate::http_server::endpoints::moderation::jobs::kill_tts_inference_jobs::kill_tts_inference_jobs_handler;
 use crate::http_server::endpoints::moderation::user_bans::moderation_ban_user_handler::moderation_ban_user_handler;
 use crate::http_server::endpoints::moderation::user::moderator_list_subscribing_users_by_signup_date::moderator_list_subscribing_users_by_signup_date_handler;
@@ -244,11 +242,6 @@ pub fn add_moderator_routes<T, B> (app: App<T>) -> App<T>
                     .route(web::head().to(|| HttpResponse::Ok()))
               )
               .service(
-                web::resource("/w2l_inference_queue_stats")
-                    .route(web::get().to(get_w2l_inference_queue_count_handler))
-                    .route(web::head().to(|| HttpResponse::Ok()))
-              )
-              .service(
                 web::resource("/kill_generic")
                     .route(web::post().to(kill_generic_inference_jobs_handler))
                     .route(web::head().to(|| HttpResponse::Ok()))
@@ -256,16 +249,6 @@ pub fn add_moderator_routes<T, B> (app: App<T>) -> App<T>
         )
         .service(
           web::scope("/pending")
-              .service(
-                web::resource("/w2l_templates")
-                    .route(web::get().to(get_pending_w2l_templates_handler))
-                    .route(web::head().to(|| HttpResponse::Ok()))
-              )
-              .service(
-                web::resource("/w2l_inference_queue_stats")
-                    .route(web::get().to(get_w2l_inference_queue_count_handler))
-                    .route(web::head().to(|| HttpResponse::Ok()))
-              )
         )
         .service(
           web::scope("/stats")

@@ -146,10 +146,6 @@ pub async fn setup_dependencies(server_hostname: &str) -> AnyhowResult<SetupResu
     easyenv::get_env_duration_seconds_or_default("DATABASE_TTS_CATEGORY_LIST_CACHE_TTL_SECONDS", Duration::from_secs(60))
   );
 
-  let w2l_template_cache = SingleItemTtlCache::create_with_duration(
-    easyenv::get_env_duration_seconds_or_default("W2L_TEMPLATE_LIST_CACHE_TTL_SECONDS", Duration::from_secs(300))
-  );
-
   let tts_queue_length_cache = SingleItemTtlCache::create_with_duration(
     easyenv::get_env_duration_seconds_or_default("TTS_QUEUE_LENGTH_CACHE_TTL_SECONDS", Duration::from_secs(30))
   );
@@ -291,7 +287,6 @@ pub async fn setup_dependencies(server_hostname: &str) -> AnyhowResult<SetupResu
           easyenv::get_env_duration_seconds_or_default(
             "VOICE_CONVERSION_MODEL_LIST_CACHE_TTL_SECONDS",
             Duration::from_secs(60))),
-        w2l_template_list: w2l_template_cache,
         database_tts_category_list: database_tts_category_list_cache,
         tts_queue_length: tts_queue_length_cache,
         tts_model_category_assignments: tts_model_category_assignments_cache,

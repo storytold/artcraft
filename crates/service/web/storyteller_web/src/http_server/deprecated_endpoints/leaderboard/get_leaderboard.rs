@@ -17,7 +17,6 @@ use crate::http_server::common_responses::user_avatars::default_avatar_from_user
 use crate::http_server::common_responses::user_details_lite::{UserDefaultAvatarInfo, UserDetailsLight};
 use errors::AnyhowResult;
 use mysql_queries::queries::tts::stats::calculate_tts_model_leaderboard::calculate_tts_model_leaderboard;
-use mysql_queries::queries::w2l::stats::calculate_w2l_template_leaderboard::calculate_w2l_template_leaderboard;
 use tokens::tokens::users::UserToken;
 
 use crate::http_server::web_utils::serialize_as_json_error::serialize_as_json_error;
@@ -154,7 +153,7 @@ pub async fn leaderboard_handler(
   let response = LeaderboardResponse {
     success: true,
     tts_leaderboard: leaderboard_info.tts_leaderboard,
-    w2l_leaderboard: leaderboard_info.w2l_leaderboard,
+    w2l_leaderboard: vec![],
   };
 
   let body = serde_json::to_string(&response)
@@ -168,58 +167,24 @@ pub async fn leaderboard_handler(
 #[derive(Clone)]
 pub struct LeaderboardInfo {
   tts_leaderboard: Vec<LeaderboardRow>,
-  w2l_leaderboard: Vec<LeaderboardRow>,
 }
 
 async fn query_leaderboard(mysql_pool: &MySqlPool) -> AnyhowResult<LeaderboardInfo> {
-  // TODO: There has to be a better way of doing this in parallel.
-  //  Some more intelligent DB connection pool. (What did jOOQ in Java do? Surely not this insanity!)
-  let mysql_connection_1 = mysql_pool.acquire();
-  let mysql_connection_2 = mysql_pool.acquire();
+  let mut mysql_connection = mysql_pool.acquire().await?;
 
-  let mut mysql_connection_1 = mysql_connection_1.await?;
-  let mut mysql_connection_2 = mysql_connection_2.await?;
-
-  let maybe_tts_results =
-      calculate_tts_model_leaderboard(&mut mysql_connection_1);
-
-  let maybe_w2l_results =
-      calculate_w2l_template_leaderboard(&mut mysql_connection_2);
-
-  let tts_results = maybe_tts_results
+  let tts_results = calculate_tts_model_leaderboard(&mut mysql_connection)
       .await?
       .into_iter()
       .map(|record| LeaderboardRow {
-        creator_user_token: record.creator_user_token.clone(), // NB: Cloned because of ref use
-        username: record.username.to_string(), // NB: Cloned because of ref use for avatar below
-        display_name: record.display_name.to_string(), // Cloned because of `UserDetailsLight`
+        creator_user_token: record.creator_user_token.clone(),
+        username: record.username.to_string(),
+        display_name: record.display_name.to_string(),
         gravatar_hash: record.gravatar_hash.to_string(),
         default_avatar_index: default_avatar_from_username(&record.username),
         default_avatar_color_index: default_avatar_color_from_username(&record.username),
         user: UserDetailsLight {
           user_token: UserToken::new_from_str(&record.creator_user_token),
-          username: record.username.to_string(), // NB: Cloned because of ref use for avatar below
-          display_name: record.display_name,
-          gravatar_hash: record.gravatar_hash,
-          default_avatar: UserDefaultAvatarInfo::from_username(&record.username),
-        },
-        uploaded_count: record.uploaded_count,
-      })
-      .collect();
-
-  let w2l_results = maybe_w2l_results
-      .await?
-      .into_iter()
-      .map(|record| LeaderboardRow {
-        creator_user_token: record.creator_user_token.clone(), // NB: Cloned because of ref use
-        username: record.username.to_string(), // NB: Cloned because of ref use for avatar below
-        display_name: record.display_name.clone(), // Cloned because of ref use.
-        gravatar_hash: record.gravatar_hash.clone(), // Cloned because of ref use.
-        default_avatar_index: default_avatar_from_username(&record.username),
-        default_avatar_color_index: default_avatar_color_from_username(&record.username),
-        user: UserDetailsLight {
-          user_token: UserToken::new_from_str(&record.creator_user_token),
-          username: record.username.to_string(), // NB: Cloned because of ref use for avatar below
+          username: record.username.to_string(),
           display_name: record.display_name,
           gravatar_hash: record.gravatar_hash,
           default_avatar: UserDefaultAvatarInfo::from_username(&record.username),
@@ -230,6 +195,5 @@ async fn query_leaderboard(mysql_pool: &MySqlPool) -> AnyhowResult<LeaderboardIn
 
   Ok(LeaderboardInfo {
     tts_leaderboard: tts_results,
-    w2l_leaderboard: w2l_results,
   })
 }

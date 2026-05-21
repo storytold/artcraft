@@ -139,8 +139,6 @@ members = [
   "crates/service/job/deprecated/inference_job",
   "crates/service/job/deprecated/tts_download_job",
   "crates/service/job/deprecated/tts_inference_job",
-  "crates/service/job/deprecated/w2l_download_job",
-  "crates/service/job/deprecated/w2l_inference_job",
 
   # Service Plugins: complete subsystems that can be plugged into services (users, billing, etc.)
   "crates/service/plugins/billing",

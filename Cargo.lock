@@ -13508,69 +13508,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "w2l-download-job"
-version = "0.0.1"
-dependencies = [
- "anyhow",
- "bucket_paths",
- "chrono",
- "cloud_storage",
- "config",
- "dotenv",
- "easyenv",
- "errors",
- "filesys",
- "google_drive_downloader",
- "hashing",
- "hostname 0.4.0",
- "hyper 1.6.0",
- "jobs_common",
- "log",
- "mysql_queries",
- "r2d2_redis",
- "serde",
- "serde_derive",
- "serde_json",
- "shared_env_var_config",
- "sqlx",
- "subprocess",
- "tempdir",
- "tokio",
- "workspace-build-acceleration",
-]
-
-[[package]]
-name = "w2l-inference-job"
-version = "0.0.1"
-dependencies = [
- "anyhow",
- "bucket_paths",
- "chrono",
- "cloud_storage",
- "config",
- "dotenv",
- "easyenv",
- "errors",
- "filesys",
- "google_drive_downloader",
- "hostname 0.4.0",
- "hyper 1.6.0",
- "jobs_common",
- "log",
- "mysql_queries",
- "r2d2_redis",
- "serde",
- "serde_derive",
- "serde_json",
- "shared_env_var_config",
- "sqlx",
- "subprocess",
- "tempdir",
- "tokio",
- "workspace-build-acceleration",
-]
-
-[[package]]
 name = "waker-fn"
 version = "1.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
