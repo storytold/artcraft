@@ -150,6 +150,9 @@ members = [
   "crates/testing/test_data",
   "crates/testing/test_utils",
 
+  # Standalone tool servers
+  "crates/tools/servers/agent_notify_server",
+
   # Vendored code
   "crates/vendor/limitation",
   "crates/vendor/tauri-plugin-http",

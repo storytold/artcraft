@@ -1,0 +1,38 @@
+[package]
+name = "agent-notify-server"
+edition = "2021"
+version = "0.0.1"
+authors = ["Brandon Thomas <bt@brand.io>"]
+publish = false
+
+[[bin]]
+name = "agent-notify-server"
+path = "src/main.rs"
+
+[package.metadata.cargo-udeps.ignore]
+normal = ["workspace-build-acceleration"]
+
+[dependencies]
+# Workspace hack (faster compile times)
+workspace-build-acceleration = { workspace = true }
+
+# Web
+actix-web = { workspace = true }
+
+# Async runtime
+tokio = { workspace = true, features = ["macros", "signal", "rt-multi-thread"] }
+
+# Audio
+rodio = { version = "0.20.1", default-features = false, features = ["symphonia-all"] }
+
+# Serialization
+serde = { workspace = true }
+serde_derive = { workspace = true }
+serde_yaml = { workspace = true }
+
+# Logging
+log = { workspace = true }
+env_logger = { workspace = true }
+
+# Errors
+anyhow = { workspace = true }

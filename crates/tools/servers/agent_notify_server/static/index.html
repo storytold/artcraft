@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Agent Notify Server</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+           max-width: 720px; margin: 40px auto; padding: 0 16px; color: #222; }
+    h1 { margin-bottom: 4px; }
+    .sub { color: #666; margin-top: 0; }
+    code { background: #f3f3f3; padding: 1px 5px; border-radius: 3px; }
+    table { border-collapse: collapse; width: 100%; margin-top: 18px; }
+    th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid #eee;
+             vertical-align: top; }
+    th { background: #fafafa; font-weight: 600; }
+    .group { margin-top: 32px; }
+    .pill { display: inline-block; padding: 1px 8px; border-radius: 10px;
+            background: #eef; color: #224; font-size: 12px; margin-left: 6px; }
+  </style>
+</head>
+<body>
+  <h1>Agent Notify Server</h1>
+  <p class="sub">Local audio-cue HTTP server for long-running agents.</p>
+
+  <div class="group">
+    <h2>One-shot alerts</h2>
+    <table>
+      <tr><th>Endpoint</th><th>Behavior</th></tr>
+      <tr><td><code>GET /alert_beep</code></td><td>Play <em>alert_beep</em> once.</td></tr>
+      <tr><td><code>GET /alert_done</code></td><td>Play <em>alert_done</em> once.</td></tr>
+      <tr><td><code>GET /alert_await</code></td><td>Play <em>alert_await_user_input</em> once.</td></tr>
+    </table>
+  </div>
+
+  <div class="group">
+    <h2>Looping alerts <span class="pill">replaces existing loop</span></h2>
+    <table>
+      <tr><th>Endpoint</th><th>Behavior</th></tr>
+      <tr><td><code>GET /loop_beep</code></td><td>Loop <em>alert_beep</em>. Replaces any prior loop.</td></tr>
+      <tr><td><code>GET /loop_done</code></td><td>Loop <em>alert_done</em>. Replaces any prior loop.</td></tr>
+      <tr><td><code>GET /loop_await</code></td><td>Loop <em>alert_await_user_input</em>. Replaces any prior loop.</td></tr>
+    </table>
+    <p style="color:#555;font-size:14px;">
+      Between iterations the server waits <code>loop_alert_timeout_millis</code>
+      (from the YAML config) before playing again.
+    </p>
+  </div>
+
+  <div class="group">
+    <h2>Stop</h2>
+    <table>
+      <tr><th>Endpoint</th><th>Behavior</th></tr>
+      <tr><td><code>GET /stop</code></td><td>Stop all playback (loops and queued one-shots).</td></tr>
+    </table>
+  </div>
+
+  <div class="group">
+    <h2>Mixing rules</h2>
+    <ul>
+      <li>A one-shot mixes with whatever is looping — both play simultaneously.</li>
+      <li>Requesting a new loop replaces the prior loop.</li>
+      <li><code>/stop</code> halts everything.</li>
+    </ul>
+  </div>
+</body>
+</html>
