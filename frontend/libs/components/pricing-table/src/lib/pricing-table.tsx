@@ -1,4 +1,4 @@
-import { faCheck } from "@fortawesome/pro-solid-svg-icons";
+import { faCheck, faStar, faGem } from "@fortawesome/pro-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Button } from "@storyteller/ui-button";
 import {
@@ -16,6 +16,10 @@ import {
   getReferrer,
 } from "@storyteller/common";
 import { useNavigate } from "react-router-dom";
+import { PROMO_PCT, planPricing } from "./promo-discounts";
+
+const DISCOUNT_PILL_CLASS =
+  "inline-flex items-center text-xs font-bold uppercase tracking-wide rounded-md px-1.5 py-0.5 border bg-primary/80 text-white border-primary/30";
 
 const billingTabs = [
   { id: "yearly", label: "Yearly" },
@@ -34,6 +38,13 @@ const PLAN_SLUG_MAP: Record<string, string> = {
   artcraft_basic: "artcraft_basic",
   artcraft_pro: "artcraft_pro",
   artcraft_max: "artcraft_max",
+};
+
+// Plans that get an eye-catching gradient frame breaking out of the grid.
+type HighlightKind = "popular" | "best";
+const HIGHLIGHTS: Record<string, HighlightKind> = {
+  artcraft_pro: "popular",
+  artcraft_max: "best",
 };
 
 interface PricingTableProps {
@@ -176,8 +187,8 @@ const PricingTable = ({
       return "Switch Plan";
     }
 
-    // No subscription - show "Select Plan"
-    return "Select Plan";
+    // No subscription - show "Get Plan"
+    return "Get Plan";
   };
 
   const handlePlanClick = async (planSlug: string) => {
@@ -290,19 +301,10 @@ const PricingTable = ({
 
   const formatPrice = (plan: SubscriptionPlanDetails) => {
     if (plan.monthlyPrice === 0) {
-      return { current: 0, original: null };
+      return { current: 0, original: null, discountPct: 0 };
     }
-
-    if (isYearly) {
-      const val = Math.round(plan.yearlyPrice / 12);
-      const original = plan.originalYearlyPrice
-        ? Math.round(plan.originalYearlyPrice / 12)
-        : null;
-      return { current: val, original };
-    } else {
-      const val = plan.originalMonthlyPrice || plan.monthlyPrice;
-      return { current: val, original: null };
-    }
+    const { current, basePrice, discountPct } = planPricing(plan, isYearly);
+    return { current, original: basePrice, discountPct };
   };
 
   // Determine grid columns based on number of plans + enterprise
@@ -343,52 +345,57 @@ const PricingTable = ({
           selectedTabClassName="text-white"
         />
         <span className="bg-primary text-white px-3 py-0.5 rounded-full text-sm font-medium -top-3 -right-10 md:-left-6 md:right-auto absolute pointer-events-none transform md:-rotate-12 rotate-12">
-          -20%
+          -{PROMO_PCT}%
         </span>
       </div>
 
       <div
-        className={`${unifiedTheme ? "max-w-6xl" : "max-w-7xl"} mx-auto grid ${gridCols} gap-4 md:gap-6`}
+        className={`${unifiedTheme ? "max-w-6xl" : "max-w-7xl"} mx-auto grid ${gridCols} gap-x-4 gap-y-10 md:gap-6 items-stretch`}
       >
         {plans.map((plan) => {
-          const isPopular = plan.slug === "artcraft_pro";
+          const highlight = HIGHLIGHTS[plan.slug] ?? null;
           const isCurrent = isCurrentPlan(plan.slug);
-          const { current: price, original: originalPrice } = formatPrice(plan);
+          const {
+            current: price,
+            original: originalPrice,
+            discountPct,
+          } = formatPrice(plan);
           const isProcessing = processingPlan === plan.slug;
+          const frame = highlight ? frameClasses(plan.colorScheme) : null;
 
-          return (
+          // Inner card body (shared between framed and un-framed plans). When
+          // highlighted, the solid color is a 2px border (the frame) — not a
+          // background — so the card keeps its subtle gradient.
+          const cardBody = (
             <div
-              key={plan.slug}
-              className={
-                getColorSchemeClasses(plan.colorScheme) +
-                (isPopular ? " shadow-2xl" : "") +
-                (isCurrent ? " ring-2 ring-white/50" : "")
-              }
+              className={twMerge(
+                getColorSchemeClasses(plan.colorScheme),
+                frame
+                  ? `relative z-10 border-2 h-full w-full shadow-2xl bg-[#101014] ${frame.border}`
+                  : "",
+                isCurrent ? "ring-2 ring-white/50" : "",
+              )}
             >
-              {isPopular && !isCurrent && (
-                <div
-                  className={
-                    unifiedTheme
-                      ? "absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 inline-flex items-center text-xs font-semibold text-primary-200 bg-primary/[0.18] border border-primary/30 rounded-full px-3 py-1 backdrop-blur whitespace-nowrap"
-                      : "absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-primary px-4 py-1 rounded-full text-sm font-bold shadow-lg whitespace-nowrap"
-                  }
-                >
-                  Most Popular
-                </div>
-              )}
-
               {isCurrent && (
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white text-black px-4 py-1 rounded-full text-sm font-bold shadow-lg whitespace-nowrap">
-                  CURRENT PLAN
+                <div className="absolute top-3 right-3 bg-white text-black px-3 py-0.5 rounded-full text-xs font-bold shadow-lg whitespace-nowrap">
+                  CURRENT
                 </div>
               )}
 
-              <h3 className="text-xl md:text-2xl font-medium mb-2 text-white">
-                {plan.name}
-              </h3>
+              <div className="mb-2 flex items-center gap-2 flex-wrap">
+                <h3 className="text-xl md:text-2xl font-semibold text-white">
+                  {plan.name}
+                </h3>
+                {discountPct > 0 && (
+                  <span className={DISCOUNT_PILL_CLASS}>
+                    {discountPct}% OFF
+                  </span>
+                )}
+              </div>
+
               <div className="mb-1 flex items-baseline gap-2">
                 {originalPrice !== null && (
-                  <span className="text-white/40 line-through text-lg md:text-xl decoration-white/40">
+                  <span className="text-[#f05951]/80 line-through text-lg md:text-xl decoration-[#f05951]/80">
                     ${originalPrice}
                   </span>
                 )}
@@ -404,13 +411,14 @@ const PricingTable = ({
               </div>
 
               <Button
-                className={`w-full justify-center border-transparent mb-6 md:mb-8 ${
+                className={twMerge(
+                  "w-full justify-center border-transparent mb-6 md:mb-8 h-11 rounded-xl",
                   isCurrent
                     ? "bg-white/20 cursor-default"
-                    : isPopular
-                      ? "bg-primary hover:bg-primary-600"
-                      : "bg-white hover:bg-white/80 text-black"
-                }`}
+                    : frame
+                      ? `${frame.button} text-white`
+                      : "bg-white hover:bg-white/80 text-black",
+                )}
                 onClick={() => handlePlanClick(plan.slug)}
                 disabled={isCurrent || isProcessing || isLoading}
               >
@@ -449,10 +457,42 @@ const PricingTable = ({
                     <Feature
                       key={idx}
                       text={feature.text}
-                      highlighted={isPopular}
+                      highlighted={!!highlight}
                     />
                   ))}
               </ul>
+            </div>
+          );
+
+          // Un-highlighted plans render the card directly into the grid.
+          if (!highlight) {
+            return (
+              <div key={plan.slug} className="contents">
+                {cardBody}
+              </div>
+            );
+          }
+
+          // Highlighted plans keep the same footprint; the solid label tab sits
+          // ABOVE the card (out of flow, no push-down) and tucks behind the card
+          // top (z-0 vs the card's z-10) so its color fills the rounded-corner
+          // notches — the tab reads as one continuous frame with the card.
+          return (
+            <div key={plan.slug} className="relative">
+              <div
+                className={twMerge(
+                  "absolute inset-x-0 bottom-[calc(100%_-_1.75rem)] z-0 flex items-center justify-center gap-1.5 rounded-t-2xl sm:rounded-t-[28px] pt-2 pb-8 text-xs font-bold uppercase tracking-[0.1em] text-white",
+                  frame?.tab,
+                )}
+              >
+                <FontAwesomeIcon
+                  icon={highlight === "popular" ? faStar : faGem}
+                  className="text-xs pb-0.5"
+                />
+                {highlight === "popular" ? "Most Popular" : "Best Value"}
+              </div>
+
+              {cardBody}
             </div>
           );
         })}
@@ -466,7 +506,7 @@ const PricingTable = ({
                 : "relative rounded-3xl p-6 md:p-8 border flex flex-col transition-all duration-300 backdrop-blur-md bg-gradient-to-b from-[#0d1f4a]/90 via-[#183878]/60 to-[#2456b8]/15 border-[#3568c9]/40 hover:border-[#3568c9] hover:shadow-[0_0_30px_rgba(53,104,201,0.25)]"
             }
           >
-            <h3 className="text-xl md:text-2xl font-medium mb-2 text-white">
+            <h3 className="text-xl md:text-2xl font-semibold mb-2 text-white">
               Enterprise
             </h3>
             <div className="mb-1 flex items-baseline gap-2">
@@ -478,7 +518,7 @@ const PricingTable = ({
 
             <a
               href="mailto:hello@storyteller.ai"
-              className="w-full flex items-center justify-center gap-2 rounded-lg border border-white/20 bg-white/10 hover:bg-white/15 text-white px-4 py-2 text-sm font-medium transition-colors mb-6 md:mb-8"
+              className="w-full flex items-center justify-center gap-2 rounded-xl border border-white/20 bg-white/10 hover:bg-white/15 text-white px-4 py-2 text-sm font-medium transition-colors mb-6 md:mb-8 h-11"
             >
               Contact Us
             </a>
@@ -505,7 +545,7 @@ const PricingTable = ({
           }
         >
           <div className="flex-shrink-0">
-            <h3 className="text-lg font-medium text-white">Enterprise</h3>
+            <h3 className="text-lg font-semibold text-white">Enterprise</h3>
             <div className="text-2xl font-bold mt-1">Custom</div>
             <div className="text-xs text-white/50 mt-1">
               For bespoke solutions
@@ -544,6 +584,39 @@ const PricingTable = ({
       )}
     </div>
   );
+};
+
+// Solid frame color for highlighted plans — uses each plan's own color scheme
+// (Pro = purple, Max = orange) so the frame matches the card it wraps. The frame
+// is a solid border + a label tab (not a background), so the card keeps its own
+// subtle gradient and the color never bleeds through.
+const frameClasses = (colorScheme: SubscriptionPlanDetails["colorScheme"]) => {
+  switch (colorScheme) {
+    case "green":
+      return {
+        tab: "bg-[#00a873]",
+        border: "border-[#00a873]",
+        button: "bg-[#00a873] hover:bg-[#008a5e]",
+      };
+    case "purple":
+      return {
+        tab: "bg-[#9D4CFF]",
+        border: "border-[#9D4CFF]",
+        button: "bg-[#9D4CFF] hover:bg-[#8633f2]",
+      };
+    case "orange":
+      return {
+        tab: "bg-[#D97700]",
+        border: "border-[#D97700]",
+        button: "bg-[#D97700] hover:bg-[#b86400]",
+      };
+    default:
+      return {
+        tab: "bg-primary",
+        border: "border-primary",
+        button: "bg-primary hover:bg-primary-600",
+      };
+  }
 };
 
 const Feature = ({

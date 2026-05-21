@@ -3,6 +3,9 @@
   "include": [],
   "references": [
     {
+      "path": "../../libs/components/pricing-table"
+    },
+    {
       "path": "../../libs/components/upload-modal"
     },
     {
@@ -31,12 +34,6 @@
     },
     {
       "path": "../../libs/components/switch"
-    },
-    {
-      "path": "../../libs/components/tab-selector"
-    },
-    {
-      "path": "../../libs/state/subscription"
     },
     {
       "path": "../../libs/components/viewer-3d"

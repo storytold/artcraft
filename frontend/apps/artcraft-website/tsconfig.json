@@ -3,6 +3,9 @@
   "include": [],
   "references": [
     {
+      "path": "../../libs/components/pricing-table"
+    },
+    {
       "path": "../../libs/components/slider-v2"
     },
     {
@@ -13,12 +16,6 @@
     },
     {
       "path": "../../libs/components/switch"
-    },
-    {
-      "path": "../../libs/components/tab-selector"
-    },
-    {
-      "path": "../../libs/state/subscription"
     },
     {
       "path": "../../libs/components/close-button"
@@ -42,9 +39,6 @@
       "path": "../../libs/components/tooltip"
     },
     {
-      "path": "../../libs/common"
-    },
-    {
       "path": "../../libs/components/popover"
     },
     {
@@ -58,6 +52,9 @@
     },
     {
       "path": "../../libs/components/button"
+    },
+    {
+      "path": "../../libs/common"
     },
     {
       "path": "../../libs/api"

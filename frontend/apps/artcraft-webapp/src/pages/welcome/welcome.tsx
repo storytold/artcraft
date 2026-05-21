@@ -14,7 +14,7 @@ import { Link } from "react-router-dom";
 import { isMobile, isMacOs } from "react-device-detect";
 import { DOWNLOAD_LINKS } from "../../config/github_download_links";
 import Seo from "../../components/seo";
-import { PricingTable } from "../../components/pricing-table";
+import { PricingTable } from "@storyteller/ui-pricing-table";
 
 const Welcome = () => {
   const downloadUrl = isMacOs ? DOWNLOAD_LINKS.MACOS : DOWNLOAD_LINKS.WINDOWS;

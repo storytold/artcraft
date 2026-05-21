@@ -197,6 +197,9 @@
     },
     {
       "path": "./libs/components/vfx"
+    },
+    {
+      "path": "./libs/components/pricing-table"
     }
   ]
 }

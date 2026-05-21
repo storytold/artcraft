@@ -38,6 +38,9 @@
   ],
   "references": [
     {
+      "path": "../../libs/components/pricing-table/tsconfig.lib.json"
+    },
+    {
       "path": "../../libs/components/upload-modal/tsconfig.lib.json"
     },
     {
@@ -66,12 +69,6 @@
     },
     {
       "path": "../../libs/components/switch/tsconfig.lib.json"
-    },
-    {
-      "path": "../../libs/components/tab-selector/tsconfig.lib.json"
-    },
-    {
-      "path": "../../libs/state/subscription/tsconfig.lib.json"
     },
     {
       "path": "../../libs/components/viewer-3d/tsconfig.lib.json"
