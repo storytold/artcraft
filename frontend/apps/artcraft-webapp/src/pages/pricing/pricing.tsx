@@ -83,20 +83,24 @@ const Pricing = () => {
   }, []);
 
   return (
-    <div className="relative min-h-screen bg-[#101014] text-white overflow-hidden">
+    <div className="relative min-h-full bg-[#101014] text-white">
       <Seo
         title="Pricing - ArtCraft"
         description="Simple, transparent pricing for ArtCraft. Start for free and scale as you grow."
       />
 
-      {/* Subtle radial accent at top, matches landing3 */}
-      <div
-        className="absolute inset-x-0 top-0 h-[700px] pointer-events-none z-0"
-        style={{
-          background:
-            "radial-gradient(ellipse 60% 50% at 50% 0%, rgba(45,129,255,0.18) 0%, transparent 70%)",
-        }}
-      />
+      {/* Subtle radial accent at top, matches landing3. Clipped to its own
+          wrapper so the outer page can grow naturally and let SidebarInset
+          handle scrolling. */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
+        <div
+          className="absolute inset-x-0 top-0 h-[700px]"
+          style={{
+            background:
+              "radial-gradient(ellipse 60% 50% at 50% 0%, rgba(45,129,255,0.18) 0%, transparent 70%)",
+          }}
+        />
+      </div>
 
       <main className="relative z-10 px-4 sm:px-8 pt-10">
         {isSeedanceRef ? (
