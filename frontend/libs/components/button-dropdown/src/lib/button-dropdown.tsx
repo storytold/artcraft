@@ -48,12 +48,14 @@ export const ButtonDropdown = ({
 }: ButtonDropdownProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedOptionIndex, setSelectedOptionIndex] = useState<number | null>(
-    null
+    null,
   );
 
   const closeModal = () => {
     setIsOpen(false);
-    options[selectedOptionIndex!].dialogProps?.onClose?.();
+    if (selectedOptionIndex !== null) {
+      options[selectedOptionIndex]?.dialogProps?.onClose?.();
+    }
   };
 
   const handleOptionClick = (index: number) => {
@@ -72,7 +74,7 @@ export const ButtonDropdown = ({
 
   const currentDialogProps =
     selectedOptionIndex !== null
-      ? options[selectedOptionIndex].dialogProps
+      ? options[selectedOptionIndex]?.dialogProps
       : null;
 
   return (
@@ -102,7 +104,7 @@ export const ButtonDropdown = ({
             static
             className={twMerge(
               "absolute z-20 mt-1 w-max divide-y divide-gray-100 overflow-hidden rounded-lg bg-brand-secondary py-1.5 shadow-xl focus:outline-none",
-              align === "left" ? "left-0" : "right-0"
+              align === "left" ? "left-0" : "right-0",
             )}
           >
             <div>
@@ -122,7 +124,7 @@ export const ButtonDropdown = ({
                             ? "pointer-events-none opacity-40"
                             : "",
                           "group flex w-full items-center py-1.5 pl-7 pr-4 text-sm",
-                          option.className
+                          option.className,
                         )}
                         onClick={() => handleOptionClick(index)}
                       >

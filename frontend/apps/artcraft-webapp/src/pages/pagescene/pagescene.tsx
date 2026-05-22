@@ -18,6 +18,8 @@ import { useSession } from "../../lib/session";
 import { useStage3DCostEstimate } from "../../lib/cost-estimate-api";
 import { useSidebar } from "../../components/ui/sidebar";
 import { useSignupCta } from "../../components/signup-cta-modal";
+import { ActiveSceneTitle } from "../../components/topbar/ActiveSceneTitle";
+import { TopBarActions } from "../../components/topbar/TopBarActions";
 import Seo from "../../components/seo";
 import { DemoOutputOverlay } from "./demo-output-overlay";
 import { OtherScenesOverlay } from "./other-scenes-overlay";
@@ -298,6 +300,8 @@ function PageSceneEditor() {
         showImageTo3DButton={false}
         showHelpMenu={false}
         modelSelectorPlacement="prompt-box"
+        topBarStartSlot={<ActiveSceneTitle />}
+        topBarEndSlot={<TopBarActions />}
         promptboxAboveStackSlot={
           <OtherScenesOverlay
             currentSceneToken={sceneToken}

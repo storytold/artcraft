@@ -89,6 +89,14 @@ export interface Stage3DBodyProps {
    *  "See other demo scenes" affordance so the button stacks above
    *  the prompt input instead of floating loose over the canvas. */
   promptboxAboveStackSlot?: React.ReactNode;
+  /** Optional content rendered in the top toolbar's left cluster, right
+   *  after the File/Outliner/Shortcuts buttons. Used by the webapp for
+   *  the editable scene title; Tauri leaves it unset. */
+  topBarStartSlot?: React.ReactNode;
+  /** Optional content rendered in the top toolbar's right cluster, before
+   *  the anonymous hint chip. Used by the webapp to host the relocated
+   *  nav actions; Tauri leaves it unset. */
+  topBarEndSlot?: React.ReactNode;
 }
 
 export const Stage3DBody = ({
@@ -97,6 +105,8 @@ export const Stage3DBody = ({
   showHelpMenu = true,
   modelSelectorPlacement = "bottom-left",
   promptboxAboveStackSlot,
+  topBarStartSlot,
+  topBarEndSlot,
 }: Stage3DBodyProps = {}) => {
   const camAspect = usePageSceneStore((s) => s.cameraAspectRatio);
   const outlinerShowing = usePageSceneStore((s) => s.outlinerShowing);
@@ -431,9 +441,15 @@ export const Stage3DBody = ({
               onClick={handleOverlayClick}
             >
               <div className="grid grid-cols-3 gap-4">
-                <ControlsTopButtons />
+                <div className="flex flex-col items-start gap-2">
+                  <ControlsTopButtons />
+                  {topBarStartSlot && (
+                    <div className="pl-3">{topBarStartSlot}</div>
+                  )}
+                </div>
                 <Controls3D showImageTo3DButton={showImageTo3DButton} />
-                <div className="flex items-start justify-end gap-2 pr-2 pt-2">
+                <div className="flex items-start justify-end gap-2 pr-3 pt-3">
+                  {topBarEndSlot}
                   <AnonHintChip />
                 </div>
               </div>
@@ -474,7 +490,7 @@ export const Stage3DBody = ({
               uploadImage={
                 editor
                   ? (((arg: Parameters<typeof editor.adapter.uploadImage>[0]) =>
-                    editor.adapter.uploadImage(arg)) as never)
+                      editor.adapter.uploadImage(arg)) as never)
                   : undefined
               }
               handleCameraSelect={handleCameraSelect}

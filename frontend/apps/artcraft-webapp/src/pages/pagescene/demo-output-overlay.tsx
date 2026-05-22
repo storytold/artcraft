@@ -174,7 +174,7 @@ export function DemoOutputOverlay({
   }
 
   return (
-    <div className="pointer-events-none absolute right-2 top-2 z-30 w-[30%] min-w-[260px] max-w-lg animate-in fade-in slide-in-from-right-8 duration-500">
+    <div className="pointer-events-none absolute right-2 top-16 z-30 w-[30%] min-w-[260px] max-w-lg animate-in fade-in slide-in-from-right-8 duration-500">
       {body}
     </div>
   );
@@ -216,7 +216,7 @@ function ShowOutputPill({ onClick }: { onClick: () => void }) {
       type="button"
       onClick={onClick}
       aria-label="Show rendered output"
-      className="pointer-events-auto absolute right-2 top-2 z-30 flex items-center gap-2 rounded-xl border border-ui-controls-border bg-ui-controls px-3 py-1.5 text-sm font-medium text-base-fg shadow-xl transition-colors duration-150 hover:bg-ui-controls/80 animate-in fade-in slide-in-from-right-4"
+      className="pointer-events-auto absolute right-2 top-16 z-30 flex items-center gap-2 rounded-xl border border-ui-controls-border bg-ui-controls px-3 py-1.5 text-sm font-medium text-base-fg shadow-xl transition-colors duration-150 hover:bg-ui-controls/80 animate-in fade-in slide-in-from-right-4"
     >
       <FontAwesomeIcon icon={faImage} className="h-3 w-3 text-primary" />
       Show output

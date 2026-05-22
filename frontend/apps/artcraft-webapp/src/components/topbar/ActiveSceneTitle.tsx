@@ -26,7 +26,6 @@ import { showToast } from "../toast/toast";
 
 const PAGESCENE_ROUTE_PREFIX = "/edit-3d";
 const DEFAULT_TITLE = "Untitled Scene";
-const PAGE_NAME = "Edit Scene";
 
 export function ActiveSceneTitle() {
   const { pathname } = useLocation();
@@ -114,18 +113,16 @@ export function ActiveSceneTitle() {
   };
 
   return (
-    <div className="flex min-w-0 items-center justify-center gap-1.5">
+    <div className="flex min-w-0 items-center justify-start gap-1.5">
       {!isEditing && (
         <div className="flex min-w-0 items-center gap-2.5">
-          <span className="text-nowrap text-sm opacity-60">{PAGE_NAME}</span>
-          <span className="text-sm opacity-60">/</span>
           {canRename ? (
             <button
               type="button"
               onClick={startEdit}
               title="Rename scene"
               aria-label="Rename scene"
-              className="-ml-1 flex min-w-0 items-center rounded-md px-2 py-1 text-sm font-semibold text-white transition-all hover:cursor-text hover:bg-white/[0.08]"
+              className="flex min-w-0 max-w-[280px] items-center rounded-lg border border-transparent px-3 py-1.5 text-sm font-semibold text-white transition-all hover:cursor-text hover:bg-white/[0.08]"
             >
               <span className="truncate">{title}</span>
               <FontAwesomeIcon
@@ -134,7 +131,7 @@ export function ActiveSceneTitle() {
               />
             </button>
           ) : (
-            <div className="-ml-1 truncate rounded-md px-2 py-1 text-sm font-semibold text-white">
+            <div className="max-w-[280px] truncate rounded-lg border border-transparent px-3 py-1.5 text-sm font-semibold text-white/80">
               {title}
             </div>
           )}
@@ -162,10 +159,9 @@ export function ActiveSceneTitle() {
           disabled={isSubmitting}
           maxLength={120}
           className={twMerge(
-            "h-8 w-[420px] max-w-full rounded-md border border-white/[0.12] bg-white/[0.04] px-2 text-center text-sm font-semibold text-white outline-none focus:outline focus:outline-2 focus:outline-brand-primary",
+            "h-[34px] w-fit max-w-full rounded-lg border border-white/[0.12] bg-white/[0.04] px-3 text-sm font-semibold text-white outline-none focus:outline focus:outline-2 focus:outline-brand-primary",
             isSubmitting && "outline outline-2 outline-brand-secondary",
-            !isValid &&
-              "border-danger focus:outline-danger focus:outline-2",
+            !isValid && "border-danger focus:outline-danger focus:outline-2",
           )}
         />
       )}

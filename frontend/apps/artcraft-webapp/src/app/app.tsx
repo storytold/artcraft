@@ -74,6 +74,7 @@ function RequireAuth() {
 
 function ProtectedContent() {
   const { state, isMobile } = useSidebar();
+  const { pathname } = useLocation();
   // Effective horizontal space taken by the sidebar — used by fixed-positioned
   // page chrome (e.g. promptboxes) to center within the content area.
   const sidebarOffset = isMobile
@@ -82,12 +83,20 @@ function ProtectedContent() {
       ? "var(--sidebar-width)"
       : "calc(var(--sidebar-width-icon) + 1.5rem)";
 
+  // The Edit 3D editor hosts the header's actions (pricing/credits/task
+  // queue/profile) inside its own canvas toolbar to reclaim vertical
+  // space, so the global header is hidden there — desktop only, since the
+  // mobile route shows a gate that still needs the header's nav chrome.
+  const hideTopBar =
+    !isMobile &&
+    (pathname === "/edit-3d" || pathname.startsWith("/edit-3d/"));
+
   return (
     <div
       className="flex flex-1 flex-col min-w-0 h-svh overflow-hidden"
       style={{ "--ac-sidebar-offset": sidebarOffset } as React.CSSProperties}
     >
-      <TopBar />
+      {!hideTopBar && <TopBar />}
       <SidebarInset className="flex-1 min-h-0 overflow-y-auto bg-[#121212]">
         <Outlet />
       </SidebarInset>

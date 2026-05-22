@@ -25,10 +25,7 @@ import { twMerge } from "tailwind-merge";
 
 import { EngineContext } from "../../contexts/EngineContext/EngineContext";
 import { setTransformMode } from "../../actions";
-import {
-  usePageSceneStore,
-  type TransformMode,
-} from "../../PageSceneStore";
+import { usePageSceneStore, type TransformMode } from "../../PageSceneStore";
 import { AssetModal } from "../AssetMenu";
 
 export interface Controls3DProps {
@@ -168,8 +165,8 @@ export const Controls3D = ({
 
   return (
     <>
-      <div className="flex justify-center pt-2">
-        <div className="glass rounded-2xl p-1.5 text-white shadow-xl">
+      <div className="flex justify-center pt-3">
+        <div className="glass rounded-2xl p-1.5 text-white shadow-xl h-fit">
           <div className="flex items-center justify-center gap-1.5">
             <div className="flex items-center gap-1.5">
               <div className="relative">
@@ -252,10 +249,11 @@ export const Controls3D = ({
                     ]}
                     onPanelAction={handleAddAssetAction}
                     showIconsInList
-                    buttonClassName={`h-9 w-9 rounded-xl text-lg ${showEmptySceneTooltip
-                      ? "bg-primary/90 hover:bg-primary/70"
-                      : "border-transparent bg-primary/90 hover:bg-primary/70"
-                      }`}
+                    buttonClassName={`h-9 w-9 rounded-xl text-lg ${
+                      showEmptySceneTooltip
+                        ? "bg-primary/90 hover:bg-primary/70"
+                        : "border-transparent bg-primary/90 hover:bg-primary/70"
+                    }`}
                     triggerIcon={
                       <FontAwesomeIcon icon={faPlus} className="text-xl" />
                     }

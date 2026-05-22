@@ -12,7 +12,10 @@ import { Modal } from "@storyteller/ui-modal";
 import { twMerge } from "tailwind-merge";
 
 import { EngineContext } from "../../contexts/EngineContext/EngineContext";
-import { usePageSceneStore, useIsVisitingOthersScene } from "../../PageSceneStore";
+import {
+  usePageSceneStore,
+  useIsVisitingOthersScene,
+} from "../../PageSceneStore";
 import { CameraAspectRatio, ToastTypes } from "../../enums";
 import { getSceneGenerationMetaData } from "../../sceneMetadata";
 import { LoadUserScenes } from "./LoadUserScenes";
@@ -240,7 +243,7 @@ export const ControlsTopButtons = () => {
   };
 
   return (
-    <div className="flex flex-col gap-2 pl-2 pt-2">
+    <div className="flex flex-col gap-2 pl-3 pt-3">
       <div className="flex gap-1.5">
         <ButtonDropdown
           label="File"
@@ -256,8 +259,7 @@ export const ControlsTopButtons = () => {
               // to the inline confirm dialog.
               ...(editor?.adapter.onRequestNewSceneSelector
                 ? {
-                    onClick: () =>
-                      editor.adapter.onRequestNewSceneSelector?.(),
+                    onClick: () => editor.adapter.onRequestNewSceneSelector?.(),
                   }
                 : {
                     dialogProps: {
@@ -359,12 +361,11 @@ export const ControlsTopButtons = () => {
                     dialogProps: {
                       title: "Reset scene to original?",
                       content: (
-                        <h4>
-                          This will discard every change you&apos;ve made
-                          in this session and restore the scene to the
-                          version the author shared. This cannot be
-                          undone.
-                        </h4>
+                        <p>
+                          This will discard every change you&apos;ve made in
+                          this session and restore the scene to the version the
+                          author shared. This cannot be undone.
+                        </p>
                       ),
                       confirmButtonProps: {
                         label: "Reset",

@@ -49,6 +49,15 @@ export interface Stage3DProps {
    *  "See other demo scenes" affordance so the button stacks above
    *  the prompt input instead of floating loose over the canvas. */
   promptboxAboveStackSlot?: React.ReactNode;
+  /** Optional content rendered in the top toolbar's left cluster, right
+   *  after the File/Outliner/Shortcuts buttons. Tauri leaves this unset;
+   *  the webapp uses it for the editable scene title. */
+  topBarStartSlot?: React.ReactNode;
+  /** Optional content rendered in the top toolbar's right cluster
+   *  (before the anonymous hint chip). Tauri leaves this unset; the
+   *  webapp uses it to host the relocated nav actions (pricing, credits,
+   *  task queue, profile) since its global header is hidden here. */
+  topBarEndSlot?: React.ReactNode;
 }
 
 export const Stage3D = ({
@@ -61,6 +70,8 @@ export const Stage3D = ({
   showHelpMenu = true,
   modelSelectorPlacement = "bottom-left",
   promptboxAboveStackSlot,
+  topBarStartSlot,
+  topBarEndSlot,
 }: Stage3DProps) => {
   // Engine's remountEngine() gate reads is3DPageMounted. With Stage3D
   // mounting only when the host's tab/route puts us on screen, the
@@ -86,6 +97,8 @@ export const Stage3D = ({
         showHelpMenu={showHelpMenu}
         modelSelectorPlacement={modelSelectorPlacement}
         promptboxAboveStackSlot={promptboxAboveStackSlot}
+        topBarStartSlot={topBarStartSlot}
+        topBarEndSlot={topBarEndSlot}
       />
       <DragComponent />
       <PrecisionSelector />
