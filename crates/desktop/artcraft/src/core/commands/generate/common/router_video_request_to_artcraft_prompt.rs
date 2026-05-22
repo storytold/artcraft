@@ -68,6 +68,12 @@ fn video_model_to_common_model_type(model: CommonVideoModel) -> Option<CommonMod
     CommonVideoModel::Veo3Fast => Some(CommonModelType::Veo3Fast),
     CommonVideoModel::Veo3p1 => Some(CommonModelType::Veo3p1),
     CommonVideoModel::Veo3p1Fast => Some(CommonModelType::Veo3p1Fast),
+    CommonVideoModel::Seedance2p0BytePlus => Some(CommonModelType::Seedance2p0BytePlus),
+    CommonVideoModel::Seedance2p0BytePlusFast => Some(CommonModelType::Seedance2p0BytePlusFast),
+    CommonVideoModel::Seedance2p0Ultra => Some(CommonModelType::Seedance2p0Ultra),
+    CommonVideoModel::Seedance2p0UltraFast => Some(CommonModelType::Seedance2p0UltraFast),
+    CommonVideoModel::PreviewModel => Some(CommonModelType::PreviewModel),
+    CommonVideoModel::PreviewModelFast => Some(CommonModelType::PreviewModelFast),
   }
 }
 
@@ -78,6 +84,7 @@ fn provider_to_generation_provider(provider: Provider) -> GenerationProvider {
     // Unused providers -> ArtCraft
     Provider::Muapi => GenerationProvider::Artcraft,
     Provider::Seedance2Pro => GenerationProvider::Artcraft ,
+    Provider::GmiCloud => GenerationProvider::Artcraft,
   }
 }
 
