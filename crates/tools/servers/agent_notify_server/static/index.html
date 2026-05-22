@@ -69,6 +69,21 @@
   </div>
 
   <div class="group">
+    <h2>State <span class="pill">read-only</span></h2>
+    <table>
+      <tr><th>Endpoint</th><th>Behavior</th></tr>
+      <tr><td><code>GET /state</code></td><td>JSON snapshot of audio engine + config. Does not change playback.</td></tr>
+    </table>
+    <p style="color:#555;font-size:14px;">
+      The <code>audio</code> object shows the current loop (<code>loop_name</code> =
+      <em>beep</em> / <em>done</em> / <em>await</em>), how many concurrent voices are
+      active, the current escalation stage, the gap and jitter being applied right
+      now, and how long the loop has been running. The <code>config</code> object
+      mirrors the loaded YAML so you can verify it parsed correctly.
+    </p>
+  </div>
+
+  <div class="group">
     <h2>Mixing rules</h2>
     <ul>
       <li>A one-shot mixes with whatever is looping — both play simultaneously.</li>

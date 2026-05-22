@@ -25,6 +25,7 @@ use std::fs::File;
 use std::io::BufReader;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
+use std::sync::Mutex;
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::mpsc::{self, Receiver, Sender};
 use std::thread::{self, JoinHandle};
@@ -32,12 +33,14 @@ use std::time::{Duration, Instant};
 
 use rand::Rng;
 use rodio::{Decoder, OutputStream, OutputStreamHandle, Sink};
+use serde_derive::Serialize;
 
 const STOP_POLL_INTERVAL: Duration = Duration::from_millis(50);
 
 #[derive(Clone)]
 pub struct AudioPlayerHandle {
   tx: Sender<AudioCommand>,
+  status: Arc<Mutex<InternalStatus>>,
 }
 
 impl AudioPlayerHandle {
@@ -56,10 +59,67 @@ impl AudioPlayerHandle {
   pub fn shutdown(&self) {
     let _ = self.tx.send(AudioCommand::Shutdown);
   }
+
+  /// Snapshot of the engine state for the `/state` endpoint. Read-only —
+  /// does not change playback.
+  pub fn status(&self) -> EngineStatus {
+    let s = self.status.lock().unwrap_or_else(|e| e.into_inner());
+    EngineStatus {
+      loop_playing: s.loop_playing,
+      loop_name: s.loop_name.clone(),
+      voices_active: s.voices_active,
+      current_stage: s.current_stage,
+      current_gap_millis: s.current_gap_millis,
+      current_jitter_millis: s.current_jitter_millis,
+      loop_pool_size: s.loop_pool_size,
+      loop_uptime_secs: s.loop_started.map(|t| t.elapsed().as_secs()),
+    }
+  }
+}
+
+#[derive(Clone, Debug, Default, Serialize)]
+pub struct EngineStatus {
+  pub loop_playing: bool,
+  pub loop_name: Option<String>,
+  pub voices_active: u32,
+  pub current_stage: u32,
+  pub current_gap_millis: u64,
+  pub current_jitter_millis: u64,
+  pub loop_pool_size: u32,
+  pub loop_uptime_secs: Option<u64>,
+}
+
+#[derive(Default)]
+struct InternalStatus {
+  loop_playing: bool,
+  loop_name: Option<String>,
+  voices_active: u32,
+  current_stage: u32,
+  current_gap_millis: u64,
+  current_jitter_millis: u64,
+  loop_pool_size: u32,
+  loop_started: Option<Instant>,
+}
+
+impl InternalStatus {
+  fn reset_loop(&mut self) {
+    self.loop_playing = false;
+    self.loop_name = None;
+    self.voices_active = 0;
+    self.current_stage = 0;
+    self.current_gap_millis = 0;
+    self.current_jitter_millis = 0;
+    self.loop_pool_size = 0;
+    self.loop_started = None;
+  }
 }
 
 #[derive(Clone, Debug)]
 pub struct LoopSpec {
+  /// Short tag identifying which endpoint started this loop ("beep" /
+  /// "done" / "await"). Surfaced in `/state` so callers can see what's
+  /// playing.
+  pub name: String,
   /// Ordered pool of sounds: primary first, then extras. The supervisor
   /// indexes this with `layer % pool.len()`, so when extras run out it
   /// cycles back through the pool (doubling already-playing voices).
@@ -78,11 +138,13 @@ pub struct LoopSpec {
 
 pub fn spawn_audio_player() -> (AudioPlayerHandle, JoinHandle<()>) {
   let (tx, rx) = mpsc::channel::<AudioCommand>();
+  let status = Arc::new(Mutex::new(InternalStatus::default()));
+  let status_for_engine = status.clone();
   let thread = thread::Builder::new()
     .name("agent-notify-audio".to_string())
-    .spawn(move || run_audio_engine(rx))
+    .spawn(move || run_audio_engine(rx, status_for_engine))
     .expect("spawn audio engine thread");
-  (AudioPlayerHandle { tx }, thread)
+  (AudioPlayerHandle { tx, status }, thread)
 }
 
 enum AudioCommand {
@@ -92,7 +154,7 @@ enum AudioCommand {
   Shutdown,
 }
 
-fn run_audio_engine(rx: Receiver<AudioCommand>) {
+fn run_audio_engine(rx: Receiver<AudioCommand>, status: Arc<Mutex<InternalStatus>>) {
   let (_stream, stream_handle) = match OutputStream::try_default() {
     Ok(s) => s,
     Err(e) => {
@@ -121,42 +183,63 @@ fn run_audio_engine(rx: Receiver<AudioCommand>) {
         }
       }
       AudioCommand::PlayLoop(spec) => {
-        stop_current_loop(&mut current_loop);
+        stop_current_loop(&mut current_loop, &status);
         if spec.pool.is_empty() {
           log::warn!("play_loop: empty sound pool, ignoring");
           continue;
         }
-        current_loop = Some(start_loop_supervisor(&stream_handle, spec));
+        current_loop = Some(start_loop_supervisor(&stream_handle, spec, status.clone()));
       }
       AudioCommand::StopAll => {
-        stop_current_loop(&mut current_loop);
+        stop_current_loop(&mut current_loop, &status);
         oneshot_sink.clear();
         oneshot_sink.play();
       }
       AudioCommand::Shutdown => {
-        stop_current_loop(&mut current_loop);
+        stop_current_loop(&mut current_loop, &status);
         oneshot_sink.stop();
         return;
       }
     }
   }
 
-  stop_current_loop(&mut current_loop);
+  stop_current_loop(&mut current_loop, &status);
   oneshot_sink.stop();
 }
 
-fn start_loop_supervisor(stream_handle: &OutputStreamHandle, spec: LoopSpec) -> LoopController {
+fn start_loop_supervisor(
+  stream_handle: &OutputStreamHandle,
+  spec: LoopSpec,
+  status: Arc<Mutex<InternalStatus>>,
+) -> LoopController {
+  // Initialize the visible status before any iterator starts, so a /state
+  // query racing the spawn sees the new loop, not the previous one's tail.
+  {
+    let mut s = status.lock().unwrap_or_else(|e| e.into_inner());
+    s.loop_playing = true;
+    s.loop_name = Some(spec.name.clone());
+    s.voices_active = 1;
+    s.current_stage = 0;
+    s.current_gap_millis = spec.gap_millis_schedule[0];
+    s.current_jitter_millis = spec.jitter_millis_schedule[0];
+    s.loop_pool_size = spec.pool.len() as u32;
+    s.loop_started = Some(Instant::now());
+  }
+
   let stop = Arc::new(AtomicBool::new(false));
   let stop_for_thread = stop.clone();
   let stream_handle = stream_handle.clone();
   let thread = thread::Builder::new()
     .name("agent-notify-loop-supervisor".to_string())
-    .spawn(move || run_loop_supervisor(stream_handle, spec, stop_for_thread))
+    .spawn(move || run_loop_supervisor(stream_handle, spec, stop_for_thread, status))
     .expect("spawn loop supervisor thread");
   LoopController { stop, thread: Some(thread) }
 }
 
-fn stop_current_loop(current_loop: &mut Option<LoopController>) {
+fn stop_current_loop(
+  current_loop: &mut Option<LoopController>,
+  status: &Arc<Mutex<InternalStatus>>,
+) {
   if let Some(mut lc) = current_loop.take() {
     lc.stop.store(true, Ordering::SeqCst);
     if let Some(thread) = lc.thread.take() {
@@ -165,12 +248,15 @@ fn stop_current_loop(current_loop: &mut Option<LoopController>) {
       }
     }
   }
+  let mut s = status.lock().unwrap_or_else(|e| e.into_inner());
+  s.reset_loop();
 }
 
 fn run_loop_supervisor(
   stream_handle: OutputStreamHandle,
   spec: LoopSpec,
   stop: Arc<AtomicBool>,
+  status: Arc<Mutex<InternalStatus>>,
 ) {
   let pool_len = spec.pool.len();
   if pool_len == 0 {
@@ -234,6 +320,11 @@ fn run_loop_supervisor(
       stop.clone(),
       layer + 1,
     ));
+    let mut s = status.lock().unwrap_or_else(|e| e.into_inner());
+    s.voices_active = iterators.len() as u32;
+    s.current_stage = (layer + 1) as u32;
+    s.current_gap_millis = next_gap;
+    s.current_jitter_millis = next_jitter;
   }
 
   // Wait until something signals stop, then drain iterator threads.

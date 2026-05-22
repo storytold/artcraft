@@ -29,6 +29,7 @@ The server listens on `127.0.0.1:43110` by default. Override with
 | GET | `/loop_done` | Loop `alert_done_sound`. Replaces any active loop. |
 | GET | `/loop_await` | Loop `alert_await_user_input_sound`. Replaces any active loop. |
 | GET | `/stop` | Stop everything — loops *and* queued one-shots. |
+| GET | `/state` | Read-only JSON snapshot of the audio engine and loaded config. Does **not** change playback. |
 
 Mixing rules:
 
@@ -36,6 +37,38 @@ Mixing rules:
 - Requesting a new loop replaces the prior loop.
 - `/stop` halts everything.
 - A missing config key makes the corresponding endpoint return `404`.
+
+### `/state` response shape
+
+```json
+{
+  "audio": {
+    "loop_playing": true,
+    "loop_name": "done",
+    "voices_active": 2,
+    "current_stage": 1,
+    "current_gap_millis": 1000,
+    "current_jitter_millis": 750,
+    "loop_pool_size": 4,
+    "loop_uptime_secs": 17
+  },
+  "config": {
+    "alert_beep_sound": "…/test_beep.wav",
+    "alert_done_sound": "…/smrpg_flower.wav",
+    "alert_await_user_input_sound": "…/smrpg_ghost.wav",
+    "extra_alert_beep_count": 0,
+    "extra_alert_done_count": 3,
+    "extra_alert_await_count": 3,
+    "gap_schedule_millis": [2000, 1000, 500, 200],
+    "jitter_schedule_millis": [1500, 750, 400, 180],
+    "escalate_waits_secs": [10, 20, 30]
+  }
+}
+```
+
+`loop_name` reflects which endpoint started the loop (`beep` / `done` /
+`await`). When idle, `loop_playing` is `false` and the loop fields collapse
+to zero/null.
 
 ## Config
 
@@ -215,13 +248,15 @@ loop the `Notification` or `Stop` hook started.
 
 Why the notification wrapper? The `Notification` hook fires for *every*
 Claude Code notification — idle reminders, permission asks, background-agent
-attention pings — not just "Claude needs your input". Without a filter, the
-await sound plays minutes after the conversation has ended for unrelated
-background events. `~/.claude/agent_notify_on_notification.sh` reads the hook
-payload, logs every event to `/tmp/agent-notify-notifications.log` for
-audit, and only fires `/loop_await` when the message text matches a
-user-attention pattern (`waiting`, `needs your input`, `needs your
-permission`, `needs your attention`).
+attention pings — not just "Claude needs your input". Crucially, the idle
+reminder uses the *same* `message` text as a real input prompt
+("Claude is waiting for your input"), so the only reliable discriminator
+is the `notification_type` field.
+`~/.claude/agent_notify_on_notification.sh` reads the hook payload, logs
+every event to `/tmp/agent-notify-notifications.log` for audit, and
+skips events with `notification_type == "idle_prompt"`. Everything else
+(permission prompts, unknown future types) fires `/loop_await` — better
+to ring the bell on an unknown attention prompt than miss a real one.
 
 ### Replacing the old bash-loop system
 

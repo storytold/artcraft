@@ -25,6 +25,7 @@ use crate::endpoints::loop_handlers::{
   loop_await_handler, loop_beep_handler, loop_done_handler,
 };
 use crate::endpoints::root_handler::root_handler;
+use crate::endpoints::state_handler::state_handler;
 use crate::endpoints::stop_handler::stop_handler;
 use crate::server_state::ServerState;
 
@@ -74,6 +75,7 @@ async fn main() -> anyhow::Result<()> {
       .route("/loop_done", web::get().to(loop_done_handler))
       .route("/loop_await", web::get().to(loop_await_handler))
       .route("/stop", web::get().to(stop_handler))
+      .route("/state", web::get().to(state_handler))
   })
   .bind(&bind_address)?
   .workers(1)
