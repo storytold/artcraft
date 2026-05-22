@@ -163,7 +163,7 @@ hook never blocks the UI while waiting for `cargo run` on the cold-start path.
         "hooks": [
           {
             "type": "command",
-            "command": "bash ~/.claude/agent_notify.sh await",
+            "command": "bash ~/.claude/agent_notify_on_notification.sh",
             "async": true
           }
         ]
@@ -190,10 +190,48 @@ hook never blocks the UI while waiting for `cargo run` on the cold-start path.
           }
         ]
       }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "AskUserQuestion",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ~/.claude/agent_notify.sh stop",
+            "async": true
+          }
+        ]
+      }
     ]
   }
 }
 ```
+
+Why two stop hooks? `UserPromptSubmit` fires only for *typed* user messages, not
+for `AskUserQuestion` option selections. The `PostToolUse` matcher on
+`AskUserQuestion` covers that case — it fires when the tool call returns
+(i.e., once you've answered), and the helper's `/stop` silences whatever
+loop the `Notification` or `Stop` hook started.
+
+Why the notification wrapper? The `Notification` hook fires for *every*
+Claude Code notification — idle reminders, permission asks, background-agent
+attention pings — not just "Claude needs your input". Without a filter, the
+await sound plays minutes after the conversation has ended for unrelated
+background events. `~/.claude/agent_notify_on_notification.sh` reads the hook
+payload, logs every event to `/tmp/agent-notify-notifications.log` for
+audit, and only fires `/loop_await` when the message text matches a
+user-attention pattern (`waiting`, `needs your input`, `needs your
+permission`, `needs your attention`).
+
+### Replacing the old bash-loop system
+
+### Audit log
+
+The Notification wrapper writes every received notification payload to
+`/tmp/agent-notify-notifications.log`, tagged `FIRE` or `SKIP`. If the await
+sound stops firing for a case you care about (or fires when it shouldn't),
+inspect that log and adjust the `case` patterns in
+`agent_notify_on_notification.sh`.
 
 ### Replacing the old bash-loop system
 
