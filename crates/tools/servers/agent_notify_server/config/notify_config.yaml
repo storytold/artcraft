@@ -41,12 +41,13 @@ loop_alert_timeout_millis_2: 500
 loop_alert_timeout_millis_3: 200
 
 # Random +/- jitter applied to each sleep. Same fallback rules as the timeout
-# schedule above. Setting non-zero values keeps voices from re-aligning over
-# time even when they share the same gap.
-loop_alert_jitter_millis: 250
-loop_alert_jitter_millis_1: 150
-loop_alert_jitter_millis_2: 80
-loop_alert_jitter_millis_3: 40
+# schedule above. A fresh random offset is drawn on every iteration of every
+# voice, so voices never re-align. Set values close to the gap for chaos;
+# set to 0 to disable jitter at that stage.
+loop_alert_jitter_millis: 1500
+loop_alert_jitter_millis_1: 750
+loop_alert_jitter_millis_2: 400
+loop_alert_jitter_millis_3: 180
 
 # Seconds-from-loop-start at which voices 2, 3, and 4 join the mix.
 escalate_wait_1: 10

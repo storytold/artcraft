@@ -304,6 +304,12 @@ fn run_loop_iterator(
     let gap = gap_millis.load(Ordering::Relaxed);
     let jitter = jitter_millis.load(Ordering::Relaxed);
     let sleep_ms = jittered_gap_millis(gap, jitter, &mut rng);
+    log::debug!(
+      "loop iterator sleeping {}ms (gap={}, jitter=±{})",
+      sleep_ms,
+      gap,
+      jitter
+    );
     if sleep_ms > 0
       && !sleep_with_stop(Duration::from_millis(sleep_ms), &stop)
     {
@@ -312,16 +318,22 @@ fn run_loop_iterator(
   }
 }
 
-/// Apply `+/- rand(0..=jitter)` to `gap`, clamped to 0 so we never wrap.
+/// Apply a uniformly random offset in `[-jitter, +jitter]` to `gap`. A fresh
+/// random value is drawn on every call, so each iteration of each voice gets
+/// its own jitter — voices never re-align. The lower bound saturates at 0
+/// so the result can't wrap below zero.
 fn jittered_gap_millis<R: Rng>(gap: u64, jitter: u64, rng: &mut R) -> u64 {
   if jitter == 0 {
     return gap;
   }
-  let delta = rng.random_range(0..=jitter);
-  if rng.random_bool(0.5) {
-    gap.saturating_add(delta)
+  // Cap at i64::MAX/2 so the negation below can't overflow. In practice
+  // jitter values are at most a few seconds; the cap is just paranoia.
+  let span = (jitter.min(i64::MAX as u64 / 2)) as i64;
+  let delta = rng.random_range(-span..=span);
+  if delta >= 0 {
+    gap.saturating_add(delta as u64)
   } else {
-    gap.saturating_sub(delta)
+    gap.saturating_sub(delta.unsigned_abs())
   }
 }
 
@@ -388,6 +400,17 @@ mod tests {
         assert!(v <= 1050);
         // saturating_sub at the floor — never wraps below 0.
       }
+    }
+
+    #[test]
+    fn rerolls_per_call_so_consecutive_values_differ() {
+      // With jitter=1000 there are 2001 possible outcomes; a sample of 50
+      // is overwhelmingly unlikely to be all-equal under uniform random.
+      let mut rng = rand::rng();
+      let samples: std::collections::HashSet<u64> = (0..50)
+        .map(|_| jittered_gap_millis(5_000, 1_000, &mut rng))
+        .collect();
+      assert!(samples.len() > 10, "expected >10 distinct values, got {}", samples.len());
     }
   }
 }
