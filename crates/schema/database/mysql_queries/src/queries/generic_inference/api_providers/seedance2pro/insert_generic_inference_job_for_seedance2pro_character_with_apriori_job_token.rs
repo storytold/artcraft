@@ -1,4 +1,3 @@
-use anyhow::anyhow;
 use log::info;
 use sqlx::{Executor, MySql};
 use std::marker::PhantomData;
@@ -14,6 +13,10 @@ use tokens::tokens::generic_inference_jobs::InferenceJobToken;
 use tokens::tokens::users::UserToken;
 
 use crate::errors::database_query_error::DatabaseQueryError;
+use crate::queries::generic_inference::api_providers::common::insert_generic_inference_job_for_provider::{
+  insert_generic_inference_job_for_provider,
+  InsertGenericInferenceJobForProviderArgs,
+};
 
 pub struct InsertGenericInferenceForSeedance2ProCharacterWithAprioriJobTokenArgs<'e, 'c, E>
   where E: 'e + Executor<'c, Database = MySql>
@@ -40,84 +43,31 @@ pub async fn insert_generic_inference_job_for_seedance2pro_character_with_aprior
 ) -> Result<InferenceJobToken, DatabaseQueryError>
   where E: 'e + Executor<'c, Database = MySql>
 {
-  const JOB_TYPE: InferenceJobType = InferenceJobType::Seedance2ProCharacter;
-  const INFERENCE_CATEGORY: InferenceCategory = InferenceCategory::CharacterGeneration;
-  const PRODUCT_CATEGORY: InferenceJobProductCategory = InferenceJobProductCategory::Seedance2ProCharacter;
-  const EXTERNAL_THIRD_PARTY: InferenceJobExternalThirdParty = InferenceJobExternalThirdParty::Seedance2Pro;
-  const STATUS: JobStatusPlus = JobStatusPlus::Pending;
-
-  let query = sqlx::query!(
-        r#"
-INSERT INTO generic_inference_jobs
-SET
-  token = ?,
-  uuid_idempotency_token = ?,
-
-  job_type = ?,
-
-  maybe_external_third_party = ?,
-  maybe_external_third_party_id = ?,
-
-  product_category = ?,
-  inference_category = ?,
-
-  maybe_model_type = NULL,
-  maybe_model_token = NULL,
-
-  maybe_input_source_token = NULL,
-  maybe_input_source_token_type = NULL,
-
-  maybe_download_url = NULL,
-  maybe_cover_image_media_file_token = NULL,
-
-  maybe_prompt_token = NULL,
-
-  maybe_wallet_ledger_entry_token = NULL,
-
-  maybe_raw_inference_text = NULL,
-
-  maybe_inference_args = NULL,
-
-  maybe_creator_user_token = ?,
-  maybe_creator_anonymous_visitor_token = ?,
-  creator_ip_address = ?,
-  creator_set_visibility = ?,
-
-  priority_level = 0,
-  is_keepalive_required = FALSE,
-  max_duration_seconds = 0,
-
-  is_debug_request = FALSE,
-  maybe_routing_tag = NULL,
-
-  status = ?
-        "#,
-        args.apriori_job_token.as_str(),
-        args.uuid_idempotency_token,
-
-        JOB_TYPE.to_str(),
-
-        EXTERNAL_THIRD_PARTY.to_str(),
-        args.kinovi_character_id,
-
-        PRODUCT_CATEGORY.to_str(),
-        INFERENCE_CATEGORY.to_str(),
-
-        args.maybe_creator_user_token.map(|t| t.to_string()),
-        args.maybe_avt_token.map(|t| t.to_string()),
-        args.creator_ip_address,
-        args.creator_set_visibility.to_str(),
-
-        STATUS.to_str(),
-    );
-
-  let query_result = query.execute(args.mysql_executor)
-      .await;
-
-  let record_id = match query_result {
-    Err(err) => return Err(DatabaseQueryError::from(err)),
-    Ok(res) => res.last_insert_id(),
+  let inner_args = InsertGenericInferenceJobForProviderArgs {
+    apriori_job_token: args.apriori_job_token,
+    uuid_idempotency_token: args.uuid_idempotency_token,
+    job_type: InferenceJobType::Seedance2ProCharacter,
+    external_third_party: InferenceJobExternalThirdParty::Seedance2Pro,
+    external_third_party_id: args.kinovi_character_id,
+    product_category: InferenceJobProductCategory::Seedance2ProCharacter,
+    inference_category: InferenceCategory::CharacterGeneration,
+    maybe_prompt_token: None,
+    maybe_wallet_ledger_entry_token: None,
+    // Character variant didn't take inference args — column was DB NULL.
+    maybe_inference_args_json: None,
+    maybe_creator_user_token: args.maybe_creator_user_token,
+    maybe_avt_token: args.maybe_avt_token,
+    creator_ip_address: args.creator_ip_address,
+    creator_set_visibility: args.creator_set_visibility,
+    maybe_debug_log_event_token: None,
+    maybe_frontend_failure_category: None,
+    maybe_failure_reason: None,
+    status: JobStatusPlus::Pending,
+    mysql_executor: args.mysql_executor,
+    phantom: args.phantom,
   };
+
+  let record_id = insert_generic_inference_job_for_provider(inner_args).await?;
 
   info!("Insert generic inference job for Seedance2Pro character: {} with record ID {}", args.apriori_job_token, record_id);
 

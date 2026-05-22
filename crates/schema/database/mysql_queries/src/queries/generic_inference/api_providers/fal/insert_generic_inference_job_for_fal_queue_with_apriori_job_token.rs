@@ -1,6 +1,5 @@
 use anyhow::anyhow;
 use log::info;
-use sqlx::MySqlPool;
 use sqlx::{Executor, MySql};
 use std::marker::PhantomData;
 
@@ -19,6 +18,10 @@ use tokens::tokens::users::UserToken;
 
 use crate::errors::database_query_error::DatabaseQueryError;
 use crate::payloads::generic_inference_args::generic_inference_args::GenericInferenceArgs;
+use crate::queries::generic_inference::api_providers::common::insert_generic_inference_job_for_provider::{
+  insert_generic_inference_job_for_provider,
+  InsertGenericInferenceJobForProviderArgs,
+};
 use crate::queries::generic_inference::api_providers::fal::insert_generic_inference_job_for_fal_queue::FalCategory;
 
 
@@ -64,12 +67,6 @@ pub async fn insert_generic_inference_job_for_fal_queue_with_apriori_job_token<'
   -> Result<InferenceJobToken, DatabaseQueryError>
   where E: 'e + Executor<'c, Database = MySql>
 {
-
-  let serialized_args_payload = serde_json::ser::to_string(&args.maybe_inference_args)
-      .map_err(|_e| anyhow!("could not encode inference args"))?;
-
-  const JOB_TYPE : InferenceJobType = InferenceJobType::FalQueue;
-
   let (inference_category, product_category) =
       match args.fal_category {
         FalCategory::ImageGeneration => (
@@ -90,100 +87,35 @@ pub async fn insert_generic_inference_job_for_fal_queue_with_apriori_job_token<'
         ),
       };
 
-  let maybe_external_third_party = InferenceJobExternalThirdParty::Fal;
+  // Historically this leaf always serialized — `None` → the literal string
+  // `"null"` written to the column — so preserve that exactly.
+  let inference_args_json = serde_json::ser::to_string(&args.maybe_inference_args)
+      .map_err(|_e| anyhow!("could not encode inference args"))?;
 
-  let status = args.starting_job_status_override.unwrap_or(JobStatusPlus::Pending);
-
-  let maybe_frontend_failure_category_str = args.maybe_frontend_failure_category
-      .map(|c| c.to_str());
-
-  let maybe_truncated_failure_reason = args.maybe_failure_reason
-      .map(|s| if s.len() > 255 { &s[..255] } else { s });
-
-  let query = sqlx::query!(
-        r#"
-INSERT INTO generic_inference_jobs
-SET
-  token = ?,
-  uuid_idempotency_token = ?,
-
-  job_type = ?,
-
-  maybe_external_third_party = ?,
-  maybe_external_third_party_id = ?,
-
-  product_category = ?,
-  inference_category = ?,
-
-  maybe_model_type = NULL,
-  maybe_model_token = NULL,
-
-  maybe_input_source_token = NULL,
-  maybe_input_source_token_type = NULL,
-
-  maybe_download_url = NULL,
-  maybe_cover_image_media_file_token = NULL,
-
-  maybe_prompt_token = ?,
-
-  maybe_raw_inference_text = NULL,
-
-  maybe_inference_args = ?,
-
-  maybe_creator_user_token = ?,
-  maybe_creator_anonymous_visitor_token = ?,
-  creator_ip_address = ?,
-  creator_set_visibility = ?,
-
-  priority_level = 0,
-  is_keepalive_required = FALSE,
-  max_duration_seconds = 0,
-
-  is_debug_request = FALSE,
-  maybe_routing_tag = NULL,
-
-  maybe_debug_log_event_token = ?,
-
-  frontend_failure_category = ?,
-  failure_reason = ?,
-
-  status = ?
-        "#,
-        args.apriori_job_token.as_str(),
-        args.uuid_idempotency_token,
-
-        JOB_TYPE.to_str(),
-
-        maybe_external_third_party.to_str(),
-        args.maybe_external_third_party_id,
-
-        product_category.to_str(),
-        inference_category.to_str(),
-
-        args.maybe_prompt_token.map(|t| t.to_string()),
-
-        serialized_args_payload,
-
-        args.maybe_creator_user_token.map(|t| t.to_string()),
-        args.maybe_avt_token.map(|t| t.to_string()),
-        args.creator_ip_address,
-        args.creator_set_visibility.to_str(),
-
-        args.maybe_debug_log_event_token.map(|t| t.as_str()),
-
-        maybe_frontend_failure_category_str,
-        maybe_truncated_failure_reason,
-
-        status.to_str(),
-    );
-
-  let query_result = query.execute(args.mysql_executor)
-      .await;
-
-  let record_id = match query_result {
-    Err(err) => return Err(DatabaseQueryError::from(err)),
-    Ok(res) => res.last_insert_id(),
+  let inner_args = InsertGenericInferenceJobForProviderArgs {
+    apriori_job_token: args.apriori_job_token,
+    uuid_idempotency_token: args.uuid_idempotency_token,
+    job_type: InferenceJobType::FalQueue,
+    external_third_party: InferenceJobExternalThirdParty::Fal,
+    external_third_party_id: args.maybe_external_third_party_id,
+    product_category,
+    inference_category,
+    maybe_prompt_token: args.maybe_prompt_token,
+    maybe_wallet_ledger_entry_token: None,
+    maybe_inference_args_json: Some(inference_args_json),
+    maybe_creator_user_token: args.maybe_creator_user_token,
+    maybe_avt_token: args.maybe_avt_token,
+    creator_ip_address: args.creator_ip_address,
+    creator_set_visibility: args.creator_set_visibility,
+    maybe_debug_log_event_token: args.maybe_debug_log_event_token,
+    maybe_frontend_failure_category: args.maybe_frontend_failure_category,
+    maybe_failure_reason: args.maybe_failure_reason,
+    status: args.starting_job_status_override.unwrap_or(JobStatusPlus::Pending),
+    mysql_executor: args.mysql_executor,
+    phantom: args.phantom,
   };
+
+  let record_id = insert_generic_inference_job_for_provider(inner_args).await?;
 
   info!("Insert generic inference job for FAL queue: {} with record ID {}", args.apriori_job_token, record_id);
 

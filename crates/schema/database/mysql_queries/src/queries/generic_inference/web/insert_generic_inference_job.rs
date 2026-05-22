@@ -1,5 +1,6 @@
+use std::marker::PhantomData;
+
 use anyhow::anyhow;
-use sqlx::error::DatabaseError;
 use sqlx::MySqlPool;
 
 use enums::by_table::generic_inference_jobs::inference_category::InferenceCategory;
@@ -7,6 +8,7 @@ use enums::by_table::generic_inference_jobs::inference_input_source_token_type::
 use enums::by_table::generic_inference_jobs::inference_job_product_category::InferenceJobProductCategory;
 use enums::by_table::generic_inference_jobs::inference_job_type::InferenceJobType;
 use enums::by_table::generic_inference_jobs::inference_model_type::InferenceModelType;
+use enums::common::job_status_plus::JobStatusPlus;
 use enums::common::visibility::Visibility;
 use tokens::tokens::anonymous_visitor_tracking::AnonymousVisitorTrackingToken;
 use tokens::tokens::generic_inference_jobs::InferenceJobToken;
@@ -15,6 +17,10 @@ use tokens::tokens::users::UserToken;
 
 use crate::errors::database_query_error::DatabaseQueryError;
 use crate::payloads::generic_inference_args::generic_inference_args::GenericInferenceArgs;
+use crate::queries::generic_inference::common::insert_full_generic_inference_job_record::{
+  insert_full_generic_inference_job_record,
+  InsertFullGenericInferenceJobRecordArgs,
+};
 
 pub struct InsertGenericInferenceArgs<'a> {
   pub uuid_idempotency_token: &'a str,
@@ -69,105 +75,68 @@ pub async fn insert_generic_inference_job(args: InsertGenericInferenceArgs<'_>)
 {
   let job_token = InferenceJobToken::generate();
 
-  let serialized_args_payload = serde_json::ser::to_string(&args.maybe_inference_args)
+  // Historically the web insert always serialized — `None` → the literal
+  // string `"null"` written to the column — so preserve that exactly.
+  let inference_args_json = serde_json::ser::to_string(&args.maybe_inference_args)
       .map_err(|_e| anyhow!("could not encode inference args"))?;
-
-  // The routing tag column is VARCHAR(32), so we should truncate.
-  let maybe_routing_tag = args.maybe_routing_tag
-      .map(|routing_tag| {
-        let mut routing_tag = routing_tag.trim().to_string();
-        routing_tag.truncate(64);
-        routing_tag
-      });
 
   // This only applies to certain types of inference.
   // "0" is the default value, typically 12 seconds for TTS.
   // "-1" means "unlimited"
   let max_duration_seconds = args.maybe_max_duration_seconds.unwrap_or(0);
 
-  let query = sqlx::query!(
-        r#"
-INSERT INTO generic_inference_jobs
-SET
-  token = ?,
-  uuid_idempotency_token = ?,
+  let inner_args = InsertFullGenericInferenceJobRecordArgs {
+    token: &job_token,
+    uuid_idempotency_token: args.uuid_idempotency_token,
 
-  job_type = ?,
+    job_type: args.job_type,
 
-  product_category = ?,
+    // Web-driven jobs are not bound to a specific upstream provider here.
+    maybe_external_third_party: None,
+    maybe_external_third_party_id: None,
 
-  inference_category = ?,
-  maybe_model_type = ?,
-  maybe_model_token = ?,
+    maybe_product_category: args.maybe_product_category,
+    inference_category: args.inference_category,
 
-  maybe_input_source_token = ?,
-  maybe_input_source_token_type = ?,
+    maybe_model_type: args.maybe_model_type,
+    maybe_model_token: args.maybe_model_token,
 
-  maybe_download_url = ?,
-  maybe_cover_image_media_file_token = ?,
+    maybe_input_source_token: args.maybe_input_source_token,
+    maybe_input_source_token_type: args.maybe_input_source_token_type,
 
-  maybe_raw_inference_text = ?,
+    maybe_download_url: args.maybe_download_url,
+    maybe_cover_image_media_file_token: args.maybe_cover_image_media_file_token,
 
-  maybe_inference_args = ?,
+    // Web variant didn't set these — pass None to keep DB NULL.
+    maybe_prompt_token: None,
+    maybe_wallet_ledger_entry_token: None,
 
-  maybe_creator_user_token = ?,
-  maybe_creator_anonymous_visitor_token = ?,
-  creator_ip_address = ?,
+    maybe_raw_inference_text: args.maybe_raw_inference_text,
 
-  creator_set_visibility = ?,
+    maybe_inference_args_json: Some(inference_args_json),
 
-  priority_level = ?,
-  is_keepalive_required = ?,
-  max_duration_seconds = ?,
+    maybe_creator_user_token: args.maybe_creator_user_token,
+    maybe_avt_token: args.maybe_avt_token,
+    creator_ip_address: args.creator_ip_address,
+    creator_set_visibility: args.creator_set_visibility,
 
-  is_debug_request = ?,
-  maybe_routing_tag = ?,
+    priority_level: args.priority_level,
+    requires_keepalive: args.requires_keepalive,
+    max_duration_seconds,
+    is_debug_request: args.is_debug_request,
 
-  status = "pending"
-        "#,
-        job_token.as_str(),
-        args.uuid_idempotency_token,
+    maybe_routing_tag: args.maybe_routing_tag,
 
-        args.job_type.to_str(),
+    maybe_debug_log_event_token: None,
+    maybe_frontend_failure_category: None,
+    maybe_failure_reason: None,
 
-        args.maybe_product_category.map(|c| c.to_str()),
+    status: JobStatusPlus::Pending,
 
-        args.inference_category.to_str(),
-
-        args.maybe_model_type.map(|t| t.to_str()),
-        args.maybe_model_token,
-
-        args.maybe_input_source_token,
-        args.maybe_input_source_token_type,
-
-        args.maybe_download_url,
-        args.maybe_cover_image_media_file_token.map(|t| t.as_str()),
-
-        args.maybe_raw_inference_text,
-
-        serialized_args_payload,
-
-        args.maybe_creator_user_token.map(|t| t.to_string()),
-        args.maybe_avt_token.map(|t| t.to_string()),
-        args.creator_ip_address,
-
-        args.creator_set_visibility.to_str(),
-
-        args.priority_level,
-        args.requires_keepalive,
-        max_duration_seconds,
-
-        args.is_debug_request,
-        maybe_routing_tag,
-    );
-
-  let query_result = query.execute(args.mysql_pool)
-      .await;
-
-  let record_id = match query_result {
-    Err(err) => return Err(DatabaseQueryError::from(err)),
-    Ok(res) => res.last_insert_id(),
+    mysql_executor: args.mysql_pool,
+    phantom: PhantomData,
   };
 
+  let record_id = insert_full_generic_inference_job_record(inner_args).await?;
   Ok((job_token, record_id))
 }

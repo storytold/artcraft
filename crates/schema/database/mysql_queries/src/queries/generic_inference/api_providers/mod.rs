@@ -1,4 +1,5 @@
 pub mod beeble;
+pub(crate) mod common;
 pub mod fal;
 pub mod gmicloud;
 pub mod seedance2pro;
