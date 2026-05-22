@@ -691,63 +691,180 @@ mod tests {
       assert_eq!(InferenceModelType::RvcV2.to_str(), "rvc_v2");
       assert_eq!(InferenceModelType::SadTalker.to_str(), "sad_talker");
       assert_eq!(InferenceModelType::SoVitsSvc.to_str(), "so_vits_svc");
+      assert_eq!(InferenceModelType::SeedVc.to_str(), "seed_vc");
+      assert_eq!(InferenceModelType::ImageGenApi.to_str(), "image_gen_api");
       assert_eq!(InferenceModelType::Tacotron2.to_str(), "tacotron2");
       assert_eq!(InferenceModelType::Vits.to_str(), "vits");
       assert_eq!(InferenceModelType::VallEX.to_str(), "vall_e_x");
       assert_eq!(InferenceModelType::RerenderAVideo.to_str(), "rerender_a_video");
       assert_eq!(InferenceModelType::StableDiffusion.to_str(), "stable_diffusion");
-      assert_eq!(InferenceModelType::ImageGenApi.to_str(), "image_gen_api");
       assert_eq!(InferenceModelType::MocapNet.to_str(), "mocap_net");
       assert_eq!(InferenceModelType::StyleTTS2.to_str(), "styletts2");
       assert_eq!(InferenceModelType::ConvertFbxToGltf.to_str(), "convert_fbx_gltf");
       assert_eq!(InferenceModelType::BvhToWorkflow.to_str(), "bvh_to_workflow");
 
-      // Image models (mirror)
+      // Image models (mirror of CommonModelType)
       assert_eq!(InferenceModelType::Flux1Dev.to_str(), "flux_1_dev");
+      assert_eq!(InferenceModelType::Flux1Schnell.to_str(), "flux_1_schnell");
+      assert_eq!(InferenceModelType::FluxDevJuggernaut.to_str(), "flux_dev_juggernaut");
+      assert_eq!(InferenceModelType::FluxPro1.to_str(), "flux_pro_1");
+      assert_eq!(InferenceModelType::FluxPro11.to_str(), "flux_pro_1p1");
+      assert_eq!(InferenceModelType::FluxPro11Ultra.to_str(), "flux_pro_1p1_ultra");
+      assert_eq!(InferenceModelType::FluxProKontextMax.to_str(), "flux_pro_kontext_max");
+      assert_eq!(InferenceModelType::Flux2LoraAngles.to_str(), "flux_2_lora_angles");
       assert_eq!(InferenceModelType::GptImage1.to_str(), "gpt_image_1");
-      assert_eq!(InferenceModelType::Midjourney.to_str(), "midjourney");
+      assert_eq!(InferenceModelType::GptImage1p5.to_str(), "gpt_image_1p5");
+      assert_eq!(InferenceModelType::GptImage2.to_str(), "gpt_image_2");
+      assert_eq!(InferenceModelType::GrokImage.to_str(), "grok_image");
+      assert_eq!(InferenceModelType::Recraft3.to_str(), "recraft_3");
+      assert_eq!(InferenceModelType::SeedEdit3.to_str(), "seededit_3");
+      assert_eq!(InferenceModelType::Qwen.to_str(), "qwen");
+      assert_eq!(InferenceModelType::QwenEdit2511Angles.to_str(), "qwen_edit_2511_angles");
+      assert_eq!(InferenceModelType::Gemini25Flash.to_str(), "gemini_25_flash");
+      assert_eq!(InferenceModelType::NanoBanana.to_str(), "nano_banana");
+      assert_eq!(InferenceModelType::NanoBanana2.to_str(), "nano_banana_2");
       assert_eq!(InferenceModelType::NanoBananaPro.to_str(), "nano_banana_pro");
+      assert_eq!(InferenceModelType::Seedream4.to_str(), "seedream_4");
       assert_eq!(InferenceModelType::Seedream4p5.to_str(), "seedream_4p5");
+      assert_eq!(InferenceModelType::Seedream5Lite.to_str(), "seedream_5_lite");
+      assert_eq!(InferenceModelType::Midjourney.to_str(), "midjourney");
+      assert_eq!(InferenceModelType::MidjourneyV6.to_str(), "midjourney_v6");
+      assert_eq!(InferenceModelType::MidjourneyV6p1.to_str(), "midjourney_v6p1");
+      assert_eq!(InferenceModelType::MidjourneyV6p1Raw.to_str(), "midjourney_v6p1_raw");
+      assert_eq!(InferenceModelType::MidjourneyV7.to_str(), "midjourney_v7");
+      assert_eq!(InferenceModelType::MidjourneyV7Draft.to_str(), "midjourney_v7_draft");
+      assert_eq!(InferenceModelType::MidjourneyV7DraftRaw.to_str(), "midjourney_v7_draft_raw");
+      assert_eq!(InferenceModelType::MidjourneyV7Raw.to_str(), "midjourney_v7_raw");
 
       // Video models
-      assert_eq!(InferenceModelType::Veo3.to_str(), "veo_3");
-      assert_eq!(InferenceModelType::Sora2.to_str(), "sora_2");
+      assert_eq!(InferenceModelType::GrokVideo.to_str(), "grok_video");
+      assert_eq!(InferenceModelType::Kling16Pro.to_str(), "kling_1p6_pro");
+      assert_eq!(InferenceModelType::Kling21Pro.to_str(), "kling_2p1_pro");
+      assert_eq!(InferenceModelType::Kling21Master.to_str(), "kling_2p1_master");
+      assert_eq!(InferenceModelType::Kling2p5TurboPro.to_str(), "kling_2p5_turbo_pro");
+      assert_eq!(InferenceModelType::Kling2p6Pro.to_str(), "kling_2p6_pro");
+      assert_eq!(InferenceModelType::Kling3p0Standard.to_str(), "kling_3p0_standard");
       assert_eq!(InferenceModelType::Kling3p0Pro.to_str(), "kling_3p0_pro");
+      assert_eq!(InferenceModelType::HappyHorse1p0.to_str(), "happy_horse_1p0");
+      assert_eq!(InferenceModelType::Seedance10Lite.to_str(), "seedance_1p0_lite");
+      assert_eq!(InferenceModelType::Seedance10Pro.to_str(), "seedance_1p0_pro");
+      assert_eq!(InferenceModelType::Seedance1p5Pro.to_str(), "seedance_1p5_pro");
+      assert_eq!(InferenceModelType::Seedance2p0.to_str(), "seedance_2p0");
+      assert_eq!(InferenceModelType::Seedance2p0Fast.to_str(), "seedance_2p0_fast");
+      assert_eq!(InferenceModelType::Seedance2p0BytePlus.to_str(), "seedance_2p0_bp");
       assert_eq!(InferenceModelType::Seedance2p0BytePlusFast.to_str(), "seedance_2p0_bp_fast");
+      assert_eq!(InferenceModelType::Seedance2p0Ultra.to_str(), "seedance_2p0_u");
+      assert_eq!(InferenceModelType::Seedance2p0UltraFast.to_str(), "seedance_2p0_u_fast");
+      assert_eq!(InferenceModelType::Sora2.to_str(), "sora_2");
+      assert_eq!(InferenceModelType::Sora2Pro.to_str(), "sora_2_pro");
+      assert_eq!(InferenceModelType::Veo2.to_str(), "veo_2");
+      assert_eq!(InferenceModelType::Veo3.to_str(), "veo_3");
+      assert_eq!(InferenceModelType::Veo3Fast.to_str(), "veo_3_fast");
+      assert_eq!(InferenceModelType::Veo3p1.to_str(), "veo_3p1");
+      assert_eq!(InferenceModelType::Veo3p1Fast.to_str(), "veo_3p1_fast");
+      assert_eq!(InferenceModelType::PreviewModel.to_str(), "preview_model");
+      assert_eq!(InferenceModelType::PreviewModelFast.to_str(), "preview_model_fast");
+      assert_eq!(InferenceModelType::SwitchX.to_str(), "switch_x");
 
       // 3D Object generation models
+      assert_eq!(InferenceModelType::Hunyuan3d2_0.to_str(), "hunyuan_3d_2p0");
+      assert_eq!(InferenceModelType::Hunyuan3d2_1.to_str(), "hunyuan_3d_2p1");
       assert_eq!(InferenceModelType::Hunyuan3d3.to_str(), "hunyuan_3d_3");
 
       // Splat generation models (World Labs)
+      assert_eq!(InferenceModelType::Marble0p1Mini.to_str(), "marble_0p1_mini");
       assert_eq!(InferenceModelType::Marble0p1Plus.to_str(), "marble_0p1_plus");
     }
 
     #[test]
     fn from_str() {
       // Legacy variants
+      assert_eq!(InferenceModelType::from_str("comfy_ui").unwrap(), InferenceModelType::ComfyUi);
       assert_eq!(InferenceModelType::from_str("rvc_v2").unwrap(), InferenceModelType::RvcV2);
       assert_eq!(InferenceModelType::from_str("sad_talker").unwrap(), InferenceModelType::SadTalker);
-      assert_eq!(InferenceModelType::from_str("seed_vc").unwrap(), InferenceModelType::SeedVc);
       assert_eq!(InferenceModelType::from_str("so_vits_svc").unwrap(), InferenceModelType::SoVitsSvc);
+      assert_eq!(InferenceModelType::from_str("seed_vc").unwrap(), InferenceModelType::SeedVc);
+      assert_eq!(InferenceModelType::from_str("image_gen_api").unwrap(), InferenceModelType::ImageGenApi);
       assert_eq!(InferenceModelType::from_str("tacotron2").unwrap(), InferenceModelType::Tacotron2);
       assert_eq!(InferenceModelType::from_str("vits").unwrap(), InferenceModelType::Vits);
       assert_eq!(InferenceModelType::from_str("vall_e_x").unwrap(), InferenceModelType::VallEX);
       assert_eq!(InferenceModelType::from_str("rerender_a_video").unwrap(), InferenceModelType::RerenderAVideo);
       assert_eq!(InferenceModelType::from_str("stable_diffusion").unwrap(), InferenceModelType::StableDiffusion);
-      assert_eq!(InferenceModelType::from_str("image_gen_api").unwrap(), InferenceModelType::ImageGenApi);
       assert_eq!(InferenceModelType::from_str("mocap_net").unwrap(), InferenceModelType::MocapNet);
       assert_eq!(InferenceModelType::from_str("styletts2").unwrap(), InferenceModelType::StyleTTS2);
-      assert_eq!(InferenceModelType::from_str("comfy_ui").unwrap(), InferenceModelType::ComfyUi);
       assert_eq!(InferenceModelType::from_str("convert_fbx_gltf").unwrap(), InferenceModelType::ConvertFbxToGltf);
       assert_eq!(InferenceModelType::from_str("bvh_to_workflow").unwrap(), InferenceModelType::BvhToWorkflow);
 
-      // Spot-check a few from the mirrored set
+      // Image models (mirror of CommonModelType)
       assert_eq!(InferenceModelType::from_str("flux_1_dev").unwrap(), InferenceModelType::Flux1Dev);
+      assert_eq!(InferenceModelType::from_str("flux_1_schnell").unwrap(), InferenceModelType::Flux1Schnell);
+      assert_eq!(InferenceModelType::from_str("flux_dev_juggernaut").unwrap(), InferenceModelType::FluxDevJuggernaut);
+      assert_eq!(InferenceModelType::from_str("flux_pro_1").unwrap(), InferenceModelType::FluxPro1);
+      assert_eq!(InferenceModelType::from_str("flux_pro_1p1").unwrap(), InferenceModelType::FluxPro11);
+      assert_eq!(InferenceModelType::from_str("flux_pro_1p1_ultra").unwrap(), InferenceModelType::FluxPro11Ultra);
+      assert_eq!(InferenceModelType::from_str("flux_pro_kontext_max").unwrap(), InferenceModelType::FluxProKontextMax);
+      assert_eq!(InferenceModelType::from_str("flux_2_lora_angles").unwrap(), InferenceModelType::Flux2LoraAngles);
+      assert_eq!(InferenceModelType::from_str("gpt_image_1").unwrap(), InferenceModelType::GptImage1);
       assert_eq!(InferenceModelType::from_str("gpt_image_1p5").unwrap(), InferenceModelType::GptImage1p5);
+      assert_eq!(InferenceModelType::from_str("gpt_image_2").unwrap(), InferenceModelType::GptImage2);
+      assert_eq!(InferenceModelType::from_str("grok_image").unwrap(), InferenceModelType::GrokImage);
+      assert_eq!(InferenceModelType::from_str("recraft_3").unwrap(), InferenceModelType::Recraft3);
+      assert_eq!(InferenceModelType::from_str("seededit_3").unwrap(), InferenceModelType::SeedEdit3);
+      assert_eq!(InferenceModelType::from_str("qwen").unwrap(), InferenceModelType::Qwen);
+      assert_eq!(InferenceModelType::from_str("qwen_edit_2511_angles").unwrap(), InferenceModelType::QwenEdit2511Angles);
+      assert_eq!(InferenceModelType::from_str("gemini_25_flash").unwrap(), InferenceModelType::Gemini25Flash);
+      assert_eq!(InferenceModelType::from_str("nano_banana").unwrap(), InferenceModelType::NanoBanana);
+      assert_eq!(InferenceModelType::from_str("nano_banana_2").unwrap(), InferenceModelType::NanoBanana2);
+      assert_eq!(InferenceModelType::from_str("nano_banana_pro").unwrap(), InferenceModelType::NanoBananaPro);
+      assert_eq!(InferenceModelType::from_str("seedream_4").unwrap(), InferenceModelType::Seedream4);
+      assert_eq!(InferenceModelType::from_str("seedream_4p5").unwrap(), InferenceModelType::Seedream4p5);
+      assert_eq!(InferenceModelType::from_str("seedream_5_lite").unwrap(), InferenceModelType::Seedream5Lite);
+      assert_eq!(InferenceModelType::from_str("midjourney").unwrap(), InferenceModelType::Midjourney);
+      assert_eq!(InferenceModelType::from_str("midjourney_v6").unwrap(), InferenceModelType::MidjourneyV6);
+      assert_eq!(InferenceModelType::from_str("midjourney_v6p1").unwrap(), InferenceModelType::MidjourneyV6p1);
+      assert_eq!(InferenceModelType::from_str("midjourney_v6p1_raw").unwrap(), InferenceModelType::MidjourneyV6p1Raw);
+      assert_eq!(InferenceModelType::from_str("midjourney_v7").unwrap(), InferenceModelType::MidjourneyV7);
+      assert_eq!(InferenceModelType::from_str("midjourney_v7_draft").unwrap(), InferenceModelType::MidjourneyV7Draft);
       assert_eq!(InferenceModelType::from_str("midjourney_v7_draft_raw").unwrap(), InferenceModelType::MidjourneyV7DraftRaw);
+      assert_eq!(InferenceModelType::from_str("midjourney_v7_raw").unwrap(), InferenceModelType::MidjourneyV7Raw);
+
+      // Video models
+      assert_eq!(InferenceModelType::from_str("grok_video").unwrap(), InferenceModelType::GrokVideo);
+      assert_eq!(InferenceModelType::from_str("kling_1p6_pro").unwrap(), InferenceModelType::Kling16Pro);
+      assert_eq!(InferenceModelType::from_str("kling_2p1_pro").unwrap(), InferenceModelType::Kling21Pro);
+      assert_eq!(InferenceModelType::from_str("kling_2p1_master").unwrap(), InferenceModelType::Kling21Master);
+      assert_eq!(InferenceModelType::from_str("kling_2p5_turbo_pro").unwrap(), InferenceModelType::Kling2p5TurboPro);
+      assert_eq!(InferenceModelType::from_str("kling_2p6_pro").unwrap(), InferenceModelType::Kling2p6Pro);
+      assert_eq!(InferenceModelType::from_str("kling_3p0_standard").unwrap(), InferenceModelType::Kling3p0Standard);
       assert_eq!(InferenceModelType::from_str("kling_3p0_pro").unwrap(), InferenceModelType::Kling3p0Pro);
+      assert_eq!(InferenceModelType::from_str("happy_horse_1p0").unwrap(), InferenceModelType::HappyHorse1p0);
+      assert_eq!(InferenceModelType::from_str("seedance_1p0_lite").unwrap(), InferenceModelType::Seedance10Lite);
+      assert_eq!(InferenceModelType::from_str("seedance_1p0_pro").unwrap(), InferenceModelType::Seedance10Pro);
+      assert_eq!(InferenceModelType::from_str("seedance_1p5_pro").unwrap(), InferenceModelType::Seedance1p5Pro);
+      assert_eq!(InferenceModelType::from_str("seedance_2p0").unwrap(), InferenceModelType::Seedance2p0);
+      assert_eq!(InferenceModelType::from_str("seedance_2p0_fast").unwrap(), InferenceModelType::Seedance2p0Fast);
+      assert_eq!(InferenceModelType::from_str("seedance_2p0_bp").unwrap(), InferenceModelType::Seedance2p0BytePlus);
       assert_eq!(InferenceModelType::from_str("seedance_2p0_bp_fast").unwrap(), InferenceModelType::Seedance2p0BytePlusFast);
+      assert_eq!(InferenceModelType::from_str("seedance_2p0_u").unwrap(), InferenceModelType::Seedance2p0Ultra);
+      assert_eq!(InferenceModelType::from_str("seedance_2p0_u_fast").unwrap(), InferenceModelType::Seedance2p0UltraFast);
+      assert_eq!(InferenceModelType::from_str("sora_2").unwrap(), InferenceModelType::Sora2);
+      assert_eq!(InferenceModelType::from_str("sora_2_pro").unwrap(), InferenceModelType::Sora2Pro);
+      assert_eq!(InferenceModelType::from_str("veo_2").unwrap(), InferenceModelType::Veo2);
+      assert_eq!(InferenceModelType::from_str("veo_3").unwrap(), InferenceModelType::Veo3);
+      assert_eq!(InferenceModelType::from_str("veo_3_fast").unwrap(), InferenceModelType::Veo3Fast);
+      assert_eq!(InferenceModelType::from_str("veo_3p1").unwrap(), InferenceModelType::Veo3p1);
+      assert_eq!(InferenceModelType::from_str("veo_3p1_fast").unwrap(), InferenceModelType::Veo3p1Fast);
+      assert_eq!(InferenceModelType::from_str("preview_model").unwrap(), InferenceModelType::PreviewModel);
+      assert_eq!(InferenceModelType::from_str("preview_model_fast").unwrap(), InferenceModelType::PreviewModelFast);
+      assert_eq!(InferenceModelType::from_str("switch_x").unwrap(), InferenceModelType::SwitchX);
+
+      // 3D Object generation models
+      assert_eq!(InferenceModelType::from_str("hunyuan_3d_2p0").unwrap(), InferenceModelType::Hunyuan3d2_0);
+      assert_eq!(InferenceModelType::from_str("hunyuan_3d_2p1").unwrap(), InferenceModelType::Hunyuan3d2_1);
       assert_eq!(InferenceModelType::from_str("hunyuan_3d_3").unwrap(), InferenceModelType::Hunyuan3d3);
+
+      // Splat generation models (World Labs)
+      assert_eq!(InferenceModelType::from_str("marble_0p1_mini").unwrap(), InferenceModelType::Marble0p1Mini);
       assert_eq!(InferenceModelType::from_str("marble_0p1_plus").unwrap(), InferenceModelType::Marble0p1Plus);
     }
 
