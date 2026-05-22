@@ -9,12 +9,31 @@ use serde_derive::{Deserialize, Serialize};
 pub const DEFAULT_CONFIG_PATH: &str =
   concat!(env!("CARGO_MANIFEST_DIR"), "/config/notify_config.yaml");
 
+pub const DEFAULT_ESCALATE_WAIT_1_SECS: u64 = 15;
+pub const DEFAULT_ESCALATE_WAIT_2_SECS: u64 = 30;
+pub const DEFAULT_ESCALATE_WAIT_3_SECS: u64 = 45;
+
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
 pub struct NotifyConfig {
   pub alert_beep_sound: Option<PathBuf>,
   pub alert_done_sound: Option<PathBuf>,
   pub alert_await_user_input_sound: Option<PathBuf>,
+
+  #[serde(default)]
+  pub extra_alert_beep_sounds: Vec<PathBuf>,
+  #[serde(default)]
+  pub extra_alert_done_sounds: Vec<PathBuf>,
+  #[serde(default)]
+  pub extra_alert_await_sounds: Vec<PathBuf>,
+
   pub loop_alert_timeout_millis: Option<u64>,
+
+  /// Seconds after a loop starts before a second concurrent voice is added.
+  pub escalate_wait_1: Option<u64>,
+  /// Seconds before a third concurrent voice is added.
+  pub escalate_wait_2: Option<u64>,
+  /// Seconds before a fourth concurrent voice is added.
+  pub escalate_wait_3: Option<u64>,
 }
 
 impl NotifyConfig {
@@ -46,17 +65,36 @@ impl NotifyConfig {
     }
   }
 
+  pub fn escalate_waits_secs(&self) -> [u64; 3] {
+    [
+      self.escalate_wait_1.unwrap_or(DEFAULT_ESCALATE_WAIT_1_SECS),
+      self.escalate_wait_2.unwrap_or(DEFAULT_ESCALATE_WAIT_2_SECS),
+      self.escalate_wait_3.unwrap_or(DEFAULT_ESCALATE_WAIT_3_SECS),
+    ]
+  }
+
   fn resolve_relative_paths(&mut self, base: &Path) {
-    resolve(&mut self.alert_beep_sound, base);
-    resolve(&mut self.alert_done_sound, base);
-    resolve(&mut self.alert_await_user_input_sound, base);
+    resolve_opt(&mut self.alert_beep_sound, base);
+    resolve_opt(&mut self.alert_done_sound, base);
+    resolve_opt(&mut self.alert_await_user_input_sound, base);
+    resolve_vec(&mut self.extra_alert_beep_sounds, base);
+    resolve_vec(&mut self.extra_alert_done_sounds, base);
+    resolve_vec(&mut self.extra_alert_await_sounds, base);
   }
 }
 
-fn resolve(slot: &mut Option<PathBuf>, base: &Path) {
+fn resolve_opt(slot: &mut Option<PathBuf>, base: &Path) {
   if let Some(p) = slot.as_ref() {
     if p.is_relative() {
       *slot = Some(base.join(p));
+    }
+  }
+}
+
+fn resolve_vec(slot: &mut Vec<PathBuf>, base: &Path) {
+  for p in slot.iter_mut() {
+    if p.is_relative() {
+      *p = base.join(&*p);
     }
   }
 }

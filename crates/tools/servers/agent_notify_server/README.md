@@ -45,14 +45,32 @@ Mixing rules:
 alert_beep_sound: test_beep.wav
 alert_done_sound: smrpg_flower.wav
 alert_await_user_input_sound: smrpg_ghost.wav
+
+extra_alert_beep_sounds: []
+extra_alert_done_sounds:
+  - smrpg_specialflower.wav
+  - smrpg_correct.wav
+extra_alert_await_sounds:
+  - smrpg_wrong.wav
+  - smrpg_drybones_crumble.wav
+
 loop_alert_timeout_millis: 2000
+escalate_wait_1: 15
+escalate_wait_2: 30
+escalate_wait_3: 45
 ```
 
 - Paths can be absolute, or relative to the YAML file's directory.
-- `loop_alert_timeout_millis` is the gap *between* consecutive plays of a
-  looping sound (after one play ends, before the next begins). Omit to replay
-  back-to-back.
 - WAV and MP3 are both supported (decoded via rodio + symphonia).
+- `loop_alert_timeout_millis` is the gap *between* consecutive plays of a
+  single voice. Omit to replay back-to-back.
+- **Escalation**: a `/loop_*` request starts one voice immediately. At
+  `escalate_wait_1` / `escalate_wait_2` / `escalate_wait_3` seconds, a
+  second / third / fourth concurrent voice joins the mix. New voices are
+  taken from `extra_alert_<state>_sounds` in order; when that pool is
+  exhausted the supervisor cycles back through the full pool
+  (primary + extras), so existing voices double up. Each voice runs in
+  its own thread and drifts naturally relative to the others.
 
 ## Claude Code wiring
 

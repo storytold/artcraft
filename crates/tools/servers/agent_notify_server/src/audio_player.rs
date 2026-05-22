@@ -5,19 +5,21 @@
 //! handlers — interact with it through [`AudioPlayerHandle`], which forwards
 //! commands over an mpsc channel.
 //!
-//! The engine maintains two independent mixing channels:
+//! The engine maintains two kinds of mixing channels at the cpal output:
 //!
 //! - **`oneshot_sink`** — fire-and-forget sounds queued by `play_once`. Reused
 //!   for the lifetime of the engine via `clear() + play()` so subsequent
 //!   appends keep working after a `StopAll`.
-//! - **A per-loop iterator thread** — owns its own `Sink` and replays the
-//!   configured sound, sleeping `gap_millis` between iterations. Replaced
-//!   atomically when a new loop sound is requested; signalled to stop via
-//!   `Arc<AtomicBool>` polled every 50ms (kept short so `/stop` and Ctrl+C
-//!   feel instant).
+//! - **A loop session** — a supervisor thread that escalates over time. It
+//!   starts one looping iterator immediately, then adds a second, third, and
+//!   fourth concurrent iterator at the configured escalation times. Each
+//!   iterator owns its own `Sink` and runs in its own thread, so the voices
+//!   drift naturally relative to one another. Replacing the loop session
+//!   (`PlayLoop` while one is running) or `StopAll` signals every iterator
+//!   and the supervisor via a shared `Arc<AtomicBool>` polled every 50ms.
 //!
-//! Because the two channels share the same `OutputStreamHandle`, a one-shot
-//! sound naturally mixes with whatever is looping.
+//! Because every channel shares the same `OutputStreamHandle`, one-shots
+//! mix on top of however many loop voices are currently running.
 
 use std::fs::File;
 use std::io::BufReader;
@@ -42,8 +44,8 @@ impl AudioPlayerHandle {
     let _ = self.tx.send(AudioCommand::PlayOnce(path));
   }
 
-  pub fn play_loop(&self, path: PathBuf, gap_millis: u64) {
-    let _ = self.tx.send(AudioCommand::PlayLoop(path, gap_millis));
+  pub fn play_loop(&self, spec: LoopSpec) {
+    let _ = self.tx.send(AudioCommand::PlayLoop(spec));
   }
 
   pub fn stop_all(&self) {
@@ -53,6 +55,18 @@ impl AudioPlayerHandle {
   pub fn shutdown(&self) {
     let _ = self.tx.send(AudioCommand::Shutdown);
   }
+}
+
+#[derive(Clone, Debug)]
+pub struct LoopSpec {
+  /// Ordered pool of sounds: primary first, then extras. The supervisor
+  /// indexes this with `layer % pool.len()`, so when extras run out it
+  /// cycles back through the pool (doubling already-playing voices).
+  pub pool: Vec<PathBuf>,
+  /// Gap between consecutive plays of a single iterator's sound.
+  pub gap_millis: u64,
+  /// Wall-clock seconds from loop start when layers 2, 3, 4 should join.
+  pub escalate_waits_secs: [u64; 3],
 }
 
 pub fn spawn_audio_player() -> (AudioPlayerHandle, JoinHandle<()>) {
@@ -66,7 +80,7 @@ pub fn spawn_audio_player() -> (AudioPlayerHandle, JoinHandle<()>) {
 
 enum AudioCommand {
   PlayOnce(PathBuf),
-  PlayLoop(PathBuf, u64),
+  PlayLoop(LoopSpec),
   StopAll,
   Shutdown,
 }
@@ -76,7 +90,6 @@ fn run_audio_engine(rx: Receiver<AudioCommand>) {
     Ok(s) => s,
     Err(e) => {
       log::error!("audio engine: failed to open default output stream: {}", e);
-      // Drain the channel so callers don't block, then exit.
       while rx.recv().is_ok() {}
       return;
     }
@@ -100,9 +113,13 @@ fn run_audio_engine(rx: Receiver<AudioCommand>) {
           log::warn!("play_once {}: {}", path.display(), e);
         }
       }
-      AudioCommand::PlayLoop(path, gap_millis) => {
+      AudioCommand::PlayLoop(spec) => {
         stop_current_loop(&mut current_loop);
-        current_loop = Some(start_loop(&stream_handle, path, gap_millis));
+        if spec.pool.is_empty() {
+          log::warn!("play_loop: empty sound pool, ignoring");
+          continue;
+        }
+        current_loop = Some(start_loop_supervisor(&stream_handle, spec));
       }
       AudioCommand::StopAll => {
         stop_current_loop(&mut current_loop);
@@ -117,23 +134,18 @@ fn run_audio_engine(rx: Receiver<AudioCommand>) {
     }
   }
 
-  // Channel closed; clean up anyway.
   stop_current_loop(&mut current_loop);
   oneshot_sink.stop();
 }
 
-fn start_loop(
-  stream_handle: &OutputStreamHandle,
-  path: PathBuf,
-  gap_millis: u64,
-) -> LoopController {
+fn start_loop_supervisor(stream_handle: &OutputStreamHandle, spec: LoopSpec) -> LoopController {
   let stop = Arc::new(AtomicBool::new(false));
   let stop_for_thread = stop.clone();
   let stream_handle = stream_handle.clone();
   let thread = thread::Builder::new()
-    .name("agent-notify-loop".to_string())
-    .spawn(move || run_loop_iterator(stream_handle, path, gap_millis, stop_for_thread))
-    .expect("spawn loop iterator thread");
+    .name("agent-notify-loop-supervisor".to_string())
+    .spawn(move || run_loop_supervisor(stream_handle, spec, stop_for_thread))
+    .expect("spawn loop supervisor thread");
   LoopController { stop, thread: Some(thread) }
 }
 
@@ -142,10 +154,80 @@ fn stop_current_loop(current_loop: &mut Option<LoopController>) {
     lc.stop.store(true, Ordering::SeqCst);
     if let Some(thread) = lc.thread.take() {
       if let Err(e) = thread.join() {
-        log::warn!("audio loop thread panicked while shutting down: {:?}", e);
+        log::warn!("audio loop supervisor panicked while shutting down: {:?}", e);
       }
     }
   }
+}
+
+fn run_loop_supervisor(
+  stream_handle: OutputStreamHandle,
+  spec: LoopSpec,
+  stop: Arc<AtomicBool>,
+) {
+  let pool_len = spec.pool.len();
+  if pool_len == 0 {
+    return;
+  }
+
+  let mut iterators: Vec<JoinHandle<()>> = Vec::with_capacity(4);
+  iterators.push(spawn_iterator(
+    &stream_handle,
+    spec.pool[0].clone(),
+    spec.gap_millis,
+    stop.clone(),
+    0,
+  ));
+
+  // Convert absolute escalation times into deltas relative to the previous
+  // escalation. `saturating_sub` handles out-of-order config (e.g. wait_2
+  // smaller than wait_1) by collapsing the interval to zero.
+  let waits = spec.escalate_waits_secs;
+  let intervals = [
+    waits[0],
+    waits[1].saturating_sub(waits[0]),
+    waits[2].saturating_sub(waits[1]),
+  ];
+
+  for layer in 0..3usize {
+    if !sleep_with_stop(Duration::from_secs(intervals[layer]), &stop) {
+      break;
+    }
+    let pool_idx = (layer + 1) % pool_len;
+    iterators.push(spawn_iterator(
+      &stream_handle,
+      spec.pool[pool_idx].clone(),
+      spec.gap_millis,
+      stop.clone(),
+      layer + 1,
+    ));
+  }
+
+  // Wait until something signals stop, then drain iterator threads.
+  while !stop.load(Ordering::SeqCst) {
+    thread::sleep(STOP_POLL_INTERVAL);
+  }
+
+  for t in iterators {
+    if let Err(e) = t.join() {
+      log::warn!("audio loop iterator panicked: {:?}", e);
+    }
+  }
+}
+
+fn spawn_iterator(
+  stream_handle: &OutputStreamHandle,
+  path: PathBuf,
+  gap_millis: u64,
+  stop: Arc<AtomicBool>,
+  layer: usize,
+) -> JoinHandle<()> {
+  log::info!("loop voice {} starting: {}", layer + 1, path.display());
+  let stream_handle = stream_handle.clone();
+  thread::Builder::new()
+    .name(format!("agent-notify-loop-{}", layer + 1))
+    .spawn(move || run_loop_iterator(stream_handle, path, gap_millis, stop))
+    .expect("spawn loop iterator thread")
 }
 
 fn run_loop_iterator(
@@ -163,15 +245,11 @@ fn run_loop_iterator(
   };
 
   while !stop.load(Ordering::SeqCst) {
-    match enqueue_sound(&sink, &path) {
-      Ok(()) => {}
-      Err(e) => {
-        log::warn!("loop iterator: failed to enqueue {}: {}", path.display(), e);
-        return;
-      }
+    if let Err(e) = enqueue_sound(&sink, &path) {
+      log::warn!("loop iterator: failed to enqueue {}: {}", path.display(), e);
+      return;
     }
 
-    // Wait for playback to finish, but stay responsive to stop.
     while !sink.empty() {
       if stop.load(Ordering::SeqCst) {
         sink.stop();
@@ -184,16 +262,10 @@ fn run_loop_iterator(
       return;
     }
 
-    if gap_millis > 0 {
-      let total = Duration::from_millis(gap_millis);
-      let started = Instant::now();
-      while started.elapsed() < total {
-        if stop.load(Ordering::SeqCst) {
-          return;
-        }
-        let remaining = total.saturating_sub(started.elapsed());
-        thread::sleep(remaining.min(STOP_POLL_INTERVAL));
-      }
+    if gap_millis > 0
+      && !sleep_with_stop(Duration::from_millis(gap_millis), &stop)
+    {
+      return;
     }
   }
 }
@@ -203,6 +275,20 @@ fn enqueue_sound(sink: &Sink, path: &Path) -> anyhow::Result<()> {
   let source = Decoder::new(file)?;
   sink.append(source);
   Ok(())
+}
+
+/// Sleep for `total` while polling `stop` every [`STOP_POLL_INTERVAL`].
+/// Returns `true` if the full duration elapsed, `false` if `stop` was set.
+fn sleep_with_stop(total: Duration, stop: &AtomicBool) -> bool {
+  let started = Instant::now();
+  while started.elapsed() < total {
+    if stop.load(Ordering::SeqCst) {
+      return false;
+    }
+    let remaining = total.saturating_sub(started.elapsed());
+    thread::sleep(remaining.min(STOP_POLL_INTERVAL));
+  }
+  !stop.load(Ordering::SeqCst)
 }
 
 struct LoopController {

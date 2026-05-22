@@ -41,8 +41,16 @@
       <tr><td><code>GET /loop_await</code></td><td>Loop <em>alert_await_user_input</em>. Replaces any prior loop.</td></tr>
     </table>
     <p style="color:#555;font-size:14px;">
-      Between iterations the server waits <code>loop_alert_timeout_millis</code>
-      (from the YAML config) before playing again.
+      Between iterations a single voice waits <code>loop_alert_timeout_millis</code>
+      before replaying.
+    </p>
+    <p style="color:#555;font-size:14px;">
+      <strong>Escalation:</strong> after the loop starts, a second voice joins
+      at <code>escalate_wait_1</code> seconds, a third at
+      <code>escalate_wait_2</code>, and a fourth at <code>escalate_wait_3</code>.
+      Each new voice is drawn from <code>extra_alert_&lt;state&gt;_sounds</code>;
+      when those run out the pool cycles, doubling already-playing voices.
+      Voices are independent threads — they drift relative to one another.
     </p>
   </div>
 
