@@ -238,11 +238,13 @@ impl From<ArtcraftRouterError> for GenerateError {
           ProviderError::Muapi(_) => BillingProvider::Muapi,
           ProviderError::Seedance2Pro(_) => BillingProvider::Kinovi,
           ProviderError::Storyteller(_) => BillingProvider::Artcraft,
+          ProviderError::GmiCloud(_) => BillingProvider::Artcraft,
         };
         Self::BillingIssue(BillingIssueReason { provider })
       },
       ArtcraftRouterError::Provider(ProviderError::Storyteller(e)) => Self::ProviderFailure(ProviderFailureReason::StorytellerError(e)),
       ArtcraftRouterError::Provider(ProviderError::Fal(_)) => Self::FalNoLongerSupported,
+      ArtcraftRouterError::Provider(ProviderError::GmiCloud(_)) => Self::ArtcraftRouterNotYetSupportedProvider("gmicloud"),
       ArtcraftRouterError::Provider(ProviderError::Muapi(_)) => Self::ArtcraftRouterNotYetSupportedProvider("muapi"),
       ArtcraftRouterError::Provider(ProviderError::Seedance2Pro(_)) => Self::ArtcraftRouterNotYetSupportedProvider("seedance2pro"),
       ArtcraftRouterError::UnsupportedModel(model) => Self::NotYetImplemented(format!("Unsupported model: {}", model)),
