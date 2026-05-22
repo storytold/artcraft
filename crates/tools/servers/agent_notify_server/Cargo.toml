@@ -36,3 +36,6 @@ env_logger = { workspace = true }
 
 # Errors
 anyhow = { workspace = true }
+
+# Random
+rand = { workspace = true }

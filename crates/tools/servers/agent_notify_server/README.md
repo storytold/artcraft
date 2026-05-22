@@ -58,6 +58,10 @@ loop_alert_timeout_millis: 2000
 loop_alert_timeout_millis_1: 1000
 loop_alert_timeout_millis_2: 500
 loop_alert_timeout_millis_3: 200
+loop_alert_jitter_millis: 250
+loop_alert_jitter_millis_1: 150
+loop_alert_jitter_millis_2: 80
+loop_alert_jitter_millis_3: 40
 escalate_wait_1: 15
 escalate_wait_2: 30
 escalate_wait_3: 45
@@ -70,6 +74,12 @@ escalate_wait_3: 45
 - `loop_alert_timeout_millis_{1,2,3}` override the gap at each escalation
   stage. Each falls back to the previous stage when unset — so you can set
   just `_1: 200` to drop straight to a 200ms gap from voice 2 onward.
+- `loop_alert_jitter_millis[_1|_2|_3]` add `+/- rand(0..=jitter)` to each
+  sleep (clamped at 0). Same fallback chain as the timeouts. Useful to
+  keep voices from re-aligning even when they share a gap. The *upcoming*
+  stage's jitter is also applied to the escalation wait itself, so voices
+  2/3/4 don't always land exactly on `escalate_wait_N` — their phase
+  drifts by `+/- rand(0..=jitter)` ms.
 - **Escalation**: a `/loop_*` request starts one voice immediately. At
   `escalate_wait_1` / `escalate_wait_2` / `escalate_wait_3` seconds, a
   second / third / fourth concurrent voice joins the mix. New voices are

@@ -35,6 +35,16 @@ pub struct NotifyConfig {
   /// Gap (millis) after `escalate_wait_3`. Falls back to stage 2.
   pub loop_alert_timeout_millis_3: Option<u64>,
 
+  /// Maximum +/- random jitter (millis) applied to each sleep at stage 0.
+  /// Each sleep becomes `timeout +/- rand(0..=jitter)`, clamped at 0.
+  pub loop_alert_jitter_millis: Option<u64>,
+  /// Jitter at stage 1. Falls back to the previous stage.
+  pub loop_alert_jitter_millis_1: Option<u64>,
+  /// Jitter at stage 2. Falls back to stage 1.
+  pub loop_alert_jitter_millis_2: Option<u64>,
+  /// Jitter at stage 3. Falls back to stage 2.
+  pub loop_alert_jitter_millis_3: Option<u64>,
+
   /// Seconds after a loop starts before a second concurrent voice is added.
   pub escalate_wait_1: Option<u64>,
   /// Seconds before a third concurrent voice is added.
@@ -90,6 +100,15 @@ impl NotifyConfig {
     let g2 = self.loop_alert_timeout_millis_2.unwrap_or(g1);
     let g3 = self.loop_alert_timeout_millis_3.unwrap_or(g2);
     [g0, g1, g2, g3]
+  }
+
+  /// Per-stage jitter (millis). Same fallback semantics as the gap schedule.
+  pub fn loop_jitter_schedule_millis(&self) -> [u64; 4] {
+    let j0 = self.loop_alert_jitter_millis.unwrap_or(0);
+    let j1 = self.loop_alert_jitter_millis_1.unwrap_or(j0);
+    let j2 = self.loop_alert_jitter_millis_2.unwrap_or(j1);
+    let j3 = self.loop_alert_jitter_millis_3.unwrap_or(j2);
+    [j0, j1, j2, j3]
   }
 
   fn resolve_relative_paths(&mut self, base: &Path) {

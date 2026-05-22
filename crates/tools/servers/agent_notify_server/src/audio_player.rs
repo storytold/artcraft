@@ -30,6 +30,7 @@ use std::sync::mpsc::{self, Receiver, Sender};
 use std::thread::{self, JoinHandle};
 use std::time::{Duration, Instant};
 
+use rand::Rng;
 use rodio::{Decoder, OutputStream, OutputStreamHandle, Sink};
 
 const STOP_POLL_INTERVAL: Duration = Duration::from_millis(50);
@@ -68,6 +69,9 @@ pub struct LoopSpec {
   /// the session share the current stage's value, so existing voices also
   /// speed up when the supervisor moves to a faster stage.
   pub gap_millis_schedule: [u64; 4],
+  /// Max +/- jitter (millis) at each escalation stage. Same shape and
+  /// sharing semantics as `gap_millis_schedule`.
+  pub jitter_millis_schedule: [u64; 4],
   /// Wall-clock seconds from loop start when layers 2, 3, 4 should join.
   pub escalate_waits_secs: [u64; 3],
 }
@@ -173,14 +177,17 @@ fn run_loop_supervisor(
     return;
   }
 
-  let schedule = spec.gap_millis_schedule;
-  let gap_millis = Arc::new(AtomicU64::new(schedule[0]));
+  let gap_schedule = spec.gap_millis_schedule;
+  let jitter_schedule = spec.jitter_millis_schedule;
+  let gap_millis = Arc::new(AtomicU64::new(gap_schedule[0]));
+  let jitter_millis = Arc::new(AtomicU64::new(jitter_schedule[0]));
 
   let mut iterators: Vec<JoinHandle<()>> = Vec::with_capacity(4);
   iterators.push(spawn_iterator(
     &stream_handle,
     spec.pool[0].clone(),
     gap_millis.clone(),
+    jitter_millis.clone(),
     stop.clone(),
     0,
   ));
@@ -195,19 +202,35 @@ fn run_loop_supervisor(
     waits[2].saturating_sub(waits[1]),
   ];
 
+  let mut rng = rand::rng();
+
   for layer in 0..3usize {
-    if !sleep_with_stop(Duration::from_secs(intervals[layer]), &stop) {
+    // Jitter the spawn phase by the *upcoming* stage's jitter, so voices
+    // 2/3/4 don't all land exactly on `escalate_wait_N`.
+    let nominal_interval_ms = intervals[layer].saturating_mul(1000);
+    let phase_jitter_ms = jitter_schedule[layer + 1];
+    let interval_ms = jittered_gap_millis(nominal_interval_ms, phase_jitter_ms, &mut rng);
+    if !sleep_with_stop(Duration::from_millis(interval_ms), &stop) {
       break;
     }
-    let next_gap = schedule[layer + 1];
-    if gap_millis.swap(next_gap, Ordering::Relaxed) != next_gap {
-      log::info!("escalation stage {}: gap now {}ms", layer + 1, next_gap);
+    let next_gap = gap_schedule[layer + 1];
+    let next_jitter = jitter_schedule[layer + 1];
+    let prev_gap = gap_millis.swap(next_gap, Ordering::Relaxed);
+    let prev_jitter = jitter_millis.swap(next_jitter, Ordering::Relaxed);
+    if prev_gap != next_gap || prev_jitter != next_jitter {
+      log::info!(
+        "escalation stage {}: gap now {}ms +/- {}ms",
+        layer + 1,
+        next_gap,
+        next_jitter
+      );
     }
     let pool_idx = (layer + 1) % pool_len;
     iterators.push(spawn_iterator(
       &stream_handle,
       spec.pool[pool_idx].clone(),
       gap_millis.clone(),
+      jitter_millis.clone(),
       stop.clone(),
       layer + 1,
     ));
@@ -229,6 +252,7 @@ fn spawn_iterator(
   stream_handle: &OutputStreamHandle,
   path: PathBuf,
   gap_millis: Arc<AtomicU64>,
+  jitter_millis: Arc<AtomicU64>,
   stop: Arc<AtomicBool>,
   layer: usize,
 ) -> JoinHandle<()> {
@@ -236,7 +260,9 @@ fn spawn_iterator(
   let stream_handle = stream_handle.clone();
   thread::Builder::new()
     .name(format!("agent-notify-loop-{}", layer + 1))
-    .spawn(move || run_loop_iterator(stream_handle, path, gap_millis, stop))
+    .spawn(move || {
+      run_loop_iterator(stream_handle, path, gap_millis, jitter_millis, stop)
+    })
     .expect("spawn loop iterator thread")
 }
 
@@ -244,6 +270,7 @@ fn run_loop_iterator(
   stream_handle: OutputStreamHandle,
   path: PathBuf,
   gap_millis: Arc<AtomicU64>,
+  jitter_millis: Arc<AtomicU64>,
   stop: Arc<AtomicBool>,
 ) {
   let sink = match Sink::try_new(&stream_handle) {
@@ -253,6 +280,8 @@ fn run_loop_iterator(
       return;
     }
   };
+
+  let mut rng = rand::rng();
 
   while !stop.load(Ordering::SeqCst) {
     if let Err(e) = enqueue_sound(&sink, &path) {
@@ -273,9 +302,26 @@ fn run_loop_iterator(
     }
 
     let gap = gap_millis.load(Ordering::Relaxed);
-    if gap > 0 && !sleep_with_stop(Duration::from_millis(gap), &stop) {
+    let jitter = jitter_millis.load(Ordering::Relaxed);
+    let sleep_ms = jittered_gap_millis(gap, jitter, &mut rng);
+    if sleep_ms > 0
+      && !sleep_with_stop(Duration::from_millis(sleep_ms), &stop)
+    {
       return;
     }
+  }
+}
+
+/// Apply `+/- rand(0..=jitter)` to `gap`, clamped to 0 so we never wrap.
+fn jittered_gap_millis<R: Rng>(gap: u64, jitter: u64, rng: &mut R) -> u64 {
+  if jitter == 0 {
+    return gap;
+  }
+  let delta = rng.random_range(0..=jitter);
+  if rng.random_bool(0.5) {
+    gap.saturating_add(delta)
+  } else {
+    gap.saturating_sub(delta)
   }
 }
 
@@ -303,4 +349,45 @@ fn sleep_with_stop(total: Duration, stop: &AtomicBool) -> bool {
 struct LoopController {
   stop: Arc<AtomicBool>,
   thread: Option<JoinHandle<()>>,
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  mod jittered_gap_millis_tests {
+    use super::*;
+
+    #[test]
+    fn zero_jitter_returns_gap_unchanged() {
+      let mut rng = rand::rng();
+      for _ in 0..50 {
+        assert_eq!(jittered_gap_millis(500, 0, &mut rng), 500);
+      }
+    }
+
+    #[test]
+    fn nonzero_jitter_stays_within_bounds_and_varies() {
+      let mut rng = rand::rng();
+      let mut seen_below = false;
+      let mut seen_above = false;
+      for _ in 0..500 {
+        let v = jittered_gap_millis(1000, 200, &mut rng);
+        assert!(v >= 800 && v <= 1200, "out of bounds: {}", v);
+        if v < 1000 { seen_below = true; }
+        if v > 1000 { seen_above = true; }
+      }
+      assert!(seen_below && seen_above, "expected jitter on both sides");
+    }
+
+    #[test]
+    fn negative_jitter_is_clamped_to_zero() {
+      let mut rng = rand::rng();
+      for _ in 0..200 {
+        let v = jittered_gap_millis(50, 1000, &mut rng);
+        assert!(v <= 1050);
+        // saturating_sub at the floor — never wraps below 0.
+      }
+    }
+  }
 }

@@ -45,7 +45,8 @@
       before replaying. Stages 1–3 can override via
       <code>loop_alert_timeout_millis_{1,2,3}</code> — each falls back to the
       previous stage if unset, so the loop progressively speeds up as it
-      escalates.
+      escalates. <code>loop_alert_jitter_millis[_1|_2|_3]</code> apply
+      <code>+/- rand(0..=jitter)</code> per sleep.
     </p>
     <p style="color:#555;font-size:14px;">
       <strong>Escalation:</strong> after the loop starts, a second voice joins

@@ -20,16 +20,19 @@ alert_done_sound: /Users/bt/dev/storyteller/artcraft/frontend/apps/artcraft/app/
 alert_await_user_input_sound: /Users/bt/dev/storyteller/artcraft/frontend/apps/artcraft/app/public/resources/sound/smrpg_ghost.wav
 
 extra_alert_beep_sounds: []
+
 extra_alert_done_sounds:
   - /Users/bt/dev/storyteller/artcraft/frontend/apps/artcraft/app/public/resources/sound/smrpg_specialflower.wav
   - /Users/bt/dev/storyteller/artcraft/frontend/apps/artcraft/app/public/resources/sound/smrpg_correct.wav
   - /Users/bt/dev/storyteller/artcraft/frontend/apps/artcraft/app/public/resources/sound/smrpg_character_extrapower.wav
+
 extra_alert_await_sounds:
   - /Users/bt/dev/storyteller/artcraft/frontend/apps/artcraft/app/public/resources/sound/smrpg_wrong.wav
   - /Users/bt/dev/storyteller/artcraft/frontend/apps/artcraft/app/public/resources/sound/smrpg_drybones_crumble.wav
   - /Users/bt/dev/storyteller/artcraft/frontend/apps/artcraft/app/public/resources/sound/smrpg_enemy_spikethrow.wav
 
 loop_alert_timeout_millis: 2000
+
 # Optional per-stage gaps. Each falls back to the previous stage when unset,
 # so leaving them out keeps the loop at `loop_alert_timeout_millis` the whole
 # time; specifying them lets the loop accelerate as it escalates.
@@ -37,7 +40,15 @@ loop_alert_timeout_millis_1: 1000
 loop_alert_timeout_millis_2: 500
 loop_alert_timeout_millis_3: 200
 
+# Random +/- jitter applied to each sleep. Same fallback rules as the timeout
+# schedule above. Setting non-zero values keeps voices from re-aligning over
+# time even when they share the same gap.
+loop_alert_jitter_millis: 250
+loop_alert_jitter_millis_1: 150
+loop_alert_jitter_millis_2: 80
+loop_alert_jitter_millis_3: 40
+
 # Seconds-from-loop-start at which voices 2, 3, and 4 join the mix.
-escalate_wait_1: 15
-escalate_wait_2: 30
-escalate_wait_3: 45
+escalate_wait_1: 10
+escalate_wait_2: 20
+escalate_wait_3: 30

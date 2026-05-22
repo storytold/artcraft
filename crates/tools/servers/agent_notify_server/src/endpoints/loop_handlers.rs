@@ -49,6 +49,7 @@ fn play_loop_or_404(
   let spec = LoopSpec {
     pool,
     gap_millis_schedule: state.config.loop_gap_schedule_millis(),
+    jitter_millis_schedule: state.config.loop_jitter_schedule_millis(),
     escalate_waits_secs: state.config.escalate_waits_secs(),
   };
   state.audio.play_loop(spec);
