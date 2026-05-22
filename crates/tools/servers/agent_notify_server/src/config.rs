@@ -27,6 +27,13 @@ pub struct NotifyConfig {
   pub extra_alert_await_sounds: Vec<PathBuf>,
 
   pub loop_alert_timeout_millis: Option<u64>,
+  /// Gap (millis) between plays once the loop has been running for
+  /// `escalate_wait_1` seconds. Falls back to the previous stage.
+  pub loop_alert_timeout_millis_1: Option<u64>,
+  /// Gap (millis) after `escalate_wait_2`. Falls back to stage 1.
+  pub loop_alert_timeout_millis_2: Option<u64>,
+  /// Gap (millis) after `escalate_wait_3`. Falls back to stage 2.
+  pub loop_alert_timeout_millis_3: Option<u64>,
 
   /// Seconds after a loop starts before a second concurrent voice is added.
   pub escalate_wait_1: Option<u64>,
@@ -71,6 +78,18 @@ impl NotifyConfig {
       self.escalate_wait_2.unwrap_or(DEFAULT_ESCALATE_WAIT_2_SECS),
       self.escalate_wait_3.unwrap_or(DEFAULT_ESCALATE_WAIT_3_SECS),
     ]
+  }
+
+  /// Per-stage gap (millis) between plays of a single voice. Each entry
+  /// falls back to the previous stage when unset, so a config that only
+  /// specifies `loop_alert_timeout_millis_1: 200` will use that 200ms gap
+  /// for stages 2 and 3 too.
+  pub fn loop_gap_schedule_millis(&self) -> [u64; 4] {
+    let g0 = self.loop_alert_timeout_millis.unwrap_or(0);
+    let g1 = self.loop_alert_timeout_millis_1.unwrap_or(g0);
+    let g2 = self.loop_alert_timeout_millis_2.unwrap_or(g1);
+    let g3 = self.loop_alert_timeout_millis_3.unwrap_or(g2);
+    [g0, g1, g2, g3]
   }
 
   fn resolve_relative_paths(&mut self, base: &Path) {

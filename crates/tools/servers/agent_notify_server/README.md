@@ -55,6 +55,9 @@ extra_alert_await_sounds:
   - smrpg_drybones_crumble.wav
 
 loop_alert_timeout_millis: 2000
+loop_alert_timeout_millis_1: 1000
+loop_alert_timeout_millis_2: 500
+loop_alert_timeout_millis_3: 200
 escalate_wait_1: 15
 escalate_wait_2: 30
 escalate_wait_3: 45
@@ -63,7 +66,10 @@ escalate_wait_3: 45
 - Paths can be absolute, or relative to the YAML file's directory.
 - WAV and MP3 are both supported (decoded via rodio + symphonia).
 - `loop_alert_timeout_millis` is the gap *between* consecutive plays of a
-  single voice. Omit to replay back-to-back.
+  single voice at stage 0. Omit to replay back-to-back.
+- `loop_alert_timeout_millis_{1,2,3}` override the gap at each escalation
+  stage. Each falls back to the previous stage when unset — so you can set
+  just `_1: 200` to drop straight to a 200ms gap from voice 2 onward.
 - **Escalation**: a `/loop_*` request starts one voice immediately. At
   `escalate_wait_1` / `escalate_wait_2` / `escalate_wait_3` seconds, a
   second / third / fourth concurrent voice joins the mix. New voices are
@@ -71,6 +77,8 @@ escalate_wait_3: 45
   exhausted the supervisor cycles back through the full pool
   (primary + extras), so existing voices double up. Each voice runs in
   its own thread and drifts naturally relative to the others.
+- All voices in a session share the *current* stage's gap, so existing
+  voices also speed up when the supervisor advances stages.
 
 ## Claude Code wiring
 

@@ -25,7 +25,7 @@ use std::fs::File;
 use std::io::BufReader;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::mpsc::{self, Receiver, Sender};
 use std::thread::{self, JoinHandle};
 use std::time::{Duration, Instant};
@@ -63,8 +63,11 @@ pub struct LoopSpec {
   /// indexes this with `layer % pool.len()`, so when extras run out it
   /// cycles back through the pool (doubling already-playing voices).
   pub pool: Vec<PathBuf>,
-  /// Gap between consecutive plays of a single iterator's sound.
-  pub gap_millis: u64,
+  /// Gap (millis) between consecutive plays at each escalation stage:
+  /// [initial, after wait_1, after wait_2, after wait_3]. All iterators in
+  /// the session share the current stage's value, so existing voices also
+  /// speed up when the supervisor moves to a faster stage.
+  pub gap_millis_schedule: [u64; 4],
   /// Wall-clock seconds from loop start when layers 2, 3, 4 should join.
   pub escalate_waits_secs: [u64; 3],
 }
@@ -170,11 +173,14 @@ fn run_loop_supervisor(
     return;
   }
 
+  let schedule = spec.gap_millis_schedule;
+  let gap_millis = Arc::new(AtomicU64::new(schedule[0]));
+
   let mut iterators: Vec<JoinHandle<()>> = Vec::with_capacity(4);
   iterators.push(spawn_iterator(
     &stream_handle,
     spec.pool[0].clone(),
-    spec.gap_millis,
+    gap_millis.clone(),
     stop.clone(),
     0,
   ));
@@ -193,11 +199,15 @@ fn run_loop_supervisor(
     if !sleep_with_stop(Duration::from_secs(intervals[layer]), &stop) {
       break;
     }
+    let next_gap = schedule[layer + 1];
+    if gap_millis.swap(next_gap, Ordering::Relaxed) != next_gap {
+      log::info!("escalation stage {}: gap now {}ms", layer + 1, next_gap);
+    }
     let pool_idx = (layer + 1) % pool_len;
     iterators.push(spawn_iterator(
       &stream_handle,
       spec.pool[pool_idx].clone(),
-      spec.gap_millis,
+      gap_millis.clone(),
       stop.clone(),
       layer + 1,
     ));
@@ -218,7 +228,7 @@ fn run_loop_supervisor(
 fn spawn_iterator(
   stream_handle: &OutputStreamHandle,
   path: PathBuf,
-  gap_millis: u64,
+  gap_millis: Arc<AtomicU64>,
   stop: Arc<AtomicBool>,
   layer: usize,
 ) -> JoinHandle<()> {
@@ -233,7 +243,7 @@ fn spawn_iterator(
 fn run_loop_iterator(
   stream_handle: OutputStreamHandle,
   path: PathBuf,
-  gap_millis: u64,
+  gap_millis: Arc<AtomicU64>,
   stop: Arc<AtomicBool>,
 ) {
   let sink = match Sink::try_new(&stream_handle) {
@@ -262,9 +272,8 @@ fn run_loop_iterator(
       return;
     }
 
-    if gap_millis > 0
-      && !sleep_with_stop(Duration::from_millis(gap_millis), &stop)
-    {
+    let gap = gap_millis.load(Ordering::Relaxed);
+    if gap > 0 && !sleep_with_stop(Duration::from_millis(gap), &stop) {
       return;
     }
   }

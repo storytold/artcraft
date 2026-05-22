@@ -42,7 +42,10 @@
     </table>
     <p style="color:#555;font-size:14px;">
       Between iterations a single voice waits <code>loop_alert_timeout_millis</code>
-      before replaying.
+      before replaying. Stages 1–3 can override via
+      <code>loop_alert_timeout_millis_{1,2,3}</code> — each falls back to the
+      previous stage if unset, so the loop progressively speeds up as it
+      escalates.
     </p>
     <p style="color:#555;font-size:14px;">
       <strong>Escalation:</strong> after the loop starts, a second voice joins
@@ -50,7 +53,9 @@
       <code>escalate_wait_2</code>, and a fourth at <code>escalate_wait_3</code>.
       Each new voice is drawn from <code>extra_alert_&lt;state&gt;_sounds</code>;
       when those run out the pool cycles, doubling already-playing voices.
-      Voices are independent threads — they drift relative to one another.
+      All voices in a session share the current stage's gap, so existing
+      voices speed up too when the supervisor advances. Voices are
+      independent threads — they drift relative to one another.
     </p>
   </div>
 
