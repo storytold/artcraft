@@ -20,7 +20,14 @@ export const is3DModelUrl = (url: string): boolean =>
   MODEL_3D_EXTENSIONS.some((ext) => url.toLowerCase().includes(ext));
 
 export interface ContextImage {
-  media_links: { cdn_url: string; maybe_thumbnail_template: string | null };
+  media_links: {
+    cdn_url: string;
+    maybe_thumbnail_template: string | null;
+    maybe_video_previews: {
+      still: string;
+      still_thumbnail_template: string;
+    } | null;
+  };
   media_token: string;
   semantic: string;
 }

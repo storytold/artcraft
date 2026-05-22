@@ -159,9 +159,22 @@ export const useCreateVideoStore = create<CreateVideoState>()(
     }),
     {
       name: "artcraft-video-batches",
+      // Persist prompt + lightweight settings alongside pending batches so a
+      // full page reload (e.g. returning from a credit top-up) keeps the
+      // user's draft. Reference media (refs) is excluded for the same reason
+      // as the image store: File handles + blob URLs don't survive serialization.
       partialize: (state) => ({
         batches: state.batches.filter((b) => b.status === "pending"),
+        ui: state.ui,
       }),
+      merge: (persisted, current) => {
+        const p = (persisted ?? {}) as Partial<CreateVideoState>;
+        return {
+          ...current,
+          ...p, // restores persisted pending batches
+          ui: { ...current.ui, ...((p.ui as Partial<VideoUiState>) ?? {}) },
+        };
+      },
     },
   ),
 );

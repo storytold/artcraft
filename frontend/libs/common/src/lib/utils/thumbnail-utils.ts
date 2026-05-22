@@ -83,12 +83,31 @@ export function getContextImageThumbnail(
     media_links: {
       maybe_thumbnail_template?: string | null;
       cdn_url: string;
+      maybe_video_previews?: {
+        still: string;
+        still_thumbnail_template: string;
+      } | null;
     };
   },
   options: MediaThumbnailOptions = {},
 ): { thumbnail: string; fullSize: string } {
   const { size = THUMBNAIL_SIZES.SMALL } = options;
   const fullSizeWidth = THUMBNAIL_SIZES.EXTRA_LARGE;
+
+  // For video refs, prefer the still-frame preview over the raw video CDN URL.
+  if (
+    !contextImage.media_links.maybe_thumbnail_template &&
+    contextImage.media_links.maybe_video_previews
+  ) {
+    const vp = contextImage.media_links.maybe_video_previews;
+    const thumbnail = vp.still_thumbnail_template
+      ? getThumbnailUrl(vp.still_thumbnail_template, { width: size }) || vp.still
+      : vp.still;
+    const fullSize = vp.still_thumbnail_template
+      ? getThumbnailUrl(vp.still_thumbnail_template, { width: fullSizeWidth }) || vp.still
+      : vp.still;
+    return { thumbnail, fullSize };
+  }
 
   const thumbnail = contextImage.media_links.maybe_thumbnail_template
     ? getThumbnailUrl(contextImage.media_links.maybe_thumbnail_template, {

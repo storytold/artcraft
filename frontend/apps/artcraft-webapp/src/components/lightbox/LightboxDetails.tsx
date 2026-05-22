@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import dayjs from "dayjs";
 import { Button } from "@storyteller/ui-button";
 import { toast } from "../toast/toast";
@@ -13,11 +13,14 @@ import {
   faCopy,
   faImage,
   faLink,
+  faPause,
   faPencil,
+  faPlay,
   faSpinnerThird,
   faTrashCan,
   faUser,
   faVideo,
+  faWaveformLines,
   faXmark,
 } from "@fortawesome/pro-solid-svg-icons";
 import {
@@ -93,6 +96,36 @@ export function LightboxDetails({
   const promptCopy = useCopyFeedback();
   const shareCopy = useCopyFeedback();
   const [isDownloading, setIsDownloading] = useState(false);
+  const [playingAudioToken, setPlayingAudioToken] = useState<string | null>(null);
+  const audioPlayerRef = useRef<HTMLAudioElement | null>(null);
+
+  const stopAudio = useCallback(() => {
+    if (audioPlayerRef.current) {
+      audioPlayerRef.current.pause();
+      audioPlayerRef.current = null;
+    }
+    setPlayingAudioToken(null);
+  }, []);
+
+  const handleAudioToggle = useCallback(
+    (token: string, url: string) => {
+      if (playingAudioToken === token) {
+        stopAudio();
+      } else {
+        stopAudio();
+        const audio = new Audio(url);
+        audio.volume = 0.7;
+        audio.onended = () => {
+          setPlayingAudioToken(null);
+          audioPlayerRef.current = null;
+        };
+        audioPlayerRef.current = audio;
+        audio.play();
+        setPlayingAudioToken(token);
+      }
+    },
+    [playingAudioToken, stopAudio],
+  );
 
   const [isPromptExpanded, setIsPromptExpanded] = useState(false);
   const [isPromptClamped, setIsPromptClamped] = useState(false);
@@ -101,6 +134,7 @@ export function LightboxDetails({
   useEffect(() => {
     setIsPromptExpanded(false);
     setIsDownloading(false);
+    stopAudio();
   }, [mediaToken]);
 
   useEffect(() => {
@@ -256,14 +290,34 @@ export function LightboxDetails({
               <div className="space-y-2">
                 <div className="flex items-center gap-2 text-xs font-medium text-white/60">
                   <FontAwesomeIcon icon={faImage} />
-                  <span>Reference Images</span>
+                  <span>Reference Media</span>
                 </div>
                 <div className="grid grid-cols-5 gap-2">
                   {promptData.contextImages.map((contextImage, index) => {
+                    const isAudio = contextImage.semantic === "audioref";
+                    const isVideoRef = contextImage.semantic === "vid_ref";
                     const { thumbnail } = getContextImageThumbnail(
                       contextImage,
                       { size: THUMBNAIL_SIZES.SMALL },
                     );
+                    const isPlayingThis = playingAudioToken === contextImage.media_token;
+
+                    if (isAudio) {
+                      return (
+                        <button
+                          key={contextImage.media_token}
+                          type="button"
+                          onClick={() => handleAudioToggle(contextImage.media_token, contextImage.media_links.cdn_url)}
+                          className="relative aspect-square overflow-hidden rounded-lg border border-white/10 hover:border-white/40 transition-colors flex items-center justify-center bg-white/5"
+                        >
+                          <FontAwesomeIcon
+                            icon={isPlayingThis ? faPause : faPlay}
+                            className="text-white/70 text-lg"
+                          />
+                        </button>
+                      );
+                    }
+
                     return (
                       <a
                         key={contextImage.media_token}
@@ -277,6 +331,14 @@ export function LightboxDetails({
                           alt={`Reference ${index + 1}`}
                           className="h-full w-full object-cover"
                         />
+                        {isVideoRef && (
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <FontAwesomeIcon
+                              icon={faVideo}
+                              className="text-white/80 text-sm drop-shadow-lg"
+                            />
+                          </div>
+                        )}
                       </a>
                     );
                   })}

@@ -10,11 +10,14 @@ import {
   faDownToLine,
   faGlobe,
   faMagnifyingGlass,
+  faPause,
   faPencil,
+  faPlay,
   faTrashCan,
   faVideo,
   faWandMagicSparkles,
   faArrowRotateRight,
+  faWaveformLines,
 } from "@fortawesome/pro-solid-svg-icons";
 import { MediaFileDelete } from "@storyteller/tauri-api";
 import { LoadingSpinner } from "@storyteller/ui-loading-spinner";
@@ -168,6 +171,36 @@ export function LightboxModal({
   const [creator, setCreator] = useState<UserInfo | null>(null);
   const [shareCopied, setShareCopied] = useState<boolean>(false);
   const shareCopiedTimeoutRef = useRef<number | null>(null);
+  const [playingAudioToken, setPlayingAudioToken] = useState<string | null>(null);
+  const audioPlayerRef = useRef<HTMLAudioElement | null>(null);
+
+  const stopAudio = useCallback(() => {
+    if (audioPlayerRef.current) {
+      audioPlayerRef.current.pause();
+      audioPlayerRef.current = null;
+    }
+    setPlayingAudioToken(null);
+  }, []);
+
+  const handleAudioToggle = useCallback(
+    (token: string, url: string) => {
+      if (playingAudioToken === token) {
+        stopAudio();
+      } else {
+        stopAudio();
+        const audio = new Audio(url);
+        audio.volume = 0.7;
+        audio.onended = () => {
+          setPlayingAudioToken(null);
+          audioPlayerRef.current = null;
+        };
+        audioPlayerRef.current = audio;
+        audio.play();
+        setPlayingAudioToken(token);
+      }
+    },
+    [playingAudioToken, stopAudio],
+  );
 
   // Stable API instances
   const mediaFilesApi = useMemo(() => new MediaFilesApi(), []);
@@ -182,6 +215,7 @@ export function LightboxModal({
       setMediaHeight(null);
       setShareCopied(false);
       setIsPromptExpanded(false);
+      stopAudio();
       if (shareCopiedTimeoutRef.current) {
         window.clearTimeout(shareCopiedTimeoutRef.current);
         shareCopiedTimeoutRef.current = null;
@@ -870,14 +904,17 @@ export function LightboxModal({
                       {contextImages && contextImages.length > 0 && (
                         <div className="space-y-1.5">
                           <div className="text-sm font-medium text-base-fg/90">
-                            Reference Images
+                            Reference Media
                           </div>
                           <div className="grid grid-cols-5 gap-1.5 w-fit">
                             {contextImages.map((contextImage, index) => {
+                              const isAudio = contextImage.semantic === "audioref";
+                              const isVideoRef = contextImage.semantic === "vid_ref";
                               const { thumbnail, fullSize } =
                                 getContextImageThumbnail(contextImage, {
                                   size: THUMBNAIL_SIZES.SMALL,
                                 });
+                              const isPlayingThis = playingAudioToken === contextImage.media_token;
 
                               return (
                                 <Tooltip
@@ -890,19 +927,21 @@ export function LightboxModal({
                                   className="p-1"
                                   content={
                                     <div className="flex flex-col gap-1.5 min-w-[100px]">
-                                      <button
-                                        className="text-xs text-left text-base-fg/80 hover:text-base-fg transition-colors py-1 px-1 rounded hover:bg-white/5"
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          setRefPreviewUrl(fullSize);
-                                        }}
-                                      >
-                                        <FontAwesomeIcon
-                                          icon={faMagnifyingGlass}
-                                          className="mr-1.5"
-                                        />
-                                        Preview image
-                                      </button>
+                                      {!isAudio && !isVideoRef && (
+                                        <button
+                                          className="text-xs text-left text-base-fg/80 hover:text-base-fg transition-colors py-1 px-1 rounded hover:bg-white/5"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            setRefPreviewUrl(fullSize);
+                                          }}
+                                        >
+                                          <FontAwesomeIcon
+                                            icon={faMagnifyingGlass}
+                                            className="mr-1.5"
+                                          />
+                                          Preview image
+                                        </button>
+                                      )}
                                       {onNavigateToMedia && (
                                         <button
                                           className="text-xs text-left text-base-fg/80 hover:text-base-fg transition-colors py-1 px-1 rounded hover:bg-white/5"
@@ -925,13 +964,38 @@ export function LightboxModal({
                                 >
                                   <div
                                     className="glass relative aspect-square overflow-hidden rounded-lg w-12 border-2 border-white/30 hover:border-white/80 transition-all group cursor-pointer"
-                                    onClick={() => setRefPreviewUrl(fullSize)}
+                                    onClick={() => {
+                                      if (isAudio) {
+                                        handleAudioToggle(contextImage.media_token, contextImage.media_links.cdn_url);
+                                      } else if (!isVideoRef) {
+                                        setRefPreviewUrl(fullSize);
+                                      }
+                                    }}
                                   >
-                                    <img
-                                      src={thumbnail}
-                                      alt={`Reference image ${index + 1}`}
-                                      className="h-full w-full object-cover"
-                                    />
+                                    {isAudio ? (
+                                      <div className="h-full w-full flex items-center justify-center bg-white/5">
+                                        <FontAwesomeIcon
+                                          icon={isPlayingThis ? faPause : faPlay}
+                                          className="text-base-fg/70 text-lg"
+                                        />
+                                      </div>
+                                    ) : (
+                                      <>
+                                        <img
+                                          src={thumbnail}
+                                          alt={`Reference ${index + 1}`}
+                                          className="h-full w-full object-cover"
+                                        />
+                                        {isVideoRef && (
+                                          <div className="absolute inset-0 flex items-center justify-center">
+                                            <FontAwesomeIcon
+                                              icon={faVideo}
+                                              className="text-white/80 text-sm drop-shadow-lg"
+                                            />
+                                          </div>
+                                        )}
+                                      </>
+                                    )}
                                   </div>
                                 </Tooltip>
                               );

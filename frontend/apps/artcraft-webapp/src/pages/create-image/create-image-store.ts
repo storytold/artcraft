@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { persist } from "zustand/middleware";
 import type { RecreatePayload } from "../../lib/recreate";
 import type { RefImage } from "../../components/prompt-box";
 
@@ -60,77 +61,93 @@ const DEFAULT_UI: ImageUiState = {
   quality: undefined,
 };
 
-export const useCreateImageStore = create<CreateImageState>((set, get) => ({
-  batches: [],
-  ui: { ...DEFAULT_UI },
-  referenceImages: [],
-  pendingRecreate: null,
+export const useCreateImageStore = create<CreateImageState>()(
+  persist(
+    (set, get) => ({
+      batches: [],
+      ui: { ...DEFAULT_UI },
+      referenceImages: [],
+      pendingRecreate: null,
 
-  setUi: (patch) =>
-    set((s) => ({ ui: { ...s.ui, ...patch } })),
+      setUi: (patch) =>
+        set((s) => ({ ui: { ...s.ui, ...patch } })),
 
-  setReferenceImages: (images) => set({ referenceImages: images }),
+      setReferenceImages: (images) => set({ referenceImages: images }),
 
-  setPendingRecreate: (payload) => set({ pendingRecreate: payload }),
+      setPendingRecreate: (payload) => set({ pendingRecreate: payload }),
 
-  consumePendingRecreate: () => {
-    const payload = get().pendingRecreate;
-    if (payload) set({ pendingRecreate: null });
-    return payload;
-  },
+      consumePendingRecreate: () => {
+        const payload = get().pendingRecreate;
+        if (payload) set({ pendingRecreate: null });
+        return payload;
+      },
 
-  startBatch: (prompt, requestedCount, modelLabel) => {
-    const id = crypto.randomUUID();
-    const batch: ImageBatch = {
-      id,
-      prompt,
-      status: "pending",
-      images: [],
-      createdAt: Date.now(),
-      requestedCount,
-      modelLabel,
-    };
-    set((s) => ({ batches: [...s.batches, batch] }));
-    return id;
-  },
+      startBatch: (prompt, requestedCount, modelLabel) => {
+        const id = crypto.randomUUID();
+        const batch: ImageBatch = {
+          id,
+          prompt,
+          status: "pending",
+          images: [],
+          createdAt: Date.now(),
+          requestedCount,
+          modelLabel,
+        };
+        set((s) => ({ batches: [...s.batches, batch] }));
+        return id;
+      },
 
-  setBatchJobToken: (batchId, jobToken) => {
-    set((s) => ({
-      batches: s.batches.map((b) =>
-        b.id === batchId ? { ...b, jobToken } : b,
-      ),
-    }));
-  },
+      setBatchJobToken: (batchId, jobToken) => {
+        set((s) => ({
+          batches: s.batches.map((b) =>
+            b.id === batchId ? { ...b, jobToken } : b,
+          ),
+        }));
+      },
 
-  completeBatch: (batchId, images) => {
-    set((s) => ({
-      batches: s.batches.map((b) =>
-        b.id === batchId
-          ? { ...b, status: "complete" as const, images: images.slice(0, 4) }
-          : b,
-      ),
-    }));
-  },
+      completeBatch: (batchId, images) => {
+        set((s) => ({
+          batches: s.batches.map((b) =>
+            b.id === batchId
+              ? { ...b, status: "complete" as const, images: images.slice(0, 4) }
+              : b,
+          ),
+        }));
+      },
 
-  failBatch: (batchId, reason) => {
-    set((s) => ({
-      batches: s.batches.map((b) =>
-        b.id === batchId
-          ? { ...b, status: "failed" as const, failureReason: reason }
-          : b,
-      ),
-    }));
-  },
+      failBatch: (batchId, reason) => {
+        set((s) => ({
+          batches: s.batches.map((b) =>
+            b.id === batchId
+              ? { ...b, status: "failed" as const, failureReason: reason }
+              : b,
+          ),
+        }));
+      },
 
-  dismissBatch: (id) => {
-    set((s) => ({ batches: s.batches.filter((b) => b.id !== id) }));
-  },
+      dismissBatch: (id) => {
+        set((s) => ({ batches: s.batches.filter((b) => b.id !== id) }));
+      },
 
-  clearCompleted: () => {
-    set((s) => ({
-      batches: s.batches.filter((b) => b.status !== "complete"),
-    }));
-  },
+      clearCompleted: () => {
+        set((s) => ({
+          batches: s.batches.filter((b) => b.status !== "complete"),
+        }));
+      },
 
-  reset: () => set({ batches: [] }),
-}));
+      reset: () => set({ batches: [] }),
+    }),
+    {
+      name: "artcraft-image-prompt",
+      // Persist prompt + lightweight generation settings so a full page reload
+      // (e.g. returning from a credit top-up) keeps the user's draft.
+      // Reference images are excluded: File handles aren't serializable and
+      // uploaded images are base64 data URLs that can exceed the localStorage quota.
+      partialize: (state) => ({ ui: state.ui }),
+      merge: (persisted, current) => {
+        const persistedUi = (persisted as { ui?: Partial<ImageUiState> } | null)?.ui;
+        return { ...current, ui: { ...current.ui, ...(persistedUi ?? {}) } };
+      },
+    },
+  ),
+);
