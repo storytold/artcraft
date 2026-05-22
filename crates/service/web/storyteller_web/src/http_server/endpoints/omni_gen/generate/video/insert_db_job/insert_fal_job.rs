@@ -29,6 +29,7 @@ pub async fn insert_fal_job(args: InsertFalJobArgs<'_, '_>) -> Result<InferenceJ
       uuid_idempotency_token: shared.idempotency_token,
       maybe_external_third_party_id: external_job_id,
       fal_category: FalCategory::VideoGeneration,
+      maybe_model_type: shared.maybe_model_type,
       maybe_prompt_token: shared.maybe_prompt_token,
       maybe_creator_user_token: Some(shared.user_token),
       maybe_avt_token: shared.maybe_avt_token,

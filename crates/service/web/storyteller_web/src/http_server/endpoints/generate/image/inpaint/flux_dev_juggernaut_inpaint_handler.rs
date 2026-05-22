@@ -270,6 +270,7 @@ pub async fn flux_dev_juggernaut_inpaint_image_handler(
     uuid_idempotency_token: &request.uuid_idempotency_token,
     maybe_external_third_party_id: &external_job_id,
     fal_category: FalCategory::ImageGeneration,
+    maybe_model_type: Some(CommonModelType::FluxDevJuggernaut),
     maybe_inference_args: None,
     maybe_prompt_token: prompt_token.as_ref(),
     maybe_creator_user_token: maybe_user_session.as_ref().map(|s| &s.user_token),

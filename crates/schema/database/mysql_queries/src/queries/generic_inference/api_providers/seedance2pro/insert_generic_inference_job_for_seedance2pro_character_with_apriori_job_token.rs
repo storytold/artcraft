@@ -6,6 +6,7 @@ use enums::by_table::generic_inference_jobs::inference_category::InferenceCatego
 use enums::by_table::generic_inference_jobs::inference_job_external_third_party::InferenceJobExternalThirdParty;
 use enums::by_table::generic_inference_jobs::inference_job_product_category::InferenceJobProductCategory;
 use enums::by_table::generic_inference_jobs::inference_job_type::InferenceJobType;
+use enums::common::generation::common_model_type::CommonModelType;
 use enums::common::job_status_plus::JobStatusPlus;
 use enums::common::visibility::Visibility;
 use tokens::tokens::anonymous_visitor_tracking::AnonymousVisitorTrackingToken;
@@ -29,6 +30,8 @@ pub struct InsertGenericInferenceForSeedance2ProCharacterWithAprioriJobTokenArgs
   /// The Kinovi character_id returned by generate_character().
   pub kinovi_character_id: &'e str,
 
+  pub maybe_model_type: Option<CommonModelType>,
+
   pub maybe_creator_user_token: Option<&'e UserToken>,
   pub maybe_avt_token: Option<&'e AnonymousVisitorTrackingToken>,
   pub creator_ip_address: &'e str,
@@ -51,6 +54,7 @@ pub async fn insert_generic_inference_job_for_seedance2pro_character_with_aprior
     external_third_party_id: args.kinovi_character_id,
     product_category: InferenceJobProductCategory::Seedance2ProCharacter,
     inference_category: InferenceCategory::CharacterGeneration,
+    maybe_model_type: args.maybe_model_type,
     maybe_prompt_token: None,
     maybe_wallet_ledger_entry_token: None,
     // Character variant doesn't take inference args.

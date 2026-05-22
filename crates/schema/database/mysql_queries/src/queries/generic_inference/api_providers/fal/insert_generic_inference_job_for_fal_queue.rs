@@ -1,6 +1,7 @@
 use sqlx::{Executor, MySql};
 use std::marker::PhantomData;
 
+use enums::common::generation::common_model_type::CommonModelType;
 use enums::common::visibility::Visibility;
 use tokens::tokens::anonymous_visitor_tracking::AnonymousVisitorTrackingToken;
 use tokens::tokens::generic_inference_jobs::InferenceJobToken;
@@ -29,6 +30,8 @@ pub struct InsertGenericInferenceForFalArgs<'e, 'c, E>
   
   pub fal_category: FalCategory,
 
+  pub maybe_model_type: Option<CommonModelType>,
+
   pub maybe_inference_args: Option<GenericInferenceArgs>,
   
   pub maybe_prompt_token: Option<&'e PromptToken>,
@@ -56,6 +59,7 @@ pub async fn insert_generic_inference_job_for_fal_queue<'e, 'c : 'e, E>(args: In
     apriori_job_token: &job_token,
     maybe_external_third_party_id: args.maybe_external_third_party_id,
     fal_category: args.fal_category,
+    maybe_model_type: args.maybe_model_type,
     maybe_inference_args: args.maybe_inference_args,
     maybe_prompt_token: args.maybe_prompt_token,
     maybe_creator_user_token: args.maybe_creator_user_token,

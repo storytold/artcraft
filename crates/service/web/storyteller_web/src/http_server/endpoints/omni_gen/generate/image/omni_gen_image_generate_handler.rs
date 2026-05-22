@@ -261,6 +261,7 @@ pub async fn omni_gen_image_generate_handler(
       uuid_idempotency_token: &idempotency_token,
       maybe_external_third_party_id: &external_job_id,
       fal_category: FalCategory::ImageGeneration,
+      maybe_model_type: None,
       maybe_inference_args: None,
       maybe_prompt_token: prompt_token.as_ref(),
       maybe_creator_user_token: Some(user_token),

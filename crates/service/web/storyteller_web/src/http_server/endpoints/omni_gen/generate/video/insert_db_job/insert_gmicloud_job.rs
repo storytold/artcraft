@@ -25,6 +25,7 @@ pub async fn insert_gmicloud_job(args: InsertGmiCloudJobArgs<'_, '_>) -> Result<
       apriori_job_token: shared.apriori_job_token,
       uuid_idempotency_token: shared.idempotency_token,
       external_request_id,
+      maybe_model_type: shared.maybe_model_type,
       maybe_prompt_token: shared.maybe_prompt_token,
       maybe_creator_user_token: Some(shared.user_token),
       maybe_avt_token: shared.maybe_avt_token,

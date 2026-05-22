@@ -192,6 +192,7 @@ pub async fn create_character_handler(
       uuid_idempotency_token: &request.uuid_idempotency_token,
       apriori_job_token: &apriori_job_token,
       kinovi_character_id: &gen_result.character_id,
+      maybe_model_type: None,
       maybe_creator_user_token: Some(user_token),
       maybe_avt_token: None,
       creator_ip_address: &ip_address,

@@ -3,6 +3,7 @@ use sqlx::{Executor, MySql};
 use std::marker::PhantomData;
 
 use enums::by_table::generic_inference_jobs::frontend_failure_category::FrontendFailureCategory;
+use enums::common::generation::common_model_type::CommonModelType;
 use enums::common::job_status_plus::JobStatusPlus;
 use enums::common::visibility::Visibility;
 use tokens::tokens::anonymous_visitor_tracking::AnonymousVisitorTrackingToken;
@@ -28,6 +29,8 @@ pub struct InsertGenericInferenceForFalMockFailureArgs<'e, 'c, E>
   pub uuid_idempotency_token: &'e str,
 
   pub fal_category: FalCategory,
+
+  pub maybe_model_type: Option<CommonModelType>,
 
   pub maybe_inference_args: Option<GenericInferenceArgs>,
 
@@ -59,6 +62,7 @@ pub async fn insert_generic_inference_job_for_fal_queue_mock_failure<'e, 'c: 'e,
     apriori_job_token: &job_token,
     maybe_external_third_party_id: &synthetic_external_id,
     fal_category: args.fal_category,
+    maybe_model_type: args.maybe_model_type,
     maybe_inference_args: args.maybe_inference_args,
     maybe_prompt_token: args.maybe_prompt_token,
     maybe_creator_user_token: args.maybe_creator_user_token,

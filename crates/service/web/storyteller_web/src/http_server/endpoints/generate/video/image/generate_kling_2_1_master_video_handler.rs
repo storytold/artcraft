@@ -245,6 +245,7 @@ pub async fn generate_kling_2_1_master_video_handler(
     uuid_idempotency_token: &request.uuid_idempotency_token,
     maybe_external_third_party_id: &external_job_id,
     fal_category: FalCategory::VideoGeneration,
+    maybe_model_type: Some(CommonModelType::Kling21Master),
     maybe_inference_args: None,
     maybe_prompt_token: prompt_token.as_ref(),
     maybe_creator_user_token: maybe_user_session.as_ref().map(|s| &s.user_token),

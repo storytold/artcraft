@@ -27,9 +27,7 @@ use fal_client::requests::webhook::video::image::enqueue_seedance_1_pro_image_to
 use fal_client::requests::webhook::video::image::enqueue_seedance_1_pro_image_to_video_webhook::{Seedance1ProArgs, Seedance1ProRequest, Seedance1ProResolution};
 use http_server_common::request::get_request_ip::get_request_ip;
 use log::{error, info, warn};
-use mysql_queries::queries::generic_inference::api_providers::fal::insert_generic_inference_job_for_fal_queue::insert_generic_inference_job_for_fal_queue;
 use mysql_queries::queries::generic_inference::api_providers::fal::insert_generic_inference_job_for_fal_queue::FalCategory;
-use mysql_queries::queries::generic_inference::api_providers::fal::insert_generic_inference_job_for_fal_queue::InsertGenericInferenceForFalArgs;
 use mysql_queries::queries::generic_inference::api_providers::fal::insert_generic_inference_job_for_fal_queue_with_apriori_job_token::{insert_generic_inference_job_for_fal_queue_with_apriori_job_token, InsertGenericInferenceForFalWithAprioriJobTokenArgs};
 use mysql_queries::queries::idepotency_tokens::insert_idempotency_token::insert_idempotency_token;
 use mysql_queries::queries::media_files::get::get_media_file::{get_media_file, get_media_file_with_connection};
@@ -255,6 +253,7 @@ pub async fn generate_seedance_1_0_pro_image_to_video_handler(
     uuid_idempotency_token: &request.uuid_idempotency_token,
     maybe_external_third_party_id: &external_job_id,
     fal_category: FalCategory::VideoGeneration,
+    maybe_model_type: Some(CommonModelType::Seedance10Pro),
     maybe_inference_args: None,
     maybe_prompt_token: prompt_token.as_ref(),
     maybe_creator_user_token: maybe_user_session.as_ref().map(|s| &s.user_token),

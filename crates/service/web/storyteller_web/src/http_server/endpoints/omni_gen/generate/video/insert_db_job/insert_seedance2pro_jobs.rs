@@ -61,6 +61,7 @@ pub async fn insert_seedance2pro_jobs(args: InsertSeedance2proJobsArgs<'_, '_>) 
         apriori_job_token: &job_token,
         uuid_idempotency_token: &idempotency_str,
         maybe_external_third_party_id: order_id,
+        maybe_model_type: shared.maybe_model_type,
         maybe_prompt_token: shared.maybe_prompt_token,
         maybe_wallet_ledger_entry_token,
         maybe_creator_user_token: Some(shared.user_token),

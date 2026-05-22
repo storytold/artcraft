@@ -23,6 +23,8 @@ use enums::by_table::generic_inference_jobs::inference_category::InferenceCatego
 use enums::by_table::generic_inference_jobs::inference_job_external_third_party::InferenceJobExternalThirdParty;
 use enums::by_table::generic_inference_jobs::inference_job_product_category::InferenceJobProductCategory;
 use enums::by_table::generic_inference_jobs::inference_job_type::InferenceJobType;
+use enums::by_table::generic_inference_jobs::inference_model_type::InferenceModelType;
+use enums::common::generation::common_model_type::CommonModelType;
 use enums::common::job_status_plus::JobStatusPlus;
 use enums::common::visibility::Visibility;
 use tokens::tokens::anonymous_visitor_tracking::AnonymousVisitorTrackingToken;
@@ -52,6 +54,11 @@ pub(crate) struct InsertGenericInferenceJobForProviderArgs<'e, 'c, E>
 
   pub product_category: InferenceJobProductCategory,
   pub inference_category: InferenceCategory,
+
+  /// Optional model identifier. Converted to the legacy
+  /// [`InferenceModelType`] (which is a superset of `CommonModelType`) at
+  /// the call site of the root insert.
+  pub maybe_model_type: Option<CommonModelType>,
 
   pub maybe_prompt_token: Option<&'e PromptToken>,
   pub maybe_wallet_ledger_entry_token: Option<&'e WalletLedgerEntryToken>,
@@ -93,8 +100,11 @@ pub(crate) async fn insert_generic_inference_job_for_provider<'e, 'c: 'e, E>(
     maybe_product_category: Some(args.product_category),
     inference_category: args.inference_category,
 
+    // Convert from the canonical CommonModelType to the table-scoped
+    // InferenceModelType so the database column gets the right value.
+    maybe_model_type: args.maybe_model_type.map(InferenceModelType::from_common_model_type),
+
     // Web-only fields — providers never set these.
-    maybe_model_type: None,
     maybe_model_token: None,
     maybe_input_source_token: None,
     maybe_input_source_token_type: None,

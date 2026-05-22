@@ -7,6 +7,7 @@ use enums::by_table::generic_inference_jobs::inference_category::InferenceCatego
 use enums::by_table::generic_inference_jobs::inference_job_external_third_party::InferenceJobExternalThirdParty;
 use enums::by_table::generic_inference_jobs::inference_job_product_category::InferenceJobProductCategory;
 use enums::by_table::generic_inference_jobs::inference_job_type::InferenceJobType;
+use enums::common::generation::common_model_type::CommonModelType;
 use enums::common::job_status_plus::JobStatusPlus;
 use enums::common::visibility::Visibility;
 use tokens::tokens::anonymous_visitor_tracking::AnonymousVisitorTrackingToken;
@@ -36,6 +37,8 @@ pub struct InsertGenericInferenceForFalWithAprioriJobTokenArgs<'e, 'c, E>
   pub maybe_external_third_party_id: &'e str,
 
   pub fal_category: FalCategory,
+
+  pub maybe_model_type: Option<CommonModelType>,
 
   pub maybe_inference_args: Option<GenericInferenceArgs>,
 
@@ -94,6 +97,7 @@ pub async fn insert_generic_inference_job_for_fal_queue_with_apriori_job_token<'
     external_third_party_id: args.maybe_external_third_party_id,
     product_category,
     inference_category,
+    maybe_model_type: args.maybe_model_type,
     maybe_prompt_token: args.maybe_prompt_token,
     maybe_wallet_ledger_entry_token: None,
     maybe_inference_args: args.maybe_inference_args,

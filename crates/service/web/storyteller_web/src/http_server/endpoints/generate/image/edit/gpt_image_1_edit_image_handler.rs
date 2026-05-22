@@ -289,6 +289,7 @@ pub async fn gpt_image_1_edit_image_handler(
     uuid_idempotency_token: &request.uuid_idempotency_token,
     maybe_external_third_party_id: &external_job_id,
     fal_category: FalCategory::ImageGeneration,
+    maybe_model_type: Some(CommonModelType::GptImage1),
     maybe_inference_args: None,
     maybe_prompt_token: prompt_token.as_ref(),
     maybe_creator_user_token: Some(&user_token),

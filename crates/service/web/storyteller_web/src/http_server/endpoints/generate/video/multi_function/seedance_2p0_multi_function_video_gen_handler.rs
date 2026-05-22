@@ -416,6 +416,7 @@ pub async fn seedance_2p0_multi_function_video_gen_handler(
         apriori_job_token: &job_token,
         uuid_idempotency_token: &idempotency_str,
         maybe_external_third_party_id: order_id,
+        maybe_model_type: Some(CommonModelType::Seedance2p0),
         maybe_inference_args: None,
         maybe_prompt_token: prompt_token.as_ref(),
         maybe_wallet_ledger_entry_token: Some(&deduction_result.ledger_entry_token),

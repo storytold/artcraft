@@ -6,6 +6,7 @@ use enums::by_table::generic_inference_jobs::inference_category::InferenceCatego
 use enums::by_table::generic_inference_jobs::inference_job_external_third_party::InferenceJobExternalThirdParty;
 use enums::by_table::generic_inference_jobs::inference_job_product_category::InferenceJobProductCategory;
 use enums::by_table::generic_inference_jobs::inference_job_type::InferenceJobType;
+use enums::common::generation::common_model_type::CommonModelType;
 use enums::common::job_status_plus::JobStatusPlus;
 use enums::common::visibility::Visibility;
 use tokens::tokens::anonymous_visitor_tracking::AnonymousVisitorTrackingToken;
@@ -27,6 +28,7 @@ where
   pub apriori_job_token: &'e InferenceJobToken,
   pub uuid_idempotency_token: &'e str,
   pub external_request_id: &'e str,
+  pub maybe_model_type: Option<CommonModelType>,
   pub maybe_prompt_token: Option<&'e PromptToken>,
   pub maybe_creator_user_token: Option<&'e UserToken>,
   pub maybe_avt_token: Option<&'e AnonymousVisitorTrackingToken>,
@@ -50,6 +52,7 @@ where
     external_third_party_id: args.external_request_id,
     product_category: InferenceJobProductCategory::GmiCloudVideo,
     inference_category: InferenceCategory::VideoGeneration,
+    maybe_model_type: args.maybe_model_type,
     maybe_prompt_token: args.maybe_prompt_token,
     maybe_wallet_ledger_entry_token: None,
     // GmiCloud doesn't take inference args.

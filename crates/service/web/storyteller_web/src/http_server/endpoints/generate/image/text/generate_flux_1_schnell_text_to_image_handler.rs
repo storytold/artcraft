@@ -223,6 +223,7 @@ pub async fn generate_flux_1_schnell_text_to_image_handler(
     uuid_idempotency_token: &request.uuid_idempotency_token,
     maybe_external_third_party_id: &external_job_id,
     fal_category: FalCategory::ImageGeneration,
+    maybe_model_type: Some(CommonModelType::Flux1Schnell),
     maybe_prompt_token: prompt_token.as_ref(),
     maybe_inference_args: None,
     maybe_creator_user_token: maybe_user_session.as_ref().map(|s| &s.user_token),
