@@ -3,18 +3,19 @@
 //! This is the *only* place in the crate that owns the raw `INSERT` query.
 //! Every other "insert" function — provider-specific leaves and the
 //! web-flavored convenience function — must funnel through here so that
-//! the column list lives in exactly one place.
+//! the column list and all the marshaling logic (inference_args JSON,
+//! routing_tag trim/truncate, failure_reason 255-char clamp) lives in
+//! exactly one place.
 //!
 //! The args struct is a superset: web fields (model/input/download/etc.) and
 //! provider fields (external_third_party, wallet_ledger_entry, debug log
 //! event, failure category/reason) are all here as `Option`. Leaves pass
-//! `None` for fields that don't apply. `maybe_inference_args_json` is the
-//! pre-serialized JSON string (or `None` for DB NULL) — see the field
-//! docstring for why this is intentional rather than `Option<T>`.
+//! `None` for fields that don't apply, and `None` writes DB `NULL`.
 //!
 //! Visibility is `pub(crate)`: external callers must use a leaf function,
 //! never this directly.
 
+use anyhow::anyhow;
 use sqlx::{Executor, MySql};
 use std::marker::PhantomData;
 
@@ -36,6 +37,7 @@ use tokens::tokens::users::UserToken;
 use tokens::tokens::wallet_ledger_entries::WalletLedgerEntryToken;
 
 use crate::errors::database_query_error::DatabaseQueryError;
+use crate::payloads::generic_inference_args::generic_inference_args::GenericInferenceArgs;
 
 pub(crate) struct InsertFullGenericInferenceJobRecordArgs<'e, 'c, E>
   where E: 'e + Executor<'c, Database = MySql>
@@ -65,12 +67,9 @@ pub(crate) struct InsertFullGenericInferenceJobRecordArgs<'e, 'c, E>
 
   pub maybe_raw_inference_text: Option<&'e str>,
 
-  /// Pre-serialized JSON for `maybe_inference_args`. `None` writes DB NULL;
-  /// `Some("null")` writes the four-character JSON literal. The distinction
-  /// preserves historical leaf behavior (gmicloud and seedance2pro_character
-  /// wrote DB NULL; the others always-serialized, producing `"null"` when
-  /// the args were `None`).
-  pub maybe_inference_args_json: Option<String>,
+  /// Serialized to JSON here and written to `maybe_inference_args`. `None`
+  /// writes DB `NULL` (never the four-character `"null"` literal).
+  pub maybe_inference_args: Option<GenericInferenceArgs>,
 
   pub maybe_creator_user_token: Option<&'e UserToken>,
   pub maybe_avt_token: Option<&'e AnonymousVisitorTrackingToken>,
@@ -112,6 +111,15 @@ pub(crate) async fn insert_full_generic_inference_job_record<'e, 'c: 'e, E>(
 
   let maybe_truncated_failure_reason = args.maybe_failure_reason
       .map(|s| if s.len() > 255 { &s[..255] } else { s });
+
+  // Serialize Some(args) → JSON string; None → DB NULL.
+  let maybe_inference_args_json = match args.maybe_inference_args.as_ref() {
+    Some(payload) => Some(
+      serde_json::ser::to_string(payload)
+          .map_err(|_e| anyhow!("could not encode inference args"))?
+    ),
+    None => None,
+  };
 
   let query = sqlx::query!(
         r#"
@@ -188,7 +196,7 @@ SET
 
         args.maybe_raw_inference_text,
 
-        args.maybe_inference_args_json,
+        maybe_inference_args_json,
 
         args.maybe_creator_user_token.map(|t| t.to_string()),
         args.maybe_avt_token.map(|t| t.to_string()),

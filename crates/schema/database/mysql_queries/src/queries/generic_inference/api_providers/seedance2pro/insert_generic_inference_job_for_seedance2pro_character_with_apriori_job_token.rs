@@ -53,8 +53,8 @@ pub async fn insert_generic_inference_job_for_seedance2pro_character_with_aprior
     inference_category: InferenceCategory::CharacterGeneration,
     maybe_prompt_token: None,
     maybe_wallet_ledger_entry_token: None,
-    // Character variant didn't take inference args — column was DB NULL.
-    maybe_inference_args_json: None,
+    // Character variant doesn't take inference args.
+    maybe_inference_args: None,
     maybe_creator_user_token: args.maybe_creator_user_token,
     maybe_avt_token: args.maybe_avt_token,
     creator_ip_address: args.creator_ip_address,

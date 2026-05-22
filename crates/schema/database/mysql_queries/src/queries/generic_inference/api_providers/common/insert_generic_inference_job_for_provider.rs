@@ -10,9 +10,8 @@
 //!   `maybe_raw_inference_text`, `maybe_routing_tag`, `priority_level`,
 //!   `requires_keepalive`, `max_duration_seconds`, `is_debug_request`) are
 //!   hard-coded to None / 0 / false here.
-//! - `maybe_inference_args_json` is pre-serialized at the leaf so that
-//!   variants which historically wrote DB NULL keep doing so while variants
-//!   which always-serialized keep producing `"null"` for empty args.
+//! - `maybe_inference_args` is passed as-is and serialized in the root.
+//!   `None` writes DB `NULL`.
 //!
 //! Visibility is `pub(crate)`: external callers must use a leaf function.
 
@@ -34,6 +33,7 @@ use tokens::tokens::users::UserToken;
 use tokens::tokens::wallet_ledger_entries::WalletLedgerEntryToken;
 
 use crate::errors::database_query_error::DatabaseQueryError;
+use crate::payloads::generic_inference_args::generic_inference_args::GenericInferenceArgs;
 use crate::queries::generic_inference::common::insert_full_generic_inference_job_record::{
   insert_full_generic_inference_job_record,
   InsertFullGenericInferenceJobRecordArgs,
@@ -56,9 +56,8 @@ pub(crate) struct InsertGenericInferenceJobForProviderArgs<'e, 'c, E>
   pub maybe_prompt_token: Option<&'e PromptToken>,
   pub maybe_wallet_ledger_entry_token: Option<&'e WalletLedgerEntryToken>,
 
-  /// See [`InsertFullGenericInferenceJobRecordArgs::maybe_inference_args_json`].
-  /// `None` writes DB NULL; `Some("null")` writes the four-char JSON literal.
-  pub maybe_inference_args_json: Option<String>,
+  /// Forwarded to the root, which serializes to JSON. `None` writes DB NULL.
+  pub maybe_inference_args: Option<GenericInferenceArgs>,
 
   pub maybe_creator_user_token: Option<&'e UserToken>,
   pub maybe_avt_token: Option<&'e AnonymousVisitorTrackingToken>,
@@ -111,7 +110,7 @@ pub(crate) async fn insert_generic_inference_job_for_provider<'e, 'c: 'e, E>(
     maybe_prompt_token: args.maybe_prompt_token,
     maybe_wallet_ledger_entry_token: args.maybe_wallet_ledger_entry_token,
 
-    maybe_inference_args_json: args.maybe_inference_args_json,
+    maybe_inference_args: args.maybe_inference_args,
 
     maybe_creator_user_token: args.maybe_creator_user_token,
     maybe_avt_token: args.maybe_avt_token,

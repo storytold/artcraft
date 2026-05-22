@@ -1,6 +1,5 @@
 use std::marker::PhantomData;
 
-use anyhow::anyhow;
 use sqlx::MySqlPool;
 
 use enums::by_table::generic_inference_jobs::inference_category::InferenceCategory;
@@ -75,11 +74,6 @@ pub async fn insert_generic_inference_job(args: InsertGenericInferenceArgs<'_>)
 {
   let job_token = InferenceJobToken::generate();
 
-  // Historically the web insert always serialized — `None` → the literal
-  // string `"null"` written to the column — so preserve that exactly.
-  let inference_args_json = serde_json::ser::to_string(&args.maybe_inference_args)
-      .map_err(|_e| anyhow!("could not encode inference args"))?;
-
   // This only applies to certain types of inference.
   // "0" is the default value, typically 12 seconds for TTS.
   // "-1" means "unlimited"
@@ -113,7 +107,7 @@ pub async fn insert_generic_inference_job(args: InsertGenericInferenceArgs<'_>)
 
     maybe_raw_inference_text: args.maybe_raw_inference_text,
 
-    maybe_inference_args_json: Some(inference_args_json),
+    maybe_inference_args: args.maybe_inference_args,
 
     maybe_creator_user_token: args.maybe_creator_user_token,
     maybe_avt_token: args.maybe_avt_token,

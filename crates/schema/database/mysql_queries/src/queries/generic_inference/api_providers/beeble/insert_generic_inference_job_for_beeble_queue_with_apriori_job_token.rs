@@ -1,4 +1,3 @@
-use anyhow::anyhow;
 use log::info;
 use sqlx::{Executor, MySql};
 use std::marker::PhantomData;
@@ -65,11 +64,6 @@ pub async fn insert_generic_inference_job_for_beeble_queue_with_apriori_job_toke
 ) -> Result<InferenceJobToken, DatabaseQueryError>
   where E: 'e + Executor<'c, Database = MySql>
 {
-  // Historically this leaf always serialized — `None` → the literal string
-  // `"null"` written to the column — so preserve that exactly.
-  let inference_args_json = serde_json::ser::to_string(&args.maybe_inference_args)
-      .map_err(|_e| anyhow!("could not encode inference args"))?;
-
   let inner_args = InsertGenericInferenceJobForProviderArgs {
     apriori_job_token: args.apriori_job_token,
     uuid_idempotency_token: args.uuid_idempotency_token,
@@ -80,7 +74,7 @@ pub async fn insert_generic_inference_job_for_beeble_queue_with_apriori_job_toke
     inference_category: InferenceCategory::VideoGeneration,
     maybe_prompt_token: args.maybe_prompt_token,
     maybe_wallet_ledger_entry_token: None,
-    maybe_inference_args_json: Some(inference_args_json),
+    maybe_inference_args: args.maybe_inference_args,
     maybe_creator_user_token: args.maybe_creator_user_token,
     maybe_avt_token: args.maybe_avt_token,
     creator_ip_address: args.creator_ip_address,

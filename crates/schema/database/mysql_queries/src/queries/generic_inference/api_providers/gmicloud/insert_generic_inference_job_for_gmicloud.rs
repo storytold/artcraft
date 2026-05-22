@@ -52,9 +52,8 @@ where
     inference_category: InferenceCategory::VideoGeneration,
     maybe_prompt_token: args.maybe_prompt_token,
     maybe_wallet_ledger_entry_token: None,
-    // GmiCloud historically didn't take inference args at all — column was
-    // DB NULL, not the `"null"` literal. Pass `None` to preserve that.
-    maybe_inference_args_json: None,
+    // GmiCloud doesn't take inference args.
+    maybe_inference_args: None,
     maybe_creator_user_token: args.maybe_creator_user_token,
     maybe_avt_token: args.maybe_avt_token,
     creator_ip_address: args.creator_ip_address,
