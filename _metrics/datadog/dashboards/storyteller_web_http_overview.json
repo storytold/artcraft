@@ -1,0 +1,437 @@
+{
+  "title": "Storyteller-web — HTTP overview",
+  "description": "Per-request HTTP metrics emitted by the storyteller-web metrics middleware (`http.server.request.count` counter, `http.server.request.duration_ms` distribution). Filter by `env` / `service` / `route` using the template variables at the top.\n\nMetrics emitted from `crates/lib/metrics` + `crates/service/web/storyteller_web/src/http_server/middleware/metrics_middleware/`. Source of truth for this dashboard JSON is `_metrics/datadog/dashboards/storyteller_web_http_overview.json` in the storyteller monorepo. Apply changes with `script/metrics/apply_dashboards.sh`.",
+  "layout_type": "ordered",
+  "notify_list": [],
+  "template_variables": [
+    {
+      "name": "env",
+      "prefix": "env",
+      "available_values": [],
+      "default": "*"
+    },
+    {
+      "name": "service",
+      "prefix": "service",
+      "available_values": [],
+      "default": "storyteller-web"
+    },
+    {
+      "name": "route",
+      "prefix": "route",
+      "available_values": [],
+      "default": "*"
+    }
+  ],
+  "reflow_type": "fixed",
+  "widgets": [
+    {
+      "definition": {
+        "type": "group",
+        "layout_type": "ordered",
+        "title": "Top-line health",
+        "show_title": true,
+        "widgets": [
+          {
+            "definition": {
+              "type": "query_value",
+              "title": "Request rate (req/s)",
+              "title_size": "16",
+              "title_align": "left",
+              "precision": 1,
+              "autoscale": true,
+              "requests": [
+                {
+                  "q": "sum:http.server.request.count{$env,$service,$route}.as_rate()",
+                  "aggregator": "avg"
+                }
+              ]
+            },
+            "layout": {
+              "x": 0,
+              "y": 0,
+              "width": 3,
+              "height": 2
+            }
+          },
+          {
+            "definition": {
+              "type": "query_value",
+              "title": "5xx error rate (%)",
+              "title_size": "16",
+              "title_align": "left",
+              "precision": 2,
+              "autoscale": false,
+              "custom_unit": "%",
+              "requests": [
+                {
+                  "q": "(sum:http.server.request.count{$env,$service,$route,status_class:5xx}.as_count() / sum:http.server.request.count{$env,$service,$route}.as_count()) * 100",
+                  "aggregator": "avg",
+                  "conditional_formats": [
+                    {
+                      "comparator": ">",
+                      "value": 5.0,
+                      "palette": "white_on_red"
+                    },
+                    {
+                      "comparator": ">",
+                      "value": 1.0,
+                      "palette": "white_on_yellow"
+                    },
+                    {
+                      "comparator": "<=",
+                      "value": 1.0,
+                      "palette": "white_on_green"
+                    }
+                  ]
+                }
+              ]
+            },
+            "layout": {
+              "x": 3,
+              "y": 0,
+              "width": 3,
+              "height": 2
+            }
+          },
+          {
+            "definition": {
+              "type": "query_value",
+              "title": "Latency p95 (ms)",
+              "title_size": "16",
+              "title_align": "left",
+              "precision": 0,
+              "autoscale": true,
+              "custom_unit": "ms",
+              "requests": [
+                {
+                  "q": "avg:http.server.request.duration_ms.p95{$env,$service,$route}",
+                  "aggregator": "avg",
+                  "conditional_formats": [
+                    {
+                      "comparator": ">",
+                      "value": 1000,
+                      "palette": "white_on_red"
+                    },
+                    {
+                      "comparator": ">",
+                      "value": 250,
+                      "palette": "white_on_yellow"
+                    },
+                    {
+                      "comparator": "<=",
+                      "value": 250,
+                      "palette": "white_on_green"
+                    }
+                  ]
+                }
+              ]
+            },
+            "layout": {
+              "x": 6,
+              "y": 0,
+              "width": 3,
+              "height": 2
+            }
+          },
+          {
+            "definition": {
+              "type": "query_value",
+              "title": "Latency p99 (ms)",
+              "title_size": "16",
+              "title_align": "left",
+              "precision": 0,
+              "autoscale": true,
+              "custom_unit": "ms",
+              "requests": [
+                {
+                  "q": "avg:http.server.request.duration_ms.p99{$env,$service,$route}",
+                  "aggregator": "avg"
+                }
+              ]
+            },
+            "layout": {
+              "x": 9,
+              "y": 0,
+              "width": 3,
+              "height": 2
+            }
+          }
+        ]
+      },
+      "layout": {
+        "x": 0,
+        "y": 0,
+        "width": 12,
+        "height": 3
+      }
+    },
+    {
+      "definition": {
+        "type": "group",
+        "layout_type": "ordered",
+        "title": "Traffic shape",
+        "show_title": true,
+        "widgets": [
+          {
+            "definition": {
+              "type": "timeseries",
+              "title": "Requests/sec by status class (stacked)",
+              "title_size": "16",
+              "title_align": "left",
+              "show_legend": true,
+              "legend_layout": "horizontal",
+              "legend_columns": [
+                "avg",
+                "max",
+                "value",
+                "sum"
+              ],
+              "requests": [
+                {
+                  "q": "sum:http.server.request.count{$env,$service,$route} by {status_class}.as_rate()",
+                  "display_type": "bars",
+                  "style": {
+                    "palette": "semantic",
+                    "line_type": "solid",
+                    "line_width": "normal"
+                  }
+                }
+              ],
+              "yaxis": {
+                "scale": "linear",
+                "include_zero": true
+              }
+            },
+            "layout": {
+              "x": 0,
+              "y": 0,
+              "width": 6,
+              "height": 4
+            }
+          },
+          {
+            "definition": {
+              "type": "timeseries",
+              "title": "Latency percentiles over time",
+              "title_size": "16",
+              "title_align": "left",
+              "show_legend": true,
+              "legend_layout": "horizontal",
+              "requests": [
+                {
+                  "q": "avg:http.server.request.duration_ms.p50{$env,$service,$route}",
+                  "display_type": "line",
+                  "style": {
+                    "palette": "cool",
+                    "line_type": "solid",
+                    "line_width": "normal"
+                  }
+                },
+                {
+                  "q": "avg:http.server.request.duration_ms.p95{$env,$service,$route}",
+                  "display_type": "line",
+                  "style": {
+                    "palette": "warm",
+                    "line_type": "solid",
+                    "line_width": "normal"
+                  }
+                },
+                {
+                  "q": "avg:http.server.request.duration_ms.p99{$env,$service,$route}",
+                  "display_type": "line",
+                  "style": {
+                    "palette": "warm",
+                    "line_type": "dashed",
+                    "line_width": "normal"
+                  }
+                }
+              ],
+              "yaxis": {
+                "scale": "linear",
+                "include_zero": true,
+                "label": "ms"
+              }
+            },
+            "layout": {
+              "x": 6,
+              "y": 0,
+              "width": 6,
+              "height": 4
+            }
+          }
+        ]
+      },
+      "layout": {
+        "x": 0,
+        "y": 3,
+        "width": 12,
+        "height": 5
+      }
+    },
+    {
+      "definition": {
+        "type": "group",
+        "layout_type": "ordered",
+        "title": "Per-route breakdown",
+        "show_title": true,
+        "widgets": [
+          {
+            "definition": {
+              "type": "toplist",
+              "title": "Top 10 routes by request volume",
+              "title_size": "16",
+              "title_align": "left",
+              "requests": [
+                {
+                  "q": "top(sum:http.server.request.count{$env,$service,$route} by {route}.as_count(), 10, 'sum', 'desc')"
+                }
+              ]
+            },
+            "layout": {
+              "x": 0,
+              "y": 0,
+              "width": 6,
+              "height": 4
+            }
+          },
+          {
+            "definition": {
+              "type": "toplist",
+              "title": "Top 10 routes by p95 latency",
+              "title_size": "16",
+              "title_align": "left",
+              "requests": [
+                {
+                  "q": "top(avg:http.server.request.duration_ms.p95{$env,$service,$route} by {route}, 10, 'mean', 'desc')"
+                }
+              ]
+            },
+            "layout": {
+              "x": 6,
+              "y": 0,
+              "width": 6,
+              "height": 4
+            }
+          },
+          {
+            "definition": {
+              "type": "timeseries",
+              "title": "5xx error count by route",
+              "title_size": "16",
+              "title_align": "left",
+              "show_legend": true,
+              "legend_layout": "horizontal",
+              "requests": [
+                {
+                  "q": "sum:http.server.request.count{$env,$service,$route,status_class:5xx} by {route}.as_count()",
+                  "display_type": "bars"
+                }
+              ],
+              "yaxis": {
+                "scale": "linear",
+                "include_zero": true
+              }
+            },
+            "layout": {
+              "x": 0,
+              "y": 4,
+              "width": 12,
+              "height": 4
+            }
+          },
+          {
+            "definition": {
+              "type": "timeseries",
+              "title": "4xx error count by route",
+              "title_size": "16",
+              "title_align": "left",
+              "show_legend": true,
+              "legend_layout": "horizontal",
+              "requests": [
+                {
+                  "q": "sum:http.server.request.count{$env,$service,$route,status_class:4xx} by {route}.as_count()",
+                  "display_type": "bars"
+                }
+              ],
+              "yaxis": {
+                "scale": "linear",
+                "include_zero": true
+              }
+            },
+            "layout": {
+              "x": 0,
+              "y": 8,
+              "width": 12,
+              "height": 4
+            }
+          }
+        ]
+      },
+      "layout": {
+        "x": 0,
+        "y": 8,
+        "width": 12,
+        "height": 13
+      }
+    },
+    {
+      "definition": {
+        "type": "group",
+        "layout_type": "ordered",
+        "title": "Methods and status codes",
+        "show_title": true,
+        "widgets": [
+          {
+            "definition": {
+              "type": "timeseries",
+              "title": "Requests/sec by HTTP method",
+              "title_size": "16",
+              "title_align": "left",
+              "show_legend": true,
+              "legend_layout": "horizontal",
+              "requests": [
+                {
+                  "q": "sum:http.server.request.count{$env,$service,$route} by {method}.as_rate()",
+                  "display_type": "bars"
+                }
+              ]
+            },
+            "layout": {
+              "x": 0,
+              "y": 0,
+              "width": 6,
+              "height": 4
+            }
+          },
+          {
+            "definition": {
+              "type": "toplist",
+              "title": "Status code distribution",
+              "title_size": "16",
+              "title_align": "left",
+              "requests": [
+                {
+                  "q": "top(sum:http.server.request.count{$env,$service,$route} by {status_code}.as_count(), 25, 'sum', 'desc')"
+                }
+              ]
+            },
+            "layout": {
+              "x": 6,
+              "y": 0,
+              "width": 6,
+              "height": 4
+            }
+          }
+        ]
+      },
+      "layout": {
+        "x": 0,
+        "y": 21,
+        "width": 12,
+        "height": 5
+      }
+    }
+  ],
+  "id": "thp-c27-vnv"
+}

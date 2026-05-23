@@ -16,6 +16,7 @@ env-secrets
 pubkeys.txt
 secrets.toml
 secrets.yaml
+secrets/
 twitch_secrets.toml
 
 # Old env secrets

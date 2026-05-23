@@ -1,0 +1,27 @@
+{
+  "name": "[storyteller-web] HTTP 5xx error rate is elevated",
+  "type": "query alert",
+  "tags": [
+    "service:storyteller-web",
+    "team:backend",
+    "metric:http_5xx"
+  ],
+  "priority": 2,
+  "message": "5xx error rate on storyteller-web is elevated.\n\nDashboard: https://app.datadoghq.com/dashboard/thp-c27-vnv/storyteller-web--http-overview\n\nMetric: `http.server.request.count{status_class:5xx} / http.server.request.count` over the last 5 minutes.\n\nFirst response steps:\n- Open the dashboard linked above. Check the **5xx error count by route** widget to identify which routes are failing.\n- Check the **Latency percentiles over time** widget — a latency spike often co-occurs with a 5xx spike (e.g. DB or upstream-provider stall).\n- Tail the production logs for `WARN`/`ERROR` lines from the affected route(s).\n\nThis monitor's source-of-truth JSON is at `_metrics/datadog/monitors/storyteller_web_5xx_error_rate.json`. Update with `script/metrics/apply_monitors.sh`.\n\n{{#is_alert}}🔥 5xx error rate is **{{value}}%**, above the **5%** critical threshold.{{/is_alert}}\n{{#is_warning}}⚠️  5xx error rate is **{{value}}%**, above the **1%** warning threshold.{{/is_warning}}\n{{#is_recovery}}✅ 5xx error rate recovered to **{{value}}%**.{{/is_recovery}}\n\n@slack-storyteller-pages",
+  "query": "sum(last_5m):(sum:http.server.request.count{service:storyteller-web,status_class:5xx,env:production}.as_count() / sum:http.server.request.count{service:storyteller-web,env:production}.as_count()) * 100 > 5",
+  "options": {
+    "thresholds": {
+      "critical": 5,
+      "warning": 1
+    },
+    "notify_audit": false,
+    "require_full_window": false,
+    "notify_no_data": false,
+    "renotify_interval": 30,
+    "evaluation_delay": 60,
+    "new_host_delay": 60,
+    "include_tags": true,
+    "escalation_message": "5xx error rate on storyteller-web is **still elevated** — please ack or fix."
+  },
+  "id": 286427558
+}
