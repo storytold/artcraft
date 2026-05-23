@@ -3,7 +3,9 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::Duration;
 
-use log::{debug, info, warn};
+use std::time::{SystemTime, UNIX_EPOCH};
+
+use log::{error, info, warn};
 
 use datadog_client::client::{
   DatadogClient, DistributionPoint, DistributionSeries, MetricPoint, MetricSeries,
@@ -48,9 +50,17 @@ impl MetricsWorker {
 
   pub async fn run(&self) {
     info!(
-      "Metrics worker started (flush every {:?}, service={}, env={})",
-      self.config.flush_interval, self.config.service_name, self.config.env,
+      "Metrics worker started (flush every {:?}, service={}, env={}, host={})",
+      self.config.flush_interval,
+      self.config.service_name,
+      self.config.env,
+      self.config.host.as_deref().unwrap_or("<unset>"),
     );
+
+    // Startup connectivity ping: submit one tiny counter so logs immediately
+    // reveal misconfigured API keys / blocked egress / etc., rather than
+    // staying silent until the first batch with real data flushes.
+    self.startup_ping().await;
 
     let mut ticker = tokio::time::interval(self.config.flush_interval);
     // `tokio::time::interval` fires immediately on the first tick; skip it
@@ -68,6 +78,39 @@ impl MetricsWorker {
     info!("Metrics worker stopped");
   }
 
+  /// One-shot at worker startup. Submits a single `metrics.startup.ping`
+  /// counter so failures (bad API key, no egress, wrong DD site) surface
+  /// in the logs within seconds of boot.
+  async fn startup_ping(&self) {
+    let now = SystemTime::now()
+      .duration_since(UNIX_EPOCH)
+      .map(|d| d.as_secs() as i64)
+      .unwrap_or(0);
+    let ping = MetricSeries {
+      metric: "metrics.startup.ping".to_string(),
+      points: vec![MetricPoint(now, 1.0)],
+      metric_type: "count".to_string(),
+      tags: vec![
+        format!("env:{}", self.config.env),
+        format!("service:{}", self.config.service_name),
+      ],
+      host: self.config.host.clone(),
+      interval: Some(60),
+    };
+    match self.client.submit_series(vec![ping]).await {
+      Ok(()) => info!(
+        "metrics: startup ping submitted successfully (service={}, env={})",
+        self.config.service_name, self.config.env,
+      ),
+      Err(e) => error!(
+        "metrics: startup ping FAILED ({}). The worker will keep trying, but \
+         this almost always means a misconfigured DATADOG_API_KEY, a wrong \
+         Datadog site host, or blocked egress to api.datadoghq.com.",
+        e,
+      ),
+    }
+  }
+
   async fn flush_once(&self) {
     let samples = self.queue.drain();
     if samples.is_empty() {
@@ -75,16 +118,33 @@ impl MetricsWorker {
     }
     let sample_count = samples.len();
     let MetricsBuild { distributions, counts } = self.build_metrics(samples);
-    debug!(
-      "metrics flush: {} samples → {} distribution series, {} count series",
-      sample_count, distributions.len(), counts.len(),
-    );
+    let dist_count = distributions.len();
+    let count_count = counts.len();
 
-    if let Err(e) = self.client.submit_distribution_points(distributions).await {
-      warn!("metrics: distribution submission failed: {}", e);
-    }
-    if let Err(e) = self.client.submit_series(counts).await {
-      warn!("metrics: series submission failed: {}", e);
+    let dist_result = self.client.submit_distribution_points(distributions).await;
+    let series_result = self.client.submit_series(counts).await;
+
+    match (&dist_result, &series_result) {
+      (Ok(()), Ok(())) => {
+        info!(
+          "metrics flush ok: {} samples → {} distribution series, {} count series",
+          sample_count, dist_count, count_count,
+        );
+      }
+      _ => {
+        if let Err(e) = dist_result {
+          warn!(
+            "metrics: distribution submission FAILED ({} series, {} samples): {}",
+            dist_count, sample_count, e,
+          );
+        }
+        if let Err(e) = series_result {
+          warn!(
+            "metrics: series submission FAILED ({} series, {} samples): {}",
+            count_count, sample_count, e,
+          );
+        }
+      }
     }
   }
 

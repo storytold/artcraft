@@ -1,5 +1,5 @@
 {
-  "title": "Storyteller-web — HTTP overview",
+  "title": "Storyteller-web \u2014 HTTP overview",
   "description": "Per-request HTTP metrics emitted by the storyteller-web metrics middleware (`http.server.request.count` counter, `http.server.request.duration_ms` distribution). Filter by `env` / `service` / `route` using the template variables at the top.\n\nMetrics emitted from `crates/lib/metrics` + `crates/service/web/storyteller_web/src/http_server/middleware/metrics_middleware/`. Source of truth for this dashboard JSON is `_metrics/datadog/dashboards/storyteller_web_http_overview.json` in the storyteller monorepo. Apply changes with `script/metrics/apply_dashboards.sh`.",
   "layout_type": "ordered",
   "notify_list": [],
@@ -105,7 +105,7 @@
               "custom_unit": "ms",
               "requests": [
                 {
-                  "q": "avg:http.server.request.duration_ms.p95{$env,$service,$route}",
+                  "q": "p95:http.server.request.duration_ms{$env,$service,$route}",
                   "aggregator": "avg",
                   "conditional_formats": [
                     {
@@ -145,7 +145,7 @@
               "custom_unit": "ms",
               "requests": [
                 {
-                  "q": "avg:http.server.request.duration_ms.p99{$env,$service,$route}",
+                  "q": "p99:http.server.request.duration_ms{$env,$service,$route}",
                   "aggregator": "avg"
                 }
               ]
@@ -220,7 +220,7 @@
               "legend_layout": "horizontal",
               "requests": [
                 {
-                  "q": "avg:http.server.request.duration_ms.p50{$env,$service,$route}",
+                  "q": "p50:http.server.request.duration_ms{$env,$service,$route}",
                   "display_type": "line",
                   "style": {
                     "palette": "cool",
@@ -229,7 +229,7 @@
                   }
                 },
                 {
-                  "q": "avg:http.server.request.duration_ms.p95{$env,$service,$route}",
+                  "q": "p95:http.server.request.duration_ms{$env,$service,$route}",
                   "display_type": "line",
                   "style": {
                     "palette": "warm",
@@ -238,7 +238,7 @@
                   }
                 },
                 {
-                  "q": "avg:http.server.request.duration_ms.p99{$env,$service,$route}",
+                  "q": "p99:http.server.request.duration_ms{$env,$service,$route}",
                   "display_type": "line",
                   "style": {
                     "palette": "warm",
@@ -303,7 +303,7 @@
               "title_align": "left",
               "requests": [
                 {
-                  "q": "top(avg:http.server.request.duration_ms.p95{$env,$service,$route} by {route}, 10, 'mean', 'desc')"
+                  "q": "top(p95:http.server.request.duration_ms{$env,$service,$route} by {route}, 10, 'mean', 'desc')"
                 }
               ]
             },
@@ -430,6 +430,101 @@
         "y": 21,
         "width": 12,
         "height": 5
+      }
+    },
+    {
+      "definition": {
+        "type": "group",
+        "layout_type": "ordered",
+        "title": "Metrics worker health",
+        "show_title": true,
+        "widgets": [
+          {
+            "definition": {
+              "type": "query_value",
+              "title": "Startup pings (last 30m)",
+              "title_size": "16",
+              "title_align": "left",
+              "precision": 0,
+              "autoscale": true,
+              "requests": [
+                {
+                  "q": "sum:metrics.startup.ping{$env,$service}.as_count()",
+                  "aggregator": "sum",
+                  "conditional_formats": [
+                    {
+                      "comparator": "<=",
+                      "value": 0,
+                      "palette": "white_on_red"
+                    },
+                    {
+                      "comparator": ">",
+                      "value": 0,
+                      "palette": "white_on_green"
+                    }
+                  ]
+                }
+              ]
+            },
+            "layout": {
+              "x": 0,
+              "y": 0,
+              "width": 4,
+              "height": 2
+            }
+          },
+          {
+            "definition": {
+              "type": "toplist",
+              "title": "Hosts with recent startup pings",
+              "title_size": "16",
+              "title_align": "left",
+              "requests": [
+                {
+                  "q": "top(sum:metrics.startup.ping{$env,$service} by {host}.as_count(), 25, 'sum', 'desc')"
+                }
+              ]
+            },
+            "layout": {
+              "x": 4,
+              "y": 0,
+              "width": 4,
+              "height": 4
+            }
+          },
+          {
+            "definition": {
+              "type": "timeseries",
+              "title": "Startup pings over time (one bar per host restart)",
+              "title_size": "16",
+              "title_align": "left",
+              "show_legend": true,
+              "legend_layout": "horizontal",
+              "requests": [
+                {
+                  "q": "sum:metrics.startup.ping{$env,$service} by {host}.as_count()",
+                  "display_type": "bars"
+                }
+              ],
+              "yaxis": {
+                "scale": "linear",
+                "include_zero": true
+              }
+            },
+            "layout": {
+              "x": 8,
+              "y": 0,
+              "width": 4,
+              "height": 4
+            }
+          }
+        ]
+      },
+      "layout": {
+        "x": 0,
+        "y": 26,
+        "width": 12,
+        "height": 4
       }
     }
   ],
