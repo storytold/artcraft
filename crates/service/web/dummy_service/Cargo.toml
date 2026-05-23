@@ -24,7 +24,7 @@ actix_cors_configs = { path = "../../../lib/actix_cors_configs" }
 actix_helpers = { path = "../../../lib/actix_helpers" }
 easyenv = { path = "../../../lib/easyenv" }
 errors = { workspace = true }
-reusable_types = { path = "../../../schema/public/reusable_types" }
+server_environment.workspace = true
 
 # External
 chrono = { workspace = true }

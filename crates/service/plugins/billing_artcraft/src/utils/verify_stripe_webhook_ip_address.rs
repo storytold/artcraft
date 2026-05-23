@@ -6,7 +6,7 @@ use errors::AnyhowResult;
 use once_cell::sync::Lazy;
 
 use http_server_common::request::get_request_ip::get_request_ip;
-use reusable_types::server_environment::ServerEnvironment;
+use server_environment::ServerEnvironment;
 
 /// List of IP addresses that send webhook requests
 /// From: https://stripe.com/docs/ips

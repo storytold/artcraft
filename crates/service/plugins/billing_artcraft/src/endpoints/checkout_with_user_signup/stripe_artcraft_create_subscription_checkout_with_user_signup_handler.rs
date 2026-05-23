@@ -20,7 +20,7 @@ use log::{error, info, warn};
 use mysql_queries::queries::users::user_stripe_customer_links::find_user_stripe_customer_link::find_user_stripe_customer_link_using_connection;
 use mysql_queries::queries::users::user_subscriptions::find_possibly_inactive_first_subscription_for_owner_user::find_possibly_inactive_first_subscription_for_owner_user_using_connection;
 use mysql_queries::queries::users::user_subscriptions::find_subscription_for_owner_user::find_subscription_for_owner_user_using_connection;
-use reusable_types::server_environment::ServerEnvironment;
+use server_environment::ServerEnvironment;
 use sqlx::MySqlPool;
 use std::collections::HashMap;
 use std::str::FromStr;

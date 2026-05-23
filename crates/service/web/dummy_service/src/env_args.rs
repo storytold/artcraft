@@ -1,5 +1,5 @@
 use errors::{anyhow, AnyhowResult};
-use reusable_types::server_environment::ServerEnvironment;
+use server_environment::ServerEnvironment;
 
 #[derive(Clone)]
 pub struct EnvArgs {

@@ -4,7 +4,7 @@ use crate::configs::stripe_artcraft_generic_product_info::StripeArtcraftGenericP
 use crate::configs::subscriptions::stripe_artcraft_subscription_info::StripeArtcraftSubscriptionInfo;
 use crate::configs::subscriptions::stripe_artcraft_subscription_info_list::{ARTCRAFT_BASIC_PRODUCTION, ARTCRAFT_BASIC_SANDBOX, ARTCRAFT_MAX_PRODUCTION, ARTCRAFT_MAX_SANDBOX, ARTCRAFT_PRO_PRODUCTION, ARTCRAFT_PRO_SANDBOX};
 use once_cell::sync::Lazy;
-use reusable_types::server_environment::ServerEnvironment;
+use server_environment::ServerEnvironment;
 use std::collections::HashMap;
 
 static PRODUCTION_PRODUCTS_BY_STRIPE_ID : Lazy<HashMap<String, StripeArtcraftGenericProductInfo>> = Lazy::new(|| {

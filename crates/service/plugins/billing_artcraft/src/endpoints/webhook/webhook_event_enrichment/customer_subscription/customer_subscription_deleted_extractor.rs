@@ -2,7 +2,7 @@ use crate::billing_action_fulfillment::artcraft_billing_action::ArtcraftBillingA
 use crate::endpoints::webhook::common::enriched_webhook_event::EnrichedWebhookEvent;
 use crate::endpoints::webhook::common::stripe_artcraft_webhook_error::StripeArtcraftWebhookError;
 use crate::endpoints::webhook::webhook_event_enrichment::customer_subscription::common::extract_common_subscription_details::extract_common_subscription_details;
-use reusable_types::server_environment::ServerEnvironment;
+use server_environment::ServerEnvironment;
 use stripe_shared::Subscription;
 
 /// Handle event type: 'customer.subscription.deleted'

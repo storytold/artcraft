@@ -39,7 +39,7 @@ use opaque_cursors::v2::opaque_cursor_encoder_v2::OpaqueCursorEncoderV2;
 use pager::client::pager::Pager;
 use redis::Client;
 use redis_caching::redis_ttl_cache::RedisTtlCache;
-use reusable_types::server_environment::ServerEnvironment;
+use server_environment::ServerEnvironment;
 use sqlx::MySqlPool;
 use url_config::third_party_url_redirector::ThirdPartyUrlRedirector;
 
@@ -58,12 +58,8 @@ pub struct ServerState {
   /// When the server starts.
   pub startup_time: DateTime<Utc>,
 
-  #[deprecated(note = "Use `server_environment` instead")]
   /// Knowing if we're in production will allow us to turn off development-only functionalities.
-  pub server_environment_old: ServerEnvironment,
-
-  /// Knowing if we're in production will allow us to turn off development-only functionalities.
-  pub server_environment: server_environment::ServerEnvironment,
+  pub server_environment: ServerEnvironment,
 
   /// Feature flags will allow us to restart the service with different conditions embedded in the code.
   pub flags: StaticFeatureFlags,

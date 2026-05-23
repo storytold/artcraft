@@ -145,7 +145,7 @@ pub async fn enqueue_fbx_to_gltf_handler(
 
     // Plan should handle "first anonymous use" and "investor" cases.
     let plan = get_correct_plan_for_session(
-      server_state.server_environment_old,
+      server_state.server_environment,
       maybe_user_session.as_ref()
     );
 

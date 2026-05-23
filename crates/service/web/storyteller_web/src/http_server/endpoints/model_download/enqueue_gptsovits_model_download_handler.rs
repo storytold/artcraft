@@ -123,7 +123,7 @@ pub async fn enqueue_gptsovits_model_download_handler(
 
   // ==================== PAID PLAN + PRIORITY ==================== //
 
-  let plan = get_correct_plan_for_session(server_state.server_environment_old, Some(&user_session));
+  let plan = get_correct_plan_for_session(server_state.server_environment, Some(&user_session));
   let priority_level = plan.web_vc_base_priority_level();
 
   // ==================== DEBUG MODE + ROUTING TAG ==================== //

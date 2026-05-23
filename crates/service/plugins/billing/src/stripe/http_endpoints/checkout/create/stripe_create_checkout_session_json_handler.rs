@@ -1,7 +1,7 @@
 use actix_web::web::Json;
 use actix_web::{web, HttpRequest, HttpResponse};
 use component_traits::traits::internal_user_lookup::InternalUserLookup;
-use reusable_types::server_environment::ServerEnvironment;
+use server_environment::ServerEnvironment;
 use url_config::third_party_url_redirector::ThirdPartyUrlRedirector;
 use user_traits_component::traits::internal_session_cache_purge::InternalSessionCachePurge;
 use utoipa::ToSchema;

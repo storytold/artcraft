@@ -163,7 +163,7 @@ pub async fn enqueue_face_fusion_workflow_handler(
   // ==================== PAID PLAN + PRIORITY ==================== //
 
   // TODO: Plan should handle "first anonymous use" and "investor" cases.
-  let plan = get_correct_plan_for_session(server_state.server_environment_old, Some(&user_session));
+  let plan = get_correct_plan_for_session(server_state.server_environment, Some(&user_session));
 
   // TODO: Separate priority for animation.
   let priority_level = plan.web_vc_base_priority_level();

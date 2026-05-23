@@ -5,7 +5,7 @@ use actix_web::HttpRequest;
 use anyhow::anyhow;
 
 use actix_helpers::extractors::get_request_host::get_request_host;
-use reusable_types::server_environment::ServerEnvironment;
+use server_environment::ServerEnvironment;
 
 /// Multi-environment configuration for 3rd party redirects, eg. Stripe checkout flow and
 /// Twitch OAuth flow.
@@ -82,7 +82,7 @@ mod tests {
   use actix_web::HttpRequest;
   use actix_web::test::TestRequest;
 
-  use reusable_types::server_environment::ServerEnvironment;
+  use server_environment::ServerEnvironment;
 
   use crate::third_party_url_redirector::ThirdPartyUrlRedirector;
 

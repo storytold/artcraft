@@ -35,7 +35,7 @@ use bootstrap::bootstrap::{bootstrap, BootstrapArgs};
 use component_traits::traits::internal_user_lookup::InternalUserLookup;
 use errors::AnyhowResult;
 use log::{info, warn};
-use reusable_types::server_environment::ServerEnvironment;
+use server_environment::ServerEnvironment;
 use shared_env_var_config::logging::DEFAULT_RUST_LOG;
 use tokio::runtime::Runtime;
 use user_traits_component::traits::internal_session_cache_purge::InternalSessionCachePurge;
@@ -193,12 +193,7 @@ pub async fn serve(
   let num_workers = server_state.env_config.num_workers;
   let hostname = server_state.hostname.clone();
 
-  // TODO(bt,2023-11-12): Remove the old type.
-  let old_server_environment = server_state.server_environment_old;
-  let new_server_environment = match old_server_environment {
-    ServerEnvironment::Development => server_environment::ServerEnvironment::Development,
-    ServerEnvironment::Production => server_environment::ServerEnvironment::Production,
-  };
+  let server_environment = server_state.server_environment;
 
   let paging_flags_for_middleware = server_state.flags.paging.clone();
   let pager_for_middleware = server_state.pager.clone();
@@ -247,8 +242,7 @@ pub async fn serve(
       .app_data(web::Data::new(server_state_arc.third_party_url_redirector))
       .app_data(web::Data::new(server_state_arc.google_sign_in_cert.clone()))
       .app_data(web::Data::new(server_state_arc.pager.clone()))
-      .app_data(web::Data::new(old_server_environment))
-      .app_data(web::Data::new(new_server_environment))
+      .app_data(web::Data::new(server_environment))
       .app_data(web::Data::from(product_lookup)) // NB: Data::from(Arc<T>) for dynamic dispatch
       .app_data(web::Data::from(stripe_lookup)) // NB: Data::from(Arc<T>) for dynamic dispatch
       .app_data(web::Data::from(user_lookup)) // NB: Data::from(Arc<T>) for dynamic dispatch
@@ -262,7 +256,7 @@ pub async fn serve(
             .error_handler(handle_multipart_error)
       )
       .wrap(MetricsMiddleware::new(metrics_collector.clone()))
-      .wrap(build_cors_config(old_server_environment))
+      .wrap(build_cors_config(server_environment))
       .wrap(shared_array_buffer_cors())
       .wrap(DefaultHeaders::new()
         .header("X-Backend-Hostname", &hostname)
@@ -280,7 +274,7 @@ pub async fn serve(
         .exclude("/readiness"))
       .wrap(middleware::Compress::default());
 
-    add_routes(app, old_server_environment)
+    add_routes(app, server_environment)
   })
   .bind(&bind_address)
   .unwrap_or_else(|err| {

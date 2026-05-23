@@ -29,6 +29,7 @@ errors.workspace = true
 http_headers.workspace = true
 http_server_common = { path = "../../../lib/deprecated/http_server_common" }
 mysql_queries = { path = "../../../schema/database/mysql_queries" }
+server_environment.workspace = true
 reusable_types = { path = "../../../schema/public/reusable_types" }
 tokens.workspace = true
 user_traits_component = { path = "../user_traits_component" }

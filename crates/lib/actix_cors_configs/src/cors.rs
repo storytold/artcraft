@@ -14,7 +14,7 @@ use crate::configs::storyteller_board::add_storyteller_board;
 use crate::configs::storyteller_render::add_storyteller_render;
 use crate::configs::storyteller_studio::add_storyteller_studio;
 use crate::configs::tauri::add_tauri;
-use reusable_types::server_environment::ServerEnvironment;
+use server_environment::ServerEnvironment;
 
 /// Return cors config for FakeYou / Vocodes / OBS / local development
 pub fn build_cors_config(server_environment: ServerEnvironment) -> Cors {
@@ -80,7 +80,7 @@ fn do_build_cors_config(is_production: bool) -> Cors {
 
 #[cfg(test)]
 mod tests {
-  use reusable_types::server_environment::ServerEnvironment;
+  use server_environment::ServerEnvironment;
 
   use crate::testing::assert_origin_invalid;
   use crate::testing::assert_origin_ok;

@@ -7,7 +7,7 @@ use crate::endpoints::webhook::common::webhook_event_log_summary::WebhookEventLo
 use crate::endpoints::webhook::webhook_event_enrichment::customer_subscription::common::calculate_subscription_end_date::calculate_subscription_end_date;
 use crate::endpoints::webhook::webhook_event_enrichment::customer_subscription::common::subscription_summary_extractor::subscription_summary_extractor;
 use log::{error, warn};
-use reusable_types::server_environment::ServerEnvironment;
+use server_environment::ServerEnvironment;
 use stripe_shared::Subscription;
 
 pub struct EventLogAndSubscriptionDetails {

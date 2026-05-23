@@ -10,7 +10,7 @@ use crate::utils::expand_ids::expand_subscription_id::expand_subscription_id;
 use crate::utils::metadata::get_metadata_user_token::get_metadata_user_token;
 use crate::utils::stripe_event_descriptor::StripeEventDescriptor;
 use log::{error, info, warn};
-use reusable_types::server_environment::ServerEnvironment;
+use server_environment::ServerEnvironment;
 use stripe::Client;
 use stripe_shared::{Invoice, InvoiceBillingReason, InvoiceStatus};
 use stripe_types::Expandable;

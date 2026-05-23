@@ -4,7 +4,7 @@ use std::str::FromStr;
 use actix_web::HttpRequest;
 use component_traits::traits::internal_user_lookup::InternalUserLookup;
 use log::{error, warn};
-use reusable_types::server_environment::ServerEnvironment;
+use server_environment::ServerEnvironment;
 use stripe::{CheckoutSession, CheckoutSessionMode, CreateCheckoutSession, CreateCheckoutSessionAutomaticTax, CreateCheckoutSessionLineItems, CreateCheckoutSessionPaymentIntentData, CreateCheckoutSessionSubscriptionData, CustomerId};
 use url_config::third_party_url_redirector::ThirdPartyUrlRedirector;
 
@@ -199,7 +199,7 @@ mod tests {
   use mockall::predicate::*;
   use tokio;
   use component_traits::traits::internal_user_lookup::{MockInternalUserLookup, UserMetadata};
-  use reusable_types::server_environment::ServerEnvironment;
+  use server_environment::ServerEnvironment;
   use url_config::third_party_url_redirector::ThirdPartyUrlRedirector;
 
   use crate::stripe::http_endpoints::checkout::create::stripe_create_checkout_session_error::CreateCheckoutSessionError;

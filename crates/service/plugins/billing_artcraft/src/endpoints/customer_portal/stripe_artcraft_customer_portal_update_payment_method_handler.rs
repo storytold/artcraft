@@ -13,7 +13,7 @@ use component_traits::traits::internal_user_lookup::InternalUserLookup;
 use enums::common::payments_namespace::PaymentsNamespace;
 use log::{error, info, warn};
 use mysql_queries::queries::users::user_subscriptions::find_subscription_for_owner_user::{find_subscription_for_owner_user_using_connection, UserSubscription};
-use reusable_types::server_environment::ServerEnvironment;
+use server_environment::ServerEnvironment;
 use sqlx::MySqlPool;
 use std::collections::HashMap;
 use std::str::FromStr;

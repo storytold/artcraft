@@ -19,7 +19,7 @@ use opaque_cursors::v2::opaque_cursor_encoder_v2::OpaqueCursorEncoderV2;
 use pager::worker::pager_worker::PagerWorker;
 use redis::Client;
 use redis_caching::redis_ttl_cache::RedisTtlCache;
-use reusable_types::server_environment::ServerEnvironment;
+use server_environment::ServerEnvironment;
 use shared_env_var_config::redis::env_get_redis_0_connection_string_or_default;
 use sqlx::MySqlPool;
 use url_config::third_party_url_redirector::ThirdPartyUrlRedirector;
@@ -185,12 +185,7 @@ pub async fn setup_dependencies(server_hostname: &str) -> AnyhowResult<SetupResu
   let server_environment = ServerEnvironment::from_str(&easyenv::get_env_string_required("SERVER_ENVIRONMENT")?)
     .ok_or(anyhow!("invalid server environment"))?;
 
-  let server_environment_typed = match server_environment {
-    ServerEnvironment::Production => server_environment::ServerEnvironment::Production,
-    ServerEnvironment::Development => server_environment::ServerEnvironment::Development,
-  };
-
-  let (pager, pager_worker, paging_flags) = build_pager(server_environment_typed, server_hostname);
+  let (pager, pager_worker, paging_flags) = build_pager(server_environment, server_hostname);
 
   let service_feature_flags = setup_static_feature_flags(paging_flags)?;
 
@@ -228,8 +223,7 @@ pub async fn setup_dependencies(server_hostname: &str) -> AnyhowResult<SetupResu
     stripe_artcraft: setup_stripe_artcraft()?,
     hostname: server_hostname.to_string(),
     startup_time,
-    server_environment_old: server_environment,
-    server_environment: server_environment_typed,
+    server_environment,
     flags: service_feature_flags,
     third_party_url_redirector,
     health_check_status,

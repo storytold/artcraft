@@ -357,7 +357,7 @@ dependencies = [
  "actix-rt",
  "actix-web",
  "log",
- "reusable_types",
+ "server_environment",
  "speculoos",
  "url",
  "workspace-build-acceleration",
@@ -1492,6 +1492,7 @@ dependencies = [
  "serde",
  "serde_derive",
  "serde_json",
+ "server_environment",
  "sqlx",
  "tokens",
  "tokio",
@@ -1522,6 +1523,7 @@ dependencies = [
  "serde",
  "serde_derive",
  "serde_json",
+ "server_environment",
  "sqlx",
  "tokio",
  "url_config",
@@ -3610,10 +3612,10 @@ dependencies = [
  "easyenv",
  "errors",
  "hostname 0.4.0",
- "reusable_types",
  "serde",
  "serde_derive",
  "serde_json",
+ "server_environment",
  "workspace-build-acceleration",
 ]
 
@@ -13539,7 +13541,7 @@ dependencies = [
  "actix-web",
  "actix_helpers",
  "anyhow",
- "reusable_types",
+ "server_environment",
  "workspace-build-acceleration",
 ]
 

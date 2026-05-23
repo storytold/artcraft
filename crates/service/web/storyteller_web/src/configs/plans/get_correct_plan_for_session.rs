@@ -1,7 +1,7 @@
 
 use chrono::Utc;
 
-use reusable_types::server_environment::ServerEnvironment;
+use server_environment::ServerEnvironment;
 
 use crate::configs::plans::plan::Plan;
 use crate::configs::plans::plan_list::{DEVELOPMENT_PREMIUM_PLANS_BY_SLUG, FREE_LOGGED_IN_PLAN, FREE_LOGGED_OUT_PLAN, LOYALTY_PLANS_BY_SLUG, PRODUCTION_PREMIUM_PLANS_BY_SLUG};
@@ -66,7 +66,7 @@ pub mod tests {
 
   use chrono::{Duration, Utc};
   use enums::common::payments_namespace::PaymentsNamespace;
-  use reusable_types::server_environment::ServerEnvironment;
+  use server_environment::ServerEnvironment;
 
   use crate::configs::plans::get_correct_plan_for_session::get_correct_plan_for_session;
   use crate::configs::plans::plan_list::{ALL_PLANS_BY_SLUG, FREE_LOGGED_IN_PLAN, FREE_LOGGED_OUT_PLAN};

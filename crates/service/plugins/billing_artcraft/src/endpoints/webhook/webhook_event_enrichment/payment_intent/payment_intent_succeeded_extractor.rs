@@ -10,7 +10,7 @@ use crate::utils::expand_ids::expand_customer_id::expand_customer_id;
 use crate::utils::metadata::get_metadata_user_token::get_metadata_user_token;
 use crate::utils::metadata::get_metadata_wallet_token::get_metadata_wallet_token;
 use log::{error, info, warn};
-use reusable_types::server_environment::ServerEnvironment;
+use server_environment::ServerEnvironment;
 use sqlx::{MySql, Transaction};
 use stripe::Client;
 use stripe_checkout::checkout_session::ListCheckoutSession;

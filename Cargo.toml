@@ -274,6 +274,7 @@ pager = { path = "crates/lib/pager" }
 openai_sora_client = { path = "crates/api_clients/openai_sora_client" }
 primitives = { path = "crates/lib/data/primitives" }
 seedance2pro_client = { path = "crates/api_clients/seedance2pro_client" }
+server_environment = { path = "crates/lib/server_environment" }
 shared_service_components = { path = "crates/lib/shared_service_components" }
 sqlite_tasks = { path = "crates/schema/database/sqlite_tasks" }
 subprocess_common = { path = "crates/lib/deprecated/subprocess_common" }

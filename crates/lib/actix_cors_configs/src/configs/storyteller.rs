@@ -59,7 +59,7 @@ pub fn add_storyteller_dev_proxy(cors: Cors, _is_production: bool) -> Cors {
 
 #[cfg(test)]
 mod tests {
-  use reusable_types::server_environment::ServerEnvironment;
+  use server_environment::ServerEnvironment;
 
   use crate::cors::build_cors_config;
   use crate::testing::assert_origin_invalid;

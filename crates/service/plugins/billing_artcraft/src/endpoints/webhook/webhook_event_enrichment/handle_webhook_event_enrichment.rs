@@ -10,7 +10,7 @@ use crate::endpoints::webhook::webhook_event_enrichment::invoice::invoice_paymen
 use crate::endpoints::webhook::webhook_event_enrichment::payment_intent::payment_intent_succeeded_extractor::payment_intent_succeeded_extractor;
 use crate::utils::stripe_event_descriptor::StripeEventDescriptor;
 use log::{info, warn};
-use reusable_types::server_environment::ServerEnvironment;
+use server_environment::ServerEnvironment;
 use sqlx::pool::PoolConnection;
 use sqlx::{MySql, Transaction};
 use stripe::Client;

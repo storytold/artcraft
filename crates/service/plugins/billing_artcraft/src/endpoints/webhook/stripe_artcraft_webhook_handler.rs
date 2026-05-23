@@ -15,7 +15,7 @@ use log::{error, info, warn};
 use mysql_queries::queries::billing::stripe::get_stripe_webhook_event_log_by_id::{get_stripe_webhook_event_log_by_id, get_stripe_webhook_event_log_by_id_with_connection};
 use mysql_queries::queries::billing::stripe::insert_stripe_webhook_event_log::InsertStripeWebhookEventLog;
 use mysql_queries::queries::users::user::update::maybe_update_email_from_synthetic_value::{maybe_update_email_from_synthetic_value, MaybeUpdateEmailFromSyntheticValueArgs};
-use reusable_types::server_environment::ServerEnvironment;
+use server_environment::ServerEnvironment;
 use serde_derive::Serialize;
 use sqlx::pool::PoolConnection;
 use sqlx::{Acquire, MySql, MySqlConnection, MySqlPool, Transaction};

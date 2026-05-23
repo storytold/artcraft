@@ -4,7 +4,7 @@ use actix_web::dev::{ServiceRequest, ServiceResponse};
 use actix_web::error::Error;
 use actix_web::App;
 
-use reusable_types::server_environment::ServerEnvironment;
+use server_environment::ServerEnvironment;
 
 use crate::http_server::routes::application_routes::add_application_routes::add_application_routes;
 use crate::http_server::routes::legacy_routes::add_legacy_routes::add_legacy_routes;

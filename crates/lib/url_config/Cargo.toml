@@ -21,7 +21,7 @@ workspace-build-acceleration = { workspace = true }
 
 # Internal
 actix_helpers = { path = "../actix_helpers" }
-reusable_types = { path = "../../schema/public/reusable_types" }
+server_environment.workspace = true
 
 # External
 actix-web = { workspace = true }
