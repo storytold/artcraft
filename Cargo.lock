@@ -3042,12 +3042,15 @@ checksum = "5c297a1c74b71ae29df00c3e22dd9534821d60eb9af5a0192823fa2acea70c2a"
 name = "datadog_client"
 version = "0.0.1"
 dependencies = [
+ "env",
+ "env_logger 0.11.9",
  "log",
  "reqwest 0.12.23",
  "serde",
  "serde_derive",
  "serde_json",
  "thiserror 2.0.18",
+ "tokio",
  "workspace-build-acceleration",
 ]
 

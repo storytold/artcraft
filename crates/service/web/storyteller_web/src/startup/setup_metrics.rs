@@ -10,7 +10,8 @@ use shared_env_var_config::metrics::{env_enable_metrics_default_false, env_optio
 /// Returns `(collector, Option<worker>)`. When metrics are disabled or no
 /// API key is set, returns a noop collector and no worker — wire the
 /// collector into the middleware unconditionally so the request path
-/// stays identical in both modes.
+/// stays identical in both modes. Callers that want a graceful shutdown
+/// drain can grab `worker.shutdown_handle()` before spawning the worker.
 pub fn build_metrics(
   server_environment: server_environment::ServerEnvironment,
   hostname: &str,

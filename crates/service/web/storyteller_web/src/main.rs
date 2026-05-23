@@ -148,21 +148,39 @@ async fn main() -> AnyhowResult<()> {
 
   // ==================== Metrics worker ==================== //
 
-  let new_server_environment_for_metrics = server_state.server_environment;
-
   let (metrics_collector, maybe_metrics_worker) =
     build_metrics(server_state.server_environment, &server_state.hostname);
 
-  if let Some(worker) = maybe_metrics_worker {
+  let maybe_metrics_shutdown = maybe_metrics_worker.map(|worker| {
     info!("Spawning metrics worker thread.");
+    let shutdown = worker.shutdown_handle();
     tokio_runtime.spawn(async move {
       worker.run().await;
     });
-  }
+    shutdown
+  });
 
   // ==================== Serve ==================== //
 
   serve(server_state, metrics_collector).await?;
+
+  // ==================== Graceful drain ==================== //
+  //
+  // serve() returns once actix has finished its own shutdown (SIGTERM,
+  // SIGINT, etc.). Tell the metrics worker to flush its last batch and
+  // exit, giving it a bounded grace period before we drop the runtime.
+  if let Some(shutdown) = maybe_metrics_shutdown {
+    use std::sync::atomic::Ordering;
+    info!("Signaling metrics worker to drain before exit.");
+    shutdown.store(true, Ordering::Relaxed);
+    // The worker drains on the next tick. One flush_interval (default 10s)
+    // is plenty for it to wake, drain, and POST one last batch. We don't
+    // join the spawned task directly because the runtime owns it.
+    tokio_runtime.block_on(async {
+      tokio::time::sleep(std::time::Duration::from_secs(12)).await;
+    });
+  }
+
   Ok(())
 }
 

@@ -185,4 +185,67 @@ mod tests {
     assert!(!debug.contains("supersecret123"));
     assert!(debug.contains("***"));
   }
+
+  // ==================== Real-API smoke tests ====================
+  //
+  // These are marked `#[ignore]` because they hit api.datadoghq.com with a
+  // real API key from `datadog_key.txt` at the workspace root and submit a
+  // tiny named metric (`datadog_client.smoke_test`).
+  //
+  // Run explicitly with:
+  //   cargo test -p datadog_client -- --ignored
+  //
+  // After running, look for the metric in Datadog within ~1 minute.
+
+  mod real_api_smoke {
+    use super::*;
+    use crate::creds::DatadogApiKey;
+    use crate::test_utils::get_test_api_key::get_test_api_key;
+    use std::time::{SystemTime, UNIX_EPOCH};
+
+    fn now_secs() -> i64 {
+      SystemTime::now().duration_since(UNIX_EPOCH).map(|d| d.as_secs() as i64).unwrap_or(0)
+    }
+
+    fn smoke_tags() -> Vec<String> {
+      vec![
+        "source:datadog_client_smoke_test".to_string(),
+        "env:test".to_string(),
+      ]
+    }
+
+    #[ignore] // hits the real Datadog API
+    #[tokio::test]
+    async fn submit_distribution_points_real_api() {
+      let _ = env_logger::builder().is_test(true).try_init();
+      let key = get_test_api_key().expect("could not load datadog_key.txt");
+      let client = DatadogClient::new(DatadogApiKey::new(key));
+      let series = vec![DistributionSeries {
+        metric: "datadog_client.smoke_test.duration".to_string(),
+        points: vec![DistributionPoint(now_secs(), vec![1.0, 2.5, 7.0])],
+        tags: smoke_tags(),
+        host: Some("smoke-test-host".to_string()),
+      }];
+      client.submit_distribution_points(series).await
+        .expect("distribution submission should succeed");
+    }
+
+    #[ignore] // hits the real Datadog API
+    #[tokio::test]
+    async fn submit_series_real_api() {
+      let _ = env_logger::builder().is_test(true).try_init();
+      let key = get_test_api_key().expect("could not load datadog_key.txt");
+      let client = DatadogClient::new(DatadogApiKey::new(key));
+      let series = vec![MetricSeries {
+        metric: "datadog_client.smoke_test.count".to_string(),
+        points: vec![MetricPoint(now_secs(), 1.0)],
+        metric_type: "count".to_string(),
+        tags: smoke_tags(),
+        host: Some("smoke-test-host".to_string()),
+        interval: Some(10),
+      }];
+      client.submit_series(series).await
+        .expect("series submission should succeed");
+    }
+  }
 }

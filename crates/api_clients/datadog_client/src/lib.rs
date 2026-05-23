@@ -14,3 +14,6 @@
 pub mod client;
 pub mod creds;
 pub mod error;
+
+#[cfg(test)]
+mod test_utils;

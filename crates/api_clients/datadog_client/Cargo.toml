@@ -22,3 +22,8 @@ serde.workspace = true
 serde_derive.workspace = true
 serde_json.workspace = true
 thiserror.workspace = true
+
+[dev-dependencies]
+env.workspace = true
+env_logger.workspace = true
+tokio = { workspace = true, features = ["macros", "rt", "rt-multi-thread", "time"] }

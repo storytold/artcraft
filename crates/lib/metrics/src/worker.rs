@@ -10,7 +10,7 @@ use datadog_client::client::{
 };
 
 use crate::queue::SampleQueue;
-use crate::sample::RequestSample;
+use crate::sample::{CounterSample, ObservationSample, RequestSample, Sample};
 
 #[derive(Clone)]
 pub struct MetricsWorkerConfig {
@@ -23,8 +23,8 @@ pub struct MetricsWorkerConfig {
 }
 
 /// Long-lived async loop: every `flush_interval`, drain the queue, aggregate
-/// by `(route, method, status_code)`, and submit two POSTs to Datadog (one
-/// distribution + one series). Stops when the shared `shutdown` flag is set.
+/// each sample kind, and POST to Datadog. Stops when the shared `shutdown`
+/// flag is set and flushes one final batch on the way out.
 pub struct MetricsWorker {
   queue: SampleQueue,
   client: DatadogClient,
@@ -46,7 +46,6 @@ impl MetricsWorker {
     self.shutdown.clone()
   }
 
-  /// Run the main loop. Intended to be `tokio::spawn`'d.
   pub async fn run(&self) {
     info!(
       "Metrics worker started (flush every {:?}, service={}, env={})",
@@ -75,7 +74,7 @@ impl MetricsWorker {
       return;
     }
     let sample_count = samples.len();
-    let (distributions, counts) = self.build_metrics(samples);
+    let MetricsBuild { distributions, counts } = self.build_metrics(samples);
     debug!(
       "metrics flush: {} samples → {} distribution series, {} count series",
       sample_count, distributions.len(), counts.len(),
@@ -89,21 +88,47 @@ impl MetricsWorker {
     }
   }
 
-  /// Group samples by `(route, method, status_code)` into two output sets:
-  /// per-group distributions (raw duration_ms values) + per-group counters.
-  fn build_metrics(
+  /// Partition samples by kind and aggregate each:
+  /// - Request samples → per `(route, method, status_code)`: distribution of
+  ///   duration_ms + count.
+  /// - Counter samples → per `(metric, sorted_tags)`: count (entry count
+  ///   in that group).
+  /// - Observation samples → per `(metric, sorted_tags)`: distribution of
+  ///   values.
+  fn build_metrics(&self, samples: Vec<Sample>) -> MetricsBuild {
+    let mut requests = Vec::new();
+    let mut counters = Vec::new();
+    let mut observations = Vec::new();
+    for s in samples {
+      match s {
+        Sample::Request(r) => requests.push(r),
+        Sample::Counter(c) => counters.push(c),
+        Sample::Observation(o) => observations.push(o),
+      }
+    }
+
+    let interval = self.config.flush_interval.as_secs() as i64;
+    let mut distributions = Vec::new();
+    let mut counts = Vec::new();
+
+    self.build_request_metrics(requests, interval, &mut distributions, &mut counts);
+    self.build_counter_metrics(counters, interval, &mut counts);
+    self.build_observation_metrics(observations, &mut distributions);
+
+    MetricsBuild { distributions, counts }
+  }
+
+  fn build_request_metrics(
     &self,
     samples: Vec<RequestSample>,
-  ) -> (Vec<DistributionSeries>, Vec<MetricSeries>) {
-    let mut by_key: HashMap<GroupKey, Bucket> = HashMap::new();
-
+    interval: i64,
+    distributions: &mut Vec<DistributionSeries>,
+    counts: &mut Vec<MetricSeries>,
+  ) {
+    let mut by_key: HashMap<RequestKey, RequestBucket> = HashMap::new();
     for s in samples {
-      let key = GroupKey {
-        route: s.route,
-        method: s.method,
-        status_code: s.status_code,
-      };
-      let bucket = by_key.entry(key).or_insert_with(|| Bucket {
+      let key = RequestKey { route: s.route, method: s.method, status_code: s.status_code };
+      let bucket = by_key.entry(key).or_insert_with(|| RequestBucket {
         durations_ms: Vec::new(),
         last_timestamp_secs: s.timestamp_secs,
       });
@@ -113,21 +138,15 @@ impl MetricsWorker {
       }
     }
 
-    let interval = self.config.flush_interval.as_secs() as i64;
-    let mut distributions = Vec::with_capacity(by_key.len());
-    let mut counts = Vec::with_capacity(by_key.len());
-
     for (key, bucket) in by_key {
-      let tags = self.build_tags(&key);
+      let tags = self.build_request_tags(&key);
       let count = bucket.durations_ms.len() as f64;
-
       distributions.push(DistributionSeries {
         metric: self.config.duration_metric_name.clone(),
         points: vec![DistributionPoint(bucket.last_timestamp_secs, bucket.durations_ms)],
         tags: tags.clone(),
         host: self.config.host.clone(),
       });
-
       counts.push(MetricSeries {
         metric: self.config.count_metric_name.clone(),
         points: vec![MetricPoint(bucket.last_timestamp_secs, count)],
@@ -137,11 +156,66 @@ impl MetricsWorker {
         interval: Some(interval),
       });
     }
-
-    (distributions, counts)
   }
 
-  fn build_tags(&self, key: &GroupKey) -> Vec<String> {
+  fn build_counter_metrics(
+    &self,
+    samples: Vec<CounterSample>,
+    interval: i64,
+    counts: &mut Vec<MetricSeries>,
+  ) {
+    let mut by_key: HashMap<(String, Vec<String>), CounterBucket> = HashMap::new();
+    for s in samples {
+      let tags = sort_tags(s.tags);
+      let entry = by_key.entry((s.metric, tags)).or_insert_with(|| CounterBucket {
+        value: 0.0,
+        last_timestamp_secs: s.timestamp_secs,
+      });
+      entry.value += 1.0;
+      if s.timestamp_secs > entry.last_timestamp_secs {
+        entry.last_timestamp_secs = s.timestamp_secs;
+      }
+    }
+    for ((metric, tags), bucket) in by_key {
+      counts.push(MetricSeries {
+        metric,
+        points: vec![MetricPoint(bucket.last_timestamp_secs, bucket.value)],
+        metric_type: "count".to_string(),
+        tags: with_service_env_tags(tags, &self.config),
+        host: self.config.host.clone(),
+        interval: Some(interval),
+      });
+    }
+  }
+
+  fn build_observation_metrics(
+    &self,
+    samples: Vec<ObservationSample>,
+    distributions: &mut Vec<DistributionSeries>,
+  ) {
+    let mut by_key: HashMap<(String, Vec<String>), ObservationBucket> = HashMap::new();
+    for s in samples {
+      let tags = sort_tags(s.tags);
+      let entry = by_key.entry((s.metric, tags)).or_insert_with(|| ObservationBucket {
+        values: Vec::new(),
+        last_timestamp_secs: s.timestamp_secs,
+      });
+      entry.values.push(s.value);
+      if s.timestamp_secs > entry.last_timestamp_secs {
+        entry.last_timestamp_secs = s.timestamp_secs;
+      }
+    }
+    for ((metric, tags), bucket) in by_key {
+      distributions.push(DistributionSeries {
+        metric,
+        points: vec![DistributionPoint(bucket.last_timestamp_secs, bucket.values)],
+        tags: with_service_env_tags(tags, &self.config),
+        host: self.config.host.clone(),
+      });
+    }
+  }
+
+  fn build_request_tags(&self, key: &RequestKey) -> Vec<String> {
     let class = status_class(key.status_code);
     vec![
       format!("route:{}", key.route),
@@ -155,15 +229,30 @@ impl MetricsWorker {
 }
 
 #[derive(Eq, Hash, PartialEq)]
-struct GroupKey {
+struct RequestKey {
   route: String,
   method: String,
   status_code: u16,
 }
 
-struct Bucket {
+struct RequestBucket {
   durations_ms: Vec<f64>,
   last_timestamp_secs: i64,
+}
+
+struct CounterBucket {
+  value: f64,
+  last_timestamp_secs: i64,
+}
+
+struct ObservationBucket {
+  values: Vec<f64>,
+  last_timestamp_secs: i64,
+}
+
+struct MetricsBuild {
+  distributions: Vec<DistributionSeries>,
+  counts: Vec<MetricSeries>,
 }
 
 fn status_class(status: u16) -> &'static str {
@@ -174,6 +263,21 @@ fn status_class(status: u16) -> &'static str {
     400..=499 => "4xx",
     _ => "5xx",
   }
+}
+
+/// Sort so `(metric, tags)` keys hash the same regardless of caller ordering.
+fn sort_tags(mut tags: Vec<String>) -> Vec<String> {
+  tags.sort();
+  tags.dedup();
+  tags
+}
+
+/// Append the service/env tags to a custom-metric tag list (after dedup),
+/// matching what request metrics get for free.
+fn with_service_env_tags(mut tags: Vec<String>, config: &MetricsWorkerConfig) -> Vec<String> {
+  tags.push(format!("env:{}", config.env));
+  tags.push(format!("service:{}", config.service_name));
+  tags
 }
 
 #[cfg(test)]
@@ -209,46 +313,44 @@ mod tests {
     }
   }
 
-  mod build_metrics_tests {
+  mod request_aggregation {
     use super::*;
 
-    fn sample(route: &str, method: &str, status: u16, dur: f64, ts: i64) -> RequestSample {
-      RequestSample {
+    fn sample(route: &str, method: &str, status: u16, dur: f64, ts: i64) -> Sample {
+      Sample::Request(RequestSample {
         route: route.to_string(),
         method: method.to_string(),
         status_code: status,
         duration_ms: dur,
         timestamp_secs: ts,
-      }
+      })
     }
 
     #[test]
     fn groups_by_route_method_status() {
-      let worker = make_worker();
+      let w = make_worker();
       let samples = vec![
         sample("/a", "GET", 200, 1.0, 100),
         sample("/a", "GET", 200, 2.0, 110),
         sample("/a", "GET", 500, 9.0, 120),
         sample("/b", "POST", 201, 5.0, 130),
       ];
-      let (dists, counts) = worker.build_metrics(samples);
-      assert_eq!(dists.len(), 3);
-      assert_eq!(counts.len(), 3);
-
-      let a_200 = dists.iter()
+      let build = w.build_metrics(samples);
+      assert_eq!(build.distributions.len(), 3);
+      assert_eq!(build.counts.len(), 3);
+      let a_200 = build.distributions.iter()
         .find(|d| d.tags.iter().any(|t| t == "route:/a")
-              && d.tags.iter().any(|t| t == "status_code:200"))
+                && d.tags.iter().any(|t| t == "status_code:200"))
         .expect("missing /a 200 series");
-      assert_eq!(a_200.points.len(), 1);
       assert_eq!(a_200.points[0].1, vec![1.0, 2.0]);
     }
 
     #[test]
     fn tags_include_class_env_service() {
-      let worker = make_worker();
+      let w = make_worker();
       let samples = vec![sample("/x", "GET", 500, 1.0, 1)];
-      let (dists, _) = worker.build_metrics(samples);
-      let tags = &dists[0].tags;
+      let build = w.build_metrics(samples);
+      let tags = &build.distributions[0].tags;
       assert!(tags.contains(&"status_class:5xx".to_string()));
       assert!(tags.contains(&"env:test".to_string()));
       assert!(tags.contains(&"service:test-service".to_string()));
@@ -256,12 +358,105 @@ mod tests {
 
     #[test]
     fn count_series_uses_count_type_and_interval() {
-      let worker = make_worker();
+      let w = make_worker();
       let samples = vec![sample("/x", "GET", 200, 1.0, 1)];
-      let (_, counts) = worker.build_metrics(samples);
-      assert_eq!(counts[0].metric_type, "count");
-      assert_eq!(counts[0].interval, Some(10));
-      assert_eq!(counts[0].points[0].1, 1.0);
+      let build = w.build_metrics(samples);
+      assert_eq!(build.counts[0].metric_type, "count");
+      assert_eq!(build.counts[0].interval, Some(10));
+      assert_eq!(build.counts[0].points[0].1, 1.0);
+    }
+  }
+
+  mod counter_aggregation {
+    use super::*;
+
+    fn counter(metric: &str, tags: Vec<&str>, ts: i64) -> Sample {
+      Sample::Counter(CounterSample {
+        metric: metric.to_string(),
+        tags: tags.into_iter().map(|s| s.to_string()).collect(),
+        timestamp_secs: ts,
+      })
+    }
+
+    #[test]
+    fn groups_by_metric_and_tag_set() {
+      let w = make_worker();
+      let samples = vec![
+        counter("orders.placed", vec!["region:us"], 1),
+        counter("orders.placed", vec!["region:us"], 2),
+        counter("orders.placed", vec!["region:eu"], 3),
+        counter("orders.failed", vec!["region:us"], 4),
+      ];
+      let build = w.build_metrics(samples);
+      assert_eq!(build.distributions.len(), 0);
+      assert_eq!(build.counts.len(), 3);
+      let us_placed = build.counts.iter().find(|m| {
+        m.metric == "orders.placed"
+          && m.tags.iter().any(|t| t == "region:us")
+      }).expect("missing orders.placed/us");
+      assert_eq!(us_placed.points[0].1, 2.0);
+    }
+
+    #[test]
+    fn tag_order_does_not_split_groups() {
+      let w = make_worker();
+      let samples = vec![
+        counter("x", vec!["a:1", "b:2"], 1),
+        counter("x", vec!["b:2", "a:1"], 2),
+      ];
+      let build = w.build_metrics(samples);
+      assert_eq!(build.counts.len(), 1);
+      assert_eq!(build.counts[0].points[0].1, 2.0);
+    }
+
+    #[test]
+    fn service_and_env_tags_appended() {
+      let w = make_worker();
+      let samples = vec![counter("foo", vec![], 1)];
+      let build = w.build_metrics(samples);
+      let tags = &build.counts[0].tags;
+      assert!(tags.contains(&"env:test".to_string()));
+      assert!(tags.contains(&"service:test-service".to_string()));
+    }
+  }
+
+  mod observation_aggregation {
+    use super::*;
+
+    fn obs(metric: &str, value: f64, tags: Vec<&str>, ts: i64) -> Sample {
+      Sample::Observation(ObservationSample {
+        metric: metric.to_string(),
+        value,
+        tags: tags.into_iter().map(|s| s.to_string()).collect(),
+        timestamp_secs: ts,
+      })
+    }
+
+    #[test]
+    fn groups_into_distributions() {
+      let w = make_worker();
+      let samples = vec![
+        obs("queue.depth", 10.0, vec!["queue:a"], 1),
+        obs("queue.depth", 20.0, vec!["queue:a"], 2),
+        obs("queue.depth", 30.0, vec!["queue:b"], 3),
+      ];
+      let build = w.build_metrics(samples);
+      assert_eq!(build.distributions.len(), 2);
+      assert_eq!(build.counts.len(), 0);
+      let a = build.distributions.iter()
+        .find(|d| d.tags.iter().any(|t| t == "queue:a"))
+        .expect("missing queue:a series");
+      assert_eq!(a.points[0].1, vec![10.0, 20.0]);
+    }
+
+    #[test]
+    fn service_and_env_tags_appended() {
+      let w = make_worker();
+      let samples = vec![obs("foo", 1.0, vec![], 1)];
+      let build = w.build_metrics(samples);
+      let tags = &build.distributions[0].tags;
+      assert!(tags.contains(&"env:test".to_string()));
+      assert!(tags.contains(&"service:test-service".to_string()));
     }
   }
 }
