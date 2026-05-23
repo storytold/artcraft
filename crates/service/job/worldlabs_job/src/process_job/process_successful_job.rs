@@ -7,6 +7,7 @@ use enums::by_table::media_files::media_file_class::MediaFileClass;
 use enums::by_table::media_files::media_file_origin_category::MediaFileOriginCategory;
 use enums::by_table::media_files::media_file_origin_product_category::MediaFileOriginProductCategory;
 use enums::by_table::media_files::media_file_type::MediaFileType;
+use enums::common::generation_provider::GenerationProvider;
 use errors::AnyhowResult;
 use hashing::sha256::sha256_hash_bytes::sha256_hash_bytes;
 use mysql_queries::queries::generic_inference::api_providers::worldlabs::list_pending_worldlabs_jobs::PendingWorldlabsJob;
@@ -111,19 +112,20 @@ pub async fn process_successful_job(
 
   // Insert media file record.
   let media_file_token = MediaFileInsertBuilder::new()
-    .maybe_creator_user(job.maybe_creator_user_token.as_ref())
-    .maybe_creator_anonymous_visitor(job.maybe_creator_anonymous_visitor_token.as_ref())
+    .checksum_sha2(&checksum)
     .creator_ip_address(&job.creator_ip_address)
     .creator_set_visibility(job.creator_set_visibility)
+    .file_size_bytes(splat_bytes.len() as u64)
+    .maybe_cover_image_media_file_token(maybe_cover_token.as_ref())
+    .maybe_creator_anonymous_visitor(job.maybe_creator_anonymous_visitor_token.as_ref())
+    .maybe_creator_user(job.maybe_creator_user_token.as_ref())
+    .maybe_generation_provider(Some(GenerationProvider::Artcraft))
+    .maybe_prompt_token(job.maybe_prompt_token.as_ref())
     .media_file_class(MediaFileClass::Dimensional)
-    .media_file_type(MediaFileType::Spz)
     .media_file_origin_category(MediaFileOriginCategory::Inference)
     .media_file_origin_product_category(MediaFileOriginProductCategory::WorldGeneration)
+    .media_file_type(MediaFileType::Spz)
     .mime_type("application/gzip")
-    .file_size_bytes(splat_bytes.len() as u64)
-    .checksum_sha2(&checksum)
-    .maybe_prompt_token(job.maybe_prompt_token.as_ref())
-    .maybe_cover_image_media_file_token(maybe_cover_token.as_ref())
     .public_bucket_directory_hash(&bucket_path)
     .insert_pool(&deps.mysql_pool)
     .await
