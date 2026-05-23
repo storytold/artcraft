@@ -19,6 +19,7 @@ use enums::by_table::media_files::media_file_class::MediaFileClass;
 use enums::by_table::media_files::media_file_origin_category::MediaFileOriginCategory;
 use enums::by_table::media_files::media_file_origin_product_category::MediaFileOriginProductCategory;
 use enums::by_table::media_files::media_file_type::MediaFileType;
+use enums::common::generation_provider::GenerationProvider;
 use ffmpeg_utils::ffprobe::ffprobe_get_info::ffprobe_get_info;
 use filesys::path_to_string::path_to_string;
 use hashing::sha256::sha256_hash_bytes::sha256_hash_bytes;
@@ -360,21 +361,22 @@ async fn download_and_upload_video(
       })?;
 
   let media_token = MediaFileInsertBuilder::new()
-      .maybe_creator_user(job.maybe_creator_user_token.as_ref())
-      .maybe_creator_anonymous_visitor(job.maybe_creator_anonymous_visitor_token.as_ref())
+      .checksum_sha2(&file_hash)
       .creator_ip_address(&job.creator_ip_address)
-      .public_bucket_directory_hash(&public_upload_path)
+      .file_size_bytes(file_size_bytes as u64)
+      .maybe_creator_anonymous_visitor(job.maybe_creator_anonymous_visitor_token.as_ref())
+      .maybe_creator_user(job.maybe_creator_user_token.as_ref())
+      .maybe_duration_millis(maybe_duration_millis)
+      .maybe_frame_height(maybe_frame_height)
+      .maybe_frame_width(maybe_frame_width)
+      .maybe_generation_provider(Some(GenerationProvider::Artcraft))
+      .maybe_prompt_token(job.maybe_prompt_token.as_ref())
       .media_file_class(MediaFileClass::Video)
-      .media_file_type(media_file_type)
       .media_file_origin_category(MediaFileOriginCategory::Inference)
       .media_file_origin_product_category(MediaFileOriginProductCategory::VideoEdit)
+      .media_file_type(media_file_type)
       .mime_type(mime_type)
-      .file_size_bytes(file_size_bytes as u64)
-      .maybe_frame_width(maybe_frame_width)
-      .maybe_frame_height(maybe_frame_height)
-      .maybe_duration_millis(maybe_duration_millis)
-      .checksum_sha2(&file_hash)
-      .maybe_prompt_token(job.maybe_prompt_token.as_ref())
+      .public_bucket_directory_hash(&public_upload_path)
       .insert_pool(&server_state.mysql_pool)
       .await
       .map_err(|e| {
