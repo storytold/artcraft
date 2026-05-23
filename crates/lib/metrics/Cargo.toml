@@ -1,0 +1,23 @@
+[package]
+name = "metrics"
+edition = "2024"
+version = "0.0.1"
+publish = false
+
+[package.metadata.cargo-udeps.ignore]
+normal = ["workspace-build-acceleration"]
+
+[lib]
+name = "metrics"
+path = "src/lib.rs"
+
+[dependencies]
+# Workspace hack (faster compile times)
+workspace-build-acceleration.workspace = true
+
+# Internal
+datadog_client.workspace = true
+
+# External
+log.workspace = true
+tokio = { workspace = true, features = ["macros", "rt", "time", "sync"] }

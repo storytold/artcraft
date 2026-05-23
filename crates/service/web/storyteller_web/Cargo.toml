@@ -65,6 +65,8 @@ markdown = { path = "../../../lib/markdown" }
 media = { path = "../../../lib/files/media" }
 memory_caching = { path = "../../../lib/caching/memory_caching" }
 migration = { path = "../../../schema/database/migration" }
+datadog_client.workspace = true
+metrics.workspace = true
 mimetypes.workspace = true
 mysql_queries.workspace = true
 opaque_cursors.workspace = true

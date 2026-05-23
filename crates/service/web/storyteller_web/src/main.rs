@@ -45,11 +45,13 @@ use crate::billing::internal_session_cache_purge_impl::InternalSessionCachePurge
 use crate::billing::stripe_internal_subscription_product_lookup_impl::StripeInternalSubscriptionProductLookupImpl;
 use crate::billing::stripe_internal_user_lookup_impl::StripeInternalUserLookupImpl;
 use crate::http_server::middleware::error_alerting_middleware::error_alerting_middleware::ErrorAlertingMiddleware;
+use crate::http_server::middleware::metrics_middleware::metrics_middleware::MetricsMiddleware;
 use crate::http_server::middleware::pushback_filter_middleware::PushbackFilter;
 use crate::http_server::routes::add_routes::add_routes;
 use crate::http_server::web_utils::handle_multipart_error::handle_multipart_error;
 use crate::startup::build_dependencies::setup_dependencies;
 use crate::startup::setup_disabled_endpoints::read_disabled_endpoints;
+use crate::startup::setup_metrics::build_metrics;
 use crate::state::server_state::ServerState;
 use crate::threads::db_health_checker_thread::db_health_checker_thread::db_health_checker_thread;
 use crate::threads::poll_ip_banlist_thread::poll_ip_bans;
@@ -144,13 +146,30 @@ async fn main() -> AnyhowResult<()> {
     poll_model_token_info_thread(model_token_info_cache_clone, mysql_pool_clone).await;
   });
 
+  // ==================== Metrics worker ==================== //
+
+  let new_server_environment_for_metrics = server_state.server_environment;
+
+  let (metrics_collector, maybe_metrics_worker) =
+    build_metrics(server_state.server_environment, &server_state.hostname);
+
+  if let Some(worker) = maybe_metrics_worker {
+    info!("Spawning metrics worker thread.");
+    tokio_runtime.spawn(async move {
+      worker.run().await;
+    });
+  }
+
   // ==================== Serve ==================== //
 
-  serve(server_state).await?;
+  serve(server_state, metrics_collector).await?;
   Ok(())
 }
 
-pub async fn serve(server_state: ServerState) -> AnyhowResult<()>
+pub async fn serve(
+  server_state: ServerState,
+  metrics_collector: metrics::collector::MetricsCollector,
+) -> AnyhowResult<()>
 {
   let bind_address = server_state.env_config.bind_address.clone();
   let num_workers = server_state.env_config.num_workers;
@@ -224,6 +243,7 @@ pub async fn serve(server_state: ServerState) -> AnyhowResult<()>
             .memory_limit(10 * 1024 * 1024) // 10 MB
             .error_handler(handle_multipart_error)
       )
+      .wrap(MetricsMiddleware::new(metrics_collector.clone()))
       .wrap(build_cors_config(old_server_environment))
       .wrap(shared_array_buffer_cors())
       .wrap(DefaultHeaders::new()

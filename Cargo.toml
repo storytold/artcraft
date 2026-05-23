@@ -10,6 +10,7 @@ members = [
   "crates/api_clients/artcraft/artcraft_client",
   "crates/api_clients/artcraft/artcraft_router",
   "crates/api_clients/cloud_storage",
+  "crates/api_clients/datadog_client",
   "crates/api_clients/fal_client",
   "crates/api_clients/google_drive_downloader",
   "crates/api_clients/google_sign_in",
@@ -79,6 +80,7 @@ members = [
   "crates/lib/jwt_signer",
   "crates/lib/logging",
   "crates/lib/markdown",
+  "crates/lib/metrics",
   "crates/lib/pager",
   "crates/lib/password",
   "crates/lib/server_environment",
@@ -240,6 +242,7 @@ component_traits = { path = "crates/service/plugins/component_traits" }
 concurrency = { path = "crates/lib/concurrency" }
 cookie_store = { path = "crates/lib/cookie_store" }
 crockford = { path = "crates/lib/data/crockford" }
+datadog_client = { path = "crates/api_clients/datadog_client" }
 easyenv = { path = "crates/lib/easyenv" }
 enums = { path = "crates/schema/public/enums" }
 error_utils = { path = "crates/lib/error_utils" }
@@ -265,6 +268,7 @@ memory_store = { path = "crates/lib/caching/memory_store" }
 midjourney_client = { path = "crates/api_clients/midjourney_client" }
 mimetypes = { path = "crates/lib/files/mimetypes" }
 muapi_client = { path = "crates/api_clients/muapi_client" }
+metrics = { path = "crates/lib/metrics" }
 mysql_queries = { path = "crates/schema/database/mysql_queries" }
 pager = { path = "crates/lib/pager" }
 openai_sora_client = { path = "crates/api_clients/openai_sora_client" }

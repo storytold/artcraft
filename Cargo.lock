@@ -3039,6 +3039,19 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5c297a1c74b71ae29df00c3e22dd9534821d60eb9af5a0192823fa2acea70c2a"
 
 [[package]]
+name = "datadog_client"
+version = "0.0.1"
+dependencies = [
+ "log",
+ "reqwest 0.12.23",
+ "serde",
+ "serde_derive",
+ "serde_json",
+ "thiserror 2.0.18",
+ "workspace-build-acceleration",
+]
+
+[[package]]
 name = "datetimes"
 version = "0.0.1"
 dependencies = [
@@ -6947,6 +6960,16 @@ version = "0.0.1"
 dependencies = [
  "anyhow",
  "errors",
+ "workspace-build-acceleration",
+]
+
+[[package]]
+name = "metrics"
+version = "0.0.1"
+dependencies = [
+ "datadog_client",
+ "log",
+ "tokio",
  "workspace-build-acceleration",
 ]
 
@@ -11455,6 +11478,7 @@ dependencies = [
  "composite_identifiers",
  "config",
  "crockford",
+ "datadog_client",
  "datetimes",
  "derive_more 0.99.17",
  "diesel",
@@ -11487,6 +11511,7 @@ dependencies = [
  "md-5 0.10.6",
  "media",
  "memory_caching",
+ "metrics",
  "migration",
  "mimetypes",
  "mysql_queries",
