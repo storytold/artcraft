@@ -1,4 +1,4 @@
-use grok_client::error::grok_error::GrokError;
+use grok_consumer_client::error::grok_error::GrokError;
 use std::error::Error;
 use std::fmt::{Display, Formatter};
 use std::path::PathBuf;

@@ -1,6 +1,6 @@
 use crate::core::artcraft_error::ArtcraftError;
 use errors::AnyhowResult;
-use grok_client::requests::image_websocket::grok_wrapped_websocket::GrokWrappedWebsocket;
+use grok_consumer_client::requests::image_websocket::grok_wrapped_websocket::GrokWrappedWebsocket;
 use log::error;
 use std::sync::{Arc, RwLock};
 

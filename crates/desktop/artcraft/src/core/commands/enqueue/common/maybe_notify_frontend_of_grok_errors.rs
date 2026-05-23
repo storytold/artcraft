@@ -2,8 +2,8 @@ use crate::core::commands::enqueue::generate_error::{GenerateError, ProviderFail
 use crate::core::events::basic_sendable_event_trait::BasicSendableEvent;
 use crate::core::events::generation_events::common::{GenerationAction, GenerationServiceProvider};
 use crate::core::events::generation_events::generation_enqueue_failure_event::GenerationEnqueueFailureEvent;
-use grok_client::error::grok_error::GrokError;
-use grok_client::error::grok_specific_api_error::GrokSpecificApiError;
+use grok_consumer_client::error::grok_error::GrokError;
+use grok_consumer_client::error::grok_specific_api_error::GrokSpecificApiError;
 use tauri::AppHandle;
 
 pub async fn maybe_notify_frontend_of_grok_errors(

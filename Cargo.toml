@@ -14,7 +14,7 @@ members = [
   "crates/api_clients/fal_client",
   "crates/api_clients/google_drive_downloader",
   "crates/api_clients/google_sign_in",
-  "crates/api_clients/grok_client",
+  "crates/api_clients/grok_consumer_client",
   "crates/api_clients/gmicloud_client",
   "crates/api_clients/midjourney_client",
   "crates/api_clients/muapi_client",
@@ -253,7 +253,7 @@ ffmpeg_utils = { path = "crates/lib/ffmpeg_utils" }
 file_to_base64_url = { path = "crates/lib/files/file_to_base64_url" }
 filesys = { path = "crates/lib/files/filesys" }
 beeble_client = { path = "crates/api_clients/beeble_client" }
-grok_client = { path = "crates/api_clients/grok_client" }
+grok_consumer_client = { path = "crates/api_clients/grok_consumer_client" }
 rootly_client = { path = "crates/api_clients/rootly_client" }
 rootly_config = { path = "crates/schema/config/rootly_config" }
 shared_env_var_config = { path = "crates/schema/config/shared_env_var_config" }

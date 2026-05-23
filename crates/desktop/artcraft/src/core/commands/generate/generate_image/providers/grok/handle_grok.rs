@@ -8,7 +8,7 @@ use crate::services::grok::state::grok_credential_manager::GrokCredentialManager
 use crate::services::grok::state::grok_image_prompt_queue::{GrokImagePromptQueue, PromptItem};
 use enums::common::generation_provider::GenerationProvider;
 use enums::tauri::tasks::task_type::TaskType;
-use grok_client::requests::image_websocket::messages::websocket_client_message::ClientMessageAspectRatio;
+use grok_consumer_client::requests::image_websocket::messages::websocket_client_message::ClientMessageAspectRatio;
 use uuid_utils::uuid::generate_random_uuid;
 use tauri::AppHandle;
 

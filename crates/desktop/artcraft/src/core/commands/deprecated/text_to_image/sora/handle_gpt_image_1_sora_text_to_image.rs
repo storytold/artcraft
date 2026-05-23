@@ -12,7 +12,7 @@ use crate::services::sora::state::sora_task_queue::SoraTaskQueue;
 use enums::common::generation_provider::GenerationProvider;
 use enums::tauri::tasks::task_type::TaskType;
 use errors::AnyhowResult;
-use grok_client::requests::image_websocket::messages::websocket_client_message::ClientMessageAspectRatio;
+use grok_consumer_client::requests::image_websocket::messages::websocket_client_message::ClientMessageAspectRatio;
 use log::{error, info};
 use openai_sora_client::recipes::maybe_upgrade_or_renew_session::maybe_upgrade_or_renew_session;
 use openai_sora_client::recipes::simple_image_gen_with_session_auto_renew::{simple_image_gen_with_session_auto_renew, SimpleImageGenAutoRenewRequest};

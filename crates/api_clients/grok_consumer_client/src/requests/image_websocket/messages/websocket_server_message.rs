@@ -87,7 +87,7 @@ mod tests {
   use crate::requests::image_websocket::messages::websocket_server_message::WebsocketServerMessage;
 
   fn json_path(file_name: &str) -> String {
-    format!("/Users/bt/dev/storyteller/storyteller-rust/crates/api_clients/grok_client/test_data/websocket_messages/{}", file_name)
+    format!("/Users/bt/dev/storyteller/storyteller-rust/crates/api_clients/grok_consumer_client/test_data/websocket_messages/{}", file_name)
   }
 
   #[test]

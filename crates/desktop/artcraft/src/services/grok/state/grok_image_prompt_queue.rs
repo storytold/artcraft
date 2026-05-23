@@ -2,7 +2,7 @@ use crate::core::artcraft_error::ArtcraftError;
 use log::error;
 use std::collections::VecDeque;
 use std::sync::{Arc, Mutex};
-use grok_client::requests::image_websocket::messages::websocket_client_message::ClientMessageAspectRatio;
+use grok_consumer_client::requests::image_websocket::messages::websocket_client_message::ClientMessageAspectRatio;
 
 #[derive(Clone)]
 pub struct GrokImagePromptQueue {

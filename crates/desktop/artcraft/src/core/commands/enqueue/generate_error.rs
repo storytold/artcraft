@@ -6,7 +6,7 @@ use base64::DecodeError;
 use enums::common::generation_provider::GenerationProvider;
 use enums::common::generation::common_model_type::CommonModelType;
 use errors::AnyhowError;
-use grok_client::error::grok_error::GrokError;
+use grok_consumer_client::error::grok_error::GrokError;
 use midjourney_client::error::midjourney_error::MidjourneyError;
 use openai_sora_client::error::sora_error::SoraError;
 use artcraft_client::error::storyteller_error::StorytellerError;

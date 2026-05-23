@@ -8,9 +8,9 @@ use crate::services::sora::state::sora_credential_manager::SoraCredentialManager
 use crate::services::storyteller::state::storyteller_credential_manager::StorytellerCredentialManager;
 use anyhow::anyhow;
 use errors::AnyhowResult;
-use grok_client::datatypes::api::file_id::FileId;
-use grok_client::datatypes::file_upload_spec::FileUploadSpec;
-use grok_client::requests::upload_file::grok_upload_file::GrokUploadFile;
+use grok_consumer_client::datatypes::api::file_id::FileId;
+use grok_consumer_client::datatypes::file_upload_spec::FileUploadSpec;
+use grok_consumer_client::requests::upload_file::grok_upload_file::GrokUploadFile;
 use log::{error, info};
 use openai_sora_client::creds::sora_credential_set::SoraCredentialSet;
 use openai_sora_client::recipes::image_upload_from_file_with_session_auto_renew::{image_upload_from_file_with_session_auto_renew, ImageUploadFromFileAutoRenewRequest};
