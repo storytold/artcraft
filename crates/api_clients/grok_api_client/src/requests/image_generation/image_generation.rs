@@ -6,9 +6,11 @@ use crate::error::grok_client_error::GrokClientError;
 use crate::error::grok_error::GrokError;
 use crate::error::grok_generic_api_error::GrokGenericApiError;
 use crate::requests::image_generation::request_types::*;
+use crate::requests::image_types::image_aspect_ratio::ImageAspectRatio;
+use crate::requests::image_types::image_model::ImageModel;
+use crate::requests::image_types::image_resolution::ImageResolution;
+use crate::requests::image_types::image_response_format::ImageResponseFormat;
 use crate::requests::xai_host::XAI_API_BASE_URL;
-
-const DEFAULT_MODEL: &str = "grok-imagine-image-quality";
 
 // ── Public args ──
 
@@ -19,38 +21,27 @@ pub struct ImageGenerationArgs {
   /// Text prompt describing the image. Required.
   pub prompt: String,
 
-  /// Model identifier. Defaults to `grok-imagine-image-quality` if `None`.
-  pub model: Option<String>,
+  /// Model identifier. Defaults to [`ImageModel::GrokImagineImageQuality`]
+  /// when `None`. Use [`ImageModel::Custom`] for identifiers not yet listed
+  /// in the enum.
+  pub model: Option<ImageModel>,
 
-  /// Number of images to generate. Server default (typically 1) if `None`.
-  pub n: Option<u32>,
+  /// Number of images to render in this request. xAI's docs don't state a
+  /// hard maximum; server default is 1 when `None`.
+  pub number_images: Option<u32>,
 
-  /// Aspect ratio (e.g. "1:1", "16:9", "auto"). Server default if `None`.
-  pub aspect_ratio: Option<String>,
+  /// Aspect ratio. See [`ImageAspectRatio`] for the closed set of accepted
+  /// values. Server default when `None`.
+  pub aspect_ratio: Option<ImageAspectRatio>,
 
-  /// Resolution (`"1k"` or `"2k"`). Server default if `None`.
-  pub resolution: Option<String>,
+  /// Output resolution tier. See [`ImageResolution`]. Server default when `None`.
+  pub resolution: Option<ImageResolution>,
 
-  /// `"url"` (default) or `"b64_json"`.
+  /// Url (default) or b64 inline. See [`ImageResponseFormat`].
   pub response_format: Option<ImageResponseFormat>,
 
   /// Optional opaque user identifier for usage attribution.
   pub user: Option<String>,
-}
-
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
-pub enum ImageResponseFormat {
-  Url,
-  B64Json,
-}
-
-impl ImageResponseFormat {
-  pub fn as_str(&self) -> &'static str {
-    match self {
-      Self::Url => "url",
-      Self::B64Json => "b64_json",
-    }
-  }
 }
 
 // ── Public response ──
@@ -83,19 +74,21 @@ pub struct GeneratedImage {
 pub async fn image_generation(args: ImageGenerationArgs) -> Result<ImageGenerationSuccess, GrokError> {
   let url = format!("{}/v1/images/generations", XAI_API_BASE_URL);
 
-  let model = args.model.unwrap_or_else(|| DEFAULT_MODEL.to_string());
+  let model = args.model.unwrap_or(ImageModel::GrokImagineImageQuality);
 
   info!(
-    "Grok image_generation: model={}, n={:?}, aspect_ratio={:?}, resolution={:?}",
-    model, args.n, args.aspect_ratio, args.resolution
+    "Grok image_generation: model={}, number_images={:?}, aspect_ratio={:?}, resolution={:?}",
+    model.as_str(), args.number_images,
+    args.aspect_ratio.map(|a| a.as_str()),
+    args.resolution.map(|r| r.as_str()),
   );
 
   let request_body = ImageGenerationRequestBody {
     prompt: args.prompt,
-    model: Some(model),
-    n: args.n,
-    aspect_ratio: args.aspect_ratio,
-    resolution: args.resolution,
+    model: Some(model.as_str().to_string()),
+    n: args.number_images,
+    aspect_ratio: args.aspect_ratio.map(|a| a.as_str().to_string()),
+    resolution: args.resolution.map(|r| r.as_str().to_string()),
     response_format: args.response_format.map(|f| f.as_str().to_string()),
     user: args.user,
   };
@@ -207,10 +200,21 @@ mod tests {
     assert!(parsed.data[0].url.is_none());
   }
 
-  #[test]
-  fn response_format_enum_round_trips() {
-    assert_eq!(ImageResponseFormat::Url.as_str(), "url");
-    assert_eq!(ImageResponseFormat::B64Json.as_str(), "b64_json");
+  // (Enum-specific round-trips live in their own modules under
+  // `requests::image_types::*`; here we just verify the public args wire up.)
+
+  #[tokio::test]
+  async fn args_with_enums_serializes_correct_strings() {
+    // We can't reach the inner serde body directly without calling the API,
+    // but we can verify the conversion functions yield exactly the docs values.
+    let m = ImageModel::GrokImagineImageQuality;
+    let a = ImageAspectRatio::Landscape16x9;
+    let r = ImageResolution::OneK;
+    let f = ImageResponseFormat::B64Json;
+    assert_eq!(m.as_str(), "grok-imagine-image-quality");
+    assert_eq!(a.as_str(), "16:9");
+    assert_eq!(r.as_str(), "1k");
+    assert_eq!(f.as_str(), "b64_json");
   }
 
   // ── Live API tests (ignored — incur cost) ──
@@ -227,9 +231,9 @@ mod tests {
       api_key,
       prompt: "A serene mountain lake at sunrise, photorealistic".to_string(),
       model: None,
-      n: None,
-      aspect_ratio: Some("16:9".to_string()),
-      resolution: Some("1k".to_string()),
+      number_images: None,
+      aspect_ratio: Some(ImageAspectRatio::Landscape16x9),
+      resolution: Some(ImageResolution::OneK),
       response_format: None,
       user: None,
     }).await.map_err(|e| anyhow::anyhow!("{}", e))?;

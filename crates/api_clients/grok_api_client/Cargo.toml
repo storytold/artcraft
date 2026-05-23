@@ -20,7 +20,9 @@ errors.workspace = true
 
 # External
 log.workspace = true
-reqwest.workspace = true
+# `multipart` is enabled on top of the workspace feature set so we can use
+# `reqwest::multipart` for POST /v1/files uploads.
+reqwest = { workspace = true, features = ["multipart"] }
 serde.workspace = true
 serde_derive.workspace = true
 serde_json.workspace = true

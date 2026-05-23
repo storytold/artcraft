@@ -33,9 +33,19 @@ pub struct VideoExtensionArgs {
   pub upload_url: Option<String>,
 }
 
+/// Source video to extend. Pick by public URL or by a previously-uploaded
+/// xAI file_id.
 #[derive(Clone, Debug)]
 pub enum VideoExtensionSource {
+  /// Public HTTPS URL pointing to the source video.
   Url(String),
+
+  /// xAI file identifier (`file_...`) obtained from a successful upload via
+  /// [`crate::requests::upload_file::upload_file::upload_file`].
+  ///
+  /// Docs:
+  /// - <https://docs.x.ai/developers/rest-api-reference/files/upload>
+  /// - <https://docs.x.ai/developers/rest-api-reference/files/manage>
   FileId(String),
 }
 

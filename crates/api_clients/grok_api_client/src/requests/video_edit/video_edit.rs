@@ -32,9 +32,20 @@ pub struct VideoEditArgs {
   pub user: Option<String>,
 }
 
+/// Source video to edit. Pick by public URL or by a previously-uploaded
+/// xAI file_id.
 #[derive(Clone, Debug)]
 pub enum VideoSource {
+  /// Public HTTPS URL pointing to the source video. xAI fetches the bytes
+  /// on its end.
   Url(String),
+
+  /// xAI file identifier (`file_...`) obtained from a successful upload via
+  /// [`crate::requests::upload_file::upload_file::upload_file`].
+  ///
+  /// Docs:
+  /// - <https://docs.x.ai/developers/rest-api-reference/files/upload>
+  /// - <https://docs.x.ai/developers/rest-api-reference/files/manage>
   FileId(String),
 }
 

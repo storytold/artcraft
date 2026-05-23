@@ -48,9 +48,21 @@ pub struct VideoGenerationArgs {
   pub user: Option<String>,
 }
 
+/// Source image for `image` (image-to-video) or `reference_images`
+/// (reference-to-video).
 #[derive(Clone, Debug)]
 pub enum VideoImageSource {
+  /// Either a public HTTPS URL or a `data:` URI containing base64-encoded
+  /// image bytes.
   Url(String),
+
+  /// xAI file identifier (`file_...`) obtained from a successful upload via
+  /// [`crate::requests::upload_file::upload_file::upload_file`]. The file
+  /// must still exist at request time.
+  ///
+  /// Docs:
+  /// - <https://docs.x.ai/developers/rest-api-reference/files/upload>
+  /// - <https://docs.x.ai/developers/rest-api-reference/files/manage>
   FileId(String),
 }
 

@@ -7,9 +7,11 @@ use crate::error::grok_error::GrokError;
 use crate::error::grok_generic_api_error::GrokGenericApiError;
 use crate::error::grok_specific_api_error::GrokSpecificApiError;
 use crate::requests::image_edit::request_types::*;
+use crate::requests::image_types::image_aspect_ratio::ImageAspectRatio;
+use crate::requests::image_types::image_model::ImageModel;
+use crate::requests::image_types::image_resolution::ImageResolution;
+use crate::requests::image_types::image_response_format::ImageResponseFormat;
 use crate::requests::xai_host::XAI_API_BASE_URL;
-
-const DEFAULT_MODEL: &str = "grok-imagine-image-quality";
 
 // ── Public args ──
 
@@ -24,36 +26,41 @@ pub struct ImageEditArgs {
   /// The output aspect ratio follows the first input image unless overridden.
   pub source_images: Vec<ImageSource>,
 
-  /// Model identifier. Defaults to `grok-imagine-image-quality` if `None`.
-  pub model: Option<String>,
+  /// Model identifier. Defaults to [`ImageModel::GrokImagineImageQuality`] when `None`.
+  pub model: Option<ImageModel>,
 
-  pub n: Option<u32>,
-  pub aspect_ratio: Option<String>,
-  pub resolution: Option<String>,
-  pub response_format: Option<ImageEditResponseFormat>,
+  /// Number of edited images to render. Server default is 1 when `None`.
+  pub number_images: Option<u32>,
+
+  /// Aspect ratio. See [`ImageAspectRatio`]. When `None`, xAI defaults to
+  /// matching the first input image.
+  pub aspect_ratio: Option<ImageAspectRatio>,
+
+  /// Output resolution tier. See [`ImageResolution`].
+  pub resolution: Option<ImageResolution>,
+
+  /// `Url` (default) or `B64Json`.
+  pub response_format: Option<ImageResponseFormat>,
+
   pub user: Option<String>,
 }
 
-/// Source image — pick by URL or by file_id (from a prior /v1/files upload).
+/// Source image — pick by URL or by `file_id` (from a prior upload).
 #[derive(Clone, Debug)]
 pub enum ImageSource {
+  /// Either a public HTTPS URL or a `data:` URI containing base64-encoded
+  /// image bytes.
   Url(String),
+
+  /// xAI file identifier (`file_...`) obtained from a successful upload via
+  /// [`crate::requests::upload_file::upload_file::upload_file`]. The file
+  /// must still exist at request time (it has not been deleted and any
+  /// `expires_after` has not lapsed).
+  ///
+  /// Docs:
+  /// - <https://docs.x.ai/developers/rest-api-reference/files/upload>
+  /// - <https://docs.x.ai/developers/rest-api-reference/files/manage>
   FileId(String),
-}
-
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
-pub enum ImageEditResponseFormat {
-  Url,
-  B64Json,
-}
-
-impl ImageEditResponseFormat {
-  pub fn as_str(&self) -> &'static str {
-    match self {
-      Self::Url => "url",
-      Self::B64Json => "b64_json",
-    }
-  }
 }
 
 // ── Public response ──
@@ -86,11 +93,13 @@ pub async fn image_edit(args: ImageEditArgs) -> Result<ImageEditSuccess, GrokErr
   }
 
   let url = format!("{}/v1/images/edits", XAI_API_BASE_URL);
-  let model = args.model.unwrap_or_else(|| DEFAULT_MODEL.to_string());
+  let model = args.model.unwrap_or(ImageModel::GrokImagineImageQuality);
 
   info!(
     "Grok image_edit: model={}, sources={}, aspect_ratio={:?}, resolution={:?}",
-    model, args.source_images.len(), args.aspect_ratio, args.resolution
+    model.as_str(), args.source_images.len(),
+    args.aspect_ratio.map(|a| a.as_str()),
+    args.resolution.map(|r| r.as_str()),
   );
 
   // Single source → `image`. Multiple sources → `images`.
@@ -104,10 +113,10 @@ pub async fn image_edit(args: ImageEditArgs) -> Result<ImageEditSuccess, GrokErr
     prompt: args.prompt,
     image,
     images,
-    model: Some(model),
-    n: args.n,
-    aspect_ratio: args.aspect_ratio,
-    resolution: args.resolution,
+    model: Some(model.as_str().to_string()),
+    n: args.number_images,
+    aspect_ratio: args.aspect_ratio.map(|a| a.as_str().to_string()),
+    resolution: args.resolution.map(|r| r.as_str().to_string()),
     response_format: args.response_format.map(|f| f.as_str().to_string()),
     user: args.user,
   };
@@ -211,7 +220,7 @@ mod tests {
       prompt: "edit".to_string(),
       source_images: vec![],
       model: None,
-      n: None,
+      number_images: None,
       aspect_ratio: None,
       resolution: None,
       response_format: None,
@@ -261,7 +270,7 @@ mod tests {
         "https://docs.x.ai/assets/api-examples/images/style-realistic.png".to_string()
       )],
       model: None,
-      n: None,
+      number_images: None,
       aspect_ratio: None,
       resolution: None,
       response_format: None,
