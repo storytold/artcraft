@@ -10,6 +10,7 @@ use enums::by_table::media_files::media_file_type::MediaFileType;
 use fal_client::webhook_payload::hydrated::hydrated_webhook_contents::ModelMeshData;
 use hashing::sha256::sha256_hash_bytes::sha256_hash_bytes;
 use log::{info, warn};
+use enums::common::generation_provider::GenerationProvider;
 use mysql_queries::queries::generic_inference::api_providers::fal::get_inference_job_by_fal_id::FalJobDetails;
 use mysql_queries::queries::media_files::create::insert_builder::media_file_insert_builder::MediaFileInsertBuilder;
 use tokens::tokens::media_files::MediaFileToken;
@@ -98,19 +99,19 @@ pub async fn process_model_mesh_payload(
       })?;
 
   let media_token = MediaFileInsertBuilder::new()
-      .maybe_creator_user(job.maybe_creator_user_token.as_ref())
-      .maybe_creator_anonymous_visitor(job.maybe_creator_anonymous_visitor_token.as_ref())
-      .creator_ip_address(&job.creator_ip_address)
-      .public_bucket_directory_hash(&public_upload_path)
-      .media_file_class(MediaFileClass::Dimensional)
-      .media_file_type(media_file_type)
-      .media_file_origin_category(MediaFileOriginCategory::Inference)
-      .maybe_engine_category(Some(MediaFileEngineCategory::Object))
-      //.media_file_origin_product_category(MediaFileOriginProductCategory::Unknown)
-      .mime_type(mime_type)
-      .file_size_bytes(file_size_bytes as u64)
-      .maybe_prompt_token(job.maybe_prompt_token.as_ref())
       .checksum_sha2(&file_hash)
+      .creator_ip_address(&job.creator_ip_address)
+      .file_size_bytes(file_size_bytes as u64)
+      .maybe_creator_anonymous_visitor(job.maybe_creator_anonymous_visitor_token.as_ref())
+      .maybe_creator_user(job.maybe_creator_user_token.as_ref())
+      .maybe_engine_category(Some(MediaFileEngineCategory::Object))
+      .maybe_generation_provider(Some(GenerationProvider::Artcraft))
+      .maybe_prompt_token(job.maybe_prompt_token.as_ref())
+      .media_file_class(MediaFileClass::Dimensional)
+      .media_file_origin_category(MediaFileOriginCategory::Inference)
+      .media_file_type(media_file_type)
+      .mime_type(mime_type)
+      .public_bucket_directory_hash(&public_upload_path)
       .insert_pool(&server_state.mysql_pool)
       .await
       .map_err(|err| {

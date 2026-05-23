@@ -14,6 +14,7 @@ use mysql_queries::queries::generic_inference::api_providers::fal::get_inference
 use mysql_queries::queries::media_files::create::insert_builder::media_file_insert_builder::MediaFileInsertBuilder;
 use std::io::Write;
 use tempfile::NamedTempFile;
+use enums::common::generation_provider::GenerationProvider;
 use thumbnail_generator::task_client::thumbnail_task::{ThumbnailTaskBuilder, ThumbnailTaskInputMimeType};
 use tokens::tokens::media_files::MediaFileToken;
 use ffmpeg_utils::ffprobe::ffprobe_get_info::ffprobe_get_info;
@@ -126,21 +127,21 @@ pub async fn process_video_payload(
       })?;
 
   let media_token = MediaFileInsertBuilder::new()
-      .maybe_creator_user(job.maybe_creator_user_token.as_ref())
-      .maybe_creator_anonymous_visitor(job.maybe_creator_anonymous_visitor_token.as_ref())
-      .creator_ip_address(&job.creator_ip_address)
-      .public_bucket_directory_hash(&public_upload_path)
-      .media_file_class(MediaFileClass::Video)
-      .media_file_type(media_file_type)
-      .media_file_origin_category(MediaFileOriginCategory::Inference)
-      //.media_file_origin_product_category(MediaFileOriginProductCategory::Unknown)
-      .mime_type(mime_type)
-      .file_size_bytes(file_size_bytes as u64)
-      .maybe_frame_width(maybe_frame_width)
-      .maybe_frame_height(maybe_frame_height)
-      .maybe_duration_millis(maybe_duration_millis)
       .checksum_sha2(&file_hash)
+      .creator_ip_address(&job.creator_ip_address)
+      .file_size_bytes(file_size_bytes as u64)
+      .maybe_creator_anonymous_visitor(job.maybe_creator_anonymous_visitor_token.as_ref())
+      .maybe_creator_user(job.maybe_creator_user_token.as_ref())
+      .maybe_duration_millis(maybe_duration_millis)
+      .maybe_frame_height(maybe_frame_height)
+      .maybe_frame_width(maybe_frame_width)
+      .maybe_generation_provider(Some(GenerationProvider::Artcraft))
       .maybe_prompt_token(job.maybe_prompt_token.as_ref())
+      .media_file_class(MediaFileClass::Video)
+      .media_file_origin_category(MediaFileOriginCategory::Inference)
+      .media_file_type(media_file_type)
+      .mime_type(mime_type)
+      .public_bucket_directory_hash(&public_upload_path)
       .insert_pool(&server_state.mysql_pool)
       .await
       .map_err(|e| {
