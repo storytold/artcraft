@@ -3,13 +3,12 @@ use serde_derive::Serialize;
 
 use crate::api::requests::videos::video_extension::request_types::*;
 use crate::api::requests::xai_host::XAI_API_BASE_URL;
+use crate::api::types::video_types::video_model::VideoModel;
 use crate::creds::grok_api_key::GrokApiKey;
 use crate::error::classify_grok_http_error::classify_grok_http_error;
 use crate::error::grok_client_error::GrokClientError;
 use crate::error::grok_error::GrokError;
 use crate::error::grok_generic_api_error::GrokGenericApiError;
-
-const DEFAULT_MODEL: &str = "grok-imagine-video";
 
 // ── Public args ──
 
@@ -32,9 +31,10 @@ pub struct VideoExtensionRequest {
   /// Source video to extend.
   pub source_video: VideoExtensionSource,
 
-  /// Model identifier. Defaults to `grok-imagine-video`.
+  /// Model identifier. Defaults to [`VideoModel::GrokImagineVideo`] when `None`.
+  /// Use [`VideoModel::Custom`] for identifiers not yet listed in the enum.
   #[serde(skip_serializing_if = "Option::is_none")]
-  pub model: Option<String>,
+  pub model: Option<VideoModel>,
 
   /// Length of the *extension only*, not the total output. xAI default is 6
   /// seconds; range 1–10.
@@ -82,14 +82,14 @@ pub async fn video_extension(args: VideoExtensionArgs<'_>) -> Result<VideoExtens
   let req = args.request;
 
   let url = format!("{}/v1/videos/extensions", XAI_API_BASE_URL);
-  let model = req.model.unwrap_or_else(|| DEFAULT_MODEL.to_string());
+  let model = req.model.unwrap_or(VideoModel::GrokImagineVideo);
 
-  info!("Grok video_extension: model={}, duration={:?}", model, req.duration);
+  info!("Grok video_extension: model={}, duration={:?}", model.as_str(), req.duration);
 
   let request_body = VideoExtensionRequestBody {
     prompt: req.prompt,
     video: to_extension_source_ref(&req.source_video),
-    model: Some(model),
+    model: Some(model.as_str().to_string()),
     duration: req.duration,
     output: req.upload_url.map(|upload_url| VideoExtensionOutput { upload_url }),
   };

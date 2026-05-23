@@ -3,14 +3,15 @@ use serde_derive::Serialize;
 
 use crate::api::requests::videos::video_generation::request_types::*;
 use crate::api::requests::xai_host::XAI_API_BASE_URL;
+use crate::api::types::video_types::video_aspect_ratio::VideoAspectRatio;
+use crate::api::types::video_types::video_model::VideoModel;
+use crate::api::types::video_types::video_resolution::VideoResolution;
 use crate::creds::grok_api_key::GrokApiKey;
 use crate::error::classify_grok_http_error::classify_grok_http_error;
 use crate::error::grok_client_error::GrokClientError;
 use crate::error::grok_error::GrokError;
 use crate::error::grok_generic_api_error::GrokGenericApiError;
 use crate::error::grok_specific_api_error::GrokSpecificApiError;
-
-const DEFAULT_MODEL: &str = "grok-imagine-video";
 
 // ── Public args ──
 
@@ -30,9 +31,10 @@ pub struct VideoGenerationRequest {
   /// Text prompt. Required.
   pub prompt: String,
 
-  /// Model identifier. Defaults to `grok-imagine-video`.
+  /// Model identifier. Defaults to [`VideoModel::GrokImagineVideo`] when `None`.
+  /// Use [`VideoModel::Custom`] for identifiers not yet listed in the enum.
   #[serde(skip_serializing_if = "Option::is_none")]
-  pub model: Option<String>,
+  pub model: Option<VideoModel>,
 
   /// Image-to-video: a single source image. Mutually exclusive with
   /// `reference_images` — supplying both returns a `BadRequest` before the
@@ -44,17 +46,20 @@ pub struct VideoGenerationRequest {
   #[serde(skip_serializing_if = "Option::is_none")]
   pub reference_images: Option<Vec<VideoImageSource>>,
 
-  /// e.g. "16:9", "1:1", "9:16".
+  /// Aspect ratio. See [`VideoAspectRatio`] for the closed set of accepted
+  /// values (7 ratios — note the video endpoint accepts fewer than image
+  /// endpoints). Server default is `16:9` when `None`.
   #[serde(skip_serializing_if = "Option::is_none")]
-  pub aspect_ratio: Option<String>,
+  pub aspect_ratio: Option<VideoAspectRatio>,
 
   /// Duration in seconds (1–15). xAI default is 8.
   #[serde(skip_serializing_if = "Option::is_none")]
   pub duration: Option<u32>,
 
-  /// `"480p"`, `"720p"`, `"1080p"`.
+  /// Output resolution tier. See [`VideoResolution`] (`480p`, `720p`,
+  /// `1080p`). Server default is `480p` when `None`.
   #[serde(skip_serializing_if = "Option::is_none")]
-  pub resolution: Option<String>,
+  pub resolution: Option<VideoResolution>,
 
   /// Optional presigned PUT URL where xAI should upload the rendered video.
   /// Per the REST API reference this is required; per the published curl
@@ -113,26 +118,26 @@ pub async fn video_generation(args: VideoGenerationArgs<'_>) -> Result<VideoGene
   }
 
   let url = format!("{}/v1/videos/generations", XAI_API_BASE_URL);
-  let model = req.model.unwrap_or_else(|| DEFAULT_MODEL.to_string());
+  let model = req.model.unwrap_or(VideoModel::GrokImagineVideo);
 
   info!(
     "Grok video_generation: model={}, has_image={}, ref_imgs={}, aspect_ratio={:?}, duration={:?}, resolution={:?}",
-    model,
+    model.as_str(),
     req.image.is_some(),
     req.reference_images.as_ref().map(|v| v.len()).unwrap_or(0),
-    req.aspect_ratio,
+    req.aspect_ratio.map(|a| a.as_str()),
     req.duration,
-    req.resolution,
+    req.resolution.map(|r| r.as_str()),
   );
 
   let request_body = VideoGenerationRequestBody {
     prompt: req.prompt,
-    model: Some(model),
+    model: Some(model.as_str().to_string()),
     image: req.image.as_ref().map(to_video_image_ref),
     reference_images: req.reference_images.map(|v| v.iter().map(to_video_image_ref).collect()),
-    aspect_ratio: req.aspect_ratio,
+    aspect_ratio: req.aspect_ratio.map(|a| a.as_str().to_string()),
     duration: req.duration,
-    resolution: req.resolution,
+    resolution: req.resolution.map(|r| r.as_str().to_string()),
     output: req.upload_url.map(|upload_url| VideoOutput { upload_url }),
     user: req.user,
   };
@@ -267,12 +272,12 @@ mod tests {
       api_key: &key,
       request: VideoGenerationRequest {
         prompt: "p".to_string(),
-        model: None,
+        model: Some(VideoModel::GrokImagineVideo),
         image: Some(VideoImageSource::Url("u".to_string())),
         reference_images: None,
-        aspect_ratio: Some("16:9".to_string()),
+        aspect_ratio: Some(VideoAspectRatio::Landscape16x9),
         duration: Some(8),
-        resolution: Some("720p".to_string()),
+        resolution: Some(VideoResolution::SevenTwentyP),
         upload_url: None,
         user: None,
       },
@@ -281,8 +286,10 @@ mod tests {
     assert!(!json.contains("secret_must_not_leak"),
       "serialized request must not contain the API key. got: {}", json);
     assert!(json.contains("\"prompt\":\"p\""));
+    assert!(json.contains("\"model\":\"grok-imagine-video\""));
     assert!(json.contains("\"image\":{\"Url\":\"u\"}"));
     assert!(json.contains("\"aspect_ratio\":\"16:9\""));
+    assert!(json.contains("\"resolution\":\"720p\""));
   }
 
   #[tokio::test]
@@ -330,9 +337,9 @@ mod tests {
         model: None,
         image: None,
         reference_images: None,
-        aspect_ratio: Some("16:9".to_string()),
+        aspect_ratio: Some(VideoAspectRatio::Landscape16x9),
         duration: Some(5),
-        resolution: Some("480p".to_string()),
+        resolution: Some(VideoResolution::FourEightyP),
         upload_url: None,
         user: None,
       },

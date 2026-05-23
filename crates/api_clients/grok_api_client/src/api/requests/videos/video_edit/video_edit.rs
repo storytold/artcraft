@@ -3,13 +3,12 @@ use serde_derive::Serialize;
 
 use crate::api::requests::videos::video_edit::request_types::*;
 use crate::api::requests::xai_host::XAI_API_BASE_URL;
+use crate::api::types::video_types::video_model::VideoModel;
 use crate::creds::grok_api_key::GrokApiKey;
 use crate::error::classify_grok_http_error::classify_grok_http_error;
 use crate::error::grok_client_error::GrokClientError;
 use crate::error::grok_error::GrokError;
 use crate::error::grok_generic_api_error::GrokGenericApiError;
-
-const DEFAULT_MODEL: &str = "grok-imagine-video";
 
 // ── Public args ──
 
@@ -32,9 +31,10 @@ pub struct VideoEditRequest {
   /// Source video to modify.
   pub source_video: VideoSource,
 
-  /// Model identifier. Defaults to `grok-imagine-video`.
+  /// Model identifier. Defaults to [`VideoModel::GrokImagineVideo`] when `None`.
+  /// Use [`VideoModel::Custom`] for identifiers not yet listed in the enum.
   #[serde(skip_serializing_if = "Option::is_none")]
-  pub model: Option<String>,
+  pub model: Option<VideoModel>,
 
   /// Optional presigned PUT URL. See `video_generation` for the
   /// docs-vs-REST-spec discrepancy.
@@ -83,14 +83,14 @@ pub async fn video_edit(args: VideoEditArgs<'_>) -> Result<VideoEditSuccess, Gro
   let req = args.request;
 
   let url = format!("{}/v1/videos/edits", XAI_API_BASE_URL);
-  let model = req.model.unwrap_or_else(|| DEFAULT_MODEL.to_string());
+  let model = req.model.unwrap_or(VideoModel::GrokImagineVideo);
 
-  info!("Grok video_edit: model={}", model);
+  info!("Grok video_edit: model={}", model.as_str());
 
   let request_body = VideoEditRequestBody {
     prompt: req.prompt,
     video: to_video_source_ref(&req.source_video),
-    model: Some(model),
+    model: Some(model.as_str().to_string()),
     output: req.upload_url.map(|upload_url| VideoEditOutput { upload_url }),
     user: req.user,
   };
