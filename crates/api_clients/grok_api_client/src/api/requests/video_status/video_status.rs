@@ -1,19 +1,29 @@
 use log::info;
+use serde_derive::Serialize;
 
+use crate::api::requests::video_status::request_types::*;
+use crate::api::requests::xai_host::XAI_API_BASE_URL;
 use crate::creds::grok_api_key::GrokApiKey;
 use crate::error::classify_grok_http_error::classify_grok_http_error;
 use crate::error::grok_client_error::GrokClientError;
 use crate::error::grok_error::GrokError;
 use crate::error::grok_generic_api_error::GrokGenericApiError;
-use crate::api::requests::video_status::request_types::*;
-use crate::api::requests::xai_host::XAI_API_BASE_URL;
 
 // ── Public args ──
 
+/// Top-level argument to [`video_status`]. Borrows the API key separately from
+/// the request body so callers can log/save [`VideoStatusRequest`] without
+/// leaking the credential.
 #[derive(Clone, Debug)]
-pub struct VideoStatusArgs {
-  pub api_key: GrokApiKey,
+pub struct VideoStatusArgs<'a> {
+  pub api_key: &'a GrokApiKey,
+  pub request: VideoStatusRequest,
+}
 
+/// The material part of a video-status poll. Derives [`Serialize`] so it
+/// can be persisted to a log or audit store independently of the API key.
+#[derive(Clone, Debug, Serialize)]
+pub struct VideoStatusRequest {
   /// The `request_id` returned by a prior `video_generation`,
   /// `video_edit`, or `video_extension` call.
   pub request_id: String,
@@ -70,10 +80,11 @@ pub struct VideoOutputInfo {
 /// - `Err(GrokSpecificApiError::VideoJobExpired)` when the job expired
 ///
 /// Docs: <https://docs.x.ai/developers/model-capabilities/video/generation>
-pub async fn video_status(args: VideoStatusArgs) -> Result<VideoStatusSuccess, GrokError> {
-  let url = format!("{}/v1/videos/{}", XAI_API_BASE_URL, args.request_id);
+pub async fn video_status(args: VideoStatusArgs<'_>) -> Result<VideoStatusSuccess, GrokError> {
+  let req = args.request;
+  let url = format!("{}/v1/videos/{}", XAI_API_BASE_URL, req.request_id);
 
-  info!("Grok video_status: request_id={}", args.request_id);
+  info!("Grok video_status: request_id={}", req.request_id);
 
   let client = reqwest::Client::builder()
     .build()
@@ -224,6 +235,22 @@ mod tests {
     assert!(matches!(err, GrokError::ApiGeneric(_)));
   }
 
+  // ── Public Request shape ──
+
+  #[test]
+  fn request_serializes_without_api_key() {
+    let key = GrokApiKey::new("secret_must_not_leak".to_string());
+    let args = VideoStatusArgs {
+      api_key: &key,
+      request: VideoStatusRequest {
+        request_id: "req_abc".to_string(),
+      },
+    };
+    let json = serde_json::to_string(&args.request).unwrap();
+    assert!(!json.contains("secret_must_not_leak"));
+    assert!(json.contains("\"request_id\":\"req_abc\""));
+  }
+
   // ── Live API tests ──
 
   #[tokio::test]
@@ -236,8 +263,10 @@ mod tests {
     let api_key = get_test_api_key()?;
     // Random UUID — should yield 404.
     let result = video_status(VideoStatusArgs {
-      api_key,
-      request_id: "00000000-0000-0000-0000-000000000000".to_string(),
+      api_key: &api_key,
+      request: VideoStatusRequest {
+        request_id: "00000000-0000-0000-0000-000000000000".to_string(),
+      },
     }).await;
 
     println!("Result: {:?}", result.as_ref().map(|s| (&s.state, s.progress)));

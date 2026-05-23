@@ -40,6 +40,16 @@ impl ImageModel {
   }
 }
 
+// Serialize as the wire string ("grok-imagine-image", "grok-imagine-image-quality",
+// or the Custom inner string) rather than the default external-tag enum format.
+// Lets `ImageGenerationRequest` / `ImageEditRequest` round-trip through any
+// log/audit pipeline as readable JSON.
+impl serde::Serialize for ImageModel {
+  fn serialize<S: serde::Serializer>(&self, s: S) -> Result<S::Ok, S::Error> {
+    s.serialize_str(self.as_str())
+  }
+}
+
 #[cfg(test)]
 mod tests {
   use super::*;
@@ -72,5 +82,15 @@ mod tests {
       ImageModel::GrokImagineImage.as_str(),
       ImageModel::GrokImagineImageQuality.as_str()
     );
+  }
+
+  #[test]
+  fn serializes_as_plain_wire_string() {
+    let m = ImageModel::GrokImagineImageQuality;
+    assert_eq!(serde_json::to_string(&m).unwrap(), "\"grok-imagine-image-quality\"");
+    let m = ImageModel::GrokImagineImage;
+    assert_eq!(serde_json::to_string(&m).unwrap(), "\"grok-imagine-image\"");
+    let m = ImageModel::Custom("grok-imagine-image-pro".to_string());
+    assert_eq!(serde_json::to_string(&m).unwrap(), "\"grok-imagine-image-pro\"");
   }
 }

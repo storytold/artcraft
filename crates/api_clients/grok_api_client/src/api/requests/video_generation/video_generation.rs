@@ -1,56 +1,74 @@
 use log::info;
+use serde_derive::Serialize;
 
+use crate::api::requests::video_generation::request_types::*;
+use crate::api::requests::xai_host::XAI_API_BASE_URL;
 use crate::creds::grok_api_key::GrokApiKey;
 use crate::error::classify_grok_http_error::classify_grok_http_error;
 use crate::error::grok_client_error::GrokClientError;
 use crate::error::grok_error::GrokError;
 use crate::error::grok_generic_api_error::GrokGenericApiError;
 use crate::error::grok_specific_api_error::GrokSpecificApiError;
-use crate::api::requests::video_generation::request_types::*;
-use crate::api::requests::xai_host::XAI_API_BASE_URL;
 
 const DEFAULT_MODEL: &str = "grok-imagine-video";
 
 // ── Public args ──
 
+/// Top-level argument to [`video_generation`]. Borrows the API key separately
+/// from the request body so callers can log/save [`VideoGenerationRequest`]
+/// without leaking the credential.
 #[derive(Clone, Debug)]
-pub struct VideoGenerationArgs {
-  pub api_key: GrokApiKey,
+pub struct VideoGenerationArgs<'a> {
+  pub api_key: &'a GrokApiKey,
+  pub request: VideoGenerationRequest,
+}
 
+/// The material part of a video-generation request. Derives [`Serialize`] so
+/// it can be persisted to a log or audit store independently of the API key.
+#[derive(Clone, Debug, Serialize)]
+pub struct VideoGenerationRequest {
   /// Text prompt. Required.
   pub prompt: String,
 
   /// Model identifier. Defaults to `grok-imagine-video`.
+  #[serde(skip_serializing_if = "Option::is_none")]
   pub model: Option<String>,
 
   /// Image-to-video: a single source image. Mutually exclusive with
   /// `reference_images` — supplying both returns a `BadRequest` before the
   /// HTTP call.
+  #[serde(skip_serializing_if = "Option::is_none")]
   pub image: Option<VideoImageSource>,
 
   /// Reference-to-video: zero or more reference images.
+  #[serde(skip_serializing_if = "Option::is_none")]
   pub reference_images: Option<Vec<VideoImageSource>>,
 
   /// e.g. "16:9", "1:1", "9:16".
+  #[serde(skip_serializing_if = "Option::is_none")]
   pub aspect_ratio: Option<String>,
 
   /// Duration in seconds (1–15). xAI default is 8.
+  #[serde(skip_serializing_if = "Option::is_none")]
   pub duration: Option<u32>,
 
   /// `"480p"`, `"720p"`, `"1080p"`.
+  #[serde(skip_serializing_if = "Option::is_none")]
   pub resolution: Option<String>,
 
   /// Optional presigned PUT URL where xAI should upload the rendered video.
   /// Per the REST API reference this is required; per the published curl
   /// examples it's optional. Omit unless your account requires it.
+  #[serde(skip_serializing_if = "Option::is_none")]
   pub upload_url: Option<String>,
 
+  #[serde(skip_serializing_if = "Option::is_none")]
   pub user: Option<String>,
 }
 
 /// Source image for `image` (image-to-video) or `reference_images`
 /// (reference-to-video).
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize)]
 pub enum VideoImageSource {
   /// Either a public HTTPS URL or a `data:` URI containing base64-encoded
   /// image bytes.
@@ -85,36 +103,38 @@ pub struct VideoGenerationSuccess {
 /// - <https://docs.x.ai/developers/model-capabilities/video/generation>
 /// - <https://docs.x.ai/developers/model-capabilities/video/image-to-video>
 /// - <https://docs.x.ai/developers/model-capabilities/video/reference-to-video>
-pub async fn video_generation(args: VideoGenerationArgs) -> Result<VideoGenerationSuccess, GrokError> {
-  if args.image.is_some() && args.reference_images.as_ref().is_some_and(|v| !v.is_empty()) {
+pub async fn video_generation(args: VideoGenerationArgs<'_>) -> Result<VideoGenerationSuccess, GrokError> {
+  let req = args.request;
+
+  if req.image.is_some() && req.reference_images.as_ref().is_some_and(|v| !v.is_empty()) {
     return Err(GrokSpecificApiError::BadRequest(
       "video_generation cannot combine `image` (image-to-video) with `reference_images` (reference-to-video) in the same request".to_string(),
     ).into());
   }
 
   let url = format!("{}/v1/videos/generations", XAI_API_BASE_URL);
-  let model = args.model.unwrap_or_else(|| DEFAULT_MODEL.to_string());
+  let model = req.model.unwrap_or_else(|| DEFAULT_MODEL.to_string());
 
   info!(
     "Grok video_generation: model={}, has_image={}, ref_imgs={}, aspect_ratio={:?}, duration={:?}, resolution={:?}",
     model,
-    args.image.is_some(),
-    args.reference_images.as_ref().map(|v| v.len()).unwrap_or(0),
-    args.aspect_ratio,
-    args.duration,
-    args.resolution,
+    req.image.is_some(),
+    req.reference_images.as_ref().map(|v| v.len()).unwrap_or(0),
+    req.aspect_ratio,
+    req.duration,
+    req.resolution,
   );
 
   let request_body = VideoGenerationRequestBody {
-    prompt: args.prompt,
+    prompt: req.prompt,
     model: Some(model),
-    image: args.image.as_ref().map(to_video_image_ref),
-    reference_images: args.reference_images.map(|v| v.iter().map(to_video_image_ref).collect()),
-    aspect_ratio: args.aspect_ratio,
-    duration: args.duration,
-    resolution: args.resolution,
-    output: args.upload_url.map(|upload_url| VideoOutput { upload_url }),
-    user: args.user,
+    image: req.image.as_ref().map(to_video_image_ref),
+    reference_images: req.reference_images.map(|v| v.iter().map(to_video_image_ref).collect()),
+    aspect_ratio: req.aspect_ratio,
+    duration: req.duration,
+    resolution: req.resolution,
+    output: req.upload_url.map(|upload_url| VideoOutput { upload_url }),
+    user: req.user,
   };
 
   let client = reqwest::Client::builder()
@@ -158,10 +178,10 @@ mod tests {
   use super::*;
   use errors::AnyhowResult;
 
-  // ── Shape tests ──
+  // ── Wire-format shape tests ──
 
   #[test]
-  fn body_serializes_text_only() {
+  fn wire_body_serializes_text_only() {
     let body = VideoGenerationRequestBody {
       prompt: "a cat dancing".to_string(),
       model: Some("grok-imagine-video".to_string()),
@@ -183,7 +203,7 @@ mod tests {
   }
 
   #[test]
-  fn body_serializes_image_to_video() {
+  fn wire_body_serializes_image_to_video() {
     let body = VideoGenerationRequestBody {
       prompt: "animate this".to_string(),
       model: None,
@@ -201,7 +221,7 @@ mod tests {
   }
 
   #[test]
-  fn body_serializes_reference_to_video() {
+  fn wire_body_serializes_reference_to_video() {
     let body = VideoGenerationRequestBody {
       prompt: "<IMAGE_1> walking".to_string(),
       model: None,
@@ -222,7 +242,7 @@ mod tests {
   }
 
   #[test]
-  fn body_serializes_upload_url() {
+  fn wire_body_serializes_upload_url() {
     let body = VideoGenerationRequestBody {
       prompt: "p".to_string(),
       model: None,
@@ -238,20 +258,49 @@ mod tests {
     assert!(json.contains("\"output\":{\"upload_url\":\"https://r2.example.com/put\"}"));
   }
 
+  // ── Public Request shape ──
+
+  #[test]
+  fn request_serializes_without_api_key() {
+    let key = GrokApiKey::new("secret_must_not_leak".to_string());
+    let args = VideoGenerationArgs {
+      api_key: &key,
+      request: VideoGenerationRequest {
+        prompt: "p".to_string(),
+        model: None,
+        image: Some(VideoImageSource::Url("u".to_string())),
+        reference_images: None,
+        aspect_ratio: Some("16:9".to_string()),
+        duration: Some(8),
+        resolution: Some("720p".to_string()),
+        upload_url: None,
+        user: None,
+      },
+    };
+    let json = serde_json::to_string(&args.request).unwrap();
+    assert!(!json.contains("secret_must_not_leak"),
+      "serialized request must not contain the API key. got: {}", json);
+    assert!(json.contains("\"prompt\":\"p\""));
+    assert!(json.contains("\"image\":{\"Url\":\"u\"}"));
+    assert!(json.contains("\"aspect_ratio\":\"16:9\""));
+  }
+
   #[tokio::test]
   async fn image_plus_reference_images_returns_bad_request() {
     let api_key = GrokApiKey::new("dummy".to_string());
     let result = video_generation(VideoGenerationArgs {
-      api_key,
-      prompt: "x".to_string(),
-      model: None,
-      image: Some(VideoImageSource::Url("u".to_string())),
-      reference_images: Some(vec![VideoImageSource::Url("v".to_string())]),
-      aspect_ratio: None,
-      duration: None,
-      resolution: None,
-      upload_url: None,
-      user: None,
+      api_key: &api_key,
+      request: VideoGenerationRequest {
+        prompt: "x".to_string(),
+        model: None,
+        image: Some(VideoImageSource::Url("u".to_string())),
+        reference_images: Some(vec![VideoImageSource::Url("v".to_string())]),
+        aspect_ratio: None,
+        duration: None,
+        resolution: None,
+        upload_url: None,
+        user: None,
+      },
     }).await;
     let err = result.unwrap_err();
     assert!(matches!(err, GrokError::ApiSpecific(GrokSpecificApiError::BadRequest(_))));
@@ -275,16 +324,18 @@ mod tests {
 
     let api_key = get_test_api_key()?;
     let result = video_generation(VideoGenerationArgs {
-      api_key,
-      prompt: "A glowing crystal rocket launching from Mars".to_string(),
-      model: None,
-      image: None,
-      reference_images: None,
-      aspect_ratio: Some("16:9".to_string()),
-      duration: Some(5),
-      resolution: Some("480p".to_string()),
-      upload_url: None,
-      user: None,
+      api_key: &api_key,
+      request: VideoGenerationRequest {
+        prompt: "A glowing crystal rocket launching from Mars".to_string(),
+        model: None,
+        image: None,
+        reference_images: None,
+        aspect_ratio: Some("16:9".to_string()),
+        duration: Some(5),
+        resolution: Some("480p".to_string()),
+        upload_url: None,
+        user: None,
+      },
     }).await.map_err(|e| anyhow::anyhow!("{}", e))?;
 
     println!("Video request_id: {}", result.request_id);

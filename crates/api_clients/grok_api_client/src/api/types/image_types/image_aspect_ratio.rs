@@ -73,6 +73,15 @@ impl ImageAspectRatio {
   }
 }
 
+// Serialize as the wire string ("1:1", "16:9", "auto", …) rather than the
+// default external-tag enum form. Lets request structs round-trip cleanly
+// through a log/audit pipeline.
+impl serde::Serialize for ImageAspectRatio {
+  fn serialize<S: serde::Serializer>(&self, s: S) -> Result<S::Ok, S::Error> {
+    s.serialize_str(self.as_str())
+  }
+}
+
 #[cfg(test)]
 mod tests {
   use super::*;
@@ -108,5 +117,12 @@ mod tests {
     assert_eq!(ImageAspectRatio::Portrait9x19_5.as_str(), "9:19.5");
     assert_eq!(ImageAspectRatio::Landscape19_5x9.as_str(), "19.5:9");
     assert_eq!(ImageAspectRatio::Auto.as_str(), "auto");
+  }
+
+  #[test]
+  fn serializes_as_plain_wire_string() {
+    assert_eq!(serde_json::to_string(&ImageAspectRatio::Square).unwrap(), "\"1:1\"");
+    assert_eq!(serde_json::to_string(&ImageAspectRatio::Portrait9x19_5).unwrap(), "\"9:19.5\"");
+    assert_eq!(serde_json::to_string(&ImageAspectRatio::Auto).unwrap(), "\"auto\"");
   }
 }

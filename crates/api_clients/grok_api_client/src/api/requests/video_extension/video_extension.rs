@@ -1,21 +1,31 @@
 use log::info;
+use serde_derive::Serialize;
 
+use crate::api::requests::video_extension::request_types::*;
+use crate::api::requests::xai_host::XAI_API_BASE_URL;
 use crate::creds::grok_api_key::GrokApiKey;
 use crate::error::classify_grok_http_error::classify_grok_http_error;
 use crate::error::grok_client_error::GrokClientError;
 use crate::error::grok_error::GrokError;
 use crate::error::grok_generic_api_error::GrokGenericApiError;
-use crate::api::requests::video_extension::request_types::*;
-use crate::api::requests::xai_host::XAI_API_BASE_URL;
 
 const DEFAULT_MODEL: &str = "grok-imagine-video";
 
 // ── Public args ──
 
+/// Top-level argument to [`video_extension`]. Borrows the API key separately
+/// from the request body so callers can log/save [`VideoExtensionRequest`]
+/// without leaking the credential.
 #[derive(Clone, Debug)]
-pub struct VideoExtensionArgs {
-  pub api_key: GrokApiKey,
+pub struct VideoExtensionArgs<'a> {
+  pub api_key: &'a GrokApiKey,
+  pub request: VideoExtensionRequest,
+}
 
+/// The material part of a video-extension request. Derives [`Serialize`] so
+/// it can be persisted to a log or audit store independently of the API key.
+#[derive(Clone, Debug, Serialize)]
+pub struct VideoExtensionRequest {
   /// Prompt describing what should happen in the extension.
   pub prompt: String,
 
@@ -23,19 +33,22 @@ pub struct VideoExtensionArgs {
   pub source_video: VideoExtensionSource,
 
   /// Model identifier. Defaults to `grok-imagine-video`.
+  #[serde(skip_serializing_if = "Option::is_none")]
   pub model: Option<String>,
 
   /// Length of the *extension only*, not the total output. xAI default is 6
   /// seconds; range 1–10.
+  #[serde(skip_serializing_if = "Option::is_none")]
   pub duration: Option<u32>,
 
   /// Optional presigned PUT URL.
+  #[serde(skip_serializing_if = "Option::is_none")]
   pub upload_url: Option<String>,
 }
 
 /// Source video to extend. Pick by public URL or by a previously-uploaded
 /// xAI file_id.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize)]
 pub enum VideoExtensionSource {
   /// Public HTTPS URL pointing to the source video.
   Url(String),
@@ -65,18 +78,20 @@ pub struct VideoExtensionSuccess {
 /// Asynchronous; poll `video_status` for completion.
 ///
 /// Docs: <https://docs.x.ai/developers/model-capabilities/video/extension>
-pub async fn video_extension(args: VideoExtensionArgs) -> Result<VideoExtensionSuccess, GrokError> {
-  let url = format!("{}/v1/videos/extensions", XAI_API_BASE_URL);
-  let model = args.model.unwrap_or_else(|| DEFAULT_MODEL.to_string());
+pub async fn video_extension(args: VideoExtensionArgs<'_>) -> Result<VideoExtensionSuccess, GrokError> {
+  let req = args.request;
 
-  info!("Grok video_extension: model={}, duration={:?}", model, args.duration);
+  let url = format!("{}/v1/videos/extensions", XAI_API_BASE_URL);
+  let model = req.model.unwrap_or_else(|| DEFAULT_MODEL.to_string());
+
+  info!("Grok video_extension: model={}, duration={:?}", model, req.duration);
 
   let request_body = VideoExtensionRequestBody {
-    prompt: args.prompt,
-    video: to_extension_source_ref(&args.source_video),
+    prompt: req.prompt,
+    video: to_extension_source_ref(&req.source_video),
     model: Some(model),
-    duration: args.duration,
-    output: args.upload_url.map(|upload_url| VideoExtensionOutput { upload_url }),
+    duration: req.duration,
+    output: req.upload_url.map(|upload_url| VideoExtensionOutput { upload_url }),
   };
 
   let client = reqwest::Client::builder()
@@ -120,10 +135,10 @@ mod tests {
   use super::*;
   use errors::AnyhowResult;
 
-  // ── Shape tests ──
+  // ── Wire-format shape tests ──
 
   #[test]
-  fn body_serializes_minimal() {
+  fn wire_body_serializes_minimal() {
     let body = VideoExtensionRequestBody {
       prompt: "keep walking".to_string(),
       video: VideoExtensionSourceRef { url: Some("https://example.com/v.mp4".to_string()), file_id: None },
@@ -140,7 +155,7 @@ mod tests {
   }
 
   #[test]
-  fn body_serializes_with_duration_and_upload_url() {
+  fn wire_body_serializes_with_duration_and_upload_url() {
     let body = VideoExtensionRequestBody {
       prompt: "p".to_string(),
       video: VideoExtensionSourceRef { url: None, file_id: Some("file_v".to_string()) },
@@ -152,6 +167,27 @@ mod tests {
     assert!(json.contains("\"duration\":8"));
     assert!(json.contains("\"video\":{\"file_id\":\"file_v\"}"));
     assert!(json.contains("\"output\":{\"upload_url\":\"https://r2.example.com/put\"}"));
+  }
+
+  // ── Public Request shape ──
+
+  #[test]
+  fn request_serializes_without_api_key() {
+    let key = GrokApiKey::new("secret_must_not_leak".to_string());
+    let args = VideoExtensionArgs {
+      api_key: &key,
+      request: VideoExtensionRequest {
+        prompt: "p".to_string(),
+        source_video: VideoExtensionSource::Url("u".to_string()),
+        model: None,
+        duration: Some(5),
+        upload_url: None,
+      },
+    };
+    let json = serde_json::to_string(&args.request).unwrap();
+    assert!(!json.contains("secret_must_not_leak"));
+    assert!(json.contains("\"duration\":5"));
+    assert!(json.contains("\"source_video\":{\"Url\":\"u\"}"));
   }
 
   #[test]
@@ -173,14 +209,16 @@ mod tests {
     let api_key = get_test_api_key()?;
     // Replace with a real publicly-reachable mp4 URL when running.
     let result = video_extension(VideoExtensionArgs {
-      api_key,
-      prompt: "Continue the walk down the same street".to_string(),
-      source_video: VideoExtensionSource::Url(
-        "https://docs.x.ai/assets/api-examples/videos/extension-source.mp4".to_string()
-      ),
-      model: None,
-      duration: Some(5),
-      upload_url: None,
+      api_key: &api_key,
+      request: VideoExtensionRequest {
+        prompt: "Continue the walk down the same street".to_string(),
+        source_video: VideoExtensionSource::Url(
+          "https://docs.x.ai/assets/api-examples/videos/extension-source.mp4".to_string()
+        ),
+        model: None,
+        duration: Some(5),
+        upload_url: None,
+      },
     }).await.map_err(|e| anyhow::anyhow!("{}", e))?;
 
     println!("Extension request_id: {}", result.request_id);

@@ -1,46 +1,62 @@
 use log::info;
+use serde_derive::Serialize;
 
+use crate::api::requests::image_generation::request_types::*;
+use crate::api::requests::xai_host::XAI_API_BASE_URL;
+use crate::api::types::image_types::image_aspect_ratio::ImageAspectRatio;
+use crate::api::types::image_types::image_model::ImageModel;
+use crate::api::types::image_types::image_resolution::ImageResolution;
+use crate::api::types::image_types::image_response_format::ImageResponseFormat;
 use crate::creds::grok_api_key::GrokApiKey;
 use crate::error::classify_grok_http_error::classify_grok_http_error;
 use crate::error::grok_client_error::GrokClientError;
 use crate::error::grok_error::GrokError;
 use crate::error::grok_generic_api_error::GrokGenericApiError;
-use crate::api::requests::image_generation::request_types::*;
-use crate::api::types::image_types::image_aspect_ratio::ImageAspectRatio;
-use crate::api::types::image_types::image_model::ImageModel;
-use crate::api::types::image_types::image_resolution::ImageResolution;
-use crate::api::types::image_types::image_response_format::ImageResponseFormat;
-use crate::api::requests::xai_host::XAI_API_BASE_URL;
 
 // ── Public args ──
 
+/// Top-level argument to [`image_generation`]. Borrows the API key separately
+/// from the request body so callers can log/save [`ImageGenerationRequest`]
+/// without leaking the credential.
 #[derive(Clone, Debug)]
-pub struct ImageGenerationArgs {
-  pub api_key: GrokApiKey,
+pub struct ImageGenerationArgs<'a> {
+  pub api_key: &'a GrokApiKey,
+  pub request: ImageGenerationRequest,
+}
 
+/// The material part of an image-generation request. Derives [`Serialize`] so
+/// it can be persisted to a log or audit store independently of the API key.
+#[derive(Clone, Debug, Serialize)]
+pub struct ImageGenerationRequest {
   /// Text prompt describing the image. Required.
   pub prompt: String,
 
   /// Model identifier. Defaults to [`ImageModel::GrokImagineImageQuality`]
   /// when `None`. Use [`ImageModel::Custom`] for identifiers not yet listed
   /// in the enum.
+  #[serde(skip_serializing_if = "Option::is_none")]
   pub model: Option<ImageModel>,
 
   /// Number of images to render in this request. xAI's docs don't state a
   /// hard maximum; server default is 1 when `None`.
+  #[serde(skip_serializing_if = "Option::is_none")]
   pub number_images: Option<u32>,
 
   /// Aspect ratio. See [`ImageAspectRatio`] for the closed set of accepted
   /// values. Server default when `None`.
+  #[serde(skip_serializing_if = "Option::is_none")]
   pub aspect_ratio: Option<ImageAspectRatio>,
 
   /// Output resolution tier. See [`ImageResolution`]. Server default when `None`.
+  #[serde(skip_serializing_if = "Option::is_none")]
   pub resolution: Option<ImageResolution>,
 
   /// Url (default) or b64 inline. See [`ImageResponseFormat`].
+  #[serde(skip_serializing_if = "Option::is_none")]
   pub response_format: Option<ImageResponseFormat>,
 
   /// Optional opaque user identifier for usage attribution.
+  #[serde(skip_serializing_if = "Option::is_none")]
   pub user: Option<String>,
 }
 
@@ -71,26 +87,27 @@ pub struct GeneratedImage {
 /// from a text prompt using xAI's Imagine API.
 ///
 /// Docs: <https://docs.x.ai/developers/model-capabilities/images/generation>
-pub async fn image_generation(args: ImageGenerationArgs) -> Result<ImageGenerationSuccess, GrokError> {
-  let url = format!("{}/v1/images/generations", XAI_API_BASE_URL);
+pub async fn image_generation(args: ImageGenerationArgs<'_>) -> Result<ImageGenerationSuccess, GrokError> {
+  let req = args.request;
 
-  let model = args.model.unwrap_or(ImageModel::GrokImagineImageQuality);
+  let url = format!("{}/v1/images/generations", XAI_API_BASE_URL);
+  let model = req.model.unwrap_or(ImageModel::GrokImagineImageQuality);
 
   info!(
     "Grok image_generation: model={}, number_images={:?}, aspect_ratio={:?}, resolution={:?}",
-    model.as_str(), args.number_images,
-    args.aspect_ratio.map(|a| a.as_str()),
-    args.resolution.map(|r| r.as_str()),
+    model.as_str(), req.number_images,
+    req.aspect_ratio.map(|a| a.as_str()),
+    req.resolution.map(|r| r.as_str()),
   );
 
   let request_body = ImageGenerationRequestBody {
-    prompt: args.prompt,
+    prompt: req.prompt,
     model: Some(model.as_str().to_string()),
-    n: args.number_images,
-    aspect_ratio: args.aspect_ratio.map(|a| a.as_str().to_string()),
-    resolution: args.resolution.map(|r| r.as_str().to_string()),
-    response_format: args.response_format.map(|f| f.as_str().to_string()),
-    user: args.user,
+    n: req.number_images,
+    aspect_ratio: req.aspect_ratio.map(|a| a.as_str().to_string()),
+    resolution: req.resolution.map(|r| r.as_str().to_string()),
+    response_format: req.response_format.map(|f| f.as_str().to_string()),
+    user: req.user,
   };
 
   let client = reqwest::Client::builder()
@@ -133,10 +150,10 @@ mod tests {
   use super::*;
   use errors::AnyhowResult;
 
-  // ── Shape tests (no API calls) ──
+  // ── Wire-format shape tests (internal ImageGenerationRequestBody) ──
 
   #[test]
-  fn request_body_serializes_minimal() {
+  fn wire_body_serializes_minimal() {
     let body = ImageGenerationRequestBody {
       prompt: "a cat".to_string(),
       model: Some("grok-imagine-image-quality".to_string()),
@@ -149,14 +166,13 @@ mod tests {
     let json = serde_json::to_string(&body).unwrap();
     assert!(json.contains("\"prompt\":\"a cat\""));
     assert!(json.contains("\"model\":\"grok-imagine-image-quality\""));
-    // Optional fields should be omitted
     assert!(!json.contains("\"n\""));
     assert!(!json.contains("\"aspect_ratio\""));
     assert!(!json.contains("\"user\""));
   }
 
   #[test]
-  fn request_body_serializes_full() {
+  fn wire_body_serializes_full() {
     let body = ImageGenerationRequestBody {
       prompt: "a cat".to_string(),
       model: Some("grok-imagine-image-quality".to_string()),
@@ -172,6 +188,49 @@ mod tests {
     assert!(json.contains("\"resolution\":\"2k\""));
     assert!(json.contains("\"response_format\":\"b64_json\""));
     assert!(json.contains("\"user\":\"user_abc\""));
+  }
+
+  // ── Public-API shape tests: ImageGenerationRequest must serialize cleanly ──
+
+  #[test]
+  fn request_serializes_with_typed_enums() {
+    let req = ImageGenerationRequest {
+      prompt: "a serene lake".to_string(),
+      model: Some(ImageModel::GrokImagineImageQuality),
+      number_images: Some(3),
+      aspect_ratio: Some(ImageAspectRatio::Landscape16x9),
+      resolution: Some(ImageResolution::OneK),
+      response_format: Some(ImageResponseFormat::Url),
+      user: None,
+    };
+    let json = serde_json::to_string(&req).unwrap();
+    assert!(json.contains("\"prompt\":\"a serene lake\""));
+    assert!(json.contains("\"model\":\"grok-imagine-image-quality\""));
+    assert!(json.contains("\"number_images\":3"));
+    assert!(json.contains("\"aspect_ratio\":\"16:9\""));
+    assert!(json.contains("\"resolution\":\"1k\""));
+    assert!(json.contains("\"response_format\":\"url\""));
+    assert!(!json.contains("\"user\""));
+  }
+
+  #[test]
+  fn request_does_not_serialize_api_key() {
+    let key = GrokApiKey::new("secret_value_must_not_leak".to_string());
+    let args = ImageGenerationArgs {
+      api_key: &key,
+      request: ImageGenerationRequest {
+        prompt: "p".to_string(),
+        model: None,
+        number_images: None,
+        aspect_ratio: None,
+        resolution: None,
+        response_format: None,
+        user: None,
+      },
+    };
+    let json = serde_json::to_string(&args.request).unwrap();
+    assert!(!json.contains("secret_value_must_not_leak"),
+      "serialized request must not contain the API key. got: {}", json);
   }
 
   #[test]
@@ -200,23 +259,6 @@ mod tests {
     assert!(parsed.data[0].url.is_none());
   }
 
-  // (Enum-specific round-trips live in their own modules under
-  // `api::types::image_types::*`; here we just verify the public args wire up.)
-
-  #[tokio::test]
-  async fn args_with_enums_serializes_correct_strings() {
-    // We can't reach the inner serde body directly without calling the API,
-    // but we can verify the conversion functions yield exactly the docs values.
-    let m = ImageModel::GrokImagineImageQuality;
-    let a = ImageAspectRatio::Landscape16x9;
-    let r = ImageResolution::OneK;
-    let f = ImageResponseFormat::B64Json;
-    assert_eq!(m.as_str(), "grok-imagine-image-quality");
-    assert_eq!(a.as_str(), "16:9");
-    assert_eq!(r.as_str(), "1k");
-    assert_eq!(f.as_str(), "b64_json");
-  }
-
   // ── Live API tests (ignored — incur cost) ──
 
   #[tokio::test]
@@ -228,14 +270,16 @@ mod tests {
 
     let api_key = get_test_api_key()?;
     let result = image_generation(ImageGenerationArgs {
-      api_key,
-      prompt: "A serene mountain lake at sunrise, photorealistic".to_string(),
-      model: None,
-      number_images: None,
-      aspect_ratio: Some(ImageAspectRatio::Landscape16x9),
-      resolution: Some(ImageResolution::OneK),
-      response_format: None,
-      user: None,
+      api_key: &api_key,
+      request: ImageGenerationRequest {
+        prompt: "A serene mountain lake at sunrise, photorealistic".to_string(),
+        model: None,
+        number_images: None,
+        aspect_ratio: Some(ImageAspectRatio::Landscape16x9),
+        resolution: Some(ImageResolution::OneK),
+        response_format: None,
+        user: None,
+      },
     }).await.map_err(|e| anyhow::anyhow!("{}", e))?;
 
     println!("Generated {} image(s)", result.images.len());

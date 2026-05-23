@@ -23,6 +23,13 @@ impl ImageResponseFormat {
   }
 }
 
+// Serialize as the wire string ("url" or "b64_json").
+impl serde::Serialize for ImageResponseFormat {
+  fn serialize<S: serde::Serializer>(&self, s: S) -> Result<S::Ok, S::Error> {
+    s.serialize_str(self.as_str())
+  }
+}
+
 #[cfg(test)]
 mod tests {
   use super::*;
@@ -31,5 +38,11 @@ mod tests {
   fn matches_docs_strings() {
     assert_eq!(ImageResponseFormat::Url.as_str(), "url");
     assert_eq!(ImageResponseFormat::B64Json.as_str(), "b64_json");
+  }
+
+  #[test]
+  fn serializes_as_plain_wire_string() {
+    assert_eq!(serde_json::to_string(&ImageResponseFormat::Url).unwrap(), "\"url\"");
+    assert_eq!(serde_json::to_string(&ImageResponseFormat::B64Json).unwrap(), "\"b64_json\"");
   }
 }

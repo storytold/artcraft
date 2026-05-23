@@ -1,21 +1,31 @@
 use log::info;
+use serde_derive::Serialize;
 
+use crate::api::requests::video_edit::request_types::*;
+use crate::api::requests::xai_host::XAI_API_BASE_URL;
 use crate::creds::grok_api_key::GrokApiKey;
 use crate::error::classify_grok_http_error::classify_grok_http_error;
 use crate::error::grok_client_error::GrokClientError;
 use crate::error::grok_error::GrokError;
 use crate::error::grok_generic_api_error::GrokGenericApiError;
-use crate::api::requests::video_edit::request_types::*;
-use crate::api::requests::xai_host::XAI_API_BASE_URL;
 
 const DEFAULT_MODEL: &str = "grok-imagine-video";
 
 // ── Public args ──
 
+/// Top-level argument to [`video_edit`]. Borrows the API key separately from
+/// the request body so callers can log/save [`VideoEditRequest`] without
+/// leaking the credential.
 #[derive(Clone, Debug)]
-pub struct VideoEditArgs {
-  pub api_key: GrokApiKey,
+pub struct VideoEditArgs<'a> {
+  pub api_key: &'a GrokApiKey,
+  pub request: VideoEditRequest,
+}
 
+/// The material part of a video-edit request. Derives [`Serialize`] so it
+/// can be persisted to a log or audit store independently of the API key.
+#[derive(Clone, Debug, Serialize)]
+pub struct VideoEditRequest {
   /// Edit instruction. Required.
   pub prompt: String,
 
@@ -23,18 +33,21 @@ pub struct VideoEditArgs {
   pub source_video: VideoSource,
 
   /// Model identifier. Defaults to `grok-imagine-video`.
+  #[serde(skip_serializing_if = "Option::is_none")]
   pub model: Option<String>,
 
   /// Optional presigned PUT URL. See `video_generation` for the
   /// docs-vs-REST-spec discrepancy.
+  #[serde(skip_serializing_if = "Option::is_none")]
   pub upload_url: Option<String>,
 
+  #[serde(skip_serializing_if = "Option::is_none")]
   pub user: Option<String>,
 }
 
 /// Source video to edit. Pick by public URL or by a previously-uploaded
 /// xAI file_id.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize)]
 pub enum VideoSource {
   /// Public HTTPS URL pointing to the source video. xAI fetches the bytes
   /// on its end.
@@ -66,18 +79,20 @@ pub struct VideoEditSuccess {
 /// ignored for video edits — the output mirrors the source video.
 ///
 /// Docs: <https://docs.x.ai/developers/model-capabilities/video/editing>
-pub async fn video_edit(args: VideoEditArgs) -> Result<VideoEditSuccess, GrokError> {
+pub async fn video_edit(args: VideoEditArgs<'_>) -> Result<VideoEditSuccess, GrokError> {
+  let req = args.request;
+
   let url = format!("{}/v1/videos/edits", XAI_API_BASE_URL);
-  let model = args.model.unwrap_or_else(|| DEFAULT_MODEL.to_string());
+  let model = req.model.unwrap_or_else(|| DEFAULT_MODEL.to_string());
 
   info!("Grok video_edit: model={}", model);
 
   let request_body = VideoEditRequestBody {
-    prompt: args.prompt,
-    video: to_video_source_ref(&args.source_video),
+    prompt: req.prompt,
+    video: to_video_source_ref(&req.source_video),
     model: Some(model),
-    output: args.upload_url.map(|upload_url| VideoEditOutput { upload_url }),
-    user: args.user,
+    output: req.upload_url.map(|upload_url| VideoEditOutput { upload_url }),
+    user: req.user,
   };
 
   let client = reqwest::Client::builder()
@@ -121,10 +136,10 @@ mod tests {
   use super::*;
   use errors::AnyhowResult;
 
-  // ── Shape tests ──
+  // ── Wire-format shape tests ──
 
   #[test]
-  fn body_serializes_url_source() {
+  fn wire_body_serializes_url_source() {
     let body = VideoEditRequestBody {
       prompt: "make it stormy".to_string(),
       video: VideoSourceRef { url: Some("https://example.com/v.mp4".to_string()), file_id: None },
@@ -141,7 +156,7 @@ mod tests {
   }
 
   #[test]
-  fn body_serializes_file_id_source_with_upload_url() {
+  fn wire_body_serializes_file_id_source_with_upload_url() {
     let body = VideoEditRequestBody {
       prompt: "p".to_string(),
       video: VideoSourceRef { url: None, file_id: Some("file_v".to_string()) },
@@ -153,6 +168,26 @@ mod tests {
     assert!(json.contains("\"video\":{\"file_id\":\"file_v\"}"));
     assert!(json.contains("\"output\":{\"upload_url\":\"https://r2.example.com/put\"}"));
     assert!(json.contains("\"user\":\"u\""));
+  }
+
+  // ── Public Request shape ──
+
+  #[test]
+  fn request_serializes_without_api_key() {
+    let key = GrokApiKey::new("secret_must_not_leak".to_string());
+    let args = VideoEditArgs {
+      api_key: &key,
+      request: VideoEditRequest {
+        prompt: "p".to_string(),
+        source_video: VideoSource::FileId("file_abc".to_string()),
+        model: None,
+        upload_url: None,
+        user: None,
+      },
+    };
+    let json = serde_json::to_string(&args.request).unwrap();
+    assert!(!json.contains("secret_must_not_leak"));
+    assert!(json.contains("\"source_video\":{\"FileId\":\"file_abc\"}"));
   }
 
   #[test]
@@ -174,14 +209,16 @@ mod tests {
     let api_key = get_test_api_key()?;
     // Replace with a real publicly-reachable mp4 URL when running.
     let result = video_edit(VideoEditArgs {
-      api_key,
-      prompt: "Change the lighting to golden hour".to_string(),
-      source_video: VideoSource::Url(
-        "https://docs.x.ai/assets/api-examples/videos/edit-source.mp4".to_string()
-      ),
-      model: None,
-      upload_url: None,
-      user: None,
+      api_key: &api_key,
+      request: VideoEditRequest {
+        prompt: "Change the lighting to golden hour".to_string(),
+        source_video: VideoSource::Url(
+          "https://docs.x.ai/assets/api-examples/videos/edit-source.mp4".to_string()
+        ),
+        model: None,
+        upload_url: None,
+        user: None,
+      },
     }).await.map_err(|e| anyhow::anyhow!("{}", e))?;
 
     println!("Edit request_id: {}", result.request_id);

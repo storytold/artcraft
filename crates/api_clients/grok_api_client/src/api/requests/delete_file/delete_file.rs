@@ -1,18 +1,28 @@
 use log::info;
+use serde_derive::Serialize;
 
+use crate::api::requests::delete_file::request_types::*;
+use crate::api::requests::xai_host::XAI_API_BASE_URL;
 use crate::creds::grok_api_key::GrokApiKey;
 use crate::error::classify_grok_http_error::classify_grok_http_error;
 use crate::error::grok_client_error::GrokClientError;
 use crate::error::grok_error::GrokError;
 use crate::error::grok_generic_api_error::GrokGenericApiError;
-use crate::api::requests::delete_file::request_types::*;
-use crate::api::requests::xai_host::XAI_API_BASE_URL;
 
 // ── Public args ──
 
+/// Top-level argument to [`delete_file`]. Borrows the API key separately from
+/// the request body so callers can log/save [`DeleteFileRequest`] without
+/// leaking the credential.
 #[derive(Clone, Debug)]
-pub struct DeleteFileArgs {
-  pub api_key: GrokApiKey,
+pub struct DeleteFileArgs<'a> {
+  pub api_key: &'a GrokApiKey,
+  pub request: DeleteFileRequest,
+}
+
+/// The material part of a delete-file request. Derives [`Serialize`].
+#[derive(Clone, Debug, Serialize)]
+pub struct DeleteFileRequest {
   pub file_id: String,
 }
 
@@ -32,10 +42,11 @@ pub struct DeleteFileSuccess {
 /// referenced in further requests.
 ///
 /// Docs: <https://docs.x.ai/developers/rest-api-reference/files/manage>
-pub async fn delete_file(args: DeleteFileArgs) -> Result<DeleteFileSuccess, GrokError> {
-  let url = format!("{}/v1/files/{}", XAI_API_BASE_URL, args.file_id);
+pub async fn delete_file(args: DeleteFileArgs<'_>) -> Result<DeleteFileSuccess, GrokError> {
+  let req = args.request;
+  let url = format!("{}/v1/files/{}", XAI_API_BASE_URL, req.file_id);
 
-  info!("Grok delete_file: file_id={}", args.file_id);
+  info!("Grok delete_file: file_id={}", req.file_id);
 
   let client = reqwest::Client::builder()
     .build()
@@ -88,5 +99,17 @@ mod tests {
     let parsed: DeleteFileResponseBody = serde_json::from_str(json).unwrap();
     assert_eq!(parsed.deleted, Some(true));
     assert!(parsed.id.is_none());
+  }
+
+  #[test]
+  fn request_serializes_without_api_key() {
+    let key = GrokApiKey::new("secret_must_not_leak".to_string());
+    let args = DeleteFileArgs {
+      api_key: &key,
+      request: DeleteFileRequest { file_id: "file_abc".to_string() },
+    };
+    let json = serde_json::to_string(&args.request).unwrap();
+    assert!(!json.contains("secret_must_not_leak"));
+    assert!(json.contains("\"file_id\":\"file_abc\""));
   }
 }

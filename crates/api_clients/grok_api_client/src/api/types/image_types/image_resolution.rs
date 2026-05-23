@@ -26,6 +26,13 @@ impl ImageResolution {
   }
 }
 
+// Serialize as the wire string ("1k", "2k").
+impl serde::Serialize for ImageResolution {
+  fn serialize<S: serde::Serializer>(&self, s: S) -> Result<S::Ok, S::Error> {
+    s.serialize_str(self.as_str())
+  }
+}
+
 #[cfg(test)]
 mod tests {
   use super::*;
@@ -34,5 +41,11 @@ mod tests {
   fn matches_docs_strings() {
     assert_eq!(ImageResolution::OneK.as_str(), "1k");
     assert_eq!(ImageResolution::TwoK.as_str(), "2k");
+  }
+
+  #[test]
+  fn serializes_as_plain_wire_string() {
+    assert_eq!(serde_json::to_string(&ImageResolution::OneK).unwrap(), "\"1k\"");
+    assert_eq!(serde_json::to_string(&ImageResolution::TwoK).unwrap(), "\"2k\"");
   }
 }
