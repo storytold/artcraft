@@ -4898,6 +4898,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "grok_api_client"
+version = "0.0.1"
+dependencies = [
+ "anyhow",
+ "env_logger 0.11.9",
+ "errors",
+ "log",
+ "reqwest 0.12.23",
+ "serde",
+ "serde_derive",
+ "serde_json",
+ "tokio",
+ "workspace-build-acceleration",
+]
+
+[[package]]
 name = "grok_consumer_client"
 version = "0.0.1"
 dependencies = [
