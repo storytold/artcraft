@@ -86,13 +86,13 @@ pub async fn main() -> AnyhowResult<()> {
       maybe_public_bucket_extension = Some(".mp4");
     }
     Some("image/jpeg") => {
-      media_file_type = MediaFileType::Image;
+      media_file_type = MediaFileType::Jpg;
       maybe_mime_type = mimetype;
       maybe_public_bucket_prefix = Some("dev_upload_");
       maybe_public_bucket_extension = Some(".jpg");
     }
     Some("image/png") => {
-      media_file_type = MediaFileType::Image;
+      media_file_type = MediaFileType::Png;
       maybe_mime_type = mimetype;
       maybe_public_bucket_prefix = Some("dev_upload_");
       maybe_public_bucket_extension = Some(".png");

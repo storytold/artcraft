@@ -236,9 +236,17 @@ pub async fn upload_snapshot_media_file_handler(
         MediaFileUploadError::ServerError
       })?;
 
+  let media_file_type = match mimetype.as_str() {
+    "image/jpeg" => MediaFileType::Jpg,
+    "image/png"  => MediaFileType::Png,
+    "image/gif"  => MediaFileType::Gif,
+    "image/webp" => MediaFileType::Image, // Fallback
+    _            => MediaFileType::Image, // Fallback
+  };
+
   let (token, record_id) = insert_media_file_from_file_upload(InsertMediaFileFromUploadArgs {
     maybe_media_class: Some(MediaFileClass::Image),
-    media_file_type: MediaFileType::Image,
+    media_file_type,
     maybe_creator_user_token: maybe_user_token.as_ref(),
     maybe_creator_anonymous_visitor_token: maybe_avt_token.as_ref(),
     creator_ip_address: &ip_address,

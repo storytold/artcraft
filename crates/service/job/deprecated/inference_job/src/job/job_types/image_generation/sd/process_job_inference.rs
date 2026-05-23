@@ -251,12 +251,20 @@ pub async fn process_job_inference(
       }
     };
 
+    let media_type = match metadata.mimetype.as_ref() {
+      "image/png" => MediaFileType::Png,
+      "image/jpeg" => MediaFileType::Jpg,
+      "image/gif" => MediaFileType::Gif,
+      "image/webp" => MediaFileType::Image, // Fallback
+      _ => MediaFileType::Image, // Fallback
+    };
+
     // extra_file_modification_info: todo!(), // JSON ENCODED STRUCT
     let (media_file_token, _id) = insert_media_file_generic_from_job(InsertFromJobArgs {
       pool: mysql_pool,
       job,
       media_class: MediaFileClass::Image,
-      media_type: MediaFileType::Image, // TODO(bt,2024-04-30): This should be a specific type of image
+      media_type,
       origin_category: MediaFileOriginCategory::Upload,
       origin_product_category: MediaFileOriginProductCategory::ImageGeneration,
       maybe_origin_model_type: Some(MediaFileOriginModelType::StableDiffusion15),

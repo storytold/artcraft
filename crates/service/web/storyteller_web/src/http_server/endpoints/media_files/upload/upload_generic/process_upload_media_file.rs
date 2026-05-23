@@ -212,10 +212,10 @@ pub async fn process_upload_media_file(
       "audio/opus" /* .opus */ => Some(MediaFileType::Audio),
       "audio/x-flac" /* .flac */ => Some(MediaFileType::Audio),
       "audio/x-wav" /* .wav */ => Some(MediaFileType::Audio),
-      // Image
-      "image/gif" /* .gif */ => Some(MediaFileType::Image),
-      "image/jpeg" /* .jpg */ => Some(MediaFileType::Image),
-      "image/png" /* .png */ => Some(MediaFileType::Image),
+      // Image — `webp` has no dedicated variant yet
+      "image/gif" /* .gif */ => Some(MediaFileType::Gif),
+      "image/jpeg" /* .jpg */ => Some(MediaFileType::Jpg),
+      "image/png" /* .png */ => Some(MediaFileType::Png),
       "image/webp" /* .webp */ => Some(MediaFileType::Image),
       // Video
       "video/mp4" /* .mp4 */ => Some(MediaFileType::Video),
