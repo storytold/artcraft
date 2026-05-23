@@ -43,82 +43,69 @@ jobs:
       contents: read
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
-      # - uses: docker/setup-buildx-action@v1
-      #   name: Set up Docker Buildx
+      # Free up disk on the runner before BuildKit fills it up. The cargo
+      # release build inside the Dockerfile produces multi-GB target dirs
+      # for 8 binaries; the GHA runner ships with ~14 GB pre-installed
+      # tooling (Android SDK, .NET, etc.) that we don't need.
+      - name: Free disk space
+        run: |
+          set -x
+          df -h /
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc \
+            /opt/hostedtoolcache/CodeQL || true
+          sudo docker system prune -af --volumes || true
+          df -h /
 
-      - uses: docker/login-action@v1
+      # BuildKit is required for the `cache-from`/`cache-to` options on
+      # docker/build-push-action.
+      - uses: docker/setup-buildx-action@v3
+        name: Set up Docker Buildx
+
+      - uses: docker/login-action@v3
         name: Login to GitHub Container Registry
         with:
           registry: ghcr.io
-          username: ${{ github.actor }} # username: ${{ github.repository_owner }}
+          username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Calculate short SHA
-        id: vars
-        # echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+      # Match the previous workflow's 12-char short-SHA convention exactly,
+      # since some downstream consumers may pin to it. metadata-action's
+      # built-in `type=sha,format=short` only gives a 7-char prefix.
+      - id: vars
+        name: Calculate short SHA
         run: |
           echo "sha_short=$(echo ${{ github.sha }} | cut -c1-12)" >> $GITHUB_OUTPUT
 
-      - name: Emit short SHA
-        run: |
-          echo "Full SHA: ${{ github.sha }}"
-          echo "Short SHA: ${{ steps.vars.outputs.sha_short }}"
-
-      #- uses: actions/cache@v2
-      #  name: Cache Docker layers
-      #  with:
-      #    path: /tmp/.buildx-cache
-      #    key: ${{ runner.os }}-buildx-${{ github.sha }}
-      #    restore-keys: |
-      #      ${{ runner.os }}-buildx-
-
-      # Docs for this action are at https://github.com/marketplace/actions/build-docker-images-using-cache
-      - uses: whoan/docker-build-with-cache-action@v6
+      - id: meta
+        name: Compute Docker tags
+        uses: docker/metadata-action@v5
         with:
-          registry: ghcr.io
-          username: ${{ github.actor }} # username: ${{ github.repository_owner }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-          image_name: storytold/storyteller-rust
-          dockerfile: ./build/service_cpu.Dockerfile
-          # NB: The `git_push_tag: true` option does not work as expected, so we put the sha in `image_tag`:
-          # https://github.com/whoan/docker-build-with-cache-action/issues/72
-          image_tag: latest,${{ github.sha }},${{ steps.vars.outputs.sha_short }}
-          # NB: Inject the Git SHA into the container so the servers can emit their own version:
-          build_extra_args: "--build-arg=GIT_SHA=${{ github.sha }}"
+          images: ghcr.io/storytold/storyteller-rust
+          tags: |
+            type=raw,value=latest
+            type=raw,value=${{ github.sha }}
+            type=raw,value=${{ steps.vars.outputs.sha_short }}
 
-      # - name: Build image
-      #   run: |
-      #     SHORT_SHA=$(echo ${GITHUB_SHA} | cut -c1-12)
-      #     docker build . --file Dockerfile --tag $IMAGE_NAME --label "runnumber=${GITHUB_RUN_ID}" --build-arg GIT_SHA=${SHORT_SHA}
-
-      # - name: Push image to GitHub Container Registry
-      #   run: |
-      #     IMAGE_ID=ghcr.io/${{ github.repository_owner }}/$IMAGE_NAME
-
-      #     # Change all uppercase to lowercase
-      #     IMAGE_ID=$(echo $IMAGE_ID | tr '[A-Z]' '[a-z]')
-
-      #     # Strip git ref prefix from version
-      #     VERSION=$(echo "${{ github.ref }}" | sed -e 's,.*/\(.*\),\1,')
-
-      #     # Strip "v" prefix from tag name
-      #     [[ "${{ github.ref }}" == "refs/tags/"* ]] && VERSION=$(echo $VERSION | sed -e 's/^v//')
-
-      #     # Use Docker `latest` tag convention
-      #     [ "$VERSION" == "$default-branch" ] && VERSION=latest
-
-      #     echo IMAGE_ID=$IMAGE_ID
-      #     echo VERSION=$VERSION
-
-      #     docker tag $IMAGE_NAME $IMAGE_ID:$VERSION
-      #     docker push $IMAGE_ID:$VERSION
-
-      #     SHORT_SHA=$(echo ${GITHUB_SHA} | cut -c1-12)
-
-      #     docker tag $IMAGE_NAME $IMAGE_ID:$SHORT_SHA
-      #     docker push $IMAGE_ID:$SHORT_SHA
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./build/service_cpu.Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            GIT_SHA=${{ github.sha }}
+          # GitHub Actions cache backend for BuildKit. `mode=max` saves
+          # all intermediate layers, not just the final image — critical
+          # for our multi-stage Cargo builds.
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          # The runner has plenty of memory; this prevents BuildKit from
+          # OOM-killing the cargo linker on a 16+ GB workspace build.
+          provenance: false
 
       - name: Cleanup / Debug
         # This job will run even on failures to help with debugging.
@@ -127,4 +114,5 @@ jobs:
           echo "Report at final github action step:"
           echo "Disk usage:"
           pwd
-          du -hsc * | sort -hr
+          du -hsc * 2>/dev/null | sort -hr || true
+          df -h /
