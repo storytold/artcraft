@@ -1,28 +1,29 @@
 /// Output resolution for `/v1/videos/generations`.
 ///
-/// xAI bills video generation per-second-per-resolution, so picking the
-/// lowest tier that meets the use case is meaningful — `480p` is materially
-/// cheaper than `1080p`.
+/// Currently `480p` (server default) and `720p` are the only supported output
+/// resolutions. The xAI REST schema also lists `"1080p"`, but the capability
+/// page contradicts this — it documents that "a 1080p input will be downsized
+/// to 720p", indicating 720p is the actual output cap. We follow the
+/// capability page since it describes observed behavior rather than just the
+/// wire schema.
 ///
-/// Server default is `480p` when omitted.
+/// If/when xAI removes the cap and 1080p is genuinely produced as output,
+/// add a `TenEightyP` variant here.
 ///
 /// Video edits (`/v1/videos/edits`) and extensions (`/v1/videos/extensions`)
-/// don't accept this field — they inherit the source video's resolution.
+/// don't accept this field — they inherit the source video's resolution
+/// (capped at 720p).
 ///
 /// Docs:
 /// - <https://docs.x.ai/developers/model-capabilities/video/generation>
 /// - <https://docs.x.ai/developers/rest-api-reference/inference/videos>
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum VideoResolution {
-  /// `"480p"` — fastest, cheapest. Server default.
+  /// `"480p"` — standard definition, faster processing. Server default.
   FourEightyP,
 
-  /// `"720p"` — middle tier.
+  /// `"720p"` — HD quality. Currently the maximum supported output resolution.
   SevenTwentyP,
-
-  /// `"1080p"` — highest fidelity, slowest, most expensive. Documented in
-  /// the REST API reference; the capability page may lag.
-  TenEightyP,
 }
 
 impl VideoResolution {
@@ -32,7 +33,6 @@ impl VideoResolution {
     match self {
       Self::FourEightyP  => "480p",
       Self::SevenTwentyP => "720p",
-      Self::TenEightyP   => "1080p",
     }
   }
 }
@@ -52,13 +52,11 @@ mod tests {
   fn matches_docs_strings() {
     assert_eq!(VideoResolution::FourEightyP.as_str(), "480p");
     assert_eq!(VideoResolution::SevenTwentyP.as_str(), "720p");
-    assert_eq!(VideoResolution::TenEightyP.as_str(), "1080p");
   }
 
   #[test]
   fn serializes_as_plain_wire_string() {
     assert_eq!(serde_json::to_string(&VideoResolution::FourEightyP).unwrap(), "\"480p\"");
     assert_eq!(serde_json::to_string(&VideoResolution::SevenTwentyP).unwrap(), "\"720p\"");
-    assert_eq!(serde_json::to_string(&VideoResolution::TenEightyP).unwrap(), "\"1080p\"");
   }
 }
