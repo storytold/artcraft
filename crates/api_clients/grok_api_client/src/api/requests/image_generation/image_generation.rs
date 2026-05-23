@@ -5,12 +5,12 @@ use crate::error::classify_grok_http_error::classify_grok_http_error;
 use crate::error::grok_client_error::GrokClientError;
 use crate::error::grok_error::GrokError;
 use crate::error::grok_generic_api_error::GrokGenericApiError;
-use crate::requests::image_generation::request_types::*;
-use crate::requests::image_types::image_aspect_ratio::ImageAspectRatio;
-use crate::requests::image_types::image_model::ImageModel;
-use crate::requests::image_types::image_resolution::ImageResolution;
-use crate::requests::image_types::image_response_format::ImageResponseFormat;
-use crate::requests::xai_host::XAI_API_BASE_URL;
+use crate::api::requests::image_generation::request_types::*;
+use crate::api::types::image_types::image_aspect_ratio::ImageAspectRatio;
+use crate::api::types::image_types::image_model::ImageModel;
+use crate::api::types::image_types::image_resolution::ImageResolution;
+use crate::api::types::image_types::image_response_format::ImageResponseFormat;
+use crate::api::requests::xai_host::XAI_API_BASE_URL;
 
 // ── Public args ──
 
@@ -201,7 +201,7 @@ mod tests {
   }
 
   // (Enum-specific round-trips live in their own modules under
-  // `requests::image_types::*`; here we just verify the public args wire up.)
+  // `api::types::image_types::*`; here we just verify the public args wire up.)
 
   #[tokio::test]
   async fn args_with_enums_serializes_correct_strings() {

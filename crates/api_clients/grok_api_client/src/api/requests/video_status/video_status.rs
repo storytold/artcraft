@@ -5,8 +5,8 @@ use crate::error::classify_grok_http_error::classify_grok_http_error;
 use crate::error::grok_client_error::GrokClientError;
 use crate::error::grok_error::GrokError;
 use crate::error::grok_generic_api_error::GrokGenericApiError;
-use crate::requests::video_status::request_types::*;
-use crate::requests::xai_host::XAI_API_BASE_URL;
+use crate::api::requests::video_status::request_types::*;
+use crate::api::requests::xai_host::XAI_API_BASE_URL;
 
 // ── Public args ──
 

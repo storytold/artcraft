@@ -1,7 +1,7 @@
 //! Shared image-endpoint enums (model, aspect ratio, resolution, response format).
 //!
-//! These are reused by both [`crate::requests::image_generation`] and
-//! [`crate::requests::image_edit`] so callers can pass type-safe values
+//! These are reused by both [`crate::api::requests::image_generation`] and
+//! [`crate::api::requests::image_edit`] so callers can pass type-safe values
 //! instead of memorising the allowed strings.
 
 pub mod image_aspect_ratio;

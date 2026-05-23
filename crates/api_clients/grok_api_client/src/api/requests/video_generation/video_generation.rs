@@ -6,8 +6,8 @@ use crate::error::grok_client_error::GrokClientError;
 use crate::error::grok_error::GrokError;
 use crate::error::grok_generic_api_error::GrokGenericApiError;
 use crate::error::grok_specific_api_error::GrokSpecificApiError;
-use crate::requests::video_generation::request_types::*;
-use crate::requests::xai_host::XAI_API_BASE_URL;
+use crate::api::requests::video_generation::request_types::*;
+use crate::api::requests::xai_host::XAI_API_BASE_URL;
 
 const DEFAULT_MODEL: &str = "grok-imagine-video";
 
@@ -57,7 +57,7 @@ pub enum VideoImageSource {
   Url(String),
 
   /// xAI file identifier (`file_...`) obtained from a successful upload via
-  /// [`crate::requests::upload_file::upload_file::upload_file`]. The file
+  /// [`crate::api::requests::upload_file::upload_file::upload_file`]. The file
   /// must still exist at request time.
   ///
   /// Docs:

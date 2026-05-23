@@ -6,8 +6,8 @@ use crate::error::classify_grok_http_error::classify_grok_http_error;
 use crate::error::grok_client_error::GrokClientError;
 use crate::error::grok_error::GrokError;
 use crate::error::grok_generic_api_error::GrokGenericApiError;
-use crate::requests::upload_file::request_types::*;
-use crate::requests::xai_host::XAI_API_BASE_URL;
+use crate::api::requests::upload_file::request_types::*;
+use crate::api::requests::xai_host::XAI_API_BASE_URL;
 
 const MAX_FILE_BYTES: u64 = 50 * 1024 * 1024;
 
@@ -42,10 +42,10 @@ pub struct UploadFileArgs {
 #[derive(Debug, Clone)]
 pub struct UploadFileSuccess {
   /// The xAI file identifier. Use this in the `FileId(_)` variant of
-  /// [`crate::requests::image_edit::image_edit::ImageSource`],
-  /// [`crate::requests::video_generation::video_generation::VideoImageSource`],
-  /// [`crate::requests::video_edit::video_edit::VideoSource`], or
-  /// [`crate::requests::video_extension::video_extension::VideoExtensionSource`].
+  /// [`crate::api::requests::image_edit::image_edit::ImageSource`],
+  /// [`crate::api::requests::video_generation::video_generation::VideoImageSource`],
+  /// [`crate::api::requests::video_edit::video_edit::VideoSource`], or
+  /// [`crate::api::requests::video_extension::video_extension::VideoExtensionSource`].
   pub file_id: String,
 
   pub bytes: Option<u64>,

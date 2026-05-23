@@ -5,8 +5,8 @@ use crate::error::classify_grok_http_error::classify_grok_http_error;
 use crate::error::grok_client_error::GrokClientError;
 use crate::error::grok_error::GrokError;
 use crate::error::grok_generic_api_error::GrokGenericApiError;
-use crate::requests::video_extension::request_types::*;
-use crate::requests::xai_host::XAI_API_BASE_URL;
+use crate::api::requests::video_extension::request_types::*;
+use crate::api::requests::xai_host::XAI_API_BASE_URL;
 
 const DEFAULT_MODEL: &str = "grok-imagine-video";
 
@@ -41,7 +41,7 @@ pub enum VideoExtensionSource {
   Url(String),
 
   /// xAI file identifier (`file_...`) obtained from a successful upload via
-  /// [`crate::requests::upload_file::upload_file::upload_file`].
+  /// [`crate::api::requests::upload_file::upload_file::upload_file`].
   ///
   /// Docs:
   /// - <https://docs.x.ai/developers/rest-api-reference/files/upload>
