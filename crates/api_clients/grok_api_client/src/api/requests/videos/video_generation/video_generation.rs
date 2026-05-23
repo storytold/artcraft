@@ -1,7 +1,7 @@
 use log::info;
 use serde_derive::Serialize;
 
-use crate::api::requests::video_generation::request_types::*;
+use crate::api::requests::videos::video_generation::request_types::*;
 use crate::api::requests::xai_host::XAI_API_BASE_URL;
 use crate::creds::grok_api_key::GrokApiKey;
 use crate::error::classify_grok_http_error::classify_grok_http_error;
@@ -75,7 +75,7 @@ pub enum VideoImageSource {
   Url(String),
 
   /// xAI file identifier (`file_...`) obtained from a successful upload via
-  /// [`crate::api::requests::upload_file::upload_file::upload_file`]. The file
+  /// [`crate::api::requests::files::upload_file::upload_file::upload_file`]. The file
   /// must still exist at request time.
   ///
   /// Docs:

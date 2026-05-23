@@ -4,7 +4,7 @@ use log::info;
 use reqwest::multipart::{Form, Part};
 use serde_derive::Serialize;
 
-use crate::api::requests::upload_file::request_types::*;
+use crate::api::requests::files::upload_file::request_types::*;
 use crate::api::requests::xai_host::XAI_API_BASE_URL;
 use crate::creds::grok_api_key::GrokApiKey;
 use crate::error::classify_grok_http_error::classify_grok_http_error;
@@ -78,10 +78,10 @@ impl fmt::Debug for UploadFileRequest {
 #[derive(Debug, Clone)]
 pub struct UploadFileSuccess {
   /// The xAI file identifier. Use this in the `FileId(_)` variant of
-  /// [`crate::api::requests::image_edit::image_edit::ImageSource`],
-  /// [`crate::api::requests::video_generation::video_generation::VideoImageSource`],
-  /// [`crate::api::requests::video_edit::video_edit::VideoSource`], or
-  /// [`crate::api::requests::video_extension::video_extension::VideoExtensionSource`].
+  /// [`crate::api::requests::images::image_edit::image_edit::ImageSource`],
+  /// [`crate::api::requests::videos::video_generation::video_generation::VideoImageSource`],
+  /// [`crate::api::requests::videos::video_edit::video_edit::VideoSource`], or
+  /// [`crate::api::requests::videos::video_extension::video_extension::VideoExtensionSource`].
   pub file_id: String,
 
   pub bytes: Option<u64>,

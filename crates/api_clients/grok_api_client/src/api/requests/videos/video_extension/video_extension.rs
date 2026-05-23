@@ -1,7 +1,7 @@
 use log::info;
 use serde_derive::Serialize;
 
-use crate::api::requests::video_extension::request_types::*;
+use crate::api::requests::videos::video_extension::request_types::*;
 use crate::api::requests::xai_host::XAI_API_BASE_URL;
 use crate::creds::grok_api_key::GrokApiKey;
 use crate::error::classify_grok_http_error::classify_grok_http_error;
@@ -54,7 +54,7 @@ pub enum VideoExtensionSource {
   Url(String),
 
   /// xAI file identifier (`file_...`) obtained from a successful upload via
-  /// [`crate::api::requests::upload_file::upload_file::upload_file`].
+  /// [`crate::api::requests::files::upload_file::upload_file::upload_file`].
   ///
   /// Docs:
   /// - <https://docs.x.ai/developers/rest-api-reference/files/upload>

@@ -1,7 +1,7 @@
 use log::info;
 use serde_derive::Serialize;
 
-use crate::api::requests::video_status::request_types::*;
+use crate::api::requests::videos::video_status::request_types::*;
 use crate::api::requests::xai_host::XAI_API_BASE_URL;
 use crate::creds::grok_api_key::GrokApiKey;
 use crate::error::classify_grok_http_error::classify_grok_http_error;

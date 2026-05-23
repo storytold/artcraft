@@ -1,7 +1,7 @@
 use log::info;
 use serde_derive::Serialize;
 
-use crate::api::requests::image_generation::request_types::*;
+use crate::api::requests::images::image_generation::request_types::*;
 use crate::api::requests::xai_host::XAI_API_BASE_URL;
 use crate::api::types::image_types::image_aspect_ratio::ImageAspectRatio;
 use crate::api::types::image_types::image_model::ImageModel;
