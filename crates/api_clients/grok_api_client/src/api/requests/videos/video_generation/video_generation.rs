@@ -174,7 +174,10 @@ fn to_video_image_ref(source: &VideoImageSource) -> VideoImageRef {
 #[cfg(test)]
 mod tests {
   use super::*;
+  use crate::test_utils::get_test_api_key::get_test_api_key;
+  use crate::test_utils::setup_test_logging::setup_test_logging;
   use errors::AnyhowResult;
+  use test_data::web::image_urls::{SUPER_WIDE_FALL_MOUNTAINS_IMAGE_URL, TALL_MOCHI_WITH_GLASSES_IMAGE_URL, WHITE_HOUSE_SUNSET_IMAGE_URL};
 
   // ── Wire-format shape tests ──
 
@@ -295,8 +298,6 @@ mod tests {
   #[tokio::test]
   #[ignore] // manually test — requires real API key and incurs costs
   async fn live_test_video_generation_text_only() -> AnyhowResult<()> {
-    use crate::test_utils::get_test_api_key::get_test_api_key;
-    use crate::test_utils::setup_test_logging::setup_test_logging;
     setup_test_logging();
 
     let api_key = get_test_api_key()?;
@@ -315,6 +316,72 @@ mod tests {
     }).await.map_err(|e| anyhow::anyhow!("{}", e))?;
 
     println!("Video request_id: {}", result.request_id);
+    assert!(!result.request_id.is_empty());
+
+    Ok(())
+  }
+
+  /// First-frame-to-video: a single source image becomes the opening frame
+  /// and the prompt drives the animation. Uses `image` (NOT
+  /// `reference_images`) — that's the xAI distinction between
+  /// image-to-video and reference-to-video.
+  #[tokio::test]
+  #[ignore] // manually test — requires real API key and incurs costs
+  async fn live_test_video_generation_first_frame_to_video() -> AnyhowResult<()> {
+    setup_test_logging();
+
+    let api_key = get_test_api_key()?;
+    let result = video_generation(VideoGenerationArgs {
+      api_key: &api_key,
+      request: VideoGenerationRequest {
+        prompt: "The camera slowly pushes in toward the building as the sun sinks below the horizon. Soft golden light, gentle breeze rustling the trees.".to_string(),
+        model: None,
+        image: Some(VideoImageSource::Url(WHITE_HOUSE_SUNSET_IMAGE_URL.to_string())),
+        reference_images: None,
+        aspect_ratio: Some(VideoAspectRatio::Landscape16x9),
+        duration: Some(5),
+        resolution: Some(VideoResolution::SevenTwentyP),
+        user: None,
+      },
+    }).await.map_err(|e| anyhow::anyhow!("{}", e))?;
+
+    println!("First-frame video request_id: {}", result.request_id);
+    assert!(!result.request_id.is_empty());
+    Ok(())
+  }
+
+  /// Reference-to-video: multiple source images influence the generated
+  /// video. xAI accepts up to 3. The prompt references them by index using
+  /// `<IMAGE_1>`, `<IMAGE_2>`, … placeholders per xAI's reference-to-video
+  /// docs.
+  ///
+  /// Different aspect ratio than the first-frame test (portrait 9:16
+  /// instead of landscape 16:9) so the two live tests don't accidentally
+  /// share a code path.
+  #[tokio::test]
+  #[ignore] // manually test — requires real API key and incurs costs
+  async fn live_test_video_generation_reference_images() -> AnyhowResult<()> {
+    setup_test_logging();
+
+    let api_key = get_test_api_key()?;
+    let result = video_generation(VideoGenerationArgs {
+      api_key: &api_key,
+      request: VideoGenerationRequest {
+        prompt: "The dogs from <IMAGE_1> in the scene from <IMAGE_2>. Make them play together.".to_string(),
+        model: None,
+        image: None,
+        reference_images: Some(vec![
+          VideoImageSource::Url(TALL_MOCHI_WITH_GLASSES_IMAGE_URL.to_string()),
+          VideoImageSource::Url(SUPER_WIDE_FALL_MOUNTAINS_IMAGE_URL.to_string()),
+        ]),
+        aspect_ratio: Some(VideoAspectRatio::Portrait9x16),
+        duration: Some(5),
+        resolution: Some(VideoResolution::SevenTwentyP),
+        user: None,
+      },
+    }).await.map_err(|e| anyhow::anyhow!("{}", e))?;
+
+    println!("Reference-to-video request_id: {}", result.request_id);
     assert!(!result.request_id.is_empty());
     Ok(())
   }

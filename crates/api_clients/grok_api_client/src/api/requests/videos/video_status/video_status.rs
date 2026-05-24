@@ -307,4 +307,57 @@ mod tests {
     // the request_id was accepted and parsed.
     Ok(())
   }
+
+  /// Polls another known request_id. Same lax assertions as the test above
+  /// — state varies with time.
+  #[tokio::test]
+  #[ignore] // manually test — requires real API key
+  async fn live_test_video_status_known_id_2() -> AnyhowResult<()> {
+    use crate::test_utils::get_test_api_key::get_test_api_key;
+    use crate::test_utils::setup_test_logging::setup_test_logging;
+    setup_test_logging();
+
+    let api_key = get_test_api_key()?;
+    let result = video_status(VideoStatusArgs {
+      api_key: &api_key,
+      request: VideoStatusRequest {
+        request_id: "7b2fa3dc-8e63-9100-b117-faffb3178773".to_string(),
+      },
+    }).await;
+
+    match &result {
+      Ok(s) => println!(
+        "status: state={:?} progress={:?} model={:?} video={:?} cost_in_usd_ticks={:?}",
+        s.state, s.progress, s.model, s.video, s.cost_in_usd_ticks,
+      ),
+      Err(e) => println!("status error: {:?}", e),
+    }
+    Ok(())
+  }
+
+  /// Polls yet another known request_id.
+  #[tokio::test]
+  #[ignore] // manually test — requires real API key
+  async fn live_test_video_status_known_id_3() -> AnyhowResult<()> {
+    use crate::test_utils::get_test_api_key::get_test_api_key;
+    use crate::test_utils::setup_test_logging::setup_test_logging;
+    setup_test_logging();
+
+    let api_key = get_test_api_key()?;
+    let result = video_status(VideoStatusArgs {
+      api_key: &api_key,
+      request: VideoStatusRequest {
+        request_id: "ff94f941-62a7-9966-92da-6b84d9eedb50".to_string(),
+      },
+    }).await;
+
+    match &result {
+      Ok(s) => println!(
+        "status: state={:?} progress={:?} model={:?} video={:?} cost_in_usd_ticks={:?}",
+        s.state, s.progress, s.model, s.video, s.cost_in_usd_ticks,
+      ),
+      Err(e) => println!("status error: {:?}", e),
+    }
+    Ok(())
+  }
 }
