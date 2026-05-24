@@ -27,7 +27,7 @@ pub async fn process_failed_job(
   let frontend_failure_category = if platform_rules_violation {
     Some(FrontendFailureCategory::ModelRulesViolation)
   } else {
-    None
+    Some(FrontendFailureCategory::GenerationFailed)
   };
 
   warn!(
