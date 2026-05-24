@@ -4899,6 +4899,40 @@ dependencies = [
 ]
 
 [[package]]
+name = "grok-api-job"
+version = "0.0.1"
+dependencies = [
+ "actix-web",
+ "actix_helpers",
+ "anyhow",
+ "bootstrap",
+ "bucket_paths",
+ "cloud_storage",
+ "concurrency",
+ "easyenv",
+ "enums",
+ "errors",
+ "grok_api_client",
+ "hashing",
+ "jobs_common",
+ "log",
+ "mysql_queries",
+ "pager",
+ "reqwest 0.12.23",
+ "rootly_client",
+ "rootly_config",
+ "serde",
+ "serde_derive",
+ "serde_json",
+ "server_environment",
+ "shared_env_var_config",
+ "sqlx",
+ "tokens",
+ "tokio",
+ "workspace-build-acceleration",
+]
+
+[[package]]
 name = "grok_api_client"
 version = "0.0.1"
 dependencies = [

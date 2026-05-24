@@ -1,0 +1,56 @@
+[package]
+name = "grok-api-job"
+edition = "2021"
+version = "0.0.1"
+publish = false
+
+[[bin]]
+name = "grok-api-job"
+path = "src/main.rs"
+
+[package.metadata.cargo-udeps.ignore]
+normal = ["workspace-build-acceleration"]
+
+[dependencies]
+# Workspace hack (faster compile times)
+workspace-build-acceleration = { workspace = true }
+
+# Internal
+actix_helpers.workspace = true
+bootstrap.workspace = true
+bucket_paths.workspace = true
+cloud_storage.workspace = true
+concurrency.workspace = true
+easyenv.workspace = true
+enums.workspace = true
+errors.workspace = true
+grok_api_client.workspace = true
+hashing = { path = "../../../lib/files/hashing" }
+jobs_common.workspace = true
+mysql_queries.workspace = true
+pager = { path = "../../../lib/pager" }
+rootly_client.workspace = true
+rootly_config.workspace = true
+server_environment = { path = "../../../lib/server_environment" }
+shared_env_var_config.workspace = true
+tokens.workspace = true
+
+# External
+anyhow.workspace = true
+log.workspace = true
+
+sqlx = { version = "0.7.4", features = [ "mysql", "runtime-tokio-rustls", "chrono" ] }
+
+# Runtime
+tokio = { version = "1.40.0", features = ["macros", "sync"] }
+
+# HTTP Client
+reqwest.workspace = true
+
+# HTTP Server
+actix-web.workspace = true
+
+# Serialization
+serde.workspace = true
+serde_derive.workspace = true
+serde_json.workspace = true
