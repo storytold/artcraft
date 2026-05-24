@@ -74,6 +74,7 @@ fn video_model_to_common_model_type(model: CommonVideoModel) -> Option<CommonMod
     CommonVideoModel::Seedance2p0UltraFast => Some(CommonModelType::Seedance2p0UltraFast),
     CommonVideoModel::PreviewModel => Some(CommonModelType::PreviewModel),
     CommonVideoModel::PreviewModelFast => Some(CommonModelType::PreviewModelFast),
+    CommonVideoModel::GrokImagineVideo => Some(CommonModelType::GrokImagineVideo),
   }
 }
 
@@ -85,6 +86,7 @@ fn provider_to_generation_provider(provider: Provider) -> GenerationProvider {
     Provider::Muapi => GenerationProvider::Artcraft,
     Provider::Seedance2Pro => GenerationProvider::Artcraft ,
     Provider::GmiCloud => GenerationProvider::Artcraft,
+    Provider::GrokApi => GenerationProvider::Artcraft,
   }
 }
 

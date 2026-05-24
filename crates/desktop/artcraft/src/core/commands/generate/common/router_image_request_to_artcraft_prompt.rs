@@ -56,6 +56,8 @@ fn image_model_to_common_model_type(model: CommonImageModel) -> Option<CommonMod
     CommonImageModel::Seedream5Lite => Some(CommonModelType::Seedream5Lite),
     CommonImageModel::QwenEdit2511Angles => Some(CommonModelType::QwenEdit2511Angles),
     CommonImageModel::Flux2LoraAngles => Some(CommonModelType::Flux2LoraAngles),
+    CommonImageModel::GrokImagineImage => Some(CommonModelType::GrokImagineImage),
+    CommonImageModel::GrokImagineImageQuality => Some(CommonModelType::GrokImagineImageQuality),
   }
 }
 
@@ -67,6 +69,7 @@ fn provider_to_generation_provider(provider: Provider) -> GenerationProvider {
     Provider::Muapi => GenerationProvider::Artcraft,
     Provider::Seedance2Pro => GenerationProvider::Artcraft ,
     Provider::GmiCloud => GenerationProvider::Artcraft,
+    Provider::GrokApi => GenerationProvider::Artcraft,
   }
 }
 
