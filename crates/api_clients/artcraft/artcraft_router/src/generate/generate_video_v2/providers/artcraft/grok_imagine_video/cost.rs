@@ -5,31 +5,17 @@ use crate::generate::generate_video_v2::providers::artcraft::grok_imagine_video:
 
 // -- Pricing constants --
 //
-// Derived from xAI's published Grok Imagine Video rates (see
-// grok_api_client::api::requests::videos::video_generation::cost) plus a 30%
-// ArtCraft markup.
-//
-//   xAI base:   480p = $0.05/sec   720p = $0.07/sec
-//   +30%:       480p = $0.065/sec  720p = $0.091/sec
-//
 // ArtCraft credits: 100 credits = $1.00. Credits always equal USD cents.
 //
 // We keep these as f64 because per-second rates are fractional; rounding
 // happens once at the end after multiplying by duration * batch.
 
-const MARKUP_MULTIPLIER: f64 = 1.30;
+const CENTS_PER_SECOND_480P: f64 = 6.5;
+const CENTS_PER_SECOND_720P: f64 = 9.1;
 
-const XAI_CENTS_PER_SECOND_480P: f64 = 5.0;
-const XAI_CENTS_PER_SECOND_720P: f64 = 7.0;
-
-const CENTS_PER_SECOND_480P: f64 = XAI_CENTS_PER_SECOND_480P * MARKUP_MULTIPLIER; // 6.5
-const CENTS_PER_SECOND_720P: f64 = XAI_CENTS_PER_SECOND_720P * MARKUP_MULTIPLIER; // 9.1
-
-// xAI also bills $0.002 (=0.2¢) per source image; with markup that's 0.26¢
-// per image. We keep this as a separate term so it doesn't get lost in
-// rounding when the per-second cost is small.
-const XAI_CENTS_PER_INPUT_IMAGE: f64 = 0.2;
-const CENTS_PER_INPUT_IMAGE: f64 = XAI_CENTS_PER_INPUT_IMAGE * MARKUP_MULTIPLIER; // 0.26
+// Per-source-image surcharge. Kept as a separate term so it doesn't get
+// lost in rounding when the per-second video cost is small.
+const CENTS_PER_INPUT_IMAGE: f64 = 0.26;
 
 pub struct ArtcraftGrokImagineVideoCostState {
   pub resolution: CommonResolution,
@@ -40,9 +26,9 @@ pub struct ArtcraftGrokImagineVideoCostState {
 
 impl ArtcraftGrokImagineVideoCostState {
   pub fn from_request(request: &ArtcraftGrokImagineVideoRequestState) -> Self {
-    // Default duration matches the upstream Grok client (xAI's default is 8s
-    // for video_generation; we use that here so cost estimates don't read 0
-    // when duration is omitted).
+    // Default duration is 8s when omitted, matching the upstream model's
+    // default — keeps cost estimates from reading 0 for under-specified
+    // requests.
     let resolution = request.request.resolution.unwrap_or(CommonResolution::SevenTwentyP);
     let duration_seconds = request.request.duration_seconds.unwrap_or(8);
     let batch_count = request.request.video_batch_count.unwrap_or(1);
@@ -65,8 +51,7 @@ impl ArtcraftGrokImagineVideoCostState {
     };
 
     let video_cents = self.duration_seconds as f64 * cents_per_second * self.batch_count as f64;
-    // Input images are billed once (not per output in the batch — xAI bills
-    // input separately from rendered output).
+    // Input images are billed once, not per output in the batch.
     let input_cents = self.input_image_count as f64 * CENTS_PER_INPUT_IMAGE;
 
     let usd_cents = (video_cents + input_cents).ceil() as u64;
@@ -188,7 +173,7 @@ mod tests {
     }
   }
 
-  // ── Relative pricing & markup verification ──
+  // ── Relative pricing ──
 
   mod relative_pricing {
     use super::*;
@@ -216,24 +201,6 @@ mod tests {
       let b4 = cost_cents(Some(CommonResolution::SevenTwentyP), 5, 4);
       assert!(b1 < b2);
       assert!(b2 < b4);
-    }
-
-    #[test]
-    fn cost_is_roughly_30_percent_above_grok_direct() {
-      // ArtCraft cost ≈ 1.30 × Grok-direct cost for the same shape.
-      // 10s @ 720p, batch 1, no input images:
-      //   Grok direct: 70 mills/s × 10 = 700 mills = 70¢
-      //   ArtCraft:    9.1 ¢/s × 10 = 91¢
-      //   Ratio: 91/70 = 1.30 ✓
-      let artcraft_720p_10s = cost_cents(Some(CommonResolution::SevenTwentyP), 10, 1);
-      assert_eq!(artcraft_720p_10s, 91);
-
-      // 5s @ 480p, batch 1:
-      //   Grok direct: 50 mills/s × 5 = 250 mills = 25¢
-      //   ArtCraft:    6.5 ¢/s × 5 = 32.5 → 33¢
-      //   Ratio: 33/25 = 1.32 (rounding effect, ~30%) ✓
-      let artcraft_480p_5s = cost_cents(Some(CommonResolution::FourEightyP), 5, 1);
-      assert_eq!(artcraft_480p_5s, 33);
     }
   }
 
