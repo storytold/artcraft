@@ -31,6 +31,18 @@ pub struct VideoExtensionRequest {
   /// Source video to extend.
   pub source_video: VideoExtensionSource,
 
+  /// **Cost-estimation hint — NOT sent to xAI, has zero effect on the
+  /// actual HTTP request.** Duration in whole seconds of the video at
+  /// [`source_video`](Self::source_video). When set, the
+  /// [`crate::api::traits::grok_request_cost_calculator_trait::GrokRequestCostCalculator`]
+  /// impl includes the input-side billing (10 mills/sec × source duration)
+  /// in the estimate; when `None`, the impl returns the output portion
+  /// only (extension duration × output rate). Populate this field if you
+  /// already know the source's runtime (e.g. from ffprobe or an upstream
+  /// generate call) so internal cost tracking reflects the true total.
+  #[serde(skip_serializing_if = "Option::is_none")]
+  pub source_video_duration_seconds: Option<u32>,
+
   /// Model identifier. Defaults to [`VideoModel::GrokImagineVideo`] when `None`.
   /// Use [`VideoModel::Custom`] for identifiers not yet listed in the enum.
   #[serde(skip_serializing_if = "Option::is_none")]
@@ -170,6 +182,7 @@ mod tests {
       request: VideoExtensionRequest {
         prompt: "p".to_string(),
         source_video: VideoExtensionSource::Url("u".to_string()),
+        source_video_duration_seconds: None,
         model: None,
         duration: Some(5),
       },
@@ -178,6 +191,35 @@ mod tests {
     assert!(!json.contains("secret_must_not_leak"));
     assert!(json.contains("\"duration\":5"));
     assert!(json.contains("\"source_video\":{\"Url\":\"u\"}"));
+    // Hint omitted when None.
+    assert!(!json.contains("source_video_duration_seconds"));
+  }
+
+  #[test]
+  fn source_duration_hint_serializes_when_set() {
+    let req = VideoExtensionRequest {
+      prompt: "p".to_string(),
+      source_video: VideoExtensionSource::Url("u".to_string()),
+      source_video_duration_seconds: Some(7),
+      model: None,
+      duration: Some(5),
+    };
+    let json = serde_json::to_string(&req).unwrap();
+    assert!(json.contains("\"source_video_duration_seconds\":7"));
+  }
+
+  #[test]
+  fn source_duration_hint_is_not_in_wire_body() {
+    // The internal wire body (what actually gets POSTed to xAI) doesn't
+    // carry the hint — it's intentionally absent from VideoExtensionRequestBody.
+    let body = VideoExtensionRequestBody {
+      prompt: "p".to_string(),
+      video: VideoExtensionSourceRef { url: Some("u".to_string()), file_id: None },
+      model: None,
+      duration: Some(5),
+    };
+    let json = serde_json::to_string(&body).unwrap();
+    assert!(!json.contains("source_video_duration_seconds"));
   }
 
   #[test]
@@ -203,6 +245,7 @@ mod tests {
       request: VideoExtensionRequest {
         prompt: "Continue the walk down the same street".to_string(),
         source_video: VideoExtensionSource::Url(ANGRY_SHIBA_VIDEO_URL.to_string()),
+        source_video_duration_seconds: None,
         model: None,
         duration: Some(5),
       },

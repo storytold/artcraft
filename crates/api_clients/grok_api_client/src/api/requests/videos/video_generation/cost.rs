@@ -106,11 +106,12 @@ mod tests {
     use super::*;
 
     #[test]
-    fn fully_default_is_8s_480p() {
-      // 50 × 8 = 400 mills = 40¢
+    fn fully_default_is_8s_720p() {
+      // Default duration 8s, default resolution 720p (per our defaults in cost.rs).
+      // 70 × 8 = 560 mills = 56¢
       let req = make_request(None, None, None, None);
-      assert_eq!(req.calculate_cost_in_mills(), 400);
-      assert_eq!(req.calculate_cost_in_cents(), 40);
+      assert_eq!(req.calculate_cost_in_mills(), 560);
+      assert_eq!(req.calculate_cost_in_cents(), 56);
     }
 
     #[test]
@@ -207,9 +208,9 @@ mod tests {
     }
 
     #[test]
-    fn default_resolution_is_480p() {
+    fn default_resolution_is_720p() {
       let r1 = make_request(Some(5), None, None, None);
-      let r2 = make_request(Some(5), Some(VideoResolution::FourEightyP), None, None);
+      let r2 = make_request(Some(5), Some(VideoResolution::SevenTwentyP), None, None);
       assert_eq!(r1.calculate_cost_in_mills(), r2.calculate_cost_in_mills());
     }
   }

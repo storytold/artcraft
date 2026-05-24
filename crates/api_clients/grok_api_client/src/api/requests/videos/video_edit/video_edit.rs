@@ -31,6 +31,18 @@ pub struct VideoEditRequest {
   /// Source video to modify (xAI reads this as the input).
   pub source_video: VideoSource,
 
+  /// **Cost-estimation hint — NOT sent to xAI, has zero effect on the
+  /// actual HTTP request.** Duration in whole seconds of the video at
+  /// [`source_video`](Self::source_video). When set, the
+  /// [`crate::api::traits::grok_request_cost_calculator_trait::GrokRequestCostCalculator`]
+  /// impl uses it for an accurate cost estimate; when `None`, the impl
+  /// falls back to a conservative default (xAI's 8-second generation
+  /// default). Populate this field if you already know the source's
+  /// runtime (e.g. from ffprobe or an upstream generate call) so internal
+  /// cost tracking stays correct.
+  #[serde(skip_serializing_if = "Option::is_none")]
+  pub source_video_duration_seconds: Option<u32>,
+
   /// Model identifier. Defaults to [`VideoModel::GrokImagineVideo`] when `None`.
   /// Use [`VideoModel::Custom`] for identifiers not yet listed in the enum.
   #[serde(skip_serializing_if = "Option::is_none")]
@@ -170,6 +182,7 @@ mod tests {
       request: VideoEditRequest {
         prompt: "p".to_string(),
         source_video: VideoSource::FileId("file_abc".to_string()),
+        source_video_duration_seconds: None,
         model: None,
         user: None,
       },
@@ -177,6 +190,35 @@ mod tests {
     let json = serde_json::to_string(&args.request).unwrap();
     assert!(!json.contains("secret_must_not_leak"));
     assert!(json.contains("\"source_video\":{\"FileId\":\"file_abc\"}"));
+    // Hint omitted when None.
+    assert!(!json.contains("source_video_duration_seconds"));
+  }
+
+  #[test]
+  fn source_duration_hint_serializes_when_set() {
+    let req = VideoEditRequest {
+      prompt: "p".to_string(),
+      source_video: VideoSource::Url("u".to_string()),
+      source_video_duration_seconds: Some(12),
+      model: None,
+      user: None,
+    };
+    let json = serde_json::to_string(&req).unwrap();
+    assert!(json.contains("\"source_video_duration_seconds\":12"));
+  }
+
+  #[test]
+  fn source_duration_hint_is_not_in_wire_body() {
+    // The internal wire body (what actually gets POSTed to xAI) doesn't
+    // carry the hint — it's intentionally absent from VideoEditRequestBody.
+    let body = VideoEditRequestBody {
+      prompt: "p".to_string(),
+      video: VideoSourceRef { url: Some("u".to_string()), file_id: None },
+      model: None,
+      user: None,
+    };
+    let json = serde_json::to_string(&body).unwrap();
+    assert!(!json.contains("source_video_duration_seconds"));
   }
 
   #[test]
@@ -202,6 +244,7 @@ mod tests {
       request: VideoEditRequest {
         prompt: "Change the lighting to midnight. Starry sky with the mily way overhead. Add some shooting stars. Everything is glowing under the starlight.".to_string(),
         source_video: VideoSource::Url(ANGRY_SHIBA_VIDEO_URL.to_string()),
+        source_video_duration_seconds: None,
         model: None,
         user: None,
       },
