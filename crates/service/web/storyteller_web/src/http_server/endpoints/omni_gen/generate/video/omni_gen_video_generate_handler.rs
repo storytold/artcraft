@@ -260,6 +260,23 @@ pub async fn omni_gen_video_generate_handler(
     }
   }
 
+  // ==================== DEBUG LOG: GROK API REQUEST ==================== //
+
+  if let GenerateVideoResponse::Grok(ref grok_payload) = pipeline_result.response {
+    if let Some(ref outbound_request) = grok_payload.maybe_outbound_request {
+      if let Err(err) = insert_debug_log(InsertDebugLogArgs {
+        apriori_debug_log_event_token: Some(&debug_log_event_token),
+        maybe_creator_user_token: Some(user_token),
+        debug_log_type: DebugLogType::GrokApiRequest,
+        message: &format!("{:#?}", outbound_request),
+        mysql_executor: &mut *mysql_connection,
+        phantom: Default::default(),
+      }).await {
+        warn!("Failed to insert Grok API request debug log: {:?}", err);
+      }
+    }
+  }
+
   // ==================== WRITE RESULT ==================== //
 
   let ip_address = get_request_ip(&http_request);

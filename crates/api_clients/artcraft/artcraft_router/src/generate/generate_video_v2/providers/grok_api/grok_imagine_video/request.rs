@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use grok_api_client::api::requests::videos::video_generation::video_generation::{
   video_generation, VideoGenerationArgs, VideoGenerationRequest as GrokVideoGenerationRequest,
 };
@@ -18,6 +20,8 @@ pub struct GrokApiGrokImagineVideoRequestState {
 
 impl GrokApiGrokImagineVideoRequestState {
   pub async fn send(&self, client: &RouterGrokApiClient) -> Result<GenerateVideoResponse, ArtcraftRouterError> {
+    let outbound_request = Arc::new(self.request.clone());
+
     let response = video_generation(VideoGenerationArgs {
       api_key: &client.api_key,
       request: self.request.clone(),
@@ -27,6 +31,7 @@ impl GrokApiGrokImagineVideoRequestState {
 
     Ok(GenerateVideoResponse::Grok(GrokVideoResponsePayload {
       request_id: response.request_id,
+      maybe_outbound_request: Some(outbound_request),
     }))
   }
 }

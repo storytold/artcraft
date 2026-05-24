@@ -21,6 +21,7 @@ pub enum DebugLogType {
   HttpRequest,
   FalRequest,
   KinoviRequest,
+  GrokApiRequest,
   FalWebhook,
   BeebleWebhook,
 }
@@ -35,6 +36,7 @@ impl DebugLogType {
       Self::HttpRequest => "http_request",
       Self::FalRequest => "fal_request",
       Self::KinoviRequest => "kinovi_request",
+      Self::GrokApiRequest => "grok_api_request",
       Self::FalWebhook => "fal_webhook",
       Self::BeebleWebhook => "beeble_webhook",
     }
@@ -45,6 +47,7 @@ impl DebugLogType {
       "http_request" => Ok(Self::HttpRequest),
       "fal_request" => Ok(Self::FalRequest),
       "kinovi_request" => Ok(Self::KinoviRequest),
+      "grok_api_request" => Ok(Self::GrokApiRequest),
       "fal_webhook" => Ok(Self::FalWebhook),
       "beeble_webhook" => Ok(Self::BeebleWebhook),
       _ => Err(EnumError::CouldNotConvertFromString(value.to_string())),
@@ -56,6 +59,7 @@ impl DebugLogType {
       Self::HttpRequest,
       Self::FalRequest,
       Self::KinoviRequest,
+      Self::GrokApiRequest,
       Self::FalWebhook,
       Self::BeebleWebhook,
     ])
@@ -77,6 +81,7 @@ mod tests {
       assert_serialization(DebugLogType::HttpRequest, "http_request");
       assert_serialization(DebugLogType::FalRequest, "fal_request");
       assert_serialization(DebugLogType::KinoviRequest, "kinovi_request");
+      assert_serialization(DebugLogType::GrokApiRequest, "grok_api_request");
       assert_serialization(DebugLogType::FalWebhook, "fal_webhook");
       assert_serialization(DebugLogType::BeebleWebhook, "beeble_webhook");
     }
@@ -86,6 +91,7 @@ mod tests {
       assert_eq!(DebugLogType::HttpRequest.to_str(), "http_request");
       assert_eq!(DebugLogType::FalRequest.to_str(), "fal_request");
       assert_eq!(DebugLogType::KinoviRequest.to_str(), "kinovi_request");
+      assert_eq!(DebugLogType::GrokApiRequest.to_str(), "grok_api_request");
       assert_eq!(DebugLogType::FalWebhook.to_str(), "fal_webhook");
       assert_eq!(DebugLogType::BeebleWebhook.to_str(), "beeble_webhook");
     }
@@ -95,6 +101,7 @@ mod tests {
       assert_eq!(DebugLogType::from_str("http_request").unwrap(), DebugLogType::HttpRequest);
       assert_eq!(DebugLogType::from_str("fal_request").unwrap(), DebugLogType::FalRequest);
       assert_eq!(DebugLogType::from_str("kinovi_request").unwrap(), DebugLogType::KinoviRequest);
+      assert_eq!(DebugLogType::from_str("grok_api_request").unwrap(), DebugLogType::GrokApiRequest);
       assert_eq!(DebugLogType::from_str("fal_webhook").unwrap(), DebugLogType::FalWebhook);
       assert_eq!(DebugLogType::from_str("beeble_webhook").unwrap(), DebugLogType::BeebleWebhook);
     }
@@ -113,10 +120,11 @@ mod tests {
     #[test]
     fn all_variants() {
       let mut variants = DebugLogType::all_variants();
-      assert_eq!(variants.len(), 5);
+      assert_eq!(variants.len(), 6);
       assert_eq!(variants.pop_first(), Some(DebugLogType::HttpRequest));
       assert_eq!(variants.pop_first(), Some(DebugLogType::FalRequest));
       assert_eq!(variants.pop_first(), Some(DebugLogType::KinoviRequest));
+      assert_eq!(variants.pop_first(), Some(DebugLogType::GrokApiRequest));
       assert_eq!(variants.pop_first(), Some(DebugLogType::FalWebhook));
       assert_eq!(variants.pop_first(), Some(DebugLogType::BeebleWebhook));
       assert_eq!(variants.pop_first(), None);

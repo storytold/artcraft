@@ -44,6 +44,11 @@ pub struct GrokVideoResponsePayload {
   /// xAI request_id; poll with `grok_api_client::api::requests::videos::video_status`
   /// to fetch the rendered video URL once it's ready.
   pub request_id: String,
+
+  /// The outbound request that was sent to Grok (xAI).
+  /// Stored as a trait object so any Request type can be captured.
+  /// Use `format!("{:?}", ...)` or `format!("{:#?}", ...)` to print.
+  pub maybe_outbound_request: Option<Arc<dyn Debug + Send + Sync>>,
 }
 
 #[derive(Clone, Debug)]
