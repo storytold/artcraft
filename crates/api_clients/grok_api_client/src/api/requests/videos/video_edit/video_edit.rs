@@ -200,7 +200,7 @@ mod tests {
     let result = video_edit(VideoEditArgs {
       api_key: &api_key,
       request: VideoEditRequest {
-        prompt: "Change the lighting to golden hour".to_string(),
+        prompt: "Change the lighting to midnight. Starry sky with the mily way overhead. Add some shooting stars. Everything is glowing under the starlight.".to_string(),
         source_video: VideoSource::Url(ANGRY_SHIBA_VIDEO_URL.to_string()),
         model: None,
         user: None,

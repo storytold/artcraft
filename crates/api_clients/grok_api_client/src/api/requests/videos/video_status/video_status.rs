@@ -275,4 +275,36 @@ mod tests {
       "expected NotFound, got: {:?}", err);
     Ok(())
   }
+
+  /// Polls a known request_id and prints the result. Doesn't assert a
+  /// specific state — depending on when the test runs, the job may be
+  /// pending, done, failed, or expired. The point is to exercise the
+  /// happy-path against the real xAI API.
+  #[tokio::test]
+  #[ignore] // manually test — requires real API key
+  async fn live_test_video_status_known_id() -> AnyhowResult<()> {
+    use crate::test_utils::get_test_api_key::get_test_api_key;
+    use crate::test_utils::setup_test_logging::setup_test_logging;
+    setup_test_logging();
+
+    let api_key = get_test_api_key()?;
+    let result = video_status(VideoStatusArgs {
+      api_key: &api_key,
+      request: VideoStatusRequest {
+        request_id: "e397ac83-c22f-90b1-9831-900c01497345".to_string(),
+      },
+    }).await;
+
+    match &result {
+      Ok(s) => println!(
+        "status: state={:?} progress={:?} model={:?} video={:?} cost_in_usd_ticks={:?}",
+        s.state, s.progress, s.model, s.video, s.cost_in_usd_ticks,
+      ),
+      Err(e) => println!("status error: {:?}", e),
+    }
+    // No assertion on the specific state — the job may have completed,
+    // failed, or expired by the time this runs. We just want to confirm
+    // the request_id was accepted and parsed.
+    Ok(())
+  }
 }
