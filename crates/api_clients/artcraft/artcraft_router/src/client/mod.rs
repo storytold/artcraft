@@ -7,5 +7,6 @@ pub mod router_client;
 pub mod router_fal_client;
 pub mod router_fal_webhook_optional_client;
 pub mod router_gmicloud_client;
+pub mod router_grok_api_client;
 pub mod router_muapi_client;
 pub mod router_seedance2pro_client;

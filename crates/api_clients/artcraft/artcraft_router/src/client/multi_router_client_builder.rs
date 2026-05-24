@@ -3,6 +3,7 @@ use crate::client::router_artcraft_client::RouterArtcraftClient;
 use crate::client::router_fal_client::RouterFalClient;
 use crate::client::router_fal_webhook_optional_client::RouterFalWebhookOptionalClient;
 use crate::client::router_gmicloud_client::RouterGmiCloudClient;
+use crate::client::router_grok_api_client::RouterGrokApiClient;
 use crate::client::router_muapi_client::RouterMuapiClient;
 use crate::client::router_seedance2pro_client::RouterSeedance2ProClient;
 
@@ -11,6 +12,7 @@ pub struct MultiRouterClientBuilder {
   fal_client: Option<RouterFalClient>,
   fal_webhook_optional_client: Option<RouterFalWebhookOptionalClient>,
   gmicloud_client: Option<RouterGmiCloudClient>,
+  grok_api_client: Option<RouterGrokApiClient>,
   muapi_client: Option<RouterMuapiClient>,
   seedance2pro_client: Option<RouterSeedance2ProClient>,
 }
@@ -22,6 +24,7 @@ impl MultiRouterClientBuilder {
       fal_client: None,
       fal_webhook_optional_client: None,
       gmicloud_client: None,
+      grok_api_client: None,
       muapi_client: None,
       seedance2pro_client: None,
     }
@@ -47,6 +50,11 @@ impl MultiRouterClientBuilder {
     self
   }
 
+  pub fn set_grok_api_client(mut self, client: RouterGrokApiClient) -> Self {
+    self.grok_api_client = Some(client);
+    self
+  }
+
   pub fn set_muapi_client(mut self, client: RouterMuapiClient) -> Self {
     self.muapi_client = Some(client);
     self
@@ -63,6 +71,7 @@ impl MultiRouterClientBuilder {
       fal_client: self.fal_client,
       fal_webhook_optional_client: self.fal_webhook_optional_client,
       gmicloud_client: self.gmicloud_client,
+      grok_api_client: self.grok_api_client,
       muapi_client: self.muapi_client,
       seedance2pro_client: self.seedance2pro_client,
     }

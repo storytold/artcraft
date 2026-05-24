@@ -9,6 +9,7 @@ pub enum ClientType {
   Fal,
   FalWebhookOptional,
   GmiCloud,
+  GrokApi,
   Muapi,
   Seedance2Pro,
 }
@@ -20,6 +21,7 @@ impl Display for ClientType {
       Self::Fal => write!(f, "Fal"),
       Self::FalWebhookOptional => write!(f, "FalWebhookOptional"),
       Self::GmiCloud => write!(f, "GmiCloud"),
+      Self::GrokApi => write!(f, "GrokApi"),
       Self::Muapi => write!(f, "Muapi"),
       Self::Seedance2Pro => write!(f, "Seedance2Pro"),
     }

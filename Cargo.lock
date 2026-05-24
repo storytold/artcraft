@@ -803,6 +803,7 @@ dependencies = [
  "enums",
  "fal_client",
  "gmicloud_client",
+ "grok_api_client",
  "log",
  "muapi_client",
  "reqwest 0.12.23",
