@@ -20,6 +20,44 @@ fn build_omni_gen_video_models() -> Vec<OmniGenVideoModelDetails> {
   let mut models = Vec::new();
 
   models.push(OmniGenVideoModelDetails {
+    model: CommonVideoModel::GrokImagineVideo,
+    model_creator: Some(ModelCreator::Grok),
+    full_name: Some("Grok Imagine".to_string()),
+    text_prompt_supported: Some(true),
+    starting_keyframe_supported: Some(true),
+    ending_keyframe_supported: Some(false),
+    image_references_supported: Some(true),
+    image_references_max: Some(3),
+    audio_references_supported: Some(true),
+    audio_references_max: Some(3),
+    audio_references_max_total_duration_seconds: Some(15),
+    //video_references_supported: Some(false),
+    //video_references_max: Some(3),
+    //video_references_max_total_duration_seconds: Some(15),
+    aspect_ratio_options: Some(vec![
+      CommonAspectRatio::WideSixteenByNine,
+      CommonAspectRatio::WideFourByThree,
+      CommonAspectRatio::WideThreeByTwo,
+      CommonAspectRatio::Square,
+      CommonAspectRatio::TallTwoByThree,
+      CommonAspectRatio::TallThreeByFour,
+      CommonAspectRatio::TallNineBySixteen,
+    ]),
+    aspect_ratio_default: Some(CommonAspectRatio::WideSixteenByNine),
+    resolution_options: Some(vec![
+      CommonResolution::FourEightyP,
+      CommonResolution::SevenTwentyP,
+    ]),
+    resolution_default: Some(CommonResolution::SevenTwentyP),
+    //batch_size_options: Some(vec![1, 2, 4]),
+    //batch_size_default: Some(1),
+    duration_seconds_min: Some(1),
+    duration_seconds_max: Some(15),
+    duration_seconds_default: Some(8),
+    ..Default::default()
+  });
+
+  models.push(OmniGenVideoModelDetails {
     model: CommonVideoModel::HappyHorse1p0,
     model_creator: Some(ModelCreator::Alibaba),
     full_name: Some("Happy Horse 1.0".to_string()),
