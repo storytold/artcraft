@@ -8,6 +8,9 @@ pub enum CommonVideoModel {
   #[serde(rename = "grok_video")]
   GrokVideo,
 
+  #[serde(rename = "grok_imagine_video")]
+  GrokImagineVideo,
+
   #[serde(rename = "kling_1p6_pro")]
   Kling16Pro,
 

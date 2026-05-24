@@ -5,8 +5,14 @@ use utoipa::ToSchema;
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Serialize, Deserialize, ToSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum CommonVideoModel {
+  /// NB: This was for the web login version
+  #[deprecated = "Use `GrokImagineVideo` instead."]
   #[serde(rename = "grok_video")]
   GrokVideo,
+
+  /// NB: This is for the API version
+  #[serde(rename = "grok_imagine_video")]
+  GrokImagineVideo,
 
   #[serde(rename = "kling_1p6_pro")]
   Kling16Pro,
@@ -93,6 +99,7 @@ impl CommonVideoModel {
     use crate::common::generation::common_model_type::CommonModelType;
     match self {
       Self::GrokVideo => CommonModelType::GrokVideo,
+      Self::GrokImagineVideo => CommonModelType::GrokImagineVideo,
       Self::Kling16Pro => CommonModelType::Kling16Pro,
       Self::Kling21Pro => CommonModelType::Kling21Pro,
       Self::Kling21Master => CommonModelType::Kling21Master,
@@ -131,6 +138,7 @@ mod tests {
   #[test]
   fn test_serialization() {
     assert_serialization(CommonVideoModel::GrokVideo, "grok_video");
+    assert_serialization(CommonVideoModel::GrokImagineVideo, "grok_imagine_video");
     assert_serialization(CommonVideoModel::Kling16Pro, "kling_1p6_pro");
     assert_serialization(CommonVideoModel::Kling21Pro, "kling_2p1_pro");
     assert_serialization(CommonVideoModel::Kling21Master, "kling_2p1_master");
@@ -162,6 +170,7 @@ mod tests {
   fn test_deserialization() {
     let cases = [
       ("grok_video", CommonVideoModel::GrokVideo),
+      ("grok_imagine_video", CommonVideoModel::GrokImagineVideo),
       ("kling_1p6_pro", CommonVideoModel::Kling16Pro),
       ("kling_2p1_pro", CommonVideoModel::Kling21Pro),
       ("kling_2p1_master", CommonVideoModel::Kling21Master),
@@ -200,6 +209,7 @@ mod tests {
   fn test_round_trip() {
     let all = [
       CommonVideoModel::GrokVideo,
+      CommonVideoModel::GrokImagineVideo,
       CommonVideoModel::Kling16Pro,
       CommonVideoModel::Kling21Pro,
       CommonVideoModel::Kling21Master,
@@ -237,6 +247,7 @@ mod tests {
   fn all_video_models_convert_to_common_model_type() {
     let models = [
       (CommonVideoModel::GrokVideo, CommonModelType::GrokVideo),
+      (CommonVideoModel::GrokImagineVideo, CommonModelType::GrokImagineVideo),
       (CommonVideoModel::Kling16Pro, CommonModelType::Kling16Pro),
       (CommonVideoModel::Kling21Pro, CommonModelType::Kling21Pro),
       (CommonVideoModel::Kling21Master, CommonModelType::Kling21Master),

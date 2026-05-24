@@ -143,6 +143,8 @@ pub enum InferenceModelType {
   // Video models
   #[serde(rename = "grok_video")]
   GrokVideo,
+  #[serde(rename = "grok_imagine_video")]
+  GrokImagineVideo,
   #[serde(rename = "kling_1p6_pro")]
   Kling16Pro,
   #[serde(rename = "kling_2p1_pro")]
@@ -273,6 +275,7 @@ impl InferenceModelType {
 
       // Video models
       Self::GrokVideo => "grok_video",
+      Self::GrokImagineVideo => "grok_imagine_video",
       Self::Kling16Pro => "kling_1p6_pro",
       Self::Kling21Pro => "kling_2p1_pro",
       Self::Kling21Master => "kling_2p1_master",
@@ -366,6 +369,7 @@ impl InferenceModelType {
 
       // Video models
       "grok_video" => Ok(Self::GrokVideo),
+      "grok_imagine_video" => Ok(Self::GrokImagineVideo),
       "kling_1p6_pro" => Ok(Self::Kling16Pro),
       "kling_2p1_pro" => Ok(Self::Kling21Pro),
       "kling_2p1_master" => Ok(Self::Kling21Master),
@@ -463,6 +467,7 @@ impl InferenceModelType {
 
       // Video models
       Self::GrokVideo,
+      Self::GrokImagineVideo,
       Self::Kling16Pro,
       Self::Kling21Pro,
       Self::Kling21Master,
@@ -543,6 +548,7 @@ impl InferenceModelType {
 
       // Video models
       CommonModelType::GrokVideo => Self::GrokVideo,
+      CommonModelType::GrokImagineVideo => Self::GrokImagineVideo,
       CommonModelType::Kling16Pro => Self::Kling16Pro,
       CommonModelType::Kling21Pro => Self::Kling21Pro,
       CommonModelType::Kling21Master => Self::Kling21Master,
@@ -646,6 +652,7 @@ mod tests {
 
       // Video models
       assert_serialization(InferenceModelType::GrokVideo, "grok_video");
+      assert_serialization(InferenceModelType::GrokImagineVideo, "grok_imagine_video");
       assert_serialization(InferenceModelType::Kling16Pro, "kling_1p6_pro");
       assert_serialization(InferenceModelType::Kling21Pro, "kling_2p1_pro");
       assert_serialization(InferenceModelType::Kling21Master, "kling_2p1_master");
@@ -738,6 +745,7 @@ mod tests {
 
       // Video models
       assert_eq!(InferenceModelType::GrokVideo.to_str(), "grok_video");
+      assert_eq!(InferenceModelType::GrokImagineVideo.to_str(), "grok_imagine_video");
       assert_eq!(InferenceModelType::Kling16Pro.to_str(), "kling_1p6_pro");
       assert_eq!(InferenceModelType::Kling21Pro.to_str(), "kling_2p1_pro");
       assert_eq!(InferenceModelType::Kling21Master.to_str(), "kling_2p1_master");
@@ -830,6 +838,7 @@ mod tests {
 
       // Video models
       assert_eq!(InferenceModelType::from_str("grok_video").unwrap(), InferenceModelType::GrokVideo);
+      assert_eq!(InferenceModelType::from_str("grok_imagine_video").unwrap(), InferenceModelType::GrokImagineVideo);
       assert_eq!(InferenceModelType::from_str("kling_1p6_pro").unwrap(), InferenceModelType::Kling16Pro);
       assert_eq!(InferenceModelType::from_str("kling_2p1_pro").unwrap(), InferenceModelType::Kling21Pro);
       assert_eq!(InferenceModelType::from_str("kling_2p1_master").unwrap(), InferenceModelType::Kling21Master);
