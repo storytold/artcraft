@@ -25,6 +25,10 @@ pub enum InferenceJobExternalThirdParty {
   #[serde(rename = "gmicloud")]
   GmiCloud,
 
+  /// Grok (xAI) API jobs
+  #[serde(rename = "grok_api")]
+  GrokApi,
+
   /// Seedance 2 Pro jobs
   #[serde(rename = "seedance2pro")]
   Seedance2Pro,
@@ -49,6 +53,7 @@ impl InferenceJobExternalThirdParty {
       Self::Beeble => "beeble",
       Self::Fal => "fal",
       Self::GmiCloud => "gmicloud",
+      Self::GrokApi => "grok_api",
       Self::Seedance2Pro => "seedance2pro",
       Self::Seedance2ProAlt => "seedance2pro_alt",
       Self::Worldlabs => "worldlabs",
@@ -60,6 +65,7 @@ impl InferenceJobExternalThirdParty {
       "beeble" => Ok(Self::Beeble),
       "fal" => Ok(Self::Fal),
       "gmicloud" => Ok(Self::GmiCloud),
+      "grok_api" => Ok(Self::GrokApi),
       "seedance2pro" => Ok(Self::Seedance2Pro),
       "seedance2pro_alt" => Ok(Self::Seedance2ProAlt),
       "worldlabs" => Ok(Self::Worldlabs),
@@ -74,6 +80,7 @@ impl InferenceJobExternalThirdParty {
       Self::Beeble,
       Self::Fal,
       Self::GmiCloud,
+      Self::GrokApi,
       Self::Seedance2Pro,
       Self::Seedance2ProAlt,
       Self::Worldlabs,
@@ -94,6 +101,7 @@ mod tests {
       assert_serialization(InferenceJobExternalThirdParty::Beeble, "beeble");
       assert_serialization(InferenceJobExternalThirdParty::Fal, "fal");
       assert_serialization(InferenceJobExternalThirdParty::GmiCloud, "gmicloud");
+      assert_serialization(InferenceJobExternalThirdParty::GrokApi, "grok_api");
       assert_serialization(InferenceJobExternalThirdParty::Seedance2Pro, "seedance2pro");
       assert_serialization(InferenceJobExternalThirdParty::Seedance2ProAlt, "seedance2pro_alt");
       assert_serialization(InferenceJobExternalThirdParty::Worldlabs, "worldlabs");
@@ -104,6 +112,7 @@ mod tests {
       assert_eq!(InferenceJobExternalThirdParty::Beeble.to_str(), "beeble");
       assert_eq!(InferenceJobExternalThirdParty::Fal.to_str(), "fal");
       assert_eq!(InferenceJobExternalThirdParty::GmiCloud.to_str(), "gmicloud");
+      assert_eq!(InferenceJobExternalThirdParty::GrokApi.to_str(), "grok_api");
       assert_eq!(InferenceJobExternalThirdParty::Seedance2Pro.to_str(), "seedance2pro");
       assert_eq!(InferenceJobExternalThirdParty::Seedance2ProAlt.to_str(), "seedance2pro_alt");
       assert_eq!(InferenceJobExternalThirdParty::Worldlabs.to_str(), "worldlabs");
@@ -114,6 +123,7 @@ mod tests {
       assert_eq!(InferenceJobExternalThirdParty::from_str("beeble").unwrap(), InferenceJobExternalThirdParty::Beeble);
       assert_eq!(InferenceJobExternalThirdParty::from_str("fal").unwrap(), InferenceJobExternalThirdParty::Fal);
       assert_eq!(InferenceJobExternalThirdParty::from_str("gmicloud").unwrap(), InferenceJobExternalThirdParty::GmiCloud);
+      assert_eq!(InferenceJobExternalThirdParty::from_str("grok_api").unwrap(), InferenceJobExternalThirdParty::GrokApi);
       assert_eq!(InferenceJobExternalThirdParty::from_str("seedance2pro").unwrap(), InferenceJobExternalThirdParty::Seedance2Pro);
       assert_eq!(InferenceJobExternalThirdParty::from_str("seedance2pro_alt").unwrap(), InferenceJobExternalThirdParty::Seedance2ProAlt);
       assert_eq!(InferenceJobExternalThirdParty::from_str("worldlabs").unwrap(), InferenceJobExternalThirdParty::Worldlabs);
@@ -122,7 +132,7 @@ mod tests {
     #[test]
     fn all_variants() {
       // Static check
-      const EXPECTED_COUNT : usize = 6;
+      const EXPECTED_COUNT : usize = 7;
       
       assert_eq!(InferenceJobExternalThirdParty::all_variants().len(), EXPECTED_COUNT);
       assert_eq!(InferenceJobExternalThirdParty::iter().len(), EXPECTED_COUNT);

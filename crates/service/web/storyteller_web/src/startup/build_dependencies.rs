@@ -41,7 +41,7 @@ use crate::state::certs::google_sign_in_cert::GoogleSignInCert;
 use crate::state::memory_cache::model_token_to_info_cache::ModelTokenToInfoCache;
 use crate::state::server_state::{
   BeebleData, DurableInMemoryCaches, EnvConfig, EphemeralInMemoryCaches, FalData,
-  GmiCloudData, InMemoryCaches, OpenAiData, ResendData, Seedance2ProData, ServerInfo,
+  GmiCloudData, GrokApiData, InMemoryCaches, OpenAiData, ResendData, Seedance2ProData, ServerInfo,
   ServerState, TrollBans, WorldLabsData,
 };
 use crate::threads::db_health_checker_thread::db_health_check_status::HealthCheckStatus;
@@ -203,6 +203,7 @@ pub async fn setup_dependencies(server_hostname: &str) -> AnyhowResult<SetupResu
   let openai_api_key = easyenv::get_env_string_required("OPENAI_API_KEY")?;
   let resend_api_key = easyenv::get_env_string_required("RESEND_API_KEY")?;
   let gmicloud_api_key = easyenv::get_env_string_required("GMICLOUD_API_KEY")?;
+  let grok_api_key = easyenv::get_env_string_required("GROK_API_KEY")?;
   let worldlabs_api_key = easyenv::get_env_string_required("WORLDLABS_API_KEY")?;
 
   let startup_time = Utc::now();
@@ -256,6 +257,9 @@ pub async fn setup_dependencies(server_hostname: &str) -> AnyhowResult<SetupResu
     },
     gmicloud: GmiCloudData {
       api_key: gmicloud_client::creds::gmicloud_api_key::GmiCloudApiKey::new(gmicloud_api_key),
+    },
+    grok_api: GrokApiData {
+      api_key: grok_api_client::creds::grok_api_key::GrokApiKey::new(grok_api_key),
     },
     seedance2pro: Seedance2ProData {
       cookies: easyenv::get_env_string_required("SEEDANCE2PRO_COOKIES")?,

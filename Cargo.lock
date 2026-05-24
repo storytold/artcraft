@@ -11519,6 +11519,7 @@ dependencies = [
  "futures-util",
  "gmicloud_client",
  "google_sign_in",
+ "grok_api_client",
  "hashing",
  "hostname 0.4.0",
  "http_server_common",

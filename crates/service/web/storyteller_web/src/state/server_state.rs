@@ -93,6 +93,8 @@ pub struct ServerState {
 
   pub gmicloud: GmiCloudData,
 
+  pub grok_api: GrokApiData,
+
   pub beeble: BeebleData,
 
   pub seedance2pro: Seedance2ProData,
@@ -322,6 +324,12 @@ pub struct FalData {
 #[derive(Clone)]
 pub struct GmiCloudData {
   pub api_key: gmicloud_client::creds::gmicloud_api_key::GmiCloudApiKey,
+}
+
+/// Grok (xAI) API integration
+#[derive(Clone)]
+pub struct GrokApiData {
+  pub api_key: grok_api_client::creds::grok_api_key::GrokApiKey,
 }
 
 /// Beeble SwitchX integration

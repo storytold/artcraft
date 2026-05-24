@@ -142,6 +142,8 @@ fn map_image_model(model: CommonImageModel) -> Result<RouterImageModel, HandlerE
     CommonImageModel::Seedream4 => RouterImageModel::Seedream4,
     CommonImageModel::Seedream4p5 => RouterImageModel::Seedream4p5,
     CommonImageModel::Seedream5Lite => RouterImageModel::Seedream5Lite,
+    CommonImageModel::GrokImagineImage => RouterImageModel::GrokImagineImage,
+    CommonImageModel::GrokImagineImageQuality => RouterImageModel::GrokImagineImageQuality,
   };
   Ok(router_model)
 }

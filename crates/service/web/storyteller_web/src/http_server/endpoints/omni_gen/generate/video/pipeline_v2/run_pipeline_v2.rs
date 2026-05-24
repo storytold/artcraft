@@ -61,6 +61,7 @@ pub async fn run_pipeline_v2(args: RunPipelineV2Args<'_>) -> Result<PipelineResu
     CommonVideoModel::Seedance2p0Fast => Provider::Seedance2Pro,
     CommonVideoModel::Seedance2p0Ultra => Provider::GmiCloud,
     CommonVideoModel::Seedance2p0UltraFast => Provider::GmiCloud,
+    CommonVideoModel::GrokImagineVideo => Provider::GrokApi,
     _ => Provider::Fal,
   };
 
@@ -68,9 +69,9 @@ pub async fn run_pipeline_v2(args: RunPipelineV2Args<'_>) -> Result<PipelineResu
   let mut exec_builder = router_builder.clone();
   exec_builder.provider = provider;
 
-  // GmiCloud takes URLs directly (like Fal), not media file tokens.
+  // GmiCloud and Grok (xAI) take URLs directly (like Fal), not media file tokens.
   // Resolve tokens to URLs before building.
-  if matches!(provider, Provider::GmiCloud) {
+  if matches!(provider, Provider::GmiCloud | Provider::GrokApi) {
     resolve_media_tokens_to_urls(&mut exec_builder, media_file_to_url_map.as_ref());
   }
 

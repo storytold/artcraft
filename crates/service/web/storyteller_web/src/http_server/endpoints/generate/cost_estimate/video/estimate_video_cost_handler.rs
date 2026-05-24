@@ -130,6 +130,7 @@ fn map_provider(
 fn map_video_model(model: CommonVideoModel) -> Result<RouterVideoModel, HandlerError> {
   let router_model = match model {
     CommonVideoModel::GrokVideo => RouterVideoModel::GrokVideo,
+    CommonVideoModel::GrokImagineVideo => RouterVideoModel::GrokImagineVideo,
     CommonVideoModel::Kling16Pro => RouterVideoModel::Kling16Pro,
     CommonVideoModel::Kling21Pro => RouterVideoModel::Kling21Pro,
     CommonVideoModel::Kling21Master => RouterVideoModel::Kling21Master,

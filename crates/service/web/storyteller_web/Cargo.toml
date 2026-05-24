@@ -55,6 +55,7 @@ error_utils.workspace = true
 errors.workspace = true
 fal_client.workspace = true
 gmicloud_client.workspace = true
+grok_api_client.workspace = true
 filesys.workspace = true
 google_sign_in = { path = "../../../api_clients/google_sign_in" }
 hashing = { path = "../../../lib/files/hashing" }

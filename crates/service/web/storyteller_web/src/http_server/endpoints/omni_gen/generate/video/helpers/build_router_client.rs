@@ -4,6 +4,7 @@ use artcraft_router::api::provider::Provider;
 use artcraft_router::client::router_client::RouterClient;
 use artcraft_router::client::router_fal_client::RouterFalClient;
 use artcraft_router::client::router_gmicloud_client::RouterGmiCloudClient;
+use artcraft_router::client::router_grok_api_client::RouterGrokApiClient;
 use artcraft_router::client::router_seedance2pro_client::RouterSeedance2ProClient;
 use seedance2pro_client::creds::seedance2pro_session::Seedance2ProSession;
 
@@ -29,6 +30,11 @@ pub fn build_router_client(
     Provider::GmiCloud => {
       Ok(RouterClient::GmiCloud(RouterGmiCloudClient::new(
         server_state.gmicloud.api_key.clone(),
+      )))
+    }
+    Provider::GrokApi => {
+      Ok(RouterClient::GrokApi(RouterGrokApiClient::new(
+        server_state.grok_api.api_key.clone(),
       )))
     }
     other => {
