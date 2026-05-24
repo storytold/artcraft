@@ -56,16 +56,10 @@ pub struct VideoGenerationRequest {
   #[serde(skip_serializing_if = "Option::is_none")]
   pub duration: Option<u32>,
 
-  /// Output resolution tier. See [`VideoResolution`] (`480p`, `720p`,
-  /// `1080p`). Server default is `480p` when `None`.
+  /// Output resolution tier. See [`VideoResolution`] (`480p` or `720p`).
+  /// Server default is `480p` when `None`.
   #[serde(skip_serializing_if = "Option::is_none")]
   pub resolution: Option<VideoResolution>,
-
-  /// Optional presigned PUT URL where xAI should upload the rendered video.
-  /// Per the REST API reference this is required; per the published curl
-  /// examples it's optional. Omit unless your account requires it.
-  #[serde(skip_serializing_if = "Option::is_none")]
-  pub upload_url: Option<String>,
 
   #[serde(skip_serializing_if = "Option::is_none")]
   pub user: Option<String>,
@@ -138,7 +132,6 @@ pub async fn video_generation(args: VideoGenerationArgs<'_>) -> Result<VideoGene
     aspect_ratio: req.aspect_ratio.map(|a| a.as_str().to_string()),
     duration: req.duration,
     resolution: req.resolution.map(|r| r.as_str().to_string()),
-    output: req.upload_url.map(|upload_url| VideoOutput { upload_url }),
     user: req.user,
   };
 
@@ -195,7 +188,6 @@ mod tests {
       aspect_ratio: Some("16:9".to_string()),
       duration: Some(5),
       resolution: Some("720p".to_string()),
-      output: None,
       user: None,
     };
     let json = serde_json::to_string(&body).unwrap();
@@ -204,7 +196,6 @@ mod tests {
     assert!(json.contains("\"resolution\":\"720p\""));
     assert!(!json.contains("\"image\""));
     assert!(!json.contains("\"reference_images\""));
-    assert!(!json.contains("\"output\""));
   }
 
   #[test]
@@ -217,7 +208,6 @@ mod tests {
       aspect_ratio: None,
       duration: None,
       resolution: None,
-      output: None,
       user: None,
     };
     let json = serde_json::to_string(&body).unwrap();
@@ -238,29 +228,11 @@ mod tests {
       aspect_ratio: None,
       duration: None,
       resolution: None,
-      output: None,
       user: None,
     };
     let json = serde_json::to_string(&body).unwrap();
     assert!(json.contains("\"reference_images\":["));
     assert!(json.contains("\"file_id\":\"file_xyz\""));
-  }
-
-  #[test]
-  fn wire_body_serializes_upload_url() {
-    let body = VideoGenerationRequestBody {
-      prompt: "p".to_string(),
-      model: None,
-      image: None,
-      reference_images: None,
-      aspect_ratio: None,
-      duration: None,
-      resolution: None,
-      output: Some(VideoOutput { upload_url: "https://r2.example.com/put".to_string() }),
-      user: None,
-    };
-    let json = serde_json::to_string(&body).unwrap();
-    assert!(json.contains("\"output\":{\"upload_url\":\"https://r2.example.com/put\"}"));
   }
 
   // ── Public Request shape ──
@@ -278,7 +250,6 @@ mod tests {
         aspect_ratio: Some(VideoAspectRatio::Landscape16x9),
         duration: Some(8),
         resolution: Some(VideoResolution::SevenTwentyP),
-        upload_url: None,
         user: None,
       },
     };
@@ -305,7 +276,6 @@ mod tests {
         aspect_ratio: None,
         duration: None,
         resolution: None,
-        upload_url: None,
         user: None,
       },
     }).await;
@@ -340,7 +310,6 @@ mod tests {
         aspect_ratio: Some(VideoAspectRatio::Landscape16x9),
         duration: Some(5),
         resolution: Some(VideoResolution::FourEightyP),
-        upload_url: None,
         user: None,
       },
     }).await.map_err(|e| anyhow::anyhow!("{}", e))?;

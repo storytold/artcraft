@@ -28,18 +28,13 @@ pub struct VideoEditRequest {
   /// Edit instruction. Required.
   pub prompt: String,
 
-  /// Source video to modify.
+  /// Source video to modify (xAI reads this as the input).
   pub source_video: VideoSource,
 
   /// Model identifier. Defaults to [`VideoModel::GrokImagineVideo`] when `None`.
   /// Use [`VideoModel::Custom`] for identifiers not yet listed in the enum.
   #[serde(skip_serializing_if = "Option::is_none")]
   pub model: Option<VideoModel>,
-
-  /// Optional presigned PUT URL. See `video_generation` for the
-  /// docs-vs-REST-spec discrepancy.
-  #[serde(skip_serializing_if = "Option::is_none")]
-  pub upload_url: Option<String>,
 
   #[serde(skip_serializing_if = "Option::is_none")]
   pub user: Option<String>,
@@ -91,7 +86,6 @@ pub async fn video_edit(args: VideoEditArgs<'_>) -> Result<VideoEditSuccess, Gro
     prompt: req.prompt,
     video: to_video_source_ref(&req.source_video),
     model: Some(model.as_str().to_string()),
-    output: req.upload_url.map(|upload_url| VideoEditOutput { upload_url }),
     user: req.user,
   };
 
@@ -144,29 +138,25 @@ mod tests {
       prompt: "make it stormy".to_string(),
       video: VideoSourceRef { url: Some("https://example.com/v.mp4".to_string()), file_id: None },
       model: Some("grok-imagine-video".to_string()),
-      output: None,
       user: None,
     };
     let json = serde_json::to_string(&body).unwrap();
     assert!(json.contains("\"prompt\":\"make it stormy\""));
     assert!(json.contains("\"video\":{\"url\":\"https://example.com/v.mp4\"}"));
     assert!(json.contains("\"model\":\"grok-imagine-video\""));
-    assert!(!json.contains("\"output\""));
     assert!(!json.contains("\"file_id\""));
   }
 
   #[test]
-  fn wire_body_serializes_file_id_source_with_upload_url() {
+  fn wire_body_serializes_file_id_source() {
     let body = VideoEditRequestBody {
       prompt: "p".to_string(),
       video: VideoSourceRef { url: None, file_id: Some("file_v".to_string()) },
       model: None,
-      output: Some(VideoEditOutput { upload_url: "https://r2.example.com/put".to_string() }),
       user: Some("u".to_string()),
     };
     let json = serde_json::to_string(&body).unwrap();
     assert!(json.contains("\"video\":{\"file_id\":\"file_v\"}"));
-    assert!(json.contains("\"output\":{\"upload_url\":\"https://r2.example.com/put\"}"));
     assert!(json.contains("\"user\":\"u\""));
   }
 
@@ -181,7 +171,6 @@ mod tests {
         prompt: "p".to_string(),
         source_video: VideoSource::FileId("file_abc".to_string()),
         model: None,
-        upload_url: None,
         user: None,
       },
     };
@@ -216,7 +205,6 @@ mod tests {
           "https://docs.x.ai/assets/api-examples/videos/edit-source.mp4".to_string()
         ),
         model: None,
-        upload_url: None,
         user: None,
       },
     }).await.map_err(|e| anyhow::anyhow!("{}", e))?;

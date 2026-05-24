@@ -27,12 +27,6 @@ pub(crate) struct VideoGenerationRequestBody {
   #[serde(skip_serializing_if = "Option::is_none")]
   pub resolution: Option<String>,
 
-  /// Output upload target. Per xAI REST spec this is required for production
-  /// usage; per the published examples it's optional and xAI hosts the result
-  /// temporarily if omitted.
-  #[serde(skip_serializing_if = "Option::is_none")]
-  pub output: Option<VideoOutput>,
-
   #[serde(skip_serializing_if = "Option::is_none")]
   pub user: Option<String>,
 }
@@ -45,11 +39,6 @@ pub(crate) struct VideoImageRef {
 
   #[serde(skip_serializing_if = "Option::is_none")]
   pub file_id: Option<String>,
-}
-
-#[derive(Serialize, Debug, Clone)]
-pub(crate) struct VideoOutput {
-  pub upload_url: String,
 }
 
 // ── Response ──

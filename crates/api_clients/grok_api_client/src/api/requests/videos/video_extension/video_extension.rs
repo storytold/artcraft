@@ -40,10 +40,6 @@ pub struct VideoExtensionRequest {
   /// seconds; range 1–10.
   #[serde(skip_serializing_if = "Option::is_none")]
   pub duration: Option<u32>,
-
-  /// Optional presigned PUT URL.
-  #[serde(skip_serializing_if = "Option::is_none")]
-  pub upload_url: Option<String>,
 }
 
 /// Source video to extend. Pick by public URL or by a previously-uploaded
@@ -91,7 +87,6 @@ pub async fn video_extension(args: VideoExtensionArgs<'_>) -> Result<VideoExtens
     video: to_extension_source_ref(&req.source_video),
     model: Some(model.as_str().to_string()),
     duration: req.duration,
-    output: req.upload_url.map(|upload_url| VideoExtensionOutput { upload_url }),
   };
 
   let client = reqwest::Client::builder()
@@ -144,29 +139,25 @@ mod tests {
       video: VideoExtensionSourceRef { url: Some("https://example.com/v.mp4".to_string()), file_id: None },
       model: Some("grok-imagine-video".to_string()),
       duration: None,
-      output: None,
     };
     let json = serde_json::to_string(&body).unwrap();
     assert!(json.contains("\"prompt\":\"keep walking\""));
     assert!(json.contains("\"video\":{\"url\":\"https://example.com/v.mp4\"}"));
     assert!(json.contains("\"model\":\"grok-imagine-video\""));
     assert!(!json.contains("\"duration\""));
-    assert!(!json.contains("\"output\""));
   }
 
   #[test]
-  fn wire_body_serializes_with_duration_and_upload_url() {
+  fn wire_body_serializes_with_duration() {
     let body = VideoExtensionRequestBody {
       prompt: "p".to_string(),
       video: VideoExtensionSourceRef { url: None, file_id: Some("file_v".to_string()) },
       model: None,
       duration: Some(8),
-      output: Some(VideoExtensionOutput { upload_url: "https://r2.example.com/put".to_string() }),
     };
     let json = serde_json::to_string(&body).unwrap();
     assert!(json.contains("\"duration\":8"));
     assert!(json.contains("\"video\":{\"file_id\":\"file_v\"}"));
-    assert!(json.contains("\"output\":{\"upload_url\":\"https://r2.example.com/put\"}"));
   }
 
   // ── Public Request shape ──
@@ -181,7 +172,6 @@ mod tests {
         source_video: VideoExtensionSource::Url("u".to_string()),
         model: None,
         duration: Some(5),
-        upload_url: None,
       },
     };
     let json = serde_json::to_string(&args.request).unwrap();
@@ -217,7 +207,6 @@ mod tests {
         ),
         model: None,
         duration: Some(5),
-        upload_url: None,
       },
     }).await.map_err(|e| anyhow::anyhow!("{}", e))?;
 
