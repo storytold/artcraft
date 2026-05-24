@@ -41,7 +41,7 @@ pub struct VideoEditRequest {
   /// runtime (e.g. from ffprobe or an upstream generate call) so internal
   /// cost tracking stays correct.
   #[serde(skip_serializing_if = "Option::is_none")]
-  pub source_video_duration_seconds: Option<u32>,
+  pub source_video_duration_seconds_hint: Option<u32>,
 
   /// Model identifier. Defaults to [`VideoModel::GrokImagineVideo`] when `None`.
   /// Use [`VideoModel::Custom`] for identifiers not yet listed in the enum.
@@ -182,7 +182,7 @@ mod tests {
       request: VideoEditRequest {
         prompt: "p".to_string(),
         source_video: VideoSource::FileId("file_abc".to_string()),
-        source_video_duration_seconds: None,
+        source_video_duration_seconds_hint: None,
         model: None,
         user: None,
       },
@@ -191,7 +191,7 @@ mod tests {
     assert!(!json.contains("secret_must_not_leak"));
     assert!(json.contains("\"source_video\":{\"FileId\":\"file_abc\"}"));
     // Hint omitted when None.
-    assert!(!json.contains("source_video_duration_seconds"));
+    assert!(!json.contains("source_video_duration_seconds_hint"));
   }
 
   #[test]
@@ -199,12 +199,12 @@ mod tests {
     let req = VideoEditRequest {
       prompt: "p".to_string(),
       source_video: VideoSource::Url("u".to_string()),
-      source_video_duration_seconds: Some(12),
+      source_video_duration_seconds_hint: Some(12),
       model: None,
       user: None,
     };
     let json = serde_json::to_string(&req).unwrap();
-    assert!(json.contains("\"source_video_duration_seconds\":12"));
+    assert!(json.contains("\"source_video_duration_seconds_hint\":12"));
   }
 
   #[test]
@@ -218,7 +218,7 @@ mod tests {
       user: None,
     };
     let json = serde_json::to_string(&body).unwrap();
-    assert!(!json.contains("source_video_duration_seconds"));
+    assert!(!json.contains("source_video_duration_seconds_hint"));
   }
 
   #[test]
@@ -244,7 +244,7 @@ mod tests {
       request: VideoEditRequest {
         prompt: "Change the lighting to midnight. Starry sky with the mily way overhead. Add some shooting stars. Everything is glowing under the starlight.".to_string(),
         source_video: VideoSource::Url(ANGRY_SHIBA_VIDEO_URL.to_string()),
-        source_video_duration_seconds: None,
+        source_video_duration_seconds_hint: None,
         model: None,
         user: None,
       },

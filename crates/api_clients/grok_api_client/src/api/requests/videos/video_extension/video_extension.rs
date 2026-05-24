@@ -41,7 +41,7 @@ pub struct VideoExtensionRequest {
   /// already know the source's runtime (e.g. from ffprobe or an upstream
   /// generate call) so internal cost tracking reflects the true total.
   #[serde(skip_serializing_if = "Option::is_none")]
-  pub source_video_duration_seconds: Option<u32>,
+  pub source_video_duration_seconds_hint: Option<u32>,
 
   /// Model identifier. Defaults to [`VideoModel::GrokImagineVideo`] when `None`.
   /// Use [`VideoModel::Custom`] for identifiers not yet listed in the enum.
@@ -182,7 +182,7 @@ mod tests {
       request: VideoExtensionRequest {
         prompt: "p".to_string(),
         source_video: VideoExtensionSource::Url("u".to_string()),
-        source_video_duration_seconds: None,
+        source_video_duration_seconds_hint: None,
         model: None,
         duration: Some(5),
       },
@@ -192,7 +192,7 @@ mod tests {
     assert!(json.contains("\"duration\":5"));
     assert!(json.contains("\"source_video\":{\"Url\":\"u\"}"));
     // Hint omitted when None.
-    assert!(!json.contains("source_video_duration_seconds"));
+    assert!(!json.contains("source_video_duration_seconds_hint"));
   }
 
   #[test]
@@ -200,12 +200,12 @@ mod tests {
     let req = VideoExtensionRequest {
       prompt: "p".to_string(),
       source_video: VideoExtensionSource::Url("u".to_string()),
-      source_video_duration_seconds: Some(7),
+      source_video_duration_seconds_hint: Some(7),
       model: None,
       duration: Some(5),
     };
     let json = serde_json::to_string(&req).unwrap();
-    assert!(json.contains("\"source_video_duration_seconds\":7"));
+    assert!(json.contains("\"source_video_duration_seconds_hint\":7"));
   }
 
   #[test]
@@ -219,7 +219,7 @@ mod tests {
       duration: Some(5),
     };
     let json = serde_json::to_string(&body).unwrap();
-    assert!(!json.contains("source_video_duration_seconds"));
+    assert!(!json.contains("source_video_duration_seconds_hint"));
   }
 
   #[test]
@@ -245,7 +245,7 @@ mod tests {
       request: VideoExtensionRequest {
         prompt: "Continue the walk down the same street".to_string(),
         source_video: VideoExtensionSource::Url(ANGRY_SHIBA_VIDEO_URL.to_string()),
-        source_video_duration_seconds: None,
+        source_video_duration_seconds_hint: None,
         model: None,
         duration: Some(5),
       },

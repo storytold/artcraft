@@ -31,7 +31,7 @@ impl GrokRequestCostCalculator for VideoExtensionRequest {
   /// the assumed 720p output).
   ///
   /// Input portion is included **only when**
-  /// [`VideoExtensionRequest::source_video_duration_seconds`] is set —
+  /// [`VideoExtensionRequest::source_video_duration_seconds_hint`] is set —
   /// otherwise the source duration is unknown and we'd be guessing.
   ///
   /// Formula:
@@ -45,7 +45,7 @@ impl GrokRequestCostCalculator for VideoExtensionRequest {
     let extension_duration = self.duration.unwrap_or(DEFAULT_EXTENSION_DURATION_SECONDS) as u64;
     let output_mills = output_mills_per_second(VideoResolution::SevenTwentyP) * extension_duration;
     let input_mills = self
-      .source_video_duration_seconds
+      .source_video_duration_seconds_hint
       .map(|secs| INPUT_MILLS_PER_SECOND_OF_SOURCE_VIDEO * secs as u64)
       .unwrap_or(0);
     output_mills + input_mills
@@ -89,7 +89,7 @@ mod tests {
     VideoExtensionRequest {
       prompt: "test".to_string(),
       source_video: source,
-      source_video_duration_seconds: None,
+      source_video_duration_seconds_hint: None,
       model,
       duration,
     }
@@ -337,7 +337,7 @@ mod tests {
     }
   }
 
-  // ── source_video_duration_seconds hint ──
+  // ── source_video_duration_seconds_hint hint ──
 
   mod duration_hint {
     use super::*;
@@ -346,7 +346,7 @@ mod tests {
     fn unset_hint_returns_output_only() {
       // ext=5s @ 720p, no hint → just output portion: 70 × 5 = 350
       let req = make_request(Some(5), url_source(), None);
-      assert_eq!(req.source_video_duration_seconds, None);
+      assert_eq!(req.source_video_duration_seconds_hint, None);
       assert_eq!(req.calculate_cost_in_mills(), 350);
     }
 
@@ -354,7 +354,7 @@ mod tests {
     fn set_hint_adds_input_portion() {
       // ext=5s @ 720p, source=10s → output 350 + input 100 = 450
       let mut req = make_request(Some(5), url_source(), None);
-      req.source_video_duration_seconds = Some(10);
+      req.source_video_duration_seconds_hint = Some(10);
       assert_eq!(req.calculate_cost_in_mills(), 450);
       assert_eq!(req.calculate_cost_in_cents(), 45);
     }
@@ -363,7 +363,7 @@ mod tests {
     fn hint_zero_is_treated_as_zero_input() {
       // ext=5s @ 720p, source=0 → output 350 + 0 = 350
       let mut req = make_request(Some(5), url_source(), None);
-      req.source_video_duration_seconds = Some(0);
+      req.source_video_duration_seconds_hint = Some(0);
       assert_eq!(req.calculate_cost_in_mills(), 350);
     }
 
@@ -371,7 +371,7 @@ mod tests {
     fn default_extension_with_hint() {
       // ext default=6s @ 720p (output 420), source=5s (input 50) → 470
       let mut req = make_request(None, url_source(), None);
-      req.source_video_duration_seconds = Some(5);
+      req.source_video_duration_seconds_hint = Some(5);
       assert_eq!(req.calculate_cost_in_mills(), 470);
       assert_eq!(req.calculate_cost_in_cents(), 47);
     }
@@ -383,7 +383,7 @@ mod tests {
       for ext in 1u32..=10 {
         for source_secs in 0u32..=20 {
           let mut req = make_request(Some(ext), url_source(), None);
-          req.source_video_duration_seconds = Some(source_secs);
+          req.source_video_duration_seconds_hint = Some(source_secs);
           assert_eq!(
             req.calculate_cost_in_mills(),
             req.calculate_cost_in_mills_with_source_duration(source_secs, VideoResolution::SevenTwentyP),
@@ -398,7 +398,7 @@ mod tests {
       // Fix ext=5s (output 350); vary hint from 0..30.
       for source_secs in 0u32..=30 {
         let mut req = make_request(Some(5), url_source(), None);
-        req.source_video_duration_seconds = Some(source_secs);
+        req.source_video_duration_seconds_hint = Some(source_secs);
         assert_eq!(req.calculate_cost_in_mills(), 350 + 10 * source_secs as u64, "source_secs={source_secs}");
       }
     }

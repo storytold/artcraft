@@ -41,7 +41,7 @@ const ASSUMED_SOURCE_RESOLUTION: VideoResolution = VideoResolution::SevenTwentyP
 //     exact billed amount.
 
 impl GrokRequestCostCalculator for VideoEditRequest {
-  /// Uses [`VideoEditRequest::source_video_duration_seconds`] when set;
+  /// Uses [`VideoEditRequest::source_video_duration_seconds_hint`] when set;
   /// otherwise falls back to a conservative default ([`DEFAULT_VIDEO_DURATION_SECONDS`]
   /// = 8s, matching xAI's `/v1/videos/generations` default).
   ///
@@ -55,7 +55,7 @@ impl GrokRequestCostCalculator for VideoEditRequest {
   ///
   /// At the 8-second default: 8 × 80 = **640 mills (64¢)**.
   fn calculate_cost_in_mills(&self) -> UsdMills {
-    let secs = self.source_video_duration_seconds.unwrap_or(DEFAULT_VIDEO_DURATION_SECONDS);
+    let secs = self.source_video_duration_seconds_hint.unwrap_or(DEFAULT_VIDEO_DURATION_SECONDS);
     self.calculate_cost_in_mills_with_source_duration(secs, ASSUMED_SOURCE_RESOLUTION)
   }
 }
@@ -92,7 +92,7 @@ mod tests {
     VideoEditRequest {
       prompt: "test edit".to_string(),
       source_video,
-      source_video_duration_seconds: None,
+      source_video_duration_seconds_hint: None,
       model,
       user: None,
     }
@@ -154,7 +154,7 @@ mod tests {
     assert!(req.calculate_cost_in_cents() > 0);
   }
 
-  // ── source_video_duration_seconds hint ──
+  // ── source_video_duration_seconds_hint hint ──
 
   mod duration_hint {
     use super::*;
@@ -162,7 +162,7 @@ mod tests {
     #[test]
     fn hint_overrides_default_duration() {
       let mut req = make_request(VideoSource::Url("u".to_string()), None);
-      req.source_video_duration_seconds = Some(5);
+      req.source_video_duration_seconds_hint = Some(5);
       // 5 × 80 = 400 mills (vs the 640 mills default)
       assert_eq!(req.calculate_cost_in_mills(), 400);
       assert_eq!(req.calculate_cost_in_cents(), 40);
@@ -171,7 +171,7 @@ mod tests {
     #[test]
     fn one_second_hint() {
       let mut req = make_request(VideoSource::Url("u".to_string()), None);
-      req.source_video_duration_seconds = Some(1);
+      req.source_video_duration_seconds_hint = Some(1);
       assert_eq!(req.calculate_cost_in_mills(), 80);  // 1 × 80
       assert_eq!(req.calculate_cost_in_cents(), 8);
     }
@@ -179,7 +179,7 @@ mod tests {
     #[test]
     fn fifteen_second_hint() {
       let mut req = make_request(VideoSource::Url("u".to_string()), None);
-      req.source_video_duration_seconds = Some(15);
+      req.source_video_duration_seconds_hint = Some(15);
       assert_eq!(req.calculate_cost_in_mills(), 1200);  // 15 × 80
       assert_eq!(req.calculate_cost_in_cents(), 120);
     }
@@ -190,7 +190,7 @@ mod tests {
       // source-duration method at the assumed (720p) resolution.
       for secs in 0u32..=30 {
         let mut req = make_request(VideoSource::Url("u".to_string()), None);
-        req.source_video_duration_seconds = Some(secs);
+        req.source_video_duration_seconds_hint = Some(secs);
         assert_eq!(
           req.calculate_cost_in_mills(),
           req.calculate_cost_in_mills_with_source_duration(secs, VideoResolution::SevenTwentyP),
@@ -202,7 +202,7 @@ mod tests {
     #[test]
     fn unset_hint_falls_back_to_default() {
       let req = make_request(VideoSource::Url("u".to_string()), None);
-      assert_eq!(req.source_video_duration_seconds, None);
+      assert_eq!(req.source_video_duration_seconds_hint, None);
       // Default = 8s @ 720p = 640 mills.
       assert_eq!(req.calculate_cost_in_mills(), 640);
     }
@@ -211,7 +211,7 @@ mod tests {
     fn zero_second_hint_costs_zero() {
       // Edge case: 0-second source is meaningless but shouldn't panic.
       let mut req = make_request(VideoSource::Url("u".to_string()), None);
-      req.source_video_duration_seconds = Some(0);
+      req.source_video_duration_seconds_hint = Some(0);
       assert_eq!(req.calculate_cost_in_mills(), 0);
     }
 
@@ -219,7 +219,7 @@ mod tests {
     fn hint_scales_linearly() {
       for secs in 1u32..=20 {
         let mut req = make_request(VideoSource::Url("u".to_string()), None);
-        req.source_video_duration_seconds = Some(secs);
+        req.source_video_duration_seconds_hint = Some(secs);
         assert_eq!(req.calculate_cost_in_mills(), 80 * secs as u64, "secs={secs}");
       }
     }
