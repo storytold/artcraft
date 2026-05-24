@@ -1,3 +1,5 @@
+use log::info;
+
 use grok_api_client::api::requests::videos::video_generation::video_generation::{
   VideoGenerationRequest as GrokVideoGenerationRequest,
   VideoImageSource as GrokVideoImageSource,
@@ -13,7 +15,6 @@ use crate::api::image_ref::ImageRef;
 use crate::api::video_list_ref::VideoListRef;
 use crate::client::request_mismatch_mitigation_strategy::RequestMismatchMitigationStrategy;
 use crate::errors::artcraft_router_error::ArtcraftRouterError;
-use crate::errors::client_error::ClientError;
 use crate::generate::generate_video::generate_video_request_builder::GenerateVideoRequestBuilder;
 use crate::generate::generate_video_v2::providers::grok_api::grok_imagine_video::request::GrokApiGrokImagineVideoRequestState;
 use crate::generate::generate_video_v2::video_generation_draft_or_request::VideoGenerationDraftOrRequest;
@@ -22,61 +23,55 @@ use crate::generate::generate_video_v2::video_generation_request::VideoGeneratio
 /// Builds a Grok Imagine Video request from the generic GenerateVideoRequestBuilder.
 ///
 /// xAI's grok-imagine-video accepts:
-/// - `image` (single source image, image-to-video mode) OR `reference_images` (multi-image reference-to-video).
-/// - These two are mutually exclusive per xAI's API; supplying both returns a BadRequest.
+/// - `image` (single source image, image-to-video mode) OR `reference_images` (multi-image
+///   reference-to-video). These two are mutually exclusive per xAI's API.
+/// - Aspect ratio, resolution (480p/720p), duration (1–15s), prompt.
 ///
-/// This binding rejects `end_frame`, `reference_videos`, and `reference_audio` since
-/// xAI doesn't support them.
+/// Fields that Grok DOESN'T accept (`end_frame`, `reference_videos`, `reference_audio`,
+/// and `MediaFileToken`-style image refs) are silently dropped with an info-level log.
+/// Same goes for the `start_frame` + `reference_images` conflict — we prefer
+/// `start_frame` (image-to-video) and drop `reference_images`. This keeps the
+/// pipeline tolerant when callers fan a single builder out to multiple providers
+/// with different capabilities.
 pub fn build_grok_api_grok_imagine_video(
   mut builder: GenerateVideoRequestBuilder,
 ) -> Result<VideoGenerationDraftOrRequest, ArtcraftRouterError> {
   let strategy = builder.request_mismatch_mitigation_strategy;
 
-  // Plan the simple/scalar fields first.
+  // Scalar fields.
   let prompt = builder.prompt.take().unwrap_or_default();
-  let aspect_ratio = plan_aspect_ratio(builder.aspect_ratio.take(), strategy)?;
-  let resolution = plan_resolution(builder.resolution.take(), strategy)?;
+  let aspect_ratio = plan_aspect_ratio(builder.aspect_ratio.take(), strategy);
+  let resolution = plan_resolution(builder.resolution.take(), strategy);
   let duration = builder.duration_seconds.take().map(|d| (d as u32).clamp(1, 15));
 
-  // start_frame → image-to-video; end_frame isn't supported.
-  let image = resolve_url_to_image_source(builder.start_frame.take())?;
-  if let Some(end_frame) = builder.end_frame.take() {
-    let _ = end_frame; // referenced for the error message below.
-    return Err(ArtcraftRouterError::Client(ClientError::ModelDoesNotSupportOption {
-      field: "end_frame",
-      value: "Grok Imagine Video does not support end-frame keyframes".to_string(),
-    }));
-  }
+  // Wholly-unsupported fields → drop with a log so it shows up in operator traces.
+  log_and_drop_end_frame(builder.end_frame.take());
+  log_and_drop_reference_videos(builder.reference_videos.take());
+  log_and_drop_reference_audio(builder.reference_audio.take());
 
-  // reference_images → reference-to-video. Mutually exclusive with `image`.
-  let reference_images = resolve_url_list_to_image_sources(builder.reference_images.take())?;
-  if image.is_some() && reference_images.as_ref().is_some_and(|v| !v.is_empty()) {
-    return Err(ArtcraftRouterError::Client(ClientError::ModelDoesNotSupportOption {
-      field: "start_frame + reference_images",
-      value: "Grok Imagine Video accepts either `start_frame` (image-to-video) OR \
-              `reference_images` (reference-to-video), not both".to_string(),
-    }));
-  }
+  // Image sources: prefer start_frame (image-to-video). If both start_frame and
+  // reference_images are supplied, drop reference_images (xAI rejects the
+  // combination on the wire).
+  let start_frame = resolve_url_to_image_source(builder.start_frame.take());
+  let reference_images_supplied = builder.reference_images.take();
 
-  // Grok doesn't ingest video or audio references.
-  if let Some(videos) = builder.reference_videos.take() {
-    let _ = videos;
-    return Err(ArtcraftRouterError::Client(ClientError::ModelDoesNotSupportOption {
-      field: "reference_videos",
-      value: "Grok Imagine Video does not accept reference videos".to_string(),
-    }));
-  }
-  if let Some(audio) = builder.reference_audio.take() {
-    let _ = audio;
-    return Err(ArtcraftRouterError::Client(ClientError::ModelDoesNotSupportOption {
-      field: "reference_audio",
-      value: "Grok Imagine Video does not accept reference audio".to_string(),
-    }));
-  }
+  let (image, reference_images) = match (start_frame, reference_images_supplied) {
+    (Some(img), Some(refs)) => {
+      info!(
+        "grok_imagine_video: both start_frame and reference_images supplied — \
+         preferring start_frame (image-to-video). Dropping {} reference images.",
+        count_image_list_ref(&refs),
+      );
+      (Some(img), None)
+    }
+    (Some(img), None) => (Some(img), None),
+    (None, Some(refs)) => (None, resolve_url_list_to_image_sources(refs)),
+    (None, None) => (None, None),
+  };
 
   let request = GrokVideoGenerationRequest {
     prompt,
-    model: None,                   // defaults to grok-imagine-video in the client
+    model: None, // defaults to grok-imagine-video in the client
     image,
     reference_images,
     aspect_ratio,
@@ -96,7 +91,7 @@ pub fn build_grok_api_grok_imagine_video(
 fn plan_aspect_ratio(
   aspect_ratio: Option<CommonAspectRatio>,
   _strategy: RequestMismatchMitigationStrategy,
-) -> Result<Option<GrokAspectRatio>, ArtcraftRouterError> {
+) -> Option<GrokAspectRatio> {
   // xAI supports exactly: 1:1, 16:9, 9:16, 4:3, 3:4, 3:2, 2:3.
   // Auto / unsupported ratios fall back to the closest match (or None → xAI default 16:9).
   match aspect_ratio {
@@ -104,98 +99,125 @@ fn plan_aspect_ratio(
     | Some(CommonAspectRatio::Auto)
     | Some(CommonAspectRatio::Auto2k)
     | Some(CommonAspectRatio::Auto3k)
-    | Some(CommonAspectRatio::Auto4k) => Ok(None),
+    | Some(CommonAspectRatio::Auto4k) => None,
 
     Some(CommonAspectRatio::Square) | Some(CommonAspectRatio::SquareHd) => {
-      Ok(Some(GrokAspectRatio::Square))
+      Some(GrokAspectRatio::Square)
     }
 
     Some(CommonAspectRatio::WideSixteenByNine) | Some(CommonAspectRatio::Wide) => {
-      Ok(Some(GrokAspectRatio::Landscape16x9))
+      Some(GrokAspectRatio::Landscape16x9)
     }
     Some(CommonAspectRatio::TallNineBySixteen) | Some(CommonAspectRatio::Tall) => {
-      Ok(Some(GrokAspectRatio::Portrait9x16))
+      Some(GrokAspectRatio::Portrait9x16)
     }
 
-    Some(CommonAspectRatio::WideFourByThree) => Ok(Some(GrokAspectRatio::Landscape4x3)),
-    Some(CommonAspectRatio::TallThreeByFour) => Ok(Some(GrokAspectRatio::Portrait3x4)),
+    Some(CommonAspectRatio::WideFourByThree) => Some(GrokAspectRatio::Landscape4x3),
+    Some(CommonAspectRatio::TallThreeByFour) => Some(GrokAspectRatio::Portrait3x4),
 
-    Some(CommonAspectRatio::WideThreeByTwo) => Ok(Some(GrokAspectRatio::Landscape3x2)),
-    Some(CommonAspectRatio::TallTwoByThree) => Ok(Some(GrokAspectRatio::Portrait2x3)),
+    Some(CommonAspectRatio::WideThreeByTwo) => Some(GrokAspectRatio::Landscape3x2),
+    Some(CommonAspectRatio::TallTwoByThree) => Some(GrokAspectRatio::Portrait2x3),
 
-    // No exact xAI match — pick the closest cardinal direction. Mild
-    // information loss, but better than failing the request.
+    // No exact xAI match — pick the closest cardinal direction.
     Some(CommonAspectRatio::WideFiveByFour)
-    | Some(CommonAspectRatio::WideTwentyOneByNine) => Ok(Some(GrokAspectRatio::Landscape16x9)),
+    | Some(CommonAspectRatio::WideTwentyOneByNine) => Some(GrokAspectRatio::Landscape16x9),
     Some(CommonAspectRatio::TallFourByFive)
-    | Some(CommonAspectRatio::TallNineByTwentyOne) => Ok(Some(GrokAspectRatio::Portrait9x16)),
+    | Some(CommonAspectRatio::TallNineByTwentyOne) => Some(GrokAspectRatio::Portrait9x16),
   }
 }
 
 fn plan_resolution(
   resolution: Option<CommonResolution>,
   _strategy: RequestMismatchMitigationStrategy,
-) -> Result<Option<GrokResolution>, ArtcraftRouterError> {
+) -> Option<GrokResolution> {
   // Grok supports 480p and 720p only (1080p is downsized to 720p per xAI docs).
   match resolution {
-    None => Ok(None),
-    Some(CommonResolution::FourEightyP) => Ok(Some(GrokResolution::FourEightyP)),
-    Some(CommonResolution::SevenTwentyP) => Ok(Some(GrokResolution::SevenTwentyP)),
+    None => None,
+    Some(CommonResolution::FourEightyP) => Some(GrokResolution::FourEightyP),
+    Some(CommonResolution::SevenTwentyP) => Some(GrokResolution::SevenTwentyP),
     // Higher-than-720p requests get clamped to 720p (Grok's cap).
     Some(CommonResolution::TenEightyP)
     | Some(CommonResolution::TwoK)
     | Some(CommonResolution::ThreeK)
-    | Some(CommonResolution::FourK) => Ok(Some(GrokResolution::SevenTwentyP)),
+    | Some(CommonResolution::FourK) => Some(GrokResolution::SevenTwentyP),
     // Lower-than-480p requests get bumped to 480p (Grok's floor).
     Some(CommonResolution::HalfK) | Some(CommonResolution::OneK) => {
-      Ok(Some(GrokResolution::FourEightyP))
+      Some(GrokResolution::FourEightyP)
     }
   }
 }
 
-// ── Image source resolvers ──
+// ── Image source resolvers (silent drops for unsupported variants) ──
 
-fn resolve_url_to_image_source(
-  image_ref: Option<ImageRef>,
-) -> Result<Option<GrokVideoImageSource>, ArtcraftRouterError> {
+fn resolve_url_to_image_source(image_ref: Option<ImageRef>) -> Option<GrokVideoImageSource> {
   match image_ref {
-    None => Ok(None),
-    Some(ImageRef::Url(url)) => Ok(Some(GrokVideoImageSource::Url(url))),
-    Some(ImageRef::MediaFileToken(_)) => {
-      Err(ArtcraftRouterError::Client(ClientError::ModelDoesNotSupportOption {
-        field: "start_frame",
-        value: "Grok Imagine Video only accepts image URLs, not media file tokens".to_string(),
-      }))
+    None => None,
+    Some(ImageRef::Url(url)) => Some(GrokVideoImageSource::Url(url)),
+    Some(ImageRef::MediaFileToken(token)) => {
+      info!(
+        "grok_imagine_video: dropping MediaFileToken {:?} for start_frame — \
+         Grok only accepts public URLs. Resolve the token to a URL upstream if needed.",
+        token,
+      );
+      None
     }
   }
 }
 
-fn resolve_url_list_to_image_sources(
-  list_ref: Option<ImageListRef>,
-) -> Result<Option<Vec<GrokVideoImageSource>>, ArtcraftRouterError> {
+fn resolve_url_list_to_image_sources(list_ref: ImageListRef) -> Option<Vec<GrokVideoImageSource>> {
   match list_ref {
-    None => Ok(None),
-    Some(ImageListRef::Urls(urls)) => {
-      Ok(Some(urls.into_iter().map(GrokVideoImageSource::Url).collect()))
-    }
-    Some(ImageListRef::MediaFileTokens(_)) => {
-      Err(ArtcraftRouterError::Client(ClientError::ModelDoesNotSupportOption {
-        field: "reference_images",
-        value: "Grok Imagine Video only accepts image URLs, not media file tokens".to_string(),
-      }))
+    ImageListRef::Urls(urls) if urls.is_empty() => None,
+    ImageListRef::Urls(urls) => Some(urls.into_iter().map(GrokVideoImageSource::Url).collect()),
+    ImageListRef::MediaFileTokens(tokens) => {
+      info!(
+        "grok_imagine_video: dropping {} MediaFileToken reference image(s) — \
+         Grok only accepts public URLs. Resolve tokens to URLs upstream if needed.",
+        tokens.len(),
+      );
+      None
     }
   }
 }
 
-// `reference_videos` and `reference_audio` resolvers exist only to consume
-// the values for a clean error message; both reject any non-None input.
-#[allow(dead_code)]
-fn reject_video_refs(_refs: Option<VideoListRef>) -> Result<(), ArtcraftRouterError> {
-  Ok(())
+fn count_image_list_ref(refs: &ImageListRef) -> usize {
+  match refs {
+    ImageListRef::Urls(v) => v.len(),
+    ImageListRef::MediaFileTokens(v) => v.len(),
+  }
 }
-#[allow(dead_code)]
-fn reject_audio_refs(_refs: Option<AudioListRef>) -> Result<(), ArtcraftRouterError> {
-  Ok(())
+
+// ── Drop-with-log helpers for fields Grok doesn't accept at all ──
+
+fn log_and_drop_end_frame(end_frame: Option<ImageRef>) {
+  if end_frame.is_some() {
+    info!("grok_imagine_video: dropping end_frame — Grok doesn't support end-frame keyframes.");
+  }
+}
+
+fn log_and_drop_reference_videos(refs: Option<VideoListRef>) {
+  if let Some(refs) = refs {
+    let count = match refs {
+      VideoListRef::Urls(v) => v.len(),
+      VideoListRef::MediaFileTokens(v) => v.len(),
+    };
+    info!(
+      "grok_imagine_video: dropping {} reference video(s) — Grok doesn't accept reference videos.",
+      count,
+    );
+  }
+}
+
+fn log_and_drop_reference_audio(refs: Option<AudioListRef>) {
+  if let Some(refs) = refs {
+    let count = match refs {
+      AudioListRef::Urls(v) => v.len(),
+      AudioListRef::MediaFileTokens(v) => v.len(),
+    };
+    info!(
+      "grok_imagine_video: dropping {} reference audio clip(s) — Grok doesn't accept reference audio.",
+      count,
+    );
+  }
 }
 
 #[cfg(test)]
@@ -363,7 +385,7 @@ mod tests {
     }
   }
 
-  // ── Image source plumbing ──
+  // ── Image source plumbing (graceful — never errors) ──
 
   mod image_tests {
     use super::*;
@@ -373,7 +395,7 @@ mod tests {
       let req = unwrap_request(make_builder(|b| {
         b.start_frame = Some(ImageRef::Url("https://example.com/start.png".to_string()));
       }));
-      match req.request.image {
+      match &req.request.image {
         Some(GrokVideoImageSource::Url(u)) => assert_eq!(u, "https://example.com/start.png"),
         other => panic!("expected Url variant, got {:?}", other),
       }
@@ -381,12 +403,13 @@ mod tests {
     }
 
     #[test]
-    fn start_frame_media_file_token_rejected() {
-      let result = build_grok_api_grok_imagine_video(GenerateVideoRequestBuilder {
-        start_frame: Some(ImageRef::MediaFileToken(MediaFileToken::new("mf_test".to_string()))),
-        ..base_builder()
-      });
-      assert!(result.is_err());
+    fn start_frame_media_file_token_silently_dropped() {
+      let req = unwrap_request(make_builder(|b| {
+        b.start_frame = Some(ImageRef::MediaFileToken(MediaFileToken::new("mf_test".to_string())));
+      }));
+      // Dropped, request still builds successfully with no image.
+      assert!(req.request.image.is_none());
+      assert!(req.request.reference_images.is_none());
     }
 
     #[test]
@@ -401,55 +424,104 @@ mod tests {
     }
 
     #[test]
-    fn reference_image_tokens_rejected() {
-      let result = build_grok_api_grok_imagine_video(GenerateVideoRequestBuilder {
-        reference_images: Some(ImageListRef::MediaFileTokens(vec![MediaFileToken::new("mf_a".to_string())])),
-        ..base_builder()
-      });
-      assert!(result.is_err());
+    fn reference_image_tokens_silently_dropped() {
+      let req = unwrap_request(make_builder(|b| {
+        b.reference_images = Some(ImageListRef::MediaFileTokens(vec![
+          MediaFileToken::new("mf_a".to_string()),
+          MediaFileToken::new("mf_b".to_string()),
+        ]));
+      }));
+      // All tokens dropped; reference_images becomes None.
+      assert!(req.request.reference_images.is_none());
+      assert!(req.request.image.is_none());
     }
 
     #[test]
-    fn start_frame_and_reference_images_together_rejected() {
-      let result = build_grok_api_grok_imagine_video(GenerateVideoRequestBuilder {
-        start_frame: Some(ImageRef::Url("u".to_string())),
-        reference_images: Some(ImageListRef::Urls(vec!["v".to_string()])),
-        ..base_builder()
-      });
-      assert!(result.is_err(), "expected rejection of mutually-exclusive image + reference_images");
+    fn start_frame_and_reference_images_together_prefers_start_frame() {
+      let req = unwrap_request(make_builder(|b| {
+        b.start_frame = Some(ImageRef::Url("https://example.com/start.png".to_string()));
+        b.reference_images = Some(ImageListRef::Urls(vec![
+          "https://example.com/ref1.png".to_string(),
+          "https://example.com/ref2.png".to_string(),
+        ]));
+      }));
+      // start_frame wins; reference_images dropped (mutually exclusive on the wire).
+      match &req.request.image {
+        Some(GrokVideoImageSource::Url(u)) => assert_eq!(u, "https://example.com/start.png"),
+        other => panic!("expected start_frame URL, got {:?}", other),
+      }
+      assert!(req.request.reference_images.is_none());
+    }
+
+    #[test]
+    fn empty_reference_image_url_list_becomes_none() {
+      let req = unwrap_request(make_builder(|b| {
+        b.reference_images = Some(ImageListRef::Urls(vec![]));
+      }));
+      assert!(req.request.reference_images.is_none());
     }
   }
 
-  // ── Unsupported features ──
+  // ── Unsupported fields are silently dropped, not rejected ──
 
-  mod unsupported_features {
+  mod unsupported_fields_graceful {
     use super::*;
 
     #[test]
-    fn end_frame_rejected() {
-      let result = build_grok_api_grok_imagine_video(GenerateVideoRequestBuilder {
-        end_frame: Some(ImageRef::Url("u".to_string())),
-        ..base_builder()
-      });
-      assert!(result.is_err());
+    fn end_frame_silently_dropped() {
+      let req = unwrap_request(make_builder(|b| {
+        b.end_frame = Some(ImageRef::Url("https://example.com/end.png".to_string()));
+      }));
+      // Request still builds; Grok's request body has no end_frame field.
+      assert!(req.request.image.is_none());
+      assert!(req.request.reference_images.is_none());
     }
 
     #[test]
-    fn reference_videos_rejected() {
-      let result = build_grok_api_grok_imagine_video(GenerateVideoRequestBuilder {
-        reference_videos: Some(VideoListRef::Urls(vec!["v".to_string()])),
-        ..base_builder()
-      });
-      assert!(result.is_err());
+    fn reference_videos_silently_dropped() {
+      let req = unwrap_request(make_builder(|b| {
+        b.reference_videos = Some(VideoListRef::Urls(vec!["https://example.com/v.mp4".to_string()]));
+      }));
+      assert!(req.request.reference_images.is_none());
     }
 
     #[test]
-    fn reference_audio_rejected() {
-      let result = build_grok_api_grok_imagine_video(GenerateVideoRequestBuilder {
-        reference_audio: Some(AudioListRef::Urls(vec!["a.wav".to_string()])),
-        ..base_builder()
-      });
-      assert!(result.is_err());
+    fn reference_audio_silently_dropped() {
+      let req = unwrap_request(make_builder(|b| {
+        b.reference_audio = Some(AudioListRef::Urls(vec!["https://example.com/a.wav".to_string()]));
+      }));
+      // No audio field on Grok; just gone.
+      assert!(req.request.reference_images.is_none());
+    }
+
+    #[test]
+    fn kitchen_sink_with_every_unsupported_field_still_succeeds() {
+      // Worst-case builder fanned out from a multi-provider context. Grok
+      // should keep what it can and drop the rest without erroring.
+      let req = unwrap_request(make_builder(|b| {
+        b.prompt = Some("kitchen sink".to_string());
+        b.start_frame = Some(ImageRef::Url("https://example.com/start.png".to_string()));
+        b.end_frame = Some(ImageRef::Url("https://example.com/end.png".to_string()));
+        b.reference_images = Some(ImageListRef::Urls(vec![
+          "https://example.com/ref.png".to_string(),
+        ]));
+        b.reference_videos = Some(VideoListRef::Urls(vec!["https://example.com/v.mp4".to_string()]));
+        b.reference_audio = Some(AudioListRef::Urls(vec!["https://example.com/a.wav".to_string()]));
+        b.resolution = Some(CommonResolution::SevenTwentyP);
+        b.aspect_ratio = Some(CommonAspectRatio::WideSixteenByNine);
+        b.duration_seconds = Some(8);
+      }));
+      // Kept: prompt + start_frame + resolution + aspect_ratio + duration.
+      assert_eq!(req.request.prompt, "kitchen sink");
+      assert!(matches!(
+        req.request.image,
+        Some(GrokVideoImageSource::Url(_))
+      ));
+      // Dropped because start_frame won the image-source contest.
+      assert!(req.request.reference_images.is_none());
+      assert_eq!(req.request.resolution, Some(GrokResolution::SevenTwentyP));
+      assert_eq!(req.request.aspect_ratio, Some(GrokAspectRatio::Landscape16x9));
+      assert_eq!(req.request.duration, Some(8));
     }
   }
 
