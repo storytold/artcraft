@@ -7,6 +7,7 @@ pub enum Provider {
   Artcraft,
   Fal,
   GmiCloud,
+  GrokApi,
   Muapi,
   Seedance2Pro,
 }

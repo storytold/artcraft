@@ -60,6 +60,7 @@ use crate::generate::generate_video_v2::providers::kinovi::happy_horse_1p0::buil
 use crate::generate::generate_video_v2::providers::kinovi::seedance_2p0::build::build_kinovi_seedance_2p0;
 use crate::generate::generate_video_v2::providers::gmicloud::seedance_2p0_g::build::build_gmicloud_seedance_2p0_u;
 use crate::generate::generate_video_v2::providers::gmicloud::seedance_2p0_fast_g::build::build_gmicloud_seedance_2p0_u_fast;
+use crate::generate::generate_video_v2::providers::grok_api::grok_imagine_video::build::build_grok_api_grok_imagine_video;
 use crate::generate::generate_video_v2::providers::kinovi::seedance_2p0_fast::build::build_kinovi_seedance_2p0_fast;
 use crate::generate::generate_video_v2::video_generation_draft_or_request::VideoGenerationDraftOrRequest;
 
@@ -165,6 +166,8 @@ impl GenerateVideoRequestBuilder {
       // GmiCloud
       (Provider::GmiCloud, CommonVideoModel::Seedance2p0Ultra) => true,
       (Provider::GmiCloud, CommonVideoModel::Seedance2p0UltraFast) => true,
+      // Grok
+      (Provider::GrokApi, CommonVideoModel::GrokImagineVideo) => true,
       // Kinovi
       (Provider::Seedance2Pro, CommonVideoModel::HappyHorse1p0) => true,
       (Provider::Seedance2Pro, CommonVideoModel::Seedance2p0) => true,
@@ -189,6 +192,8 @@ impl GenerateVideoRequestBuilder {
       // GmiCloud
       (Provider::GmiCloud, CommonVideoModel::Seedance2p0Ultra) => build_gmicloud_seedance_2p0_u(self),
       (Provider::GmiCloud, CommonVideoModel::Seedance2p0UltraFast) => build_gmicloud_seedance_2p0_u_fast(self),
+      // Grok
+      (Provider::GrokApi, CommonVideoModel::GrokImagineVideo) => build_grok_api_grok_imagine_video(self),
       // Kinovi
       (Provider::Seedance2Pro, CommonVideoModel::HappyHorse1p0) => build_kinovi_happy_horse_1p0(self),
       (Provider::Seedance2Pro, CommonVideoModel::Seedance2p0) => build_kinovi_seedance_2p0(self),
@@ -203,6 +208,7 @@ impl GenerateVideoRequestBuilder {
       Provider::Artcraft => self.build_artcraft(),
       Provider::Fal => self.build_fal(),
       Provider::GmiCloud => self.unsupported_provider(), // GmiCloud uses build2() only
+      Provider::GrokApi => self.unsupported_provider(),  // Grok uses build2() only
       Provider::Muapi => self.build_muapi(),
       Provider::Seedance2Pro => self.build_seedance2pro(),
     }

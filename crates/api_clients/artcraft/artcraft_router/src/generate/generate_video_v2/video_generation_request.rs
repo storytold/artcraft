@@ -25,6 +25,8 @@ use crate::generate::generate_video_v2::providers::gmicloud::seedance_2p0_g::cos
 use crate::generate::generate_video_v2::providers::gmicloud::seedance_2p0_g::request::GmiCloudSeedance2p0UltraRequestState;
 use crate::generate::generate_video_v2::providers::gmicloud::seedance_2p0_fast_g::cost::GmiCloudSeedance2p0UltraFastCostState;
 use crate::generate::generate_video_v2::providers::gmicloud::seedance_2p0_fast_g::request::GmiCloudSeedance2p0UltraFastRequestState;
+use crate::generate::generate_video_v2::providers::grok_api::grok_imagine_video::cost::GrokApiGrokImagineVideoCostState;
+use crate::generate::generate_video_v2::providers::grok_api::grok_imagine_video::request::GrokApiGrokImagineVideoRequestState;
 use crate::generate::generate_video_v2::providers::kinovi::happy_horse_1p0::cost::KinoviHappyHorse1p0CostState;
 use crate::generate::generate_video_v2::providers::kinovi::happy_horse_1p0::request::KinoviHappyHorse1p0RequestState;
 use crate::generate::generate_video_v2::providers::kinovi::seedance_2p0::cost::KinoviSeedance2p0CostState;
@@ -45,6 +47,7 @@ pub enum VideoGenerationRequest {
   ArtcraftSeedance2p0BytePlusFast(ArtcraftSeedance2p0BytePlusFastRequestState),
   GmiCloudSeedance2p0Ultra(GmiCloudSeedance2p0UltraRequestState),
   GmiCloudSeedance2p0UltraFast(GmiCloudSeedance2p0UltraFastRequestState),
+  GrokApiGrokImagineVideo(GrokApiGrokImagineVideoRequestState),
   KinoviHappyHorse1p0(KinoviHappyHorse1p0RequestState),
   KinoviSeedance2p0(KinoviSeedance2p0RequestState),
   KinoviSeedance2p0Fast(KinoviSeedance2p0FastRequestState),
@@ -65,6 +68,7 @@ impl VideoGenerationRequest {
       Self::ArtcraftSeedance2p0BytePlusFast(_) => Provider::Artcraft,
       Self::GmiCloudSeedance2p0Ultra(_) => Provider::GmiCloud,
       Self::GmiCloudSeedance2p0UltraFast(_) => Provider::GmiCloud,
+      Self::GrokApiGrokImagineVideo(_) => Provider::GrokApi,
       Self::KinoviHappyHorse1p0(_) => Provider::Seedance2Pro,
       Self::KinoviSeedance2p0(_) => Provider::Seedance2Pro,
       Self::KinoviSeedance2p0Fast(_) => Provider::Seedance2Pro,
@@ -85,6 +89,7 @@ impl VideoGenerationRequest {
       VideoGenerationRequest::ArtcraftSeedance2p0BytePlusFast(request) => Ok(ArtcraftSeedance2p0BytePlusFastCostState::from_request(request).estimate_cost()),
       VideoGenerationRequest::GmiCloudSeedance2p0Ultra(request) => Ok(GmiCloudSeedance2p0UltraCostState::from_request(request).estimate_cost()),
       VideoGenerationRequest::GmiCloudSeedance2p0UltraFast(request) => Ok(GmiCloudSeedance2p0UltraFastCostState::from_request(request).estimate_cost()),
+      VideoGenerationRequest::GrokApiGrokImagineVideo(request) => Ok(GrokApiGrokImagineVideoCostState::from_request(request).estimate_cost()),
       VideoGenerationRequest::KinoviHappyHorse1p0(request) => Ok(KinoviHappyHorse1p0CostState::from_request(request).estimate_cost()),
       VideoGenerationRequest::KinoviSeedance2p0(request) => Ok(KinoviSeedance2p0CostState::from_request(request).estimate_cost()),
       VideoGenerationRequest::KinoviSeedance2p0Fast(request) => Ok(KinoviSeedance2p0FastCostState::from_request(request).estimate_cost()),
@@ -137,6 +142,10 @@ impl VideoGenerationRequest {
       },
       VideoGenerationRequest::GmiCloudSeedance2p0UltraFast(request) => {
         let client_ref = client.get_gmicloud_client_ref()?;
+        request.send(client_ref).await
+      },
+      VideoGenerationRequest::GrokApiGrokImagineVideo(request) => {
+        let client_ref = client.get_grok_api_client_ref()?;
         request.send(client_ref).await
       },
       VideoGenerationRequest::KinoviHappyHorse1p0(request) => {

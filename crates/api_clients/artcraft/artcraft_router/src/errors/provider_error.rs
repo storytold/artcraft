@@ -3,6 +3,7 @@ use std::fmt::{Display, Formatter};
 use artcraft_client::error::storyteller_error::StorytellerError;
 use fal_client::error::fal_error_plus::FalErrorPlus;
 use gmicloud_client::error::gmicloud_error::GmiCloudError;
+use grok_api_client::error::grok_error::GrokError;
 use muapi_client::error::muapi_error::MuapiError;
 use seedance2pro_client::error::seedance2pro_error::Seedance2ProError;
 
@@ -11,6 +12,7 @@ pub enum ProviderError {
   Storyteller(StorytellerError),
   Fal(FalErrorPlus),
   GmiCloud(GmiCloudError),
+  Grok(GrokError),
   Muapi(MuapiError),
   Seedance2Pro(Seedance2ProError),
 }
@@ -23,6 +25,7 @@ impl Display for ProviderError {
       Self::Storyteller(e) => write!(f, "Storyteller provider error: {}", e),
       Self::Fal(e) => write!(f, "Fal provider error: {}", e),
       Self::GmiCloud(e) => write!(f, "GmiCloud provider error: {}", e),
+      Self::Grok(e) => write!(f, "Grok provider error: {}", e),
       Self::Muapi(e) => write!(f, "Muapi provider error: {}", e),
       Self::Seedance2Pro(e) => write!(f, "Seedance2Pro provider error: {}", e),
     }
@@ -44,6 +47,12 @@ impl From<FalErrorPlus> for ProviderError {
 impl From<GmiCloudError> for ProviderError {
   fn from(error: GmiCloudError) -> Self {
     Self::GmiCloud(error)
+  }
+}
+
+impl From<GrokError> for ProviderError {
+  fn from(error: GrokError) -> Self {
+    Self::Grok(error)
   }
 }
 

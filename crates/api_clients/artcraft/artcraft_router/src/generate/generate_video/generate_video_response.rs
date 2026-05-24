@@ -40,9 +40,17 @@ pub struct GmiCloudVideoResponsePayload {
 }
 
 #[derive(Clone, Debug)]
+pub struct GrokVideoResponsePayload {
+  /// xAI request_id; poll with `grok_api_client::api::requests::videos::video_status`
+  /// to fetch the rendered video URL once it's ready.
+  pub request_id: String,
+}
+
+#[derive(Clone, Debug)]
 pub enum GenerateVideoResponse {
   Artcraft(ArtcraftVideoResponsePayload),
   GmiCloud(GmiCloudVideoResponsePayload),
+  Grok(GrokVideoResponsePayload),
   Muapi(MuapiVideoResponsePayload),
   Seedance2Pro(Seedance2proVideoResponsePayload),
   Fal(FalVideoResponsePayload),
@@ -73,6 +81,13 @@ impl GenerateVideoResponse {
   pub fn get_gmicloud_payload(&self) -> Option<GmiCloudVideoResponsePayload> {
     match self {
       Self::GmiCloud(p) => Some(p.clone()),
+      _ => None,
+    }
+  }
+
+  pub fn get_grok_payload(&self) -> Option<GrokVideoResponsePayload> {
+    match self {
+      Self::Grok(p) => Some(p.clone()),
       _ => None,
     }
   }
