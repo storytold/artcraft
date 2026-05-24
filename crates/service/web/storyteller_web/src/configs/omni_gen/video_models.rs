@@ -27,10 +27,7 @@ fn build_omni_gen_video_models() -> Vec<OmniGenVideoModelDetails> {
     starting_keyframe_supported: Some(true),
     ending_keyframe_supported: Some(false),
     image_references_supported: Some(true),
-    image_references_max: Some(3),
-    audio_references_supported: Some(true),
-    audio_references_max: Some(3),
-    audio_references_max_total_duration_seconds: Some(15),
+    image_references_max: Some(7),
     //video_references_supported: Some(false),
     //video_references_max: Some(3),
     //video_references_max_total_duration_seconds: Some(15),
@@ -53,6 +50,7 @@ fn build_omni_gen_video_models() -> Vec<OmniGenVideoModelDetails> {
     //batch_size_default: Some(1),
     duration_seconds_min: Some(1),
     duration_seconds_max: Some(15),
+    duration_seconds_max_with_image_references: Some(10),
     duration_seconds_default: Some(8),
     ..Default::default()
   });

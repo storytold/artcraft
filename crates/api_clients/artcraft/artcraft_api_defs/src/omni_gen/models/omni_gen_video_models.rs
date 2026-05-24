@@ -149,7 +149,12 @@ pub struct OmniGenVideoModelDetails {
   
   #[serde(skip_serializing_if = "Option::is_none")]
   pub duration_seconds_max: Option<u16>,
-  
+
+  /// Specific maximum when image references are used,
+  /// eg. Grok limits to 10 seconds in this mode.
+  #[serde(skip_serializing_if = "Option::is_none")]
+  pub duration_seconds_max_with_image_references: Option<u16>,
+
   #[serde(skip_serializing_if = "Option::is_none")]
   pub duration_seconds_options: Option<Vec<u16>>,
   
@@ -204,6 +209,7 @@ impl Default for OmniGenVideoModelDetails {
       default_quality: None,
       duration_seconds_min: None,
       duration_seconds_max: None,
+      duration_seconds_max_with_image_references: None,
       duration_seconds_options: None,
       duration_seconds_default: None,
       batch_size_min: None,
