@@ -344,6 +344,7 @@ mod tests {
   async fn live_test_image_edit_single() -> AnyhowResult<()> {
     use crate::test_utils::get_test_api_key::get_test_api_key;
     use crate::test_utils::setup_test_logging::setup_test_logging;
+    use test_data::web::image_urls::JUNO_AT_LAKE_IMAGE_URL;
     setup_test_logging();
 
     let api_key = get_test_api_key()?;
@@ -351,9 +352,7 @@ mod tests {
       api_key: &api_key,
       request: ImageEditRequest {
         prompt: "Render this as a pencil sketch with detailed shading".to_string(),
-        source_images: vec![ImageSource::Url(
-          "https://docs.x.ai/assets/api-examples/images/style-realistic.png".to_string()
-        )],
+        source_images: vec![ImageSource::Url(JUNO_AT_LAKE_IMAGE_URL.to_string())],
         model: None,
         number_images: None,
         aspect_ratio: None,

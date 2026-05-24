@@ -193,17 +193,15 @@ mod tests {
   async fn live_test_video_edit() -> AnyhowResult<()> {
     use crate::test_utils::get_test_api_key::get_test_api_key;
     use crate::test_utils::setup_test_logging::setup_test_logging;
+    use test_data::web::video_urls::ANGRY_SHIBA_VIDEO_URL;
     setup_test_logging();
 
     let api_key = get_test_api_key()?;
-    // Replace with a real publicly-reachable mp4 URL when running.
     let result = video_edit(VideoEditArgs {
       api_key: &api_key,
       request: VideoEditRequest {
         prompt: "Change the lighting to golden hour".to_string(),
-        source_video: VideoSource::Url(
-          "https://docs.x.ai/assets/api-examples/videos/edit-source.mp4".to_string()
-        ),
+        source_video: VideoSource::Url(ANGRY_SHIBA_VIDEO_URL.to_string()),
         model: None,
         user: None,
       },

@@ -30,4 +30,5 @@ serde_json.workspace = true
 [dev-dependencies]
 anyhow.workspace = true
 env_logger.workspace = true
+test_data.workspace = true
 tokio = { version = "1", features = ["full"] }
