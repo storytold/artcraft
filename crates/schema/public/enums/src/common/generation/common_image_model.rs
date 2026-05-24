@@ -25,6 +25,10 @@ pub enum CommonImageModel {
   GptImage1p5,
   #[serde(rename = "gpt_image_2")]
   GptImage2,
+  #[serde(rename = "grok_imagine_image")]
+  GrokImagineImage,
+  #[serde(rename = "grok_imagine_image_q")]
+  GrokImagineImageQuality,
   #[serde(rename = "nano_banana")]
   NanoBanana,
   #[serde(rename = "nano_banana_2")]
@@ -50,6 +54,8 @@ impl CommonImageModel {
       Self::GptImage1 => CommonModelType::GptImage1,
       Self::GptImage1p5 => CommonModelType::GptImage1p5,
       Self::GptImage2 => CommonModelType::GptImage2,
+      Self::GrokImagineImage => CommonModelType::GrokImagineImage,
+      Self::GrokImagineImageQuality => CommonModelType::GrokImagineImageQuality,
       Self::NanoBanana => CommonModelType::NanoBanana,
       Self::NanoBanana2 => CommonModelType::NanoBanana2,
       Self::NanoBananaPro => CommonModelType::NanoBananaPro,
@@ -79,6 +85,8 @@ mod tests {
       assert_serialization(CommonImageModel::GptImage1, "gpt_image_1");
       assert_serialization(CommonImageModel::GptImage1p5, "gpt_image_1p5");
       assert_serialization(CommonImageModel::GptImage2, "gpt_image_2");
+      assert_serialization(CommonImageModel::GrokImagineImage, "grok_imagine_image");
+      assert_serialization(CommonImageModel::GrokImagineImageQuality, "grok_imagine_image_q");
       assert_serialization(CommonImageModel::NanoBanana, "nano_banana");
       assert_serialization(CommonImageModel::NanoBanana2, "nano_banana_2");
       assert_serialization(CommonImageModel::NanoBananaPro, "nano_banana_pro");
@@ -97,6 +105,8 @@ mod tests {
         (CommonImageModel::GptImage1, CommonModelType::GptImage1),
         (CommonImageModel::GptImage1p5, CommonModelType::GptImage1p5),
         (CommonImageModel::GptImage2, CommonModelType::GptImage2),
+        (CommonImageModel::GrokImagineImage, CommonModelType::GrokImagineImage),
+        (CommonImageModel::GrokImagineImageQuality, CommonModelType::GrokImagineImageQuality),
         (CommonImageModel::NanoBanana, CommonModelType::NanoBanana),
         (CommonImageModel::NanoBanana2, CommonModelType::NanoBanana2),
         (CommonImageModel::NanoBananaPro, CommonModelType::NanoBananaPro),
@@ -129,7 +139,7 @@ mod tests {
     #[test]
     fn variant_count() {
       use strum::IntoEnumIterator;
-      assert_eq!(CommonImageModel::iter().len(), 13);
+      assert_eq!(CommonImageModel::iter().len(), 15);
     }
 
     #[test]

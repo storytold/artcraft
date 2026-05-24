@@ -53,6 +53,12 @@ pub enum CommonModelType {
   // Generic grok image model without a version
   #[serde(rename = "grok_image")]
   GrokImage,
+  // xAI's Grok Imagine image model (grok-imagine-image), standard tier.
+  #[serde(rename = "grok_imagine_image")]
+  GrokImagineImage,
+  // xAI's Grok Imagine image model (grok-imagine-image-quality), high-quality tier.
+  #[serde(rename = "grok_imagine_image_q")]
+  GrokImagineImageQuality,
   #[serde(rename = "recraft_3")]
   Recraft3,
   #[serde(rename = "seededit_3")]
@@ -203,6 +209,8 @@ impl CommonModelType {
       Self::GptImage1p5 => "gpt_image_1p5",
       Self::GptImage2 => "gpt_image_2",
       Self::GrokImage => "grok_image",
+      Self::GrokImagineImage => "grok_imagine_image",
+      Self::GrokImagineImageQuality => "grok_imagine_image_q",
       Self::Recraft3 => "recraft_3",
       Self::SeedEdit3 => "seededit_3",
       Self::Qwen => "qwen",
@@ -280,6 +288,8 @@ impl CommonModelType {
       "gpt_image_1p5" => Ok(Self::GptImage1p5),
       "gpt_image_2" => Ok(Self::GptImage2),
       "grok_image" => Ok(Self::GrokImage),
+      "grok_imagine_image" => Ok(Self::GrokImagineImage),
+      "grok_imagine_image_q" => Ok(Self::GrokImagineImageQuality),
       "recraft_3" => Ok(Self::Recraft3),
       "seededit_3" => Ok(Self::SeedEdit3),
       "qwen" => Ok(Self::Qwen),
@@ -361,6 +371,8 @@ impl CommonModelType {
       Self::GptImage1p5,
       Self::GptImage2,
       Self::GrokImage,
+      Self::GrokImagineImage,
+      Self::GrokImagineImageQuality,
       Self::Recraft3,
       Self::SeedEdit3,
       Self::Qwen,
@@ -439,6 +451,8 @@ impl CommonModelType {
       Self::GptImage1p5 => CommonModelClass::Image,
       Self::GptImage2 => CommonModelClass::Image,
       Self::GrokImage => CommonModelClass::Image,
+      Self::GrokImagineImage => CommonModelClass::Image,
+      Self::GrokImagineImageQuality => CommonModelClass::Image,
       Self::Recraft3 => CommonModelClass::Image,
       Self::SeedEdit3 => CommonModelClass::Image,
       Self::Qwen => CommonModelClass::Image,
@@ -527,6 +541,8 @@ mod tests {
       assert_serialization(CommonModelType::GptImage1p5, "gpt_image_1p5");
       assert_serialization(CommonModelType::GptImage2, "gpt_image_2");
       assert_serialization(CommonModelType::GrokImage, "grok_image");
+      assert_serialization(CommonModelType::GrokImagineImage, "grok_imagine_image");
+      assert_serialization(CommonModelType::GrokImagineImageQuality, "grok_imagine_image_q");
       assert_serialization(CommonModelType::Recraft3, "recraft_3");
       assert_serialization(CommonModelType::SeedEdit3, "seededit_3");
       assert_serialization(CommonModelType::Qwen, "qwen");
@@ -600,6 +616,8 @@ mod tests {
       assert_eq!(CommonModelType::GptImage1p5.to_str(), "gpt_image_1p5");
       assert_eq!(CommonModelType::GptImage2.to_str(), "gpt_image_2");
       assert_eq!(CommonModelType::GrokImage.to_str(), "grok_image");
+      assert_eq!(CommonModelType::GrokImagineImage.to_str(), "grok_imagine_image");
+      assert_eq!(CommonModelType::GrokImagineImageQuality.to_str(), "grok_imagine_image_q");
       assert_eq!(CommonModelType::Recraft3.to_str(), "recraft_3");
       assert_eq!(CommonModelType::SeedEdit3.to_str(), "seededit_3");
       assert_eq!(CommonModelType::Qwen.to_str(), "qwen");
@@ -675,6 +693,8 @@ mod tests {
       assert_eq!(CommonModelType::from_str("gpt_image_1p5").unwrap(), CommonModelType::GptImage1p5);
       assert_eq!(CommonModelType::from_str("gpt_image_2").unwrap(), CommonModelType::GptImage2);
       assert_eq!(CommonModelType::from_str("grok_image").unwrap(), CommonModelType::GrokImage);
+      assert_eq!(CommonModelType::from_str("grok_imagine_image").unwrap(), CommonModelType::GrokImagineImage);
+      assert_eq!(CommonModelType::from_str("grok_imagine_image_q").unwrap(), CommonModelType::GrokImagineImageQuality);
       assert_eq!(CommonModelType::from_str("recraft_3").unwrap(), CommonModelType::Recraft3);
       assert_eq!(CommonModelType::from_str("seededit_3").unwrap(), CommonModelType::SeedEdit3);
       assert_eq!(CommonModelType::from_str("qwen").unwrap(), CommonModelType::Qwen);
@@ -737,7 +757,7 @@ mod tests {
     #[test]
     fn all_variants() {
       let mut variants = CommonModelType::all_variants();
-      assert_eq!(variants.len(), 65);
+      assert_eq!(variants.len(), 67);
       // Image models
       assert_eq!(variants.pop_first(), Some(CommonModelType::Flux1Dev));
       assert_eq!(variants.pop_first(), Some(CommonModelType::Flux1Schnell));
@@ -751,6 +771,8 @@ mod tests {
       assert_eq!(variants.pop_first(), Some(CommonModelType::GptImage1p5));
       assert_eq!(variants.pop_first(), Some(CommonModelType::GptImage2));
       assert_eq!(variants.pop_first(), Some(CommonModelType::GrokImage));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::GrokImagineImage));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::GrokImagineImageQuality));
       assert_eq!(variants.pop_first(), Some(CommonModelType::Recraft3));
       assert_eq!(variants.pop_first(), Some(CommonModelType::SeedEdit3));
       assert_eq!(variants.pop_first(), Some(CommonModelType::Qwen));

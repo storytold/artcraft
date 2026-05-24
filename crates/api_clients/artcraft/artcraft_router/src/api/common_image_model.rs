@@ -19,6 +19,10 @@ pub enum CommonImageModel {
   GptImage1p5,
   #[serde(rename = "gpt_image_2")]
   GptImage2,
+  #[serde(rename = "grok_imagine_image")]
+  GrokImagineImage,
+  #[serde(rename = "grok_imagine_image_q")]
+  GrokImagineImageQuality,
   #[serde(rename = "nano_banana")]
   NanoBanana,
   #[serde(rename = "nano_banana_2")]
