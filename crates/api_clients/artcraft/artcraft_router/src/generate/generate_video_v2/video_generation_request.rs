@@ -3,6 +3,8 @@ use crate::client::router_client::RouterClient;
 use crate::errors::artcraft_router_error::ArtcraftRouterError;
 use crate::generate::generate_video::generate_video_response::GenerateVideoResponse;
 use crate::generate::generate_video::video_generation_cost_estimate::VideoGenerationCostEstimate;
+use crate::generate::generate_video_v2::providers::artcraft::grok_imagine_video::cost::ArtcraftGrokImagineVideoCostState;
+use crate::generate::generate_video_v2::providers::artcraft::grok_imagine_video::request::ArtcraftGrokImagineVideoRequestState;
 use crate::generate::generate_video_v2::providers::artcraft::happy_horse_1p0::cost::ArtcraftHappyHorse1p0CostState;
 use crate::generate::generate_video_v2::providers::artcraft::happy_horse_1p0::request::ArtcraftHappyHorse1p0RequestState;
 use crate::generate::generate_video_v2::providers::artcraft::preview_model::cost::ArtcraftPreviewModelCostState;
@@ -36,6 +38,7 @@ use crate::generate::generate_video_v2::providers::kinovi::seedance_2p0_fast::re
 
 #[derive(Clone, Debug)]
 pub enum VideoGenerationRequest {
+  ArtcraftGrokImagineVideo(ArtcraftGrokImagineVideoRequestState),
   ArtcraftHappyHorse1p0(ArtcraftHappyHorse1p0RequestState),
   ArtcraftPreviewModel(ArtcraftPreviewModelRequestState),
   ArtcraftPreviewModelFast(ArtcraftPreviewModelFastRequestState),
@@ -57,6 +60,7 @@ impl VideoGenerationRequest {
 
   pub fn get_provider(&self) -> Provider {
     match self {
+      Self::ArtcraftGrokImagineVideo(_) => Provider::Artcraft,
       Self::ArtcraftHappyHorse1p0(_) => Provider::Artcraft,
       Self::ArtcraftPreviewModel(_) => Provider::Artcraft,
       Self::ArtcraftPreviewModelFast(_) => Provider::Artcraft,
@@ -78,6 +82,7 @@ impl VideoGenerationRequest {
   /// Return a cost estimate to fulfill the request.
   pub fn estimate_cost(&self) -> Result<VideoGenerationCostEstimate, ArtcraftRouterError> {
     match self {
+      VideoGenerationRequest::ArtcraftGrokImagineVideo(request) => Ok(ArtcraftGrokImagineVideoCostState::from_request(request).estimate_cost()),
       VideoGenerationRequest::ArtcraftHappyHorse1p0(request) => Ok(ArtcraftHappyHorse1p0CostState::from_request(request).estimate_cost()),
       VideoGenerationRequest::ArtcraftPreviewModel(request) => Ok(ArtcraftPreviewModelCostState::from_request(request).estimate_cost()),
       VideoGenerationRequest::ArtcraftPreviewModelFast(request) => Ok(ArtcraftPreviewModelFastCostState::from_request(request).estimate_cost()),
@@ -100,6 +105,10 @@ impl VideoGenerationRequest {
   /// If successful, returns the job IDs.
   pub async fn send_request(&self, client: &RouterClient) -> Result<GenerateVideoResponse, ArtcraftRouterError> {
     match self {
+      VideoGenerationRequest::ArtcraftGrokImagineVideo(request) => {
+        let client_ref = client.get_artcraft_client_ref()?;
+        request.send(client_ref).await
+      },
       VideoGenerationRequest::ArtcraftHappyHorse1p0(request) => {
         let client_ref = client.get_artcraft_client_ref()?;
         request.send(client_ref).await

@@ -1,4 +1,5 @@
 pub(crate) mod build_common;
+pub mod grok_imagine_video;
 pub mod happy_horse_1p0;
 pub mod preview_model;
 pub mod preview_model_fast;
