@@ -30,16 +30,17 @@ export const AuthLayout = ({
         }}
       />
 
-      <div className="relative z-10 flex w-full max-w-5xl overflow-hidden rounded-3xl border border-white/10 bg-[#1C1C20] shadow-2xl lg:min-h-[640px]">
+      <div className="relative z-10 flex w-full max-w-5xl overflow-hidden rounded-3xl border border-white/[4%] bg-[#1C1C20] shadow-2xl lg:min-h-[640px]">
         {/* Form pane */}
         <div className="flex w-full flex-col lg:w-1/2">
           <div className="flex flex-1 flex-col justify-center px-8 py-10 sm:px-10">
             <div className="mx-auto w-full max-w-sm">
               <div className="mb-8 text-center">
                 <img
-                  src="/images/artcraft-logo.png"
+                  src="/images/artcraft-icon.png"
                   alt="ArtCraft"
-                  className="mx-auto mb-6 h-7 w-auto"
+                  className="mx-auto mb-6 h-12 w-auto select-none pointer-events-none"
+                  draggable={false}
                 />
                 <h1 className="mb-2 text-2xl font-semibold">{title}</h1>
                 <p className="text-sm text-white/60">{subtitle}</p>

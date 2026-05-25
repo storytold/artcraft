@@ -154,7 +154,7 @@ const VerifyReset = () => {
                     onChange={(e) => setVerificationCode(e.target.value)}
                     placeholder="Enter verification code"
                     isError={!!fieldErrors.verificationCode}
-                    inputClassName="w-full bg-black/20 border border-white/10 focus:border-primary/50 rounded-xl px-4 py-3 text-white placeholder-white/20 outline-none transition-colors"
+                    inputClassName="w-full bg-black/40 border border-white/10 focus:border-primary/50 rounded-xl px-4 py-3 text-white placeholder-white/20 outline-none transition-colors"
                   />
                   {fieldErrors.verificationCode && (
                     <p className="text-red-400 text-xs ml-1">
@@ -176,7 +176,7 @@ const VerifyReset = () => {
                       onChange={(e) => setNewPassword(e.target.value)}
                       placeholder="Enter new password"
                       isError={!!fieldErrors.newPassword}
-                      inputClassName="w-full bg-black/20 border border-white/10 focus:border-primary/50 rounded-xl px-4 py-3 text-white placeholder-white/20 outline-none transition-colors pr-12"
+                      inputClassName="w-full bg-black/40 border border-white/10 focus:border-primary/50 rounded-xl px-4 py-3 text-white placeholder-white/20 outline-none transition-colors pr-12"
                     />
                     <button
                       type="button"
@@ -208,7 +208,7 @@ const VerifyReset = () => {
                       onChange={(e) => setConfirmPassword(e.target.value)}
                       placeholder="Enter new password again"
                       isError={!!fieldErrors.confirmPassword}
-                      inputClassName="w-full bg-black/20 border border-white/10 focus:border-primary/50 rounded-xl px-4 py-3 text-white placeholder-white/20 outline-none transition-colors pr-12"
+                      inputClassName="w-full bg-black/40 border border-white/10 focus:border-primary/50 rounded-xl px-4 py-3 text-white placeholder-white/20 outline-none transition-colors pr-12"
                     />
                     <button
                       type="button"

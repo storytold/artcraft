@@ -91,7 +91,7 @@ const Login = () => {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="you@example.com or username"
-              inputClassName="w-full bg-black/20 border border-white/10 focus:border-primary/50 rounded-xl px-4 py-3 text-white placeholder-white/20 outline-none transition-colors"
+              inputClassName="w-full bg-black/40 border border-white/10 focus:border-primary/50 rounded-xl px-4 py-3 text-white placeholder-white/20 outline-none transition-colors"
             />
           </div>
           <div className="space-y-2">
@@ -112,7 +112,7 @@ const Login = () => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Min. 8 characters"
-                inputClassName="w-full bg-black/20 border border-white/10 focus:border-primary/50 rounded-xl px-4 py-3 text-white placeholder-white/20 outline-none transition-colors pr-12"
+                inputClassName="w-full bg-black/40 border border-white/10 focus:border-primary/50 rounded-xl px-4 py-3 text-white placeholder-white/20 outline-none transition-colors pr-12"
               />
               <button
                 type="button"
@@ -132,7 +132,10 @@ const Login = () => {
               disabled={isLoading}
             >
               {isLoading ? (
-                <FontAwesomeIcon icon={faSpinnerThird} className="animate-spin" />
+                <FontAwesomeIcon
+                  icon={faSpinnerThird}
+                  className="animate-spin"
+                />
               ) : (
                 "Log in"
               )}
