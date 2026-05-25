@@ -319,7 +319,13 @@ export class UsersApi extends ApiManager {
 
     try {
       const response = await this.authFetch<
-        { google_credential: string },
+        {
+          google_credential: string;
+          maybe_referral_url?: string;
+          maybe_landing_url?: string;
+          maybe_referral_username?: string;
+          maybe_referral_code?: string;
+        },
         {
           success: boolean;
           username_not_yet_customized?: boolean;

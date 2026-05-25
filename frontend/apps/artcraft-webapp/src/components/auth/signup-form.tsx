@@ -7,6 +7,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Button } from "@storyteller/ui-button";
 import { Input } from "@storyteller/ui-input";
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { UsersApi } from "@storyteller/api";
 import {
   getLandingUrl,
@@ -29,6 +30,7 @@ export const SignupForm = ({
   className = "",
   autoFocus = false,
 }: SignupFormProps) => {
+  const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -83,7 +85,14 @@ export const SignupForm = ({
   };
 
   const handleGoogleSuccess = (isNewUser: boolean) => {
-    onSuccess(isNewUser);
+    // New Google users set a password first (then land on welcome/pricing);
+    // returning users already have an account, so send them straight home.
+    if (isNewUser) {
+      // Flag the navigation so the set-password page knows it came from SSO.
+      navigate("/set-password", { state: { fromGoogleSso: true } });
+    } else {
+      navigate("/");
+    }
   };
 
   const handleGoogleError = (message: string) => {

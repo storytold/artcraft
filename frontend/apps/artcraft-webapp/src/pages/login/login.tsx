@@ -52,7 +52,12 @@ const Login = () => {
     // Mirror handleLogin: let the session store reflect the cookie before we
     // navigate so RequireAuth on the destination doesn't bounce us back.
     await refreshSession(true);
-    navigate(isNewUser ? "/welcome" : redirectTo);
+    if (isNewUser) {
+      // Flag the navigation so the set-password page knows it came from SSO.
+      navigate("/set-password", { state: { fromGoogleSso: true } });
+    } else {
+      navigate(redirectTo);
+    }
   };
 
   const handleGoogleError = (message: string) => {

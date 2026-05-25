@@ -20,6 +20,7 @@ import Pricing from "../pages/pricing";
 import Support from "../pages/support/support";
 import Login from "../pages/login";
 import Signup from "../pages/signup";
+import SetPassword from "../pages/set-password";
 import { AuthLayout } from "../components/auth";
 import ForgotPassword, { VerifyReset } from "../pages/forgot-password";
 import Welcome from "../pages/welcome";
@@ -126,6 +127,7 @@ export function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
         </Route>
+        <Route path="/set-password" element={<SetPassword />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/forgot-password/verify" element={<VerifyReset />} />
 
