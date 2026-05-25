@@ -9,6 +9,7 @@ use actix_http::StatusCode;
 use actix_web::{HttpResponse, HttpResponseBuilder, ResponseError};
 use anyhow::anyhow;
 use mysql_queries::errors::mysql_error::{MysqlCrateErrorSubtype, MysqlError};
+use serde::Serialize;
 
 /// An error type for actix-web handlers that wraps causal errors for debugging
 /// and paging while presenting safe, generic HTTP responses to users.
@@ -36,6 +37,11 @@ use mysql_queries::errors::mysql_error::{MysqlCrateErrorSubtype, MysqlError};
 pub enum CommonWebError {
   /// 400 Bad Request with a user-facing message.
   BadInputWithSimpleMessage(String),
+
+  /// 400 Bad Request with an endpoint-specific JSON body.
+  /// The body is whatever the caller serialized (e.g. a per-field validation
+  /// failure list). Construct via [`CommonWebError::bad_input_tailored_response`].
+  BadInputTailoredResponse(serde_json::Value),
 
   /// 401 Unauthorized.
   NotAuthorized,
@@ -96,6 +102,22 @@ impl CommonWebError {
     Self::from_anyhow_error(anyhow!("ServerErrorWithMessage: {:?}", msg))
   }
 
+  /// Build a 400 Bad Request whose body is the JSON-serialized form of `body`.
+  ///
+  /// Use this when an endpoint needs to return a structured validation payload
+  /// (per-field errors, etc.) rather than the generic `{success, error_code, message}`
+  /// envelope used by [`BadInputWithSimpleMessage`].
+  ///
+  /// If serialization fails (rare — usually only when a `Map` has non-string keys),
+  /// falls back to an [`UncaughtServerError`] so the failure is paged and the
+  /// caller never sees a corrupt response.
+  pub fn bad_input_tailored_response<T: Serialize>(body: &T) -> Self {
+    match serde_json::to_value(body) {
+      Ok(value) => Self::BadInputTailoredResponse(value),
+      Err(err) => Self::from_error(err),
+    }
+  }
+
   /// Extract the wrapped causal error (only present for `UncaughtServerError`).
   pub fn cause(&self) -> Option<&(dyn std::error::Error + Send + Sync + 'static)> {
     match self {
@@ -131,6 +153,7 @@ impl Display for CommonWebError {
   fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
     match self {
       Self::BadInputWithSimpleMessage(msg) => write!(f, "Bad input: {}", msg),
+      Self::BadInputTailoredResponse(value) => write!(f, "Bad input (tailored): {}", value),
       Self::NotAuthorized => write!(f, "Not authorized"),
       Self::NotFound => write!(f, "Not found"),
       Self::PaymentRequired => write!(f, "Payment required"),
@@ -149,6 +172,7 @@ impl std::fmt::Debug for CommonWebError {
   fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
     match self {
       Self::BadInputWithSimpleMessage(msg) => write!(f, "BadInputWithSimpleMessage({:?})", msg),
+      Self::BadInputTailoredResponse(value) => write!(f, "BadInputTailoredResponse({})", value),
       Self::NotAuthorized => write!(f, "NotAuthorized"),
       Self::NotFound => write!(f, "NotFound"),
       Self::PaymentRequired => write!(f, "PaymentRequired"),
@@ -179,6 +203,7 @@ impl ResponseError for CommonWebError {
   fn status_code(&self) -> StatusCode {
     match self {
       Self::BadInputWithSimpleMessage(_) => StatusCode::BAD_REQUEST,
+      Self::BadInputTailoredResponse(_) => StatusCode::BAD_REQUEST,
       Self::NotAuthorized => StatusCode::UNAUTHORIZED,
       Self::NotFound => StatusCode::NOT_FOUND,
       Self::PaymentRequired => StatusCode::PAYMENT_REQUIRED,
@@ -202,6 +227,11 @@ impl ResponseError for CommonWebError {
               error_code_str: status.canonical_reason(),
               message: msg,
             })
+      }
+      Self::BadInputTailoredResponse(value) => {
+        // The body is whatever the caller serialized — no envelope.
+        // `.json(...)` sets Content-Type: application/json automatically.
+        HttpResponse::BadRequest().json(value)
       }
       Self::ContentPolicyRejected => {
         HttpResponseBuilder::new(status)
@@ -385,6 +415,32 @@ mod tests {
     let body = String::from_utf8(bytes.to_vec()).unwrap();
     assert!(body.contains("\"message\":\"name is required\""));
     assert!(body.contains("\"error_code\":400"));
+  }
+
+  #[test]
+  fn bad_input_tailored_response_serializes_payload_verbatim() {
+    #[derive(Serialize)]
+    struct Sample {
+      reason: &'static str,
+      count: u32,
+    }
+
+    let error = CommonWebError::bad_input_tailored_response(&Sample {
+      reason: "no good",
+      count: 3,
+    });
+    assert_eq!(error.status_code(), StatusCode::BAD_REQUEST);
+    assert!(!error.is_server_error());
+    assert!(error.cause().is_none());
+
+    let response = error.error_response();
+    let content_type = response.headers().get("content-type").unwrap().to_str().unwrap();
+    assert!(content_type.starts_with("application/json"));
+
+    let bytes = response.into_body().try_into_bytes().unwrap();
+    let body = String::from_utf8(bytes.to_vec()).unwrap();
+    // Body is the raw serialized payload — no envelope.
+    assert_eq!(body, r#"{"reason":"no good","count":3}"#);
   }
 
   #[test]
