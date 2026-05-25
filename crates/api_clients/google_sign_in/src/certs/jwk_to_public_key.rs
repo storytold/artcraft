@@ -1,5 +1,5 @@
 use crate::certs::key_map::KeyMap;
-use errors::{anyhow, AnyhowResult};
+use crate::error::google_sign_in_error::GoogleSignInError;
 use jwt_simple::prelude::RS256PublicKey;
 use serde_derive::Deserialize;
 
@@ -7,10 +7,11 @@ use serde_derive::Deserialize;
 /// Grab Google's keys from here: https://www.googleapis.com/oauth2/v3/certs
 /// These are updated frequently throughout the day and must be re-fetched.
 /// NB: This implementation is adapted from the crate `signin`.
-pub fn jwk_to_public_key(json_web_key: &str) -> AnyhowResult<KeyMap> {
+pub fn jwk_to_public_key(json_web_key: &str) -> Result<KeyMap, GoogleSignInError> {
   let mut key_map = KeyMap::new();
 
-  let json_keys: JsonKeys = serde_json::from_str(json_web_key)?;
+  let json_keys: JsonKeys = serde_json::from_str(json_web_key)
+    .map_err(GoogleSignInError::JwkJsonParseFailed)?;
 
   for key in json_keys.keys {
     if key.use_ != "sig" {
@@ -18,11 +19,14 @@ pub fn jwk_to_public_key(json_web_key: &str) -> AnyhowResult<KeyMap> {
     }
     match key.alg.as_ref() {
       "RS256" => {
-        let n_decoded = base64_decode_url(&key.n)?;
-        let e_decoded = base64_decode_url(&key.e)?;
+        let n_decoded = base64_decode_url(&key.n)
+          .map_err(GoogleSignInError::JwkBase64DecodeFailed)?;
+        let e_decoded = base64_decode_url(&key.e)
+          .map_err(GoogleSignInError::JwkBase64DecodeFailed)?;
 
-        let public_key = RS256PublicKey::from_components(&n_decoded, &e_decoded)?
-            .with_key_id(&key.kid);
+        let public_key = RS256PublicKey::from_components(&n_decoded, &e_decoded)
+          .map_err(|err| GoogleSignInError::JwkRsaKeyConstructionFailed(format!("{}", err)))?
+          .with_key_id(&key.kid);
 
         key_map.insert(key.kid, public_key);
       }
@@ -31,7 +35,7 @@ pub fn jwk_to_public_key(json_web_key: &str) -> AnyhowResult<KeyMap> {
   }
 
   if key_map.is_empty() {
-    return Err(anyhow!("No keys found in JWK"));
+    return Err(GoogleSignInError::JwkNoKeysFound);
   }
 
   Ok(key_map)

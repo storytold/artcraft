@@ -1,5 +1,5 @@
 use crate::claims::google_custom_claims::GoogleCustomClaims;
-use errors::{anyhow, AnyhowResult};
+use crate::error::google_sign_in_error::GoogleSignInError;
 use jwt_simple::claims::{Audiences, JWTClaims};
 
 pub struct Claims {
@@ -37,11 +37,11 @@ impl Claims {
 
   /// Determine if the claim audience is as expected.
   /// This is necessary so third parties don't send claims signed on their behalf by Google.
-  pub fn audience_matches(&self, audience: &str) -> AnyhowResult<bool> {
+  pub fn audience_matches(&self, audience: &str) -> Result<bool, GoogleSignInError> {
     match self.claims.audiences.as_ref() {
       Some(Audiences::AsString(claim_audience)) => Ok(claim_audience.eq(audience)),
       Some(Audiences::AsSet(audiences)) => Ok(audiences.contains(audience)),
-      _ => Err(anyhow!("Invalid audience type")),
+      _ => Err(GoogleSignInError::AudienceMissing),
     }
   }
 

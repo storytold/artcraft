@@ -1,9 +1,8 @@
 use crate::certs::key_map::KeyMap;
 use crate::claims::claims::Claims;
 use crate::claims::google_custom_claims::GoogleCustomClaims;
-use crate::errors::VerifyError;
+use crate::error::google_sign_in_error::GoogleSignInError;
 use crate::jwt::decode_jwt_header::decode_jwt_header;
-use errors::anyhow;
 use jwt_simple::algorithms::RS256PublicKey;
 use jwt_simple::algorithms::RSAPublicKeyLike;
 use jwt_simple::common::VerificationOptions;
@@ -12,16 +11,15 @@ use std::collections::HashSet;
 
 /// Decode a Google Sign In JWT.
 /// Verification options can be supplied to increase clock skew tolerance, etc.
-pub fn decode_and_verify_token_claims(keys: &KeyMap, token: &str, mut options: Option<VerificationOptions>) -> Result<Claims, VerifyError> {
-  let header = decode_jwt_header(token)
-      .map_err(|err| VerifyError::JwtDecodeError { source: err })?;
+pub fn decode_and_verify_token_claims(keys: &KeyMap, token: &str, mut options: Option<VerificationOptions>) -> Result<Claims, GoogleSignInError> {
+  let header = decode_jwt_header(token)?;
 
   let key_id = header.kid.as_deref()
       .or_else(|| keys.keys().next().map(|k|k.as_str()))
-      .ok_or_else(|| anyhow!("No key ID found"))?;
+      .ok_or(GoogleSignInError::JwtNoKeyId)?;
 
   let key = keys.get(key_id)
-      .ok_or_else(|| VerifyError::JwtKeyMissing { requested_key: key_id.to_string() })?;
+      .ok_or_else(|| GoogleSignInError::JwtKeyMissing { requested_key: key_id.to_string() })?;
 
   if options.is_none() {
     options = Some(VerificationOptions {
@@ -36,7 +34,7 @@ pub fn decode_and_verify_token_claims(keys: &KeyMap, token: &str, mut options: O
   decode_and_verify_token_claims_with_key(key, token, options)
 }
 
-pub fn decode_and_verify_token_claims_with_key(key: &RS256PublicKey, token: &str, options: Option<VerificationOptions>) -> Result<Claims, VerifyError> {
+pub fn decode_and_verify_token_claims_with_key(key: &RS256PublicKey, token: &str, options: Option<VerificationOptions>) -> Result<Claims, GoogleSignInError> {
   let result = key.verify_token::<GoogleCustomClaims>(token, options);
 
   let claims = match result {
@@ -44,22 +42,22 @@ pub fn decode_and_verify_token_claims_with_key(key: &RS256PublicKey, token: &str
     Err(err) => {
       if let Some(inner_error) = err.downcast_ref::<JWTError>() {
         match inner_error {
-          JWTError::RequiredAudienceMismatch => return Err(VerifyError::JwtInvalidAudience),
-          JWTError::RequiredAudienceMissing => return Err(VerifyError::JwtInvalidAudience),
-          JWTError::RequiredIssuerMismatch => return Err(VerifyError::JwtInvalidIssuer),
-          JWTError::RequiredIssuerMissing => return Err(VerifyError::JwtInvalidIssuer),
-          JWTError::TokenHasExpired => return Err(VerifyError::JwtExpired),
+          JWTError::RequiredAudienceMismatch => return Err(GoogleSignInError::JwtInvalidAudience),
+          JWTError::RequiredAudienceMissing => return Err(GoogleSignInError::JwtInvalidAudience),
+          JWTError::RequiredIssuerMismatch => return Err(GoogleSignInError::JwtInvalidIssuer),
+          JWTError::RequiredIssuerMissing => return Err(GoogleSignInError::JwtInvalidIssuer),
+          JWTError::TokenHasExpired => return Err(GoogleSignInError::JwtExpired),
           _ => {}, // Fall-through
         }
       }
-      return Err(VerifyError::AnyhowError(err));
+      return Err(GoogleSignInError::JwtVerifyFailed(format!("{}", err)));
     }
   };
 
   match claims.issuer.as_deref() {
     Some("https://accounts.google.com" | "accounts.google.com") => {} // Permitted
     _ => {
-      return Err(VerifyError::JwtInvalidIssuer);
+      return Err(GoogleSignInError::JwtInvalidIssuer);
     }
   }
 
@@ -72,7 +70,7 @@ pub fn decode_and_verify_token_claims_with_key(key: &RS256PublicKey, token: &str
 mod tests {
   use crate::certs::jwk_to_public_key::jwk_to_public_key;
   use crate::decode_and_verify_token_claims::decode_and_verify_token_claims;
-  use crate::errors::VerifyError;
+  use crate::error::google_sign_in_error::GoogleSignInError;
   use coarsetime::Duration;
   use jwt_simple::claims::Audiences;
   use jwt_simple::prelude::VerificationOptions;
@@ -180,7 +178,7 @@ mod tests {
     };
 
     match decode_and_verify_token_claims(&key_map, credential, Some(options)) {
-      Err(VerifyError::JwtKeyMissing { requested_key}) => {
+      Err(GoogleSignInError::JwtKeyMissing { requested_key}) => {
         assert_eq!(requested_key, "b2620d5e7f132b52afe8875cdf3776c064249d04");
       }
       Err(err) => {
@@ -201,7 +199,7 @@ mod tests {
     let credential = "eyJhbGciOiJSUzI1NiIsImtpZCI6ImIyNjIwZDVlN2YxMzJiNTJhZmU4ODc1Y2RmMzc3NmMwNjQyNDlkMDQiLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLCJhenAiOiI3ODg4NDMwMzQyMzctdXFjZzh0YmdvZnJjZjF0bzM3ZTFicXBoZDkyNGphZjYuYXBwcy5nb29nbGV1c2VyY29udGVudC5jb20iLCJhdWQiOiI3ODg4NDMwMzQyMzctdXFjZzh0YmdvZnJjZjF0bzM3ZTFicXBoZDkyNGphZjYuYXBwcy5nb29nbGV1c2VyY29udGVudC5jb20iLCJzdWIiOiIxMTMxMDE5Njc2MTIzOTY3OTM3NzciLCJlbWFpbCI6InZvY29kZXMyMDIwQGdtYWlsLmNvbSIsImVtYWlsX3ZlcmlmaWVkIjp0cnVlLCJuYmYiOjE3MjY3ODYxMDAsIm5hbWUiOiJWb2NvZGVzIFZvY29kZXMiLCJwaWN0dXJlIjoiaHR0cHM6Ly9saDMuZ29vZ2xldXNlcmNvbnRlbnQuY29tL2EvQUNnOG9jTHoyLTJPYUFtME1ReFI2ajhDTnItUG84X1hyLWFyeUFUaUNuNGMwaV9UdURtTF9nPXM5Ni1jIiwiZ2l2ZW5fbmFtZSI6IlZvY29kZXMiLCJmYW1pbHlfbmFtZSI6IlZvY29kZXMiLCJpYXQiOjE3MjY3ODY0MDAsImV4cCI6MTcyNjc5MDAwMCwianRpIjoiNGQ0NGVlYWMwNmNlNzlmYzBhYjIyNzBjZmVlYTMwZDhhY2Y3NzYxMyJ9.EYg71yIkvhxFGc8ZVCXeTOAmPAtLYDphHnkdf1sh8b_Jz4Y7S1DpmiTqQ1ytxu7J1xNixvdwhuIDzSlCvlxaFl8475GvAlyPTNtZtmWbFD5SRM_XHLOynijOp8WQ4nej-CHvT1KjjqMfkZ1EeQMoWk1H72PxPg_RiUgzsklkUs1wOkLAySk7R3EIAl7bIzpoY_WH2pxv9ccFpBtKDHaDqHkxAWBUQX0-G7ZXZBPVz07V28ZfdbzFDapjZaUFbumazh_-J2-9AA6JkcteF4h_gpbBcLYAuxt5bWI5FECWbYe42khwb93WJ5SK12Tt0EPoyzIObJs14NWGAajtHTg3wA";
 
     match decode_and_verify_token_claims(&key_map, credential, None) {
-      Err(VerifyError::JwtExpired) => {
+      Err(GoogleSignInError::JwtExpired) => {
         // Expected error case
       }
       Err(err) => {
@@ -231,7 +229,7 @@ mod tests {
     };
 
     match decode_and_verify_token_claims(&key_map, credential, Some(options)) {
-      Err(VerifyError::JwtInvalidIssuer) => {
+      Err(GoogleSignInError::JwtInvalidIssuer) => {
         // Expected error case
       }
       Err(err) => {
@@ -261,7 +259,7 @@ mod tests {
     };
 
     match decode_and_verify_token_claims(&key_map, credential, Some(options)) {
-      Err(VerifyError::JwtInvalidAudience) => {
+      Err(GoogleSignInError::JwtInvalidAudience) => {
         // Expected error case
       }
       Err(err) => {

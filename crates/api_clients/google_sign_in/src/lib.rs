@@ -21,7 +21,7 @@
 pub mod certs;
 pub mod claims;
 pub mod decode_and_verify_token_claims;
-pub mod errors;
+pub mod error;
 
 pub(crate) mod jwt;
 

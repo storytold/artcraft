@@ -4865,7 +4865,6 @@ version = "0.0.1"
 dependencies = [
  "base64 0.13.1",
  "coarsetime",
- "errors",
  "jwt-simple",
  "reqwest 0.12.23",
  "serde",
