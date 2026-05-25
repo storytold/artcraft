@@ -11,7 +11,7 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { UsersApi } from "@storyteller/api";
 import { AuthHeader, AuthFooter, GoogleLoginButton } from "../../components/auth";
 import Seo from "../../components/seo";
-import { refreshSession } from "../../lib/session";
+import { refreshSession, useSessionStore } from "../../lib/session";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -48,13 +48,12 @@ const Login = () => {
     }
   };
 
-  const handleGoogleSuccess = async (isNewUser: boolean) => {
-    // Mirror handleLogin: let the session store reflect the cookie before we
-    // navigate so RequireAuth on the destination doesn't bounce us back.
+  const handleGoogleSuccess = async () => {
+    // Refresh so the session store reflects the new cookie (and whether the
+    // account still needs a password) before deciding where to send them.
     await refreshSession(true);
-    if (isNewUser) {
-      // Flag the navigation so the set-password page knows it came from SSO.
-      navigate("/set-password", { state: { fromGoogleSso: true } });
+    if (useSessionStore.getState().passwordNotSet) {
+      navigate("/set-password");
     } else {
       navigate(redirectTo);
     }

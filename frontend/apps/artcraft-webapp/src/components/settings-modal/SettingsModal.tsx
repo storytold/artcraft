@@ -94,7 +94,7 @@ function GeneralPanel() {
 }
 
 function AccountPanel() {
-  const { user, authChecked } = useSession();
+  const { user, authChecked, passwordNotSet } = useSession();
 
   if (!authChecked) {
     return (
@@ -112,7 +112,7 @@ function AccountPanel() {
 
   return (
     <div className="pt-3">
-      <AccountSection user={user} />
+      <AccountSection user={user} passwordNotSet={passwordNotSet} />
     </div>
   );
 }

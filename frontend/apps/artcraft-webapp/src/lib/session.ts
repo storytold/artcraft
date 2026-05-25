@@ -6,6 +6,9 @@ interface SessionState {
   user: UserInfo | undefined;
   loggedIn: boolean;
   authChecked: boolean;
+  // True when the signed-in user has no password yet (e.g. signed up via
+  // Google SSO and hasn't set one). Drives the set-password flow.
+  passwordNotSet: boolean;
   setSession: (next: Partial<Omit<SessionState, "setSession">>) => void;
 }
 
@@ -13,6 +16,7 @@ export const useSessionStore = create<SessionState>((set) => ({
   user: undefined,
   loggedIn: false,
   authChecked: false,
+  passwordNotSet: false,
   setSession: (next) => set(next),
 }));
 
@@ -36,6 +40,9 @@ async function fetchAndStoreSession(): Promise<void> {
       user: loggedIn ? response.data!.user : undefined,
       loggedIn,
       authChecked: true,
+      passwordNotSet: loggedIn
+        ? !!response.data!.onboarding?.password_not_set
+        : false,
     });
   } catch {
     // Backend unreachable or timed out — clear cache so next call retries.
@@ -45,6 +52,7 @@ async function fetchAndStoreSession(): Promise<void> {
       user: undefined,
       loggedIn: false,
       authChecked: true,
+      passwordNotSet: false,
     });
   }
 }
@@ -92,6 +100,7 @@ export interface UseSessionResult {
   user: UserInfo | undefined;
   loggedIn: boolean;
   authChecked: boolean;
+  passwordNotSet: boolean;
 }
 
 /** Subscribe to session state. The first caller per page-load triggers the fetch. */
@@ -99,6 +108,7 @@ export function useSession(): UseSessionResult {
   const user = useSessionStore((s) => s.user);
   const loggedIn = useSessionStore((s) => s.loggedIn);
   const authChecked = useSessionStore((s) => s.authChecked);
+  const passwordNotSet = useSessionStore((s) => s.passwordNotSet);
 
   useEffect(() => {
     ensureAuthChangeListener();
@@ -108,7 +118,7 @@ export function useSession(): UseSessionResult {
     }
   }, []);
 
-  return { user, loggedIn, authChecked };
+  return { user, loggedIn, authChecked, passwordNotSet };
 }
 
 // Backwards-compatible response shape for legacy `await getSession()` callers.

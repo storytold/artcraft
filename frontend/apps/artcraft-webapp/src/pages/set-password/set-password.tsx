@@ -7,14 +7,15 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Button } from "@storyteller/ui-button";
 import { Input } from "@storyteller/ui-input";
 import { useState } from "react";
-import { useNavigate, useLocation, Navigate } from "react-router-dom";
+import { useNavigate, Navigate } from "react-router-dom";
 import { UsersApi } from "@storyteller/api";
+import { useSession, refreshSession } from "../../lib/session";
 import Seo from "../../components/seo";
 import { toast } from "../../components/toast/toast";
 
 const SetPassword = () => {
   const navigate = useNavigate();
-  const location = useLocation();
+  const { loggedIn, authChecked, passwordNotSet } = useSession();
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -22,10 +23,21 @@ const SetPassword = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // This page is only meant to be reached straight from the Google SSO success
-  // redirect, which passes `fromGoogleSso` in the navigation state. Anyone
-  // landing here directly (typed URL, bookmark, etc.) is sent home.
-  if (!location.state?.fromGoogleSso) {
+  // Only meant for a signed-in user who has no password yet (the Google SSO
+  // sign-up case). Wait for the session check, then send everyone else home —
+  // this covers direct navigation and stops an existing user (who already has
+  // a password) from being misrouted here.
+  if (!authChecked) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[#101014]">
+        <FontAwesomeIcon
+          icon={faSpinnerThird}
+          className="animate-spin text-4xl text-primary/80"
+        />
+      </div>
+    );
+  }
+  if (!loggedIn || !passwordNotSet) {
     return <Navigate to="/" replace />;
   }
 
@@ -53,6 +65,7 @@ const SetPassword = () => {
 
     if (response.success) {
       toast.success("Password has been set");
+      await refreshSession(true);
       navigate("/welcome");
     } else {
       setError(response.errorMessage || "Failed to set password");

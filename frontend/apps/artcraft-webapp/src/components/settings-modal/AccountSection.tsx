@@ -18,9 +18,10 @@ type EditingSection = "username" | "email" | "password" | null;
 
 interface AccountSectionProps {
   user: UserInfo;
+  passwordNotSet: boolean;
 }
 
-export function AccountSection({ user }: AccountSectionProps) {
+export function AccountSection({ user, passwordNotSet }: AccountSectionProps) {
   const [editing, setEditing] = useState<EditingSection>(null);
 
   const requestOpen = (section: EditingSection) => setEditing(section);
@@ -44,6 +45,7 @@ export function AccountSection({ user }: AccountSectionProps) {
       <hr className="border-ui-panel-border" />
       <PasswordForm
         user={user}
+        passwordNotSet={passwordNotSet}
         isEditing={editing === "password"}
         onOpen={() => requestOpen("password")}
         onClose={close}
@@ -130,7 +132,9 @@ function UsernameForm({ user, isEditing, onOpen, onClose }: SectionFormProps) {
       await refreshSession(true);
       onClose();
     } else {
-      setError(humanizeError(response.errorMessage, "Could not update username."));
+      setError(
+        humanizeError(response.errorMessage, "Could not update username."),
+      );
     }
   };
 
@@ -280,15 +284,22 @@ function EmailForm({ user, isEditing, onOpen, onClose }: SectionFormProps) {
   );
 }
 
-function PasswordForm({ user, isEditing, onOpen, onClose }: SectionFormProps) {
+function PasswordForm({
+  user,
+  passwordNotSet,
+  isEditing,
+  onOpen,
+  onClose,
+}: SectionFormProps & { passwordNotSet: boolean }) {
   const [oldPassword, setOldPassword] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  const canSubmit =
-    oldPassword.length > 0 && password.length > 0 && confirm.length > 0;
+  const canSubmit = passwordNotSet
+    ? password.length > 0 && confirm.length > 0
+    : oldPassword.length > 0 && password.length > 0 && confirm.length > 0;
 
   const reset = () => {
     setOldPassword("");
@@ -311,32 +322,32 @@ function PasswordForm({ user, isEditing, onOpen, onClose }: SectionFormProps) {
     e.preventDefault();
     setError(null);
 
-    if (oldPassword.length === 0) {
-      setError("Enter your current password.");
-      return;
-    }
     const reason = validatePassword(password, confirm);
     if (reason) {
       setError(reason);
-      return;
-    }
-    if (oldPassword === password) {
-      setError("New password must be different from the current password.");
       return;
     }
 
     setSubmitting(true);
     const usersApi = new UsersApi();
 
-    const verify = await usersApi.Login({
-      usernameOrEmail: user.username,
-      password: oldPassword,
-    });
-
-    if (!verify.success) {
-      setSubmitting(false);
-      setError("Current password is incorrect.");
-      return;
+    // When the account already has a password, confirm the current one before
+    // changing it. A new SSO account with no password set skips this step.
+    if (!passwordNotSet) {
+      if (oldPassword === password) {
+        setSubmitting(false);
+        setError("New password must be different from the current password.");
+        return;
+      }
+      const verify = await usersApi.Login({
+        usernameOrEmail: user.username,
+        password: oldPassword,
+      });
+      if (!verify.success) {
+        setSubmitting(false);
+        setError("Current password is incorrect.");
+        return;
+      }
     }
 
     const response = await usersApi.ChangePassword({
@@ -346,46 +357,59 @@ function PasswordForm({ user, isEditing, onOpen, onClose }: SectionFormProps) {
     setSubmitting(false);
 
     if (response.success) {
-      toast.success("Password updated.");
+      toast.success(passwordNotSet ? "Password set." : "Password updated.");
+      await refreshSession(true);
       handleClose();
     } else {
-      setError(humanizeError(response.errorMessage, "Could not update password."));
+      setError(
+        humanizeError(response.errorMessage, "Could not update password."),
+      );
     }
   };
 
   return (
     <SectionShell
       title="Password"
-      collapsedDescription="Used to sign in to your account."
-      editingDescription={`Choose a new password of at least ${PASSWORD_MIN} characters.`}
+      collapsedDescription={
+        passwordNotSet
+          ? "Set a password so you can also sign into the desktop app."
+          : "Used to sign in to your account."
+      }
+      editingDescription={`Choose a password of at least ${PASSWORD_MIN} characters.`}
+      actionLabel={passwordNotSet ? "Set" : "Change"}
       isEditing={isEditing}
       onOpen={handleOpen}
     >
       <form onSubmit={handleSubmit} className="flex flex-col gap-2">
-        <Input
-          type="password"
-          value={oldPassword}
-          onChange={(e) => setOldPassword(e.target.value)}
-          placeholder="Current password"
-          autoComplete="current-password"
-          autoFocus
-          inputClassName="w-full bg-black/20 border border-white/10 focus:border-primary/50 rounded-lg px-3 py-2 text-sm text-white placeholder-white/30 outline-none"
-        />
+        {!passwordNotSet && (
+          <Input
+            type="password"
+            value={oldPassword}
+            onChange={(e) => setOldPassword(e.target.value)}
+            placeholder="Current password"
+            autoComplete="current-password"
+            autoFocus
+            inputClassName="w-full bg-black/20 border border-white/10 focus:border-primary/50 rounded-lg px-3 py-2 text-sm text-white placeholder-white/30 outline-none"
+          />
+        )}
         <div className="grid grid-cols-2 gap-2">
           <Input
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            placeholder="New password"
+            placeholder={passwordNotSet ? "Password" : "New password"}
             minLength={PASSWORD_MIN}
             autoComplete="new-password"
+            autoFocus={passwordNotSet}
             inputClassName="w-full bg-black/20 border border-white/10 focus:border-primary/50 rounded-lg px-3 py-2 text-sm text-white placeholder-white/30 outline-none"
           />
           <Input
             type="password"
             value={confirm}
             onChange={(e) => setConfirm(e.target.value)}
-            placeholder="Confirm new password"
+            placeholder={
+              passwordNotSet ? "Confirm password" : "Confirm new password"
+            }
             minLength={PASSWORD_MIN}
             autoComplete="new-password"
             inputClassName="w-full bg-black/20 border border-white/10 focus:border-primary/50 rounded-lg px-3 py-2 text-sm text-white placeholder-white/30 outline-none"
@@ -408,6 +432,7 @@ function SectionShell({
   editingDescription,
   currentLabel,
   currentValue,
+  actionLabel = "Change",
   isEditing,
   onOpen,
   children,
@@ -417,6 +442,7 @@ function SectionShell({
   editingDescription: string;
   currentLabel?: string;
   currentValue?: string;
+  actionLabel?: string;
   isEditing: boolean;
   onOpen: () => void;
   children: React.ReactNode;
@@ -437,7 +463,7 @@ function SectionShell({
             className="h-9 px-3 shrink-0"
             onClick={onOpen}
           >
-            Change
+            {actionLabel}
           </Button>
         )}
       </div>
@@ -500,15 +526,15 @@ function FormActions({
 }
 
 function FormError({ message }: { message: string }) {
-  return (
-    <p className="text-xs text-red-400 leading-tight">{message}</p>
-  );
+  return <p className="text-xs text-red-400 leading-tight">{message}</p>;
 }
 
 function validateUsername(username: string): string | null {
   if (username.length === 0) return "Username cannot be empty.";
-  if (username.length < USERNAME_MIN) return `Username must be at least ${USERNAME_MIN} characters.`;
-  if (username.length > USERNAME_MAX) return `Username must be at most ${USERNAME_MAX} characters.`;
+  if (username.length < USERNAME_MIN)
+    return `Username must be at least ${USERNAME_MIN} characters.`;
+  if (username.length > USERNAME_MAX)
+    return `Username must be at most ${USERNAME_MAX} characters.`;
   if (!USERNAME_REGEX.test(username)) {
     return "Username may only contain letters, numbers, underscores, and hyphens.";
   }
@@ -523,7 +549,8 @@ function validateEmail(email: string): string | null {
 }
 
 function validatePassword(password: string, confirm: string): string | null {
-  if (password.length < PASSWORD_MIN) return `Password must be at least ${PASSWORD_MIN} characters.`;
+  if (password.length < PASSWORD_MIN)
+    return `Password must be at least ${PASSWORD_MIN} characters.`;
   if (password !== confirm) return "Passwords do not match.";
   return null;
 }

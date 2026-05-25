@@ -57,7 +57,9 @@ export function GoogleLoginButton({
   };
 
   return (
-    <div className={`group relative w-full h-10 ${className}`}>
+    <div
+      className={`group relative w-full h-10 transition-transform duration-150 active:scale-95 ${className}`}
+    >
       {/* Custom visual button - shown behind */}
       <div className="absolute inset-0 w-full h-full flex items-center justify-center gap-3 bg-white text-black rounded-full font-medium border border-gray-200 group-hover:border-white/80 group-hover:bg-white/80 transition-colors">
         {isLoading ? (

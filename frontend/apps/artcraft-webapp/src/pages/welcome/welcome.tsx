@@ -32,7 +32,7 @@ const Welcome = () => {
         <div className="w-[900px] h-[900px] rounded-full bg-gradient-to-br from-primary/40 via-purple-600/30 to-blue-500/20 opacity-30 blur-[120px]"></div>
       </div>
 
-      <main className="relative z-10 pt-28 pb-20 px-4 sm:px-6 lg:px-8">
+      <main className="relative z-10 pt-12 pb-20 px-4 sm:px-6 lg:px-8">
         {/* Success Header */}
         <div className="text-center mb-12">
           <div className="inline-flex items-center gap-3 bg-primary/10 border border-primary/30 rounded-full px-6 py-3 mb-6">
@@ -48,8 +48,9 @@ const Welcome = () => {
           <h1 className="text-4xl sm:text-5xl md:text-6xl font-medium mb-4 tracking-tight">
             Welcome to <span className="text-primary">ArtCraft</span>
           </h1>
-          <p className="text-xl text-white/70 max-w-2xl mx-auto">
+          <p className="text-lg sm:text-xl text-white/70 max-w-2xl mx-auto px-2.5">
             Support open-source development and unlock premium AI art features.
+            <br className="hidden sm:block" />
             Your subscription keeps ArtCraft free for everyone.
           </p>
         </div>
@@ -163,7 +164,7 @@ const Welcome = () => {
                     <Button
                       as="link"
                       href={downloadUrl}
-                      className="rounded-full bg-white text-black hover:bg-gray-100 dark:bg-white dark:text-black dark:hover:bg-gray-200 px-6 py-2.5 text-sm font-bold rounded-xl"
+                      className="rounded-full bg-white text-black hover:bg-gray-100 dark:bg-white dark:text-black dark:hover:bg-gray-200 px-6 py-2.5 text-sm font-bold"
                     >
                       <FontAwesomeIcon icon={faDownload} className="mr-2" />
                       Download for {isMacOs ? "Mac" : "Windows"}
