@@ -12,7 +12,7 @@ use artcraft_api_defs::moderation::jobs::user::list_user_jobs::{
 use mysql_queries::queries::generic_inference::web::list_user_jobs_for_moderation::list_user_jobs_for_moderation;
 
 use tokens::tokens::users::UserToken;
-use crate::http_server::common_responses::common_web_error::CommonWebError;
+use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
 use crate::http_server::web_utils::user_session::require_moderator::{require_moderator, UseDatabase};
 use crate::state::server_state::ServerState;
 
@@ -34,17 +34,17 @@ pub async fn list_user_jobs_handler(
   http_request: HttpRequest,
   path: Path<ListUserJobsPathInfo>,
   server_state: web::Data<Arc<ServerState>>,
-) -> Result<Json<ListUserJobsResponse>, CommonWebError> {
+) -> Result<Json<ListUserJobsResponse>, AdvancedCommonWebError> {
 
   let _user_session = require_moderator(&http_request, &server_state, UseDatabase::GrabNewConnection)
     .await
-    .map_err(|_| CommonWebError::NotAuthorized)?;
+    .map_err(|_| AdvancedCommonWebError::NotAuthorized)?;
 
   let results = list_user_jobs_for_moderation(&path.user_token, &server_state.mysql_pool)
     .await
     .map_err(|err| {
       warn!("list_user_jobs error: {:?}", err);
-      CommonWebError::ServerError
+      AdvancedCommonWebError::server_error_with_message("uncaught server error")
     })?;
 
   let jobs = results.into_iter().map(|row| ListUserJobsEntry {

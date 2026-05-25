@@ -1,7 +1,6 @@
 use std::fmt::{Display, Formatter};
 use std::sync::Arc;
 
-use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::session::session_checker_error::SessionCheckerError;
 use crate::http_server::web_utils::user_session::require_user_session::RequireUserSessionError;
 use actix_artcraft::sessions::anonymous_visitor_tracking::avt_cookie_payload_error::AvtCookiePayloadError;
@@ -9,6 +8,7 @@ use actix_artcraft::sessions::user_sessions::http_user_session_payload_error::Ht
 use actix_http::StatusCode;
 use actix_web::{HttpResponse, HttpResponseBuilder, ResponseError};
 use anyhow::anyhow;
+use mysql_queries::errors::mysql_error::{MysqlCrateErrorSubtype, MysqlError};
 
 /// An error type for actix-web handlers that wraps causal errors for debugging
 /// and paging while presenting safe, generic HTTP responses to users.
@@ -241,6 +241,15 @@ impl From<sqlx::Error> for AdvancedCommonWebError {
   }
 }
 
+impl<T> From<MysqlError<T>> for AdvancedCommonWebError
+where
+  T: MysqlCrateErrorSubtype + Send + Sync + 'static,
+{
+  fn from(err: MysqlError<T>) -> Self {
+    Self::from_error(err)
+  }
+}
+
 impl From<anyhow::Error> for AdvancedCommonWebError {
   fn from(err: anyhow::Error) -> Self {
     // anyhow::Error doesn't impl std::error::Error, so we go through Box -> Arc.
@@ -295,18 +304,6 @@ impl From<SessionCheckerError> for AdvancedCommonWebError {
       SessionCheckerError::Sqlx(err) => Self::from_error(err),
       // Likely Redis caching middleware
       SessionCheckerError::OtherError(err) => Self::from_anyhow_error(err),
-    }
-  }
-}
-
-impl From<CommonWebError> for AdvancedCommonWebError {
-  fn from(value: CommonWebError) -> Self {
-    match value {
-      CommonWebError::BadInputWithSimpleMessage(msg) => Self::BadInputWithSimpleMessage(msg),
-      CommonWebError::NotAuthorized => Self::NotAuthorized,
-      CommonWebError::NotFound => Self::NotFound,
-      CommonWebError::PaymentRequired => Self::PaymentRequired,
-      CommonWebError::ServerError => Self::from_error(value),
     }
   }
 }

@@ -5,7 +5,7 @@
 
 use std::sync::Arc;
 
-use crate::http_server::common_responses::common_web_error::CommonWebError;
+use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
 use crate::state::server_state::ServerState;
 use actix_web::web::Json;
 use actix_web::{web, HttpRequest};
@@ -33,7 +33,7 @@ pub async fn create_prompt_handler(
   http_request: HttpRequest,
   request: Json<CreatePromptRequest>,
   server_state: web::Data<Arc<ServerState>>,
-) -> Result<Json<CreatePromptResponse>, CommonWebError>
+) -> Result<Json<CreatePromptResponse>, AdvancedCommonWebError>
 {
   let mut mysql_connection = server_state.mysql_pool
       .acquire()
@@ -45,7 +45,7 @@ pub async fn create_prompt_handler(
       .await
       .map_err(|e| {
         warn!("Session checker error: {:?}", e);
-        CommonWebError::ServerError
+        AdvancedCommonWebError::server_error_with_message("uncaught server error")
       })?;
 
   //let maybe_avt_token = server_state
@@ -56,7 +56,7 @@ pub async fn create_prompt_handler(
       .await
       .map_err(|err| {
         error!("Error inserting idempotency token: {:?}", err);
-        CommonWebError::BadInputWithSimpleMessage("invalid idempotency token".to_string())
+        AdvancedCommonWebError::BadInputWithSimpleMessage("invalid idempotency token".to_string())
       })?;
 
   let ip_address = get_request_ip(&http_request);
@@ -95,7 +95,7 @@ pub async fn create_prompt_handler(
     Ok(token) => token,
     Err(err) => {
       error!("error inserting prompt: {:?}", err);
-      return Err(CommonWebError::ServerError);
+      return Err(AdvancedCommonWebError::server_error_with_message("uncaught server error"));
     }
   };
 

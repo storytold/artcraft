@@ -7,11 +7,9 @@ use actix_web::Error;
 use pager::client::pager::Pager;
 
 use super::handlers::check_advanced_common_web_error::check_advanced_common_web_error;
-use super::handlers::check_common_web_error::check_common_web_error;
 use super::handlers::check_status_code_fallback::check_status_code_fallback;
 use super::request_debugging_metadata::RequestDebuggingMetadata;
 use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
-use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::state::flags::paging_flags::PagingFlags;
 
 // ======================== Transform (factory) ========================
@@ -19,7 +17,7 @@ use crate::state::flags::paging_flags::PagingFlags;
 /// Middleware that intercepts error responses and enqueues pager alerts.
 ///
 /// Inspects errors in two ways:
-/// 1. **Typed error matching** via downcast (e.g. `CommonWebError::ServerError`)
+/// 1. **Typed error matching** via downcast (e.g. `AdvancedCommonWebError::UncaughtServerError`)
 /// 2. **Status code fallback** for untyped 500s that slip through
 ///
 /// Both `PagingFlags.is_paging_enabled` and `PagingFlags.is_paging_for_500s_enabled`
@@ -132,12 +130,6 @@ fn check_ok_response_for_alerts<B>(
         return;
       }
     }
-
-    if let Some(common_err) = err.as_error::<CommonWebError>() {
-      if check_common_web_error(pager, method, path, metadata, common_err) {
-        return;
-      }
-    }
   }
 
   // --- Status code fallback ---
@@ -156,12 +148,6 @@ fn check_err_for_alerts(
 
   if let Some(advanced_err) = err.as_error::<AdvancedCommonWebError>() {
     if check_advanced_common_web_error(pager, method, path, metadata, advanced_err) {
-      return;
-    }
-  }
-
-  if let Some(common_err) = err.as_error::<CommonWebError>() {
-    if check_common_web_error(pager, method, path, metadata, common_err) {
       return;
     }
   }

@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use crate::billing::wallets::attempt_wallet_deduction::attempt_wallet_deduction_else_common_web_error;
-use crate::http_server::common_responses::common_web_error::CommonWebError;
+use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
 use crate::http_server::endpoints::generate::common::payments_error_test::payments_error_test;
 use crate::http_server::validations::validate_idempotency_token_format::validate_idempotency_token_format;
 use crate::state::server_state::ServerState;
@@ -46,12 +46,12 @@ pub async fn nano_banana_2_multi_function_image_gen_handler(
   http_request: HttpRequest,
   request: Json<NanaBanana2MultiFunctionImageGenRequest>,
   server_state: web::Data<Arc<ServerState>>
-) -> Result<Json<NanaBanana2MultiFunctionImageGenResponse>, CommonWebError> {
+) -> Result<Json<NanaBanana2MultiFunctionImageGenResponse>, AdvancedCommonWebError> {
 
   payments_error_test(&request.prompt.as_deref().unwrap_or(""))?;
 
   if let Err(reason) = validate_idempotency_token_format(&request.uuid_idempotency_token) {
-    return Err(CommonWebError::BadInputWithSimpleMessage(reason));
+    return Err(AdvancedCommonWebError::BadInputWithSimpleMessage(reason));
   }
 
   let mut mysql_connection = server_state.mysql_pool
@@ -64,7 +64,7 @@ pub async fn nano_banana_2_multi_function_image_gen_handler(
       .await
       .map_err(|e| {
         warn!("Session checker error: {:?}", e);
-        CommonWebError::ServerError
+        AdvancedCommonWebError::server_error_with_message("uncaught server error")
       })?;
 
   let maybe_avt_token = server_state
@@ -74,7 +74,7 @@ pub async fn nano_banana_2_multi_function_image_gen_handler(
   let user_token = match maybe_user_session.as_ref() {
     Some(session) => &session.user_token,
     None => {
-      return Err(CommonWebError::NotAuthorized);
+      return Err(AdvancedCommonWebError::NotAuthorized);
     }
   };
 
@@ -95,7 +95,7 @@ pub async fn nano_banana_2_multi_function_image_gen_handler(
       .await
       .map_err(|err| {
         error!("Error inserting idempotency token: {:?}", err);
-        CommonWebError::BadInputWithSimpleMessage("repeated idempotency token".to_string())
+        AdvancedCommonWebError::BadInputWithSimpleMessage("repeated idempotency token".to_string())
       })?;
 
   info!("Fal webhook URL: {}", server_state.fal.webhook_url);
@@ -169,7 +169,7 @@ pub async fn nano_banana_2_multi_function_image_gen_handler(
         .await
         .map_err(|err| {
           warn!("Error calling enqueue_nano_banana_2_edit_image_webhook: {:?}", err);
-          CommonWebError::ServerError
+          AdvancedCommonWebError::server_error_with_message("uncaught server error")
         })?;
 
   } else {
@@ -236,14 +236,14 @@ pub async fn nano_banana_2_multi_function_image_gen_handler(
         .await
         .map_err(|err| {
           warn!("Error calling enqueue_nano_banana_2_text_to_image_webhook: {:?}", err);
-          CommonWebError::ServerError
+          AdvancedCommonWebError::server_error_with_message("uncaught server error")
         })?;
   }
 
   let external_job_id = fal_result.request_id
       .ok_or_else(|| {
         warn!("Fal request_id is None");
-        CommonWebError::ServerError
+        AdvancedCommonWebError::server_error_with_message("uncaught server error")
       })?;
 
   info!("Fal request_id: {}", external_job_id);
@@ -255,7 +255,7 @@ pub async fn nano_banana_2_multi_function_image_gen_handler(
       .await
       .map_err(|err| {
         error!("Error starting MySQL transaction: {:?}", err);
-        CommonWebError::ServerError
+        AdvancedCommonWebError::server_error_with_message("uncaught server error")
       })?;
 
   let maybe_aspect_ratio = match request.aspect_ratio {
@@ -360,7 +360,7 @@ pub async fn nano_banana_2_multi_function_image_gen_handler(
     Ok(token) => token,
     Err(err) => {
       warn!("Error inserting generic inference job for FAL queue: {:?}", err);
-      return Err(CommonWebError::ServerError);
+      return Err(AdvancedCommonWebError::server_error_with_message("uncaught server error"));
     }
   };
 
@@ -369,7 +369,7 @@ pub async fn nano_banana_2_multi_function_image_gen_handler(
       .await
       .map_err(|err| {
         error!("Error committing MySQL transaction: {:?}", err);
-        CommonWebError::ServerError
+        AdvancedCommonWebError::server_error_with_message("uncaught server error")
       })?;
 
   Ok(Json(NanaBanana2MultiFunctionImageGenResponse {

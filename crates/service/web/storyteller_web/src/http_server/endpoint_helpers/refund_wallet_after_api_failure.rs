@@ -1,4 +1,4 @@
-use crate::http_server::common_responses::common_web_error::CommonWebError;
+use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
 use log::{error, info};
 use mysql_queries::queries::wallets::refund::try_to_refund_ledger_entry::{try_to_refund_ledger_entry, WalletRefundOutcome};
 use sqlx::Acquire;
@@ -7,13 +7,13 @@ use tokens::tokens::wallet_ledger_entries::WalletLedgerEntryToken;
 pub async fn refund_wallet_after_api_failure(
   ledger_entry_token: &WalletLedgerEntryToken,
   connection: &mut sqlx::pool::PoolConnection<sqlx::MySql>,
-) -> Result<(), CommonWebError> {
+) -> Result<(), AdvancedCommonWebError> {
   let mut transaction = connection.begin().await.map_err(|err| {
     error!(
       "Failed to begin refund transaction after API failure (ledger {}): {:?}",
       ledger_entry_token.as_str(), err
     );
-    CommonWebError::ServerError
+    AdvancedCommonWebError::server_error_with_message("uncaught server error")
   })?;
 
   match try_to_refund_ledger_entry(ledger_entry_token, &mut transaction).await {
@@ -29,7 +29,7 @@ pub async fn refund_wallet_after_api_failure(
           "Failed to commit refund after API failure (ledger {}): {:?}",
           ledger_entry_token.as_str(), err
         );
-        CommonWebError::ServerError
+        AdvancedCommonWebError::server_error_with_message("uncaught server error")
       })?;
     }
     Ok(WalletRefundOutcome::AlreadyRefunded) => {
@@ -45,7 +45,7 @@ pub async fn refund_wallet_after_api_failure(
         ledger_entry_token.as_str(), err
       );
       let _ = transaction.rollback().await;
-      return Err(CommonWebError::ServerError);
+      return Err(AdvancedCommonWebError::server_error_with_message("uncaught server error"));
     }
   }
 

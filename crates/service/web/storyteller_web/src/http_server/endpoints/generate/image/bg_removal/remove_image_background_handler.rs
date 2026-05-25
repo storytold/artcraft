@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use crate::http_server::common_responses::common_web_error::CommonWebError;
+use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
 use crate::http_server::common_responses::media::media_links_builder::MediaLinksBuilder;
 use crate::http_server::endpoints::media_files::helpers::get_media_domain::get_media_domain;
 use crate::http_server::validations::validate_idempotency_token_format::validate_idempotency_token_format;
@@ -39,7 +39,7 @@ pub async fn remove_image_background_handler(
   http_request: HttpRequest,
   request: Json<RemoveImageBackgroundRequest>,
   server_state: web::Data<Arc<ServerState>>
-) -> Result<Json<RemoveImageBackgroundResponse>, CommonWebError> {
+) -> Result<Json<RemoveImageBackgroundResponse>, AdvancedCommonWebError> {
   let mut mysql_connection = server_state.mysql_pool
       .acquire()
       .await?;
@@ -50,7 +50,7 @@ pub async fn remove_image_background_handler(
       .await
       .map_err(|e| {
         warn!("Session checker error: {:?}", e);
-        CommonWebError::ServerError
+        AdvancedCommonWebError::server_error_with_message("uncaught server error")
       })?;
 
   let maybe_avt_token = server_state
@@ -71,19 +71,19 @@ pub async fn remove_image_background_handler(
     Some(token) => token,
     None => {
       warn!("No media file token provided");
-      return Err(CommonWebError::BadInputWithSimpleMessage("No media file token provided".to_string()));
+      return Err(AdvancedCommonWebError::BadInputWithSimpleMessage("No media file token provided".to_string()));
     }
   };
 
   if let Err(reason) = validate_idempotency_token_format(&request.uuid_idempotency_token) {
-    return Err(CommonWebError::BadInputWithSimpleMessage(reason));
+    return Err(AdvancedCommonWebError::BadInputWithSimpleMessage(reason));
   }
 
   insert_idempotency_token(&request.uuid_idempotency_token, &mut *mysql_connection)
       .await
       .map_err(|err| {
         error!("Error inserting idempotency token: {:?}", err);
-        CommonWebError::BadInputWithSimpleMessage("invalid idempotency token".to_string())
+        AdvancedCommonWebError::BadInputWithSimpleMessage("invalid idempotency token".to_string())
       })?;
   const IS_MOD : bool = false;
   
@@ -97,16 +97,16 @@ pub async fn remove_image_background_handler(
     Ok(Some(media_file)) => media_file,
     Ok(None) => {
       warn!("MediaFile not found: {:?}", media_file_token);
-      return Err(CommonWebError::NotFound);
+      return Err(AdvancedCommonWebError::NotFound);
     },
     Err(err) => {
       warn!("Error looking up media_file: {:?}", err);
-      return Err(CommonWebError::ServerError);
+      return Err(AdvancedCommonWebError::server_error_with_message("uncaught server error"));
     }
   };
 
   if !media_file.media_type.is_jpg_or_png_or_legacy_image() {
-    return Err(CommonWebError::BadInputWithSimpleMessage("Media file must be a JPG or PNG image".to_string()));
+    return Err(AdvancedCommonWebError::BadInputWithSimpleMessage("Media file must be a JPG or PNG image".to_string()));
   }
   
   let media_domain = get_media_domain(&http_request);
@@ -135,13 +135,13 @@ pub async fn remove_image_background_handler(
       .await
       .map_err(|err| {
         warn!("Error calling remove_background_rembg_webhook: {:?}", err);
-        CommonWebError::ServerError
+        AdvancedCommonWebError::server_error_with_message("uncaught server error")
       })?;
 
   let external_job_id = fal_result.request_id
       .ok_or_else(|| {
         warn!("Fal request_id is None");
-        CommonWebError::ServerError
+        AdvancedCommonWebError::server_error_with_message("uncaught server error")
       })?;
   
   info!("Fal request_id: {}", external_job_id);
@@ -167,7 +167,7 @@ pub async fn remove_image_background_handler(
     Ok(token) => token,
     Err(err) => {
       warn!("Error inserting generic inference job for FAL queue: {:?}", err);
-      return Err(CommonWebError::ServerError);
+      return Err(AdvancedCommonWebError::server_error_with_message("uncaught server error"));
     }
   };
 

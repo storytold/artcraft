@@ -1,4 +1,4 @@
-use crate::http_server::common_responses::common_web_error::CommonWebError;
+use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
 use crate::http_server::common_responses::media::media_links_builder::MediaLinksBuilder;
 use crate::http_server::endpoints::media_files::helpers::get_media_domain::get_media_domain;
 use actix_web::HttpRequest;
@@ -18,7 +18,7 @@ pub async fn lookup_image_urls_as_map(
   mysql_connection: &mut PoolConnection<MySql>,
   server_environment: ServerEnvironment,
   tokens: &[MediaFileToken],
-) -> Result<HashMap<MediaFileToken, String>, CommonWebError> {
+) -> Result<HashMap<MediaFileToken, String>, AdvancedCommonWebError> {
   const CAN_SEE_DELETED: bool = false;
 
   let result = batch_get_media_files_by_tokens_with_connection(
@@ -31,7 +31,7 @@ pub async fn lookup_image_urls_as_map(
     Ok(files) => files,
     Err(err) => {
       error!("Error getting media files by tokens: {:?}", err);
-      return Err(CommonWebError::ServerError);
+      return Err(AdvancedCommonWebError::server_error_with_message("uncaught server error"));
     }
   };
 
@@ -45,7 +45,7 @@ pub async fn lookup_image_urls_as_map(
         .cloned()
         .collect::<Vec<&MediaFileToken>>();
 
-    return Err(CommonWebError::BadInputWithSimpleMessage(
+    return Err(AdvancedCommonWebError::BadInputWithSimpleMessage(
       format!("Not all media files could be found. Media files found: {}, tokens provided: {}, in original: {:?}, req {:?}, ret {:?}",
         media_files.len(), tokens.len(), diff, requested, returned)));
   }
