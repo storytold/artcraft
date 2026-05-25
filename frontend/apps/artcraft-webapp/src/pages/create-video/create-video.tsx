@@ -159,22 +159,33 @@ function buildSizePopoverItems(
   }));
 }
 
+// Effective max duration for the active input mode. Some models (e.g. Grok)
+// cap duration lower when image references are used — that's reference mode here.
+function maxDurationForMode(
+  model: OmniGenVideoModelInfo,
+  isReferenceMode: boolean,
+): number | null {
+  const imageRefMax = model.duration_seconds_max_with_image_references;
+  return isReferenceMode && imageRefMax != null
+    ? imageRefMax
+    : model.duration_seconds_max;
+}
+
 function resolveDurationForModel(
   model: OmniGenVideoModelInfo,
   current: number | null,
+  isReferenceMode: boolean,
 ): number | null {
   if (current == null) return model.duration_seconds_default ?? null;
-  if (
-    model.duration_seconds_min != null &&
-    model.duration_seconds_max != null
-  ) {
-    if (
-      current >= model.duration_seconds_min &&
-      current <= model.duration_seconds_max
-    ) {
+  const max = maxDurationForMode(model, isReferenceMode);
+  if (model.duration_seconds_min != null && max != null) {
+    if (current >= model.duration_seconds_min && current <= max) {
       return current;
     }
-    return model.duration_seconds_default ?? model.duration_seconds_min;
+    return Math.min(
+      model.duration_seconds_default ?? model.duration_seconds_min,
+      max,
+    );
   }
   if (model.duration_seconds_options?.length) {
     if (model.duration_seconds_options.includes(current)) return current;
@@ -316,10 +327,12 @@ export default function CreateVideo() {
     !!selectedModel?.starting_keyframe_supported ||
     !!selectedModel?.starting_keyframe_required ||
     !!selectedModel?.image_references_supported;
+  const supportsVideoRefs = !!selectedModel?.video_references_supported;
+  const supportsAudioRefs = !!selectedModel?.audio_references_supported;
   const supportsRefMode =
     !!selectedModel?.image_references_supported ||
-    !!selectedModel?.video_references_supported ||
-    !!selectedModel?.audio_references_supported;
+    supportsVideoRefs ||
+    supportsAudioRefs;
   const inputMode = ui.inputMode;
   const isReferenceMode = supportsRefMode && inputMode === "reference";
   const hasEndFrame = !!(
@@ -441,15 +454,13 @@ export default function CreateVideo() {
   );
   const durationRange = useMemo((): { min: number; max: number } | null => {
     if (!selectedModel) return null;
+    const max = maxDurationForMode(selectedModel, isReferenceMode);
     if (
       selectedModel.duration_seconds_min != null &&
-      selectedModel.duration_seconds_max != null &&
-      selectedModel.duration_seconds_max > selectedModel.duration_seconds_min
+      max != null &&
+      max > selectedModel.duration_seconds_min
     ) {
-      return {
-        min: selectedModel.duration_seconds_min,
-        max: selectedModel.duration_seconds_max,
-      };
+      return { min: selectedModel.duration_seconds_min, max };
     }
     if (
       selectedModel.duration_seconds_options &&
@@ -461,7 +472,7 @@ export default function CreateVideo() {
       return { min: opts[0]!, max: opts[opts.length - 1]! };
     }
     return null;
-  }, [selectedModel]);
+  }, [selectedModel, isReferenceMode]);
   const effectiveDuration =
     duration ?? selectedModel?.duration_seconds_default ?? 5;
   const [localDuration, setLocalDuration] = useState(effectiveDuration);
@@ -594,10 +605,6 @@ export default function CreateVideo() {
       const model = item.action ? _modelLookup.get(item.action) : undefined;
       if (!model) return;
       const currentState = useCreateVideoStore.getState().ui;
-      const nextDuration = resolveDurationForModel(
-        model,
-        currentState.duration,
-      );
 
       const newSupportsKeyframe =
         !!model.starting_keyframe_supported ||
@@ -611,6 +618,12 @@ export default function CreateVideo() {
         currentState.inputMode === "reference" && newSupportsRefs
           ? "reference"
           : "keyframe";
+
+      const nextDuration = resolveDurationForModel(
+        model,
+        currentState.duration,
+        nextInputMode === "reference",
+      );
 
       setUi({
         selectedModelId: model.model,
@@ -659,15 +672,22 @@ export default function CreateVideo() {
     (item: PopoverItem) => {
       const mode = item.label === "Reference" ? "reference" : "keyframe";
       if (mode === inputMode) return;
-      setUi({ inputMode: mode });
       if (mode === "reference") {
+        // Some models (e.g. Grok) cap duration lower in image-reference mode.
+        const cap = selectedModel?.duration_seconds_max_with_image_references;
+        const clamped = cap != null && (duration ?? 0) > cap ? cap : undefined;
+        setUi({
+          inputMode: mode,
+          ...(clamped != null ? { duration: clamped } : {}),
+        });
         setEndFrameImage(undefined);
       } else {
+        setUi({ inputMode: mode });
         setReferenceVideos([]);
         setReferenceAudios([]);
       }
     },
-    [inputMode, setUi],
+    [inputMode, duration, selectedModel, setUi],
   );
 
   const imagePickerMax = Math.max(
@@ -1030,8 +1050,10 @@ export default function CreateVideo() {
             }
             mentionItems={mentionItems.length > 0 ? mentionItems : undefined}
             mediaReferenceRow={
-              isReferenceMode ? (
+              isReferenceMode && (supportsVideoRefs || supportsAudioRefs) ? (
                 <MediaReferenceRow
+                  videoSupported={supportsVideoRefs}
+                  audioSupported={supportsAudioRefs}
                   referenceVideos={referenceVideos}
                   onReferenceVideosChange={setReferenceVideos}
                   maxVideoCount={selectedModel?.video_references_max ?? 3}

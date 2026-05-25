@@ -176,6 +176,7 @@ const MODEL_DISPLAY_NAMES: Record<string, string> = {
   seedream_5_lite: "Seedream 5 Lite",
   // Video models
   grok_video: "Grok Video",
+  grok_imagine_video: "Grok Imagine",
   kling_1p6_pro: "Kling 1.6 Pro",
   kling_2p1_pro: "Kling 2.1 Pro",
   kling_2p1_master: "Kling 2.1 Master",

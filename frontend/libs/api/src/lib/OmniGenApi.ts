@@ -124,6 +124,9 @@ export interface OmniGenVideoModelInfo {
   duration_seconds_default: number | null;
   duration_seconds_min: number | null;
   duration_seconds_max: number | null;
+  // Max duration when image references are used (e.g. Grok caps to 10s in
+  // reference mode while allowing the full duration_seconds_max in keyframe mode).
+  duration_seconds_max_with_image_references: number | null;
   starting_keyframe_supported: boolean | null;
   starting_keyframe_required: boolean | null;
   ending_keyframe_supported: boolean | null;
@@ -165,9 +168,7 @@ export interface OmniGenProviderEntry {
 /** Strip keys whose value is null or undefined so the server only sees
  *  fields that are explicitly set. */
 function stripNulls(obj: object): Record<string, unknown> {
-  return Object.fromEntries(
-    Object.entries(obj).filter(([, v]) => v != null),
-  );
+  return Object.fromEntries(Object.entries(obj).filter(([, v]) => v != null));
 }
 
 // ── API class ────────────────────────────────────────────────────────────

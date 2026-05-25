@@ -68,6 +68,7 @@ export const MODEL_TYPE_TO_CREATOR: Record<string, ModelCreator> = {
   marble_0p1_plus: ModelCreator.WorldLabs,
   grok_image: ModelCreator.Grok,
   grok_video: ModelCreator.Grok,
+  grok_imagine_video: ModelCreator.Grok,
   midjourney: ModelCreator.Midjourney,
   midjourney_v6: ModelCreator.Midjourney,
   midjourney_v6p1: ModelCreator.Midjourney,
@@ -155,6 +156,7 @@ export const getModelDisplayName = (modelType: string): string => {
     // Grok
     grok_image: "Grok Image",
     grok_video: "Grok Video",
+    grok_imagine_video: "Grok Imagine",
 
     // Flux — Black Forest Labs
     flux_1_dev: "Flux 1 Dev",

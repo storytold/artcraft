@@ -21,6 +21,8 @@ import {
 } from "./upload-media";
 
 interface MediaReferenceRowProps {
+  videoSupported: boolean;
+  audioSupported: boolean;
   referenceVideos: RefVideo[];
   onReferenceVideosChange: (videos: RefVideo[]) => void;
   maxVideoCount: number;
@@ -33,6 +35,8 @@ interface MediaReferenceRowProps {
 }
 
 export const MediaReferenceRow = ({
+  videoSupported,
+  audioSupported,
   referenceVideos,
   onReferenceVideosChange,
   maxVideoCount,
@@ -66,9 +70,7 @@ export const MediaReferenceRow = ({
     totalAudioDuration < maxAudioRefDuration &&
     !uploadingAudio;
 
-  const handleVideoUpload = async (
-    e: React.ChangeEvent<HTMLInputElement>,
-  ) => {
+  const handleVideoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     if (videoInputRef.current) videoInputRef.current.value = "";
     if (files.length === 0) return;
@@ -123,9 +125,7 @@ export const MediaReferenceRow = ({
     }
   };
 
-  const handleAudioUpload = async (
-    e: React.ChangeEvent<HTMLInputElement>,
-  ) => {
+  const handleAudioUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     if (audioInputRef.current) audioInputRef.current.value = "";
     if (files.length === 0) return;
@@ -214,101 +214,107 @@ export const MediaReferenceRow = ({
         onPointerDown={(e) => e.stopPropagation()}
       >
         {/* Video section */}
-        <div className="flex grow gap-2 px-3 py-2">
-          <div className="flex grow flex-col gap-1">
-            <div className="flex items-center gap-2 text-white/90">
-              <FontAwesomeIcon icon={faVideo} className="h-3.5 w-3.5" />
-              <span className="flex items-center gap-1.5 text-sm font-medium">
-                Video Ref
-                <span className="font-semibold text-white/60">
-                  ({referenceVideos.length}/{maxVideoCount})
+        {videoSupported && (
+          <div className="flex grow gap-2 px-3 py-2">
+            <div className="flex grow flex-col gap-1">
+              <div className="flex items-center gap-2 text-white/90">
+                <FontAwesomeIcon icon={faVideo} className="h-3.5 w-3.5" />
+                <span className="flex items-center gap-1.5 text-sm font-medium">
+                  Video Ref
+                  <span className="font-semibold text-white/60">
+                    ({referenceVideos.length}/{maxVideoCount})
+                  </span>
                 </span>
+              </div>
+              <span className="text-[13px] text-white/60">
+                {totalVideoDuration}/{maxVideoRefDuration}s
               </span>
             </div>
-            <span className="text-[13px] text-white/60">
-              {totalVideoDuration}/{maxVideoRefDuration}s
-            </span>
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            {referenceVideos.map((video) => (
-              <VideoRefTile
-                key={video.id}
-                video={video}
-                onRemove={removeVideo}
-              />
-            ))}
-            {uploadingVideo && (
-              <div className="flex aspect-square w-10 sm:w-14 items-center justify-center overflow-hidden rounded-lg border-2 border-white/30 bg-white/5">
-                <FontAwesomeIcon
-                  icon={faSpinnerThird}
-                  spin
-                  className="h-5 w-5 text-white/60"
+            <div className="flex flex-wrap items-center gap-2">
+              {referenceVideos.map((video) => (
+                <VideoRefTile
+                  key={video.id}
+                  video={video}
+                  onRemove={removeVideo}
                 />
-              </div>
-            )}
-            {canAddVideo && (
-              <button
-                onClick={() => videoInputRef.current?.click()}
-                className="flex aspect-square w-10 sm:w-14 items-center justify-center overflow-hidden rounded-lg border-2 border-dashed border-white/25 bg-white/5 transition-all hover:border-white/40 hover:bg-white/10"
-              >
-                <FontAwesomeIcon
-                  icon={faPlus}
-                  className="text-2xl text-white/80"
-                />
-              </button>
-            )}
+              ))}
+              {uploadingVideo && (
+                <div className="flex aspect-square w-10 sm:w-14 items-center justify-center overflow-hidden rounded-lg border-2 border-white/30 bg-white/5">
+                  <FontAwesomeIcon
+                    icon={faSpinnerThird}
+                    spin
+                    className="h-5 w-5 text-white/60"
+                  />
+                </div>
+              )}
+              {canAddVideo && (
+                <button
+                  onClick={() => videoInputRef.current?.click()}
+                  className="flex aspect-square w-10 sm:w-14 items-center justify-center overflow-hidden rounded-lg border-2 border-dashed border-white/25 bg-white/5 transition-all hover:border-white/40 hover:bg-white/10"
+                >
+                  <FontAwesomeIcon
+                    icon={faPlus}
+                    className="text-2xl text-white/80"
+                  />
+                </button>
+              )}
+            </div>
           </div>
-        </div>
+        )}
 
-        <div className="h-[1px] sm:h-auto sm:w-[1px] self-stretch bg-white/10 mx-3 sm:mx-0" />
+        {videoSupported && audioSupported && (
+          <div className="h-[1px] sm:h-auto sm:w-[1px] self-stretch bg-white/10 mx-3 sm:mx-0" />
+        )}
 
         {/* Audio section */}
-        <div className="flex grow gap-2 px-3 py-2">
-          <div className="flex grow flex-col gap-1">
-            <div className="flex items-center gap-2 text-white/90">
-              <FontAwesomeIcon icon={faMusic} className="h-3.5 w-3.5" />
-              <span className="flex items-center gap-1.5 text-sm font-medium">
-                Audio Ref
-                <span className="font-semibold text-white/60">
-                  ({referenceAudios.length}/{maxAudioCount})
+        {audioSupported && (
+          <div className="flex grow gap-2 px-3 py-2">
+            <div className="flex grow flex-col gap-1">
+              <div className="flex items-center gap-2 text-white/90">
+                <FontAwesomeIcon icon={faMusic} className="h-3.5 w-3.5" />
+                <span className="flex items-center gap-1.5 text-sm font-medium">
+                  Audio Ref
+                  <span className="font-semibold text-white/60">
+                    ({referenceAudios.length}/{maxAudioCount})
+                  </span>
                 </span>
+              </div>
+              <span className="text-[13px] text-white/60">
+                {totalAudioDuration}/{maxAudioRefDuration}s
               </span>
             </div>
-            <span className="text-[13px] text-white/60">
-              {totalAudioDuration}/{maxAudioRefDuration}s
-            </span>
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            {referenceAudios.map((audio, i) => (
-              <AudioRefTile
-                key={audio.id}
-                audio={audio}
-                index={i}
-                onRemove={removeAudio}
-              />
-            ))}
-            {uploadingAudio && (
-              <div className="flex aspect-square w-10 sm:w-14 items-center justify-center overflow-hidden rounded-lg border-2 border-white/30 bg-white/5">
-                <FontAwesomeIcon
-                  icon={faSpinnerThird}
-                  spin
-                  className="h-5 w-5 text-white/60"
+            <div className="flex flex-wrap items-center gap-2">
+              {referenceAudios.map((audio, i) => (
+                <AudioRefTile
+                  key={audio.id}
+                  audio={audio}
+                  index={i}
+                  onRemove={removeAudio}
                 />
-              </div>
-            )}
-            {canAddAudio && (
-              <button
-                onClick={() => audioInputRef.current?.click()}
-                className="flex aspect-square w-10 sm:w-14 items-center justify-center overflow-hidden rounded-lg border-2 border-dashed border-white/25 bg-white/5 transition-all hover:border-white/40 hover:bg-white/10"
-              >
-                <FontAwesomeIcon
-                  icon={faPlus}
-                  className="text-2xl text-white/80"
-                />
-              </button>
-            )}
+              ))}
+              {uploadingAudio && (
+                <div className="flex aspect-square w-10 sm:w-14 items-center justify-center overflow-hidden rounded-lg border-2 border-white/30 bg-white/5">
+                  <FontAwesomeIcon
+                    icon={faSpinnerThird}
+                    spin
+                    className="h-5 w-5 text-white/60"
+                  />
+                </div>
+              )}
+              {canAddAudio && (
+                <button
+                  onClick={() => audioInputRef.current?.click()}
+                  className="flex aspect-square w-10 sm:w-14 items-center justify-center overflow-hidden rounded-lg border-2 border-dashed border-white/25 bg-white/5 transition-all hover:border-white/40 hover:bg-white/10"
+                >
+                  <FontAwesomeIcon
+                    icon={faPlus}
+                    className="text-2xl text-white/80"
+                  />
+                </button>
+              )}
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </>
   );
