@@ -14,6 +14,7 @@ import {
   getReferralUsername,
   getReferrer,
 } from "@storyteller/common";
+import { GoogleLoginButton } from "./GoogleLoginButton";
 
 interface SignupFormProps {
   onSuccess: (isNewUser?: boolean) => void;
@@ -81,36 +82,16 @@ export const SignupForm = ({
     }
   };
 
-  //const handleGoogleSuccess = (isNewUser: boolean) => {
-  //  onSuccess(isNewUser);
-  //};
+  const handleGoogleSuccess = (isNewUser: boolean) => {
+    onSuccess(isNewUser);
+  };
 
-  //const handleGoogleError = (errorMessage: string) => {
-  //  setError(errorMessage);
-  //};
+  const handleGoogleError = (message: string) => {
+    setError(message);
+  };
 
   return (
     <div className={`space-y-4 ${className}`}>
-      {/* {showGoogleButton && (
-        <>
-          <GoogleLoginButton
-            mode="signup"
-            onSuccess={handleGoogleSuccess}
-            onError={handleGoogleError}
-          />
-
-          <div className="relative flex items-center justify-center py-2">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-white/10"></div>
-            </div>
-            <span className="relative bg-[#1C1C20] px-4 text-xs text-white/40 uppercase tracking-widest">
-              or
-            </span>
-          </div>
-        </>
-      )}
-      */}
-
       <form
         className="space-y-4"
         onSubmit={(e) => {
@@ -139,9 +120,11 @@ export const SignupForm = ({
         </div>
 
         <div className="space-y-2">
-          <label className="text-xs font-semibold text-white/70 ml-1">
-            Password
-          </label>
+          <div className="flex justify-between items-center ml-1">
+            <label className="text-xs font-semibold text-white/70">
+              Password
+            </label>
+          </div>
           <div className="relative">
             <Input
               type={showPassword ? "text" : "password"}
@@ -170,11 +153,26 @@ export const SignupForm = ({
             {isLoading ? (
               <FontAwesomeIcon icon={faSpinnerThird} className="animate-spin" />
             ) : (
-              "Create Account"
+              "Create account"
             )}
           </Button>
         </div>
       </form>
+
+      <div className="relative flex items-center justify-center py-2">
+        <div className="absolute inset-0 flex items-center">
+          <div className="w-full border-t border-white/10" />
+        </div>
+        <span className="relative bg-[#1C1C20] px-4 text-xs uppercase tracking-widest text-white/40">
+          or
+        </span>
+      </div>
+
+      <GoogleLoginButton
+        mode="signup"
+        onSuccess={handleGoogleSuccess}
+        onError={handleGoogleError}
+      />
     </div>
   );
 };

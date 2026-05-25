@@ -20,6 +20,7 @@ import Pricing from "../pages/pricing";
 import Support from "../pages/support/support";
 import Login from "../pages/login";
 import Signup from "../pages/signup";
+import { AuthLayout } from "../components/auth";
 import ForgotPassword, { VerifyReset } from "../pages/forgot-password";
 import Welcome from "../pages/welcome";
 import Onboarding from "../pages/onboarding";
@@ -118,9 +119,13 @@ export function App() {
     <>
       <ScrollToTop />
       <Routes>
-        {/* Public — no chrome, no auth gate */}
-        <Route path="/login" element={<Login />} />
-        <Route path="/signup" element={<Signup />} />
+        {/* Public — no chrome, no auth gate. login/signup share a layout route
+            so the showcase pane (and its video) stays mounted when toggling
+            between them. */}
+        <Route element={<AuthLayout />}>
+          <Route path="/login" element={<Login />} />
+          <Route path="/signup" element={<Signup />} />
+        </Route>
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/forgot-password/verify" element={<VerifyReset />} />
 

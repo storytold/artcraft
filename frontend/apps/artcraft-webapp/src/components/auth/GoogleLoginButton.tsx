@@ -57,9 +57,9 @@ export function GoogleLoginButton({
   };
 
   return (
-    <div className={`relative w-full h-12 ${className}`}>
+    <div className={`group relative w-full h-10 ${className}`}>
       {/* Custom visual button - shown behind */}
-      <div className="absolute inset-0 w-full h-full flex items-center justify-center gap-3 bg-white text-black rounded-lg font-medium border border-gray-200 hover:bg-gray-50 transition-colors">
+      <div className="absolute inset-0 w-full h-full flex items-center justify-center gap-3 bg-white text-black rounded-full font-medium border border-gray-200 group-hover:border-white/80 group-hover:bg-white/80 transition-colors">
         {isLoading ? (
           <FontAwesomeIcon
             icon={faSpinnerThird}
@@ -68,7 +68,7 @@ export function GoogleLoginButton({
         ) : (
           <>
             <GoogleIcon />
-            <span>Continue with Google</span>
+            <span className="text-sm font-semibold">Continue with Google</span>
           </>
         )}
       </div>

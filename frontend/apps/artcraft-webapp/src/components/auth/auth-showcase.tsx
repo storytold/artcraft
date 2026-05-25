@@ -4,7 +4,7 @@ const FEATURED_VIDEO_URL =
 export const AuthShowcase = () => {
   return (
     <div
-      className="absolute inset-0 overflow-hidden bg-black"
+      className="absolute inset-2 overflow-hidden bg-black rounded-2xl"
       style={{ containerType: "size" }}
     >
       {/* Vimeo background embed (no controls) scaled to cover the pane. The
