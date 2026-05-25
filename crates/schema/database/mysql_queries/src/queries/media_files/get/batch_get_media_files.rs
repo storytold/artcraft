@@ -311,6 +311,7 @@ SELECT
     m.maybe_duration_millis,
 
     m.maybe_prompt_token,
+    prompts.maybe_other_args as maybe_other_prompt_args,
 
     media_file_cover_image.public_bucket_directory_hash as maybe_file_cover_image_public_bucket_hash,
     media_file_cover_image.maybe_public_bucket_prefix as maybe_file_cover_image_public_bucket_prefix,
