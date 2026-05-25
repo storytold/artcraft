@@ -5,6 +5,7 @@ pub mod billing_fakeyou;
 pub mod characters;
 pub mod comments;
 pub mod credits;
+pub mod dev;
 pub mod download_job;
 pub mod featured_items;
 pub mod generate;

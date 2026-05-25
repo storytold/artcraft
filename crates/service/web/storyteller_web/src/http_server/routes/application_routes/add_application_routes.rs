@@ -3,6 +3,7 @@ use crate::http_server::routes::application_routes::billing_fakeyou_routes::add_
 use crate::http_server::routes::application_routes::character_routes::add_character_routes;
 use crate::http_server::routes::application_routes::comments_routes::add_comments_routes;
 use crate::http_server::routes::application_routes::credits_routes::add_credits_routes;
+use crate::http_server::routes::application_routes::dev_routes::add_dev_routes;
 use crate::http_server::routes::application_routes::featured_item_routes::add_featured_item_routes;
 use crate::http_server::routes::application_routes::generate_routes::add_generate_routes;
 use crate::http_server::routes::application_routes::job_routes::add_job_routes;
@@ -63,6 +64,7 @@ where
   // Other useful tools
   app = add_analytics_routes(app); // /v1/analytics/...
   app = add_web_referrals_routes(app); // /v1/web_referrals/...
+  app = add_dev_routes(app); // /v1/dev/... — dev-only error/response shape probes
 
   // User and user-adjacent routes
   app = add_comments_routes(app); // /v1/comments/...
