@@ -4,10 +4,7 @@ import type { OmniGenImageModelInfo } from "@storyteller/api";
 import { PopoverMenu, type PopoverItem } from "@storyteller/ui-popover";
 import { Tooltip } from "@storyteller/ui-tooltip";
 import { GalleryModal, type GalleryItem } from "@storyteller/ui-gallery-modal";
-import {
-  PromptBox,
-  type RefImage,
-} from "../../components/prompt-box";
+import { PromptBox, type RefImage } from "../../components/prompt-box";
 import {
   GenerationGalleryGrid,
   useGalleryData,
@@ -391,7 +388,7 @@ export default function CreateImage() {
       promptBox={
         <div
           ref={promptBoxRef}
-          className="animate-fade-in-up fixed bottom-2 sm:bottom-3 right-0 z-30 mx-auto w-full max-w-[900px] px-2 sm:px-4 transition-[left] duration-200 ease-linear"
+          className="animate-fade-in-up fixed bottom-2 sm:bottom-3 right-0 z-30 mx-auto w-full max-w-5xl px-2 sm:px-4 transition-[left] duration-200 ease-linear"
           style={{
             animationDelay: "150ms",
             left: "var(--ac-sidebar-offset, 0px)",
@@ -410,7 +407,12 @@ export default function CreateImage() {
             onReferenceImagesChange={setReferenceImages}
             onPickFromLibrary={() => setIsImagePickerOpen(true)}
             modelSelector={
-              <Tooltip content="Model" position="top" className="z-50" closeOnClick>
+              <Tooltip
+                content="Model"
+                position="top"
+                className="z-50"
+                closeOnClick
+              >
                 <PopoverMenu
                   items={modelItems}
                   onSelect={handleModelChange}
@@ -455,9 +457,7 @@ export default function CreateImage() {
                 {hasQualityOptions && selectedModel && (
                   <QualityPicker
                     qualityOptions={selectedModel.quality_options ?? []}
-                    defaultQuality={
-                      selectedModel.default_quality ?? undefined
-                    }
+                    defaultQuality={selectedModel.default_quality ?? undefined}
                     currentQuality={quality}
                     handleQualitySelect={setQuality}
                   />

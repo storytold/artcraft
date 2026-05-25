@@ -50,6 +50,13 @@ import { useSignupCta } from "../../components/signup-cta-modal";
 
 const DEFAULT_MODEL_ID = "seedance_2p0";
 
+// Models where character @-mentions are intentionally held back in the UI for now,
+// even though the API reports character_references_supported. Remove an entry to enable.
+const CHARACTERS_DISABLED_MODEL_IDS = new Set([
+  "seedance_2p0_bp", // Seedance 2.0 Plus
+  "seedance_2p0_bp_fast", // Seedance 2.0 Plus Fast
+]);
+
 const VIDEO_FILTER = [FilterMediaClasses.VIDEO];
 
 const AUTO_RATIOS = new Set(["auto", "auto_2k", "auto_3k", "auto_4k"]);
@@ -398,11 +405,12 @@ export default function CreateVideo() {
     generateAudio: hasSound ? generateWithSound : undefined,
   });
 
-  // Characters are supported for Seedance 2.0 and Seedance 2.0 Fast, in
-  // both keyframe and reference input modes.
+  // Character @-mentions are driven by the model's capability flag (set by the
+  // API), in both keyframe and reference input modes — except models we're
+  // intentionally holding back for now (see CHARACTERS_DISABLED_MODEL_IDS).
   const supportsCharacters =
-    selectedModel?.model === "seedance_2p0" ||
-    selectedModel?.model === "seedance_2p0_fast";
+    !!selectedModel?.character_references_supported &&
+    !CHARACTERS_DISABLED_MODEL_IDS.has(selectedModel?.model ?? "");
   const activeCharacters = supportsCharacters ? storedCharacters : [];
 
   // Popover items
@@ -975,7 +983,7 @@ export default function CreateVideo() {
       promptBox={
         <div
           ref={promptBoxRef}
-          className="animate-fade-in-up fixed bottom-2 sm:bottom-3 right-0 z-30 mx-auto w-full max-w-[900px] px-2 sm:px-4 transition-[left] duration-200 ease-linear"
+          className="animate-fade-in-up fixed bottom-2 sm:bottom-3 right-0 z-30 mx-auto w-full max-w-5xl px-2 sm:px-4 transition-[left] duration-200 ease-linear"
           style={{
             animationDelay: "150ms",
             left: "var(--ac-sidebar-offset, 0px)",

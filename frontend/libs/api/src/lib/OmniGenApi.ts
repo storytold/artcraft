@@ -139,6 +139,8 @@ export interface OmniGenVideoModelInfo {
   audio_references_supported: boolean | null;
   audio_references_max: number | null;
   audio_references_max_total_duration_seconds: number | null;
+  character_references_supported: boolean | null;
+  character_references_max: number | null;
   text_prompt_supported: boolean | null;
   text_prompt_max_length: number | null;
   negative_text_prompt_supported: boolean | null;

@@ -34,6 +34,8 @@ export const MODEL_TYPE_TO_CREATOR: Record<string, ModelCreator> = {
   seedance_1p5_pro: ModelCreator.Bytedance,
   seedance_2p0: ModelCreator.Bytedance,
   seedance_2p0_fast: ModelCreator.Bytedance,
+  seedance_2p0_bp: ModelCreator.Bytedance,
+  seedance_2p0_bp_fast: ModelCreator.Bytedance,
   // Seedance — dot-normalized aliases
   seedance_1_0_lite: ModelCreator.Bytedance,
   // Seedream
@@ -195,6 +197,8 @@ export const getModelDisplayName = (modelType: string): string => {
     seedance_1p5_pro: "Seedance 1.5 Pro",
     seedance_2p0: "Seedance 2.0",
     seedance_2p0_fast: "Seedance 2.0 Fast",
+    seedance_2p0_bp: "Seedance 2.0 Plus",
+    seedance_2p0_bp_fast: "Seedance 2.0 Plus Fast",
     // Seedance — dot-normalized aliases
     seedance_1_0_lite: "Seedance 1.0 Lite",
 
