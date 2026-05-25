@@ -248,27 +248,7 @@ impl ResponseError for CommonWebError {
             })
       }
       Self::BadInputTailoredResponse(payload) => {
-        // Body is the caller-supplied serializable struct — no envelope.
-        // `serde_json::to_vec` accepts `&dyn erased_serde::Serialize`.
-        match serde_json::to_vec(payload) {
-          Ok(bytes) => {
-            HttpResponseBuilder::new(status)
-                .insert_header(("Content-Type", "application/json"))
-                .body(bytes)
-          }
-          Err(err) => {
-            // Serialization failed (rare — non-string Map keys, etc.).
-            // Fall back to a generic 500 so the failure is observable
-            // rather than producing a corrupt 400 body.
-            log::error!("BadInputTailoredResponse serialization failed: {:?}", err);
-            HttpResponseBuilder::new(StatusCode::INTERNAL_SERVER_ERROR)
-                .json(JsonErrorWithoutMessage {
-                  success: false,
-                  error_code: 500,
-                  error_code_str: Some("Internal Server Error"),
-                })
-          }
-        }
+        HttpResponse::BadRequest().json(payload)
       }
       Self::ContentPolicyRejected => {
         HttpResponseBuilder::new(status)
