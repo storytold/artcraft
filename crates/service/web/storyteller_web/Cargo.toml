@@ -175,6 +175,7 @@ magic-crypt = "3.1.13" # encrypting sort IDs for the frontend so we don't leak i
 md-5 = "0.10.6" # gravatar
 
 # Serialization
+erased-serde.workspace = true
 serde.workspace = true
 serde_derive.workspace = true
 serde_json.workspace = true

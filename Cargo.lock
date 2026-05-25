@@ -11542,6 +11542,7 @@ dependencies = [
  "elasticsearch",
  "elasticsearch_schema",
  "enums",
+ "erased-serde",
  "error_utils",
  "errors",
  "fal_client",

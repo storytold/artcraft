@@ -38,7 +38,7 @@ pub async fn dev_input_error_handler() -> Result<HttpResponse, CommonWebError> {
     ],
   };
 
-  Err(CommonWebError::bad_input_tailored_response(&body))
+  Err(CommonWebError::bad_input_tailored_response(body))
 }
 
 #[derive(Serialize)]

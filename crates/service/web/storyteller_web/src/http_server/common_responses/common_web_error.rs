@@ -39,9 +39,16 @@ pub enum CommonWebError {
   BadInputWithSimpleMessage(String),
 
   /// 400 Bad Request with an endpoint-specific JSON body.
-  /// The body is whatever the caller serialized (e.g. a per-field validation
-  /// failure list). Construct via [`CommonWebError::bad_input_tailored_response`].
-  BadInputTailoredResponse(serde_json::Value),
+  /// The caller hands over any `Serialize` struct; the middleware writes it
+  /// directly as the response body with `Content-Type: application/json`.
+  /// Construct via [`CommonWebError::bad_input_tailored_response`].
+  ///
+  /// Stored as `Arc<dyn erased_serde::Serialize + Send + Sync + 'static>`:
+  /// `serde::Serialize` isn't object-safe (its method is generic over
+  /// `Serializer`), so we use `erased_serde::Serialize` — a sibling trait
+  /// with a non-generic method, auto-implemented for every `T: Serialize`.
+  /// `Arc` (instead of `Box`) keeps the enum `Clone`.
+  BadInputTailoredResponse(Arc<dyn erased_serde::Serialize + Send + Sync + 'static>),
 
   /// 401 Unauthorized.
   NotAuthorized,
@@ -106,16 +113,18 @@ impl CommonWebError {
   ///
   /// Use this when an endpoint needs to return a structured validation payload
   /// (per-field errors, etc.) rather than the generic `{success, error_code, message}`
-  /// envelope used by [`BadInputWithSimpleMessage`].
+  /// envelope used by [`BadInputWithSimpleMessage`]. The caller passes its own
+  /// `Serialize` type directly — no envelope, no `serde_json::Value` boxing
+  /// at the callsite.
+  /// Build a 400 Bad Request whose body is the JSON-serialized form of `body`.
   ///
-  /// If serialization fails (rare — usually only when a `Map` has non-string keys),
-  /// falls back to an [`UncaughtServerError`] so the failure is paged and the
-  /// caller never sees a corrupt response.
-  pub fn bad_input_tailored_response<T: Serialize>(body: &T) -> Self {
-    match serde_json::to_value(body) {
-      Ok(value) => Self::BadInputTailoredResponse(value),
-      Err(err) => Self::from_error(err),
-    }
+  /// The caller passes its typed struct directly. Serialization is deferred to
+  /// response time, when the middleware writes the JSON straight onto the wire.
+  pub fn bad_input_tailored_response<T>(body: T) -> Self
+  where
+    T: Serialize + Send + Sync + 'static,
+  {
+    Self::BadInputTailoredResponse(Arc::new(body))
   }
 
   /// Extract the wrapped causal error (only present for `UncaughtServerError`).
@@ -153,7 +162,12 @@ impl Display for CommonWebError {
   fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
     match self {
       Self::BadInputWithSimpleMessage(msg) => write!(f, "Bad input: {}", msg),
-      Self::BadInputTailoredResponse(value) => write!(f, "Bad input (tailored): {}", value),
+      Self::BadInputTailoredResponse(payload) => {
+        match serde_json::to_string(payload) {
+          Ok(s) => write!(f, "Bad input (tailored): {}", s),
+          Err(_) => write!(f, "Bad input (tailored): <unserializable payload>"),
+        }
+      }
       Self::NotAuthorized => write!(f, "Not authorized"),
       Self::NotFound => write!(f, "Not found"),
       Self::PaymentRequired => write!(f, "Payment required"),
@@ -172,7 +186,12 @@ impl std::fmt::Debug for CommonWebError {
   fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
     match self {
       Self::BadInputWithSimpleMessage(msg) => write!(f, "BadInputWithSimpleMessage({:?})", msg),
-      Self::BadInputTailoredResponse(value) => write!(f, "BadInputTailoredResponse({})", value),
+      Self::BadInputTailoredResponse(payload) => {
+        match serde_json::to_string(payload) {
+          Ok(s) => write!(f, "BadInputTailoredResponse({})", s),
+          Err(_) => write!(f, "BadInputTailoredResponse(<unserializable>)"),
+        }
+      }
       Self::NotAuthorized => write!(f, "NotAuthorized"),
       Self::NotFound => write!(f, "NotFound"),
       Self::PaymentRequired => write!(f, "PaymentRequired"),
@@ -228,10 +247,28 @@ impl ResponseError for CommonWebError {
               message: msg,
             })
       }
-      Self::BadInputTailoredResponse(value) => {
-        // The body is whatever the caller serialized — no envelope.
-        // `.json(...)` sets Content-Type: application/json automatically.
-        HttpResponse::BadRequest().json(value)
+      Self::BadInputTailoredResponse(payload) => {
+        // Body is the caller-supplied serializable struct — no envelope.
+        // `serde_json::to_vec` accepts `&dyn erased_serde::Serialize`.
+        match serde_json::to_vec(payload) {
+          Ok(bytes) => {
+            HttpResponseBuilder::new(status)
+                .insert_header(("Content-Type", "application/json"))
+                .body(bytes)
+          }
+          Err(err) => {
+            // Serialization failed (rare — non-string Map keys, etc.).
+            // Fall back to a generic 500 so the failure is observable
+            // rather than producing a corrupt 400 body.
+            log::error!("BadInputTailoredResponse serialization failed: {:?}", err);
+            HttpResponseBuilder::new(StatusCode::INTERNAL_SERVER_ERROR)
+                .json(JsonErrorWithoutMessage {
+                  success: false,
+                  error_code: 500,
+                  error_code_str: Some("Internal Server Error"),
+                })
+          }
+        }
       }
       Self::ContentPolicyRejected => {
         HttpResponseBuilder::new(status)
@@ -425,7 +462,7 @@ mod tests {
       count: u32,
     }
 
-    let error = CommonWebError::bad_input_tailored_response(&Sample {
+    let error = CommonWebError::bad_input_tailored_response(Sample {
       reason: "no good",
       count: 3,
     });
