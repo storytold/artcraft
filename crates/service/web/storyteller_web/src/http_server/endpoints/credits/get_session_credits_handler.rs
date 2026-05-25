@@ -45,7 +45,7 @@ pub async fn get_session_credits_handler(
       .await
       .map_err(|err| {
         error!("Error acquiring MySQL connection: {:?}", err);
-        AdvancedCommonWebError::server_error_with_message("uncaught server error")
+        AdvancedCommonWebError::from_error(err)
       })?;
 
   let maybe_user_session = server_state
@@ -54,7 +54,7 @@ pub async fn get_session_credits_handler(
       .await
       .map_err(|e| {
         warn!("Session checker error: {:?}", e);
-        AdvancedCommonWebError::server_error_with_message("uncaught server error")
+        AdvancedCommonWebError::from_error(e)
       })?;
 
   let user_token = match maybe_user_session {
@@ -68,7 +68,7 @@ pub async fn get_session_credits_handler(
     &mut mysql_connection,
   ).await.map_err(|err| {
     error!("Error finding primary wallet for user: {:?}, error: {:?}", user_token, err);
-    AdvancedCommonWebError::server_error_with_message("uncaught server error")
+    AdvancedCommonWebError::from_error(err)
   })?;
 
   let free_credits = 0u64;

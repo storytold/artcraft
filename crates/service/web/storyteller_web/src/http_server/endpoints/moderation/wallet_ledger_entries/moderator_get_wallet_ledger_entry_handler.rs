@@ -44,7 +44,7 @@ pub async fn moderator_get_wallet_ledger_entry_handler(
     .await
     .map_err(|err| {
       warn!("moderator_get_wallet_ledger_entry error: {:?}", err);
-      AdvancedCommonWebError::server_error_with_message("uncaught server error")
+      AdvancedCommonWebError::from_anyhow_error(err)
     })?;
 
   let maybe_entry_details = maybe_entry.map(|entry| ModeratorGetWalletLedgerEntryDetails {

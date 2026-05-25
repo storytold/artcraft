@@ -49,7 +49,7 @@ pub async fn moderator_create_wallet_for_user_handler(
     .await
     .map_err(|err| {
       warn!("moderator_create_wallet_for_user user lookup error: {:?}", err);
-      AdvancedCommonWebError::server_error_with_message("uncaught server error")
+      AdvancedCommonWebError::from_error(err)
     })?;
 
   if maybe_user.is_none() {
@@ -64,7 +64,7 @@ pub async fn moderator_create_wallet_for_user_handler(
     .await
     .map_err(|err| {
       error!("Error acquiring MySQL connection: {:?}", err);
-      AdvancedCommonWebError::server_error_with_message("uncaught server error")
+      AdvancedCommonWebError::from_error(err)
     })?;
 
   let maybe_wallet_token = find_primary_wallet_token_for_owner_using_connection(
@@ -73,7 +73,7 @@ pub async fn moderator_create_wallet_for_user_handler(
     &mut mysql_connection,
   ).await.map_err(|err| {
     error!("Error finding wallet for user {:?}: {:?}", user_token, err);
-    AdvancedCommonWebError::server_error_with_message("uncaught server error")
+    AdvancedCommonWebError::from_error(err)
   })?;
 
   if let Some(wallet_token) = maybe_wallet_token {
@@ -89,7 +89,7 @@ pub async fn moderator_create_wallet_for_user_handler(
     .await
     .map_err(|err| {
       error!("Error starting MySQL transaction: {:?}", err);
-      AdvancedCommonWebError::server_error_with_message("uncaught server error")
+      AdvancedCommonWebError::from_error(err)
     })?;
 
   let wallet_token = create_new_wallet_for_owner_user(
@@ -98,7 +98,7 @@ pub async fn moderator_create_wallet_for_user_handler(
     &mut transaction,
   ).await.map_err(|err| {
     error!("Error creating wallet for user {:?}: {:?}", user_token, err);
-    AdvancedCommonWebError::server_error_with_message("uncaught server error")
+    AdvancedCommonWebError::from_error(err)
   })?;
 
   transaction
@@ -106,7 +106,7 @@ pub async fn moderator_create_wallet_for_user_handler(
     .await
     .map_err(|err| {
       error!("Error committing MySQL transaction: {:?}", err);
-      AdvancedCommonWebError::server_error_with_message("uncaught server error")
+      AdvancedCommonWebError::from_error(err)
     })?;
 
   Ok(Json(ModeratorCreateWalletForUserResponse {

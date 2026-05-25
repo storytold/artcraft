@@ -44,7 +44,7 @@ pub async fn list_wallet_ledger_entries_by_wallet_handler(
     .await
     .map_err(|err| {
       warn!("list_wallet_ledger_entries_by_wallet error: {:?}", err);
-      AdvancedCommonWebError::server_error_with_message("uncaught server error")
+      AdvancedCommonWebError::from_anyhow_error(err)
     })?;
 
   let entries = results.into_iter().map(|row| ListWalletLedgerEntriesByWalletEntry {

@@ -44,7 +44,7 @@ pub async fn moderator_get_wallet_handler(
     .await
     .map_err(|err| {
       warn!("moderator_get_wallet error: {:?}", err);
-      AdvancedCommonWebError::server_error_with_message("uncaught server error")
+      AdvancedCommonWebError::from_anyhow_error(err)
     })?;
 
   let maybe_wallet_details = maybe_wallet.map(|wallet| ModeratorGetWalletDetails {

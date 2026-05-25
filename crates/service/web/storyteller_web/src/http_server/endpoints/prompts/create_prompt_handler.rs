@@ -45,7 +45,7 @@ pub async fn create_prompt_handler(
       .await
       .map_err(|e| {
         warn!("Session checker error: {:?}", e);
-        AdvancedCommonWebError::server_error_with_message("uncaught server error")
+        AdvancedCommonWebError::from_error(e)
       })?;
 
   //let maybe_avt_token = server_state
@@ -95,7 +95,7 @@ pub async fn create_prompt_handler(
     Ok(token) => token,
     Err(err) => {
       error!("error inserting prompt: {:?}", err);
-      return Err(AdvancedCommonWebError::server_error_with_message("uncaught server error"));
+      return Err(AdvancedCommonWebError::from_anyhow_error(err));
     }
   };
 

@@ -22,7 +22,7 @@ pub async fn fetch_all_required_media_files(
     Ok(files) => files,
     Err(err) => {
       error!("Error getting media files by tokens: {:?}", err);
-      return Err(AdvancedCommonWebError::server_error_with_message("uncaught server error"));
+      return Err(AdvancedCommonWebError::from_anyhow_error(err));
     }
   };
 

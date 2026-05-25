@@ -48,7 +48,7 @@ pub async fn delete_media_file_handler(
         .await
         .map_err(|e| {
             warn!("Session checker error: {:?}", e);
-            AdvancedCommonWebError::server_error_with_message("uncaught server error")
+            AdvancedCommonWebError::from_error(e)
         })?;
 
     let user_session = match maybe_user_session {
@@ -75,7 +75,7 @@ pub async fn delete_media_file_handler(
         },
         Err(err) => {
             warn!("Error looking up media_file: {:?}", err);
-            return Err(AdvancedCommonWebError::server_error_with_message("uncaught server error"));
+            return Err(AdvancedCommonWebError::from_anyhow_error(err));
         }
     };
 
@@ -136,7 +136,7 @@ pub async fn delete_media_file_handler(
         Ok(_) => {},
         Err(err) => {
             warn!("Update media_file mod approval status DB error: {:?}", err);
-            return Err(AdvancedCommonWebError::server_error_with_message("uncaught server error"));
+            return Err(AdvancedCommonWebError::from_anyhow_error(err));
         }
     };
 

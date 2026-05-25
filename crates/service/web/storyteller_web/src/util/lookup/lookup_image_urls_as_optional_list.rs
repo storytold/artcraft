@@ -31,7 +31,7 @@ pub async fn lookup_image_urls_as_optional_list(
     Ok(files) => files,
     Err(err) => {
       error!("Error getting media files by tokens: {:?}", err);
-      return Err(AdvancedCommonWebError::server_error_with_message("uncaught server error"));
+      return Err(AdvancedCommonWebError::from_anyhow_error(err));
     }
   };
 

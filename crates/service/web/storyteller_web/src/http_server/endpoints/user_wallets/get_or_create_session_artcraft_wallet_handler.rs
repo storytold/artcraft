@@ -39,7 +39,7 @@ pub async fn get_or_create_session_artcraft_wallet_handler(
       .await
       .map_err(|err| {
         error!("Error acquiring MySQL connection: {:?}", err);
-        AdvancedCommonWebError::server_error_with_message("uncaught server error")
+        AdvancedCommonWebError::from_error(err)
       })?;
 
   let maybe_user_session = server_state
@@ -48,7 +48,7 @@ pub async fn get_or_create_session_artcraft_wallet_handler(
       .await
       .map_err(|e| {
         warn!("Session checker error: {:?}", e);
-        AdvancedCommonWebError::server_error_with_message("uncaught server error")
+        AdvancedCommonWebError::from_error(e)
       })?;
 
   let user_token = match maybe_user_session {
@@ -62,7 +62,7 @@ pub async fn get_or_create_session_artcraft_wallet_handler(
     &mut mysql_connection,
   ).await.map_err(|err| {
     error!("Error finding primary artcraft wallet for user {:?}: {:?}", user_token, err);
-    AdvancedCommonWebError::server_error_with_message("uncaught server error")
+    AdvancedCommonWebError::from_error(err)
   })?;
 
   if let Some(wallet_token) = maybe_wallet_token {
@@ -77,7 +77,7 @@ pub async fn get_or_create_session_artcraft_wallet_handler(
       .await
       .map_err(|err| {
         error!("Error starting MySQL transaction: {:?}", err);
-        AdvancedCommonWebError::server_error_with_message("uncaught server error")
+        AdvancedCommonWebError::from_error(err)
       })?;
 
   let wallet_token = create_new_artcraft_wallet_for_owner_user(
@@ -85,7 +85,7 @@ pub async fn get_or_create_session_artcraft_wallet_handler(
     &mut transaction,
   ).await.map_err(|err| {
     error!("Error creating artcraft wallet for user {:?}: {:?}", user_token, err);
-    AdvancedCommonWebError::server_error_with_message("uncaught server error")
+    AdvancedCommonWebError::from_error(err)
   })?;
 
   transaction
@@ -93,7 +93,7 @@ pub async fn get_or_create_session_artcraft_wallet_handler(
       .await
       .map_err(|err| {
         error!("Error committing MySQL transaction: {:?}", err);
-        AdvancedCommonWebError::server_error_with_message("uncaught server error")
+        AdvancedCommonWebError::from_error(err)
       })?;
 
   Ok(Json(GetOrCreateSessionArtcraftWalletResponse {

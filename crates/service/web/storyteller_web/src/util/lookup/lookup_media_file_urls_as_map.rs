@@ -32,7 +32,7 @@ pub async fn lookup_media_file_urls_as_map(
     Ok(files) => files,
     Err(err) => {
       error!("Error getting media files by tokens: {:?}", err);
-      return Err(AdvancedCommonWebError::server_error_with_message("uncaught server error"));
+      return Err(AdvancedCommonWebError::from_anyhow_error(err));
     }
   };
 

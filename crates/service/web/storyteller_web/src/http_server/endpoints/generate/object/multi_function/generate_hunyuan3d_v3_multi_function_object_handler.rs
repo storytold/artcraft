@@ -72,7 +72,7 @@ pub async fn generate_hunyuan3d_v3_multi_function_object_handler(
     .await
     .map_err(|e| {
       warn!("Session checker error: {:?}", e);
-      AdvancedCommonWebError::server_error_with_message("uncaught server error")
+      AdvancedCommonWebError::from_error(e)
     })?;
 
   let maybe_avt_token = server_state
@@ -196,7 +196,7 @@ pub async fn generate_hunyuan3d_v3_multi_function_object_handler(
             "Error calling enqueue_hunyuan3d_v3_text_to_3d_webhook: {:?}",
             err
           );
-          AdvancedCommonWebError::server_error_with_message("uncaught server error")
+          AdvancedCommonWebError::from_error(err)
         })?
     }
 
@@ -237,7 +237,7 @@ pub async fn generate_hunyuan3d_v3_multi_function_object_handler(
             "Error calling enqueue_hunyuan3d_v3_sketch_to_3d_webhook: {:?}",
             err
           );
-          AdvancedCommonWebError::server_error_with_message("uncaught server error")
+          AdvancedCommonWebError::from_error(err)
         })?
     }
 
@@ -280,7 +280,7 @@ pub async fn generate_hunyuan3d_v3_multi_function_object_handler(
             "Error calling enqueue_hunyuan3d_v3_image_to_3d_webhook: {:?}",
             err
           );
-          AdvancedCommonWebError::server_error_with_message("uncaught server error")
+          AdvancedCommonWebError::from_error(err)
         })?
     }
 
@@ -294,7 +294,7 @@ pub async fn generate_hunyuan3d_v3_multi_function_object_handler(
 
   let external_job_id = fal_result.request_id.ok_or_else(|| {
     warn!("Fal request_id is None");
-    AdvancedCommonWebError::server_error_with_message("uncaught server error")
+    AdvancedCommonWebError::server_error_with_message("Fal request_id is None")
   })?;
 
   info!("Fal request_id: {}", external_job_id);
@@ -303,7 +303,7 @@ pub async fn generate_hunyuan3d_v3_multi_function_object_handler(
 
   let mut transaction = mysql_connection.begin().await.map_err(|err| {
     error!("Error starting MySQL transaction: {:?}", err);
-    AdvancedCommonWebError::server_error_with_message("uncaught server error")
+    AdvancedCommonWebError::from_error(err)
   })?;
 
   // Insert prompt record if we have a prompt
@@ -403,13 +403,13 @@ pub async fn generate_hunyuan3d_v3_multi_function_object_handler(
         "Error inserting generic inference job for FAL queue: {:?}",
         err
       );
-      return Err(AdvancedCommonWebError::server_error_with_message("uncaught server error"));
+      return Err(AdvancedCommonWebError::from_error(err));
     }
   };
 
   let _r = transaction.commit().await.map_err(|err| {
     error!("Error committing MySQL transaction: {:?}", err);
-    AdvancedCommonWebError::server_error_with_message("uncaught server error")
+    AdvancedCommonWebError::from_error(err)
   })?;
 
   Ok(Json(Hunyuan3dV3MultiFunctionObjectGenResponse {

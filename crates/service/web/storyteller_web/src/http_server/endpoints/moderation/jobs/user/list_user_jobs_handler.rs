@@ -44,7 +44,7 @@ pub async fn list_user_jobs_handler(
     .await
     .map_err(|err| {
       warn!("list_user_jobs error: {:?}", err);
-      AdvancedCommonWebError::server_error_with_message("uncaught server error")
+      AdvancedCommonWebError::from_anyhow_error(err)
     })?;
 
   let jobs = results.into_iter().map(|row| ListUserJobsEntry {

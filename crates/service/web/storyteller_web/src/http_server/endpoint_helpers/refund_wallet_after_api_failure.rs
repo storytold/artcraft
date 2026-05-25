@@ -13,7 +13,7 @@ pub async fn refund_wallet_after_api_failure(
       "Failed to begin refund transaction after API failure (ledger {}): {:?}",
       ledger_entry_token.as_str(), err
     );
-    AdvancedCommonWebError::server_error_with_message("uncaught server error")
+    AdvancedCommonWebError::from_error(err)
   })?;
 
   match try_to_refund_ledger_entry(ledger_entry_token, &mut transaction).await {
@@ -29,7 +29,7 @@ pub async fn refund_wallet_after_api_failure(
           "Failed to commit refund after API failure (ledger {}): {:?}",
           ledger_entry_token.as_str(), err
         );
-        AdvancedCommonWebError::server_error_with_message("uncaught server error")
+        AdvancedCommonWebError::from_error(err)
       })?;
     }
     Ok(WalletRefundOutcome::AlreadyRefunded) => {
@@ -45,7 +45,7 @@ pub async fn refund_wallet_after_api_failure(
         ledger_entry_token.as_str(), err
       );
       let _ = transaction.rollback().await;
-      return Err(AdvancedCommonWebError::server_error_with_message("uncaught server error"));
+      return Err(AdvancedCommonWebError::from_error(err));
     }
   }
 

@@ -50,7 +50,7 @@ pub async fn moderator_user_lookup_by_stripe_customer_id_handler(
     .await
     .map_err(|err| {
       warn!("moderator_user_lookup_by_stripe_customer_id error: {:?}", err);
-      AdvancedCommonWebError::server_error_with_message("uncaught server error")
+      AdvancedCommonWebError::from_anyhow_error(err)
     })?;
 
   let users = results.into_iter().map(|row| ModeratorUserLookupByStripeCustomerIdEntry {

@@ -49,7 +49,7 @@ pub async fn moderator_list_subscribing_users_by_signup_date_handler(
   ).await
     .map_err(|err| {
       warn!("moderator_list_subscribing_users_by_signup_date error: {:?}", err);
-      AdvancedCommonWebError::server_error_with_message("uncaught server error")
+      AdvancedCommonWebError::from_anyhow_error(err)
     })?;
 
   let users = result.users.into_iter().map(|u| ModeratorListSubscribingUsersBySignupDateEntry {

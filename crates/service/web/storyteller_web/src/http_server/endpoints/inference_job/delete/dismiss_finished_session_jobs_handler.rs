@@ -37,7 +37,7 @@ pub async fn dismiss_finished_session_jobs_handler(
       .await
       .map_err(|e| {
         error!("Could not acquire DB pool: {:?}", e);
-        AdvancedCommonWebError::server_error_with_message("uncaught server error")
+        AdvancedCommonWebError::from_error(e)
       })?;
 
   let user_session = require_user_session_using_connection(
@@ -48,7 +48,7 @@ pub async fn dismiss_finished_session_jobs_handler(
       .await
       .map_err(|err| {
         error!("tts job query error: {:?}", err);
-        AdvancedCommonWebError::server_error_with_message("uncaught server error")
+        AdvancedCommonWebError::from_anyhow_error(err)
       })?;
 
   Ok(Json(DismissFinishedSessionJobsSuccessResponse {

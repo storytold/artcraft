@@ -50,7 +50,7 @@ pub async fn remove_image_background_handler(
       .await
       .map_err(|e| {
         warn!("Session checker error: {:?}", e);
-        AdvancedCommonWebError::server_error_with_message("uncaught server error")
+        AdvancedCommonWebError::from_error(e)
       })?;
 
   let maybe_avt_token = server_state
@@ -101,7 +101,7 @@ pub async fn remove_image_background_handler(
     },
     Err(err) => {
       warn!("Error looking up media_file: {:?}", err);
-      return Err(AdvancedCommonWebError::server_error_with_message("uncaught server error"));
+      return Err(AdvancedCommonWebError::from_anyhow_error(err));
     }
   };
 
@@ -135,13 +135,13 @@ pub async fn remove_image_background_handler(
       .await
       .map_err(|err| {
         warn!("Error calling remove_background_rembg_webhook: {:?}", err);
-        AdvancedCommonWebError::server_error_with_message("uncaught server error")
+        AdvancedCommonWebError::from_error(err)
       })?;
 
   let external_job_id = fal_result.request_id
       .ok_or_else(|| {
         warn!("Fal request_id is None");
-        AdvancedCommonWebError::server_error_with_message("uncaught server error")
+        AdvancedCommonWebError::server_error_with_message("Fal request_id is None")
       })?;
   
   info!("Fal request_id: {}", external_job_id);
@@ -167,7 +167,7 @@ pub async fn remove_image_background_handler(
     Ok(token) => token,
     Err(err) => {
       warn!("Error inserting generic inference job for FAL queue: {:?}", err);
-      return Err(AdvancedCommonWebError::server_error_with_message("uncaught server error"));
+      return Err(AdvancedCommonWebError::from_error(err));
     }
   };
 

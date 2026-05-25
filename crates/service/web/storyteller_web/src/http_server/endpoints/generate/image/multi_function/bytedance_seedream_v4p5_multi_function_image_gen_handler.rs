@@ -72,7 +72,7 @@ pub async fn bytedance_seedream_v4p5_multi_function_image_gen_handler(
       .await
       .map_err(|e| {
         warn!("Session checker error: {:?}", e);
-        AdvancedCommonWebError::server_error_with_message("uncaught server error")
+        AdvancedCommonWebError::from_error(e)
       })?;
 
   let maybe_avt_token = server_state
@@ -174,7 +174,7 @@ pub async fn bytedance_seedream_v4p5_multi_function_image_gen_handler(
         .await
         .map_err(|err| {
           warn!("Error calling enqueue_bytedance_seedream_v4p5_edit_image_webhook: {:?}", err);
-          AdvancedCommonWebError::server_error_with_message("uncaught server error")
+          AdvancedCommonWebError::from_error(err)
         })?;
 
   } else {
@@ -233,14 +233,14 @@ pub async fn bytedance_seedream_v4p5_multi_function_image_gen_handler(
         .await
         .map_err(|err| {
           warn!("Error calling enqueue_bytedance_seedream_v4p5_text_to_image_webhook: {:?}", err);
-          AdvancedCommonWebError::server_error_with_message("uncaught server error")
+          AdvancedCommonWebError::from_error(err)
         })?;
   }
 
   let external_job_id = fal_result.request_id
       .ok_or_else(|| {
         warn!("Fal request_id is None");
-        AdvancedCommonWebError::server_error_with_message("uncaught server error")
+        AdvancedCommonWebError::server_error_with_message("Fal request_id is None")
       })?;
 
   info!("Fal request_id: {}", external_job_id);
@@ -252,7 +252,7 @@ pub async fn bytedance_seedream_v4p5_multi_function_image_gen_handler(
       .await
       .map_err(|err| {
         error!("Error starting MySQL transaction: {:?}", err);
-        AdvancedCommonWebError::server_error_with_message("uncaught server error")
+        AdvancedCommonWebError::from_error(err)
       })?;
 
   // NB: Don't fail the job if the query fails.
@@ -348,7 +348,7 @@ pub async fn bytedance_seedream_v4p5_multi_function_image_gen_handler(
     Ok(token) => token,
     Err(err) => {
       warn!("Error inserting generic inference job for FAL queue: {:?}", err);
-      return Err(AdvancedCommonWebError::server_error_with_message("uncaught server error"));
+      return Err(AdvancedCommonWebError::from_error(err));
     }
   };
   
@@ -357,7 +357,7 @@ pub async fn bytedance_seedream_v4p5_multi_function_image_gen_handler(
       .await
       .map_err(|err| {
         error!("Error committing MySQL transaction: {:?}", err);
-        AdvancedCommonWebError::server_error_with_message("uncaught server error")
+        AdvancedCommonWebError::from_error(err)
       })?;
 
   Ok(Json(BytedanceSeedreamV4p5MultiFunctionImageGenResponse {

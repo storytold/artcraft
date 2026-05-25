@@ -82,7 +82,7 @@ pub async fn log_web_referral_handler(
         .make_new_cookie_with_apriori_token(&token)
         .map_err(|e| {
           warn!("AVT cookie creation error: {:?}", e);
-          AdvancedCommonWebError::server_error_with_message("uncaught server error")
+          AdvancedCommonWebError::from_error(e)
         })?;
       (token, Some(cookie))
     }
@@ -106,7 +106,7 @@ pub async fn log_web_referral_handler(
     maybe_anonymous_visitor_token: Some(&avt_token_str),
   }).await.map_err(|e| {
     warn!("Error inserting web referral: {:?}", e);
-    AdvancedCommonWebError::server_error_with_message("uncaught server error")
+    AdvancedCommonWebError::from_error(e)
   })?;
 
   info!("Recorded web referral: {}", referral_url);

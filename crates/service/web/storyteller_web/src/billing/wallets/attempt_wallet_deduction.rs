@@ -45,15 +45,15 @@ pub async fn attempt_wallet_deduction_else_common_web_error(
       }
       WalletSpendError::SelectError(err) => {
         log::error!("SQL error (select) in attempt_wallet_deduction: {:?}", err);
-        AdvancedCommonWebError::server_error_with_message("uncaught server error")
+        AdvancedCommonWebError::from_error(err)
       }
       WalletSpendError::SelectOptionalError(err) => {
         log::error!("SQL error (select optional) in attempt_wallet_deduction: {:?}", err);
-        AdvancedCommonWebError::server_error_with_message("uncaught server error")
+        AdvancedCommonWebError::from_error(err)
       }
       WalletSpendError::SqlxError(err) => {
         log::error!("SQL error (sqlx) in attempt_wallet_deduction: {:?}", err);
-        AdvancedCommonWebError::server_error_with_message("uncaught server error")
+        AdvancedCommonWebError::from_error(err)
       }
     }),
   }

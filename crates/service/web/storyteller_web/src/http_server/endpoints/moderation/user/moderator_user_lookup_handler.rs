@@ -64,7 +64,7 @@ pub async fn moderator_user_lookup_handler(
   let maybe_user = maybe_result
     .map_err(|err| {
       warn!("moderator_user_lookup error: {:?}", err);
-      AdvancedCommonWebError::server_error_with_message("uncaught server error")
+      AdvancedCommonWebError::from_anyhow_error(err)
     })?;
 
   let maybe_user_details = maybe_user.map(|user| ModeratorUserLookupUserDetails {
