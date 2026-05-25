@@ -10,7 +10,7 @@ use sqlx::pool::PoolConnection;
 use sqlx::MySql;
 use tokens::tokens::media_files::MediaFileToken;
 
-use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::common_responses::media::media_links_builder::MediaLinksBuilder;
 use crate::http_server::endpoints::media_files::helpers::get_media_domain::get_media_domain;
 
@@ -28,7 +28,7 @@ pub async fn lookup_media_files_as_cdn_url_list_and_map(
   mysql_connection: &mut PoolConnection<MySql>,
   server_environment: ServerEnvironment,
   tokens: &[MediaFileToken],
-) -> Result<MediaFilesAsCdnUrlListAndMap, AdvancedCommonWebError> {
+) -> Result<MediaFilesAsCdnUrlListAndMap, CommonWebError> {
   const CAN_SEE_DELETED: bool = false;
 
   if tokens.is_empty() {
@@ -48,7 +48,7 @@ pub async fn lookup_media_files_as_cdn_url_list_and_map(
     Ok(files) => files,
     Err(err) => {
       error!("Error getting media files by tokens: {:?}", err);
-      return Err(AdvancedCommonWebError::from_anyhow_error(err));
+      return Err(CommonWebError::from_anyhow_error(err));
     }
   };
 
@@ -62,7 +62,7 @@ pub async fn lookup_media_files_as_cdn_url_list_and_map(
         .cloned()
         .collect::<Vec<&MediaFileToken>>();
 
-    return Err(AdvancedCommonWebError::BadInputWithSimpleMessage(
+    return Err(CommonWebError::BadInputWithSimpleMessage(
       format!("Not all media files could be found. Media files found: {}, tokens provided: {}, in original: {:?}, req {:?}, ret {:?}",
         media_files.len(), tokens.len(), diff, requested, returned)));
   }

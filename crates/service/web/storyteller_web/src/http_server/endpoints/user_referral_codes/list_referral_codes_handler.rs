@@ -5,7 +5,7 @@ use actix_web::HttpRequest;
 use log::warn;
 
 use artcraft_api_defs::user_referral_codes::list_referral_codes::{ListReferralCodesResponse, ReferralCodeEntry};
-use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::state::server_state::ServerState;
 use mysql_queries::queries::user_referral_codes::list_referral_codes_for_user::list_referral_codes_for_user;
 
@@ -23,9 +23,9 @@ use mysql_queries::queries::user_referral_codes::list_referral_codes_for_user::l
 pub async fn list_referral_codes_handler(
   http_request: HttpRequest,
   server_state: web::Data<Arc<ServerState>>,
-) -> Result<Json<ListReferralCodesResponse>, AdvancedCommonWebError> {
+) -> Result<Json<ListReferralCodesResponse>, CommonWebError> {
   let mut mysql_connection = server_state.mysql_pool.acquire().await
-    .map_err(|e| AdvancedCommonWebError::from(e))?;
+    .map_err(|e| CommonWebError::from(e))?;
 
   let maybe_user_session = server_state
     .session_checker
@@ -33,18 +33,18 @@ pub async fn list_referral_codes_handler(
     .await
     .map_err(|e| {
       warn!("Session checker error: {:?}", e);
-      AdvancedCommonWebError::from(e)
+      CommonWebError::from(e)
     })?;
 
   let user_session = match maybe_user_session {
     Some(session) if !session.is_banned => session,
-    _ => return Err(AdvancedCommonWebError::NotAuthorized),
+    _ => return Err(CommonWebError::NotAuthorized),
   };
 
   let user_token = &user_session.user_token;
 
   let rows = list_referral_codes_for_user(user_token, &mut *mysql_connection).await
-    .map_err(|e| AdvancedCommonWebError::from(e))?;
+    .map_err(|e| CommonWebError::from(e))?;
 
   let referral_codes = rows.into_iter().map(|r| ReferralCodeEntry {
     token: r.token,

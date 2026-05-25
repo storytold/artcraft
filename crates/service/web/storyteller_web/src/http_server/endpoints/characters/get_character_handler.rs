@@ -13,7 +13,7 @@ use mysql_queries::queries::media_files::get::batch_get_media_files_by_tokens::{
 use tokens::tokens::characters::CharacterToken;
 use tokens::tokens::media_files::MediaFileToken;
 
-use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::common_responses::media::media_domain::MediaDomain;
 use crate::http_server::common_responses::media::media_links_builder::MediaLinksBuilder;
 use crate::http_server::endpoints::media_files::helpers::get_media_domain::get_media_domain;
@@ -37,7 +37,7 @@ pub async fn get_character_handler(
   http_request: HttpRequest,
   path: Path<GetCharacterPathInfo>,
   server_state: web::Data<Arc<ServerState>>,
-) -> Result<Json<GetCharacterResponse>, AdvancedCommonWebError> {
+) -> Result<Json<GetCharacterResponse>, CommonWebError> {
 
   let mut mysql_connection = server_state.mysql_pool.acquire().await?;
 
@@ -45,7 +45,7 @@ pub async fn get_character_handler(
       .await?
       .ok_or_else(|| {
         warn!("Character not found: {}", path.character_token);
-        AdvancedCommonWebError::NotFound
+        CommonWebError::NotFound
       })?;
 
   // --- Resolve media links ---

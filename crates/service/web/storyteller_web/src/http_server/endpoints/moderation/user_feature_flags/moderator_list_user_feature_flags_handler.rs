@@ -10,7 +10,7 @@ use mysql_queries::queries::users::user::get::get_user_token_by_username::get_us
 use mysql_queries::queries::users::user_profiles::get_user_profile_by_token::get_user_profile_by_token;
 use tokens::tokens::users::UserToken;
 
-use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::session::lookup::user_session_feature_flags::UserSessionFeatureFlags;
 use crate::http_server::web_utils::user_session::require_moderator::{
   require_moderator, UseDatabase,
@@ -55,14 +55,14 @@ pub async fn moderator_list_user_feature_flags_handler(
   http_request: HttpRequest,
   path: Path<ListUserFeatureFlagsPathInfo>,
   server_state: web::Data<Arc<ServerState>>,
-) -> Result<Json<ModeratorListUserFeatureFlagsResponse>, AdvancedCommonWebError> {
+) -> Result<Json<ModeratorListUserFeatureFlagsResponse>, CommonWebError> {
   let _user_session = require_moderator(
     &http_request,
     &server_state,
     UseDatabase::GrabNewConnection,
   ).await.map_err(|err| {
     warn!("Moderator check failed: {:?}", err);
-    AdvancedCommonWebError::NotAuthorized
+    CommonWebError::NotAuthorized
   })?;
 
   let username_or_token = path.username_or_token.trim();
@@ -74,10 +74,10 @@ pub async fn moderator_list_user_feature_flags_handler(
       .await
       .map_err(|err| {
         warn!("Could not get user token by username: {:?}", err);
-        AdvancedCommonWebError::from_anyhow_error(err)
+        CommonWebError::from_anyhow_error(err)
       })?
       .ok_or_else(|| {
-        AdvancedCommonWebError::NotFound
+        CommonWebError::NotFound
       })?
   };
 
@@ -85,10 +85,10 @@ pub async fn moderator_list_user_feature_flags_handler(
     .await
     .map_err(|err| {
       warn!("Could not get user profile by token: {:?}", err);
-      AdvancedCommonWebError::from_anyhow_error(err)
+      CommonWebError::from_anyhow_error(err)
     })?
     .ok_or_else(|| {
-      AdvancedCommonWebError::NotFound
+      CommonWebError::NotFound
     })?;
 
   let user_feature_flags =

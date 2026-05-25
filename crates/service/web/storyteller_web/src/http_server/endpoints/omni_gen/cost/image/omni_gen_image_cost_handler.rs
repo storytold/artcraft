@@ -10,7 +10,7 @@ use artcraft_router::generate::generate_image::generate_image_request_builder::G
 use artcraft_router::generate::generate_image::image_generation_cost_estimate::ImageGenerationCostEstimate;
 use log::warn;
 
-use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::endpoints::omni_gen::generate::image::hydrate_to_router_request::hydrate_to_router_request;
 use crate::state::server_state::ServerState;
 
@@ -30,7 +30,7 @@ pub async fn omni_gen_image_cost_handler(
   _http_request: HttpRequest,
   request: Json<OmniGenImageCostAndGenerateRequest>,
   _server_state: web::Data<Arc<ServerState>>,
-) -> Result<Json<OmniGenImageCostResponse>, AdvancedCommonWebError> {
+) -> Result<Json<OmniGenImageCostResponse>, CommonWebError> {
   let mut generate_request = hydrate_to_router_request(&request)?;
   generate_request.provider = Provider::Artcraft; // NB: Explicitly spell this out.
 
@@ -70,7 +70,7 @@ fn should_use_pipeline_v2(
 
 fn estimate_pipeline_v2_cost(
   generate_request: &GenerateImageRequestBuilder,
-) -> Result<ImageGenerationCostEstimate, AdvancedCommonWebError> {
+) -> Result<ImageGenerationCostEstimate, CommonWebError> {
   let mut builder = generate_request.clone();
 
   builder.provider = Provider::Artcraft;
@@ -106,12 +106,12 @@ fn estimate_pipeline_v2_cost(
   let mut cost = builder.build2()
     .map_err(|e| {
       warn!("Failed to build image cost request for pipeline v2 (fal): {}", e);
-      AdvancedCommonWebError::from_error(e)
+      CommonWebError::from_error(e)
     })?
     .estimate_cost()
     .map_err(|e| {
       warn!("Failed to estimate image cost for pipeline v2 (fal): {}", e);
-      AdvancedCommonWebError::from_error(e)
+      CommonWebError::from_error(e)
     })?;
 
   cost.cost_in_credits = cost.cost_in_usd_cents;
@@ -121,14 +121,14 @@ fn estimate_pipeline_v2_cost(
 
 fn estimate_pipeline_v1_cost(
   generate_request: &GenerateImageRequestBuilder,
-) -> Result<ImageGenerationCostEstimate, AdvancedCommonWebError> {
+) -> Result<ImageGenerationCostEstimate, CommonWebError> {
   let mut builder = generate_request.clone();
   builder.provider = Provider::Artcraft;
 
   let plan = builder.build()
     .map_err(|e| {
       warn!("Failed to build image cost plan for pipeline v1: {}", e);
-      AdvancedCommonWebError::from_error(e)
+      CommonWebError::from_error(e)
     })?;
 
   Ok(plan.estimate_costs())

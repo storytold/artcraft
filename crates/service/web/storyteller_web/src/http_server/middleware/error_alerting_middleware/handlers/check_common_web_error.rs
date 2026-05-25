@@ -5,17 +5,17 @@ use pager::client::pager::Pager;
 use pager::notification::notification_details_builder::NotificationDetailsBuilder;
 use pager::notification::notification_urgency::NotificationUrgency;
 
-use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::middleware::error_alerting_middleware::request_debugging_metadata::RequestDebuggingMetadata;
 
-/// Check `AdvancedCommonWebError` and alert on uncaught server errors.
+/// Check `CommonWebError` and alert on uncaught server errors.
 /// Returns `true` if the error was handled (alerted or intentionally skipped).
-pub(crate) fn check_advanced_common_web_error(
+pub(crate) fn check_common_web_error(
   pager: &Pager,
   method: &str,
   path: &str,
   metadata: &RequestDebuggingMetadata,
-  error: &AdvancedCommonWebError,
+  error: &CommonWebError,
 ) -> bool {
   if !error.is_server_error() {
     // Non-500 errors (400, 401, 403, 403, 404...) are intentional — don't alert.
@@ -51,7 +51,7 @@ pub(crate) fn check_advanced_common_web_error(
       .set_session_user_token(metadata.session_user_token.clone());
 
   match error {
-    AdvancedCommonWebError::UncaughtServerErrorWithInternalMessage { internal_message, error } => {
+    CommonWebError::UncaughtServerErrorWithInternalMessage { internal_message, error } => {
       builder = builder.set_extra_message(Some(internal_message.to_string()));
     }
     _ => {},
@@ -62,7 +62,7 @@ pub(crate) fn check_advanced_common_web_error(
   if let Err(err) = pager.enqueue_page(notification) {
     warn!("Error alerting middleware: failed to enqueue page: {:?}", err);
   } else {
-    debug!("Error alerting middleware: enqueued alert for AdvancedCommonWebError::UncaughtServerError");
+    debug!("Error alerting middleware: enqueued alert for CommonWebError::UncaughtServerError");
   }
 
   true

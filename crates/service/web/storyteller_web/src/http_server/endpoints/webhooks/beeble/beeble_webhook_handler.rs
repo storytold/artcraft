@@ -40,7 +40,7 @@ use pager::notification::notification_urgency::NotificationUrgency;
 use thumbnail_generator::task_client::thumbnail_task::{ThumbnailTaskBuilder, ThumbnailTaskInputMimeType};
 use tokens::tokens::media_files::MediaFileToken;
 
-use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::endpoints::webhooks::fal::process_success::resolve_file_metadata::resolve_file_metadata;
 use crate::state::server_state::ServerState;
 use crate::util::http_download_url_to_bytes::http_download_url_to_bytes;
@@ -53,14 +53,14 @@ pub async fn beeble_webhook_handler(
   http_request: HttpRequest,
   request_body_bytes: Bytes,
   server_state: web::Data<Arc<ServerState>>,
-) -> Result<Json<SimpleGenericJsonSuccess>, AdvancedCommonWebError> {
+) -> Result<Json<SimpleGenericJsonSuccess>, CommonWebError> {
 
   // Step 1: Parse bytes into a UTF-8 string and log it.
   let raw_body = String::from_utf8(request_body_bytes.to_vec())
       .map_err(|err| {
         error!("Beeble webhook: could not decode request body to UTF-8: {:?}", err);
         enqueue_parse_error_alert(&server_state, &http_request, "UTF-8 decode failed", &err, None);
-        AdvancedCommonWebError::from_error(err)
+        CommonWebError::from_error(err)
       })?;
 
   info!("Received Beeble webhook body: {}", raw_body);
@@ -70,7 +70,7 @@ pub async fn beeble_webhook_handler(
       .map_err(|err| {
         error!("Beeble webhook: could not parse webhook payload: {:?}", err);
         enqueue_parse_error_alert(&server_state, &http_request, "JSON parse failed", &err, Some(&raw_body));
-        AdvancedCommonWebError::from_error(err)
+        CommonWebError::from_error(err)
       })?;
 
   let job_id = payload.id.as_str();
@@ -85,11 +85,11 @@ pub async fn beeble_webhook_handler(
     Ok(Some(record)) => record,
     Ok(None) => {
       warn!("Could not find job record by Beeble job_id: {}", job_id);
-      return Err(AdvancedCommonWebError::NotFound);
+      return Err(CommonWebError::NotFound);
     }
     Err(err) => {
       error!("Error querying job record for Beeble job_id {}: {:?}", job_id, err);
-      return Err(AdvancedCommonWebError::from_anyhow_error(err));
+      return Err(CommonWebError::from_anyhow_error(err));
     }
   };
 
@@ -119,7 +119,7 @@ pub async fn beeble_webhook_handler(
     }
     BeebleWebhookStatus::Unknown => {
       warn!("Beeble webhook received unknown status for job_id {}", job_id);
-      Err(AdvancedCommonWebError::server_error_with_message(
+      Err(CommonWebError::server_error_with_message(
         &format!("Beeble webhook received unknown status for job_id {}", job_id),
       ))
     }
@@ -167,15 +167,15 @@ async fn handle_completed(
   job_id: &str,
   payload: &BeebleWebhookPayload,
   job: &BeebleJobDetails,
-) -> Result<Json<SimpleGenericJsonSuccess>, AdvancedCommonWebError> {
+) -> Result<Json<SimpleGenericJsonSuccess>, CommonWebError> {
   let output = payload.output.as_ref().ok_or_else(|| {
     warn!("Beeble webhook completed but no output for job_id {}", job_id);
-    AdvancedCommonWebError::server_error_with_message("Beeble webhook completed but output is missing")
+    CommonWebError::server_error_with_message("Beeble webhook completed but output is missing")
   })?;
 
   let render_url = output.render.as_deref().ok_or_else(|| {
     warn!("Beeble webhook completed but no render URL for job_id {}", job_id);
-    AdvancedCommonWebError::server_error_with_message("Beeble webhook completed but render URL is missing")
+    CommonWebError::server_error_with_message("Beeble webhook completed but render URL is missing")
   })?;
 
   info!("Downloading Beeble render video from {} for job_id {}", render_url, job_id);
@@ -208,7 +208,7 @@ async fn handle_completed(
     phantom: Default::default(),
   }).await.map_err(|err| {
     warn!("Error marking job as successfully done for job_id {}: {:?}", job_id, err);
-    AdvancedCommonWebError::from_anyhow_error(err)
+    CommonWebError::from_anyhow_error(err)
   })?;
 
   info!("Job {} marked as successfully done for Beeble job_id {}", job.job_token, job_id);
@@ -221,7 +221,7 @@ async fn handle_failed(
   job_id: &str,
   payload: &BeebleWebhookPayload,
   job: &BeebleJobDetails,
-) -> Result<Json<SimpleGenericJsonSuccess>, AdvancedCommonWebError> {
+) -> Result<Json<SimpleGenericJsonSuccess>, CommonWebError> {
   let public_failure_reason = payload.error
       .as_deref()
       .unwrap_or("Unknown Beeble error")
@@ -253,7 +253,7 @@ async fn handle_failed(
       job_id,
       err,
     );
-    return Err(AdvancedCommonWebError::from_anyhow_error(err));
+    return Err(CommonWebError::from_anyhow_error(err));
   }
 
   info!(
@@ -269,13 +269,13 @@ async fn download_and_upload_video(
   video_url: &str,
   job: &BeebleJobDetails,
   server_state: &ServerState,
-) -> Result<MediaFileToken, AdvancedCommonWebError> {
+) -> Result<MediaFileToken, CommonWebError> {
   // Download with a retry if the first attempt returns suspiciously few bytes.
   let mut file_bytes = http_download_url_to_bytes(video_url)
       .await
       .map_err(|err| {
         warn!("Failed to download video from {}: {:?}", video_url, err);
-        AdvancedCommonWebError::from_error(err)
+        CommonWebError::from_error(err)
       })?;
 
   if file_bytes.len() <= 10 {
@@ -288,7 +288,7 @@ async fn download_and_upload_video(
         .await
         .map_err(|err| {
           warn!("Failed to download video on retry from {}: {:?}", video_url, err);
-          AdvancedCommonWebError::from_error(err)
+          CommonWebError::from_error(err)
         })?;
   }
 
@@ -299,7 +299,7 @@ async fn download_and_upload_video(
           "Could not determine file type for Beeble video (bytes: {})",
           file_bytes.len(),
         );
-        AdvancedCommonWebError::server_error_with_message(
+        CommonWebError::server_error_with_message(
           &format!("Could not determine file type for Beeble video (bytes: {})", file_bytes.len()))
       })?;
 
@@ -311,7 +311,7 @@ async fn download_and_upload_video(
   let media_file_type = MediaFileType::try_from_mime_type(mime_type)
       .ok_or_else(|| {
         warn!("Unsupported media file type: {}", mime_type);
-        AdvancedCommonWebError::server_error_with_message(
+        CommonWebError::server_error_with_message(
           &format!("Unsupported media file type: {}", mime_type))
       })?;
 
@@ -321,7 +321,7 @@ async fn download_and_upload_video(
   let file_hash = sha256_hash_bytes(&file_bytes)
       .map_err(|e| {
         warn!("Failed to hash video bytes: {:?}", e);
-        AdvancedCommonWebError::from_anyhow_error(e)
+        CommonWebError::from_anyhow_error(e)
       })?;
 
   let mut maybe_duration_millis = None;
@@ -357,7 +357,7 @@ async fn download_and_upload_video(
       .await
       .map_err(|e| {
         warn!("Failed to upload video to bucket: {:?}", e);
-        AdvancedCommonWebError::from_anyhow_error(e)
+        CommonWebError::from_anyhow_error(e)
       })?;
 
   let media_token = MediaFileInsertBuilder::new()
@@ -381,7 +381,7 @@ async fn download_and_upload_video(
       .await
       .map_err(|e| {
         warn!("Failed to insert video media file record: {:?}", e);
-        AdvancedCommonWebError::from_error(e)
+        CommonWebError::from_error(e)
       })?;
 
   info!("Video media file uploaded with token: {}", media_token);

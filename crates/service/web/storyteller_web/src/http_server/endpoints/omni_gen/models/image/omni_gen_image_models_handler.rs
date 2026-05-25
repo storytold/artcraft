@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use crate::configs::omni_gen::image_models::OMNI_GEN_IMAGE_MODELS_AND_PROVIDERS;
-use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::state::server_state::ServerState;
 use actix_web::web::{Json, Query};
 use actix_web::{web, HttpRequest};
@@ -25,7 +25,7 @@ pub async fn omni_gen_image_models_handler(
   _http_request: HttpRequest,
   _query: Query<OmniGenImageModelsQuery>,
   _server_state: web::Data<Arc<ServerState>>,
-) -> Result<Json<OmniGenImageModelsResponse>, AdvancedCommonWebError> {
+) -> Result<Json<OmniGenImageModelsResponse>, CommonWebError> {
   let response = (*OMNI_GEN_IMAGE_MODELS_AND_PROVIDERS).clone();
   Ok(Json(response))
 }

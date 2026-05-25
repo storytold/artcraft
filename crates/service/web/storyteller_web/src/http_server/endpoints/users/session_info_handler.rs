@@ -10,7 +10,7 @@ use sqlx::MySqlPool;
 use artcraft_api_defs::users::session_info::{FakeYouPlan, SessionInfoSuccessResponse, SessionOnboardingState, SessionUserInfo, StorytellerStreamPlan};
 use enums::by_table::users::user_feature_flag::UserFeatureFlag;
 
-use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::common_responses::user_details_lite_builder::UserDetailsLightBuilder;
 use actix_artcraft::sessions::anonymous_visitor_tracking::avt_cookie_manager::AvtCookieManager;
 use crate::http_server::session::lookup::user_session_feature_flags::UserSessionFeatureFlags;
@@ -30,7 +30,7 @@ pub async fn session_info_handler(
   mysql_pool: web::Data<MySqlPool>,
   session_checker: web::Data<SessionChecker>,
   avt_manager: web::Data<AvtCookieManager>,
-) -> Result<HttpResponse, AdvancedCommonWebError>
+) -> Result<HttpResponse, CommonWebError>
 {
   let mut mysql_connection = mysql_pool.acquire().await?;
 

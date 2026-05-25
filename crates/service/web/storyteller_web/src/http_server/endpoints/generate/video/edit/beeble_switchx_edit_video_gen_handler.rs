@@ -34,7 +34,7 @@ use mysql_queries::queries::prompts::insert_prompt::{insert_prompt, InsertPrompt
 use tokens::tokens::generic_inference_jobs::InferenceJobToken;
 use tokens::tokens::media_files::MediaFileToken;
 
-use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::endpoints::generate::common::payments_error_test::payments_error_test;
 use crate::http_server::validations::validate_idempotency_token_format::validate_idempotency_token_format;
 use crate::state::server_state::ServerState;
@@ -59,7 +59,7 @@ pub async fn beeble_switchx_edit_video_gen_handler(
   http_request: HttpRequest,
   request: Json<BeebleSwitchXEditVideoRequest>,
   server_state: web::Data<Arc<ServerState>>,
-) -> Result<Json<BeebleSwitchXEditVideoResponse>, AdvancedCommonWebError> {
+) -> Result<Json<BeebleSwitchXEditVideoResponse>, CommonWebError> {
 
   payments_error_test(&request.prompt.as_deref().unwrap_or(""))?;
 
@@ -73,12 +73,12 @@ pub async fn beeble_switchx_edit_video_gen_handler(
     .await
     .map_err(|e| {
       warn!("Session checker error: {:?}", e);
-      AdvancedCommonWebError::from(e)
+      CommonWebError::from(e)
     })?;
 
   let user_token = match maybe_user_session.as_ref() {
     Some(session) => &session.user_token,
-    None => return Err(AdvancedCommonWebError::NotAuthorized),
+    None => return Err(CommonWebError::NotAuthorized),
   };
 
   let maybe_avt_token = server_state
@@ -89,18 +89,18 @@ pub async fn beeble_switchx_edit_video_gen_handler(
 
   let source_video_media_token = request.source_video_media_token.as_ref()
     .ok_or_else(|| {
-      AdvancedCommonWebError::BadInputWithSimpleMessage("source_video_media_token is required".to_string())
+      CommonWebError::BadInputWithSimpleMessage("source_video_media_token is required".to_string())
     })?;
 
   if let Err(reason) = validate_idempotency_token_format(&request.uuid_idempotency_token) {
-    return Err(AdvancedCommonWebError::BadInputWithSimpleMessage(reason));
+    return Err(CommonWebError::BadInputWithSimpleMessage(reason));
   }
 
   insert_idempotency_token(&request.uuid_idempotency_token, &mut *mysql_connection)
     .await
     .map_err(|err| {
       error!("Error inserting idempotency token: {:?}", err);
-      AdvancedCommonWebError::BadInputWithSimpleMessage("repeated idempotency token".to_string())
+      CommonWebError::BadInputWithSimpleMessage("repeated idempotency token".to_string())
     })?;
 
   // ==================== LOOKUP MEDIA FILES (BATCH) ==================== //
@@ -118,13 +118,13 @@ pub async fn beeble_switchx_edit_video_gen_handler(
     &tokens_to_lookup,
   ).await.map_err(|err| {
     warn!("Error looking up media files: {:?}", err);
-    AdvancedCommonWebError::from(err)
+    CommonWebError::from(err)
   })?;
 
   let source_video_cdn_url = cdn_url_map.get(source_video_media_token)
     .ok_or_else(|| {
       warn!("Source video media file not found: {:?}", source_video_media_token);
-      AdvancedCommonWebError::NotFound
+      CommonWebError::NotFound
     })?
     .clone();
 
@@ -134,7 +134,7 @@ pub async fn beeble_switchx_edit_video_gen_handler(
         .cloned()
         .ok_or_else(|| {
           warn!("Reference image media file not found: {:?}", ref_token);
-          AdvancedCommonWebError::NotFound
+          CommonWebError::NotFound
         })
     })
     .transpose()?;
@@ -148,7 +148,7 @@ pub async fn beeble_switchx_edit_video_gen_handler(
   let video_bytes = http_download_url_to_bytes(&source_video_cdn_url).await
     .map_err(|err| {
       error!("Failed to download source video: {:?}", err);
-      AdvancedCommonWebError::from_error(err)
+      CommonWebError::from_error(err)
     })?;
 
   info!("Downloaded source video: {} bytes", video_bytes.len());
@@ -170,7 +170,7 @@ pub async fn beeble_switchx_edit_video_gen_handler(
     beeble_api_key, &video_filename, video_content_type, video_bytes.to_vec(),
   ).await.map_err(|err| {
     error!("Beeble video upload failed: {:?}", err);
-    AdvancedCommonWebError::from_error(err)
+    CommonWebError::from_error(err)
   })?;
 
   info!("Source video uploaded to Beeble: {}", video_upload.beeble_uri);
@@ -181,7 +181,7 @@ pub async fn beeble_switchx_edit_video_gen_handler(
     let image_bytes = http_download_url_to_bytes(ref_cdn_url).await
       .map_err(|err| {
         error!("Failed to download reference image: {:?}", err);
-        AdvancedCommonWebError::from_error(err)
+        CommonWebError::from_error(err)
       })?;
 
     info!("Downloaded reference image: {} bytes", image_bytes.len());
@@ -193,7 +193,7 @@ pub async fn beeble_switchx_edit_video_gen_handler(
       beeble_api_key, &image_filename, "image/jpeg", image_bytes.to_vec(),
     ).await.map_err(|err| {
       error!("Beeble image upload failed: {:?}", err);
-      AdvancedCommonWebError::from_error(err)
+      CommonWebError::from_error(err)
     })?;
 
     info!("Reference image uploaded to Beeble: {}", image_upload.beeble_uri);
@@ -227,13 +227,13 @@ pub async fn beeble_switchx_edit_video_gen_handler(
         detected_frames,
         ref message,
       }) => {
-        AdvancedCommonWebError::BadInputWithSimpleMessage(format!(
+        CommonWebError::BadInputWithSimpleMessage(format!(
           "Video has too many frames: {} (max: {}); {}",
           detected_frames, max_frames, message
         ))
       },
       _ => {
-        AdvancedCommonWebError::from_error(err)
+        CommonWebError::from_error(err)
       }
     }
   })?;
@@ -247,7 +247,7 @@ pub async fn beeble_switchx_edit_video_gen_handler(
 
   let mut transaction = mysql_connection.begin().await.map_err(|err| {
     error!("Error starting MySQL transaction: {:?}", err);
-    AdvancedCommonWebError::from_error(err)
+    CommonWebError::from_error(err)
   })?;
 
   // -- Prompt --
@@ -330,13 +330,13 @@ pub async fn beeble_switchx_edit_video_gen_handler(
     Ok(token) => token,
     Err(err) => {
       error!("Error inserting inference job: {:?}", err);
-      return Err(AdvancedCommonWebError::from_error(err));
+      return Err(CommonWebError::from_error(err));
     }
   };
 
   transaction.commit().await.map_err(|err| {
     error!("Error committing transaction: {:?}", err);
-    AdvancedCommonWebError::from_error(err)
+    CommonWebError::from_error(err)
   })?;
 
   Ok(Json(BeebleSwitchXEditVideoResponse {

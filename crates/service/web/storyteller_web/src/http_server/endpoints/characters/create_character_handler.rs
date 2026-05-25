@@ -23,7 +23,7 @@ use seedance2pro_client::requests::upload_file::upload_file::{upload_file, Uploa
 use tokens::tokens::generic_inference_jobs::InferenceJobToken;
 use url_utils::extension::extract_extension_from_url::{extract_extension_from_url, ExtractExtensions};
 
-use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::validations::validate_idempotency_token_format::validate_idempotency_token_format;
 use crate::state::server_state::ServerState;
 use crate::util::http_download_url_to_bytes::http_download_url_to_bytes;
@@ -50,7 +50,7 @@ pub async fn create_character_handler(
   http_request: HttpRequest,
   request: Json<CreateCharacterRequest>,
   server_state: web::Data<Arc<ServerState>>,
-) -> Result<Json<CreateCharacterResponse>, AdvancedCommonWebError> {
+) -> Result<Json<CreateCharacterResponse>, CommonWebError> {
 
   // --- Auth ---
 
@@ -64,12 +64,12 @@ pub async fn create_character_handler(
       .await
       .map_err(|e| {
         warn!("Session checker error: {:?}", e);
-        AdvancedCommonWebError::from(e)
+        CommonWebError::from(e)
       })?;
 
   let user_session = match maybe_user_session {
     Some(session) => session,
-    None => return Err(AdvancedCommonWebError::NotAuthorized),
+    None => return Err(CommonWebError::NotAuthorized),
   };
 
   let user_token = &user_session.user_token;
@@ -78,7 +78,7 @@ pub async fn create_character_handler(
   // --- Validate input ---
 
   if let Err(reason) = validate_idempotency_token_format(&request.uuid_idempotency_token) {
-    return Err(AdvancedCommonWebError::BadInputWithSimpleMessage(reason));
+    return Err(CommonWebError::BadInputWithSimpleMessage(reason));
   }
 
   // For now we use the model name as the character name and description.
@@ -89,7 +89,7 @@ pub async fn create_character_handler(
 
   if let Some(desc) = character_description {
     if desc.len() > CHARACTER_MAX_DESCRIPTION_LENGTH {
-      return Err(AdvancedCommonWebError::BadInputWithSimpleMessage(
+      return Err(CommonWebError::BadInputWithSimpleMessage(
         format!("Description exceeds maximum length of {} characters.", CHARACTER_MAX_DESCRIPTION_LENGTH),
       ));
     }
@@ -108,7 +108,7 @@ pub async fn create_character_handler(
       .get(&request.image_media_token)
       .ok_or_else(|| {
         warn!("Image media token not found: {:?}", request.image_media_token);
-        AdvancedCommonWebError::BadInputWithSimpleMessage("Image media file not found.".to_string())
+        CommonWebError::BadInputWithSimpleMessage("Image media file not found.".to_string())
       })?;
 
   // --- Insert idempotency token ---
@@ -117,7 +117,7 @@ pub async fn create_character_handler(
       .await
       .map_err(|err| {
         error!("Error inserting idempotency token: {:?}", err);
-        AdvancedCommonWebError::BadInputWithSimpleMessage("repeated idempotency token".to_string())
+        CommonWebError::BadInputWithSimpleMessage("repeated idempotency token".to_string())
       })?;
 
   // --- Upload image to Kinovi CDN ---
@@ -148,7 +148,7 @@ pub async fn create_character_handler(
       .await
       .map_err(|err| {
         error!("Error calling Kinovi generate_character: {:?}", err);
-        AdvancedCommonWebError::from_error(err)
+        CommonWebError::from_error(err)
       })?;
 
   info!(
@@ -167,7 +167,7 @@ pub async fn create_character_handler(
       .await
       .map_err(|err| {
         error!("Error starting MySQL transaction: {:?}", err);
-        AdvancedCommonWebError::from_error(err)
+        CommonWebError::from_error(err)
       })?;
 
   let character_token = create_pending_character(CreatePendingCharacterArgs {
@@ -204,7 +204,7 @@ pub async fn create_character_handler(
       .await
       .map_err(|err| {
         error!("Error inserting inference job: {:?}", err);
-        AdvancedCommonWebError::from_error(err)
+        CommonWebError::from_error(err)
       })?;
 
   info!("Created inference job: {}", apriori_job_token);
@@ -214,7 +214,7 @@ pub async fn create_character_handler(
       .await
       .map_err(|err| {
         error!("Error committing transaction: {:?}", err);
-        AdvancedCommonWebError::from_error(err)
+        CommonWebError::from_error(err)
       })?;
 
   Ok(Json(CreateCharacterResponse {
@@ -229,7 +229,7 @@ pub async fn create_character_handler(
 async fn upload_to_kinovi(
   cookies: &str,
   our_cdn_url: &url::Url,
-) -> Result<String, AdvancedCommonWebError> {
+) -> Result<String, CommonWebError> {
   let extension = extract_extension_from_url(our_cdn_url, &ExtractExtensions::All)
       .map(|ext| ext.without_period().to_string())
       .unwrap_or_else(|| "png".to_string());
@@ -240,7 +240,7 @@ async fn upload_to_kinovi(
       .await
       .map_err(|err| {
         warn!("Error downloading media file from CDN: {:?}", err);
-        AdvancedCommonWebError::from_error(err)
+        CommonWebError::from_error(err)
       })?
       .to_vec();
 
@@ -252,7 +252,7 @@ async fn upload_to_kinovi(
       .await
       .map_err(|err| {
         warn!("Error preparing Kinovi file upload: {:?}", err);
-        AdvancedCommonWebError::from_error(err)
+        CommonWebError::from_error(err)
       })?;
 
   let upload_result = upload_file(UploadFileArgs {
@@ -263,7 +263,7 @@ async fn upload_to_kinovi(
       .await
       .map_err(|err| {
         warn!("Error uploading file to Kinovi: {:?}", err);
-        AdvancedCommonWebError::from_error(err)
+        CommonWebError::from_error(err)
       })?;
 
   Ok(upload_result.public_url)

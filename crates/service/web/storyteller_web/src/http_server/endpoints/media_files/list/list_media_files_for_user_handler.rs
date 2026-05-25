@@ -20,7 +20,7 @@ use mysql_queries::queries::media_files::list::list_media_files_for_user::{list_
 use tokens::tokens::media_files::MediaFileToken;
 use utoipa::{IntoParams, ToSchema};
 
-use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::common_responses::media::media_file_cover_image_details::MediaFileCoverImageDetails;
 use crate::http_server::common_responses::media::media_links_builder::MediaLinksBuilder;
 use crate::http_server::common_responses::media_file_origin_details::MediaFileOriginDetails;
@@ -194,7 +194,7 @@ pub async fn list_media_files_for_user_handler(
   path: Path<ListMediaFilesForUserPathInfo>,
   query: Query<ListMediaFilesForUserQueryParams>,
   server_state: web::Data<Arc<ServerState>>
-) -> Result<Json<ListMediaFilesForUserSuccessResponse>, AdvancedCommonWebError>
+) -> Result<Json<ListMediaFilesForUserSuccessResponse>, CommonWebError>
 {
   let maybe_user_session = server_state
       .session_checker
@@ -254,7 +254,7 @@ pub async fn list_media_files_for_user_handler(
     Ok(results) => results,
     Err(e) => {
       warn!("Query error: {:?}", e);
-      return Err(AdvancedCommonWebError::from_anyhow_error(e));
+      return Err(CommonWebError::from_anyhow_error(e));
     }
   };
 

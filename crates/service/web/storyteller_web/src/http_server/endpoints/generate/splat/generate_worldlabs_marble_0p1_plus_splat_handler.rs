@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use crate::billing::wallets::attempt_wallet_deduction::attempt_wallet_deduction_else_common_web_error;
-use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::endpoint_helpers::refund_wallet_after_api_failure::refund_wallet_after_api_failure;
 use crate::http_server::endpoints::generate::common::payments_error_test::payments_error_test;
 use crate::http_server::validations::validate_idempotency_token_format::validate_idempotency_token_format;
@@ -48,18 +48,18 @@ pub async fn generate_worldlabs_marble_0p1_plus_splat_handler(
   http_request: HttpRequest,
   request: Json<GenerateWorldlabsMarble0p1PlusSplatRequest>,
   server_state: web::Data<Arc<ServerState>>
-) -> Result<Json<GenerateWorldlabsMarble0p1PlusSplatResponse>, AdvancedCommonWebError> {
+) -> Result<Json<GenerateWorldlabsMarble0p1PlusSplatResponse>, CommonWebError> {
 
   payments_error_test(&request.prompt.as_deref().unwrap_or(""))?;
 
   if request.image_media_file_token.is_none() && request.prompt.is_none() {
-    return Err(AdvancedCommonWebError::BadInputWithSimpleMessage(
+    return Err(CommonWebError::BadInputWithSimpleMessage(
       "At least one of image_media_file_token or prompt must be provided".to_string()
     ));
   }
 
   if let Err(reason) = validate_idempotency_token_format(&request.uuid_idempotency_token) {
-    return Err(AdvancedCommonWebError::BadInputWithSimpleMessage(reason));
+    return Err(CommonWebError::BadInputWithSimpleMessage(reason));
   }
 
   let mut mysql_connection = server_state.mysql_pool
@@ -72,7 +72,7 @@ pub async fn generate_worldlabs_marble_0p1_plus_splat_handler(
       .await
       .map_err(|e| {
         warn!("Session checker error: {:?}", e);
-        AdvancedCommonWebError::from(e)
+        CommonWebError::from(e)
       })?;
 
   let maybe_avt_token = server_state
@@ -82,7 +82,7 @@ pub async fn generate_worldlabs_marble_0p1_plus_splat_handler(
   let user_token = match maybe_user_session.as_ref() {
     Some(session) => &session.user_token,
     None => {
-      return Err(AdvancedCommonWebError::NotAuthorized);
+      return Err(CommonWebError::NotAuthorized);
     }
   };
 
@@ -90,7 +90,7 @@ pub async fn generate_worldlabs_marble_0p1_plus_splat_handler(
       .await
       .map_err(|err| {
         error!("Error inserting idempotency token: {:?}", err);
-        AdvancedCommonWebError::BadInputWithSimpleMessage("repeated idempotency token".to_string())
+        CommonWebError::BadInputWithSimpleMessage("repeated idempotency token".to_string())
       })?;
 
   let apriori_job_token = InferenceJobToken::generate();
@@ -126,7 +126,7 @@ pub async fn generate_worldlabs_marble_0p1_plus_splat_handler(
     let cdn_url = image_urls.get(image_token)
       .ok_or_else(|| {
         warn!("Image token not found in lookup results: {:?}", image_token);
-        AdvancedCommonWebError::server_error_with_message("Image token no found in lookup result")
+        CommonWebError::server_error_with_message("Image token no found in lookup result")
       })?;
 
     WorldPrompt::Image {
@@ -170,7 +170,7 @@ pub async fn generate_worldlabs_marble_0p1_plus_splat_handler(
       .await
       .map_err(|err| {
         error!("Error starting MySQL transaction: {:?}", err);
-        AdvancedCommonWebError::from_error(err)
+        CommonWebError::from_error(err)
       })?;
 
   let prompt_result = insert_prompt(InsertPromptArgs {
@@ -240,7 +240,7 @@ pub async fn generate_worldlabs_marble_0p1_plus_splat_handler(
     Ok(token) => token,
     Err(err) => {
       warn!("Error inserting generic inference job for WorldLabs queue: {:?}", err);
-      return Err(AdvancedCommonWebError::from_error(err));
+      return Err(CommonWebError::from_error(err));
     }
   };
 
@@ -249,7 +249,7 @@ pub async fn generate_worldlabs_marble_0p1_plus_splat_handler(
       .await
       .map_err(|err| {
         error!("Error committing MySQL transaction: {:?}", err);
-        AdvancedCommonWebError::from_error(err)
+        CommonWebError::from_error(err)
       })?;
 
   Ok(Json(GenerateWorldlabsMarble0p1PlusSplatResponse {
@@ -258,17 +258,17 @@ pub async fn generate_worldlabs_marble_0p1_plus_splat_handler(
   }))
 }
 
-fn classify_worldlabs_error(err: WorldLabsError) -> AdvancedCommonWebError {
+fn classify_worldlabs_error(err: WorldLabsError) -> CommonWebError {
 
   if let WorldLabsError::ApiSpecific(WorldLabsSpecificApiError::NsfwContentPolicyRejected { message }) = &err {
-    return AdvancedCommonWebError::ContentPolicyRejectedWithMessage(
+    return CommonWebError::ContentPolicyRejectedWithMessage(
       message.clone().unwrap_or_else(|| "Content rejected by policy".to_string())
     );
   }
 
   if err.is_403_forbidden() {
-    return AdvancedCommonWebError::Forbidden;
+    return CommonWebError::Forbidden;
   }
 
-  AdvancedCommonWebError::from_error(err)
+  CommonWebError::from_error(err)
 }

@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::common_responses::media::media_file_cover_image_details_builder::MediaFileCoverImageDetailsBuilder;
 use crate::http_server::common_responses::media::media_links_builder::MediaLinksBuilder;
 use crate::http_server::common_responses::user_details_lite_builder::UserDetailsLightBuilder;
@@ -40,7 +40,7 @@ pub async fn list_batch_generated_redux_media_files_handler(
   http_request: HttpRequest,
   path: Path<ListBatchGeneratedReduxMediaFilesPathInfo>,
   server_state: web::Data<Arc<ServerState>>
-) -> Result<Json<ListBatchGeneratedReduxMediaFilesSuccessResponse>, AdvancedCommonWebError> {
+) -> Result<Json<ListBatchGeneratedReduxMediaFilesSuccessResponse>, CommonWebError> {
   let mut mysql_connection = server_state.mysql_pool
       .acquire()
       .await?;
@@ -74,7 +74,7 @@ pub async fn list_batch_generated_redux_media_files_handler(
     Ok(batch) => batch.media_files,
     Err(e) => {
       warn!("query error: {:?}", e);
-      return Err(AdvancedCommonWebError::from_anyhow_error(e));
+      return Err(CommonWebError::from_anyhow_error(e));
     }
   };
 

@@ -16,7 +16,7 @@ use mysql_queries::queries::users::user::get::lookup_user_for_moderation::{
 };
 use tokens::tokens::users::UserToken;
 
-use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::web_utils::user_session::require_moderator::{require_moderator, UseDatabase};
 use crate::state::server_state::ServerState;
 
@@ -38,11 +38,11 @@ pub async fn moderator_user_lookup_handler(
   http_request: HttpRequest,
   request: Json<ModeratorUserLookupRequest>,
   server_state: web::Data<Arc<ServerState>>,
-) -> Result<Json<ModeratorUserLookupSuccessResponse>, AdvancedCommonWebError> {
+) -> Result<Json<ModeratorUserLookupSuccessResponse>, CommonWebError> {
 
   let _user_session = require_moderator(&http_request, &server_state, UseDatabase::GrabNewConnection)
     .await
-    .map_err(|_| AdvancedCommonWebError::NotAuthorized)?;
+    .map_err(|_| CommonWebError::NotAuthorized)?;
 
   let search = request.search.trim();
 
@@ -64,7 +64,7 @@ pub async fn moderator_user_lookup_handler(
   let maybe_user = maybe_result
     .map_err(|err| {
       warn!("moderator_user_lookup error: {:?}", err);
-      AdvancedCommonWebError::from_anyhow_error(err)
+      CommonWebError::from_anyhow_error(err)
     })?;
 
   let maybe_user_details = maybe_user.map(|user| ModeratorUserLookupUserDetails {

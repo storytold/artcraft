@@ -12,7 +12,7 @@ use artcraft_api_defs::moderation::wallet_ledger_entries::moderator_get_wallet_l
 use mysql_queries::queries::wallet_ledger_entries::get_wallet_ledger_entry_for_moderation::get_wallet_ledger_entry_for_moderation;
 
 use tokens::tokens::wallet_ledger_entries::WalletLedgerEntryToken;
-use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::web_utils::user_session::require_moderator::{require_moderator, UseDatabase};
 use crate::state::server_state::ServerState;
 
@@ -34,17 +34,17 @@ pub async fn moderator_get_wallet_ledger_entry_handler(
   http_request: HttpRequest,
   path: Path<ModeratorGetWalletLedgerEntryPathInfo>,
   server_state: web::Data<Arc<ServerState>>,
-) -> Result<Json<ModeratorGetWalletLedgerEntryResponse>, AdvancedCommonWebError> {
+) -> Result<Json<ModeratorGetWalletLedgerEntryResponse>, CommonWebError> {
 
   let _user_session = require_moderator(&http_request, &server_state, UseDatabase::GrabNewConnection)
     .await
-    .map_err(|_| AdvancedCommonWebError::NotAuthorized)?;
+    .map_err(|_| CommonWebError::NotAuthorized)?;
 
   let maybe_entry = get_wallet_ledger_entry_for_moderation(&path.wallet_ledger_entry_token, &server_state.mysql_pool)
     .await
     .map_err(|err| {
       warn!("moderator_get_wallet_ledger_entry error: {:?}", err);
-      AdvancedCommonWebError::from_anyhow_error(err)
+      CommonWebError::from_anyhow_error(err)
     })?;
 
   let maybe_entry_details = maybe_entry.map(|entry| ModeratorGetWalletLedgerEntryDetails {

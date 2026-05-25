@@ -12,13 +12,13 @@ use enums::common::generation::common_image_model::CommonImageModel as CommonIma
 use enums::common::generation::common_quality::CommonQuality as CommonQualityEnum;
 use enums::common::generation::common_resolution::CommonResolution as CommonResolutionEnum;
 
-use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 
 pub fn hydrate_to_router_request(
   request: &OmniGenImageCostAndGenerateRequest,
-) -> Result<GenerateImageRequestBuilder, AdvancedCommonWebError> {
+) -> Result<GenerateImageRequestBuilder, CommonWebError> {
   let api_model = request.model.as_ref()
-    .ok_or_else(|| AdvancedCommonWebError::BadInputWithSimpleMessage(
+    .ok_or_else(|| CommonWebError::BadInputWithSimpleMessage(
       "model is required".to_string(),
     ))?;
 
@@ -57,10 +57,10 @@ pub fn hydrate_to_router_request(
 
 fn convert_model(
   model: &CommonImageModelEnum,
-) -> Result<CommonImageModelRouter, AdvancedCommonWebError> {
+) -> Result<CommonImageModelRouter, CommonWebError> {
   let json = serde_json::to_string(model)?;
   serde_json::from_str(&json).map_err(|e| {
-    AdvancedCommonWebError::BadInputWithSimpleMessage(
+    CommonWebError::BadInputWithSimpleMessage(
       format!("Unsupported image model: {}", e),
     )
   })
@@ -68,10 +68,10 @@ fn convert_model(
 
 fn convert_aspect_ratio(
   ar: &CommonAspectRatioEnum,
-) -> Result<CommonAspectRatioRouter, AdvancedCommonWebError> {
+) -> Result<CommonAspectRatioRouter, CommonWebError> {
   let json = serde_json::to_string(ar)?;
   serde_json::from_str(&json).map_err(|e| {
-    AdvancedCommonWebError::BadInputWithSimpleMessage(
+    CommonWebError::BadInputWithSimpleMessage(
       format!("Unsupported aspect ratio: {}", e),
     )
   })
@@ -79,10 +79,10 @@ fn convert_aspect_ratio(
 
 fn convert_resolution(
   res: &CommonResolutionEnum,
-) -> Result<CommonResolutionRouter, AdvancedCommonWebError> {
+) -> Result<CommonResolutionRouter, CommonWebError> {
   let json = serde_json::to_string(res)?;
   serde_json::from_str(&json).map_err(|e| {
-    AdvancedCommonWebError::BadInputWithSimpleMessage(
+    CommonWebError::BadInputWithSimpleMessage(
       format!("Unsupported resolution: {}", e),
     )
   })
@@ -90,10 +90,10 @@ fn convert_resolution(
 
 fn convert_quality(
   quality: &CommonQualityEnum,
-) -> Result<CommonQualityRouter, AdvancedCommonWebError> {
+) -> Result<CommonQualityRouter, CommonWebError> {
   let json = serde_json::to_string(quality)?;
   serde_json::from_str(&json).map_err(|e| {
-    AdvancedCommonWebError::BadInputWithSimpleMessage(
+    CommonWebError::BadInputWithSimpleMessage(
       format!("Unsupported quality: {}", e),
     )
   })

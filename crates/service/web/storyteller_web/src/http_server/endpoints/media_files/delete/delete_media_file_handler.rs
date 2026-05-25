@@ -1,7 +1,7 @@
 use std::fmt;
 use std::sync::Arc;
 
-use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::web_utils::response_success_helpers::simple_json_success;
 use crate::state::server_state::ServerState;
 use crate::util::delete_role_disambiguation::{delete_role_disambiguation, DeleteRole};
@@ -27,9 +27,9 @@ use utoipa::ToSchema;
     path = "/v1/media_files/file/{token}",
     responses(
         (status = 200, description = "Success Delete", body = SimpleGenericJsonSuccess),
-        (status = 400, description = "Bad input", body = AdvancedCommonWebError),
-        (status = 401, description = "Not authorized", body = AdvancedCommonWebError),
-        (status = 500, description = "Server error", body = AdvancedCommonWebError),
+        (status = 400, description = "Bad input", body = CommonWebError),
+        (status = 401, description = "Not authorized", body = CommonWebError),
+        (status = 500, description = "Server error", body = CommonWebError),
     ),
     params(
         ("request" = DeleteMediaFileRequest, description = "Payload for Request"),
@@ -41,21 +41,21 @@ pub async fn delete_media_file_handler(
     path: Path<DeleteMediaFilePathInfo>,
     request: Json<DeleteMediaFileRequest>,
     server_state: web::Data<Arc<ServerState>>
-) -> Result<Json<SimpleGenericJsonSuccess>, AdvancedCommonWebError> {
+) -> Result<Json<SimpleGenericJsonSuccess>, CommonWebError> {
     let maybe_user_session = server_state
         .session_checker
         .maybe_get_user_session(&http_request, &server_state.mysql_pool)
         .await
         .map_err(|e| {
             warn!("Session checker error: {:?}", e);
-            AdvancedCommonWebError::from_error(e)
+            CommonWebError::from_error(e)
         })?;
 
     let user_session = match maybe_user_session {
         Some(session) => session,
         None => {
             warn!("not logged in");
-            return Err(AdvancedCommonWebError::NotAuthorized);
+            return Err(CommonWebError::NotAuthorized);
         }
     };
 
@@ -71,11 +71,11 @@ pub async fn delete_media_file_handler(
         Ok(Some(media_file)) => media_file,
         Ok(None) => {
             warn!("MediaFile not found: {:?}", path.token);
-            return Err(AdvancedCommonWebError::NotFound);
+            return Err(CommonWebError::NotFound);
         },
         Err(err) => {
             warn!("Error looking up media_file: {:?}", err);
-            return Err(AdvancedCommonWebError::from_anyhow_error(err));
+            return Err(CommonWebError::from_anyhow_error(err));
         }
     };
 
@@ -84,7 +84,7 @@ pub async fn delete_media_file_handler(
 
     if !is_creator && !is_mod {
         warn!("user is not allowed to delete this media_file: {:?}", user_session.user_token);
-        return Err(AdvancedCommonWebError::NotAuthorized);
+        return Err(CommonWebError::NotAuthorized);
     }
 
     let delete_role = delete_role_disambiguation(is_mod, is_creator, request.as_mod);
@@ -93,7 +93,7 @@ pub async fn delete_media_file_handler(
         match delete_role {
             DeleteRole::ErrorDoNotDelete => {
                 warn!("user is not allowed to delete media_files: {:?}", user_session.user_token);
-                return Err(AdvancedCommonWebError::NotAuthorized);
+                return Err(CommonWebError::NotAuthorized);
             }
             DeleteRole::AsUser => {
                 delete_media_file_as_user(
@@ -113,7 +113,7 @@ pub async fn delete_media_file_handler(
         match delete_role {
             DeleteRole::ErrorDoNotDelete => {
                 warn!("user is not allowed to undelete voices: {:?}", user_session.user_token);
-                return Err(AdvancedCommonWebError::NotAuthorized);
+                return Err(CommonWebError::NotAuthorized);
             }
             DeleteRole::AsUser => {
                 // NB: Technically only mods can see their own media_files
@@ -136,7 +136,7 @@ pub async fn delete_media_file_handler(
         Ok(_) => {},
         Err(err) => {
             warn!("Update media_file mod approval status DB error: {:?}", err);
-            return Err(AdvancedCommonWebError::from_anyhow_error(err));
+            return Err(CommonWebError::from_anyhow_error(err));
         }
     };
 

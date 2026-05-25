@@ -5,7 +5,7 @@ use enums::common::payments_namespace::PaymentsNamespace;
 use log::warn;
 use utoipa::ToSchema;
 
-use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 
 // =============== Response ===============
 
@@ -38,17 +38,17 @@ pub struct SubscriptionProductKey {
 pub async fn list_active_user_subscriptions_handler(
   http_request: HttpRequest,
   internal_user_lookup: web::Data<dyn InternalUserLookup>,
-) -> Result<Json<ListActiveUserSubscriptionsResponse>, AdvancedCommonWebError> {
+) -> Result<Json<ListActiveUserSubscriptionsResponse>, CommonWebError> {
   let maybe_user_metadata = internal_user_lookup
     .lookup_user_from_http_request(&http_request)
     .await
     .map_err(|err| {
       warn!("Error looking up user: {:?}", err);
-      AdvancedCommonWebError::from_error(err)
+      CommonWebError::from_error(err)
     })?;
 
   let user_metadata = match maybe_user_metadata {
-    None => return Err(AdvancedCommonWebError::NotAuthorized),
+    None => return Err(CommonWebError::NotAuthorized),
     Some(user_metadata) => user_metadata,
   };
 

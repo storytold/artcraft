@@ -1,4 +1,4 @@
-use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::state::server_state::ServerState;
 use actix_web::web::Json;
 use enums::by_table::debug_logs::debug_log_type::DebugLogType;
@@ -23,7 +23,7 @@ pub async fn handle_failed_fal_webhook(
   error_data: &ErrorData,
   maybe_top_level_error: Option<&str>,
   raw_body: &str,
-) -> Result<Json<SimpleGenericJsonSuccess>, AdvancedCommonWebError> {
+) -> Result<Json<SimpleGenericJsonSuccess>, CommonWebError> {
 
   info!(
     "FAL webhook ERROR for request_id {}: top_level_error={:?}, error_type={:?}, message={:?}",
@@ -38,11 +38,11 @@ pub async fn handle_failed_fal_webhook(
     Ok(Some(record)) => record,
     Ok(None) => {
       warn!("Could not find job record by fal request_id: {}", request_id);
-      return Err(AdvancedCommonWebError::NotFound);
+      return Err(CommonWebError::NotFound);
     }
     Err(err) => {
       error!("Error querying job record for request_id {}: {:?}", request_id, err);
-      return Err(AdvancedCommonWebError::from_anyhow_error(err));
+      return Err(CommonWebError::from_anyhow_error(err));
     }
   };
 
@@ -100,7 +100,7 @@ pub async fn handle_failed_fal_webhook(
       request_id,
       err,
     );
-    return Err(AdvancedCommonWebError::from_anyhow_error(err));
+    return Err(CommonWebError::from_anyhow_error(err));
   }
 
   info!(

@@ -12,7 +12,7 @@ use artcraft_api_defs::moderation::wallets::list_user_wallets::{
 use mysql_queries::queries::wallets::list_user_wallets_for_moderation::list_user_wallets_for_moderation;
 
 use tokens::tokens::users::UserToken;
-use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::web_utils::user_session::require_moderator::{require_moderator, UseDatabase};
 use crate::state::server_state::ServerState;
 
@@ -34,17 +34,17 @@ pub async fn list_user_wallets_handler(
   http_request: HttpRequest,
   path: Path<ListUserWalletsPathInfo>,
   server_state: web::Data<Arc<ServerState>>,
-) -> Result<Json<ListUserWalletsResponse>, AdvancedCommonWebError> {
+) -> Result<Json<ListUserWalletsResponse>, CommonWebError> {
 
   let _user_session = require_moderator(&http_request, &server_state, UseDatabase::GrabNewConnection)
     .await
-    .map_err(|_| AdvancedCommonWebError::NotAuthorized)?;
+    .map_err(|_| CommonWebError::NotAuthorized)?;
 
   let results = list_user_wallets_for_moderation(&path.user_token, &server_state.mysql_pool)
     .await
     .map_err(|err| {
       warn!("list_user_wallets error: {:?}", err);
-      AdvancedCommonWebError::from_anyhow_error(err)
+      CommonWebError::from_anyhow_error(err)
     })?;
 
   let wallets = results.into_iter().map(|row| ListUserWalletsEntry {

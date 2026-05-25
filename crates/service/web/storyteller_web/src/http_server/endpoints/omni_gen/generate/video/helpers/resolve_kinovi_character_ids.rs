@@ -8,7 +8,7 @@ use sqlx::MySql;
 use mysql_queries::queries::characters::batch_lookup_characters_by_token_for_prompting::batch_lookup_characters_by_token_for_prompting;
 use tokens::tokens::characters::CharacterToken;
 
-use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 
 /// Resolve character tokens to a map of CharacterToken → Kinovi character ID.
 ///
@@ -17,7 +17,7 @@ use crate::http_server::common_responses::advanced_common_web_error::AdvancedCom
 pub async fn resolve_kinovi_character_ids(
   maybe_tokens: Option<&[CharacterToken]>,
   connection: &mut sqlx::pool::PoolConnection<MySql>,
-) -> Result<Option<HashMap<CharacterToken, String>>, AdvancedCommonWebError> {
+) -> Result<Option<HashMap<CharacterToken, String>>, CommonWebError> {
   let tokens = match maybe_tokens {
     None => return Ok(None),
     Some(tokens) if tokens.is_empty() => return Ok(None),

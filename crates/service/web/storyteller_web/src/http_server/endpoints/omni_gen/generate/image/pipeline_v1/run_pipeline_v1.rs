@@ -10,7 +10,7 @@ use tokens::tokens::generic_inference_jobs::InferenceJobToken;
 use tokens::tokens::users::UserToken;
 
 use crate::billing::wallets::attempt_wallet_deduction::attempt_wallet_deduction_else_common_web_error;
-use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::endpoints::omni_gen::generate::image::pipeline_result::ImagePipelineResult;
 use crate::state::server_state::ServerState;
 use crate::util::lookup::lookup_media_files_as_cdn_url_list_and_map::MediaFilesAsCdnUrlListAndMap;
@@ -25,7 +25,7 @@ pub struct RunPipelineV1Args<'a> {
 
 pub async fn run_pipeline_v1(
   args: RunPipelineV1Args<'_>,
-) -> Result<ImagePipelineResult, AdvancedCommonWebError> {
+) -> Result<ImagePipelineResult, CommonWebError> {
   let RunPipelineV1Args {
     router_builder,
     server_state,
@@ -67,7 +67,7 @@ pub async fn run_pipeline_v1(
     .await
     .map_err(|e| {
       warn!("Image generation failed: {:?}", e);
-      AdvancedCommonWebError::from_error(e)
+      CommonWebError::from_error(e)
     })?;
 
   Ok(ImagePipelineResult {
@@ -96,13 +96,13 @@ fn apply_hydrated_media_inputs(
 
 fn estimate_cost_in_credits(
   router_builder: &GenerateImageRequestBuilder,
-) -> Result<u64, AdvancedCommonWebError> {
+) -> Result<u64, CommonWebError> {
   let mut cost_builder = router_builder.clone();
   cost_builder.provider = Provider::Artcraft;
 
   let cost_plan = cost_builder.build().map_err(|e| {
     warn!("Failed to build image cost plan for v1 pipeline: {}", e);
-    AdvancedCommonWebError::from_error(e)
+    CommonWebError::from_error(e)
   })?;
 
   Ok(cost_plan.estimate_costs().cost_in_credits.unwrap_or(0))
@@ -110,12 +110,12 @@ fn estimate_cost_in_credits(
 
 fn build_execution_plan(
   router_builder: &GenerateImageRequestBuilder,
-) -> Result<ImageGenerationPlan, AdvancedCommonWebError> {
+) -> Result<ImageGenerationPlan, CommonWebError> {
   let mut execution_builder = router_builder.clone();
   execution_builder.provider = Provider::Fal;
 
   execution_builder.build().map_err(|e| {
     warn!("Failed to build image generation plan for v1 pipeline: {}", e);
-    AdvancedCommonWebError::from_error(e)
+    CommonWebError::from_error(e)
   })
 }

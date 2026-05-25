@@ -1,4 +1,4 @@
-use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::endpoints::webhooks::fal::process_success::resolve_file_metadata::resolve_file_metadata;
 use crate::state::server_state::ServerState;
 use crate::util::http_download_url_to_bytes::http_download_url_to_bytes;
@@ -60,12 +60,12 @@ pub async fn process_model_glb_payload(
   maybe_thumbnail_data: Option<&ThumbnailData>,
   job: &FalJobDetails,
   server_state: &ServerState,
-) -> Result<MediaFileToken, AdvancedCommonWebError> {
+) -> Result<MediaFileToken, CommonWebError> {
   let mesh_url = model_glb_data.url
       .as_deref()
       .ok_or_else(|| {
         warn!("No `url` in model glb payload");
-        AdvancedCommonWebError::server_error_with_message("no `url` in model glb payload")
+        CommonWebError::server_error_with_message("no `url` in model glb payload")
       })?;
 
   // Download with a retry if the first attempt returns suspiciously few bytes.
@@ -73,7 +73,7 @@ pub async fn process_model_glb_payload(
       .await
       .map_err(|err| {
         warn!("Failed to download mesh from {}: {:?}", mesh_url, err);
-        AdvancedCommonWebError::from_error(err)
+        CommonWebError::from_error(err)
       })?;
 
   if file_bytes.len() <= 10 {
@@ -86,7 +86,7 @@ pub async fn process_model_glb_payload(
         .await
         .map_err(|e| {
           warn!("Failed to download mesh on retry from {}: {:?}", mesh_url, e);
-          AdvancedCommonWebError::server_error_with_message(
+          CommonWebError::server_error_with_message(
             &format!("Failed to download mesh on retry: {:?}", e))
         })?;
   }
@@ -99,7 +99,7 @@ pub async fn process_model_glb_payload(
           file_bytes.len(),
           model_glb_data.content_type,
         );
-        AdvancedCommonWebError::server_error_with_message(
+        CommonWebError::server_error_with_message(
           &format!("Could not determine file type for mesh (bytes: {}, fal content_type: {:?})",
             file_bytes.len(), model_glb_data.content_type))
       })?;
@@ -111,7 +111,7 @@ pub async fn process_model_glb_payload(
   let media_file_type = MediaFileType::try_from_mime_type(mime_type)
       .ok_or_else(|| {
         warn!("Unsupported media file type: {}", mime_type);
-        AdvancedCommonWebError::server_error_with_message(
+        CommonWebError::server_error_with_message(
           &format!("Unsupported media file type: {}", mime_type))
       })?;
 
@@ -121,7 +121,7 @@ pub async fn process_model_glb_payload(
   let file_hash = sha256_hash_bytes(&file_bytes)
       .map_err(|e| {
         warn!("Failed to hash mesh bytes: {:?}", e);
-        AdvancedCommonWebError::from_anyhow_error(e)
+        CommonWebError::from_anyhow_error(e)
       })?;
 
   let public_upload_path = MediaFileBucketPath::generate_new(PREFIX, Some(&extension_with_period));
@@ -135,7 +135,7 @@ pub async fn process_model_glb_payload(
       .await
       .map_err(|e| {
         warn!("Failed to upload mesh to bucket: {:?}", e);
-        AdvancedCommonWebError::from_anyhow_error(e)
+        CommonWebError::from_anyhow_error(e)
       })?;
 
   let media_token = MediaFileInsertBuilder::new()
@@ -156,7 +156,7 @@ pub async fn process_model_glb_payload(
       .await
       .map_err(|e| {
         warn!("Failed to insert glb media file record: {:?}", e);
-        AdvancedCommonWebError::from_error(e)
+        CommonWebError::from_error(e)
       })?;
 
   info!("Glb media file uploaded with token: {}", media_token);
@@ -181,11 +181,11 @@ async fn try_to_attach_thumbnail(
   job: &FalJobDetails,
   server_state: &ServerState,
   glb_media_token: &MediaFileToken,
-) -> Result<(), AdvancedCommonWebError> {
+) -> Result<(), CommonWebError> {
   let thumbnail_data = maybe_thumbnail_data
       .ok_or_else(|| {
         warn!("No thumbnail data in extracted contents");
-        AdvancedCommonWebError::server_error_with_message(
+        CommonWebError::server_error_with_message(
           "no thumbnail data in extracted contents")
       })?;
 
@@ -195,7 +195,7 @@ async fn try_to_attach_thumbnail(
       .as_deref()
       .ok_or_else(|| {
         warn!("No `url` in thumbnail payload");
-        AdvancedCommonWebError::server_error_with_message("no `url` in thumbnail payload")
+        CommonWebError::server_error_with_message("no `url` in thumbnail payload")
       })?;
 
   // Download with a retry if the first attempt returns suspiciously few bytes.
@@ -203,7 +203,7 @@ async fn try_to_attach_thumbnail(
       .await
       .map_err(|e| {
         warn!("Failed to download thumbnail image from {}: {:?}", thumbnail_url, e);
-        AdvancedCommonWebError::server_error_with_message(
+        CommonWebError::server_error_with_message(
           &format!("Failed to download thumbnail image: {:?}", e))
       })?;
 
@@ -217,7 +217,7 @@ async fn try_to_attach_thumbnail(
         .await
         .map_err(|e| {
           warn!("Failed to download thumbnail on retry from {}: {:?}", thumbnail_url, e);
-          AdvancedCommonWebError::server_error_with_message(
+          CommonWebError::server_error_with_message(
             &format!("Failed to download thumbnail on retry: {:?}", e))
         })?;
   }
@@ -230,7 +230,7 @@ async fn try_to_attach_thumbnail(
           file_bytes.len(),
           thumbnail_data.content_type,
         );
-        AdvancedCommonWebError::server_error_with_message(
+        CommonWebError::server_error_with_message(
           &format!("Could not determine file type for thumbnail (bytes: {}, fal content_type: {:?})",
             file_bytes.len(), thumbnail_data.content_type))
       })?;
@@ -242,7 +242,7 @@ async fn try_to_attach_thumbnail(
   let media_file_type = MediaFileType::try_from_mime_type(mime_type)
       .ok_or_else(|| {
         warn!("Unsupported thumbnail media file type: {}", mime_type);
-        AdvancedCommonWebError::server_error_with_message(
+        CommonWebError::server_error_with_message(
           &format!("Unsupported media file type: {}", mime_type))
       })?;
 
@@ -252,7 +252,7 @@ async fn try_to_attach_thumbnail(
   let file_hash = sha256_hash_bytes(&file_bytes)
       .map_err(|e| {
         warn!("Failed to hash thumbnail bytes: {:?}", e);
-        AdvancedCommonWebError::from_anyhow_error(e)
+        CommonWebError::from_anyhow_error(e)
       })?;
 
   let public_upload_path = MediaFileBucketPath::generate_new(PREFIX, Some(&extension_with_period));
@@ -266,7 +266,7 @@ async fn try_to_attach_thumbnail(
       .await
       .map_err(|e| {
         warn!("Failed to upload thumbnail to bucket: {:?}", e);
-        AdvancedCommonWebError::from_anyhow_error(e)
+        CommonWebError::from_anyhow_error(e)
       })?;
 
   let thumbnail_media_token = MediaFileInsertBuilder::new()
@@ -287,7 +287,7 @@ async fn try_to_attach_thumbnail(
       .await
       .map_err(|e| {
         warn!("Failed to insert thumbnail media file record: {:?}", e);
-        AdvancedCommonWebError::from_error(e)
+        CommonWebError::from_error(e)
       })?;
 
   let query_result = set_media_file_cover_image(UpdateArgs {

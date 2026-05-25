@@ -9,7 +9,7 @@ use tokens::tokens::characters::CharacterToken;
 use mysql_queries::queries::characters::delete_character::delete_character;
 use mysql_queries::queries::characters::get_character_by_token_including_deleted::get_character_by_token_including_deleted;
 
-use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::web_utils::user_session::require_user_session_using_connection::require_user_session_using_connection;
 use crate::state::server_state::ServerState;
 
@@ -32,7 +32,7 @@ pub async fn delete_character_handler(
   http_request: HttpRequest,
   path: Path<DeleteCharacterPathInfo>,
   server_state: web::Data<Arc<ServerState>>,
-) -> Result<Json<DeleteCharacterResponse>, AdvancedCommonWebError> {
+) -> Result<Json<DeleteCharacterResponse>, CommonWebError> {
 
   let character_token = &path.character_token;
 
@@ -55,7 +55,7 @@ pub async fn delete_character_handler(
       .await?
       .ok_or_else(|| {
         warn!("Character not found: {}", character_token);
-        AdvancedCommonWebError::NotFound
+        CommonWebError::NotFound
       })?;
 
   // Already deleted — return success idempotently.
@@ -76,7 +76,7 @@ pub async fn delete_character_handler(
       "User {} attempted to delete character {} owned by {:?}",
       user_token, character_token, character.maybe_creator_user_token,
     );
-    return Err(AdvancedCommonWebError::NotAuthorized);
+    return Err(CommonWebError::NotAuthorized);
   }
 
   // --- Soft delete ---

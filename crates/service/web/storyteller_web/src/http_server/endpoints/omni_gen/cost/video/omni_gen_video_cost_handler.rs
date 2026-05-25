@@ -9,7 +9,7 @@ use artcraft_router::errors::artcraft_router_error::ArtcraftRouterError;
 use artcraft_router::generate::generate_video::video_generation_cost_estimate::VideoGenerationCostEstimate;
 use log::warn;
 use artcraft_router::api::common_video_model::CommonVideoModel;
-use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::endpoints::omni_gen::generate::video::helpers::hydrate_router_request::hydrate_to_router_request;
 use crate::state::server_state::ServerState;
 
@@ -29,7 +29,7 @@ pub async fn omni_gen_video_cost_handler(
   _http_request: HttpRequest,
   request: Json<OmniGenVideoCostAndGenerateRequest>,
   _server_state: web::Data<Arc<ServerState>>,
-) -> Result<Json<OmniGenVideoCostResponse>, AdvancedCommonWebError> {
+) -> Result<Json<OmniGenVideoCostResponse>, CommonWebError> {
   let mut builder = hydrate_to_router_request(&request)?;
 
   builder.provider = Provider::Artcraft;
@@ -38,12 +38,12 @@ pub async fn omni_gen_video_cost_handler(
     builder.build2()
       .map_err(|e| {
         warn!("Failed to build2 cost estimate: {}", e);
-        AdvancedCommonWebError::from_error(e)
+        CommonWebError::from_error(e)
       })?
       .estimate_cost()
       .map_err(|e| {
         warn!("Failed to estimate cost (v2): {}", e);
-        AdvancedCommonWebError::from_error(e)
+        CommonWebError::from_error(e)
       })?
   } else {
     let plan = match builder.build() {
@@ -53,12 +53,12 @@ pub async fn omni_gen_video_cost_handler(
         builder.build()
           .map_err(|e| {
             warn!("Failed to build Fal cost plan: {}", e);
-            AdvancedCommonWebError::from_error(e)
+            CommonWebError::from_error(e)
           })?
       }
       Err(e) => {
         warn!("Failed to build cost plan: {}", e);
-        return Err(AdvancedCommonWebError::from_error(e));
+        return Err(CommonWebError::from_error(e));
       }
     };
     plan.estimate_costs()

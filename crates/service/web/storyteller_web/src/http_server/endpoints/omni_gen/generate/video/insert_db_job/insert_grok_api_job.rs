@@ -5,7 +5,7 @@ use mysql_queries::queries::generic_inference::api_providers::grok_api::insert_g
 };
 use tokens::tokens::generic_inference_jobs::InferenceJobToken;
 
-use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 
 use super::shared_job_args::SharedJobArgs;
 
@@ -14,7 +14,7 @@ pub struct InsertGrokApiJobArgs<'a, 'tx> {
   pub shared: SharedJobArgs<'a, 'tx>,
 }
 
-pub async fn insert_grok_api_job(args: InsertGrokApiJobArgs<'_, '_>) -> Result<InferenceJobToken, AdvancedCommonWebError> {
+pub async fn insert_grok_api_job(args: InsertGrokApiJobArgs<'_, '_>) -> Result<InferenceJobToken, CommonWebError> {
   let InsertGrokApiJobArgs {
     external_request_id,
     shared,
@@ -40,7 +40,7 @@ pub async fn insert_grok_api_job(args: InsertGrokApiJobArgs<'_, '_>) -> Result<I
     Ok(token) => Ok(token),
     Err(err) => {
       warn!("Error inserting Grok (xAI) API inference job: {:?}", err);
-      Err(AdvancedCommonWebError::from_error(err))
+      Err(CommonWebError::from_error(err))
     }
   }
 }

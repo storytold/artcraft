@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::state::server_state::ServerState;
 use actix_helpers::extractors::get_request_user_agent::get_request_user_agent;
 use actix_web::web::Json;
@@ -29,7 +29,7 @@ pub async fn log_app_active_user_json_handler(
   http_request: HttpRequest,
   request: Json<LogAppActiveUserRequest>,
   server_state: web::Data<Arc<ServerState>>,
-) -> Result<Json<LogAppActiveUserResponse>, AdvancedCommonWebError>
+) -> Result<Json<LogAppActiveUserResponse>, CommonWebError>
 {
   let mut mysql_connection = server_state.mysql_pool
       .acquire()
@@ -41,7 +41,7 @@ pub async fn log_app_active_user_json_handler(
       .await?;
 
   let user_token = maybe_user_session
-      .ok_or(AdvancedCommonWebError::NotAuthorized)?
+      .ok_or(CommonWebError::NotAuthorized)?
       .user_token;
 
   let ip_address = get_request_ip(&http_request);
@@ -139,10 +139,10 @@ pub async fn log_app_active_user_json_handler(
   }))
 }
 
-fn validate_app_session_token_format(app_session_token: &AppSessionToken) -> Result<(), AdvancedCommonWebError> {
+fn validate_app_session_token_format(app_session_token: &AppSessionToken) -> Result<(), CommonWebError> {
   if !app_session_token.as_str().starts_with(AppSessionToken::token_prefix()) {
     warn!("App session token has invalid prefix: {}", app_session_token.as_str());
-    return Err(AdvancedCommonWebError::BadInputWithSimpleMessage("Invalid app session token format".to_string()));
+    return Err(CommonWebError::BadInputWithSimpleMessage("Invalid app session token format".to_string()));
   }
 
   Ok(())

@@ -29,7 +29,7 @@ use mysql_queries::queries::prompt_context_items::insert_batch_prompt_context_it
 use mysql_queries::queries::prompts::insert_prompt::{insert_prompt, InsertPromptArgs};
 use tokens::tokens::non_unique::debug_logs_event_token::DebugLogEventToken;
 
-use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::endpoints::generate::common::payments_error_test::payments_error_test;
 use crate::http_server::endpoints::omni_gen::generate::image::hydrate_to_router_request::hydrate_to_router_request;
 use crate::http_server::endpoints::omni_gen::generate::image::pipeline_v1::run_pipeline_v1::{run_pipeline_v1, RunPipelineV1Args};
@@ -56,7 +56,7 @@ pub async fn omni_gen_image_generate_handler(
   http_request: HttpRequest,
   request: Json<OmniGenImageCostAndGenerateRequest>,
   server_state: web::Data<Arc<ServerState>>,
-) -> Result<Json<OmniGenImageGenerateResponse>, AdvancedCommonWebError> {
+) -> Result<Json<OmniGenImageGenerateResponse>, CommonWebError> {
 
   payments_error_test(&request.prompt.as_deref().unwrap_or(""))?;
 
@@ -76,12 +76,12 @@ pub async fn omni_gen_image_generate_handler(
     .await
     .map_err(|e| {
       warn!("Session checker error: {:?}", e);
-      AdvancedCommonWebError::from(e)
+      CommonWebError::from(e)
     })?;
 
   let user_token = match maybe_user_session.as_ref() {
     Some(session) => &session.user_token,
-    None => return Err(AdvancedCommonWebError::NotAuthorized),
+    None => return Err(CommonWebError::NotAuthorized),
   };
 
   let maybe_avt_token = server_state
@@ -95,14 +95,14 @@ pub async fn omni_gen_image_generate_handler(
     .to_string();
 
   if let Err(reason) = validate_idempotency_token_format(&idempotency_token) {
-    return Err(AdvancedCommonWebError::BadInputWithSimpleMessage(reason));
+    return Err(CommonWebError::BadInputWithSimpleMessage(reason));
   }
 
   insert_idempotency_token(&idempotency_token, &mut *mysql_connection)
     .await
     .map_err(|err| {
       error!("Error inserting idempotency token: {:?}", err);
-      AdvancedCommonWebError::BadInputWithSimpleMessage("repeated idempotency token".to_string())
+      CommonWebError::BadInputWithSimpleMessage("repeated idempotency token".to_string())
     })?;
 
   // ==================== RESOLVE MEDIA TOKENS ==================== //
@@ -189,7 +189,7 @@ pub async fn omni_gen_image_generate_handler(
     .await
     .map_err(|err| {
       error!("Error starting MySQL transaction: {:?}", err);
-      AdvancedCommonWebError::from_error(err)
+      CommonWebError::from_error(err)
     })?;
 
   // -- Prompt --
@@ -281,13 +281,13 @@ pub async fn omni_gen_image_generate_handler(
     Ok(token) => token,
     Err(err) => {
       warn!("Error inserting inference job: {:?}", err);
-      return Err(AdvancedCommonWebError::from_error(err));
+      return Err(CommonWebError::from_error(err));
     }
   };
 
   transaction.commit().await.map_err(|err| {
     error!("Error committing transaction: {:?}", err);
-    AdvancedCommonWebError::from_error(err)
+    CommonWebError::from_error(err)
   })?;
 
   Ok(Json(OmniGenImageGenerateResponse {

@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::sync::Arc;
 
-use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::endpoints::generate::common::payments_error_test::payments_error_test;
 use crate::http_server::validations::validate_idempotency_token_format::validate_idempotency_token_format;
 use crate::state::server_state::ServerState;
@@ -61,7 +61,7 @@ pub async fn generate_hunyuan3d_v3_multi_function_object_handler(
   http_request: HttpRequest,
   request: Json<Hunyuan3dV3MultiFunctionObjectGenRequest>,
   server_state: web::Data<Arc<ServerState>>,
-) -> Result<Json<Hunyuan3dV3MultiFunctionObjectGenResponse>, AdvancedCommonWebError> {
+) -> Result<Json<Hunyuan3dV3MultiFunctionObjectGenResponse>, CommonWebError> {
   payments_error_test(&request.prompt.as_deref().unwrap_or(""))?;
 
   let mut mysql_connection = server_state.mysql_pool.acquire().await?;
@@ -72,7 +72,7 @@ pub async fn generate_hunyuan3d_v3_multi_function_object_handler(
     .await
     .map_err(|e| {
       warn!("Session checker error: {:?}", e);
-      AdvancedCommonWebError::from_error(e)
+      CommonWebError::from_error(e)
     })?;
 
   let maybe_avt_token = server_state
@@ -80,7 +80,7 @@ pub async fn generate_hunyuan3d_v3_multi_function_object_handler(
     .get_avt_token_from_request(&http_request);
 
   if let Err(reason) = validate_idempotency_token_format(&request.uuid_idempotency_token) {
-    return Err(AdvancedCommonWebError::BadInputWithSimpleMessage(reason));
+    return Err(CommonWebError::BadInputWithSimpleMessage(reason));
   }
 
   // Collect all media tokens to look up in a single batch query
@@ -142,7 +142,7 @@ pub async fn generate_hunyuan3d_v3_multi_function_object_handler(
     .await
     .map_err(|err| {
       error!("Error inserting idempotency token: {:?}", err);
-      AdvancedCommonWebError::BadInputWithSimpleMessage("repeated idempotency token".to_string())
+      CommonWebError::BadInputWithSimpleMessage("repeated idempotency token".to_string())
     })?;
 
   info!("Fal webhook URL: {}", server_state.fal.webhook_url);
@@ -196,7 +196,7 @@ pub async fn generate_hunyuan3d_v3_multi_function_object_handler(
             "Error calling enqueue_hunyuan3d_v3_text_to_3d_webhook: {:?}",
             err
           );
-          AdvancedCommonWebError::from_error(err)
+          CommonWebError::from_error(err)
         })?
     }
 
@@ -237,7 +237,7 @@ pub async fn generate_hunyuan3d_v3_multi_function_object_handler(
             "Error calling enqueue_hunyuan3d_v3_sketch_to_3d_webhook: {:?}",
             err
           );
-          AdvancedCommonWebError::from_error(err)
+          CommonWebError::from_error(err)
         })?
     }
 
@@ -280,13 +280,13 @@ pub async fn generate_hunyuan3d_v3_multi_function_object_handler(
             "Error calling enqueue_hunyuan3d_v3_image_to_3d_webhook: {:?}",
             err
           );
-          AdvancedCommonWebError::from_error(err)
+          CommonWebError::from_error(err)
         })?
     }
 
     // Neither prompt nor image - invalid request
     (false, false) => {
-      return Err(AdvancedCommonWebError::BadInputWithSimpleMessage(
+      return Err(CommonWebError::BadInputWithSimpleMessage(
         "Either prompt or image_media_token must be provided".to_string(),
       ));
     }
@@ -294,7 +294,7 @@ pub async fn generate_hunyuan3d_v3_multi_function_object_handler(
 
   let external_job_id = fal_result.request_id.ok_or_else(|| {
     warn!("Fal request_id is None");
-    AdvancedCommonWebError::server_error_with_message("Fal request_id is None")
+    CommonWebError::server_error_with_message("Fal request_id is None")
   })?;
 
   info!("Fal request_id: {}", external_job_id);
@@ -303,7 +303,7 @@ pub async fn generate_hunyuan3d_v3_multi_function_object_handler(
 
   let mut transaction = mysql_connection.begin().await.map_err(|err| {
     error!("Error starting MySQL transaction: {:?}", err);
-    AdvancedCommonWebError::from_error(err)
+    CommonWebError::from_error(err)
   })?;
 
   // Insert prompt record if we have a prompt
@@ -403,13 +403,13 @@ pub async fn generate_hunyuan3d_v3_multi_function_object_handler(
         "Error inserting generic inference job for FAL queue: {:?}",
         err
       );
-      return Err(AdvancedCommonWebError::from_error(err));
+      return Err(CommonWebError::from_error(err));
     }
   };
 
   let _r = transaction.commit().await.map_err(|err| {
     error!("Error committing MySQL transaction: {:?}", err);
-    AdvancedCommonWebError::from_error(err)
+    CommonWebError::from_error(err)
   })?;
 
   Ok(Json(Hunyuan3dV3MultiFunctionObjectGenResponse {

@@ -1,4 +1,4 @@
-use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 use log::{error, warn};
 use mysql_queries::queries::media_files::get::batch_get_media_files_by_tokens::{batch_get_media_files_by_tokens_with_connection, MediaFilesByTokensRecord};
 use sqlx::pool::PoolConnection;
@@ -11,7 +11,7 @@ const CAN_SEE_DELETED: bool = false;
 pub async fn fetch_all_required_media_files(
   mysql_connection: &mut PoolConnection<MySql>,
   media_file_tokens: &[MediaFileToken],
-) -> Result<Vec<MediaFilesByTokensRecord>, AdvancedCommonWebError> {
+) -> Result<Vec<MediaFilesByTokensRecord>, CommonWebError> {
   let result = batch_get_media_files_by_tokens_with_connection(
     mysql_connection,
     &media_file_tokens,
@@ -22,13 +22,13 @@ pub async fn fetch_all_required_media_files(
     Ok(files) => files,
     Err(err) => {
       error!("Error getting media files by tokens: {:?}", err);
-      return Err(AdvancedCommonWebError::from_anyhow_error(err));
+      return Err(CommonWebError::from_anyhow_error(err));
     }
   };
 
   if media_files.len() != media_file_tokens.len() {
     warn!("Wrong number of media files returned for tokens: {} found for {} tokens", media_files.len(), media_file_tokens.len());
-    return Err(AdvancedCommonWebError::BadInputWithSimpleMessage(
+    return Err(CommonWebError::BadInputWithSimpleMessage(
       format!("Not all media files could be found. Media files found: {}, tokens provided: {}",
         media_files.len(), media_file_tokens.len())));
   }

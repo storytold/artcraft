@@ -1,7 +1,7 @@
 use std::collections::HashSet;
 use std::sync::Arc;
 
-use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::common_responses::media::media_domain::MediaDomain;
 use crate::http_server::common_responses::media::media_links_builder::MediaLinksBuilder;
 use crate::http_server::endpoints::inference_job::utils::estimates::estimate_job_progress::estimate_job_progress;
@@ -161,7 +161,7 @@ pub async fn batch_get_inference_job_status_handler(
   http_request: HttpRequest,
   query: Query<BatchGetInferenceJobStatusQueryParams>,
   server_state: web::Data<Arc<ServerState>>,
-) -> Result<Json<BatchGetInferenceJobStatusSuccessResponse>, AdvancedCommonWebError> {
+) -> Result<Json<BatchGetInferenceJobStatusSuccessResponse>, CommonWebError> {
 
   let tokens = query.tokens.iter()
       .map(|token| token.trim())
@@ -188,14 +188,14 @@ pub async fn batch_get_inference_job_status_handler(
   ).await
       .map_err(|err| {
         warn!("Batch job query error: {:?}", err);
-        AdvancedCommonWebError::from_anyhow_error(err)
+        CommonWebError::from_anyhow_error(err)
       })?;
 
   let mut redis = server_state.redis_pool
       .get()
       .map_err(|e| {
         warn!("Redis pool error: {:?}", e);
-        AdvancedCommonWebError::from_error(e)
+        CommonWebError::from_error(e)
       })?;
 
   // TODO(bt,2024-04-22): Look up the extra redis statuses per item.

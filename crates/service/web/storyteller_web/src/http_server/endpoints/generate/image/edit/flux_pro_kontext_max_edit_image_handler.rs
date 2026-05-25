@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use crate::billing::wallets::temporary_test_wallet_deduction::temporary_test_wallet_deduction;
-use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::common_responses::media::media_links_builder::MediaLinksBuilder;
 use crate::http_server::endpoints::generate::common::payments_error_test::payments_error_test;
 use crate::http_server::endpoints::media_files::helpers::get_media_domain::get_media_domain;
@@ -47,7 +47,7 @@ pub async fn flux_pro_kontext_max_edit_image_handler(
   http_request: HttpRequest,
   request: Json<FluxProKontextMaxEditImageRequest>,
   server_state: web::Data<Arc<ServerState>>
-) -> Result<Json<FluxProKontextMaxEditImageResponse>, AdvancedCommonWebError> {
+) -> Result<Json<FluxProKontextMaxEditImageResponse>, CommonWebError> {
   
   payments_error_test(&request.prompt.as_deref().unwrap_or(""))?;
   
@@ -61,7 +61,7 @@ pub async fn flux_pro_kontext_max_edit_image_handler(
       .await
       .map_err(|e| {
         warn!("Session checker error: {:?}", e);
-        AdvancedCommonWebError::from_error(e)
+        CommonWebError::from_error(e)
       })?;
 
   let maybe_avt_token = server_state
@@ -71,7 +71,7 @@ pub async fn flux_pro_kontext_max_edit_image_handler(
   let user_token = match maybe_user_session.as_ref() {
     Some(session) => &session.user_token,
     None => {
-      return Err(AdvancedCommonWebError::NotAuthorized);
+      return Err(CommonWebError::NotAuthorized);
     }
   };
 
@@ -81,12 +81,12 @@ pub async fn flux_pro_kontext_max_edit_image_handler(
   //  Some(session) => session,
   //  None => {
   //    warn!("not logged in");
-  //    return Err(AdvancedCommonWebError::NotAuthorized);
+  //    return Err(CommonWebError::NotAuthorized);
   //  }
   //};
 
   if let Err(reason) = validate_idempotency_token_format(&request.uuid_idempotency_token) {
-    return Err(AdvancedCommonWebError::BadInputWithSimpleMessage(reason));
+    return Err(CommonWebError::BadInputWithSimpleMessage(reason));
   }
 
   const CAN_SEE_DELETED: bool = false;
@@ -106,7 +106,7 @@ pub async fn flux_pro_kontext_max_edit_image_handler(
     Ok(files) => files,
     Err(err) => {
       error!("Error getting media files by tokens: {:?}", err);
-      return Err(AdvancedCommonWebError::from_anyhow_error(err));
+      return Err(CommonWebError::from_anyhow_error(err));
     }
   };
 
@@ -114,7 +114,7 @@ pub async fn flux_pro_kontext_max_edit_image_handler(
     Some(file) => file,
     None => {
       warn!("No media files found for tokens: {:?}", media_tokens);
-      return Err(AdvancedCommonWebError::BadInputWithSimpleMessage(
+      return Err(CommonWebError::BadInputWithSimpleMessage(
         "No media files found for provided tokens".to_string()));
     }
   };
@@ -139,7 +139,7 @@ pub async fn flux_pro_kontext_max_edit_image_handler(
       .await
       .map_err(|err| {
         error!("Error inserting idempotency token: {:?}", err);
-        AdvancedCommonWebError::BadInputWithSimpleMessage("repeated idempotency token".to_string())
+        CommonWebError::BadInputWithSimpleMessage("repeated idempotency token".to_string())
       })?;
 
   //// TODO: This is test code
@@ -188,13 +188,13 @@ pub async fn flux_pro_kontext_max_edit_image_handler(
       .await
       .map_err(|err| {
         warn!("Error calling enqueue_flux_pro_kontext_max_edit_webook: {:?}", err);
-        AdvancedCommonWebError::from_error(err)
+        CommonWebError::from_error(err)
       })?;
 
   let external_job_id = fal_result.request_id
       .ok_or_else(|| {
         warn!("Fal request_id is None");
-        AdvancedCommonWebError::server_error_with_message("Fal request_id is None")
+        CommonWebError::server_error_with_message("Fal request_id is None")
       })?;
 
   info!("Fal request_id: {}", external_job_id);
@@ -206,7 +206,7 @@ pub async fn flux_pro_kontext_max_edit_image_handler(
       .await
       .map_err(|err| {
         error!("Error starting MySQL transaction: {:?}", err);
-        AdvancedCommonWebError::from_error(err)
+        CommonWebError::from_error(err)
       })?;
 
   // NB: Don't fail the job if the query fails.
@@ -285,7 +285,7 @@ pub async fn flux_pro_kontext_max_edit_image_handler(
     Ok(token) => token,
     Err(err) => {
       warn!("Error inserting generic inference job for FAL queue: {:?}", err);
-      return Err(AdvancedCommonWebError::from_error(err));
+      return Err(CommonWebError::from_error(err));
     }
   };
   
@@ -294,7 +294,7 @@ pub async fn flux_pro_kontext_max_edit_image_handler(
       .await
       .map_err(|err| {
         error!("Error committing MySQL transaction: {:?}", err);
-        AdvancedCommonWebError::from_error(err)
+        CommonWebError::from_error(err)
       })?;
 
   Ok(Json(FluxProKontextMaxEditImageResponse {

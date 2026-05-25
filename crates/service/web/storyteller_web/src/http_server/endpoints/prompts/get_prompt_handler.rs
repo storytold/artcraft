@@ -12,7 +12,7 @@ use log::{error, warn};
 use mysql_queries::queries::prompt_context_items::list_prompt_context_items::list_prompt_context_items;
 use mysql_queries::queries::prompts::get_prompt::get_prompt_from_connection;
 
-use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::common_responses::media::media_links_builder::MediaLinksBuilder;
 use crate::http_server::endpoints::media_files::helpers::get_media_domain::get_media_domain;
 use crate::state::server_state::ServerState;
@@ -35,7 +35,7 @@ pub async fn get_prompt_handler(
   http_request: HttpRequest,
   path: Path<GetPromptPathInfo>,
   server_state: web::Data<Arc<ServerState>>,
-) -> Result<Json<GetPromptSuccessResponse>, AdvancedCommonWebError> {
+) -> Result<Json<GetPromptSuccessResponse>, CommonWebError> {
   let mut mysql_connection = server_state.mysql_pool.acquire().await?;
 
   let maybe_user_session = server_state
@@ -44,7 +44,7 @@ pub async fn get_prompt_handler(
     .await
     .map_err(|e| {
       warn!("Session checker error: {:?}", e);
-      AdvancedCommonWebError::from(e)
+      CommonWebError::from(e)
     })?;
 
   let is_moderator = maybe_user_session
@@ -57,9 +57,9 @@ pub async fn get_prompt_handler(
     .await
     .map_err(|err| {
       warn!("query error: {:?}", err);
-      AdvancedCommonWebError::from(err)
+      CommonWebError::from(err)
     })?
-    .ok_or(AdvancedCommonWebError::NotFound)?;
+    .ok_or(CommonWebError::NotFound)?;
 
   let mut maybe_style_name = None;
   let mut maybe_strength = None;

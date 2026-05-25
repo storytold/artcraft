@@ -8,7 +8,7 @@ use mysql_queries::queries::generic_inference::api_providers::fal::insert_generi
 };
 use tokens::tokens::generic_inference_jobs::InferenceJobToken;
 
-use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 
 use super::shared_job_args::SharedJobArgs;
 
@@ -17,7 +17,7 @@ pub struct InsertFalJobArgs<'a, 'tx> {
   pub shared: SharedJobArgs<'a, 'tx>,
 }
 
-pub async fn insert_fal_job(args: InsertFalJobArgs<'_, '_>) -> Result<InferenceJobToken, AdvancedCommonWebError> {
+pub async fn insert_fal_job(args: InsertFalJobArgs<'_, '_>) -> Result<InferenceJobToken, CommonWebError> {
   let InsertFalJobArgs { 
     external_job_id,
     shared,
@@ -49,7 +49,7 @@ pub async fn insert_fal_job(args: InsertFalJobArgs<'_, '_>) -> Result<InferenceJ
     Ok(token) => Ok(token),
     Err(err) => {
       warn!("Error inserting fal inference job: {:?}", err);
-      Err(AdvancedCommonWebError::from_error(err))
+      Err(CommonWebError::from_error(err))
     }
   }
 }

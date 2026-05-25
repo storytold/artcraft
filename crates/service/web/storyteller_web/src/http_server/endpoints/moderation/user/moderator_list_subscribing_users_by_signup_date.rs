@@ -14,7 +14,7 @@ use mysql_queries::queries::users::user::list::list_subscribing_users_by_signup_
   ListSubscribingUsersBySignupDateArgs,
 };
 
-use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::web_utils::user_session::require_moderator::{require_moderator, UseDatabase};
 use crate::state::server_state::ServerState;
 
@@ -34,11 +34,11 @@ pub async fn moderator_list_subscribing_users_by_signup_date_handler(
   http_request: HttpRequest,
   request: Json<ModeratorListSubscribingUsersBySignupDateRequest>,
   server_state: web::Data<Arc<ServerState>>,
-) -> Result<Json<ModeratorListSubscribingUsersBySignupDateResponse>, AdvancedCommonWebError> {
+) -> Result<Json<ModeratorListSubscribingUsersBySignupDateResponse>, CommonWebError> {
 
   let _user_session = require_moderator(&http_request, &server_state, UseDatabase::GrabNewConnection)
     .await
-    .map_err(|_| AdvancedCommonWebError::NotAuthorized)?;
+    .map_err(|_| CommonWebError::NotAuthorized)?;
 
   let result = list_subscribing_users_by_signup_date_for_moderation(
     ListSubscribingUsersBySignupDateArgs {
@@ -49,7 +49,7 @@ pub async fn moderator_list_subscribing_users_by_signup_date_handler(
   ).await
     .map_err(|err| {
       warn!("moderator_list_subscribing_users_by_signup_date error: {:?}", err);
-      AdvancedCommonWebError::from_anyhow_error(err)
+      CommonWebError::from_anyhow_error(err)
     })?;
 
   let users = result.users.into_iter().map(|u| ModeratorListSubscribingUsersBySignupDateEntry {

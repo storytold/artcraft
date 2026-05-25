@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use crate::billing::wallets::attempt_wallet_deduction::attempt_wallet_deduction_else_common_web_error;
-use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::endpoint_helpers::refund_wallet_after_api_failure::refund_wallet_after_api_failure;
 use crate::http_server::validations::validate_idempotency_token_format::validate_idempotency_token_format;
 use crate::state::server_state::ServerState;
@@ -44,10 +44,10 @@ pub async fn qwen_edit_2511_edit_image_angle_handler(
   http_request: HttpRequest,
   request: Json<QwenEdit2511EditImageAngleRequest>,
   server_state: web::Data<Arc<ServerState>>
-) -> Result<Json<QwenEdit2511EditImageAngleResponse>, AdvancedCommonWebError> {
+) -> Result<Json<QwenEdit2511EditImageAngleResponse>, CommonWebError> {
 
   if let Err(reason) = validate_idempotency_token_format(&request.uuid_idempotency_token) {
-    return Err(AdvancedCommonWebError::BadInputWithSimpleMessage(reason));
+    return Err(CommonWebError::BadInputWithSimpleMessage(reason));
   }
 
   let mut mysql_connection = server_state.mysql_pool
@@ -60,7 +60,7 @@ pub async fn qwen_edit_2511_edit_image_angle_handler(
       .await
       .map_err(|e| {
         warn!("Session checker error: {:?}", e);
-        AdvancedCommonWebError::from_error(e)
+        CommonWebError::from_error(e)
       })?;
 
   let maybe_avt_token = server_state
@@ -70,7 +70,7 @@ pub async fn qwen_edit_2511_edit_image_angle_handler(
   let user_token = match maybe_user_session.as_ref() {
     Some(session) => &session.user_token,
     None => {
-      return Err(AdvancedCommonWebError::NotAuthorized);
+      return Err(CommonWebError::NotAuthorized);
     }
   };
 
@@ -84,14 +84,14 @@ pub async fn qwen_edit_2511_edit_image_angle_handler(
   ).await?
       .ok_or_else(|| {
         warn!("No image URLs found for media token");
-        AdvancedCommonWebError::BadInputWithSimpleMessage("Image media token not found".to_string())
+        CommonWebError::BadInputWithSimpleMessage("Image media token not found".to_string())
       })?;
 
   insert_idempotency_token(&request.uuid_idempotency_token, &mut *mysql_connection)
       .await
       .map_err(|err| {
         error!("Error inserting idempotency token: {:?}", err);
-        AdvancedCommonWebError::BadInputWithSimpleMessage("repeated idempotency token".to_string())
+        CommonWebError::BadInputWithSimpleMessage("repeated idempotency token".to_string())
       })?;
 
   info!("Fal webhook URL: {}", server_state.fal.webhook_url);
@@ -149,14 +149,14 @@ pub async fn qwen_edit_2511_edit_image_angle_handler(
     Err(err) => {
       warn!("Error calling enqueue_qwen_edit_2511_edit_image_angle_webhook: {:?}", err);
       refund_wallet_after_api_failure(&wallet_deduction.ledger_entry_token, &mut mysql_connection).await?;
-      return Err(AdvancedCommonWebError::from_error(err));
+      return Err(CommonWebError::from_error(err));
     }
   };
 
   let external_job_id = fal_result.request_id
       .ok_or_else(|| {
         warn!("Fal request_id is None");
-        AdvancedCommonWebError::server_error_with_message("Fal request_id is None")
+        CommonWebError::server_error_with_message("Fal request_id is None")
       })?;
 
   info!("Fal request_id: {}", external_job_id);
@@ -168,7 +168,7 @@ pub async fn qwen_edit_2511_edit_image_angle_handler(
       .await
       .map_err(|err| {
         error!("Error starting MySQL transaction: {:?}", err);
-        AdvancedCommonWebError::from_error(err)
+        CommonWebError::from_error(err)
       })?;
 
   let prompt_result = insert_prompt(InsertPromptArgs {
@@ -252,7 +252,7 @@ pub async fn qwen_edit_2511_edit_image_angle_handler(
     Ok(token) => token,
     Err(err) => {
       warn!("Error inserting generic inference job for FAL queue: {:?}", err);
-      return Err(AdvancedCommonWebError::from_error(err));
+      return Err(CommonWebError::from_error(err));
     }
   };
 
@@ -261,7 +261,7 @@ pub async fn qwen_edit_2511_edit_image_angle_handler(
       .await
       .map_err(|err| {
         error!("Error committing MySQL transaction: {:?}", err);
-        AdvancedCommonWebError::from_error(err)
+        CommonWebError::from_error(err)
       })?;
 
   Ok(Json(QwenEdit2511EditImageAngleResponse {

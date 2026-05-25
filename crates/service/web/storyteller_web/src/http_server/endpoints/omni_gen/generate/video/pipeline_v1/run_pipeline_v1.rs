@@ -15,7 +15,7 @@ use tokens::tokens::characters::CharacterToken;
 use tokens::tokens::media_files::MediaFileToken;
 use tokens::tokens::users::UserToken;
 
-use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::endpoints::omni_gen::generate::video::helpers::bill_wallet::bill_wallet;
 use crate::http_server::endpoints::omni_gen::generate::video::helpers::pipeline_result::PipelineResult;
 use crate::http_server::endpoints::omni_gen::generate::video::pipeline_v1::execute::execute_fal::execute_generation_fal;
@@ -36,7 +36,7 @@ pub struct RunPipelineV1Args<'a> {
 
 // ── Pipeline entrypoint ──
 
-pub async fn run_pipeline_v1(args: RunPipelineV1Args<'_>) -> Result<PipelineResult, AdvancedCommonWebError> {
+pub async fn run_pipeline_v1(args: RunPipelineV1Args<'_>) -> Result<PipelineResult, CommonWebError> {
   let RunPipelineV1Args {
     request,
     router_builder,
@@ -67,7 +67,7 @@ pub async fn run_pipeline_v1(args: RunPipelineV1Args<'_>) -> Result<PipelineResu
     };
     let cost_plan = cost_request.build().map_err(|e| {
       warn!("Failed to build cost plan during video distillation: {}", e);
-      AdvancedCommonWebError::from_error(e)
+      CommonWebError::from_error(e)
     })?;
     cost_plan.estimate_costs()
   };
@@ -88,7 +88,7 @@ pub async fn run_pipeline_v1(args: RunPipelineV1Args<'_>) -> Result<PipelineResu
 
   let plan = exec_request.build().map_err(|e| {
     warn!("Failed to build video generation plan during distillation: {}", e);
-    AdvancedCommonWebError::from_error(e)
+    CommonWebError::from_error(e)
   })?;
 
   info!("v1 distilled plan: {:?}", plan);

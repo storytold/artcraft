@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::sync::Arc;
 
 use crate::billing::wallets::attempt_wallet_deduction::attempt_wallet_deduction_else_common_web_error;
-use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::endpoints::generate::common::payments_error_test::payments_error_test;
 use crate::http_server::validations::validate_idempotency_token_format::validate_idempotency_token_format;
 use crate::state::server_state::ServerState;
@@ -47,7 +47,7 @@ pub async fn seedance_1p5_pro_multi_function_video_gen_handler(
   http_request: HttpRequest,
   request: Json<Seedance1p5ProMultiFunctionVideoGenRequest>,
   server_state: web::Data<Arc<ServerState>>
-) -> Result<Json<Seedance1p5ProMultiFunctionVideoGenResponse>, AdvancedCommonWebError> {
+) -> Result<Json<Seedance1p5ProMultiFunctionVideoGenResponse>, CommonWebError> {
 
   info!("Request: {:?}", request);
   
@@ -63,7 +63,7 @@ pub async fn seedance_1p5_pro_multi_function_video_gen_handler(
       .await
       .map_err(|e| {
         warn!("Session checker error: {:?}", e);
-        AdvancedCommonWebError::from_error(e)
+        CommonWebError::from_error(e)
       })?;
 
   let maybe_avt_token = server_state
@@ -73,12 +73,12 @@ pub async fn seedance_1p5_pro_multi_function_video_gen_handler(
   let user_token = match maybe_user_session.as_ref() {
     Some(session) => &session.user_token,
     None => {
-      return Err(AdvancedCommonWebError::NotAuthorized);
+      return Err(CommonWebError::NotAuthorized);
     }
   };
 
   if let Err(reason) = validate_idempotency_token_format(&request.uuid_idempotency_token) {
-    return Err(AdvancedCommonWebError::BadInputWithSimpleMessage(reason));
+    return Err(CommonWebError::BadInputWithSimpleMessage(reason));
   }
 
   // Collect media tokens to look up
@@ -109,7 +109,7 @@ pub async fn seedance_1p5_pro_multi_function_video_gen_handler(
     Some(token) => match image_urls_by_token.get(token) {
       Some(url) => Some(url.to_string()),
       None => {
-        return Err(AdvancedCommonWebError::BadInputWithSimpleMessage("Media for start frame not found.".to_string()));
+        return Err(CommonWebError::BadInputWithSimpleMessage("Media for start frame not found.".to_string()));
       }
     }
   };
@@ -119,7 +119,7 @@ pub async fn seedance_1p5_pro_multi_function_video_gen_handler(
     Some(token) => match image_urls_by_token.get(token) {
       Some(url) => Some(url.to_string()),
       None => {
-        return Err(AdvancedCommonWebError::BadInputWithSimpleMessage("Media for end frame not found.".to_string()));
+        return Err(CommonWebError::BadInputWithSimpleMessage("Media for end frame not found.".to_string()));
       }
     }
   };
@@ -128,7 +128,7 @@ pub async fn seedance_1p5_pro_multi_function_video_gen_handler(
       .await
       .map_err(|err| {
         error!("Error inserting idempotency token: {:?}", err);
-        AdvancedCommonWebError::BadInputWithSimpleMessage("repeated idempotency token".to_string())
+        CommonWebError::BadInputWithSimpleMessage("repeated idempotency token".to_string())
       })?;
 
   info!("Fal webhook URL: {}", server_state.fal.webhook_url);
@@ -180,7 +180,7 @@ pub async fn seedance_1p5_pro_multi_function_video_gen_handler(
         .await
         .map_err(|err| {
           warn!("Error calling enqueue_seedance_1p5_pro_image_to_video_webhook: {:?}", err);
-          AdvancedCommonWebError::from_error(err)
+          CommonWebError::from_error(err)
         })?;
 
   } else {
@@ -220,14 +220,14 @@ pub async fn seedance_1p5_pro_multi_function_video_gen_handler(
         .await
         .map_err(|err| {
           warn!("Error calling enqueue_seedance_1p5_pro_text_to_video_webhook: {:?}", err);
-          AdvancedCommonWebError::from_error(err)
+          CommonWebError::from_error(err)
         })?;
   }
 
   let external_job_id = fal_result.request_id
       .ok_or_else(|| {
         warn!("Fal request_id is None");
-        AdvancedCommonWebError::server_error_with_message("Fal request_id is None")
+        CommonWebError::server_error_with_message("Fal request_id is None")
       })?;
 
   info!("Fal request_id: {}", external_job_id);
@@ -239,7 +239,7 @@ pub async fn seedance_1p5_pro_multi_function_video_gen_handler(
       .await
       .map_err(|err| {
         error!("Error starting MySQL transaction: {:?}", err);
-        AdvancedCommonWebError::from_error(err)
+        CommonWebError::from_error(err)
       })?;
 
   // NB: Don't fail the job if the query fails.
@@ -346,7 +346,7 @@ pub async fn seedance_1p5_pro_multi_function_video_gen_handler(
     Ok(token) => token,
     Err(err) => {
       warn!("Error inserting generic inference job for FAL queue: {:?}", err);
-      return Err(AdvancedCommonWebError::from_error(err));
+      return Err(CommonWebError::from_error(err));
     }
   };
 
@@ -355,7 +355,7 @@ pub async fn seedance_1p5_pro_multi_function_video_gen_handler(
       .await
       .map_err(|err| {
         error!("Error committing MySQL transaction: {:?}", err);
-        AdvancedCommonWebError::from_error(err)
+        CommonWebError::from_error(err)
       })?;
 
   Ok(Json(Seedance1p5ProMultiFunctionVideoGenResponse {

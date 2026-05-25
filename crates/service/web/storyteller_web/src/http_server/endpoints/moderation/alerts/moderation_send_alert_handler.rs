@@ -13,7 +13,7 @@ use mysql_queries::queries::staff_audit_logs::insert_staff_audit_log::{
 };
 use pager::notification::notification_details_builder::NotificationDetailsBuilder;
 use pager::notification::notification_urgency::NotificationUrgency;
-use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::web_utils::user_session::require_moderator::{require_moderator, UseDatabase};
 use crate::state::server_state::ServerState;
 
@@ -33,13 +33,13 @@ pub async fn moderation_send_alert_handler(
   http_request: HttpRequest,
   request: Json<ModerationSendAlertRequest>,
   server_state: web::Data<Arc<ServerState>>,
-) -> Result<Json<ModerationSendAlertResponse>, AdvancedCommonWebError> {
+) -> Result<Json<ModerationSendAlertResponse>, CommonWebError> {
 
   let user_session = require_moderator(&http_request, &server_state, UseDatabase::GrabNewConnection)
     .await
     .map_err(|err| {
       warn!("Moderator check failed: {:?}", err);
-      AdvancedCommonWebError::NotAuthorized
+      CommonWebError::NotAuthorized
     })?;
 
   let ip_address = get_request_ip(&http_request);
@@ -77,7 +77,7 @@ pub async fn moderation_send_alert_handler(
     .enqueue_page(notification)
     .map_err(|err| {
       warn!("moderation_send_alert error: {:?}", err);
-      AdvancedCommonWebError::from_error(err)
+      CommonWebError::from_error(err)
     })?;
 
   // Insert staff audit log.
@@ -91,7 +91,7 @@ pub async fn moderation_send_alert_handler(
     phantom: PhantomData,
   }).await.map_err(|err| {
     warn!("Failed to insert staff audit log: {:?}", err);
-    AdvancedCommonWebError::from_error(err)
+    CommonWebError::from_error(err)
   })?;
 
   Ok(Json(ModerationSendAlertResponse {

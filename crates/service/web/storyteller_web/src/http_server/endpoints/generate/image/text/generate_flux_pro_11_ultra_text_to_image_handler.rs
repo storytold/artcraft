@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use crate::billing::wallets::attempt_wallet_deduction::attempt_wallet_deduction_else_common_web_error;
 use crate::billing::wallets::temporary_test_wallet_deduction::temporary_test_wallet_deduction;
-use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::endpoints::generate::common::payments_error_test::payments_error_test;
 use crate::http_server::validations::validate_idempotency_token_format::validate_idempotency_token_format;
 use crate::state::server_state::ServerState;
@@ -48,7 +48,7 @@ pub async fn generate_flux_pro_11_ultra_text_to_image_handler(
   http_request: HttpRequest,
   request: Json<GenerateFluxPro11UltraTextToImageRequest>,
   server_state: web::Data<Arc<ServerState>>
-) -> Result<Json<GenerateFluxPro11UltraTextToImageResponse>, AdvancedCommonWebError> {
+) -> Result<Json<GenerateFluxPro11UltraTextToImageResponse>, CommonWebError> {
   
   payments_error_test(&request.prompt.as_deref().unwrap_or(""))?;
   
@@ -62,7 +62,7 @@ pub async fn generate_flux_pro_11_ultra_text_to_image_handler(
       .await
       .map_err(|e| {
         warn!("Session checker error: {:?}", e);
-        AdvancedCommonWebError::from_error(e)
+        CommonWebError::from_error(e)
       })?;
 
   let maybe_avt_token = server_state
@@ -72,19 +72,19 @@ pub async fn generate_flux_pro_11_ultra_text_to_image_handler(
   let user_token = match maybe_user_session.as_ref() {
     Some(session) => &session.user_token,
     None => {
-      return Err(AdvancedCommonWebError::NotAuthorized);
+      return Err(CommonWebError::NotAuthorized);
     }
   };
 
   if let Err(reason) = validate_idempotency_token_format(&request.uuid_idempotency_token) {
-    return Err(AdvancedCommonWebError::BadInputWithSimpleMessage(reason));
+    return Err(CommonWebError::BadInputWithSimpleMessage(reason));
   }
 
   insert_idempotency_token(&request.uuid_idempotency_token, &mut *mysql_connection)
       .await
       .map_err(|err| {
         error!("Error inserting idempotency token: {:?}", err);
-        AdvancedCommonWebError::BadInputWithSimpleMessage("invalid idempotency token".to_string())
+        CommonWebError::BadInputWithSimpleMessage("invalid idempotency token".to_string())
       })?;
 
   const IS_MOD : bool = false;
@@ -141,13 +141,13 @@ pub async fn generate_flux_pro_11_ultra_text_to_image_handler(
       .await
       .map_err(|err| {
         warn!("Error calling enqueue_flux_pro_ultra_text_to_image_webhook: {:?}", err);
-        AdvancedCommonWebError::from_error(err)
+        CommonWebError::from_error(err)
       })?;
 
   let external_job_id = fal_result.request_id
       .ok_or_else(|| {
         warn!("Fal request_id is None");
-        AdvancedCommonWebError::server_error_with_message("Fal request_id is None")
+        CommonWebError::server_error_with_message("Fal request_id is None")
       })?;
   
   info!("Fal request_id: {}", external_job_id);
@@ -159,7 +159,7 @@ pub async fn generate_flux_pro_11_ultra_text_to_image_handler(
       .await
       .map_err(|err| {
         error!("Error starting MySQL transaction: {:?}", err);
-        AdvancedCommonWebError::from_error(err)
+        CommonWebError::from_error(err)
       })?;
 
   // NB: Don't fail the job if the query fails.
@@ -236,7 +236,7 @@ pub async fn generate_flux_pro_11_ultra_text_to_image_handler(
     Ok(token) => token,
     Err(err) => {
       warn!("Error inserting generic inference job for FAL queue: {:?}", err);
-      return Err(AdvancedCommonWebError::from_error(err));
+      return Err(CommonWebError::from_error(err));
     }
   };
 
@@ -245,7 +245,7 @@ pub async fn generate_flux_pro_11_ultra_text_to_image_handler(
       .await
       .map_err(|err| {
         error!("Error committing MySQL transaction: {:?}", err);
-        AdvancedCommonWebError::from_error(err)
+        CommonWebError::from_error(err)
       })?;
 
   Ok(Json(GenerateFluxPro11UltraTextToImageResponse {

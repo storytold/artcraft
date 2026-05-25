@@ -13,7 +13,7 @@ use tokens::tokens::generic_inference_jobs::InferenceJobToken;
 use tokens::tokens::users::UserToken;
 
 use crate::billing::wallets::attempt_wallet_deduction::attempt_wallet_deduction_else_common_web_error;
-use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::endpoints::omni_gen::generate::image::pipeline_result::ImagePipelineResult;
 use crate::state::server_state::ServerState;
 use crate::util::lookup::lookup_media_files_as_cdn_url_list_and_map::MediaFilesAsCdnUrlListAndMap;
@@ -34,7 +34,7 @@ pub fn should_use_pipeline_v2(router_builder: &GenerateImageRequestBuilder) -> b
 
 pub async fn run_pipeline_v2(
   args: RunPipelineV2Args<'_>,
-) -> Result<ImagePipelineResult, AdvancedCommonWebError> {
+) -> Result<ImagePipelineResult, CommonWebError> {
   let RunPipelineV2Args {
     router_builder,
     server_state,
@@ -75,13 +75,13 @@ pub async fn run_pipeline_v2(
 
 fn build_execution_request(
   router_builder: &GenerateImageRequestBuilder,
-) -> Result<ImageGenerationDraftOrRequest, AdvancedCommonWebError> {
+) -> Result<ImageGenerationDraftOrRequest, CommonWebError> {
   let mut execution_builder = router_builder.clone();
   execution_builder.provider = Provider::Fal;
 
   execution_builder.build2().map_err(|e| {
     warn!("Failed to build2 for image v2 pipeline: {}", e);
-    AdvancedCommonWebError::from_error(e)
+    CommonWebError::from_error(e)
   })
 }
 
@@ -105,7 +105,7 @@ fn apply_hydrated_media_inputs(
 
 fn estimate_cost_in_credits(
   router_builder: &GenerateImageRequestBuilder,
-) -> Result<u64, AdvancedCommonWebError> {
+) -> Result<u64, CommonWebError> {
   // TODO(bt,2026-05-15): This might not be 1:1 with new Fal costs, eg. Gpt-image-2
   let mut cost_builder = router_builder.clone();
   cost_builder.provider = Provider::Artcraft;
@@ -118,7 +118,7 @@ fn estimate_cost_in_credits(
     Ok(request) => {
       let cost_plan = request.estimate_cost().map_err(|e| {
         warn!("Failed to build image cost plan for v2 pipeline: {}", e);
-        AdvancedCommonWebError::from_error(e)
+        CommonWebError::from_error(e)
       })?;
       return Ok(cost_plan.cost_in_credits.unwrap_or(0));
     },
@@ -127,7 +127,7 @@ fn estimate_cost_in_credits(
   // Fall back to pipeline_v1 cost
   let cost_plan = cost_builder.build().map_err(|e| {
     warn!("Failed to build image cost plan for v1 pipeline: {}", e);
-    AdvancedCommonWebError::from_error(e)
+    CommonWebError::from_error(e)
   })?;
 
   Ok(cost_plan.estimate_costs().cost_in_credits.unwrap_or(0))
@@ -136,7 +136,7 @@ fn estimate_cost_in_credits(
 async fn finalize_and_generate(
   draft_or_request: ImageGenerationDraftOrRequest,
   server_state: &ServerState,
-) -> Result<GenerateImageResponse, AdvancedCommonWebError> {
+) -> Result<GenerateImageResponse, CommonWebError> {
   let provider = draft_or_request.get_provider();
   let client = build_router_client(provider, server_state)?;
 
@@ -146,13 +146,13 @@ async fn finalize_and_generate(
     .await
     .map_err(|err| {
       warn!("v2 image generation failed: {:?}", err);
-      AdvancedCommonWebError::from_error(err)
+      CommonWebError::from_error(err)
     })
 }
 
 async fn finalize_request(
   draft_or_request: ImageGenerationDraftOrRequest,
-) -> Result<ImageGenerationRequest, AdvancedCommonWebError> {
+) -> Result<ImageGenerationRequest, CommonWebError> {
   match draft_or_request {
     ImageGenerationDraftOrRequest::Request(request) => Ok(request),
     ImageGenerationDraftOrRequest::Draft(draft) => {
@@ -160,7 +160,7 @@ async fn finalize_request(
         .await
         .map_err(|err| {
           warn!("Failed to finalize image v2 draft: {:?}", err);
-          AdvancedCommonWebError::from_error(err)
+          CommonWebError::from_error(err)
         })
     }
   }
@@ -169,7 +169,7 @@ async fn finalize_request(
 fn build_router_client(
   provider: Provider,
   server_state: &ServerState,
-) -> Result<RouterClient, AdvancedCommonWebError> {
+) -> Result<RouterClient, CommonWebError> {
   match provider {
     Provider::Fal => {
       let fal_client = RouterFalWebhookOptionalClient::new_with_webhook(
@@ -179,7 +179,7 @@ fn build_router_client(
       Ok(RouterClient::FalWebhookOptional(fal_client))
     },
     other => {
-      Err(AdvancedCommonWebError::server_error_with_message(
+      Err(CommonWebError::server_error_with_message(
         &format!("Unsupported provider for image v2 generation: {:?}", other),
       ))
     },

@@ -6,7 +6,7 @@ use log::warn;
 
 use artcraft_api_defs::user_referral_codes::delete_referral_code::{DeleteReferralCodePathInfo, DeleteReferralCodeResponse};
 use tokens::tokens::user_referral_codes::UserReferralCodeToken;
-use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::state::server_state::ServerState;
 use mysql_queries::queries::user_referral_codes::soft_delete_referral_code::soft_delete_referral_code;
 
@@ -28,9 +28,9 @@ pub async fn delete_referral_code_handler(
   http_request: HttpRequest,
   server_state: web::Data<Arc<ServerState>>,
   path: web::Path<DeleteReferralCodePathInfo>,
-) -> Result<Json<DeleteReferralCodeResponse>, AdvancedCommonWebError> {
+) -> Result<Json<DeleteReferralCodeResponse>, CommonWebError> {
   let mut mysql_connection = server_state.mysql_pool.acquire().await
-    .map_err(|e| AdvancedCommonWebError::from(e))?;
+    .map_err(|e| CommonWebError::from(e))?;
 
   let maybe_user_session = server_state
     .session_checker
@@ -38,12 +38,12 @@ pub async fn delete_referral_code_handler(
     .await
     .map_err(|e| {
       warn!("Session checker error: {:?}", e);
-      AdvancedCommonWebError::from(e)
+      CommonWebError::from(e)
     })?;
 
   let user_session = match maybe_user_session {
     Some(session) if !session.is_banned => session,
-    _ => return Err(AdvancedCommonWebError::NotAuthorized),
+    _ => return Err(CommonWebError::NotAuthorized),
   };
 
   let user_token = &user_session.user_token;
@@ -53,10 +53,10 @@ pub async fn delete_referral_code_handler(
     user_token,
     &mut *mysql_connection,
   ).await
-    .map_err(|e| AdvancedCommonWebError::from(e))?;
+    .map_err(|e| CommonWebError::from(e))?;
 
   if !deleted {
-    return Err(AdvancedCommonWebError::NotAuthorized);
+    return Err(CommonWebError::NotAuthorized);
   }
 
   Ok(Json(DeleteReferralCodeResponse {

@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::state::server_state::ServerState;
 use actix_web::web::Json;
 use actix_web::{web, HttpRequest};
@@ -33,13 +33,13 @@ pub struct GetOrCreateSessionArtcraftWalletResponse {
 pub async fn get_or_create_session_artcraft_wallet_handler(
   http_request: HttpRequest,
   server_state: web::Data<Arc<ServerState>>,
-) -> Result<Json<GetOrCreateSessionArtcraftWalletResponse>, AdvancedCommonWebError> {
+) -> Result<Json<GetOrCreateSessionArtcraftWalletResponse>, CommonWebError> {
   let mut mysql_connection = server_state.mysql_pool
       .acquire()
       .await
       .map_err(|err| {
         error!("Error acquiring MySQL connection: {:?}", err);
-        AdvancedCommonWebError::from_error(err)
+        CommonWebError::from_error(err)
       })?;
 
   let maybe_user_session = server_state
@@ -48,12 +48,12 @@ pub async fn get_or_create_session_artcraft_wallet_handler(
       .await
       .map_err(|e| {
         warn!("Session checker error: {:?}", e);
-        AdvancedCommonWebError::from_error(e)
+        CommonWebError::from_error(e)
       })?;
 
   let user_token = match maybe_user_session {
     Some(session) => session.user_token,
-    None => return Err(AdvancedCommonWebError::NotAuthorized),
+    None => return Err(CommonWebError::NotAuthorized),
   };
 
   let maybe_wallet_token = find_primary_wallet_token_for_owner_using_connection(
@@ -62,7 +62,7 @@ pub async fn get_or_create_session_artcraft_wallet_handler(
     &mut mysql_connection,
   ).await.map_err(|err| {
     error!("Error finding primary artcraft wallet for user {:?}: {:?}", user_token, err);
-    AdvancedCommonWebError::from_error(err)
+    CommonWebError::from_error(err)
   })?;
 
   if let Some(wallet_token) = maybe_wallet_token {
@@ -77,7 +77,7 @@ pub async fn get_or_create_session_artcraft_wallet_handler(
       .await
       .map_err(|err| {
         error!("Error starting MySQL transaction: {:?}", err);
-        AdvancedCommonWebError::from_error(err)
+        CommonWebError::from_error(err)
       })?;
 
   let wallet_token = create_new_artcraft_wallet_for_owner_user(
@@ -85,7 +85,7 @@ pub async fn get_or_create_session_artcraft_wallet_handler(
     &mut transaction,
   ).await.map_err(|err| {
     error!("Error creating artcraft wallet for user {:?}: {:?}", user_token, err);
-    AdvancedCommonWebError::from_error(err)
+    CommonWebError::from_error(err)
   })?;
 
   transaction
@@ -93,7 +93,7 @@ pub async fn get_or_create_session_artcraft_wallet_handler(
       .await
       .map_err(|err| {
         error!("Error committing MySQL transaction: {:?}", err);
-        AdvancedCommonWebError::from_error(err)
+        CommonWebError::from_error(err)
       })?;
 
   Ok(Json(GetOrCreateSessionArtcraftWalletResponse {

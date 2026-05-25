@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::endpoints::webhooks::fal::process_failure::handle_failed_fal_webhook::handle_failed_fal_webhook;
 use crate::http_server::endpoints::webhooks::fal::process_success::handle_successful_fal_webhook::handle_successful_fal_webhook;
 use crate::state::server_state::ServerState;
@@ -22,7 +22,7 @@ pub async fn fal_webhook_handler(
   http_request: HttpRequest,
   request_body_bytes: Bytes,
   server_state: web::Data<Arc<ServerState>>,
-) -> Result<Json<SimpleGenericJsonSuccess>, AdvancedCommonWebError> {
+) -> Result<Json<SimpleGenericJsonSuccess>, CommonWebError> {
 
   // Step 1: Parse bytes into a UTF-8 string and log it.
   let raw_body = String::from_utf8(request_body_bytes.to_vec())
@@ -30,8 +30,8 @@ pub async fn fal_webhook_handler(
         error!("FAL webhook: could not decode request body to UTF-8: {:?}", err);
         enqueue_parse_error_alert(&server_state, &http_request, "UTF-8 decode failed", &err, None);
         // Ordinarily this is a user input error, but I want to know when this happens and see the error trace:
-        // AdvancedCommonWebError::BadInputWithSimpleMessage("Could not decode request body to UTF-8".to_string())
-        AdvancedCommonWebError::from_error(err)
+        // CommonWebError::BadInputWithSimpleMessage("Could not decode request body to UTF-8".to_string())
+        CommonWebError::from_error(err)
       })?;
 
   info!("Received FAL webhook body: {}", raw_body);
@@ -42,8 +42,8 @@ pub async fn fal_webhook_handler(
         error!("FAL webhook: could not parse webhook payload: {:?}", err);
         enqueue_parse_error_alert(&server_state, &http_request, "JSON parse failed", &err, Some(&raw_body));
         // Ordinarily this is a user input error, but I want to know when this happens and see the error trace:
-        // AdvancedCommonWebError::BadInputWithSimpleMessage("Could not parse webhook payload".to_string())
-        AdvancedCommonWebError::from_error(err)
+        // CommonWebError::BadInputWithSimpleMessage("Could not parse webhook payload".to_string())
+        CommonWebError::from_error(err)
       })?;
 
   let request_id = webhook_payload.request_id.as_str();
@@ -76,7 +76,7 @@ pub async fn fal_webhook_handler(
         "FAL webhook payload_error for request_id {}: {}",
         request_id, payload_error_data.payload_error,
       );
-      Err(AdvancedCommonWebError::from_anyhow_error(
+      Err(CommonWebError::from_anyhow_error(
         anyhow::anyhow!("FAL payload_error: {}", payload_error_data.payload_error)
       ))
     }

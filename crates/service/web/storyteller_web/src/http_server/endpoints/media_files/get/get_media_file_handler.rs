@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::common_responses::media::media_domain::MediaDomain;
 use crate::http_server::common_responses::media::media_file_cover_image_details::MediaFileCoverImageDetails;
 use crate::http_server::common_responses::media::media_links_builder::MediaLinksBuilder;
@@ -217,7 +217,7 @@ pub async fn get_media_file_handler(
   http_request: HttpRequest,
   path: Path<GetMediaFilePathInfo>,
   server_state: web::Data<Arc<ServerState>>
-) -> Result<Json<GetMediaFileSuccessResponse>, AdvancedCommonWebError> {
+) -> Result<Json<GetMediaFileSuccessResponse>, CommonWebError> {
   let media_file_token = path.into_inner().token;
 
   let maybe_user_session = server_state
@@ -267,7 +267,7 @@ async fn modern_media_file_lookup(
   show_deleted_results: bool,
   server_state: &ServerState,
   media_domain: MediaDomain,
-) -> Result<GetMediaFileSuccessResponse, AdvancedCommonWebError> {
+) -> Result<GetMediaFileSuccessResponse, CommonWebError> {
 
   let is_mod = show_deleted_results;
 
@@ -280,9 +280,9 @@ async fn modern_media_file_lookup(
   let result = match result {
     Err(e) => {
       warn!("query error: {:?}", e);
-      return Err(AdvancedCommonWebError::from_anyhow_error(e));
+      return Err(CommonWebError::from_anyhow_error(e));
     }
-    Ok(None) => return Err(AdvancedCommonWebError::NotFound),
+    Ok(None) => return Err(CommonWebError::NotFound),
     Ok(Some(result)) => result,
   };
 
@@ -330,7 +330,7 @@ async fn modern_media_file_lookup(
       public_bucket_url: bucket_url_from_media_path(&public_bucket_path, media_domain, server_state.server_environment)
           .map_err(|err| {
             warn!("error creating URL: {:?}", err);
-            AdvancedCommonWebError::from_anyhow_error(err)
+            CommonWebError::from_anyhow_error(err)
           })?,
       public_bucket_path: public_bucket_path
           .get_full_object_path_str()
@@ -415,7 +415,7 @@ async fn emulate_media_file_with_legacy_tts_result_lookup(
   show_deleted_results: bool,
   server_state: &ServerState,
   media_domain: MediaDomain,
-) -> Result<GetMediaFileSuccessResponse, AdvancedCommonWebError> {
+) -> Result<GetMediaFileSuccessResponse, CommonWebError> {
 
   let result = select_tts_result_by_token(
     &media_file_token.as_str(),
@@ -426,9 +426,9 @@ async fn emulate_media_file_with_legacy_tts_result_lookup(
   let result = match result {
     Err(e) => {
       warn!("query error (legacy TTS): {:?}", e);
-      return Err(AdvancedCommonWebError::from_anyhow_error(e));
+      return Err(CommonWebError::from_anyhow_error(e));
     }
-    Ok(None) => return Err(AdvancedCommonWebError::NotFound),
+    Ok(None) => return Err(CommonWebError::NotFound),
     Ok(Some(result)) => result,
   };
 
@@ -468,7 +468,7 @@ async fn emulate_media_file_with_legacy_tts_result_lookup(
       public_bucket_url: bucket_url_from_str_path(&public_bucket_path, media_domain, server_state.server_environment)
           .map_err(|err| {
             warn!("error creating URL: {:?}", err);
-            AdvancedCommonWebError::from_anyhow_error(err)
+            CommonWebError::from_anyhow_error(err)
           })?,
       public_bucket_path,
       cover_image: MediaFileCoverImageDetails::from_legacy_token_str(&result.tts_result_token),

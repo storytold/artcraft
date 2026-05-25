@@ -7,7 +7,7 @@ use utoipa::ToSchema;
 
 use mysql_queries::queries::generic_inference::web::dismiss_finished_jobs_for_user::dismiss_finished_jobs_for_user;
 
-use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::web_utils::user_session::require_user_session_using_connection::require_user_session_using_connection;
 use crate::state::server_state::ServerState;
 
@@ -25,19 +25,19 @@ pub struct DismissFinishedSessionJobsSuccessResponse {
   path = "/v1/jobs/session/dismiss_finished",
   responses(
     (status = 200, body = DismissFinishedSessionJobsSuccessResponse),
-    (status = 401, body = AdvancedCommonWebError),
-    (status = 500, body = AdvancedCommonWebError),
+    (status = 401, body = CommonWebError),
+    (status = 500, body = CommonWebError),
   ),
 )]
 pub async fn dismiss_finished_session_jobs_handler(
   http_request: HttpRequest,
-  server_state: web::Data<Arc<ServerState>>) -> Result<Json<DismissFinishedSessionJobsSuccessResponse>, AdvancedCommonWebError>
+  server_state: web::Data<Arc<ServerState>>) -> Result<Json<DismissFinishedSessionJobsSuccessResponse>, CommonWebError>
 {
   let mut mysql_connection = server_state.mysql_pool.acquire()
       .await
       .map_err(|e| {
         error!("Could not acquire DB pool: {:?}", e);
-        AdvancedCommonWebError::from_error(e)
+        CommonWebError::from_error(e)
       })?;
 
   let user_session = require_user_session_using_connection(
@@ -48,7 +48,7 @@ pub async fn dismiss_finished_session_jobs_handler(
       .await
       .map_err(|err| {
         error!("tts job query error: {:?}", err);
-        AdvancedCommonWebError::from_anyhow_error(err)
+        CommonWebError::from_anyhow_error(err)
       })?;
 
   Ok(Json(DismissFinishedSessionJobsSuccessResponse {

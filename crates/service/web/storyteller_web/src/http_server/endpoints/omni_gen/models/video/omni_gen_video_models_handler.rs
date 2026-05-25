@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use crate::configs::omni_gen::video_models::OMNI_GEN_VIDEO_MODELS_AND_PROVIDERS;
-use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::session::lookup::user_session_feature_flags::UserSessionFeatureFlags;
 use crate::state::server_state::ServerState;
 use actix_web::web::{Json, Query};
@@ -28,7 +28,7 @@ pub async fn omni_gen_video_models_handler(
   _http_request: HttpRequest,
   _server_state: web::Data<Arc<ServerState>>,
   _query: Query<OmniGenVideoModelsQuery>,
-) -> Result<Json<OmniGenVideoModelsResponse>, AdvancedCommonWebError> {
+) -> Result<Json<OmniGenVideoModelsResponse>, CommonWebError> {
   let mut response = (*OMNI_GEN_VIDEO_MODELS_AND_PROVIDERS).clone();
   Ok(Json(response))
 }
@@ -37,7 +37,7 @@ pub async fn omni_gen_video_models_handler(
 pub async fn can_see_happy_horse(
   http_request: &HttpRequest,
   server_state: &ServerState,
-) -> Result<bool, AdvancedCommonWebError> {
+) -> Result<bool, CommonWebError> {
 
   let mut mysql_connection = server_state.mysql_pool.acquire().await?;
 
@@ -47,7 +47,7 @@ pub async fn can_see_happy_horse(
       .await
       .map_err(|e| {
         warn!("Session checker error: {:?}", e);
-        AdvancedCommonWebError::from(e)
+        CommonWebError::from(e)
       })?;
   
   let user_session = match maybe_user_session {

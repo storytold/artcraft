@@ -15,7 +15,7 @@ use tokens::tokens::non_unique::debug_logs_event_token::DebugLogEventToken;
 use tokens::tokens::prompts::PromptToken;
 use tokens::tokens::users::UserToken;
 
-use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::web_utils::user_session::require_moderator::{
   require_moderator, UseDatabase,
 };
@@ -91,14 +91,14 @@ pub async fn moderation_get_job_by_token_handler(
   http_request: HttpRequest,
   path: web::Path<GetJobByTokenPathInfo>,
   server_state: web::Data<Arc<ServerState>>,
-) -> Result<Json<GetJobByTokenSuccessResponse>, AdvancedCommonWebError> {
+) -> Result<Json<GetJobByTokenSuccessResponse>, CommonWebError> {
   let _user_session = require_moderator(
     &http_request,
     &server_state,
     UseDatabase::GrabNewConnection,
   ).await.map_err(|err| {
     warn!("Moderator check failed: {:?}", err);
-    AdvancedCommonWebError::NotAuthorized
+    CommonWebError::NotAuthorized
   })?;
 
   let mut mysql_connection = server_state.mysql_pool.acquire().await?;
@@ -109,10 +109,10 @@ pub async fn moderation_get_job_by_token_handler(
     phantom: Default::default(),
   }).await.map_err(|err| {
     warn!("Error fetching job by token {}: {:?}", path.token, err);
-    AdvancedCommonWebError::from_error(err)
+    CommonWebError::from_error(err)
   })?;
 
-  let job = job.ok_or(AdvancedCommonWebError::NotFound)?;
+  let job = job.ok_or(CommonWebError::NotFound)?;
 
   Ok(Json(GetJobByTokenSuccessResponse {
     success: true,

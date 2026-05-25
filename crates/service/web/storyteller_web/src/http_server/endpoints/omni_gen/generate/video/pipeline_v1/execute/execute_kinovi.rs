@@ -26,7 +26,7 @@ use url_utils::extension::extract_extension_from_url::{
   extract_extension_from_url, ExtractExtensions,
 };
 
-use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::endpoint_helpers::refund_wallet_after_api_failure::refund_wallet_after_api_failure;
 use crate::state::server_state::ServerState;
 use crate::util::http_download_url_to_bytes::http_download_url_to_bytes;
@@ -38,7 +38,7 @@ pub(crate) async fn execute_generation_kinovi(
   kinovi_character_ids: Option<Vec<String>>,
   maybe_wallet_ledger_entry_token: Option<&WalletLedgerEntryToken>,
   mysql_connection: &mut sqlx::pool::PoolConnection<sqlx::MySql>,
-) -> Result<GenerateVideoResponse, AdvancedCommonWebError> {
+) -> Result<GenerateVideoResponse, CommonWebError> {
   let result = execute_generation_kinovi_inner(
     request,
     server_state,
@@ -63,7 +63,7 @@ async fn execute_generation_kinovi_inner(
   server_state: &ServerState,
   media_file_hydration_map: Option<&HashMap<MediaFileToken, Url>>,
   kinovi_character_ids: Option<Vec<String>>,
-) -> Result<GenerateVideoResponse, AdvancedCommonWebError> {
+) -> Result<GenerateVideoResponse, CommonWebError> {
   let session = Seedance2ProSession::from_cookies_string(
     server_state.seedance2pro.cookies.clone()
   );
@@ -144,7 +144,7 @@ async fn execute_generation_kinovi_inner(
   let gen_response = generate_video(video_gen_args).await
     .map_err(|err| {
       warn!("Seedance2Pro generate_video failed: {:?}", err);
-      AdvancedCommonWebError::from_error(err)
+      CommonWebError::from_error(err)
     })?;
 
   info!(
@@ -167,14 +167,14 @@ async fn upload_token_to_seedance2pro(
   session: &Seedance2ProSession,
   hydration_map: &HashMap<MediaFileToken, Url>,
   maybe_token: Option<&MediaFileToken>,
-) -> Result<Option<String>, AdvancedCommonWebError> {
+) -> Result<Option<String>, CommonWebError> {
   let token = match maybe_token {
     None => return Ok(None),
     Some(t) => t,
   };
 
   let url = hydration_map.get(token).ok_or_else(|| {
-    AdvancedCommonWebError::BadInputWithSimpleMessage(
+    CommonWebError::BadInputWithSimpleMessage(
       format!("Media token not found in hydration map: {:?}", token))
   })?;
 
@@ -187,7 +187,7 @@ async fn upload_tokens_to_seedance2pro(
   session: &Seedance2ProSession,
   hydration_map: &HashMap<MediaFileToken, Url>,
   maybe_tokens: Option<&[MediaFileToken]>,
-) -> Result<Option<Vec<String>>, AdvancedCommonWebError> {
+) -> Result<Option<Vec<String>>, CommonWebError> {
   let tokens = match maybe_tokens {
     None => return Ok(None),
     Some(tokens) if tokens.is_empty() => return Ok(None),
@@ -197,7 +197,7 @@ async fn upload_tokens_to_seedance2pro(
   let mut urls = Vec::with_capacity(tokens.len());
   for token in tokens {
     let url = hydration_map.get(token).ok_or_else(|| {
-      AdvancedCommonWebError::BadInputWithSimpleMessage(
+      CommonWebError::BadInputWithSimpleMessage(
         format!("Media token not found in hydration map: {:?}", token))
     })?;
     urls.push(upload_url_to_seedance2pro(session, url).await?);
@@ -209,7 +209,7 @@ async fn upload_tokens_to_seedance2pro(
 async fn upload_url_to_seedance2pro(
   session: &Seedance2ProSession,
   our_cdn_url: &Url,
-) -> Result<String, AdvancedCommonWebError> {
+) -> Result<String, CommonWebError> {
   let extension = extract_extension_from_url(our_cdn_url, &ExtractExtensions::All)
       .map(|ext| ext.without_period().to_string())
       .unwrap_or_else(|| "png".to_string());
@@ -218,7 +218,7 @@ async fn upload_url_to_seedance2pro(
       .await
       .map_err(|err| {
         warn!("Error downloading media from CDN for Seedance2Pro upload: {:?}", err);
-        AdvancedCommonWebError::from_error(err)
+        CommonWebError::from_error(err)
       })?
       .to_vec();
 
@@ -230,7 +230,7 @@ async fn upload_url_to_seedance2pro(
       .await
       .map_err(|err| {
         warn!("Error preparing seedance2pro file upload: {:?}", err);
-        AdvancedCommonWebError::from_error(err)
+        CommonWebError::from_error(err)
       })?;
 
   let upload_result = upload_file(UploadFileArgs {
@@ -241,7 +241,7 @@ async fn upload_url_to_seedance2pro(
       .await
       .map_err(|err| {
         warn!("Error uploading file to seedance2pro: {:?}", err);
-        AdvancedCommonWebError::from_error(err)
+        CommonWebError::from_error(err)
       })?;
 
   Ok(upload_result.public_url)

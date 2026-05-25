@@ -14,7 +14,7 @@ use mysql_queries::queries::debug_logs::list_debug_logs_for_token::{
 use tokens::tokens::non_unique::debug_logs_event_token::DebugLogEventToken;
 use tokens::tokens::users::UserToken;
 
-use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::web_utils::user_session::require_moderator::{
   require_moderator, UseDatabase,
 };
@@ -73,14 +73,14 @@ pub async fn moderation_list_debug_logs_for_token_handler(
   path: web::Path<ListDebugLogsPathInfo>,
   query: web::Query<ListDebugLogsQueryParams>,
   server_state: web::Data<Arc<ServerState>>,
-) -> Result<Json<ListDebugLogsSuccessResponse>, AdvancedCommonWebError> {
+) -> Result<Json<ListDebugLogsSuccessResponse>, CommonWebError> {
   let _user_session = require_moderator(
     &http_request,
     &server_state,
     UseDatabase::GrabNewConnection,
   ).await.map_err(|err| {
     warn!("Moderator check failed: {:?}", err);
-    AdvancedCommonWebError::NotAuthorized
+    CommonWebError::NotAuthorized
   })?;
 
   let mut mysql_connection = server_state.mysql_pool.acquire().await?;
@@ -92,7 +92,7 @@ pub async fn moderation_list_debug_logs_for_token_handler(
     phantom: Default::default(),
   }).await.map_err(|err| {
     warn!("Error listing debug logs for token {}: {:?}", path.token, err);
-    AdvancedCommonWebError::from_error(err)
+    CommonWebError::from_error(err)
   })?;
 
   let debug_logs: Vec<DebugLogEntry> = rows.into_iter().map(|row| {

@@ -8,14 +8,14 @@ use artcraft_router::client::router_grok_api_client::RouterGrokApiClient;
 use artcraft_router::client::router_seedance2pro_client::RouterSeedance2ProClient;
 use seedance2pro_client::creds::seedance2pro_session::Seedance2ProSession;
 
-use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::state::server_state::ServerState;
 
 pub fn build_router_client(
   provider: Provider,
   server_state: &ServerState,
   use_alternate_kinovi: bool,
-) -> Result<RouterClient, AdvancedCommonWebError> {
+) -> Result<RouterClient, CommonWebError> {
   match provider {
     Provider::Seedance2Pro => {
       kinovi_provider(server_state, use_alternate_kinovi)
@@ -38,14 +38,14 @@ pub fn build_router_client(
       )))
     }
     other => {
-      Err(AdvancedCommonWebError::server_error_with_message(
+      Err(CommonWebError::server_error_with_message(
         &format!("Unsupported provider for video generation: {:?}", other),
       ))
     }
   }
 }
 
-fn kinovi_provider(server_state: &ServerState, use_alternate_kinovi: bool) -> Result<RouterClient, AdvancedCommonWebError> {
+fn kinovi_provider(server_state: &ServerState, use_alternate_kinovi: bool) -> Result<RouterClient, CommonWebError> {
   let session = if use_alternate_kinovi {
     // Alternate Kinovi
     Seedance2ProSession::from_cookies_string(

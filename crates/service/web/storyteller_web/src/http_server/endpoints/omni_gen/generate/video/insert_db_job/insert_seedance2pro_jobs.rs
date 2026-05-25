@@ -1,6 +1,6 @@
 use log::{error, warn};
 
-use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 use enums::common::visibility::Visibility;
 use mysql_queries::queries::generic_inference::api_providers::seedance2pro::insert_generic_inference_job_for_seedance2pro_queue_with_apriori_job_token::{
   insert_generic_inference_job_for_seedance2pro_queue_with_apriori_job_token,
@@ -25,7 +25,7 @@ pub struct InsertSeedance2proJobsResult {
   pub all_job_tokens: Vec<InferenceJobToken>,
 }
 
-pub async fn insert_seedance2pro_jobs(args: InsertSeedance2proJobsArgs<'_, '_>) -> Result<InsertSeedance2proJobsResult, AdvancedCommonWebError> {
+pub async fn insert_seedance2pro_jobs(args: InsertSeedance2proJobsArgs<'_, '_>) -> Result<InsertSeedance2proJobsResult, CommonWebError> {
   let InsertSeedance2proJobsArgs {
     primary_order_id,
     maybe_additional_order_ids,
@@ -79,14 +79,14 @@ pub async fn insert_seedance2pro_jobs(args: InsertSeedance2proJobsArgs<'_, '_>) 
       Ok(token) => all_job_tokens.push(token),
       Err(err) => {
         warn!("Error inserting seedance2pro inference job (order_id={}): {:?}", order_id, err);
-        if i == 0 { return Err(AdvancedCommonWebError::from_error(err)); }
+        if i == 0 { return Err(CommonWebError::from_error(err)); }
       }
     }
   }
 
   let primary_job_token = all_job_tokens.first().cloned().ok_or_else(|| {
     error!("No inference job token was created");
-    AdvancedCommonWebError::server_error_with_message("No inference job token was created")
+    CommonWebError::server_error_with_message("No inference job token was created")
   })?;
 
   Ok(InsertSeedance2proJobsResult {

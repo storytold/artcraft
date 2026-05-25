@@ -1,7 +1,7 @@
 use std::collections::HashSet;
 use std::sync::Arc;
 
-use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::common_responses::media::media_domain::MediaDomain;
 use crate::http_server::common_responses::media::media_links_builder::MediaLinksBuilder;
 use crate::http_server::endpoints::inference_job::utils::estimates::estimate_job_progress::estimate_job_progress;
@@ -63,7 +63,7 @@ pub async fn list_session_jobs_handler(
   http_request: HttpRequest,
   query: Query<ListSessionJobsQueryParams>,
   server_state: web::Data<Arc<ServerState>>
-) -> Result<Json<ListSessionJobsSuccessResponse>, AdvancedCommonWebError> {
+) -> Result<Json<ListSessionJobsSuccessResponse>, CommonWebError> {
 
   let mut mysql_connection = server_state.mysql_pool.acquire().await?;
 
@@ -72,7 +72,7 @@ pub async fn list_session_jobs_handler(
 
   // ==================== USER SESSION ==================== //
 
-  // NB: SessionCheckerError → AdvancedCommonWebError maps payload errors (bad cookie) to 401
+  // NB: SessionCheckerError → CommonWebError maps payload errors (bad cookie) to 401
   //     and DB / cache errors to 500.
   let maybe_user_session = server_state
       .session_checker
@@ -96,7 +96,7 @@ pub async fn list_session_jobs_handler(
     (None, Some(avt_token)) => SessionUser::Anonymous(avt_token),
     (None, None) => {
       // TODO(bt,2025-04-15): We should install an AVT cookie.
-      return Err(AdvancedCommonWebError::NotAuthorized);
+      return Err(CommonWebError::NotAuthorized);
     }
   };
 
@@ -111,7 +111,7 @@ pub async fn list_session_jobs_handler(
 
   let mut redis = server_state.redis_pool
       .get()
-      .map_err(AdvancedCommonWebError::from_error)?;
+      .map_err(CommonWebError::from_error)?;
 
   // TODO(bt,2024-04-22): Look up the extra redis statuses per item.
 
@@ -142,7 +142,7 @@ fn records_to_response(
   records: Vec<GenericInferenceJobStatus>,
   server_environment: ServerEnvironment,
   media_domain: MediaDomain,
-) -> Result<Json<ListSessionJobsSuccessResponse>, AdvancedCommonWebError> {
+) -> Result<Json<ListSessionJobsSuccessResponse>, CommonWebError> {
   let mut records = records.into_iter()
       .map(|record| {
         db_record_to_response_payload(record, None, server_environment, media_domain)

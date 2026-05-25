@@ -29,7 +29,7 @@ use tokens::tokens::generic_inference_jobs::InferenceJobToken;
 use tokens::tokens::media_files::MediaFileToken;
 use tokens::tokens::non_unique::debug_logs_event_token::DebugLogEventToken;
 
-use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::endpoints::generate::common::payments_error_test::payments_error_test;
 use crate::http_server::endpoints::omni_gen::generate::video::helpers::hydrate_router_request::hydrate_to_router_request;
 use crate::http_server::endpoints::omni_gen::generate::video::insert_db_job::insert_fal_job::{insert_fal_job, InsertFalJobArgs};
@@ -63,7 +63,7 @@ pub async fn omni_gen_video_generate_handler(
   http_request: HttpRequest,
   request: Json<OmniGenVideoCostAndGenerateRequest>,
   server_state: web::Data<Arc<ServerState>>,
-) -> Result<Json<OmniGenVideoGenerateResponse>, AdvancedCommonWebError> {
+) -> Result<Json<OmniGenVideoGenerateResponse>, CommonWebError> {
 
   info!("request: {:?}", request);
 
@@ -85,12 +85,12 @@ pub async fn omni_gen_video_generate_handler(
     .await
     .map_err(|e| {
       warn!("Session checker error: {:?}", e);
-      AdvancedCommonWebError::from(e)
+      CommonWebError::from(e)
     })?;
 
   let session = match maybe_user_session.as_ref() {
     Some(session) => session,
-    None => return Err(AdvancedCommonWebError::NotAuthorized),
+    None => return Err(CommonWebError::NotAuthorized),
   };
 
   let user_token = &session.user_token;
@@ -111,14 +111,14 @@ pub async fn omni_gen_video_generate_handler(
     .to_string();
 
   if let Err(reason) = validate_idempotency_token_format(&idempotency_token) {
-    return Err(AdvancedCommonWebError::BadInputWithSimpleMessage(reason));
+    return Err(CommonWebError::BadInputWithSimpleMessage(reason));
   }
 
   insert_idempotency_token(&idempotency_token, &mut *mysql_connection)
     .await
     .map_err(|err| {
       error!("Error inserting idempotency token: {:?}", err);
-      AdvancedCommonWebError::BadInputWithSimpleMessage("repeated idempotency token".to_string())
+      CommonWebError::BadInputWithSimpleMessage("repeated idempotency token".to_string())
     })?;
 
   // ==================== RESOLVE MEDIA TOKENS ==================== //
@@ -283,7 +283,7 @@ pub async fn omni_gen_video_generate_handler(
 
   let mut transaction = mysql_connection.begin().await.map_err(|err| {
     error!("Error starting MySQL transaction: {:?}", err);
-    AdvancedCommonWebError::from_error(err)
+    CommonWebError::from_error(err)
   })?;
 
   // -- Prompt --
@@ -386,7 +386,7 @@ pub async fn omni_gen_video_generate_handler(
     GenerateVideoResponse::Fal(payload) => {
       let external_id = payload.request_id.as_deref().ok_or_else(|| {
         error!("Fal generation response missing request_id");
-        AdvancedCommonWebError::server_error_with_message("Fal generation response missing request_id")
+        CommonWebError::server_error_with_message("Fal generation response missing request_id")
       })?;
       info!("Inserting fal job with token: {:?}", pipeline_result.billing.apriori_job_token);
       let token = insert_fal_job(InsertFalJobArgs {
@@ -461,13 +461,13 @@ pub async fn omni_gen_video_generate_handler(
     }
     other => {
       error!("Unexpected generation response variant: {:?}", other);
-      return Err(AdvancedCommonWebError::server_error_with_message("Unexpected generation response"));
+      return Err(CommonWebError::server_error_with_message("Unexpected generation response"));
     }
   };
 
   transaction.commit().await.map_err(|err| {
     error!("Error committing transaction: {:?}", err);
-    AdvancedCommonWebError::from_error(err)
+    CommonWebError::from_error(err)
   })?;
 
   Ok(Json(OmniGenVideoGenerateResponse {

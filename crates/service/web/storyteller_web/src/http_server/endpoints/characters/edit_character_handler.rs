@@ -10,7 +10,7 @@ use mysql_queries::queries::characters::update_character_name_and_description::u
 use seedance2pro_client::creds::seedance2pro_session::Seedance2ProSession;
 use seedance2pro_client::requests::update_character::update_character::{update_character, UpdateCharacterArgs};
 
-use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::web_utils::user_session::require_user_session_using_connection::require_user_session_using_connection;
 use crate::state::server_state::ServerState;
 
@@ -32,7 +32,7 @@ pub async fn edit_character_handler(
   http_request: HttpRequest,
   request: Json<EditCharacterRequest>,
   server_state: web::Data<Arc<ServerState>>,
-) -> Result<Json<EditCharacterResponse>, AdvancedCommonWebError> {
+) -> Result<Json<EditCharacterResponse>, CommonWebError> {
 
   // --- Auth ---
 
@@ -53,7 +53,7 @@ pub async fn edit_character_handler(
       .await?
       .ok_or_else(|| {
         warn!("Character not found: {}", request.token);
-        AdvancedCommonWebError::NotFound
+        CommonWebError::NotFound
       })?;
 
   // --- Ownership check ---
@@ -65,7 +65,7 @@ pub async fn edit_character_handler(
 
   if !is_owner && !is_mod {
     warn!("User {} tried to edit character {} they don't own", user_token, request.token);
-    return Err(AdvancedCommonWebError::NotFound);
+    return Err(CommonWebError::NotFound);
   }
 
   // --- Determine what to update ---
@@ -114,7 +114,7 @@ pub async fn edit_character_handler(
           .await
           .map_err(|err| {
             error!("Error updating character on Kinovi: {:?}", err);
-            AdvancedCommonWebError::from_error_with_message(
+            CommonWebError::from_error_with_message(
               "Error Updating Kinovi Character API".to_string(),
               err,
             )
@@ -166,7 +166,7 @@ fn resolve_name_update(updated_name: &Option<String>) -> Option<String> {
 /// Determine the description update type.
 fn resolve_description_update(
   updated_description: &Option<String>,
-) -> Result<DescriptionUpdateType, AdvancedCommonWebError> {
+) -> Result<DescriptionUpdateType, CommonWebError> {
   let desc = match updated_description.as_ref() {
     None => return Ok(DescriptionUpdateType::NoUpdate),
     Some(d) => d,
@@ -176,7 +176,7 @@ fn resolve_description_update(
   if trimmed.is_empty() {
     Ok(DescriptionUpdateType::Nullify)
   } else if trimmed.len() > CHARACTER_MAX_DESCRIPTION_LENGTH {
-    Err(AdvancedCommonWebError::BadInputWithSimpleMessage(
+    Err(CommonWebError::BadInputWithSimpleMessage(
       format!("Description exceeds maximum length of {} characters.", CHARACTER_MAX_DESCRIPTION_LENGTH),
     ))
   } else {

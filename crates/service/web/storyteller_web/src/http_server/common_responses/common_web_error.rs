@@ -16,13 +16,13 @@ use mysql_queries::errors::mysql_error::{MysqlCrateErrorSubtype, MysqlError};
 /// ## Usage
 ///
 /// ```ignore
-/// pub async fn my_handler(...) -> Result<Json<MyResponse>, AdvancedCommonWebError> {
+/// pub async fn my_handler(...) -> Result<Json<MyResponse>, CommonWebError> {
 ///   // sqlx errors, anyhow errors, session errors — all convert via ?
 ///   let user = require_user_session_using_connection(&req, ...)?;
 ///   let data = some_db_query(&pool).await?;
 ///
 ///   if data.is_none() {
-///     return Err(AdvancedCommonWebError::NotFound);
+///     return Err(CommonWebError::NotFound);
 ///   }
 ///
 ///   Ok(Json(MyResponse { data }))
@@ -33,7 +33,7 @@ use mysql_queries::errors::mysql_error::{MysqlCrateErrorSubtype, MysqlError};
 /// The wrapped cause is never shown to users but is available to the error
 /// alerting middleware for paging and logging.
 #[derive(Clone)]
-pub enum AdvancedCommonWebError {
+pub enum CommonWebError {
   /// 400 Bad Request with a user-facing message.
   BadInputWithSimpleMessage(String),
 
@@ -72,7 +72,7 @@ pub enum AdvancedCommonWebError {
 
 // =============== Public accessors ===============
 
-impl AdvancedCommonWebError {
+impl CommonWebError {
   /// Wrap any error as an `UncaughtServerError`.
   pub fn from_error(error: impl std::error::Error + Send + Sync + 'static) -> Self {
     Self::UncaughtServerError(Arc::new(error))
@@ -127,7 +127,7 @@ impl AdvancedCommonWebError {
 
 // =============== Display / Debug / Error ===============
 
-impl Display for AdvancedCommonWebError {
+impl Display for CommonWebError {
   fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
     match self {
       Self::BadInputWithSimpleMessage(msg) => write!(f, "Bad input: {}", msg),
@@ -145,7 +145,7 @@ impl Display for AdvancedCommonWebError {
   }
 }
 
-impl std::fmt::Debug for AdvancedCommonWebError {
+impl std::fmt::Debug for CommonWebError {
   fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
     match self {
       Self::BadInputWithSimpleMessage(msg) => write!(f, "BadInputWithSimpleMessage({:?})", msg),
@@ -163,7 +163,7 @@ impl std::fmt::Debug for AdvancedCommonWebError {
   }
 }
 
-impl std::error::Error for AdvancedCommonWebError {
+impl std::error::Error for CommonWebError {
   fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
     match self {
       Self::UncaughtServerError(err) => Some(err.as_ref()),
@@ -175,7 +175,7 @@ impl std::error::Error for AdvancedCommonWebError {
 
 // =============== Actix ResponseError ===============
 
-impl ResponseError for AdvancedCommonWebError {
+impl ResponseError for CommonWebError {
   fn status_code(&self) -> StatusCode {
     match self {
       Self::BadInputWithSimpleMessage(_) => StatusCode::BAD_REQUEST,
@@ -235,13 +235,13 @@ impl ResponseError for AdvancedCommonWebError {
 
 // =============== From impls (automatic ? conversion) ===============
 
-impl From<sqlx::Error> for AdvancedCommonWebError {
+impl From<sqlx::Error> for CommonWebError {
   fn from(err: sqlx::Error) -> Self {
     Self::from_error(err)
   }
 }
 
-impl<T> From<MysqlError<T>> for AdvancedCommonWebError
+impl<T> From<MysqlError<T>> for CommonWebError
 where
   T: MysqlCrateErrorSubtype + Send + Sync + 'static,
 {
@@ -250,7 +250,7 @@ where
   }
 }
 
-impl From<anyhow::Error> for AdvancedCommonWebError {
+impl From<anyhow::Error> for CommonWebError {
   fn from(err: anyhow::Error) -> Self {
     // anyhow::Error doesn't impl std::error::Error, so we go through Box -> Arc.
     let boxed: Box<dyn std::error::Error + Send + Sync> = err.into();
@@ -258,13 +258,13 @@ impl From<anyhow::Error> for AdvancedCommonWebError {
   }
 }
 
-impl From<serde_json::Error> for AdvancedCommonWebError {
+impl From<serde_json::Error> for CommonWebError {
   fn from(err: serde_json::Error) -> Self {
     Self::from_error(err)
   }
 }
 
-impl From<RequireUserSessionError> for AdvancedCommonWebError {
+impl From<RequireUserSessionError> for CommonWebError {
   fn from(value: RequireUserSessionError) -> Self {
     match value {
       RequireUserSessionError::NotAuthorized => Self::NotAuthorized,
@@ -273,7 +273,7 @@ impl From<RequireUserSessionError> for AdvancedCommonWebError {
   }
 }
 
-impl From<HttpUserSessionPayloadError> for AdvancedCommonWebError {
+impl From<HttpUserSessionPayloadError> for CommonWebError {
   fn from(err: HttpUserSessionPayloadError) -> Self {
     if err.is_server_error() {
       Self::from_error(err)
@@ -283,7 +283,7 @@ impl From<HttpUserSessionPayloadError> for AdvancedCommonWebError {
   }
 }
 
-impl From<AvtCookiePayloadError> for AdvancedCommonWebError {
+impl From<AvtCookiePayloadError> for CommonWebError {
   fn from(err: AvtCookiePayloadError) -> Self {
     if err.is_server_error() {
       Self::from_error(err)
@@ -293,7 +293,7 @@ impl From<AvtCookiePayloadError> for AdvancedCommonWebError {
   }
 }
 
-impl From<SessionCheckerError> for AdvancedCommonWebError {
+impl From<SessionCheckerError> for CommonWebError {
   fn from(value: SessionCheckerError) -> Self {
     match value {
       // Bad / forged session cookie → 401 (don't page on this)
@@ -327,7 +327,7 @@ struct JsonErrorWithMessage<'a> {
 
 // =============== OpenAPI schema ===============
 
-impl utoipa::PartialSchema for AdvancedCommonWebError {
+impl utoipa::PartialSchema for CommonWebError {
   fn schema() -> utoipa::openapi::RefOr<utoipa::openapi::Schema> {
     utoipa::openapi::ObjectBuilder::new()
         .property(
@@ -360,9 +360,9 @@ impl utoipa::PartialSchema for AdvancedCommonWebError {
   }
 }
 
-impl utoipa::ToSchema for AdvancedCommonWebError {
+impl utoipa::ToSchema for CommonWebError {
   fn name() -> std::borrow::Cow<'static, str> {
-    std::borrow::Cow::Borrowed("AdvancedCommonWebError")
+    std::borrow::Cow::Borrowed("CommonWebError")
   }
 }
 
@@ -375,7 +375,7 @@ mod tests {
 
   #[test]
   fn bad_input_returns_400_with_message() {
-    let error = AdvancedCommonWebError::BadInputWithSimpleMessage("name is required".to_string());
+    let error = CommonWebError::BadInputWithSimpleMessage("name is required".to_string());
     assert_eq!(error.status_code(), StatusCode::BAD_REQUEST);
     assert!(!error.is_server_error());
     assert!(error.cause().is_none());
@@ -389,27 +389,27 @@ mod tests {
 
   #[test]
   fn not_found_returns_404() {
-    let error = AdvancedCommonWebError::NotFound;
+    let error = CommonWebError::NotFound;
     assert_eq!(error.status_code(), StatusCode::NOT_FOUND);
     assert!(!error.is_server_error());
   }
 
   #[test]
   fn not_authorized_returns_401() {
-    let error = AdvancedCommonWebError::NotAuthorized;
+    let error = CommonWebError::NotAuthorized;
     assert_eq!(error.status_code(), StatusCode::UNAUTHORIZED);
   }
 
   #[test]
   fn payment_required_returns_402() {
-    let error = AdvancedCommonWebError::PaymentRequired;
+    let error = CommonWebError::PaymentRequired;
     assert_eq!(error.status_code(), StatusCode::PAYMENT_REQUIRED);
   }
 
   #[test]
   fn uncaught_io_error_returns_500_and_hides_cause() {
     let io_err = std::io::Error::new(std::io::ErrorKind::Other, "disk exploded");
-    let error = AdvancedCommonWebError::from_error(io_err);
+    let error = CommonWebError::from_error(io_err);
 
     assert_eq!(error.status_code(), StatusCode::INTERNAL_SERVER_ERROR);
     assert!(error.is_server_error());
@@ -428,7 +428,7 @@ mod tests {
 
   #[test]
   fn anyhow_error_converts_to_500_via_from() {
-    let error: AdvancedCommonWebError = anyhow::anyhow!("something broke in the pipeline").into();
+    let error: CommonWebError = anyhow::anyhow!("something broke in the pipeline").into();
     assert_eq!(error.status_code(), StatusCode::INTERNAL_SERVER_ERROR);
     assert!(error.is_server_error());
 
@@ -440,7 +440,7 @@ mod tests {
   fn nested_anyhow_error_preserves_context_chain() {
     let inner = std::io::Error::new(std::io::ErrorKind::ConnectionRefused, "connection refused");
     let with_context = anyhow::Error::new(inner).context("failed to connect to database");
-    let error: AdvancedCommonWebError = with_context.into();
+    let error: CommonWebError = with_context.into();
 
     assert!(error.is_server_error());
     let cause = error.cause().unwrap();
@@ -454,14 +454,14 @@ mod tests {
 
   #[test]
   fn require_user_session_not_authorized_maps_to_401() {
-    let error: AdvancedCommonWebError = RequireUserSessionError::NotAuthorized.into();
+    let error: CommonWebError = RequireUserSessionError::NotAuthorized.into();
     assert_eq!(error.status_code(), StatusCode::UNAUTHORIZED);
     assert!(!error.is_server_error());
   }
 
   #[test]
   fn require_user_session_server_error_wraps_cause() {
-    let error: AdvancedCommonWebError = RequireUserSessionError::ServerError.into();
+    let error: CommonWebError = RequireUserSessionError::ServerError.into();
     assert_eq!(error.status_code(), StatusCode::INTERNAL_SERVER_ERROR);
     assert!(error.is_server_error());
     assert!(error.cause().is_some());
@@ -472,7 +472,7 @@ mod tests {
   fn serde_json_error_converts_to_500() {
     let bad_json = "not json at all{{{";
     let serde_err: serde_json::Error = serde_json::from_str::<serde_json::Value>(bad_json).unwrap_err();
-    let error: AdvancedCommonWebError = serde_err.into();
+    let error: CommonWebError = serde_err.into();
 
     assert_eq!(error.status_code(), StatusCode::INTERNAL_SERVER_ERROR);
     assert!(error.is_server_error());
@@ -483,7 +483,7 @@ mod tests {
   #[test]
   fn error_source_returns_wrapped_error() {
     let io_err = std::io::Error::new(std::io::ErrorKind::Other, "root cause");
-    let error = AdvancedCommonWebError::from_error(io_err);
+    let error = CommonWebError::from_error(io_err);
 
     let source = std::error::Error::source(&error);
     assert!(source.is_some());
@@ -492,31 +492,31 @@ mod tests {
 
   #[test]
   fn non_server_errors_have_no_source() {
-    assert!(std::error::Error::source(&AdvancedCommonWebError::NotFound).is_none());
-    assert!(std::error::Error::source(&AdvancedCommonWebError::NotAuthorized).is_none());
-    assert!(std::error::Error::source(&AdvancedCommonWebError::PaymentRequired).is_none());
-    assert!(std::error::Error::source(&AdvancedCommonWebError::Forbidden).is_none());
-    assert!(std::error::Error::source(&AdvancedCommonWebError::ContentPolicyRejected).is_none());
-    assert!(std::error::Error::source(&AdvancedCommonWebError::ContentPolicyRejectedWithMessage("test".to_string())).is_none());
+    assert!(std::error::Error::source(&CommonWebError::NotFound).is_none());
+    assert!(std::error::Error::source(&CommonWebError::NotAuthorized).is_none());
+    assert!(std::error::Error::source(&CommonWebError::PaymentRequired).is_none());
+    assert!(std::error::Error::source(&CommonWebError::Forbidden).is_none());
+    assert!(std::error::Error::source(&CommonWebError::ContentPolicyRejected).is_none());
+    assert!(std::error::Error::source(&CommonWebError::ContentPolicyRejectedWithMessage("test".to_string())).is_none());
   }
 
   #[test]
   fn forbidden_returns_403() {
-    let error = AdvancedCommonWebError::Forbidden;
+    let error = CommonWebError::Forbidden;
     assert_eq!(error.status_code(), StatusCode::FORBIDDEN);
     assert!(!error.is_server_error());
   }
 
   #[test]
   fn content_policy_rejected_returns_403() {
-    let error = AdvancedCommonWebError::ContentPolicyRejected;
+    let error = CommonWebError::ContentPolicyRejected;
     assert_eq!(error.status_code(), StatusCode::FORBIDDEN);
     assert!(!error.is_server_error());
   }
 
   #[test]
   fn content_policy_rejected_with_message_returns_403() {
-    let error = AdvancedCommonWebError::ContentPolicyRejectedWithMessage("NSFW detected".to_string());
+    let error = CommonWebError::ContentPolicyRejectedWithMessage("NSFW detected".to_string());
     assert_eq!(error.status_code(), StatusCode::FORBIDDEN);
     assert!(!error.is_server_error());
 

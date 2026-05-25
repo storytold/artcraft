@@ -1,4 +1,4 @@
-use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::endpoints::webhooks::fal::process_success::resolve_file_metadata::resolve_file_metadata;
 use crate::state::server_state::ServerState;
 use crate::util::http_download_url_to_bytes::http_download_url_to_bytes;
@@ -21,12 +21,12 @@ pub async fn process_model_mesh_payload(
   model_mesh_data: &ModelMeshData,
   job: &FalJobDetails,
   server_state: &ServerState,
-) -> Result<MediaFileToken, AdvancedCommonWebError> {
+) -> Result<MediaFileToken, CommonWebError> {
   let mesh_url = model_mesh_data.url
       .as_deref()
       .ok_or_else(|| {
         warn!("No `url` in model mesh payload");
-        AdvancedCommonWebError::server_error_with_message("no `url` in model mesh payload")
+        CommonWebError::server_error_with_message("no `url` in model mesh payload")
       })?;
 
   // Download with a retry if the first attempt returns suspiciously few bytes.
@@ -34,7 +34,7 @@ pub async fn process_model_mesh_payload(
       .await
       .map_err(|err| {
         warn!("Failed to download mesh from {}: {:?}", mesh_url, err);
-        AdvancedCommonWebError::from_error(err)
+        CommonWebError::from_error(err)
       })?;
 
   if file_bytes.len() <= 10 {
@@ -47,7 +47,7 @@ pub async fn process_model_mesh_payload(
         .await
         .map_err(|err| {
           warn!("Failed to download mesh on retry from {}: {:?}", mesh_url, err);
-          AdvancedCommonWebError::from_error(err)
+          CommonWebError::from_error(err)
         })?;
   }
 
@@ -59,7 +59,7 @@ pub async fn process_model_mesh_payload(
           file_bytes.len(),
           model_mesh_data.content_type,
         );
-        AdvancedCommonWebError::server_error_with_message(
+        CommonWebError::server_error_with_message(
           &format!("Could not determine file type for mesh (bytes: {}, fal content_type: {:?})",
             file_bytes.len(), model_mesh_data.content_type))
       })?;
@@ -71,7 +71,7 @@ pub async fn process_model_mesh_payload(
   let media_file_type = MediaFileType::try_from_mime_type(mime_type)
       .ok_or_else(|| {
         warn!("Unsupported media file type: {}", mime_type);
-        AdvancedCommonWebError::server_error_with_message(
+        CommonWebError::server_error_with_message(
           &format!("Unsupported media file type: {}", mime_type))
       })?;
 
@@ -81,7 +81,7 @@ pub async fn process_model_mesh_payload(
   let file_hash = sha256_hash_bytes(&file_bytes)
       .map_err(|err| {
         warn!("Failed to hash mesh bytes: {:?}", err);
-        AdvancedCommonWebError::from_anyhow_error(err)
+        CommonWebError::from_anyhow_error(err)
       })?;
 
   let public_upload_path = MediaFileBucketPath::generate_new(PREFIX, Some(&extension_with_period));
@@ -95,7 +95,7 @@ pub async fn process_model_mesh_payload(
       .await
       .map_err(|err| {
         warn!("Failed to upload mesh to bucket: {:?}", err);
-        AdvancedCommonWebError::from_anyhow_error(err)
+        CommonWebError::from_anyhow_error(err)
       })?;
 
   let media_token = MediaFileInsertBuilder::new()
@@ -116,7 +116,7 @@ pub async fn process_model_mesh_payload(
       .await
       .map_err(|err| {
         warn!("Failed to insert mesh media file record: {:?}", err);
-        AdvancedCommonWebError::from_error(err)
+        CommonWebError::from_error(err)
       })?;
 
   info!("Mesh media file uploaded with token: {}", media_token);

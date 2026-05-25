@@ -9,7 +9,7 @@ use http_server_common::request::get_request_ip::get_request_ip;
 use mysql_queries::queries::web_referrals::insert_web_referral::{insert_web_referral, InsertWebReferralArgs};
 use tokens::tokens::anonymous_visitor_tracking::AnonymousVisitorTrackingToken;
 
-use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::state::server_state::ServerState;
 
 /// Record a web referral for analytics tracking.
@@ -26,7 +26,7 @@ pub async fn log_web_referral_handler(
   http_request: HttpRequest,
   request: web::Json<LogWebReferralRequest>,
   server_state: web::Data<Arc<ServerState>>,
-) -> Result<HttpResponse, AdvancedCommonWebError> {
+) -> Result<HttpResponse, CommonWebError> {
 
   // 1. Try to get the referral URL from the request body, falling back to the Referer header.
   let referral_url = request.maybe_referral_url.as_deref()
@@ -82,7 +82,7 @@ pub async fn log_web_referral_handler(
         .make_new_cookie_with_apriori_token(&token)
         .map_err(|e| {
           warn!("AVT cookie creation error: {:?}", e);
-          AdvancedCommonWebError::from_error(e)
+          CommonWebError::from_error(e)
         })?;
       (token, Some(cookie))
     }
@@ -106,7 +106,7 @@ pub async fn log_web_referral_handler(
     maybe_anonymous_visitor_token: Some(&avt_token_str),
   }).await.map_err(|e| {
     warn!("Error inserting web referral: {:?}", e);
-    AdvancedCommonWebError::from_error(e)
+    CommonWebError::from_error(e)
   })?;
 
   info!("Recorded web referral: {}", referral_url);
@@ -117,7 +117,7 @@ pub async fn log_web_referral_handler(
   };
 
   let body = serde_json::to_string(&response)
-    .map_err(AdvancedCommonWebError::from_error)?;
+    .map_err(CommonWebError::from_error)?;
 
   let mut response_builder = HttpResponse::Ok();
 
@@ -130,13 +130,13 @@ pub async fn log_web_referral_handler(
     .body(body))
 }
 
-fn ok_response() -> Result<HttpResponse, AdvancedCommonWebError> {
+fn ok_response() -> Result<HttpResponse, CommonWebError> {
   let response = LogWebReferralResponse {
     success: true,
   };
 
   let body = serde_json::to_string(&response)
-    .map_err(AdvancedCommonWebError::from_error)?;
+    .map_err(CommonWebError::from_error)?;
 
   Ok(HttpResponse::Ok()
     .content_type("application/json")

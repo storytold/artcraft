@@ -15,7 +15,7 @@ use mysql_queries::queries::user_referrals::list_user_referrals_for_user::{
   list_user_referrals_for_user, ListUserReferralsForUserArgs,
 };
 
-use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::web_utils::user_session::require_moderator::{
   require_moderator, UseDatabase,
 };
@@ -45,7 +45,7 @@ pub async fn moderator_list_user_referrals_for_user_handler(
   path: Path<ListUserReferralsForUserPathInfo>,
   query: Query<ListUserReferralsForUserQueryParams>,
   server_state: web::Data<Arc<ServerState>>,
-) -> Result<Json<ListUserReferralsForUserSuccessResponse>, AdvancedCommonWebError> {
+) -> Result<Json<ListUserReferralsForUserSuccessResponse>, CommonWebError> {
 
   let _user_session = require_moderator(
     &http_request,
@@ -53,7 +53,7 @@ pub async fn moderator_list_user_referrals_for_user_handler(
     UseDatabase::GrabNewConnection,
   ).await.map_err(|err| {
     warn!("Moderator check failed: {:?}", err);
-    AdvancedCommonWebError::NotAuthorized
+    CommonWebError::NotAuthorized
   })?;
 
   let limit = query.limit
@@ -67,7 +67,7 @@ pub async fn moderator_list_user_referrals_for_user_handler(
         .decode_cursor_expecting_name(CURSOR_NAME, cursor_str)
         .map_err(|err| {
           warn!("Failed to decode cursor: {:?}", err);
-          AdvancedCommonWebError::BadInputWithSimpleMessage(
+          CommonWebError::BadInputWithSimpleMessage(
             "Invalid cursor".to_string())
         })?;
       decoded.last_id
@@ -85,7 +85,7 @@ pub async fn moderator_list_user_referrals_for_user_handler(
     },
   ).await.map_err(|err| {
     warn!("Failed to list user referrals for user: {:?}", err);
-    AdvancedCommonWebError::from_error(err)
+    CommonWebError::from_error(err)
   })?;
 
   let maybe_cursor = records.last().map(|last| {
@@ -93,7 +93,7 @@ pub async fn moderator_list_user_referrals_for_user_handler(
       .encode_last_id_cursor(CURSOR_NAME, last.id)
   }).transpose().map_err(|err| {
     warn!("Failed to encode cursor: {:?}", err);
-    AdvancedCommonWebError::server_error_with_message("Failed to encode cursor")
+    CommonWebError::server_error_with_message("Failed to encode cursor")
   })?;
 
   let referrals = records.into_iter().map(|r| {

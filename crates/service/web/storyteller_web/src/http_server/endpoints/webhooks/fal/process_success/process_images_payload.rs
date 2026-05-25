@@ -1,4 +1,4 @@
-use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::endpoints::webhooks::fal::process_success::resolve_file_metadata::resolve_file_metadata;
 use crate::state::server_state::ServerState;
 use crate::util::http_download_url_to_bytes::http_download_url_to_bytes;
@@ -28,7 +28,7 @@ pub async fn process_images_payload(
   job: &FalJobDetails,
   server_state: &ServerState,
   pager: &Pager,
-) -> Result<(Option<MediaFileToken>, Option<BatchGenerationToken>), AdvancedCommonWebError> {
+) -> Result<(Option<MediaFileToken>, Option<BatchGenerationToken>), CommonWebError> {
 
   let mut maybe_media_token = None;
 
@@ -67,10 +67,10 @@ pub async fn process_images_payload(
 
   if success_count == 0 {
     if let Some(err) = maybe_error {
-      return Err(AdvancedCommonWebError::from_error(err));
+      return Err(CommonWebError::from_error(err));
     } else {
       // NB: Branch should be unreachable.
-      return Err(AdvancedCommonWebError::server_error_with_message("none of the images could be processed"));
+      return Err(CommonWebError::server_error_with_message("none of the images could be processed"));
     }
   }
 
@@ -101,12 +101,12 @@ async fn upload_image(
   server_state: &ServerState,
   image: &ImagesData,
   maybe_batch_token: Option<&BatchGenerationToken>,
-) -> Result<MediaFileToken, AdvancedCommonWebError> {
+) -> Result<MediaFileToken, CommonWebError> {
   let image_url = image.url
       .as_deref()
       .ok_or_else(|| {
         warn!("No `url` in image payload");
-        AdvancedCommonWebError::server_error_with_message("no `url` in image payload")
+        CommonWebError::server_error_with_message("no `url` in image payload")
       })?;
 
   // Download with a retry if the first attempt returns suspiciously few bytes.
@@ -114,7 +114,7 @@ async fn upload_image(
       .await
       .map_err(|e| {
         warn!("Failed to download image from {}: {:?}", image_url, e);
-        AdvancedCommonWebError::server_error_with_message(
+        CommonWebError::server_error_with_message(
           &format!("Failed to download image: {:?}", e))
       })?;
 
@@ -128,7 +128,7 @@ async fn upload_image(
         .await
         .map_err(|e| {
           warn!("Failed to download image on retry from {}: {:?}", image_url, e);
-          AdvancedCommonWebError::server_error_with_message(
+          CommonWebError::server_error_with_message(
             &format!("Failed to download image on retry: {:?}", e))
         })?;
   }
@@ -141,7 +141,7 @@ async fn upload_image(
           file_bytes.len(),
           image.content_type,
         );
-        AdvancedCommonWebError::server_error_with_message(
+        CommonWebError::server_error_with_message(
           &format!("Could not determine file type for image (bytes: {}, fal content_type: {:?})",
             file_bytes.len(), image.content_type))
       })?;
@@ -156,13 +156,13 @@ async fn upload_image(
       let converted = webp_bytes_to_png_bytes(&file_bytes)
           .map_err(|e| {
             warn!("Failed to convert WebP to PNG: {:?}", e);
-            AdvancedCommonWebError::from_error(e)
+            CommonWebError::from_error(e)
           })?;
 
       let converted_metadata = resolve_file_metadata(&converted, Some("image/png"))
           .ok_or_else(|| {
             warn!("Failed to determine file type after WebP→PNG conversion");
-            AdvancedCommonWebError::server_error_with_message(
+            CommonWebError::server_error_with_message(
               "Failed to determine file type after WebP→PNG conversion")
           })?;
 
@@ -198,12 +198,12 @@ async fn upload_image_bytes(
   mime_type: &str,
   file_extension: FileExtension,
   maybe_batch_token: Option<&BatchGenerationToken>,
-) -> Result<MediaFileToken, AdvancedCommonWebError> {
+) -> Result<MediaFileToken, CommonWebError> {
 
   let media_file_type = MediaFileType::try_from_mime_type(mime_type)
       .ok_or_else(|| {
         warn!("Unsupported media file type: {}", mime_type);
-        AdvancedCommonWebError::server_error_with_message(
+        CommonWebError::server_error_with_message(
           &format!("Unsupported media file type: {}", mime_type))
       })?;
 
@@ -215,12 +215,12 @@ async fn upload_image_bytes(
   let file_hash = sha256_hash_bytes(&file_bytes)
       .map_err(|e| {
         warn!("Failed to hash image bytes: {:?}", e);
-        AdvancedCommonWebError::from_anyhow_error(e)
+        CommonWebError::from_anyhow_error(e)
       })?;
   let image_info = ImageInfo::decode_image_from_bytes(&file_bytes)
       .map_err(|e| {
         warn!("Failed to decode image info: {:?}", e);
-        AdvancedCommonWebError::from_error(e)
+        CommonWebError::from_error(e)
       })?;
 
   let public_upload_path = MediaFileBucketPath::generate_new(PREFIX, Some(&extension_with_period));
@@ -234,7 +234,7 @@ async fn upload_image_bytes(
       .await
       .map_err(|e| {
         warn!("Failed to upload image to bucket: {:?}", e);
-        AdvancedCommonWebError::from_anyhow_error(e)
+        CommonWebError::from_anyhow_error(e)
       })?;
 
   let mut query_builder = MediaFileInsertBuilder::new()
@@ -262,7 +262,7 @@ async fn upload_image_bytes(
       .await
       .map_err(|e| {
         warn!("Failed to insert image media file record: {:?}", e);
-        AdvancedCommonWebError::from_error(e)
+        CommonWebError::from_error(e)
       })?;
 
   info!("Image media file uploaded with token: {} ; possible batch token: {:?}",

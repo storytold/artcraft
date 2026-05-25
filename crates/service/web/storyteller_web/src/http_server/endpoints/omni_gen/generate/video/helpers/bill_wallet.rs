@@ -6,7 +6,7 @@ use tokens::tokens::users::UserToken;
 use tokens::tokens::wallet_ledger_entries::WalletLedgerEntryToken;
 
 use crate::billing::wallets::attempt_wallet_deduction::attempt_wallet_deduction_else_common_web_error;
-use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 
 pub struct BillWalletResult {
   pub apriori_job_token: InferenceJobToken,
@@ -20,7 +20,7 @@ pub async fn bill_wallet(
   user_token: &UserToken,
   cost: u64,
   mysql_connection: &mut sqlx::pool::PoolConnection<sqlx::MySql>,
-) -> Result<BillWalletResult, AdvancedCommonWebError> {
+) -> Result<BillWalletResult, CommonWebError> {
   let apriori_job_token = InferenceJobToken::generate();
 
   info!("Charging wallet: {} credits", cost);

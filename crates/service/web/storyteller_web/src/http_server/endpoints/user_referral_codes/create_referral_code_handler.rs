@@ -6,7 +6,7 @@ use log::warn;
 use utoipa::ToSchema;
 
 use artcraft_api_defs::user_referral_codes::create_referral_code::{CreateReferralCodeRequest, CreateReferralCodeResponse};
-use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::session::lookup::user_session_feature_flags::UserSessionFeatureFlags;
 use crate::state::server_state::ServerState;
 use mysql_queries::errors::database_insert_error::DatabaseInsertError;
@@ -32,9 +32,9 @@ pub async fn create_referral_code_handler(
   http_request: HttpRequest,
   server_state: web::Data<Arc<ServerState>>,
   request: web::Json<CreateReferralCodeRequest>,
-) -> Result<Json<CreateReferralCodeResponse>, AdvancedCommonWebError> {
+) -> Result<Json<CreateReferralCodeResponse>, CommonWebError> {
   let mut mysql_connection = server_state.mysql_pool.acquire().await
-    .map_err(|e| AdvancedCommonWebError::from(e))?;
+    .map_err(|e| CommonWebError::from(e))?;
 
   let maybe_user_session = server_state
     .session_checker
@@ -42,17 +42,17 @@ pub async fn create_referral_code_handler(
     .await
     .map_err(|e| {
       warn!("Session checker error: {:?}", e);
-      AdvancedCommonWebError::from(e)
+      CommonWebError::from(e)
     })?;
 
   let user_session = match maybe_user_session {
     Some(session) if !session.is_banned => session,
-    _ => return Err(AdvancedCommonWebError::NotAuthorized),
+    _ => return Err(CommonWebError::NotAuthorized),
   };
 
   let feature_flags = UserSessionFeatureFlags::new(user_session.maybe_feature_flags.as_deref());
   if !feature_flags.can_use_referrals_program() {
-    return Err(AdvancedCommonWebError::NotAuthorized);
+    return Err(CommonWebError::NotAuthorized);
   }
 
   let user_token = &user_session.user_token;
@@ -61,19 +61,19 @@ pub async fn create_referral_code_handler(
   let code = request.code.trim().to_string();
 
   if code.is_empty() {
-    return Err(AdvancedCommonWebError::BadInputWithSimpleMessage(
+    return Err(CommonWebError::BadInputWithSimpleMessage(
       "Referral code cannot be empty".to_string(),
     ));
   }
 
   if code.len() > 32 {
-    return Err(AdvancedCommonWebError::BadInputWithSimpleMessage(
+    return Err(CommonWebError::BadInputWithSimpleMessage(
       "Referral code must be 32 characters or fewer".to_string(),
     ));
   }
 
   if !code.chars().all(|c| c.is_alphanumeric() || c == '_' || c == '.' || c == '-') {
-    return Err(AdvancedCommonWebError::BadInputWithSimpleMessage(
+    return Err(CommonWebError::BadInputWithSimpleMessage(
       "Referral code may only contain letters, numbers, underscores, periods, and dashes".to_string(),
     ));
   }
@@ -82,10 +82,10 @@ pub async fn create_referral_code_handler(
 
   // Check the user doesn't already have too many active codes.
   let existing = list_referral_codes_for_user(user_token, &mut *mysql_connection).await
-    .map_err(|e| AdvancedCommonWebError::from(e))?;
+    .map_err(|e| CommonWebError::from(e))?;
 
   if existing.len() >= MAX_ACTIVE_CODES {
-    return Err(AdvancedCommonWebError::BadInputWithSimpleMessage(
+    return Err(CommonWebError::BadInputWithSimpleMessage(
       format!("You can have at most {} active referral codes. Delete one first.", MAX_ACTIVE_CODES),
     ));
   }
@@ -104,12 +104,12 @@ pub async fn create_referral_code_handler(
     Ok(token) => token,
     Err(err) => return match err {
       DatabaseInsertError::DuplicateKeyError => {
-        return Err(AdvancedCommonWebError::BadInputWithSimpleMessage(
+        return Err(CommonWebError::BadInputWithSimpleMessage(
           "This referral code is already in use".to_string(),
         ));
       },
-      DatabaseInsertError::SqlxError(e) => Err(AdvancedCommonWebError::from(e)),
-      DatabaseInsertError::AnyhowError(e) => Err(AdvancedCommonWebError::from_anyhow_error(e)),
+      DatabaseInsertError::SqlxError(e) => Err(CommonWebError::from(e)),
+      DatabaseInsertError::AnyhowError(e) => Err(CommonWebError::from_anyhow_error(e)),
     },
   };
 

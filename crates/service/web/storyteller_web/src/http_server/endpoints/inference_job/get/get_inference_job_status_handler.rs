@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::common_responses::media::media_domain::MediaDomain;
 use crate::http_server::common_responses::media::media_links_builder::MediaLinksBuilder;
 use crate::http_server::endpoints::inference_job::utils::estimates::estimate_job_progress::estimate_job_progress;
@@ -153,12 +153,12 @@ pub async fn get_inference_job_status_handler(
   http_request: HttpRequest,
   path: Path<GetInferenceJobStatusPathInfo>,
   server_state: web::Data<Arc<ServerState>>,
-) -> Result<Json<GetInferenceJobStatusSuccessResponse>, AdvancedCommonWebError> {
+) -> Result<Json<GetInferenceJobStatusSuccessResponse>, CommonWebError> {
   if path.token.as_str().trim() == "None" {
     // NB: A bunch of Python clients use our API and can fail in this manner.
     // This was a large traffic driver during the 2023-03-08 outage.
     // Presumably, it's this client: https://github.com/shards-7/fakeyou.py
-    return Err(AdvancedCommonWebError::NotFound);
+    return Err(CommonWebError::NotFound);
   }
 
   // NB: Since this is publicly exposed, we don't query sensitive data.
@@ -169,10 +169,10 @@ pub async fn get_inference_job_status_handler(
 
   let record = match maybe_status {
     Ok(Some(record)) => record,
-    Ok(None) => return Err(AdvancedCommonWebError::NotFound),
+    Ok(None) => return Err(CommonWebError::NotFound),
     Err(err) => {
       warn!("Job query error for token {}: {:?}", path.token.as_str(), err);
-      return Err(AdvancedCommonWebError::from_anyhow_error(err));
+      return Err(CommonWebError::from_anyhow_error(err));
     }
   };
 
@@ -180,7 +180,7 @@ pub async fn get_inference_job_status_handler(
       .get()
       .map_err(|e| {
         warn!("Redis pool error: {:?}", e);
-        AdvancedCommonWebError::from_error(e)
+        CommonWebError::from_error(e)
       })?;
 
   // TODO(bt,2023-05-21): Make async.

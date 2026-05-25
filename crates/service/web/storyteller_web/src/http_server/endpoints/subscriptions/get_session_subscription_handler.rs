@@ -1,7 +1,7 @@
 use std::fmt;
 use std::sync::Arc;
 
-use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::common_responses::media::media_links_builder::MediaLinksBuilder;
 use crate::state::server_state::ServerState;
 use actix_web::web::{Json, Path};
@@ -44,14 +44,14 @@ pub async fn get_session_subscription_handler(
   http_request: HttpRequest,
   path: Path<GetSessionSubscriptionPathInfo>,
   server_state: web::Data<Arc<ServerState>>
-) -> Result<Json<GetSessionSubscriptionResponse>, AdvancedCommonWebError>
+) -> Result<Json<GetSessionSubscriptionResponse>, CommonWebError>
 {
   let mut mysql_connection = server_state.mysql_pool
       .acquire()
       .await
       .map_err(|err| {
         error!("Error acquiring MySQL connection: {:?}", err);
-        AdvancedCommonWebError::from_error(err)
+        CommonWebError::from_error(err)
       })?;
 
   let maybe_user_session = server_state
@@ -60,12 +60,12 @@ pub async fn get_session_subscription_handler(
       .await
       .map_err(|e| {
         warn!("Session checker error: {:?}", e);
-        AdvancedCommonWebError::from_error(e)
+        CommonWebError::from_error(e)
       })?;
 
   let user_token = match maybe_user_session {
     Some(session) => session.user_token,
-    None => return Err(AdvancedCommonWebError::NotAuthorized),
+    None => return Err(CommonWebError::NotAuthorized),
   };
 
   let maybe_subscription = find_subscription_for_owner_user_using_connection(
@@ -74,7 +74,7 @@ pub async fn get_session_subscription_handler(
     &mut mysql_connection
   ).await.map_err(|err| {
     error!("Error looking up user's ({}) existing subscription: {:?}", &user_token, err);
-    AdvancedCommonWebError::from_error(err) // NB: This was probably *our* fault.
+    CommonWebError::from_error(err) // NB: This was probably *our* fault.
   })?;
 
   Ok(Json(GetSessionSubscriptionResponse {

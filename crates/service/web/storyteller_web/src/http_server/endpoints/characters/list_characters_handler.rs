@@ -12,7 +12,7 @@ use mysql_queries::queries::characters::list_active_characters_for_user::list_ac
 use mysql_queries::queries::media_files::get::batch_get_media_files_by_tokens::{batch_get_media_files_by_tokens_with_connection, MediaFilesByTokensRecord};
 use tokens::tokens::media_files::MediaFileToken;
 
-use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::common_responses::media::media_domain::MediaDomain;
 use crate::http_server::common_responses::media::media_links_builder::MediaLinksBuilder;
 use crate::http_server::endpoints::media_files::helpers::get_media_domain::get_media_domain;
@@ -35,7 +35,7 @@ pub async fn list_characters_handler(
   http_request: HttpRequest,
   query: Query<ListCharactersQuery>,
   server_state: web::Data<Arc<ServerState>>,
-) -> Result<Json<ListCharactersResponse>, AdvancedCommonWebError> {
+) -> Result<Json<ListCharactersResponse>, CommonWebError> {
 
   let mut mysql_connection = server_state.mysql_pool.acquire().await?;
 

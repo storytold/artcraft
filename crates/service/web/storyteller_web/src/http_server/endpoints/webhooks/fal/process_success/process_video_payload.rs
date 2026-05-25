@@ -1,4 +1,4 @@
-use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::endpoints::webhooks::fal::process_success::resolve_file_metadata::resolve_file_metadata;
 use crate::state::server_state::ServerState;
 use crate::util::http_download_url_to_bytes::http_download_url_to_bytes;
@@ -25,12 +25,12 @@ pub async fn process_video_payload(
   video_data: &VideoData,
   job: &FalJobDetails,
   server_state: &ServerState,
-) -> Result<MediaFileToken, AdvancedCommonWebError> {
+) -> Result<MediaFileToken, CommonWebError> {
   let video_url = video_data.url
       .as_deref()
       .ok_or_else(|| {
         warn!("No `url` in video payload");
-        AdvancedCommonWebError::server_error_with_message("no `url` in video payload")
+        CommonWebError::server_error_with_message("no `url` in video payload")
       })?;
 
   // Download with a retry if the first attempt returns suspiciously few bytes.
@@ -38,7 +38,7 @@ pub async fn process_video_payload(
       .await
       .map_err(|err| {
         warn!("Failed to download video from {}: {:?}", video_url, err);
-        AdvancedCommonWebError::from_error(err)
+        CommonWebError::from_error(err)
       })?;
 
   if file_bytes.len() <= 10 {
@@ -51,7 +51,7 @@ pub async fn process_video_payload(
         .await
         .map_err(|err| {
           warn!("Failed to download video on retry from {}: {:?}", video_url, err);
-          AdvancedCommonWebError::from_error(err)
+          CommonWebError::from_error(err)
         })?;
   }
 
@@ -63,7 +63,7 @@ pub async fn process_video_payload(
           file_bytes.len(),
           video_data.content_type,
         );
-        AdvancedCommonWebError::server_error_with_message(
+        CommonWebError::server_error_with_message(
           &format!("Could not determine file type for video (bytes: {}, fal content_type: {:?})",
             file_bytes.len(), video_data.content_type))
       })?;
@@ -76,7 +76,7 @@ pub async fn process_video_payload(
   let media_file_type = MediaFileType::try_from_mime_type(mime_type)
       .ok_or_else(|| {
         warn!("Unsupported media file type: {}", mime_type);
-        AdvancedCommonWebError::server_error_with_message(
+        CommonWebError::server_error_with_message(
           &format!("Unsupported media file type: {}", mime_type))
       })?;
 
@@ -86,7 +86,7 @@ pub async fn process_video_payload(
   let file_hash = sha256_hash_bytes(&file_bytes)
       .map_err(|e| {
         warn!("Failed to hash video bytes: {:?}", e);
-        AdvancedCommonWebError::from_anyhow_error(e)
+        CommonWebError::from_anyhow_error(e)
       })?;
 
   let mut maybe_duration_millis = None;
@@ -123,7 +123,7 @@ pub async fn process_video_payload(
       .await
       .map_err(|e| {
         warn!("Failed to upload video to bucket: {:?}", e);
-        AdvancedCommonWebError::from_anyhow_error(e)
+        CommonWebError::from_anyhow_error(e)
       })?;
 
   let media_token = MediaFileInsertBuilder::new()
@@ -146,7 +146,7 @@ pub async fn process_video_payload(
       .await
       .map_err(|e| {
         warn!("Failed to insert video media file record: {:?}", e);
-        AdvancedCommonWebError::from_error(e)
+        CommonWebError::from_error(e)
       })?;
 
   info!("Video media file uploaded with token: {}", media_token);

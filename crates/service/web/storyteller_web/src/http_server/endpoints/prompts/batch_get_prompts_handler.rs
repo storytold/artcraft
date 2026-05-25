@@ -15,7 +15,7 @@ use mysql_queries::queries::prompt_context_items::batch_list_prompt_context_item
 use mysql_queries::queries::prompts::batch_get_prompts::batch_get_prompts;
 use tokens::tokens::prompts::PromptToken;
 
-use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::common_responses::media::media_links_builder::MediaLinksBuilder;
 use crate::http_server::endpoints::media_files::helpers::get_media_domain::get_media_domain;
 use crate::state::server_state::ServerState;
@@ -40,9 +40,9 @@ pub async fn batch_get_prompts_handler(
   http_request: HttpRequest,
   query: Query<BatchGetPromptsQuery>,
   server_state: web::Data<Arc<ServerState>>,
-) -> Result<Json<BatchGetPromptsResponse>, AdvancedCommonWebError> {
+) -> Result<Json<BatchGetPromptsResponse>, CommonWebError> {
   if query.tokens.len() > MAX_BATCH_SIZE {
-    return Err(AdvancedCommonWebError::BadInputWithSimpleMessage(
+    return Err(CommonWebError::BadInputWithSimpleMessage(
       format!("tokens must contain at most {} items", MAX_BATCH_SIZE),
     ));
   }
@@ -70,7 +70,7 @@ pub async fn batch_get_prompts_handler(
     .await
     .map_err(|err| {
       warn!("Batch get prompts query error: {:?}", err);
-      AdvancedCommonWebError::from_error(err)
+      CommonWebError::from_error(err)
     })?;
 
   // Batch query: fetch all context items for all prompts in one query
@@ -78,7 +78,7 @@ pub async fn batch_get_prompts_handler(
     .await
     .map_err(|err| {
       warn!("Batch list prompt context items query error: {:?}", err);
-      AdvancedCommonWebError::from_error(err)
+      CommonWebError::from_error(err)
     })?;
 
   let media_domain = get_media_domain(&http_request);

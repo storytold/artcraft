@@ -1,4 +1,4 @@
-use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 use enums::common::payments_namespace::PaymentsNamespace;
 use errors::AnyhowResult;
 use log::{error, info};
@@ -22,7 +22,7 @@ pub async fn attempt_wallet_deduction_else_common_web_error(
   maybe_reference_token: Option<&str>,
   amount_to_deduct: u64,
   connection: &mut PoolConnection<MySql>
-) -> Result<WalletDeductionResult, AdvancedCommonWebError> {
+) -> Result<WalletDeductionResult, CommonWebError> {
 
   let result = try_wallet_deduction(
     user_token,
@@ -37,23 +37,23 @@ pub async fn attempt_wallet_deduction_else_common_web_error(
     Err(err) => Err(match err {
       WalletSpendError::InvalidAmountToSpend => {
         log::error!("invalid spend amount charged");
-        AdvancedCommonWebError::PaymentRequired
+        CommonWebError::PaymentRequired
       }
       WalletSpendError::InsufficientBalance { requested_to_spend_amount, available_amount } => {
         log::error!("payment is required - requested: {}, available: {}", requested_to_spend_amount, available_amount);
-        AdvancedCommonWebError::PaymentRequired
+        CommonWebError::PaymentRequired
       }
       WalletSpendError::SelectError(err) => {
         log::error!("SQL error (select) in attempt_wallet_deduction: {:?}", err);
-        AdvancedCommonWebError::from_error(err)
+        CommonWebError::from_error(err)
       }
       WalletSpendError::SelectOptionalError(err) => {
         log::error!("SQL error (select optional) in attempt_wallet_deduction: {:?}", err);
-        AdvancedCommonWebError::from_error(err)
+        CommonWebError::from_error(err)
       }
       WalletSpendError::SqlxError(err) => {
         log::error!("SQL error (sqlx) in attempt_wallet_deduction: {:?}", err);
-        AdvancedCommonWebError::from_error(err)
+        CommonWebError::from_error(err)
       }
     }),
   }

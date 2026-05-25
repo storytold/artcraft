@@ -3,7 +3,7 @@ use std::iter::FromIterator;
 use std::sync::Arc;
 
 use crate::billing::wallets::attempt_wallet_deduction::attempt_wallet_deduction_else_common_web_error;
-use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::common_responses::media::media_links_builder::MediaLinksBuilder;
 use crate::http_server::endpoints::generate::common::payments_error_test::payments_error_test;
 use crate::http_server::endpoints::media_files::helpers::get_media_domain::get_media_domain;
@@ -58,12 +58,12 @@ pub async fn gpt_image_1p5_multi_function_image_gen_handler(
   http_request: HttpRequest,
   request: Json<GptImage1p5MultiFunctionImageGenRequest>,
   server_state: web::Data<Arc<ServerState>>
-) -> Result<Json<GptImage1p5MultiFunctionImageGenResponse>, AdvancedCommonWebError> {
+) -> Result<Json<GptImage1p5MultiFunctionImageGenResponse>, CommonWebError> {
   
   payments_error_test(&request.prompt.as_deref().unwrap_or(""))?;
 
   if let Err(reason) = validate_idempotency_token_format(&request.uuid_idempotency_token) {
-    return Err(AdvancedCommonWebError::BadInputWithSimpleMessage(reason));
+    return Err(CommonWebError::BadInputWithSimpleMessage(reason));
   }
   
   let mut mysql_connection = server_state.mysql_pool
@@ -76,7 +76,7 @@ pub async fn gpt_image_1p5_multi_function_image_gen_handler(
       .await
       .map_err(|e| {
         warn!("Session checker error: {:?}", e);
-        AdvancedCommonWebError::from_error(e)
+        CommonWebError::from_error(e)
       })?;
 
   let maybe_avt_token = server_state
@@ -86,7 +86,7 @@ pub async fn gpt_image_1p5_multi_function_image_gen_handler(
   let user_token = match maybe_user_session.as_ref() {
     Some(session) => &session.user_token,
     None => {
-      return Err(AdvancedCommonWebError::NotAuthorized);
+      return Err(CommonWebError::NotAuthorized);
     }
   };
 
@@ -141,7 +141,7 @@ pub async fn gpt_image_1p5_multi_function_image_gen_handler(
       .await
       .map_err(|err| {
         error!("Error inserting idempotency token: {:?}", err);
-        AdvancedCommonWebError::BadInputWithSimpleMessage("repeated idempotency token".to_string())
+        CommonWebError::BadInputWithSimpleMessage("repeated idempotency token".to_string())
       })?;
 
   info!("Fal webhook URL: {}", server_state.fal.webhook_url);
@@ -223,7 +223,7 @@ pub async fn gpt_image_1p5_multi_function_image_gen_handler(
         .await
         .map_err(|err| {
           warn!("Error calling enqueue_gpt_image_1p5_image_edit_webhook: {:?}", err);
-          AdvancedCommonWebError::from_error(err)
+          CommonWebError::from_error(err)
         })?;
 
   } else {
@@ -289,14 +289,14 @@ pub async fn gpt_image_1p5_multi_function_image_gen_handler(
         .await
         .map_err(|err| {
           warn!("Error calling enqueue_gpt_image_1p5_text_to_image_webhook: {:?}", err);
-          AdvancedCommonWebError::from_error(err)
+          CommonWebError::from_error(err)
         })?;
   }
 
   let external_job_id = fal_result.request_id
       .ok_or_else(|| {
         warn!("Fal request_id is None");
-        AdvancedCommonWebError::server_error_with_message("Fal request_id is None")
+        CommonWebError::server_error_with_message("Fal request_id is None")
       })?;
 
   info!("Fal request_id: {}", external_job_id);
@@ -308,7 +308,7 @@ pub async fn gpt_image_1p5_multi_function_image_gen_handler(
       .await
       .map_err(|err| {
         error!("Error starting MySQL transaction: {:?}", err);
-        AdvancedCommonWebError::from_error(err)
+        CommonWebError::from_error(err)
       })?;
 
   // NB: Don't fail the job if the query fails.
@@ -399,7 +399,7 @@ pub async fn gpt_image_1p5_multi_function_image_gen_handler(
     Ok(token) => token,
     Err(err) => {
       warn!("Error inserting generic inference job for FAL queue: {:?}", err);
-      return Err(AdvancedCommonWebError::from_error(err));
+      return Err(CommonWebError::from_error(err));
     }
   };
   
@@ -408,7 +408,7 @@ pub async fn gpt_image_1p5_multi_function_image_gen_handler(
       .await
       .map_err(|err| {
         error!("Error committing MySQL transaction: {:?}", err);
-        AdvancedCommonWebError::from_error(err)
+        CommonWebError::from_error(err)
       })?;
 
   Ok(Json(GptImage1p5MultiFunctionImageGenResponse {

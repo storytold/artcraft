@@ -24,7 +24,7 @@ use tokens::tokens::model_weights::ModelWeightToken;
 use tokens::tokens::prompts::PromptToken;
 use utoipa::{IntoParams, ToSchema};
 
-use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::common_responses::media::media_file_cover_image_details::MediaFileCoverImageDetails;
 use crate::http_server::common_responses::media::media_links_builder::MediaLinksBuilder;
 use crate::http_server::common_responses::simple_entity_stats::SimpleEntityStats;
@@ -214,7 +214,7 @@ pub async fn batch_get_media_files_handler(
   http_request: HttpRequest,
   query: Query<BatchGetMediaFilesQueryParams>,
   server_state: web::Data<Arc<ServerState>>
-) -> Result<Json<BatchGetMediaFilesSuccessResponse>, AdvancedCommonWebError> {
+) -> Result<Json<BatchGetMediaFilesSuccessResponse>, CommonWebError> {
   let maybe_user_session = server_state
       .session_checker
       .maybe_get_user_session(&http_request, &server_state.mysql_pool)
@@ -248,7 +248,7 @@ pub async fn batch_get_media_files_handler(
     Ok(media_files) => media_files,
     Err(e) => {
       warn!("query error: {:?}", e);
-      return Err(AdvancedCommonWebError::from_anyhow_error(e));
+      return Err(CommonWebError::from_anyhow_error(e));
     }
   };
 

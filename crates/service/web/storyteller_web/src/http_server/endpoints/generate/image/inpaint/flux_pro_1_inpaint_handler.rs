@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::common_responses::media::media_links_builder::MediaLinksBuilder;
 use crate::http_server::endpoints::generate::common::payments_error_test::payments_error_test;
 use crate::http_server::endpoints::media_files::helpers::get_media_domain::get_media_domain;
@@ -46,7 +46,7 @@ pub async fn flux_pro_1_inpaint_image_handler(
   http_request: HttpRequest,
   request: Json<FluxPro1InpaintImageRequest>,
   server_state: web::Data<Arc<ServerState>>
-) -> Result<Json<FluxPro1InpaintImageResponse>, AdvancedCommonWebError> {
+) -> Result<Json<FluxPro1InpaintImageResponse>, CommonWebError> {
 
   payments_error_test(&request.prompt.as_deref().unwrap_or(""))?;
   
@@ -60,7 +60,7 @@ pub async fn flux_pro_1_inpaint_image_handler(
       .await
       .map_err(|e| {
         warn!("Session checker error: {:?}", e);
-        AdvancedCommonWebError::from_error(e)
+        CommonWebError::from_error(e)
       })?;
 
   let maybe_avt_token = server_state
@@ -73,12 +73,12 @@ pub async fn flux_pro_1_inpaint_image_handler(
   //  Some(session) => session,
   //  None => {
   //    warn!("not logged in");
-  //    return Err(AdvancedCommonWebError::NotAuthorized);
+  //    return Err(CommonWebError::NotAuthorized);
   //  }
   //};
 
   if let Err(reason) = validate_idempotency_token_format(&request.uuid_idempotency_token) {
-    return Err(AdvancedCommonWebError::BadInputWithSimpleMessage(reason));
+    return Err(CommonWebError::BadInputWithSimpleMessage(reason));
   }
 
   const CAN_SEE_DELETED: bool = false;
@@ -98,13 +98,13 @@ pub async fn flux_pro_1_inpaint_image_handler(
     Ok(files) => files,
     Err(err) => {
       error!("Error getting media files by tokens: {:?}", err);
-      return Err(AdvancedCommonWebError::from_anyhow_error(err));
+      return Err(CommonWebError::from_anyhow_error(err));
     }
   };
 
   if media_files.len() != media_tokens.len() {
     warn!("Wrong number of media files returned for tokens: {} found for {} tokens", media_files.len(), media_tokens.len());
-    return Err(AdvancedCommonWebError::BadInputWithSimpleMessage(
+    return Err(CommonWebError::BadInputWithSimpleMessage(
       format!("Not all media files could be found. Media files found: {}, tokens provided: {}",
         media_files.len(), media_tokens.len())));
   }
@@ -115,14 +115,14 @@ pub async fn flux_pro_1_inpaint_image_handler(
       .find(|file| file.token == request.image_media_token)
       .ok_or_else(|| {
         warn!("Image media file not found for token: {}", request.image_media_token);
-        AdvancedCommonWebError::BadInputWithSimpleMessage("Image media file not found".to_string())
+        CommonWebError::BadInputWithSimpleMessage("Image media file not found".to_string())
       })?;
 
   let mask_media_file = media_files.iter()
       .find(|file| file.token == request.mask_media_token)
       .ok_or_else(|| {
         warn!("Mask media file not found for token: {}", request.mask_media_token);
-        AdvancedCommonWebError::BadInputWithSimpleMessage("Mask media file not found".to_string())
+        CommonWebError::BadInputWithSimpleMessage("Mask media file not found".to_string())
       })?;
 
   let image_url = {
@@ -157,7 +157,7 @@ pub async fn flux_pro_1_inpaint_image_handler(
       .await
       .map_err(|err| {
         error!("Error inserting idempotency token: {:?}", err);
-        AdvancedCommonWebError::BadInputWithSimpleMessage("repeated idempotency token".to_string())
+        CommonWebError::BadInputWithSimpleMessage("repeated idempotency token".to_string())
       })?;
 
   info!("Fal webhook URL: {}", server_state.fal.webhook_url);
@@ -185,13 +185,13 @@ pub async fn flux_pro_1_inpaint_image_handler(
       .await
       .map_err(|err| {
         warn!("Error calling enqueue_flux_pro_1_infill_webhook: {:?}", err);
-        AdvancedCommonWebError::from_error(err)
+        CommonWebError::from_error(err)
       })?;
 
   let external_job_id = fal_result.request_id
       .ok_or_else(|| {
         warn!("Fal request_id is None");
-        AdvancedCommonWebError::server_error_with_message("Fal request_id is None")
+        CommonWebError::server_error_with_message("Fal request_id is None")
       })?;
 
   info!("Fal request_id: {}", external_job_id);
@@ -203,7 +203,7 @@ pub async fn flux_pro_1_inpaint_image_handler(
       .await
       .map_err(|err| {
         error!("Error starting MySQL transaction: {:?}", err);
-        AdvancedCommonWebError::from_error(err)
+        CommonWebError::from_error(err)
       })?;
 
   // NB: Don't fail the job if the query fails.
@@ -285,7 +285,7 @@ pub async fn flux_pro_1_inpaint_image_handler(
     Ok(token) => token,
     Err(err) => {
       warn!("Error inserting generic inference job for FAL queue: {:?}", err);
-      return Err(AdvancedCommonWebError::from_error(err));
+      return Err(CommonWebError::from_error(err));
     }
   };
 
@@ -294,7 +294,7 @@ pub async fn flux_pro_1_inpaint_image_handler(
       .await
       .map_err(|err| {
         error!("Error committing MySQL transaction: {:?}", err);
-        AdvancedCommonWebError::from_error(err)
+        CommonWebError::from_error(err)
       })?;
 
   Ok(Json(FluxPro1InpaintImageResponse {

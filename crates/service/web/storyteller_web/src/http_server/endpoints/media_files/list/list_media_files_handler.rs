@@ -20,7 +20,7 @@ use mysql_queries::queries::media_files::list::list_media_files::{list_media_fil
 use tokens::tokens::media_files::MediaFileToken;
 use utoipa::{IntoParams, ToSchema};
 
-use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::common_responses::media::media_file_cover_image_details::MediaFileCoverImageDetails;
 use crate::http_server::common_responses::media::media_links_builder::MediaLinksBuilder;
 use crate::http_server::common_responses::media_file_origin_details::MediaFileOriginDetails;
@@ -190,7 +190,7 @@ pub async fn list_media_files_handler(
     http_request: HttpRequest,
     query: Query<ListMediaFilesQueryParams>,
     server_state: web::Data<Arc<ServerState>>
-) -> Result<Json<ListMediaFilesSuccessResponse>, AdvancedCommonWebError>
+) -> Result<Json<ListMediaFilesSuccessResponse>, CommonWebError>
 {
   let maybe_user_session = server_state
       .session_checker
@@ -201,7 +201,7 @@ pub async fn list_media_files_handler(
 
   if !allowed_explore_media_access(maybe_user_session.as_ref()) {
     warn!("Explore media access is not permitted for user");
-    return Err(AdvancedCommonWebError::NotAuthorized);
+    return Err(CommonWebError::NotAuthorized);
   }
 
   let mut is_mod = false;
@@ -254,7 +254,7 @@ pub async fn list_media_files_handler(
     Ok(results) => results,
     Err(e) => {
       warn!("Query error: {:?}", e);
-      return Err(AdvancedCommonWebError::from_anyhow_error(e));
+      return Err(CommonWebError::from_anyhow_error(e));
     }
   };
 

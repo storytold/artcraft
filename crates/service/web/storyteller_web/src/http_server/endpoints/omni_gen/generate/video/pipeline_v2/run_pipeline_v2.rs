@@ -12,7 +12,7 @@ use tokens::tokens::characters::CharacterToken;
 use tokens::tokens::media_files::MediaFileToken;
 use tokens::tokens::users::UserToken;
 
-use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::endpoint_helpers::refund_wallet_after_api_failure::refund_wallet_after_api_failure;
 use crate::http_server::endpoints::omni_gen::generate::video::helpers::bill_wallet::bill_wallet;
 use crate::http_server::endpoints::omni_gen::generate::video::helpers::build_router_client::build_router_client;
@@ -30,7 +30,7 @@ pub struct RunPipelineV2Args<'a> {
   pub use_alternate_kinovi: bool,
 }
 
-pub async fn run_pipeline_v2(args: RunPipelineV2Args<'_>) -> Result<PipelineResult, AdvancedCommonWebError> {
+pub async fn run_pipeline_v2(args: RunPipelineV2Args<'_>) -> Result<PipelineResult, CommonWebError> {
   let RunPipelineV2Args {
     router_builder,
     server_state,
@@ -78,7 +78,7 @@ pub async fn run_pipeline_v2(args: RunPipelineV2Args<'_>) -> Result<PipelineResu
   let draft_or_request = exec_builder.build2()
       .map_err(|e| {
         warn!("Failed to build2 for v2 pipeline: {}", e);
-        AdvancedCommonWebError::from_error(e)
+        CommonWebError::from_error(e)
       })?;
 
   // 2. Calculate cost.
@@ -91,12 +91,12 @@ pub async fn run_pipeline_v2(args: RunPipelineV2Args<'_>) -> Result<PipelineResu
     cost_builder.build2()
       .map_err(|e| {
         warn!("Failed to build2 cost estimate for v2: {}", e);
-        AdvancedCommonWebError::from_error(e)
+        CommonWebError::from_error(e)
       })?
       .estimate_cost()
       .map_err(|e| {
         warn!("Failed to estimate cost for v2: {}", e);
-        AdvancedCommonWebError::from_error(e)
+        CommonWebError::from_error(e)
       })?
       .cost_in_credits
       .unwrap_or(0)
@@ -148,7 +148,7 @@ async fn upload_and_generate(
   media_file_urls_by_token: Option<&HashMap<MediaFileToken, String>>,
   kinovi_character_ids: Option<&HashMap<CharacterToken, String>>,
   use_alternate_kinovi: bool,
-) -> Result<GenerateVideoResponse, AdvancedCommonWebError> {
+) -> Result<GenerateVideoResponse, CommonWebError> {
 
   let provider = draft_or_request.get_provider();
   let client = build_router_client(provider, server_state, use_alternate_kinovi)?;
@@ -166,7 +166,7 @@ async fn upload_and_generate(
           .await
           .map_err(|err| {
             warn!("Failed to finalize v2 draft: {:?}", err);
-            AdvancedCommonWebError::from_error(err)
+            CommonWebError::from_error(err)
           })?
     }
   };
@@ -175,6 +175,6 @@ async fn upload_and_generate(
       .await
       .map_err(|err| {
         warn!("v2 video generation failed: {:?}", err);
-        AdvancedCommonWebError::from_error(err)
+        CommonWebError::from_error(err)
       })
 }

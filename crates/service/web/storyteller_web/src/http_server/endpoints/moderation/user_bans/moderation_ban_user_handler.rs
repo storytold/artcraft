@@ -17,7 +17,7 @@ use mysql_queries::queries::users::user::update::set_user_ban_status::{
 };
 use mysql_queries::queries::users::user_profiles::get_user_profile_by_username::get_user_profile_by_username;
 
-use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::web_utils::user_session::require_moderator::{
   require_moderator, UseDatabase,
 };
@@ -58,7 +58,7 @@ pub async fn moderation_ban_user_handler(
   http_request: HttpRequest,
   request: Json<ModerationBanUserRequest>,
   server_state: web::Data<Arc<ServerState>>,
-) -> Result<Json<ModerationBanUserSuccessResponse>, AdvancedCommonWebError> {
+) -> Result<Json<ModerationBanUserSuccessResponse>, CommonWebError> {
 
   // 1. Require moderator with ban permissions.
   let user_session = require_moderator(
@@ -67,12 +67,12 @@ pub async fn moderation_ban_user_handler(
     UseDatabase::GrabNewConnection,
   ).await.map_err(|err| {
     warn!("Moderator check failed: {:?}", err);
-    AdvancedCommonWebError::NotAuthorized
+    CommonWebError::NotAuthorized
   })?;
 
   if !user_session.can_ban_users {
     warn!("User {} is not allowed to ban users", user_session.user_token.as_str());
-    return Err(AdvancedCommonWebError::NotAuthorized);
+    return Err(CommonWebError::NotAuthorized);
   }
 
   // 2. Look up the target user by username.
@@ -83,10 +83,10 @@ pub async fn moderation_ban_user_handler(
     &server_state.mysql_pool,
   ).await.map_err(|err| {
     warn!("User lookup error: {:?}", err);
-    AdvancedCommonWebError::from_anyhow_error(err)
+    CommonWebError::from_anyhow_error(err)
   })?.ok_or_else(|| {
     warn!("User not found for ban: {}", username_lower);
-    AdvancedCommonWebError::NotFound
+    CommonWebError::NotFound
   })?;
 
   let ip_address = get_request_ip(&http_request);
@@ -109,7 +109,7 @@ pub async fn moderation_ban_user_handler(
   let mut transaction = server_state.mysql_pool.begin().await
       .map_err(|err| {
         warn!("Failed to begin transaction: {:?}", err);
-        AdvancedCommonWebError::from_error(err)
+        CommonWebError::from_error(err)
       })?;
 
   // 4. Set ban status.
@@ -122,7 +122,7 @@ pub async fn moderation_ban_user_handler(
     phantom: PhantomData,
   }).await.map_err(|err| {
     warn!("Failed to set user ban status: {:?}", err);
-    AdvancedCommonWebError::from_error(err)
+    CommonWebError::from_error(err)
   })?;
 
   // 5. Insert staff audit log.
@@ -136,13 +136,13 @@ pub async fn moderation_ban_user_handler(
     phantom: PhantomData,
   }).await.map_err(|err| {
     warn!("Failed to insert staff audit log: {:?}", err);
-    AdvancedCommonWebError::from_error(err)
+    CommonWebError::from_error(err)
   })?;
 
   // 6. Commit transaction.
   transaction.commit().await.map_err(|err| {
     warn!("Failed to commit transaction: {:?}", err);
-    AdvancedCommonWebError::from_error(err)
+    CommonWebError::from_error(err)
   })?;
 
   info!(

@@ -1,4 +1,4 @@
-use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 use artcraft_api_defs::omni_gen::cost_and_generate_requests::omni_gen_video_cost_and_generate_request::OmniGenVideoCostAndGenerateRequest;
 use artcraft_router::api::audio_list_ref::AudioListRef;
 use artcraft_router::api::character_list_ref::CharacterListRef;
@@ -17,10 +17,10 @@ use enums::common::generation::common_video_model::CommonVideoModel as CommonVid
 
 pub fn hydrate_to_router_request(
   request: &OmniGenVideoCostAndGenerateRequest,
-) -> Result<GenerateVideoRequestBuilder, AdvancedCommonWebError> {
+) -> Result<GenerateVideoRequestBuilder, CommonWebError> {
   let api_model = request.model
     .as_ref()
-    .ok_or_else(|| AdvancedCommonWebError::BadInputWithSimpleMessage(
+    .ok_or_else(|| CommonWebError::BadInputWithSimpleMessage(
       "model is required".to_string(),
     ))?;
 
@@ -65,10 +65,10 @@ pub fn hydrate_to_router_request(
 
 fn convert_model(
   model: &CommonVideoModelEnum,
-) -> Result<CommonVideoModelRouter, AdvancedCommonWebError> {
+) -> Result<CommonVideoModelRouter, CommonWebError> {
   let json = serde_json::to_string(model)?;
   serde_json::from_str(&json).map_err(|e| {
-    AdvancedCommonWebError::BadInputWithSimpleMessage(
+    CommonWebError::BadInputWithSimpleMessage(
       format!("Unsupported video model: {}", e),
     )
   })
@@ -76,10 +76,10 @@ fn convert_model(
 
 fn convert_aspect_ratio(
   ar: &CommonAspectRatioEnum,
-) -> Result<CommonAspectRatioRouter, AdvancedCommonWebError> {
+) -> Result<CommonAspectRatioRouter, CommonWebError> {
   let json = serde_json::to_string(ar)?;
   serde_json::from_str(&json).map_err(|e| {
-    AdvancedCommonWebError::BadInputWithSimpleMessage(
+    CommonWebError::BadInputWithSimpleMessage(
       format!("Unsupported aspect ratio: {}", e),
     )
   })
@@ -87,10 +87,10 @@ fn convert_aspect_ratio(
 
 fn convert_resolution(
   res: &CommonResolutionEnum,
-) -> Result<CommonResolutionRouter, AdvancedCommonWebError> {
+) -> Result<CommonResolutionRouter, CommonWebError> {
   let json = serde_json::to_string(res)?;
   serde_json::from_str(&json).map_err(|e| {
-    AdvancedCommonWebError::BadInputWithSimpleMessage(
+    CommonWebError::BadInputWithSimpleMessage(
       format!("Unsupported resolution: {}", e),
     )
   })

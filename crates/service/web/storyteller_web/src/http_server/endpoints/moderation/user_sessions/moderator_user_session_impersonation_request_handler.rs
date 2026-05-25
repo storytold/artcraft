@@ -24,7 +24,7 @@ use mysql_queries::queries::users::user::get::lookup_user_for_moderation::{
   LookupUserForModerationResult,
 };
 
-use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::web_utils::user_session::require_moderator::{
   require_moderator, UseDatabase,
 };
@@ -68,7 +68,7 @@ pub async fn moderator_user_session_impersonation_request_handler(
   http_request: HttpRequest,
   request: Json<ModerationImpersonateRequest>,
   server_state: web::Data<Arc<ServerState>>,
-) -> Result<Json<ModerationImpersonateSuccessResponse>, AdvancedCommonWebError> {
+) -> Result<Json<ModerationImpersonateSuccessResponse>, CommonWebError> {
 
   // 1. Require moderator session.
   let user_session = require_moderator(
@@ -77,12 +77,12 @@ pub async fn moderator_user_session_impersonation_request_handler(
     UseDatabase::GrabNewConnection,
   ).await.map_err(|err| {
     warn!("Moderator check failed: {:?}", err);
-    AdvancedCommonWebError::NotAuthorized
+    CommonWebError::NotAuthorized
   })?;
 
   if user_session.is_banned {
     warn!("Banned moderator tried to impersonate: {}", user_session.user_token.as_str());
-    return Err(AdvancedCommonWebError::NotAuthorized);
+    return Err(CommonWebError::NotAuthorized);
   }
 
   // 2. Determine lookup strategy from the request.
@@ -104,7 +104,7 @@ pub async fn moderator_user_session_impersonation_request_handler(
       user_session.user_token.as_str(),
       target_user.user_token.as_str(),
     );
-    return Err(AdvancedCommonWebError::BadInputWithSimpleMessage(
+    return Err(CommonWebError::BadInputWithSimpleMessage(
       "Target user is banned".to_string(),
     ));
   }
@@ -119,7 +119,7 @@ pub async fn moderator_user_session_impersonation_request_handler(
   let mut transaction = server_state.mysql_pool.begin().await
       .map_err(|err| {
         warn!("Failed to begin transaction: {:?}", err);
-        AdvancedCommonWebError::from_error(err)
+        CommonWebError::from_error(err)
       })?;
 
   // 8. Insert staff audit log.
@@ -133,7 +133,7 @@ pub async fn moderator_user_session_impersonation_request_handler(
     phantom: PhantomData,
   }).await.map_err(|err| {
     warn!("Failed to insert staff audit log: {:?}", err);
-    AdvancedCommonWebError::from_error(err)
+    CommonWebError::from_error(err)
   })?;
 
   // 9. Insert impersonation request (expires in 20 minutes).
@@ -151,13 +151,13 @@ pub async fn moderator_user_session_impersonation_request_handler(
     },
   ).await.map_err(|err| {
     warn!("Failed to insert impersonation request: {:?}", err);
-    AdvancedCommonWebError::from_error(err)
+    CommonWebError::from_error(err)
   })?;
 
   // 10. Commit transaction.
   transaction.commit().await.map_err(|err| {
     warn!("Failed to commit transaction: {:?}", err);
-    AdvancedCommonWebError::from_error(err)
+    CommonWebError::from_error(err)
   })?;
 
   info!(
@@ -187,7 +187,7 @@ enum UserLookup {
 /// Resolve which lookup field was provided. Exactly one must be set.
 fn resolve_lookup_strategy(
   request: &ModerationImpersonateRequest,
-) -> Result<UserLookup, AdvancedCommonWebError> {
+) -> Result<UserLookup, CommonWebError> {
   let mut fields_set = 0u8;
 
   if request.username.is_some() { fields_set += 1; }
@@ -196,13 +196,13 @@ fn resolve_lookup_strategy(
   if request.username_email_or_token.is_some() { fields_set += 1; }
 
   if fields_set == 0 {
-    return Err(AdvancedCommonWebError::BadInputWithSimpleMessage(
+    return Err(CommonWebError::BadInputWithSimpleMessage(
       "Provide one of: username, user_token, email_address, or username_email_or_token".to_string(),
     ));
   }
 
   if fields_set > 1 {
-    return Err(AdvancedCommonWebError::BadInputWithSimpleMessage(
+    return Err(CommonWebError::BadInputWithSimpleMessage(
       "Only one lookup field should be provided".to_string(),
     ));
   }
@@ -223,7 +223,7 @@ fn resolve_lookup_strategy(
     return Ok(classify_ambiguous_lookup(value));
   }
 
-  Err(AdvancedCommonWebError::BadInputWithSimpleMessage(
+  Err(CommonWebError::BadInputWithSimpleMessage(
     "No lookup field provided".to_string(),
   ))
 }
@@ -246,7 +246,7 @@ fn classify_ambiguous_lookup(value: &str) -> UserLookup {
 async fn perform_user_lookup(
   lookup: &UserLookup,
   server_state: &ServerState,
-) -> Result<LookupUserForModerationResult, AdvancedCommonWebError> {
+) -> Result<LookupUserForModerationResult, CommonWebError> {
   let maybe_user = match lookup {
     UserLookup::Username(username) => {
       lookup_user_for_moderation_by_username(username, &server_state.mysql_pool).await
@@ -263,11 +263,11 @@ async fn perform_user_lookup(
     Ok(Some(user)) => Ok(user),
     Ok(None) => {
       warn!("User not found for impersonation lookup: {:?}", lookup);
-      Err(AdvancedCommonWebError::NotFound)
+      Err(CommonWebError::NotFound)
     }
     Err(err) => {
       warn!("User lookup error: {:?}", err);
-      Err(AdvancedCommonWebError::from_anyhow_error(err))
+      Err(CommonWebError::from_anyhow_error(err))
     }
   }
 }

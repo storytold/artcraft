@@ -19,7 +19,7 @@ use redis::Commands;
 use tokens::tokens::media_files::MediaFileToken;
 use utoipa::ToSchema;
 
-use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::common_responses::media::media_file_cover_image_details::MediaFileCoverImageDetails;
 use crate::http_server::common_responses::media::media_links_builder::MediaLinksBuilder;
 use crate::http_server::common_responses::media_file_origin_details::MediaFileOriginDetails;
@@ -136,18 +136,18 @@ const REDIS_KEY : &str = "pinned_media_files_list";
 pub async fn list_pinned_media_files_handler(
   http_request: HttpRequest,
   server_state: web::Data<Arc<ServerState>>
-) -> Result<Json<ListPinnedMediaFilesSuccessResponse>, AdvancedCommonWebError> {
+) -> Result<Json<ListPinnedMediaFilesSuccessResponse>, CommonWebError> {
 
   let mut redis = server_state.redis_pool.get()
       .map_err(|err| {
         error!("Could not obtain redis: {err}");
-        AdvancedCommonWebError::server_error_with_message("pinned media files error")
+        CommonWebError::server_error_with_message("pinned media files error")
       })?;
 
   let token_list : Option<String> = redis.get(REDIS_KEY)
       .map_err(|err| {
         error!("Could not get redis result: {err}");
-        AdvancedCommonWebError::server_error_with_message("pinned media files error")
+        CommonWebError::server_error_with_message("pinned media files error")
       })?;
 
   let media_file_tokens = token_list
@@ -171,7 +171,7 @@ pub async fn list_pinned_media_files_handler(
       Ok(media_files) => media_files,
       Err(e) => {
         warn!("Query error: {:?}", e);
-        return Err(AdvancedCommonWebError::from_anyhow_error(e));
+        return Err(CommonWebError::from_anyhow_error(e));
       }
     };
   }

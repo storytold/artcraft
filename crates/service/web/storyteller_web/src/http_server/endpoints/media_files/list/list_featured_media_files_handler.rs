@@ -21,7 +21,7 @@ use time::ext::InstantExt;
 use tokens::tokens::media_files::MediaFileToken;
 use utoipa::{IntoParams, ToSchema};
 
-use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::common_responses::media::media_file_cover_image_details::MediaFileCoverImageDetails;
 use crate::http_server::common_responses::media::media_links_builder::MediaLinksBuilder;
 use crate::http_server::common_responses::media_file_origin_details::MediaFileOriginDetails;
@@ -197,7 +197,7 @@ pub async fn list_featured_media_files_handler(
   http_request: HttpRequest,
   query: Query<ListFeaturedMediaFilesQueryParams>,
   server_state: web::Data<Arc<ServerState>>
-) -> Result<HttpResponse, AdvancedCommonWebError> {
+) -> Result<HttpResponse, CommonWebError> {
 
   let cache_start = Instant::now();
 
@@ -337,7 +337,7 @@ async fn database_lookup(
   query: &ListFeaturedMediaFilesQueryParams,
   server_state: &ServerState,
   maybe_cloudflare_header: Option<&str>,
-) -> Result<FeaturedMediaFileListPage, AdvancedCommonWebError> {
+) -> Result<FeaturedMediaFileListPage, CommonWebError> {
 
   // TODO(bt,2023-12-04): Enforce real maximums and defaults
   let limit = query.page_size.unwrap_or(25);
@@ -376,7 +376,7 @@ async fn database_lookup(
     mysql_pool: &server_state.mysql_pool,
   }).await.map_err(|err| {
     error!("DB error: {:?}", err);
-    AdvancedCommonWebError::from_anyhow_error(err)
+    CommonWebError::from_anyhow_error(err)
   })?;
 
   let query_duration = Instant::now().signed_duration_since(query_start);
