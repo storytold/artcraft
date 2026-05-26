@@ -10,6 +10,19 @@ use crate::errors::artcraft_router_error::ArtcraftRouterError;
 use crate::errors::client_error::ClientError;
 use crate::generate::generate_image::image_generation_plan::ImageGenerationPlan;
 use crate::generate::generate_image_v2::image_generation_draft_or_request::ImageGenerationDraftOrRequest;
+use crate::generate::generate_image_v2::providers::artcraft::flux_1_dev::build::build_artcraft_flux_1_dev;
+use crate::generate::generate_image_v2::providers::artcraft::flux_1_schnell::build::build_artcraft_flux_1_schnell;
+use crate::generate::generate_image_v2::providers::artcraft::flux_pro_1p1::build::build_artcraft_flux_pro_1p1;
+use crate::generate::generate_image_v2::providers::artcraft::flux_pro_1p1_ultra::build::build_artcraft_flux_pro_1p1_ultra;
+use crate::generate::generate_image_v2::providers::artcraft::gpt_image_1::build::build_artcraft_gpt_image_1;
+use crate::generate::generate_image_v2::providers::artcraft::gpt_image_1p5::build::build_artcraft_gpt_image_1p5;
+use crate::generate::generate_image_v2::providers::artcraft::gpt_image_2::build::build_artcraft_gpt_image_2;
+use crate::generate::generate_image_v2::providers::artcraft::nano_banana::build::build_artcraft_nano_banana;
+use crate::generate::generate_image_v2::providers::artcraft::nano_banana_2::build::build_artcraft_nano_banana_2;
+use crate::generate::generate_image_v2::providers::artcraft::nano_banana_pro::build::build_artcraft_nano_banana_pro;
+use crate::generate::generate_image_v2::providers::artcraft::seedream_4::build::build_artcraft_seedream_4;
+use crate::generate::generate_image_v2::providers::artcraft::seedream_4p5::build::build_artcraft_seedream_4p5;
+use crate::generate::generate_image_v2::providers::artcraft::seedream_5_lite::build::build_artcraft_seedream_5_lite;
 use crate::generate::generate_image_v2::providers::fal::flux_1_dev::build::build_fal_flux_1_dev;
 use crate::generate::generate_image_v2::providers::fal::flux_1_schnell::build::build_fal_flux_1_schnell;
 use crate::generate::generate_image_v2::providers::fal::flux_pro_1p1::build::build_fal_flux_pro_1p1;
@@ -106,6 +119,20 @@ impl GenerateImageRequestBuilder {
 
   pub fn use_new_builder(&self) -> bool {
     match (self.provider, self.model) {
+      (Provider::Artcraft, CommonImageModel::Flux1Dev) => true,
+      (Provider::Artcraft, CommonImageModel::Flux1Schnell) => true,
+      (Provider::Artcraft, CommonImageModel::FluxPro11) => true,
+      (Provider::Artcraft, CommonImageModel::FluxPro11Ultra) => true,
+      (Provider::Artcraft, CommonImageModel::GptImage1) => true,
+      (Provider::Artcraft, CommonImageModel::GptImage1p5) => true,
+      (Provider::Artcraft, CommonImageModel::GptImage2) => true,
+      (Provider::Artcraft, CommonImageModel::NanoBanana) => true,
+      (Provider::Artcraft, CommonImageModel::NanoBanana2) => true,
+      (Provider::Artcraft, CommonImageModel::NanoBananaPro) => true,
+      (Provider::Artcraft, CommonImageModel::Seedream4) => true,
+      (Provider::Artcraft, CommonImageModel::Seedream4p5) => true,
+      (Provider::Artcraft, CommonImageModel::Seedream5Lite) => true,
+
       (Provider::Fal, CommonImageModel::Flux1Dev) => true,
       (Provider::Fal, CommonImageModel::Flux1Schnell) => true,
       (Provider::Fal, CommonImageModel::FluxPro11) => true,
@@ -119,12 +146,27 @@ impl GenerateImageRequestBuilder {
       (Provider::Fal, CommonImageModel::Seedream4) => true,
       (Provider::Fal, CommonImageModel::Seedream4p5) => true,
       (Provider::Fal, CommonImageModel::Seedream5Lite) => true,
+
       _ => false,
     }
   }
 
   pub fn build2(self) -> Result<ImageGenerationDraftOrRequest, ArtcraftRouterError> {
     match (self.provider, self.model) {
+      (Provider::Artcraft, CommonImageModel::Flux1Dev) => build_artcraft_flux_1_dev(self),
+      (Provider::Artcraft, CommonImageModel::Flux1Schnell) => build_artcraft_flux_1_schnell(self),
+      (Provider::Artcraft, CommonImageModel::FluxPro11) => build_artcraft_flux_pro_1p1(self),
+      (Provider::Artcraft, CommonImageModel::FluxPro11Ultra) => build_artcraft_flux_pro_1p1_ultra(self),
+      (Provider::Artcraft, CommonImageModel::GptImage1) => build_artcraft_gpt_image_1(self),
+      (Provider::Artcraft, CommonImageModel::GptImage1p5) => build_artcraft_gpt_image_1p5(self),
+      (Provider::Artcraft, CommonImageModel::GptImage2) => build_artcraft_gpt_image_2(self),
+      (Provider::Artcraft, CommonImageModel::NanoBanana) => build_artcraft_nano_banana(self),
+      (Provider::Artcraft, CommonImageModel::NanoBanana2) => build_artcraft_nano_banana_2(self),
+      (Provider::Artcraft, CommonImageModel::NanoBananaPro) => build_artcraft_nano_banana_pro(self),
+      (Provider::Artcraft, CommonImageModel::Seedream4) => build_artcraft_seedream_4(self),
+      (Provider::Artcraft, CommonImageModel::Seedream4p5) => build_artcraft_seedream_4p5(self),
+      (Provider::Artcraft, CommonImageModel::Seedream5Lite) => build_artcraft_seedream_5_lite(self),
+
       (Provider::Fal, CommonImageModel::Flux1Dev) => build_fal_flux_1_dev(self),
       (Provider::Fal, CommonImageModel::Flux1Schnell) => build_fal_flux_1_schnell(self),
       (Provider::Fal, CommonImageModel::FluxPro11) => build_fal_flux_pro_1p1(self),
@@ -138,6 +180,7 @@ impl GenerateImageRequestBuilder {
       (Provider::Fal, CommonImageModel::Seedream4) => build_fal_seedream_4(self),
       (Provider::Fal, CommonImageModel::Seedream4p5) => build_fal_seedream_4p5(self),
       (Provider::Fal, CommonImageModel::Seedream5Lite) => build_fal_seedream_5_lite(self),
+
       _ => self.unsupported_provider_and_model(),
     }
   }

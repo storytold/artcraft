@@ -8,7 +8,7 @@ use enums::common::generation::common_resolution::CommonResolution;
 use tokens::tokens::media_files::MediaFileToken;
 
 /// Shared request body for both the image cost estimate and image generation endpoints.
-#[derive(Serialize, Deserialize, ToSchema, Debug)]
+#[derive(Clone, Serialize, Deserialize, ToSchema, Debug)]
 pub struct OmniGenImageCostAndGenerateRequest {
   /// REQUIRED (even if marked optional)
   /// Idempotency token to prevent duplicate requests.

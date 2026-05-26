@@ -3,6 +3,32 @@ use crate::client::router_client::RouterClient;
 use crate::errors::artcraft_router_error::ArtcraftRouterError;
 use crate::generate::generate_image::generate_image_response::GenerateImageResponse;
 use crate::generate::generate_image::image_generation_cost_estimate::ImageGenerationCostEstimate;
+use crate::generate::generate_image_v2::providers::artcraft::flux_1_dev::cost::ArtcraftFlux1DevCostState;
+use crate::generate::generate_image_v2::providers::artcraft::flux_1_dev::request::ArtcraftFlux1DevRequestState;
+use crate::generate::generate_image_v2::providers::artcraft::flux_1_schnell::cost::ArtcraftFlux1SchnellCostState;
+use crate::generate::generate_image_v2::providers::artcraft::flux_1_schnell::request::ArtcraftFlux1SchnellRequestState;
+use crate::generate::generate_image_v2::providers::artcraft::flux_pro_1p1::cost::ArtcraftFluxPro1p1CostState;
+use crate::generate::generate_image_v2::providers::artcraft::flux_pro_1p1::request::ArtcraftFluxPro1p1RequestState;
+use crate::generate::generate_image_v2::providers::artcraft::flux_pro_1p1_ultra::cost::ArtcraftFluxPro1p1UltraCostState;
+use crate::generate::generate_image_v2::providers::artcraft::flux_pro_1p1_ultra::request::ArtcraftFluxPro1p1UltraRequestState;
+use crate::generate::generate_image_v2::providers::artcraft::gpt_image_1::cost::ArtcraftGptImage1CostState;
+use crate::generate::generate_image_v2::providers::artcraft::gpt_image_1::request::ArtcraftGptImage1RequestState;
+use crate::generate::generate_image_v2::providers::artcraft::gpt_image_1p5::cost::ArtcraftGptImage1p5CostState;
+use crate::generate::generate_image_v2::providers::artcraft::gpt_image_1p5::request::ArtcraftGptImage1p5RequestState;
+use crate::generate::generate_image_v2::providers::artcraft::gpt_image_2::cost::ArtcraftGptImage2CostState;
+use crate::generate::generate_image_v2::providers::artcraft::gpt_image_2::request::ArtcraftGptImage2RequestState;
+use crate::generate::generate_image_v2::providers::artcraft::nano_banana::cost::ArtcraftNanoBananaCostState;
+use crate::generate::generate_image_v2::providers::artcraft::nano_banana::request::ArtcraftNanoBananaRequestState;
+use crate::generate::generate_image_v2::providers::artcraft::nano_banana_2::cost::ArtcraftNanoBanana2CostState;
+use crate::generate::generate_image_v2::providers::artcraft::nano_banana_2::request::ArtcraftNanoBanana2RequestState;
+use crate::generate::generate_image_v2::providers::artcraft::nano_banana_pro::cost::ArtcraftNanoBananaProCostState;
+use crate::generate::generate_image_v2::providers::artcraft::nano_banana_pro::request::ArtcraftNanoBananaProRequestState;
+use crate::generate::generate_image_v2::providers::artcraft::seedream_4::cost::ArtcraftSeedream4CostState;
+use crate::generate::generate_image_v2::providers::artcraft::seedream_4::request::ArtcraftSeedream4RequestState;
+use crate::generate::generate_image_v2::providers::artcraft::seedream_4p5::cost::ArtcraftSeedream4p5CostState;
+use crate::generate::generate_image_v2::providers::artcraft::seedream_4p5::request::ArtcraftSeedream4p5RequestState;
+use crate::generate::generate_image_v2::providers::artcraft::seedream_5_lite::cost::ArtcraftSeedream5LiteCostState;
+use crate::generate::generate_image_v2::providers::artcraft::seedream_5_lite::request::ArtcraftSeedream5LiteRequestState;
 use crate::generate::generate_image_v2::providers::fal::flux_1_dev::cost::FalFlux1DevCostState;
 use crate::generate::generate_image_v2::providers::fal::flux_1_dev::request::FalFlux1DevRequestState;
 use crate::generate::generate_image_v2::providers::fal::flux_1_schnell::cost::FalFlux1SchnellCostState;
@@ -32,6 +58,22 @@ use crate::generate::generate_image_v2::providers::fal::seedream_5_lite::request
 
 #[derive(Clone, Debug)]
 pub enum ImageGenerationRequest {
+  // ── Artcraft provider (omni-gen image endpoint) ──
+  ArtcraftFlux1Dev(ArtcraftFlux1DevRequestState),
+  ArtcraftFlux1Schnell(ArtcraftFlux1SchnellRequestState),
+  ArtcraftFluxPro1p1(ArtcraftFluxPro1p1RequestState),
+  ArtcraftFluxPro1p1Ultra(ArtcraftFluxPro1p1UltraRequestState),
+  ArtcraftGptImage1(ArtcraftGptImage1RequestState),
+  ArtcraftGptImage1p5(ArtcraftGptImage1p5RequestState),
+  ArtcraftGptImage2(ArtcraftGptImage2RequestState),
+  ArtcraftNanoBanana(ArtcraftNanoBananaRequestState),
+  ArtcraftNanoBanana2(ArtcraftNanoBanana2RequestState),
+  ArtcraftNanoBananaPro(ArtcraftNanoBananaProRequestState),
+  ArtcraftSeedream4(ArtcraftSeedream4RequestState),
+  ArtcraftSeedream4p5(ArtcraftSeedream4p5RequestState),
+  ArtcraftSeedream5Lite(ArtcraftSeedream5LiteRequestState),
+
+  // ── Fal provider ──
   FalFlux1Dev(FalFlux1DevRequestState),
   FalFlux1Schnell(FalFlux1SchnellRequestState),
   FalFluxPro1p1(FalFluxPro1p1RequestState),
@@ -50,6 +92,20 @@ pub enum ImageGenerationRequest {
 impl ImageGenerationRequest {
   pub fn get_provider(&self) -> Provider {
     match self {
+      Self::ArtcraftFlux1Dev(_) => Provider::Artcraft,
+      Self::ArtcraftFlux1Schnell(_) => Provider::Artcraft,
+      Self::ArtcraftFluxPro1p1(_) => Provider::Artcraft,
+      Self::ArtcraftFluxPro1p1Ultra(_) => Provider::Artcraft,
+      Self::ArtcraftGptImage1(_) => Provider::Artcraft,
+      Self::ArtcraftGptImage1p5(_) => Provider::Artcraft,
+      Self::ArtcraftGptImage2(_) => Provider::Artcraft,
+      Self::ArtcraftNanoBanana(_) => Provider::Artcraft,
+      Self::ArtcraftNanoBanana2(_) => Provider::Artcraft,
+      Self::ArtcraftNanoBananaPro(_) => Provider::Artcraft,
+      Self::ArtcraftSeedream4(_) => Provider::Artcraft,
+      Self::ArtcraftSeedream4p5(_) => Provider::Artcraft,
+      Self::ArtcraftSeedream5Lite(_) => Provider::Artcraft,
+
       Self::FalFlux1Dev(_) => Provider::Fal,
       Self::FalFlux1Schnell(_) => Provider::Fal,
       Self::FalFluxPro1p1(_) => Provider::Fal,
@@ -68,50 +124,121 @@ impl ImageGenerationRequest {
 
   pub fn estimate_cost(&self) -> Result<ImageGenerationCostEstimate, ArtcraftRouterError> {
     match self {
-      Self::FalFlux1Dev(request) => {
-        Ok(FalFlux1DevCostState::from_request(request).estimate_cost())
+      // ── Artcraft ──
+      Self::ArtcraftFlux1Dev(request) => {
+        Ok(ArtcraftFlux1DevCostState::from_request(request).estimate_cost())
       }
-      Self::FalFlux1Schnell(request) => {
-        Ok(FalFlux1SchnellCostState::from_request(request).estimate_cost())
+      Self::ArtcraftFlux1Schnell(request) => {
+        Ok(ArtcraftFlux1SchnellCostState::from_request(request).estimate_cost())
       }
-      Self::FalFluxPro1p1(request) => {
-        Ok(FalFluxPro1p1CostState::from_request(request).estimate_cost())
+      Self::ArtcraftFluxPro1p1(request) => {
+        Ok(ArtcraftFluxPro1p1CostState::from_request(request).estimate_cost())
       }
-      Self::FalFluxPro1p1Ultra(request) => {
-        Ok(FalFluxPro1p1UltraCostState::from_request(request).estimate_cost())
+      Self::ArtcraftFluxPro1p1Ultra(request) => {
+        Ok(ArtcraftFluxPro1p1UltraCostState::from_request(request).estimate_cost())
       }
-      Self::FalGptImage1(request) => {
-        Ok(FalGptImage1CostState::from_request(request).estimate_cost())
+      Self::ArtcraftGptImage1(request) => {
+        Ok(ArtcraftGptImage1CostState::from_request(request).estimate_cost())
       }
-      Self::FalGptImage1p5(request) => {
-        Ok(FalGptImage1p5CostState::from_request(request).estimate_cost())
+      Self::ArtcraftGptImage1p5(request) => {
+        Ok(ArtcraftGptImage1p5CostState::from_request(request).estimate_cost())
       }
-      Self::FalGptImage2(request) => {
-        Ok(FalGptImage2CostState::from_request(request).estimate_cost())
+      Self::ArtcraftGptImage2(request) => {
+        Ok(ArtcraftGptImage2CostState::from_request(request).estimate_cost())
       }
-      Self::FalNanoBanana(request) => {
-        Ok(FalNanoBananaCostState::from_request(request).estimate_cost())
+      Self::ArtcraftNanoBanana(request) => {
+        Ok(ArtcraftNanoBananaCostState::from_request(request).estimate_cost())
       }
-      Self::FalNanoBanana2(request) => {
-        Ok(FalNanoBanana2CostState::from_request(request).estimate_cost())
+      Self::ArtcraftNanoBanana2(request) => {
+        Ok(ArtcraftNanoBanana2CostState::from_request(request).estimate_cost())
       }
-      Self::FalNanoBananaPro(request) => {
-        Ok(FalNanoBananaProCostState::from_request(request).estimate_cost())
+      Self::ArtcraftNanoBananaPro(request) => {
+        Ok(ArtcraftNanoBananaProCostState::from_request(request).estimate_cost())
       }
-      Self::FalSeedream4(request) => {
-        Ok(FalSeedream4CostState::from_request(request).estimate_cost())
+      Self::ArtcraftSeedream4(request) => {
+        Ok(ArtcraftSeedream4CostState::from_request(request).estimate_cost())
       }
-      Self::FalSeedream4p5(request) => {
-        Ok(FalSeedream4p5CostState::from_request(request).estimate_cost())
+      Self::ArtcraftSeedream4p5(request) => {
+        Ok(ArtcraftSeedream4p5CostState::from_request(request).estimate_cost())
       }
-      Self::FalSeedream5Lite(request) => {
-        Ok(FalSeedream5LiteCostState::from_request(request).estimate_cost())
+      Self::ArtcraftSeedream5Lite(request) => {
+        Ok(ArtcraftSeedream5LiteCostState::from_request(request).estimate_cost())
       }
+
+      // ── Fal ──
+      Self::FalFlux1Dev(request) => Ok(FalFlux1DevCostState::from_request(request).estimate_cost()),
+      Self::FalFlux1Schnell(request) => Ok(FalFlux1SchnellCostState::from_request(request).estimate_cost()),
+      Self::FalFluxPro1p1(request) => Ok(FalFluxPro1p1CostState::from_request(request).estimate_cost()),
+      Self::FalFluxPro1p1Ultra(request) => Ok(FalFluxPro1p1UltraCostState::from_request(request).estimate_cost()),
+      Self::FalGptImage1(request) => Ok(FalGptImage1CostState::from_request(request).estimate_cost()),
+      Self::FalGptImage1p5(request) => Ok(FalGptImage1p5CostState::from_request(request).estimate_cost()),
+      Self::FalGptImage2(request) => Ok(FalGptImage2CostState::from_request(request).estimate_cost()),
+      Self::FalNanoBanana(request) => Ok(FalNanoBananaCostState::from_request(request).estimate_cost()),
+      Self::FalNanoBanana2(request) => Ok(FalNanoBanana2CostState::from_request(request).estimate_cost()),
+      Self::FalNanoBananaPro(request) => Ok(FalNanoBananaProCostState::from_request(request).estimate_cost()),
+      Self::FalSeedream4(request) => Ok(FalSeedream4CostState::from_request(request).estimate_cost()),
+      Self::FalSeedream4p5(request) => Ok(FalSeedream4p5CostState::from_request(request).estimate_cost()),
+      Self::FalSeedream5Lite(request) => Ok(FalSeedream5LiteCostState::from_request(request).estimate_cost()),
     }
   }
 
   pub async fn send_request(&self, client: &RouterClient) -> Result<GenerateImageResponse, ArtcraftRouterError> {
     match self {
+      // ── Artcraft (omni-gen image endpoint) ──
+      Self::ArtcraftFlux1Dev(request) => {
+        let artcraft_client = client.get_artcraft_client_ref()?;
+        request.send(artcraft_client).await
+      }
+      Self::ArtcraftFlux1Schnell(request) => {
+        let artcraft_client = client.get_artcraft_client_ref()?;
+        request.send(artcraft_client).await
+      }
+      Self::ArtcraftFluxPro1p1(request) => {
+        let artcraft_client = client.get_artcraft_client_ref()?;
+        request.send(artcraft_client).await
+      }
+      Self::ArtcraftFluxPro1p1Ultra(request) => {
+        let artcraft_client = client.get_artcraft_client_ref()?;
+        request.send(artcraft_client).await
+      }
+      Self::ArtcraftGptImage1(request) => {
+        let artcraft_client = client.get_artcraft_client_ref()?;
+        request.send(artcraft_client).await
+      }
+      Self::ArtcraftGptImage1p5(request) => {
+        let artcraft_client = client.get_artcraft_client_ref()?;
+        request.send(artcraft_client).await
+      }
+      Self::ArtcraftGptImage2(request) => {
+        let artcraft_client = client.get_artcraft_client_ref()?;
+        request.send(artcraft_client).await
+      }
+      Self::ArtcraftNanoBanana(request) => {
+        let artcraft_client = client.get_artcraft_client_ref()?;
+        request.send(artcraft_client).await
+      }
+      Self::ArtcraftNanoBanana2(request) => {
+        let artcraft_client = client.get_artcraft_client_ref()?;
+        request.send(artcraft_client).await
+      }
+      Self::ArtcraftNanoBananaPro(request) => {
+        let artcraft_client = client.get_artcraft_client_ref()?;
+        request.send(artcraft_client).await
+      }
+      Self::ArtcraftSeedream4(request) => {
+        let artcraft_client = client.get_artcraft_client_ref()?;
+        request.send(artcraft_client).await
+      }
+      Self::ArtcraftSeedream4p5(request) => {
+        let artcraft_client = client.get_artcraft_client_ref()?;
+        request.send(artcraft_client).await
+      }
+      Self::ArtcraftSeedream5Lite(request) => {
+        let artcraft_client = client.get_artcraft_client_ref()?;
+        request.send(artcraft_client).await
+      }
+
+      // ── Fal ──
       Self::FalFlux1Dev(request) => {
         let fal_client = client.get_fal_webhook_optional_client_ref()?;
         request.send(fal_client).await
