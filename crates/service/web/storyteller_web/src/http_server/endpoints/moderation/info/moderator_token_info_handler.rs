@@ -24,6 +24,7 @@ use tokens::tokens::prompts::PromptToken;
 use tokens::tokens::users::UserToken;
 
 use crate::http_server::web_utils::serialize_as_json_error::serialize_as_json_error;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::web_utils::user_session::require_moderator::{require_moderator, RequireModeratorError, UseDatabase};
 use crate::state::server_state::ServerState;
 
@@ -39,41 +40,15 @@ pub struct ModeratorTokenInfoResponse {
   /// Json-encoded payload
   pub maybe_payload: Option<String>,
 }
-
-#[derive(Debug, Serialize, ToSchema)]
-pub enum ModeratorTokenInfoError {
-  ServerError,
-  Unauthorized,
-}
-
-impl ResponseError for ModeratorTokenInfoError {
-  fn status_code(&self) -> StatusCode {
-    match *self {
-      ModeratorTokenInfoError::ServerError => StatusCode::INTERNAL_SERVER_ERROR,
-      ModeratorTokenInfoError::Unauthorized => StatusCode::UNAUTHORIZED,
-    }
-  }
-
-  fn error_response(&self) -> HttpResponse {
-    serialize_as_json_error(self)
-  }
-}
-
 // NB: Not using DeriveMore since Clion doesn't understand it.
-impl fmt::Display for ModeratorTokenInfoError {
-  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-    write!(f, "{:?}", self)
-  }
-}
-
 #[utoipa::path(
   get,
   tag = "Moderation",
   path = "/v1/moderation/token_info/{token}",
   responses(
     (status = 200, description = "Found", body = ModeratorTokenInfoResponse),
-    (status = 401, description = "Not authorized", body = ModeratorTokenInfoError),
-    (status = 500, description = "Server error", body = ModeratorTokenInfoError),
+    (status = 401, description = "Not authorized", body = CommonWebError),
+    (status = 500, description = "Server error", body = CommonWebError),
   ),
   params(
     ("path" = ModeratorTokenInfoPath, description = "Path for Request")
@@ -83,13 +58,13 @@ pub async fn moderator_get_token_info_handler(
   path: Path<ModeratorTokenInfoPath>,
   http_request: HttpRequest,
   server_state: web::Data<Arc<ServerState>>
-) -> Result<HttpResponse, ModeratorTokenInfoError> {
+) -> Result<HttpResponse, CommonWebError> {
 
   let user_session = require_moderator(&http_request, &server_state, UseDatabase::GrabNewConnection)
       .await
       .map_err(|err| match err {
-        RequireModeratorError::ServerError => ModeratorTokenInfoError::ServerError,
-        RequireModeratorError::NotAuthorized => ModeratorTokenInfoError::Unauthorized,
+        RequireModeratorError::ServerError => CommonWebError::from_error(err),
+        RequireModeratorError::NotAuthorized => CommonWebError::NotAuthorized,
       })?;
 
   let token = path.token.trim();
@@ -97,7 +72,7 @@ pub async fn moderator_get_token_info_handler(
       .await
       .map_err(|err| {
         warn!("get tts pending count error: {:?}", err);
-        ModeratorTokenInfoError::ServerError
+        CommonWebError::from_anyhow_error(err)
       })?;
 
   let response = ModeratorTokenInfoResponse {
@@ -106,7 +81,7 @@ pub async fn moderator_get_token_info_handler(
   };
 
   let body = serde_json::to_string(&response)
-      .map_err(|e| ModeratorTokenInfoError::ServerError)?;
+      .map_err(CommonWebError::from_error)?;
 
   Ok(HttpResponse::Ok()
       .content_type("application/json")

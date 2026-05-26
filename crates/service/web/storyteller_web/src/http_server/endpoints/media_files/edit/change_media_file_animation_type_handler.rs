@@ -15,6 +15,7 @@ use mysql_queries::queries::media_files::edit::update_media_file_animation_type:
 use mysql_queries::queries::media_files::get::get_media_file::get_media_file;
 
 use crate::http_server::common_requests::media_file_token_path_info::MediaFileTokenPathInfo;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::common_responses::simple_response::SimpleResponse;
 use crate::http_server::web_utils::user_session::require_user_session::require_user_session;
 use crate::state::server_state::ServerState;
@@ -27,37 +28,7 @@ pub struct ChangeMediaFileAnimationTypeRequest {
 }
 
 // =============== Error Response ===============
-
-#[derive(Debug, Serialize, ToSchema)]
-pub enum ChangeMediaFileAnimationTypeError {
-    BadInput(String),
-    NotFound,
-    NotAuthorized,
-    ServerError,
-}
-
-impl ResponseError for ChangeMediaFileAnimationTypeError {
-    fn status_code(&self) -> StatusCode {
-        match *self {
-            ChangeMediaFileAnimationTypeError::BadInput(_) => StatusCode::BAD_REQUEST,
-            ChangeMediaFileAnimationTypeError::NotFound => StatusCode::NOT_FOUND,
-            ChangeMediaFileAnimationTypeError::NotAuthorized => StatusCode::UNAUTHORIZED,
-            ChangeMediaFileAnimationTypeError::ServerError => StatusCode::INTERNAL_SERVER_ERROR,
-        }
-    }
-
-    fn error_response(&self) -> HttpResponse {
-        serialize_as_json_error(self)
-    }
-}
-
 // NB: Not using derive_more::Display since Clion doesn't understand it.
-impl fmt::Display for ChangeMediaFileAnimationTypeError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{:?}", self)
-    }
-}
-
 // =============== Handler ===============
 
 /// Change the animation type for a media file.
@@ -69,9 +40,9 @@ impl fmt::Display for ChangeMediaFileAnimationTypeError {
     path = "/v1/media_files/animation_type/{token}",
     responses(
         (status = 200, description = "Success", body = SimpleResponse),
-        (status = 400, description = "Bad input", body = ChangeMediaFileAnimationTypeError),
-        (status = 401, description = "Not authorized", body = ChangeMediaFileAnimationTypeError),
-        (status = 500, description = "Server error", body = ChangeMediaFileAnimationTypeError),
+        (status = 400, description = "Bad input", body = CommonWebError),
+        (status = 401, description = "Not authorized", body = CommonWebError),
+        (status = 500, description = "Server error", body = CommonWebError),
     ),
     params(
         ("request" = ChangeMediaFileAnimationTypeRequest, description = "Payload for Request"),
@@ -83,13 +54,13 @@ pub async fn change_media_file_animation_type_handler(
     path: Path<MediaFileTokenPathInfo>,
     request: Json<ChangeMediaFileAnimationTypeRequest>,
     server_state: web::Data<Arc<ServerState>>
-) -> Result<Json<SimpleResponse>, ChangeMediaFileAnimationTypeError> {
+) -> Result<Json<SimpleResponse>, CommonWebError> {
 
     let user_session = require_user_session(&http_request, &server_state)
         .await
         .map_err(|e| {
             warn!("Not authorized: {:?}", e);
-            ChangeMediaFileAnimationTypeError::NotAuthorized
+            CommonWebError::NotAuthorized
         })?;
 
     let media_file_token = path.token.clone();
@@ -105,11 +76,11 @@ pub async fn change_media_file_animation_type_handler(
         Ok(Some(media_file)) => media_file,
         Ok(None) => {
             warn!("MediaFile not found: {:?}", media_file_token);
-            return Err(ChangeMediaFileAnimationTypeError::NotFound);
+            return Err(CommonWebError::NotFound);
         },
         Err(err) => {
             warn!("Error looking up media_file: {:?}", err);
-            return Err(ChangeMediaFileAnimationTypeError::ServerError);
+            return Err(CommonWebError::from_anyhow_error(err));
         }
     };
 
@@ -120,7 +91,7 @@ pub async fn change_media_file_animation_type_handler(
         Some(MediaFileEngineCategory::Character) => {}
         // Everything else is disallowed
         _ => {
-            return Err(ChangeMediaFileAnimationTypeError::BadInput(
+            return Err(CommonWebError::BadInputWithSimpleMessage(
                 "this media file engine category does not support animation".to_string()));
         }
     }
@@ -128,7 +99,7 @@ pub async fn change_media_file_animation_type_handler(
     if request.maybe_animation_type.is_none()
         && media_file.maybe_engine_category != Some(MediaFileEngineCategory::Character)
     {
-        return Err(ChangeMediaFileAnimationTypeError::BadInput(
+        return Err(CommonWebError::BadInputWithSimpleMessage(
             "animation type can only be cleared for character types".to_string()));
     }
 
@@ -137,7 +108,7 @@ pub async fn change_media_file_animation_type_handler(
 
     if !is_creator && !is_mod {
         warn!("user is not allowed to edit this media_file: {:?}", user_session.user_token);
-        return Err(ChangeMediaFileAnimationTypeError::NotAuthorized);
+        return Err(CommonWebError::NotAuthorized);
     }
 
     let query_result = update_media_file_animation_type(
@@ -150,7 +121,7 @@ pub async fn change_media_file_animation_type_handler(
         Ok(_) => {},
         Err(err) => {
             warn!("Update MediaFile DB error: {:?}", err);
-            return Err(ChangeMediaFileAnimationTypeError::ServerError);
+            return Err(CommonWebError::from_anyhow_error(err));
         }
     };
 

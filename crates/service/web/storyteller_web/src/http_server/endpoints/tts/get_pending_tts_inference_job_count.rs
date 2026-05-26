@@ -8,6 +8,7 @@ use log::{debug, error, warn};
 use mysql_queries::queries::tts::tts_inference_jobs::get_pending_tts_inference_job_count::get_pending_tts_inference_job_count;
 
 use crate::http_server::web_utils::response_error_helpers::to_simple_json_error;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::state::server_state::ServerState;
 
 #[derive(Serialize)]
@@ -20,40 +21,11 @@ pub struct Response {
   /// During an attack, we may want this to go extremely slow.
   pub refresh_interval_millis: u64,
 }
-
-
-#[derive(Debug)]
-pub enum GetPendingTtsInferenceJobCountError {
-  ServerError,
-}
-
-impl ResponseError for GetPendingTtsInferenceJobCountError {
-  fn status_code(&self) -> StatusCode {
-    match *self {
-      GetPendingTtsInferenceJobCountError::ServerError=> StatusCode::INTERNAL_SERVER_ERROR,
-    }
-  }
-
-  fn error_response(&self) -> HttpResponse {
-    let error_reason = match self {
-      GetPendingTtsInferenceJobCountError::ServerError => "server error".to_string(),
-    };
-
-    to_simple_json_error(&error_reason, self.status_code())
-  }
-}
-
 // NB: Not using derive_more::Display since Clion doesn't understand it.
-impl fmt::Display for GetPendingTtsInferenceJobCountError {
-  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-    write!(f, "{:?}", self)
-  }
-}
-
 pub async fn get_pending_tts_inference_job_count_handler(
   http_request: HttpRequest,
   server_state: web::Data<Arc<ServerState>>
-) -> Result<HttpResponse, GetPendingTtsInferenceJobCountError> {
+) -> Result<HttpResponse, CommonWebError> {
 
   if server_state.flags.disable_tts_queue_length_endpoint {
     // NB: Despite the cache being a powerful protector of the database (this is an expensive query),
@@ -70,7 +42,7 @@ pub async fn get_pending_tts_inference_job_count_handler(
   let maybe_cached = server_state.caches.ephemeral.tts_queue_length.grab_copy_without_bump_if_unexpired()
       .map_err(|e| {
         error!("error consulting cache: {:?}", e);
-        GetPendingTtsInferenceJobCountError::ServerError
+        CommonWebError::from_anyhow_error(e)
       })?;
 
   let count_result = match maybe_cached {
@@ -93,12 +65,12 @@ pub async fn get_pending_tts_inference_job_count_handler(
           let maybe_cached = server_state.caches.ephemeral.tts_queue_length.grab_even_expired_and_bump()
               .map_err(|err| {
                 error!("error consulting cache (even expired): {:?}", err);
-                GetPendingTtsInferenceJobCountError::ServerError
+                CommonWebError::from_anyhow_error(err)
               })?;
 
           maybe_cached.ok_or_else(|| {
             error!("error querying database and subsequently reading cache: {:?}", err);
-            GetPendingTtsInferenceJobCountError::ServerError
+            CommonWebError::server_error_with_message("uncaught server error")
           })?
         }
 
@@ -107,7 +79,7 @@ pub async fn get_pending_tts_inference_job_count_handler(
           server_state.caches.ephemeral.tts_queue_length.store_copy(&count_result)
               .map_err(|e| {
                 error!("error storing cache: {:?}", e);
-                GetPendingTtsInferenceJobCountError::ServerError
+                CommonWebError::from_anyhow_error(e)
               })?;
 
           count_result
@@ -124,25 +96,25 @@ pub async fn get_pending_tts_inference_job_count_handler(
   })
 }
 
-pub fn render_response_busy(response: Response) -> Result<HttpResponse, GetPendingTtsInferenceJobCountError> {
+pub fn render_response_busy(response: Response) -> Result<HttpResponse, CommonWebError> {
   let body = render_response_payload(response)?;
   Ok(HttpResponse::TooManyRequests()
       .content_type("application/json")
       .body(body))
 }
 
-pub fn render_response_ok(response: Response) -> Result<HttpResponse, GetPendingTtsInferenceJobCountError> {
+pub fn render_response_ok(response: Response) -> Result<HttpResponse, CommonWebError> {
   let body = render_response_payload(response)?;
   Ok(HttpResponse::Ok()
       .content_type("application/json")
       .body(body))
 }
 
-pub fn render_response_payload(response: Response) -> Result<String, GetPendingTtsInferenceJobCountError> {
+pub fn render_response_payload(response: Response) -> Result<String, CommonWebError> {
   let body = serde_json::to_string(&response)
       .map_err(|e| {
         error!("error returning response: {:?}",  e);
-        GetPendingTtsInferenceJobCountError::ServerError
+        CommonWebError::from_error(e)
       })?;
   Ok(body)
 }

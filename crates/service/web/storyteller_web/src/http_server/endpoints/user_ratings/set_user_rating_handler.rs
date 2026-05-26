@@ -25,6 +25,7 @@ use tokens::tokens::w2l_results::W2lResultToken;
 use tokens::tokens::w2l_templates::W2lTemplateToken;
 
 use crate::state::server_state::ServerState;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 
 // =============== Request ===============
 
@@ -51,35 +52,7 @@ pub struct SetUserRatingResponse {
 }
 
 // =============== Error Response ===============
-
-#[derive(Debug, Serialize, ToSchema)]
-pub enum SetUserRatingError {
-  BadInput(String),
-  NotAuthorized,
-  ServerError,
-}
-
-impl ResponseError for SetUserRatingError {
-  fn status_code(&self) -> StatusCode {
-    match *self {
-      SetUserRatingError::BadInput(_) => StatusCode::BAD_REQUEST,
-      SetUserRatingError::NotAuthorized => StatusCode::UNAUTHORIZED,
-      SetUserRatingError::ServerError => StatusCode::INTERNAL_SERVER_ERROR,
-    }
-  }
-
-  fn error_response(&self) -> HttpResponse {
-    serialize_as_json_error(self)
-  }
-}
-
 // NB: Not using DeriveMore since Clion doesn't understand it.
-impl std::fmt::Display for SetUserRatingError {
-  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-    write!(f, "{:?}", self)
-  }
-}
-
 // =============== Handler ===============
 
 #[utoipa::path(
@@ -89,15 +62,15 @@ impl std::fmt::Display for SetUserRatingError {
   request_body = SetUserRatingRequest,
   responses(
       (status = 200, description = "Set user rating", body = SetUserRatingResponse),
-      (status = 400, description = "Bad input", body = SetUserRatingError),
-      (status = 401, description = "Not authorized", body = SetUserRatingError),
-      (status = 500, description = "Server error", body = SetUserRatingError),
+      (status = 400, description = "Bad input", body = CommonWebError),
+      (status = 401, description = "Not authorized", body = CommonWebError),
+      (status = 500, description = "Server error", body = CommonWebError),
   ),
 )]
 pub async fn set_user_rating_handler(
   http_request: HttpRequest,
   request: web::Json<SetUserRatingRequest>,
-  server_state: web::Data<Arc<ServerState>>) -> Result<HttpResponse, SetUserRatingError>
+  server_state: web::Data<Arc<ServerState>>) -> Result<HttpResponse, CommonWebError>
 {
   // NB(bt,2023-12-14): Kasisnu found that we're getting entity type mismatches in production. Apart from
   // querying the database for entity existence, this is the next best way to prevent incorrect comment
@@ -117,14 +90,14 @@ pub async fn set_user_rating_handler(
 
   if !token_prefix_matches {
     warn!("invalid token prefix: {:?} for {:?}", request.entity_token, request.entity_type);
-    return Err(SetUserRatingError::BadInput("invalid token prefix".to_string()));
+    return Err(CommonWebError::BadInputWithSimpleMessage("invalid token prefix".to_string()));
   }
 
   let mut mysql_connection = server_state.mysql_pool.acquire()
       .await
       .map_err(|e| {
         error!("Could not acquire DB pool: {:?}", e);
-        SetUserRatingError::ServerError
+        CommonWebError::from_error(e)
       })?;
 
   let maybe_user_session = server_state
@@ -133,14 +106,14 @@ pub async fn set_user_rating_handler(
       .await
       .map_err(|e| {
         error!("Session checker error: {:?}", e);
-        SetUserRatingError::ServerError
+        CommonWebError::from_error(e)
       })?;
 
   let user_session = match maybe_user_session {
     Some(session) => session,
     None => {
       info!("not logged in");
-      return Err(SetUserRatingError::NotAuthorized);
+      return Err(CommonWebError::NotAuthorized);
     }
   };
 
@@ -158,13 +131,13 @@ pub async fn set_user_rating_handler(
 
     // TODO: We'll handle ratings of more types in the future.
     UserRatingEntityType::W2lResult | UserRatingEntityType::TtsResult =>
-      return Err(SetUserRatingError::BadInput("type not yet supported".to_string())),
+      return Err(CommonWebError::BadInputWithSimpleMessage("type not yet supported".to_string())),
   };
 
   let mut transaction = mysql_connection.begin().await
       .map_err(|err| {
         error!("error creating transaction: {:?}", err);
-        SetUserRatingError::ServerError
+        CommonWebError::from_error(err)
       })?;
 
   let maybe_existing_user_rating = get_user_rating_transactional_locking(
@@ -174,7 +147,7 @@ pub async fn set_user_rating_handler(
   ).await
       .map_err(|err| {
         error!("error getting user rating: {:?}", err);
-        SetUserRatingError::ServerError
+        CommonWebError::from_anyhow_error(err)
       })?;
 
   let _r = upsert_user_rating(Args {
@@ -188,7 +161,7 @@ pub async fn set_user_rating_handler(
       .await
       .map_err(|err| {
         error!("Error upserting rating: {:?}", err);
-        SetUserRatingError::ServerError
+        CommonWebError::from_anyhow_error(err)
       })?;
 
   let existing_rating_value = maybe_existing_user_rating
@@ -224,7 +197,7 @@ pub async fn set_user_rating_handler(
           .await
           .map_err(|err| {
             error!("Error upserting entity stats: {:?}", err);
-            SetUserRatingError::ServerError
+            CommonWebError::from_anyhow_error(err)
           })?;
     }
   }
@@ -232,7 +205,7 @@ pub async fn set_user_rating_handler(
   transaction.commit().await
       .map_err(|err| {
         error!("error committing transaction: {:?}", err);
-        SetUserRatingError::ServerError
+        CommonWebError::from_error(err)
       })?;
 
   // NB: Legacy
@@ -243,7 +216,7 @@ pub async fn set_user_rating_handler(
           .await
           .map_err(|err| {
             error!("Error updating TTS rating summary stats: {:?}", err);
-            SetUserRatingError::ServerError
+            CommonWebError::from_anyhow_error(err)
           })?;
     }
     _ => {
@@ -258,7 +231,7 @@ pub async fn set_user_rating_handler(
       .await
       .map_err(|err| {
         error!("Error getting total user rating count for entity: {:?}", err);
-        SetUserRatingError::ServerError
+        CommonWebError::from_anyhow_error(err)
       })?;
 
   let response = SetUserRatingResponse {
@@ -267,7 +240,7 @@ pub async fn set_user_rating_handler(
   };
 
   let body = serde_json::to_string(&response)
-      .map_err(|_e| SetUserRatingError::ServerError)?;
+      .map_err(CommonWebError::from_error)?;
 
   Ok(HttpResponse::Ok()
       .content_type("application/json")

@@ -10,6 +10,7 @@ use enums::common::payments_namespace::PaymentsNamespace;
 use http_server_common::response::serialize_as_json_error::serialize_as_json_error;
 
 use crate::state::server_state::ServerState;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 
 // =============== Success Response ===============
 
@@ -53,36 +54,12 @@ pub struct AppFeature {
 }
 
 // =============== Error Response ===============
-
-#[derive(Debug, Serialize)]
-pub enum AppPlansError {
-    ServerError,
-}
-
-impl ResponseError for AppPlansError {
-    fn status_code(&self) -> StatusCode {
-        match *self {
-            AppPlansError::ServerError => StatusCode::INTERNAL_SERVER_ERROR,
-        }
-    }
-
-    fn error_response(&self) -> HttpResponse {
-        serialize_as_json_error(self)
-    }
-}
-
 // NB: Not using derive_more::Display since Clion doesn't understand it.
-impl fmt::Display for AppPlansError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{:?}", self)
-    }
-}
-
 // =============== Handler ===============
 
 pub async fn get_app_plans_handler(
     http_request: HttpRequest,
-    server_state: web::Data<Arc<ServerState>>) -> Result<HttpResponse, AppPlansError>
+    server_state: web::Data<Arc<ServerState>>) -> Result<HttpResponse, CommonWebError>
 {
     let maybe_user = server_state
         .session_checker
@@ -90,7 +67,7 @@ pub async fn get_app_plans_handler(
         .await
         .map_err(|e| {
             warn!("Session checker error: {:?}", e);
-            AppPlansError::ServerError
+            CommonWebError::from_error(e)
         })?;
 
     let unlimited_time = maybe_user
@@ -155,7 +132,7 @@ pub async fn get_app_plans_handler(
     };
 
     let body = serde_json::to_string(&response)
-        .map_err(|e| AppPlansError::ServerError)?;
+        .map_err(CommonWebError::from_error)?;
 
     Ok(HttpResponse::Ok()
         .content_type("application/json")

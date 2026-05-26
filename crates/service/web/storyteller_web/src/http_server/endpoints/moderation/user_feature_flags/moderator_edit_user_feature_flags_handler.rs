@@ -24,6 +24,7 @@ use mysql_queries::queries::users::user_profiles::get_user_profile_by_token::get
 use tokens::tokens::users::UserToken;
 
 use crate::http_server::session::lookup::user_session_feature_flags::UserSessionFeatureFlags;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::web_utils::response_error_helpers::to_simple_json_error;
 use crate::http_server::web_utils::response_success_helpers::simple_json_success;
 use crate::http_server::web_utils::user_session::require_moderator::{
@@ -64,50 +65,16 @@ pub enum EditUserFeatureFlagsOption {
   /// Clear all flags from the user.
   ClearAllFlags,
 }
-
-#[derive(Debug, ToSchema)]
-pub enum EditUserFeatureFlagsError {
-  BadInput(String),
-  ServerError,
-  Unauthorized,
-}
-
-impl ResponseError for EditUserFeatureFlagsError {
-  fn status_code(&self) -> StatusCode {
-    match *self {
-      EditUserFeatureFlagsError::BadInput(_) => StatusCode::BAD_REQUEST,
-      EditUserFeatureFlagsError::ServerError => StatusCode::INTERNAL_SERVER_ERROR,
-      EditUserFeatureFlagsError::Unauthorized => StatusCode::UNAUTHORIZED,
-    }
-  }
-
-  fn error_response(&self) -> HttpResponse {
-    let error_reason = match self {
-      EditUserFeatureFlagsError::BadInput(reason) => reason.to_string(),
-      EditUserFeatureFlagsError::ServerError => "server error".to_string(),
-      EditUserFeatureFlagsError::Unauthorized => "unauthorized".to_string(),
-    };
-
-    to_simple_json_error(&error_reason, self.status_code())
-  }
-}
-
 // NB: Not using derive_more::Display since Clion doesn't understand it.
-impl fmt::Display for EditUserFeatureFlagsError {
-  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-    write!(f, "{:?}", self)
-  }
-}
-
 #[utoipa::path(
   post,
   tag = "Moderation",
   path = "/v1/moderation/user_feature_flags/user/{username_or_token}",
   responses(
     (status = 200, description = "Success", body = SimpleGenericJsonSuccess),
-    (status = 401, description = "Unauthorized", body = EditUserFeatureFlagsError),
-    (status = 404, description = "Not found", body = EditUserFeatureFlagsError),
-    (status = 500, description = "Server error", body = EditUserFeatureFlagsError),
+    (status = 401, description = "Unauthorized", body = CommonWebError),
+    (status = 404, description = "Not found", body = CommonWebError),
+    (status = 500, description = "Server error", body = CommonWebError),
   ),
   params(
     ("path" = EditUserFeatureFlagPathInfo, description = "Path for Request"),
@@ -120,7 +87,7 @@ pub async fn moderator_edit_user_feature_flags_handler(
   request: Json<EditUserFeatureFlagsRequest>,
   server_state: Data<Arc<ServerState>>,
   redis_pool: Data<r2d2::Pool<Client>>,
-) -> Result<HttpResponse, EditUserFeatureFlagsError> {
+) -> Result<HttpResponse, CommonWebError> {
 
   let user_session = require_moderator(
     &http_request,
@@ -128,7 +95,7 @@ pub async fn moderator_edit_user_feature_flags_handler(
     UseDatabase::GrabNewConnection,
   ).await.map_err(|err| {
     warn!("Moderator check failed: {:?}", err);
-    EditUserFeatureFlagsError::Unauthorized
+    CommonWebError::NotAuthorized
   })?;
 
   let username_or_token = path.username_or_token.trim();
@@ -140,18 +107,18 @@ pub async fn moderator_edit_user_feature_flags_handler(
       .await
       .map_err(|e| {
         warn!("Could not get user token by username: {:?}", e);
-        EditUserFeatureFlagsError::ServerError
+        CommonWebError::from_anyhow_error(e)
       })?
-      .ok_or(EditUserFeatureFlagsError::ServerError)?
+      .ok_or(CommonWebError::server_error_with_message("uncaught server error"))?
   };
 
   let user_profile = get_user_profile_by_token(&user_token, &server_state.mysql_pool)
     .await
     .map_err(|e| {
       warn!("Could not get user profile by token: {:?}", e);
-      EditUserFeatureFlagsError::ServerError
+      CommonWebError::from_anyhow_error(e)
     })?
-    .ok_or(EditUserFeatureFlagsError::ServerError)?;
+    .ok_or(CommonWebError::server_error_with_message("uncaught server error"))?;
 
   let mut user_feature_flags =
     UserSessionFeatureFlags::new(user_profile.maybe_feature_flags.as_deref());
@@ -188,7 +155,7 @@ pub async fn moderator_edit_user_feature_flags_handler(
   }).await
     .map_err(|e| {
       warn!("Could not set flags: {:?}", e);
-      EditUserFeatureFlagsError::ServerError
+      CommonWebError::from_anyhow_error(e)
     })?;
 
   // Insert staff audit log.
@@ -196,14 +163,14 @@ pub async fn moderator_edit_user_feature_flags_handler(
     .await
     .map_err(|e| {
       warn!("Could not acquire MySQL connection for audit log: {:?}", e);
-      EditUserFeatureFlagsError::ServerError
+      CommonWebError::from_error(e)
     })?;
 
   let mut transaction = mysql_connection.begin()
     .await
     .map_err(|e| {
       warn!("Could not start transaction for audit log: {:?}", e);
-      EditUserFeatureFlagsError::ServerError
+      CommonWebError::from_error(e)
     })?;
 
   let _audit_token = insert_staff_audit_log(InsertStaffAuditLogArgs {
@@ -216,14 +183,14 @@ pub async fn moderator_edit_user_feature_flags_handler(
     phantom: PhantomData,
   }).await.map_err(|err| {
     warn!("Failed to insert staff audit log: {:?}", err);
-    EditUserFeatureFlagsError::ServerError
+    CommonWebError::from_error(err)
   })?;
 
   transaction.commit()
     .await
     .map_err(|e| {
       warn!("Could not commit audit log transaction: {:?}", e);
-      EditUserFeatureFlagsError::ServerError
+      CommonWebError::from_error(e)
     })?;
 
   // Invalidate Redis cache for the user profile.

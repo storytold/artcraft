@@ -13,6 +13,7 @@ use mysql_queries::queries::voice_designer::voices::get_voice::get_voice_by_toke
 use tokens::tokens::zs_voices::ZsVoiceToken;
 
 use crate::http_server::web_utils::response_success_helpers::simple_json_success;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::state::server_state::ServerState;
 use crate::util::delete_role_disambiguation::{delete_role_disambiguation, DeleteRole};
 
@@ -30,37 +31,7 @@ pub struct DeleteVoicePathInfo {
 }
 
 // =============== Error Response ===============
-
-#[derive(Debug, Serialize)]
-pub enum DeleteVoiceError {
-  BadInput(String),
-  NotFound,
-  NotAuthorized,
-  ServerError,
-}
-
-impl ResponseError for DeleteVoiceError {
-  fn status_code(&self) -> StatusCode {
-    match *self {
-      DeleteVoiceError::BadInput(_) => StatusCode::BAD_REQUEST,
-      DeleteVoiceError::NotFound => StatusCode::NOT_FOUND,
-      DeleteVoiceError::NotAuthorized => StatusCode::UNAUTHORIZED,
-      DeleteVoiceError::ServerError => StatusCode::INTERNAL_SERVER_ERROR,
-    }
-  }
-
-  fn error_response(&self) -> HttpResponse {
-    serialize_as_json_error(self)
-  }
-}
-
 // NB: Not using derive_more::Display since Clion doesn't understand it.
-impl fmt::Display for DeleteVoiceError {
-  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-    write!(f, "{:?}", self)
-  }
-}
-
 // =============== Handler ===============
 
 pub async fn delete_voice_handler(
@@ -68,21 +39,21 @@ pub async fn delete_voice_handler(
   path: Path<DeleteVoicePathInfo>,
   request: web::Json<DeleteVoiceRequest>,
   server_state: web::Data<Arc<ServerState>>
-) -> Result<HttpResponse, DeleteVoiceError>{
+) -> Result<HttpResponse, CommonWebError>{
   let maybe_user_session = server_state
       .session_checker
       .maybe_get_user_session(&http_request, &server_state.mysql_pool)
       .await
       .map_err(|e| {
         warn!("Session checker error: {:?}", e);
-        DeleteVoiceError::ServerError
+        CommonWebError::from_error(e)
       })?;
 
   let user_session = match maybe_user_session {
     Some(session) => session,
     None => {
       warn!("not logged in");
-      return Err(DeleteVoiceError::NotAuthorized);
+      return Err(CommonWebError::NotAuthorized);
     }
   };
 
@@ -99,11 +70,11 @@ pub async fn delete_voice_handler(
     Ok(Some(voice)) => voice,
     Ok(None) => {
       warn!("Voice not found: {:?}", voice_token);
-      return Err(DeleteVoiceError::NotFound);
+      return Err(CommonWebError::NotFound);
     },
     Err(err) => {
       warn!("Error looking up voice: {:?}", err);
-      return Err(DeleteVoiceError::ServerError);
+      return Err(CommonWebError::from_anyhow_error(err));
     }
   };
 
@@ -113,7 +84,7 @@ pub async fn delete_voice_handler(
 
   if !is_creator && !is_mod {
     warn!("user is not allowed to delete this voice: {:?}", user_session.user_token);
-    return Err(DeleteVoiceError::NotAuthorized);
+    return Err(CommonWebError::NotAuthorized);
   }
 
   let delete_role = delete_role_disambiguation(is_mod, is_creator, request.as_mod);
@@ -122,7 +93,7 @@ pub async fn delete_voice_handler(
     match delete_role {
       DeleteRole::ErrorDoNotDelete => {
         warn!("user is not allowed to delete voices: {:?}", user_session.user_token);
-        return Err(DeleteVoiceError::NotAuthorized);
+        return Err(CommonWebError::NotAuthorized);
       }
       DeleteRole::AsUser => {
         delete_voice_as_user(
@@ -142,7 +113,7 @@ pub async fn delete_voice_handler(
     match delete_role {
       DeleteRole::ErrorDoNotDelete => {
         warn!("user is not allowed to undelete voices: {:?}", user_session.user_token);
-        return Err(DeleteVoiceError::NotAuthorized);
+        return Err(CommonWebError::NotAuthorized);
       }
       DeleteRole::AsUser => {
         undelete_voice_as_user(
@@ -164,7 +135,7 @@ pub async fn delete_voice_handler(
     Ok(_) => {},
     Err(err) => {
       warn!("Update voice mod approval status DB error: {:?}", err);
-      return Err(DeleteVoiceError::ServerError);
+      return Err(CommonWebError::from_anyhow_error(err));
     }
   };
 

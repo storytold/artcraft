@@ -7,6 +7,7 @@ use log::warn;
 use mysql_queries::queries::stats::get_on_prem_worker_stats::get_on_prem_worker_stats;
 
 use crate::http_server::web_utils::serialize_as_json_error::serialize_as_json_error;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::state::server_state::ServerState;
 
 const MIN_SAMPLE_SIZE : u32 = 100;
@@ -31,38 +32,12 @@ pub struct WorkerMixStats {
   pub on_prem_count: i64,
   pub cloud_count: i64,
 }
-
-#[derive(Debug, Serialize)]
-pub enum GetOnPremWorkerStatsError {
-  ServerError,
-  Unauthorized,
-}
-
-impl ResponseError for GetOnPremWorkerStatsError {
-  fn status_code(&self) -> StatusCode {
-    match *self {
-      GetOnPremWorkerStatsError::ServerError => StatusCode::INTERNAL_SERVER_ERROR,
-      GetOnPremWorkerStatsError::Unauthorized => StatusCode::UNAUTHORIZED,
-    }
-  }
-
-  fn error_response(&self) -> HttpResponse {
-    serialize_as_json_error(self)
-  }
-}
-
 // NB: Not using DeriveMore since Clion doesn't understand it.
-impl std::fmt::Display for GetOnPremWorkerStatsError {
-  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-    write!(f, "{:?}", self)
-  }
-}
-
 pub async fn get_on_prem_worker_stats_handler(
   http_request: HttpRequest,
   query: Query<QueryFields>,
   server_state: web::Data<Arc<ServerState>>,
-) -> Result<HttpResponse, GetOnPremWorkerStatsError> {
+) -> Result<HttpResponse, CommonWebError> {
 
   let maybe_user_session = server_state
       .session_checker
@@ -70,21 +45,21 @@ pub async fn get_on_prem_worker_stats_handler(
       .await
       .map_err(|e| {
         warn!("Session checker error: {:?}", e);
-        GetOnPremWorkerStatsError::ServerError
+        CommonWebError::from_error(e)
       })?;
 
   let user_session = match maybe_user_session {
     Some(session) => session,
     None => {
       warn!("not logged in");
-      return Err(GetOnPremWorkerStatsError::Unauthorized);
+      return Err(CommonWebError::NotAuthorized);
     }
   };
 
   // TODO: Not a good fit for this permission.
   if !user_session.can_edit_other_users_tts_models {
     warn!("user is not allowed to edit user tts: {:?}", user_session.user_token);
-    return Err(GetOnPremWorkerStatsError::Unauthorized);
+    return Err(CommonWebError::NotAuthorized);
   }
 
   let sample_size = query.sample_size
@@ -97,7 +72,7 @@ pub async fn get_on_prem_worker_stats_handler(
   )
       .await
       .map_err(|e| {
-        GetOnPremWorkerStatsError::ServerError
+        CommonWebError::from_anyhow_error(e)
       })?;
 
   let response = GetOnPremWorkerStatsResponse {
@@ -110,7 +85,7 @@ pub async fn get_on_prem_worker_stats_handler(
   };
 
   let body = serde_json::to_string(&response)
-      .map_err(|e| GetOnPremWorkerStatsError::ServerError)?;
+      .map_err(CommonWebError::from_error)?;
 
   Ok(HttpResponse::Ok()
       .content_type("application/json")

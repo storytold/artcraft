@@ -12,6 +12,7 @@ use mysql_queries::queries::voice_designer::voice_samples::get_dataset_sample::g
 use tokens::tokens::zs_voice_dataset_samples::ZsVoiceDatasetSampleToken;
 
 use crate::state::server_state::ServerState;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::util::delete_role_disambiguation::{delete_role_disambiguation, DeleteRole};
 
 // TODO(bt,2023-10-10): This is way too much boilerplate.
@@ -28,49 +29,13 @@ pub struct DeleteSampleRequest {
   /// NB: this is only to disambiguate when a user is both a mod and an author.
   as_mod: Option<bool>,
 }
-
-#[derive(Debug)]
-pub enum DeleteSampleError {
-  BadInput(String),
-  NotAuthorized,
-  NotFound,
-  ServerError,
-}
-
-impl ResponseError for DeleteSampleError {
-  fn status_code(&self) -> StatusCode {
-    match *self {
-      DeleteSampleError::BadInput(_) => StatusCode::BAD_REQUEST,
-      DeleteSampleError::NotAuthorized => StatusCode::UNAUTHORIZED,
-      DeleteSampleError::NotFound => StatusCode::NOT_FOUND,
-      DeleteSampleError::ServerError => StatusCode::INTERNAL_SERVER_ERROR,
-    }
-  }
-
-  fn error_response(&self) -> HttpResponse {
-    let error_reason = match self {
-      DeleteSampleError::BadInput(reason) => reason.to_string(),
-      DeleteSampleError::NotAuthorized => "unauthorized".to_string(),
-      DeleteSampleError::NotFound => "not found".to_string(),
-      DeleteSampleError::ServerError => "server error".to_string(),
-    };
-
-    to_simple_json_error(&error_reason, self.status_code())
-  }
-}
-
 // NB: Not using derive_more::Display since Clion doesn't understand it.
-impl std::fmt::Display for DeleteSampleError {
-  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-    write!(f, "{:?}", self)
-  }
-}
 pub async fn delete_sample_handler(
   http_request: HttpRequest,
   path: Path<DeleteSamplePathInfo>,
   request: web::Json<DeleteSampleRequest>,
   server_state: web::Data<Arc<ServerState>>
-) -> Result<HttpResponse, DeleteSampleError> {
+) -> Result<HttpResponse, CommonWebError> {
 
   let maybe_user_session = server_state
       .session_checker
@@ -78,14 +43,14 @@ pub async fn delete_sample_handler(
       .await
       .map_err(|e| {
         warn!("Session checker error: {:?}", e);
-        DeleteSampleError::ServerError
+        CommonWebError::from_error(e)
       })?;
 
   let user_session = match maybe_user_session {
     Some(session) => session,
     None => {
       warn!("not logged in");
-      return Err(DeleteSampleError::NotAuthorized);
+      return Err(CommonWebError::NotAuthorized);
     }
   };
 
@@ -102,9 +67,9 @@ pub async fn delete_sample_handler(
   let dataset_sample = match inference_result_query_result {
     Err(e) => {
       warn!("query error: {:?}", e);
-      return Err(DeleteSampleError::ServerError);
+      return Err(CommonWebError::from_anyhow_error(e));
     }
-    Ok(None) => return Err(DeleteSampleError::NotFound),
+    Ok(None) => return Err(CommonWebError::NotFound),
     Ok(Some(sample)) => sample,
   };
 
@@ -118,7 +83,7 @@ pub async fn delete_sample_handler(
 
   if !is_author && !is_mod {
     warn!("user is not allowed to delete samples: {:?}", user_session.user_token);
-    return Err(DeleteSampleError::NotAuthorized);
+    return Err(CommonWebError::NotAuthorized);
   }
 
   let delete_role = delete_role_disambiguation(is_mod, is_author, request.as_mod);
@@ -126,7 +91,7 @@ pub async fn delete_sample_handler(
   let query_result = if request.set_delete {
     match delete_role  {
       DeleteRole::ErrorDoNotDelete => {
-        return Err(DeleteSampleError::NotAuthorized);
+        return Err(CommonWebError::NotAuthorized);
       }
       DeleteRole::AsUser => {
         delete_sample_as_user(&path.sample_token, &server_state.mysql_pool).await
@@ -138,7 +103,7 @@ pub async fn delete_sample_handler(
   } else {
     match delete_role  {
       DeleteRole::ErrorDoNotDelete => {
-        return Err(DeleteSampleError::NotAuthorized);
+        return Err(CommonWebError::NotAuthorized);
       }
       DeleteRole::AsUser => {
         undelete_sample_as_user(&path.sample_token, &server_state.mysql_pool).await
@@ -153,7 +118,7 @@ pub async fn delete_sample_handler(
     Ok(_) => {},
     Err(err) => {
       warn!("Delete DB error: {:?}", err);
-      return Err(DeleteSampleError::ServerError);
+      return Err(CommonWebError::from_anyhow_error(err));
     }
   };
 

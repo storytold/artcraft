@@ -16,6 +16,7 @@ use redis_common::redis_keys::RedisKeys;
 use tokens::tokens::generic_inference_jobs::InferenceJobToken;
 
 use crate::http_server::web_utils::filter_model_name::filter_model_name;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::web_utils::response_error_helpers::to_simple_json_error;
 use crate::state::server_state::ServerState;
 
@@ -56,49 +57,18 @@ pub struct GetTtsInferenceStatusSuccessResponse {
   pub success: bool,
   pub state: TtsInferenceJobStatusForResponse,
 }
-
-#[derive(Debug)]
-pub enum GetTtsInferenceStatusError {
-  ServerError,
-  NotFound,
-}
-
-impl ResponseError for GetTtsInferenceStatusError {
-  fn status_code(&self) -> StatusCode {
-    match *self {
-      GetTtsInferenceStatusError::ServerError => StatusCode::INTERNAL_SERVER_ERROR,
-      GetTtsInferenceStatusError::NotFound => StatusCode::NOT_FOUND,
-    }
-  }
-
-  fn error_response(&self) -> HttpResponse {
-    let error_reason = match self {
-      Self::ServerError => "server error".to_string(),
-      Self::NotFound => "not found".to_string(),
-    };
-
-    to_simple_json_error(&error_reason, self.status_code())
-  }
-}
-
 // NB: Not using derive_more::Display since Clion doesn't understand it.
-impl fmt::Display for GetTtsInferenceStatusError {
-  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-    write!(f, "{:?}", self)
-  }
-}
-
 pub async fn get_tts_inference_job_status_handler(
   http_request: HttpRequest,
   path: Path<GetTtsInferenceStatusPathInfo>,
-  server_state: web::Data<Arc<ServerState>>) -> Result<HttpResponse, GetTtsInferenceStatusError>
+  server_state: web::Data<Arc<ServerState>>) -> Result<HttpResponse, CommonWebError>
 {
   let job_token = path.into_inner().token;
 
   if job_token.trim() == "None" {
     // NB: A bunch of Python clients use our API and can fail in this manner.
     // This was a large traffic driver during the 2023-03-08 outage.
-    return Err(GetTtsInferenceStatusError::NotFound);
+    return Err(CommonWebError::NotFound);
   }
 
   // NB(bt,2023-11-27): We're moving TT2 over to `inference-job` (from `tts-inference-job`), which
@@ -118,7 +88,7 @@ pub async fn get_tts_inference_job_status_handler(
   let body = serde_json::to_string(&response)
       .map_err(|e| {
         error!("error returning response: {:?}",  e);
-        GetTtsInferenceStatusError::ServerError
+        CommonWebError::from_error(e)
       })?;
 
   Ok(HttpResponse::Ok()
@@ -127,7 +97,7 @@ pub async fn get_tts_inference_job_status_handler(
 }
 
 async fn legacy_lookup(job_token: &str, server_state: &ServerState)
-  -> Result<TtsInferenceJobStatusForResponse, GetTtsInferenceStatusError>
+  -> Result<TtsInferenceJobStatusForResponse, CommonWebError>
 {
   // NB: Lookup failure is Err(RowNotFound).
   // NB: Since this is publicly exposed, we don't query sensitive data.
@@ -136,10 +106,10 @@ async fn legacy_lookup(job_token: &str, server_state: &ServerState)
 
   let record = match maybe_status {
     Ok(Some(record)) => record,
-    Ok(None) => return Err(GetTtsInferenceStatusError::NotFound),
+    Ok(None) => return Err(CommonWebError::NotFound),
     Err(err) => {
       error!("tts job query error: {:?}", err);
-      return Err(GetTtsInferenceStatusError::ServerError);
+      return Err(CommonWebError::from_anyhow_error(err));
     }
   };
 
@@ -147,7 +117,7 @@ async fn legacy_lookup(job_token: &str, server_state: &ServerState)
       .get()
       .map_err(|e| {
         error!("redis error: {:?}", e);
-        GetTtsInferenceStatusError::ServerError
+        CommonWebError::from_error(e)
       })?;
 
   // TODO(bt,2023-05-21): Make async.
@@ -180,7 +150,7 @@ async fn legacy_lookup(job_token: &str, server_state: &ServerState)
 }
 
 async fn modern_lookup(job_token: &str, server_state: &ServerState)
-  -> Result<TtsInferenceJobStatusForResponse, GetTtsInferenceStatusError>
+  -> Result<TtsInferenceJobStatusForResponse, CommonWebError>
 {
   // NB: Lookup failure is Err(RowNotFound).
   // NB: Since this is publicly exposed, we don't query sensitive data.
@@ -193,10 +163,10 @@ async fn modern_lookup(job_token: &str, server_state: &ServerState)
 
   let record = match maybe_status {
     Ok(Some(record)) => record,
-    Ok(None) => return Err(GetTtsInferenceStatusError::NotFound),
+    Ok(None) => return Err(CommonWebError::NotFound),
     Err(err) => {
       error!("tts job query error: {:?}", err);
-      return Err(GetTtsInferenceStatusError::ServerError);
+      return Err(CommonWebError::from_anyhow_error(err));
     }
   };
 
@@ -204,7 +174,7 @@ async fn modern_lookup(job_token: &str, server_state: &ServerState)
       .get()
       .map_err(|e| {
         error!("redis error: {:?}", e);
-        GetTtsInferenceStatusError::ServerError
+        CommonWebError::from_error(e)
       })?;
 
   // TODO(bt,2023-05-21): Make async.

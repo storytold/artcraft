@@ -3,11 +3,8 @@
 #![forbid(unused_mut)]
 #![forbid(unused_variables)]
 
-use std::fmt;
 use std::sync::Arc;
 
-use actix_web::error::ResponseError;
-use actix_web::http::StatusCode;
 use actix_web::{web, HttpRequest, HttpResponse};
 use chrono::{DateTime, Utc};
 use log::warn;
@@ -15,7 +12,7 @@ use log::warn;
 use enums::common::vocoder_type::VocoderType;
 use mysql_queries::queries::vocoder::list_vocoder_models::{list_vocoder_models, VocoderModelListItem};
 
-use crate::http_server::web_utils::response_error_helpers::to_simple_json_error;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::state::server_state::ServerState;
 
 #[derive(Serialize)]
@@ -53,40 +50,11 @@ pub struct VocoderListItemModFields {
   pub user_deleted_at: Option<DateTime<Utc>>,
   pub mod_deleted_at: Option<DateTime<Utc>>,
 }
-
-
-#[derive(Debug)]
-pub enum ListVocodersError {
-  ServerError,
-}
-
-impl ResponseError for ListVocodersError {
-  fn status_code(&self) -> StatusCode {
-    match *self {
-      ListVocodersError::ServerError=> StatusCode::INTERNAL_SERVER_ERROR,
-    }
-  }
-
-  fn error_response(&self) -> HttpResponse {
-    let error_reason = match self {
-      ListVocodersError::ServerError => "server error".to_string(),
-    };
-
-    to_simple_json_error(&error_reason, self.status_code())
-  }
-}
-
 // NB: Not using derive_more::Display since Clion doesn't understand it.
-impl fmt::Display for ListVocodersError {
-  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-    write!(f, "{:?}", self)
-  }
-}
-
 pub async fn list_vocoders_handler(
   http_request: HttpRequest,
   server_state: web::Data<Arc<ServerState>>
-) -> Result<HttpResponse, ListVocodersError> {
+) -> Result<HttpResponse, CommonWebError> {
 
   let is_moderator = server_state
       .session_checker
@@ -94,7 +62,7 @@ pub async fn list_vocoders_handler(
       .await
       .map_err(|e| {
         warn!("Session checker error: {:?}", e);
-        ListVocodersError::ServerError
+        CommonWebError::from_error(e)
       })?
       .map(|session| {
         // NB: Since we need to rip out and replace the permissions system,
@@ -115,7 +83,7 @@ pub async fn list_vocoders_handler(
     Ok(results) => results,
     Err(e) => {
       warn!("vocoder list query error: {:?}", e);
-      return Err(ListVocodersError::ServerError);
+      return Err(CommonWebError::from_anyhow_error(e));
     }
   };
 
@@ -156,7 +124,7 @@ pub async fn list_vocoders_handler(
   };
 
   let body = serde_json::to_string(&response)
-      .map_err(|_e| ListVocodersError::ServerError)?;
+      .map_err(CommonWebError::from_error)?;
 
   Ok(HttpResponse::Ok()
       .content_type("application/json")

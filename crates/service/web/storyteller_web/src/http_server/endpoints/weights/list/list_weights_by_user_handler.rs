@@ -19,6 +19,7 @@ use primitives::numerics::u64_to_u32_saturating::u64_to_u32_saturating;
 use tokens::tokens::model_weights::ModelWeightToken;
 
 use crate::http_server::common_responses::media::weights_cover_image_details::WeightsCoverImageDetails;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::common_responses::pagination_page::PaginationPage;
 use crate::http_server::common_responses::simple_entity_stats::SimpleEntityStats;
 use crate::http_server::common_responses::user_details_lite::UserDetailsLight;
@@ -104,36 +105,14 @@ pub struct ListWeightsForUserQueryParams {
 pub struct ListWeightsByUserPathInfo {
   username: String,
 }
-
-#[derive(Debug,ToSchema)]
-pub enum ListWeightsByUserError {
-  NotAuthorized,
-  ServerError,
-}
-
-impl fmt::Display for ListWeightsByUserError {
-  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-    write!(f, "{:?}", self)
-  }
-}
-
-impl ResponseError for ListWeightsByUserError {
-  fn status_code(&self) -> StatusCode {
-    match *self {
-      ListWeightsByUserError::NotAuthorized => StatusCode::UNAUTHORIZED,
-      ListWeightsByUserError::ServerError => StatusCode::INTERNAL_SERVER_ERROR,
-    }
-  }
-}
-
 #[utoipa::path(
   get,
   tag = "Model Weights",
   path = "/v1/weights/by_user/{username}",
   responses(
       (status = 200, description = "List Weights by user", body = ListWeightsByUserSuccessResponse),
-      (status = 401, description = "Not authorized", body = ListWeightsByUserError),
-      (status = 500, description = "Server error", body = ListWeightsByUserError),
+      (status = 401, description = "Not authorized", body = CommonWebError),
+      (status = 500, description = "Server error", body = CommonWebError),
   ),
   params(
       ("path" = ListWeightsByUserPathInfo, description = "Payload for Request"),
@@ -145,7 +124,7 @@ pub async fn list_weights_by_user_handler(
   path: Path<ListWeightsByUserPathInfo>,
   query: Query<ListWeightsForUserQueryParams>,
   server_state: web::Data<Arc<ServerState>>
-) -> Result<HttpResponse, ListWeightsByUserError> {
+) -> Result<HttpResponse, CommonWebError> {
 
   let maybe_user_session = server_state
       .session_checker
@@ -153,7 +132,7 @@ pub async fn list_weights_by_user_handler(
       .await
       .map_err(|e| {
         warn!("Session checker error: {:?}", e);
-        ListWeightsByUserError::ServerError
+        CommonWebError::from_error(e)
       })?;
 
   let mut is_author = false;
@@ -195,14 +174,14 @@ pub async fn list_weights_by_user_handler(
     }
   ).await.map_err(|e| {
     warn!("Error querying for weights: {:?}", e);
-    ListWeightsByUserError::ServerError
+    CommonWebError::from_anyhow_error(e)
   });
 
   let results_page = match query_results {
     Ok(results) => results,
     Err(e) => {
       warn!("Error querying for weights: {:?}", e);
-      return Err(ListWeightsByUserError::ServerError);
+      return Err(CommonWebError::from_error(e));
     }
   };
 
@@ -270,7 +249,7 @@ pub async fn list_weights_by_user_handler(
 
   
   let body = serde_json::to_string(&response)
-      .map_err(|e| ListWeightsByUserError::ServerError)?;
+      .map_err(CommonWebError::from_error)?;
   
   Ok(HttpResponse::Ok()
       .content_type("application/json")

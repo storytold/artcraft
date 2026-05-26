@@ -3,20 +3,17 @@
 #![forbid(unused_mut)]
 #![forbid(unused_variables)]
 
-use std::fmt;
 use std::sync::Arc;
 
-use actix_web::error::ResponseError;
-use actix_web::http::StatusCode;
 use actix_web::web::Path;
 use actix_web::{web, HttpRequest, HttpResponse};
 use chrono::{DateTime, Utc};
 use log::warn;
 
-use http_server_common::response::serialize_as_json_error::serialize_as_json_error;
 use mysql_queries::queries::tts::tts_category_assignments::list_assigned_tts_categories_query_builder::ListAssignedTtsCategoriesQueryBuilder;
 
 use crate::state::server_state::ServerState;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 
 // =============== Request ===============
 
@@ -65,43 +62,19 @@ pub struct DisplayCategory {
 }
 
 // =============== Error Response ===============
-
-#[derive(Debug, Serialize)]
-pub enum ListTtsModelAssignedCategoriesError {
-  ServerError,
-}
-
-impl ResponseError for ListTtsModelAssignedCategoriesError {
-  fn status_code(&self) -> StatusCode {
-    match *self {
-      ListTtsModelAssignedCategoriesError::ServerError => StatusCode::INTERNAL_SERVER_ERROR,
-    }
-  }
-
-  fn error_response(&self) -> HttpResponse {
-    serialize_as_json_error(self)
-  }
-}
-
 // NB: Not using derive_more::Display since Clion doesn't understand it.
-impl fmt::Display for ListTtsModelAssignedCategoriesError {
-  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-    write!(f, "{:?}", self)
-  }
-}
-
 // =============== Handler ===============
 
 pub async fn list_tts_model_assigned_categories_handler(
   http_request: HttpRequest,
   path: Path<ListTtsModelAssignedCategoriesPathInfo>,
-  server_state: web::Data<Arc<ServerState>>) -> Result<HttpResponse, ListTtsModelAssignedCategoriesError>
+  server_state: web::Data<Arc<ServerState>>) -> Result<HttpResponse, CommonWebError>
 {
   let mut mysql_connection = server_state.mysql_pool.acquire()
       .await
       .map_err(|e| {
         warn!("Could not acquire DB pool: {:?}", e);
-        ListTtsModelAssignedCategoriesError::ServerError
+        CommonWebError::from_error(e)
       })?;
 
   let maybe_user_session = server_state
@@ -110,7 +83,7 @@ pub async fn list_tts_model_assigned_categories_handler(
       .await
       .map_err(|e| {
         warn!("Session checker error: {:?}", e);
-        ListTtsModelAssignedCategoriesError::ServerError
+        CommonWebError::from_error(e)
       })?;
 
   // TODO: We don't have any permissions for categories. This is a proxy.
@@ -130,7 +103,7 @@ pub async fn list_tts_model_assigned_categories_handler(
     Ok(results) => results,
     Err(err) => {
       warn!("DB error: {:?}", err);
-      return Err(ListTtsModelAssignedCategoriesError::ServerError);
+      return Err(CommonWebError::from_anyhow_error(err));
     }
   };
 
@@ -162,7 +135,7 @@ pub async fn list_tts_model_assigned_categories_handler(
   };
 
   let body = serde_json::to_string(&response)
-      .map_err(|_e| ListTtsModelAssignedCategoriesError::ServerError)?;
+      .map_err(CommonWebError::from_error)?;
 
   Ok(HttpResponse::Ok()
       .content_type("application/json")

@@ -19,6 +19,7 @@ use tokens::tokens::users::UserToken;
 use utoipa::{IntoParams, ToSchema};
 
 use crate::http_server::common_responses::media::media_file_cover_image_details::MediaFileCoverImageDetails;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::common_responses::media::media_links_builder::MediaLinksBuilder;
 use crate::http_server::common_responses::user_details_lite::UserDetailsLight;
 use crate::http_server::endpoints::media_files::helpers::get_media_domain::get_media_domain;
@@ -144,37 +145,6 @@ pub struct SearchMediaFileListItem {
   pub created_at: DateTime<Utc>,
   pub updated_at: DateTime<Utc>,
 }
-
-#[derive(Debug, ToSchema)]
-pub enum SearchMediaFilesError {
-  ServerError,
-  NotAuthorized,
-}
-
-impl ResponseError for SearchMediaFilesError {
-  fn status_code(&self) -> StatusCode {
-    match *self {
-      SearchMediaFilesError::ServerError => StatusCode::INTERNAL_SERVER_ERROR,
-      SearchMediaFilesError::NotAuthorized => StatusCode::UNAUTHORIZED,
-    }
-  }
-
-  fn error_response(&self) -> HttpResponse {
-    let error_reason = match self {
-      SearchMediaFilesError::ServerError => "server error".to_string(),
-      SearchMediaFilesError::NotAuthorized => "not authorized".to_string(),
-    };
-
-    to_simple_json_error(&error_reason, self.status_code())
-  }
-}
-
-impl std::fmt::Display for SearchMediaFilesError {
-  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-    write!(f, "{:?}", self)
-  }
-}
-
 /// Search for media files for the active user based on various criteria.
 ///
 /// This only returns media files owned by the active user.
@@ -185,15 +155,15 @@ impl std::fmt::Display for SearchMediaFilesError {
   params(SearchMediaFilesQueryParams),
   responses(
     (status = 200, description = "Success response", body = SearchMediaFilesSuccessResponse),
-    (status = 401, description = "Not authorized", body = SearchMediaFilesError),
-    (status = 500, description = "Server error", body = SearchMediaFilesError),
+    (status = 401, description = "Not authorized", body = CommonWebError),
+    (status = 500, description = "Server error", body = CommonWebError),
   ),
 )]
 pub async fn search_session_media_files_handler(
     http_request: HttpRequest,
     query: Query<SearchMediaFilesQueryParams>,
     server_state: web::Data<Arc<ServerState>>
-) -> Result<Json<SearchMediaFilesSuccessResponse>, SearchMediaFilesError>
+) -> Result<Json<SearchMediaFilesSuccessResponse>, CommonWebError>
 {
   // NB(bt,2024-07-01): This isn't great. Though we HMAC our cookies, this could
   // result in bad situations where we don't invalidate sessions, etc. We're only
@@ -205,17 +175,17 @@ pub async fn search_session_media_files_handler(
   let session = match session_result {
     Ok(Some(session)) => session,
     Ok(None) => {
-      return Err(SearchMediaFilesError::NotAuthorized);
+      return Err(CommonWebError::NotAuthorized);
     },
     Err(err) => {
       warn!("Session decode error: {:?}", err);
-      return Err(SearchMediaFilesError::ServerError);
+      return Err(CommonWebError::from_error(err));
     }
   };
 
   let user_token = match session.maybe_user_token {
     Some(user_token) => UserToken::new_from_str(&user_token),
-    None => return Err(SearchMediaFilesError::NotAuthorized),
+    None => return Err(CommonWebError::NotAuthorized),
   };
 
   let mut maybe_filter_media_types = get_scoped_media_types(query.filter_media_type.as_deref());
@@ -236,7 +206,7 @@ pub async fn search_session_media_files_handler(
     Ok(results) => results,
     Err(err) => {
       warn!("Searching error: {:?}", err);
-      return Err(SearchMediaFilesError::ServerError);
+      return Err(CommonWebError::from_anyhow_error(err));
     }
   };
 

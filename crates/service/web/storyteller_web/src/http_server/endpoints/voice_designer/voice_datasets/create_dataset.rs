@@ -13,6 +13,7 @@ use mysql_queries::queries::voice_designer::datasets::create_dataset::{create_da
 use tokens::tokens::zs_voice_datasets::ZsVoiceDatasetToken;
 
 use crate::state::server_state::ServerState;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 
 #[derive(Deserialize)]
 pub struct CreateDatasetRequest {
@@ -30,52 +31,24 @@ pub struct CreateDatasetResponse {
 }
 
 // =============== Error Response ===============
-
-#[derive(Debug, Serialize)]
-pub enum CreateDatasetError {
-  BadInput(String),
-  NotAuthorized,
-  ServerError,
-}
-
-impl ResponseError for CreateDatasetError {
-  fn status_code(&self) -> StatusCode {
-    match *self {
-      CreateDatasetError::BadInput(_) => StatusCode::BAD_REQUEST,
-      CreateDatasetError::NotAuthorized => StatusCode::UNAUTHORIZED,
-      CreateDatasetError::ServerError => StatusCode::INTERNAL_SERVER_ERROR,
-    }
-  }
-
-  fn error_response(&self) -> HttpResponse {
-    serialize_as_json_error(self)
-  }
-}
-
 // NB: Not using DeriveMore since Clion doesn't understand it.
-impl fmt::Display for CreateDatasetError {
-  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-    write!(f, "{:?}", self)
-  }
-}
-
 // =============== Handler ===============
 
-pub async fn create_dataset_handler(http_request: HttpRequest, request: web::Json<CreateDatasetRequest>, server_state: web::Data<Arc<ServerState>>) -> Result<HttpResponse, CreateDatasetError> {
+pub async fn create_dataset_handler(http_request: HttpRequest, request: web::Json<CreateDatasetRequest>, server_state: web::Data<Arc<ServerState>>) -> Result<HttpResponse, CommonWebError> {
   let maybe_user_session = server_state.session_checker.maybe_get_user_session(&http_request, &server_state.mysql_pool).await.map_err(|e| {
     error!("Error getting user session: {:?}", e);
-    CreateDatasetError::ServerError
+    CommonWebError::from_error(e)
   })?;
 
   let user_session = match maybe_user_session {
     Some(session) => session,
     None => {
       warn!("not logged in");
-      return Err(CreateDatasetError::NotAuthorized);
+      return Err(CommonWebError::NotAuthorized);
     },
   };
 
-  let idempotency_token = request.idempotency_token.clone().ok_or(CreateDatasetError::BadInput("no idempotency token provided".to_string()))?;
+  let idempotency_token = request.idempotency_token.clone().ok_or(CommonWebError::BadInputWithSimpleMessage("no idempotency token provided".to_string()))?;
 
   let title = request.title.clone();
 
@@ -95,7 +68,7 @@ pub async fn create_dataset_handler(http_request: HttpRequest, request: web::Jso
     Ok(token) => token,
     Err(e) => {
       error!("Error creating dataset: {:?}", e);
-      return Err(CreateDatasetError::ServerError);
+      return Err(CommonWebError::from_anyhow_error(e));
     }
   };
 
@@ -106,7 +79,7 @@ pub async fn create_dataset_handler(http_request: HttpRequest, request: web::Jso
 
 
   let body = serde_json::to_string(&response)
-      .map_err(|e| CreateDatasetError::ServerError)?;
+      .map_err(|e| CommonWebError::from_error(e))?;
 
   Ok(HttpResponse::Ok()
       .content_type("application/json")

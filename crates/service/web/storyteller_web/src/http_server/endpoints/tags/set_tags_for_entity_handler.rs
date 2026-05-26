@@ -7,6 +7,7 @@ use std::fmt;
 use std::sync::Arc;
 
 use crate::http_server::common_responses::tag_info::TagInfo;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::web_utils::response_error_helpers::to_simple_json_error;
 use crate::http_server::web_utils::user_session::require_user_session_extended_using_connection::require_user_session_extended_using_connection;
 use crate::state::server_state::ServerState;
@@ -51,44 +52,7 @@ pub struct SetTagsForEntitySuccessResponse {
   pub success: bool,
   pub tags: Vec<TagInfo>,
 }
-
-#[derive(Debug, ToSchema)]
-pub enum SetTagsForEntityError {
-  BadInput(String),
-  NotAuthorized,
-  NotFound,
-  ServerError,
-}
-
-impl ResponseError for SetTagsForEntityError {
-  fn status_code(&self) -> StatusCode {
-    match *self {
-      SetTagsForEntityError::BadInput(_) => StatusCode::BAD_REQUEST,
-      SetTagsForEntityError::NotAuthorized => StatusCode::UNAUTHORIZED,
-      SetTagsForEntityError::NotFound => StatusCode::NOT_FOUND,
-      SetTagsForEntityError::ServerError => StatusCode::INTERNAL_SERVER_ERROR,
-    }
-  }
-
-  fn error_response(&self) -> HttpResponse {
-    let error_reason = match self {
-      SetTagsForEntityError::BadInput(reason) => reason.to_string(),
-      SetTagsForEntityError::NotAuthorized => "unauthorized".to_string(),
-      SetTagsForEntityError::NotFound => "not found".to_string(),
-      SetTagsForEntityError::ServerError => "server error".to_string(),
-    };
-
-    to_simple_json_error(&error_reason, self.status_code())
-  }
-}
-
 // NB: Not using derive_more::Display since Clion doesn't understand it.
-impl fmt::Display for SetTagsForEntityError {
-  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-    write!(f, "{:?}", self)
-  }
-}
-
 /// Edit the tags (in bulk) for an entity. Comma-separated.
 #[utoipa::path(
   post,
@@ -96,9 +60,9 @@ impl fmt::Display for SetTagsForEntityError {
   path = "/v1/tags/edit/{entity_type}/{entity_token}",
   responses(
     (status = 200, description = "Success", body = SetTagsForEntitySuccessResponse),
-    (status = 400, description = "Bad input", body = SetTagsForEntityError),
-    (status = 401, description = "Not authorized", body = SetTagsForEntityError),
-    (status = 500, description = "Server error", body = SetTagsForEntityError),
+    (status = 400, description = "Bad input", body = CommonWebError),
+    (status = 401, description = "Not authorized", body = CommonWebError),
+    (status = 500, description = "Server error", body = CommonWebError),
   ),
   params(
     ("request" = SetTagsForEntityRequest, description = "Payload for Request"),
@@ -109,7 +73,7 @@ pub async fn set_tags_for_entity_handler(
   request: Json<SetTagsForEntityRequest>,
   path: Path<SetTagsForEntityPathInfo>,
   server_state: Data<Arc<ServerState>>,
-) -> Result<Json<SetTagsForEntitySuccessResponse>, SetTagsForEntityError>
+) -> Result<Json<SetTagsForEntitySuccessResponse>, CommonWebError>
 {
   let token = path.entity_token.as_str();
   let token_prefix_matches = match path.entity_type {
@@ -119,7 +83,7 @@ pub async fn set_tags_for_entity_handler(
 
   if !token_prefix_matches {
     warn!("invalid token prefix: {:?} for {:?}", path.entity_token, path.entity_type);
-    return Err(SetTagsForEntityError::BadInput("invalid token prefix".to_string()));
+    return Err(CommonWebError::BadInputWithSimpleMessage("invalid token prefix".to_string()));
   }
 
   let mut mysql_connection = server_state.mysql_pool
@@ -127,7 +91,7 @@ pub async fn set_tags_for_entity_handler(
       .await
       .map_err(|err| {
         warn!("MySql pool error: {:?}", err);
-        SetTagsForEntityError::ServerError
+        CommonWebError::from_error(err)
       })?;
 
   let user_session = require_user_session_extended_using_connection(
@@ -136,11 +100,11 @@ pub async fn set_tags_for_entity_handler(
     &mut mysql_connection)
       .await
       .map_err(|_err| {
-        SetTagsForEntityError::NotAuthorized
+        CommonWebError::NotAuthorized
       })?;
 
   if user_session.role.is_banned {
-    return Err(SetTagsForEntityError::NotAuthorized);
+    return Err(CommonWebError::NotAuthorized);
   }
 
   let is_mod = user_session.role.can_ban_users;
@@ -154,7 +118,7 @@ pub async fn set_tags_for_entity_handler(
 
   if !is_creator && !is_mod {
     warn!("user is not allowed to modify entity: {:?}", user_session.user_token);
-    return Err(SetTagsForEntityError::NotAuthorized);
+    return Err(CommonWebError::NotAuthorized);
   }
 
   let request_tags = to_normalized_tags(&request.tags);
@@ -169,7 +133,7 @@ pub async fn set_tags_for_entity_handler(
           .collect::<Vec<TagInfo>>())
       .map_err(|e| {
         warn!("error selecting tags: {:?}", e);
-        SetTagsForEntityError::ServerError
+        CommonWebError::from_anyhow_error(e)
       })?;
 
   let matching_tag_values = matching_tags
@@ -191,7 +155,7 @@ pub async fn set_tags_for_entity_handler(
         .await
         .map_err(|e| {
           warn!("error creating tag: {:?}", e);
-          SetTagsForEntityError::ServerError
+          CommonWebError::from_error(e)
         })?;
     new_tags.push(TagInfo {
       token,
@@ -217,7 +181,7 @@ pub async fn set_tags_for_entity_handler(
       .await
       .map_err(|e| {
         warn!("error updating tags: {:?}", e);
-        SetTagsForEntityError::ServerError
+        CommonWebError::from_anyhow_error(e)
       })?;
 
   Ok(Json(SetTagsForEntitySuccessResponse {
@@ -231,7 +195,7 @@ async fn get_is_creator(
   entity_token: &str,
   user_token: &UserToken,
   mysql_connection: &mut MySqlConnection
-) -> Result<bool, SetTagsForEntityError> {
+) -> Result<bool, CommonWebError> {
   match entity_type {
     TagUseEntityType::MediaFile => {
       let entity_token = MediaFileToken::new_from_str(entity_token);
@@ -245,10 +209,10 @@ async fn get_is_creator(
           Ok(media_file.maybe_creator_user_token
               .is_some_and(|t| t.as_str() == user_token.as_str()))
         },
-        Ok(None) => Err(SetTagsForEntityError::NotFound),
+        Ok(None) => Err(CommonWebError::NotFound),
         Err(err) => {
           warn!("Error looking up media_file: {:?}", err);
-          Err(SetTagsForEntityError::ServerError)
+          Err(CommonWebError::from_anyhow_error(err))
         }
       }
     }
@@ -263,10 +227,10 @@ async fn get_is_creator(
         Ok(Some(model_weight)) => {
           Ok(model_weight.creator_user_token.as_str() == user_token.as_str())
         },
-        Ok(None) => Err(SetTagsForEntityError::NotFound),
+        Ok(None) => Err(CommonWebError::NotFound),
         Err(err) => {
           warn!("Error looking up model_weight: {:?}", err);
-          Err(SetTagsForEntityError::ServerError)
+          Err(CommonWebError::from_anyhow_error(err))
         }
       }
     }

@@ -9,6 +9,7 @@ use chrono::{DateTime, Utc};
 use http_server_common::response::serialize_as_json_error::serialize_as_json_error;
 
 use crate::state::server_state::ServerState;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 
 // =============== Success Response ===============
 
@@ -37,36 +38,12 @@ pub struct AppNewsResponse {
 
 
 // =============== Error Response ===============
-
-#[derive(Debug, Serialize)]
-pub enum AppNewsError {
-    ServerError,
-}
-
-impl ResponseError for AppNewsError {
-    fn status_code(&self) -> StatusCode {
-        match *self {
-            AppNewsError::ServerError => StatusCode::INTERNAL_SERVER_ERROR,
-        }
-    }
-
-    fn error_response(&self) -> HttpResponse {
-        serialize_as_json_error(self)
-    }
-}
-
 // NB: Not using derive_more::Display since Clion doesn't understand it.
-impl fmt::Display for AppNewsError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{:?}", self)
-    }
-}
-
 // =============== Handler ===============
 
 pub async fn get_app_news_handler(
     http_request: HttpRequest,
-    server_state: web::Data<Arc<ServerState>>) -> Result<HttpResponse, AppNewsError>
+    server_state: web::Data<Arc<ServerState>>) -> Result<HttpResponse, CommonWebError>
 {
     // TODO: Real news items.
 
@@ -97,7 +74,7 @@ pub async fn get_app_news_handler(
     };
 
     let body = serde_json::to_string(&response)
-        .map_err(|e| AppNewsError::ServerError)?;
+        .map_err(CommonWebError::from_error)?;
 
     Ok(HttpResponse::Ok()
         .content_type("application/json")

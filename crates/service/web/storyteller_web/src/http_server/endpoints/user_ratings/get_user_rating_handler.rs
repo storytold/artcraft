@@ -16,6 +16,7 @@ use tokens::tokens::tts_models::TtsModelToken;
 use tokens::tokens::w2l_templates::W2lTemplateToken;
 
 use crate::state::server_state::ServerState;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 
 // =============== Request ===============
 
@@ -41,35 +42,7 @@ pub struct GetUserRatingResponse {
 }
 
 // =============== Error Response ===============
-
-#[derive(Debug, Serialize, ToSchema)]
-pub enum GetUserRatingError {
-  BadInput(String),
-  NotAuthorized,
-  ServerError,
-}
-
-impl ResponseError for GetUserRatingError {
-  fn status_code(&self) -> StatusCode {
-    match *self {
-      GetUserRatingError::BadInput(_) => StatusCode::BAD_REQUEST,
-      GetUserRatingError::NotAuthorized => StatusCode::UNAUTHORIZED,
-      GetUserRatingError::ServerError => StatusCode::INTERNAL_SERVER_ERROR,
-    }
-  }
-
-  fn error_response(&self) -> HttpResponse {
-    serialize_as_json_error(self)
-  }
-}
-
 // NB: Not using DeriveMore since Clion doesn't understand it.
-impl std::fmt::Display for GetUserRatingError {
-  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-    write!(f, "{:?}", self)
-  }
-}
-
 // =============== Handler ===============
 
 
@@ -83,21 +56,21 @@ impl std::fmt::Display for GetUserRatingError {
   ),
   responses(
     (status = 200, description = "List User Bookmarks", body = GetUserRatingResponse),
-    (status = 400, description = "Bad input", body = GetUserRatingError),
-    (status = 401, description = "Not authorized", body = GetUserRatingError),
-    (status = 500, description = "Server error", body = GetUserRatingError),
+    (status = 400, description = "Bad input", body = CommonWebError),
+    (status = 401, description = "Not authorized", body = CommonWebError),
+    (status = 500, description = "Server error", body = CommonWebError),
   ),
 )]
 pub async fn get_user_rating_handler(
   http_request: HttpRequest,
   path: web::Path<GetUserRatingPath>,
-  server_state: web::Data<Arc<ServerState>>) -> Result<HttpResponse, GetUserRatingError>
+  server_state: web::Data<Arc<ServerState>>) -> Result<HttpResponse, CommonWebError>
 {
   let mut mysql_connection = server_state.mysql_pool.acquire()
       .await
       .map_err(|e| {
         error!("Could not acquire DB pool: {:?}", e);
-        GetUserRatingError::ServerError
+        CommonWebError::from_error(e)
       })?;
 
   let maybe_user_session = server_state
@@ -106,14 +79,14 @@ pub async fn get_user_rating_handler(
       .await
       .map_err(|e| {
         error!("Session checker error: {:?}", e);
-        GetUserRatingError::ServerError
+        CommonWebError::from_error(e)
       })?;
 
   let user_session = match maybe_user_session {
     Some(session) => session,
     None => {
       info!("not logged in");
-      return Err(GetUserRatingError::NotAuthorized);
+      return Err(CommonWebError::NotAuthorized);
     }
   };
 
@@ -129,7 +102,7 @@ pub async fn get_user_rating_handler(
 
     // TODO: We'll handle ratings of more types in the future.
     UserRatingEntityType::W2lResult | UserRatingEntityType::TtsResult =>
-      return Err(GetUserRatingError::BadInput("type not yet supported".to_string())),
+      return Err(CommonWebError::BadInputWithSimpleMessage("type not yet supported".to_string())),
   };
 
   let maybe_rating = get_user_rating(Args {
@@ -140,7 +113,7 @@ pub async fn get_user_rating_handler(
       .await
       .map_err(|err| {
         error!("Error fetching rating: {:?}", err);
-        GetUserRatingError::ServerError
+        CommonWebError::from_anyhow_error(err)
       })?;
 
   let response = GetUserRatingResponse {
@@ -149,7 +122,7 @@ pub async fn get_user_rating_handler(
   };
 
   let body = serde_json::to_string(&response)
-      .map_err(|_e| GetUserRatingError::ServerError)?;
+      .map_err(CommonWebError::from_error)?;
 
   Ok(HttpResponse::Ok()
       .content_type("application/json")

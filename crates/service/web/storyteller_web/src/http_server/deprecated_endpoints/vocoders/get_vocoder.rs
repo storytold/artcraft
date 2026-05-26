@@ -3,11 +3,8 @@
 #![forbid(unused_mut)]
 #![forbid(unused_variables)]
 
-use std::fmt;
 use std::sync::Arc;
 
-use actix_web::error::ResponseError;
-use actix_web::http::StatusCode;
 use actix_web::web::Path;
 use actix_web::{web, HttpRequest, HttpResponse};
 use chrono::{DateTime, Utc};
@@ -17,7 +14,7 @@ use enums::common::visibility::Visibility;
 use enums::common::vocoder_type::VocoderType;
 use mysql_queries::queries::vocoder::get_vocoder_model::get_vocoder_model_by_token;
 
-use crate::http_server::web_utils::response_error_helpers::to_simple_json_error;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::state::server_state::ServerState;
 
 // =============== Request ===============
@@ -77,43 +74,12 @@ pub struct VocoderModFields {
 }
 
 // =============== Error Response ===============
-
-#[derive(Debug)]
-pub enum GetVocoderError {
-  NotFound,
-  ServerError,
-}
-
-impl ResponseError for GetVocoderError {
-  fn status_code(&self) -> StatusCode {
-    match *self {
-      GetVocoderError::NotFound => StatusCode::NOT_FOUND,
-      GetVocoderError::ServerError => StatusCode::INTERNAL_SERVER_ERROR,
-    }
-  }
-
-  fn error_response(&self) -> HttpResponse {
-    let error_reason = match self {
-      GetVocoderError::NotFound => "not found".to_string(),
-      GetVocoderError::ServerError => "server error".to_string(),
-    };
-
-    to_simple_json_error(&error_reason, self.status_code())
-  }
-}
-
 // NB: Not using derive_more::Display since Clion doesn't understand it.
-impl fmt::Display for GetVocoderError {
-  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-    write!(f, "{:?}", self)
-  }
-}
-
 pub async fn get_vocoder_handler(
   http_request: HttpRequest,
   path: Path<GetVocoderPathInfo>,
   server_state: web::Data<Arc<ServerState>>
-) -> Result<HttpResponse, GetVocoderError> {
+) -> Result<HttpResponse, CommonWebError> {
 
   let is_moderator = server_state
       .session_checker
@@ -121,7 +87,7 @@ pub async fn get_vocoder_handler(
       .await
       .map_err(|e| {
         warn!("Session checker error: {:?}", e);
-        GetVocoderError::ServerError
+        CommonWebError::from_error(e)
       })?
       .map(|session| {
         // NB: Since we need to rip out and replace the permissions system,
@@ -140,10 +106,10 @@ pub async fn get_vocoder_handler(
 
   let vocoder = match query_result {
     Ok(Some(model)) => model,
-    Ok(None) => return Err(GetVocoderError::NotFound),
+    Ok(None) => return Err(CommonWebError::NotFound),
     Err(e) => {
       warn!("query error: {:?}", e);
-      return Err(GetVocoderError::ServerError);
+      return Err(CommonWebError::from_anyhow_error(e));
     }
   };
 
@@ -185,7 +151,7 @@ pub async fn get_vocoder_handler(
   };
 
   let body = serde_json::to_string(&response)
-      .map_err(|_e| GetVocoderError::ServerError)?;
+      .map_err(CommonWebError::from_error)?;
 
   Ok(HttpResponse::Ok()
       .content_type("application/json")

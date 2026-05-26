@@ -14,6 +14,7 @@ use mysql_queries::queries::tts::tts_results::delete_tts_result_various_scopes::
 use mysql_queries::queries::tts::tts_results::query_tts_result::select_tts_result_by_token;
 
 use crate::http_server::web_utils::response_error_helpers::to_simple_json_error;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::web_utils::response_success_helpers::simple_json_success;
 use crate::state::server_state::ServerState;
 use crate::util::delete_role_disambiguation::delete_role_disambiguation;
@@ -31,64 +32,27 @@ pub struct DeleteTtsInferenceResultRequest {
   /// NB: this is only to disambiguate when a user is both a mod and an author.
   as_mod: Option<bool>,
 }
-
-#[derive(Debug)]
-pub enum DeleteTtsInferenceResultError {
-  BadInput(String),
-  NotAuthorized,
-  NotFound,
-  ServerError,
-}
-
-impl ResponseError for DeleteTtsInferenceResultError {
-  fn status_code(&self) -> StatusCode {
-    match *self {
-      DeleteTtsInferenceResultError::BadInput(_) => StatusCode::BAD_REQUEST,
-      DeleteTtsInferenceResultError::NotAuthorized => StatusCode::UNAUTHORIZED,
-      DeleteTtsInferenceResultError::NotFound => StatusCode::NOT_FOUND,
-      DeleteTtsInferenceResultError::ServerError => StatusCode::INTERNAL_SERVER_ERROR,
-    }
-  }
-
-  fn error_response(&self) -> HttpResponse {
-    let error_reason = match self {
-      DeleteTtsInferenceResultError::BadInput(reason) => reason.to_string(),
-      DeleteTtsInferenceResultError::NotAuthorized => "unauthorized".to_string(),
-      DeleteTtsInferenceResultError::NotFound => "not found".to_string(),
-      DeleteTtsInferenceResultError::ServerError => "server error".to_string(),
-    };
-
-    to_simple_json_error(&error_reason, self.status_code())
-  }
-}
-
 // NB: Not using derive_more::Display since Clion doesn't understand it.
-impl fmt::Display for DeleteTtsInferenceResultError {
-  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-    write!(f, "{:?}", self)
-  }
-}
-
 pub async fn delete_tts_inference_result_handler(
   http_request: HttpRequest,
   path: Path<DeleteTtsInferenceResultPathInfo>,
   request: web::Json<DeleteTtsInferenceResultRequest>,
   server_state: web::Data<Arc<ServerState>>
-) -> Result<HttpResponse, DeleteTtsInferenceResultError> {
+) -> Result<HttpResponse, CommonWebError> {
   let maybe_user_session = server_state
       .session_checker
       .maybe_get_user_session(&http_request, &server_state.mysql_pool)
       .await
       .map_err(|e| {
         warn!("Session checker error: {:?}", e);
-        DeleteTtsInferenceResultError::ServerError
+        CommonWebError::from_error(e)
       })?;
 
   let user_session = match maybe_user_session {
     Some(session) => session,
     None => {
       warn!("not logged in");
-      return Err(DeleteTtsInferenceResultError::NotAuthorized);
+      return Err(CommonWebError::NotAuthorized);
     }
   };
 
@@ -105,9 +69,9 @@ pub async fn delete_tts_inference_result_handler(
   let tts_inference_result = match inference_result_query_result {
     Err(e) => {
       warn!("query error: {:?}", e);
-      return Err(DeleteTtsInferenceResultError::ServerError);
+      return Err(CommonWebError::from_anyhow_error(e));
     }
-    Ok(None) => return Err(DeleteTtsInferenceResultError::NotFound),
+    Ok(None) => return Err(CommonWebError::NotFound),
     Ok(Some(inference_result)) => inference_result,
   };
 
@@ -121,7 +85,7 @@ pub async fn delete_tts_inference_result_handler(
 
   if !is_author && !is_mod {
     warn!("user is not allowed to delete inference results: {:?}", user_session.user_token);
-    return Err(DeleteTtsInferenceResultError::NotAuthorized);
+    return Err(CommonWebError::NotAuthorized);
   }
 
   let delete_role = delete_role_disambiguation(is_mod, is_author, request.as_mod);
@@ -130,7 +94,7 @@ pub async fn delete_tts_inference_result_handler(
     match delete_role {
       DeleteRole::ErrorDoNotDelete => {
         warn!("user is not allowed to delete inference results: {:?}", user_session.user_token);
-        return Err(DeleteTtsInferenceResultError::NotAuthorized);
+        return Err(CommonWebError::NotAuthorized);
       }
       DeleteRole::AsUser => {
         delete_tts_inference_result_as_user(
@@ -150,7 +114,7 @@ pub async fn delete_tts_inference_result_handler(
     match delete_role {
       DeleteRole::ErrorDoNotDelete => {
         warn!("user is not allowed to undelete inference results: {:?}", user_session.user_token);
-        return Err(DeleteTtsInferenceResultError::NotAuthorized);
+        return Err(CommonWebError::NotAuthorized);
       }
       DeleteRole::AsUser => {
         // NB: Technically only mods can see their own inference_results here
@@ -173,7 +137,7 @@ pub async fn delete_tts_inference_result_handler(
     Ok(_) => {},
     Err(err) => {
       warn!("Update tts mod approval status DB error: {:?}", err);
-      return Err(DeleteTtsInferenceResultError::ServerError);
+      return Err(CommonWebError::from_anyhow_error(err));
     }
   };
 

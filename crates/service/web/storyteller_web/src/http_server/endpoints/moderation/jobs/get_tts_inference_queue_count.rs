@@ -9,6 +9,7 @@ use log::warn;
 use mysql_queries::queries::tts::tts_inference_jobs::get_pending_tts_inference_job_detailed_stats::{get_pending_tts_inference_job_detailed_stats, PendingCountResult};
 
 use crate::http_server::web_utils::serialize_as_json_error::serialize_as_json_error;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::state::server_state::ServerState;
 
 #[derive(Serialize)]
@@ -29,37 +30,11 @@ pub struct GetTtsInferenceQueueCountResponse {
   // Failed, but not permanently dead
   pub attempt_failed_count: i64,
 }
-
-#[derive(Debug, Serialize)]
-pub enum GetTtsInferenceQueueCountError {
-  ServerError,
-  Unauthorized,
-}
-
-impl ResponseError for GetTtsInferenceQueueCountError {
-  fn status_code(&self) -> StatusCode {
-    match *self {
-      GetTtsInferenceQueueCountError::ServerError => StatusCode::INTERNAL_SERVER_ERROR,
-      GetTtsInferenceQueueCountError::Unauthorized => StatusCode::UNAUTHORIZED,
-    }
-  }
-
-  fn error_response(&self) -> HttpResponse {
-    serialize_as_json_error(self)
-  }
-}
-
 // NB: Not using DeriveMore since Clion doesn't understand it.
-impl fmt::Display for GetTtsInferenceQueueCountError {
-  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-    write!(f, "{:?}", self)
-  }
-}
-
 pub async fn get_tts_inference_queue_count_handler(
   http_request: HttpRequest,
   server_state: web::Data<Arc<ServerState>>
-) -> Result<HttpResponse, GetTtsInferenceQueueCountError> {
+) -> Result<HttpResponse, CommonWebError> {
 
   let maybe_user_session = server_state
       .session_checker
@@ -67,28 +42,28 @@ pub async fn get_tts_inference_queue_count_handler(
       .await
       .map_err(|e| {
         warn!("Session checker error: {:?}", e);
-        GetTtsInferenceQueueCountError::ServerError
+        CommonWebError::from_error(e)
       })?;
 
   let user_session = match maybe_user_session {
     Some(session) => session,
     None => {
       warn!("not logged in");
-      return Err(GetTtsInferenceQueueCountError::Unauthorized);
+      return Err(CommonWebError::NotAuthorized);
     }
   };
 
   // TODO: Not a good fit for this permission.
   if !user_session.can_ban_users {
     warn!("user is not allowed to view bans: {:?}", user_session.user_token);
-    return Err(GetTtsInferenceQueueCountError::Unauthorized);
+    return Err(CommonWebError::NotAuthorized);
   }
 
   let result = get_pending_tts_inference_job_detailed_stats(&server_state.mysql_pool)
       .await
       .map_err(|err| {
         warn!("get tts pending count error: {:?}", err);
-        GetTtsInferenceQueueCountError::ServerError
+        CommonWebError::from_anyhow_error(err)
       })?
       .unwrap_or(
         // NB: Not Found for null results means nothing is pending in the queue (not an error!)
@@ -111,7 +86,7 @@ pub async fn get_tts_inference_queue_count_handler(
   };
 
   let body = serde_json::to_string(&response)
-      .map_err(|e| GetTtsInferenceQueueCountError::ServerError)?;
+      .map_err(CommonWebError::from_error)?;
 
   Ok(HttpResponse::Ok()
       .content_type("application/json")

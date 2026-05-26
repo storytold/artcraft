@@ -13,6 +13,7 @@ use mysql_queries::queries::beta_keys::insert_batch_beta_keys::{insert_batch_bet
 use mysql_queries::queries::users::user_profiles::get_user_profile_by_username::get_user_profile_by_username;
 
 use crate::http_server::web_utils::response_error_helpers::to_simple_json_error;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::web_utils::user_session::require_moderator::{require_moderator, RequireModeratorError, UseDatabase};
 use crate::state::server_state::ServerState;
 
@@ -37,41 +38,7 @@ pub struct CreateBetaKeysSuccessResponse {
   pub success: bool,
   pub beta_keys: Vec<String>,
 }
-
-#[derive(Debug, ToSchema)]
-pub enum CreateBetaKeysError {
-  BadInput(String),
-  NotAuthorized,
-  ServerError,
-}
-
-impl ResponseError for CreateBetaKeysError {
-  fn status_code(&self) -> StatusCode {
-    match *self {
-      CreateBetaKeysError::BadInput(_) => StatusCode::BAD_REQUEST,
-      CreateBetaKeysError::NotAuthorized => StatusCode::UNAUTHORIZED,
-      CreateBetaKeysError::ServerError => StatusCode::INTERNAL_SERVER_ERROR,
-    }
-  }
-
-  fn error_response(&self) -> HttpResponse {
-    let error_reason = match self {
-      CreateBetaKeysError::BadInput(reason) => reason.to_string(),
-      CreateBetaKeysError::NotAuthorized => "unauthorized".to_string(),
-      CreateBetaKeysError::ServerError => "server error".to_string(),
-    };
-
-    to_simple_json_error(&error_reason, self.status_code())
-  }
-}
-
 // NB: Not using derive_more::Display since Clion doesn't understand it.
-impl fmt::Display for CreateBetaKeysError {
-  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-    write!(f, "{:?}", self)
-  }
-}
-
 /// Create beta keys in bulk, and possibly assign them to a referrer user.
 #[utoipa::path(
   post,
@@ -79,9 +46,9 @@ impl fmt::Display for CreateBetaKeysError {
   path = "/v1/beta_keys/create",
   responses(
     (status = 200, description = "Success", body = CreateBetaKeysSuccessResponse),
-    (status = 400, description = "Bad input", body = CreateBetaKeysError),
-    (status = 401, description = "Not authorized", body = CreateBetaKeysError),
-    (status = 500, description = "Server error", body = CreateBetaKeysError),
+    (status = 400, description = "Bad input", body = CommonWebError),
+    (status = 401, description = "Not authorized", body = CommonWebError),
+    (status = 500, description = "Server error", body = CommonWebError),
   ),
   params(
     ("request" = CreateBetaKeysRequest, description = "Payload for Request"),
@@ -91,13 +58,13 @@ pub async fn create_beta_keys_handler(
   http_request: HttpRequest,
   request: web::Json<CreateBetaKeysRequest>,
   server_state: web::Data<Arc<ServerState>>,
-) -> Result<HttpResponse, CreateBetaKeysError>
+) -> Result<HttpResponse, CommonWebError>
 {
   let user_session = require_moderator(&http_request, &server_state, UseDatabase::GrabNewConnection)
       .await
       .map_err(|err| match err {
-        RequireModeratorError::ServerError => CreateBetaKeysError::ServerError,
-        RequireModeratorError::NotAuthorized => CreateBetaKeysError::NotAuthorized,
+        RequireModeratorError::ServerError => CommonWebError::from_error(err),
+        RequireModeratorError::NotAuthorized => CommonWebError::NotAuthorized,
       })?;
 
   let mut maybe_referrer_user_token = None;
@@ -108,13 +75,13 @@ pub async fn create_beta_keys_handler(
         .await
         .map_err(|err| {
           warn!("Error inserting beta keys: {:?}", err);
-          CreateBetaKeysError::ServerError
+          CommonWebError::from_anyhow_error(err)
         })?;
 
     let user = match maybe_user {
       Some(user) => user,
       None => {
-        return Err(CreateBetaKeysError::BadInput("referrer user not found".to_string()));
+        return Err(CommonWebError::BadInputWithSimpleMessage("referrer user not found".to_string()));
       }
     };
 
@@ -136,7 +103,7 @@ pub async fn create_beta_keys_handler(
     mysql_pool: &server_state.mysql_pool,
   }).await.map_err(|err| {
     warn!("Error inserting beta keys: {:?}", err);
-    CreateBetaKeysError::ServerError
+    CommonWebError::from_anyhow_error(err)
   })?;
 
   let response = CreateBetaKeysSuccessResponse {
@@ -145,7 +112,7 @@ pub async fn create_beta_keys_handler(
   };
 
   let body = serde_json::to_string(&response)
-      .map_err(|_e| CreateBetaKeysError::ServerError)?;
+      .map_err(CommonWebError::from_error)?;
 
   Ok(HttpResponse::Ok()
       .content_type("application/json")

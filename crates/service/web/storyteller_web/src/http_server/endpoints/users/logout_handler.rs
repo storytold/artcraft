@@ -3,13 +3,10 @@
 #![forbid(unused_mut)]
 #![forbid(unused_variables)]
 
-use std::fmt;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 
 use actix_artcraft::sessions::user_sessions::http_user_session_manager::HttpUserSessionManager;
-use actix_web::error::ResponseError;
-use actix_web::http::StatusCode;
 use actix_web::{web, HttpRequest, HttpResponse};
-use http_server_common::response::response_error_helpers::to_simple_json_error;
 use log::warn;
 use mysql_queries::queries::users::user_sessions::delete_user_session::delete_user_session;
 use sqlx::MySqlPool;
@@ -20,42 +17,14 @@ use utoipa::ToSchema;
 pub struct LogoutSuccessResponse {
   pub success: bool,
 }
-
-#[derive(Debug, ToSchema)]
-pub enum LogoutError {
-  ServerError,
-}
-
-impl ResponseError for LogoutError {
-  fn status_code(&self) -> StatusCode {
-    match *self {
-      LogoutError::ServerError=> StatusCode::INTERNAL_SERVER_ERROR,
-    }
-  }
-
-  fn error_response(&self) -> HttpResponse {
-    let error_reason = match self {
-      LogoutError::ServerError => "server error".to_string(),
-    };
-
-    to_simple_json_error(&error_reason, self.status_code())
-  }
-}
-
 // NB: Not using derive_more::Display since Clion doesn't understand it.
-impl fmt::Display for LogoutError {
-  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-    write!(f, "{:?}", self)
-  }
-}
-
 #[utoipa::path(
   post,
   tag = "Users",
   path = "/v1/logout",
   responses(
     (status = 200, description = "Found", body = LogoutSuccessResponse),
-    (status = 500, description = "Server error", body = LogoutError),
+    (status = 500, description = "Server error", body = CommonWebError),
   ),
 )]
 pub async fn logout_handler(
@@ -63,7 +32,7 @@ pub async fn logout_handler(
   session_cookie_manager: web::Data<HttpUserSessionManager>,
   mysql_pool: web::Data<MySqlPool>,
   internal_session_cache_purge: web::Data<dyn InternalSessionCachePurge>,
-) -> Result<HttpResponse, LogoutError>
+) -> Result<HttpResponse, CommonWebError>
 {
   // Best effort to delete Redis session cache
   internal_session_cache_purge.best_effort_purge_session_cache(&http_request);
@@ -72,7 +41,7 @@ pub async fn logout_handler(
       .decode_session_payload_from_request(&http_request)
       .map_err(|e| {
         warn!("Session cookie decode error: {:?}", e);
-        LogoutError::ServerError
+        CommonWebError::from_error(e)
       })?;
 
   if let Some(session) = maybe_session {
@@ -93,7 +62,7 @@ pub async fn logout_handler(
   };
 
   let body = serde_json::to_string(&response)
-    .map_err(|_e| LogoutError::ServerError)?;
+    .map_err(CommonWebError::from_error)?;
 
   // Mark cookie for deletion
   delete_cookie.make_removal();

@@ -4,11 +4,8 @@
 #![forbid(unused_variables)]
 
 use std::collections::HashSet;
-use std::fmt;
 use std::sync::Arc;
 
-use actix_web::error::ResponseError;
-use actix_web::http::StatusCode;
 use actix_web::{web, HttpRequest, HttpResponse};
 use chrono::{DateTime, Utc};
 use lexical_sort::natural_lexical_cmp;
@@ -23,7 +20,7 @@ use migration::text_to_speech::list_tts_models_for_migration::list_tts_models_fo
 use mysql_queries::queries::tts::tts_category_assignments::fetch_and_build_tts_model_category_map::fetch_and_build_tts_model_category_map_with_connection;
 use mysql_queries::queries::users::user_sessions::get_user_session_by_token::SessionUserRecord;
 
-use crate::http_server::web_utils::response_error_helpers::to_simple_json_error;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::state::server_state::ServerState;
 
 #[derive(Serialize, Clone)]
@@ -66,38 +63,10 @@ pub struct ListTtsModelsSuccessResponse {
   pub success: bool,
   pub models: Vec<TtsModelRecordForResponse>,
 }
-
-#[derive(Debug)]
-pub enum ListTtsModelsError {
-  ServerError,
-}
-
-impl ResponseError for ListTtsModelsError {
-  fn status_code(&self) -> StatusCode {
-    match *self {
-      ListTtsModelsError::ServerError=> StatusCode::INTERNAL_SERVER_ERROR,
-    }
-  }
-
-  fn error_response(&self) -> HttpResponse {
-    let error_reason = match self {
-      ListTtsModelsError::ServerError => "server error".to_string(),
-    };
-
-    to_simple_json_error(&error_reason, self.status_code())
-  }
-}
-
 // NB: Not using derive_more::Display since Clion doesn't understand it.
-impl fmt::Display for ListTtsModelsError {
-  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-    write!(f, "{:?}", self)
-  }
-}
-
 pub async fn list_tts_models_handler(
   http_request: HttpRequest,
-  server_state: web::Data<Arc<ServerState>>) -> Result<HttpResponse, ListTtsModelsError>
+  server_state: web::Data<Arc<ServerState>>) -> Result<HttpResponse, CommonWebError>
 {
   if server_state.flags.disable_tts_model_list_endpoint {
     // NB: Despite the cache being a powerful protector of the database (this is an expensive query),
@@ -112,7 +81,7 @@ pub async fn list_tts_models_handler(
   let maybe_models = server_state.caches.ephemeral.tts_model_list.grab_copy_without_bump_if_unexpired()
       .map_err(|e| {
         error!("Error consulting cache: {:?}", e);
-        ListTtsModelsError::ServerError
+        CommonWebError::from_anyhow_error(e)
       })?;
 
   // NB: We don't know if we need a MySQL connection, so don't grab one unless we do.
@@ -130,7 +99,7 @@ pub async fn list_tts_models_handler(
           .await
           .map_err(|e| {
             warn!("Could not acquire DB pool: {:?}", e);
-            ListTtsModelsError::ServerError
+            CommonWebError::from_error(e)
           })?;
 
       // TODO: Fail open in case the DB is down. Pull from expired cache if query fails.
@@ -138,7 +107,7 @@ pub async fn list_tts_models_handler(
           .await
           .map_err(|e| {
             error!("Error querying database: {:?}", e);
-            ListTtsModelsError::ServerError
+            CommonWebError::from_anyhow_error(e)
           })?;
 
       maybe_mysql_connection = Some(mysql_connection);
@@ -146,7 +115,7 @@ pub async fn list_tts_models_handler(
       server_state.caches.ephemeral.tts_model_list.store_copy(&models)
           .map_err(|e| {
             error!("Error storing cache: {:?}", e);
-            ListTtsModelsError::ServerError
+            CommonWebError::from_anyhow_error(e)
           })?;
 
       models
@@ -166,7 +135,7 @@ pub async fn list_tts_models_handler(
     }
   }.map_err(|e| {
     warn!("Session checker error: {:?}", e);
-    ListTtsModelsError::ServerError
+    CommonWebError::from_error(e)
   })?;
 
   let maybe_session_user_token = maybe_user_session
@@ -190,25 +159,25 @@ pub async fn list_tts_models_handler(
   })
 }
 
-pub fn render_response_busy(response: ListTtsModelsSuccessResponse) -> Result<HttpResponse, ListTtsModelsError> {
+pub fn render_response_busy(response: ListTtsModelsSuccessResponse) -> Result<HttpResponse, CommonWebError> {
   let body = render_response_payload(response)?;
   Ok(HttpResponse::TooManyRequests()
       .content_type("application/json")
       .body(body))
 }
 
-pub fn render_response_ok(response: ListTtsModelsSuccessResponse) -> Result<HttpResponse, ListTtsModelsError> {
+pub fn render_response_ok(response: ListTtsModelsSuccessResponse) -> Result<HttpResponse, CommonWebError> {
   let body = render_response_payload(response)?;
   Ok(HttpResponse::Ok()
       .content_type("application/json")
       .body(body))
 }
 
-pub fn render_response_payload(response: ListTtsModelsSuccessResponse) -> Result<String, ListTtsModelsError> {
+pub fn render_response_payload(response: ListTtsModelsSuccessResponse) -> Result<String, CommonWebError> {
   let body = serde_json::to_string(&response)
       .map_err(|e| {
         error!("error returning response: {:?}",  e);
-        ListTtsModelsError::ServerError
+        CommonWebError::from_error(e)
       })?;
   Ok(body)
 }

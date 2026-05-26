@@ -3,21 +3,18 @@
 #![forbid(unused_mut)]
 #![forbid(unused_variables)]
 
-use std::fmt;
 use std::sync::Arc;
 
-use actix_web::error::ResponseError;
-use actix_web::http::StatusCode;
 use actix_web::{web, HttpRequest, HttpResponse};
 use chrono::{DateTime, Utc};
 use log::error;
 
 use datetimes::CHRONO_DATETIME_UNIX_EPOCH;
 use enums::by_table::model_categories::model_type::ModelType;
-use http_server_common::response::serialize_as_json_error::serialize_as_json_error;
 use tokens::tokens::model_categories::ModelCategoryToken;
 
 use crate::configs::static_model::categories::synthetic_category_list::SYNTHETIC_CATEGORY_LIST;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::state::cached_queries::list_cached_tts_categories_for_public_dropdown::list_cached_tts_categories_for_public_dropdown_db_pool;
 use crate::state::server_state::ServerState;
 
@@ -64,45 +61,19 @@ pub struct DisplayCategory {
 }
 
 // =============== Error Response ===============
-
-#[derive(Debug, Serialize)]
-pub enum ListTtsCategoriesError {
-  NotAuthorized,
-  ServerError,
-}
-
-impl ResponseError for ListTtsCategoriesError {
-  fn status_code(&self) -> StatusCode {
-    match *self {
-      ListTtsCategoriesError::NotAuthorized => StatusCode::UNAUTHORIZED,
-      ListTtsCategoriesError::ServerError => StatusCode::INTERNAL_SERVER_ERROR,
-    }
-  }
-
-  fn error_response(&self) -> HttpResponse {
-    serialize_as_json_error(self)
-  }
-}
-
 // NB: Not using derive_more::Display since Clion doesn't understand it.
-impl fmt::Display for ListTtsCategoriesError {
-  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-    write!(f, "{:?}", self)
-  }
-}
-
 // =============== Handler ===============
 
 pub async fn list_tts_categories_handler(
   _http_request: HttpRequest,
-  server_state: web::Data<Arc<ServerState>>) -> Result<HttpResponse, ListTtsCategoriesError>
+  server_state: web::Data<Arc<ServerState>>) -> Result<HttpResponse, CommonWebError>
 {
   let database_categories = list_cached_tts_categories_for_public_dropdown_db_pool(
     &server_state.caches.ephemeral.database_tts_category_list, &server_state.mysql_pool)
       .await
       .map_err(|e| {
         error!("error querying categories from db/cache: {:?}", e);
-        ListTtsCategoriesError::ServerError
+        CommonWebError::from_anyhow_error(e)
       })?;
 
   // NB: These will be already sorted.
@@ -164,7 +135,7 @@ pub async fn list_tts_categories_handler(
   };
 
   let body = serde_json::to_string(&response)
-      .map_err(|_e| ListTtsCategoriesError::ServerError)?;
+      .map_err(CommonWebError::from_error)?;
 
   Ok(HttpResponse::Ok()
       .content_type("application/json")

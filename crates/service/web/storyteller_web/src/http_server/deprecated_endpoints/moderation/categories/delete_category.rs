@@ -11,6 +11,7 @@ use http_server_common::response::serialize_as_json_error::serialize_as_json_err
 use mysql_queries::queries::model_categories::toggle_model_category_soft_delete::{toggle_model_category_soft_delete, ToggleSoftDeleteState};
 
 use crate::state::server_state::ServerState;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 
 // =============== Request ===============
 
@@ -33,42 +34,14 @@ pub struct DeleteCategoryResponse {
 }
 
 // =============== Error Response ===============
-
-#[derive(Debug, Serialize)]
-pub enum DeleteCategoryError {
-  NotFound,
-  NotAuthorized,
-  ServerError,
-}
-
-impl ResponseError for DeleteCategoryError {
-  fn status_code(&self) -> StatusCode {
-    match *self {
-      DeleteCategoryError::NotFound => StatusCode::NOT_FOUND,
-      DeleteCategoryError::NotAuthorized => StatusCode::UNAUTHORIZED,
-      DeleteCategoryError::ServerError => StatusCode::INTERNAL_SERVER_ERROR,
-    }
-  }
-
-  fn error_response(&self) -> HttpResponse {
-    serialize_as_json_error(self)
-  }
-}
-
 // NB: Not using DeriveMore since Clion doesn't understand it.
-impl fmt::Display for DeleteCategoryError {
-  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-    write!(f, "{:?}", self)
-  }
-}
-
 // =============== Handler ===============
 
 pub async fn delete_category_handler(
   http_request: HttpRequest,
   path: Path<DeleteCategoryPathInfo>,
   request: web::Json<DeleteCategoryRequest>,
-  server_state: web::Data<Arc<ServerState>>) -> Result<HttpResponse, DeleteCategoryError>
+  server_state: web::Data<Arc<ServerState>>) -> Result<HttpResponse, CommonWebError>
 {
   let maybe_user_session = server_state
       .session_checker
@@ -76,21 +49,21 @@ pub async fn delete_category_handler(
       .await
       .map_err(|e| {
         warn!("Session checker error: {:?}", e);
-        DeleteCategoryError::ServerError
+        CommonWebError::from_error(e)
       })?;
 
   let user_session = match maybe_user_session {
     Some(session) => session,
     None => {
       warn!("not logged in");
-      return Err(DeleteCategoryError::NotAuthorized);
+      return Err(CommonWebError::NotAuthorized);
     }
   };
 
   // TODO: We don't have a permission for categories, so we use this as a proxy.
   if !user_session.can_ban_users {
     warn!("no permission to delete categories");
-    return Err(DeleteCategoryError::NotAuthorized);
+    return Err(CommonWebError::NotAuthorized);
   }
 
   let soft_delete_state = if request.set_delete {
@@ -109,7 +82,7 @@ pub async fn delete_category_handler(
     Ok(_) => {},
     Err(err) => {
       warn!("Delete/undelete category edit DB error: {:?}", err);
-      return Err(DeleteCategoryError::ServerError);
+      return Err(CommonWebError::from_anyhow_error(err));
     }
   };
 
@@ -118,7 +91,7 @@ pub async fn delete_category_handler(
   };
 
   let body = serde_json::to_string(&response)
-      .map_err(|e| DeleteCategoryError::ServerError)?;
+      ?;
 
   Ok(HttpResponse::Ok()
       .content_type("application/json")

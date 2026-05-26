@@ -16,6 +16,7 @@ use mysql_queries::queries::media_files::edit::update_media_file_visibility::{up
 use mysql_queries::queries::media_files::get::get_media_file::get_media_file;
 
 use crate::http_server::common_requests::media_file_token_path_info::MediaFileTokenPathInfo;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::state::server_state::ServerState;
 
 #[derive(Deserialize, ToSchema)]
@@ -24,37 +25,7 @@ pub struct ChangeMediaFileVisibilityRequest {
 }
 
 // =============== Error Response ===============
-
-#[derive(Debug, Serialize, ToSchema)]
-pub enum ChangeMediaFileVisibilityError {
-    BadInput(String),
-    NotFound,
-    NotAuthorized,
-    ServerError,
-}
-
-impl ResponseError for ChangeMediaFileVisibilityError {
-    fn status_code(&self) -> StatusCode {
-        match *self {
-            ChangeMediaFileVisibilityError::BadInput(_) => StatusCode::BAD_REQUEST,
-            ChangeMediaFileVisibilityError::NotFound => StatusCode::NOT_FOUND,
-            ChangeMediaFileVisibilityError::NotAuthorized => StatusCode::UNAUTHORIZED,
-            ChangeMediaFileVisibilityError::ServerError => StatusCode::INTERNAL_SERVER_ERROR,
-        }
-    }
-
-    fn error_response(&self) -> HttpResponse {
-        serialize_as_json_error(self)
-    }
-}
-
 // NB: Not using derive_more::Display since Clion doesn't understand it.
-impl fmt::Display for ChangeMediaFileVisibilityError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{:?}", self)
-    }
-}
-
 // =============== Handler ===============
 
 /// Change the visibility (public, hidden, private) of a media file.
@@ -64,9 +35,9 @@ impl fmt::Display for ChangeMediaFileVisibilityError {
     path = "/v1/media_files/visibility/{token}",
     responses(
         (status = 200, description = "Success", body = SimpleGenericJsonSuccess),
-        (status = 400, description = "Bad input", body = ChangeMediaFileVisibilityError),
-        (status = 401, description = "Not authorized", body = ChangeMediaFileVisibilityError),
-        (status = 500, description = "Server error", body = ChangeMediaFileVisibilityError),
+        (status = 400, description = "Bad input", body = CommonWebError),
+        (status = 401, description = "Not authorized", body = CommonWebError),
+        (status = 500, description = "Server error", body = CommonWebError),
     ),
     params(
         ("request" = ChangeMediaFileVisibilityRequest, description = "Payload for Request"),
@@ -77,7 +48,7 @@ pub async fn change_media_file_visibility_handler(
     http_request: HttpRequest,
     path: Path<MediaFileTokenPathInfo>,
     request: web::Json<ChangeMediaFileVisibilityRequest>,
-    server_state: web::Data<Arc<ServerState>>) -> Result<HttpResponse, ChangeMediaFileVisibilityError>
+    server_state: web::Data<Arc<ServerState>>) -> Result<HttpResponse, CommonWebError>
 {
     let maybe_user_session = server_state
         .session_checker
@@ -85,14 +56,14 @@ pub async fn change_media_file_visibility_handler(
         .await
         .map_err(|e| {
             warn!("Session checker error: {:?}", e);
-            ChangeMediaFileVisibilityError::ServerError
+            CommonWebError::from_error(e)
         })?;
 
     let user_session = match maybe_user_session {
         Some(session) => session,
         None => {
             warn!("not logged in");
-            return Err(ChangeMediaFileVisibilityError::NotAuthorized);
+            return Err(CommonWebError::NotAuthorized);
         }
     };
 
@@ -109,11 +80,11 @@ pub async fn change_media_file_visibility_handler(
         Ok(Some(media_file)) => media_file,
         Ok(None) => {
             warn!("MediaFile not found: {:?}", media_file_token);
-            return Err(ChangeMediaFileVisibilityError::NotFound);
+            return Err(CommonWebError::NotFound);
         },
         Err(err) => {
             warn!("Error looking up media_file: {:?}", err);
-            return Err(ChangeMediaFileVisibilityError::ServerError);
+            return Err(CommonWebError::from_anyhow_error(err));
         }
     };
 
@@ -122,7 +93,7 @@ pub async fn change_media_file_visibility_handler(
 
     if !is_creator && !is_mod {
         warn!("user is not allowed to edit this media_file: {:?}", user_session.user_token);
-        return Err(ChangeMediaFileVisibilityError::NotAuthorized);
+        return Err(CommonWebError::NotAuthorized);
     }
 
     let mut creator_set_visibility = Visibility::Public;
@@ -130,7 +101,7 @@ pub async fn change_media_file_visibility_handler(
 
     if let Some(visibility) = request.creator_set_visibility.as_deref() {
         creator_set_visibility = Visibility::from_str(visibility)
-            .map_err(|_| ChangeMediaFileVisibilityError::BadInput("bad record visibility".to_string()))?;
+            .map_err(|_| CommonWebError::BadInputWithSimpleMessage("bad record visibility".to_string()))?;
     }
 
     let ip_address = get_request_ip(&http_request);
@@ -152,7 +123,7 @@ pub async fn change_media_file_visibility_handler(
         Ok(_) => {},
         Err(err) => {
             warn!("Update MediaFile DB error: {:?}", err);
-            return Err(ChangeMediaFileVisibilityError::ServerError);
+            return Err(CommonWebError::from_anyhow_error(err));
         }
     };
 

@@ -10,6 +10,7 @@ use http_server_common::response::serialize_as_json_error::serialize_as_json_err
 use mysql_queries::queries::tts::tts_inference_jobs::kill_tts_inference_jobs::{kill_tts_inference_jobs, JobStatus};
 
 use crate::state::server_state::ServerState;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 
 // =============== Request ===============
 
@@ -39,43 +40,13 @@ pub struct KillTtsInferenceJobsResponse {
 }
 
 // =============== Error Response ===============
-
-#[derive(Debug, Serialize)]
-pub enum KillTtsInferenceJobsError {
-  BadInput(String),
-  NotFound,
-  NotAuthorized,
-  ServerError,
-}
-
-impl ResponseError for KillTtsInferenceJobsError {
-  fn status_code(&self) -> StatusCode {
-    match *self {
-      KillTtsInferenceJobsError::BadInput(_) => StatusCode::BAD_REQUEST,
-      KillTtsInferenceJobsError::NotFound => StatusCode::NOT_FOUND,
-      KillTtsInferenceJobsError::NotAuthorized => StatusCode::UNAUTHORIZED,
-      KillTtsInferenceJobsError::ServerError => StatusCode::INTERNAL_SERVER_ERROR,
-    }
-  }
-
-  fn error_response(&self) -> HttpResponse {
-    serialize_as_json_error(self)
-  }
-}
-
 // NB: Not using derive_more::Display since Clion doesn't understand it.
-impl fmt::Display for KillTtsInferenceJobsError {
-  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-    write!(f, "{:?}", self)
-  }
-}
-
 // =============== Handler ===============
 
 pub async fn kill_tts_inference_jobs_handler(
   http_request: HttpRequest,
   request: web::Json<KillTtsInferenceJobsRequest>,
-  server_state: web::Data<Arc<ServerState>>) -> Result<HttpResponse, KillTtsInferenceJobsError>
+  server_state: web::Data<Arc<ServerState>>) -> Result<HttpResponse, CommonWebError>
 {
   let maybe_user_session = server_state
       .session_checker
@@ -83,21 +54,21 @@ pub async fn kill_tts_inference_jobs_handler(
       .await
       .map_err(|e| {
         warn!("Session checker error: {:?}", e);
-        KillTtsInferenceJobsError::ServerError
+        CommonWebError::from_error(e)
       })?;
 
   let user_session = match maybe_user_session {
     Some(session) => session,
     None => {
       warn!("not logged in");
-      return Err(KillTtsInferenceJobsError::NotAuthorized);
+      return Err(CommonWebError::NotAuthorized);
     }
   };
 
   // TODO: We don't have a permission for this, so use this as a proxy permission
   if !user_session.can_ban_users {
     warn!("no permission to edit categories");
-    return Err(KillTtsInferenceJobsError::NotAuthorized);
+    return Err(CommonWebError::NotAuthorized);
   }
 
   let job_status = match request.kill_action {
@@ -110,7 +81,7 @@ pub async fn kill_tts_inference_jobs_handler(
       .await
       .map_err(|e| {
         error!("Error with query: {:?}", e);
-        KillTtsInferenceJobsError::ServerError
+        CommonWebError::from_anyhow_error(e)
       })?;
 
   let response = KillTtsInferenceJobsResponse {
@@ -118,7 +89,7 @@ pub async fn kill_tts_inference_jobs_handler(
   };
 
   let body = serde_json::to_string(&response)
-      .map_err(|e| KillTtsInferenceJobsError::ServerError)?;
+      .map_err(CommonWebError::from_error)?;
 
   Ok(HttpResponse::Ok()
       .content_type("application/json")

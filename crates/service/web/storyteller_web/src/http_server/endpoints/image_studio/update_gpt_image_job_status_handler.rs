@@ -2,6 +2,7 @@ use std::fmt;
 use std::sync::Arc;
 
 use crate::http_server::web_utils::response_error_helpers::to_simple_json_error;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::state::server_state::ServerState;
 use actix_web::error::ResponseError;
 use actix_web::http::StatusCode;
@@ -58,41 +59,7 @@ pub enum UpdatedJobStatus {
 pub struct UpdateGptImageJobStatusSuccessResponse {
   pub success: bool,
 }
-
-#[derive(Debug, ToSchema)]
-pub enum UpdateGptImageJobStatusError {
-  ServerError,
-  NotFound,
-  NotAuthorized,
-}
-
-impl ResponseError for UpdateGptImageJobStatusError {
-  fn status_code(&self) -> StatusCode {
-    match *self {
-      UpdateGptImageJobStatusError::ServerError => StatusCode::INTERNAL_SERVER_ERROR,
-      UpdateGptImageJobStatusError::NotFound => StatusCode::NOT_FOUND,
-      UpdateGptImageJobStatusError::NotAuthorized => StatusCode::UNAUTHORIZED,
-    }
-  }
-
-  fn error_response(&self) -> HttpResponse {
-    let error_reason = match self {
-      Self::ServerError => "server error".to_string(),
-      Self::NotFound => "not found".to_string(),
-      Self::NotAuthorized => "unauthorized".to_string(),
-    };
-
-    to_simple_json_error(&error_reason, self.status_code())
-  }
-}
-
 // NB: Not using derive_more::Display since Clion doesn't understand it.
-impl fmt::Display for UpdateGptImageJobStatusError {
-  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-    write!(f, "{:?}", self)
-  }
-}
-
 /// [INTERNAL ENDPOINT] Update a GPT Image generation job status.
 /// This is called by our internal infra, not users. Keep it guarded.
 /// We can do secrets-based auth later.
@@ -102,7 +69,7 @@ impl fmt::Display for UpdateGptImageJobStatusError {
   path = "/v1/image_studio/update_job_status",
   responses(
     (status = 200, body = UpdateGptImageJobStatusSuccessResponse),
-    (status = 500, body = UpdateGptImageJobStatusError),
+    (status = 500, body = CommonWebError),
   ),
   params(
     ("request" = UpdateGptImageJobStatusRequest, description = "Request"),
@@ -111,14 +78,14 @@ impl fmt::Display for UpdateGptImageJobStatusError {
 pub async fn update_gpt_image_job_status_handler(
   http_request: HttpRequest,
   request: Json<UpdateGptImageJobStatusRequest>,
-  server_state: web::Data<Arc<ServerState>>) -> Result<Json<UpdateGptImageJobStatusSuccessResponse>, UpdateGptImageJobStatusError>
+  server_state: web::Data<Arc<ServerState>>) -> Result<Json<UpdateGptImageJobStatusSuccessResponse>, CommonWebError>
 {
   //// TODO(bt,2024-06-16): Reuse connection
   //let mut mysql_connection = server_state.mysql_pool.acquire()
   //    .await
   //    .map_err(|e| {
   //      warn!("Could not acquire DB pool: {:?}", e);
-  //      UpdateGptImageJobStatusError::ServerError
+  //      CommonWebError::from_error(e)
   //    })?;
 
   let inference_job = get_inference_job_status(
@@ -128,10 +95,10 @@ pub async fn update_gpt_image_job_status_handler(
 
   let inference_job = match inference_job {
     Ok(Some(record)) => record,
-    Ok(None) => return Err(UpdateGptImageJobStatusError::NotFound),
+    Ok(None) => return Err(CommonWebError::NotFound),
     Err(err) => {
       error!("tts job query error: {:?}", err);
-      return Err(UpdateGptImageJobStatusError::ServerError);
+      return Err(CommonWebError::from_anyhow_error(err));
     }
   };
 
@@ -142,10 +109,10 @@ pub async fn update_gpt_image_job_status_handler(
       return Ok(Json(UpdateGptImageJobStatusSuccessResponse { success: true }))
     },
     // TODO: Handle other states as terminal states?
-    //JobStatusPlus::CompleteFailure => return Err(UpdateGptImageJobStatusError::ServerError),
+    //JobStatusPlus::CompleteFailure => return Err(CommonWebError::from_error(err)),
     //JobStatusPlus::AttemptFailed => {}
     //JobStatusPlus::Dead => {}
-    //JobStatusPlus::CancelledByUser => return Err(UpdateGptImageJobStatusError::ServerError),
+    //JobStatusPlus::CancelledByUser => return Err(CommonWebError::from_error(err)),
     //JobStatusPlus::CancelledBySystem => {}
     _ => {} // Intentional fall through.
   }
@@ -170,7 +137,7 @@ pub async fn update_gpt_image_job_status_handler(
         Ok(media_token) => media_token,
         Err(err) => {
           error!("Error uploading image: {:?}", err);
-          return Err(UpdateGptImageJobStatusError::ServerError);
+          return Err(CommonWebError::from_anyhow_error(err));
         }
       };
     }
@@ -182,7 +149,7 @@ pub async fn update_gpt_image_job_status_handler(
       .await
       .map_err(|err| {
         error!("Error updating job: {:?}", err);
-        UpdateGptImageJobStatusError::ServerError
+        CommonWebError::from_anyhow_error(err)
       })?;
 
   info!("Job record updated for job: {:?}", request.job_token);

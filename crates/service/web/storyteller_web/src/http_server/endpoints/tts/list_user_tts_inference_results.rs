@@ -11,6 +11,7 @@ use log::warn;
 use mysql_queries::queries::tts::tts_results::list_tts_results_query_builder::{ListTtsResultsQueryBuilder, TtsInferenceRecordForList};
 
 use crate::http_server::web_utils::response_error_helpers::to_simple_json_error;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::state::server_state::ServerState;
 
 /// For the URL PathInfo
@@ -34,41 +35,13 @@ pub struct ListTtsInferenceResultsForUserSuccessResponse {
   pub cursor_next: Option<String>,
   pub cursor_previous: Option<String>,
 }
-
-#[derive(Debug)]
-pub enum ListTtsInferenceResultsForUserError {
-  ServerError,
-}
-
-impl ResponseError for ListTtsInferenceResultsForUserError {
-  fn status_code(&self) -> StatusCode {
-    match *self {
-      ListTtsInferenceResultsForUserError::ServerError=> StatusCode::INTERNAL_SERVER_ERROR,
-    }
-  }
-
-  fn error_response(&self) -> HttpResponse {
-    let error_reason = match self {
-      ListTtsInferenceResultsForUserError::ServerError => "server error".to_string(),
-    };
-
-    to_simple_json_error(&error_reason, self.status_code())
-  }
-}
-
 // NB: Not using derive_more::Display since Clion doesn't understand it.
-impl fmt::Display for ListTtsInferenceResultsForUserError {
-  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-    write!(f, "{:?}", self)
-  }
-}
-
 pub async fn list_user_tts_inference_results_handler(
   http_request: HttpRequest,
   path: Path<ListTtsInferenceResultsForUserPathInfo>,
   query: Query<ListTtsInferenceResultsForUserQuery>,
   server_state: web::Data<Arc<ServerState>>
-) -> Result<HttpResponse, ListTtsInferenceResultsForUserError>
+) -> Result<HttpResponse, CommonWebError>
 {
   return Ok(HttpResponse::Gone()
       .content_type(ContentType::plaintext())
@@ -80,7 +53,7 @@ pub async fn list_user_tts_inference_results_handler(
     path: Path<ListTtsInferenceResultsForUserPathInfo>,
     query: Query<ListTtsInferenceResultsForUserQuery>,
     server_state: web::Data<Arc<ServerState>>
-  ) -> Result<HttpResponse, ListTtsInferenceResultsForUserError>
+  ) -> Result<HttpResponse, CommonWebError>
   {
     let maybe_user_session = server_state
       .session_checker
@@ -88,7 +61,7 @@ pub async fn list_user_tts_inference_results_handler(
       .await
       .map_err(|e| {
         warn!("Session checker error: {:?}", e);
-        ListTtsInferenceResultsForUserError::ServerError
+        CommonWebError::from_error(e)
       })?;
 
   // Permissions & ACLs
@@ -114,7 +87,7 @@ pub async fn list_user_tts_inference_results_handler(
     let cursor = server_state.sort_key_crypto.decrypt_id(cursor)
         .map_err(|e| {
           warn!("crypto error: {:?}", e);
-          ListTtsInferenceResultsForUserError::ServerError
+          CommonWebError::from_anyhow_error(e)
         })?;
     Some(cursor)
   } else {
@@ -139,7 +112,7 @@ pub async fn list_user_tts_inference_results_handler(
     Ok(results) => results,
     Err(e) => {
       warn!("Query error: {:?}", e);
-      return Err(ListTtsInferenceResultsForUserError::ServerError);
+      return Err(CommonWebError::from_anyhow_error(e));
     }
   };
 
@@ -147,7 +120,7 @@ pub async fn list_user_tts_inference_results_handler(
     let cursor = server_state.sort_key_crypto.encrypt_id(id as u64)
         .map_err(|e| {
           warn!("crypto error: {:?}", e);
-          ListTtsInferenceResultsForUserError::ServerError
+          CommonWebError::from_anyhow_error(e)
         })?;
     Some(cursor)
   } else {
@@ -158,7 +131,7 @@ pub async fn list_user_tts_inference_results_handler(
     let cursor = server_state.sort_key_crypto.encrypt_id(id as u64)
         .map_err(|e| {
           warn!("crypto error: {:?}", e);
-          ListTtsInferenceResultsForUserError::ServerError
+          CommonWebError::from_anyhow_error(e)
         })?;
     Some(cursor)
   } else {
@@ -173,7 +146,7 @@ pub async fn list_user_tts_inference_results_handler(
   };
 
   let body = serde_json::to_string(&response)
-    .map_err(|e| ListTtsInferenceResultsForUserError::ServerError)?;
+    .map_err(CommonWebError::from_error)?;
 
   Ok(HttpResponse::Ok()
     .content_type("application/json")

@@ -12,6 +12,7 @@ use mysql_queries::queries::model_categories::create_category::{create_category,
 use tokens::tokens::model_categories::ModelCategoryToken;
 
 use crate::state::server_state::ServerState;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 
 const DEFAULT_CAN_DIRECTLY_HAVE_MODELS : bool = true;
 const DEFAULT_CAN_HAVE_SUBCATEGORIES : bool = false;
@@ -50,41 +51,13 @@ pub struct CreateCategoryResponse {
 }
 
 // =============== Error Response ===============
-
-#[derive(Debug, Serialize)]
-pub enum CreateCategoryError {
-  BadInput(String),
-  NotAuthorized,
-  ServerError,
-}
-
-impl ResponseError for CreateCategoryError {
-  fn status_code(&self) -> StatusCode {
-    match *self {
-      CreateCategoryError::BadInput(_) => StatusCode::BAD_REQUEST,
-      CreateCategoryError::NotAuthorized => StatusCode::UNAUTHORIZED,
-      CreateCategoryError::ServerError => StatusCode::INTERNAL_SERVER_ERROR,
-    }
-  }
-
-  fn error_response(&self) -> HttpResponse {
-    serialize_as_json_error(self)
-  }
-}
-
 // NB: Not using DeriveMore since Clion doesn't understand it.
-impl fmt::Display for CreateCategoryError {
-  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-    write!(f, "{:?}", self)
-  }
-}
-
 // =============== Handler ===============
 
 pub async fn create_category_handler(
   http_request: HttpRequest,
   request: web::Json<CreateCategoryRequest>,
-  server_state: web::Data<Arc<ServerState>>) -> Result<HttpResponse, CreateCategoryError>
+  server_state: web::Data<Arc<ServerState>>) -> Result<HttpResponse, CommonWebError>
 {
   let maybe_user_session = server_state
       .session_checker
@@ -92,14 +65,14 @@ pub async fn create_category_handler(
       .await
       .map_err(|e| {
         warn!("Session checker error: {:?}", e);
-        CreateCategoryError::ServerError
+        CommonWebError::from_error(e)
       })?;
 
   let user_session = match maybe_user_session {
     Some(session) => session,
     None => {
       warn!("not logged in");
-      return Err(CreateCategoryError::NotAuthorized);
+      return Err(CommonWebError::NotAuthorized);
     }
   };
 
@@ -109,7 +82,7 @@ pub async fn create_category_handler(
 
   let model_type = match request.model_type {
     None => {
-      return Err(CreateCategoryError::BadInput("no model type".to_string()));
+      return Err(CommonWebError::BadInputWithSimpleMessage("no model type".to_string()));
     }
     Some(ModelType::Tts) => "tts",
     Some(ModelType::W2l) => "w2l",
@@ -117,11 +90,11 @@ pub async fn create_category_handler(
 
   let idempotency_token = request.idempotency_token
       .clone()
-      .ok_or(CreateCategoryError::BadInput("no idempotency token provided".to_string()))?;
+      .ok_or(CommonWebError::BadInputWithSimpleMessage("no idempotency token provided".to_string()))?;
 
   let name = request.name
       .clone()
-      .ok_or(CreateCategoryError::BadInput("no name provided".to_string()))?;
+      .ok_or(CommonWebError::BadInputWithSimpleMessage("no name provided".to_string()))?;
 
   let category_token = ModelCategoryToken::generate().to_string();
 
@@ -164,7 +137,7 @@ pub async fn create_category_handler(
     Ok(_) => {},
     Err(err) => {
       warn!("Create category edit DB error: {:?}", err);
-      return Err(CreateCategoryError::ServerError);
+      return Err(CommonWebError::from_anyhow_error(err));
     }
   };
 
@@ -174,7 +147,7 @@ pub async fn create_category_handler(
   };
 
   let body = serde_json::to_string(&response)
-      .map_err(|e| CreateCategoryError::ServerError)?;
+      ?;
 
   Ok(HttpResponse::Ok()
       .content_type("application/json")

@@ -22,6 +22,7 @@ use mysql_queries::queries::trending_model_analytics::list_trending_tts_models::
 use tokens::tokens::tts_models::TtsModelToken;
 
 use crate::state::server_state::ServerState;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 
 // TODO TODO TODO: This endpoint is not done!
 // TODO TODO TODO: This endpoint is not done!
@@ -45,36 +46,12 @@ pub type WindowTrends = HashMap<WindowName, Vec<TtsModelToken>>;
 
 
 // =============== Error Response ===============
-
-#[derive(Debug, Serialize)]
-pub enum ListTrendingTtsModelsError {
-  ServerError,
-}
-
-impl ResponseError for ListTrendingTtsModelsError {
-  fn status_code(&self) -> StatusCode {
-    match *self {
-      ListTrendingTtsModelsError::ServerError => StatusCode::INTERNAL_SERVER_ERROR,
-    }
-  }
-
-  fn error_response(&self) -> HttpResponse {
-    serialize_as_json_error(self)
-  }
-}
-
 // NB: Not using derive_more::Display since Clion doesn't understand it.
-impl fmt::Display for ListTrendingTtsModelsError {
-  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-    write!(f, "{:?}", self)
-  }
-}
-
 // =============== Handler ===============
 
 pub async fn list_trending_tts_models_handler(
   _http_request: HttpRequest,
-  server_state: web::Data<Arc<ServerState>>) -> Result<HttpResponse, ListTrendingTtsModelsError>
+  server_state: web::Data<Arc<ServerState>>) -> Result<HttpResponse, CommonWebError>
 {
 
 // TODO: Cache the outputs!
@@ -82,7 +59,7 @@ pub async fn list_trending_tts_models_handler(
 //  let maybe_category_assignments = server_state.caches.tts_model_category_assignments.copy_without_bump_if_unexpired()
 //      .map_err(|e| {
 //        error!("Error consulting cache: {:?}", e);
-//        ListTrendingTtsModelsError::ServerError
+//        CommonWebError::from_error(e)
 //      })?;
 //
 //  let category_assignments = match maybe_category_assignments {
@@ -99,7 +76,7 @@ pub async fn list_trending_tts_models_handler(
 //      server_state.caches.tts_model_category_assignments.store_copy(&category_assignments)
 //          .map_err(|e| {
 //            error!("Error storing cache: {:?}", e);
-//            ListTrendingTtsModelsError::ServerError
+//            CommonWebError::from_error(e)
 //          })?;
 //
 //      category_assignments
@@ -109,7 +86,7 @@ pub async fn list_trending_tts_models_handler(
   let trending_models= list_trending_tts_models_with_pool(&server_state.mysql_pool).await
       .map_err(|e| {
         error!("Query error: {:?}", e);
-        ListTrendingTtsModelsError::ServerError
+        CommonWebError::from_anyhow_error(e)
       })?;
 
 // TODO: Actually generate the response body sensibly.
@@ -136,7 +113,7 @@ pub async fn list_trending_tts_models_handler(
   };
 
   let body = serde_json::to_string(&response)
-      .map_err(|_e| ListTrendingTtsModelsError::ServerError)?;
+      .map_err(CommonWebError::from_error)?;
 
   Ok(HttpResponse::Ok()
       .content_type("application/json")

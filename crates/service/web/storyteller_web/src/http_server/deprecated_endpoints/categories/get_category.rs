@@ -12,6 +12,7 @@ use http_server_common::response::serialize_as_json_error::serialize_as_json_err
 use mysql_queries::queries::model_categories::get_category_by_token::get_category_by_token;
 
 use crate::state::server_state::ServerState;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 
 // =============== Request ===============
 
@@ -63,39 +64,13 @@ pub struct DisplayCategory {
 }
 
 // =============== Error Response ===============
-
-#[derive(Debug, Serialize)]
-pub enum GetCategoryError {
-  NotFound,
-  ServerError,
-}
-
-impl ResponseError for GetCategoryError {
-  fn status_code(&self) -> StatusCode {
-    match *self {
-      GetCategoryError::NotFound => StatusCode::NOT_FOUND,
-      GetCategoryError::ServerError => StatusCode::INTERNAL_SERVER_ERROR,
-    }
-  }
-
-  fn error_response(&self) -> HttpResponse {
-    serialize_as_json_error(self)
-  }
-}
-
 // NB: Not using derive_more::Display since Clion doesn't understand it.
-impl fmt::Display for GetCategoryError {
-  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-    write!(f, "{:?}", self)
-  }
-}
-
 // =============== Handler ===============
 
 pub async fn get_category_handler(
   http_request: HttpRequest,
   path: Path<GetCategoryPathInfo>,
-  server_state: web::Data<Arc<ServerState>>) -> Result<HttpResponse, GetCategoryError>
+  server_state: web::Data<Arc<ServerState>>) -> Result<HttpResponse, CommonWebError>
 {
   let maybe_user_session = server_state
       .session_checker
@@ -103,7 +78,7 @@ pub async fn get_category_handler(
       .await
       .map_err(|e| {
         warn!("Session checker error: {:?}", e);
-        GetCategoryError::ServerError
+        CommonWebError::from_error(e)
       })?;
 
   // TODO: We don't have any permissions for categories. This is a proxy.
@@ -120,11 +95,11 @@ pub async fn get_category_handler(
     },
     Ok(None) => {
       warn!("could not find category");
-      return Err(GetCategoryError::NotFound);
+      return Err(CommonWebError::NotFound);
     },
     Err(err) => {
       warn!("error looking up category: {:?}", err);
-      return Err(GetCategoryError::ServerError);
+      return Err(CommonWebError::from_anyhow_error(err));
     },
   };
 
@@ -156,7 +131,7 @@ pub async fn get_category_handler(
   };
 
   let body = serde_json::to_string(&response)
-      .map_err(|e| GetCategoryError::ServerError)?;
+      .map_err(CommonWebError::from_error)?;
 
   Ok(HttpResponse::Ok()
       .content_type("application/json")

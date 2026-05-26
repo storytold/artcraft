@@ -7,6 +7,7 @@ use chrono::{DateTime, Utc};
 use log::{info, warn};
 
 use crate::http_server::common_responses::user_details_lite::UserDetailsLight;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 use enums::common::visibility::Visibility;
 use mysql_queries::queries::voice_designer::voices::list_voices_query_builder::ListVoicesQueryBuilder;
 use tokens::tokens::zs_voices::ZsVoiceToken;
@@ -43,40 +44,18 @@ pub struct ZsVoiceForList {
   pub created_at: DateTime<Utc>,
   pub updated_at: DateTime<Utc>,
 }
-
-#[derive(Debug)]
-pub enum ListZsVoicesError {
-  NotAuthorized,
-  ServerError,
-}
-
-impl std::fmt::Display for ListZsVoicesError {
-  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-    write!(f, "{:?}", self)
-  }
-}
-
-impl ResponseError for ListZsVoicesError {
-  fn status_code(&self) -> StatusCode {
-    match *self {
-      ListZsVoicesError::NotAuthorized => StatusCode::UNAUTHORIZED,
-      ListZsVoicesError::ServerError => StatusCode::INTERNAL_SERVER_ERROR,
-    }
-  }
-}
-
 pub async fn list_available_voices_handler(
     http_request: HttpRequest,
     query: web::Query<ListZsVoicesQuery>,
     server_state: web::Data<Arc<ServerState>>
-) -> Result<HttpResponse, ListZsVoicesError> {
+) -> Result<HttpResponse, CommonWebError> {
 
       let maybe_user_session = server_state.session_checker.maybe_get_user_session(
           &http_request,
           &server_state.mysql_pool
       ).await.map_err(|e| {
         warn!("Session checker error: {:?}", e);
-        ListZsVoicesError::ServerError
+        CommonWebError::from_error(e)
       })?;
 
       let mut is_mod = false;
@@ -87,7 +66,7 @@ pub async fn list_available_voices_handler(
           }
           None => {
             info!("not logged in");
-            return Err(ListZsVoicesError::NotAuthorized);
+            return Err(CommonWebError::NotAuthorized);
           }
       };
 
@@ -101,7 +80,7 @@ pub async fn list_available_voices_handler(
         let cursor = server_state.sort_key_crypto.decrypt_id(cursor)
             .map_err(|e| {
               warn!("crypto error: {:?}", e);
-              ListZsVoicesError::ServerError
+              CommonWebError::from_anyhow_error(e)
             })?;
         Some(cursor)
       } else {
@@ -130,7 +109,7 @@ pub async fn list_available_voices_handler(
         Ok(results) => results,
         Err(e) => {
             warn!("Query error: {:?}", e);
-            return Err(ListZsVoicesError::ServerError);
+            return Err(CommonWebError::from_anyhow_error(e));
         }
     };
 
@@ -138,7 +117,7 @@ pub async fn list_available_voices_handler(
         let cursor = server_state.sort_key_crypto.encrypt_id(id as u64)
             .map_err(|e| {
                 warn!("crypto error: {:?}", e);
-                ListZsVoicesError::ServerError
+                CommonWebError::from_anyhow_error(e)
             })?;
         Some(cursor)
     } else {
@@ -149,7 +128,7 @@ pub async fn list_available_voices_handler(
         let cursor = server_state.sort_key_crypto.encrypt_id(id as u64)
             .map_err(|e| {
                 warn!("crypto error: {:?}", e);
-                ListZsVoicesError::ServerError
+                CommonWebError::from_anyhow_error(e)
             })?;
         Some(cursor)
     } else {
@@ -180,7 +159,7 @@ pub async fn list_available_voices_handler(
     };
 
     let body = serde_json::to_string(&response)
-        .map_err(|e| ListZsVoicesError::ServerError)?;
+        .map_err(CommonWebError::from_error)?;
 
     Ok(HttpResponse::Ok()
         .content_type("application/json")

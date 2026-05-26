@@ -9,6 +9,7 @@ use chrono::{DateTime, Utc};
 use log::warn;
 
 use crate::http_server::common_responses::user_details_lite::UserDetailsLight;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 use enums::common::visibility::Visibility;
 use mysql_queries::queries::voice_designer::voices::get_voice::get_voice_by_token;
 use tokens::tokens::zs_voices::ZsVoiceToken;
@@ -37,35 +38,11 @@ pub struct GetVoiceResponse {
 pub struct GetVoicePathInfo {
     voice_token: String,
 }
-
-#[derive(Debug)]
-pub enum GetVoiceError {
-    NotAuthorized,
-    NotFound,
-    ServerError,
-}
-
-impl fmt::Display for GetVoiceError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{:?}", self)
-    }
-}
-
-impl ResponseError for GetVoiceError {
-    fn status_code(&self) -> StatusCode {
-        match *self {
-            GetVoiceError::NotAuthorized => StatusCode::UNAUTHORIZED,
-            GetVoiceError::ServerError => StatusCode::INTERNAL_SERVER_ERROR,
-            GetVoiceError::NotFound => StatusCode::NOT_FOUND,
-        }
-    }
-}
-
 pub async fn get_voice_handler(
     http_request: HttpRequest,
     path: Path<GetVoicePathInfo>,
     server_state: web::Data<Arc<ServerState>>
-) -> Result<HttpResponse, GetVoiceError> {
+) -> Result<HttpResponse, CommonWebError> {
 
     let maybe_user_session = server_state
         .session_checker
@@ -73,14 +50,14 @@ pub async fn get_voice_handler(
         .await
         .map_err(|e| {
             warn!("Session checker error: {:?}", e);
-            GetVoiceError::ServerError
+            CommonWebError::from_error(e)
         })?;
 
     let user_session = match maybe_user_session {
         Some(session) => session,
         None => {
             warn!("not logged in");
-            return Err(GetVoiceError::NotAuthorized);
+            return Err(CommonWebError::NotAuthorized);
         }
     };
 
@@ -98,11 +75,11 @@ pub async fn get_voice_handler(
         Ok(Some(voice)) => voice,
         Ok(None) => {
             warn!("Voice not found: {:?}", voice_token);
-            return Err(GetVoiceError::NotFound);
+            return Err(CommonWebError::NotFound);
         },
         Err(err) => {
             warn!("Error looking up voice: {:?}", err);
-            return Err(GetVoiceError::ServerError);
+            return Err(CommonWebError::from_anyhow_error(err));
         }
     };
 
@@ -112,7 +89,7 @@ pub async fn get_voice_handler(
 
     if !is_creator && !is_mod {
         warn!("user is not allowed to view this voice: {:?}", user_session.user_token);
-        return Err(GetVoiceError::NotAuthorized);
+        return Err(CommonWebError::NotAuthorized);
     }
 
     let response = GetVoiceResponse {
@@ -133,7 +110,7 @@ pub async fn get_voice_handler(
     };
 
     let body = serde_json::to_string(&response)
-        .map_err(|e| GetVoiceError::ServerError)?;
+        .map_err(CommonWebError::from_error)?;
 
     Ok(HttpResponse::Ok()
         .content_type("application/json")

@@ -9,6 +9,7 @@ use log::warn;
 use utoipa::ToSchema;
 
 use crate::http_server::common_requests::media_file_token_path_info::MediaFileTokenPathInfo;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 use artcraft_api_defs::common::responses::simple_generic_json_success::SimpleGenericJsonSuccess;
 use crate::http_server::web_utils::response_success_helpers::simple_json_success;
 use crate::state::server_state::ServerState;
@@ -24,37 +25,7 @@ pub struct RenameMediaFileRequest {
 }
 
 // =============== Error Response ===============
-
-#[derive(Debug, Serialize, ToSchema)]
-pub enum RenameMediaFileError {
-  BadInput(String),
-  NotFound,
-  NotAuthorized,
-  ServerError,
-}
-
-impl ResponseError for RenameMediaFileError {
-  fn status_code(&self) -> StatusCode {
-    match *self {
-      RenameMediaFileError::BadInput(_) => StatusCode::BAD_REQUEST,
-      RenameMediaFileError::NotFound => StatusCode::NOT_FOUND,
-      RenameMediaFileError::NotAuthorized => StatusCode::UNAUTHORIZED,
-      RenameMediaFileError::ServerError => StatusCode::INTERNAL_SERVER_ERROR,
-    }
-  }
-
-  fn error_response(&self) -> HttpResponse {
-    serialize_as_json_error(self)
-  }
-}
-
 // NB: Not using derive_more::Display since Clion doesn't understand it.
-impl fmt::Display for RenameMediaFileError {
-  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-    write!(f, "{:?}", self)
-  }
-}
-
 // =============== Handler ===============
 
 /// Change (or remove) the "title" of a media file.
@@ -64,9 +35,9 @@ impl fmt::Display for RenameMediaFileError {
   path = "/v1/media_files/rename/{token}",
   responses(
     (status = 200, description = "Success", body = SimpleGenericJsonSuccess),
-    (status = 400, description = "Bad input", body = RenameMediaFileError),
-    (status = 401, description = "Not authorized", body = RenameMediaFileError),
-    (status = 500, description = "Server error", body = RenameMediaFileError),
+    (status = 400, description = "Bad input", body = CommonWebError),
+    (status = 401, description = "Not authorized", body = CommonWebError),
+    (status = 500, description = "Server error", body = CommonWebError),
   ),
   params(
     ("request" = RenameMediaFileRequest, description = "Payload for Request"),
@@ -78,21 +49,21 @@ pub async fn rename_media_file_handler(
   path: Path<MediaFileTokenPathInfo>,
   request: web::Json<RenameMediaFileRequest>,
   server_state: web::Data<Arc<ServerState>>
-) -> Result<HttpResponse, RenameMediaFileError>{
+) -> Result<HttpResponse, CommonWebError>{
   let maybe_user_session = server_state
       .session_checker
       .maybe_get_user_session(&http_request, &server_state.mysql_pool)
       .await
       .map_err(|e| {
         warn!("Session checker error: {:?}", e);
-        RenameMediaFileError::ServerError
+        CommonWebError::from_error(e)
       })?;
 
   let user_session = match maybe_user_session {
     Some(session) => session,
     None => {
       warn!("not logged in");
-      return Err(RenameMediaFileError::NotAuthorized);
+      return Err(CommonWebError::NotAuthorized);
     }
   };
 
@@ -108,11 +79,11 @@ pub async fn rename_media_file_handler(
     Ok(Some(media_file)) => media_file,
     Ok(None) => {
       warn!("MediaFile not found: {:?}", path.token);
-      return Err(RenameMediaFileError::NotFound);
+      return Err(CommonWebError::NotFound);
     },
     Err(err) => {
       warn!("Error looking up media_file: {:?}", err);
-      return Err(RenameMediaFileError::ServerError);
+      return Err(CommonWebError::from_anyhow_error(err));
     }
   };
 
@@ -121,7 +92,7 @@ pub async fn rename_media_file_handler(
 
   if !is_creator && !is_mod {
     warn!("user is not allowed to delete this media_file: {:?}", user_session.user_token);
-    return Err(RenameMediaFileError::NotAuthorized);
+    return Err(CommonWebError::NotAuthorized);
   }
 
   rename_media_file(
@@ -130,7 +101,7 @@ pub async fn rename_media_file_handler(
     &server_state.mysql_pool
   ).await.map_err(|err| {
     warn!("Error renaming media_file: {:?}", err);
-    RenameMediaFileError::ServerError
+    CommonWebError::from_anyhow_error(err)
   })?;
 
   Ok(simple_json_success())

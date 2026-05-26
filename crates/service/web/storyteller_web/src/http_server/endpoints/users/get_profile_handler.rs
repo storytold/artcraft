@@ -4,10 +4,7 @@
 #![forbid(unused_variables)]
 
 use std::collections::BTreeSet;
-use std::fmt;
 
-use actix_web::error::ResponseError;
-use actix_web::http::StatusCode;
 use actix_web::web::Path;
 use actix_web::{web, HttpRequest, HttpResponse};
 use chrono::{DateTime, Utc};
@@ -20,7 +17,6 @@ use utoipa::ToSchema;
 use enums::by_table::users::user_feature_flag::UserFeatureFlag;
 use enums::common::visibility::Visibility;
 use http_server_common::request::get_request_header_optional::get_request_header_optional;
-use http_server_common::response::serialize_as_json_error::serialize_as_json_error;
 use http_server_common::util::timer::MultiBenchmarkingTimer;
 use mysql_queries::queries::users::user_badges::list_user_badges::list_user_badges;
 use mysql_queries::queries::users::user_badges::list_user_badges::UserBadgeForList;
@@ -28,6 +24,7 @@ use mysql_queries::queries::users::user_profiles::get_user_profile_by_username::
 use tokens::tokens::users::UserToken;
 
 use crate::http_server::common_responses::user_avatars::default_avatar_color_from_username::default_avatar_color_from_username;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::common_responses::user_avatars::default_avatar_from_username::default_avatar_from_username;
 use crate::http_server::common_responses::user_details_lite::UserDetailsLight;
 use crate::http_server::session::lookup::user_session_feature_flags::UserSessionFeatureFlags;
@@ -89,47 +86,20 @@ pub struct ProfileSuccessResponse {
   pub success: bool,
   pub user: Option<UserProfileRecordForResponse>,
 }
-
-#[derive(Debug, Serialize, ToSchema)]
-pub enum ProfileError {
-  ServerError,
-  NotFound,
-}
-
 /// For the URL PathInfo
 #[derive(Deserialize, ToSchema)]
 pub struct GetProfilePathInfo {
   username: String,
 }
-
-impl ResponseError for ProfileError {
-  fn status_code(&self) -> StatusCode {
-    match *self {
-      ProfileError::ServerError=> StatusCode::INTERNAL_SERVER_ERROR,
-      ProfileError::NotFound => StatusCode::NOT_FOUND,
-    }
-  }
-
-  fn error_response(&self) -> HttpResponse {
-    serialize_as_json_error(self)
-  }
-}
-
 // NB: Not using derive_more::Display since Clion doesn't understand it.
-impl fmt::Display for ProfileError {
-  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-    write!(f, "{:?}", self)
-  }
-}
-
 #[utoipa::path(
   get,
   tag = "Users",
   path = "/v1/user/{username}/profile",
   responses(
     (status = 200, description = "Get profile", body = UserProfileRecordForResponse),
-    (status = 404, description = "Not found", body = ProfileError),
-    (status = 500, description = "Server error", body = ProfileError),
+    (status = 404, description = "Not found", body = CommonWebError),
+    (status = 500, description = "Server error", body = CommonWebError),
   ),
   params(
     ("path" = GetProfilePathInfo, description = "Path for Request")
@@ -141,7 +111,7 @@ pub async fn get_profile_handler(
   mysql_pool: web::Data<MySqlPool>,
   redis_pool: web::Data<r2d2::Pool<Client>>,
   session_checker: web::Data<SessionChecker>,
-) -> Result<HttpResponse, ProfileError>
+) -> Result<HttpResponse, CommonWebError>
 {
   let mut benchmark = MultiBenchmarkingTimer::new_started();
 
@@ -149,7 +119,7 @@ pub async fn get_profile_handler(
       .await
       .map_err(|e| {
         warn!("Could not acquire DB pool: {:?}", e);
-        ProfileError::ServerError
+        CommonWebError::from_error(e)
       })?;
 
   let (pool_connection, maybe_user_session_fut) =
@@ -159,7 +129,7 @@ pub async fn get_profile_handler(
             .await
             .map_err(|e| {
               warn!("Session checker error: {:?}", e);
-              ProfileError::ServerError
+              CommonWebError::from_error(e)
             });
         (pc, ret)
         }
@@ -198,10 +168,10 @@ pub async fn get_profile_handler(
 
     let user_profile = match maybe_user_profile {
       Ok(Some(user_profile)) => user_profile,
-      Ok(None) => return Err(ProfileError::NotFound),
+      Ok(None) => return Err(CommonWebError::NotFound),
       Err(err) => {
         error!("User profile query error: {:?}", err);
-        return Err(ProfileError::ServerError);
+        return Err(CommonWebError::from_anyhow_error(err));
       }
     };
 
@@ -227,7 +197,7 @@ pub async fn get_profile_handler(
   }
 
   let user_data = match maybe_user_data {
-    None => return Err(ProfileError::NotFound),
+    None => return Err(CommonWebError::NotFound),
     Some(user_data) => user_data,
   };
 
@@ -238,7 +208,7 @@ pub async fn get_profile_handler(
 
   if is_banned && !is_mod {
     // Can't see banned users.
-    return Err(ProfileError::NotFound);
+    return Err(CommonWebError::NotFound);
   }
 
   if store_in_cache {
@@ -312,7 +282,7 @@ pub async fn get_profile_handler(
   };
 
   let body = serde_json::to_string(&response)
-    .map_err(|_e| ProfileError::ServerError)?;
+    .map_err(CommonWebError::from_error)?;
 
   let mut http_response = HttpResponse::Ok();
 

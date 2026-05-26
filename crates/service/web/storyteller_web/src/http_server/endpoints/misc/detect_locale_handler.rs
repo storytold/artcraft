@@ -7,6 +7,7 @@ use actix_web::web::Json;
 use actix_web::{web, HttpRequest, HttpResponse};
 
 use crate::http_server::endpoints::app_state::components::get_user_locale::get_user_locale;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::state::server_state::ServerState;
 use http_server_common::response::serialize_as_json_error::serialize_as_json_error;
 
@@ -22,37 +23,13 @@ pub struct DetectLocaleResponse {
 }
 
 // =============== Error Response ===============
-
-#[derive(Debug, Serialize)]
-pub enum DetectLocaleError {
-  ServerError,
-}
-
-impl ResponseError for DetectLocaleError {
-  fn status_code(&self) -> StatusCode {
-    match *self {
-      DetectLocaleError::ServerError => StatusCode::INTERNAL_SERVER_ERROR,
-    }
-  }
-
-  fn error_response(&self) -> HttpResponse {
-    serialize_as_json_error(self)
-  }
-}
-
 // NB: Not using derive_more::Display since Clion doesn't understand it.
-impl fmt::Display for DetectLocaleError {
-  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-    write!(f, "{:?}", self)
-  }
-}
-
 // =============== Handler ===============
 
 pub async fn detect_locale_handler(
   http_request: HttpRequest,
   server_state: web::Data<Arc<ServerState>>
-) -> Result<Json<DetectLocaleResponse>, DetectLocaleError> {
+) -> Result<Json<DetectLocaleResponse>, CommonWebError> {
   let locale = get_user_locale(&http_request);
 
   Ok(Json(DetectLocaleResponse {

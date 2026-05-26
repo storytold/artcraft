@@ -9,6 +9,7 @@ use http_server_common::response::serialize_as_json_error::serialize_as_json_err
 use mysql_queries::queries::unsubscribe_reason::insert_unsubscribe_reason::UnsubscribeReasonInsertBuilder;
 
 use crate::state::server_state::ServerState;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 
 // =============== Request ===============
 
@@ -26,44 +27,18 @@ pub struct SetUnsubscribeReasonResponse {
 }
 
 // =============== Error Response ===============
-
-#[derive(Debug, Serialize)]
-pub enum SetUnsubscribeReasonError {
-  NotAuthorized,
-  ServerError,
-}
-
-impl ResponseError for SetUnsubscribeReasonError {
-  fn status_code(&self) -> StatusCode {
-    match *self {
-      SetUnsubscribeReasonError::NotAuthorized => StatusCode::UNAUTHORIZED,
-      SetUnsubscribeReasonError::ServerError => StatusCode::INTERNAL_SERVER_ERROR,
-    }
-  }
-
-  fn error_response(&self) -> HttpResponse {
-    serialize_as_json_error(self)
-  }
-}
-
-impl std::fmt::Display for SetUnsubscribeReasonError {
-  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-    write!(f, "{:?}", self)
-  }
-}
-
 // =============== Handler ===============
 
 pub async fn set_unsubscribe_reason_handler(
   http_request: HttpRequest,
   request: web::Json<SetUnsubscribeReasonRequest>,
-  server_state: web::Data<Arc<ServerState>>) -> Result<HttpResponse, SetUnsubscribeReasonError>
+  server_state: web::Data<Arc<ServerState>>) -> Result<HttpResponse, CommonWebError>
 {
   let mut mysql_connection = server_state.mysql_pool.acquire()
       .await
       .map_err(|e| {
         error!("Could not acquire DB pool: {:?}", e);
-        SetUnsubscribeReasonError::ServerError
+        CommonWebError::from_error(e)
       })?;
 
   let maybe_user_session = server_state
@@ -72,14 +47,14 @@ pub async fn set_unsubscribe_reason_handler(
       .await
       .map_err(|e| {
         error!("Session checker error: {:?}", e);
-        SetUnsubscribeReasonError::ServerError
+        CommonWebError::from_error(e)
       })?;
 
   let user_session = match maybe_user_session {
     Some(session) => session,
     None => {
       info!("not logged in");
-      return Err(SetUnsubscribeReasonError::NotAuthorized);
+      return Err(CommonWebError::NotAuthorized);
     }
   };
 
@@ -91,7 +66,7 @@ pub async fn set_unsubscribe_reason_handler(
     .set_unsubscribe_reason(&request.reason)
     .insert(&mut mysql_connection)
     .await
-    .map_err(|_e| SetUnsubscribeReasonError::ServerError)?;
+    .map_err(CommonWebError::from_anyhow_error)?;
 
 
   let response = SetUnsubscribeReasonResponse {
@@ -99,7 +74,7 @@ pub async fn set_unsubscribe_reason_handler(
   };
 
   let body = serde_json::to_string(&response)
-      .map_err(|_e| SetUnsubscribeReasonError::ServerError)?;
+      .map_err(|_e| CommonWebError::from_error(_e))?;
 
   Ok(HttpResponse::Ok()
       .content_type("application/json")

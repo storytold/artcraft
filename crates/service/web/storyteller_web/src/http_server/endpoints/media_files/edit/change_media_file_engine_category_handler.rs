@@ -14,6 +14,7 @@ use mysql_queries::queries::media_files::edit::update_media_file_engine_category
 use mysql_queries::queries::media_files::get::get_media_file::get_media_file;
 
 use crate::http_server::common_requests::media_file_token_path_info::MediaFileTokenPathInfo;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::common_responses::simple_response::SimpleResponse;
 use crate::http_server::web_utils::user_session::require_user_session::require_user_session;
 use crate::state::server_state::ServerState;
@@ -24,37 +25,7 @@ pub struct ChangeMediaFileEngineCategoryRequest {
 }
 
 // =============== Error Response ===============
-
-#[derive(Debug, Serialize, ToSchema)]
-pub enum ChangeMediaFileEngineCategoryError {
-    BadInput(String),
-    NotFound,
-    NotAuthorized,
-    ServerError,
-}
-
-impl ResponseError for ChangeMediaFileEngineCategoryError {
-    fn status_code(&self) -> StatusCode {
-        match *self {
-            ChangeMediaFileEngineCategoryError::BadInput(_) => StatusCode::BAD_REQUEST,
-            ChangeMediaFileEngineCategoryError::NotFound => StatusCode::NOT_FOUND,
-            ChangeMediaFileEngineCategoryError::NotAuthorized => StatusCode::UNAUTHORIZED,
-            ChangeMediaFileEngineCategoryError::ServerError => StatusCode::INTERNAL_SERVER_ERROR,
-        }
-    }
-
-    fn error_response(&self) -> HttpResponse {
-        serialize_as_json_error(self)
-    }
-}
-
 // NB: Not using derive_more::Display since Clion doesn't understand it.
-impl fmt::Display for ChangeMediaFileEngineCategoryError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{:?}", self)
-    }
-}
-
 // =============== Handler ===============
 
 /// Change the engine category of a media file.
@@ -66,9 +37,9 @@ impl fmt::Display for ChangeMediaFileEngineCategoryError {
     path = "/v1/media_files/engine_category/{token}",
     responses(
         (status = 200, description = "Success", body = SimpleResponse),
-        (status = 400, description = "Bad input", body = ChangeMediaFileEngineCategoryError),
-        (status = 401, description = "Not authorized", body = ChangeMediaFileEngineCategoryError),
-        (status = 500, description = "Server error", body = ChangeMediaFileEngineCategoryError),
+        (status = 400, description = "Bad input", body = CommonWebError),
+        (status = 401, description = "Not authorized", body = CommonWebError),
+        (status = 500, description = "Server error", body = CommonWebError),
     ),
     params(
         ("request" = ChangeMediaFileEngineCategoryRequest, description = "Payload for Request"),
@@ -80,13 +51,13 @@ pub async fn change_media_file_engine_category_handler(
     path: Path<MediaFileTokenPathInfo>,
     request: Json<ChangeMediaFileEngineCategoryRequest>,
     server_state: web::Data<Arc<ServerState>>
-) -> Result<Json<SimpleResponse>, ChangeMediaFileEngineCategoryError> {
+) -> Result<Json<SimpleResponse>, CommonWebError> {
 
     let user_session = require_user_session(&http_request, &server_state)
         .await
         .map_err(|e| {
             warn!("Not authorized: {:?}", e);
-            ChangeMediaFileEngineCategoryError::NotAuthorized
+            CommonWebError::NotAuthorized
         })?;
 
     let media_file_token = path.token.clone();
@@ -102,28 +73,28 @@ pub async fn change_media_file_engine_category_handler(
         Ok(Some(media_file)) => media_file,
         Ok(None) => {
             warn!("MediaFile not found: {:?}", media_file_token);
-            return Err(ChangeMediaFileEngineCategoryError::NotFound);
+            return Err(CommonWebError::NotFound);
         },
         Err(err) => {
             warn!("Error looking up media_file: {:?}", err);
-            return Err(ChangeMediaFileEngineCategoryError::ServerError);
+            return Err(CommonWebError::from_anyhow_error(err));
         }
     };
 
     match media_file.maybe_engine_category {
-        None => return Err(ChangeMediaFileEngineCategoryError::BadInput(
+        None => return Err(CommonWebError::BadInputWithSimpleMessage(
             "No engine category on existing object".to_string())),
 
         Some(existing_category) => {
             if !is_valid_transition(existing_category) {
-                return Err(ChangeMediaFileEngineCategoryError::BadInput(
+                return Err(CommonWebError::BadInputWithSimpleMessage(
                     format!("Invalid engine category on existing object: {:?}", existing_category)));
             }
         }
     }
 
     if !is_valid_transition(request.engine_category) {
-        return Err(ChangeMediaFileEngineCategoryError::BadInput(
+        return Err(CommonWebError::BadInputWithSimpleMessage(
             format!("Invalid engine category: {:?}", request.engine_category)));
     }
 
@@ -132,7 +103,7 @@ pub async fn change_media_file_engine_category_handler(
 
     if !is_creator && !is_mod {
         warn!("user is not allowed to edit this media_file: {:?}", user_session.user_token);
-        return Err(ChangeMediaFileEngineCategoryError::NotAuthorized);
+        return Err(CommonWebError::NotAuthorized);
     }
 
     let query_result = update_media_file_engine_category(
@@ -145,7 +116,7 @@ pub async fn change_media_file_engine_category_handler(
         Ok(_) => {},
         Err(err) => {
             warn!("Update MediaFile DB error: {:?}", err);
-            return Err(ChangeMediaFileEngineCategoryError::ServerError);
+            return Err(CommonWebError::from_anyhow_error(err));
         }
     };
 

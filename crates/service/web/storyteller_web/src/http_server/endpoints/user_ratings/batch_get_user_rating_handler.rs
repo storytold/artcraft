@@ -16,6 +16,7 @@ use tokens::tokens::model_weights::ModelWeightToken;
 use tokens::tokens::tts_models::TtsModelToken;
 
 use crate::state::server_state::ServerState;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 
 const MAX_BATCH_SIZE : usize = 200;
 
@@ -55,35 +56,7 @@ pub struct RatingRow {
 }
 
 // =============== Error Response ===============
-
-#[derive(Debug, Serialize, ToSchema)]
-pub enum BatchGetUserRatingError {
-  BadInput(String),
-  NotAuthorized,
-  ServerError,
-}
-
-impl ResponseError for BatchGetUserRatingError {
-  fn status_code(&self) -> StatusCode {
-    match *self {
-      BatchGetUserRatingError::BadInput(_) => StatusCode::BAD_REQUEST,
-      BatchGetUserRatingError::NotAuthorized => StatusCode::UNAUTHORIZED,
-      BatchGetUserRatingError::ServerError => StatusCode::INTERNAL_SERVER_ERROR,
-    }
-  }
-
-  fn error_response(&self) -> HttpResponse {
-    serialize_as_json_error(self)
-  }
-}
-
 // NB: Not using DeriveMore since Clion doesn't understand it.
-impl std::fmt::Display for BatchGetUserRatingError {
-  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-    write!(f, "{:?}", self)
-  }
-}
-
 // =============== Handler ===============
 
 
@@ -96,21 +69,21 @@ impl std::fmt::Display for BatchGetUserRatingError {
   ),
   responses(
     (status = 200, description = "List User Bookmarks", body = BatchGetUserRatingResponse),
-    (status = 400, description = "Bad input", body = BatchGetUserRatingError),
-    (status = 401, description = "Not authorized", body = BatchGetUserRatingError),
-    (status = 500, description = "Server error", body = BatchGetUserRatingError),
+    (status = 400, description = "Bad input", body = CommonWebError),
+    (status = 401, description = "Not authorized", body = CommonWebError),
+    (status = 500, description = "Server error", body = CommonWebError),
   ),
 )]
 pub async fn batch_get_user_rating_handler(
   http_request: HttpRequest,
   query: Query<BatchGetUserRatingQueryParams>,
-  server_state: web::Data<Arc<ServerState>>) -> Result<HttpResponse, BatchGetUserRatingError>
+  server_state: web::Data<Arc<ServerState>>) -> Result<HttpResponse, CommonWebError>
 {
   let mut mysql_connection = server_state.mysql_pool.acquire()
       .await
       .map_err(|e| {
         error!("Could not acquire DB pool: {:?}", e);
-        BatchGetUserRatingError::ServerError
+        CommonWebError::from_error(e)
       })?;
 
   let maybe_user_session = server_state
@@ -119,7 +92,7 @@ pub async fn batch_get_user_rating_handler(
       .await
       .map_err(|e| {
         error!("Session checker error: {:?}", e);
-        BatchGetUserRatingError::ServerError
+        CommonWebError::from_error(e)
       })?;
 
   // NB: Force move of tokens from the Query<T>.
@@ -151,7 +124,7 @@ pub async fn batch_get_user_rating_handler(
   ).await
       .map_err(|e| {
         error!("Batch get user ratings DB error: {:?}", e);
-        BatchGetUserRatingError::ServerError
+        CommonWebError::from_anyhow_error(e)
       })
       .map(|ratings| {
         HttpResponse::Ok()

@@ -10,6 +10,7 @@ use sqlx::MySqlPool;
 use utoipa::ToSchema;
 
 use crate::configs::supported_languages_for_models::{get_canonicalized_language_tag_for_model, get_primary_language_subtag};
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::web_utils::user_session::require_user_session::RequireUserSessionError;
 use crate::http_server::web_utils::user_session::require_user_session_extended_using_connection::require_user_session_extended_using_connection;
 use crate::state::server_state::ServerState;
@@ -60,37 +61,7 @@ pub struct UpdateWeightPathInfo {
 }
 
 // =============== Error Response ===============
-
-#[derive(Debug, Serialize, ToSchema)]
-pub enum UpdateWeightError {
-    BadInput(String),
-    NotFound,
-    NotAuthorized,
-    ServerError,
-}
-
-impl ResponseError for UpdateWeightError {
-    fn status_code(&self) -> StatusCode {
-        match *self {
-            UpdateWeightError::BadInput(_) => StatusCode::BAD_REQUEST,
-            UpdateWeightError::NotFound => StatusCode::NOT_FOUND,
-            UpdateWeightError::NotAuthorized => StatusCode::UNAUTHORIZED,
-            UpdateWeightError::ServerError => StatusCode::INTERNAL_SERVER_ERROR,
-        }
-    }
-
-    fn error_response(&self) -> HttpResponse {
-        serialize_as_json_error(self)
-    }
-}
-
 // NB: Not using derive_more::Display since Clion doesn't understand it.
-impl fmt::Display for UpdateWeightError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{:?}", self)
-    }
-}
-
 // =============== Handler ===============
 
 /// Handle updates to model weight metadata (using sparse field updates!)
@@ -100,9 +71,9 @@ impl fmt::Display for UpdateWeightError {
     path = "/v1/weights/weight/{weight_token}",
     responses(
         (status = 200, description = "Success Update", body = SimpleGenericJsonSuccess),
-        (status = 400, description = "Bad input", body = UpdateWeightError),
-        (status = 401, description = "Not authorized", body = UpdateWeightError),
-        (status = 500, description = "Server error", body = UpdateWeightError),
+        (status = 400, description = "Bad input", body = CommonWebError),
+        (status = 401, description = "Not authorized", body = CommonWebError),
+        (status = 500, description = "Server error", body = CommonWebError),
     ),
     params(
         ("request" = UpdateWeightRequest, description = "Payload for Request"),
@@ -115,13 +86,13 @@ pub async fn update_weight_handler(
     request: web::Json<UpdateWeightRequest>,
     mysql_pool: web::Data<MySqlPool>,
     server_state: web::Data<Arc<ServerState>>
-) -> Result<HttpResponse, UpdateWeightError> {
+) -> Result<HttpResponse, CommonWebError> {
     let mut mysql_connection = mysql_pool
         .acquire()
         .await
         .map_err(|err| {
             warn!("could not acquire mysql connection: {:?}", err);
-            UpdateWeightError::ServerError
+            CommonWebError::from_error(err)
         })?;
 
     let user_session = require_user_session_extended_using_connection(
@@ -130,10 +101,10 @@ pub async fn update_weight_handler(
         &mut mysql_connection)
         .await
         .map_err(|err| match err {
-            RequireUserSessionError::NotAuthorized => UpdateWeightError::NotAuthorized,
+            RequireUserSessionError::NotAuthorized => CommonWebError::NotAuthorized,
             _ => {
                 warn!("get user session error: {:?}", err);
-                UpdateWeightError::ServerError
+                CommonWebError::from_error(err)
             },
         })?;
 
@@ -152,11 +123,11 @@ pub async fn update_weight_handler(
         Ok(Some(weight)) => weight,
         Ok(None) => {
             warn!("Weight not found: {:?}", weight_token);
-            return Err(UpdateWeightError::NotFound);
+            return Err(CommonWebError::NotFound);
         }
         Err(err) => {
             warn!("Error looking up weight: {:?}", err);
-            return Err(UpdateWeightError::ServerError);
+            return Err(CommonWebError::from_anyhow_error(err));
         }
     };
 
@@ -166,7 +137,7 @@ pub async fn update_weight_handler(
 
     if !is_creator && !is_mod {
         warn!("user is not allowed to edit this weight: {:?}", user_session.user_token);
-        return Err(UpdateWeightError::NotAuthorized);
+        return Err(CommonWebError::NotAuthorized);
     }
 
     let mut weight_title = None;
@@ -178,7 +149,7 @@ pub async fn update_weight_handler(
 
     if let Some(title) = &request.title {
         if contains_slurs(title) {
-            return Err(UpdateWeightError::BadInput("Title contains slurs".to_string()));
+            return Err(CommonWebError::BadInputWithSimpleMessage("Title contains slurs".to_string()));
         }
         weight_title = Some(title.trim().to_string());
     }
@@ -193,22 +164,22 @@ pub async fn update_weight_handler(
                 &server_state.mysql_pool
             ).await.map_err(|err| {
                 warn!("Error looking up media file: {:?}", err);
-                UpdateWeightError::ServerError
+                CommonWebError::from_anyhow_error(err)
             })?;
 
             let maybe_media_file_type = maybe_media_file.map(|media_file| media_file.media_type);
 
             match maybe_media_file_type {
                 Some(MediaFileType::Image) => cover_image = Some(CoverImageOption::SetCoverImage(media_file_token)),
-                None => return Err(UpdateWeightError::BadInput("Media file does not exist".to_string())),
-                _ => return Err(UpdateWeightError::BadInput("Media file is the wrong type".to_string())),
+                None => return Err(CommonWebError::BadInputWithSimpleMessage("Media file does not exist".to_string())),
+                _ => return Err(CommonWebError::BadInputWithSimpleMessage("Media file is the wrong type".to_string())),
             }
         }
     }
 
     if let Some(markdown) = &request.description_markdown {
         if contains_slurs(markdown) {
-            return Err(UpdateWeightError::BadInput("Description contains slurs".to_string()));
+            return Err(CommonWebError::BadInputWithSimpleMessage("Description contains slurs".to_string()));
         }
         let markdown = markdown.trim().to_string();
         let html = simple_markdown_to_html(&markdown);
@@ -226,7 +197,7 @@ pub async fn update_weight_handler(
             WeightsType::HifiganTacotron2 => {}
             WeightsType::VallE => {}
             _ => {
-                return Err(UpdateWeightError::BadInput("Language tag is not applicable to this model type".to_string()));
+                return Err(CommonWebError::BadInputWithSimpleMessage("Language tag is not applicable to this model type".to_string()));
             }
         }
     }
@@ -256,7 +227,7 @@ pub async fn update_weight_handler(
         Ok(()) => {}
         Err(err) => {
             warn!("Update Weight DB error: {:?}", err);
-            return Err(UpdateWeightError::ServerError);
+            return Err(CommonWebError::from_anyhow_error(err));
         }
     }
 

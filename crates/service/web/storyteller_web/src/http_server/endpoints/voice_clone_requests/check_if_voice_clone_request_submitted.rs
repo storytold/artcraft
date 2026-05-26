@@ -10,6 +10,7 @@ use http_server_common::response::serialize_as_json_error::serialize_as_json_err
 use mysql_queries::queries::voice_clone_requests::get_voice_clone_request::{get_voice_clone_request_by_token, get_voice_clone_request_by_user_token};
 
 use crate::state::server_state::ServerState;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 
 // =============== Request ===============
 
@@ -29,41 +30,13 @@ pub struct CheckIfVoiceRequestSubmittedResponse {
 }
 
 // =============== Error Response ===============
-
-#[derive(Debug, Serialize)]
-pub enum CheckIfVoiceRequestSubmittedError {
-  BadInput(String),
-  NotAuthorized,
-  ServerError,
-}
-
-impl ResponseError for CheckIfVoiceRequestSubmittedError {
-  fn status_code(&self) -> StatusCode {
-    match *self {
-      CheckIfVoiceRequestSubmittedError::BadInput(_) => StatusCode::BAD_REQUEST,
-      CheckIfVoiceRequestSubmittedError::NotAuthorized => StatusCode::UNAUTHORIZED,
-      CheckIfVoiceRequestSubmittedError::ServerError => StatusCode::INTERNAL_SERVER_ERROR,
-    }
-  }
-
-  fn error_response(&self) -> HttpResponse {
-    serialize_as_json_error(self)
-  }
-}
-
 // NB: Not using DeriveMore since Clion doesn't understand it.
-impl fmt::Display for CheckIfVoiceRequestSubmittedError {
-  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-    write!(f, "{:?}", self)
-  }
-}
-
 // =============== Handler ===============
 
 pub async fn check_if_voice_clone_request_submitted_handler(
   http_request: HttpRequest,
   request: web::Json<CheckIfVoiceRequestSubmittedRequest>,
-  server_state: web::Data<Arc<ServerState>>) -> Result<HttpResponse, CheckIfVoiceRequestSubmittedError>
+  server_state: web::Data<Arc<ServerState>>) -> Result<HttpResponse, CommonWebError>
 {
   let maybe_user_session = server_state
       .session_checker
@@ -71,7 +44,7 @@ pub async fn check_if_voice_clone_request_submitted_handler(
       .await
       .map_err(|e| {
         warn!("Session checker error: {:?}", e);
-        CheckIfVoiceRequestSubmittedError::ServerError
+        CommonWebError::from_error(e)
       })?;
 
   let mut submitted_by_token = false;
@@ -84,7 +57,7 @@ pub async fn check_if_voice_clone_request_submitted_handler(
         .await
         .map_err(|e| {
           warn!("Database error: {:?}", e);
-          CheckIfVoiceRequestSubmittedError::ServerError
+          CommonWebError::from_anyhow_error(e)
         })?;
 
     submitted_by_token = request.is_some();
@@ -97,7 +70,7 @@ pub async fn check_if_voice_clone_request_submitted_handler(
         .await
         .map_err(|e| {
           warn!("Database error: {:?}", e);
-          CheckIfVoiceRequestSubmittedError::ServerError
+          CommonWebError::from_anyhow_error(e)
         })?;
 
     submitted_by_user = request.is_some();
@@ -111,7 +84,7 @@ pub async fn check_if_voice_clone_request_submitted_handler(
   };
 
   let body = serde_json::to_string(&response)
-      .map_err(|e| CheckIfVoiceRequestSubmittedError::ServerError)?;
+      .map_err(CommonWebError::from_error)?;
 
   Ok(HttpResponse::Ok()
       .content_type("application/json")

@@ -9,6 +9,7 @@ use log::{error, warn};
 use mysql_queries::queries::ip_bans::list_ip_bans::list_ip_bans;
 
 use crate::http_server::web_utils::response_error_helpers::to_simple_json_error;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::state::server_state::ServerState;
 
 #[derive(Serialize)]
@@ -29,45 +30,11 @@ pub struct IpBanRecordForList {
   pub created_at: DateTime<Utc>,
   pub updated_at: DateTime<Utc>,
 }
-
-#[derive(Debug)]
-pub enum ListIpBansError {
-  BadInput(String),
-  ServerError,
-  Unauthorized,
-}
-
-impl ResponseError for ListIpBansError {
-  fn status_code(&self) -> StatusCode {
-    match *self {
-      ListIpBansError::BadInput(_) => StatusCode::BAD_REQUEST,
-      ListIpBansError::ServerError => StatusCode::INTERNAL_SERVER_ERROR,
-      ListIpBansError::Unauthorized => StatusCode::UNAUTHORIZED,
-    }
-  }
-
-  fn error_response(&self) -> HttpResponse {
-    let error_reason = match self {
-      ListIpBansError::BadInput(reason) => reason.to_string(),
-      ListIpBansError::ServerError => "server error".to_string(),
-      ListIpBansError::Unauthorized => "unauthorized".to_string(),
-    };
-
-    to_simple_json_error(&error_reason, self.status_code())
-  }
-}
-
 // NB: Not using derive_more::Display since Clion doesn't understand it.
-impl std::fmt::Display for ListIpBansError {
-  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-    write!(f, "{:?}", self)
-  }
-}
-
 pub async fn list_ip_bans_handler(
   http_request: HttpRequest,
   server_state: web::Data<Arc<ServerState>>
-) -> Result<HttpResponse, ListIpBansError> {
+) -> Result<HttpResponse, CommonWebError> {
 
   let maybe_user_session = server_state
       .session_checker
@@ -75,27 +42,27 @@ pub async fn list_ip_bans_handler(
       .await
       .map_err(|e| {
         warn!("Session checker error: {:?}", e);
-        ListIpBansError::ServerError
+        CommonWebError::from_error(e)
       })?;
 
   let user_session = match maybe_user_session {
     Some(session) => session,
     None => {
       warn!("not logged in");
-      return Err(ListIpBansError::Unauthorized);
+      return Err(CommonWebError::NotAuthorized);
     }
   };
 
   if !user_session.can_ban_users {
     warn!("user is not allowed to see bans: {:?}", user_session.user_token);
-    return Err(ListIpBansError::Unauthorized);
+    return Err(CommonWebError::NotAuthorized);
   }
 
   let results = list_ip_bans(&server_state.mysql_pool)
       .await
       .map_err(|err| {
         error!("list ip bans db error: {:?}", err);
-        ListIpBansError::ServerError
+        CommonWebError::from_anyhow_error(err)
       })?
       .into_iter()
       .map(|ban| {
@@ -119,7 +86,7 @@ pub async fn list_ip_bans_handler(
   };
 
   let body = serde_json::to_string(&response)
-      .map_err(|e| ListIpBansError::ServerError)?;
+      .map_err(CommonWebError::from_error)?;
 
   Ok(HttpResponse::Ok()
       .content_type("application/json")

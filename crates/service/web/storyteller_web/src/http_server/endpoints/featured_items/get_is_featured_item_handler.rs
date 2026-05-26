@@ -17,6 +17,7 @@ use tokens::tokens::users::UserToken;
 use tokens::tokens::w2l_templates::W2lTemplateToken;
 
 use crate::http_server::web_utils::response_error_helpers::to_simple_json_error;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::state::server_state::ServerState;
 
 #[derive(Deserialize, ToSchema)]
@@ -30,41 +31,7 @@ pub struct GetIsFeaturedItemSuccessResponse {
   pub success: bool,
   pub is_featured: bool,
 }
-
-#[derive(Debug, ToSchema)]
-pub enum GetIsFeaturedItemError {
-  BadInput(String),
-  NotAuthorized,
-  ServerError,
-}
-
-impl ResponseError for GetIsFeaturedItemError {
-  fn status_code(&self) -> StatusCode {
-    match *self {
-      GetIsFeaturedItemError::BadInput(_) => StatusCode::BAD_REQUEST,
-      GetIsFeaturedItemError::NotAuthorized => StatusCode::UNAUTHORIZED,
-      GetIsFeaturedItemError::ServerError => StatusCode::INTERNAL_SERVER_ERROR,
-    }
-  }
-
-  fn error_response(&self) -> HttpResponse {
-    let error_reason = match self {
-      GetIsFeaturedItemError::BadInput(reason) => reason.to_string(),
-      GetIsFeaturedItemError::NotAuthorized => "unauthorized".to_string(),
-      GetIsFeaturedItemError::ServerError => "server error".to_string(),
-    };
-
-    to_simple_json_error(&error_reason, self.status_code())
-  }
-}
-
 // NB: Not using derive_more::Display since Clion doesn't understand it.
-impl fmt::Display for GetIsFeaturedItemError {
-  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-    write!(f, "{:?}", self)
-  }
-}
-
 /// Determine if an item is featured
 #[utoipa::path(
   get,
@@ -73,14 +40,14 @@ impl fmt::Display for GetIsFeaturedItemError {
   request_body = GetIsFeaturedItemPathInfo,
   responses(
     (status = 200, body = GetIsFeaturedItemSuccessResponse),
-    (status = 400, body = GetIsFeaturedItemError),
+    (status = 400, body = CommonWebError),
   )
 )]
 pub async fn get_is_featured_item_handler(
   http_request: HttpRequest,
   path: Path<GetIsFeaturedItemPathInfo>,
   server_state: web::Data<Arc<ServerState>>,
-) -> Result<Json<GetIsFeaturedItemSuccessResponse>, GetIsFeaturedItemError>
+) -> Result<Json<GetIsFeaturedItemSuccessResponse>, CommonWebError>
 {
   // NB(bt,2023-12-14): Kasisnu found that we're getting entity type mismatches in production. Apart from
   // querying the database for entity existence, this is the next best way to prevent incorrect comment
@@ -95,7 +62,7 @@ pub async fn get_is_featured_item_handler(
 
   if !token_prefix_matches {
     warn!("invalid token prefix: {:?} for {:?}", path.entity_token, path.entity_type);
-    return Err(GetIsFeaturedItemError::BadInput("invalid token prefix".to_string()));
+    return Err(CommonWebError::BadInputWithSimpleMessage("invalid token prefix".to_string()));
   }
 
   let entity = FeaturedItemEntity::from_entity_type_and_token(path.entity_type, &path.entity_token);
@@ -104,7 +71,7 @@ pub async fn get_is_featured_item_handler(
       .await
       .map_err(|err| {
         warn!("MySql error: {:?}", err);
-        GetIsFeaturedItemError::ServerError
+        CommonWebError::from_anyhow_error(err)
       })?;
 
   Ok(Json(GetIsFeaturedItemSuccessResponse {

@@ -16,6 +16,7 @@ use mysql_queries::queries::voice_designer::datasets::update_dataset::{update_da
 use tokens::tokens::zs_voice_datasets::ZsVoiceDatasetToken;
 
 use crate::configs::supported_languages_for_models::get_canonicalized_language_tag_for_model;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::state::server_state::ServerState;
 
 #[derive(Deserialize)]
@@ -41,44 +42,14 @@ pub struct UpdateDatasetPathInfo {
 }
 
 // =============== Error Response ===============
-
-#[derive(Debug, Serialize)]
-pub enum UpdateDatasetError {
-  BadInput(String),
-  NotFound,
-  NotAuthorized,
-  ServerError,
-}
-
-impl ResponseError for UpdateDatasetError {
-  fn status_code(&self) -> StatusCode {
-    match *self {
-      UpdateDatasetError::BadInput(_) => StatusCode::BAD_REQUEST,
-      UpdateDatasetError::NotFound => StatusCode::NOT_FOUND,
-      UpdateDatasetError::NotAuthorized => StatusCode::UNAUTHORIZED,
-      UpdateDatasetError::ServerError => StatusCode::INTERNAL_SERVER_ERROR,
-    }
-  }
-
-  fn error_response(&self) -> HttpResponse {
-    serialize_as_json_error(self)
-  }
-}
-
 // NB: Not using derive_more::Display since Clion doesn't understand it.
-impl fmt::Display for UpdateDatasetError {
-  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-    write!(f, "{:?}", self)
-  }
-}
-
 // =============== Handler ===============
 
 pub async fn update_dataset_handler(
   http_request: HttpRequest,
   path: Path<UpdateDatasetPathInfo>,
   request: web::Json<UpdateDatasetRequest>,
-  server_state: web::Data<Arc<ServerState>>) -> Result<HttpResponse, UpdateDatasetError>
+  server_state: web::Data<Arc<ServerState>>) -> Result<HttpResponse, CommonWebError>
 {
   let maybe_user_session = server_state
       .session_checker
@@ -86,14 +57,14 @@ pub async fn update_dataset_handler(
       .await
       .map_err(|e| {
         warn!("Session checker error: {:?}", e);
-        UpdateDatasetError::ServerError
+        CommonWebError::from_error(e)
       })?;
 
   let user_session = match maybe_user_session {
     Some(session) => session,
     None => {
       warn!("not logged in");
-      return Err(UpdateDatasetError::NotAuthorized);
+      return Err(CommonWebError::NotAuthorized);
     }
   };
 
@@ -110,11 +81,11 @@ pub async fn update_dataset_handler(
       Ok(Some(dataset)) => dataset,
       Ok(None) => {
         warn!("Dataset not found: {:?}", dataset_token);
-        return Err(UpdateDatasetError::NotFound);
+        return Err(CommonWebError::NotFound);
       },
       Err(err) => {
         warn!("Error looking up dataset: {:?}", err);
-        return Err(UpdateDatasetError::ServerError);
+        return Err(CommonWebError::from_anyhow_error(err));
       }
   };
 
@@ -125,7 +96,7 @@ pub async fn update_dataset_handler(
 
   if !is_creator && !is_mod {
     warn!("user is not allowed to edit this dataset: {:?}", user_session.user_token);
-    return Err(UpdateDatasetError::NotAuthorized);
+    return Err(CommonWebError::NotAuthorized);
   }
 
   let mut title = None;
@@ -135,7 +106,7 @@ pub async fn update_dataset_handler(
 
   if let Some(payload) = request.title.as_deref() {
     if user_input_common::check_for_slurs::contains_slurs(payload) {
-      return Err(UpdateDatasetError::BadInput("title contains slurs".to_string()));
+      return Err(CommonWebError::BadInputWithSimpleMessage("title contains slurs".to_string()));
     }
 
     title = Some(payload.trim().to_string());
@@ -153,7 +124,7 @@ pub async fn update_dataset_handler(
         .transpose()
         .map_err(|e| {
           error!("Error parsing language tag '{}': {:?}", tag, e);
-          UpdateDatasetError::BadInput("bad locale string".to_string())
+          CommonWebError::BadInputWithSimpleMessage("bad locale string".to_string())
         })?;
 
     if let Some(full_tag) = maybe_full_canonical_tag {
@@ -166,7 +137,7 @@ pub async fn update_dataset_handler(
 
   if let Some(visibility) = request.creator_set_visibility.as_deref() {
     creator_set_visibility = Visibility::from_str(visibility)
-        .map_err(|_| UpdateDatasetError::BadInput("bad record visibility".to_string()))?;
+        .map_err(|_| CommonWebError::BadInputWithSimpleMessage("bad record visibility".to_string()))?;
   }
 
 
@@ -194,7 +165,7 @@ pub async fn update_dataset_handler(
     Ok(_) => {},
     Err(err) => {
       warn!("Update Dataset DB error: {:?}", err);
-      return Err(UpdateDatasetError::ServerError);
+      return Err(CommonWebError::from_anyhow_error(err));
     }
   };
 

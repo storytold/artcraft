@@ -15,6 +15,7 @@ use mysql_queries::queries::media_files::get::get_media_file::get_media_file;
 use tokens::tokens::media_files::MediaFileToken;
 
 use crate::http_server::common_requests::media_file_token_path_info::MediaFileTokenPathInfo;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 use artcraft_api_defs::common::responses::simple_generic_json_success::SimpleGenericJsonSuccess;
 use crate::http_server::web_utils::response_success_helpers::simple_json_success;
 use crate::state::server_state::ServerState;
@@ -27,37 +28,7 @@ pub struct SetMediaFileCoverImageRequest {
 }
 
 // =============== Error Response ===============
-
-#[derive(Debug, Serialize, ToSchema)]
-pub enum SetMediaFileCoverImageError {
-  BadInput(String),
-  NotFound,
-  NotAuthorized,
-  ServerError,
-}
-
-impl ResponseError for SetMediaFileCoverImageError {
-  fn status_code(&self) -> StatusCode {
-    match *self {
-      SetMediaFileCoverImageError::BadInput(_) => StatusCode::BAD_REQUEST,
-      SetMediaFileCoverImageError::NotFound => StatusCode::NOT_FOUND,
-      SetMediaFileCoverImageError::NotAuthorized => StatusCode::UNAUTHORIZED,
-      SetMediaFileCoverImageError::ServerError => StatusCode::INTERNAL_SERVER_ERROR,
-    }
-  }
-
-  fn error_response(&self) -> HttpResponse {
-    serialize_as_json_error(self)
-  }
-}
-
 // NB: Not using derive_more::Display since Clion doesn't understand it.
-impl fmt::Display for SetMediaFileCoverImageError {
-  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-    write!(f, "{:?}", self)
-  }
-}
-
 // =============== Handler ===============
 
 /// Set or remove the "cover image" (which are used as thumbnails) on a file.
@@ -70,9 +41,9 @@ impl fmt::Display for SetMediaFileCoverImageError {
   path = "/v1/media_files/cover_image/{token}",
   responses(
     (status = 200, description = "Success Delete", body = SimpleGenericJsonSuccess),
-    (status = 400, description = "Bad input", body = SetMediaFileCoverImageError),
-    (status = 401, description = "Not authorized", body = SetMediaFileCoverImageError),
-    (status = 500, description = "Server error", body = SetMediaFileCoverImageError),
+    (status = 400, description = "Bad input", body = CommonWebError),
+    (status = 401, description = "Not authorized", body = CommonWebError),
+    (status = 500, description = "Server error", body = CommonWebError),
   ),
   params(
     ("request" = SetMediaFileCoverImageRequest, description = "Payload for Request"),
@@ -84,21 +55,21 @@ pub async fn set_media_file_cover_image_handler(
   path: Path<MediaFileTokenPathInfo>,
   request: web::Json<SetMediaFileCoverImageRequest>,
   server_state: web::Data<Arc<ServerState>>
-) -> Result<HttpResponse, SetMediaFileCoverImageError>{
+) -> Result<HttpResponse, CommonWebError>{
   let maybe_user_session = server_state
       .session_checker
       .maybe_get_user_session(&http_request, &server_state.mysql_pool)
       .await
       .map_err(|e| {
         warn!("Session checker error: {:?}", e);
-        SetMediaFileCoverImageError::ServerError
+        CommonWebError::from_error(e)
       })?;
 
   let user_session = match maybe_user_session {
     Some(session) => session,
     None => {
       warn!("not logged in");
-      return Err(SetMediaFileCoverImageError::NotAuthorized);
+      return Err(CommonWebError::NotAuthorized);
     }
   };
 
@@ -114,11 +85,11 @@ pub async fn set_media_file_cover_image_handler(
     Ok(Some(media_file)) => media_file,
     Ok(None) => {
       warn!("MediaFile not found: {:?}", path.token);
-      return Err(SetMediaFileCoverImageError::NotFound);
+      return Err(CommonWebError::NotFound);
     },
     Err(err) => {
       warn!("Error looking up media_file: {:?}", err);
-      return Err(SetMediaFileCoverImageError::ServerError);
+      return Err(CommonWebError::from_anyhow_error(err));
     }
   };
 
@@ -127,7 +98,7 @@ pub async fn set_media_file_cover_image_handler(
 
   if !is_creator && !is_mod {
     warn!("user is not allowed to delete this media_file: {:?}", user_session.user_token);
-    return Err(SetMediaFileCoverImageError::NotAuthorized);
+    return Err(CommonWebError::NotAuthorized);
   }
 
   let mut maybe_set_media_file_token = None;
@@ -151,11 +122,11 @@ pub async fn set_media_file_cover_image_handler(
         Ok(Some(media_file)) => media_file,
         Ok(None) => {
           warn!("Media file not found: {:?}", media_file_token);
-          return Err(SetMediaFileCoverImageError::NotFound);
+          return Err(CommonWebError::NotFound);
         },
         Err(err) => {
           warn!("Error looking up model_weights : {:?}", err);
-          return Err(SetMediaFileCoverImageError::ServerError);
+          return Err(CommonWebError::from_anyhow_error(err));
         }
       };
 
@@ -165,7 +136,7 @@ pub async fn set_media_file_cover_image_handler(
       let can_use_image = media_file.media_type == MediaFileType::Image;
 
       if  !can_use_image {
-        return Err(SetMediaFileCoverImageError::BadInput("Invalid media file token.".to_string()));
+        return Err(CommonWebError::BadInputWithSimpleMessage("Invalid media file token.".to_string()));
       }
 
       maybe_set_media_file_token = Some(media_file.token);
@@ -182,7 +153,7 @@ pub async fn set_media_file_cover_image_handler(
     Ok(_) => {},
     Err(err) => {
       warn!("Update MediaFile DB error: {:?}", err);
-      return Err(SetMediaFileCoverImageError::ServerError);
+      return Err(CommonWebError::from_anyhow_error(err));
     }
   };
 

@@ -3,21 +3,18 @@
 #![forbid(unused_mut)]
 #![forbid(unused_variables)]
 
-use std::fmt;
 use std::sync::Arc;
 
-use actix_web::error::ResponseError;
-use actix_web::http::StatusCode;
 use actix_web::web::Path;
 use actix_web::{web, HttpRequest, HttpResponse};
 use chrono::{DateTime, Utc};
 use log::warn;
 
 use crate::http_server::common_responses::user_avatars::default_avatar_color_from_username::default_avatar_color_from_username;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::common_responses::user_avatars::default_avatar_from_username::default_avatar_from_username;
 use enums::by_table::tts_models::tts_model_type::TtsModelType;
 use enums::common::visibility::Visibility;
-use http_server_common::response::serialize_as_json_error::serialize_as_json_error;
 use migration::text_to_speech::get_tts_model_info_migration::get_tts_model_info_migration;
 use mysql_queries::column_types::vocoder_type::VocoderType;
 use redis_common::redis_cache_keys::RedisCacheKeys;
@@ -149,45 +146,19 @@ pub struct TtsModelModeratorFieldInfo {
 }
 
 // =============== Error Response ===============
-
-#[derive(Debug, Serialize)]
-pub enum GetTtsModelError {
-  ServerError,
-  NotFound,
-}
-
-impl ResponseError for GetTtsModelError {
-  fn status_code(&self) -> StatusCode {
-    match *self {
-      GetTtsModelError::ServerError => StatusCode::INTERNAL_SERVER_ERROR,
-      GetTtsModelError::NotFound => StatusCode::NOT_FOUND,
-    }
-  }
-
-  fn error_response(&self) -> HttpResponse {
-    serialize_as_json_error(self)
-  }
-}
-
 // NB: Not using derive_more::Display since Clion doesn't understand it.
-impl fmt::Display for GetTtsModelError {
-  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-    write!(f, "{:?}", self)
-  }
-}
-
 // =============== Handler ===============
 
 pub async fn get_tts_model_handler(
   http_request: HttpRequest,
   path: Path<GetTtsModelPathInfo>,
-  server_state: web::Data<Arc<ServerState>>) -> Result<HttpResponse, GetTtsModelError>
+  server_state: web::Data<Arc<ServerState>>) -> Result<HttpResponse, CommonWebError>
 {
   let mut mysql_connection = server_state.mysql_pool.acquire()
       .await
       .map_err(|e| {
         warn!("Could not acquire DB pool: {:?}", e);
-        GetTtsModelError::ServerError
+        CommonWebError::from_error(e)
       })?;
 
   let maybe_user_session = server_state
@@ -196,7 +167,7 @@ pub async fn get_tts_model_handler(
       .await
       .map_err(|e| {
         warn!("Session checker error: {:?}", e);
-        GetTtsModelError::ServerError
+        CommonWebError::from_error(e)
       })?;
 
   let mut show_deleted_models = false;
@@ -244,9 +215,9 @@ pub async fn get_tts_model_handler(
   let model = match model_query_result {
     Err(e) => {
       warn!("query error: {:?}", e);
-      return Err(GetTtsModelError::ServerError);
+      return Err(CommonWebError::from_anyhow_error(e));
     }
-    Ok(None) => return Err(GetTtsModelError::NotFound),
+    Ok(None) => return Err(CommonWebError::NotFound),
     Ok(Some(model)) => model,
   };
 
@@ -259,7 +230,7 @@ pub async fn get_tts_model_handler(
   //  // NB: The moderator fields will always be present before removal
   //  // We don't want non-mods seeing stuff made by banned users.
   //  if moderator_fields.creator_is_banned && !is_moderator {
-  //    return Err(GetTtsModelError::NotFound);
+  //    return Err(CommonWebError::NotFound);
   //  }
   //}
 
@@ -357,7 +328,7 @@ pub async fn get_tts_model_handler(
   };
 
   let body = serde_json::to_string(&response)
-      .map_err(|_e| GetTtsModelError::ServerError)?;
+      .map_err(CommonWebError::from_error)?;
 
   Ok(HttpResponse::Ok()
       .content_type("application/json")

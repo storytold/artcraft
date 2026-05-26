@@ -11,6 +11,7 @@ use http_server_common::response::serialize_as_json_error::serialize_as_json_err
 use mysql_queries::queries::model_categories::list_categories_query_builder::ListCategoriesQueryBuilder;
 
 use crate::state::server_state::ServerState;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 
 // =============== Request ===============
 
@@ -70,39 +71,13 @@ pub struct CategoryForModeration {
 }
 
 // =============== Error Response ===============
-
-#[derive(Debug, Serialize)]
-pub enum ListTtsCategoriesForModerationError {
-  NotAuthorized,
-  ServerError,
-}
-
-impl ResponseError for ListTtsCategoriesForModerationError {
-  fn status_code(&self) -> StatusCode {
-    match *self {
-      ListTtsCategoriesForModerationError::NotAuthorized => StatusCode::UNAUTHORIZED,
-      ListTtsCategoriesForModerationError::ServerError => StatusCode::INTERNAL_SERVER_ERROR,
-    }
-  }
-
-  fn error_response(&self) -> HttpResponse {
-    serialize_as_json_error(self)
-  }
-}
-
 // NB: Not using derive_more::Display since Clion doesn't understand it.
-impl fmt::Display for ListTtsCategoriesForModerationError {
-  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-    write!(f, "{:?}", self)
-  }
-}
-
 // =============== Handler ===============
 
 pub async fn list_tts_categories_for_moderation_handler(
   http_request: HttpRequest,
   query: web::Query<QueryParams>,
-  server_state: web::Data<Arc<ServerState>>) -> Result<HttpResponse, ListTtsCategoriesForModerationError>
+  server_state: web::Data<Arc<ServerState>>) -> Result<HttpResponse, CommonWebError>
 {
   let maybe_user_session = server_state
       .session_checker
@@ -110,21 +85,21 @@ pub async fn list_tts_categories_for_moderation_handler(
       .await
       .map_err(|e| {
         warn!("Session checker error: {:?}", e);
-        ListTtsCategoriesForModerationError::ServerError
+        CommonWebError::from_error(e)
       })?;
 
   let user_session = match maybe_user_session {
     Some(session) => session,
     None => {
       warn!("not logged in");
-      return Err(ListTtsCategoriesForModerationError::NotAuthorized);
+      return Err(CommonWebError::NotAuthorized);
     }
   };
 
   // TODO: We don't have a permission for categories, so we use this as a proxy.
   if !user_session.can_ban_users {
     warn!("no permission to edit categories");
-    return Err(ListTtsCategoriesForModerationError::NotAuthorized);
+    return Err(CommonWebError::NotAuthorized);
   }
 
   // The objects we'll show or hide
@@ -153,7 +128,7 @@ pub async fn list_tts_categories_for_moderation_handler(
     Ok(results) => results,
     Err(err) => {
       warn!("DB error: {:?}", err);
-      return Err(ListTtsCategoriesForModerationError::ServerError);
+      return Err(CommonWebError::from_anyhow_error(err));
     }
   };
 
@@ -192,7 +167,7 @@ pub async fn list_tts_categories_for_moderation_handler(
   };
 
   let body = serde_json::to_string(&response)
-      .map_err(|e| ListTtsCategoriesForModerationError::ServerError)?;
+      .map_err(CommonWebError::from_error)?;
 
   Ok(HttpResponse::Ok()
       .content_type("application/json")

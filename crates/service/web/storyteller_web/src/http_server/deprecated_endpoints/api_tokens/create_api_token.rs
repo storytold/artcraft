@@ -11,6 +11,7 @@ use http_server_common::response::serialize_as_json_error::serialize_as_json_err
 use mysql_queries::queries::api_tokens::create_api_token::create_api_token_for_user;
 
 use crate::state::server_state::ServerState;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 
 // =============== Request ===============
 
@@ -28,41 +29,13 @@ pub struct CreateApiTokenResponse {
 }
 
 // =============== Error Response ===============
-
-#[derive(Debug, Serialize)]
-pub enum CreateApiTokenError {
-  BadInput(String),
-  NotAuthorized,
-  ServerError,
-}
-
-impl ResponseError for CreateApiTokenError {
-  fn status_code(&self) -> StatusCode {
-    match *self {
-      CreateApiTokenError::BadInput(_) => StatusCode::BAD_REQUEST,
-      CreateApiTokenError::NotAuthorized => StatusCode::UNAUTHORIZED,
-      CreateApiTokenError::ServerError => StatusCode::INTERNAL_SERVER_ERROR,
-    }
-  }
-
-  fn error_response(&self) -> HttpResponse {
-    serialize_as_json_error(self)
-  }
-}
-
 // NB: Not using DeriveMore since Clion doesn't understand it.
-impl fmt::Display for CreateApiTokenError {
-  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-    write!(f, "{:?}", self)
-  }
-}
-
 // =============== Handler ===============
 
 pub async fn create_api_token_handler(
   http_request: HttpRequest,
   request: web::Json<CreateApiTokenRequest>,
-  server_state: web::Data<Arc<ServerState>>) -> Result<HttpResponse, CreateApiTokenError>
+  server_state: web::Data<Arc<ServerState>>) -> Result<HttpResponse, CommonWebError>
 {
   let maybe_user_session = server_state
       .session_checker
@@ -70,20 +43,20 @@ pub async fn create_api_token_handler(
       .await
       .map_err(|e| {
         warn!("Session checker error: {:?}", e);
-        CreateApiTokenError::ServerError
+        CommonWebError::from_error(e)
       })?;
 
   let user_session = match maybe_user_session {
     Some(session) => session,
     None => {
       warn!("not logged in");
-      return Err(CreateApiTokenError::NotAuthorized);
+      return Err(CommonWebError::NotAuthorized);
     }
   };
   
   if user_session.is_banned {
     warn!("banned users cannot create API tokens");
-    return Err(CreateApiTokenError::NotAuthorized);
+    return Err(CommonWebError::NotAuthorized);
   }
 
   let creator_ip_address = get_request_ip(&http_request);
@@ -96,7 +69,7 @@ pub async fn create_api_token_handler(
       .await
       .map_err(|e| {
         warn!("API token creation errror: {:?}", e);
-        CreateApiTokenError::ServerError
+        CommonWebError::from_anyhow_error(e)
       })?;
 
   let response = CreateApiTokenResponse {
@@ -105,7 +78,7 @@ pub async fn create_api_token_handler(
   };
 
   let body = serde_json::to_string(&response)
-      .map_err(|e| CreateApiTokenError::ServerError)?;
+      .map_err(CommonWebError::from_error)?;
 
   Ok(HttpResponse::Ok()
       .content_type("application/json")

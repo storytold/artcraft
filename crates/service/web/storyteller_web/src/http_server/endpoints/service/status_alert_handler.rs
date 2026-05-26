@@ -7,6 +7,7 @@ use actix_web::{web, HttpRequest, HttpResponse, ResponseError};
 use utoipa::ToSchema;
 
 use crate::http_server::endpoints::app_state::components::get_status_alert::{get_status_alert, AppStateStatusAlertCategory};
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::state::server_state::ServerState;
 use http_server_common::response::serialize_as_json_error::serialize_as_json_error;
 
@@ -51,31 +52,7 @@ pub enum StatusAlertCategory {
   /// System is down for maintenance
   DownForMaintenance,
 }
-
-#[derive(Debug, Serialize, ToSchema)]
-pub enum StatusAlertError {
-  ServerError,
-}
-
-impl ResponseError for StatusAlertError {
-  fn status_code(&self) -> StatusCode {
-    match *self {
-      StatusAlertError::ServerError => StatusCode::INTERNAL_SERVER_ERROR,
-    }
-  }
-
-  fn error_response(&self) -> HttpResponse {
-    serialize_as_json_error(self)
-  }
-}
-
 // NB: Not using derive_more::Display since Clion doesn't understand it.
-impl std::fmt::Display for StatusAlertError {
-  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-    write!(f, "{:?}", self)
-  }
-}
-
 #[utoipa::path(
   get,
   tag = "Misc",
@@ -86,13 +63,13 @@ impl std::fmt::Display for StatusAlertError {
       description = "Check service status for frontend alert messages",
       body = StatusAlertResponse,
     ),
-    (status = 500, description = "Server error", body = StatusAlertError)
+    (status = 500, description = "Server error", body = CommonWebError)
   ),
 )]
 pub async fn status_alert_handler(
   _http_request: HttpRequest,
   server_state: web::Data<Arc<ServerState>>
-) -> Result<Json<StatusAlertResponse>, StatusAlertError> {
+) -> Result<Json<StatusAlertResponse>, CommonWebError> {
 
   let maybe_alert = get_status_alert(&server_state);
 

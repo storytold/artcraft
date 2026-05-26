@@ -16,6 +16,7 @@ use mysql_queries::queries::media_files::get::get_media_file::get_media_file;
 use tokens::tokens::media_files::MediaFileToken;
 
 use crate::state::server_state::ServerState;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 
 #[derive(Deserialize)]
 pub struct UpdateMediaFileRequest {
@@ -34,44 +35,14 @@ pub struct UpdateMediaFilePathInfo {
 }
 
 // =============== Error Response ===============
-
-#[derive(Debug, Serialize)]
-pub enum UpdateMediaFileError {
-    BadInput(String),
-    NotFound,
-    NotAuthorized,
-    ServerError,
-}
-
-impl ResponseError for UpdateMediaFileError {
-    fn status_code(&self) -> StatusCode {
-        match *self {
-            UpdateMediaFileError::BadInput(_) => StatusCode::BAD_REQUEST,
-            UpdateMediaFileError::NotFound => StatusCode::NOT_FOUND,
-            UpdateMediaFileError::NotAuthorized => StatusCode::UNAUTHORIZED,
-            UpdateMediaFileError::ServerError => StatusCode::INTERNAL_SERVER_ERROR,
-        }
-    }
-
-    fn error_response(&self) -> HttpResponse {
-        serialize_as_json_error(self)
-    }
-}
-
 // NB: Not using derive_more::Display since Clion doesn't understand it.
-impl fmt::Display for UpdateMediaFileError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{:?}", self)
-    }
-}
-
 // =============== Handler ===============
 
 pub async fn update_media_file_handler(
     http_request: HttpRequest,
     path: Path<UpdateMediaFilePathInfo>,
     request: web::Json<UpdateMediaFileRequest>,
-    server_state: web::Data<Arc<ServerState>>) -> Result<HttpResponse, UpdateMediaFileError>
+    server_state: web::Data<Arc<ServerState>>) -> Result<HttpResponse, CommonWebError>
 {
     let maybe_user_session = server_state
         .session_checker
@@ -79,14 +50,14 @@ pub async fn update_media_file_handler(
         .await
         .map_err(|e| {
             warn!("Session checker error: {:?}", e);
-            UpdateMediaFileError::ServerError
+            CommonWebError::from_error(e)
         })?;
 
     let user_session = match maybe_user_session {
         Some(session) => session,
         None => {
             warn!("not logged in");
-            return Err(UpdateMediaFileError::NotAuthorized);
+            return Err(CommonWebError::NotAuthorized);
         }
     };
 
@@ -103,11 +74,11 @@ pub async fn update_media_file_handler(
         Ok(Some(media_file)) => media_file,
         Ok(None) => {
             warn!("MediaFile not found: {:?}", media_file_token);
-            return Err(UpdateMediaFileError::NotFound);
+            return Err(CommonWebError::NotFound);
         },
         Err(err) => {
             warn!("Error looking up media_file: {:?}", err);
-            return Err(UpdateMediaFileError::ServerError);
+            return Err(CommonWebError::from_anyhow_error(err));
         }
     };
 
@@ -116,7 +87,7 @@ pub async fn update_media_file_handler(
 
     if !is_creator && !is_mod {
         warn!("user is not allowed to edit this media_file: {:?}", user_session.user_token);
-        return Err(UpdateMediaFileError::NotAuthorized);
+        return Err(CommonWebError::NotAuthorized);
     }
 
     let mut creator_set_visibility = Visibility::Public;
@@ -124,7 +95,7 @@ pub async fn update_media_file_handler(
 
     if let Some(visibility) = request.creator_set_visibility.as_deref() {
         creator_set_visibility = Visibility::from_str(visibility)
-            .map_err(|_| UpdateMediaFileError::BadInput("bad record visibility".to_string()))?;
+            .map_err(|_| CommonWebError::BadInputWithSimpleMessage("bad record visibility".to_string()))?;
     }
 
     let ip_address = get_request_ip(&http_request);
@@ -146,7 +117,7 @@ pub async fn update_media_file_handler(
         Ok(_) => {},
         Err(err) => {
             warn!("Update MediaFile DB error: {:?}", err);
-            return Err(UpdateMediaFileError::ServerError);
+            return Err(CommonWebError::from_anyhow_error(err));
         }
     };
 

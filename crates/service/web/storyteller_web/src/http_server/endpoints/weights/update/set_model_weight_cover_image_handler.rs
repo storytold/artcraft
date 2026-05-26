@@ -19,6 +19,7 @@ use tokens::tokens::media_files::MediaFileToken;
 use tokens::tokens::model_weights::ModelWeightToken;
 
 use crate::state::server_state::ServerState;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 
 #[derive(Deserialize, ToSchema)]
 pub struct SetModelWeightCoverImageRequest {
@@ -37,37 +38,7 @@ pub struct SetModelWeightCoverImagePathInfo {
 }
 
 // =============== Error Response ===============
-
-#[derive(Debug, Serialize, ToSchema)]
-pub enum SetModelWeightCoverImageError {
-  BadInput(String),
-  NotFound,
-  NotAuthorized,
-  ServerError,
-}
-
-impl ResponseError for SetModelWeightCoverImageError {
-  fn status_code(&self) -> StatusCode {
-    match *self {
-      SetModelWeightCoverImageError::BadInput(_) => StatusCode::BAD_REQUEST,
-      SetModelWeightCoverImageError::NotFound => StatusCode::NOT_FOUND,
-      SetModelWeightCoverImageError::NotAuthorized => StatusCode::UNAUTHORIZED,
-      SetModelWeightCoverImageError::ServerError => StatusCode::INTERNAL_SERVER_ERROR,
-    }
-  }
-
-  fn error_response(&self) -> HttpResponse {
-    serialize_as_json_error(self)
-  }
-}
-
 // NB: Not using derive_more::Display since Clion doesn't understand it.
-impl fmt::Display for SetModelWeightCoverImageError {
-  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-    write!(f, "{:?}", self)
-  }
-}
-
 // =============== Handler ===============
 
 #[utoipa::path(
@@ -76,9 +47,9 @@ impl fmt::Display for SetModelWeightCoverImageError {
   path = "/v1/weights/weight/{weight_token}/cover_image",
   responses(
     (status = 200, description = "Success Update", body = SetModelWeightCoverImageResponse),
-    (status = 400, description = "Bad input", body = SetModelWeightCoverImageError),
-    (status = 401, description = "Not authorized", body = SetModelWeightCoverImageError),
-    (status = 500, description = "Server error", body = SetModelWeightCoverImageError),
+    (status = 400, description = "Bad input", body = CommonWebError),
+    (status = 401, description = "Not authorized", body = CommonWebError),
+    (status = 500, description = "Server error", body = CommonWebError),
   ),
   params(
     ("request" = SetModelWeightCoverImageRequest, description = "Payload for Request"),
@@ -89,7 +60,7 @@ pub async fn set_model_weight_cover_image_handler(
   http_request: HttpRequest,
   path: Path<SetModelWeightCoverImagePathInfo>,
   request: web::Json<SetModelWeightCoverImageRequest>,
-  server_state: web::Data<Arc<ServerState>>) -> Result<HttpResponse, SetModelWeightCoverImageError>
+  server_state: web::Data<Arc<ServerState>>) -> Result<HttpResponse, CommonWebError>
 {
   let maybe_user_session = server_state
       .session_checker
@@ -97,14 +68,14 @@ pub async fn set_model_weight_cover_image_handler(
       .await
       .map_err(|e| {
         warn!("Session checker error: {:?}", e);
-        SetModelWeightCoverImageError::ServerError
+        CommonWebError::from_error(e)
       })?;
 
   let user_session = match maybe_user_session {
     Some(session) => session,
     None => {
       warn!("not logged in");
-      return Err(SetModelWeightCoverImageError::NotAuthorized);
+      return Err(CommonWebError::NotAuthorized);
     }
   };
 
@@ -122,11 +93,11 @@ pub async fn set_model_weight_cover_image_handler(
     Ok(Some(model_weight)) => model_weight,
     Ok(None) => {
       warn!("Model weight not found: {:?}", &path.token);
-      return Err(SetModelWeightCoverImageError::NotFound);
+      return Err(CommonWebError::NotFound);
     },
     Err(err) => {
       warn!("Error looking up model_weights : {:?}", err);
-      return Err(SetModelWeightCoverImageError::ServerError);
+      return Err(CommonWebError::from_anyhow_error(err));
     }
   };
 
@@ -134,7 +105,7 @@ pub async fn set_model_weight_cover_image_handler(
 
   if !is_creator && !is_mod {
     warn!("user is not allowed to edit this media_file: {:?}", user_session.user_token);
-    return Err(SetModelWeightCoverImageError::NotAuthorized);
+    return Err(CommonWebError::NotAuthorized);
   }
 
   let mut maybe_set_media_file_token = None;
@@ -156,11 +127,11 @@ pub async fn set_model_weight_cover_image_handler(
         Ok(Some(media_file)) => media_file,
         Ok(None) => {
           warn!("Media file not found: {:?}", media_file_token);
-          return Err(SetModelWeightCoverImageError::NotFound);
+          return Err(CommonWebError::NotFound);
         },
         Err(err) => {
           warn!("Error looking up model_weights : {:?}", err);
-          return Err(SetModelWeightCoverImageError::ServerError);
+          return Err(CommonWebError::from_anyhow_error(err));
         }
       };
 
@@ -170,7 +141,7 @@ pub async fn set_model_weight_cover_image_handler(
       let can_use_image = media_file.media_type == MediaFileType::Image;
 
       if  !can_use_image {
-        return Err(SetModelWeightCoverImageError::BadInput("Invalid media file token.".to_string()));
+        return Err(CommonWebError::BadInputWithSimpleMessage("Invalid media file token.".to_string()));
       }
 
       maybe_set_media_file_token = Some(media_file.token);
@@ -190,7 +161,7 @@ pub async fn set_model_weight_cover_image_handler(
     Ok(_) => {},
     Err(err) => {
       warn!("Update MediaFile DB error: {:?}", err);
-      return Err(SetModelWeightCoverImageError::ServerError);
+      return Err(CommonWebError::from_anyhow_error(err));
     }
   };
 

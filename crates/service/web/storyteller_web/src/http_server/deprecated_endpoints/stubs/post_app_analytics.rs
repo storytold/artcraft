@@ -10,6 +10,7 @@ use http_server_common::request::get_request_ip::get_request_ip;
 use http_server_common::response::serialize_as_json_error::serialize_as_json_error;
 
 use crate::state::server_state::ServerState;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 
 // =============== Request ===============
 
@@ -75,41 +76,13 @@ pub struct PostAppAnalyticsResponse {
 }
 
 // =============== Error Response ===============
-
-#[derive(Debug, Serialize)]
-pub enum PostAppAnalyticsError {
-    BadInput(String),
-    NotAuthorized,
-    ServerError,
-}
-
-impl ResponseError for PostAppAnalyticsError {
-    fn status_code(&self) -> StatusCode {
-        match *self {
-            PostAppAnalyticsError::BadInput(_) => StatusCode::BAD_REQUEST,
-            PostAppAnalyticsError::NotAuthorized => StatusCode::UNAUTHORIZED,
-            PostAppAnalyticsError::ServerError => StatusCode::INTERNAL_SERVER_ERROR,
-        }
-    }
-
-    fn error_response(&self) -> HttpResponse {
-        serialize_as_json_error(self)
-    }
-}
-
 // NB: Not using DeriveMore since Clion doesn't understand it.
-impl fmt::Display for PostAppAnalyticsError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{:?}", self)
-    }
-}
-
 // =============== Handler ===============
 
 pub async fn post_app_analytics_handler(
     http_request: HttpRequest,
     request: web::Json<PostAppAnalyticsRequest>,
-    server_state: web::Data<Arc<ServerState>>) -> Result<HttpResponse, PostAppAnalyticsError>
+    server_state: web::Data<Arc<ServerState>>) -> Result<HttpResponse, CommonWebError>
 {
     let maybe_user_session = server_state
         .session_checker
@@ -117,7 +90,7 @@ pub async fn post_app_analytics_handler(
         .await
         .map_err(|e| {
             warn!("Session checker error: {:?}", e);
-            PostAppAnalyticsError::ServerError
+            CommonWebError::from_error(e)
         })?;
 
     let creator_ip_address = get_request_ip(&http_request);
@@ -129,7 +102,7 @@ pub async fn post_app_analytics_handler(
     };
 
     let body = serde_json::to_string(&response)
-        .map_err(|e| PostAppAnalyticsError::ServerError)?;
+        .map_err(CommonWebError::from_error)?;
 
     Ok(HttpResponse::Ok()
         .content_type("application/json")

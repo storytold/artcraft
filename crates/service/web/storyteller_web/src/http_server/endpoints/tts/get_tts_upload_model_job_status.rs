@@ -13,6 +13,7 @@ use mysql_queries::queries::tts::tts_model_upload_jobs::get_tts_model_upload_job
 use redis_common::redis_keys::RedisKeys;
 
 use crate::http_server::web_utils::response_error_helpers::to_simple_json_error;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::state::server_state::ServerState;
 
 /// For the URL PathInfo
@@ -45,50 +46,28 @@ pub struct GetTtsUploadModelStatusSuccessResponse {
   pub success: bool,
   pub state: TtsUploadModelJobStatusForResponse,
 }
-
-#[derive(Debug, Display)]
-pub enum GetTtsUploadModelStatusError {
-  ServerError,
-}
-
-impl ResponseError for GetTtsUploadModelStatusError {
-  fn status_code(&self) -> StatusCode {
-    match *self {
-      GetTtsUploadModelStatusError::ServerError=> StatusCode::INTERNAL_SERVER_ERROR,
-    }
-  }
-
-  fn error_response(&self) -> HttpResponse {
-    let error_reason = match self {
-      GetTtsUploadModelStatusError::ServerError => "server error".to_string(),
-    };
-
-    to_simple_json_error(&error_reason, self.status_code())
-  }
-}
-
 pub async fn get_tts_upload_model_job_status_handler(
   http_request: HttpRequest,
   path: Path<GetTtsUploadModelStatusPathInfo>,
-  server_state: web::Data<Arc<ServerState>>) -> Result<HttpResponse, GetTtsUploadModelStatusError>
+  server_state: web::Data<Arc<ServerState>>) -> Result<HttpResponse, CommonWebError>
 {
   // NB: Since this is publicly exposed, we don't query sensitive data.
   let record = get_tts_model_upload_job_status(&path.token, &server_state.mysql_pool)
       .await
       .map_err(|err| {
         error!("tts template query error: {:?}", err);
-        GetTtsUploadModelStatusError::ServerError
+        CommonWebError::from_anyhow_error(err)
       })?
       .ok_or(
         // TODO: 404
-        GetTtsUploadModelStatusError::ServerError
+        CommonWebError::server_error_with_message("uncaught server error")
       )?;
 
   let mut redis = server_state.redis_pool
       .get()
       .map_err(|e| {
         warn!("redis error: {:?}", e);
-        GetTtsUploadModelStatusError::ServerError
+        CommonWebError::from_error(e)
       })?;
 
   let extra_status_key = RedisKeys::tts_download_extra_status_info(&path.token);
@@ -119,7 +98,7 @@ pub async fn get_tts_upload_model_job_status_handler(
   };
 
   let body = serde_json::to_string(&response)
-      .map_err(|e| GetTtsUploadModelStatusError::ServerError)?;
+      .map_err(|e| CommonWebError::from_error(e))?;
 
   Ok(HttpResponse::Ok()
       .content_type("application/json")

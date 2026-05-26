@@ -15,6 +15,7 @@ use mysql_queries::queries::voice_designer::voices::update_voice::{update_voice,
 use tokens::tokens::zs_voices::ZsVoiceToken;
 
 use crate::configs::supported_languages_for_models::get_canonicalized_language_tag_for_model;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::state::server_state::ServerState;
 
 #[derive(Deserialize)]
@@ -40,44 +41,14 @@ pub struct UpdateVoicePathInfo {
 }
 
 // =============== Error Response ===============
-
-#[derive(Debug, Serialize)]
-pub enum UpdateVoiceError {
-  BadInput(String),
-  NotFound,
-  NotAuthorized,
-  ServerError,
-}
-
-impl ResponseError for UpdateVoiceError {
-  fn status_code(&self) -> StatusCode {
-    match *self {
-      UpdateVoiceError::BadInput(_) => StatusCode::BAD_REQUEST,
-      UpdateVoiceError::NotFound => StatusCode::NOT_FOUND,
-      UpdateVoiceError::NotAuthorized => StatusCode::UNAUTHORIZED,
-      UpdateVoiceError::ServerError => StatusCode::INTERNAL_SERVER_ERROR,
-    }
-  }
-
-  fn error_response(&self) -> HttpResponse {
-    serialize_as_json_error(self)
-  }
-}
-
 // NB: Not using derive_more::Display since Clion doesn't understand it.
-impl fmt::Display for UpdateVoiceError {
-  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-    write!(f, "{:?}", self)
-  }
-}
-
 // =============== Handler ===============
 
 pub async fn update_voice_handler(
   http_request: HttpRequest,
   path: Path<UpdateVoicePathInfo>,
   request: web::Json<UpdateVoiceRequest>,
-  server_state: web::Data<Arc<ServerState>>) -> Result<HttpResponse, UpdateVoiceError>
+  server_state: web::Data<Arc<ServerState>>) -> Result<HttpResponse, CommonWebError>
 {
   let maybe_user_session = server_state
       .session_checker
@@ -85,14 +56,14 @@ pub async fn update_voice_handler(
       .await
       .map_err(|e| {
         warn!("Session checker error: {:?}", e);
-        UpdateVoiceError::ServerError
+        CommonWebError::from_error(e)
       })?;
 
   let user_session = match maybe_user_session {
     Some(session) => session,
     None => {
       warn!("not logged in");
-      return Err(UpdateVoiceError::NotAuthorized);
+      return Err(CommonWebError::NotAuthorized);
     }
   };
 
@@ -109,11 +80,11 @@ pub async fn update_voice_handler(
     Ok(Some(voice)) => voice,
     Ok(None) => {
       warn!("Voice not found: {:?}", voice_token);
-      return Err(UpdateVoiceError::NotFound);
+      return Err(CommonWebError::NotFound);
     },
     Err(err) => {
       warn!("Error looking up voice: {:?}", err);
-      return Err(UpdateVoiceError::ServerError);
+      return Err(CommonWebError::from_anyhow_error(err));
     }
   };
 
@@ -124,7 +95,7 @@ pub async fn update_voice_handler(
 
   if !is_creator && !is_mod {
     warn!("user is not allowed to edit this voice: {:?}", user_session.user_token);
-    return Err(UpdateVoiceError::NotAuthorized);
+    return Err(CommonWebError::NotAuthorized);
   }
 
   let mut title = None;
@@ -134,7 +105,7 @@ pub async fn update_voice_handler(
 
   if let Some(payload) = request.title.as_deref() {
     if user_input_common::check_for_slurs::contains_slurs(payload) {
-      return Err(UpdateVoiceError::BadInput("title contains slurs".to_string()));
+      return Err(CommonWebError::BadInputWithSimpleMessage("title contains slurs".to_string()));
     }
 
     title = Some(payload.trim().to_string());
@@ -152,7 +123,7 @@ pub async fn update_voice_handler(
         .transpose()
         .map_err(|e| {
           error!("Error parsing language tag '{}': {:?}", tag, e);
-          UpdateVoiceError::BadInput("bad locale string".to_string())
+          CommonWebError::BadInputWithSimpleMessage("bad locale string".to_string())
         })?;
 
     if let Some(full_tag) = maybe_full_canonical_tag {
@@ -165,7 +136,7 @@ pub async fn update_voice_handler(
 
   if let Some(visibility) = request.creator_set_visibility.as_deref() {
     creator_set_visibility = Visibility::from_str(visibility)
-        .map_err(|_| UpdateVoiceError::BadInput("bad record visibility".to_string()))?;
+        .map_err(|_| CommonWebError::BadInputWithSimpleMessage("bad record visibility".to_string()))?;
   }
 
 
@@ -191,7 +162,7 @@ pub async fn update_voice_handler(
     Ok(_) => {},
     Err(err) => {
       warn!("Update Voice DB error: {:?}", err);
-      return Err(UpdateVoiceError::ServerError);
+      return Err(CommonWebError::from_anyhow_error(err));
     }
   };
 

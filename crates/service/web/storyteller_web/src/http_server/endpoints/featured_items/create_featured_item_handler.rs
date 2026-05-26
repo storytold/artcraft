@@ -23,6 +23,7 @@ use tokens::tokens::users::UserToken;
 use tokens::tokens::w2l_templates::W2lTemplateToken;
 
 use crate::http_server::web_utils::response_error_helpers::to_simple_json_error;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::state::server_state::ServerState;
 
 #[derive(Deserialize, ToSchema)]
@@ -35,41 +36,7 @@ pub struct CreateFeaturedItemRequest {
 pub struct CreateFeaturedItemSuccessResponse {
   pub success: bool,
 }
-
-#[derive(Debug, ToSchema)]
-pub enum CreateFeaturedItemError {
-  BadInput(String),
-  NotAuthorized,
-  ServerError,
-}
-
-impl ResponseError for CreateFeaturedItemError {
-  fn status_code(&self) -> StatusCode {
-    match *self {
-      CreateFeaturedItemError::BadInput(_) => StatusCode::BAD_REQUEST,
-      CreateFeaturedItemError::NotAuthorized => StatusCode::UNAUTHORIZED,
-      CreateFeaturedItemError::ServerError => StatusCode::INTERNAL_SERVER_ERROR,
-    }
-  }
-
-  fn error_response(&self) -> HttpResponse {
-    let error_reason = match self {
-      CreateFeaturedItemError::BadInput(reason) => reason.to_string(),
-      CreateFeaturedItemError::NotAuthorized => "unauthorized".to_string(),
-      CreateFeaturedItemError::ServerError => "server error".to_string(),
-    };
-
-    to_simple_json_error(&error_reason, self.status_code())
-  }
-}
-
 // NB: Not using derive_more::Display since Clion doesn't understand it.
-impl fmt::Display for CreateFeaturedItemError {
-  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-    write!(f, "{:?}", self)
-  }
-}
-
 /// Create a featured item (only mods can do this).
 #[utoipa::path(
   post,
@@ -78,14 +45,14 @@ impl fmt::Display for CreateFeaturedItemError {
   request_body = CreateFeaturedItemRequest,
   responses(
     (status = 200, body = CreateFeaturedItemSuccessResponse),
-    (status = 400, body = CreateFeaturedItemError),
+    (status = 400, body = CommonWebError),
   )
 )]
 pub async fn create_featured_item_handler(
   http_request: HttpRequest,
   request: web::Json<CreateFeaturedItemRequest>,
   server_state: web::Data<Arc<ServerState>>,
-) -> Result<HttpResponse, CreateFeaturedItemError>
+) -> Result<HttpResponse, CommonWebError>
 {
   // NB(bt,2023-12-14): Kasisnu found that we're getting entity type mismatches in production. Apart from
   // querying the database for entity existence, this is the next best way to prevent incorrect comment
@@ -100,7 +67,7 @@ pub async fn create_featured_item_handler(
 
   if !token_prefix_matches {
     warn!("invalid token prefix: {:?} for {:?}", request.entity_token, request.entity_type);
-    return Err(CreateFeaturedItemError::BadInput("invalid token prefix".to_string()));
+    return Err(CommonWebError::BadInputWithSimpleMessage("invalid token prefix".to_string()));
   }
 
   let mut mysql_connection = server_state.mysql_pool
@@ -108,7 +75,7 @@ pub async fn create_featured_item_handler(
       .await
       .map_err(|err| {
         warn!("MySql pool error: {:?}", err);
-        CreateFeaturedItemError::ServerError
+        CommonWebError::from_error(err)
       })?;
 
   let maybe_user_session = server_state
@@ -117,14 +84,14 @@ pub async fn create_featured_item_handler(
       .await
       .map_err(|e| {
         warn!("Session checker error: {:?}", e);
-        CreateFeaturedItemError::ServerError
+        CommonWebError::from_error(e)
       })?;
 
   let user_session = match maybe_user_session {
     Some(session) => session,
     None => {
       warn!("not logged in");
-      return Err(CreateFeaturedItemError::NotAuthorized);
+      return Err(CommonWebError::NotAuthorized);
     }
   };
 
@@ -132,7 +99,7 @@ pub async fn create_featured_item_handler(
 
   if !is_mod {
     warn!("not moderator");
-    return Err(CreateFeaturedItemError::NotAuthorized);
+    return Err(CommonWebError::NotAuthorized);
   }
 
   let entity = FeaturedItemEntity::from_entity_type_and_token(
@@ -141,7 +108,7 @@ pub async fn create_featured_item_handler(
   let mut transaction = mysql_connection.begin().await
       .map_err(|err| {
         error!("error creating transaction: {:?}", err);
-        CreateFeaturedItemError::ServerError
+        CommonWebError::from_error(err)
       })?;
 
   match request.entity_type {
@@ -155,7 +122,7 @@ pub async fn create_featured_item_handler(
 
       if let Err(err) = result {
         warn!("error modifying visibility: {:?}", err);
-        return Err(CreateFeaturedItemError::ServerError);
+        return Err(CommonWebError::from_anyhow_error(err));
       }
     }
     FeaturedItemEntityType::ModelWeight => {} // TODO
@@ -170,7 +137,7 @@ pub async fn create_featured_item_handler(
 
   if let Err(err) = upsert_result {
     warn!("error setting featured: {:?}", err);
-    return Err(CreateFeaturedItemError::ServerError);
+    return Err(CommonWebError::from_anyhow_error(err));
   }
 
   let ip_address = get_request_ip(&http_request);
@@ -189,7 +156,7 @@ pub async fn create_featured_item_handler(
   transaction.commit().await
       .map_err(|err| {
         error!("error committing transaction: {:?}", err);
-        CreateFeaturedItemError::ServerError
+        CommonWebError::from_error(err)
       })?;
 
   let response = CreateFeaturedItemSuccessResponse {
@@ -197,7 +164,7 @@ pub async fn create_featured_item_handler(
   };
 
   let body = serde_json::to_string(&response)
-      .map_err(|_e| CreateFeaturedItemError::ServerError)?;
+      .map_err(CommonWebError::from_error)?;
 
   Ok(HttpResponse::Ok()
       .content_type("application/json")

@@ -13,6 +13,7 @@ use mysql_queries::queries::voice_designer::datasets::get_dataset::get_dataset_b
 use tokens::tokens::zs_voice_datasets::ZsVoiceDatasetToken;
 
 use crate::http_server::web_utils::response_success_helpers::simple_json_success;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::state::server_state::ServerState;
 use crate::util::delete_role_disambiguation::{delete_role_disambiguation, DeleteRole};
 
@@ -30,37 +31,7 @@ pub struct DeleteDatasetPathInfo {
 }
 
 // =============== Error Response ===============
-
-#[derive(Debug, Serialize)]
-pub enum DeleteDatasetError {
-    BadInput(String),
-    NotFound,
-    NotAuthorized,
-    ServerError,
-}
-
-impl ResponseError for DeleteDatasetError {
-    fn status_code(&self) -> StatusCode {
-        match *self {
-            DeleteDatasetError::BadInput(_) => StatusCode::BAD_REQUEST,
-            DeleteDatasetError::NotFound => StatusCode::NOT_FOUND,
-            DeleteDatasetError::NotAuthorized => StatusCode::UNAUTHORIZED,
-            DeleteDatasetError::ServerError => StatusCode::INTERNAL_SERVER_ERROR,
-        }
-    }
-
-    fn error_response(&self) -> HttpResponse {
-        serialize_as_json_error(self)
-    }
-}
-
 // NB: Not using derive_more::Display since Clion doesn't understand it.
-impl fmt::Display for DeleteDatasetError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{:?}", self)
-    }
-}
-
 // =============== Handler ===============
 
 pub async fn delete_dataset_handler(
@@ -68,21 +39,21 @@ pub async fn delete_dataset_handler(
     path: Path<DeleteDatasetPathInfo>,
     request: web::Json<DeleteDatasetRequest>,
     server_state: web::Data<Arc<ServerState>>
-) -> Result<HttpResponse, DeleteDatasetError>{
+) -> Result<HttpResponse, CommonWebError>{
     let maybe_user_session = server_state
         .session_checker
         .maybe_get_user_session(&http_request, &server_state.mysql_pool)
         .await
         .map_err(|e| {
             warn!("Session checker error: {:?}", e);
-            DeleteDatasetError::ServerError
+            CommonWebError::from_error(e)
         })?;
 
     let user_session = match maybe_user_session {
         Some(session) => session,
         None => {
             warn!("not logged in");
-            return Err(DeleteDatasetError::NotAuthorized);
+            return Err(CommonWebError::NotAuthorized);
         }
     };
 
@@ -99,11 +70,11 @@ pub async fn delete_dataset_handler(
         Ok(Some(dataset)) => dataset,
         Ok(None) => {
             warn!("Dataset not found: {:?}", dataset_token);
-            return Err(DeleteDatasetError::NotFound);
+            return Err(CommonWebError::NotFound);
         },
         Err(err) => {
             warn!("Error looking up dataset: {:?}", err);
-            return Err(DeleteDatasetError::ServerError);
+            return Err(CommonWebError::from_anyhow_error(err));
         }
     };
 
@@ -113,7 +84,7 @@ pub async fn delete_dataset_handler(
 
     if !is_creator && !is_mod {
         warn!("user is not allowed to delete this dataset: {:?}", user_session.user_token);
-        return Err(DeleteDatasetError::NotAuthorized);
+        return Err(CommonWebError::NotAuthorized);
     }
 
     let delete_role = delete_role_disambiguation(is_mod, is_creator, request.as_mod);
@@ -122,7 +93,7 @@ pub async fn delete_dataset_handler(
         match delete_role {
             DeleteRole::ErrorDoNotDelete => {
                 warn!("user is not allowed to delete datasets: {:?}", user_session.user_token);
-                return Err(DeleteDatasetError::NotAuthorized);
+                return Err(CommonWebError::NotAuthorized);
             }
             DeleteRole::AsUser => {
                 delete_dataset_as_user(
@@ -142,7 +113,7 @@ pub async fn delete_dataset_handler(
         match delete_role {
             DeleteRole::ErrorDoNotDelete => {
                 warn!("user is not allowed to undelete voices: {:?}", user_session.user_token);
-                return Err(DeleteDatasetError::NotAuthorized);
+                return Err(CommonWebError::NotAuthorized);
             }
             DeleteRole::AsUser => {
                 // NB: Technically only mods can see their own datasets
@@ -165,7 +136,7 @@ pub async fn delete_dataset_handler(
         Ok(_) => {},
         Err(err) => {
             warn!("Update dataset mod approval status DB error: {:?}", err);
-            return Err(DeleteDatasetError::ServerError);
+            return Err(CommonWebError::from_anyhow_error(err));
         }
     };
 

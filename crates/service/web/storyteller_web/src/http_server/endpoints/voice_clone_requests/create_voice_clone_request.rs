@@ -11,6 +11,7 @@ use http_server_common::response::serialize_as_json_error::serialize_as_json_err
 use mysql_queries::queries::voice_clone_requests::insert_voice_clone_requests_builder::InsertVoiceCloneRequestBuilder;
 
 use crate::state::server_state::ServerState;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 
 // =============== Request ===============
 
@@ -58,41 +59,13 @@ pub struct CreateVoiceRequestResponse {
 }
 
 // =============== Error Response ===============
-
-#[derive(Debug, Serialize)]
-pub enum CreateVoiceRequestError {
-  BadInput(String),
-  NotAuthorized,
-  ServerError,
-}
-
-impl ResponseError for CreateVoiceRequestError {
-  fn status_code(&self) -> StatusCode {
-    match *self {
-      CreateVoiceRequestError::BadInput(_) => StatusCode::BAD_REQUEST,
-      CreateVoiceRequestError::NotAuthorized => StatusCode::UNAUTHORIZED,
-      CreateVoiceRequestError::ServerError => StatusCode::INTERNAL_SERVER_ERROR,
-    }
-  }
-
-  fn error_response(&self) -> HttpResponse {
-    serialize_as_json_error(self)
-  }
-}
-
 // NB: Not using DeriveMore since Clion doesn't understand it.
-impl fmt::Display for CreateVoiceRequestError {
-  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-    write!(f, "{:?}", self)
-  }
-}
-
 // =============== Handler ===============
 
 pub async fn create_voice_clone_request_handler(
   http_request: HttpRequest,
   request: web::Json<CreateVoiceRequestRequest>,
-  server_state: web::Data<Arc<ServerState>>) -> Result<HttpResponse, CreateVoiceRequestError>
+  server_state: web::Data<Arc<ServerState>>) -> Result<HttpResponse, CommonWebError>
 {
   let maybe_user_session = server_state
       .session_checker
@@ -100,7 +73,7 @@ pub async fn create_voice_clone_request_handler(
       .await
       .map_err(|e| {
         warn!("Session checker error: {:?}", e);
-        CreateVoiceRequestError::ServerError
+        CommonWebError::from_error(e)
       })?;
 
   let creator_ip_address = get_request_ip(&http_request);
@@ -133,7 +106,7 @@ pub async fn create_voice_clone_request_handler(
       .await
       .map_err(|e| {
         warn!("creation error: {:?}", e);
-        CreateVoiceRequestError::ServerError
+        CommonWebError::from_anyhow_error(e)
       })?;
 
   let response = CreateVoiceRequestResponse {
@@ -141,7 +114,7 @@ pub async fn create_voice_clone_request_handler(
   };
 
   let body = serde_json::to_string(&response)
-      .map_err(|e| CreateVoiceRequestError::ServerError)?;
+      .map_err(CommonWebError::from_error)?;
 
   Ok(HttpResponse::Ok()
       .content_type("application/json")

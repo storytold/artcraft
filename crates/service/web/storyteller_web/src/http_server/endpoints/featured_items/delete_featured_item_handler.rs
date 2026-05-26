@@ -21,6 +21,7 @@ use tokens::tokens::users::UserToken;
 
 use artcraft_api_defs::common::responses::simple_generic_json_success::SimpleGenericJsonSuccess;
 use crate::http_server::web_utils::response_error_helpers::to_simple_json_error;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::web_utils::response_success_helpers::simple_json_success;
 use crate::state::server_state::ServerState;
 
@@ -29,44 +30,7 @@ pub struct DeleteFeaturedItemRequest {
   entity_token: String,
   entity_type: FeaturedItemEntityType,
 }
-
-#[derive(Debug, ToSchema)]
-pub enum DeleteFeaturedItemError {
-  BadInput(String),
-  NotAuthorized,
-  NotFound,
-  ServerError,
-}
-
-impl ResponseError for DeleteFeaturedItemError {
-  fn status_code(&self) -> StatusCode {
-    match *self {
-      DeleteFeaturedItemError::BadInput(_) => StatusCode::BAD_REQUEST,
-      DeleteFeaturedItemError::NotAuthorized => StatusCode::UNAUTHORIZED,
-      DeleteFeaturedItemError::NotFound => StatusCode::NOT_FOUND,
-      DeleteFeaturedItemError::ServerError => StatusCode::INTERNAL_SERVER_ERROR,
-    }
-  }
-
-  fn error_response(&self) -> HttpResponse {
-    let error_reason = match self {
-      DeleteFeaturedItemError::BadInput(reason) => reason.to_string(),
-      DeleteFeaturedItemError::NotAuthorized => "unauthorized".to_string(),
-      DeleteFeaturedItemError::NotFound => "not found".to_string(),
-      DeleteFeaturedItemError::ServerError => "server error".to_string(),
-    };
-
-    to_simple_json_error(&error_reason, self.status_code())
-  }
-}
-
 // NB: Not using derive_more::Display since Clion doesn't understand it.
-impl fmt::Display for DeleteFeaturedItemError {
-  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-    write!(f, "{:?}", self)
-  }
-}
-
 /// Remove a featured item (only mods can do this).
 #[utoipa::path(
   delete,
@@ -75,17 +39,17 @@ impl fmt::Display for DeleteFeaturedItemError {
   request_body = DeleteFeaturedItemRequest,
   responses(
     (status = 200, description = "Success", body = SimpleGenericJsonSuccess),
-    (status = 400, description = "Bad input", body = DeleteFeaturedItemError),
-    (status = 401, description = "Not authorized", body = DeleteFeaturedItemError),
-    (status = 404, description = "Not found", body = DeleteFeaturedItemError),
-    (status = 500, description = "Server error", body = DeleteFeaturedItemError),
+    (status = 400, description = "Bad input", body = CommonWebError),
+    (status = 401, description = "Not authorized", body = CommonWebError),
+    (status = 404, description = "Not found", body = CommonWebError),
+    (status = 500, description = "Server error", body = CommonWebError),
   ),
 )]
 pub async fn delete_featured_item_handler(
   http_request: HttpRequest,
   request: web::Json<DeleteFeaturedItemRequest>,
   server_state: web::Data<Arc<ServerState>>
-) -> Result<HttpResponse, DeleteFeaturedItemError> {
+) -> Result<HttpResponse, CommonWebError> {
 
   // NB(bt,2023-12-14): Kasisnu found that we're getting entity type mismatches in production. Apart from
   // querying the database for entity existence, this is the next best way to prevent incorrect comment
@@ -100,7 +64,7 @@ pub async fn delete_featured_item_handler(
 
   if !token_prefix_matches {
     warn!("invalid token prefix: {:?} for {:?}", request.entity_token, request.entity_type);
-    return Err(DeleteFeaturedItemError::BadInput("invalid token prefix".to_string()));
+    return Err(CommonWebError::BadInputWithSimpleMessage("invalid token prefix".to_string()));
   }
 
   let mut mysql_connection = server_state.mysql_pool
@@ -108,7 +72,7 @@ pub async fn delete_featured_item_handler(
       .await
       .map_err(|err| {
         warn!("MySql pool error: {:?}", err);
-        DeleteFeaturedItemError::ServerError
+        CommonWebError::from_error(err)
       })?;
 
   let maybe_user_session = server_state
@@ -117,13 +81,13 @@ pub async fn delete_featured_item_handler(
       .await
       .map_err(|e| {
         warn!("Session checker error: {:?}", e);
-        DeleteFeaturedItemError::ServerError
+        CommonWebError::from_error(e)
       })?;
 
   let user_session = match maybe_user_session {
     Some(session) => session,
     None => {
-      return Err(DeleteFeaturedItemError::NotAuthorized);
+      return Err(CommonWebError::NotAuthorized);
     }
   };
 
@@ -131,7 +95,7 @@ pub async fn delete_featured_item_handler(
 
   if !is_mod {
     warn!("not moderator");
-    return Err(DeleteFeaturedItemError::NotAuthorized);
+    return Err(CommonWebError::NotAuthorized);
   }
 
   let entity = FeaturedItemEntity::from_entity_type_and_token(
@@ -140,7 +104,7 @@ pub async fn delete_featured_item_handler(
   let mut transaction = mysql_connection.begin().await
       .map_err(|err| {
         error!("error creating transaction: {:?}", err);
-        DeleteFeaturedItemError::ServerError
+        CommonWebError::from_error(err)
       })?;
 
   let delete_result = delete_featured_item(
@@ -164,13 +128,13 @@ pub async fn delete_featured_item_handler(
   transaction.commit().await
       .map_err(|err| {
         error!("error committing transaction: {:?}", err);
-        DeleteFeaturedItemError::ServerError
+        CommonWebError::from_error(err)
       })?;
 
   match delete_result {
     Ok(_) => {},
     Err(_err) => {
-      return Err(DeleteFeaturedItemError::ServerError);
+      return Err(CommonWebError::from_anyhow_error(_err));
     }
   };
 

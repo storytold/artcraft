@@ -9,6 +9,7 @@ use chrono::{DateTime, Utc};
 use log::warn;
 
 use crate::http_server::session::lookup::user_session_extended::UserSessionExtended;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 use enums::by_table::media_uploads::media_upload_type::MediaUploadType;
 use enums::common::visibility::Visibility;
 use mysql_queries::queries::media_uploads::reverse_list_user_media_uploads_of_type::reverse_list_user_media_uploads_of_type_with_connection;
@@ -48,52 +49,20 @@ pub struct MediaUploadEntry {
   pub created_at: DateTime<Utc>,
   pub updated_at: DateTime<Utc>,
 }
-
-#[deprecated(note = "Use `media_files` instead of `media_uploads`.")]
-#[derive(Debug)]
-pub enum ListUserMediaUploadsOfTypeError {
-  ServerError,
-  NotAuthorized,
-}
-
-impl ResponseError for ListUserMediaUploadsOfTypeError {
-  fn status_code(&self) -> StatusCode {
-    match *self {
-      Self::ServerError => StatusCode::INTERNAL_SERVER_ERROR,
-      Self::NotAuthorized => StatusCode::UNAUTHORIZED,
-    }
-  }
-
-  fn error_response(&self) -> HttpResponse {
-    let error_reason = match self {
-      Self::ServerError => "server error".to_string(),
-      Self::NotAuthorized => "not authorized".to_string(),
-    };
-
-    to_simple_json_error(&error_reason, self.status_code())
-  }
-}
-
 // NB: Not using derive_more::Display since Clion doesn't understand it.
-impl fmt::Display for ListUserMediaUploadsOfTypeError {
-  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-    write!(f, "{:?}", self)
-  }
-}
-
 #[deprecated(note = "Use `media_files` instead of `media_uploads`.")]
 pub async fn list_user_media_uploads_of_type_handler(
   http_request: HttpRequest,
   path: Path<ListUserMediaUploadsOfTypeProfilePathInfo>,
   server_state: web::Data<Arc<ServerState>>
-) -> Result<HttpResponse, ListUserMediaUploadsOfTypeError>
+) -> Result<HttpResponse, CommonWebError>
 {
   let mut mysql_connection = server_state.mysql_pool
       .acquire()
       .await
       .map_err(|err| {
         warn!("MySql pool error: {:?}", err);
-        ListUserMediaUploadsOfTypeError::ServerError
+        CommonWebError::from_error(err)
       })?;
 
   // ==================== USER SESSION ==================== //
@@ -104,12 +73,12 @@ pub async fn list_user_media_uploads_of_type_handler(
       .await
       .map_err(|e| {
         warn!("Session checker error: {:?}", e);
-        ListUserMediaUploadsOfTypeError::ServerError
+        CommonWebError::from_error(e)
       })?;
 
   let user_token = match maybe_user_session {
     None => {
-      return Err(ListUserMediaUploadsOfTypeError::NotAuthorized);
+      return Err(CommonWebError::NotAuthorized);
     }
     Some(user_session) => UserToken::new_from_str(&user_session.user_token),
   };
@@ -124,7 +93,7 @@ pub async fn list_user_media_uploads_of_type_handler(
     Ok(results) => results,
     Err(e) => {
       warn!("Query error: {:?}", e);
-      return Err(ListUserMediaUploadsOfTypeError::ServerError);
+      return Err(CommonWebError::from_anyhow_error(e));
     }
   };
 
@@ -143,7 +112,7 @@ pub async fn list_user_media_uploads_of_type_handler(
   };
 
   let body = serde_json::to_string(&response)
-    .map_err(|e| ListUserMediaUploadsOfTypeError::ServerError)?;
+    .map_err(|e| CommonWebError::from_error(e))?;
 
   Ok(HttpResponse::Ok()
     .content_type("application/json")

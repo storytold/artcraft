@@ -14,6 +14,7 @@ use tokens::tokens::zs_voice_dataset_samples::ZsVoiceDatasetSampleToken;
 use tokens::tokens::zs_voice_datasets::ZsVoiceDatasetToken;
 
 use crate::state::server_state::ServerState;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 
 #[derive(Serialize, Clone)]
 pub struct ZsSampleRecordForResponse {
@@ -42,46 +43,24 @@ pub struct ListSamplesByDatasetSuccessResponse {
 pub struct ListSamplesByDatasetPathInfo {
   dataset_token: String,
 }
-
-#[derive(Debug)]
-pub enum ListSamplesByDatasetError {
-  NotAuthorized,
-  ServerError,
-}
-
-impl std::fmt::Display for ListSamplesByDatasetError {
-  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-    write!(f, "{:?}", self)
-  }
-}
-
-impl ResponseError for ListSamplesByDatasetError {
-  fn status_code(&self) -> StatusCode {
-    match *self {
-      ListSamplesByDatasetError::NotAuthorized => StatusCode::UNAUTHORIZED,
-      ListSamplesByDatasetError::ServerError => StatusCode::INTERNAL_SERVER_ERROR,
-    }
-  }
-}
-
 pub async fn list_samples_by_dataset_handler(
   http_request: HttpRequest,
   path: web::Path<ListSamplesByDatasetPathInfo>,
   server_state: web::Data<Arc<ServerState>>
-) -> Result<HttpResponse, ListSamplesByDatasetError> {
+) -> Result<HttpResponse, CommonWebError> {
   let maybe_user_session = server_state.session_checker.maybe_get_user_session(
     &http_request,
     &server_state.mysql_pool
   ).await.map_err(|e| {
     warn!("Session checker error: {:?}", e);
-    ListSamplesByDatasetError::ServerError
+    CommonWebError::from_error(e)
   })?;
 
   let user_session = match maybe_user_session {
     Some(session) => session,
     None => {
       warn!("not logged in");
-      return Err(ListSamplesByDatasetError::NotAuthorized);
+      return Err(CommonWebError::NotAuthorized);
     },
   };
 
@@ -98,14 +77,14 @@ pub async fn list_samples_by_dataset_handler(
     &server_state.mysql_pool
   ).await.map_err(|e| {
     warn!("list_samples error: {:?}", e);
-    ListSamplesByDatasetError::ServerError
+    CommonWebError::from_anyhow_error(e)
   });
 
   let samples = match query_results {
     Ok(samples) => samples,
     Err(e) => {
       warn!("list_samples error: {:?}", e);
-      return Err(ListSamplesByDatasetError::ServerError);
+      return Err(CommonWebError::from_error(e));
     },
   };
 
@@ -131,7 +110,7 @@ pub async fn list_samples_by_dataset_handler(
 
   let body = serde_json::to_string(&response).map_err(|e| {
     warn!("json serialization error: {:?}", e);
-    ListSamplesByDatasetError::ServerError
+    CommonWebError::from_error(e)
   })?;
 
   Ok(HttpResponse::Ok().content_type("application/json").body(body))

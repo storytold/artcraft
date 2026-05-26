@@ -18,6 +18,7 @@ use primitives::numerics::u64_to_u32_saturating::u64_to_u32_saturating;
 use tokens::tokens::model_weights::ModelWeightToken;
 
 use crate::http_server::common_responses::media::weights_cover_image_details::WeightsCoverImageDetails;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::common_responses::simple_entity_stats::SimpleEntityStats;
 use crate::http_server::common_responses::user_details_lite::UserDetailsLight;
 use crate::http_server::endpoints::media_files::helpers::get_media_domain::get_media_domain;
@@ -86,38 +87,15 @@ pub struct GetWeightResponse {
 pub struct GetWeightPathInfo {
     weight_token: ModelWeightToken,
 }
-
-#[derive(Debug, ToSchema)]
-pub enum GetWeightError {
-    NotAuthorized,
-    NotFound,
-    ServerError,
-}
-
-impl fmt::Display for GetWeightError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{:?}", self)
-    }
-}
-
-impl ResponseError for GetWeightError {
-    fn status_code(&self) -> StatusCode {
-        match *self {
-            GetWeightError::NotAuthorized => StatusCode::UNAUTHORIZED,
-            GetWeightError::ServerError => StatusCode::INTERNAL_SERVER_ERROR,
-            GetWeightError::NotFound => StatusCode::NOT_FOUND,
-        }
-    }
-}
 #[utoipa::path(
     get,
     tag = "Model Weights",
     path = "/v1/weights/weight/{weight_token}",
     responses(
         (status = 200, description = "Success Update", body = GetWeightResponse),
-        (status = 400, description = "Bad input", body = GetWeightError),
-        (status = 401, description = "Not authorized", body = GetWeightError),
-        (status = 500, description = "Server error", body = GetWeightError),
+        (status = 400, description = "Bad input", body = CommonWebError),
+        (status = 401, description = "Not authorized", body = CommonWebError),
+        (status = 500, description = "Server error", body = CommonWebError),
     ),
     params(
         ("path" = GetWeightPathInfo, description = "Path for Request")
@@ -127,14 +105,14 @@ pub async fn get_weight_handler(
     http_request: HttpRequest,
     path: Path<GetWeightPathInfo>,
     server_state: web::Data<Arc<ServerState>>
-) -> Result<HttpResponse, GetWeightError> {
+) -> Result<HttpResponse, CommonWebError> {
     let maybe_user_session = server_state
         .session_checker
         .maybe_get_user_session(&http_request, &server_state.mysql_pool)
         .await
         .map_err(|e| {
             warn!("Session checker error: {:?}", e);
-            GetWeightError::ServerError
+            CommonWebError::from_error(e)
         })?;
 
     let is_mod = maybe_user_session
@@ -152,11 +130,11 @@ pub async fn get_weight_handler(
         Ok(Some(weight)) => weight,
         Ok(None) => {
             warn!("Weight not found: {:?}", &path.weight_token);
-            return Err(GetWeightError::NotFound);
+            return Err(CommonWebError::NotFound);
         },
         Err(err) => {
             warn!("Error looking up weight: {:?}", err);
-            return Err(GetWeightError::ServerError);
+            return Err(CommonWebError::from_anyhow_error(err));
         }
     };
 
@@ -168,7 +146,7 @@ pub async fn get_weight_handler(
             Some(session) => session,
             None => {
                 warn!("not logged in");
-                return Err(GetWeightError::NotAuthorized);
+                return Err(CommonWebError::NotAuthorized);
             }
         };
 
@@ -176,7 +154,7 @@ pub async fn get_weight_handler(
 
         if !is_mod && session_user_token.as_str() != user_session.user_token.as_str() {
             warn!("user is not allowed to view this weight: {:?}", user_session.user_token.as_str());
-            return Err(GetWeightError::NotAuthorized);
+            return Err(CommonWebError::NotAuthorized);
         }
     }
 
@@ -239,7 +217,7 @@ pub async fn get_weight_handler(
     };
 
     let body = serde_json::to_string(&response)
-        .map_err(|e| GetWeightError::ServerError)?;
+        .map_err(CommonWebError::from_error)?;
 
     Ok(HttpResponse::Ok()
         .content_type("application/json")

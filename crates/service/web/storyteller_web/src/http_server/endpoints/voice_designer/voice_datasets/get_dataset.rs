@@ -9,6 +9,7 @@ use chrono::{DateTime, Utc};
 use log::warn;
 
 use crate::http_server::common_responses::user_details_lite::UserDetailsLight;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 use enums::common::visibility::Visibility;
 use mysql_queries::queries::voice_designer::datasets::get_dataset::get_dataset_by_token;
 use tokens::tokens::zs_voice_datasets::ZsVoiceDatasetToken;
@@ -37,35 +38,11 @@ pub struct GetDatasetResponse {
 pub struct GetDatasetPathInfo {
     dataset_token: String,
 }
-
-#[derive(Debug)]
-pub enum GetDatasetError {
-    NotAuthorized,
-    NotFound,
-    ServerError,
-}
-
-impl fmt::Display for GetDatasetError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{:?}", self)
-    }
-}
-
-impl ResponseError for GetDatasetError {
-    fn status_code(&self) -> StatusCode {
-        match *self {
-            GetDatasetError::NotAuthorized => StatusCode::UNAUTHORIZED,
-            GetDatasetError::ServerError => StatusCode::INTERNAL_SERVER_ERROR,
-            GetDatasetError::NotFound => StatusCode::NOT_FOUND,
-        }
-    }
-}
-
 pub async fn get_dataset_handler(
     http_request: HttpRequest,
     path: Path<GetDatasetPathInfo>,
     server_state: web::Data<Arc<ServerState>>
-) -> Result<HttpResponse, GetDatasetError> {
+) -> Result<HttpResponse, CommonWebError> {
 
     let maybe_user_session = server_state
         .session_checker
@@ -73,14 +50,14 @@ pub async fn get_dataset_handler(
         .await
         .map_err(|e| {
             warn!("Session checker error: {:?}", e);
-            GetDatasetError::ServerError
+            CommonWebError::from_error(e)
         })?;
 
     let user_session = match maybe_user_session {
         Some(session) => session,
         None => {
             warn!("not logged in");
-            return Err(GetDatasetError::NotAuthorized);
+            return Err(CommonWebError::NotAuthorized);
         }
     };
 
@@ -98,11 +75,11 @@ pub async fn get_dataset_handler(
         Ok(Some(dataset)) => dataset,
         Ok(None) => {
             warn!("Dataset not found: {:?}", dataset_token);
-            return Err(GetDatasetError::NotFound);
+            return Err(CommonWebError::NotFound);
         },
         Err(err) => {
             warn!("Error looking up dataset: {:?}", err);
-            return Err(GetDatasetError::ServerError);
+            return Err(CommonWebError::from_anyhow_error(err));
         }
     };
 
@@ -112,7 +89,7 @@ pub async fn get_dataset_handler(
 
     if !is_creator && !is_mod {
         warn!("user is not allowed to view this dataset: {:?}", user_session.user_token);
-        return Err(GetDatasetError::NotAuthorized);
+        return Err(CommonWebError::NotAuthorized);
     }
 
     let response = GetDatasetResponse {
@@ -133,7 +110,7 @@ pub async fn get_dataset_handler(
     };
 
     let body = serde_json::to_string(&response)
-        .map_err(|e| GetDatasetError::ServerError)?;
+        .map_err(CommonWebError::from_error)?;
 
     Ok(HttpResponse::Ok()
         .content_type("application/json")

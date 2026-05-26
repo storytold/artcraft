@@ -11,6 +11,7 @@ use log::{error, warn};
 use mysql_queries::queries::ip_bans::get_ip_ban::get_ip_ban;
 
 use crate::http_server::web_utils::response_error_helpers::to_simple_json_error;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::state::server_state::ServerState;
 
 /// For the URL PathInfo
@@ -37,42 +38,11 @@ pub struct IpBanRecord {
   pub created_at: DateTime<Utc>,
   pub updated_at: DateTime<Utc>,
 }
-
-#[derive(Debug, Display)]
-pub enum GetIpBanError {
-  BadInput(String),
-  ServerError,
-  NotFound,
-  Unauthorized,
-}
-
-impl ResponseError for GetIpBanError {
-  fn status_code(&self) -> StatusCode {
-    match *self {
-      GetIpBanError::BadInput(_) => StatusCode::BAD_REQUEST,
-      GetIpBanError::ServerError => StatusCode::INTERNAL_SERVER_ERROR,
-      GetIpBanError::NotFound => StatusCode::NOT_FOUND,
-      GetIpBanError::Unauthorized => StatusCode::UNAUTHORIZED,
-    }
-  }
-
-  fn error_response(&self) -> HttpResponse {
-    let error_reason = match self {
-      GetIpBanError::BadInput(reason) => reason.to_string(),
-      GetIpBanError::ServerError => "server error".to_string(),
-      GetIpBanError::NotFound => "not found".to_string(),
-      GetIpBanError::Unauthorized => "unauthorized".to_string(),
-    };
-
-    to_simple_json_error(&error_reason, self.status_code())
-  }
-}
-
 pub async fn get_ip_ban_handler(
   http_request: HttpRequest,
   path: Path<GetIpBanPathInfo>,
   server_state: web::Data<Arc<ServerState>>
-) -> Result<HttpResponse, GetIpBanError> {
+) -> Result<HttpResponse, CommonWebError> {
 
   let maybe_user_session = server_state
       .session_checker
@@ -80,20 +50,20 @@ pub async fn get_ip_ban_handler(
       .await
       .map_err(|e| {
         warn!("Session checker error: {:?}", e);
-        GetIpBanError::ServerError
+        CommonWebError::from_error(e)
       })?;
 
   let user_session = match maybe_user_session {
     Some(session) => session,
     None => {
       warn!("not logged in");
-      return Err(GetIpBanError::Unauthorized);
+      return Err(CommonWebError::NotAuthorized);
     }
   };
 
   if !user_session.can_ban_users {
     warn!("user is not allowed to view bans: {:?}", user_session.user_token);
-    return Err(GetIpBanError::Unauthorized);
+    return Err(CommonWebError::NotAuthorized);
   }
 
   let ip_address = path.ip_address.trim();
@@ -102,12 +72,12 @@ pub async fn get_ip_ban_handler(
       .await
       .map_err(|err| {
         error!("get ip ban db error: {:?}", err);
-        GetIpBanError::ServerError
+        CommonWebError::from_anyhow_error(err)
       })?;
 
   let result : IpBanRecord = match maybe_result {
     None => {
-      return Err(GetIpBanError::NotFound);
+      return Err(CommonWebError::NotFound);
     },
     Some(ban) => IpBanRecord {
       ip_address: ban.ip_address,
@@ -128,7 +98,7 @@ pub async fn get_ip_ban_handler(
   };
 
   let body = serde_json::to_string(&response)
-      .map_err(|e| GetIpBanError::ServerError)?;
+      .map_err(CommonWebError::from_error)?;
 
   Ok(HttpResponse::Ok()
       .content_type("application/json")

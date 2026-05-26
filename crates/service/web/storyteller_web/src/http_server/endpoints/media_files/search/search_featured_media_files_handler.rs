@@ -18,6 +18,7 @@ use tokens::tokens::media_files::MediaFileToken;
 use utoipa::{IntoParams, ToSchema};
 
 use crate::http_server::common_responses::media::media_file_cover_image_details::MediaFileCoverImageDetails;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::common_responses::media::media_links_builder::MediaLinksBuilder;
 use crate::http_server::common_responses::user_details_lite::UserDetailsLight;
 use crate::http_server::endpoints::media_files::helpers::get_media_domain::get_media_domain;
@@ -143,37 +144,6 @@ pub struct SearchFeaturedMediaFileListItem {
   pub created_at: DateTime<Utc>,
   pub updated_at: DateTime<Utc>,
 }
-
-#[derive(Debug, ToSchema)]
-pub enum SearchFeaturedMediaFilesError {
-  ServerError,
-  NotAuthorized,
-}
-
-impl ResponseError for SearchFeaturedMediaFilesError {
-  fn status_code(&self) -> StatusCode {
-    match *self {
-      SearchFeaturedMediaFilesError::ServerError => StatusCode::INTERNAL_SERVER_ERROR,
-      SearchFeaturedMediaFilesError::NotAuthorized => StatusCode::UNAUTHORIZED,
-    }
-  }
-
-  fn error_response(&self) -> HttpResponse {
-    let error_reason = match self {
-      SearchFeaturedMediaFilesError::ServerError => "server error".to_string(),
-      SearchFeaturedMediaFilesError::NotAuthorized => "not authorized".to_string(),
-    };
-
-    to_simple_json_error(&error_reason, self.status_code())
-  }
-}
-
-impl std::fmt::Display for SearchFeaturedMediaFilesError {
-  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-    write!(f, "{:?}", self)
-  }
-}
-
 /// Search for featured media files based on various criteria.
 #[utoipa::path(
   get,
@@ -182,14 +152,14 @@ impl std::fmt::Display for SearchFeaturedMediaFilesError {
   params(SearchFeaturedMediaFilesQueryParams),
   responses(
     (status = 200, description = "Success Response", body = SearchFeaturedMediaFilesSuccessResponse),
-    (status = 500, description = "Server error", body = SearchFeaturedMediaFilesError),
+    (status = 500, description = "Server error", body = CommonWebError),
   ),
 )]
 pub async fn search_featured_media_files_handler(
     http_request: HttpRequest,
     query: Query<SearchFeaturedMediaFilesQueryParams>,
     server_state: web::Data<Arc<ServerState>>
-) -> Result<Json<SearchFeaturedMediaFilesSuccessResponse>, SearchFeaturedMediaFilesError>
+) -> Result<Json<SearchFeaturedMediaFilesSuccessResponse>, CommonWebError>
 {
   let mut maybe_filter_media_types = get_scoped_media_types(query.filter_media_type.as_deref());
   let mut maybe_filter_media_classes  = get_scoped_media_classes(query.filter_media_classes.as_deref());
@@ -209,7 +179,7 @@ pub async fn search_featured_media_files_handler(
     Ok(results) => results,
     Err(err) => {
       warn!("Searching error: {:?}", err);
-      return Err(SearchFeaturedMediaFilesError::ServerError);
+      return Err(CommonWebError::from_anyhow_error(err));
     }
   };
 

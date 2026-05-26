@@ -8,6 +8,7 @@ use derive_more::Display;
 use log::error;
 
 use crate::http_server::common_responses::user_avatars::default_avatar_color_from_username::default_avatar_color_from_username;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::common_responses::user_avatars::default_avatar_from_username::default_avatar_from_username;
 use mysql_queries::queries::public_event_feed::list_public_event_feed_items::list_public_event_feed_items;
 
@@ -54,39 +55,17 @@ pub struct ListEventsSuccessResponse {
   pub success: bool,
   pub events: Vec<EventRecord>,
 }
-
-#[derive(Debug, Display)]
-pub enum ListEventsError {
-  ServerError,
-}
-
-impl ResponseError for ListEventsError {
-  fn status_code(&self) -> StatusCode {
-    match *self {
-      ListEventsError::ServerError=> StatusCode::INTERNAL_SERVER_ERROR,
-    }
-  }
-
-  fn error_response(&self) -> HttpResponse {
-    let error_reason = match self {
-      ListEventsError::ServerError => "server error".to_string(),
-    };
-
-    to_simple_json_error(&error_reason, self.status_code())
-  }
-}
-
 pub async fn list_events_handler(
   http_request: HttpRequest,
   server_state: web::Data<Arc<ServerState>>
-) -> Result<HttpResponse, ListEventsError> {
+) -> Result<HttpResponse, CommonWebError> {
 
   // NB: Since this is publicly exposed, we don't query sensitive data.
   let events = list_public_event_feed_items(&server_state.mysql_pool)
       .await
       .map_err(|err| {
         error!("error querying for event feed events: {:?}", err);
-        ListEventsError::ServerError
+        CommonWebError::from_anyhow_error(err)
       })?
       .into_iter()
       .map(|event| {
@@ -131,7 +110,7 @@ pub async fn list_events_handler(
   };
 
   let body = serde_json::to_string(&response)
-    .map_err(|e| ListEventsError::ServerError)?;
+    .map_err(CommonWebError::from_error)?;
 
   Ok(HttpResponse::Ok()
     .content_type("application/json")

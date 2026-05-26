@@ -11,6 +11,7 @@ use log::{info, warn};
 use mysql_queries::queries::tts::tts_models::list_tts_models::{list_tts_models, TtsModelRecordForList};
 
 use crate::http_server::web_utils::response_error_helpers::to_simple_json_error;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::state::server_state::ServerState;
 
 /// For the URL PathInfo
@@ -24,40 +25,12 @@ pub struct ListTtsModelsForUserSuccessResponse {
   pub success: bool,
   pub models: Vec<TtsModelRecordForList>,
 }
-
-#[derive(Debug)]
-pub enum ListTtsModelsForUserError {
-  ServerError,
-}
-
-impl ResponseError for ListTtsModelsForUserError {
-  fn status_code(&self) -> StatusCode {
-    match *self {
-      ListTtsModelsForUserError::ServerError=> StatusCode::INTERNAL_SERVER_ERROR,
-    }
-  }
-
-  fn error_response(&self) -> HttpResponse {
-    let error_reason = match self {
-      ListTtsModelsForUserError::ServerError => "server error".to_string(),
-    };
-
-    to_simple_json_error(&error_reason, self.status_code())
-  }
-}
-
 // NB: Not using derive_more::Display since Clion doesn't understand it.
-impl fmt::Display for ListTtsModelsForUserError {
-  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-    write!(f, "{:?}", self)
-  }
-}
-
 pub async fn list_user_tts_models_handler(
   http_request: HttpRequest,
   path: Path<GetProfilePathInfo>,
   server_state: web::Data<Arc<ServerState>>
-) -> Result<HttpResponse, ListTtsModelsForUserError>
+) -> Result<HttpResponse, CommonWebError>
 {
   return Ok(HttpResponse::Gone()
       .content_type(ContentType::plaintext())
@@ -68,7 +41,7 @@ pub async fn original_list_user_tts_models_handler(
   http_request: HttpRequest,
   path: Path<GetProfilePathInfo>,
   server_state: web::Data<Arc<ServerState>>
-) -> Result<HttpResponse, ListTtsModelsForUserError>
+) -> Result<HttpResponse, CommonWebError>
 {
   info!("Fetching templates for user: {}", &path.username);
 
@@ -82,7 +55,7 @@ pub async fn original_list_user_tts_models_handler(
     Ok(results) => results,
     Err(e) => {
       warn!("Query error: {:?}", e);
-      return Err(ListTtsModelsForUserError::ServerError);
+      return Err(CommonWebError::from_anyhow_error(e));
     }
   };
 
@@ -92,7 +65,7 @@ pub async fn original_list_user_tts_models_handler(
   };
 
   let body = serde_json::to_string(&response)
-    .map_err(|e| ListTtsModelsForUserError::ServerError)?;
+    .map_err(|e| CommonWebError::from_error(e))?;
 
   Ok(HttpResponse::Ok()
     .content_type("application/json")

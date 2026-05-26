@@ -19,6 +19,7 @@ use tokens::tokens::model_weights::ModelWeightToken;
 
 use artcraft_api_defs::common::responses::simple_generic_json_success::SimpleGenericJsonSuccess;
 use crate::http_server::web_utils::response_success_helpers::simple_json_success;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::state::server_state::ServerState;
 use crate::util::delete_role_disambiguation::{delete_role_disambiguation, DeleteRole};
 
@@ -35,47 +36,16 @@ pub struct DeleteWeightRequest {
 
 
 // =============== Error Response ===============
-
-#[derive(Debug, Serialize,ToSchema)]
-pub enum DeleteWeightError {
-  BadInput(String),
-  NotFound,
-  NotAuthorized,
-  ServerError,
-}
-
-impl ResponseError for DeleteWeightError {
-  fn status_code(&self) -> StatusCode {
-    match *self {
-      DeleteWeightError::BadInput(_) => StatusCode::BAD_REQUEST,
-      DeleteWeightError::NotFound => StatusCode::NOT_FOUND,
-      DeleteWeightError::NotAuthorized => StatusCode::UNAUTHORIZED,
-      DeleteWeightError::ServerError => StatusCode::INTERNAL_SERVER_ERROR,
-    }
-  }
-
-  fn error_response(&self) -> HttpResponse {
-    serialize_as_json_error(self)
-  }
-}
-
 // NB: Not using derive_more::Display since Clion doesn't understand it.
-impl fmt::Display for DeleteWeightError {
-  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-    write!(f, "{:?}", self)
-  }
-}
-
-
 #[utoipa::path(
   delete,
   tag = "Model Weights",
   path = "/v1/weights/weight/{weight_token}",
   responses(
       (status = 200, description = "Success Delete", body = SimpleGenericJsonSuccess),
-      (status = 400, description = "Bad input", body = DeleteWeightError),
-      (status = 401, description = "Not authorized", body = DeleteWeightError),
-      (status = 500, description = "Server error", body = DeleteWeightError),
+      (status = 400, description = "Bad input", body = CommonWebError),
+      (status = 401, description = "Not authorized", body = CommonWebError),
+      (status = 500, description = "Server error", body = CommonWebError),
   ),
   params(
       ("request" = DeleteWeightRequest, description = "Payload for Request"),
@@ -87,21 +57,21 @@ pub async fn delete_weight_handler(
     path: Path<DeleteWeightPathInfo>,
     request: web::Json<DeleteWeightRequest>,
     server_state: web::Data<Arc<ServerState>>
-  ) -> Result<HttpResponse, DeleteWeightError>{
+  ) -> Result<HttpResponse, CommonWebError>{
     let maybe_user_session = server_state
         .session_checker
         .maybe_get_user_session(&http_request, &server_state.mysql_pool)
         .await
         .map_err(|e| {
           warn!("Session checker error: {:?}", e);
-          DeleteWeightError::ServerError
+          CommonWebError::from_error(e)
         })?;
   
     let user_session = match maybe_user_session {
       Some(session) => session,
       None => {
         warn!("not logged in");
-        return Err(DeleteWeightError::NotAuthorized);
+        return Err(CommonWebError::NotAuthorized);
       }
     };
   
@@ -118,11 +88,11 @@ pub async fn delete_weight_handler(
       Ok(Some(weight)) => weight,
       Ok(None) => {
         warn!("Weight not found: {:?}", weight_token);
-        return Err(DeleteWeightError::NotFound);
+        return Err(CommonWebError::NotFound);
       },
       Err(err) => {
         warn!("Error looking up weight: {:?}", err);
-        return Err(DeleteWeightError::ServerError);
+        return Err(CommonWebError::from_anyhow_error(err));
       }
     };
   
@@ -132,7 +102,7 @@ pub async fn delete_weight_handler(
   
     if !is_creator && !is_mod {
       warn!("user is not allowed to delete this weight: {:?}", user_session.user_token);
-      return Err(DeleteWeightError::NotAuthorized);
+      return Err(CommonWebError::NotAuthorized);
     }
   
     let delete_role = delete_role_disambiguation(is_mod, is_creator, Some(request.as_mod));
@@ -141,7 +111,7 @@ pub async fn delete_weight_handler(
       match delete_role {
         DeleteRole::ErrorDoNotDelete => {
           warn!("user is not allowed to delete weights: {:?}", user_session.user_token);
-          return Err(DeleteWeightError::NotAuthorized);
+          return Err(CommonWebError::NotAuthorized);
         }
         DeleteRole::AsUser => {
           delete_weights_as_user(
@@ -160,7 +130,7 @@ pub async fn delete_weight_handler(
       match delete_role {
         DeleteRole::ErrorDoNotDelete => {
           warn!("user is not allowed to undelete weights: {:?}", user_session.user_token);
-          return Err(DeleteWeightError::NotAuthorized);
+          return Err(CommonWebError::NotAuthorized);
         }
         DeleteRole::AsUser => {
           undelete_weights_as_user(
@@ -181,7 +151,7 @@ pub async fn delete_weight_handler(
       Ok(_) => {},
       Err(err) => {
         warn!("Update weight mod approval status DB error: {:?}", err);
-        return Err(DeleteWeightError::ServerError);
+        return Err(CommonWebError::from_anyhow_error(err));
       }
     };
   

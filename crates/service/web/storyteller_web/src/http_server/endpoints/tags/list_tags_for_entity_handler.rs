@@ -7,6 +7,7 @@ use std::fmt;
 use std::sync::Arc;
 
 use crate::http_server::common_responses::tag_info::TagInfo;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::web_utils::response_error_helpers::to_simple_json_error;
 use crate::state::server_state::ServerState;
 use actix_web::error::ResponseError;
@@ -34,41 +35,7 @@ pub struct ListTagsForEntitySuccessResponse {
   pub success: bool,
   pub tags: Vec<TagInfo>,
 }
-
-#[derive(Debug, ToSchema)]
-pub enum ListTagsForEntityError {
-  NotFound,
-  ServerError,
-  BadInput(String),
-}
-
-impl ResponseError for ListTagsForEntityError {
-  fn status_code(&self) -> StatusCode {
-    match *self {
-      ListTagsForEntityError::NotFound => StatusCode::NOT_FOUND,
-      ListTagsForEntityError::ServerError => StatusCode::INTERNAL_SERVER_ERROR,
-      ListTagsForEntityError::BadInput(_) => StatusCode::BAD_REQUEST,
-    }
-  }
-
-  fn error_response(&self) -> HttpResponse {
-    let error_reason = match self {
-      ListTagsForEntityError::NotFound => "not found".to_string(),
-      ListTagsForEntityError::ServerError => "server error".to_string(),
-      ListTagsForEntityError::BadInput(ref reason) => reason.clone(),
-    };
-
-    to_simple_json_error(&error_reason, self.status_code())
-  }
-}
-
 // NB: Not using derive_more::Display since Clion doesn't understand it.
-impl fmt::Display for ListTagsForEntityError {
-  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-    write!(f, "{:?}", self)
-  }
-}
-
 /// List the tags for an entity
 #[utoipa::path(
   get,
@@ -76,9 +43,9 @@ impl fmt::Display for ListTagsForEntityError {
   path = "/v1/tags/list/{entity_type}/{entity_token}",
   responses(
     (status = 200, description = "Success", body = ListTagsForEntitySuccessResponse),
-    (status = 400, description = "Bad input", body = ListTagsForEntityError),
-    (status = 401, description = "Not authorized", body = ListTagsForEntityError),
-    (status = 500, description = "Server error", body = ListTagsForEntityError),
+    (status = 400, description = "Bad input", body = CommonWebError),
+    (status = 401, description = "Not authorized", body = CommonWebError),
+    (status = 500, description = "Server error", body = CommonWebError),
   ),
   params(
     ("request" = ListTagsForEntityPathInfo, description = "Payload for Request"),
@@ -88,7 +55,7 @@ pub async fn list_tags_for_entity_handler(
   http_request: HttpRequest,
   path: Path<ListTagsForEntityPathInfo>,
   server_state: web::Data<Arc<ServerState>>,
-) -> Result<Json<ListTagsForEntitySuccessResponse>, ListTagsForEntityError>
+) -> Result<Json<ListTagsForEntitySuccessResponse>, CommonWebError>
 {
   let token = path.entity_token.as_str();
   let token_prefix_matches = match path.entity_type {
@@ -98,7 +65,7 @@ pub async fn list_tags_for_entity_handler(
 
   if !token_prefix_matches {
     warn!("invalid token prefix: {:?} for {:?}", path.entity_token, path.entity_type);
-    return Err(ListTagsForEntityError::BadInput("invalid token prefix".to_string()));
+    return Err(CommonWebError::BadInputWithSimpleMessage("invalid token prefix".to_string()));
   }
 
   let mut mysql_connection = server_state.mysql_pool
@@ -106,7 +73,7 @@ pub async fn list_tags_for_entity_handler(
       .await
       .map_err(|err| {
         warn!("MySql pool error: {:?}", err);
-        ListTagsForEntityError::ServerError
+        CommonWebError::from_error(err)
       })?;
 
   let entity = TagUseEntity::from_entity_type_and_token(
@@ -116,7 +83,7 @@ pub async fn list_tags_for_entity_handler(
       .await
       .map_err(|e| {
         warn!("error listing tags: {:?}", e);
-        ListTagsForEntityError::ServerError
+        CommonWebError::from_anyhow_error(e)
       })?;
 
   tags.sort_by(|a, b| a.tag_value.cmp(&b.tag_value));

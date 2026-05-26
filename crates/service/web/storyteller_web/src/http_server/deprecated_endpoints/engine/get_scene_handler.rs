@@ -15,6 +15,7 @@ use mysql_queries::queries::media_files::get::get_media_file::get_media_file;
 use tokens::tokens::media_files::MediaFileToken;
 
 use crate::http_server::web_utils::response_error_helpers::to_simple_json_error;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::state::server_state::ServerState;
 
 /// For the URL PathInfo
@@ -43,45 +44,14 @@ pub struct MediaFileInfo {
   pub created_at: DateTime<Utc>,
   pub updated_at: DateTime<Utc>,
 }
-
-#[derive(Debug, ToSchema)]
-pub enum GetSceneError {
-  ServerError,
-  NotFound,
-}
-
-impl ResponseError for GetSceneError {
-  fn status_code(&self) -> StatusCode {
-    match *self {
-      GetSceneError::ServerError => StatusCode::INTERNAL_SERVER_ERROR,
-      GetSceneError::NotFound => StatusCode::NOT_FOUND,
-    }
-  }
-
-  fn error_response(&self) -> HttpResponse {
-    let error_reason = match self {
-      GetSceneError::ServerError => "server error".to_string(),
-      GetSceneError::NotFound => "not found".to_string(),
-    };
-
-    to_simple_json_error(&error_reason, self.status_code())
-  }
-}
-
 // NB: Not using derive_more::Display since Clion doesn't understand it.
-impl fmt::Display for GetSceneError {
-  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-    write!(f, "{:?}", self)
-  }
-}
-
 #[utoipa::path(
   get,
   path = "/v1/engine/scene/{token}",
   responses(
     (status = 200, description = "Found", body = GetSceneSuccessResponse),
-    (status = 404, description = "Not found", body = GetSceneError),
-    (status = 500, description = "Server error", body = GetSceneError),
+    (status = 404, description = "Not found", body = CommonWebError),
+    (status = 500, description = "Server error", body = CommonWebError),
   ),
   params(
     ("path" = GetScenePathInfo, description = "Path for Request")
@@ -90,7 +60,7 @@ impl fmt::Display for GetSceneError {
 pub async fn get_scene_handler(
   http_request: HttpRequest,
   path: Path<GetScenePathInfo>,
-  server_state: web::Data<Arc<ServerState>>) -> Result<HttpResponse, GetSceneError>
+  server_state: web::Data<Arc<ServerState>>) -> Result<HttpResponse, CommonWebError>
 {
   let media_file_token = path.into_inner().token;
 
@@ -98,7 +68,7 @@ pub async fn get_scene_handler(
                                           false, &server_state).await?;
 
   let body = serde_json::to_string(&response)
-      .map_err(|e| GetSceneError::ServerError)?;
+      .map_err(CommonWebError::from_error)?;
 
   Ok(HttpResponse::Ok()
       .content_type("application/json")
@@ -109,7 +79,7 @@ async fn modern_media_file_lookup(
   media_file_token: &MediaFileToken,
   show_deleted_results: bool,
   server_state: &ServerState,
-) -> Result<GetSceneSuccessResponse, GetSceneError> {
+) -> Result<GetSceneSuccessResponse, CommonWebError> {
 
   let result = get_media_file(
     media_file_token,
@@ -120,9 +90,9 @@ async fn modern_media_file_lookup(
   let result = match result {
     Err(e) => {
       warn!("query error: {:?}", e);
-      return Err(GetSceneError::ServerError);
+      return Err(CommonWebError::from_anyhow_error(e));
     }
-    Ok(None) => return Err(GetSceneError::NotFound),
+    Ok(None) => return Err(CommonWebError::NotFound),
     Ok(Some(result)) => result,
   };
 

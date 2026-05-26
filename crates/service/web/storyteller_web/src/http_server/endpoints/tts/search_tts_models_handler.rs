@@ -4,11 +4,8 @@
 #![forbid(unused_variables)]
 
 use std::collections::HashSet;
-use std::fmt;
 use std::sync::Arc;
 
-use actix_web::error::ResponseError;
-use actix_web::http::StatusCode;
 use actix_web::{web, HttpRequest, HttpResponse};
 use chrono::{DateTime, Utc};
 use log::error;
@@ -18,7 +15,7 @@ use enums::common::visibility::Visibility;
 use tokens::tokens::tts_models::TtsModelToken;
 use tokens::tokens::users::UserToken;
 
-use crate::http_server::web_utils::response_error_helpers::to_simple_json_error;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::state::server_state::ServerState;
 
 #[derive(Deserialize)]
@@ -66,39 +63,11 @@ pub struct SearchTtsModelsSuccessResponse {
   pub success: bool,
   pub models: Vec<TtsModel>,
 }
-
-#[derive(Debug)]
-pub enum SearchTtsModelsError {
-  ServerError,
-}
-
-impl ResponseError for SearchTtsModelsError {
-  fn status_code(&self) -> StatusCode {
-    match *self {
-      SearchTtsModelsError::ServerError=> StatusCode::INTERNAL_SERVER_ERROR,
-    }
-  }
-
-  fn error_response(&self) -> HttpResponse {
-    let error_reason = match self {
-      SearchTtsModelsError::ServerError => "server error".to_string(),
-    };
-
-    to_simple_json_error(&error_reason, self.status_code())
-  }
-}
-
 // NB: Not using derive_more::Display since Clion doesn't understand it.
-impl fmt::Display for SearchTtsModelsError {
-  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-    write!(f, "{:?}", self)
-  }
-}
-
 pub async fn search_tts_models_handler(
   _http_request: HttpRequest,
   request: web::Json<SearchTtsModelsRequest>,
-  server_state: web::Data<Arc<ServerState>>) -> Result<HttpResponse, SearchTtsModelsError>
+  server_state: web::Data<Arc<ServerState>>) -> Result<HttpResponse, CommonWebError>
 {
   let results = search_tts_models(
     &server_state.elasticsearch,
@@ -107,7 +76,7 @@ pub async fn search_tts_models_handler(
       .await
       .map_err(|err| {
         error!("Searching error: {:?}", err);
-        SearchTtsModelsError::ServerError
+        CommonWebError::from_anyhow_error(err)
       })?;
 
   let results = results.into_iter()
@@ -146,7 +115,7 @@ pub async fn search_tts_models_handler(
   };
 
   let body = serde_json::to_string(&response)
-      .map_err(|_e| SearchTtsModelsError::ServerError)?;
+      .map_err(CommonWebError::from_error)?;
 
   Ok(HttpResponse::Ok()
       .content_type("application/json")

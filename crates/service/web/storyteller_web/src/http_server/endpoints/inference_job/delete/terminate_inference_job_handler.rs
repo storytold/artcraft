@@ -14,6 +14,7 @@ use mysql_queries::queries::generic_inference::web::mark_generic_inference_job_c
 use tokens::tokens::generic_inference_jobs::InferenceJobToken;
 
 use crate::http_server::web_utils::response_error_helpers::to_simple_json_error;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::state::server_state::ServerState;
 
 /// For the URL PathInfo
@@ -26,41 +27,7 @@ pub struct TerminateInferenceJobPathInfo {
 pub struct TerminateInferenceJobSuccessResponse {
   pub success: bool,
 }
-
-#[derive(Debug, ToSchema)]
-pub enum TerminateInferenceJobError {
-  ServerError,
-  NotFound,
-  NotAuthorized,
-}
-
-impl ResponseError for TerminateInferenceJobError {
-  fn status_code(&self) -> StatusCode {
-    match *self {
-      TerminateInferenceJobError::ServerError => StatusCode::INTERNAL_SERVER_ERROR,
-      TerminateInferenceJobError::NotFound => StatusCode::NOT_FOUND,
-      TerminateInferenceJobError::NotAuthorized => StatusCode::UNAUTHORIZED,
-    }
-  }
-
-  fn error_response(&self) -> HttpResponse {
-    let error_reason = match self {
-      Self::ServerError => "server error".to_string(),
-      Self::NotFound => "not found".to_string(),
-      Self::NotAuthorized => "unauthorized".to_string(),
-    };
-
-    to_simple_json_error(&error_reason, self.status_code())
-  }
-}
-
 // NB: Not using derive_more::Display since Clion doesn't understand it.
-impl fmt::Display for TerminateInferenceJobError {
-  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-    write!(f, "{:?}", self)
-  }
-}
-
 /// Terminate a job for the user.
 ///
 /// The user must own the job. This works for logged in users as well as logged out users
@@ -74,19 +41,19 @@ impl fmt::Display for TerminateInferenceJobError {
   ),
   responses(
     (status = 200, body = TerminateInferenceJobSuccessResponse),
-    (status = 500, body = TerminateInferenceJobError),
+    (status = 500, body = CommonWebError),
   ),
 )]
 pub async fn terminate_inference_job_handler(
   http_request: HttpRequest,
   path: Path<TerminateInferenceJobPathInfo>,
-  server_state: web::Data<Arc<ServerState>>) -> Result<HttpResponse, TerminateInferenceJobError>
+  server_state: web::Data<Arc<ServerState>>) -> Result<HttpResponse, CommonWebError>
 {
   let mut mysql_connection = server_state.mysql_pool.acquire()
       .await
       .map_err(|e| {
         warn!("Could not acquire DB pool: {:?}", e);
-        TerminateInferenceJobError::ServerError
+        CommonWebError::from_error(e)
       })?;
 
   let maybe_user_session = server_state
@@ -95,7 +62,7 @@ pub async fn terminate_inference_job_handler(
       .await
       .map_err(|e| {
         warn!("Session checker error: {:?}", e);
-        TerminateInferenceJobError::ServerError
+        CommonWebError::from_error(e)
       })?;
 
   let maybe_status = get_inference_job_status_from_connection(
@@ -103,10 +70,10 @@ pub async fn terminate_inference_job_handler(
 
   let job_status = match maybe_status {
     Ok(Some(record)) => record,
-    Ok(None) => return Err(TerminateInferenceJobError::NotFound),
+    Ok(None) => return Err(CommonWebError::NotFound),
     Err(err) => {
       error!("tts job query error: {:?}", err);
-      return Err(TerminateInferenceJobError::ServerError);
+      return Err(CommonWebError::from_anyhow_error(err));
     }
   };
 
@@ -117,13 +84,13 @@ pub async fn terminate_inference_job_handler(
 
   if let Some((session_user_token, job_user_token)) = maybe_user_tokens {
     if session_user_token != job_user_token {
-      return Err(TerminateInferenceJobError::NotAuthorized);
+      return Err(CommonWebError::NotAuthorized);
     }
   } else {
     let ip_address = get_request_ip(&http_request);
     if ip_address != job_status.user_details.creator_ip_address {
       // TODO(bt,2023-10-24): Allow if anonymous visitor token cookie matches
-      return Err(TerminateInferenceJobError::NotAuthorized);
+      return Err(CommonWebError::NotAuthorized);
     }
   }
 
@@ -131,7 +98,7 @@ pub async fn terminate_inference_job_handler(
       .await
       .map_err(|err| {
         error!("tts job query error: {:?}", err);
-        TerminateInferenceJobError::ServerError
+        CommonWebError::from_anyhow_error(err)
       })?;
 
   let response = TerminateInferenceJobSuccessResponse {
@@ -141,7 +108,7 @@ pub async fn terminate_inference_job_handler(
   let body = serde_json::to_string(&response)
       .map_err(|e| {
         error!("error returning response: {:?}",  e);
-        TerminateInferenceJobError::ServerError
+        CommonWebError::from_error(e)
       })?;
 
   Ok(HttpResponse::Ok()

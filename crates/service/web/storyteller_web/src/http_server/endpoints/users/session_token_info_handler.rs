@@ -11,6 +11,7 @@ use utoipa::ToSchema;
 use http_server_common::response::response_error_helpers::to_simple_json_error;
 
 use crate::http_server::session::session_checker::SessionChecker;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::state::server_state::ServerState;
 
 #[derive(Serialize, ToSchema)]
@@ -21,38 +22,7 @@ pub struct SessionTokenInfoSuccessResponse {
   /// Send this as the "Session:" header.
   pub maybe_signed_session: Option<String>,
 }
-
-#[derive(Debug, ToSchema)]
-pub enum SessionTokenInfoError {
-  NotAuthorized,
-  ServerError,
-}
-
-impl ResponseError for SessionTokenInfoError {
-  fn status_code(&self) -> StatusCode {
-    match *self {
-      SessionTokenInfoError::NotAuthorized => StatusCode::UNAUTHORIZED,
-      SessionTokenInfoError::ServerError => StatusCode::INTERNAL_SERVER_ERROR,
-    }
-  }
-
-  fn error_response(&self) -> HttpResponse {
-    let error_reason = match self {
-      SessionTokenInfoError::ServerError => "server error".to_string(),
-      SessionTokenInfoError::NotAuthorized => "not authorized".to_string(),
-    };
-
-    to_simple_json_error(&error_reason, self.status_code())
-  }
-}
-
 // NB: Not using derive_more::Display since Clion doesn't understand it.
-impl fmt::Display for SessionTokenInfoError {
-  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-    write!(f, "{:?}", self)
-  }
-}
-
 /// Hack to bypass CORS. !!!!!!!!!!!DO NOT USE THIS!!!!!!!!!!!!!!
 ///
 /// Seriously do not use this unless you okay it with Brandon, Kasisnu, or Michael.
@@ -63,21 +33,21 @@ impl fmt::Display for SessionTokenInfoError {
   path = "/v1/session_token",
   responses(
     (status = 200, description = "Success response", body = SessionTokenInfoSuccessResponse),
-    (status = 500, description = "Server error", body = SessionTokenInfoError),
+    (status = 500, description = "Server error", body = CommonWebError),
   ),
 )]
 pub async fn session_token_info_handler(
   http_request: HttpRequest,
   session_checker: web::Data<SessionChecker>,
   server_state: web::Data<Arc<ServerState>>,
-) -> Result<Json<SessionTokenInfoSuccessResponse>, SessionTokenInfoError>
+) -> Result<Json<SessionTokenInfoSuccessResponse>, CommonWebError>
 {
   let maybe_session_payload = server_state
       .session_cookie_manager
       .check_and_return_session_token_decodes(&http_request)
       .map_err(|e| {
         warn!("Session cookie decode error: {:?}", e);
-        SessionTokenInfoError::ServerError
+        CommonWebError::from_error(e)
       })?;
 
   Ok(Json(SessionTokenInfoSuccessResponse {

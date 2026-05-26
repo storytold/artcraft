@@ -15,6 +15,7 @@ use mysql_queries::queries::tts::tts_models::delete_tts_model_various_scopes::un
 use mysql_queries::queries::tts::tts_models::get_tts_model::get_tts_model_by_token;
 
 use crate::http_server::web_utils::response_error_helpers::to_simple_json_error;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::web_utils::response_success_helpers::simple_json_success;
 use crate::state::server_state::ServerState;
 use crate::util::delete_role_disambiguation::delete_role_disambiguation;
@@ -32,54 +33,17 @@ pub struct DeleteTtsModelRequest {
   /// NB: this is only to disambiguate when a user is both a mod and an author.
   as_mod: Option<bool>,
 }
-
-#[derive(Debug)]
-pub enum DeleteTtsModelError {
-  BadInput(String),
-  NotAuthorized,
-  NotFound,
-  ServerError,
-}
-
-impl ResponseError for DeleteTtsModelError {
-  fn status_code(&self) -> StatusCode {
-    match *self {
-      DeleteTtsModelError::BadInput(_) => StatusCode::BAD_REQUEST,
-      DeleteTtsModelError::NotAuthorized => StatusCode::UNAUTHORIZED,
-      DeleteTtsModelError::NotFound => StatusCode::NOT_FOUND,
-      DeleteTtsModelError::ServerError => StatusCode::INTERNAL_SERVER_ERROR,
-    }
-  }
-
-  fn error_response(&self) -> HttpResponse {
-    let error_reason = match self {
-      DeleteTtsModelError::BadInput(reason) => reason.to_string(),
-      DeleteTtsModelError::NotAuthorized => "unauthorized".to_string(),
-      DeleteTtsModelError::NotFound => "not found".to_string(),
-      DeleteTtsModelError::ServerError => "server error".to_string(),
-    };
-
-    to_simple_json_error(&error_reason, self.status_code())
-  }
-}
-
 // NB: Not using derive_more::Display since Clion doesn't understand it.
-impl fmt::Display for DeleteTtsModelError {
-  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-    write!(f, "{:?}", self)
-  }
-}
-
 pub async fn delete_tts_model_handler(
   http_request: HttpRequest,
   path: Path<DeleteTtsModelPathInfo>,
   request: web::Json<DeleteTtsModelRequest>,
   server_state: web::Data<Arc<ServerState>>
-) -> Result<HttpResponse, DeleteTtsModelError> {
+) -> Result<HttpResponse, CommonWebError> {
   // NB: Disable if we've migrated to model_weights
   if server_state.flags.switch_tts_to_model_weights {
     warn!("Migration to model_weights for tts. Cannot delete old model.");
-    return Err(DeleteTtsModelError::ServerError);
+    return Err(CommonWebError::server_error_with_message("uncaught server error"));
   }
 
   let maybe_user_session = server_state
@@ -88,14 +52,14 @@ pub async fn delete_tts_model_handler(
       .await
       .map_err(|e| {
         warn!("Session checker error: {:?}", e);
-        DeleteTtsModelError::ServerError
+        CommonWebError::from_error(e)
       })?;
 
   let user_session = match maybe_user_session {
     Some(session) => session,
     None => {
       warn!("not logged in");
-      return Err(DeleteTtsModelError::NotAuthorized);
+      return Err(CommonWebError::NotAuthorized);
     }
   };
 
@@ -112,9 +76,9 @@ pub async fn delete_tts_model_handler(
   let tts_model = match model_query_result {
     Err(e) => {
       warn!("query error: {:?}", e);
-      return Err(DeleteTtsModelError::ServerError);
+      return Err(CommonWebError::from_anyhow_error(e));
     }
-    Ok(None) => return Err(DeleteTtsModelError::NotFound),
+    Ok(None) => return Err(CommonWebError::NotFound),
     Ok(Some(model)) => model,
   };
 
@@ -123,13 +87,13 @@ pub async fn delete_tts_model_handler(
 
   if !is_author && !is_mod {
     warn!("user is not allowed to delete models: {:?}", user_session.user_token);
-    return Err(DeleteTtsModelError::NotAuthorized);
+    return Err(CommonWebError::NotAuthorized);
   }
 
   if !is_mod {
     if tts_model.is_locked_from_user_modification || tts_model.is_locked_from_use {
       warn!("user is not allowed to delete models (locked): {:?}", user_session.user_token);
-      return Err(DeleteTtsModelError::NotAuthorized);
+      return Err(CommonWebError::NotAuthorized);
     }
   }
 
@@ -141,7 +105,7 @@ pub async fn delete_tts_model_handler(
     match delete_role {
       DeleteRole::ErrorDoNotDelete => {
         warn!("user is not allowed to delete model: {:?}", user_session.user_token);
-        return Err(DeleteTtsModelError::NotAuthorized);
+        return Err(CommonWebError::NotAuthorized);
       }
       DeleteRole::AsUser => {
         delete_tts_model_as_user(
@@ -162,7 +126,7 @@ pub async fn delete_tts_model_handler(
     match delete_role {
       DeleteRole::ErrorDoNotDelete => {
         warn!("user is not allowed to undelete model: {:?}", user_session.user_token);
-        return Err(DeleteTtsModelError::NotAuthorized);
+        return Err(CommonWebError::NotAuthorized);
       }
       DeleteRole::AsUser => {
         // NB: Technically only mods can see their own inference_results here
@@ -186,7 +150,7 @@ pub async fn delete_tts_model_handler(
     Ok(_) => {},
     Err(err) => {
       warn!("Delete tts model DB error: {:?}", err);
-      return Err(DeleteTtsModelError::ServerError);
+      return Err(CommonWebError::from_anyhow_error(err));
     }
   };
 
