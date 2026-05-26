@@ -68,6 +68,9 @@ pub enum CommonWebError {
   /// 403 Forbidden — content was rejected, with a user-facing message.
   ContentPolicyRejectedWithMessage(String),
 
+  /// 429 Too Many Requests - user is sending too many requests and is being rate limited.
+  TooManyRequests,
+
   /// Uncaught errors are always 500 Internal Server Error.
   /// The user will never see the error cause or message, but our
   /// middleware will handle alerting, logging, etc.
@@ -174,6 +177,7 @@ impl Display for CommonWebError {
       Self::Forbidden => write!(f, "Forbidden"),
       Self::ContentPolicyRejected => write!(f, "Content policy rejected"),
       Self::ContentPolicyRejectedWithMessage(msg) => write!(f, "Content policy rejected: {}", msg),
+      Self::TooManyRequests => write!(f, "Too many requests"),
       Self::UncaughtServerError(err) => write!(f, "Server error: {}", err),
       Self::UncaughtServerErrorWithInternalMessage { internal_message, error } => {
         write!(f, "Server error: {}: {}", internal_message, error)
@@ -198,6 +202,7 @@ impl std::fmt::Debug for CommonWebError {
       Self::Forbidden => write!(f, "Forbidden"),
       Self::ContentPolicyRejected => write!(f, "ContentPolicyRejected"),
       Self::ContentPolicyRejectedWithMessage(msg) => write!(f, "ContentPolicyRejectedWithMessage({:?})", msg),
+      Self::TooManyRequests => write!(f, "TooManyRequests"),
       Self::UncaughtServerError(err) => write!(f, "UncaughtServerError({:?})", err),
       Self::UncaughtServerErrorWithInternalMessage { internal_message, error } => {
         write!(f, "UncaughtServerErrorWithInternalMessage({:?}, {:?})", internal_message, error)
@@ -229,6 +234,7 @@ impl ResponseError for CommonWebError {
       Self::Forbidden => StatusCode::FORBIDDEN,
       Self::ContentPolicyRejected => StatusCode::FORBIDDEN,
       Self::ContentPolicyRejectedWithMessage(_) => StatusCode::FORBIDDEN,
+      Self::TooManyRequests => StatusCode::TOO_MANY_REQUESTS,
       Self::UncaughtServerError(_) => StatusCode::INTERNAL_SERVER_ERROR,
       Self::UncaughtServerErrorWithInternalMessage { .. } => StatusCode::INTERNAL_SERVER_ERROR,
     }
