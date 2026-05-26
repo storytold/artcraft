@@ -64,6 +64,8 @@ use crate::generate::generate_video_v2::providers::artcraft::seedance_2p0_u::bui
 use crate::generate::generate_video_v2::providers::artcraft::seedance_2p0_u_fast::build::build_artcraft_seedance_2p0_u_fast;
 use crate::generate::generate_video_v2::providers::artcraft::seedance_2p0_bp::build::build_artcraft_seedance_2p0_bp;
 use crate::generate::generate_video_v2::providers::artcraft::seedance_2p0_bp_fast::build::build_artcraft_seedance_2p0_bp_fast;
+use crate::generate::generate_video_v2::providers::artcraft::sora_2::build::build_artcraft_sora_2;
+use crate::generate::generate_video_v2::providers::artcraft::sora_2_pro::build::build_artcraft_sora_2_pro;
 use crate::generate::generate_video_v2::providers::artcraft::veo_2::build::build_artcraft_veo_2;
 use crate::generate::generate_video_v2::providers::artcraft::veo_3::build::build_artcraft_veo_3;
 use crate::generate::generate_video_v2::providers::artcraft::veo_3_fast::build::build_artcraft_veo_3_fast;
@@ -200,6 +202,8 @@ impl GenerateVideoRequestBuilder {
       (Provider::Artcraft, CommonVideoModel::Seedance2p0BytePlusFast) => true,
       (Provider::Artcraft, CommonVideoModel::PreviewModel) => true,
       (Provider::Artcraft, CommonVideoModel::PreviewModelFast) => true,
+      (Provider::Artcraft, CommonVideoModel::Sora2) => true,
+      (Provider::Artcraft, CommonVideoModel::Sora2Pro) => true,
       (Provider::Artcraft, CommonVideoModel::Veo2) => true,
       (Provider::Artcraft, CommonVideoModel::Veo3) => true,
       (Provider::Artcraft, CommonVideoModel::Veo3Fast) => true,
@@ -256,6 +260,8 @@ impl GenerateVideoRequestBuilder {
       (Provider::Artcraft, CommonVideoModel::Seedance2p0BytePlusFast) => build_artcraft_seedance_2p0_bp_fast(self),
       (Provider::Artcraft, CommonVideoModel::PreviewModel) => build_artcraft_preview_model(self),
       (Provider::Artcraft, CommonVideoModel::PreviewModelFast) => build_artcraft_preview_model_fast(self),
+      (Provider::Artcraft, CommonVideoModel::Sora2) => build_artcraft_sora_2(self),
+      (Provider::Artcraft, CommonVideoModel::Sora2Pro) => build_artcraft_sora_2_pro(self),
       (Provider::Artcraft, CommonVideoModel::Veo2) => build_artcraft_veo_2(self),
       (Provider::Artcraft, CommonVideoModel::Veo3) => build_artcraft_veo_3(self),
       (Provider::Artcraft, CommonVideoModel::Veo3Fast) => build_artcraft_veo_3_fast(self),

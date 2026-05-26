@@ -18,6 +18,8 @@ pub mod seedance_2p0_u_fast;
 pub mod seedance_2p0_u;
 pub mod seedance_2p0_bp;
 pub mod seedance_2p0_bp_fast;
+pub mod sora_2;
+pub mod sora_2_pro;
 pub mod veo_2;
 pub mod veo_3;
 pub mod veo_3_fast;
@@ -29,3 +31,6 @@ mod kling_cost_parity_tests;
 
 #[cfg(test)]
 mod veo_cost_parity_tests;
+
+#[cfg(test)]
+mod sora_cost_parity_tests;

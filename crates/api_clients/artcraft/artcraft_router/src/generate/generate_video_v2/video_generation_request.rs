@@ -37,6 +37,10 @@ use crate::generate::generate_video_v2::providers::artcraft::seedance_2p0_bp::co
 use crate::generate::generate_video_v2::providers::artcraft::seedance_2p0_bp::request::ArtcraftSeedance2p0BytePlusRequestState;
 use crate::generate::generate_video_v2::providers::artcraft::seedance_2p0_bp_fast::cost::ArtcraftSeedance2p0BytePlusFastCostState;
 use crate::generate::generate_video_v2::providers::artcraft::seedance_2p0_bp_fast::request::ArtcraftSeedance2p0BytePlusFastRequestState;
+use crate::generate::generate_video_v2::providers::artcraft::sora_2::cost::ArtcraftSora2CostState;
+use crate::generate::generate_video_v2::providers::artcraft::sora_2::request::ArtcraftSora2RequestState;
+use crate::generate::generate_video_v2::providers::artcraft::sora_2_pro::cost::ArtcraftSora2ProCostState;
+use crate::generate::generate_video_v2::providers::artcraft::sora_2_pro::request::ArtcraftSora2ProRequestState;
 use crate::generate::generate_video_v2::providers::artcraft::veo_2::cost::ArtcraftVeo2CostState;
 use crate::generate::generate_video_v2::providers::artcraft::veo_2::request::ArtcraftVeo2RequestState;
 use crate::generate::generate_video_v2::providers::artcraft::veo_3::cost::ArtcraftVeo3CostState;
@@ -111,6 +115,8 @@ pub enum VideoGenerationRequest {
   ArtcraftSeedance2p0UltraFast(ArtcraftSeedance2p0UltraFastRequestState),
   ArtcraftSeedance2p0BytePlus(ArtcraftSeedance2p0BytePlusRequestState),
   ArtcraftSeedance2p0BytePlusFast(ArtcraftSeedance2p0BytePlusFastRequestState),
+  ArtcraftSora2(ArtcraftSora2RequestState),
+  ArtcraftSora2Pro(ArtcraftSora2ProRequestState),
   ArtcraftVeo2(ArtcraftVeo2RequestState),
   ArtcraftVeo3(ArtcraftVeo3RequestState),
   ArtcraftVeo3Fast(ArtcraftVeo3FastRequestState),
@@ -161,6 +167,8 @@ impl VideoGenerationRequest {
       Self::ArtcraftSeedance2p0UltraFast(_) => Provider::Artcraft,
       Self::ArtcraftSeedance2p0BytePlus(_) => Provider::Artcraft,
       Self::ArtcraftSeedance2p0BytePlusFast(_) => Provider::Artcraft,
+      Self::ArtcraftSora2(_) => Provider::Artcraft,
+      Self::ArtcraftSora2Pro(_) => Provider::Artcraft,
       Self::ArtcraftVeo2(_) => Provider::Artcraft,
       Self::ArtcraftVeo3(_) => Provider::Artcraft,
       Self::ArtcraftVeo3Fast(_) => Provider::Artcraft,
@@ -211,6 +219,8 @@ impl VideoGenerationRequest {
       VideoGenerationRequest::ArtcraftSeedance2p0UltraFast(request) => Ok(ArtcraftSeedance2p0UltraFastCostState::from_request(request).estimate_cost()),
       VideoGenerationRequest::ArtcraftSeedance2p0BytePlus(request) => Ok(ArtcraftSeedance2p0BytePlusCostState::from_request(request).estimate_cost()),
       VideoGenerationRequest::ArtcraftSeedance2p0BytePlusFast(request) => Ok(ArtcraftSeedance2p0BytePlusFastCostState::from_request(request).estimate_cost()),
+      VideoGenerationRequest::ArtcraftSora2(request) => Ok(ArtcraftSora2CostState::from_request(request).estimate_cost()),
+      VideoGenerationRequest::ArtcraftSora2Pro(request) => Ok(ArtcraftSora2ProCostState::from_request(request).estimate_cost()),
       VideoGenerationRequest::ArtcraftVeo2(request) => Ok(ArtcraftVeo2CostState::from_request(request).estimate_cost()),
       VideoGenerationRequest::ArtcraftVeo3(request) => Ok(ArtcraftVeo3CostState::from_request(request).estimate_cost()),
       VideoGenerationRequest::ArtcraftVeo3Fast(request) => Ok(ArtcraftVeo3FastCostState::from_request(request).estimate_cost()),
@@ -310,6 +320,14 @@ impl VideoGenerationRequest {
         request.send(client_ref).await
       },
       VideoGenerationRequest::ArtcraftSeedance2p0BytePlusFast(request) => {
+        let client_ref = client.get_artcraft_client_ref()?;
+        request.send(client_ref).await
+      },
+      VideoGenerationRequest::ArtcraftSora2(request) => {
+        let client_ref = client.get_artcraft_client_ref()?;
+        request.send(client_ref).await
+      },
+      VideoGenerationRequest::ArtcraftSora2Pro(request) => {
         let client_ref = client.get_artcraft_client_ref()?;
         request.send(client_ref).await
       },
