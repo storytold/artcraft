@@ -1,4 +1,4 @@
-use crate::http_server::endpoints::users::google_sso::google_sso_handler::GoogleCreateAccountErrorResponse;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::endpoints::users::google_sso::handle_new_sso_account::NewSsoAccountInfo;
 use crate::http_server::session::lookup::user_session_feature_flags::UserSessionFeatureFlags;
 use actix_artcraft::requests::get_request_signup_source_enum::get_request_signup_source_enum;
@@ -31,13 +31,13 @@ pub struct CreateArgs<'a> {
 pub async fn handle_new_sso_account_for_new_user(
   args: CreateArgs<'_>
 )
-  -> Result<NewSsoAccountInfo, GoogleCreateAccountErrorResponse>
+  -> Result<NewSsoAccountInfo, CommonWebError>
 {
   let mut transaction = args.mysql_connection.begin()
       .await
       .map_err(|e| {
         warn!("Could not begin transaction: {:?}", e);
-        GoogleCreateAccountErrorResponse::server_error()
+        CommonWebError::from_error(e)
       })?;
 
   // Enroll users in studio temporarily.
@@ -87,19 +87,26 @@ pub async fn handle_new_sso_account_for_new_user(
       },
       Err(err) => {
         warn!("error creating account from google sso: {:?}", err);
-        return Err(GoogleCreateAccountErrorResponse::server_error());
+        // CreateAccountError doesn't impl std::error::Error, so fold it into anyhow.
+        return Err(CommonWebError::from_anyhow_error(
+          anyhow::anyhow!("error creating account from google sso: {:?}", err),
+        ));
       },
     }
   }
 
   let user_token = maybe_user_token.ok_or_else(|| {
     error!("no username without collision after several tries (token)");
-    GoogleCreateAccountErrorResponse::server_error()
+    CommonWebError::server_error_with_message(
+      "no username without collision after several tries (token)",
+    )
   })?;
 
   let user_display_name = maybe_user_display_name.ok_or_else(|| {
     error!("no username without collision after several tries (display name)");
-    GoogleCreateAccountErrorResponse::server_error()
+    CommonWebError::server_error_with_message(
+      "no username without collision after several tries (display name)",
+    )
   })?;
 
   let _token = insert_google_sign_in_account(InsertGoogleSignInArgs {
@@ -115,14 +122,14 @@ pub async fn handle_new_sso_account_for_new_user(
     transaction: &mut transaction,
   }).await.map_err(|err| {
     warn!("error inserting google sign in account: {:?}", err);
-    GoogleCreateAccountErrorResponse::server_error()
+    CommonWebError::from_anyhow_error(err)
   })?;
 
   transaction.commit()
       .await
       .map_err(|e| {
         warn!("Could not commit transaction: {:?}", e);
-        GoogleCreateAccountErrorResponse::server_error()
+        CommonWebError::from_error(e)
       })?;
 
   Ok(NewSsoAccountInfo {

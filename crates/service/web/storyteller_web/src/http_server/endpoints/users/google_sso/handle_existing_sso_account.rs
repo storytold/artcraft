@@ -1,4 +1,4 @@
-use crate::http_server::endpoints::users::google_sso::google_sso_handler::GoogleCreateAccountErrorResponse;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 use actix_web::HttpRequest;
 use google_sign_in::claims::claims::Claims;
 use http_server_common::request::get_request_ip::get_request_ip;
@@ -21,7 +21,7 @@ pub struct ExistingAccountArgs<'a> {
 pub async fn handle_existing_sso_account(
   args: ExistingAccountArgs<'_>
 )
-  -> Result<UserToken, GoogleCreateAccountErrorResponse>
+  -> Result<UserToken, CommonWebError>
 {
   let user_token = match &args.sso_account.maybe_user_token {
     Some(token) => token.clone(),
@@ -30,7 +30,9 @@ pub async fn handle_existing_sso_account(
       // consider how to migrate accounts and handle all the various account states.
       // For now, we'll just deny this possibility. It should not happen.
       warn!("no user token for existing google sign in account!");
-      return Err(GoogleCreateAccountErrorResponse::server_error());
+      return Err(CommonWebError::server_error_with_message(
+        "no user token for existing google sign in account",
+      ));
     },
   };
 

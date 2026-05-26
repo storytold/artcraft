@@ -1,4 +1,4 @@
-use crate::http_server::endpoints::users::google_sso::google_sso_handler::GoogleCreateAccountErrorResponse;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::endpoints::users::google_sso::handle_new_sso_account_for_existing_user::{handle_new_sso_account_for_existing_user, LinkArgs};
 use crate::http_server::endpoints::users::google_sso::handle_new_sso_account_for_new_user::{handle_new_sso_account_for_new_user, CreateArgs};
 use crate::util::canonicalize_email_for_users_table::canonicalize_email_for_users_table;
@@ -33,7 +33,7 @@ pub struct NewSsoAccountInfo {
 pub async fn handle_new_sso_account(
   args: NewSsoArgs<'_>
 )
-  -> Result<NewSsoAccountInfo, GoogleCreateAccountErrorResponse>
+  -> Result<NewSsoAccountInfo, CommonWebError>
 {
   // NB: We use this routine to "normalize" email addresses in the user table.
   // It won't necessarily match the email address in the Google claims.
@@ -46,7 +46,7 @@ pub async fn handle_new_sso_account(
           .await
           .map_err(|err| {
             warn!("error looking up user by email: {:?}", err);
-            GoogleCreateAccountErrorResponse::server_error()
+            CommonWebError::from_anyhow_error(err)
           })?;
 
   match maybe_user_account {

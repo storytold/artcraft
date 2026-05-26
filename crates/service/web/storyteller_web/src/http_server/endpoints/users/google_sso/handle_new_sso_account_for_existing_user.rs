@@ -1,4 +1,4 @@
-use crate::http_server::endpoints::users::google_sso::google_sso_handler::GoogleCreateAccountErrorResponse;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::endpoints::users::google_sso::handle_new_sso_account::NewSsoAccountInfo;
 pub use actix_web::HttpRequest;
 use google_sign_in::claims::claims::Claims;
@@ -20,13 +20,13 @@ pub struct LinkArgs<'a> {
 pub async fn handle_new_sso_account_for_existing_user(
   args: LinkArgs<'_>
 )
-  -> Result<NewSsoAccountInfo, GoogleCreateAccountErrorResponse>
+  -> Result<NewSsoAccountInfo, CommonWebError>
 {
   let mut transaction = args.mysql_connection.begin()
       .await
       .map_err(|e| {
         warn!("Could not begin transaction: {:?}", e);
-        GoogleCreateAccountErrorResponse::server_error()
+        CommonWebError::from_error(e)
       })?;
 
   let ip_address = get_request_ip(&args.http_request);
@@ -44,14 +44,14 @@ pub async fn handle_new_sso_account_for_existing_user(
     transaction: &mut transaction,
   }).await.map_err(|err| {
     warn!("error inserting google sign in account: {:?}", err);
-    GoogleCreateAccountErrorResponse::server_error()
+    CommonWebError::from_anyhow_error(err)
   })?;
 
   transaction.commit()
       .await
       .map_err(|e| {
         warn!("Could not commit transaction: {:?}", e);
-        GoogleCreateAccountErrorResponse::server_error()
+        CommonWebError::from_error(e)
       })?;
 
   Ok(NewSsoAccountInfo {

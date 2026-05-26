@@ -1,4 +1,5 @@
-use crate::http_server::endpoints::users::google_sso::google_sso_handler::{GoogleCreateAccountErrorResponse, GoogleCreateAccountRequest};
+use crate::http_server::common_responses::common_web_error::CommonWebError;
+use crate::http_server::endpoints::users::google_sso::google_sso_handler::GoogleCreateAccountRequest;
 use crate::state::certs::google_sign_in_cert::GoogleSignInCert;
 use google_sign_in::claims::claims::Claims;
 use google_sign_in::decode_and_verify_token_claims::decode_and_verify_token_claims;
@@ -9,12 +10,12 @@ use std::collections::HashSet;
 pub async fn check_claims(
   request: &GoogleCreateAccountRequest,
   google_sign_in_cert: &GoogleSignInCert,
-) -> Result<Claims, GoogleCreateAccountErrorResponse> {
+) -> Result<Claims, CommonWebError> {
   let keys = google_sign_in_cert.fetch_key_map(false)
       .await
       .map_err(|e| {
         warn!("error downloading google certs: {:?}", e);
-        GoogleCreateAccountErrorResponse::server_error()
+        CommonWebError::from_anyhow_error(e)
       })?;
 
   let verification_options = Some(build_options());
@@ -28,7 +29,7 @@ pub async fn check_claims(
           .await
           .map_err(|e| {
             warn!("error refreshing google certs: {:?}", e);
-            GoogleCreateAccountErrorResponse::server_error()
+            CommonWebError::from_anyhow_error(e)
           })?;
 
       let verification_options = Some(build_options());
@@ -36,7 +37,9 @@ pub async fn check_claims(
       let claims = decode_and_verify_token_claims(&keys, &request.google_credential, verification_options)
           .map_err(|e| {
             warn!("error decoding google token claims: {:?}", e);
-            GoogleCreateAccountErrorResponse::bad_request()
+            // The detailed error is logged above; the user-facing message is intentionally
+            // generic so we don't leak JWT internals.
+            CommonWebError::BadInputWithSimpleMessage("invalid google credential".to_string())
           })?;
 
       claims

@@ -3,24 +3,19 @@
 //#![forbid(unused_mut)]
 //#![forbid(unused_variables)]
 
-use std::fmt;
-use std::fmt::Formatter;
-
-use crate::util::lookup::resolve_referral_info::resolve_referral_info;
-use mysql_queries::queries::user_referrals::insert_user_referral::{insert_user_referral, InsertUserReferralArgs};
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::endpoints::users::google_sso::check_claims::check_claims;
 use crate::http_server::endpoints::users::google_sso::handle_existing_sso_account::{handle_existing_sso_account, ExistingAccountArgs};
 use crate::http_server::endpoints::users::google_sso::handle_new_sso_account::{handle_new_sso_account, NewSsoArgs};
 use crate::state::certs::google_sign_in_cert::GoogleSignInCert;
+use crate::util::lookup::resolve_referral_info::resolve_referral_info;
 use actix_artcraft::sessions::user_sessions::http_user_session_manager::HttpUserSessionManager;
-use actix_web::error::ResponseError;
-use actix_web::http::StatusCode;
 use actix_web::web::{Data, Json};
 use actix_web::{HttpRequest, HttpResponse};
 use http_server_common::request::get_request_ip::get_request_ip;
-use http_server_common::response::serialize_as_json_error::serialize_as_json_error;
 use log::{info, warn};
 use mysql_queries::queries::google_sign_in_accounts::get_google_sign_in_account_by_subject::get_google_sign_in_account;
+use mysql_queries::queries::user_referrals::insert_user_referral::{insert_user_referral, InsertUserReferralArgs};
 use mysql_queries::queries::users::user_sessions::create_user_session_with_transactor::create_user_session_with_transactor;
 use mysql_queries::utils::transactor::Transactor;
 use sqlx::{Acquire, MySqlPool};
@@ -118,62 +113,6 @@ pub struct GoogleCreateAccountSuccessResponse {
   pub maybe_user_display_name: Option<String>,
 }
 
-#[derive(ToSchema, Serialize, Debug)]
-pub struct GoogleCreateAccountErrorResponse {
-  pub success: bool,
-  pub error_type: GoogleCreateAccountErrorType,
-}
-
-#[derive(ToSchema, Copy, Clone, Debug, Serialize)]
-pub enum GoogleCreateAccountErrorType {
-  BadRequest, // Other request malformed errors, eg. bad Origin header
-  BadInput,
-  EmailTaken,
-  ServerError,
-  UsernameReserved,
-  UsernameTaken,
-}
-
-impl GoogleCreateAccountErrorResponse {
-  pub fn server_error() -> Self {
-    Self {
-      success: false,
-      error_type: GoogleCreateAccountErrorType::ServerError,
-    }
-  }
-
-  pub fn bad_request() -> Self {
-    Self {
-      success: false,
-      error_type: GoogleCreateAccountErrorType::BadRequest,
-    }
-  }
-}
-
-// NB: Not using DeriveMore since Clion doesn't understand it.
-impl fmt::Display for GoogleCreateAccountErrorResponse {
-  fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-    write!(f, "{:?}", self.error_type)
-  }
-}
-
-impl ResponseError for GoogleCreateAccountErrorResponse {
-  fn status_code(&self) -> StatusCode {
-    match self.error_type {
-      GoogleCreateAccountErrorType::BadRequest => StatusCode::BAD_REQUEST,
-      GoogleCreateAccountErrorType::BadInput => StatusCode::BAD_REQUEST,
-      GoogleCreateAccountErrorType::EmailTaken => StatusCode::BAD_REQUEST,
-      GoogleCreateAccountErrorType::ServerError => StatusCode::INTERNAL_SERVER_ERROR,
-      GoogleCreateAccountErrorType::UsernameReserved => StatusCode::BAD_REQUEST,
-      GoogleCreateAccountErrorType::UsernameTaken => StatusCode::BAD_REQUEST,
-    }
-  }
-
-  fn error_response(&self) -> HttpResponse {
-    serialize_as_json_error(self)
-  }
-}
-
 /// Sign in or sign up with "Sign in with Google" credentials.
 /// This supports both sign up for new users and sign in for existing users.
 #[utoipa::path(
@@ -182,9 +121,9 @@ impl ResponseError for GoogleCreateAccountErrorResponse {
   path = "/v1/accounts/google_sso",
   responses(
     (status = 200, description = "Success", body = GoogleCreateAccountSuccessResponse),
-    (status = 400, description = "Bad input", body = GoogleCreateAccountErrorResponse),
-    (status = 401, description = "Not authorized", body = GoogleCreateAccountErrorResponse),
-    (status = 500, description = "Server error", body = GoogleCreateAccountErrorResponse),
+    (status = 400, description = "Bad input", body = CommonWebError),
+    (status = 401, description = "Not authorized", body = CommonWebError),
+    (status = 500, description = "Server error", body = CommonWebError),
   ),
   params(
     ("request" = GoogleCreateAccountRequest, description = "Payload for Request"),
@@ -196,7 +135,7 @@ pub async fn google_sso_handler(
   mysql_pool: Data<MySqlPool>,
   session_cookie_manager: Data<HttpUserSessionManager>,
   google_sign_in_cert: Data<GoogleSignInCert>,
-) -> Result<HttpResponse, GoogleCreateAccountErrorResponse>
+) -> Result<HttpResponse, CommonWebError>
 {
   let claims = check_claims(&request, &google_sign_in_cert).await?;
 
@@ -208,28 +147,28 @@ pub async fn google_sso_handler(
       .map(|s| s.to_string())
       .ok_or_else(|| {
         warn!("no subject in google claims");
-        GoogleCreateAccountErrorResponse::bad_request()
+        CommonWebError::BadInputWithSimpleMessage("no subject in google claims".to_string())
       })?;
 
   let claims_email_address = claims.email()
       .map(|email| email.to_string())
       .ok_or_else(|| {
         warn!("no email address in google claims");
-        GoogleCreateAccountErrorResponse::bad_request()
+        CommonWebError::BadInputWithSimpleMessage("no email address in google claims".to_string())
       })?;
 
   let mut mysql_connection = mysql_pool.acquire()
       .await
       .map_err(|e| {
         warn!("Could not acquire DB pool: {:?}", e);
-        GoogleCreateAccountErrorResponse::server_error()
+        CommonWebError::from_error(e)
       })?;
 
   let maybe_sso_account = get_google_sign_in_account(&claims_subject, &mut *mysql_connection)
       .await
       .map_err(|err| {
         warn!("error getting google sign in account: {:?}", err);
-        GoogleCreateAccountErrorResponse::server_error()
+        CommonWebError::from_anyhow_error(err)
       })?;
 
   let user_token;
@@ -312,7 +251,7 @@ pub async fn google_sso_handler(
       .await
       .map_err(|e| {
         warn!("error creating user session: {:?}", e);
-        GoogleCreateAccountErrorResponse::server_error()
+        CommonWebError::from_anyhow_error(e)
       })?;
 
   info!("new user session created");
@@ -339,16 +278,16 @@ pub fn construct_http_response(
   user_token: &UserToken,
   maybe_user_display_name: Option<String>,
   username_not_yet_customized: bool,
-) -> Result<HttpResponse, GoogleCreateAccountErrorResponse> {
+) -> Result<HttpResponse, CommonWebError> {
 
   let session_cookie = match session_cookie_manager.create_cookie(&session_token, &user_token) {
     Ok(cookie) => cookie,
-    Err(_) => return Err(GoogleCreateAccountErrorResponse::server_error()),
+    Err(err) => return Err(CommonWebError::from_error(err)),
   };
 
   let signed_session = match session_cookie_manager.encode_session_payload(&session_token, &user_token) {
     Ok(payload) => payload,
-    Err(_) => return Err(GoogleCreateAccountErrorResponse::server_error()),
+    Err(err) => return Err(CommonWebError::from_error(err)),
   };
 
   let response = GoogleCreateAccountSuccessResponse {
@@ -358,8 +297,7 @@ pub fn construct_http_response(
     maybe_user_display_name,
   };
 
-  let body = serde_json::to_string(&response)
-      .map_err(|_e| GoogleCreateAccountErrorResponse::server_error())?;
+  let body = serde_json::to_string(&response)?;
 
   Ok(HttpResponse::Ok()
       .cookie(session_cookie)
