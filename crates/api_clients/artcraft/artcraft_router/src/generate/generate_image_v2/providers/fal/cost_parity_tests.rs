@@ -249,3 +249,253 @@ mod flux_pro_1p1_ultra {
     assert_eq!(v2_cost(builder), None);
   }
 }
+
+// ── Helper for models that accept both t2i and edit modes ──
+
+mod t2i_and_edit_helpers {
+  use super::*;
+
+  /// Returns sample image-input shapes used for parity tests: None, empty Urls,
+  /// single URL, multiple URLs. (Skips MediaFileTokens — Fal rejects those, but
+  /// v1 surfaces a different error type than v2 in some places; the URL paths
+  /// are the meaningful ones for cost parity.)
+  pub fn all_image_inputs() -> Vec<Option<ImageListRef>> {
+    vec![
+      None,
+      Some(ImageListRef::Urls(vec![])),
+      Some(ImageListRef::Urls(vec!["https://example.com/a.jpg".to_string()])),
+      Some(ImageListRef::Urls(vec![
+        "https://example.com/a.jpg".to_string(),
+        "https://example.com/b.jpg".to_string(),
+      ])),
+    ]
+  }
+}
+
+// ── Nano Banana (Gemini 2.5 Flash) ──
+
+mod nano_banana {
+  use super::*;
+  use super::t2i_and_edit_helpers::all_image_inputs;
+
+  fn base() -> GenerateImageRequestBuilder {
+    base_builder(CommonImageModel::NanoBanana)
+  }
+
+  #[test]
+  fn cost_parity_full_combinatorial() {
+    let batches = [None, Some(1u16), Some(2), Some(3), Some(4)];
+    let mut combos = 0;
+    for aspect_ratio in all_aspect_ratios() {
+      for batch in &batches {
+        for strategy in all_strategies() {
+          for image_inputs in all_image_inputs() {
+            let mut builder = base();
+            builder.aspect_ratio = *aspect_ratio;
+            builder.image_batch_count = *batch;
+            builder.request_mismatch_mitigation_strategy = *strategy;
+            builder.image_inputs = image_inputs;
+
+            let v1 = v1_cost(&builder);
+            let v2 = v2_cost(builder.clone());
+            assert_eq!(
+              v1, v2,
+              "nano_banana cost mismatch: ar={:?} batch={:?} strat={:?} → v1={:?} v2={:?}",
+              builder.aspect_ratio, batch, strategy, v1, v2,
+            );
+
+            let v1c = v1_credits(&builder);
+            let v2c = v2_credits(builder.clone());
+            assert_eq!(v1c, v2c);
+
+            combos += 1;
+          }
+        }
+      }
+    }
+    assert!(combos >= 18 * 5 * 3 * 4, "expected ≥{} combos, got {}", 18 * 5 * 3 * 4, combos);
+  }
+
+  #[test]
+  fn cost_parity_out_of_range_batches() {
+    for &batch in &[5u16, 7, 100] {
+      for &strategy in all_strategies() {
+        let mut builder = base();
+        builder.image_batch_count = Some(batch);
+        builder.request_mismatch_mitigation_strategy = strategy;
+        assert_eq!(v1_cost(&builder), v2_cost(builder.clone()));
+      }
+    }
+  }
+}
+
+// ── Seedream 4 ──
+
+mod seedream_4 {
+  use super::*;
+  use super::t2i_and_edit_helpers::all_image_inputs;
+
+  fn base() -> GenerateImageRequestBuilder {
+    base_builder(CommonImageModel::Seedream4)
+  }
+
+  #[test]
+  fn cost_parity_full_combinatorial() {
+    let batches = [None, Some(1u16), Some(2), Some(3), Some(4)];
+    let mut combos = 0;
+    for aspect_ratio in all_aspect_ratios() {
+      for batch in &batches {
+        for strategy in all_strategies() {
+          for image_inputs in all_image_inputs() {
+            let mut builder = base();
+            builder.aspect_ratio = *aspect_ratio;
+            builder.image_batch_count = *batch;
+            builder.request_mismatch_mitigation_strategy = *strategy;
+            builder.image_inputs = image_inputs;
+
+            let v1 = v1_cost(&builder);
+            let v2 = v2_cost(builder.clone());
+            assert_eq!(
+              v1, v2,
+              "seedream_4 cost mismatch: ar={:?} batch={:?} strat={:?} → v1={:?} v2={:?}",
+              builder.aspect_ratio, batch, strategy, v1, v2,
+            );
+
+            let v1c = v1_credits(&builder);
+            let v2c = v2_credits(builder.clone());
+            assert_eq!(v1c, v2c);
+
+            combos += 1;
+          }
+        }
+      }
+    }
+    assert!(combos >= 18 * 5 * 3 * 4, "expected ≥{} combos, got {}", 18 * 5 * 3 * 4, combos);
+  }
+
+  #[test]
+  fn cost_parity_out_of_range_batches() {
+    for &batch in &[5u16, 7, 100] {
+      for &strategy in all_strategies() {
+        let mut builder = base();
+        builder.image_batch_count = Some(batch);
+        builder.request_mismatch_mitigation_strategy = strategy;
+        assert_eq!(v1_cost(&builder), v2_cost(builder.clone()));
+      }
+    }
+  }
+}
+
+// ── Seedream 4.5 ──
+
+mod seedream_4p5 {
+  use super::*;
+  use super::t2i_and_edit_helpers::all_image_inputs;
+
+  fn base() -> GenerateImageRequestBuilder {
+    base_builder(CommonImageModel::Seedream4p5)
+  }
+
+  #[test]
+  fn cost_parity_full_combinatorial() {
+    let batches = [None, Some(1u16), Some(2), Some(3), Some(4)];
+    let mut combos = 0;
+    for aspect_ratio in all_aspect_ratios() {
+      for batch in &batches {
+        for strategy in all_strategies() {
+          for image_inputs in all_image_inputs() {
+            let mut builder = base();
+            builder.aspect_ratio = *aspect_ratio;
+            builder.image_batch_count = *batch;
+            builder.request_mismatch_mitigation_strategy = *strategy;
+            builder.image_inputs = image_inputs;
+
+            let v1 = v1_cost(&builder);
+            let v2 = v2_cost(builder.clone());
+            assert_eq!(
+              v1, v2,
+              "seedream_4p5 cost mismatch: ar={:?} batch={:?} strat={:?} → v1={:?} v2={:?}",
+              builder.aspect_ratio, batch, strategy, v1, v2,
+            );
+
+            let v1c = v1_credits(&builder);
+            let v2c = v2_credits(builder.clone());
+            assert_eq!(v1c, v2c);
+
+            combos += 1;
+          }
+        }
+      }
+    }
+    assert!(combos >= 18 * 5 * 3 * 4, "expected ≥{} combos, got {}", 18 * 5 * 3 * 4, combos);
+  }
+}
+
+// ── Seedream 5 Lite ──
+
+mod seedream_5_lite {
+  use super::*;
+  use super::t2i_and_edit_helpers::all_image_inputs;
+
+  fn base() -> GenerateImageRequestBuilder {
+    base_builder(CommonImageModel::Seedream5Lite)
+  }
+
+  fn all_resolutions() -> &'static [Option<CommonResolution>] {
+    &[
+      None,
+      Some(CommonResolution::HalfK),
+      Some(CommonResolution::OneK),
+      Some(CommonResolution::TwoK),
+      Some(CommonResolution::ThreeK),
+      Some(CommonResolution::FourK),
+    ]
+  }
+
+  #[test]
+  fn cost_parity_full_combinatorial() {
+    // Cost parity for seedream_5_lite — also sweep resolution since the
+    // resolution-as-aspect-fallback path is unique to this model.
+    let batches = [None, Some(1u16), Some(4)];
+    let strategies = [
+      RequestMismatchMitigationStrategy::ErrorOut,
+      RequestMismatchMitigationStrategy::PayMoreUpgrade,
+    ];
+    let aspect_ratios = [
+      None,
+      Some(CommonAspectRatio::Square),
+      Some(CommonAspectRatio::Auto),
+      Some(CommonAspectRatio::Auto4k),
+      Some(CommonAspectRatio::WideSixteenByNine),
+    ];
+
+    let mut combos = 0;
+    for resolution in all_resolutions() {
+      for aspect_ratio in &aspect_ratios {
+        for batch in &batches {
+          for strategy in &strategies {
+            for image_inputs in all_image_inputs() {
+              let mut builder = base();
+              builder.resolution = *resolution;
+              builder.aspect_ratio = *aspect_ratio;
+              builder.image_batch_count = *batch;
+              builder.request_mismatch_mitigation_strategy = *strategy;
+              builder.image_inputs = image_inputs;
+
+              let v1 = v1_cost(&builder);
+              let v2 = v2_cost(builder.clone());
+              assert_eq!(
+                v1, v2,
+                "seedream_5_lite cost mismatch: res={:?} ar={:?} batch={:?} strat={:?} → v1={:?} v2={:?}",
+                resolution, builder.aspect_ratio, batch, strategy, v1, v2,
+              );
+
+              combos += 1;
+            }
+          }
+        }
+      }
+    }
+    assert!(combos >= 6 * 5 * 3 * 2 * 4, "expected ≥{} combos, got {}", 6 * 5 * 3 * 2 * 4, combos);
+  }
+}

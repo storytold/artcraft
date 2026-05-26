@@ -17,8 +17,12 @@ use crate::generate::generate_image_v2::providers::fal::flux_pro_1p1_ultra::buil
 use crate::generate::generate_image_v2::providers::fal::gpt_image_1::build::build_fal_gpt_image_1;
 use crate::generate::generate_image_v2::providers::fal::gpt_image_1p5::build::build_fal_gpt_image_1p5;
 use crate::generate::generate_image_v2::providers::fal::gpt_image_2::build::build_fal_gpt_image_2;
+use crate::generate::generate_image_v2::providers::fal::nano_banana::build::build_fal_nano_banana;
 use crate::generate::generate_image_v2::providers::fal::nano_banana_2::build::build_fal_nano_banana_2;
 use crate::generate::generate_image_v2::providers::fal::nano_banana_pro::build::build_fal_nano_banana_pro;
+use crate::generate::generate_image_v2::providers::fal::seedream_4::build::build_fal_seedream_4;
+use crate::generate::generate_image_v2::providers::fal::seedream_4p5::build::build_fal_seedream_4p5;
+use crate::generate::generate_image_v2::providers::fal::seedream_5_lite::build::build_fal_seedream_5_lite;
 use crate::generate::generate_image::plan::artcraft::plan_generate_image_artcraft_flux_1_dev::plan_generate_image_artcraft_flux_1_dev;
 use crate::generate::generate_image::plan::artcraft::plan_generate_image_artcraft_flux_1_schnell::plan_generate_image_artcraft_flux_1_schnell;
 use crate::generate::generate_image::plan::artcraft::plan_generate_image_artcraft_flux_2_lora_angles::plan_generate_image_artcraft_flux_2_lora_angles;
@@ -109,8 +113,12 @@ impl GenerateImageRequestBuilder {
       (Provider::Fal, CommonImageModel::GptImage1) => true,
       (Provider::Fal, CommonImageModel::GptImage1p5) => true,
       (Provider::Fal, CommonImageModel::GptImage2) => true,
+      (Provider::Fal, CommonImageModel::NanoBanana) => true,
       (Provider::Fal, CommonImageModel::NanoBanana2) => true,
       (Provider::Fal, CommonImageModel::NanoBananaPro) => true,
+      (Provider::Fal, CommonImageModel::Seedream4) => true,
+      (Provider::Fal, CommonImageModel::Seedream4p5) => true,
+      (Provider::Fal, CommonImageModel::Seedream5Lite) => true,
       _ => false,
     }
   }
@@ -124,8 +132,12 @@ impl GenerateImageRequestBuilder {
       (Provider::Fal, CommonImageModel::GptImage1) => build_fal_gpt_image_1(self),
       (Provider::Fal, CommonImageModel::GptImage1p5) => build_fal_gpt_image_1p5(self),
       (Provider::Fal, CommonImageModel::GptImage2) => build_fal_gpt_image_2(self),
+      (Provider::Fal, CommonImageModel::NanoBanana) => build_fal_nano_banana(self),
       (Provider::Fal, CommonImageModel::NanoBanana2) => build_fal_nano_banana_2(self),
       (Provider::Fal, CommonImageModel::NanoBananaPro) => build_fal_nano_banana_pro(self),
+      (Provider::Fal, CommonImageModel::Seedream4) => build_fal_seedream_4(self),
+      (Provider::Fal, CommonImageModel::Seedream4p5) => build_fal_seedream_4p5(self),
+      (Provider::Fal, CommonImageModel::Seedream5Lite) => build_fal_seedream_5_lite(self),
       _ => self.unsupported_provider_and_model(),
     }
   }

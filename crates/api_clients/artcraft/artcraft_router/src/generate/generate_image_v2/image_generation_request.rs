@@ -17,10 +17,18 @@ use crate::generate::generate_image_v2::providers::fal::gpt_image_1p5::cost::Fal
 use crate::generate::generate_image_v2::providers::fal::gpt_image_1p5::request::FalGptImage1p5RequestState;
 use crate::generate::generate_image_v2::providers::fal::gpt_image_2::cost::FalGptImage2CostState;
 use crate::generate::generate_image_v2::providers::fal::gpt_image_2::request::FalGptImage2RequestState;
+use crate::generate::generate_image_v2::providers::fal::nano_banana::cost::FalNanoBananaCostState;
+use crate::generate::generate_image_v2::providers::fal::nano_banana::request::FalNanoBananaRequestState;
 use crate::generate::generate_image_v2::providers::fal::nano_banana_2::cost::FalNanoBanana2CostState;
 use crate::generate::generate_image_v2::providers::fal::nano_banana_2::request::FalNanoBanana2RequestState;
 use crate::generate::generate_image_v2::providers::fal::nano_banana_pro::cost::FalNanoBananaProCostState;
 use crate::generate::generate_image_v2::providers::fal::nano_banana_pro::request::FalNanoBananaProRequestState;
+use crate::generate::generate_image_v2::providers::fal::seedream_4::cost::FalSeedream4CostState;
+use crate::generate::generate_image_v2::providers::fal::seedream_4::request::FalSeedream4RequestState;
+use crate::generate::generate_image_v2::providers::fal::seedream_4p5::cost::FalSeedream4p5CostState;
+use crate::generate::generate_image_v2::providers::fal::seedream_4p5::request::FalSeedream4p5RequestState;
+use crate::generate::generate_image_v2::providers::fal::seedream_5_lite::cost::FalSeedream5LiteCostState;
+use crate::generate::generate_image_v2::providers::fal::seedream_5_lite::request::FalSeedream5LiteRequestState;
 
 #[derive(Clone, Debug)]
 pub enum ImageGenerationRequest {
@@ -31,8 +39,12 @@ pub enum ImageGenerationRequest {
   FalGptImage1(FalGptImage1RequestState),
   FalGptImage1p5(FalGptImage1p5RequestState),
   FalGptImage2(FalGptImage2RequestState),
+  FalNanoBanana(FalNanoBananaRequestState),
   FalNanoBanana2(FalNanoBanana2RequestState),
   FalNanoBananaPro(FalNanoBananaProRequestState),
+  FalSeedream4(FalSeedream4RequestState),
+  FalSeedream4p5(FalSeedream4p5RequestState),
+  FalSeedream5Lite(FalSeedream5LiteRequestState),
 }
 
 impl ImageGenerationRequest {
@@ -45,8 +57,12 @@ impl ImageGenerationRequest {
       Self::FalGptImage1(_) => Provider::Fal,
       Self::FalGptImage1p5(_) => Provider::Fal,
       Self::FalGptImage2(_) => Provider::Fal,
+      Self::FalNanoBanana(_) => Provider::Fal,
       Self::FalNanoBanana2(_) => Provider::Fal,
       Self::FalNanoBananaPro(_) => Provider::Fal,
+      Self::FalSeedream4(_) => Provider::Fal,
+      Self::FalSeedream4p5(_) => Provider::Fal,
+      Self::FalSeedream5Lite(_) => Provider::Fal,
     }
   }
 
@@ -73,11 +89,23 @@ impl ImageGenerationRequest {
       Self::FalGptImage2(request) => {
         Ok(FalGptImage2CostState::from_request(request).estimate_cost())
       }
+      Self::FalNanoBanana(request) => {
+        Ok(FalNanoBananaCostState::from_request(request).estimate_cost())
+      }
       Self::FalNanoBanana2(request) => {
         Ok(FalNanoBanana2CostState::from_request(request).estimate_cost())
       }
       Self::FalNanoBananaPro(request) => {
         Ok(FalNanoBananaProCostState::from_request(request).estimate_cost())
+      }
+      Self::FalSeedream4(request) => {
+        Ok(FalSeedream4CostState::from_request(request).estimate_cost())
+      }
+      Self::FalSeedream4p5(request) => {
+        Ok(FalSeedream4p5CostState::from_request(request).estimate_cost())
+      }
+      Self::FalSeedream5Lite(request) => {
+        Ok(FalSeedream5LiteCostState::from_request(request).estimate_cost())
       }
     }
   }
@@ -113,12 +141,30 @@ impl ImageGenerationRequest {
         let fal_client = client.get_fal_webhook_optional_client_ref()?;
         request.send(fal_client).await
       }
+      Self::FalNanoBanana(request) => {
+        // nano_banana (Gemini 2.5 Flash) is webhook-required.
+        let fal_client = client.get_fal_client_ref()?;
+        request.send(fal_client).await
+      }
       Self::FalNanoBanana2(request) => {
         let fal_client = client.get_fal_webhook_optional_client_ref()?;
         request.send(fal_client).await
       }
       Self::FalNanoBananaPro(request) => {
         let fal_client = client.get_fal_webhook_optional_client_ref()?;
+        request.send(fal_client).await
+      }
+      Self::FalSeedream4(request) => {
+        // Seedream v4 is webhook-required.
+        let fal_client = client.get_fal_client_ref()?;
+        request.send(fal_client).await
+      }
+      Self::FalSeedream4p5(request) => {
+        let fal_client = client.get_fal_client_ref()?;
+        request.send(fal_client).await
+      }
+      Self::FalSeedream5Lite(request) => {
+        let fal_client = client.get_fal_client_ref()?;
         request.send(fal_client).await
       }
     }
