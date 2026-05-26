@@ -649,12 +649,6 @@ mod nano_banana_2 {
     ]
   }
 
-  /// Currently fails: v1 prices `resolution=None` at 8¢ (1K default); v2 reads
-  /// 15¢ from fal_client. The defaults predate the trait and need to be
-  /// reconciled — either fix v2 to clamp `None`→OneK before delegating, or
-  /// update v1 to read from fal_client too. Strict parity test kept here for
-  /// regression detection once the fix lands.
-  #[ignore]
   #[test]
   fn cost_parity_full_combinatorial() {
     let batches = [None, Some(1u16), Some(4)];
@@ -722,9 +716,6 @@ mod nano_banana_pro {
     ]
   }
 
-  /// Currently fails: v1 maps `ThreeK`→TwoK pricing (15¢); v2 routes
-  /// `ThreeK`→FourK in fal_client (30¢). Pick a side and update the other.
-  #[ignore]
   #[test]
   fn cost_parity_full_combinatorial() {
     let batches = [None, Some(1u16), Some(4)];
@@ -791,11 +782,6 @@ mod gpt_image_1 {
     base_builder(CommonImageModel::GptImage1)
   }
 
-  /// Currently fails: v1 bills 2¢ per input image (edit-mode high-fidelity
-  /// estimate); v2 doesn't bill input-image tokens. Decide whether to
-  /// preserve the input-image fee in v2 or drop it from v1 (likely the
-  /// former, since Fal does bill tokens for inputs in practice).
-  #[ignore]
   #[test]
   fn cost_parity_full_combinatorial() {
     let batches = [None, Some(1u16), Some(2), Some(4)];
@@ -841,10 +827,6 @@ mod gpt_image_1p5 {
     base_builder(CommonImageModel::GptImage1p5)
   }
 
-  /// Currently fails: hand-rolled v1 cost table rounds $0.133→14¢ for
-  /// High+Square; v2's fal_client trait returns 13¢. Off-by-one cent in
-  /// several quality/size buckets — reconcile rounding direction.
-  #[ignore]
   #[test]
   fn cost_parity_full_combinatorial() {
     let batches = [None, Some(1u16), Some(2), Some(4)];
@@ -886,11 +868,6 @@ mod gpt_image_2 {
     base_builder(CommonImageModel::GptImage2)
   }
 
-  /// Currently fails: v1 reads quality+size buckets explicitly and prices
-  /// `q=None`→High→Auto at 23¢; v2 reads fal_client which returns 16¢ for the
-  /// same input shape. Differences exist across most matrix cells — needs a
-  /// full price-table reconciliation.
-  #[ignore]
   #[test]
   fn cost_parity_full_combinatorial() {
     let batches = [None, Some(1u16), Some(2), Some(4)];

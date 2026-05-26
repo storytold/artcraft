@@ -18,7 +18,8 @@ impl FalNanoBananaProCostState {
 
   pub fn estimate_cost(&self) -> ImageGenerationCostEstimate {
     ImageGenerationCostEstimate {
-      cost_in_credits: None,
+      // v1 sets cost_in_credits to the same value as USD cents (1:1).
+      cost_in_credits: Some(self.cost_in_usd_cents),
       cost_in_usd_cents: Some(self.cost_in_usd_cents),
       is_free: false,
       is_unlimited: false,
@@ -145,6 +146,6 @@ mod tests {
     assert!(!cost.is_unlimited);
     assert!(!cost.is_rate_limited);
     assert!(!cost.has_watermark);
-    assert!(cost.cost_in_credits.is_none());
+    assert_eq!(cost.cost_in_credits, cost.cost_in_usd_cents);
   }
 }

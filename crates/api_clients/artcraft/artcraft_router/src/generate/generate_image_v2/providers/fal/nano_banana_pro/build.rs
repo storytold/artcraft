@@ -121,7 +121,10 @@ fn plan_resolution(resolution: Option<CommonResolution>) -> Option<PlannedResolu
     CommonResolution::HalfK | CommonResolution::FourEightyP | CommonResolution::SevenTwentyP
     | CommonResolution::OneK | CommonResolution::TenEightyP => PlannedResolution::OneK,
     CommonResolution::TwoK => PlannedResolution::TwoK,
-    CommonResolution::ThreeK | CommonResolution::FourK => PlannedResolution::FourK,
+    // 3K isn't natively supported on Fal nano_banana_pro; v1 downgrades to 2K
+    // pricing (and TwoK resolution). Match v1 here so cost+behavior agree.
+    CommonResolution::ThreeK => PlannedResolution::TwoK,
+    CommonResolution::FourK => PlannedResolution::FourK,
   })
 }
 
@@ -393,13 +396,14 @@ mod tests {
     }
 
     #[test]
-    fn three_k_rounds_up_to_four_k() {
+    fn three_k_rounds_down_to_two_k() {
+      // Match v1's downgrade behavior: 3K → 2K (cheaper, no 3K native support).
       let builder = GenerateImageRequestBuilder {
         resolution: Some(CommonResolution::ThreeK),
         ..base_builder()
       };
       let req = unwrap_t2i(build_fal_nano_banana_pro(builder));
-      assert!(matches!(req.resolution, Some(NanoBananaProTextToImageResolution::FourK)));
+      assert!(matches!(req.resolution, Some(NanoBananaProTextToImageResolution::TwoK)));
     }
 
     #[test]
