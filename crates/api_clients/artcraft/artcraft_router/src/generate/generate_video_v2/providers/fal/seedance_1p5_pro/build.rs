@@ -284,3 +284,421 @@ fn to_i2v_aspect_ratio(a: PlanAspectRatio) -> EnqueueSeedance1p5ProImageToVideoA
     PlanAspectRatio::NineBySixteen => Ar::NineBySixteen,
   }
 }
+
+#[cfg(test)]
+mod tests {
+  use tokens::tokens::media_files::MediaFileToken;
+
+  use crate::api::common_video_model::CommonVideoModel;
+  use crate::api::provider::Provider;
+  use crate::generate::generate_video_v2::video_generation_request::VideoGenerationRequest;
+
+  use super::*;
+
+  // ── Helpers ──
+
+  fn base_t2v_builder() -> GenerateVideoRequestBuilder {
+    GenerateVideoRequestBuilder {
+      model: CommonVideoModel::Seedance1p5Pro,
+      provider: Provider::Fal,
+      prompt: Some("a corgi running".to_string()),
+      // No start_frame → text-to-video.
+      ..Default::default()
+    }
+  }
+
+  fn base_i2v_builder() -> GenerateVideoRequestBuilder {
+    GenerateVideoRequestBuilder {
+      model: CommonVideoModel::Seedance1p5Pro,
+      provider: Provider::Fal,
+      prompt: Some("a corgi running".to_string()),
+      start_frame: Some(ImageRef::Url("https://example.com/start.png".to_string())),
+      ..Default::default()
+    }
+  }
+
+  fn make_t2v(f: impl FnOnce(&mut GenerateVideoRequestBuilder)) -> GenerateVideoRequestBuilder {
+    let mut b = base_t2v_builder();
+    f(&mut b);
+    b
+  }
+
+  fn make_i2v(f: impl FnOnce(&mut GenerateVideoRequestBuilder)) -> GenerateVideoRequestBuilder {
+    let mut b = base_i2v_builder();
+    f(&mut b);
+    b
+  }
+
+  fn unwrap_t2v(result: Result<VideoGenerationDraftOrRequest, ArtcraftRouterError>) -> EnqueueSeedance1p5ProTextToVideoRequest {
+    use crate::generate::generate_video_v2::providers::fal::seedance_1p5_pro::request::FalSeedance1p5ProMode;
+    match result.expect("build should succeed") {
+      VideoGenerationDraftOrRequest::Request(VideoGenerationRequest::FalSeedance1p5Pro(state)) => match state.mode {
+        FalSeedance1p5ProMode::TextToVideo(req) => req,
+        FalSeedance1p5ProMode::ImageToVideo(_) => panic!("expected TextToVideo mode"),
+      },
+      _ => panic!("expected FalSeedance1p5Pro request"),
+    }
+  }
+
+  fn unwrap_i2v(result: Result<VideoGenerationDraftOrRequest, ArtcraftRouterError>) -> EnqueueSeedance1p5ProImageToVideoRequest {
+    use crate::generate::generate_video_v2::providers::fal::seedance_1p5_pro::request::FalSeedance1p5ProMode;
+    match result.expect("build should succeed") {
+      VideoGenerationDraftOrRequest::Request(VideoGenerationRequest::FalSeedance1p5Pro(state)) => match state.mode {
+        FalSeedance1p5ProMode::ImageToVideo(req) => req,
+        FalSeedance1p5ProMode::TextToVideo(_) => panic!("expected ImageToVideo mode"),
+      },
+      _ => panic!("expected FalSeedance1p5Pro request"),
+    }
+  }
+
+  // ── Mode selection (t2v vs i2v) ──
+
+  mod mode_selection {
+    use super::*;
+
+    #[test]
+    fn no_start_frame_picks_t2v() {
+      let _ = unwrap_t2v(build_fal_seedance_1p5_pro(base_t2v_builder()));
+    }
+
+    #[test]
+    fn start_frame_picks_i2v() {
+      let _ = unwrap_i2v(build_fal_seedance_1p5_pro(base_i2v_builder()));
+    }
+
+    #[test]
+    fn end_frame_alone_without_start_frame_errors() {
+      let result = build_fal_seedance_1p5_pro(make_t2v(|b| {
+        b.end_frame = Some(ImageRef::Url("https://example.com/end.png".to_string()));
+      }));
+      assert!(result.is_err());
+    }
+
+    #[test]
+    fn i2v_with_end_frame_succeeds() {
+      let req = unwrap_i2v(build_fal_seedance_1p5_pro(make_i2v(|b| {
+        b.end_frame = Some(ImageRef::Url("https://example.com/end.png".to_string()));
+      })));
+      assert_eq!(req.end_image_url.as_deref(), Some("https://example.com/end.png"));
+    }
+
+    #[test]
+    fn media_file_token_for_start_frame_errors() {
+      let result = build_fal_seedance_1p5_pro(make_t2v(|b| {
+        b.start_frame = Some(ImageRef::MediaFileToken(MediaFileToken::new("mf_x".to_string())));
+      }));
+      assert!(result.is_err());
+    }
+
+    #[test]
+    fn media_file_token_for_end_frame_errors() {
+      let result = build_fal_seedance_1p5_pro(make_i2v(|b| {
+        b.end_frame = Some(ImageRef::MediaFileToken(MediaFileToken::new("mf_x".to_string())));
+      }));
+      assert!(result.is_err());
+    }
+  }
+
+  // ── Materialized field conversions ──
+
+  mod materialized_field_conversions {
+    use super::*;
+
+    #[test]
+    fn t2v_prompt_passed_through() {
+      let req = unwrap_t2v(build_fal_seedance_1p5_pro(make_t2v(|b| {
+        b.prompt = Some("hello world".to_string());
+      })));
+      assert_eq!(req.prompt, "hello world");
+    }
+
+    #[test]
+    fn i2v_prompt_passed_through() {
+      let req = unwrap_i2v(build_fal_seedance_1p5_pro(make_i2v(|b| {
+        b.prompt = Some("hello world".to_string());
+      })));
+      assert_eq!(req.prompt, "hello world");
+    }
+
+    #[test]
+    fn t2v_prompt_defaults_to_empty() {
+      let req = unwrap_t2v(build_fal_seedance_1p5_pro(make_t2v(|b| { b.prompt = None; })));
+      assert_eq!(req.prompt, "");
+    }
+
+    #[test]
+    fn i2v_image_url_passed_through() {
+      let req = unwrap_i2v(build_fal_seedance_1p5_pro(make_i2v(|b| {
+        b.start_frame = Some(ImageRef::Url("https://example.com/a.png".to_string()));
+      })));
+      assert_eq!(req.image_url, "https://example.com/a.png");
+    }
+
+    #[test]
+    fn i2v_end_image_absent_is_none() {
+      let req = unwrap_i2v(build_fal_seedance_1p5_pro(base_i2v_builder()));
+      assert!(req.end_image_url.is_none());
+    }
+
+    #[test]
+    fn t2v_generate_audio_passed_through() {
+      let req = unwrap_t2v(build_fal_seedance_1p5_pro(make_t2v(|b| {
+        b.generate_audio = Some(true);
+      })));
+      assert_eq!(req.generate_audio, Some(true));
+    }
+
+    #[test]
+    fn t2v_generate_audio_none_passed_through() {
+      let req = unwrap_t2v(build_fal_seedance_1p5_pro(make_t2v(|b| {
+        b.generate_audio = None;
+      })));
+      assert!(req.generate_audio.is_none());
+    }
+
+    #[test]
+    fn i2v_generate_audio_false_passed_through() {
+      let req = unwrap_i2v(build_fal_seedance_1p5_pro(make_i2v(|b| {
+        b.generate_audio = Some(false);
+      })));
+      assert_eq!(req.generate_audio, Some(false));
+    }
+  }
+
+  // ── Resolution conversions ──
+
+  mod resolution_conversions {
+    use super::*;
+
+    #[test]
+    fn t2v_resolution_480p() {
+      let req = unwrap_t2v(build_fal_seedance_1p5_pro(make_t2v(|b| {
+        b.resolution = Some(CommonResolution::FourEightyP);
+      })));
+      assert!(matches!(req.resolution, Some(EnqueueSeedance1p5ProTextToVideoResolution::FourEightyP)));
+    }
+
+    #[test]
+    fn t2v_resolution_720p() {
+      let req = unwrap_t2v(build_fal_seedance_1p5_pro(make_t2v(|b| {
+        b.resolution = Some(CommonResolution::SevenTwentyP);
+      })));
+      assert!(matches!(req.resolution, Some(EnqueueSeedance1p5ProTextToVideoResolution::SevenTwentyP)));
+    }
+
+    #[test]
+    fn t2v_resolution_1080p() {
+      let req = unwrap_t2v(build_fal_seedance_1p5_pro(make_t2v(|b| {
+        b.resolution = Some(CommonResolution::TenEightyP);
+      })));
+      assert!(matches!(req.resolution, Some(EnqueueSeedance1p5ProTextToVideoResolution::TenEightyP)));
+    }
+
+    #[test]
+    fn t2v_resolution_none_stays_none() {
+      let req = unwrap_t2v(build_fal_seedance_1p5_pro(make_t2v(|b| { b.resolution = None; })));
+      assert!(req.resolution.is_none());
+    }
+
+    #[test]
+    fn unsupported_resolution_errors_with_error_out() {
+      let result = build_fal_seedance_1p5_pro(make_t2v(|b| {
+        b.resolution = Some(CommonResolution::FourK);
+        b.request_mismatch_mitigation_strategy = RequestMismatchMitigationStrategy::ErrorOut;
+      }));
+      assert!(result.is_err());
+    }
+
+    #[test]
+    fn unsupported_resolution_upgrades_with_pay_more() {
+      let req = unwrap_t2v(build_fal_seedance_1p5_pro(make_t2v(|b| {
+        b.resolution = Some(CommonResolution::FourK);
+        b.request_mismatch_mitigation_strategy = RequestMismatchMitigationStrategy::PayMoreUpgrade;
+      })));
+      assert!(matches!(req.resolution, Some(EnqueueSeedance1p5ProTextToVideoResolution::TenEightyP)));
+    }
+
+    #[test]
+    fn unsupported_resolution_downgrades_with_pay_less() {
+      let req = unwrap_t2v(build_fal_seedance_1p5_pro(make_t2v(|b| {
+        b.resolution = Some(CommonResolution::FourK);
+        b.request_mismatch_mitigation_strategy = RequestMismatchMitigationStrategy::PayLessDowngrade;
+      })));
+      assert!(matches!(req.resolution, Some(EnqueueSeedance1p5ProTextToVideoResolution::FourEightyP)));
+    }
+  }
+
+  // ── Duration conversions (4 through 12 seconds supported) ──
+
+  mod duration_conversions {
+    use super::*;
+
+    #[test]
+    fn duration_4s() {
+      let req = unwrap_t2v(build_fal_seedance_1p5_pro(make_t2v(|b| { b.duration_seconds = Some(4); })));
+      assert!(matches!(req.duration, Some(EnqueueSeedance1p5ProTextToVideoDuration::FourSeconds)));
+    }
+
+    #[test]
+    fn duration_12s() {
+      let req = unwrap_t2v(build_fal_seedance_1p5_pro(make_t2v(|b| { b.duration_seconds = Some(12); })));
+      assert!(matches!(req.duration, Some(EnqueueSeedance1p5ProTextToVideoDuration::TwelveSeconds)));
+    }
+
+    #[test]
+    fn duration_none_stays_none() {
+      let req = unwrap_t2v(build_fal_seedance_1p5_pro(make_t2v(|b| { b.duration_seconds = None; })));
+      assert!(req.duration.is_none());
+    }
+
+    #[test]
+    fn unsupported_duration_errors_with_error_out() {
+      let result = build_fal_seedance_1p5_pro(make_t2v(|b| {
+        b.duration_seconds = Some(13);
+        b.request_mismatch_mitigation_strategy = RequestMismatchMitigationStrategy::ErrorOut;
+      }));
+      assert!(result.is_err());
+    }
+
+    #[test]
+    fn unsupported_duration_upgrades_to_max_with_pay_more() {
+      let req = unwrap_t2v(build_fal_seedance_1p5_pro(make_t2v(|b| {
+        b.duration_seconds = Some(20);
+        b.request_mismatch_mitigation_strategy = RequestMismatchMitigationStrategy::PayMoreUpgrade;
+      })));
+      assert!(matches!(req.duration, Some(EnqueueSeedance1p5ProTextToVideoDuration::TwelveSeconds)));
+    }
+
+    #[test]
+    fn unsupported_duration_downgrades_to_min_with_pay_less() {
+      let req = unwrap_t2v(build_fal_seedance_1p5_pro(make_t2v(|b| {
+        b.duration_seconds = Some(2);
+        b.request_mismatch_mitigation_strategy = RequestMismatchMitigationStrategy::PayLessDowngrade;
+      })));
+      assert!(matches!(req.duration, Some(EnqueueSeedance1p5ProTextToVideoDuration::FourSeconds)));
+    }
+  }
+
+  // ── Aspect ratio conversions ──
+
+  mod aspect_ratio_conversions {
+    use super::*;
+
+    #[test]
+    fn auto() {
+      let req = unwrap_t2v(build_fal_seedance_1p5_pro(make_t2v(|b| {
+        b.aspect_ratio = Some(CommonAspectRatio::Auto);
+      })));
+      assert!(matches!(req.aspect_ratio, Some(EnqueueSeedance1p5ProTextToVideoAspectRatio::Auto)));
+    }
+
+    #[test]
+    fn sixteen_by_nine() {
+      let req = unwrap_t2v(build_fal_seedance_1p5_pro(make_t2v(|b| {
+        b.aspect_ratio = Some(CommonAspectRatio::WideSixteenByNine);
+      })));
+      assert!(matches!(req.aspect_ratio, Some(EnqueueSeedance1p5ProTextToVideoAspectRatio::SixteenByNine)));
+    }
+
+    #[test]
+    fn square() {
+      let req = unwrap_t2v(build_fal_seedance_1p5_pro(make_t2v(|b| {
+        b.aspect_ratio = Some(CommonAspectRatio::Square);
+      })));
+      assert!(matches!(req.aspect_ratio, Some(EnqueueSeedance1p5ProTextToVideoAspectRatio::Square)));
+    }
+
+    #[test]
+    fn unsupported_aspect_ratio_falls_back_to_nearest_with_pay_more() {
+      // WideFiveByFour → nearest wide → FourByThree (per nearest_aspect_ratio).
+      let req = unwrap_t2v(build_fal_seedance_1p5_pro(make_t2v(|b| {
+        b.aspect_ratio = Some(CommonAspectRatio::WideFiveByFour);
+        b.request_mismatch_mitigation_strategy = RequestMismatchMitigationStrategy::PayMoreUpgrade;
+      })));
+      assert!(matches!(req.aspect_ratio, Some(EnqueueSeedance1p5ProTextToVideoAspectRatio::FourByThree)));
+    }
+
+    #[test]
+    fn unsupported_aspect_ratio_errors_with_error_out() {
+      let result = build_fal_seedance_1p5_pro(make_t2v(|b| {
+        b.aspect_ratio = Some(CommonAspectRatio::WideFiveByFour);
+        b.request_mismatch_mitigation_strategy = RequestMismatchMitigationStrategy::ErrorOut;
+      }));
+      assert!(result.is_err());
+    }
+  }
+
+  // ── Full combinatorial pass (t2v + i2v) ──
+
+  #[test]
+  fn t2v_combinatorial_pass() {
+    let resolutions = [
+      None,
+      Some(CommonResolution::FourEightyP),
+      Some(CommonResolution::SevenTwentyP),
+      Some(CommonResolution::TenEightyP),
+    ];
+    let durations = [None, Some(4u16), Some(8u16), Some(12u16)];
+    let aspect_ratios = [
+      None,
+      Some(CommonAspectRatio::Auto),
+      Some(CommonAspectRatio::Square),
+      Some(CommonAspectRatio::WideSixteenByNine),
+      Some(CommonAspectRatio::TallNineBySixteen),
+    ];
+    let audios = [None, Some(true), Some(false)];
+
+    let mut combos = 0;
+    for &res in &resolutions {
+      for &dur in &durations {
+        for &ar in &aspect_ratios {
+          for &audio in &audios {
+            let mut b = base_t2v_builder();
+            b.resolution = res;
+            b.duration_seconds = dur;
+            b.aspect_ratio = ar;
+            b.generate_audio = audio;
+            assert!(build_fal_seedance_1p5_pro(b).is_ok());
+            combos += 1;
+          }
+        }
+      }
+    }
+    assert_eq!(combos, 4 * 4 * 5 * 3);
+  }
+
+  #[test]
+  fn i2v_combinatorial_pass() {
+    let resolutions = [
+      None,
+      Some(CommonResolution::SevenTwentyP),
+      Some(CommonResolution::TenEightyP),
+    ];
+    let durations = [None, Some(5u16), Some(12u16)];
+    let aspect_ratios = [None, Some(CommonAspectRatio::WideSixteenByNine), Some(CommonAspectRatio::Square)];
+    let audios = [None, Some(true), Some(false)];
+
+    let mut combos = 0;
+    for &res in &resolutions {
+      for &dur in &durations {
+        for &ar in &aspect_ratios {
+          for &audio in &audios {
+            for has_end in [false, true] {
+              let mut b = base_i2v_builder();
+              b.resolution = res;
+              b.duration_seconds = dur;
+              b.aspect_ratio = ar;
+              b.generate_audio = audio;
+              if has_end {
+                b.end_frame = Some(ImageRef::Url("https://example.com/end.png".to_string()));
+              }
+              assert!(build_fal_seedance_1p5_pro(b).is_ok());
+              combos += 1;
+            }
+          }
+        }
+      }
+    }
+    assert_eq!(combos, 3 * 3 * 3 * 3 * 2);
+  }
+}

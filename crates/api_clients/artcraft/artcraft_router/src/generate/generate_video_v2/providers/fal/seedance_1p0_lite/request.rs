@@ -38,3 +38,87 @@ impl FalSeedance10LiteRequestState {
     }))
   }
 }
+
+#[cfg(test)]
+mod tests {
+  use test_data::web::image_urls::JUNO_AT_LAKE_IMAGE_URL;
+
+  use crate::api::common_aspect_ratio::CommonAspectRatio;
+  use crate::api::common_resolution::CommonResolution;
+  use crate::api::common_video_model::CommonVideoModel;
+  use crate::api::image_ref::ImageRef;
+  use crate::api::provider::Provider;
+  use crate::generate::generate_video::generate_video_request_builder::GenerateVideoRequestBuilder;
+  use crate::generate::generate_video::generate_video_response::GenerateVideoResponse;
+  use crate::generate::generate_video_v2::video_generation_draft_or_request::VideoGenerationDraftOrRequest;
+  use crate::test_helpers::get_fal_client;
+
+  // ── Live integration tests (require Fal credentials, incur costs) ──
+
+  #[tokio::test]
+  #[ignore] // requires real API key, incurs costs
+  async fn live_image_to_video_720p_5s() {
+    let response = run_pipeline(GenerateVideoRequestBuilder {
+      prompt: Some("the dog leaps into the lake and splashes around.".to_string()),
+      start_frame: Some(ImageRef::Url(JUNO_AT_LAKE_IMAGE_URL.to_string())),
+      aspect_ratio: Some(CommonAspectRatio::WideSixteenByNine),
+      resolution: Some(CommonResolution::SevenTwentyP),
+      duration_seconds: Some(5),
+      ..fal_seedance_1p0_lite_builder()
+    }).await;
+    println!("response: {:?}", response);
+    assert!(matches!(response, GenerateVideoResponse::Fal(_)));
+  }
+
+  #[tokio::test]
+  #[ignore] // requires real API key, incurs costs
+  async fn live_image_to_video_480p_10s() {
+    let response = run_pipeline(GenerateVideoRequestBuilder {
+      prompt: Some("a vivid splash of color filling the frame".to_string()),
+      start_frame: Some(ImageRef::Url(JUNO_AT_LAKE_IMAGE_URL.to_string())),
+      resolution: Some(CommonResolution::FourEightyP),
+      duration_seconds: Some(10),
+      ..fal_seedance_1p0_lite_builder()
+    }).await;
+    println!("response: {:?}", response);
+    assert!(matches!(response, GenerateVideoResponse::Fal(_)));
+  }
+
+  #[tokio::test]
+  #[ignore] // requires real API key, incurs costs
+  async fn live_image_to_video_with_end_frame() {
+    let response = run_pipeline(GenerateVideoRequestBuilder {
+      prompt: Some("a smooth transition between two scenes".to_string()),
+      start_frame: Some(ImageRef::Url(JUNO_AT_LAKE_IMAGE_URL.to_string())),
+      end_frame: Some(ImageRef::Url(JUNO_AT_LAKE_IMAGE_URL.to_string())),
+      duration_seconds: Some(5),
+      ..fal_seedance_1p0_lite_builder()
+    }).await;
+    println!("response: {:?}", response);
+    assert!(matches!(response, GenerateVideoResponse::Fal(_)));
+  }
+
+  fn fal_seedance_1p0_lite_builder() -> GenerateVideoRequestBuilder {
+    GenerateVideoRequestBuilder {
+      model: CommonVideoModel::Seedance10Lite,
+      provider: Provider::Fal,
+      video_batch_count: Some(1),
+      ..Default::default()
+    }
+  }
+
+  async fn run_pipeline(builder: GenerateVideoRequestBuilder) -> GenerateVideoResponse {
+    let client = get_fal_client();
+    let draft_or_request = builder.build2().expect("build2 should succeed");
+    let request = match draft_or_request {
+      VideoGenerationDraftOrRequest::Request(r) => r,
+      _ => panic!("expected Request variant (Fal skips draft)"),
+    };
+    let response = request.send_request(&client).await.expect("send_request should succeed");
+    match &response {
+      GenerateVideoResponse::Fal(p) => println!("fal request_id={:?}", p.request_id),
+      other => println!("unexpected response: {:?}", other),
+    }
+    response
+  }
+}
