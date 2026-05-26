@@ -37,7 +37,6 @@ use crate::http_server::endpoints::omni_gen::generate::video::insert_db_job::ins
 use crate::http_server::endpoints::omni_gen::generate::video::insert_db_job::insert_grok_api_job::{insert_grok_api_job, InsertGrokApiJobArgs};
 use crate::http_server::endpoints::omni_gen::generate::video::insert_db_job::insert_seedance2pro_jobs::{insert_seedance2pro_jobs, InsertSeedance2proJobsArgs};
 use crate::http_server::endpoints::omni_gen::generate::video::insert_db_job::shared_job_args::SharedJobArgs;
-use crate::http_server::endpoints::omni_gen::generate::video::pipeline_v1::run_pipeline_v1::{run_pipeline_v1, RunPipelineV1Args};
 use crate::http_server::endpoints::omni_gen::generate::video::pipeline_v2::run_pipeline_v2::{run_pipeline_v2, RunPipelineV2Args};
 use crate::http_server::endpoints::omni_gen::generate::video::helpers::resolve_kinovi_character_ids::resolve_kinovi_character_ids;
 use crate::http_server::session::lookup::user_session_feature_flags::UserSessionFeatureFlags;
@@ -184,20 +183,6 @@ pub async fn omni_gen_video_generate_handler(
 
   // ==================== PIPELINE DISPATCH ==================== //
 
-  let use_v2 = match request.model {
-    Some(CommonVideoModel::HappyHorse1p0) => true,
-    Some(CommonVideoModel::Seedance2p0) => true,
-    Some(CommonVideoModel::Seedance2p0Fast) => true,
-    Some(CommonVideoModel::Seedance2p0Ultra) => true,
-    Some(CommonVideoModel::Seedance2p0UltraFast) => true,
-    Some(CommonVideoModel::Seedance2p0BytePlus) => true,
-    Some(CommonVideoModel::Seedance2p0BytePlusFast) => true,
-    Some(CommonVideoModel::PreviewModel) => true,
-    Some(CommonVideoModel::PreviewModelFast) => true,
-    Some(CommonVideoModel::GrokImagineVideo) => true,
-    _ => false,
-  };
-
   let use_alternate_kinovi = match request.model {
     Some(CommonVideoModel::Seedance2p0BytePlus) => true,
     Some(CommonVideoModel::Seedance2p0BytePlusFast) => true,
@@ -206,29 +191,15 @@ pub async fn omni_gen_video_generate_handler(
     _ => false,
   };
 
-  let pipeline_result = if use_v2 {
-    info!("Using pipeline v2");
-    run_pipeline_v2(RunPipelineV2Args {
-      router_builder: &router_builder,
-      server_state: &server_state,
-      mysql_connection: &mut mysql_connection,
-      user_token,
-      media_file_to_url_map: &media_file_to_url_map,
-      kinovi_character_id_map: &kinovi_character_id_map,
-      use_alternate_kinovi,
-    }).await?
-  } else {
-    info!("Using pipeline v1");
-    run_pipeline_v1(RunPipelineV1Args {
-      request: &request,
-      router_builder: &router_builder,
-      server_state: &server_state,
-      mysql_connection: &mut mysql_connection,
-      user_token,
-      media_url_map: &media_file_hydration_map,
-      kinovi_character_id_map: &kinovi_character_id_map,
-    }).await?
-  };
+  let pipeline_result = run_pipeline_v2(RunPipelineV2Args {
+    router_builder: &router_builder,
+    server_state: &server_state,
+    mysql_connection: &mut mysql_connection,
+    user_token,
+    media_file_to_url_map: &media_file_to_url_map,
+    kinovi_character_id_map: &kinovi_character_id_map,
+    use_alternate_kinovi,
+  }).await?;
 
   // ==================== DEBUG LOG: HTTP REQUEST ==================== //
 

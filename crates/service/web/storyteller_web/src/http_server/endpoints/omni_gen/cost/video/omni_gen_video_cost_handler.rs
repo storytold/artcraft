@@ -5,10 +5,7 @@ use actix_web::{web, HttpRequest};
 use artcraft_api_defs::omni_gen::cost_and_generate_requests::omni_gen_video_cost_and_generate_request::OmniGenVideoCostAndGenerateRequest;
 use artcraft_api_defs::omni_gen::cost_response::omni_gen_video_cost_response::OmniGenVideoCostResponse;
 use artcraft_router::api::provider::Provider;
-use artcraft_router::errors::artcraft_router_error::ArtcraftRouterError;
-use artcraft_router::generate::generate_video::video_generation_cost_estimate::VideoGenerationCostEstimate;
 use log::warn;
-use artcraft_router::api::common_video_model::CommonVideoModel;
 use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::endpoints::omni_gen::generate::video::helpers::hydrate_router_request::hydrate_to_router_request;
 use crate::state::server_state::ServerState;
@@ -34,35 +31,16 @@ pub async fn omni_gen_video_cost_handler(
 
   builder.provider = Provider::Artcraft;
 
-  let estimate = if builder.use_new_builder() {
-    builder.build2()
-      .map_err(|e| {
-        warn!("Failed to build2 cost estimate: {}", e);
-        CommonWebError::from_error(e)
-      })?
-      .estimate_cost()
-      .map_err(|e| {
-        warn!("Failed to estimate cost (v2): {}", e);
-        CommonWebError::from_error(e)
-      })?
-  } else {
-    let plan = match builder.build() {
-      Ok(plan) => plan,
-      Err(ArtcraftRouterError::UnsupportedModel(_)) => {
-        builder.provider = Provider::Fal;
-        builder.build()
-          .map_err(|e| {
-            warn!("Failed to build Fal cost plan: {}", e);
-            CommonWebError::from_error(e)
-          })?
-      }
-      Err(e) => {
-        warn!("Failed to build cost plan: {}", e);
-        return Err(CommonWebError::from_error(e));
-      }
-    };
-    plan.estimate_costs()
-  };
+  let estimate = builder.build2()
+    .map_err(|e| {
+      warn!("Failed to build cost estimate: {}", e);
+      CommonWebError::from_error(e)
+    })?
+    .estimate_cost()
+    .map_err(|e| {
+      warn!("Failed to estimate cost: {}", e);
+      CommonWebError::from_error(e)
+    })?;
 
   Ok(Json(OmniGenVideoCostResponse {
     success: true,

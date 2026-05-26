@@ -805,7 +805,6 @@ dependencies = [
  "gmicloud_client",
  "grok_api_client",
  "log",
- "muapi_client",
  "reqwest 0.12.23",
  "seedance2pro_client",
  "serde",

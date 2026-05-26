@@ -97,7 +97,6 @@ pub enum BillingProvider {
   Fal,
   Kinovi,
   Midjourney,
-  Muapi,
   Sora,
 }
 
@@ -235,7 +234,6 @@ impl From<ArtcraftRouterError> for GenerateError {
       ArtcraftRouterError::ProviderBillingError(err) => {
         let provider = match err {
           ProviderError::Fal(_) => BillingProvider::Fal,
-          ProviderError::Muapi(_) => BillingProvider::Muapi,
           ProviderError::Seedance2Pro(_) => BillingProvider::Kinovi,
           ProviderError::Storyteller(_) => BillingProvider::Artcraft,
           ProviderError::GmiCloud(_) => BillingProvider::Artcraft,
@@ -247,7 +245,6 @@ impl From<ArtcraftRouterError> for GenerateError {
       ArtcraftRouterError::Provider(ProviderError::Fal(_)) => Self::FalNoLongerSupported,
       ArtcraftRouterError::Provider(ProviderError::GmiCloud(_)) => Self::ArtcraftRouterNotYetSupportedProvider("gmicloud"),
       ArtcraftRouterError::Provider(ProviderError::Grok(_)) => Self::ArtcraftRouterNotYetSupportedProvider("grok_api"),
-      ArtcraftRouterError::Provider(ProviderError::Muapi(_)) => Self::ArtcraftRouterNotYetSupportedProvider("muapi"),
       ArtcraftRouterError::Provider(ProviderError::Seedance2Pro(_)) => Self::ArtcraftRouterNotYetSupportedProvider("seedance2pro"),
       ArtcraftRouterError::UnsupportedModel(model) => Self::NotYetImplemented(format!("Unsupported model: {}", model)),
       ArtcraftRouterError::UnsupportedProviderAndModelForNewApi(message) => Self::ArtcraftRouterNotYetSupportedProvider("unsupported model for new router API"),

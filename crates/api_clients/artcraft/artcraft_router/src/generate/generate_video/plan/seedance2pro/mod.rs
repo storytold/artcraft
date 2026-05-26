@@ -1,2 +1,0 @@
-pub mod plan_generate_video_seedance2pro_seedance2p0;
-pub mod plan_generate_video_seedance2pro_seedance2p0_fast;

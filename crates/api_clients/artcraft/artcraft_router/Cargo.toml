@@ -22,7 +22,6 @@ artcraft_client.workspace = true
 fal_client.workspace = true
 gmicloud_client.workspace = true
 grok_api_client.workspace = true
-muapi_client.workspace = true
 seedance2pro_client.workspace = true
 tokens.workspace = true
 url_utils.workspace = true

@@ -58,10 +58,10 @@ pub async fn estimate_video_cost_handler(
     idempotency_token: None,
   };
 
-  let plan = router_request.build()
+  let estimate = router_request.build2()
+    .map_err(|e| HandlerError::InvalidInput(format!("{}", e)))?
+    .estimate_cost()
     .map_err(|e| HandlerError::InvalidInput(format!("{}", e)))?;
-
-  let estimate = plan.estimate_costs();
 
   Ok(Json(EstimateVideoCostResponse {
     success: true,

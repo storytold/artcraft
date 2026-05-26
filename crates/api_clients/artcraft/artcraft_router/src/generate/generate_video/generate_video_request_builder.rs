@@ -9,44 +9,6 @@ use crate::api::provider::Provider;
 use crate::api::video_list_ref::VideoListRef;
 use crate::client::request_mismatch_mitigation_strategy::RequestMismatchMitigationStrategy;
 use crate::errors::artcraft_router_error::ArtcraftRouterError;
-use crate::generate::generate_video::plan::artcraft::plan_generate_video_artcraft_kling3p0_pro::plan_generate_video_artcraft_kling3p0_pro;
-use crate::generate::generate_video::plan::artcraft::plan_generate_video_artcraft_kling3p0_standard::plan_generate_video_artcraft_kling3p0_standard;
-use crate::generate::generate_video::plan::artcraft::plan_generate_video_artcraft_kling_1_6_pro::plan_generate_video_artcraft_kling_1_6_pro;
-use crate::generate::generate_video::plan::artcraft::plan_generate_video_artcraft_kling_2_1_master::plan_generate_video_artcraft_kling_2_1_master;
-use crate::generate::generate_video::plan::artcraft::plan_generate_video_artcraft_kling_2_1_pro::plan_generate_video_artcraft_kling_2_1_pro;
-use crate::generate::generate_video::plan::artcraft::plan_generate_video_artcraft_kling_2_5_turbo_pro::plan_generate_video_artcraft_kling_2_5_turbo_pro;
-use crate::generate::generate_video::plan::artcraft::plan_generate_video_artcraft_kling_2_6_pro::plan_generate_video_artcraft_kling_2_6_pro;
-use crate::generate::generate_video::plan::artcraft::plan_generate_video_artcraft_seedance1p5_pro::plan_generate_video_artcraft_seedance1p5_pro;
-use crate::generate::generate_video::plan::artcraft::plan_generate_video_artcraft_seedance2p0::plan_generate_video_artcraft_seedance2p0;
-use crate::generate::generate_video::plan::artcraft::plan_generate_video_artcraft_seedance2p0_fast::plan_generate_video_artcraft_seedance2p0_fast;
-use crate::generate::generate_video::plan::artcraft::plan_generate_video_artcraft_seedance_1_0_lite::plan_generate_video_artcraft_seedance_1_0_lite;
-use crate::generate::generate_video::plan::artcraft::plan_generate_video_artcraft_sora_2::plan_generate_video_artcraft_sora_2;
-use crate::generate::generate_video::plan::artcraft::plan_generate_video_artcraft_sora_2_pro::plan_generate_video_artcraft_sora_2_pro;
-use crate::generate::generate_video::plan::artcraft::plan_generate_video_artcraft_veo_2::plan_generate_video_artcraft_veo_2;
-use crate::generate::generate_video::plan::artcraft::plan_generate_video_artcraft_veo_3::plan_generate_video_artcraft_veo_3;
-use crate::generate::generate_video::plan::artcraft::plan_generate_video_artcraft_veo_3_fast::plan_generate_video_artcraft_veo_3_fast;
-use crate::generate::generate_video::plan::artcraft::plan_generate_video_artcraft_veo_3p1::plan_generate_video_artcraft_veo_3p1;
-use crate::generate::generate_video::plan::artcraft::plan_generate_video_artcraft_veo_3p1_fast::plan_generate_video_artcraft_veo_3p1_fast;
-use crate::generate::generate_video::plan::fal::plan_generate_video_fal_kling_1_6_pro::plan_generate_video_fal_kling_1_6_pro;
-use crate::generate::generate_video::plan::fal::plan_generate_video_fal_kling_2_1_master::plan_generate_video_fal_kling_2_1_master;
-use crate::generate::generate_video::plan::fal::plan_generate_video_fal_kling_2_1_pro::plan_generate_video_fal_kling_2_1_pro;
-use crate::generate::generate_video::plan::fal::plan_generate_video_fal_kling_2_5_turbo_pro::plan_generate_video_fal_kling_2_5_turbo_pro;
-use crate::generate::generate_video::plan::fal::plan_generate_video_fal_kling_2_6_pro::plan_generate_video_fal_kling_2_6_pro;
-use crate::generate::generate_video::plan::fal::plan_generate_video_fal_kling_3p0_pro::plan_generate_video_fal_kling_3p0_pro;
-use crate::generate::generate_video::plan::fal::plan_generate_video_fal_kling_3p0_standard::plan_generate_video_fal_kling_3p0_standard;
-use crate::generate::generate_video::plan::fal::plan_generate_video_fal_seedance_1_0_lite::plan_generate_video_fal_seedance_1_0_lite;
-use crate::generate::generate_video::plan::fal::plan_generate_video_fal_seedance_1p5_pro::plan_generate_video_fal_seedance_1p5_pro;
-use crate::generate::generate_video::plan::fal::plan_generate_video_fal_sora_2::plan_generate_video_fal_sora_2;
-use crate::generate::generate_video::plan::fal::plan_generate_video_fal_sora_2_pro::plan_generate_video_fal_sora_2_pro;
-use crate::generate::generate_video::plan::fal::plan_generate_video_fal_veo_2::plan_generate_video_fal_veo_2;
-use crate::generate::generate_video::plan::fal::plan_generate_video_fal_veo_3::plan_generate_video_fal_veo_3;
-use crate::generate::generate_video::plan::fal::plan_generate_video_fal_veo_3_fast::plan_generate_video_fal_veo_3_fast;
-use crate::generate::generate_video::plan::fal::plan_generate_video_fal_veo_3p1::plan_generate_video_fal_veo_3p1;
-use crate::generate::generate_video::plan::fal::plan_generate_video_fal_veo_3p1_fast::plan_generate_video_fal_veo_3p1_fast;
-use crate::generate::generate_video::plan::muapi::plan_generate_video_muapi_seedance2p0::plan_generate_video_muapi_seedance2p0;
-use crate::generate::generate_video::plan::seedance2pro::plan_generate_video_seedance2pro_seedance2p0::plan_generate_video_seedance2pro_seedance2p0;
-use crate::generate::generate_video::plan::seedance2pro::plan_generate_video_seedance2pro_seedance2p0_fast::plan_generate_video_seedance2pro_seedance2p0_fast;
-use crate::generate::generate_video::video_generation_plan::VideoGenerationPlan;
 use crate::generate::generate_video_v2::providers::artcraft::grok_imagine_video::build::build_artcraft_grok_imagine_video;
 use crate::generate::generate_video_v2::providers::artcraft::happy_horse_1p0::build::build_artcraft_happy_horse_1p0;
 use crate::generate::generate_video_v2::providers::artcraft::kling_1_6_pro::build::build_artcraft_kling_1_6_pro;
@@ -95,9 +57,8 @@ use crate::generate::generate_video_v2::providers::fal::veo_3p1_fast::build::bui
 use crate::generate::generate_video_v2::providers::kinovi::seedance_2p0_fast::build::build_kinovi_seedance_2p0_fast;
 use crate::generate::generate_video_v2::video_generation_draft_or_request::VideoGenerationDraftOrRequest;
 
-/// Plan to either (1) generate a video or (2) determine how much it costs to generate that video.
-/// This works across multiple providers by shaping a generic "GenerateVideoRequest" into a provider-specific plan.
-/// That plan can then be used to return a cost estimate for that given provider or return a struct that can be used to send a real generation request.
+/// Provider-agnostic video generation request. Distilled by `build2()` into a
+/// `VideoGenerationDraftOrRequest` for the selected (provider, model) pair.
 #[derive(Clone, Debug)]
 pub struct GenerateVideoRequestBuilder {
   /// Which model to use.
@@ -182,64 +143,6 @@ impl Default for GenerateVideoRequestBuilder {
 
 impl GenerateVideoRequestBuilder {
 
-  pub fn use_new_builder(&self) -> bool {
-    match (self.provider, self.model) {
-      // Artcraft
-      (Provider::Artcraft, CommonVideoModel::GrokImagineVideo) => true,
-      (Provider::Artcraft, CommonVideoModel::HappyHorse1p0) => true,
-      (Provider::Artcraft, CommonVideoModel::Kling16Pro) => true,
-      (Provider::Artcraft, CommonVideoModel::Kling21Master) => true,
-      (Provider::Artcraft, CommonVideoModel::Kling21Pro) => true,
-      (Provider::Artcraft, CommonVideoModel::Kling2p5TurboPro) => true,
-      (Provider::Artcraft, CommonVideoModel::Kling2p6Pro) => true,
-      (Provider::Artcraft, CommonVideoModel::Kling3p0Pro) => true,
-      (Provider::Artcraft, CommonVideoModel::Kling3p0Standard) => true,
-      (Provider::Artcraft, CommonVideoModel::Seedance2p0) => true,
-      (Provider::Artcraft, CommonVideoModel::Seedance2p0Fast) => true,
-      (Provider::Artcraft, CommonVideoModel::Seedance2p0Ultra) => true,
-      (Provider::Artcraft, CommonVideoModel::Seedance2p0UltraFast) => true,
-      (Provider::Artcraft, CommonVideoModel::Seedance2p0BytePlus) => true,
-      (Provider::Artcraft, CommonVideoModel::Seedance2p0BytePlusFast) => true,
-      (Provider::Artcraft, CommonVideoModel::PreviewModel) => true,
-      (Provider::Artcraft, CommonVideoModel::PreviewModelFast) => true,
-      (Provider::Artcraft, CommonVideoModel::Sora2) => true,
-      (Provider::Artcraft, CommonVideoModel::Sora2Pro) => true,
-      (Provider::Artcraft, CommonVideoModel::Veo2) => true,
-      (Provider::Artcraft, CommonVideoModel::Veo3) => true,
-      (Provider::Artcraft, CommonVideoModel::Veo3Fast) => true,
-      (Provider::Artcraft, CommonVideoModel::Veo3p1) => true,
-      (Provider::Artcraft, CommonVideoModel::Veo3p1Fast) => true,
-      // Fal
-      (Provider::Fal, CommonVideoModel::Kling16Pro) => true,
-      (Provider::Fal, CommonVideoModel::Kling21Master) => true,
-      (Provider::Fal, CommonVideoModel::Kling21Pro) => true,
-      (Provider::Fal, CommonVideoModel::Kling2p5TurboPro) => true,
-      (Provider::Fal, CommonVideoModel::Kling2p6Pro) => true,
-      (Provider::Fal, CommonVideoModel::Kling3p0Pro) => true,
-      (Provider::Fal, CommonVideoModel::Kling3p0Standard) => true,
-      (Provider::Fal, CommonVideoModel::Seedance10Lite) => true,
-      (Provider::Fal, CommonVideoModel::Seedance1p5Pro) => true,
-      (Provider::Fal, CommonVideoModel::Sora2) => true,
-      (Provider::Fal, CommonVideoModel::Sora2Pro) => true,
-      (Provider::Fal, CommonVideoModel::Veo2) => true,
-      (Provider::Fal, CommonVideoModel::Veo3) => true,
-      (Provider::Fal, CommonVideoModel::Veo3Fast) => true,
-      (Provider::Fal, CommonVideoModel::Veo3p1) => true,
-      (Provider::Fal, CommonVideoModel::Veo3p1Fast) => true,
-      // GmiCloud
-      (Provider::GmiCloud, CommonVideoModel::Seedance2p0Ultra) => true,
-      (Provider::GmiCloud, CommonVideoModel::Seedance2p0UltraFast) => true,
-      // Grok
-      (Provider::GrokApi, CommonVideoModel::GrokImagineVideo) => true,
-      // Kinovi
-      (Provider::Seedance2Pro, CommonVideoModel::HappyHorse1p0) => true,
-      (Provider::Seedance2Pro, CommonVideoModel::Seedance2p0) => true,
-      (Provider::Seedance2Pro, CommonVideoModel::Seedance2p0Fast) => true,
-      _ => false,
-    }
-  }
-
-  // New builder (transitional state)
   pub fn build2(self) -> Result<VideoGenerationDraftOrRequest, ArtcraftRouterError> {
     match (self.provider, self.model) {
       // Artcraft
@@ -297,88 +200,9 @@ impl GenerateVideoRequestBuilder {
     }
   }
 
-  /// Read the video generation request, construct a plan, then yield a means to execute it.
-  pub fn build(&self) -> Result<VideoGenerationPlan, ArtcraftRouterError> {
-    match self.provider {
-      Provider::Artcraft => self.build_artcraft(),
-      Provider::Fal => self.build_fal(),
-      Provider::GmiCloud => self.unsupported_provider(), // GmiCloud uses build2() only
-      Provider::GrokApi => self.unsupported_provider(),  // Grok uses build2() only
-      Provider::Muapi => self.build_muapi(),
-      Provider::Seedance2Pro => self.build_seedance2pro(),
-    }
-  }
-
-  fn build_artcraft(&self) -> Result<VideoGenerationPlan, ArtcraftRouterError> {
-    match self.model {
-      CommonVideoModel::Kling16Pro => plan_generate_video_artcraft_kling_1_6_pro(self),
-      CommonVideoModel::Kling21Master => plan_generate_video_artcraft_kling_2_1_master(self),
-      CommonVideoModel::Kling21Pro => plan_generate_video_artcraft_kling_2_1_pro(self),
-      CommonVideoModel::Kling2p5TurboPro => plan_generate_video_artcraft_kling_2_5_turbo_pro(self),
-      CommonVideoModel::Kling2p6Pro => plan_generate_video_artcraft_kling_2_6_pro(self),
-      CommonVideoModel::Kling3p0Pro => plan_generate_video_artcraft_kling3p0_pro(self),
-      CommonVideoModel::Kling3p0Standard => plan_generate_video_artcraft_kling3p0_standard(self),
-      CommonVideoModel::Seedance10Lite => plan_generate_video_artcraft_seedance_1_0_lite(self),
-      CommonVideoModel::Seedance1p5Pro => plan_generate_video_artcraft_seedance1p5_pro(self),
-      CommonVideoModel::Seedance2p0 => plan_generate_video_artcraft_seedance2p0(self),
-      CommonVideoModel::Seedance2p0Fast => plan_generate_video_artcraft_seedance2p0_fast(self),
-      CommonVideoModel::Sora2 => plan_generate_video_artcraft_sora_2(self),
-      CommonVideoModel::Sora2Pro => plan_generate_video_artcraft_sora_2_pro(self),
-      CommonVideoModel::Veo2 => plan_generate_video_artcraft_veo_2(self),
-      CommonVideoModel::Veo3 => plan_generate_video_artcraft_veo_3(self),
-      CommonVideoModel::Veo3Fast => plan_generate_video_artcraft_veo_3_fast(self),
-      CommonVideoModel::Veo3p1 => plan_generate_video_artcraft_veo_3p1(self),
-      CommonVideoModel::Veo3p1Fast => plan_generate_video_artcraft_veo_3p1_fast(self),
-      _ => Err(ArtcraftRouterError::UnsupportedModel(format!("{:?}", self.model))),
-    }
-  }
-
-  fn build_fal(&self) -> Result<VideoGenerationPlan, ArtcraftRouterError> {
-    match self.model {
-      CommonVideoModel::Veo2 => plan_generate_video_fal_veo_2(self),
-      CommonVideoModel::Veo3 => plan_generate_video_fal_veo_3(self),
-      CommonVideoModel::Veo3Fast => plan_generate_video_fal_veo_3_fast(self),
-      CommonVideoModel::Veo3p1 => plan_generate_video_fal_veo_3p1(self),
-      CommonVideoModel::Veo3p1Fast => plan_generate_video_fal_veo_3p1_fast(self),
-      CommonVideoModel::Kling16Pro => plan_generate_video_fal_kling_1_6_pro(self),
-      CommonVideoModel::Kling21Pro => plan_generate_video_fal_kling_2_1_pro(self),
-      CommonVideoModel::Kling21Master => plan_generate_video_fal_kling_2_1_master(self),
-      CommonVideoModel::Kling2p5TurboPro => plan_generate_video_fal_kling_2_5_turbo_pro(self),
-      CommonVideoModel::Kling2p6Pro => plan_generate_video_fal_kling_2_6_pro(self),
-      CommonVideoModel::Kling3p0Pro => plan_generate_video_fal_kling_3p0_pro(self),
-      CommonVideoModel::Kling3p0Standard => plan_generate_video_fal_kling_3p0_standard(self),
-      CommonVideoModel::Seedance10Lite => plan_generate_video_fal_seedance_1_0_lite(self),
-      CommonVideoModel::Seedance1p5Pro => plan_generate_video_fal_seedance_1p5_pro(self),
-      CommonVideoModel::Sora2 => plan_generate_video_fal_sora_2(self),
-      CommonVideoModel::Sora2Pro => plan_generate_video_fal_sora_2_pro(self),
-      _ => Err(ArtcraftRouterError::UnsupportedModel(format!("{:?}", self.model))),
-    }
-  }
-
-  fn build_muapi(&self) -> Result<VideoGenerationPlan, ArtcraftRouterError> {
-    match self.model {
-      CommonVideoModel::Seedance2p0 => plan_generate_video_muapi_seedance2p0(self),
-      _ => Err(ArtcraftRouterError::UnsupportedModel(format!("{:?}", self.model))),
-    }
-  }
-
-  fn build_seedance2pro(&self) -> Result<VideoGenerationPlan, ArtcraftRouterError> {
-    match self.model {
-      CommonVideoModel::Seedance2p0 => plan_generate_video_seedance2pro_seedance2p0(self),
-      CommonVideoModel::Seedance2p0Fast => plan_generate_video_seedance2pro_seedance2p0_fast(self),
-      _ => Err(ArtcraftRouterError::UnsupportedModel(format!("{:?}", self.model))),
-    }
-  }
-
-  fn unsupported_provider(&self) -> Result<VideoGenerationPlan, ArtcraftRouterError> {
-    Err(ArtcraftRouterError::UnsupportedModel(
-      format!("Video generation for model `{:?}` is not supported for provider {:?}", self.model, self.provider)
-    ))
-  }
-
   fn unsupported_provider_and_model(&self) -> Result<VideoGenerationDraftOrRequest, ArtcraftRouterError> {
     Err(ArtcraftRouterError::UnsupportedProviderAndModelForNewApi(
-      format!("Video generation for model `{:?}` is not supported for provider {:?} using the new API", self.model, self.provider)
+      format!("Video generation for model `{:?}` is not supported for provider {:?}", self.model, self.provider)
     ))
   }
 

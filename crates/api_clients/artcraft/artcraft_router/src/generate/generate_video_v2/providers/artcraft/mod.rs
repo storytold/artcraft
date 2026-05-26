@@ -26,11 +26,3 @@ pub mod veo_3_fast;
 pub mod veo_3p1;
 pub mod veo_3p1_fast;
 
-#[cfg(test)]
-mod kling_cost_parity_tests;
-
-#[cfg(test)]
-mod veo_cost_parity_tests;
-
-#[cfg(test)]
-mod sora_cost_parity_tests;

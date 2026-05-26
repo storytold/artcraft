@@ -62,13 +62,8 @@ pub(super) async fn handle_artcraft_video_via_router(
     negative_prompt: None,
   };
 
-  let response = if router_request.use_new_builder() {
-    info!("Building request for artcraft_router (v2 pipeline)...");
-    generate_via_v2(router_request, &client).await?
-  } else {
-    info!("Building request for artcraft_router (v1 pipeline)...");
-    generate_via_v1(router_request, &client).await?
-  };
+  info!("Building request for artcraft_router (v2 pipeline)...");
+  let response = generate_via_v2(router_request, &client).await?;
 
   let job_id = response.get_artcraft_payload()
     .map(|p| p.inference_job_token.to_string())
@@ -83,22 +78,6 @@ pub(super) async fn handle_artcraft_video_via_router(
     maybe_prompt_token: None,
     maybe_queue_response_url: None,
   })
-}
-
-/// V1 pipeline: build → plan → generate_video.
-async fn generate_via_v1(
-  router_request: GenerateVideoRequestBuilder,
-  client: &RouterClient,
-) -> Result<GenerateVideoResponse, GenerateError> {
-  let plan = router_request.build()?;
-
-  let response = plan.generate_video(client).await.map_err(|err| {
-    error!("V1 failed to enqueue: {:?}", err);
-    GenerateError::from(err)
-  })?;
-
-  info!("V1 successfully enqueued.");
-  Ok(response)
 }
 
 /// V2 pipeline: build2 → send_request (Artcraft skips draft phase).

@@ -66,7 +66,6 @@ fn provider_to_generation_provider(provider: Provider) -> GenerationProvider {
     Provider::Artcraft => GenerationProvider::Artcraft,
     Provider::Fal => GenerationProvider::Fal,
     // Unused providers -> ArtCraft
-    Provider::Muapi => GenerationProvider::Artcraft,
     Provider::Seedance2Pro => GenerationProvider::Artcraft ,
     Provider::GmiCloud => GenerationProvider::Artcraft,
     Provider::GrokApi => GenerationProvider::Artcraft,

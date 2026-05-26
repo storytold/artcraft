@@ -8,6 +8,5 @@ pub enum Provider {
   Fal,
   GmiCloud,
   GrokApi,
-  Muapi,
   Seedance2Pro,
 }

@@ -1,18 +1,12 @@
 use std::fmt::Debug;
 use std::sync::Arc;
 
-use muapi_client::api_types::request_id::RequestId as MuapiRequestId;
 use tokens::tokens::generic_inference_jobs::InferenceJobToken;
 
 #[derive(Clone, Debug)]
 pub struct ArtcraftVideoResponsePayload {
   pub inference_job_token: InferenceJobToken,
   pub all_inference_job_tokens: Vec<InferenceJobToken>,
-}
-
-#[derive(Clone, Debug)]
-pub struct MuapiVideoResponsePayload {
-  pub request_id: MuapiRequestId,
 }
 
 #[derive(Clone, Debug)]
@@ -56,7 +50,6 @@ pub enum GenerateVideoResponse {
   Artcraft(ArtcraftVideoResponsePayload),
   GmiCloud(GmiCloudVideoResponsePayload),
   Grok(GrokVideoResponsePayload),
-  Muapi(MuapiVideoResponsePayload),
   Seedance2Pro(Seedance2proVideoResponsePayload),
   Fal(FalVideoResponsePayload),
 }
@@ -65,13 +58,6 @@ impl GenerateVideoResponse {
   pub fn get_artcraft_payload(&self) -> Option<ArtcraftVideoResponsePayload> {
     match self {
       Self::Artcraft(p) => Some(p.clone()),
-      _ => None,
-    }
-  }
-
-  pub fn get_muapi_payload(&self) -> Option<MuapiVideoResponsePayload> {
-    match self {
-      Self::Muapi(p) => Some(p.clone()),
       _ => None,
     }
   }
