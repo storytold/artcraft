@@ -18,6 +18,14 @@ pub mod seedance_2p0_u_fast;
 pub mod seedance_2p0_u;
 pub mod seedance_2p0_bp;
 pub mod seedance_2p0_bp_fast;
+pub mod veo_2;
+pub mod veo_3;
+pub mod veo_3_fast;
+pub mod veo_3p1;
+pub mod veo_3p1_fast;
 
 #[cfg(test)]
 mod kling_cost_parity_tests;
+
+#[cfg(test)]
+mod veo_cost_parity_tests;

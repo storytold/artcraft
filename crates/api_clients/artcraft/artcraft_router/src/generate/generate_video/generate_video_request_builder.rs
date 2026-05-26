@@ -64,6 +64,11 @@ use crate::generate::generate_video_v2::providers::artcraft::seedance_2p0_u::bui
 use crate::generate::generate_video_v2::providers::artcraft::seedance_2p0_u_fast::build::build_artcraft_seedance_2p0_u_fast;
 use crate::generate::generate_video_v2::providers::artcraft::seedance_2p0_bp::build::build_artcraft_seedance_2p0_bp;
 use crate::generate::generate_video_v2::providers::artcraft::seedance_2p0_bp_fast::build::build_artcraft_seedance_2p0_bp_fast;
+use crate::generate::generate_video_v2::providers::artcraft::veo_2::build::build_artcraft_veo_2;
+use crate::generate::generate_video_v2::providers::artcraft::veo_3::build::build_artcraft_veo_3;
+use crate::generate::generate_video_v2::providers::artcraft::veo_3_fast::build::build_artcraft_veo_3_fast;
+use crate::generate::generate_video_v2::providers::artcraft::veo_3p1::build::build_artcraft_veo_3p1;
+use crate::generate::generate_video_v2::providers::artcraft::veo_3p1_fast::build::build_artcraft_veo_3p1_fast;
 use crate::generate::generate_video_v2::providers::kinovi::happy_horse_1p0::build::build_kinovi_happy_horse_1p0;
 use crate::generate::generate_video_v2::providers::kinovi::seedance_2p0::build::build_kinovi_seedance_2p0;
 use crate::generate::generate_video_v2::providers::gmicloud::seedance_2p0_g::build::build_gmicloud_seedance_2p0_u;
@@ -195,6 +200,11 @@ impl GenerateVideoRequestBuilder {
       (Provider::Artcraft, CommonVideoModel::Seedance2p0BytePlusFast) => true,
       (Provider::Artcraft, CommonVideoModel::PreviewModel) => true,
       (Provider::Artcraft, CommonVideoModel::PreviewModelFast) => true,
+      (Provider::Artcraft, CommonVideoModel::Veo2) => true,
+      (Provider::Artcraft, CommonVideoModel::Veo3) => true,
+      (Provider::Artcraft, CommonVideoModel::Veo3Fast) => true,
+      (Provider::Artcraft, CommonVideoModel::Veo3p1) => true,
+      (Provider::Artcraft, CommonVideoModel::Veo3p1Fast) => true,
       // Fal
       (Provider::Fal, CommonVideoModel::Kling16Pro) => true,
       (Provider::Fal, CommonVideoModel::Kling21Master) => true,
@@ -246,6 +256,11 @@ impl GenerateVideoRequestBuilder {
       (Provider::Artcraft, CommonVideoModel::Seedance2p0BytePlusFast) => build_artcraft_seedance_2p0_bp_fast(self),
       (Provider::Artcraft, CommonVideoModel::PreviewModel) => build_artcraft_preview_model(self),
       (Provider::Artcraft, CommonVideoModel::PreviewModelFast) => build_artcraft_preview_model_fast(self),
+      (Provider::Artcraft, CommonVideoModel::Veo2) => build_artcraft_veo_2(self),
+      (Provider::Artcraft, CommonVideoModel::Veo3) => build_artcraft_veo_3(self),
+      (Provider::Artcraft, CommonVideoModel::Veo3Fast) => build_artcraft_veo_3_fast(self),
+      (Provider::Artcraft, CommonVideoModel::Veo3p1) => build_artcraft_veo_3p1(self),
+      (Provider::Artcraft, CommonVideoModel::Veo3p1Fast) => build_artcraft_veo_3p1_fast(self),
       // Fal
       (Provider::Fal, CommonVideoModel::Kling16Pro) => build_fal_kling_1_6_pro(self),
       (Provider::Fal, CommonVideoModel::Kling21Master) => build_fal_kling_2_1_master(self),
