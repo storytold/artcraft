@@ -7,7 +7,7 @@ import { Button } from "@storyteller/ui-button";
 import { GalleryModal, type GalleryItem } from "@storyteller/ui-gallery-modal";
 import { PromptBox, type RefImage } from "../../components/prompt-box";
 import {
-  GenerationGalleryGrid,
+  GenerationGallery,
   useGalleryData,
   useGenerationJobs,
   useAuthCheck,
@@ -396,7 +396,7 @@ export default function CreateImage() {
       modelItems={modelItems}
       onModelChange={handleModelChange}
       gridContent={
-        <GenerationGalleryGrid
+        <GenerationGallery
           inProgressJobs={jobs.inProgress}
           failedJobs={jobs.failed}
           onDismissFailed={jobs.dismissFailed}

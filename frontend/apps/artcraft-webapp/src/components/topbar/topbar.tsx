@@ -1,11 +1,17 @@
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { SidebarTrigger, useSidebar } from "../ui/sidebar";
+import { GalleryViewToggle } from "../generation-gallery/GalleryViewToggle";
 import { Breadcrumbs } from "./breadcrumbs";
 import { TopBarActions } from "./TopBarActions";
 
+// Create pages whose generation feed supports the grid/list layout toggle.
+const GALLERY_VIEW_ROUTES = new Set(["/create-image", "/create-video"]);
+
 export function TopBar() {
   const { state, isMobile } = useSidebar();
+  const { pathname } = useLocation();
   const showTopbarLogo = isMobile || state === "collapsed";
+  const showViewToggle = GALLERY_VIEW_ROUTES.has(pathname);
 
   return (
     <header className="sticky top-0 z-20 flex items-center gap-3 border-b border-white/[0.06] bg-[#121212]/80 backdrop-blur-md px-3 pb-4 pt-3 sm:pt-6">
@@ -26,8 +32,11 @@ export function TopBar() {
         </div>
       </div>
 
-      {/* Right: credits / upgrade / task queue / avatar */}
-      <TopBarActions className="ml-auto" />
+      {/* Right: gallery layout toggle (create pages) + credits / upgrade / task queue / avatar */}
+      <div className="ml-auto flex items-center gap-3">
+        {showViewToggle && <GalleryViewToggle />}
+        <TopBarActions />
+      </div>
     </header>
   );
 }

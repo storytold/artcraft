@@ -17,6 +17,9 @@ export interface GalleryItem {
   mediaClass: string;
   modelId?: string;
   batchImageToken?: string;
+  // Token for the generation's prompt record. The list view resolves it
+  // (via the shared prompts cache) to show the real prompt + model.
+  promptToken?: string;
 }
 
 const PAGE_SIZE = 40;
@@ -70,6 +73,7 @@ export function useGalleryData(options: {
       mediaClass: item.media_class || "image",
       modelId: item.maybe_model_type || undefined,
       batchImageToken: item.maybe_batch_token,
+      promptToken: item.maybe_prompt_token || undefined,
     };
   }, []);
 

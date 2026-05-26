@@ -1,11 +1,13 @@
-import { useEffect, useMemo, useRef } from "react";
 import Masonry from "react-masonry-css";
 import { LoadingSpinner } from "@storyteller/ui-loading-spinner";
 import { PendingCard } from "./PendingCard";
 import { FailedCard } from "./FailedCard";
 import { GalleryCard } from "./GalleryCard";
-import type { InProgressJob, FailedJob } from "./useGenerationJobs";
-import type { GalleryItem } from "./useGalleryData";
+import {
+  useMergedGalleryEntries,
+  useInfiniteScrollSentinel,
+} from "./useGalleryEntries";
+import type { GenerationGalleryProps } from "./types";
 
 // ── Grid layout constants ─────────────────────────────────────────────────
 
@@ -21,23 +23,6 @@ const BREAKPOINT_COLS = {
 const MASONRY_CLASS = "flex w-auto ml-[-12px]";
 const COLUMN_CLASS = "pl-[8px]";
 
-// ── Types ──────────────────────────────────────────────────────────────────
-
-interface GenerationGalleryGridProps {
-  inProgressJobs: InProgressJob[];
-  failedJobs: FailedJob[];
-  onDismissFailed: (jobToken: string) => void;
-  newlyCompletedItems: GalleryItem[];
-  galleryItems: GalleryItem[];
-  newlyCompletedTokens: Set<string>;
-  hasMore: boolean;
-  isLoading: boolean;
-  isInitialLoading: boolean;
-  onLoadMore: () => void;
-  onGalleryItemClick: (item: GalleryItem) => void;
-  enableMakeVideo?: boolean;
-}
-
 // ── Component ──────────────────────────────────────────────────────────────
 
 export function GenerationGalleryGrid({
@@ -48,78 +33,20 @@ export function GenerationGalleryGrid({
   galleryItems,
   newlyCompletedTokens,
   hasMore,
-  isLoading,
   isInitialLoading,
   onLoadMore,
   onGalleryItemClick,
   enableMakeVideo,
-}: GenerationGalleryGridProps) {
-  const sentinelRef = useRef<HTMLDivElement>(null);
+}: GenerationGalleryProps) {
+  const sentinelRef = useInfiniteScrollSentinel(hasMore, onLoadMore);
 
-  // Infinite scroll
-  useEffect(() => {
-    const sentinel = sentinelRef.current;
-    if (!sentinel || !hasMore) return;
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) onLoadMore();
-      },
-      { rootMargin: "400px" },
-    );
-    observer.observe(sentinel);
-    return () => observer.disconnect();
-  }, [hasMore, onLoadMore]);
-
-  const mergedEntries = useMemo(() => {
-    type Entry =
-      | { kind: "pending"; key: string; createdAt: number; job: InProgressJob }
-      | { kind: "failed"; key: string; createdAt: number; job: FailedJob }
-      | {
-          kind: "gallery";
-          key: string;
-          createdAt: number;
-          item: GalleryItem;
-        };
-
-    const entries: Entry[] = [];
-
-    for (const job of inProgressJobs) {
-      entries.push({
-        kind: "pending",
-        key: job.id,
-        createdAt: new Date(job.createdAt).getTime(),
-        job,
-      });
-    }
-    for (const job of failedJobs) {
-      entries.push({
-        kind: "failed",
-        key: job.id,
-        createdAt: new Date(job.createdAt).getTime(),
-        job,
-      });
-    }
-    for (const item of newlyCompletedItems) {
-      entries.push({
-        kind: "gallery",
-        key: `new-${item.id}`,
-        createdAt: new Date(item.createdAt).getTime(),
-        item,
-      });
-    }
-    for (const item of galleryItems) {
-      if (newlyCompletedTokens.has(item.id)) continue;
-      entries.push({
-        kind: "gallery",
-        key: item.id,
-        createdAt: new Date(item.createdAt).getTime(),
-        item,
-      });
-    }
-
-    entries.sort((a, b) => b.createdAt - a.createdAt);
-    return entries;
-  }, [inProgressJobs, failedJobs, newlyCompletedItems, galleryItems, newlyCompletedTokens]);
+  const mergedEntries = useMergedGalleryEntries({
+    inProgressJobs,
+    failedJobs,
+    newlyCompletedItems,
+    galleryItems,
+    newlyCompletedTokens,
+  });
 
   if (isInitialLoading) {
     return (

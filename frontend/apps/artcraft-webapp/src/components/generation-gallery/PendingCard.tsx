@@ -2,6 +2,7 @@ import { memo } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSpinnerThird } from "@fortawesome/pro-solid-svg-icons";
 import { getModelCreatorIconPath } from "../../lib/omni-gen-hooks";
+import { derivePendingStatus } from "./pending-status";
 
 export interface PendingCardProps {
   id: string;
@@ -13,17 +14,6 @@ export interface PendingCardProps {
   batchCount?: number;
 }
 
-const formatTimeLeft = (ms: number): string => {
-  const totalSeconds = Math.ceil(ms / 1000);
-  const hours = Math.floor(totalSeconds / 3600);
-  const minutes = Math.floor((totalSeconds % 3600) / 60);
-  const seconds = totalSeconds % 60;
-  if (hours > 0 && minutes > 0) return `~${hours}h ${minutes}m`;
-  if (hours > 0) return `~${hours}h`;
-  if (minutes > 0) return `~${minutes}m`;
-  return `~${seconds}s`;
-};
-
 export const PendingCard = memo(function PendingCard({
   modelId,
   modelLabel,
@@ -32,14 +22,10 @@ export const PendingCard = memo(function PendingCard({
   estimatedTimeLeftMs,
   batchCount,
 }: PendingCardProps) {
-  const progressPercent =
-    progress != null ? Math.max(0, Math.min(100, Math.round(progress))) : null;
-  const isAlmostDone = progress != null && progress >= 95;
-  const timeLabel = isAlmostDone
-    ? "Almost done..."
-    : estimatedTimeLeftMs != null && estimatedTimeLeftMs > 0
-      ? formatTimeLeft(estimatedTimeLeftMs)
-      : null;
+  const { progressPercent, timeLabel } = derivePendingStatus(
+    progress,
+    estimatedTimeLeftMs,
+  );
 
   const iconPath = getModelCreatorIconPath(modelId);
 

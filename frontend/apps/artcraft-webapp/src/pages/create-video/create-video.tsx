@@ -24,7 +24,7 @@ import {
   type MentionItem,
 } from "../../components/prompt-box";
 import {
-  GenerationGalleryGrid,
+  GenerationGallery,
   useGalleryData,
   useGenerationJobs,
   useAuthCheck,
@@ -994,7 +994,7 @@ export default function CreateVideo() {
       onModelChange={handleModelChange}
       glowOrbs={videoGlowOrbs}
       gridContent={
-        <GenerationGalleryGrid
+        <GenerationGallery
           inProgressJobs={enrichedInProgress}
           failedJobs={jobs.failed}
           onDismissFailed={jobs.dismissFailed}
