@@ -16,7 +16,9 @@ pub fn build_fal_flux_pro_1p1_ultra(
 ) -> Result<ImageGenerationDraftOrRequest, ArtcraftRouterError> {
   let strategy = builder.request_mismatch_mitigation_strategy;
 
-  // Flux Pro 1.1 Ultra is text-to-image only.
+  // Flux Pro 1.1 Ultra is text-to-image only. v1 hard-errors on any
+  // image_inputs (regardless of generation_mode_mismatch_strategy) —
+  // match that.
   if builder.image_inputs.is_some() {
     return Err(ArtcraftRouterError::Client(ClientError::ModelDoesNotSupportOption {
       field: "image_inputs",

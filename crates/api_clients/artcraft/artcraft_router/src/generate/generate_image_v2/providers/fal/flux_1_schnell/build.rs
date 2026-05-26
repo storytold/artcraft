@@ -141,12 +141,21 @@ fn plan_edit_image_size(
 
 // ── Image inputs ──
 
+/// Flux 1 Schnell redux takes exactly one image URL. v1 rejects multi-URL
+/// inputs; match that strictness so cost parity holds across the full sweep.
 fn resolve_single_image_url(
   image_inputs: Option<ImageListRef>,
 ) -> Result<Option<String>, ArtcraftRouterError> {
   match image_inputs {
     None => Ok(None),
-    Some(ImageListRef::Urls(urls)) => Ok(urls.into_iter().next()),
+    Some(ImageListRef::Urls(urls)) if urls.is_empty() => Ok(None),
+    Some(ImageListRef::Urls(urls)) if urls.len() == 1 => Ok(Some(urls.into_iter().next().unwrap())),
+    Some(ImageListRef::Urls(urls)) => {
+      Err(ArtcraftRouterError::Client(ClientError::ModelDoesNotSupportOption {
+        field: "image_inputs",
+        value: format!("Flux 1 Schnell redux supports exactly 1 image, got {}", urls.len()),
+      }))
+    }
     Some(ImageListRef::MediaFileTokens(_)) => {
       Err(ArtcraftRouterError::Client(ClientError::FalOnlySupportsUrls))
     }
@@ -222,7 +231,8 @@ mod tests {
     }
 
     #[test]
-    fn multiple_urls_takes_first() {
+    fn multiple_urls_rejected_for_parity_with_v1() {
+      // v1 hard-rejects >1 URL for Flux 1 Schnell redux. v2 mirrors that.
       let builder = GenerateImageRequestBuilder {
         image_inputs: Some(ImageListRef::Urls(vec![
           "https://example.com/a.jpg".to_string(),
@@ -230,8 +240,10 @@ mod tests {
         ])),
         ..base_builder()
       };
-      let req = unwrap_edit(build_fal_flux_1_schnell(builder));
-      assert_eq!(req.image_url, "https://example.com/a.jpg");
+      assert!(matches!(
+        build_fal_flux_1_schnell(builder),
+        Err(ArtcraftRouterError::Client(ClientError::ModelDoesNotSupportOption { field: "image_inputs", .. }))
+      ));
     }
 
     #[test]

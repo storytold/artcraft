@@ -1,3 +1,4 @@
+pub(crate) mod angle_validation;
 pub(crate) mod build_common;
 pub mod flux_1_dev;
 pub mod flux_1_schnell;
