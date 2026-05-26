@@ -68,6 +68,7 @@ mod tests {
       session_token: None,
       maybe_error: None,
       session_user_token: None,
+      extra_message: None,
     }
   }
 
