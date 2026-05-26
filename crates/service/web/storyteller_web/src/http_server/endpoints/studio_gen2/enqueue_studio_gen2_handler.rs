@@ -26,6 +26,7 @@ use tokens::tokens::generic_inference_jobs::InferenceJobToken;
 use tokens::tokens::media_files::MediaFileToken;
 
 use crate::configs::plans::get_correct_plan_for_session::get_correct_plan_for_session;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::configs::plans::plan_category::PlanCategory;
 use crate::http_server::requests::request_headers::get_routing_tag_header::get_routing_tag_header;
 use crate::http_server::requests::request_headers::has_debug_header::has_debug_header;
@@ -84,44 +85,7 @@ pub struct EnqueueStudioGen2Response {
   pub success: bool,
   pub inference_job_token: InferenceJobToken,
 }
-
-#[derive(Debug, ToSchema)]
-pub enum EnqueueStudioGen2Error {
-  BadInput(String),
-  NotAuthorized,
-  ServerError,
-  RateLimited,
-}
-
-impl ResponseError for EnqueueStudioGen2Error {
-  fn status_code(&self) -> StatusCode {
-    match *self {
-      EnqueueStudioGen2Error::BadInput(_) => StatusCode::BAD_REQUEST,
-      EnqueueStudioGen2Error::NotAuthorized => StatusCode::UNAUTHORIZED,
-      EnqueueStudioGen2Error::ServerError => StatusCode::INTERNAL_SERVER_ERROR,
-      EnqueueStudioGen2Error::RateLimited => StatusCode::TOO_MANY_REQUESTS,
-    }
-  }
-
-  fn error_response(&self) -> HttpResponse {
-    let error_reason = match self {
-      EnqueueStudioGen2Error::BadInput(reason) => reason.to_string(),
-      EnqueueStudioGen2Error::NotAuthorized => "unauthorized".to_string(),
-      EnqueueStudioGen2Error::ServerError => "server error".to_string(),
-      EnqueueStudioGen2Error::RateLimited => "rate limited".to_string(),
-    };
-
-    to_simple_json_error(&error_reason, self.status_code())
-  }
-}
-
 // NB: Not using derive_more::Display since Clion doesn't understand it.
-impl std::fmt::Display for EnqueueStudioGen2Error {
-  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-    write!(f, "{:?}", self)
-  }
-}
-
 /// Enqueue Studio Gen2 jobs.
 #[utoipa::path(
   post,
@@ -129,10 +93,10 @@ impl std::fmt::Display for EnqueueStudioGen2Error {
   path = "/v1/studio_gen2/enqueue",
   responses(
     (status = 200, description = "Success", body = EnqueueStudioGen2Response),
-    (status = 400, description = "Bad input", body = EnqueueStudioGen2Error),
-    (status = 401, description = "Not authorized", body = EnqueueStudioGen2Error),
-    (status = 429, description = "Rate limited", body = EnqueueStudioGen2Error),
-    (status = 500, description = "Server error", body = EnqueueStudioGen2Error)
+    (status = 400, description = "Bad input", body = CommonWebError),
+    (status = 401, description = "Not authorized", body = CommonWebError),
+    (status = 429, description = "Rate limited", body = CommonWebError),
+    (status = 500, description = "Server error", body = CommonWebError)
   ),
   params(("request" = EnqueueStudioGen2Request, description = "Payload for request"))
 )]
@@ -140,7 +104,7 @@ pub async fn enqueue_studio_gen2_handler(
   http_request: HttpRequest,
   request: Json<EnqueueStudioGen2Request>,
   server_state: web::Data<Arc<ServerState>>
-) -> Result<Json<EnqueueStudioGen2Response>, EnqueueStudioGen2Error> {
+) -> Result<Json<EnqueueStudioGen2Response>, CommonWebError> {
 
   let a = 1;
   // ==================== DB ==================== //
@@ -150,7 +114,7 @@ pub async fn enqueue_studio_gen2_handler(
       .await
       .map_err(|err| {
         warn!("MySql pool error: {:?}", err);
-        EnqueueStudioGen2Error::ServerError
+        CommonWebError::from_error(err)
       })?;
 
   let maybe_avt_token = server_state.avt_cookie_manager
@@ -164,7 +128,7 @@ pub async fn enqueue_studio_gen2_handler(
       .await
       .map_err(|e| {
         warn!("Session checker error: {:?}", e);
-        EnqueueStudioGen2Error::ServerError
+        CommonWebError::from_error(e)
       })?;
 
   let maybe_user_token = maybe_user_session
@@ -175,7 +139,7 @@ pub async fn enqueue_studio_gen2_handler(
 
   //if !allowed_video_style_transfer_access(maybe_user_session.as_ref(), &server_state.flags) {
   //  warn!("Video style transfer access is not permitted for user");
-  //  return Err(EnqueueStudioGen2Error::NotAuthorized);
+  //  return Err(CommonWebError::NotAuthorized);
   //}
 
   // ==================== PAID PLAN + PRIORITY ==================== //
@@ -205,27 +169,27 @@ pub async fn enqueue_studio_gen2_handler(
     None => &server_state.redis_rate_limiters.logged_out,
     Some(ref user) => {
       if user.role.is_banned {
-        return Err(EnqueueStudioGen2Error::NotAuthorized);
+        return Err(CommonWebError::NotAuthorized);
       }
       &server_state.redis_rate_limiters.logged_in
     },
   };
 
   if let Err(_err) = rate_limiter.rate_limit_request(&http_request).await {
-    return Err(EnqueueStudioGen2Error::RateLimited);
+    return Err(CommonWebError::TooManyRequests);
   }
 
   // ==================== HANDLE IDEMPOTENCY ==================== //
 
   if let Err(reason) = validate_idempotency_token_format(&request.uuid_idempotency_token) {
-    return Err(EnqueueStudioGen2Error::BadInput(reason));
+    return Err(CommonWebError::BadInputWithSimpleMessage(reason));
   }
 
   insert_idempotency_token(&request.uuid_idempotency_token, &mut *mysql_connection)
       .await
       .map_err(|err| {
         error!("Error inserting idempotency token: {:?}", err);
-        EnqueueStudioGen2Error::BadInput("invalid idempotency token".to_string())
+        CommonWebError::BadInputWithSimpleMessage("invalid idempotency token".to_string())
       })?;
 
   // ==================== LOOK UP MODEL INFO ==================== //
@@ -317,9 +281,9 @@ pub async fn enqueue_studio_gen2_handler(
     Err(err) => {
       warn!("New generic inference job creation DB error: {:?}", err);
       if err.had_duplicate_idempotency_token() {
-        return Err(EnqueueStudioGen2Error::BadInput("Duplicate idempotency token".to_string()));
+        return Err(CommonWebError::BadInputWithSimpleMessage("Duplicate idempotency token".to_string()));
       }
-      return Err(EnqueueStudioGen2Error::ServerError);
+      return Err(CommonWebError::from_error(err));
     }
   };
 

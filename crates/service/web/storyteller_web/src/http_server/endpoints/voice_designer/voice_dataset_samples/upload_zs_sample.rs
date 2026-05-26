@@ -23,6 +23,7 @@ use tokens::tokens::zs_voice_dataset_samples::ZsVoiceDatasetSampleToken;
 use tokens::tokens::zs_voice_datasets::ZsVoiceDatasetToken;
 
 use crate::http_server::deprecated_endpoints::media_uploads::common::drain_multipart_request::{drain_multipart_request, MediaSource};
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::validations::validate_idempotency_token_format::validate_idempotency_token_format;
 use crate::state::server_state::ServerState;
 
@@ -32,39 +33,7 @@ pub struct UploadSampleResponse {
   pub sample_token: ZsVoiceDatasetSampleToken,
   pub media_file_token: MediaFileToken,
 }
-
-#[derive(Debug, Serialize)]
-pub enum UploadSampleError {
-  BadInput(String),
-  NotAuthorized,
-  MustBeLoggedIn,
-  ServerError,
-  RateLimited,
-}
-
-impl ResponseError for UploadSampleError {
-  fn status_code(&self) -> StatusCode {
-    match *self {
-      UploadSampleError::BadInput(_) => StatusCode::BAD_REQUEST,
-      UploadSampleError::NotAuthorized => StatusCode::UNAUTHORIZED,
-      UploadSampleError::MustBeLoggedIn => StatusCode::UNAUTHORIZED,
-      UploadSampleError::ServerError => StatusCode::INTERNAL_SERVER_ERROR,
-      UploadSampleError::RateLimited => StatusCode::TOO_MANY_REQUESTS,
-    }
-  }
-
-  fn error_response(&self) -> HttpResponse {
-    serialize_as_json_error(self)
-  }
-}
-
 // NB: Not using derive_more::Display since Clion doesn't understand it.
-impl std::fmt::Display for UploadSampleError {
-  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-    write!(f, "{:?}", self)
-  }
-}
-
 static ALLOWED_AUDIO_MIME_TYPES : Lazy<HashSet<&'static str>> = Lazy::new(|| {
   HashSet::from([
     "audio/aac",
@@ -87,14 +56,14 @@ pub async fn upload_zs_sample_handler(
   http_request: HttpRequest,
   server_state: web::Data<Arc<ServerState>>,
   mut multipart_payload: Multipart,
-) -> Result<HttpResponse, UploadSampleError> {
+) -> Result<HttpResponse, CommonWebError> {
 
   let mut mysql_connection = server_state.mysql_pool
       .acquire()
       .await
       .map_err(|err| {
         error!("MySql pool error: {:?}", err);
-        UploadSampleError::ServerError
+        CommonWebError::from_error(err)
       })?;
 
   // ==================== READ SESSION ==================== //
@@ -105,14 +74,14 @@ pub async fn upload_zs_sample_handler(
       .await
       .map_err(|e| {
         error!("Session checker error: {:?}", e);
-        UploadSampleError::ServerError
+        CommonWebError::from_error(e)
       })?;
 
   // ==================== BANNED USERS ==================== //
 
   if let Some(ref user) = maybe_user_session {
     if user.is_banned {
-      return Err(UploadSampleError::NotAuthorized);
+      return Err(CommonWebError::NotAuthorized);
     }
   }
 
@@ -124,11 +93,11 @@ pub async fn upload_zs_sample_handler(
   };
 
   if let Err(_err) = rate_limiter.rate_limit_request(&http_request).await {
-    return Err(UploadSampleError::RateLimited);
+    return Err(CommonWebError::TooManyRequests);
   }
 
   if let Err(_err) = server_state.redis_rate_limiters.model_upload.rate_limit_request(&http_request).await {
-    return Err(UploadSampleError::RateLimited);
+    return Err(CommonWebError::TooManyRequests);
   }
 
   // ==================== READ MULTIPART REQUEST ==================== //
@@ -137,11 +106,11 @@ pub async fn upload_zs_sample_handler(
       .await
       .map_err(|e| {
         // TODO: Error handling could be nicer.
-        UploadSampleError::BadInput("bad request".to_string())
+        CommonWebError::BadInputWithSimpleMessage("bad request".to_string())
       })?;
 
   let uuid_idempotency_token = upload_sample_request.uuid_idempotency_token
-      .ok_or(UploadSampleError::BadInput("no uuid".to_string()))?;
+      .ok_or(CommonWebError::BadInputWithSimpleMessage("no uuid".to_string()))?;
 
   let maybe_existing_upload =
       get_dataset_sample_by_uuid_with_connection(&uuid_idempotency_token, &mut mysql_connection)
@@ -150,7 +119,7 @@ pub async fn upload_zs_sample_handler(
   match maybe_existing_upload {
     Err(err) => {
       error!("Error checking for previous upload: {:?}", err);
-      return Err(UploadSampleError::ServerError);
+      return Err(CommonWebError::from_anyhow_error(err));
     }
     Ok(Some(previous_record)) => {
       return success_response(
@@ -164,7 +133,7 @@ pub async fn upload_zs_sample_handler(
   }
 
   if let Err(reason) = validate_idempotency_token_format(&uuid_idempotency_token) {
-    return Err(UploadSampleError::BadInput(reason));
+    return Err(CommonWebError::BadInputWithSimpleMessage(reason));
   }
 
   let creator_set_visibility = maybe_user_session
@@ -191,19 +160,19 @@ pub async fn upload_zs_sample_handler(
       .flatten();
 
   let dataset_token = match upload_sample_request.dataset_token {
-    None => return Err(UploadSampleError::BadInput("missing dataset token".to_string())),
+    None => return Err(CommonWebError::BadInputWithSimpleMessage("missing dataset token".to_string())),
     Some(token) => ZsVoiceDatasetToken::new_from_str(&token),
   };
 
   let bytes = match upload_sample_request.file_bytes {
-    None => return Err(UploadSampleError::BadInput("missing file contents".to_string())),
+    None => return Err(CommonWebError::BadInputWithSimpleMessage("missing file contents".to_string())),
     Some(bytes) => bytes,
   };
 
   let hash = sha256_hash_bytes(&bytes)
       .map_err(|io_error| {
         error!("Problem hashing bytes: {:?}", io_error);
-        UploadSampleError::ServerError
+        CommonWebError::from_anyhow_error(io_error)
       })?;
 
   let file_size_bytes = bytes.len();
@@ -221,7 +190,7 @@ pub async fn upload_zs_sample_handler(
           .filter(|c| c.is_ascii())
           .filter(|c| c.is_alphanumeric() || *c == '/')
           .collect::<String>();
-      return Err(UploadSampleError::BadInput(format!("unpermitted mime type: {}", &filtered_mimetype)));
+      return Err(CommonWebError::BadInputWithSimpleMessage(format!("unpermitted mime type: {}", &filtered_mimetype)));
     }
 
     // NB: .aiff (audio/aiff) isn't supported by Symphonia:
@@ -285,7 +254,7 @@ pub async fn upload_zs_sample_handler(
         None
       ).map_err(|e| {
         warn!("file decoding error: {:?}", e);
-        UploadSampleError::BadInput("could not decode file".to_string())
+        CommonWebError::BadInputWithSimpleMessage("could not decode file".to_string())
       })?;
 
       maybe_duration_millis = basic_info.duration_millis;
@@ -297,7 +266,7 @@ pub async fn upload_zs_sample_handler(
     Some(m) => m,
     None => {
       warn!("Invalid mimetype: {:?}", maybe_mimetype);
-      return Err(UploadSampleError::BadInput(format!("unknown mimetype: {:?}", maybe_mimetype)))
+      return Err(CommonWebError::BadInputWithSimpleMessage(format!("unknown mimetype: {:?}", maybe_mimetype)))
     },
   };
 
@@ -312,7 +281,7 @@ pub async fn upload_zs_sample_handler(
     Some(m) => m,
     None => {
       warn!("Missing mimetype!");
-      return Err(UploadSampleError::BadInput("Missing mimetype".to_string()));
+      return Err(CommonWebError::BadInputWithSimpleMessage("Missing mimetype".to_string()));
     },
   };
 
@@ -335,7 +304,7 @@ pub async fn upload_zs_sample_handler(
       .await
       .map_err(|e| {
         warn!("Upload media bytes to bucket error: {:?}", e);
-        UploadSampleError::ServerError
+        CommonWebError::from_anyhow_error(e)
       })?;
 
   let (dataset_sample_token, media_file_token, _record_id) = insert_dataset_sample_and_media_file(InsertDatasetSampleAndMediaFileArgs {
@@ -362,7 +331,7 @@ pub async fn upload_zs_sample_handler(
       .await
       .map_err(|err| {
         warn!("New generic download creation DB error: {:?}", err);
-        UploadSampleError::ServerError
+        CommonWebError::from_anyhow_error(err)
       })?;
 
   info!("new media file token: {:?} dataset token: {:?}", media_file_token, dataset_sample_token);
@@ -376,7 +345,7 @@ pub async fn upload_zs_sample_handler(
 fn success_response(
   sample_token: ZsVoiceDatasetSampleToken,
   media_file_token: MediaFileToken
-) -> Result<HttpResponse, UploadSampleError> {
+) -> Result<HttpResponse, CommonWebError> {
 
   let response = UploadSampleResponse {
     success: true,
@@ -385,7 +354,7 @@ fn success_response(
   };
 
   let body = serde_json::to_string(&response)
-      .map_err(|e| UploadSampleError::ServerError)?;
+      .map_err(CommonWebError::from_error)?;
 
   return Ok(HttpResponse::Ok()
       .content_type("application/json")

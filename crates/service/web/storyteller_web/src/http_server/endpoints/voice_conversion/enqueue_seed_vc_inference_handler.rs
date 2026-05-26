@@ -3,13 +3,10 @@
 #![forbid(unused_mut)]
 #![forbid(unused_variables)]
 
-use std::fmt;
 use std::sync::Arc;
 
-use actix_web::error::ResponseError;
-use actix_web::http::StatusCode;
 use actix_web::web::Json;
-use actix_web::{web, HttpRequest, HttpResponse};
+use actix_web::{web, HttpRequest};
 use log::{info, warn};
 use utoipa::ToSchema;
 
@@ -30,10 +27,10 @@ use tokens::tokens::users::UserToken;
 use tts_common::priority::{FAKEYOU_DEFAULT_VALID_API_TOKEN_PRIORITY_LEVEL, FAKEYOU_INVESTOR_PRIORITY_LEVEL};
 
 use crate::configs::app_startup::username_set::UsernameSet;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::configs::plans::get_correct_plan_for_session::get_correct_plan_for_session;
 use crate::http_server::deprecated_endpoints::investor_demo::demo_cookie::request_has_demo_cookie;
 use crate::http_server::session::lookup::user_session_extended::UserSessionExtended;
-use crate::http_server::web_utils::response_error_helpers::to_simple_json_error;
 use crate::state::server_state::ServerState;
 
 // TODO: Temporary for investor demo
@@ -62,57 +59,17 @@ pub struct InferSeedVcSuccessResponse {
   pub success: bool,
   pub inference_job_token: String,
 }
-
-#[derive(Debug, ToSchema)]
-pub enum InferSeedVcError {
-  BadInput(String),
-  NotAuthorized,
-  ServerError,
-  RateLimited,
-  NotFound,
-}
-
-impl ResponseError for InferSeedVcError {
-  fn status_code(&self) -> StatusCode {
-    match *self {
-      InferSeedVcError::BadInput(_) => StatusCode::BAD_REQUEST,
-      InferSeedVcError::NotAuthorized => StatusCode::UNAUTHORIZED,
-      InferSeedVcError::ServerError => StatusCode::INTERNAL_SERVER_ERROR,
-      InferSeedVcError::RateLimited => StatusCode::TOO_MANY_REQUESTS,
-      InferSeedVcError::NotFound => StatusCode::NOT_FOUND,
-    }
-  }
-
-  fn error_response(&self) -> HttpResponse {
-    let error_reason = match self {
-      InferSeedVcError::BadInput(reason) => reason.to_string(),
-      InferSeedVcError::NotAuthorized => "unauthorized".to_string(),
-      InferSeedVcError::ServerError => "server error".to_string(),
-      InferSeedVcError::RateLimited => "rate limited".to_string(),
-      InferSeedVcError::NotFound => "not found".to_string(),
-    };
-
-    to_simple_json_error(&error_reason, self.status_code())
-  }
-}
-
 // NB: Not using derive_more::Display since Clion doesn't understand it.
-impl fmt::Display for InferSeedVcError {
-  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-    write!(f, "{:?}", self)
-  }
-}
-
 #[utoipa::path(
   post,
   tag = "Voice Conversion",
   path = "/v1/voice_conversion/seed_vc_inference",
   responses(
     (status = 200, description = "Success response", body = InferSeedVcSuccessResponse),
-    (status = 400, description = "Bad input", body = InferSeedVcError),
-    (status = 401, description = "Not authorized", body = InferSeedVcError),
-    (status = 429, description = "Rate limited", body = InferSeedVcError),
-    (status = 500, description = "Server error", body = InferSeedVcError)
+    (status = 400, description = "Bad input", body = CommonWebError),
+    (status = 401, description = "Not authorized", body = CommonWebError),
+    (status = 429, description = "Rate limited", body = CommonWebError),
+    (status = 500, description = "Server error", body = CommonWebError)
   ),
   params(("request" = InferSeedVcRequest, description = "Payload for Request"))
 )]
@@ -120,10 +77,10 @@ pub async fn enqueue_infer_seed_vc_handler(
   http_request: HttpRequest,
   request: Json<InferSeedVcRequest>,
   server_state: web::Data<Arc<ServerState>>
-) -> Result<Json<InferSeedVcSuccessResponse>, InferSeedVcError> {
+) -> Result<Json<InferSeedVcSuccessResponse>, CommonWebError> {
 
   if server_state.flags.disable_voice_conversion {
-    return Err(InferSeedVcError::RateLimited);
+    return Err(CommonWebError::TooManyRequests);
   }
   
   let mut is_from_api = false;
@@ -137,7 +94,7 @@ pub async fn enqueue_infer_seed_vc_handler(
     .await
     .map_err(|err| {
       warn!("MySql pool error: {:?}", err);
-      InferSeedVcError::ServerError
+      CommonWebError::from_error(err)
     })?;
 
   // ==================== USER SESSION ==================== //
@@ -148,7 +105,7 @@ pub async fn enqueue_infer_seed_vc_handler(
     .await
     .map_err(|e| {
       warn!("Session checker error: {:?}", e);
-      InferSeedVcError::ServerError
+      CommonWebError::from_error(e)
     })?;
 
   if let Some(user_session) = maybe_user_session.as_ref() {
@@ -215,7 +172,7 @@ pub async fn enqueue_infer_seed_vc_handler(
   if let Some(ref user) = maybe_user_session {
     if user.role.is_banned {
       warn!("User is not authorized to use Seed-VC because they are banned.");
-      return Err(InferSeedVcError::NotAuthorized);
+      return Err(CommonWebError::NotAuthorized);
     }
   }
 
@@ -249,7 +206,7 @@ pub async fn enqueue_infer_seed_vc_handler(
     };
 
     if let Err(_err) = rate_limiter.rate_limit_request(&http_request).await {
-      return Err(InferSeedVcError::RateLimited);
+      return Err(CommonWebError::TooManyRequests);
     }
   }
 
@@ -283,7 +240,7 @@ pub async fn enqueue_infer_seed_vc_handler(
     } else if source_media_token.starts_with(MediaFileToken::token_prefix()) {
       InferenceInputSourceTokenType::MediaFile
     } else {
-      return Err(InferSeedVcError::BadInput(
+      return Err(CommonWebError::BadInputWithSimpleMessage(
         "input token is not a media_upload or media_file token".to_string()));
     };
 
@@ -295,7 +252,7 @@ pub async fn enqueue_infer_seed_vc_handler(
     } else if reference_media_token.starts_with(MediaFileToken::token_prefix()) {
       InferenceInputSourceTokenType::MediaFile
     } else {
-      return Err(InferSeedVcError::BadInput(
+      return Err(CommonWebError::BadInputWithSimpleMessage(
         "reference token is not a media_upload or media_file token".to_string()));
     };
 
@@ -337,9 +294,9 @@ pub async fn enqueue_infer_seed_vc_handler(
     Err(err) => {
       warn!("New (generic) seed-vc inference job creation DB error: {:?}", err);
       if err.had_duplicate_idempotency_token() {
-        return Err(InferSeedVcError::BadInput("Duplicate idempotency token".to_string()));
+        return Err(CommonWebError::BadInputWithSimpleMessage("Duplicate idempotency token".to_string()));
       }
-      return Err(InferSeedVcError::ServerError);
+      return Err(CommonWebError::from_error(err));
     }
   };
 

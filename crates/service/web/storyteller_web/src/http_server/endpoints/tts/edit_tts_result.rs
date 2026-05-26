@@ -3,11 +3,8 @@
 #![forbid(unused_mut)]
 #![forbid(unused_variables)]
 
-use std::fmt;
 use std::sync::Arc;
 
-use actix_web::error::ResponseError;
-use actix_web::http::StatusCode;
 use actix_web::web::Path;
 use actix_web::{web, HttpRequest, HttpResponse};
 use log::{error, warn};
@@ -17,7 +14,7 @@ use http_server_common::request::get_request_ip::get_request_ip;
 use mysql_queries::queries::tts::tts_results::edit_tts_result::{edit_tts_result, CreatorOrModFields, EditTtsResultArgs};
 use mysql_queries::queries::tts::tts_results::query_tts_result::select_tts_result_by_token;
 
-use crate::http_server::web_utils::response_error_helpers::to_simple_json_error;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::web_utils::response_success_helpers::simple_json_success;
 use crate::state::server_state::ServerState;
 
@@ -32,49 +29,12 @@ pub struct EditTtsResultRequest {
   // ========== Author + Moderator options ==========
   pub creator_set_visibility: Option<String>,
 }
-
-#[derive(Debug)]
-pub enum EditTtsResultError {
-  BadInput(String),
-  NotAuthorized,
-  ResultNotFound,
-  ServerError,
-}
-
-impl ResponseError for EditTtsResultError {
-  fn status_code(&self) -> StatusCode {
-    match *self {
-      EditTtsResultError::BadInput(_) => StatusCode::BAD_REQUEST,
-      EditTtsResultError::NotAuthorized => StatusCode::UNAUTHORIZED,
-      EditTtsResultError::ResultNotFound => StatusCode::NOT_FOUND,
-      EditTtsResultError::ServerError => StatusCode::INTERNAL_SERVER_ERROR,
-    }
-  }
-
-  fn error_response(&self) -> HttpResponse {
-    let error_reason = match self {
-      EditTtsResultError::BadInput(reason) => reason.to_string(),
-      EditTtsResultError::NotAuthorized=> "unauthorized".to_string(),
-      EditTtsResultError::ResultNotFound => "not found".to_string(),
-      EditTtsResultError::ServerError => "server error".to_string(),
-    };
-
-    to_simple_json_error(&error_reason, self.status_code())
-  }
-}
-
 // NB: Not using derive_more::Display since Clion doesn't understand it.
-impl fmt::Display for EditTtsResultError {
-  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-    write!(f, "{:?}", self)
-  }
-}
-
 pub async fn edit_tts_inference_result_handler(
   http_request: HttpRequest,
   path: Path<EditTtsResultPathInfo>,
   request: web::Json<EditTtsResultRequest>,
-  server_state: web::Data<Arc<ServerState>>) -> Result<HttpResponse, EditTtsResultError>
+  server_state: web::Data<Arc<ServerState>>) -> Result<HttpResponse, CommonWebError>
 {
   let maybe_user_session = server_state
       .session_checker
@@ -82,14 +42,14 @@ pub async fn edit_tts_inference_result_handler(
       .await
       .map_err(|e| {
         warn!("Session checker error: {:?}", e);
-        EditTtsResultError::ServerError
+        CommonWebError::from_error(e)
       })?;
 
   let user_session = match maybe_user_session {
     Some(session) => session,
     None => {
       warn!("not logged in");
-      return Err(EditTtsResultError::NotAuthorized);
+      return Err(CommonWebError::NotAuthorized);
     }
   };
 
@@ -110,9 +70,9 @@ pub async fn edit_tts_inference_result_handler(
   let inference_result = match inference_result_query_result {
     Err(e) => {
       warn!("query error: {:?}", e);
-      return Err(EditTtsResultError::ServerError);
+      return Err(CommonWebError::from_anyhow_error(e));
     }
-    Ok(None) => return Err(EditTtsResultError::ResultNotFound),
+    Ok(None) => return Err(CommonWebError::NotFound),
     Ok(Some(inference_result)) => inference_result,
   };
 
@@ -124,7 +84,7 @@ pub async fn edit_tts_inference_result_handler(
 
   if !is_author && !is_moderator {
     warn!("user is not allowed to edit result: {:?}", user_session.user_token);
-    return Err(EditTtsResultError::NotAuthorized);
+    return Err(CommonWebError::NotAuthorized);
   }
 
   // Author + Mod fields.
@@ -133,7 +93,7 @@ pub async fn edit_tts_inference_result_handler(
 
   if let Some(visibility) = request.creator_set_visibility.as_deref() {
     creator_set_visibility = Visibility::from_str(visibility)
-        .map_err(|_| EditTtsResultError::BadInput("bad record visibility".to_string()))?;
+        .map_err(|_| CommonWebError::BadInputWithSimpleMessage("bad record visibility".to_string()))?;
   }
 
   let ip_address = get_request_ip(&http_request);
@@ -157,7 +117,7 @@ pub async fn edit_tts_inference_result_handler(
       .await
       .map_err(|err| {
         error!("Update TTS result DB error: {:?}", err);
-        EditTtsResultError::ServerError
+        CommonWebError::from_anyhow_error(err)
       })?;
 
   Ok(simple_json_success())

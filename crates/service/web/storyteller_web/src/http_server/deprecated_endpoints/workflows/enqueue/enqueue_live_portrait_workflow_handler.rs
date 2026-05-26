@@ -22,6 +22,7 @@ use tokens::tokens::generic_inference_jobs::InferenceJobToken;
 use tokens::tokens::media_files::MediaFileToken;
 
 use crate::configs::plans::get_correct_plan_for_session::get_correct_plan_for_session;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::configs::plans::plan_category::PlanCategory;
 use crate::http_server::requests::get_request_domain_branding::{get_request_domain_branding, DomainBranding};
 use crate::http_server::requests::request_headers::get_routing_tag_header::get_routing_tag_header;
@@ -84,44 +85,7 @@ pub struct EnqueueLivePortraitWorkflowSuccessResponse {
   pub success: bool,
   pub inference_job_token: InferenceJobToken,
 }
-
-#[derive(Debug, ToSchema)]
-pub enum EnqueueLivePortraitWorkflowError {
-  BadInput(String),
-  NotAuthorized,
-  ServerError,
-  RateLimited,
-}
-
-impl ResponseError for EnqueueLivePortraitWorkflowError {
-  fn status_code(&self) -> StatusCode {
-    match *self {
-      EnqueueLivePortraitWorkflowError::BadInput(_) => StatusCode::BAD_REQUEST,
-      EnqueueLivePortraitWorkflowError::NotAuthorized => StatusCode::UNAUTHORIZED,
-      EnqueueLivePortraitWorkflowError::ServerError => StatusCode::INTERNAL_SERVER_ERROR,
-      EnqueueLivePortraitWorkflowError::RateLimited => StatusCode::TOO_MANY_REQUESTS,
-    }
-  }
-
-  fn error_response(&self) -> HttpResponse {
-    let error_reason = match self {
-      EnqueueLivePortraitWorkflowError::BadInput(reason) => reason.to_string(),
-      EnqueueLivePortraitWorkflowError::NotAuthorized => "unauthorized".to_string(),
-      EnqueueLivePortraitWorkflowError::ServerError => "server error".to_string(),
-      EnqueueLivePortraitWorkflowError::RateLimited => "rate limited".to_string(),
-    };
-
-    to_simple_json_error(&error_reason, self.status_code())
-  }
-}
-
 // NB: Not using derive_more::Display since Clion doesn't understand it.
-impl std::fmt::Display for EnqueueLivePortraitWorkflowError {
-  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-    write!(f, "{:?}", self)
-  }
-}
-
 /// Enqueue "face mirror" (Live Portrait) video workflows.
 ///
 /// We've renamed this as to not give away what we're doing to users.
@@ -131,17 +95,17 @@ impl std::fmt::Display for EnqueueLivePortraitWorkflowError {
   path = "/v1/workflows/enqueue_face_mirror",
   responses(
     (status = 200, description = "Success", body = EnqueueLivePortraitWorkflowSuccessResponse),
-    (status = 400, description = "Bad input", body = EnqueueLivePortraitWorkflowError),
-    (status = 401, description = "Not authorized", body = EnqueueLivePortraitWorkflowError),
-    (status = 429, description = "Rate limited", body = EnqueueLivePortraitWorkflowError),
-    (status = 500, description = "Server error", body = EnqueueLivePortraitWorkflowError)
+    (status = 400, description = "Bad input", body = CommonWebError),
+    (status = 401, description = "Not authorized", body = CommonWebError),
+    (status = 429, description = "Rate limited", body = CommonWebError),
+    (status = 500, description = "Server error", body = CommonWebError)
   ),
   params(("request" = EnqueueLivePortraitWorkflowRequest, description = "Payload for request"))
 )]
 pub async fn enqueue_live_portrait_workflow_handler(
   http_request: HttpRequest,
   request: Json<EnqueueLivePortraitWorkflowRequest>,
-  server_state: web::Data<Arc<ServerState>>) -> Result<Json<EnqueueLivePortraitWorkflowSuccessResponse>, EnqueueLivePortraitWorkflowError>
+  server_state: web::Data<Arc<ServerState>>) -> Result<Json<EnqueueLivePortraitWorkflowSuccessResponse>, CommonWebError>
 {
   // ==================== DB ==================== //
 
@@ -150,7 +114,7 @@ pub async fn enqueue_live_portrait_workflow_handler(
       .await
       .map_err(|err| {
         warn!("MySql pool error: {:?}", err);
-        EnqueueLivePortraitWorkflowError::ServerError
+        CommonWebError::from_error(err)
       })?;
 
   // ==================== USER SESSION ==================== //
@@ -164,8 +128,8 @@ pub async fn enqueue_live_portrait_workflow_handler(
     &mut mysql_connection)
       .await
       .map_err(|err| match err {
-        RequireUserSessionError::ServerError => EnqueueLivePortraitWorkflowError::ServerError,
-        RequireUserSessionError::NotAuthorized => EnqueueLivePortraitWorkflowError::NotAuthorized,
+        RequireUserSessionError::ServerError => CommonWebError::from_error(err),
+        RequireUserSessionError::NotAuthorized => CommonWebError::NotAuthorized,
       })?;
 
   // ==================== PAID PLAN + PRIORITY ==================== //
@@ -187,20 +151,20 @@ pub async fn enqueue_live_portrait_workflow_handler(
   // ==================== RATE LIMIT ==================== //
 
   if let Err(_err) = server_state.redis_rate_limiters.logged_in.rate_limit_request(&http_request).await {
-    return Err(EnqueueLivePortraitWorkflowError::RateLimited);
+    return Err(CommonWebError::TooManyRequests);
   }
 
   // ==================== HANDLE IDEMPOTENCY ==================== //
 
   if let Err(reason) = validate_idempotency_token_format(&request.uuid_idempotency_token) {
-    return Err(EnqueueLivePortraitWorkflowError::BadInput(reason));
+    return Err(CommonWebError::BadInputWithSimpleMessage(reason));
   }
 
   insert_idempotency_token(&request.uuid_idempotency_token, &mut *mysql_connection)
       .await
       .map_err(|err| {
         error!("Error inserting idempotency token: {:?}", err);
-        EnqueueLivePortraitWorkflowError::BadInput("invalid idempotency token".to_string())
+        CommonWebError::BadInputWithSimpleMessage("invalid idempotency token".to_string())
       })?;
 
   // ==================== HANDLE REQUEST ==================== //
@@ -293,9 +257,9 @@ pub async fn enqueue_live_portrait_workflow_handler(
     Err(err) => {
       warn!("New generic inference job creation DB error: {:?}", err);
       if err.had_duplicate_idempotency_token() {
-        return Err(EnqueueLivePortraitWorkflowError::BadInput("Duplicate idempotency token".to_string()));
+        return Err(CommonWebError::BadInputWithSimpleMessage("Duplicate idempotency token".to_string()));
       }
-      return Err(EnqueueLivePortraitWorkflowError::ServerError);
+      return Err(CommonWebError::from_error(err));
     }
   };
 

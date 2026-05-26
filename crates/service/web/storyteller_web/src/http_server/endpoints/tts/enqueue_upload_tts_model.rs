@@ -3,16 +3,13 @@
 #![forbid(unused_mut)]
 #![forbid(unused_variables)]
 
-use std::fmt;
 use std::sync::Arc;
 
-use actix_web::error::ResponseError;
-use actix_web::http::StatusCode;
 use actix_web::{web, HttpRequest, HttpResponse};
 use log::warn;
 
 use crate::http_server::validations::validate_model_title::validate_model_title;
-use crate::http_server::web_utils::response_error_helpers::to_simple_json_error;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::state::server_state::ServerState;
 use config::bad_urls::is_bad_tts_model_download_url;
 use enums::by_table::generic_download_jobs::generic_download_type::GenericDownloadType;
@@ -69,56 +66,19 @@ pub struct UploadTtsModelSuccessResponse {
   /// This is a transitional field to tell the frontend how to process the job checking.
   pub job_type: DownloadJobType,
 }
-
-#[derive(Debug)]
-pub enum UploadTtsModelError {
-  BadInput(String),
-  MustBeLoggedIn,
-  ServerError,
-  RateLimited,
-}
-
-impl ResponseError for UploadTtsModelError {
-  fn status_code(&self) -> StatusCode {
-    match *self {
-      UploadTtsModelError::BadInput(_) => StatusCode::BAD_REQUEST,
-      UploadTtsModelError::MustBeLoggedIn => StatusCode::UNAUTHORIZED,
-      UploadTtsModelError::ServerError => StatusCode::INTERNAL_SERVER_ERROR,
-      UploadTtsModelError::RateLimited => StatusCode::TOO_MANY_REQUESTS,
-    }
-  }
-
-  fn error_response(&self) -> HttpResponse {
-    let error_reason = match self {
-      UploadTtsModelError::BadInput(reason) => reason.to_string(),
-      UploadTtsModelError::MustBeLoggedIn => "user must be logged in".to_string(),
-      UploadTtsModelError::ServerError => "server error".to_string(),
-      UploadTtsModelError::RateLimited => "rate limited".to_string(),
-    };
-
-    to_simple_json_error(&error_reason, self.status_code())
-  }
-}
-
 // NB: Not using derive_more::Display since Clion doesn't understand it.
-impl fmt::Display for UploadTtsModelError {
-  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-    write!(f, "{:?}", self)
-  }
-}
-
 pub async fn upload_tts_model_handler(
   http_request: HttpRequest,
   request: web::Json<UploadTtsModelRequest>,
   server_state: web::Data<Arc<ServerState>>
-) -> Result<HttpResponse, UploadTtsModelError> {
+) -> Result<HttpResponse, CommonWebError> {
   
   if server_state.flags.disable_tts {
-    return Err(UploadTtsModelError::RateLimited);
+    return Err(CommonWebError::TooManyRequests);
   }
   
   if let Err(_err) = server_state.redis_rate_limiters.model_upload.rate_limit_request(&http_request).await {
-    return Err(UploadTtsModelError::RateLimited);
+    return Err(CommonWebError::TooManyRequests);
   }
 
   let maybe_user_session = server_state
@@ -127,23 +87,23 @@ pub async fn upload_tts_model_handler(
     .await
     .map_err(|e| {
       warn!("Session checker error: {:?}", e);
-      UploadTtsModelError::ServerError
+      CommonWebError::from_error(e)
     })?;
 
   let user_session = match maybe_user_session {
     Some(session) => session,
     None => {
       warn!("not logged in");
-      return Err(UploadTtsModelError::MustBeLoggedIn);
+      return Err(CommonWebError::NotAuthorized);
     }
   };
 
   if let Err(reason) = validate_idempotency_token(&request.idempotency_token) {
-    return Err(UploadTtsModelError::BadInput(reason));
+    return Err(CommonWebError::BadInputWithSimpleMessage(reason));
   }
 
   if let Err(reason) = validate_model_title(&request.title) {
-    return Err(UploadTtsModelError::BadInput(reason));
+    return Err(CommonWebError::BadInputWithSimpleMessage(reason));
   }
 
   let ip_address = get_request_ip(&http_request);
@@ -155,11 +115,11 @@ pub async fn upload_tts_model_handler(
   match is_bad_tts_model_download_url(&download_url) {
     Ok(false) => {} // Ok case
     Ok(true) => {
-      return Err(UploadTtsModelError::BadInput("Bad model download URL".to_string()));
+      return Err(CommonWebError::BadInputWithSimpleMessage("Bad model download URL".to_string()));
     }
     Err(err) => {
       warn!("Error parsing url: {:?}", err);
-      return Err(UploadTtsModelError::BadInput("Bad model download URL".to_string()));
+      return Err(CommonWebError::BadInputWithSimpleMessage("Bad model download URL".to_string()));
     }
   }
 
@@ -189,7 +149,7 @@ pub async fn upload_tts_model_handler(
         Ok(token) => token,
         Err(err) => {
           warn!("Error inserting new job record: {:?}", err);
-          return Err(UploadTtsModelError::ServerError);
+          return Err(CommonWebError::from_anyhow_error(err));
         }
       };
       download_job_type = DownloadJobType::LegacyTts;
@@ -211,7 +171,7 @@ pub async fn upload_tts_model_handler(
           .await
           .map_err(|err| {
             warn!("New generic download creation DB error (for TTS model): {:?}", err);
-            UploadTtsModelError::ServerError
+            CommonWebError::from_anyhow_error(err)
           })?;
 
       job_token = download_job_token.to_string();
@@ -223,7 +183,7 @@ pub async fn upload_tts_model_handler(
       .await
       .map_err(|e| {
         warn!("error publishing event: {:?}", e);
-        UploadTtsModelError::ServerError
+        CommonWebError::from_anyhow_error(e)
       })?;
 
   let response = UploadTtsModelSuccessResponse {
@@ -233,7 +193,7 @@ pub async fn upload_tts_model_handler(
   };
 
   let body = serde_json::to_string(&response)
-    .map_err(|_e| UploadTtsModelError::ServerError)?;
+    ?;
 
   Ok(HttpResponse::Ok()
     .content_type("application/json")

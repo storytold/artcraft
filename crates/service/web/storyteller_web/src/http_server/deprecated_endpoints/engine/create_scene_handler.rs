@@ -20,40 +20,9 @@ use mysql_queries::queries::media_files::create::specialized_insert::insert_medi
 use tokens::tokens::media_files::MediaFileToken;
 
 use crate::http_server::deprecated_endpoints::engine::drain_multipart_request::drain_multipart_request;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::validations::validate_idempotency_token_format::validate_idempotency_token_format;
 use crate::state::server_state::ServerState;
-
-#[derive(Debug, Serialize, ToSchema)]
-pub enum CreateSceneError {
-  BadInput(String),
-  NotAuthorized,
-  MustBeLoggedIn,
-  ServerError,
-  RateLimited,
-}
-
-impl ResponseError for CreateSceneError {
-  fn status_code(&self) -> StatusCode {
-    match *self {
-      CreateSceneError::BadInput(_) => StatusCode::BAD_REQUEST,
-      CreateSceneError::NotAuthorized => StatusCode::UNAUTHORIZED,
-      CreateSceneError::MustBeLoggedIn => StatusCode::UNAUTHORIZED,
-      CreateSceneError::ServerError => StatusCode::INTERNAL_SERVER_ERROR,
-      CreateSceneError::RateLimited => StatusCode::TOO_MANY_REQUESTS,
-    }
-  }
-
-  fn error_response(&self) -> HttpResponse {
-    serialize_as_json_error(self)
-  }
-}
-
-impl std::fmt::Display for CreateSceneError {
-  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-    write!(f, "{:?}", self)
-  }
-}
-
 #[derive(Serialize, ToSchema)]
 pub struct CreateSceneSuccessResponse {
   pub success: bool,
@@ -68,22 +37,22 @@ pub struct CreateSceneSuccessResponse {
   path = "/v1/engine/create_scene",
   responses(
     (status = 200, description = "Found", body = CreateSceneSuccessResponse),
-    (status = 404, description = "Not found", body = CreateSceneError),
-    (status = 500, description = "Server error", body = CreateSceneError),
+    (status = 404, description = "Not found", body = CommonWebError),
+    (status = 500, description = "Server error", body = CommonWebError),
   ),
 )]
 pub async fn create_scene_handler(
   http_request: HttpRequest,
   server_state: web::Data<Arc<ServerState>>,
   mut multipart_payload: Multipart,
-) -> Result<HttpResponse, CreateSceneError> {
+) -> Result<HttpResponse, CommonWebError> {
 
   let mut mysql_connection = server_state.mysql_pool
       .acquire()
       .await
       .map_err(|err| {
         error!("MySql pool error: {:?}", err);
-        CreateSceneError::ServerError
+        CommonWebError::from_error(err)
       })?;
 
   // ==================== READ SESSION ==================== //
@@ -94,7 +63,7 @@ pub async fn create_scene_handler(
       .await
       .map_err(|e| {
         error!("Session checker error: {:?}", e);
-        CreateSceneError::ServerError
+        CommonWebError::from_error(e)
       })?;
 
   let maybe_avt_token = server_state
@@ -105,7 +74,7 @@ pub async fn create_scene_handler(
 
   if let Some(ref user) = maybe_user_session {
     if user.is_banned {
-      return Err(CreateSceneError::NotAuthorized);
+      return Err(CommonWebError::NotAuthorized);
     }
   }
 
@@ -117,7 +86,7 @@ pub async fn create_scene_handler(
   };
 
   if let Err(_err) = rate_limiter.rate_limit_request(&http_request).await {
-    return Err(CreateSceneError::RateLimited);
+    return Err(CommonWebError::TooManyRequests);
   }
 
   // ==================== READ MULTIPART REQUEST ==================== //
@@ -126,16 +95,16 @@ pub async fn create_scene_handler(
       .await
       .map_err(|e| {
         // TODO: Error handling could be nicer.
-        CreateSceneError::BadInput("bad request".to_string())
+        CommonWebError::BadInputWithSimpleMessage("bad request".to_string())
       })?;
 
   let uuid_idempotency_token = upload_media_request.uuid_idempotency_token
-      .ok_or(CreateSceneError::BadInput("no uuid".to_string()))?;
+      .ok_or(CommonWebError::BadInputWithSimpleMessage("no uuid".to_string()))?;
 
   // ==================== HANDLE IDEMPOTENCY ==================== //
 
   if let Err(reason) = validate_idempotency_token_format(&uuid_idempotency_token) {
-    return Err(CreateSceneError::BadInput(reason));
+    return Err(CommonWebError::BadInputWithSimpleMessage(reason));
   }
 
   // TODO(bt, 2024-02-22): This should be a transaction.
@@ -143,7 +112,7 @@ pub async fn create_scene_handler(
       .await
       .map_err(|err| {
         error!("Error inserting idempotency token: {:?}", err);
-        CreateSceneError::BadInput("invalid idempotency token".to_string())
+        CommonWebError::BadInputWithSimpleMessage("invalid idempotency token".to_string())
       })?;
 
   // ==================== USER DATA ==================== //
@@ -164,7 +133,7 @@ pub async fn create_scene_handler(
       .unwrap_or("text/plain");
 
   let bytes = match upload_media_request.file_bytes {
-    None => return Err(CreateSceneError::BadInput("missing file contents".to_string())),
+    None => return Err(CommonWebError::BadInputWithSimpleMessage("missing file contents".to_string())),
     Some(bytes) => bytes,
   };
 
@@ -173,7 +142,7 @@ pub async fn create_scene_handler(
   let hash = sha256_hash_bytes(&bytes)
       .map_err(|io_error| {
         error!("Problem hashing bytes: {:?}", io_error);
-        CreateSceneError::ServerError
+        CommonWebError::from_anyhow_error(io_error)
       })?;
 
   const PREFIX : Option<&str> = Some("scene_");
@@ -190,7 +159,7 @@ pub async fn create_scene_handler(
       .await
       .map_err(|e| {
         warn!("Upload media bytes to bucket error: {:?}", e);
-        CreateSceneError::ServerError
+        CommonWebError::from_anyhow_error(e)
       })?;
 
   // TODO(bt, 2024-02-22): This should be a transaction.
@@ -222,7 +191,7 @@ pub async fn create_scene_handler(
       .await
       .map_err(|err| {
         warn!("New file creation DB error: {:?}", err);
-        CreateSceneError::ServerError
+        CommonWebError::from_anyhow_error(err)
       })?;
 
   info!("new media file id: {} token: {:?}", record_id, &token);
@@ -233,7 +202,7 @@ pub async fn create_scene_handler(
   };
 
   let body = serde_json::to_string(&response)
-      .map_err(|e| CreateSceneError::ServerError)?;
+      .map_err(CommonWebError::from_error)?;
 
   return Ok(HttpResponse::Ok()
       .content_type("application/json")

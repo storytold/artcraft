@@ -6,8 +6,6 @@
 use std::collections::HashMap;
 use std::sync::Arc;
 
-use actix_web::error::ResponseError;
-use actix_web::http::StatusCode;
 use actix_web::{web, HttpRequest, HttpResponse};
 use log::{error, info, warn};
 
@@ -30,12 +28,12 @@ use tokens::tokens::model_weights::ModelWeightToken;
 use tokens::tokens::users::UserToken;
 
 use crate::configs::plans::get_correct_plan_for_session::get_correct_plan_for_session;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::configs::plans::plan_category::PlanCategory;
 use crate::http_server::requests::request_headers::get_routing_tag_header::get_routing_tag_header;
 use crate::http_server::requests::request_headers::has_debug_header::has_debug_header;
 use crate::http_server::session::lookup::user_session_extended::UserSessionExtended;
 use crate::http_server::validations::validate_idempotency_token_format::validate_idempotency_token_format;
-use crate::http_server::web_utils::response_error_helpers::to_simple_json_error;
 use crate::state::server_state::ServerState;
 use crate::util::allowed_video_style_transfer_access::allowed_video_style_transfer_access;
 
@@ -68,48 +66,11 @@ pub struct EnqueueComfySuccessResponse {
     pub success: bool,
     pub inference_job_token: InferenceJobToken,
 }
-
-#[derive(Debug)]
-pub enum EnqueueComfyError {
-    BadInput(String),
-    NotAuthorized,
-    ServerError,
-    RateLimited,
-}
-
-impl ResponseError for EnqueueComfyError {
-    fn status_code(&self) -> StatusCode {
-        match *self {
-            EnqueueComfyError::BadInput(_) => StatusCode::BAD_REQUEST,
-            EnqueueComfyError::NotAuthorized => StatusCode::UNAUTHORIZED,
-            EnqueueComfyError::ServerError => StatusCode::INTERNAL_SERVER_ERROR,
-            EnqueueComfyError::RateLimited => StatusCode::TOO_MANY_REQUESTS,
-        }
-    }
-
-    fn error_response(&self) -> HttpResponse {
-        let error_reason = match self {
-            EnqueueComfyError::BadInput(reason) => reason.to_string(),
-            EnqueueComfyError::NotAuthorized => "unauthorized".to_string(),
-            EnqueueComfyError::ServerError => "server error".to_string(),
-            EnqueueComfyError::RateLimited => "rate limited".to_string(),
-        };
-
-        to_simple_json_error(&error_reason, self.status_code())
-    }
-}
-
 // NB: Not using derive_more::Display since Clion doesn't understand it.
-impl std::fmt::Display for EnqueueComfyError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{:?}", self)
-    }
-}
-
 pub async fn enqueue_comfy_ui_handler(
     http_request: HttpRequest,
     request: web::Json<EnqueueComfyRequest>,
-    server_state: web::Data<Arc<ServerState>>) -> Result<HttpResponse, EnqueueComfyError>
+    server_state: web::Data<Arc<ServerState>>) -> Result<HttpResponse, CommonWebError>
 {
     let mut maybe_user_token : Option<UserToken> = None;
 
@@ -118,7 +79,7 @@ pub async fn enqueue_comfy_ui_handler(
         .await
         .map_err(|err| {
             warn!("MySql pool error: {:?}", err);
-            EnqueueComfyError::ServerError
+            CommonWebError::from_error(err)
         })?;
 
     let maybe_avt_token = server_state.avt_cookie_manager
@@ -132,7 +93,7 @@ pub async fn enqueue_comfy_ui_handler(
         .await
         .map_err(|e| {
             warn!("Session checker error: {:?}", e);
-            EnqueueComfyError::ServerError
+            CommonWebError::from_error(e)
         })?;
 
     if let Some(user_session) = maybe_user_session.as_ref() {
@@ -143,7 +104,7 @@ pub async fn enqueue_comfy_ui_handler(
 
     if !allowed_video_style_transfer_access(maybe_user_session.as_ref(), &server_state.flags) {
         warn!("Video style transfer access is not permitted for user");
-        return Err(EnqueueComfyError::NotAuthorized);
+        return Err(CommonWebError::NotAuthorized);
     }
 
     // ==================== PAID PLAN + PRIORITY ==================== //
@@ -168,27 +129,27 @@ pub async fn enqueue_comfy_ui_handler(
         None => &server_state.redis_rate_limiters.logged_out,
         Some(ref user) => {
             if user.role.is_banned {
-                return Err(EnqueueComfyError::NotAuthorized);
+                return Err(CommonWebError::NotAuthorized);
             }
             &server_state.redis_rate_limiters.logged_in
         },
     };
 
     if let Err(_err) = rate_limiter.rate_limit_request(&http_request).await {
-        return Err(EnqueueComfyError::RateLimited);
+        return Err(CommonWebError::TooManyRequests);
     }
 
     // ==================== HANDLE IDEMPOTENCY ==================== //
 
     if let Err(reason) = validate_idempotency_token_format(&request.uuid_idempotency_token) {
-        return Err(EnqueueComfyError::BadInput(reason));
+        return Err(CommonWebError::BadInputWithSimpleMessage(reason));
     }
 
     insert_idempotency_token(&request.uuid_idempotency_token, &mut *mysql_connection)
         .await
         .map_err(|err| {
             error!("Error inserting idempotency token: {:?}", err);
-            EnqueueComfyError::BadInput("invalid idempotency token".to_string())
+            CommonWebError::BadInputWithSimpleMessage("invalid idempotency token".to_string())
         })?;
 
     // ==================== LOOK UP MODEL INFO ==================== //
@@ -327,9 +288,9 @@ pub async fn enqueue_comfy_ui_handler(
         Err(err) => {
             warn!("New generic inference job creation DB error: {:?}", err);
             if err.had_duplicate_idempotency_token() {
-                return Err(EnqueueComfyError::BadInput("Duplicate idempotency token".to_string()));
+                return Err(CommonWebError::BadInputWithSimpleMessage("Duplicate idempotency token".to_string()));
             }
-            return Err(EnqueueComfyError::ServerError);
+            return Err(CommonWebError::from_error(err));
         }
     };
 
@@ -339,7 +300,7 @@ pub async fn enqueue_comfy_ui_handler(
     };
 
     let body = serde_json::to_string(&response)
-        .map_err(|_e| EnqueueComfyError::ServerError)?;
+        ?;
 
     Ok(HttpResponse::Ok()
         .content_type("application/json")

@@ -2,11 +2,8 @@
 #![forbid(unused_mut)]
 #![forbid(unused_variables)]
 
-use std::fmt::Debug;
 use std::sync::Arc;
 
-use actix_web::error::ResponseError;
-use actix_web::http::StatusCode;
 use actix_web::{web, HttpRequest, HttpResponse};
 use log::warn;
 use serde::Deserialize;
@@ -34,7 +31,7 @@ use tokens::tokens::generic_inference_jobs::InferenceJobToken;
 use tokens::tokens::users::UserToken;
 
 use crate::configs::plans::get_correct_plan_for_session::get_correct_plan_for_session;
-use crate::http_server::web_utils::response_error_helpers::to_simple_json_error;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::state::server_state::ServerState;
 
 /// Debug requests can get routed to special "debug-only" workers, which can
@@ -58,43 +55,6 @@ pub struct EnqueueTTSRequestSuccessResponse {
     pub success: bool,
     pub inference_job_token: InferenceJobToken,
 }
-
-#[derive(Debug,ToSchema)]
-pub enum EnqueueTTSRequestError {
-    BadInput(String),
-    NotAuthorized,
-    ServerError,
-    RateLimited,
-}
-
-impl ResponseError for EnqueueTTSRequestError {
-    fn status_code(&self) -> StatusCode {
-        match *self {
-            EnqueueTTSRequestError::BadInput(_) => StatusCode::BAD_REQUEST,
-            EnqueueTTSRequestError::NotAuthorized => StatusCode::UNAUTHORIZED,
-            EnqueueTTSRequestError::ServerError => StatusCode::INTERNAL_SERVER_ERROR,
-            EnqueueTTSRequestError::RateLimited => StatusCode::TOO_MANY_REQUESTS,
-        }
-    }
-
-    fn error_response(&self) -> HttpResponse {
-        let error_reason = match self {
-            EnqueueTTSRequestError::BadInput(reason) => reason.to_string(),
-            EnqueueTTSRequestError::NotAuthorized => "unauthorized".to_string(),
-            EnqueueTTSRequestError::ServerError => "server error".to_string(),
-            EnqueueTTSRequestError::RateLimited => "rate limited".to_string(),
-        };
-
-        to_simple_json_error(&error_reason, self.status_code())
-    }
-}
-
-impl std::fmt::Display for EnqueueTTSRequestError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{:?}", self)
-    }
-}
-
 // Implementation for enqueuing a TTS request
 // Reference enqueue_infer_tts_handler.rs for checks: rate limiting / user sessions
 // insert generic inference job.rs
@@ -105,10 +65,10 @@ impl std::fmt::Display for EnqueueTTSRequestError {
     path = "/v1/voice_designer/inference/enqueue_tts",
     responses(
         (status = 200, description = "Enqueue TTS generically", body = EnqueueTTSRequestSuccessResponse),
-        (status = 400, description = "Bad input", body = EnqueueTTSRequestError),
-        (status = 401, description = "Not authorized", body = EnqueueTTSRequestError),
-        (status = 429, description = "Rate limited", body = EnqueueTTSRequestError),
-        (status = 500, description = "Server error", body = EnqueueTTSRequestError)
+        (status = 400, description = "Bad input", body = CommonWebError),
+        (status = 401, description = "Not authorized", body = CommonWebError),
+        (status = 429, description = "Rate limited", body = CommonWebError),
+        (status = 500, description = "Server error", body = CommonWebError)
     ),
     params(
         ("request" = EnqueueTTSRequest, description = "Payload for TTS Request")
@@ -118,13 +78,13 @@ pub async fn enqueue_tts_request(
     http_request: HttpRequest,
     request: web::Json<EnqueueTTSRequest>,
     server_state: web::Data<Arc<ServerState>>
-) -> Result<HttpResponse, EnqueueTTSRequestError> {
+) -> Result<HttpResponse, CommonWebError> {
     
     let mut maybe_user_token: Option<UserToken> = None;
 
     let mut mysql_connection = server_state.mysql_pool.acquire().await.map_err(|err| {
         warn!("MySql pool error: {:?}", err);
-        EnqueueTTSRequestError::ServerError
+        CommonWebError::from_error(err)
     })?;
 
     // ==================== USER SESSION ==================== //
@@ -133,7 +93,7 @@ pub async fn enqueue_tts_request(
         .maybe_get_user_session_extended_from_connection(&http_request, &mut mysql_connection).await
         .map_err(|e| {
             warn!("Session checker error: {:?}", e);
-            EnqueueTTSRequestError::ServerError
+            CommonWebError::from_error(e)
         })?;
 
     if let Some(user_session) = maybe_user_session.as_ref() {
@@ -161,7 +121,7 @@ pub async fn enqueue_tts_request(
 
     if let Some(ref user) = maybe_user_session {
         if user.role.is_banned {
-            return Err(EnqueueTTSRequestError::NotAuthorized);
+            return Err(CommonWebError::NotAuthorized);
         }
     }
 
@@ -173,7 +133,7 @@ pub async fn enqueue_tts_request(
     };
 
     if let Err(_err) = rate_limiter.rate_limit_request(&http_request).await {
-        return Err(EnqueueTTSRequestError::RateLimited);
+        return Err(CommonWebError::TooManyRequests);
     }
 
     // Get up IP address
@@ -223,9 +183,9 @@ pub async fn enqueue_tts_request(
         Err(err) => {
             warn!("New generic inference job creation DB error: {:?}", err);
             if err.had_duplicate_idempotency_token() {
-                return Err(EnqueueTTSRequestError::BadInput("Duplicate idempotency token".to_string()));
+                return Err(CommonWebError::BadInputWithSimpleMessage("Duplicate idempotency token".to_string()));
             }
-            return Err(EnqueueTTSRequestError::ServerError);
+            return Err(CommonWebError::from_error(err));
         }
     };
 
@@ -234,7 +194,7 @@ pub async fn enqueue_tts_request(
         inference_job_token: job_token,
     };
 
-    let body = serde_json::to_string(&response).map_err(|_e| EnqueueTTSRequestError::ServerError)?;
+    let body = serde_json::to_string(&response)?;
 
     // Error handling 101 rust result type returned like so.
     Ok(HttpResponse::Ok().content_type("application/json").body(body))

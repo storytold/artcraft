@@ -39,6 +39,7 @@ use tokens::tokens::media_files::MediaFileToken;
 use tokens::tokens::users::UserToken;
 
 use crate::configs::plans::get_correct_plan_for_session::get_correct_plan_for_session;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::requests::request_headers::get_routing_tag_header::get_routing_tag_header;
 use crate::http_server::requests::request_headers::has_debug_header::has_debug_header;
 use crate::http_server::validations::validate_idempotency_token_format::validate_idempotency_token_format;
@@ -62,43 +63,6 @@ pub struct EnqueueWorkFlowRequestSuccessResponse {
     pub success: bool,
     pub inference_job_token: InferenceJobToken,
 }
-
-#[derive(Debug, ToSchema)]
-pub enum EnqueueWorkFlowRequestError {
-    BadInput(String),
-    NotAuthorized,
-    ServerError,
-    RateLimited,
-}
-
-impl ResponseError for EnqueueWorkFlowRequestError {
-    fn status_code(&self) -> StatusCode {
-        match *self {
-            EnqueueWorkFlowRequestError::BadInput(_) => StatusCode::BAD_REQUEST,
-            EnqueueWorkFlowRequestError::NotAuthorized => StatusCode::UNAUTHORIZED,
-            EnqueueWorkFlowRequestError::ServerError => StatusCode::INTERNAL_SERVER_ERROR,
-            EnqueueWorkFlowRequestError::RateLimited => StatusCode::TOO_MANY_REQUESTS,
-        }
-    }
-
-    fn error_response(&self) -> HttpResponse {
-        let error_reason = match self {
-            EnqueueWorkFlowRequestError::BadInput(reason) => reason.to_string(),
-            EnqueueWorkFlowRequestError::NotAuthorized => "unauthorized".to_string(),
-            EnqueueWorkFlowRequestError::ServerError => "server error".to_string(),
-            EnqueueWorkFlowRequestError::RateLimited => "rate limited".to_string(),
-        };
-
-        to_simple_json_error(&error_reason, self.status_code())
-    }
-}
-
-impl Display for EnqueueWorkFlowRequestError {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{:?}", self)
-    }
-}
-
 // Implementation for enqueuing a TTS request
 // Reference enqueue_infer_tts_handler.rs for checks: rate limiting / user sessions
 // insert generic inference job.rs
@@ -108,23 +72,23 @@ pub async fn enqueue_workflow_upload_request(
     http_request: HttpRequest,
     request: Json<EnqueueWorkFlowRequest>,
     server_state: Data<Arc<ServerState>>
-) -> Result<HttpResponse, EnqueueWorkFlowRequestError> {
+) -> Result<HttpResponse, CommonWebError> {
 
 
     if request.google_drive_link.is_empty() {
-        return Err(EnqueueWorkFlowRequestError::BadInput("Missing Google Drive Link".to_string()));
+        return Err(CommonWebError::BadInputWithSimpleMessage("Missing Google Drive Link".to_string()));
     } 
 
     if request.title.is_empty() {
-        return Err(EnqueueWorkFlowRequestError::BadInput("Missing Title".to_string()));
+        return Err(CommonWebError::BadInputWithSimpleMessage("Missing Title".to_string()));
     }
 
     if request.description.is_empty() {
-        return Err(EnqueueWorkFlowRequestError::BadInput("Missing Description".to_string()));
+        return Err(CommonWebError::BadInputWithSimpleMessage("Missing Description".to_string()));
     }
 
     if request.commit_hash.is_empty() {
-        return Err(EnqueueWorkFlowRequestError::BadInput("Missing commit hash".to_string()));
+        return Err(CommonWebError::BadInputWithSimpleMessage("Missing commit hash".to_string()));
     }
 
     let mut maybe_user_token: Option<UserToken> = None;
@@ -134,7 +98,7 @@ pub async fn enqueue_workflow_upload_request(
 
     let mut mysql_connection = server_state.mysql_pool.acquire().await.map_err(|err| {
         warn!("MySql pool error: {:?}", err);
-        EnqueueWorkFlowRequestError::ServerError
+        CommonWebError::from_error(err)
     })?;
 
     // ==================== USER SESSION ==================== //
@@ -143,7 +107,7 @@ pub async fn enqueue_workflow_upload_request(
         .maybe_get_user_session_extended_from_connection(&http_request, &mut mysql_connection).await
         .map_err(|e| {
             warn!("Session checker error: {:?}", e);
-            EnqueueWorkFlowRequestError::ServerError
+            CommonWebError::from_error(e)
         })?;
     
 
@@ -172,7 +136,7 @@ pub async fn enqueue_workflow_upload_request(
 
     if let Some(ref user) = maybe_user_session {
         if user.role.is_banned {
-            return Err(EnqueueWorkFlowRequestError::NotAuthorized);
+            return Err(CommonWebError::NotAuthorized);
         }
     }
 
@@ -186,7 +150,7 @@ pub async fn enqueue_workflow_upload_request(
     };
 
     if let Err(_err) = rate_limiter.rate_limit_request(&http_request).await {
-        return Err(EnqueueWorkFlowRequestError::RateLimited);
+        return Err(CommonWebError::TooManyRequests);
     }
 
     // Get up IP address
@@ -197,14 +161,14 @@ pub async fn enqueue_workflow_upload_request(
     // ==================== HANDLE IDEMPOTENCY ==================== //
 
     if let Err(reason) = validate_idempotency_token_format(&request.uuid_idempotency_token) {
-        return Err(EnqueueWorkFlowRequestError::BadInput(reason));
+        return Err(CommonWebError::BadInputWithSimpleMessage(reason));
     }
 
     insert_idempotency_token(&request.uuid_idempotency_token, &mut *mysql_connection)
         .await
         .map_err(|err| {
             error!("Error inserting idempotency token: {:?}", err);
-            EnqueueWorkFlowRequestError::BadInput("invalid idempotency token".to_string())
+            CommonWebError::BadInputWithSimpleMessage("invalid idempotency token".to_string())
         })?;
 
     // ==================== INFERENCE ARGS ==================== //
@@ -300,9 +264,9 @@ pub async fn enqueue_workflow_upload_request(
         Err(err) => {
             warn!("New generic inference job creation DB error: {:?}", err);
             if err.had_duplicate_idempotency_token() {
-                return Err(EnqueueWorkFlowRequestError::BadInput("Duplicate idempotency token".to_string()));
+                return Err(CommonWebError::BadInputWithSimpleMessage("Duplicate idempotency token".to_string()));
             }
-            return Err(EnqueueWorkFlowRequestError::ServerError);
+            return Err(CommonWebError::from_error(err));
         }
     };
 
@@ -313,7 +277,7 @@ pub async fn enqueue_workflow_upload_request(
 
     let body = serde_json
         ::to_string(&response)
-        .map_err(|_e| EnqueueWorkFlowRequestError::ServerError)?;
+        ?;
 
     // Error handling 101 rust result type returned like so.
     Ok(HttpResponse::Ok().content_type("application/json").body(body))

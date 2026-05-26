@@ -23,6 +23,7 @@ use tokens::tokens::generic_inference_jobs::InferenceJobToken;
 use tokens::tokens::media_files::MediaFileToken;
 
 use crate::configs::plans::get_correct_plan_for_session::get_correct_plan_for_session;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::requests::request_headers::get_routing_tag_header::get_routing_tag_header;
 use crate::http_server::requests::request_headers::has_debug_header::has_debug_header;
 use crate::http_server::validations::validate_idempotency_token_format::validate_idempotency_token_format;
@@ -50,36 +51,6 @@ pub struct EnqueueGptSovitsModelDownloadSuccessResponse {
   /// This is how frontend clients can request the job execution status.
   pub job_token: InferenceJobToken,
 }
-
-#[derive(Debug, Serialize, ToSchema)]
-pub enum EnqueueGptSovitsModelDownloadError {
-  BadInput(String),
-  NotAuthorized,
-  ServerError,
-  RateLimited,
-}
-
-impl ResponseError for EnqueueGptSovitsModelDownloadError {
-  fn status_code(&self) -> StatusCode {
-    match *self {
-      EnqueueGptSovitsModelDownloadError::BadInput(_) => StatusCode::BAD_REQUEST,
-      EnqueueGptSovitsModelDownloadError::NotAuthorized => StatusCode::UNAUTHORIZED,
-      EnqueueGptSovitsModelDownloadError::ServerError => StatusCode::INTERNAL_SERVER_ERROR,
-      EnqueueGptSovitsModelDownloadError::RateLimited => StatusCode::TOO_MANY_REQUESTS,
-    }
-  }
-
-  fn error_response(&self) -> HttpResponse {
-    serialize_as_json_error(self)
-  }
-}
-
-impl fmt::Display for EnqueueGptSovitsModelDownloadError {
-  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-    write!(f, "{:?}", self)
-  }
-}
-
 /// Enqueue a GptSoVits model for download (eg. from Google Drive)
 #[utoipa::path(
   post,
@@ -88,13 +59,13 @@ impl fmt::Display for EnqueueGptSovitsModelDownloadError {
   request_body = EnqueueGptSovitsModelDownloadRequest,
   responses(
     (status = 200, body = EnqueueGptSovitsModelDownloadSuccessResponse),
-    (status = 400, body = EnqueueGptSovitsModelDownloadError),
+    (status = 400, body = CommonWebError),
   )
 )]
 pub async fn enqueue_gptsovits_model_download_handler(
   http_request: HttpRequest,
   request: Json<EnqueueGptSovitsModelDownloadRequest>,
-  server_state: web::Data<Arc<ServerState>>) -> Result<Json<EnqueueGptSovitsModelDownloadSuccessResponse>, EnqueueGptSovitsModelDownloadError>
+  server_state: web::Data<Arc<ServerState>>) -> Result<Json<EnqueueGptSovitsModelDownloadSuccessResponse>, CommonWebError>
 {
   // ==================== DB ==================== //
 
@@ -103,7 +74,7 @@ pub async fn enqueue_gptsovits_model_download_handler(
     .await
     .map_err(|err| {
       warn!("MySql pool error: {:?}", err);
-      EnqueueGptSovitsModelDownloadError::ServerError
+      CommonWebError::from_error(err)
     })?;
 
   // ==================== USER SESSION ==================== //
@@ -117,8 +88,8 @@ pub async fn enqueue_gptsovits_model_download_handler(
     &mut mysql_connection)
     .await
     .map_err(|err| match err {
-      RequireUserSessionError::ServerError => EnqueueGptSovitsModelDownloadError::ServerError,
-      RequireUserSessionError::NotAuthorized => EnqueueGptSovitsModelDownloadError::NotAuthorized,
+      RequireUserSessionError::ServerError => CommonWebError::from_error(err),
+      RequireUserSessionError::NotAuthorized => CommonWebError::NotAuthorized,
     })?;
 
   // ==================== PAID PLAN + PRIORITY ==================== //
@@ -133,7 +104,7 @@ pub async fn enqueue_gptsovits_model_download_handler(
   let maybe_routing_tag= get_routing_tag_header(&http_request);
 
   if let Err(_err) = server_state.redis_rate_limiters.model_upload.rate_limit_request(&http_request).await {
-    return Err(EnqueueGptSovitsModelDownloadError::RateLimited);
+    return Err(CommonWebError::TooManyRequests);
   }
 
   let ip_address = get_request_ip(&http_request);
@@ -145,23 +116,23 @@ pub async fn enqueue_gptsovits_model_download_handler(
   let creator_set_visibility = request.creator_set_visibility.unwrap_or(Visibility::Public);
 
   if let Err(reason) = validate_idempotency_token_format(&uuid) {
-    return Err(EnqueueGptSovitsModelDownloadError::BadInput(reason));
+    return Err(CommonWebError::BadInputWithSimpleMessage(reason));
   }
 
   if let Some(title) = title {
     if let Err(reason) = validate_model_title(title) {
-      return Err(EnqueueGptSovitsModelDownloadError::BadInput(reason));
+      return Err(CommonWebError::BadInputWithSimpleMessage(reason));
     }
   }
 
   match is_bad_tts_model_download_url(&download_url) {
     Ok(false) => {} // Ok case
     Ok(true) => {
-      return Err(EnqueueGptSovitsModelDownloadError::BadInput("Bad model download URL".to_string()));
+      return Err(CommonWebError::BadInputWithSimpleMessage("Bad model download URL".to_string()));
     }
     Err(err) => {
       warn!("Error parsing url: {:?}", err);
-      return Err(EnqueueGptSovitsModelDownloadError::BadInput("Bad model download URL".to_string()));
+      return Err(CommonWebError::BadInputWithSimpleMessage("Bad model download URL".to_string()));
     }
   }
 
@@ -206,9 +177,9 @@ pub async fn enqueue_gptsovits_model_download_handler(
     Err(err) => {
       warn!("New generic inference job creation DB error: {:?}", err);
       if err.had_duplicate_idempotency_token() {
-        return Err(EnqueueGptSovitsModelDownloadError::BadInput("Duplicate idempotency token".to_string()));
+        return Err(CommonWebError::BadInputWithSimpleMessage("Duplicate idempotency token".to_string()));
       }
-      return Err(EnqueueGptSovitsModelDownloadError::ServerError);
+      return Err(CommonWebError::from_error(err));
     }
   };
 

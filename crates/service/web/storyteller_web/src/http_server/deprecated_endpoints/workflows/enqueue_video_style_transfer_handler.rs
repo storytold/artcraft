@@ -5,8 +5,6 @@
 
 use std::sync::Arc;
 
-use actix_web::error::ResponseError;
-use actix_web::http::StatusCode;
 use actix_web::{web, HttpRequest, HttpResponse};
 use log::{error, info, warn};
 use utoipa::ToSchema;
@@ -30,13 +28,13 @@ use tokens::tokens::generic_inference_jobs::InferenceJobToken;
 use tokens::tokens::media_files::MediaFileToken;
 
 use crate::configs::plans::get_correct_plan_for_session::get_correct_plan_for_session;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::configs::plans::plan_category::PlanCategory;
 use crate::http_server::deprecated_endpoints::workflows::coordinate_workflow_args::{coordinate_workflow_args, CoordinatedWorkflowArgs};
 use crate::http_server::requests::request_headers::get_routing_tag_header::get_routing_tag_header;
 use crate::http_server::requests::request_headers::has_debug_header::has_debug_header;
 use crate::http_server::session::lookup::user_session_extended::UserSessionExtended;
 use crate::http_server::validations::validate_idempotency_token_format::validate_idempotency_token_format;
-use crate::http_server::web_utils::response_error_helpers::to_simple_json_error;
 use crate::state::server_state::ServerState;
 use crate::util::allowed_video_style_transfer_access::allowed_video_style_transfer_access;
 use crate::util::cleaners::empty_media_file_token_to_null::empty_media_file_token_to_null;
@@ -166,44 +164,7 @@ pub struct EnqueueVideoStyleTransferSuccessResponse {
     pub success: bool,
     pub inference_job_token: InferenceJobToken,
 }
-
-#[derive(Debug, ToSchema)]
-pub enum EnqueueVideoStyleTransferError {
-    BadInput(String),
-    NotAuthorized,
-    ServerError,
-    RateLimited,
-}
-
-impl ResponseError for EnqueueVideoStyleTransferError {
-    fn status_code(&self) -> StatusCode {
-        match *self {
-            EnqueueVideoStyleTransferError::BadInput(_) => StatusCode::BAD_REQUEST,
-            EnqueueVideoStyleTransferError::NotAuthorized => StatusCode::UNAUTHORIZED,
-            EnqueueVideoStyleTransferError::ServerError => StatusCode::INTERNAL_SERVER_ERROR,
-            EnqueueVideoStyleTransferError::RateLimited => StatusCode::TOO_MANY_REQUESTS,
-        }
-    }
-
-    fn error_response(&self) -> HttpResponse {
-        let error_reason = match self {
-            EnqueueVideoStyleTransferError::BadInput(reason) => reason.to_string(),
-            EnqueueVideoStyleTransferError::NotAuthorized => "unauthorized".to_string(),
-            EnqueueVideoStyleTransferError::ServerError => "server error".to_string(),
-            EnqueueVideoStyleTransferError::RateLimited => "rate limited".to_string(),
-        };
-
-        to_simple_json_error(&error_reason, self.status_code())
-    }
-}
-
 // NB: Not using derive_more::Display since Clion doesn't understand it.
-impl std::fmt::Display for EnqueueVideoStyleTransferError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{:?}", self)
-    }
-}
-
 /// DEPRECATED. Use /v1/workflows/enqueue_studio or /v1/workflows/enqueue_vst
 #[deprecated(note = "Use /v1/workflows/enqueue_studio")]
 #[utoipa::path(
@@ -212,24 +173,24 @@ impl std::fmt::Display for EnqueueVideoStyleTransferError {
     path = "/v1/video/enqueue_vst",
     responses(
         (status = 200, description = "Success", body = EnqueueVideoStyleTransferSuccessResponse),
-        (status = 400, description = "Bad input", body = EnqueueVideoStyleTransferError),
-        (status = 401, description = "Not authorized", body = EnqueueVideoStyleTransferError),
-        (status = 429, description = "Rate limited", body = EnqueueVideoStyleTransferError),
-        (status = 500, description = "Server error", body = EnqueueVideoStyleTransferError)
+        (status = 400, description = "Bad input", body = CommonWebError),
+        (status = 401, description = "Not authorized", body = CommonWebError),
+        (status = 429, description = "Rate limited", body = CommonWebError),
+        (status = 500, description = "Server error", body = CommonWebError)
     ),
     params(("request" = EnqueueVideoStyleTransferRequest, description = "Payload for request"))
 )]
 pub async fn enqueue_video_style_transfer_handler(
     http_request: HttpRequest,
     request: web::Json<EnqueueVideoStyleTransferRequest>,
-    server_state: web::Data<Arc<ServerState>>) -> Result<HttpResponse, EnqueueVideoStyleTransferError>
+    server_state: web::Data<Arc<ServerState>>) -> Result<HttpResponse, CommonWebError>
 {
     // ==================== VALIDATION ==================== //
 
     match request.frame_skip {
         None | Some(1) | Some(2) => {} // Allowed
         _ => {
-            return Err(EnqueueVideoStyleTransferError::BadInput("Invalid frame skip value".to_string()));
+            return Err(CommonWebError::BadInputWithSimpleMessage("Invalid frame skip value".to_string()));
         }
     }
 
@@ -240,7 +201,7 @@ pub async fn enqueue_video_style_transfer_handler(
         .await
         .map_err(|err| {
             warn!("MySql pool error: {:?}", err);
-            EnqueueVideoStyleTransferError::ServerError
+            CommonWebError::from_error(err)
         })?;
 
     let maybe_avt_token = server_state.avt_cookie_manager
@@ -254,7 +215,7 @@ pub async fn enqueue_video_style_transfer_handler(
         .await
         .map_err(|e| {
             warn!("Session checker error: {:?}", e);
-            EnqueueVideoStyleTransferError::ServerError
+            CommonWebError::from_error(e)
         })?;
 
     let maybe_user_token = maybe_user_session
@@ -265,7 +226,7 @@ pub async fn enqueue_video_style_transfer_handler(
 
     if !allowed_video_style_transfer_access(maybe_user_session.as_ref(), &server_state.flags) {
         warn!("Video style transfer access is not permitted for user");
-        return Err(EnqueueVideoStyleTransferError::NotAuthorized);
+        return Err(CommonWebError::NotAuthorized);
     }
 
     // ==================== PAID PLAN + PRIORITY ==================== //
@@ -295,27 +256,27 @@ pub async fn enqueue_video_style_transfer_handler(
         None => &server_state.redis_rate_limiters.logged_out,
         Some(ref user) => {
             if user.role.is_banned {
-                return Err(EnqueueVideoStyleTransferError::NotAuthorized);
+                return Err(CommonWebError::NotAuthorized);
             }
             &server_state.redis_rate_limiters.logged_in
         },
     };
 
     if let Err(_err) = rate_limiter.rate_limit_request(&http_request).await {
-        return Err(EnqueueVideoStyleTransferError::RateLimited);
+        return Err(CommonWebError::TooManyRequests);
     }
 
     // ==================== HANDLE IDEMPOTENCY ==================== //
 
     if let Err(reason) = validate_idempotency_token_format(&request.uuid_idempotency_token) {
-        return Err(EnqueueVideoStyleTransferError::BadInput(reason));
+        return Err(CommonWebError::BadInputWithSimpleMessage(reason));
     }
 
     insert_idempotency_token(&request.uuid_idempotency_token, &mut *mysql_connection)
         .await
         .map_err(|err| {
             error!("Error inserting idempotency token: {:?}", err);
-            EnqueueVideoStyleTransferError::BadInput("invalid idempotency token".to_string())
+            CommonWebError::BadInputWithSimpleMessage("invalid idempotency token".to_string())
         })?;
 
     // ==================== LOOK UP MODEL INFO ==================== //
@@ -353,7 +314,7 @@ pub async fn enqueue_video_style_transfer_handler(
     let maybe_strength = request.use_strength
         .map(|strength| {
             if strength < MINIMUM_STRENGTH || strength > MAXIMUM_STRENGTH {
-                Err(EnqueueVideoStyleTransferError::BadInput("Strength must be between 0.0 and 1.0".to_string()))
+                Err(CommonWebError::BadInputWithSimpleMessage("Strength must be between 0.0 and 1.0".to_string()))
             } else {
                 Ok(strength)
             }
@@ -481,9 +442,9 @@ pub async fn enqueue_video_style_transfer_handler(
         Err(err) => {
             warn!("New generic inference job creation DB error: {:?}", err);
             if err.had_duplicate_idempotency_token() {
-                return Err(EnqueueVideoStyleTransferError::BadInput("Duplicate idempotency token".to_string()));
+                return Err(CommonWebError::BadInputWithSimpleMessage("Duplicate idempotency token".to_string()));
             }
-            return Err(EnqueueVideoStyleTransferError::ServerError);
+            return Err(CommonWebError::from_error(err));
         }
     };
 
@@ -493,7 +454,7 @@ pub async fn enqueue_video_style_transfer_handler(
     };
 
     let body = serde_json::to_string(&response)
-        .map_err(|_e| EnqueueVideoStyleTransferError::ServerError)?;
+        ?;
 
     Ok(HttpResponse::Ok()
         .content_type("application/json")

@@ -21,6 +21,7 @@ use tokens::tokens::generic_inference_jobs::InferenceJobToken;
 use tokens::tokens::media_files::MediaFileToken;
 
 use crate::configs::plans::get_correct_plan_for_session::get_correct_plan_for_session;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::configs::plans::plan_category::PlanCategory;
 use crate::http_server::requests::get_request_domain_branding::{get_request_domain_branding, DomainBranding};
 use crate::http_server::requests::request_headers::get_routing_tag_header::get_routing_tag_header;
@@ -75,44 +76,7 @@ pub struct EnqueueFaceFusionWorkflowSuccessResponse {
   pub success: bool,
   pub inference_job_token: InferenceJobToken,
 }
-
-#[derive(Debug, ToSchema)]
-pub enum EnqueueFaceFusionWorkflowError {
-  BadInput(String),
-  NotAuthorized,
-  ServerError,
-  RateLimited,
-}
-
-impl ResponseError for EnqueueFaceFusionWorkflowError {
-  fn status_code(&self) -> StatusCode {
-    match *self {
-      EnqueueFaceFusionWorkflowError::BadInput(_) => StatusCode::BAD_REQUEST,
-      EnqueueFaceFusionWorkflowError::NotAuthorized => StatusCode::UNAUTHORIZED,
-      EnqueueFaceFusionWorkflowError::ServerError => StatusCode::INTERNAL_SERVER_ERROR,
-      EnqueueFaceFusionWorkflowError::RateLimited => StatusCode::TOO_MANY_REQUESTS,
-    }
-  }
-
-  fn error_response(&self) -> HttpResponse {
-    let error_reason = match self {
-      EnqueueFaceFusionWorkflowError::BadInput(reason) => reason.to_string(),
-      EnqueueFaceFusionWorkflowError::NotAuthorized => "unauthorized".to_string(),
-      EnqueueFaceFusionWorkflowError::ServerError => "server error".to_string(),
-      EnqueueFaceFusionWorkflowError::RateLimited => "rate limited".to_string(),
-    };
-
-    to_simple_json_error(&error_reason, self.status_code())
-  }
-}
-
 // NB: Not using derive_more::Display since Clion doesn't understand it.
-impl std::fmt::Display for EnqueueFaceFusionWorkflowError {
-  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-    write!(f, "{:?}", self)
-  }
-}
-
 /// Enqueue "lipsync" (Face Fusion) video workflows.
 ///
 /// We've renamed this as to not give away what we're doing to users.
@@ -122,10 +86,10 @@ impl std::fmt::Display for EnqueueFaceFusionWorkflowError {
   path = "/v1/workflows/enqueue_lipsync",
   responses(
     (status = 200, description = "Success", body = EnqueueFaceFusionWorkflowSuccessResponse),
-    (status = 400, description = "Bad input", body = EnqueueFaceFusionWorkflowError),
-    (status = 401, description = "Not authorized", body = EnqueueFaceFusionWorkflowError),
-    (status = 429, description = "Rate limited", body = EnqueueFaceFusionWorkflowError),
-    (status = 500, description = "Server error", body = EnqueueFaceFusionWorkflowError)
+    (status = 400, description = "Bad input", body = CommonWebError),
+    (status = 401, description = "Not authorized", body = CommonWebError),
+    (status = 429, description = "Rate limited", body = CommonWebError),
+    (status = 500, description = "Server error", body = CommonWebError)
   ),
   params(("request" = EnqueueFaceFusionWorkflowRequest, description = "Payload for request"))
 )]
@@ -133,7 +97,7 @@ pub async fn enqueue_face_fusion_workflow_handler(
   http_request: HttpRequest,
   request: Json<EnqueueFaceFusionWorkflowRequest>,
   server_state: web::Data<Arc<ServerState>>
-) -> Result<Json<EnqueueFaceFusionWorkflowSuccessResponse>, EnqueueFaceFusionWorkflowError>
+) -> Result<Json<EnqueueFaceFusionWorkflowSuccessResponse>, CommonWebError>
 {
   // ==================== DB ==================== //
 
@@ -142,7 +106,7 @@ pub async fn enqueue_face_fusion_workflow_handler(
       .await
       .map_err(|err| {
         warn!("MySql pool error: {:?}", err);
-        EnqueueFaceFusionWorkflowError::ServerError
+        CommonWebError::from_error(err)
       })?;
 
   // ==================== USER SESSION ==================== //
@@ -156,8 +120,8 @@ pub async fn enqueue_face_fusion_workflow_handler(
     &mut mysql_connection)
       .await
       .map_err(|err| match err {
-        RequireUserSessionError::ServerError => EnqueueFaceFusionWorkflowError::ServerError,
-        RequireUserSessionError::NotAuthorized => EnqueueFaceFusionWorkflowError::NotAuthorized,
+        RequireUserSessionError::ServerError => CommonWebError::from_error(err),
+        RequireUserSessionError::NotAuthorized => CommonWebError::NotAuthorized,
       })?;
 
   // ==================== PAID PLAN + PRIORITY ==================== //
@@ -179,20 +143,20 @@ pub async fn enqueue_face_fusion_workflow_handler(
   // ==================== RATE LIMIT ==================== //
 
   if let Err(_err) = server_state.redis_rate_limiters.logged_in.rate_limit_request(&http_request).await {
-    return Err(EnqueueFaceFusionWorkflowError::RateLimited);
+    return Err(CommonWebError::TooManyRequests);
   }
 
   // ==================== HANDLE IDEMPOTENCY ==================== //
 
   if let Err(reason) = validate_idempotency_token_format(&request.uuid_idempotency_token) {
-    return Err(EnqueueFaceFusionWorkflowError::BadInput(reason));
+    return Err(CommonWebError::BadInputWithSimpleMessage(reason));
   }
 
   insert_idempotency_token(&request.uuid_idempotency_token, &mut *mysql_connection)
       .await
       .map_err(|err| {
         error!("Error inserting idempotency token: {:?}", err);
-        EnqueueFaceFusionWorkflowError::BadInput("invalid idempotency token".to_string())
+        CommonWebError::BadInputWithSimpleMessage("invalid idempotency token".to_string())
       })?;
 
   // ==================== HANDLE REQUEST ==================== //
@@ -275,9 +239,9 @@ pub async fn enqueue_face_fusion_workflow_handler(
     Err(err) => {
       warn!("New generic inference job creation DB error: {:?}", err);
       if err.had_duplicate_idempotency_token() {
-        return Err(EnqueueFaceFusionWorkflowError::BadInput("Duplicate idempotency token".to_string()));
+        return Err(CommonWebError::BadInputWithSimpleMessage("Duplicate idempotency token".to_string()));
       }
-      return Err(EnqueueFaceFusionWorkflowError::ServerError);
+      return Err(CommonWebError::from_error(err));
     }
   };
 

@@ -37,6 +37,7 @@ use tokens::tokens::model_weights::ModelWeightToken;
 use tokens::tokens::users::UserToken;
 
 use crate::configs::plans::get_correct_plan_for_session::get_correct_plan_for_session;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::validations::validate_idempotency_token_format::validate_idempotency_token_format;
 use crate::http_server::web_utils::response_error_helpers::to_simple_json_error;
 use crate::state::server_state::ServerState;
@@ -138,43 +139,6 @@ pub struct EnqueueImageGenRequestSuccessResponse {
     pub success: bool,
     pub inference_job_token: InferenceJobToken,
 }
-
-#[derive(Debug, ToSchema)]
-pub enum EnqueueImageGenRequestError {
-    BadInput(String),
-    NotAuthorized,
-    ServerError,
-    RateLimited,
-}
-
-impl ResponseError for EnqueueImageGenRequestError {
-    fn status_code(&self) -> StatusCode {
-        match *self {
-            EnqueueImageGenRequestError::BadInput(_) => StatusCode::BAD_REQUEST,
-            EnqueueImageGenRequestError::NotAuthorized => StatusCode::UNAUTHORIZED,
-            EnqueueImageGenRequestError::ServerError => StatusCode::INTERNAL_SERVER_ERROR,
-            EnqueueImageGenRequestError::RateLimited => StatusCode::TOO_MANY_REQUESTS,
-        }
-    }
-
-    fn error_response(&self) -> HttpResponse {
-        let error_reason = match self {
-            EnqueueImageGenRequestError::BadInput(reason) => reason.to_string(),
-            EnqueueImageGenRequestError::NotAuthorized => "unauthorized".to_string(),
-            EnqueueImageGenRequestError::ServerError => "server error".to_string(),
-            EnqueueImageGenRequestError::RateLimited => "rate limited".to_string(),
-        };
-
-        to_simple_json_error(&error_reason, self.status_code())
-    }
-}
-
-impl Display for EnqueueImageGenRequestError {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{:?}", self)
-    }
-}
-
 // Implementation for enqueuing a TTS request
 // Reference enqueue_infer_tts_handler.rs for checks: rate limiting / user sessions
 // insert generic inference job.rs
@@ -188,10 +152,10 @@ impl Display for EnqueueImageGenRequestError {
             description = "Enqueue TTS generically",
             body = EnqueueImageGenRequestSuccessResponse,
         ),
-        (status = 400, description = "Bad input", body = EnqueueImageGenRequestError),
-        (status = 401, description = "Not authorized", body = EnqueueImageGenRequestError),
-        (status = 429, description = "Rate limited", body = EnqueueImageGenRequestError),
-        (status = 500, description = "Server error", body = EnqueueImageGenRequestError)
+        (status = 400, description = "Bad input", body = CommonWebError),
+        (status = 401, description = "Not authorized", body = CommonWebError),
+        (status = 429, description = "Rate limited", body = CommonWebError),
+        (status = 500, description = "Server error", body = CommonWebError)
     ),
     params(("request" = EnqueueImageGenRequest, description = "Payload for TTS Request"))
 )]
@@ -199,10 +163,10 @@ pub async fn enqueue_image_generation_request(
     http_request: HttpRequest,
     request: Json<EnqueueImageGenRequest>,
     server_state: Data<Arc<ServerState>>
-) -> Result<HttpResponse, EnqueueImageGenRequestError> {
+) -> Result<HttpResponse, CommonWebError> {
 
     let inference_mode = inference_mode_from_http_request(&http_request)
-        .ok_or(EnqueueImageGenRequestError::BadInput("Invalid request".to_string()))?;
+        .ok_or(CommonWebError::BadInputWithSimpleMessage("Invalid request".to_string()))?;
 
     validate_request(&request, inference_mode)?;
 
@@ -213,7 +177,7 @@ pub async fn enqueue_image_generation_request(
 
     let mut mysql_connection = server_state.mysql_pool.acquire().await.map_err(|err| {
         warn!("MySql pool error: {:?}", err);
-        EnqueueImageGenRequestError::ServerError
+        CommonWebError::from_error(err)
     })?;
 
     // ==================== USER SESSION ==================== //
@@ -222,7 +186,7 @@ pub async fn enqueue_image_generation_request(
         .maybe_get_user_session_extended_from_connection(&http_request, &mut mysql_connection).await
         .map_err(|e| {
             warn!("Session checker error: {:?}", e);
-            EnqueueImageGenRequestError::ServerError
+            CommonWebError::from_error(e)
         })?;
     
 
@@ -254,7 +218,7 @@ pub async fn enqueue_image_generation_request(
 
     if let Some(ref user) = maybe_user_session {
         if user.role.is_banned {
-            return Err(EnqueueImageGenRequestError::NotAuthorized);
+            return Err(CommonWebError::NotAuthorized);
         }
     }
 
@@ -268,7 +232,7 @@ pub async fn enqueue_image_generation_request(
     };
 
     if let Err(_err) = rate_limiter.rate_limit_request(&http_request).await {
-        return Err(EnqueueImageGenRequestError::RateLimited);
+        return Err(CommonWebError::TooManyRequests);
     }
 
     // Get up IP address
@@ -279,14 +243,14 @@ pub async fn enqueue_image_generation_request(
     // ==================== HANDLE IDEMPOTENCY ==================== //
 
     if let Err(reason) = validate_idempotency_token_format(&request.uuid_idempotency_token) {
-        return Err(EnqueueImageGenRequestError::BadInput(reason));
+        return Err(CommonWebError::BadInputWithSimpleMessage(reason));
     }
 
     insert_idempotency_token(&request.uuid_idempotency_token, &mut *mysql_connection)
         .await
         .map_err(|err| {
             error!("Error inserting idempotency token: {:?}", err);
-            EnqueueImageGenRequestError::BadInput("invalid idempotency token".to_string())
+            CommonWebError::BadInputWithSimpleMessage("invalid idempotency token".to_string())
         })?;
 
     // ==================== INFERENCE ARGS ==================== //
@@ -349,7 +313,7 @@ pub async fn enqueue_image_generation_request(
 
     match both_fields {
         (Some(_), Some(_)) => {
-            return Err(EnqueueImageGenRequestError::BadInput("Can't upload both lora and model".to_string()));
+            return Err(CommonWebError::BadInputWithSimpleMessage("Can't upload both lora and model".to_string()));
         }
         (Some(sd_url), None) => {
             maybe_sd_upload_url = Some(sd_url.to_string());
@@ -438,9 +402,9 @@ pub async fn enqueue_image_generation_request(
         Err(err) => {
             warn!("New generic inference job creation DB error: {:?}", err);
             if err.had_duplicate_idempotency_token() {
-                return Err(EnqueueImageGenRequestError::BadInput("Duplicate idempotency token".to_string()));
+                return Err(CommonWebError::BadInputWithSimpleMessage("Duplicate idempotency token".to_string()));
             }
-            return Err(EnqueueImageGenRequestError::ServerError);
+            return Err(CommonWebError::from_error(err));
         }
     };
 
@@ -451,7 +415,7 @@ pub async fn enqueue_image_generation_request(
 
     let body = serde_json
         ::to_string(&response)
-        .map_err(|_e| EnqueueImageGenRequestError::ServerError)?;
+        ?;
 
     // Error handling 101 rust result type returned like so.
     Ok(HttpResponse::Ok().content_type("application/json").body(body))
@@ -460,7 +424,7 @@ pub async fn enqueue_image_generation_request(
 fn validate_request(
     request: &Json<EnqueueImageGenRequest>,
     inference_mode: TypeOfInference
-) -> Result<(), EnqueueImageGenRequestError> {
+) -> Result<(), CommonWebError> {
 
     let mut requires_name = false;
     let mut requires_description = false;
@@ -485,19 +449,19 @@ fn validate_request(
     }
 
     if requires_name && request.maybe_name.is_none() {
-        return Err(EnqueueImageGenRequestError::BadInput("Missing Model / Lora Name".to_string()));
+        return Err(CommonWebError::BadInputWithSimpleMessage("Missing Model / Lora Name".to_string()));
     }
     if requires_description && request.maybe_description.is_none() {
-        return Err(EnqueueImageGenRequestError::BadInput("Missing Model / Lora Description".to_string()));
+        return Err(CommonWebError::BadInputWithSimpleMessage("Missing Model / Lora Description".to_string()));
     }
     if requires_sd_model_token && request.maybe_sd_model_token.is_none() {
-        return Err(EnqueueImageGenRequestError::BadInput("Missing Model Token".to_string()));
+        return Err(CommonWebError::BadInputWithSimpleMessage("Missing Model Token".to_string()));
     }
     if requires_lora_upload_path && request.maybe_lora_upload_path.is_none() {
-        return Err(EnqueueImageGenRequestError::BadInput("Missing Lora Upload Path".to_string()));
+        return Err(CommonWebError::BadInputWithSimpleMessage("Missing Lora Upload Path".to_string()));
     }
     if requires_upload_path && request.maybe_upload_path.is_none() {
-        return Err(EnqueueImageGenRequestError::BadInput("Missing Model Upload Path".to_string()));
+        return Err(CommonWebError::BadInputWithSimpleMessage("Missing Model Upload Path".to_string()));
     }
 
     Ok(())

@@ -32,6 +32,7 @@ use tokens::tokens::generic_inference_jobs::InferenceJobToken;
 use tokens::tokens::users::UserToken;
 
 use crate::configs::plans::get_correct_plan_for_session::get_correct_plan_for_session;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::web_utils::response_error_helpers::to_simple_json_error;
 use crate::state::server_state::ServerState;
 
@@ -46,43 +47,6 @@ pub struct EnqueueCreateVoiceRequestSuccessResponse {
     pub success: bool,
     pub inference_job_token: InferenceJobToken,
 }
-
-#[derive(Debug)]
-pub enum EnqueueCreateVoiceRequestError {
-    BadInput(String),
-    NotAuthorized,
-    ServerError,
-    RateLimited,
-}
-
-impl ResponseError for EnqueueCreateVoiceRequestError {
-    fn status_code(&self) -> StatusCode {
-        match *self {
-            EnqueueCreateVoiceRequestError::BadInput(_) => StatusCode::BAD_REQUEST,
-            EnqueueCreateVoiceRequestError::NotAuthorized => StatusCode::UNAUTHORIZED,
-            EnqueueCreateVoiceRequestError::ServerError => StatusCode::INTERNAL_SERVER_ERROR,
-            EnqueueCreateVoiceRequestError::RateLimited => StatusCode::TOO_MANY_REQUESTS,
-        }
-    }
-
-    fn error_response(&self) -> HttpResponse {
-        let error_reason = match self {
-            EnqueueCreateVoiceRequestError::BadInput(reason) => reason.to_string(),
-            EnqueueCreateVoiceRequestError::NotAuthorized => "unauthorized".to_string(),
-            EnqueueCreateVoiceRequestError::ServerError => "server error".to_string(),
-            EnqueueCreateVoiceRequestError::RateLimited => "rate limited".to_string(),
-        };
-
-        to_simple_json_error(&error_reason, self.status_code())
-    }
-}
-
-impl std::fmt::Display for EnqueueCreateVoiceRequestError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{:?}", self)
-    }
-}
-
 /// Debug requests can get routed to special "debug-only" workers, which can
 /// be used to trial new code, run debugging, etc.
 const DEBUG_HEADER_NAME: &str = "enable-debug-mode";
@@ -96,7 +60,7 @@ pub async fn create_voice_handler(
     http_request: HttpRequest,
     request: web::Json<EnqueueCreateVoiceRequest>,
     server_state: web::Data<Arc<ServerState>>
-) -> Result<HttpResponse, EnqueueCreateVoiceRequestError> {
+) -> Result<HttpResponse, CommonWebError> {
     // voice data set token ... zsd_wb08asm0m4a4cz42wwqked6tfg6e e.g
 
     // need this for the job
@@ -107,7 +71,7 @@ pub async fn create_voice_handler(
 
     let mut mysql_connection = server_state.mysql_pool.acquire().await.map_err(|err| {
         warn!("MySql pool error: {:?}", err);
-        EnqueueCreateVoiceRequestError::ServerError
+        CommonWebError::from_error(err)
     })?;
 
     // ==================== USER SESSION ==================== //
@@ -116,7 +80,7 @@ pub async fn create_voice_handler(
         .maybe_get_user_session_extended_from_connection(&http_request, &mut mysql_connection).await
         .map_err(|e| {
             warn!("Session checker error: {:?}", e);
-            EnqueueCreateVoiceRequestError::ServerError
+            CommonWebError::from_error(e)
         })?;
 
     if let Some(user_session) = maybe_user_session.as_ref() {
@@ -144,7 +108,7 @@ pub async fn create_voice_handler(
 
     if let Some(ref user) = maybe_user_session {
         if user.role.is_banned {
-            return Err(EnqueueCreateVoiceRequestError::NotAuthorized);
+            return Err(CommonWebError::NotAuthorized);
         }
     }
 
@@ -156,7 +120,7 @@ pub async fn create_voice_handler(
     };
 
     if let Err(_err) = rate_limiter.rate_limit_request(&http_request).await {
-        return Err(EnqueueCreateVoiceRequestError::RateLimited);
+        return Err(CommonWebError::TooManyRequests);
     }
 
     info!("Received payload for voice creation.");
@@ -208,9 +172,9 @@ pub async fn create_voice_handler(
         Err(err) => {
             warn!("New generic inference job creation DB error: {:?}", err);
             if err.had_duplicate_idempotency_token() {
-                return Err(EnqueueCreateVoiceRequestError::BadInput("Duplicate idempotency token".to_string()));
+                return Err(CommonWebError::BadInputWithSimpleMessage("Duplicate idempotency token".to_string()));
             }
-            return Err(EnqueueCreateVoiceRequestError::ServerError);
+            return Err(CommonWebError::from_error(err));
         }
     };
 
@@ -222,7 +186,7 @@ pub async fn create_voice_handler(
 
     let body = serde_json
         ::to_string(&response)
-        .map_err(|_e| EnqueueCreateVoiceRequestError::ServerError)?;
+        ?;
     // Error handling 101 rust result type returned like so.
     Ok(HttpResponse::Ok().content_type("application/json").body(body))
 }

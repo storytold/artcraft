@@ -3,13 +3,10 @@
 #![forbid(unused_mut)]
 #![forbid(unused_variables)]
 
-use std::fmt;
 use std::sync::Arc;
 
-use actix_web::error::ResponseError;
-use actix_web::http::StatusCode;
 use actix_web::web::Json;
-use actix_web::{web, HttpRequest, HttpResponse};
+use actix_web::{web, HttpRequest};
 use log::{error, info, warn};
 use redis::Commands;
 use sqlx::pool::PoolConnection;
@@ -35,8 +32,8 @@ use tokens::tokens::users::UserToken;
 use tts_common::priority::FAKEYOU_INVESTOR_PRIORITY_LEVEL;
 
 use crate::configs::plans::get_correct_plan_for_session::get_correct_plan_for_session;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::deprecated_endpoints::investor_demo::demo_cookie::request_has_demo_cookie;
-use crate::http_server::web_utils::response_error_helpers::to_simple_json_error;
 use crate::state::memory_cache::model_token_to_info_cache::{ModelInfoForInferenceJob, ModelTokenToInfoCache};
 use crate::state::server_state::ServerState;
 
@@ -97,54 +94,17 @@ pub struct EnqueueVoiceConversionInferenceSuccessResponse {
   pub success: bool,
   pub inference_job_token: InferenceJobToken,
 }
-
-#[derive(Debug, ToSchema)]
-pub enum EnqueueVoiceConversionInferenceError {
-  BadInput(String),
-  NotAuthorized,
-  ServerError,
-  RateLimited,
-}
-
-impl ResponseError for EnqueueVoiceConversionInferenceError {
-  fn status_code(&self) -> StatusCode {
-    match *self {
-      EnqueueVoiceConversionInferenceError::BadInput(_) => StatusCode::BAD_REQUEST,
-      EnqueueVoiceConversionInferenceError::NotAuthorized => StatusCode::UNAUTHORIZED,
-      EnqueueVoiceConversionInferenceError::ServerError => StatusCode::INTERNAL_SERVER_ERROR,
-      EnqueueVoiceConversionInferenceError::RateLimited => StatusCode::TOO_MANY_REQUESTS,
-    }
-  }
-
-  fn error_response(&self) -> HttpResponse {
-    let error_reason = match self {
-      EnqueueVoiceConversionInferenceError::BadInput(reason) => reason.to_string(),
-      EnqueueVoiceConversionInferenceError::NotAuthorized => "unauthorized".to_string(),
-      EnqueueVoiceConversionInferenceError::ServerError => "server error".to_string(),
-      EnqueueVoiceConversionInferenceError::RateLimited => "rate limited".to_string(),
-    };
-
-    to_simple_json_error(&error_reason, self.status_code())
-  }
-}
-
 // NB: Not using derive_more::Display since Clion doesn't understand it.
-impl fmt::Display for EnqueueVoiceConversionInferenceError {
-  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-    write!(f, "{:?}", self)
-  }
-}
-
 #[utoipa::path(
   post,
   tag = "Voice Conversion",
   path = "/v1/voice_conversion/inference",
   responses(
     (status = 200, description = "Success", body = EnqueueVoiceConversionInferenceSuccessResponse),
-    (status = 400, description = "Bad input", body = EnqueueVoiceConversionInferenceError),
-    (status = 401, description = "Not authorized", body = EnqueueVoiceConversionInferenceError),
-    (status = 429, description = "Rate limited", body = EnqueueVoiceConversionInferenceError),
-    (status = 500, description = "Server error", body = EnqueueVoiceConversionInferenceError),
+    (status = 400, description = "Bad input", body = CommonWebError),
+    (status = 401, description = "Not authorized", body = CommonWebError),
+    (status = 429, description = "Rate limited", body = CommonWebError),
+    (status = 500, description = "Server error", body = CommonWebError),
   ),
   params(
     ("request" = EnqueueVoiceConversionInferenceRequest, description = "Payload for Request"),
@@ -154,11 +114,11 @@ pub async fn enqueue_voice_conversion_inference_handler(
   http_request: HttpRequest,
   request: Json<EnqueueVoiceConversionInferenceRequest>,
   server_state: web::Data<Arc<ServerState>>
-) -> Result<Json<EnqueueVoiceConversionInferenceSuccessResponse>, EnqueueVoiceConversionInferenceError>
+) -> Result<Json<EnqueueVoiceConversionInferenceSuccessResponse>, CommonWebError>
 {
 
   if server_state.flags.disable_voice_conversion {
-    return Err(EnqueueVoiceConversionInferenceError::RateLimited);
+    return Err(CommonWebError::TooManyRequests);
   }
   
   let mut maybe_user_token : Option<UserToken> = None;
@@ -170,7 +130,7 @@ pub async fn enqueue_voice_conversion_inference_handler(
       .await
       .map_err(|err| {
         warn!("MySql pool error: {:?}", err);
-        EnqueueVoiceConversionInferenceError::ServerError
+        CommonWebError::from_error(err)
       })?;
 
   // ==================== AVT TOKEN ==================== //
@@ -185,7 +145,7 @@ pub async fn enqueue_voice_conversion_inference_handler(
     .await
     .map_err(|e| {
       warn!("Session checker error: {:?}", e);
-      EnqueueVoiceConversionInferenceError::ServerError
+      CommonWebError::from_error(e)
     })?;
 
   if let Some(user_session) = maybe_user_session.as_ref() {
@@ -239,7 +199,7 @@ pub async fn enqueue_voice_conversion_inference_handler(
 
   if let Some(ref user) = maybe_user_session {
     if user.role.is_banned {
-      return Err(EnqueueVoiceConversionInferenceError::NotAuthorized);
+      return Err(CommonWebError::NotAuthorized);
     }
   }
 
@@ -257,7 +217,7 @@ pub async fn enqueue_voice_conversion_inference_handler(
     }
 
     if let Err(_err) = rate_limiter.rate_limit_request(&http_request).await {
-      return Err(EnqueueVoiceConversionInferenceError::RateLimited);
+      return Err(CommonWebError::TooManyRequests);
     }
   }
 
@@ -282,7 +242,7 @@ pub async fn enqueue_voice_conversion_inference_handler(
     } else if media_token.starts_with(MediaFileToken::token_prefix()) {
       InferenceInputSourceTokenType::MediaFile
     } else {
-      return Err(EnqueueVoiceConversionInferenceError::BadInput(
+      return Err(CommonWebError::BadInputWithSimpleMessage(
         "input token is not a media_upload or media_file token".to_string()));
     };
 
@@ -292,7 +252,7 @@ pub async fn enqueue_voice_conversion_inference_handler(
       .get()
       .map_err(|e| {
         error!("redis error: {:?}", e);
-        EnqueueVoiceConversionInferenceError::ServerError
+        CommonWebError::from_error(e)
       })?;
 
   let redis_count_key = RedisKeys::web_vc_model_usage_count(&model_token);
@@ -300,7 +260,7 @@ pub async fn enqueue_voice_conversion_inference_handler(
   redis.incr::<_, _, ()>(&redis_count_key, 1)
       .map_err(|e| {
         warn!("redis error: {:?}", e);
-        EnqueueVoiceConversionInferenceError::ServerError
+        CommonWebError::from_error(e)
       })?;
 
   let ip_address = get_request_ip(&http_request);
@@ -340,7 +300,7 @@ pub async fn enqueue_voice_conversion_inference_handler(
     _ => {
       // In theory, this shouldn't catch anything.
       error!("wrong model type for voice conversion: {:?}", model_inference_info.job_model_type);
-      return Err(EnqueueVoiceConversionInferenceError::ServerError)
+      return Err(CommonWebError::server_error_with_message("wrong model type for voice conversion"))
     }
   };
 
@@ -383,9 +343,9 @@ pub async fn enqueue_voice_conversion_inference_handler(
     Err(err) => {
       warn!("New generic inference job creation DB error: {:?}", err);
       if err.had_duplicate_idempotency_token() {
-        return Err(EnqueueVoiceConversionInferenceError::BadInput("Duplicate idempotency token".to_string()));
+        return Err(CommonWebError::BadInputWithSimpleMessage("Duplicate idempotency token".to_string()));
       }
-      return Err(EnqueueVoiceConversionInferenceError::ServerError);
+      return Err(CommonWebError::from_error(err));
     }
   };
 
@@ -395,7 +355,7 @@ pub async fn enqueue_voice_conversion_inference_handler(
       .await
       .map_err(|e| {
         warn!("error publishing event: {:?}", e);
-        EnqueueVoiceConversionInferenceError::ServerError
+        CommonWebError::from_anyhow_error(e)
       })?;
 
   Ok(Json(EnqueueVoiceConversionInferenceSuccessResponse {
@@ -408,12 +368,12 @@ async fn lookup_model_info(
   model_token: &str,
   cache: &ModelTokenToInfoCache,
   mysql_connection: &mut PoolConnection<MySql>,
-) -> Result<ModelInfoForInferenceJob, EnqueueVoiceConversionInferenceError> {
+) -> Result<ModelInfoForInferenceJob, CommonWebError> {
   let maybe_model_inference_info = cache
       .get_info(model_token)
       .map_err(|err| {
         error!("in-memory cache error: {:?}", err);
-        EnqueueVoiceConversionInferenceError::ServerError
+        CommonWebError::from_anyhow_error(err)
       })?;
 
   if let Some(inference_info) = maybe_model_inference_info {
@@ -425,7 +385,7 @@ async fn lookup_model_info(
       .await
       .map_err(|err| {
         error!("model lookup error: {:?}", err);
-        EnqueueVoiceConversionInferenceError::ServerError
+        CommonWebError::from_anyhow_error(err)
       })?;
 
   let model_info = match result {
@@ -449,14 +409,14 @@ async fn lookup_model_info(
     }
     _ => {
       error!("wrong model type for inference: {:?}", model_info);
-      return Err(EnqueueVoiceConversionInferenceError::BadInput("wrong model type for inference".to_string()));
+      return Err(CommonWebError::BadInputWithSimpleMessage("wrong model type for inference".to_string()));
     }
   };
 
   cache.insert_one(model_token, &inference_info)
       .map_err(|err| {
         error!("cache insertion error: {:?}", err);
-        EnqueueVoiceConversionInferenceError::ServerError
+        CommonWebError::from_anyhow_error(err)
       })?;
 
   Ok(inference_info)

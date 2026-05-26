@@ -16,7 +16,6 @@ use crate::http_server::common_responses::tag_info::TagInfo;
 use crate::http_server::common_responses::user_details_lite::{UserDefaultAvatarInfo, UserDetailsLight};
 use crate::http_server::deprecated_endpoints::conversion::enqueue_fbx_to_gltf_handler::*;
 use crate::http_server::deprecated_endpoints::engine::create_scene_handler::*;
-use crate::http_server::deprecated_endpoints::image_gen::enqueue_image_generation::EnqueueImageGenRequestError;
 use crate::http_server::deprecated_endpoints::image_gen::enqueue_image_generation::EnqueueImageGenRequestSuccessResponse;
 use crate::http_server::deprecated_endpoints::workflows::enqueue::enqueue_face_fusion_workflow_handler::*;
 use crate::http_server::deprecated_endpoints::workflows::enqueue::enqueue_live_portrait_workflow_handler::*;
@@ -691,7 +690,6 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     CreateFeaturedItemError,
     CreateFeaturedItemRequest,
     CreateFeaturedItemSuccessResponse,
-    CreateSceneError,
     CreateSceneSuccessResponse,
     CreateUserBookmarkError,
     CreateUserBookmarkRequest,
@@ -802,31 +800,23 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     EditUsernameRequest,
     EditUsernameResponse,
     EnqueueFaceFusionCropDimensions,
-    EnqueueFaceFusionWorkflowError,
     EnqueueFaceFusionWorkflowRequest,
     EnqueueFaceFusionWorkflowSuccessResponse,
     EnqueueFbxToGltfRequest,
     EnqueueFbxToGltfRequestError,
     EnqueueFbxToGltfRequestSuccessResponse,
-    EnqueueGptSovitsModelDownloadError,
     EnqueueGptSovitsModelDownloadRequest,
     EnqueueGptSovitsModelDownloadSuccessResponse,
-    EnqueueImageGenRequestError,
     EnqueueImageGenRequestSuccessResponse,
     EnqueueLivePortraitCropDimensions,
-    EnqueueLivePortraitWorkflowError,
     EnqueueLivePortraitWorkflowRequest,
     EnqueueLivePortraitWorkflowSuccessResponse,
-    EnqueueStudioGen2Error,
     EnqueueStudioGen2Request,
     EnqueueStudioGen2Response,
     EnqueueTTSRequest,
-    EnqueueTTSRequestError,
     EnqueueTTSRequestSuccessResponse,
-    EnqueueVideoStyleTransferError,
     EnqueueVideoStyleTransferRequest,
     EnqueueVideoStyleTransferSuccessResponse,
-    EnqueueVoiceConversionInferenceError,
     EnqueueVoiceConversionInferenceRequest,
     EnqueueVoiceConversionInferenceSuccessResponse,
     FeaturedMediaFile,

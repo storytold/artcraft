@@ -3,11 +3,8 @@
 #![forbid(unused_mut)]
 #![forbid(unused_variables)]
 
-use std::fmt;
 use std::sync::Arc;
 
-use actix_web::error::ResponseError;
-use actix_web::http::StatusCode;
 use actix_web::web::{Json, Path};
 use actix_web::{web, HttpRequest, HttpResponse};
 use language_tags::LanguageTag;
@@ -15,7 +12,7 @@ use log::{error, info, warn};
 use sqlx::MySqlPool;
 
 use crate::configs::supported_languages_for_models::get_canonicalized_language_tag_for_model;
-use crate::http_server::web_utils::response_error_helpers::to_simple_json_error;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::web_utils::response_success_helpers::simple_json_success;
 use crate::state::server_state::ServerState;
 use enums::common::visibility::Visibility;
@@ -90,54 +87,17 @@ pub struct EditTtsModelRequest {
   pub use_default_m_factor: Option<bool>,
   pub maybe_custom_m_factor: Option<f64>,
 }
-
-#[derive(Debug)]
-pub enum EditTtsModelError {
-  BadInput(String),
-  NotAuthorized,
-  ModelNotFound,
-  ServerError,
-}
-
-impl ResponseError for EditTtsModelError {
-  fn status_code(&self) -> StatusCode {
-    match *self {
-      EditTtsModelError::BadInput(_) => StatusCode::BAD_REQUEST,
-      EditTtsModelError::NotAuthorized => StatusCode::UNAUTHORIZED,
-      EditTtsModelError::ModelNotFound => StatusCode::NOT_FOUND,
-      EditTtsModelError::ServerError => StatusCode::INTERNAL_SERVER_ERROR,
-    }
-  }
-
-  fn error_response(&self) -> HttpResponse {
-    let error_reason = match self {
-      EditTtsModelError::BadInput(reason) => reason.to_string(),
-      EditTtsModelError::NotAuthorized=> "unauthorized".to_string(),
-      EditTtsModelError::ModelNotFound => "not found".to_string(),
-      EditTtsModelError::ServerError => "server error".to_string(),
-    };
-
-    to_simple_json_error(&error_reason, self.status_code())
-  }
-}
-
 // NB: Not using derive_more::Display since Clion doesn't understand it.
-impl fmt::Display for EditTtsModelError {
-  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-    write!(f, "{:?}", self)
-  }
-}
-
 pub async fn edit_tts_model_handler(
   http_request: HttpRequest,
   path: Path<EditTtsModelPathInfo>,
   request: Json<EditTtsModelRequest>,
-  server_state: web::Data<Arc<ServerState>>) -> Result<HttpResponse, EditTtsModelError>
+  server_state: web::Data<Arc<ServerState>>) -> Result<HttpResponse, CommonWebError>
 {
   // NB: Disable if we've migrated to model_weights
   if server_state.flags.switch_tts_to_model_weights {
     warn!("Migration to model_weights for tts. Cannot delete old model.");
-    return Err(EditTtsModelError::ServerError);
+    return Err(CommonWebError::server_error_with_message("TTS migrated to model_weights; legacy edit endpoint disabled"));
   }
 
   let maybe_user_session = server_state
@@ -146,14 +106,14 @@ pub async fn edit_tts_model_handler(
       .await
       .map_err(|e| {
         warn!("Session checker error: {:?}", e);
-        EditTtsModelError::ServerError
+        CommonWebError::from_error(e)
       })?;
 
   let user_session = match maybe_user_session {
     Some(session) => session,
     None => {
       warn!("not logged in");
-      return Err(EditTtsModelError::NotAuthorized);
+      return Err(CommonWebError::NotAuthorized);
     }
   };
 
@@ -173,11 +133,11 @@ pub async fn edit_tts_model_handler(
     },
     Ok(None) => {
       warn!("could not find model");
-      return Err(EditTtsModelError::ModelNotFound);
+      return Err(CommonWebError::NotFound);
     },
     Err(err) => {
       warn!("error looking up model: {:?}", err);
-      return Err(EditTtsModelError::ModelNotFound);
+      return Err(CommonWebError::NotFound);
     },
   };
 
@@ -187,12 +147,12 @@ pub async fn edit_tts_model_handler(
 
   if !is_author && !is_mod {
     warn!("user is not allowed to edit model: {:?}", user_session.user_token);
-    return Err(EditTtsModelError::NotAuthorized);
+    return Err(CommonWebError::NotAuthorized);
   }
 
   if !is_mod {
     if model_record.is_locked_from_user_modification || model_record.is_locked_from_use {
-      return Err(EditTtsModelError::NotAuthorized);
+      return Err(CommonWebError::NotAuthorized);
     }
   }
 
@@ -213,7 +173,7 @@ pub async fn edit_tts_model_handler(
 
   if let Some(payload) = request.title.as_deref() {
     if contains_slurs(payload) {
-      return Err(EditTtsModelError::BadInput("title contains slurs".to_string()));
+      return Err(CommonWebError::BadInputWithSimpleMessage("title contains slurs".to_string()));
     }
 
     title = Some(payload.trim().to_string());
@@ -221,7 +181,7 @@ pub async fn edit_tts_model_handler(
 
   if let Some(markdown) = request.description_markdown.as_deref() {
     if contains_slurs(markdown) {
-      return Err(EditTtsModelError::BadInput("description contains slurs".to_string()));
+      return Err(CommonWebError::BadInputWithSimpleMessage("description contains slurs".to_string()));
     }
 
     let markdown = markdown.trim().to_string();
@@ -243,7 +203,7 @@ pub async fn edit_tts_model_handler(
         .transpose()
         .map_err(|e| {
           error!("Error parsing language tag '{}': {:?}", tag, e);
-          EditTtsModelError::BadInput("bad locale string".to_string())
+          CommonWebError::BadInputWithSimpleMessage("bad locale string".to_string())
         })?;
 
     if let Some(full_tag) = maybe_full_canonical_tag {
@@ -262,7 +222,7 @@ pub async fn edit_tts_model_handler(
 
   if let Some(visibility) = request.creator_set_visibility.as_deref() {
     creator_set_visibility = Visibility::from_str(visibility)
-        .map_err(|_| EditTtsModelError::BadInput("bad record visibility".to_string()))?;
+        .map_err(|_| CommonWebError::BadInputWithSimpleMessage("bad record visibility".to_string()))?;
   }
 
   let text_pipeline_type = request.text_pipeline_type
@@ -330,7 +290,7 @@ pub async fn edit_tts_model_handler(
     Ok(_) => {},
     Err(err) => {
       warn!("Update W2L model edit DB error: {:?}", err);
-      return Err(EditTtsModelError::ServerError);
+      return Err(CommonWebError::from_error(err));
     }
   };
 
@@ -348,7 +308,7 @@ async fn update_mod_details(
   moderator_user_token: &str,
   tts_model_token: &str,
   mysql_pool: &MySqlPool
-) -> Result<(), EditTtsModelError> {
+) -> Result<(), CommonWebError> {
 
   let is_public_listing_approved= request.is_public_listing_approved.unwrap_or(false);
   let is_locked_from_user_modification = request.is_locked_from_user_modification.unwrap_or(false);
@@ -392,7 +352,7 @@ async fn update_mod_details(
     Ok(_) => Ok(()),
     Err(err) => {
       warn!("Update TTS model (mod details) DB error: {:?}", err);
-      Err(EditTtsModelError::ServerError)
+      Err(CommonWebError::from_error(err))
     }
   }
 }

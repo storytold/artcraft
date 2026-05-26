@@ -3,10 +3,7 @@
 #![forbid(unused_mut)]
 #![forbid(unused_variables)]
 
-use std::fmt;
 
-use actix_web::error::ResponseError;
-use actix_web::http::StatusCode;
 use actix_web::web::Path;
 use actix_web::{web, HttpRequest, HttpResponse};
 use log::warn;
@@ -14,7 +11,6 @@ use sqlx::MySqlPool;
 
 use enums::common::visibility::Visibility;
 use http_server_common::request::get_request_ip::get_request_ip;
-use http_server_common::response::serialize_as_json_error::serialize_as_json_error;
 use markdown::simple_markdown_to_html::simple_markdown_to_html;
 use mysql_queries::queries::users::user_profiles::edit_user_profile_as_account_holder::edit_user_profile_as_account_holder;
 use mysql_queries::queries::users::user_profiles::edit_user_profile_as_mod::edit_user_profile_as_mod;
@@ -25,6 +21,7 @@ use redis_common::redis_cache_keys::RedisCacheKeys;
 use user_input_common::check_for_slurs::contains_slurs;
 
 use crate::http_server::session::session_checker::SessionChecker;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::validations::validate_profile_cashapp_username::{normalize_cashapp_username_for_storage, validate_profile_cashapp_username};
 use crate::http_server::validations::validate_profile_discord_username::validate_profile_discord_username;
 use crate::http_server::validations::validate_profile_github_username::validate_profile_github_username;
@@ -60,37 +57,7 @@ pub struct EditProfileRequest {
 pub struct EditProfileSuccessResponse {
   pub success: bool,
 }
-
-#[derive(Debug, Serialize)]
-pub enum EditProfileError {
-  BadInput(String),
-  NotAuthorized,
-  UserNotFound,
-  ServerError,
-}
-
-impl ResponseError for EditProfileError {
-  fn status_code(&self) -> StatusCode {
-    match *self {
-      EditProfileError::BadInput(_) => StatusCode::BAD_REQUEST,
-      EditProfileError::NotAuthorized => StatusCode::UNAUTHORIZED,
-      EditProfileError::UserNotFound => StatusCode::NOT_FOUND,
-      EditProfileError::ServerError => StatusCode::INTERNAL_SERVER_ERROR,
-    }
-  }
-
-  fn error_response(&self) -> HttpResponse {
-    serialize_as_json_error(self)
-  }
-}
-
 // NB: Not using derive_more::Display since Clion doesn't understand it.
-impl fmt::Display for EditProfileError {
-  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-    write!(f, "{:?}", self)
-  }
-}
-
 pub async fn edit_profile_handler(
   http_request: HttpRequest,
   path: Path<EditProfilePathInfo>,
@@ -98,27 +65,27 @@ pub async fn edit_profile_handler(
   mysql_pool: web::Data<MySqlPool>,
   redis_ttl_cache: web::Data<RedisTtlCache>,
   session_checker: web::Data<SessionChecker>,
-) -> Result<HttpResponse, EditProfileError>
+) -> Result<HttpResponse, CommonWebError>
 {
   let maybe_user_session = session_checker
       .maybe_get_user_session(&http_request, &mysql_pool)
       .await
       .map_err(|e| {
         warn!("Session checker error: {:?}", e);
-        EditProfileError::ServerError
+        CommonWebError::from_error(e)
       })?;
 
   let user_session = match maybe_user_session {
     Some(session) => session,
     None => {
       warn!("not logged in");
-      return Err(EditProfileError::NotAuthorized);
+      return Err(CommonWebError::NotAuthorized);
     }
   };
 
   if user_session.is_banned {
     // Banned users can't edit anything
-    return Err(EditProfileError::NotAuthorized);
+    return Err(CommonWebError::NotAuthorized);
   }
 
   let user_lookup_result =
@@ -127,10 +94,10 @@ pub async fn edit_profile_handler(
 
   let user_record = match user_lookup_result {
     Ok(Some(result)) => result,
-    Ok(None) => return Err(EditProfileError::UserNotFound),
+    Ok(None) => return Err(CommonWebError::NotFound),
     Err(err) => {
       warn!("lookup error: {:?}", err);
-      return Err(EditProfileError::ServerError);
+      return Err(CommonWebError::from_anyhow_error(err));
     }
   };
 
@@ -146,7 +113,7 @@ pub async fn edit_profile_handler(
   }
 
   if !editor_is_original_user && !editor_is_moderator {
-    return Err(EditProfileError::NotAuthorized);
+    return Err(CommonWebError::NotAuthorized);
   }
 
   // Fields to set
@@ -165,7 +132,7 @@ pub async fn edit_profile_handler(
       twitter_username = None;
     } else {
       if let Err(reason) = validate_profile_twitter_username(trimmed) {
-        return Err(EditProfileError::BadInput(reason));
+        return Err(CommonWebError::BadInputWithSimpleMessage(reason));
       }
       let normalized = normalize_twitter_username_for_storage(trimmed);
       twitter_username = Some(normalized);
@@ -178,7 +145,7 @@ pub async fn edit_profile_handler(
       twitch_username = None;
     } else {
       if let Err(reason) = validate_profile_twitch_username(trimmed) {
-        return Err(EditProfileError::BadInput(reason));
+        return Err(CommonWebError::BadInputWithSimpleMessage(reason));
       }
       twitch_username = Some(trimmed);
     }
@@ -190,7 +157,7 @@ pub async fn edit_profile_handler(
       discord_username = None;
     } else {
       if let Err(reason) = validate_profile_discord_username(trimmed) {
-        return Err(EditProfileError::BadInput(reason));
+        return Err(CommonWebError::BadInputWithSimpleMessage(reason));
       }
       discord_username = Some(trimmed);
     }
@@ -202,7 +169,7 @@ pub async fn edit_profile_handler(
       github_username = None;
     } else {
       if let Err(reason) = validate_profile_github_username(trimmed) {
-        return Err(EditProfileError::BadInput(reason));
+        return Err(CommonWebError::BadInputWithSimpleMessage(reason));
       }
       github_username = Some(trimmed);
     }
@@ -214,7 +181,7 @@ pub async fn edit_profile_handler(
       cashapp_username = None;
     } else {
       if let Err(reason) = validate_profile_cashapp_username(trimmed) {
-        return Err(EditProfileError::BadInput(reason));
+        return Err(CommonWebError::BadInputWithSimpleMessage(reason));
       }
       let normalized = normalize_cashapp_username_for_storage(trimmed);
       cashapp_username = Some(normalized);
@@ -227,7 +194,7 @@ pub async fn edit_profile_handler(
       website_url = None;
     } else {
       if let Err(reason) = validate_profile_website_url(trimmed) {
-        return Err(EditProfileError::BadInput(reason));
+        return Err(CommonWebError::BadInputWithSimpleMessage(reason));
       }
       website_url = Some(trimmed);
     }
@@ -235,7 +202,7 @@ pub async fn edit_profile_handler(
 
   if let Some(markdown) = request.profile_markdown.as_deref() {
     if contains_slurs(markdown) {
-      return Err(EditProfileError::BadInput("profile contains slurs".to_string()));
+      return Err(CommonWebError::BadInputWithSimpleMessage("profile contains slurs".to_string()));
     }
 
     let markdown = markdown.trim().to_string();
@@ -294,7 +261,7 @@ pub async fn edit_profile_handler(
     Ok(_) => {},
     Err(err) => {
       warn!("Profile edit DB error: {:?}", err);
-      return Err(EditProfileError::ServerError);
+      return Err(CommonWebError::from_anyhow_error(err));
     }
   };
 
@@ -319,7 +286,7 @@ pub async fn edit_profile_handler(
   };
 
   let body = serde_json::to_string(&response)
-      .map_err(|_e| EditProfileError::BadInput("".to_string()))?;
+      .map_err(|_e| CommonWebError::BadInputWithSimpleMessage("".to_string()))?;
 
   Ok(HttpResponse::Ok()
       .content_type("application/json")
