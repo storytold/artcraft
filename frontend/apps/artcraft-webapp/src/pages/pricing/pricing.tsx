@@ -3,7 +3,7 @@ import { useSearchParams } from "react-router-dom";
 import { faCoins } from "@fortawesome/pro-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Button } from "@storyteller/ui-button";
-import { UsersApi } from "@storyteller/api";
+import { BillingApi, UsersApi } from "@storyteller/api";
 import Seo from "../../components/seo";
 import {
   PricingTable,
@@ -66,18 +66,45 @@ const SeedanceBanner = () => (
   </div>
 );
 
+// Compact "top up" CTA shown above the plan table for users who already have a
+// plan, so returning subscribers can buy one-time credit packs without scrolling.
+const BuyMoreCreditsCta = ({ onClick }: { onClick: () => void }) => (
+  <div className="mb-8 flex flex-col items-center text-center">
+    <p className="text-base text-white/65">Need more credits?</p>
+    <Button
+      variant="secondary"
+      className="mt-3 gap-2 rounded-full border border-white/[0.1] bg-white/[0.06] hover:bg-white/[0.1] px-5 py-2 h-11 text-[14px] font-semibold text-white"
+      onClick={onClick}
+    >
+      <FontAwesomeIcon icon={faCoins} className="text-primary text-[13px]" />
+      Buy more credits
+    </Button>
+  </div>
+);
+
 const Pricing = () => {
   const [searchParams] = useSearchParams();
   const isSeedanceRef = searchParams.get("ref") === "sd2fakeyou";
   const [creditsModalOpen, setCreditsModalOpen] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [hasPlan, setHasPlan] = useState(false);
 
   useEffect(() => {
     const check = async () => {
       try {
         const api = new UsersApi();
         const res = await api.GetSession();
-        setIsLoggedIn(res.success && !!res.data?.loggedIn && !!res.data?.user);
+        const loggedIn =
+          res.success && !!res.data?.loggedIn && !!res.data?.user;
+        setIsLoggedIn(loggedIn);
+        if (!loggedIn) return;
+        const subs = await new BillingApi().ListActiveSubscriptions();
+        setHasPlan(
+          !!subs.success &&
+            !!subs.data?.active_subscriptions?.some(
+              (sub) => sub.namespace === "artcraft",
+            ),
+        );
       } catch {
         // not logged in
       }
@@ -110,6 +137,9 @@ const Pricing = () => {
           <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-[5fr_7fr] gap-8 xl:gap-12 items-start">
             <SeedanceBanner />
             <div className="w-full">
+              {hasPlan && (
+                <BuyMoreCreditsCta onClick={() => setCreditsModalOpen(true)} />
+              )}
               <PricingTable
                 showHeader={false}
                 unifiedTheme
@@ -135,6 +165,9 @@ const Pricing = () => {
                 everyone.
               </p>
             </div>
+            {hasPlan && (
+              <BuyMoreCreditsCta onClick={() => setCreditsModalOpen(true)} />
+            )}
             <PricingTable
               showHeader={false}
               unifiedTheme
@@ -145,8 +178,8 @@ const Pricing = () => {
         )}
       </main>
 
-      {isLoggedIn && (
-        <div className="relative z-10 flex flex-col items-center px-4 pb-4 sm:px-8">
+      {isLoggedIn && !hasPlan && (
+        <div className="relative z-10 flex flex-col items-center px-4 pb-4 sm:px-8 pt-6">
           <div className="inline-flex items-center gap-2 text-white/40">
             <div className="h-px w-8 bg-white/20" />
             <span className="text-sm">Or</span>

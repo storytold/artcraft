@@ -24,7 +24,12 @@ export interface GenerateVideoParams {
 
 export async function enqueueVideoGeneration(
   params: GenerateVideoParams,
-): Promise<{ success: boolean; jobToken?: string; error?: string }> {
+): Promise<{
+  success: boolean;
+  jobToken?: string;
+  error?: string;
+  errorCode?: number;
+}> {
   const body: OmniGenVideoRequest = {
     model: params.model,
     prompt: params.prompt,
@@ -60,8 +65,21 @@ export async function enqueueVideoGeneration(
     }
     return { success: false, error: "Generation failed" };
   } catch (err: any) {
-    return { success: false, error: err.message ?? "Request failed" };
+    return {
+      success: false,
+      error: err.message ?? "Request failed",
+      errorCode: parseHttpStatusCode(err),
+    };
   }
+}
+
+// Pull the HTTP status out of an ApiManager error. ApiManager throws
+// `Error("HTTP error! status: 402")` on a non-2xx response (the JSON body is
+// not surfaced), so callers can special-case codes like 402 Payment Required.
+function parseHttpStatusCode(err: unknown): number | undefined {
+  const message = err instanceof Error ? err.message : String(err);
+  const match = /status:\s*(\d+)/.exec(message);
+  return match ? Number(match[1]) : undefined;
 }
 
 // ── Poll for completion ──────────────────────────────────────────────────

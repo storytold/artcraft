@@ -28,6 +28,7 @@ import {
   getModelCreatorIconPath,
 } from "../../lib/omni-gen-hooks";
 import { useSignupCta } from "../../components/signup-cta-modal";
+import { useInsufficientCredits } from "../../components/insufficient-credits-modal";
 import { faSparkles } from "@fortawesome/pro-solid-svg-icons";
 
 // ── Constants ────────────────────────────────────────────────────────────
@@ -63,6 +64,7 @@ function buildModelPopoverItems(
 export default function CreateImage() {
   const { user, authChecked } = useAuthCheck();
   const { loggedIn, openSignupCta } = useSignupCta();
+  const openInsufficientCredits = useInsufficientCredits();
   const { promptBoxRef, promptHeight } = usePromptHeight();
 
   // Fetch models from API
@@ -137,6 +139,7 @@ export default function CreateImage() {
   const setBatchJobToken = useCreateImageStore((s) => s.setBatchJobToken);
   const completeBatch = useCreateImageStore((s) => s.completeBatch);
   const failBatch = useCreateImageStore((s) => s.failBatch);
+  const dismissBatch = useCreateImageStore((s) => s.dismissBatch);
   const pollingCleanupsRef = useRef<Map<string, () => void>>(new Map());
 
   // Jobs + gallery
@@ -311,7 +314,14 @@ export default function CreateImage() {
       });
 
       if (!result.success || !result.jobToken) {
-        failBatch(batchId, result.error ?? "Failed to start generation");
+        // 402 Payment Required: the user is out of credits. Drop the pending
+        // card and surface the upgrade modal instead of a failed-card error.
+        if (result.errorCode === 402) {
+          dismissBatch(batchId);
+          openInsufficientCredits();
+        } else {
+          failBatch(batchId, result.error ?? "Failed to start generation");
+        }
         setIsGenerating(false);
         return;
       }
@@ -342,6 +352,7 @@ export default function CreateImage() {
   }, [
     loggedIn,
     openSignupCta,
+    openInsufficientCredits,
     prompt,
     isGenerating,
     selectedModel,
@@ -356,6 +367,7 @@ export default function CreateImage() {
     setBatchJobToken,
     completeBatch,
     failBatch,
+    dismissBatch,
   ]);
 
   // ── Render ────────────────────────────────────────────────────────────

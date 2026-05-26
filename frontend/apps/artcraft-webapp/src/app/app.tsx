@@ -36,6 +36,7 @@ import {
 import { AppSidebar } from "../components/sidebar/app-sidebar";
 import { TopBar } from "../components/topbar/topbar";
 import { SignupCtaModal } from "../components/signup-cta-modal";
+import { InsufficientCreditsModal } from "../components/insufficient-credits-modal";
 import { useSession } from "../lib/session";
 
 function ScrollToTop() {
@@ -177,6 +178,7 @@ export function App() {
       </Routes>
       <ToastContainer />
       <SignupCtaModal />
+      <InsufficientCreditsModal />
     </>
   );
 }

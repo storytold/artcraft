@@ -1,4 +1,10 @@
-import { faCheck, faStar, faGem } from "@fortawesome/pro-solid-svg-icons";
+import {
+  faCheck,
+  faStar,
+  faGem,
+  faCopy,
+  faEnvelope,
+} from "@fortawesome/pro-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Button } from "@storyteller/ui-button";
 import {
@@ -6,7 +12,7 @@ import {
   SubscriptionPlanDetails,
 } from "@storyteller/subscription";
 import { twMerge } from "tailwind-merge";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { TabSelector } from "@storyteller/ui-tab-selector";
 import { UsersApi, BillingApi, UserInfo } from "@storyteller/api";
 import {
@@ -32,6 +38,8 @@ const ENTERPRISE_FEATURES = [
   "Support SLAs",
   "Custom integrations",
 ];
+
+const CONTACT_EMAIL = "hello@storyteller.ai";
 
 // Mapping from our plan slugs to API plan slugs
 const PLAN_SLUG_MAP: Record<string, string> = {
@@ -516,12 +524,10 @@ const PricingTable = ({
               For bespoke solutions
             </div>
 
-            <a
-              href="mailto:hello@storyteller.ai"
-              className="w-full flex items-center justify-center gap-2 rounded-xl border border-white/20 bg-white/10 hover:bg-white/15 text-white px-4 py-2 text-sm font-medium transition-colors mb-6 md:mb-8 h-11"
-            >
-              Contact Us
-            </a>
+            <ContactUsButton
+              wrapperClassName="w-full mb-6 md:mb-8"
+              triggerClassName="w-full flex items-center justify-center gap-2 rounded-xl border border-white/20 bg-white/10 hover:bg-white/15 text-white px-4 py-2 text-sm font-medium transition-colors h-11"
+            />
 
             <div className="text-sm text-white/50 mb-3">
               Everything in Max, plus:
@@ -561,12 +567,11 @@ const PricingTable = ({
               ))}
             </div>
           </div>
-          <a
-            href="mailto:hello@storyteller.ai"
-            className="md:self-center flex-shrink-0 flex items-center justify-center gap-2 rounded-lg border border-white/20 bg-white/10 hover:bg-white/15 text-white px-4 py-2 text-sm font-medium transition-colors"
-          >
-            Contact Us
-          </a>
+          <ContactUsButton
+            wrapperClassName="md:self-center flex-shrink-0"
+            triggerClassName="w-full md:w-auto flex items-center justify-center gap-2 rounded-lg border border-white/20 bg-white/10 hover:bg-white/15 text-white px-4 py-2 text-sm font-medium transition-colors"
+            menuClassName="right-0 min-w-[12rem]"
+          />
         </div>
       )}
 
@@ -639,5 +644,89 @@ const Feature = ({
     </span>
   </li>
 );
+
+// "Contact Us" with a small popover offering copy-to-clipboard or a mailto
+// link, so users without a configured mail client can still grab the address.
+const ContactUsButton = ({
+  triggerClassName,
+  wrapperClassName,
+  menuClassName = "left-0 right-0",
+}: {
+  triggerClassName: string;
+  wrapperClassName?: string;
+  menuClassName?: string;
+}) => {
+  const [open, setOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Close the popover on an outside click or Escape.
+  useEffect(() => {
+    if (!open) return;
+    const onPointerDown = (e: MouseEvent) => {
+      if (!containerRef.current?.contains(e.target as Node)) setOpen(false);
+    };
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("mousedown", onPointerDown);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", onPointerDown);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [open]);
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(CONTACT_EMAIL);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      // Clipboard unavailable (e.g. insecure context); silently ignore.
+    }
+  };
+
+  return (
+    <div ref={containerRef} className={twMerge("relative", wrapperClassName)}>
+      <button
+        type="button"
+        onClick={() => setOpen((prev) => !prev)}
+        className={triggerClassName}
+      >
+        Contact Us
+      </button>
+
+      {open && (
+        <div
+          className={twMerge(
+            "absolute top-full z-20 mt-2 overflow-hidden rounded-xl border border-white/15 bg-[#1b1b20] shadow-[0_20px_60px_-15px_rgba(0,0,0,0.7)]",
+            menuClassName,
+          )}
+        >
+          <button
+            type="button"
+            onClick={handleCopy}
+            className="flex w-full items-center gap-2.5 px-4 py-3 text-left text-sm text-white/80 transition-colors hover:bg-white/[0.06]"
+          >
+            <FontAwesomeIcon
+              icon={copied ? faCheck : faCopy}
+              className="w-4 text-primary"
+            />
+            {copied ? "Copied!" : "Copy email"}
+          </button>
+          <a
+            href={`mailto:${CONTACT_EMAIL}`}
+            onClick={() => setOpen(false)}
+            className="flex w-full items-center gap-2.5 border-t border-white/10 px-4 py-3 text-left text-sm text-white/80 transition-colors hover:bg-white/[0.06]"
+          >
+            <FontAwesomeIcon icon={faEnvelope} className="w-4 text-primary" />
+            Email us
+          </a>
+        </div>
+      )}
+    </div>
+  );
+};
 
 export default PricingTable;

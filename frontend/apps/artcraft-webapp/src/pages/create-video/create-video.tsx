@@ -49,6 +49,7 @@ import {
   getModelCreatorIconPath,
 } from "../../lib/omni-gen-hooks";
 import { useSignupCta } from "../../components/signup-cta-modal";
+import { useInsufficientCredits } from "../../components/insufficient-credits-modal";
 
 // ── Constants ────────────────────────────────────────────────────────────
 
@@ -210,6 +211,7 @@ function resolveDurationForModel(
 export default function CreateVideo() {
   const { user, authChecked } = useAuthCheck();
   const { loggedIn, openSignupCta } = useSignupCta();
+  const openInsufficientCredits = useInsufficientCredits();
   const { promptBoxRef, promptHeight } = usePromptHeight();
 
   // Fetch models from API
@@ -327,6 +329,7 @@ export default function CreateVideo() {
   const setBatchJobToken = useCreateVideoStore((s) => s.setBatchJobToken);
   const completeBatch = useCreateVideoStore((s) => s.completeBatch);
   const failBatch = useCreateVideoStore((s) => s.failBatch);
+  const dismissBatch = useCreateVideoStore((s) => s.dismissBatch);
   const pollingCleanupsRef = useRef<Map<string, () => void>>(new Map());
 
   // Derived model capabilities
@@ -883,7 +886,14 @@ export default function CreateVideo() {
 
       if (!result.success || !result.jobToken) {
         console.warn("[generate-video] enqueue failed", result.error);
-        failBatch(batchId, result.error ?? "Failed to start generation");
+        // 402 Payment Required: the user is out of credits. Drop the pending
+        // card and surface the upgrade modal instead of a failed-card error.
+        if (result.errorCode === 402) {
+          dismissBatch(batchId);
+          openInsufficientCredits();
+        } else {
+          failBatch(batchId, result.error ?? "Failed to start generation");
+        }
       } else {
         setBatchJobToken(batchId, result.jobToken);
         console.log("[generate-video] polling started", {
@@ -923,6 +933,7 @@ export default function CreateVideo() {
   }, [
     loggedIn,
     openSignupCta,
+    openInsufficientCredits,
     prompt,
     needsImage,
     isReferenceMode,
@@ -945,6 +956,7 @@ export default function CreateVideo() {
     setBatchJobToken,
     completeBatch,
     failBatch,
+    dismissBatch,
   ]);
 
   // ── Render ────────────────────────────────────────────────────────────
