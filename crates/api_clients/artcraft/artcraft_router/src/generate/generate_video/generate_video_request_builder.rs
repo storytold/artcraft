@@ -62,6 +62,13 @@ use crate::generate::generate_video_v2::providers::kinovi::seedance_2p0::build::
 use crate::generate::generate_video_v2::providers::gmicloud::seedance_2p0_g::build::build_gmicloud_seedance_2p0_u;
 use crate::generate::generate_video_v2::providers::gmicloud::seedance_2p0_fast_g::build::build_gmicloud_seedance_2p0_u_fast;
 use crate::generate::generate_video_v2::providers::grok_api::grok_imagine_video::build::build_grok_api_grok_imagine_video;
+use crate::generate::generate_video_v2::providers::fal::kling_1_6_pro::build::build_fal_kling_1_6_pro;
+use crate::generate::generate_video_v2::providers::fal::kling_2_1_master::build::build_fal_kling_2_1_master;
+use crate::generate::generate_video_v2::providers::fal::kling_2_1_pro::build::build_fal_kling_2_1_pro;
+use crate::generate::generate_video_v2::providers::fal::kling_2_5_turbo_pro::build::build_fal_kling_2_5_turbo_pro;
+use crate::generate::generate_video_v2::providers::fal::kling_2_6_pro::build::build_fal_kling_2_6_pro;
+use crate::generate::generate_video_v2::providers::fal::kling_3p0_pro::build::build_fal_kling_3p0_pro;
+use crate::generate::generate_video_v2::providers::fal::kling_3p0_standard::build::build_fal_kling_3p0_standard;
 use crate::generate::generate_video_v2::providers::fal::seedance_1p0_lite::build::build_fal_seedance_1p0_lite;
 use crate::generate::generate_video_v2::providers::fal::seedance_1p5_pro::build::build_fal_seedance_1p5_pro;
 use crate::generate::generate_video_v2::providers::fal::veo_2::build::build_fal_veo_2;
@@ -173,6 +180,13 @@ impl GenerateVideoRequestBuilder {
       (Provider::Artcraft, CommonVideoModel::PreviewModel) => true,
       (Provider::Artcraft, CommonVideoModel::PreviewModelFast) => true,
       // Fal
+      (Provider::Fal, CommonVideoModel::Kling16Pro) => true,
+      (Provider::Fal, CommonVideoModel::Kling21Master) => true,
+      (Provider::Fal, CommonVideoModel::Kling21Pro) => true,
+      (Provider::Fal, CommonVideoModel::Kling2p5TurboPro) => true,
+      (Provider::Fal, CommonVideoModel::Kling2p6Pro) => true,
+      (Provider::Fal, CommonVideoModel::Kling3p0Pro) => true,
+      (Provider::Fal, CommonVideoModel::Kling3p0Standard) => true,
       (Provider::Fal, CommonVideoModel::Seedance10Lite) => true,
       (Provider::Fal, CommonVideoModel::Seedance1p5Pro) => true,
       (Provider::Fal, CommonVideoModel::Veo2) => true,
@@ -208,6 +222,13 @@ impl GenerateVideoRequestBuilder {
       (Provider::Artcraft, CommonVideoModel::PreviewModel) => build_artcraft_preview_model(self),
       (Provider::Artcraft, CommonVideoModel::PreviewModelFast) => build_artcraft_preview_model_fast(self),
       // Fal
+      (Provider::Fal, CommonVideoModel::Kling16Pro) => build_fal_kling_1_6_pro(self),
+      (Provider::Fal, CommonVideoModel::Kling21Master) => build_fal_kling_2_1_master(self),
+      (Provider::Fal, CommonVideoModel::Kling21Pro) => build_fal_kling_2_1_pro(self),
+      (Provider::Fal, CommonVideoModel::Kling2p5TurboPro) => build_fal_kling_2_5_turbo_pro(self),
+      (Provider::Fal, CommonVideoModel::Kling2p6Pro) => build_fal_kling_2_6_pro(self),
+      (Provider::Fal, CommonVideoModel::Kling3p0Pro) => build_fal_kling_3p0_pro(self),
+      (Provider::Fal, CommonVideoModel::Kling3p0Standard) => build_fal_kling_3p0_standard(self),
       (Provider::Fal, CommonVideoModel::Seedance10Lite) => build_fal_seedance_1p0_lite(self),
       (Provider::Fal, CommonVideoModel::Seedance1p5Pro) => build_fal_seedance_1p5_pro(self),
       (Provider::Fal, CommonVideoModel::Veo2) => build_fal_veo_2(self),

@@ -287,6 +287,320 @@ fn v2_cost(builder: GenerateVideoRequestBuilder) -> Option<u64> {
     .and_then(|estimate| estimate.cost_in_usd_cents)
 }
 
+// ── Kling shared helpers ──
+
+mod kling_helpers {
+  use super::*;
+
+  pub fn kling_aspect_ratios() -> &'static [Option<CommonAspectRatio>] {
+    &[
+      None,
+      Some(CommonAspectRatio::Square),
+      Some(CommonAspectRatio::WideSixteenByNine),
+      Some(CommonAspectRatio::TallNineBySixteen),
+      Some(CommonAspectRatio::Auto),
+      // Unsupported — falls back to 16:9 for non-ErrorOut.
+      Some(CommonAspectRatio::WideFourByThree),
+    ]
+  }
+}
+
+// ── Kling 1.6 Pro ──
+
+mod kling_1_6_pro {
+  use super::*;
+  use super::kling_helpers::kling_aspect_ratios;
+
+  fn base_builder() -> GenerateVideoRequestBuilder {
+    GenerateVideoRequestBuilder {
+      model: CommonVideoModel::Kling16Pro,
+      provider: Provider::Fal,
+      start_frame: Some(ImageRef::Url(DUMMY_IMAGE.to_string())),
+      ..Default::default()
+    }
+  }
+
+  #[test]
+  fn cost_parity_full_combinatorial() {
+    let durations = [None, Some(5u16), Some(10)];
+    let mut combos = 0;
+    for &aspect_ratio in kling_aspect_ratios() {
+      for &duration in &durations {
+        for include_end_frame in [false, true] {
+          let mut builder = base_builder();
+          builder.aspect_ratio = aspect_ratio;
+          builder.duration_seconds = duration;
+          if include_end_frame {
+            builder.end_frame = Some(ImageRef::Url(DUMMY_END_FRAME.to_string()));
+          }
+          let v1 = v1_cost(&builder);
+          let v2 = v2_cost(builder.clone());
+          assert_eq!(v1, v2, "kling_1_6_pro: ar={:?} dur={:?} end={} → v1={:?} v2={:?}",
+            aspect_ratio, duration, include_end_frame, v1, v2);
+          combos += 1;
+        }
+      }
+    }
+    assert_eq!(combos, 6 * 3 * 2);
+  }
+}
+
+// ── Kling 2.1 Pro ──
+
+mod kling_2_1_pro {
+  use super::*;
+  use super::kling_helpers::kling_aspect_ratios;
+
+  fn base_builder() -> GenerateVideoRequestBuilder {
+    GenerateVideoRequestBuilder {
+      model: CommonVideoModel::Kling21Pro,
+      provider: Provider::Fal,
+      start_frame: Some(ImageRef::Url(DUMMY_IMAGE.to_string())),
+      ..Default::default()
+    }
+  }
+
+  #[test]
+  fn cost_parity_full_combinatorial() {
+    let durations = [None, Some(5u16), Some(10)];
+    let mut combos = 0;
+    for &aspect_ratio in kling_aspect_ratios() {
+      for &duration in &durations {
+        for include_end_frame in [false, true] {
+          let mut builder = base_builder();
+          builder.aspect_ratio = aspect_ratio;
+          builder.duration_seconds = duration;
+          if include_end_frame {
+            builder.end_frame = Some(ImageRef::Url(DUMMY_END_FRAME.to_string()));
+          }
+          let v1 = v1_cost(&builder);
+          let v2 = v2_cost(builder.clone());
+          assert_eq!(v1, v2, "kling_2_1_pro: ar={:?} dur={:?} end={} → v1={:?} v2={:?}",
+            aspect_ratio, duration, include_end_frame, v1, v2);
+          combos += 1;
+        }
+      }
+    }
+    assert_eq!(combos, 6 * 3 * 2);
+  }
+}
+
+// ── Kling 2.1 Master ──
+
+mod kling_2_1_master {
+  use super::*;
+  use super::kling_helpers::kling_aspect_ratios;
+
+  fn base_builder() -> GenerateVideoRequestBuilder {
+    GenerateVideoRequestBuilder {
+      model: CommonVideoModel::Kling21Master,
+      provider: Provider::Fal,
+      start_frame: Some(ImageRef::Url(DUMMY_IMAGE.to_string())),
+      ..Default::default()
+    }
+  }
+
+  #[test]
+  fn cost_parity_full_combinatorial() {
+    let durations = [None, Some(5u16), Some(10)];
+    let mut combos = 0;
+    for &aspect_ratio in kling_aspect_ratios() {
+      for &duration in &durations {
+        let mut builder = base_builder();
+        builder.aspect_ratio = aspect_ratio;
+        builder.duration_seconds = duration;
+        let v1 = v1_cost(&builder);
+        let v2 = v2_cost(builder.clone());
+        assert_eq!(v1, v2, "kling_2_1_master: ar={:?} dur={:?} → v1={:?} v2={:?}",
+          aspect_ratio, duration, v1, v2);
+        combos += 1;
+      }
+    }
+    assert_eq!(combos, 6 * 3);
+  }
+}
+
+// ── Kling 2.5 Turbo Pro ──
+
+mod kling_2_5_turbo_pro {
+  use super::*;
+  use super::kling_helpers::kling_aspect_ratios;
+
+  fn base_builder() -> GenerateVideoRequestBuilder {
+    GenerateVideoRequestBuilder {
+      model: CommonVideoModel::Kling2p5TurboPro,
+      provider: Provider::Fal,
+      ..Default::default()
+    }
+  }
+
+  #[test]
+  fn cost_parity_full_combinatorial() {
+    let durations = [None, Some(5u16), Some(10)];
+    let mut combos = 0;
+    for &aspect_ratio in kling_aspect_ratios() {
+      for &duration in &durations {
+        for has_start in [false, true] {
+          for include_end in [false, true] {
+            if include_end && !has_start { continue; }
+            let mut builder = base_builder();
+            builder.aspect_ratio = aspect_ratio;
+            builder.duration_seconds = duration;
+            if has_start {
+              builder.start_frame = Some(ImageRef::Url(DUMMY_IMAGE.to_string()));
+            }
+            if include_end {
+              builder.end_frame = Some(ImageRef::Url(DUMMY_END_FRAME.to_string()));
+            }
+            let v1 = v1_cost(&builder);
+            let v2 = v2_cost(builder.clone());
+            assert_eq!(v1, v2, "kling_2_5_turbo_pro: ar={:?} dur={:?} start={} end={} → v1={:?} v2={:?}",
+              aspect_ratio, duration, has_start, include_end, v1, v2);
+            combos += 1;
+          }
+        }
+      }
+    }
+    assert!(combos >= 50, "expected ≥50 combos, got {}", combos);
+  }
+}
+
+// ── Kling 2.6 Pro ──
+
+mod kling_2_6_pro {
+  use super::*;
+  use super::kling_helpers::kling_aspect_ratios;
+
+  fn base_builder() -> GenerateVideoRequestBuilder {
+    GenerateVideoRequestBuilder {
+      model: CommonVideoModel::Kling2p6Pro,
+      provider: Provider::Fal,
+      ..Default::default()
+    }
+  }
+
+  #[test]
+  fn cost_parity_full_combinatorial() {
+    let durations = [None, Some(5u16), Some(10)];
+    let audios = [None, Some(true), Some(false)];
+    let mut combos = 0;
+    for &aspect_ratio in kling_aspect_ratios() {
+      for &duration in &durations {
+        for &generate_audio in &audios {
+          for has_start in [false, true] {
+            let mut builder = base_builder();
+            builder.aspect_ratio = aspect_ratio;
+            builder.duration_seconds = duration;
+            builder.generate_audio = generate_audio;
+            if has_start {
+              builder.start_frame = Some(ImageRef::Url(DUMMY_IMAGE.to_string()));
+            }
+            let v1 = v1_cost(&builder);
+            let v2 = v2_cost(builder.clone());
+            assert_eq!(v1, v2, "kling_2_6_pro: ar={:?} dur={:?} audio={:?} start={} → v1={:?} v2={:?}",
+              aspect_ratio, duration, generate_audio, has_start, v1, v2);
+            combos += 1;
+          }
+        }
+      }
+    }
+    assert_eq!(combos, 6 * 3 * 3 * 2);
+  }
+}
+
+// ── Kling 3.0 Pro ──
+
+mod kling_3p0_pro {
+  use super::*;
+  use super::kling_helpers::kling_aspect_ratios;
+
+  fn base_builder() -> GenerateVideoRequestBuilder {
+    GenerateVideoRequestBuilder {
+      model: CommonVideoModel::Kling3p0Pro,
+      provider: Provider::Fal,
+      ..Default::default()
+    }
+  }
+
+  #[test]
+  fn cost_parity_full_combinatorial() {
+    // 3-15s inclusive, plus None and out-of-range.
+    let durations = [None, Some(3u16), Some(5), Some(10), Some(15), Some(2), Some(16)];
+    let audios = [None, Some(true), Some(false)];
+    let mut combos = 0;
+    for &aspect_ratio in kling_aspect_ratios() {
+      for &duration in &durations {
+        for &generate_audio in &audios {
+          for has_start in [false, true] {
+            for include_end in [false, true] {
+              if include_end && !has_start { continue; }
+              let mut builder = base_builder();
+              builder.aspect_ratio = aspect_ratio;
+              builder.duration_seconds = duration;
+              builder.generate_audio = generate_audio;
+              if has_start {
+                builder.start_frame = Some(ImageRef::Url(DUMMY_IMAGE.to_string()));
+              }
+              if include_end {
+                builder.end_frame = Some(ImageRef::Url(DUMMY_END_FRAME.to_string()));
+              }
+              let v1 = v1_cost(&builder);
+              let v2 = v2_cost(builder.clone());
+              assert_eq!(v1, v2, "kling_3p0_pro: ar={:?} dur={:?} audio={:?} start={} end={} → v1={:?} v2={:?}",
+                aspect_ratio, duration, generate_audio, has_start, include_end, v1, v2);
+              combos += 1;
+            }
+          }
+        }
+      }
+    }
+    assert!(combos >= 300, "expected ≥300 combos, got {}", combos);
+  }
+}
+
+// ── Kling 3.0 Standard ──
+
+mod kling_3p0_standard {
+  use super::*;
+  use super::kling_helpers::kling_aspect_ratios;
+
+  fn base_builder() -> GenerateVideoRequestBuilder {
+    GenerateVideoRequestBuilder {
+      model: CommonVideoModel::Kling3p0Standard,
+      provider: Provider::Fal,
+      ..Default::default()
+    }
+  }
+
+  #[test]
+  fn cost_parity_full_combinatorial() {
+    let durations = [None, Some(3u16), Some(5), Some(10), Some(15), Some(2), Some(16)];
+    let audios = [None, Some(true), Some(false)];
+    let mut combos = 0;
+    for &aspect_ratio in kling_aspect_ratios() {
+      for &duration in &durations {
+        for &generate_audio in &audios {
+          for has_start in [false, true] {
+            let mut builder = base_builder();
+            builder.aspect_ratio = aspect_ratio;
+            builder.duration_seconds = duration;
+            builder.generate_audio = generate_audio;
+            if has_start {
+              builder.start_frame = Some(ImageRef::Url(DUMMY_IMAGE.to_string()));
+            }
+            let v1 = v1_cost(&builder);
+            let v2 = v2_cost(builder.clone());
+            assert_eq!(v1, v2, "kling_3p0_standard: ar={:?} dur={:?} audio={:?} start={} → v1={:?} v2={:?}",
+              aspect_ratio, duration, generate_audio, has_start, v1, v2);
+            combos += 1;
+          }
+        }
+      }
+    }
+    assert!(combos >= 200, "expected ≥200 combos, got {}", combos);
+  }
+}
+
 // ── Veo 2 ──
 
 mod veo_2 {

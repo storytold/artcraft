@@ -1,3 +1,10 @@
+pub mod kling_1_6_pro;
+pub mod kling_2_1_master;
+pub mod kling_2_1_pro;
+pub mod kling_2_5_turbo_pro;
+pub mod kling_2_6_pro;
+pub mod kling_3p0_pro;
+pub mod kling_3p0_standard;
 pub mod seedance_1p0_lite;
 pub mod seedance_1p5_pro;
 pub mod veo_2;

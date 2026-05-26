@@ -23,6 +23,20 @@ use crate::generate::generate_video_v2::providers::artcraft::seedance_2p0_bp::co
 use crate::generate::generate_video_v2::providers::artcraft::seedance_2p0_bp::request::ArtcraftSeedance2p0BytePlusRequestState;
 use crate::generate::generate_video_v2::providers::artcraft::seedance_2p0_bp_fast::cost::ArtcraftSeedance2p0BytePlusFastCostState;
 use crate::generate::generate_video_v2::providers::artcraft::seedance_2p0_bp_fast::request::ArtcraftSeedance2p0BytePlusFastRequestState;
+use crate::generate::generate_video_v2::providers::fal::kling_1_6_pro::cost::FalKling16ProCostState;
+use crate::generate::generate_video_v2::providers::fal::kling_1_6_pro::request::FalKling16ProRequestState;
+use crate::generate::generate_video_v2::providers::fal::kling_2_1_master::cost::FalKling21MasterCostState;
+use crate::generate::generate_video_v2::providers::fal::kling_2_1_master::request::FalKling21MasterRequestState;
+use crate::generate::generate_video_v2::providers::fal::kling_2_1_pro::cost::FalKling21ProCostState;
+use crate::generate::generate_video_v2::providers::fal::kling_2_1_pro::request::FalKling21ProRequestState;
+use crate::generate::generate_video_v2::providers::fal::kling_2_5_turbo_pro::cost::FalKling2p5TurboProCostState;
+use crate::generate::generate_video_v2::providers::fal::kling_2_5_turbo_pro::request::FalKling2p5TurboProRequestState;
+use crate::generate::generate_video_v2::providers::fal::kling_2_6_pro::cost::FalKling2p6ProCostState;
+use crate::generate::generate_video_v2::providers::fal::kling_2_6_pro::request::FalKling2p6ProRequestState;
+use crate::generate::generate_video_v2::providers::fal::kling_3p0_pro::cost::FalKling3p0ProCostState;
+use crate::generate::generate_video_v2::providers::fal::kling_3p0_pro::request::FalKling3p0ProRequestState;
+use crate::generate::generate_video_v2::providers::fal::kling_3p0_standard::cost::FalKling3p0StandardCostState;
+use crate::generate::generate_video_v2::providers::fal::kling_3p0_standard::request::FalKling3p0StandardRequestState;
 use crate::generate::generate_video_v2::providers::fal::seedance_1p0_lite::cost::FalSeedance10LiteCostState;
 use crate::generate::generate_video_v2::providers::fal::seedance_1p0_lite::request::FalSeedance10LiteRequestState;
 use crate::generate::generate_video_v2::providers::fal::seedance_1p5_pro::cost::FalSeedance1p5ProCostState;
@@ -62,6 +76,13 @@ pub enum VideoGenerationRequest {
   ArtcraftSeedance2p0UltraFast(ArtcraftSeedance2p0UltraFastRequestState),
   ArtcraftSeedance2p0BytePlus(ArtcraftSeedance2p0BytePlusRequestState),
   ArtcraftSeedance2p0BytePlusFast(ArtcraftSeedance2p0BytePlusFastRequestState),
+  FalKling16Pro(FalKling16ProRequestState),
+  FalKling21Master(FalKling21MasterRequestState),
+  FalKling21Pro(FalKling21ProRequestState),
+  FalKling2p5TurboPro(FalKling2p5TurboProRequestState),
+  FalKling2p6Pro(FalKling2p6ProRequestState),
+  FalKling3p0Pro(FalKling3p0ProRequestState),
+  FalKling3p0Standard(FalKling3p0StandardRequestState),
   FalSeedance10Lite(FalSeedance10LiteRequestState),
   FalSeedance1p5Pro(FalSeedance1p5ProRequestState),
   FalVeo2(FalVeo2RequestState),
@@ -91,6 +112,13 @@ impl VideoGenerationRequest {
       Self::ArtcraftSeedance2p0UltraFast(_) => Provider::Artcraft,
       Self::ArtcraftSeedance2p0BytePlus(_) => Provider::Artcraft,
       Self::ArtcraftSeedance2p0BytePlusFast(_) => Provider::Artcraft,
+      Self::FalKling16Pro(_) => Provider::Fal,
+      Self::FalKling21Master(_) => Provider::Fal,
+      Self::FalKling21Pro(_) => Provider::Fal,
+      Self::FalKling2p5TurboPro(_) => Provider::Fal,
+      Self::FalKling2p6Pro(_) => Provider::Fal,
+      Self::FalKling3p0Pro(_) => Provider::Fal,
+      Self::FalKling3p0Standard(_) => Provider::Fal,
       Self::FalSeedance10Lite(_) => Provider::Fal,
       Self::FalSeedance1p5Pro(_) => Provider::Fal,
       Self::FalVeo2(_) => Provider::Fal,
@@ -120,6 +148,13 @@ impl VideoGenerationRequest {
       VideoGenerationRequest::ArtcraftSeedance2p0UltraFast(request) => Ok(ArtcraftSeedance2p0UltraFastCostState::from_request(request).estimate_cost()),
       VideoGenerationRequest::ArtcraftSeedance2p0BytePlus(request) => Ok(ArtcraftSeedance2p0BytePlusCostState::from_request(request).estimate_cost()),
       VideoGenerationRequest::ArtcraftSeedance2p0BytePlusFast(request) => Ok(ArtcraftSeedance2p0BytePlusFastCostState::from_request(request).estimate_cost()),
+      VideoGenerationRequest::FalKling16Pro(request) => Ok(FalKling16ProCostState::from_request(request).estimate_cost()),
+      VideoGenerationRequest::FalKling21Master(request) => Ok(FalKling21MasterCostState::from_request(request).estimate_cost()),
+      VideoGenerationRequest::FalKling21Pro(request) => Ok(FalKling21ProCostState::from_request(request).estimate_cost()),
+      VideoGenerationRequest::FalKling2p5TurboPro(request) => Ok(FalKling2p5TurboProCostState::from_request(request).estimate_cost()),
+      VideoGenerationRequest::FalKling2p6Pro(request) => Ok(FalKling2p6ProCostState::from_request(request).estimate_cost()),
+      VideoGenerationRequest::FalKling3p0Pro(request) => Ok(FalKling3p0ProCostState::from_request(request).estimate_cost()),
+      VideoGenerationRequest::FalKling3p0Standard(request) => Ok(FalKling3p0StandardCostState::from_request(request).estimate_cost()),
       VideoGenerationRequest::FalSeedance10Lite(request) => Ok(FalSeedance10LiteCostState::from_request(request).estimate_cost()),
       VideoGenerationRequest::FalSeedance1p5Pro(request) => Ok(FalSeedance1p5ProCostState::from_request(request).estimate_cost()),
       VideoGenerationRequest::FalVeo2(request) => Ok(FalVeo2CostState::from_request(request).estimate_cost()),
@@ -178,6 +213,34 @@ impl VideoGenerationRequest {
       },
       VideoGenerationRequest::ArtcraftSeedance2p0BytePlusFast(request) => {
         let client_ref = client.get_artcraft_client_ref()?;
+        request.send(client_ref).await
+      },
+      VideoGenerationRequest::FalKling16Pro(request) => {
+        let client_ref = client.get_fal_client_ref()?;
+        request.send(client_ref).await
+      },
+      VideoGenerationRequest::FalKling21Master(request) => {
+        let client_ref = client.get_fal_client_ref()?;
+        request.send(client_ref).await
+      },
+      VideoGenerationRequest::FalKling21Pro(request) => {
+        let client_ref = client.get_fal_client_ref()?;
+        request.send(client_ref).await
+      },
+      VideoGenerationRequest::FalKling2p5TurboPro(request) => {
+        let client_ref = client.get_fal_client_ref()?;
+        request.send(client_ref).await
+      },
+      VideoGenerationRequest::FalKling2p6Pro(request) => {
+        let client_ref = client.get_fal_client_ref()?;
+        request.send(client_ref).await
+      },
+      VideoGenerationRequest::FalKling3p0Pro(request) => {
+        let client_ref = client.get_fal_client_ref()?;
+        request.send(client_ref).await
+      },
+      VideoGenerationRequest::FalKling3p0Standard(request) => {
+        let client_ref = client.get_fal_client_ref()?;
         request.send(client_ref).await
       },
       VideoGenerationRequest::FalSeedance10Lite(request) => {
