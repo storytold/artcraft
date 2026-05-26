@@ -69,9 +69,9 @@ pub async fn run_pipeline_v2(args: RunPipelineV2Args<'_>) -> Result<PipelineResu
   let mut exec_builder = router_builder.clone();
   exec_builder.provider = provider;
 
-  // GmiCloud and Grok (xAI) take URLs directly (like Fal), not media file tokens.
+  // Fal, GmiCloud, and Grok (xAI) take image URLs directly, not media file tokens.
   // Resolve tokens to URLs before building.
-  if matches!(provider, Provider::GmiCloud | Provider::GrokApi) {
+  if matches!(provider, Provider::Fal | Provider::GmiCloud | Provider::GrokApi) {
     resolve_media_tokens_to_urls(&mut exec_builder, media_file_to_url_map.as_ref());
   }
 
