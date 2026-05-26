@@ -993,7 +993,6 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     ProfileError,
     PromptInfo,
     RatingRow,
-    RedeemBetaKeyError,
     RedeemBetaKeyRequest,
     RedeemBetaKeySuccessResponse,
     RemoveImageBackgroundRequest,
