@@ -286,3 +286,304 @@ fn v2_cost(builder: GenerateVideoRequestBuilder) -> Option<u64> {
     .and_then(|dor| dor.estimate_cost().ok())
     .and_then(|estimate| estimate.cost_in_usd_cents)
 }
+
+// ── Veo 2 ──
+
+mod veo_2 {
+  use super::*;
+
+  fn base_builder() -> GenerateVideoRequestBuilder {
+    GenerateVideoRequestBuilder {
+      model: CommonVideoModel::Veo2,
+      provider: Provider::Fal,
+      ..Default::default()
+    }
+  }
+
+  fn supported_aspect_ratios() -> &'static [Option<CommonAspectRatio>] {
+    &[
+      None,
+      Some(CommonAspectRatio::Auto),
+      Some(CommonAspectRatio::WideSixteenByNine),
+      Some(CommonAspectRatio::TallNineBySixteen),
+      // Unsupported (router falls back to Auto for non-ErrorOut strategy).
+      Some(CommonAspectRatio::Square),
+    ]
+  }
+
+  fn all_durations() -> &'static [Option<u16>] {
+    &[None, Some(5), Some(6), Some(7), Some(8)]
+  }
+
+  #[test]
+  fn cost_parity_full_combinatorial() {
+    let mut combos = 0;
+    for &aspect_ratio in supported_aspect_ratios() {
+      for &duration in all_durations() {
+        for has_start_frame in [false, true] {
+          let mut builder = base_builder();
+          builder.aspect_ratio = aspect_ratio;
+          builder.duration_seconds = duration;
+          if has_start_frame {
+            builder.start_frame = Some(ImageRef::Url(DUMMY_IMAGE.to_string()));
+          }
+          let v1 = v1_cost(&builder);
+          let v2 = v2_cost(builder.clone());
+          assert_eq!(
+            v1, v2,
+            "veo_2 cost mismatch: ar={:?} dur={:?} start={} → v1={:?} v2={:?}",
+            aspect_ratio, duration, has_start_frame, v1, v2,
+          );
+          combos += 1;
+        }
+      }
+    }
+    assert_eq!(combos, 5 * 5 * 2);
+  }
+}
+
+// ── Veo 3 ──
+
+mod veo_3 {
+  use super::*;
+
+  fn base_builder() -> GenerateVideoRequestBuilder {
+    GenerateVideoRequestBuilder {
+      model: CommonVideoModel::Veo3,
+      provider: Provider::Fal,
+      ..Default::default()
+    }
+  }
+
+  fn all_resolutions() -> &'static [Option<CommonResolution>] {
+    &[None, Some(CommonResolution::SevenTwentyP), Some(CommonResolution::TenEightyP)]
+  }
+
+  fn all_durations() -> &'static [Option<u16>] {
+    &[None, Some(4), Some(6), Some(8)]
+  }
+
+  fn supported_aspect_ratios() -> &'static [Option<CommonAspectRatio>] {
+    &[
+      None,
+      Some(CommonAspectRatio::Auto),
+      Some(CommonAspectRatio::WideSixteenByNine),
+      Some(CommonAspectRatio::TallNineBySixteen),
+      Some(CommonAspectRatio::Square),
+    ]
+  }
+
+  fn audio_options() -> &'static [Option<bool>] {
+    &[None, Some(true), Some(false)]
+  }
+
+  #[test]
+  fn cost_parity_full_combinatorial() {
+    let mut combos = 0;
+    for &resolution in all_resolutions() {
+      for &duration in all_durations() {
+        for &aspect_ratio in supported_aspect_ratios() {
+          for &generate_audio in audio_options() {
+            for has_start_frame in [false, true] {
+              let mut builder = base_builder();
+              builder.resolution = resolution;
+              builder.duration_seconds = duration;
+              builder.aspect_ratio = aspect_ratio;
+              builder.generate_audio = generate_audio;
+              if has_start_frame {
+                builder.start_frame = Some(ImageRef::Url(DUMMY_IMAGE.to_string()));
+              }
+              let v1 = v1_cost(&builder);
+              let v2 = v2_cost(builder.clone());
+              assert_eq!(
+                v1, v2,
+                "veo_3 cost mismatch: res={:?} dur={:?} ar={:?} audio={:?} start={} → v1={:?} v2={:?}",
+                resolution, duration, aspect_ratio, generate_audio, has_start_frame, v1, v2,
+              );
+              combos += 1;
+            }
+          }
+        }
+      }
+    }
+    assert_eq!(combos, 3 * 4 * 5 * 3 * 2);
+  }
+}
+
+// ── Veo 3 Fast (image-to-video only) ──
+
+mod veo_3_fast {
+  use super::*;
+
+  fn base_builder() -> GenerateVideoRequestBuilder {
+    GenerateVideoRequestBuilder {
+      model: CommonVideoModel::Veo3Fast,
+      provider: Provider::Fal,
+      start_frame: Some(ImageRef::Url(DUMMY_IMAGE.to_string())),
+      ..Default::default()
+    }
+  }
+
+  #[test]
+  fn cost_parity_full_combinatorial() {
+    let resolutions = [None, Some(CommonResolution::SevenTwentyP), Some(CommonResolution::TenEightyP)];
+    let durations = [None, Some(4u16), Some(6), Some(8)];
+    let audios = [None, Some(true), Some(false)];
+
+    let mut combos = 0;
+    for &resolution in &resolutions {
+      for &duration in &durations {
+        for &generate_audio in &audios {
+          let mut builder = base_builder();
+          builder.resolution = resolution;
+          builder.duration_seconds = duration;
+          builder.generate_audio = generate_audio;
+          let v1 = v1_cost(&builder);
+          let v2 = v2_cost(builder.clone());
+          assert_eq!(
+            v1, v2,
+            "veo_3_fast cost mismatch: res={:?} dur={:?} audio={:?} → v1={:?} v2={:?}",
+            resolution, duration, generate_audio, v1, v2,
+          );
+          combos += 1;
+        }
+      }
+    }
+    assert_eq!(combos, 3 * 4 * 3);
+  }
+}
+
+// ── Veo 3.1 ──
+
+mod veo_3p1 {
+  use super::*;
+
+  fn base_builder() -> GenerateVideoRequestBuilder {
+    GenerateVideoRequestBuilder {
+      model: CommonVideoModel::Veo3p1,
+      provider: Provider::Fal,
+      ..Default::default()
+    }
+  }
+
+  fn all_resolutions() -> &'static [Option<CommonResolution>] {
+    &[None, Some(CommonResolution::SevenTwentyP), Some(CommonResolution::TenEightyP)]
+  }
+
+  fn all_durations() -> &'static [Option<u16>] {
+    &[None, Some(4), Some(6), Some(8)]
+  }
+
+  fn supported_aspect_ratios() -> &'static [Option<CommonAspectRatio>] {
+    &[None, Some(CommonAspectRatio::Auto), Some(CommonAspectRatio::WideSixteenByNine), Some(CommonAspectRatio::TallNineBySixteen)]
+  }
+
+  fn audio_options() -> &'static [Option<bool>] {
+    &[None, Some(true), Some(false)]
+  }
+
+  /// Three modes: text-to-video (no frames), image-to-video (start only),
+  /// first/last-frame (both). All three must price identically.
+  #[derive(Clone, Copy)]
+  enum FrameSetup {
+    None_,
+    StartOnly,
+    StartAndEnd,
+  }
+
+  #[test]
+  fn cost_parity_full_combinatorial() {
+    let mut combos = 0;
+    for &resolution in all_resolutions() {
+      for &duration in all_durations() {
+        for &aspect_ratio in supported_aspect_ratios() {
+          for &generate_audio in audio_options() {
+            for frames in [FrameSetup::None_, FrameSetup::StartOnly, FrameSetup::StartAndEnd] {
+              let mut builder = base_builder();
+              builder.resolution = resolution;
+              builder.duration_seconds = duration;
+              builder.aspect_ratio = aspect_ratio;
+              builder.generate_audio = generate_audio;
+              match frames {
+                FrameSetup::None_ => {}
+                FrameSetup::StartOnly => {
+                  builder.start_frame = Some(ImageRef::Url(DUMMY_IMAGE.to_string()));
+                }
+                FrameSetup::StartAndEnd => {
+                  builder.start_frame = Some(ImageRef::Url(DUMMY_IMAGE.to_string()));
+                  builder.end_frame = Some(ImageRef::Url(DUMMY_END_FRAME.to_string()));
+                }
+              }
+              let v1 = v1_cost(&builder);
+              let v2 = v2_cost(builder.clone());
+              assert_eq!(
+                v1, v2,
+                "veo_3p1 cost mismatch: res={:?} dur={:?} ar={:?} audio={:?} → v1={:?} v2={:?}",
+                resolution, duration, aspect_ratio, generate_audio, v1, v2,
+              );
+              combos += 1;
+            }
+          }
+        }
+      }
+    }
+    assert_eq!(combos, 3 * 4 * 4 * 3 * 3);
+  }
+}
+
+// ── Veo 3.1 Fast ──
+
+mod veo_3p1_fast {
+  use super::*;
+
+  fn base_builder() -> GenerateVideoRequestBuilder {
+    GenerateVideoRequestBuilder {
+      model: CommonVideoModel::Veo3p1Fast,
+      provider: Provider::Fal,
+      ..Default::default()
+    }
+  }
+
+  #[test]
+  fn cost_parity_full_combinatorial() {
+    let resolutions = [None, Some(CommonResolution::SevenTwentyP), Some(CommonResolution::TenEightyP)];
+    let durations = [None, Some(4u16), Some(6), Some(8)];
+    let aspect_ratios = [
+      None,
+      Some(CommonAspectRatio::Auto),
+      Some(CommonAspectRatio::WideSixteenByNine),
+      Some(CommonAspectRatio::TallNineBySixteen),
+    ];
+    let audios = [None, Some(true), Some(false)];
+
+    let mut combos = 0;
+    for &resolution in &resolutions {
+      for &duration in &durations {
+        for &aspect_ratio in &aspect_ratios {
+          for &generate_audio in &audios {
+            for include_end_frame in [false, true] {
+              let mut builder = base_builder();
+              builder.resolution = resolution;
+              builder.duration_seconds = duration;
+              builder.aspect_ratio = aspect_ratio;
+              builder.generate_audio = generate_audio;
+              builder.start_frame = Some(ImageRef::Url(DUMMY_IMAGE.to_string()));
+              if include_end_frame {
+                builder.end_frame = Some(ImageRef::Url(DUMMY_END_FRAME.to_string()));
+              }
+              let v1 = v1_cost(&builder);
+              let v2 = v2_cost(builder.clone());
+              assert_eq!(
+                v1, v2,
+                "veo_3p1_fast cost mismatch: res={:?} dur={:?} ar={:?} audio={:?} end={} → v1={:?} v2={:?}",
+                resolution, duration, aspect_ratio, generate_audio, include_end_frame, v1, v2,
+              );
+              combos += 1;
+            }
+          }
+        }
+      }
+    }
+    assert_eq!(combos, 3 * 4 * 4 * 3 * 2);
+  }
+}

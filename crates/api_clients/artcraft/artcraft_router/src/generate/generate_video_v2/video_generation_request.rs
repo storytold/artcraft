@@ -27,6 +27,16 @@ use crate::generate::generate_video_v2::providers::fal::seedance_1p0_lite::cost:
 use crate::generate::generate_video_v2::providers::fal::seedance_1p0_lite::request::FalSeedance10LiteRequestState;
 use crate::generate::generate_video_v2::providers::fal::seedance_1p5_pro::cost::FalSeedance1p5ProCostState;
 use crate::generate::generate_video_v2::providers::fal::seedance_1p5_pro::request::FalSeedance1p5ProRequestState;
+use crate::generate::generate_video_v2::providers::fal::veo_2::cost::FalVeo2CostState;
+use crate::generate::generate_video_v2::providers::fal::veo_2::request::FalVeo2RequestState;
+use crate::generate::generate_video_v2::providers::fal::veo_3::cost::FalVeo3CostState;
+use crate::generate::generate_video_v2::providers::fal::veo_3::request::FalVeo3RequestState;
+use crate::generate::generate_video_v2::providers::fal::veo_3_fast::cost::FalVeo3FastCostState;
+use crate::generate::generate_video_v2::providers::fal::veo_3_fast::request::FalVeo3FastRequestState;
+use crate::generate::generate_video_v2::providers::fal::veo_3p1::cost::FalVeo3p1CostState;
+use crate::generate::generate_video_v2::providers::fal::veo_3p1::request::FalVeo3p1RequestState;
+use crate::generate::generate_video_v2::providers::fal::veo_3p1_fast::cost::FalVeo3p1FastCostState;
+use crate::generate::generate_video_v2::providers::fal::veo_3p1_fast::request::FalVeo3p1FastRequestState;
 use crate::generate::generate_video_v2::providers::gmicloud::seedance_2p0_g::cost::GmiCloudSeedance2p0UltraCostState;
 use crate::generate::generate_video_v2::providers::gmicloud::seedance_2p0_g::request::GmiCloudSeedance2p0UltraRequestState;
 use crate::generate::generate_video_v2::providers::gmicloud::seedance_2p0_fast_g::cost::GmiCloudSeedance2p0UltraFastCostState;
@@ -54,6 +64,11 @@ pub enum VideoGenerationRequest {
   ArtcraftSeedance2p0BytePlusFast(ArtcraftSeedance2p0BytePlusFastRequestState),
   FalSeedance10Lite(FalSeedance10LiteRequestState),
   FalSeedance1p5Pro(FalSeedance1p5ProRequestState),
+  FalVeo2(FalVeo2RequestState),
+  FalVeo3(FalVeo3RequestState),
+  FalVeo3Fast(FalVeo3FastRequestState),
+  FalVeo3p1(FalVeo3p1RequestState),
+  FalVeo3p1Fast(FalVeo3p1FastRequestState),
   GmiCloudSeedance2p0Ultra(GmiCloudSeedance2p0UltraRequestState),
   GmiCloudSeedance2p0UltraFast(GmiCloudSeedance2p0UltraFastRequestState),
   GrokApiGrokImagineVideo(GrokApiGrokImagineVideoRequestState),
@@ -78,6 +93,11 @@ impl VideoGenerationRequest {
       Self::ArtcraftSeedance2p0BytePlusFast(_) => Provider::Artcraft,
       Self::FalSeedance10Lite(_) => Provider::Fal,
       Self::FalSeedance1p5Pro(_) => Provider::Fal,
+      Self::FalVeo2(_) => Provider::Fal,
+      Self::FalVeo3(_) => Provider::Fal,
+      Self::FalVeo3Fast(_) => Provider::Fal,
+      Self::FalVeo3p1(_) => Provider::Fal,
+      Self::FalVeo3p1Fast(_) => Provider::Fal,
       Self::GmiCloudSeedance2p0Ultra(_) => Provider::GmiCloud,
       Self::GmiCloudSeedance2p0UltraFast(_) => Provider::GmiCloud,
       Self::GrokApiGrokImagineVideo(_) => Provider::GrokApi,
@@ -102,6 +122,11 @@ impl VideoGenerationRequest {
       VideoGenerationRequest::ArtcraftSeedance2p0BytePlusFast(request) => Ok(ArtcraftSeedance2p0BytePlusFastCostState::from_request(request).estimate_cost()),
       VideoGenerationRequest::FalSeedance10Lite(request) => Ok(FalSeedance10LiteCostState::from_request(request).estimate_cost()),
       VideoGenerationRequest::FalSeedance1p5Pro(request) => Ok(FalSeedance1p5ProCostState::from_request(request).estimate_cost()),
+      VideoGenerationRequest::FalVeo2(request) => Ok(FalVeo2CostState::from_request(request).estimate_cost()),
+      VideoGenerationRequest::FalVeo3(request) => Ok(FalVeo3CostState::from_request(request).estimate_cost()),
+      VideoGenerationRequest::FalVeo3Fast(request) => Ok(FalVeo3FastCostState::from_request(request).estimate_cost()),
+      VideoGenerationRequest::FalVeo3p1(request) => Ok(FalVeo3p1CostState::from_request(request).estimate_cost()),
+      VideoGenerationRequest::FalVeo3p1Fast(request) => Ok(FalVeo3p1FastCostState::from_request(request).estimate_cost()),
       VideoGenerationRequest::GmiCloudSeedance2p0Ultra(request) => Ok(GmiCloudSeedance2p0UltraCostState::from_request(request).estimate_cost()),
       VideoGenerationRequest::GmiCloudSeedance2p0UltraFast(request) => Ok(GmiCloudSeedance2p0UltraFastCostState::from_request(request).estimate_cost()),
       VideoGenerationRequest::GrokApiGrokImagineVideo(request) => Ok(GrokApiGrokImagineVideoCostState::from_request(request).estimate_cost()),
@@ -160,6 +185,26 @@ impl VideoGenerationRequest {
         request.send(client_ref).await
       },
       VideoGenerationRequest::FalSeedance1p5Pro(request) => {
+        let client_ref = client.get_fal_client_ref()?;
+        request.send(client_ref).await
+      },
+      VideoGenerationRequest::FalVeo2(request) => {
+        let client_ref = client.get_fal_client_ref()?;
+        request.send(client_ref).await
+      },
+      VideoGenerationRequest::FalVeo3(request) => {
+        let client_ref = client.get_fal_client_ref()?;
+        request.send(client_ref).await
+      },
+      VideoGenerationRequest::FalVeo3Fast(request) => {
+        let client_ref = client.get_fal_client_ref()?;
+        request.send(client_ref).await
+      },
+      VideoGenerationRequest::FalVeo3p1(request) => {
+        let client_ref = client.get_fal_client_ref()?;
+        request.send(client_ref).await
+      },
+      VideoGenerationRequest::FalVeo3p1Fast(request) => {
         let client_ref = client.get_fal_client_ref()?;
         request.send(client_ref).await
       },
