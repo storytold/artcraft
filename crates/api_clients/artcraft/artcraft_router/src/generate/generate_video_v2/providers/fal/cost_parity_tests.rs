@@ -601,6 +601,104 @@ mod kling_3p0_standard {
   }
 }
 
+// ── Sora 2 ──
+
+mod sora_2 {
+  use super::*;
+
+  fn base_builder() -> GenerateVideoRequestBuilder {
+    GenerateVideoRequestBuilder {
+      model: CommonVideoModel::Sora2,
+      provider: Provider::Fal,
+      ..Default::default()
+    }
+  }
+
+  #[test]
+  fn cost_parity_full_combinatorial() {
+    let resolutions = [None, Some(CommonResolution::SevenTwentyP), Some(CommonResolution::TenEightyP)];
+    let durations = [None, Some(4u16), Some(8), Some(12)];
+    let aspect_ratios = [
+      None,
+      Some(CommonAspectRatio::Auto),
+      Some(CommonAspectRatio::WideSixteenByNine),
+      Some(CommonAspectRatio::TallNineBySixteen),
+      Some(CommonAspectRatio::Square),
+    ];
+    let mut combos = 0;
+    for &resolution in &resolutions {
+      for &duration in &durations {
+        for &aspect_ratio in &aspect_ratios {
+          for has_start in [false, true] {
+            let mut builder = base_builder();
+            builder.resolution = resolution;
+            builder.duration_seconds = duration;
+            builder.aspect_ratio = aspect_ratio;
+            if has_start {
+              builder.start_frame = Some(ImageRef::Url(DUMMY_IMAGE.to_string()));
+            }
+            let v1 = v1_cost(&builder);
+            let v2 = v2_cost(builder.clone());
+            assert_eq!(v1, v2, "sora_2: res={:?} dur={:?} ar={:?} start={} → v1={:?} v2={:?}",
+              resolution, duration, aspect_ratio, has_start, v1, v2);
+            combos += 1;
+          }
+        }
+      }
+    }
+    assert_eq!(combos, 3 * 4 * 5 * 2);
+  }
+}
+
+// ── Sora 2 Pro ──
+
+mod sora_2_pro {
+  use super::*;
+
+  fn base_builder() -> GenerateVideoRequestBuilder {
+    GenerateVideoRequestBuilder {
+      model: CommonVideoModel::Sora2Pro,
+      provider: Provider::Fal,
+      ..Default::default()
+    }
+  }
+
+  #[test]
+  fn cost_parity_full_combinatorial() {
+    let resolutions = [None, Some(CommonResolution::SevenTwentyP), Some(CommonResolution::TenEightyP)];
+    let durations = [None, Some(4u16), Some(8), Some(12)];
+    let aspect_ratios = [
+      None,
+      Some(CommonAspectRatio::Auto),
+      Some(CommonAspectRatio::WideSixteenByNine),
+      Some(CommonAspectRatio::TallNineBySixteen),
+      Some(CommonAspectRatio::Square),
+    ];
+    let mut combos = 0;
+    for &resolution in &resolutions {
+      for &duration in &durations {
+        for &aspect_ratio in &aspect_ratios {
+          for has_start in [false, true] {
+            let mut builder = base_builder();
+            builder.resolution = resolution;
+            builder.duration_seconds = duration;
+            builder.aspect_ratio = aspect_ratio;
+            if has_start {
+              builder.start_frame = Some(ImageRef::Url(DUMMY_IMAGE.to_string()));
+            }
+            let v1 = v1_cost(&builder);
+            let v2 = v2_cost(builder.clone());
+            assert_eq!(v1, v2, "sora_2_pro: res={:?} dur={:?} ar={:?} start={} → v1={:?} v2={:?}",
+              resolution, duration, aspect_ratio, has_start, v1, v2);
+            combos += 1;
+          }
+        }
+      }
+    }
+    assert_eq!(combos, 3 * 4 * 5 * 2);
+  }
+}
+
 // ── Veo 2 ──
 
 mod veo_2 {

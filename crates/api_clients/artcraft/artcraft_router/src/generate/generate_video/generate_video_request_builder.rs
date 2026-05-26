@@ -71,6 +71,8 @@ use crate::generate::generate_video_v2::providers::fal::kling_3p0_pro::build::bu
 use crate::generate::generate_video_v2::providers::fal::kling_3p0_standard::build::build_fal_kling_3p0_standard;
 use crate::generate::generate_video_v2::providers::fal::seedance_1p0_lite::build::build_fal_seedance_1p0_lite;
 use crate::generate::generate_video_v2::providers::fal::seedance_1p5_pro::build::build_fal_seedance_1p5_pro;
+use crate::generate::generate_video_v2::providers::fal::sora_2::build::build_fal_sora_2;
+use crate::generate::generate_video_v2::providers::fal::sora_2_pro::build::build_fal_sora_2_pro;
 use crate::generate::generate_video_v2::providers::fal::veo_2::build::build_fal_veo_2;
 use crate::generate::generate_video_v2::providers::fal::veo_3::build::build_fal_veo_3;
 use crate::generate::generate_video_v2::providers::fal::veo_3_fast::build::build_fal_veo_3_fast;
@@ -189,6 +191,8 @@ impl GenerateVideoRequestBuilder {
       (Provider::Fal, CommonVideoModel::Kling3p0Standard) => true,
       (Provider::Fal, CommonVideoModel::Seedance10Lite) => true,
       (Provider::Fal, CommonVideoModel::Seedance1p5Pro) => true,
+      (Provider::Fal, CommonVideoModel::Sora2) => true,
+      (Provider::Fal, CommonVideoModel::Sora2Pro) => true,
       (Provider::Fal, CommonVideoModel::Veo2) => true,
       (Provider::Fal, CommonVideoModel::Veo3) => true,
       (Provider::Fal, CommonVideoModel::Veo3Fast) => true,
@@ -231,6 +235,8 @@ impl GenerateVideoRequestBuilder {
       (Provider::Fal, CommonVideoModel::Kling3p0Standard) => build_fal_kling_3p0_standard(self),
       (Provider::Fal, CommonVideoModel::Seedance10Lite) => build_fal_seedance_1p0_lite(self),
       (Provider::Fal, CommonVideoModel::Seedance1p5Pro) => build_fal_seedance_1p5_pro(self),
+      (Provider::Fal, CommonVideoModel::Sora2) => build_fal_sora_2(self),
+      (Provider::Fal, CommonVideoModel::Sora2Pro) => build_fal_sora_2_pro(self),
       (Provider::Fal, CommonVideoModel::Veo2) => build_fal_veo_2(self),
       (Provider::Fal, CommonVideoModel::Veo3) => build_fal_veo_3(self),
       (Provider::Fal, CommonVideoModel::Veo3Fast) => build_fal_veo_3_fast(self),

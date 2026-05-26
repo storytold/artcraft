@@ -7,6 +7,8 @@ pub mod kling_3p0_pro;
 pub mod kling_3p0_standard;
 pub mod seedance_1p0_lite;
 pub mod seedance_1p5_pro;
+pub mod sora_2;
+pub mod sora_2_pro;
 pub mod veo_2;
 pub mod veo_3;
 pub mod veo_3_fast;

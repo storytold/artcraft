@@ -39,6 +39,10 @@ use crate::generate::generate_video_v2::providers::fal::kling_3p0_standard::cost
 use crate::generate::generate_video_v2::providers::fal::kling_3p0_standard::request::FalKling3p0StandardRequestState;
 use crate::generate::generate_video_v2::providers::fal::seedance_1p0_lite::cost::FalSeedance10LiteCostState;
 use crate::generate::generate_video_v2::providers::fal::seedance_1p0_lite::request::FalSeedance10LiteRequestState;
+use crate::generate::generate_video_v2::providers::fal::sora_2::cost::FalSora2CostState;
+use crate::generate::generate_video_v2::providers::fal::sora_2::request::FalSora2RequestState;
+use crate::generate::generate_video_v2::providers::fal::sora_2_pro::cost::FalSora2ProCostState;
+use crate::generate::generate_video_v2::providers::fal::sora_2_pro::request::FalSora2ProRequestState;
 use crate::generate::generate_video_v2::providers::fal::seedance_1p5_pro::cost::FalSeedance1p5ProCostState;
 use crate::generate::generate_video_v2::providers::fal::seedance_1p5_pro::request::FalSeedance1p5ProRequestState;
 use crate::generate::generate_video_v2::providers::fal::veo_2::cost::FalVeo2CostState;
@@ -85,6 +89,8 @@ pub enum VideoGenerationRequest {
   FalKling3p0Standard(FalKling3p0StandardRequestState),
   FalSeedance10Lite(FalSeedance10LiteRequestState),
   FalSeedance1p5Pro(FalSeedance1p5ProRequestState),
+  FalSora2(FalSora2RequestState),
+  FalSora2Pro(FalSora2ProRequestState),
   FalVeo2(FalVeo2RequestState),
   FalVeo3(FalVeo3RequestState),
   FalVeo3Fast(FalVeo3FastRequestState),
@@ -121,6 +127,8 @@ impl VideoGenerationRequest {
       Self::FalKling3p0Standard(_) => Provider::Fal,
       Self::FalSeedance10Lite(_) => Provider::Fal,
       Self::FalSeedance1p5Pro(_) => Provider::Fal,
+      Self::FalSora2(_) => Provider::Fal,
+      Self::FalSora2Pro(_) => Provider::Fal,
       Self::FalVeo2(_) => Provider::Fal,
       Self::FalVeo3(_) => Provider::Fal,
       Self::FalVeo3Fast(_) => Provider::Fal,
@@ -157,6 +165,8 @@ impl VideoGenerationRequest {
       VideoGenerationRequest::FalKling3p0Standard(request) => Ok(FalKling3p0StandardCostState::from_request(request).estimate_cost()),
       VideoGenerationRequest::FalSeedance10Lite(request) => Ok(FalSeedance10LiteCostState::from_request(request).estimate_cost()),
       VideoGenerationRequest::FalSeedance1p5Pro(request) => Ok(FalSeedance1p5ProCostState::from_request(request).estimate_cost()),
+      VideoGenerationRequest::FalSora2(request) => Ok(FalSora2CostState::from_request(request).estimate_cost()),
+      VideoGenerationRequest::FalSora2Pro(request) => Ok(FalSora2ProCostState::from_request(request).estimate_cost()),
       VideoGenerationRequest::FalVeo2(request) => Ok(FalVeo2CostState::from_request(request).estimate_cost()),
       VideoGenerationRequest::FalVeo3(request) => Ok(FalVeo3CostState::from_request(request).estimate_cost()),
       VideoGenerationRequest::FalVeo3Fast(request) => Ok(FalVeo3FastCostState::from_request(request).estimate_cost()),
@@ -248,6 +258,14 @@ impl VideoGenerationRequest {
         request.send(client_ref).await
       },
       VideoGenerationRequest::FalSeedance1p5Pro(request) => {
+        let client_ref = client.get_fal_client_ref()?;
+        request.send(client_ref).await
+      },
+      VideoGenerationRequest::FalSora2(request) => {
+        let client_ref = client.get_fal_client_ref()?;
+        request.send(client_ref).await
+      },
+      VideoGenerationRequest::FalSora2Pro(request) => {
         let client_ref = client.get_fal_client_ref()?;
         request.send(client_ref).await
       },
