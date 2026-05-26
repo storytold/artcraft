@@ -1,19 +1,6 @@
 use crate::core::commands::enqueue::generate_error::GenerateError;
 use crate::core::commands::enqueue::task_enqueue_success::TaskEnqueueSuccess;
 use crate::core::commands::generate::generate_video::artcraft::get_storyteller_creds_or_error::get_storyteller_creds_or_error;
-use crate::core::commands::generate::generate_video::artcraft::handle_artcraft_kling_1p6_pro::handle_artcraft_kling_1p6_pro;
-use crate::core::commands::generate::generate_video::artcraft::handle_artcraft_kling_2p1_master::handle_artcraft_kling_2p1_master;
-use crate::core::commands::generate::generate_video::artcraft::handle_artcraft_kling_2p1_pro::handle_artcraft_kling_2p1_pro;
-use crate::core::commands::generate::generate_video::artcraft::handle_artcraft_kling_2p5_turbo_pro::handle_artcraft_kling_2p5_turbo_pro;
-use crate::core::commands::generate::generate_video::artcraft::handle_artcraft_kling_2p6_pro::handle_artcraft_kling_2p6_pro;
-use crate::core::commands::generate::generate_video::artcraft::handle_artcraft_seedance_1_lite::handle_artcraft_seedance_1_lite;
-use crate::core::commands::generate::generate_video::artcraft::handle_artcraft_sora2::handle_artcraft_sora2;
-use crate::core::commands::generate::generate_video::artcraft::handle_artcraft_sora2_pro::handle_artcraft_sora2_pro;
-use crate::core::commands::generate::generate_video::artcraft::handle_artcraft_veo2::handle_artcraft_veo2;
-use crate::core::commands::generate::generate_video::artcraft::handle_artcraft_veo3::handle_artcraft_veo3;
-use crate::core::commands::generate::generate_video::artcraft::handle_artcraft_veo3_fast::handle_artcraft_veo3_fast;
-use crate::core::commands::generate::generate_video::artcraft::handle_artcraft_veo3p1::handle_artcraft_veo3p1;
-use crate::core::commands::generate::generate_video::artcraft::handle_artcraft_veo3p1_fast::handle_artcraft_veo3p1_fast;
 use crate::core::commands::generate::generate_video::artcraft::handle_artcraft_video_via_router::handle_artcraft_video_via_router;
 use crate::core::commands::generate::generate_video::request::{TauriGenerateVideoRequest, TauriVideoModel};
 use crate::core::events::generation_events::common::GenerationModel;
@@ -32,34 +19,30 @@ pub async fn handle_video_artcraft(
 
   let creds = get_storyteller_creds_or_error(app, storyteller_creds_manager)?;
 
-  match request.model {
-    None => {
-      Err(GenerateError::no_model_specified())
-    },
-    // Handled via router
-    Some(TauriVideoModel::Kling3p0Pro) => handle_artcraft_video_via_router(request, app_env_configs, &creds, CommonVideoModel::Kling3p0Pro, GenerationModel::Kling3p0Pro).await,
-    Some(TauriVideoModel::Kling3p0Standard) => handle_artcraft_video_via_router(request, app_env_configs, &creds, CommonVideoModel::Kling3p0Standard, GenerationModel::Kling3p0Standard).await,
-    Some(TauriVideoModel::Seedance1p5Pro) => handle_artcraft_video_via_router(request, app_env_configs, &creds, CommonVideoModel::Seedance1p5Pro, GenerationModel::Seedance1p5Pro).await,
-    Some(TauriVideoModel::Seedance2p0) => handle_artcraft_video_via_router(request, app_env_configs, &creds, CommonVideoModel::Seedance2p0, GenerationModel::Seedance2p0).await,
-    Some(TauriVideoModel::Seedance2p0Fast) => handle_artcraft_video_via_router(request, app_env_configs, &creds, CommonVideoModel::Seedance2p0Fast, GenerationModel::Seedance2p0Fast).await,
-    Some(TauriVideoModel::HappyHorse1p0) => handle_artcraft_video_via_router(request, app_env_configs, &creds, CommonVideoModel::HappyHorse1p0, GenerationModel::HappyHorse1p0).await,
-    // Legacy endpoints
-    Some(TauriVideoModel::Kling16Pro) => handle_artcraft_kling_1p6_pro(request, app_env_configs, &creds).await,
-    Some(TauriVideoModel::Kling21Pro) => handle_artcraft_kling_2p1_pro(request, app_env_configs, &creds).await,
-    Some(TauriVideoModel::Kling21Master) => handle_artcraft_kling_2p1_master(request, app_env_configs, &creds).await,
-    Some(TauriVideoModel::Kling2p5TurboPro) => handle_artcraft_kling_2p5_turbo_pro(request, app_env_configs, &creds).await,
-    Some(TauriVideoModel::Kling2p6Pro) => handle_artcraft_kling_2p6_pro(request, app_env_configs, &creds).await,
-    Some(TauriVideoModel::Seedance10Lite) => handle_artcraft_seedance_1_lite(request, app_env_configs, &creds).await,
-    Some(TauriVideoModel::Sora2) => handle_artcraft_sora2(request, app_env_configs, &creds).await,
-    Some(TauriVideoModel::Sora2Pro) => handle_artcraft_sora2_pro(request, app_env_configs, &creds).await,
-    Some(TauriVideoModel::Veo2) => handle_artcraft_veo2(request, app_env_configs, &creds).await,
-    Some(TauriVideoModel::Veo3) => handle_artcraft_veo3(request, app_env_configs, &creds).await,
-    Some(TauriVideoModel::Veo3Fast) => handle_artcraft_veo3_fast(request, app_env_configs, &creds).await,
-    Some(TauriVideoModel::Veo3p1) => handle_artcraft_veo3p1(request, app_env_configs, &creds).await,
-    Some(TauriVideoModel::Veo3p1Fast) => handle_artcraft_veo3p1_fast(request, app_env_configs, &creds).await,
-    Some(_) => {
-      Err(GenerateError::AnyhowError(
-        anyhow!("wrong logic: another branch should handle this: {:?}", request.model)))
-    },
-  }
+  let (router_model, generation_model) = match request.model {
+    None => return Err(GenerateError::no_model_specified()),
+    Some(TauriVideoModel::HappyHorse1p0) => (CommonVideoModel::HappyHorse1p0, GenerationModel::HappyHorse1p0),
+    Some(TauriVideoModel::Kling16Pro) => (CommonVideoModel::Kling16Pro, GenerationModel::Kling1_6),
+    Some(TauriVideoModel::Kling21Master) => (CommonVideoModel::Kling21Master, GenerationModel::Kling21Master),
+    Some(TauriVideoModel::Kling21Pro) => (CommonVideoModel::Kling21Pro, GenerationModel::Kling21Pro),
+    Some(TauriVideoModel::Kling2p5TurboPro) => (CommonVideoModel::Kling2p5TurboPro, GenerationModel::Kling2p5TurboPro),
+    Some(TauriVideoModel::Kling2p6Pro) => (CommonVideoModel::Kling2p6Pro, GenerationModel::Kling2p6Pro),
+    Some(TauriVideoModel::Kling3p0Pro) => (CommonVideoModel::Kling3p0Pro, GenerationModel::Kling3p0Pro),
+    Some(TauriVideoModel::Kling3p0Standard) => (CommonVideoModel::Kling3p0Standard, GenerationModel::Kling3p0Standard),
+    Some(TauriVideoModel::Seedance10Lite) => (CommonVideoModel::Seedance10Lite, GenerationModel::Seedance10Lite),
+    Some(TauriVideoModel::Seedance1p5Pro) => (CommonVideoModel::Seedance1p5Pro, GenerationModel::Seedance1p5Pro),
+    Some(TauriVideoModel::Seedance2p0) => (CommonVideoModel::Seedance2p0, GenerationModel::Seedance2p0),
+    Some(TauriVideoModel::Seedance2p0Fast) => (CommonVideoModel::Seedance2p0Fast, GenerationModel::Seedance2p0Fast),
+    Some(TauriVideoModel::Sora2) => (CommonVideoModel::Sora2, GenerationModel::Sora2),
+    Some(TauriVideoModel::Sora2Pro) => (CommonVideoModel::Sora2Pro, GenerationModel::Sora2Pro),
+    Some(TauriVideoModel::Veo2) => (CommonVideoModel::Veo2, GenerationModel::Veo2),
+    Some(TauriVideoModel::Veo3) => (CommonVideoModel::Veo3, GenerationModel::Veo3),
+    Some(TauriVideoModel::Veo3Fast) => (CommonVideoModel::Veo3Fast, GenerationModel::Veo3Fast),
+    Some(TauriVideoModel::Veo3p1) => (CommonVideoModel::Veo3p1, GenerationModel::Veo3p1),
+    Some(TauriVideoModel::Veo3p1Fast) => (CommonVideoModel::Veo3p1Fast, GenerationModel::Veo3p1Fast),
+    Some(other) => return Err(GenerateError::AnyhowError(
+      anyhow!("wrong logic: another branch should handle this: {:?}", other))),
+  };
+
+  handle_artcraft_video_via_router(request, app_env_configs, &creds, router_model, generation_model).await
 }
