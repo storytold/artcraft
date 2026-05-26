@@ -41,6 +41,10 @@ pub enum CommonImageModel {
   Seedream4p5,
   #[serde(rename = "seedream_5_lite")]
   Seedream5Lite,
+  #[serde(rename = "qwen_edit_2511_angles")]
+  QwenEdit2511Angles,
+  #[serde(rename = "flux_2_lora_angles")]
+  Flux2LoraAngles,
 }
 
 impl CommonImageModel {
@@ -62,6 +66,8 @@ impl CommonImageModel {
       Self::Seedream4 => CommonModelType::Seedream4,
       Self::Seedream4p5 => CommonModelType::Seedream4p5,
       Self::Seedream5Lite => CommonModelType::Seedream5Lite,
+      Self::QwenEdit2511Angles => CommonModelType::QwenEdit2511Angles,
+      Self::Flux2LoraAngles => CommonModelType::Flux2LoraAngles,
     }
   }
 }
@@ -93,6 +99,8 @@ mod tests {
       assert_serialization(CommonImageModel::Seedream4, "seedream_4");
       assert_serialization(CommonImageModel::Seedream4p5, "seedream_4p5");
       assert_serialization(CommonImageModel::Seedream5Lite, "seedream_5_lite");
+      assert_serialization(CommonImageModel::QwenEdit2511Angles, "qwen_edit_2511_angles");
+      assert_serialization(CommonImageModel::Flux2LoraAngles, "flux_2_lora_angles");
     }
 
     #[test]
@@ -113,6 +121,8 @@ mod tests {
         (CommonImageModel::Seedream4, CommonModelType::Seedream4),
         (CommonImageModel::Seedream4p5, CommonModelType::Seedream4p5),
         (CommonImageModel::Seedream5Lite, CommonModelType::Seedream5Lite),
+        (CommonImageModel::QwenEdit2511Angles, CommonModelType::QwenEdit2511Angles),
+        (CommonImageModel::Flux2LoraAngles, CommonModelType::Flux2LoraAngles),
       ];
       for (image_model, expected) in models {
         assert_eq!(image_model.to_common_model_type(), expected);
@@ -139,7 +149,7 @@ mod tests {
     #[test]
     fn variant_count() {
       use strum::IntoEnumIterator;
-      assert_eq!(CommonImageModel::iter().len(), 15);
+      assert_eq!(CommonImageModel::iter().len(), 17);
     }
 
     #[test]

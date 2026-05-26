@@ -1,6 +1,7 @@
 pub(crate) mod build_common;
 pub mod flux_1_dev;
 pub mod flux_1_schnell;
+pub mod flux_2_lora_angles;
 pub mod flux_pro_1p1;
 pub mod flux_pro_1p1_ultra;
 pub mod gpt_image_1;
@@ -9,6 +10,7 @@ pub mod gpt_image_2;
 pub mod nano_banana;
 pub mod nano_banana_2;
 pub mod nano_banana_pro;
+pub mod qwen_edit_2511_angles;
 pub(crate) mod request_common;
 pub mod seedream_4;
 pub mod seedream_4p5;

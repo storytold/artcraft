@@ -381,3 +381,52 @@ mod gpt_image_tests {
   #[test]
   fn gpt_image_2_edit_parity() { sweep_edit(CommonImageModel::GptImage2); }
 }
+
+// ── Angle models (Artcraft) ──
+//
+// v1 angle plans require exactly one input image (MediaFileToken). Cost is
+// always 4¢ × num_images regardless of aspect ratio or angles. The parity
+// sweep exercises the typical edit-mode input shape.
+
+mod angle_models_tests {
+  use super::*;
+  use tokens::tokens::media_files::MediaFileToken;
+
+  fn base_with_one_input(model: CommonImageModel) -> GenerateImageRequestBuilder {
+    GenerateImageRequestBuilder {
+      image_inputs: Some(ImageListRef::MediaFileTokens(vec![
+        MediaFileToken::new_from_str("mf_test"),
+      ])),
+      horizontal_angle: Some(45.0),
+      vertical_angle: Some(-15.0),
+      zoom: Some(2.0),
+      ..base_builder(model)
+    }
+  }
+
+  fn sweep(model: CommonImageModel) {
+    let batches = [None, Some(1u16), Some(2), Some(3), Some(4)];
+    for aspect_ratio in all_aspect_ratios() {
+      for batch in &batches {
+        for strategy in all_strategies() {
+          let builder = GenerateImageRequestBuilder {
+            aspect_ratio: *aspect_ratio,
+            image_batch_count: *batch,
+            request_mismatch_mitigation_strategy: *strategy,
+            ..base_with_one_input(model)
+          };
+          assert_parity_when_v1_succeeds(
+            &builder,
+            &format!("angle model={:?} ar={:?} batch={:?} strat={:?}", model, aspect_ratio, batch, strategy),
+          );
+        }
+      }
+    }
+  }
+
+  #[test]
+  fn qwen_edit_2511_angles_parity() { sweep(CommonImageModel::QwenEdit2511Angles); }
+
+  #[test]
+  fn flux_2_lora_angles_parity() { sweep(CommonImageModel::Flux2LoraAngles); }
+}

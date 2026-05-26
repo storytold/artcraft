@@ -7,6 +7,8 @@ use crate::generate::generate_image_v2::providers::artcraft::flux_1_dev::cost::A
 use crate::generate::generate_image_v2::providers::artcraft::flux_1_dev::request::ArtcraftFlux1DevRequestState;
 use crate::generate::generate_image_v2::providers::artcraft::flux_1_schnell::cost::ArtcraftFlux1SchnellCostState;
 use crate::generate::generate_image_v2::providers::artcraft::flux_1_schnell::request::ArtcraftFlux1SchnellRequestState;
+use crate::generate::generate_image_v2::providers::artcraft::flux_2_lora_angles::cost::ArtcraftFlux2LoraAnglesCostState;
+use crate::generate::generate_image_v2::providers::artcraft::flux_2_lora_angles::request::ArtcraftFlux2LoraAnglesRequestState;
 use crate::generate::generate_image_v2::providers::artcraft::flux_pro_1p1::cost::ArtcraftFluxPro1p1CostState;
 use crate::generate::generate_image_v2::providers::artcraft::flux_pro_1p1::request::ArtcraftFluxPro1p1RequestState;
 use crate::generate::generate_image_v2::providers::artcraft::flux_pro_1p1_ultra::cost::ArtcraftFluxPro1p1UltraCostState;
@@ -23,6 +25,8 @@ use crate::generate::generate_image_v2::providers::artcraft::nano_banana_2::cost
 use crate::generate::generate_image_v2::providers::artcraft::nano_banana_2::request::ArtcraftNanoBanana2RequestState;
 use crate::generate::generate_image_v2::providers::artcraft::nano_banana_pro::cost::ArtcraftNanoBananaProCostState;
 use crate::generate::generate_image_v2::providers::artcraft::nano_banana_pro::request::ArtcraftNanoBananaProRequestState;
+use crate::generate::generate_image_v2::providers::artcraft::qwen_edit_2511_angles::cost::ArtcraftQwenEdit2511AnglesCostState;
+use crate::generate::generate_image_v2::providers::artcraft::qwen_edit_2511_angles::request::ArtcraftQwenEdit2511AnglesRequestState;
 use crate::generate::generate_image_v2::providers::artcraft::seedream_4::cost::ArtcraftSeedream4CostState;
 use crate::generate::generate_image_v2::providers::artcraft::seedream_4::request::ArtcraftSeedream4RequestState;
 use crate::generate::generate_image_v2::providers::artcraft::seedream_4p5::cost::ArtcraftSeedream4p5CostState;
@@ -33,6 +37,8 @@ use crate::generate::generate_image_v2::providers::fal::flux_1_dev::cost::FalFlu
 use crate::generate::generate_image_v2::providers::fal::flux_1_dev::request::FalFlux1DevRequestState;
 use crate::generate::generate_image_v2::providers::fal::flux_1_schnell::cost::FalFlux1SchnellCostState;
 use crate::generate::generate_image_v2::providers::fal::flux_1_schnell::request::FalFlux1SchnellRequestState;
+use crate::generate::generate_image_v2::providers::fal::flux_2_lora_angles::cost::FalFlux2LoraAnglesCostState;
+use crate::generate::generate_image_v2::providers::fal::flux_2_lora_angles::request::FalFlux2LoraAnglesRequestState;
 use crate::generate::generate_image_v2::providers::fal::flux_pro_1p1::cost::FalFluxPro1p1CostState;
 use crate::generate::generate_image_v2::providers::fal::flux_pro_1p1::request::FalFluxPro1p1RequestState;
 use crate::generate::generate_image_v2::providers::fal::flux_pro_1p1_ultra::cost::FalFluxPro1p1UltraCostState;
@@ -49,6 +55,8 @@ use crate::generate::generate_image_v2::providers::fal::nano_banana_2::cost::Fal
 use crate::generate::generate_image_v2::providers::fal::nano_banana_2::request::FalNanoBanana2RequestState;
 use crate::generate::generate_image_v2::providers::fal::nano_banana_pro::cost::FalNanoBananaProCostState;
 use crate::generate::generate_image_v2::providers::fal::nano_banana_pro::request::FalNanoBananaProRequestState;
+use crate::generate::generate_image_v2::providers::fal::qwen_edit_2511_angles::cost::FalQwenEdit2511AnglesCostState;
+use crate::generate::generate_image_v2::providers::fal::qwen_edit_2511_angles::request::FalQwenEdit2511AnglesRequestState;
 use crate::generate::generate_image_v2::providers::fal::seedream_4::cost::FalSeedream4CostState;
 use crate::generate::generate_image_v2::providers::fal::seedream_4::request::FalSeedream4RequestState;
 use crate::generate::generate_image_v2::providers::fal::seedream_4p5::cost::FalSeedream4p5CostState;
@@ -72,6 +80,8 @@ pub enum ImageGenerationRequest {
   ArtcraftSeedream4(ArtcraftSeedream4RequestState),
   ArtcraftSeedream4p5(ArtcraftSeedream4p5RequestState),
   ArtcraftSeedream5Lite(ArtcraftSeedream5LiteRequestState),
+  ArtcraftQwenEdit2511Angles(ArtcraftQwenEdit2511AnglesRequestState),
+  ArtcraftFlux2LoraAngles(ArtcraftFlux2LoraAnglesRequestState),
 
   // ── Fal provider ──
   FalFlux1Dev(FalFlux1DevRequestState),
@@ -87,6 +97,8 @@ pub enum ImageGenerationRequest {
   FalSeedream4(FalSeedream4RequestState),
   FalSeedream4p5(FalSeedream4p5RequestState),
   FalSeedream5Lite(FalSeedream5LiteRequestState),
+  FalQwenEdit2511Angles(FalQwenEdit2511AnglesRequestState),
+  FalFlux2LoraAngles(FalFlux2LoraAnglesRequestState),
 }
 
 impl ImageGenerationRequest {
@@ -105,6 +117,8 @@ impl ImageGenerationRequest {
       Self::ArtcraftSeedream4(_) => Provider::Artcraft,
       Self::ArtcraftSeedream4p5(_) => Provider::Artcraft,
       Self::ArtcraftSeedream5Lite(_) => Provider::Artcraft,
+      Self::ArtcraftQwenEdit2511Angles(_) => Provider::Artcraft,
+      Self::ArtcraftFlux2LoraAngles(_) => Provider::Artcraft,
 
       Self::FalFlux1Dev(_) => Provider::Fal,
       Self::FalFlux1Schnell(_) => Provider::Fal,
@@ -119,6 +133,8 @@ impl ImageGenerationRequest {
       Self::FalSeedream4(_) => Provider::Fal,
       Self::FalSeedream4p5(_) => Provider::Fal,
       Self::FalSeedream5Lite(_) => Provider::Fal,
+      Self::FalQwenEdit2511Angles(_) => Provider::Fal,
+      Self::FalFlux2LoraAngles(_) => Provider::Fal,
     }
   }
 
@@ -164,6 +180,12 @@ impl ImageGenerationRequest {
       Self::ArtcraftSeedream5Lite(request) => {
         Ok(ArtcraftSeedream5LiteCostState::from_request(request).estimate_cost())
       }
+      Self::ArtcraftQwenEdit2511Angles(request) => {
+        Ok(ArtcraftQwenEdit2511AnglesCostState::from_request(request).estimate_cost())
+      }
+      Self::ArtcraftFlux2LoraAngles(request) => {
+        Ok(ArtcraftFlux2LoraAnglesCostState::from_request(request).estimate_cost())
+      }
 
       // ── Fal ──
       Self::FalFlux1Dev(request) => Ok(FalFlux1DevCostState::from_request(request).estimate_cost()),
@@ -179,6 +201,8 @@ impl ImageGenerationRequest {
       Self::FalSeedream4(request) => Ok(FalSeedream4CostState::from_request(request).estimate_cost()),
       Self::FalSeedream4p5(request) => Ok(FalSeedream4p5CostState::from_request(request).estimate_cost()),
       Self::FalSeedream5Lite(request) => Ok(FalSeedream5LiteCostState::from_request(request).estimate_cost()),
+      Self::FalQwenEdit2511Angles(request) => Ok(FalQwenEdit2511AnglesCostState::from_request(request).estimate_cost()),
+      Self::FalFlux2LoraAngles(request) => Ok(FalFlux2LoraAnglesCostState::from_request(request).estimate_cost()),
     }
   }
 
@@ -237,6 +261,14 @@ impl ImageGenerationRequest {
         let artcraft_client = client.get_artcraft_client_ref()?;
         request.send(artcraft_client).await
       }
+      Self::ArtcraftQwenEdit2511Angles(request) => {
+        let artcraft_client = client.get_artcraft_client_ref()?;
+        request.send(artcraft_client).await
+      }
+      Self::ArtcraftFlux2LoraAngles(request) => {
+        let artcraft_client = client.get_artcraft_client_ref()?;
+        request.send(artcraft_client).await
+      }
 
       // ── Fal ──
       Self::FalFlux1Dev(request) => {
@@ -291,6 +323,16 @@ impl ImageGenerationRequest {
         request.send(fal_client).await
       }
       Self::FalSeedream5Lite(request) => {
+        let fal_client = client.get_fal_client_ref()?;
+        request.send(fal_client).await
+      }
+      Self::FalQwenEdit2511Angles(request) => {
+        // Webhook-required endpoint.
+        let fal_client = client.get_fal_client_ref()?;
+        request.send(fal_client).await
+      }
+      Self::FalFlux2LoraAngles(request) => {
+        // Webhook-required endpoint.
         let fal_client = client.get_fal_client_ref()?;
         request.send(fal_client).await
       }
