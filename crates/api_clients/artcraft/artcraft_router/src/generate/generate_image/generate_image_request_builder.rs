@@ -12,6 +12,8 @@ use crate::generate::generate_image::image_generation_plan::ImageGenerationPlan;
 use crate::generate::generate_image_v2::image_generation_draft_or_request::ImageGenerationDraftOrRequest;
 use crate::generate::generate_image_v2::providers::fal::flux_1_dev::build::build_fal_flux_1_dev;
 use crate::generate::generate_image_v2::providers::fal::flux_1_schnell::build::build_fal_flux_1_schnell;
+use crate::generate::generate_image_v2::providers::fal::flux_pro_1p1::build::build_fal_flux_pro_1p1;
+use crate::generate::generate_image_v2::providers::fal::flux_pro_1p1_ultra::build::build_fal_flux_pro_1p1_ultra;
 use crate::generate::generate_image_v2::providers::fal::gpt_image_1::build::build_fal_gpt_image_1;
 use crate::generate::generate_image_v2::providers::fal::gpt_image_1p5::build::build_fal_gpt_image_1p5;
 use crate::generate::generate_image_v2::providers::fal::gpt_image_2::build::build_fal_gpt_image_2;
@@ -102,6 +104,8 @@ impl GenerateImageRequestBuilder {
     match (self.provider, self.model) {
       (Provider::Fal, CommonImageModel::Flux1Dev) => true,
       (Provider::Fal, CommonImageModel::Flux1Schnell) => true,
+      (Provider::Fal, CommonImageModel::FluxPro11) => true,
+      (Provider::Fal, CommonImageModel::FluxPro11Ultra) => true,
       (Provider::Fal, CommonImageModel::GptImage1) => true,
       (Provider::Fal, CommonImageModel::GptImage1p5) => true,
       (Provider::Fal, CommonImageModel::GptImage2) => true,
@@ -115,6 +119,8 @@ impl GenerateImageRequestBuilder {
     match (self.provider, self.model) {
       (Provider::Fal, CommonImageModel::Flux1Dev) => build_fal_flux_1_dev(self),
       (Provider::Fal, CommonImageModel::Flux1Schnell) => build_fal_flux_1_schnell(self),
+      (Provider::Fal, CommonImageModel::FluxPro11) => build_fal_flux_pro_1p1(self),
+      (Provider::Fal, CommonImageModel::FluxPro11Ultra) => build_fal_flux_pro_1p1_ultra(self),
       (Provider::Fal, CommonImageModel::GptImage1) => build_fal_gpt_image_1(self),
       (Provider::Fal, CommonImageModel::GptImage1p5) => build_fal_gpt_image_1p5(self),
       (Provider::Fal, CommonImageModel::GptImage2) => build_fal_gpt_image_2(self),

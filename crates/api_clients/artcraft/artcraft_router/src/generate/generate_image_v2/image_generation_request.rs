@@ -7,6 +7,10 @@ use crate::generate::generate_image_v2::providers::fal::flux_1_dev::cost::FalFlu
 use crate::generate::generate_image_v2::providers::fal::flux_1_dev::request::FalFlux1DevRequestState;
 use crate::generate::generate_image_v2::providers::fal::flux_1_schnell::cost::FalFlux1SchnellCostState;
 use crate::generate::generate_image_v2::providers::fal::flux_1_schnell::request::FalFlux1SchnellRequestState;
+use crate::generate::generate_image_v2::providers::fal::flux_pro_1p1::cost::FalFluxPro1p1CostState;
+use crate::generate::generate_image_v2::providers::fal::flux_pro_1p1::request::FalFluxPro1p1RequestState;
+use crate::generate::generate_image_v2::providers::fal::flux_pro_1p1_ultra::cost::FalFluxPro1p1UltraCostState;
+use crate::generate::generate_image_v2::providers::fal::flux_pro_1p1_ultra::request::FalFluxPro1p1UltraRequestState;
 use crate::generate::generate_image_v2::providers::fal::gpt_image_1::cost::FalGptImage1CostState;
 use crate::generate::generate_image_v2::providers::fal::gpt_image_1::request::FalGptImage1RequestState;
 use crate::generate::generate_image_v2::providers::fal::gpt_image_1p5::cost::FalGptImage1p5CostState;
@@ -22,6 +26,8 @@ use crate::generate::generate_image_v2::providers::fal::nano_banana_pro::request
 pub enum ImageGenerationRequest {
   FalFlux1Dev(FalFlux1DevRequestState),
   FalFlux1Schnell(FalFlux1SchnellRequestState),
+  FalFluxPro1p1(FalFluxPro1p1RequestState),
+  FalFluxPro1p1Ultra(FalFluxPro1p1UltraRequestState),
   FalGptImage1(FalGptImage1RequestState),
   FalGptImage1p5(FalGptImage1p5RequestState),
   FalGptImage2(FalGptImage2RequestState),
@@ -34,6 +40,8 @@ impl ImageGenerationRequest {
     match self {
       Self::FalFlux1Dev(_) => Provider::Fal,
       Self::FalFlux1Schnell(_) => Provider::Fal,
+      Self::FalFluxPro1p1(_) => Provider::Fal,
+      Self::FalFluxPro1p1Ultra(_) => Provider::Fal,
       Self::FalGptImage1(_) => Provider::Fal,
       Self::FalGptImage1p5(_) => Provider::Fal,
       Self::FalGptImage2(_) => Provider::Fal,
@@ -49,6 +57,12 @@ impl ImageGenerationRequest {
       }
       Self::FalFlux1Schnell(request) => {
         Ok(FalFlux1SchnellCostState::from_request(request).estimate_cost())
+      }
+      Self::FalFluxPro1p1(request) => {
+        Ok(FalFluxPro1p1CostState::from_request(request).estimate_cost())
+      }
+      Self::FalFluxPro1p1Ultra(request) => {
+        Ok(FalFluxPro1p1UltraCostState::from_request(request).estimate_cost())
       }
       Self::FalGptImage1(request) => {
         Ok(FalGptImage1CostState::from_request(request).estimate_cost())
@@ -76,6 +90,15 @@ impl ImageGenerationRequest {
       }
       Self::FalFlux1Schnell(request) => {
         let fal_client = client.get_fal_webhook_optional_client_ref()?;
+        request.send(fal_client).await
+      }
+      Self::FalFluxPro1p1(request) => {
+        // Flux Pro 1.1 is webhook-required — uses the webhook-only RouterFalClient.
+        let fal_client = client.get_fal_client_ref()?;
+        request.send(fal_client).await
+      }
+      Self::FalFluxPro1p1Ultra(request) => {
+        let fal_client = client.get_fal_client_ref()?;
         request.send(fal_client).await
       }
       Self::FalGptImage1(request) => {
