@@ -20,6 +20,8 @@ use crate::generate::generate_video_v2::providers::artcraft::kling_3p0_pro::buil
 use crate::generate::generate_video_v2::providers::artcraft::kling_3p0_standard::build::build_artcraft_kling_3p0_standard;
 use crate::generate::generate_video_v2::providers::artcraft::preview_model::build::build_artcraft_preview_model;
 use crate::generate::generate_video_v2::providers::artcraft::preview_model_fast::build::build_artcraft_preview_model_fast;
+use crate::generate::generate_video_v2::providers::artcraft::seedance_1p0_lite::build::build_artcraft_seedance_1p0_lite;
+use crate::generate::generate_video_v2::providers::artcraft::seedance_1p5_pro::build::build_artcraft_seedance_1p5_pro;
 use crate::generate::generate_video_v2::providers::artcraft::seedance_2p0::build::build_artcraft_seedance_2p0;
 use crate::generate::generate_video_v2::providers::artcraft::seedance_2p0_fast::build::build_artcraft_seedance_2p0_fast;
 use crate::generate::generate_video_v2::providers::artcraft::seedance_2p0_u::build::build_artcraft_seedance_2p0_u;
@@ -163,6 +165,8 @@ impl GenerateVideoRequestBuilder {
       (Provider::Artcraft, CommonVideoModel::Seedance2p0BytePlusFast) => build_artcraft_seedance_2p0_bp_fast(self),
       (Provider::Artcraft, CommonVideoModel::PreviewModel) => build_artcraft_preview_model(self),
       (Provider::Artcraft, CommonVideoModel::PreviewModelFast) => build_artcraft_preview_model_fast(self),
+      (Provider::Artcraft, CommonVideoModel::Seedance10Lite) => build_artcraft_seedance_1p0_lite(self),
+      (Provider::Artcraft, CommonVideoModel::Seedance1p5Pro) => build_artcraft_seedance_1p5_pro(self),
       (Provider::Artcraft, CommonVideoModel::Sora2) => build_artcraft_sora_2(self),
       (Provider::Artcraft, CommonVideoModel::Sora2Pro) => build_artcraft_sora_2_pro(self),
       (Provider::Artcraft, CommonVideoModel::Veo2) => build_artcraft_veo_2(self),

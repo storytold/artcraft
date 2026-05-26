@@ -25,6 +25,10 @@ use crate::generate::generate_video_v2::providers::artcraft::preview_model::cost
 use crate::generate::generate_video_v2::providers::artcraft::preview_model::request::ArtcraftPreviewModelRequestState;
 use crate::generate::generate_video_v2::providers::artcraft::preview_model_fast::cost::ArtcraftPreviewModelFastCostState;
 use crate::generate::generate_video_v2::providers::artcraft::preview_model_fast::request::ArtcraftPreviewModelFastRequestState;
+use crate::generate::generate_video_v2::providers::artcraft::seedance_1p0_lite::cost::ArtcraftSeedance10LiteCostState;
+use crate::generate::generate_video_v2::providers::artcraft::seedance_1p0_lite::request::ArtcraftSeedance10LiteRequestState;
+use crate::generate::generate_video_v2::providers::artcraft::seedance_1p5_pro::cost::ArtcraftSeedance1p5ProCostState;
+use crate::generate::generate_video_v2::providers::artcraft::seedance_1p5_pro::request::ArtcraftSeedance1p5ProRequestState;
 use crate::generate::generate_video_v2::providers::artcraft::seedance_2p0::cost::ArtcraftSeedance2p0CostState;
 use crate::generate::generate_video_v2::providers::artcraft::seedance_2p0::request::ArtcraftSeedance2p0RequestState;
 use crate::generate::generate_video_v2::providers::artcraft::seedance_2p0_fast::cost::ArtcraftSeedance2p0FastCostState;
@@ -109,6 +113,8 @@ pub enum VideoGenerationRequest {
   ArtcraftKling3p0Standard(ArtcraftKling3p0StandardRequestState),
   ArtcraftPreviewModel(ArtcraftPreviewModelRequestState),
   ArtcraftPreviewModelFast(ArtcraftPreviewModelFastRequestState),
+  ArtcraftSeedance10Lite(ArtcraftSeedance10LiteRequestState),
+  ArtcraftSeedance1p5Pro(ArtcraftSeedance1p5ProRequestState),
   ArtcraftSeedance2p0(ArtcraftSeedance2p0RequestState),
   ArtcraftSeedance2p0Fast(ArtcraftSeedance2p0FastRequestState),
   ArtcraftSeedance2p0Ultra(ArtcraftSeedance2p0UltraRequestState),
@@ -161,6 +167,8 @@ impl VideoGenerationRequest {
       Self::ArtcraftKling3p0Standard(_) => Provider::Artcraft,
       Self::ArtcraftPreviewModel(_) => Provider::Artcraft,
       Self::ArtcraftPreviewModelFast(_) => Provider::Artcraft,
+      Self::ArtcraftSeedance10Lite(_) => Provider::Artcraft,
+      Self::ArtcraftSeedance1p5Pro(_) => Provider::Artcraft,
       Self::ArtcraftSeedance2p0(_) => Provider::Artcraft,
       Self::ArtcraftSeedance2p0Fast(_) => Provider::Artcraft,
       Self::ArtcraftSeedance2p0Ultra(_) => Provider::Artcraft,
@@ -213,6 +221,8 @@ impl VideoGenerationRequest {
       VideoGenerationRequest::ArtcraftKling3p0Standard(request) => Ok(ArtcraftKling3p0StandardCostState::from_request(request).estimate_cost()),
       VideoGenerationRequest::ArtcraftPreviewModel(request) => Ok(ArtcraftPreviewModelCostState::from_request(request).estimate_cost()),
       VideoGenerationRequest::ArtcraftPreviewModelFast(request) => Ok(ArtcraftPreviewModelFastCostState::from_request(request).estimate_cost()),
+      VideoGenerationRequest::ArtcraftSeedance10Lite(request) => Ok(ArtcraftSeedance10LiteCostState::from_request(request).estimate_cost()),
+      VideoGenerationRequest::ArtcraftSeedance1p5Pro(request) => Ok(ArtcraftSeedance1p5ProCostState::from_request(request).estimate_cost()),
       VideoGenerationRequest::ArtcraftSeedance2p0(request) => Ok(ArtcraftSeedance2p0CostState::from_request(request).estimate_cost()),
       VideoGenerationRequest::ArtcraftSeedance2p0Fast(request) => Ok(ArtcraftSeedance2p0FastCostState::from_request(request).estimate_cost()),
       VideoGenerationRequest::ArtcraftSeedance2p0Ultra(request) => Ok(ArtcraftSeedance2p0UltraCostState::from_request(request).estimate_cost()),
@@ -296,6 +306,14 @@ impl VideoGenerationRequest {
         request.send(client_ref).await
       },
       VideoGenerationRequest::ArtcraftPreviewModelFast(request) => {
+        let client_ref = client.get_artcraft_client_ref()?;
+        request.send(client_ref).await
+      },
+      VideoGenerationRequest::ArtcraftSeedance10Lite(request) => {
+        let client_ref = client.get_artcraft_client_ref()?;
+        request.send(client_ref).await
+      },
+      VideoGenerationRequest::ArtcraftSeedance1p5Pro(request) => {
         let client_ref = client.get_artcraft_client_ref()?;
         request.send(client_ref).await
       },
