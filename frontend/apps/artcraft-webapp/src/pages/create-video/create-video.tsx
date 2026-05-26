@@ -1,10 +1,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faClock, faWaveformLines } from "@fortawesome/pro-solid-svg-icons";
+import {
+  faClock,
+  faSparkles,
+  faWaveformLines,
+} from "@fortawesome/pro-solid-svg-icons";
 import { CharactersApi, FilterMediaClasses } from "@storyteller/api";
 import type { OmniGenVideoModelInfo } from "@storyteller/api";
-import { ToggleButton } from "@storyteller/ui-button";
+import { Button, ToggleButton } from "@storyteller/ui-button";
 import { PopoverMenu, type PopoverItem } from "@storyteller/ui-popover";
 import { SliderV2 } from "@storyteller/ui-sliderv2";
 import { Tooltip } from "@storyteller/ui-tooltip";
@@ -959,8 +963,20 @@ export default function CreateVideo() {
       description="Generate stunning AI videos with ArtCraft"
       authChecked={authChecked}
       hasContent={hasContent}
-      emptyStateTitle="Generate Video"
-      emptyStateSubtitle="Add a prompt, then generate"
+      emptyStateTitle="Create Video"
+      emptyStateSubtitle="Describe a scene. See it in motion."
+      emptyStateCta={
+        loggedIn ? undefined : (
+          <Button
+            variant="primary"
+            onClick={openSignupCta}
+            icon={faSparkles}
+            className="h-12 px-6 text-base font-semibold rounded-full"
+          >
+            Sign up to create
+          </Button>
+        )
+      }
       bottomOffset={promptHeight + 24}
       modelItems={modelItems}
       onModelChange={handleModelChange}

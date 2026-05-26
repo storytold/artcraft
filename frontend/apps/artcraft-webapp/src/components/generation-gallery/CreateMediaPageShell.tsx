@@ -2,6 +2,7 @@ import { type ReactNode } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSpinnerThird } from "@fortawesome/pro-solid-svg-icons";
 import { type PopoverItem } from "@storyteller/ui-popover";
+import { TruchetPattern } from "@storyteller/ui-vfx";
 import Seo from "../../components/seo";
 
 interface CreateMediaPageShellProps {
@@ -16,6 +17,9 @@ interface CreateMediaPageShellProps {
   hasContent: boolean;
   emptyStateTitle: string;
   emptyStateSubtitle: string;
+  // Optional CTA rendered under the empty-state subtitle (e.g. a signup button
+  // for logged-out visitors). Omitted for logged-in users.
+  emptyStateCta?: ReactNode;
   bottomOffset: number;
   // Model selector
   modelItems: PopoverItem[];
@@ -35,6 +39,7 @@ export function CreateMediaPageShell({
   hasContent,
   emptyStateTitle,
   emptyStateSubtitle,
+  emptyStateCta,
   bottomOffset,
   glowOrbs,
   gridContent,
@@ -66,6 +71,26 @@ export function CreateMediaPageShell({
           </div>
         ))}
 
+      {/* Subtle truchet pattern, only on the empty state so it never sits
+          behind the gallery grid. Masked to a soft center vignette. */}
+      {!hasContent && (
+        <div
+          aria-hidden
+          className="pointer-events-none fixed inset-0 z-0"
+          style={{
+            maskImage:
+              "radial-gradient(ellipse 70% 60% at 50% 50%, black 20%, transparent 80%)",
+            WebkitMaskImage:
+              "radial-gradient(ellipse 70% 60% at 50% 50%, black 20%, transparent 80%)",
+          }}
+        >
+          <TruchetPattern
+            intensity={0.5}
+            className="absolute inset-0 h-full w-full"
+          />
+        </div>
+      )}
+
       <div className="relative z-[1] h-full w-full">
         <div className="flex h-full w-full flex-col">
           {!hasContent && (
@@ -77,6 +102,7 @@ export function CreateMediaPageShell({
                 <span className="pt-2 text-lg text-white/80 md:text-xl">
                   {emptyStateSubtitle}
                 </span>
+                {emptyStateCta && <div className="pt-6">{emptyStateCta}</div>}
               </div>
             </div>
           )}

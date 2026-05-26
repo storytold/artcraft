@@ -1,10 +1,12 @@
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useState } from "react";
 import { create } from "zustand";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCheck } from "@fortawesome/pro-solid-svg-icons";
 import { Modal } from "@storyteller/ui-modal";
 import { Button } from "@storyteller/ui-button";
-import { useSession } from "../lib/session";
+import { GoogleLoginButton } from "./auth";
+import { refreshSession, useSession, useSessionStore } from "../lib/session";
 
 interface SignupCtaState {
   isOpen: boolean;
@@ -35,21 +37,39 @@ export function useSignupCta(): {
 }
 
 const PERKS: string[] = [
-  "Generate images and videos with top AI models",
+  "Generate images and videos with latest AI models",
   "Save your work and access it from any device",
+  "Access to our desktop app",
 ];
 
 export function SignupCtaModal() {
   const isOpen = useSignupCtaStore((s) => s.isOpen);
   const close = useSignupCtaStore((s) => s.close);
+  const navigate = useNavigate();
   const location = useLocation();
   const from = encodeURIComponent(location.pathname + location.search);
+  const [error, setError] = useState<string | null>(null);
+
+  // Mirror the login/signup pages: refresh the session so it reflects the new
+  // cookie, then send brand-new SSO users to set a password. Everyone else
+  // just closes the modal and stays on the page they were on.
+  const handleGoogleSuccess = async () => {
+    await refreshSession(true);
+    close();
+    if (useSessionStore.getState().passwordNotSet) {
+      navigate("/set-password");
+    }
+  };
+
+  const handleGoogleError = (message: string) => {
+    setError(message);
+  };
 
   return (
     <Modal
       isOpen={isOpen}
       onClose={close}
-      className="rounded-2xl w-full max-w-md overflow-hidden border border-white/10 bg-[#161618] p-0 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.6)]"
+      className="rounded-2xl w-full max-w-md overflow-hidden border border-white/[5%] bg-[#161618] p-0 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.6)]"
       allowBackgroundInteraction={false}
       showClose={true}
       closeOnOutsideClick={true}
@@ -58,7 +78,7 @@ export function SignupCtaModal() {
       backdropClassName="bg-black/80"
     >
       <div className="relative overflow-hidden">
-        {/* Off-center ambient glow — feels designed, not generic */}
+        {/* Off-center ambient glow, feels designed, not generic */}
         <div
           aria-hidden
           className="pointer-events-none absolute -top-24 -right-16 h-64 w-64 rounded-full bg-primary/25 blur-[80px]"
@@ -73,7 +93,7 @@ export function SignupCtaModal() {
             Start <span className="text-primary">crafting</span> in seconds.
           </h2>
           <p className="mt-3 max-w-[20rem] text-[15px] leading-relaxed text-white/55">
-            Free to try. Sign up and pick up where you left off.
+            Sign up and start creating right away.
           </p>
 
           <ul className="mt-7 space-y-3">
@@ -93,19 +113,41 @@ export function SignupCtaModal() {
             ))}
           </ul>
 
-          <div className="mt-8 flex flex-col gap-2">
+          <div className="mt-8 flex flex-col gap-3">
+            {error && (
+              <div className="rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-center text-sm text-red-500">
+                {error}
+              </div>
+            )}
+
             <Link to={`/signup?from=${from}`} onClick={close} className="block">
               <Button
                 variant="primary"
-                className="w-full h-12 text-sm font-semibold rounded-full"
+                className="w-full h-10 text-sm font-semibold rounded-full"
               >
-                Create free account
+                Create account with email
               </Button>
             </Link>
+
+            <div className="relative flex items-center justify-center py-1">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-white/10" />
+              </div>
+              <span className="relative bg-[#161618] px-4 text-xs uppercase tracking-widest text-white/40">
+                or
+              </span>
+            </div>
+
+            <GoogleLoginButton
+              mode="signup"
+              onSuccess={handleGoogleSuccess}
+              onError={handleGoogleError}
+            />
+
             <Link
               to={`/login?from=${from}`}
               onClick={close}
-              className="text-center text-[13px] text-white/55 hover:text-white transition-colors py-2"
+              className="text-center text-[13px] text-white/55 hover:text-white transition-colors py-1"
             >
               Already have an account?{" "}
               <span className="font-medium text-white/90">Log in</span>

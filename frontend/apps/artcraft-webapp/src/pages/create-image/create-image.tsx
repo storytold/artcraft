@@ -3,6 +3,7 @@ import { FilterMediaClasses } from "@storyteller/api";
 import type { OmniGenImageModelInfo } from "@storyteller/api";
 import { PopoverMenu, type PopoverItem } from "@storyteller/ui-popover";
 import { Tooltip } from "@storyteller/ui-tooltip";
+import { Button } from "@storyteller/ui-button";
 import { GalleryModal, type GalleryItem } from "@storyteller/ui-gallery-modal";
 import { PromptBox, type RefImage } from "../../components/prompt-box";
 import {
@@ -27,6 +28,7 @@ import {
   getModelCreatorIconPath,
 } from "../../lib/omni-gen-hooks";
 import { useSignupCta } from "../../components/signup-cta-modal";
+import { faSparkles } from "@fortawesome/pro-solid-svg-icons";
 
 // ── Constants ────────────────────────────────────────────────────────────
 
@@ -364,8 +366,20 @@ export default function CreateImage() {
       description="Generate stunning AI images with ArtCraft"
       authChecked={authChecked}
       hasContent={hasContent}
-      emptyStateTitle="Generate Image"
-      emptyStateSubtitle="Add a prompt, then generate"
+      emptyStateTitle="Create Image"
+      emptyStateSubtitle="Describe anything. See it in seconds."
+      emptyStateCta={
+        loggedIn ? undefined : (
+          <Button
+            variant="primary"
+            onClick={openSignupCta}
+            icon={faSparkles}
+            className="h-12 px-6 text-base font-semibold rounded-full"
+          >
+            Sign up to create
+          </Button>
+        )
+      }
       bottomOffset={promptHeight + 24}
       modelItems={modelItems}
       onModelChange={handleModelChange}
