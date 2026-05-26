@@ -1,6 +1,13 @@
 pub(crate) mod build_common;
 pub mod grok_imagine_video;
 pub mod happy_horse_1p0;
+pub mod kling_1_6_pro;
+pub mod kling_2_1_master;
+pub mod kling_2_1_pro;
+pub mod kling_2_5_turbo_pro;
+pub mod kling_2_6_pro;
+pub mod kling_3p0_pro;
+pub mod kling_3p0_standard;
 pub mod preview_model;
 pub mod preview_model_fast;
 pub(crate) mod request_common;
@@ -11,3 +18,6 @@ pub mod seedance_2p0_u_fast;
 pub mod seedance_2p0_u;
 pub mod seedance_2p0_bp;
 pub mod seedance_2p0_bp_fast;
+
+#[cfg(test)]
+mod kling_cost_parity_tests;

@@ -7,6 +7,20 @@ use crate::generate::generate_video_v2::providers::artcraft::grok_imagine_video:
 use crate::generate::generate_video_v2::providers::artcraft::grok_imagine_video::request::ArtcraftGrokImagineVideoRequestState;
 use crate::generate::generate_video_v2::providers::artcraft::happy_horse_1p0::cost::ArtcraftHappyHorse1p0CostState;
 use crate::generate::generate_video_v2::providers::artcraft::happy_horse_1p0::request::ArtcraftHappyHorse1p0RequestState;
+use crate::generate::generate_video_v2::providers::artcraft::kling_1_6_pro::cost::ArtcraftKling16ProCostState;
+use crate::generate::generate_video_v2::providers::artcraft::kling_1_6_pro::request::ArtcraftKling16ProRequestState;
+use crate::generate::generate_video_v2::providers::artcraft::kling_2_1_master::cost::ArtcraftKling21MasterCostState;
+use crate::generate::generate_video_v2::providers::artcraft::kling_2_1_master::request::ArtcraftKling21MasterRequestState;
+use crate::generate::generate_video_v2::providers::artcraft::kling_2_1_pro::cost::ArtcraftKling21ProCostState;
+use crate::generate::generate_video_v2::providers::artcraft::kling_2_1_pro::request::ArtcraftKling21ProRequestState;
+use crate::generate::generate_video_v2::providers::artcraft::kling_2_5_turbo_pro::cost::ArtcraftKling2p5TurboProCostState;
+use crate::generate::generate_video_v2::providers::artcraft::kling_2_5_turbo_pro::request::ArtcraftKling2p5TurboProRequestState;
+use crate::generate::generate_video_v2::providers::artcraft::kling_2_6_pro::cost::ArtcraftKling2p6ProCostState;
+use crate::generate::generate_video_v2::providers::artcraft::kling_2_6_pro::request::ArtcraftKling2p6ProRequestState;
+use crate::generate::generate_video_v2::providers::artcraft::kling_3p0_pro::cost::ArtcraftKling3p0ProCostState;
+use crate::generate::generate_video_v2::providers::artcraft::kling_3p0_pro::request::ArtcraftKling3p0ProRequestState;
+use crate::generate::generate_video_v2::providers::artcraft::kling_3p0_standard::cost::ArtcraftKling3p0StandardCostState;
+use crate::generate::generate_video_v2::providers::artcraft::kling_3p0_standard::request::ArtcraftKling3p0StandardRequestState;
 use crate::generate::generate_video_v2::providers::artcraft::preview_model::cost::ArtcraftPreviewModelCostState;
 use crate::generate::generate_video_v2::providers::artcraft::preview_model::request::ArtcraftPreviewModelRequestState;
 use crate::generate::generate_video_v2::providers::artcraft::preview_model_fast::cost::ArtcraftPreviewModelFastCostState;
@@ -72,6 +86,13 @@ use crate::generate::generate_video_v2::providers::kinovi::seedance_2p0_fast::re
 pub enum VideoGenerationRequest {
   ArtcraftGrokImagineVideo(ArtcraftGrokImagineVideoRequestState),
   ArtcraftHappyHorse1p0(ArtcraftHappyHorse1p0RequestState),
+  ArtcraftKling16Pro(ArtcraftKling16ProRequestState),
+  ArtcraftKling21Master(ArtcraftKling21MasterRequestState),
+  ArtcraftKling21Pro(ArtcraftKling21ProRequestState),
+  ArtcraftKling2p5TurboPro(ArtcraftKling2p5TurboProRequestState),
+  ArtcraftKling2p6Pro(ArtcraftKling2p6ProRequestState),
+  ArtcraftKling3p0Pro(ArtcraftKling3p0ProRequestState),
+  ArtcraftKling3p0Standard(ArtcraftKling3p0StandardRequestState),
   ArtcraftPreviewModel(ArtcraftPreviewModelRequestState),
   ArtcraftPreviewModelFast(ArtcraftPreviewModelFastRequestState),
   ArtcraftSeedance2p0(ArtcraftSeedance2p0RequestState),
@@ -110,6 +131,13 @@ impl VideoGenerationRequest {
     match self {
       Self::ArtcraftGrokImagineVideo(_) => Provider::Artcraft,
       Self::ArtcraftHappyHorse1p0(_) => Provider::Artcraft,
+      Self::ArtcraftKling16Pro(_) => Provider::Artcraft,
+      Self::ArtcraftKling21Master(_) => Provider::Artcraft,
+      Self::ArtcraftKling21Pro(_) => Provider::Artcraft,
+      Self::ArtcraftKling2p5TurboPro(_) => Provider::Artcraft,
+      Self::ArtcraftKling2p6Pro(_) => Provider::Artcraft,
+      Self::ArtcraftKling3p0Pro(_) => Provider::Artcraft,
+      Self::ArtcraftKling3p0Standard(_) => Provider::Artcraft,
       Self::ArtcraftPreviewModel(_) => Provider::Artcraft,
       Self::ArtcraftPreviewModelFast(_) => Provider::Artcraft,
       Self::ArtcraftSeedance2p0(_) => Provider::Artcraft,
@@ -148,6 +176,13 @@ impl VideoGenerationRequest {
     match self {
       VideoGenerationRequest::ArtcraftGrokImagineVideo(request) => Ok(ArtcraftGrokImagineVideoCostState::from_request(request).estimate_cost()),
       VideoGenerationRequest::ArtcraftHappyHorse1p0(request) => Ok(ArtcraftHappyHorse1p0CostState::from_request(request).estimate_cost()),
+      VideoGenerationRequest::ArtcraftKling16Pro(request) => Ok(ArtcraftKling16ProCostState::from_request(request).estimate_cost()),
+      VideoGenerationRequest::ArtcraftKling21Master(request) => Ok(ArtcraftKling21MasterCostState::from_request(request).estimate_cost()),
+      VideoGenerationRequest::ArtcraftKling21Pro(request) => Ok(ArtcraftKling21ProCostState::from_request(request).estimate_cost()),
+      VideoGenerationRequest::ArtcraftKling2p5TurboPro(request) => Ok(ArtcraftKling2p5TurboProCostState::from_request(request).estimate_cost()),
+      VideoGenerationRequest::ArtcraftKling2p6Pro(request) => Ok(ArtcraftKling2p6ProCostState::from_request(request).estimate_cost()),
+      VideoGenerationRequest::ArtcraftKling3p0Pro(request) => Ok(ArtcraftKling3p0ProCostState::from_request(request).estimate_cost()),
+      VideoGenerationRequest::ArtcraftKling3p0Standard(request) => Ok(ArtcraftKling3p0StandardCostState::from_request(request).estimate_cost()),
       VideoGenerationRequest::ArtcraftPreviewModel(request) => Ok(ArtcraftPreviewModelCostState::from_request(request).estimate_cost()),
       VideoGenerationRequest::ArtcraftPreviewModelFast(request) => Ok(ArtcraftPreviewModelFastCostState::from_request(request).estimate_cost()),
       VideoGenerationRequest::ArtcraftSeedance2p0(request) => Ok(ArtcraftSeedance2p0CostState::from_request(request).estimate_cost()),
@@ -190,6 +225,34 @@ impl VideoGenerationRequest {
         request.send(client_ref).await
       },
       VideoGenerationRequest::ArtcraftHappyHorse1p0(request) => {
+        let client_ref = client.get_artcraft_client_ref()?;
+        request.send(client_ref).await
+      },
+      VideoGenerationRequest::ArtcraftKling16Pro(request) => {
+        let client_ref = client.get_artcraft_client_ref()?;
+        request.send(client_ref).await
+      },
+      VideoGenerationRequest::ArtcraftKling21Master(request) => {
+        let client_ref = client.get_artcraft_client_ref()?;
+        request.send(client_ref).await
+      },
+      VideoGenerationRequest::ArtcraftKling21Pro(request) => {
+        let client_ref = client.get_artcraft_client_ref()?;
+        request.send(client_ref).await
+      },
+      VideoGenerationRequest::ArtcraftKling2p5TurboPro(request) => {
+        let client_ref = client.get_artcraft_client_ref()?;
+        request.send(client_ref).await
+      },
+      VideoGenerationRequest::ArtcraftKling2p6Pro(request) => {
+        let client_ref = client.get_artcraft_client_ref()?;
+        request.send(client_ref).await
+      },
+      VideoGenerationRequest::ArtcraftKling3p0Pro(request) => {
+        let client_ref = client.get_artcraft_client_ref()?;
+        request.send(client_ref).await
+      },
+      VideoGenerationRequest::ArtcraftKling3p0Standard(request) => {
         let client_ref = client.get_artcraft_client_ref()?;
         request.send(client_ref).await
       },
