@@ -10,7 +10,6 @@ import {
   faBroom,
   faBomb,
   faCircleExclamation,
-  faTriangleExclamation,
   faCopy,
   faCheck,
 } from "@fortawesome/pro-solid-svg-icons";
@@ -217,7 +216,6 @@ const InProgressCard = ({
     : task.estimatedTimeLeftMs != null && task.estimatedTimeLeftMs > 0
       ? formatTimeLeft(task.estimatedTimeLeftMs)
       : null;
-  const isSeedance2 = task.modelType === "seedance_2p0";
   const modelIconPath = task.modelType
     ? getModelCreatorIconPath(task.modelType)
     : null;
@@ -243,21 +241,6 @@ const InProgressCard = ({
                 />
               )}
               {task.title}
-              {isSeedance2 && (
-                <Tooltip
-                  content="Seedance 2.0 is in Early Alpha. Generations may be slow and may experience outages."
-                  position="top"
-                  strategy="fixed"
-                  className="w-[200px] text-wrap bg-yellow-400/60 backdrop-blur-3xl"
-                  zIndex={50}
-                  delay={100}
-                >
-                  <FontAwesomeIcon
-                    icon={faTriangleExclamation}
-                    className="h-3 w-3 shrink-0 text-yellow-400/60 transition-all hover:text-yellow-400"
-                  />
-                </Tooltip>
-              )}
             </div>
             <div className="ml-2 shrink-0 text-xs tabular-nums text-base-fg/60">
               {progressPercent}%
