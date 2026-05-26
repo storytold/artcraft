@@ -23,6 +23,10 @@ use crate::generate::generate_video_v2::providers::artcraft::seedance_2p0_bp::co
 use crate::generate::generate_video_v2::providers::artcraft::seedance_2p0_bp::request::ArtcraftSeedance2p0BytePlusRequestState;
 use crate::generate::generate_video_v2::providers::artcraft::seedance_2p0_bp_fast::cost::ArtcraftSeedance2p0BytePlusFastCostState;
 use crate::generate::generate_video_v2::providers::artcraft::seedance_2p0_bp_fast::request::ArtcraftSeedance2p0BytePlusFastRequestState;
+use crate::generate::generate_video_v2::providers::fal::seedance_1p0_lite::cost::FalSeedance10LiteCostState;
+use crate::generate::generate_video_v2::providers::fal::seedance_1p0_lite::request::FalSeedance10LiteRequestState;
+use crate::generate::generate_video_v2::providers::fal::seedance_1p5_pro::cost::FalSeedance1p5ProCostState;
+use crate::generate::generate_video_v2::providers::fal::seedance_1p5_pro::request::FalSeedance1p5ProRequestState;
 use crate::generate::generate_video_v2::providers::gmicloud::seedance_2p0_g::cost::GmiCloudSeedance2p0UltraCostState;
 use crate::generate::generate_video_v2::providers::gmicloud::seedance_2p0_g::request::GmiCloudSeedance2p0UltraRequestState;
 use crate::generate::generate_video_v2::providers::gmicloud::seedance_2p0_fast_g::cost::GmiCloudSeedance2p0UltraFastCostState;
@@ -48,6 +52,8 @@ pub enum VideoGenerationRequest {
   ArtcraftSeedance2p0UltraFast(ArtcraftSeedance2p0UltraFastRequestState),
   ArtcraftSeedance2p0BytePlus(ArtcraftSeedance2p0BytePlusRequestState),
   ArtcraftSeedance2p0BytePlusFast(ArtcraftSeedance2p0BytePlusFastRequestState),
+  FalSeedance10Lite(FalSeedance10LiteRequestState),
+  FalSeedance1p5Pro(FalSeedance1p5ProRequestState),
   GmiCloudSeedance2p0Ultra(GmiCloudSeedance2p0UltraRequestState),
   GmiCloudSeedance2p0UltraFast(GmiCloudSeedance2p0UltraFastRequestState),
   GrokApiGrokImagineVideo(GrokApiGrokImagineVideoRequestState),
@@ -70,6 +76,8 @@ impl VideoGenerationRequest {
       Self::ArtcraftSeedance2p0UltraFast(_) => Provider::Artcraft,
       Self::ArtcraftSeedance2p0BytePlus(_) => Provider::Artcraft,
       Self::ArtcraftSeedance2p0BytePlusFast(_) => Provider::Artcraft,
+      Self::FalSeedance10Lite(_) => Provider::Fal,
+      Self::FalSeedance1p5Pro(_) => Provider::Fal,
       Self::GmiCloudSeedance2p0Ultra(_) => Provider::GmiCloud,
       Self::GmiCloudSeedance2p0UltraFast(_) => Provider::GmiCloud,
       Self::GrokApiGrokImagineVideo(_) => Provider::GrokApi,
@@ -92,6 +100,8 @@ impl VideoGenerationRequest {
       VideoGenerationRequest::ArtcraftSeedance2p0UltraFast(request) => Ok(ArtcraftSeedance2p0UltraFastCostState::from_request(request).estimate_cost()),
       VideoGenerationRequest::ArtcraftSeedance2p0BytePlus(request) => Ok(ArtcraftSeedance2p0BytePlusCostState::from_request(request).estimate_cost()),
       VideoGenerationRequest::ArtcraftSeedance2p0BytePlusFast(request) => Ok(ArtcraftSeedance2p0BytePlusFastCostState::from_request(request).estimate_cost()),
+      VideoGenerationRequest::FalSeedance10Lite(request) => Ok(FalSeedance10LiteCostState::from_request(request).estimate_cost()),
+      VideoGenerationRequest::FalSeedance1p5Pro(request) => Ok(FalSeedance1p5ProCostState::from_request(request).estimate_cost()),
       VideoGenerationRequest::GmiCloudSeedance2p0Ultra(request) => Ok(GmiCloudSeedance2p0UltraCostState::from_request(request).estimate_cost()),
       VideoGenerationRequest::GmiCloudSeedance2p0UltraFast(request) => Ok(GmiCloudSeedance2p0UltraFastCostState::from_request(request).estimate_cost()),
       VideoGenerationRequest::GrokApiGrokImagineVideo(request) => Ok(GrokApiGrokImagineVideoCostState::from_request(request).estimate_cost()),
@@ -143,6 +153,14 @@ impl VideoGenerationRequest {
       },
       VideoGenerationRequest::ArtcraftSeedance2p0BytePlusFast(request) => {
         let client_ref = client.get_artcraft_client_ref()?;
+        request.send(client_ref).await
+      },
+      VideoGenerationRequest::FalSeedance10Lite(request) => {
+        let client_ref = client.get_fal_client_ref()?;
+        request.send(client_ref).await
+      },
+      VideoGenerationRequest::FalSeedance1p5Pro(request) => {
+        let client_ref = client.get_fal_client_ref()?;
         request.send(client_ref).await
       },
       VideoGenerationRequest::GmiCloudSeedance2p0Ultra(request) => {

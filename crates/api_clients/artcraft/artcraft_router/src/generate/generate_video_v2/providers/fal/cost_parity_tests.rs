@@ -1,0 +1,288 @@
+//! Combinatorial cost-parity tests between v1 (`build().estimate_cost()`) and v2
+//! (`build2().estimate_cost()`) for the Fal-hosted Seedance video models.
+//!
+//! The goal: every request that produces a price in v1 must produce the
+//! identical price in v2. If any callsite picks a different price after the
+//! port, billing diverges. These tests close that gap.
+//!
+//! Both pipelines ultimately delegate to the same `FalRequestCostCalculator`
+//! impls in `fal_client`, so parity should hold by construction — but we
+//! exercise a wide variety of inputs anyway to catch any drift in the request
+//! plumbing (e.g. resolution/duration mapping errors, default-value mismatches,
+//! aspect-ratio fallthroughs).
+
+#![cfg(test)]
+
+use crate::api::common_aspect_ratio::CommonAspectRatio;
+use crate::api::common_resolution::CommonResolution;
+use crate::api::common_video_model::CommonVideoModel;
+use crate::api::image_ref::ImageRef;
+use crate::api::provider::Provider;
+use crate::client::request_mismatch_mitigation_strategy::RequestMismatchMitigationStrategy;
+use crate::generate::generate_video::generate_video_request_builder::GenerateVideoRequestBuilder;
+
+const DUMMY_IMAGE: &str = "https://example.com/dummy.png";
+const DUMMY_END_FRAME: &str = "https://example.com/dummy_end.png";
+
+// ── seedance 1.0 lite ──
+
+mod seedance_1p0_lite {
+  use super::*;
+
+  fn base_builder() -> GenerateVideoRequestBuilder {
+    GenerateVideoRequestBuilder {
+      model: CommonVideoModel::Seedance10Lite,
+      provider: Provider::Fal,
+      // 1.0 lite is image-to-video only — a start_frame is required.
+      start_frame: Some(ImageRef::Url(DUMMY_IMAGE.to_string())),
+      ..Default::default()
+    }
+  }
+
+  fn all_resolutions() -> &'static [Option<CommonResolution>] {
+    &[
+      None,
+      Some(CommonResolution::FourEightyP),
+      Some(CommonResolution::SevenTwentyP),
+      Some(CommonResolution::TenEightyP),
+    ]
+  }
+
+  fn all_durations() -> &'static [Option<u16>] {
+    &[None, Some(5), Some(10)]
+  }
+
+  fn supported_aspect_ratios() -> &'static [Option<CommonAspectRatio>] {
+    &[
+      None,
+      Some(CommonAspectRatio::Auto),
+      Some(CommonAspectRatio::Square),
+      Some(CommonAspectRatio::WideFourByThree),
+      Some(CommonAspectRatio::WideSixteenByNine),
+      Some(CommonAspectRatio::Wide),
+      Some(CommonAspectRatio::WideTwentyOneByNine),
+      Some(CommonAspectRatio::TallThreeByFour),
+      Some(CommonAspectRatio::TallNineBySixteen),
+      Some(CommonAspectRatio::Tall),
+    ]
+  }
+
+  #[test]
+  fn cost_parity_full_combinatorial() {
+    let mut combos_checked = 0;
+    let mut combos_with_end_frame = 0;
+
+    for &resolution in all_resolutions() {
+      for &duration in all_durations() {
+        for &aspect_ratio in supported_aspect_ratios() {
+          for include_end_frame in [false, true] {
+            let mut builder = base_builder();
+            builder.resolution = resolution;
+            builder.duration_seconds = duration;
+            builder.aspect_ratio = aspect_ratio;
+            if include_end_frame {
+              builder.end_frame = Some(ImageRef::Url(DUMMY_END_FRAME.to_string()));
+              combos_with_end_frame += 1;
+            }
+
+            let v1 = v1_cost(&builder);
+            let v2 = v2_cost(builder.clone());
+            assert_eq!(
+              v1, v2,
+              "1.0 lite cost mismatch: res={:?} dur={:?} ar={:?} end={} → v1={:?} v2={:?}",
+              resolution, duration, aspect_ratio, include_end_frame, v1, v2,
+            );
+            combos_checked += 1;
+          }
+        }
+      }
+    }
+
+    // Sanity: we should be checking a meaningful number of combinations.
+    assert!(combos_checked >= 240, "expected ≥240 combos, got {}", combos_checked);
+    assert!(combos_with_end_frame > 0, "expected at least one with end_frame");
+  }
+}
+
+// ── seedance 1.5 pro ──
+
+mod seedance_1p5_pro {
+  use super::*;
+
+  fn t2v_builder() -> GenerateVideoRequestBuilder {
+    GenerateVideoRequestBuilder {
+      model: CommonVideoModel::Seedance1p5Pro,
+      provider: Provider::Fal,
+      // No start_frame → text-to-video mode.
+      ..Default::default()
+    }
+  }
+
+  fn i2v_builder() -> GenerateVideoRequestBuilder {
+    GenerateVideoRequestBuilder {
+      model: CommonVideoModel::Seedance1p5Pro,
+      provider: Provider::Fal,
+      start_frame: Some(ImageRef::Url(DUMMY_IMAGE.to_string())),
+      ..Default::default()
+    }
+  }
+
+  fn all_resolutions() -> &'static [Option<CommonResolution>] {
+    &[
+      None,
+      Some(CommonResolution::FourEightyP),
+      Some(CommonResolution::SevenTwentyP),
+      Some(CommonResolution::TenEightyP),
+    ]
+  }
+
+  fn all_durations() -> &'static [Option<u16>] {
+    &[None, Some(4), Some(5), Some(6), Some(7), Some(8), Some(9), Some(10), Some(11), Some(12)]
+  }
+
+  fn supported_aspect_ratios() -> &'static [Option<CommonAspectRatio>] {
+    &[
+      None,
+      Some(CommonAspectRatio::Auto),
+      Some(CommonAspectRatio::Square),
+      Some(CommonAspectRatio::WideFourByThree),
+      Some(CommonAspectRatio::WideSixteenByNine),
+      Some(CommonAspectRatio::Wide),
+      Some(CommonAspectRatio::WideTwentyOneByNine),
+      Some(CommonAspectRatio::TallThreeByFour),
+      Some(CommonAspectRatio::TallNineBySixteen),
+      Some(CommonAspectRatio::Tall),
+    ]
+  }
+
+  fn audio_options() -> &'static [Option<bool>] {
+    &[None, Some(true), Some(false)]
+  }
+
+  #[test]
+  fn cost_parity_t2v_combinatorial() {
+    let mut combos_checked = 0;
+    for &resolution in all_resolutions() {
+      for &duration in all_durations() {
+        for &aspect_ratio in supported_aspect_ratios() {
+          for &generate_audio in audio_options() {
+            let mut builder = t2v_builder();
+            builder.resolution = resolution;
+            builder.duration_seconds = duration;
+            builder.aspect_ratio = aspect_ratio;
+            builder.generate_audio = generate_audio;
+
+            let v1 = v1_cost(&builder);
+            let v2 = v2_cost(builder.clone());
+            assert_eq!(
+              v1, v2,
+              "1.5 pro t2v cost mismatch: res={:?} dur={:?} ar={:?} audio={:?} → v1={:?} v2={:?}",
+              resolution, duration, aspect_ratio, generate_audio, v1, v2,
+            );
+            combos_checked += 1;
+          }
+        }
+      }
+    }
+    assert!(combos_checked >= 1000, "expected ≥1000 combos, got {}", combos_checked);
+  }
+
+  #[test]
+  fn cost_parity_i2v_combinatorial() {
+    let mut combos_checked = 0;
+    let mut combos_with_end_frame = 0;
+    for &resolution in all_resolutions() {
+      for &duration in all_durations() {
+        for &aspect_ratio in supported_aspect_ratios() {
+          for &generate_audio in audio_options() {
+            for include_end_frame in [false, true] {
+              let mut builder = i2v_builder();
+              builder.resolution = resolution;
+              builder.duration_seconds = duration;
+              builder.aspect_ratio = aspect_ratio;
+              builder.generate_audio = generate_audio;
+              if include_end_frame {
+                builder.end_frame = Some(ImageRef::Url(DUMMY_END_FRAME.to_string()));
+                combos_with_end_frame += 1;
+              }
+
+              let v1 = v1_cost(&builder);
+              let v2 = v2_cost(builder.clone());
+              assert_eq!(
+                v1, v2,
+                "1.5 pro i2v cost mismatch: res={:?} dur={:?} ar={:?} audio={:?} end={} → v1={:?} v2={:?}",
+                resolution, duration, aspect_ratio, generate_audio, include_end_frame, v1, v2,
+              );
+              combos_checked += 1;
+            }
+          }
+        }
+      }
+    }
+    assert!(combos_checked >= 2000, "expected ≥2000 combos, got {}", combos_checked);
+    assert!(combos_with_end_frame > 0, "expected at least one with end_frame");
+  }
+
+  #[test]
+  fn cost_parity_with_pay_less_downgrade_strategy() {
+    // Sanity: even when the mismatch strategy downgrades unsupported
+    // resolutions/durations, v1 and v2 should pick the same fallback.
+    let oddities: &[(Option<CommonResolution>, Option<u16>)] = &[
+      (Some(CommonResolution::OneK), None),
+      (Some(CommonResolution::TwoK), Some(5)),
+      (Some(CommonResolution::FourK), Some(12)),
+      (None, Some(13)),
+    ];
+    for &(resolution, duration) in oddities {
+      let mut builder = t2v_builder();
+      builder.resolution = resolution;
+      builder.duration_seconds = duration;
+      builder.request_mismatch_mitigation_strategy =
+        RequestMismatchMitigationStrategy::PayLessDowngrade;
+      let v1 = v1_cost(&builder);
+      let v2 = v2_cost(builder.clone());
+      assert_eq!(v1, v2, "PayLessDowngrade mismatch at res={:?} dur={:?}", resolution, duration);
+    }
+  }
+
+  #[test]
+  fn cost_parity_with_pay_more_upgrade_strategy() {
+    let oddities: &[(Option<CommonResolution>, Option<u16>)] = &[
+      (Some(CommonResolution::OneK), None),
+      (Some(CommonResolution::TwoK), Some(5)),
+      (Some(CommonResolution::FourK), Some(13)),
+      (None, Some(20)),
+    ];
+    for &(resolution, duration) in oddities {
+      let mut builder = t2v_builder();
+      builder.resolution = resolution;
+      builder.duration_seconds = duration;
+      builder.request_mismatch_mitigation_strategy =
+        RequestMismatchMitigationStrategy::PayMoreUpgrade;
+      let v1 = v1_cost(&builder);
+      let v2 = v2_cost(builder.clone());
+      assert_eq!(v1, v2, "PayMoreUpgrade mismatch at res={:?} dur={:?}", resolution, duration);
+    }
+  }
+}
+
+// ── helpers ──
+
+/// Returns `Some(cost_in_usd_cents)` from the v1 pipeline. If v1 errors out
+/// (e.g. for an unsupported resolution with `ErrorOut` strategy), returns `None`
+/// so the parity test can compare apples to apples.
+fn v1_cost(builder: &GenerateVideoRequestBuilder) -> Option<u64> {
+  builder
+    .build()
+    .ok()
+    .and_then(|plan| plan.estimate_costs().cost_in_usd_cents)
+}
+
+/// Same as `v1_cost`, but for the v2 pipeline.
+fn v2_cost(builder: GenerateVideoRequestBuilder) -> Option<u64> {
+  builder
+    .build2()
+    .ok()
+    .and_then(|dor| dor.estimate_cost().ok())
+    .and_then(|estimate| estimate.cost_in_usd_cents)
+}

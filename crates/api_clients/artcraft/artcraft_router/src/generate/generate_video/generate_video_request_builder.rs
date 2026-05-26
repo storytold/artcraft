@@ -62,6 +62,8 @@ use crate::generate::generate_video_v2::providers::kinovi::seedance_2p0::build::
 use crate::generate::generate_video_v2::providers::gmicloud::seedance_2p0_g::build::build_gmicloud_seedance_2p0_u;
 use crate::generate::generate_video_v2::providers::gmicloud::seedance_2p0_fast_g::build::build_gmicloud_seedance_2p0_u_fast;
 use crate::generate::generate_video_v2::providers::grok_api::grok_imagine_video::build::build_grok_api_grok_imagine_video;
+use crate::generate::generate_video_v2::providers::fal::seedance_1p0_lite::build::build_fal_seedance_1p0_lite;
+use crate::generate::generate_video_v2::providers::fal::seedance_1p5_pro::build::build_fal_seedance_1p5_pro;
 use crate::generate::generate_video_v2::providers::kinovi::seedance_2p0_fast::build::build_kinovi_seedance_2p0_fast;
 use crate::generate::generate_video_v2::video_generation_draft_or_request::VideoGenerationDraftOrRequest;
 
@@ -165,6 +167,9 @@ impl GenerateVideoRequestBuilder {
       (Provider::Artcraft, CommonVideoModel::Seedance2p0BytePlusFast) => true,
       (Provider::Artcraft, CommonVideoModel::PreviewModel) => true,
       (Provider::Artcraft, CommonVideoModel::PreviewModelFast) => true,
+      // Fal
+      (Provider::Fal, CommonVideoModel::Seedance10Lite) => true,
+      (Provider::Fal, CommonVideoModel::Seedance1p5Pro) => true,
       // GmiCloud
       (Provider::GmiCloud, CommonVideoModel::Seedance2p0Ultra) => true,
       (Provider::GmiCloud, CommonVideoModel::Seedance2p0UltraFast) => true,
@@ -192,6 +197,9 @@ impl GenerateVideoRequestBuilder {
       (Provider::Artcraft, CommonVideoModel::Seedance2p0BytePlusFast) => build_artcraft_seedance_2p0_bp_fast(self),
       (Provider::Artcraft, CommonVideoModel::PreviewModel) => build_artcraft_preview_model(self),
       (Provider::Artcraft, CommonVideoModel::PreviewModelFast) => build_artcraft_preview_model_fast(self),
+      // Fal
+      (Provider::Fal, CommonVideoModel::Seedance10Lite) => build_fal_seedance_1p0_lite(self),
+      (Provider::Fal, CommonVideoModel::Seedance1p5Pro) => build_fal_seedance_1p5_pro(self),
       // GmiCloud
       (Provider::GmiCloud, CommonVideoModel::Seedance2p0Ultra) => build_gmicloud_seedance_2p0_u(self),
       (Provider::GmiCloud, CommonVideoModel::Seedance2p0UltraFast) => build_gmicloud_seedance_2p0_u_fast(self),
