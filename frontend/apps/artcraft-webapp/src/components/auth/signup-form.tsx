@@ -15,7 +15,7 @@ import {
   getReferralUsername,
   getReferrer,
 } from "@storyteller/common";
-import { refreshSession, useSessionStore } from "../../lib/session";
+import { consumeNewUserWelcome, refreshSession } from "../../lib/session";
 import { GoogleLoginButton } from "./GoogleLoginButton";
 
 interface SignupFormProps {
@@ -85,13 +85,13 @@ export const SignupForm = ({
     }
   };
 
-  const handleGoogleSuccess = async () => {
-    // Refresh so the session reflects the new cookie (and whether the account
-    // still needs a password), then route accordingly. New SSO users skip
-    // setting a password and go straight to pricing; everyone else goes home.
+  const handleGoogleSuccess = async (isNewUser: boolean) => {
+    // Refresh so the session reflects the new cookie, then route accordingly.
+    // Brand-new accounts see the welcome page once (mirrors the signup flow);
+    // returning users go home.
     await refreshSession(true);
-    if (useSessionStore.getState().passwordNotSet) {
-      navigate("/pricing");
+    if (consumeNewUserWelcome(isNewUser)) {
+      navigate("/welcome");
     } else {
       navigate("/");
     }

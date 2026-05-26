@@ -81,6 +81,34 @@ export function updateSessionUser(partial: Partial<UserInfo>): void {
   invalidateSession();
 }
 
+// Decide whether a just-authenticated user should see the one-time post-signup
+// welcome page, and record that they have. Call once after `refreshSession`.
+//
+// `isNewUser` comes from the SSO response (`username_not_yet_customized`), which
+// the backend forces to false for returning Google logins — so it never re-fires
+// for normal repeat logins regardless of whether the user customized their
+// username. As a belt-and-suspenders guard (e.g. the email→Google-link case where
+// the flag can read true on an existing account), we also persist a per-user-token
+// marker so the welcome page shows at most once per account on this device.
+const WELCOME_SHOWN_KEY_PREFIX = "artcraft.welcomeShown.";
+
+export function consumeNewUserWelcome(isNewUser: boolean): boolean {
+  if (!isNewUser) return false;
+  if (typeof window === "undefined") return true;
+
+  const userToken = useSessionStore.getState().user?.user_token;
+  if (!userToken) return true;
+
+  const key = `${WELCOME_SHOWN_KEY_PREFIX}${userToken}`;
+  try {
+    if (window.localStorage.getItem(key)) return false;
+    window.localStorage.setItem(key, "1");
+  } catch {
+    // localStorage blocked (e.g. privacy mode) — fall through and just show it.
+  }
+  return true;
+}
+
 // Attach the auth-change listener exactly once per page load. Login/logout/
 // password-reset flows dispatch this event; every consumer shares the resulting
 // store update instead of each re-running its own effect.

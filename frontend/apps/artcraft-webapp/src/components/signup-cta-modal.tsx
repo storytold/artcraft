@@ -6,7 +6,7 @@ import { faCheck } from "@fortawesome/pro-solid-svg-icons";
 import { Modal } from "@storyteller/ui-modal";
 import { Button } from "@storyteller/ui-button";
 import { GoogleLoginButton } from "./auth";
-import { refreshSession, useSession, useSessionStore } from "../lib/session";
+import { consumeNewUserWelcome, refreshSession, useSession } from "../lib/session";
 
 interface SignupCtaState {
   isOpen: boolean;
@@ -51,13 +51,13 @@ export function SignupCtaModal() {
   const [error, setError] = useState<string | null>(null);
 
   // Mirror the login/signup pages: refresh the session so it reflects the new
-  // cookie, then send brand-new SSO users straight to pricing. Everyone else
-  // just closes the modal and stays on the page they were on.
-  const handleGoogleSuccess = async () => {
+  // cookie, then send brand-new accounts to the welcome page (once). Everyone
+  // else just closes the modal and stays on the page they were on.
+  const handleGoogleSuccess = async (isNewUser: boolean) => {
     await refreshSession(true);
     close();
-    if (useSessionStore.getState().passwordNotSet) {
-      navigate("/pricing");
+    if (consumeNewUserWelcome(isNewUser)) {
+      navigate("/welcome");
     }
   };
 

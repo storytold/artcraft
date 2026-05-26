@@ -11,7 +11,7 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { UsersApi } from "@storyteller/api";
 import { AuthHeader, AuthFooter, GoogleLoginButton } from "../../components/auth";
 import Seo from "../../components/seo";
-import { refreshSession, useSessionStore } from "../../lib/session";
+import { consumeNewUserWelcome, refreshSession } from "../../lib/session";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -48,13 +48,13 @@ const Login = () => {
     }
   };
 
-  const handleGoogleSuccess = async () => {
-    // Refresh so the session store reflects the new cookie (and whether the
-    // account still needs a password) before deciding where to send them.
+  const handleGoogleSuccess = async (isNewUser: boolean) => {
+    // Refresh so the session store reflects the new cookie before navigating.
     await refreshSession(true);
-    if (useSessionStore.getState().passwordNotSet) {
-      // New SSO users skip setting a password and go straight to pricing.
-      navigate("/pricing");
+    if (consumeNewUserWelcome(isNewUser)) {
+      // Brand-new accounts see the welcome page once (mirrors the signup flow);
+      // returning users go wherever they were headed.
+      navigate("/welcome");
     } else {
       navigate(redirectTo);
     }
