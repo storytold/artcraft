@@ -10,7 +10,7 @@ use crate::generate::generate_video::generate_video_response::{
 
 /// Send a video generation request to the Artcraft omni-gen endpoint.
 /// All Artcraft model request states delegate to this function.
-pub async fn send_artcraft_omni_request(
+pub async fn send_artcraft_omni_video_request(
   request: &OmniGenVideoCostAndGenerateRequest,
   client: &RouterArtcraftClient,
 ) -> Result<GenerateVideoResponse, ArtcraftRouterError> {

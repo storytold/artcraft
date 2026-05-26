@@ -37,7 +37,7 @@ pub enum UltraWideSupport {
 /// Build an `OmniGenVideoCostAndGenerateRequest` from the builder, using
 /// model-specific configuration for the model enum variant, resolution
 /// strategy, and ultra-wide aspect ratio support.
-pub fn build_artcraft_omni_request(
+pub fn build_artcraft_omni_video_request(
   mut builder: GenerateVideoRequestBuilder,
   model: CommonVideoModelEnum,
   resolutions: SupportedResolutions,

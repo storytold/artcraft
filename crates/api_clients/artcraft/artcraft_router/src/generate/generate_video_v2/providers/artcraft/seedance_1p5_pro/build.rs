@@ -5,7 +5,7 @@ use crate::errors::artcraft_router_error::ArtcraftRouterError;
 use crate::errors::client_error::ClientError;
 use crate::generate::generate_video::generate_video_request_builder::GenerateVideoRequestBuilder;
 use crate::generate::generate_video_v2::providers::artcraft::build_common::{
-  build_artcraft_omni_request, SupportedResolutions, UltraWideSupport,
+  build_artcraft_omni_video_request, SupportedResolutions, UltraWideSupport,
 };
 use crate::generate::generate_video_v2::providers::artcraft::seedance_1p5_pro::request::ArtcraftSeedance1p5ProRequestState;
 use crate::generate::generate_video_v2::video_generation_draft_or_request::VideoGenerationDraftOrRequest;
@@ -20,7 +20,7 @@ pub fn build_artcraft_seedance_1p5_pro(mut builder: GenerateVideoRequestBuilder)
   builder.duration_seconds = final_duration;
 
   let generate_audio = builder.generate_audio;
-  let mut request = build_artcraft_omni_request(
+  let mut request = build_artcraft_omni_video_request(
     builder,
     CommonVideoModelEnum::Seedance1p5Pro,
     SupportedResolutions::Full,

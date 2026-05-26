@@ -5,7 +5,7 @@ use crate::errors::artcraft_router_error::ArtcraftRouterError;
 use crate::errors::client_error::ClientError;
 use crate::generate::generate_video::generate_video_request_builder::GenerateVideoRequestBuilder;
 use crate::generate::generate_video_v2::providers::artcraft::build_common::{
-  build_artcraft_omni_request, SupportedResolutions, UltraWideSupport,
+  build_artcraft_omni_video_request, SupportedResolutions, UltraWideSupport,
 };
 use crate::generate::generate_video_v2::providers::artcraft::veo_3p1::request::ArtcraftVeo3p1RequestState;
 use crate::generate::generate_video_v2::video_generation_draft_or_request::VideoGenerationDraftOrRequest;
@@ -20,7 +20,7 @@ pub fn build_artcraft_veo_3p1(mut builder: GenerateVideoRequestBuilder) -> Resul
   builder.duration_seconds = final_duration;
 
   let generate_audio = builder.generate_audio;
-  let mut request = build_artcraft_omni_request(
+  let mut request = build_artcraft_omni_video_request(
     builder,
     CommonVideoModelEnum::Veo3p1,
     SupportedResolutions::Full,

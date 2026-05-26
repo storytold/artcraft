@@ -3,7 +3,7 @@ use enums::common::generation::common_video_model::CommonVideoModel as CommonVid
 use crate::errors::artcraft_router_error::ArtcraftRouterError;
 use crate::generate::generate_video::generate_video_request_builder::GenerateVideoRequestBuilder;
 use crate::generate::generate_video_v2::providers::artcraft::build_common::{
-  build_artcraft_omni_request, SupportedResolutions, UltraWideSupport,
+  build_artcraft_omni_video_request, SupportedResolutions, UltraWideSupport,
 };
 use crate::generate::generate_video_v2::providers::artcraft::veo_3::request::ArtcraftVeo3RequestState;
 use crate::generate::generate_video_v2::video_generation_draft_or_request::VideoGenerationDraftOrRequest;
@@ -15,7 +15,7 @@ pub fn build_artcraft_veo_3(builder: GenerateVideoRequestBuilder) -> Result<Vide
   // are within omni-gen's accepted ranges. We just preserve generate_audio
   // through the helper, then read both fields in cost.rs.
   let generate_audio = builder.generate_audio;
-  let mut request = build_artcraft_omni_request(
+  let mut request = build_artcraft_omni_video_request(
     builder,
     CommonVideoModelEnum::Veo3,
     SupportedResolutions::Full,
