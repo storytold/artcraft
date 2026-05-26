@@ -8,6 +8,7 @@ use artcraft_router::client::request_mismatch_mitigation_strategy::RequestMismat
 use artcraft_router::client::router_artcraft_client::RouterArtcraftClient;
 use artcraft_router::client::router_client::RouterClient;
 use artcraft_router::generate::generate_image::generate_image_request_builder::GenerateImageRequestBuilder;
+use artcraft_router::generate::generate_image_v2::image_generation_draft_or_request::ImageGenerationDraftOrRequest;
 use enums::common::generation_provider::GenerationProvider;
 use enums::tauri::tasks::task_type::TaskType;
 
@@ -49,11 +50,17 @@ pub async fn handle_flux_2_lora_angles(
     zoom: request.adjust_zoom,
   };
 
-  let plan = router_request.build()?;
+  let dor = router_request.build2()?;
 
-  info!("Flux2LoraAngles plan: {:?}", plan);
+  info!("Flux2LoraAngles request: {:?}", dor);
 
-  let response = plan.generate_image(&client).await.map_err(|err| {
+  let request = match dor {
+    ImageGenerationDraftOrRequest::Request(req) => req,
+    // Artcraft-side angle models always return a Request — never a Draft.
+    ImageGenerationDraftOrRequest::Draft(d) => match d {},
+  };
+
+  let response = request.send_request(&client).await.map_err(|err| {
     error!("Flux2LoraAngles generation failed: {:?}", err);
     GenerateError::from(err)
   })?;

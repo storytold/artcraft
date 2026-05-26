@@ -16,6 +16,3 @@ pub(crate) mod request_common;
 pub mod seedream_4;
 pub mod seedream_4p5;
 pub mod seedream_5_lite;
-
-#[cfg(test)]
-mod cost_parity_tests;

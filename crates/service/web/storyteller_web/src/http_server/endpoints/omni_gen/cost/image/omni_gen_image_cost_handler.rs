@@ -34,12 +34,7 @@ pub async fn omni_gen_image_cost_handler(
   let mut generate_request = hydrate_to_router_request(&request)?;
   generate_request.provider = Provider::Artcraft; // NB: Explicitly spell this out.
 
-  // TODO(bt,2026-05-15): Get rid of this as soon as we can (there are even worse hacks below).
-  let estimate = if should_use_pipeline_v2(&generate_request) {
-    estimate_pipeline_v2_cost(&generate_request)?
-  } else {
-    estimate_pipeline_v1_cost(&generate_request)?
-  };
+  let estimate = estimate_cost(&generate_request)?;
 
   Ok(Json(OmniGenImageCostResponse {
     success: true,
@@ -53,49 +48,32 @@ pub async fn omni_gen_image_cost_handler(
   }))
 }
 
-fn should_use_pipeline_v2(
-  generate_request: &GenerateImageRequestBuilder,
-) -> bool {
-  // Early migrate anything that uses FAL v2:
-  let mut builder = generate_request.clone();
-  builder.provider = Provider::Fal;
-
-  if builder.use_new_builder() {
-    return true;
-  }
-
-  // Fallback
-  generate_request.use_new_builder()
-}
-
-fn estimate_pipeline_v2_cost(
+fn estimate_cost(
   generate_request: &GenerateImageRequestBuilder,
 ) -> Result<ImageGenerationCostEstimate, CommonWebError> {
   let mut builder = generate_request.clone();
-
   builder.provider = Provider::Artcraft;
 
   match builder.clone().build2() {
     Ok(result) => match result.estimate_cost() {
       Ok(cost) => return Ok(cost),
       Err(err) => {
-        warn!("Failed to estimate image cost for pipeline v2 (artcraft): {}", err);
+        warn!("Failed to estimate image cost via Artcraft: {}", err);
       }
     },
     Err(err) => {
-      warn!("Failed to build image cost request for pipeline v2 (artcraft): {}", err);
+      warn!("Failed to build image cost request via Artcraft: {}", err);
     }
   }
 
-  // TODO(bt,2026-05-15): This is a horrible hack for models that aren't fully migrated
-  //  to pipeline_v2 (don't have artcraft cost calculators). This is an awful hack we need
-  //  to kill in the future.
-
+  // TODO(bt,2026-05-15): This is a horrible hack for models that aren't fully
+  // available on the Artcraft provider. Falls back to Fal pricing. Kill this
+  // once every cost-estimation route lives on a single provider.
   builder.provider = Provider::Fal;
 
   // Fal cost estimation doesn't work with media file tokens.
-  // We don't need to look them up (though, technically, image size does impact cost with
-  // some providers). Let's just fill the list with dummy URLs in that case.
+  // We don't need to look them up (though, technically, image size does impact
+  // cost with some providers). Just fill the list with dummy URLs.
   if let Some(ImageListRef::MediaFileTokens(tokens)) = builder.image_inputs.as_ref() {
     builder.image_inputs = Some(ImageListRef::Urls(vec![
       "https://example.com/image.png".to_string();
@@ -105,31 +83,16 @@ fn estimate_pipeline_v2_cost(
 
   let mut cost = builder.build2()
     .map_err(|e| {
-      warn!("Failed to build image cost request for pipeline v2 (fal): {}", e);
+      warn!("Failed to build image cost request via Fal: {}", e);
       CommonWebError::from_error(e)
     })?
     .estimate_cost()
     .map_err(|e| {
-      warn!("Failed to estimate image cost for pipeline v2 (fal): {}", e);
+      warn!("Failed to estimate image cost via Fal: {}", e);
       CommonWebError::from_error(e)
     })?;
 
   cost.cost_in_credits = cost.cost_in_usd_cents;
 
   Ok(cost)
-}
-
-fn estimate_pipeline_v1_cost(
-  generate_request: &GenerateImageRequestBuilder,
-) -> Result<ImageGenerationCostEstimate, CommonWebError> {
-  let mut builder = generate_request.clone();
-  builder.provider = Provider::Artcraft;
-
-  let plan = builder.build()
-    .map_err(|e| {
-      warn!("Failed to build image cost plan for pipeline v1: {}", e);
-      CommonWebError::from_error(e)
-    })?;
-
-  Ok(plan.estimate_costs())
 }

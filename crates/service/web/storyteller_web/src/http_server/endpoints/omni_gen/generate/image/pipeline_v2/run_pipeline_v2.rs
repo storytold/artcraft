@@ -26,12 +26,6 @@ pub struct RunPipelineV2Args<'a> {
   pub resolved_media: &'a MediaFilesAsCdnUrlListAndMap,
 }
 
-pub fn should_use_pipeline_v2(router_builder: &GenerateImageRequestBuilder) -> bool {
-  let mut execution_builder = router_builder.clone();
-  execution_builder.provider = Provider::Fal;
-  execution_builder.use_new_builder()
-}
-
 pub async fn run_pipeline_v2(
   args: RunPipelineV2Args<'_>,
 ) -> Result<ImagePipelineResult, CommonWebError> {
@@ -106,31 +100,20 @@ fn apply_hydrated_media_inputs(
 fn estimate_cost_in_credits(
   router_builder: &GenerateImageRequestBuilder,
 ) -> Result<u64, CommonWebError> {
-  // TODO(bt,2026-05-15): This might not be 1:1 with new Fal costs, eg. Gpt-image-2
   let mut cost_builder = router_builder.clone();
   cost_builder.provider = Provider::Artcraft;
 
-  // Attempt pipeline_v2 cost
-  match cost_builder.clone().build2() {
-    Err(err) => {
-      warn!("Failed to build image cost plan for v2 pipeline: {}", err);
-    },
-    Ok(request) => {
-      let cost_plan = request.estimate_cost().map_err(|e| {
-        warn!("Failed to build image cost plan for v2 pipeline: {}", e);
-        CommonWebError::from_error(e)
-      })?;
-      return Ok(cost_plan.cost_in_credits.unwrap_or(0));
-    },
-  }
-  
-  // Fall back to pipeline_v1 cost
-  let cost_plan = cost_builder.build().map_err(|e| {
-    warn!("Failed to build image cost plan for v1 pipeline: {}", e);
+  let request = cost_builder.build2().map_err(|e| {
+    warn!("Failed to build image cost request: {}", e);
     CommonWebError::from_error(e)
   })?;
 
-  Ok(cost_plan.estimate_costs().cost_in_credits.unwrap_or(0))
+  let cost = request.estimate_cost().map_err(|e| {
+    warn!("Failed to estimate image cost: {}", e);
+    CommonWebError::from_error(e)
+  })?;
+
+  Ok(cost.cost_in_credits.unwrap_or(0))
 }
 
 async fn finalize_and_generate(

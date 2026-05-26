@@ -58,10 +58,9 @@ pub async fn estimate_image_cost_handler(
     zoom: None,
   };
 
-  let plan = router_request.build()
+  let estimate = router_request.build2()
+    .and_then(|dor| dor.estimate_cost())
     .map_err(|e| HandlerError::InvalidInput(format!("{}", e)))?;
-
-  let estimate = plan.estimate_costs();
 
   Ok(Json(EstimateImageCostResponse {
     success: true,

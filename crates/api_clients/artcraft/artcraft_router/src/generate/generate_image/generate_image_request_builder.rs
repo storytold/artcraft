@@ -7,8 +7,6 @@ use crate::api::provider::Provider;
 use crate::client::generation_mode_mismatch_strategy::GenerationModeMismatchStrategy;
 use crate::client::request_mismatch_mitigation_strategy::RequestMismatchMitigationStrategy;
 use crate::errors::artcraft_router_error::ArtcraftRouterError;
-use crate::errors::client_error::ClientError;
-use crate::generate::generate_image::image_generation_plan::ImageGenerationPlan;
 use crate::generate::generate_image_v2::image_generation_draft_or_request::ImageGenerationDraftOrRequest;
 use crate::generate::generate_image_v2::providers::artcraft::flux_1_dev::build::build_artcraft_flux_1_dev;
 use crate::generate::generate_image_v2::providers::artcraft::flux_1_schnell::build::build_artcraft_flux_1_schnell;
@@ -40,34 +38,6 @@ use crate::generate::generate_image_v2::providers::fal::qwen_edit_2511_angles::b
 use crate::generate::generate_image_v2::providers::fal::seedream_4::build::build_fal_seedream_4;
 use crate::generate::generate_image_v2::providers::fal::seedream_4p5::build::build_fal_seedream_4p5;
 use crate::generate::generate_image_v2::providers::fal::seedream_5_lite::build::build_fal_seedream_5_lite;
-use crate::generate::generate_image::plan::artcraft::plan_generate_image_artcraft_flux_1_dev::plan_generate_image_artcraft_flux_1_dev;
-use crate::generate::generate_image::plan::artcraft::plan_generate_image_artcraft_flux_1_schnell::plan_generate_image_artcraft_flux_1_schnell;
-use crate::generate::generate_image::plan::artcraft::plan_generate_image_artcraft_flux_2_lora_angles::plan_generate_image_artcraft_flux_2_lora_angles;
-use crate::generate::generate_image::plan::artcraft::plan_generate_image_artcraft_flux_pro_1p1::plan_generate_image_artcraft_flux_pro_1p1;
-use crate::generate::generate_image::plan::artcraft::plan_generate_image_artcraft_flux_pro_1p1_ultra::plan_generate_image_artcraft_flux_pro_1p1_ultra;
-use crate::generate::generate_image::plan::artcraft::plan_generate_image_artcraft_gpt_image_1::plan_generate_image_artcraft_gpt_image_1;
-use crate::generate::generate_image::plan::artcraft::plan_generate_image_artcraft_gpt_image_1p5::plan_generate_image_artcraft_gpt_image_1p5;
-use crate::generate::generate_image::plan::artcraft::plan_generate_image_artcraft_gpt_image_2::plan_generate_image_artcraft_gpt_image_2;
-use crate::generate::generate_image::plan::artcraft::plan_generate_image_artcraft_nano_banana::plan_generate_image_artcraft_nano_banana;
-use crate::generate::generate_image::plan::artcraft::plan_generate_image_artcraft_nano_banana_2::plan_generate_image_artcraft_nano_banana_2;
-use crate::generate::generate_image::plan::artcraft::plan_generate_image_artcraft_nano_banana_pro::plan_generate_image_artcraft_nano_banana_pro;
-use crate::generate::generate_image::plan::artcraft::plan_generate_image_artcraft_qwen_edit_2511_angles::plan_generate_image_artcraft_qwen_edit_2511_angles;
-use crate::generate::generate_image::plan::artcraft::plan_generate_image_artcraft_seedream_4::plan_generate_image_artcraft_seedream_4;
-use crate::generate::generate_image::plan::artcraft::plan_generate_image_artcraft_seedream_4p5::plan_generate_image_artcraft_seedream_4p5;
-use crate::generate::generate_image::plan::artcraft::plan_generate_image_artcraft_seedream_5_lite::plan_generate_image_artcraft_seedream_5_lite;
-use crate::generate::generate_image::plan::fal::plan_generate_image_fal_flux_1_dev::plan_generate_image_fal_flux_1_dev;
-use crate::generate::generate_image::plan::fal::plan_generate_image_fal_flux_1_schnell::plan_generate_image_fal_flux_1_schnell;
-use crate::generate::generate_image::plan::fal::plan_generate_image_fal_flux_pro_1p1::plan_generate_image_fal_flux_pro_1p1;
-use crate::generate::generate_image::plan::fal::plan_generate_image_fal_flux_pro_1p1_ultra::plan_generate_image_fal_flux_pro_1p1_ultra;
-use crate::generate::generate_image::plan::fal::plan_generate_image_fal_gpt_image_1::plan_generate_image_fal_gpt_image_1;
-use crate::generate::generate_image::plan::fal::plan_generate_image_fal_gpt_image_1p5::plan_generate_image_fal_gpt_image_1p5;
-use crate::generate::generate_image::plan::fal::plan_generate_image_fal_gpt_image_2::plan_generate_image_fal_gpt_image_2;
-use crate::generate::generate_image::plan::fal::plan_generate_image_fal_seedream_4::plan_generate_image_fal_seedream_4;
-use crate::generate::generate_image::plan::fal::plan_generate_image_fal_seedream_4p5::plan_generate_image_fal_seedream_4p5;
-use crate::generate::generate_image::plan::fal::plan_generate_image_fal_seedream_5_lite::plan_generate_image_fal_seedream_5_lite;
-use crate::generate::generate_image::plan::fal::plan_generate_image_fal_nano_banana::plan_generate_image_fal_nano_banana;
-use crate::generate::generate_image::plan::fal::plan_generate_image_fal_nano_banana_2::plan_generate_image_fal_nano_banana_2;
-use crate::generate::generate_image::plan::fal::plan_generate_image_fal_nano_banana_pro::plan_generate_image_fal_nano_banana_pro;
 
 #[derive(Clone, Debug)]
 pub struct GenerateImageRequestBuilder {
@@ -121,44 +91,13 @@ pub struct GenerateImageRequestBuilder {
 
 impl GenerateImageRequestBuilder {
 
-  pub fn use_new_builder(&self) -> bool {
-    match (self.provider, self.model) {
-      (Provider::Artcraft, CommonImageModel::Flux1Dev) => true,
-      (Provider::Artcraft, CommonImageModel::Flux1Schnell) => true,
-      (Provider::Artcraft, CommonImageModel::FluxPro11) => true,
-      (Provider::Artcraft, CommonImageModel::FluxPro11Ultra) => true,
-      (Provider::Artcraft, CommonImageModel::GptImage1) => true,
-      (Provider::Artcraft, CommonImageModel::GptImage1p5) => true,
-      (Provider::Artcraft, CommonImageModel::GptImage2) => true,
-      (Provider::Artcraft, CommonImageModel::NanoBanana) => true,
-      (Provider::Artcraft, CommonImageModel::NanoBanana2) => true,
-      (Provider::Artcraft, CommonImageModel::NanoBananaPro) => true,
-      (Provider::Artcraft, CommonImageModel::Seedream4) => true,
-      (Provider::Artcraft, CommonImageModel::Seedream4p5) => true,
-      (Provider::Artcraft, CommonImageModel::Seedream5Lite) => true,
-      (Provider::Artcraft, CommonImageModel::QwenEdit2511Angles) => true,
-      (Provider::Artcraft, CommonImageModel::Flux2LoraAngles) => true,
-
-      (Provider::Fal, CommonImageModel::Flux1Dev) => true,
-      (Provider::Fal, CommonImageModel::Flux1Schnell) => true,
-      (Provider::Fal, CommonImageModel::FluxPro11) => true,
-      (Provider::Fal, CommonImageModel::FluxPro11Ultra) => true,
-      (Provider::Fal, CommonImageModel::GptImage1) => true,
-      (Provider::Fal, CommonImageModel::GptImage1p5) => true,
-      (Provider::Fal, CommonImageModel::GptImage2) => true,
-      (Provider::Fal, CommonImageModel::NanoBanana) => true,
-      (Provider::Fal, CommonImageModel::NanoBanana2) => true,
-      (Provider::Fal, CommonImageModel::NanoBananaPro) => true,
-      (Provider::Fal, CommonImageModel::Seedream4) => true,
-      (Provider::Fal, CommonImageModel::Seedream4p5) => true,
-      (Provider::Fal, CommonImageModel::Seedream5Lite) => true,
-      (Provider::Fal, CommonImageModel::QwenEdit2511Angles) => true,
-      (Provider::Fal, CommonImageModel::Flux2LoraAngles) => true,
-
-      _ => false,
-    }
-  }
-
+  /// Build an executable image generation request for the configured
+  /// (provider, model) pair. Returns either a directly-sendable `Request`
+  /// or a `Draft` that needs media-token resolution before sending.
+  ///
+  /// Named `build2` for historical reasons — this is the only build method
+  /// since v1 was removed. The name is preserved for consistency with
+  /// `GenerateVideoRequestBuilder::build2`.
   pub fn build2(self) -> Result<ImageGenerationDraftOrRequest, ArtcraftRouterError> {
     match (self.provider, self.model) {
       (Provider::Artcraft, CommonImageModel::Flux1Dev) => build_artcraft_flux_1_dev(self),
@@ -197,69 +136,9 @@ impl GenerateImageRequestBuilder {
     }
   }
 
-  /// Read the image generation request, construct a plan, then yield a means to execute it.
-  pub fn build(&self) -> Result<ImageGenerationPlan, ArtcraftRouterError> {
-    match self.provider {
-      Provider::Artcraft => self.build_artcraft(),
-      Provider::Fal => self.build_fal(),
-      _ => self.unsupported_provider(),
-    }
-  }
-
-  fn build_artcraft(&self) -> Result<ImageGenerationPlan, ArtcraftRouterError> {
-    match self.model {
-      CommonImageModel::Flux1Dev => plan_generate_image_artcraft_flux_1_dev(self),
-      CommonImageModel::Flux1Schnell => plan_generate_image_artcraft_flux_1_schnell(self),
-      CommonImageModel::Flux2LoraAngles => plan_generate_image_artcraft_flux_2_lora_angles(self),
-      CommonImageModel::FluxPro11 => plan_generate_image_artcraft_flux_pro_1p1(self),
-      CommonImageModel::FluxPro11Ultra => plan_generate_image_artcraft_flux_pro_1p1_ultra(self),
-      CommonImageModel::GptImage1 => plan_generate_image_artcraft_gpt_image_1(self),
-      CommonImageModel::GptImage1p5 => plan_generate_image_artcraft_gpt_image_1p5(self),
-      CommonImageModel::GptImage2 => plan_generate_image_artcraft_gpt_image_2(self),
-      CommonImageModel::NanoBanana => plan_generate_image_artcraft_nano_banana(self),
-      CommonImageModel::NanoBanana2 => plan_generate_image_artcraft_nano_banana_2(self),
-      CommonImageModel::NanoBananaPro => plan_generate_image_artcraft_nano_banana_pro(self),
-      CommonImageModel::QwenEdit2511Angles => plan_generate_image_artcraft_qwen_edit_2511_angles(self),
-      CommonImageModel::Seedream4 => plan_generate_image_artcraft_seedream_4(self),
-      CommonImageModel::Seedream4p5 => plan_generate_image_artcraft_seedream_4p5(self),
-      CommonImageModel::Seedream5Lite => plan_generate_image_artcraft_seedream_5_lite(self),
-      _ => Err(ArtcraftRouterError::UnsupportedModel(format!("{:?}", self.model))),
-    }
-  }
-
-  fn build_fal(&self) -> Result<ImageGenerationPlan, ArtcraftRouterError> {
-    match self.model {
-      CommonImageModel::Flux1Dev => plan_generate_image_fal_flux_1_dev(self),
-      CommonImageModel::Flux1Schnell => plan_generate_image_fal_flux_1_schnell(self),
-      CommonImageModel::FluxPro11 => plan_generate_image_fal_flux_pro_1p1(self),
-      CommonImageModel::FluxPro11Ultra => plan_generate_image_fal_flux_pro_1p1_ultra(self),
-      CommonImageModel::GptImage1 => plan_generate_image_fal_gpt_image_1(self),
-      CommonImageModel::GptImage1p5 => plan_generate_image_fal_gpt_image_1p5(self),
-      CommonImageModel::GptImage2 => plan_generate_image_fal_gpt_image_2(self),
-      CommonImageModel::NanoBanana => plan_generate_image_fal_nano_banana(self),
-      CommonImageModel::NanoBanana2 => plan_generate_image_fal_nano_banana_2(self),
-      CommonImageModel::NanoBananaPro => plan_generate_image_fal_nano_banana_pro(self),
-      CommonImageModel::Seedream4 => plan_generate_image_fal_seedream_4(self),
-      CommonImageModel::Seedream4p5 => plan_generate_image_fal_seedream_4p5(self),
-      CommonImageModel::Seedream5Lite => plan_generate_image_fal_seedream_5_lite(self),
-      _ => {
-        Err(ArtcraftRouterError::Client(ClientError::ModelDoesNotSupportOption {
-          field: "provider",
-          value: format!("{:?} is only available on the Artcraft provider", self.model),
-        }))
-      }
-    }
-  }
-
-  fn unsupported_provider(&self) -> Result<ImageGenerationPlan, ArtcraftRouterError> {
-    Err(ArtcraftRouterError::UnsupportedModel(
-      format!("Image generation for model `{:?}` is not supported for provider {:?}", self.model, self.provider)
-    ))
-  }
-
   fn unsupported_provider_and_model(&self) -> Result<ImageGenerationDraftOrRequest, ArtcraftRouterError> {
     Err(ArtcraftRouterError::UnsupportedProviderAndModelForNewApi(
-      format!("Image generation for model `{:?}` is not supported for provider {:?} using the new API", self.model, self.provider)
+      format!("Image generation for model `{:?}` is not supported for provider {:?}", self.model, self.provider)
     ))
   }
 

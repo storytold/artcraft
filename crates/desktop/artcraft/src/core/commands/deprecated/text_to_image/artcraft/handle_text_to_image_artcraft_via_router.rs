@@ -18,6 +18,7 @@ use artcraft_router::client::request_mismatch_mitigation_strategy::RequestMismat
 use artcraft_router::client::router_artcraft_client::RouterArtcraftClient;
 use artcraft_router::client::router_client::RouterClient;
 use artcraft_router::generate::generate_image::generate_image_request_builder::GenerateImageRequestBuilder;
+use artcraft_router::generate::generate_image_v2::image_generation_draft_or_request::ImageGenerationDraftOrRequest;
 use enums::common::generation_provider::GenerationProvider;
 use enums::tauri::tasks::task_type::TaskType;
 use log::{error, info};
@@ -62,11 +63,17 @@ pub(super) async fn handle_text_to_image_artcraft_via_router(
     zoom: None,
   };
 
-  let plan = router_request.build()?;
+  let dor = router_request.build2()?;
 
-  info!("Image Generation Plan: {:?}", plan);
+  info!("Image Generation Request: {:?}", dor);
 
-  let response = match plan.generate_image(&client).await {
+  let request = match dor {
+    ImageGenerationDraftOrRequest::Request(req) => req,
+    // Artcraft never returns a Draft — image-token resolution happens server-side.
+    ImageGenerationDraftOrRequest::Draft(d) => match d {},
+  };
+
+  let response = match request.send_request(&client).await {
     Ok(resp) => {
       info!("Successfully enqueued.");
       resp
