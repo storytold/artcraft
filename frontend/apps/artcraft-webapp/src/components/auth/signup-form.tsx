@@ -87,11 +87,11 @@ export const SignupForm = ({
 
   const handleGoogleSuccess = async () => {
     // Refresh so the session reflects the new cookie (and whether the account
-    // still needs a password), then route accordingly. New SSO users with no
-    // password go set one; everyone else goes home.
+    // still needs a password), then route accordingly. New SSO users skip
+    // setting a password and go straight to pricing; everyone else goes home.
     await refreshSession(true);
     if (useSessionStore.getState().passwordNotSet) {
-      navigate("/set-password");
+      navigate("/pricing");
     } else {
       navigate("/");
     }

@@ -53,7 +53,8 @@ const Login = () => {
     // account still needs a password) before deciding where to send them.
     await refreshSession(true);
     if (useSessionStore.getState().passwordNotSet) {
-      navigate("/set-password");
+      // New SSO users skip setting a password and go straight to pricing.
+      navigate("/pricing");
     } else {
       navigate(redirectTo);
     }

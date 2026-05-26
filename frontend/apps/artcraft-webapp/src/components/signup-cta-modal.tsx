@@ -51,13 +51,13 @@ export function SignupCtaModal() {
   const [error, setError] = useState<string | null>(null);
 
   // Mirror the login/signup pages: refresh the session so it reflects the new
-  // cookie, then send brand-new SSO users to set a password. Everyone else
+  // cookie, then send brand-new SSO users straight to pricing. Everyone else
   // just closes the modal and stays on the page they were on.
   const handleGoogleSuccess = async () => {
     await refreshSession(true);
     close();
     if (useSessionStore.getState().passwordNotSet) {
-      navigate("/set-password");
+      navigate("/pricing");
     }
   };
 
