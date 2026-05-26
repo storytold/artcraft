@@ -486,6 +486,20 @@ mod tests {
   }
 
   #[test]
+  fn too_many_requests_returns_429() {
+    let error = CommonWebError::TooManyRequests;
+    assert_eq!(error.status_code(), StatusCode::TOO_MANY_REQUESTS);
+    assert!(!error.is_server_error());
+    assert!(error.cause().is_none());
+
+    let response = error.error_response();
+    let bytes = response.into_body().try_into_bytes().unwrap();
+    let body = String::from_utf8(bytes.to_vec()).unwrap();
+    assert!(body.contains("\"error_code\":429"));
+    assert!(body.contains("\"error_code_str\":\"Too Many Requests\""));
+  }
+
+  #[test]
   fn uncaught_io_error_returns_500_and_hides_cause() {
     let io_err = std::io::Error::new(std::io::ErrorKind::Other, "disk exploded");
     let error = CommonWebError::from_error(io_err);
