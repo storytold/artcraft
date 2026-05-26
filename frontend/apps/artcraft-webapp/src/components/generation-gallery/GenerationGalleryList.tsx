@@ -60,7 +60,7 @@ export function GenerationGalleryList({
   }
 
   return (
-    <div className="mx-auto w-full max-w-5xl">
+    <div className="mx-auto w-full max-w-5xl sm:px-4">
       <div className="flex flex-col divide-y divide-white/[0.04]">
         {mergedEntries.map((entry) => {
           if (entry.kind === "pending") {
