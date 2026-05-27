@@ -58,8 +58,6 @@ fn is_legacy_only_model(model: TauriImageModel) -> bool {
       | TauriImageModel::Recraft3
       | TauriImageModel::Midjourney
       | TauriImageModel::FluxProKontextMax
-      | TauriImageModel::QwenEdit2511Angles
-      | TauriImageModel::Flux2LoraAngles
       | TauriImageModel::FluxDevJuggernaut
   )
 }
