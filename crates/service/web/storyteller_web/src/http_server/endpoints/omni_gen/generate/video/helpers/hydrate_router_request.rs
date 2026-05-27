@@ -2,8 +2,8 @@ use crate::http_server::common_responses::common_web_error::CommonWebError;
 use artcraft_api_defs::omni_gen::cost_and_generate_requests::omni_gen_video_cost_and_generate_request::OmniGenVideoCostAndGenerateRequest;
 use artcraft_router::api::audio_list_ref::AudioListRef;
 use artcraft_router::api::character_list_ref::CharacterListRef;
-use artcraft_router::api::router_aspect_ratio::RouterAspectRatio as CommonAspectRatioRouter;
-use artcraft_router::api::router_resolution::RouterResolution as CommonResolutionRouter;
+use artcraft_router::api::router_aspect_ratio::RouterAspectRatio;
+use artcraft_router::api::router_resolution::RouterResolution;
 use artcraft_router::api::router_video_model::RouterVideoModel;
 use artcraft_router::api::image_list_ref::ImageListRef;
 use artcraft_router::api::image_ref::ImageRef;
@@ -76,7 +76,7 @@ fn convert_model(
 
 fn convert_aspect_ratio(
   ar: &CommonAspectRatioEnum,
-) -> Result<CommonAspectRatioRouter, CommonWebError> {
+) -> Result<RouterAspectRatio, CommonWebError> {
   let json = serde_json::to_string(ar)?;
   serde_json::from_str(&json).map_err(|e| {
     CommonWebError::BadInputWithSimpleMessage(
@@ -87,7 +87,7 @@ fn convert_aspect_ratio(
 
 fn convert_resolution(
   res: &CommonResolutionEnum,
-) -> Result<CommonResolutionRouter, CommonWebError> {
+) -> Result<RouterResolution, CommonWebError> {
   let json = serde_json::to_string(res)?;
   serde_json::from_str(&json).map_err(|e| {
     CommonWebError::BadInputWithSimpleMessage(

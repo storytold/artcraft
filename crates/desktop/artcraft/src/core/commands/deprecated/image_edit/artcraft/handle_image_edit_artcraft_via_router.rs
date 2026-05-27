@@ -7,9 +7,9 @@ use crate::core::commands::enqueue::task_enqueue_success::TaskEnqueueSuccess;
 use crate::core::events::generation_events::common::GenerationModel;
 use crate::core::state::app_env_configs::app_env_configs::AppEnvConfigs;
 use crate::services::storyteller::state::storyteller_credential_manager::StorytellerCredentialManager;
-use artcraft_router::api::router_aspect_ratio::RouterAspectRatio as RouterCommonAspectRatio;
+use artcraft_router::api::router_aspect_ratio::RouterAspectRatio;
 use artcraft_router::api::router_image_model::RouterImageModel;
-use artcraft_router::api::router_resolution::RouterResolution as RouterCommonResolution;
+use artcraft_router::api::router_resolution::RouterResolution;
 use artcraft_router::api::image_list_ref::ImageListRef;
 use artcraft_router::api::provider::Provider;
 use artcraft_router::client::request_mismatch_mitigation_strategy::RequestMismatchMitigationStrategy;
@@ -122,47 +122,47 @@ pub(super) async fn handle_image_edit_artcraft_via_router(
   })
 }
 
-fn get_aspect_ratio_edit(request: &EnqueueEditImageCommand) -> Option<RouterCommonAspectRatio> {
+fn get_aspect_ratio_edit(request: &EnqueueEditImageCommand) -> Option<RouterAspectRatio> {
   if let Some(ar) = request.common_aspect_ratio {
     return Some(convert_desktop_aspect_ratio(ar));
   }
   if let Some(ar) = request.aspect_ratio {
     return Some(match ar {
-      EditImageSize::Auto => RouterCommonAspectRatio::Auto,
-      EditImageSize::Square => RouterCommonAspectRatio::Square,
-      EditImageSize::Wide => RouterCommonAspectRatio::Wide,
-      EditImageSize::Tall => RouterCommonAspectRatio::Tall,
+      EditImageSize::Auto => RouterAspectRatio::Auto,
+      EditImageSize::Square => RouterAspectRatio::Square,
+      EditImageSize::Wide => RouterAspectRatio::Wide,
+      EditImageSize::Tall => RouterAspectRatio::Tall,
     });
   }
   None
 }
 
-fn get_resolution_edit(request: &EnqueueEditImageCommand) -> Option<RouterCommonResolution> {
+fn get_resolution_edit(request: &EnqueueEditImageCommand) -> Option<RouterResolution> {
   request.image_resolution.map(|res| match res {
-    EditImageResolution::OneK => RouterCommonResolution::OneK,
-    EditImageResolution::TwoK => RouterCommonResolution::TwoK,
-    EditImageResolution::FourK => RouterCommonResolution::FourK,
+    EditImageResolution::OneK => RouterResolution::OneK,
+    EditImageResolution::TwoK => RouterResolution::TwoK,
+    EditImageResolution::FourK => RouterResolution::FourK,
   })
 }
 
-fn convert_desktop_aspect_ratio(ar: DesktopCommonAspectRatio) -> RouterCommonAspectRatio {
+fn convert_desktop_aspect_ratio(ar: DesktopCommonAspectRatio) -> RouterAspectRatio {
   match ar {
-    DesktopCommonAspectRatio::Auto => RouterCommonAspectRatio::Auto,
-    DesktopCommonAspectRatio::Square => RouterCommonAspectRatio::Square,
-    DesktopCommonAspectRatio::WideThreeByTwo => RouterCommonAspectRatio::WideThreeByTwo,
-    DesktopCommonAspectRatio::WideFourByThree => RouterCommonAspectRatio::WideFourByThree,
-    DesktopCommonAspectRatio::WideFiveByFour => RouterCommonAspectRatio::WideFiveByFour,
-    DesktopCommonAspectRatio::WideSixteenByNine => RouterCommonAspectRatio::WideSixteenByNine,
-    DesktopCommonAspectRatio::WideTwentyOneByNine => RouterCommonAspectRatio::WideTwentyOneByNine,
-    DesktopCommonAspectRatio::TallTwoByThree => RouterCommonAspectRatio::TallTwoByThree,
-    DesktopCommonAspectRatio::TallThreeByFour => RouterCommonAspectRatio::TallThreeByFour,
-    DesktopCommonAspectRatio::TallFourByFive => RouterCommonAspectRatio::TallFourByFive,
-    DesktopCommonAspectRatio::TallNineBySixteen => RouterCommonAspectRatio::TallNineBySixteen,
-    DesktopCommonAspectRatio::TallNineByTwentyOne => RouterCommonAspectRatio::TallNineByTwentyOne,
-    DesktopCommonAspectRatio::Wide => RouterCommonAspectRatio::Wide,
-    DesktopCommonAspectRatio::Tall => RouterCommonAspectRatio::Tall,
-    DesktopCommonAspectRatio::Auto2k => RouterCommonAspectRatio::Auto2k,
-    DesktopCommonAspectRatio::Auto4k => RouterCommonAspectRatio::Auto4k,
-    DesktopCommonAspectRatio::SquareHd => RouterCommonAspectRatio::SquareHd,
+    DesktopCommonAspectRatio::Auto => RouterAspectRatio::Auto,
+    DesktopCommonAspectRatio::Square => RouterAspectRatio::Square,
+    DesktopCommonAspectRatio::WideThreeByTwo => RouterAspectRatio::WideThreeByTwo,
+    DesktopCommonAspectRatio::WideFourByThree => RouterAspectRatio::WideFourByThree,
+    DesktopCommonAspectRatio::WideFiveByFour => RouterAspectRatio::WideFiveByFour,
+    DesktopCommonAspectRatio::WideSixteenByNine => RouterAspectRatio::WideSixteenByNine,
+    DesktopCommonAspectRatio::WideTwentyOneByNine => RouterAspectRatio::WideTwentyOneByNine,
+    DesktopCommonAspectRatio::TallTwoByThree => RouterAspectRatio::TallTwoByThree,
+    DesktopCommonAspectRatio::TallThreeByFour => RouterAspectRatio::TallThreeByFour,
+    DesktopCommonAspectRatio::TallFourByFive => RouterAspectRatio::TallFourByFive,
+    DesktopCommonAspectRatio::TallNineBySixteen => RouterAspectRatio::TallNineBySixteen,
+    DesktopCommonAspectRatio::TallNineByTwentyOne => RouterAspectRatio::TallNineByTwentyOne,
+    DesktopCommonAspectRatio::Wide => RouterAspectRatio::Wide,
+    DesktopCommonAspectRatio::Tall => RouterAspectRatio::Tall,
+    DesktopCommonAspectRatio::Auto2k => RouterAspectRatio::Auto2k,
+    DesktopCommonAspectRatio::Auto4k => RouterAspectRatio::Auto4k,
+    DesktopCommonAspectRatio::SquareHd => RouterAspectRatio::SquareHd,
   }
 }
