@@ -94,14 +94,14 @@ pub async fn omni_gen_video_generate_handler(
 
   let user_token = &session.user_token;
 
-  let user_feature_flags =
-      UserSessionFeatureFlags::new(session.maybe_feature_flags.as_deref());
+  let maybe_avt_token = server_state
+      .avt_cookie_manager
+      .get_avt_token_from_request(&http_request);
 
   // ==================== MODEL ACCESS CHECK ==================== //
 
-  let maybe_avt_token = server_state
-    .avt_cookie_manager
-    .get_avt_token_from_request(&http_request);
+  let user_feature_flags =
+      UserSessionFeatureFlags::new(session.maybe_feature_flags.as_deref());
 
   // ==================== IDEMPOTENCY ==================== //
 

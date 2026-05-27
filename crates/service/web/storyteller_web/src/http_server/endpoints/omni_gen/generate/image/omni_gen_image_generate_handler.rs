@@ -33,6 +33,7 @@ use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::endpoints::generate::common::payments_error_test::payments_error_test;
 use crate::http_server::endpoints::omni_gen::generate::image::hydrate_to_router_request::hydrate_to_router_request;
 use crate::http_server::endpoints::omni_gen::generate::image::pipeline_v2::run_pipeline_v2::{run_pipeline_v2, RunPipelineV2Args};
+use crate::http_server::session::lookup::user_session_feature_flags::UserSessionFeatureFlags;
 use crate::http_server::validations::validate_idempotency_token_format::validate_idempotency_token_format;
 use crate::state::server_state::ServerState;
 use crate::util::lookup::lookup_media_files_as_cdn_url_list_and_map::lookup_media_files_as_cdn_url_list_and_map;
@@ -78,14 +79,21 @@ pub async fn omni_gen_image_generate_handler(
       CommonWebError::from(e)
     })?;
 
-  let user_token = match maybe_user_session.as_ref() {
-    Some(session) => &session.user_token,
+  let session = match maybe_user_session.as_ref() {
+    Some(session) => session,
     None => return Err(CommonWebError::NotAuthorized),
   };
+
+  let user_token = &session.user_token;
 
   let maybe_avt_token = server_state
     .avt_cookie_manager
     .get_avt_token_from_request(&http_request);
+
+  // ==================== MODEL ACCESS CHECK ==================== //
+
+  let user_feature_flags =
+      UserSessionFeatureFlags::new(session.maybe_feature_flags.as_deref());
 
   // ==================== IDEMPOTENCY ==================== //
 
@@ -167,7 +175,7 @@ pub async fn omni_gen_image_generate_handler(
     }
   };
 
-  // ==================== DB TRANSACTION ==================== //
+  // ==================== WRITE RESULT ==================== //
 
   let ip_address = get_request_ip(&http_request);
 
