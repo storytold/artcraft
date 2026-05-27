@@ -58,6 +58,8 @@ pub async fn omni_gen_image_generate_handler(
   server_state: web::Data<Arc<ServerState>>,
 ) -> Result<Json<OmniGenImageGenerateResponse>, CommonWebError> {
 
+  info!("request: {:?}", request);
+
   payments_error_test(&request.prompt.as_deref().unwrap_or(""))?;
 
   let debug_log_event_token = DebugLogEventToken::generate();
