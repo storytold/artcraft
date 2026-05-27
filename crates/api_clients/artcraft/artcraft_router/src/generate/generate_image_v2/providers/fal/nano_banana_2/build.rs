@@ -208,12 +208,12 @@ fn resolve_image_urls(
 #[cfg(test)]
 mod tests {
   use super::*;
-  use crate::api::common_image_model::CommonImageModel;
+  use crate::api::router_image_model::RouterImageModel;
   use crate::api::provider::Provider;
 
   fn base_builder() -> GenerateImageRequestBuilder {
     GenerateImageRequestBuilder {
-      model: CommonImageModel::NanoBanana2,
+      model: RouterImageModel::NanoBanana2,
       provider: Provider::Fal,
       prompt: Some("a cat in space".to_string()),
       image_inputs: None,

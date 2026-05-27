@@ -116,12 +116,12 @@ fn plan_image_size(
 #[cfg(test)]
 mod tests {
   use super::*;
-  use crate::api::common_image_model::CommonImageModel;
+  use crate::api::router_image_model::RouterImageModel;
   use crate::api::provider::Provider;
 
   fn base() -> GenerateImageRequestBuilder {
     GenerateImageRequestBuilder {
-      model: CommonImageModel::QwenEdit2511Angles,
+      model: RouterImageModel::QwenEdit2511Angles,
       provider: Provider::Fal,
       prompt: Some("test".to_string()),
       image_inputs: Some(ImageListRef::Urls(vec!["https://example.com/x.jpg".to_string()])),

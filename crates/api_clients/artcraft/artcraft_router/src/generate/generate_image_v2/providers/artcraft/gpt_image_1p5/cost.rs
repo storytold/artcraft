@@ -95,7 +95,7 @@ fn size_bucket(aspect_ratio: Option<CommonAspectRatioEnum>) -> SizeBucket {
 #[cfg(test)]
 mod tests {
   use crate::api::common_aspect_ratio::CommonAspectRatio;
-  use crate::api::common_image_model::CommonImageModel;
+  use crate::api::router_image_model::RouterImageModel;
   use crate::api::common_quality::CommonQuality;
   use crate::api::provider::Provider;
   use crate::client::request_mismatch_mitigation_strategy::RequestMismatchMitigationStrategy;
@@ -103,7 +103,7 @@ mod tests {
 
   fn cost_cents(quality: Option<CommonQuality>, aspect_ratio: Option<CommonAspectRatio>, batch: u16) -> u64 {
     let builder = GenerateImageRequestBuilder {
-      model: CommonImageModel::GptImage1p5,
+      model: RouterImageModel::GptImage1p5,
       provider: Provider::Artcraft,
       prompt: None,
       image_inputs: None,

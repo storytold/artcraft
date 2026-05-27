@@ -1,6 +1,6 @@
 use artcraft_api_defs::omni_gen::cost_and_generate_requests::omni_gen_image_cost_and_generate_request::OmniGenImageCostAndGenerateRequest;
 use artcraft_router::api::common_aspect_ratio::CommonAspectRatio as CommonAspectRatioRouter;
-use artcraft_router::api::common_image_model::CommonImageModel as CommonImageModelRouter;
+use artcraft_router::api::router_image_model::RouterImageModel;
 use artcraft_router::api::common_quality::CommonQuality as CommonQualityRouter;
 use artcraft_router::api::common_resolution::CommonResolution as CommonResolutionRouter;
 use artcraft_router::api::image_list_ref::ImageListRef;
@@ -57,7 +57,7 @@ pub fn hydrate_to_router_request(
 
 fn convert_model(
   model: &CommonImageModelEnum,
-) -> Result<CommonImageModelRouter, CommonWebError> {
+) -> Result<RouterImageModel, CommonWebError> {
   let json = serde_json::to_string(model)?;
   serde_json::from_str(&json).map_err(|e| {
     CommonWebError::BadInputWithSimpleMessage(

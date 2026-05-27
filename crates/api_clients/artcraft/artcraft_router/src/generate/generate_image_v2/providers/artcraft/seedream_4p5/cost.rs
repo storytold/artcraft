@@ -31,14 +31,14 @@ impl ArtcraftSeedream4p5CostState {
 
 #[cfg(test)]
 mod tests {
-  use crate::api::common_image_model::CommonImageModel;
+  use crate::api::router_image_model::RouterImageModel;
   use crate::api::provider::Provider;
   use crate::client::request_mismatch_mitigation_strategy::RequestMismatchMitigationStrategy;
   use crate::generate::generate_image::generate_image_request_builder::GenerateImageRequestBuilder;
 
   fn cost_cents(image_batch_count: u16) -> u64 {
     let builder = GenerateImageRequestBuilder {
-      model: CommonImageModel::Seedream4p5,
+      model: RouterImageModel::Seedream4p5,
       provider: Provider::Artcraft,
       prompt: None,
       image_inputs: None,

@@ -1,6 +1,6 @@
 use artcraft_api_defs::prompts::create_prompt::CreatePromptRequest;
 use artcraft_router::api::common_aspect_ratio::CommonAspectRatio as RouterAspectRatio;
-use artcraft_router::api::common_image_model::CommonImageModel;
+use artcraft_router::api::router_image_model::RouterImageModel;
 use artcraft_router::api::common_resolution::CommonResolution as RouterResolution;
 use artcraft_router::api::provider::Provider;
 use artcraft_router::generate::generate_image::generate_image_request_builder::GenerateImageRequestBuilder;
@@ -39,25 +39,25 @@ fn determine_image_generation_mode(request: &GenerateImageRequestBuilder) -> Com
   }
 }
 
-fn image_model_to_common_model_type(model: CommonImageModel) -> Option<CommonModelType> {
+fn image_model_to_common_model_type(model: RouterImageModel) -> Option<CommonModelType> {
   match model {
-    CommonImageModel::Flux1Dev => Some(CommonModelType::Flux1Dev),
-    CommonImageModel::Flux1Schnell => Some(CommonModelType::Flux1Schnell),
-    CommonImageModel::FluxPro11 => Some(CommonModelType::FluxPro11),
-    CommonImageModel::FluxPro11Ultra => Some(CommonModelType::FluxPro11Ultra),
-    CommonImageModel::GptImage1 => Some(CommonModelType::GptImage1),
-    CommonImageModel::GptImage1p5 => Some(CommonModelType::GptImage1p5),
-    CommonImageModel::GptImage2 => Some(CommonModelType::GptImage2),
-    CommonImageModel::NanoBanana => Some(CommonModelType::NanoBanana),
-    CommonImageModel::NanoBanana2 => Some(CommonModelType::NanoBanana2),
-    CommonImageModel::NanoBananaPro => Some(CommonModelType::NanoBananaPro),
-    CommonImageModel::Seedream4 => Some(CommonModelType::Seedream4),
-    CommonImageModel::Seedream4p5 => Some(CommonModelType::Seedream4p5),
-    CommonImageModel::Seedream5Lite => Some(CommonModelType::Seedream5Lite),
-    CommonImageModel::QwenEdit2511Angles => Some(CommonModelType::QwenEdit2511Angles),
-    CommonImageModel::Flux2LoraAngles => Some(CommonModelType::Flux2LoraAngles),
-    CommonImageModel::GrokImagineImage => Some(CommonModelType::GrokImagineImage),
-    CommonImageModel::GrokImagineImageQuality => Some(CommonModelType::GrokImagineImageQuality),
+    RouterImageModel::Flux1Dev => Some(CommonModelType::Flux1Dev),
+    RouterImageModel::Flux1Schnell => Some(CommonModelType::Flux1Schnell),
+    RouterImageModel::FluxPro11 => Some(CommonModelType::FluxPro11),
+    RouterImageModel::FluxPro11Ultra => Some(CommonModelType::FluxPro11Ultra),
+    RouterImageModel::GptImage1 => Some(CommonModelType::GptImage1),
+    RouterImageModel::GptImage1p5 => Some(CommonModelType::GptImage1p5),
+    RouterImageModel::GptImage2 => Some(CommonModelType::GptImage2),
+    RouterImageModel::NanoBanana => Some(CommonModelType::NanoBanana),
+    RouterImageModel::NanoBanana2 => Some(CommonModelType::NanoBanana2),
+    RouterImageModel::NanoBananaPro => Some(CommonModelType::NanoBananaPro),
+    RouterImageModel::Seedream4 => Some(CommonModelType::Seedream4),
+    RouterImageModel::Seedream4p5 => Some(CommonModelType::Seedream4p5),
+    RouterImageModel::Seedream5Lite => Some(CommonModelType::Seedream5Lite),
+    RouterImageModel::QwenEdit2511Angles => Some(CommonModelType::QwenEdit2511Angles),
+    RouterImageModel::Flux2LoraAngles => Some(CommonModelType::Flux2LoraAngles),
+    RouterImageModel::GrokImagineImage => Some(CommonModelType::GrokImagineImage),
+    RouterImageModel::GrokImagineImageQuality => Some(CommonModelType::GrokImagineImageQuality),
   }
 }
 
@@ -115,7 +115,7 @@ mod tests {
 
   fn base_builder() -> GenerateImageRequestBuilder {
     GenerateImageRequestBuilder {
-      model: CommonImageModel::NanoBananaPro,
+      model: RouterImageModel::NanoBananaPro,
       provider: Provider::Fal,
       prompt: Some("a cat in space".to_string()),
       image_inputs: None,
@@ -192,11 +192,11 @@ mod tests {
   #[test]
   fn all_image_models_map() {
     let models = [
-      (CommonImageModel::Flux1Dev, CommonModelType::Flux1Dev),
-      (CommonImageModel::Flux1Schnell, CommonModelType::Flux1Schnell),
-      (CommonImageModel::NanoBananaPro, CommonModelType::NanoBananaPro),
-      (CommonImageModel::GptImage1, CommonModelType::GptImage1),
-      (CommonImageModel::Seedream4, CommonModelType::Seedream4),
+      (RouterImageModel::Flux1Dev, CommonModelType::Flux1Dev),
+      (RouterImageModel::Flux1Schnell, CommonModelType::Flux1Schnell),
+      (RouterImageModel::NanoBananaPro, CommonModelType::NanoBananaPro),
+      (RouterImageModel::GptImage1, CommonModelType::GptImage1),
+      (RouterImageModel::Seedream4, CommonModelType::Seedream4),
     ];
     for (router_model, expected) in models {
       let builder = GenerateImageRequestBuilder { model: router_model, ..base_builder() };

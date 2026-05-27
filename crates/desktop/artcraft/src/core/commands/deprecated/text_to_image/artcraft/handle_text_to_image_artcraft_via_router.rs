@@ -9,7 +9,7 @@ use crate::core::events::generation_events::common::GenerationModel;
 use crate::core::state::app_env_configs::app_env_configs::AppEnvConfigs;
 use crate::services::storyteller::state::storyteller_credential_manager::StorytellerCredentialManager;
 use artcraft_router::api::common_aspect_ratio::CommonAspectRatio as RouterCommonAspectRatio;
-use artcraft_router::api::common_image_model::CommonImageModel;
+use artcraft_router::api::router_image_model::RouterImageModel;
 use artcraft_router::api::common_resolution::CommonResolution as RouterCommonResolution;
 use artcraft_router::api::common_quality::CommonQuality as RouterCommonQuality;
 use artcraft_router::api::image_list_ref::ImageListRef;
@@ -27,7 +27,7 @@ pub(super) async fn handle_text_to_image_artcraft_via_router(
   request: &EnqueueTextToImageRequest,
   app_env_configs: &AppEnvConfigs,
   storyteller_creds_manager: &StorytellerCredentialManager,
-  model: CommonImageModel,
+  model: RouterImageModel,
   generation_model: GenerationModel,
 ) -> Result<TaskEnqueueSuccess, GenerateError> {
   let creds = match storyteller_creds_manager.get_credentials()? {

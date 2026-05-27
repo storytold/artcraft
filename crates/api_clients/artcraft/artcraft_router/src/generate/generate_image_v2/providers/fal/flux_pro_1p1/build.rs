@@ -103,13 +103,13 @@ fn plan_num_images(
 #[cfg(test)]
 mod tests {
   use super::*;
-  use crate::api::common_image_model::CommonImageModel;
+  use crate::api::router_image_model::RouterImageModel;
   use crate::api::image_list_ref::ImageListRef;
   use crate::api::provider::Provider;
 
   fn base_builder() -> GenerateImageRequestBuilder {
     GenerateImageRequestBuilder {
-      model: CommonImageModel::FluxPro11,
+      model: RouterImageModel::FluxPro11,
       provider: Provider::Fal,
       prompt: Some("a cat in space".to_string()),
       image_inputs: None,

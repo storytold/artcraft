@@ -32,7 +32,7 @@ impl ArtcraftFlux2LoraAnglesCostState {
 
 #[cfg(test)]
 mod tests {
-  use crate::api::common_image_model::CommonImageModel;
+  use crate::api::router_image_model::RouterImageModel;
   use crate::api::image_list_ref::ImageListRef;
   use crate::api::provider::Provider;
   use crate::client::request_mismatch_mitigation_strategy::RequestMismatchMitigationStrategy;
@@ -41,7 +41,7 @@ mod tests {
 
   fn cost_cents(image_batch_count: u16) -> u64 {
     let builder = GenerateImageRequestBuilder {
-      model: CommonImageModel::Flux2LoraAngles,
+      model: RouterImageModel::Flux2LoraAngles,
       provider: Provider::Artcraft,
       prompt: None,
       image_inputs: Some(ImageListRef::MediaFileTokens(vec![MediaFileToken::new_from_str("mf_test")])),

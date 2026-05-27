@@ -80,7 +80,7 @@ fn is_square_or_none(aspect_ratio: Option<CommonAspectRatioEnum>) -> bool {
 #[cfg(test)]
 mod tests {
   use crate::api::common_aspect_ratio::CommonAspectRatio;
-  use crate::api::common_image_model::CommonImageModel;
+  use crate::api::router_image_model::RouterImageModel;
   use crate::api::common_quality::CommonQuality;
   use crate::api::image_list_ref::ImageListRef;
   use crate::api::provider::Provider;
@@ -90,7 +90,7 @@ mod tests {
 
   fn base() -> GenerateImageRequestBuilder {
     GenerateImageRequestBuilder {
-      model: CommonImageModel::GptImage1,
+      model: RouterImageModel::GptImage1,
       provider: Provider::Artcraft,
       prompt: None,
       image_inputs: None,

@@ -6,7 +6,7 @@ use strum::EnumCount;
 use strum::EnumIter;
 
 /// Image models available for generation.
-/// Mirrors artcraft_router::api::common_image_model::CommonImageModel.
+/// Mirrors artcraft_router::api::router_image_model::RouterImageModel.
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Serialize, Deserialize, ToSchema)]
 #[cfg_attr(test, derive(EnumIter, EnumCount))]
 #[serde(rename_all = "snake_case")]

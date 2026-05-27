@@ -27,14 +27,14 @@ impl ArtcraftFlux1SchnellCostState {
 
 #[cfg(test)]
 mod tests {
-  use crate::api::common_image_model::CommonImageModel;
+  use crate::api::router_image_model::RouterImageModel;
   use crate::api::provider::Provider;
   use crate::client::request_mismatch_mitigation_strategy::RequestMismatchMitigationStrategy;
   use crate::generate::generate_image::generate_image_request_builder::GenerateImageRequestBuilder;
 
   fn build_estimate() -> crate::generate::generate_image::image_generation_cost_estimate::ImageGenerationCostEstimate {
     let builder = GenerateImageRequestBuilder {
-      model: CommonImageModel::Flux1Schnell,
+      model: RouterImageModel::Flux1Schnell,
       provider: Provider::Artcraft,
       prompt: None,
       image_inputs: None,

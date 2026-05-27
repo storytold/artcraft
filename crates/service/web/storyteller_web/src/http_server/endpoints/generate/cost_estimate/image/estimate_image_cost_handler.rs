@@ -8,7 +8,7 @@ use artcraft_api_defs::generate::cost_estimate::estimate_image_cost::{
   EstimateImageCostResponse,
 };
 use artcraft_router::api::common_aspect_ratio::CommonAspectRatio as RouterAspectRatio;
-use artcraft_router::api::common_image_model::CommonImageModel as RouterImageModel;
+use artcraft_router::api::router_image_model::RouterImageModel;
 use artcraft_router::api::common_quality::CommonQuality as RouterQuality;
 use artcraft_router::api::common_resolution::CommonResolution as RouterResolution;
 use artcraft_router::api::provider::Provider as RouterProvider;

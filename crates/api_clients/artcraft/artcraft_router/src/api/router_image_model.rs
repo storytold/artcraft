@@ -4,7 +4,7 @@ use serde_derive::{Deserialize, Serialize};
 /// Not all models are available through all providers.
 #[derive(Copy, Clone, Debug, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
-pub enum CommonImageModel {
+pub enum RouterImageModel {
   #[serde(rename = "flux_1_dev")]
   Flux1Dev,
   #[serde(rename = "flux_1_schnell")]

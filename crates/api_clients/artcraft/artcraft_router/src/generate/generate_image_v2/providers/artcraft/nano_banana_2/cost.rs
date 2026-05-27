@@ -53,7 +53,7 @@ fn cost_per_image_in_cents(resolution: Option<CommonResolutionEnum>) -> u64 {
 
 #[cfg(test)]
 mod tests {
-  use crate::api::common_image_model::CommonImageModel;
+  use crate::api::router_image_model::RouterImageModel;
   use crate::api::common_resolution::CommonResolution;
   use crate::api::provider::Provider;
   use crate::client::request_mismatch_mitigation_strategy::RequestMismatchMitigationStrategy;
@@ -61,7 +61,7 @@ mod tests {
 
   fn cost_cents(resolution: Option<CommonResolution>, image_batch_count: u16) -> u64 {
     let builder = GenerateImageRequestBuilder {
-      model: CommonImageModel::NanoBanana2,
+      model: RouterImageModel::NanoBanana2,
       provider: Provider::Artcraft,
       prompt: None,
       image_inputs: None,
