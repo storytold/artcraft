@@ -21,13 +21,13 @@ pub fn tauri_image_model_to_enums_model(model: TauriImageModel) -> Option<Common
     TauriImageModel::Seedream4 => Some(CommonImageModel::Seedream4),
     TauriImageModel::Seedream4p5 => Some(CommonImageModel::Seedream4p5),
     TauriImageModel::Seedream5Lite => Some(CommonImageModel::Seedream5Lite),
+    TauriImageModel::QwenEdit2511Angles => Some(CommonImageModel::QwenEdit2511Angles),
+    TauriImageModel::Flux2LoraAngles => Some(CommonImageModel::Flux2LoraAngles),
     // Not accounted for yet
     TauriImageModel::GrokImage => None,
     TauriImageModel::Recraft3 => None,
     TauriImageModel::Midjourney => None,
     TauriImageModel::FluxProKontextMax => None,
-    TauriImageModel::QwenEdit2511Angles => None,
-    TauriImageModel::Flux2LoraAngles => None,
     TauriImageModel::FluxDevJuggernaut => None,
   }
 }
