@@ -5,7 +5,6 @@ use actix_web::web::Json;
 use actix_web::{web, HttpRequest};
 use log::{error, info, warn};
 use sqlx::Acquire;
-use url::Url;
 
 use artcraft_api_defs::omni_gen::cost_and_generate_requests::omni_gen_video_cost_and_generate_request::OmniGenVideoCostAndGenerateRequest;
 use artcraft_api_defs::omni_gen::generate_response::omni_gen_video_generate_response::OmniGenVideoGenerateResponse;
@@ -42,7 +41,7 @@ use crate::http_server::endpoints::omni_gen::generate::video::helpers::resolve_k
 use crate::http_server::session::lookup::user_session_feature_flags::UserSessionFeatureFlags;
 use crate::http_server::validations::validate_idempotency_token_format::validate_idempotency_token_format;
 use crate::state::server_state::ServerState;
-use crate::util::lookup::lookup_image_urls_as_map::lookup_image_urls_as_map;
+use crate::util::lookup::lookup_media_files_as_cdn_url_list_and_map::lookup_media_files_as_cdn_url_list_and_map;
 
 /// Generate a video using the omni-gen unified endpoint.
 #[utoipa::path(
@@ -122,52 +121,36 @@ pub async fn omni_gen_video_generate_handler(
 
   // ==================== RESOLVE MEDIA TOKENS ==================== //
 
-  let media_file_hydration_map: Option<HashMap<MediaFileToken, Url>> = {
-    let mut all_tokens: Vec<MediaFileToken> = Vec::new();
+  let mut all_tokens: Vec<MediaFileToken> = Vec::new();
 
-    if let Some(token) = &request.start_frame_image_media_token {
-      all_tokens.push(token.clone());
-    }
-    if let Some(token) = &request.end_frame_image_media_token {
-      all_tokens.push(token.clone());
-    }
-    if let Some(tokens) = &request.reference_image_media_tokens {
-      all_tokens.extend(tokens.iter().cloned());
-    }
-    if let Some(tokens) = &request.reference_video_media_tokens {
-      all_tokens.extend(tokens.iter().cloned());
-    }
-    if let Some(tokens) = &request.reference_audio_media_tokens {
-      all_tokens.extend(tokens.iter().cloned());
-    }
+  if let Some(token) = &request.start_frame_image_media_token {
+    all_tokens.push(token.clone());
+  }
+  if let Some(token) = &request.end_frame_image_media_token {
+    all_tokens.push(token.clone());
+  }
+  if let Some(tokens) = &request.reference_image_media_tokens {
+    all_tokens.extend(tokens.iter().cloned());
+  }
+  if let Some(tokens) = &request.reference_video_media_tokens {
+    all_tokens.extend(tokens.iter().cloned());
+  }
+  if let Some(tokens) = &request.reference_audio_media_tokens {
+    all_tokens.extend(tokens.iter().cloned());
+  }
 
-    if all_tokens.is_empty() {
-      None
-    } else {
-      info!("Resolving {} media file tokens to CDN URLs", all_tokens.len());
-      let raw = lookup_image_urls_as_map(
-        &http_request,
-        &mut mysql_connection,
-        server_state.server_environment,
-        &all_tokens,
-      ).await?;
-      let parsed: HashMap<MediaFileToken, Url> = raw.into_iter()
-        .filter_map(|(token, url_str)| match Url::parse(&url_str) {
-          Ok(url) => Some((token, url)),
-          Err(err) => {
-            warn!("Failed to parse media file URL {:?}: {:?}", url_str, err);
-            None
-          }
-        })
-        .collect();
-      Some(parsed)
-    }
+  let media_file_to_url_map: Option<HashMap<MediaFileToken, String>> = if all_tokens.is_empty() {
+    None
+  } else {
+    info!("Resolving {} media file tokens to CDN URLs", all_tokens.len());
+    let resolved = lookup_media_files_as_cdn_url_list_and_map(
+      &http_request,
+      &mut mysql_connection,
+      server_state.server_environment,
+      &all_tokens,
+    ).await?;
+    Some(resolved.token_to_url_map)
   };
-
-  let media_file_to_url_map: Option<HashMap<MediaFileToken, String>> =
-    media_file_hydration_map.as_ref().map(|map| {
-      map.iter().map(|(k, v)| (k.clone(), v.to_string())).collect()
-    });
 
   // ==================== RESOLVE CHARACTERS ==================== //
 
