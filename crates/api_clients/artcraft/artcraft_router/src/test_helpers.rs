@@ -49,7 +49,7 @@ pub fn get_fal_client() -> RouterClient {
     .expect("Failed to read /Users/bt/Artcraft/credentials/fal_api_key.txt");
   let api_key = FalApiKey::from_str(secret.trim());
   let webhook_url = "https://example.com/fal-webhook-test".to_string();
-  RouterClient::Fal(RouterFalClient::new(api_key, webhook_url))
+  RouterClient::Fal(RouterFalClient::new_with_webhook(api_key, webhook_url))
 }
 
 pub fn base_fal_image_request() -> GenerateImageRequestBuilder {

@@ -10,6 +10,7 @@ use fal_client::requests::webhook::video::text::enqueue_veo_3_text_to_video_webh
 
 use crate::client::router_fal_client::RouterFalClient;
 use crate::errors::artcraft_router_error::ArtcraftRouterError;
+use crate::errors::client_error::ClientError;
 use crate::errors::provider_error::ProviderError;
 use crate::generate::generate_video::generate_video_response::{
   FalVideoResponsePayload, GenerateVideoResponse,
@@ -28,13 +29,15 @@ pub struct FalVeo3RequestState {
 
 impl FalVeo3RequestState {
   pub async fn send(&self, client: &RouterFalClient) -> Result<GenerateVideoResponse, ArtcraftRouterError> {
+    let webhook_url = client.webhook_url.as_deref()
+      .ok_or(ArtcraftRouterError::Client(ClientError::WebhookUrlRequired))?;
     let (webhook_response, outbound_request): (_, Arc<dyn Debug + Send + Sync>) = match &self.mode {
       FalVeo3Mode::TextToVideo(request) => {
         let outbound: Arc<dyn Debug + Send + Sync> = Arc::new(request.clone());
         let args = Veo3TextToVideoArgs {
           request: request.clone(),
           api_key: &client.api_key,
-          webhook_url: client.webhook_url.as_str(),
+          webhook_url,
         };
         (enqueue_veo_3_text_to_video_webhook(args).await, outbound)
       }
@@ -43,7 +46,7 @@ impl FalVeo3RequestState {
         let args = Veo3Args {
           request: request.clone(),
           api_key: &client.api_key,
-          webhook_url: client.webhook_url.as_str(),
+          webhook_url,
         };
         (enqueue_veo_3_image_to_video_webhook(args).await, outbound)
       }

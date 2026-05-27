@@ -12,6 +12,7 @@ use fal_client::requests::webhook::video::text::enqueue_seedance_1p5_pro_text_to
 
 use crate::client::router_fal_client::RouterFalClient;
 use crate::errors::artcraft_router_error::ArtcraftRouterError;
+use crate::errors::client_error::ClientError;
 use crate::errors::provider_error::ProviderError;
 use crate::generate::generate_video::generate_video_response::{
   FalVideoResponsePayload, GenerateVideoResponse,
@@ -30,12 +31,14 @@ pub struct FalSeedance1p5ProRequestState {
 
 impl FalSeedance1p5ProRequestState {
   pub async fn send(&self, client: &RouterFalClient) -> Result<GenerateVideoResponse, ArtcraftRouterError> {
+    let webhook_url = client.webhook_url.as_deref()
+      .ok_or(ArtcraftRouterError::Client(ClientError::WebhookUrlRequired))?;
     let (webhook_response, outbound_request): (_, Arc<dyn Debug + Send + Sync>) = match &self.mode {
       FalSeedance1p5ProMode::TextToVideo(request) => {
         let outbound: Arc<dyn Debug + Send + Sync> = Arc::new(request.clone());
         let args = EnqueueSeedance1p5ProTextToVideoArgs {
           request: request.clone(),
-          webhook_url: client.webhook_url.as_str(),
+          webhook_url,
           api_key: &client.api_key,
         };
         (enqueue_seedance_1p5_pro_text_to_video_webhook(args).await, outbound)
@@ -44,7 +47,7 @@ impl FalSeedance1p5ProRequestState {
         let outbound: Arc<dyn Debug + Send + Sync> = Arc::new(request.clone());
         let args = EnqueueSeedance1p5ProImageToVideoArgs {
           request: request.clone(),
-          webhook_url: client.webhook_url.as_str(),
+          webhook_url,
           api_key: &client.api_key,
         };
         (enqueue_seedance_1p5_pro_image_to_video_webhook(args).await, outbound)

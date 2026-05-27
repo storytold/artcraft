@@ -3,7 +3,7 @@ use log::{info, warn};
 use artcraft_router::api::image_list_ref::ImageListRef;
 use artcraft_router::api::provider::Provider;
 use artcraft_router::client::router_client::RouterClient;
-use artcraft_router::client::router_fal_webhook_optional_client::RouterFalWebhookOptionalClient;
+use artcraft_router::client::router_fal_client::RouterFalClient;
 use artcraft_router::generate::generate_image::generate_image_request_builder::GenerateImageRequestBuilder;
 use artcraft_router::generate::generate_image::generate_image_response::GenerateImageResponse;
 use artcraft_router::generate::generate_image_v2::image_generation_draft_context::ImageGenerationDraftContext;
@@ -155,11 +155,11 @@ fn build_router_client(
 ) -> Result<RouterClient, CommonWebError> {
   match provider {
     Provider::Fal => {
-      let fal_client = RouterFalWebhookOptionalClient::new_with_webhook(
+      let fal_client = RouterFalClient::new_with_webhook(
         server_state.fal.api_key.clone(),
         server_state.fal.webhook_url.clone(),
       );
-      Ok(RouterClient::FalWebhookOptional(fal_client))
+      Ok(RouterClient::Fal(fal_client))
     },
     other => {
       Err(CommonWebError::server_error_with_message(

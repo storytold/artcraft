@@ -11,6 +11,7 @@ use fal_client::requests::webhook::image::text::enqueue_gemini_25_flash_text_to_
 
 use crate::client::router_fal_client::RouterFalClient;
 use crate::errors::artcraft_router_error::ArtcraftRouterError;
+use crate::errors::client_error::ClientError;
 use crate::errors::provider_error::ProviderError;
 use crate::generate::generate_image::generate_image_response::{
   FalImageResponsePayload, GenerateImageResponse,
@@ -24,12 +25,14 @@ pub enum FalNanoBananaRequestState {
 
 impl FalNanoBananaRequestState {
   pub async fn send(&self, client: &RouterFalClient) -> Result<GenerateImageResponse, ArtcraftRouterError> {
+    let webhook_url = client.webhook_url.as_deref()
+      .ok_or(ArtcraftRouterError::Client(ClientError::WebhookUrlRequired))?;
     let (webhook_response, outbound): (_, Arc<dyn Debug + Send + Sync>) = match self {
       Self::TextToImage(request) => {
         let outbound: Arc<dyn Debug + Send + Sync> = Arc::new(request.clone());
         let args = Gemini25FlashTextToImageArgs {
           request: request.clone(),
-          webhook_url: client.webhook_url.as_str(),
+          webhook_url,
           api_key: &client.api_key,
         };
         (enqueue_gemini_25_flash_text_to_image_webhook(args).await, outbound)
@@ -38,7 +41,7 @@ impl FalNanoBananaRequestState {
         let outbound: Arc<dyn Debug + Send + Sync> = Arc::new(request.clone());
         let args = Gemini25FlashEditArgs {
           request: request.clone(),
-          webhook_url: client.webhook_url.as_str(),
+          webhook_url,
           api_key: &client.api_key,
         };
         (enqueue_gemini_25_flash_edit_webhook(args).await, outbound)
@@ -75,7 +78,7 @@ mod tests {
   }
 
   fn client_with_webhook() -> RouterFalClient {
-    RouterFalClient::new(
+    RouterFalClient::new_with_webhook(
       read_fal_api_key(),
       "https://example.com/fal-webhook-test".to_string(),
     )

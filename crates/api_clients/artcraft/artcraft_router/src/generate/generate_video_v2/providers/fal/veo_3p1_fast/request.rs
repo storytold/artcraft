@@ -17,6 +17,7 @@ use fal_client::requests::webhook::video::text::enqueue_veo_3p1_fast_text_to_vid
 
 use crate::client::router_fal_client::RouterFalClient;
 use crate::errors::artcraft_router_error::ArtcraftRouterError;
+use crate::errors::client_error::ClientError;
 use crate::errors::provider_error::ProviderError;
 use crate::generate::generate_video::generate_video_response::{
   FalVideoResponsePayload, GenerateVideoResponse,
@@ -36,12 +37,14 @@ pub struct FalVeo3p1FastRequestState {
 
 impl FalVeo3p1FastRequestState {
   pub async fn send(&self, client: &RouterFalClient) -> Result<GenerateVideoResponse, ArtcraftRouterError> {
+    let webhook_url = client.webhook_url.as_deref()
+      .ok_or(ArtcraftRouterError::Client(ClientError::WebhookUrlRequired))?;
     let (webhook_response, outbound_request): (_, Arc<dyn Debug + Send + Sync>) = match &self.mode {
       FalVeo3p1FastMode::TextToVideo(request) => {
         let outbound: Arc<dyn Debug + Send + Sync> = Arc::new(request.clone());
         let args = EnqueueVeo3p1FastTextToVideoArgs {
           request: request.clone(),
-          webhook_url: client.webhook_url.as_str(),
+          webhook_url,
           api_key: &client.api_key,
         };
         (enqueue_veo_3p1_fast_text_to_video_webhook(args).await, outbound)
@@ -50,7 +53,7 @@ impl FalVeo3p1FastRequestState {
         let outbound: Arc<dyn Debug + Send + Sync> = Arc::new(request.clone());
         let args = EnqueueVeo3p1FastImageToVideoArgs {
           request: request.clone(),
-          webhook_url: client.webhook_url.as_str(),
+          webhook_url,
           api_key: &client.api_key,
         };
         (enqueue_veo_3p1_fast_image_to_video_webhook(args).await, outbound)
@@ -59,7 +62,7 @@ impl FalVeo3p1FastRequestState {
         let outbound: Arc<dyn Debug + Send + Sync> = Arc::new(request.clone());
         let args = EnqueueVeo3p1FastFirstLastFrameImageToVideoArgs {
           request: request.clone(),
-          webhook_url: client.webhook_url.as_str(),
+          webhook_url,
           api_key: &client.api_key,
         };
         (enqueue_veo_3p1_fast_first_last_frame_image_to_video_webhook(args).await, outbound)

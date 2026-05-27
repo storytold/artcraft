@@ -7,6 +7,7 @@ use fal_client::requests::webhook::video::image::enqueue_veo_3_fast_image_to_vid
 
 use crate::client::router_fal_client::RouterFalClient;
 use crate::errors::artcraft_router_error::ArtcraftRouterError;
+use crate::errors::client_error::ClientError;
 use crate::errors::provider_error::ProviderError;
 use crate::generate::generate_video::generate_video_response::{
   FalVideoResponsePayload, GenerateVideoResponse,
@@ -19,12 +20,14 @@ pub struct FalVeo3FastRequestState {
 
 impl FalVeo3FastRequestState {
   pub async fn send(&self, client: &RouterFalClient) -> Result<GenerateVideoResponse, ArtcraftRouterError> {
+    let webhook_url = client.webhook_url.as_deref()
+      .ok_or(ArtcraftRouterError::Client(ClientError::WebhookUrlRequired))?;
     let outbound_request: Arc<dyn Debug + Send + Sync> = Arc::new(self.request.clone());
 
     let args = Veo3FastArgs {
       request: self.request.clone(),
       api_key: &client.api_key,
-      webhook_url: client.webhook_url.as_str(),
+      webhook_url,
     };
 
     let webhook_response = enqueue_veo_3_fast_image_to_video_webhook(args)

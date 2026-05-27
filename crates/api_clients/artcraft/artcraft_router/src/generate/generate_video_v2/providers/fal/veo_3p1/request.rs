@@ -14,6 +14,7 @@ use fal_client::requests::webhook::video::text::enqueue_veo_3p1_text_to_video_we
 
 use crate::client::router_fal_client::RouterFalClient;
 use crate::errors::artcraft_router_error::ArtcraftRouterError;
+use crate::errors::client_error::ClientError;
 use crate::errors::provider_error::ProviderError;
 use crate::generate::generate_video::generate_video_response::{
   FalVideoResponsePayload, GenerateVideoResponse,
@@ -33,12 +34,14 @@ pub struct FalVeo3p1RequestState {
 
 impl FalVeo3p1RequestState {
   pub async fn send(&self, client: &RouterFalClient) -> Result<GenerateVideoResponse, ArtcraftRouterError> {
+    let webhook_url = client.webhook_url.as_deref()
+      .ok_or(ArtcraftRouterError::Client(ClientError::WebhookUrlRequired))?;
     let (webhook_response, outbound_request): (_, Arc<dyn Debug + Send + Sync>) = match &self.mode {
       FalVeo3p1Mode::TextToVideo(request) => {
         let outbound: Arc<dyn Debug + Send + Sync> = Arc::new(request.clone());
         let args = EnqueueVeo3p1TextToVideoArgs {
           request: request.clone(),
-          webhook_url: client.webhook_url.as_str(),
+          webhook_url,
           api_key: &client.api_key,
         };
         (enqueue_veo_3p1_text_to_video_webhook(args).await, outbound)
@@ -47,7 +50,7 @@ impl FalVeo3p1RequestState {
         let outbound: Arc<dyn Debug + Send + Sync> = Arc::new(request.clone());
         let args = EnqueueVeo3p1ImageToVideoArgs {
           request: request.clone(),
-          webhook_url: client.webhook_url.as_str(),
+          webhook_url,
           api_key: &client.api_key,
         };
         (enqueue_veo_3p1_image_to_video_webhook(args).await, outbound)
@@ -56,7 +59,7 @@ impl FalVeo3p1RequestState {
         let outbound: Arc<dyn Debug + Send + Sync> = Arc::new(request.clone());
         let args = EnqueueVeo3p1FirstLastFrameImageToVideoArgs {
           request: request.clone(),
-          webhook_url: client.webhook_url.as_str(),
+          webhook_url,
           api_key: &client.api_key,
         };
         (enqueue_veo_3p1_first_last_frame_image_to_video_webhook(args).await, outbound)

@@ -7,6 +7,7 @@ use fal_client::requests::webhook::image::text::enqueue_flux_pro_11_ultra_text_t
 
 use crate::client::router_fal_client::RouterFalClient;
 use crate::errors::artcraft_router_error::ArtcraftRouterError;
+use crate::errors::client_error::ClientError;
 use crate::errors::provider_error::ProviderError;
 use crate::generate::generate_image::generate_image_response::{
   FalImageResponsePayload, GenerateImageResponse,
@@ -19,10 +20,12 @@ pub struct FalFluxPro1p1UltraRequestState {
 
 impl FalFluxPro1p1UltraRequestState {
   pub async fn send(&self, client: &RouterFalClient) -> Result<GenerateImageResponse, ArtcraftRouterError> {
+    let webhook_url = client.webhook_url.as_deref()
+      .ok_or(ArtcraftRouterError::Client(ClientError::WebhookUrlRequired))?;
     let outbound: Arc<dyn Debug + Send + Sync> = Arc::new(self.request.clone());
     let args = FluxPro11UltraArgs {
       request: self.request.clone(),
-      webhook_url: client.webhook_url.as_str(),
+      webhook_url,
       api_key: &client.api_key,
     };
     let webhook_response = enqueue_flux_pro_11_ultra_text_to_image_webhook(args)
@@ -54,7 +57,7 @@ mod tests {
   }
 
   fn client_with_webhook() -> RouterFalClient {
-    RouterFalClient::new(
+    RouterFalClient::new_with_webhook(
       read_fal_api_key(),
       "https://example.com/fal-webhook-test".to_string(),
     )

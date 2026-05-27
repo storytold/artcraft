@@ -21,7 +21,7 @@ pub fn build_router_client(
       kinovi_provider(server_state, use_alternate_kinovi)
     }
     Provider::Fal => {
-      let fal_client = RouterFalClient::new(
+      let fal_client = RouterFalClient::new_with_webhook(
         server_state.fal.api_key.clone(),
         server_state.fal.webhook_url.clone(),
       );

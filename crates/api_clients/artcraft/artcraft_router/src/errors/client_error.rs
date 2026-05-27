@@ -7,7 +7,6 @@ use tokens::tokens::media_files::MediaFileToken;
 pub enum ClientType {
   Artcraft,
   Fal,
-  FalWebhookOptional,
   GmiCloud,
   GrokApi,
   Seedance2Pro,
@@ -18,7 +17,6 @@ impl Display for ClientType {
     match self {
       Self::Artcraft => write!(f, "Artcraft"),
       Self::Fal => write!(f, "Fal"),
-      Self::FalWebhookOptional => write!(f, "FalWebhookOptional"),
       Self::GmiCloud => write!(f, "GmiCloud"),
       Self::GrokApi => write!(f, "GrokApi"),
       Self::Seedance2Pro => write!(f, "Seedance2Pro"),
@@ -49,6 +47,11 @@ pub enum ClientError {
 
   /// Seedance2Pro only accepts URLs for media inputs, not media tokens.
   Seedance2ProOnlySupportsUrls,
+
+  /// The Fal endpoint requires a webhook URL but the caller built the client
+  /// in polling/queue mode (no webhook URL). Returned by webhook-only
+  /// endpoints (those whose fal_client wrapper has no `api::` queue variant).
+  WebhookUrlRequired,
   
   /// The pre-dispatch context of media file token to URL map was not supplied.
   MediaFileToUrlMapNotProvided,
@@ -88,6 +91,9 @@ impl Display for ClientError {
       }
       Self::Seedance2ProOnlySupportsUrls => {
         write!(f, "Seedance2Pro only supports URLs for media inputs; resolve media tokens to URLs before calling this provider")
+      }
+      Self::WebhookUrlRequired => {
+        write!(f, "This Fal endpoint only supports webhook dispatch; the caller built RouterFalClient in polling-only mode (no webhook URL)")
       }
       Self::MediaFileToUrlMapNotProvided => {
         write!(f, "Media file to URL map was not provided")

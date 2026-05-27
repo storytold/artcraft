@@ -5,9 +5,8 @@ use fal_client::requests::api::image::edit::flux_1_dev_edit_image::api::Flux1Dev
 use fal_client::requests::api::image::text::flux_1_dev_text_to_image::api::Flux1DevTextToImageRequest;
 use fal_client::requests::traits::fal_endpoint_trait::FalEndpoint;
 
-use crate::client::router_fal_webhook_optional_client::RouterFalWebhookOptionalClient;
+use crate::client::router_fal_client::RouterFalClient;
 use crate::errors::artcraft_router_error::ArtcraftRouterError;
-use crate::errors::provider_error::ProviderError;
 use crate::generate::generate_image::generate_image_response::{
   FalImageResponsePayload, GenerateImageResponse,
 };
@@ -19,7 +18,7 @@ pub enum FalFlux1DevRequestState {
 }
 
 impl FalFlux1DevRequestState {
-  pub async fn send(&self, client: &RouterFalWebhookOptionalClient) -> Result<GenerateImageResponse, ArtcraftRouterError> {
+  pub async fn send(&self, client: &RouterFalClient) -> Result<GenerateImageResponse, ArtcraftRouterError> {
     match self {
       Self::TextToImage(request) => {
         let outbound: Arc<dyn Debug + Send + Sync> = Arc::new(request.clone());
@@ -58,12 +57,10 @@ struct FalResponseIds {
 
 async fn send_fal_request<T: FalEndpoint>(
   request: &T,
-  client: &RouterFalWebhookOptionalClient,
+  client: &RouterFalClient,
 ) -> Result<FalResponseIds, ArtcraftRouterError> {
   if let Some(webhook_url) = &client.webhook_url {
-    let response = request
-      .send_webhook_request(&client.api_key, webhook_url)
-      .await?;
+    let response = request.send_webhook_request(&client.api_key, webhook_url).await?;
     Ok(FalResponseIds {
       request_id: response.request_id,
       gateway_request_id: response.gateway_request_id,
@@ -71,9 +68,7 @@ async fn send_fal_request<T: FalEndpoint>(
       response_url: None,
     })
   } else {
-    let response = request
-      .send_queue_request(&client.api_key)
-      .await?;
+    let response = request.send_queue_request(&client.api_key).await?;
     Ok(FalResponseIds {
       request_id: Some(response.request_id),
       gateway_request_id: None,
@@ -99,15 +94,11 @@ mod tests {
     FalApiKey::from_str(secret.trim())
   }
 
-  fn client_with_webhook() -> RouterFalWebhookOptionalClient {
-    RouterFalWebhookOptionalClient::new_with_webhook(
+  fn client_with_webhook() -> RouterFalClient {
+    RouterFalClient::new_with_webhook(
       read_fal_api_key(),
       "https://example.com/fal-webhook-test".to_string(),
     )
-  }
-
-  fn client_without_webhook() -> RouterFalWebhookOptionalClient {
-    RouterFalWebhookOptionalClient::new(read_fal_api_key())
   }
 
   // ── Text-to-image ──
@@ -134,16 +125,6 @@ mod tests {
       assert!(payload.request_id.is_some() || payload.gateway_request_id.is_some());
     }
 
-    #[tokio::test]
-    #[ignore] // requires real API key, incurs cost
-    async fn send_via_queue() {
-      let client = client_without_webhook();
-      let state = t2i_request();
-      let response = state.send(&client).await.expect("send should succeed");
-      let payload = response.get_fal_payload().expect("expected Fal payload");
-      println!("Queue t2i — request_id: {:?}", payload.request_id);
-      assert!(payload.request_id.is_some());
-    }
   }
 
   // ── Edit image ──
@@ -170,15 +151,5 @@ mod tests {
       assert!(payload.request_id.is_some() || payload.gateway_request_id.is_some());
     }
 
-    #[tokio::test]
-    #[ignore] // requires real API key, incurs cost
-    async fn send_via_queue() {
-      let client = client_without_webhook();
-      let state = edit_request();
-      let response = state.send(&client).await.expect("send should succeed");
-      let payload = response.get_fal_payload().expect("expected Fal payload");
-      println!("Queue edit — request_id: {:?}", payload.request_id);
-      assert!(payload.request_id.is_some());
-    }
   }
 }

@@ -6,7 +6,6 @@ use artcraft_router::client::generation_mode_mismatch_strategy::GenerationModeMi
 use artcraft_router::client::request_mismatch_mitigation_strategy::RequestMismatchMitigationStrategy;
 use artcraft_router::client::router_client::RouterClient;
 use artcraft_router::client::router_fal_client::RouterFalClient;
-use artcraft_router::client::router_fal_webhook_optional_client::RouterFalWebhookOptionalClient;
 use artcraft_router::generate::generate_image::generate_image_request_builder::GenerateImageRequestBuilder;
 use artcraft_router::generate::generate_image::generate_image_response::GenerateImageResponse;
 use artcraft_router::generate::generate_image_v2::image_generation_draft_or_request::ImageGenerationDraftOrRequest;
@@ -91,8 +90,8 @@ async fn handle_fal(
     storyteller_creds_manager,
   ).await;
 
-  let fal_client = RouterFalWebhookOptionalClient::from_str(api_key);
-  let client = RouterClient::FalWebhookOptional(fal_client);
+  let fal_client = RouterFalClient::new_polling_only_from_raw_key(api_key);
+  let client = RouterClient::Fal(fal_client);
 
   info!("Building FAL image generation plan: model={:?}", router_model);
 

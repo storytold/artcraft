@@ -272,11 +272,11 @@ impl ImageGenerationRequest {
 
       // ── Fal ──
       Self::FalFlux1Dev(request) => {
-        let fal_client = client.get_fal_webhook_optional_client_ref()?;
+        let fal_client = client.get_fal_client_ref()?;
         request.send(fal_client).await
       }
       Self::FalFlux1Schnell(request) => {
-        let fal_client = client.get_fal_webhook_optional_client_ref()?;
+        let fal_client = client.get_fal_client_ref()?;
         request.send(fal_client).await
       }
       Self::FalFluxPro1p1(request) => {
@@ -289,15 +289,15 @@ impl ImageGenerationRequest {
         request.send(fal_client).await
       }
       Self::FalGptImage1(request) => {
-        let fal_client = client.get_fal_webhook_optional_client_ref()?;
+        let fal_client = client.get_fal_client_ref()?;
         request.send(fal_client).await
       }
       Self::FalGptImage1p5(request) => {
-        let fal_client = client.get_fal_webhook_optional_client_ref()?;
+        let fal_client = client.get_fal_client_ref()?;
         request.send(fal_client).await
       }
       Self::FalGptImage2(request) => {
-        let fal_client = client.get_fal_webhook_optional_client_ref()?;
+        let fal_client = client.get_fal_client_ref()?;
         request.send(fal_client).await
       }
       Self::FalNanoBanana(request) => {
@@ -306,11 +306,11 @@ impl ImageGenerationRequest {
         request.send(fal_client).await
       }
       Self::FalNanoBanana2(request) => {
-        let fal_client = client.get_fal_webhook_optional_client_ref()?;
+        let fal_client = client.get_fal_client_ref()?;
         request.send(fal_client).await
       }
       Self::FalNanoBananaPro(request) => {
-        let fal_client = client.get_fal_webhook_optional_client_ref()?;
+        let fal_client = client.get_fal_client_ref()?;
         request.send(fal_client).await
       }
       Self::FalSeedream4(request) => {
