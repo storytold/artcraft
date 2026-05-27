@@ -31,10 +31,20 @@ pub async fn omni_gen_image_cost_handler(
   request: Json<OmniGenImageCostAndGenerateRequest>,
   _server_state: web::Data<Arc<ServerState>>,
 ) -> Result<Json<OmniGenImageCostResponse>, CommonWebError> {
-  let mut generate_request = hydrate_to_router_request(&request)?;
-  generate_request.provider = Provider::Artcraft; // NB: Explicitly spell this out.
+  let mut builder = hydrate_to_router_request(&request)?;
 
-  let estimate = estimate_cost(&generate_request)?;
+  builder.provider = Provider::Artcraft; // NB: Explicitly spell this out.
+
+  let estimate = builder.build2()
+      .map_err(|e| {
+        warn!("Failed to build cost estimate: {}", e);
+        CommonWebError::from_error(e)
+      })?
+      .estimate_cost()
+      .map_err(|e| {
+        warn!("Failed to estimate cost: {}", e);
+        CommonWebError::from_error(e)
+      })?;
 
   Ok(Json(OmniGenImageCostResponse {
     success: true,
@@ -46,53 +56,4 @@ pub async fn omni_gen_image_cost_handler(
     has_watermark: estimate.has_watermark,
     failures_are_refunded: estimate.failures_are_refunded,
   }))
-}
-
-fn estimate_cost(
-  generate_request: &GenerateImageRequestBuilder,
-) -> Result<ImageGenerationCostEstimate, CommonWebError> {
-  let mut builder = generate_request.clone();
-  builder.provider = Provider::Artcraft;
-
-  match builder.clone().build2() {
-    Ok(result) => match result.estimate_cost() {
-      Ok(cost) => return Ok(cost),
-      Err(err) => {
-        warn!("Failed to estimate image cost via Artcraft: {}", err);
-      }
-    },
-    Err(err) => {
-      warn!("Failed to build image cost request via Artcraft: {}", err);
-    }
-  }
-
-  // TODO(bt,2026-05-15): This is a horrible hack for models that aren't fully
-  // available on the Artcraft provider. Falls back to Fal pricing. Kill this
-  // once every cost-estimation route lives on a single provider.
-  builder.provider = Provider::Fal;
-
-  // Fal cost estimation doesn't work with media file tokens.
-  // We don't need to look them up (though, technically, image size does impact
-  // cost with some providers). Just fill the list with dummy URLs.
-  if let Some(ImageListRef::MediaFileTokens(tokens)) = builder.image_inputs.as_ref() {
-    builder.image_inputs = Some(ImageListRef::Urls(vec![
-      "https://example.com/image.png".to_string();
-      tokens.len()
-    ]));
-  }
-
-  let mut cost = builder.build2()
-    .map_err(|e| {
-      warn!("Failed to build image cost request via Fal: {}", e);
-      CommonWebError::from_error(e)
-    })?
-    .estimate_cost()
-    .map_err(|e| {
-      warn!("Failed to estimate image cost via Fal: {}", e);
-      CommonWebError::from_error(e)
-    })?;
-
-  cost.cost_in_credits = cost.cost_in_usd_cents;
-
-  Ok(cost)
 }
