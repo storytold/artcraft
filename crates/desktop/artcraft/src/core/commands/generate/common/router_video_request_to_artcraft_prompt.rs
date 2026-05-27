@@ -1,7 +1,7 @@
 use artcraft_api_defs::prompts::create_prompt::CreatePromptRequest;
 use artcraft_router::api::common_aspect_ratio::CommonAspectRatio as RouterAspectRatio;
 use artcraft_router::api::common_resolution::CommonResolution as RouterResolution;
-use artcraft_router::api::common_video_model::CommonVideoModel;
+use artcraft_router::api::router_video_model::RouterVideoModel;
 use artcraft_router::api::provider::Provider;
 use artcraft_router::generate::generate_video::generate_video_request_builder::GenerateVideoRequestBuilder;
 use enums::common::generation::common_aspect_ratio::CommonAspectRatio as EnumsAspectRatio;
@@ -46,35 +46,35 @@ fn determine_video_generation_mode(request: &GenerateVideoRequestBuilder) -> Com
   }
 }
 
-fn video_model_to_common_model_type(model: CommonVideoModel) -> Option<CommonModelType> {
+fn video_model_to_common_model_type(model: RouterVideoModel) -> Option<CommonModelType> {
   match model {
-    CommonVideoModel::GrokVideo => Some(CommonModelType::GrokVideo),
-    CommonVideoModel::Kling16Pro => Some(CommonModelType::Kling16Pro),
-    CommonVideoModel::Kling21Pro => Some(CommonModelType::Kling21Pro),
-    CommonVideoModel::Kling21Master => Some(CommonModelType::Kling21Master),
-    CommonVideoModel::Kling2p5TurboPro => Some(CommonModelType::Kling2p5TurboPro),
-    CommonVideoModel::Kling2p6Pro => Some(CommonModelType::Kling2p6Pro),
-    CommonVideoModel::Kling3p0Standard => Some(CommonModelType::Kling3p0Standard),
-    CommonVideoModel::Kling3p0Pro => Some(CommonModelType::Kling3p0Pro),
-    CommonVideoModel::Seedance10Lite => Some(CommonModelType::Seedance10Lite),
-    CommonVideoModel::Seedance1p5Pro => Some(CommonModelType::Seedance1p5Pro),
-    CommonVideoModel::Seedance2p0 => Some(CommonModelType::Seedance2p0),
-    CommonVideoModel::Seedance2p0Fast => Some(CommonModelType::Seedance2p0Fast),
-    CommonVideoModel::HappyHorse1p0 => Some(CommonModelType::HappyHorse1p0),
-    CommonVideoModel::Sora2 => Some(CommonModelType::Sora2),
-    CommonVideoModel::Sora2Pro => Some(CommonModelType::Sora2Pro),
-    CommonVideoModel::Veo2 => Some(CommonModelType::Veo2),
-    CommonVideoModel::Veo3 => Some(CommonModelType::Veo3),
-    CommonVideoModel::Veo3Fast => Some(CommonModelType::Veo3Fast),
-    CommonVideoModel::Veo3p1 => Some(CommonModelType::Veo3p1),
-    CommonVideoModel::Veo3p1Fast => Some(CommonModelType::Veo3p1Fast),
-    CommonVideoModel::Seedance2p0BytePlus => Some(CommonModelType::Seedance2p0BytePlus),
-    CommonVideoModel::Seedance2p0BytePlusFast => Some(CommonModelType::Seedance2p0BytePlusFast),
-    CommonVideoModel::Seedance2p0Ultra => Some(CommonModelType::Seedance2p0Ultra),
-    CommonVideoModel::Seedance2p0UltraFast => Some(CommonModelType::Seedance2p0UltraFast),
-    CommonVideoModel::PreviewModel => Some(CommonModelType::PreviewModel),
-    CommonVideoModel::PreviewModelFast => Some(CommonModelType::PreviewModelFast),
-    CommonVideoModel::GrokImagineVideo => Some(CommonModelType::GrokImagineVideo),
+    RouterVideoModel::GrokVideo => Some(CommonModelType::GrokVideo),
+    RouterVideoModel::Kling16Pro => Some(CommonModelType::Kling16Pro),
+    RouterVideoModel::Kling21Pro => Some(CommonModelType::Kling21Pro),
+    RouterVideoModel::Kling21Master => Some(CommonModelType::Kling21Master),
+    RouterVideoModel::Kling2p5TurboPro => Some(CommonModelType::Kling2p5TurboPro),
+    RouterVideoModel::Kling2p6Pro => Some(CommonModelType::Kling2p6Pro),
+    RouterVideoModel::Kling3p0Standard => Some(CommonModelType::Kling3p0Standard),
+    RouterVideoModel::Kling3p0Pro => Some(CommonModelType::Kling3p0Pro),
+    RouterVideoModel::Seedance10Lite => Some(CommonModelType::Seedance10Lite),
+    RouterVideoModel::Seedance1p5Pro => Some(CommonModelType::Seedance1p5Pro),
+    RouterVideoModel::Seedance2p0 => Some(CommonModelType::Seedance2p0),
+    RouterVideoModel::Seedance2p0Fast => Some(CommonModelType::Seedance2p0Fast),
+    RouterVideoModel::HappyHorse1p0 => Some(CommonModelType::HappyHorse1p0),
+    RouterVideoModel::Sora2 => Some(CommonModelType::Sora2),
+    RouterVideoModel::Sora2Pro => Some(CommonModelType::Sora2Pro),
+    RouterVideoModel::Veo2 => Some(CommonModelType::Veo2),
+    RouterVideoModel::Veo3 => Some(CommonModelType::Veo3),
+    RouterVideoModel::Veo3Fast => Some(CommonModelType::Veo3Fast),
+    RouterVideoModel::Veo3p1 => Some(CommonModelType::Veo3p1),
+    RouterVideoModel::Veo3p1Fast => Some(CommonModelType::Veo3p1Fast),
+    RouterVideoModel::Seedance2p0BytePlus => Some(CommonModelType::Seedance2p0BytePlus),
+    RouterVideoModel::Seedance2p0BytePlusFast => Some(CommonModelType::Seedance2p0BytePlusFast),
+    RouterVideoModel::Seedance2p0Ultra => Some(CommonModelType::Seedance2p0Ultra),
+    RouterVideoModel::Seedance2p0UltraFast => Some(CommonModelType::Seedance2p0UltraFast),
+    RouterVideoModel::PreviewModel => Some(CommonModelType::PreviewModel),
+    RouterVideoModel::PreviewModelFast => Some(CommonModelType::PreviewModelFast),
+    RouterVideoModel::GrokImagineVideo => Some(CommonModelType::GrokImagineVideo),
   }
 }
 
@@ -131,7 +131,7 @@ mod tests {
 
   fn base_builder() -> GenerateVideoRequestBuilder {
     GenerateVideoRequestBuilder {
-      model: CommonVideoModel::Kling3p0Standard,
+      model: RouterVideoModel::Kling3p0Standard,
       provider: Provider::Fal,
       prompt: Some("a dog running on the beach".to_string()),
       negative_prompt: None,
@@ -244,10 +244,10 @@ mod tests {
   #[test]
   fn video_model_mapping() {
     let models = [
-      (CommonVideoModel::Kling3p0Standard, CommonModelType::Kling3p0Standard),
-      (CommonVideoModel::Veo3, CommonModelType::Veo3),
-      (CommonVideoModel::Seedance2p0, CommonModelType::Seedance2p0),
-      (CommonVideoModel::Sora2, CommonModelType::Sora2),
+      (RouterVideoModel::Kling3p0Standard, CommonModelType::Kling3p0Standard),
+      (RouterVideoModel::Veo3, CommonModelType::Veo3),
+      (RouterVideoModel::Seedance2p0, CommonModelType::Seedance2p0),
+      (RouterVideoModel::Sora2, CommonModelType::Sora2),
     ];
     for (router_model, expected) in models {
       let builder = GenerateVideoRequestBuilder { model: router_model, ..base_builder() };

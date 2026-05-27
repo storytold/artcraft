@@ -123,7 +123,7 @@ fn unsupported(field: &'static str, value: &str) -> ArtcraftRouterError {
 
 #[cfg(test)]
 mod tests {
-  use crate::api::common_video_model::CommonVideoModel;
+  use crate::api::router_video_model::RouterVideoModel;
   use crate::api::provider::Provider;
   use crate::generate::generate_video_v2::video_generation_request::VideoGenerationRequest;
 
@@ -131,7 +131,7 @@ mod tests {
 
   fn base_builder() -> GenerateVideoRequestBuilder {
     GenerateVideoRequestBuilder {
-      model: CommonVideoModel::Veo3Fast,
+      model: RouterVideoModel::Veo3Fast,
       provider: Provider::Fal,
       prompt: Some("test".to_string()),
       start_frame: Some(ImageRef::Url("https://example.com/a.png".to_string())),

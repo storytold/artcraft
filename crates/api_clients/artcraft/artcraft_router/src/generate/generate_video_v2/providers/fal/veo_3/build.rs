@@ -205,7 +205,7 @@ fn to_i2v_resolution(r: PlanResolution) -> Veo3I2vResolution {
 
 #[cfg(test)]
 mod tests {
-  use crate::api::common_video_model::CommonVideoModel;
+  use crate::api::router_video_model::RouterVideoModel;
   use crate::api::provider::Provider;
   use crate::generate::generate_video_v2::video_generation_request::VideoGenerationRequest;
 
@@ -213,7 +213,7 @@ mod tests {
 
   fn base_t2v_builder() -> GenerateVideoRequestBuilder {
     GenerateVideoRequestBuilder {
-      model: CommonVideoModel::Veo3,
+      model: RouterVideoModel::Veo3,
       provider: Provider::Fal,
       prompt: Some("test".to_string()),
       ..Default::default()

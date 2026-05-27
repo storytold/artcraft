@@ -113,14 +113,14 @@ fn plan_duration(
 
 #[cfg(test)]
 mod tests {
-  use crate::api::common_video_model::CommonVideoModel;
+  use crate::api::router_video_model::RouterVideoModel;
   use crate::api::provider::Provider;
 
   use super::*;
 
   fn base_builder() -> GenerateVideoRequestBuilder {
     GenerateVideoRequestBuilder {
-      model: CommonVideoModel::Kling16Pro,
+      model: RouterVideoModel::Kling16Pro,
       provider: Provider::Fal,
       prompt: Some("test".to_string()),
       start_frame: Some(ImageRef::Url("https://example.com/a.png".to_string())),

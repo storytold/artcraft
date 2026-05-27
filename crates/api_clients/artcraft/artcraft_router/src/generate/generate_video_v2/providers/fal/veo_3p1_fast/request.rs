@@ -84,7 +84,7 @@ impl FalVeo3p1FastRequestState {
 mod tests {
   use test_data::web::image_urls::JUNO_AT_LAKE_IMAGE_URL;
 
-  use crate::api::common_video_model::CommonVideoModel;
+  use crate::api::router_video_model::RouterVideoModel;
   use crate::api::image_ref::ImageRef;
   use crate::api::provider::Provider;
   use crate::generate::generate_video::generate_video_request_builder::GenerateVideoRequestBuilder;
@@ -117,7 +117,7 @@ mod tests {
 
   fn builder() -> GenerateVideoRequestBuilder {
     GenerateVideoRequestBuilder {
-      model: CommonVideoModel::Veo3p1Fast,
+      model: RouterVideoModel::Veo3p1Fast,
       provider: Provider::Fal,
       ..Default::default()
     }

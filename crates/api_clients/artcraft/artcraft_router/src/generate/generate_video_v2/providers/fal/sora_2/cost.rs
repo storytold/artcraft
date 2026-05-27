@@ -41,13 +41,13 @@ fn duration_seconds_for_cost(d: Option<FalSora2Duration>) -> u64 {
 
 #[cfg(test)]
 mod tests {
-  use crate::api::common_video_model::CommonVideoModel;
+  use crate::api::router_video_model::RouterVideoModel;
   use crate::api::provider::Provider;
   use crate::generate::generate_video::generate_video_request_builder::GenerateVideoRequestBuilder;
 
   fn cost_cents(duration_seconds: Option<u16>) -> u64 {
     let b = GenerateVideoRequestBuilder {
-      model: CommonVideoModel::Sora2,
+      model: RouterVideoModel::Sora2,
       provider: Provider::Fal,
       prompt: Some("test".to_string()),
       duration_seconds,

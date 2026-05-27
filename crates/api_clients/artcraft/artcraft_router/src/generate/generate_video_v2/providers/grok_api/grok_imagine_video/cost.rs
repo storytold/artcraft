@@ -36,7 +36,7 @@ impl GrokApiGrokImagineVideoCostState {
 mod tests {
   use crate::api::common_aspect_ratio::CommonAspectRatio;
   use crate::api::common_resolution::CommonResolution;
-  use crate::api::common_video_model::CommonVideoModel;
+  use crate::api::router_video_model::RouterVideoModel;
   use crate::api::image_list_ref::ImageListRef;
   use crate::api::image_ref::ImageRef;
   use crate::api::provider::Provider;
@@ -168,7 +168,7 @@ mod tests {
     reference_images: Option<ImageListRef>,
   ) -> u64 {
     let builder = GenerateVideoRequestBuilder {
-      model: CommonVideoModel::GrokImagineVideo,
+      model: RouterVideoModel::GrokImagineVideo,
       provider: Provider::GrokApi,
       aspect_ratio: Some(CommonAspectRatio::WideSixteenByNine),
       resolution,

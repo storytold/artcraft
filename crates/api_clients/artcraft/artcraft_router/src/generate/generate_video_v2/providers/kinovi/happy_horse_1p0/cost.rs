@@ -308,9 +308,9 @@ mod tests {
     video_batch_count: u16,
     resolution: Option<CommonResolution>,
   ) -> KinoviHappyHorse1p0DraftState {
-    use crate::api::common_video_model::CommonVideoModel;
+    use crate::api::router_video_model::RouterVideoModel;
     let builder = GenerateVideoRequestBuilder {
-      model: CommonVideoModel::HappyHorse1p0,
+      model: RouterVideoModel::HappyHorse1p0,
       provider: Provider::Seedance2Pro,
       resolution,
       duration_seconds: Some(duration_seconds),

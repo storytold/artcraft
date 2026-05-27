@@ -4,7 +4,7 @@ use artcraft_router::api::audio_list_ref::AudioListRef;
 use artcraft_router::api::character_list_ref::CharacterListRef;
 use artcraft_router::api::common_aspect_ratio::CommonAspectRatio as CommonAspectRatioRouter;
 use artcraft_router::api::common_resolution::CommonResolution as CommonResolutionRouter;
-use artcraft_router::api::common_video_model::CommonVideoModel as CommonVideoModelRouter;
+use artcraft_router::api::router_video_model::RouterVideoModel;
 use artcraft_router::api::image_list_ref::ImageListRef;
 use artcraft_router::api::image_ref::ImageRef;
 use artcraft_router::api::provider::Provider;
@@ -65,7 +65,7 @@ pub fn hydrate_to_router_request(
 
 fn convert_model(
   model: &CommonVideoModelEnum,
-) -> Result<CommonVideoModelRouter, CommonWebError> {
+) -> Result<RouterVideoModel, CommonWebError> {
   let json = serde_json::to_string(model)?;
   serde_json::from_str(&json).map_err(|e| {
     CommonWebError::BadInputWithSimpleMessage(

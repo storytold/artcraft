@@ -144,7 +144,7 @@ mod tests {
 
   use crate::api::common_aspect_ratio::CommonAspectRatio;
   use crate::api::common_resolution::CommonResolution;
-  use crate::api::common_video_model::CommonVideoModel;
+  use crate::api::router_video_model::RouterVideoModel;
   use crate::api::image_list_ref::ImageListRef;
   use crate::api::image_ref::ImageRef;
   use crate::api::provider::Provider;
@@ -284,7 +284,7 @@ mod tests {
 
   fn base_builder() -> GenerateVideoRequestBuilder {
     GenerateVideoRequestBuilder {
-      model: CommonVideoModel::Seedance2p0UltraFast,
+      model: RouterVideoModel::Seedance2p0UltraFast,
       provider: Provider::GmiCloud,
       duration_seconds: Some(5),
       video_batch_count: Some(1),

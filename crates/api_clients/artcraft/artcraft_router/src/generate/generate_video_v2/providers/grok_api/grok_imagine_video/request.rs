@@ -43,7 +43,7 @@ mod tests {
 
   use crate::api::common_aspect_ratio::CommonAspectRatio;
   use crate::api::common_resolution::CommonResolution;
-  use crate::api::common_video_model::CommonVideoModel;
+  use crate::api::router_video_model::RouterVideoModel;
   use crate::api::image_ref::ImageRef;
   use crate::api::provider::Provider;
   use crate::client::router_client::RouterClient;
@@ -80,7 +80,7 @@ mod tests {
 
   fn grok_builder() -> GenerateVideoRequestBuilder {
     GenerateVideoRequestBuilder {
-      model: CommonVideoModel::GrokImagineVideo,
+      model: RouterVideoModel::GrokImagineVideo,
       provider: Provider::GrokApi,
       video_batch_count: Some(1),
       ..Default::default()

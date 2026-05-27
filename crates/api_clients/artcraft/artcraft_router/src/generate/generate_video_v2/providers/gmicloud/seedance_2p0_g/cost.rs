@@ -30,7 +30,7 @@ impl GmiCloudSeedance2p0UltraCostState {
 #[cfg(test)]
 mod tests {
   use crate::api::common_resolution::CommonResolution;
-  use crate::api::common_video_model::CommonVideoModel;
+  use crate::api::router_video_model::RouterVideoModel;
   use crate::api::provider::Provider;
   use crate::generate::generate_video::generate_video_request_builder::GenerateVideoRequestBuilder;
 
@@ -116,7 +116,7 @@ mod tests {
 
   fn cost_cents(resolution: Option<CommonResolution>, duration_seconds: u16) -> u64 {
     let builder = GenerateVideoRequestBuilder {
-      model: CommonVideoModel::Seedance2p0Ultra,
+      model: RouterVideoModel::Seedance2p0Ultra,
       provider: Provider::GmiCloud,
       resolution,
       duration_seconds: Some(duration_seconds),

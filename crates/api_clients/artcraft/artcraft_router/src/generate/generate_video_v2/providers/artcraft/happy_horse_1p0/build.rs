@@ -144,7 +144,7 @@ mod tests {
 
   fn base_builder() -> GenerateVideoRequestBuilder {
     GenerateVideoRequestBuilder {
-      model: crate::api::common_video_model::CommonVideoModel::HappyHorse1p0,
+      model: crate::api::router_video_model::RouterVideoModel::HappyHorse1p0,
       provider: Provider::Artcraft,
       duration_seconds: Some(5),
       video_batch_count: Some(1),

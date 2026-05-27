@@ -1,5 +1,5 @@
 use crate::api::router_image_model::RouterImageModel;
-use crate::api::common_video_model::CommonVideoModel;
+use crate::api::router_video_model::RouterVideoModel;
 use crate::api::provider::Provider;
 use crate::client::request_mismatch_mitigation_strategy::RequestMismatchMitigationStrategy;
 use crate::client::router_artcraft_client::RouterArtcraftClient;
@@ -339,7 +339,7 @@ pub fn base_flux_pro_1p1_ultra_image_request() -> GenerateImageRequestBuilder {
 
 pub fn base_video_request() -> GenerateVideoRequestBuilder {
   GenerateVideoRequestBuilder {
-    model: CommonVideoModel::Seedance2p0,
+    model: RouterVideoModel::Seedance2p0,
     provider: Provider::Artcraft,
     prompt: Some("a cat in space".to_string()),
     negative_prompt: None,

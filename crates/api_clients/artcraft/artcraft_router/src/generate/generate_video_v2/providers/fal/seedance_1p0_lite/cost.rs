@@ -32,7 +32,7 @@ impl FalSeedance10LiteCostState {
 mod tests {
   use crate::api::common_aspect_ratio::CommonAspectRatio;
   use crate::api::common_resolution::CommonResolution;
-  use crate::api::common_video_model::CommonVideoModel;
+  use crate::api::router_video_model::RouterVideoModel;
   use crate::api::image_ref::ImageRef;
   use crate::api::provider::Provider;
   use crate::generate::generate_video::generate_video_request_builder::GenerateVideoRequestBuilder;
@@ -41,7 +41,7 @@ mod tests {
 
   fn base_builder() -> GenerateVideoRequestBuilder {
     GenerateVideoRequestBuilder {
-      model: CommonVideoModel::Seedance10Lite,
+      model: RouterVideoModel::Seedance10Lite,
       provider: Provider::Fal,
       prompt: Some("test".to_string()),
       start_frame: Some(ImageRef::Url("https://example.com/start.png".to_string())),

@@ -5,7 +5,7 @@ pub mod router_image_model;
 pub mod common_quality;
 pub mod common_resolution;
 pub mod common_splat_model;
-pub mod common_video_model;
+pub mod router_video_model;
 pub mod image_list_ref;
 pub mod image_ref;
 pub mod provider;

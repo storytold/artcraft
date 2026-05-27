@@ -106,7 +106,7 @@ fn unsupported(field: &'static str, value: &str) -> ArtcraftRouterError {
 mod tests {
   use tokens::tokens::media_files::MediaFileToken;
 
-  use crate::api::common_video_model::CommonVideoModel;
+  use crate::api::router_video_model::RouterVideoModel;
   use crate::api::provider::Provider;
   use crate::generate::generate_video_v2::video_generation_request::VideoGenerationRequest;
 
@@ -114,7 +114,7 @@ mod tests {
 
   fn base_builder() -> GenerateVideoRequestBuilder {
     GenerateVideoRequestBuilder {
-      model: CommonVideoModel::Veo2,
+      model: RouterVideoModel::Veo2,
       provider: Provider::Fal,
       prompt: Some("a corgi running".to_string()),
       ..Default::default()

@@ -82,7 +82,7 @@ mod tests {
     KinoviSeedance2p0FastBatchCount as KinoviBatchCount,
   };
 
-  use crate::api::common_video_model::CommonVideoModel;
+  use crate::api::router_video_model::RouterVideoModel;
   use crate::api::provider::Provider;
   use crate::api::video_list_ref::VideoListRef;
   use crate::generate::generate_video::generate_video_request_builder::GenerateVideoRequestBuilder;
@@ -372,7 +372,7 @@ mod tests {
     };
 
     let builder = GenerateVideoRequestBuilder {
-      model: CommonVideoModel::Seedance2p0Fast,
+      model: RouterVideoModel::Seedance2p0Fast,
       provider: Provider::Seedance2Pro,
       resolution,
       reference_videos,

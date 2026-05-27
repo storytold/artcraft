@@ -68,7 +68,7 @@ fn flf_duration_seconds(d: Option<EnqueueVeo3p1FirstLastFrameImageToVideoDuratio
 
 #[cfg(test)]
 mod tests {
-  use crate::api::common_video_model::CommonVideoModel;
+  use crate::api::router_video_model::RouterVideoModel;
   use crate::api::image_ref::ImageRef;
   use crate::api::provider::Provider;
   use crate::generate::generate_video::generate_video_request_builder::GenerateVideoRequestBuilder;
@@ -79,7 +79,7 @@ mod tests {
     frames: u8,
   ) -> u64 {
     let mut b = GenerateVideoRequestBuilder {
-      model: CommonVideoModel::Veo3p1,
+      model: RouterVideoModel::Veo3p1,
       provider: Provider::Fal,
       prompt: Some("test".to_string()),
       duration_seconds,

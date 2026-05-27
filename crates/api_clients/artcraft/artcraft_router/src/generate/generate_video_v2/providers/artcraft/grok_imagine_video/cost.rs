@@ -73,7 +73,7 @@ mod tests {
   use tokens::tokens::media_files::MediaFileToken;
 
   use crate::api::common_resolution::CommonResolution;
-  use crate::api::common_video_model::CommonVideoModel;
+  use crate::api::router_video_model::RouterVideoModel;
   use crate::api::image_list_ref::ImageListRef;
   use crate::api::image_ref::ImageRef;
   use crate::api::provider::Provider;
@@ -341,7 +341,7 @@ mod tests {
       } else { None };
 
       let builder = GenerateVideoRequestBuilder {
-        model: CommonVideoModel::GrokImagineVideo,
+        model: RouterVideoModel::GrokImagineVideo,
         provider: Provider::Artcraft,
         resolution,
         aspect_ratio,
@@ -382,7 +382,7 @@ mod tests {
       } else { None };
 
       let builder = GenerateVideoRequestBuilder {
-        model: CommonVideoModel::GrokImagineVideo,
+        model: RouterVideoModel::GrokImagineVideo,
         provider: Provider::GrokApi,
         resolution,
         aspect_ratio,
@@ -409,7 +409,7 @@ mod tests {
     video_batch_count: u16,
   ) -> VideoGenerationCostEstimate {
     let builder = GenerateVideoRequestBuilder {
-      model: CommonVideoModel::GrokImagineVideo,
+      model: RouterVideoModel::GrokImagineVideo,
       provider: Provider::Artcraft,
       resolution,
       duration_seconds: Some(duration_seconds),
@@ -451,7 +451,7 @@ mod tests {
     } else { None };
 
     let builder = GenerateVideoRequestBuilder {
-      model: CommonVideoModel::GrokImagineVideo,
+      model: RouterVideoModel::GrokImagineVideo,
       provider: Provider::Artcraft,
       resolution,
       duration_seconds: Some(duration_seconds),

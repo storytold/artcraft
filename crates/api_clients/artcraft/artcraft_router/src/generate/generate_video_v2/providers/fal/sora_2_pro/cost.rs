@@ -56,14 +56,14 @@ fn is_ten_eighty_p_for_cost(mode: &FalSora2ProMode, resolution: Option<FalSora2P
 #[cfg(test)]
 mod tests {
   use crate::api::common_resolution::CommonResolution;
-  use crate::api::common_video_model::CommonVideoModel;
+  use crate::api::router_video_model::RouterVideoModel;
   use crate::api::image_ref::ImageRef;
   use crate::api::provider::Provider;
   use crate::generate::generate_video::generate_video_request_builder::GenerateVideoRequestBuilder;
 
   fn cost_cents(duration_seconds: Option<u16>, resolution: Option<CommonResolution>, has_start: bool) -> u64 {
     let mut b = GenerateVideoRequestBuilder {
-      model: CommonVideoModel::Sora2Pro,
+      model: RouterVideoModel::Sora2Pro,
       provider: Provider::Fal,
       prompt: Some("test".to_string()),
       duration_seconds,

@@ -6,7 +6,7 @@ use crate::core::state::app_env_configs::app_env_configs::AppEnvConfigs;
 use artcraft_client::credentials::storyteller_credential_set::StorytellerCredentialSet;
 use artcraft_router::api::audio_list_ref::AudioListRef;
 use artcraft_router::api::character_list_ref::CharacterListRef;
-use artcraft_router::api::common_video_model::CommonVideoModel;
+use artcraft_router::api::router_video_model::RouterVideoModel;
 use artcraft_router::api::image_list_ref::ImageListRef;
 use artcraft_router::api::image_ref::ImageRef;
 use artcraft_router::api::provider::Provider;
@@ -25,7 +25,7 @@ pub(super) async fn handle_artcraft_video_via_router(
   request: &TauriGenerateVideoRequest,
   app_env_configs: &AppEnvConfigs,
   creds: &StorytellerCredentialSet,
-  model: CommonVideoModel,
+  model: RouterVideoModel,
   generation_model: GenerationModel,
 ) -> Result<TaskEnqueueSuccess, GenerateError> {
   let client = RouterClient::Artcraft(RouterArtcraftClient::new(

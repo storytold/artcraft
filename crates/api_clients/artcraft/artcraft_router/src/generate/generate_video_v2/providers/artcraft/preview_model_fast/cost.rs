@@ -53,7 +53,7 @@ impl ArtcraftPreviewModelFastCostState {
 #[cfg(test)]
 mod tests {
   use crate::api::common_resolution::CommonResolution;
-  use crate::api::common_video_model::CommonVideoModel;
+  use crate::api::router_video_model::RouterVideoModel;
   use crate::api::provider::Provider;
   use crate::generate::generate_video::generate_video_request_builder::GenerateVideoRequestBuilder;
 
@@ -178,7 +178,7 @@ mod tests {
     video_batch_count: u16,
   ) -> crate::generate::generate_video::video_generation_cost_estimate::VideoGenerationCostEstimate {
     let builder = GenerateVideoRequestBuilder {
-      model: CommonVideoModel::PreviewModelFast,
+      model: RouterVideoModel::PreviewModelFast,
       provider: Provider::Artcraft,
       resolution,
       duration_seconds: Some(duration_seconds),

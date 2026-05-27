@@ -289,7 +289,7 @@ fn to_i2v_aspect_ratio(a: PlanAspectRatio) -> EnqueueSeedance1p5ProImageToVideoA
 mod tests {
   use tokens::tokens::media_files::MediaFileToken;
 
-  use crate::api::common_video_model::CommonVideoModel;
+  use crate::api::router_video_model::RouterVideoModel;
   use crate::api::provider::Provider;
   use crate::generate::generate_video_v2::video_generation_request::VideoGenerationRequest;
 
@@ -299,7 +299,7 @@ mod tests {
 
   fn base_t2v_builder() -> GenerateVideoRequestBuilder {
     GenerateVideoRequestBuilder {
-      model: CommonVideoModel::Seedance1p5Pro,
+      model: RouterVideoModel::Seedance1p5Pro,
       provider: Provider::Fal,
       prompt: Some("a corgi running".to_string()),
       // No start_frame → text-to-video.
@@ -309,7 +309,7 @@ mod tests {
 
   fn base_i2v_builder() -> GenerateVideoRequestBuilder {
     GenerateVideoRequestBuilder {
-      model: CommonVideoModel::Seedance1p5Pro,
+      model: RouterVideoModel::Seedance1p5Pro,
       provider: Provider::Fal,
       prompt: Some("a corgi running".to_string()),
       start_frame: Some(ImageRef::Url("https://example.com/start.png".to_string())),

@@ -44,14 +44,14 @@ fn duration_seconds_for_cost(d: Veo3FastDuration) -> u64 {
 
 #[cfg(test)]
 mod tests {
-  use crate::api::common_video_model::CommonVideoModel;
+  use crate::api::router_video_model::RouterVideoModel;
   use crate::api::image_ref::ImageRef;
   use crate::api::provider::Provider;
   use crate::generate::generate_video::generate_video_request_builder::GenerateVideoRequestBuilder;
 
   fn cost_cents(duration_seconds: Option<u16>, generate_audio: Option<bool>) -> u64 {
     let b = GenerateVideoRequestBuilder {
-      model: CommonVideoModel::Veo3Fast,
+      model: RouterVideoModel::Veo3Fast,
       provider: Provider::Fal,
       prompt: Some("test".to_string()),
       start_frame: Some(ImageRef::Url("https://example.com/a.png".to_string())),

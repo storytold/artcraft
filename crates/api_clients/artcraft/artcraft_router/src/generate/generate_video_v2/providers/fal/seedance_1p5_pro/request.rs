@@ -71,7 +71,7 @@ mod tests {
 
   use crate::api::common_aspect_ratio::CommonAspectRatio;
   use crate::api::common_resolution::CommonResolution;
-  use crate::api::common_video_model::CommonVideoModel;
+  use crate::api::router_video_model::RouterVideoModel;
   use crate::api::image_ref::ImageRef;
   use crate::api::provider::Provider;
   use crate::generate::generate_video::generate_video_request_builder::GenerateVideoRequestBuilder;
@@ -141,7 +141,7 @@ mod tests {
 
   fn fal_seedance_1p5_pro_builder() -> GenerateVideoRequestBuilder {
     GenerateVideoRequestBuilder {
-      model: CommonVideoModel::Seedance1p5Pro,
+      model: RouterVideoModel::Seedance1p5Pro,
       provider: Provider::Fal,
       video_batch_count: Some(1),
       ..Default::default()

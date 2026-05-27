@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use log::{error, info, warn};
 use sqlx::pool::PoolConnection;
-use artcraft_router::api::common_video_model::CommonVideoModel;
+use artcraft_router::api::router_video_model::RouterVideoModel;
 use artcraft_router::api::provider::Provider;
 use artcraft_router::generate::generate_video::generate_video_request_builder::GenerateVideoRequestBuilder;
 use artcraft_router::generate::generate_video::generate_video_response::GenerateVideoResponse;
@@ -44,24 +44,24 @@ pub async fn run_pipeline_v2(args: RunPipelineV2Args<'_>) -> Result<PipelineResu
   let mut router_builder = router_builder.clone();
 
   match router_builder.model {
-    CommonVideoModel::PreviewModel |
-    CommonVideoModel::Seedance2p0BytePlus => {
-      router_builder.model = CommonVideoModel::Seedance2p0;
+    RouterVideoModel::PreviewModel |
+    RouterVideoModel::Seedance2p0BytePlus => {
+      router_builder.model = RouterVideoModel::Seedance2p0;
     },
-    CommonVideoModel::PreviewModelFast |
-    CommonVideoModel::Seedance2p0BytePlusFast => {
-      router_builder.model = CommonVideoModel::Seedance2p0Fast;
+    RouterVideoModel::PreviewModelFast |
+    RouterVideoModel::Seedance2p0BytePlusFast => {
+      router_builder.model = RouterVideoModel::Seedance2p0Fast;
     },
     _ => {}, // Fall-through
   }
 
   let provider = match router_builder.model {
-    CommonVideoModel::HappyHorse1p0 => Provider::Seedance2Pro,
-    CommonVideoModel::Seedance2p0 => Provider::Seedance2Pro,
-    CommonVideoModel::Seedance2p0Fast => Provider::Seedance2Pro,
-    CommonVideoModel::Seedance2p0Ultra => Provider::GmiCloud,
-    CommonVideoModel::Seedance2p0UltraFast => Provider::GmiCloud,
-    CommonVideoModel::GrokImagineVideo => Provider::GrokApi,
+    RouterVideoModel::HappyHorse1p0 => Provider::Seedance2Pro,
+    RouterVideoModel::Seedance2p0 => Provider::Seedance2Pro,
+    RouterVideoModel::Seedance2p0Fast => Provider::Seedance2Pro,
+    RouterVideoModel::Seedance2p0Ultra => Provider::GmiCloud,
+    RouterVideoModel::Seedance2p0UltraFast => Provider::GmiCloud,
+    RouterVideoModel::GrokImagineVideo => Provider::GrokApi,
     _ => Provider::Fal,
   };
 

@@ -79,7 +79,7 @@ fn i2v_to_t2v_duration(d: EnqueueSeedance1p5ProImageToVideoDuration) -> EnqueueS
 mod tests {
   use crate::api::common_aspect_ratio::CommonAspectRatio;
   use crate::api::common_resolution::CommonResolution;
-  use crate::api::common_video_model::CommonVideoModel;
+  use crate::api::router_video_model::RouterVideoModel;
   use crate::api::image_ref::ImageRef;
   use crate::api::provider::Provider;
   use crate::generate::generate_video::generate_video_request_builder::GenerateVideoRequestBuilder;
@@ -88,7 +88,7 @@ mod tests {
 
   fn t2v_builder() -> GenerateVideoRequestBuilder {
     GenerateVideoRequestBuilder {
-      model: CommonVideoModel::Seedance1p5Pro,
+      model: RouterVideoModel::Seedance1p5Pro,
       provider: Provider::Fal,
       prompt: Some("test".to_string()),
       ..Default::default()
@@ -97,7 +97,7 @@ mod tests {
 
   fn i2v_builder() -> GenerateVideoRequestBuilder {
     GenerateVideoRequestBuilder {
-      model: CommonVideoModel::Seedance1p5Pro,
+      model: RouterVideoModel::Seedance1p5Pro,
       provider: Provider::Fal,
       prompt: Some("test".to_string()),
       start_frame: Some(ImageRef::Url("https://example.com/start.png".to_string())),

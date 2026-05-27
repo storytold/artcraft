@@ -29,7 +29,7 @@ impl ArtcraftKling21MasterCostState {
 
 #[cfg(test)]
 mod tests {
-  use crate::api::common_video_model::CommonVideoModel;
+  use crate::api::router_video_model::RouterVideoModel;
   use crate::api::image_ref::ImageRef;
   use crate::api::provider::Provider;
   use crate::generate::generate_video::generate_video_request_builder::GenerateVideoRequestBuilder;
@@ -37,7 +37,7 @@ mod tests {
 
   fn cost_cents(duration_seconds: Option<u16>) -> u64 {
     let b = GenerateVideoRequestBuilder {
-      model: CommonVideoModel::Kling21Master,
+      model: RouterVideoModel::Kling21Master,
       provider: Provider::Artcraft,
       prompt: Some("test".to_string()),
       start_frame: Some(ImageRef::MediaFileToken(MediaFileToken::new("mf_x".to_string()))),
