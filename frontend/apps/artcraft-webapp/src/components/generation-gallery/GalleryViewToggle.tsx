@@ -7,11 +7,14 @@ import {
   type GalleryViewMode,
 } from "../../lib/gallery-view-store";
 
-const OPTIONS: { mode: GalleryViewMode; icon: IconDefinition; label: string }[] =
-  [
-    { mode: "grid", icon: faGrid2, label: "Grid view" },
-    { mode: "list", icon: faListUl, label: "List view" },
-  ];
+const OPTIONS: {
+  mode: GalleryViewMode;
+  icon: IconDefinition;
+  label: string;
+}[] = [
+  { mode: "grid", icon: faGrid2, label: "Grid view" },
+  { mode: "list", icon: faListUl, label: "List view" },
+];
 
 // Segmented grid/list switch for the create-page galleries. Lives in the
 // TopBar; the selection is shared with the gallery via useGalleryViewStore.
@@ -23,7 +26,7 @@ export function GalleryViewToggle() {
     <div
       role="group"
       aria-label="Gallery layout"
-      className="flex h-8 items-center gap-0.5 rounded-lg border border-white/[0.08] bg-white/[0.04] p-0.5"
+      className="flex items-center gap-0.5 rounded-lg border border-white/[0.08] bg-white/[0.04] p-0.5"
     >
       {OPTIONS.map(({ mode, icon, label }) => {
         const active = viewMode === mode;
@@ -34,7 +37,7 @@ export function GalleryViewToggle() {
               aria-label={label}
               aria-pressed={active}
               onClick={() => setViewMode(mode)}
-              className={`flex h-7 w-7 items-center justify-center rounded-md text-sm transition-colors ${
+              className={`flex h-6 w-6 items-center justify-center rounded-md text-xs transition-colors ${
                 active
                   ? "bg-white/10 text-white"
                   : "text-white/45 hover:text-white/80"

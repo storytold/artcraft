@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useCallback, useMemo } from "react";
 import { LoadingSpinner } from "@storyteller/ui-loading-spinner";
 import { PendingRow } from "./PendingRow";
 import { FailedRow } from "./FailedRow";
@@ -8,6 +8,7 @@ import {
   useInfiniteScrollSentinel,
 } from "./useGalleryEntries";
 import { usePrompts } from "../../lib/prompts-cache";
+import { useMediaPromptTokens } from "../../lib/media-prompt-token-cache";
 import type { GenerationGalleryProps } from "./types";
 
 // Constrains the feed to the promptbox width (max-w-5xl) and stacks one row
@@ -37,18 +38,45 @@ export function GenerationGalleryList({
     newlyCompletedTokens,
   });
 
-  // Resolve each completed item's prompt record (batched + cached) so rows can
-  // show the real prompt text and model rather than the "Image Generation"
-  // placeholder. Pending/failed entries already carry their own prompt.
-  const promptTokens = useMemo(
+  // Show the real prompt text + model on completed rows instead of the
+  // "Image Generation" placeholder. The profile media-list endpoint doesn't
+  // return prompt tokens yet, so for items missing one we resolve it through
+  // the batch media-files endpoint (media token → prompt token), then feed the
+  // prompt token into the prompts cache (prompt token → text + model). Both
+  // steps are batched + cached. Pending/failed entries already carry a prompt.
+  const mediaTokensNeedingPrompt = useMemo(
     () =>
       mergedEntries.flatMap((entry) =>
-        entry.kind === "gallery" && entry.item.promptToken
-          ? [entry.item.promptToken]
+        entry.kind === "gallery" && !entry.item.promptToken
+          ? [entry.item.id]
           : [],
       ),
     [mergedEntries],
   );
+  const resolvedPromptTokens = useMediaPromptTokens(mediaTokensNeedingPrompt);
+
+  // For an item: its (non-empty) prompt token, and whether the media→prompt
+  // lookup has finished. `resolved` lets rows show a skeleton while loading and
+  // fall back to the label once we know there's no prompt.
+  const promptStateFor = useCallback(
+    (item: { id: string; promptToken?: string }) => {
+      const direct = item.promptToken;
+      const resolved = direct != null || resolvedPromptTokens.has(item.id);
+      const promptToken = direct || resolvedPromptTokens.get(item.id) || "";
+      return { promptToken, resolved };
+    },
+    [resolvedPromptTokens],
+  );
+
+  const promptTokens = useMemo(() => {
+    const tokens: string[] = [];
+    for (const entry of mergedEntries) {
+      if (entry.kind !== "gallery") continue;
+      const { promptToken } = promptStateFor(entry.item);
+      if (promptToken) tokens.push(promptToken);
+    }
+    return tokens;
+  }, [mergedEntries, promptStateFor]);
   const promptsMap = usePrompts(promptTokens);
 
   if (isInitialLoading) {
@@ -91,9 +119,11 @@ export function GenerationGalleryList({
               />
             );
           }
-          const prompt = entry.item.promptToken
-            ? promptsMap.get(entry.item.promptToken)
-            : undefined;
+          const { promptToken, resolved } = promptStateFor(entry.item);
+          const prompt = promptToken ? promptsMap.get(promptToken) : undefined;
+          // Loading while the media→prompt lookup is pending, or it found a
+          // prompt token whose text hasn't arrived yet.
+          const loading = !resolved || (!!promptToken && !prompt);
           return (
             <GalleryRow
               key={entry.key}
@@ -102,6 +132,7 @@ export function GenerationGalleryList({
               enableMakeVideo={enableMakeVideo}
               title={prompt?.maybe_positive_prompt?.trim() || undefined}
               modelId={prompt?.maybe_model_type || undefined}
+              loading={loading}
             />
           );
         })}

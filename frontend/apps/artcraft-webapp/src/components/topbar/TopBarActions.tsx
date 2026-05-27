@@ -96,7 +96,12 @@ export function TopBarActions({ className }: { className?: string }) {
   };
 
   return (
-    <div className={twMerge("flex items-center gap-2 shrink-0", className)}>
+    <div
+      className={twMerge(
+        "flex items-center gap-1 sm:gap-2 shrink-0",
+        className,
+      )}
+    >
       {!authChecked ? null : user ? (
         <>
           <Link

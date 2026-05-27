@@ -21,10 +21,15 @@ export function TopBar() {
         <div className="flex gap-6 h-8">
           {showTopbarLogo && (
             <Link to="/" className="flex items-center shrink-0">
+              {/* The wordmark is too wide on phones — use the square icon there. */}
               <img
-                src="/images/artcraft-logo.png"
+                src={
+                  isMobile
+                    ? "/images/artcraft-icon.png"
+                    : "/images/artcraft-logo.png"
+                }
                 alt="ArtCraft"
-                className="h-4 sm:h-5 w-auto"
+                className={isMobile ? "h-5 w-auto" : "h-5 w-auto"}
               />
             </Link>
           )}
@@ -33,7 +38,7 @@ export function TopBar() {
       </div>
 
       {/* Right: gallery layout toggle (create pages) + credits / upgrade / task queue / avatar */}
-      <div className="ml-auto flex items-center gap-3">
+      <div className="ml-auto flex items-center gap-1.5 sm:gap-2">
         {showViewToggle && <GalleryViewToggle />}
         <TopBarActions />
       </div>

@@ -78,13 +78,23 @@ export class MediaFilesApi extends ApiManager {
   }: {
     mediaTokens: string[];
   }): Promise<ApiResponse<MediaFile[]>> {
-    const endpoint = `${this.getApiSchemeAndHost()}/v1/media_files/batch`;
+    if (mediaTokens.length === 0) {
+      return { success: true, data: [] };
+    }
+    // The batch endpoint deserializes `tokens` as a repeated query param
+    // (?tokens=a&tokens=b), not a single comma-joined value, so build the
+    // query string explicitly (matching BatchGetPrompts). Passing a joined
+    // string makes the backend see one bogus token and return zero files.
+    const queryString = mediaTokens
+      .map((t) => `tokens=${encodeURIComponent(t)}`)
+      .join("&");
+    const endpoint = `${this.getApiSchemeAndHost()}/v1/media_files/batch?${queryString}`;
 
     return await this.get<{
       success: boolean;
       media_files: MediaFile[];
       error_reason?: string;
-    }>({ endpoint, query: { tokens: mediaTokens.join(",") } })
+    }>({ endpoint })
       .then((response) => ({
         success: response.success,
         data: response.media_files,

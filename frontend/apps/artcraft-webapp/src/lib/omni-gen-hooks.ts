@@ -168,6 +168,7 @@ const MODEL_DISPLAY_NAMES: Record<string, string> = {
   flux_pro_1p1: "Flux Pro 1.1",
   flux_pro_1p1_ultra: "Flux Pro 1.1 Ultra",
   gpt_image_1p5: "GPT Image 1.5",
+  gpt_image_2: "GPT Image 2",
   nano_banana: "Nano Banana",
   nano_banana_2: "Nano Banana 2",
   nano_banana_pro: "Nano Banana Pro",
@@ -198,6 +199,8 @@ const MODEL_DISPLAY_NAMES: Record<string, string> = {
   veo_3_fast: "Google Veo 3 Fast",
   veo_3p1: "Google Veo 3.1",
   veo_3p1_fast: "Google Veo 3.1 Fast",
+  // Edit / VFX models
+  switch_x: "SwitchX",
 };
 
 export function getModelDisplayName(modelId: string, fullName?: string | null): string {
@@ -218,6 +221,9 @@ const MODEL_CREATOR_ICON_MAP: Record<string, string> = {
   veo: "google",
   grok: "grok",
   happy_horse: "alibaba",
+  // Beeble SwitchX (background change) has no provider icon — use the ArtCraft
+  // mark since it's surfaced as an ArtCraft feature.
+  switch_x: "artcraft",
 };
 
 const ICON_FILES: Record<string, string> = {
