@@ -1,4 +1,4 @@
-use crate::api::common_splat_model::CommonSplatModel;
+use crate::api::router_splat_model::RouterSplatModel;
 use crate::api::image_list_ref::ImageListRef;
 use crate::api::provider::Provider;
 use crate::errors::artcraft_router_error::ArtcraftRouterError;
@@ -8,7 +8,7 @@ use crate::generate::generate_splat::splat_generation_plan::SplatGenerationPlan;
 
 pub struct GenerateSplatRequest {
   /// Which model to use.
-  pub model: CommonSplatModel,
+  pub model: RouterSplatModel,
 
   /// Which provider to use.
   pub provider: Provider,
@@ -35,8 +35,8 @@ impl GenerateSplatRequest {
 
   fn build_artcraft(&self) -> Result<SplatGenerationPlan, ArtcraftRouterError> {
     match self.model {
-      CommonSplatModel::Marble0p1Mini => plan_generate_splat_artcraft_marble_0p1_mini(self),
-      CommonSplatModel::Marble0p1Plus => plan_generate_splat_artcraft_marble_0p1_plus(self),
+      RouterSplatModel::Marble0p1Mini => plan_generate_splat_artcraft_marble_0p1_mini(self),
+      RouterSplatModel::Marble0p1Plus => plan_generate_splat_artcraft_marble_0p1_plus(self),
     }
   }
 

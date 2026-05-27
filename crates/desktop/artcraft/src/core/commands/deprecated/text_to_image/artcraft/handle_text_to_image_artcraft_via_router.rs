@@ -8,10 +8,10 @@ use crate::core::commands::deprecated::text_to_image::enqueue_text_to_image_comm
 use crate::core::events::generation_events::common::GenerationModel;
 use crate::core::state::app_env_configs::app_env_configs::AppEnvConfigs;
 use crate::services::storyteller::state::storyteller_credential_manager::StorytellerCredentialManager;
-use artcraft_router::api::common_aspect_ratio::CommonAspectRatio as RouterCommonAspectRatio;
+use artcraft_router::api::router_aspect_ratio::RouterAspectRatio as RouterCommonAspectRatio;
 use artcraft_router::api::router_image_model::RouterImageModel;
-use artcraft_router::api::common_resolution::CommonResolution as RouterCommonResolution;
-use artcraft_router::api::common_quality::CommonQuality as RouterCommonQuality;
+use artcraft_router::api::router_resolution::RouterResolution as RouterCommonResolution;
+use artcraft_router::api::router_quality::RouterQuality as RouterCommonQuality;
 use artcraft_router::api::image_list_ref::ImageListRef;
 use artcraft_router::api::provider::Provider;
 use artcraft_router::client::request_mismatch_mitigation_strategy::RequestMismatchMitigationStrategy;

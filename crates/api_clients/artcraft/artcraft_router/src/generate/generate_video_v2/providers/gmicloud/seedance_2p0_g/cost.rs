@@ -29,7 +29,7 @@ impl GmiCloudSeedance2p0UltraCostState {
 
 #[cfg(test)]
 mod tests {
-  use crate::api::common_resolution::CommonResolution;
+  use crate::api::router_resolution::RouterResolution;
   use crate::api::router_video_model::RouterVideoModel;
   use crate::api::provider::Provider;
   use crate::generate::generate_video::generate_video_request_builder::GenerateVideoRequestBuilder;
@@ -50,7 +50,7 @@ mod tests {
 
     #[test]
     fn explicit_720p_5s() {
-      assert_eq!(cost_cents(Some(CommonResolution::SevenTwentyP), 5), 26);
+      assert_eq!(cost_cents(Some(RouterResolution::SevenTwentyP), 5), 26);
     }
   }
 
@@ -59,17 +59,17 @@ mod tests {
 
     #[test]
     fn p480_5s() {
-      assert_eq!(cost_cents(Some(CommonResolution::FourEightyP), 5), 12);
+      assert_eq!(cost_cents(Some(RouterResolution::FourEightyP), 5), 12);
     }
 
     #[test]
     fn p480_10s() {
-      assert_eq!(cost_cents(Some(CommonResolution::FourEightyP), 10), 24);
+      assert_eq!(cost_cents(Some(RouterResolution::FourEightyP), 10), 24);
     }
 
     #[test]
     fn p480_15s() {
-      assert_eq!(cost_cents(Some(CommonResolution::FourEightyP), 15), 36);
+      assert_eq!(cost_cents(Some(RouterResolution::FourEightyP), 15), 36);
     }
   }
 
@@ -78,17 +78,17 @@ mod tests {
 
     #[test]
     fn p1080_5s() {
-      assert_eq!(cost_cents(Some(CommonResolution::TenEightyP), 5), 58);
+      assert_eq!(cost_cents(Some(RouterResolution::TenEightyP), 5), 58);
     }
 
     #[test]
     fn p1080_10s() {
-      assert_eq!(cost_cents(Some(CommonResolution::TenEightyP), 10), 116);
+      assert_eq!(cost_cents(Some(RouterResolution::TenEightyP), 10), 116);
     }
 
     #[test]
     fn p1080_15s() {
-      assert_eq!(cost_cents(Some(CommonResolution::TenEightyP), 15), 174);
+      assert_eq!(cost_cents(Some(RouterResolution::TenEightyP), 15), 174);
     }
   }
 
@@ -97,9 +97,9 @@ mod tests {
 
     #[test]
     fn higher_resolution_costs_more() {
-      let c480 = cost_cents(Some(CommonResolution::FourEightyP), 10);
-      let c720 = cost_cents(Some(CommonResolution::SevenTwentyP), 10);
-      let c1080 = cost_cents(Some(CommonResolution::TenEightyP), 10);
+      let c480 = cost_cents(Some(RouterResolution::FourEightyP), 10);
+      let c720 = cost_cents(Some(RouterResolution::SevenTwentyP), 10);
+      let c1080 = cost_cents(Some(RouterResolution::TenEightyP), 10);
       assert!(c480 < c720, "480p ({c480}) should be < 720p ({c720})");
       assert!(c720 < c1080, "720p ({c720}) should be < 1080p ({c1080})");
     }
@@ -114,7 +114,7 @@ mod tests {
     }
   }
 
-  fn cost_cents(resolution: Option<CommonResolution>, duration_seconds: u16) -> u64 {
+  fn cost_cents(resolution: Option<RouterResolution>, duration_seconds: u16) -> u64 {
     let builder = GenerateVideoRequestBuilder {
       model: RouterVideoModel::Seedance2p0Ultra,
       provider: Provider::GmiCloud,

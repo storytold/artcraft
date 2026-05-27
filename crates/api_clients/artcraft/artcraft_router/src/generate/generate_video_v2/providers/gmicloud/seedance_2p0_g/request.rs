@@ -26,8 +26,8 @@ impl GmiCloudSeedance2p0UltraRequestState {
 
 #[cfg(test)]
 mod tests {
-  use crate::api::common_aspect_ratio::CommonAspectRatio;
-  use crate::api::common_resolution::CommonResolution;
+  use crate::api::router_aspect_ratio::RouterAspectRatio;
+  use crate::api::router_resolution::RouterResolution;
   use crate::api::router_video_model::RouterVideoModel;
   use crate::api::image_ref::ImageRef;
   use crate::api::provider::Provider;
@@ -44,8 +44,8 @@ mod tests {
   async fn test_text_to_video_720p() {
     let response = run_pipeline(GenerateVideoRequestBuilder {
       prompt: Some("A corgi running through a field of wildflowers at sunset.".to_string()),
-      aspect_ratio: Some(CommonAspectRatio::WideSixteenByNine),
-      resolution: Some(CommonResolution::SevenTwentyP),
+      aspect_ratio: Some(RouterAspectRatio::WideSixteenByNine),
+      resolution: Some(RouterResolution::SevenTwentyP),
       duration_seconds: Some(5),
       ..gmicloud_builder()
     }).await;
@@ -58,7 +58,7 @@ mod tests {
     let response = run_pipeline(GenerateVideoRequestBuilder {
       prompt: Some("The dog starts running and splashing in the lake.".to_string()),
       start_frame: Some(ImageRef::Url(JUNO_AT_LAKE_IMAGE_URL.to_string())),
-      resolution: Some(CommonResolution::FourEightyP),
+      resolution: Some(RouterResolution::FourEightyP),
       duration_seconds: Some(5),
       ..gmicloud_builder()
     }).await;

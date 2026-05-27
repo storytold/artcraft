@@ -6,7 +6,7 @@ use fal_client::requests::webhook::image::text::enqueue_gemini_25_flash_text_to_
   Gemini25FlashTextToImageRequest,
 };
 
-use crate::api::common_aspect_ratio::CommonAspectRatio;
+use crate::api::router_aspect_ratio::RouterAspectRatio;
 use crate::api::image_list_ref::ImageListRef;
 use crate::client::request_mismatch_mitigation_strategy::RequestMismatchMitigationStrategy;
 use crate::errors::artcraft_router_error::ArtcraftRouterError;
@@ -103,27 +103,27 @@ fn to_edit_num_images(n: PlannedNumImages) -> Gemini25FlashEditNumImages {
 //   1:1, 5:4, 4:3, 3:2, 16:9, 21:9, 4:5, 3:4, 2:3, 9:16
 //   (no Auto for text-to-image)
 fn plan_t2i_aspect_ratio(
-  aspect_ratio: Option<CommonAspectRatio>,
+  aspect_ratio: Option<RouterAspectRatio>,
   strategy: RequestMismatchMitigationStrategy,
 ) -> Result<Option<Gemini25FlashTextToImageAspectRatio>, ArtcraftRouterError> {
   use Gemini25FlashTextToImageAspectRatio as T;
   match aspect_ratio {
     None => Ok(None),
 
-    Some(CommonAspectRatio::Auto)
-    | Some(CommonAspectRatio::Auto2k)
-    | Some(CommonAspectRatio::Auto4k) => Ok(Some(T::OneByOne)),
+    Some(RouterAspectRatio::Auto)
+    | Some(RouterAspectRatio::Auto2k)
+    | Some(RouterAspectRatio::Auto4k) => Ok(Some(T::OneByOne)),
 
-    Some(CommonAspectRatio::Square) | Some(CommonAspectRatio::SquareHd) => Ok(Some(T::OneByOne)),
-    Some(CommonAspectRatio::WideFiveByFour) => Ok(Some(T::FiveByFour)),
-    Some(CommonAspectRatio::WideFourByThree) => Ok(Some(T::FourByThree)),
-    Some(CommonAspectRatio::WideThreeByTwo) => Ok(Some(T::ThreeByTwo)),
-    Some(CommonAspectRatio::WideSixteenByNine) | Some(CommonAspectRatio::Wide) => Ok(Some(T::SixteenByNine)),
-    Some(CommonAspectRatio::WideTwentyOneByNine) => Ok(Some(T::TwentyOneByNine)),
-    Some(CommonAspectRatio::TallFourByFive) => Ok(Some(T::FourByFive)),
-    Some(CommonAspectRatio::TallThreeByFour) => Ok(Some(T::ThreeByFour)),
-    Some(CommonAspectRatio::TallTwoByThree) => Ok(Some(T::TwoByThree)),
-    Some(CommonAspectRatio::TallNineBySixteen) | Some(CommonAspectRatio::Tall) => Ok(Some(T::NineBySixteen)),
+    Some(RouterAspectRatio::Square) | Some(RouterAspectRatio::SquareHd) => Ok(Some(T::OneByOne)),
+    Some(RouterAspectRatio::WideFiveByFour) => Ok(Some(T::FiveByFour)),
+    Some(RouterAspectRatio::WideFourByThree) => Ok(Some(T::FourByThree)),
+    Some(RouterAspectRatio::WideThreeByTwo) => Ok(Some(T::ThreeByTwo)),
+    Some(RouterAspectRatio::WideSixteenByNine) | Some(RouterAspectRatio::Wide) => Ok(Some(T::SixteenByNine)),
+    Some(RouterAspectRatio::WideTwentyOneByNine) => Ok(Some(T::TwentyOneByNine)),
+    Some(RouterAspectRatio::TallFourByFive) => Ok(Some(T::FourByFive)),
+    Some(RouterAspectRatio::TallThreeByFour) => Ok(Some(T::ThreeByFour)),
+    Some(RouterAspectRatio::TallTwoByThree) => Ok(Some(T::TwoByThree)),
+    Some(RouterAspectRatio::TallNineBySixteen) | Some(RouterAspectRatio::Tall) => Ok(Some(T::NineBySixteen)),
 
     Some(unsupported) => match strategy {
       RequestMismatchMitigationStrategy::ErrorOut => {
@@ -139,27 +139,27 @@ fn plan_t2i_aspect_ratio(
 
 // Gemini 2.5 Flash image-edit supported aspect ratios: same as t2i plus Auto
 fn plan_edit_aspect_ratio(
-  aspect_ratio: Option<CommonAspectRatio>,
+  aspect_ratio: Option<RouterAspectRatio>,
   strategy: RequestMismatchMitigationStrategy,
 ) -> Result<Option<Gemini25FlashEditAspectRatio>, ArtcraftRouterError> {
   use Gemini25FlashEditAspectRatio as E;
   match aspect_ratio {
     None => Ok(None),
 
-    Some(CommonAspectRatio::Auto)
-    | Some(CommonAspectRatio::Auto2k)
-    | Some(CommonAspectRatio::Auto4k) => Ok(Some(E::Auto)),
+    Some(RouterAspectRatio::Auto)
+    | Some(RouterAspectRatio::Auto2k)
+    | Some(RouterAspectRatio::Auto4k) => Ok(Some(E::Auto)),
 
-    Some(CommonAspectRatio::Square) | Some(CommonAspectRatio::SquareHd) => Ok(Some(E::OneByOne)),
-    Some(CommonAspectRatio::WideFiveByFour) => Ok(Some(E::FiveByFour)),
-    Some(CommonAspectRatio::WideFourByThree) => Ok(Some(E::FourByThree)),
-    Some(CommonAspectRatio::WideThreeByTwo) => Ok(Some(E::ThreeByTwo)),
-    Some(CommonAspectRatio::WideSixteenByNine) | Some(CommonAspectRatio::Wide) => Ok(Some(E::SixteenByNine)),
-    Some(CommonAspectRatio::WideTwentyOneByNine) => Ok(Some(E::TwentyOneByNine)),
-    Some(CommonAspectRatio::TallFourByFive) => Ok(Some(E::FourByFive)),
-    Some(CommonAspectRatio::TallThreeByFour) => Ok(Some(E::ThreeByFour)),
-    Some(CommonAspectRatio::TallTwoByThree) => Ok(Some(E::TwoByThree)),
-    Some(CommonAspectRatio::TallNineBySixteen) | Some(CommonAspectRatio::Tall) => Ok(Some(E::NineBySixteen)),
+    Some(RouterAspectRatio::Square) | Some(RouterAspectRatio::SquareHd) => Ok(Some(E::OneByOne)),
+    Some(RouterAspectRatio::WideFiveByFour) => Ok(Some(E::FiveByFour)),
+    Some(RouterAspectRatio::WideFourByThree) => Ok(Some(E::FourByThree)),
+    Some(RouterAspectRatio::WideThreeByTwo) => Ok(Some(E::ThreeByTwo)),
+    Some(RouterAspectRatio::WideSixteenByNine) | Some(RouterAspectRatio::Wide) => Ok(Some(E::SixteenByNine)),
+    Some(RouterAspectRatio::WideTwentyOneByNine) => Ok(Some(E::TwentyOneByNine)),
+    Some(RouterAspectRatio::TallFourByFive) => Ok(Some(E::FourByFive)),
+    Some(RouterAspectRatio::TallThreeByFour) => Ok(Some(E::ThreeByFour)),
+    Some(RouterAspectRatio::TallTwoByThree) => Ok(Some(E::TwoByThree)),
+    Some(RouterAspectRatio::TallNineBySixteen) | Some(RouterAspectRatio::Tall) => Ok(Some(E::NineBySixteen)),
 
     Some(unsupported) => match strategy {
       RequestMismatchMitigationStrategy::ErrorOut => {
@@ -301,7 +301,7 @@ mod tests {
     #[test]
     fn t2i_auto_falls_back_to_one_by_one() {
       let builder = GenerateImageRequestBuilder {
-        aspect_ratio: Some(CommonAspectRatio::Auto),
+        aspect_ratio: Some(RouterAspectRatio::Auto),
         ..base_builder()
       };
       let req = unwrap_t2i(build_fal_nano_banana(builder));
@@ -311,7 +311,7 @@ mod tests {
     #[test]
     fn t2i_wide_sixteen_by_nine() {
       let builder = GenerateImageRequestBuilder {
-        aspect_ratio: Some(CommonAspectRatio::WideSixteenByNine),
+        aspect_ratio: Some(RouterAspectRatio::WideSixteenByNine),
         ..base_builder()
       };
       let req = unwrap_t2i(build_fal_nano_banana(builder));
@@ -322,7 +322,7 @@ mod tests {
     fn edit_auto_is_preserved() {
       let builder = GenerateImageRequestBuilder {
         image_inputs: Some(ImageListRef::Urls(vec!["https://example.com/img.jpg".to_string()])),
-        aspect_ratio: Some(CommonAspectRatio::Auto),
+        aspect_ratio: Some(RouterAspectRatio::Auto),
         ..base_builder()
       };
       let req = unwrap_edit(build_fal_nano_banana(builder));

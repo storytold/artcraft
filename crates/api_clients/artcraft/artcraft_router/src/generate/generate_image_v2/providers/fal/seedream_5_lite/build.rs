@@ -7,8 +7,8 @@ use fal_client::requests::webhook::image::text::enqueue_bytedance_seedream_v5_li
   EnqueueBytedanceSeedreamV5LiteTextToImageSize,
 };
 
-use crate::api::common_aspect_ratio::CommonAspectRatio;
-use crate::api::common_resolution::CommonResolution;
+use crate::api::router_aspect_ratio::RouterAspectRatio;
+use crate::api::router_resolution::RouterResolution;
 use crate::api::image_list_ref::ImageListRef;
 use crate::client::request_mismatch_mitigation_strategy::RequestMismatchMitigationStrategy;
 use crate::errors::artcraft_router_error::ArtcraftRouterError;
@@ -120,8 +120,8 @@ enum PlannedImageSize {
 }
 
 fn plan_image_size(
-  aspect_ratio: Option<CommonAspectRatio>,
-  resolution: Option<CommonResolution>,
+  aspect_ratio: Option<RouterAspectRatio>,
+  resolution: Option<RouterResolution>,
   strategy: RequestMismatchMitigationStrategy,
 ) -> Result<Option<PlannedImageSize>, ArtcraftRouterError> {
   use PlannedImageSize as S;
@@ -129,25 +129,25 @@ fn plan_image_size(
     // No aspect_ratio: use resolution as a hint for Auto sizes.
     // Seedream v5 lite has no 4K — clamp to 3K.
     None => match resolution {
-      Some(CommonResolution::TwoK) => Ok(Some(S::Auto2k)),
-      Some(CommonResolution::ThreeK) | Some(CommonResolution::FourK) => Ok(Some(S::Auto3k)),
+      Some(RouterResolution::TwoK) => Ok(Some(S::Auto2k)),
+      Some(RouterResolution::ThreeK) | Some(RouterResolution::FourK) => Ok(Some(S::Auto3k)),
       _ => Ok(None),
     },
 
-    Some(CommonAspectRatio::Auto) | Some(CommonAspectRatio::Auto2k) => Ok(Some(S::Auto2k)),
-    Some(CommonAspectRatio::Auto3k) => Ok(Some(S::Auto3k)),
+    Some(RouterAspectRatio::Auto) | Some(RouterAspectRatio::Auto2k) => Ok(Some(S::Auto2k)),
+    Some(RouterAspectRatio::Auto3k) => Ok(Some(S::Auto3k)),
     // No 4K — fall back to 3K.
-    Some(CommonAspectRatio::Auto4k) => Ok(Some(S::Auto3k)),
+    Some(RouterAspectRatio::Auto4k) => Ok(Some(S::Auto3k)),
 
-    Some(CommonAspectRatio::Square) => Ok(Some(S::Square)),
-    Some(CommonAspectRatio::SquareHd) => Ok(Some(S::SquareHd)),
+    Some(RouterAspectRatio::Square) => Ok(Some(S::Square)),
+    Some(RouterAspectRatio::SquareHd) => Ok(Some(S::SquareHd)),
 
-    Some(CommonAspectRatio::Wide) | Some(CommonAspectRatio::WideSixteenByNine) => Ok(Some(S::LandscapeSixteenNine)),
-    Some(CommonAspectRatio::WideFourByThree) => Ok(Some(S::LandscapeFourThree)),
+    Some(RouterAspectRatio::Wide) | Some(RouterAspectRatio::WideSixteenByNine) => Ok(Some(S::LandscapeSixteenNine)),
+    Some(RouterAspectRatio::WideFourByThree) => Ok(Some(S::LandscapeFourThree)),
 
-    Some(unsupported @ CommonAspectRatio::WideFiveByFour)
-    | Some(unsupported @ CommonAspectRatio::WideThreeByTwo)
-    | Some(unsupported @ CommonAspectRatio::WideTwentyOneByNine) => match strategy {
+    Some(unsupported @ RouterAspectRatio::WideFiveByFour)
+    | Some(unsupported @ RouterAspectRatio::WideThreeByTwo)
+    | Some(unsupported @ RouterAspectRatio::WideTwentyOneByNine) => match strategy {
       RequestMismatchMitigationStrategy::ErrorOut => {
         Err(ArtcraftRouterError::Client(ClientError::ModelDoesNotSupportOption {
           field: "aspect_ratio",
@@ -157,12 +157,12 @@ fn plan_image_size(
       _ => Ok(Some(S::LandscapeSixteenNine)),
     },
 
-    Some(CommonAspectRatio::Tall) | Some(CommonAspectRatio::TallNineBySixteen) => Ok(Some(S::PortraitSixteenNine)),
-    Some(CommonAspectRatio::TallThreeByFour) => Ok(Some(S::PortraitFourThree)),
+    Some(RouterAspectRatio::Tall) | Some(RouterAspectRatio::TallNineBySixteen) => Ok(Some(S::PortraitSixteenNine)),
+    Some(RouterAspectRatio::TallThreeByFour) => Ok(Some(S::PortraitFourThree)),
 
-    Some(unsupported @ CommonAspectRatio::TallFourByFive)
-    | Some(unsupported @ CommonAspectRatio::TallTwoByThree)
-    | Some(unsupported @ CommonAspectRatio::TallNineByTwentyOne) => match strategy {
+    Some(unsupported @ RouterAspectRatio::TallFourByFive)
+    | Some(unsupported @ RouterAspectRatio::TallTwoByThree)
+    | Some(unsupported @ RouterAspectRatio::TallNineByTwentyOne) => match strategy {
       RequestMismatchMitigationStrategy::ErrorOut => {
         Err(ArtcraftRouterError::Client(ClientError::ModelDoesNotSupportOption {
           field: "aspect_ratio",
@@ -251,7 +251,7 @@ mod tests {
   #[test]
   fn auto_maps_to_auto2k() {
     let builder = GenerateImageRequestBuilder {
-      aspect_ratio: Some(CommonAspectRatio::Auto),
+      aspect_ratio: Some(RouterAspectRatio::Auto),
       ..base_builder()
     };
     let req = unwrap_t2i(build_fal_seedream_5_lite(builder));
@@ -262,7 +262,7 @@ mod tests {
   fn auto4k_falls_back_to_auto3k() {
     // Seedream 5 Lite has no 4K — clamp to 3K.
     let builder = GenerateImageRequestBuilder {
-      aspect_ratio: Some(CommonAspectRatio::Auto4k),
+      aspect_ratio: Some(RouterAspectRatio::Auto4k),
       ..base_builder()
     };
     let req = unwrap_t2i(build_fal_seedream_5_lite(builder));
@@ -278,7 +278,7 @@ mod tests {
   #[test]
   fn resolution_two_k_triggers_auto2k_when_no_aspect() {
     let builder = GenerateImageRequestBuilder {
-      resolution: Some(CommonResolution::TwoK),
+      resolution: Some(RouterResolution::TwoK),
       ..base_builder()
     };
     let req = unwrap_t2i(build_fal_seedream_5_lite(builder));
@@ -288,7 +288,7 @@ mod tests {
   #[test]
   fn resolution_four_k_clamps_to_auto3k() {
     let builder = GenerateImageRequestBuilder {
-      resolution: Some(CommonResolution::FourK),
+      resolution: Some(RouterResolution::FourK),
       ..base_builder()
     };
     let req = unwrap_t2i(build_fal_seedream_5_lite(builder));

@@ -2,8 +2,8 @@ use fal_client::requests::webhook::video::image::enqueue_veo_3_fast_image_to_vid
   Veo3FastAspectRatio, Veo3FastDuration, Veo3FastRequest, Veo3FastResolution,
 };
 
-use crate::api::common_aspect_ratio::CommonAspectRatio;
-use crate::api::common_resolution::CommonResolution;
+use crate::api::router_aspect_ratio::RouterAspectRatio;
+use crate::api::router_resolution::RouterResolution;
 use crate::api::image_ref::ImageRef;
 use crate::client::request_mismatch_mitigation_strategy::RequestMismatchMitigationStrategy;
 use crate::errors::artcraft_router_error::ArtcraftRouterError;
@@ -53,19 +53,19 @@ fn require_url(image_ref: Option<ImageRef>) -> Result<String, ArtcraftRouterErro
 }
 
 fn plan_aspect_ratio(
-  aspect_ratio: Option<CommonAspectRatio>,
+  aspect_ratio: Option<RouterAspectRatio>,
   strategy: RequestMismatchMitigationStrategy,
 ) -> Result<Veo3FastAspectRatio, ArtcraftRouterError> {
   use Veo3FastAspectRatio as Ar;
   match aspect_ratio {
     None
-    | Some(CommonAspectRatio::Auto)
-    | Some(CommonAspectRatio::Auto2k)
-    | Some(CommonAspectRatio::Auto3k)
-    | Some(CommonAspectRatio::Auto4k) => Ok(Ar::Auto),
+    | Some(RouterAspectRatio::Auto)
+    | Some(RouterAspectRatio::Auto2k)
+    | Some(RouterAspectRatio::Auto3k)
+    | Some(RouterAspectRatio::Auto4k) => Ok(Ar::Auto),
 
-    Some(CommonAspectRatio::WideSixteenByNine) | Some(CommonAspectRatio::Wide) => Ok(Ar::WideSixteenNine),
-    Some(CommonAspectRatio::TallNineBySixteen) | Some(CommonAspectRatio::Tall) => Ok(Ar::TallNineSixteen),
+    Some(RouterAspectRatio::WideSixteenByNine) | Some(RouterAspectRatio::Wide) => Ok(Ar::WideSixteenNine),
+    Some(RouterAspectRatio::TallNineBySixteen) | Some(RouterAspectRatio::Tall) => Ok(Ar::TallNineSixteen),
 
     Some(unsupported_ar) => match strategy {
       RequestMismatchMitigationStrategy::ErrorOut => {
@@ -77,14 +77,14 @@ fn plan_aspect_ratio(
 }
 
 fn plan_resolution(
-  resolution: Option<CommonResolution>,
+  resolution: Option<RouterResolution>,
   strategy: RequestMismatchMitigationStrategy,
 ) -> Result<Veo3FastResolution, ArtcraftRouterError> {
   use Veo3FastResolution as R;
   match resolution {
     None => Ok(R::Default),
-    Some(CommonResolution::SevenTwentyP) => Ok(R::SevenTwentyP),
-    Some(CommonResolution::TenEightyP) => Ok(R::TenEightyP),
+    Some(RouterResolution::SevenTwentyP) => Ok(R::SevenTwentyP),
+    Some(RouterResolution::TenEightyP) => Ok(R::TenEightyP),
     Some(other) => match strategy {
       RequestMismatchMitigationStrategy::ErrorOut => {
         Err(unsupported("resolution", &format!("{:?}", other)))
@@ -181,9 +181,9 @@ mod tests {
 
   #[test]
   fn full_combinatorial_pass() {
-    let resolutions = [None, Some(CommonResolution::SevenTwentyP), Some(CommonResolution::TenEightyP)];
+    let resolutions = [None, Some(RouterResolution::SevenTwentyP), Some(RouterResolution::TenEightyP)];
     let durations = [None, Some(4u16), Some(6), Some(8)];
-    let aspect_ratios = [None, Some(CommonAspectRatio::Auto), Some(CommonAspectRatio::WideSixteenByNine), Some(CommonAspectRatio::TallNineBySixteen)];
+    let aspect_ratios = [None, Some(RouterAspectRatio::Auto), Some(RouterAspectRatio::WideSixteenByNine), Some(RouterAspectRatio::TallNineBySixteen)];
     let audios = [None, Some(true), Some(false)];
 
     let mut combos = 0;

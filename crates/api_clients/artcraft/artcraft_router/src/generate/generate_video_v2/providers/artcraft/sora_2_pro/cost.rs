@@ -47,7 +47,7 @@ fn is_ten_eighty_p_for_cost(resolution: Option<CommonResolutionEnum>, has_start_
 
 #[cfg(test)]
 mod tests {
-  use crate::api::common_resolution::CommonResolution;
+  use crate::api::router_resolution::RouterResolution;
   use crate::api::router_video_model::RouterVideoModel;
   use crate::api::image_ref::ImageRef;
   use crate::api::provider::Provider;
@@ -56,7 +56,7 @@ mod tests {
 
   fn cost_cents(
     duration_seconds: Option<u16>,
-    resolution: Option<CommonResolution>,
+    resolution: Option<RouterResolution>,
     has_start_frame: bool,
   ) -> u64 {
     let mut b = GenerateVideoRequestBuilder {
@@ -77,19 +77,19 @@ mod tests {
     use super::*;
 
     #[test]
-    fn p720_4s_is_120() { assert_eq!(cost_cents(Some(4), Some(CommonResolution::SevenTwentyP), false), 120); }
+    fn p720_4s_is_120() { assert_eq!(cost_cents(Some(4), Some(RouterResolution::SevenTwentyP), false), 120); }
 
     #[test]
-    fn p720_8s_is_240() { assert_eq!(cost_cents(Some(8), Some(CommonResolution::SevenTwentyP), false), 240); }
+    fn p720_8s_is_240() { assert_eq!(cost_cents(Some(8), Some(RouterResolution::SevenTwentyP), false), 240); }
 
     #[test]
-    fn p720_12s_is_360() { assert_eq!(cost_cents(Some(12), Some(CommonResolution::SevenTwentyP), false), 360); }
+    fn p720_12s_is_360() { assert_eq!(cost_cents(Some(12), Some(RouterResolution::SevenTwentyP), false), 360); }
 
     #[test]
-    fn p1080_4s_is_200() { assert_eq!(cost_cents(Some(4), Some(CommonResolution::TenEightyP), false), 200); }
+    fn p1080_4s_is_200() { assert_eq!(cost_cents(Some(4), Some(RouterResolution::TenEightyP), false), 200); }
 
     #[test]
-    fn p1080_12s_is_600() { assert_eq!(cost_cents(Some(12), Some(CommonResolution::TenEightyP), false), 600); }
+    fn p1080_12s_is_600() { assert_eq!(cost_cents(Some(12), Some(RouterResolution::TenEightyP), false), 600); }
 
     #[test]
     fn t2v_default_resolution_priced_as_1080p() {
@@ -106,8 +106,8 @@ mod tests {
 
   #[test]
   fn higher_resolution_costs_more() {
-    let c720 = cost_cents(Some(8), Some(CommonResolution::SevenTwentyP), false);
-    let c1080 = cost_cents(Some(8), Some(CommonResolution::TenEightyP), false);
+    let c720 = cost_cents(Some(8), Some(RouterResolution::SevenTwentyP), false);
+    let c1080 = cost_cents(Some(8), Some(RouterResolution::TenEightyP), false);
     assert!(c720 < c1080);
   }
 }

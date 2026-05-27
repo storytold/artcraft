@@ -3,7 +3,7 @@ use fal_client::requests::webhook::image::angle::enqueue_qwen_edit_2511_edit_ima
   EnqueueQwenEdit2511EditImageAngleRequest,
 };
 
-use crate::api::common_aspect_ratio::CommonAspectRatio;
+use crate::api::router_aspect_ratio::RouterAspectRatio;
 use crate::api::image_list_ref::ImageListRef;
 use crate::client::request_mismatch_mitigation_strategy::RequestMismatchMitigationStrategy;
 use crate::errors::artcraft_router_error::ArtcraftRouterError;
@@ -80,26 +80,26 @@ fn plan_num_images(
 }
 
 fn plan_image_size(
-  aspect_ratio: Option<CommonAspectRatio>,
+  aspect_ratio: Option<RouterAspectRatio>,
   strategy: RequestMismatchMitigationStrategy,
 ) -> Result<Option<EnqueueQwenEdit2511AngleImageSize>, ArtcraftRouterError> {
   use EnqueueQwenEdit2511AngleImageSize as S;
   match aspect_ratio {
     None => Ok(None),
 
-    Some(CommonAspectRatio::Auto)
-    | Some(CommonAspectRatio::Auto2k)
-    | Some(CommonAspectRatio::Auto3k)
-    | Some(CommonAspectRatio::Auto4k) => Ok(Some(S::SquareHd)),
+    Some(RouterAspectRatio::Auto)
+    | Some(RouterAspectRatio::Auto2k)
+    | Some(RouterAspectRatio::Auto3k)
+    | Some(RouterAspectRatio::Auto4k) => Ok(Some(S::SquareHd)),
 
-    Some(CommonAspectRatio::Square) => Ok(Some(S::Square)),
-    Some(CommonAspectRatio::SquareHd) => Ok(Some(S::SquareHd)),
+    Some(RouterAspectRatio::Square) => Ok(Some(S::Square)),
+    Some(RouterAspectRatio::SquareHd) => Ok(Some(S::SquareHd)),
 
-    Some(CommonAspectRatio::Wide) | Some(CommonAspectRatio::WideSixteenByNine) => Ok(Some(S::LandscapeSixteenNine)),
-    Some(CommonAspectRatio::WideFourByThree) => Ok(Some(S::LandscapeFourThree)),
+    Some(RouterAspectRatio::Wide) | Some(RouterAspectRatio::WideSixteenByNine) => Ok(Some(S::LandscapeSixteenNine)),
+    Some(RouterAspectRatio::WideFourByThree) => Ok(Some(S::LandscapeFourThree)),
 
-    Some(CommonAspectRatio::Tall) | Some(CommonAspectRatio::TallNineBySixteen) => Ok(Some(S::PortraitSixteenNine)),
-    Some(CommonAspectRatio::TallThreeByFour) => Ok(Some(S::PortraitFourThree)),
+    Some(RouterAspectRatio::Tall) | Some(RouterAspectRatio::TallNineBySixteen) => Ok(Some(S::PortraitSixteenNine)),
+    Some(RouterAspectRatio::TallThreeByFour) => Ok(Some(S::PortraitFourThree)),
 
     Some(unsupported) => match strategy {
       RequestMismatchMitigationStrategy::ErrorOut => {

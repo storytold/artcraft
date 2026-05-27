@@ -5,9 +5,9 @@ use enums::common::generation::common_quality::CommonQuality as CommonQualityEnu
 use enums::common::generation::common_resolution::CommonResolution as CommonResolutionEnum;
 use tokens::tokens::media_files::MediaFileToken;
 
-use crate::api::common_aspect_ratio::CommonAspectRatio;
-use crate::api::common_quality::CommonQuality;
-use crate::api::common_resolution::CommonResolution;
+use crate::api::router_aspect_ratio::RouterAspectRatio;
+use crate::api::router_quality::RouterQuality;
+use crate::api::router_resolution::RouterResolution;
 use crate::api::image_list_ref::ImageListRef;
 use crate::client::request_mismatch_mitigation_strategy::RequestMismatchMitigationStrategy;
 use crate::errors::artcraft_router_error::ArtcraftRouterError;
@@ -91,46 +91,46 @@ pub fn resolve_image_list_ref(
   }
 }
 
-fn to_aspect_ratio_enum(ar: CommonAspectRatio) -> CommonAspectRatioEnum {
+fn to_aspect_ratio_enum(ar: RouterAspectRatio) -> CommonAspectRatioEnum {
   match ar {
-    CommonAspectRatio::Auto => CommonAspectRatioEnum::Auto,
-    CommonAspectRatio::Auto2k => CommonAspectRatioEnum::Auto2k,
-    CommonAspectRatio::Auto3k => CommonAspectRatioEnum::Auto3k,
-    CommonAspectRatio::Auto4k => CommonAspectRatioEnum::Auto4k,
-    CommonAspectRatio::Square => CommonAspectRatioEnum::Square,
-    CommonAspectRatio::SquareHd => CommonAspectRatioEnum::SquareHd,
-    CommonAspectRatio::WideFourByThree => CommonAspectRatioEnum::WideFourByThree,
-    CommonAspectRatio::WideFiveByFour => CommonAspectRatioEnum::WideFiveByFour,
-    CommonAspectRatio::WideThreeByTwo => CommonAspectRatioEnum::WideThreeByTwo,
-    CommonAspectRatio::WideSixteenByNine => CommonAspectRatioEnum::WideSixteenByNine,
-    CommonAspectRatio::WideTwentyOneByNine => CommonAspectRatioEnum::WideTwentyOneByNine,
-    CommonAspectRatio::Wide => CommonAspectRatioEnum::Wide,
-    CommonAspectRatio::TallThreeByFour => CommonAspectRatioEnum::TallThreeByFour,
-    CommonAspectRatio::TallFourByFive => CommonAspectRatioEnum::TallFourByFive,
-    CommonAspectRatio::TallTwoByThree => CommonAspectRatioEnum::TallTwoByThree,
-    CommonAspectRatio::TallNineBySixteen => CommonAspectRatioEnum::TallNineBySixteen,
-    CommonAspectRatio::TallNineByTwentyOne => CommonAspectRatioEnum::TallNineByTwentyOne,
-    CommonAspectRatio::Tall => CommonAspectRatioEnum::Tall,
+    RouterAspectRatio::Auto => CommonAspectRatioEnum::Auto,
+    RouterAspectRatio::Auto2k => CommonAspectRatioEnum::Auto2k,
+    RouterAspectRatio::Auto3k => CommonAspectRatioEnum::Auto3k,
+    RouterAspectRatio::Auto4k => CommonAspectRatioEnum::Auto4k,
+    RouterAspectRatio::Square => CommonAspectRatioEnum::Square,
+    RouterAspectRatio::SquareHd => CommonAspectRatioEnum::SquareHd,
+    RouterAspectRatio::WideFourByThree => CommonAspectRatioEnum::WideFourByThree,
+    RouterAspectRatio::WideFiveByFour => CommonAspectRatioEnum::WideFiveByFour,
+    RouterAspectRatio::WideThreeByTwo => CommonAspectRatioEnum::WideThreeByTwo,
+    RouterAspectRatio::WideSixteenByNine => CommonAspectRatioEnum::WideSixteenByNine,
+    RouterAspectRatio::WideTwentyOneByNine => CommonAspectRatioEnum::WideTwentyOneByNine,
+    RouterAspectRatio::Wide => CommonAspectRatioEnum::Wide,
+    RouterAspectRatio::TallThreeByFour => CommonAspectRatioEnum::TallThreeByFour,
+    RouterAspectRatio::TallFourByFive => CommonAspectRatioEnum::TallFourByFive,
+    RouterAspectRatio::TallTwoByThree => CommonAspectRatioEnum::TallTwoByThree,
+    RouterAspectRatio::TallNineBySixteen => CommonAspectRatioEnum::TallNineBySixteen,
+    RouterAspectRatio::TallNineByTwentyOne => CommonAspectRatioEnum::TallNineByTwentyOne,
+    RouterAspectRatio::Tall => CommonAspectRatioEnum::Tall,
   }
 }
 
-fn to_resolution_enum(r: CommonResolution) -> CommonResolutionEnum {
+fn to_resolution_enum(r: RouterResolution) -> CommonResolutionEnum {
   match r {
-    CommonResolution::HalfK => CommonResolutionEnum::HalfK,
-    CommonResolution::OneK => CommonResolutionEnum::OneK,
-    CommonResolution::TwoK => CommonResolutionEnum::TwoK,
-    CommonResolution::ThreeK => CommonResolutionEnum::ThreeK,
-    CommonResolution::FourK => CommonResolutionEnum::FourK,
-    CommonResolution::FourEightyP => CommonResolutionEnum::FourEightyP,
-    CommonResolution::SevenTwentyP => CommonResolutionEnum::SevenTwentyP,
-    CommonResolution::TenEightyP => CommonResolutionEnum::TenEightyP,
+    RouterResolution::HalfK => CommonResolutionEnum::HalfK,
+    RouterResolution::OneK => CommonResolutionEnum::OneK,
+    RouterResolution::TwoK => CommonResolutionEnum::TwoK,
+    RouterResolution::ThreeK => CommonResolutionEnum::ThreeK,
+    RouterResolution::FourK => CommonResolutionEnum::FourK,
+    RouterResolution::FourEightyP => CommonResolutionEnum::FourEightyP,
+    RouterResolution::SevenTwentyP => CommonResolutionEnum::SevenTwentyP,
+    RouterResolution::TenEightyP => CommonResolutionEnum::TenEightyP,
   }
 }
 
-fn to_quality_enum(q: CommonQuality) -> CommonQualityEnum {
+fn to_quality_enum(q: RouterQuality) -> CommonQualityEnum {
   match q {
-    CommonQuality::Low => CommonQualityEnum::Low,
-    CommonQuality::Medium => CommonQualityEnum::Medium,
-    CommonQuality::High => CommonQualityEnum::High,
+    RouterQuality::Low => CommonQualityEnum::Low,
+    RouterQuality::Medium => CommonQualityEnum::Medium,
+    RouterQuality::High => CommonQualityEnum::High,
   }
 }

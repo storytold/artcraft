@@ -20,8 +20,8 @@ impl ArtcraftHappyHorse1p0RequestState {
 mod tests {
   use tokens::tokens::media_files::MediaFileToken;
 
-  use crate::api::common_aspect_ratio::CommonAspectRatio;
-  use crate::api::common_resolution::CommonResolution;
+  use crate::api::router_aspect_ratio::RouterAspectRatio;
+  use crate::api::router_resolution::RouterResolution;
   use crate::api::router_video_model::RouterVideoModel;
   use crate::api::image_ref::ImageRef;
   use crate::api::provider::Provider;
@@ -43,7 +43,7 @@ mod tests {
     async fn landscape() {
       let response = run_pipeline(GenerateVideoRequestBuilder {
         prompt: Some("A corgi running through a field of wildflowers at sunset.".to_string()),
-        aspect_ratio: Some(CommonAspectRatio::WideSixteenByNine),
+        aspect_ratio: Some(RouterAspectRatio::WideSixteenByNine),
         ..artcraft_builder()
       }).await;
       assert!(matches!(response, GenerateVideoResponse::Artcraft(_)));
@@ -55,7 +55,7 @@ mod tests {
     async fn portrait() {
       let response = run_pipeline(GenerateVideoRequestBuilder {
         prompt: Some("A cat sitting on a windowsill watching rain.".to_string()),
-        aspect_ratio: Some(CommonAspectRatio::TallNineBySixteen),
+        aspect_ratio: Some(RouterAspectRatio::TallNineBySixteen),
         ..artcraft_builder()
       }).await;
       assert!(matches!(response, GenerateVideoResponse::Artcraft(_)));
@@ -67,7 +67,7 @@ mod tests {
     async fn square() {
       let response = run_pipeline(GenerateVideoRequestBuilder {
         prompt: Some("A hummingbird hovering near a flower.".to_string()),
-        aspect_ratio: Some(CommonAspectRatio::Square),
+        aspect_ratio: Some(RouterAspectRatio::Square),
         ..artcraft_builder()
       }).await;
       assert!(matches!(response, GenerateVideoResponse::Artcraft(_)));
@@ -83,7 +83,7 @@ mod tests {
     async fn res_720p() {
       let response = run_pipeline(GenerateVideoRequestBuilder {
         prompt: Some("A golden retriever catching a frisbee on the beach.".to_string()),
-        resolution: Some(CommonResolution::SevenTwentyP),
+        resolution: Some(RouterResolution::SevenTwentyP),
         ..artcraft_builder()
       }).await;
       assert!(matches!(response, GenerateVideoResponse::Artcraft(_)));
@@ -95,7 +95,7 @@ mod tests {
     async fn res_1080p() {
       let response = run_pipeline(GenerateVideoRequestBuilder {
         prompt: Some("A fox walking through a snowy forest.".to_string()),
-        resolution: Some(CommonResolution::TenEightyP),
+        resolution: Some(RouterResolution::TenEightyP),
         ..artcraft_builder()
       }).await;
       assert!(matches!(response, GenerateVideoResponse::Artcraft(_)));
@@ -111,7 +111,7 @@ mod tests {
     async fn text_to_video() {
       let response = run_pipeline(GenerateVideoRequestBuilder {
         prompt: Some("A whale breaching in the open ocean at dawn, cinematic.".to_string()),
-        aspect_ratio: Some(CommonAspectRatio::WideSixteenByNine),
+        aspect_ratio: Some(RouterAspectRatio::WideSixteenByNine),
         ..artcraft_builder()
       }).await;
       assert!(matches!(response, GenerateVideoResponse::Artcraft(_)));
@@ -124,7 +124,7 @@ mod tests {
       let response = run_pipeline(GenerateVideoRequestBuilder {
         prompt: Some("The dog watches the lake as the sun sets.".to_string()),
         start_frame: Some(ImageRef::MediaFileToken(MediaFileToken::new(JUNO_AT_LAKE_PRODUCTION_MEDIA_TOKEN.to_string()))),
-        aspect_ratio: Some(CommonAspectRatio::WideSixteenByNine),
+        aspect_ratio: Some(RouterAspectRatio::WideSixteenByNine),
         ..artcraft_builder()
       }).await;
       assert!(matches!(response, GenerateVideoResponse::Artcraft(_)));

@@ -67,7 +67,7 @@ impl FalVeo2RequestState {
 mod tests {
   use test_data::web::image_urls::JUNO_AT_LAKE_IMAGE_URL;
 
-  use crate::api::common_aspect_ratio::CommonAspectRatio;
+  use crate::api::router_aspect_ratio::RouterAspectRatio;
   use crate::api::router_video_model::RouterVideoModel;
   use crate::api::image_ref::ImageRef;
   use crate::api::provider::Provider;
@@ -81,7 +81,7 @@ mod tests {
   async fn live_text_to_video_5s() {
     let response = run_pipeline(GenerateVideoRequestBuilder {
       prompt: Some("a peaceful lake at dawn".to_string()),
-      aspect_ratio: Some(CommonAspectRatio::WideSixteenByNine),
+      aspect_ratio: Some(RouterAspectRatio::WideSixteenByNine),
       duration_seconds: Some(5),
       ..fal_veo_2_builder()
     }).await;

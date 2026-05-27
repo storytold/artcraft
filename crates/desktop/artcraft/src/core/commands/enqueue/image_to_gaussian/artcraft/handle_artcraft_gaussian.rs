@@ -6,7 +6,7 @@ use crate::core::commands::enqueue::task_enqueue_success::TaskEnqueueSuccess;
 use crate::core::events::generation_events::common::GenerationModel;
 use crate::core::state::app_env_configs::app_env_configs::AppEnvConfigs;
 use crate::services::storyteller::state::storyteller_credential_manager::StorytellerCredentialManager;
-use artcraft_router::api::common_splat_model::CommonSplatModel;
+use artcraft_router::api::router_splat_model::RouterSplatModel;
 use tauri::AppHandle;
 
 pub async fn handle_gaussian_artcraft(
@@ -20,13 +20,13 @@ pub async fn handle_gaussian_artcraft(
   match request.model {
     None => Err(GenerateError::no_model_specified()),
     Some(GaussianModel::Marble0p1Mini) => {
-      handle_artcraft_splat_via_router(request, app_env_configs, &creds, CommonSplatModel::Marble0p1Mini, GenerationModel::WorldlabsMarble0p1Mini).await
+      handle_artcraft_splat_via_router(request, app_env_configs, &creds, RouterSplatModel::Marble0p1Mini, GenerationModel::WorldlabsMarble0p1Mini).await
     }
     Some(
       GaussianModel::Marble0p1Plus | 
       GaussianModel::WorldLabsMarble // Legacy variant — route to Plus
     ) => {
-      handle_artcraft_splat_via_router(request, app_env_configs, &creds, CommonSplatModel::Marble0p1Plus, GenerationModel::WorldlabsMarble0p1Plus).await
+      handle_artcraft_splat_via_router(request, app_env_configs, &creds, RouterSplatModel::Marble0p1Plus, GenerationModel::WorldlabsMarble0p1Plus).await
     }
   }
 }

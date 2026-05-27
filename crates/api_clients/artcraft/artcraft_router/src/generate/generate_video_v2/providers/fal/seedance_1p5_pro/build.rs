@@ -7,8 +7,8 @@ use fal_client::requests::webhook::video::text::enqueue_seedance_1p5_pro_text_to
   EnqueueSeedance1p5ProTextToVideoRequest, EnqueueSeedance1p5ProTextToVideoResolution,
 };
 
-use crate::api::common_aspect_ratio::CommonAspectRatio;
-use crate::api::common_resolution::CommonResolution;
+use crate::api::router_aspect_ratio::RouterAspectRatio;
+use crate::api::router_resolution::RouterResolution;
 use crate::api::image_ref::ImageRef;
 use crate::client::request_mismatch_mitigation_strategy::RequestMismatchMitigationStrategy;
 use crate::errors::artcraft_router_error::ArtcraftRouterError;
@@ -114,23 +114,23 @@ fn optional_url(image_ref: Option<ImageRef>) -> Result<Option<String>, ArtcraftR
 }
 
 fn plan_aspect_ratio(
-  aspect_ratio: Option<CommonAspectRatio>,
+  aspect_ratio: Option<RouterAspectRatio>,
   strategy: RequestMismatchMitigationStrategy,
 ) -> Result<Option<PlanAspectRatio>, ArtcraftRouterError> {
   use PlanAspectRatio as Ar;
   match aspect_ratio {
     None => Ok(None),
 
-    Some(CommonAspectRatio::Auto)
-    | Some(CommonAspectRatio::Auto2k)
-    | Some(CommonAspectRatio::Auto4k) => Ok(Some(Ar::Auto)),
+    Some(RouterAspectRatio::Auto)
+    | Some(RouterAspectRatio::Auto2k)
+    | Some(RouterAspectRatio::Auto4k) => Ok(Some(Ar::Auto)),
 
-    Some(CommonAspectRatio::Square) | Some(CommonAspectRatio::SquareHd) => Ok(Some(Ar::Square)),
-    Some(CommonAspectRatio::WideFourByThree) => Ok(Some(Ar::FourByThree)),
-    Some(CommonAspectRatio::WideSixteenByNine) | Some(CommonAspectRatio::Wide) => Ok(Some(Ar::SixteenByNine)),
-    Some(CommonAspectRatio::WideTwentyOneByNine) => Ok(Some(Ar::TwentyOneByNine)),
-    Some(CommonAspectRatio::TallThreeByFour) => Ok(Some(Ar::ThreeByFour)),
-    Some(CommonAspectRatio::TallNineBySixteen) | Some(CommonAspectRatio::Tall) => Ok(Some(Ar::NineBySixteen)),
+    Some(RouterAspectRatio::Square) | Some(RouterAspectRatio::SquareHd) => Ok(Some(Ar::Square)),
+    Some(RouterAspectRatio::WideFourByThree) => Ok(Some(Ar::FourByThree)),
+    Some(RouterAspectRatio::WideSixteenByNine) | Some(RouterAspectRatio::Wide) => Ok(Some(Ar::SixteenByNine)),
+    Some(RouterAspectRatio::WideTwentyOneByNine) => Ok(Some(Ar::TwentyOneByNine)),
+    Some(RouterAspectRatio::TallThreeByFour) => Ok(Some(Ar::ThreeByFour)),
+    Some(RouterAspectRatio::TallNineBySixteen) | Some(RouterAspectRatio::Tall) => Ok(Some(Ar::NineBySixteen)),
 
     Some(unsupported) => match strategy {
       RequestMismatchMitigationStrategy::ErrorOut => {
@@ -145,28 +145,28 @@ fn plan_aspect_ratio(
 }
 
 /// Pick the nearest supported aspect ratio for unsupported inputs.
-fn nearest_aspect_ratio(aspect_ratio: CommonAspectRatio) -> PlanAspectRatio {
+fn nearest_aspect_ratio(aspect_ratio: RouterAspectRatio) -> PlanAspectRatio {
   use PlanAspectRatio as Ar;
   match aspect_ratio {
-    CommonAspectRatio::WideFiveByFour => Ar::FourByThree,
-    CommonAspectRatio::WideThreeByTwo => Ar::FourByThree,
-    CommonAspectRatio::TallFourByFive => Ar::ThreeByFour,
-    CommonAspectRatio::TallTwoByThree => Ar::ThreeByFour,
-    CommonAspectRatio::TallNineByTwentyOne => Ar::NineBySixteen,
+    RouterAspectRatio::WideFiveByFour => Ar::FourByThree,
+    RouterAspectRatio::WideThreeByTwo => Ar::FourByThree,
+    RouterAspectRatio::TallFourByFive => Ar::ThreeByFour,
+    RouterAspectRatio::TallTwoByThree => Ar::ThreeByFour,
+    RouterAspectRatio::TallNineByTwentyOne => Ar::NineBySixteen,
     _ => Ar::Square,
   }
 }
 
 fn plan_resolution(
-  resolution: Option<CommonResolution>,
+  resolution: Option<RouterResolution>,
   strategy: RequestMismatchMitigationStrategy,
 ) -> Result<Option<PlanResolution>, ArtcraftRouterError> {
   use PlanResolution as R;
   match resolution {
     None => Ok(None),
-    Some(CommonResolution::FourEightyP) => Ok(Some(R::FourEightyP)),
-    Some(CommonResolution::SevenTwentyP) => Ok(Some(R::SevenTwentyP)),
-    Some(CommonResolution::TenEightyP) => Ok(Some(R::TenEightyP)),
+    Some(RouterResolution::FourEightyP) => Ok(Some(R::FourEightyP)),
+    Some(RouterResolution::SevenTwentyP) => Ok(Some(R::SevenTwentyP)),
+    Some(RouterResolution::TenEightyP) => Ok(Some(R::TenEightyP)),
     Some(other) => match strategy {
       RequestMismatchMitigationStrategy::ErrorOut => {
         Err(ArtcraftRouterError::Client(ClientError::ModelDoesNotSupportOption {
@@ -473,7 +473,7 @@ mod tests {
     #[test]
     fn t2v_resolution_480p() {
       let req = unwrap_t2v(build_fal_seedance_1p5_pro(make_t2v(|b| {
-        b.resolution = Some(CommonResolution::FourEightyP);
+        b.resolution = Some(RouterResolution::FourEightyP);
       })));
       assert!(matches!(req.resolution, Some(EnqueueSeedance1p5ProTextToVideoResolution::FourEightyP)));
     }
@@ -481,7 +481,7 @@ mod tests {
     #[test]
     fn t2v_resolution_720p() {
       let req = unwrap_t2v(build_fal_seedance_1p5_pro(make_t2v(|b| {
-        b.resolution = Some(CommonResolution::SevenTwentyP);
+        b.resolution = Some(RouterResolution::SevenTwentyP);
       })));
       assert!(matches!(req.resolution, Some(EnqueueSeedance1p5ProTextToVideoResolution::SevenTwentyP)));
     }
@@ -489,7 +489,7 @@ mod tests {
     #[test]
     fn t2v_resolution_1080p() {
       let req = unwrap_t2v(build_fal_seedance_1p5_pro(make_t2v(|b| {
-        b.resolution = Some(CommonResolution::TenEightyP);
+        b.resolution = Some(RouterResolution::TenEightyP);
       })));
       assert!(matches!(req.resolution, Some(EnqueueSeedance1p5ProTextToVideoResolution::TenEightyP)));
     }
@@ -503,7 +503,7 @@ mod tests {
     #[test]
     fn unsupported_resolution_errors_with_error_out() {
       let result = build_fal_seedance_1p5_pro(make_t2v(|b| {
-        b.resolution = Some(CommonResolution::FourK);
+        b.resolution = Some(RouterResolution::FourK);
         b.request_mismatch_mitigation_strategy = RequestMismatchMitigationStrategy::ErrorOut;
       }));
       assert!(result.is_err());
@@ -512,7 +512,7 @@ mod tests {
     #[test]
     fn unsupported_resolution_upgrades_with_pay_more() {
       let req = unwrap_t2v(build_fal_seedance_1p5_pro(make_t2v(|b| {
-        b.resolution = Some(CommonResolution::FourK);
+        b.resolution = Some(RouterResolution::FourK);
         b.request_mismatch_mitigation_strategy = RequestMismatchMitigationStrategy::PayMoreUpgrade;
       })));
       assert!(matches!(req.resolution, Some(EnqueueSeedance1p5ProTextToVideoResolution::TenEightyP)));
@@ -521,7 +521,7 @@ mod tests {
     #[test]
     fn unsupported_resolution_downgrades_with_pay_less() {
       let req = unwrap_t2v(build_fal_seedance_1p5_pro(make_t2v(|b| {
-        b.resolution = Some(CommonResolution::FourK);
+        b.resolution = Some(RouterResolution::FourK);
         b.request_mismatch_mitigation_strategy = RequestMismatchMitigationStrategy::PayLessDowngrade;
       })));
       assert!(matches!(req.resolution, Some(EnqueueSeedance1p5ProTextToVideoResolution::FourEightyP)));
@@ -587,7 +587,7 @@ mod tests {
     #[test]
     fn auto() {
       let req = unwrap_t2v(build_fal_seedance_1p5_pro(make_t2v(|b| {
-        b.aspect_ratio = Some(CommonAspectRatio::Auto);
+        b.aspect_ratio = Some(RouterAspectRatio::Auto);
       })));
       assert!(matches!(req.aspect_ratio, Some(EnqueueSeedance1p5ProTextToVideoAspectRatio::Auto)));
     }
@@ -595,7 +595,7 @@ mod tests {
     #[test]
     fn sixteen_by_nine() {
       let req = unwrap_t2v(build_fal_seedance_1p5_pro(make_t2v(|b| {
-        b.aspect_ratio = Some(CommonAspectRatio::WideSixteenByNine);
+        b.aspect_ratio = Some(RouterAspectRatio::WideSixteenByNine);
       })));
       assert!(matches!(req.aspect_ratio, Some(EnqueueSeedance1p5ProTextToVideoAspectRatio::SixteenByNine)));
     }
@@ -603,7 +603,7 @@ mod tests {
     #[test]
     fn square() {
       let req = unwrap_t2v(build_fal_seedance_1p5_pro(make_t2v(|b| {
-        b.aspect_ratio = Some(CommonAspectRatio::Square);
+        b.aspect_ratio = Some(RouterAspectRatio::Square);
       })));
       assert!(matches!(req.aspect_ratio, Some(EnqueueSeedance1p5ProTextToVideoAspectRatio::Square)));
     }
@@ -612,7 +612,7 @@ mod tests {
     fn unsupported_aspect_ratio_falls_back_to_nearest_with_pay_more() {
       // WideFiveByFour → nearest wide → FourByThree (per nearest_aspect_ratio).
       let req = unwrap_t2v(build_fal_seedance_1p5_pro(make_t2v(|b| {
-        b.aspect_ratio = Some(CommonAspectRatio::WideFiveByFour);
+        b.aspect_ratio = Some(RouterAspectRatio::WideFiveByFour);
         b.request_mismatch_mitigation_strategy = RequestMismatchMitigationStrategy::PayMoreUpgrade;
       })));
       assert!(matches!(req.aspect_ratio, Some(EnqueueSeedance1p5ProTextToVideoAspectRatio::FourByThree)));
@@ -621,7 +621,7 @@ mod tests {
     #[test]
     fn unsupported_aspect_ratio_errors_with_error_out() {
       let result = build_fal_seedance_1p5_pro(make_t2v(|b| {
-        b.aspect_ratio = Some(CommonAspectRatio::WideFiveByFour);
+        b.aspect_ratio = Some(RouterAspectRatio::WideFiveByFour);
         b.request_mismatch_mitigation_strategy = RequestMismatchMitigationStrategy::ErrorOut;
       }));
       assert!(result.is_err());
@@ -634,17 +634,17 @@ mod tests {
   fn t2v_combinatorial_pass() {
     let resolutions = [
       None,
-      Some(CommonResolution::FourEightyP),
-      Some(CommonResolution::SevenTwentyP),
-      Some(CommonResolution::TenEightyP),
+      Some(RouterResolution::FourEightyP),
+      Some(RouterResolution::SevenTwentyP),
+      Some(RouterResolution::TenEightyP),
     ];
     let durations = [None, Some(4u16), Some(8u16), Some(12u16)];
     let aspect_ratios = [
       None,
-      Some(CommonAspectRatio::Auto),
-      Some(CommonAspectRatio::Square),
-      Some(CommonAspectRatio::WideSixteenByNine),
-      Some(CommonAspectRatio::TallNineBySixteen),
+      Some(RouterAspectRatio::Auto),
+      Some(RouterAspectRatio::Square),
+      Some(RouterAspectRatio::WideSixteenByNine),
+      Some(RouterAspectRatio::TallNineBySixteen),
     ];
     let audios = [None, Some(true), Some(false)];
 
@@ -671,11 +671,11 @@ mod tests {
   fn i2v_combinatorial_pass() {
     let resolutions = [
       None,
-      Some(CommonResolution::SevenTwentyP),
-      Some(CommonResolution::TenEightyP),
+      Some(RouterResolution::SevenTwentyP),
+      Some(RouterResolution::TenEightyP),
     ];
     let durations = [None, Some(5u16), Some(12u16)];
-    let aspect_ratios = [None, Some(CommonAspectRatio::WideSixteenByNine), Some(CommonAspectRatio::Square)];
+    let aspect_ratios = [None, Some(RouterAspectRatio::WideSixteenByNine), Some(RouterAspectRatio::Square)];
     let audios = [None, Some(true), Some(false)];
 
     let mut combos = 0;

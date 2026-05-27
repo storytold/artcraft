@@ -1,4 +1,4 @@
-use artcraft_router::api::common_resolution::CommonResolution as RouterCommonResolution;
+use artcraft_router::api::router_resolution::RouterResolution as RouterCommonResolution;
 use enums::common::generation::common_resolution::CommonResolution as EnumsCommonResolution;
 
 /// Map from the router's CommonResolution to the enums crate's CommonResolution.

@@ -28,7 +28,7 @@ mod tests {
   use tokens::tokens::media_files::MediaFileToken;
 
   use crate::api::character_list_ref::CharacterListRef;
-  use crate::api::common_resolution::CommonResolution;
+  use crate::api::router_resolution::RouterResolution;
   use crate::api::router_video_model::RouterVideoModel;
   use crate::api::image_list_ref::ImageListRef;
   use crate::api::image_ref::ImageRef;
@@ -83,19 +83,19 @@ mod tests {
 
     #[test]
     fn res_480p() {
-      let req = unwrap_request(make_builder(|b| { b.resolution = Some(CommonResolution::FourEightyP); }));
+      let req = unwrap_request(make_builder(|b| { b.resolution = Some(RouterResolution::FourEightyP); }));
       assert_eq!(req.request.resolution, Some(CommonResolutionEnum::FourEightyP));
     }
 
     #[test]
     fn res_720p() {
-      let req = unwrap_request(make_builder(|b| { b.resolution = Some(CommonResolution::SevenTwentyP); }));
+      let req = unwrap_request(make_builder(|b| { b.resolution = Some(RouterResolution::SevenTwentyP); }));
       assert_eq!(req.request.resolution, Some(CommonResolutionEnum::SevenTwentyP));
     }
 
     #[test]
     fn res_1080p_downgrades_to_720p() {
-      let req = unwrap_request(make_builder(|b| { b.resolution = Some(CommonResolution::TenEightyP); }));
+      let req = unwrap_request(make_builder(|b| { b.resolution = Some(RouterResolution::TenEightyP); }));
       assert_eq!(req.request.resolution, Some(CommonResolutionEnum::SevenTwentyP));
     }
 
@@ -104,7 +104,7 @@ mod tests {
       let result = build_artcraft_preview_model_fast(GenerateVideoRequestBuilder {
         model: RouterVideoModel::PreviewModelFast,
         provider: Provider::Artcraft,
-        resolution: Some(CommonResolution::TenEightyP),
+        resolution: Some(RouterResolution::TenEightyP),
         request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::ErrorOut,
         ..Default::default()
       });

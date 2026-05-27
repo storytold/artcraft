@@ -7,7 +7,7 @@ use fal_client::requests::webhook::image::text::enqueue_bytedance_seedream_v4_te
   EnqueueBytedanceSeedreamV4TextToImageSize,
 };
 
-use crate::api::common_aspect_ratio::CommonAspectRatio;
+use crate::api::router_aspect_ratio::RouterAspectRatio;
 use crate::api::image_list_ref::ImageListRef;
 use crate::client::request_mismatch_mitigation_strategy::RequestMismatchMitigationStrategy;
 use crate::errors::artcraft_router_error::ArtcraftRouterError;
@@ -118,7 +118,7 @@ enum PlannedImageSize {
 }
 
 fn plan_image_size(
-  aspect_ratio: Option<CommonAspectRatio>,
+  aspect_ratio: Option<RouterAspectRatio>,
   is_edit_mode: bool,
   strategy: RequestMismatchMitigationStrategy,
 ) -> Result<Option<PlannedImageSize>, ArtcraftRouterError> {
@@ -126,21 +126,21 @@ fn plan_image_size(
   match aspect_ratio {
     None => Ok(None),
 
-    Some(CommonAspectRatio::Auto) => {
+    Some(RouterAspectRatio::Auto) => {
       if is_edit_mode { Ok(Some(S::Auto)) } else { Ok(Some(S::Square)) }
     }
-    Some(CommonAspectRatio::Auto2k) | Some(CommonAspectRatio::Auto3k) => Ok(Some(S::Auto2k)),
-    Some(CommonAspectRatio::Auto4k) => Ok(Some(S::Auto4k)),
+    Some(RouterAspectRatio::Auto2k) | Some(RouterAspectRatio::Auto3k) => Ok(Some(S::Auto2k)),
+    Some(RouterAspectRatio::Auto4k) => Ok(Some(S::Auto4k)),
 
-    Some(CommonAspectRatio::Square) => Ok(Some(S::Square)),
-    Some(CommonAspectRatio::SquareHd) => Ok(Some(S::SquareHd)),
+    Some(RouterAspectRatio::Square) => Ok(Some(S::Square)),
+    Some(RouterAspectRatio::SquareHd) => Ok(Some(S::SquareHd)),
 
-    Some(CommonAspectRatio::Wide) | Some(CommonAspectRatio::WideSixteenByNine) => Ok(Some(S::LandscapeSixteenNine)),
-    Some(CommonAspectRatio::WideFourByThree) => Ok(Some(S::LandscapeFourThree)),
+    Some(RouterAspectRatio::Wide) | Some(RouterAspectRatio::WideSixteenByNine) => Ok(Some(S::LandscapeSixteenNine)),
+    Some(RouterAspectRatio::WideFourByThree) => Ok(Some(S::LandscapeFourThree)),
 
-    Some(unsupported @ CommonAspectRatio::WideFiveByFour)
-    | Some(unsupported @ CommonAspectRatio::WideThreeByTwo)
-    | Some(unsupported @ CommonAspectRatio::WideTwentyOneByNine) => match strategy {
+    Some(unsupported @ RouterAspectRatio::WideFiveByFour)
+    | Some(unsupported @ RouterAspectRatio::WideThreeByTwo)
+    | Some(unsupported @ RouterAspectRatio::WideTwentyOneByNine) => match strategy {
       RequestMismatchMitigationStrategy::ErrorOut => {
         Err(ArtcraftRouterError::Client(ClientError::ModelDoesNotSupportOption {
           field: "aspect_ratio",
@@ -150,12 +150,12 @@ fn plan_image_size(
       _ => Ok(Some(S::LandscapeSixteenNine)),
     },
 
-    Some(CommonAspectRatio::Tall) | Some(CommonAspectRatio::TallNineBySixteen) => Ok(Some(S::PortraitSixteenNine)),
-    Some(CommonAspectRatio::TallThreeByFour) => Ok(Some(S::PortraitFourThree)),
+    Some(RouterAspectRatio::Tall) | Some(RouterAspectRatio::TallNineBySixteen) => Ok(Some(S::PortraitSixteenNine)),
+    Some(RouterAspectRatio::TallThreeByFour) => Ok(Some(S::PortraitFourThree)),
 
-    Some(unsupported @ CommonAspectRatio::TallFourByFive)
-    | Some(unsupported @ CommonAspectRatio::TallTwoByThree)
-    | Some(unsupported @ CommonAspectRatio::TallNineByTwentyOne) => match strategy {
+    Some(unsupported @ RouterAspectRatio::TallFourByFive)
+    | Some(unsupported @ RouterAspectRatio::TallTwoByThree)
+    | Some(unsupported @ RouterAspectRatio::TallNineByTwentyOne) => match strategy {
       RequestMismatchMitigationStrategy::ErrorOut => {
         Err(ArtcraftRouterError::Client(ClientError::ModelDoesNotSupportOption {
           field: "aspect_ratio",
@@ -291,7 +291,7 @@ mod tests {
   #[test]
   fn t2i_auto_maps_to_square() {
     let builder = GenerateImageRequestBuilder {
-      aspect_ratio: Some(CommonAspectRatio::Auto),
+      aspect_ratio: Some(RouterAspectRatio::Auto),
       ..base_builder()
     };
     let req = unwrap_t2i(build_fal_seedream_4(builder));
@@ -302,7 +302,7 @@ mod tests {
   fn edit_auto_stays_auto() {
     let builder = GenerateImageRequestBuilder {
       image_inputs: Some(ImageListRef::Urls(vec!["https://example.com/img.jpg".to_string()])),
-      aspect_ratio: Some(CommonAspectRatio::Auto),
+      aspect_ratio: Some(RouterAspectRatio::Auto),
       ..base_builder()
     };
     let req = unwrap_edit(build_fal_seedream_4(builder));
@@ -312,7 +312,7 @@ mod tests {
   #[test]
   fn auto4k_maps_to_auto4k() {
     let builder = GenerateImageRequestBuilder {
-      aspect_ratio: Some(CommonAspectRatio::Auto4k),
+      aspect_ratio: Some(RouterAspectRatio::Auto4k),
       ..base_builder()
     };
     let req = unwrap_t2i(build_fal_seedream_4(builder));
@@ -322,7 +322,7 @@ mod tests {
   #[test]
   fn wide_21_9_errors_out() {
     let builder = GenerateImageRequestBuilder {
-      aspect_ratio: Some(CommonAspectRatio::WideTwentyOneByNine),
+      aspect_ratio: Some(RouterAspectRatio::WideTwentyOneByNine),
       ..base_builder()
     };
     assert!(matches!(
@@ -334,7 +334,7 @@ mod tests {
   #[test]
   fn wide_21_9_falls_back_with_upgrade() {
     let builder = GenerateImageRequestBuilder {
-      aspect_ratio: Some(CommonAspectRatio::WideTwentyOneByNine),
+      aspect_ratio: Some(RouterAspectRatio::WideTwentyOneByNine),
       request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::PayMoreUpgrade,
       ..base_builder()
     };

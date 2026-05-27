@@ -54,12 +54,12 @@ fn cost_per_image_in_cents(resolution: Option<CommonResolutionEnum>) -> u64 {
 #[cfg(test)]
 mod tests {
   use crate::api::router_image_model::RouterImageModel;
-  use crate::api::common_resolution::CommonResolution;
+  use crate::api::router_resolution::RouterResolution;
   use crate::api::provider::Provider;
   use crate::client::request_mismatch_mitigation_strategy::RequestMismatchMitigationStrategy;
   use crate::generate::generate_image::generate_image_request_builder::GenerateImageRequestBuilder;
 
-  fn cost_cents(resolution: Option<CommonResolution>, image_batch_count: u16) -> u64 {
+  fn cost_cents(resolution: Option<RouterResolution>, image_batch_count: u16) -> u64 {
     let builder = GenerateImageRequestBuilder {
       model: RouterImageModel::NanoBanana2,
       provider: Provider::Artcraft,
@@ -88,36 +88,36 @@ mod tests {
   fn default_resolution_four_images_is_32c() { assert_eq!(cost_cents(None, 4), 32); }
 
   #[test]
-  fn one_k_one_image_is_8c() { assert_eq!(cost_cents(Some(CommonResolution::OneK), 1), 8); }
+  fn one_k_one_image_is_8c() { assert_eq!(cost_cents(Some(RouterResolution::OneK), 1), 8); }
 
   // ── 0.5K (6¢) ──────────────────────────────────────────────────────────────
 
   #[test]
-  fn half_k_one_image_is_6c() { assert_eq!(cost_cents(Some(CommonResolution::HalfK), 1), 6); }
+  fn half_k_one_image_is_6c() { assert_eq!(cost_cents(Some(RouterResolution::HalfK), 1), 6); }
 
   #[test]
-  fn half_k_four_images_is_24c() { assert_eq!(cost_cents(Some(CommonResolution::HalfK), 4), 24); }
+  fn half_k_four_images_is_24c() { assert_eq!(cost_cents(Some(RouterResolution::HalfK), 4), 24); }
 
   // ── 2K (12¢) ───────────────────────────────────────────────────────────────
 
   #[test]
-  fn two_k_one_image_is_12c() { assert_eq!(cost_cents(Some(CommonResolution::TwoK), 1), 12); }
+  fn two_k_one_image_is_12c() { assert_eq!(cost_cents(Some(RouterResolution::TwoK), 1), 12); }
 
   #[test]
-  fn two_k_four_images_is_48c() { assert_eq!(cost_cents(Some(CommonResolution::TwoK), 4), 48); }
+  fn two_k_four_images_is_48c() { assert_eq!(cost_cents(Some(RouterResolution::TwoK), 4), 48); }
 
   // ── 3K falls back to 2K pricing ────────────────────────────────────────────
 
   #[test]
   fn three_k_one_image_falls_back_to_two_k_pricing() {
-    assert_eq!(cost_cents(Some(CommonResolution::ThreeK), 1), 12);
+    assert_eq!(cost_cents(Some(RouterResolution::ThreeK), 1), 12);
   }
 
   // ── 4K (16¢) ───────────────────────────────────────────────────────────────
 
   #[test]
-  fn four_k_one_image_is_16c() { assert_eq!(cost_cents(Some(CommonResolution::FourK), 1), 16); }
+  fn four_k_one_image_is_16c() { assert_eq!(cost_cents(Some(RouterResolution::FourK), 1), 16); }
 
   #[test]
-  fn four_k_four_images_is_64c() { assert_eq!(cost_cents(Some(CommonResolution::FourK), 4), 64); }
+  fn four_k_four_images_is_64c() { assert_eq!(cost_cents(Some(RouterResolution::FourK), 4), 64); }
 }

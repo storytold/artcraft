@@ -1,7 +1,7 @@
-use crate::api::common_aspect_ratio::CommonAspectRatio;
+use crate::api::router_aspect_ratio::RouterAspectRatio;
 use crate::api::router_image_model::RouterImageModel;
-use crate::api::common_quality::CommonQuality;
-use crate::api::common_resolution::CommonResolution;
+use crate::api::router_quality::RouterQuality;
+use crate::api::router_resolution::RouterResolution;
 use crate::api::image_list_ref::ImageListRef;
 use crate::api::provider::Provider;
 use crate::client::generation_mode_mismatch_strategy::GenerationModeMismatchStrategy;
@@ -56,13 +56,13 @@ pub struct GenerateImageRequestBuilder {
   pub image_inputs: Option<ImageListRef>,
 
   /// The resolution to use.
-  pub resolution: Option<CommonResolution>,
+  pub resolution: Option<RouterResolution>,
 
   /// The aspect ratio to use.
-  pub aspect_ratio: Option<CommonAspectRatio>,
+  pub aspect_ratio: Option<RouterAspectRatio>,
 
   /// The quality level for generation. Not all models use this.
-  pub quality: Option<CommonQuality>,
+  pub quality: Option<RouterQuality>,
 
   /// How many images to generate.
   pub image_batch_count: Option<u16>,

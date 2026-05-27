@@ -22,8 +22,8 @@ mod tests {
   use tokens::tokens::media_files::MediaFileToken;
 
   use crate::api::character_list_ref::CharacterListRef;
-  use crate::api::common_aspect_ratio::CommonAspectRatio;
-  use crate::api::common_resolution::CommonResolution;
+  use crate::api::router_aspect_ratio::RouterAspectRatio;
+  use crate::api::router_resolution::RouterResolution;
   use crate::api::router_video_model::RouterVideoModel;
   use crate::api::image_list_ref::ImageListRef;
   use crate::api::image_ref::ImageRef;
@@ -53,7 +53,7 @@ mod tests {
     async fn landscape() {
       let response = run_pipeline(GenerateVideoRequestBuilder {
         prompt: Some("A corgi running through a field of wildflowers at sunset.".to_string()),
-        aspect_ratio: Some(CommonAspectRatio::WideSixteenByNine),
+        aspect_ratio: Some(RouterAspectRatio::WideSixteenByNine),
         ..artcraft_fast_builder()
       }).await;
       assert!(matches!(response, GenerateVideoResponse::Artcraft(_)));
@@ -65,7 +65,7 @@ mod tests {
     async fn portrait() {
       let response = run_pipeline(GenerateVideoRequestBuilder {
         prompt: Some("A cat sitting on a windowsill watching rain.".to_string()),
-        aspect_ratio: Some(CommonAspectRatio::TallNineBySixteen),
+        aspect_ratio: Some(RouterAspectRatio::TallNineBySixteen),
         ..artcraft_fast_builder()
       }).await;
       assert!(matches!(response, GenerateVideoResponse::Artcraft(_)));
@@ -77,7 +77,7 @@ mod tests {
     async fn square() {
       let response = run_pipeline(GenerateVideoRequestBuilder {
         prompt: Some("A hummingbird hovering near a flower.".to_string()),
-        aspect_ratio: Some(CommonAspectRatio::Square),
+        aspect_ratio: Some(RouterAspectRatio::Square),
         ..artcraft_fast_builder()
       }).await;
       assert!(matches!(response, GenerateVideoResponse::Artcraft(_)));
@@ -95,7 +95,7 @@ mod tests {
     async fn res_480p() {
       let response = run_pipeline(GenerateVideoRequestBuilder {
         prompt: Some("A shiba inu playing in autumn leaves.".to_string()),
-        resolution: Some(CommonResolution::FourEightyP),
+        resolution: Some(RouterResolution::FourEightyP),
         ..artcraft_fast_builder()
       }).await;
       assert!(matches!(response, GenerateVideoResponse::Artcraft(_)));
@@ -107,7 +107,7 @@ mod tests {
     async fn res_720p() {
       let response = run_pipeline(GenerateVideoRequestBuilder {
         prompt: Some("A golden retriever catching a frisbee on the beach.".to_string()),
-        resolution: Some(CommonResolution::SevenTwentyP),
+        resolution: Some(RouterResolution::SevenTwentyP),
         ..artcraft_fast_builder()
       }).await;
       assert!(matches!(response, GenerateVideoResponse::Artcraft(_)));
@@ -126,7 +126,7 @@ mod tests {
     async fn text_to_video() {
       let response = run_pipeline(GenerateVideoRequestBuilder {
         prompt: Some("A sky whale breaching in the open sky, pink clouds at dawn, cinematic.".to_string()),
-        aspect_ratio: Some(CommonAspectRatio::WideSixteenByNine),
+        aspect_ratio: Some(RouterAspectRatio::WideSixteenByNine),
         ..artcraft_fast_builder()
       }).await;
       assert!(matches!(response, GenerateVideoResponse::Artcraft(_)));
@@ -140,7 +140,7 @@ mod tests {
         prompt: Some("The dog walks from the lake to the forest.".to_string()),
         start_frame: Some(ImageRef::MediaFileToken(MediaFileToken::new(JUNO_AT_LAKE_PRODUCTION_MEDIA_TOKEN.to_string()))),
         end_frame: Some(ImageRef::MediaFileToken(MediaFileToken::new(FOREST_BACKDROP_PRODUCTION_MEDIA_TOKEN.to_string()))),
-        aspect_ratio: Some(CommonAspectRatio::WideSixteenByNine),
+        aspect_ratio: Some(RouterAspectRatio::WideSixteenByNine),
         ..artcraft_fast_builder()
       }).await;
       assert!(matches!(response, GenerateVideoResponse::Artcraft(_)));
@@ -157,7 +157,7 @@ mod tests {
           MediaFileToken::new(TALL_MOCHI_WITH_GLASSES_PRODUCTION_MEDIA_TOKEN.to_string()),
           MediaFileToken::new(WHITE_HOUSE_SUNSET_PRODUCTION_MEDIA_TOKEN.to_string()),
         ])),
-        aspect_ratio: Some(CommonAspectRatio::WideSixteenByNine),
+        aspect_ratio: Some(RouterAspectRatio::WideSixteenByNine),
         ..artcraft_fast_builder()
       }).await;
       assert!(matches!(response, GenerateVideoResponse::Artcraft(_)));
@@ -173,7 +173,7 @@ mod tests {
           CharacterToken::new(JIM.token.to_string()),
           CharacterToken::new(KNIGHT.token.to_string()),
         ])),
-        aspect_ratio: Some(CommonAspectRatio::WideSixteenByNine),
+        aspect_ratio: Some(RouterAspectRatio::WideSixteenByNine),
         ..artcraft_fast_builder()
       }).await;
       assert!(matches!(response, GenerateVideoResponse::Artcraft(_)));

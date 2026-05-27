@@ -4,7 +4,7 @@ use serde_derive::{Deserialize, Serialize};
 /// Not all models are available through all providers.
 #[derive(Copy, Clone, Debug, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
-pub enum CommonSplatModel {
+pub enum RouterSplatModel {
   #[serde(rename = "marble_0p1_mini")]
   Marble0p1Mini,
 

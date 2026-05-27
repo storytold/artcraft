@@ -46,8 +46,8 @@ impl FalSeedance10LiteRequestState {
 mod tests {
   use test_data::web::image_urls::JUNO_AT_LAKE_IMAGE_URL;
 
-  use crate::api::common_aspect_ratio::CommonAspectRatio;
-  use crate::api::common_resolution::CommonResolution;
+  use crate::api::router_aspect_ratio::RouterAspectRatio;
+  use crate::api::router_resolution::RouterResolution;
   use crate::api::router_video_model::RouterVideoModel;
   use crate::api::image_ref::ImageRef;
   use crate::api::provider::Provider;
@@ -64,8 +64,8 @@ mod tests {
     let response = run_pipeline(GenerateVideoRequestBuilder {
       prompt: Some("the dog leaps into the lake and splashes around.".to_string()),
       start_frame: Some(ImageRef::Url(JUNO_AT_LAKE_IMAGE_URL.to_string())),
-      aspect_ratio: Some(CommonAspectRatio::WideSixteenByNine),
-      resolution: Some(CommonResolution::SevenTwentyP),
+      aspect_ratio: Some(RouterAspectRatio::WideSixteenByNine),
+      resolution: Some(RouterResolution::SevenTwentyP),
       duration_seconds: Some(5),
       ..fal_seedance_1p0_lite_builder()
     }).await;
@@ -79,7 +79,7 @@ mod tests {
     let response = run_pipeline(GenerateVideoRequestBuilder {
       prompt: Some("a vivid splash of color filling the frame".to_string()),
       start_frame: Some(ImageRef::Url(JUNO_AT_LAKE_IMAGE_URL.to_string())),
-      resolution: Some(CommonResolution::FourEightyP),
+      resolution: Some(RouterResolution::FourEightyP),
       duration_seconds: Some(10),
       ..fal_seedance_1p0_lite_builder()
     }).await;

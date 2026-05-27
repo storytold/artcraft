@@ -1,8 +1,8 @@
 use artcraft_api_defs::omni_gen::cost_and_generate_requests::omni_gen_image_cost_and_generate_request::OmniGenImageCostAndGenerateRequest;
-use artcraft_router::api::common_aspect_ratio::CommonAspectRatio as CommonAspectRatioRouter;
+use artcraft_router::api::router_aspect_ratio::RouterAspectRatio as CommonAspectRatioRouter;
 use artcraft_router::api::router_image_model::RouterImageModel;
-use artcraft_router::api::common_quality::CommonQuality as CommonQualityRouter;
-use artcraft_router::api::common_resolution::CommonResolution as CommonResolutionRouter;
+use artcraft_router::api::router_quality::RouterQuality as CommonQualityRouter;
+use artcraft_router::api::router_resolution::RouterResolution as CommonResolutionRouter;
 use artcraft_router::api::image_list_ref::ImageListRef;
 use artcraft_router::api::provider::Provider;
 use artcraft_router::client::request_mismatch_mitigation_strategy::RequestMismatchMitigationStrategy;

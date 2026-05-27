@@ -67,7 +67,7 @@ impl FalVeo3RequestState {
 mod tests {
   use test_data::web::image_urls::JUNO_AT_LAKE_IMAGE_URL;
 
-  use crate::api::common_resolution::CommonResolution;
+  use crate::api::router_resolution::RouterResolution;
   use crate::api::router_video_model::RouterVideoModel;
   use crate::api::image_ref::ImageRef;
   use crate::api::provider::Provider;
@@ -81,7 +81,7 @@ mod tests {
   async fn live_text_to_video_720p_4s_audio_on() {
     let r = run_pipeline(GenerateVideoRequestBuilder {
       prompt: Some("a serene mountain landscape".to_string()),
-      resolution: Some(CommonResolution::SevenTwentyP),
+      resolution: Some(RouterResolution::SevenTwentyP),
       duration_seconds: Some(4),
       generate_audio: Some(true),
       ..builder()
@@ -95,7 +95,7 @@ mod tests {
     let r = run_pipeline(GenerateVideoRequestBuilder {
       prompt: Some("the dog leaps into the lake.".to_string()),
       start_frame: Some(ImageRef::Url(JUNO_AT_LAKE_IMAGE_URL.to_string())),
-      resolution: Some(CommonResolution::TenEightyP),
+      resolution: Some(RouterResolution::TenEightyP),
       duration_seconds: Some(8),
       generate_audio: Some(false),
       ..builder()

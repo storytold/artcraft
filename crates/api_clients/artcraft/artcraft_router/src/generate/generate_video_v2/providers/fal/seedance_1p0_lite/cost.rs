@@ -30,8 +30,8 @@ impl FalSeedance10LiteCostState {
 
 #[cfg(test)]
 mod tests {
-  use crate::api::common_aspect_ratio::CommonAspectRatio;
-  use crate::api::common_resolution::CommonResolution;
+  use crate::api::router_aspect_ratio::RouterAspectRatio;
+  use crate::api::router_resolution::RouterResolution;
   use crate::api::router_video_model::RouterVideoModel;
   use crate::api::image_ref::ImageRef;
   use crate::api::provider::Provider;
@@ -49,7 +49,7 @@ mod tests {
     }
   }
 
-  fn cost_cents(resolution: Option<CommonResolution>, duration_seconds: Option<u16>) -> u64 {
+  fn cost_cents(resolution: Option<RouterResolution>, duration_seconds: Option<u16>) -> u64 {
     let mut b = base_builder();
     b.resolution = resolution;
     b.duration_seconds = duration_seconds;
@@ -69,18 +69,18 @@ mod tests {
     #[test]
     fn p720_5s_special_case() {
       // Per the Fal cost calculator: 720p + 5s short-circuits to 18¢.
-      assert_eq!(cost_cents(Some(CommonResolution::SevenTwentyP), Some(5)), 18);
+      assert_eq!(cost_cents(Some(RouterResolution::SevenTwentyP), Some(5)), 18);
     }
 
     #[test]
     fn p720_10s() {
       // 1280×720×30 fps × 10s / 1024 = 270000 tokens × $1.8/M = $0.486 → ceil = 49¢.
-      assert_eq!(cost_cents(Some(CommonResolution::SevenTwentyP), Some(10)), 49);
+      assert_eq!(cost_cents(Some(RouterResolution::SevenTwentyP), Some(10)), 49);
     }
 
     #[test]
     fn p720_default_duration_matches_5s() {
-      assert_eq!(cost_cents(Some(CommonResolution::SevenTwentyP), None), 18);
+      assert_eq!(cost_cents(Some(RouterResolution::SevenTwentyP), None), 18);
     }
 
     #[test]
@@ -95,13 +95,13 @@ mod tests {
     #[test]
     fn p480_5s() {
       // 640×480×30×5/1024 = 45000 × $1.8/M = $0.081 → ceil = 9¢.
-      assert_eq!(cost_cents(Some(CommonResolution::FourEightyP), Some(5)), 9);
+      assert_eq!(cost_cents(Some(RouterResolution::FourEightyP), Some(5)), 9);
     }
 
     #[test]
     fn p480_10s() {
       // 640×480×30×10/1024 = 90000 × $1.8/M = $0.162 → ceil = 17¢.
-      assert_eq!(cost_cents(Some(CommonResolution::FourEightyP), Some(10)), 17);
+      assert_eq!(cost_cents(Some(RouterResolution::FourEightyP), Some(10)), 17);
     }
   }
 
@@ -111,13 +111,13 @@ mod tests {
     #[test]
     fn p1080_5s() {
       // 1920×1080×30×5/1024 = 303750 × $1.8/M = $0.54675 → ceil = 55¢.
-      assert_eq!(cost_cents(Some(CommonResolution::TenEightyP), Some(5)), 55);
+      assert_eq!(cost_cents(Some(RouterResolution::TenEightyP), Some(5)), 55);
     }
 
     #[test]
     fn p1080_10s() {
       // 1920×1080×30×10/1024 = 607500 × $1.8/M = $1.0935 → ceil = 110¢.
-      assert_eq!(cost_cents(Some(CommonResolution::TenEightyP), Some(10)), 110);
+      assert_eq!(cost_cents(Some(RouterResolution::TenEightyP), Some(10)), 110);
     }
   }
 
@@ -128,17 +128,17 @@ mod tests {
 
     #[test]
     fn higher_resolution_costs_more() {
-      let p480 = cost_cents(Some(CommonResolution::FourEightyP), Some(10));
-      let p720 = cost_cents(Some(CommonResolution::SevenTwentyP), Some(10));
-      let p1080 = cost_cents(Some(CommonResolution::TenEightyP), Some(10));
+      let p480 = cost_cents(Some(RouterResolution::FourEightyP), Some(10));
+      let p720 = cost_cents(Some(RouterResolution::SevenTwentyP), Some(10));
+      let p1080 = cost_cents(Some(RouterResolution::TenEightyP), Some(10));
       assert!(p480 < p720, "480p ({p480}) should be < 720p ({p720})");
       assert!(p720 < p1080, "720p ({p720}) should be < 1080p ({p1080})");
     }
 
     #[test]
     fn longer_duration_costs_more() {
-      let d5 = cost_cents(Some(CommonResolution::TenEightyP), Some(5));
-      let d10 = cost_cents(Some(CommonResolution::TenEightyP), Some(10));
+      let d5 = cost_cents(Some(RouterResolution::TenEightyP), Some(5));
+      let d10 = cost_cents(Some(RouterResolution::TenEightyP), Some(10));
       assert!(d5 < d10, "5s ({d5}) should be < 10s ({d10})");
     }
   }
@@ -148,17 +148,17 @@ mod tests {
   #[test]
   fn combinatorial_positive_cost() {
     let resolutions = [
-      Some(CommonResolution::FourEightyP),
-      Some(CommonResolution::SevenTwentyP),
-      Some(CommonResolution::TenEightyP),
+      Some(RouterResolution::FourEightyP),
+      Some(RouterResolution::SevenTwentyP),
+      Some(RouterResolution::TenEightyP),
     ];
     let durations = [Some(5u16), Some(10u16)];
     let aspect_ratios = [
       None,
-      Some(CommonAspectRatio::Auto),
-      Some(CommonAspectRatio::Square),
-      Some(CommonAspectRatio::WideSixteenByNine),
-      Some(CommonAspectRatio::TallNineBySixteen),
+      Some(RouterAspectRatio::Auto),
+      Some(RouterAspectRatio::Square),
+      Some(RouterAspectRatio::WideSixteenByNine),
+      Some(RouterAspectRatio::TallNineBySixteen),
     ];
 
     let mut combos = 0;
@@ -181,11 +181,11 @@ mod tests {
   // Aspect ratio doesn't influence cost (calculator only uses resolution and duration).
   #[test]
   fn aspect_ratio_does_not_affect_cost() {
-    let with_wide = cost_cents(Some(CommonResolution::SevenTwentyP), Some(10));
+    let with_wide = cost_cents(Some(RouterResolution::SevenTwentyP), Some(10));
     let mut b = base_builder();
-    b.resolution = Some(CommonResolution::SevenTwentyP);
+    b.resolution = Some(RouterResolution::SevenTwentyP);
     b.duration_seconds = Some(10);
-    b.aspect_ratio = Some(CommonAspectRatio::Square);
+    b.aspect_ratio = Some(RouterAspectRatio::Square);
     let with_square = b.build2().unwrap().estimate_cost().unwrap().cost_in_usd_cents.unwrap();
     assert_eq!(with_wide, with_square);
   }
@@ -193,9 +193,9 @@ mod tests {
   // End frame doesn't influence cost.
   #[test]
   fn end_frame_does_not_affect_cost() {
-    let without = cost_cents(Some(CommonResolution::TenEightyP), Some(5));
+    let without = cost_cents(Some(RouterResolution::TenEightyP), Some(5));
     let mut b = base_builder();
-    b.resolution = Some(CommonResolution::TenEightyP);
+    b.resolution = Some(RouterResolution::TenEightyP);
     b.duration_seconds = Some(5);
     b.end_frame = Some(ImageRef::Url("https://example.com/end.png".to_string()));
     let with_end = b.build2().unwrap().estimate_cost().unwrap().cost_in_usd_cents.unwrap();

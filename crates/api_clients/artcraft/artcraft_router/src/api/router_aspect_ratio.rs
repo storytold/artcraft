@@ -8,7 +8,7 @@ use strum::EnumIter;
 #[derive(Copy, Clone, Debug, Serialize, Deserialize)]
 #[cfg_attr(test, derive(EnumIter))]
 #[serde(rename_all = "snake_case")]
-pub enum CommonAspectRatio {
+pub enum RouterAspectRatio {
   // Auto (eg. for image editing to use the source; used by Nano Banana Pro edit image, but not text-to-image)
   Auto,
 

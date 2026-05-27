@@ -2,7 +2,7 @@ use fal_client::requests::webhook::image::text::enqueue_flux_pro_11_ultra_text_t
   FluxPro11UltraAspectRatio, FluxPro11UltraNumImages, FluxPro11UltraRequest,
 };
 
-use crate::api::common_aspect_ratio::CommonAspectRatio;
+use crate::api::router_aspect_ratio::RouterAspectRatio;
 use crate::client::request_mismatch_mitigation_strategy::RequestMismatchMitigationStrategy;
 use crate::errors::artcraft_router_error::ArtcraftRouterError;
 use crate::errors::client_error::ClientError;
@@ -41,29 +41,29 @@ pub fn build_fal_flux_pro_1p1_ultra(
 }
 
 fn plan_aspect_ratio(
-  aspect_ratio: Option<CommonAspectRatio>,
+  aspect_ratio: Option<RouterAspectRatio>,
   strategy: RequestMismatchMitigationStrategy,
 ) -> Result<FluxPro11UltraAspectRatio, ArtcraftRouterError> {
   use FluxPro11UltraAspectRatio as Ar;
   match aspect_ratio {
     None => Ok(Ar::Square),
 
-    Some(CommonAspectRatio::Auto)
-    | Some(CommonAspectRatio::Auto2k)
-    | Some(CommonAspectRatio::Auto4k) => Ok(Ar::Square),
+    Some(RouterAspectRatio::Auto)
+    | Some(RouterAspectRatio::Auto2k)
+    | Some(RouterAspectRatio::Auto4k) => Ok(Ar::Square),
 
-    Some(CommonAspectRatio::Square) | Some(CommonAspectRatio::SquareHd) => Ok(Ar::Square),
-    Some(CommonAspectRatio::WideFourByThree) => Ok(Ar::LandscapeFourByThree),
-    Some(CommonAspectRatio::WideThreeByTwo) => Ok(Ar::LandscapeThreeByTwo),
-    Some(CommonAspectRatio::WideSixteenByNine) | Some(CommonAspectRatio::Wide) => Ok(Ar::LandscapeSixteenByNine),
-    Some(CommonAspectRatio::WideTwentyOneByNine) => Ok(Ar::LandscapeTwentyOneByNine),
-    Some(CommonAspectRatio::TallThreeByFour) => Ok(Ar::PortraitThreeByFour),
-    Some(CommonAspectRatio::TallTwoByThree) => Ok(Ar::PortraitTwoByThree),
-    Some(CommonAspectRatio::TallNineBySixteen) | Some(CommonAspectRatio::Tall) => Ok(Ar::PortraitNineBySixteen),
-    Some(CommonAspectRatio::TallNineByTwentyOne) => Ok(Ar::PortraitNineByTwentyOne),
+    Some(RouterAspectRatio::Square) | Some(RouterAspectRatio::SquareHd) => Ok(Ar::Square),
+    Some(RouterAspectRatio::WideFourByThree) => Ok(Ar::LandscapeFourByThree),
+    Some(RouterAspectRatio::WideThreeByTwo) => Ok(Ar::LandscapeThreeByTwo),
+    Some(RouterAspectRatio::WideSixteenByNine) | Some(RouterAspectRatio::Wide) => Ok(Ar::LandscapeSixteenByNine),
+    Some(RouterAspectRatio::WideTwentyOneByNine) => Ok(Ar::LandscapeTwentyOneByNine),
+    Some(RouterAspectRatio::TallThreeByFour) => Ok(Ar::PortraitThreeByFour),
+    Some(RouterAspectRatio::TallTwoByThree) => Ok(Ar::PortraitTwoByThree),
+    Some(RouterAspectRatio::TallNineBySixteen) | Some(RouterAspectRatio::Tall) => Ok(Ar::PortraitNineBySixteen),
+    Some(RouterAspectRatio::TallNineByTwentyOne) => Ok(Ar::PortraitNineByTwentyOne),
 
-    Some(CommonAspectRatio::WideFiveByFour) => Ok(Ar::LandscapeFourByThree),
-    Some(CommonAspectRatio::TallFourByFive) => Ok(Ar::PortraitThreeByFour),
+    Some(RouterAspectRatio::WideFiveByFour) => Ok(Ar::LandscapeFourByThree),
+    Some(RouterAspectRatio::TallFourByFive) => Ok(Ar::PortraitThreeByFour),
 
     Some(unsupported) => match strategy {
       RequestMismatchMitigationStrategy::ErrorOut => {
@@ -186,7 +186,7 @@ mod tests {
     #[test]
     fn wide_sixteen_by_nine() {
       let builder = GenerateImageRequestBuilder {
-        aspect_ratio: Some(CommonAspectRatio::WideSixteenByNine),
+        aspect_ratio: Some(RouterAspectRatio::WideSixteenByNine),
         ..base_builder()
       };
       let req = unwrap_request(build_fal_flux_pro_1p1_ultra(builder));
@@ -196,7 +196,7 @@ mod tests {
     #[test]
     fn wide_three_by_two_has_direct_mapping() {
       let builder = GenerateImageRequestBuilder {
-        aspect_ratio: Some(CommonAspectRatio::WideThreeByTwo),
+        aspect_ratio: Some(RouterAspectRatio::WideThreeByTwo),
         ..base_builder()
       };
       let req = unwrap_request(build_fal_flux_pro_1p1_ultra(builder));
@@ -206,7 +206,7 @@ mod tests {
     #[test]
     fn tall_two_by_three_has_direct_mapping() {
       let builder = GenerateImageRequestBuilder {
-        aspect_ratio: Some(CommonAspectRatio::TallTwoByThree),
+        aspect_ratio: Some(RouterAspectRatio::TallTwoByThree),
         ..base_builder()
       };
       let req = unwrap_request(build_fal_flux_pro_1p1_ultra(builder));
@@ -216,7 +216,7 @@ mod tests {
     #[test]
     fn wide_twenty_one_by_nine_has_direct_mapping() {
       let builder = GenerateImageRequestBuilder {
-        aspect_ratio: Some(CommonAspectRatio::WideTwentyOneByNine),
+        aspect_ratio: Some(RouterAspectRatio::WideTwentyOneByNine),
         ..base_builder()
       };
       let req = unwrap_request(build_fal_flux_pro_1p1_ultra(builder));
@@ -226,7 +226,7 @@ mod tests {
     #[test]
     fn square_hd_collapses_to_square() {
       let builder = GenerateImageRequestBuilder {
-        aspect_ratio: Some(CommonAspectRatio::SquareHd),
+        aspect_ratio: Some(RouterAspectRatio::SquareHd),
         ..base_builder()
       };
       let req = unwrap_request(build_fal_flux_pro_1p1_ultra(builder));

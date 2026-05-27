@@ -4,8 +4,8 @@ use seedance2pro_client::generate::video::generate_seedance_2p0::{
   KinoviSeedance2p0OutputResolution as KinoviOutputResolution,
 };
 
-use crate::api::common_aspect_ratio::CommonAspectRatio;
-use crate::api::common_resolution::CommonResolution;
+use crate::api::router_aspect_ratio::RouterAspectRatio;
+use crate::api::router_resolution::RouterResolution;
 use crate::client::request_mismatch_mitigation_strategy::RequestMismatchMitigationStrategy;
 use crate::errors::artcraft_router_error::ArtcraftRouterError;
 use crate::errors::client_error::ClientError;
@@ -55,29 +55,29 @@ fn do_build_kinovi_seedance_2p0(mut builder: GenerateVideoRequestBuilder) -> Res
 // All supported ratios cost the same, so PayMoreUpgrade and PayLessDowngrade both
 // select the nearest match rather than rounding in a specific direction.
 fn plan_aspect_ratio(
-  aspect_ratio: Option<CommonAspectRatio>,
+  aspect_ratio: Option<RouterAspectRatio>,
   strategy: RequestMismatchMitigationStrategy,
 ) -> Result<KinoviAspectRatio, ArtcraftRouterError> {
   match aspect_ratio {
     // No preference or auto — default to landscape
     None
-    | Some(CommonAspectRatio::Auto)
-    | Some(CommonAspectRatio::Auto2k)
-    | Some(CommonAspectRatio::Auto4k) => Ok(KinoviAspectRatio::Landscape16x9),
+    | Some(RouterAspectRatio::Auto)
+    | Some(RouterAspectRatio::Auto2k)
+    | Some(RouterAspectRatio::Auto4k) => Ok(KinoviAspectRatio::Landscape16x9),
 
     // Direct mappings
-    Some(CommonAspectRatio::WideSixteenByNine) | Some(CommonAspectRatio::Wide) => {
+    Some(RouterAspectRatio::WideSixteenByNine) | Some(RouterAspectRatio::Wide) => {
       Ok(KinoviAspectRatio::Landscape16x9)
     }
-    Some(CommonAspectRatio::TallNineBySixteen) | Some(CommonAspectRatio::Tall) => {
+    Some(RouterAspectRatio::TallNineBySixteen) | Some(RouterAspectRatio::Tall) => {
       Ok(KinoviAspectRatio::Portrait9x16)
     }
-    Some(CommonAspectRatio::Square) | Some(CommonAspectRatio::SquareHd) => {
+    Some(RouterAspectRatio::Square) | Some(RouterAspectRatio::SquareHd) => {
       Ok(KinoviAspectRatio::Square1x1)
     }
-    Some(CommonAspectRatio::WideFourByThree) => Ok(KinoviAspectRatio::Standard4x3),
-    Some(CommonAspectRatio::TallThreeByFour) => Ok(KinoviAspectRatio::Portrait3x4),
-    Some(CommonAspectRatio::WideTwentyOneByNine) => Ok(KinoviAspectRatio::UltraWide21x9),
+    Some(RouterAspectRatio::WideFourByThree) => Ok(KinoviAspectRatio::Standard4x3),
+    Some(RouterAspectRatio::TallThreeByFour) => Ok(KinoviAspectRatio::Portrait3x4),
+    Some(RouterAspectRatio::WideTwentyOneByNine) => Ok(KinoviAspectRatio::UltraWide21x9),
 
     // Mismatches — apply strategy
     Some(unsupported) => match strategy {
@@ -96,29 +96,29 @@ fn plan_aspect_ratio(
 }
 
 /// Pick the nearest supported aspect ratio by AR value (width / height).
-fn nearest_aspect_ratio(aspect_ratio: CommonAspectRatio) -> KinoviAspectRatio {
+fn nearest_aspect_ratio(aspect_ratio: RouterAspectRatio) -> KinoviAspectRatio {
   match aspect_ratio {
-    CommonAspectRatio::WideFiveByFour => KinoviAspectRatio::Standard4x3,         // 1.25, nearest 1.33
-    CommonAspectRatio::WideThreeByTwo => KinoviAspectRatio::Standard4x3,         // 1.50, nearest 1.33
-    CommonAspectRatio::TallFourByFive => KinoviAspectRatio::Portrait3x4,         // 0.80, nearest 0.75
-    CommonAspectRatio::TallTwoByThree => KinoviAspectRatio::Portrait3x4,         // 0.67, nearest 0.75
-    CommonAspectRatio::TallNineByTwentyOne => KinoviAspectRatio::Portrait9x16,   // 0.43, nearest 0.56
+    RouterAspectRatio::WideFiveByFour => KinoviAspectRatio::Standard4x3,         // 1.25, nearest 1.33
+    RouterAspectRatio::WideThreeByTwo => KinoviAspectRatio::Standard4x3,         // 1.50, nearest 1.33
+    RouterAspectRatio::TallFourByFive => KinoviAspectRatio::Portrait3x4,         // 0.80, nearest 0.75
+    RouterAspectRatio::TallTwoByThree => KinoviAspectRatio::Portrait3x4,         // 0.67, nearest 0.75
+    RouterAspectRatio::TallNineByTwentyOne => KinoviAspectRatio::Portrait9x16,   // 0.43, nearest 0.56
     _ => KinoviAspectRatio::Square1x1,
   }
 }
 
 // Seedance 2.0 Pro supports output resolutions: 480p, 720p, 1080p.
 fn plan_output_resolution(
-  resolution: Option<CommonResolution>,
+  resolution: Option<RouterResolution>,
   strategy: RequestMismatchMitigationStrategy,
 ) -> Result<Option<KinoviOutputResolution>, ArtcraftRouterError> {
   match resolution {
     None => Ok(None),
 
     // Direct mappings
-    Some(CommonResolution::FourEightyP) => Ok(Some(KinoviOutputResolution::FourEightyP)),
-    Some(CommonResolution::SevenTwentyP) => Ok(Some(KinoviOutputResolution::SevenTwentyP)),
-    Some(CommonResolution::TenEightyP) => Ok(Some(KinoviOutputResolution::TenEightyP)),
+    Some(RouterResolution::FourEightyP) => Ok(Some(KinoviOutputResolution::FourEightyP)),
+    Some(RouterResolution::SevenTwentyP) => Ok(Some(KinoviOutputResolution::SevenTwentyP)),
+    Some(RouterResolution::TenEightyP) => Ok(Some(KinoviOutputResolution::TenEightyP)),
 
     // Mismatches
     Some(unsupported) => match strategy {
@@ -130,13 +130,13 @@ fn plan_output_resolution(
       }
       RequestMismatchMitigationStrategy::PayMoreUpgrade => {
         Ok(Some(match unsupported {
-          CommonResolution::HalfK => KinoviOutputResolution::FourEightyP,
+          RouterResolution::HalfK => KinoviOutputResolution::FourEightyP,
           _ => KinoviOutputResolution::TenEightyP,
         }))
       }
       RequestMismatchMitigationStrategy::PayLessDowngrade => {
         Ok(Some(match unsupported {
-          CommonResolution::HalfK => KinoviOutputResolution::FourEightyP,
+          RouterResolution::HalfK => KinoviOutputResolution::FourEightyP,
           _ => KinoviOutputResolution::TenEightyP,
         }))
       }
@@ -207,8 +207,8 @@ mod tests {
 
   use crate::api::audio_list_ref::AudioListRef;
   use crate::api::character_list_ref::CharacterListRef;
-  use crate::api::common_aspect_ratio::CommonAspectRatio;
-  use crate::api::common_resolution::CommonResolution;
+  use crate::api::router_aspect_ratio::RouterAspectRatio;
+  use crate::api::router_resolution::RouterResolution;
   use crate::api::image_list_ref::ImageListRef;
   use crate::api::image_ref::ImageRef;
   use crate::api::provider::Provider;
@@ -292,7 +292,7 @@ mod tests {
     #[test]
     fn aspect_ratio_wide() {
       let builder = GenerateVideoRequestBuilder {
-        aspect_ratio: Some(CommonAspectRatio::WideSixteenByNine),
+        aspect_ratio: Some(RouterAspectRatio::WideSixteenByNine),
         ..seedance2pro_builder()
       };
       let draft = unwrap_draft(build_kinovi_seedance_2p0(builder));
@@ -302,7 +302,7 @@ mod tests {
     #[test]
     fn aspect_ratio_tall() {
       let builder = GenerateVideoRequestBuilder {
-        aspect_ratio: Some(CommonAspectRatio::TallNineBySixteen),
+        aspect_ratio: Some(RouterAspectRatio::TallNineBySixteen),
         ..seedance2pro_builder()
       };
       let draft = unwrap_draft(build_kinovi_seedance_2p0(builder));
@@ -312,7 +312,7 @@ mod tests {
     #[test]
     fn aspect_ratio_square() {
       let builder = GenerateVideoRequestBuilder {
-        aspect_ratio: Some(CommonAspectRatio::Square),
+        aspect_ratio: Some(RouterAspectRatio::Square),
         ..seedance2pro_builder()
       };
       let draft = unwrap_draft(build_kinovi_seedance_2p0(builder));
@@ -335,7 +335,7 @@ mod tests {
     #[test]
     fn resolution_480p() {
       let builder = GenerateVideoRequestBuilder {
-        resolution: Some(CommonResolution::FourEightyP),
+        resolution: Some(RouterResolution::FourEightyP),
         ..seedance2pro_builder()
       };
       let draft = unwrap_draft(build_kinovi_seedance_2p0(builder));
@@ -345,7 +345,7 @@ mod tests {
     #[test]
     fn resolution_720p() {
       let builder = GenerateVideoRequestBuilder {
-        resolution: Some(CommonResolution::SevenTwentyP),
+        resolution: Some(RouterResolution::SevenTwentyP),
         ..seedance2pro_builder()
       };
       let draft = unwrap_draft(build_kinovi_seedance_2p0(builder));
@@ -355,7 +355,7 @@ mod tests {
     #[test]
     fn resolution_1080p() {
       let builder = GenerateVideoRequestBuilder {
-        resolution: Some(CommonResolution::TenEightyP),
+        resolution: Some(RouterResolution::TenEightyP),
         ..seedance2pro_builder()
       };
       let draft = unwrap_draft(build_kinovi_seedance_2p0(builder));
@@ -372,7 +372,7 @@ mod tests {
     #[test]
     fn unsupported_resolution_error_out() {
       let builder = GenerateVideoRequestBuilder {
-        resolution: Some(CommonResolution::FourK),
+        resolution: Some(RouterResolution::FourK),
         request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::ErrorOut,
         ..seedance2pro_builder()
       };
@@ -382,7 +382,7 @@ mod tests {
     #[test]
     fn unsupported_resolution_rounds_up() {
       let builder = GenerateVideoRequestBuilder {
-        resolution: Some(CommonResolution::FourK),
+        resolution: Some(RouterResolution::FourK),
         request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::PayMoreUpgrade,
         ..seedance2pro_builder()
       };
@@ -522,8 +522,8 @@ mod tests {
   fn full_request_all_fields() {
     let builder = GenerateVideoRequestBuilder {
       prompt: Some("full test".to_string()),
-      aspect_ratio: Some(CommonAspectRatio::TallNineBySixteen),
-      resolution: Some(CommonResolution::TenEightyP),
+      aspect_ratio: Some(RouterAspectRatio::TallNineBySixteen),
+      resolution: Some(RouterResolution::TenEightyP),
       duration_seconds: Some(10),
       video_batch_count: Some(4),
       start_frame: Some(ImageRef::Url("https://example.com/start.jpg".to_string())),

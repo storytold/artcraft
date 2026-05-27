@@ -7,7 +7,7 @@ use fal_client::requests::webhook::image::text::enqueue_bytedance_seedream_v4p5_
   EnqueueBytedanceSeedreamV4p5TextToImageSize,
 };
 
-use crate::api::common_aspect_ratio::CommonAspectRatio;
+use crate::api::router_aspect_ratio::RouterAspectRatio;
 use crate::api::image_list_ref::ImageListRef;
 use crate::client::request_mismatch_mitigation_strategy::RequestMismatchMitigationStrategy;
 use crate::errors::artcraft_router_error::ArtcraftRouterError;
@@ -119,7 +119,7 @@ enum PlannedImageSize {
 }
 
 fn plan_image_size(
-  aspect_ratio: Option<CommonAspectRatio>,
+  aspect_ratio: Option<RouterAspectRatio>,
   strategy: RequestMismatchMitigationStrategy,
 ) -> Result<Option<PlannedImageSize>, ArtcraftRouterError> {
   use PlannedImageSize as S;
@@ -127,18 +127,18 @@ fn plan_image_size(
     None => Ok(None),
 
     // No bare Auto for v4.5 — fall back to Auto2k.
-    Some(CommonAspectRatio::Auto) | Some(CommonAspectRatio::Auto2k) | Some(CommonAspectRatio::Auto3k) => Ok(Some(S::Auto2k)),
-    Some(CommonAspectRatio::Auto4k) => Ok(Some(S::Auto4k)),
+    Some(RouterAspectRatio::Auto) | Some(RouterAspectRatio::Auto2k) | Some(RouterAspectRatio::Auto3k) => Ok(Some(S::Auto2k)),
+    Some(RouterAspectRatio::Auto4k) => Ok(Some(S::Auto4k)),
 
-    Some(CommonAspectRatio::Square) => Ok(Some(S::Square)),
-    Some(CommonAspectRatio::SquareHd) => Ok(Some(S::SquareHd)),
+    Some(RouterAspectRatio::Square) => Ok(Some(S::Square)),
+    Some(RouterAspectRatio::SquareHd) => Ok(Some(S::SquareHd)),
 
-    Some(CommonAspectRatio::Wide) | Some(CommonAspectRatio::WideSixteenByNine) => Ok(Some(S::LandscapeSixteenNine)),
-    Some(CommonAspectRatio::WideFourByThree) => Ok(Some(S::LandscapeFourThree)),
+    Some(RouterAspectRatio::Wide) | Some(RouterAspectRatio::WideSixteenByNine) => Ok(Some(S::LandscapeSixteenNine)),
+    Some(RouterAspectRatio::WideFourByThree) => Ok(Some(S::LandscapeFourThree)),
 
-    Some(unsupported @ CommonAspectRatio::WideFiveByFour)
-    | Some(unsupported @ CommonAspectRatio::WideThreeByTwo)
-    | Some(unsupported @ CommonAspectRatio::WideTwentyOneByNine) => match strategy {
+    Some(unsupported @ RouterAspectRatio::WideFiveByFour)
+    | Some(unsupported @ RouterAspectRatio::WideThreeByTwo)
+    | Some(unsupported @ RouterAspectRatio::WideTwentyOneByNine) => match strategy {
       RequestMismatchMitigationStrategy::ErrorOut => {
         Err(ArtcraftRouterError::Client(ClientError::ModelDoesNotSupportOption {
           field: "aspect_ratio",
@@ -148,12 +148,12 @@ fn plan_image_size(
       _ => Ok(Some(S::LandscapeSixteenNine)),
     },
 
-    Some(CommonAspectRatio::Tall) | Some(CommonAspectRatio::TallNineBySixteen) => Ok(Some(S::PortraitSixteenNine)),
-    Some(CommonAspectRatio::TallThreeByFour) => Ok(Some(S::PortraitFourThree)),
+    Some(RouterAspectRatio::Tall) | Some(RouterAspectRatio::TallNineBySixteen) => Ok(Some(S::PortraitSixteenNine)),
+    Some(RouterAspectRatio::TallThreeByFour) => Ok(Some(S::PortraitFourThree)),
 
-    Some(unsupported @ CommonAspectRatio::TallFourByFive)
-    | Some(unsupported @ CommonAspectRatio::TallTwoByThree)
-    | Some(unsupported @ CommonAspectRatio::TallNineByTwentyOne) => match strategy {
+    Some(unsupported @ RouterAspectRatio::TallFourByFive)
+    | Some(unsupported @ RouterAspectRatio::TallTwoByThree)
+    | Some(unsupported @ RouterAspectRatio::TallNineByTwentyOne) => match strategy {
       RequestMismatchMitigationStrategy::ErrorOut => {
         Err(ArtcraftRouterError::Client(ClientError::ModelDoesNotSupportOption {
           field: "aspect_ratio",
@@ -243,7 +243,7 @@ mod tests {
   fn auto_falls_back_to_auto2k() {
     // Seedream 4.5 has no bare Auto — request with Auto should map to Auto2k.
     let builder = GenerateImageRequestBuilder {
-      aspect_ratio: Some(CommonAspectRatio::Auto),
+      aspect_ratio: Some(RouterAspectRatio::Auto),
       ..base_builder()
     };
     let req = unwrap_t2i(build_fal_seedream_4p5(builder));
@@ -253,7 +253,7 @@ mod tests {
   #[test]
   fn auto4k_stays_auto4k() {
     let builder = GenerateImageRequestBuilder {
-      aspect_ratio: Some(CommonAspectRatio::Auto4k),
+      aspect_ratio: Some(RouterAspectRatio::Auto4k),
       ..base_builder()
     };
     let req = unwrap_t2i(build_fal_seedream_4p5(builder));

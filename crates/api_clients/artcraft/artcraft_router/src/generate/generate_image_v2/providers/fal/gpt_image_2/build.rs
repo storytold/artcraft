@@ -8,9 +8,9 @@ use fal_client::requests::api::image::text::gpt_image_2_text_to_image::api::{
   GptImage2TextToImageRequest, GptImage2TextToImageSize,
 };
 
-use crate::api::common_aspect_ratio::CommonAspectRatio;
-use crate::api::common_quality::CommonQuality;
-use crate::api::common_resolution::CommonResolution;
+use crate::api::router_aspect_ratio::RouterAspectRatio;
+use crate::api::router_quality::RouterQuality;
+use crate::api::router_resolution::RouterResolution;
 use crate::api::image_list_ref::ImageListRef;
 use crate::client::request_mismatch_mitigation_strategy::RequestMismatchMitigationStrategy;
 use crate::errors::artcraft_router_error::ArtcraftRouterError;
@@ -106,47 +106,47 @@ fn plan_num_images(
   }
 }
 
-fn plan_quality(quality: Option<CommonQuality>) -> PlannedQuality {
+fn plan_quality(quality: Option<RouterQuality>) -> PlannedQuality {
   match quality {
-    Some(CommonQuality::Low) => PlannedQuality::Low,
-    Some(CommonQuality::Medium) => PlannedQuality::Medium,
-    Some(CommonQuality::High) | None => PlannedQuality::High,
+    Some(RouterQuality::Low) => PlannedQuality::Low,
+    Some(RouterQuality::Medium) => PlannedQuality::Medium,
+    Some(RouterQuality::High) | None => PlannedQuality::High,
   }
 }
 
-fn plan_resolution(resolution: Option<CommonResolution>) -> Option<GptImage2Resolution> {
+fn plan_resolution(resolution: Option<RouterResolution>) -> Option<GptImage2Resolution> {
   resolution.map(|r| match r {
-    CommonResolution::HalfK
-    | CommonResolution::FourEightyP
-    | CommonResolution::SevenTwentyP
-    | CommonResolution::OneK => GptImage2Resolution::OneK,
-    CommonResolution::TenEightyP | CommonResolution::TwoK => GptImage2Resolution::TwoK,
-    CommonResolution::ThreeK => GptImage2Resolution::ThreeK,
-    CommonResolution::FourK => GptImage2Resolution::FourK,
+    RouterResolution::HalfK
+    | RouterResolution::FourEightyP
+    | RouterResolution::SevenTwentyP
+    | RouterResolution::OneK => GptImage2Resolution::OneK,
+    RouterResolution::TenEightyP | RouterResolution::TwoK => GptImage2Resolution::TwoK,
+    RouterResolution::ThreeK => GptImage2Resolution::ThreeK,
+    RouterResolution::FourK => GptImage2Resolution::FourK,
   })
 }
 
-fn plan_image_size(aspect_ratio: Option<CommonAspectRatio>) -> Option<PlannedImageSize> {
+fn plan_image_size(aspect_ratio: Option<RouterAspectRatio>) -> Option<PlannedImageSize> {
   match aspect_ratio {
     None => None,
-    Some(CommonAspectRatio::Auto)
-    | Some(CommonAspectRatio::Auto2k)
-    | Some(CommonAspectRatio::Auto3k)
-    | Some(CommonAspectRatio::Auto4k) => Some(PlannedImageSize::Auto),
-    Some(CommonAspectRatio::Square) => Some(PlannedImageSize::Square),
-    Some(CommonAspectRatio::SquareHd) => Some(PlannedImageSize::SquareHd),
-    Some(CommonAspectRatio::WideFourByThree)
-    | Some(CommonAspectRatio::WideFiveByFour) => Some(PlannedImageSize::Landscape4x3),
-    Some(CommonAspectRatio::WideThreeByTwo)
-    | Some(CommonAspectRatio::WideSixteenByNine)
-    | Some(CommonAspectRatio::WideTwentyOneByNine)
-    | Some(CommonAspectRatio::Wide) => Some(PlannedImageSize::Landscape16x9),
-    Some(CommonAspectRatio::TallThreeByFour)
-    | Some(CommonAspectRatio::TallFourByFive) => Some(PlannedImageSize::Portrait4x3),
-    Some(CommonAspectRatio::TallTwoByThree)
-    | Some(CommonAspectRatio::TallNineBySixteen)
-    | Some(CommonAspectRatio::TallNineByTwentyOne)
-    | Some(CommonAspectRatio::Tall) => Some(PlannedImageSize::Portrait16x9),
+    Some(RouterAspectRatio::Auto)
+    | Some(RouterAspectRatio::Auto2k)
+    | Some(RouterAspectRatio::Auto3k)
+    | Some(RouterAspectRatio::Auto4k) => Some(PlannedImageSize::Auto),
+    Some(RouterAspectRatio::Square) => Some(PlannedImageSize::Square),
+    Some(RouterAspectRatio::SquareHd) => Some(PlannedImageSize::SquareHd),
+    Some(RouterAspectRatio::WideFourByThree)
+    | Some(RouterAspectRatio::WideFiveByFour) => Some(PlannedImageSize::Landscape4x3),
+    Some(RouterAspectRatio::WideThreeByTwo)
+    | Some(RouterAspectRatio::WideSixteenByNine)
+    | Some(RouterAspectRatio::WideTwentyOneByNine)
+    | Some(RouterAspectRatio::Wide) => Some(PlannedImageSize::Landscape16x9),
+    Some(RouterAspectRatio::TallThreeByFour)
+    | Some(RouterAspectRatio::TallFourByFive) => Some(PlannedImageSize::Portrait4x3),
+    Some(RouterAspectRatio::TallTwoByThree)
+    | Some(RouterAspectRatio::TallNineBySixteen)
+    | Some(RouterAspectRatio::TallNineByTwentyOne)
+    | Some(RouterAspectRatio::Tall) => Some(PlannedImageSize::Portrait16x9),
   }
 }
 
@@ -359,9 +359,9 @@ mod tests {
   fn quality_maps_exhaustively_for_text_and_edit() {
     let cases = [
       (None, "Some(High)"),
-      (Some(CommonQuality::Low), "Some(Low)"),
-      (Some(CommonQuality::Medium), "Some(Medium)"),
-      (Some(CommonQuality::High), "Some(High)"),
+      (Some(RouterQuality::Low), "Some(Low)"),
+      (Some(RouterQuality::Medium), "Some(Medium)"),
+      (Some(RouterQuality::High), "Some(High)"),
     ];
 
     for (quality, expected) in cases {
@@ -386,14 +386,14 @@ mod tests {
   fn resolution_maps_exhaustively_for_text_and_edit() {
     let cases = [
       (None, "None"),
-      (Some(CommonResolution::HalfK), "Some(OneK)"),
-      (Some(CommonResolution::FourEightyP), "Some(OneK)"),
-      (Some(CommonResolution::SevenTwentyP), "Some(OneK)"),
-      (Some(CommonResolution::OneK), "Some(OneK)"),
-      (Some(CommonResolution::TenEightyP), "Some(TwoK)"),
-      (Some(CommonResolution::TwoK), "Some(TwoK)"),
-      (Some(CommonResolution::ThreeK), "Some(ThreeK)"),
-      (Some(CommonResolution::FourK), "Some(FourK)"),
+      (Some(RouterResolution::HalfK), "Some(OneK)"),
+      (Some(RouterResolution::FourEightyP), "Some(OneK)"),
+      (Some(RouterResolution::SevenTwentyP), "Some(OneK)"),
+      (Some(RouterResolution::OneK), "Some(OneK)"),
+      (Some(RouterResolution::TenEightyP), "Some(TwoK)"),
+      (Some(RouterResolution::TwoK), "Some(TwoK)"),
+      (Some(RouterResolution::ThreeK), "Some(ThreeK)"),
+      (Some(RouterResolution::FourK), "Some(FourK)"),
     ];
 
     for (resolution, expected) in cases {
@@ -418,24 +418,24 @@ mod tests {
   fn aspect_ratio_maps_exhaustively_for_text_and_edit() {
     let cases = [
       (None, "None", "None"),
-      (Some(CommonAspectRatio::Auto), "None", "Some(Auto)"),
-      (Some(CommonAspectRatio::Auto2k), "None", "Some(Auto)"),
-      (Some(CommonAspectRatio::Auto3k), "None", "Some(Auto)"),
-      (Some(CommonAspectRatio::Auto4k), "None", "Some(Auto)"),
-      (Some(CommonAspectRatio::Square), "Some(Square)", "Some(Square)"),
-      (Some(CommonAspectRatio::SquareHd), "Some(SquareHd)", "Some(SquareHd)"),
-      (Some(CommonAspectRatio::WideThreeByTwo), "Some(Landscape16x9)", "Some(Landscape16x9)"),
-      (Some(CommonAspectRatio::WideFourByThree), "Some(Landscape4x3)", "Some(Landscape4x3)"),
-      (Some(CommonAspectRatio::WideFiveByFour), "Some(Landscape4x3)", "Some(Landscape4x3)"),
-      (Some(CommonAspectRatio::WideSixteenByNine), "Some(Landscape16x9)", "Some(Landscape16x9)"),
-      (Some(CommonAspectRatio::WideTwentyOneByNine), "Some(Landscape16x9)", "Some(Landscape16x9)"),
-      (Some(CommonAspectRatio::Wide), "Some(Landscape16x9)", "Some(Landscape16x9)"),
-      (Some(CommonAspectRatio::TallTwoByThree), "Some(Portrait16x9)", "Some(Portrait16x9)"),
-      (Some(CommonAspectRatio::TallThreeByFour), "Some(Portrait4x3)", "Some(Portrait4x3)"),
-      (Some(CommonAspectRatio::TallFourByFive), "Some(Portrait4x3)", "Some(Portrait4x3)"),
-      (Some(CommonAspectRatio::TallNineBySixteen), "Some(Portrait16x9)", "Some(Portrait16x9)"),
-      (Some(CommonAspectRatio::TallNineByTwentyOne), "Some(Portrait16x9)", "Some(Portrait16x9)"),
-      (Some(CommonAspectRatio::Tall), "Some(Portrait16x9)", "Some(Portrait16x9)"),
+      (Some(RouterAspectRatio::Auto), "None", "Some(Auto)"),
+      (Some(RouterAspectRatio::Auto2k), "None", "Some(Auto)"),
+      (Some(RouterAspectRatio::Auto3k), "None", "Some(Auto)"),
+      (Some(RouterAspectRatio::Auto4k), "None", "Some(Auto)"),
+      (Some(RouterAspectRatio::Square), "Some(Square)", "Some(Square)"),
+      (Some(RouterAspectRatio::SquareHd), "Some(SquareHd)", "Some(SquareHd)"),
+      (Some(RouterAspectRatio::WideThreeByTwo), "Some(Landscape16x9)", "Some(Landscape16x9)"),
+      (Some(RouterAspectRatio::WideFourByThree), "Some(Landscape4x3)", "Some(Landscape4x3)"),
+      (Some(RouterAspectRatio::WideFiveByFour), "Some(Landscape4x3)", "Some(Landscape4x3)"),
+      (Some(RouterAspectRatio::WideSixteenByNine), "Some(Landscape16x9)", "Some(Landscape16x9)"),
+      (Some(RouterAspectRatio::WideTwentyOneByNine), "Some(Landscape16x9)", "Some(Landscape16x9)"),
+      (Some(RouterAspectRatio::Wide), "Some(Landscape16x9)", "Some(Landscape16x9)"),
+      (Some(RouterAspectRatio::TallTwoByThree), "Some(Portrait16x9)", "Some(Portrait16x9)"),
+      (Some(RouterAspectRatio::TallThreeByFour), "Some(Portrait4x3)", "Some(Portrait4x3)"),
+      (Some(RouterAspectRatio::TallFourByFive), "Some(Portrait4x3)", "Some(Portrait4x3)"),
+      (Some(RouterAspectRatio::TallNineBySixteen), "Some(Portrait16x9)", "Some(Portrait16x9)"),
+      (Some(RouterAspectRatio::TallNineByTwentyOne), "Some(Portrait16x9)", "Some(Portrait16x9)"),
+      (Some(RouterAspectRatio::Tall), "Some(Portrait16x9)", "Some(Portrait16x9)"),
     ];
 
     for (aspect_ratio, expected_t2i, _) in cases {

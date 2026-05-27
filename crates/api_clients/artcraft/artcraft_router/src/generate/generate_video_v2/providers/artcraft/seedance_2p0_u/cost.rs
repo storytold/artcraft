@@ -49,7 +49,7 @@ impl ArtcraftSeedance2p0UltraCostState {
 
 #[cfg(test)]
 mod tests {
-  use crate::api::common_resolution::CommonResolution;
+  use crate::api::router_resolution::RouterResolution;
   use crate::api::router_video_model::RouterVideoModel;
   use crate::api::provider::Provider;
   use crate::generate::generate_video::generate_video_request_builder::GenerateVideoRequestBuilder;
@@ -60,27 +60,27 @@ mod tests {
     #[test]
     fn batch_1() {
       // 11.2 * 5 = 56¢
-      assert_eq!(cost_cents(Some(CommonResolution::SevenTwentyP), 5, 1), 56);
+      assert_eq!(cost_cents(Some(RouterResolution::SevenTwentyP), 5, 1), 56);
       // 11.2 * 10 = 112¢
-      assert_eq!(cost_cents(Some(CommonResolution::SevenTwentyP), 10, 1), 112);
+      assert_eq!(cost_cents(Some(RouterResolution::SevenTwentyP), 10, 1), 112);
       // 11.2 * 15 = 168¢
-      assert_eq!(cost_cents(Some(CommonResolution::SevenTwentyP), 15, 1), 168);
+      assert_eq!(cost_cents(Some(RouterResolution::SevenTwentyP), 15, 1), 168);
     }
 
     #[test]
     fn batch_2() {
-      assert_eq!(cost_cents(Some(CommonResolution::SevenTwentyP), 5, 2), 112);
-      assert_eq!(cost_cents(Some(CommonResolution::SevenTwentyP), 10, 2), 224);
+      assert_eq!(cost_cents(Some(RouterResolution::SevenTwentyP), 5, 2), 112);
+      assert_eq!(cost_cents(Some(RouterResolution::SevenTwentyP), 10, 2), 224);
     }
 
     #[test]
     fn batch_4() {
-      assert_eq!(cost_cents(Some(CommonResolution::SevenTwentyP), 5, 4), 224);
+      assert_eq!(cost_cents(Some(RouterResolution::SevenTwentyP), 5, 4), 224);
     }
 
     #[test]
     fn none_defaults_to_720p() {
-      assert_eq!(cost_cents(None, 10, 1), cost_cents(Some(CommonResolution::SevenTwentyP), 10, 1));
+      assert_eq!(cost_cents(None, 10, 1), cost_cents(Some(RouterResolution::SevenTwentyP), 10, 1));
     }
   }
 
@@ -90,16 +90,16 @@ mod tests {
     #[test]
     fn batch_1() {
       // 5.4404 * 5 = 27.202 → ceil = 28¢
-      assert_eq!(cost_cents(Some(CommonResolution::FourEightyP), 5, 1), 28);
+      assert_eq!(cost_cents(Some(RouterResolution::FourEightyP), 5, 1), 28);
       // 5.4404 * 10 = 54.404 → ceil = 55¢
-      assert_eq!(cost_cents(Some(CommonResolution::FourEightyP), 10, 1), 55);
+      assert_eq!(cost_cents(Some(RouterResolution::FourEightyP), 10, 1), 55);
       // 5.4404 * 15 = 81.606 → ceil = 82¢
-      assert_eq!(cost_cents(Some(CommonResolution::FourEightyP), 15, 1), 82);
+      assert_eq!(cost_cents(Some(RouterResolution::FourEightyP), 15, 1), 82);
     }
 
     #[test]
     fn batch_4() {
-      assert_eq!(cost_cents(Some(CommonResolution::FourEightyP), 10, 4), 220);
+      assert_eq!(cost_cents(Some(RouterResolution::FourEightyP), 10, 4), 220);
     }
   }
 
@@ -109,16 +109,16 @@ mod tests {
     #[test]
     fn batch_1() {
       // 32.6424 * 5 = 163.212 → ceil = 164¢
-      assert_eq!(cost_cents(Some(CommonResolution::TenEightyP), 5, 1), 164);
+      assert_eq!(cost_cents(Some(RouterResolution::TenEightyP), 5, 1), 164);
       // 32.6424 * 10 = 326.424 → ceil = 327¢
-      assert_eq!(cost_cents(Some(CommonResolution::TenEightyP), 10, 1), 327);
+      assert_eq!(cost_cents(Some(RouterResolution::TenEightyP), 10, 1), 327);
       // 32.6424 * 15 = 489.636 → ceil = 490¢
-      assert_eq!(cost_cents(Some(CommonResolution::TenEightyP), 15, 1), 490);
+      assert_eq!(cost_cents(Some(RouterResolution::TenEightyP), 15, 1), 490);
     }
 
     #[test]
     fn batch_4() {
-      assert_eq!(cost_cents(Some(CommonResolution::TenEightyP), 10, 4), 1308);
+      assert_eq!(cost_cents(Some(RouterResolution::TenEightyP), 10, 4), 1308);
     }
   }
 
@@ -127,9 +127,9 @@ mod tests {
 
     #[test]
     fn cost_480p_cheaper_than_720p_cheaper_than_1080p() {
-      let c480 = cost_cents(Some(CommonResolution::FourEightyP), 10, 1);
-      let c720 = cost_cents(Some(CommonResolution::SevenTwentyP), 10, 1);
-      let c1080 = cost_cents(Some(CommonResolution::TenEightyP), 10, 1);
+      let c480 = cost_cents(Some(RouterResolution::FourEightyP), 10, 1);
+      let c720 = cost_cents(Some(RouterResolution::SevenTwentyP), 10, 1);
+      let c1080 = cost_cents(Some(RouterResolution::TenEightyP), 10, 1);
       assert!(c480 < c720);
       assert!(c720 < c1080);
     }
@@ -160,7 +160,7 @@ mod tests {
   }
 
   fn build_cost(
-    resolution: Option<CommonResolution>,
+    resolution: Option<RouterResolution>,
     duration_seconds: u16,
     video_batch_count: u16,
   ) -> crate::generate::generate_video::video_generation_cost_estimate::VideoGenerationCostEstimate {
@@ -175,7 +175,7 @@ mod tests {
     builder.build2().expect("build2").estimate_cost().expect("estimate_cost")
   }
 
-  fn cost_cents(resolution: Option<CommonResolution>, duration_seconds: u16, batch: u16) -> u64 {
+  fn cost_cents(resolution: Option<RouterResolution>, duration_seconds: u16, batch: u16) -> u64 {
     build_cost(resolution, duration_seconds, batch).cost_in_usd_cents.unwrap()
   }
 }

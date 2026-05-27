@@ -3,8 +3,8 @@ use gmicloud_client::requests::api::video::seedance_2_0_fast_260128::api::{
 };
 
 use crate::api::audio_list_ref::AudioListRef;
-use crate::api::common_aspect_ratio::CommonAspectRatio;
-use crate::api::common_resolution::CommonResolution;
+use crate::api::router_aspect_ratio::RouterAspectRatio;
+use crate::api::router_resolution::RouterResolution;
 use crate::api::image_list_ref::ImageListRef;
 use crate::api::image_ref::ImageRef;
 use crate::api::video_list_ref::VideoListRef;
@@ -54,39 +54,39 @@ pub fn build_gmicloud_seedance_2p0_u_fast(
 }
 
 fn plan_ratio(
-  aspect_ratio: Option<CommonAspectRatio>,
+  aspect_ratio: Option<RouterAspectRatio>,
   _strategy: RequestMismatchMitigationStrategy,
 ) -> Result<Option<Seedance20FastRatio>, ArtcraftRouterError> {
   match aspect_ratio {
-    None | Some(CommonAspectRatio::Auto) | Some(CommonAspectRatio::Auto2k)
-    | Some(CommonAspectRatio::Auto3k) | Some(CommonAspectRatio::Auto4k) => Ok(None),
-    Some(CommonAspectRatio::WideSixteenByNine) | Some(CommonAspectRatio::Wide) => Ok(Some(Seedance20FastRatio::Landscape16x9)),
-    Some(CommonAspectRatio::TallNineBySixteen) | Some(CommonAspectRatio::Tall) => Ok(Some(Seedance20FastRatio::Portrait9x16)),
-    Some(CommonAspectRatio::Square) | Some(CommonAspectRatio::SquareHd) => Ok(Some(Seedance20FastRatio::Square)),
-    Some(CommonAspectRatio::WideFourByThree) => Ok(Some(Seedance20FastRatio::Standard4x3)),
-    Some(CommonAspectRatio::TallThreeByFour) => Ok(Some(Seedance20FastRatio::Portrait3x4)),
-    Some(CommonAspectRatio::WideTwentyOneByNine) | Some(CommonAspectRatio::TallNineByTwentyOne) => {
+    None | Some(RouterAspectRatio::Auto) | Some(RouterAspectRatio::Auto2k)
+    | Some(RouterAspectRatio::Auto3k) | Some(RouterAspectRatio::Auto4k) => Ok(None),
+    Some(RouterAspectRatio::WideSixteenByNine) | Some(RouterAspectRatio::Wide) => Ok(Some(Seedance20FastRatio::Landscape16x9)),
+    Some(RouterAspectRatio::TallNineBySixteen) | Some(RouterAspectRatio::Tall) => Ok(Some(Seedance20FastRatio::Portrait9x16)),
+    Some(RouterAspectRatio::Square) | Some(RouterAspectRatio::SquareHd) => Ok(Some(Seedance20FastRatio::Square)),
+    Some(RouterAspectRatio::WideFourByThree) => Ok(Some(Seedance20FastRatio::Standard4x3)),
+    Some(RouterAspectRatio::TallThreeByFour) => Ok(Some(Seedance20FastRatio::Portrait3x4)),
+    Some(RouterAspectRatio::WideTwentyOneByNine) | Some(RouterAspectRatio::TallNineByTwentyOne) => {
       Ok(Some(Seedance20FastRatio::UltraWide21x9))
     }
-    Some(CommonAspectRatio::WideThreeByTwo) | Some(CommonAspectRatio::WideFiveByFour)
-    | Some(CommonAspectRatio::TallFourByFive) | Some(CommonAspectRatio::TallTwoByThree) => {
+    Some(RouterAspectRatio::WideThreeByTwo) | Some(RouterAspectRatio::WideFiveByFour)
+    | Some(RouterAspectRatio::TallFourByFive) | Some(RouterAspectRatio::TallTwoByThree) => {
       Ok(Some(Seedance20FastRatio::Adaptive))
     }
   }
 }
 
 fn plan_resolution(
-  resolution: Option<CommonResolution>,
+  resolution: Option<RouterResolution>,
   _strategy: RequestMismatchMitigationStrategy,
 ) -> Result<Option<Seedance20FastResolution>, ArtcraftRouterError> {
   match resolution {
     None => Ok(None),
-    Some(CommonResolution::FourEightyP) => Ok(Some(Seedance20FastResolution::FourEightyP)),
-    Some(CommonResolution::SevenTwentyP) => Ok(Some(Seedance20FastResolution::SevenTwentyP)),
+    Some(RouterResolution::FourEightyP) => Ok(Some(Seedance20FastResolution::FourEightyP)),
+    Some(RouterResolution::SevenTwentyP) => Ok(Some(Seedance20FastResolution::SevenTwentyP)),
     // Fast model doesn't support 1080p — fall back to 720p
-    Some(CommonResolution::TenEightyP) => Ok(Some(Seedance20FastResolution::SevenTwentyP)),
-    Some(CommonResolution::HalfK) | Some(CommonResolution::OneK) => Ok(Some(Seedance20FastResolution::FourEightyP)),
-    Some(CommonResolution::TwoK) | Some(CommonResolution::ThreeK) | Some(CommonResolution::FourK) => {
+    Some(RouterResolution::TenEightyP) => Ok(Some(Seedance20FastResolution::SevenTwentyP)),
+    Some(RouterResolution::HalfK) | Some(RouterResolution::OneK) => Ok(Some(Seedance20FastResolution::FourEightyP)),
+    Some(RouterResolution::TwoK) | Some(RouterResolution::ThreeK) | Some(RouterResolution::FourK) => {
       Ok(Some(Seedance20FastResolution::SevenTwentyP))
     }
   }
@@ -142,8 +142,8 @@ mod tests {
   };
   use tokens::tokens::media_files::MediaFileToken;
 
-  use crate::api::common_aspect_ratio::CommonAspectRatio;
-  use crate::api::common_resolution::CommonResolution;
+  use crate::api::router_aspect_ratio::RouterAspectRatio;
+  use crate::api::router_resolution::RouterResolution;
   use crate::api::router_video_model::RouterVideoModel;
   use crate::api::image_list_ref::ImageListRef;
   use crate::api::image_ref::ImageRef;
@@ -189,19 +189,19 @@ mod tests {
 
     #[test]
     fn res_480p() {
-      let req = unwrap_request(make_builder(|b| { b.resolution = Some(CommonResolution::FourEightyP); }));
+      let req = unwrap_request(make_builder(|b| { b.resolution = Some(RouterResolution::FourEightyP); }));
       assert_eq!(req.request.resolution, Some(Seedance20FastResolution::FourEightyP));
     }
 
     #[test]
     fn res_720p() {
-      let req = unwrap_request(make_builder(|b| { b.resolution = Some(CommonResolution::SevenTwentyP); }));
+      let req = unwrap_request(make_builder(|b| { b.resolution = Some(RouterResolution::SevenTwentyP); }));
       assert_eq!(req.request.resolution, Some(Seedance20FastResolution::SevenTwentyP));
     }
 
     #[test]
     fn res_1080p_falls_back_to_720p() {
-      let req = unwrap_request(make_builder(|b| { b.resolution = Some(CommonResolution::TenEightyP); }));
+      let req = unwrap_request(make_builder(|b| { b.resolution = Some(RouterResolution::TenEightyP); }));
       assert_eq!(req.request.resolution, Some(Seedance20FastResolution::SevenTwentyP));
     }
 
@@ -217,19 +217,19 @@ mod tests {
 
     #[test]
     fn landscape_16x9() {
-      let req = unwrap_request(make_builder(|b| { b.aspect_ratio = Some(CommonAspectRatio::WideSixteenByNine); }));
+      let req = unwrap_request(make_builder(|b| { b.aspect_ratio = Some(RouterAspectRatio::WideSixteenByNine); }));
       assert_eq!(req.request.ratio, Some(Seedance20FastRatio::Landscape16x9));
     }
 
     #[test]
     fn square() {
-      let req = unwrap_request(make_builder(|b| { b.aspect_ratio = Some(CommonAspectRatio::Square); }));
+      let req = unwrap_request(make_builder(|b| { b.aspect_ratio = Some(RouterAspectRatio::Square); }));
       assert_eq!(req.request.ratio, Some(Seedance20FastRatio::Square));
     }
 
     #[test]
     fn auto_maps_to_none() {
-      let req = unwrap_request(make_builder(|b| { b.aspect_ratio = Some(CommonAspectRatio::Auto); }));
+      let req = unwrap_request(make_builder(|b| { b.aspect_ratio = Some(RouterAspectRatio::Auto); }));
       assert_eq!(req.request.ratio, None);
     }
   }

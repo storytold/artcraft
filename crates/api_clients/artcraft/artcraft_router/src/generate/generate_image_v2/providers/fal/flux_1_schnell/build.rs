@@ -6,7 +6,7 @@ use fal_client::requests::api::image::text::flux_1_schnell_text_to_image::api::{
   Flux1SchnellTextToImageRequest,
 };
 
-use crate::api::common_aspect_ratio::CommonAspectRatio;
+use crate::api::router_aspect_ratio::RouterAspectRatio;
 use crate::api::image_list_ref::ImageListRef;
 use crate::client::request_mismatch_mitigation_strategy::RequestMismatchMitigationStrategy;
 use crate::errors::artcraft_router_error::ArtcraftRouterError;
@@ -104,38 +104,38 @@ fn to_edit_num_images(n: PlannedNumImages) -> Flux1SchnellEditImageNumImages {
 // ── Aspect ratio ──
 
 fn plan_aspect_ratio(
-  aspect_ratio: Option<CommonAspectRatio>,
+  aspect_ratio: Option<RouterAspectRatio>,
 ) -> Flux1SchnellTextToImageAspectRatio {
   use Flux1SchnellTextToImageAspectRatio as T;
   match aspect_ratio {
-    None | Some(CommonAspectRatio::Auto) | Some(CommonAspectRatio::Auto2k)
-    | Some(CommonAspectRatio::Auto3k) | Some(CommonAspectRatio::Auto4k) => T::SquareHd,
-    Some(CommonAspectRatio::Square) => T::Square,
-    Some(CommonAspectRatio::SquareHd) => T::SquareHd,
-    Some(CommonAspectRatio::WideFourByThree) | Some(CommonAspectRatio::WideFiveByFour)
-    | Some(CommonAspectRatio::WideThreeByTwo) | Some(CommonAspectRatio::Wide) => T::LandscapeFourByThree,
-    Some(CommonAspectRatio::WideSixteenByNine) | Some(CommonAspectRatio::WideTwentyOneByNine) => T::LandscapeSixteenByNine,
-    Some(CommonAspectRatio::TallThreeByFour) | Some(CommonAspectRatio::TallFourByFive)
-    | Some(CommonAspectRatio::TallTwoByThree) | Some(CommonAspectRatio::Tall) => T::PortraitThreeByFour,
-    Some(CommonAspectRatio::TallNineBySixteen) | Some(CommonAspectRatio::TallNineByTwentyOne) => T::PortraitNineBySixteen,
+    None | Some(RouterAspectRatio::Auto) | Some(RouterAspectRatio::Auto2k)
+    | Some(RouterAspectRatio::Auto3k) | Some(RouterAspectRatio::Auto4k) => T::SquareHd,
+    Some(RouterAspectRatio::Square) => T::Square,
+    Some(RouterAspectRatio::SquareHd) => T::SquareHd,
+    Some(RouterAspectRatio::WideFourByThree) | Some(RouterAspectRatio::WideFiveByFour)
+    | Some(RouterAspectRatio::WideThreeByTwo) | Some(RouterAspectRatio::Wide) => T::LandscapeFourByThree,
+    Some(RouterAspectRatio::WideSixteenByNine) | Some(RouterAspectRatio::WideTwentyOneByNine) => T::LandscapeSixteenByNine,
+    Some(RouterAspectRatio::TallThreeByFour) | Some(RouterAspectRatio::TallFourByFive)
+    | Some(RouterAspectRatio::TallTwoByThree) | Some(RouterAspectRatio::Tall) => T::PortraitThreeByFour,
+    Some(RouterAspectRatio::TallNineBySixteen) | Some(RouterAspectRatio::TallNineByTwentyOne) => T::PortraitNineBySixteen,
   }
 }
 
 fn plan_edit_image_size(
-  aspect_ratio: Option<CommonAspectRatio>,
+  aspect_ratio: Option<RouterAspectRatio>,
 ) -> Option<Flux1SchnellEditImageSize> {
   use Flux1SchnellEditImageSize as S;
   aspect_ratio.and_then(|ar| match ar {
-    CommonAspectRatio::Auto | CommonAspectRatio::Auto2k
-    | CommonAspectRatio::Auto3k | CommonAspectRatio::Auto4k => None,
-    CommonAspectRatio::Square => Some(S::Square),
-    CommonAspectRatio::SquareHd => Some(S::SquareHd),
-    CommonAspectRatio::WideFourByThree | CommonAspectRatio::WideFiveByFour
-    | CommonAspectRatio::WideThreeByTwo | CommonAspectRatio::Wide => Some(S::LandscapeFourByThree),
-    CommonAspectRatio::WideSixteenByNine | CommonAspectRatio::WideTwentyOneByNine => Some(S::LandscapeSixteenByNine),
-    CommonAspectRatio::TallThreeByFour | CommonAspectRatio::TallFourByFive
-    | CommonAspectRatio::TallTwoByThree | CommonAspectRatio::Tall => Some(S::PortraitThreeByFour),
-    CommonAspectRatio::TallNineBySixteen | CommonAspectRatio::TallNineByTwentyOne => Some(S::PortraitNineBySixteen),
+    RouterAspectRatio::Auto | RouterAspectRatio::Auto2k
+    | RouterAspectRatio::Auto3k | RouterAspectRatio::Auto4k => None,
+    RouterAspectRatio::Square => Some(S::Square),
+    RouterAspectRatio::SquareHd => Some(S::SquareHd),
+    RouterAspectRatio::WideFourByThree | RouterAspectRatio::WideFiveByFour
+    | RouterAspectRatio::WideThreeByTwo | RouterAspectRatio::Wide => Some(S::LandscapeFourByThree),
+    RouterAspectRatio::WideSixteenByNine | RouterAspectRatio::WideTwentyOneByNine => Some(S::LandscapeSixteenByNine),
+    RouterAspectRatio::TallThreeByFour | RouterAspectRatio::TallFourByFive
+    | RouterAspectRatio::TallTwoByThree | RouterAspectRatio::Tall => Some(S::PortraitThreeByFour),
+    RouterAspectRatio::TallNineBySixteen | RouterAspectRatio::TallNineByTwentyOne => Some(S::PortraitNineBySixteen),
   })
 }
 
@@ -351,7 +351,7 @@ mod tests {
     #[test]
     fn square() {
       let builder = GenerateImageRequestBuilder {
-        aspect_ratio: Some(CommonAspectRatio::Square),
+        aspect_ratio: Some(RouterAspectRatio::Square),
         ..base_builder()
       };
       let req = unwrap_t2i(build_fal_flux_1_schnell(builder));
@@ -361,7 +361,7 @@ mod tests {
     #[test]
     fn wide_sixteen_by_nine() {
       let builder = GenerateImageRequestBuilder {
-        aspect_ratio: Some(CommonAspectRatio::WideSixteenByNine),
+        aspect_ratio: Some(RouterAspectRatio::WideSixteenByNine),
         ..base_builder()
       };
       let req = unwrap_t2i(build_fal_flux_1_schnell(builder));
@@ -371,7 +371,7 @@ mod tests {
     #[test]
     fn tall_nine_by_sixteen() {
       let builder = GenerateImageRequestBuilder {
-        aspect_ratio: Some(CommonAspectRatio::TallNineBySixteen),
+        aspect_ratio: Some(RouterAspectRatio::TallNineBySixteen),
         ..base_builder()
       };
       let req = unwrap_t2i(build_fal_flux_1_schnell(builder));
@@ -381,7 +381,7 @@ mod tests {
     #[test]
     fn edit_auto_yields_none() {
       let builder = GenerateImageRequestBuilder {
-        aspect_ratio: Some(CommonAspectRatio::Auto),
+        aspect_ratio: Some(RouterAspectRatio::Auto),
         image_inputs: Some(ImageListRef::Urls(vec!["https://example.com/img.jpg".to_string()])),
         ..base_builder()
       };
@@ -392,7 +392,7 @@ mod tests {
     #[test]
     fn edit_square() {
       let builder = GenerateImageRequestBuilder {
-        aspect_ratio: Some(CommonAspectRatio::Square),
+        aspect_ratio: Some(RouterAspectRatio::Square),
         image_inputs: Some(ImageListRef::Urls(vec!["https://example.com/img.jpg".to_string()])),
         ..base_builder()
       };
@@ -403,7 +403,7 @@ mod tests {
     #[test]
     fn edit_landscape() {
       let builder = GenerateImageRequestBuilder {
-        aspect_ratio: Some(CommonAspectRatio::WideSixteenByNine),
+        aspect_ratio: Some(RouterAspectRatio::WideSixteenByNine),
         image_inputs: Some(ImageListRef::Urls(vec!["https://example.com/img.jpg".to_string()])),
         ..base_builder()
       };

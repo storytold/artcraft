@@ -3,8 +3,8 @@ use seedance2pro_client::generate::video::generate_happy_horse_1p0::{
   KinoviHappyHorse1p0OutputResolution,
 };
 
-use crate::api::common_aspect_ratio::CommonAspectRatio;
-use crate::api::common_resolution::CommonResolution;
+use crate::api::router_aspect_ratio::RouterAspectRatio;
+use crate::api::router_resolution::RouterResolution;
 use crate::client::request_mismatch_mitigation_strategy::RequestMismatchMitigationStrategy;
 use crate::errors::artcraft_router_error::ArtcraftRouterError;
 use crate::errors::client_error::ClientError;
@@ -46,26 +46,26 @@ fn do_build(mut builder: GenerateVideoRequestBuilder) -> Result<KinoviHappyHorse
 // ── Plan helpers ──
 
 fn plan_aspect_ratio(
-  aspect_ratio: Option<CommonAspectRatio>,
+  aspect_ratio: Option<RouterAspectRatio>,
   strategy: RequestMismatchMitigationStrategy,
 ) -> Result<Option<KinoviHappyHorse1p0AspectRatio>, ArtcraftRouterError> {
   match aspect_ratio {
     None
-    | Some(CommonAspectRatio::Auto)
-    | Some(CommonAspectRatio::Auto2k)
-    | Some(CommonAspectRatio::Auto4k) => Ok(None),
+    | Some(RouterAspectRatio::Auto)
+    | Some(RouterAspectRatio::Auto2k)
+    | Some(RouterAspectRatio::Auto4k) => Ok(None),
 
-    Some(CommonAspectRatio::WideSixteenByNine) | Some(CommonAspectRatio::Wide) => {
+    Some(RouterAspectRatio::WideSixteenByNine) | Some(RouterAspectRatio::Wide) => {
       Ok(Some(KinoviHappyHorse1p0AspectRatio::Landscape16x9))
     }
-    Some(CommonAspectRatio::TallNineBySixteen) | Some(CommonAspectRatio::Tall) => {
+    Some(RouterAspectRatio::TallNineBySixteen) | Some(RouterAspectRatio::Tall) => {
       Ok(Some(KinoviHappyHorse1p0AspectRatio::Portrait9x16))
     }
-    Some(CommonAspectRatio::Square) | Some(CommonAspectRatio::SquareHd) => {
+    Some(RouterAspectRatio::Square) | Some(RouterAspectRatio::SquareHd) => {
       Ok(Some(KinoviHappyHorse1p0AspectRatio::Square1x1))
     }
-    Some(CommonAspectRatio::WideFourByThree) => Ok(Some(KinoviHappyHorse1p0AspectRatio::Landscape4x3)),
-    Some(CommonAspectRatio::TallThreeByFour) => Ok(Some(KinoviHappyHorse1p0AspectRatio::Portrait3x4)),
+    Some(RouterAspectRatio::WideFourByThree) => Ok(Some(KinoviHappyHorse1p0AspectRatio::Landscape4x3)),
+    Some(RouterAspectRatio::TallThreeByFour) => Ok(Some(KinoviHappyHorse1p0AspectRatio::Portrait3x4)),
 
     Some(unsupported) => match strategy {
       RequestMismatchMitigationStrategy::ErrorOut => {
@@ -82,28 +82,28 @@ fn plan_aspect_ratio(
   }
 }
 
-fn nearest_aspect_ratio(aspect_ratio: CommonAspectRatio) -> KinoviHappyHorse1p0AspectRatio {
+fn nearest_aspect_ratio(aspect_ratio: RouterAspectRatio) -> KinoviHappyHorse1p0AspectRatio {
   match aspect_ratio {
-    CommonAspectRatio::WideFiveByFour => KinoviHappyHorse1p0AspectRatio::Landscape4x3,
-    CommonAspectRatio::WideThreeByTwo => KinoviHappyHorse1p0AspectRatio::Landscape4x3,
-    CommonAspectRatio::WideTwentyOneByNine => KinoviHappyHorse1p0AspectRatio::Landscape16x9,
-    CommonAspectRatio::TallFourByFive => KinoviHappyHorse1p0AspectRatio::Portrait3x4,
-    CommonAspectRatio::TallTwoByThree => KinoviHappyHorse1p0AspectRatio::Portrait3x4,
-    CommonAspectRatio::TallNineByTwentyOne => KinoviHappyHorse1p0AspectRatio::Portrait9x16,
+    RouterAspectRatio::WideFiveByFour => KinoviHappyHorse1p0AspectRatio::Landscape4x3,
+    RouterAspectRatio::WideThreeByTwo => KinoviHappyHorse1p0AspectRatio::Landscape4x3,
+    RouterAspectRatio::WideTwentyOneByNine => KinoviHappyHorse1p0AspectRatio::Landscape16x9,
+    RouterAspectRatio::TallFourByFive => KinoviHappyHorse1p0AspectRatio::Portrait3x4,
+    RouterAspectRatio::TallTwoByThree => KinoviHappyHorse1p0AspectRatio::Portrait3x4,
+    RouterAspectRatio::TallNineByTwentyOne => KinoviHappyHorse1p0AspectRatio::Portrait9x16,
     _ => KinoviHappyHorse1p0AspectRatio::Square1x1,
   }
 }
 
 // Happy Horse supports 720p and 1080p only (no 480p).
 fn plan_output_resolution(
-  resolution: Option<CommonResolution>,
+  resolution: Option<RouterResolution>,
   strategy: RequestMismatchMitigationStrategy,
 ) -> Result<Option<KinoviHappyHorse1p0OutputResolution>, ArtcraftRouterError> {
   match resolution {
     None => Ok(None),
 
-    Some(CommonResolution::SevenTwentyP) => Ok(Some(KinoviHappyHorse1p0OutputResolution::SevenTwentyP)),
-    Some(CommonResolution::TenEightyP) => Ok(Some(KinoviHappyHorse1p0OutputResolution::TenEightyP)),
+    Some(RouterResolution::SevenTwentyP) => Ok(Some(KinoviHappyHorse1p0OutputResolution::SevenTwentyP)),
+    Some(RouterResolution::TenEightyP) => Ok(Some(KinoviHappyHorse1p0OutputResolution::TenEightyP)),
 
     Some(unsupported) => match strategy {
       RequestMismatchMitigationStrategy::ErrorOut => {
@@ -241,7 +241,7 @@ mod tests {
     #[test]
     fn aspect_ratio_wide() {
       let builder = GenerateVideoRequestBuilder {
-        aspect_ratio: Some(CommonAspectRatio::WideSixteenByNine),
+        aspect_ratio: Some(RouterAspectRatio::WideSixteenByNine),
         ..happy_horse_builder()
       };
       let draft = unwrap_draft(build_kinovi_happy_horse_1p0(builder));
@@ -251,7 +251,7 @@ mod tests {
     #[test]
     fn aspect_ratio_tall() {
       let builder = GenerateVideoRequestBuilder {
-        aspect_ratio: Some(CommonAspectRatio::TallNineBySixteen),
+        aspect_ratio: Some(RouterAspectRatio::TallNineBySixteen),
         ..happy_horse_builder()
       };
       let draft = unwrap_draft(build_kinovi_happy_horse_1p0(builder));
@@ -261,7 +261,7 @@ mod tests {
     #[test]
     fn aspect_ratio_square() {
       let builder = GenerateVideoRequestBuilder {
-        aspect_ratio: Some(CommonAspectRatio::Square),
+        aspect_ratio: Some(RouterAspectRatio::Square),
         ..happy_horse_builder()
       };
       let draft = unwrap_draft(build_kinovi_happy_horse_1p0(builder));
@@ -278,7 +278,7 @@ mod tests {
     #[test]
     fn aspect_ratio_auto_defaults_to_none() {
       let builder = GenerateVideoRequestBuilder {
-        aspect_ratio: Some(CommonAspectRatio::Auto),
+        aspect_ratio: Some(RouterAspectRatio::Auto),
         ..happy_horse_builder()
       };
       let draft = unwrap_draft(build_kinovi_happy_horse_1p0(builder));
@@ -288,7 +288,7 @@ mod tests {
     #[test]
     fn unsupported_aspect_ratio_falls_back() {
       let builder = GenerateVideoRequestBuilder {
-        aspect_ratio: Some(CommonAspectRatio::WideFiveByFour),
+        aspect_ratio: Some(RouterAspectRatio::WideFiveByFour),
         ..happy_horse_builder()
       };
       let draft = unwrap_draft(build_kinovi_happy_horse_1p0(builder));
@@ -298,7 +298,7 @@ mod tests {
     #[test]
     fn unsupported_aspect_ratio_errors_out() {
       let builder = GenerateVideoRequestBuilder {
-        aspect_ratio: Some(CommonAspectRatio::WideFiveByFour),
+        aspect_ratio: Some(RouterAspectRatio::WideFiveByFour),
         request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::ErrorOut,
         ..happy_horse_builder()
       };
@@ -314,7 +314,7 @@ mod tests {
     #[test]
     fn resolution_720p() {
       let builder = GenerateVideoRequestBuilder {
-        resolution: Some(CommonResolution::SevenTwentyP),
+        resolution: Some(RouterResolution::SevenTwentyP),
         ..happy_horse_builder()
       };
       let draft = unwrap_draft(build_kinovi_happy_horse_1p0(builder));
@@ -324,7 +324,7 @@ mod tests {
     #[test]
     fn resolution_1080p() {
       let builder = GenerateVideoRequestBuilder {
-        resolution: Some(CommonResolution::TenEightyP),
+        resolution: Some(RouterResolution::TenEightyP),
         ..happy_horse_builder()
       };
       let draft = unwrap_draft(build_kinovi_happy_horse_1p0(builder));
@@ -341,7 +341,7 @@ mod tests {
     #[test]
     fn unsupported_resolution_error_out() {
       let builder = GenerateVideoRequestBuilder {
-        resolution: Some(CommonResolution::FourEightyP),
+        resolution: Some(RouterResolution::FourEightyP),
         request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::ErrorOut,
         ..happy_horse_builder()
       };
@@ -351,7 +351,7 @@ mod tests {
     #[test]
     fn unsupported_resolution_upgrades() {
       let builder = GenerateVideoRequestBuilder {
-        resolution: Some(CommonResolution::FourK),
+        resolution: Some(RouterResolution::FourK),
         request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::PayMoreUpgrade,
         ..happy_horse_builder()
       };
@@ -362,7 +362,7 @@ mod tests {
     #[test]
     fn unsupported_resolution_downgrades() {
       let builder = GenerateVideoRequestBuilder {
-        resolution: Some(CommonResolution::FourK),
+        resolution: Some(RouterResolution::FourK),
         request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::PayLessDowngrade,
         ..happy_horse_builder()
       };
@@ -418,8 +418,8 @@ mod tests {
   fn full_request_all_fields() {
     let builder = GenerateVideoRequestBuilder {
       prompt: Some("full test".to_string()),
-      aspect_ratio: Some(CommonAspectRatio::TallNineBySixteen),
-      resolution: Some(CommonResolution::TenEightyP),
+      aspect_ratio: Some(RouterAspectRatio::TallNineBySixteen),
+      resolution: Some(RouterResolution::TenEightyP),
       duration_seconds: Some(10),
       video_batch_count: Some(4),
       start_frame: Some(ImageRef::Url("https://example.com/start.jpg".to_string())),

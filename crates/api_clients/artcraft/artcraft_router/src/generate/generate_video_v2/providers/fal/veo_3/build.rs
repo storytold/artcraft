@@ -5,8 +5,8 @@ use fal_client::requests::webhook::video::text::enqueue_veo_3_text_to_video_webh
   Veo3T2vAspectRatio, Veo3T2vDuration, Veo3T2vResolution, Veo3TextToVideoRequest,
 };
 
-use crate::api::common_aspect_ratio::CommonAspectRatio;
-use crate::api::common_resolution::CommonResolution;
+use crate::api::router_aspect_ratio::RouterAspectRatio;
+use crate::api::router_resolution::RouterResolution;
 use crate::api::image_ref::ImageRef;
 use crate::client::request_mismatch_mitigation_strategy::RequestMismatchMitigationStrategy;
 use crate::errors::artcraft_router_error::ArtcraftRouterError;
@@ -83,14 +83,14 @@ pub fn build_fal_veo_3(
 
 /// Text-to-video: only 16:9 and 9:16 (no Auto, no Square).
 fn plan_t2v_aspect_ratio(
-  aspect_ratio: Option<CommonAspectRatio>,
+  aspect_ratio: Option<RouterAspectRatio>,
   strategy: RequestMismatchMitigationStrategy,
 ) -> Result<Veo3T2vAspectRatio, ArtcraftRouterError> {
   use Veo3T2vAspectRatio as Ar;
   match aspect_ratio {
     None => Ok(Ar::Default),
-    Some(CommonAspectRatio::WideSixteenByNine) | Some(CommonAspectRatio::Wide) => Ok(Ar::WideSixteenNine),
-    Some(CommonAspectRatio::TallNineBySixteen) | Some(CommonAspectRatio::Tall) => Ok(Ar::TallNineSixteen),
+    Some(RouterAspectRatio::WideSixteenByNine) | Some(RouterAspectRatio::Wide) => Ok(Ar::WideSixteenNine),
+    Some(RouterAspectRatio::TallNineBySixteen) | Some(RouterAspectRatio::Tall) => Ok(Ar::TallNineSixteen),
     Some(other) => match strategy {
       RequestMismatchMitigationStrategy::ErrorOut => {
         Err(unsupported("aspect_ratio", &format!("{:?}", other)))
@@ -102,19 +102,19 @@ fn plan_t2v_aspect_ratio(
 
 /// Image-to-video: Auto, 16:9, 9:16 (no Square).
 fn plan_i2v_aspect_ratio(
-  aspect_ratio: Option<CommonAspectRatio>,
+  aspect_ratio: Option<RouterAspectRatio>,
   strategy: RequestMismatchMitigationStrategy,
 ) -> Result<Veo3I2vAspectRatio, ArtcraftRouterError> {
   use Veo3I2vAspectRatio as Ar;
   match aspect_ratio {
     None
-    | Some(CommonAspectRatio::Auto)
-    | Some(CommonAspectRatio::Auto2k)
-    | Some(CommonAspectRatio::Auto3k)
-    | Some(CommonAspectRatio::Auto4k) => Ok(Ar::Auto),
+    | Some(RouterAspectRatio::Auto)
+    | Some(RouterAspectRatio::Auto2k)
+    | Some(RouterAspectRatio::Auto3k)
+    | Some(RouterAspectRatio::Auto4k) => Ok(Ar::Auto),
 
-    Some(CommonAspectRatio::WideSixteenByNine) | Some(CommonAspectRatio::Wide) => Ok(Ar::WideSixteenNine),
-    Some(CommonAspectRatio::TallNineBySixteen) | Some(CommonAspectRatio::Tall) => Ok(Ar::TallNineSixteen),
+    Some(RouterAspectRatio::WideSixteenByNine) | Some(RouterAspectRatio::Wide) => Ok(Ar::WideSixteenNine),
+    Some(RouterAspectRatio::TallNineBySixteen) | Some(RouterAspectRatio::Tall) => Ok(Ar::TallNineSixteen),
 
     Some(other) => match strategy {
       RequestMismatchMitigationStrategy::ErrorOut => {
@@ -126,13 +126,13 @@ fn plan_i2v_aspect_ratio(
 }
 
 fn plan_resolution(
-  resolution: Option<CommonResolution>,
+  resolution: Option<RouterResolution>,
   strategy: RequestMismatchMitigationStrategy,
 ) -> Result<PlanResolution, ArtcraftRouterError> {
   match resolution {
     None => Ok(PlanResolution::Default),
-    Some(CommonResolution::SevenTwentyP) => Ok(PlanResolution::SevenTwentyP),
-    Some(CommonResolution::TenEightyP) => Ok(PlanResolution::TenEightyP),
+    Some(RouterResolution::SevenTwentyP) => Ok(PlanResolution::SevenTwentyP),
+    Some(RouterResolution::TenEightyP) => Ok(PlanResolution::TenEightyP),
     Some(other) => match strategy {
       RequestMismatchMitigationStrategy::ErrorOut => {
         Err(unsupported("resolution", &format!("{:?}", other)))
@@ -272,21 +272,21 @@ mod tests {
     #[test]
     fn t2v_720p() {
       let mut b = base_t2v_builder();
-      b.resolution = Some(CommonResolution::SevenTwentyP);
+      b.resolution = Some(RouterResolution::SevenTwentyP);
       assert!(matches!(t2v_request(b).resolution, Veo3T2vResolution::SevenTwentyP));
     }
 
     #[test]
     fn t2v_1080p() {
       let mut b = base_t2v_builder();
-      b.resolution = Some(CommonResolution::TenEightyP);
+      b.resolution = Some(RouterResolution::TenEightyP);
       assert!(matches!(t2v_request(b).resolution, Veo3T2vResolution::TenEightyP));
     }
 
     #[test]
     fn t2v_unsupported_upgrades_with_pay_more() {
       let mut b = base_t2v_builder();
-      b.resolution = Some(CommonResolution::FourK);
+      b.resolution = Some(RouterResolution::FourK);
       b.request_mismatch_mitigation_strategy = RequestMismatchMitigationStrategy::PayMoreUpgrade;
       assert!(matches!(t2v_request(b).resolution, Veo3T2vResolution::TenEightyP));
     }
@@ -315,7 +315,7 @@ mod tests {
     #[test]
     fn t2v_sixteen_nine() {
       let mut b = base_t2v_builder();
-      b.aspect_ratio = Some(CommonAspectRatio::WideSixteenByNine);
+      b.aspect_ratio = Some(RouterAspectRatio::WideSixteenByNine);
       assert!(matches!(t2v_request(b).aspect_ratio, Veo3T2vAspectRatio::WideSixteenNine));
     }
 
@@ -343,9 +343,9 @@ mod tests {
 
   #[test]
   fn full_combinatorial_pass() {
-    let resolutions = [None, Some(CommonResolution::SevenTwentyP), Some(CommonResolution::TenEightyP)];
+    let resolutions = [None, Some(RouterResolution::SevenTwentyP), Some(RouterResolution::TenEightyP)];
     let durations = [None, Some(4u16), Some(6), Some(8)];
-    let aspect_ratios = [None, Some(CommonAspectRatio::Auto), Some(CommonAspectRatio::WideSixteenByNine), Some(CommonAspectRatio::TallNineBySixteen)];
+    let aspect_ratios = [None, Some(RouterAspectRatio::Auto), Some(RouterAspectRatio::WideSixteenByNine), Some(RouterAspectRatio::TallNineBySixteen)];
     let audios = [None, Some(true), Some(false)];
 
     let mut combos = 0;

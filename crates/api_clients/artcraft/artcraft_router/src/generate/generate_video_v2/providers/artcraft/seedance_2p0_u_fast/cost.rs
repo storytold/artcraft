@@ -48,7 +48,7 @@ impl ArtcraftSeedance2p0UltraFastCostState {
 
 #[cfg(test)]
 mod tests {
-  use crate::api::common_resolution::CommonResolution;
+  use crate::api::router_resolution::RouterResolution;
   use crate::api::router_video_model::RouterVideoModel;
   use crate::api::provider::Provider;
   use crate::generate::generate_video::generate_video_request_builder::GenerateVideoRequestBuilder;
@@ -59,26 +59,26 @@ mod tests {
     #[test]
     fn batch_1() {
       // 8.9089 * 5 = 44.5445 → ceil = 45¢
-      assert_eq!(cost_cents(Some(CommonResolution::SevenTwentyP), 5, 1), 45);
+      assert_eq!(cost_cents(Some(RouterResolution::SevenTwentyP), 5, 1), 45);
       // 8.9089 * 10 = 89.089 → ceil = 90¢
-      assert_eq!(cost_cents(Some(CommonResolution::SevenTwentyP), 10, 1), 90);
+      assert_eq!(cost_cents(Some(RouterResolution::SevenTwentyP), 10, 1), 90);
       // 8.9089 * 15 = 133.6335 → ceil = 134¢
-      assert_eq!(cost_cents(Some(CommonResolution::SevenTwentyP), 15, 1), 134);
+      assert_eq!(cost_cents(Some(RouterResolution::SevenTwentyP), 15, 1), 134);
     }
 
     #[test]
     fn batch_2() {
-      assert_eq!(cost_cents(Some(CommonResolution::SevenTwentyP), 10, 2), 180);
+      assert_eq!(cost_cents(Some(RouterResolution::SevenTwentyP), 10, 2), 180);
     }
 
     #[test]
     fn batch_4() {
-      assert_eq!(cost_cents(Some(CommonResolution::SevenTwentyP), 10, 4), 360);
+      assert_eq!(cost_cents(Some(RouterResolution::SevenTwentyP), 10, 4), 360);
     }
 
     #[test]
     fn none_defaults_to_720p() {
-      assert_eq!(cost_cents(None, 10, 1), cost_cents(Some(CommonResolution::SevenTwentyP), 10, 1));
+      assert_eq!(cost_cents(None, 10, 1), cost_cents(Some(RouterResolution::SevenTwentyP), 10, 1));
     }
   }
 
@@ -88,16 +88,16 @@ mod tests {
     #[test]
     fn batch_1() {
       // 3.6267 * 5 = 18.1335 → ceil = 19¢
-      assert_eq!(cost_cents(Some(CommonResolution::FourEightyP), 5, 1), 19);
+      assert_eq!(cost_cents(Some(RouterResolution::FourEightyP), 5, 1), 19);
       // 3.6267 * 10 = 36.267 → ceil = 37¢
-      assert_eq!(cost_cents(Some(CommonResolution::FourEightyP), 10, 1), 37);
+      assert_eq!(cost_cents(Some(RouterResolution::FourEightyP), 10, 1), 37);
       // 3.6267 * 15 = 54.4005 → ceil = 55¢
-      assert_eq!(cost_cents(Some(CommonResolution::FourEightyP), 15, 1), 55);
+      assert_eq!(cost_cents(Some(RouterResolution::FourEightyP), 15, 1), 55);
     }
 
     #[test]
     fn batch_4() {
-      assert_eq!(cost_cents(Some(CommonResolution::FourEightyP), 10, 4), 148);
+      assert_eq!(cost_cents(Some(RouterResolution::FourEightyP), 10, 4), 148);
     }
   }
 
@@ -106,8 +106,8 @@ mod tests {
 
     #[test]
     fn cost_480p_cheaper_than_720p() {
-      let c480 = cost_cents(Some(CommonResolution::FourEightyP), 10, 1);
-      let c720 = cost_cents(Some(CommonResolution::SevenTwentyP), 10, 1);
+      let c480 = cost_cents(Some(RouterResolution::FourEightyP), 10, 1);
+      let c720 = cost_cents(Some(RouterResolution::SevenTwentyP), 10, 1);
       assert!(c480 < c720, "480p ({c480}) should be < 720p ({c720})");
     }
 
@@ -122,12 +122,12 @@ mod tests {
 
     #[test]
     fn fast_g_cheaper_than_standard_g() {
-      let fast = cost_cents(Some(CommonResolution::SevenTwentyP), 10, 1);
+      let fast = cost_cents(Some(RouterResolution::SevenTwentyP), 10, 1);
       let standard = {
         let builder = GenerateVideoRequestBuilder {
           model: RouterVideoModel::Seedance2p0Ultra,
           provider: Provider::Artcraft,
-          resolution: Some(CommonResolution::SevenTwentyP),
+          resolution: Some(RouterResolution::SevenTwentyP),
           duration_seconds: Some(10),
           video_batch_count: Some(1),
           ..Default::default()
@@ -145,7 +145,7 @@ mod tests {
   }
 
   fn build_cost(
-    resolution: Option<CommonResolution>,
+    resolution: Option<RouterResolution>,
     duration_seconds: u16,
     video_batch_count: u16,
   ) -> crate::generate::generate_video::video_generation_cost_estimate::VideoGenerationCostEstimate {
@@ -160,7 +160,7 @@ mod tests {
     builder.build2().expect("build2").estimate_cost().expect("estimate_cost")
   }
 
-  fn cost_cents(resolution: Option<CommonResolution>, duration_seconds: u16, batch: u16) -> u64 {
+  fn cost_cents(resolution: Option<RouterResolution>, duration_seconds: u16, batch: u16) -> u64 {
     build_cost(resolution, duration_seconds, batch).cost_in_usd_cents.unwrap()
   }
 }

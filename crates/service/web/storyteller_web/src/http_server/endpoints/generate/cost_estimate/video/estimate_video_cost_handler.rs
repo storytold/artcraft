@@ -7,8 +7,8 @@ use artcraft_api_defs::generate::cost_estimate::estimate_video_cost::{
   EstimateVideoCostError, EstimateVideoCostErrorType, EstimateVideoCostRequest,
   EstimateVideoCostResponse,
 };
-use artcraft_router::api::common_aspect_ratio::CommonAspectRatio as RouterAspectRatio;
-use artcraft_router::api::common_resolution::CommonResolution as RouterResolution;
+use artcraft_router::api::router_aspect_ratio::RouterAspectRatio;
+use artcraft_router::api::router_resolution::RouterResolution;
 use artcraft_router::api::router_video_model::RouterVideoModel;
 use artcraft_router::api::provider::Provider as RouterProvider;
 use artcraft_router::client::request_mismatch_mitigation_strategy::RequestMismatchMitigationStrategy;

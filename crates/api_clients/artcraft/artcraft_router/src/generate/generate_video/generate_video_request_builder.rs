@@ -1,7 +1,7 @@
 use crate::api::audio_list_ref::AudioListRef;
 use crate::api::character_list_ref::CharacterListRef;
-use crate::api::common_aspect_ratio::CommonAspectRatio;
-use crate::api::common_resolution::CommonResolution;
+use crate::api::router_aspect_ratio::RouterAspectRatio;
+use crate::api::router_resolution::RouterResolution;
 use crate::api::router_video_model::RouterVideoModel;
 use crate::api::image_list_ref::ImageListRef;
 use crate::api::image_ref::ImageRef;
@@ -94,10 +94,10 @@ pub struct GenerateVideoRequestBuilder {
   pub reference_character_tokens: Option<CharacterListRef>,
 
   /// The resolution to use
-  pub resolution: Option<CommonResolution>,
+  pub resolution: Option<RouterResolution>,
 
   /// The aspect ratio to use
-  pub aspect_ratio: Option<CommonAspectRatio>,
+  pub aspect_ratio: Option<RouterAspectRatio>,
 
   /// How many seconds to generate.
   pub duration_seconds: Option<u16>,

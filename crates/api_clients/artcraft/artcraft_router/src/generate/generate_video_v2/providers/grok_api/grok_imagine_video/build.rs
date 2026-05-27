@@ -8,8 +8,8 @@ use grok_api_client::api::types::video_types::video_aspect_ratio::VideoAspectRat
 use grok_api_client::api::types::video_types::video_resolution::VideoResolution as GrokResolution;
 
 use crate::api::audio_list_ref::AudioListRef;
-use crate::api::common_aspect_ratio::CommonAspectRatio;
-use crate::api::common_resolution::CommonResolution;
+use crate::api::router_aspect_ratio::RouterAspectRatio;
+use crate::api::router_resolution::RouterResolution;
 use crate::api::image_list_ref::ImageListRef;
 use crate::api::image_ref::ImageRef;
 use crate::api::video_list_ref::VideoListRef;
@@ -89,59 +89,59 @@ pub fn build_grok_api_grok_imagine_video(
 // ── Field planners ──
 
 fn plan_aspect_ratio(
-  aspect_ratio: Option<CommonAspectRatio>,
+  aspect_ratio: Option<RouterAspectRatio>,
   _strategy: RequestMismatchMitigationStrategy,
 ) -> Option<GrokAspectRatio> {
   // xAI supports exactly: 1:1, 16:9, 9:16, 4:3, 3:4, 3:2, 2:3.
   // Auto / unsupported ratios fall back to the closest match (or None → xAI default 16:9).
   match aspect_ratio {
     None
-    | Some(CommonAspectRatio::Auto)
-    | Some(CommonAspectRatio::Auto2k)
-    | Some(CommonAspectRatio::Auto3k)
-    | Some(CommonAspectRatio::Auto4k) => None,
+    | Some(RouterAspectRatio::Auto)
+    | Some(RouterAspectRatio::Auto2k)
+    | Some(RouterAspectRatio::Auto3k)
+    | Some(RouterAspectRatio::Auto4k) => None,
 
-    Some(CommonAspectRatio::Square) | Some(CommonAspectRatio::SquareHd) => {
+    Some(RouterAspectRatio::Square) | Some(RouterAspectRatio::SquareHd) => {
       Some(GrokAspectRatio::Square)
     }
 
-    Some(CommonAspectRatio::WideSixteenByNine) | Some(CommonAspectRatio::Wide) => {
+    Some(RouterAspectRatio::WideSixteenByNine) | Some(RouterAspectRatio::Wide) => {
       Some(GrokAspectRatio::Landscape16x9)
     }
-    Some(CommonAspectRatio::TallNineBySixteen) | Some(CommonAspectRatio::Tall) => {
+    Some(RouterAspectRatio::TallNineBySixteen) | Some(RouterAspectRatio::Tall) => {
       Some(GrokAspectRatio::Portrait9x16)
     }
 
-    Some(CommonAspectRatio::WideFourByThree) => Some(GrokAspectRatio::Landscape4x3),
-    Some(CommonAspectRatio::TallThreeByFour) => Some(GrokAspectRatio::Portrait3x4),
+    Some(RouterAspectRatio::WideFourByThree) => Some(GrokAspectRatio::Landscape4x3),
+    Some(RouterAspectRatio::TallThreeByFour) => Some(GrokAspectRatio::Portrait3x4),
 
-    Some(CommonAspectRatio::WideThreeByTwo) => Some(GrokAspectRatio::Landscape3x2),
-    Some(CommonAspectRatio::TallTwoByThree) => Some(GrokAspectRatio::Portrait2x3),
+    Some(RouterAspectRatio::WideThreeByTwo) => Some(GrokAspectRatio::Landscape3x2),
+    Some(RouterAspectRatio::TallTwoByThree) => Some(GrokAspectRatio::Portrait2x3),
 
     // No exact xAI match — pick the closest cardinal direction.
-    Some(CommonAspectRatio::WideFiveByFour)
-    | Some(CommonAspectRatio::WideTwentyOneByNine) => Some(GrokAspectRatio::Landscape16x9),
-    Some(CommonAspectRatio::TallFourByFive)
-    | Some(CommonAspectRatio::TallNineByTwentyOne) => Some(GrokAspectRatio::Portrait9x16),
+    Some(RouterAspectRatio::WideFiveByFour)
+    | Some(RouterAspectRatio::WideTwentyOneByNine) => Some(GrokAspectRatio::Landscape16x9),
+    Some(RouterAspectRatio::TallFourByFive)
+    | Some(RouterAspectRatio::TallNineByTwentyOne) => Some(GrokAspectRatio::Portrait9x16),
   }
 }
 
 fn plan_resolution(
-  resolution: Option<CommonResolution>,
+  resolution: Option<RouterResolution>,
   _strategy: RequestMismatchMitigationStrategy,
 ) -> Option<GrokResolution> {
   // Grok supports 480p and 720p only (1080p is downsized to 720p per xAI docs).
   match resolution {
     None => None,
-    Some(CommonResolution::FourEightyP) => Some(GrokResolution::FourEightyP),
-    Some(CommonResolution::SevenTwentyP) => Some(GrokResolution::SevenTwentyP),
+    Some(RouterResolution::FourEightyP) => Some(GrokResolution::FourEightyP),
+    Some(RouterResolution::SevenTwentyP) => Some(GrokResolution::SevenTwentyP),
     // Higher-than-720p requests get clamped to 720p (Grok's cap).
-    Some(CommonResolution::TenEightyP)
-    | Some(CommonResolution::TwoK)
-    | Some(CommonResolution::ThreeK)
-    | Some(CommonResolution::FourK) => Some(GrokResolution::SevenTwentyP),
+    Some(RouterResolution::TenEightyP)
+    | Some(RouterResolution::TwoK)
+    | Some(RouterResolution::ThreeK)
+    | Some(RouterResolution::FourK) => Some(GrokResolution::SevenTwentyP),
     // Lower-than-480p requests get bumped to 480p (Grok's floor).
-    Some(CommonResolution::HalfK) | Some(CommonResolution::OneK) => {
+    Some(RouterResolution::HalfK) | Some(RouterResolution::OneK) => {
       Some(GrokResolution::FourEightyP)
     }
   }
@@ -225,8 +225,8 @@ mod tests {
   use super::*;
   use tokens::tokens::media_files::MediaFileToken;
 
-  use crate::api::common_aspect_ratio::CommonAspectRatio;
-  use crate::api::common_resolution::CommonResolution;
+  use crate::api::router_aspect_ratio::RouterAspectRatio;
+  use crate::api::router_resolution::RouterResolution;
   use crate::api::router_video_model::RouterVideoModel;
   use crate::api::image_list_ref::ImageListRef;
   use crate::api::image_ref::ImageRef;
@@ -280,56 +280,56 @@ mod tests {
 
     #[test]
     fn square() {
-      let req = unwrap_request(make_builder(|b| { b.aspect_ratio = Some(CommonAspectRatio::Square); }));
+      let req = unwrap_request(make_builder(|b| { b.aspect_ratio = Some(RouterAspectRatio::Square); }));
       assert_eq!(req.request.aspect_ratio, Some(GrokAspectRatio::Square));
     }
 
     #[test]
     fn landscape_16x9() {
-      let req = unwrap_request(make_builder(|b| { b.aspect_ratio = Some(CommonAspectRatio::WideSixteenByNine); }));
+      let req = unwrap_request(make_builder(|b| { b.aspect_ratio = Some(RouterAspectRatio::WideSixteenByNine); }));
       assert_eq!(req.request.aspect_ratio, Some(GrokAspectRatio::Landscape16x9));
     }
 
     #[test]
     fn portrait_9x16() {
-      let req = unwrap_request(make_builder(|b| { b.aspect_ratio = Some(CommonAspectRatio::TallNineBySixteen); }));
+      let req = unwrap_request(make_builder(|b| { b.aspect_ratio = Some(RouterAspectRatio::TallNineBySixteen); }));
       assert_eq!(req.request.aspect_ratio, Some(GrokAspectRatio::Portrait9x16));
     }
 
     #[test]
     fn landscape_4x3() {
-      let req = unwrap_request(make_builder(|b| { b.aspect_ratio = Some(CommonAspectRatio::WideFourByThree); }));
+      let req = unwrap_request(make_builder(|b| { b.aspect_ratio = Some(RouterAspectRatio::WideFourByThree); }));
       assert_eq!(req.request.aspect_ratio, Some(GrokAspectRatio::Landscape4x3));
     }
 
     #[test]
     fn portrait_3x4() {
-      let req = unwrap_request(make_builder(|b| { b.aspect_ratio = Some(CommonAspectRatio::TallThreeByFour); }));
+      let req = unwrap_request(make_builder(|b| { b.aspect_ratio = Some(RouterAspectRatio::TallThreeByFour); }));
       assert_eq!(req.request.aspect_ratio, Some(GrokAspectRatio::Portrait3x4));
     }
 
     #[test]
     fn landscape_3x2() {
-      let req = unwrap_request(make_builder(|b| { b.aspect_ratio = Some(CommonAspectRatio::WideThreeByTwo); }));
+      let req = unwrap_request(make_builder(|b| { b.aspect_ratio = Some(RouterAspectRatio::WideThreeByTwo); }));
       assert_eq!(req.request.aspect_ratio, Some(GrokAspectRatio::Landscape3x2));
     }
 
     #[test]
     fn portrait_2x3() {
-      let req = unwrap_request(make_builder(|b| { b.aspect_ratio = Some(CommonAspectRatio::TallTwoByThree); }));
+      let req = unwrap_request(make_builder(|b| { b.aspect_ratio = Some(RouterAspectRatio::TallTwoByThree); }));
       assert_eq!(req.request.aspect_ratio, Some(GrokAspectRatio::Portrait2x3));
     }
 
     #[test]
     fn auto_maps_to_none() {
-      let req = unwrap_request(make_builder(|b| { b.aspect_ratio = Some(CommonAspectRatio::Auto); }));
+      let req = unwrap_request(make_builder(|b| { b.aspect_ratio = Some(RouterAspectRatio::Auto); }));
       assert_eq!(req.request.aspect_ratio, None);
     }
 
     #[test]
     fn unsupported_wide_falls_back_to_16x9() {
       let req = unwrap_request(make_builder(|b| {
-        b.aspect_ratio = Some(CommonAspectRatio::WideTwentyOneByNine);
+        b.aspect_ratio = Some(RouterAspectRatio::WideTwentyOneByNine);
       }));
       assert_eq!(req.request.aspect_ratio, Some(GrokAspectRatio::Landscape16x9));
     }
@@ -337,7 +337,7 @@ mod tests {
     #[test]
     fn unsupported_tall_falls_back_to_9x16() {
       let req = unwrap_request(make_builder(|b| {
-        b.aspect_ratio = Some(CommonAspectRatio::TallNineByTwentyOne);
+        b.aspect_ratio = Some(RouterAspectRatio::TallNineByTwentyOne);
       }));
       assert_eq!(req.request.aspect_ratio, Some(GrokAspectRatio::Portrait9x16));
     }
@@ -350,31 +350,31 @@ mod tests {
 
     #[test]
     fn res_480p() {
-      let req = unwrap_request(make_builder(|b| { b.resolution = Some(CommonResolution::FourEightyP); }));
+      let req = unwrap_request(make_builder(|b| { b.resolution = Some(RouterResolution::FourEightyP); }));
       assert_eq!(req.request.resolution, Some(GrokResolution::FourEightyP));
     }
 
     #[test]
     fn res_720p() {
-      let req = unwrap_request(make_builder(|b| { b.resolution = Some(CommonResolution::SevenTwentyP); }));
+      let req = unwrap_request(make_builder(|b| { b.resolution = Some(RouterResolution::SevenTwentyP); }));
       assert_eq!(req.request.resolution, Some(GrokResolution::SevenTwentyP));
     }
 
     #[test]
     fn res_1080p_clamps_to_720p() {
-      let req = unwrap_request(make_builder(|b| { b.resolution = Some(CommonResolution::TenEightyP); }));
+      let req = unwrap_request(make_builder(|b| { b.resolution = Some(RouterResolution::TenEightyP); }));
       assert_eq!(req.request.resolution, Some(GrokResolution::SevenTwentyP));
     }
 
     #[test]
     fn res_4k_clamps_to_720p() {
-      let req = unwrap_request(make_builder(|b| { b.resolution = Some(CommonResolution::FourK); }));
+      let req = unwrap_request(make_builder(|b| { b.resolution = Some(RouterResolution::FourK); }));
       assert_eq!(req.request.resolution, Some(GrokResolution::SevenTwentyP));
     }
 
     #[test]
     fn res_1k_bumps_to_480p() {
-      let req = unwrap_request(make_builder(|b| { b.resolution = Some(CommonResolution::OneK); }));
+      let req = unwrap_request(make_builder(|b| { b.resolution = Some(RouterResolution::OneK); }));
       assert_eq!(req.request.resolution, Some(GrokResolution::FourEightyP));
     }
 
@@ -507,8 +507,8 @@ mod tests {
         ]));
         b.reference_videos = Some(VideoListRef::Urls(vec!["https://example.com/v.mp4".to_string()]));
         b.reference_audio = Some(AudioListRef::Urls(vec!["https://example.com/a.wav".to_string()]));
-        b.resolution = Some(CommonResolution::SevenTwentyP);
-        b.aspect_ratio = Some(CommonAspectRatio::WideSixteenByNine);
+        b.resolution = Some(RouterResolution::SevenTwentyP);
+        b.aspect_ratio = Some(RouterAspectRatio::WideSixteenByNine);
         b.duration_seconds = Some(8);
       }));
       // Kept: prompt + start_frame + resolution + aspect_ratio + duration.

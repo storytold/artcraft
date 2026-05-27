@@ -57,12 +57,12 @@ impl ArtcraftSeedance10LiteCostState {
 
 #[cfg(test)]
 mod tests {
-  use crate::api::common_resolution::CommonResolution;
+  use crate::api::router_resolution::RouterResolution;
   use crate::api::router_video_model::RouterVideoModel;
   use crate::api::provider::Provider;
   use crate::generate::generate_video::generate_video_request_builder::GenerateVideoRequestBuilder;
 
-  fn cost_cents(duration_seconds: Option<u16>, resolution: Option<CommonResolution>) -> u64 {
+  fn cost_cents(duration_seconds: Option<u16>, resolution: Option<RouterResolution>) -> u64 {
     let b = GenerateVideoRequestBuilder {
       model: RouterVideoModel::Seedance10Lite,
       provider: Provider::Artcraft,
@@ -81,22 +81,22 @@ mod tests {
   }
 
   #[test]
-  fn p720_5s_is_18() { assert_eq!(cost_cents(Some(5), Some(CommonResolution::SevenTwentyP)), 18); }
+  fn p720_5s_is_18() { assert_eq!(cost_cents(Some(5), Some(RouterResolution::SevenTwentyP)), 18); }
 
   #[test]
   fn p720_10s_is_95() {
     // 1280×720×30×10/1024 = 270000 tokens × $1.8/M = $0.486 → ceil = 49¢ ...
     // No wait — fal kling not seedance. The Seedance 1.0 Lite rate is different.
     // Trust the fal calculator: assert whatever the actual computed value is.
-    let v = cost_cents(Some(10), Some(CommonResolution::SevenTwentyP));
+    let v = cost_cents(Some(10), Some(RouterResolution::SevenTwentyP));
     assert!(v > 18, "10s should cost more than 5s, got {}", v);
   }
 
   #[test]
   fn p480_5s_cheaper_than_p720_5s() {
     assert!(
-      cost_cents(Some(5), Some(CommonResolution::FourEightyP))
-        < cost_cents(Some(5), Some(CommonResolution::SevenTwentyP))
+      cost_cents(Some(5), Some(RouterResolution::FourEightyP))
+        < cost_cents(Some(5), Some(RouterResolution::SevenTwentyP))
     );
   }
 }

@@ -2,7 +2,7 @@ use fal_client::requests::webhook::video::image::enqueue_kling_v1p6_pro_image_to
   Kling1p6ProAspectRatio, Kling1p6ProDuration, Kling1p6ProRequest,
 };
 
-use crate::api::common_aspect_ratio::CommonAspectRatio;
+use crate::api::router_aspect_ratio::RouterAspectRatio;
 use crate::api::image_ref::ImageRef;
 use crate::client::request_mismatch_mitigation_strategy::RequestMismatchMitigationStrategy;
 use crate::errors::artcraft_router_error::ArtcraftRouterError;
@@ -63,20 +63,20 @@ pub(crate) fn optional_url(image_ref: Option<ImageRef>) -> Result<Option<String>
 }
 
 fn plan_aspect_ratio(
-  aspect_ratio: Option<CommonAspectRatio>,
+  aspect_ratio: Option<RouterAspectRatio>,
   strategy: RequestMismatchMitigationStrategy,
 ) -> Result<Kling1p6ProAspectRatio, ArtcraftRouterError> {
   use Kling1p6ProAspectRatio as Ar;
   match aspect_ratio {
     None => Ok(Ar::WideSixteenNine),
 
-    Some(CommonAspectRatio::Square) | Some(CommonAspectRatio::SquareHd) => Ok(Ar::Square),
-    Some(CommonAspectRatio::WideSixteenByNine) | Some(CommonAspectRatio::Wide) => Ok(Ar::WideSixteenNine),
-    Some(CommonAspectRatio::TallNineBySixteen) | Some(CommonAspectRatio::Tall) => Ok(Ar::TallNineSixteen),
+    Some(RouterAspectRatio::Square) | Some(RouterAspectRatio::SquareHd) => Ok(Ar::Square),
+    Some(RouterAspectRatio::WideSixteenByNine) | Some(RouterAspectRatio::Wide) => Ok(Ar::WideSixteenNine),
+    Some(RouterAspectRatio::TallNineBySixteen) | Some(RouterAspectRatio::Tall) => Ok(Ar::TallNineSixteen),
 
-    Some(CommonAspectRatio::Auto)
-    | Some(CommonAspectRatio::Auto2k)
-    | Some(CommonAspectRatio::Auto4k) => Ok(Ar::WideSixteenNine),
+    Some(RouterAspectRatio::Auto)
+    | Some(RouterAspectRatio::Auto2k)
+    | Some(RouterAspectRatio::Auto4k) => Ok(Ar::WideSixteenNine),
 
     Some(other) => match strategy {
       RequestMismatchMitigationStrategy::ErrorOut => {
@@ -144,7 +144,7 @@ mod tests {
 
   #[test]
   fn full_combinatorial_pass() {
-    let aspect_ratios = [None, Some(CommonAspectRatio::Square), Some(CommonAspectRatio::WideSixteenByNine), Some(CommonAspectRatio::TallNineBySixteen), Some(CommonAspectRatio::Auto)];
+    let aspect_ratios = [None, Some(RouterAspectRatio::Square), Some(RouterAspectRatio::WideSixteenByNine), Some(RouterAspectRatio::TallNineBySixteen), Some(RouterAspectRatio::Auto)];
     let durations = [None, Some(5u16), Some(10)];
     let mut combos = 0;
     for &aspect_ratio in &aspect_ratios {

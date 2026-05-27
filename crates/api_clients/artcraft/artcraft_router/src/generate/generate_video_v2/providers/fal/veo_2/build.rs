@@ -3,7 +3,7 @@ use fal_client::requests::webhook::video::image::enqueue_veo_2_image_to_video_we
 };
 use fal_client::requests::webhook::video::text::enqueue_veo_2_text_to_video_webhook::Veo2TextToVideoRequest;
 
-use crate::api::common_aspect_ratio::CommonAspectRatio;
+use crate::api::router_aspect_ratio::RouterAspectRatio;
 use crate::api::image_ref::ImageRef;
 use crate::client::request_mismatch_mitigation_strategy::RequestMismatchMitigationStrategy;
 use crate::errors::artcraft_router_error::ArtcraftRouterError;
@@ -52,19 +52,19 @@ pub fn build_fal_veo_2(
 }
 
 fn plan_aspect_ratio(
-  aspect_ratio: Option<CommonAspectRatio>,
+  aspect_ratio: Option<RouterAspectRatio>,
   strategy: RequestMismatchMitigationStrategy,
 ) -> Result<Veo2AspectRatio, ArtcraftRouterError> {
   use Veo2AspectRatio as Ar;
   match aspect_ratio {
     None
-    | Some(CommonAspectRatio::Auto)
-    | Some(CommonAspectRatio::Auto2k)
-    | Some(CommonAspectRatio::Auto3k)
-    | Some(CommonAspectRatio::Auto4k) => Ok(Ar::Auto),
+    | Some(RouterAspectRatio::Auto)
+    | Some(RouterAspectRatio::Auto2k)
+    | Some(RouterAspectRatio::Auto3k)
+    | Some(RouterAspectRatio::Auto4k) => Ok(Ar::Auto),
 
-    Some(CommonAspectRatio::WideSixteenByNine) | Some(CommonAspectRatio::Wide) => Ok(Ar::WideSixteenNine),
-    Some(CommonAspectRatio::TallNineBySixteen) | Some(CommonAspectRatio::Tall) => Ok(Ar::TallNineSixteen),
+    Some(RouterAspectRatio::WideSixteenByNine) | Some(RouterAspectRatio::Wide) => Ok(Ar::WideSixteenNine),
+    Some(RouterAspectRatio::TallNineBySixteen) | Some(RouterAspectRatio::Tall) => Ok(Ar::TallNineSixteen),
 
     Some(unsupported_ar) => match strategy {
       RequestMismatchMitigationStrategy::ErrorOut => {
@@ -246,26 +246,26 @@ mod tests {
 
   mod aspect_ratio_conversions {
     use super::*;
-    use crate::api::common_aspect_ratio::CommonAspectRatio;
+    use crate::api::router_aspect_ratio::RouterAspectRatio;
 
     #[test]
     fn t2v_auto() {
       let mut b = base_builder();
-      b.aspect_ratio = Some(CommonAspectRatio::Auto);
+      b.aspect_ratio = Some(RouterAspectRatio::Auto);
       assert!(matches!(t2v_request(b).aspect_ratio, Veo2AspectRatio::Auto));
     }
 
     #[test]
     fn t2v_sixteen_nine() {
       let mut b = base_builder();
-      b.aspect_ratio = Some(CommonAspectRatio::WideSixteenByNine);
+      b.aspect_ratio = Some(RouterAspectRatio::WideSixteenByNine);
       assert!(matches!(t2v_request(b).aspect_ratio, Veo2AspectRatio::WideSixteenNine));
     }
 
     #[test]
     fn t2v_unsupported_aspect_ratio_falls_back_with_pay_more() {
       let mut b = base_builder();
-      b.aspect_ratio = Some(CommonAspectRatio::Square);
+      b.aspect_ratio = Some(RouterAspectRatio::Square);
       b.request_mismatch_mitigation_strategy = RequestMismatchMitigationStrategy::PayMoreUpgrade;
       assert!(matches!(t2v_request(b).aspect_ratio, Veo2AspectRatio::Auto));
     }
@@ -273,7 +273,7 @@ mod tests {
     #[test]
     fn t2v_unsupported_aspect_ratio_errors_with_error_out() {
       let mut b = base_builder();
-      b.aspect_ratio = Some(CommonAspectRatio::Square);
+      b.aspect_ratio = Some(RouterAspectRatio::Square);
       b.request_mismatch_mitigation_strategy = RequestMismatchMitigationStrategy::ErrorOut;
       assert!(build_fal_veo_2(b).is_err());
     }
@@ -281,8 +281,8 @@ mod tests {
 
   #[test]
   fn full_combinatorial_pass() {
-    use crate::api::common_aspect_ratio::CommonAspectRatio;
-    let aspect_ratios = [None, Some(CommonAspectRatio::Auto), Some(CommonAspectRatio::WideSixteenByNine), Some(CommonAspectRatio::TallNineBySixteen)];
+    use crate::api::router_aspect_ratio::RouterAspectRatio;
+    let aspect_ratios = [None, Some(RouterAspectRatio::Auto), Some(RouterAspectRatio::WideSixteenByNine), Some(RouterAspectRatio::TallNineBySixteen)];
     let durations = [None, Some(5u16), Some(6), Some(7), Some(8)];
 
     let mut combos = 0;

@@ -109,14 +109,14 @@ fn size_bucket(aspect_ratio: Option<CommonAspectRatioEnum>) -> SizeBucket {
 
 #[cfg(test)]
 mod tests {
-  use crate::api::common_aspect_ratio::CommonAspectRatio;
+  use crate::api::router_aspect_ratio::RouterAspectRatio;
   use crate::api::router_image_model::RouterImageModel;
-  use crate::api::common_quality::CommonQuality;
+  use crate::api::router_quality::RouterQuality;
   use crate::api::provider::Provider;
   use crate::client::request_mismatch_mitigation_strategy::RequestMismatchMitigationStrategy;
   use crate::generate::generate_image::generate_image_request_builder::GenerateImageRequestBuilder;
 
-  fn cost_cents(quality: Option<CommonQuality>, aspect_ratio: Option<CommonAspectRatio>, batch: u16) -> u64 {
+  fn cost_cents(quality: Option<RouterQuality>, aspect_ratio: Option<RouterAspectRatio>, batch: u16) -> u64 {
     let builder = GenerateImageRequestBuilder {
       model: RouterImageModel::GptImage2,
       provider: Provider::Artcraft,
@@ -139,63 +139,63 @@ mod tests {
   // ── Low (1¢ all sizes) ────────────────────────────────────────────────────
 
   #[test]
-  fn low_square() { assert_eq!(cost_cents(Some(CommonQuality::Low), Some(CommonAspectRatio::Square), 1), 1); }
+  fn low_square() { assert_eq!(cost_cents(Some(RouterQuality::Low), Some(RouterAspectRatio::Square), 1), 1); }
 
   #[test]
-  fn low_square_hd() { assert_eq!(cost_cents(Some(CommonQuality::Low), Some(CommonAspectRatio::SquareHd), 1), 1); }
+  fn low_square_hd() { assert_eq!(cost_cents(Some(RouterQuality::Low), Some(RouterAspectRatio::SquareHd), 1), 1); }
 
   #[test]
-  fn low_landscape_4x3() { assert_eq!(cost_cents(Some(CommonQuality::Low), Some(CommonAspectRatio::WideFourByThree), 1), 1); }
+  fn low_landscape_4x3() { assert_eq!(cost_cents(Some(RouterQuality::Low), Some(RouterAspectRatio::WideFourByThree), 1), 1); }
 
   #[test]
-  fn low_four() { assert_eq!(cost_cents(Some(CommonQuality::Low), None, 4), 4); }
+  fn low_four() { assert_eq!(cost_cents(Some(RouterQuality::Low), None, 4), 4); }
 
   // ── Medium ────────────────────────────────────────────────────────────────
 
   #[test]
-  fn medium_square_is_6c() { assert_eq!(cost_cents(Some(CommonQuality::Medium), Some(CommonAspectRatio::Square), 1), 6); }
+  fn medium_square_is_6c() { assert_eq!(cost_cents(Some(RouterQuality::Medium), Some(RouterAspectRatio::Square), 1), 6); }
 
   #[test]
-  fn medium_square_hd_is_6c() { assert_eq!(cost_cents(Some(CommonQuality::Medium), Some(CommonAspectRatio::SquareHd), 1), 6); }
+  fn medium_square_hd_is_6c() { assert_eq!(cost_cents(Some(RouterQuality::Medium), Some(RouterAspectRatio::SquareHd), 1), 6); }
 
   #[test]
-  fn medium_auto_is_6c() { assert_eq!(cost_cents(Some(CommonQuality::Medium), None, 1), 6); }
+  fn medium_auto_is_6c() { assert_eq!(cost_cents(Some(RouterQuality::Medium), None, 1), 6); }
 
   #[test]
-  fn medium_landscape_4x3_is_4c() { assert_eq!(cost_cents(Some(CommonQuality::Medium), Some(CommonAspectRatio::WideFourByThree), 1), 4); }
+  fn medium_landscape_4x3_is_4c() { assert_eq!(cost_cents(Some(RouterQuality::Medium), Some(RouterAspectRatio::WideFourByThree), 1), 4); }
 
   #[test]
-  fn medium_portrait_4x3_is_4c() { assert_eq!(cost_cents(Some(CommonQuality::Medium), Some(CommonAspectRatio::TallThreeByFour), 1), 4); }
+  fn medium_portrait_4x3_is_4c() { assert_eq!(cost_cents(Some(RouterQuality::Medium), Some(RouterAspectRatio::TallThreeByFour), 1), 4); }
 
   #[test]
-  fn medium_landscape_16x9_is_4c() { assert_eq!(cost_cents(Some(CommonQuality::Medium), Some(CommonAspectRatio::WideSixteenByNine), 1), 4); }
+  fn medium_landscape_16x9_is_4c() { assert_eq!(cost_cents(Some(RouterQuality::Medium), Some(RouterAspectRatio::WideSixteenByNine), 1), 4); }
 
   #[test]
-  fn medium_portrait_16x9_is_4c() { assert_eq!(cost_cents(Some(CommonQuality::Medium), Some(CommonAspectRatio::TallNineBySixteen), 1), 4); }
+  fn medium_portrait_16x9_is_4c() { assert_eq!(cost_cents(Some(RouterQuality::Medium), Some(RouterAspectRatio::TallNineBySixteen), 1), 4); }
 
   #[test]
-  fn medium_square_four_is_24c() { assert_eq!(cost_cents(Some(CommonQuality::Medium), Some(CommonAspectRatio::Square), 4), 24); }
+  fn medium_square_four_is_24c() { assert_eq!(cost_cents(Some(RouterQuality::Medium), Some(RouterAspectRatio::Square), 4), 24); }
 
   // ── High ──────────────────────────────────────────────────────────────────
 
   #[test]
-  fn high_square_is_22c() { assert_eq!(cost_cents(Some(CommonQuality::High), Some(CommonAspectRatio::Square), 1), 22); }
+  fn high_square_is_22c() { assert_eq!(cost_cents(Some(RouterQuality::High), Some(RouterAspectRatio::Square), 1), 22); }
 
   #[test]
-  fn high_square_hd_is_23c() { assert_eq!(cost_cents(Some(CommonQuality::High), Some(CommonAspectRatio::SquareHd), 1), 23); }
+  fn high_square_hd_is_23c() { assert_eq!(cost_cents(Some(RouterQuality::High), Some(RouterAspectRatio::SquareHd), 1), 23); }
 
   #[test]
-  fn high_auto_is_23c() { assert_eq!(cost_cents(Some(CommonQuality::High), None, 1), 23); }
+  fn high_auto_is_23c() { assert_eq!(cost_cents(Some(RouterQuality::High), None, 1), 23); }
 
   #[test]
-  fn high_landscape_4x3_is_15c() { assert_eq!(cost_cents(Some(CommonQuality::High), Some(CommonAspectRatio::WideFourByThree), 1), 15); }
+  fn high_landscape_4x3_is_15c() { assert_eq!(cost_cents(Some(RouterQuality::High), Some(RouterAspectRatio::WideFourByThree), 1), 15); }
 
   #[test]
-  fn high_landscape_16x9_is_16c() { assert_eq!(cost_cents(Some(CommonQuality::High), Some(CommonAspectRatio::WideSixteenByNine), 1), 16); }
+  fn high_landscape_16x9_is_16c() { assert_eq!(cost_cents(Some(RouterQuality::High), Some(RouterAspectRatio::WideSixteenByNine), 1), 16); }
 
   #[test]
-  fn high_square_four_is_88c() { assert_eq!(cost_cents(Some(CommonQuality::High), Some(CommonAspectRatio::Square), 4), 88); }
+  fn high_square_four_is_88c() { assert_eq!(cost_cents(Some(RouterQuality::High), Some(RouterAspectRatio::Square), 4), 88); }
 
   #[test]
-  fn high_square_hd_four_is_92c() { assert_eq!(cost_cents(Some(CommonQuality::High), Some(CommonAspectRatio::SquareHd), 4), 92); }
+  fn high_square_hd_four_is_92c() { assert_eq!(cost_cents(Some(RouterQuality::High), Some(RouterAspectRatio::SquareHd), 4), 92); }
 }

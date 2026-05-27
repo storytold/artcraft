@@ -7,8 +7,8 @@ use fal_client::requests::api::image::text::nano_banana_pro_text_to_image::api::
   NanoBananaProTextToImageRequest, NanoBananaProTextToImageResolution,
 };
 
-use crate::api::common_aspect_ratio::CommonAspectRatio;
-use crate::api::common_resolution::CommonResolution;
+use crate::api::router_aspect_ratio::RouterAspectRatio;
+use crate::api::router_resolution::RouterResolution;
 use crate::api::image_list_ref::ImageListRef;
 use crate::client::request_mismatch_mitigation_strategy::RequestMismatchMitigationStrategy;
 use crate::errors::artcraft_router_error::ArtcraftRouterError;
@@ -116,15 +116,15 @@ enum PlannedResolution {
   FourK,
 }
 
-fn plan_resolution(resolution: Option<CommonResolution>) -> Option<PlannedResolution> {
+fn plan_resolution(resolution: Option<RouterResolution>) -> Option<PlannedResolution> {
   resolution.map(|r| match r {
-    CommonResolution::HalfK | CommonResolution::FourEightyP | CommonResolution::SevenTwentyP
-    | CommonResolution::OneK | CommonResolution::TenEightyP => PlannedResolution::OneK,
-    CommonResolution::TwoK => PlannedResolution::TwoK,
+    RouterResolution::HalfK | RouterResolution::FourEightyP | RouterResolution::SevenTwentyP
+    | RouterResolution::OneK | RouterResolution::TenEightyP => PlannedResolution::OneK,
+    RouterResolution::TwoK => PlannedResolution::TwoK,
     // 3K isn't natively supported on Fal nano_banana_pro; v1 downgrades to 2K
     // pricing (and TwoK resolution). Match v1 here so cost+behavior agree.
-    CommonResolution::ThreeK => PlannedResolution::TwoK,
-    CommonResolution::FourK => PlannedResolution::FourK,
+    RouterResolution::ThreeK => PlannedResolution::TwoK,
+    RouterResolution::FourK => PlannedResolution::FourK,
   })
 }
 
@@ -147,44 +147,44 @@ fn to_edit_resolution(r: PlannedResolution) -> NanoBananaProEditImageResolution 
 // ── Aspect ratio ──
 
 fn plan_t2i_aspect_ratio(
-  aspect_ratio: Option<CommonAspectRatio>,
+  aspect_ratio: Option<RouterAspectRatio>,
 ) -> Option<NanoBananaProTextToImageAspectRatio> {
   use NanoBananaProTextToImageAspectRatio as T;
   aspect_ratio.and_then(|ar| match ar {
-    CommonAspectRatio::Square | CommonAspectRatio::SquareHd => Some(T::OneByOne),
-    CommonAspectRatio::WideFiveByFour => Some(T::FiveByFour),
-    CommonAspectRatio::WideFourByThree => Some(T::FourByThree),
-    CommonAspectRatio::WideThreeByTwo | CommonAspectRatio::Wide => Some(T::ThreeByTwo),
-    CommonAspectRatio::WideSixteenByNine => Some(T::SixteenByNine),
-    CommonAspectRatio::WideTwentyOneByNine => Some(T::TwentyOneByNine),
-    CommonAspectRatio::TallFourByFive => Some(T::FourByFive),
-    CommonAspectRatio::TallThreeByFour => Some(T::ThreeByFour),
-    CommonAspectRatio::TallTwoByThree | CommonAspectRatio::Tall => Some(T::TwoByThree),
-    CommonAspectRatio::TallNineBySixteen => Some(T::NineBySixteen),
-    CommonAspectRatio::TallNineByTwentyOne => Some(T::NineBySixteen), // nearest match
-    CommonAspectRatio::Auto | CommonAspectRatio::Auto2k
-    | CommonAspectRatio::Auto3k | CommonAspectRatio::Auto4k => None,
+    RouterAspectRatio::Square | RouterAspectRatio::SquareHd => Some(T::OneByOne),
+    RouterAspectRatio::WideFiveByFour => Some(T::FiveByFour),
+    RouterAspectRatio::WideFourByThree => Some(T::FourByThree),
+    RouterAspectRatio::WideThreeByTwo | RouterAspectRatio::Wide => Some(T::ThreeByTwo),
+    RouterAspectRatio::WideSixteenByNine => Some(T::SixteenByNine),
+    RouterAspectRatio::WideTwentyOneByNine => Some(T::TwentyOneByNine),
+    RouterAspectRatio::TallFourByFive => Some(T::FourByFive),
+    RouterAspectRatio::TallThreeByFour => Some(T::ThreeByFour),
+    RouterAspectRatio::TallTwoByThree | RouterAspectRatio::Tall => Some(T::TwoByThree),
+    RouterAspectRatio::TallNineBySixteen => Some(T::NineBySixteen),
+    RouterAspectRatio::TallNineByTwentyOne => Some(T::NineBySixteen), // nearest match
+    RouterAspectRatio::Auto | RouterAspectRatio::Auto2k
+    | RouterAspectRatio::Auto3k | RouterAspectRatio::Auto4k => None,
   })
 }
 
 fn plan_edit_aspect_ratio(
-  aspect_ratio: Option<CommonAspectRatio>,
+  aspect_ratio: Option<RouterAspectRatio>,
 ) -> Option<NanoBananaProEditImageAspectRatio> {
   use NanoBananaProEditImageAspectRatio as E;
   aspect_ratio.map(|ar| match ar {
-    CommonAspectRatio::Auto | CommonAspectRatio::Auto2k
-    | CommonAspectRatio::Auto3k | CommonAspectRatio::Auto4k => E::Auto,
-    CommonAspectRatio::Square | CommonAspectRatio::SquareHd => E::OneByOne,
-    CommonAspectRatio::WideFiveByFour => E::FiveByFour,
-    CommonAspectRatio::WideFourByThree => E::FourByThree,
-    CommonAspectRatio::WideThreeByTwo | CommonAspectRatio::Wide => E::ThreeByTwo,
-    CommonAspectRatio::WideSixteenByNine => E::SixteenByNine,
-    CommonAspectRatio::WideTwentyOneByNine => E::TwentyOneByNine,
-    CommonAspectRatio::TallFourByFive => E::FourByFive,
-    CommonAspectRatio::TallThreeByFour => E::ThreeByFour,
-    CommonAspectRatio::TallTwoByThree | CommonAspectRatio::Tall => E::TwoByThree,
-    CommonAspectRatio::TallNineBySixteen => E::NineBySixteen,
-    CommonAspectRatio::TallNineByTwentyOne => E::NineBySixteen, // nearest match
+    RouterAspectRatio::Auto | RouterAspectRatio::Auto2k
+    | RouterAspectRatio::Auto3k | RouterAspectRatio::Auto4k => E::Auto,
+    RouterAspectRatio::Square | RouterAspectRatio::SquareHd => E::OneByOne,
+    RouterAspectRatio::WideFiveByFour => E::FiveByFour,
+    RouterAspectRatio::WideFourByThree => E::FourByThree,
+    RouterAspectRatio::WideThreeByTwo | RouterAspectRatio::Wide => E::ThreeByTwo,
+    RouterAspectRatio::WideSixteenByNine => E::SixteenByNine,
+    RouterAspectRatio::WideTwentyOneByNine => E::TwentyOneByNine,
+    RouterAspectRatio::TallFourByFive => E::FourByFive,
+    RouterAspectRatio::TallThreeByFour => E::ThreeByFour,
+    RouterAspectRatio::TallTwoByThree | RouterAspectRatio::Tall => E::TwoByThree,
+    RouterAspectRatio::TallNineBySixteen => E::NineBySixteen,
+    RouterAspectRatio::TallNineByTwentyOne => E::NineBySixteen, // nearest match
   })
 }
 
@@ -368,7 +368,7 @@ mod tests {
     #[test]
     fn one_k_maps_to_one_k() {
       let builder = GenerateImageRequestBuilder {
-        resolution: Some(CommonResolution::OneK),
+        resolution: Some(RouterResolution::OneK),
         ..base_builder()
       };
       let req = unwrap_t2i(build_fal_nano_banana_pro(builder));
@@ -378,7 +378,7 @@ mod tests {
     #[test]
     fn two_k_maps_to_two_k() {
       let builder = GenerateImageRequestBuilder {
-        resolution: Some(CommonResolution::TwoK),
+        resolution: Some(RouterResolution::TwoK),
         ..base_builder()
       };
       let req = unwrap_t2i(build_fal_nano_banana_pro(builder));
@@ -388,7 +388,7 @@ mod tests {
     #[test]
     fn four_k_maps_to_four_k() {
       let builder = GenerateImageRequestBuilder {
-        resolution: Some(CommonResolution::FourK),
+        resolution: Some(RouterResolution::FourK),
         ..base_builder()
       };
       let req = unwrap_t2i(build_fal_nano_banana_pro(builder));
@@ -399,7 +399,7 @@ mod tests {
     fn three_k_rounds_down_to_two_k() {
       // Match v1's downgrade behavior: 3K → 2K (cheaper, no 3K native support).
       let builder = GenerateImageRequestBuilder {
-        resolution: Some(CommonResolution::ThreeK),
+        resolution: Some(RouterResolution::ThreeK),
         ..base_builder()
       };
       let req = unwrap_t2i(build_fal_nano_banana_pro(builder));
@@ -409,7 +409,7 @@ mod tests {
     #[test]
     fn half_k_rounds_to_one_k() {
       let builder = GenerateImageRequestBuilder {
-        resolution: Some(CommonResolution::HalfK),
+        resolution: Some(RouterResolution::HalfK),
         ..base_builder()
       };
       let req = unwrap_t2i(build_fal_nano_banana_pro(builder));
@@ -420,7 +420,7 @@ mod tests {
     fn edit_mode_resolution() {
       let builder = GenerateImageRequestBuilder {
         image_inputs: Some(ImageListRef::Urls(vec!["https://example.com/img.jpg".to_string()])),
-        resolution: Some(CommonResolution::FourK),
+        resolution: Some(RouterResolution::FourK),
         ..base_builder()
       };
       let req = unwrap_edit(build_fal_nano_banana_pro(builder));
@@ -442,7 +442,7 @@ mod tests {
     #[test]
     fn square_maps_to_one_by_one() {
       let builder = GenerateImageRequestBuilder {
-        aspect_ratio: Some(CommonAspectRatio::Square),
+        aspect_ratio: Some(RouterAspectRatio::Square),
         ..base_builder()
       };
       let req = unwrap_t2i(build_fal_nano_banana_pro(builder));
@@ -452,7 +452,7 @@ mod tests {
     #[test]
     fn wide_sixteen_by_nine() {
       let builder = GenerateImageRequestBuilder {
-        aspect_ratio: Some(CommonAspectRatio::WideSixteenByNine),
+        aspect_ratio: Some(RouterAspectRatio::WideSixteenByNine),
         ..base_builder()
       };
       let req = unwrap_t2i(build_fal_nano_banana_pro(builder));
@@ -462,7 +462,7 @@ mod tests {
     #[test]
     fn tall_nine_by_sixteen() {
       let builder = GenerateImageRequestBuilder {
-        aspect_ratio: Some(CommonAspectRatio::TallNineBySixteen),
+        aspect_ratio: Some(RouterAspectRatio::TallNineBySixteen),
         ..base_builder()
       };
       let req = unwrap_t2i(build_fal_nano_banana_pro(builder));
@@ -472,7 +472,7 @@ mod tests {
     #[test]
     fn auto_yields_none_for_t2i() {
       let builder = GenerateImageRequestBuilder {
-        aspect_ratio: Some(CommonAspectRatio::Auto),
+        aspect_ratio: Some(RouterAspectRatio::Auto),
         ..base_builder()
       };
       let req = unwrap_t2i(build_fal_nano_banana_pro(builder));
@@ -482,7 +482,7 @@ mod tests {
     #[test]
     fn auto_yields_auto_for_edit() {
       let builder = GenerateImageRequestBuilder {
-        aspect_ratio: Some(CommonAspectRatio::Auto),
+        aspect_ratio: Some(RouterAspectRatio::Auto),
         image_inputs: Some(ImageListRef::Urls(vec!["https://example.com/img.jpg".to_string()])),
         ..base_builder()
       };
@@ -493,7 +493,7 @@ mod tests {
     #[test]
     fn edit_square() {
       let builder = GenerateImageRequestBuilder {
-        aspect_ratio: Some(CommonAspectRatio::SquareHd),
+        aspect_ratio: Some(RouterAspectRatio::SquareHd),
         image_inputs: Some(ImageListRef::Urls(vec!["https://example.com/img.jpg".to_string()])),
         ..base_builder()
       };

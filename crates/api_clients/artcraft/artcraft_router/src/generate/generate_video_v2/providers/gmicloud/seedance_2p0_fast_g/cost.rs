@@ -29,7 +29,7 @@ impl GmiCloudSeedance2p0UltraFastCostState {
 
 #[cfg(test)]
 mod tests {
-  use crate::api::common_resolution::CommonResolution;
+  use crate::api::router_resolution::RouterResolution;
   use crate::api::router_video_model::RouterVideoModel;
   use crate::api::provider::Provider;
   use crate::generate::generate_video::generate_video_request_builder::GenerateVideoRequestBuilder;
@@ -62,19 +62,19 @@ mod tests {
     #[test]
     fn p480_5s() {
       // 1.0 * 5 = 5¢
-      assert_eq!(cost_cents(Some(CommonResolution::FourEightyP), 5), 5);
+      assert_eq!(cost_cents(Some(RouterResolution::FourEightyP), 5), 5);
     }
 
     #[test]
     fn p480_10s() {
       // 1.0 * 10 = 10¢
-      assert_eq!(cost_cents(Some(CommonResolution::FourEightyP), 10), 10);
+      assert_eq!(cost_cents(Some(RouterResolution::FourEightyP), 10), 10);
     }
 
     #[test]
     fn p480_15s() {
       // 1.0 * 15 = 15¢
-      assert_eq!(cost_cents(Some(CommonResolution::FourEightyP), 15), 15);
+      assert_eq!(cost_cents(Some(RouterResolution::FourEightyP), 15), 15);
     }
   }
 
@@ -83,19 +83,19 @@ mod tests {
 
     #[test]
     fn higher_resolution_costs_more() {
-      let c480 = cost_cents(Some(CommonResolution::FourEightyP), 10);
-      let c720 = cost_cents(Some(CommonResolution::SevenTwentyP), 10);
+      let c480 = cost_cents(Some(RouterResolution::FourEightyP), 10);
+      let c720 = cost_cents(Some(RouterResolution::SevenTwentyP), 10);
       assert!(c480 < c720, "480p ({c480}) should be < 720p ({c720})");
     }
 
     #[test]
     fn fast_cheaper_than_standard() {
-      let fast = cost_cents(Some(CommonResolution::SevenTwentyP), 10);
+      let fast = cost_cents(Some(RouterResolution::SevenTwentyP), 10);
       let standard = {
         let builder = GenerateVideoRequestBuilder {
           model: RouterVideoModel::Seedance2p0Ultra,
           provider: Provider::GmiCloud,
-          resolution: Some(CommonResolution::SevenTwentyP),
+          resolution: Some(RouterResolution::SevenTwentyP),
           duration_seconds: Some(10),
           video_batch_count: Some(1),
           ..Default::default()
@@ -106,7 +106,7 @@ mod tests {
     }
   }
 
-  fn cost_cents(resolution: Option<CommonResolution>, duration_seconds: u16) -> u64 {
+  fn cost_cents(resolution: Option<RouterResolution>, duration_seconds: u16) -> u64 {
     let builder = GenerateVideoRequestBuilder {
       model: RouterVideoModel::Seedance2p0UltraFast,
       provider: Provider::GmiCloud,

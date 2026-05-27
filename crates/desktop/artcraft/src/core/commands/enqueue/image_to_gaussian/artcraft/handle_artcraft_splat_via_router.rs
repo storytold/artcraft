@@ -4,7 +4,7 @@ use crate::core::commands::enqueue::task_enqueue_success::TaskEnqueueSuccess;
 use crate::core::events::generation_events::common::GenerationModel;
 use crate::core::state::app_env_configs::app_env_configs::AppEnvConfigs;
 use artcraft_client::credentials::storyteller_credential_set::StorytellerCredentialSet;
-use artcraft_router::api::common_splat_model::CommonSplatModel;
+use artcraft_router::api::router_splat_model::RouterSplatModel;
 use artcraft_router::api::image_list_ref::ImageListRef;
 use artcraft_router::api::provider::Provider;
 use artcraft_router::client::router_artcraft_client::RouterArtcraftClient;
@@ -18,7 +18,7 @@ pub(super) async fn handle_artcraft_splat_via_router(
   request: &EnqueueImageToGaussianRequest,
   app_env_configs: &AppEnvConfigs,
   creds: &StorytellerCredentialSet,
-  model: CommonSplatModel,
+  model: RouterSplatModel,
   generation_model: GenerationModel,
 ) -> Result<TaskEnqueueSuccess, GenerateError> {
   let client = RouterClient::Artcraft(RouterArtcraftClient::new(

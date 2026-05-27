@@ -28,7 +28,7 @@ mod tests {
   use tokens::tokens::media_files::MediaFileToken;
 
   use crate::api::character_list_ref::CharacterListRef;
-  use crate::api::common_resolution::CommonResolution;
+  use crate::api::router_resolution::RouterResolution;
   use crate::api::image_list_ref::ImageListRef;
   use crate::api::image_ref::ImageRef;
   use crate::api::provider::Provider;
@@ -77,13 +77,13 @@ mod tests {
 
     #[test]
     fn res_720p() {
-      let req = unwrap_request(make_builder(|b| { b.resolution = Some(CommonResolution::SevenTwentyP); }));
+      let req = unwrap_request(make_builder(|b| { b.resolution = Some(RouterResolution::SevenTwentyP); }));
       assert_eq!(req.request.resolution, Some(CommonResolutionEnum::SevenTwentyP));
     }
 
     #[test]
     fn res_1080p() {
-      let req = unwrap_request(make_builder(|b| { b.resolution = Some(CommonResolution::TenEightyP); }));
+      let req = unwrap_request(make_builder(|b| { b.resolution = Some(RouterResolution::TenEightyP); }));
       assert_eq!(req.request.resolution, Some(CommonResolutionEnum::TenEightyP));
     }
 
@@ -95,7 +95,7 @@ mod tests {
 
     #[test]
     fn unsupported_480p_upgrades() {
-      let req = unwrap_request(make_builder(|b| { b.resolution = Some(CommonResolution::FourEightyP); }));
+      let req = unwrap_request(make_builder(|b| { b.resolution = Some(RouterResolution::FourEightyP); }));
       assert_eq!(req.request.resolution, Some(CommonResolutionEnum::TenEightyP));
     }
   }

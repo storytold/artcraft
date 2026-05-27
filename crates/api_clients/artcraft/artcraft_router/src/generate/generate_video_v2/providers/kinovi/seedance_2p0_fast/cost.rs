@@ -76,7 +76,7 @@ impl KinoviSeedance2p0FastCostState {
 #[cfg(test)]
 mod tests {
   use super::*;
-  use crate::api::common_resolution::CommonResolution;
+  use crate::api::router_resolution::RouterResolution;
   use seedance2pro_client::generate::video::generate_seedance_2p0_fast::{
     KinoviSeedance2p0FastOutputResolution as KinoviOutputResolution,
     KinoviSeedance2p0FastBatchCount as KinoviBatchCount,
@@ -253,7 +253,7 @@ mod tests {
 
     #[test]
     fn from_draft_480p() {
-      let draft = make_draft(5, 1, Some(CommonResolution::FourEightyP), false);
+      let draft = make_draft(5, 1, Some(RouterResolution::FourEightyP), false);
       let cost = KinoviSeedance2p0FastCostState::from_draft(&draft);
       assert!(matches!(cost.resolution, Some(KinoviOutputResolution::FourEightyP)));
       assert_eq!(cost.estimate_cost().cost_in_usd_cents, Some(36));
@@ -277,7 +277,7 @@ mod tests {
 
     #[test]
     fn from_draft_duration_15_batch_2() {
-      let draft = make_draft(15, 2, Some(CommonResolution::SevenTwentyP), false);
+      let draft = make_draft(15, 2, Some(RouterResolution::SevenTwentyP), false);
       let cost = KinoviSeedance2p0FastCostState::from_draft(&draft);
       assert_eq!(cost.duration_seconds, 15);
       assert!(matches!(cost.batch_count, Some(KinoviBatchCount::Two)));
@@ -293,7 +293,7 @@ mod tests {
     #[test]
     fn draft_and_request_produce_same_cost() {
       // 720p, 5s, batch 1
-      let draft = make_draft(5, 1, Some(CommonResolution::SevenTwentyP), false);
+      let draft = make_draft(5, 1, Some(RouterResolution::SevenTwentyP), false);
       let req = make_request_state(Some(KinoviOutputResolution::SevenTwentyP), 5, KinoviBatchCount::One, false);
       let draft_cost = KinoviSeedance2p0FastCostState::from_draft(&draft).estimate_cost();
       let req_cost = KinoviSeedance2p0FastCostState::from_request(&req).estimate_cost();
@@ -303,7 +303,7 @@ mod tests {
 
     #[test]
     fn draft_and_request_produce_same_cost_480p() {
-      let draft = make_draft(10, 2, Some(CommonResolution::FourEightyP), false);
+      let draft = make_draft(10, 2, Some(RouterResolution::FourEightyP), false);
       let req = make_request_state(Some(KinoviOutputResolution::FourEightyP), 10, KinoviBatchCount::Two, false);
       let draft_cost = KinoviSeedance2p0FastCostState::from_draft(&draft).estimate_cost();
       let req_cost = KinoviSeedance2p0FastCostState::from_request(&req).estimate_cost();
@@ -362,7 +362,7 @@ mod tests {
   fn make_draft(
     duration_seconds: u16,
     video_batch_count: u16,
-    resolution: Option<CommonResolution>,
+    resolution: Option<RouterResolution>,
     with_video_ref: bool,
   ) -> KinoviSeedance2p0FastDraftState {
     let reference_videos = if with_video_ref {

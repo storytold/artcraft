@@ -1,6 +1,6 @@
 use artcraft_api_defs::prompts::create_prompt::CreatePromptRequest;
-use artcraft_router::api::common_aspect_ratio::CommonAspectRatio as RouterAspectRatio;
-use artcraft_router::api::common_resolution::CommonResolution as RouterResolution;
+use artcraft_router::api::router_aspect_ratio::RouterAspectRatio;
+use artcraft_router::api::router_resolution::RouterResolution;
 use artcraft_router::api::router_video_model::RouterVideoModel;
 use artcraft_router::api::provider::Provider;
 use artcraft_router::generate::generate_video::generate_video_request_builder::GenerateVideoRequestBuilder;

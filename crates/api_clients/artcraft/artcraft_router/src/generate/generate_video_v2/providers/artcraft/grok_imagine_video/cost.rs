@@ -72,7 +72,7 @@ impl ArtcraftGrokImagineVideoCostState {
 mod tests {
   use tokens::tokens::media_files::MediaFileToken;
 
-  use crate::api::common_resolution::CommonResolution;
+  use crate::api::router_resolution::RouterResolution;
   use crate::api::router_video_model::RouterVideoModel;
   use crate::api::image_list_ref::ImageListRef;
   use crate::api::image_ref::ImageRef;
@@ -90,30 +90,30 @@ mod tests {
       // 9.1 × 5  =  45.5  → 46
       // 9.1 × 10 =  91.0  → 91
       // 9.1 × 15 = 136.5  → 137
-      assert_eq!(cost_cents(Some(CommonResolution::SevenTwentyP), 5, 1), 46);
-      assert_eq!(cost_cents(Some(CommonResolution::SevenTwentyP), 10, 1), 91);
-      assert_eq!(cost_cents(Some(CommonResolution::SevenTwentyP), 15, 1), 137);
+      assert_eq!(cost_cents(Some(RouterResolution::SevenTwentyP), 5, 1), 46);
+      assert_eq!(cost_cents(Some(RouterResolution::SevenTwentyP), 10, 1), 91);
+      assert_eq!(cost_cents(Some(RouterResolution::SevenTwentyP), 15, 1), 137);
     }
 
     #[test]
     fn batch_2() {
       // 9.1 × 5 × 2 = 91 → 91
-      assert_eq!(cost_cents(Some(CommonResolution::SevenTwentyP), 5, 2), 91);
+      assert_eq!(cost_cents(Some(RouterResolution::SevenTwentyP), 5, 2), 91);
       // 9.1 × 15 × 2 = 273 → 273
-      assert_eq!(cost_cents(Some(CommonResolution::SevenTwentyP), 15, 2), 273);
+      assert_eq!(cost_cents(Some(RouterResolution::SevenTwentyP), 15, 2), 273);
     }
 
     #[test]
     fn batch_4() {
       // 9.1 × 5 × 4 = 182 → 182
-      assert_eq!(cost_cents(Some(CommonResolution::SevenTwentyP), 5, 4), 182);
+      assert_eq!(cost_cents(Some(RouterResolution::SevenTwentyP), 5, 4), 182);
     }
 
     #[test]
     fn none_defaults_to_720p() {
       assert_eq!(
         cost_cents(None, 5, 1),
-        cost_cents(Some(CommonResolution::SevenTwentyP), 5, 1),
+        cost_cents(Some(RouterResolution::SevenTwentyP), 5, 1),
       );
     }
   }
@@ -128,21 +128,21 @@ mod tests {
       // 6.5 × 5  =  32.5 → 33
       // 6.5 × 10 =  65.0 → 65
       // 6.5 × 15 =  97.5 → 98
-      assert_eq!(cost_cents(Some(CommonResolution::FourEightyP), 5, 1), 33);
-      assert_eq!(cost_cents(Some(CommonResolution::FourEightyP), 10, 1), 65);
-      assert_eq!(cost_cents(Some(CommonResolution::FourEightyP), 15, 1), 98);
+      assert_eq!(cost_cents(Some(RouterResolution::FourEightyP), 5, 1), 33);
+      assert_eq!(cost_cents(Some(RouterResolution::FourEightyP), 10, 1), 65);
+      assert_eq!(cost_cents(Some(RouterResolution::FourEightyP), 15, 1), 98);
     }
 
     #[test]
     fn batch_2() {
       // 6.5 × 5 × 2 = 65 → 65
-      assert_eq!(cost_cents(Some(CommonResolution::FourEightyP), 5, 2), 65);
+      assert_eq!(cost_cents(Some(RouterResolution::FourEightyP), 5, 2), 65);
     }
 
     #[test]
     fn batch_4() {
       // 6.5 × 5 × 4 = 130 → 130
-      assert_eq!(cost_cents(Some(CommonResolution::FourEightyP), 5, 4), 130);
+      assert_eq!(cost_cents(Some(RouterResolution::FourEightyP), 5, 4), 130);
     }
   }
 
@@ -155,8 +155,8 @@ mod tests {
     fn single_start_frame_adds_input_charge() {
       // 720p 5s batch 1 = 45.5 + 0.26 (one start_frame) = 45.76 → ceil 46
       // Identical to the no-image case (45.5 → 46) because of ceil rounding.
-      let with_img = cost_cents_with_images(Some(CommonResolution::SevenTwentyP), 5, 1, true, 0);
-      let no_img   = cost_cents_with_images(Some(CommonResolution::SevenTwentyP), 5, 1, false, 0);
+      let with_img = cost_cents_with_images(Some(RouterResolution::SevenTwentyP), 5, 1, true, 0);
+      let no_img   = cost_cents_with_images(Some(RouterResolution::SevenTwentyP), 5, 1, false, 0);
       assert_eq!(with_img, 46);
       assert_eq!(no_img, 46);
     }
@@ -167,9 +167,9 @@ mod tests {
       // N=0 → 26
       // N=1 → 26.26 → 27
       // N=4 → 27.04 → 28
-      assert_eq!(cost_cents_with_images(Some(CommonResolution::FourEightyP), 4, 1, false, 0), 26);
-      assert_eq!(cost_cents_with_images(Some(CommonResolution::FourEightyP), 4, 1, false, 1), 27);
-      assert_eq!(cost_cents_with_images(Some(CommonResolution::FourEightyP), 4, 1, false, 4), 28);
+      assert_eq!(cost_cents_with_images(Some(RouterResolution::FourEightyP), 4, 1, false, 0), 26);
+      assert_eq!(cost_cents_with_images(Some(RouterResolution::FourEightyP), 4, 1, false, 1), 27);
+      assert_eq!(cost_cents_with_images(Some(RouterResolution::FourEightyP), 4, 1, false, 4), 28);
     }
   }
 
@@ -180,25 +180,25 @@ mod tests {
 
     #[test]
     fn cost_480p_cheaper_than_720p() {
-      let c480 = cost_cents(Some(CommonResolution::FourEightyP), 10, 1);
-      let c720 = cost_cents(Some(CommonResolution::SevenTwentyP), 10, 1);
+      let c480 = cost_cents(Some(RouterResolution::FourEightyP), 10, 1);
+      let c720 = cost_cents(Some(RouterResolution::SevenTwentyP), 10, 1);
       assert!(c480 < c720, "480p ({c480}) should be cheaper than 720p ({c720})");
     }
 
     #[test]
     fn cost_scales_with_duration() {
-      let c5  = cost_cents(Some(CommonResolution::SevenTwentyP), 5, 1);
-      let c10 = cost_cents(Some(CommonResolution::SevenTwentyP), 10, 1);
-      let c15 = cost_cents(Some(CommonResolution::SevenTwentyP), 15, 1);
+      let c5  = cost_cents(Some(RouterResolution::SevenTwentyP), 5, 1);
+      let c10 = cost_cents(Some(RouterResolution::SevenTwentyP), 10, 1);
+      let c15 = cost_cents(Some(RouterResolution::SevenTwentyP), 15, 1);
       assert!(c5 < c10);
       assert!(c10 < c15);
     }
 
     #[test]
     fn cost_scales_with_batch() {
-      let b1 = cost_cents(Some(CommonResolution::SevenTwentyP), 5, 1);
-      let b2 = cost_cents(Some(CommonResolution::SevenTwentyP), 5, 2);
-      let b4 = cost_cents(Some(CommonResolution::SevenTwentyP), 5, 4);
+      let b1 = cost_cents(Some(RouterResolution::SevenTwentyP), 5, 1);
+      let b2 = cost_cents(Some(RouterResolution::SevenTwentyP), 5, 2);
+      let b4 = cost_cents(Some(RouterResolution::SevenTwentyP), 5, 4);
       assert!(b1 < b2);
       assert!(b2 < b4);
     }
@@ -212,8 +212,8 @@ mod tests {
     #[test]
     fn credits_equal_usd_cents_all_combos() {
       let resolutions = [
-        Some(CommonResolution::FourEightyP),
-        Some(CommonResolution::SevenTwentyP),
+        Some(RouterResolution::FourEightyP),
+        Some(RouterResolution::SevenTwentyP),
         None,
       ];
       for res in resolutions {
@@ -235,27 +235,27 @@ mod tests {
 
   mod small_margin {
     use super::*;
-    use crate::api::common_aspect_ratio::CommonAspectRatio;
+    use crate::api::router_aspect_ratio::RouterAspectRatio;
 
     #[test]
     fn small_margin() {
       let resolutions = [
         None,
-        Some(CommonResolution::FourEightyP),
-        Some(CommonResolution::SevenTwentyP),
-        Some(CommonResolution::TenEightyP), // clamps to 720p on both sides
+        Some(RouterResolution::FourEightyP),
+        Some(RouterResolution::SevenTwentyP),
+        Some(RouterResolution::TenEightyP), // clamps to 720p on both sides
       ];
       let durations: &[u16] = &[1, 4, 5, 8, 10, 12, 15];
       let aspect_ratios = [
         None,
-        Some(CommonAspectRatio::Auto),
-        Some(CommonAspectRatio::Square),
-        Some(CommonAspectRatio::WideSixteenByNine),
-        Some(CommonAspectRatio::TallNineBySixteen),
-        Some(CommonAspectRatio::WideFourByThree),
-        Some(CommonAspectRatio::TallThreeByFour),
-        Some(CommonAspectRatio::WideThreeByTwo),
-        Some(CommonAspectRatio::TallTwoByThree),
+        Some(RouterAspectRatio::Auto),
+        Some(RouterAspectRatio::Square),
+        Some(RouterAspectRatio::WideSixteenByNine),
+        Some(RouterAspectRatio::TallNineBySixteen),
+        Some(RouterAspectRatio::WideFourByThree),
+        Some(RouterAspectRatio::TallThreeByFour),
+        Some(RouterAspectRatio::WideThreeByTwo),
+        Some(RouterAspectRatio::TallTwoByThree),
       ];
       // (has_start_frame, num_reference_images). At most one of the two is
       // non-default — start_frame and reference_images are mutually exclusive
@@ -322,9 +322,9 @@ mod tests {
     // ── Cross-provider helpers ──
 
     fn artcraft_cents(
-      resolution: Option<CommonResolution>,
+      resolution: Option<RouterResolution>,
       duration_seconds: u16,
-      aspect_ratio: Option<CommonAspectRatio>,
+      aspect_ratio: Option<RouterAspectRatio>,
       has_start_frame: bool,
       num_reference_images: usize,
     ) -> u64 {
@@ -363,9 +363,9 @@ mod tests {
     }
 
     fn grokapi_cents(
-      resolution: Option<CommonResolution>,
+      resolution: Option<RouterResolution>,
       duration_seconds: u16,
-      aspect_ratio: Option<CommonAspectRatio>,
+      aspect_ratio: Option<RouterAspectRatio>,
       has_start_frame: bool,
       num_reference_images: usize,
     ) -> u64 {
@@ -404,7 +404,7 @@ mod tests {
   // ── Helpers ──
 
   fn build_cost(
-    resolution: Option<CommonResolution>,
+    resolution: Option<RouterResolution>,
     duration_seconds: u16,
     video_batch_count: u16,
   ) -> VideoGenerationCostEstimate {
@@ -423,7 +423,7 @@ mod tests {
   }
 
   fn cost_cents(
-    resolution: Option<CommonResolution>,
+    resolution: Option<RouterResolution>,
     duration_seconds: u16,
     video_batch_count: u16,
   ) -> u64 {
@@ -433,7 +433,7 @@ mod tests {
   }
 
   fn cost_cents_with_images(
-    resolution: Option<CommonResolution>,
+    resolution: Option<RouterResolution>,
     duration_seconds: u16,
     video_batch_count: u16,
     has_start_frame: bool,

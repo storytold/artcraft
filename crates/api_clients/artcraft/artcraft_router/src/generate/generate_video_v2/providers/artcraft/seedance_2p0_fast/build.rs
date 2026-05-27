@@ -29,8 +29,8 @@ mod tests {
   use tokens::tokens::media_files::MediaFileToken;
 
   use crate::api::character_list_ref::CharacterListRef;
-  use crate::api::common_aspect_ratio::CommonAspectRatio;
-  use crate::api::common_resolution::CommonResolution;
+  use crate::api::router_aspect_ratio::RouterAspectRatio;
+  use crate::api::router_resolution::RouterResolution;
   use crate::api::router_video_model::RouterVideoModel;
   use crate::api::image_list_ref::ImageListRef;
   use crate::api::image_ref::ImageRef;
@@ -93,7 +93,7 @@ mod tests {
     #[test]
     fn wide() {
       let req = unwrap_request(artcraft_fast_builder_with(|b| {
-        b.aspect_ratio = Some(CommonAspectRatio::WideSixteenByNine);
+        b.aspect_ratio = Some(RouterAspectRatio::WideSixteenByNine);
       }));
       assert_eq!(req.request.aspect_ratio, Some(CommonAspectRatioEnum::WideSixteenByNine));
     }
@@ -101,7 +101,7 @@ mod tests {
     #[test]
     fn tall() {
       let req = unwrap_request(artcraft_fast_builder_with(|b| {
-        b.aspect_ratio = Some(CommonAspectRatio::TallNineBySixteen);
+        b.aspect_ratio = Some(RouterAspectRatio::TallNineBySixteen);
       }));
       assert_eq!(req.request.aspect_ratio, Some(CommonAspectRatioEnum::TallNineBySixteen));
     }
@@ -109,7 +109,7 @@ mod tests {
     #[test]
     fn square() {
       let req = unwrap_request(artcraft_fast_builder_with(|b| {
-        b.aspect_ratio = Some(CommonAspectRatio::Square);
+        b.aspect_ratio = Some(RouterAspectRatio::Square);
       }));
       assert_eq!(req.request.aspect_ratio, Some(CommonAspectRatioEnum::Square));
     }
@@ -129,7 +129,7 @@ mod tests {
     #[test]
     fn res_480p() {
       let req = unwrap_request(artcraft_fast_builder_with(|b| {
-        b.resolution = Some(CommonResolution::FourEightyP);
+        b.resolution = Some(RouterResolution::FourEightyP);
       }));
       assert_eq!(req.request.resolution, Some(CommonResolutionEnum::FourEightyP));
     }
@@ -137,7 +137,7 @@ mod tests {
     #[test]
     fn res_720p() {
       let req = unwrap_request(artcraft_fast_builder_with(|b| {
-        b.resolution = Some(CommonResolution::SevenTwentyP);
+        b.resolution = Some(RouterResolution::SevenTwentyP);
       }));
       assert_eq!(req.request.resolution, Some(CommonResolutionEnum::SevenTwentyP));
     }
@@ -145,7 +145,7 @@ mod tests {
     #[test]
     fn res_1080p_downgrades_to_720p() {
       let req = unwrap_request(artcraft_fast_builder_with(|b| {
-        b.resolution = Some(CommonResolution::TenEightyP);
+        b.resolution = Some(RouterResolution::TenEightyP);
       }));
       assert_eq!(req.request.resolution, Some(CommonResolutionEnum::SevenTwentyP));
     }
@@ -155,7 +155,7 @@ mod tests {
       let result = build_artcraft_seedance_2p0_fast(GenerateVideoRequestBuilder {
         model: RouterVideoModel::Seedance2p0Fast,
         provider: Provider::Artcraft,
-        resolution: Some(CommonResolution::TenEightyP),
+        resolution: Some(RouterResolution::TenEightyP),
         request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::ErrorOut,
         ..Default::default()
       });

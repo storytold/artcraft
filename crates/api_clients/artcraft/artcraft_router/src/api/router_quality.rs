@@ -4,7 +4,7 @@ use serde_derive::{Deserialize, Serialize};
 /// Not every model will use this; models that don't simply ignore it.
 #[derive(Copy, Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "snake_case")]
-pub enum CommonQuality {
+pub enum RouterQuality {
   High,
   Medium,
   Low,
