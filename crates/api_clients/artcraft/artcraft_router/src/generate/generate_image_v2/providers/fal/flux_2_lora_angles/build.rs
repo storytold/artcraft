@@ -29,8 +29,8 @@ pub fn build_fal_flux_2_lora_angles(
 
   let request = EnqueueFlux2LoraEditImageAngleRequest {
     image_urls,
-    horizontal_angle: builder.horizontal_angle,
-    vertical_angle: builder.vertical_angle,
+    horizontal_angle: builder.horizontal_angle.map(wrap_angle_degrees),
+    vertical_angle: builder.vertical_angle.map(wrap_angle_degrees),
     zoom: builder.zoom,
     num_images: Some(num_images),
     image_size,
@@ -112,6 +112,13 @@ fn plan_image_size(
   }
 }
 
+/// Wrap an angle in degrees into the half-open interval [0, 360).
+/// Fal's flux-2-lora-gallery endpoint rejects negative angles (schema requires `ge: 0.0`),
+/// but treats the angle as a position on a circle, so -30° is equivalent to 330°.
+fn wrap_angle_degrees(v: f64) -> f64 {
+  ((v % 360.0) + 360.0) % 360.0
+}
+
 #[cfg(test)]
 mod tests {
   use super::*;
@@ -150,8 +157,33 @@ mod tests {
   fn passes_through_camera_params() {
     let req = unwrap_request(build_fal_flux_2_lora_angles(base()));
     assert_eq!(req.horizontal_angle, Some(45.0));
-    assert_eq!(req.vertical_angle, Some(-15.0));
+    // base() sets vertical_angle to -15.0; wrap_angle_degrees rotates it around the circle to 345.0
+    assert_eq!(req.vertical_angle, Some(345.0));
     assert_eq!(req.zoom, Some(2.0));
+  }
+
+  #[test]
+  fn negative_vertical_angle_wraps_around_circle() {
+    let builder = GenerateImageRequestBuilder {
+      horizontal_angle: Some(315.0),
+      vertical_angle: Some(-30.0),
+      ..base()
+    };
+    let req = unwrap_request(build_fal_flux_2_lora_angles(builder));
+    assert_eq!(req.horizontal_angle, Some(315.0));
+    assert_eq!(req.vertical_angle, Some(330.0));
+  }
+
+  #[test]
+  fn angles_at_or_past_360_wrap_back_to_zero_range() {
+    let builder = GenerateImageRequestBuilder {
+      horizontal_angle: Some(360.0),
+      vertical_angle: Some(420.0),
+      ..base()
+    };
+    let req = unwrap_request(build_fal_flux_2_lora_angles(builder));
+    assert_eq!(req.horizontal_angle, Some(0.0));
+    assert_eq!(req.vertical_angle, Some(60.0));
   }
 
   #[test]
