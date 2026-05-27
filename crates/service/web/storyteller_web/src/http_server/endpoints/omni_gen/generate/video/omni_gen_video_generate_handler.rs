@@ -174,16 +174,6 @@ pub async fn omni_gen_video_generate_handler(
     _ => false,
   };
 
-  let pipeline_result = run_pipeline_v2(RunPipelineV2Args {
-    router_builder: &router_builder,
-    server_state: &server_state,
-    mysql_connection: &mut mysql_connection,
-    user_token,
-    media_file_to_url_map: &media_file_to_url_map,
-    kinovi_character_id_map: &kinovi_character_id_map,
-    use_alternate_kinovi,
-  }).await?;
-
   // ==================== DEBUG LOG: HTTP REQUEST ==================== //
 
   if let Err(err) = insert_debug_log(InsertDebugLogArgs {
@@ -196,6 +186,16 @@ pub async fn omni_gen_video_generate_handler(
   }).await {
     warn!("Failed to insert HTTP request debug log: {:?}", err);
   }
+
+  let pipeline_result = run_pipeline_v2(RunPipelineV2Args {
+    router_builder: &router_builder,
+    server_state: &server_state,
+    mysql_connection: &mut mysql_connection,
+    user_token,
+    media_file_to_url_map: &media_file_to_url_map,
+    kinovi_character_id_map: &kinovi_character_id_map,
+    use_alternate_kinovi,
+  }).await?;
 
   // ==================== DEBUG LOG: FAL REQUEST ==================== //
 
