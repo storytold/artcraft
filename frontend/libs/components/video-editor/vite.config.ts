@@ -23,6 +23,10 @@ const EXTRA_EXTERNAL_PREFIXES = [
   'lucide-react',
   'sonner',
   'cmdk',
+  '@hugeicons/',
+  'use-deep-compare-effect',
+  'react-router-dom',
+  'framer-motion',
 ];
 
 function isExternal(id: string): boolean {

@@ -842,3 +842,124 @@ export {
   removePreset,
 } from "./lib/timeline/components/graph-editor/custom-presets-store";
 
+
+// --- PreviewPanel + preview canvas surface ---
+// The PreviewPanel is the main top component for the preview viewport. It
+// owns the compositor canvas, the transform/mask handle overlays, the
+// snap-guide overlay, the zoom/pan gestures, and the right-click context
+// menu. Mount it inside <EditorProvider> and pass it the overlay catalog
+// (definitions + instances) plus a visibility callback — the lib reads
+// overlay visibility state from `usePreviewStore`. PreviewViewport is
+// exposed for hosts that want to construct a custom outer shell without
+// re-implementing the zoom/pan/cursor math; usePreviewViewport gives
+// access to the same context value inside child trees.
+export { PreviewPanel } from "./lib/preview/components";
+export {
+  PreviewViewportProvider,
+  usePreviewViewport,
+  usePreviewViewportState,
+} from "./lib/preview/components/preview-viewport";
+export { PreviewOverlayLayer } from "./lib/preview/components/overlay-layer";
+export { PreviewInteractionOverlay } from "./lib/preview/components/preview-interaction-overlay";
+export { TransformHandles } from "./lib/preview/components/transform-handles";
+export { MaskHandles } from "./lib/preview/components/mask-handles";
+export { SnapGuides } from "./lib/preview/components/snap-guides";
+export { TextEditOverlay } from "./lib/preview/components/text-edit-overlay";
+export { PreviewToolbar } from "./lib/preview/components/toolbar";
+export { PreviewContextMenu } from "./lib/preview/components/context-menu";
+export { GridPopover } from "./lib/preview/components/guide-popover";
+export { PEN_CURSOR } from "./lib/preview/components/cursors";
+
+// Preview store (Zustand) — tracks the active guide, grid config, and
+// overlay visibility. Hosts that mount their own preview shell can read
+// `state.overlays[overlayId]` and pipe overlay control checkboxes through
+// `setOverlayVisibility`.
+export { usePreviewStore } from "./lib/preview/preview-store";
+
+// Preview interaction hooks. Pointer + transform-handle controllers wrap
+// the smoothness-critical drag/scale/rotate gestures. These are useful for
+// hosts that want a custom preview shell but keep the canonical gesture
+// stack. Both call `useEditor()` internally and write through the
+// EditorCore managers — no extra wiring beyond <EditorProvider>.
+export { usePreviewInteraction } from "./lib/preview/hooks/use-preview-interaction";
+export type { OnSnapLinesChange } from "./lib/preview/hooks/use-preview-interaction";
+export { useTransformHandles } from "./lib/preview/hooks/use-transform-handles";
+
+// Preview interaction controllers (class-based, same smoothness contract
+// as the timeline controllers). Hosts building entirely custom React
+// glue can drive these directly with their own depsRef.
+export { PreviewInteractionController } from "./lib/preview/controllers/preview-interaction-controller";
+export type {
+  PreviewInteractionDeps,
+  PreviewInteractionDepsRef,
+  EditingTextState,
+  PreviewViewportAdapter as PreviewInteractionViewportAdapter,
+} from "./lib/preview/controllers/preview-interaction-controller";
+export { TransformHandleController } from "./lib/preview/controllers/transform-handle-controller";
+export type {
+  TransformHandleDeps,
+  TransformHandleDepsRef,
+  PreviewViewportAdapter as TransformHandleViewportAdapter,
+} from "./lib/preview/controllers/transform-handle-controller";
+
+// Preview coords (logical-canvas <-> screen-overlay math) and zoom presets.
+export {
+  screenToCanvas,
+  canvasToOverlay,
+  positionToOverlay,
+  getDisplayScale,
+  screenPixelsToLogicalThreshold,
+} from "./lib/preview/preview-coords";
+export type { PreviewViewportGeometry } from "./lib/preview/preview-coords";
+export { PREVIEW_ZOOM, PREVIEW_ZOOM_PRESETS } from "./lib/preview/zoom";
+
+// Preview overlays — registry types for hosts that want to publish
+// overlay instances (e.g. an export-progress HUD, a custom guide overlay)
+// into the preview surface.
+export {
+  EMPTY_PREVIEW_OVERLAY_SOURCE_RESULT,
+  isPreviewOverlayVisible,
+  createPreviewOverlayControl,
+  mergePreviewOverlaySources,
+} from "./lib/preview/overlays";
+export type {
+  PreviewOverlayHudAnchor,
+  PreviewOverlayMount,
+  PreviewOverlayPlane,
+  PreviewOverlayRenderContext,
+  PreviewOverlayInstance,
+  PreviewOverlayDefinition,
+  PreviewOverlayControl,
+  PreviewOverlaySourceResult,
+} from "./lib/preview/overlays";
+
+// Visual handle primitives — exported so hosts building bespoke overlays
+// (e.g. a third-party mask renderer) can reuse the same look + hit areas.
+export {
+  HandleButton,
+  CornerHandle,
+  CircleHandle,
+  EdgeHandle,
+  IconHandle,
+  BoundingBoxOutline,
+  ShapeOutline,
+  CanvasPathOutline,
+  LineOverlay,
+  getResizeCursor,
+  HANDLE_SIZE,
+  HANDLE_HIT_AREA_SIZE,
+  ICON_HANDLE_RADIUS,
+  EDGE_HANDLE_THIN_SIZE,
+  EDGE_HANDLE_THICK_SIZE,
+  LINE_HIT_AREA_SIZE,
+} from "./lib/preview/components/handle-primitives";
+
+// Editor + interaction hooks now reachable from the public surface so
+// hosts can subscribe to EditorCore changes the same way the lib does.
+export { useEditor } from "./lib/editor/use-editor";
+export { useCommittedRef } from "./lib/hooks/use-committed-ref";
+export { useShiftKey } from "./lib/hooks/use-shift-key";
+export { useRafLoop } from "./lib/hooks/use-raf-loop";
+export { useContainerSize } from "./lib/hooks/use-container-size";
+export { useResizeObserver } from "./lib/hooks/use-resize-observer";
+export { useFullscreen } from "./lib/hooks/use-fullscreen";

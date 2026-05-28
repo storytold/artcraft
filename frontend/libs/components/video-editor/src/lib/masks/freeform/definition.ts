@@ -33,16 +33,7 @@ import {
   snapRotation,
   snapScale,
 } from "../../preview/preview-snap";
-
-// PEN_CURSOR is the pen-tool cursor SVG inlined from
-// opencut-classic/apps/web/src/preview/components/cursors.ts. The hotspot
-// is at the nib tip (1, 1), which is where anchor points land.
-const PEN_CURSOR = `url("data:image/svg+xml,${encodeURIComponent(
-  `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none">
-  <path d="M 1 1 L 5 2 L 13 10 L 10 13 L 2 5 Z" fill="white" stroke="#111" stroke-width="1" stroke-linejoin="round"/>
-  <path d="M 1 1 L 5 2 L 2 5 Z" fill="#111"/>
-</svg>`,
-)}") 1 1, crosshair`;
+import { PEN_CURSOR } from "../../preview/components/cursors";
 
 const PERCENTAGE_DISPLAY = {
   displayMultiplier: 100,
