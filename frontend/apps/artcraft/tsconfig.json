@@ -41,6 +41,9 @@
       "path": "../../libs/components/loading-spinner"
     },
     {
+      "path": "../../libs/components/video-editor"
+    },
+    {
       "path": "../../libs/components/toaster"
     },
     {

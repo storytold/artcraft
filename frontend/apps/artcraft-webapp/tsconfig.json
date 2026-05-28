@@ -12,9 +12,6 @@
       "path": "../../libs/components/slider-v2"
     },
     {
-      "path": "../../libs/components/vfx"
-    },
-    {
       "path": "../../libs/components/gallery-modal"
     },
     {
@@ -51,10 +48,10 @@
       "path": "../../libs/components/loading-spinner"
     },
     {
-      "path": "../../libs/components/tooltip"
+      "path": "../../libs/components/popover"
     },
     {
-      "path": "../../libs/components/popover"
+      "path": "../../libs/components/tooltip"
     },
     {
       "path": "../../libs/components/modal"
@@ -66,10 +63,16 @@
       "path": "../../libs/components/button"
     },
     {
+      "path": "../../libs/components/vfx"
+    },
+    {
       "path": "../../libs/common"
     },
     {
       "path": "../../libs/api"
+    },
+    {
+      "path": "../../libs/components/video-editor"
     },
     {
       "path": "./tsconfig.app.json"

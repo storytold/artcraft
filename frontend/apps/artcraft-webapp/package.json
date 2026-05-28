@@ -3,6 +3,7 @@
   "version": "0.0.1",
   "private": true,
   "dependencies": {
+    "@storyteller/ui-video-editor": "workspace:*",
     "react-masonry-css": "^1.0.16"
   }
 }

@@ -200,6 +200,9 @@
     },
     {
       "path": "./libs/components/pricing-table"
+    },
+    {
+      "path": "./libs/components/video-editor"
     }
   ]
 }

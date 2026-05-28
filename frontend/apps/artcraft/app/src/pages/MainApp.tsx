@@ -73,6 +73,7 @@ import { Angles } from "./PageAngles";
 import { Storyboard } from "./PageStoryboard";
 import { PageBackgroundChange } from "./PageBackgroundChange";
 import { PageScene } from "./PageScene";
+import { VideoEditor } from "@storyteller/ui-video-editor";
 import {
   topNavMediaId,
   topNavMediaUrl,
@@ -254,6 +255,8 @@ const TabBody = ({ sceneToken }: { sceneToken?: string }) => {
       return storyboardPageEnabled ? <div><Storyboard /></div> : null;
     case "BACKGROUND_CHANGE":
       return <div><PageBackgroundChange /></div>;
+    case "VIDEO_EDITOR":
+      return <div className="h-[calc(100vh-3rem)] w-full"><VideoEditor /></div>;
     default:
       return null;
   }
