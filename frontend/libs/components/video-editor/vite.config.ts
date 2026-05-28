@@ -2,6 +2,7 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import dts from 'vite-plugin-dts';
+import wasm from 'vite-plugin-wasm';
 import * as path from 'path';
 import { isExternal as baseIsExternal } from '../../shared-vite-config';
 
@@ -35,7 +36,7 @@ function isExternal(id: string): boolean {
 export default defineConfig(() => ({
   root: __dirname,
   cacheDir: '../../../node_modules/.vite/libs/components/video-editor',
-  plugins: [react(), dts({ entryRoot: 'src', tsconfigPath: path.join(__dirname, 'tsconfig.lib.json') })],
+  plugins: [react(), wasm(), dts({ entryRoot: 'src', tsconfigPath: path.join(__dirname, 'tsconfig.lib.json') })],
   build: {
     outDir: './dist',
     emptyOutDir: true,
@@ -59,6 +60,14 @@ export default defineConfig(() => ({
     environment: 'jsdom',
     include: ['{src,tests}/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
     reporters: ['default'],
+    // opencut-wasm is published as ESM with a .wasm asset; vitest's default
+    // resolver hits the .wasm file directly without going through vite's
+    // transform pipeline. Inlining the package forces vite to process it.
+    server: {
+      deps: {
+        inline: [/opencut-wasm/],
+      },
+    },
     coverage: {
       reportsDirectory: './test-output/vitest/coverage',
       provider: 'v8' as const,
