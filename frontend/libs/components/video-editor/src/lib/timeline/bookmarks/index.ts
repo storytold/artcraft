@@ -15,6 +15,6 @@ export {
 } from "./utils";
 export { getBookmarkSnapPoints } from "./snap-source";
 export { TimelineBookmarksRow } from "./components/bookmarks";
-// TODO: useBookmarkDrag + BookmarkDragState belong to the hooks port (parallel agent).
-// Once available, re-export from "./hooks/use-bookmark-drag".
+export { useBookmarkDrag } from "./hooks/use-bookmark-drag";
+export type { BookmarkDragState } from "./hooks/use-bookmark-drag";
 

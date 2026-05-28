@@ -735,29 +735,15 @@ export { DEFAULT_BACKGROUND_COLOR } from "./lib/background/color";
 //
 // Hosts mount <Timeline /> below an <EditorProvider> wrapping their state
 // managers. The component is the single render surface for the timeline panel.
-//
-// NOTE: The Timeline + child components import React hooks
-// (use-element-interaction, use-timeline-zoom, use-keyframe-drag, etc.) and
-// the selection subsystem that haven't been ported yet (parallel agent
-// territory). The TSX source files are all in src/lib/timeline/components/
-// and src/lib/timeline/components/graph-editor/ and will become bundleable
-// once the hooks + selection ports land. Until then we export only the leaf
-// pieces whose dep chains resolve today.
-//
-// TODO: Once hooks/selection are ported, uncomment the full block:
-//   export { Timeline } from "./lib/timeline/components";
-//   export { TimelineToolbar } from "./lib/timeline/components/timeline-toolbar";
-//   export { TimelinePlayhead } from "./lib/timeline/components/timeline-playhead";
-//   export { TimelineTrackContent } from "./lib/timeline/components/timeline-track";
-//   export { TimelineElement } from "./lib/timeline/components/timeline-element";
-//   export { AudioWaveform } from "./lib/timeline/components/audio-waveform";
-//   export { AudioVolumeLine } from "./lib/timeline/components/audio-volume-line";
-//   export { SnapIndicator } from "./lib/timeline/components/snap-indicator";
-//   export { TimelineBookmarksRow } from "./lib/timeline/bookmarks";
-//   export { GraphEditorPopover } from "./lib/timeline/components/graph-editor/popover";
-//   export { useGraphEditorController } from "./lib/timeline/components/graph-editor/use-controller";
-
-// Leaf components with no missing-hook deps — buildable today.
+export { Timeline } from "./lib/timeline/components";
+export { TimelineToolbar } from "./lib/timeline/components/timeline-toolbar";
+export { TimelinePlayhead } from "./lib/timeline/components/timeline-playhead";
+export { TimelineElement } from "./lib/timeline/components/timeline-element";
+export { AudioWaveform } from "./lib/timeline/components/audio-waveform";
+export { AudioVolumeLine } from "./lib/timeline/components/audio-volume-line";
+export { SnapIndicator } from "./lib/timeline/components/snap-indicator";
+export { GraphEditorPopover } from "./lib/timeline/components/graph-editor/popover";
+export { useGraphEditorController } from "./lib/timeline/components/graph-editor/use-controller";
 export { TimelineTick } from "./lib/timeline/components/timeline-tick";
 export { DragLine } from "./lib/timeline/components/drag-line";
 export { BezierGraph, BEZIER_GRAPH_MIN_HEIGHT } from "./lib/timeline/components/graph-editor/bezier-graph";

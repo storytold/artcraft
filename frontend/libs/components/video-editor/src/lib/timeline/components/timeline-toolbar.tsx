@@ -17,7 +17,7 @@ import { Slider } from "../../components/ui/slider";
 import { TIMELINE_ZOOM_BUTTON_FACTOR } from "./interaction";
 import { TIMELINE_ZOOM_MAX } from "../scale";
 import { sliderToZoom, zoomToSlider } from "../zoom-utils";
-import { ScenesView } from "../../panels/scenes-view";
+import { ScenesView } from "../../components/editor/scenes-view";
 import { type TActionWithOptionalArgs, invokeAction } from "../../actions";
 import {
   canToggleSourceAudio,
