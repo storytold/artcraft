@@ -28,6 +28,8 @@ export type {
   AssetGalleryAdapter,
   AuthUserAdapter,
   ExportSinkAdapter,
+  ToastAdapter,
+  ToastOptions,
   VideoEditorAdapters,
 } from "./lib/adapters";
 
@@ -40,6 +42,7 @@ export {
   createLocalFileMediaSource,
   anonymousAuthUser,
   downloadExportSink,
+  consoleToast,
 } from "./lib/adapters/default";
 
 // --- MediaTime + frame math (the wasm boundary) ---
