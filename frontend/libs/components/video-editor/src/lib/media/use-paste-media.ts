@@ -1,12 +1,8 @@
 import { useEffect } from "react";
 import { useEditor } from "../editor/use-editor";
-// TODO: processMediaAssets + showMediaUploadToast are upstream subsystems
-// that have not been ported into this lib. Hosts that need clipboard
-// paste-to-import should provide their own via adapters. The skeleton
-// here keeps the import-typable-element guard + clipboard fallback wired
-// so non-media pastes still flow through editor.clipboard.paste().
-// import { processMediaAssets } from "./processing";
-// import { showMediaUploadToast } from "./upload-toast";
+import { useEditorAdapters } from "../EditorProvider";
+import { processMediaAssets } from "./processing";
+import { showMediaUploadToast } from "./upload-toast";
 import { buildElementFromMedia } from "../timeline/element-utils";
 import { AddMediaAssetCommand } from "../commands/media";
 import { InsertElementCommand } from "../commands/timeline";
@@ -43,6 +39,7 @@ function extractMediaFilesFromClipboard({
 
 export function usePasteMedia() {
   const editor = useEditor();
+  const { toast } = useEditorAdapters();
 
   useEffect(() => {
     const handlePaste = async (event: ClipboardEvent) => {
@@ -67,60 +64,51 @@ export function usePasteMedia() {
       if (!activeProject) return;
 
       try {
-        // TODO: route through ProjectStorageAdapter / MediaSourceAdapter
-        // for the media import pipeline. processMediaAssets +
-        // showMediaUploadToast are not yet available in this lib.
-        // await showMediaUploadToast({
-        //   filesCount: files.length,
-        //   promise: async () => {
-        //     const processedAssets = await processMediaAssets({ files });
-        //     const startTime = editor.playback.getCurrentTime();
-        //
-        //     for (const asset of processedAssets) {
-        //       const addMediaCmd = new AddMediaAssetCommand({
-        //         projectId: activeProject.metadata.id,
-        //         asset,
-        //       });
-        //       const assetId = addMediaCmd.getAssetId();
-        //       const duration =
-        //         asset.duration != null
-        //           ? mediaTimeFromSeconds({ seconds: asset.duration })
-        //           : DEFAULT_NEW_ELEMENT_DURATION;
-        //       const trackType = asset.type === "audio" ? "audio" : "video";
-        //
-        //       const element = buildElementFromMedia({
-        //         mediaId: assetId,
-        //         mediaType: asset.type,
-        //         name: asset.name,
-        //         duration,
-        //         startTime,
-        //         buffer:
-        //           asset.type === "audio"
-        //             ? new AudioBuffer({ length: 1, sampleRate: 44100 })
-        //             : undefined,
-        //       });
-        //
-        //       const insertCmd = new InsertElementCommand({
-        //         element,
-        //         placement: { mode: "auto", trackType },
-        //       });
-        //       const batchCmd = new BatchCommand([addMediaCmd, insertCmd]);
-        //       editor.command.execute({ command: batchCmd });
-        //     }
-        //
-        //     return {
-        //       uploadedCount: processedAssets.length,
-        //       assetNames: processedAssets.map((asset) => asset.name),
-        //     };
-        //   },
-        // });
-        void files;
-        void buildElementFromMedia;
-        void AddMediaAssetCommand;
-        void InsertElementCommand;
-        void BatchCommand;
-        void DEFAULT_NEW_ELEMENT_DURATION;
-        void mediaTimeFromSeconds;
+        await showMediaUploadToast({
+          filesCount: files.length,
+          toast,
+          promise: async () => {
+            const processedAssets = await processMediaAssets({ files, toast });
+            const startTime = editor.playback.getCurrentTime();
+
+            for (const asset of processedAssets) {
+              const addMediaCmd = new AddMediaAssetCommand({
+                projectId: activeProject.metadata.id,
+                asset,
+              });
+              const assetId = addMediaCmd.getAssetId();
+              const duration =
+                asset.duration != null
+                  ? mediaTimeFromSeconds({ seconds: asset.duration })
+                  : DEFAULT_NEW_ELEMENT_DURATION;
+              const trackType = asset.type === "audio" ? "audio" : "video";
+
+              const element = buildElementFromMedia({
+                mediaId: assetId,
+                mediaType: asset.type,
+                name: asset.name,
+                duration,
+                startTime,
+                buffer:
+                  asset.type === "audio"
+                    ? new AudioBuffer({ length: 1, sampleRate: 44100 })
+                    : undefined,
+              });
+
+              const insertCmd = new InsertElementCommand({
+                element,
+                placement: { mode: "auto", trackType },
+              });
+              const batchCmd = new BatchCommand([addMediaCmd, insertCmd]);
+              editor.command.execute({ command: batchCmd });
+            }
+
+            return {
+              uploadedCount: processedAssets.length,
+              assetNames: processedAssets.map((asset) => asset.name),
+            };
+          },
+        });
       } catch (error) {
         console.error("Failed to paste media:", error);
       }
@@ -128,5 +116,5 @@ export function usePasteMedia() {
 
     window.addEventListener("paste", handlePaste);
     return () => window.removeEventListener("paste", handlePaste);
-  }, [editor]);
+  }, [editor, toast]);
 }

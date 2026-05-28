@@ -806,17 +806,26 @@ export {
   getBarFractionFromOutputAmplitude,
 } from "./lib/timeline/audio-display";
 
-// --- Timeline bookmarks UI ---
-// TODO: TimelineBookmarksRow depends on UI primitives whose Radix peer
-// imports resolve at the host level but vite's lib bundler needs them
-// reachable. Currently bundling pulls in @hugeicons which is externalized
-// fine — but the underlying bookmark popover chain pulls in unported
-// hooks. Re-export once useBookmarkDrag + sibling hooks land.
+// --- Timeline bookmarks ---
+export {
+  TimelineBookmarksRow,
+  useBookmarkDrag,
+  findBookmarkIndex,
+  isBookmarkAtTime,
+  toggleBookmarkInArray,
+  removeBookmarkFromArray,
+  updateBookmarkInArray,
+  moveBookmarkInArray,
+  getFrameTime,
+  getBookmarkAtTime,
+  getBookmarksActiveAtTime,
+  getBookmarkSnapPoints,
+  bookmarkNotesPreviewOverlay,
+  getBookmarkPreviewOverlaySource,
+} from "./lib/timeline/bookmarks";
+export type { BookmarkDragState } from "./lib/timeline/bookmarks";
 
 // --- Graph editor (curve editor popover for keyframe easing) ---
-// The full popover (GraphEditorPopover) imports use-controller.ts which
-// requires use-keyframe-selection (unported hook). Leaf primitives are
-// exported above; export the full popover once the keyframe hooks land.
 export {
   BUILTIN_PRESETS,
   PRESET_MATCH_TOLERANCE,
@@ -957,13 +966,9 @@ export { useFullscreen } from "./lib/hooks/use-fullscreen";
 // / Select / Textarea), the keyframe toggle, and the per-element animated
 // param channel logic (preview/commit + upsert-keyframe-at-playhead).
 //
-// Several tab content builders (MasksTab, SpeedTab, GraphicTab,
-// ClipEffectsTab, StandaloneEffectTab) live in subsystems that other
-// agents own — those builders currently render `null` with a port TODO.
-// Once those tabs land, drop the placeholders in registry.tsx.
-//
-// PropertiesPanel itself reads selection via `editor.selection.getSelectedElements()`
-// directly until the parallel `useElementSelection` hook lands.
+// All five tab content builders (MasksTab, SpeedTab, GraphicTab,
+// ClipEffectsTab, StandaloneEffectTab) are now wired through the
+// registry. PropertiesPanel reads selection via useElementSelection.
 //
 // Mount inside <EditorProvider>; the panel reads/writes its UI prefs through
 // `usePropertiesStore` (active-tab-per-element-type, transform scale lock).

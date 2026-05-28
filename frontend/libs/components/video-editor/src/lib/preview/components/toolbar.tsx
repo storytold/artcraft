@@ -4,11 +4,7 @@ import { useState, useEffect } from "react";
 import { useEditor } from "../../editor/use-editor";
 import { formatTimecode } from "opencut-wasm";
 import { invokeAction } from "../../actions";
-// TODO: EditableTimecode is exported from
-// opencut-classic/apps/web/src/components/editable-timecode.tsx. It renders
-// an inline-editable timecode input. The component pulls in primitives that
-// aren't ported yet, so this toolbar falls back to a plain read-only
-// timecode display until that component ports over.
+import { EditableTimecode } from "../../components/editable-timecode";
 import { Button } from "../../components/ui/button";
 import {
   FullScreenIcon,
@@ -78,17 +74,14 @@ function TimecodeDisplay() {
     };
   }, [editor.playback]);
 
-  // TODO(EditableTimecode): swap this read-only span for the editable
-  // timecode input once `components/editable-timecode` is ported.
   return (
     <div className="flex items-center">
-      <span className="text-center font-mono text-xs tabular-nums">
-        {formatTimecode({
-          time: currentTime,
-          format: "HH:MM:SS:FF",
-          rate: fps,
-        })}
-      </span>
+      <EditableTimecode
+        time={currentTime}
+        duration={totalDuration}
+        fps={fps}
+        onTimeChange={({ time }) => editor.playback.seek({ time })}
+      />
       <span className="text-muted-foreground px-2 font-mono text-xs">/</span>
       <span className="text-muted-foreground font-mono text-xs">
         {formatTimecode({
