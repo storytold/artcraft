@@ -1024,3 +1024,112 @@ export { Textarea } from "./lib/components/ui/textarea";
 // component end-to-end). ---
 export { useMaskHandles } from "./lib/masks/use-mask-handles";
 export { useFocusLock } from "./lib/hooks/use-focus-lock";
+
+// --- Editor shell ---
+// The chrome around the editor surface ported from opencut-classic:
+// header (project menu + editable name + export button), the export
+// popover, the mobile-blocker gate, the first-run onboarding dialog,
+// and the scene switcher sheet. Hosts that want a turnkey shell can
+// mount these directly; hosts that ship their own chrome can pick
+// individual pieces.
+export { EditorHeader } from "./lib/components/editor/editor-header";
+export { ExportButton } from "./lib/components/editor/export-button";
+export { MobileGate } from "./lib/components/editor/mobile-gate";
+export { Onboarding } from "./lib/components/editor/onboarding";
+export { ScenesView } from "./lib/components/editor/scenes-view";
+
+// --- Actions subsystem ---
+// Registry + dispatcher for editor-wide commands. `invokeAction` fires
+// a registered handler (split, undo, toggle-play, etc.) without
+// coupling the caller to the manager that performs the work.
+// `useEditorActions` wires the canonical handler set against
+// EditorCore (mount it once inside <EditorProvider>); hosts that want
+// a subset can call `useActionHandler` directly. The keybindings
+// store persists user-overridden shortcuts and exposes the listener
+// hook the host attaches at the document level.
+export {
+  invokeAction,
+  bindAction,
+  unbindAction,
+  ACTIONS,
+  getActionDefinition,
+  getDefaultShortcuts,
+} from "./lib/actions";
+export type {
+  TAction,
+  TActionArgsMap,
+  TActionWithArgs,
+  TActionWithNoArgs,
+  TActionWithOptionalArgs,
+  TActionFunc,
+  TActionHandlerOptions,
+  TActionDefinition,
+  TActionBaseDefinition,
+  TActionCategory,
+  TArgOfAction,
+  TInvocationTrigger,
+} from "./lib/actions";
+export { useEditorActions } from "./lib/actions/use-editor-actions";
+export { useActionHandler } from "./lib/actions/use-action-handler";
+export { useKeybindingsListener } from "./lib/actions/use-keybindings";
+export { useKeybindingsStore } from "./lib/actions/keybindings-store";
+export type { KeybindingConflict } from "./lib/actions/keybindings-store";
+export {
+  useKeyboardShortcutsHelp,
+} from "./lib/actions/use-keyboard-shortcuts-help";
+export type { KeyboardShortcut } from "./lib/actions/use-keyboard-shortcuts-help";
+export { ShortcutsDialog } from "./lib/actions/shortcuts-dialog";
+export {
+  isKey,
+} from "./lib/actions/keybinding";
+export type {
+  Key,
+  KeybindingConfig,
+  ModifierKeys,
+  ModifierBasedShortcutKey,
+  ShortcutKey,
+  SingleCharacterShortcutKey,
+} from "./lib/actions/keybinding";
+
+// --- Selection scope (escape-key cancellation registry shared by
+// editor-actions and timeline selection scopes) ---
+export {
+  activateScope,
+  clearActiveScope,
+} from "./lib/selection/scope";
+export type { ScopeEntry } from "./lib/selection/scope";
+
+// --- AssetsPanel ---
+// The full AssetsPanel subsystem ported from opencut-classic. Renders
+// the left-rail tab bar (media/sounds/text/stickers/effects/transitions/
+// captions/adjustment/settings), the media gallery view (grid or list,
+// sortable, with drag-to-import + context-menu deletion), the project
+// settings view (frame rate, aspect ratio, custom canvas size), and the
+// background settings view (blur previews + solid colors + pattern-craft
+// + syntax-ui gradient swatches).
+//
+// View modules that live in sibling subsystems
+// (sounds/text/stickers/effects/subtitles) render "coming soon"
+// placeholders until those ports land. Media import pipeline
+// (processMediaAssets + showMediaUploadToast) and the actions registry
+// (invokeAction("remove-media-assets")) are also pending — the gallery
+// surfaces a toast warning and a no-op delete handler in the meantime.
+//
+// Mount inside <EditorProvider>; the panel reads/writes its UI prefs
+// (active tab, media view mode, sort order) through `useAssetsPanelStore`.
+export { AssetsPanel } from "./lib/panels/assets";
+export { TabBar as AssetsPanelTabBar } from "./lib/panels/assets/tabbar";
+export { MediaDragOverlay } from "./lib/panels/assets/drag-overlay";
+export { DraggableItem } from "./lib/panels/assets/draggable-item";
+export type { DraggableItemProps } from "./lib/panels/assets/draggable-item";
+export {
+  TAB_KEYS as ASSETS_PANEL_TAB_KEYS,
+  tabs as assetsPanelTabs,
+  useAssetsPanelStore,
+} from "./lib/panels/assets/assets-panel-store";
+export type {
+  Tab as AssetsPanelTab,
+  MediaViewMode,
+  MediaSortKey,
+  MediaSortOrder,
+} from "./lib/panels/assets/assets-panel-store";
