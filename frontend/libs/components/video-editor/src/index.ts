@@ -726,3 +726,119 @@ export {
   DEFAULT_BACKGROUND_BLUR_INTENSITY,
 } from "./lib/background/blur";
 export { DEFAULT_BACKGROUND_COLOR } from "./lib/background/color";
+
+// --- Timeline UI ---
+// The full Timeline subsystem ported from opencut-classic: ruler, tracks,
+// elements, playhead, snap indicator, audio waveform/volume line, drag line,
+// toolbar (zoom slider, snap/ripple toggles, graph editor popover), and the
+// timeline-store for UI prefs (snapping, ripple, expanded keyframe lanes).
+//
+// Hosts mount <Timeline /> below an <EditorProvider> wrapping their state
+// managers. The component is the single render surface for the timeline panel.
+//
+// NOTE: The Timeline + child components import React hooks
+// (use-element-interaction, use-timeline-zoom, use-keyframe-drag, etc.) and
+// the selection subsystem that haven't been ported yet (parallel agent
+// territory). The TSX source files are all in src/lib/timeline/components/
+// and src/lib/timeline/components/graph-editor/ and will become bundleable
+// once the hooks + selection ports land. Until then we export only the leaf
+// pieces whose dep chains resolve today.
+//
+// TODO: Once hooks/selection are ported, uncomment the full block:
+//   export { Timeline } from "./lib/timeline/components";
+//   export { TimelineToolbar } from "./lib/timeline/components/timeline-toolbar";
+//   export { TimelinePlayhead } from "./lib/timeline/components/timeline-playhead";
+//   export { TimelineTrackContent } from "./lib/timeline/components/timeline-track";
+//   export { TimelineElement } from "./lib/timeline/components/timeline-element";
+//   export { AudioWaveform } from "./lib/timeline/components/audio-waveform";
+//   export { AudioVolumeLine } from "./lib/timeline/components/audio-volume-line";
+//   export { SnapIndicator } from "./lib/timeline/components/snap-indicator";
+//   export { TimelineBookmarksRow } from "./lib/timeline/bookmarks";
+//   export { GraphEditorPopover } from "./lib/timeline/components/graph-editor/popover";
+//   export { useGraphEditorController } from "./lib/timeline/components/graph-editor/use-controller";
+
+// Leaf components with no missing-hook deps — buildable today.
+export { TimelineTick } from "./lib/timeline/components/timeline-tick";
+export { DragLine } from "./lib/timeline/components/drag-line";
+export { BezierGraph, BEZIER_GRAPH_MIN_HEIGHT } from "./lib/timeline/components/graph-editor/bezier-graph";
+
+// --- Timeline UI store (snapping + ripple toggles, expanded keyframe IDs) ---
+export { useTimelineStore } from "./lib/timeline/timeline-store";
+
+// --- Timeline component layout constants + helpers ---
+// Re-exported so hosts can lay out custom timeline-adjacent UI consistently.
+export {
+  TIMELINE_TRACK_HEIGHTS_PX,
+  KEYFRAME_LANE_HEIGHT_PX,
+  KEYFRAME_DIAMOND_SIZE_PX,
+  EXPANDED_GROUP_HEADER_HEIGHT_PX,
+  TIMELINE_TRACK_GAP_PX,
+  TIMELINE_TRACK_LABELS_COLUMN_WIDTH_PX,
+  TIMELINE_RULER_HEIGHT_PX,
+  TIMELINE_BOOKMARK_ROW_HEIGHT_PX,
+  TIMELINE_SCROLLBAR_SIZE_PX,
+  TIMELINE_CONTENT_TOP_PADDING_PX,
+} from "./lib/timeline/components/layout";
+export {
+  getTrackHeight,
+  getExpandedTrackHeight,
+  getCumulativeHeightBefore,
+  getTotalTracksHeight,
+} from "./lib/timeline/components/track-layout";
+export { TIMELINE_LAYERS } from "./lib/timeline/components/layers";
+export {
+  TIMELINE_TRACK_THEME,
+  TIMELINE_AUDIO_WAVEFORM_COLOR,
+  SELECTED_TRACK_ROW_CLASS,
+  DEFAULT_TIMELINE_BOOKMARK_COLOR,
+  getTimelineElementClassName,
+} from "./lib/timeline/components/theme";
+export {
+  TIMELINE_DRAG_THRESHOLD_PX,
+  TIMELINE_HORIZONTAL_WHEEL_STEP_PX,
+  TIMELINE_ZOOM_BUTTON_FACTOR,
+  TIMELINE_ZOOM_ANCHOR_PLAYHEAD_THRESHOLD,
+} from "./lib/timeline/components/interaction";
+export {
+  computeTrackExpansionHeight,
+  getTrackExpandedRows,
+  getExpandedRows,
+  getExpansionHeight,
+  getPropertyLabel,
+} from "./lib/timeline/components/expanded-layout";
+export type { ExpandedRow } from "./lib/timeline/components/expanded-layout";
+export {
+  computeDropTarget,
+  getDropLineY,
+} from "./lib/timeline/components/drop-target";
+export { resolveTimelineElementIntersections } from "./lib/timeline/components/selection-hit-testing";
+
+// --- Audio display curves (db ↔ line-position mapping for AudioVolumeLine) ---
+export {
+  getLinePosFromDb,
+  getDbFromLinePos,
+  getBarFractionFromOutputAmplitude,
+} from "./lib/timeline/audio-display";
+
+// --- Timeline bookmarks UI ---
+// TODO: TimelineBookmarksRow depends on UI primitives whose Radix peer
+// imports resolve at the host level but vite's lib bundler needs them
+// reachable. Currently bundling pulls in @hugeicons which is externalized
+// fine — but the underlying bookmark popover chain pulls in unported
+// hooks. Re-export once useBookmarkDrag + sibling hooks land.
+
+// --- Graph editor (curve editor popover for keyframe easing) ---
+// The full popover (GraphEditorPopover) imports use-controller.ts which
+// requires use-keyframe-selection (unported hook). Leaf primitives are
+// exported above; export the full popover once the keyframe hooks land.
+export {
+  BUILTIN_PRESETS,
+  PRESET_MATCH_TOLERANCE,
+} from "./lib/timeline/components/graph-editor/easing-presets";
+export type { EasingPreset } from "./lib/timeline/components/graph-editor/easing-presets";
+export {
+  useCustomPresets,
+  savePreset,
+  removePreset,
+} from "./lib/timeline/components/graph-editor/custom-presets-store";
+
