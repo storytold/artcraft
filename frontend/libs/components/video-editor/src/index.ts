@@ -291,3 +291,192 @@ export type {
   TBackground,
   TTimelineViewState,
 } from "./lib/project/types";
+
+// --- Masks ---
+// Full mask subsystem (minus freeform, deferred). Hosts can list
+// definitions via getMaskDefinitionsForMenu, register their own via
+// masksRegistry.registerMask, or build a mask instance via
+// buildDefaultMaskInstance + the mask shape's params.
+export {
+  masksRegistry,
+  registerDefaultMasks,
+  getMaskDefinition,
+  getMaskDefinitionsForMenu,
+  buildDefaultMaskInstance,
+} from "./lib/masks";
+export type {
+  Mask,
+  MaskType,
+  MaskDefinition,
+  MaskInteractionDefinition,
+  MaskInteractionResult,
+  MaskHandlePosition,
+  MaskHandleId,
+  MaskOverlay,
+  MaskRenderer,
+  MaskFeatures,
+  MaskSnapArgs,
+  MaskSnapResult,
+  MaskParamUpdateArgs,
+  BaseMaskParams,
+  RectangleMaskParams,
+  SplitMaskParams,
+  TextMaskParams,
+  FreeformPathPoint,
+} from "./lib/masks/types";
+
+// --- Preview canvas math ---
+export {
+  getVisibleElementsWithBounds,
+  getCornerPosition,
+  getEdgeHandlePosition,
+  ROTATION_HANDLE_OFFSET,
+} from "./lib/preview/element-bounds";
+export type {
+  ElementBounds,
+  ElementWithBounds,
+  Corner,
+  Edge,
+} from "./lib/preview/element-bounds";
+export { hitTest, getHitElements, resolvePreferredHit } from "./lib/preview/hit-test";
+export {
+  snapPosition,
+  snapScale,
+  snapScaleAxes,
+  snapRotation,
+  MIN_SCALE,
+  SNAP_THRESHOLD_SCREEN_PIXELS,
+} from "./lib/preview/preview-snap";
+export type {
+  SnapLine,
+  ScaleEdgePreference,
+  SnapResult as PreviewSnapResult,
+  ScaleSnapResult,
+  AxisSnapResult,
+  RotationSnapResult,
+} from "./lib/preview/preview-snap";
+
+// --- Retime (audio mastering) ---
+export {
+  DEFAULT_RETIME_RATE,
+  MIN_RETIME_RATE,
+  MAX_RETIME_RATE,
+  clampRetimeRate,
+  buildConstantRetime,
+  getSourceTimeAtClipTime,
+  getClipTimeAtSourceTime,
+  getEffectiveRateAt,
+  getTimelineDurationForSourceSpan,
+  getSourceSpanAtClipTime,
+  renderRetimedBuffer,
+} from "./lib/retime";
+export type { RetimeConfig } from "./lib/timeline/types";
+
+// --- Audio state (gain/mute/volume animation) ---
+export {
+  clampDb,
+  dBToLinear,
+  getElementVolume,
+  isElementMuted,
+  hasAnimatedVolume,
+  resolveEffectiveAudioGain,
+  buildWaveformGainSamples,
+  buildAudioGainAutomation,
+} from "./lib/timeline/audio-state";
+export { VOLUME_DB_MIN, VOLUME_DB_MAX } from "./lib/timeline/audio-constants";
+
+// --- Timeline placement ---
+export {
+  resolveTrackPlacement,
+  applyPlacement,
+  canElementGoOnTrack,
+  validateElementTrackCompatibility,
+  buildEmptyTrack,
+  MAIN_TRACK_NAME,
+  enforceMainTrackStart,
+  getEarliestMainTrackElement,
+} from "./lib/timeline/placement";
+export type {
+  PlacementResult,
+  PlacementStrategy,
+  PlacementSubject,
+  PlacementTimeSpan,
+} from "./lib/timeline/placement";
+
+// --- Group move + resize solvers ---
+export {
+  buildMoveGroup,
+  resolveGroupMove,
+  snapGroupEdges,
+} from "./lib/timeline/group-move";
+export type {
+  MoveGroup,
+  GroupMember,
+  GroupMoveResult,
+  GroupTrackSection,
+  PlannedElementMove,
+  PlannedTrackCreation,
+} from "./lib/timeline/group-move";
+export { computeGroupResize } from "./lib/timeline/group-resize";
+export type {
+  ComputeGroupResizeArgs,
+  GroupResizeMember,
+  GroupResizeResult,
+  GroupResizeUpdate,
+  ResizeSide,
+} from "./lib/timeline/group-resize";
+
+// --- Timeline animation targets + update pipeline ---
+export {
+  resolveAnimationTarget,
+} from "./lib/timeline/animation-targets";
+export type { AnimationPathDescriptor } from "./lib/timeline/animation-targets";
+export { applyElementUpdate } from "./lib/timeline/update-pipeline";
+export type { ElementUpdateContext } from "./lib/timeline/update-pipeline";
+
+// --- Audio separation (extract / recover source audio) ---
+export {
+  isSourceAudioEnabled,
+  isSourceAudioSeparated,
+  canExtractSourceAudio,
+  canRecoverSourceAudio,
+  canToggleSourceAudio,
+  doesElementHaveEnabledAudio,
+  buildSeparatedAudioElement,
+  getSourceAudioActionLabel,
+} from "./lib/timeline/audio-separation";
+
+// --- Ripple (gap-closing after deletes/shrinks) ---
+export {
+  applyRippleAdjustments,
+  computeRippleAdjustments,
+  rippleShiftElements,
+} from "./lib/ripple";
+export type { RippleAdjustment } from "./lib/ripple";
+
+// --- Commands base + clipboard types ---
+export { Command } from "./lib/commands/base-command";
+export { BatchCommand } from "./lib/commands/batch-command";
+export { PreviewTracker } from "./lib/commands/preview-tracker";
+export type { CommandResult } from "./lib/commands/base-command";
+export type {
+  ClipboardEntry,
+  ClipboardEntryType,
+  ClipboardEntryByType,
+  ClipboardHandler,
+  ClipboardHandlerMap,
+  CopyContext,
+  PasteContext,
+  ElementClipboardItem,
+  ElementsClipboardEntry,
+  KeyframeClipboardItem,
+  KeyframesClipboardEntry,
+} from "./lib/clipboard/types";
+
+// --- Selection types ---
+export type {
+  EditorSelectionPatch,
+  EditorSelectionSnapshot,
+  EditorSelectionKind,
+  SelectedMaskPointSelection,
+} from "./lib/selection/editor-selection";
