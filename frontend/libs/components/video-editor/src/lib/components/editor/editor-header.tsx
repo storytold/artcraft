@@ -8,13 +8,15 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "../ui/dropdown-menu";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { ExportButton } from "./export-button";
 import { useEditorAdapters } from "../../EditorProvider";
 import { useEditor } from "../../editor/use-editor";
 import { CommandIcon, Logout05Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { ShortcutsDialog } from "../../actions/shortcuts-dialog";
+import { RenameProjectDialog } from "../../project/components/rename-project-dialog";
+import { DeleteProjectDialog } from "../../project/components/delete-project-dialog";
 import { cn } from "../../utils/ui";
 import { Button } from "../ui/button";
 
@@ -128,19 +130,22 @@ function ProjectDropdown() {
           <DropdownMenuSeparator />
         </DropdownMenuContent>
       </DropdownMenu>
-      {/* TODO: RenameProjectDialog / DeleteProjectDialog live in the
-          @/project subtree which isn't ported yet (host-level workflow).
-          Hosts can listen for `openDialog === "rename"` and render their
-          own confirmation UI. The local state stays so the menu items
-          continue to function. */}
+      <RenameProjectDialog
+        isOpen={openDialog === "rename"}
+        onOpenChange={(isOpen) => setOpenDialog(isOpen ? "rename" : null)}
+        onConfirm={(newName) => handleSaveProjectName(newName)}
+        projectName={activeProject?.metadata.name || ""}
+      />
+      <DeleteProjectDialog
+        isOpen={openDialog === "delete"}
+        onOpenChange={(isOpen) => setOpenDialog(isOpen ? "delete" : null)}
+        onConfirm={handleDeleteProject}
+        projectNames={[activeProject?.metadata.name || ""]}
+      />
       <ShortcutsDialog
         isOpen={openDialog === "shortcuts"}
         onOpenChange={(isOpen) => setOpenDialog(isOpen ? "shortcuts" : null)}
       />
-      {/* Acknowledge the unused locals so the dropdown items still build. */}
-      {openDialog === "rename" && handleSaveProjectName ? null : null}
-      {openDialog === "delete" && handleDeleteProject ? null : null}
-      {Link ? null : null}
     </>
   );
 }
