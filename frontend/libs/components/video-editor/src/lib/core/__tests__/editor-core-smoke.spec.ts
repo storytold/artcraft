@@ -9,6 +9,7 @@ import type {
 import { consoleToast } from "../../adapters/default/console-toast";
 import { anonymousAuthUser } from "../../adapters/default/anonymous-auth-user";
 import { downloadExportSink } from "../../adapters/default/download-export-sink";
+import { emptySoundsAdapter } from "../../adapters/default/empty-sounds-adapter";
 import { buildDefaultScene } from "../../timeline/scenes";
 import type { TProject } from "../../project/types";
 import { mediaTimeFromSeconds, ZERO_MEDIA_TIME } from "../../wasm";
@@ -69,6 +70,7 @@ function buildInMemoryAdapters(): VideoEditorAdapters {
     authUser: anonymousAuthUser,
     exportSink: downloadExportSink,
     toast: consoleToast,
+    soundsAdapter: emptySoundsAdapter,
     assetGallery: null,
   };
 }
