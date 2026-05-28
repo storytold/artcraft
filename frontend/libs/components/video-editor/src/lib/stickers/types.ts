@@ -1,3 +1,7 @@
+import type { STICKER_CATEGORIES } from "./categories";
+
+export type StickerCategory = keyof typeof STICKER_CATEGORIES;
+
 export interface StickerItem {
   id: string;
   provider: string;
@@ -20,7 +24,7 @@ export interface StickerBrowseSection {
   layout?: "grid" | "row";
   action?: {
     type: "see-all";
-    category?: string;
+    category?: StickerCategory;
     sectionId?: string;
   };
 }
