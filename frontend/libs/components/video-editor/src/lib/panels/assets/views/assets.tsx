@@ -28,14 +28,8 @@ import { DEFAULT_NEW_ELEMENT_DURATION } from "../../../timeline/creation";
 import { mediaTimeFromSeconds, type MediaTime } from "../../../wasm";
 import { useEditor } from "../../../editor/use-editor";
 import { useFileUpload } from "../../../media/use-file-upload";
-// TODO: processMediaAssets + showMediaUploadToast are upstream subsystems
-// for the media import pipeline. Hosts that have a richer asset
-// pipeline should wire it through MediaSourceAdapter. The MediaView
-// keeps the UI plumbing wired so the gallery still renders + can drop
-// files, but actual ingest is gated behind a console warning until the
-// pipeline lands.
-// import { processMediaAssets } from "../../../media/processing";
-// import { showMediaUploadToast } from "../../../media/upload-toast";
+import { processMediaAssets } from "../../../media/processing";
+import { showMediaUploadToast } from "../../../media/upload-toast";
 import { SelectableItem } from "../../../selection/selectable-item";
 import { SelectableSurface } from "../../../selection/selectable-surface";
 import { useSelection } from "../../../selection/context";
@@ -90,33 +84,27 @@ export function MediaView() {
     setIsProcessing(true);
     setProgress(0);
     try {
-      // TODO: route through ProjectStorageAdapter / MediaSourceAdapter.
-      // The original called processMediaAssets({ files, onProgress })
-      // and then editor.media.addMediaAsset() per asset. Until the
-      // pipeline ports across, we surface a non-blocking warning.
-      // await showMediaUploadToast({
-      //   filesCount: files.length,
-      //   promise: async () => {
-      //     const processedAssets = await processMediaAssets({
-      //       files,
-      //       onProgress: (progress: { progress: number }) =>
-      //         setProgress(progress.progress),
-      //     });
-      //     for (const asset of processedAssets) {
-      //       await editor.media.addMediaAsset({
-      //         projectId: activeProject.metadata.id,
-      //         asset,
-      //       });
-      //     }
-      //     return {
-      //       uploadedCount: processedAssets.length,
-      //       assetNames: processedAssets.map((asset) => asset.name),
-      //     };
-      //   },
-      // });
-      toast.info(
-        `Media import pipeline (${files.length} file${files.length === 1 ? "" : "s"}) is not yet wired in this lib`,
-      );
+      await showMediaUploadToast({
+        filesCount: files.length,
+        toast,
+        promise: async () => {
+          const processedAssets = await processMediaAssets({
+            files,
+            toast,
+            onProgress: ({ progress }) => setProgress(progress),
+          });
+          for (const asset of processedAssets) {
+            await editor.media.addMediaAsset({
+              projectId: activeProject.metadata.id,
+              asset,
+            });
+          }
+          return {
+            uploadedCount: processedAssets.length,
+            assetNames: processedAssets.map((asset) => asset.name),
+          };
+        },
+      });
     } catch (error) {
       console.error("Error processing files:", error);
     } finally {

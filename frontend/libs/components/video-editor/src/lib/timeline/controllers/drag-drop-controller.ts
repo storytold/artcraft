@@ -30,11 +30,16 @@ import type { MediaAsset } from "../../media/types";
 import { roundFrameTime, type MediaTime } from "../../wasm";
 
 // External file drop processing (drag from OS) is wired through the
-// host via processFiles + showUploadToast. OpenCut's `processMediaAssets`
-// and `showMediaUploadToast` are not ported into this lib — hosts
-// implement them once and pass them through the controller config.
-// TODO: port a default processFiles/showUploadToast pair into the lib so
-// hosts that don't need custom decoding can use a baseline.
+// host via processFiles + showUploadToast. The lib ships baseline
+// implementations in `media/processing.ts` (`processMediaAssets`) and
+// `media/upload-toast.ts` (`showMediaUploadToast`); hosts that want the
+// default pipeline pass them through here:
+//   processFiles: ({ files }) =>
+//     processMediaAssets({ files, toast: editor.adapters.toast })
+//   showUploadToast: ({ filesCount, promise }) =>
+//     showMediaUploadToast({ filesCount, toast: editor.adapters.toast, promise })
+// Hosts with custom decoding (e.g. server-side transcode) shadow with
+// their own pipeline.
 
 // --- Config ---
 
