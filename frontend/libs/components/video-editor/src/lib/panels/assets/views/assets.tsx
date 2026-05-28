@@ -215,41 +215,27 @@ export function MediaView() {
             onClick={openFilePicker}
           />
         ) : (
-          // TODO: SelectableSurface + MediaScopeRegistrar (selection
-          // scope) are not yet ported — re-wrap with the original
-          // multi-select container once the selection React surface
-          // lands. Until then we render the list directly.
-          <>
-            <MediaScopeRegistrar
-              revealId={highlightMediaId}
-              onRevealComplete={clearHighlight}
-              orderedIds={orderedMediaIds}
-            />
+          <SelectableSurface
+            ariaLabel="Assets"
+            orderedIds={orderedMediaIds}
+            revealId={highlightMediaId}
+            onRevealComplete={clearHighlight}
+          >
+            <MediaScopeRegistrar />
             <MediaItemList
               items={filteredMediaItems}
               mode={mediaViewMode}
               onRemove={handleRemove}
             />
-          </>
+          </SelectableSurface>
         )}
       </PanelView>
     </>
   );
 }
 
-function MediaScopeRegistrar({
-  revealId: _revealId,
-  onRevealComplete: _onRevealComplete,
-  orderedIds: _orderedIds,
-}: {
-  revealId: string | null;
-  onRevealComplete: () => void;
-  orderedIds: string[];
-}) {
-  // TODO: useSelectionScope() registration. The selection React surface
-  // (SelectableSurface/SelectableItem/useSelection/useSelectionScope)
-  // has not been ported into this lib yet — wire up once it lands so
-  // multi-select + reveal-on-highlight start working again.
+function MediaScopeRegistrar() {
+  useSelectionScope();
   return null;
 }
 
@@ -328,10 +314,8 @@ function MediaItemWithContextMenu({
     ids: string[];
   }) => void;
 }) {
-  // TODO: useSelection() (multi-select state from the unported
-  // selection React surface) — until it lands we treat every context
-  // menu invocation as a single-item delete.
-  const idsToDelete = [item.id];
+  const { isSelected, selectedIds } = useSelection();
+  const idsToDelete = isSelected(item.id) ? selectedIds : [item.id];
   const deleteLabel =
     idsToDelete.length > 1 ? `Delete ${idsToDelete.length} items` : "Delete";
 
@@ -379,8 +363,7 @@ function MediaItemList({
     >
       {items.map((item) => (
         <MediaItemWithContextMenu item={item} onRemove={onRemove} key={item.id}>
-          {/* TODO: wrap in SelectableItem once selection surface lands */}
-          <div className={cn(!isGrid && "w-full")}>
+          <SelectableItem className={cn(!isGrid && "w-full")} id={item.id}>
             <MediaAssetDraggable
               item={item}
               preview={
@@ -392,7 +375,7 @@ function MediaItemList({
               variant={isGrid ? "card" : "compact"}
               isRounded={isGrid ? false : undefined}
             />
-          </div>
+          </SelectableItem>
         </MediaItemWithContextMenu>
       ))}
     </div>
