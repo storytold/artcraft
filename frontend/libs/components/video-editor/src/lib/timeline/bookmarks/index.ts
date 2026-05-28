@@ -17,4 +17,8 @@ export { getBookmarkSnapPoints } from "./snap-source";
 export { TimelineBookmarksRow } from "./components/bookmarks";
 export { useBookmarkDrag } from "./hooks/use-bookmark-drag";
 export type { BookmarkDragState } from "./hooks/use-bookmark-drag";
+export {
+  bookmarkNotesPreviewOverlay,
+  getBookmarkPreviewOverlaySource,
+} from "./preview-overlay-source";
 

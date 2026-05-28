@@ -49,6 +49,7 @@
     "react-drag-drop-files": "^2.3.10",
     "react-helmet": "^6.1.0",
     "react-hot-toast": "^2.5.2",
+    "react-resizable-panels": "^2.1.7",
     "react-router-dom": "6.29.0",
     "react-spring": "^10.0.1",
     "tailwind-merge": "^2.2.2",

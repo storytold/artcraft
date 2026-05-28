@@ -27,6 +27,7 @@ const EXTRA_EXTERNAL_PREFIXES = [
   'use-deep-compare-effect',
   'react-router-dom',
   'framer-motion',
+  'react-resizable-panels',
 ];
 
 function isExternal(id: string): boolean {
