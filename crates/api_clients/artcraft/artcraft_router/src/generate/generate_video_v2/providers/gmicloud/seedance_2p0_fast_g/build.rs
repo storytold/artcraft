@@ -147,7 +147,7 @@ mod tests {
   use crate::api::router_video_model::RouterVideoModel;
   use crate::api::image_list_ref::ImageListRef;
   use crate::api::image_ref::ImageRef;
-  use crate::api::provider::Provider;
+  use crate::api::router_provider::RouterProvider;
   use crate::api::video_list_ref::VideoListRef;
   use crate::api::audio_list_ref::AudioListRef;
   use crate::generate::generate_video::generate_video_request_builder::GenerateVideoRequestBuilder;
@@ -285,7 +285,7 @@ mod tests {
   fn base_builder() -> GenerateVideoRequestBuilder {
     GenerateVideoRequestBuilder {
       model: RouterVideoModel::Seedance2p0UltraFast,
-      provider: Provider::GmiCloud,
+      provider: RouterProvider::GmiCloud,
       duration_seconds: Some(5),
       video_batch_count: Some(1),
       ..Default::default()

@@ -1,4 +1,4 @@
-use crate::api::provider::Provider;
+use crate::api::router_provider::RouterProvider;
 use crate::errors::artcraft_router_error::ArtcraftRouterError;
 use crate::generate::generate_video::video_generation_cost_estimate::VideoGenerationCostEstimate;
 use crate::generate::generate_video_v2::providers::kinovi::happy_horse_1p0::cost::KinoviHappyHorse1p0CostState;
@@ -22,11 +22,11 @@ pub enum VideoGenerationDraftRequest {
 
 impl VideoGenerationDraftRequest {
 
-  pub fn get_provider(&self) -> Provider {
+  pub fn get_provider(&self) -> RouterProvider {
     match self {
-      Self::KinoviHappyHorse1p0(_) => Provider::Seedance2Pro,
-      Self::KinoviSeedance2p0(_) => Provider::Seedance2Pro,
-      Self::KinoviSeedance2p0Fast(_) => Provider::Seedance2Pro,
+      Self::KinoviHappyHorse1p0(_) => RouterProvider::Seedance2Pro,
+      Self::KinoviSeedance2p0(_) => RouterProvider::Seedance2Pro,
+      Self::KinoviSeedance2p0Fast(_) => RouterProvider::Seedance2Pro,
     }
   }
 

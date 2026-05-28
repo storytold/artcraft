@@ -31,14 +31,14 @@ impl ArtcraftKling21ProCostState {
 mod tests {
   use crate::api::router_video_model::RouterVideoModel;
   use crate::api::image_ref::ImageRef;
-  use crate::api::provider::Provider;
+  use crate::api::router_provider::RouterProvider;
   use crate::generate::generate_video::generate_video_request_builder::GenerateVideoRequestBuilder;
   use tokens::tokens::media_files::MediaFileToken;
 
   fn cost_cents(duration_seconds: Option<u16>) -> u64 {
     let b = GenerateVideoRequestBuilder {
       model: RouterVideoModel::Kling21Pro,
-      provider: Provider::Artcraft,
+      provider: RouterProvider::Artcraft,
       prompt: Some("test".to_string()),
       start_frame: Some(ImageRef::MediaFileToken(MediaFileToken::new("mf_x".to_string()))),
       duration_seconds,

@@ -51,7 +51,7 @@ impl ArtcraftSeedance2p0BytePlusCostState {
 mod tests {
   use crate::api::router_resolution::RouterResolution;
   use crate::api::router_video_model::RouterVideoModel;
-  use crate::api::provider::Provider;
+  use crate::api::router_provider::RouterProvider;
   use crate::generate::generate_video::generate_video_request_builder::GenerateVideoRequestBuilder;
 
   mod pricing_720p {
@@ -161,7 +161,7 @@ mod tests {
   ) -> crate::generate::generate_video::video_generation_cost_estimate::VideoGenerationCostEstimate {
     GenerateVideoRequestBuilder {
       model: RouterVideoModel::Seedance2p0BytePlus,
-      provider: Provider::Artcraft,
+      provider: RouterProvider::Artcraft,
       resolution,
       duration_seconds: Some(duration_seconds),
       video_batch_count: Some(video_batch_count),

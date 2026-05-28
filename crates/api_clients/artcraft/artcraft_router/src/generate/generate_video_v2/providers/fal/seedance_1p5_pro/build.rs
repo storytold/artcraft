@@ -290,7 +290,7 @@ mod tests {
   use tokens::tokens::media_files::MediaFileToken;
 
   use crate::api::router_video_model::RouterVideoModel;
-  use crate::api::provider::Provider;
+  use crate::api::router_provider::RouterProvider;
   use crate::generate::generate_video_v2::video_generation_request::VideoGenerationRequest;
 
   use super::*;
@@ -300,7 +300,7 @@ mod tests {
   fn base_t2v_builder() -> GenerateVideoRequestBuilder {
     GenerateVideoRequestBuilder {
       model: RouterVideoModel::Seedance1p5Pro,
-      provider: Provider::Fal,
+      provider: RouterProvider::Fal,
       prompt: Some("a corgi running".to_string()),
       // No start_frame → text-to-video.
       ..Default::default()
@@ -310,7 +310,7 @@ mod tests {
   fn base_i2v_builder() -> GenerateVideoRequestBuilder {
     GenerateVideoRequestBuilder {
       model: RouterVideoModel::Seedance1p5Pro,
-      provider: Provider::Fal,
+      provider: RouterProvider::Fal,
       prompt: Some("a corgi running".to_string()),
       start_frame: Some(ImageRef::Url("https://example.com/start.png".to_string())),
       ..Default::default()

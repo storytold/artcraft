@@ -35,13 +35,13 @@ impl ArtcraftVeo3FastCostState {
 #[cfg(test)]
 mod tests {
   use crate::api::router_video_model::RouterVideoModel;
-  use crate::api::provider::Provider;
+  use crate::api::router_provider::RouterProvider;
   use crate::generate::generate_video::generate_video_request_builder::GenerateVideoRequestBuilder;
 
   fn cost_cents(duration_seconds: Option<u16>, generate_audio: Option<bool>) -> u64 {
     let b = GenerateVideoRequestBuilder {
       model: RouterVideoModel::Veo3Fast,
-      provider: Provider::Artcraft,
+      provider: RouterProvider::Artcraft,
       prompt: Some("test".to_string()),
       duration_seconds,
       generate_audio,

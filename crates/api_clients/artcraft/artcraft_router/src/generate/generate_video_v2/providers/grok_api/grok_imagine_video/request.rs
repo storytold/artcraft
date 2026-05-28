@@ -45,7 +45,7 @@ mod tests {
   use crate::api::router_resolution::RouterResolution;
   use crate::api::router_video_model::RouterVideoModel;
   use crate::api::image_ref::ImageRef;
-  use crate::api::provider::Provider;
+  use crate::api::router_provider::RouterProvider;
   use crate::client::router_client::RouterClient;
   use crate::client::router_grok_api_client::RouterGrokApiClient;
   use crate::generate::generate_video::generate_video_request_builder::GenerateVideoRequestBuilder;
@@ -81,7 +81,7 @@ mod tests {
   fn grok_builder() -> GenerateVideoRequestBuilder {
     GenerateVideoRequestBuilder {
       model: RouterVideoModel::GrokImagineVideo,
-      provider: Provider::GrokApi,
+      provider: RouterProvider::GrokApi,
       video_batch_count: Some(1),
       ..Default::default()
     }

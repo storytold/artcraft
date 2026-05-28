@@ -68,7 +68,7 @@ impl ArtcraftSeedance2p0CostState {
 #[cfg(test)]
 mod tests {
   use crate::api::router_resolution::RouterResolution;
-  use crate::api::provider::Provider;
+  use crate::api::router_provider::RouterProvider;
   use crate::generate::generate_video::generate_video_request_builder::GenerateVideoRequestBuilder;
 
   // -- 720p pricing --
@@ -237,7 +237,7 @@ mod tests {
             let artcraft_cost = build_cost(*res, *dur, *batch);
 
             let kinovi = GenerateVideoRequestBuilder {
-              provider: Provider::Seedance2Pro,
+              provider: RouterProvider::Seedance2Pro,
               resolution: *res,
               duration_seconds: Some(*dur),
               video_batch_count: Some(*batch),
@@ -268,7 +268,7 @@ mod tests {
     video_batch_count: u16,
   ) -> crate::generate::generate_video::video_generation_cost_estimate::VideoGenerationCostEstimate {
     let builder = GenerateVideoRequestBuilder {
-      provider: Provider::Artcraft,
+      provider: RouterProvider::Artcraft,
       resolution,
       duration_seconds: Some(duration_seconds),
       video_batch_count: Some(video_batch_count),

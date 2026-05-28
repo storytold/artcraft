@@ -61,7 +61,7 @@ impl KinoviHappyHorse1p0CostState {
 mod tests {
   use super::*;
   use crate::api::router_resolution::RouterResolution;
-  use crate::api::provider::Provider;
+  use crate::api::router_provider::RouterProvider;
   use crate::generate::generate_video::generate_video_request_builder::GenerateVideoRequestBuilder;
   use crate::generate::generate_video_v2::video_generation_draft::VideoGenerationDraftRequest;
   use crate::generate::generate_video_v2::video_generation_draft_or_request::VideoGenerationDraftOrRequest;
@@ -311,7 +311,7 @@ mod tests {
     use crate::api::router_video_model::RouterVideoModel;
     let builder = GenerateVideoRequestBuilder {
       model: RouterVideoModel::HappyHorse1p0,
-      provider: Provider::Seedance2Pro,
+      provider: RouterProvider::Seedance2Pro,
       resolution,
       duration_seconds: Some(duration_seconds),
       video_batch_count: Some(video_batch_count),

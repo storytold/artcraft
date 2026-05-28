@@ -50,7 +50,7 @@ impl ArtcraftSeedance2p0UltraFastCostState {
 mod tests {
   use crate::api::router_resolution::RouterResolution;
   use crate::api::router_video_model::RouterVideoModel;
-  use crate::api::provider::Provider;
+  use crate::api::router_provider::RouterProvider;
   use crate::generate::generate_video::generate_video_request_builder::GenerateVideoRequestBuilder;
 
   mod pricing_720p {
@@ -126,7 +126,7 @@ mod tests {
       let standard = {
         let builder = GenerateVideoRequestBuilder {
           model: RouterVideoModel::Seedance2p0Ultra,
-          provider: Provider::Artcraft,
+          provider: RouterProvider::Artcraft,
           resolution: Some(RouterResolution::SevenTwentyP),
           duration_seconds: Some(10),
           video_batch_count: Some(1),
@@ -151,7 +151,7 @@ mod tests {
   ) -> crate::generate::generate_video::video_generation_cost_estimate::VideoGenerationCostEstimate {
     let builder = GenerateVideoRequestBuilder {
       model: RouterVideoModel::Seedance2p0UltraFast,
-      provider: Provider::Artcraft,
+      provider: RouterProvider::Artcraft,
       resolution,
       duration_seconds: Some(duration_seconds),
       video_batch_count: Some(video_batch_count),

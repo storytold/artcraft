@@ -107,7 +107,7 @@ mod tests {
   use tokens::tokens::media_files::MediaFileToken;
 
   use crate::api::router_video_model::RouterVideoModel;
-  use crate::api::provider::Provider;
+  use crate::api::router_provider::RouterProvider;
   use crate::generate::generate_video_v2::video_generation_request::VideoGenerationRequest;
 
   use super::*;
@@ -115,7 +115,7 @@ mod tests {
   fn base_builder() -> GenerateVideoRequestBuilder {
     GenerateVideoRequestBuilder {
       model: RouterVideoModel::Veo2,
-      provider: Provider::Fal,
+      provider: RouterProvider::Fal,
       prompt: Some("a corgi running".to_string()),
       ..Default::default()
     }

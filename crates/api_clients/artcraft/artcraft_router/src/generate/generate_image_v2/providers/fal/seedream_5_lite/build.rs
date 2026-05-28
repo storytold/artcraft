@@ -220,12 +220,12 @@ fn resolve_image_list_ref(
 mod tests {
   use super::*;
   use crate::api::router_image_model::RouterImageModel;
-  use crate::api::provider::Provider;
+  use crate::api::router_provider::RouterProvider;
 
   fn base_builder() -> GenerateImageRequestBuilder {
     GenerateImageRequestBuilder {
       model: RouterImageModel::Seedream5Lite,
-      provider: Provider::Fal,
+      provider: RouterProvider::Fal,
       prompt: Some("a cat in space".to_string()),
       image_inputs: None,
       resolution: None,

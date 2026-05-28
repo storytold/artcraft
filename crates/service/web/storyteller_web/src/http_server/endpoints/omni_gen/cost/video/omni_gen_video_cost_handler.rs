@@ -4,7 +4,7 @@ use actix_web::web::Json;
 use actix_web::{web, HttpRequest};
 use artcraft_api_defs::omni_gen::cost_and_generate_requests::omni_gen_video_cost_and_generate_request::OmniGenVideoCostAndGenerateRequest;
 use artcraft_api_defs::omni_gen::cost_response::omni_gen_video_cost_response::OmniGenVideoCostResponse;
-use artcraft_router::api::provider::Provider;
+use artcraft_router::api::router_provider::RouterProvider;
 use log::warn;
 use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::endpoints::omni_gen::generate::video::helpers::hydrate_router_request::hydrate_to_router_request;
@@ -29,7 +29,7 @@ pub async fn omni_gen_video_cost_handler(
 ) -> Result<Json<OmniGenVideoCostResponse>, CommonWebError> {
   let mut builder = hydrate_to_router_request(&request)?;
 
-  builder.provider = Provider::Artcraft;
+  builder.provider = RouterProvider::Artcraft;
 
   let estimate = builder.build2()
     .map_err(|e| {

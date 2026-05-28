@@ -7,7 +7,7 @@ use artcraft_router::api::router_resolution::RouterResolution;
 use artcraft_router::api::router_video_model::RouterVideoModel;
 use artcraft_router::api::image_list_ref::ImageListRef;
 use artcraft_router::api::image_ref::ImageRef;
-use artcraft_router::api::provider::Provider;
+use artcraft_router::api::router_provider::RouterProvider;
 use artcraft_router::api::video_list_ref::VideoListRef;
 use artcraft_router::client::request_mismatch_mitigation_strategy::RequestMismatchMitigationStrategy;
 use artcraft_router::generate::generate_video::generate_video_request_builder::GenerateVideoRequestBuilder;
@@ -38,7 +38,7 @@ pub fn hydrate_to_router_request(
 
   Ok(GenerateVideoRequestBuilder {
     model,
-    provider: Provider::Artcraft,
+    provider: RouterProvider::Artcraft,
     prompt: request.prompt.clone(),
     negative_prompt: request.negative_prompt.clone(),
     start_frame: request.start_frame_image_media_token.clone()

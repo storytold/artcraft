@@ -33,7 +33,7 @@ impl ArtcraftQwenEdit2511AnglesCostState {
 mod tests {
   use crate::api::router_image_model::RouterImageModel;
   use crate::api::image_list_ref::ImageListRef;
-  use crate::api::provider::Provider;
+  use crate::api::router_provider::RouterProvider;
   use crate::client::request_mismatch_mitigation_strategy::RequestMismatchMitigationStrategy;
   use crate::generate::generate_image::generate_image_request_builder::GenerateImageRequestBuilder;
   use tokens::tokens::media_files::MediaFileToken;
@@ -41,7 +41,7 @@ mod tests {
   fn cost_cents(image_batch_count: u16) -> u64 {
     let builder = GenerateImageRequestBuilder {
       model: RouterImageModel::QwenEdit2511Angles,
-      provider: Provider::Artcraft,
+      provider: RouterProvider::Artcraft,
       prompt: None,
       image_inputs: Some(ImageListRef::MediaFileTokens(vec![MediaFileToken::new_from_str("mf_test")])),
       resolution: None,

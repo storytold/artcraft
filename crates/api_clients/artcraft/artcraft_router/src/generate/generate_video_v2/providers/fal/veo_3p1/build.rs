@@ -261,7 +261,7 @@ fn to_flf_resolution(r: PlanResolution) -> EnqueueVeo3p1FirstLastFrameImageToVid
 #[cfg(test)]
 mod tests {
   use crate::api::router_video_model::RouterVideoModel;
-  use crate::api::provider::Provider;
+  use crate::api::router_provider::RouterProvider;
   use crate::generate::generate_video_v2::video_generation_request::VideoGenerationRequest;
 
   use super::*;
@@ -269,7 +269,7 @@ mod tests {
   fn base_builder() -> GenerateVideoRequestBuilder {
     GenerateVideoRequestBuilder {
       model: RouterVideoModel::Veo3p1,
-      provider: Provider::Fal,
+      provider: RouterProvider::Fal,
       prompt: Some("test".to_string()),
       ..Default::default()
     }

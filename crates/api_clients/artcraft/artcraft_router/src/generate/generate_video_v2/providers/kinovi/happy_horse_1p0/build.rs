@@ -163,7 +163,7 @@ mod tests {
   use tokens::tokens::media_files::MediaFileToken;
 
   use crate::api::image_ref::ImageRef;
-  use crate::api::provider::Provider;
+  use crate::api::router_provider::RouterProvider;
   use crate::client::request_mismatch_mitigation_strategy::RequestMismatchMitigationStrategy;
   use crate::errors::artcraft_router_error::ArtcraftRouterError;
   use crate::generate::generate_video::generate_video_request_builder::GenerateVideoRequestBuilder;
@@ -441,7 +441,7 @@ mod tests {
 
   fn happy_horse_builder() -> GenerateVideoRequestBuilder {
     GenerateVideoRequestBuilder {
-      provider: Provider::Seedance2Pro,
+      provider: RouterProvider::Seedance2Pro,
       prompt: Some("a cat dancing".to_string()),
       duration_seconds: Some(5),
       video_batch_count: Some(1),

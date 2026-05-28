@@ -2,7 +2,7 @@ use artcraft_api_defs::prompts::create_prompt::CreatePromptRequest;
 use artcraft_router::api::router_aspect_ratio::RouterAspectRatio;
 use artcraft_router::api::router_resolution::RouterResolution;
 use artcraft_router::api::router_video_model::RouterVideoModel;
-use artcraft_router::api::provider::Provider;
+use artcraft_router::api::router_provider::RouterProvider;
 use artcraft_router::generate::generate_video::generate_video_request_builder::GenerateVideoRequestBuilder;
 use enums::common::generation::common_aspect_ratio::CommonAspectRatio as EnumsAspectRatio;
 use enums::common::generation::common_generation_mode::CommonGenerationMode;
@@ -78,14 +78,14 @@ fn video_model_to_common_model_type(model: RouterVideoModel) -> Option<CommonMod
   }
 }
 
-fn provider_to_generation_provider(provider: Provider) -> GenerationProvider {
+fn provider_to_generation_provider(provider: RouterProvider) -> GenerationProvider {
   match provider {
-    Provider::Artcraft => GenerationProvider::Artcraft,
-    Provider::Fal => GenerationProvider::Fal,
+    RouterProvider::Artcraft => GenerationProvider::Artcraft,
+    RouterProvider::Fal => GenerationProvider::Fal,
     // Unused providers -> ArtCraft
-    Provider::Seedance2Pro => GenerationProvider::Artcraft ,
-    Provider::GmiCloud => GenerationProvider::Artcraft,
-    Provider::GrokApi => GenerationProvider::Artcraft,
+    RouterProvider::Seedance2Pro => GenerationProvider::Artcraft ,
+    RouterProvider::GmiCloud => GenerationProvider::Artcraft,
+    RouterProvider::GrokApi => GenerationProvider::Artcraft,
   }
 }
 
@@ -132,7 +132,7 @@ mod tests {
   fn base_builder() -> GenerateVideoRequestBuilder {
     GenerateVideoRequestBuilder {
       model: RouterVideoModel::Kling3p0Standard,
-      provider: Provider::Fal,
+      provider: RouterProvider::Fal,
       prompt: Some("a dog running on the beach".to_string()),
       negative_prompt: None,
       start_frame: None,

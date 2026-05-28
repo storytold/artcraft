@@ -34,7 +34,7 @@ mod tests {
   use crate::api::router_video_model::RouterVideoModel;
   use crate::api::image_list_ref::ImageListRef;
   use crate::api::image_ref::ImageRef;
-  use crate::api::provider::Provider;
+  use crate::api::router_provider::RouterProvider;
   use crate::api::video_list_ref::VideoListRef;
   use crate::client::request_mismatch_mitigation_strategy::RequestMismatchMitigationStrategy;
   use crate::generate::generate_video::generate_video_request_builder::GenerateVideoRequestBuilder;
@@ -154,7 +154,7 @@ mod tests {
     fn res_1080p_error_out() {
       let result = build_artcraft_seedance_2p0_fast(GenerateVideoRequestBuilder {
         model: RouterVideoModel::Seedance2p0Fast,
-        provider: Provider::Artcraft,
+        provider: RouterProvider::Artcraft,
         resolution: Some(RouterResolution::TenEightyP),
         request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::ErrorOut,
         ..Default::default()
@@ -187,7 +187,7 @@ mod tests {
     fn url_start_frame_rejected() {
       let result = build_artcraft_seedance_2p0_fast(GenerateVideoRequestBuilder {
         model: RouterVideoModel::Seedance2p0Fast,
-        provider: Provider::Artcraft,
+        provider: RouterProvider::Artcraft,
         start_frame: Some(ImageRef::Url("https://example.com".to_string())),
         ..Default::default()
       });
@@ -224,7 +224,7 @@ mod tests {
   fn artcraft_fast_builder_with(f: impl FnOnce(&mut GenerateVideoRequestBuilder)) -> GenerateVideoRequestBuilder {
     let mut builder = GenerateVideoRequestBuilder {
       model: RouterVideoModel::Seedance2p0Fast,
-      provider: Provider::Artcraft,
+      provider: RouterProvider::Artcraft,
       duration_seconds: Some(5),
       video_batch_count: Some(1),
       ..Default::default()

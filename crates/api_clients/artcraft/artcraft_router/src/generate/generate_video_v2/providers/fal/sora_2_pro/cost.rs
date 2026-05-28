@@ -58,13 +58,13 @@ mod tests {
   use crate::api::router_resolution::RouterResolution;
   use crate::api::router_video_model::RouterVideoModel;
   use crate::api::image_ref::ImageRef;
-  use crate::api::provider::Provider;
+  use crate::api::router_provider::RouterProvider;
   use crate::generate::generate_video::generate_video_request_builder::GenerateVideoRequestBuilder;
 
   fn cost_cents(duration_seconds: Option<u16>, resolution: Option<RouterResolution>, has_start: bool) -> u64 {
     let mut b = GenerateVideoRequestBuilder {
       model: RouterVideoModel::Sora2Pro,
-      provider: Provider::Fal,
+      provider: RouterProvider::Fal,
       prompt: Some("test".to_string()),
       duration_seconds,
       resolution,

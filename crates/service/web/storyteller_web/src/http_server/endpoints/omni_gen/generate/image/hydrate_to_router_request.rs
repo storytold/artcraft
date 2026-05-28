@@ -4,7 +4,7 @@ use artcraft_router::api::router_image_model::RouterImageModel;
 use artcraft_router::api::router_quality::RouterQuality;
 use artcraft_router::api::router_resolution::RouterResolution;
 use artcraft_router::api::image_list_ref::ImageListRef;
-use artcraft_router::api::provider::Provider;
+use artcraft_router::api::router_provider::RouterProvider;
 use artcraft_router::client::request_mismatch_mitigation_strategy::RequestMismatchMitigationStrategy;
 use artcraft_router::generate::generate_image::generate_image_request_builder::GenerateImageRequestBuilder;
 use enums::common::generation::common_aspect_ratio::CommonAspectRatio as CommonAspectRatioEnum;
@@ -38,7 +38,7 @@ pub fn hydrate_to_router_request(
 
   Ok(GenerateImageRequestBuilder {
     model,
-    provider: Provider::Artcraft,
+    provider: RouterProvider::Artcraft,
     prompt: request.prompt.clone(),
     image_inputs: request.image_media_tokens.clone()
       .map(ImageListRef::MediaFileTokens),

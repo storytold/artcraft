@@ -3,7 +3,7 @@ use crate::api::router_image_model::RouterImageModel;
 use crate::api::router_quality::RouterQuality;
 use crate::api::router_resolution::RouterResolution;
 use crate::api::image_list_ref::ImageListRef;
-use crate::api::provider::Provider;
+use crate::api::router_provider::RouterProvider;
 use crate::client::generation_mode_mismatch_strategy::GenerationModeMismatchStrategy;
 use crate::client::request_mismatch_mitigation_strategy::RequestMismatchMitigationStrategy;
 use crate::errors::artcraft_router_error::ArtcraftRouterError;
@@ -45,7 +45,7 @@ pub struct GenerateImageRequestBuilder {
   pub model: RouterImageModel,
 
   /// Which provider to use.
-  pub provider: Provider,
+  pub provider: RouterProvider,
 
   /// The prompt for the image generation.
   pub prompt: Option<String>,
@@ -100,37 +100,37 @@ impl GenerateImageRequestBuilder {
   /// `GenerateVideoRequestBuilder::build2`.
   pub fn build2(self) -> Result<ImageGenerationDraftOrRequest, ArtcraftRouterError> {
     match (self.provider, self.model) {
-      (Provider::Artcraft, RouterImageModel::Flux1Dev) => build_artcraft_flux_1_dev(self),
-      (Provider::Artcraft, RouterImageModel::Flux1Schnell) => build_artcraft_flux_1_schnell(self),
-      (Provider::Artcraft, RouterImageModel::FluxPro11) => build_artcraft_flux_pro_1p1(self),
-      (Provider::Artcraft, RouterImageModel::FluxPro11Ultra) => build_artcraft_flux_pro_1p1_ultra(self),
-      (Provider::Artcraft, RouterImageModel::GptImage1) => build_artcraft_gpt_image_1(self),
-      (Provider::Artcraft, RouterImageModel::GptImage1p5) => build_artcraft_gpt_image_1p5(self),
-      (Provider::Artcraft, RouterImageModel::GptImage2) => build_artcraft_gpt_image_2(self),
-      (Provider::Artcraft, RouterImageModel::NanoBanana) => build_artcraft_nano_banana(self),
-      (Provider::Artcraft, RouterImageModel::NanoBanana2) => build_artcraft_nano_banana_2(self),
-      (Provider::Artcraft, RouterImageModel::NanoBananaPro) => build_artcraft_nano_banana_pro(self),
-      (Provider::Artcraft, RouterImageModel::Seedream4) => build_artcraft_seedream_4(self),
-      (Provider::Artcraft, RouterImageModel::Seedream4p5) => build_artcraft_seedream_4p5(self),
-      (Provider::Artcraft, RouterImageModel::Seedream5Lite) => build_artcraft_seedream_5_lite(self),
-      (Provider::Artcraft, RouterImageModel::QwenEdit2511Angles) => build_artcraft_qwen_edit_2511_angles(self),
-      (Provider::Artcraft, RouterImageModel::Flux2LoraAngles) => build_artcraft_flux_2_lora_angles(self),
+      (RouterProvider::Artcraft, RouterImageModel::Flux1Dev) => build_artcraft_flux_1_dev(self),
+      (RouterProvider::Artcraft, RouterImageModel::Flux1Schnell) => build_artcraft_flux_1_schnell(self),
+      (RouterProvider::Artcraft, RouterImageModel::FluxPro11) => build_artcraft_flux_pro_1p1(self),
+      (RouterProvider::Artcraft, RouterImageModel::FluxPro11Ultra) => build_artcraft_flux_pro_1p1_ultra(self),
+      (RouterProvider::Artcraft, RouterImageModel::GptImage1) => build_artcraft_gpt_image_1(self),
+      (RouterProvider::Artcraft, RouterImageModel::GptImage1p5) => build_artcraft_gpt_image_1p5(self),
+      (RouterProvider::Artcraft, RouterImageModel::GptImage2) => build_artcraft_gpt_image_2(self),
+      (RouterProvider::Artcraft, RouterImageModel::NanoBanana) => build_artcraft_nano_banana(self),
+      (RouterProvider::Artcraft, RouterImageModel::NanoBanana2) => build_artcraft_nano_banana_2(self),
+      (RouterProvider::Artcraft, RouterImageModel::NanoBananaPro) => build_artcraft_nano_banana_pro(self),
+      (RouterProvider::Artcraft, RouterImageModel::Seedream4) => build_artcraft_seedream_4(self),
+      (RouterProvider::Artcraft, RouterImageModel::Seedream4p5) => build_artcraft_seedream_4p5(self),
+      (RouterProvider::Artcraft, RouterImageModel::Seedream5Lite) => build_artcraft_seedream_5_lite(self),
+      (RouterProvider::Artcraft, RouterImageModel::QwenEdit2511Angles) => build_artcraft_qwen_edit_2511_angles(self),
+      (RouterProvider::Artcraft, RouterImageModel::Flux2LoraAngles) => build_artcraft_flux_2_lora_angles(self),
 
-      (Provider::Fal, RouterImageModel::Flux1Dev) => build_fal_flux_1_dev(self),
-      (Provider::Fal, RouterImageModel::Flux1Schnell) => build_fal_flux_1_schnell(self),
-      (Provider::Fal, RouterImageModel::FluxPro11) => build_fal_flux_pro_1p1(self),
-      (Provider::Fal, RouterImageModel::FluxPro11Ultra) => build_fal_flux_pro_1p1_ultra(self),
-      (Provider::Fal, RouterImageModel::GptImage1) => build_fal_gpt_image_1(self),
-      (Provider::Fal, RouterImageModel::GptImage1p5) => build_fal_gpt_image_1p5(self),
-      (Provider::Fal, RouterImageModel::GptImage2) => build_fal_gpt_image_2(self),
-      (Provider::Fal, RouterImageModel::NanoBanana) => build_fal_nano_banana(self),
-      (Provider::Fal, RouterImageModel::NanoBanana2) => build_fal_nano_banana_2(self),
-      (Provider::Fal, RouterImageModel::NanoBananaPro) => build_fal_nano_banana_pro(self),
-      (Provider::Fal, RouterImageModel::Seedream4) => build_fal_seedream_4(self),
-      (Provider::Fal, RouterImageModel::Seedream4p5) => build_fal_seedream_4p5(self),
-      (Provider::Fal, RouterImageModel::Seedream5Lite) => build_fal_seedream_5_lite(self),
-      (Provider::Fal, RouterImageModel::QwenEdit2511Angles) => build_fal_qwen_edit_2511_angles(self),
-      (Provider::Fal, RouterImageModel::Flux2LoraAngles) => build_fal_flux_2_lora_angles(self),
+      (RouterProvider::Fal, RouterImageModel::Flux1Dev) => build_fal_flux_1_dev(self),
+      (RouterProvider::Fal, RouterImageModel::Flux1Schnell) => build_fal_flux_1_schnell(self),
+      (RouterProvider::Fal, RouterImageModel::FluxPro11) => build_fal_flux_pro_1p1(self),
+      (RouterProvider::Fal, RouterImageModel::FluxPro11Ultra) => build_fal_flux_pro_1p1_ultra(self),
+      (RouterProvider::Fal, RouterImageModel::GptImage1) => build_fal_gpt_image_1(self),
+      (RouterProvider::Fal, RouterImageModel::GptImage1p5) => build_fal_gpt_image_1p5(self),
+      (RouterProvider::Fal, RouterImageModel::GptImage2) => build_fal_gpt_image_2(self),
+      (RouterProvider::Fal, RouterImageModel::NanoBanana) => build_fal_nano_banana(self),
+      (RouterProvider::Fal, RouterImageModel::NanoBanana2) => build_fal_nano_banana_2(self),
+      (RouterProvider::Fal, RouterImageModel::NanoBananaPro) => build_fal_nano_banana_pro(self),
+      (RouterProvider::Fal, RouterImageModel::Seedream4) => build_fal_seedream_4(self),
+      (RouterProvider::Fal, RouterImageModel::Seedream4p5) => build_fal_seedream_4p5(self),
+      (RouterProvider::Fal, RouterImageModel::Seedream5Lite) => build_fal_seedream_5_lite(self),
+      (RouterProvider::Fal, RouterImageModel::QwenEdit2511Angles) => build_fal_qwen_edit_2511_angles(self),
+      (RouterProvider::Fal, RouterImageModel::Flux2LoraAngles) => build_fal_flux_2_lora_angles(self),
 
       _ => self.unsupported_provider_and_model(),
     }

@@ -27,7 +27,7 @@ mod tests {
   use crate::api::router_video_model::RouterVideoModel;
   use crate::api::image_list_ref::ImageListRef;
   use crate::api::image_ref::ImageRef;
-  use crate::api::provider::Provider;
+  use crate::api::router_provider::RouterProvider;
   use crate::client::router_artcraft_client::RouterArtcraftClient;
   use crate::client::router_client::RouterClient;
   use crate::generate::generate_video::generate_video_request_builder::GenerateVideoRequestBuilder;
@@ -186,7 +186,7 @@ mod tests {
   fn artcraft_fast_builder() -> GenerateVideoRequestBuilder {
     GenerateVideoRequestBuilder {
       model: RouterVideoModel::Seedance2p0UltraFast,
-      provider: Provider::Artcraft,
+      provider: RouterProvider::Artcraft,
       duration_seconds: Some(4),
       video_batch_count: Some(1),
       ..Default::default()

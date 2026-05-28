@@ -76,7 +76,7 @@ mod tests {
   use crate::api::router_video_model::RouterVideoModel;
   use crate::api::image_list_ref::ImageListRef;
   use crate::api::image_ref::ImageRef;
-  use crate::api::provider::Provider;
+  use crate::api::router_provider::RouterProvider;
   use crate::generate::generate_video::generate_video_request_builder::GenerateVideoRequestBuilder;
   use crate::generate::generate_video::video_generation_cost_estimate::VideoGenerationCostEstimate;
 
@@ -342,7 +342,7 @@ mod tests {
 
       let builder = GenerateVideoRequestBuilder {
         model: RouterVideoModel::GrokImagineVideo,
-        provider: Provider::Artcraft,
+        provider: RouterProvider::Artcraft,
         resolution,
         aspect_ratio,
         duration_seconds: Some(duration_seconds),
@@ -383,7 +383,7 @@ mod tests {
 
       let builder = GenerateVideoRequestBuilder {
         model: RouterVideoModel::GrokImagineVideo,
-        provider: Provider::GrokApi,
+        provider: RouterProvider::GrokApi,
         resolution,
         aspect_ratio,
         duration_seconds: Some(duration_seconds),
@@ -410,7 +410,7 @@ mod tests {
   ) -> VideoGenerationCostEstimate {
     let builder = GenerateVideoRequestBuilder {
       model: RouterVideoModel::GrokImagineVideo,
-      provider: Provider::Artcraft,
+      provider: RouterProvider::Artcraft,
       resolution,
       duration_seconds: Some(duration_seconds),
       video_batch_count: Some(video_batch_count),
@@ -452,7 +452,7 @@ mod tests {
 
     let builder = GenerateVideoRequestBuilder {
       model: RouterVideoModel::GrokImagineVideo,
-      provider: Provider::Artcraft,
+      provider: RouterProvider::Artcraft,
       resolution,
       duration_seconds: Some(duration_seconds),
       video_batch_count: Some(video_batch_count),

@@ -30,7 +30,7 @@ mod tests {
   use crate::api::router_resolution::RouterResolution;
   use crate::api::router_video_model::RouterVideoModel;
   use crate::api::image_ref::ImageRef;
-  use crate::api::provider::Provider;
+  use crate::api::router_provider::RouterProvider;
   use crate::client::router_client::RouterClient;
   use crate::client::router_gmicloud_client::RouterGmiCloudClient;
   use crate::generate::generate_video::generate_video_request_builder::GenerateVideoRequestBuilder;
@@ -68,7 +68,7 @@ mod tests {
   fn gmicloud_builder() -> GenerateVideoRequestBuilder {
     GenerateVideoRequestBuilder {
       model: RouterVideoModel::Seedance2p0Ultra,
-      provider: Provider::GmiCloud,
+      provider: RouterProvider::GmiCloud,
       video_batch_count: Some(1),
       ..Default::default()
     }

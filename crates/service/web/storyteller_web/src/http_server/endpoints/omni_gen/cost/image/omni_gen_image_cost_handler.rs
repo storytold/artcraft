@@ -5,7 +5,7 @@ use actix_web::{web, HttpRequest};
 use artcraft_api_defs::omni_gen::cost_and_generate_requests::omni_gen_image_cost_and_generate_request::OmniGenImageCostAndGenerateRequest;
 use artcraft_api_defs::omni_gen::cost_response::omni_gen_image_cost_response::OmniGenImageCostResponse;
 use artcraft_router::api::image_list_ref::ImageListRef;
-use artcraft_router::api::provider::Provider;
+use artcraft_router::api::router_provider::RouterProvider;
 use artcraft_router::generate::generate_image::generate_image_request_builder::GenerateImageRequestBuilder;
 use artcraft_router::generate::generate_image::image_generation_cost_estimate::ImageGenerationCostEstimate;
 use log::warn;
@@ -33,7 +33,7 @@ pub async fn omni_gen_image_cost_handler(
 ) -> Result<Json<OmniGenImageCostResponse>, CommonWebError> {
   let mut builder = hydrate_to_router_request(&request)?;
 
-  builder.provider = Provider::Artcraft; // NB: Explicitly spell this out.
+  builder.provider = RouterProvider::Artcraft; // NB: Explicitly spell this out.
 
   let estimate = builder.build2()
       .map_err(|e| {

@@ -2,7 +2,7 @@ use artcraft_api_defs::prompts::create_prompt::CreatePromptRequest;
 use artcraft_router::api::router_aspect_ratio::RouterAspectRatio;
 use artcraft_router::api::router_image_model::RouterImageModel;
 use artcraft_router::api::router_resolution::RouterResolution;
-use artcraft_router::api::provider::Provider;
+use artcraft_router::api::router_provider::RouterProvider;
 use artcraft_router::generate::generate_image::generate_image_request_builder::GenerateImageRequestBuilder;
 use enums::common::generation::common_aspect_ratio::CommonAspectRatio as EnumsAspectRatio;
 use enums::common::generation::common_generation_mode::CommonGenerationMode;
@@ -61,14 +61,14 @@ fn image_model_to_common_model_type(model: RouterImageModel) -> Option<CommonMod
   }
 }
 
-fn provider_to_generation_provider(provider: Provider) -> GenerationProvider {
+fn provider_to_generation_provider(provider: RouterProvider) -> GenerationProvider {
   match provider {
-    Provider::Artcraft => GenerationProvider::Artcraft,
-    Provider::Fal => GenerationProvider::Fal,
+    RouterProvider::Artcraft => GenerationProvider::Artcraft,
+    RouterProvider::Fal => GenerationProvider::Fal,
     // Unused providers -> ArtCraft
-    Provider::Seedance2Pro => GenerationProvider::Artcraft ,
-    Provider::GmiCloud => GenerationProvider::Artcraft,
-    Provider::GrokApi => GenerationProvider::Artcraft,
+    RouterProvider::Seedance2Pro => GenerationProvider::Artcraft ,
+    RouterProvider::GmiCloud => GenerationProvider::Artcraft,
+    RouterProvider::GrokApi => GenerationProvider::Artcraft,
   }
 }
 
@@ -116,7 +116,7 @@ mod tests {
   fn base_builder() -> GenerateImageRequestBuilder {
     GenerateImageRequestBuilder {
       model: RouterImageModel::NanoBananaPro,
-      provider: Provider::Fal,
+      provider: RouterProvider::Fal,
       prompt: Some("a cat in space".to_string()),
       image_inputs: None,
       resolution: None,
@@ -207,7 +207,7 @@ mod tests {
 
   #[test]
   fn provider_mapping() {
-    let builder = GenerateImageRequestBuilder { provider: Provider::Artcraft, ..base_builder() };
+    let builder = GenerateImageRequestBuilder { provider: RouterProvider::Artcraft, ..base_builder() };
     let prompt = router_image_request_to_artcraft_prompt(&builder);
     assert_eq!(prompt.generation_provider, Some(GenerationProvider::Artcraft));
   }

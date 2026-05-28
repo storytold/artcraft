@@ -50,7 +50,7 @@ mod tests {
   use crate::api::router_resolution::RouterResolution;
   use crate::api::router_video_model::RouterVideoModel;
   use crate::api::image_ref::ImageRef;
-  use crate::api::provider::Provider;
+  use crate::api::router_provider::RouterProvider;
   use crate::generate::generate_video::generate_video_request_builder::GenerateVideoRequestBuilder;
   use crate::generate::generate_video::generate_video_response::GenerateVideoResponse;
   use crate::generate::generate_video_v2::video_generation_draft_or_request::VideoGenerationDraftOrRequest;
@@ -104,7 +104,7 @@ mod tests {
   fn fal_seedance_1p0_lite_builder() -> GenerateVideoRequestBuilder {
     GenerateVideoRequestBuilder {
       model: RouterVideoModel::Seedance10Lite,
-      provider: Provider::Fal,
+      provider: RouterProvider::Fal,
       video_batch_count: Some(1),
       ..Default::default()
     }

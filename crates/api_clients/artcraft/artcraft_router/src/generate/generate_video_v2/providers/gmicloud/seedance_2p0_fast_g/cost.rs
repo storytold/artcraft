@@ -31,7 +31,7 @@ impl GmiCloudSeedance2p0UltraFastCostState {
 mod tests {
   use crate::api::router_resolution::RouterResolution;
   use crate::api::router_video_model::RouterVideoModel;
-  use crate::api::provider::Provider;
+  use crate::api::router_provider::RouterProvider;
   use crate::generate::generate_video::generate_video_request_builder::GenerateVideoRequestBuilder;
 
   mod pricing_720p {
@@ -94,7 +94,7 @@ mod tests {
       let standard = {
         let builder = GenerateVideoRequestBuilder {
           model: RouterVideoModel::Seedance2p0Ultra,
-          provider: Provider::GmiCloud,
+          provider: RouterProvider::GmiCloud,
           resolution: Some(RouterResolution::SevenTwentyP),
           duration_seconds: Some(10),
           video_batch_count: Some(1),
@@ -109,7 +109,7 @@ mod tests {
   fn cost_cents(resolution: Option<RouterResolution>, duration_seconds: u16) -> u64 {
     let builder = GenerateVideoRequestBuilder {
       model: RouterVideoModel::Seedance2p0UltraFast,
-      provider: Provider::GmiCloud,
+      provider: RouterProvider::GmiCloud,
       resolution,
       duration_seconds: Some(duration_seconds),
       video_batch_count: Some(1),

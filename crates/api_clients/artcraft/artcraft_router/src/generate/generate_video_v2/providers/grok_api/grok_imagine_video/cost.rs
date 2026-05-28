@@ -39,7 +39,7 @@ mod tests {
   use crate::api::router_video_model::RouterVideoModel;
   use crate::api::image_list_ref::ImageListRef;
   use crate::api::image_ref::ImageRef;
-  use crate::api::provider::Provider;
+  use crate::api::router_provider::RouterProvider;
   use crate::generate::generate_video::generate_video_request_builder::GenerateVideoRequestBuilder;
 
   // Pricing reference (from grok_api_client/cost.rs, mirrors xAI's table):
@@ -169,7 +169,7 @@ mod tests {
   ) -> u64 {
     let builder = GenerateVideoRequestBuilder {
       model: RouterVideoModel::GrokImagineVideo,
-      provider: Provider::GrokApi,
+      provider: RouterProvider::GrokApi,
       aspect_ratio: Some(RouterAspectRatio::WideSixteenByNine),
       resolution,
       duration_seconds: Some(duration_seconds),

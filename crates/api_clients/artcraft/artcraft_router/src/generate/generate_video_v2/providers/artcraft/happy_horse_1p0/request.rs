@@ -24,7 +24,7 @@ mod tests {
   use crate::api::router_resolution::RouterResolution;
   use crate::api::router_video_model::RouterVideoModel;
   use crate::api::image_ref::ImageRef;
-  use crate::api::provider::Provider;
+  use crate::api::router_provider::RouterProvider;
   use crate::client::router_artcraft_client::RouterArtcraftClient;
   use crate::client::router_client::RouterClient;
   use crate::generate::generate_video::generate_video_request_builder::GenerateVideoRequestBuilder;
@@ -137,7 +137,7 @@ mod tests {
   fn artcraft_builder() -> GenerateVideoRequestBuilder {
     GenerateVideoRequestBuilder {
       model: RouterVideoModel::HappyHorse1p0,
-      provider: Provider::Artcraft,
+      provider: RouterProvider::Artcraft,
       duration_seconds: Some(4),
       video_batch_count: Some(1),
       ..Default::default()

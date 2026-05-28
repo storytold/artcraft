@@ -145,14 +145,14 @@ fn to_i2v_duration(d: PlanDuration) -> EnqueueKlingV2p5TurboProImageToVideoDurat
 mod tests {
   use crate::api::router_video_model::RouterVideoModel;
   use crate::api::image_ref::ImageRef;
-  use crate::api::provider::Provider;
+  use crate::api::router_provider::RouterProvider;
 
   use super::*;
 
   fn base_builder() -> GenerateVideoRequestBuilder {
     GenerateVideoRequestBuilder {
       model: RouterVideoModel::Kling2p5TurboPro,
-      provider: Provider::Fal,
+      provider: RouterProvider::Fal,
       prompt: Some("test".to_string()),
       ..Default::default()
     }

@@ -1,4 +1,4 @@
-use crate::api::provider::Provider;
+use crate::api::router_provider::RouterProvider;
 use crate::client::router_client::RouterClient;
 use crate::errors::artcraft_router_error::ArtcraftRouterError;
 use crate::generate::generate_image::generate_image_response::GenerateImageResponse;
@@ -102,39 +102,39 @@ pub enum ImageGenerationRequest {
 }
 
 impl ImageGenerationRequest {
-  pub fn get_provider(&self) -> Provider {
+  pub fn get_provider(&self) -> RouterProvider {
     match self {
-      Self::ArtcraftFlux1Dev(_) => Provider::Artcraft,
-      Self::ArtcraftFlux1Schnell(_) => Provider::Artcraft,
-      Self::ArtcraftFluxPro1p1(_) => Provider::Artcraft,
-      Self::ArtcraftFluxPro1p1Ultra(_) => Provider::Artcraft,
-      Self::ArtcraftGptImage1(_) => Provider::Artcraft,
-      Self::ArtcraftGptImage1p5(_) => Provider::Artcraft,
-      Self::ArtcraftGptImage2(_) => Provider::Artcraft,
-      Self::ArtcraftNanoBanana(_) => Provider::Artcraft,
-      Self::ArtcraftNanoBanana2(_) => Provider::Artcraft,
-      Self::ArtcraftNanoBananaPro(_) => Provider::Artcraft,
-      Self::ArtcraftSeedream4(_) => Provider::Artcraft,
-      Self::ArtcraftSeedream4p5(_) => Provider::Artcraft,
-      Self::ArtcraftSeedream5Lite(_) => Provider::Artcraft,
-      Self::ArtcraftQwenEdit2511Angles(_) => Provider::Artcraft,
-      Self::ArtcraftFlux2LoraAngles(_) => Provider::Artcraft,
+      Self::ArtcraftFlux1Dev(_) => RouterProvider::Artcraft,
+      Self::ArtcraftFlux1Schnell(_) => RouterProvider::Artcraft,
+      Self::ArtcraftFluxPro1p1(_) => RouterProvider::Artcraft,
+      Self::ArtcraftFluxPro1p1Ultra(_) => RouterProvider::Artcraft,
+      Self::ArtcraftGptImage1(_) => RouterProvider::Artcraft,
+      Self::ArtcraftGptImage1p5(_) => RouterProvider::Artcraft,
+      Self::ArtcraftGptImage2(_) => RouterProvider::Artcraft,
+      Self::ArtcraftNanoBanana(_) => RouterProvider::Artcraft,
+      Self::ArtcraftNanoBanana2(_) => RouterProvider::Artcraft,
+      Self::ArtcraftNanoBananaPro(_) => RouterProvider::Artcraft,
+      Self::ArtcraftSeedream4(_) => RouterProvider::Artcraft,
+      Self::ArtcraftSeedream4p5(_) => RouterProvider::Artcraft,
+      Self::ArtcraftSeedream5Lite(_) => RouterProvider::Artcraft,
+      Self::ArtcraftQwenEdit2511Angles(_) => RouterProvider::Artcraft,
+      Self::ArtcraftFlux2LoraAngles(_) => RouterProvider::Artcraft,
 
-      Self::FalFlux1Dev(_) => Provider::Fal,
-      Self::FalFlux1Schnell(_) => Provider::Fal,
-      Self::FalFluxPro1p1(_) => Provider::Fal,
-      Self::FalFluxPro1p1Ultra(_) => Provider::Fal,
-      Self::FalGptImage1(_) => Provider::Fal,
-      Self::FalGptImage1p5(_) => Provider::Fal,
-      Self::FalGptImage2(_) => Provider::Fal,
-      Self::FalNanoBanana(_) => Provider::Fal,
-      Self::FalNanoBanana2(_) => Provider::Fal,
-      Self::FalNanoBananaPro(_) => Provider::Fal,
-      Self::FalSeedream4(_) => Provider::Fal,
-      Self::FalSeedream4p5(_) => Provider::Fal,
-      Self::FalSeedream5Lite(_) => Provider::Fal,
-      Self::FalQwenEdit2511Angles(_) => Provider::Fal,
-      Self::FalFlux2LoraAngles(_) => Provider::Fal,
+      Self::FalFlux1Dev(_) => RouterProvider::Fal,
+      Self::FalFlux1Schnell(_) => RouterProvider::Fal,
+      Self::FalFluxPro1p1(_) => RouterProvider::Fal,
+      Self::FalFluxPro1p1Ultra(_) => RouterProvider::Fal,
+      Self::FalGptImage1(_) => RouterProvider::Fal,
+      Self::FalGptImage1p5(_) => RouterProvider::Fal,
+      Self::FalGptImage2(_) => RouterProvider::Fal,
+      Self::FalNanoBanana(_) => RouterProvider::Fal,
+      Self::FalNanoBanana2(_) => RouterProvider::Fal,
+      Self::FalNanoBananaPro(_) => RouterProvider::Fal,
+      Self::FalSeedream4(_) => RouterProvider::Fal,
+      Self::FalSeedream4p5(_) => RouterProvider::Fal,
+      Self::FalSeedream5Lite(_) => RouterProvider::Fal,
+      Self::FalQwenEdit2511Angles(_) => RouterProvider::Fal,
+      Self::FalFlux2LoraAngles(_) => RouterProvider::Fal,
     }
   }
 

@@ -50,7 +50,7 @@ mod tests {
   use crate::api::router_resolution::RouterResolution;
   use crate::api::router_video_model::RouterVideoModel;
   use crate::api::image_ref::ImageRef;
-  use crate::api::provider::Provider;
+  use crate::api::router_provider::RouterProvider;
   use crate::generate::generate_video::generate_video_request_builder::GenerateVideoRequestBuilder;
   use tokens::tokens::media_files::MediaFileToken;
 
@@ -61,7 +61,7 @@ mod tests {
   ) -> u64 {
     let mut b = GenerateVideoRequestBuilder {
       model: RouterVideoModel::Sora2Pro,
-      provider: Provider::Artcraft,
+      provider: RouterProvider::Artcraft,
       prompt: Some("test".to_string()),
       duration_seconds,
       resolution,

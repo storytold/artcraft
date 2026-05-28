@@ -82,7 +82,7 @@ mod tests {
   };
 
   use crate::api::router_resolution::RouterResolution;
-  use crate::api::provider::Provider;
+  use crate::api::router_provider::RouterProvider;
   use crate::api::video_list_ref::VideoListRef;
   use crate::generate::generate_video::generate_video_request_builder::GenerateVideoRequestBuilder;
   use crate::generate::generate_video_v2::video_generation_draft::VideoGenerationDraftRequest;
@@ -421,7 +421,7 @@ mod tests {
     };
 
     let builder = GenerateVideoRequestBuilder {
-      provider: Provider::Seedance2Pro,
+      provider: RouterProvider::Seedance2Pro,
       resolution,
       reference_videos,
       duration_seconds: Some(duration_seconds),

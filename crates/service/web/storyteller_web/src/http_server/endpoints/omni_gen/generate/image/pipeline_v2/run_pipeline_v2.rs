@@ -1,7 +1,7 @@
 use log::{info, warn};
 
 use artcraft_router::api::image_list_ref::ImageListRef;
-use artcraft_router::api::provider::Provider;
+use artcraft_router::api::router_provider::RouterProvider;
 use artcraft_router::client::router_client::RouterClient;
 use artcraft_router::client::router_fal_client::RouterFalClient;
 use artcraft_router::generate::generate_image::generate_image_request_builder::GenerateImageRequestBuilder;
@@ -71,7 +71,7 @@ fn build_execution_request(
   router_builder: &GenerateImageRequestBuilder,
 ) -> Result<ImageGenerationDraftOrRequest, CommonWebError> {
   let mut execution_builder = router_builder.clone();
-  execution_builder.provider = Provider::Fal;
+  execution_builder.provider = RouterProvider::Fal;
 
   execution_builder.build2().map_err(|e| {
     warn!("Failed to build2 for image v2 pipeline: {}", e);
@@ -101,7 +101,7 @@ fn estimate_cost_in_credits(
   router_builder: &GenerateImageRequestBuilder,
 ) -> Result<u64, CommonWebError> {
   let mut cost_builder = router_builder.clone();
-  cost_builder.provider = Provider::Artcraft;
+  cost_builder.provider = RouterProvider::Artcraft;
 
   let request = cost_builder.build2().map_err(|e| {
     warn!("Failed to build image cost request: {}", e);
@@ -150,11 +150,11 @@ async fn finalize_request(
 }
 
 fn build_router_client(
-  provider: Provider,
+  provider: RouterProvider,
   server_state: &ServerState,
 ) -> Result<RouterClient, CommonWebError> {
   match provider {
-    Provider::Fal => {
+    RouterProvider::Fal => {
       let fal_client = RouterFalClient::new_with_webhook(
         server_state.fal.api_key.clone(),
         server_state.fal.webhook_url.clone(),

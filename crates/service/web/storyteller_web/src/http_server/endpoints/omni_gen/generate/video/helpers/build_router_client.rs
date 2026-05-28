@@ -1,6 +1,6 @@
 //! Build a RouterClient for the given provider from server state.
 
-use artcraft_router::api::provider::Provider;
+use artcraft_router::api::router_provider::RouterProvider;
 use artcraft_router::client::router_client::RouterClient;
 use artcraft_router::client::router_fal_client::RouterFalClient;
 use artcraft_router::client::router_gmicloud_client::RouterGmiCloudClient;
@@ -12,27 +12,27 @@ use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::state::server_state::ServerState;
 
 pub fn build_router_client(
-  provider: Provider,
+  provider: RouterProvider,
   server_state: &ServerState,
   use_alternate_kinovi: bool,
 ) -> Result<RouterClient, CommonWebError> {
   match provider {
-    Provider::Seedance2Pro => {
+    RouterProvider::Seedance2Pro => {
       kinovi_provider(server_state, use_alternate_kinovi)
     }
-    Provider::Fal => {
+    RouterProvider::Fal => {
       let fal_client = RouterFalClient::new_with_webhook(
         server_state.fal.api_key.clone(),
         server_state.fal.webhook_url.clone(),
       );
       Ok(RouterClient::Fal(fal_client))
     }
-    Provider::GmiCloud => {
+    RouterProvider::GmiCloud => {
       Ok(RouterClient::GmiCloud(RouterGmiCloudClient::new(
         server_state.gmicloud.api_key.clone(),
       )))
     }
-    Provider::GrokApi => {
+    RouterProvider::GrokApi => {
       Ok(RouterClient::GrokApi(RouterGrokApiClient::new(
         server_state.grok_api.api_key.clone(),
       )))

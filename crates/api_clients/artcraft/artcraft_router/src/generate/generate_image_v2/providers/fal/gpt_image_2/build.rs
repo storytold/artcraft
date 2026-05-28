@@ -226,12 +226,12 @@ mod tests {
   use std::fmt::Debug;
 
   use crate::api::router_image_model::RouterImageModel;
-  use crate::api::provider::Provider;
+  use crate::api::router_provider::RouterProvider;
 
   fn base_builder() -> GenerateImageRequestBuilder {
     GenerateImageRequestBuilder {
       model: RouterImageModel::GptImage2,
-      provider: Provider::Fal,
+      provider: RouterProvider::Fal,
       prompt: Some("a cat in space".to_string()),
       image_inputs: None,
       resolution: None,

@@ -59,13 +59,13 @@ impl ArtcraftSeedance10LiteCostState {
 mod tests {
   use crate::api::router_resolution::RouterResolution;
   use crate::api::router_video_model::RouterVideoModel;
-  use crate::api::provider::Provider;
+  use crate::api::router_provider::RouterProvider;
   use crate::generate::generate_video::generate_video_request_builder::GenerateVideoRequestBuilder;
 
   fn cost_cents(duration_seconds: Option<u16>, resolution: Option<RouterResolution>) -> u64 {
     let b = GenerateVideoRequestBuilder {
       model: RouterVideoModel::Seedance10Lite,
-      provider: Provider::Artcraft,
+      provider: RouterProvider::Artcraft,
       prompt: Some("test".to_string()),
       duration_seconds,
       resolution,

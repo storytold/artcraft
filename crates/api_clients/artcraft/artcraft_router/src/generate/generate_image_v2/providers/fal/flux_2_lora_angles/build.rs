@@ -116,12 +116,12 @@ fn plan_image_size(
 mod tests {
   use super::*;
   use crate::api::router_image_model::RouterImageModel;
-  use crate::api::provider::Provider;
+  use crate::api::router_provider::RouterProvider;
 
   fn base() -> GenerateImageRequestBuilder {
     GenerateImageRequestBuilder {
       model: RouterImageModel::Flux2LoraAngles,
-      provider: Provider::Fal,
+      provider: RouterProvider::Fal,
       prompt: None,
       image_inputs: Some(ImageListRef::Urls(vec!["https://example.com/x.jpg".to_string()])),
       resolution: None,

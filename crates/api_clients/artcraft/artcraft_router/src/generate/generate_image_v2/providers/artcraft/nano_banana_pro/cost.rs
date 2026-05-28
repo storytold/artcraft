@@ -44,14 +44,14 @@ impl ArtcraftNanoBananaProCostState {
 mod tests {
   use crate::api::router_image_model::RouterImageModel;
   use crate::api::router_resolution::RouterResolution;
-  use crate::api::provider::Provider;
+  use crate::api::router_provider::RouterProvider;
   use crate::client::request_mismatch_mitigation_strategy::RequestMismatchMitigationStrategy;
   use crate::generate::generate_image::generate_image_request_builder::GenerateImageRequestBuilder;
 
   fn cost_cents(resolution: Option<RouterResolution>, image_batch_count: u16) -> u64 {
     let builder = GenerateImageRequestBuilder {
       model: RouterImageModel::NanoBananaPro,
-      provider: Provider::Artcraft,
+      provider: RouterProvider::Artcraft,
       prompt: None,
       image_inputs: None,
       resolution,

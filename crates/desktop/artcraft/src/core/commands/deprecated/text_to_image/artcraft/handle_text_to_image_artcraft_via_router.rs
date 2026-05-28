@@ -13,7 +13,7 @@ use artcraft_router::api::router_image_model::RouterImageModel;
 use artcraft_router::api::router_resolution::RouterResolution;
 use artcraft_router::api::router_quality::RouterQuality;
 use artcraft_router::api::image_list_ref::ImageListRef;
-use artcraft_router::api::provider::Provider;
+use artcraft_router::api::router_provider::RouterProvider;
 use artcraft_router::client::request_mismatch_mitigation_strategy::RequestMismatchMitigationStrategy;
 use artcraft_router::client::router_artcraft_client::RouterArtcraftClient;
 use artcraft_router::client::router_client::RouterClient;
@@ -48,7 +48,7 @@ pub(super) async fn handle_text_to_image_artcraft_via_router(
 
   let router_request = GenerateImageRequestBuilder {
     model,
-    provider: Provider::Artcraft,
+    provider: RouterProvider::Artcraft,
     prompt: request.prompt.clone(),
     image_inputs,
     resolution,
