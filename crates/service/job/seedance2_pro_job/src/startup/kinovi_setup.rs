@@ -21,19 +21,20 @@ const ENV_SEEDANCE2PRO_BYTEPLUS_ULTRA_COOKIES: &str = "SEEDANCE2PRO_BYTEPLUS_ULT
 
 
 pub fn get_kinovi_version() -> anyhow::Result<KinoviVersion> {
+  info!("Reading kinovi version from first CLI arg (optional - typical production config is via env vars):");
+
+  if let Some(arg) = std::env::args().nth(1) {
+    return parse_kinovi_version(&arg);
+  }
+
   info!("Reading kinovi version from env var: {}", ENV_SEEDANCE2PRO_VERSION);
 
   if let Some(version) = easyenv::get_env_string_optional(ENV_SEEDANCE2PRO_VERSION) {
     return parse_kinovi_version(&version);
   }
 
-  info!("Env var {} unset; falling back to first CLI arg", ENV_SEEDANCE2PRO_VERSION);
-  if let Some(arg) = std::env::args().nth(1) {
-    return parse_kinovi_version(&arg);
-  }
-
   Err(anyhow!(
-    "kinovi version not specified: set {} or pass volcengine|byteplus|byteplusultra as the first CLI arg",
+    "kinovi version not specified: set env var {} or pass volcengine|byteplus|byteplusultra as the first CLI arg",
     ENV_SEEDANCE2PRO_VERSION,
   ))
 }
