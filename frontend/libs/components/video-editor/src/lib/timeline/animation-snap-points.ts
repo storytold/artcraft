@@ -1,23 +1,42 @@
+import { getElementKeyframes } from "../animation";
 import type { SceneTracks } from "./types";
 import type { SnapPoint } from "./snapping";
+import { addMediaTime } from "../wasm";
 
-// PHASE-1 STUB: returns no keyframe snap points.
+// Emits snap points for every keyframe on every animatable element in
+// the scene tracks. Used by the playhead scrubber so the cursor snaps
+// to keyframes during scrub.
 //
-// The full OpenCut implementation iterates every element's animation
-// channels via `getElementKeyframes` from @/animation/keyframe-query.
-// That function chains into channel-data, interpolation, and path
-// modules that aren't yet ported. Restoring keyframe snapping requires:
-//   1. animation/keyframe-query, /channel-data, /interpolation, /path
-//   2. swap this body for the original implementation (visible in
-//      opencut-classic/apps/web/src/timeline/animation-snap-points.ts)
-//
-// Until then the playhead still snaps to element edges, bookmarks, and
-// the playhead's own frame grid via the other sources — only the
-// element-internal keyframes are missing as snap targets.
-
-export function getAnimationKeyframeSnapPointsForTimeline(_args: {
+// (Previously a phase-1 stub returning []. Now the real implementation
+// since the animation chain has been ported in full.)
+export function getAnimationKeyframeSnapPointsForTimeline({
+  tracks,
+  excludeElementIds,
+}: {
   tracks: SceneTracks;
   excludeElementIds?: Set<string>;
 }): SnapPoint[] {
-  return [];
+  const snapPoints: SnapPoint[] = [];
+  const orderedTracks = [...tracks.overlay, tracks.main, ...tracks.audio];
+
+  for (const track of orderedTracks) {
+    for (const element of track.elements) {
+      if (excludeElementIds?.has(element.id)) {
+        continue;
+      }
+
+      for (const keyframe of getElementKeyframes({
+        animations: element.animations,
+      })) {
+        snapPoints.push({
+          time: addMediaTime({ a: element.startTime, b: keyframe.time }),
+          type: "keyframe",
+          elementId: element.id,
+          trackId: track.id,
+        });
+      }
+    }
+  }
+
+  return snapPoints;
 }
