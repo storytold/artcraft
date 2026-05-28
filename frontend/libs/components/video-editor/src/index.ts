@@ -296,7 +296,7 @@ export type {
 } from "./lib/project/types";
 
 // --- Masks ---
-// Full mask subsystem (minus freeform, deferred). Hosts can list
+// Full mask subsystem (including freeform pen tool). Hosts can list
 // definitions via getMaskDefinitionsForMenu, register their own via
 // masksRegistry.registerMask, or build a mask instance via
 // buildDefaultMaskInstance + the mask shape's params.

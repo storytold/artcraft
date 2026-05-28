@@ -34,8 +34,6 @@ function withMaskId({ mask, id }: { mask: MaskWithoutId; id: string }): Mask {
     case "text":
       return { ...mask, id };
     case "freeform":
-      // Defined in the Mask union but the freeform definition isn't
-      // ported yet — falls through to id-stamp the param payload.
       return { ...mask, id };
   }
 }
