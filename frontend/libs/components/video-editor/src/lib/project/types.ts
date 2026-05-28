@@ -1,11 +1,6 @@
 import type { FrameRate } from "opencut-wasm";
+import type { TScene } from "../timeline/types";
 import type { MediaTime } from "../wasm";
-
-// NOTE: TScene type is intentionally `unknown` here for phase-1 port.
-// The real TScene lives in timeline/types.ts and pulls in animation/effects/
-// masks chains that aren't yet fully ported. Once timeline/types lands,
-// replace this with `import type { TScene } from "../timeline/types"`.
-type TSceneStub = unknown;
 
 export type TBackground =
   | {
@@ -48,7 +43,7 @@ export interface TTimelineViewState {
 
 export interface TProject {
   metadata: TProjectMetadata;
-  scenes: TSceneStub[];
+  scenes: TScene[];
   currentSceneId: string;
   settings: TProjectSettings;
   version: number;
