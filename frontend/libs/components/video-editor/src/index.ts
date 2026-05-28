@@ -483,3 +483,50 @@ export type {
   EditorSelectionKind,
   SelectedMaskPointSelection,
 } from "./lib/selection/editor-selection";
+
+// --- Media runtime (audio decode + mixing, waveform sampling) ---
+export {
+  createAudioContext,
+  decodeAudioToFloat32,
+  collectAudibleCandidates,
+  collectAudioElements,
+  collectAudioMixSources,
+  collectAudioClips,
+  createTimelineAudioBuffer,
+  timelineHasAudio,
+  extractPeakRange,
+  extractRmsRange,
+  extractRmsBuckets,
+  getSampleBucketRange,
+} from "./lib/media/audio";
+export type {
+  CollectedAudioElement,
+  DecodedAudio,
+  AudibleElementCandidate,
+  AudioClipSource,
+} from "./lib/media/audio";
+export {
+  buildSourceWaveformSummary,
+  buildWaveformSampleBuckets,
+  sampleSourceWaveformSummary,
+  computeRmsBuckets,
+} from "./lib/media/waveform-summary";
+export type {
+  SourceWaveformSummary,
+  SampleBucket,
+} from "./lib/media/waveform-summary";
+export {
+  applyAudioMasteringToBuffer,
+  createAudioMasteringChain,
+  getAudioBufferPeak,
+} from "./lib/media/audio-mastering";
+export {
+  getMediaTypeFromFile,
+  mediaSupportsAudio,
+  SUPPORTS_AUDIO,
+} from "./lib/media/media-utils";
+export type { MediaAsset, MediaType } from "./lib/media/types";
+
+// --- Caching services (decoded video frames + waveform summaries) ---
+export { VideoCache, videoCache } from "./lib/services/video-cache";
+export { WaveformCache, waveformCache } from "./lib/services/waveform-cache";
