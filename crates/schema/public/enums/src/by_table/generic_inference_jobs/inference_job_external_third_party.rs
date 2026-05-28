@@ -37,6 +37,10 @@ pub enum InferenceJobExternalThirdParty {
   #[serde(rename = "seedance2pro_alt")]
   Seedance2ProAlt,
 
+  /// Seedance 2 Pro BytePlus Ultra jobs
+  #[serde(rename = "seedance2pro_bpu")]
+  Seedance2ProBytePlusUltra,
+
   /// World Labs jobs
   #[serde(rename = "worldlabs")]
   Worldlabs,
@@ -56,6 +60,7 @@ impl InferenceJobExternalThirdParty {
       Self::GrokApi => "grok_api",
       Self::Seedance2Pro => "seedance2pro",
       Self::Seedance2ProAlt => "seedance2pro_alt",
+      Self::Seedance2ProBytePlusUltra => "seedance2pro_bpu",
       Self::Worldlabs => "worldlabs",
     }
   }
@@ -68,6 +73,7 @@ impl InferenceJobExternalThirdParty {
       "grok_api" => Ok(Self::GrokApi),
       "seedance2pro" => Ok(Self::Seedance2Pro),
       "seedance2pro_alt" => Ok(Self::Seedance2ProAlt),
+      "seedance2pro_bpu" => Ok(Self::Seedance2ProBytePlusUltra),
       "worldlabs" => Ok(Self::Worldlabs),
       _ => Err(format!("invalid value: {:?}", value)),
     }
@@ -83,6 +89,7 @@ impl InferenceJobExternalThirdParty {
       Self::GrokApi,
       Self::Seedance2Pro,
       Self::Seedance2ProAlt,
+      Self::Seedance2ProBytePlusUltra,
       Self::Worldlabs,
     ])
   }
@@ -104,6 +111,7 @@ mod tests {
       assert_serialization(InferenceJobExternalThirdParty::GrokApi, "grok_api");
       assert_serialization(InferenceJobExternalThirdParty::Seedance2Pro, "seedance2pro");
       assert_serialization(InferenceJobExternalThirdParty::Seedance2ProAlt, "seedance2pro_alt");
+      assert_serialization(InferenceJobExternalThirdParty::Seedance2ProBytePlusUltra, "seedance2pro_bpu");
       assert_serialization(InferenceJobExternalThirdParty::Worldlabs, "worldlabs");
     }
 
@@ -115,6 +123,7 @@ mod tests {
       assert_eq!(InferenceJobExternalThirdParty::GrokApi.to_str(), "grok_api");
       assert_eq!(InferenceJobExternalThirdParty::Seedance2Pro.to_str(), "seedance2pro");
       assert_eq!(InferenceJobExternalThirdParty::Seedance2ProAlt.to_str(), "seedance2pro_alt");
+      assert_eq!(InferenceJobExternalThirdParty::Seedance2ProBytePlusUltra.to_str(), "seedance2pro_bpu");
       assert_eq!(InferenceJobExternalThirdParty::Worldlabs.to_str(), "worldlabs");
     }
 
@@ -126,13 +135,14 @@ mod tests {
       assert_eq!(InferenceJobExternalThirdParty::from_str("grok_api").unwrap(), InferenceJobExternalThirdParty::GrokApi);
       assert_eq!(InferenceJobExternalThirdParty::from_str("seedance2pro").unwrap(), InferenceJobExternalThirdParty::Seedance2Pro);
       assert_eq!(InferenceJobExternalThirdParty::from_str("seedance2pro_alt").unwrap(), InferenceJobExternalThirdParty::Seedance2ProAlt);
+      assert_eq!(InferenceJobExternalThirdParty::from_str("seedance2pro_bpu").unwrap(), InferenceJobExternalThirdParty::Seedance2ProBytePlusUltra);
       assert_eq!(InferenceJobExternalThirdParty::from_str("worldlabs").unwrap(), InferenceJobExternalThirdParty::Worldlabs);
     }
 
     #[test]
     fn all_variants() {
       // Static check
-      const EXPECTED_COUNT : usize = 7;
+      const EXPECTED_COUNT : usize = 8;
       
       assert_eq!(InferenceJobExternalThirdParty::all_variants().len(), EXPECTED_COUNT);
       assert_eq!(InferenceJobExternalThirdParty::iter().len(), EXPECTED_COUNT);
