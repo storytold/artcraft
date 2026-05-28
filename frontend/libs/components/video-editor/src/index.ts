@@ -630,3 +630,99 @@ export {
   copyClipboardEntry,
   buildPasteClipboardCommand,
 } from "./lib/clipboard/handlers";
+
+// --- Rendering subsystem ---
+// CanvasRenderer + SceneExporter wrap the wasm compositor; buildScene
+// turns timeline state into the RootNode tree the renderer consumes.
+// Node classes are exported for hosts that need to construct render
+// trees manually (e.g. preview composites or custom export pipelines).
+export { CanvasRenderer } from "./lib/services/renderer/canvas-renderer";
+export type { CanvasRendererParams } from "./lib/services/renderer/canvas-renderer";
+export { SceneExporter } from "./lib/services/renderer/scene-exporter";
+export type { SceneExporterEvents } from "./lib/services/renderer/scene-exporter";
+export { buildScene } from "./lib/services/renderer/scene-builder";
+export type { BuildSceneParams } from "./lib/services/renderer/scene-builder";
+export { BaseNode } from "./lib/services/renderer/nodes/base-node";
+export type { AnyBaseNode, BaseNodeParams } from "./lib/services/renderer/nodes/base-node";
+export { RootNode } from "./lib/services/renderer/nodes/root-node";
+export type { RootNodeParams } from "./lib/services/renderer/nodes/root-node";
+export { ColorNode } from "./lib/services/renderer/nodes/color-node";
+export type { ColorNodeParams } from "./lib/services/renderer/nodes/color-node";
+export { VideoNode } from "./lib/services/renderer/nodes/video-node";
+export type { VideoNodeParams } from "./lib/services/renderer/nodes/video-node";
+export { ImageNode, loadImageSource } from "./lib/services/renderer/nodes/image-node";
+export type {
+  ImageNodeParams,
+  CachedImageSource,
+} from "./lib/services/renderer/nodes/image-node";
+export { StickerNode, loadStickerSource } from "./lib/services/renderer/nodes/sticker-node";
+export type { StickerNodeParams } from "./lib/services/renderer/nodes/sticker-node";
+export { GraphicNode } from "./lib/services/renderer/nodes/graphic-node";
+export type {
+  GraphicNodeParams,
+  ResolvedGraphicNodeState,
+} from "./lib/services/renderer/nodes/graphic-node";
+export { TextNode, renderTextToContext } from "./lib/services/renderer/nodes/text-node";
+export type {
+  TextNodeParams,
+  ResolvedTextNodeState,
+} from "./lib/services/renderer/nodes/text-node";
+export { BlurBackgroundNode } from "./lib/services/renderer/nodes/blur-background-node";
+export type {
+  BlurBackgroundNodeParams,
+  BackdropSource,
+  ResolvedBlurBackgroundNodeState,
+} from "./lib/services/renderer/nodes/blur-background-node";
+export { EffectLayerNode } from "./lib/services/renderer/nodes/effect-layer-node";
+export type {
+  EffectLayerNodeParams,
+  ResolvedEffectLayerNodeState,
+} from "./lib/services/renderer/nodes/effect-layer-node";
+export { VisualNode } from "./lib/services/renderer/nodes/visual-node";
+export type {
+  VisualNodeParams,
+  ResolvedVisualNodeState,
+  ResolvedVisualSourceNodeState,
+} from "./lib/services/renderer/nodes/visual-node";
+export { effectPreviewService } from "./lib/services/renderer/effect-preview";
+export {
+  gpuRenderer,
+  initializeGpuRenderer,
+  isGpuAvailable,
+} from "./lib/services/renderer/gpu-renderer";
+export { applyMaskFeather } from "./lib/services/renderer/mask-feather";
+export { createCanvasSurface } from "./lib/services/renderer/canvas-utils";
+
+// --- Export module ---
+export {
+  EXPORT_FORMAT_VALUES,
+  EXPORT_QUALITY_VALUES,
+  getExportFileExtension,
+  getExportMimeType,
+  downloadBuffer,
+} from "./lib/export";
+export type {
+  ExportFormat,
+  ExportQuality,
+  ExportOptions,
+  ExportResult,
+  ExportState,
+} from "./lib/export";
+export { DEFAULT_EXPORT_OPTIONS } from "./lib/export/defaults";
+export { EXPORT_MIME_TYPES } from "./lib/export/mime-types";
+
+// --- Gradients ---
+export { drawCssBackground, parseGradient, GradientParser } from "./lib/gradients";
+export type {
+  GradientAst,
+  GradientOrientation,
+  Color,
+  ColorStop,
+} from "./lib/gradients";
+
+// --- Background defaults ---
+export {
+  BACKGROUND_BLUR_INTENSITY_PRESETS,
+  DEFAULT_BACKGROUND_BLUR_INTENSITY,
+} from "./lib/background/blur";
+export { DEFAULT_BACKGROUND_COLOR } from "./lib/background/color";
