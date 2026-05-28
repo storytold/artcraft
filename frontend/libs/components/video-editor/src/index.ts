@@ -110,6 +110,40 @@ export type {
   PlayheadConfigRef,
 } from "./lib/timeline/controllers/playhead-controller";
 
+// --- Remaining timeline controllers ---
+// Same smoothness contract as the controllers above — class-based,
+// configRef pattern, window-level mousemove/mouseup during active
+// sessions, no React state in the hot path.
+export { DragDropController } from "./lib/timeline/controllers/drag-drop-controller";
+export type {
+  DragDropConfig,
+  DragDropConfigRef,
+  ProcessedMediaAsset,
+} from "./lib/timeline/controllers/drag-drop-controller";
+export { ElementInteractionController } from "./lib/timeline/controllers/element-interaction-controller";
+export type {
+  ElementInteractionDeps,
+  ElementInteractionDepsRef,
+  ViewportAdapter,
+  InputAdapter,
+  SceneReader,
+  ElementSelectionApi,
+  PlaybackReader,
+  TimelineOps,
+  SnapConfig,
+} from "./lib/timeline/controllers/element-interaction-controller";
+export { KeyframeDragController } from "./lib/timeline/controllers/keyframe-drag-controller";
+export type {
+  KeyframeDragConfig,
+  KeyframeDragConfigRef,
+  KeyframeDragState,
+} from "./lib/timeline/controllers/keyframe-drag-controller";
+export { ResizeController } from "./lib/timeline/controllers/resize-controller";
+export type {
+  ResizeConfig,
+  ResizeConfigRef,
+} from "./lib/timeline/controllers/resize-controller";
+
 // --- Timeline snapping ---
 export {
   buildTimelineSnapPoints,
