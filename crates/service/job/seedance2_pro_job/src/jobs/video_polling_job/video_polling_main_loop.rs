@@ -5,14 +5,15 @@ use chrono::Utc;
 use enums::by_table::generic_inference_jobs::inference_job_external_third_party::InferenceJobExternalThirdParty;
 use enums::by_table::generic_inference_jobs::inference_job_type::InferenceJobType;
 use log::{error, info, warn};
+use mysql_queries::queries::generic_inference::api_providers::seedance2pro::list_pending_seedance2pro_video_jobs::{list_pending_seedance2pro_video_jobs, PendingSeedance2ProJob};
 use pager::notification::notification_details_builder::NotificationDetailsBuilder;
 use pager::notification::notification_urgency::NotificationUrgency;
-use mysql_queries::queries::generic_inference::api_providers::seedance2pro::list_pending_seedance2pro_video_jobs::{list_pending_seedance2pro_video_jobs, PendingSeedance2ProJob};
 use seedance2pro_client::requests::poll_orders::poll_orders::{poll_orders, OrderStatus, PollOrdersArgs, PollOrdersResponse, TaskStatus};
 
+use crate::job_dependencies::JobDependencies;
 use crate::jobs::video_polling_job::alert_on_error::alert_pager_and_return_err;
 use crate::jobs::video_polling_job::process_orders_batch::process_orders_batch;
-use crate::job_dependencies::JobDependencies;
+use crate::kinovi_version::KinoviVersion;
 
 const POLL_ALERT_THRESHOLD: Duration = Duration::from_mins(6);
 
@@ -61,14 +62,28 @@ pub async fn video_polling_main_loop(job_dependencies: JobDependencies) {
 }
 
 async fn run_poll_iteration(deps: &JobDependencies) -> anyhow::Result<()> {
+  info!("Querying database jobs for type: {:?}", deps.kinovi_version);
+  
+  let (
+    job_type,
+    third_party,
+  ) = match deps.kinovi_version {
+    KinoviVersion::Volcengine => (
+      InferenceJobType::Seedance2ProQueue,
+      InferenceJobExternalThirdParty::Seedance2Pro,
+    ),
+    KinoviVersion::BytePlus => (
+      InferenceJobType::Seedance2ProAltQueue,
+      InferenceJobExternalThirdParty::Seedance2ProAlt,
+    ),
+    KinoviVersion::BytePlusUltra => (
+      InferenceJobType::Seedance2ProBytePlusUltraQueue,
+      InferenceJobExternalThirdParty::Seedance2ProBytePlusUltra,
+    ),
+  };
+  
   // 1. Query all (limit 25,000) non-terminal Seedance2Pro jobs from DB.
   //    This is all non-(complete_success, complete_failure) jobs.
-  let (third_party, job_type) = if deps.is_alternate_mode {
-    (InferenceJobExternalThirdParty::Seedance2ProAlt, InferenceJobType::Seedance2ProAltQueue)
-  } else {
-    (InferenceJobExternalThirdParty::Seedance2Pro, InferenceJobType::Seedance2ProQueue)
-  };
-
   let pending_jobs = match list_pending_seedance2pro_video_jobs(&deps.mysql_pool, third_party, job_type).await {
     Ok(jobs) => jobs,
     Err(err) => {
