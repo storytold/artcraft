@@ -18,6 +18,7 @@ use enums::common::generation::common_video_model::CommonVideoModel;
 use enums::common::generation_provider::GenerationProvider;
 use http_server_common::request::get_request_ip::get_request_ip;
 use mysql_queries::queries::debug_logs::insert_debug_log::{insert_debug_log, InsertDebugLogArgs};
+use mysql_queries::queries::generic_inference::api_providers::seedance2pro::insert_generic_inference_job_for_seedance2pro_queue_with_apriori_job_token::KinoviVersion;
 use mysql_queries::queries::idepotency_tokens::insert_idempotency_token::insert_idempotency_token;
 use mysql_queries::queries::prompt_context_items::insert_batch_prompt_context_items::{
   insert_batch_prompt_context_items, InsertBatchArgs, PromptContextItem,
@@ -38,6 +39,7 @@ use crate::http_server::endpoints::omni_gen::generate::video::insert_db_job::ins
 use crate::http_server::endpoints::omni_gen::generate::video::insert_db_job::shared_job_args::SharedJobArgs;
 use crate::http_server::endpoints::omni_gen::generate::video::pipeline_v2::run_pipeline_v2::{run_pipeline_v2, RunPipelineV2Args};
 use crate::http_server::endpoints::omni_gen::generate::video::helpers::resolve_kinovi_character_ids::resolve_kinovi_character_ids;
+use crate::http_server::endpoints::omni_gen::generate::video::kinovi_account::KinoviAccount;
 use crate::http_server::session::lookup::user_session_feature_flags::UserSessionFeatureFlags;
 use crate::http_server::validations::validate_idempotency_token_format::validate_idempotency_token_format;
 use crate::state::server_state::ServerState;
@@ -166,12 +168,17 @@ pub async fn omni_gen_video_generate_handler(
 
   // ==================== PIPELINE DISPATCH ==================== //
 
-  let use_alternate_kinovi = match request.model {
-    Some(CommonVideoModel::Seedance2p0BytePlus) => true,
-    Some(CommonVideoModel::Seedance2p0BytePlusFast) => true,
-    Some(CommonVideoModel::PreviewModel) => true,
-    Some(CommonVideoModel::PreviewModelFast) => true,
-    _ => false,
+  let kinovi_account = match request.model {
+    // BytePlus Ultra
+    Some(CommonVideoModel::Seedance2p0BytePlusUltra) => KinoviAccount::BytePlusUltra,
+    Some(CommonVideoModel::Seedance2p0BytePlusUltraFast) => KinoviAccount::BytePlusUltra,
+    // BytePlus
+    Some(CommonVideoModel::Seedance2p0BytePlus) => KinoviAccount::BytePlus,
+    Some(CommonVideoModel::Seedance2p0BytePlusFast) => KinoviAccount::BytePlus,
+    Some(CommonVideoModel::PreviewModel) => KinoviAccount::BytePlus,
+    Some(CommonVideoModel::PreviewModelFast) => KinoviAccount::BytePlus,
+    // Everything else goes through Volcengine
+    _ => KinoviAccount::Volcengine,
   };
 
   // ==================== DEBUG LOG: HTTP REQUEST ==================== //
@@ -194,7 +201,7 @@ pub async fn omni_gen_video_generate_handler(
     user_token,
     media_file_to_url_map: &media_file_to_url_map,
     kinovi_character_id_map: &kinovi_character_id_map,
-    use_alternate_kinovi,
+    kinovi_account,
   }).await?;
 
   // ==================== DEBUG LOG: FAL REQUEST ==================== //
@@ -318,11 +325,18 @@ pub async fn omni_gen_video_generate_handler(
   let (primary_job_token, all_job_tokens) = match &pipeline_result.response {
     GenerateVideoResponse::Seedance2Pro(payload) => {
       info!("Inserting seedance2pro job(s) with token: {:?}", pipeline_result.billing.apriori_job_token);
+
+      let kinovi_version = match kinovi_account {
+        KinoviAccount::Volcengine => KinoviVersion::Volcengine,
+        KinoviAccount::BytePlus => KinoviVersion::BytePlus,
+        KinoviAccount::BytePlusUltra => KinoviVersion::BytePlusUltra,
+      };
+
       let result = insert_seedance2pro_jobs(InsertSeedance2proJobsArgs {
         primary_order_id: &payload.order_id,
         maybe_additional_order_ids: payload.maybe_order_ids.as_deref(),
         maybe_wallet_ledger_entry_token: pipeline_result.billing.maybe_wallet_ledger_entry_token.as_ref(),
-        use_alternate_kinovi,
+        kinovi_version,
         shared: SharedJobArgs {
           apriori_job_token: &pipeline_result.billing.apriori_job_token,
           idempotency_token: &idempotency_token,

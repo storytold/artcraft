@@ -42,11 +42,11 @@ pub struct BeebleData {
 /// Seedance 2 Pro integration
 #[derive(Clone)]
 pub struct Seedance2ProData {
-  /// Cookie string for seedance2-pro.com
-  pub cookies: String,
+  pub cookies_volcengine: String,
 
-  /// Cookie string for seedance2-pro.com (Whitelisted account)
   pub cookies_byteplus: String,
+
+  pub cookies_byteplus_ultra: String,
 }
 
 /// OpenAI integration
@@ -82,8 +82,9 @@ pub fn setup_inference_providers() -> AnyhowResult<InferenceProviders> {
       webhook_url: easyenv::get_env_string_required("BEEBLE_WEBHOOK_URL")?,
     },
     seedance2pro: Seedance2ProData {
-      cookies: easyenv::get_env_string_required("SEEDANCE2PRO_COOKIES")?,
+      cookies_volcengine: easyenv::get_env_string_required("SEEDANCE2PRO_COOKIES")?,
       cookies_byteplus: easyenv::get_env_string_required("SEEDANCE2PRO_WHITELIST_COOKIES")?,
+      cookies_byteplus_ultra: easyenv::get_env_string_required("SEEDANCE2PRO_BYTEPLUS_ULTRA_COOKIES")?,
     },
     openai: OpenAiData {
       api_key: easyenv::get_env_string_required("OPENAI_API_KEY")?,

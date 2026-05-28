@@ -9,16 +9,17 @@ use artcraft_router::client::router_seedance2pro_client::RouterSeedance2ProClien
 use seedance2pro_client::creds::seedance2pro_session::Seedance2ProSession;
 
 use crate::http_server::common_responses::common_web_error::CommonWebError;
+use crate::http_server::endpoints::omni_gen::generate::video::kinovi_account::KinoviAccount;
 use crate::state::server_state::ServerState;
 
 pub fn build_router_client(
   provider: RouterProvider,
   server_state: &ServerState,
-  use_alternate_kinovi: bool,
+  kinovi_account: KinoviAccount,
 ) -> Result<RouterClient, CommonWebError> {
   match provider {
     RouterProvider::Seedance2Pro => {
-      kinovi_provider(server_state, use_alternate_kinovi)
+      kinovi_provider(server_state, kinovi_account)
     }
     RouterProvider::Fal => {
       let fal_client = RouterFalClient::new_with_webhook(
@@ -45,18 +46,16 @@ pub fn build_router_client(
   }
 }
 
-fn kinovi_provider(server_state: &ServerState, use_alternate_kinovi: bool) -> Result<RouterClient, CommonWebError> {
-  let session = if use_alternate_kinovi {
-    // Alternate Kinovi
-    Seedance2ProSession::from_cookies_string(
-      server_state.inference_providers.seedance2pro.cookies_byteplus.clone()
-    )
-  } else {
-    // Standard Kinovi
-    Seedance2ProSession::from_cookies_string(
-      server_state.inference_providers.seedance2pro.cookies.clone()
-    )
+fn kinovi_provider(server_state: &ServerState, kinovi_account: KinoviAccount) -> Result<RouterClient, CommonWebError> {
+  let seedance2pro = &server_state.inference_providers.seedance2pro;
+  
+  let cookies = match kinovi_account {
+    KinoviAccount::Volcengine => seedance2pro.cookies_volcengine.clone(),
+    KinoviAccount::BytePlus => seedance2pro.cookies_byteplus.clone(),
+    KinoviAccount::BytePlusUltra => seedance2pro.cookies_byteplus_ultra.clone(),
   };
+
+  let session = Seedance2ProSession::from_cookies_string(cookies);
   
   Ok(RouterClient::Seedance2Pro(RouterSeedance2ProClient::new(session)))
 }

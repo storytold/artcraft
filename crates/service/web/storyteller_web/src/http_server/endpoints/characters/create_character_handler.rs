@@ -123,7 +123,7 @@ pub async fn create_character_handler(
   // --- Upload image to Kinovi CDN ---
 
   let seedance_image_url = upload_to_kinovi(
-    &server_state.inference_providers.seedance2pro.cookies,
+    &server_state.inference_providers.seedance2pro.cookies_volcengine,
     image_cdn_url,
   ).await?;
 
@@ -132,7 +132,7 @@ pub async fn create_character_handler(
   // --- Call Kinovi generate_character ---
 
   let session = Seedance2ProSession::from_cookies_string(
-    server_state.inference_providers.seedance2pro.cookies.clone()
+    server_state.inference_providers.seedance2pro.cookies_volcengine.clone()
   );
 
   let gen_result = generate_character(GenerateCharacterArgs {

@@ -26,8 +26,8 @@ use crate::queries::generic_inference::api_providers::common::insert_generic_inf
 pub struct InsertGenericInferenceForSeedance2ProWithAprioriJobTokenArgs<'e, 'c, E>
   where E: 'e + Executor<'c, Database = MySql>
 {
-  /// Which kinovi queue to use: standard or alternate
-  pub use_alternate_kinovi: bool,
+  /// Which kinovi queue to use
+  pub kinovi_version: KinoviVersion,
 
   pub uuid_idempotency_token: &'e str,
 
@@ -57,23 +57,39 @@ pub struct InsertGenericInferenceForSeedance2ProWithAprioriJobTokenArgs<'e, 'c, 
   pub phantom: PhantomData<&'c E>,
 }
 
+#[derive(Debug, Clone, Copy)]
+pub enum KinoviVersion {
+  Volcengine,
+  BytePlus,
+  BytePlusUltra,
+}
+
+
 pub async fn insert_generic_inference_job_for_seedance2pro_queue_with_apriori_job_token<'e, 'c : 'e, E>(
   args: InsertGenericInferenceForSeedance2ProWithAprioriJobTokenArgs<'e, 'c, E>
 ) -> Result<InferenceJobToken, DatabaseQueryError>
   where E: 'e + Executor<'c, Database = MySql>
 {
-  let (job_type, external_third_party, product_category) = if args.use_alternate_kinovi {
-    (
-      InferenceJobType::Seedance2ProAltQueue,
-      InferenceJobExternalThirdParty::Seedance2ProAlt,
-      InferenceJobProductCategory::Seedance2ProVideoAlt,
-    )
-  } else {
-    (
+  let (
+    job_type, 
+    external_third_party, 
+    product_category
+  ) = match args.kinovi_version {
+    KinoviVersion::Volcengine => (
       InferenceJobType::Seedance2ProQueue,
       InferenceJobExternalThirdParty::Seedance2Pro,
       InferenceJobProductCategory::Seedance2ProVideo,
-    )
+    ),
+    KinoviVersion::BytePlus => (
+      InferenceJobType::Seedance2ProAltQueue,
+      InferenceJobExternalThirdParty::Seedance2ProAlt,
+      InferenceJobProductCategory::Seedance2ProVideoAlt,
+    ),
+    KinoviVersion::BytePlusUltra => (
+      InferenceJobType::Seedance2ProAltQueue,
+      InferenceJobExternalThirdParty::Seedance2ProAlt,
+      InferenceJobProductCategory::Seedance2ProVideoAlt,
+    ),
   };
 
   let record_id = insert_generic_inference_job_for_provider(InsertGenericInferenceJobForProviderArgs {

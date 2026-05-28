@@ -26,10 +26,7 @@ use enums::common::visibility::Visibility;
 use http_server_common::request::get_request_ip::get_request_ip;
 use log::{error, info, warn};
 use mysql_queries::queries::characters::batch_lookup_characters_by_token_for_prompting::batch_lookup_characters_by_token_for_prompting;
-use mysql_queries::queries::generic_inference::api_providers::seedance2pro::insert_generic_inference_job_for_seedance2pro_queue_with_apriori_job_token::{
-  insert_generic_inference_job_for_seedance2pro_queue_with_apriori_job_token,
-  InsertGenericInferenceForSeedance2ProWithAprioriJobTokenArgs,
-};
+use mysql_queries::queries::generic_inference::api_providers::seedance2pro::insert_generic_inference_job_for_seedance2pro_queue_with_apriori_job_token::{insert_generic_inference_job_for_seedance2pro_queue_with_apriori_job_token, InsertGenericInferenceForSeedance2ProWithAprioriJobTokenArgs, KinoviVersion};
 use mysql_queries::queries::idepotency_tokens::insert_idempotency_token::insert_idempotency_token;
 use mysql_queries::queries::prompt_context_items::insert_batch_prompt_context_items::{
   insert_batch_prompt_context_items, InsertBatchArgs, PromptContextItem,
@@ -215,7 +212,7 @@ pub async fn seedance_2p0_multi_function_video_gen_handler(
         warn!("Whitelist session failed for user {:?}: {:?}, falling back to regular session", user_token, err);
 
         let regular_session = Seedance2ProSession::from_cookies_string(
-          server_state.inference_providers.seedance2pro.cookies.clone()
+          server_state.inference_providers.seedance2pro.cookies_volcengine.clone()
         );
 
         let result = upload_and_generate(
@@ -253,7 +250,7 @@ pub async fn seedance_2p0_multi_function_video_gen_handler(
     info!("User {:?} using regular seedance session", user_token);
 
     let regular_session = Seedance2ProSession::from_cookies_string(
-      server_state.inference_providers.seedance2pro.cookies.clone()
+      server_state.inference_providers.seedance2pro.cookies_volcengine.clone()
     );
 
     let result = upload_and_generate(
@@ -412,7 +409,7 @@ pub async fn seedance_2p0_multi_function_video_gen_handler(
 
     let db_result = insert_generic_inference_job_for_seedance2pro_queue_with_apriori_job_token(
       InsertGenericInferenceForSeedance2ProWithAprioriJobTokenArgs {
-        use_alternate_kinovi: false,
+        kinovi_version: KinoviVersion::Volcengine,
         apriori_job_token: &job_token,
         uuid_idempotency_token: &idempotency_str,
         maybe_external_third_party_id: order_id,
