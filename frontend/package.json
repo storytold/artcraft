@@ -52,6 +52,7 @@
     "react-resizable-panels": "^2.1.7",
     "react-router-dom": "6.29.0",
     "react-spring": "^10.0.1",
+    "react-window": "^2.2.7",
     "tailwind-merge": "^2.2.2",
     "three": "^0.171.0",
     "use-deep-compare-effect": "^1.8.1",

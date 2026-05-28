@@ -1124,3 +1124,64 @@ export type {
   MediaSortKey,
   MediaSortOrder,
 } from "./lib/panels/assets/assets-panel-store";
+
+// --- Fonts ---
+// Atlas-backed Google Fonts picker ported from opencut-classic. The
+// FontPicker drives masks/text-mask params today and the upcoming
+// TextView once that lands. Hosts that need to preload a Google font
+// outside the picker (e.g. before rendering an export frame) call
+// loadFullFont / loadFonts directly. SYSTEM_FONTS is the bundled
+// short-list that never needs network loading.
+export { FontPicker } from "./lib/components/ui/font-picker";
+export {
+  SYSTEM_FONTS,
+  useFontAtlas,
+  loadFontAtlas,
+  getCachedFontAtlas,
+  clearFontAtlasCache,
+  loadFullFont,
+  loadFonts,
+} from "./lib/fonts";
+export type {
+  FontOption,
+  GoogleFontMeta,
+  FontAtlas,
+  FontAtlasEntry,
+} from "./lib/fonts";
+
+// --- Text view ---
+// AssetsPanel "Text" tab content. Drags a default text element onto the
+// active scene's timeline at the current playhead time.
+export { TextView } from "./lib/text/components/assets-view";
+
+// --- Effects view ---
+// AssetsPanel "Effects" tab content. Renders a grid of effect previews
+// (live-rendered via effectPreviewService) drawn from effectsRegistry.
+// Each item is draggable onto the timeline as a standalone effect clip.
+export { EffectsView } from "./lib/effects/components/assets-view";
+
+// --- Project dialogs ---
+// Confirmation dialogs ported from opencut-classic. RenameProjectDialog
+// drives the rename flow; DeleteProjectDialog drives single- and
+// multi-project delete confirmation. Both are wired into EditorHeader's
+// ProjectDropdown via the `openDialog` state.
+export { RenameProjectDialog } from "./lib/project/components/rename-project-dialog";
+export { DeleteProjectDialog } from "./lib/project/components/delete-project-dialog";
+
+// --- Sounds ---
+// AssetsPanel "Sounds" tab content. SoundsView renders the sound-effects
+// + saved-sounds tabs with search, infinite scroll, previewing, and
+// timeline insertion. Data flows through SoundsAdapter — the lib ships
+// an emptySoundsAdapter default; hosts wire their own search / saved-
+// sound backend (Artcraft routes through the storyteller-web sounds
+// proxy).
+export { SoundsView } from "./lib/sounds/components/assets-view";
+export { useSoundsStore } from "./lib/sounds/sounds-store";
+export { useSoundSearch } from "./lib/sounds/use-sound-search";
+export type {
+  SoundEffect,
+  SavedSound,
+  SavedSoundsData,
+} from "./lib/sounds/types";
+export type { SoundsAdapter, SoundsSearchResult } from "./lib/adapters";
+export { emptySoundsAdapter } from "./lib/adapters/default";
