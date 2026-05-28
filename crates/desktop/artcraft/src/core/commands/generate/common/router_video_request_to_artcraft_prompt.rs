@@ -72,6 +72,8 @@ fn video_model_to_common_model_type(model: RouterVideoModel) -> Option<CommonMod
     RouterVideoModel::Seedance2p0BytePlusFast => Some(CommonModelType::Seedance2p0BytePlusFast),
     RouterVideoModel::Seedance2p0Ultra => Some(CommonModelType::Seedance2p0Ultra),
     RouterVideoModel::Seedance2p0UltraFast => Some(CommonModelType::Seedance2p0UltraFast),
+    RouterVideoModel::Seedance2p0BytePlusUltra => Some(CommonModelType::Seedance2p0BytePlusUltra),
+    RouterVideoModel::Seedance2p0BytePlusUltraFast => Some(CommonModelType::Seedance2p0BytePlusUltraFast),
     RouterVideoModel::PreviewModel => Some(CommonModelType::PreviewModel),
     RouterVideoModel::PreviewModelFast => Some(CommonModelType::PreviewModelFast),
     RouterVideoModel::GrokImagineVideo => Some(CommonModelType::GrokImagineVideo),

@@ -56,6 +56,12 @@ pub enum RouterVideoModel {
   #[serde(rename = "seedance_2p0_u_fast")]
   Seedance2p0UltraFast,
 
+  #[serde(rename = "seedance_2p0_bpu")]
+  Seedance2p0BytePlusUltra,
+
+  #[serde(rename = "seedance_2p0_bpu_fast")]
+  Seedance2p0BytePlusUltraFast,
+
   #[serde(rename = "happy_horse_1p0")]
   HappyHorse1p0,
 
