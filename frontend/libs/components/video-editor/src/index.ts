@@ -569,3 +569,30 @@ export type { MediaAsset, MediaType } from "./lib/media/types";
 // --- Caching services (decoded video frames + waveform summaries) ---
 export { VideoCache, videoCache } from "./lib/services/video-cache";
 export { WaveformCache, waveformCache } from "./lib/services/waveform-cache";
+
+// --- EditorCore + managers ---
+// Hosts that need direct access (e.g. command palette wiring,
+// keyboard shortcuts) call EditorCore.getInstance(). The instance is
+// created on first access with bundled default adapters; the
+// EditorProvider re-initializes it with the host's adapters on mount.
+export { EditorCore } from "./lib/core";
+export { CommandManager } from "./lib/core/managers/commands";
+export { TimelineManager } from "./lib/core/managers/timeline-manager";
+export { PlaybackManager } from "./lib/core/managers/playback-manager";
+export { ScenesManager } from "./lib/core/managers/scenes-manager";
+export { ProjectManager } from "./lib/core/managers/project-manager";
+export { MediaManager } from "./lib/core/managers/media-manager";
+export { RendererManager } from "./lib/core/managers/renderer-manager";
+export { SaveManager } from "./lib/core/managers/save-manager";
+export { AudioManager } from "./lib/core/managers/audio-manager";
+export { SelectionManager } from "./lib/core/managers/selection-manager";
+export { ClipboardManager } from "./lib/core/managers/clipboard-manager";
+export { DiagnosticsManager } from "./lib/core/managers/diagnostics-manager";
+
+// --- Clipboard handlers ---
+export {
+  clipboardHandlers,
+  clipboardCopyHandlers,
+  copyClipboardEntry,
+  buildPasteClipboardCommand,
+} from "./lib/clipboard/handlers";

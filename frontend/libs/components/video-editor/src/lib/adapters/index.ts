@@ -18,6 +18,7 @@ export type { MediaSourceAdapter } from "./media-source";
 export type { AssetGalleryAdapter } from "./asset-gallery";
 export type { AuthUserAdapter } from "./auth-user";
 export type { ExportSinkAdapter } from "./export-sink";
+export type { ToastAdapter, ToastOptions } from "./toast";
 
 // Bundle that EditorProvider accepts. `assetGallery` is optional —
 // when null/undefined, the editor uses its built-in file picker.
@@ -26,5 +27,6 @@ export interface VideoEditorAdapters {
   mediaSource: import("./media-source").MediaSourceAdapter;
   authUser: import("./auth-user").AuthUserAdapter;
   exportSink: import("./export-sink").ExportSinkAdapter;
+  toast: import("./toast").ToastAdapter;
   assetGallery?: import("./asset-gallery").AssetGalleryAdapter | null;
 }

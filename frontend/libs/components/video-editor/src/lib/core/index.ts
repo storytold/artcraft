@@ -1,46 +1,99 @@
 import { SelectionManager } from "./managers/selection-manager";
 import { DiagnosticsManager } from "./managers/diagnostics-manager";
+import { CommandManager } from "./managers/commands";
+import { PlaybackManager } from "./managers/playback-manager";
+import { ClipboardManager } from "./managers/clipboard-manager";
+import { SaveManager } from "./managers/save-manager";
+import { RendererManager } from "./managers/renderer-manager";
+import { AudioManager } from "./managers/audio-manager";
+import { ScenesManager } from "./managers/scenes-manager";
+import { TimelineManager } from "./managers/timeline-manager";
+import { MediaManager } from "./managers/media-manager";
+import { ProjectManager } from "./managers/project-manager";
+import { registerDefaultEffects } from "../effects";
+import { registerDefaultMasks } from "../masks";
+import type { VideoEditorAdapters } from "../adapters";
+import { createDefaultAdapters } from "../adapters/default";
 
-// Partial EditorCore — only the managers that have been ported so far
-// are wired up. Each manager gets a back-reference to the core so it
-// can coordinate with siblings (e.g. ClipboardManager.copy needs
-// editor.selection.getSelectedElements()). As more managers port, they
-// join this constructor in opencut's original order:
-//
+// Singleton coordinator for the editor. Manager construction order
+// mirrors OpenCut's:
 //   command, timeline, playback, scenes, project, media, renderer,
-//   save, audio, selection, clipboard, diagnostics
+//   save, audio, selection, clipboard, diagnostics.
 //
-// The not-yet-ported managers will appear as optional/undefined fields
-// during the migration, but consumers should treat the eventual surface
-// as required.
+// Adapters land via `EditorCore.initialize({ adapters })`, called by
+// EditorProvider on mount. If a command path calls getInstance() before
+// initialize() has been wired up (e.g. tests), bundled defaults are
+// used. Hosts that want their own adapters must call initialize() before
+// mounting any panels.
 export class EditorCore {
   private static instance: EditorCore | null = null;
 
+  public readonly adapters: VideoEditorAdapters;
+
+  public readonly command: CommandManager;
+  public readonly timeline: TimelineManager;
+  public readonly playback: PlaybackManager;
+  public readonly scenes: ScenesManager;
+  public readonly project: ProjectManager;
+  public readonly media: MediaManager;
+  public readonly renderer: RendererManager;
+  public readonly save: SaveManager;
+  public readonly audio: AudioManager;
   public readonly selection: SelectionManager;
+  public readonly clipboard: ClipboardManager;
   public readonly diagnostics: DiagnosticsManager;
 
-  // Stub managers pending full port. Typed as `any` so command code
-  // that references `editor.timeline.updateTracks(...)` etc. compiles
-  // today; calls will fail at runtime until the real managers land.
-  public readonly command: any = undefined as any;
-  public readonly playback: any = undefined as any;
-  public readonly scenes: any = undefined as any;
-  public readonly project: any = undefined as any;
-  public readonly media: any = undefined as any;
-  public readonly renderer: any = undefined as any;
-  public readonly save: any = undefined as any;
-  public readonly audio: any = undefined as any;
-  public readonly timeline: any = undefined as any;
-  public readonly clipboard: any = undefined as any;
-
-  private constructor() {
+  private constructor(adapters: VideoEditorAdapters) {
+    this.adapters = adapters;
+    registerDefaultEffects();
+    registerDefaultMasks();
+    this.command = new CommandManager(this);
+    this.timeline = new TimelineManager(this);
+    this.playback = new PlaybackManager(this);
+    this.scenes = new ScenesManager(this);
+    this.project = new ProjectManager(this);
+    this.media = new MediaManager(this);
+    this.renderer = new RendererManager(this);
+    this.save = new SaveManager({ editor: this });
+    this.audio = new AudioManager(this);
     this.selection = new SelectionManager(this);
+    this.clipboard = new ClipboardManager(this);
     this.diagnostics = new DiagnosticsManager(this);
+    this.playback.bindTimelineScope();
+    this.command.registerReactor(() => {
+      const activeScene = this.scenes.getActiveSceneOrNull();
+      if (!activeScene) {
+        return;
+      }
+
+      const tracks = activeScene.tracks;
+      const prunedTracks = {
+        ...tracks,
+        overlay: tracks.overlay.filter((track) => track.elements.length > 0),
+        audio: tracks.audio.filter((track) => track.elements.length > 0),
+      };
+      if (
+        prunedTracks.overlay.length !== tracks.overlay.length ||
+        prunedTracks.audio.length !== tracks.audio.length
+      ) {
+        this.timeline.updateTracks(prunedTracks);
+      }
+    });
+    this.save.start();
+  }
+
+  static initialize({
+    adapters,
+  }: {
+    adapters: VideoEditorAdapters;
+  }): EditorCore {
+    EditorCore.instance = new EditorCore(adapters);
+    return EditorCore.instance;
   }
 
   static getInstance(): EditorCore {
     if (!EditorCore.instance) {
-      EditorCore.instance = new EditorCore();
+      EditorCore.instance = new EditorCore(createDefaultAdapters());
     }
     return EditorCore.instance;
   }

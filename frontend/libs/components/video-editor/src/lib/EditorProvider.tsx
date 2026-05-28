@@ -1,6 +1,7 @@
 import { createContext, useContext, useMemo, type ReactNode } from "react";
 import type { VideoEditorAdapters } from "./adapters";
 import { createDefaultAdapters } from "./adapters/default";
+import { EditorCore } from "./core";
 
 // Internal context. Components inside the editor read adapters via
 // `useEditorAdapters()` rather than threading them through props.
@@ -22,6 +23,14 @@ export function EditorProvider({ adapters, children }: EditorProviderProps) {
     if (!adapters) return defaults;
     return { ...defaults, ...adapters };
   }, [adapters]);
+
+  // Bootstrap EditorCore with the resolved adapter bundle. Commands
+  // and managers read `EditorCore.getInstance().adapters.X` after
+  // this. Re-initializing on adapter changes resets the singleton —
+  // hosts that need hot-swap behavior should remount.
+  useMemo(() => {
+    EditorCore.initialize({ adapters: resolved });
+  }, [resolved]);
 
   return <Ctx.Provider value={resolved}>{children}</Ctx.Provider>;
 }
