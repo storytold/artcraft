@@ -6,24 +6,15 @@ import { TransformHandles } from "./transform-handles";
 import { MaskHandles } from "./mask-handles";
 import { SnapGuides } from "./snap-guides";
 import { TextEditOverlay } from "./text-edit-overlay";
-// TODO: usePropertiesStore is exported from
-// opencut-classic/apps/web/src/components/editor/panels/properties/stores/properties-store.ts
-// and tracks which property panel tab is active per element type. The
-// PropertiesPanel itself isn't ported yet, so we fall back to never treating
-// the preview as in mask mode here. Hosts that have already ported the
-// properties panel can replace this with the real selector.
 import { useEditor } from "../../editor/use-editor";
+import { usePropertiesStore } from "../../panels/properties/stores/properties-store";
 
 export function PreviewInteractionOverlay() {
   const [snapLines, setSnapLines] = useState<SnapLine[]>([]);
   const editor = useEditor();
   const viewport = usePreviewViewport();
   const selectedElements = useEditor((e) => e.selection.getSelectedElements());
-  // TODO(properties-store): wire to the real `usePropertiesStore` once the
-  // properties panel lands. For now `isMaskMode` is always false, which keeps
-  // the transform-handle path active even when the selected element type
-  // would otherwise show mask handles.
-  const activeTabPerType: Record<string, string | undefined> = {};
+  const { activeTabPerType } = usePropertiesStore();
 
   const selectedRef =
     selectedElements.length === 1 ? selectedElements[0] : null;

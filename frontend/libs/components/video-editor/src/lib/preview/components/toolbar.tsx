@@ -3,18 +3,12 @@
 import { useState, useEffect } from "react";
 import { useEditor } from "../../editor/use-editor";
 import { formatTimecode } from "opencut-wasm";
-// TODO: invokeAction is exported from
-// opencut-classic/apps/web/src/actions/index.ts and dispatches keyboard
-// actions like "toggle-play" through the keybinding system. The actions
-// registry isn't ported yet, so the play/pause button calls the playback
-// manager directly for now. Replace this with `invokeAction("toggle-play")`
-// once `../../actions` lands.
+import { invokeAction } from "../../actions";
 // TODO: EditableTimecode is exported from
 // opencut-classic/apps/web/src/components/editable-timecode.tsx. It renders
-// an inline-editable timecode input. The component pulls in the
-// `NumberField`/scrub-input primitives which aren't ported yet, so this
-// toolbar falls back to a plain read-only timecode display until that
-// component ports over.
+// an inline-editable timecode input. The component pulls in primitives that
+// aren't ported yet, so this toolbar falls back to a plain read-only
+// timecode display until that component ports over.
 import { Button } from "../../components/ui/button";
 import {
   FullScreenIcon,
@@ -141,7 +135,6 @@ function ZoomSelect() {
 }
 
 function PlayPauseButton() {
-  const editor = useEditor();
   const isPlaying = useEditor((e) => e.playback.getIsPlaying());
 
   return (
@@ -149,14 +142,7 @@ function PlayPauseButton() {
       variant="text"
       size="icon"
       onClick={() => {
-        // TODO(invokeAction): use `invokeAction("toggle-play")` once the
-        // actions registry is ported. Direct manager call works because the
-        // PlaybackManager owns the play state and is reactive.
-        if (editor.playback.getIsPlaying()) {
-          editor.playback.pause();
-        } else {
-          editor.playback.play();
-        }
+        invokeAction("toggle-play");
       }}
     >
       <HugeiconsIcon icon={isPlaying ? PauseIcon : PlayIcon} />

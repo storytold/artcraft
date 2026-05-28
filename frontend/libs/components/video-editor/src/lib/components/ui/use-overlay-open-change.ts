@@ -1,17 +1,5 @@
 import { useCallback, useEffect, useId, useRef } from "react";
-
-// TODO: actions/keybindings-store is part of the actions subsystem (not yet ported).
-// This stub matches the openOverlay/closeOverlay surface used by useOverlayOpenChange.
-// When keybindings-store lands, replace these no-ops with the real store hook.
-function useKeybindingsStore(): {
-  openOverlay: (id: string) => void;
-  closeOverlay: (id: string) => void;
-} {
-  return {
-    openOverlay: () => {},
-    closeOverlay: () => {},
-  };
-}
+import { useKeybindingsStore } from "../../actions/keybindings-store";
 
 export function useOverlayOpenChange({
   open,
