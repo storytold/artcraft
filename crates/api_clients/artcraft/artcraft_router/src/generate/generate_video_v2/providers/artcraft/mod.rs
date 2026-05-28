@@ -1,4 +1,6 @@
 pub(crate) mod build_common;
+#[cfg(test)]
+mod parity_tests;
 pub mod grok_imagine_video;
 pub mod happy_horse_1p0;
 pub mod kling_1_6_pro;
@@ -20,6 +22,8 @@ pub mod seedance_2p0_u_fast;
 pub mod seedance_2p0_u;
 pub mod seedance_2p0_bp;
 pub mod seedance_2p0_bp_fast;
+pub mod seedance_2p0_bpu;
+pub mod seedance_2p0_bpu_fast;
 pub mod sora_2;
 pub mod sora_2_pro;
 pub mod veo_2;

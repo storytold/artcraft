@@ -28,6 +28,8 @@ use crate::generate::generate_video_v2::providers::artcraft::seedance_2p0_u::bui
 use crate::generate::generate_video_v2::providers::artcraft::seedance_2p0_u_fast::build::build_artcraft_seedance_2p0_u_fast;
 use crate::generate::generate_video_v2::providers::artcraft::seedance_2p0_bp::build::build_artcraft_seedance_2p0_bp;
 use crate::generate::generate_video_v2::providers::artcraft::seedance_2p0_bp_fast::build::build_artcraft_seedance_2p0_bp_fast;
+use crate::generate::generate_video_v2::providers::artcraft::seedance_2p0_bpu::build::build_artcraft_seedance_2p0_bpu;
+use crate::generate::generate_video_v2::providers::artcraft::seedance_2p0_bpu_fast::build::build_artcraft_seedance_2p0_bpu_fast;
 use crate::generate::generate_video_v2::providers::artcraft::sora_2::build::build_artcraft_sora_2;
 use crate::generate::generate_video_v2::providers::artcraft::sora_2_pro::build::build_artcraft_sora_2_pro;
 use crate::generate::generate_video_v2::providers::artcraft::veo_2::build::build_artcraft_veo_2;
@@ -163,6 +165,8 @@ impl GenerateVideoRequestBuilder {
       (RouterProvider::Artcraft, RouterVideoModel::Seedance2p0UltraFast) => build_artcraft_seedance_2p0_u_fast(self),
       (RouterProvider::Artcraft, RouterVideoModel::Seedance2p0BytePlus) => build_artcraft_seedance_2p0_bp(self),
       (RouterProvider::Artcraft, RouterVideoModel::Seedance2p0BytePlusFast) => build_artcraft_seedance_2p0_bp_fast(self),
+      (RouterProvider::Artcraft, RouterVideoModel::Seedance2p0BytePlusUltra) => build_artcraft_seedance_2p0_bpu(self),
+      (RouterProvider::Artcraft, RouterVideoModel::Seedance2p0BytePlusUltraFast) => build_artcraft_seedance_2p0_bpu_fast(self),
       (RouterProvider::Artcraft, RouterVideoModel::PreviewModel) => build_artcraft_preview_model(self),
       (RouterProvider::Artcraft, RouterVideoModel::PreviewModelFast) => build_artcraft_preview_model_fast(self),
       (RouterProvider::Artcraft, RouterVideoModel::Seedance10Lite) => build_artcraft_seedance_1p0_lite(self),
