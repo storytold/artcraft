@@ -51,19 +51,11 @@ export function ExportButton() {
 
   const handlePopoverOpenChange = ({ open }: { open: boolean }) => {
     if (!open) {
-      // TODO: editor.project.cancelExport + clearExportState are unported.
-      // Hosts that need export support should drive the SceneExporter
-      // directly (see `services/renderer/scene-exporter.ts`) or wrap a
-      // custom export pipeline.
-      // editor.project.cancelExport();
-      // editor.project.clearExportState();
+      editor.project.cancelExport();
+      editor.project.clearExportState();
     }
     setIsExportPopoverOpen(open);
   };
-
-  // Acknowledge the `editor` reference so the TODO closure shape lines
-  // up when the project-manager export surface is finished.
-  void editor;
 
   return (
     <Popover
@@ -107,13 +99,7 @@ function ExportPopover({
 }) {
   const editor = useEditor();
   const activeProject = useEditor((e) => e.project.getActive());
-  // TODO: editor.project.getExportState is unported. Until it lands,
-  // we render the popover in its "idle, ready to export" state.
-  const exportState = {
-    isExporting: false,
-    progress: 0,
-    result: null as { success: boolean; buffer?: ArrayBuffer; error?: string } | null,
-  };
+  const exportState = useEditor((e) => e.project.getExportState());
   const { isExporting, progress, result: exportResult } = exportState;
   const [format, setFormat] = useState<ExportFormat>(
     DEFAULT_EXPORT_OPTIONS.format,
@@ -128,48 +114,33 @@ function ExportPopover({
   const handleExport = async () => {
     if (!activeProject) return;
 
-    // TODO: editor.project.export is unported. Hosts can drive the
-    // export pipeline manually using SceneExporter + buildScene; once
-    // the manager surface lands, restore the original block:
-    //
-    //   const result = await editor.project.export({
-    //     options: {
-    //       format,
-    //       quality,
-    //       fps: activeProject.settings.fps,
-    //       includeAudio: shouldIncludeAudio,
-    //     },
-    //   });
-    //
-    //   if (result.cancelled) {
-    //     editor.project.clearExportState();
-    //     return;
-    //   }
-    //
-    //   if (result.success && result.buffer) {
-    //     downloadBuffer({
-    //       buffer: result.buffer,
-    //       filename: `${activeProject.metadata.name}${getExportFileExtension({ format })}`,
-    //       mimeType: getExportMimeType({ format }),
-    //     });
-    //     editor.project.clearExportState();
-    //     onOpenChange(false);
-    //   }
+    const result = await editor.project.export({
+      options: {
+        format,
+        quality,
+        fps: activeProject.settings.fps,
+        includeAudio: shouldIncludeAudio,
+      },
+    });
 
-    // Acknowledge unused helpers so we keep the imports parked for the
-    // TODO above; this no-op avoids dead-code warnings until the
-    // surface lands.
-    void downloadBuffer;
-    void getExportFileExtension;
-    void getExportMimeType;
-    void shouldIncludeAudio;
-    void onOpenChange;
+    if (result.cancelled) {
+      editor.project.clearExportState();
+      return;
+    }
+
+    if (result.success && result.buffer) {
+      downloadBuffer({
+        buffer: result.buffer,
+        filename: `${activeProject.metadata.name}${getExportFileExtension({ format })}`,
+        mimeType: getExportMimeType({ format }),
+      });
+      editor.project.clearExportState();
+      onOpenChange(false);
+    }
   };
 
   const handleCancel = () => {
-    // TODO: editor.project.cancelExport is unported.
-    // editor.project.cancelExport();
-    void editor;
+    editor.project.cancelExport();
   };
 
   return (

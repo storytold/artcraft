@@ -1,6 +1,11 @@
 import type { EditorCore } from "../index";
 import type { TProject, TProjectSettings, TTimelineViewState } from "../../project/types";
 import type { MediaAsset } from "../../media/types";
+import type { ProjectMeta } from "../../adapters/types";
+import type {
+  ExportOptions,
+  ExportResult,
+} from "../../export";
 import { UpdateProjectSettingsCommand } from "../../commands/project";
 
 // Thin adapter-delegating ProjectManager. The OpenCut original (707
@@ -21,11 +26,29 @@ interface MigrationState {
   isMigrating: boolean;
 }
 
+export interface ExportProgressState {
+  isExporting: boolean;
+  progress: number;
+  cancelled: boolean;
+  error: string | null;
+  result: ExportResult | null;
+}
+
+const INITIAL_EXPORT_STATE: ExportProgressState = {
+  isExporting: false,
+  progress: 0,
+  cancelled: false,
+  error: null,
+  result: null,
+};
+
 export class ProjectManager {
   private active: TProject | null = null;
   private isLoading = false;
   private migrationState: MigrationState = { isMigrating: false };
   private listeners = new Set<() => void>();
+  private exportState: ExportProgressState = { ...INITIAL_EXPORT_STATE };
+  private exportCancelRequested = false;
 
   constructor(private editor: EditorCore) {}
 
@@ -121,6 +144,136 @@ export class ProjectManager {
   // those helpers port, this is a no-op — the host can override.
   ratchetFpsForImportedMedia(_args: { importedAssets: MediaAsset[] }): void {
     // No-op until FPS helpers port.
+  }
+
+  // --- Project lifecycle ---
+
+  async prepareExit(): Promise<void> {
+    await this.editor.save.flush();
+  }
+
+  closeProject(): void {
+    this.editor.save.stop();
+    this.editor.command.clear();
+    this.editor.scenes.clearScenes();
+    this.editor.media.clearAllAssets();
+    this.exportState = { ...INITIAL_EXPORT_STATE };
+    this.exportCancelRequested = false;
+    this.clearActive();
+  }
+
+  async listProjects(): Promise<ProjectMeta[]> {
+    return this.editor.adapters.projectStorage.listProjects();
+  }
+
+  async renameProject({
+    id,
+    name,
+  }: {
+    id: string;
+    name: string;
+  }): Promise<void> {
+    const envelope = await this.editor.adapters.projectStorage.loadProject(id);
+    if (!envelope) return;
+    const project = envelope.data as TProject;
+    const renamed: TProject = {
+      ...project,
+      metadata: {
+        ...project.metadata,
+        name,
+        updatedAt: new Date(),
+      },
+    };
+    await this.editor.adapters.projectStorage.saveProject({
+      id: renamed.metadata.id,
+      name: renamed.metadata.name,
+      updatedAt: renamed.metadata.updatedAt.getTime(),
+      data: renamed,
+    });
+    if (this.active?.metadata.id === id) {
+      this.active = renamed;
+      this.notify();
+    }
+  }
+
+  async deleteProjects({ ids }: { ids: string[] }): Promise<void> {
+    await Promise.all(
+      ids.map((id) => this.editor.adapters.projectStorage.deleteProject(id)),
+    );
+    if (this.active && ids.includes(this.active.metadata.id)) {
+      this.clearActive();
+    }
+  }
+
+  // --- Export lifecycle ---
+
+  getExportState(): ExportProgressState {
+    return this.exportState;
+  }
+
+  clearExportState(): void {
+    this.exportState = { ...INITIAL_EXPORT_STATE };
+    this.exportCancelRequested = false;
+    this.notify();
+  }
+
+  cancelExport(): void {
+    if (!this.exportState.isExporting) return;
+    this.exportCancelRequested = true;
+  }
+
+  async export({
+    options,
+  }: {
+    options: ExportOptions;
+  }): Promise<ExportResult> {
+    if (this.exportState.isExporting) {
+      return { success: false, error: "Export already in progress" };
+    }
+
+    this.exportCancelRequested = false;
+    this.exportState = {
+      isExporting: true,
+      progress: 0,
+      cancelled: false,
+      error: null,
+      result: null,
+    };
+    this.notify();
+
+    try {
+      const result = await this.editor.renderer.exportProject({
+        options,
+        onProgress: ({ progress }) => {
+          this.exportState = { ...this.exportState, progress };
+          this.notify();
+        },
+        onCancel: () => this.exportCancelRequested,
+      });
+
+      this.exportState = {
+        isExporting: false,
+        progress: result.success ? 1 : this.exportState.progress,
+        cancelled: result.cancelled === true,
+        error: result.success ? null : (result.error ?? null),
+        result,
+      };
+      this.notify();
+      return result;
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Unknown export error";
+      const failure: ExportResult = { success: false, error: message };
+      this.exportState = {
+        isExporting: false,
+        progress: this.exportState.progress,
+        cancelled: false,
+        error: message,
+        result: failure,
+      };
+      this.notify();
+      return failure;
+    }
   }
 
   subscribe(listener: () => void): () => void {

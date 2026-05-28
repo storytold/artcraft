@@ -47,20 +47,13 @@ function ProjectDropdown() {
     setIsExiting(true);
 
     try {
-      // TODO: editor.project.prepareExit() + closeProject() are unported
-      // (the ProjectManager in this lib only exposes the
-      // adapter-delegating surface). Hosts wiring the editor shell should
-      // provide a "back to projects" callback or implement those methods
-      // on a ProjectStorageAdapter wrapper.
-      // await editor.project.prepareExit();
-      // editor.project.closeProject();
+      await editor.project.prepareExit();
+      editor.project.closeProject();
     } catch (error) {
       console.error("Failed to prepare project exit:", error);
     } finally {
-      // editor.project.closeProject();
-      // TODO: host should provide a route or callback for "back to
-      // projects". The /projects route is part of the OpenCut Next.js
-      // app shell and isn't part of this lib.
+      // The /projects route is host-owned. Hosts can intercept this with
+      // their own router or override the editor shell.
       navigate("/projects");
     }
   };
@@ -72,12 +65,10 @@ function ProjectDropdown() {
       newName !== activeProject.metadata.name
     ) {
       try {
-        // TODO: editor.project.renameProject is unported. Hosts can
-        // implement project rename via their ProjectStorageAdapter.
-        // await editor.project.renameProject({
-        //   id: activeProject.metadata.id,
-        //   name: newName.trim(),
-        // });
+        await editor.project.renameProject({
+          id: activeProject.metadata.id,
+          name: newName.trim(),
+        });
       } catch (error) {
         toast.error("Failed to rename project", {
           description:
@@ -92,11 +83,9 @@ function ProjectDropdown() {
   const handleDeleteProject = async () => {
     if (activeProject) {
       try {
-        // TODO: editor.project.deleteProjects is unported. Hosts can
-        // implement via their ProjectStorageAdapter.
-        // await editor.project.deleteProjects({
-        //   ids: [activeProject.metadata.id],
-        // });
+        await editor.project.deleteProjects({
+          ids: [activeProject.metadata.id],
+        });
         navigate("/projects");
       } catch (error) {
         toast.error("Failed to delete project", {
@@ -188,12 +177,10 @@ function EditableProjectName() {
 
     if (newName !== originalNameRef.current) {
       try {
-        // TODO: editor.project.renameProject is unported. See
-        // ProjectDropdown for context.
-        // await editor.project.renameProject({
-        //   id: activeProject.metadata.id,
-        //   name: newName,
-        // });
+        await editor.project.renameProject({
+          id: activeProject.metadata.id,
+          name: newName,
+        });
       } catch (error) {
         toast.error("Failed to rename project", {
           description:
@@ -217,10 +204,6 @@ function EditableProjectName() {
       inputRef.current?.blur();
     }
   };
-
-  // Acknowledge `editor` is referenced so the closure shape lines up
-  // when the renameProject TODO above is resolved.
-  void editor;
 
   return (
     <input
