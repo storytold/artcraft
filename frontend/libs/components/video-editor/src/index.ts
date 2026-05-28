@@ -963,3 +963,64 @@ export { useRafLoop } from "./lib/hooks/use-raf-loop";
 export { useContainerSize } from "./lib/hooks/use-container-size";
 export { useResizeObserver } from "./lib/hooks/use-resize-observer";
 export { useFullscreen } from "./lib/hooks/use-fullscreen";
+
+// --- PropertiesPanel ---
+// The full PropertiesPanel subsystem ported from opencut-classic. Owns the
+// element-type-to-tab registry (transform/blending/audio/speed/text/etc.),
+// the per-param input rendering pipeline (NumberField / Switch / ColorPicker
+// / Select / Textarea), the keyframe toggle, and the per-element animated
+// param channel logic (preview/commit + upsert-keyframe-at-playhead).
+//
+// Several tab content builders (MasksTab, SpeedTab, GraphicTab,
+// ClipEffectsTab, StandaloneEffectTab) live in subsystems that other
+// agents own — those builders currently render `null` with a port TODO.
+// Once those tabs land, drop the placeholders in registry.tsx.
+//
+// PropertiesPanel itself reads selection via `editor.selection.getSelectedElements()`
+// directly until the parallel `useElementSelection` hook lands.
+//
+// Mount inside <EditorProvider>; the panel reads/writes its UI prefs through
+// `usePropertiesStore` (active-tab-per-element-type, transform scale lock).
+export { PropertiesPanel } from "./lib/panels/properties";
+export { usePropertiesStore } from "./lib/panels/properties/stores/properties-store";
+export {
+  getPropertiesConfig,
+} from "./lib/panels/properties/registry";
+export type {
+  TabContentProps,
+  PropertiesTabDef,
+  ElementPropertiesConfig,
+} from "./lib/panels/properties/registry";
+export { PropertyParamField } from "./lib/panels/properties/components/property-param-field";
+export { KeyframeToggle } from "./lib/panels/properties/components/keyframe-toggle";
+export { ElementParamsTab } from "./lib/panels/properties/components/element-params-tab";
+export { EmptyView as PropertiesEmptyView } from "./lib/panels/properties/empty-view";
+export { useElementPlayhead } from "./lib/panels/properties/hooks/use-element-playhead";
+export {
+  useKeyframedParamProperty,
+} from "./lib/panels/properties/hooks/use-keyframed-param-property";
+export type {
+  KeyframedParamPropertyResult,
+} from "./lib/panels/properties/hooks/use-keyframed-param-property";
+export { usePropertyDraft } from "./lib/panels/properties/hooks/use-property-draft";
+
+// --- Section primitive (used by PropertiesPanel + future tab content) ---
+export {
+  Section,
+  SectionHeader,
+  SectionTitle,
+  SectionFields,
+  SectionField,
+  SectionContent,
+} from "./lib/components/section";
+
+// --- Extra UI primitives ported for PropertiesPanel ---
+export { NumberField } from "./lib/components/ui/number-field";
+export { Switch } from "./lib/components/ui/switch";
+export { Textarea } from "./lib/components/ui/textarea";
+
+// --- Masks: pointer/handle interaction hook (unblocks PreviewPanel's
+// mask-handles overlay; PreviewPanel now drives the real MaskHandles
+// component end-to-end). ---
+export { useMaskHandles } from "./lib/masks/use-mask-handles";
+export { useFocusLock } from "./lib/hooks/use-focus-lock";
