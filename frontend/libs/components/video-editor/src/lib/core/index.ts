@@ -19,6 +19,20 @@ export class EditorCore {
   public readonly selection: SelectionManager;
   public readonly diagnostics: DiagnosticsManager;
 
+  // Stub managers pending full port. Typed as `any` so command code
+  // that references `editor.timeline.updateTracks(...)` etc. compiles
+  // today; calls will fail at runtime until the real managers land.
+  public readonly command: any = undefined as any;
+  public readonly playback: any = undefined as any;
+  public readonly scenes: any = undefined as any;
+  public readonly project: any = undefined as any;
+  public readonly media: any = undefined as any;
+  public readonly renderer: any = undefined as any;
+  public readonly save: any = undefined as any;
+  public readonly audio: any = undefined as any;
+  public readonly timeline: any = undefined as any;
+  public readonly clipboard: any = undefined as any;
+
   private constructor() {
     this.selection = new SelectionManager(this);
     this.diagnostics = new DiagnosticsManager(this);

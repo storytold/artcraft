@@ -462,6 +462,45 @@ export { Command } from "./lib/commands/base-command";
 export { BatchCommand } from "./lib/commands/batch-command";
 export { PreviewTracker } from "./lib/commands/preview-tracker";
 export type { CommandResult } from "./lib/commands/base-command";
+
+// --- Timeline commands ---
+export {
+  TracksSnapshotCommand,
+  // Element commands
+  InsertElementCommand,
+  DeleteElementsCommand,
+  DuplicateElementsCommand,
+  SplitElementsCommand,
+  UpdateElementsCommand,
+  ToggleSourceAudioSeparationCommand,
+  MoveElementCommand,
+  // Effect commands
+  AddClipEffectCommand,
+  RemoveClipEffectCommand,
+  ToggleClipEffectCommand,
+  UpdateClipEffectParamsCommand,
+  ReorderClipEffectsCommand,
+  // Keyframe commands
+  RemoveEffectParamKeyframeCommand,
+  RemoveKeyframeCommand,
+  RetimeKeyframeCommand,
+  UpdateScalarKeyframeCurveCommand,
+  UpsertEffectParamKeyframeCommand,
+  UpsertKeyframeCommand,
+  // Mask commands
+  DeleteFreeformPathMaskPointsCommand,
+  InsertFreeformPathMaskPointCommand,
+  RemoveMaskCommand,
+  ToggleMaskInvertedCommand,
+  // Track commands
+  AddTrackCommand,
+  RemoveTrackCommand,
+  ToggleTrackMuteCommand,
+  ToggleTrackVisibilityCommand,
+  // Clipboard commands
+  PasteCommand,
+  PasteKeyframesCommand,
+} from "./lib/commands/timeline";
 export type {
   ClipboardEntry,
   ClipboardEntryType,
