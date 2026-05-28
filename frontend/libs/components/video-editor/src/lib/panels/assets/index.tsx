@@ -3,12 +3,6 @@
 import { Separator } from "../../components/ui/separator";
 import { type Tab, useAssetsPanelStore } from "./assets-panel-store";
 import { TabBar } from "./tabbar";
-// TODO: SoundsView/TextView/StickersView/EffectsView/Captions live in
-// sibling modules in opencut-classic
-// (@/sounds, @/text, @/stickers, @/effects, @/subtitles). None of those
-// React surfaces have been ported into this lib yet — render
-// "coming soon" placeholders until they land.
-// import { Captions } from "../../subtitles/components/assets-view";
 import { MediaView } from "./views/assets";
 import { SettingsView } from "./views/settings";
 import { SoundsView } from "../../sounds/components/assets-view";
@@ -16,6 +10,9 @@ import { StickersView } from "../../stickers/components/assets-view";
 import { TextView } from "../../text/components/assets-view";
 import { EffectsView } from "../../effects/components/assets-view";
 
+// Captions/Transitions/Adjustment tabs render placeholders. Captions
+// depends on the transcription subsystem (deferred per scope). Transitions
+// and Adjustment views aren't in OpenCut yet either.
 function ComingSoon({ label }: { label: string }) {
   return (
     <div className="text-muted-foreground p-4">
