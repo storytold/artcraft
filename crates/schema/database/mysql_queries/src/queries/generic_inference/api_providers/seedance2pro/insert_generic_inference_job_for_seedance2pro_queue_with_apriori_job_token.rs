@@ -71,8 +71,8 @@ pub async fn insert_generic_inference_job_for_seedance2pro_queue_with_apriori_jo
   where E: 'e + Executor<'c, Database = MySql>
 {
   let (
-    job_type, 
-    external_third_party, 
+    job_type,
+    external_third_party,
     product_category
   ) = match args.kinovi_version {
     KinoviVersion::Volcengine => (
@@ -86,9 +86,9 @@ pub async fn insert_generic_inference_job_for_seedance2pro_queue_with_apriori_jo
       InferenceJobProductCategory::Seedance2ProVideoAlt,
     ),
     KinoviVersion::BytePlusUltra => (
-      InferenceJobType::Seedance2ProAltQueue,
-      InferenceJobExternalThirdParty::Seedance2ProAlt,
-      InferenceJobProductCategory::Seedance2ProVideoAlt,
+      InferenceJobType::Seedance2ProBytePlusUltraQueue,
+      InferenceJobExternalThirdParty::Seedance2ProBytePlusUltra,
+      InferenceJobProductCategory::Seedance2ProVideoBytePlusUltra,
     ),
   };
 
