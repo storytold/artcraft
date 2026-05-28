@@ -128,3 +128,166 @@ export {
   registerCanceller,
   cancelInteraction,
 } from "./lib/editor/cancel-interaction";
+
+// --- Timeline element constructors + type guards ---
+// Hosts that want to inject elements directly (drag-and-drop from the
+// Artcraft gallery, etc.) build CreateTimelineElement values via these
+// helpers, then dispatch them through the EditorCore.timeline manager
+// (once that lands) or directly into the store.
+export {
+  canElementHaveAudio,
+  isVisualElement,
+  isMaskableElement,
+  isRetimableElement,
+  canElementBeHidden,
+  hasElementEffects,
+  hasMediaId,
+  requiresMediaId,
+  buildTextElement,
+  buildEffectElement,
+  buildStickerElement,
+  buildGraphicElement,
+  buildElementFromMedia,
+  buildLibraryAudioElement,
+  getElementsAtTime,
+  getElementFontFamilies,
+} from "./lib/timeline/element-utils";
+
+// --- Scenes ---
+export {
+  getMainScene,
+  ensureMainScene,
+  buildDefaultScene,
+  canDeleteScene,
+  getFallbackSceneAfterDelete,
+  findCurrentScene,
+  getProjectDurationFromScenes,
+  updateSceneInArray,
+} from "./lib/timeline/scenes";
+export { calculateTotalDuration } from "./lib/timeline/calculate-duration";
+
+// --- Effects + Graphics + Animation registries ---
+// Hosts that want to register custom effects or graphics call into
+// these registries at startup. The default sets land via
+// registerDefaultEffects / registerDefaultGraphics (called from
+// EditorCore once that ports; safe to call manually before then).
+export {
+  effectsRegistry,
+  registerDefaultEffects,
+  resolveEffectPasses,
+  buildDefaultEffectInstance,
+  EFFECT_TARGET_ELEMENT_TYPES,
+} from "./lib/effects";
+export type {
+  Effect,
+  EffectDefinition,
+  EffectPass,
+  EffectPassTemplate,
+  EffectRendererConfig,
+  EffectUniformValue,
+} from "./lib/effects/types";
+
+export {
+  graphicsRegistry,
+  registerDefaultGraphics,
+  getGraphicDefinition,
+  buildDefaultGraphicInstance,
+  resolveGraphicParams,
+  resolveGraphicElementParamsAtTime,
+  buildGraphicPreviewUrl,
+  DEFAULT_GRAPHIC_SOURCE_SIZE,
+  rectangleGraphicDefinition,
+  ellipseGraphicDefinition,
+  polygonGraphicDefinition,
+  starGraphicDefinition,
+} from "./lib/graphics";
+export type {
+  GraphicDefinition,
+  GraphicInstance,
+  GraphicRenderContext,
+} from "./lib/graphics/types";
+
+// --- Animation surface ---
+export {
+  getChannelValueAtTime,
+  resolveAnimationPathValueAtTime,
+  getElementLocalTime,
+  getElementKeyframes,
+  upsertPathKeyframe,
+  removeElementKeyframe,
+  retimeElementKeyframe,
+  cloneAnimations,
+  splitAnimationsAtTime,
+  clampAnimationsToDuration,
+  isAnimationPath,
+  isAnimationPropertyPath,
+} from "./lib/animation";
+export type {
+  ElementAnimations,
+  ElementKeyframe,
+  AnimationChannel,
+  AnimationPath,
+  AnimationPropertyPath,
+  ScalarAnimationChannel,
+  ScalarAnimationKey,
+} from "./lib/animation/types";
+
+// --- Rendering primitives ---
+export {
+  buildTransformFromParams,
+  readOpacityFromParams,
+  readBlendModeFromParams,
+} from "./lib/rendering";
+export { resolveTransformAtTime } from "./lib/rendering/animation-values";
+export type { Transform, BlendMode } from "./lib/rendering";
+
+// --- Params + registry ---
+export type {
+  ParamValue,
+  ParamValues,
+  ParamDefinition,
+  ParamChannelLayout,
+  LinearRgba,
+} from "./lib/params";
+export {
+  buildDefaultParamValues,
+  getElementParams,
+  getBuiltInElementParams,
+  readElementParamValue,
+  writeElementParamValue,
+  buildElementParamValues,
+} from "./lib/params/registry";
+
+// --- Timeline domain types ---
+export type {
+  TimelineElement,
+  TimelineTrack,
+  SceneTracks,
+  TScene,
+  Bookmark,
+  ElementRef,
+  ElementType,
+  TrackType,
+  VideoElement,
+  ImageElement,
+  AudioElement,
+  TextElement,
+  GraphicElement,
+  StickerElement,
+  EffectElement,
+  VisualElement,
+  MaskableElement,
+  RetimableElement,
+  DropTarget,
+  ComputeDropTargetParams,
+  ClipboardItem,
+  CreateTimelineElement,
+} from "./lib/timeline/types";
+export type {
+  TProject,
+  TProjectMetadata,
+  TProjectSettings,
+  TCanvasSize,
+  TBackground,
+  TTimelineViewState,
+} from "./lib/project/types";
