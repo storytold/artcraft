@@ -129,14 +129,14 @@ pub async fn generate_hunyuan_2_0_image_to_3d_handler(
     server_state.server_environment, 
     &bucket_path);
   
-  info!("Fal webhook URL: {}", server_state.fal.webhook_url);
+  info!("Fal webhook URL: {}", server_state.inference_providers.fal.webhook_url);
   
   let args = Hunyuan3d2Args {
     request: Hunyuan3d2Request {
       image_url: media_links.cdn_url.to_string(),
     },
-    webhook_url: &server_state.fal.webhook_url,
-    api_key: &server_state.fal.api_key,
+    webhook_url: &server_state.inference_providers.fal.webhook_url,
+    api_key: &server_state.inference_providers.fal.api_key,
   };
 
   let fal_result = enqueue_hunyuan_3d_2_image_to_3d_webhook(args)

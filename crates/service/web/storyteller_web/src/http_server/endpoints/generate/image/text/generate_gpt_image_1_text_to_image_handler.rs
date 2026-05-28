@@ -93,7 +93,7 @@ pub async fn generate_gpt_image_1_text_to_image_handler(
         CommonWebError::BadInputWithSimpleMessage("repeated idempotency token".to_string())
       })?;
 
-  info!("Fal webhook URL: {}", server_state.fal.webhook_url);
+  info!("Fal webhook URL: {}", server_state.inference_providers.fal.webhook_url);
 
   let image_size = match request.image_size {
     Some(GenerateGptImage1TextToImageImageSize::Square) => GptTextToImageSize::Square,
@@ -120,7 +120,7 @@ pub async fn generate_gpt_image_1_text_to_image_handler(
     None => GptTextToImageQuality::High, // Default to High
   };
 
-  let openai_api_key = OpenAiApiKey::from_str(&server_state.openai.api_key);
+  let openai_api_key = OpenAiApiKey::from_str(&server_state.inference_providers.openai.api_key);
 
   let byok_request = GptTextToImageByokRequest {
     prompt: request.prompt.as_deref().unwrap_or("").to_string(),
@@ -135,8 +135,8 @@ pub async fn generate_gpt_image_1_text_to_image_handler(
 
   let args = GptTextToImageByokArgs {
     request: byok_request,
-    webhook_url: &server_state.fal.webhook_url,
-    api_key: &server_state.fal.api_key,
+    webhook_url: &server_state.inference_providers.fal.webhook_url,
+    api_key: &server_state.inference_providers.fal.api_key,
     openai_api_key: &openai_api_key,
   };
 

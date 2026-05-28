@@ -113,7 +113,7 @@ pub async fn nano_banana_multi_function_image_gen_handler(
         CommonWebError::BadInputWithSimpleMessage("repeated idempotency token".to_string())
       })?;
 
-  info!("Fal webhook URL: {}", server_state.fal.webhook_url);
+  info!("Fal webhook URL: {}", server_state.inference_providers.fal.webhook_url);
 
   let apriori_job_token = InferenceJobToken::generate();
 
@@ -154,8 +154,8 @@ pub async fn nano_banana_multi_function_image_gen_handler(
         num_images,
         aspect_ratio: Some(aspect_ratio),
       },
-      webhook_url: &server_state.fal.webhook_url,
-      api_key: &server_state.fal.api_key,
+      webhook_url: &server_state.inference_providers.fal.webhook_url,
+      api_key: &server_state.inference_providers.fal.api_key,
     };
 
     let cost = args.request.calculate_cost_in_cents();
@@ -213,8 +213,8 @@ pub async fn nano_banana_multi_function_image_gen_handler(
 
     let args = Gemini25FlashTextToImageArgs {
       request: t2i_request,
-      webhook_url: &server_state.fal.webhook_url,
-      api_key: &server_state.fal.api_key,
+      webhook_url: &server_state.inference_providers.fal.webhook_url,
+      api_key: &server_state.inference_providers.fal.api_key,
     };
 
     info!("Charging wallet: {}", cost);

@@ -143,7 +143,7 @@ pub async fn generate_worldlabs_marble_0p1_mini_splat_handler(
   };
 
   // Call World Labs API to start generation
-  let creds = WorldLabsApiCreds::new(server_state.worldlabs.api_key.clone());
+  let creds = WorldLabsApiCreds::new(server_state.inference_providers.worldlabs.api_key.clone());
   
   let generate_result = match generate_world(GenerateWorldArgs {
     creds: &creds,

@@ -164,7 +164,7 @@ pub async fn flux_pro_kontext_max_edit_image_handler(
   //  warn!("Temporary wallet deduction failed: {:?}", err); // Infallible for now.
   //}
 
-  info!("Fal webhook URL: {}", server_state.fal.webhook_url);
+  info!("Fal webhook URL: {}", server_state.inference_providers.fal.webhook_url);
 
   let num_images = match request.num_images {
     Some(FluxProKontextMaxEditImageNumImages::One) => FluxProKontextMaxNumImages::One,
@@ -180,8 +180,8 @@ pub async fn flux_pro_kontext_max_edit_image_handler(
       image_url: image_url.to_string(),
       num_images,
     },
-    webhook_url: &server_state.fal.webhook_url,
-    api_key: &server_state.fal.api_key,
+    webhook_url: &server_state.inference_providers.fal.webhook_url,
+    api_key: &server_state.inference_providers.fal.api_key,
   };
 
   let fal_result = enqueue_flux_pro_kontext_max_edit_webhook(args)

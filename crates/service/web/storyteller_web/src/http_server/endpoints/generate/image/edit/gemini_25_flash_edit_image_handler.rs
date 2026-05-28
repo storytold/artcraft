@@ -139,7 +139,7 @@ pub async fn gemini_25_flash_edit_image_handler(
         CommonWebError::BadInputWithSimpleMessage("repeated idempotency token".to_string())
       })?;
 
-  info!("Fal webhook URL: {}", server_state.fal.webhook_url);
+  info!("Fal webhook URL: {}", server_state.inference_providers.fal.webhook_url);
 
   let mut num_images = match request.num_images {
     Some(Gemini25FlashEditImageNumImages::One) => Gemini25FlashEditNumImages::One,
@@ -157,8 +157,8 @@ pub async fn gemini_25_flash_edit_image_handler(
       num_images,
       aspect_ratio: None, // TODO
     },
-    webhook_url: &server_state.fal.webhook_url,
-    api_key: &server_state.fal.api_key,
+    webhook_url: &server_state.inference_providers.fal.webhook_url,
+    api_key: &server_state.inference_providers.fal.api_key,
   };
 
   let apriori_job_token = InferenceJobToken::generate();

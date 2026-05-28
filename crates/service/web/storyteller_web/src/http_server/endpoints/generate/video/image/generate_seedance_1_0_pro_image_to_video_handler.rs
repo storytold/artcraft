@@ -125,7 +125,7 @@ pub async fn generate_seedance_1_0_pro_image_to_video_handler(
         CommonWebError::NotFound
       })?;
 
-  info!("Fal webhook URL: {}", server_state.fal.webhook_url);
+  info!("Fal webhook URL: {}", server_state.inference_providers.fal.webhook_url);
 
   let apriori_job_token = InferenceJobToken::generate();
 
@@ -177,8 +177,8 @@ pub async fn generate_seedance_1_0_pro_image_to_video_handler(
 
   let args = Seedance1ProArgs {
     request: i2v_request,
-    webhook_url: &server_state.fal.webhook_url,
-    api_key: &server_state.fal.api_key,
+    webhook_url: &server_state.inference_providers.fal.webhook_url,
+    api_key: &server_state.inference_providers.fal.api_key,
   };
 
   let fal_result = enqueue_seedance_1_pro_image_to_video_webhook(args)

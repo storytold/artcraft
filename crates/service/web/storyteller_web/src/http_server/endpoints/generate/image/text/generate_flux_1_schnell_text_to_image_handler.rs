@@ -115,7 +115,7 @@ pub async fn generate_flux_1_schnell_text_to_image_handler(
 
   const IS_MOD : bool = false;
 
-  info!("Fal webhook URL: {}", server_state.fal.webhook_url);
+  info!("Fal webhook URL: {}", server_state.inference_providers.fal.webhook_url);
   
   let aspect_ratio = match request.aspect_ratio {
     Some(GenerateFlux1SchnellTextToImageAspectRatio::Square) => Flux1SchnellAspectRatio::Square,
@@ -141,8 +141,8 @@ pub async fn generate_flux_1_schnell_text_to_image_handler(
       aspect_ratio,
       num_images,
     },
-    webhook_url: &server_state.fal.webhook_url,
-    api_key: &server_state.fal.api_key,
+    webhook_url: &server_state.inference_providers.fal.webhook_url,
+    api_key: &server_state.inference_providers.fal.api_key,
   };
 
   let fal_result = enqueue_flux_1_schnell_text_to_image_webhook(args)

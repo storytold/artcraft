@@ -144,7 +144,7 @@ pub async fn sora_2_multi_function_video_gen_handler(
         CommonWebError::BadInputWithSimpleMessage("repeated idempotency token".to_string())
       })?;
 
-  info!("Fal webhook URL: {}", server_state.fal.webhook_url);
+  info!("Fal webhook URL: {}", server_state.inference_providers.fal.webhook_url);
 
   let apriori_job_token = InferenceJobToken::generate();
 
@@ -196,8 +196,8 @@ pub async fn sora_2_multi_function_video_gen_handler(
 
     let args = EnqueueSora2ImageToVideoArgs {
       request: i2v_request,
-      webhook_url: &server_state.fal.webhook_url,
-      api_key: &server_state.fal.api_key,
+      webhook_url: &server_state.inference_providers.fal.webhook_url,
+      api_key: &server_state.inference_providers.fal.api_key,
     };
 
     fal_result = enqueue_sora_2_image_to_video_webhook(args)
@@ -251,8 +251,8 @@ pub async fn sora_2_multi_function_video_gen_handler(
 
     let args = EnqueueSora2TextToVideoArgs {
       request: t2v_request,
-      webhook_url: &server_state.fal.webhook_url,
-      api_key: &server_state.fal.api_key,
+      webhook_url: &server_state.inference_providers.fal.webhook_url,
+      api_key: &server_state.inference_providers.fal.api_key,
     };
 
     fal_result = enqueue_sora_2_text_to_video_webhook(args)

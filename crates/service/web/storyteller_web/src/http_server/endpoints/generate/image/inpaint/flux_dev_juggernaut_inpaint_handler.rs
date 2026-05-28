@@ -160,7 +160,7 @@ pub async fn flux_dev_juggernaut_inpaint_image_handler(
         CommonWebError::BadInputWithSimpleMessage("repeated idempotency token".to_string())
       })?;
 
-  info!("Fal webhook URL: {}", server_state.fal.webhook_url);
+  info!("Fal webhook URL: {}", server_state.inference_providers.fal.webhook_url);
 
   let num_images = match request.num_images {
     Some(FluxDevJuggernautInpaintImageNumImages::One) => FluxDevJuggernautInfillNumImages::One,
@@ -177,8 +177,8 @@ pub async fn flux_dev_juggernaut_inpaint_image_handler(
       mask_url: mask_image_url,
       num_images,
     },
-    webhook_url: &server_state.fal.webhook_url,
-    api_key: &server_state.fal.api_key,
+    webhook_url: &server_state.inference_providers.fal.webhook_url,
+    api_key: &server_state.inference_providers.fal.api_key,
   };
 
   let fal_result = enqueue_flux_dev_juggernaut_infill_webhook(args)

@@ -192,7 +192,7 @@ pub async fn seedance_2p0_multi_function_video_gen_handler(
     info!("User {:?} is seedance-whitelisted, trying whitelist session first", user_token);
 
     let whitelist_session = Seedance2ProSession::from_cookies_string(
-      server_state.seedance2pro.cookies_byteplus.clone()
+      server_state.inference_providers.seedance2pro.cookies_byteplus.clone()
     );
 
     let result = upload_and_generate(
@@ -215,7 +215,7 @@ pub async fn seedance_2p0_multi_function_video_gen_handler(
         warn!("Whitelist session failed for user {:?}: {:?}, falling back to regular session", user_token, err);
 
         let regular_session = Seedance2ProSession::from_cookies_string(
-          server_state.seedance2pro.cookies.clone()
+          server_state.inference_providers.seedance2pro.cookies.clone()
         );
 
         let result = upload_and_generate(
@@ -253,7 +253,7 @@ pub async fn seedance_2p0_multi_function_video_gen_handler(
     info!("User {:?} using regular seedance session", user_token);
 
     let regular_session = Seedance2ProSession::from_cookies_string(
-      server_state.seedance2pro.cookies.clone()
+      server_state.inference_providers.seedance2pro.cookies.clone()
     );
 
     let result = upload_and_generate(

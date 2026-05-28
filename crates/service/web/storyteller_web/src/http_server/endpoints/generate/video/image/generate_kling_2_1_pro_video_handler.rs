@@ -146,7 +146,7 @@ pub async fn generate_kling_2_1_pro_video_handler(
         })?),
   };
 
-  info!("Fal webhook URL: {}", server_state.fal.webhook_url);
+  info!("Fal webhook URL: {}", server_state.inference_providers.fal.webhook_url);
   
   let apriori_job_token = InferenceJobToken::generate();
   
@@ -180,8 +180,8 @@ pub async fn generate_kling_2_1_pro_video_handler(
 
   let args = Kling2p1ProArgs {
     request: fal_request,
-    webhook_url: &server_state.fal.webhook_url,
-    api_key: &server_state.fal.api_key,
+    webhook_url: &server_state.inference_providers.fal.webhook_url,
+    api_key: &server_state.inference_providers.fal.api_key,
   };
 
   info!("Charging wallet: {}", cost);

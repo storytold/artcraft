@@ -141,7 +141,7 @@ pub async fn gpt_image_1_edit_image_handler(
         CommonWebError::BadInputWithSimpleMessage("repeated idempotency token".to_string())
       })?;
 
-  info!("Fal webhook URL: {}", server_state.fal.webhook_url);
+  info!("Fal webhook URL: {}", server_state.inference_providers.fal.webhook_url);
 
   let image_size = match request.image_size {
     Some(GptImage1EditImageImageSize::Square) => GptEditImageSize::Square,
@@ -168,7 +168,7 @@ pub async fn gpt_image_1_edit_image_handler(
     None => GptEditImageQuality::High, // Default to High
   };
   
-  let openai_api_key = OpenAiApiKey::from_str(&server_state.openai.api_key);
+  let openai_api_key = OpenAiApiKey::from_str(&server_state.inference_providers.openai.api_key);
 
 
   let args = GptEditImageByokArgs {
@@ -179,8 +179,8 @@ pub async fn gpt_image_1_edit_image_handler(
       image_size,
       quality,
     },
-    webhook_url: &server_state.fal.webhook_url,
-    api_key: &server_state.fal.api_key,
+    webhook_url: &server_state.inference_providers.fal.webhook_url,
+    api_key: &server_state.inference_providers.fal.api_key,
     openai_api_key: &openai_api_key,
   };
 

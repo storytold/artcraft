@@ -156,8 +156,8 @@ fn build_router_client(
   match provider {
     RouterProvider::Fal => {
       let fal_client = RouterFalClient::new_with_webhook(
-        server_state.fal.api_key.clone(),
-        server_state.fal.webhook_url.clone(),
+        server_state.inference_providers.fal.api_key.clone(),
+        server_state.inference_providers.fal.webhook_url.clone(),
       );
       Ok(RouterClient::Fal(fal_client))
     },

@@ -9,7 +9,6 @@ use cloud_storage::bucket_client::BucketClient;
 use elasticsearch::http::transport::Transport;
 use elasticsearch::Elasticsearch;
 use errors::AnyhowResult;
-use fal_client::creds::fal_api_key::FalApiKey;
 use log::info;
 use memory_caching::arc_ttl_sieve::ArcTtlSieve;
 use memory_caching::single_item_ttl_cache::SingleItemTtlCache;
@@ -34,15 +33,16 @@ use crate::startup::setup_bans::{
   load_cidr_bans, load_ip_address_troll_bans,
   load_static_container_ip_bans, load_troll_user_token_bans,
 };
+use crate::startup::setup_inference_providers::setup_inference_providers;
 use crate::startup::setup_static_feature_flags::setup_static_feature_flags;
 use crate::startup::setup_stripe_artcraft::setup_stripe_artcraft;
 use crate::startup::setup_stripe_fakeyou::setup_stripe_fakeyou;
 use crate::state::certs::google_sign_in_cert::GoogleSignInCert;
 use crate::state::memory_cache::model_token_to_info_cache::ModelTokenToInfoCache;
 use crate::state::server_state::{
-  BeebleData, DurableInMemoryCaches, EnvConfig, EphemeralInMemoryCaches, FalData,
-  GmiCloudData, GrokApiData, InMemoryCaches, OpenAiData, ResendData, Seedance2ProData, ServerInfo,
-  ServerState, TrollBans, WorldLabsData,
+  DurableInMemoryCaches, EnvConfig, EphemeralInMemoryCaches,
+  InMemoryCaches, ResendData, ServerInfo,
+  ServerState, TrollBans,
 };
 use crate::threads::db_health_checker_thread::db_health_check_status::HealthCheckStatus;
 use crate::util::encrypted_sort_id::SortKeyCrypto;
@@ -197,14 +197,9 @@ pub async fn setup_dependencies(server_hostname: &str) -> AnyhowResult<SetupResu
     .trim()
     .to_string();
 
-  let fal_api_key = FalApiKey::new(easyenv::get_env_string_required("FAL_API_KEY")?);
-  let fal_webhook_url = easyenv::get_env_string_required("FAL_WEBHOOK_URL")?;
+  let inference_providers = setup_inference_providers()?;
 
-  let openai_api_key = easyenv::get_env_string_required("OPENAI_API_KEY")?;
   let resend_api_key = easyenv::get_env_string_required("RESEND_API_KEY")?;
-  let gmicloud_api_key = easyenv::get_env_string_required("GMICLOUD_API_KEY")?;
-  let grok_api_key = easyenv::get_env_string_required("GROK_API_KEY")?;
-  let worldlabs_api_key = easyenv::get_env_string_required("WORLDLABS_API_KEY")?;
 
   let startup_time = Utc::now();
 
@@ -245,34 +240,9 @@ pub async fn setup_dependencies(server_hostname: &str) -> AnyhowResult<SetupResu
     sort_key_crypto,
     opaque_cursors: opaque_cursor_encoder,
     static_api_token_set,
-    beeble: BeebleData {
-      api_key: beeble_client::creds::beeble_api_key::BeebleApiKey::new(
-        easyenv::get_env_string_required("BEEBLE_API_KEY")?,
-      ),
-      webhook_url: easyenv::get_env_string_required("BEEBLE_WEBHOOK_URL")?,
-    },
-    fal: FalData {
-      api_key: fal_api_key,
-      webhook_url: fal_webhook_url,
-    },
-    gmicloud: GmiCloudData {
-      api_key: gmicloud_client::creds::gmicloud_api_key::GmiCloudApiKey::new(gmicloud_api_key),
-    },
-    grok_api: GrokApiData {
-      api_key: grok_api_client::creds::grok_api_key::GrokApiKey::new(grok_api_key),
-    },
-    seedance2pro: Seedance2ProData {
-      cookies: easyenv::get_env_string_required("SEEDANCE2PRO_COOKIES")?,
-      cookies_byteplus: easyenv::get_env_string_required("SEEDANCE2PRO_WHITELIST_COOKIES")?,
-    },
-    openai: OpenAiData {
-      api_key: openai_api_key,
-    },
+    inference_providers,
     resend: ResendData {
       api_key: resend_api_key,
-    },
-    worldlabs: WorldLabsData {
-      api_key: worldlabs_api_key,
     },
     pager,
     caches: InMemoryCaches {

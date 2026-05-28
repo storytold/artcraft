@@ -121,14 +121,14 @@ pub async fn remove_image_background_handler(
     server_state.server_environment, 
     &bucket_path);
   
-  info!("Fal webhook URL: {}", server_state.fal.webhook_url);
+  info!("Fal webhook URL: {}", server_state.inference_providers.fal.webhook_url);
   
   let args = RemoveBackgroundRembgWebhookArgs {
     request: RemoveBackgroundRembgWebhookRequest {
       image_url: media_links.cdn_url.to_string(),
     },
-    webhook_url: &server_state.fal.webhook_url,
-    api_key: &server_state.fal.api_key,
+    webhook_url: &server_state.inference_providers.fal.webhook_url,
+    api_key: &server_state.inference_providers.fal.api_key,
   };
 
   let fal_result = remove_background_rembg_webhook(args)

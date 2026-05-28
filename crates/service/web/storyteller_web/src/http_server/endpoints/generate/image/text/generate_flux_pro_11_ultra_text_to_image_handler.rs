@@ -89,7 +89,7 @@ pub async fn generate_flux_pro_11_ultra_text_to_image_handler(
 
   const IS_MOD : bool = false;
   
-  info!("Fal webhook URL: {}", server_state.fal.webhook_url);
+  info!("Fal webhook URL: {}", server_state.inference_providers.fal.webhook_url);
 
   let apriori_job_token = InferenceJobToken::generate();
 
@@ -133,8 +133,8 @@ pub async fn generate_flux_pro_11_ultra_text_to_image_handler(
 
   let args = FluxPro11UltraArgs {
     request: ultra_request,
-    webhook_url: &server_state.fal.webhook_url,
-    api_key: &server_state.fal.api_key,
+    webhook_url: &server_state.inference_providers.fal.webhook_url,
+    api_key: &server_state.inference_providers.fal.api_key,
   };
 
   let fal_result = enqueue_flux_pro_11_ultra_text_to_image_webhook(args)

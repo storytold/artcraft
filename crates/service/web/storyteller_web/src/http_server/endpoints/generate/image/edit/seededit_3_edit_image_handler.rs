@@ -134,15 +134,15 @@ pub async fn seededit_3_edit_image_handler(
         CommonWebError::BadInputWithSimpleMessage("repeated idempotency token".to_string())
       })?;
 
-  info!("Fal webhook URL: {}", server_state.fal.webhook_url);
+  info!("Fal webhook URL: {}", server_state.inference_providers.fal.webhook_url);
 
   let args = SeedEditV3EditArgs {
     request: SeedEditV3EditRequest {
       prompt: request.prompt.as_deref().unwrap_or("").to_string(),
       image_url: image_url.to_string(),
     },
-    webhook_url: &server_state.fal.webhook_url,
-    api_key: &server_state.fal.api_key,
+    webhook_url: &server_state.inference_providers.fal.webhook_url,
+    api_key: &server_state.inference_providers.fal.api_key,
   };
 
   let fal_result = enqueue_seededit_v3_edit_webhook(args)

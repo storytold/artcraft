@@ -135,7 +135,7 @@ pub async fn qwen_edit_image_handler(
         CommonWebError::BadInputWithSimpleMessage("repeated idempotency token".to_string())
       })?;
 
-  info!("Fal webhook URL: {}", server_state.fal.webhook_url);
+  info!("Fal webhook URL: {}", server_state.inference_providers.fal.webhook_url);
 
   let apriori_job_token = InferenceJobToken::generate();
 
@@ -162,8 +162,8 @@ pub async fn qwen_edit_image_handler(
       negative_prompt: request.negative_prompt.clone(),
       acceleration: acceleration.map(|s| s.to_string()),
     },
-    webhook_url: &server_state.fal.webhook_url,
-    api_key: &server_state.fal.api_key,
+    webhook_url: &server_state.inference_providers.fal.webhook_url,
+    api_key: &server_state.inference_providers.fal.api_key,
   };
 
   let cost = args.request.calculate_cost_in_cents();

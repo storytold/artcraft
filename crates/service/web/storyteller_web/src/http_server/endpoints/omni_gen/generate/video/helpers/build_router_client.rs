@@ -22,19 +22,19 @@ pub fn build_router_client(
     }
     RouterProvider::Fal => {
       let fal_client = RouterFalClient::new_with_webhook(
-        server_state.fal.api_key.clone(),
-        server_state.fal.webhook_url.clone(),
+        server_state.inference_providers.fal.api_key.clone(),
+        server_state.inference_providers.fal.webhook_url.clone(),
       );
       Ok(RouterClient::Fal(fal_client))
     }
     RouterProvider::GmiCloud => {
       Ok(RouterClient::GmiCloud(RouterGmiCloudClient::new(
-        server_state.gmicloud.api_key.clone(),
+        server_state.inference_providers.gmicloud.api_key.clone(),
       )))
     }
     RouterProvider::GrokApi => {
       Ok(RouterClient::GrokApi(RouterGrokApiClient::new(
-        server_state.grok_api.api_key.clone(),
+        server_state.inference_providers.grok_api.api_key.clone(),
       )))
     }
     other => {
@@ -49,12 +49,12 @@ fn kinovi_provider(server_state: &ServerState, use_alternate_kinovi: bool) -> Re
   let session = if use_alternate_kinovi {
     // Alternate Kinovi
     Seedance2ProSession::from_cookies_string(
-      server_state.seedance2pro.cookies_byteplus.clone()
+      server_state.inference_providers.seedance2pro.cookies_byteplus.clone()
     )
   } else {
     // Standard Kinovi
     Seedance2ProSession::from_cookies_string(
-      server_state.seedance2pro.cookies.clone()
+      server_state.inference_providers.seedance2pro.cookies.clone()
     )
   };
   

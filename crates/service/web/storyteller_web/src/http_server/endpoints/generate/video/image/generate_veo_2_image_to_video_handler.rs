@@ -138,7 +138,7 @@ pub async fn generate_veo_2_image_to_video_handler(
     server_state.server_environment, 
     &bucket_path);
   
-  info!("Fal webhook URL: {}", server_state.fal.webhook_url);
+  info!("Fal webhook URL: {}", server_state.inference_providers.fal.webhook_url);
   
   let apriori_job_token = InferenceJobToken::generate();
   
@@ -169,8 +169,8 @@ pub async fn generate_veo_2_image_to_video_handler(
 
   let args = Veo2Args {
     request: veo2_request,
-    webhook_url: &server_state.fal.webhook_url,
-    api_key: &server_state.fal.api_key,
+    webhook_url: &server_state.inference_providers.fal.webhook_url,
+    api_key: &server_state.inference_providers.fal.api_key,
   };
 
   info!("Charging wallet: {}", cost);
