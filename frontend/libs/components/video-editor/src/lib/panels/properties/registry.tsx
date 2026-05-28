@@ -23,16 +23,10 @@ import {
   DashboardSpeed02Icon,
 } from "@hugeicons/core-free-icons";
 import { ElementParamsTab } from "./components/element-params-tab";
-// TODO(parallel-port): ClipEffectsTab / StandaloneEffectTab live in the effects
-// subsystem (opencut-classic/apps/web/src/effects/components/effects-tab.tsx).
-// Once that ports, replace the placeholder tab content with the real imports:
-//   import { ClipEffectsTab, StandaloneEffectTab } from "../../effects/components/effects-tab";
-// TODO(parallel-port): MasksTab lives in masks/components/masks-tab.tsx.
-//   import { MasksTab } from "../../masks/components/masks-tab";
-// TODO(parallel-port): SpeedTab lives in speed/components/speed-tab.tsx.
-//   import { SpeedTab } from "../../speed/components/speed-tab";
-// TODO(parallel-port): GraphicTab lives in graphics/components/graphic-tab.tsx.
-//   import { GraphicTab } from "../../graphics/components/graphic-tab";
+import { ClipEffectsTab, StandaloneEffectTab } from "../../effects/components/effects-tab";
+import { MasksTab } from "../../masks/components/masks-tab";
+import { SpeedTab } from "../../speed/components/speed-tab";
+import { GraphicTab } from "../../graphics/components/graphic-tab";
 import { OcShapesIcon } from "../../components/icons";
 
 const TRANSFORM_PARAM_KEYS = [
@@ -150,12 +144,9 @@ function buildSpeedTab({
     id: "speed",
     label: "Speed",
     icon: <HugeiconsIcon icon={DashboardSpeed02Icon} size={16} />,
-    // TODO(parallel-port): replace with <SpeedTab element={element} trackId={trackId} /> once ported.
-    content: ({ trackId }) => {
-      void element;
-      void trackId;
-      return null;
-    },
+    content: ({ trackId }) => (
+      <SpeedTab element={element} trackId={trackId} />
+    ),
   };
 }
 
@@ -168,12 +159,9 @@ function buildMasksTab({
     id: "masks",
     label: "Masks",
     icon: <OcShapesIcon size={16} />,
-    // TODO(parallel-port): replace with <MasksTab element={element} trackId={trackId} /> once ported.
-    content: ({ trackId }) => {
-      void element;
-      void trackId;
-      return null;
-    },
+    content: ({ trackId }) => (
+      <MasksTab element={element} trackId={trackId} />
+    ),
   };
 }
 
@@ -186,12 +174,9 @@ function buildClipEffectsTab({
     id: "effects",
     label: "Effects",
     icon: <HugeiconsIcon icon={MagicWand05Icon} size={16} />,
-    // TODO(parallel-port): replace with <ClipEffectsTab element={element} trackId={trackId} /> once ported.
-    content: ({ trackId }) => {
-      void element;
-      void trackId;
-      return null;
-    },
+    content: ({ trackId }) => (
+      <ClipEffectsTab element={element} trackId={trackId} />
+    ),
   };
 }
 
@@ -220,12 +205,9 @@ function buildGraphicTab({
     id: "graphic",
     label: "Graphic",
     icon: <OcShapesIcon size={16} />,
-    // TODO(parallel-port): replace with <GraphicTab element={element} trackId={trackId} /> once ported.
-    content: ({ trackId }) => {
-      void element;
-      void trackId;
-      return null;
-    },
+    content: ({ trackId }) => (
+      <GraphicTab element={element} trackId={trackId} />
+    ),
   };
 }
 
@@ -238,12 +220,9 @@ function buildStandaloneEffectTab({
     id: "effects",
     label: "Effects",
     icon: <HugeiconsIcon icon={MagicWand05Icon} size={16} />,
-    // TODO(parallel-port): replace with <StandaloneEffectTab element={element} trackId={trackId} /> once ported.
-    content: ({ trackId }) => {
-      void element;
-      void trackId;
-      return null;
-    },
+    content: ({ trackId }) => (
+      <StandaloneEffectTab element={element} trackId={trackId} />
+    ),
   };
 }
 
