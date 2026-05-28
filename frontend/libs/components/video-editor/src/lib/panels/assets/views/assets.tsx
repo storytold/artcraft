@@ -28,29 +28,18 @@ import { DEFAULT_NEW_ELEMENT_DURATION } from "../../../timeline/creation";
 import { mediaTimeFromSeconds, type MediaTime } from "../../../wasm";
 import { useEditor } from "../../../editor/use-editor";
 import { useFileUpload } from "../../../media/use-file-upload";
-// TODO: invokeAction is exported from opencut-classic's actions/index
-// (keyboard action registry). Not yet ported into this lib — wire the
-// remove-asset path through editor.media directly until the actions
-// registry lands.
-// import { invokeAction } from "../../../actions";
 // TODO: processMediaAssets + showMediaUploadToast are upstream subsystems
-// for the media import pipeline. Not yet ported — hosts should provide
-// their own through adapters. The MediaView keeps the UI plumbing wired
-// so the gallery still renders + can drop files, but actual ingest is
-// gated behind a console warning until the pipeline lands.
+// for the media import pipeline. Hosts that have a richer asset
+// pipeline should wire it through MediaSourceAdapter. The MediaView
+// keeps the UI plumbing wired so the gallery still renders + can drop
+// files, but actual ingest is gated behind a console warning until the
+// pipeline lands.
 // import { processMediaAssets } from "../../../media/processing";
 // import { showMediaUploadToast } from "../../../media/upload-toast";
-// TODO: SelectableSurface/SelectableItem/useSelection/useSelectionScope
-// are the multi-select scope primitives from opencut-classic's
-// `selection` module. The lib only ships `editor-selection.ts` so far —
-// the React surface hasn't been ported yet. Until it lands, we render
-// without selection scope (single-select via editor.selection only).
-// import {
-//   SelectableItem,
-//   SelectableSurface,
-//   useSelection,
-//   useSelectionScope,
-// } from "../../../selection";
+import { SelectableItem } from "../../../selection/selectable-item";
+import { SelectableSurface } from "../../../selection/selectable-surface";
+import { useSelection } from "../../../selection/context";
+import { useSelectionScope } from "../../../selection/hooks/use-selection-scope";
 import { buildElementFromMedia } from "../../../timeline/element-utils";
 import {
   type MediaSortKey,
@@ -152,15 +141,11 @@ export function MediaView() {
   }) => {
     event.stopPropagation();
 
-    // TODO: route through invokeAction("remove-media-assets", {...})
-    // once the actions registry ports across. For now, hit the media
-    // manager directly so the gallery stays interactive.
-    void ids;
-    void activeProject;
-    // invokeAction("remove-media-assets", {
-    //   projectId: activeProject.metadata.id,
-    //   assetIds: ids,
-    // });
+    if (!activeProject) return;
+    editor.media.removeMediaAssets({
+      projectId: activeProject.metadata.id,
+      ids,
+    });
   };
 
   const handleSort = ({ key }: { key: MediaSortKey }) => {

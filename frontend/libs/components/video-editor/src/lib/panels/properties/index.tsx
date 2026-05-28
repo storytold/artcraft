@@ -9,12 +9,7 @@ import {
   TooltipTrigger,
 } from "../../components/ui/tooltip";
 import { useEditor } from "../../editor/use-editor";
-// TODO(parallel-port): useElementSelection lives in
-// opencut-classic/apps/web/src/timeline/hooks/element/use-element-selection.ts
-// and is being ported by a parallel agent into
-// ../../timeline/hooks/element/use-element-selection. Once it lands, restore:
-//   import { useElementSelection } from "../../timeline/hooks/element/use-element-selection";
-// and remove the inline fallback below.
+import { useElementSelection } from "../../timeline/hooks/element/use-element-selection";
 import { usePropertiesStore } from "./stores/properties-store";
 import { getPropertiesConfig } from "./registry";
 import { cn } from "../../utils/ui";
@@ -24,9 +19,7 @@ export function PropertiesPanel() {
   const editor = useEditor();
   useEditor((e) => e.scenes.getActiveSceneOrNull());
   useEditor((e) => e.media.getAssets());
-  // TODO(parallel-port): replace with `const { selectedElements } = useElementSelection();`
-  // once the hook is ported. Until then read the editor selection directly.
-  const selectedElements = useEditor((e) => e.selection.getSelectedElements());
+  const { selectedElements } = useElementSelection();
   const { activeTabPerType, setActiveTab } = usePropertiesStore();
 
   if (selectedElements.length === 0) {

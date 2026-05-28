@@ -4,13 +4,8 @@ import { useEffect, useState } from "react";
 import { useTimelineStore } from "../timeline/timeline-store";
 import { useActionHandler } from "./use-action-handler";
 import { useEditor } from "../editor/use-editor";
-// TODO: useElementSelection + useKeyframeSelection live under
-// `timeline/hooks/element/` in opencut-classic; they haven't been ported
-// here yet (parallel agent territory). Until they land, we fall back to
-// empty selection arrays and no-op clears so the rest of the action
-// surface still wires up.
-// import { useElementSelection } from "../timeline/hooks/element/use-element-selection";
-// import { useKeyframeSelection } from "../timeline/hooks/element/use-keyframe-selection";
+import { useElementSelection } from "../timeline/hooks/element/use-element-selection";
+import { useKeyframeSelection } from "../timeline/hooks/element/use-keyframe-selection";
 import {
   addMediaTime,
   maxMediaTime,
@@ -35,12 +30,8 @@ import type { ElementRef } from "../timeline/types";
 
 export function useEditorActions() {
   const editor = useEditor();
-  // TODO: replace with real useElementSelection/useKeyframeSelection
-  // hooks once they're ported.
-  const selectedElements: ElementRef[] = [];
-  const setElementSelection = (_params: { elements: ElementRef[] }): void => {};
-  const selectedKeyframes: unknown[] = [];
-  const clearKeyframeSelection = (): void => {};
+  const { selectedElements, setElementSelection } = useElementSelection();
+  const { selectedKeyframes, clearKeyframeSelection } = useKeyframeSelection();
   const selectedMaskPointSelection = useEditor((e) =>
     e.selection.getSelectedMaskPointSelection(),
   );
@@ -326,10 +317,7 @@ export function useEditorActions() {
           if (selectedKeyframes.length === 0) {
             return;
           }
-          // TODO: re-enable once useKeyframeSelection is ported and
-          // returns the proper KeyframeRef[] type expected by
-          // removeKeyframes.
-          // editor.timeline.removeKeyframes({ keyframes: selectedKeyframes });
+          editor.timeline.removeKeyframes({ keyframes: selectedKeyframes });
           clearKeyframeSelection();
           return;
         case "elements":
