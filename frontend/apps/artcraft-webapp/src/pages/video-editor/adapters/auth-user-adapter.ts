@@ -5,32 +5,40 @@ import { useSessionStore } from "../../../lib/session";
 // Webapp AuthUserAdapter — reads the current signed-in user from
 // `useSessionStore` (Zustand) and subscribes to its changes so the
 // editor chrome re-renders on sign-in / sign-out without a remount.
+//
+// `currentUser()` must return a stable reference across calls when the
+// underlying user hasn't changed (otherwise React's useSyncExternalStore
+// loop sees a new snapshot every render). We cache the last computed
+// AuthUser keyed on the source UserInfo identity.
 
-function mapUser(user: UserInfo | undefined): AuthUser | null {
-  if (!user) return null;
-  return {
-    id: user.user_token,
-    displayName: user.display_name,
-  };
+let cachedSource: UserInfo | undefined = undefined;
+let cachedResult: AuthUser | null = null;
+
+function snapshot(): AuthUser | null {
+  const source = useSessionStore.getState().user;
+  if (source === cachedSource) return cachedResult;
+  cachedSource = source;
+  cachedResult = source
+    ? { id: source.user_token, displayName: source.display_name }
+    : null;
+  return cachedResult;
 }
 
 export const webappAuthUserAdapter: AuthUserAdapter = {
   currentUser() {
-    return mapUser(useSessionStore.getState().user);
+    return snapshot();
   },
   subscribe(listener) {
-    let previous = mapUser(useSessionStore.getState().user);
-    return useSessionStore.subscribe((state) => {
-      const next = mapUser(state.user);
-      // Identity check on shape: zustand fires on any state change, but
-      // we only want to notify when the *user* changed.
+    return useSessionStore.subscribe(() => {
+      // Recompute and only fire if the projected AuthUser changed.
+      const previous = cachedResult;
+      const next = snapshot();
       if (
         (previous === null && next === null) ||
         (previous?.id === next?.id && previous?.displayName === next?.displayName)
       ) {
         return;
       }
-      previous = next;
       listener(next);
     });
   },

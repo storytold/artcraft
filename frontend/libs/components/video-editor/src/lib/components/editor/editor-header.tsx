@@ -19,6 +19,7 @@ import { RenameProjectDialog } from "../../project/components/rename-project-dia
 import { DeleteProjectDialog } from "../../project/components/delete-project-dialog";
 import { cn } from "../../utils/ui";
 import { Button } from "../ui/button";
+import { useAuthUser } from "./use-auth-user";
 
 export function EditorHeader() {
   return (
@@ -28,9 +29,24 @@ export function EditorHeader() {
         <EditableProjectName />
       </div>
       <nav className="flex items-center gap-2">
+        <CurrentUserBadge />
         <ExportButton />
       </nav>
     </header>
+  );
+}
+
+function CurrentUserBadge() {
+  const { authUser } = useEditorAdapters();
+  const user = useAuthUser(authUser);
+  if (!user) return null;
+  return (
+    <span
+      className="text-muted-foreground hidden truncate text-xs sm:inline-block"
+      title={user.displayName}
+    >
+      {user.displayName}
+    </span>
   );
 }
 
