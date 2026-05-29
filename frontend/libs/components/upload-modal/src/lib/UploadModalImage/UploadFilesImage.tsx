@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Group as PanelGroup, Panel, Separator as PanelResizeHandle } from "react-resizable-panels";
+import { PanelGroup, Panel, PanelResizeHandle } from "react-resizable-panels";
 import { Button } from "@storyteller/ui-button";
 import { FileUploader } from "@storyteller/ui-file-uploader";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
