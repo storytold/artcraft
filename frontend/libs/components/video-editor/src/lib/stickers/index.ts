@@ -307,7 +307,6 @@ export { stickersRegistry, StickersRegistry } from "./registry";
 export { resolveStickerId };
 export { parseStickerId, buildStickerId } from "./sticker-id";
 export { registerDefaultStickerProviders } from "./providers";
-export { resolveQueryToRegions, getRegionLabel } from "./providers/flags";
 export type {
   StickerBrowseResult,
   StickerBrowseSection,

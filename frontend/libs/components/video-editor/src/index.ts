@@ -1189,12 +1189,11 @@ export { emptySoundsAdapter } from "./lib/adapters/default";
 // --- Stickers ---
 // AssetsPanel "Stickers" tab content. StickersView renders the
 // category-grouped browse view (Shapes drives the only non-empty
-// category today; Flags is a stub until the countries dataset ports;
-// Logos is intentionally empty) plus a search box. Items are inserted
-// onto the timeline via DraggableItem (graphic for shapes, sticker for
-// non-shape providers). Hosts that need direct access to the
-// provider registry can register their own providers via
-// `stickersRegistry.register({ key, definition })` before mounting.
+// category today; Logos is intentionally empty) plus a search box.
+// Items are inserted onto the timeline via DraggableItem (graphic for
+// shapes, sticker for non-shape providers). Hosts that need direct
+// access to the provider registry can register their own providers
+// via `stickersRegistry.register({ key, definition })` before mounting.
 export { StickersView } from "./lib/stickers/components/assets-view";
 export { useStickersStore } from "./lib/stickers/stickers-store";
 export {
@@ -1213,12 +1212,9 @@ export {
   STICKER_INTRINSIC_SIZE_FALLBACK,
   parseStickerId,
   buildStickerId,
-  resolveQueryToRegions,
-  getRegionLabel,
 } from "./lib/stickers";
 export { shapesProvider, parseShapeStickerId } from "./lib/stickers/providers/shapes";
 export { logosProvider } from "./lib/stickers/providers/logos";
-export { flagsProvider } from "./lib/stickers/providers/flags";
 export type {
   StickerBrowseResult,
   StickerBrowseSection,

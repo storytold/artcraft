@@ -14,7 +14,6 @@ import {
   buildStickerElement,
 } from "../../timeline/element-utils";
 import { STICKER_CATEGORIES } from "../categories";
-import { getRegionLabel, resolveQueryToRegions } from "..";
 import { parseShapeStickerId } from "../providers/shapes";
 import type { TimelineDragData } from "../../timeline/drag";
 import type {
@@ -175,29 +174,6 @@ function EmptyView({ message }: { message: string }) {
   );
 }
 
-function RegionBanner({ region }: { region: string }) {
-  return (
-    <div className="flex h-7 items-center gap-1.5 rounded-lg border border-sky-100 bg-sky-50 px-2">
-      <svg
-        width="12"
-        height="12"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        className="shrink-0 text-sky-600"
-        aria-hidden="true"
-      >
-        <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" />
-        <circle cx="12" cy="10" r="3" />
-      </svg>
-      <span className="text-xs font-semibold text-sky-600">{region}</span>
-    </div>
-  );
-}
-
 function StickersContentView() {
   const {
     browseContent,
@@ -221,15 +197,8 @@ function StickersContentView() {
     }
 
     if (searchResults?.items.length) {
-      const normalizedQuery = searchQuery.trim().toLowerCase();
-      const isRegionSearch =
-        selectedCategory === "flags" &&
-        resolveQueryToRegions({ query: normalizedQuery }) !== null;
-      const regionLabel = getRegionLabel({ query: normalizedQuery });
-
       return (
         <div className="flex flex-col gap-3 pb-4">
-          {isRegionSearch && <RegionBanner region={regionLabel} />}
           <div className="flex items-center justify-between">
             <span className="text-muted-foreground text-sm">
               {searchResults.total} results
