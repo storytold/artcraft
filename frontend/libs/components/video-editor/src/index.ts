@@ -1,11 +1,10 @@
 // Public API for @storyteller/ui-video-editor.
-//
-// Surface grows as the OpenCut Classic port lands. Each section below
-// reflects which folders are real (ported from opencut-classic) vs
-// still placeholder (only VideoEditor + adapters are visible from
-// host code until the panels port lands).
 
-// --- Top-level component (placeholder until panels port lands) ---
+// --- Top-level component ---
+// The bundled editor shell: provider + header + assets / preview /
+// properties / timeline split + onboarding + mobile gate. Most hosts
+// just mount <VideoEditor>; those that want their own shell can
+// compose with <EditorProvider> and the individual panel exports below.
 export { VideoEditor } from "./lib/VideoEditor";
 export type { VideoEditorProps } from "./lib/VideoEditor";
 
