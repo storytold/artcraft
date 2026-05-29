@@ -1033,10 +1033,11 @@ export { ScenesView } from "./lib/components/editor/scenes-view";
 // a registered handler (split, undo, toggle-play, etc.) without
 // coupling the caller to the manager that performs the work.
 // `useEditorActions` wires the canonical handler set against
-// EditorCore (mount it once inside <EditorProvider>); hosts that want
-// a subset can call `useActionHandler` directly. The keybindings
-// store persists user-overridden shortcuts and exposes the listener
-// hook the host attaches at the document level.
+// EditorCore; `useKeybindingsListener` attaches the global keydown
+// dispatcher. Both are mounted automatically by <VideoEditor>. Hosts
+// that compose their own shell with <EditorProvider> directly must
+// call them inside that tree; hosts that want a subset of handlers
+// can call `useActionHandler` directly instead.
 export {
   invokeAction,
   bindAction,
