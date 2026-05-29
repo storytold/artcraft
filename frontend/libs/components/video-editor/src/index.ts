@@ -1092,19 +1092,15 @@ export type { ScopeEntry } from "./lib/selection/scope";
 
 // --- AssetsPanel ---
 // The full AssetsPanel subsystem ported from opencut-classic. Renders
-// the left-rail tab bar (media/sounds/text/stickers/effects/transitions/
-// captions/adjustment/settings), the media gallery view (grid or list,
-// sortable, with drag-to-import + context-menu deletion), the project
-// settings view (frame rate, aspect ratio, custom canvas size), and the
-// background settings view (blur previews + solid colors + pattern-craft
-// + syntax-ui gradient swatches).
+// the left-rail tab bar (media/sounds/text/stickers/effects/captions/
+// settings), the media gallery view (grid or list, sortable, with
+// drag-to-import + context-menu deletion), the project settings view
+// (frame rate, aspect ratio, custom canvas size), and the background
+// settings view (blur previews + solid colors + pattern-craft +
+// syntax-ui gradient swatches).
 //
-// View modules that live in sibling subsystems
-// (sounds/text/stickers/effects/subtitles) render "coming soon"
-// placeholders until those ports land. Media import pipeline
-// (processMediaAssets + showMediaUploadToast) and the actions registry
-// (invokeAction("remove-media-assets")) are also pending — the gallery
-// surfaces a toast warning and a no-op delete handler in the meantime.
+// Captions still renders a "coming soon" placeholder — depends on the
+// transcription subsystem (deferred per port scope).
 //
 // Mount inside <EditorProvider>; the panel reads/writes its UI prefs
 // (active tab, media view mode, sort order) through `useAssetsPanelStore`.
