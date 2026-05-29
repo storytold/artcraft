@@ -51,7 +51,7 @@ body {
 
 /* ===================== THEME VARIABLES ===================== */
 :root {
-  --st-bg: #242424;
+  --st-bg: #121212;
   /* gray theme default */
   --st-panel: #1f1f1f;
   --st-panel-border: #3f3f3f;
@@ -96,7 +96,7 @@ body {
 
 /* Gray (current) */
 .theme-gray {
-  --st-bg: #242424;
+  --st-bg: #121212;
   --st-panel: #1f1f1f;
   --st-panel-border: #272727;
   --st-modal: #1f1f1f;

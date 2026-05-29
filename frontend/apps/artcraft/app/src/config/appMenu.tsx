@@ -259,7 +259,7 @@ export const getBadgeStyles = (badge?: string) => {
     case "BEST":
       return "bg-primary text-white";
     case "SOON":
-      return "bg-gray-600 text-white";
+      return "bg-ui-controls text-base-fg";
     default:
       return "";
   }
