@@ -46,6 +46,7 @@ import type { MediaAsset } from "../../../media/types";
 import { cn } from "../../../utils/ui";
 import {
   CloudUploadIcon,
+  FolderLibraryIcon,
   GridViewIcon,
   LeftToRightListDashIcon,
   Sorting19Icon,
@@ -57,7 +58,7 @@ import { HugeiconsIcon, type IconSvgElement } from "@hugeicons/react";
 
 export function MediaView() {
   const editor = useEditor();
-  const { toast, mediaSource } = useEditorAdapters();
+  const { toast, mediaSource, assetGallery } = useEditorAdapters();
   const mediaFiles = useEditor((e) => e.media.getAssets());
   const activeProject = useEditor((e) => e.project.getActive());
 
@@ -120,6 +121,65 @@ export function MediaView() {
       multiple: true,
       onFilesSelected: (files) => processFiles({ files }),
     });
+
+  const handleBrowseGallery = async () => {
+    if (!assetGallery || !activeProject) return;
+    let selections: Awaited<ReturnType<typeof assetGallery.openPicker>>;
+    try {
+      selections = await assetGallery.openPicker({
+        kinds: ["video", "image", "audio"],
+      });
+    } catch (error) {
+      console.error("Gallery picker failed:", error);
+      toast.error("Couldn't open the gallery");
+      return;
+    }
+    if (selections.length === 0) return;
+
+    setIsProcessing(true);
+    setProgress(0);
+    try {
+      await showMediaUploadToast({
+        filesCount: selections.length,
+        toast,
+        promise: async () => {
+          // Pre-resolved handles: fetch each CDN URL into a File so the
+          // lib's downstream consumers (audio, scene-builder, retime)
+          // that need a live Blob keep working. processMediaAssets
+          // skips uploadLocalFile because `existingHandles` is set.
+          const files: File[] = [];
+          const handles = selections.map((s) => s.handle);
+          for (const selection of selections) {
+            const resolved = await mediaSource.resolveMedia(selection.handle);
+            const blob = await (await fetch(resolved.url)).blob();
+            files.push(new File([blob], selection.name, { type: resolved.mime }));
+          }
+          const processedAssets = await processMediaAssets({
+            files,
+            toast,
+            mediaSource,
+            existingHandles: handles,
+            onProgress: ({ progress }) => setProgress(progress),
+          });
+          for (const asset of processedAssets) {
+            await editor.media.addMediaAsset({
+              projectId: activeProject.metadata.id,
+              asset,
+            });
+          }
+          return {
+            uploadedCount: processedAssets.length,
+            assetNames: processedAssets.map((asset) => asset.name),
+          };
+        },
+      });
+    } catch (error) {
+      console.error("Error importing from gallery:", error);
+    } finally {
+      setIsProcessing(false);
+      setProgress(0);
+    }
+  };
 
   const handleRemove = ({
     event,
@@ -202,6 +262,7 @@ export function MediaView() {
             sortOrder={mediaSortOrder}
             onSort={handleSort}
             onImport={openFilePicker}
+            onBrowseGallery={assetGallery ? handleBrowseGallery : undefined}
           />
         }
         className={cn(isDragOver && "bg-accent/30")}
@@ -509,6 +570,7 @@ function MediaActions({
   sortOrder,
   onSort,
   onImport,
+  onBrowseGallery,
 }: {
   mediaViewMode: MediaViewMode;
   setMediaViewMode: (mode: MediaViewMode) => void;
@@ -517,6 +579,8 @@ function MediaActions({
   sortOrder: MediaSortOrder;
   onSort: ({ key }: { key: MediaSortKey }) => void;
   onImport: () => void;
+  // Optional: only rendered when the host wires an AssetGalleryAdapter.
+  onBrowseGallery?: () => void;
 }) {
   return (
     <div className="flex gap-1.5">
@@ -600,6 +664,18 @@ function MediaActions({
           </TooltipContent>
         </Tooltip>
       </TooltipProvider>
+      {onBrowseGallery ? (
+        <Button
+          variant="outline"
+          onClick={onBrowseGallery}
+          disabled={isProcessing}
+          size="sm"
+          className="items-center justify-center gap-1.5"
+        >
+          <HugeiconsIcon icon={FolderLibraryIcon} />
+          Browse
+        </Button>
+      ) : null}
       <Button
         variant="outline"
         onClick={onImport}

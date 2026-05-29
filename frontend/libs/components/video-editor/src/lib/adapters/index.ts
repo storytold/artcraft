@@ -15,7 +15,10 @@ export type {
 
 export type { ProjectStorageAdapter } from "./project-storage";
 export type { MediaSourceAdapter } from "./media-source";
-export type { AssetGalleryAdapter } from "./asset-gallery";
+export type {
+  AssetGalleryAdapter,
+  MediaPickerSelection,
+} from "./asset-gallery";
 export type { AuthUserAdapter } from "./auth-user";
 export type { ExportSinkAdapter } from "./export-sink";
 export type { ToastAdapter, ToastOptions } from "./toast";

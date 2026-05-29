@@ -25,6 +25,7 @@ export type {
   ProjectStorageAdapter,
   MediaSourceAdapter,
   AssetGalleryAdapter,
+  MediaPickerSelection,
   AuthUserAdapter,
   ExportSinkAdapter,
   ToastAdapter,
