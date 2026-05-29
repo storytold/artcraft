@@ -22,13 +22,24 @@ export class MediaManager {
   // The asset's `id` is the caller-provided MediaHandle id. Pre-Phase-2
   // this was a generated UUID; now uploads go through MediaSourceAdapter
   // and the handle's id is the stable identifier the editor stores in
-  // project state.
+  // project state. Returns the existing entry (idempotent no-op) when
+  // the asset id is already in the bin so re-imports of the same gallery
+  // token don't produce duplicate rows.
   async addMediaAsset({
     asset,
   }: {
     projectId?: string;
     asset: MediaAsset;
   }): Promise<MediaAsset | null> {
+    const existing = this.assets.find((a) => a.id === asset.id);
+    if (existing) {
+      return existing;
+    }
+
+    // Append and remember the insertion index so we can roll back to
+    // exactly the appended entry on failure (filter-by-id would strip
+    // any pre-existing duplicate too).
+    const insertIndex = this.assets.length;
     this.assets = [...this.assets, asset];
     this.notify();
 
@@ -39,7 +50,10 @@ export class MediaManager {
       return asset;
     } catch (error) {
       console.error("Failed to register media asset:", error);
-      this.assets = this.assets.filter((existing) => existing.id !== asset.id);
+      this.assets = [
+        ...this.assets.slice(0, insertIndex),
+        ...this.assets.slice(insertIndex + 1),
+      ];
       this.notify();
       this.editor.adapters.toast.error("Failed to add media", {
         description: error instanceof Error ? error.message : undefined,
