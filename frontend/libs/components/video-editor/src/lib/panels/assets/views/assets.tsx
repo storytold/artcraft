@@ -138,6 +138,7 @@ export function MediaView() {
 
     setIsProcessing(true);
     setProgress(0);
+    const abort = new AbortController();
     try {
       await showMediaUploadToast({
         filesCount: selections.length,
@@ -147,18 +148,55 @@ export function MediaView() {
           // lib's downstream consumers (audio, scene-builder, retime)
           // that need a live Blob keep working. processMediaAssets
           // skips uploadLocalFile because `existingHandles` is set.
-          const files: File[] = [];
-          const handles = selections.map((s) => s.handle);
-          for (const selection of selections) {
-            const resolved = await mediaSource.resolveMedia(selection.handle);
-            const blob = await (await fetch(resolved.url)).blob();
-            files.push(new File([blob], selection.name, { type: resolved.mime }));
+          //
+          // Per-item try/catch so a single CORS/403/network failure
+          // doesn't abort the whole batch. Run the fetches in parallel —
+          // sequential awaits used to stall the toast progress bar for
+          // the full pre-fetch loop.
+          const fetched = await Promise.all(
+            selections.map(async (selection) => {
+              try {
+                const resolved = await mediaSource.resolveMedia(
+                  selection.handle,
+                );
+                const response = await fetch(resolved.url, {
+                  signal: abort.signal,
+                });
+                if (!response.ok) {
+                  throw new Error(`HTTP ${response.status}`);
+                }
+                const blob = await response.blob();
+                return {
+                  file: new File([blob], selection.name, {
+                    type: resolved.mime,
+                  }),
+                  handle: selection.handle,
+                };
+              } catch (error) {
+                console.error(
+                  "Gallery import failed for",
+                  selection.name,
+                  error,
+                );
+                toast.error(`Couldn't import ${selection.name}`, {
+                  description:
+                    error instanceof Error ? error.message : undefined,
+                });
+                return null;
+              }
+            }),
+          );
+          const successes = fetched.filter(
+            (entry): entry is NonNullable<typeof entry> => entry !== null,
+          );
+          if (successes.length === 0) {
+            return { uploadedCount: 0, assetNames: [] };
           }
           const processedAssets = await processMediaAssets({
-            files,
+            files: successes.map((entry) => entry.file),
             toast,
             mediaSource,
-            existingHandles: handles,
+            existingHandles: successes.map((entry) => entry.handle),
             onProgress: ({ progress }) => setProgress(progress),
           });
           for (const asset of processedAssets) {
@@ -176,6 +214,7 @@ export function MediaView() {
     } catch (error) {
       console.error("Error importing from gallery:", error);
     } finally {
+      abort.abort();
       setIsProcessing(false);
       setProgress(0);
     }
