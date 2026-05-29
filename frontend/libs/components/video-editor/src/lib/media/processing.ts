@@ -82,6 +82,7 @@ export async function processMediaAssets({
   mediaSource,
   onProgress,
   existingHandles,
+  existingResolved,
 }: {
   files: FileList | File[];
   toast: ToastAdapter;
@@ -92,6 +93,12 @@ export async function processMediaAssets({
   // asset already stored in the host's media library). Aligned by
   // index with `files`.
   existingHandles?: ReadonlyArray<MediaHandle | undefined>;
+  // Optional: skip resolveMedia too when the caller already resolved
+  // the handle (gallery picker fetches the URL before constructing the
+  // File, so resolving again would double the network roundtrips).
+  // Aligned by index with `files`. Ignored unless the entry at the
+  // same index of `existingHandles` is also set.
+  existingResolved?: ReadonlyArray<ResolvedMedia | undefined>;
 }): Promise<ProcessedMediaAsset[]> {
   const fileArray = Array.from(files);
   const processedAssets: ProcessedMediaAsset[] = [];
@@ -167,7 +174,8 @@ export async function processMediaAssets({
         handle = await mediaSource.uploadLocalFile(file);
         ownsHandle = true;
       }
-      resolved = await mediaSource.resolveMedia(handle);
+      const existingResolvedItem = existing ? existingResolved?.[index] : undefined;
+      resolved = existingResolvedItem ?? (await mediaSource.resolveMedia(handle));
 
       processedAssets.push({
         id: handle.id,

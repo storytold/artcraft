@@ -171,6 +171,7 @@ export function MediaView() {
                     type: resolved.mime,
                   }),
                   handle: selection.handle,
+                  resolved,
                 };
               } catch (error) {
                 console.error(
@@ -197,6 +198,11 @@ export function MediaView() {
             toast,
             mediaSource,
             existingHandles: successes.map((entry) => entry.handle),
+            // Pass the already-resolved ResolvedMedia through so
+            // processMediaAssets doesn't re-call resolveMedia (which
+            // for the webapp adapter is a GetMediaFileByToken HTTP
+            // roundtrip per asset).
+            existingResolved: successes.map((entry) => entry.resolved),
             onProgress: ({ progress }) => setProgress(progress),
           });
           for (const asset of processedAssets) {
