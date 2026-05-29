@@ -12,6 +12,29 @@
     --sidebar-accent: rgba(255, 255, 255, 0.06);
     --sidebar-accent-fg: #ffffff;
     --sidebar-ring: rgba(45, 129, 255, 0.4);
+
+    /* shadcn design tokens consumed by @storyteller/ui-video-editor.
+       Dark-theme palette (the editor only runs in dark mode today).
+       --primary matches the webapp's brand blue (#2d81ff). */
+    --background: 0 0% 9%;
+    --foreground: 0 0% 98%;
+    --card: 0 0% 12%;
+    --card-foreground: 0 0% 98%;
+    --popover: 0 0% 12%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 216 100% 59%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 0 0% 24%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 0 0% 18%;
+    --muted-foreground: 0 0% 64%;
+    --accent: 0 0% 16%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 70% 50%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 18%;
+    --input: 0 0% 18%;
+    --ring: 217 91% 60%;
   }
 
 }
