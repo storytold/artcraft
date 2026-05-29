@@ -15,7 +15,12 @@ import { showToast } from "../../../components/toast/toast";
 
 const uploadApi = new MediaUploadApi();
 
-function triggerDownload(artifact: ExportArtifact): void {
+// Returns the freshly-minted object URL so the caller can revoke it
+// AFTER the background upload finishes. Revoking on a fixed 1s timer
+// races the disk write for large exports (AV scan, low-end SSD) and
+// can also yank the Blob reference out from under a concurrent
+// UploadNewVideo that's still reading from the same Blob.
+function triggerDownload(artifact: ExportArtifact): string {
   const url = URL.createObjectURL(artifact.blob);
   const a = document.createElement("a");
   a.href = url;
@@ -23,7 +28,7 @@ function triggerDownload(artifact: ExportArtifact): void {
   document.body.appendChild(a);
   a.click();
   a.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  return url;
 }
 
 async function uploadToLibrary(artifact: ExportArtifact): Promise<void> {
@@ -60,11 +65,14 @@ async function uploadToLibrary(artifact: ExportArtifact): Promise<void> {
 
 export const webappExportSinkAdapter: ExportSinkAdapter = {
   async accept(artifact) {
-    triggerDownload(artifact);
+    const downloadUrl = triggerDownload(artifact);
 
     // Don't await — let the upload happen in the background so the
     // export popover can close immediately. Surface success/failure
-    // via toast.
+    // via toast. Revoke the download URL only after the upload settles
+    // so that (a) the browser has finished initiating the download and
+    // (b) the upload isn't reading from a Blob whose URL has already
+    // been torn down.
     void uploadToLibrary(artifact)
       .then(() => {
         showToast(
@@ -79,6 +87,9 @@ export const webappExportSinkAdapter: ExportSinkAdapter = {
           "error",
           `Couldn't save ${artifact.filename} to your media library: ${message}`,
         );
+      })
+      .finally(() => {
+        URL.revokeObjectURL(downloadUrl);
       });
 
     return artifact.filename;
