@@ -1,4 +1,10 @@
-import { useMemo, useRef, useState, type ReactElement } from "react";
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactElement,
+} from "react";
 import type {
   AssetGalleryAdapter,
   MediaKind,
@@ -48,10 +54,33 @@ export function useWebappAssetGalleryAdapter(): AssetGalleryHostBundle {
   });
   const resolverRef = useRef<Resolver | null>(null);
 
+  // Reject (resolve-empty) any pending resolver. Used when a second
+  // openPicker call arrives before the first one resolved, or when the
+  // hook unmounts mid-flow. Without this the first promise hangs
+  // forever and the caller's UI stays stuck in its "processing" state.
+  const settlePending = (selections: MediaPickerSelection[]) => {
+    const resolver = resolverRef.current;
+    resolverRef.current = null;
+    resolver?.(selections);
+  };
+
+  // Unmount cleanup — fail any in-flight picker rather than leak it.
+  useEffect(() => {
+    return () => {
+      settlePending([]);
+    };
+    // settlePending closes over the ref; safe to omit from deps.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const adapter = useMemo<AssetGalleryAdapter>(
     () => ({
       openPicker({ kinds }) {
         return new Promise<MediaPickerSelection[]>((resolve) => {
+          // If a previous picker hasn't settled (user clicked Browse
+          // again before the modal closed, or two consumers raced for
+          // the picker), resolve it empty so its caller can unwind.
+          settlePending([]);
           resolverRef.current = resolve;
           setState({ open: true, filter: kindsToFilter(kinds) });
         });
@@ -65,17 +94,13 @@ export function useWebappAssetGalleryAdapter(): AssetGalleryHostBundle {
       handle: { id: item.id, kind: mediaClassToKind(item.mediaClass) },
       name: item.label,
     }));
-    const resolver = resolverRef.current;
-    resolverRef.current = null;
     setState({ open: false, filter: undefined });
-    resolver?.(selections);
+    settlePending(selections);
   };
 
   const handleClose = () => {
-    const resolver = resolverRef.current;
-    resolverRef.current = null;
     setState({ open: false, filter: undefined });
-    resolver?.([]);
+    settlePending([]);
   };
 
   const modal = (
