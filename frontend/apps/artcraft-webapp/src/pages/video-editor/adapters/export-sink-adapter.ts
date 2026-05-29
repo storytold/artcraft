@@ -15,11 +15,16 @@ import { showToast } from "../../../components/toast/toast";
 
 const uploadApi = new MediaUploadApi();
 
-// Returns the freshly-minted object URL so the caller can revoke it
-// AFTER the background upload finishes. Revoking on a fixed 1s timer
-// races the disk write for large exports (AV scan, low-end SSD) and
-// can also yank the Blob reference out from under a concurrent
-// UploadNewVideo that's still reading from the same Blob.
+// Trigger the browser download for the rendered artifact and return
+// the freshly-minted object URL so the caller can revoke it AFTER the
+// background upload finishes (avoids racing the disk write or yanking
+// the Blob ref out from under a concurrent UploadNewVideo).
+//
+// Inlined here rather than composing with the lib's downloadExportSink
+// because that adapter revokes the URL itself before returning, which
+// we explicitly don't want — we need to keep the URL alive while the
+// upload is in-flight. Behavior is otherwise the same as
+// downloadExportSink.accept().
 function triggerDownload(artifact: ExportArtifact): string {
   const url = URL.createObjectURL(artifact.blob);
   const a = document.createElement("a");
