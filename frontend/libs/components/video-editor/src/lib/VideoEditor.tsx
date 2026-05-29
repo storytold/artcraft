@@ -84,17 +84,29 @@ function DegradedRendererBanner() {
 }
 
 function EditorLayout() {
+  // Boot the wasm-backed GPU compositor and gate the panel render on
+  // it. We need to *await* init before <PreviewCanvas> mounts —
+  // child useEffects fire bottom-up, so kicking GPU off in a sibling
+  // useEffect lets PreviewCanvas race ahead and panic with
+  // "GPU context not initialized" the moment opencut-wasm's
+  // initCompositor runs. initializeGpuRenderer is idempotent and
+  // catches WebGPU failures internally, so the gate eventually opens
+  // even on hardware without WebGPU (rendering falls back via
+  // RendererManager.isDegraded).
+  const [gpuReady, setGpuReady] = useState(false);
+  useEffect(() => {
+    let cancelled = false;
+    void initializeGpuRenderer().then(() => {
+      if (!cancelled) setGpuReady(true);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   useEditorActions();
   useKeybindingsListener();
   usePasteMedia();
-  // Boot the wasm-backed GPU compositor. Idempotent (caches its own
-  // initPromise) and catches WebGPU failures internally, so it's safe
-  // to fire-and-forget. Without this, the first <PreviewCanvas> render
-  // panics with "GPU context not initialized" the moment opencut-wasm's
-  // initCompositor runs.
-  useEffect(() => {
-    void initializeGpuRenderer();
-  }, []);
   const { panels, setPanel } = usePanelStore();
   const activeScene = useEditor((editor) =>
     editor.scenes.getActiveSceneOrNull(),
@@ -139,6 +151,8 @@ function EditorLayout() {
       ),
     [overlaySource.definitions, overlays],
   );
+
+  if (!gpuReady) return null;
 
   return (
     <ResizablePanelGroup
