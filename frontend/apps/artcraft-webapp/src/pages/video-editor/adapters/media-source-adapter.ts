@@ -33,9 +33,65 @@ function kindFromMediaClass(mediaClass: ApiMediaFileClass | null): MediaKind {
   return "image";
 }
 
-// Best-effort mime hint by media class. The CDN URL is what the editor
-// actually consumes; mime is metadata used by mediabunny / probe code.
-function mimeFromMediaClass(mediaClass: ApiMediaFileClass | null): string {
+const EXT_TO_MIME: Record<string, string> = {
+  // video
+  mp4: "video/mp4",
+  webm: "video/webm",
+  mov: "video/quicktime",
+  m4v: "video/x-m4v",
+  mkv: "video/x-matroska",
+  avi: "video/x-msvideo",
+  // audio
+  mp3: "audio/mpeg",
+  wav: "audio/wav",
+  ogg: "audio/ogg",
+  oga: "audio/ogg",
+  m4a: "audio/mp4",
+  aac: "audio/aac",
+  flac: "audio/flac",
+  // image
+  png: "image/png",
+  jpg: "image/jpeg",
+  jpeg: "image/jpeg",
+  gif: "image/gif",
+  webp: "image/webp",
+  svg: "image/svg+xml",
+  bmp: "image/bmp",
+  avif: "image/avif",
+};
+
+function extensionOf(path: string | null | undefined): string | null {
+  if (!path) return null;
+  // Trim querystring/hash before extracting the extension so URLs like
+  // /file.webm?token=abc still produce "webm".
+  const trimmed = path.split(/[?#]/)[0];
+  const dot = trimmed.lastIndexOf(".");
+  if (dot === -1 || dot === trimmed.length - 1) return null;
+  return trimmed.slice(dot + 1).toLowerCase();
+}
+
+// Resolve mime by reading the real file extension (from
+// maybe_original_filename, falling back to the CDN URL and then to the
+// public bucket path). Drops back to a coarse class-based default only
+// when none of those carry a recognised extension. The class default
+// loses container-level info — playing a .webm video through a path
+// that asserts video/mp4 made mediabunny pick the wrong demuxer.
+function mimeForMediaFile({
+  maybeOriginalFilename,
+  cdnUrl,
+  publicBucketPath,
+  mediaClass,
+}: {
+  maybeOriginalFilename: string | null;
+  cdnUrl: string;
+  publicBucketPath: string;
+  mediaClass: ApiMediaFileClass | null;
+}): string {
+  const candidates = [maybeOriginalFilename, cdnUrl, publicBucketPath];
+  for (const candidate of candidates) {
+    const ext = extensionOf(candidate);
+    if (ext && EXT_TO_MIME[ext]) return EXT_TO_MIME[ext];
+  }
   if (mediaClass === "video") return "video/mp4";
   if (mediaClass === "audio") return "audio/mpeg";
   if (mediaClass === "image") return "image/png";
@@ -90,7 +146,12 @@ export const webappMediaSourceAdapter: MediaSourceAdapter = {
     const media = response.data;
     return {
       url: media.media_links.cdn_url,
-      mime: mimeFromMediaClass(media.media_class),
+      mime: mimeForMediaFile({
+        maybeOriginalFilename: media.maybe_original_filename,
+        cdnUrl: media.media_links.cdn_url,
+        publicBucketPath: media.public_bucket_path,
+        mediaClass: media.media_class,
+      }),
       durationMs: media.maybe_duration_millis ?? undefined,
     };
   },
