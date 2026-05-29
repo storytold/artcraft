@@ -13,6 +13,7 @@ export type {
   ExportArtifact,
 } from "./types";
 
+export { kindFromMime } from "./kind-from-mime";
 export type { ProjectStorageAdapter } from "./project-storage";
 export type { MediaSourceAdapter } from "./media-source";
 export type {

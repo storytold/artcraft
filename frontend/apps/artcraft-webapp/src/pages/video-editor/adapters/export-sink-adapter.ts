@@ -2,8 +2,9 @@ import type {
   ExportArtifact,
   ExportSinkAdapter,
 } from "@storyteller/ui-video-editor";
-import { MediaUploadApi } from "@storyteller/api";
+import { kindFromMime } from "@storyteller/ui-video-editor";
 import { showToast } from "../../../components/toast/toast";
+import { uploadByKind } from "./upload-by-kind";
 
 // Webapp ExportSinkAdapter — downloads the export to disk immediately
 // (matching the lib's default behavior so the user always gets the
@@ -12,8 +13,6 @@ import { showToast } from "../../../components/toast/toast";
 //
 // Upload failures are reported via toast but don't fail the export —
 // the download already happened, so the user has the file regardless.
-
-const uploadApi = new MediaUploadApi();
 
 // Trigger the browser download for the rendered artifact and return
 // the freshly-minted object URL so the caller can revoke it AFTER the
@@ -37,35 +36,13 @@ function triggerDownload(artifact: ExportArtifact): string {
 }
 
 async function uploadToLibrary(artifact: ExportArtifact): Promise<void> {
-  const uuid = crypto.randomUUID();
   const baseTitle = artifact.filename.replace(/\.[^.]+$/, "");
-  const isVideo = artifact.mime.startsWith("video/");
-  const isAudio = artifact.mime.startsWith("audio/");
-
-  const response = isVideo
-    ? await uploadApi.UploadNewVideo({
-        uuid,
-        blob: artifact.blob,
-        fileName: artifact.filename,
-        maybe_title: baseTitle,
-      })
-    : isAudio
-      ? await uploadApi.UploadAudio({
-          uuid,
-          blob: artifact.blob,
-          fileName: artifact.filename,
-          maybe_title: baseTitle,
-        })
-      : await uploadApi.UploadImage({
-          uuid,
-          blob: artifact.blob,
-          fileName: artifact.filename,
-          maybe_title: baseTitle,
-        });
-
-  if (!response.success) {
-    throw new Error(response.errorMessage || "Upload failed");
-  }
+  await uploadByKind({
+    kind: kindFromMime(artifact.mime),
+    blob: artifact.blob,
+    fileName: artifact.filename,
+    title: baseTitle,
+  });
 }
 
 // In-flight gate keyed by filename. Without this, double-clicking

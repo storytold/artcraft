@@ -1,5 +1,6 @@
 import type { MediaSourceAdapter } from "../media-source";
-import type { MediaHandle, MediaKind, ResolvedMedia } from "../types";
+import type { MediaHandle, ResolvedMedia } from "../types";
+import { kindFromMime } from "../kind-from-mime";
 
 // Default media source: keeps File objects in memory and hands out
 // blob: URLs. Persists nothing across reloads — projects only stay
@@ -13,12 +14,6 @@ interface Entry {
   file: File;
   blobUrl: string;
   resolved: ResolvedMedia;
-}
-
-function kindFromMime(mime: string): MediaKind {
-  if (mime.startsWith("video/")) return "video";
-  if (mime.startsWith("audio/")) return "audio";
-  return "image";
 }
 
 function newId(): string {

@@ -45,6 +45,11 @@ export {
   consoleToast,
 } from "./lib/adapters/default";
 
+// --- Adapter helpers ---
+// Small utilities every MediaSourceAdapter implementation needs;
+// exposed so hosts don't re-implement them inconsistently.
+export { kindFromMime } from "./lib/adapters";
+
 // --- MediaTime + frame math (the wasm boundary) ---
 export {
   TICKS_PER_SECOND,

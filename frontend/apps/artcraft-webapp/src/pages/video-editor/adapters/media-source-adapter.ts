@@ -4,7 +4,9 @@ import type {
   MediaSourceAdapter,
   ResolvedMedia,
 } from "@storyteller/ui-video-editor";
-import { MediaFilesApi, MediaUploadApi } from "@storyteller/api";
+import { kindFromMime } from "@storyteller/ui-video-editor";
+import { MediaFilesApi } from "@storyteller/api";
+import { uploadByKind } from "./upload-by-kind";
 
 // MediaFileClass enum values from @storyteller/api as string literals.
 // @storyteller/api doesn't re-export the enum from its main entry, so
@@ -18,14 +20,7 @@ type ApiMediaFileClass = "video" | "audio" | "image" | "unknown" | string;
 // media_file_token returned by upload; resolveMedia maps the token to
 // the CDN URL stored on the MediaFile model.
 
-const uploadApi = new MediaUploadApi();
 const filesApi = new MediaFilesApi();
-
-function kindFromMime(mime: string): MediaKind {
-  if (mime.startsWith("video/")) return "video";
-  if (mime.startsWith("audio/")) return "audio";
-  return "image";
-}
 
 function kindFromMediaClass(mediaClass: ApiMediaFileClass | null): MediaKind {
   if (mediaClass === "video") return "video";
@@ -101,37 +96,12 @@ function mimeForMediaFile({
 export const webappMediaSourceAdapter: MediaSourceAdapter = {
   async uploadLocalFile(file: File): Promise<MediaHandle> {
     const kind = kindFromMime(file.type);
-    const uuid = crypto.randomUUID();
-    const fileName = file.name;
-    const maybe_title = file.name;
-
-    const response =
-      kind === "video"
-        ? await uploadApi.UploadNewVideo({
-            uuid,
-            blob: file,
-            fileName,
-            maybe_title,
-          })
-        : kind === "audio"
-          ? await uploadApi.UploadAudio({
-              uuid,
-              blob: file,
-              fileName,
-              maybe_title,
-            })
-          : await uploadApi.UploadImage({
-              uuid,
-              blob: file,
-              fileName,
-              maybe_title,
-            });
-
-    if (!response.success || !response.data) {
-      throw new Error(response.errorMessage || "Upload failed");
-    }
-
-    return { id: response.data, kind };
+    const id = await uploadByKind({
+      kind,
+      blob: file,
+      fileName: file.name,
+    });
+    return { id, kind };
   },
 
   async resolveMedia(handle: MediaHandle): Promise<ResolvedMedia> {
