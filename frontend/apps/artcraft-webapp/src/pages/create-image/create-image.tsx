@@ -26,6 +26,8 @@ import { useImageCostEstimate } from "../../lib/cost-estimate-api";
 import {
   useOmniGenImageModels,
   getModelCreatorIconPath,
+  getModelDescription,
+  getModelInfo,
 } from "../../lib/omni-gen-hooks";
 import { useSignupCta } from "../../components/signup-cta-modal";
 import { useInsufficientCredits } from "../../components/insufficient-credits-modal";
@@ -48,6 +50,8 @@ function buildModelPopoverItems(
   return models.map((model) => ({
     label: model.full_name || model.model,
     selected: model.model === selectedId,
+    description: getModelDescription(model.model, model.extra_info_short),
+    info: getModelInfo(model.model, model.extra_info) || undefined,
     icon: (
       <img
         src={getModelCreatorIconPath(model.model)}
@@ -444,8 +448,8 @@ export default function CreateImage() {
                   onSelect={handleModelChange}
                   mode="toggle"
                   panelTitle="Select Model"
-                  panelClassName="w-max"
-                  showIconsInList
+                  panelClassName="w-80"
+                  richList
                   triggerIcon={
                     <img
                       src={getModelCreatorIconPath(selectedModel?.model ?? "")}

@@ -21,6 +21,7 @@ import {
   faChevronUp,
   faChevronDown,
   faCircleCheck,
+  faCircleInfo,
 } from "@fortawesome/pro-solid-svg-icons";
 import { Model, ModelInfo } from "@storyteller/model-list";
 import { Tooltip } from "@storyteller/ui-tooltip";
@@ -140,6 +141,125 @@ function PortalTooltip({
   );
 }
 
+// Small (i) info affordance for list rows. Opens on hover (desktop) and
+// toggles on click/tap (works on touch devices). Rendered into a portal so it
+// is never clipped by the popover panel's bounds.
+function InfoHint({ content }: { content: ReactNode }) {
+  const [open, setOpen] = useState(false);
+  const pinnedRef = useRef(false); // opened via click/tap (sticky until dismissed)
+  const [position, setPosition] = useState({ top: 0, left: 0, maxWidth: 320 });
+  const anchorRef = useRef<HTMLButtonElement>(null);
+  const hoverTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  const updatePosition = useCallback(() => {
+    const el = anchorRef.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    // Clamp horizontally so the (centered) bubble never overflows the viewport
+    // — important on narrow / mobile screens.
+    const margin = 8;
+    const vw = window.innerWidth;
+    const maxWidth = Math.min(320, vw - margin * 2);
+    const half = maxWidth / 2;
+    const center = rect.left + rect.width / 2;
+    const left = Math.max(margin + half, Math.min(center, vw - margin - half));
+    // Anchor above the icon; the bubble is translated up by its own height.
+    setPosition({ top: rect.top - 8, left, maxWidth });
+  }, []);
+
+  const close = useCallback(() => {
+    pinnedRef.current = false;
+    setOpen(false);
+  }, []);
+
+  // While open, reposition on scroll and dismiss on outside click / Escape.
+  useEffect(() => {
+    if (!open) return;
+    const onScroll = () => updatePosition();
+    const onPointerDown = (e: MouseEvent) => {
+      if (anchorRef.current?.contains(e.target as Node)) return;
+      close();
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") close();
+    };
+    window.addEventListener("scroll", onScroll, true);
+    window.addEventListener("mousedown", onPointerDown, true);
+    window.addEventListener("keydown", onKey);
+    return () => {
+      window.removeEventListener("scroll", onScroll, true);
+      window.removeEventListener("mousedown", onPointerDown, true);
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [open, close, updatePosition]);
+
+  useEffect(() => {
+    return () => {
+      if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current);
+    };
+  }, []);
+
+  return (
+    <>
+      <button
+        ref={anchorRef}
+        type="button"
+        aria-label="More info"
+        className="ml-0.5 inline-flex h-4 w-4 shrink-0 items-center justify-center text-base-fg/40 transition-colors hover:text-base-fg/80"
+        onClick={(e) => {
+          // Don't let the click select the row.
+          e.stopPropagation();
+          e.preventDefault();
+          if (open && pinnedRef.current) {
+            close();
+          } else {
+            pinnedRef.current = true;
+            updatePosition();
+            setOpen(true);
+          }
+        }}
+        onMouseEnter={() => {
+          if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current);
+          hoverTimerRef.current = setTimeout(() => {
+            updatePosition();
+            setOpen(true);
+          }, 150);
+        }}
+        onMouseLeave={() => {
+          if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current);
+          if (!pinnedRef.current) setOpen(false);
+        }}
+      >
+        <FontAwesomeIcon icon={faCircleInfo} className="h-3.5 w-3.5" />
+      </button>
+      {open &&
+        createPortal(
+          <div
+            style={{
+              position: "fixed",
+              top: position.top,
+              left: position.left,
+              maxWidth: position.maxWidth,
+              transform: "translate(-50%, -100%)",
+              zIndex: 10000,
+            }}
+            className="pointer-events-auto rounded-lg border border-white/10 bg-ui-controls p-3 text-xs leading-relaxed text-base-fg shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+            onMouseEnter={() => {
+              if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current);
+            }}
+            onMouseLeave={() => {
+              if (!pinnedRef.current) setOpen(false);
+            }}
+          >
+            {content}
+          </div>,
+          document.body,
+        )}
+    </>
+  );
+}
+
 // Global hover manager to debounce close across adjacent hover popovers
 let globalCloseTimer: NodeJS.Timeout | null = null;
 const cancelGlobalClose = () => {
@@ -170,6 +290,9 @@ export interface PopoverItem {
   disabled?: boolean;
   divider?: boolean;
   description?: string;
+  // Longer info blurb surfaced behind an (i) icon next to the label. Shown on
+  // hover (desktop) and tap (mobile). Only rendered in `richList` mode.
+  info?: ReactNode;
   badges?: Array<{
     label: string;
     icon?: ReactNode;
@@ -250,6 +373,10 @@ interface PopoverMenuProps {
   closeOnUnhover?: boolean;
   renderTrigger?: (selected?: PopoverItem, open?: boolean) => ReactNode;
   maxListHeight?: number | string;
+  // Render rows as rich cards: icon in a subtle container, bold name (with an
+  // optional (i) info icon) and a description line beneath. Keeps click-to-
+  // select semantics. Use for model/option pickers with descriptions.
+  richList?: boolean;
 }
 
 export const PopoverMenu = ({
@@ -274,6 +401,7 @@ export const PopoverMenu = ({
   closeOnUnhover = false,
   renderTrigger,
   maxListHeight,
+  richList = false,
 }: PopoverMenuProps) => {
   const selectedItem = items.find((item) => item.selected);
   const [openTooltipIdx, setOpenTooltipIdx] = useState<number | null>(null);
@@ -414,7 +542,7 @@ export const PopoverMenu = ({
                   );
                 }
                 let resizeObserver: ResizeObserver | null = null;
-                if (open && maxListHeight) {
+                if (open && (maxListHeight || richList)) {
                   setScrollReady(false);
                   scrollTimeoutId = setTimeout(() => {
                     scrollToSelectedItem();
@@ -592,6 +720,131 @@ export const PopoverMenu = ({
                           ? children(close)
                           : children}
                       </div>
+                    ) : richList ? (
+                      <div className="relative">
+                        {/* Top fade — appears only when there's content above,
+                            with a slow bouncing arrow hinting to scroll up. */}
+                        <div
+                          className={twMerge(
+                            "pointer-events-none absolute inset-x-0 top-0 z-20 flex h-10 items-start justify-center bg-gradient-to-b from-ui-panel to-transparent pt-1 transition-opacity duration-200",
+                            canScrollUp ? "opacity-100" : "opacity-0",
+                          )}
+                        >
+                          <FontAwesomeIcon
+                            icon={faChevronUp}
+                            className="animate-bounce text-sm text-base-fg/60 drop-shadow [animation-duration:1.1s]"
+                          />
+                        </div>
+                        <div
+                          ref={scrollContainerRef}
+                          data-scroll-container
+                          className="flex flex-col gap-0.5 overflow-y-auto text-sm text-base-fg [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+                          style={{ maxHeight: maxListHeight ?? "60vh" }}
+                        >
+                          {items.map((item, index) => (
+                            <div key={index}>
+                              <div
+                                data-selected={
+                                  item.selected ? "true" : undefined
+                                }
+                                onClick={() => {
+                                  if (!item.disabled)
+                                    handleItemClick(item, close);
+                                }}
+                                className={twMerge(
+                                  "group flex cursor-pointer items-center gap-3 rounded-lg px-2 py-2 transition-colors",
+                                  item.selected
+                                    ? "bg-ui-controls/70"
+                                    : "hover:bg-ui-controls/50",
+                                  item.disabled
+                                    ? "!cursor-not-allowed opacity-50"
+                                    : "",
+                                )}
+                              >
+                                <span
+                                  className={twMerge(
+                                    "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border text-base-fg/80 transition-colors",
+                                    item.selected
+                                      ? "border-primary bg-primary/20"
+                                      : "border-ui-controls-border bg-ui-controls/60",
+                                  )}
+                                >
+                                  {item.icon}
+                                </span>
+                                <div className="flex min-w-0 flex-1 flex-col">
+                                  <div className="flex min-w-0 items-center gap-1">
+                                    <span
+                                      className={twMerge(
+                                        "truncate font-semibold",
+                                        item.selected
+                                          ? "text-base-fg"
+                                          : "text-base-fg/90",
+                                      )}
+                                    >
+                                      {item.label}
+                                    </span>
+                                    {item.info ? (
+                                      <InfoHint content={item.info} />
+                                    ) : null}
+                                  </div>
+                                  {item.description && (
+                                    <span className="truncate text-xs text-base-fg/55">
+                                      {item.description}
+                                    </span>
+                                  )}
+                                  {item.badges &&
+                                    Array.isArray(item.badges) &&
+                                    item.badges.length > 0 && (
+                                      <div className="mt-1 flex flex-row flex-wrap gap-1">
+                                        {item.badges.map((badge, i) => (
+                                          <span
+                                            key={i}
+                                            className="inline-flex items-center gap-1 rounded bg-ui-badge px-1.5 py-0.5 text-xs font-medium text-base-fg"
+                                          >
+                                            {badge?.icon && (
+                                              <span>{badge.icon}</span>
+                                            )}
+                                            {badge?.label || ""}
+                                          </span>
+                                        ))}
+                                      </div>
+                                    )}
+                                </div>
+                                {item.trailing && (
+                                  <div className="ml-1 flex shrink-0 items-center">
+                                    {item.trailing}
+                                  </div>
+                                )}
+                                {item.selected &&
+                                  (item.selectedRight ?? (
+                                    <span className="ml-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary">
+                                      <FontAwesomeIcon
+                                        icon={faCheck}
+                                        className="text-[11px] font-bold text-white"
+                                      />
+                                    </span>
+                                  ))}
+                              </div>
+                              {item.divider && (
+                                <div className="my-1 border-t border-white/10" />
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                        {/* Bottom fade — appears only when there's more below,
+                            with a slow bouncing arrow hinting to scroll down. */}
+                        <div
+                          className={twMerge(
+                            "pointer-events-none absolute inset-x-0 bottom-0 z-20 flex h-10 items-end justify-center bg-gradient-to-t from-ui-panel to-transparent pb-1 transition-opacity duration-200",
+                            canScrollDown ? "opacity-100" : "opacity-0",
+                          )}
+                        >
+                          <FontAwesomeIcon
+                            icon={faChevronDown}
+                            className="animate-bounce text-sm text-base-fg/60 drop-shadow [animation-duration:1.1s]"
+                          />
+                        </div>
+                      </div>
                     ) : mode === "hoverSelect" ? (
                       <div className="relative flex flex-col text-sm text-base-fg overflow-visible">
                         {maxListHeight && canScrollUp && (
@@ -609,10 +862,10 @@ export const PopoverMenu = ({
                           style={
                             maxListHeight
                               ? {
-                                maxHeight: maxListHeight,
-                                overflowY: "auto",
-                                opacity: scrollReady ? 1 : 0,
-                              }
+                                  maxHeight: maxListHeight,
+                                  overflowY: "auto",
+                                  opacity: scrollReady ? 1 : 0,
+                                }
                               : undefined
                           }
                         >
@@ -620,10 +873,10 @@ export const PopoverMenu = ({
                             const tooltipContent =
                               typeof item.hoverTooltip === "function"
                                 ? (
-                                  item.hoverTooltip as (
-                                    close: () => void,
-                                  ) => ReactNode
-                                )(close)
+                                    item.hoverTooltip as (
+                                      close: () => void,
+                                    ) => ReactNode
+                                  )(close)
                                 : item.hoverTooltip;
 
                             const itemRow = (
@@ -789,10 +1042,10 @@ export const PopoverMenu = ({
                                 content={
                                   typeof item.hoverTooltip === "function"
                                     ? (
-                                      item.hoverTooltip as (
-                                        close: () => void,
-                                      ) => ReactNode
-                                    )(close)
+                                        item.hoverTooltip as (
+                                          close: () => void,
+                                        ) => ReactNode
+                                      )(close)
                                     : item.hoverTooltip
                                 }
                                 position="right"

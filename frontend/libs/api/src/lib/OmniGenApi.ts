@@ -78,6 +78,8 @@ export interface OmniGenImageModelInfo {
   model: string;
   is_disabled: boolean | null;
   full_name: string | null;
+  extra_info_short?: string | null;
+  extra_info?: string | null;
   aspect_ratio_options: string[] | null;
   aspect_ratio_default: string | null;
   aspect_ratio_default_when_editing: string | null;
@@ -110,6 +112,8 @@ export interface OmniGenVideoModelInfo {
   model: string;
   is_disabled: boolean | null;
   full_name: string | null;
+  extra_info_short?: string | null;
+  extra_info?: string | null;
   aspect_ratio_options: string[] | null;
   aspect_ratio_default: string | null;
   resolution_options: string[] | null;

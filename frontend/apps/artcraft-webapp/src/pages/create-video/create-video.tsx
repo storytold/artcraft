@@ -47,6 +47,8 @@ import { useVideoCostEstimate } from "../../lib/cost-estimate-api";
 import {
   useOmniGenVideoModels,
   getModelCreatorIconPath,
+  getModelDescription,
+  getModelInfo,
 } from "../../lib/omni-gen-hooks";
 import { useSignupCta } from "../../components/signup-cta-modal";
 import { useInsufficientCredits } from "../../components/insufficient-credits-modal";
@@ -123,6 +125,8 @@ function buildModelPopoverItems(
   const apiItems: PopoverItem[] = models.map((model) => ({
     label: model.full_name || model.model,
     selected: model.model === selectedId,
+    description: getModelDescription(model.model, model.extra_info_short),
+    info: getModelInfo(model.model, model.extra_info) || undefined,
     icon: (
       <img
         src={getModelCreatorIconPath(model.model)}
@@ -137,16 +141,15 @@ function buildModelPopoverItems(
       label,
       selected: false,
       disabled: true,
-      className: "!ml-0",
       icon: (
         <img
           src={getModelCreatorIconPath(id)}
           alt={`${id} logo`}
-          className="h-4 w-4 icon-auto-contrast"
+          className="h-5 w-5 icon-auto-contrast"
         />
       ),
       trailing: (
-        <span className="-ml-3.5 shrink-0 rounded-full bg-white/20 px-2 py-0 text-[10px] font-bold uppercase tracking-wider text-white">
+        <span className="shrink-0 rounded-full bg-white/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white">
           Soon
         </span>
       ),
@@ -1064,8 +1067,8 @@ export default function CreateVideo() {
                   onSelect={handleModelChange}
                   mode="toggle"
                   panelTitle="Select Model"
-                  panelClassName="w-max"
-                  showIconsInList
+                  panelClassName="w-80"
+                  richList
                   triggerIcon={
                     <img
                       src={getModelCreatorIconPath(selectedModel?.model ?? "")}
