@@ -93,6 +93,11 @@ function EditorLayout() {
   // catches WebGPU failures internally, so the gate eventually opens
   // even on hardware without WebGPU (rendering falls back via
   // RendererManager.isDegraded).
+  //
+  // The actions / keybindings / paste-media listeners live in
+  // ReadyEditorLayout below so they only attach once gpuReady; before
+  // the gate flips, a Space/Delete keypress or a media paste would
+  // dispatch against an editor whose preview canvas hasn't mounted.
   const [gpuReady, setGpuReady] = useState(false);
   useEffect(() => {
     let cancelled = false;
@@ -104,6 +109,11 @@ function EditorLayout() {
     };
   }, []);
 
+  if (!gpuReady) return null;
+  return <ReadyEditorLayout />;
+}
+
+function ReadyEditorLayout() {
   useEditorActions();
   useKeybindingsListener();
   usePasteMedia();
@@ -151,8 +161,6 @@ function EditorLayout() {
       ),
     [overlaySource.definitions, overlays],
   );
-
-  if (!gpuReady) return null;
 
   return (
     <ResizablePanelGroup
