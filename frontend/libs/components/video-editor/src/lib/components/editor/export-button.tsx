@@ -17,7 +17,6 @@ import { cn } from "../../utils/ui";
 import {
   getExportMimeType,
   getExportFileExtension,
-  downloadBuffer,
 } from "../../export";
 import { Check, Copy, Download, RotateCcw } from "lucide-react";
 import {
@@ -33,7 +32,9 @@ import {
   SectionTitle,
 } from "../section";
 import { useEditor } from "../../editor/use-editor";
+import { useEditorAdapters } from "../../EditorProvider";
 import { DEFAULT_EXPORT_OPTIONS } from "../../export/defaults";
+import { mediaTimeToSeconds } from "../../wasm";
 
 function isExportFormat(value: string): value is ExportFormat {
   return EXPORT_FORMAT_VALUES.some((formatValue) => formatValue === value);
@@ -98,6 +99,7 @@ function ExportPopover({
   onOpenChange: (open: boolean) => void;
 }) {
   const editor = useEditor();
+  const { exportSink, toast } = useEditorAdapters();
   const activeProject = useEditor((e) => e.project.getActive());
   const exportState = useEditor((e) => e.project.getExportState());
   const { isExporting, progress, result: exportResult } = exportState;
@@ -129,11 +131,27 @@ function ExportPopover({
     }
 
     if (result.success && result.buffer) {
-      downloadBuffer({
-        buffer: result.buffer,
-        filename: `${activeProject.metadata.name}${getExportFileExtension({ format })}`,
-        mimeType: getExportMimeType({ format }),
-      });
+      const mime = getExportMimeType({ format });
+      const filename = `${activeProject.metadata.name}${getExportFileExtension({ format })}`;
+      const projectDurationTicks = editor.timeline.getTotalDuration();
+      const durationMs = Math.round(
+        mediaTimeToSeconds({ time: projectDurationTicks }) * 1000,
+      );
+      try {
+        await exportSink.accept({
+          blob: new Blob([result.buffer], { type: mime }),
+          filename,
+          mime,
+          durationMs: durationMs > 0 ? durationMs : undefined,
+        });
+      } catch (error) {
+        console.error("Export sink failed:", error);
+        toast.error("Couldn't save exported video", {
+          description:
+            error instanceof Error ? error.message : "Unknown error",
+        });
+        return;
+      }
       editor.project.clearExportState();
       onOpenChange(false);
     }
