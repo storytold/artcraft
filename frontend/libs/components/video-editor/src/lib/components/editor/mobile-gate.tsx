@@ -35,7 +35,7 @@ export function MobileGate({ children }: MobileGateProps) {
   };
 
   return (
-    <div className="bg-background relative flex h-screen w-screen flex-col overflow-hidden">
+    <div className="bg-background relative flex h-full w-full flex-col overflow-hidden">
       <Button
         variant="text"
         className="absolute top-6 left-6 flex items-center gap-1 text-muted-foreground"

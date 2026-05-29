@@ -46,7 +46,7 @@ export function VideoEditor({ projectId: _projectId, adapters }: VideoEditorProp
   return (
     <EditorProvider adapters={adapters}>
       <MobileGate>
-        <div className="bg-background flex h-screen w-screen flex-col overflow-hidden">
+        <div className="bg-background flex h-full w-full flex-col overflow-hidden">
           <DegradedRendererBanner />
           <EditorHeader />
           <div className="min-h-0 min-w-0 flex-1">
