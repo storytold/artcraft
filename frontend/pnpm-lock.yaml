@@ -592,6 +592,9 @@ importers:
 
   apps/artcraft-webapp:
     dependencies:
+      '@storyteller/ui-gallery-modal':
+        specifier: workspace:*
+        version: link:../../libs/components/gallery-modal
       '@storyteller/ui-pricing-table':
         specifier: workspace:*
         version: link:../../libs/components/pricing-table

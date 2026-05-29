@@ -12,14 +12,15 @@ import {
 import { webappToastAdapter } from "./adapters/toast-adapter";
 import { webappAuthUserAdapter } from "./adapters/auth-user-adapter";
 import { webappMediaSourceAdapter } from "./adapters/media-source-adapter";
+import { useWebappAssetGalleryAdapter } from "./adapters/asset-gallery-adapter";
 
 // Webapp host for the @storyteller/ui-video-editor lib.
 //
-// Phase 1: bootstraps a default in-memory project so the editor shell
-// can mount with an active scene. Phase 2 will inject Artcraft-specific
-// adapters here (gallery, media source, auth) the same way pagescene
-// does at apps/artcraft-webapp/src/pages/pagescene/web-adapter.tsx, and
-// will load real projects via the ProjectStorageAdapter.
+// Bootstraps a default in-memory project so the editor shell can mount
+// with an active scene (replace with a real load via
+// ProjectStorageAdapter once the backend exists), and injects the
+// webapp adapters that route through Artcraft's MediaUploadApi /
+// MediaFilesApi / gallery modal / session store / toast event bus.
 
 function buildBootstrapProject({ id }: { id: string }): TProject {
   const scene = buildDefaultScene({ name: "Main scene", isMain: true });
@@ -47,13 +48,17 @@ export default function VideoEditorPage() {
   const { projectId } = useParams<{ projectId?: string }>();
   const [ready, setReady] = useState(false);
 
+  const { adapter: assetGalleryAdapter, modal: galleryModal } =
+    useWebappAssetGalleryAdapter();
+
   const adapters = useMemo<Partial<VideoEditorAdapters>>(
     () => ({
       toast: webappToastAdapter,
       authUser: webappAuthUserAdapter,
       mediaSource: webappMediaSourceAdapter,
+      assetGallery: assetGalleryAdapter,
     }),
-    [],
+    [assetGalleryAdapter],
   );
 
   useEffect(() => {
@@ -81,6 +86,7 @@ export default function VideoEditorPage() {
   return (
     <div className="h-full w-full overflow-hidden">
       <VideoEditor projectId={projectId} adapters={adapters} />
+      {galleryModal}
     </div>
   );
 }
