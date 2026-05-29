@@ -101,6 +101,22 @@ export const webappMediaSourceAdapter: MediaSourceAdapter = {
   releaseResolved() {
     // no-op
   },
+
+  // Called by processMediaAssets when a fresh upload made it to the
+  // server but a later step failed (resolveMedia error, decode error)
+  // and the asset never landed in a project. Delete the orphan so the
+  // user's media library doesn't accumulate dangling entries.
+  async deleteHandle(handle) {
+    const response = await filesApi.DeleteMediaFileByToken({
+      mediaFileToken: handle.id,
+      asMod: false,
+    });
+    if (!response.success) {
+      throw new Error(
+        response.errorMessage || `Failed to delete media ${handle.id}`,
+      );
+    }
+  },
 };
 
 // Re-exported so other adapters in this folder (e.g. asset gallery)

@@ -19,4 +19,11 @@ export interface MediaSourceAdapter {
   // For blob: URLs the default impl revokes them; HTTP-backed impls
   // can no-op.
   releaseResolved?(resolved: ResolvedMedia): void;
+  // Called when an uploaded handle should be torn down — e.g. when
+  // post-upload processing fails (probe error, decode error) and the
+  // editor never commits the asset to a project. Hosts that back
+  // uploads with persistent storage (Artcraft media library, S3 bucket)
+  // should delete the resource here so failed imports don't leak files.
+  // Local/blob-URL impls can no-op.
+  deleteHandle?(handle: MediaHandle): Promise<void>;
 }

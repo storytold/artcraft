@@ -116,6 +116,10 @@ export async function processMediaAssets({
     let hasAudio: boolean | undefined;
     let handle: MediaHandle | undefined;
     let resolved: ResolvedMedia | undefined;
+    // True only for handles we obtained via uploadLocalFile in this
+    // call — host-provided handles in `existingHandles` must not be
+    // deleted on failure (the host owns them).
+    let ownsHandle = false;
 
     try {
       if (fileType === "image") {
@@ -157,7 +161,12 @@ export async function processMediaAssets({
       }
 
       const existing = existingHandles?.[index];
-      handle = existing ?? (await mediaSource.uploadLocalFile(file));
+      if (existing) {
+        handle = existing;
+      } else {
+        handle = await mediaSource.uploadLocalFile(file);
+        ownsHandle = true;
+      }
       resolved = await mediaSource.resolveMedia(handle);
 
       processedAssets.push({
@@ -186,6 +195,21 @@ export async function processMediaAssets({
       toast.error(`Failed to process ${file.name}`);
       if (resolved && mediaSource.releaseResolved) {
         mediaSource.releaseResolved(resolved);
+      }
+      // If we minted this handle (uploadLocalFile succeeded but a later
+      // step in the try block threw — typically resolveMedia), ask the
+      // adapter to delete it so the user's media library doesn't grow
+      // a dangling entry for an asset that never made it into a project.
+      if (handle && ownsHandle && mediaSource.deleteHandle) {
+        try {
+          await mediaSource.deleteHandle(handle);
+        } catch (deleteError) {
+          console.error(
+            "deleteHandle failed during rollback:",
+            handle.id,
+            deleteError,
+          );
+        }
       }
     }
   }
