@@ -95,8 +95,8 @@ function EditorLayout() {
   // RendererManager.isDegraded).
   //
   // The actions / keybindings / paste-media listeners live in
-  // ReadyEditorLayout below so they only attach once gpuReady; before
-  // the gate flips, a Space/Delete keypress or a media paste would
+  // ReadyEditorLayout below so they only attach once both gates are
+  // open; before then, a Space/Delete keypress or a media paste would
   // dispatch against an editor whose preview canvas hasn't mounted.
   const [gpuReady, setGpuReady] = useState(false);
   useEffect(() => {
@@ -109,7 +109,17 @@ function EditorLayout() {
     };
   }, []);
 
-  if (!gpuReady) return null;
+  // Also gate on the host having bootstrapped a project. Panels read
+  // editor.scenes.getActiveScene() / editor.project.getActive() on
+  // mount; without a project they crash with "No active scene". Hosts
+  // can bootstrap via setActiveProject at any time — this gate flips
+  // as soon as they do. Avoids the historical pattern of hosts having
+  // to render <VideoEditor> conditionally on their own ready state.
+  const hasProject = useEditor(
+    (editor) => editor.project.getActive() !== null,
+  );
+
+  if (!gpuReady || !hasProject) return null;
   return <ReadyEditorLayout />;
 }
 

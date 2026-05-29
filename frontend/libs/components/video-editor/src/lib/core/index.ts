@@ -82,6 +82,11 @@ export class EditorCore {
     this.save.start();
   }
 
+  // First-call wins. Subsequent calls return the existing instance
+  // regardless of the adapters supplied, so the typical host pattern
+  // ("explicit initialize before VideoEditor mounts, then again from
+  // EditorProvider") is safe — the host's adapter bundle stays in
+  // effect. Hosts that want to swap adapters should call reset() first.
   static initialize({
     adapters,
   }: {

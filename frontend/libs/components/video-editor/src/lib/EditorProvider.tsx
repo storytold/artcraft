@@ -26,8 +26,11 @@ export function EditorProvider({ adapters, children }: EditorProviderProps) {
 
   // Bootstrap EditorCore with the resolved adapter bundle. Commands
   // and managers read `EditorCore.getInstance().adapters.X` after
-  // this. Re-initializing on adapter changes resets the singleton —
-  // hosts that need hot-swap behavior should remount.
+  // this. EditorCore.initialize is first-wins idempotent — a host that
+  // calls initialize before mounting <VideoEditor> (the recommended
+  // pattern, to lock in their adapters before any getInstance() race)
+  // wins; this call is a no-op. Hosts that want to hot-swap adapters
+  // should call EditorCore.reset() first then remount.
   useMemo(() => {
     EditorCore.initialize({ adapters: resolved });
   }, [resolved]);
