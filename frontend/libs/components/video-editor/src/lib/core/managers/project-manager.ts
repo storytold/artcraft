@@ -1,3 +1,4 @@
+import type { FrameRate } from "opencut-wasm";
 import type { EditorCore } from "../index";
 import type { TProject, TProjectSettings, TTimelineViewState } from "../../project/types";
 import type { MediaAsset } from "../../media/types";
@@ -7,6 +8,7 @@ import type {
   ExportResult,
 } from "../../export";
 import { UpdateProjectSettingsCommand } from "../../commands/project";
+import { getRaisedProjectFpsForImportedMedia } from "../../fps/utils";
 
 // Thin adapter-delegating ProjectManager. The OpenCut original (707
 // LOC) handled IndexedDB CRUD, autosave migrations, project bytes
@@ -138,12 +140,27 @@ export class ProjectManager {
     return this.active?.timelineViewState;
   }
 
-  // FPS-ratchet: bump project FPS up to the highest imported clip FPS
-  // if the project was created at a lower rate. Verbatim with OpenCut
-  // we'd compare against the highest of the imported media. Until
-  // those helpers port, this is a no-op — the host can override.
-  ratchetFpsForImportedMedia(_args: { importedAssets: MediaAsset[] }): void {
-    // No-op until FPS helpers port.
+  // Bump project FPS up to the highest imported clip FPS if the project
+  // was created at a lower rate. Returns the new FrameRate if a bump
+  // happened (so the caller can record it for undo) or null if the
+  // existing rate already covers the imported media.
+  ratchetFpsForImportedMedia({
+    importedAssets,
+  }: {
+    importedAssets: MediaAsset[];
+  }): FrameRate | null {
+    if (!this.active) return null;
+    const raised = getRaisedProjectFpsForImportedMedia({
+      currentFps: this.active.settings.fps,
+      importedAssets,
+    });
+    if (!raised) return null;
+    this.active = {
+      ...this.active,
+      settings: { ...this.active.settings, fps: raised },
+    };
+    this.notify();
+    return raised;
   }
 
   // --- Project lifecycle ---

@@ -49,12 +49,29 @@ export class AddMediaAssetCommand extends Command {
   }
 
   undo(): void {
-    if (this.savedAssets) {
-      const editor = EditorCore.getInstance();
-      editor.media.setAssets({ assets: this.savedAssets });
+    if (!this.savedAssets) return;
+    const editor = EditorCore.getInstance();
+    editor.media.setAssets({ assets: this.savedAssets });
 
-      // Persistence handled by host via ProjectStorageAdapter
+    // If execute() ratcheted the project FPS up to accommodate this
+    // media, roll it back. previousProjectFps is the rate the project
+    // had before this command ran.
+    if (this.appliedProjectFps && this.previousProjectFps) {
+      const activeProject = editor.project.getActive();
+      if (activeProject) {
+        editor.project.setActiveProject({
+          project: {
+            ...activeProject,
+            settings: {
+              ...activeProject.settings,
+              fps: this.previousProjectFps,
+            },
+          },
+        });
+      }
     }
+
+    // Persistence handled by host via ProjectStorageAdapter
   }
 
   getAssetId(): string {
