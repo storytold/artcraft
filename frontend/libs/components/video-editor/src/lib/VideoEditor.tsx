@@ -1,6 +1,7 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { EditorProvider } from "./EditorProvider";
 import type { VideoEditorAdapters } from "./adapters";
+import { initializeGpuRenderer } from "./services/renderer/gpu-renderer";
 import {
   ResizablePanelGroup,
   ResizablePanel,
@@ -86,6 +87,14 @@ function EditorLayout() {
   useEditorActions();
   useKeybindingsListener();
   usePasteMedia();
+  // Boot the wasm-backed GPU compositor. Idempotent (caches its own
+  // initPromise) and catches WebGPU failures internally, so it's safe
+  // to fire-and-forget. Without this, the first <PreviewCanvas> render
+  // panics with "GPU context not initialized" the moment opencut-wasm's
+  // initCompositor runs.
+  useEffect(() => {
+    void initializeGpuRenderer();
+  }, []);
   const { panels, setPanel } = usePanelStore();
   const activeScene = useEditor((editor) =>
     editor.scenes.getActiveSceneOrNull(),
