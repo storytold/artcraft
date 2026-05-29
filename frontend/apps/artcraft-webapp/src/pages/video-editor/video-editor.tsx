@@ -12,6 +12,7 @@ import {
 import { webappToastAdapter } from "./adapters/toast-adapter";
 import { webappAuthUserAdapter } from "./adapters/auth-user-adapter";
 import { webappMediaSourceAdapter } from "./adapters/media-source-adapter";
+import { webappExportSinkAdapter } from "./adapters/export-sink-adapter";
 import { useWebappAssetGalleryAdapter } from "./adapters/asset-gallery-adapter";
 
 // Webapp host for the @storyteller/ui-video-editor lib.
@@ -57,6 +58,7 @@ export default function VideoEditorPage() {
       authUser: webappAuthUserAdapter,
       mediaSource: webappMediaSourceAdapter,
       assetGallery: assetGalleryAdapter,
+      exportSink: webappExportSinkAdapter,
     }),
     [assetGalleryAdapter],
   );
