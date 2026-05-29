@@ -87,7 +87,9 @@ export class EditorCore {
   }: {
     adapters: VideoEditorAdapters;
   }): EditorCore {
-    EditorCore.instance = new EditorCore(adapters);
+    if (!EditorCore.instance) {
+      EditorCore.instance = new EditorCore(adapters);
+    }
     return EditorCore.instance;
   }
 
