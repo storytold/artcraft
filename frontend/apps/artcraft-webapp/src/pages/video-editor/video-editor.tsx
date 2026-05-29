@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import {
   VideoEditor,
@@ -63,6 +63,13 @@ export default function VideoEditorPage() {
     [assetGalleryAdapter],
   );
 
+  // Stable transient id for the "no projectId in route" case. Computed
+  // once on first mount and reused across StrictMode double-mount,
+  // adapter ref churn, and any other dep change so we never overwrite
+  // the in-memory project with a fresh bootstrap.
+  const transientIdRef = useRef<string>(`local-${crypto.randomUUID()}`);
+  const resolvedProjectId = projectId ?? transientIdRef.current;
+
   useEffect(() => {
     // Explicit initialize ensures the webapp adapters are installed
     // before getInstance() lazy-creates with defaults. EditorProvider's
@@ -72,16 +79,20 @@ export default function VideoEditorPage() {
       adapters: { ...createDefaultAdapters(), ...adapters },
     });
     const editor = EditorCore.getInstance();
-    const project = buildBootstrapProject({
-      id: projectId ?? `local-${Date.now()}`,
-    });
-    editor.project.setActiveProject({ project });
-    editor.scenes.initializeScenes({
-      scenes: project.scenes,
-      currentSceneId: project.currentSceneId,
-    });
+
+    // Bootstrap only when the active project doesn't already match the
+    // requested id. StrictMode mount → unmount → re-mount with the same
+    // id is a no-op; a route nav to a different :projectId reloads.
+    if (editor.project.getActive()?.metadata.id !== resolvedProjectId) {
+      const project = buildBootstrapProject({ id: resolvedProjectId });
+      editor.project.setActiveProject({ project });
+      editor.scenes.initializeScenes({
+        scenes: project.scenes,
+        currentSceneId: project.currentSceneId,
+      });
+    }
     setReady(true);
-  }, [projectId, adapters]);
+  }, [resolvedProjectId, adapters]);
 
   if (!ready) return null;
 
