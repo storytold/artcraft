@@ -16,6 +16,8 @@ import { MobileGate } from "./components/editor/mobile-gate";
 import { usePanelStore } from "./editor/panel-store";
 import { usePasteMedia } from "./media/use-paste-media";
 import { useEditor } from "./editor/use-editor";
+import { useEditorActions } from "./actions/use-editor-actions";
+import { useKeybindingsListener } from "./actions/use-keybindings";
 import { Button } from "./components/ui/button";
 import { Cancel01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
@@ -81,6 +83,8 @@ function DegradedRendererBanner() {
 }
 
 function EditorLayout() {
+  useEditorActions();
+  useKeybindingsListener();
   usePasteMedia();
   const { panels, setPanel } = usePanelStore();
   const activeScene = useEditor((editor) =>
