@@ -63,9 +63,25 @@ async function uploadToLibrary(artifact: ExportArtifact): Promise<void> {
   }
 }
 
+// In-flight gate keyed by filename. Without this, double-clicking
+// Export or any concurrent invocation launches two simultaneous
+// UploadNewVideo / UploadAudio / UploadImage calls for the same Blob;
+// both succeed, the user's library ends up with two identical entries
+// and the user sees duplicate success toasts.
+const inFlight = new Set<string>();
+
 export const webappExportSinkAdapter: ExportSinkAdapter = {
   async accept(artifact) {
     const downloadUrl = triggerDownload(artifact);
+
+    if (inFlight.has(artifact.filename)) {
+      // Download still happens (user pressed Export, they should get
+      // the file). Just skip the duplicate upload + toast.
+      // Revoke the URL after a brief delay — no upload to chain to.
+      setTimeout(() => URL.revokeObjectURL(downloadUrl), 1000);
+      return artifact.filename;
+    }
+    inFlight.add(artifact.filename);
 
     // Don't await — let the upload happen in the background so the
     // export popover can close immediately. Surface success/failure
@@ -89,6 +105,7 @@ export const webappExportSinkAdapter: ExportSinkAdapter = {
         );
       })
       .finally(() => {
+        inFlight.delete(artifact.filename);
         URL.revokeObjectURL(downloadUrl);
       });
 
