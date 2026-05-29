@@ -1,12 +1,17 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
 import {
   VideoEditor,
   EditorCore,
   buildDefaultScene,
+  createDefaultAdapters,
   ZERO_MEDIA_TIME,
   type TProject,
+  type VideoEditorAdapters,
 } from "@storyteller/ui-video-editor";
+import { webappToastAdapter } from "./adapters/toast-adapter";
+import { webappAuthUserAdapter } from "./adapters/auth-user-adapter";
+import { webappMediaSourceAdapter } from "./adapters/media-source-adapter";
 
 // Webapp host for the @storyteller/ui-video-editor lib.
 //
@@ -42,7 +47,23 @@ export default function VideoEditorPage() {
   const { projectId } = useParams<{ projectId?: string }>();
   const [ready, setReady] = useState(false);
 
+  const adapters = useMemo<Partial<VideoEditorAdapters>>(
+    () => ({
+      toast: webappToastAdapter,
+      authUser: webappAuthUserAdapter,
+      mediaSource: webappMediaSourceAdapter,
+    }),
+    [],
+  );
+
   useEffect(() => {
+    // Explicit initialize ensures the webapp adapters are installed
+    // before getInstance() lazy-creates with defaults. EditorProvider's
+    // own initialize call (later, when <VideoEditor> mounts) is a no-op
+    // because the instance now exists with our adapter bundle.
+    EditorCore.initialize({
+      adapters: { ...createDefaultAdapters(), ...adapters },
+    });
     const editor = EditorCore.getInstance();
     const project = buildBootstrapProject({
       id: projectId ?? `local-${Date.now()}`,
@@ -53,13 +74,13 @@ export default function VideoEditorPage() {
       currentSceneId: project.currentSceneId,
     });
     setReady(true);
-  }, [projectId]);
+  }, [projectId, adapters]);
 
   if (!ready) return null;
 
   return (
     <div className="h-full w-full overflow-hidden">
-      <VideoEditor projectId={projectId} />
+      <VideoEditor projectId={projectId} adapters={adapters} />
     </div>
   );
 }
