@@ -57,7 +57,7 @@ import { HugeiconsIcon, type IconSvgElement } from "@hugeicons/react";
 
 export function MediaView() {
   const editor = useEditor();
-  const { toast } = useEditorAdapters();
+  const { toast, mediaSource } = useEditorAdapters();
   const mediaFiles = useEditor((e) => e.media.getAssets());
   const activeProject = useEditor((e) => e.project.getActive());
 
@@ -91,6 +91,7 @@ export function MediaView() {
           const processedAssets = await processMediaAssets({
             files,
             toast,
+            mediaSource,
             onProgress: ({ progress }) => setProgress(progress),
           });
           for (const asset of processedAssets) {

@@ -1,4 +1,6 @@
 import type { ToastAdapter } from "../adapters/toast";
+import type { MediaSourceAdapter } from "../adapters/media-source";
+import type { MediaHandle, ResolvedMedia } from "../adapters/types";
 import { getMediaTypeFromFile } from "./media-utils";
 import type { MediaAsset } from "./types";
 import { readVideoFile } from "./mediabunny";
@@ -10,8 +12,14 @@ import { renderThumbnailDataUrl } from "./thumbnail";
 // adapter contract gives that responsibility to the host's
 // ProjectStorageAdapter / MediaSourceAdapter, so we no longer gate
 // uploads on browser storage availability here.
+//
+// Each file goes through MediaSourceAdapter.uploadLocalFile to get a
+// stable handle (in the default impl, that's a blob URL keyed in an
+// in-memory map; for Artcraft hosts, an upload returns a media token).
+// The asset's `id` is the handle's id so the editor can re-resolve the
+// URL via MediaSourceAdapter.resolveMedia on a subsequent session.
 
-export interface ProcessedMediaAsset extends Omit<MediaAsset, "id"> {}
+export interface ProcessedMediaAsset extends MediaAsset {}
 
 const getUnsupportedVideoDescription = ({
   codec,
@@ -71,11 +79,19 @@ async function generateImageThumbnail({
 export async function processMediaAssets({
   files,
   toast,
+  mediaSource,
   onProgress,
+  existingHandles,
 }: {
   files: FileList | File[];
   toast: ToastAdapter;
+  mediaSource: MediaSourceAdapter;
   onProgress?: ({ progress }: { progress: number }) => void;
+  // Optional: skip upload for files whose handle is already known
+  // (e.g. the gallery picker path, where the user is reimporting an
+  // asset already stored in the host's media library). Aligned by
+  // index with `files`.
+  existingHandles?: ReadonlyArray<MediaHandle | undefined>;
 }): Promise<ProcessedMediaAsset[]> {
   const fileArray = Array.from(files);
   const processedAssets: ProcessedMediaAsset[] = [];
@@ -83,7 +99,8 @@ export async function processMediaAssets({
   const total = fileArray.length;
   let completed = 0;
 
-  for (const file of fileArray) {
+  for (let index = 0; index < fileArray.length; index++) {
+    const file = fileArray[index];
     const fileType = getMediaTypeFromFile({ file });
 
     if (!fileType) {
@@ -91,13 +108,14 @@ export async function processMediaAssets({
       continue;
     }
 
-    const url = URL.createObjectURL(file);
     let thumbnailUrl: string | undefined;
     let duration: number | undefined;
     let width: number | undefined;
     let height: number | undefined;
     let fps: number | undefined;
     let hasAudio: boolean | undefined;
+    let handle: MediaHandle | undefined;
+    let resolved: ResolvedMedia | undefined;
 
     try {
       if (fileType === "image") {
@@ -138,11 +156,16 @@ export async function processMediaAssets({
         duration = await getMediaDuration({ file });
       }
 
+      const existing = existingHandles?.[index];
+      handle = existing ?? (await mediaSource.uploadLocalFile(file));
+      resolved = await mediaSource.resolveMedia(handle);
+
       processedAssets.push({
+        id: handle.id,
         name: file.name,
         type: fileType,
         file,
-        url,
+        url: resolved.url,
         thumbnailUrl,
         duration,
         width,
@@ -161,7 +184,9 @@ export async function processMediaAssets({
     } catch (error) {
       console.error("Error processing file:", file.name, error);
       toast.error(`Failed to process ${file.name}`);
-      URL.revokeObjectURL(url);
+      if (resolved && mediaSource.releaseResolved) {
+        mediaSource.releaseResolved(resolved);
+      }
     }
   }
 

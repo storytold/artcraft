@@ -39,7 +39,7 @@ function extractMediaFilesFromClipboard({
 
 export function usePasteMedia() {
   const editor = useEditor();
-  const { toast } = useEditorAdapters();
+  const { toast, mediaSource } = useEditorAdapters();
 
   useEffect(() => {
     const handlePaste = async (event: ClipboardEvent) => {
@@ -68,7 +68,11 @@ export function usePasteMedia() {
           filesCount: files.length,
           toast,
           promise: async () => {
-            const processedAssets = await processMediaAssets({ files, toast });
+            const processedAssets = await processMediaAssets({
+              files,
+              toast,
+              mediaSource,
+            });
             const startTime = editor.playback.getCurrentTime();
 
             for (const asset of processedAssets) {
@@ -116,5 +120,5 @@ export function usePasteMedia() {
 
     window.addEventListener("paste", handlePaste);
     return () => window.removeEventListener("paste", handlePaste);
-  }, [editor, toast]);
+  }, [editor, toast, mediaSource]);
 }

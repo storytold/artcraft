@@ -1,6 +1,5 @@
 import type { EditorCore } from "../index";
 import type { MediaAsset } from "../../media/types";
-import { generateUUID } from "../../utils/id";
 import { videoCache } from "../../services/video-cache";
 import { waveformCache } from "../../services/waveform-cache";
 import { BatchCommand } from "../../commands";
@@ -20,28 +19,27 @@ export class MediaManager {
 
   constructor(private editor: EditorCore) {}
 
+  // The asset's `id` is the caller-provided MediaHandle id. Pre-Phase-2
+  // this was a generated UUID; now uploads go through MediaSourceAdapter
+  // and the handle's id is the stable identifier the editor stores in
+  // project state.
   async addMediaAsset({
     asset,
   }: {
     projectId?: string;
-    asset: Omit<MediaAsset, "id">;
+    asset: MediaAsset;
   }): Promise<MediaAsset | null> {
-    const newAsset: MediaAsset = {
-      ...asset,
-      id: generateUUID(),
-    };
-
-    this.assets = [...this.assets, newAsset];
+    this.assets = [...this.assets, asset];
     this.notify();
 
     try {
       this.editor.project.ratchetFpsForImportedMedia({
-        importedAssets: [newAsset],
+        importedAssets: [asset],
       });
-      return newAsset;
+      return asset;
     } catch (error) {
       console.error("Failed to register media asset:", error);
-      this.assets = this.assets.filter((asset) => asset.id !== newAsset.id);
+      this.assets = this.assets.filter((existing) => existing.id !== asset.id);
       this.notify();
       this.editor.adapters.toast.error("Failed to add media", {
         description: error instanceof Error ? error.message : undefined,

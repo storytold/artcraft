@@ -1,13 +1,10 @@
 import { Command, type CommandResult } from "../base-command";
 import { EditorCore } from "../../core";
 import type { MediaAsset } from "../../media/types";
-import { generateUUID } from "../../utils/id";
 import type { FrameRate } from "opencut-wasm";
 
 export class AddMediaAssetCommand extends Command {
-  private assetId: string;
   private savedAssets: MediaAsset[] | null = null;
-  private createdAsset: MediaAsset | null = null;
   private previousProjectFps: FrameRate | null = null;
   private appliedProjectFps: FrameRate | null = null;
 
@@ -16,32 +13,26 @@ export class AddMediaAssetCommand extends Command {
     asset,
   }: {
     projectId: string;
-    asset: Omit<MediaAsset, "id">;
+    asset: MediaAsset;
   }) {
     super();
     this.projectId = projectId;
     this.asset = asset;
-    this.assetId = generateUUID();
   }
 
   private projectId: string;
-  private asset: Omit<MediaAsset, "id">;
+  private asset: MediaAsset;
 
   execute(): CommandResult | undefined {
     const editor = EditorCore.getInstance();
     this.savedAssets = [...editor.media.getAssets()];
 
-    this.createdAsset = {
-      ...this.asset,
-      id: this.assetId,
-    };
-
     editor.media.setAssets({
-      assets: [...this.savedAssets, this.createdAsset],
+      assets: [...this.savedAssets, this.asset],
     });
     this.previousProjectFps = editor.project.getActiveOrNull()?.settings.fps ?? null;
     this.appliedProjectFps = editor.project.ratchetFpsForImportedMedia({
-      importedAssets: [this.createdAsset],
+      importedAssets: [this.asset],
     });
 
     // Persistence handled by host via ProjectStorageAdapter
@@ -75,6 +66,6 @@ export class AddMediaAssetCommand extends Command {
   }
 
   getAssetId(): string {
-    return this.assetId;
+    return this.asset.id;
   }
 }

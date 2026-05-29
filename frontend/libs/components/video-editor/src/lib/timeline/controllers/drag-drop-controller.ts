@@ -27,7 +27,10 @@ import type {
 } from "../types";
 import type { TimelineDragData } from "../drag";
 import type { MediaAsset } from "../../media/types";
+import type { ProcessedMediaAsset } from "../../media/processing";
 import { roundFrameTime, type MediaTime } from "../../wasm";
+
+export type { ProcessedMediaAsset } from "../../media/processing";
 
 // External file drop processing (drag from OS) is wired through the
 // host via processFiles + showUploadToast. The lib ships baseline
@@ -35,15 +38,17 @@ import { roundFrameTime, type MediaTime } from "../../wasm";
 // `media/upload-toast.ts` (`showMediaUploadToast`); hosts that want the
 // default pipeline pass them through here:
 //   processFiles: ({ files }) =>
-//     processMediaAssets({ files, toast: editor.adapters.toast })
+//     processMediaAssets({
+//       files,
+//       toast: editor.adapters.toast,
+//       mediaSource: editor.adapters.mediaSource,
+//     })
 //   showUploadToast: ({ filesCount, promise }) =>
 //     showMediaUploadToast({ filesCount, toast: editor.adapters.toast, promise })
 // Hosts with custom decoding (e.g. server-side transcode) shadow with
 // their own pipeline.
 
 // --- Config ---
-
-export interface ProcessedMediaAsset extends Omit<MediaAsset, "id"> {}
 
 export interface DragDropConfig {
   zoomLevel: number;
