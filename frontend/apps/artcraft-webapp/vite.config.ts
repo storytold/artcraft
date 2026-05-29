@@ -1,6 +1,8 @@
 /// <reference types='vitest' />
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import wasm from 'vite-plugin-wasm';
+import topLevelAwait from 'vite-plugin-top-level-await';
 import { nxViteTsPaths } from '@nx/vite/plugins/nx-tsconfig-paths.plugin';
 import { execSync } from 'child_process';
 import path from 'path';
@@ -42,7 +44,7 @@ export default defineConfig(() => ({
     port: 4301,
     host: 'localhost',
   },
-  plugins: [generateNewsPlugin(), nxViteTsPaths(), react()],
+  plugins: [generateNewsPlugin(), nxViteTsPaths(), react(), wasm(), topLevelAwait()],
   // Uncomment this if you are using workers.
   // worker: {
   //  plugins: [ nxViteTsPaths() ],
