@@ -6,6 +6,7 @@ import {
   faVideo,
   faImage,
   faCube,
+  faFilm,
   faWandMagicSparkles,
   faGrid2,
   faGraduationCap,
@@ -52,6 +53,7 @@ const CREATE_ITEMS_STATIC: NavItem[] = [
   { label: "Image", href: "/create-image", icon: faImage },
   { label: "Video", href: "/create-video", icon: faVideo },
   { label: "Edit 3D", href: "/edit-3d", icon: faCube },
+  { label: "Edit Video", href: "/video-editor", icon: faFilm },
   {
     label: "BG Change",
     href: "/background-change",
