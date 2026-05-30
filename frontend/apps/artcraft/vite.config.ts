@@ -3,6 +3,7 @@ import tsconfigPaths from "vite-tsconfig-paths";
 import path from "path";
 import { resolve } from "node:path";
 import wasm from "vite-plugin-wasm";
+import topLevelAwait from "vite-plugin-top-level-await";
 
 // NB(bt): This configuration file can specify bundler rollup options, compiler plugins,
 // import path resolution, dev server HTTP headers, CORS options, path rewriting, etc.
@@ -56,7 +57,7 @@ export default defineConfig({
       },
     },
   },
-  plugins: [sparkWasmDataUrlFix(), tsconfigPaths(), wasm()],
+  plugins: [sparkWasmDataUrlFix(), tsconfigPaths(), wasm(), topLevelAwait()],
   server: {
     fs: {
       allow: [workspaceRoot],
