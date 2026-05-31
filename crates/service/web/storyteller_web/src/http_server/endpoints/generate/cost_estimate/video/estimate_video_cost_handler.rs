@@ -131,6 +131,7 @@ fn map_video_model(model: CommonVideoModel) -> Result<RouterVideoModel, HandlerE
   let router_model = match model {
     CommonVideoModel::GrokVideo => RouterVideoModel::GrokVideo,
     CommonVideoModel::GrokImagineVideo => RouterVideoModel::GrokImagineVideo,
+    CommonVideoModel::GrokImagineVideo1p5 => RouterVideoModel::GrokImagineVideo1p5,
     CommonVideoModel::Kling16Pro => RouterVideoModel::Kling16Pro,
     CommonVideoModel::Kling21Pro => RouterVideoModel::Kling21Pro,
     CommonVideoModel::Kling21Master => RouterVideoModel::Kling21Master,

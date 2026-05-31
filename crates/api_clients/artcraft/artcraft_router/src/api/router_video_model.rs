@@ -11,6 +11,9 @@ pub enum RouterVideoModel {
   #[serde(rename = "grok_imagine_video")]
   GrokImagineVideo,
 
+  #[serde(rename = "grok_imagine_video_1p5")]
+  GrokImagineVideo1p5,
+
   #[serde(rename = "kling_1p6_pro")]
   Kling16Pro,
 

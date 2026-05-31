@@ -14,6 +14,9 @@ pub enum CommonVideoModel {
   #[serde(rename = "grok_imagine_video")]
   GrokImagineVideo,
 
+  #[serde(rename = "grok_imagine_video_1p5")]
+  GrokImagineVideo1p5,
+
   #[serde(rename = "kling_1p6_pro")]
   Kling16Pro,
 
@@ -106,6 +109,7 @@ impl CommonVideoModel {
     match self {
       Self::GrokVideo => CommonModelType::GrokVideo,
       Self::GrokImagineVideo => CommonModelType::GrokImagineVideo,
+      Self::GrokImagineVideo1p5 => CommonModelType::GrokImagineVideo1p5,
       Self::Kling16Pro => CommonModelType::Kling16Pro,
       Self::Kling21Pro => CommonModelType::Kling21Pro,
       Self::Kling21Master => CommonModelType::Kling21Master,
@@ -147,6 +151,7 @@ mod tests {
   fn test_serialization() {
     assert_serialization(CommonVideoModel::GrokVideo, "grok_video");
     assert_serialization(CommonVideoModel::GrokImagineVideo, "grok_imagine_video");
+    assert_serialization(CommonVideoModel::GrokImagineVideo1p5, "grok_imagine_video_1p5");
     assert_serialization(CommonVideoModel::Kling16Pro, "kling_1p6_pro");
     assert_serialization(CommonVideoModel::Kling21Pro, "kling_2p1_pro");
     assert_serialization(CommonVideoModel::Kling21Master, "kling_2p1_master");
@@ -181,6 +186,7 @@ mod tests {
     let cases = [
       ("grok_video", CommonVideoModel::GrokVideo),
       ("grok_imagine_video", CommonVideoModel::GrokImagineVideo),
+      ("grok_imagine_video_1p5", CommonVideoModel::GrokImagineVideo1p5),
       ("kling_1p6_pro", CommonVideoModel::Kling16Pro),
       ("kling_2p1_pro", CommonVideoModel::Kling21Pro),
       ("kling_2p1_master", CommonVideoModel::Kling21Master),
@@ -222,6 +228,7 @@ mod tests {
     let all = [
       CommonVideoModel::GrokVideo,
       CommonVideoModel::GrokImagineVideo,
+      CommonVideoModel::GrokImagineVideo1p5,
       CommonVideoModel::Kling16Pro,
       CommonVideoModel::Kling21Pro,
       CommonVideoModel::Kling21Master,
@@ -262,6 +269,7 @@ mod tests {
     let models = [
       (CommonVideoModel::GrokVideo, CommonModelType::GrokVideo),
       (CommonVideoModel::GrokImagineVideo, CommonModelType::GrokImagineVideo),
+      (CommonVideoModel::GrokImagineVideo1p5, CommonModelType::GrokImagineVideo1p5),
       (CommonVideoModel::Kling16Pro, CommonModelType::Kling16Pro),
       (CommonVideoModel::Kling21Pro, CommonModelType::Kling21Pro),
       (CommonVideoModel::Kling21Master, CommonModelType::Kling21Master),

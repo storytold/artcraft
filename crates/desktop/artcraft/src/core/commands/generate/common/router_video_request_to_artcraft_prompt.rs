@@ -77,6 +77,7 @@ fn video_model_to_common_model_type(model: RouterVideoModel) -> Option<CommonMod
     RouterVideoModel::PreviewModel => Some(CommonModelType::PreviewModel),
     RouterVideoModel::PreviewModelFast => Some(CommonModelType::PreviewModelFast),
     RouterVideoModel::GrokImagineVideo => Some(CommonModelType::GrokImagineVideo),
+    RouterVideoModel::GrokImagineVideo1p5 => Some(CommonModelType::GrokImagineVideo1p5),
   }
 }
 
