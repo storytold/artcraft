@@ -54,17 +54,21 @@ pub fn build_grok_api_grok_imagine_video_1p5(
   let start_frame = resolve_url_to_image_source(builder.start_frame.take());
   let reference_images_supplied = builder.reference_images.take();
 
+  // xAI's v1.5 model explicitly does NOT accept `reference_images` (it only
+  // supports text-to-video and single-image-to-video). If the caller supplies
+  // reference images and no start_frame, promote the first reference image
+  // into `image` (image-to-video) and drop the rest.
   let (image, reference_images) = match (start_frame, reference_images_supplied) {
     (Some(img), Some(refs)) => {
       info!(
         "grok_imagine_video_1p5: both start_frame and reference_images supplied — \
-         preferring start_frame (image-to-video). Dropping {} reference images.",
+         preferring start_frame (image-to-video). Dropping {} reference image(s).",
         count_image_list_ref(&refs),
       );
       (Some(img), None)
     }
     (Some(img), None) => (Some(img), None),
-    (None, Some(refs)) => (None, resolve_url_list_to_image_sources(refs)),
+    (None, Some(refs)) => promote_first_reference_to_image(refs),
     (None, None) => (None, None),
   };
 
@@ -159,17 +163,40 @@ fn resolve_url_to_image_source(image_ref: Option<ImageRef>) -> Option<GrokVideoI
   }
 }
 
-fn resolve_url_list_to_image_sources(list_ref: ImageListRef) -> Option<Vec<GrokVideoImageSource>> {
+/// xAI's v1.5 model rejects `reference_images` entirely. When a caller has
+/// only supplied reference images (no start_frame), promote the first one
+/// to `image` so they at least get image-to-video, and drop the remainder
+/// with a log so it's visible in operator traces.
+fn promote_first_reference_to_image(
+  list_ref: ImageListRef,
+) -> (Option<GrokVideoImageSource>, Option<Vec<GrokVideoImageSource>>) {
   match list_ref {
-    ImageListRef::Urls(urls) if urls.is_empty() => None,
-    ImageListRef::Urls(urls) => Some(urls.into_iter().map(GrokVideoImageSource::Url).collect()),
+    ImageListRef::Urls(urls) if urls.is_empty() => (None, None),
+    ImageListRef::Urls(mut urls) => {
+      let first_url = urls.remove(0);
+      let dropped = urls.len();
+      if dropped > 0 {
+        info!(
+          "grok_imagine_video_1p5: v1.5 doesn't accept reference_images; promoting \
+           the first reference image to start_frame (image-to-video). Dropping {} \
+           additional reference image(s).",
+          dropped,
+        );
+      } else {
+        info!(
+          "grok_imagine_video_1p5: v1.5 doesn't accept reference_images; promoting \
+           the single reference image to start_frame (image-to-video).",
+        );
+      }
+      (Some(GrokVideoImageSource::Url(first_url)), None)
+    }
     ImageListRef::MediaFileTokens(tokens) => {
       info!(
         "grok_imagine_video_1p5: dropping {} MediaFileToken reference image(s) — \
          Grok only accepts public URLs. Resolve tokens to URLs upstream if needed.",
         tokens.len(),
       );
-      None
+      (None, None)
     }
   }
 }
@@ -431,14 +458,72 @@ mod tests {
     }
 
     #[test]
-    fn reference_image_urls_passed_through() {
-      let urls = vec!["https://example.com/a.png".to_string(), "https://example.com/b.png".to_string()];
+    fn multiple_reference_image_urls_promote_first_and_drop_rest() {
+      // xAI's v1.5 model rejects `reference_images`. The builder promotes the
+      // first reference to `image` and drops the remainder.
+      let urls = vec![
+        "https://example.com/a.png".to_string(),
+        "https://example.com/b.png".to_string(),
+        "https://example.com/c.png".to_string(),
+      ];
       let req = unwrap_request(make_builder(|b| {
         b.reference_images = Some(ImageListRef::Urls(urls.clone()));
       }));
-      let refs = req.request.reference_images.expect("reference_images should be set");
-      assert_eq!(refs.len(), 2);
-      assert!(req.request.image.is_none());
+      assert!(
+        req.request.reference_images.is_none(),
+        "reference_images must be None (xAI v1.5 rejects them)",
+      );
+      match &req.request.image {
+        Some(GrokVideoImageSource::Url(u)) => assert_eq!(u, "https://example.com/a.png"),
+        other => panic!("expected first reference image promoted to `image`, got {:?}", other),
+      }
+    }
+
+    #[test]
+    fn single_reference_image_url_promotes_to_image() {
+      let req = unwrap_request(make_builder(|b| {
+        b.reference_images = Some(ImageListRef::Urls(vec![
+          "https://example.com/only.png".to_string(),
+        ]));
+      }));
+      assert!(req.request.reference_images.is_none());
+      match &req.request.image {
+        Some(GrokVideoImageSource::Url(u)) => assert_eq!(u, "https://example.com/only.png"),
+        other => panic!("expected single reference promoted to `image`, got {:?}", other),
+      }
+    }
+
+    /// Replicates the production failure from 2026-05-31: storyteller-web
+    /// received `reference_image_media_tokens: [..., ...]` and routed it to
+    /// the v1.5 model, which rejected the request with
+    /// `reference_images is not supported for this model`. After the
+    /// promote-first fix, the resolved URLs go into `image` instead.
+    #[test]
+    fn reproduces_2026_05_31_two_ref_image_urls_no_start_frame() {
+      let req = unwrap_request(make_builder(|b| {
+        // Two URLs (the storyteller-web pipeline resolves media tokens to URLs
+        // before calling build2() on the GrokApi provider).
+        b.reference_images = Some(ImageListRef::Urls(vec![
+          "https://pub.example.com/media/a.png".to_string(),
+          "https://pub.example.com/media/b.png".to_string(),
+        ]));
+        b.start_frame = None;
+        b.resolution = Some(RouterResolution::SevenTwentyP);
+        b.aspect_ratio = Some(RouterAspectRatio::WideSixteenByNine);
+        b.duration_seconds = Some(5);
+      }));
+      // The fix: no `reference_images` ever reach xAI for v1.5.
+      assert!(
+        req.request.reference_images.is_none(),
+        "v1.5 must never send reference_images to xAI",
+      );
+      // The first reference is preserved as image-to-video so the user still
+      // gets a sensible result.
+      assert!(matches!(req.request.image, Some(GrokVideoImageSource::Url(_))));
+      assert_eq!(req.request.resolution, Some(GrokResolution::SevenTwentyP));
+      assert_eq!(req.request.aspect_ratio, Some(GrokAspectRatio::Landscape16x9));
+      assert_eq!(req.request.duration, Some(5));
+      assert_eq!(req.request.model, Some(GrokVideoModel::GrokImagineVideo1p5Preview));
     }
 
     #[test]
