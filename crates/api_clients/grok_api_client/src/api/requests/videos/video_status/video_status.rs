@@ -364,7 +364,8 @@ mod tests {
       api_key: &api_key,
       request: VideoStatusRequest {
         //request_id: "ff94f941-62a7-9966-92da-6b84d9eedb50".to_string(),
-        request_id: "4eea215a-9d21-9261-be1a-324409ec22c5".to_string(),
+        //request_id: "4eea215a-9d21-9261-be1a-324409ec22c5".to_string(),
+        request_id: "4d4a6185-209e-95f3-942b-510042637839".to_string(),
       },
     }).await;
 
