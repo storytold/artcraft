@@ -2,6 +2,7 @@ pub(crate) mod build_common;
 #[cfg(test)]
 mod parity_tests;
 pub mod grok_imagine_video;
+pub mod grok_imagine_video_1p5;
 pub mod happy_horse_1p0;
 pub mod kling_1_6_pro;
 pub mod kling_2_1_master;

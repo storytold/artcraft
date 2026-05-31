@@ -10,6 +10,7 @@ use crate::api::video_list_ref::VideoListRef;
 use crate::client::request_mismatch_mitigation_strategy::RequestMismatchMitigationStrategy;
 use crate::errors::artcraft_router_error::ArtcraftRouterError;
 use crate::generate::generate_video_v2::providers::artcraft::grok_imagine_video::build::build_artcraft_grok_imagine_video;
+use crate::generate::generate_video_v2::providers::artcraft::grok_imagine_video_1p5::build::build_artcraft_grok_imagine_video_1p5;
 use crate::generate::generate_video_v2::providers::artcraft::happy_horse_1p0::build::build_artcraft_happy_horse_1p0;
 use crate::generate::generate_video_v2::providers::artcraft::kling_1_6_pro::build::build_artcraft_kling_1_6_pro;
 use crate::generate::generate_video_v2::providers::artcraft::kling_2_1_master::build::build_artcraft_kling_2_1_master;
@@ -152,6 +153,7 @@ impl GenerateVideoRequestBuilder {
     match (self.provider, self.model) {
       // Artcraft
       (RouterProvider::Artcraft, RouterVideoModel::GrokImagineVideo) => build_artcraft_grok_imagine_video(self),
+      (RouterProvider::Artcraft, RouterVideoModel::GrokImagineVideo1p5) => build_artcraft_grok_imagine_video_1p5(self),
       (RouterProvider::Artcraft, RouterVideoModel::HappyHorse1p0) => build_artcraft_happy_horse_1p0(self),
       (RouterProvider::Artcraft, RouterVideoModel::Kling16Pro) => build_artcraft_kling_1_6_pro(self),
       (RouterProvider::Artcraft, RouterVideoModel::Kling21Master) => build_artcraft_kling_2_1_master(self),

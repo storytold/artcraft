@@ -5,6 +5,8 @@ use crate::generate::generate_video::generate_video_response::GenerateVideoRespo
 use crate::generate::generate_video::video_generation_cost_estimate::VideoGenerationCostEstimate;
 use crate::generate::generate_video_v2::providers::artcraft::grok_imagine_video::cost::ArtcraftGrokImagineVideoCostState;
 use crate::generate::generate_video_v2::providers::artcraft::grok_imagine_video::request::ArtcraftGrokImagineVideoRequestState;
+use crate::generate::generate_video_v2::providers::artcraft::grok_imagine_video_1p5::cost::ArtcraftGrokImagineVideo1p5CostState;
+use crate::generate::generate_video_v2::providers::artcraft::grok_imagine_video_1p5::request::ArtcraftGrokImagineVideo1p5RequestState;
 use crate::generate::generate_video_v2::providers::artcraft::happy_horse_1p0::cost::ArtcraftHappyHorse1p0CostState;
 use crate::generate::generate_video_v2::providers::artcraft::happy_horse_1p0::request::ArtcraftHappyHorse1p0RequestState;
 use crate::generate::generate_video_v2::providers::artcraft::kling_1_6_pro::cost::ArtcraftKling16ProCostState;
@@ -109,6 +111,7 @@ use crate::generate::generate_video_v2::providers::kinovi::seedance_2p0_fast::re
 #[derive(Clone, Debug)]
 pub enum VideoGenerationRequest {
   ArtcraftGrokImagineVideo(ArtcraftGrokImagineVideoRequestState),
+  ArtcraftGrokImagineVideo1p5(ArtcraftGrokImagineVideo1p5RequestState),
   ArtcraftHappyHorse1p0(ArtcraftHappyHorse1p0RequestState),
   ArtcraftKling16Pro(ArtcraftKling16ProRequestState),
   ArtcraftKling21Master(ArtcraftKling21MasterRequestState),
@@ -166,6 +169,7 @@ impl VideoGenerationRequest {
   pub fn get_provider(&self) -> RouterProvider {
     match self {
       Self::ArtcraftGrokImagineVideo(_) => RouterProvider::Artcraft,
+      Self::ArtcraftGrokImagineVideo1p5(_) => RouterProvider::Artcraft,
       Self::ArtcraftHappyHorse1p0(_) => RouterProvider::Artcraft,
       Self::ArtcraftKling16Pro(_) => RouterProvider::Artcraft,
       Self::ArtcraftKling21Master(_) => RouterProvider::Artcraft,
@@ -223,6 +227,7 @@ impl VideoGenerationRequest {
   pub fn estimate_cost(&self) -> Result<VideoGenerationCostEstimate, ArtcraftRouterError> {
     match self {
       VideoGenerationRequest::ArtcraftGrokImagineVideo(request) => Ok(ArtcraftGrokImagineVideoCostState::from_request(request).estimate_cost()),
+      VideoGenerationRequest::ArtcraftGrokImagineVideo1p5(request) => Ok(ArtcraftGrokImagineVideo1p5CostState::from_request(request).estimate_cost()),
       VideoGenerationRequest::ArtcraftHappyHorse1p0(request) => Ok(ArtcraftHappyHorse1p0CostState::from_request(request).estimate_cost()),
       VideoGenerationRequest::ArtcraftKling16Pro(request) => Ok(ArtcraftKling16ProCostState::from_request(request).estimate_cost()),
       VideoGenerationRequest::ArtcraftKling21Master(request) => Ok(ArtcraftKling21MasterCostState::from_request(request).estimate_cost()),
@@ -281,6 +286,10 @@ impl VideoGenerationRequest {
   pub async fn send_request(&self, client: &RouterClient) -> Result<GenerateVideoResponse, ArtcraftRouterError> {
     match self {
       VideoGenerationRequest::ArtcraftGrokImagineVideo(request) => {
+        let client_ref = client.get_artcraft_client_ref()?;
+        request.send(client_ref).await
+      },
+      VideoGenerationRequest::ArtcraftGrokImagineVideo1p5(request) => {
         let client_ref = client.get_artcraft_client_ref()?;
         request.send(client_ref).await
       },
