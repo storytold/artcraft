@@ -306,7 +306,8 @@ mod tests {
     let result = video_status(VideoStatusArgs {
       api_key: &api_key,
       request: VideoStatusRequest {
-        request_id: "e397ac83-c22f-90b1-9831-900c01497345".to_string(),
+        //request_id: "e397ac83-c22f-90b1-9831-900c01497345".to_string(),
+        request_id: "ce681bd0-133d-9cf3-975c-422d292d4e8e".to_string(),
       },
     }).await;
 

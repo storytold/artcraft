@@ -96,6 +96,19 @@ mod tests {
     assert!(matches!(response, GenerateVideoResponse::Grok(_)));
   }
 
+  #[tokio::test]
+  #[ignore] // requires real API key, incurs costs
+  async fn test_image_to_video_720p() {
+    let response = run_pipeline(GenerateVideoRequestBuilder {
+      prompt: Some("The dog leaps into the lake and splashes around.".to_string()),
+      start_frame: Some(ImageRef::Url(JUNO_AT_LAKE_IMAGE_URL.to_string())),
+      resolution: Some(RouterResolution::SevenTwentyP),
+      duration_seconds: Some(5),
+      ..grok_builder()
+    }).await;
+    assert!(matches!(response, GenerateVideoResponse::Grok(_)));
+  }
+
   fn grok_builder() -> GenerateVideoRequestBuilder {
     GenerateVideoRequestBuilder {
       model: RouterVideoModel::GrokImagineVideo1p5,
