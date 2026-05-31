@@ -145,7 +145,11 @@ export interface OmniGenVideoModelInfo {
   audio_references_max_total_duration_seconds: number | null;
   character_references_supported: boolean | null;
   character_references_max: number | null;
+  // Whether the model can generate from a text prompt at all (shows the prompt box).
   text_prompt_supported: boolean | null;
+  // Whether the model can generate from text ALONE. When false, a text prompt
+  // may still be used but an image (starting frame / reference) is also required.
+  text_to_video_supported: boolean | null;
   text_prompt_max_length: number | null;
   negative_text_prompt_supported: boolean | null;
   negative_text_prompt_max_length: number | null;

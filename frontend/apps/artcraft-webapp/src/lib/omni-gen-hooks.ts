@@ -182,6 +182,7 @@ const MODEL_DISPLAY_NAMES: Record<string, string> = {
   // Video models
   grok_video: "Grok Video",
   grok_imagine_video: "Grok Imagine",
+  grok_imagine_video_1p5: "Grok Imagine 1.5",
   kling_1p6_pro: "Kling 1.6 Pro",
   kling_2p1_pro: "Kling 2.1 Pro",
   kling_2p1_master: "Kling 2.1 Master",
@@ -237,6 +238,7 @@ const MODEL_DESCRIPTIONS: Record<string, string> = {
   // ── Video models ── (seedance_2p0 intentionally omitted)
   grok_video: "Stylized video generation by xAI",
   grok_imagine_video: "Versatile video styles by xAI",
+  grok_imagine_video_1p5: "Image-to-video styles by xAI",
   kling_1p6_pro: "Smooth, coherent motion",
   kling_2p1_pro: "Sharper realism and detail",
   kling_2p1_master: "Top-fidelity cinematic motion",

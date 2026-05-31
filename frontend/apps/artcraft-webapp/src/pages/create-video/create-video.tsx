@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
+  faCircleInfo,
   faClock,
   faSparkles,
   faWaveformLines,
@@ -52,6 +53,7 @@ import {
 } from "../../lib/omni-gen-hooks";
 import { useSignupCta } from "../../components/signup-cta-modal";
 import { useInsufficientCredits } from "../../components/insufficient-credits-modal";
+import { toast } from "../../components/toast/toast";
 
 // ── Constants ────────────────────────────────────────────────────────────
 
@@ -226,15 +228,22 @@ export default function CreateVideo() {
 
   const selectedModel = useMemo((): OmniGenVideoModelInfo | undefined => {
     if (!apiModels.length) return undefined;
-    if (ui.selectedModelId) {
-      return (
-        apiModels.find((m) => m.model === ui.selectedModelId) ??
+    const model = ui.selectedModelId
+      ? (apiModels.find((m) => m.model === ui.selectedModelId) ??
         apiModels.find((m) => m.model === DEFAULT_MODEL_ID) ??
-        apiModels[0]
-      );
+        apiModels[0])
+      : (apiModels.find((m) => m.model === DEFAULT_MODEL_ID) ?? apiModels[0]);
+
+    // Image-to-video-only models (API reports text_to_video_supported: false)
+    // require an image so pure text-to-video is blocked. A text prompt is still
+    // allowed (text_prompt_supported) — it just can't be the only input.
+    if (model && model.text_to_video_supported === false) {
+      return { ...model, starting_keyframe_required: true };
     }
-    return apiModels.find((m) => m.model === DEFAULT_MODEL_ID) ?? apiModels[0];
+    return model;
   }, [apiModels, ui.selectedModelId]);
+
+  const requiresImageInput = selectedModel?.text_to_video_supported === false;
 
   const prompt = ui.prompt;
   const setPrompt = useCallback((v: string) => setUi({ prompt: v }), [setUi]);
@@ -774,16 +783,16 @@ export default function CreateVideo() {
       openSignupCta();
       return;
     }
-    if (
-      !prompt.trim() ||
-      isGeneratingRef.current ||
-      needsImage ||
-      !selectedModel
-    ) {
+    if (needsImage) {
+      toast.error(
+        "Add a starting frame — this model can't generate from text alone.",
+      );
+      return;
+    }
+    if (!prompt.trim() || isGeneratingRef.current || !selectedModel) {
       console.log("[generate-video] blocked", {
         hasPrompt: !!prompt.trim(),
         isGenerating: isGeneratingRef.current,
-        needsImage,
         hasModel: !!selectedModel,
       });
       return;
@@ -1029,11 +1038,23 @@ export default function CreateVideo() {
               </span>
             </div>
           )} */}
+          {requiresImageInput && (
+            <div className="mb-2 flex items-start gap-2.5 rounded-lg border border-amber-500/40 bg-amber-900/80 px-3.5 py-2.5 text-xs text-amber-100 shadow-lg backdrop-blur-sm">
+              <FontAwesomeIcon
+                icon={faCircleInfo}
+                className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-amber-400"
+              />
+              <span>
+                This model can&apos;t generate from text alone — add a starting
+                frame to animate your prompt.
+              </span>
+            </div>
+          )}
           <PromptBox
             prompt={prompt}
             onPromptChange={setPrompt}
             onSubmit={handleGenerate}
-            isSubmitting={isGenerating || needsImage}
+            isSubmitting={isGenerating}
             credits={estimatedCredits}
             placeholder="Describe the video you want to generate..."
             supportsImagePrompts={supportsImagePrompts}

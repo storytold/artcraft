@@ -20,6 +20,11 @@ export class VideoModel extends Model {
   // Whether the model requires an image
   readonly requiresImage: boolean;
 
+  // Whether the model can generate from a text prompt ALONE. When false, a text
+  // prompt may still be used but an image (starting frame / reference) is also
+  // required. Mirrors the webapp API's `text_to_video_supported`. Defaults true.
+  readonly textToVideoSupported: boolean;
+
   // The size options for the model
   readonly sizeOptions: SizeOption[];
 
@@ -77,6 +82,7 @@ export class VideoModel extends Model {
     startFrame: boolean;
     endFrame: boolean;
     requiresImage: boolean;
+    textToVideoSupported?: boolean;
     tags?: ModelTag[];
     sizeOptions?: SizeOption[];
     progressBarTime?: number;
@@ -100,6 +106,7 @@ export class VideoModel extends Model {
     this.startFrame = args.startFrame;
     this.endFrame = args.endFrame;
     this.requiresImage = args.requiresImage;
+    this.textToVideoSupported = args.textToVideoSupported ?? true;
     this.sizeOptions = args.sizeOptions ?? [];
     this.generateWithSound = args.generateWithSound || false;
     this.durationOptions = args.durationOptions;
