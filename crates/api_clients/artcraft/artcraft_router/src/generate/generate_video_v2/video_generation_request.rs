@@ -227,7 +227,7 @@ impl VideoGenerationRequest {
   pub fn estimate_cost(&self) -> Result<VideoGenerationCostEstimate, ArtcraftRouterError> {
     match self {
       VideoGenerationRequest::ArtcraftGrokImagineVideo(request) => Ok(ArtcraftGrokImagineVideoCostState::from_request(request).estimate_cost()),
-      VideoGenerationRequest::ArtcraftGrokImagineVideo1p5(request) => Ok(ArtcraftGrokImagineVideo1p5CostState::from_request(request).estimate_cost()),
+      VideoGenerationRequest::ArtcraftGrokImagineVideo1p5(request) => ArtcraftGrokImagineVideo1p5CostState::from_request(request).estimate_cost(),
       VideoGenerationRequest::ArtcraftHappyHorse1p0(request) => Ok(ArtcraftHappyHorse1p0CostState::from_request(request).estimate_cost()),
       VideoGenerationRequest::ArtcraftKling16Pro(request) => Ok(ArtcraftKling16ProCostState::from_request(request).estimate_cost()),
       VideoGenerationRequest::ArtcraftKling21Master(request) => Ok(ArtcraftKling21MasterCostState::from_request(request).estimate_cost()),
@@ -274,7 +274,7 @@ impl VideoGenerationRequest {
       VideoGenerationRequest::GmiCloudSeedance2p0Ultra(request) => Ok(GmiCloudSeedance2p0UltraCostState::from_request(request).estimate_cost()),
       VideoGenerationRequest::GmiCloudSeedance2p0UltraFast(request) => Ok(GmiCloudSeedance2p0UltraFastCostState::from_request(request).estimate_cost()),
       VideoGenerationRequest::GrokApiGrokImagineVideo(request) => Ok(GrokApiGrokImagineVideoCostState::from_request(request).estimate_cost()),
-      VideoGenerationRequest::GrokApiGrokImagineVideo1p5(request) => Ok(GrokApiGrokImagineVideo1p5CostState::from_request(request).estimate_cost()),
+      VideoGenerationRequest::GrokApiGrokImagineVideo1p5(request) => GrokApiGrokImagineVideo1p5CostState::from_request(request).estimate_cost(),
       VideoGenerationRequest::KinoviHappyHorse1p0(request) => Ok(KinoviHappyHorse1p0CostState::from_request(request).estimate_cost()),
       VideoGenerationRequest::KinoviSeedance2p0(request) => Ok(KinoviSeedance2p0CostState::from_request(request).estimate_cost()),
       VideoGenerationRequest::KinoviSeedance2p0Fast(request) => Ok(KinoviSeedance2p0FastCostState::from_request(request).estimate_cost()),

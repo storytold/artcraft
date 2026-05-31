@@ -6,6 +6,7 @@ use grok_api_client::api::requests::videos::video_generation::video_generation::
 
 use crate::client::router_grok_api_client::RouterGrokApiClient;
 use crate::errors::artcraft_router_error::ArtcraftRouterError;
+use crate::errors::client_error::ClientError;
 use crate::errors::provider_error::ProviderError;
 use crate::generate::generate_video::generate_video_response::{
   GenerateVideoResponse, GrokVideoResponsePayload,
@@ -21,6 +22,15 @@ pub struct GrokApiGrokImagineVideo1p5RequestState {
 
 impl GrokApiGrokImagineVideo1p5RequestState {
   pub async fn send(&self, client: &RouterGrokApiClient) -> Result<GenerateVideoResponse, ArtcraftRouterError> {
+    // Defense in depth: `build()` already enforces this. Bouncing the
+    // request here costs nothing and avoids an HTTP call we know will fail.
+    if self.request.image.is_none() && self.request.reference_images.is_none() {
+      return Err(ArtcraftRouterError::Client(ClientError::ModelDoesNotSupportOption {
+        field: "image_inputs",
+        value: "text-to-video isn't supported by grok-imagine-video-1.5-preview; supply a start_frame or at least one reference image".to_string(),
+      }));
+    }
+
     let outbound_request = Arc::new(self.request.clone());
 
     let response = video_generation(VideoGenerationArgs {
@@ -62,6 +72,8 @@ mod tests {
     let builder = GenerateVideoRequestBuilder {
       prompt: Some("test".to_string()),
       resolution: Some(RouterResolution::SevenTwentyP),
+      // v1.5 requires an input image (no T2V).
+      start_frame: Some(ImageRef::Url("https://example.com/start.png".to_string())),
       ..grok_builder()
     };
     let request = unwrap_request(builder);

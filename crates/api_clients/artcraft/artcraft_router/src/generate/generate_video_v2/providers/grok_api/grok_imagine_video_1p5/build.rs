@@ -16,6 +16,7 @@ use crate::api::image_ref::ImageRef;
 use crate::api::video_list_ref::VideoListRef;
 use crate::client::request_mismatch_mitigation_strategy::RequestMismatchMitigationStrategy;
 use crate::errors::artcraft_router_error::ArtcraftRouterError;
+use crate::errors::client_error::ClientError;
 use crate::generate::generate_video::generate_video_request_builder::GenerateVideoRequestBuilder;
 use crate::generate::generate_video_v2::providers::grok_api::grok_imagine_video_1p5::request::GrokApiGrokImagineVideo1p5RequestState;
 use crate::generate::generate_video_v2::video_generation_draft_or_request::VideoGenerationDraftOrRequest;
@@ -71,6 +72,15 @@ pub fn build_grok_api_grok_imagine_video_1p5(
     (None, Some(refs)) => promote_first_reference_to_image(refs),
     (None, None) => (None, None),
   };
+
+  // xAI's v1.5 model rejects text-to-video at the server. Bounce the request
+  // here rather than spending an API round-trip to learn the same thing.
+  if image.is_none() && reference_images.is_none() {
+    return Err(ArtcraftRouterError::Client(ClientError::ModelDoesNotSupportOption {
+      field: "image_inputs",
+      value: "text-to-video isn't supported by grok-imagine-video-1.5-preview; supply a start_frame or at least one reference image".to_string(),
+    }));
+  }
 
   let request = GrokVideoGenerationRequest {
     prompt,
@@ -449,12 +459,21 @@ mod tests {
     }
 
     #[test]
-    fn start_frame_media_file_token_silently_dropped() {
-      let req = unwrap_request(make_builder(|b| {
-        b.start_frame = Some(ImageRef::MediaFileToken(MediaFileToken::new("mf_test".to_string())));
-      }));
-      assert!(req.request.image.is_none());
-      assert!(req.request.reference_images.is_none());
+    fn start_frame_media_file_token_dropped_then_rejected_as_text_only() {
+      // MediaFileTokens get silently dropped (Grok only accepts URLs), but
+      // with no usable image left the no-image guard rejects the build.
+      let result = build_grok_api_grok_imagine_video_1p5(GenerateVideoRequestBuilder {
+        model: RouterVideoModel::GrokImagineVideo1p5,
+        provider: RouterProvider::GrokApi,
+        start_frame: Some(ImageRef::MediaFileToken(MediaFileToken::new("mf_test".to_string()))),
+        ..Default::default()
+      });
+      assert!(matches!(
+        result,
+        Err(crate::errors::artcraft_router_error::ArtcraftRouterError::Client(
+          crate::errors::client_error::ClientError::ModelDoesNotSupportOption { field: "image_inputs", .. }
+        )),
+      ));
     }
 
     #[test]
@@ -527,15 +546,24 @@ mod tests {
     }
 
     #[test]
-    fn reference_image_tokens_silently_dropped() {
-      let req = unwrap_request(make_builder(|b| {
-        b.reference_images = Some(ImageListRef::MediaFileTokens(vec![
+    fn reference_image_tokens_dropped_then_rejected_as_text_only() {
+      // MediaFileTokens get silently dropped; with no usable image left the
+      // no-image guard rejects the build.
+      let result = build_grok_api_grok_imagine_video_1p5(GenerateVideoRequestBuilder {
+        model: RouterVideoModel::GrokImagineVideo1p5,
+        provider: RouterProvider::GrokApi,
+        reference_images: Some(ImageListRef::MediaFileTokens(vec![
           MediaFileToken::new("mf_a".to_string()),
           MediaFileToken::new("mf_b".to_string()),
-        ]));
-      }));
-      assert!(req.request.reference_images.is_none());
-      assert!(req.request.image.is_none());
+        ])),
+        ..Default::default()
+      });
+      assert!(matches!(
+        result,
+        Err(crate::errors::artcraft_router_error::ArtcraftRouterError::Client(
+          crate::errors::client_error::ClientError::ModelDoesNotSupportOption { field: "image_inputs", .. }
+        )),
+      ));
     }
 
     #[test]
@@ -555,11 +583,21 @@ mod tests {
     }
 
     #[test]
-    fn empty_reference_image_url_list_becomes_none() {
-      let req = unwrap_request(make_builder(|b| {
-        b.reference_images = Some(ImageListRef::Urls(vec![]));
-      }));
-      assert!(req.request.reference_images.is_none());
+    fn empty_reference_image_url_list_rejected_as_text_only() {
+      // Empty list resolves to None for both image and reference_images;
+      // the no-image guard then rejects the build.
+      let result = build_grok_api_grok_imagine_video_1p5(GenerateVideoRequestBuilder {
+        model: RouterVideoModel::GrokImagineVideo1p5,
+        provider: RouterProvider::GrokApi,
+        reference_images: Some(ImageListRef::Urls(vec![])),
+        ..Default::default()
+      });
+      assert!(matches!(
+        result,
+        Err(crate::errors::artcraft_router_error::ArtcraftRouterError::Client(
+          crate::errors::client_error::ClientError::ModelDoesNotSupportOption { field: "image_inputs", .. }
+        )),
+      ));
     }
   }
 
@@ -570,11 +608,15 @@ mod tests {
 
     #[test]
     fn end_frame_silently_dropped() {
+      // end_frame isn't on Grok's wire body at all, so the only thing to
+      // verify is that supplying it doesn't break the build. `make_builder`
+      // injects a default start_frame to satisfy the v1.5 no-image guard.
       let req = unwrap_request(make_builder(|b| {
         b.end_frame = Some(ImageRef::Url("https://example.com/end.png".to_string()));
       }));
-      assert!(req.request.image.is_none());
+      // image comes from the default start_frame; reference_images stays None.
       assert!(req.request.reference_images.is_none());
+      assert!(matches!(req.request.image, Some(GrokVideoImageSource::Url(_))));
     }
 
     #[test]
@@ -637,6 +679,13 @@ mod tests {
   fn make_builder(f: impl FnOnce(&mut GenerateVideoRequestBuilder)) -> GenerateVideoRequestBuilder {
     let mut b = base_builder();
     f(&mut b);
+    // v1.5 requires an input image; tests that don't explicitly exercise the
+    // image-handling paths get a default start_frame so they sail past the
+    // no-image guard in `build()`. Tests that set start_frame or
+    // reference_images themselves keep their override.
+    if b.start_frame.is_none() && b.reference_images.is_none() {
+      b.start_frame = Some(ImageRef::Url("https://example.com/default.png".to_string()));
+    }
     b
   }
 

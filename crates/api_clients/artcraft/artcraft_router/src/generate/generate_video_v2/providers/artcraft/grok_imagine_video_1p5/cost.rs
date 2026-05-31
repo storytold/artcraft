@@ -8,6 +8,8 @@ use grok_api_client::api::traits::grok_request_cost_calculator_trait::GrokReques
 use grok_api_client::api::types::video_types::video_model::VideoModel as GrokVideoModel;
 use grok_api_client::api::types::video_types::video_resolution::VideoResolution as GrokResolution;
 
+use crate::errors::artcraft_router_error::ArtcraftRouterError;
+use crate::errors::client_error::ClientError;
 use crate::generate::generate_video::video_generation_cost_estimate::VideoGenerationCostEstimate;
 use crate::generate::generate_video_v2::providers::artcraft::grok_imagine_video_1p5::request::ArtcraftGrokImagineVideo1p5RequestState;
 
@@ -62,13 +64,23 @@ impl ArtcraftGrokImagineVideo1p5CostState {
       .saturating_mul(self.batch_count as u64)
   }
 
-  pub fn estimate_cost(&self) -> VideoGenerationCostEstimate {
+  pub fn estimate_cost(&self) -> Result<VideoGenerationCostEstimate, ArtcraftRouterError> {
+    // Defense in depth: `build()` already enforces this, but a state
+    // constructed by hand must not get a quote for an operation xAI will
+    // reject.
+    if self.input_image_count == 0 {
+      return Err(ArtcraftRouterError::Client(ClientError::ModelDoesNotSupportOption {
+        field: "image_inputs",
+        value: "text-to-video isn't supported by grok-imagine-video-1.5-preview; supply a start_frame or at least one reference image".to_string(),
+      }));
+    }
+
     let base = self.base_cost_in_cents_for_batch();
     // 5% markup, ceil so the user is always charged enough to cover the
     // upstream grok cost regardless of rounding.
     let usd_cents = base.saturating_mul(MARKUP_NUMERATOR).div_ceil(MARKUP_DENOMINATOR);
 
-    VideoGenerationCostEstimate {
+    Ok(VideoGenerationCostEstimate {
       cost_in_credits: Some(usd_cents),
       cost_in_usd_cents: Some(usd_cents),
       is_free: false,
@@ -76,7 +88,7 @@ impl ArtcraftGrokImagineVideo1p5CostState {
       is_rate_limited: false,
       has_watermark: false,
       failures_are_refunded: None,
-    }
+    })
   }
 
   /// Build a `GrokVideoGenerationRequest` whose pricing-relevant fields
@@ -146,25 +158,25 @@ mod tests {
     //
     // Durations are confined to [4, 15] because the ArtCraft pipeline clamps
     // outside that range (see `plan_duration` in artcraft/build_common.rs).
+    // Every case carries exactly one image. v1.5 rejects text-to-video, AND
+    // the GrokApi build step collapses multi-image reference-to-video
+    // requests down to one `image` (promote-first; see grok_api side
+    // build.rs). So the only request shape where both sides agree on the
+    // input image count is the single-image case.
     const PARITY_CASES: &[(Option<RouterResolution>, u16, u64)] = &[
       // 480p variations
-      (Some(RouterResolution::FourEightyP),  4, 0),
-      (Some(RouterResolution::FourEightyP),  5, 0),
-      (Some(RouterResolution::FourEightyP),  8, 0),
-      (Some(RouterResolution::FourEightyP), 15, 0),
+      (Some(RouterResolution::FourEightyP),  4, 1),
       (Some(RouterResolution::FourEightyP),  5, 1),
-      (Some(RouterResolution::FourEightyP),  5, 3),
+      (Some(RouterResolution::FourEightyP),  8, 1),
+      (Some(RouterResolution::FourEightyP), 15, 1),
       // 720p variations
-      (Some(RouterResolution::SevenTwentyP),  4, 0),
-      (Some(RouterResolution::SevenTwentyP),  5, 0),
-      (Some(RouterResolution::SevenTwentyP),  8, 0),
-      (Some(RouterResolution::SevenTwentyP), 15, 0),
+      (Some(RouterResolution::SevenTwentyP),  4, 1),
       (Some(RouterResolution::SevenTwentyP),  5, 1),
-      (Some(RouterResolution::SevenTwentyP),  5, 3),
+      (Some(RouterResolution::SevenTwentyP),  8, 1),
+      (Some(RouterResolution::SevenTwentyP), 15, 1),
       // None defaults to 720p in our `from_request`, which matches the
       // assumption Grok's calculator makes when fed a 720p request.
-      (None,                                  5, 0),
-      (None,                                  5, 2),
+      (None,                                  5, 1),
     ];
 
     #[test]
@@ -217,13 +229,14 @@ mod tests {
     /// `base_cost_in_cents_*` API is tested above.
     #[test]
     fn end_to_end_markup_is_at_least_five_percent_over_grok() {
+      // Single-image cases only — see PARITY_CASES comment above for why
+      // multi-image rows can't be apples-to-apples between the two sides.
       let cases: &[(Option<RouterResolution>, u16, bool, usize)] = &[
-        (Some(RouterResolution::FourEightyP),  5, false, 0),
+        (Some(RouterResolution::FourEightyP),  5, true,  0),
         (Some(RouterResolution::FourEightyP), 10, true,  0),
-        (Some(RouterResolution::SevenTwentyP), 5, false, 0),
-        (Some(RouterResolution::SevenTwentyP), 5, false, 3),
+        (Some(RouterResolution::SevenTwentyP), 5, true,  0),
         (Some(RouterResolution::SevenTwentyP), 8, true,  0),
-        (Some(RouterResolution::SevenTwentyP),15, false, 0),
+        (Some(RouterResolution::SevenTwentyP),15, true,  0),
       ];
       for &(res, duration, has_start, refs) in cases {
         let artcraft_cents = artcraft_end_to_end_cents(res, duration, 1, has_start, refs);
@@ -249,7 +262,7 @@ mod tests {
         let state = artcraft_state(res, dur, imgs, batch);
         let base = state.base_cost_in_cents_for_batch();
         let want = base.saturating_mul(MARKUP_NUMERATOR).div_ceil(MARKUP_DENOMINATOR);
-        let got = state.estimate_cost().cost_in_usd_cents.unwrap();
+        let got = state.estimate_cost().expect("estimate_cost").cost_in_usd_cents.unwrap();
         assert_eq!(
           got, want,
           "res={res:?} dur={dur} imgs={imgs} batch={batch} base={base}",
@@ -262,7 +275,7 @@ mod tests {
       for &(res, dur, imgs, batch) in MARKUP_CASES {
         let state = artcraft_state(res, dur, imgs, batch);
         let base = state.base_cost_in_cents_for_batch();
-        let final_ = state.estimate_cost().cost_in_usd_cents.unwrap();
+        let final_ = state.estimate_cost().expect("estimate_cost").cost_in_usd_cents.unwrap();
         assert!(
           final_ >= base,
           "final {final_}¢ < base {base}¢ at res={res:?} dur={dur} imgs={imgs} batch={batch}",
@@ -272,48 +285,67 @@ mod tests {
 
     #[test]
     fn known_value_at_720p_5s_batch_1() {
-      // grok v1.5 720p × 5s = 700 mills = 70¢
-      // 70 × 1.05 = 73.5 → ceil = 74¢
-      let state = artcraft_state(Some(RouterResolution::SevenTwentyP), 5, 0, 1);
-      assert_eq!(state.base_cost_in_cents_for_one_video(), 70);
-      assert_eq!(state.estimate_cost().cost_in_usd_cents.unwrap(), 74);
+      // grok v1.5 720p × 5s + 1 image = 700 + 10 = 710 mills = 71¢
+      // 71 × 1.05 = 74.55 → ceil = 75¢
+      let state = artcraft_state(Some(RouterResolution::SevenTwentyP), 5, 1, 1);
+      assert_eq!(state.base_cost_in_cents_for_one_video(), 71);
+      assert_eq!(state.estimate_cost().expect("estimate_cost").cost_in_usd_cents.unwrap(), 75);
     }
 
     #[test]
     fn known_value_at_480p_5s_batch_1() {
-      // grok v1.5 480p × 5s = 400 mills = 40¢
-      // 40 × 1.05 = 42 → ceil = 42¢
-      let state = artcraft_state(Some(RouterResolution::FourEightyP), 5, 0, 1);
-      assert_eq!(state.base_cost_in_cents_for_one_video(), 40);
-      assert_eq!(state.estimate_cost().cost_in_usd_cents.unwrap(), 42);
+      // grok v1.5 480p × 5s + 1 image = 400 + 10 = 410 mills = 41¢
+      // 41 × 1.05 = 43.05 → ceil = 44¢
+      let state = artcraft_state(Some(RouterResolution::FourEightyP), 5, 1, 1);
+      assert_eq!(state.base_cost_in_cents_for_one_video(), 41);
+      assert_eq!(state.estimate_cost().expect("estimate_cost").cost_in_usd_cents.unwrap(), 44);
     }
 
     #[test]
     fn known_value_at_720p_5s_batch_2() {
-      // base for batch 2 = 70 × 2 = 140¢
-      // 140 × 1.05 = 147 → ceil 147¢
-      let state = artcraft_state(Some(RouterResolution::SevenTwentyP), 5, 0, 2);
-      assert_eq!(state.base_cost_in_cents_for_batch(), 140);
-      assert_eq!(state.estimate_cost().cost_in_usd_cents.unwrap(), 147);
+      // base per video at 720p 5s + 1 image = 71¢. Batch 2 = 142¢.
+      // 142 × 1.05 = 149.1 → ceil 150¢.
+      let state = artcraft_state(Some(RouterResolution::SevenTwentyP), 5, 1, 2);
+      assert_eq!(state.base_cost_in_cents_for_batch(), 142);
+      assert_eq!(state.estimate_cost().expect("estimate_cost").cost_in_usd_cents.unwrap(), 150);
     }
 
-    // (resolution, duration, image_count, batch)
+    /// v1.5 doesn't support text-to-video. The cost calculator must refuse
+    /// to quote an image-less request even if a state is constructed
+    /// directly.
+    #[test]
+    fn estimate_cost_rejects_text_only_request() {
+      let state = ArtcraftGrokImagineVideo1p5CostState {
+        resolution: CommonResolution::SevenTwentyP,
+        duration_seconds: 5,
+        batch_count: 1,
+        input_image_count: 0,
+      };
+      let err = state.estimate_cost().expect_err("text-only should be rejected");
+      match err {
+        ArtcraftRouterError::Client(ClientError::ModelDoesNotSupportOption { field, .. }) => {
+          assert_eq!(field, "image_inputs");
+        }
+        other => panic!("expected Client(ModelDoesNotSupportOption), got {:?}", other),
+      }
+    }
+
+    // (resolution, duration, image_count, batch) — every case has at least
+    // one image since v1.5 rejects text-to-video.
     const MARKUP_CASES: &[(Option<RouterResolution>, u16, u64, u16)] = &[
-      (Some(RouterResolution::FourEightyP),   5, 0, 1),
-      (Some(RouterResolution::FourEightyP),   5, 0, 2),
-      (Some(RouterResolution::FourEightyP),   5, 0, 4),
-      (Some(RouterResolution::FourEightyP),   8, 0, 1),
-      (Some(RouterResolution::FourEightyP),  15, 0, 1),
       (Some(RouterResolution::FourEightyP),   5, 1, 1),
+      (Some(RouterResolution::FourEightyP),   5, 1, 2),
+      (Some(RouterResolution::FourEightyP),   5, 1, 4),
+      (Some(RouterResolution::FourEightyP),   8, 1, 1),
+      (Some(RouterResolution::FourEightyP),  15, 1, 1),
       (Some(RouterResolution::FourEightyP),   5, 3, 1),
-      (Some(RouterResolution::SevenTwentyP),  5, 0, 1),
-      (Some(RouterResolution::SevenTwentyP),  5, 0, 2),
-      (Some(RouterResolution::SevenTwentyP),  5, 0, 4),
-      (Some(RouterResolution::SevenTwentyP),  8, 0, 1),
-      (Some(RouterResolution::SevenTwentyP), 15, 0, 1),
       (Some(RouterResolution::SevenTwentyP),  5, 1, 1),
+      (Some(RouterResolution::SevenTwentyP),  5, 1, 2),
+      (Some(RouterResolution::SevenTwentyP),  5, 1, 4),
+      (Some(RouterResolution::SevenTwentyP),  8, 1, 1),
+      (Some(RouterResolution::SevenTwentyP), 15, 1, 1),
       (Some(RouterResolution::SevenTwentyP),  5, 3, 1),
-      (None,                                  5, 0, 1),
+      (None,                                  5, 1, 1),
     ];
   }
 
@@ -324,42 +356,42 @@ mod tests {
 
     #[test]
     fn higher_resolution_costs_more() {
-      let p480 = artcraft_state(Some(RouterResolution::FourEightyP), 5, 0, 1)
-        .estimate_cost().cost_in_usd_cents.unwrap();
-      let p720 = artcraft_state(Some(RouterResolution::SevenTwentyP), 5, 0, 1)
-        .estimate_cost().cost_in_usd_cents.unwrap();
+      let p480 = artcraft_state(Some(RouterResolution::FourEightyP), 5, 1, 1)
+        .estimate_cost().expect("estimate_cost").cost_in_usd_cents.unwrap();
+      let p720 = artcraft_state(Some(RouterResolution::SevenTwentyP), 5, 1, 1)
+        .estimate_cost().expect("estimate_cost").cost_in_usd_cents.unwrap();
       assert!(p480 < p720, "480p ({p480}¢) should be < 720p ({p720}¢)");
     }
 
     #[test]
     fn longer_duration_costs_more() {
-      let c5  = artcraft_state(Some(RouterResolution::SevenTwentyP),  5, 0, 1)
-        .estimate_cost().cost_in_usd_cents.unwrap();
-      let c10 = artcraft_state(Some(RouterResolution::SevenTwentyP), 10, 0, 1)
-        .estimate_cost().cost_in_usd_cents.unwrap();
-      let c15 = artcraft_state(Some(RouterResolution::SevenTwentyP), 15, 0, 1)
-        .estimate_cost().cost_in_usd_cents.unwrap();
+      let c5  = artcraft_state(Some(RouterResolution::SevenTwentyP),  5, 1, 1)
+        .estimate_cost().expect("estimate_cost").cost_in_usd_cents.unwrap();
+      let c10 = artcraft_state(Some(RouterResolution::SevenTwentyP), 10, 1, 1)
+        .estimate_cost().expect("estimate_cost").cost_in_usd_cents.unwrap();
+      let c15 = artcraft_state(Some(RouterResolution::SevenTwentyP), 15, 1, 1)
+        .estimate_cost().expect("estimate_cost").cost_in_usd_cents.unwrap();
       assert!(c5 < c10);
       assert!(c10 < c15);
     }
 
     #[test]
     fn more_images_cost_more_or_equal() {
-      // Each image is +10 mills = +1¢ before markup, so 1+ image always
-      // strictly increases final cost (the markup ceil pushes us up enough).
-      let zero = artcraft_state(Some(RouterResolution::SevenTwentyP), 5, 0, 1)
-        .estimate_cost().cost_in_usd_cents.unwrap();
+      // Each image is +10 mills = +1¢ before markup, so additional images
+      // monotonically increase cost.
+      let one = artcraft_state(Some(RouterResolution::SevenTwentyP), 5, 1, 1)
+        .estimate_cost().expect("estimate_cost").cost_in_usd_cents.unwrap();
       let three = artcraft_state(Some(RouterResolution::SevenTwentyP), 5, 3, 1)
-        .estimate_cost().cost_in_usd_cents.unwrap();
-      assert!(zero < three, "zero={zero}¢ vs three={three}¢");
+        .estimate_cost().expect("estimate_cost").cost_in_usd_cents.unwrap();
+      assert!(one < three, "one={one}¢ vs three={three}¢");
     }
 
     #[test]
     fn more_batch_costs_more() {
-      let b1 = artcraft_state(Some(RouterResolution::SevenTwentyP), 5, 0, 1)
-        .estimate_cost().cost_in_usd_cents.unwrap();
-      let b4 = artcraft_state(Some(RouterResolution::SevenTwentyP), 5, 0, 4)
-        .estimate_cost().cost_in_usd_cents.unwrap();
+      let b1 = artcraft_state(Some(RouterResolution::SevenTwentyP), 5, 1, 1)
+        .estimate_cost().expect("estimate_cost").cost_in_usd_cents.unwrap();
+      let b4 = artcraft_state(Some(RouterResolution::SevenTwentyP), 5, 1, 4)
+        .estimate_cost().expect("estimate_cost").cost_in_usd_cents.unwrap();
       assert!(b1 < b4);
     }
   }
@@ -499,6 +531,9 @@ mod tests {
       resolution,
       duration_seconds: Some(duration_seconds),
       video_batch_count: Some(video_batch_count),
+      // v1.5 requires an input image — the no-image guard in build()
+      // rejects T2V.
+      start_frame: Some(ImageRef::MediaFileToken(MediaFileToken::new("mf_default".to_string()))),
       ..Default::default()
     };
     builder.build2()
