@@ -32,6 +32,7 @@ use tokens::tokens::non_unique::debug_logs_event_token::DebugLogEventToken;
 use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::endpoints::generate::common::payments_error_test::payments_error_test;
 use crate::http_server::endpoints::omni_gen::generate::video::helpers::hydrate_router_request::hydrate_to_router_request;
+use crate::http_server::endpoints::omni_gen::generate::video::helpers::validate_image_required::validate_image_required;
 use crate::http_server::endpoints::omni_gen::generate::video::insert_db_job::insert_fal_job::{insert_fal_job, InsertFalJobArgs};
 use crate::http_server::endpoints::omni_gen::generate::video::insert_db_job::insert_gmicloud_job::{insert_gmicloud_job, InsertGmiCloudJobArgs};
 use crate::http_server::endpoints::omni_gen::generate::video::insert_db_job::insert_grok_api_job::{insert_grok_api_job, InsertGrokApiJobArgs};
@@ -66,6 +67,10 @@ pub async fn omni_gen_video_generate_handler(
 ) -> Result<Json<OmniGenVideoGenerateResponse>, CommonWebError> {
 
   info!("request: {:?}", request);
+
+  // Reject doomed combos (e.g. grok_imagine_video_1p5 without an image)
+  // before any billable or DB-mutating work — see helper for the rules.
+  validate_image_required(&request)?;
 
   payments_error_test(&request.prompt.as_deref().unwrap_or(""))?;
 
