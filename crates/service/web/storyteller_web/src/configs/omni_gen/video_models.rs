@@ -23,6 +23,7 @@ fn build_omni_gen_video_models() -> Vec<OmniGenVideoModelDetails> {
     model: CommonVideoModel::GrokImagineVideo,
     model_creator: Some(ModelCreator::Grok),
     full_name: Some("Grok Imagine".to_string()),
+    text_to_video_supported: Some(false),
     text_prompt_supported: Some(true),
     starting_keyframe_supported: Some(true),
     ending_keyframe_supported: Some(false),

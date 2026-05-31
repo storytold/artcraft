@@ -79,7 +79,11 @@ pub struct OmniGenVideoModelDetails {
   /// Additional details about the model. (Brief; only a few words.)
   #[serde(skip_serializing_if = "Option::is_none")]
   pub extra_info_short: Option<String>,
-  
+
+  /// Whether a pure text-to-video modality is supported
+  #[serde(skip_serializing_if = "Option::is_none")]
+  pub text_to_video_supported: Option<bool>,
+
   #[serde(skip_serializing_if = "Option::is_none")]
   pub text_prompt_supported: Option<bool>,
   
@@ -193,6 +197,7 @@ impl Default for OmniGenVideoModelDetails {
       full_name: None,
       extra_info: None,
       extra_info_short: None,
+      text_to_video_supported: None,
       text_prompt_supported: None,
       text_prompt_max_length: None,
       negative_text_prompt_supported: None,
