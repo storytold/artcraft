@@ -65,6 +65,7 @@ pub async fn run_pipeline_v2(args: RunPipelineV2Args<'_>) -> Result<PipelineResu
     //RouterVideoModel::Seedance2p0Ultra => RouterProvider::GmiCloud,
     //RouterVideoModel::Seedance2p0UltraFast => RouterProvider::GmiCloud,
     RouterVideoModel::GrokImagineVideo => RouterProvider::GrokApi,
+    RouterVideoModel::GrokImagineVideo1p5 => RouterProvider::GrokApi,
     _ => RouterProvider::Fal,
   };
 
