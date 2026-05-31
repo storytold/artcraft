@@ -23,7 +23,6 @@ fn build_omni_gen_video_models() -> Vec<OmniGenVideoModelDetails> {
     model: CommonVideoModel::GrokImagineVideo,
     model_creator: Some(ModelCreator::Grok),
     full_name: Some("Grok Imagine".to_string()),
-    text_to_video_supported: Some(false),
     text_prompt_supported: Some(true),
     starting_keyframe_supported: Some(true),
     ending_keyframe_supported: Some(false),
@@ -62,6 +61,7 @@ fn build_omni_gen_video_models() -> Vec<OmniGenVideoModelDetails> {
     full_name: Some("Grok Imagine 1.5 Preview".to_string()),
     extra_info: Some("Fast and high quality".to_string()),
     extra_info_short: Some("Fast and high quality".to_string()),
+    text_to_video_supported: Some(false), // NB: This might be temporary
     text_prompt_supported: Some(true),
     starting_keyframe_supported: Some(true),
     ending_keyframe_supported: Some(false),
