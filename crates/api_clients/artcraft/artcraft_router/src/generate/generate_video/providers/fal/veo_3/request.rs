@@ -58,6 +58,8 @@ impl FalVeo3RequestState {
     Ok(GenerateVideoResponse::Fal(FalVideoResponsePayload {
       request_id: webhook_response.request_id,
       gateway_request_id: webhook_response.gateway_request_id,
+      maybe_status_url: None,
+      maybe_response_url: None,
       maybe_outbound_request: Some(outbound_request),
     }))
   }

@@ -1,27 +1,32 @@
-use fal_client::requests_old::webhook::video::image::enqueue_kling_v1p6_pro_image_to_video_webhook::Kling1p6ProDuration;
+use fal_client::requests::traits::fal_request_cost_calculator_trait::FalRequestCostCalculator;
 
 use crate::generate::generate_video::video_generation_cost_estimate::VideoGenerationCostEstimate;
-use crate::generate::generate_video::providers::fal::kling_1_6_pro::request::FalKling16ProRequestState;
+use crate::generate::generate_video::providers::fal::kling_1_6_pro::request::{
+  FalKling16ProMode, FalKling16ProRequestState,
+};
 
 #[derive(Clone, Debug)]
 pub struct FalKling16ProCostState {
-  pub is_ten_seconds: bool,
+  pub cost_in_usd_cents: u64,
 }
 
 impl FalKling16ProCostState {
   pub fn from_request(request: &FalKling16ProRequestState) -> Self {
-    Self {
-      is_ten_seconds: matches!(request.request.duration, Kling1p6ProDuration::TenSeconds),
-    }
+    // Cost math is owned by fal_client's per-endpoint `FalRequestCostCalculator`
+    // implementations. The router state mirrors whichever calculator matches
+    // the dispatched mode so router cost ≡ fal_client cost by construction.
+    let cost_in_usd_cents = match &request.mode {
+      FalKling16ProMode::TextToVideo(req) => req.calculate_cost_in_cents(),
+      FalKling16ProMode::ImageToVideo(req) => req.calculate_cost_in_cents(),
+      FalKling16ProMode::ElementsToVideo(req) => req.calculate_cost_in_cents(),
+    };
+    Self { cost_in_usd_cents }
   }
 
   pub fn estimate_cost(&self) -> VideoGenerationCostEstimate {
-    // Mirrors fal_client kling_v1p6_pro: 5s = 48¢, 10s = 95¢ (Default → 5s).
-    let cost_in_usd_cents: u64 = if self.is_ten_seconds { 95 } else { 48 };
-
     VideoGenerationCostEstimate {
-      cost_in_credits: Some(cost_in_usd_cents),
-      cost_in_usd_cents: Some(cost_in_usd_cents),
+      cost_in_credits: Some(self.cost_in_usd_cents),
+      cost_in_usd_cents: Some(self.cost_in_usd_cents),
       is_free: false,
       is_unlimited: false,
       is_rate_limited: false,
@@ -33,29 +38,95 @@ impl FalKling16ProCostState {
 
 #[cfg(test)]
 mod tests {
-  use crate::api::router_video_model::RouterVideoModel;
+  use crate::api::image_list_ref::ImageListRef;
   use crate::api::image_ref::ImageRef;
   use crate::api::router_provider::RouterProvider;
+  use crate::api::router_video_model::RouterVideoModel;
   use crate::generate::generate_video::generate_video_request_builder::GenerateVideoRequestBuilder;
 
-  fn cost_cents(duration_seconds: Option<u16>) -> u64 {
-    let b = GenerateVideoRequestBuilder {
+  fn cost_cents_with(mut configure: impl FnMut(&mut GenerateVideoRequestBuilder)) -> u64 {
+    let mut b = GenerateVideoRequestBuilder {
       model: RouterVideoModel::Kling16Pro,
       provider: RouterProvider::Fal,
       prompt: Some("test".to_string()),
-      start_frame: Some(ImageRef::Url("https://example.com/a.png".to_string())),
-      duration_seconds,
       ..Default::default()
     };
+    configure(&mut b);
     b.build2().unwrap().estimate_cost().unwrap().cost_in_usd_cents.unwrap()
   }
 
-  #[test]
-  fn five_seconds_is_48() { assert_eq!(cost_cents(Some(5)), 48); }
+  // ── Image-to-video ($0.095/sec) ──
 
   #[test]
-  fn ten_seconds_is_95() { assert_eq!(cost_cents(Some(10)), 95); }
+  fn i2v_5s_is_48() {
+    // ceil(95 × 5 / 10) = 48¢
+    let cost = cost_cents_with(|b| {
+      b.start_frame = Some(ImageRef::Url("https://example.com/a.png".to_string()));
+      b.duration_seconds = Some(5);
+    });
+    assert_eq!(cost, 48);
+  }
 
   #[test]
-  fn default_duration_is_5s_priced_at_48() { assert_eq!(cost_cents(None), 48); }
+  fn i2v_10s_is_95() {
+    // ceil(95 × 10 / 10) = 95¢
+    let cost = cost_cents_with(|b| {
+      b.start_frame = Some(ImageRef::Url("https://example.com/a.png".to_string()));
+      b.duration_seconds = Some(10);
+    });
+    assert_eq!(cost, 95);
+  }
+
+  #[test]
+  fn i2v_default_duration_is_5s_priced_at_48() {
+    let cost = cost_cents_with(|b| {
+      b.start_frame = Some(ImageRef::Url("https://example.com/a.png".to_string()));
+    });
+    assert_eq!(cost, 48);
+  }
+
+  // ── Text-to-video ($0.098/sec) ──
+
+  #[test]
+  fn t2v_5s_is_49() {
+    // ceil(98 × 5 / 10) = 49¢
+    let cost = cost_cents_with(|b| {
+      b.duration_seconds = Some(5);
+    });
+    assert_eq!(cost, 49);
+  }
+
+  #[test]
+  fn t2v_10s_is_98() {
+    let cost = cost_cents_with(|b| {
+      b.duration_seconds = Some(10);
+    });
+    assert_eq!(cost, 98);
+  }
+
+  #[test]
+  fn t2v_default_duration_is_5s_priced_at_49() {
+    let cost = cost_cents_with(|_b| {});
+    assert_eq!(cost, 49);
+  }
+
+  // ── Elements-to-video ($0.098/sec, same as t2v) ──
+
+  #[test]
+  fn elements_5s_is_49() {
+    let cost = cost_cents_with(|b| {
+      b.reference_images = Some(ImageListRef::Urls(vec!["https://example.com/r.png".to_string()]));
+      b.duration_seconds = Some(5);
+    });
+    assert_eq!(cost, 49);
+  }
+
+  #[test]
+  fn elements_10s_is_98() {
+    let cost = cost_cents_with(|b| {
+      b.reference_images = Some(ImageListRef::Urls(vec!["https://example.com/r.png".to_string()]));
+      b.duration_seconds = Some(10);
+    });
+    assert_eq!(cost, 98);
+  }
 }

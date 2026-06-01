@@ -1,5 +1,4 @@
-use fal_client::requests_old::webhook::video::image::enqueue_kling_v2p5_turbo_pro_image_to_video_webhook::EnqueueKlingV2p5TurboProImageToVideoDurationSeconds;
-use fal_client::requests_old::webhook::video::text::enqueue_kling_v2p5_turbo_pro_text_to_video_webhook::EnqueueKlingV2p5TurboProTextToVideoDurationSeconds;
+use fal_client::requests::traits::fal_request_cost_calculator_trait::FalRequestCostCalculator;
 
 use crate::generate::generate_video::video_generation_cost_estimate::VideoGenerationCostEstimate;
 use crate::generate::generate_video::providers::fal::kling_2_5_turbo_pro::request::{
@@ -8,29 +7,24 @@ use crate::generate::generate_video::providers::fal::kling_2_5_turbo_pro::reques
 
 #[derive(Clone, Debug)]
 pub struct FalKling2p5TurboProCostState {
-  pub is_ten_seconds: bool,
+  pub cost_in_usd_cents: u64,
 }
 
 impl FalKling2p5TurboProCostState {
   pub fn from_request(request: &FalKling2p5TurboProRequestState) -> Self {
-    let is_ten_seconds = match &request.mode {
-      FalKling2p5TurboProMode::TextToVideo(req) => {
-        matches!(req.duration, Some(EnqueueKlingV2p5TurboProTextToVideoDurationSeconds::Ten))
-      }
-      FalKling2p5TurboProMode::ImageToVideo(req) => {
-        matches!(req.duration, Some(EnqueueKlingV2p5TurboProImageToVideoDurationSeconds::Ten))
-      }
+    // Cost math is owned by fal_client's per-endpoint `FalRequestCostCalculator`
+    // implementations.
+    let cost_in_usd_cents = match &request.mode {
+      FalKling2p5TurboProMode::TextToVideo(req) => req.calculate_cost_in_cents(),
+      FalKling2p5TurboProMode::ImageToVideo(req) => req.calculate_cost_in_cents(),
     };
-    Self { is_ten_seconds }
+    Self { cost_in_usd_cents }
   }
 
   pub fn estimate_cost(&self) -> VideoGenerationCostEstimate {
-    // Mirrors fal_client kling_v2p5_turbo_pro: 5s = 35¢, 10s = 70¢. None → 5s.
-    let cost_in_usd_cents: u64 = if self.is_ten_seconds { 70 } else { 35 };
-
     VideoGenerationCostEstimate {
-      cost_in_credits: Some(cost_in_usd_cents),
-      cost_in_usd_cents: Some(cost_in_usd_cents),
+      cost_in_credits: Some(self.cost_in_usd_cents),
+      cost_in_usd_cents: Some(self.cost_in_usd_cents),
       is_free: false,
       is_unlimited: false,
       is_rate_limited: false,
@@ -42,9 +36,9 @@ impl FalKling2p5TurboProCostState {
 
 #[cfg(test)]
 mod tests {
-  use crate::api::router_video_model::RouterVideoModel;
   use crate::api::image_ref::ImageRef;
   use crate::api::router_provider::RouterProvider;
+  use crate::api::router_video_model::RouterVideoModel;
   use crate::generate::generate_video::generate_video_request_builder::GenerateVideoRequestBuilder;
 
   fn cost_cents(duration_seconds: Option<u16>, has_start: bool) -> u64 {
@@ -61,6 +55,8 @@ mod tests {
     b.build2().unwrap().estimate_cost().unwrap().cost_in_usd_cents.unwrap()
   }
 
+  // Pricing: $0.07/sec flat → 5s = 35¢, 10s = 70¢. Same for t2v and i2v.
+
   #[test]
   fn t2v_5s_is_35() { assert_eq!(cost_cents(Some(5), false), 35); }
 
@@ -69,6 +65,9 @@ mod tests {
 
   #[test]
   fn i2v_5s_is_35() { assert_eq!(cost_cents(Some(5), true), 35); }
+
+  #[test]
+  fn i2v_10s_is_70() { assert_eq!(cost_cents(Some(10), true), 70); }
 
   #[test]
   fn default_is_5s_priced_at_35() { assert_eq!(cost_cents(None, false), 35); }
