@@ -1,10 +1,10 @@
 use std::fmt::Debug;
 use std::sync::Arc;
 
-use fal_client::requests::webhook::image::edit::enqueue_gemini_25_flash_edit_webhook::{
+use fal_client::requests_old::webhook::image::edit::enqueue_gemini_25_flash_edit_webhook::{
   enqueue_gemini_25_flash_edit_webhook, Gemini25FlashEditArgs, Gemini25FlashEditRequest,
 };
-use fal_client::requests::webhook::image::text::enqueue_gemini_25_flash_text_to_image_webhook::{
+use fal_client::requests_old::webhook::image::text::enqueue_gemini_25_flash_text_to_image_webhook::{
   enqueue_gemini_25_flash_text_to_image_webhook, Gemini25FlashTextToImageArgs,
   Gemini25FlashTextToImageRequest,
 };
@@ -65,8 +65,8 @@ impl FalNanoBananaRequestState {
 mod tests {
   use super::*;
   use fal_client::creds::fal_api_key::FalApiKey;
-  use fal_client::requests::webhook::image::edit::enqueue_gemini_25_flash_edit_webhook::Gemini25FlashEditNumImages;
-  use fal_client::requests::webhook::image::text::enqueue_gemini_25_flash_text_to_image_webhook::{
+  use fal_client::requests_old::webhook::image::edit::enqueue_gemini_25_flash_edit_webhook::Gemini25FlashEditNumImages;
+  use fal_client::requests_old::webhook::image::text::enqueue_gemini_25_flash_text_to_image_webhook::{
     Gemini25FlashTextToImageAspectRatio, Gemini25FlashTextToImageNumImages,
   };
   use test_data::web::image_urls::JUNO_AT_LAKE_IMAGE_URL;

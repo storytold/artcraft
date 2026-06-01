@@ -1,4 +1,4 @@
-use fal_client::requests::webhook::image::angle::enqueue_flux_2_lora_edit_image_angle_webhook::{
+use fal_client::requests_old::webhook::image::angle::enqueue_flux_2_lora_edit_image_angle_webhook::{
   EnqueueFlux2LoraAngleImageSize, EnqueueFlux2LoraAngleNumImages,
   EnqueueFlux2LoraEditImageAngleRequest,
 };

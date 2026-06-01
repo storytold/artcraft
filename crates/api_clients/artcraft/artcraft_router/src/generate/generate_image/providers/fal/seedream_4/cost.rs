@@ -1,5 +1,5 @@
-use fal_client::requests::webhook::image::edit::enqueue_bytedance_seedream_v4_edit_image_webhook::EnqueueBytedanceSeedreamV4EditImageNumImages;
-use fal_client::requests::webhook::image::text::enqueue_bytedance_seedream_v4_text_to_image_webhook::EnqueueBytedanceSeedreamV4TextToImageNumImages;
+use fal_client::requests_old::webhook::image::edit::enqueue_bytedance_seedream_v4_edit_image_webhook::EnqueueBytedanceSeedreamV4EditImageNumImages;
+use fal_client::requests_old::webhook::image::text::enqueue_bytedance_seedream_v4_text_to_image_webhook::EnqueueBytedanceSeedreamV4TextToImageNumImages;
 
 use crate::generate::generate_image::image_generation_cost_estimate::ImageGenerationCostEstimate;
 use crate::generate::generate_image::providers::fal::seedream_4::request::FalSeedream4RequestState;
@@ -49,8 +49,8 @@ impl FalSeedream4CostState {
 #[cfg(test)]
 mod tests {
   use super::*;
-  use fal_client::requests::webhook::image::edit::enqueue_bytedance_seedream_v4_edit_image_webhook::EnqueueBytedanceSeedreamV4EditImageRequest;
-  use fal_client::requests::webhook::image::text::enqueue_bytedance_seedream_v4_text_to_image_webhook::EnqueueBytedanceSeedreamV4TextToImageRequest;
+  use fal_client::requests_old::webhook::image::edit::enqueue_bytedance_seedream_v4_edit_image_webhook::EnqueueBytedanceSeedreamV4EditImageRequest;
+  use fal_client::requests_old::webhook::image::text::enqueue_bytedance_seedream_v4_text_to_image_webhook::EnqueueBytedanceSeedreamV4TextToImageRequest;
 
   fn t2i_cost(n: EnqueueBytedanceSeedreamV4TextToImageNumImages) -> ImageGenerationCostEstimate {
     FalSeedream4CostState::from_request(&FalSeedream4RequestState::TextToImage(

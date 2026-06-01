@@ -1,7 +1,7 @@
 use std::fmt::Debug;
 use std::sync::Arc;
 
-use fal_client::requests::webhook::video::image::enqueue_kling_v1p6_pro_image_to_video_webhook::{
+use fal_client::requests_old::webhook::video::image::enqueue_kling_v1p6_pro_image_to_video_webhook::{
   enqueue_kling_v1p6_pro_image_to_video_webhook, Kling1p6ProArgs, Kling1p6ProRequest,
 };
 

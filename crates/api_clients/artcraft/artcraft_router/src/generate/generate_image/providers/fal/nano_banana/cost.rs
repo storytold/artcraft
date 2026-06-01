@@ -1,5 +1,5 @@
-use fal_client::requests::webhook::image::edit::enqueue_gemini_25_flash_edit_webhook::Gemini25FlashEditNumImages;
-use fal_client::requests::webhook::image::text::enqueue_gemini_25_flash_text_to_image_webhook::Gemini25FlashTextToImageNumImages;
+use fal_client::requests_old::webhook::image::edit::enqueue_gemini_25_flash_edit_webhook::Gemini25FlashEditNumImages;
+use fal_client::requests_old::webhook::image::text::enqueue_gemini_25_flash_text_to_image_webhook::Gemini25FlashTextToImageNumImages;
 
 use crate::generate::generate_image::image_generation_cost_estimate::ImageGenerationCostEstimate;
 use crate::generate::generate_image::providers::fal::nano_banana::request::FalNanoBananaRequestState;
@@ -48,8 +48,8 @@ impl FalNanoBananaCostState {
 #[cfg(test)]
 mod tests {
   use super::*;
-  use fal_client::requests::webhook::image::edit::enqueue_gemini_25_flash_edit_webhook::Gemini25FlashEditRequest;
-  use fal_client::requests::webhook::image::text::enqueue_gemini_25_flash_text_to_image_webhook::Gemini25FlashTextToImageRequest;
+  use fal_client::requests_old::webhook::image::edit::enqueue_gemini_25_flash_edit_webhook::Gemini25FlashEditRequest;
+  use fal_client::requests_old::webhook::image::text::enqueue_gemini_25_flash_text_to_image_webhook::Gemini25FlashTextToImageRequest;
 
   fn t2i_cost(n: Gemini25FlashTextToImageNumImages) -> ImageGenerationCostEstimate {
     FalNanoBananaCostState::from_request(&FalNanoBananaRequestState::TextToImage(

@@ -1,10 +1,10 @@
 use std::fmt::Debug;
 use std::sync::Arc;
 
-use fal_client::requests::webhook::video::image::enqueue_veo_2_image_to_video_webhook::{
+use fal_client::requests_old::webhook::video::image::enqueue_veo_2_image_to_video_webhook::{
   enqueue_veo_2_image_to_video_webhook, Veo2Args, Veo2Request,
 };
-use fal_client::requests::webhook::video::text::enqueue_veo_2_text_to_video_webhook::{
+use fal_client::requests_old::webhook::video::text::enqueue_veo_2_text_to_video_webhook::{
   enqueue_veo_2_text_to_video_webhook, Veo2TextToVideoArgs, Veo2TextToVideoRequest,
 };
 

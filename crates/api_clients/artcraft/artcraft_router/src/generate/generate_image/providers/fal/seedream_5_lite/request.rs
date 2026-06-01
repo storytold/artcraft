@@ -1,11 +1,11 @@
 use std::fmt::Debug;
 use std::sync::Arc;
 
-use fal_client::requests::webhook::image::edit::enqueue_bytedance_seedream_v5_lite_edit_image_webhook::{
+use fal_client::requests_old::webhook::image::edit::enqueue_bytedance_seedream_v5_lite_edit_image_webhook::{
   enqueue_bytedance_seedream_v5_lite_edit_image_webhook, EnqueueBytedanceSeedreamV5LiteEditImageArgs,
   EnqueueBytedanceSeedreamV5LiteEditImageRequest,
 };
-use fal_client::requests::webhook::image::text::enqueue_bytedance_seedream_v5_lite_text_to_image_webhook::{
+use fal_client::requests_old::webhook::image::text::enqueue_bytedance_seedream_v5_lite_text_to_image_webhook::{
   enqueue_bytedance_seedream_v5_lite_text_to_image_webhook, EnqueueBytedanceSeedreamV5LiteTextToImageArgs,
   EnqueueBytedanceSeedreamV5LiteTextToImageRequest,
 };
@@ -66,7 +66,7 @@ impl FalSeedream5LiteRequestState {
 mod tests {
   use super::*;
   use fal_client::creds::fal_api_key::FalApiKey;
-  use fal_client::requests::webhook::image::text::enqueue_bytedance_seedream_v5_lite_text_to_image_webhook::EnqueueBytedanceSeedreamV5LiteTextToImageNumImages;
+  use fal_client::requests_old::webhook::image::text::enqueue_bytedance_seedream_v5_lite_text_to_image_webhook::EnqueueBytedanceSeedreamV5LiteTextToImageNumImages;
 
   fn read_fal_api_key() -> FalApiKey {
     let secret = std::fs::read_to_string("/Users/bt/Artcraft/credentials/fal_api_key.txt")

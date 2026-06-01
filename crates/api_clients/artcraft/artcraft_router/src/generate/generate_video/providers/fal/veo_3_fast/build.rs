@@ -1,4 +1,4 @@
-use fal_client::requests::webhook::video::image::enqueue_veo_3_fast_image_to_video_webhook::{
+use fal_client::requests_old::webhook::video::image::enqueue_veo_3_fast_image_to_video_webhook::{
   Veo3FastAspectRatio, Veo3FastDuration, Veo3FastRequest, Veo3FastResolution,
 };
 

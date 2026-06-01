@@ -1,7 +1,7 @@
-use fal_client::requests::webhook::video::image::enqueue_veo_3_image_to_video_webhook::{
+use fal_client::requests_old::webhook::video::image::enqueue_veo_3_image_to_video_webhook::{
   Veo3I2vAspectRatio, Veo3I2vDuration, Veo3I2vResolution, Veo3Request,
 };
-use fal_client::requests::webhook::video::text::enqueue_veo_3_text_to_video_webhook::{
+use fal_client::requests_old::webhook::video::text::enqueue_veo_3_text_to_video_webhook::{
   Veo3T2vAspectRatio, Veo3T2vDuration, Veo3T2vResolution, Veo3TextToVideoRequest,
 };
 

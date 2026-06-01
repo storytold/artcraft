@@ -1,6 +1,6 @@
-use fal_client::requests::webhook::video::image::enqueue_veo_3p1_first_last_frame_image_to_video_webhook::EnqueueVeo3p1FirstLastFrameImageToVideoDurationSeconds;
-use fal_client::requests::webhook::video::image::enqueue_veo_3p1_image_to_video_webhook::EnqueueVeo3p1ImageToVideoDurationSeconds;
-use fal_client::requests::webhook::video::text::enqueue_veo_3p1_text_to_video_webhook::EnqueueVeo3p1TextToVideoDurationSeconds;
+use fal_client::requests_old::webhook::video::image::enqueue_veo_3p1_first_last_frame_image_to_video_webhook::EnqueueVeo3p1FirstLastFrameImageToVideoDurationSeconds;
+use fal_client::requests_old::webhook::video::image::enqueue_veo_3p1_image_to_video_webhook::EnqueueVeo3p1ImageToVideoDurationSeconds;
+use fal_client::requests_old::webhook::video::text::enqueue_veo_3p1_text_to_video_webhook::EnqueueVeo3p1TextToVideoDurationSeconds;
 
 use crate::generate::generate_video::video_generation_cost_estimate::VideoGenerationCostEstimate;
 use crate::generate::generate_video::providers::fal::veo_3p1::request::{FalVeo3p1Mode, FalVeo3p1RequestState};

@@ -1,11 +1,11 @@
 use std::fmt::Debug;
 use std::sync::Arc;
 
-use fal_client::requests::webhook::image::edit::enqueue_bytedance_seedream_v4_edit_image_webhook::{
+use fal_client::requests_old::webhook::image::edit::enqueue_bytedance_seedream_v4_edit_image_webhook::{
   enqueue_bytedance_seedream_v4_edit_image_webhook, EnqueueBytedanceSeedreamV4EditImageArgs,
   EnqueueBytedanceSeedreamV4EditImageRequest,
 };
-use fal_client::requests::webhook::image::text::enqueue_bytedance_seedream_v4_text_to_image_webhook::{
+use fal_client::requests_old::webhook::image::text::enqueue_bytedance_seedream_v4_text_to_image_webhook::{
   enqueue_bytedance_seedream_v4_text_to_image_webhook, EnqueueBytedanceSeedreamV4TextToImageArgs,
   EnqueueBytedanceSeedreamV4TextToImageRequest,
 };
@@ -66,8 +66,8 @@ impl FalSeedream4RequestState {
 mod tests {
   use super::*;
   use fal_client::creds::fal_api_key::FalApiKey;
-  use fal_client::requests::webhook::image::edit::enqueue_bytedance_seedream_v4_edit_image_webhook::EnqueueBytedanceSeedreamV4EditImageNumImages;
-  use fal_client::requests::webhook::image::text::enqueue_bytedance_seedream_v4_text_to_image_webhook::EnqueueBytedanceSeedreamV4TextToImageNumImages;
+  use fal_client::requests_old::webhook::image::edit::enqueue_bytedance_seedream_v4_edit_image_webhook::EnqueueBytedanceSeedreamV4EditImageNumImages;
+  use fal_client::requests_old::webhook::image::text::enqueue_bytedance_seedream_v4_text_to_image_webhook::EnqueueBytedanceSeedreamV4TextToImageNumImages;
   use test_data::web::image_urls::JUNO_AT_LAKE_IMAGE_URL;
 
   fn read_fal_api_key() -> FalApiKey {

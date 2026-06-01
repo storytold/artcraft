@@ -11,9 +11,9 @@ use artcraft_api_defs::generate::object::generate_hunyuan_2_1_image_to_3d::Gener
 use artcraft_api_defs::generate::object::generate_hunyuan_2_1_image_to_3d::GenerateHunyuan21ImageTo3dResponse;
 use bucket_paths::legacy::typified_paths::public::media_files::bucket_file_path::MediaFileBucketPath;
 use enums::common::visibility::Visibility;
-use fal_client::requests::webhook::object::enqueue_hunyuan_3d_21_image_to_3d_webhook::enqueue_hunyuan_3d_2_1_image_to_3d_webhook;
-use fal_client::requests::webhook::object::enqueue_hunyuan_3d_21_image_to_3d_webhook::Hunyuan3d21Args;
-use fal_client::requests::webhook::object::enqueue_hunyuan_3d_21_image_to_3d_webhook::Hunyuan3d21Request;
+use fal_client::requests_old::webhook::object::enqueue_hunyuan_3d_21_image_to_3d_webhook::enqueue_hunyuan_3d_2_1_image_to_3d_webhook;
+use fal_client::requests_old::webhook::object::enqueue_hunyuan_3d_21_image_to_3d_webhook::Hunyuan3d21Args;
+use fal_client::requests_old::webhook::object::enqueue_hunyuan_3d_21_image_to_3d_webhook::Hunyuan3d21Request;
 use http_server_common::request::get_request_ip::get_request_ip;
 use log::{error, info, warn};
 use sqlx::Acquire;

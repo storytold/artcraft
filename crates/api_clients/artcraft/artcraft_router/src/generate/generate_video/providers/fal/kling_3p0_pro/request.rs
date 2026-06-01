@@ -1,11 +1,11 @@
 use std::fmt::Debug;
 use std::sync::Arc;
 
-use fal_client::requests::webhook::video::image::enqueue_kling_3p0_pro_image_to_video_webhook::{
+use fal_client::requests_old::webhook::video::image::enqueue_kling_3p0_pro_image_to_video_webhook::{
   enqueue_kling_3p0_pro_image_to_video_webhook, EnqueueKling3p0ProImageToVideoArgs,
   EnqueueKling3p0ProImageToVideoRequest,
 };
-use fal_client::requests::webhook::video::text::enqueue_kling_3p0_pro_text_to_video_webhook::{
+use fal_client::requests_old::webhook::video::text::enqueue_kling_3p0_pro_text_to_video_webhook::{
   enqueue_kling_3p0_pro_text_to_video_webhook, EnqueueKling3p0ProTextToVideoArgs,
   EnqueueKling3p0ProTextToVideoRequest,
 };

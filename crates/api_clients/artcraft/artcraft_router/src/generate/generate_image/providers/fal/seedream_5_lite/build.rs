@@ -1,8 +1,8 @@
-use fal_client::requests::webhook::image::edit::enqueue_bytedance_seedream_v5_lite_edit_image_webhook::{
+use fal_client::requests_old::webhook::image::edit::enqueue_bytedance_seedream_v5_lite_edit_image_webhook::{
   EnqueueBytedanceSeedreamV5LiteEditImageNumImages, EnqueueBytedanceSeedreamV5LiteEditImageRequest,
   EnqueueBytedanceSeedreamV5LiteEditImageSize,
 };
-use fal_client::requests::webhook::image::text::enqueue_bytedance_seedream_v5_lite_text_to_image_webhook::{
+use fal_client::requests_old::webhook::image::text::enqueue_bytedance_seedream_v5_lite_text_to_image_webhook::{
   EnqueueBytedanceSeedreamV5LiteTextToImageNumImages, EnqueueBytedanceSeedreamV5LiteTextToImageRequest,
   EnqueueBytedanceSeedreamV5LiteTextToImageSize,
 };

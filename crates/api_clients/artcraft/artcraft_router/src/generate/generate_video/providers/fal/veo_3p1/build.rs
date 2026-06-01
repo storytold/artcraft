@@ -1,12 +1,12 @@
-use fal_client::requests::webhook::video::image::enqueue_veo_3p1_first_last_frame_image_to_video_webhook::{
+use fal_client::requests_old::webhook::video::image::enqueue_veo_3p1_first_last_frame_image_to_video_webhook::{
   EnqueueVeo3p1FirstLastFrameImageToVideoAspectRatio, EnqueueVeo3p1FirstLastFrameImageToVideoDurationSeconds,
   EnqueueVeo3p1FirstLastFrameImageToVideoRequest, EnqueueVeo3p1FirstLastFrameImageToVideoResolution,
 };
-use fal_client::requests::webhook::video::image::enqueue_veo_3p1_image_to_video_webhook::{
+use fal_client::requests_old::webhook::video::image::enqueue_veo_3p1_image_to_video_webhook::{
   EnqueueVeo3p1ImageToVideoAspectRatio, EnqueueVeo3p1ImageToVideoDurationSeconds,
   EnqueueVeo3p1ImageToVideoRequest, EnqueueVeo3p1ImageToVideoResolution,
 };
-use fal_client::requests::webhook::video::text::enqueue_veo_3p1_text_to_video_webhook::{
+use fal_client::requests_old::webhook::video::text::enqueue_veo_3p1_text_to_video_webhook::{
   EnqueueVeo3p1TextToVideoAspectRatio, EnqueueVeo3p1TextToVideoDurationSeconds,
   EnqueueVeo3p1TextToVideoRequest, EnqueueVeo3p1TextToVideoResolution,
 };

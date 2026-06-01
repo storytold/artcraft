@@ -1,12 +1,12 @@
 use std::fmt::Debug;
 use std::sync::Arc;
 
-use fal_client::requests::webhook::video::image::enqueue_sora_2_pro_image_to_video_webhook::{
+use fal_client::requests_old::webhook::video::image::enqueue_sora_2_pro_image_to_video_webhook::{
   enqueue_sora_2_pro_image_to_video_webhook, EnqueueSora2ProImageToVideoArgs,
   EnqueueSora2ProImageToVideoAspectRatio, EnqueueSora2ProImageToVideoDurationSeconds,
   EnqueueSora2ProImageToVideoRequest, EnqueueSora2ProImageToVideoResolution,
 };
-use fal_client::requests::webhook::video::text::enqueue_sora_2_pro_text_to_video_webhook::{
+use fal_client::requests_old::webhook::video::text::enqueue_sora_2_pro_text_to_video_webhook::{
   enqueue_sora_2_pro_text_to_video_webhook, EnqueueSora2ProTextToVideoArgs,
   EnqueueSora2ProTextToVideoAspectRatio, EnqueueSora2ProTextToVideoDurationSeconds,
   EnqueueSora2ProTextToVideoRequest, EnqueueSora2ProTextToVideoResolution,

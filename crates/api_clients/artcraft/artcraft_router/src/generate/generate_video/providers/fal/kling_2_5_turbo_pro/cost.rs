@@ -1,5 +1,5 @@
-use fal_client::requests::webhook::video::image::enqueue_kling_v2p5_turbo_pro_image_to_video_webhook::EnqueueKlingV2p5TurboProImageToVideoDurationSeconds;
-use fal_client::requests::webhook::video::text::enqueue_kling_v2p5_turbo_pro_text_to_video_webhook::EnqueueKlingV2p5TurboProTextToVideoDurationSeconds;
+use fal_client::requests_old::webhook::video::image::enqueue_kling_v2p5_turbo_pro_image_to_video_webhook::EnqueueKlingV2p5TurboProImageToVideoDurationSeconds;
+use fal_client::requests_old::webhook::video::text::enqueue_kling_v2p5_turbo_pro_text_to_video_webhook::EnqueueKlingV2p5TurboProTextToVideoDurationSeconds;
 
 use crate::generate::generate_video::video_generation_cost_estimate::VideoGenerationCostEstimate;
 use crate::generate::generate_video::providers::fal::kling_2_5_turbo_pro::request::{

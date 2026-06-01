@@ -1,7 +1,7 @@
-use fal_client::requests::webhook::image::edit::enqueue_gemini_25_flash_edit_webhook::{
+use fal_client::requests_old::webhook::image::edit::enqueue_gemini_25_flash_edit_webhook::{
   Gemini25FlashEditAspectRatio, Gemini25FlashEditNumImages, Gemini25FlashEditRequest,
 };
-use fal_client::requests::webhook::image::text::enqueue_gemini_25_flash_text_to_image_webhook::{
+use fal_client::requests_old::webhook::image::text::enqueue_gemini_25_flash_text_to_image_webhook::{
   Gemini25FlashTextToImageAspectRatio, Gemini25FlashTextToImageNumImages,
   Gemini25FlashTextToImageRequest,
 };

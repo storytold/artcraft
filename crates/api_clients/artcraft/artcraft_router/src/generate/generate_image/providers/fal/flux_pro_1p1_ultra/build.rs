@@ -1,4 +1,4 @@
-use fal_client::requests::webhook::image::text::enqueue_flux_pro_11_ultra_text_to_image_webhook::{
+use fal_client::requests_old::webhook::image::text::enqueue_flux_pro_11_ultra_text_to_image_webhook::{
   FluxPro11UltraAspectRatio, FluxPro11UltraNumImages, FluxPro11UltraRequest,
 };
 

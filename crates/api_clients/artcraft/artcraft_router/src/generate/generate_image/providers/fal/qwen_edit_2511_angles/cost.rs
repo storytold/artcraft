@@ -32,7 +32,7 @@ impl FalQwenEdit2511AnglesCostState {
 #[cfg(test)]
 mod tests {
   use super::*;
-  use fal_client::requests::webhook::image::angle::enqueue_qwen_edit_2511_edit_image_angle_webhook::{
+  use fal_client::requests_old::webhook::image::angle::enqueue_qwen_edit_2511_edit_image_angle_webhook::{
     EnqueueQwenEdit2511AngleNumImages, EnqueueQwenEdit2511EditImageAngleRequest,
   };
 

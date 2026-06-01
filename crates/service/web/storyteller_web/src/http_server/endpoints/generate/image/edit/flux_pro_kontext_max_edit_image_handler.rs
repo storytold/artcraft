@@ -18,7 +18,7 @@ use enums::common::generation::common_model_type::CommonModelType;
 use enums::common::visibility::Visibility;
 use enums::common::generation::common_generation_mode::CommonGenerationMode;
 use fal_client::creds::open_ai_api_key::OpenAiApiKey;
-use fal_client::requests::webhook::image::edit::enqueue_flux_pro_kontext_max_edit_webhook::{enqueue_flux_pro_kontext_max_edit_webhook, FluxProKontextMaxArgs, FluxProKontextMaxNumImages, FluxProKontextMaxRequest};
+use fal_client::requests_old::webhook::image::edit::enqueue_flux_pro_kontext_max_edit_webhook::{enqueue_flux_pro_kontext_max_edit_webhook, FluxProKontextMaxArgs, FluxProKontextMaxNumImages, FluxProKontextMaxRequest};
 use http_server_common::request::get_request_ip::get_request_ip;
 use log::{error, info, warn};
 use mysql_queries::queries::generic_inference::api_providers::fal::insert_generic_inference_job_for_fal_queue::insert_generic_inference_job_for_fal_queue;

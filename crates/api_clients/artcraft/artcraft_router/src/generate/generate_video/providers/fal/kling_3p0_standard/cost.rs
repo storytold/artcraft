@@ -1,5 +1,5 @@
-use fal_client::requests::webhook::video::image::enqueue_kling_3p0_standard_image_to_video_webhook::EnqueueKling3p0StandardImageToVideoDuration;
-use fal_client::requests::webhook::video::text::enqueue_kling_3p0_standard_text_to_video_webhook::EnqueueKling3p0StandardTextToVideoDuration;
+use fal_client::requests_old::webhook::video::image::enqueue_kling_3p0_standard_image_to_video_webhook::EnqueueKling3p0StandardImageToVideoDuration;
+use fal_client::requests_old::webhook::video::text::enqueue_kling_3p0_standard_text_to_video_webhook::EnqueueKling3p0StandardTextToVideoDuration;
 
 use crate::generate::generate_video::video_generation_cost_estimate::VideoGenerationCostEstimate;
 use crate::generate::generate_video::providers::fal::kling_3p0_standard::request::{

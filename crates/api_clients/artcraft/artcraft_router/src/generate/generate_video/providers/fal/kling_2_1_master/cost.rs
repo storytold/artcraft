@@ -1,4 +1,4 @@
-use fal_client::requests::webhook::video::image::enqueue_kling_v2p1_master_image_to_video_webhook::Kling2p1MasterDuration;
+use fal_client::requests_old::webhook::video::image::enqueue_kling_v2p1_master_image_to_video_webhook::Kling2p1MasterDuration;
 
 use crate::generate::generate_video::video_generation_cost_estimate::VideoGenerationCostEstimate;
 use crate::generate::generate_video::providers::fal::kling_2_1_master::request::FalKling21MasterRequestState;

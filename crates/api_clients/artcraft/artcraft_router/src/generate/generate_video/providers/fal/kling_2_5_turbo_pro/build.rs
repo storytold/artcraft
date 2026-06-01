@@ -1,7 +1,7 @@
-use fal_client::requests::webhook::video::image::enqueue_kling_v2p5_turbo_pro_image_to_video_webhook::{
+use fal_client::requests_old::webhook::video::image::enqueue_kling_v2p5_turbo_pro_image_to_video_webhook::{
   EnqueueKlingV2p5TurboProImageToVideoDurationSeconds, EnqueueKlingV2p5TurboProImageToVideoRequest,
 };
-use fal_client::requests::webhook::video::text::enqueue_kling_v2p5_turbo_pro_text_to_video_webhook::{
+use fal_client::requests_old::webhook::video::text::enqueue_kling_v2p5_turbo_pro_text_to_video_webhook::{
   EnqueueKlingV2p5TurboProTextToVideoAspectRatio, EnqueueKlingV2p5TurboProTextToVideoDurationSeconds,
   EnqueueKlingV2p5TurboProTextToVideoRequest,
 };

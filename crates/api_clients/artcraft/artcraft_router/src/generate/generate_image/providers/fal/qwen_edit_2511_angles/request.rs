@@ -1,7 +1,7 @@
 use std::fmt::Debug;
 use std::sync::Arc;
 
-use fal_client::requests::webhook::image::angle::enqueue_qwen_edit_2511_edit_image_angle_webhook::{
+use fal_client::requests_old::webhook::image::angle::enqueue_qwen_edit_2511_edit_image_angle_webhook::{
   enqueue_qwen_edit_2511_edit_image_angle_webhook, EnqueueQwenEdit2511EditImageAngleArgs,
   EnqueueQwenEdit2511EditImageAngleRequest,
 };
@@ -47,7 +47,7 @@ impl FalQwenEdit2511AnglesRequestState {
 mod tests {
   use super::*;
   use fal_client::creds::fal_api_key::FalApiKey;
-  use fal_client::requests::webhook::image::angle::enqueue_qwen_edit_2511_edit_image_angle_webhook::{
+  use fal_client::requests_old::webhook::image::angle::enqueue_qwen_edit_2511_edit_image_angle_webhook::{
     EnqueueQwenEdit2511AngleImageSize, EnqueueQwenEdit2511AngleNumImages,
   };
 

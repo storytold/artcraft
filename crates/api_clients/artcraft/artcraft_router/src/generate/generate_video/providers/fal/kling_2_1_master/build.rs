@@ -1,4 +1,4 @@
-use fal_client::requests::webhook::video::image::enqueue_kling_v2p1_master_image_to_video_webhook::{
+use fal_client::requests_old::webhook::video::image::enqueue_kling_v2p1_master_image_to_video_webhook::{
   Kling2p1MasterAspectRatio, Kling2p1MasterDuration, Kling2p1MasterRequest,
 };
 

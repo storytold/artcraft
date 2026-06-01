@@ -1,4 +1,4 @@
-use fal_client::requests::webhook::video::image::enqueue_veo_3_fast_image_to_video_webhook::Veo3FastDuration;
+use fal_client::requests_old::webhook::video::image::enqueue_veo_3_fast_image_to_video_webhook::Veo3FastDuration;
 
 use crate::generate::generate_video::video_generation_cost_estimate::VideoGenerationCostEstimate;
 use crate::generate::generate_video::providers::fal::veo_3_fast::request::FalVeo3FastRequestState;

@@ -19,7 +19,7 @@ use enums::common::generation_provider::GenerationProvider;
 use enums::common::visibility::Visibility;
 use fal_client::creds::open_ai_api_key::OpenAiApiKey;
 use fal_client::requests::traits::fal_request_cost_calculator_trait::FalRequestCostCalculator;
-use fal_client::requests::webhook::image::text::enqueue_gpt_image_1_byok_text_to_image_webhook::{enqueue_gpt_image_1_byok_text_to_image_webhook, GptTextToImageByokArgs, GptTextToImageByokRequest, GptTextToImageNumImages, GptTextToImageQuality, GptTextToImageSize};
+use fal_client::requests_old::webhook::image::text::enqueue_gpt_image_1_byok_text_to_image_webhook::{enqueue_gpt_image_1_byok_text_to_image_webhook, GptTextToImageByokArgs, GptTextToImageByokRequest, GptTextToImageNumImages, GptTextToImageQuality, GptTextToImageSize};
 use http_server_common::request::get_request_ip::get_request_ip;
 use log::{error, info, warn};
 use mysql_queries::queries::generic_inference::api_providers::fal::insert_generic_inference_job_for_fal_queue::insert_generic_inference_job_for_fal_queue;

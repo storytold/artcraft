@@ -1,6 +1,6 @@
 use enums::common::generation::common_resolution::CommonResolution as CommonResolutionEnum;
 use fal_client::requests::traits::fal_request_cost_calculator_trait::FalRequestCostCalculator;
-use fal_client::requests::webhook::video::image::enqueue_seedance_1_lite_image_to_video_webhook::{
+use fal_client::requests_old::webhook::video::image::enqueue_seedance_1_lite_image_to_video_webhook::{
   Seedance1LiteDuration, Seedance1LiteRequest, Seedance1LiteResolution,
 };
 

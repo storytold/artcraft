@@ -1,7 +1,7 @@
 use std::fmt::Debug;
 use std::sync::Arc;
 
-use fal_client::requests::webhook::image::text::enqueue_flux_pro_11_text_to_image_webhook::{
+use fal_client::requests_old::webhook::image::text::enqueue_flux_pro_11_text_to_image_webhook::{
   enqueue_flux_pro_11_text_to_image_webhook, FluxPro11Args, FluxPro11Request,
 };
 
@@ -46,7 +46,7 @@ impl FalFluxPro1p1RequestState {
 mod tests {
   use super::*;
   use fal_client::creds::fal_api_key::FalApiKey;
-  use fal_client::requests::webhook::image::text::enqueue_flux_pro_11_text_to_image_webhook::{
+  use fal_client::requests_old::webhook::image::text::enqueue_flux_pro_11_text_to_image_webhook::{
     FluxPro11AspectRatio, FluxPro11NumImages,
   };
 

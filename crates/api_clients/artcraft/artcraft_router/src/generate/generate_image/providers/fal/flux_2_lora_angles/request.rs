@@ -1,7 +1,7 @@
 use std::fmt::Debug;
 use std::sync::Arc;
 
-use fal_client::requests::webhook::image::angle::enqueue_flux_2_lora_edit_image_angle_webhook::{
+use fal_client::requests_old::webhook::image::angle::enqueue_flux_2_lora_edit_image_angle_webhook::{
   enqueue_flux_2_lora_edit_image_angle_webhook, EnqueueFlux2LoraEditImageAngleArgs,
   EnqueueFlux2LoraEditImageAngleRequest,
 };
@@ -47,7 +47,7 @@ impl FalFlux2LoraAnglesRequestState {
 mod tests {
   use super::*;
   use fal_client::creds::fal_api_key::FalApiKey;
-  use fal_client::requests::webhook::image::angle::enqueue_flux_2_lora_edit_image_angle_webhook::{
+  use fal_client::requests_old::webhook::image::angle::enqueue_flux_2_lora_edit_image_angle_webhook::{
     EnqueueFlux2LoraAngleImageSize, EnqueueFlux2LoraAngleNumImages,
   };
 

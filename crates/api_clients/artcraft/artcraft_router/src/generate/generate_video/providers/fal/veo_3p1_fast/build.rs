@@ -1,12 +1,12 @@
-use fal_client::requests::webhook::video::image::enqueue_veo_3p1_fast_first_last_frame_image_to_video_webhook::{
+use fal_client::requests_old::webhook::video::image::enqueue_veo_3p1_fast_first_last_frame_image_to_video_webhook::{
   EnqueueVeo3p1FastFirstLastFrameImageToVideoAspectRatio, EnqueueVeo3p1FastFirstLastFrameImageToVideoDurationSeconds,
   EnqueueVeo3p1FastFirstLastFrameImageToVideoRequest, EnqueueVeo3p1FastFirstLastFrameImageToVideoResolution,
 };
-use fal_client::requests::webhook::video::image::enqueue_veo_3p1_fast_image_to_video_webhook::{
+use fal_client::requests_old::webhook::video::image::enqueue_veo_3p1_fast_image_to_video_webhook::{
   EnqueueVeo3p1FastImageToVideoAspectRatio, EnqueueVeo3p1FastImageToVideoDurationSeconds,
   EnqueueVeo3p1FastImageToVideoRequest, EnqueueVeo3p1FastImageToVideoResolution,
 };
-use fal_client::requests::webhook::video::text::enqueue_veo_3p1_fast_text_to_video_webhook::{
+use fal_client::requests_old::webhook::video::text::enqueue_veo_3p1_fast_text_to_video_webhook::{
   EnqueueVeo3p1FastTextToVideoAspectRatio, EnqueueVeo3p1FastTextToVideoDurationSeconds,
   EnqueueVeo3p1FastTextToVideoRequest, EnqueueVeo3p1FastTextToVideoResolution,
 };

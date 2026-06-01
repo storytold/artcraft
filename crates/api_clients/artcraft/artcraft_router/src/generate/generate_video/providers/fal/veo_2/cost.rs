@@ -1,4 +1,4 @@
-use fal_client::requests::webhook::video::image::enqueue_veo_2_image_to_video_webhook::Veo2Duration;
+use fal_client::requests_old::webhook::video::image::enqueue_veo_2_image_to_video_webhook::Veo2Duration;
 
 use crate::generate::generate_video::video_generation_cost_estimate::VideoGenerationCostEstimate;
 use crate::generate::generate_video::providers::fal::veo_2::request::{FalVeo2Mode, FalVeo2RequestState};

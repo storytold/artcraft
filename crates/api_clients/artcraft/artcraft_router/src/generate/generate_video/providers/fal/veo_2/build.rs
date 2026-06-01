@@ -1,7 +1,7 @@
-use fal_client::requests::webhook::video::image::enqueue_veo_2_image_to_video_webhook::{
+use fal_client::requests_old::webhook::video::image::enqueue_veo_2_image_to_video_webhook::{
   Veo2AspectRatio, Veo2Duration, Veo2Request,
 };
-use fal_client::requests::webhook::video::text::enqueue_veo_2_text_to_video_webhook::Veo2TextToVideoRequest;
+use fal_client::requests_old::webhook::video::text::enqueue_veo_2_text_to_video_webhook::Veo2TextToVideoRequest;
 
 use crate::api::router_aspect_ratio::RouterAspectRatio;
 use crate::api::image_ref::ImageRef;
