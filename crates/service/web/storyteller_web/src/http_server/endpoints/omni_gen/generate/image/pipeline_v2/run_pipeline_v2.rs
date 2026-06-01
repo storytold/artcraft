@@ -6,9 +6,9 @@ use artcraft_router::client::router_client::RouterClient;
 use artcraft_router::client::router_fal_client::RouterFalClient;
 use artcraft_router::generate::generate_image::generate_image_request_builder::GenerateImageRequestBuilder;
 use artcraft_router::generate::generate_image::generate_image_response::GenerateImageResponse;
-use artcraft_router::generate::generate_image_v2::image_generation_draft_context::ImageGenerationDraftContext;
-use artcraft_router::generate::generate_image_v2::image_generation_draft_or_request::ImageGenerationDraftOrRequest;
-use artcraft_router::generate::generate_image_v2::image_generation_request::ImageGenerationRequest;
+use artcraft_router::generate::generate_image::image_generation_draft_context::ImageGenerationDraftContext;
+use artcraft_router::generate::generate_image::image_generation_draft_or_request::ImageGenerationDraftOrRequest;
+use artcraft_router::generate::generate_image::image_generation_request::ImageGenerationRequest;
 use tokens::tokens::generic_inference_jobs::InferenceJobToken;
 use tokens::tokens::users::UserToken;
 
