@@ -210,5 +210,102 @@ mod tests {
     );
   }
 
+  /// Parity vs the legacy
+  /// `requests_old/http/video/image/http_kling_v2p6_pro_image_to_video.rs`.
+  ///
+  /// The legacy has no cost calculator, so cost parity is N/A. The wire
+  /// shape *intentionally diverges*: fal renamed the image field from
+  /// `image_url` (legacy) to `start_image_url` (current docs), and the
+  /// legacy gained no concept of `voice_ids` or `end_image_url`. These
+  /// tests document the differences and pin the endpoint URL, so we'll
+  /// notice if fal ever flips back or further changes the schema.
+  mod legacy_parity {
+    use super::*;
+    use crate::requests_old::http::video::image::http_kling_v2p6_pro_image_to_video::{
+      kling_v2p6_pro_image_to_video, KlingV2p6ProImageToVideoInput,
+    };
+
+    /// Same `fal-ai/kling-video/v2.6/pro/image-to-video` path.
+    #[test]
+    fn endpoint_path_matches_legacy() {
+      let legacy = kling_v2p6_pro_image_to_video(KlingV2p6ProImageToVideoInput {
+        prompt: "p".to_string(),
+        image_url: "https://example.com/x.png".to_string(),
+        ..Default::default()
+      });
+      assert_eq!(
+        Kling2p6ProImageToVideoRequest::ENDPOINT,
+        legacy.endpoint,
+      );
+    }
+
+    /// The image-URL field was renamed by fal: legacy `image_url` →
+    /// current `start_image_url`. This test pins the new module to the
+    /// current name and confirms the legacy field name is *not* emitted.
+    #[test]
+    fn new_module_emits_start_image_url_not_image_url() {
+      let new = Kling2p6ProImageToVideoRequest {
+        prompt: "p".to_string(),
+        start_image_url: "https://example.com/x.png".to_string(),
+        end_image_url: None,
+        duration: None,
+        negative_prompt: None,
+        generate_audio: None,
+        voice_ids: None,
+      };
+      let json = serde_json::to_value(new.to_raw_request().unwrap()).unwrap();
+      assert!(json.get("start_image_url").is_some(), "missing start_image_url: {json}");
+      assert!(json.get("image_url").is_none(), "unexpected legacy image_url: {json}");
+    }
+
+    /// Legacy struct still emits the *old* `image_url` field name —
+    /// asserting this here flags any future schema drift in the legacy
+    /// archive (it shouldn't change; if it does we want to know).
+    #[test]
+    fn legacy_module_still_emits_image_url() {
+      let legacy = KlingV2p6ProImageToVideoInput {
+        prompt: "p".to_string(),
+        image_url: "https://example.com/x.png".to_string(),
+        ..Default::default()
+      };
+      let json = serde_json::to_value(&legacy).unwrap();
+      assert!(json.get("image_url").is_some(), "missing image_url: {json}");
+      assert!(json.get("start_image_url").is_none(), "unexpected start_image_url: {json}");
+    }
+
+    /// On fields that *did* survive the rename (prompt, duration,
+    /// negative_prompt, generate_audio), wire JSON must match between
+    /// new and legacy when populated with the same values.
+    #[test]
+    fn surviving_fields_match_legacy_wire_shape() {
+      let new = Kling2p6ProImageToVideoRequest {
+        prompt: "shared prompt".to_string(),
+        start_image_url: "https://example.com/x.png".to_string(),
+        end_image_url: None,
+        duration: Some(Kling2p6ProImageToVideoDuration::TenSeconds),
+        negative_prompt: Some("blurry".to_string()),
+        generate_audio: Some(false),
+        voice_ids: None,
+      };
+      let mut new_json = serde_json::to_value(new.to_raw_request().unwrap()).unwrap();
+
+      let legacy = KlingV2p6ProImageToVideoInput {
+        prompt: "shared prompt".to_string(),
+        image_url: "https://example.com/x.png".to_string(),
+        duration: Some("10".to_string()),
+        negative_prompt: Some("blurry".to_string()),
+        generate_audio: Some(false),
+      };
+      let mut legacy_json = serde_json::to_value(&legacy).unwrap();
+
+      // Strip the renamed image-URL field from each side, then compare.
+      // (`voice_ids` and `end_image_url` are new in 2.6 — neither is set
+      // in this test, so they don't appear in JSON.)
+      new_json.as_object_mut().unwrap().remove("start_image_url");
+      legacy_json.as_object_mut().unwrap().remove("image_url");
+      assert_eq!(new_json, legacy_json);
+    }
+  }
+
   // NB: Pricing tests are in cost.rs
 }
