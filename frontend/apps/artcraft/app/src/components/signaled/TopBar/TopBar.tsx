@@ -784,19 +784,19 @@ export const TopBar = ({ pageName }: Props) => {
                   variant="primary"
                   icon={faGem}
                   onClick={toggleSubscriptionModal}
-                  className="h-[38px] shadow-md shadow-primary-500/50 transition-all duration-300 hover:shadow-md hover:shadow-primary-500/75"
+                  className="transition-all duration-300"
                 >
                   Support
                 </Button>
               )}
 
-              <UploadImagesButton className="h-[38px] w-[38px]" />
+              <UploadImagesButton className="h-[34px] w-[34px]" />
 
               <Tooltip content="Settings" position="bottom" delay={300}>
                 <Button
                   variant="secondary"
                   icon={faGear}
-                  className="h-[38px] w-[38px]"
+                  className="h-[34px] w-[34px]"
                   onClick={() => {
                     setSettingsSection("general");
                     setIsSettingsModalOpen(true);
@@ -807,7 +807,6 @@ export const TopBar = ({ pageName }: Props) => {
 
               <Button
                 variant="secondary"
-                className="h-[38px]"
                 icon={faImages}
                 onClick={handleOpenGalleryModal}
               >
