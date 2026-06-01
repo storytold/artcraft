@@ -1,1 +1,2 @@
+pub mod kling_1p6_pro_image_to_video;
 pub mod kling_3p0_standard_image_to_video;
