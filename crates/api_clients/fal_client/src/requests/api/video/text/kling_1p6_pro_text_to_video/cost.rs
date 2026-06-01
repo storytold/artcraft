@@ -105,4 +105,132 @@ mod tests {
       assert!(text > image, "text-to-video ({text}¢) must be > image-to-video ({image}¢) at {t:?}");
     }
   }
+
+  /// Exhaustive cost-table tests: every permutation of cost-relevant
+  /// configuration for text-to-video. There is no direct legacy
+  /// equivalent (the legacy `enqueue_kling_v1p6_pro_image_to_video_webhook`
+  /// is image-to-video at a slightly lower rate), so the parity here is
+  /// against the canonical $0.098/sec formula. A separate sub-test
+  /// cross-references the legacy image-to-video function to confirm the
+  /// expected per-duration premium ($0.003/sec rounded).
+  mod cost_table {
+    use super::*;
+    use crate::requests::traits::fal_request_cost_calculator_trait::FalRequestCostCalculator;
+    use crate::requests_old::webhook::video::image::enqueue_kling_v1p6_pro_image_to_video_webhook::{
+      Kling1p6ProAspectRatio as LegacyAspectRatio,
+      Kling1p6ProDuration as LegacyDuration,
+      Kling1p6ProRequest as LegacyRequest,
+    };
+
+    fn new_request(
+      duration: Option<Kling1p6ProTextToVideoDuration>,
+      aspect_ratio: Option<Kling1p6ProTextToVideoAspectRatio>,
+    ) -> Kling1p6ProTextToVideoRequest {
+      Kling1p6ProTextToVideoRequest {
+        prompt: "test".to_string(),
+        negative_prompt: None,
+        duration,
+        aspect_ratio,
+        cfg_scale: None,
+      }
+    }
+
+    // (duration, aspect_ratio, expected_cents)
+    //
+    // Math: ceil(98 × secs / 10) where 5s → 49¢ and 10s → 98¢.
+    // duration=None defaults to 5s.
+    // Aspect ratio is irrelevant to cost; iterated only to assert it.
+    const COST_TABLE: &[(
+      Option<Kling1p6ProTextToVideoDuration>,
+      Option<Kling1p6ProTextToVideoAspectRatio>,
+      u64,
+    )] = &[
+      // duration=None → 5s default → 49¢
+      (None, None,                                                       49),
+      (None, Some(Kling1p6ProTextToVideoAspectRatio::Square),            49),
+      (None, Some(Kling1p6ProTextToVideoAspectRatio::SixteenByNine),     49),
+      (None, Some(Kling1p6ProTextToVideoAspectRatio::NineBySixteen),     49),
+      // duration=5s → 49¢
+      (Some(Kling1p6ProTextToVideoDuration::FiveSeconds), None,                                                       49),
+      (Some(Kling1p6ProTextToVideoDuration::FiveSeconds), Some(Kling1p6ProTextToVideoAspectRatio::Square),             49),
+      (Some(Kling1p6ProTextToVideoDuration::FiveSeconds), Some(Kling1p6ProTextToVideoAspectRatio::SixteenByNine),      49),
+      (Some(Kling1p6ProTextToVideoDuration::FiveSeconds), Some(Kling1p6ProTextToVideoAspectRatio::NineBySixteen),      49),
+      // duration=10s → 98¢
+      (Some(Kling1p6ProTextToVideoDuration::TenSeconds),  None,                                                       98),
+      (Some(Kling1p6ProTextToVideoDuration::TenSeconds),  Some(Kling1p6ProTextToVideoAspectRatio::Square),             98),
+      (Some(Kling1p6ProTextToVideoDuration::TenSeconds),  Some(Kling1p6ProTextToVideoAspectRatio::SixteenByNine),      98),
+      (Some(Kling1p6ProTextToVideoDuration::TenSeconds),  Some(Kling1p6ProTextToVideoAspectRatio::NineBySixteen),      98),
+    ];
+
+    #[test]
+    fn new_module_matches_cost_table() {
+      for &(duration, aspect_ratio, expected) in COST_TABLE {
+        let got = new_request(duration, aspect_ratio).calculate_cost_in_cents();
+        assert_eq!(
+          got, expected,
+          "new module: duration={duration:?} aspect_ratio={aspect_ratio:?}",
+        );
+      }
+    }
+
+    /// Aspect ratio is not part of the billing formula — every row in the
+    /// cost table must produce the same value for any aspect-ratio choice.
+    #[test]
+    fn cost_is_independent_of_aspect_ratio() {
+      let aspect_ratios = [
+        None,
+        Some(Kling1p6ProTextToVideoAspectRatio::Square),
+        Some(Kling1p6ProTextToVideoAspectRatio::SixteenByNine),
+        Some(Kling1p6ProTextToVideoAspectRatio::NineBySixteen),
+      ];
+      let durations = [
+        None,
+        Some(Kling1p6ProTextToVideoDuration::FiveSeconds),
+        Some(Kling1p6ProTextToVideoDuration::TenSeconds),
+      ];
+      for duration in durations {
+        let baseline = new_request(duration, aspect_ratios[0]).calculate_cost_in_cents();
+        for &ar in &aspect_ratios[1..] {
+          let cost = new_request(duration, ar).calculate_cost_in_cents();
+          assert_eq!(cost, baseline, "duration={duration:?} ar={ar:?}");
+        }
+      }
+    }
+
+    /// Cross-check against the legacy image-to-video function. Text-to-video
+    /// is `$0.098/sec` and image-to-video is `$0.095/sec`, so at each
+    /// duration the cost difference equals `ceil(0.003 × secs)`:
+    ///   5s:  49¢ − 48¢ = 1¢   (≈ $0.015 difference before rounding)
+    ///   10s: 98¢ − 95¢ = 3¢
+    /// If a future change to the legacy image-to-video rate breaks this
+    /// invariant, this test calls it out.
+    #[test]
+    fn premium_over_legacy_image_to_video_is_as_expected() {
+      fn legacy_image(secs_variant: LegacyDuration) -> u64 {
+        LegacyRequest {
+          image_url: "https://example.com/i.png".to_string(),
+          end_frame_image_url: None,
+          prompt: "test".to_string(),
+          duration: secs_variant,
+          aspect_ratio: LegacyAspectRatio::WideSixteenNine,
+        }.calculate_cost_in_cents()
+      }
+
+      // (text duration, equivalent legacy image duration, expected premium in cents)
+      let cases = [
+        (Kling1p6ProTextToVideoDuration::FiveSeconds, LegacyDuration::FiveSeconds, 1u64),
+        (Kling1p6ProTextToVideoDuration::TenSeconds,  LegacyDuration::TenSeconds,  3u64),
+      ];
+
+      for (text_d, legacy_d, expected_premium) in cases {
+        let text_cost = new_request(Some(text_d), None).calculate_cost_in_cents();
+        let image_cost = legacy_image(legacy_d);
+        let premium = text_cost.saturating_sub(image_cost);
+        assert_eq!(
+          premium, expected_premium,
+          "{text_d:?}: text={text_cost}¢ legacy_image={image_cost}¢ premium={premium}¢ (want {expected_premium}¢)",
+        );
+      }
+    }
+  }
 }
