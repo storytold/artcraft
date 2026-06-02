@@ -23,7 +23,7 @@ pub (super) struct BatchRequestJson {
 pub (super) struct ApiParams {
   pub prompt: String,
   #[serde(rename = "aspectRatio")]
-  pub aspect_ratio: &'static str,
+  pub aspect_ratio: String,
   pub resolution: &'static str,
   pub model: &'static str,
 

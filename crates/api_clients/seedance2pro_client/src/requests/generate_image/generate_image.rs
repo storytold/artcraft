@@ -39,6 +39,12 @@ pub struct GenerateImageArgs<'a> {
 }
 
 /// Image generation parameters (no session/host info).
+///
+/// `aspect_ratio` and `quality` are loosely-typed strings here so this
+/// function can serve image-generation flows that aren't Midjourney without
+/// being constrained to Midjourney's particular set of values. The thin
+/// per-model wrappers (`generate_midjourney_v7`, etc.) own strongly-typed
+/// enums and convert them to strings before calling in.
 #[derive(Clone)]
 pub struct KinoviGenerateImageRequest {
   /// Which Midjourney variant to run.
@@ -47,8 +53,9 @@ pub struct KinoviGenerateImageRequest {
   /// User prompt.
   pub prompt: String,
 
-  /// Output aspect ratio.
-  pub aspect_ratio: KinoviMidjourneyAspectRatio,
+  /// Output aspect ratio, e.g. `"16:9"`, `"1:1"`, `"9:16"`. Forwarded
+  /// verbatim into the request's `aspectRatio` field.
+  pub aspect_ratio: String,
 
   /// Optional negative prompt. Sent as the `"no"` field on the wire.
   pub negative_prompt: Option<String>,
@@ -66,8 +73,14 @@ pub struct KinoviGenerateImageRequest {
   /// Midjourney "chaos" parameter. Valid range 0–100.
   pub chaos: Option<u8>,
 
-  /// Quality preset. `None` omits the field.
-  pub quality: Option<KinoviMidjourneyQuality>,
+  /// Quality preset, e.g. `"0.25"`, `"0.5"`, `"1"`. Parsed as an `f32` and
+  /// emitted as a JSON number on the wire. `None` omits the field.
+  ///
+  /// If the string isn't a valid `f32`, `generate_image()` returns a
+  /// `Seedance2ProClientError::InvalidRequestField` error rather than
+  /// panicking. The typed wrappers always supply well-formed values, so
+  /// errors here only occur for callers that bypass them.
+  pub quality: Option<String>,
 
   /// Enables Midjourney "raw" style mode when true. Sent as `"style":"raw"`.
   pub raw_mode: bool,
@@ -147,64 +160,6 @@ impl KinoviMidjourneyModel {
   }
 }
 
-/// Output aspect ratio. Kinovi/Midjourney accepts a wide range; the values
-/// here cover every ratio seen in the captured request samples plus the
-/// common Midjourney-supported variants.
-#[derive(Debug, Clone, Copy, Eq, PartialEq)]
-pub enum KinoviMidjourneyAspectRatio {
-  Square1x1,
-  Landscape16x9,
-  Portrait9x16,
-  UltraWide21x9,
-  UltraTall9x21,
-  Standard4x3,
-  Portrait3x4,
-  Wide5x4,
-  Tall4x5,
-  Wide3x2,
-  Tall2x3,
-}
-
-impl KinoviMidjourneyAspectRatio {
-  fn as_api_str(&self) -> &'static str {
-    match self {
-      Self::Square1x1 => "1:1",
-      Self::Landscape16x9 => "16:9",
-      Self::Portrait9x16 => "9:16",
-      Self::UltraWide21x9 => "21:9",
-      Self::UltraTall9x21 => "9:21",
-      Self::Standard4x3 => "4:3",
-      Self::Portrait3x4 => "3:4",
-      Self::Wide5x4 => "5:4",
-      Self::Tall4x5 => "4:5",
-      Self::Wide3x2 => "3:2",
-      Self::Tall2x3 => "2:3",
-    }
-  }
-}
-
-/// Midjourney quality presets. Higher = more compute and slower; pricing is
-/// flat regardless.
-#[derive(Debug, Clone, Copy, Eq, PartialEq)]
-pub enum KinoviMidjourneyQuality {
-  /// 0.25
-  Quarter,
-  /// 0.5
-  Half,
-  /// 1 (default)
-  Full,
-}
-
-impl KinoviMidjourneyQuality {
-  fn as_api_value(&self) -> f32 {
-    match self {
-      Self::Quarter => 0.25,
-      Self::Half => 0.5,
-      Self::Full => 1.0,
-    }
-  }
-}
-
 /// Number of distinct Midjourney generations to enqueue.
 /// Each task itself returns a 4-image grid; this knob just enqueues N tasks.
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
@@ -257,19 +212,21 @@ pub async fn generate_image(args: GenerateImageArgs<'_>) -> Result<GenerateImage
   // wire — Midjourney rejects empty arrays.
   let uploaded_urls = req.reference_image_urls.filter(|urls| !urls.is_empty());
 
+  let quality = req.quality.as_deref().map(parse_quality).transpose()?;
+
   let request_body = BatchRequest {
     zero: BatchRequestInner {
       json: BatchRequestJson {
         business_type: BUSINESS_TYPE,
         api_params: ApiParams {
           prompt: req.prompt,
-          aspect_ratio: req.aspect_ratio.as_api_str(),
+          aspect_ratio: req.aspect_ratio,
           resolution: MIDJOURNEY_RESOLUTION,
           model: req.model.as_api_str(),
           stylize: req.stylize,
           chaos: req.chaos,
           weird: req.weird,
-          quality: req.quality.map(|q| q.as_api_value()),
+          quality,
           style,
           negative_prompt: req.negative_prompt,
           batch_count,
@@ -347,6 +304,20 @@ pub async fn generate_image(args: GenerateImageArgs<'_>) -> Result<GenerateImage
   })
 }
 
+/// The wire format for `quality` is a JSON number, but the public API
+/// accepts a string so future models with different quality semantics can
+/// hand in whatever they like. Callers funnel through strongly-typed
+/// wrapper enums whose string output is always parseable; arbitrary
+/// callers might not, so we surface a structured client error instead of
+/// panicking.
+fn parse_quality(raw: &str) -> Result<f32, Seedance2ProClientError> {
+  raw.parse::<f32>().map_err(|err| Seedance2ProClientError::InvalidRequestField {
+    field: "quality",
+    raw_value: raw.to_string(),
+    reason: format!("not a valid f32: {}", err),
+  })
+}
+
 #[cfg(test)]
 mod tests {
   use super::*;
@@ -360,7 +331,7 @@ mod tests {
       KinoviGenerateImageRequest {
         model: KinoviMidjourneyModel::V7,
         prompt: String::new(),
-        aspect_ratio: KinoviMidjourneyAspectRatio::Square1x1,
+        aspect_ratio: "1:1".to_string(),
         negative_prompt: None,
         stylize: None,
         weird: None,
@@ -407,20 +378,11 @@ mod tests {
     #[test]
     fn pricing_is_aspect_ratio_agnostic() {
       let baseline = make_request(KinoviMidjourneyBatchCount::One).estimate_credits();
-      for ar in [
-        KinoviMidjourneyAspectRatio::Square1x1,
-        KinoviMidjourneyAspectRatio::Landscape16x9,
-        KinoviMidjourneyAspectRatio::Portrait9x16,
-        KinoviMidjourneyAspectRatio::UltraWide21x9,
-        KinoviMidjourneyAspectRatio::UltraTall9x21,
-        KinoviMidjourneyAspectRatio::Standard4x3,
-        KinoviMidjourneyAspectRatio::Portrait3x4,
-        KinoviMidjourneyAspectRatio::Wide5x4,
-        KinoviMidjourneyAspectRatio::Tall4x5,
-        KinoviMidjourneyAspectRatio::Wide3x2,
-        KinoviMidjourneyAspectRatio::Tall2x3,
-      ] {
-        let req = KinoviGenerateImageRequest { aspect_ratio: ar, ..make_request(KinoviMidjourneyBatchCount::One) };
+      for ar in ["1:1", "16:9", "9:16", "21:9", "9:21", "4:3", "3:4", "5:4", "4:5", "3:2", "2:3"] {
+        let req = KinoviGenerateImageRequest {
+          aspect_ratio: ar.to_string(),
+          ..make_request(KinoviMidjourneyBatchCount::One)
+        };
         assert_eq!(req.estimate_credits(), baseline, "aspect_ratio={:?}", ar);
       }
     }
@@ -433,7 +395,7 @@ mod tests {
         stylize: Some(1000),
         weird: Some(3000),
         chaos: Some(100),
-        quality: Some(KinoviMidjourneyQuality::Full),
+        quality: Some("1".to_string()),
         raw_mode: true,
         negative_prompt: Some("ugly, blurry".to_string()),
         ..make_request(KinoviMidjourneyBatchCount::One)
@@ -485,12 +447,17 @@ mod tests {
     use serde_json::Value;
 
     fn build_wire_json(req: KinoviGenerateImageRequest) -> Value {
+      try_build_wire_json(req).expect("test helper: malformed quality string")
+    }
+
+    fn try_build_wire_json(req: KinoviGenerateImageRequest) -> Result<Value, Seedance2ProClientError> {
       // Mirrors the body assembly in `generate_image()` minus the actual
       // network call, so we can introspect the JSON the server would see.
       let batch_count_value = req.batch_count.as_u8();
       let batch_count = if batch_count_value > 1 { Some(batch_count_value) } else { None };
       let style = if req.raw_mode { Some("raw") } else { None };
       let uploaded_urls = req.reference_image_urls.filter(|urls| !urls.is_empty());
+      let quality = req.quality.as_deref().map(parse_quality).transpose()?;
 
       let request_body = BatchRequest {
         zero: BatchRequestInner {
@@ -498,13 +465,13 @@ mod tests {
             business_type: BUSINESS_TYPE,
             api_params: ApiParams {
               prompt: req.prompt,
-              aspect_ratio: req.aspect_ratio.as_api_str(),
+              aspect_ratio: req.aspect_ratio,
               resolution: MIDJOURNEY_RESOLUTION,
               model: req.model.as_api_str(),
               stylize: req.stylize,
               chaos: req.chaos,
               weird: req.weird,
-              quality: req.quality.map(|q| q.as_api_value()),
+              quality,
               style,
               negative_prompt: req.negative_prompt,
               batch_count,
@@ -513,7 +480,7 @@ mod tests {
           },
         },
       };
-      serde_json::to_value(&request_body).unwrap()
+      Ok(serde_json::to_value(&request_body).unwrap())
     }
 
     fn api_params(req: KinoviGenerateImageRequest) -> Value {
@@ -524,7 +491,7 @@ mod tests {
       KinoviGenerateImageRequest {
         model,
         prompt: prompt.to_string(),
-        aspect_ratio: KinoviMidjourneyAspectRatio::Square1x1,
+        aspect_ratio: "1:1".to_string(),
         negative_prompt: None,
         stylize: None,
         weird: None,
@@ -578,24 +545,16 @@ mod tests {
     // ── Aspect ratio strings ──
 
     #[test]
-    fn all_aspect_ratios_serialize_correctly() {
-      let cases = [
-        (KinoviMidjourneyAspectRatio::Square1x1, "1:1"),
-        (KinoviMidjourneyAspectRatio::Landscape16x9, "16:9"),
-        (KinoviMidjourneyAspectRatio::Portrait9x16, "9:16"),
-        (KinoviMidjourneyAspectRatio::UltraWide21x9, "21:9"),
-        (KinoviMidjourneyAspectRatio::UltraTall9x21, "9:21"),
-        (KinoviMidjourneyAspectRatio::Standard4x3, "4:3"),
-        (KinoviMidjourneyAspectRatio::Portrait3x4, "3:4"),
-        (KinoviMidjourneyAspectRatio::Wide5x4, "5:4"),
-        (KinoviMidjourneyAspectRatio::Tall4x5, "4:5"),
-        (KinoviMidjourneyAspectRatio::Wide3x2, "3:2"),
-        (KinoviMidjourneyAspectRatio::Tall2x3, "2:3"),
-      ];
-      for (ar, expected) in cases {
-        let req = KinoviGenerateImageRequest { aspect_ratio: ar, ..minimal_request(KinoviMidjourneyModel::V7, "p") };
+    fn aspect_ratio_passes_through_verbatim() {
+      // The base API is stringly-typed for aspect_ratio — whatever the caller
+      // (typically a per-model wrapper) hands in must appear on the wire as-is.
+      for input in ["1:1", "16:9", "9:16", "21:9", "9:21", "4:3", "3:4", "5:4", "4:5", "3:2", "2:3"] {
+        let req = KinoviGenerateImageRequest {
+          aspect_ratio: input.to_string(),
+          ..minimal_request(KinoviMidjourneyModel::V7, "p")
+        };
         let p = api_params(req);
-        assert_eq!(p["aspectRatio"], expected, "aspect_ratio={:?}", ar);
+        assert_eq!(p["aspectRatio"], input, "aspect_ratio={:?}", input);
       }
     }
 
@@ -647,23 +606,42 @@ mod tests {
 
     #[test]
     fn quality_quarter_serializes_as_0_25() {
-      let req = KinoviGenerateImageRequest { quality: Some(KinoviMidjourneyQuality::Quarter), ..minimal_request(KinoviMidjourneyModel::V7, "p") };
+      let req = KinoviGenerateImageRequest { quality: Some("0.25".to_string()), ..minimal_request(KinoviMidjourneyModel::V7, "p") };
       let q = api_params(req)["quality"].as_f64().unwrap();
       assert!((q - 0.25).abs() < 1e-6, "got {}", q);
     }
 
     #[test]
     fn quality_half_serializes_as_0_5() {
-      let req = KinoviGenerateImageRequest { quality: Some(KinoviMidjourneyQuality::Half), ..minimal_request(KinoviMidjourneyModel::V7, "p") };
+      let req = KinoviGenerateImageRequest { quality: Some("0.5".to_string()), ..minimal_request(KinoviMidjourneyModel::V7, "p") };
       let q = api_params(req)["quality"].as_f64().unwrap();
       assert!((q - 0.5).abs() < 1e-6, "got {}", q);
     }
 
     #[test]
     fn quality_full_serializes_as_1_0() {
-      let req = KinoviGenerateImageRequest { quality: Some(KinoviMidjourneyQuality::Full), ..minimal_request(KinoviMidjourneyModel::V7, "p") };
+      let req = KinoviGenerateImageRequest { quality: Some("1".to_string()), ..minimal_request(KinoviMidjourneyModel::V7, "p") };
       let q = api_params(req)["quality"].as_f64().unwrap();
       assert!((q - 1.0).abs() < 1e-6, "got {}", q);
+    }
+
+    #[test]
+    fn quality_with_non_numeric_string_returns_client_error() {
+      // The base function accepts strings; malformed input surfaces as a
+      // structured `Seedance2ProClientError::InvalidRequestField` rather
+      // than panicking.
+      let req = KinoviGenerateImageRequest {
+        quality: Some("not-a-number".to_string()),
+        ..minimal_request(KinoviMidjourneyModel::V7, "p")
+      };
+      let err = try_build_wire_json(req).expect_err("expected an error");
+      match err {
+        Seedance2ProClientError::InvalidRequestField { field, raw_value, .. } => {
+          assert_eq!(field, "quality");
+          assert_eq!(raw_value, "not-a-number");
+        }
+        other => panic!("expected InvalidRequestField, got {:?}", other),
+      }
     }
 
     // ── Raw mode ──
@@ -737,12 +715,12 @@ mod tests {
       let req = KinoviGenerateImageRequest {
         model: KinoviMidjourneyModel::V7,
         prompt: "abandoned skyscrapers".to_string(),
-        aspect_ratio: KinoviMidjourneyAspectRatio::Square1x1,
+        aspect_ratio: "1:1".to_string(),
         negative_prompt: Some("dark, gloomy, night".to_string()),
         stylize: Some(1000),
         weird: Some(3000),
         chaos: Some(100),
-        quality: Some(KinoviMidjourneyQuality::Half),
+        quality: Some("0.5".to_string()),
         raw_mode: true,
         batch_count: KinoviMidjourneyBatchCount::One,
         reference_image_urls: None,
@@ -760,12 +738,12 @@ mod tests {
       let req = KinoviGenerateImageRequest {
         model: KinoviMidjourneyModel::V8,
         prompt: "desolate cliff overlooking the ocean".to_string(),
-        aspect_ratio: KinoviMidjourneyAspectRatio::Portrait9x16,
+        aspect_ratio: "9:16".to_string(),
         negative_prompt: None,
         stylize: None,
         weird: None,
         chaos: None,
-        quality: Some(KinoviMidjourneyQuality::Full),
+        quality: Some("1".to_string()),
         raw_mode: false,
         batch_count: KinoviMidjourneyBatchCount::Four,
         reference_image_urls: None,
@@ -804,7 +782,7 @@ mod tests {
         request: KinoviGenerateImageRequest {
           model: KinoviMidjourneyModel::V7,
           prompt: "A corgi astronaut floating among stars".to_string(),
-          aspect_ratio: KinoviMidjourneyAspectRatio::Square1x1,
+          aspect_ratio: "1:1".to_string(),
           negative_prompt: None,
           stylize: None,
           weird: None,
@@ -834,7 +812,7 @@ mod tests {
         request: KinoviGenerateImageRequest {
           model: KinoviMidjourneyModel::V7Niji,
           prompt: "A magical shiba inu sorcerer casting spells in a crystal cave".to_string(),
-          aspect_ratio: KinoviMidjourneyAspectRatio::UltraWide21x9,
+          aspect_ratio: "21:9".to_string(),
           negative_prompt: None,
           stylize: None,
           weird: None,
@@ -863,12 +841,12 @@ mod tests {
         request: KinoviGenerateImageRequest {
           model: KinoviMidjourneyModel::V8,
           prompt: "A magical shiba inu sorcerer casting spells in a crystal cave".to_string(),
-          aspect_ratio: KinoviMidjourneyAspectRatio::Square1x1,
+          aspect_ratio: "1:1".to_string(),
           negative_prompt: Some("dark, gloomy".to_string()),
           stylize: Some(730),
           weird: Some(2050),
           chaos: Some(70),
-          quality: Some(KinoviMidjourneyQuality::Half),
+          quality: Some("0.5".to_string()),
           raw_mode: true,
           batch_count: KinoviMidjourneyBatchCount::One,
           reference_image_urls: None,
@@ -892,12 +870,12 @@ mod tests {
         request: KinoviGenerateImageRequest {
           model: KinoviMidjourneyModel::V8,
           prompt: "desolate cliff overlooking the ocean".to_string(),
-          aspect_ratio: KinoviMidjourneyAspectRatio::Portrait9x16,
+          aspect_ratio: "9:16".to_string(),
           negative_prompt: None,
           stylize: None,
           weird: None,
           chaos: None,
-          quality: Some(KinoviMidjourneyQuality::Full),
+          quality: Some("1".to_string()),
           raw_mode: false,
           batch_count: KinoviMidjourneyBatchCount::Four,
           reference_image_urls: None,

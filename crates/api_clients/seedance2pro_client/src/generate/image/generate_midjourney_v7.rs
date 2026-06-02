@@ -5,11 +5,11 @@ use crate::requests::generate_image::generate_image::{
 };
 use crate::requests::kinovi_host::KinoviHost;
 
-// Re-export shared enums so callers can use this module without dipping into
-// the lower-level `requests::generate_image` module path.
-pub use crate::requests::generate_image::generate_image::{
-  KinoviMidjourneyAspectRatio, KinoviMidjourneyBatchCount, KinoviMidjourneyQuality,
-};
+// `KinoviMidjourneyBatchCount` is shared across all Midjourney models, so we
+// re-export it from the base. Aspect ratio and quality, however, are pinned
+// to model-specific enums on this wrapper to keep their valid values typed
+// at the call site.
+pub use crate::requests::generate_image::generate_image::KinoviMidjourneyBatchCount;
 
 // ── Args ──
 
@@ -24,12 +24,12 @@ pub struct GenerateMidjourneyV7Args<'a> {
 #[derive(Clone, Debug)]
 pub struct GenerateMidjourneyV7Request {
   pub prompt: String,
-  pub aspect_ratio: KinoviMidjourneyAspectRatio,
+  pub aspect_ratio: GenerateMidjourneyV7AspectRatio,
   pub negative_prompt: Option<String>,
   pub stylize: Option<u16>,
   pub weird: Option<u16>,
   pub chaos: Option<u8>,
-  pub quality: Option<KinoviMidjourneyQuality>,
+  pub quality: Option<GenerateMidjourneyV7Quality>,
   pub raw_mode: bool,
   pub batch_count: KinoviMidjourneyBatchCount,
   pub reference_image_urls: Option<Vec<String>>,
@@ -48,15 +48,73 @@ impl GenerateMidjourneyV7Request {
     KinoviGenerateImageRequest {
       model: KinoviMidjourneyModel::V7,
       prompt: self.prompt.clone(),
-      aspect_ratio: self.aspect_ratio,
+      aspect_ratio: self.aspect_ratio.as_api_str().to_string(),
       negative_prompt: self.negative_prompt.clone(),
       stylize: self.stylize,
       weird: self.weird,
       chaos: self.chaos,
-      quality: self.quality,
+      quality: self.quality.map(|q| q.as_api_str().to_string()),
       raw_mode: self.raw_mode,
       batch_count: self.batch_count,
       reference_image_urls: self.reference_image_urls.clone(),
+    }
+  }
+}
+
+// ── Model-specific enums ──
+
+/// Aspect ratios supported by Midjourney v7.
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
+pub enum GenerateMidjourneyV7AspectRatio {
+  Square1x1,
+  Landscape16x9,
+  Portrait9x16,
+  UltraWide21x9,
+  UltraTall9x21,
+  Standard4x3,
+  Portrait3x4,
+  Wide5x4,
+  Tall4x5,
+  Wide3x2,
+  Tall2x3,
+}
+
+impl GenerateMidjourneyV7AspectRatio {
+  fn as_api_str(&self) -> &'static str {
+    match self {
+      Self::Square1x1 => "1:1",
+      Self::Landscape16x9 => "16:9",
+      Self::Portrait9x16 => "9:16",
+      Self::UltraWide21x9 => "21:9",
+      Self::UltraTall9x21 => "9:21",
+      Self::Standard4x3 => "4:3",
+      Self::Portrait3x4 => "3:4",
+      Self::Wide5x4 => "5:4",
+      Self::Tall4x5 => "4:5",
+      Self::Wide3x2 => "3:2",
+      Self::Tall2x3 => "2:3",
+    }
+  }
+}
+
+/// Quality presets supported by Midjourney v7. Higher = more compute and
+/// slower; Kinovi credit pricing is flat regardless.
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
+pub enum GenerateMidjourneyV7Quality {
+  /// 0.25
+  Quarter,
+  /// 0.5
+  Half,
+  /// 1 (default)
+  Full,
+}
+
+impl GenerateMidjourneyV7Quality {
+  fn as_api_str(&self) -> &'static str {
+    match self {
+      Self::Quarter => "0.25",
+      Self::Half => "0.5",
+      Self::Full => "1",
     }
   }
 }
@@ -107,7 +165,7 @@ mod tests {
   fn make_request(batch_count: KinoviMidjourneyBatchCount) -> GenerateMidjourneyV7Request {
     GenerateMidjourneyV7Request {
       prompt: "test".to_string(),
-      aspect_ratio: KinoviMidjourneyAspectRatio::Square1x1,
+      aspect_ratio: GenerateMidjourneyV7AspectRatio::Square1x1,
       negative_prompt: None,
       stylize: None,
       weird: None,
@@ -134,12 +192,12 @@ mod tests {
     fn inner_request_preserves_all_fields() {
       let req = GenerateMidjourneyV7Request {
         prompt: "a corgi in space".to_string(),
-        aspect_ratio: KinoviMidjourneyAspectRatio::Landscape16x9,
+        aspect_ratio: GenerateMidjourneyV7AspectRatio::Landscape16x9,
         negative_prompt: Some("dark".to_string()),
         stylize: Some(500),
         weird: Some(1500),
         chaos: Some(50),
-        quality: Some(KinoviMidjourneyQuality::Half),
+        quality: Some(GenerateMidjourneyV7Quality::Half),
         raw_mode: true,
         batch_count: KinoviMidjourneyBatchCount::Four,
         reference_image_urls: Some(vec!["https://example.com/x.png".to_string()]),
@@ -147,18 +205,55 @@ mod tests {
       let inner = req.to_inner_request();
       assert_eq!(inner.model, KinoviMidjourneyModel::V7);
       assert_eq!(inner.prompt, "a corgi in space");
-      assert_eq!(inner.aspect_ratio, KinoviMidjourneyAspectRatio::Landscape16x9);
+      assert_eq!(inner.aspect_ratio, "16:9");
       assert_eq!(inner.negative_prompt.as_deref(), Some("dark"));
       assert_eq!(inner.stylize, Some(500));
       assert_eq!(inner.weird, Some(1500));
       assert_eq!(inner.chaos, Some(50));
-      assert_eq!(inner.quality, Some(KinoviMidjourneyQuality::Half));
+      assert_eq!(inner.quality.as_deref(), Some("0.5"));
       assert!(inner.raw_mode);
       assert_eq!(inner.batch_count, KinoviMidjourneyBatchCount::Four);
       assert_eq!(
         inner.reference_image_urls.as_deref(),
         Some(&["https://example.com/x.png".to_string()][..]),
       );
+    }
+
+    /// Every wrapper-side aspect ratio must serialize to the exact wire
+    /// string Midjourney expects. Catches silent drift between the enum
+    /// surface and the API.
+    #[test]
+    fn every_aspect_ratio_maps_to_canonical_wire_string() {
+      let cases = [
+        (GenerateMidjourneyV7AspectRatio::Square1x1, "1:1"),
+        (GenerateMidjourneyV7AspectRatio::Landscape16x9, "16:9"),
+        (GenerateMidjourneyV7AspectRatio::Portrait9x16, "9:16"),
+        (GenerateMidjourneyV7AspectRatio::UltraWide21x9, "21:9"),
+        (GenerateMidjourneyV7AspectRatio::UltraTall9x21, "9:21"),
+        (GenerateMidjourneyV7AspectRatio::Standard4x3, "4:3"),
+        (GenerateMidjourneyV7AspectRatio::Portrait3x4, "3:4"),
+        (GenerateMidjourneyV7AspectRatio::Wide5x4, "5:4"),
+        (GenerateMidjourneyV7AspectRatio::Tall4x5, "4:5"),
+        (GenerateMidjourneyV7AspectRatio::Wide3x2, "3:2"),
+        (GenerateMidjourneyV7AspectRatio::Tall2x3, "2:3"),
+      ];
+      for (variant, expected) in cases {
+        let req = GenerateMidjourneyV7Request { aspect_ratio: variant, ..make_request(KinoviMidjourneyBatchCount::One) };
+        assert_eq!(req.to_inner_request().aspect_ratio, expected, "variant={:?}", variant);
+      }
+    }
+
+    #[test]
+    fn every_quality_maps_to_canonical_wire_string() {
+      let cases = [
+        (GenerateMidjourneyV7Quality::Quarter, "0.25"),
+        (GenerateMidjourneyV7Quality::Half, "0.5"),
+        (GenerateMidjourneyV7Quality::Full, "1"),
+      ];
+      for (variant, expected) in cases {
+        let req = GenerateMidjourneyV7Request { quality: Some(variant), ..make_request(KinoviMidjourneyBatchCount::One) };
+        assert_eq!(req.to_inner_request().quality.as_deref(), Some(expected), "variant={:?}", variant);
+      }
     }
   }
 
@@ -224,7 +319,7 @@ mod tests {
         host_override: None,
         request: GenerateMidjourneyV7Request {
           prompt: "A corgi astronaut floating among stars".to_string(),
-          aspect_ratio: KinoviMidjourneyAspectRatio::Square1x1,
+          aspect_ratio: GenerateMidjourneyV7AspectRatio::Square1x1,
           negative_prompt: None,
           stylize: None,
           weird: None,
@@ -251,12 +346,12 @@ mod tests {
         host_override: None,
         request: GenerateMidjourneyV7Request {
           prompt: "abandoned skyscrapers".to_string(),
-          aspect_ratio: KinoviMidjourneyAspectRatio::Square1x1,
+          aspect_ratio: GenerateMidjourneyV7AspectRatio::Square1x1,
           negative_prompt: Some("dark, gloomy, night".to_string()),
           stylize: Some(1000),
           weird: Some(3000),
           chaos: Some(100),
-          quality: Some(KinoviMidjourneyQuality::Half),
+          quality: Some(GenerateMidjourneyV7Quality::Half),
           raw_mode: true,
           batch_count: KinoviMidjourneyBatchCount::One,
           reference_image_urls: None,
