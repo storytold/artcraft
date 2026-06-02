@@ -70,26 +70,44 @@ pub async fn insert_generic_inference_job_for_seedance2pro_queue_with_apriori_jo
 ) -> Result<InferenceJobToken, DatabaseQueryError>
   where E: 'e + Executor<'c, Database = MySql>
 {
+  let is_image_model = match args.maybe_model_type {
+    Some(CommonModelType::Midjourney7) |
+    Some(CommonModelType::Midjourney7Niji) |
+    Some(CommonModelType::Midjourney8) => true,
+    _ => false,
+  };
+
   let (
     job_type,
     external_third_party,
     product_category
-  ) = match args.kinovi_version {
-    KinoviVersion::Volcengine => (
+  ) = match (args.kinovi_version, is_image_model) {
+    (KinoviVersion::Volcengine, true) => (
       InferenceJobType::Seedance2ProQueue,
       InferenceJobExternalThirdParty::Seedance2Pro,
       InferenceJobProductCategory::Seedance2ProVideo,
     ),
-    KinoviVersion::BytePlus => (
+    (KinoviVersion::Volcengine, false) => (
+      InferenceJobType::Seedance2ProQueue,
+      InferenceJobExternalThirdParty::Seedance2Pro,
+      InferenceJobProductCategory::Seedance2ProImage,
+    ),
+    (KinoviVersion::BytePlus, _) => (
       InferenceJobType::Seedance2ProAltQueue,
       InferenceJobExternalThirdParty::Seedance2ProAlt,
       InferenceJobProductCategory::Seedance2ProVideoAlt,
     ),
-    KinoviVersion::BytePlusUltra => (
+    (KinoviVersion::BytePlusUltra, _) => (
       InferenceJobType::Seedance2ProBytePlusUltraQueue,
       InferenceJobExternalThirdParty::Seedance2ProBytePlusUltra,
       InferenceJobProductCategory::Seedance2ProVideoBytePlusUltra,
     ),
+  };
+
+  let inference_category = if is_image_model {
+    InferenceCategory::ImageGeneration
+  } else {
+    InferenceCategory::VideoGeneration
   };
 
   let record_id = insert_generic_inference_job_for_provider(InsertGenericInferenceJobForProviderArgs {
@@ -99,7 +117,7 @@ pub async fn insert_generic_inference_job_for_seedance2pro_queue_with_apriori_jo
     external_third_party,
     external_third_party_id: args.maybe_external_third_party_id,
     product_category,
-    inference_category: InferenceCategory::VideoGeneration,
+    inference_category,
     maybe_model_type: args.maybe_model_type,
     maybe_prompt_token: args.maybe_prompt_token,
     maybe_wallet_ledger_entry_token: args.maybe_wallet_ledger_entry_token,
