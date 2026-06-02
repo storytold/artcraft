@@ -66,7 +66,9 @@ impl TaskStatus {
   }
 }
 
-/// A single generated video result attached to an order.
+/// A single generated result attached to an order — a video frame for video
+/// orders, or one of Midjourney's 4 generated images for image orders.
+/// (Originally named for the video-only days; the underlying shape is shared.)
 #[derive(Debug, Clone)]
 pub struct VideoResult {
   pub url: String,
@@ -77,17 +79,49 @@ pub struct VideoResult {
   // pub ratio: Option<f64>,
 }
 
-/// The status of one order (one video generation task).
+/// Type-neutral alias for [`VideoResult`]. Prefer this name in new
+/// callers that deal with both image and video orders.
+pub type MediaResult = VideoResult;
+
+/// Media type of an order. Midjourney orders are `Image`; the various
+/// Seedance/keyframe/reference flows are `Video`.
+///
+/// `Unknown` covers response payloads that omit the field (older video
+/// polling) or return an unrecognised value.
+#[derive(Debug, Clone, PartialEq)]
+pub enum OrderMediaType {
+  Image,
+  Video,
+  Unknown(String),
+}
+
+impl OrderMediaType {
+  fn from_str(s: &str) -> Self {
+    match s {
+      "image" => Self::Image,
+      "video" => Self::Video,
+      other => Self::Unknown(other.to_string()),
+    }
+  }
+
+  pub fn is_image(&self) -> bool { matches!(self, Self::Image) }
+  pub fn is_video(&self) -> bool { matches!(self, Self::Video) }
+}
+
+/// The status of one order (one generation task — video or image).
 #[derive(Debug, Clone)]
 pub struct OrderStatus {
   pub order_id: String,
 
   pub task_status: TaskStatus,
 
-  /// Top-level result video URL. Populated when `task_status` is `Completed`.
+  /// Top-level result URL (video file for video orders, the first image of
+  /// the 4-image grid for Midjourney image orders). Populated when
+  /// `task_status` is `Completed`.
   pub result_url: Option<String>,
 
-  /// Detailed result entries. Typically one entry per video.
+  /// Detailed result entries. One entry per video frame (video orders), or
+  /// four entries per Midjourney task (image orders).
   pub results: Vec<VideoResult>,
 
   /// Structured failure reason. Populated when `task_status` is `Failed` or `fail_reason` is present.
@@ -98,6 +132,11 @@ pub struct OrderStatus {
 
   /// Parsed `created_at` as a `DateTime<Utc>`. `None` if the raw string could not be parsed.
   pub created_at_utc: Option<DateTime<Utc>>,
+
+  /// Whether this order produced an image or a video. `None` for older
+  /// polling responses that didn't include the field — those came from the
+  /// video-only era and can be treated as video by callers that need to.
+  pub media_type: Option<OrderMediaType>,
 }
 
 // --- Implementation ---
@@ -184,6 +223,8 @@ pub async fn poll_orders(args: PollOrdersArgs<'_>) -> Result<PollOrdersResponse,
         .map(|dt| dt.with_timezone(&Utc))
         .ok();
 
+      let media_type = o.media_type.as_deref().map(OrderMediaType::from_str);
+
       OrderStatus {
         order_id: o.order_id,
         task_status,
@@ -196,6 +237,7 @@ pub async fn poll_orders(args: PollOrdersArgs<'_>) -> Result<PollOrdersResponse,
         fail_reason,
         created_at: o.created_at,
         created_at_utc,
+        media_type,
       }
     })
     .collect();
@@ -229,6 +271,232 @@ mod tests {
   fn test_session() -> AnyhowResult<Seedance2ProSession> {
     let cookies = get_test_cookies()?;
     Ok(Seedance2ProSession::from_cookies_string(cookies))
+  }
+
+  // ── Offline parsing tests against captured responses ──
+  //
+  // These verify the deserializer + mapping handle the Midjourney image
+  // polling shape, including the new `mediaType` field, without breaking
+  // the older video-only callers.
+
+  mod offline_parsing {
+    use super::*;
+
+    /// Helper: take a captured response file with a `Response:` header and
+    /// extract the first complete JSON array body. Tolerant of whitespace
+    /// between `[` and `{` (the pretty-printed captures look like
+    /// `[\n  {`).
+    fn extract_json_body(raw: &str) -> &str {
+      // The body always sits after the `Response:` header in the capture.
+      // Anchor the search there so we don't accidentally grab a `[` from
+      // a header value above.
+      let after_header = match raw.find("Response") {
+        Some(i) => &raw[i..],
+        None => raw,
+      };
+      let local_start = after_header.find('[').expect("no `[` found in response body");
+      let start = (raw.len() - after_header.len()) + local_start;
+
+      let mut depth = 0i32;
+      let mut in_str = false;
+      let mut esc = false;
+      let bytes = raw.as_bytes();
+      for i in start..bytes.len() {
+        let c = bytes[i] as char;
+        if in_str {
+          if esc { esc = false; }
+          else if c == '\\' { esc = true; }
+          else if c == '"' { in_str = false; }
+        } else {
+          if c == '"' { in_str = true; }
+          else if c == '[' || c == '{' { depth += 1; }
+          else if c == ']' || c == '}' {
+            depth -= 1;
+            if depth == 0 {
+              return &raw[start..=i];
+            }
+          }
+        }
+      }
+      panic!("never found closing bracket")
+    }
+
+    /// The pretty-printed captures occasionally contain trailing commas
+    /// before `]` or `}` because the curator excised neighbouring orders
+    /// by hand. serde_json is strict about JSON, so scrub those out
+    /// before parsing.
+    fn strip_trailing_commas(body: &str) -> String {
+      let mut out = String::with_capacity(body.len());
+      let mut in_str = false;
+      let mut esc = false;
+      let bytes = body.as_bytes();
+      let mut i = 0;
+      while i < bytes.len() {
+        let c = bytes[i] as char;
+        if in_str {
+          out.push(c);
+          if esc { esc = false; }
+          else if c == '\\' { esc = true; }
+          else if c == '"' { in_str = false; }
+          i += 1;
+          continue;
+        }
+        if c == '"' { in_str = true; out.push(c); i += 1; continue; }
+        if c == ',' {
+          // Peek ahead past whitespace; if the next non-whitespace char is
+          // `]` or `}`, drop the comma.
+          let mut j = i + 1;
+          while j < bytes.len() && (bytes[j] as char).is_whitespace() { j += 1; }
+          if j < bytes.len() && (bytes[j] == b']' || bytes[j] == b'}') {
+            i += 1;
+            continue;
+          }
+        }
+        out.push(c);
+        i += 1;
+      }
+      out
+    }
+
+    fn parse_orders(raw: &str) -> Vec<OrderStatus> {
+      let body = extract_json_body(raw);
+      let body = strip_trailing_commas(body);
+      let batch: Vec<BatchResponseItem> = serde_json::from_str(&body).expect("parse batch");
+      let json = batch.into_iter().next().expect("non-empty batch").result.data.json;
+      json.orders.into_iter().map(|o| {
+        let task_status = TaskStatus::from_str(&o.task_status);
+        let fail_reason = match (&o.fail_reason, &task_status) {
+          (Some(r), _) => Some(FailureReason::from_reason(r)),
+          (None, TaskStatus::Failed) => Some(FailureReason::from_reason("(no reason)")),
+          _ => None,
+        };
+        let created_at_utc = DateTime::parse_from_rfc3339(&o.created_at)
+          .map(|dt| dt.with_timezone(&Utc)).ok();
+        let media_type = o.media_type.as_deref().map(OrderMediaType::from_str);
+        OrderStatus {
+          order_id: o.order_id,
+          task_status,
+          result_url: o.result_url,
+          results: o.results.into_iter().map(|r| VideoResult {
+            url: r.url, width: r.width, height: r.height,
+          }).collect(),
+          fail_reason,
+          created_at: o.created_at,
+          created_at_utc,
+          media_type,
+        }
+      }).collect()
+    }
+
+    const MIDJOURNEY_BATCH_1_COMPLETE: &str = include_str!(
+      "../../../../../../requests/sites/kinovi.ai/2026-06-02-midjourney-job-polling/3_midjourney_job_batch_size_1_complete.txt"
+    );
+
+    const MIDJOURNEY_BATCH_1_PENDING: &str = include_str!(
+      "../../../../../../requests/sites/kinovi.ai/2026-06-02-midjourney-job-polling/2_midjourney_job_batch_size_1_in_progress.txt"
+    );
+
+    const MIDJOURNEY_BATCH_2_COMPLETE: &str = include_str!(
+      "../../../../../../requests/sites/kinovi.ai/2026-06-02-midjourney-job-polling/6_midjourney_job_batch_size_2_complete.txt"
+    );
+
+    /// Midjourney batch-1, COMPLETED: the order should be Image, Completed,
+    /// and carry 4 generated images in `results`.
+    #[test]
+    fn midjourney_batch_1_complete_parses_as_image_order_with_4_results() {
+      let orders = parse_orders(MIDJOURNEY_BATCH_1_COMPLETE);
+      let mj = orders.iter()
+        .find(|o| o.order_id == "ord_b0w9ylcjp8syya0sz51zxf8j")
+        .expect("expected the captured Midjourney order");
+
+      assert_eq!(mj.media_type, Some(OrderMediaType::Image));
+      assert!(mj.media_type.as_ref().unwrap().is_image());
+      assert!(!mj.media_type.as_ref().unwrap().is_video());
+      assert_eq!(mj.task_status, TaskStatus::Completed);
+      assert_eq!(mj.results.len(), 4, "Midjourney returns a 4-image grid per task");
+      assert!(mj.result_url.is_some());
+      // All four images share the same task base URL, differing only in the trailing `-N.png` index.
+      for (i, r) in mj.results.iter().enumerate() {
+        assert!(r.url.ends_with(&format!("-{}.png", i)), "result {} url={}", i, r.url);
+        assert_eq!(r.width, 1344);
+        assert_eq!(r.height, 896);
+      }
+    }
+
+    /// Midjourney batch-1, PENDING: still parses, media_type still Image,
+    /// `results` empty.
+    #[test]
+    fn midjourney_batch_1_pending_parses() {
+      let orders = parse_orders(MIDJOURNEY_BATCH_1_PENDING);
+      let mj = orders.iter()
+        .find(|o| o.order_id == "ord_b0w9ylcjp8syya0sz51zxf8j")
+        .expect("expected the captured Midjourney order");
+      assert_eq!(mj.media_type, Some(OrderMediaType::Image));
+      assert_eq!(mj.task_status, TaskStatus::Pending);
+      assert!(mj.results.is_empty());
+      assert!(mj.result_url.is_none());
+    }
+
+    /// Batch-2 captured page mixes image + video orders. Confirm both
+    /// media types coexist in the same parsed `Vec<OrderStatus>` without
+    /// either kind breaking the other.
+    #[test]
+    fn midjourney_batch_2_complete_has_both_image_and_video_orders() {
+      let orders = parse_orders(MIDJOURNEY_BATCH_2_COMPLETE);
+      let images = orders.iter().filter(|o| o.media_type == Some(OrderMediaType::Image)).count();
+      let videos = orders.iter().filter(|o| o.media_type == Some(OrderMediaType::Video)).count();
+      assert!(images >= 2, "expected at least the 2 batched Midjourney orders, got {}", images);
+      assert!(videos >= 1, "expected at least one video order in the captured page, got {}", videos);
+
+      // Spot-check one of the two batched image orders.
+      let mj = orders.iter()
+        .find(|o| o.order_id == "ord_glcnvbw6hh7rzxx84hnyy4td")
+        .expect("expected the first batched Midjourney order");
+      assert_eq!(mj.media_type, Some(OrderMediaType::Image));
+      assert_eq!(mj.task_status, TaskStatus::Completed);
+      assert_eq!(mj.results.len(), 4);
+    }
+
+    /// Back-compat: when the raw payload omits `mediaType` (older video-only
+    /// polling), `media_type` parses as `None` and the rest of the order
+    /// continues to deserialise unchanged.
+    #[test]
+    fn omitted_media_type_field_yields_none() {
+      // Hand-built minimal video-shaped order, no `mediaType` field.
+      let body = r#"[{"result":{"data":{"json":{"orders":[{
+        "orderId":"ord_legacy_video",
+        "resultUrl":null,
+        "taskStatus":"PROCESSING",
+        "results":[],
+        "failReason":null,
+        "createdAt":"2026-02-19T01:20:50.398Z"
+      }],"nextCursor":null}}}}]"#;
+      let orders = parse_orders(body);
+      assert_eq!(orders.len(), 1);
+      assert!(orders[0].media_type.is_none(), "legacy responses without mediaType should map to None");
+      assert_eq!(orders[0].task_status, TaskStatus::Processing);
+    }
+
+    /// Unrecognised mediaType values shouldn't crash deserialisation;
+    /// they end up as `Unknown(_)`.
+    #[test]
+    fn unknown_media_type_value_is_preserved() {
+      let body = r#"[{"result":{"data":{"json":{"orders":[{
+        "orderId":"ord_x",
+        "resultUrl":null,
+        "taskStatus":"PROCESSING",
+        "results":[],
+        "failReason":null,
+        "createdAt":"2026-02-19T01:20:50.398Z",
+        "mediaType":"hologram"
+      }],"nextCursor":null}}}}]"#;
+      let orders = parse_orders(body);
+      assert_eq!(orders.len(), 1);
+      match &orders[0].media_type {
+        Some(OrderMediaType::Unknown(s)) => assert_eq!(s, "hologram"),
+        other => panic!("expected Unknown(\"hologram\"), got {:?}", other),
+      }
+    }
   }
 
   #[tokio::test]

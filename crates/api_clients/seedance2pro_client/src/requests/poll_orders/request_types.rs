@@ -31,6 +31,11 @@ pub(super) struct RawOrder {
   pub results: Vec<RawVideoResult>,
   pub fail_reason: Option<String>,
   pub created_at: String,
+
+  /// `"image"` for Midjourney image-generation orders, `"video"` for video
+  /// orders. `None` for older response shapes that didn't include the field.
+  #[serde(default)]
+  pub media_type: Option<String>,
 }
 
 #[derive(Deserialize, Debug)]
