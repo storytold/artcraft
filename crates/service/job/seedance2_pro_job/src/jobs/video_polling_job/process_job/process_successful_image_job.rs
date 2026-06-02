@@ -14,6 +14,7 @@ use mysql_queries::queries::generic_inference::api_providers::seedance2pro::list
 use mysql_queries::queries::generic_inference::web::mark_generic_inference_job_successfully_done_by_token::mark_generic_inference_job_successfully_done_by_token;
 use mysql_queries::queries::media_files::create::insert_builder::media_file_insert_builder::MediaFileInsertBuilder;
 use seedance2pro_client::requests::poll_orders::poll_orders::{OrderStatus, VideoResult};
+use tokens::tokens::batch_generations::BatchGenerationToken;
 use tokens::tokens::media_files::MediaFileToken;
 
 use crate::job_dependencies::JobDependencies;
@@ -52,8 +53,16 @@ pub async fn process_successful_image_job(
   // parallelising adds little while complicating refund-on-partial-failure.
   let mut created_tokens: Vec<MediaFileToken> = Vec::with_capacity(order.results.len());
 
+  let is_batch = order.results.len() > 1;
+
+  let maybe_batch_prompt_token = if is_batch {
+    Some(BatchGenerationToken::generate())
+  } else {
+    None
+  };
+
   for (idx, result) in order.results.iter().enumerate() {
-    let token = match download_and_store_one_image(deps, job, order, result, idx).await {
+    let token = match download_and_store_one_image(deps, job, order, result, idx, maybe_batch_prompt_token.as_ref()).await {
       Ok(t) => t,
       Err(err) => {
         // The first image is the headline result. If it fails, surface
@@ -118,6 +127,7 @@ async fn download_and_store_one_image(
   order: &OrderStatus,
   result: &VideoResult,
   index: usize,
+  maybe_batch_token: Option<&BatchGenerationToken>,
 ) -> AnyhowResult<MediaFileToken> {
   let image_url = result.url.as_str();
 
@@ -161,6 +171,7 @@ async fn download_and_store_one_image(
     .creator_ip_address(&job.creator_ip_address)
     .creator_set_visibility(job.creator_set_visibility)
     .file_size_bytes(image_bytes.len() as u64)
+    .maybe_batch_generation_token(maybe_batch_token)
     .maybe_creator_anonymous_visitor(job.maybe_creator_anonymous_visitor_token.as_ref())
     .maybe_creator_user(job.maybe_creator_user_token.as_ref())
     .maybe_frame_height(Some(result.height))
