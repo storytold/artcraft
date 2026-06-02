@@ -38,6 +38,9 @@ use crate::generate::generate_image::providers::fal::qwen_edit_2511_angles::buil
 use crate::generate::generate_image::providers::fal::seedream_4::build::build_fal_seedream_4;
 use crate::generate::generate_image::providers::fal::seedream_4p5::build::build_fal_seedream_4p5;
 use crate::generate::generate_image::providers::fal::seedream_5_lite::build::build_fal_seedream_5_lite;
+use crate::generate::generate_image::providers::kinovi::midjourney_7::build::build_kinovi_midjourney_7;
+use crate::generate::generate_image::providers::kinovi::midjourney_7_niji::build::build_kinovi_midjourney_7_niji;
+use crate::generate::generate_image::providers::kinovi::midjourney_8::build::build_kinovi_midjourney_8;
 
 #[derive(Clone, Debug)]
 pub struct GenerateImageRequestBuilder {
@@ -131,6 +134,11 @@ impl GenerateImageRequestBuilder {
       (RouterProvider::Fal, RouterImageModel::Seedream5Lite) => build_fal_seedream_5_lite(self),
       (RouterProvider::Fal, RouterImageModel::QwenEdit2511Angles) => build_fal_qwen_edit_2511_angles(self),
       (RouterProvider::Fal, RouterImageModel::Flux2LoraAngles) => build_fal_flux_2_lora_angles(self),
+
+      // Kinovi / Seedance2Pro (Midjourney)
+      (RouterProvider::Seedance2Pro, RouterImageModel::Midjourney7) => build_kinovi_midjourney_7(self),
+      (RouterProvider::Seedance2Pro, RouterImageModel::Midjourney7Niji) => build_kinovi_midjourney_7_niji(self),
+      (RouterProvider::Seedance2Pro, RouterImageModel::Midjourney8) => build_kinovi_midjourney_8(self),
 
       _ => self.unsupported_provider_and_model(),
     }

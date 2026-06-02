@@ -90,7 +90,11 @@ pub(super) async fn handle_image_edit_artcraft_via_router(
   let request = match dor {
     ImageGenerationDraftOrRequest::Request(req) => req,
     // Artcraft never returns a Draft — image-token resolution happens server-side.
-    ImageGenerationDraftOrRequest::Draft(d) => match d {},
+    // The only draft-producing models today are Kinovi-Midjourney variants,
+    // which are routed to a separate provider.
+    ImageGenerationDraftOrRequest::Draft(_) => unreachable!(
+      "Artcraft router should never produce a draft for image edits"
+    ),
   };
 
   let response = match request.send_request(&client).await {

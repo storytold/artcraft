@@ -57,7 +57,11 @@ pub async fn handle_qwen_edit_2511_angles(
   let request = match dor {
     ImageGenerationDraftOrRequest::Request(req) => req,
     // Artcraft-side angle models always return a Request — never a Draft.
-    ImageGenerationDraftOrRequest::Draft(d) => match d {},
+    // The only draft-producing models today are Kinovi-Midjourney variants,
+    // which are routed to a separate provider.
+    ImageGenerationDraftOrRequest::Draft(_) => unreachable!(
+      "Artcraft QwenEdit2511Angles should never produce a draft"
+    ),
   };
 
   let response = request.send_request(&client).await.map_err(|err| {

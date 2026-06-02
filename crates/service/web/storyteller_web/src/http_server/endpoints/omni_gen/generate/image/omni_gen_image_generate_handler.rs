@@ -175,6 +175,11 @@ pub async fn omni_gen_image_generate_handler(
     GenerateImageResponse::Fal(p) => {
       p.request_id.clone().unwrap_or_default()
     }
+    GenerateImageResponse::Seedance2Pro(p) => {
+      // Kinovi/Midjourney uses Seedance2Pro's task_id as the external job
+      // identifier (the order_id is also available on the payload).
+      p.task_id.clone()
+    }
   };
 
   // ==================== WRITE RESULT ==================== //

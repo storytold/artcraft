@@ -145,6 +145,9 @@ fn map_image_model(model: CommonImageModel) -> Result<RouterImageModel, HandlerE
     CommonImageModel::GrokImagineImageQuality => RouterImageModel::GrokImagineImageQuality,
     CommonImageModel::QwenEdit2511Angles => RouterImageModel::QwenEdit2511Angles,
     CommonImageModel::Flux2LoraAngles => RouterImageModel::Flux2LoraAngles,
+    CommonImageModel::Midjourney7 => RouterImageModel::Midjourney7,
+    CommonImageModel::Midjourney7Niji => RouterImageModel::Midjourney7Niji,
+    CommonImageModel::Midjourney8 => RouterImageModel::Midjourney8,
   };
   Ok(router_model)
 }

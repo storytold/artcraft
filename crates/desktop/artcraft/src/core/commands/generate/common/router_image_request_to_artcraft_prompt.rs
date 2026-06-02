@@ -58,6 +58,9 @@ fn image_model_to_common_model_type(model: RouterImageModel) -> Option<CommonMod
     RouterImageModel::Flux2LoraAngles => Some(CommonModelType::Flux2LoraAngles),
     RouterImageModel::GrokImagineImage => Some(CommonModelType::GrokImagineImage),
     RouterImageModel::GrokImagineImageQuality => Some(CommonModelType::GrokImagineImageQuality),
+    RouterImageModel::Midjourney7 => Some(CommonModelType::Midjourney7),
+    RouterImageModel::Midjourney7Niji => Some(CommonModelType::Midjourney7Niji),
+    RouterImageModel::Midjourney8 => Some(CommonModelType::Midjourney8),
   }
 }
 

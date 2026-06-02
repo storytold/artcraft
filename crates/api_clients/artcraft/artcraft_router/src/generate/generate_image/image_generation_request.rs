@@ -63,6 +63,12 @@ use crate::generate::generate_image::providers::fal::seedream_4p5::cost::FalSeed
 use crate::generate::generate_image::providers::fal::seedream_4p5::request::FalSeedream4p5RequestState;
 use crate::generate::generate_image::providers::fal::seedream_5_lite::cost::FalSeedream5LiteCostState;
 use crate::generate::generate_image::providers::fal::seedream_5_lite::request::FalSeedream5LiteRequestState;
+use crate::generate::generate_image::providers::kinovi::midjourney_7::cost::KinoviMidjourney7CostState;
+use crate::generate::generate_image::providers::kinovi::midjourney_7::request::KinoviMidjourney7RequestState;
+use crate::generate::generate_image::providers::kinovi::midjourney_7_niji::cost::KinoviMidjourney7NijiCostState;
+use crate::generate::generate_image::providers::kinovi::midjourney_7_niji::request::KinoviMidjourney7NijiRequestState;
+use crate::generate::generate_image::providers::kinovi::midjourney_8::cost::KinoviMidjourney8CostState;
+use crate::generate::generate_image::providers::kinovi::midjourney_8::request::KinoviMidjourney8RequestState;
 
 #[derive(Clone, Debug)]
 pub enum ImageGenerationRequest {
@@ -99,6 +105,11 @@ pub enum ImageGenerationRequest {
   FalSeedream5Lite(FalSeedream5LiteRequestState),
   FalQwenEdit2511Angles(FalQwenEdit2511AnglesRequestState),
   FalFlux2LoraAngles(FalFlux2LoraAnglesRequestState),
+
+  // ── Kinovi / Seedance2Pro provider (Midjourney image generation) ──
+  KinoviMidjourney7(KinoviMidjourney7RequestState),
+  KinoviMidjourney7Niji(KinoviMidjourney7NijiRequestState),
+  KinoviMidjourney8(KinoviMidjourney8RequestState),
 }
 
 impl ImageGenerationRequest {
@@ -135,6 +146,10 @@ impl ImageGenerationRequest {
       Self::FalSeedream5Lite(_) => RouterProvider::Fal,
       Self::FalQwenEdit2511Angles(_) => RouterProvider::Fal,
       Self::FalFlux2LoraAngles(_) => RouterProvider::Fal,
+
+      Self::KinoviMidjourney7(_) => RouterProvider::Seedance2Pro,
+      Self::KinoviMidjourney7Niji(_) => RouterProvider::Seedance2Pro,
+      Self::KinoviMidjourney8(_) => RouterProvider::Seedance2Pro,
     }
   }
 
@@ -203,6 +218,10 @@ impl ImageGenerationRequest {
       Self::FalSeedream5Lite(request) => Ok(FalSeedream5LiteCostState::from_request(request).estimate_cost()),
       Self::FalQwenEdit2511Angles(request) => Ok(FalQwenEdit2511AnglesCostState::from_request(request).estimate_cost()),
       Self::FalFlux2LoraAngles(request) => Ok(FalFlux2LoraAnglesCostState::from_request(request).estimate_cost()),
+
+      Self::KinoviMidjourney7(request) => Ok(KinoviMidjourney7CostState::from_request(request).estimate_cost()),
+      Self::KinoviMidjourney7Niji(request) => Ok(KinoviMidjourney7NijiCostState::from_request(request).estimate_cost()),
+      Self::KinoviMidjourney8(request) => Ok(KinoviMidjourney8CostState::from_request(request).estimate_cost()),
     }
   }
 
@@ -335,6 +354,23 @@ impl ImageGenerationRequest {
         // Webhook-required endpoint.
         let fal_client = client.get_fal_client_ref()?;
         request.send(fal_client).await
+      }
+
+      // ── Kinovi / Seedance2Pro (Midjourney) ──
+      Self::KinoviMidjourney7(request) => {
+        let seedance_client = client.get_seedance2pro_client_ref()
+          .map_err(ArtcraftRouterError::Client)?;
+        request.send(seedance_client).await
+      }
+      Self::KinoviMidjourney7Niji(request) => {
+        let seedance_client = client.get_seedance2pro_client_ref()
+          .map_err(ArtcraftRouterError::Client)?;
+        request.send(seedance_client).await
+      }
+      Self::KinoviMidjourney8(request) => {
+        let seedance_client = client.get_seedance2pro_client_ref()
+          .map_err(ArtcraftRouterError::Client)?;
+        request.send(seedance_client).await
       }
     }
   }
