@@ -11,7 +11,7 @@ const Tooltip = TooltipPrimitive.Root;
 const TooltipTrigger = TooltipPrimitive.Trigger;
 
 const tooltipVariants = cva(
-  "z-50 overflow-visible rounded-sm text-sm shadow-md",
+  "z-50 overflow-visible rounded-lg text-sm shadow-md",
   {
     variants: {
       variant: {
@@ -39,7 +39,8 @@ const tooltipVariants = cva(
 );
 
 interface TooltipContentProps
-  extends React.ComponentPropsWithoutRef<typeof TooltipPrimitive.Content>,
+  extends
+    React.ComponentPropsWithoutRef<typeof TooltipPrimitive.Content>,
     VariantProps<typeof tooltipVariants> {}
 
 const TooltipContent = React.forwardRef<

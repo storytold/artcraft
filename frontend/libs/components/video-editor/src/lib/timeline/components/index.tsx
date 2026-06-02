@@ -68,10 +68,7 @@ import { useElementSelection } from "../hooks/element/use-element-selection";
 import { useTimelineSeek } from "../hooks/use-timeline-seek";
 import { useTimelineDragDrop } from "../hooks/use-timeline-drag-drop";
 import { TimelineRuler } from "./timeline-ruler";
-import {
-  TimelineBookmarksRow,
-  useBookmarkDrag,
-} from "../bookmarks/index";
+import { TimelineBookmarksRow, useBookmarkDrag } from "../bookmarks/index";
 import { useEdgeAutoScroll } from "../hooks/use-edge-auto-scroll";
 import { useInitialScrollBottom } from "../hooks/use-initial-scroll-bottom";
 import { useTimelineResize } from "../hooks/use-timeline-resize";
@@ -298,12 +295,12 @@ export function Timeline() {
 
   const { dragView, handleElementMouseDown, handleElementClick } =
     useElementInteraction({
-    zoomLevel,
-    tracksContainerRef,
-    tracksScrollRef,
-    snappingEnabled,
-    onSnapPointChange: handleSnapPointChange,
-  });
+      zoomLevel,
+      tracksContainerRef,
+      tracksScrollRef,
+      snappingEnabled,
+      onSnapPointChange: handleSnapPointChange,
+    });
   const isElementDragging = dragView.kind === "dragging";
 
   const {
@@ -427,7 +424,7 @@ export function Timeline() {
   return (
     <section
       className={
-        "panel bg-background relative flex h-full flex-col overflow-hidden rounded-sm border"
+        "panel bg-background relative flex h-full flex-col overflow-hidden rounded-lg border border-ui-panel-border"
       }
       {...dragProps}
       aria-label="Timeline"
@@ -451,9 +448,7 @@ export function Timeline() {
           className="relative isolate flex flex-1 flex-col overflow-hidden"
           ref={tracksContainerRef}
         >
-          <SelectionBox
-            bounds={selectionBox?.bounds ?? null}
-          />
+          <SelectionBox bounds={selectionBox?.bounds ?? null} />
           <DragLine
             dropTarget={dropTarget}
             tracks={tracks}
@@ -632,7 +627,7 @@ function TrackLabelsPanel({
 
   return (
     <div
-      className="flex shrink-0 flex-col border-r"
+      className="flex shrink-0 flex-col border-r border-ui-panel"
       style={{ width: `${TIMELINE_TRACK_LABELS_COLUMN_WIDTH_PX}px` }}
     >
       <div
@@ -776,8 +771,8 @@ function TimelineTrackRows({
   const draggingElementIds = useMemo(
     () =>
       dragView.kind === "dragging"
-      ? dragView.memberTimeOffsets
-      : (null as ReadonlyMap<string, MediaTime> | null),
+        ? dragView.memberTimeOffsets
+        : (null as ReadonlyMap<string, MediaTime> | null),
     [dragView],
   );
   const sortedTracks = useMemo(() => {

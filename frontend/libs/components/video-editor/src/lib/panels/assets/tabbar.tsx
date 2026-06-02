@@ -8,11 +8,7 @@ import {
 } from "../../components/ui/tooltip";
 import { Button } from "../../components/ui/button";
 import { cn } from "../../utils/ui";
-import {
-  TAB_KEYS,
-  tabs,
-  useAssetsPanelStore,
-} from "./assets-panel-store";
+import { TAB_KEYS, tabs, useAssetsPanelStore } from "./assets-panel-store";
 
 export function TabBar() {
   const { activeTab, setActiveTab } = useAssetsPanelStore();
@@ -62,7 +58,7 @@ export function TabBar() {
                   aria-label={tab.label}
                   className={cn(
                     "shrink-0",
-                    "h-8 w-8",
+                    "h-8 w-8 rounded-lg border-transparent",
                     activeTab !== tabKey && "text-muted-foreground",
                   )}
                   onClick={() => setActiveTab(tabKey)}

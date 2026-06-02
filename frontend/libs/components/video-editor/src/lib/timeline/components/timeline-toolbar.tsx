@@ -69,7 +69,7 @@ export function TimelineToolbar({
 
   return (
     <ScrollArea className="scrollbar-hidden">
-      <div className="flex h-10 items-center justify-between border-b px-2 py-1">
+      <div className="flex h-10 items-center justify-between border-b px-2 py-1 border-ui-panel-border">
         <ToolbarLeftSection />
 
         <SceneSelector />
@@ -352,7 +352,7 @@ function ToolbarButton({
       disabled={disabled}
       onClick={onClick ? (event) => onClick({ event }) : undefined}
       className={cn(
-        "rounded-sm",
+        "rounded-lg",
         disabled ? "cursor-not-allowed opacity-50" : "",
       )}
     >

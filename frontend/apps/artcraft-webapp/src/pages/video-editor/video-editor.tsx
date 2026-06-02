@@ -14,6 +14,7 @@ import { webappAuthUserAdapter } from "./adapters/auth-user-adapter";
 import { webappMediaSourceAdapter } from "./adapters/media-source-adapter";
 import { webappExportSinkAdapter } from "./adapters/export-sink-adapter";
 import { useWebappAssetGalleryAdapter } from "./adapters/asset-gallery-adapter";
+import { TopBarActions } from "../../components/topbar/TopBarActions";
 
 // Webapp host for the @storyteller/ui-video-editor lib.
 //
@@ -98,7 +99,11 @@ export default function VideoEditorPage() {
 
   return (
     <div className="h-full w-full overflow-hidden">
-      <VideoEditor projectId={projectId} adapters={adapters} />
+      <VideoEditor
+        projectId={projectId}
+        adapters={adapters}
+        headerEndSlot={<TopBarActions />}
+      />
       {galleryModal}
     </div>
   );

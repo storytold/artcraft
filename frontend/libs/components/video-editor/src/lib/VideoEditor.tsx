@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { EditorProvider } from "./EditorProvider";
 import type { VideoEditorAdapters } from "./adapters";
 import { initializeGpuRenderer } from "./services/renderer/gpu-renderer";
@@ -39,19 +39,27 @@ export interface VideoEditorProps {
   // Hosts pass a partial set of adapters; the rest fall back to the
   // bundled defaults (IndexedDB project storage, blob-URL media, etc).
   adapters?: Partial<VideoEditorAdapters> | null;
+  // Optional host chrome rendered in the editor header, to the right of
+  // the export button. Webapp hosts that hide the global topbar inject
+  // its actions (pricing/credits/task queue/profile) here.
+  headerEndSlot?: ReactNode;
 }
 
 // Public entry. Wraps the inner shell with EditorProvider so callers
 // don't have to mount the provider themselves. Hosts that want to share
 // one provider across multiple editor instances can mount EditorProvider
 // + VideoEditorShell separately.
-export function VideoEditor({ projectId: _projectId, adapters }: VideoEditorProps) {
+export function VideoEditor({
+  projectId: _projectId,
+  adapters,
+  headerEndSlot,
+}: VideoEditorProps) {
   return (
     <EditorProvider adapters={adapters}>
       <MobileGate>
         <div className="bg-background flex h-full w-full flex-col overflow-hidden">
           <DegradedRendererBanner />
-          <EditorHeader />
+          <EditorHeader endSlot={headerEndSlot} />
           <div className="min-h-0 min-w-0 flex-1">
             <EditorLayout />
           </div>

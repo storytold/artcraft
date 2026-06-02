@@ -54,7 +54,7 @@ const DialogContent = React.forwardRef<
     <DialogPrimitive.Content
       ref={ref}
       className={cn(
-        "bg-popover fixed top-[50%] left-[50%] z-250 grid w-[calc(100%-2rem)] max-w-lg translate-x-[-50%] translate-y-[-50%] rounded-lg border shadow-lg duration-200",
+        "bg-popover fixed top-[50%] left-[50%] z-250 grid w-[calc(100%-2rem)] max-w-lg translate-x-[-50%] translate-y-[-50%] rounded-lg border border-ui-panel-border shadow-lg duration-200",
         className,
       )}
       onCloseAutoFocus={(e) => {
@@ -78,7 +78,10 @@ const DialogHeader = ({
   ...props
 }: React.HTMLAttributes<HTMLDivElement>) => (
   <div
-    className={cn("flex flex-col space-y-2 text-left border-b p-6", className)}
+    className={cn(
+      "flex flex-col space-y-2 text-left border-b border-ui-panel-border p-6",
+      className,
+    )}
     {...props}
   />
 );
@@ -98,7 +101,7 @@ const DialogFooter = ({
 }: React.HTMLAttributes<HTMLDivElement>) => (
   <div
     className={cn(
-      "flex gap-3 flex-col-reverse sm:flex-row sm:justify-end p-6 py-5 border-t",
+      "flex gap-3 flex-col-reverse sm:flex-row sm:justify-end p-6 py-5 border-t border-ui-panel-border",
       className,
     )}
     {...props}

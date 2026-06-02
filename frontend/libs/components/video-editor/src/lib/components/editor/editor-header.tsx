@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef, useState, type ReactNode } from "react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -21,7 +21,14 @@ import { cn } from "../../utils/ui";
 import { Button } from "../ui/button";
 import { useAuthUser } from "./use-auth-user";
 
-export function EditorHeader() {
+export interface EditorHeaderProps {
+  // Optional host chrome rendered to the right of the export button (e.g.
+  // the webapp's pricing/credits/task queue/profile cluster when the
+  // global topbar is hidden).
+  endSlot?: ReactNode;
+}
+
+export function EditorHeader({ endSlot }: EditorHeaderProps) {
   return (
     <header className="bg-background flex h-[3.4rem] items-center justify-between px-3 pt-0.5">
       <div className="flex items-center gap-1">
@@ -31,6 +38,7 @@ export function EditorHeader() {
       <nav className="flex items-center gap-2">
         <CurrentUserBadge />
         <ExportButton />
+        {endSlot}
       </nav>
     </header>
   );
@@ -41,12 +49,13 @@ function CurrentUserBadge() {
   const user = useAuthUser(authUser);
   if (!user) return null;
   return (
-    <span
-      className="text-muted-foreground hidden truncate text-xs sm:inline-block"
-      title={user.displayName}
-    >
-      {user.displayName}
-    </span>
+    // <span
+    //   className="text-muted-foreground hidden truncate text-xs sm:inline-block"
+    //   title={user.displayName}
+    // >
+    //   {user.displayName}
+    // </span>
+    null
   );
 }
 

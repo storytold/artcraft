@@ -24,7 +24,7 @@ export function PropertiesPanel() {
 
   if (selectedElements.length === 0) {
     return (
-      <div className="panel bg-background flex h-full flex-col items-center justify-center overflow-hidden rounded-sm border">
+      <div className="panel bg-background flex h-full flex-col items-center justify-center overflow-hidden rounded-lg border border-ui-panel-border">
         <EmptyView />
       </div>
     );
@@ -32,9 +32,9 @@ export function PropertiesPanel() {
 
   if (selectedElements.length > 1) {
     return (
-      <div className="panel bg-background flex h-full flex-col items-center justify-center overflow-hidden rounded-sm border">
+      <div className="panel bg-background flex h-full flex-col items-center justify-center overflow-hidden rounded-lg border border-ui-panel-border">
         <p className="text-muted-foreground text-sm">
-          {selectedElements.length} elements selected.0
+          {selectedElements.length} elements selected.
         </p>
       </div>
     );
@@ -62,9 +62,9 @@ export function PropertiesPanel() {
   if (!activeTab) return null;
 
   return (
-    <div className="panel bg-background flex h-full overflow-hidden rounded-sm border">
+    <div className="panel bg-background flex h-full overflow-hidden rounded-lg border border-ui-panel-border">
       <TooltipProvider delayDuration={0}>
-        <div className="flex shrink-0 flex-col gap-0.5 border-r p-1 scrollbar-hidden overflow-y-auto">
+        <div className="flex shrink-0 flex-col gap-0.5 border-r border-ui-panel-border p-1 scrollbar-hidden overflow-y-auto">
           {visibleTabs.map((tab) => (
             <Tooltip key={tab.id}>
               <TooltipTrigger asChild>

@@ -12,7 +12,10 @@ import type { RootNode } from "../../services/renderer/nodes/root-node";
 import { buildScene } from "../../services/renderer/scene-builder";
 import { PreviewOverlayLayer } from "./overlay-layer";
 import { PreviewInteractionOverlay } from "./preview-interaction-overlay";
-import { ContextMenu, ContextMenuTrigger } from "../../components/ui/context-menu";
+import {
+  ContextMenu,
+  ContextMenuTrigger,
+} from "../../components/ui/context-menu";
 import type {
   PreviewOverlayControl,
   PreviewOverlayInstance,
@@ -78,7 +81,7 @@ export function PreviewPanel({
   return (
     <div
       ref={handleContainerRef}
-      className="panel bg-background relative flex size-full min-h-0 min-w-0 flex-col rounded-sm border"
+      className="panel bg-background relative flex size-full min-h-0 min-w-0 flex-col !rounded-lg border border-ui-panel-border"
     >
       <PreviewCanvas
         container={container}
@@ -194,21 +197,16 @@ function PreviewCanvas({
     );
     const frame = Math.floor(renderTime / ticksPerFrame);
 
-    if (
-      frame === lastFrameRef.current &&
-      renderTree === lastSceneRef.current
-    ) {
+    if (frame === lastFrameRef.current && renderTree === lastSceneRef.current) {
       return;
     }
 
     renderingRef.current = true;
     lastSceneRef.current = renderTree;
     lastFrameRef.current = frame;
-    renderer
-      .render({ node: renderTree, time: renderTime })
-      .then(() => {
-        renderingRef.current = false;
-      });
+    renderer.render({ node: renderTree, time: renderTime }).then(() => {
+      renderingRef.current = false;
+    });
   }, [renderer, renderTree, editor.playback, editor.timeline]);
 
   useRafLoop(render);
@@ -308,20 +306,20 @@ function PreviewCanvas({
                 ref={viewportRef}
                 className="relative flex size-full min-h-0 min-w-0 items-center justify-center overflow-hidden"
               >
-              <div
-                ref={canvasMountRef}
-                className="absolute block border"
-                style={{
-                  left: viewport.sceneLeft,
-                  top: viewport.sceneTop,
-                  width: viewport.sceneWidth,
-                  height: viewport.sceneHeight,
-                  background:
-                    activeProject.settings.background.type === "blur"
-                      ? "transparent"
-                      : activeProject?.settings.background.color,
-                }}
-              />
+                <div
+                  ref={canvasMountRef}
+                  className="absolute block border border-ui-panel"
+                  style={{
+                    left: viewport.sceneLeft,
+                    top: viewport.sceneTop,
+                    width: viewport.sceneWidth,
+                    height: viewport.sceneHeight,
+                    background:
+                      activeProject.settings.background.type === "blur"
+                        ? "transparent"
+                        : activeProject?.settings.background.color,
+                  }}
+                />
                 <PreviewOverlayLayer
                   instances={overlayInstances}
                   plane="under-interaction"
