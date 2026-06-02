@@ -29,19 +29,6 @@ pub enum GrokSpecificApiError {
   /// 400 Bad Request — the request body shape was invalid (e.g. missing
   /// required field, unsupported model, invalid aspect ratio).
   BadRequest(String),
-
-  /// The video generation/edit/extension job finished with `status:"failed"`.
-  ///
-  /// The `code` mirrors xAI's machine-readable error code
-  /// (`invalid_argument`, `permission_denied`, `failed_precondition`,
-  /// `internal_error`); `message` is the human-readable description.
-  VideoJobFailed {
-    code: String,
-    message: String,
-  },
-
-  /// The video job expired (poll status was `"expired"`).
-  VideoJobExpired,
 }
 
 impl Error for GrokSpecificApiError {}
@@ -56,10 +43,6 @@ impl Display for GrokSpecificApiError {
       Self::RateLimited => write!(f, "Grok API: Rate limited"),
       Self::PromptModerated(msg) => write!(f, "Grok API: Prompt moderated: {}", msg),
       Self::BadRequest(msg) => write!(f, "Grok API: Bad request: {}", msg),
-      Self::VideoJobFailed { code, message } => {
-        write!(f, "Grok API: Video job failed ({}): {}", code, message)
-      }
-      Self::VideoJobExpired => write!(f, "Grok API: Video job expired"),
     }
   }
 }

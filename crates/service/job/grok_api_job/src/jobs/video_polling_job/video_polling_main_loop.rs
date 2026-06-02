@@ -3,7 +3,7 @@ use std::time::Duration;
 use log::{error, info, warn};
 
 use grok_api_client::api::requests::videos::video_status::video_status::{
-  video_status, VideoStatusArgs, VideoStatusRequest, VideoStatusState, VideoStatusSuccess,
+  video_status, FailureReason, VideoOutputInfo, VideoStatus, VideoStatusArgs, VideoStatusRequest,
 };
 use grok_api_client::error::grok_error::GrokError;
 use grok_api_client::error::grok_specific_api_error::GrokSpecificApiError;
@@ -66,48 +66,70 @@ async fn poll_one_job(deps: &JobDependencies, job: &PendingGrokApiJob) {
     },
   }).await;
 
-  let success = match poll_result {
-    Ok(success) => success,
+  let response = match poll_result {
+    Ok(response) => response,
     Err(err) => {
       handle_video_status_error(deps, job, err).await;
       return;
     }
   };
 
-  match success.state {
-    VideoStatusState::Pending => {
-      let progress = success.progress.map(|p| format!("{}%", p)).unwrap_or_else(|| "?".to_string());
+  match response.status {
+    VideoStatus::Pending { progress } => {
+      let progress_str = progress.map(|p| format!("{}%", p)).unwrap_or_else(|| "?".to_string());
       info!(
         "Grok request {} for job {} still pending ({} progress).",
-        job.request_id, job.job_token.as_str(), progress,
+        job.request_id, job.job_token.as_str(), progress_str,
       );
     }
-    VideoStatusState::Done => {
-      finalize_done_response(deps, job, success).await;
+    VideoStatus::Complete { video, .. } => {
+      finalize_complete_response(deps, job, video).await;
     }
-    VideoStatusState::Failed => {
-      // The Failed variant is mapped into `GrokError::ApiSpecific(VideoJobFailed)`
-      // by the client. We shouldn't hit this branch, but treat defensively.
-      warn!(
-        "Unexpected VideoStatusState::Failed surfaced as Ok for request {} (job {}).",
-        job.request_id, job.job_token.as_str(),
+    VideoStatus::Failed { reason, code, error, .. } => {
+      let reason_str = format_failed_reason(reason, code.as_deref(), error.as_deref());
+      info!(
+        "Grok request {} for job {} reported failed: {}.",
+        job.request_id, job.job_token.as_str(), reason_str,
       );
-      process_failed_job(deps, job, "Grok video status reported failed").await;
+      process_failed_job(deps, job, &reason_str).await;
       let _ = deps.job_stats.increment_failure_count();
     }
   }
 }
 
-async fn finalize_done_response(
+fn format_failed_reason(
+  reason: FailureReason,
+  maybe_code: Option<&str>,
+  maybe_error: Option<&str>,
+) -> String {
+  // `process_failed_job` scans this string for "moderation" / "moderated" /
+  // "platform rules" / "content policy" to decide the user-facing failure
+  // category, so make sure ContentModerated always lands on that wording.
+  match reason {
+    FailureReason::ContentModerated => {
+      format!(
+        "Grok video content moderated: {}",
+        maybe_error.unwrap_or("no details"),
+      )
+    }
+    FailureReason::Unknown => {
+      let code_part = maybe_code.unwrap_or("unknown");
+      let error_part = maybe_error.unwrap_or("no details");
+      format!("Grok video failed ({}): {}", code_part, error_part)
+    }
+  }
+}
+
+async fn finalize_complete_response(
   deps: &JobDependencies,
   job: &PendingGrokApiJob,
-  success: VideoStatusSuccess,
+  maybe_video: Option<VideoOutputInfo>,
 ) {
-  let video_url = match success.video.as_ref().and_then(|v| v.url.clone()) {
+  let video_url = match maybe_video.as_ref().and_then(|v| v.url.clone()) {
     Some(url) => url,
     None => {
       warn!(
-        "Grok request {} reported Done with no video.url for job {}. Skipping.",
+        "Grok request {} reported Complete with no video.url for job {}. Skipping.",
         job.request_id, job.job_token.as_str(),
       );
       return;
@@ -139,28 +161,11 @@ async fn handle_video_status_error(
   err: GrokError,
 ) {
   match &err {
-    // Terminal: mark the job failed.
-    GrokError::ApiSpecific(GrokSpecificApiError::VideoJobFailed { code, message }) => {
-      let reason = format!("Grok video failed ({}): {}", code, message);
-      info!(
-        "Grok request {} for job {} reported failed. Marking job failed.",
-        job.request_id, job.job_token.as_str(),
-      );
-      process_failed_job(deps, job, &reason).await;
-      let _ = deps.job_stats.increment_failure_count();
-    }
-    GrokError::ApiSpecific(GrokSpecificApiError::VideoJobExpired) => {
-      let reason = "Grok video job expired";
-      info!(
-        "Grok request {} for job {} expired. Marking job failed.",
-        job.request_id, job.job_token.as_str(),
-      );
-      process_failed_job(deps, job, reason).await;
-      let _ = deps.job_stats.increment_failure_count();
-    }
     GrokError::ApiSpecific(GrokSpecificApiError::NotFound) => {
       // Treat NotFound as terminal — xAI doesn't know about this request_id
-      // anymore (expired retention or never existed).
+      // anymore (expired retention or never existed). Note: a true
+      // `status:"expired"` poll response comes back as `VideoStatus::Failed`,
+      // not as an error, so this arm is only for 404 from the HTTP layer.
       let reason = "Grok video job not found (likely expired)";
       info!(
         "Grok request {} for job {} not found. Marking job failed.",

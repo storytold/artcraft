@@ -68,7 +68,7 @@ fn extract_xai_error_message(body: &str) -> Option<String> {
 /// Heuristic: does this response body mention content moderation? xAI's
 /// safety filter rejections include words like "moderation", "safety",
 /// "content_policy", or "blocked".
-fn body_indicates_moderation(body: &str) -> bool {
+pub(crate) fn body_indicates_moderation(body: &str) -> bool {
   let lower = body.to_lowercase();
   lower.contains("moderat")          // moderation / moderated
     || lower.contains("safety")

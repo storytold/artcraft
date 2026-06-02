@@ -1,10 +1,11 @@
 use log::info;
 use serde_derive::Serialize;
+use serde_json::Value as JsonValue;
 
 use crate::api::requests::videos::video_status::request_types::*;
 use crate::api::requests::xai_host::XAI_API_BASE_URL;
 use crate::creds::grok_api_key::GrokApiKey;
-use crate::error::classify_grok_http_error::classify_grok_http_error;
+use crate::error::classify_grok_http_error::{body_indicates_moderation, classify_grok_http_error};
 use crate::error::grok_client_error::GrokClientError;
 use crate::error::grok_error::GrokError;
 use crate::error::grok_generic_api_error::GrokGenericApiError;
@@ -31,31 +32,46 @@ pub struct VideoStatusRequest {
 
 // ── Public response ──
 
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum VideoStatusState {
-  /// Still working.
-  Pending,
-  /// Finished successfully — `video.url` is populated.
-  Done,
-  /// xAI couldn't render this — see `VideoJobFailed` in the error path.
-  Failed,
+#[derive(Debug, Clone)]
+pub struct VideoStatusResponse {
+  pub status: VideoStatus,
 }
 
+/// The lifecycle state of a video job. `Failed` is a *status*, not an error —
+/// xAI accepted the job and (usually) billed for it, but didn't produce a
+/// usable video.
 #[derive(Debug, Clone)]
-pub struct VideoStatusSuccess {
-  pub state: VideoStatusState,
+pub enum VideoStatus {
+  /// Still working. `progress` is 0–100 when xAI provides it.
+  Pending {
+    progress: Option<u8>,
+  },
+  /// Finished successfully — `video.url` is typically populated.
+  Complete {
+    model: Option<String>,
+    video: Option<VideoOutputInfo>,
+    cost_in_usd_ticks: Option<u64>,
+  },
+  /// xAI couldn't render this. `reason` is our best classification; the
+  /// remaining fields surface whatever xAI told us so the caller can log,
+  /// mark the row failed, and (where applicable) refund / surface a
+  /// user-facing message.
+  Failed {
+    reason: FailureReason,
+    code: Option<String>,
+    error: Option<String>,
+    cost_in_usd_ticks: Option<u64>,
+    full_error_json_payload: Option<String>,
+  },
+}
 
-  /// 0–100, may be `None` while still queued.
-  pub progress: Option<u8>,
-
-  /// The model that fulfilled the request.
-  pub model: Option<String>,
-
-  /// Populated when `state == Done`.
-  pub video: Option<VideoOutputInfo>,
-
-  /// xAI cost reporting (in micro-dollars / "USD ticks").
-  pub cost_in_usd_ticks: Option<u64>,
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum FailureReason {
+  /// xAI's safety filter rejected the prompt or the generated video.
+  ContentModerated,
+  /// Anything else: invalid argument we can't recover from, internal error,
+  /// expired job, etc.
+  Unknown,
 }
 
 #[derive(Debug, Clone)]
@@ -72,15 +88,13 @@ pub struct VideoOutputInfo {
 /// GET https://api.x.ai/v1/videos/{request_id} — poll a video generation /
 /// edit / extension job for its current status.
 ///
-/// Returns:
-/// - `Ok(VideoStatusSuccess { state: Pending, .. })` while the job is in flight
-/// - `Ok(VideoStatusSuccess { state: Done, video: Some(..), .. })` when finished
-/// - `Err(GrokSpecificApiError::VideoJobFailed { code, message })` when xAI
-///   reports the job as failed
-/// - `Err(GrokSpecificApiError::VideoJobExpired)` when the job expired
+/// Returns `Ok(VideoStatusResponse)` for any well-formed xAI response,
+/// including jobs that failed or were moderated — those come back as
+/// `VideoStatus::Failed`. Only infrastructure problems (auth, network, 404
+/// for unknown request_id, 5xx) bubble up as `Err(GrokError)`.
 ///
 /// Docs: <https://docs.x.ai/developers/model-capabilities/video/generation>
-pub async fn video_status(args: VideoStatusArgs<'_>) -> Result<VideoStatusSuccess, GrokError> {
+pub async fn video_status(args: VideoStatusArgs<'_>) -> Result<VideoStatusResponse, GrokError> {
   let req = args.request;
   let url = format!("{}/v1/videos/{}", XAI_API_BASE_URL, req.request_id);
 
@@ -98,55 +112,155 @@ pub async fn video_status(args: VideoStatusArgs<'_>) -> Result<VideoStatusSucces
     .await
     .map_err(GrokGenericApiError::ReqwestError)?;
 
-  let status = response.status();
+  let http_status = response.status();
   let response_body = response.text()
     .await
     .map_err(GrokGenericApiError::ReqwestError)?;
 
-  info!("Grok video_status response: http_status={}", status);
+  info!("Grok video_status response: http_status={}", http_status);
 
-  classify_grok_http_error(status, Some(&response_body))?;
+  if http_status.is_success() {
+    let parsed: VideoStatusResponseBody = serde_json::from_str(&response_body)
+      .map_err(|err| GrokGenericApiError::SerdeResponseParseErrorWithBody(err, response_body.clone()))?;
+    return classify_status_field(&parsed, &response_body);
+  }
 
-  let parsed: VideoStatusResponseBody = serde_json::from_str(&response_body)
-    .map_err(|err| GrokGenericApiError::SerdeResponseParseErrorWithBody(err, response_body.clone()))?;
+  // Non-2xx. xAI returns 4xx for some failure modes that are really "the job
+  // failed" rather than "something is wrong with your request" — most
+  // notably content moderation. Recognize those and return them as a Failed
+  // status so callers don't have to thread an error path.
+  if body_indicates_moderation(&response_body) {
+    return Ok(build_moderated_failed_response(&response_body));
+  }
 
-  classify_status_field(&parsed)
+  // Anything else (401, 402, 404, 429, plain 400/403, 5xx) is a real error.
+  Err(unwrap_classify_err(classify_grok_http_error(http_status, Some(&response_body))))
 }
 
-fn classify_status_field(parsed: &VideoStatusResponseBody) -> Result<VideoStatusSuccess, GrokError> {
-  let state = match parsed.status.as_str() {
-    "pending" | "queued" | "in_progress" | "processing" => VideoStatusState::Pending,
-    "done" | "completed" | "succeeded" => VideoStatusState::Done,
+fn classify_status_field(
+  parsed: &VideoStatusResponseBody,
+  raw_body: &str,
+) -> Result<VideoStatusResponse, GrokError> {
+  let cost = parsed.usage.as_ref().and_then(|u| u.cost_in_usd_ticks);
+
+  match parsed.status.as_str() {
+    "pending" | "queued" | "in_progress" | "processing" => Ok(VideoStatusResponse {
+      status: VideoStatus::Pending { progress: parsed.progress },
+    }),
+    "done" | "completed" | "succeeded" => {
+      let video = parsed.video.as_ref().map(|v| VideoOutputInfo {
+        url: v.url.clone(),
+        duration: v.duration,
+        respect_moderation: v.respect_moderation,
+      });
+      Ok(VideoStatusResponse {
+        status: VideoStatus::Complete {
+          model: parsed.model.clone(),
+          video,
+          cost_in_usd_ticks: cost,
+        },
+      })
+    }
     "failed" => {
-      let (code, message) = parsed.error.as_ref()
-        .map(|e| (e.code.clone(), e.message.clone()))
-        .unwrap_or_else(|| ("unknown".to_string(), "video job failed without details".to_string()));
-      return Err(crate::error::grok_specific_api_error::GrokSpecificApiError::VideoJobFailed { code, message }.into());
+      let code = parsed.error.as_ref().map(|e| e.code.clone());
+      let error_msg = parsed.error.as_ref().map(|e| e.message.clone());
+      let reason = if text_indicates_moderation(error_msg.as_deref())
+        || body_indicates_moderation(raw_body)
+      {
+        FailureReason::ContentModerated
+      } else {
+        FailureReason::Unknown
+      };
+      Ok(VideoStatusResponse {
+        status: VideoStatus::Failed {
+          reason,
+          code,
+          error: error_msg,
+          cost_in_usd_ticks: cost,
+          full_error_json_payload: Some(raw_body.to_string()),
+        },
+      })
     }
-    "expired" => {
-      return Err(crate::error::grok_specific_api_error::GrokSpecificApiError::VideoJobExpired.into());
-    }
-    other => {
-      return Err(GrokGenericApiError::UncategorizedBadResponseWithStatusAndBody {
-        status_code: reqwest::StatusCode::OK,
-        body: format!("unknown video status: {:?}", other),
-      }.into());
-    }
+    "expired" => Ok(VideoStatusResponse {
+      status: VideoStatus::Failed {
+        reason: FailureReason::Unknown,
+        code: Some("expired".to_string()),
+        error: Some("video job expired".to_string()),
+        cost_in_usd_ticks: cost,
+        full_error_json_payload: Some(raw_body.to_string()),
+      },
+    }),
+    other => Err(GrokGenericApiError::UncategorizedBadResponseWithStatusAndBody {
+      status_code: reqwest::StatusCode::OK,
+      body: format!("unknown video status: {:?}", other),
+    }.into()),
+  }
+}
+
+fn build_moderated_failed_response(raw_body: &str) -> VideoStatusResponse {
+  let (code, error_msg, cost) = parse_error_body(raw_body);
+  VideoStatusResponse {
+    status: VideoStatus::Failed {
+      reason: FailureReason::ContentModerated,
+      code,
+      error: error_msg,
+      cost_in_usd_ticks: cost,
+      full_error_json_payload: Some(raw_body.to_string()),
+    },
+  }
+}
+
+/// Best-effort extraction of `{code, error, usage.cost_in_usd_ticks}` from
+/// the two error-body shapes xAI uses:
+///
+/// 1. Status-poll 4xx:
+///    `{"code":"...", "error":"<string>", "usage":{"cost_in_usd_ticks":...}}`
+/// 2. OpenAI-compatible:
+///    `{"error":{"code":"...", "message":"..."}}`
+fn parse_error_body(body: &str) -> (Option<String>, Option<String>, Option<u64>) {
+  let parsed: JsonValue = match serde_json::from_str(body) {
+    Ok(v) => v,
+    Err(_) => return (None, None, None),
   };
 
-  let video = parsed.video.as_ref().map(|v| VideoOutputInfo {
-    url: v.url.clone(),
-    duration: v.duration,
-    respect_moderation: v.respect_moderation,
-  });
+  let top_level_code = parsed.get("code")
+    .and_then(JsonValue::as_str)
+    .map(str::to_string);
 
-  Ok(VideoStatusSuccess {
-    state,
-    progress: parsed.progress,
-    model: parsed.model.clone(),
-    video,
-    cost_in_usd_ticks: parsed.usage.as_ref().and_then(|u| u.cost_in_usd_ticks),
-  })
+  let (error_msg, nested_code) = match parsed.get("error") {
+    Some(JsonValue::String(s)) => (Some(s.clone()), None),
+    Some(obj @ JsonValue::Object(_)) => {
+      let msg = obj.get("message").and_then(JsonValue::as_str).map(str::to_string);
+      let nested = obj.get("code").and_then(JsonValue::as_str).map(str::to_string);
+      (msg, nested)
+    }
+    _ => (None, None),
+  };
+
+  let code = top_level_code.or(nested_code);
+
+  let cost = parsed.get("usage")
+    .and_then(|u| u.get("cost_in_usd_ticks"))
+    .and_then(JsonValue::as_u64);
+
+  (code, error_msg, cost)
+}
+
+fn text_indicates_moderation(maybe_text: Option<&str>) -> bool {
+  maybe_text.map(body_indicates_moderation).unwrap_or(false)
+}
+
+/// `classify_grok_http_error` always returns `Err` when the status is non-2xx,
+/// so this is infallible in our call path. Spelled out for clarity at the call
+/// site rather than `.unwrap_err()` on the inline expression.
+fn unwrap_classify_err(result: Result<(), GrokError>) -> GrokError {
+  match result {
+    Ok(()) => GrokGenericApiError::UncategorizedBadResponseWithStatusAndBody {
+      status_code: reqwest::StatusCode::OK,
+      body: "classify_grok_http_error returned Ok for a non-2xx response".to_string(),
+    }.into(),
+    Err(err) => err,
+  }
 }
 
 #[cfg(test)]
@@ -156,36 +270,30 @@ mod tests {
 
   use crate::error::grok_specific_api_error::GrokSpecificApiError;
 
-  // ── Shape tests ──
+  // ── Status-field dispatch (HTTP 200) ──
 
   #[test]
   fn pending_response_classifies_as_pending() {
     let json = r#"{ "status": "pending", "progress": 12, "model": "grok-imagine-video" }"#;
     let parsed: VideoStatusResponseBody = serde_json::from_str(json).unwrap();
-    let result = classify_status_field(&parsed).unwrap();
-    assert_eq!(result.state, VideoStatusState::Pending);
-    assert_eq!(result.progress, Some(12));
-    assert_eq!(result.model.as_deref(), Some("grok-imagine-video"));
-    assert!(result.video.is_none());
+    let result = classify_status_field(&parsed, json).unwrap();
+    match result.status {
+      VideoStatus::Pending { progress } => assert_eq!(progress, Some(12)),
+      other => panic!("expected Pending, got: {:?}", other),
+    }
   }
 
   #[test]
-  fn pending_response_with_v1p5_model_passes_model_string_through() {
-    // The `model` field is opaque Option<String>; the v1.5 preview model
-    // identifier (and its dated alias) flow through unchanged.
+  fn pending_response_with_v1p5_model_does_not_break_dispatch() {
+    // `model` doesn't surface on Pending; it flows through on Complete only.
     let json = r#"{ "status": "pending", "progress": 5, "model": "grok-imagine-video-1.5-preview" }"#;
     let parsed: VideoStatusResponseBody = serde_json::from_str(json).unwrap();
-    let result = classify_status_field(&parsed).unwrap();
-    assert_eq!(result.model.as_deref(), Some("grok-imagine-video-1.5-preview"));
-
-    let json_alias = r#"{ "status": "pending", "progress": 5, "model": "grok-imagine-video-1.5-2026-05-30" }"#;
-    let parsed_alias: VideoStatusResponseBody = serde_json::from_str(json_alias).unwrap();
-    let result_alias = classify_status_field(&parsed_alias).unwrap();
-    assert_eq!(result_alias.model.as_deref(), Some("grok-imagine-video-1.5-2026-05-30"));
+    let result = classify_status_field(&parsed, json).unwrap();
+    assert!(matches!(result.status, VideoStatus::Pending { .. }));
   }
 
   #[test]
-  fn done_response_classifies_as_done_with_video() {
+  fn done_response_classifies_as_complete_with_video() {
     let json = r#"{
       "status": "done",
       "progress": 100,
@@ -194,60 +302,148 @@ mod tests {
       "usage": { "cost_in_usd_ticks": 42 }
     }"#;
     let parsed: VideoStatusResponseBody = serde_json::from_str(json).unwrap();
-    let result = classify_status_field(&parsed).unwrap();
-    assert_eq!(result.state, VideoStatusState::Done);
-    let video = result.video.unwrap();
-    assert_eq!(video.url.as_deref(), Some("https://imagine.x.ai/v.mp4"));
-    assert_eq!(video.duration, Some(5));
-    assert_eq!(video.respect_moderation, Some(true));
-    assert_eq!(result.cost_in_usd_ticks, Some(42));
+    let result = classify_status_field(&parsed, json).unwrap();
+    match result.status {
+      VideoStatus::Complete { model, video, cost_in_usd_ticks } => {
+        assert_eq!(model.as_deref(), Some("grok-imagine-video"));
+        let video = video.unwrap();
+        assert_eq!(video.url.as_deref(), Some("https://imagine.x.ai/v.mp4"));
+        assert_eq!(video.duration, Some(5));
+        assert_eq!(video.respect_moderation, Some(true));
+        assert_eq!(cost_in_usd_ticks, Some(42));
+      }
+      other => panic!("expected Complete, got: {:?}", other),
+    }
   }
 
   #[test]
-  fn failed_response_returns_video_job_failed_error() {
+  fn failed_response_returns_ok_failed_unknown() {
     let json = r#"{
       "status": "failed",
       "progress": 50,
-      "error": { "code": "invalid_argument", "message": "duration too long" }
+      "error": { "code": "invalid_argument", "message": "duration too long" },
+      "usage": { "cost_in_usd_ticks": 7 }
     }"#;
     let parsed: VideoStatusResponseBody = serde_json::from_str(json).unwrap();
-    let err = classify_status_field(&parsed).unwrap_err();
-    match err {
-      GrokError::ApiSpecific(GrokSpecificApiError::VideoJobFailed { code, message }) => {
-        assert_eq!(code, "invalid_argument");
-        assert_eq!(message, "duration too long");
+    let result = classify_status_field(&parsed, json).unwrap();
+    match result.status {
+      VideoStatus::Failed { reason, code, error, cost_in_usd_ticks, full_error_json_payload } => {
+        assert_eq!(reason, FailureReason::Unknown);
+        assert_eq!(code.as_deref(), Some("invalid_argument"));
+        assert_eq!(error.as_deref(), Some("duration too long"));
+        assert_eq!(cost_in_usd_ticks, Some(7));
+        assert_eq!(full_error_json_payload.as_deref(), Some(json));
       }
-      other => panic!("expected VideoJobFailed, got: {:?}", other),
+      other => panic!("expected Failed, got: {:?}", other),
     }
   }
 
   #[test]
-  fn failed_response_without_error_object_uses_unknown() {
+  fn failed_response_with_moderation_message_is_classified_as_content_moderated() {
+    let json = r#"{
+      "status": "failed",
+      "error": { "code": "permission_denied", "message": "Video rejected by safety moderation" },
+      "usage": { "cost_in_usd_ticks": 11 }
+    }"#;
+    let parsed: VideoStatusResponseBody = serde_json::from_str(json).unwrap();
+    let result = classify_status_field(&parsed, json).unwrap();
+    match result.status {
+      VideoStatus::Failed { reason, code, cost_in_usd_ticks, .. } => {
+        assert_eq!(reason, FailureReason::ContentModerated);
+        assert_eq!(code.as_deref(), Some("permission_denied"));
+        assert_eq!(cost_in_usd_ticks, Some(11));
+      }
+      other => panic!("expected Failed, got: {:?}", other),
+    }
+  }
+
+  #[test]
+  fn failed_response_without_error_object_yields_none_code_and_error() {
     let json = r#"{ "status": "failed", "progress": 0 }"#;
     let parsed: VideoStatusResponseBody = serde_json::from_str(json).unwrap();
-    let err = classify_status_field(&parsed).unwrap_err();
-    match err {
-      GrokError::ApiSpecific(GrokSpecificApiError::VideoJobFailed { code, .. }) => {
-        assert_eq!(code, "unknown");
+    let result = classify_status_field(&parsed, json).unwrap();
+    match result.status {
+      VideoStatus::Failed { reason, code, error, .. } => {
+        assert_eq!(reason, FailureReason::Unknown);
+        assert!(code.is_none());
+        assert!(error.is_none());
       }
-      other => panic!("expected VideoJobFailed(unknown), got: {:?}", other),
+      other => panic!("expected Failed, got: {:?}", other),
     }
   }
 
   #[test]
-  fn expired_response_returns_expired_error() {
-    let json = r#"{ "status": "expired" }"#;
+  fn expired_response_classifies_as_failed_unknown() {
+    let json = r#"{ "status": "expired", "usage": { "cost_in_usd_ticks": 3 } }"#;
     let parsed: VideoStatusResponseBody = serde_json::from_str(json).unwrap();
-    let err = classify_status_field(&parsed).unwrap_err();
-    assert!(matches!(err, GrokError::ApiSpecific(GrokSpecificApiError::VideoJobExpired)));
+    let result = classify_status_field(&parsed, json).unwrap();
+    match result.status {
+      VideoStatus::Failed { reason, code, cost_in_usd_ticks, .. } => {
+        assert_eq!(reason, FailureReason::Unknown);
+        assert_eq!(code.as_deref(), Some("expired"));
+        assert_eq!(cost_in_usd_ticks, Some(3));
+      }
+      other => panic!("expected Failed, got: {:?}", other),
+    }
   }
 
   #[test]
   fn unknown_status_field_returns_generic_error() {
     let json = r#"{ "status": "magnificent" }"#;
     let parsed: VideoStatusResponseBody = serde_json::from_str(json).unwrap();
-    let err = classify_status_field(&parsed).unwrap_err();
+    let err = classify_status_field(&parsed, json).unwrap_err();
     assert!(matches!(err, GrokError::ApiGeneric(_)));
+  }
+
+  // ── Error-body dispatch (HTTP 4xx) ──
+
+  #[test]
+  fn moderation_4xx_body_becomes_failed_content_moderated() {
+    // The real-world body that previously surfaced as
+    // `Err(GrokSpecificApiError::PromptModerated(..))`. It should now be
+    // an Ok(Failed { ContentModerated }) with all fields populated from
+    // the JSON.
+    let body = r#"{"code":"Client specified an invalid argument","error":"Generated video rejected by content moderation.","usage":{"cost_in_usd_ticks":11300000000}}"#;
+    let response = build_moderated_failed_response(body);
+    match response.status {
+      VideoStatus::Failed { reason, code, error, cost_in_usd_ticks, full_error_json_payload } => {
+        assert_eq!(reason, FailureReason::ContentModerated);
+        assert_eq!(code.as_deref(), Some("Client specified an invalid argument"));
+        assert_eq!(error.as_deref(), Some("Generated video rejected by content moderation."));
+        assert_eq!(cost_in_usd_ticks, Some(11_300_000_000));
+        assert_eq!(full_error_json_payload.as_deref(), Some(body));
+      }
+      other => panic!("expected Failed, got: {:?}", other),
+    }
+  }
+
+  #[test]
+  fn moderation_openai_shape_body_extracts_nested_code_and_message() {
+    let body = r#"{"error":{"code":"content_policy","message":"Content moderation blocked this prompt"}}"#;
+    let response = build_moderated_failed_response(body);
+    match response.status {
+      VideoStatus::Failed { reason, code, error, .. } => {
+        assert_eq!(reason, FailureReason::ContentModerated);
+        assert_eq!(code.as_deref(), Some("content_policy"));
+        assert_eq!(error.as_deref(), Some("Content moderation blocked this prompt"));
+      }
+      other => panic!("expected Failed, got: {:?}", other),
+    }
+  }
+
+  #[test]
+  fn moderation_unparseable_body_still_yields_failed_with_payload() {
+    let body = "totally not json but mentions moderation";
+    let response = build_moderated_failed_response(body);
+    match response.status {
+      VideoStatus::Failed { reason, code, error, full_error_json_payload, .. } => {
+        assert_eq!(reason, FailureReason::ContentModerated);
+        assert!(code.is_none());
+        assert!(error.is_none());
+        assert_eq!(full_error_json_payload.as_deref(), Some(body));
+      }
+      other => panic!("expected Failed, got: {:?}", other),
+    }
   }
 
   // ── Public Request shape ──
@@ -284,7 +480,7 @@ mod tests {
       },
     }).await;
 
-    println!("Result: {:?}", result.as_ref().map(|s| (&s.state, s.progress)));
+    println!("Result: {:?}", result.as_ref().map(|r| &r.status));
     let err = result.unwrap_err();
     assert!(matches!(err, GrokError::ApiSpecific(GrokSpecificApiError::NotFound)),
       "expected NotFound, got: {:?}", err);
@@ -292,8 +488,8 @@ mod tests {
   }
 
   /// Polls a known request_id and prints the result. Doesn't assert a
-  /// specific state — depending on when the test runs, the job may be
-  /// pending, done, failed, or expired. The point is to exercise the
+  /// specific status — depending on when the test runs, the job may be
+  /// pending, complete, or failed. The point is to exercise the
   /// happy-path against the real xAI API.
   #[tokio::test]
   #[ignore] // manually test — requires real API key
@@ -306,26 +502,19 @@ mod tests {
     let result = video_status(VideoStatusArgs {
       api_key: &api_key,
       request: VideoStatusRequest {
-        //request_id: "e397ac83-c22f-90b1-9831-900c01497345".to_string(),
         request_id: "ce681bd0-133d-9cf3-975c-422d292d4e8e".to_string(),
       },
     }).await;
 
     match &result {
-      Ok(s) => println!(
-        "status: state={:?} progress={:?} model={:?} video={:?} cost_in_usd_ticks={:?}",
-        s.state, s.progress, s.model, s.video, s.cost_in_usd_ticks,
-      ),
+      Ok(r) => println!("status: {:?}", r.status),
       Err(e) => println!("status error: {:?}", e),
     }
-    // No assertion on the specific state — the job may have completed,
-    // failed, or expired by the time this runs. We just want to confirm
-    // the request_id was accepted and parsed.
     Ok(())
   }
 
   /// Polls another known request_id. Same lax assertions as the test above
-  /// — state varies with time.
+  /// — status varies with time.
   #[tokio::test]
   #[ignore] // manually test — requires real API key
   async fn live_test_video_status_known_id_2() -> AnyhowResult<()> {
@@ -342,10 +531,7 @@ mod tests {
     }).await;
 
     match &result {
-      Ok(s) => println!(
-        "status: state={:?} progress={:?} model={:?} video={:?} cost_in_usd_ticks={:?}",
-        s.state, s.progress, s.model, s.video, s.cost_in_usd_ticks,
-      ),
+      Ok(r) => println!("status: {:?}", r.status),
       Err(e) => println!("status error: {:?}", e),
     }
     Ok(())
@@ -363,17 +549,12 @@ mod tests {
     let result = video_status(VideoStatusArgs {
       api_key: &api_key,
       request: VideoStatusRequest {
-        //request_id: "ff94f941-62a7-9966-92da-6b84d9eedb50".to_string(),
-        //request_id: "4eea215a-9d21-9261-be1a-324409ec22c5".to_string(),
         request_id: "4d4a6185-209e-95f3-942b-510042637839".to_string(),
       },
     }).await;
 
     match &result {
-      Ok(s) => println!(
-        "status: state={:?} progress={:?} model={:?} video={:?} cost_in_usd_ticks={:?}",
-        s.state, s.progress, s.model, s.video, s.cost_in_usd_ticks,
-      ),
+      Ok(r) => println!("status: {:?}", r.status),
       Err(e) => println!("status error: {:?}", e),
     }
     Ok(())
