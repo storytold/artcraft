@@ -438,10 +438,25 @@ mod tests {
     let result = poll_orders(PollOrdersArgs { session: &session, cursor: None, host_override: None }).await?;
     println!("Orders returned: {}", result.orders.len());
     println!("Next cursor: {:?}", result.next_cursor);
+    let mut images = 0;
+    let mut videos = 0;
+    let mut unknown = 0;
+    let mut missing = 0;
     for order in &result.orders {
-      println!("  {} | {:?} | result_url={:?} | fail={:?}",
-        order.order_id, order.task_status, order.result_url, order.fail_reason);
+      match &order.media_type {
+        Some(OrderMediaType::Image) => images += 1,
+        Some(OrderMediaType::Video) => videos += 1,
+        Some(OrderMediaType::Unknown(_)) => unknown += 1,
+        None => missing += 1,
+      }
+      println!("  {} | {:?} | media={:?} | results={} | result_url={:?} | fail={:?}",
+        order.order_id, order.task_status, order.media_type,
+        order.results.len(), order.result_url, order.fail_reason);
     }
+    println!(
+      "media_type tally: image={}, video={}, unknown={}, missing={}",
+      images, videos, unknown, missing,
+    );
     assert_eq!(1, 2); // NB: Intentional failure to inspect output.
     Ok(())
   }
@@ -457,10 +472,61 @@ mod tests {
     println!("Orders returned (with cursor {}): {}", cursor, result.orders.len());
     println!("Next cursor: {:?}", result.next_cursor);
     for order in &result.orders {
-      println!("  {} | {:?} | result_url={:?} | fail={:?}",
-        order.order_id, order.task_status, order.result_url, order.fail_reason);
+      println!("  {} | {:?} | media={:?} | results={} | result_url={:?} | fail={:?}",
+        order.order_id, order.task_status, order.media_type,
+        order.results.len(), order.result_url, order.fail_reason);
     }
     assert_eq!(1, 2); // NB: Intentional failure to inspect output.
+    Ok(())
+  }
+
+  /// Page back from the most recent orders until we hit a Midjourney image
+  /// order, then assert the new parsing path detects it. Bounded to a few
+  /// pages so this doesn't accidentally exhaust the whole account.
+  #[tokio::test]
+  #[ignore] // manually test — requires real cookies
+  async fn test_poll_back_to_first_image_order() -> AnyhowResult<()> {
+    setup_test_logging(LevelFilter::Trace);
+    let session = test_session()?;
+
+    const MAX_PAGES: usize = 10;
+    let mut cursor: Option<u64> = None;
+    let mut found_image_orders: Vec<OrderStatus> = Vec::new();
+    let mut pages_scanned = 0usize;
+
+    for _ in 0..MAX_PAGES {
+      let result = poll_orders(PollOrdersArgs {
+        session: &session, cursor, host_override: None,
+      }).await?;
+      pages_scanned += 1;
+      println!("Page {}: {} orders, next_cursor={:?}", pages_scanned, result.orders.len(), result.next_cursor);
+
+      for order in &result.orders {
+        if order.media_type == Some(OrderMediaType::Image) {
+          found_image_orders.push(order.clone());
+        }
+      }
+      if !found_image_orders.is_empty() { break; }
+      cursor = result.next_cursor;
+      if cursor.is_none() { break; }
+    }
+
+    println!("Scanned {} pages; found {} image order(s)", pages_scanned, found_image_orders.len());
+    for o in &found_image_orders {
+      println!("  IMG {} | {:?} | results={} | result_url={:?}",
+        o.order_id, o.task_status, o.results.len(), o.result_url);
+    }
+
+    assert!(!found_image_orders.is_empty(),
+      "expected to find at least one image order within {} pages — \
+       create a Midjourney generation if needed and rerun", MAX_PAGES);
+
+    // Each Midjourney task returns exactly 4 images when completed.
+    if let Some(completed) = found_image_orders.iter().find(|o| o.task_status == TaskStatus::Completed) {
+      assert_eq!(completed.results.len(), 4,
+        "completed Midjourney image order should have 4 results, got {}",
+        completed.results.len());
+    }
     Ok(())
   }
 
