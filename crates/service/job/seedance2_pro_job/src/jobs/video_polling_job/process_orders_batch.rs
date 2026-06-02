@@ -2,10 +2,11 @@ use std::collections::HashMap;
 
 use log::{info, warn};
 use mysql_queries::queries::generic_inference::api_providers::seedance2pro::list_pending_seedance2pro_video_jobs::PendingSeedance2ProJob;
-use seedance2pro_client::requests::poll_orders::poll_orders::{OrderStatus, TaskStatus};
+use seedance2pro_client::requests::poll_orders::poll_orders::{OrderMediaType, OrderStatus, TaskStatus};
 
 use crate::job_dependencies::JobDependencies;
 use crate::jobs::video_polling_job::process_job::process_failed_job::process_failed_job;
+use crate::jobs::video_polling_job::process_job::process_successful_image_job::process_successful_image_job;
 use crate::jobs::video_polling_job::process_job::process_successful_job::process_successful_job;
 
 /// Process a batch of polled orders against the pending jobs map.
@@ -38,11 +39,30 @@ pub async fn process_orders_batch(
     match &order.task_status {
       TaskStatus::Completed => {
         info!(
-          "Order {} completed, processing job {}",
+          "Order {} completed (media_type={:?}), processing job {}",
           order.order_id,
+          order.media_type,
           job.job_token.as_str()
         );
-        if let Err(err) = process_successful_job(deps, &job, order).await {
+
+        // Dispatch on media type: Midjourney image orders return ~4 PNGs
+        // and need different download/insert handling than the video
+        // path. `None` (older response shapes that pre-date the
+        // `mediaType` field) and `Some(Video)` both fall to the video
+        // handler for back-compat with the seedance video flow.
+        let result = match &order.media_type {
+          Some(OrderMediaType::Image) => process_successful_image_job(deps, &job, order).await,
+          Some(OrderMediaType::Video) | None => process_successful_job(deps, &job, order).await,
+          Some(OrderMediaType::Unknown(other)) => {
+            warn!(
+              "Order {} has unrecognised media_type {:?}; treating as video",
+              order.order_id, other,
+            );
+            process_successful_job(deps, &job, order).await
+          }
+        };
+
+        if let Err(err) = result {
           warn!(
             "Error processing completed order {}: {:?}",
             order.order_id, err
