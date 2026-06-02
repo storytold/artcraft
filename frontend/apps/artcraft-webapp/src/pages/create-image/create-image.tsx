@@ -5,7 +5,18 @@ import { PopoverMenu, type PopoverItem } from "@storyteller/ui-popover";
 import { Tooltip } from "@storyteller/ui-tooltip";
 import { Button } from "@storyteller/ui-button";
 import { GalleryModal, type GalleryItem } from "@storyteller/ui-gallery-modal";
-import { PromptBox, type RefImage } from "../../components/prompt-box";
+import {
+  PromptBox,
+  ImagePromptRow,
+  MobilePromptForm,
+  MobileSelectField,
+  MobileFieldButton,
+  MobileCountStepper,
+  SettingsDrawer,
+  DrawerOptionList,
+  DrawerSection,
+  type RefImage,
+} from "../../components/prompt-box";
 import {
   GenerationGallery,
   useGalleryData,
@@ -18,10 +29,22 @@ import {
 import { Lightbox } from "../../components/lightbox/lightbox";
 import { useCreateImageStore } from "./create-image-store";
 import { enqueueImageGeneration, startPolling } from "./generate-image-api";
-import { AspectRatioPicker } from "./components/AspectRatioPicker";
+import {
+  AspectRatioPicker,
+  buildAspectRatioItems,
+  aspectRatioFromLabel,
+} from "./components/AspectRatioPicker";
 import { GenerationCountPicker } from "./components/GenerationCountPicker";
-import { ResolutionPicker } from "./components/ResolutionPicker";
-import { QualityPicker } from "./components/QualityPicker";
+import {
+  ResolutionPicker,
+  buildResolutionItems,
+  resolutionFromLabel,
+} from "./components/ResolutionPicker";
+import {
+  QualityPicker,
+  buildQualityItems,
+  qualityFromLabel,
+} from "./components/QualityPicker";
 import { useImageCostEstimate } from "../../lib/cost-estimate-api";
 import {
   useOmniGenImageModels,
@@ -117,6 +140,7 @@ export default function CreateImage() {
   const referenceImages = useCreateImageStore((s) => s.referenceImages);
   const setReferenceImages = useCreateImageStore((s) => s.setReferenceImages);
   const [isImagePickerOpen, setIsImagePickerOpen] = useState(false);
+  const [isOutputDrawerOpen, setIsOutputDrawerOpen] = useState(false);
   const [pickerSelectedIds, setPickerSelectedIds] = useState<string[]>([]);
   const maxImageRefs = selectedModel?.image_refs_max ?? 6;
   const imagePickerMax = Math.max(1, maxImageRefs - referenceImages.length);
@@ -374,6 +398,118 @@ export default function CreateImage() {
     dismissBatch,
   ]);
 
+  // ── Mobile form ───────────────────────────────────────────────────────
+
+  const supportsImagePrompts = !!selectedModel?.image_refs_supported;
+
+  const resolutionItems = buildResolutionItems(
+    selectedModel?.resolution_options ?? [],
+    resolution ?? selectedModel?.resolution_default ?? undefined,
+  );
+  const qualityItems = buildQualityItems(
+    selectedModel?.quality_options ?? [],
+    quality ?? selectedModel?.default_quality ?? undefined,
+  );
+  const outputSummary =
+    [
+      resolutionItems.find((i) => i.selected)?.label,
+      qualityItems.find((i) => i.selected)?.label,
+    ]
+      .filter(Boolean)
+      .join(" · ") || "Default";
+
+  const mobileForm = (
+    <MobilePromptForm
+      prompt={prompt}
+      onPromptChange={setPrompt}
+      onSubmit={handleGenerate}
+      isSubmitting={isGenerating}
+      credits={estimatedCredits}
+      placeholder="Describe what you want in the image..."
+      autoAdvance={loggedIn && !!prompt.trim() && !isGenerating}
+      modelField={
+        <MobileSelectField
+          label="Model"
+          title="Select Model"
+          items={modelItems}
+          onSelect={handleModelChange}
+        />
+      }
+      frames={
+        supportsImagePrompts ? (
+          <ImagePromptRow
+            maxImagePromptCount={maxImageRefs}
+            referenceImages={referenceImages}
+            setReferenceImages={setReferenceImages}
+            onPickFromLibrary={() => setIsImagePickerOpen(true)}
+          />
+        ) : undefined
+      }
+      settingsFields={
+        <>
+          {hasAspectRatios && (
+            <MobileSelectField
+              label="Aspect ratio"
+              items={buildAspectRatioItems(
+                selectedModel?.aspect_ratio_options ?? [],
+                aspectRatio ?? selectedModel?.aspect_ratio_default ?? undefined,
+              )}
+              onSelect={(item) => {
+                const r = aspectRatioFromLabel(item.label);
+                if (r) setAspectRatio(r);
+              }}
+            />
+          )}
+          {(hasResolutions || hasQualityOptions) && (
+            <>
+              <MobileFieldButton
+                label="Output"
+                value={outputSummary}
+                onClick={() => setIsOutputDrawerOpen(true)}
+              />
+              <SettingsDrawer
+                open={isOutputDrawerOpen}
+                onOpenChange={setIsOutputDrawerOpen}
+                title="Output"
+              >
+                {hasResolutions && (
+                  <DrawerSection label="Resolution">
+                    <DrawerOptionList
+                      items={resolutionItems}
+                      onSelect={(item) => {
+                        const r = resolutionFromLabel(item.label);
+                        if (r) setResolution(r);
+                      }}
+                    />
+                  </DrawerSection>
+                )}
+                {hasQualityOptions && (
+                  <DrawerSection label="Quality">
+                    <DrawerOptionList
+                      items={qualityItems}
+                      onSelect={(item) => {
+                        const q = qualityFromLabel(item.label);
+                        if (q) setQuality(q);
+                      }}
+                    />
+                  </DrawerSection>
+                )}
+              </SettingsDrawer>
+            </>
+          )}
+        </>
+      }
+      countField={
+        <MobileCountStepper
+          value={numImages}
+          onChange={setNumImages}
+          max={selectedModel?.batch_size_max ?? 4}
+          options={selectedModel?.batch_size_options}
+        />
+      }
+    />
+  );
+
   // ── Render ────────────────────────────────────────────────────────────
 
   return (
@@ -399,6 +535,7 @@ export default function CreateImage() {
       bottomOffset={promptHeight + 24}
       modelItems={modelItems}
       onModelChange={handleModelChange}
+      promptForm={mobileForm}
       gridContent={
         <GenerationGallery
           inProgressJobs={jobs.inProgress}

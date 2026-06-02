@@ -21,19 +21,14 @@ export const AspectRatioPicker = ({
   const isAutoRatio = !!useAspectRatio && AUTO_RATIOS.has(useAspectRatio);
 
   const handleSelectAdapter = (item: PopoverItem) => {
-    const ratio = labelToAspectRatio(item.label);
+    const ratio = aspectRatioFromLabel(item.label);
     if (ratio) handleAspectRatioSelect(ratio);
   };
 
-  const aspectRatioList: PopoverItem[] = aspectRatioOptions.map((ratio) => ({
-    label: getAspectRatioTextLabel(ratio),
-    selected: useAspectRatio === ratio,
-    icon: AUTO_RATIOS.has(ratio) ? (
-      <AutoIcon />
-    ) : (
-      <AspectRatioIcon commonAspectRatio={ratio} />
-    ),
-  }));
+  const aspectRatioList = buildAspectRatioItems(
+    aspectRatioOptions,
+    useAspectRatio,
+  );
 
   return (
     <Tooltip
@@ -89,6 +84,22 @@ function getAspectRatioTextLabel(ratio: string): string {
   return ASPECT_RATIO_LABELS[ratio] ?? ratio;
 }
 
-function labelToAspectRatio(label: string): string | undefined {
+export function aspectRatioFromLabel(label: string): string | undefined {
   return LABEL_TO_RATIO[label];
+}
+
+// Shared by the desktop popover and the mobile settings field.
+export function buildAspectRatioItems(
+  aspectRatioOptions: string[],
+  selected?: string,
+): PopoverItem[] {
+  return aspectRatioOptions.map((ratio) => ({
+    label: getAspectRatioTextLabel(ratio),
+    selected: selected === ratio,
+    icon: AUTO_RATIOS.has(ratio) ? (
+      <AutoIcon />
+    ) : (
+      <AspectRatioIcon commonAspectRatio={ratio} />
+    ),
+  }));
 }

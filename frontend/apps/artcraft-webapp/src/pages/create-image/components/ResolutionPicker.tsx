@@ -41,6 +41,27 @@ const LABEL_TO_RESOLUTION: Record<string, string> = Object.fromEntries(
   Object.entries(RESOLUTION_LABELS).map(([k, v]) => [v, k]),
 );
 
+export function resolutionFromLabel(label: string): string | undefined {
+  return LABEL_TO_RESOLUTION[label];
+}
+
+// Shared by the desktop popover and the mobile settings field.
+export function buildResolutionItems(
+  resolutionOptions: string[],
+  selected?: string,
+): PopoverItem[] {
+  return resolutionOptions.map((resolution) => ({
+    label: RESOLUTION_LABELS[resolution] ?? resolution,
+    selected: selected === resolution,
+    icon: (
+      <FontAwesomeIcon
+        icon={RESOLUTION_ICONS[resolution] ?? faStandardDefinition}
+        className="h-4 w-4"
+      />
+    ),
+  }));
+}
+
 export const ResolutionPicker = ({
   resolutionOptions,
   defaultResolution,
@@ -50,22 +71,16 @@ export const ResolutionPicker = ({
   const activeResolution = currentResolution ?? defaultResolution ?? undefined;
 
   const handleSelectAdapter = (item: PopoverItem) => {
-    const resolution = LABEL_TO_RESOLUTION[item.label];
+    const resolution = resolutionFromLabel(item.label);
     if (resolution) {
       handleResolutionSelect(resolution);
     }
   };
 
-  const resolutionList: PopoverItem[] = resolutionOptions.map((resolution) => ({
-    label: RESOLUTION_LABELS[resolution] ?? resolution,
-    selected: activeResolution === resolution,
-    icon: (
-      <FontAwesomeIcon
-        icon={RESOLUTION_ICONS[resolution] ?? faStandardDefinition}
-        className="h-4 w-4"
-      />
-    ),
-  }));
+  const resolutionList = buildResolutionItems(
+    resolutionOptions,
+    activeResolution,
+  );
 
   return (
     <Tooltip

@@ -1,10 +1,17 @@
-import { type ReactNode } from "react";
+import { type ReactNode, useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSpinnerThird } from "@fortawesome/pro-solid-svg-icons";
 import { isMobile } from "react-device-detect";
 import { type PopoverItem } from "@storyteller/ui-popover";
+import { TabSelector } from "@storyteller/ui-tab-selector";
 import { TruchetPattern } from "@storyteller/ui-vfx";
 import Seo from "../../components/seo";
+import { useIsMobile } from "../ui/use-mobile";
+import { GalleryViewToggle } from "./GalleryViewToggle";
+import {
+  MobileCreateTabsProvider,
+  type MobileCreateTab,
+} from "./mobile-create-tabs";
 
 interface CreateMediaPageShellProps {
   // SEO
@@ -30,8 +37,17 @@ interface CreateMediaPageShellProps {
   // Children slots
   gridContent: ReactNode;
   promptBox: ReactNode;
+  // Mobile-only form rendered on the "Generate" tab. When provided and the
+  // viewport is mobile, the shell swaps the floating prompt box for a tabbed
+  // Generate / History layout.
+  promptForm?: ReactNode;
   modals: ReactNode;
 }
+
+const MOBILE_TABS = [
+  { id: "generate", label: "Generate" },
+  { id: "history", label: "History" },
+];
 
 export function CreateMediaPageShell({
   title,
@@ -45,8 +61,12 @@ export function CreateMediaPageShell({
   glowOrbs,
   gridContent,
   promptBox,
+  promptForm,
   modals,
 }: CreateMediaPageShellProps) {
+  const viewportIsMobile = useIsMobile();
+  const [mobileTab, setMobileTab] = useState<MobileCreateTab>("generate");
+
   if (!authChecked) {
     return (
       <div className="flex h-full items-center justify-center bg-[#101014]">
@@ -55,6 +75,59 @@ export function CreateMediaPageShell({
           className="animate-spin text-4xl text-primary/80"
         />
       </div>
+    );
+  }
+
+  // Mobile: split into Generate (form) / History (gallery) tabs so the prompt
+  // box no longer overlaps results. Desktop keeps the floating prompt box.
+  if (viewportIsMobile && promptForm) {
+    return (
+      <MobileCreateTabsProvider
+        value={{
+          tab: mobileTab,
+          setTab: setMobileTab,
+          goToHistory: () => setMobileTab("history"),
+        }}
+      >
+        <div className="flex h-full w-full flex-col bg-[#101014] text-white">
+          <Seo title={title} description={description} />
+
+          <div className="relative flex items-center justify-center border-b border-ui-panel-border px-3 py-2">
+            <TabSelector
+              tabs={MOBILE_TABS}
+              activeTab={mobileTab}
+              onTabChange={(id) => setMobileTab(id as MobileCreateTab)}
+              className="w-auto"
+            />
+            {mobileTab === "history" && hasContent && (
+              <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                <GalleryViewToggle />
+              </div>
+            )}
+          </div>
+
+          <div className="min-h-0 flex-1 overflow-hidden">
+            {mobileTab === "generate" ? (
+              promptForm
+            ) : hasContent ? (
+              <div className="h-full w-full overflow-y-auto pt-0.5">
+                <div className="px-3">{gridContent}</div>
+              </div>
+            ) : (
+              <div className="flex h-full flex-col items-center justify-center px-6 text-center">
+                <span className="text-lg font-semibold text-white">
+                  {emptyStateTitle}
+                </span>
+                <span className="pt-1 text-sm text-white/60">
+                  Your generations will appear here.
+                </span>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {modals}
+      </MobileCreateTabsProvider>
     );
   }
 

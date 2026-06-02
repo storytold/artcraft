@@ -20,6 +20,21 @@ const LABEL_TO_QUALITY: Record<string, string> = Object.fromEntries(
   Object.entries(QUALITY_LABELS).map(([k, v]) => [v, k]),
 );
 
+export function qualityFromLabel(label: string): string | undefined {
+  return LABEL_TO_QUALITY[label];
+}
+
+// Shared by the desktop popover and the mobile settings field.
+export function buildQualityItems(
+  qualityOptions: string[],
+  selected?: string,
+): PopoverItem[] {
+  return qualityOptions.map((q) => ({
+    label: QUALITY_LABELS[q] ?? q,
+    selected: selected === q,
+  }));
+}
+
 export const QualityPicker = ({
   qualityOptions,
   defaultQuality,
@@ -29,14 +44,11 @@ export const QualityPicker = ({
   const activeQuality = currentQuality ?? defaultQuality ?? undefined;
 
   const handleSelectAdapter = (item: PopoverItem) => {
-    const quality = LABEL_TO_QUALITY[item.label];
+    const quality = qualityFromLabel(item.label);
     if (quality) handleQualitySelect(quality);
   };
 
-  const qualityList: PopoverItem[] = qualityOptions.map((q) => ({
-    label: QUALITY_LABELS[q] ?? q,
-    selected: activeQuality === q,
-  }));
+  const qualityList = buildQualityItems(qualityOptions, activeQuality);
 
   return (
     <Tooltip

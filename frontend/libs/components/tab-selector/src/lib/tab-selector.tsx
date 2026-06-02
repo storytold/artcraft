@@ -62,16 +62,16 @@ export const TabSelector: React.FC<TabSelectorProps> = ({
       className={twMerge(
         "w-full",
         className,
-        disabled ? "cursor-not-allowed opacity-60" : ""
+        disabled ? "cursor-not-allowed opacity-60" : "",
       )}
     >
       <TabGroup selectedIndex={selectedIndex} onChange={handleTabChange}>
-        <TabList className="glass glass-no-hover relative inline-flex min-w-fit overflow-x-auto rounded-lg p-0.5 py-1 !shadow-none">
+        <TabList className="glass glass-no-hover relative inline-flex min-w-fit overflow-x-auto rounded-xl p-0.5 py-1 !shadow-none">
           {/* Animated indicator */}
           <div
             className={twMerge(
               "absolute top-1 z-10 h-[calc(100%-8px)] rounded-md bg-primary/30 transition-all duration-200 ease-in-out",
-              indicatorClassName
+              indicatorClassName,
             )}
             style={{
               left: indicatorStyle.left,
@@ -96,7 +96,7 @@ export const TabSelector: React.FC<TabSelectorProps> = ({
                     ? twMerge("text-base-fg", selectedTabClassName)
                     : "text-base-fg/70 hover:text-base-fg",
                   disabled ? "cursor-not-allowed opacity-60" : "",
-                  tabClassName
+                  tabClassName,
                 )
               }
             >

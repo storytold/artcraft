@@ -334,3 +334,50 @@
   border-radius: inherit;
   z-index: -1;
 }
+
+/* Mobile bottom-sheet (SettingsDrawer). The shadcn Sheet relies on the
+   tailwindcss-animate plugin, which isn't enabled here, so we drive the
+   slide ourselves off Radix's data-state. Defining a closed-state animation
+   lets Radix delay unmount until the slide-down finishes. */
+@keyframes ac-drawer-up {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+@keyframes ac-drawer-down {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(100%);
+  }
+}
+
+.ac-drawer-content[data-state="open"] {
+  animation: ac-drawer-up 0.32s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.ac-drawer-content[data-state="closed"] {
+  animation: ac-drawer-down 0.22s ease-in forwards;
+}
+
+@keyframes ac-sheet-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.ac-sheet-overlay[data-state="open"] {
+  animation: ac-sheet-fade 0.25s ease-out;
+}
+
+.ac-sheet-overlay[data-state="closed"] {
+  animation: ac-sheet-fade 0.2s ease-in reverse forwards;
+}

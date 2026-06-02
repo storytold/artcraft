@@ -16,9 +16,17 @@ import { Tooltip } from "@storyteller/ui-tooltip";
 import { GalleryModal, type GalleryItem } from "@storyteller/ui-gallery-modal";
 import {
   PromptBox,
+  ImagePromptRow,
   MediaReferenceRow,
   CharactersModal,
   useCharactersStore,
+  MobilePromptForm,
+  MobileSelectField,
+  MobileFieldButton,
+  MobileCountStepper,
+  SettingsDrawer,
+  DrawerOptionList,
+  DrawerSection,
   type RefImage,
   type RefVideo,
   type RefAudio,
@@ -295,6 +303,7 @@ export default function CreateVideo() {
   const [isImagePickerOpen, setIsImagePickerOpen] = useState(false);
   const [isEndFramePickerOpen, setIsEndFramePickerOpen] = useState(false);
   const [isCharactersModalOpen, setIsCharactersModalOpen] = useState(false);
+  const [isOutputDrawerOpen, setIsOutputDrawerOpen] = useState(false);
   const [pickerSelectedIds, setPickerSelectedIds] = useState<string[]>([]);
   const [endFramePickerSelectedIds, setEndFramePickerSelectedIds] = useState<
     string[]
@@ -971,6 +980,214 @@ export default function CreateVideo() {
     dismissBatch,
   ]);
 
+  // ── Mobile form ───────────────────────────────────────────────────────
+
+  const activeResolutionLabel = resolutionItems?.find((i) => i.selected)?.label;
+  const outputSummary = [`${effectiveDuration}s`, activeResolutionLabel]
+    .filter(Boolean)
+    .join(" · ");
+
+  const mobileForm = (
+    <MobilePromptForm
+      prompt={prompt}
+      onPromptChange={setPrompt}
+      onSubmit={handleGenerate}
+      isSubmitting={isGenerating}
+      credits={estimatedCredits}
+      placeholder="Describe the video you want to generate..."
+      mentionItems={mentionItems.length > 0 ? mentionItems : undefined}
+      autoAdvance={loggedIn && !!prompt.trim() && !isGenerating && !needsImage}
+      banner={
+        requiresImageInput ? (
+          <div className="flex items-start gap-2.5 rounded-lg border border-amber-500/40 bg-amber-900/80 px-3.5 py-2.5 text-xs text-amber-100">
+            <FontAwesomeIcon
+              icon={faCircleInfo}
+              className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-amber-400"
+            />
+            <span>
+              This model can&apos;t generate from text alone — add a starting
+              frame to animate your prompt.
+            </span>
+          </div>
+        ) : undefined
+      }
+      inputModeSelector={
+        inputModeItems ? (
+          <div className="grid grid-cols-2 gap-2">
+            {inputModeItems.map((item) => (
+              <button
+                key={item.label}
+                type="button"
+                onClick={() => handleInputModeChange(item)}
+                className={`rounded-xl border px-3 py-2.5 text-left transition-colors ${
+                  item.selected
+                    ? "border-primary bg-primary/15"
+                    : "border-ui-panel-border bg-ui-controls hover:bg-ui-controls/80"
+                }`}
+              >
+                <span className="block text-sm font-semibold text-base-fg">
+                  {item.label}
+                </span>
+                <span className="block text-xs text-base-fg/55">
+                  {item.description}
+                </span>
+              </button>
+            ))}
+          </div>
+        ) : undefined
+      }
+      modelField={
+        <MobileSelectField
+          label="Model"
+          title="Select Model"
+          items={modelItems}
+          onSelect={handleModelChange}
+        />
+      }
+      frames={
+        supportsImagePrompts ? (
+          <ImagePromptRow
+            maxImagePromptCount={
+              isReferenceMode ? (selectedModel?.image_references_max ?? 3) : 1
+            }
+            referenceImages={referenceImages}
+            setReferenceImages={setReferenceImages}
+            onPickFromLibrary={
+              supportsImagePrompts
+                ? () => setIsImagePickerOpen(true)
+                : undefined
+            }
+            isVideo
+            isReferenceMode={isReferenceMode}
+            endFrameImage={endFrameImage}
+            setEndFrameImage={setEndFrameImage}
+            showEndFrameSection={hasEndFrame}
+            onPickEndFrameFromLibrary={
+              hasEndFrame ? () => setIsEndFramePickerOpen(true) : undefined
+            }
+          />
+        ) : undefined
+      }
+      mediaRefs={
+        isReferenceMode && (supportsVideoRefs || supportsAudioRefs) ? (
+          <MediaReferenceRow
+            videoSupported={supportsVideoRefs}
+            audioSupported={supportsAudioRefs}
+            referenceVideos={referenceVideos}
+            onReferenceVideosChange={setReferenceVideos}
+            maxVideoCount={selectedModel?.video_references_max ?? 3}
+            maxVideoRefDuration={
+              selectedModel?.video_references_max_total_duration_seconds ?? 30
+            }
+            referenceAudios={referenceAudios}
+            onReferenceAudiosChange={setReferenceAudios}
+            maxAudioCount={selectedModel?.audio_references_max ?? 2}
+            maxAudioRefDuration={
+              selectedModel?.audio_references_max_total_duration_seconds ?? 30
+            }
+          />
+        ) : undefined
+      }
+      settingsFields={
+        <>
+          {hasSizeOptions && (
+            <MobileSelectField
+              label="Aspect ratio"
+              items={sizeItems}
+              onSelect={handleSizeChange}
+            />
+          )}
+          {hasSound && (
+            <div className="flex items-center justify-between rounded-xl border border-ui-panel-border bg-ui-controls px-3.5 py-2.5">
+              <span className="flex items-center gap-2 text-sm font-medium text-base-fg/70">
+                <FontAwesomeIcon icon={faWaveformLines} className="h-4 w-4" />
+                Audio
+              </span>
+              <ToggleButton
+                isActive={generateWithSound}
+                icon={faWaveformLines}
+                activeIcon={faWaveformLines}
+                label={generateWithSound ? "On" : "Off"}
+                onClick={() =>
+                  setUi({ generateWithSound: !generateWithSound })
+                }
+              />
+            </div>
+          )}
+          {(durationRange || resolutionItems) && (
+            <>
+              <MobileFieldButton
+                label="Output"
+                icon={<FontAwesomeIcon icon={faClock} className="h-4 w-4" />}
+                value={outputSummary}
+                onClick={() => setIsOutputDrawerOpen(true)}
+              />
+              <SettingsDrawer
+                open={isOutputDrawerOpen}
+                onOpenChange={setIsOutputDrawerOpen}
+                title="Output"
+              >
+                {durationRange && (
+                  <DrawerSection label="Duration">
+                    <div className="px-3 pb-1 pt-2">
+                      <div className="flex items-center gap-2.5">
+                        <div className="flex-1">
+                          <SliderV2
+                            min={durationRange.min}
+                            max={durationRange.max}
+                            value={localDuration}
+                            onChange={handleDurationSlide}
+                            step={1}
+                            suffix="s"
+                            variant="filled"
+                          />
+                        </div>
+                        <span className="text-base-fg min-w-6 shrink-0 text-sm font-medium tabular-nums">
+                          {localDuration}s
+                        </span>
+                      </div>
+                      <div className="text-base-fg/40 mt-1.5 flex justify-between px-0.5 text-[11px] tabular-nums">
+                        <span>{durationRange.min}s</span>
+                        <span>{durationRange.max}s</span>
+                      </div>
+                    </div>
+                  </DrawerSection>
+                )}
+                {resolutionItems && (
+                  <DrawerSection label="Resolution">
+                    <DrawerOptionList
+                      items={resolutionItems}
+                      onSelect={handleResolutionChange}
+                    />
+                  </DrawerSection>
+                )}
+              </SettingsDrawer>
+            </>
+          )}
+        </>
+      }
+      countField={
+        <MobileCountStepper
+          value={numVideos}
+          onChange={setNumVideos}
+          max={selectedModel?.batch_size_max ?? 4}
+          options={selectedModel?.batch_size_options}
+        />
+      }
+      extraActions={
+        supportsCharacters ? (
+          <button
+            type="button"
+            onClick={() => setIsCharactersModalOpen(true)}
+            className="flex h-11 items-center justify-center gap-1 rounded-xl border border-ui-controls-border bg-ui-controls px-3 text-sm font-medium text-base-fg transition-all hover:bg-ui-controls/80 active:scale-95"
+          >
+            @Characters
+          </button>
+        ) : undefined
+      }
+    />
+  );
+
   // ── Render ────────────────────────────────────────────────────────────
 
   const videoGlowOrbs = (
@@ -1005,6 +1222,7 @@ export default function CreateVideo() {
       modelItems={modelItems}
       onModelChange={handleModelChange}
       glowOrbs={videoGlowOrbs}
+      promptForm={mobileForm}
       gridContent={
         <GenerationGallery
           inProgressJobs={enrichedInProgress}
