@@ -16,6 +16,9 @@ use crate::generate::generate_image::providers::artcraft::flux_pro_1p1_ultra::bu
 use crate::generate::generate_image::providers::artcraft::gpt_image_1::build::build_artcraft_gpt_image_1;
 use crate::generate::generate_image::providers::artcraft::gpt_image_1p5::build::build_artcraft_gpt_image_1p5;
 use crate::generate::generate_image::providers::artcraft::gpt_image_2::build::build_artcraft_gpt_image_2;
+use crate::generate::generate_image::providers::artcraft::midjourney_7::build::build_artcraft_midjourney_7;
+use crate::generate::generate_image::providers::artcraft::midjourney_7_niji::build::build_artcraft_midjourney_7_niji;
+use crate::generate::generate_image::providers::artcraft::midjourney_8::build::build_artcraft_midjourney_8;
 use crate::generate::generate_image::providers::artcraft::nano_banana::build::build_artcraft_nano_banana;
 use crate::generate::generate_image::providers::artcraft::nano_banana_2::build::build_artcraft_nano_banana_2;
 use crate::generate::generate_image::providers::artcraft::nano_banana_pro::build::build_artcraft_nano_banana_pro;
@@ -118,6 +121,9 @@ impl GenerateImageRequestBuilder {
       (RouterProvider::Artcraft, RouterImageModel::Seedream5Lite) => build_artcraft_seedream_5_lite(self),
       (RouterProvider::Artcraft, RouterImageModel::QwenEdit2511Angles) => build_artcraft_qwen_edit_2511_angles(self),
       (RouterProvider::Artcraft, RouterImageModel::Flux2LoraAngles) => build_artcraft_flux_2_lora_angles(self),
+      (RouterProvider::Artcraft, RouterImageModel::Midjourney7) => build_artcraft_midjourney_7(self),
+      (RouterProvider::Artcraft, RouterImageModel::Midjourney7Niji) => build_artcraft_midjourney_7_niji(self),
+      (RouterProvider::Artcraft, RouterImageModel::Midjourney8) => build_artcraft_midjourney_8(self),
 
       (RouterProvider::Fal, RouterImageModel::Flux1Dev) => build_fal_flux_1_dev(self),
       (RouterProvider::Fal, RouterImageModel::Flux1Schnell) => build_fal_flux_1_schnell(self),

@@ -19,6 +19,12 @@ use crate::generate::generate_image::providers::artcraft::gpt_image_1p5::cost::A
 use crate::generate::generate_image::providers::artcraft::gpt_image_1p5::request::ArtcraftGptImage1p5RequestState;
 use crate::generate::generate_image::providers::artcraft::gpt_image_2::cost::ArtcraftGptImage2CostState;
 use crate::generate::generate_image::providers::artcraft::gpt_image_2::request::ArtcraftGptImage2RequestState;
+use crate::generate::generate_image::providers::artcraft::midjourney_7::cost::ArtcraftMidjourney7CostState;
+use crate::generate::generate_image::providers::artcraft::midjourney_7::request::ArtcraftMidjourney7RequestState;
+use crate::generate::generate_image::providers::artcraft::midjourney_7_niji::cost::ArtcraftMidjourney7NijiCostState;
+use crate::generate::generate_image::providers::artcraft::midjourney_7_niji::request::ArtcraftMidjourney7NijiRequestState;
+use crate::generate::generate_image::providers::artcraft::midjourney_8::cost::ArtcraftMidjourney8CostState;
+use crate::generate::generate_image::providers::artcraft::midjourney_8::request::ArtcraftMidjourney8RequestState;
 use crate::generate::generate_image::providers::artcraft::nano_banana::cost::ArtcraftNanoBananaCostState;
 use crate::generate::generate_image::providers::artcraft::nano_banana::request::ArtcraftNanoBananaRequestState;
 use crate::generate::generate_image::providers::artcraft::nano_banana_2::cost::ArtcraftNanoBanana2CostState;
@@ -88,6 +94,9 @@ pub enum ImageGenerationRequest {
   ArtcraftSeedream5Lite(ArtcraftSeedream5LiteRequestState),
   ArtcraftQwenEdit2511Angles(ArtcraftQwenEdit2511AnglesRequestState),
   ArtcraftFlux2LoraAngles(ArtcraftFlux2LoraAnglesRequestState),
+  ArtcraftMidjourney7(ArtcraftMidjourney7RequestState),
+  ArtcraftMidjourney7Niji(ArtcraftMidjourney7NijiRequestState),
+  ArtcraftMidjourney8(ArtcraftMidjourney8RequestState),
 
   // ── Fal provider ──
   FalFlux1Dev(FalFlux1DevRequestState),
@@ -130,6 +139,9 @@ impl ImageGenerationRequest {
       Self::ArtcraftSeedream5Lite(_) => RouterProvider::Artcraft,
       Self::ArtcraftQwenEdit2511Angles(_) => RouterProvider::Artcraft,
       Self::ArtcraftFlux2LoraAngles(_) => RouterProvider::Artcraft,
+      Self::ArtcraftMidjourney7(_) => RouterProvider::Artcraft,
+      Self::ArtcraftMidjourney7Niji(_) => RouterProvider::Artcraft,
+      Self::ArtcraftMidjourney8(_) => RouterProvider::Artcraft,
 
       Self::FalFlux1Dev(_) => RouterProvider::Fal,
       Self::FalFlux1Schnell(_) => RouterProvider::Fal,
@@ -200,6 +212,15 @@ impl ImageGenerationRequest {
       }
       Self::ArtcraftFlux2LoraAngles(request) => {
         Ok(ArtcraftFlux2LoraAnglesCostState::from_request(request).estimate_cost())
+      }
+      Self::ArtcraftMidjourney7(request) => {
+        Ok(ArtcraftMidjourney7CostState::from_request(request).estimate_cost())
+      }
+      Self::ArtcraftMidjourney7Niji(request) => {
+        Ok(ArtcraftMidjourney7NijiCostState::from_request(request).estimate_cost())
+      }
+      Self::ArtcraftMidjourney8(request) => {
+        Ok(ArtcraftMidjourney8CostState::from_request(request).estimate_cost())
       }
 
       // ── Fal ──
@@ -285,6 +306,18 @@ impl ImageGenerationRequest {
         request.send(artcraft_client).await
       }
       Self::ArtcraftFlux2LoraAngles(request) => {
+        let artcraft_client = client.get_artcraft_client_ref()?;
+        request.send(artcraft_client).await
+      }
+      Self::ArtcraftMidjourney7(request) => {
+        let artcraft_client = client.get_artcraft_client_ref()?;
+        request.send(artcraft_client).await
+      }
+      Self::ArtcraftMidjourney7Niji(request) => {
+        let artcraft_client = client.get_artcraft_client_ref()?;
+        request.send(artcraft_client).await
+      }
+      Self::ArtcraftMidjourney8(request) => {
         let artcraft_client = client.get_artcraft_client_ref()?;
         request.send(artcraft_client).await
       }
