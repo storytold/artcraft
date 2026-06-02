@@ -53,20 +53,24 @@ pub async fn run_pipeline_v2(
 
   let apriori_job_token = InferenceJobToken::generate();
 
-  if cost > 0 {
-    attempt_wallet_deduction_else_common_web_error(
+  let maybe_wallet_ledger_entry_token = if cost > 0 {
+    let deduction = attempt_wallet_deduction_else_common_web_error(
       user_token,
       Some(apriori_job_token.as_str()),
       cost,
       mysql_connection,
     ).await?;
-  }
+    Some(deduction.ledger_entry_token)
+  } else {
+    None
+  };
 
   let response = finalize_and_generate(draft_or_request, server_state, resolved_media).await?;
 
   Ok(ImagePipelineResult {
     apriori_job_token,
     response,
+    maybe_wallet_ledger_entry_token,
   })
 }
 
