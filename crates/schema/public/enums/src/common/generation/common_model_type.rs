@@ -100,6 +100,15 @@ pub enum CommonModelType {
   MidjourneyV7DraftRaw,
   #[serde(rename = "midjourney_v7_raw")]
   MidjourneyV7Raw,
+  /// Midjourney v7 as routed via kinovi
+  #[serde(rename = "midjourney_7")]
+  Midjourney7,
+  /// Midjourney v7 niji as routed via kinovi
+  #[serde(rename = "midjourney_7_niji")]
+  Midjourney7Niji,
+  /// Midjourney v8 as routed via kinovi
+  #[serde(rename = "midjourney_8")]
+  Midjourney8,
 
   //// Image Infill models
   //#[serde(rename = "flux_pro_1_infill")]
@@ -237,6 +246,9 @@ impl CommonModelType {
       Self::MidjourneyV7Draft => "midjourney_v7_draft",
       Self::MidjourneyV7DraftRaw => "midjourney_v7_draft_raw",
       Self::MidjourneyV7Raw => "midjourney_v7_raw",
+      Self::Midjourney7 => "midjourney_7",
+      Self::Midjourney7Niji => "midjourney_7_niji",
+      Self::Midjourney8 => "midjourney_8",
 
       // Video models
       Self::GrokVideo => "grok_video",
@@ -319,6 +331,9 @@ impl CommonModelType {
       "midjourney_v7_draft" => Ok(Self::MidjourneyV7Draft),
       "midjourney_v7_draft_raw" => Ok(Self::MidjourneyV7DraftRaw),
       "midjourney_v7_raw" => Ok(Self::MidjourneyV7Raw),
+      "midjourney_7" => Ok(Self::Midjourney7),
+      "midjourney_7_niji" => Ok(Self::Midjourney7Niji),
+      "midjourney_8" => Ok(Self::Midjourney8),
 
       // Video models
       "grok_video" => Ok(Self::GrokVideo),
@@ -405,6 +420,9 @@ impl CommonModelType {
       Self::MidjourneyV7Draft,
       Self::MidjourneyV7DraftRaw,
       Self::MidjourneyV7Raw,
+      Self::Midjourney7,
+      Self::Midjourney7Niji,
+      Self::Midjourney8,
 
       // Video models
       Self::GrokVideo,
@@ -488,6 +506,9 @@ impl CommonModelType {
       Self::MidjourneyV7Draft => CommonModelClass::Image,
       Self::MidjourneyV7DraftRaw => CommonModelClass::Image,
       Self::MidjourneyV7Raw => CommonModelClass::Image,
+      Self::Midjourney7 => CommonModelClass::Image,
+      Self::Midjourney7Niji => CommonModelClass::Image,
+      Self::Midjourney8 => CommonModelClass::Image,
 
       // Video models
       Self::GrokVideo => CommonModelClass::Video,
@@ -581,6 +602,9 @@ mod tests {
       assert_serialization(CommonModelType::MidjourneyV7Draft, "midjourney_v7_draft");
       assert_serialization(CommonModelType::MidjourneyV7DraftRaw, "midjourney_v7_draft_raw");
       assert_serialization(CommonModelType::MidjourneyV7Raw, "midjourney_v7_raw");
+      assert_serialization(CommonModelType::Midjourney7, "midjourney_7");
+      assert_serialization(CommonModelType::Midjourney7Niji, "midjourney_7_niji");
+      assert_serialization(CommonModelType::Midjourney8, "midjourney_8");
       // Video models
       assert_serialization(CommonModelType::GrokVideo, "grok_video");
       assert_serialization(CommonModelType::GrokImagineVideo, "grok_imagine_video");
@@ -659,6 +683,9 @@ mod tests {
       assert_eq!(CommonModelType::MidjourneyV7Draft.to_str(), "midjourney_v7_draft");
       assert_eq!(CommonModelType::MidjourneyV7DraftRaw.to_str(), "midjourney_v7_draft_raw");
       assert_eq!(CommonModelType::MidjourneyV7Raw.to_str(), "midjourney_v7_raw");
+      assert_eq!(CommonModelType::Midjourney7.to_str(), "midjourney_7");
+      assert_eq!(CommonModelType::Midjourney7Niji.to_str(), "midjourney_7_niji");
+      assert_eq!(CommonModelType::Midjourney8.to_str(), "midjourney_8");
 
       // Video models
       assert_eq!(CommonModelType::GrokVideo.to_str(), "grok_video");
@@ -739,6 +766,9 @@ mod tests {
       assert_eq!(CommonModelType::from_str("midjourney_v7_draft").unwrap(), CommonModelType::MidjourneyV7Draft);
       assert_eq!(CommonModelType::from_str("midjourney_v7_draft_raw").unwrap(), CommonModelType::MidjourneyV7DraftRaw);
       assert_eq!(CommonModelType::from_str("midjourney_v7_raw").unwrap(), CommonModelType::MidjourneyV7Raw);
+      assert_eq!(CommonModelType::from_str("midjourney_7").unwrap(), CommonModelType::Midjourney7);
+      assert_eq!(CommonModelType::from_str("midjourney_7_niji").unwrap(), CommonModelType::Midjourney7Niji);
+      assert_eq!(CommonModelType::from_str("midjourney_8").unwrap(), CommonModelType::Midjourney8);
       // Video models
       assert_eq!(CommonModelType::from_str("grok_video").unwrap(), CommonModelType::GrokVideo);
       assert_eq!(CommonModelType::from_str("grok_imagine_video").unwrap(), CommonModelType::GrokImagineVideo);
@@ -785,7 +815,7 @@ mod tests {
     #[test]
     fn all_variants() {
       let mut variants = CommonModelType::all_variants();
-      assert_eq!(variants.len(), 70);
+      assert_eq!(variants.len(), 73);
       // Image models
       assert_eq!(variants.pop_first(), Some(CommonModelType::Flux1Dev));
       assert_eq!(variants.pop_first(), Some(CommonModelType::Flux1Schnell));
@@ -820,6 +850,9 @@ mod tests {
       assert_eq!(variants.pop_first(), Some(CommonModelType::MidjourneyV7Draft));
       assert_eq!(variants.pop_first(), Some(CommonModelType::MidjourneyV7DraftRaw));
       assert_eq!(variants.pop_first(), Some(CommonModelType::MidjourneyV7Raw));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::Midjourney7));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::Midjourney7Niji));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::Midjourney8));
       // Video models
       assert_eq!(variants.pop_first(), Some(CommonModelType::GrokVideo));
       assert_eq!(variants.pop_first(), Some(CommonModelType::GrokImagineVideo));

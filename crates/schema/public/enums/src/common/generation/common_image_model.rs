@@ -29,6 +29,12 @@ pub enum CommonImageModel {
   GrokImagineImage,
   #[serde(rename = "grok_imagine_image_q")]
   GrokImagineImageQuality,
+  #[serde(rename = "midjourney_7")]
+  Midjourney7,
+  #[serde(rename = "midjourney_7_niji")]
+  Midjourney7Niji,
+  #[serde(rename = "midjourney_8")]
+  Midjourney8,
   #[serde(rename = "nano_banana")]
   NanoBanana,
   #[serde(rename = "nano_banana_2")]
@@ -60,6 +66,9 @@ impl CommonImageModel {
       Self::GptImage2 => CommonModelType::GptImage2,
       Self::GrokImagineImage => CommonModelType::GrokImagineImage,
       Self::GrokImagineImageQuality => CommonModelType::GrokImagineImageQuality,
+      Self::Midjourney7 => CommonModelType::Midjourney7,
+      Self::Midjourney7Niji => CommonModelType::Midjourney7Niji,
+      Self::Midjourney8 => CommonModelType::Midjourney8,
       Self::NanoBanana => CommonModelType::NanoBanana,
       Self::NanoBanana2 => CommonModelType::NanoBanana2,
       Self::NanoBananaPro => CommonModelType::NanoBananaPro,
@@ -93,6 +102,9 @@ mod tests {
       assert_serialization(CommonImageModel::GptImage2, "gpt_image_2");
       assert_serialization(CommonImageModel::GrokImagineImage, "grok_imagine_image");
       assert_serialization(CommonImageModel::GrokImagineImageQuality, "grok_imagine_image_q");
+      assert_serialization(CommonImageModel::Midjourney7, "midjourney_7");
+      assert_serialization(CommonImageModel::Midjourney7Niji, "midjourney_7_niji");
+      assert_serialization(CommonImageModel::Midjourney8, "midjourney_8");
       assert_serialization(CommonImageModel::NanoBanana, "nano_banana");
       assert_serialization(CommonImageModel::NanoBanana2, "nano_banana_2");
       assert_serialization(CommonImageModel::NanoBananaPro, "nano_banana_pro");
@@ -115,6 +127,9 @@ mod tests {
         (CommonImageModel::GptImage2, CommonModelType::GptImage2),
         (CommonImageModel::GrokImagineImage, CommonModelType::GrokImagineImage),
         (CommonImageModel::GrokImagineImageQuality, CommonModelType::GrokImagineImageQuality),
+        (CommonImageModel::Midjourney7, CommonModelType::Midjourney7),
+        (CommonImageModel::Midjourney7Niji, CommonModelType::Midjourney7Niji),
+        (CommonImageModel::Midjourney8, CommonModelType::Midjourney8),
         (CommonImageModel::NanoBanana, CommonModelType::NanoBanana),
         (CommonImageModel::NanoBanana2, CommonModelType::NanoBanana2),
         (CommonImageModel::NanoBananaPro, CommonModelType::NanoBananaPro),
@@ -149,7 +164,7 @@ mod tests {
     #[test]
     fn variant_count() {
       use strum::IntoEnumIterator;
-      assert_eq!(CommonImageModel::iter().len(), 17);
+      assert_eq!(CommonImageModel::iter().len(), 20);
     }
 
     #[test]

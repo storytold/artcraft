@@ -143,6 +143,15 @@ pub enum InferenceModelType {
   MidjourneyV7DraftRaw,
   #[serde(rename = "midjourney_v7_raw")]
   MidjourneyV7Raw,
+  /// Midjourney v7 as routed via kinovi
+  #[serde(rename = "midjourney_7")]
+  Midjourney7,
+  /// Midjourney v7 niji as routed via kinovi
+  #[serde(rename = "midjourney_7_niji")]
+  Midjourney7Niji,
+  /// Midjourney v8 as routed via kinovi
+  #[serde(rename = "midjourney_8")]
+  Midjourney8,
 
   // Video models
   #[serde(rename = "grok_video")]
@@ -284,6 +293,9 @@ impl InferenceModelType {
       Self::MidjourneyV7Draft => "midjourney_v7_draft",
       Self::MidjourneyV7DraftRaw => "midjourney_v7_draft_raw",
       Self::MidjourneyV7Raw => "midjourney_v7_raw",
+      Self::Midjourney7 => "midjourney_7",
+      Self::Midjourney7Niji => "midjourney_7_niji",
+      Self::Midjourney8 => "midjourney_8",
 
       // Video models
       Self::GrokVideo => "grok_video",
@@ -383,6 +395,9 @@ impl InferenceModelType {
       "midjourney_v7_draft" => Ok(Self::MidjourneyV7Draft),
       "midjourney_v7_draft_raw" => Ok(Self::MidjourneyV7DraftRaw),
       "midjourney_v7_raw" => Ok(Self::MidjourneyV7Raw),
+      "midjourney_7" => Ok(Self::Midjourney7),
+      "midjourney_7_niji" => Ok(Self::Midjourney7Niji),
+      "midjourney_8" => Ok(Self::Midjourney8),
 
       // Video models
       "grok_video" => Ok(Self::GrokVideo),
@@ -486,6 +501,9 @@ impl InferenceModelType {
       Self::MidjourneyV7Draft,
       Self::MidjourneyV7DraftRaw,
       Self::MidjourneyV7Raw,
+      Self::Midjourney7,
+      Self::Midjourney7Niji,
+      Self::Midjourney8,
 
       // Video models
       Self::GrokVideo,
@@ -572,6 +590,9 @@ impl InferenceModelType {
       CommonModelType::MidjourneyV7Draft => Self::MidjourneyV7Draft,
       CommonModelType::MidjourneyV7DraftRaw => Self::MidjourneyV7DraftRaw,
       CommonModelType::MidjourneyV7Raw => Self::MidjourneyV7Raw,
+      CommonModelType::Midjourney7 => Self::Midjourney7,
+      CommonModelType::Midjourney7Niji => Self::Midjourney7Niji,
+      CommonModelType::Midjourney8 => Self::Midjourney8,
 
       // Video models
       CommonModelType::GrokVideo => Self::GrokVideo,
@@ -681,6 +702,9 @@ mod tests {
       assert_serialization(InferenceModelType::MidjourneyV7Draft, "midjourney_v7_draft");
       assert_serialization(InferenceModelType::MidjourneyV7DraftRaw, "midjourney_v7_draft_raw");
       assert_serialization(InferenceModelType::MidjourneyV7Raw, "midjourney_v7_raw");
+      assert_serialization(InferenceModelType::Midjourney7, "midjourney_7");
+      assert_serialization(InferenceModelType::Midjourney7Niji, "midjourney_7_niji");
+      assert_serialization(InferenceModelType::Midjourney8, "midjourney_8");
 
       // Video models
       assert_serialization(InferenceModelType::GrokVideo, "grok_video");
@@ -779,6 +803,9 @@ mod tests {
       assert_eq!(InferenceModelType::MidjourneyV7Draft.to_str(), "midjourney_v7_draft");
       assert_eq!(InferenceModelType::MidjourneyV7DraftRaw.to_str(), "midjourney_v7_draft_raw");
       assert_eq!(InferenceModelType::MidjourneyV7Raw.to_str(), "midjourney_v7_raw");
+      assert_eq!(InferenceModelType::Midjourney7.to_str(), "midjourney_7");
+      assert_eq!(InferenceModelType::Midjourney7Niji.to_str(), "midjourney_7_niji");
+      assert_eq!(InferenceModelType::Midjourney8.to_str(), "midjourney_8");
 
       // Video models
       assert_eq!(InferenceModelType::GrokVideo.to_str(), "grok_video");
@@ -877,6 +904,9 @@ mod tests {
       assert_eq!(InferenceModelType::from_str("midjourney_v7_draft").unwrap(), InferenceModelType::MidjourneyV7Draft);
       assert_eq!(InferenceModelType::from_str("midjourney_v7_draft_raw").unwrap(), InferenceModelType::MidjourneyV7DraftRaw);
       assert_eq!(InferenceModelType::from_str("midjourney_v7_raw").unwrap(), InferenceModelType::MidjourneyV7Raw);
+      assert_eq!(InferenceModelType::from_str("midjourney_7").unwrap(), InferenceModelType::Midjourney7);
+      assert_eq!(InferenceModelType::from_str("midjourney_7_niji").unwrap(), InferenceModelType::Midjourney7Niji);
+      assert_eq!(InferenceModelType::from_str("midjourney_8").unwrap(), InferenceModelType::Midjourney8);
 
       // Video models
       assert_eq!(InferenceModelType::from_str("grok_video").unwrap(), InferenceModelType::GrokVideo);
