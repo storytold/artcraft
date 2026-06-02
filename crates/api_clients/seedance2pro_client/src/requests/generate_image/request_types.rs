@@ -50,6 +50,11 @@ pub (super) struct ApiParams {
   /// (Midjourney returns four images per task regardless).
   #[serde(rename = "batchCount", skip_serializing_if = "Option::is_none")]
   pub batch_count: Option<u8>,
+
+  /// Reference image URLs. When present, Midjourney uses them as visual
+  /// inspiration alongside the prompt.
+  #[serde(rename = "uploadedUrls", skip_serializing_if = "Option::is_none")]
+  pub uploaded_urls: Option<Vec<String>>,
 }
 
 #[derive(Deserialize, Debug)]

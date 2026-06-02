@@ -53,13 +53,16 @@ pub struct KinoviGenerateImageRequest {
   /// Optional negative prompt. Sent as the `"no"` field on the wire.
   pub negative_prompt: Option<String>,
 
+  /// "0 = literal, 1000 = artistic"
   /// Midjourney "stylize" parameter. Valid range 0–1000. `None` omits the
   /// field and lets Kinovi pick its default.
   pub stylize: Option<u16>,
 
+  /// "Unconventional aesthetics"
   /// Midjourney "weird" parameter. Valid range 0–3000.
   pub weird: Option<u16>,
 
+  /// "Variation between images"
   /// Midjourney "chaos" parameter. Valid range 0–100.
   pub chaos: Option<u8>,
 
@@ -71,6 +74,10 @@ pub struct KinoviGenerateImageRequest {
 
   /// Number of distinct generations to enqueue in a single request.
   pub batch_count: KinoviMidjourneyBatchCount,
+
+  /// Optional reference image URLs. Sent on the wire as `uploadedUrls`.
+  /// Midjourney uses these as visual inspiration alongside the prompt.
+  pub reference_image_urls: Option<Vec<String>>,
 }
 
 impl std::fmt::Debug for KinoviGenerateImageRequest {
@@ -86,6 +93,7 @@ impl std::fmt::Debug for KinoviGenerateImageRequest {
       .field("quality", &self.quality)
       .field("raw_mode", &self.raw_mode)
       .field("batch_count", &self.batch_count)
+      .field("reference_image_urls", &self.reference_image_urls)
       .finish()
   }
 }
@@ -245,6 +253,10 @@ pub async fn generate_image(args: GenerateImageArgs<'_>) -> Result<GenerateImage
 
   let style = if req.raw_mode { Some("raw") } else { None };
 
+  // Empty Vec is treated as "no references" so the field is omitted from the
+  // wire — Midjourney rejects empty arrays.
+  let uploaded_urls = req.reference_image_urls.filter(|urls| !urls.is_empty());
+
   let request_body = BatchRequest {
     zero: BatchRequestInner {
       json: BatchRequestJson {
@@ -261,6 +273,7 @@ pub async fn generate_image(args: GenerateImageArgs<'_>) -> Result<GenerateImage
           style,
           negative_prompt: req.negative_prompt,
           batch_count,
+          uploaded_urls,
         },
       },
     },
@@ -355,6 +368,7 @@ mod tests {
         quality: None,
         raw_mode: false,
         batch_count,
+        reference_image_urls: None,
       }
     }
 
@@ -476,6 +490,7 @@ mod tests {
       let batch_count_value = req.batch_count.as_u8();
       let batch_count = if batch_count_value > 1 { Some(batch_count_value) } else { None };
       let style = if req.raw_mode { Some("raw") } else { None };
+      let uploaded_urls = req.reference_image_urls.filter(|urls| !urls.is_empty());
 
       let request_body = BatchRequest {
         zero: BatchRequestInner {
@@ -493,6 +508,7 @@ mod tests {
               style,
               negative_prompt: req.negative_prompt,
               batch_count,
+              uploaded_urls,
             },
           },
         },
@@ -516,6 +532,7 @@ mod tests {
         quality: None,
         raw_mode: false,
         batch_count: KinoviMidjourneyBatchCount::One,
+        reference_image_urls: None,
       }
     }
 
@@ -588,7 +605,7 @@ mod tests {
     fn optionals_omitted_when_none() {
       let p = api_params(minimal_request(KinoviMidjourneyModel::V7, "p"));
       let obj = p.as_object().unwrap();
-      for key in ["stylize", "chaos", "weird", "quality", "style", "no", "batchCount"] {
+      for key in ["stylize", "chaos", "weird", "quality", "style", "no", "batchCount", "uploadedUrls"] {
         assert!(!obj.contains_key(key), "expected `{}` to be omitted in minimal request", key);
       }
     }
@@ -728,6 +745,7 @@ mod tests {
         quality: Some(KinoviMidjourneyQuality::Half),
         raw_mode: true,
         batch_count: KinoviMidjourneyBatchCount::One,
+        reference_image_urls: None,
       };
       let got = api_params(req);
       let expected: Value = serde_json::from_str(
@@ -750,6 +768,7 @@ mod tests {
         quality: Some(KinoviMidjourneyQuality::Full),
         raw_mode: false,
         batch_count: KinoviMidjourneyBatchCount::Four,
+        reference_image_urls: None,
       };
       let got = api_params(req);
       let expected: Value = serde_json::from_str(
@@ -793,6 +812,7 @@ mod tests {
           quality: None,
           raw_mode: false,
           batch_count: KinoviMidjourneyBatchCount::One,
+          reference_image_urls: None,
         },
       };
       let result = generate_image(args).await?;
@@ -822,6 +842,7 @@ mod tests {
           quality: None,
           raw_mode: false,
           batch_count: KinoviMidjourneyBatchCount::One,
+          reference_image_urls: None,
         },
       };
       let result = generate_image(args).await?;
@@ -841,7 +862,7 @@ mod tests {
         host_override: None,
         request: KinoviGenerateImageRequest {
           model: KinoviMidjourneyModel::V8,
-          prompt: "abandoned k-mart, overgrown vines, retrofuturist signage".to_string(),
+          prompt: "A magical shiba inu sorcerer casting spells in a crystal cave".to_string(),
           aspect_ratio: KinoviMidjourneyAspectRatio::Square1x1,
           negative_prompt: Some("dark, gloomy".to_string()),
           stylize: Some(730),
@@ -850,6 +871,7 @@ mod tests {
           quality: Some(KinoviMidjourneyQuality::Half),
           raw_mode: true,
           batch_count: KinoviMidjourneyBatchCount::One,
+          reference_image_urls: None,
         },
       };
       let result = generate_image(args).await?;
@@ -878,6 +900,7 @@ mod tests {
           quality: Some(KinoviMidjourneyQuality::Full),
           raw_mode: false,
           batch_count: KinoviMidjourneyBatchCount::Four,
+          reference_image_urls: None,
         },
       };
       let result = generate_image(args).await?;
