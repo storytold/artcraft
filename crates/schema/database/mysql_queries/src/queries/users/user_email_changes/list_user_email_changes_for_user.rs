@@ -1,6 +1,6 @@
 use std::marker::PhantomData;
 
-use chrono::{DateTime, NaiveDateTime, Utc};
+use chrono::{DateTime, Utc};
 use sqlx::{Executor, MySql};
 
 use tokens::tokens::users::UserToken;
@@ -23,6 +23,9 @@ where
   pub phantom: PhantomData<&'c E>,
 }
 
+#[derive(Debug)]
+pub struct UserEmailChangeRow {
+  pub id: u64,
   pub old_email: String,
   pub new_email: String,
   pub ip_address: String,
@@ -52,7 +55,7 @@ struct RawUserEmailChangeRow {
   old_email: String,
   new_email: String,
   ip_address: String,
-  created_at: NaiveDateTime,
+  created_at: DateTime<Utc>,
 
   user_token: UserToken,
   user_username: String,
@@ -195,7 +198,7 @@ LIMIT ?
       old_email: row.old_email,
       new_email: row.new_email,
       ip_address: row.ip_address,
-      created_at: row.created_at.and_utc(),
+      created_at: row.created_at,
       user,
       maybe_changed_by_user,
     }
