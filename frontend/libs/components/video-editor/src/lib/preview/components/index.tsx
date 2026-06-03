@@ -204,9 +204,20 @@ function PreviewCanvas({
     renderingRef.current = true;
     lastSceneRef.current = renderTree;
     lastFrameRef.current = frame;
-    renderer.render({ node: renderTree, time: renderTime }).then(() => {
-      renderingRef.current = false;
-    });
+    // .finally — without this, any rejection from renderer.render
+    // (typical: a tainted image / failed source decode) leaves
+    // renderingRef.current stuck at true forever, and every
+    // subsequent RAF iteration early-returns at the guard above.
+    // The preview then appears frozen even though the loop keeps
+    // ticking.
+    renderer
+      .render({ node: renderTree, time: renderTime })
+      .catch((error: unknown) => {
+        console.error("Preview render failed:", error);
+      })
+      .finally(() => {
+        renderingRef.current = false;
+      });
   }, [renderer, renderTree, editor.playback, editor.timeline]);
 
   useRafLoop(render);
