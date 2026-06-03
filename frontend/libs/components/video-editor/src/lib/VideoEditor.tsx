@@ -12,6 +12,7 @@ import { PropertiesPanel } from "./panels/properties";
 import { Timeline } from "./timeline/components";
 import { PreviewPanel } from "./preview/components";
 import { EditorHeader } from "./components/editor/editor-header";
+import { EditorErrorBoundary } from "./components/editor/editor-error-boundary";
 import { Onboarding } from "./components/editor/onboarding";
 import { MobileGate } from "./components/editor/mobile-gate";
 import { usePanelStore } from "./editor/panel-store";
@@ -57,14 +58,22 @@ export function VideoEditor({
   return (
     <EditorProvider adapters={adapters}>
       <MobileGate>
-        <div className="bg-background flex h-full w-full flex-col overflow-hidden">
-          <DegradedRendererBanner />
-          <EditorHeader endSlot={headerEndSlot} />
-          <div className="min-h-0 min-w-0 flex-1">
-            <EditorLayout />
+        {/* Boundary contains any descendant throw — without this, an
+            unhandled exception in a panel or renderer node propagates
+            to the host shell and the user sees a blank app. The
+            boundary's recovery button remounts the editor subtree
+            (key bump); EditorCore + the host's project state stay
+            alive across the recovery. */}
+        <EditorErrorBoundary>
+          <div className="bg-background flex h-full w-full flex-col overflow-hidden">
+            <DegradedRendererBanner />
+            <EditorHeader endSlot={headerEndSlot} />
+            <div className="min-h-0 min-w-0 flex-1">
+              <EditorLayout />
+            </div>
+            <Onboarding />
           </div>
-          <Onboarding />
-        </div>
+        </EditorErrorBoundary>
       </MobileGate>
     </EditorProvider>
   );
