@@ -6,6 +6,12 @@ import {
 
 export interface ImageNodeParams extends VisualNodeParams {
   url: string;
+  // Optional original File. When supplied, the loader prefers a
+  // same-origin blob: URL minted from it, which guarantees the canvas
+  // doesn't end up CORS-tainted on draw — the failure mode behind
+  // images rendering as black in the preview. Cross-origin CDN URLs
+  // still work via crossOrigin="anonymous" when file is absent.
+  file?: File;
   maxSourceSize?: number;
 }
 
@@ -19,9 +25,11 @@ const imageSourceCache = new Map<string, Promise<CachedImageSource>>();
 
 export function loadImageSource({
   url,
+  file,
   maxSourceSize,
 }: {
   url: string;
+  file?: File;
   maxSourceSize?: number;
 }): Promise<CachedImageSource> {
   const cacheKey = `${url}::${maxSourceSize ?? "full"}`;
@@ -31,12 +39,28 @@ export function loadImageSource({
 
   const promise = (async (): Promise<CachedImageSource> => {
     const image = new Image();
+    // Prefer a same-origin blob URL minted from the File when the host
+    // provided one. Falls back to the resolved URL with explicit CORS
+    // so cross-origin CDNs that allow anonymous reads still work.
+    let objectUrl: string | null = null;
+    if (file) {
+      objectUrl = URL.createObjectURL(file);
+    } else {
+      image.crossOrigin = "anonymous";
+    }
+    const src = objectUrl ?? url;
 
-    await new Promise<void>((resolve, reject) => {
-      image.onload = () => resolve();
-      image.onerror = () => reject(new Error("Image load failed"));
-      image.src = url;
-    });
+    try {
+      await new Promise<void>((resolve, reject) => {
+        image.onload = () => resolve();
+        image.onerror = () => reject(new Error("Image load failed"));
+        image.src = src;
+      });
+    } finally {
+      // Revoke the blob URL once the browser has the bitmap. The
+      // <img> retains its decoded pixels independently of the URL.
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+    }
 
     const naturalWidth = image.naturalWidth;
     const naturalHeight = image.naturalHeight;

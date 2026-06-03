@@ -238,6 +238,7 @@ async function resolveImageNode({
 }): Promise<ResolvedVisualSourceNodeState | null> {
   const source = await loadImageSource({
     url: node.params.url,
+    file: node.params.file,
     maxSourceSize: node.params.maxSourceSize,
   });
   const visualState = resolveVisualState({
@@ -439,7 +440,10 @@ async function resolveBackdropSource({
     };
   }
 
-  const source = await loadImageSource({ url: node.params.url });
+  const source = await loadImageSource({
+    url: node.params.url,
+    file: node.params.file,
+  });
   return {
     source: source.source,
     width: source.width,

@@ -89,6 +89,7 @@ function buildTrackNodes({
           nodes.push(
             new ImageNode({
               url: mediaAsset.url,
+              file: mediaAsset.file,
               duration: element.duration,
               timeOffset: element.startTime,
               trimStart: element.trimStart,
