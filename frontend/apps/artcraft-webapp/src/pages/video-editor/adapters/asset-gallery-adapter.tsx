@@ -52,6 +52,10 @@ export function useWebappAssetGalleryAdapter(): AssetGalleryHostBundle {
     open: false,
     filter: undefined,
   });
+  // GalleryModal at mode="select" only registers user clicks when an
+  // onSelectItem handler is wired; without selectedItemIds tracking
+  // the "Use selected" button hands back an empty array.
+  const [selectedItemIds, setSelectedItemIds] = useState<string[]>([]);
   const resolverRef = useRef<Resolver | null>(null);
 
   // Reject (resolve-empty) any pending resolver. Used when a second
@@ -81,6 +85,7 @@ export function useWebappAssetGalleryAdapter(): AssetGalleryHostBundle {
           // again before the modal closed, or two consumers raced for
           // the picker), resolve it empty so its caller can unwind.
           settlePending([]);
+          setSelectedItemIds([]);
           resolverRef.current = resolve;
           setState({ open: true, filter: kindsToFilter(kinds) });
         });
@@ -89,17 +94,25 @@ export function useWebappAssetGalleryAdapter(): AssetGalleryHostBundle {
     [],
   );
 
+  const handleSelectItem = (id: string) => {
+    setSelectedItemIds((prev) =>
+      prev.includes(id) ? prev.filter((existing) => existing !== id) : [...prev, id],
+    );
+  };
+
   const handleUseSelected = (items: GalleryItem[]) => {
     const selections: MediaPickerSelection[] = items.map((item) => ({
       handle: { id: item.id, kind: mediaClassToKind(item.mediaClass) },
       name: item.label,
     }));
     setState({ open: false, filter: undefined });
+    setSelectedItemIds([]);
     settlePending(selections);
   };
 
   const handleClose = () => {
     setState({ open: false, filter: undefined });
+    setSelectedItemIds([]);
     settlePending([]);
   };
 
@@ -108,6 +121,8 @@ export function useWebappAssetGalleryAdapter(): AssetGalleryHostBundle {
       mode="select"
       isOpen={state.open}
       forceFilter={state.filter}
+      selectedItemIds={selectedItemIds}
+      onSelectItem={handleSelectItem}
       onUseSelected={handleUseSelected}
       onClose={handleClose}
     />
