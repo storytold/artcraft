@@ -93,6 +93,7 @@ use crate::http_server::endpoints::moderation::user_feature_flags::moderator_lis
 use crate::http_server::endpoints::moderation::staff_audit_logs::moderator_list_staff_audit_logs_handler::*;
 use crate::http_server::endpoints::moderation::user_bans::moderation_ban_user_handler::*;
 use crate::http_server::endpoints::moderation::user_emails::moderator_change_user_email::*;
+use crate::http_server::endpoints::moderation::user_emails::moderator_list_email_address_changes_for_user::*;
 use artcraft_api_defs::moderation::user_referrals::list_global_user_referrals::*;
 use artcraft_api_defs::moderation::user_referrals::list_user_referrals_for_user::*;
 use crate::http_server::endpoints::moderation::user_sessions::moderator_list_user_session_impersonation_requests_for_user_handler::*;
@@ -535,6 +536,7 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     crate::http_server::endpoints::moderation::user_referrals::moderator_list_user_referrals_for_user_handler::moderator_list_user_referrals_for_user_handler,
     crate::http_server::endpoints::moderation::user_bans::moderation_ban_user_handler::moderation_ban_user_handler,
     crate::http_server::endpoints::moderation::user_emails::moderator_change_user_email::moderator_change_user_email_handler,
+    crate::http_server::endpoints::moderation::user_emails::moderator_list_email_address_changes_for_user::moderator_list_email_address_changes_for_user_handler,
     crate::http_server::endpoints::moderation::user_sessions::moderator_list_user_session_impersonation_requests_for_user_handler::moderator_list_user_session_impersonation_requests_for_user_handler,
     crate::http_server::endpoints::moderation::user_sessions::moderator_list_user_session_impersonation_requests_handler::moderator_list_user_session_impersonation_requests_handler,
     crate::http_server::endpoints::moderation::user_sessions::moderator_user_session_impersonation_request_handler::moderator_user_session_impersonation_request_handler,
@@ -960,6 +962,9 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     ModerationImpersonateSuccessResponse,
     ModeratorChangeUserEmailRequest,
     ModeratorChangeUserEmailSuccessResponse,
+    ModeratorListUserEmailChangesSuccessResponse,
+    ModeratorUserEmailChangeItem,
+    ModeratorUserEmailChangeUserSummary,
     ModernInferenceQueueStats,
     PinnedMediaFile,
     PinnedModelWeightForList,
@@ -1197,6 +1202,9 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     ListUserReferralsForUserQueryParams,
     ListUserReferralsForUserPathInfo,
     ListUserReferralsForUserSuccessResponse,
+
+    // User Emails (Moderation)
+    ModeratorListUserEmailChangesQueryParams,
   ))
 )]
 pub struct ApiDoc;
