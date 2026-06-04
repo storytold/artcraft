@@ -21,7 +21,12 @@ export type {
   MediaPickerSelection,
 } from "./asset-gallery";
 export type { AuthUserAdapter } from "./auth-user";
-export type { ExportSinkAdapter } from "./export-sink";
+export type {
+  ExportSinkAdapter,
+  ExportSinkOptions,
+  ExportSinkProgressEvent,
+  ExportDestination,
+} from "./export-sink";
 export type { ToastAdapter, ToastOptions } from "./toast";
 export type { SoundsAdapter, SoundsSearchResult } from "./sounds";
 
