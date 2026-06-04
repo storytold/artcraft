@@ -1,29 +1,20 @@
 import type {
   ExportArtifact,
   ExportSinkAdapter,
+  ExportSinkOptions,
 } from "@storyteller/ui-video-editor";
 import { kindFromMime } from "@storyteller/ui-video-editor";
-import { showToast } from "../../../components/toast/toast";
 import { uploadByKind } from "./upload-by-kind";
 
-// Webapp ExportSinkAdapter — downloads the export to disk immediately
-// (matching the lib's default behavior so the user always gets the
-// file) and kicks off a fire-and-forget upload to the Artcraft media
-// library so the rendered video also shows up in their gallery.
+// Webapp ExportSinkAdapter.
 //
-// Upload failures are reported via toast but don't fail the export —
-// the download already happened, so the user has the file regardless.
+// Two destinations the user can pick independently from the export
+// popover: a browser download (`saveToDisk`) and an Artcraft media
+// library upload (`saveToLibrary`). The progress callback fires once
+// per destination so the lib can render inline status rows; accept()
+// resolves only after every requested destination has settled so the
+// "Close" button in the popover only appears when everything is done.
 
-// Trigger the browser download for the rendered artifact and return
-// the freshly-minted object URL so the caller can revoke it AFTER the
-// background upload finishes (avoids racing the disk write or yanking
-// the Blob ref out from under a concurrent UploadNewVideo).
-//
-// Inlined here rather than composing with the lib's downloadExportSink
-// because that adapter revokes the URL itself before returning, which
-// we explicitly don't want — we need to keep the URL alive while the
-// upload is in-flight. Behavior is otherwise the same as
-// downloadExportSink.accept().
 function triggerDownload(artifact: ExportArtifact): string {
   const url = URL.createObjectURL(artifact.blob);
   const a = document.createElement("a");
@@ -47,50 +38,85 @@ async function uploadToLibrary(artifact: ExportArtifact): Promise<void> {
 
 // In-flight gate keyed by filename. Without this, double-clicking
 // Export or any concurrent invocation launches two simultaneous
-// UploadNewVideo / UploadAudio / UploadImage calls for the same Blob;
-// both succeed, the user's library ends up with two identical entries
-// and the user sees duplicate success toasts.
+// UploadNewVideo / UploadAudio / UploadImage calls for the same Blob.
 const inFlight = new Set<string>();
 
 export const webappExportSinkAdapter: ExportSinkAdapter = {
-  async accept(artifact) {
-    const downloadUrl = triggerDownload(artifact);
+  async accept(artifact, options) {
+    const saveToDisk = options?.saveToDisk ?? true;
+    const saveToLibrary = options?.saveToLibrary ?? false;
+    const onProgress = options?.onProgress;
 
+    if (!saveToDisk && !saveToLibrary) {
+      return null;
+    }
+
+    // Disk: download is effectively synchronous; we still emit a
+    // pending → success transition so the popover row can render the
+    // spinner-to-checkmark animation rather than snapping straight to
+    // success.
+    let downloadUrl: string | null = null;
+    if (saveToDisk) {
+      onProgress?.({ destination: "disk", status: "pending" });
+      try {
+        downloadUrl = triggerDownload(artifact);
+        onProgress?.({ destination: "disk", status: "success" });
+      } catch (error) {
+        onProgress?.({
+          destination: "disk",
+          status: "error",
+          error: error instanceof Error ? error.message : "Download failed",
+        });
+      }
+    }
+
+    if (!saveToLibrary) {
+      // Disk-only path: schedule blob URL revoke and return. The 60s
+      // delay outlasts large file writes on slow disks.
+      if (downloadUrl) {
+        setTimeout(() => URL.revokeObjectURL(downloadUrl as string), 60_000);
+      }
+      return saveToDisk ? artifact.filename : null;
+    }
+
+    // Library path. Dedupe concurrent invocations of the same artifact
+    // so a double-click doesn't double-upload.
     if (inFlight.has(artifact.filename)) {
-      // Download still happens (user pressed Export, they should get
-      // the file). Just skip the duplicate upload + toast.
-      // Revoke the URL after a brief delay — no upload to chain to.
-      setTimeout(() => URL.revokeObjectURL(downloadUrl), 1000);
-      return artifact.filename;
+      onProgress?.({
+        destination: "library",
+        status: "error",
+        error: "Already uploading this export",
+      });
+      if (downloadUrl) {
+        setTimeout(() => URL.revokeObjectURL(downloadUrl as string), 60_000);
+      }
+      return saveToDisk ? artifact.filename : null;
     }
     inFlight.add(artifact.filename);
 
-    // Don't await — let the upload happen in the background so the
-    // export popover can close immediately. Surface success/failure
-    // via toast. Revoke the download URL only after the upload settles
-    // so that (a) the browser has finished initiating the download and
-    // (b) the upload isn't reading from a Blob whose URL has already
-    // been torn down.
-    void uploadToLibrary(artifact)
-      .then(() => {
-        showToast(
-          "success",
-          `Saved ${artifact.filename} to your media library`,
-        );
-      })
-      .catch((error: unknown) => {
-        const message =
-          error instanceof Error ? error.message : "Unknown error";
-        showToast(
-          "error",
-          `Couldn't save ${artifact.filename} to your media library: ${message}`,
-        );
-      })
-      .finally(() => {
-        inFlight.delete(artifact.filename);
-        URL.revokeObjectURL(downloadUrl);
+    onProgress?.({ destination: "library", status: "uploading" });
+    try {
+      await uploadToLibrary(artifact);
+      onProgress?.({ destination: "library", status: "success" });
+    } catch (error) {
+      onProgress?.({
+        destination: "library",
+        status: "error",
+        error: error instanceof Error ? error.message : "Upload failed",
       });
+    } finally {
+      inFlight.delete(artifact.filename);
+      // Revoke after the upload settles so the parallel disk write
+      // and the library read can't race against the URL release.
+      if (downloadUrl) {
+        URL.revokeObjectURL(downloadUrl);
+      }
+    }
 
-    return artifact.filename;
+    return saveToDisk ? artifact.filename : null;
   },
 };
+
+// Helper re-exported so other adapters in this folder can build their
+// own ExportSinkOptions when delegating to the webapp adapter.
+export type { ExportSinkOptions };
