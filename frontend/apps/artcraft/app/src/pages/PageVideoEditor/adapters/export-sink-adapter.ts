@@ -8,41 +8,34 @@ import {
   downloadUrlToPath,
 } from "@storyteller/api";
 import { downloadDir } from "@tauri-apps/api/path";
-import { ToastTypes } from "~/enums";
-import { addToast } from "~/signals/toasts";
 import { uploadByKind } from "./upload-by-kind";
 
 // Tauri ExportSinkAdapter.
 //
-// 1. Mint a blob URL for the rendered artifact.
-// 2. Call promptDownloadLocationIfNeeded — pops a native save-as dialog
-//    when the user enabled "Ask location before download" in app
-//    settings. Falls back to `~/Downloads/<filename>` otherwise.
-// 3. downloadUrlToPath writes the file to the chosen path. If the user
-//    cancelled the save dialog (chosen === null), skip the disk write.
-// 4. Fire-and-forget UploadNewVideo / UploadAudio / UploadImage so the
-//    finished render also lands in the user's Artcraft media library.
-// 5. Revoke the blob URL only after BOTH operations settle so the
-//    upload doesn't read a Blob whose URL was torn down early.
+// Two destinations the user controls from the export popover:
+//   - saveToDisk: native save-as dialog (promptDownloadLocationIfNeeded
+//     falls back to the OS Downloads dir when the "Ask location before
+//     download" setting is off) → downloadUrlToPath writes the file.
+//   - saveToLibrary: UploadNewVideo / UploadAudio / UploadImage mirrors
+//     the render into the user's Artcraft media library.
 //
-// In-flight Set on filename dedupes concurrent invocations (rapid
-// double-click on Export).
+// Progress events fire per destination so the lib's popover can render
+// inline status rows; accept() resolves only after every requested
+// destination settled. In-flight Set dedupes concurrent invocations.
 
 const inFlight = new Set<string>();
 
-function emitToast(type: ToastTypes, message: string): void {
-  addToast(type, message);
-}
-
-async function ensureSavePath(url: string, filename: string): Promise<string | null> {
+async function ensureSavePath(
+  url: string,
+  filename: string,
+): Promise<string | null> {
   const chosen = await promptDownloadLocationIfNeeded(url);
   if (chosen === null) {
-    // User explicitly cancelled the dialog. Skip the disk write —
-    // upload still runs so they can grab the result from the gallery.
+    // User explicitly cancelled the dialog.
     return null;
   }
   if (typeof chosen === "string") return chosen;
-  // Toggle is off: default to Downloads/<filename>.
+  // "Ask location before download" is off — default to Downloads/<filename>.
   const dir = await downloadDir();
   return `${dir}/${filename}`;
 }
@@ -58,56 +51,85 @@ async function uploadToLibrary(artifact: ExportArtifact): Promise<void> {
 }
 
 export const tauriExportSinkAdapter: ExportSinkAdapter = {
-  async accept(artifact) {
+  async accept(artifact, options) {
+    const saveToDisk = options?.saveToDisk ?? true;
+    const saveToLibrary = options?.saveToLibrary ?? false;
+    const onProgress = options?.onProgress;
+
+    if (!saveToDisk && !saveToLibrary) {
+      return null;
+    }
+
     const downloadUrl = URL.createObjectURL(artifact.blob);
 
     if (inFlight.has(artifact.filename)) {
-      // Don't double-upload. The disk write would also duplicate
-      // (overwrite the same file at the same path), so skip both.
-      // Schedule a delayed revoke since there's no upload to tie it to.
+      if (saveToDisk) {
+        onProgress?.({
+          destination: "disk",
+          status: "error",
+          error: "Already saving this export",
+        });
+      }
+      if (saveToLibrary) {
+        onProgress?.({
+          destination: "library",
+          status: "error",
+          error: "Already uploading this export",
+        });
+      }
       setTimeout(() => URL.revokeObjectURL(downloadUrl), 60_000);
-      return artifact.filename;
+      return null;
     }
     inFlight.add(artifact.filename);
 
-    // Disk write — synchronously block accept() until the path is
-    // chosen so the editor's UI reflects the cancel-vs-save state.
     let savedPath: string | null = null;
     try {
-      const targetPath = await ensureSavePath(downloadUrl, artifact.filename);
-      if (targetPath) {
-        await downloadUrlToPath(downloadUrl, targetPath);
-        savedPath = targetPath;
+      if (saveToDisk) {
+        onProgress?.({ destination: "disk", status: "pending" });
+        try {
+          const targetPath = await ensureSavePath(downloadUrl, artifact.filename);
+          if (targetPath) {
+            await downloadUrlToPath(downloadUrl, targetPath);
+            savedPath = targetPath;
+            onProgress?.({ destination: "disk", status: "success" });
+          } else {
+            // User cancelled the dialog — treat as error so the row
+            // doesn't look like a silent success.
+            onProgress?.({
+              destination: "disk",
+              status: "error",
+              error: "Save dialog cancelled",
+            });
+          }
+        } catch (error) {
+          console.error("Export disk save failed:", error);
+          onProgress?.({
+            destination: "disk",
+            status: "error",
+            error: error instanceof Error ? error.message : "Disk save failed",
+          });
+        }
       }
-    } catch (error) {
-      console.error("Export disk save failed:", error);
-      const message =
-        error instanceof Error ? error.message : "Unknown error";
-      emitToast(ToastTypes.ERROR, `Couldn't save export to disk: ${message}`);
+
+      if (saveToLibrary) {
+        onProgress?.({ destination: "library", status: "uploading" });
+        try {
+          await uploadToLibrary(artifact);
+          onProgress?.({ destination: "library", status: "success" });
+        } catch (error) {
+          console.error("Export library upload failed:", error);
+          onProgress?.({
+            destination: "library",
+            status: "error",
+            error: error instanceof Error ? error.message : "Upload failed",
+          });
+        }
+      }
+    } finally {
+      inFlight.delete(artifact.filename);
+      URL.revokeObjectURL(downloadUrl);
     }
 
-    // Library mirror runs detached so the user gets the file regardless
-    // of upload outcome.
-    void uploadToLibrary(artifact)
-      .then(() => {
-        emitToast(
-          ToastTypes.SUCCESS,
-          `Saved ${artifact.filename} to your media library`,
-        );
-      })
-      .catch((error: unknown) => {
-        const message =
-          error instanceof Error ? error.message : "Unknown error";
-        emitToast(
-          ToastTypes.ERROR,
-          `Couldn't save ${artifact.filename} to your media library: ${message}`,
-        );
-      })
-      .finally(() => {
-        inFlight.delete(artifact.filename);
-        URL.revokeObjectURL(downloadUrl);
-      });
-
-    return savedPath ?? artifact.filename;
+    return savedPath ?? (saveToDisk ? artifact.filename : null);
   },
 };
