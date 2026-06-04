@@ -1,4 +1,4 @@
-import { type ReactNode } from "react";
+import { type ReactNode, useMemo } from "react";
 import { GenerateButton } from "@storyteller/ui-button";
 import { MentionTextarea } from "../MentionTextarea";
 import { buildMentionColorMap } from "../mention-colors";
@@ -49,7 +49,12 @@ export function MobilePromptForm({
   countField,
 }: MobilePromptFormProps) {
   const { goToHistory } = useMobileCreateTabs();
-  const colorMap = buildMentionColorMap(mentionItems);
+  // Memoize so a new colorMap identity doesn't re-fire MentionTextarea's
+  // DOM-sync effect on every parent render (caret-loss source on iOS).
+  const colorMap = useMemo(
+    () => buildMentionColorMap(mentionItems),
+    [mentionItems],
+  );
 
   const handleCreate = () => {
     onSubmit();
