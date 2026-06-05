@@ -49,22 +49,17 @@ export function getEditableScalarChannels({
     return null;
   }
 
-  const channelEntries = isLeafChannelData(data)
-    ? [["value", data] as const]
-    : Object.entries(data);
-  const channels = channelEntries.flatMap(([componentKey, channel]) => {
+  const channelEntries: Array<[string, ChannelData | undefined]> =
+    isLeafChannelData(data)
+      ? [["value", data]]
+      : Object.entries(data);
+  const channels: ScalarGraphChannel[] = [];
+  for (const [componentKey, channel] of channelEntries) {
     if (!isScalarAnimationChannel(channel)) {
-      return [];
+      continue;
     }
-
-    return [
-      {
-        propertyPath,
-        componentKey,
-        channel,
-      } satisfies ScalarGraphChannel,
-    ];
-  });
+    channels.push({ propertyPath, componentKey, channel });
+  }
 
   return { easingMode: getEasingModeForChannelData({ data }), channels };
 }

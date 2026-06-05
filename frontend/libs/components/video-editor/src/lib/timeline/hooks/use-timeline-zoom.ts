@@ -51,7 +51,7 @@ export function useTimelineZoom({
     seek: (time) => editor.playback.seek({ time }),
     setTimelineViewState: ({ zoomLevel, scrollLeft, playheadTime }) =>
       editor.project.setTimelineViewState({
-        viewState: {
+        timelineViewState: {
           zoomLevel,
           scrollLeft,
           playheadTime,

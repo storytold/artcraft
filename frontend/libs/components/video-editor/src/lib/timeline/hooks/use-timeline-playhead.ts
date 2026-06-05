@@ -48,7 +48,7 @@ export function useTimelinePlayhead({
       editor.playback.setScrubbing({ isScrubbing: scrubbing }),
     setTimelineViewState: ({ zoomLevel, scrollLeft, playheadTime }) =>
       editor.project.setTimelineViewState({
-        viewState: {
+        timelineViewState: {
           zoomLevel,
           scrollLeft,
           playheadTime,
