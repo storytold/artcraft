@@ -746,7 +746,7 @@ export { DEFAULT_BACKGROUND_COLOR } from "./lib/background/color";
 export { Timeline } from "./lib/timeline/components";
 export { TimelineToolbar } from "./lib/timeline/components/timeline-toolbar";
 export { TimelinePlayhead } from "./lib/timeline/components/timeline-playhead";
-export { TimelineElement } from "./lib/timeline/components/timeline-element";
+export { TimelineElement as TimelineElementView } from "./lib/timeline/components/timeline-element";
 export { AudioWaveform } from "./lib/timeline/components/audio-waveform";
 export { AudioVolumeLine } from "./lib/timeline/components/audio-volume-line";
 export { SnapIndicator } from "./lib/timeline/components/snap-indicator";
