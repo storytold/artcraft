@@ -6,7 +6,6 @@ import {
   faVideo,
   faImage,
   faCube,
-  faFilm,
   faWandMagicSparkles,
   faGrid2,
   faGraduationCap,
@@ -42,7 +41,6 @@ type NavItem = {
   href: string;
   icon: IconDefinition;
   external?: boolean;
-  badge?: string;
 };
 
 const PRIMARY_ITEMS: NavItem[] = [{ label: "Home", href: "/", icon: faHouse }];
@@ -54,7 +52,6 @@ const CREATE_ITEMS_STATIC: NavItem[] = [
   { label: "Image", href: "/create-image", icon: faImage },
   { label: "Video", href: "/create-video", icon: faVideo },
   { label: "Edit 3D", href: "/edit-3d", icon: faCube },
-  { label: "Edit Video", href: "/video-editor", icon: faFilm, badge: "BETA" },
   {
     label: "BG Change",
     href: "/background-change",
@@ -143,11 +140,6 @@ function NavMenuItem({
     <>
       <FontAwesomeIcon icon={item.icon} />
       <span>{item.label}</span>
-      {item.badge && (
-        <span className="ml-auto rounded-sm bg-amber-500 px-1.5 py-0.5 text-[9px] font-semibold uppercase leading-none text-white group-data-[collapsible=icon]:hidden">
-          {item.badge}
-        </span>
-      )}
     </>
   );
   return (

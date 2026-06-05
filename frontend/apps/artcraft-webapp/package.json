@@ -3,10 +3,6 @@
   "version": "0.0.1",
   "private": true,
   "dependencies": {
-    "@storyteller/ui-gallery-modal": "workspace:*",
-    "@storyteller/ui-pricing-table": "workspace:*",
-    "@storyteller/ui-video-editor": "workspace:*",
-    "react-aria": "^3.48.0",
     "react-masonry-css": "^1.0.16"
   }
 }
