@@ -80,7 +80,7 @@ export interface FullAppItem {
   description: string;
   icon: IconDefinition;
   category: "generate" | "edit";
-  badge?: "NEW" | "BEST" | "SOON";
+  badge?: "NEW" | "BEST" | "SOON" | "BETA";
   action?: AppId;
   color?: string;
 }
@@ -206,7 +206,7 @@ export const ALL_APPS: FullAppItem[] = [
     category: "edit",
     action: "VIDEO_EDITOR",
     color: "bg-teal-500/40",
-    badge: "NEW",
+    badge: "BETA",
   },
   {
     id: "2d-canvas",
@@ -271,6 +271,8 @@ export const getBadgeStyles = (badge?: string) => {
       return "bg-primary text-white";
     case "SOON":
       return "bg-gray-600 text-white";
+    case "BETA":
+      return "bg-amber-500 text-white";
     default:
       return "";
   }
