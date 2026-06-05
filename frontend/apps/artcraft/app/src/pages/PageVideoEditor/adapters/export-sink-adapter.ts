@@ -22,6 +22,11 @@ import { uploadByKind } from "./upload-by-kind";
 // Progress events fire per destination so the lib's popover can render
 // inline status rows; accept() resolves only after every requested
 // destination settled. In-flight Set dedupes concurrent invocations.
+//
+// Return value: the absolute path of the file written to disk when
+// saveToDisk succeeded, otherwise `null`. Matches the
+// ExportSinkAdapter contract — the webapp adapter always returns
+// `null` because the browser can't observe the chosen download path.
 
 const inFlight = new Set<string>();
 
@@ -130,6 +135,6 @@ export const tauriExportSinkAdapter: ExportSinkAdapter = {
       URL.revokeObjectURL(downloadUrl);
     }
 
-    return savedPath ?? (saveToDisk ? artifact.filename : null);
+    return savedPath;
   },
 };

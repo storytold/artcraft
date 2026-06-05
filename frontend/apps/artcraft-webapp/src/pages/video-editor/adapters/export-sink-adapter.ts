@@ -14,6 +14,11 @@ import { uploadByKind } from "./upload-by-kind";
 // per destination so the lib can render inline status rows; accept()
 // resolves only after every requested destination has settled so the
 // "Close" button in the popover only appears when everything is done.
+//
+// accept() always returns `null`: the browser's <a download> flow
+// does not expose the actual on-disk path, so callers that want a
+// real path must use the Tauri adapter instead. This matches the
+// ExportSinkAdapter contract.
 
 function triggerDownload(artifact: ExportArtifact): string {
   const url = URL.createObjectURL(artifact.blob);
@@ -76,7 +81,7 @@ export const webappExportSinkAdapter: ExportSinkAdapter = {
       if (downloadUrl) {
         setTimeout(() => URL.revokeObjectURL(downloadUrl as string), 60_000);
       }
-      return saveToDisk ? artifact.filename : null;
+      return null;
     }
 
     // Library path. Dedupe concurrent invocations of the same artifact
@@ -90,7 +95,7 @@ export const webappExportSinkAdapter: ExportSinkAdapter = {
       if (downloadUrl) {
         setTimeout(() => URL.revokeObjectURL(downloadUrl as string), 60_000);
       }
-      return saveToDisk ? artifact.filename : null;
+      return null;
     }
     inFlight.add(artifact.filename);
 
@@ -113,7 +118,7 @@ export const webappExportSinkAdapter: ExportSinkAdapter = {
       }
     }
 
-    return saveToDisk ? artifact.filename : null;
+    return null;
   },
 };
 

@@ -33,6 +33,13 @@ export interface ExportSinkOptions {
 }
 
 export interface ExportSinkAdapter {
+  // Returns the absolute filesystem path of the saved disk artifact
+  // when the sink can determine it (e.g. a native save-dialog flow),
+  // or `null` otherwise. Browser-download sinks cannot observe the
+  // chosen path due to sandboxing and MUST return `null`. Library-only
+  // saves also return `null`. The lib does not currently consume the
+  // return value — it's surfaced for hosts that want to log or open
+  // the saved file.
   accept(
     artifact: ExportArtifact,
     options?: ExportSinkOptions,
