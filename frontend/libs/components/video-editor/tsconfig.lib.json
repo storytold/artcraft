@@ -17,7 +17,9 @@
     "noEmitOnError": false,
     "noUnusedLocals": false,
     "strictNullChecks": false,
-    "noImplicitAny": false
+    "noImplicitAny": false,
+    "noImplicitOverride": false,
+    "noImplicitReturns": false
   },
   "exclude": [
     "out-tsc",
