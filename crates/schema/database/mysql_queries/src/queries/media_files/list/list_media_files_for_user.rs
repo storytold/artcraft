@@ -16,7 +16,8 @@ use enums::common::view_as::ViewAs;
 use enums::common::visibility::Visibility;
 use errors::AnyhowResult;
 use tokens::tokens::media_files::MediaFileToken;
-
+use tokens::tokens::prompts::PromptToken;
+use tokens::traits::mysql_token_from_row::MySqlTokenFromRow;
 use crate::helpers::boolean_converters::i8_to_bool;
 use crate::payloads::prompt_args::prompt_inner_payload::PromptInnerPayload;
 
@@ -50,6 +51,8 @@ pub struct MediaFileListItem {
   pub public_bucket_directory_hash: String,
   pub maybe_public_bucket_prefix: Option<String>,
   pub maybe_public_bucket_extension: Option<String>,
+
+  pub maybe_prompt_token: Option<PromptToken>,
 
   pub creator_set_visibility: Visibility,
 
@@ -146,6 +149,7 @@ pub async fn list_media_files_for_user(args: ListMediaFileForUserArgs<'_>) -> An
           public_bucket_directory_hash: record.public_bucket_directory_hash,
           maybe_public_bucket_prefix: record.maybe_public_bucket_prefix,
           maybe_public_bucket_extension: record.maybe_public_bucket_extension,
+          maybe_prompt_token: record.maybe_prompt_token,
           creator_set_visibility: record.creator_set_visibility,
           is_user_upload: i8_to_bool(record.is_user_upload),
           is_intermediate_system_file: i8_to_bool(record.is_intermediate_system_file),
@@ -200,6 +204,8 @@ fn select_result_fields() -> String {
     m.public_bucket_directory_hash,
     m.maybe_public_bucket_prefix,
     m.maybe_public_bucket_extension,
+
+    m.maybe_prompt_token,
 
     m.creator_set_visibility,
 
@@ -386,6 +392,8 @@ struct MediaFileListItemInternal {
   maybe_public_bucket_prefix: Option<String>,
   maybe_public_bucket_extension: Option<String>,
 
+  maybe_prompt_token: Option<PromptToken>,
+
   creator_set_visibility: Visibility,
 
   is_user_upload: i8,
@@ -439,6 +447,7 @@ impl FromRow<'_, MySqlRow> for MediaFileListItemInternal {
       public_bucket_directory_hash: row.try_get("public_bucket_directory_hash")?,
       maybe_public_bucket_prefix: row.try_get("maybe_public_bucket_prefix")?,
       maybe_public_bucket_extension: row.try_get("maybe_public_bucket_extension")?,
+      maybe_prompt_token: PromptToken::try_from_mysql_row_nullable(row, "maybe_prompt_token")?,
       creator_set_visibility: Visibility::try_from_mysql_row(row, "creator_set_visibility")?,
       is_user_upload: row.try_get("is_user_upload")?,
       is_intermediate_system_file: row.try_get("is_intermediate_system_file")?,

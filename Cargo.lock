@@ -809,6 +809,7 @@ dependencies = [
  "seedance2pro_client",
  "serde",
  "serde_derive",
+ "serde_json",
  "strum",
  "test_data",
  "tokens",

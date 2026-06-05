@@ -406,6 +406,19 @@ export const MentionTextarea = forwardRef<HTMLDivElement, MentionTextareaProps>(
       const el = editorRef.current;
       if (!el) return;
 
+      // This effect re-runs whenever `buildHTML`'s identity changes (the parent
+      // recomputing `colorMap`/`mentionItems`), not only when `value` genuinely
+      // changes from outside. If the DOM already shows this exact text while the
+      // user is focused, skip the innerHTML rewrite entirely: reassigning
+      // innerHTML under a live caret detaches it on iOS Safari, which makes the
+      // cursor disappear mid-typing. A pending caret (mention insert) must still
+      // resync, and an unfocused editor is safe to recolor.
+      if (pendingCaret.current === null && document.activeElement === el) {
+        let domText = el.innerText;
+        if (domText.endsWith("\n")) domText = domText.slice(0, -1);
+        if (domText === value) return;
+      }
+
       const sel = window.getSelection();
       if (document.activeElement === el && sel && !sel.isCollapsed) return;
 

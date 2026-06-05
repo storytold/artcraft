@@ -9,6 +9,7 @@ use crate::http_server::endpoints::voice_conversion::list_voice_conversion_model
 use crate::http_server::session::session_checker::SessionChecker;
 use crate::http_server::web_utils::redis_rate_limiter::RedisRateLimiter;
 use crate::http_server::web_utils::scoped_temp_dir_creator::ScopedTempDirCreator;
+use crate::startup::setup_inference_providers::InferenceProviders;
 use crate::state::certs::google_sign_in_cert::GoogleSignInCert;
 use crate::state::flags::paging_flags::PagingFlags;
 use crate::state::memory_cache::model_token_to_info_cache::ModelTokenToInfoCache;
@@ -25,8 +26,6 @@ use billing_component::stripe::stripe_config::StripeConfig;
 use chrono::{DateTime, Utc};
 use cloud_storage::bucket_client::BucketClient;
 use elasticsearch::Elasticsearch;
-use beeble_client::creds::beeble_api_key::BeebleApiKey;
-use fal_client::creds::fal_api_key::FalApiKey;
 use memory_caching::arc_ttl_sieve::ArcTtlSieve;
 use memory_caching::single_item_ttl_cache::SingleItemTtlCache;
 use mysql_queries::mediators::badge_granter::BadgeGranter;
@@ -89,21 +88,9 @@ pub struct ServerState {
   pub public_bucket_client: BucketClient,
   pub auto_gc_bucket_client: BucketClient,
 
-  pub fal: FalData,
+  pub inference_providers: InferenceProviders,
 
-  pub gmicloud: GmiCloudData,
-
-  pub grok_api: GrokApiData,
-
-  pub beeble: BeebleData,
-
-  pub seedance2pro: Seedance2ProData,
-
-  pub openai: OpenAiData,
-  
   pub resend: ResendData,
-
-  pub worldlabs: WorldLabsData,
 
   pub pager: Pager,
 
@@ -313,56 +300,8 @@ pub struct TrollBans {
   pub ip_addresses: IpBanList,
 }
 
-/// Fal integration
-#[derive(Clone)]
-pub struct FalData {
-  pub api_key: FalApiKey,
-  pub webhook_url: String,
-}
-
-/// GmiCloud integration
-#[derive(Clone)]
-pub struct GmiCloudData {
-  pub api_key: gmicloud_client::creds::gmicloud_api_key::GmiCloudApiKey,
-}
-
-/// Grok (xAI) API integration
-#[derive(Clone)]
-pub struct GrokApiData {
-  pub api_key: grok_api_client::creds::grok_api_key::GrokApiKey,
-}
-
-/// Beeble SwitchX integration
-#[derive(Clone)]
-pub struct BeebleData {
-  pub api_key: BeebleApiKey,
-  pub webhook_url: String,
-}
-
-/// Seedance 2 Pro integration
-#[derive(Clone)]
-pub struct Seedance2ProData {
-  /// Cookie string for seedance2-pro.com
-  pub cookies: String,
-
-  /// Cookie string for seedance2-pro.com (Whitelisted account)
-  pub cookies_byteplus: String,
-}
-
-/// OpenAI integration
-#[derive(Clone)]
-pub struct OpenAiData {
-  pub api_key: String,
-}
-
 /// Resend integration
 #[derive(Clone)]
 pub struct ResendData {
-  pub api_key: String,
-}
-
-/// World Labs integration
-#[derive(Clone)]
-pub struct WorldLabsData {
   pub api_key: String,
 }

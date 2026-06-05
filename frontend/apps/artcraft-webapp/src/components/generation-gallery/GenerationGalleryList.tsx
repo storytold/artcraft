@@ -115,6 +115,9 @@ export function GenerationGalleryList({
                 modelLabel={entry.job.modelLabel}
                 failureReason={entry.job.failureReason}
                 failureMessage={entry.job.failureMessage}
+                refImageUrl={entry.job.refImageUrl}
+                promptToken={entry.job.promptToken}
+                recreateMediaClass={entry.job.mediaClass}
                 onDismiss={onDismissFailed}
               />
             );

@@ -141,7 +141,7 @@ pub async fn beeble_switchx_edit_video_gen_handler(
 
   // ==================== DOWNLOAD & UPLOAD TO BEEBLE ==================== //
 
-  let beeble_api_key = &server_state.beeble.api_key;
+  let beeble_api_key = &server_state.inference_providers.beeble.api_key;
 
   // Download + upload source video
   info!("Downloading source video from CDN: {}", source_video_cdn_url);
@@ -216,7 +216,7 @@ pub async fn beeble_switchx_edit_video_gen_handler(
       reference_image_uri: maybe_reference_beeble_uri,
       alpha_uri: None,
       max_resolution: Some(1080),
-      callback_url: Some(server_state.beeble.webhook_url.clone()),
+      callback_url: Some(server_state.inference_providers.beeble.webhook_url.clone()),
       idempotency_key: Some(request.uuid_idempotency_token.clone()),
     },
   }).await.map_err(|err| {

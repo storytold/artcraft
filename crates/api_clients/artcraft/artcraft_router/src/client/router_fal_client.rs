@@ -6,7 +6,7 @@ use fal_client::creds::fal_api_key::FalApiKey;
 ///   - `None` → endpoints will use the queue/polling flow (where available).
 ///
 /// Some endpoints are webhook-only (their fal_client wrapper lives under the
-/// `requests::webhook::*` namespace and has no `api::` queue variant). Those
+/// `requests_old::webhook::*` namespace and has no `api::` queue variant). Those
 /// will return `ClientError::WebhookUrlRequired` when constructed with `None`.
 pub struct RouterFalClient {
   pub(crate) api_key: FalApiKey,

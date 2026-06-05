@@ -1,6 +1,6 @@
-use artcraft_router::api::common_aspect_ratio::CommonAspectRatio as RouterAspectRatio;
-use artcraft_router::api::common_quality::CommonQuality as RouterQuality;
-use artcraft_router::api::common_resolution::CommonResolution as RouterResolution;
+use artcraft_router::api::router_aspect_ratio::RouterAspectRatio;
+use artcraft_router::api::router_quality::RouterQuality;
+use artcraft_router::api::router_resolution::RouterResolution;
 use enums::common::generation::common_aspect_ratio::CommonAspectRatio as EnumsAspectRatio;
 use enums::common::generation::common_quality::CommonQuality as EnumsQuality;
 use enums::common::generation::common_resolution::CommonResolution as EnumsResolution;

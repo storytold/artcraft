@@ -18,8 +18,8 @@ use enums::common::generation::common_model_type::CommonModelType;
 use enums::common::generation_provider::GenerationProvider;
 use enums::common::visibility::Visibility;
 use fal_client::requests::traits::fal_request_cost_calculator_trait::FalRequestCostCalculator;
-use fal_client::requests::webhook::video::image::enqueue_seedance_1p5_pro_image_to_video_webhook::{enqueue_seedance_1p5_pro_image_to_video_webhook, EnqueueSeedance1p5ProImageToVideoArgs, EnqueueSeedance1p5ProImageToVideoAspectRatio, EnqueueSeedance1p5ProImageToVideoDuration, EnqueueSeedance1p5ProImageToVideoRequest, EnqueueSeedance1p5ProImageToVideoResolution};
-use fal_client::requests::webhook::video::text::enqueue_seedance_1p5_pro_text_to_video_webhook::{enqueue_seedance_1p5_pro_text_to_video_webhook, EnqueueSeedance1p5ProTextToVideoArgs, EnqueueSeedance1p5ProTextToVideoRequest, EnqueueSeedance1p5ProTextToVideoAspectRatio, EnqueueSeedance1p5ProTextToVideoDuration, EnqueueSeedance1p5ProTextToVideoResolution};
+use fal_client::requests_old::webhook::video::image::enqueue_seedance_1p5_pro_image_to_video_webhook::{enqueue_seedance_1p5_pro_image_to_video_webhook, EnqueueSeedance1p5ProImageToVideoArgs, EnqueueSeedance1p5ProImageToVideoAspectRatio, EnqueueSeedance1p5ProImageToVideoDuration, EnqueueSeedance1p5ProImageToVideoRequest, EnqueueSeedance1p5ProImageToVideoResolution};
+use fal_client::requests_old::webhook::video::text::enqueue_seedance_1p5_pro_text_to_video_webhook::{enqueue_seedance_1p5_pro_text_to_video_webhook, EnqueueSeedance1p5ProTextToVideoArgs, EnqueueSeedance1p5ProTextToVideoRequest, EnqueueSeedance1p5ProTextToVideoAspectRatio, EnqueueSeedance1p5ProTextToVideoDuration, EnqueueSeedance1p5ProTextToVideoResolution};
 use http_server_common::request::get_request_ip::get_request_ip;
 use log::{error, info, warn};
 use mysql_queries::queries::generic_inference::api_providers::fal::insert_generic_inference_job_for_fal_queue::FalCategory;
@@ -131,7 +131,7 @@ pub async fn seedance_1p5_pro_multi_function_video_gen_handler(
         CommonWebError::BadInputWithSimpleMessage("repeated idempotency token".to_string())
       })?;
 
-  info!("Fal webhook URL: {}", server_state.fal.webhook_url);
+  info!("Fal webhook URL: {}", server_state.inference_providers.fal.webhook_url);
 
   let apriori_job_token = InferenceJobToken::generate();
 
@@ -172,8 +172,8 @@ pub async fn seedance_1p5_pro_multi_function_video_gen_handler(
 
     let args = EnqueueSeedance1p5ProImageToVideoArgs {
       request: i2v_request,
-      webhook_url: &server_state.fal.webhook_url,
-      api_key: &server_state.fal.api_key,
+      webhook_url: &server_state.inference_providers.fal.webhook_url,
+      api_key: &server_state.inference_providers.fal.api_key,
     };
 
     fal_result = enqueue_seedance_1p5_pro_image_to_video_webhook(args)
@@ -203,8 +203,8 @@ pub async fn seedance_1p5_pro_multi_function_video_gen_handler(
 
     let args = EnqueueSeedance1p5ProTextToVideoArgs {
       request: t2v_request,
-      webhook_url: &server_state.fal.webhook_url,
-      api_key: &server_state.fal.api_key,
+      webhook_url: &server_state.inference_providers.fal.webhook_url,
+      api_key: &server_state.inference_providers.fal.api_key,
     };
 
     info!("Charging wallet: {}", cost);

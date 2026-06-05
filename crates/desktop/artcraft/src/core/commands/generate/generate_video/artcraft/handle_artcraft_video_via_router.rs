@@ -6,17 +6,17 @@ use crate::core::state::app_env_configs::app_env_configs::AppEnvConfigs;
 use artcraft_client::credentials::storyteller_credential_set::StorytellerCredentialSet;
 use artcraft_router::api::audio_list_ref::AudioListRef;
 use artcraft_router::api::character_list_ref::CharacterListRef;
-use artcraft_router::api::common_video_model::CommonVideoModel;
+use artcraft_router::api::router_video_model::RouterVideoModel;
 use artcraft_router::api::image_list_ref::ImageListRef;
 use artcraft_router::api::image_ref::ImageRef;
-use artcraft_router::api::provider::Provider;
+use artcraft_router::api::router_provider::RouterProvider;
 use artcraft_router::api::video_list_ref::VideoListRef;
 use artcraft_router::client::request_mismatch_mitigation_strategy::RequestMismatchMitigationStrategy;
 use artcraft_router::client::router_artcraft_client::RouterArtcraftClient;
 use artcraft_router::client::router_client::RouterClient;
 use artcraft_router::generate::generate_video::generate_video_request_builder::GenerateVideoRequestBuilder;
 use artcraft_router::generate::generate_video::generate_video_response::GenerateVideoResponse;
-use artcraft_router::generate::generate_video_v2::video_generation_draft_or_request::VideoGenerationDraftOrRequest;
+use artcraft_router::generate::generate_video::video_generation_draft_or_request::VideoGenerationDraftOrRequest;
 use enums::common::generation_provider::GenerationProvider;
 use enums::tauri::tasks::task_type::TaskType;
 use log::{error, info};
@@ -25,7 +25,7 @@ pub(super) async fn handle_artcraft_video_via_router(
   request: &TauriGenerateVideoRequest,
   app_env_configs: &AppEnvConfigs,
   creds: &StorytellerCredentialSet,
-  model: CommonVideoModel,
+  model: RouterVideoModel,
   generation_model: GenerationModel,
 ) -> Result<TaskEnqueueSuccess, GenerateError> {
   let client = RouterClient::Artcraft(RouterArtcraftClient::new(
@@ -44,7 +44,7 @@ pub(super) async fn handle_artcraft_video_via_router(
 
   let router_request = GenerateVideoRequestBuilder {
     model,
-    provider: Provider::Artcraft,
+    provider: RouterProvider::Artcraft,
     prompt: request.prompt.clone(),
     start_frame,
     end_frame,

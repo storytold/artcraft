@@ -1,0 +1,12 @@
+{
+  "db_name": "MySQL",
+  "query": "\nINSERT INTO user_email_changes\nSET\n  user_token = ?,\n  old_email = ?,\n  new_email = ?,\n  ip_address = ?,\n  maybe_changed_by_user_token = ?\n    ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 5
+    },
+    "nullable": []
+  },
+  "hash": "1359fb54af12d78251fe435b063771984ee00d74a71b5d29e9df267991f38522"
+}

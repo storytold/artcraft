@@ -35,6 +35,7 @@ import {
   useSidebar,
 } from "../components/ui/sidebar";
 import { AppSidebar } from "../components/sidebar/app-sidebar";
+import { MobileBottomNav } from "../components/sidebar/mobile-bottom-nav";
 import { TopBar } from "../components/topbar/topbar";
 import { SignupCtaModal } from "../components/signup-cta-modal";
 import { InsufficientCreditsModal } from "../components/insufficient-credits-modal";
@@ -108,6 +109,7 @@ function ProtectedContent() {
       <SidebarInset className="flex-1 min-h-0 overflow-y-auto bg-[#121212]">
         <Outlet />
       </SidebarInset>
+      {isMobile && <MobileBottomNav />}
     </div>
   );
 }

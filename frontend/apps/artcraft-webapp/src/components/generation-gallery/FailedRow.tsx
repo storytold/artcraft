@@ -1,7 +1,15 @@
-import { memo } from "react";
+import { memo, useCallback, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faCircleExclamation, faXmark } from "@fortawesome/pro-solid-svg-icons";
+import {
+  faArrowRotateRight,
+  faCircleExclamation,
+  faSpinnerThird,
+  faXmark,
+} from "@fortawesome/pro-solid-svg-icons";
+import { Tooltip } from "@storyteller/ui-tooltip";
 import { getModelCreatorIconPath } from "../../lib/omni-gen-hooks";
+import { applyRecreateFromPromptToken } from "../../lib/recreate";
 import { CopyPromptButton } from "./CopyPromptButton";
 import type { FailedCardProps } from "./FailedCard";
 
@@ -12,17 +20,44 @@ export const FailedRow = memo(function FailedRow({
   prompt,
   modelId,
   modelLabel,
+  refImageUrl,
+  promptToken,
+  recreateMediaClass,
   onDismiss,
 }: FailedCardProps) {
+  const navigate = useNavigate();
+  const [isRecreating, setIsRecreating] = useState(false);
   const iconPath = modelId ? getModelCreatorIconPath(modelId) : null;
+
+  const handleRecreate = useCallback(async () => {
+    if (!promptToken || isRecreating) return;
+    setIsRecreating(true);
+    try {
+      await applyRecreateFromPromptToken(
+        promptToken,
+        recreateMediaClass,
+        navigate,
+      );
+    } finally {
+      setIsRecreating(false);
+    }
+  }, [promptToken, recreateMediaClass, navigate, isRecreating]);
 
   return (
     <div className="flex items-center gap-3 rounded-lg px-2.5 py-2">
-      {/* Error thumbnail */}
-      <div className="flex size-[100px] shrink-0 items-center justify-center rounded-md bg-red-500/10 leading-none">
+      {/* Error thumbnail — ref image (if any) faded behind the warning icon */}
+      <div className="relative flex size-[100px] shrink-0 items-center justify-center overflow-hidden rounded-md bg-red-500/10 leading-none">
+        {refImageUrl && (
+          <img
+            src={refImageUrl}
+            alt=""
+            aria-hidden
+            className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-10"
+          />
+        )}
         <FontAwesomeIcon
           icon={faCircleExclamation}
-          className="text-2xl text-red-400"
+          className="relative text-2xl text-red-400"
         />
       </div>
 
@@ -33,6 +68,22 @@ export const FailedRow = memo(function FailedRow({
             {failureReason || "Generation failed"}
           </p>
           {prompt && <CopyPromptButton text={prompt} />}
+          {promptToken && (
+            <Tooltip content="Recreate" position="top">
+              <button
+                type="button"
+                onClick={handleRecreate}
+                disabled={isRecreating}
+                aria-label="Recreate"
+                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-white/40 transition-colors hover:bg-white/10 hover:text-white disabled:opacity-60"
+              >
+                <FontAwesomeIcon
+                  icon={isRecreating ? faSpinnerThird : faArrowRotateRight}
+                  className={`text-sm ${isRecreating ? "animate-spin" : ""}`}
+                />
+              </button>
+            </Tooltip>
+          )}
         </div>
         {prompt && (
           <p className="mt-0.5 truncate text-xs text-white/45">{prompt}</p>

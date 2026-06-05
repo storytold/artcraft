@@ -1,0 +1,164 @@
+use std::sync::Arc;
+
+use grok_api_client::api::requests::videos::video_generation::video_generation::{
+  video_generation, VideoGenerationArgs, VideoGenerationRequest as GrokVideoGenerationRequest,
+};
+
+use crate::client::router_grok_api_client::RouterGrokApiClient;
+use crate::errors::artcraft_router_error::ArtcraftRouterError;
+use crate::errors::client_error::ClientError;
+use crate::errors::provider_error::ProviderError;
+use crate::generate::generate_video::generate_video_response::{
+  GenerateVideoResponse, GrokVideoResponsePayload,
+};
+
+#[derive(Clone, Debug)]
+pub struct GrokApiGrokImagineVideo1p5RequestState {
+  /// The fully-resolved Grok request body, with `model` set to
+  /// `VideoModel::GrokImagineVideo1p5Preview`. Doesn't carry the API key —
+  /// that gets borrowed at send time from the router client.
+  pub request: GrokVideoGenerationRequest,
+}
+
+impl GrokApiGrokImagineVideo1p5RequestState {
+  pub async fn send(&self, client: &RouterGrokApiClient) -> Result<GenerateVideoResponse, ArtcraftRouterError> {
+    // Defense in depth: `build()` already enforces this. Bouncing the
+    // request here costs nothing and avoids an HTTP call we know will fail.
+    if self.request.image.is_none() && self.request.reference_images.is_none() {
+      return Err(ArtcraftRouterError::Client(ClientError::ModelDoesNotSupportOption {
+        field: "image_inputs",
+        value: "text-to-video isn't supported by grok-imagine-video-1.5-preview; supply a start_frame or at least one reference image".to_string(),
+      }));
+    }
+
+    let outbound_request = Arc::new(self.request.clone());
+
+    let response = video_generation(VideoGenerationArgs {
+      api_key: &client.api_key,
+      request: self.request.clone(),
+    })
+      .await
+      .map_err(|err| ArtcraftRouterError::Provider(ProviderError::Grok(err)))?;
+
+    Ok(GenerateVideoResponse::Grok(GrokVideoResponsePayload {
+      request_id: response.request_id,
+      maybe_outbound_request: Some(outbound_request),
+    }))
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+  use grok_api_client::api::types::video_types::video_model::VideoModel;
+  use grok_api_client::creds::grok_api_key::GrokApiKey;
+  use test_data::web::image_urls::JUNO_AT_LAKE_IMAGE_URL;
+
+  use crate::api::router_aspect_ratio::RouterAspectRatio;
+  use crate::api::router_resolution::RouterResolution;
+  use crate::api::router_video_model::RouterVideoModel;
+  use crate::api::image_ref::ImageRef;
+  use crate::api::router_provider::RouterProvider;
+  use crate::client::router_client::RouterClient;
+  use crate::client::router_grok_api_client::RouterGrokApiClient;
+  use crate::generate::generate_video::generate_video_request_builder::GenerateVideoRequestBuilder;
+  use crate::generate::generate_video::generate_video_response::GenerateVideoResponse;
+  use crate::generate::generate_video::video_generation_draft_or_request::VideoGenerationDraftOrRequest;
+
+  // ── Wire-shape sanity: the built request always carries the 1.5 model id ──
+
+  #[test]
+  fn built_request_targets_grok_imagine_video_1p5_preview() {
+    let builder = GenerateVideoRequestBuilder {
+      prompt: Some("test".to_string()),
+      resolution: Some(RouterResolution::SevenTwentyP),
+      // v1.5 requires an input image (no T2V).
+      start_frame: Some(ImageRef::Url("https://example.com/start.png".to_string())),
+      ..grok_builder()
+    };
+    let request = unwrap_request(builder);
+    assert_eq!(request.request.model, Some(VideoModel::GrokImagineVideo1p5Preview));
+  }
+
+  // ── Live API tests (manual) ──
+
+  #[tokio::test]
+  #[ignore] // requires real API key, incurs costs
+  async fn test_text_to_video_720p() {
+    let response = run_pipeline(GenerateVideoRequestBuilder {
+      prompt: Some("A glowing crystal rocket launching from Mars.".to_string()),
+      aspect_ratio: Some(RouterAspectRatio::WideSixteenByNine),
+      resolution: Some(RouterResolution::SevenTwentyP),
+      duration_seconds: Some(5),
+      ..grok_builder()
+    }).await;
+    assert!(matches!(response, GenerateVideoResponse::Grok(_)));
+  }
+
+  #[tokio::test]
+  #[ignore] // requires real API key, incurs costs
+  async fn test_image_to_video_480p() {
+    let response = run_pipeline(GenerateVideoRequestBuilder {
+      prompt: Some("The dog leaps into the lake and splashes around.".to_string()),
+      start_frame: Some(ImageRef::Url(JUNO_AT_LAKE_IMAGE_URL.to_string())),
+      resolution: Some(RouterResolution::FourEightyP),
+      duration_seconds: Some(5),
+      ..grok_builder()
+    }).await;
+    assert!(matches!(response, GenerateVideoResponse::Grok(_)));
+  }
+
+  #[tokio::test]
+  #[ignore] // requires real API key, incurs costs
+  async fn test_image_to_video_720p() {
+    let response = run_pipeline(GenerateVideoRequestBuilder {
+      prompt: Some("The dog leaps into the lake and splashes around.".to_string()),
+      start_frame: Some(ImageRef::Url(JUNO_AT_LAKE_IMAGE_URL.to_string())),
+      resolution: Some(RouterResolution::SevenTwentyP),
+      duration_seconds: Some(5),
+      ..grok_builder()
+    }).await;
+    assert!(matches!(response, GenerateVideoResponse::Grok(_)));
+  }
+
+  fn grok_builder() -> GenerateVideoRequestBuilder {
+    GenerateVideoRequestBuilder {
+      model: RouterVideoModel::GrokImagineVideo1p5,
+      provider: RouterProvider::GrokApi,
+      video_batch_count: Some(1),
+      ..Default::default()
+    }
+  }
+
+  fn get_grok_client() -> RouterClient {
+    let secret = std::fs::read_to_string("/Users/bt/Artcraft/credentials/grok_api_key.txt")
+      .expect("Failed to read Grok API key");
+    let api_key = GrokApiKey::new(secret.trim().to_string());
+    RouterClient::GrokApi(RouterGrokApiClient::new(api_key))
+  }
+
+  fn unwrap_request(builder: GenerateVideoRequestBuilder) -> GrokApiGrokImagineVideo1p5RequestState {
+    let result = builder.build2().expect("build2 should succeed");
+    match result {
+      VideoGenerationDraftOrRequest::Request(
+        crate::generate::generate_video::video_generation_request::VideoGenerationRequest::GrokApiGrokImagineVideo1p5(s)
+      ) => s,
+      _ => panic!("expected GrokApiGrokImagineVideo1p5 request"),
+    }
+  }
+
+  async fn run_pipeline(builder: GenerateVideoRequestBuilder) -> GenerateVideoResponse {
+    let client = get_grok_client();
+    let draft_or_request = builder.build2().expect("build2 should succeed");
+    let request = match draft_or_request {
+      VideoGenerationDraftOrRequest::Request(r) => r,
+      _ => panic!("expected Request variant (Grok skips draft)"),
+    };
+    let response = request.send_request(&client).await.expect("send_request should succeed");
+    match &response {
+      GenerateVideoResponse::Grok(p) => println!("grok request_id={}", p.request_id),
+      other => println!("unexpected response: {:?}", other),
+    }
+    response
+  }
+}

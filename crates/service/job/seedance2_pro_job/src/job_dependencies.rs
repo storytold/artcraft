@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use crate::kinovi_version::KinoviVersion;
 use chrono::Duration;
 use cloud_storage::bucket_client::BucketClient;
 use concurrency::relaxed_atomic_bool::RelaxedAtomicBool;
@@ -20,9 +21,8 @@ pub struct JobDependencies {
   /// Session credentials for polling seedance2-pro.com.
   pub seedance2pro_session: Seedance2ProSession,
 
-  /// When true, this instance polls for alternate-account jobs
-  /// (Seedance2ProAltQueue / Seedance2ProAlt) instead of the primary ones.
-  pub is_alternate_mode: bool,
+  /// The kinovi account/version we poll
+  pub kinovi_version: KinoviVersion,
 
   pub server_environment: ServerEnvironment,
 

@@ -1,1 +1,4 @@
+pub mod kling_1p6_pro_text_to_video;
+pub mod kling_2p5_turbo_pro_text_to_video;
+pub mod kling_2p6_pro_text_to_video;
 pub mod kling_3p0_standard_text_to_video;

@@ -1003,7 +1003,7 @@ export const TaskQueue = () => {
           )}
           <PopoverMenu
             mode="default"
-            buttonClassName="h-[38px] w-[38px] !p-0 relative"
+            buttonClassName="h-[34px] w-[34px] !p-0 relative"
             panelClassName="w-[400px] p-2 bg-ui-panel mt-2.5"
             position="bottom"
             align="end"

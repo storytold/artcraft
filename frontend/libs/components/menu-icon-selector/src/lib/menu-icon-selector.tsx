@@ -87,14 +87,14 @@ export const MenuIconSelector: React.FC<MenuIconSelectorProps> = ({
     >
       <div
         ref={containerRef}
-        className="relative flex gap-1 rounded-xl px-1 py-0.5 min-w-max bg-ui-panel border border-ui-panel-border"
+        className="relative flex gap-1 rounded-full px-1 py-0.5 min-w-max bg-ui-panel border border-ui-panel-border"
         style={{ minWidth: 0 }}
         onMouseLeave={() => setHoveredIndex(-1)}
       >
         {/* Active tab background */}
         {selectedIndex >= 0 && (
           <div
-            className="absolute z-10 rounded-lg bg-primary/25 border-2 border-primary shadow-md transition-all duration-150 ease-in-out -ml-[1px]"
+            className="absolute z-10 rounded-full bg-primary/25 border-2 border-primary shadow-md transition-all duration-150 ease-in-out -ml-[1px]"
             style={{
               left: activeStyle.left,
               width: activeStyle.width,
@@ -106,7 +106,7 @@ export const MenuIconSelector: React.FC<MenuIconSelectorProps> = ({
         {/* Hover background (only if hovering a different tab) */}
         {hoveredIndex !== -1 && hoveredIndex !== selectedIndex && (
           <div
-            className="absolute z-20 rounded-lg bg-primary/10 transition-all duration-150 ease-in-out pointer-events-none -ml-[1px]"
+            className="absolute z-20 rounded-full bg-primary/10 transition-all duration-150 ease-in-out pointer-events-none -ml-[1px]"
             style={{
               left: hoverStyle.left,
               width: hoverStyle.width,
@@ -147,7 +147,7 @@ export const MenuIconSelector: React.FC<MenuIconSelectorProps> = ({
                 onClick={() => !disabled && onMenuChange(item.id)}
                 onMouseEnter={() => setHoveredIndex(idx)}
                 className={twMerge(
-                  "relative z-30 flex flex-col items-center justify-center px-3 py-2 rounded-lg transition-all duration-150 text-base-fg",
+                  "relative z-30 flex flex-col items-center justify-center px-3 py-2 rounded-full transition-all duration-150 text-base-fg",
                   disabled ? "cursor-not-allowed opacity-60" : "",
                 )}
                 tabIndex={0}

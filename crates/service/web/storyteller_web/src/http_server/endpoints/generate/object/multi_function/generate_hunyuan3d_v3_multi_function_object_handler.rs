@@ -17,17 +17,17 @@ use enums::by_table::prompts::prompt_type::PromptType;
 use enums::common::generation_provider::GenerationProvider;
 use enums::common::generation::common_model_type::CommonModelType;
 use enums::common::visibility::Visibility;
-use fal_client::requests::webhook::object::enqueue_hunyuan3d_v3_image_to_3d_webhook::{
+use fal_client::requests_old::webhook::object::enqueue_hunyuan3d_v3_image_to_3d_webhook::{
   enqueue_hunyuan3d_v3_image_to_3d_webhook, EnqueueHunyuan3dV3ImageTo3dArgs,
   EnqueueHunyuan3dV3ImageTo3dGenerateType, EnqueueHunyuan3dV3ImageTo3dPolygonType,
   EnqueueHunyuan3dV3ImageTo3dRequest,
 };
-use fal_client::requests::webhook::object::enqueue_hunyuan3d_v3_sketch_to_3d_webhook::{
+use fal_client::requests_old::webhook::object::enqueue_hunyuan3d_v3_sketch_to_3d_webhook::{
   enqueue_hunyuan3d_v3_sketch_to_3d_webhook, EnqueueHunyuan3dV3SketchTo3dArgs,
   EnqueueHunyuan3dV3SketchTo3dGenerateType, EnqueueHunyuan3dV3SketchTo3dPolygonType,
   EnqueueHunyuan3dV3SketchTo3dRequest,
 };
-use fal_client::requests::webhook::object::enqueue_hunyuan3d_v3_text_to_3d_webhook::{
+use fal_client::requests_old::webhook::object::enqueue_hunyuan3d_v3_text_to_3d_webhook::{
   enqueue_hunyuan3d_v3_text_to_3d_webhook, EnqueueHunyuan3dV3TextTo3dArgs,
   EnqueueHunyuan3dV3TextTo3dGenerateType, EnqueueHunyuan3dV3TextTo3dPolygonType,
   EnqueueHunyuan3dV3TextTo3dRequest,
@@ -145,7 +145,7 @@ pub async fn generate_hunyuan3d_v3_multi_function_object_handler(
       CommonWebError::BadInputWithSimpleMessage("repeated idempotency token".to_string())
     })?;
 
-  info!("Fal webhook URL: {}", server_state.fal.webhook_url);
+  info!("Fal webhook URL: {}", server_state.inference_providers.fal.webhook_url);
 
   // Determine which mode we're in based on inputs
   let has_prompt = request
@@ -185,8 +185,8 @@ pub async fn generate_hunyuan3d_v3_multi_function_object_handler(
           polygon_type,
           enable_pbr: Some(enable_pbr),
         },
-        webhook_url: &server_state.fal.webhook_url,
-        api_key: &server_state.fal.api_key,
+        webhook_url: &server_state.inference_providers.fal.webhook_url,
+        api_key: &server_state.inference_providers.fal.api_key,
       };
 
       enqueue_hunyuan3d_v3_text_to_3d_webhook(args)
@@ -226,8 +226,8 @@ pub async fn generate_hunyuan3d_v3_multi_function_object_handler(
           polygon_type,
           enable_pbr: Some(enable_pbr),
         },
-        webhook_url: &server_state.fal.webhook_url,
-        api_key: &server_state.fal.api_key,
+        webhook_url: &server_state.inference_providers.fal.webhook_url,
+        api_key: &server_state.inference_providers.fal.api_key,
       };
 
       enqueue_hunyuan3d_v3_sketch_to_3d_webhook(args)
@@ -269,8 +269,8 @@ pub async fn generate_hunyuan3d_v3_multi_function_object_handler(
           polygon_type,
           enable_pbr: Some(enable_pbr),
         },
-        webhook_url: &server_state.fal.webhook_url,
-        api_key: &server_state.fal.api_key,
+        webhook_url: &server_state.inference_providers.fal.webhook_url,
+        api_key: &server_state.inference_providers.fal.api_key,
       };
 
       enqueue_hunyuan3d_v3_image_to_3d_webhook(args)

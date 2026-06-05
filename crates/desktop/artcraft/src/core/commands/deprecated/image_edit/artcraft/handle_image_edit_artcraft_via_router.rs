@@ -7,16 +7,16 @@ use crate::core::commands::enqueue::task_enqueue_success::TaskEnqueueSuccess;
 use crate::core::events::generation_events::common::GenerationModel;
 use crate::core::state::app_env_configs::app_env_configs::AppEnvConfigs;
 use crate::services::storyteller::state::storyteller_credential_manager::StorytellerCredentialManager;
-use artcraft_router::api::common_aspect_ratio::CommonAspectRatio as RouterCommonAspectRatio;
-use artcraft_router::api::common_image_model::CommonImageModel;
-use artcraft_router::api::common_resolution::CommonResolution as RouterCommonResolution;
+use artcraft_router::api::router_aspect_ratio::RouterAspectRatio;
+use artcraft_router::api::router_image_model::RouterImageModel;
+use artcraft_router::api::router_resolution::RouterResolution;
 use artcraft_router::api::image_list_ref::ImageListRef;
-use artcraft_router::api::provider::Provider;
+use artcraft_router::api::router_provider::RouterProvider;
 use artcraft_router::client::request_mismatch_mitigation_strategy::RequestMismatchMitigationStrategy;
 use artcraft_router::client::router_artcraft_client::RouterArtcraftClient;
 use artcraft_router::client::router_client::RouterClient;
 use artcraft_router::generate::generate_image::generate_image_request_builder::GenerateImageRequestBuilder;
-use artcraft_router::generate::generate_image_v2::image_generation_draft_or_request::ImageGenerationDraftOrRequest;
+use artcraft_router::generate::generate_image::image_generation_draft_or_request::ImageGenerationDraftOrRequest;
 use enums::common::generation_provider::GenerationProvider;
 use enums::tauri::tasks::task_type::TaskType;
 use log::{error, info};
@@ -27,7 +27,7 @@ pub(super) async fn handle_image_edit_artcraft_via_router(
   request: &EnqueueEditImageCommand,
   app_env_configs: &AppEnvConfigs,
   storyteller_creds_manager: &StorytellerCredentialManager,
-  model: CommonImageModel,
+  model: RouterImageModel,
   generation_model: GenerationModel,
 ) -> Result<TaskEnqueueSuccess, GenerateError> {
   let creds = match storyteller_creds_manager.get_credentials()? {
@@ -68,7 +68,7 @@ pub(super) async fn handle_image_edit_artcraft_via_router(
 
   let router_request = GenerateImageRequestBuilder {
     model,
-    provider: Provider::Artcraft,
+    provider: RouterProvider::Artcraft,
     prompt: Some(request.prompt.clone()),
     image_inputs,
     resolution,
@@ -90,7 +90,11 @@ pub(super) async fn handle_image_edit_artcraft_via_router(
   let request = match dor {
     ImageGenerationDraftOrRequest::Request(req) => req,
     // Artcraft never returns a Draft — image-token resolution happens server-side.
-    ImageGenerationDraftOrRequest::Draft(d) => match d {},
+    // The only draft-producing models today are Kinovi-Midjourney variants,
+    // which are routed to a separate provider.
+    ImageGenerationDraftOrRequest::Draft(_) => unreachable!(
+      "Artcraft router should never produce a draft for image edits"
+    ),
   };
 
   let response = match request.send_request(&client).await {
@@ -122,47 +126,47 @@ pub(super) async fn handle_image_edit_artcraft_via_router(
   })
 }
 
-fn get_aspect_ratio_edit(request: &EnqueueEditImageCommand) -> Option<RouterCommonAspectRatio> {
+fn get_aspect_ratio_edit(request: &EnqueueEditImageCommand) -> Option<RouterAspectRatio> {
   if let Some(ar) = request.common_aspect_ratio {
     return Some(convert_desktop_aspect_ratio(ar));
   }
   if let Some(ar) = request.aspect_ratio {
     return Some(match ar {
-      EditImageSize::Auto => RouterCommonAspectRatio::Auto,
-      EditImageSize::Square => RouterCommonAspectRatio::Square,
-      EditImageSize::Wide => RouterCommonAspectRatio::Wide,
-      EditImageSize::Tall => RouterCommonAspectRatio::Tall,
+      EditImageSize::Auto => RouterAspectRatio::Auto,
+      EditImageSize::Square => RouterAspectRatio::Square,
+      EditImageSize::Wide => RouterAspectRatio::Wide,
+      EditImageSize::Tall => RouterAspectRatio::Tall,
     });
   }
   None
 }
 
-fn get_resolution_edit(request: &EnqueueEditImageCommand) -> Option<RouterCommonResolution> {
+fn get_resolution_edit(request: &EnqueueEditImageCommand) -> Option<RouterResolution> {
   request.image_resolution.map(|res| match res {
-    EditImageResolution::OneK => RouterCommonResolution::OneK,
-    EditImageResolution::TwoK => RouterCommonResolution::TwoK,
-    EditImageResolution::FourK => RouterCommonResolution::FourK,
+    EditImageResolution::OneK => RouterResolution::OneK,
+    EditImageResolution::TwoK => RouterResolution::TwoK,
+    EditImageResolution::FourK => RouterResolution::FourK,
   })
 }
 
-fn convert_desktop_aspect_ratio(ar: DesktopCommonAspectRatio) -> RouterCommonAspectRatio {
+fn convert_desktop_aspect_ratio(ar: DesktopCommonAspectRatio) -> RouterAspectRatio {
   match ar {
-    DesktopCommonAspectRatio::Auto => RouterCommonAspectRatio::Auto,
-    DesktopCommonAspectRatio::Square => RouterCommonAspectRatio::Square,
-    DesktopCommonAspectRatio::WideThreeByTwo => RouterCommonAspectRatio::WideThreeByTwo,
-    DesktopCommonAspectRatio::WideFourByThree => RouterCommonAspectRatio::WideFourByThree,
-    DesktopCommonAspectRatio::WideFiveByFour => RouterCommonAspectRatio::WideFiveByFour,
-    DesktopCommonAspectRatio::WideSixteenByNine => RouterCommonAspectRatio::WideSixteenByNine,
-    DesktopCommonAspectRatio::WideTwentyOneByNine => RouterCommonAspectRatio::WideTwentyOneByNine,
-    DesktopCommonAspectRatio::TallTwoByThree => RouterCommonAspectRatio::TallTwoByThree,
-    DesktopCommonAspectRatio::TallThreeByFour => RouterCommonAspectRatio::TallThreeByFour,
-    DesktopCommonAspectRatio::TallFourByFive => RouterCommonAspectRatio::TallFourByFive,
-    DesktopCommonAspectRatio::TallNineBySixteen => RouterCommonAspectRatio::TallNineBySixteen,
-    DesktopCommonAspectRatio::TallNineByTwentyOne => RouterCommonAspectRatio::TallNineByTwentyOne,
-    DesktopCommonAspectRatio::Wide => RouterCommonAspectRatio::Wide,
-    DesktopCommonAspectRatio::Tall => RouterCommonAspectRatio::Tall,
-    DesktopCommonAspectRatio::Auto2k => RouterCommonAspectRatio::Auto2k,
-    DesktopCommonAspectRatio::Auto4k => RouterCommonAspectRatio::Auto4k,
-    DesktopCommonAspectRatio::SquareHd => RouterCommonAspectRatio::SquareHd,
+    DesktopCommonAspectRatio::Auto => RouterAspectRatio::Auto,
+    DesktopCommonAspectRatio::Square => RouterAspectRatio::Square,
+    DesktopCommonAspectRatio::WideThreeByTwo => RouterAspectRatio::WideThreeByTwo,
+    DesktopCommonAspectRatio::WideFourByThree => RouterAspectRatio::WideFourByThree,
+    DesktopCommonAspectRatio::WideFiveByFour => RouterAspectRatio::WideFiveByFour,
+    DesktopCommonAspectRatio::WideSixteenByNine => RouterAspectRatio::WideSixteenByNine,
+    DesktopCommonAspectRatio::WideTwentyOneByNine => RouterAspectRatio::WideTwentyOneByNine,
+    DesktopCommonAspectRatio::TallTwoByThree => RouterAspectRatio::TallTwoByThree,
+    DesktopCommonAspectRatio::TallThreeByFour => RouterAspectRatio::TallThreeByFour,
+    DesktopCommonAspectRatio::TallFourByFive => RouterAspectRatio::TallFourByFive,
+    DesktopCommonAspectRatio::TallNineBySixteen => RouterAspectRatio::TallNineBySixteen,
+    DesktopCommonAspectRatio::TallNineByTwentyOne => RouterAspectRatio::TallNineByTwentyOne,
+    DesktopCommonAspectRatio::Wide => RouterAspectRatio::Wide,
+    DesktopCommonAspectRatio::Tall => RouterAspectRatio::Tall,
+    DesktopCommonAspectRatio::Auto2k => RouterAspectRatio::Auto2k,
+    DesktopCommonAspectRatio::Auto4k => RouterAspectRatio::Auto4k,
+    DesktopCommonAspectRatio::SquareHd => RouterAspectRatio::SquareHd,
   }
 }

@@ -1,8 +1,8 @@
 use artcraft_api_defs::prompts::create_prompt::CreatePromptRequest;
-use artcraft_router::api::common_aspect_ratio::CommonAspectRatio as RouterAspectRatio;
-use artcraft_router::api::common_image_model::CommonImageModel;
-use artcraft_router::api::common_resolution::CommonResolution as RouterResolution;
-use artcraft_router::api::provider::Provider;
+use artcraft_router::api::router_aspect_ratio::RouterAspectRatio;
+use artcraft_router::api::router_image_model::RouterImageModel;
+use artcraft_router::api::router_resolution::RouterResolution;
+use artcraft_router::api::router_provider::RouterProvider;
 use artcraft_router::generate::generate_image::generate_image_request_builder::GenerateImageRequestBuilder;
 use enums::common::generation::common_aspect_ratio::CommonAspectRatio as EnumsAspectRatio;
 use enums::common::generation::common_generation_mode::CommonGenerationMode;
@@ -39,36 +39,39 @@ fn determine_image_generation_mode(request: &GenerateImageRequestBuilder) -> Com
   }
 }
 
-fn image_model_to_common_model_type(model: CommonImageModel) -> Option<CommonModelType> {
+fn image_model_to_common_model_type(model: RouterImageModel) -> Option<CommonModelType> {
   match model {
-    CommonImageModel::Flux1Dev => Some(CommonModelType::Flux1Dev),
-    CommonImageModel::Flux1Schnell => Some(CommonModelType::Flux1Schnell),
-    CommonImageModel::FluxPro11 => Some(CommonModelType::FluxPro11),
-    CommonImageModel::FluxPro11Ultra => Some(CommonModelType::FluxPro11Ultra),
-    CommonImageModel::GptImage1 => Some(CommonModelType::GptImage1),
-    CommonImageModel::GptImage1p5 => Some(CommonModelType::GptImage1p5),
-    CommonImageModel::GptImage2 => Some(CommonModelType::GptImage2),
-    CommonImageModel::NanoBanana => Some(CommonModelType::NanoBanana),
-    CommonImageModel::NanoBanana2 => Some(CommonModelType::NanoBanana2),
-    CommonImageModel::NanoBananaPro => Some(CommonModelType::NanoBananaPro),
-    CommonImageModel::Seedream4 => Some(CommonModelType::Seedream4),
-    CommonImageModel::Seedream4p5 => Some(CommonModelType::Seedream4p5),
-    CommonImageModel::Seedream5Lite => Some(CommonModelType::Seedream5Lite),
-    CommonImageModel::QwenEdit2511Angles => Some(CommonModelType::QwenEdit2511Angles),
-    CommonImageModel::Flux2LoraAngles => Some(CommonModelType::Flux2LoraAngles),
-    CommonImageModel::GrokImagineImage => Some(CommonModelType::GrokImagineImage),
-    CommonImageModel::GrokImagineImageQuality => Some(CommonModelType::GrokImagineImageQuality),
+    RouterImageModel::Flux1Dev => Some(CommonModelType::Flux1Dev),
+    RouterImageModel::Flux1Schnell => Some(CommonModelType::Flux1Schnell),
+    RouterImageModel::FluxPro11 => Some(CommonModelType::FluxPro11),
+    RouterImageModel::FluxPro11Ultra => Some(CommonModelType::FluxPro11Ultra),
+    RouterImageModel::GptImage1 => Some(CommonModelType::GptImage1),
+    RouterImageModel::GptImage1p5 => Some(CommonModelType::GptImage1p5),
+    RouterImageModel::GptImage2 => Some(CommonModelType::GptImage2),
+    RouterImageModel::NanoBanana => Some(CommonModelType::NanoBanana),
+    RouterImageModel::NanoBanana2 => Some(CommonModelType::NanoBanana2),
+    RouterImageModel::NanoBananaPro => Some(CommonModelType::NanoBananaPro),
+    RouterImageModel::Seedream4 => Some(CommonModelType::Seedream4),
+    RouterImageModel::Seedream4p5 => Some(CommonModelType::Seedream4p5),
+    RouterImageModel::Seedream5Lite => Some(CommonModelType::Seedream5Lite),
+    RouterImageModel::QwenEdit2511Angles => Some(CommonModelType::QwenEdit2511Angles),
+    RouterImageModel::Flux2LoraAngles => Some(CommonModelType::Flux2LoraAngles),
+    RouterImageModel::GrokImagineImage => Some(CommonModelType::GrokImagineImage),
+    RouterImageModel::GrokImagineImageQuality => Some(CommonModelType::GrokImagineImageQuality),
+    RouterImageModel::Midjourney7 => Some(CommonModelType::Midjourney7),
+    RouterImageModel::Midjourney7Niji => Some(CommonModelType::Midjourney7Niji),
+    RouterImageModel::Midjourney8 => Some(CommonModelType::Midjourney8),
   }
 }
 
-fn provider_to_generation_provider(provider: Provider) -> GenerationProvider {
+fn provider_to_generation_provider(provider: RouterProvider) -> GenerationProvider {
   match provider {
-    Provider::Artcraft => GenerationProvider::Artcraft,
-    Provider::Fal => GenerationProvider::Fal,
+    RouterProvider::Artcraft => GenerationProvider::Artcraft,
+    RouterProvider::Fal => GenerationProvider::Fal,
     // Unused providers -> ArtCraft
-    Provider::Seedance2Pro => GenerationProvider::Artcraft ,
-    Provider::GmiCloud => GenerationProvider::Artcraft,
-    Provider::GrokApi => GenerationProvider::Artcraft,
+    RouterProvider::Seedance2Pro => GenerationProvider::Artcraft ,
+    RouterProvider::GmiCloud => GenerationProvider::Artcraft,
+    RouterProvider::GrokApi => GenerationProvider::Artcraft,
   }
 }
 
@@ -115,8 +118,8 @@ mod tests {
 
   fn base_builder() -> GenerateImageRequestBuilder {
     GenerateImageRequestBuilder {
-      model: CommonImageModel::NanoBananaPro,
-      provider: Provider::Fal,
+      model: RouterImageModel::NanoBananaPro,
+      provider: RouterProvider::Fal,
       prompt: Some("a cat in space".to_string()),
       image_inputs: None,
       resolution: None,
@@ -192,11 +195,11 @@ mod tests {
   #[test]
   fn all_image_models_map() {
     let models = [
-      (CommonImageModel::Flux1Dev, CommonModelType::Flux1Dev),
-      (CommonImageModel::Flux1Schnell, CommonModelType::Flux1Schnell),
-      (CommonImageModel::NanoBananaPro, CommonModelType::NanoBananaPro),
-      (CommonImageModel::GptImage1, CommonModelType::GptImage1),
-      (CommonImageModel::Seedream4, CommonModelType::Seedream4),
+      (RouterImageModel::Flux1Dev, CommonModelType::Flux1Dev),
+      (RouterImageModel::Flux1Schnell, CommonModelType::Flux1Schnell),
+      (RouterImageModel::NanoBananaPro, CommonModelType::NanoBananaPro),
+      (RouterImageModel::GptImage1, CommonModelType::GptImage1),
+      (RouterImageModel::Seedream4, CommonModelType::Seedream4),
     ];
     for (router_model, expected) in models {
       let builder = GenerateImageRequestBuilder { model: router_model, ..base_builder() };
@@ -207,7 +210,7 @@ mod tests {
 
   #[test]
   fn provider_mapping() {
-    let builder = GenerateImageRequestBuilder { provider: Provider::Artcraft, ..base_builder() };
+    let builder = GenerateImageRequestBuilder { provider: RouterProvider::Artcraft, ..base_builder() };
     let prompt = router_image_request_to_artcraft_prompt(&builder);
     assert_eq!(prompt.generation_provider, Some(GenerationProvider::Artcraft));
   }

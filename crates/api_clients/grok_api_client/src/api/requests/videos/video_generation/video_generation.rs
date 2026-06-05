@@ -385,4 +385,109 @@ mod tests {
     assert!(!result.request_id.is_empty());
     Ok(())
   }
+
+  // ── grok-imagine-video-1.5-preview live API tests ──
+  //
+  // All three exercise the v1.5 preview model at 480p / 5s. They're
+  // `#[ignore]` because they hit xAI's billed endpoint — run them with
+  // `cargo test -p grok_api_client -- --ignored grok_imagine_1p5`. xAI's
+  // model docs page advertises `text, image → video` for this model, so
+  // text-to-video SHOULD work in principle even though earlier ad-hoc curl
+  // experiments returned a "Text-to-video is not supported" 400 — these
+  // tests are the source of truth for what xAI actually accepts today.
+
+  mod grok_imagine_1p5_tests {
+    use super::*;
+
+    const TEST_DURATION_SECONDS: u32 = 5;
+    const TEST_RESOLUTION: VideoResolution = VideoResolution::FourEightyP;
+
+    /// Text-to-video at 480p / 5s. The only image-related fields are
+    /// omitted, so this is a pure text-only request.
+    #[tokio::test]
+    #[ignore] // costs money — run manually
+    async fn live_test_grok_imagine_1p5_text_to_video() -> AnyhowResult<()> {
+      setup_test_logging();
+
+      let api_key = get_test_api_key()?;
+      let result = video_generation(VideoGenerationArgs {
+        api_key: &api_key,
+        request: VideoGenerationRequest {
+          prompt: "Timelapse of a flower blooming in a sunlit garden.".to_string(),
+          model: Some(VideoModel::GrokImagineVideo1p5Preview),
+          image: None,
+          reference_images: None,
+          aspect_ratio: Some(VideoAspectRatio::Landscape16x9),
+          duration: Some(TEST_DURATION_SECONDS),
+          resolution: Some(TEST_RESOLUTION),
+          user: None,
+        },
+      }).await.map_err(|e| anyhow::anyhow!("{}", e))?;
+
+      println!("v1.5 text-to-video request_id: {}", result.request_id);
+      assert!(!result.request_id.is_empty());
+      Ok(())
+    }
+
+    /// Image-to-video (keyframe) at 480p / 5s. The source image becomes the
+    /// opening frame and the prompt drives the animation.
+    #[tokio::test]
+    #[ignore] // costs money — run manually
+    async fn live_test_grok_imagine_1p5_image_to_video_keyframe() -> AnyhowResult<()> {
+      setup_test_logging();
+
+      let api_key = get_test_api_key()?;
+      let result = video_generation(VideoGenerationArgs {
+        api_key: &api_key,
+        request: VideoGenerationRequest {
+          prompt: "The camera slowly pushes in toward the building as the sun sinks below the horizon. Soft golden light, gentle breeze rustling the trees.".to_string(),
+          model: Some(VideoModel::GrokImagineVideo1p5Preview),
+          image: Some(VideoImageSource::Url(WHITE_HOUSE_SUNSET_IMAGE_URL.to_string())),
+          reference_images: None,
+          aspect_ratio: Some(VideoAspectRatio::Landscape16x9),
+          duration: Some(TEST_DURATION_SECONDS),
+          resolution: Some(TEST_RESOLUTION),
+          user: None,
+        },
+      }).await.map_err(|e| anyhow::anyhow!("{}", e))?;
+
+      println!("v1.5 image-to-video request_id: {}", result.request_id);
+      assert!(!result.request_id.is_empty());
+      Ok(())
+    }
+
+    /// Reference-images-to-video at 480p / 5s. Two reference images
+    /// influence the generated video; the prompt references them by index.
+    ///
+    /// xAI's v1.5 preview has been observed to reject `reference_images`
+    /// outright at runtime (despite the docs implying support). This test
+    /// is the canonical way to detect when xAI changes that behavior.
+    #[tokio::test]
+    #[ignore] // costs money — run manually
+    async fn live_test_grok_imagine_1p5_reference_images_to_video() -> AnyhowResult<()> {
+      setup_test_logging();
+
+      let api_key = get_test_api_key()?;
+      let result = video_generation(VideoGenerationArgs {
+        api_key: &api_key,
+        request: VideoGenerationRequest {
+          prompt: "The dogs from <IMAGE_1> in the scene from <IMAGE_2>. Make them play together.".to_string(),
+          model: Some(VideoModel::GrokImagineVideo1p5Preview),
+          image: None,
+          reference_images: Some(vec![
+            VideoImageSource::Url(TALL_MOCHI_WITH_GLASSES_IMAGE_URL.to_string()),
+            VideoImageSource::Url(SUPER_WIDE_FALL_MOUNTAINS_IMAGE_URL.to_string()),
+          ]),
+          aspect_ratio: Some(VideoAspectRatio::Landscape16x9),
+          duration: Some(TEST_DURATION_SECONDS),
+          resolution: Some(TEST_RESOLUTION),
+          user: None,
+        },
+      }).await.map_err(|e| anyhow::anyhow!("{}", e))?;
+
+      println!("v1.5 reference-to-video request_id: {}", result.request_id);
+      assert!(!result.request_id.is_empty());
+      Ok(())
+    }
+  }
 }

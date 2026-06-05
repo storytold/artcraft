@@ -1,14 +1,14 @@
 use log::{error, info};
 
 use artcraft_client::credentials::storyteller_credential_set::StorytellerCredentialSet;
-use artcraft_router::api::common_image_model::CommonImageModel;
+use artcraft_router::api::router_image_model::RouterImageModel;
 use artcraft_router::api::image_list_ref::ImageListRef;
-use artcraft_router::api::provider::Provider;
+use artcraft_router::api::router_provider::RouterProvider;
 use artcraft_router::client::request_mismatch_mitigation_strategy::RequestMismatchMitigationStrategy;
 use artcraft_router::client::router_artcraft_client::RouterArtcraftClient;
 use artcraft_router::client::router_client::RouterClient;
 use artcraft_router::generate::generate_image::generate_image_request_builder::GenerateImageRequestBuilder;
-use artcraft_router::generate::generate_image_v2::image_generation_draft_or_request::ImageGenerationDraftOrRequest;
+use artcraft_router::generate::generate_image::image_generation_draft_or_request::ImageGenerationDraftOrRequest;
 use enums::common::generation_provider::GenerationProvider;
 use enums::tauri::tasks::task_type::TaskType;
 
@@ -34,8 +34,8 @@ pub async fn handle_flux_2_lora_angles(
   let image_inputs = build_image_inputs(request, semantic_media_files);
 
   let router_request = GenerateImageRequestBuilder {
-    model: CommonImageModel::Flux2LoraAngles,
-    provider: Provider::Artcraft,
+    model: RouterImageModel::Flux2LoraAngles,
+    provider: RouterProvider::Artcraft,
     prompt: request.prompt.clone(),
     image_inputs,
     resolution: None,
@@ -57,7 +57,11 @@ pub async fn handle_flux_2_lora_angles(
   let request = match dor {
     ImageGenerationDraftOrRequest::Request(req) => req,
     // Artcraft-side angle models always return a Request — never a Draft.
-    ImageGenerationDraftOrRequest::Draft(d) => match d {},
+    // The only draft-producing models today are Kinovi-Midjourney variants,
+    // which are routed to a separate provider.
+    ImageGenerationDraftOrRequest::Draft(_) => unreachable!(
+      "Artcraft Flux2LoraAngles should never produce a draft"
+    ),
   };
 
   let response = request.send_request(&client).await.map_err(|err| {

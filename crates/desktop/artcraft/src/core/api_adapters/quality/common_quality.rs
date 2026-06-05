@@ -1,5 +1,5 @@
 use serde_derive::{Deserialize, Serialize};
-use artcraft_router::api::common_quality::CommonQuality as RouterCommonQuality;
+use artcraft_router::api::router_quality::RouterQuality;
 
 /// Just cargo culting this. might not be necessary for standalone types anymore
 #[derive(Copy, Clone, Debug, Serialize, Deserialize)]
@@ -11,11 +11,11 @@ pub enum CommonQuality {
 }
 
 impl CommonQuality {
-  pub fn to_artcraft_router_type(&self) -> RouterCommonQuality {
+  pub fn to_artcraft_router_type(&self) -> RouterQuality {
     match self {
-      CommonQuality::High => RouterCommonQuality::High,
-      CommonQuality::Medium => RouterCommonQuality::Medium,
-      CommonQuality::Low => RouterCommonQuality::Low,
+      CommonQuality::High => RouterQuality::High,
+      CommonQuality::Medium => RouterQuality::Medium,
+      CommonQuality::Low => RouterQuality::Low,
     }
   } 
 }

@@ -40,6 +40,10 @@ pub enum StaffAuditAction {
   /// Staff edited a user's feature flags.
   #[serde(rename = "edit_user_feature_flags")]
   EditUserFeatureFlags,
+
+  /// Staff changed a user's email address.
+  #[serde(rename = "change_user_email")]
+  ChangeUserEmail,
 }
 
 impl_enum_display_and_debug_using_to_str!(StaffAuditAction);
@@ -56,6 +60,7 @@ impl StaffAuditAction {
       Self::AddWalletBankedBalance => "add_wallet_banked_balance",
       Self::SendAlert => "send_alert",
       Self::EditUserFeatureFlags => "edit_user_feature_flags",
+      Self::ChangeUserEmail => "change_user_email",
     }
   }
 
@@ -68,6 +73,7 @@ impl StaffAuditAction {
       "add_wallet_banked_balance" => Ok(Self::AddWalletBankedBalance),
       "send_alert" => Ok(Self::SendAlert),
       "edit_user_feature_flags" => Ok(Self::EditUserFeatureFlags),
+      "change_user_email" => Ok(Self::ChangeUserEmail),
       _ => Err(format!("invalid StaffAuditAction value: {:?}", value)),
     }
   }
@@ -81,6 +87,7 @@ impl StaffAuditAction {
       Self::AddWalletBankedBalance,
       Self::SendAlert,
       Self::EditUserFeatureFlags,
+      Self::ChangeUserEmail,
     ])
   }
 }
@@ -102,6 +109,7 @@ mod tests {
       assert_serialization(StaffAuditAction::AddWalletBankedBalance, "add_wallet_banked_balance");
       assert_serialization(StaffAuditAction::SendAlert, "send_alert");
       assert_serialization(StaffAuditAction::EditUserFeatureFlags, "edit_user_feature_flags");
+      assert_serialization(StaffAuditAction::ChangeUserEmail, "change_user_email");
     }
 
     #[test]
@@ -113,6 +121,7 @@ mod tests {
       assert_eq!(StaffAuditAction::AddWalletBankedBalance.to_str(), "add_wallet_banked_balance");
       assert_eq!(StaffAuditAction::SendAlert.to_str(), "send_alert");
       assert_eq!(StaffAuditAction::EditUserFeatureFlags.to_str(), "edit_user_feature_flags");
+      assert_eq!(StaffAuditAction::ChangeUserEmail.to_str(), "change_user_email");
     }
 
     #[test]
@@ -124,12 +133,13 @@ mod tests {
       assert_eq!(StaffAuditAction::from_str("add_wallet_banked_balance").unwrap(), StaffAuditAction::AddWalletBankedBalance);
       assert_eq!(StaffAuditAction::from_str("send_alert").unwrap(), StaffAuditAction::SendAlert);
       assert_eq!(StaffAuditAction::from_str("edit_user_feature_flags").unwrap(), StaffAuditAction::EditUserFeatureFlags);
+      assert_eq!(StaffAuditAction::from_str("change_user_email").unwrap(), StaffAuditAction::ChangeUserEmail);
       assert!(StaffAuditAction::from_str("invalid").is_err());
     }
 
     #[test]
     fn all_variants() {
-      const EXPECTED_COUNT: usize = 7;
+      const EXPECTED_COUNT: usize = 8;
       assert_eq!(StaffAuditAction::all_variants().len(), EXPECTED_COUNT);
     }
   }

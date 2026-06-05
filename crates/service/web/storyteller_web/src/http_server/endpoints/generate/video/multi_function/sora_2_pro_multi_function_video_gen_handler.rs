@@ -23,8 +23,8 @@ use enums::common::visibility::Visibility;
 use enums::common::generation::common_generation_mode::CommonGenerationMode;
 use fal_client::creds::open_ai_api_key::OpenAiApiKey;
 use fal_client::requests::traits::fal_request_cost_calculator_trait::FalRequestCostCalculator;
-use fal_client::requests::webhook::video::image::enqueue_sora_2_pro_image_to_video_webhook::{enqueue_sora_2_pro_image_to_video_webhook, EnqueueSora2ProImageToVideoArgs, EnqueueSora2ProImageToVideoAspectRatio, EnqueueSora2ProImageToVideoDurationSeconds, EnqueueSora2ProImageToVideoRequest, EnqueueSora2ProImageToVideoResolution};
-use fal_client::requests::webhook::video::text::enqueue_sora_2_pro_text_to_video_webhook::{enqueue_sora_2_pro_text_to_video_webhook, EnqueueSora2ProTextToVideoArgs, EnqueueSora2ProTextToVideoRequest, EnqueueSora2ProTextToVideoAspectRatio, EnqueueSora2ProTextToVideoDurationSeconds, EnqueueSora2ProTextToVideoResolution};
+use fal_client::requests_old::webhook::video::image::enqueue_sora_2_pro_image_to_video_webhook::{enqueue_sora_2_pro_image_to_video_webhook, EnqueueSora2ProImageToVideoArgs, EnqueueSora2ProImageToVideoAspectRatio, EnqueueSora2ProImageToVideoDurationSeconds, EnqueueSora2ProImageToVideoRequest, EnqueueSora2ProImageToVideoResolution};
+use fal_client::requests_old::webhook::video::text::enqueue_sora_2_pro_text_to_video_webhook::{enqueue_sora_2_pro_text_to_video_webhook, EnqueueSora2ProTextToVideoArgs, EnqueueSora2ProTextToVideoRequest, EnqueueSora2ProTextToVideoAspectRatio, EnqueueSora2ProTextToVideoDurationSeconds, EnqueueSora2ProTextToVideoResolution};
 use http_server_common::request::get_request_ip::get_request_ip;
 use log::{error, info, warn};
 use mysql_queries::queries::generic_inference::api_providers::fal::insert_generic_inference_job_for_fal_queue::insert_generic_inference_job_for_fal_queue;
@@ -144,7 +144,7 @@ pub async fn sora_2_pro_multi_function_video_gen_handler(
         CommonWebError::BadInputWithSimpleMessage("repeated idempotency token".to_string())
       })?;
 
-  info!("Fal webhook URL: {}", server_state.fal.webhook_url);
+  info!("Fal webhook URL: {}", server_state.inference_providers.fal.webhook_url);
 
   let apriori_job_token = InferenceJobToken::generate();
 
@@ -197,8 +197,8 @@ pub async fn sora_2_pro_multi_function_video_gen_handler(
 
     let args = EnqueueSora2ProImageToVideoArgs {
       request: i2v_request,
-      webhook_url: &server_state.fal.webhook_url,
-      api_key: &server_state.fal.api_key,
+      webhook_url: &server_state.inference_providers.fal.webhook_url,
+      api_key: &server_state.inference_providers.fal.api_key,
     };
 
     fal_result = enqueue_sora_2_pro_image_to_video_webhook(args)
@@ -253,8 +253,8 @@ pub async fn sora_2_pro_multi_function_video_gen_handler(
 
     let args = EnqueueSora2ProTextToVideoArgs {
       request: t2v_request,
-      webhook_url: &server_state.fal.webhook_url,
-      api_key: &server_state.fal.api_key,
+      webhook_url: &server_state.inference_providers.fal.webhook_url,
+      api_key: &server_state.inference_providers.fal.api_key,
     };
 
     fal_result = enqueue_sora_2_pro_text_to_video_webhook(args)

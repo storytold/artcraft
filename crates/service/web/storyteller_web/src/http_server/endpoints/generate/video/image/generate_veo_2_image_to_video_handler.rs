@@ -23,11 +23,11 @@ use enums::common::visibility::Visibility;
 use enums::common::generation::common_aspect_ratio::CommonAspectRatio;
 use enums::common::generation::common_generation_mode::CommonGenerationMode;
 use fal_client::requests::traits::fal_request_cost_calculator_trait::FalRequestCostCalculator;
-use fal_client::requests::webhook::video::image::enqueue_veo_2_image_to_video_webhook::enqueue_veo_2_image_to_video_webhook;
-use fal_client::requests::webhook::video::image::enqueue_veo_2_image_to_video_webhook::Veo2Args;
-use fal_client::requests::webhook::video::image::enqueue_veo_2_image_to_video_webhook::Veo2AspectRatio;
-use fal_client::requests::webhook::video::image::enqueue_veo_2_image_to_video_webhook::Veo2Duration;
-use fal_client::requests::webhook::video::image::enqueue_veo_2_image_to_video_webhook::Veo2Request;
+use fal_client::requests_old::webhook::video::image::enqueue_veo_2_image_to_video_webhook::enqueue_veo_2_image_to_video_webhook;
+use fal_client::requests_old::webhook::video::image::enqueue_veo_2_image_to_video_webhook::Veo2Args;
+use fal_client::requests_old::webhook::video::image::enqueue_veo_2_image_to_video_webhook::Veo2AspectRatio;
+use fal_client::requests_old::webhook::video::image::enqueue_veo_2_image_to_video_webhook::Veo2Duration;
+use fal_client::requests_old::webhook::video::image::enqueue_veo_2_image_to_video_webhook::Veo2Request;
 use http_server_common::request::get_request_ip::get_request_ip;
 use log::{error, info, warn};
 use mysql_queries::queries::generic_inference::api_providers::fal::insert_generic_inference_job_for_fal_queue::FalCategory;
@@ -138,7 +138,7 @@ pub async fn generate_veo_2_image_to_video_handler(
     server_state.server_environment, 
     &bucket_path);
   
-  info!("Fal webhook URL: {}", server_state.fal.webhook_url);
+  info!("Fal webhook URL: {}", server_state.inference_providers.fal.webhook_url);
   
   let apriori_job_token = InferenceJobToken::generate();
   
@@ -169,8 +169,8 @@ pub async fn generate_veo_2_image_to_video_handler(
 
   let args = Veo2Args {
     request: veo2_request,
-    webhook_url: &server_state.fal.webhook_url,
-    api_key: &server_state.fal.api_key,
+    webhook_url: &server_state.inference_providers.fal.webhook_url,
+    api_key: &server_state.inference_providers.fal.api_key,
   };
 
   info!("Charging wallet: {}", cost);

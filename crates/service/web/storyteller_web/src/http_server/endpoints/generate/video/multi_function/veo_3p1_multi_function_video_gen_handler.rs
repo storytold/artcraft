@@ -23,9 +23,9 @@ use enums::common::visibility::Visibility;
 use enums::common::generation::common_generation_mode::CommonGenerationMode;
 use fal_client::creds::open_ai_api_key::OpenAiApiKey;
 use fal_client::requests::traits::fal_request_cost_calculator_trait::FalRequestCostCalculator;
-use fal_client::requests::webhook::video::image::enqueue_veo_3p1_first_last_frame_image_to_video_webhook::{enqueue_veo_3p1_first_last_frame_image_to_video_webhook, EnqueueVeo3p1FirstLastFrameImageToVideoArgs, EnqueueVeo3p1FirstLastFrameImageToVideoAspectRatio, EnqueueVeo3p1FirstLastFrameImageToVideoDurationSeconds, EnqueueVeo3p1FirstLastFrameImageToVideoRequest, EnqueueVeo3p1FirstLastFrameImageToVideoResolution};
-use fal_client::requests::webhook::video::image::enqueue_veo_3p1_image_to_video_webhook::{enqueue_veo_3p1_image_to_video_webhook, EnqueueVeo3p1ImageToVideoArgs, EnqueueVeo3p1ImageToVideoAspectRatio, EnqueueVeo3p1ImageToVideoDurationSeconds, EnqueueVeo3p1ImageToVideoRequest, EnqueueVeo3p1ImageToVideoResolution};
-use fal_client::requests::webhook::video::text::enqueue_veo_3p1_text_to_video_webhook::{enqueue_veo_3p1_text_to_video_webhook, EnqueueVeo3p1TextToVideoArgs, EnqueueVeo3p1TextToVideoRequest, EnqueueVeo3p1TextToVideoAspectRatio, EnqueueVeo3p1TextToVideoDurationSeconds, EnqueueVeo3p1TextToVideoResolution};
+use fal_client::requests_old::webhook::video::image::enqueue_veo_3p1_first_last_frame_image_to_video_webhook::{enqueue_veo_3p1_first_last_frame_image_to_video_webhook, EnqueueVeo3p1FirstLastFrameImageToVideoArgs, EnqueueVeo3p1FirstLastFrameImageToVideoAspectRatio, EnqueueVeo3p1FirstLastFrameImageToVideoDurationSeconds, EnqueueVeo3p1FirstLastFrameImageToVideoRequest, EnqueueVeo3p1FirstLastFrameImageToVideoResolution};
+use fal_client::requests_old::webhook::video::image::enqueue_veo_3p1_image_to_video_webhook::{enqueue_veo_3p1_image_to_video_webhook, EnqueueVeo3p1ImageToVideoArgs, EnqueueVeo3p1ImageToVideoAspectRatio, EnqueueVeo3p1ImageToVideoDurationSeconds, EnqueueVeo3p1ImageToVideoRequest, EnqueueVeo3p1ImageToVideoResolution};
+use fal_client::requests_old::webhook::video::text::enqueue_veo_3p1_text_to_video_webhook::{enqueue_veo_3p1_text_to_video_webhook, EnqueueVeo3p1TextToVideoArgs, EnqueueVeo3p1TextToVideoRequest, EnqueueVeo3p1TextToVideoAspectRatio, EnqueueVeo3p1TextToVideoDurationSeconds, EnqueueVeo3p1TextToVideoResolution};
 use http_server_common::request::get_request_ip::get_request_ip;
 use log::{error, info, warn};
 use mysql_queries::queries::generic_inference::api_providers::fal::insert_generic_inference_job_for_fal_queue::FalCategory;
@@ -143,7 +143,7 @@ pub async fn veo_3p1_multi_function_video_gen_handler(
         CommonWebError::BadInputWithSimpleMessage("repeated idempotency token".to_string())
       })?;
 
-  info!("Fal webhook URL: {}", server_state.fal.webhook_url);
+  info!("Fal webhook URL: {}", server_state.inference_providers.fal.webhook_url);
 
   let apriori_job_token = InferenceJobToken::generate();
 
@@ -192,8 +192,8 @@ pub async fn veo_3p1_multi_function_video_gen_handler(
 
       let args = EnqueueVeo3p1FirstLastFrameImageToVideoArgs {
         request: flf_request,
-        webhook_url: &server_state.fal.webhook_url,
-        api_key: &server_state.fal.api_key,
+        webhook_url: &server_state.inference_providers.fal.webhook_url,
+        api_key: &server_state.inference_providers.fal.api_key,
       };
 
       info!("Charging wallet: {}", cost);
@@ -249,8 +249,8 @@ pub async fn veo_3p1_multi_function_video_gen_handler(
 
       let args = EnqueueVeo3p1ImageToVideoArgs {
         request: i2v_request,
-        webhook_url: &server_state.fal.webhook_url,
-        api_key: &server_state.fal.api_key,
+        webhook_url: &server_state.inference_providers.fal.webhook_url,
+        api_key: &server_state.inference_providers.fal.api_key,
       };
 
       info!("Charging wallet: {}", cost);
@@ -319,8 +319,8 @@ pub async fn veo_3p1_multi_function_video_gen_handler(
 
     let args = EnqueueVeo3p1TextToVideoArgs {
       request: t2v_request,
-      webhook_url: &server_state.fal.webhook_url,
-      api_key: &server_state.fal.api_key,
+      webhook_url: &server_state.inference_providers.fal.webhook_url,
+      api_key: &server_state.inference_providers.fal.api_key,
     };
 
     fal_result = enqueue_veo_3p1_text_to_video_webhook(args)

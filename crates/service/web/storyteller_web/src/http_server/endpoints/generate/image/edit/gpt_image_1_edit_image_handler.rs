@@ -20,9 +20,9 @@ use enums::common::generation_provider::GenerationProvider;
 use enums::common::visibility::Visibility;
 use fal_client::creds::open_ai_api_key::OpenAiApiKey;
 use fal_client::requests::traits::fal_request_cost_calculator_trait::FalRequestCostCalculator;
-use fal_client::requests::webhook::image::edit::enqueue_gpt_image_1_byok_edit_image_webhook::enqueue_gpt_image_1_byok_edit_image_webhook;
-use fal_client::requests::webhook::image::edit::enqueue_gpt_image_1_byok_edit_image_webhook::GptEditImageNumImages;
-use fal_client::requests::webhook::image::edit::enqueue_gpt_image_1_byok_edit_image_webhook::{GptEditImageByokArgs, GptEditImageByokRequest, GptEditImageQuality, GptEditImageSize};
+use fal_client::requests_old::webhook::image::edit::enqueue_gpt_image_1_byok_edit_image_webhook::enqueue_gpt_image_1_byok_edit_image_webhook;
+use fal_client::requests_old::webhook::image::edit::enqueue_gpt_image_1_byok_edit_image_webhook::GptEditImageNumImages;
+use fal_client::requests_old::webhook::image::edit::enqueue_gpt_image_1_byok_edit_image_webhook::{GptEditImageByokArgs, GptEditImageByokRequest, GptEditImageQuality, GptEditImageSize};
 use http_server_common::request::get_request_ip::get_request_ip;
 use log::{error, info, warn};
 use mysql_queries::queries::generic_inference::api_providers::fal::insert_generic_inference_job_for_fal_queue::insert_generic_inference_job_for_fal_queue;
@@ -141,7 +141,7 @@ pub async fn gpt_image_1_edit_image_handler(
         CommonWebError::BadInputWithSimpleMessage("repeated idempotency token".to_string())
       })?;
 
-  info!("Fal webhook URL: {}", server_state.fal.webhook_url);
+  info!("Fal webhook URL: {}", server_state.inference_providers.fal.webhook_url);
 
   let image_size = match request.image_size {
     Some(GptImage1EditImageImageSize::Square) => GptEditImageSize::Square,
@@ -168,7 +168,7 @@ pub async fn gpt_image_1_edit_image_handler(
     None => GptEditImageQuality::High, // Default to High
   };
   
-  let openai_api_key = OpenAiApiKey::from_str(&server_state.openai.api_key);
+  let openai_api_key = OpenAiApiKey::from_str(&server_state.inference_providers.openai.api_key);
 
 
   let args = GptEditImageByokArgs {
@@ -179,8 +179,8 @@ pub async fn gpt_image_1_edit_image_handler(
       image_size,
       quality,
     },
-    webhook_url: &server_state.fal.webhook_url,
-    api_key: &server_state.fal.api_key,
+    webhook_url: &server_state.inference_providers.fal.webhook_url,
+    api_key: &server_state.inference_providers.fal.api_key,
     openai_api_key: &openai_api_key,
   };
 

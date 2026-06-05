@@ -7,9 +7,9 @@ use artcraft_api_defs::generate::cost_estimate::estimate_splat_cost::{
   EstimateSplatCostError, EstimateSplatCostErrorType, EstimateSplatCostRequest,
   EstimateSplatCostResponse,
 };
-use artcraft_router::api::common_splat_model::CommonSplatModel as RouterSplatModel;
+use artcraft_router::api::router_splat_model::RouterSplatModel;
 use artcraft_router::api::image_list_ref::ImageListRef;
-use artcraft_router::api::provider::Provider as RouterProvider;
+use artcraft_router::api::router_provider::RouterProvider;
 use artcraft_router::generate::generate_splat::generate_splat_request::GenerateSplatRequest;
 use enums::common::generation::common_splat_model::CommonSplatModel;
 use enums::common::generation_provider::GenerationProvider;
@@ -104,7 +104,7 @@ impl ResponseError for HandlerError {
     let (error_type, error_message) = match self {
       HandlerError::InvalidProviderForModel { provider, model } => (
         EstimateSplatCostErrorType::InvalidProviderForModel,
-        format!("Provider '{}' is not supported for model '{}'", provider, model),
+        format!("RouterProvider '{}' is not supported for model '{}'", provider, model),
       ),
       HandlerError::InvalidInput(msg) => (
         EstimateSplatCostErrorType::InvalidInput,

@@ -7,11 +7,11 @@ use artcraft_api_defs::generate::cost_estimate::estimate_image_cost::{
   EstimateImageCostError, EstimateImageCostErrorType, EstimateImageCostRequest,
   EstimateImageCostResponse,
 };
-use artcraft_router::api::common_aspect_ratio::CommonAspectRatio as RouterAspectRatio;
-use artcraft_router::api::common_image_model::CommonImageModel as RouterImageModel;
-use artcraft_router::api::common_quality::CommonQuality as RouterQuality;
-use artcraft_router::api::common_resolution::CommonResolution as RouterResolution;
-use artcraft_router::api::provider::Provider as RouterProvider;
+use artcraft_router::api::router_aspect_ratio::RouterAspectRatio;
+use artcraft_router::api::router_image_model::RouterImageModel;
+use artcraft_router::api::router_quality::RouterQuality;
+use artcraft_router::api::router_resolution::RouterResolution;
+use artcraft_router::api::router_provider::RouterProvider;
 use artcraft_router::client::generation_mode_mismatch_strategy::GenerationModeMismatchStrategy;
 use artcraft_router::client::request_mismatch_mitigation_strategy::RequestMismatchMitigationStrategy;
 use artcraft_router::generate::generate_image::generate_image_request_builder::GenerateImageRequestBuilder;
@@ -98,7 +98,7 @@ impl ResponseError for HandlerError {
     let (error_type, error_message) = match self {
       HandlerError::InvalidProviderForModel { provider, model } => (
         EstimateImageCostErrorType::InvalidProviderForModel,
-        format!("Provider '{}' is not supported for model '{}'", provider, model),
+        format!("RouterProvider '{}' is not supported for model '{}'", provider, model),
       ),
       HandlerError::InvalidInput(msg) => (
         EstimateImageCostErrorType::InvalidInput,
@@ -145,6 +145,9 @@ fn map_image_model(model: CommonImageModel) -> Result<RouterImageModel, HandlerE
     CommonImageModel::GrokImagineImageQuality => RouterImageModel::GrokImagineImageQuality,
     CommonImageModel::QwenEdit2511Angles => RouterImageModel::QwenEdit2511Angles,
     CommonImageModel::Flux2LoraAngles => RouterImageModel::Flux2LoraAngles,
+    CommonImageModel::Midjourney7 => RouterImageModel::Midjourney7,
+    CommonImageModel::Midjourney7Niji => RouterImageModel::Midjourney7Niji,
+    CommonImageModel::Midjourney8 => RouterImageModel::Midjourney8,
   };
   Ok(router_model)
 }

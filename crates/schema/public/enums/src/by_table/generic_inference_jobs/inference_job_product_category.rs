@@ -53,10 +53,19 @@ pub enum InferenceJobProductCategory {
   #[serde(rename = "seedance2pro_character")]
   Seedance2ProCharacter,
 
+  /// Seedance 2 Pro / Kinovi: Midjourney image generation.
+  #[serde(rename = "seedance2pro_image")]
+  Seedance2ProImage,
+
   // =============== SEEDANCE 2 PRO ALT ===============
 
   #[serde(rename = "seedance2pro_video_alt")]
   Seedance2ProVideoAlt,
+
+  // =============== SEEDANCE 2 PRO BYTEPLUS ULTRA ===============
+
+  #[serde(rename = "seedance2pro_video_bpu")]
+  Seedance2ProVideoBytePlusUltra,
 
   // =============== WORLD LABS ===============
 
@@ -164,7 +173,9 @@ impl InferenceJobProductCategory {
       Self::BeebleVideo => "beeble_video",
       Self::Seedance2ProVideo => "seedance2pro_video",
       Self::Seedance2ProCharacter => "seedance2pro_character",
+      Self::Seedance2ProImage => "seedance2pro_image",
       Self::Seedance2ProVideoAlt => "seedance2pro_video_alt",
+      Self::Seedance2ProVideoBytePlusUltra => "seedance2pro_video_bpu",
       Self::WorldlabsSplat => "worldlabs_splat",
       Self::TtsGptSoVits => "tts_gpt_so_vits",
       Self::TtsStyleTts2 => "tts_style_tts2",
@@ -203,7 +214,9 @@ impl InferenceJobProductCategory {
       "beeble_video" => Ok(Self::BeebleVideo),
       "seedance2pro_video" => Ok(Self::Seedance2ProVideo),
       "seedance2pro_character" => Ok(Self::Seedance2ProCharacter),
+      "seedance2pro_image" => Ok(Self::Seedance2ProImage),
       "seedance2pro_video_alt" => Ok(Self::Seedance2ProVideoAlt),
+      "seedance2pro_video_bpu" => Ok(Self::Seedance2ProVideoBytePlusUltra),
       "worldlabs_splat" => Ok(Self::WorldlabsSplat),
       "tts_gpt_so_vits" => Ok(Self::TtsGptSoVits),
       "tts_style_tts2" => Ok(Self::TtsStyleTts2),
@@ -245,7 +258,9 @@ impl InferenceJobProductCategory {
       Self::BeebleVideo,
       Self::Seedance2ProVideo,
       Self::Seedance2ProCharacter,
+      Self::Seedance2ProImage,
       Self::Seedance2ProVideoAlt,
+      Self::Seedance2ProVideoBytePlusUltra,
       Self::WorldlabsSplat,
       Self::TtsGptSoVits,
       Self::TtsStyleTts2,
@@ -293,7 +308,9 @@ mod tests {
       assert_serialization(InferenceJobProductCategory::BeebleVideo, "beeble_video");
       assert_serialization(InferenceJobProductCategory::Seedance2ProVideo, "seedance2pro_video");
       assert_serialization(InferenceJobProductCategory::Seedance2ProCharacter, "seedance2pro_character");
+      assert_serialization(InferenceJobProductCategory::Seedance2ProImage, "seedance2pro_image");
       assert_serialization(InferenceJobProductCategory::Seedance2ProVideoAlt, "seedance2pro_video_alt");
+      assert_serialization(InferenceJobProductCategory::Seedance2ProVideoBytePlusUltra, "seedance2pro_video_bpu");
       assert_serialization(InferenceJobProductCategory::WorldlabsSplat, "worldlabs_splat");
       assert_serialization(InferenceJobProductCategory::TtsGptSoVits, "tts_gpt_so_vits");
       assert_serialization(InferenceJobProductCategory::TtsStyleTts2, "tts_style_tts2");
@@ -331,7 +348,9 @@ mod tests {
       assert_eq!(InferenceJobProductCategory::BeebleVideo.to_str(), "beeble_video");
       assert_eq!(InferenceJobProductCategory::Seedance2ProVideo.to_str(), "seedance2pro_video");
       assert_eq!(InferenceJobProductCategory::Seedance2ProCharacter.to_str(), "seedance2pro_character");
+      assert_eq!(InferenceJobProductCategory::Seedance2ProImage.to_str(), "seedance2pro_image");
       assert_eq!(InferenceJobProductCategory::Seedance2ProVideoAlt.to_str(), "seedance2pro_video_alt");
+      assert_eq!(InferenceJobProductCategory::Seedance2ProVideoBytePlusUltra.to_str(), "seedance2pro_video_bpu");
       assert_eq!(InferenceJobProductCategory::WorldlabsSplat.to_str(), "worldlabs_splat");
       assert_eq!(InferenceJobProductCategory::TtsGptSoVits.to_str(), "tts_gpt_so_vits");
       assert_eq!(InferenceJobProductCategory::TtsStyleTts2.to_str(), "tts_style_tts2");
@@ -368,7 +387,9 @@ mod tests {
       assert_eq!(InferenceJobProductCategory::from_str("beeble_video").unwrap(), InferenceJobProductCategory::BeebleVideo);
       assert_eq!(InferenceJobProductCategory::from_str("seedance2pro_video").unwrap(), InferenceJobProductCategory::Seedance2ProVideo);
       assert_eq!(InferenceJobProductCategory::from_str("seedance2pro_character").unwrap(), InferenceJobProductCategory::Seedance2ProCharacter);
+      assert_eq!(InferenceJobProductCategory::from_str("seedance2pro_image").unwrap(), InferenceJobProductCategory::Seedance2ProImage);
       assert_eq!(InferenceJobProductCategory::from_str("seedance2pro_video_alt").unwrap(), InferenceJobProductCategory::Seedance2ProVideoAlt);
+      assert_eq!(InferenceJobProductCategory::from_str("seedance2pro_video_bpu").unwrap(), InferenceJobProductCategory::Seedance2ProVideoBytePlusUltra);
       assert_eq!(InferenceJobProductCategory::from_str("worldlabs_splat").unwrap(), InferenceJobProductCategory::WorldlabsSplat);
       assert_eq!(InferenceJobProductCategory::from_str("tts_gpt_so_vits").unwrap(), InferenceJobProductCategory::TtsGptSoVits);
       assert_eq!(InferenceJobProductCategory::from_str("tts_style_tts2").unwrap(), InferenceJobProductCategory::TtsStyleTts2);
@@ -396,7 +417,7 @@ mod tests {
     #[test]
     fn all_variants() {
       // Static check
-      const EXPECTED_COUNT : usize = 34;
+      const EXPECTED_COUNT : usize = 36;
 
       assert_eq!(InferenceJobProductCategory::all_variants().len(), EXPECTED_COUNT);
       assert_eq!(InferenceJobProductCategory::iter().len(), EXPECTED_COUNT);

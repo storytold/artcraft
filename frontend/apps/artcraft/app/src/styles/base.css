@@ -42,7 +42,16 @@ h6 {
 }
 
 body {
-  font-family: "Source Sans 3", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-family:
+    "Source Sans 3",
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    Roboto,
+    "Helvetica Neue",
+    Arial,
+    sans-serif;
   color: var(--st-fg);
   background-color: var(--st-bg);
   color-scheme: var(--st-color-scheme, dark);
@@ -51,7 +60,7 @@ body {
 
 /* ===================== THEME VARIABLES ===================== */
 :root {
-  --st-bg: #242424;
+  --st-bg: #121212;
   /* gray theme default */
   --st-panel: #1f1f1f;
   --st-panel-border: #3f3f3f;
@@ -120,7 +129,7 @@ body {
 
 /* Gray (current) */
 .theme-gray {
-  --st-bg: #242424;
+  --st-bg: #121212;
   --st-panel: #1f1f1f;
   --st-panel-border: #272727;
   --st-modal: #1f1f1f;
@@ -133,7 +142,7 @@ body {
   --st-color-scheme: dark;
   --st-gallery-vignette-alpha: 0.3;
   --st-photo-tint-rgb: 0 0 0;
-  --st-photo-tint-alpha: 0.4;
+  --st-photo-tint-alpha: 0.6;
   --st-photo-grayscale: 1;
   --st-badge-alpha: 0.4;
 }
@@ -217,9 +226,11 @@ body {
 
 .bg-ui-panel-gradient {
   background:
-    radial-gradient(60.68% 60.68% at 50% 0%,
+    radial-gradient(
+      60.68% 60.68% at 50% 0%,
       rgba(255, 255, 255, 0.08) 0%,
-      rgba(0, 0, 0, 0) 70%),
+      rgba(0, 0, 0, 0) 70%
+    ),
     var(--st-panel);
   background-color: var(--st-panel);
 }
@@ -334,11 +345,21 @@ img {
   width: 10px;
   height: 10px;
   pointer-events: none;
-  background:
-    linear-gradient(135deg,
-      transparent 40%, rgba(255, 255, 255, 0.5) 40%, rgba(255, 255, 255, 0.5) 45%, transparent 45%,
-      transparent 55%, rgba(255, 255, 255, 0.5) 55%, rgba(255, 255, 255, 0.5) 60%, transparent 60%,
-      transparent 70%, rgba(255, 255, 255, 0.5) 70%, rgba(255, 255, 255, 0.5) 75%, transparent 75%);
+  background: linear-gradient(
+    135deg,
+    transparent 40%,
+    rgba(255, 255, 255, 0.5) 40%,
+    rgba(255, 255, 255, 0.5) 45%,
+    transparent 45%,
+    transparent 55%,
+    rgba(255, 255, 255, 0.5) 55%,
+    rgba(255, 255, 255, 0.5) 60%,
+    transparent 60%,
+    transparent 70%,
+    rgba(255, 255, 255, 0.5) 70%,
+    rgba(255, 255, 255, 0.5) 75%,
+    transparent 75%
+  );
 }
 
 .scrollbar-hidden {
@@ -603,7 +624,8 @@ img {
   /* shorter visible segment + larger gap = clearer motion */
   stroke-dashoffset: 0;
   animation: st-solid-wrap 1.6s linear infinite;
-  filter: drop-shadow(0 0 10px rgba(59, 130, 246, 0.8)) drop-shadow(0 0 18px rgba(59, 130, 246, 0.5));
+  filter: drop-shadow(0 0 10px rgba(59, 130, 246, 0.8))
+    drop-shadow(0 0 18px rgba(59, 130, 246, 0.5));
 }
 
 @keyframes st-solid-wrap {

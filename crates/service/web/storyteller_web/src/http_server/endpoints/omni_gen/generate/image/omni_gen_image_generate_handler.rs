@@ -14,24 +14,23 @@ use enums::by_table::prompts::prompt_type::PromptType;
 use enums::common::generation::common_generation_mode::CommonGenerationMode;
 use enums::common::generation::common_model_type::CommonModelType;
 use enums::common::generation_provider::GenerationProvider;
-use enums::common::visibility::Visibility;
 use http_server_common::request::get_request_ip::get_request_ip;
 use mysql_queries::queries::debug_logs::insert_debug_log::{insert_debug_log, InsertDebugLogArgs};
-use mysql_queries::queries::generic_inference::api_providers::fal::insert_generic_inference_job_for_fal_queue::FalCategory;
-use mysql_queries::queries::generic_inference::api_providers::fal::insert_generic_inference_job_for_fal_queue_with_apriori_job_token::{
-  insert_generic_inference_job_for_fal_queue_with_apriori_job_token,
-  InsertGenericInferenceForFalWithAprioriJobTokenArgs,
-};
+use mysql_queries::queries::generic_inference::api_providers::seedance2pro::insert_generic_inference_job_for_seedance2pro_queue_with_apriori_job_token::KinoviVersion;
 use mysql_queries::queries::idepotency_tokens::insert_idempotency_token::insert_idempotency_token;
 use mysql_queries::queries::prompt_context_items::insert_batch_prompt_context_items::{
   insert_batch_prompt_context_items, InsertBatchArgs, PromptContextItem,
 };
 use mysql_queries::queries::prompts::insert_prompt::{insert_prompt, InsertPromptArgs};
+use tokens::tokens::generic_inference_jobs::InferenceJobToken;
 use tokens::tokens::non_unique::debug_logs_event_token::DebugLogEventToken;
 
 use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::endpoints::generate::common::payments_error_test::payments_error_test;
 use crate::http_server::endpoints::omni_gen::generate::image::hydrate_to_router_request::hydrate_to_router_request;
+use crate::http_server::endpoints::omni_gen::generate::image::insert_db_job::insert_fal_job::{insert_fal_job, InsertFalJobArgs};
+use crate::http_server::endpoints::omni_gen::generate::image::insert_db_job::insert_seedance2pro_jobs::{insert_seedance2pro_jobs, InsertSeedance2proJobsArgs};
+use crate::http_server::endpoints::omni_gen::generate::image::insert_db_job::shared_job_args::SharedJobArgs;
 use crate::http_server::endpoints::omni_gen::generate::image::pipeline_v2::run_pipeline_v2::{run_pipeline_v2, RunPipelineV2Args};
 use crate::http_server::session::lookup::user_session_feature_flags::UserSessionFeatureFlags;
 use crate::http_server::validations::validate_idempotency_token_format::validate_idempotency_token_format;
@@ -168,15 +167,6 @@ pub async fn omni_gen_image_generate_handler(
     }
   }
 
-  let external_job_id = match &pipeline_result.response {
-    GenerateImageResponse::Artcraft(p) => {
-      p.inference_job_token.as_str().to_string()
-    }
-    GenerateImageResponse::Fal(p) => {
-      p.request_id.clone().unwrap_or_default()
-    }
-  };
-
   // ==================== WRITE RESULT ==================== //
 
   let ip_address = get_request_ip(&http_request);
@@ -251,34 +241,63 @@ pub async fn omni_gen_image_generate_handler(
   }
 
   // -- Inference job --
+  //
+  // Each provider has its own queue / worker. Branch by response variant
+  // so the row lands on the correct queue (the Seedance2Pro/Kinovi worker
+  // for Midjourney; the Fal worker for everything else).
 
-  let db_result = insert_generic_inference_job_for_fal_queue_with_apriori_job_token(
-    InsertGenericInferenceForFalWithAprioriJobTokenArgs {
-      apriori_job_token: &pipeline_result.apriori_job_token,
-      uuid_idempotency_token: &idempotency_token,
-      maybe_external_third_party_id: &external_job_id,
-      fal_category: FalCategory::ImageGeneration,
-      maybe_model_type: request.model.map(|v| v.to_common_model_type()),
-      maybe_inference_args: None,
-      maybe_prompt_token: prompt_token.as_ref(),
-      maybe_creator_user_token: Some(user_token),
-      maybe_avt_token: maybe_avt_token.as_ref(),
-      creator_ip_address: &ip_address,
-      creator_set_visibility: Visibility::Public,
-      maybe_debug_log_event_token: Some(&debug_log_event_token),
-      mysql_executor: &mut *transaction,
-      starting_job_status_override: None,
-      maybe_frontend_failure_category: None,
-      maybe_failure_reason: None,
-      phantom: Default::default(),
+  let job_token: InferenceJobToken = match &pipeline_result.response {
+    GenerateImageResponse::Seedance2Pro(payload) => {
+      info!("Inserting seedance2pro image job(s) with token: {:?}", pipeline_result.apriori_job_token);
+
+      // The image-side omni pipeline always dispatches Midjourney via the
+      // Volcengine Kinovi account today. If we ever route to BytePlus /
+      // BytePlus Ultra here, mirror the video-side `kinovi_account` knob.
+      let kinovi_version = KinoviVersion::Volcengine;
+
+      let result = insert_seedance2pro_jobs(InsertSeedance2proJobsArgs {
+        primary_order_id: &payload.order_id,
+        maybe_additional_order_ids: payload.maybe_order_ids.as_deref(),
+        maybe_wallet_ledger_entry_token: pipeline_result.maybe_wallet_ledger_entry_token.as_ref(),
+        kinovi_version,
+        shared: SharedJobArgs {
+          apriori_job_token: &pipeline_result.apriori_job_token,
+          idempotency_token: &idempotency_token,
+          user_token,
+          maybe_avt_token: maybe_avt_token.as_ref(),
+          maybe_model_type: request.model.map(|v| v.to_common_model_type()),
+          maybe_prompt_token: prompt_token.as_ref(),
+          maybe_debug_log_event_token: Some(&debug_log_event_token),
+          ip_address: &ip_address,
+          transaction: &mut transaction,
+        },
+      }).await?;
+      result.primary_job_token
     }
-  ).await;
-
-  let job_token = match db_result {
-    Ok(token) => token,
-    Err(err) => {
-      warn!("Error inserting inference job: {:?}", err);
-      return Err(CommonWebError::from_error(err));
+    GenerateImageResponse::Fal(payload) => {
+      info!("Inserting fal image job with token: {:?}", pipeline_result.apriori_job_token);
+      let external_job_id = payload.request_id.clone().unwrap_or_default();
+      insert_fal_job(InsertFalJobArgs {
+        external_job_id: &external_job_id,
+        shared: SharedJobArgs {
+          apriori_job_token: &pipeline_result.apriori_job_token,
+          idempotency_token: &idempotency_token,
+          user_token,
+          maybe_avt_token: maybe_avt_token.as_ref(),
+          maybe_model_type: request.model.map(|v| v.to_common_model_type()),
+          maybe_prompt_token: prompt_token.as_ref(),
+          maybe_debug_log_event_token: Some(&debug_log_event_token),
+          ip_address: &ip_address,
+          transaction: &mut transaction,
+        },
+      }).await?
+    }
+    GenerateImageResponse::Artcraft(payload) => {
+      // The omni image pipeline never dispatches via the Artcraft provider
+      // itself today (everything routes to Fal or Kinovi), but the response
+      // variant exists so we cover it defensively — Artcraft jobs come back
+      // already inserted server-side, so just propagate the token.
+      payload.inference_job_token.clone()
     }
   };
 

@@ -22,9 +22,9 @@ use enums::common::generation::common_model_type::CommonModelType;
 use enums::common::visibility::Visibility;
 use enums::common::generation::common_generation_mode::CommonGenerationMode;
 use fal_client::requests::traits::fal_request_cost_calculator_trait::FalRequestCostCalculator;
-use fal_client::requests::webhook::video::image::enqueue_seedance_1_pro_image_to_video_webhook::enqueue_seedance_1_pro_image_to_video_webhook;
-use fal_client::requests::webhook::video::image::enqueue_seedance_1_pro_image_to_video_webhook::Seedance1ProDuration;
-use fal_client::requests::webhook::video::image::enqueue_seedance_1_pro_image_to_video_webhook::{Seedance1ProArgs, Seedance1ProRequest, Seedance1ProResolution};
+use fal_client::requests_old::webhook::video::image::enqueue_seedance_1_pro_image_to_video_webhook::enqueue_seedance_1_pro_image_to_video_webhook;
+use fal_client::requests_old::webhook::video::image::enqueue_seedance_1_pro_image_to_video_webhook::Seedance1ProDuration;
+use fal_client::requests_old::webhook::video::image::enqueue_seedance_1_pro_image_to_video_webhook::{Seedance1ProArgs, Seedance1ProRequest, Seedance1ProResolution};
 use http_server_common::request::get_request_ip::get_request_ip;
 use log::{error, info, warn};
 use mysql_queries::queries::generic_inference::api_providers::fal::insert_generic_inference_job_for_fal_queue::FalCategory;
@@ -125,7 +125,7 @@ pub async fn generate_seedance_1_0_pro_image_to_video_handler(
         CommonWebError::NotFound
       })?;
 
-  info!("Fal webhook URL: {}", server_state.fal.webhook_url);
+  info!("Fal webhook URL: {}", server_state.inference_providers.fal.webhook_url);
 
   let apriori_job_token = InferenceJobToken::generate();
 
@@ -177,8 +177,8 @@ pub async fn generate_seedance_1_0_pro_image_to_video_handler(
 
   let args = Seedance1ProArgs {
     request: i2v_request,
-    webhook_url: &server_state.fal.webhook_url,
-    api_key: &server_state.fal.api_key,
+    webhook_url: &server_state.inference_providers.fal.webhook_url,
+    api_key: &server_state.inference_providers.fal.api_key,
   };
 
   let fal_result = enqueue_seedance_1_pro_image_to_video_webhook(args)

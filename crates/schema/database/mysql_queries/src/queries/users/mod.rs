@@ -1,6 +1,7 @@
 pub mod user;
 pub mod user_badges;
 pub mod user_bookmarks;
+pub mod user_email_changes;
 pub mod user_password_resets;
 pub mod user_profiles;
 pub mod user_ratings;

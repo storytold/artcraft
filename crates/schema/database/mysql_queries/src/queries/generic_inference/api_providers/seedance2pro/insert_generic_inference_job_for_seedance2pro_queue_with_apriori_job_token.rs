@@ -26,8 +26,8 @@ use crate::queries::generic_inference::api_providers::common::insert_generic_inf
 pub struct InsertGenericInferenceForSeedance2ProWithAprioriJobTokenArgs<'e, 'c, E>
   where E: 'e + Executor<'c, Database = MySql>
 {
-  /// Which kinovi queue to use: standard or alternate
-  pub use_alternate_kinovi: bool,
+  /// Which kinovi queue to use
+  pub kinovi_version: KinoviVersion,
 
   pub uuid_idempotency_token: &'e str,
 
@@ -57,23 +57,57 @@ pub struct InsertGenericInferenceForSeedance2ProWithAprioriJobTokenArgs<'e, 'c, 
   pub phantom: PhantomData<&'c E>,
 }
 
+#[derive(Debug, Clone, Copy)]
+pub enum KinoviVersion {
+  Volcengine,
+  BytePlus,
+  BytePlusUltra,
+}
+
+
 pub async fn insert_generic_inference_job_for_seedance2pro_queue_with_apriori_job_token<'e, 'c : 'e, E>(
   args: InsertGenericInferenceForSeedance2ProWithAprioriJobTokenArgs<'e, 'c, E>
 ) -> Result<InferenceJobToken, DatabaseQueryError>
   where E: 'e + Executor<'c, Database = MySql>
 {
-  let (job_type, external_third_party, product_category) = if args.use_alternate_kinovi {
-    (
-      InferenceJobType::Seedance2ProAltQueue,
-      InferenceJobExternalThirdParty::Seedance2ProAlt,
-      InferenceJobProductCategory::Seedance2ProVideoAlt,
-    )
-  } else {
-    (
+  let is_image_model = match args.maybe_model_type {
+    Some(CommonModelType::Midjourney7) |
+    Some(CommonModelType::Midjourney7Niji) |
+    Some(CommonModelType::Midjourney8) => true,
+    _ => false,
+  };
+
+  let (
+    job_type,
+    external_third_party,
+    product_category
+  ) = match (args.kinovi_version, is_image_model) {
+    (KinoviVersion::Volcengine, true) => (
       InferenceJobType::Seedance2ProQueue,
       InferenceJobExternalThirdParty::Seedance2Pro,
       InferenceJobProductCategory::Seedance2ProVideo,
-    )
+    ),
+    (KinoviVersion::Volcengine, false) => (
+      InferenceJobType::Seedance2ProQueue,
+      InferenceJobExternalThirdParty::Seedance2Pro,
+      InferenceJobProductCategory::Seedance2ProImage,
+    ),
+    (KinoviVersion::BytePlus, _) => (
+      InferenceJobType::Seedance2ProAltQueue,
+      InferenceJobExternalThirdParty::Seedance2ProAlt,
+      InferenceJobProductCategory::Seedance2ProVideoAlt,
+    ),
+    (KinoviVersion::BytePlusUltra, _) => (
+      InferenceJobType::Seedance2ProBytePlusUltraQueue,
+      InferenceJobExternalThirdParty::Seedance2ProBytePlusUltra,
+      InferenceJobProductCategory::Seedance2ProVideoBytePlusUltra,
+    ),
+  };
+
+  let inference_category = if is_image_model {
+    InferenceCategory::ImageGeneration
+  } else {
+    InferenceCategory::VideoGeneration
   };
 
   let record_id = insert_generic_inference_job_for_provider(InsertGenericInferenceJobForProviderArgs {
@@ -83,7 +117,7 @@ pub async fn insert_generic_inference_job_for_seedance2pro_queue_with_apriori_jo
     external_third_party,
     external_third_party_id: args.maybe_external_third_party_id,
     product_category,
-    inference_category: InferenceCategory::VideoGeneration,
+    inference_category,
     maybe_model_type: args.maybe_model_type,
     maybe_prompt_token: args.maybe_prompt_token,
     maybe_wallet_ledger_entry_token: args.maybe_wallet_ledger_entry_token,

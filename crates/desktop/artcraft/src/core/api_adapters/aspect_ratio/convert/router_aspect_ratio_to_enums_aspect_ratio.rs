@@ -1,26 +1,26 @@
-use artcraft_router::api::common_aspect_ratio::CommonAspectRatio as RouterCommonAspectRatio;
+use artcraft_router::api::router_aspect_ratio::RouterAspectRatio;
 use enums::common::generation::common_aspect_ratio::CommonAspectRatio as EnumsCommonAspectRatio;
 
 /// Map from the router's CommonAspectRatio to the enums crate's CommonAspectRatio.
-pub fn router_aspect_ratio_to_enums_aspect_ratio(ratio: RouterCommonAspectRatio) -> EnumsCommonAspectRatio {
+pub fn router_aspect_ratio_to_enums_aspect_ratio(ratio: RouterAspectRatio) -> EnumsCommonAspectRatio {
   match ratio {
-    RouterCommonAspectRatio::Auto => EnumsCommonAspectRatio::Auto,
-    RouterCommonAspectRatio::Square => EnumsCommonAspectRatio::Square,
-    RouterCommonAspectRatio::WideThreeByTwo => EnumsCommonAspectRatio::WideThreeByTwo,
-    RouterCommonAspectRatio::WideFourByThree => EnumsCommonAspectRatio::WideFourByThree,
-    RouterCommonAspectRatio::WideFiveByFour => EnumsCommonAspectRatio::WideFiveByFour,
-    RouterCommonAspectRatio::WideSixteenByNine => EnumsCommonAspectRatio::WideSixteenByNine,
-    RouterCommonAspectRatio::WideTwentyOneByNine => EnumsCommonAspectRatio::WideTwentyOneByNine,
-    RouterCommonAspectRatio::TallTwoByThree => EnumsCommonAspectRatio::TallTwoByThree,
-    RouterCommonAspectRatio::TallThreeByFour => EnumsCommonAspectRatio::TallThreeByFour,
-    RouterCommonAspectRatio::TallFourByFive => EnumsCommonAspectRatio::TallFourByFive,
-    RouterCommonAspectRatio::TallNineBySixteen => EnumsCommonAspectRatio::TallNineBySixteen,
-    RouterCommonAspectRatio::TallNineByTwentyOne => EnumsCommonAspectRatio::TallNineByTwentyOne,
-    RouterCommonAspectRatio::Wide => EnumsCommonAspectRatio::Wide,
-    RouterCommonAspectRatio::Tall => EnumsCommonAspectRatio::Tall,
-    RouterCommonAspectRatio::Auto2k => EnumsCommonAspectRatio::Auto2k,
-    RouterCommonAspectRatio::Auto3k => EnumsCommonAspectRatio::Auto3k,
-    RouterCommonAspectRatio::Auto4k => EnumsCommonAspectRatio::Auto4k,
-    RouterCommonAspectRatio::SquareHd => EnumsCommonAspectRatio::SquareHd,
+    RouterAspectRatio::Auto => EnumsCommonAspectRatio::Auto,
+    RouterAspectRatio::Square => EnumsCommonAspectRatio::Square,
+    RouterAspectRatio::WideThreeByTwo => EnumsCommonAspectRatio::WideThreeByTwo,
+    RouterAspectRatio::WideFourByThree => EnumsCommonAspectRatio::WideFourByThree,
+    RouterAspectRatio::WideFiveByFour => EnumsCommonAspectRatio::WideFiveByFour,
+    RouterAspectRatio::WideSixteenByNine => EnumsCommonAspectRatio::WideSixteenByNine,
+    RouterAspectRatio::WideTwentyOneByNine => EnumsCommonAspectRatio::WideTwentyOneByNine,
+    RouterAspectRatio::TallTwoByThree => EnumsCommonAspectRatio::TallTwoByThree,
+    RouterAspectRatio::TallThreeByFour => EnumsCommonAspectRatio::TallThreeByFour,
+    RouterAspectRatio::TallFourByFive => EnumsCommonAspectRatio::TallFourByFive,
+    RouterAspectRatio::TallNineBySixteen => EnumsCommonAspectRatio::TallNineBySixteen,
+    RouterAspectRatio::TallNineByTwentyOne => EnumsCommonAspectRatio::TallNineByTwentyOne,
+    RouterAspectRatio::Wide => EnumsCommonAspectRatio::Wide,
+    RouterAspectRatio::Tall => EnumsCommonAspectRatio::Tall,
+    RouterAspectRatio::Auto2k => EnumsCommonAspectRatio::Auto2k,
+    RouterAspectRatio::Auto3k => EnumsCommonAspectRatio::Auto3k,
+    RouterAspectRatio::Auto4k => EnumsCommonAspectRatio::Auto4k,
+    RouterAspectRatio::SquareHd => EnumsCommonAspectRatio::SquareHd,
   }
 }

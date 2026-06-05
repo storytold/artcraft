@@ -1,10 +1,10 @@
 use artcraft_api_defs::omni_gen::cost_and_generate_requests::omni_gen_image_cost_and_generate_request::OmniGenImageCostAndGenerateRequest;
-use artcraft_router::api::common_aspect_ratio::CommonAspectRatio as CommonAspectRatioRouter;
-use artcraft_router::api::common_image_model::CommonImageModel as CommonImageModelRouter;
-use artcraft_router::api::common_quality::CommonQuality as CommonQualityRouter;
-use artcraft_router::api::common_resolution::CommonResolution as CommonResolutionRouter;
+use artcraft_router::api::router_aspect_ratio::RouterAspectRatio;
+use artcraft_router::api::router_image_model::RouterImageModel;
+use artcraft_router::api::router_quality::RouterQuality;
+use artcraft_router::api::router_resolution::RouterResolution;
 use artcraft_router::api::image_list_ref::ImageListRef;
-use artcraft_router::api::provider::Provider;
+use artcraft_router::api::router_provider::RouterProvider;
 use artcraft_router::client::request_mismatch_mitigation_strategy::RequestMismatchMitigationStrategy;
 use artcraft_router::generate::generate_image::generate_image_request_builder::GenerateImageRequestBuilder;
 use enums::common::generation::common_aspect_ratio::CommonAspectRatio as CommonAspectRatioEnum;
@@ -38,7 +38,7 @@ pub fn hydrate_to_router_request(
 
   Ok(GenerateImageRequestBuilder {
     model,
-    provider: Provider::Artcraft,
+    provider: RouterProvider::Artcraft,
     prompt: request.prompt.clone(),
     image_inputs: request.image_media_tokens.clone()
       .map(ImageListRef::MediaFileTokens),
@@ -57,7 +57,7 @@ pub fn hydrate_to_router_request(
 
 fn convert_model(
   model: &CommonImageModelEnum,
-) -> Result<CommonImageModelRouter, CommonWebError> {
+) -> Result<RouterImageModel, CommonWebError> {
   let json = serde_json::to_string(model)?;
   serde_json::from_str(&json).map_err(|e| {
     CommonWebError::BadInputWithSimpleMessage(
@@ -68,7 +68,7 @@ fn convert_model(
 
 fn convert_aspect_ratio(
   ar: &CommonAspectRatioEnum,
-) -> Result<CommonAspectRatioRouter, CommonWebError> {
+) -> Result<RouterAspectRatio, CommonWebError> {
   let json = serde_json::to_string(ar)?;
   serde_json::from_str(&json).map_err(|e| {
     CommonWebError::BadInputWithSimpleMessage(
@@ -79,7 +79,7 @@ fn convert_aspect_ratio(
 
 fn convert_resolution(
   res: &CommonResolutionEnum,
-) -> Result<CommonResolutionRouter, CommonWebError> {
+) -> Result<RouterResolution, CommonWebError> {
   let json = serde_json::to_string(res)?;
   serde_json::from_str(&json).map_err(|e| {
     CommonWebError::BadInputWithSimpleMessage(
@@ -90,7 +90,7 @@ fn convert_resolution(
 
 fn convert_quality(
   quality: &CommonQualityEnum,
-) -> Result<CommonQualityRouter, CommonWebError> {
+) -> Result<RouterQuality, CommonWebError> {
   let json = serde_json::to_string(quality)?;
   serde_json::from_str(&json).map_err(|e| {
     CommonWebError::BadInputWithSimpleMessage(

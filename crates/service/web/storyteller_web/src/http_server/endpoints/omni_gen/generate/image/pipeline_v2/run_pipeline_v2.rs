@@ -1,14 +1,17 @@
 use log::{info, warn};
 
 use artcraft_router::api::image_list_ref::ImageListRef;
-use artcraft_router::api::provider::Provider;
+use artcraft_router::api::router_image_model::RouterImageModel;
+use artcraft_router::api::router_provider::RouterProvider;
 use artcraft_router::client::router_client::RouterClient;
 use artcraft_router::client::router_fal_client::RouterFalClient;
+use artcraft_router::client::router_seedance2pro_client::RouterSeedance2ProClient;
 use artcraft_router::generate::generate_image::generate_image_request_builder::GenerateImageRequestBuilder;
 use artcraft_router::generate::generate_image::generate_image_response::GenerateImageResponse;
-use artcraft_router::generate::generate_image_v2::image_generation_draft_context::ImageGenerationDraftContext;
-use artcraft_router::generate::generate_image_v2::image_generation_draft_or_request::ImageGenerationDraftOrRequest;
-use artcraft_router::generate::generate_image_v2::image_generation_request::ImageGenerationRequest;
+use artcraft_router::generate::generate_image::image_generation_draft_context::ImageGenerationDraftContext;
+use artcraft_router::generate::generate_image::image_generation_draft_or_request::ImageGenerationDraftOrRequest;
+use artcraft_router::generate::generate_image::image_generation_request::ImageGenerationRequest;
+use seedance2pro_client::creds::seedance2pro_session::Seedance2ProSession;
 use tokens::tokens::generic_inference_jobs::InferenceJobToken;
 use tokens::tokens::users::UserToken;
 
@@ -50,20 +53,24 @@ pub async fn run_pipeline_v2(
 
   let apriori_job_token = InferenceJobToken::generate();
 
-  if cost > 0 {
-    attempt_wallet_deduction_else_common_web_error(
+  let maybe_wallet_ledger_entry_token = if cost > 0 {
+    let deduction = attempt_wallet_deduction_else_common_web_error(
       user_token,
       Some(apriori_job_token.as_str()),
       cost,
       mysql_connection,
     ).await?;
-  }
+    Some(deduction.ledger_entry_token)
+  } else {
+    None
+  };
 
-  let response = finalize_and_generate(draft_or_request, server_state).await?;
+  let response = finalize_and_generate(draft_or_request, server_state, resolved_media).await?;
 
   Ok(ImagePipelineResult {
     apriori_job_token,
     response,
+    maybe_wallet_ledger_entry_token,
   })
 }
 
@@ -71,12 +78,24 @@ fn build_execution_request(
   router_builder: &GenerateImageRequestBuilder,
 ) -> Result<ImageGenerationDraftOrRequest, CommonWebError> {
   let mut execution_builder = router_builder.clone();
-  execution_builder.provider = Provider::Fal;
+  execution_builder.provider = provider_for_model(execution_builder.model);
 
   execution_builder.build2().map_err(|e| {
     warn!("Failed to build2 for image v2 pipeline: {}", e);
     CommonWebError::from_error(e)
   })
+}
+
+/// Route each image model to the provider that fulfils it. Midjourney is
+/// served via the Seedance2Pro/Kinovi (Volcengine) backend; everything else
+/// flows through Fal.
+fn provider_for_model(model: RouterImageModel) -> RouterProvider {
+  match model {
+    RouterImageModel::Midjourney7
+    | RouterImageModel::Midjourney7Niji
+    | RouterImageModel::Midjourney8 => RouterProvider::Seedance2Pro,
+    _ => RouterProvider::Fal,
+  }
 }
 
 fn apply_hydrated_media_inputs(
@@ -101,7 +120,7 @@ fn estimate_cost_in_credits(
   router_builder: &GenerateImageRequestBuilder,
 ) -> Result<u64, CommonWebError> {
   let mut cost_builder = router_builder.clone();
-  cost_builder.provider = Provider::Artcraft;
+  cost_builder.provider = RouterProvider::Artcraft;
 
   let request = cost_builder.build2().map_err(|e| {
     warn!("Failed to build image cost request: {}", e);
@@ -119,11 +138,27 @@ fn estimate_cost_in_credits(
 async fn finalize_and_generate(
   draft_or_request: ImageGenerationDraftOrRequest,
   server_state: &ServerState,
+  resolved_media: &MediaFilesAsCdnUrlListAndMap,
 ) -> Result<GenerateImageResponse, CommonWebError> {
   let provider = draft_or_request.get_provider();
   let client = build_router_client(provider, server_state)?;
 
-  let request = finalize_request(draft_or_request).await?;
+  // Inline the draft finalization so the draft context can borrow `client`.
+  let request: ImageGenerationRequest = match draft_or_request {
+    ImageGenerationDraftOrRequest::Request(request) => request,
+    ImageGenerationDraftOrRequest::Draft(draft) => {
+      let draft_context = ImageGenerationDraftContext {
+        client: Some(&client),
+        media_file_to_artcraft_url_map: Some(&resolved_media.token_to_url_map),
+      };
+      draft.finalize(draft_context)
+        .await
+        .map_err(|err| {
+          warn!("Failed to finalize image v2 draft: {:?}", err);
+          CommonWebError::from_error(err)
+        })?
+    }
+  };
 
   request.send_request(&client)
     .await
@@ -133,33 +168,26 @@ async fn finalize_and_generate(
     })
 }
 
-async fn finalize_request(
-  draft_or_request: ImageGenerationDraftOrRequest,
-) -> Result<ImageGenerationRequest, CommonWebError> {
-  match draft_or_request {
-    ImageGenerationDraftOrRequest::Request(request) => Ok(request),
-    ImageGenerationDraftOrRequest::Draft(draft) => {
-      draft.finalize(ImageGenerationDraftContext::default())
-        .await
-        .map_err(|err| {
-          warn!("Failed to finalize image v2 draft: {:?}", err);
-          CommonWebError::from_error(err)
-        })
-    }
-  }
-}
-
 fn build_router_client(
-  provider: Provider,
+  provider: RouterProvider,
   server_state: &ServerState,
 ) -> Result<RouterClient, CommonWebError> {
   match provider {
-    Provider::Fal => {
+    RouterProvider::Fal => {
       let fal_client = RouterFalClient::new_with_webhook(
-        server_state.fal.api_key.clone(),
-        server_state.fal.webhook_url.clone(),
+        server_state.inference_providers.fal.api_key.clone(),
+        server_state.inference_providers.fal.webhook_url.clone(),
       );
       Ok(RouterClient::Fal(fal_client))
+    },
+    RouterProvider::Seedance2Pro => {
+      // Midjourney image generation always uses the Volcengine account.
+      // Per-request account selection (like the video flow's
+      // `KinoviAccount` enum) isn't needed here yet — if it ever is, plumb
+      // a parallel knob through `RunPipelineV2Args`.
+      let cookies = server_state.inference_providers.seedance2pro.cookies_volcengine.clone();
+      let session = Seedance2ProSession::from_cookies_string(cookies);
+      Ok(RouterClient::Seedance2Pro(RouterSeedance2ProClient::new(session)))
     },
     other => {
       Err(CommonWebError::server_error_with_message(

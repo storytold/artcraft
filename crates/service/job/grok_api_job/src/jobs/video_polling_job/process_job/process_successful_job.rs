@@ -1,5 +1,5 @@
 use anyhow::anyhow;
-use log::{error, info};
+use log::{error, info, warn};
 
 use bucket_paths::legacy::typified_paths::public::media_files::bucket_file_path::MediaFileBucketPath;
 use enums::by_table::generic_inference_jobs::inference_result_type::InferenceResultType;
@@ -9,6 +9,7 @@ use enums::by_table::media_files::media_file_origin_product_category::MediaFileO
 use enums::by_table::media_files::media_file_type::MediaFileType;
 use enums::common::generation_provider::GenerationProvider;
 use errors::AnyhowResult;
+use grok_api_client::api::requests::videos::video_status::video_status::VideoOutputInfo;
 use hashing::sha256::sha256_hash_bytes::sha256_hash_bytes;
 use mysql_queries::queries::generic_inference::api_providers::grok_api::list_pending_grok_api_jobs::PendingGrokApiJob;
 use mysql_queries::queries::generic_inference::web::mark_generic_inference_job_successfully_done_by_token::mark_generic_inference_job_successfully_done_by_token;
@@ -20,9 +21,49 @@ use crate::jobs::video_polling_job::alert_on_error::alert_pager_and_return_err;
 const VIDEO_PREFIX: &str = "artcraft_";
 const VIDEO_SUFFIX: &str = ".mp4";
 
+/// Handle a `VideoStatus::Complete` poll response: extract the video URL,
+/// download and persist the video, and bump the job-stats counter. If the
+/// `Complete` response is missing a `video.url`, log and skip (the job
+/// stays pending so a later poll can retry). Internal failures during
+/// download / upload / mark-done bump the failure counter.
+pub async fn process_complete_response(
+  deps: &JobDependencies,
+  job: &PendingGrokApiJob,
+  maybe_video: Option<VideoOutputInfo>,
+) {
+  let video_url = match maybe_video.as_ref().and_then(|v| v.url.clone()) {
+    Some(url) => url,
+    None => {
+      warn!(
+        "Grok request {} reported Complete with no video.url for job {}. Skipping.",
+        job.request_id, job.job_token.as_str(),
+      );
+      return;
+    }
+  };
+
+  info!(
+    "Grok request {} completed, processing job {}.",
+    job.request_id, job.job_token.as_str(),
+  );
+
+  match download_and_finalize_video(deps, job, &video_url).await {
+    Ok(()) => {
+      let _ = deps.job_stats.increment_success_count();
+    }
+    Err(err) => {
+      warn!(
+        "Error processing completed Grok request {} for job {}: {:?}",
+        job.request_id, job.job_token.as_str(), err,
+      );
+      let _ = deps.job_stats.increment_failure_count();
+    }
+  }
+}
+
 /// Download the completed video from xAI, upload to bucket, create media file
 /// record, and mark the job done.
-pub async fn process_successful_job(
+async fn download_and_finalize_video(
   deps: &JobDependencies,
   job: &PendingGrokApiJob,
   video_url: &str,

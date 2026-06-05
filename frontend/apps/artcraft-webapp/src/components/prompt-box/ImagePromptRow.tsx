@@ -4,6 +4,7 @@ import {
   useRef,
   useState,
   type CSSProperties,
+  type SyntheticEvent,
 } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -37,6 +38,8 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import type { RefImage } from "./types";
 import { uploadImage } from "./upload-image";
+import { useIsMobile } from "../ui/use-mobile";
+import { SettingsDrawer } from "./mobile/SettingsDrawer";
 
 interface ImagePromptRowProps {
   maxImagePromptCount: number;
@@ -69,8 +72,16 @@ export const ImagePromptRow = ({
   showEndFrameSection,
   onPickEndFrameFromLibrary,
 }: ImagePromptRowProps) => {
+  const rootRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const endFrameInputRef = useRef<HTMLInputElement>(null);
+
+  // Stop in-row interactions from bubbling (drag/prompt-box behind), but let
+  // events from portaled children (e.g. the mobile Add drawer) pass through so
+  // Radix can dismiss them on backdrop click.
+  const stopIfInside = (e: SyntheticEvent) => {
+    if (rootRef.current?.contains(e.target as Node)) e.stopPropagation();
+  };
   const [uploadingEndFrame, setUploadingEndFrame] = useState(false);
   const [uploadingImages, setUploadingImages] = useState<
     { id: string; file: File }[]
@@ -229,13 +240,14 @@ export const ImagePromptRow = ({
         />
       )}
       <div
+        ref={rootRef}
         className={twMerge(
-          "glass flex flex-col sm:flex-row rounded-t-xl",
+          "glass flex flex-col sm:flex-row rounded-xl sm:rounded-t-xl sm:rounded-b-none",
           className,
         )}
-        onMouseDown={(e) => e.stopPropagation()}
-        onClick={(e) => e.stopPropagation()}
-        onPointerDown={(e) => e.stopPropagation()}
+        onMouseDown={stopIfInside}
+        onClick={stopIfInside}
+        onPointerDown={stopIfInside}
       >
         <div className="flex min-w-0 flex-1 gap-2 px-3 py-2">
           <div className="flex grow flex-col gap-1 min-w-32">
@@ -301,56 +313,12 @@ export const ImagePromptRow = ({
                 <UploadingThumbnail key={id} file={file} />
               ))}
 
-            {canAddMore &&
-              (onPickFromLibrary ? (
-                <Tooltip
-                  interactive
-                  position="top"
-                  delay={100}
-                  className="bg-ui-controls text-base-fg border border-ui-controls-border p-2 -mb-0.5"
-                  closeOnClick
-                  content={
-                    <div className="flex flex-col gap-1.5">
-                      <Button
-                        variant="primary"
-                        onClick={() => fileInputRef.current?.click()}
-                        icon={faPlus}
-                        className="w-full"
-                      >
-                        Upload
-                      </Button>
-                      <Button
-                        variant="action"
-                        onClick={onPickFromLibrary}
-                        icon={faImages}
-                        className="w-full bg-white/15 hover:bg-white/20"
-                      >
-                        Pick from library
-                      </Button>
-                    </div>
-                  }
-                >
-                  <button
-                    onClick={() => fileInputRef.current?.click()}
-                    className="flex aspect-square w-10 sm:w-14 items-center justify-center overflow-hidden rounded-lg border-2 border-dashed border-white/25 bg-white/5 transition-all hover:border-white/40 hover:bg-white/10"
-                  >
-                    <FontAwesomeIcon
-                      icon={faPlus}
-                      className="text-2xl text-white/80"
-                    />
-                  </button>
-                </Tooltip>
-              ) : (
-                <button
-                  onClick={() => fileInputRef.current?.click()}
-                  className="flex aspect-square w-10 sm:w-14 items-center justify-center overflow-hidden rounded-lg border-2 border-dashed border-white/25 bg-white/5 transition-all hover:border-white/40 hover:bg-white/10"
-                >
-                  <FontAwesomeIcon
-                    icon={faPlus}
-                    className="text-2xl text-white/80"
-                  />
-                </button>
-              ))}
+            {canAddMore && (
+              <AddButton
+                onUpload={() => fileInputRef.current?.click()}
+                onPickFromLibrary={onPickFromLibrary}
+              />
+            )}
           </div>
         </div>
 
@@ -401,54 +369,11 @@ export const ImagePromptRow = ({
                     className="h-5 w-5 text-white"
                   />
                 </div>
-              ) : onPickEndFrameFromLibrary ? (
-                <Tooltip
-                  interactive
-                  position="top"
-                  delay={100}
-                  className="bg-ui-controls text-base-fg border border-ui-controls-border p-2 -mb-0.5"
-                  closeOnClick
-                  content={
-                    <div className="flex flex-col gap-1.5">
-                      <Button
-                        variant="primary"
-                        onClick={() => endFrameInputRef.current?.click()}
-                        icon={faPlus}
-                        className="w-full"
-                      >
-                        Upload
-                      </Button>
-                      <Button
-                        variant="action"
-                        onClick={onPickEndFrameFromLibrary}
-                        icon={faImages}
-                        className="w-full bg-white/15 hover:bg-white/20"
-                      >
-                        Pick from library
-                      </Button>
-                    </div>
-                  }
-                >
-                  <button
-                    onClick={() => endFrameInputRef.current?.click()}
-                    className="flex aspect-square w-10 sm:w-14 items-center justify-center overflow-hidden rounded-lg border-2 border-dashed border-white/25 bg-white/5 transition-all hover:border-white/40 hover:bg-white/10"
-                  >
-                    <FontAwesomeIcon
-                      icon={faPlus}
-                      className="text-2xl text-white/80"
-                    />
-                  </button>
-                </Tooltip>
               ) : (
-                <button
-                  onClick={() => endFrameInputRef.current?.click()}
-                  className="flex aspect-square w-10 sm:w-14 items-center justify-center overflow-hidden rounded-lg border-2 border-dashed border-white/25 bg-white/5 transition-all hover:border-white/40 hover:bg-white/10"
-                >
-                  <FontAwesomeIcon
-                    icon={faPlus}
-                    className="text-2xl text-white/80"
-                  />
-                </button>
+                <AddButton
+                  onUpload={() => endFrameInputRef.current?.click()}
+                  onPickFromLibrary={onPickEndFrameFromLibrary}
+                />
               )}
             </div>
           </div>
@@ -478,6 +403,109 @@ export const ImagePromptRow = ({
 };
 
 // ── Sub-components ───────────────────────────────────────────────────────
+
+const ADD_BUTTON_CLASS =
+  "flex aspect-square w-10 sm:w-14 items-center justify-center overflow-hidden rounded-lg border-2 border-dashed border-white/25 bg-white/5 transition-all hover:border-white/40 hover:bg-white/10";
+
+// Upload / Pick-from-library affordance. On desktop it's a hover tooltip; on
+// mobile that tooltip auto-opens from the emulated mouseenter fired on
+// navigation, so we use a tap-triggered bottom sheet instead.
+const AddButton = ({
+  onUpload,
+  onPickFromLibrary,
+}: {
+  onUpload: () => void;
+  onPickFromLibrary?: () => void;
+}) => {
+  const isMobile = useIsMobile();
+  const [drawerOpen, setDrawerOpen] = useState(false);
+
+  const plus = (
+    <FontAwesomeIcon icon={faPlus} className="text-2xl text-white/80" />
+  );
+
+  if (!onPickFromLibrary) {
+    return (
+      <button onClick={onUpload} className={ADD_BUTTON_CLASS}>
+        {plus}
+      </button>
+    );
+  }
+
+  if (isMobile) {
+    return (
+      <>
+        <button onClick={() => setDrawerOpen(true)} className={ADD_BUTTON_CLASS}>
+          {plus}
+        </button>
+        <SettingsDrawer
+          open={drawerOpen}
+          onOpenChange={setDrawerOpen}
+          title="Add image"
+        >
+          <div className="flex flex-col gap-2 pb-2">
+            <Button
+              variant="primary"
+              icon={faPlus}
+              className="w-full"
+              onClick={() => {
+                onUpload();
+                setDrawerOpen(false);
+              }}
+            >
+              Upload
+            </Button>
+            <Button
+              variant="action"
+              icon={faImages}
+              className="w-full bg-white/15 hover:bg-white/20"
+              onClick={() => {
+                onPickFromLibrary();
+                setDrawerOpen(false);
+              }}
+            >
+              Pick from library
+            </Button>
+          </div>
+        </SettingsDrawer>
+      </>
+    );
+  }
+
+  return (
+    <Tooltip
+      interactive
+      position="top"
+      delay={100}
+      className="bg-ui-controls text-base-fg border border-ui-controls-border p-2 -mb-0.5"
+      closeOnClick
+      content={
+        <div className="flex flex-col gap-1.5">
+          <Button
+            variant="primary"
+            onClick={onUpload}
+            icon={faPlus}
+            className="w-full"
+          >
+            Upload
+          </Button>
+          <Button
+            variant="action"
+            onClick={onPickFromLibrary}
+            icon={faImages}
+            className="w-full bg-white/15 hover:bg-white/20"
+          >
+            Pick from library
+          </Button>
+        </div>
+      }
+    >
+      <button onClick={onUpload} className={ADD_BUTTON_CLASS}>
+        {plus}
+      </button>
+    </Tooltip>
+  );
+};
 
 const ImageThumbnail = ({
   image,
@@ -582,7 +610,11 @@ const UploadingThumbnail = ({ file }: { file: File }) => {
         />
       </div>
       <div className="absolute inset-0 flex items-center justify-center bg-black/20">
-        <FontAwesomeIcon icon={faSpinnerThird} spin className="h-6 w-6 text-white" />
+        <FontAwesomeIcon
+          icon={faSpinnerThird}
+          spin
+          className="h-6 w-6 text-white"
+        />
       </div>
     </div>
   );

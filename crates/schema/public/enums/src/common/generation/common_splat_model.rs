@@ -1,7 +1,7 @@
 use utoipa::ToSchema;
 
 /// Splat models available for generation.
-/// Mirrors artcraft_router::api::common_splat_model::CommonSplatModel.
+/// Mirrors artcraft_router::api::router_splat_model::RouterSplatModel.
 #[derive(Copy, Clone, Debug, Serialize, Deserialize, ToSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum CommonSplatModel {

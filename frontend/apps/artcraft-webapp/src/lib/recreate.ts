@@ -73,21 +73,51 @@ export async function applyRecreateFromMediaToken(
       toast.error("Recreate unavailable for this media");
       return;
     }
-    const mediaClass = resolveMediaClass(promptData, fallbackMediaClass);
-    if (!mediaClass) {
-      toast.error("Recreate not supported for this media type");
-      return;
-    }
-    const payload = buildRecreatePayload(promptData, mediaClass);
-    if (mediaClass === "video") {
-      useCreateVideoStore.getState().setPendingRecreate(payload);
-      navigate("/create-video");
-    } else {
-      useCreateImageStore.getState().setPendingRecreate(payload);
-      navigate("/create-image");
-    }
+    applyRecreateFromPromptData(promptData, fallbackMediaClass, navigate);
   } catch {
     toast.error("Failed to load recreate data");
+  }
+}
+
+// Recreate variant for items that already know their prompt token but have no
+// media file to look up — used for failed generations, where the prompt exists
+// but no entity was produced.
+export async function applyRecreateFromPromptToken(
+  promptToken: string,
+  fallbackMediaClass: RecreateMediaClass,
+  navigate: NavigateFunction,
+): Promise<void> {
+  try {
+    const promptsApi = new PromptsApi();
+    const resp = await promptsApi.GetPromptsByToken({ token: promptToken });
+    const promptData = resp.success ? resp.data ?? null : null;
+    if (!promptData) {
+      toast.error("Recreate data unavailable");
+      return;
+    }
+    applyRecreateFromPromptData(promptData, fallbackMediaClass, navigate);
+  } catch {
+    toast.error("Failed to load recreate data");
+  }
+}
+
+function applyRecreateFromPromptData(
+  promptData: Prompts,
+  fallbackMediaClass: RecreateMediaClass,
+  navigate: NavigateFunction,
+): void {
+  const mediaClass = resolveMediaClass(promptData, fallbackMediaClass);
+  if (!mediaClass) {
+    toast.error("Recreate not supported for this media type");
+    return;
+  }
+  const payload = buildRecreatePayload(promptData, mediaClass);
+  if (mediaClass === "video") {
+    useCreateVideoStore.getState().setPendingRecreate(payload);
+    navigate("/create-video");
+  } else {
+    useCreateImageStore.getState().setPendingRecreate(payload);
+    navigate("/create-image");
   }
 }
 

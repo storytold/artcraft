@@ -7,10 +7,10 @@ use artcraft_api_defs::generate::cost_estimate::estimate_video_cost::{
   EstimateVideoCostError, EstimateVideoCostErrorType, EstimateVideoCostRequest,
   EstimateVideoCostResponse,
 };
-use artcraft_router::api::common_aspect_ratio::CommonAspectRatio as RouterAspectRatio;
-use artcraft_router::api::common_resolution::CommonResolution as RouterResolution;
-use artcraft_router::api::common_video_model::CommonVideoModel as RouterVideoModel;
-use artcraft_router::api::provider::Provider as RouterProvider;
+use artcraft_router::api::router_aspect_ratio::RouterAspectRatio;
+use artcraft_router::api::router_resolution::RouterResolution;
+use artcraft_router::api::router_video_model::RouterVideoModel;
+use artcraft_router::api::router_provider::RouterProvider;
 use artcraft_router::client::request_mismatch_mitigation_strategy::RequestMismatchMitigationStrategy;
 use artcraft_router::generate::generate_video::generate_video_request_builder::GenerateVideoRequestBuilder;
 use enums::common::generation::common_aspect_ratio::CommonAspectRatio;
@@ -99,7 +99,7 @@ impl ResponseError for HandlerError {
     let (error_type, error_message) = match self {
       HandlerError::InvalidProviderForModel { provider, model } => (
         EstimateVideoCostErrorType::InvalidProviderForModel,
-        format!("Provider '{}' is not supported for model '{}'", provider, model),
+        format!("RouterProvider '{}' is not supported for model '{}'", provider, model),
       ),
       HandlerError::InvalidInput(msg) => (
         EstimateVideoCostErrorType::InvalidInput,
@@ -131,6 +131,7 @@ fn map_video_model(model: CommonVideoModel) -> Result<RouterVideoModel, HandlerE
   let router_model = match model {
     CommonVideoModel::GrokVideo => RouterVideoModel::GrokVideo,
     CommonVideoModel::GrokImagineVideo => RouterVideoModel::GrokImagineVideo,
+    CommonVideoModel::GrokImagineVideo1p5 => RouterVideoModel::GrokImagineVideo1p5,
     CommonVideoModel::Kling16Pro => RouterVideoModel::Kling16Pro,
     CommonVideoModel::Kling21Pro => RouterVideoModel::Kling21Pro,
     CommonVideoModel::Kling21Master => RouterVideoModel::Kling21Master,
@@ -146,6 +147,8 @@ fn map_video_model(model: CommonVideoModel) -> Result<RouterVideoModel, HandlerE
     CommonVideoModel::Seedance2p0UltraFast => RouterVideoModel::Seedance2p0UltraFast,
     CommonVideoModel::Seedance2p0BytePlus=> RouterVideoModel::Seedance2p0BytePlus,
     CommonVideoModel::Seedance2p0BytePlusFast=> RouterVideoModel::Seedance2p0BytePlusFast,
+    CommonVideoModel::Seedance2p0BytePlusUltra => RouterVideoModel::Seedance2p0BytePlusUltra,
+    CommonVideoModel::Seedance2p0BytePlusUltraFast => RouterVideoModel::Seedance2p0BytePlusUltraFast,
     CommonVideoModel::HappyHorse1p0 => RouterVideoModel::HappyHorse1p0,
     CommonVideoModel::Sora2 => RouterVideoModel::Sora2,
     CommonVideoModel::Sora2Pro => RouterVideoModel::Sora2Pro,

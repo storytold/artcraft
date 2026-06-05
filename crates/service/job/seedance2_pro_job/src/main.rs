@@ -33,10 +33,12 @@ use crate::jobs::credits_checking_job::credits_checking_main_loop::credits_check
 use crate::jobs::video_polling_job::video_polling_main_loop::video_polling_main_loop;
 use crate::job_dependencies::JobDependencies;
 use crate::startup::build_pager::build_pager;
+use crate::startup::kinovi_setup::{get_kinovi_session, get_kinovi_version};
 
 pub mod http_server;
 pub mod job_dependencies;
 pub mod jobs;
+pub mod kinovi_version;
 pub mod startup;
 
 // Bucket config
@@ -45,10 +47,6 @@ const ENV_SECRET_KEY: &str = "SECRET_KEY";
 const ENV_REGION_NAME: &str = "REGION_NAME";
 const ENV_PUBLIC_BUCKET_NAME: &str = "PUBLIC_BUCKET_NAME";
 const ENV_S3_ENDPOINT: &str = "S3_COMPATIBLE_ENDPOINT_URL";
-
-const ENV_SEEDANCE2PRO_ALTERNATE: &str = "SEEDANCE2PRO_ALTERNATE";
-const ENV_SEEDANCE2PRO_COOKIES: &str = "SEEDANCE2PRO_COOKIES";
-const ENV_SEEDANCE2PRO_ALT_COOKIES: &str = "SEEDANCE2PRO_ALT_COOKIES";
 
 const ENV_MAX_JOB_AGE_THRESHOLD_HOURS: &str = "MAX_JOB_AGE_THRESHOLD_HOURS";
 
@@ -105,21 +103,8 @@ async fn main() -> AnyhowResult<()> {
     Some(bucket_timeout),
   )?;
 
-  // Alternate mode: uses a different Kinovi account, different job types, skips character polling.
-  let is_alternate_mode = easyenv::get_env_string_optional(ENV_SEEDANCE2PRO_ALTERNATE)
-    .map(|v| v.trim().to_lowercase())
-    .map(|v| v == "true" || v == "1")
-    .unwrap_or(false);
-
-  if is_alternate_mode {
-    info!("Running in ALTERNATE mode (SEEDANCE2PRO_ALTERNATE=true).");
-  }
-
-  // Seedance2Pro session from cookie string
-  let cookie_env_var = if is_alternate_mode { ENV_SEEDANCE2PRO_ALT_COOKIES } else { ENV_SEEDANCE2PRO_COOKIES };
-  info!("Reading Seedance2Pro cookies from environment variable: {}", cookie_env_var);
-  let seedance2pro_cookies = easyenv::get_env_string_required(cookie_env_var)?;
-  let seedance2pro_session = Seedance2ProSession::from_cookies_string(seedance2pro_cookies);
+  let kinovi_version = get_kinovi_version()?;
+  let kinovi_session = get_kinovi_session(kinovi_version)?;
 
   // How often to poll for results (default: 15 seconds)
   let poll_interval_millis: u64 = easyenv::get_env_num(
@@ -186,8 +171,8 @@ async fn main() -> AnyhowResult<()> {
   let job_dependencies = JobDependencies {
     mysql_pool,
     public_bucket_client,
-    seedance2pro_session,
-    is_alternate_mode,
+    seedance2pro_session: kinovi_session,
+    kinovi_version,
     server_environment,
     job_stats,
     poll_interval_millis,
@@ -241,16 +226,16 @@ async fn main() -> AnyhowResult<()> {
     credits_checking_main_loop(credits_deps).await;
   });
 
-  if is_alternate_mode {
-    // Alternate mode: skip character polling entirely.
-    info!("Alternate mode: character polling is disabled.");
-    let _ = tokio::join!(video_handle, credits_handle);
-  } else {
+  if kinovi_version.has_characters() {
     let character_deps = job_dependencies;
     let character_handle = tokio::spawn(async move {
       character_polling_main_loop(character_deps).await;
     });
     let _ = tokio::join!(video_handle, character_handle, credits_handle);
+  } else {
+    // skip character polling entirely.
+    info!("Alternate mode: character polling is disabled.");
+    let _ = tokio::join!(video_handle, credits_handle);
   }
 
   info!("Shutting down pager worker...");
@@ -260,3 +245,4 @@ async fn main() -> AnyhowResult<()> {
 
   Ok(())
 }
+

@@ -19,7 +19,7 @@ use log::{info, warn};
 use mysql_queries::queries::media_files::list::list_media_files_for_user::{list_media_files_for_user, ListMediaFileForUserArgs};
 use tokens::tokens::media_files::MediaFileToken;
 use utoipa::{IntoParams, ToSchema};
-
+use tokens::tokens::prompts::PromptToken;
 use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::common_responses::media::media_file_cover_image_details::MediaFileCoverImageDetails;
 use crate::http_server::common_responses::media::media_links_builder::MediaLinksBuilder;
@@ -136,6 +136,9 @@ pub struct MediaFileForUserListItem {
 
   /// Rich CDN links to the media, including thumbnails, previews, and more.
   pub media_links: MediaLinks,
+
+  /// The foreign key to the prompt used to generate the media, if applicable.
+  pub maybe_prompt_token: Option<PromptToken>,
 
   /// Information about the cover image. Many media files do not require a cover image,
   /// e.g. image files, video files with thumbnails, audio files, etc.
@@ -307,6 +310,7 @@ pub async fn list_media_files_for_user_handler(
           maybe_origin_model_token: record.maybe_origin_model_token,
           media_links: MediaLinksBuilder::from_media_path_and_env(
             media_domain, server_state.server_environment, &public_bucket_path),
+          maybe_prompt_token: record.maybe_prompt_token,
           public_bucket_path: public_bucket_path
               .get_full_object_path_str()
               .to_string(),

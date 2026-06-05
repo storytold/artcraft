@@ -2,10 +2,7 @@ use log::{error, warn};
 
 use crate::http_server::common_responses::common_web_error::CommonWebError;
 use enums::common::visibility::Visibility;
-use mysql_queries::queries::generic_inference::api_providers::seedance2pro::insert_generic_inference_job_for_seedance2pro_queue_with_apriori_job_token::{
-  insert_generic_inference_job_for_seedance2pro_queue_with_apriori_job_token,
-  InsertGenericInferenceForSeedance2ProWithAprioriJobTokenArgs,
-};
+use mysql_queries::queries::generic_inference::api_providers::seedance2pro::insert_generic_inference_job_for_seedance2pro_queue_with_apriori_job_token::{insert_generic_inference_job_for_seedance2pro_queue_with_apriori_job_token, InsertGenericInferenceForSeedance2ProWithAprioriJobTokenArgs, KinoviVersion};
 use tokens::tokens::generic_inference_jobs::InferenceJobToken;
 use tokens::tokens::wallet_ledger_entries::WalletLedgerEntryToken;
 use uuid_utils::uuid::generate_random_uuid;
@@ -16,7 +13,7 @@ pub struct InsertSeedance2proJobsArgs<'a, 'tx> {
   pub primary_order_id: &'a str,
   pub maybe_additional_order_ids: Option<&'a [String]>,
   pub maybe_wallet_ledger_entry_token: Option<&'a WalletLedgerEntryToken>,
-  pub use_alternate_kinovi: bool,
+  pub kinovi_version: KinoviVersion,
   pub shared: SharedJobArgs<'a, 'tx>,
 }
 
@@ -30,7 +27,7 @@ pub async fn insert_seedance2pro_jobs(args: InsertSeedance2proJobsArgs<'_, '_>) 
     primary_order_id,
     maybe_additional_order_ids,
     maybe_wallet_ledger_entry_token,
-    use_alternate_kinovi,
+    kinovi_version,
     mut shared,
   } = args;
 
@@ -57,7 +54,7 @@ pub async fn insert_seedance2pro_jobs(args: InsertSeedance2proJobsArgs<'_, '_>) 
 
     let db_result = insert_generic_inference_job_for_seedance2pro_queue_with_apriori_job_token(
       InsertGenericInferenceForSeedance2ProWithAprioriJobTokenArgs {
-        use_alternate_kinovi,
+        kinovi_version,
         apriori_job_token: &job_token,
         uuid_idempotency_token: &idempotency_str,
         maybe_external_third_party_id: order_id,

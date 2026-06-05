@@ -104,6 +104,87 @@ fn build_omni_gen_image_models() -> Vec<OmniGenImageModelDetails> {
   });
 
   models.push(OmniGenImageModelDetails {
+    model: CommonImageModel::Midjourney7,
+    model_creator: Some(ModelCreator::Midjourney),
+    full_name: Some("Midjourney v7".to_string()),
+    text_prompt_supported: Some(true),
+    image_refs_supported: Some(true),
+    image_refs_max: Some(1),
+    aspect_ratio_options: Some(vec![
+      CommonAspectRatio::Auto,
+      CommonAspectRatio::TallTwoByThree,
+      CommonAspectRatio::TallThreeByFour,
+      CommonAspectRatio::TallFourByFive,
+      CommonAspectRatio::TallNineBySixteen,
+      CommonAspectRatio::WideThreeByTwo,
+      CommonAspectRatio::WideFourByThree,
+      CommonAspectRatio::WideFiveByFour,
+      CommonAspectRatio::WideSixteenByNine,
+      CommonAspectRatio::WideTwentyOneByNine,
+    ]),
+    aspect_ratio_default: Some(CommonAspectRatio::Square),
+    //aspect_ratio_default_when_editing: Some(CommonAspectRatio::Auto),
+    batch_size_min: Some(1),
+    batch_size_max: Some(2), // TODO: Fix batch sizes
+    batch_size_default: Some(1),
+    ..Default::default()
+  });
+
+  models.push(OmniGenImageModelDetails {
+    model: CommonImageModel::Midjourney7Niji,
+    model_creator: Some(ModelCreator::Midjourney),
+    full_name: Some("Midjourney v7 Niji (Anime)".to_string()),
+    text_prompt_supported: Some(true),
+    image_refs_supported: Some(true),
+    image_refs_max: Some(1),
+    aspect_ratio_options: Some(vec![
+      CommonAspectRatio::Auto,
+      CommonAspectRatio::TallTwoByThree,
+      CommonAspectRatio::TallThreeByFour,
+      CommonAspectRatio::TallFourByFive,
+      CommonAspectRatio::TallNineBySixteen,
+      CommonAspectRatio::WideThreeByTwo,
+      CommonAspectRatio::WideFourByThree,
+      CommonAspectRatio::WideFiveByFour,
+      CommonAspectRatio::WideSixteenByNine,
+      CommonAspectRatio::WideTwentyOneByNine,
+    ]),
+    aspect_ratio_default: Some(CommonAspectRatio::Square),
+    //aspect_ratio_default_when_editing: Some(CommonAspectRatio::Auto),
+    batch_size_min: Some(1),
+    batch_size_max: Some(2), // TODO: Fix batch sizes
+    batch_size_default: Some(1),
+    ..Default::default()
+  });
+
+  models.push(OmniGenImageModelDetails {
+    model: CommonImageModel::Midjourney8,
+    model_creator: Some(ModelCreator::Midjourney),
+    full_name: Some("Midjourney v8".to_string()),
+    text_prompt_supported: Some(true),
+    image_refs_supported: Some(true),
+    image_refs_max: Some(1),
+    aspect_ratio_options: Some(vec![
+      CommonAspectRatio::Auto,
+      CommonAspectRatio::TallTwoByThree,
+      CommonAspectRatio::TallThreeByFour,
+      CommonAspectRatio::TallFourByFive,
+      CommonAspectRatio::TallNineBySixteen,
+      CommonAspectRatio::WideThreeByTwo,
+      CommonAspectRatio::WideFourByThree,
+      CommonAspectRatio::WideFiveByFour,
+      CommonAspectRatio::WideSixteenByNine,
+      CommonAspectRatio::WideTwentyOneByNine,
+    ]),
+    aspect_ratio_default: Some(CommonAspectRatio::Square),
+    //aspect_ratio_default_when_editing: Some(CommonAspectRatio::Auto),
+    batch_size_min: Some(1),
+    batch_size_max: Some(2), // TODO: Fix batch sizes
+    batch_size_default: Some(1),
+    ..Default::default()
+  });
+
+  models.push(OmniGenImageModelDetails {
     model: CommonImageModel::NanoBanana, // NB: currently Gemini25Flash in our system
     model_creator: Some(ModelCreator::ArtCraft),
     full_name: Some("Nano Banana".to_string()),

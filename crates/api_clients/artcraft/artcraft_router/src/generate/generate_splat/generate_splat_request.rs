@@ -1,6 +1,6 @@
-use crate::api::common_splat_model::CommonSplatModel;
+use crate::api::router_splat_model::RouterSplatModel;
 use crate::api::image_list_ref::ImageListRef;
-use crate::api::provider::Provider;
+use crate::api::router_provider::RouterProvider;
 use crate::errors::artcraft_router_error::ArtcraftRouterError;
 use crate::generate::generate_splat::plan::artcraft::plan_generate_splat_artcraft_marble_0p1_mini::plan_generate_splat_artcraft_marble_0p1_mini;
 use crate::generate::generate_splat::plan::artcraft::plan_generate_splat_artcraft_marble_0p1_plus::plan_generate_splat_artcraft_marble_0p1_plus;
@@ -8,10 +8,10 @@ use crate::generate::generate_splat::splat_generation_plan::SplatGenerationPlan;
 
 pub struct GenerateSplatRequest {
   /// Which model to use.
-  pub model: CommonSplatModel,
+  pub model: RouterSplatModel,
 
   /// Which provider to use.
-  pub provider: Provider,
+  pub provider: RouterProvider,
 
   /// The prompt for splat generation (optional).
   pub prompt: Option<String>,
@@ -28,15 +28,15 @@ impl GenerateSplatRequest {
   /// Read the splat generation request, construct a plan, then yield a means to execute it.
   pub fn build(&self) -> Result<SplatGenerationPlan, ArtcraftRouterError> {
     match self.provider {
-      Provider::Artcraft => self.build_artcraft(),
+      RouterProvider::Artcraft => self.build_artcraft(),
       _ => self.unsupported_provider(),
     }
   }
 
   fn build_artcraft(&self) -> Result<SplatGenerationPlan, ArtcraftRouterError> {
     match self.model {
-      CommonSplatModel::Marble0p1Mini => plan_generate_splat_artcraft_marble_0p1_mini(self),
-      CommonSplatModel::Marble0p1Plus => plan_generate_splat_artcraft_marble_0p1_plus(self),
+      RouterSplatModel::Marble0p1Mini => plan_generate_splat_artcraft_marble_0p1_mini(self),
+      RouterSplatModel::Marble0p1Plus => plan_generate_splat_artcraft_marble_0p1_plus(self),
     }
   }
 

@@ -32,6 +32,9 @@ export interface FailedJob {
   failureMessage?: string;
   status: string;
   createdAt: string;
+  promptToken?: string;
+  refImageUrl?: string;
+  mediaClass: "image" | "video";
 }
 
 // ── Constants ──────────────────────────────────────────────────────────────
@@ -95,9 +98,7 @@ function getPrompt(job: Job, promptsMap?: Map<string, Prompts>): string {
     ? (promptsMap?.get(promptToken) ?? getCachedPrompt(promptToken))
     : undefined;
   return (
-    cached?.maybe_positive_prompt ||
-    job.request.maybe_raw_inference_text ||
-    ""
+    cached?.maybe_positive_prompt || job.request.maybe_raw_inference_text || ""
   );
 }
 
@@ -106,12 +107,13 @@ function getModelId(job: Job, promptsMap?: Map<string, Prompts>): string {
   const cachedPrompt = promptToken
     ? (promptsMap?.get(promptToken) ?? getCachedPrompt(promptToken))
     : undefined;
-  return (
-    cachedPrompt?.maybe_model_type ?? job.request.maybe_model_type ?? ""
-  );
+  return cachedPrompt?.maybe_model_type ?? job.request.maybe_model_type ?? "";
 }
 
-function jobToInProgress(job: Job, promptsMap: Map<string, Prompts>): InProgressJob {
+function jobToInProgress(
+  job: Job,
+  promptsMap: Map<string, Prompts>,
+): InProgressJob {
   const now = Date.now();
   const createdMs = new Date(job.created_at).getTime();
   const modelType = job.request.maybe_model_type;
@@ -157,6 +159,13 @@ function jobToFailed(job: Job, promptsMap: Map<string, Prompts>): FailedJob {
   const failureMessage =
     rawMessage && failureCategory !== "unknown" ? rawMessage : undefined;
 
+  const promptToken = job.request.maybe_prompt_token ?? undefined;
+  const promptData = promptToken ? promptsMap.get(promptToken) : undefined;
+  const refImageUrl = pickFirstRefImageUrl(promptData);
+  const inferred = getJobMediaType(job);
+  const mediaClass: "image" | "video" =
+    inferred === "video" ? "video" : "image";
+
   return {
     id: job.job_token,
     prompt: getPrompt(job, promptsMap),
@@ -166,7 +175,28 @@ function jobToFailed(job: Job, promptsMap: Map<string, Prompts>): FailedJob {
     failureMessage,
     status: job.status.status,
     createdAt: job.created_at,
+    promptToken,
+    refImageUrl,
+    mediaClass,
   };
+}
+
+// Semantics that aren't still images — videos and audio clips can't be rendered
+// as the faded backdrop behind the error state, so skip them when picking the
+// reference to display.
+const NON_IMAGE_REF_SEMANTICS = new Set(["vid_ref", "audioref"]);
+
+function pickFirstRefImageUrl(
+  promptData: Prompts | undefined,
+): string | undefined {
+  const refs = promptData?.maybe_context_images;
+  if (!refs?.length) return undefined;
+  for (const ref of refs) {
+    if (NON_IMAGE_REF_SEMANTICS.has(ref.semantic)) continue;
+    const url = ref.media_links?.cdn_url;
+    if (url) return url;
+  }
+  return undefined;
 }
 
 function jobToGalleryItem(
@@ -256,10 +286,12 @@ export function useGenerationJobs(options: {
   const promptTokens = useMemo(() => {
     const tokens: string[] = [];
     for (const j of inProgressJobs) {
-      if (j.request.maybe_prompt_token) tokens.push(j.request.maybe_prompt_token);
+      if (j.request.maybe_prompt_token)
+        tokens.push(j.request.maybe_prompt_token);
     }
     for (const j of failedJobsRaw) {
-      if (j.request.maybe_prompt_token) tokens.push(j.request.maybe_prompt_token);
+      if (j.request.maybe_prompt_token)
+        tokens.push(j.request.maybe_prompt_token);
     }
     return tokens;
   }, [inProgressJobs, failedJobsRaw]);
@@ -271,8 +303,7 @@ export function useGenerationJobs(options: {
         .slice()
         .sort(
           (a, b) =>
-            new Date(b.created_at).getTime() -
-            new Date(a.created_at).getTime(),
+            new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
         )
         .map((j) => jobToInProgress(j, promptsMap)),
     [inProgressJobs, promptsMap],
@@ -284,8 +315,7 @@ export function useGenerationJobs(options: {
         .slice()
         .sort(
           (a, b) =>
-            new Date(b.updated_at).getTime() -
-            new Date(a.updated_at).getTime(),
+            new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime(),
         )
         .map((j) => jobToFailed(j, promptsMap)),
     [failedJobsRaw, promptsMap],
@@ -375,17 +405,14 @@ export function useGenerationJobs(options: {
     };
   }, [load, enabled]);
 
-  const dismissFailed = useCallback(
-    async (jobToken: string) => {
-      try {
-        await apiRef.current.DeleteJobByToken(jobToken);
-        setFailedJobsRaw((prev) => prev.filter((f) => f.job_token !== jobToken));
-      } catch {
-        // ignore
-      }
-    },
-    [],
-  );
+  const dismissFailed = useCallback(async (jobToken: string) => {
+    try {
+      await apiRef.current.DeleteJobByToken(jobToken);
+      setFailedJobsRaw((prev) => prev.filter((f) => f.job_token !== jobToken));
+    } catch {
+      // ignore
+    }
+  }, []);
 
   return {
     inProgress,

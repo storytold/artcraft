@@ -1,6 +1,6 @@
-use crate::api::common_image_model::CommonImageModel;
-use crate::api::common_video_model::CommonVideoModel;
-use crate::api::provider::Provider;
+use crate::api::router_image_model::RouterImageModel;
+use crate::api::router_video_model::RouterVideoModel;
+use crate::api::router_provider::RouterProvider;
 use crate::client::request_mismatch_mitigation_strategy::RequestMismatchMitigationStrategy;
 use crate::client::router_artcraft_client::RouterArtcraftClient;
 use crate::client::router_client::RouterClient;
@@ -27,8 +27,8 @@ pub fn get_artcraft_client() -> RouterClient {
 
 pub fn base_image_request() -> GenerateImageRequestBuilder {
   GenerateImageRequestBuilder {
-    model: CommonImageModel::NanoBananaPro,
-    provider: Provider::Artcraft,
+    model: RouterImageModel::NanoBananaPro,
+    provider: RouterProvider::Artcraft,
     prompt: Some("a cat in space".to_string()),
     image_inputs: None,
     resolution: None,
@@ -54,8 +54,8 @@ pub fn get_fal_client() -> RouterClient {
 
 pub fn base_fal_image_request() -> GenerateImageRequestBuilder {
   GenerateImageRequestBuilder {
-    model: CommonImageModel::NanoBananaPro,
-    provider: Provider::Fal,
+    model: RouterImageModel::NanoBananaPro,
+    provider: RouterProvider::Fal,
     prompt: Some("a cat in space".to_string()),
     image_inputs: None,
     resolution: None,
@@ -73,8 +73,8 @@ pub fn base_fal_image_request() -> GenerateImageRequestBuilder {
 
 pub fn base_seedream_4_image_request() -> GenerateImageRequestBuilder {
   GenerateImageRequestBuilder {
-    model: CommonImageModel::Seedream4,
-    provider: Provider::Artcraft,
+    model: RouterImageModel::Seedream4,
+    provider: RouterProvider::Artcraft,
     prompt: Some("a cat in space".to_string()),
     image_inputs: None,
     resolution: None,
@@ -92,8 +92,8 @@ pub fn base_seedream_4_image_request() -> GenerateImageRequestBuilder {
 
 pub fn base_seedream_4p5_image_request() -> GenerateImageRequestBuilder {
   GenerateImageRequestBuilder {
-    model: CommonImageModel::Seedream4p5,
-    provider: Provider::Artcraft,
+    model: RouterImageModel::Seedream4p5,
+    provider: RouterProvider::Artcraft,
     prompt: Some("a cat in space".to_string()),
     image_inputs: None,
     resolution: None,
@@ -111,8 +111,8 @@ pub fn base_seedream_4p5_image_request() -> GenerateImageRequestBuilder {
 
 pub fn base_seedream_5_lite_image_request() -> GenerateImageRequestBuilder {
   GenerateImageRequestBuilder {
-    model: CommonImageModel::Seedream5Lite,
-    provider: Provider::Artcraft,
+    model: RouterImageModel::Seedream5Lite,
+    provider: RouterProvider::Artcraft,
     prompt: Some("a cat in space".to_string()),
     image_inputs: None,
     resolution: None,
@@ -130,8 +130,8 @@ pub fn base_seedream_5_lite_image_request() -> GenerateImageRequestBuilder {
 
 pub fn base_nano_banana_2_image_request() -> GenerateImageRequestBuilder {
   GenerateImageRequestBuilder {
-    model: CommonImageModel::NanoBanana2,
-    provider: Provider::Artcraft,
+    model: RouterImageModel::NanoBanana2,
+    provider: RouterProvider::Artcraft,
     prompt: Some("a cat in space".to_string()),
     image_inputs: None,
     resolution: None,
@@ -149,8 +149,8 @@ pub fn base_nano_banana_2_image_request() -> GenerateImageRequestBuilder {
 
 pub fn base_nano_banana_image_request() -> GenerateImageRequestBuilder {
   GenerateImageRequestBuilder {
-    model: CommonImageModel::NanoBanana,
-    provider: Provider::Artcraft,
+    model: RouterImageModel::NanoBanana,
+    provider: RouterProvider::Artcraft,
     prompt: Some("a cat in space".to_string()),
     image_inputs: None,
     resolution: None,
@@ -168,8 +168,8 @@ pub fn base_nano_banana_image_request() -> GenerateImageRequestBuilder {
 
 pub fn base_gpt_image_1_image_request() -> GenerateImageRequestBuilder {
   GenerateImageRequestBuilder {
-    model: CommonImageModel::GptImage1,
-    provider: Provider::Artcraft,
+    model: RouterImageModel::GptImage1,
+    provider: RouterProvider::Artcraft,
     prompt: Some("a cat in space".to_string()),
     image_inputs: None,
     resolution: None,
@@ -187,8 +187,8 @@ pub fn base_gpt_image_1_image_request() -> GenerateImageRequestBuilder {
 
 pub fn base_gpt_image_2_image_request() -> GenerateImageRequestBuilder {
   GenerateImageRequestBuilder {
-    model: CommonImageModel::GptImage2,
-    provider: Provider::Artcraft,
+    model: RouterImageModel::GptImage2,
+    provider: RouterProvider::Artcraft,
     prompt: Some("a cat in space".to_string()),
     image_inputs: None,
     resolution: None,
@@ -206,8 +206,8 @@ pub fn base_gpt_image_2_image_request() -> GenerateImageRequestBuilder {
 
 pub fn base_gpt_image_1p5_image_request() -> GenerateImageRequestBuilder {
   GenerateImageRequestBuilder {
-    model: CommonImageModel::GptImage1p5,
-    provider: Provider::Artcraft,
+    model: RouterImageModel::GptImage1p5,
+    provider: RouterProvider::Artcraft,
     prompt: Some("a cat in space".to_string()),
     image_inputs: None,
     resolution: None,
@@ -225,8 +225,8 @@ pub fn base_gpt_image_1p5_image_request() -> GenerateImageRequestBuilder {
 
 pub fn base_flux_1_dev_image_request() -> GenerateImageRequestBuilder {
   GenerateImageRequestBuilder {
-    model: CommonImageModel::Flux1Dev,
-    provider: Provider::Artcraft,
+    model: RouterImageModel::Flux1Dev,
+    provider: RouterProvider::Artcraft,
     prompt: Some("a cat in space".to_string()),
     image_inputs: None,
     resolution: None,
@@ -244,8 +244,8 @@ pub fn base_flux_1_dev_image_request() -> GenerateImageRequestBuilder {
 
 pub fn base_flux_1_schnell_image_request() -> GenerateImageRequestBuilder {
   GenerateImageRequestBuilder {
-    model: CommonImageModel::Flux1Schnell,
-    provider: Provider::Artcraft,
+    model: RouterImageModel::Flux1Schnell,
+    provider: RouterProvider::Artcraft,
     prompt: Some("a cat in space".to_string()),
     image_inputs: None,
     resolution: None,
@@ -263,8 +263,8 @@ pub fn base_flux_1_schnell_image_request() -> GenerateImageRequestBuilder {
 
 pub fn base_flux_pro_1p1_image_request() -> GenerateImageRequestBuilder {
   GenerateImageRequestBuilder {
-    model: CommonImageModel::FluxPro11,
-    provider: Provider::Artcraft,
+    model: RouterImageModel::FluxPro11,
+    provider: RouterProvider::Artcraft,
     prompt: Some("a cat in space".to_string()),
     image_inputs: None,
     resolution: None,
@@ -282,8 +282,8 @@ pub fn base_flux_pro_1p1_image_request() -> GenerateImageRequestBuilder {
 
 pub fn base_qwen_edit_2511_angles_image_request() -> GenerateImageRequestBuilder {
   GenerateImageRequestBuilder {
-    model: CommonImageModel::QwenEdit2511Angles,
-    provider: Provider::Artcraft,
+    model: RouterImageModel::QwenEdit2511Angles,
+    provider: RouterProvider::Artcraft,
     prompt: None,
     image_inputs: None,
     resolution: None,
@@ -301,8 +301,8 @@ pub fn base_qwen_edit_2511_angles_image_request() -> GenerateImageRequestBuilder
 
 pub fn base_flux_2_lora_angles_image_request() -> GenerateImageRequestBuilder {
   GenerateImageRequestBuilder {
-    model: CommonImageModel::Flux2LoraAngles,
-    provider: Provider::Artcraft,
+    model: RouterImageModel::Flux2LoraAngles,
+    provider: RouterProvider::Artcraft,
     prompt: None,
     image_inputs: None,
     resolution: None,
@@ -320,8 +320,8 @@ pub fn base_flux_2_lora_angles_image_request() -> GenerateImageRequestBuilder {
 
 pub fn base_flux_pro_1p1_ultra_image_request() -> GenerateImageRequestBuilder {
   GenerateImageRequestBuilder {
-    model: CommonImageModel::FluxPro11Ultra,
-    provider: Provider::Artcraft,
+    model: RouterImageModel::FluxPro11Ultra,
+    provider: RouterProvider::Artcraft,
     prompt: Some("a cat in space".to_string()),
     image_inputs: None,
     resolution: None,
@@ -339,8 +339,8 @@ pub fn base_flux_pro_1p1_ultra_image_request() -> GenerateImageRequestBuilder {
 
 pub fn base_video_request() -> GenerateVideoRequestBuilder {
   GenerateVideoRequestBuilder {
-    model: CommonVideoModel::Seedance2p0,
-    provider: Provider::Artcraft,
+    model: RouterVideoModel::Seedance2p0,
+    provider: RouterProvider::Artcraft,
     prompt: Some("a cat in space".to_string()),
     negative_prompt: None,
     start_frame: None,

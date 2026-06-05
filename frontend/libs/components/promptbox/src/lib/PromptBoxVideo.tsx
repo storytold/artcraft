@@ -7,10 +7,7 @@ import { SliderV2 } from "@storyteller/ui-sliderv2";
 import { Tooltip } from "@storyteller/ui-tooltip";
 import { ToggleButton, GenerateButton } from "@storyteller/ui-button";
 import { Modal } from "@storyteller/ui-modal";
-import {
-  GenerateVideo,
-  GenerateVideoRequest,
-} from "@storyteller/tauri-api";
+import { GenerateVideo, GenerateVideoRequest } from "@storyteller/tauri-api";
 import {
   faWaveformLines,
   faClock,
@@ -974,6 +971,18 @@ export const PromptBoxVideo = ({
               : "ring-1 ring-transparent",
           )}
         >
+          {selectedModel?.textToVideoSupported === false && (
+            <div className="mb-2 flex items-center gap-1.5 rounded-md bg-ui-controls/60 px-2.5 py-1.5 text-xs text-base-fg/70">
+              <FontAwesomeIcon
+                icon={faCircleInfo}
+                className="h-3 w-3 shrink-0"
+              />
+              <span>
+                This model can&apos;t generate from text alone - add a starting
+                frame to animate your prompt.
+              </span>
+            </div>
+          )}
           <div className="relative flex justify-center gap-2">
             <div className="promptbox-resize-wrap relative flex-1 min-w-0">
               {hasAnyMentionables ? (

@@ -1,0 +1,157 @@
+{
+  "db_name": "MySQL",
+  "query": "\nSELECT\n  uec.id as `id: u64`,\n  uec.old_email,\n  uec.new_email,\n  uec.ip_address,\n  uec.created_at,\n\n  u_subject.token as `user_token: tokens::tokens::users::UserToken`,\n  u_subject.username as user_username,\n  u_subject.display_name as user_display_name,\n  u_subject.email_gravatar_hash as user_gravatar_hash,\n\n  u_changer.token as `maybe_changed_by_user_token?: tokens::tokens::users::UserToken`,\n  u_changer.username as `maybe_changed_by_user_username?`,\n  u_changer.display_name as `maybe_changed_by_user_display_name?`,\n  u_changer.email_gravatar_hash as `maybe_changed_by_user_gravatar_hash?`\n\nFROM user_email_changes AS uec\nJOIN users AS u_subject\n  ON uec.user_token = u_subject.token\nLEFT JOIN users AS u_changer\n  ON uec.maybe_changed_by_user_token = u_changer.token\nWHERE uec.user_token = ?\nORDER BY uec.id DESC\nLIMIT ?\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id: u64",
+        "type_info": {
+          "type": "LongLong",
+          "flags": "NOT_NULL | PRIMARY_KEY | UNSIGNED | AUTO_INCREMENT",
+          "char_set": 63,
+          "max_size": 20
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "old_email",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NOT_NULL | MULTIPLE_KEY | BINARY | NO_DEFAULT_VALUE",
+          "char_set": 224,
+          "max_size": 1020
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "new_email",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NOT_NULL | MULTIPLE_KEY | BINARY | NO_DEFAULT_VALUE",
+          "char_set": 224,
+          "max_size": 1020
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "ip_address",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NOT_NULL | BINARY | NO_DEFAULT_VALUE",
+          "char_set": 224,
+          "max_size": 160
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "created_at",
+        "type_info": {
+          "type": "Timestamp",
+          "flags": "NOT_NULL | MULTIPLE_KEY | BINARY | TIMESTAMP",
+          "char_set": 63,
+          "max_size": 19
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "user_token: tokens::tokens::users::UserToken",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NOT_NULL | UNIQUE_KEY | BINARY | NO_DEFAULT_VALUE",
+          "char_set": 224,
+          "max_size": 128
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "user_username",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NOT_NULL | UNIQUE_KEY | BINARY | NO_DEFAULT_VALUE",
+          "char_set": 224,
+          "max_size": 80
+        }
+      },
+      {
+        "ordinal": 7,
+        "name": "user_display_name",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NOT_NULL | BINARY | NO_DEFAULT_VALUE",
+          "char_set": 224,
+          "max_size": 80
+        }
+      },
+      {
+        "ordinal": 8,
+        "name": "user_gravatar_hash",
+        "type_info": {
+          "type": "String",
+          "flags": "NOT_NULL | BINARY | NO_DEFAULT_VALUE",
+          "char_set": 224,
+          "max_size": 128
+        }
+      },
+      {
+        "ordinal": 9,
+        "name": "maybe_changed_by_user_token?: tokens::tokens::users::UserToken",
+        "type_info": {
+          "type": "VarString",
+          "flags": "UNIQUE_KEY | BINARY | NO_DEFAULT_VALUE",
+          "char_set": 224,
+          "max_size": 128
+        }
+      },
+      {
+        "ordinal": 10,
+        "name": "maybe_changed_by_user_username?",
+        "type_info": {
+          "type": "VarString",
+          "flags": "UNIQUE_KEY | BINARY | NO_DEFAULT_VALUE",
+          "char_set": 224,
+          "max_size": 80
+        }
+      },
+      {
+        "ordinal": 11,
+        "name": "maybe_changed_by_user_display_name?",
+        "type_info": {
+          "type": "VarString",
+          "flags": "BINARY | NO_DEFAULT_VALUE",
+          "char_set": 224,
+          "max_size": 80
+        }
+      },
+      {
+        "ordinal": 12,
+        "name": "maybe_changed_by_user_gravatar_hash?",
+        "type_info": {
+          "type": "String",
+          "flags": "BINARY | NO_DEFAULT_VALUE",
+          "char_set": 224,
+          "max_size": 128
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      true,
+      true
+    ]
+  },
+  "hash": "c17e1d6b567dd378bb4cb0478fb9558e907a0f36498bd049c7c526e496e89259"
+}

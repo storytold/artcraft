@@ -11,7 +11,9 @@ export function TopBar() {
   const { state, isMobile } = useSidebar();
   const { pathname } = useLocation();
   const showTopbarLogo = isMobile || state === "collapsed";
-  const showViewToggle = GALLERY_VIEW_ROUTES.has(pathname);
+  // On mobile the toggle lives next to the Generate/History tabs (see
+  // CreateMediaPageShell), so keep it out of the top bar there.
+  const showViewToggle = !isMobile && GALLERY_VIEW_ROUTES.has(pathname);
 
   return (
     <header className="sticky top-0 z-20 flex items-center gap-3 border-b border-white/[0.06] bg-[#121212]/80 backdrop-blur-md px-3 pb-4 pt-3 sm:pt-6">

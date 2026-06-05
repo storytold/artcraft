@@ -1,5 +1,5 @@
-use artcraft_router::api::common_aspect_ratio::CommonAspectRatio;
-use artcraft_router::api::common_resolution::CommonResolution;
+use artcraft_router::api::router_aspect_ratio::RouterAspectRatio;
+use artcraft_router::api::router_resolution::RouterResolution;
 use enums::common::generation_provider::GenerationProvider;
 use enums::tauri::ux::tauri_command_caller::TauriCommandCaller;
 use serde_derive::{Deserialize, Serialize};
@@ -93,8 +93,8 @@ pub struct TauriGenerateVideoRequest {
   pub reference_audio_media_tokens: Option<Vec<MediaFileToken>>,
   pub reference_character_tokens: Option<Vec<CharacterToken>>,
 
-  pub aspect_ratio: Option<CommonAspectRatio>,
-  pub resolution: Option<CommonResolution>,
+  pub aspect_ratio: Option<RouterAspectRatio>,
+  pub resolution: Option<RouterResolution>,
 
   pub duration_seconds: Option<u16>,
   pub generate_audio: Option<bool>,

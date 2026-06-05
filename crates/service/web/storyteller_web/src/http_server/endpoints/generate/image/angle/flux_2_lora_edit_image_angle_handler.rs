@@ -17,7 +17,7 @@ use enums::common::visibility::Visibility;
 use enums::common::generation::common_aspect_ratio::CommonAspectRatio;
 use enums::common::generation::common_generation_mode::CommonGenerationMode;
 use fal_client::requests::traits::fal_request_cost_calculator_trait::FalRequestCostCalculator;
-use fal_client::requests::webhook::image::angle::enqueue_flux_2_lora_edit_image_angle_webhook::{enqueue_flux_2_lora_edit_image_angle_webhook, EnqueueFlux2LoraEditImageAngleArgs, EnqueueFlux2LoraEditImageAngleRequest, EnqueueFlux2LoraAngleNumImages, EnqueueFlux2LoraAngleImageSize};
+use fal_client::requests_old::webhook::image::angle::enqueue_flux_2_lora_edit_image_angle_webhook::{enqueue_flux_2_lora_edit_image_angle_webhook, EnqueueFlux2LoraEditImageAngleArgs, EnqueueFlux2LoraEditImageAngleRequest, EnqueueFlux2LoraAngleNumImages, EnqueueFlux2LoraAngleImageSize};
 use http_server_common::request::get_request_ip::get_request_ip;
 use log::{error, info, warn};
 use mysql_queries::queries::generic_inference::api_providers::fal::insert_generic_inference_job_for_fal_queue::FalCategory;
@@ -94,7 +94,7 @@ pub async fn flux_2_lora_edit_image_angle_handler(
         CommonWebError::BadInputWithSimpleMessage("repeated idempotency token".to_string())
       })?;
 
-  info!("Fal webhook URL: {}", server_state.fal.webhook_url);
+  info!("Fal webhook URL: {}", server_state.inference_providers.fal.webhook_url);
 
   let apriori_job_token = InferenceJobToken::generate();
 
@@ -130,8 +130,8 @@ pub async fn flux_2_lora_edit_image_angle_handler(
 
   let args = EnqueueFlux2LoraEditImageAngleArgs {
     request: fal_request,
-    webhook_url: &server_state.fal.webhook_url,
-    api_key: &server_state.fal.api_key,
+    webhook_url: &server_state.inference_providers.fal.webhook_url,
+    api_key: &server_state.inference_providers.fal.api_key,
   };
 
   info!("Charging wallet: {}", cost);

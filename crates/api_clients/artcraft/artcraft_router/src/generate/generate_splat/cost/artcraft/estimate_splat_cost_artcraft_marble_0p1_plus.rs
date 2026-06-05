@@ -28,16 +28,16 @@ pub(crate) fn estimate_splat_cost_artcraft_marble_0p1_plus(
 
 #[cfg(test)]
 mod tests {
-  use crate::api::common_splat_model::CommonSplatModel;
-  use crate::api::provider::Provider;
+  use crate::api::router_splat_model::RouterSplatModel;
+  use crate::api::router_provider::RouterProvider;
   use crate::generate::generate_splat::generate_splat_request::GenerateSplatRequest;
 
   use tokens::tokens::media_files::MediaFileToken;
 
   fn estimate_usd_cents(prompt: Option<&str>, image_tokens: Option<Vec<MediaFileToken>>) -> u64 {
     let request = GenerateSplatRequest {
-      model: CommonSplatModel::Marble0p1Plus,
-      provider: Provider::Artcraft,
+      model: RouterSplatModel::Marble0p1Plus,
+      provider: RouterProvider::Artcraft,
       prompt: prompt.map(|s| s.to_string()),
       reference_images: image_tokens.map(crate::api::image_list_ref::ImageListRef::MediaFileTokens),
       idempotency_token: None,
