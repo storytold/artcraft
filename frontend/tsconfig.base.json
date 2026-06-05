@@ -30,7 +30,10 @@
         "apps/artcraft/app/src/*"
       ],
       "@storyteller/api": ["libs/api/src/index.ts"],
-      "@storyteller/markdown-content": ["libs/markdown-content/src/index.ts"]
+      "@storyteller/markdown-content": ["libs/markdown-content/src/index.ts"],
+      "@storyteller/credits": ["libs/state/credits/src/index.ts"],
+      "@storyteller/subscription": ["libs/state/subscription/src/index.ts"],
+      "@storyteller/google-analytics": ["libs/analytics/google-analytics/src/index.ts"]
     }
   }
 }

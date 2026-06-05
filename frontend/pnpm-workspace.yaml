@@ -2,4 +2,6 @@ packages:
   - 'apps/*'
   - 'libs/*'
   - 'libs/components/*'
+  - 'libs/state/*'
+  - 'libs/analytics/*'
 
