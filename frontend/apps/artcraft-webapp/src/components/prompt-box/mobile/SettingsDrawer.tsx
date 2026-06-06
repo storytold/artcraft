@@ -11,6 +11,12 @@ interface SettingsDrawerProps {
   onOpenChange: (open: boolean) => void;
   title: string;
   children: ReactNode;
+  // Defaults to a modal sheet (focus trap + body scroll lock). Pass false when
+  // this drawer opens another modal on top of it: two modal Radix layers each
+  // lock <body> (react-remove-scroll adds a `pointer-events: none` class), and
+  // their overlapping mount/unmount strands one of those locks on <body>,
+  // freezing the whole page. A non-modal sheet skips the lock entirely.
+  modal?: boolean;
 }
 
 // Bottom sheet used for every mobile settings group (model, output, etc.).
@@ -19,9 +25,10 @@ export function SettingsDrawer({
   onOpenChange,
   title,
   children,
+  modal = true,
 }: SettingsDrawerProps) {
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
+    <Sheet open={open} onOpenChange={onOpenChange} modal={modal}>
       <SheetContent
         side="bottom"
         aria-describedby={undefined}
