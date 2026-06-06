@@ -407,6 +407,14 @@ export const ImagePromptRow = ({
 const ADD_BUTTON_CLASS =
   "flex aspect-square w-10 sm:w-14 items-center justify-center overflow-hidden rounded-lg border-2 border-dashed border-white/25 bg-white/5 transition-all hover:border-white/40 hover:bg-white/10";
 
+// The mobile add-sheet (a Radix modal) plays a ~220ms slide-down before it
+// unmounts (see `.ac-drawer-content[data-state="closed"]` in styles.css).
+// Opening the library modal before then leaves two modal layers overlapping;
+// Radix captures the sheet's `pointer-events: none` as the body's "original"
+// value and writes it back when the library modal closes — freezing the whole
+// page. Wait for the sheet to fully close before opening the library.
+const SHEET_CLOSE_MS = 240;
+
 // Upload / Pick-from-library affordance. On desktop it's a hover tooltip; on
 // mobile that tooltip auto-opens from the emulated mouseenter fired on
 // navigation, so we use a tap-triggered bottom sheet instead.
@@ -460,8 +468,8 @@ const AddButton = ({
               icon={faImages}
               className="w-full bg-white/15 hover:bg-white/20"
               onClick={() => {
-                onPickFromLibrary();
                 setDrawerOpen(false);
+                window.setTimeout(() => onPickFromLibrary(), SHEET_CLOSE_MS);
               }}
             >
               Pick from library
