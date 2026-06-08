@@ -5,6 +5,7 @@ mod comments_routes;
 mod credits_routes;
 mod dev_routes;
 mod featured_item_routes;
+mod folders_routes;
 mod generate_routes;
 mod job_routes;
 mod media_files_routes;

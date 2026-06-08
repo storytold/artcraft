@@ -1,0 +1,101 @@
+use std::sync::Arc;
+
+use actix_web::web::{Json, Path};
+use actix_web::{web, HttpRequest};
+use log::warn;
+
+use artcraft_api_defs::folders::subfolder::{
+  BulkAddSubfoldersRequest, BulkAddSubfoldersSuccessResponse, SubfolderPathInfo,
+};
+use mysql_queries::queries::folders::folder::get_folder_for_owner::get_folder_for_owner;
+use mysql_queries::queries::folders::subfolder::bulk_set_parent_folder::bulk_set_parent_folder;
+use mysql_queries::queries::folders::subfolder::filter_existing_owned_folder_tokens::filter_existing_owned_folder_tokens;
+use tokens::tokens::folders::FolderToken;
+
+use crate::http_server::common_responses::common_web_error::CommonWebError;
+use crate::http_server::web_utils::user_session::require_user_session_using_connection::require_user_session_using_connection;
+use crate::state::server_state::ServerState;
+
+const MAX_BULK: usize = 500;
+
+/// Bulk-reparent folders under the URL `folder_token`. Idempotent: tokens
+/// that don't exist or are already parented to this folder are silently
+/// accepted; the response lists the tokens that "stick".
+#[utoipa::path(
+  put,
+  tag = "Folders",
+  path = "/v1/folders/subfolders/{folder_token}/bulk_add",
+  params(("folder_token" = String, description = "Parent folder token")),
+  request_body = BulkAddSubfoldersRequest,
+  responses(
+    (status = 200, body = BulkAddSubfoldersSuccessResponse),
+    (status = 400, body = CommonWebError),
+    (status = 401, body = CommonWebError),
+    (status = 404, body = CommonWebError),
+    (status = 500, body = CommonWebError),
+  ),
+)]
+pub async fn bulk_add_subfolders_handler(
+  http_request: HttpRequest,
+  path: Path<SubfolderPathInfo>,
+  request: Json<BulkAddSubfoldersRequest>,
+  server_state: web::Data<Arc<ServerState>>,
+) -> Result<Json<BulkAddSubfoldersSuccessResponse>, CommonWebError> {
+  let mut conn = server_state.mysql_pool.acquire().await.map_err(|err| {
+    warn!("MySQL pool error: {:?}", err);
+    CommonWebError::from_error(err)
+  })?;
+
+  let user_session = require_user_session_using_connection(
+    &http_request, &server_state.session_checker, &mut conn,
+  ).await.map_err(|_| CommonWebError::NotAuthorized)?;
+
+  if request.subfolder_tokens.len() > MAX_BULK {
+    return Err(CommonWebError::BadInputWithSimpleMessage(
+      format!("too many subfolders in one request (max {})", MAX_BULK),
+    ));
+  }
+
+  let parent_token = FolderToken::new_from_str(path.folder_token.trim());
+
+  // Confirm the parent exists + is owned.
+  let parent = get_folder_for_owner(&parent_token, &user_session.user_token, &server_state.mysql_pool)
+    .await
+    .map_err(|err| {
+      warn!("Parent folder lookup failed: {:?}", err);
+      CommonWebError::from_error(err)
+    })?;
+  if parent.is_none() {
+    return Err(CommonWebError::NotFound);
+  }
+
+  // Filter input to tokens that actually exist, are owned, and aren't deleted.
+  let accepted = filter_existing_owned_folder_tokens(
+    &request.subfolder_tokens,
+    &user_session.user_token,
+    &server_state.mysql_pool,
+  ).await.map_err(|err| {
+    warn!("filter_existing_owned_folder_tokens failed: {:?}", err);
+    CommonWebError::from_error(err)
+  })?;
+
+  if !accepted.is_empty() {
+    bulk_set_parent_folder(
+      &accepted,
+      &parent_token,
+      &user_session.user_token,
+      &server_state.mysql_pool,
+    ).await.map_err(|err| {
+      warn!("bulk_set_parent_folder failed: {:?}", err);
+      CommonWebError::from_error(err)
+    })?;
+  }
+
+  // Note: `accepted` may include the parent itself; the SQL guard excludes
+  // it from the UPDATE. We still report it as "accepted" for client
+  // simplicity — no-op tokens are normal in idempotent bulk endpoints.
+  Ok(Json(BulkAddSubfoldersSuccessResponse {
+    success: true,
+    accepted_subfolder_tokens: accepted,
+  }))
+}

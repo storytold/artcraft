@@ -1,9 +1,12 @@
 pub mod common_responses;
 pub mod delete;
 pub mod edit;
+pub mod folder;
 pub mod get;
 pub mod helpers;
 pub mod list;
+pub mod media_files;
 pub mod search;
+pub mod subfolder;
 pub mod upload;
 pub mod upsert_upload;

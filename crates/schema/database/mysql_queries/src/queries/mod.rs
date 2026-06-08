@@ -13,6 +13,7 @@ pub mod database_time;
 pub mod email_sender_jobs;
 pub mod entity_stats;
 pub mod featured_items;
+pub mod folders;
 pub mod generic_download;
 pub mod generic_inference;
 pub mod generic_synthetic_ids;
