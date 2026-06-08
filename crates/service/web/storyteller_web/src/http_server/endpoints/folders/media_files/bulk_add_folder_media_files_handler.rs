@@ -34,7 +34,7 @@ const MAX_BULK: usize = 500;
   put,
   tag = "Folders",
   path = "/v1/folders/media_files/{folder_token}/bulk_add",
-  params(("folder_token" = String, description = "Folder token")),
+  params(("folder_token" = FolderToken, description = "Folder token")),
   request_body = BulkAddFolderMediaFilesRequest,
   responses(
     (status = 200, body = BulkAddFolderMediaFilesSuccessResponse),
@@ -65,10 +65,9 @@ pub async fn bulk_add_folder_media_files_handler(
     ));
   }
 
-  let folder_token = FolderToken::new_from_str(path.folder_token.trim());
 
   let folder = get_folder_for_owner(GetFolderForOwnerArgs {
-    folder_token: &folder_token,
+    folder_token: &path.folder_token,
     owner_user_token: &user_session.user_token,
     mysql_executor: &mut *conn,
     phantom: PhantomData,
@@ -91,7 +90,7 @@ pub async fn bulk_add_folder_media_files_handler(
 
   if !accepted.is_empty() {
     bulk_insert_folder_media_files(BulkInsertFolderMediaFilesArgs {
-      folder_token: &folder_token,
+      folder_token: &path.folder_token,
       media_file_tokens: &accepted,
       mysql_executor: &mut *conn,
       phantom: PhantomData,

@@ -39,7 +39,7 @@ pub struct ListFoldersSuccessResponse {
 
 #[derive(Deserialize, ToSchema)]
 pub struct FolderPathInfo {
-  pub folder_token: String,
+  pub folder_token: FolderToken,
 }
 
 #[derive(Serialize, ToSchema)]

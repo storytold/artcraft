@@ -9,7 +9,7 @@ use crate::folders::common::FolderInfo;
 
 #[derive(Deserialize, ToSchema)]
 pub struct SubfolderPathInfo {
-  pub folder_token: String,
+  pub folder_token: FolderToken,
 }
 
 #[derive(Deserialize, ToSchema, IntoParams)]

@@ -21,7 +21,7 @@ use crate::state::server_state::ServerState;
   put,
   tag = "Folders",
   path = "/v1/folders/folder/{folder_token}/star",
-  params(("folder_token" = String, description = "Folder token")),
+  params(("folder_token" = FolderToken, description = "Folder token")),
   request_body = SetFolderStarRequest,
   responses(
     (status = 200, body = SetFolderStarSuccessResponse),
@@ -45,10 +45,9 @@ pub async fn star_folder_handler(
     &http_request, &server_state.session_checker, &mut conn,
   ).await.map_err(|_| CommonWebError::NotAuthorized)?;
 
-  let folder_token = FolderToken::new_from_str(path.folder_token.trim());
 
   let rows_affected = update_folder_has_star(UpdateFolderHasStarArgs {
-    folder_token: &folder_token,
+    folder_token: &path.folder_token,
     owner_user_token: &user_session.user_token,
     has_star: request.has_star,
     mysql_executor: &mut *conn,

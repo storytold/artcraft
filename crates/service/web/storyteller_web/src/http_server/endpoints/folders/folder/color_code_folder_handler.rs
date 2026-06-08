@@ -23,7 +23,7 @@ const MAX_COLOR_CODE_LEN: usize = 16;
   put,
   tag = "Folders",
   path = "/v1/folders/folder/{folder_token}/color_code",
-  params(("folder_token" = String, description = "Folder token")),
+  params(("folder_token" = FolderToken, description = "Folder token")),
   request_body = SetFolderColorCodeRequest,
   responses(
     (status = 200, body = SetFolderColorCodeSuccessResponse),
@@ -63,10 +63,9 @@ pub async fn color_code_folder_handler(
     }
   }
 
-  let folder_token = FolderToken::new_from_str(path.folder_token.trim());
 
   let rows_affected = update_folder_color_code(UpdateFolderColorCodeArgs {
-    folder_token: &folder_token,
+    folder_token: &path.folder_token,
     owner_user_token: &user_session.user_token,
     maybe_color_code: trimmed.as_deref(),
     mysql_executor: &mut *conn,

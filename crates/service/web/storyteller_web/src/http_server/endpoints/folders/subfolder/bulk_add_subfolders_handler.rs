@@ -32,7 +32,7 @@ const MAX_BULK: usize = 500;
   put,
   tag = "Folders",
   path = "/v1/folders/subfolders/{folder_token}/bulk_add",
-  params(("folder_token" = String, description = "Parent folder token")),
+  params(("folder_token" = FolderToken, description = "Parent folder token")),
   request_body = BulkAddSubfoldersRequest,
   responses(
     (status = 200, body = BulkAddSubfoldersSuccessResponse),
@@ -63,10 +63,9 @@ pub async fn bulk_add_subfolders_handler(
     ));
   }
 
-  let parent_token = FolderToken::new_from_str(path.folder_token.trim());
 
   let parent = get_folder_for_owner(GetFolderForOwnerArgs {
-    folder_token: &parent_token,
+    folder_token: &path.folder_token,
     owner_user_token: &user_session.user_token,
     mysql_executor: &mut *conn,
     phantom: PhantomData,
@@ -91,7 +90,7 @@ pub async fn bulk_add_subfolders_handler(
   if !accepted.is_empty() {
     bulk_set_parent_folder(BulkSetParentFolderArgs {
       child_tokens: &accepted,
-      new_parent_token: &parent_token,
+      new_parent_token: &path.folder_token,
       owner_user_token: &user_session.user_token,
       mysql_executor: &mut *conn,
       phantom: PhantomData,

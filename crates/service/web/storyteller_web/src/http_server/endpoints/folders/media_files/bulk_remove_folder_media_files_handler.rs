@@ -29,7 +29,7 @@ const MAX_BULK: usize = 500;
   put,
   tag = "Folders",
   path = "/v1/folders/media_files/{folder_token}/bulk_remove",
-  params(("folder_token" = String, description = "Folder token")),
+  params(("folder_token" = FolderToken, description = "Folder token")),
   request_body = BulkRemoveFolderMediaFilesRequest,
   responses(
     (status = 200, body = BulkRemoveFolderMediaFilesSuccessResponse),
@@ -60,10 +60,9 @@ pub async fn bulk_remove_folder_media_files_handler(
     ));
   }
 
-  let folder_token = FolderToken::new_from_str(path.folder_token.trim());
 
   let folder = get_folder_for_owner(GetFolderForOwnerArgs {
-    folder_token: &folder_token,
+    folder_token: &path.folder_token,
     owner_user_token: &user_session.user_token,
     mysql_executor: &mut *conn,
     phantom: PhantomData,
@@ -76,7 +75,7 @@ pub async fn bulk_remove_folder_media_files_handler(
   }
 
   let removed_count = bulk_delete_folder_media_files(BulkDeleteFolderMediaFilesArgs {
-    folder_token: &folder_token,
+    folder_token: &path.folder_token,
     media_file_tokens: &request.media_file_tokens,
     mysql_executor: &mut *conn,
     phantom: PhantomData,

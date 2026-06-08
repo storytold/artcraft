@@ -25,7 +25,7 @@ const MAX_BULK: usize = 500;
   put,
   tag = "Folders",
   path = "/v1/folders/subfolders/{folder_token}/bulk_remove",
-  params(("folder_token" = String, description = "Parent folder token")),
+  params(("folder_token" = FolderToken, description = "Parent folder token")),
   request_body = BulkRemoveSubfoldersRequest,
   responses(
     (status = 200, body = BulkRemoveSubfoldersSuccessResponse),
@@ -55,14 +55,13 @@ pub async fn bulk_remove_subfolders_handler(
     ));
   }
 
-  let from_parent_token = FolderToken::new_from_str(path.folder_token.trim());
 
   // No parent existence check — the UPDATE's WHERE clause already gates
   // on owner_user_token AND current parent, so this is naturally a no-op
   // for rows we shouldn't touch.
   let removed_count = bulk_clear_parent_folder(BulkClearParentFolderArgs {
     child_tokens: &request.subfolder_tokens,
-    from_parent_token: &from_parent_token,
+    from_parent_token: &path.folder_token,
     owner_user_token: &user_session.user_token,
     mysql_executor: &mut *conn,
     phantom: PhantomData,

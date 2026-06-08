@@ -30,7 +30,7 @@ const MAX_LIMIT: u32 = 1000;
   tag = "Folders",
   path = "/v1/folders/subfolders/{folder_token}",
   params(
-    ("folder_token" = String, description = "Parent folder token"),
+    ("folder_token" = FolderToken, description = "Parent folder token"),
     ListSubfoldersQueryParams,
   ),
   responses(
@@ -56,11 +56,10 @@ pub async fn list_subfolders_handler(
     &http_request, &server_state.session_checker, &mut conn,
   ).await.map_err(|_| CommonWebError::NotAuthorized)?;
 
-  let parent_token = FolderToken::new_from_str(path.folder_token.trim());
 
   // Confirm the parent exists + is owned by the caller before listing.
   let parent = get_folder_for_owner(GetFolderForOwnerArgs {
-    folder_token: &parent_token,
+    folder_token: &path.folder_token,
     owner_user_token: &user_session.user_token,
     mysql_executor: &mut *conn,
     phantom: PhantomData,
@@ -88,7 +87,7 @@ pub async fn list_subfolders_handler(
   };
 
   let rows = list_subfolders(ListSubfoldersArgs {
-    parent_folder_token: &parent_token,
+    parent_folder_token: &path.folder_token,
     owner_user_token: &user_session.user_token,
     maybe_cursor_id,
     limit,

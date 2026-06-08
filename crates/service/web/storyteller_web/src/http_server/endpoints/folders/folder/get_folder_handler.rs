@@ -21,7 +21,7 @@ use crate::state::server_state::ServerState;
   get,
   tag = "Folders",
   path = "/v1/folders/folder/{folder_token}",
-  params(("folder_token" = String, description = "Folder token")),
+  params(("folder_token" = FolderToken, description = "Folder token")),
   responses(
     (status = 200, body = GetFolderSuccessResponse),
     (status = 401, body = CommonWebError),
@@ -43,10 +43,9 @@ pub async fn get_folder_handler(
     &http_request, &server_state.session_checker, &mut conn,
   ).await.map_err(|_| CommonWebError::NotAuthorized)?;
 
-  let folder_token = FolderToken::new_from_str(path.folder_token.trim());
 
   let row = get_folder_for_owner(GetFolderForOwnerArgs {
-    folder_token: &folder_token,
+    folder_token: &path.folder_token,
     owner_user_token: &user_session.user_token,
     mysql_executor: &mut *conn,
     phantom: PhantomData,

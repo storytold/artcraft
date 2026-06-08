@@ -30,7 +30,7 @@ const MAX_LIMIT: u32 = 1000;
   tag = "Folders",
   path = "/v1/folders/media_files/{folder_token}",
   params(
-    ("folder_token" = String, description = "Folder token"),
+    ("folder_token" = FolderToken, description = "Folder token"),
     ListFolderMediaFilesQueryParams,
   ),
   responses(
@@ -56,10 +56,9 @@ pub async fn list_folder_media_files_handler(
     &http_request, &server_state.session_checker, &mut conn,
   ).await.map_err(|_| CommonWebError::NotAuthorized)?;
 
-  let folder_token = FolderToken::new_from_str(path.folder_token.trim());
 
   let folder = get_folder_for_owner(GetFolderForOwnerArgs {
-    folder_token: &folder_token,
+    folder_token: &path.folder_token,
     owner_user_token: &user_session.user_token,
     mysql_executor: &mut *conn,
     phantom: PhantomData,
@@ -87,7 +86,7 @@ pub async fn list_folder_media_files_handler(
   };
 
   let rows = list_folder_media_files(ListFolderMediaFilesArgs {
-    folder_token: &folder_token,
+    folder_token: &path.folder_token,
     maybe_cursor_id,
     limit,
     mysql_executor: &mut *conn,

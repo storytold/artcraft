@@ -23,7 +23,7 @@ const MAX_NAME_LEN: usize = 255;
   put,
   tag = "Folders",
   path = "/v1/folders/folder/{folder_token}/rename",
-  params(("folder_token" = String, description = "Folder token")),
+  params(("folder_token" = FolderToken, description = "Folder token")),
   request_body = RenameFolderRequest,
   responses(
     (status = 200, body = RenameFolderSuccessResponse),
@@ -58,10 +58,9 @@ pub async fn rename_folder_handler(
     ));
   }
 
-  let folder_token = FolderToken::new_from_str(path.folder_token.trim());
 
   let rows_affected = update_folder_name(UpdateFolderNameArgs {
-    folder_token: &folder_token,
+    folder_token: &path.folder_token,
     owner_user_token: &user_session.user_token,
     new_name: &new_name,
     mysql_executor: &mut *conn,

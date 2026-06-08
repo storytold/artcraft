@@ -1,6 +1,7 @@
 use serde_derive::{Deserialize, Serialize};
 use utoipa::{IntoParams, ToSchema};
 
+use tokens::tokens::folders::FolderToken;
 use tokens::tokens::media_files::MediaFileToken;
 
 use crate::folders::common::FolderMediaFileInfo;
@@ -9,7 +10,7 @@ use crate::folders::common::FolderMediaFileInfo;
 
 #[derive(Deserialize, ToSchema)]
 pub struct FolderMediaFilesPathInfo {
-  pub folder_token: String,
+  pub folder_token: FolderToken,
 }
 
 #[derive(Deserialize, ToSchema, IntoParams)]
