@@ -1,0 +1,42 @@
+[workspace]
+# Standalone workspace during the MVP spike — keeps us out of the root
+# workspace's Cargo.toml until the final commit so other agents on `main`
+# don't collide with this work. Will be merged into the parent workspace
+# as the last step (see docs/mcp-integration-plan.md, Phase 6).
+
+[package]
+name = "artcraft-mcp"
+version = "0.0.1"
+edition = "2021"
+publish = false
+
+[[bin]]
+name = "artcraft-mcp"
+path = "src/main.rs"
+
+[dependencies]
+# MCP SDK
+rmcp = { version = "1.7.0", features = ["server", "macros", "transport-io", "schemars"] }
+schemars = "1.0"
+
+# Async + logging
+tokio = { version = "1.50.0", features = ["macros", "rt-multi-thread", "io-std", "time"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt"] }
+
+# Serde + errors
+serde = { version = "1.0.228", features = ["derive"] }
+serde_json = "1.0.149"
+anyhow = "1.0.102"
+
+# Home directory resolution (matches desktop crate)
+directories = "6.0.0"
+
+# Internal crates — path deps into the parent workspace.
+# Cargo resolves their own `.workspace = true` deps against the root
+# workspace at storyteller-rust/Cargo.toml (Cargo walks up from each
+# path-dep target), so we don't have to mirror those.
+artcraft_client = { path = "../../api_clients/artcraft/artcraft_client" }
+artcraft_api_defs = { path = "../../api_clients/artcraft/artcraft_api_defs" }
+enums = { path = "../../schema/public/enums" }
+tokens = { path = "../../schema/public/tokens" }
