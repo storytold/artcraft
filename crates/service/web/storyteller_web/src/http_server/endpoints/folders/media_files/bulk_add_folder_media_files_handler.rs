@@ -32,7 +32,7 @@ const MAX_BULK: usize = 500;
 /// tokens.
 #[utoipa::path(
   put,
-  tag = "Folders",
+  tag = "Folders (Media File Management)",
   path = "/v1/folders/media_files/{folder_token}/bulk_add",
   params(("folder_token" = FolderToken, description = "Folder token")),
   request_body = BulkAddFolderMediaFilesRequest,

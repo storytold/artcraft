@@ -27,7 +27,7 @@ const MAX_LIMIT: u32 = 1000;
 
 #[utoipa::path(
   get,
-  tag = "Folders",
+  tag = "Folders (Media File Management)",
   path = "/v1/folders/media_files/{folder_token}",
   params(
     ("folder_token" = FolderToken, description = "Folder token"),

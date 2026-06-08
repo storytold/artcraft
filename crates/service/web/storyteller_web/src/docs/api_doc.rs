@@ -97,6 +97,7 @@ use crate::http_server::endpoints::moderation::user_emails::moderator_list_email
 
 // Folder endpoints
 use crate::http_server::endpoints::folders::folder::color_code_folder_handler::*;
+use crate::http_server::endpoints::folders::folder::cover_image_folder_handler::*;
 use crate::http_server::endpoints::folders::folder::create_folder_handler::*;
 use crate::http_server::endpoints::folders::folder::delete_folder_handler::*;
 use crate::http_server::endpoints::folders::folder::get_folder_handler::*;
@@ -564,6 +565,7 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     crate::http_server::endpoints::folders::folder::rename_folder_handler::rename_folder_handler,
     crate::http_server::endpoints::folders::folder::star_folder_handler::star_folder_handler,
     crate::http_server::endpoints::folders::folder::color_code_folder_handler::color_code_folder_handler,
+    crate::http_server::endpoints::folders::folder::cover_image_folder_handler::cover_image_folder_handler,
     crate::http_server::endpoints::folders::folder::delete_folder_handler::delete_folder_handler,
     crate::http_server::endpoints::folders::subfolder::list_subfolders_handler::list_subfolders_handler,
     crate::http_server::endpoints::folders::subfolder::bulk_add_subfolders_handler::bulk_add_subfolders_handler,
@@ -1257,6 +1259,8 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     SetFolderStarSuccessResponse,
     SetFolderColorCodeRequest,
     SetFolderColorCodeSuccessResponse,
+    SetFolderCoverImageRequest,
+    SetFolderCoverImageSuccessResponse,
     DeleteFolderSuccessResponse,
     ListSubfoldersQueryParams,
     ListSubfoldersSuccessResponse,

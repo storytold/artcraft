@@ -4,6 +4,7 @@ use actix_web::dev::{ServiceRequest, ServiceResponse};
 use actix_web::{web, App, Error, HttpResponse};
 
 use crate::http_server::endpoints::folders::folder::color_code_folder_handler::color_code_folder_handler;
+use crate::http_server::endpoints::folders::folder::cover_image_folder_handler::cover_image_folder_handler;
 use crate::http_server::endpoints::folders::folder::create_folder_handler::create_folder_handler;
 use crate::http_server::endpoints::folders::folder::delete_folder_handler::delete_folder_handler;
 use crate::http_server::endpoints::folders::folder::get_folder_handler::get_folder_handler;
@@ -62,6 +63,11 @@ where
           .service(
             web::resource("/{folder_token}/color_code")
               .route(web::put().to(color_code_folder_handler))
+              .route(web::head().to(|| HttpResponse::Ok())),
+          )
+          .service(
+            web::resource("/{folder_token}/cover_image")
+              .route(web::put().to(cover_image_folder_handler))
               .route(web::head().to(|| HttpResponse::Ok())),
           ),
       )

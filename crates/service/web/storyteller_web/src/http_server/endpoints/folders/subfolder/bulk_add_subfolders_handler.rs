@@ -30,7 +30,7 @@ const MAX_BULK: usize = 500;
 /// accepted; the response lists the tokens that "stick".
 #[utoipa::path(
   put,
-  tag = "Folders",
+  tag = "Folders (Subfolder Management)",
   path = "/v1/folders/subfolders/{folder_token}/bulk_add",
   params(("folder_token" = FolderToken, description = "Parent folder token")),
   request_body = BulkAddSubfoldersRequest,

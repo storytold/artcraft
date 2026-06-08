@@ -1,4 +1,5 @@
 pub mod color_code_folder_handler;
+pub mod cover_image_folder_handler;
 pub mod create_folder_handler;
 pub mod delete_folder_handler;
 pub mod folder_info_conversion;

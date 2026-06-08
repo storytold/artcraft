@@ -27,7 +27,7 @@ const MAX_LIMIT: u32 = 1000;
 
 #[utoipa::path(
   get,
-  tag = "Folders",
+  tag = "Folders (Subfolder Management)",
   path = "/v1/folders/subfolders/{folder_token}",
   params(
     ("folder_token" = FolderToken, description = "Parent folder token"),

@@ -27,7 +27,7 @@ const MAX_BULK: usize = 500;
 /// rows; idempotent (rows that don't exist are silently skipped).
 #[utoipa::path(
   put,
-  tag = "Folders",
+  tag = "Folders (Media File Management)",
   path = "/v1/folders/media_files/{folder_token}/bulk_remove",
   params(("folder_token" = FolderToken, description = "Folder token")),
   request_body = BulkRemoveFolderMediaFilesRequest,
