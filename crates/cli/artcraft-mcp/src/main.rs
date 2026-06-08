@@ -42,6 +42,19 @@ struct GeneratedImage {
 struct GenerateImageArgs {
   /// Text prompt describing the image to generate.
   prompt: String,
+
+  /// Optional model id (snake_case). Defaults to `nano_banana_pro` if
+  /// omitted. Valid values:
+  /// `nano_banana_pro` (recommended general purpose),
+  /// `nano_banana_2`, `nano_banana`,
+  /// `flux_pro_1p1_ultra`, `flux_pro_1p1`, `flux_1_dev`, `flux_1_schnell`,
+  /// `gpt_image_2`, `gpt_image_1p5`, `gpt_image_1`,
+  /// `midjourney_8`, `midjourney_7`, `midjourney_7_niji`,
+  /// `seedream_5_lite`, `seedream_4p5`, `seedream_4`,
+  /// `grok_imagine_image_q`, `grok_imagine_image`,
+  /// `qwen_edit_2511_angles`, `flux_2_lora_angles`.
+  #[serde(default)]
+  model: Option<String>,
 }
 
 #[derive(Clone)]
@@ -58,13 +71,13 @@ impl ArtcraftServer {
   }
 
   #[tool(
-    description = "Generate an image with Artcraft from a text prompt. Blocks up to 90 seconds for completion. Returns the generated image inline plus its CDN URL."
+    description = "Generate an image with Artcraft from a text prompt. Optionally pick a model — see the model parameter description for valid ids. Blocks up to 90 seconds for completion. Returns the generated image inline plus its CDN URL."
   )]
   async fn generate_image(
     &self,
-    Parameters(GenerateImageArgs { prompt }): Parameters<GenerateImageArgs>,
+    Parameters(GenerateImageArgs { prompt, model }): Parameters<GenerateImageArgs>,
   ) -> Result<CallToolResult, McpError> {
-    match run_generate_image(&prompt).await {
+    match run_generate_image(&prompt, model.as_deref()).await {
       Ok(image) => {
         let inline_url = image
           .maybe_thumbnail_template
@@ -105,24 +118,25 @@ impl ServerHandler for ArtcraftServer {
   }
 }
 
-async fn run_generate_image(prompt: &str) -> Result<GeneratedImage> {
+async fn run_generate_image(prompt: &str, requested_model: Option<&str>) -> Result<GeneratedImage> {
   let trimmed = prompt.trim();
   if trimmed.is_empty() {
     return Err(anyhow!("prompt is empty"));
   }
 
+  let model = resolve_model(requested_model)?;
+
   let api_host = ApiHost::Storyteller;
   let creds = load_storyteller_credentials()?;
   if creds.is_empty() {
     return Err(anyhow!(
-      "No Storyteller credentials found at ~/Artcraft/credentials/. \
-       Sign in to the Artcraft desktop app first."
+      "No Storyteller credentials found. Sign in to the Artcraft desktop app first."
     ));
   }
 
   let request = OmniGenImageCostAndGenerateRequest {
     idempotency_token: Some(uuid::Uuid::new_v4().hyphenated().to_string()),
-    model: Some(DEFAULT_MODEL),
+    model: Some(model),
     prompt: Some(trimmed.to_string()),
     image_media_tokens: None,
     resolution: None,
@@ -134,7 +148,7 @@ async fn run_generate_image(prompt: &str) -> Result<GeneratedImage> {
     adjust_zoom: None,
   };
 
-  tracing::info!("submitting omni_gen image request, model={:?}", DEFAULT_MODEL);
+  tracing::info!("submitting omni_gen image request, model={:?}", model);
 
   let submit = omni_gen_image_generate(&api_host, Some(&creds), request)
     .await
@@ -318,6 +332,14 @@ fn read_trimmed(path: &PathBuf) -> Result<Option<String>> {
     Ok(None)
   } else {
     Ok(Some(trimmed.to_string()))
+  }
+}
+
+fn resolve_model(requested: Option<&str>) -> Result<CommonImageModel> {
+  match requested.map(str::trim).filter(|s| !s.is_empty()) {
+    None => Ok(DEFAULT_MODEL),
+    Some(s) => serde_json::from_value::<CommonImageModel>(serde_json::Value::String(s.to_string()))
+      .map_err(|_| anyhow!("unknown model: {}. See the model parameter description for valid ids.", s)),
   }
 }
 
