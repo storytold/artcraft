@@ -22,7 +22,7 @@ const MAX_BULK: usize = 500;
 /// Bulk-unparent folders from the URL `folder_token`. Idempotent: rows
 /// that aren't currently parented to this folder are silently skipped.
 #[utoipa::path(
-  put,
+  post,
   tag = "Folders (Subfolder Management)",
   path = "/v1/folders/subfolders/{folder_token}/bulk_remove",
   params(("folder_token" = FolderToken, description = "Parent folder token")),

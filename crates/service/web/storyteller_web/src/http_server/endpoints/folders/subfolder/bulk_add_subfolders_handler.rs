@@ -34,7 +34,7 @@ const MAX_BULK: usize = 500;
 /// that don't exist or are already parented to this folder are silently
 /// accepted; the response lists the tokens that "stick".
 #[utoipa::path(
-  put,
+  post,
   tag = "Folders (Subfolder Management)",
   path = "/v1/folders/subfolders/{folder_token}/bulk_add",
   params(("folder_token" = FolderToken, description = "Parent folder token")),

@@ -26,7 +26,7 @@ const MAX_BULK: usize = 500;
 /// Bulk-remove media files from a folder. Hard-deletes the membership
 /// rows; idempotent (rows that don't exist are silently skipped).
 #[utoipa::path(
-  put,
+  post,
   tag = "Folders (Media File Management)",
   path = "/v1/folders/media_files/{folder_token}/bulk_remove",
   params(("folder_token" = FolderToken, description = "Folder token")),

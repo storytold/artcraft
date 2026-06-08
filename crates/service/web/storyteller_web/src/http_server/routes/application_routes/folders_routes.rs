@@ -81,12 +81,12 @@ where
           )
           .service(
             web::resource("/{folder_token}/bulk_add")
-              .route(web::put().to(bulk_add_subfolders_handler))
+              .route(web::post().to(bulk_add_subfolders_handler))
               .route(web::head().to(|| HttpResponse::Ok())),
           )
           .service(
             web::resource("/{folder_token}/bulk_remove")
-              .route(web::put().to(bulk_remove_subfolders_handler))
+              .route(web::post().to(bulk_remove_subfolders_handler))
               .route(web::head().to(|| HttpResponse::Ok())),
           ),
       )
@@ -100,12 +100,12 @@ where
           )
           .service(
             web::resource("/{folder_token}/bulk_add")
-              .route(web::put().to(bulk_add_folder_media_files_handler))
+              .route(web::post().to(bulk_add_folder_media_files_handler))
               .route(web::head().to(|| HttpResponse::Ok())),
           )
           .service(
             web::resource("/{folder_token}/bulk_remove")
-              .route(web::put().to(bulk_remove_folder_media_files_handler))
+              .route(web::post().to(bulk_remove_folder_media_files_handler))
               .route(web::head().to(|| HttpResponse::Ok())),
           ),
       ),

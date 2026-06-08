@@ -31,7 +31,7 @@ const MAX_BULK: usize = 500;
 /// soft-deleted are silently skipped; the response lists the accepted
 /// tokens.
 #[utoipa::path(
-  put,
+  post,
   tag = "Folders (Media File Management)",
   path = "/v1/folders/media_files/{folder_token}/bulk_add",
   params(("folder_token" = FolderToken, description = "Folder token")),
