@@ -60,7 +60,6 @@ pub async fn bulk_remove_folder_media_files_handler(
     ));
   }
 
-
   let folder = get_folder_for_owner(GetFolderForOwnerArgs {
     folder_token: &path.folder_token,
     owner_user_token: &user_session.user_token,
@@ -70,6 +69,7 @@ pub async fn bulk_remove_folder_media_files_handler(
     warn!("Folder lookup failed: {:?}", err);
     CommonWebError::from_error(err)
   })?;
+  
   if folder.is_none() {
     return Err(CommonWebError::NotFound);
   }

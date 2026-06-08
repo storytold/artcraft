@@ -55,7 +55,6 @@ pub async fn bulk_remove_subfolders_handler(
     ));
   }
 
-
   // No parent existence check — the UPDATE's WHERE clause already gates
   // on owner_user_token AND current parent, so this is naturally a no-op
   // for rows we shouldn't touch.

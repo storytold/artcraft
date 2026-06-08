@@ -49,9 +49,11 @@ pub async fn rename_folder_handler(
   ).await.map_err(|_| CommonWebError::NotAuthorized)?;
 
   let new_name = request.new_name.trim().to_string();
+
   if new_name.is_empty() {
     return Err(CommonWebError::BadInputWithSimpleMessage("name is empty".to_string()));
   }
+
   if new_name.len() > MAX_NAME_LEN {
     return Err(CommonWebError::BadInputWithSimpleMessage(
       format!("name too long (max {} chars)", MAX_NAME_LEN),
