@@ -12,7 +12,7 @@ use mysql_queries::queries::folders::folder::list_folders_for_user::{
 };
 
 use crate::http_server::common_responses::common_web_error::CommonWebError;
-use crate::http_server::endpoints::media_files::folder::folder_info_conversion::folder_row_to_info;
+use crate::http_server::endpoints::folders::folder::folder_info_conversion::folder_row_to_info;
 use crate::http_server::web_utils::user_session::require_user_session_using_connection::require_user_session_using_connection;
 use crate::state::server_state::ServerState;
 

@@ -22,7 +22,7 @@ pub struct CreateFolderSuccessResponse {
 
 // ── GET /v1/folders/list_all ──
 
-#[derive(Deserialize, IntoParams)]
+#[derive(Deserialize, ToSchema, IntoParams)]
 pub struct ListFoldersQueryParams {
   pub cursor: Option<String>,
   pub limit: Option<u32>,

@@ -12,7 +12,7 @@ pub struct FolderMediaFilesPathInfo {
   pub folder_token: String,
 }
 
-#[derive(Deserialize, IntoParams)]
+#[derive(Deserialize, ToSchema, IntoParams)]
 pub struct ListFolderMediaFilesQueryParams {
   pub cursor: Option<String>,
   pub limit: Option<u32>,

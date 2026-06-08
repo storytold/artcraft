@@ -31,7 +31,7 @@ pub struct ModeratorListUserEmailChangesForUserPathInfo {
   pub username: String,
 }
 
-#[derive(Deserialize, IntoParams)]
+#[derive(Deserialize, ToSchema, IntoParams)]
 pub struct ModeratorListUserEmailChangesQueryParams {
   /// Opaque cursor from a previous page's `maybe_cursor`. Omit for the
   /// first page.
