@@ -28,6 +28,15 @@ use tokens::tokens::generic_inference_jobs::InferenceJobToken;
 const POLL_INTERVAL: Duration = Duration::from_secs(3);
 const POLL_TIMEOUT: Duration = Duration::from_secs(90);
 const DEFAULT_MODEL: CommonImageModel = CommonImageModel::NanoBananaPro;
+/// Width for the inline preview thumbnail. Claude Desktop caps tool results
+/// at ~1 MB, and base64 adds ~33% overhead, so we target raw bytes under
+/// ~700 KB. 768 px is a safe ceiling for typical PNG output.
+const INLINE_THUMBNAIL_WIDTH: u32 = 768;
+
+struct GeneratedImage {
+  cdn_url: String,
+  maybe_thumbnail_template: Option<String>,
+}
 
 #[derive(Debug, Deserialize, schemars::JsonSchema)]
 struct GenerateImageArgs {
@@ -56,16 +65,24 @@ impl ArtcraftServer {
     Parameters(GenerateImageArgs { prompt }): Parameters<GenerateImageArgs>,
   ) -> Result<CallToolResult, McpError> {
     match run_generate_image(&prompt).await {
-      Ok(url) => match fetch_image_for_inline(&url).await {
-        Ok((data_b64, mime)) => Ok(CallToolResult::success(vec![
-          Content::image(data_b64, mime),
-          Content::text(url),
-        ])),
-        Err(err) => {
-          tracing::warn!("inline image fetch failed, returning URL only: {:#}", err);
-          Ok(CallToolResult::success(vec![Content::text(url)]))
+      Ok(image) => {
+        let inline_url = image
+          .maybe_thumbnail_template
+          .as_ref()
+          .map(|t| t.replace("{WIDTH}", &INLINE_THUMBNAIL_WIDTH.to_string()))
+          .unwrap_or_else(|| image.cdn_url.clone());
+
+        match fetch_image_for_inline(&inline_url).await {
+          Ok((data_b64, mime)) => Ok(CallToolResult::success(vec![
+            Content::image(data_b64, mime),
+            Content::text(image.cdn_url),
+          ])),
+          Err(err) => {
+            tracing::warn!("inline image fetch failed, returning URL only: {:#}", err);
+            Ok(CallToolResult::success(vec![Content::text(image.cdn_url)]))
+          }
         }
-      },
+      }
       Err(err) => Ok(CallToolResult::error(vec![Content::text(format!(
         "{:#}",
         err
@@ -88,7 +105,7 @@ impl ServerHandler for ArtcraftServer {
   }
 }
 
-async fn run_generate_image(prompt: &str) -> Result<String> {
+async fn run_generate_image(prompt: &str) -> Result<GeneratedImage> {
   let trimmed = prompt.trim();
   if trimmed.is_empty() {
     return Err(anyhow!("prompt is empty"));
@@ -136,7 +153,7 @@ async fn poll_for_image_url(
   api_host: &ApiHost,
   creds: &StorytellerCredentialSet,
   target: &InferenceJobToken,
-) -> Result<String> {
+) -> Result<GeneratedImage> {
   let deadline = Instant::now() + POLL_TIMEOUT;
 
   let mut include_states = HashSet::new();
@@ -168,7 +185,10 @@ async fn poll_for_image_url(
             .maybe_result
             .as_ref()
             .ok_or_else(|| anyhow!("job marked complete but result missing"))?;
-          return Ok(result.media_links.cdn_url.to_string());
+          return Ok(GeneratedImage {
+            cdn_url: result.media_links.cdn_url.to_string(),
+            maybe_thumbnail_template: result.media_links.maybe_thumbnail_template.clone(),
+          });
         }
         JobStatusPlus::CompleteFailure | JobStatusPlus::Dead => {
           let msg = job
