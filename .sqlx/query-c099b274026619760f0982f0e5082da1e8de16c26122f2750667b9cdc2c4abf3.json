@@ -1,0 +1,12 @@
+{
+  "db_name": "MySQL",
+  "query": "\nINSERT INTO folders\nSET\n  token = ?,\n  name = ?,\n  owner_user_token = ?,\n  maybe_parent_folder_token = ?,\n  maybe_color_code = ?\n    ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 5
+    },
+    "nullable": []
+  },
+  "hash": "c099b274026619760f0982f0e5082da1e8de16c26122f2750667b9cdc2c4abf3"
+}
