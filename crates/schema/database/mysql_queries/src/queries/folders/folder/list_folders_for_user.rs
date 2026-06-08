@@ -1,4 +1,6 @@
-use sqlx::MySqlPool;
+use std::marker::PhantomData;
+
+use sqlx::{Executor, MySql};
 
 use tokens::tokens::folders::FolderToken;
 use tokens::tokens::media_files::MediaFileToken;
@@ -6,22 +8,33 @@ use tokens::tokens::users::UserToken;
 
 use crate::queries::folders::folder::folder_row::FolderRow;
 
-pub struct ListFoldersForUserArgs<'a> {
-  pub owner_user_token: &'a UserToken,
+pub struct ListFoldersForUserArgs<'e, 'c, E>
+where
+  E: 'e + Executor<'c, Database = MySql>,
+{
+  pub owner_user_token: &'e UserToken,
   pub maybe_cursor_id: Option<u64>,
   pub limit: u32,
-  pub pool: &'a MySqlPool,
+  pub mysql_executor: E,
+  pub phantom: PhantomData<&'c E>,
 }
 
 /// List all live folders owned by a user, newest first. Includes the
 /// derived `is_orphaned` flag computed by joining the table against itself
 /// on `maybe_parent_folder_token` — orphaned means the parent row is
 /// missing or soft-deleted.
-pub async fn list_folders_for_user(
-  args: ListFoldersForUserArgs<'_>,
-) -> Result<Vec<FolderRow>, sqlx::Error> {
+pub async fn list_folders_for_user<'e, 'c: 'e, E>(
+  args: ListFoldersForUserArgs<'e, 'c, E>,
+) -> Result<Vec<FolderRow>, sqlx::Error>
+where
+  E: 'e + Executor<'c, Database = MySql>,
+{
   let limit = args.limit as i64;
 
+  // Two query branches because sqlx::query! can't accept a conditional
+  // WHERE clause at the macro level. `args.mysql_executor` is moved into
+  // exactly one arm at runtime — Rust permits this since the arms are
+  // mutually exclusive.
   let rows = match args.maybe_cursor_id {
     Some(cursor_id) => {
       sqlx::query!(
@@ -58,7 +71,7 @@ LIMIT ?
         cursor_id,
         limit,
       )
-        .fetch_all(args.pool)
+        .fetch_all(args.mysql_executor)
         .await?
         .into_iter()
         .map(|r| FolderRow {
@@ -113,7 +126,7 @@ LIMIT ?
         args.owner_user_token.as_str(),
         limit,
       )
-        .fetch_all(args.pool)
+        .fetch_all(args.mysql_executor)
         .await?
         .into_iter()
         .map(|r| FolderRow {

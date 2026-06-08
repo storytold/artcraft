@@ -1,3 +1,4 @@
+use std::marker::PhantomData;
 use std::sync::Arc;
 
 use actix_web::web::{Json, Path};
@@ -7,7 +8,9 @@ use log::warn;
 use artcraft_api_defs::folders::folder::{
   FolderPathInfo, SetFolderColorCodeRequest, SetFolderColorCodeSuccessResponse,
 };
-use mysql_queries::queries::folders::folder::update_folder_color_code::update_folder_color_code;
+use mysql_queries::queries::folders::folder::update_folder_color_code::{
+  update_folder_color_code, UpdateFolderColorCodeArgs,
+};
 use tokens::tokens::folders::FolderToken;
 
 use crate::http_server::common_responses::common_web_error::CommonWebError;
@@ -62,12 +65,13 @@ pub async fn color_code_folder_handler(
 
   let folder_token = FolderToken::new_from_str(path.folder_token.trim());
 
-  let rows_affected = update_folder_color_code(
-    &folder_token,
-    &user_session.user_token,
-    trimmed.as_deref(),
-    &server_state.mysql_pool,
-  ).await.map_err(|err| {
+  let rows_affected = update_folder_color_code(UpdateFolderColorCodeArgs {
+    folder_token: &folder_token,
+    owner_user_token: &user_session.user_token,
+    maybe_color_code: trimmed.as_deref(),
+    mysql_executor: &mut *conn,
+    phantom: PhantomData,
+  }).await.map_err(|err| {
     warn!("update_folder_color_code failed: {:?}", err);
     CommonWebError::from_error(err)
   })?;

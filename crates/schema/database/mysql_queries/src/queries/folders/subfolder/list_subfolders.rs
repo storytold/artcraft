@@ -1,4 +1,6 @@
-use sqlx::MySqlPool;
+use std::marker::PhantomData;
+
+use sqlx::{Executor, MySql};
 
 use tokens::tokens::folders::FolderToken;
 use tokens::tokens::media_files::MediaFileToken;
@@ -6,25 +8,28 @@ use tokens::tokens::users::UserToken;
 
 use crate::queries::folders::folder::folder_row::FolderRow;
 
-pub struct ListSubfoldersArgs<'a> {
-  pub parent_folder_token: &'a FolderToken,
-  pub owner_user_token: &'a UserToken,
+pub struct ListSubfoldersArgs<'e, 'c, E>
+where
+  E: 'e + Executor<'c, Database = MySql>,
+{
+  pub parent_folder_token: &'e FolderToken,
+  pub owner_user_token: &'e UserToken,
   pub maybe_cursor_id: Option<u64>,
   pub limit: u32,
-  pub pool: &'a MySqlPool,
+  pub mysql_executor: E,
+  pub phantom: PhantomData<&'c E>,
 }
 
 /// Paginated list of live folders whose `maybe_parent_folder_token` is
 /// the given parent. Scoped to the owner to avoid leaking siblings of
-/// folders owned by another user.
-///
-/// The `is_orphaned` flag will be `false` for all results: by definition,
-/// the parent matched here so it exists. (A leftover, soft-deleted parent
-/// is still treated as "parent exists" — that case is rare and not the
-/// caller's concern for this endpoint.)
-pub async fn list_subfolders(
-  args: ListSubfoldersArgs<'_>,
-) -> Result<Vec<FolderRow>, sqlx::Error> {
+/// folders owned by another user. `is_orphaned` is always `false` here:
+/// by definition, the parent matched so it exists.
+pub async fn list_subfolders<'e, 'c: 'e, E>(
+  args: ListSubfoldersArgs<'e, 'c, E>,
+) -> Result<Vec<FolderRow>, sqlx::Error>
+where
+  E: 'e + Executor<'c, Database = MySql>,
+{
   let limit = args.limit as i64;
 
   let rows = match args.maybe_cursor_id {
@@ -59,7 +64,7 @@ LIMIT ?
         cursor_id,
         limit,
       )
-        .fetch_all(args.pool)
+        .fetch_all(args.mysql_executor)
         .await?
         .into_iter()
         .map(|r| FolderRow {
@@ -110,7 +115,7 @@ LIMIT ?
         args.owner_user_token.as_str(),
         limit,
       )
-        .fetch_all(args.pool)
+        .fetch_all(args.mysql_executor)
         .await?
         .into_iter()
         .map(|r| FolderRow {

@@ -1,3 +1,4 @@
+use std::marker::PhantomData;
 use std::sync::Arc;
 
 use actix_web::web::{Json, Path};
@@ -5,7 +6,9 @@ use actix_web::{web, HttpRequest};
 use log::warn;
 
 use artcraft_api_defs::folders::folder::{DeleteFolderSuccessResponse, FolderPathInfo};
-use mysql_queries::queries::folders::folder::soft_delete_folder::soft_delete_folder;
+use mysql_queries::queries::folders::folder::soft_delete_folder::{
+  soft_delete_folder, SoftDeleteFolderArgs,
+};
 use tokens::tokens::folders::FolderToken;
 
 use crate::http_server::common_responses::common_web_error::CommonWebError;
@@ -42,11 +45,12 @@ pub async fn delete_folder_handler(
 
   let folder_token = FolderToken::new_from_str(path.folder_token.trim());
 
-  let rows_affected = soft_delete_folder(
-    &folder_token,
-    &user_session.user_token,
-    &server_state.mysql_pool,
-  ).await.map_err(|err| {
+  let rows_affected = soft_delete_folder(SoftDeleteFolderArgs {
+    folder_token: &folder_token,
+    owner_user_token: &user_session.user_token,
+    mysql_executor: &mut *conn,
+    phantom: PhantomData,
+  }).await.map_err(|err| {
     warn!("soft_delete_folder failed: {:?}", err);
     CommonWebError::from_error(err)
   })?;

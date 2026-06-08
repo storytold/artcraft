@@ -1,3 +1,4 @@
+use std::marker::PhantomData;
 use std::sync::Arc;
 
 use actix_web::web::{Json, Path};
@@ -7,7 +8,9 @@ use log::warn;
 use artcraft_api_defs::folders::folder::{
   FolderPathInfo, SetFolderStarRequest, SetFolderStarSuccessResponse,
 };
-use mysql_queries::queries::folders::folder::update_folder_has_star::update_folder_has_star;
+use mysql_queries::queries::folders::folder::update_folder_has_star::{
+  update_folder_has_star, UpdateFolderHasStarArgs,
+};
 use tokens::tokens::folders::FolderToken;
 
 use crate::http_server::common_responses::common_web_error::CommonWebError;
@@ -44,12 +47,13 @@ pub async fn star_folder_handler(
 
   let folder_token = FolderToken::new_from_str(path.folder_token.trim());
 
-  let rows_affected = update_folder_has_star(
-    &folder_token,
-    &user_session.user_token,
-    request.has_star,
-    &server_state.mysql_pool,
-  ).await.map_err(|err| {
+  let rows_affected = update_folder_has_star(UpdateFolderHasStarArgs {
+    folder_token: &folder_token,
+    owner_user_token: &user_session.user_token,
+    has_star: request.has_star,
+    mysql_executor: &mut *conn,
+    phantom: PhantomData,
+  }).await.map_err(|err| {
     warn!("update_folder_has_star failed: {:?}", err);
     CommonWebError::from_error(err)
   })?;

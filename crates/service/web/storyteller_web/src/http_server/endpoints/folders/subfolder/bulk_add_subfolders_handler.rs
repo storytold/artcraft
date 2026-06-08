@@ -1,3 +1,4 @@
+use std::marker::PhantomData;
 use std::sync::Arc;
 
 use actix_web::web::{Json, Path};
@@ -7,9 +8,15 @@ use log::warn;
 use artcraft_api_defs::folders::subfolder::{
   BulkAddSubfoldersRequest, BulkAddSubfoldersSuccessResponse, SubfolderPathInfo,
 };
-use mysql_queries::queries::folders::folder::get_folder_for_owner::get_folder_for_owner;
-use mysql_queries::queries::folders::subfolder::bulk_set_parent_folder::bulk_set_parent_folder;
-use mysql_queries::queries::folders::subfolder::filter_existing_owned_folder_tokens::filter_existing_owned_folder_tokens;
+use mysql_queries::queries::folders::folder::get_folder_for_owner::{
+  get_folder_for_owner, GetFolderForOwnerArgs,
+};
+use mysql_queries::queries::folders::subfolder::bulk_set_parent_folder::{
+  bulk_set_parent_folder, BulkSetParentFolderArgs,
+};
+use mysql_queries::queries::folders::subfolder::filter_existing_owned_folder_tokens::{
+  filter_existing_owned_folder_tokens, FilterExistingOwnedFolderTokensArgs,
+};
 use tokens::tokens::folders::FolderToken;
 
 use crate::http_server::common_responses::common_web_error::CommonWebError;
@@ -58,34 +65,37 @@ pub async fn bulk_add_subfolders_handler(
 
   let parent_token = FolderToken::new_from_str(path.folder_token.trim());
 
-  // Confirm the parent exists + is owned.
-  let parent = get_folder_for_owner(&parent_token, &user_session.user_token, &server_state.mysql_pool)
-    .await
-    .map_err(|err| {
-      warn!("Parent folder lookup failed: {:?}", err);
-      CommonWebError::from_error(err)
-    })?;
+  let parent = get_folder_for_owner(GetFolderForOwnerArgs {
+    folder_token: &parent_token,
+    owner_user_token: &user_session.user_token,
+    mysql_executor: &mut *conn,
+    phantom: PhantomData,
+  }).await.map_err(|err| {
+    warn!("Parent folder lookup failed: {:?}", err);
+    CommonWebError::from_error(err)
+  })?;
   if parent.is_none() {
     return Err(CommonWebError::NotFound);
   }
 
-  // Filter input to tokens that actually exist, are owned, and aren't deleted.
-  let accepted = filter_existing_owned_folder_tokens(
-    &request.subfolder_tokens,
-    &user_session.user_token,
-    &server_state.mysql_pool,
-  ).await.map_err(|err| {
+  let accepted = filter_existing_owned_folder_tokens(FilterExistingOwnedFolderTokensArgs {
+    candidate_tokens: &request.subfolder_tokens,
+    owner_user_token: &user_session.user_token,
+    mysql_executor: &mut *conn,
+    phantom: PhantomData,
+  }).await.map_err(|err| {
     warn!("filter_existing_owned_folder_tokens failed: {:?}", err);
     CommonWebError::from_error(err)
   })?;
 
   if !accepted.is_empty() {
-    bulk_set_parent_folder(
-      &accepted,
-      &parent_token,
-      &user_session.user_token,
-      &server_state.mysql_pool,
-    ).await.map_err(|err| {
+    bulk_set_parent_folder(BulkSetParentFolderArgs {
+      child_tokens: &accepted,
+      new_parent_token: &parent_token,
+      owner_user_token: &user_session.user_token,
+      mysql_executor: &mut *conn,
+      phantom: PhantomData,
+    }).await.map_err(|err| {
       warn!("bulk_set_parent_folder failed: {:?}", err);
       CommonWebError::from_error(err)
     })?;

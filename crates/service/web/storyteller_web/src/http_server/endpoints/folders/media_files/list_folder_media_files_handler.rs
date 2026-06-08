@@ -1,3 +1,4 @@
+use std::marker::PhantomData;
 use std::sync::Arc;
 
 use actix_web::web::{Json, Path, Query};
@@ -7,7 +8,9 @@ use log::warn;
 use artcraft_api_defs::folders::media_files::{
   FolderMediaFilesPathInfo, ListFolderMediaFilesQueryParams, ListFolderMediaFilesSuccessResponse,
 };
-use mysql_queries::queries::folders::folder::get_folder_for_owner::get_folder_for_owner;
+use mysql_queries::queries::folders::folder::get_folder_for_owner::{
+  get_folder_for_owner, GetFolderForOwnerArgs,
+};
 use mysql_queries::queries::folders::media_files::list_folder_media_files::{
   list_folder_media_files, ListFolderMediaFilesArgs,
 };
@@ -55,13 +58,15 @@ pub async fn list_folder_media_files_handler(
 
   let folder_token = FolderToken::new_from_str(path.folder_token.trim());
 
-  // Confirm the folder exists + is owned.
-  let folder = get_folder_for_owner(&folder_token, &user_session.user_token, &server_state.mysql_pool)
-    .await
-    .map_err(|err| {
-      warn!("Folder lookup failed: {:?}", err);
-      CommonWebError::from_error(err)
-    })?;
+  let folder = get_folder_for_owner(GetFolderForOwnerArgs {
+    folder_token: &folder_token,
+    owner_user_token: &user_session.user_token,
+    mysql_executor: &mut *conn,
+    phantom: PhantomData,
+  }).await.map_err(|err| {
+    warn!("Folder lookup failed: {:?}", err);
+    CommonWebError::from_error(err)
+  })?;
   if folder.is_none() {
     return Err(CommonWebError::NotFound);
   }
@@ -85,7 +90,8 @@ pub async fn list_folder_media_files_handler(
     folder_token: &folder_token,
     maybe_cursor_id,
     limit,
-    pool: &server_state.mysql_pool,
+    mysql_executor: &mut *conn,
+    phantom: PhantomData,
   }).await.map_err(|err| {
     warn!("list_folder_media_files failed: {:?}", err);
     CommonWebError::from_error(err)

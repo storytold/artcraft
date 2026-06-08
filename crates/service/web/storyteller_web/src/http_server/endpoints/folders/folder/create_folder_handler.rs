@@ -1,3 +1,4 @@
+use std::marker::PhantomData;
 use std::sync::Arc;
 
 use actix_web::web::Json;
@@ -6,7 +7,9 @@ use log::warn;
 
 use artcraft_api_defs::folders::common::FolderInfo;
 use artcraft_api_defs::folders::folder::{CreateFolderRequest, CreateFolderSuccessResponse};
-use mysql_queries::queries::folders::folder::get_folder_for_owner::get_folder_for_owner;
+use mysql_queries::queries::folders::folder::get_folder_for_owner::{
+  get_folder_for_owner, GetFolderForOwnerArgs,
+};
 use mysql_queries::queries::folders::folder::insert_folder::{insert_folder, InsertFolderArgs};
 use tokens::tokens::folders::FolderToken;
 
@@ -56,12 +59,15 @@ pub async fn create_folder_handler(
 
   // If a parent was supplied, require it to exist + be owned by the caller.
   if let Some(parent_token) = &request.maybe_parent_folder_token {
-    let parent = get_folder_for_owner(parent_token, &user_session.user_token, &server_state.mysql_pool)
-      .await
-      .map_err(|err| {
-        warn!("Parent folder lookup failed: {:?}", err);
-        CommonWebError::from_error(err)
-      })?;
+    let parent = get_folder_for_owner(GetFolderForOwnerArgs {
+      folder_token: parent_token,
+      owner_user_token: &user_session.user_token,
+      mysql_executor: &mut *conn,
+      phantom: PhantomData,
+    }).await.map_err(|err| {
+      warn!("Parent folder lookup failed: {:?}", err);
+      CommonWebError::from_error(err)
+    })?;
     if parent.is_none() {
       return Err(CommonWebError::BadInputWithSimpleMessage(
         "parent folder does not exist".to_string(),
@@ -77,19 +83,24 @@ pub async fn create_folder_handler(
     owner_user_token: &user_session.user_token,
     maybe_parent_folder_token: request.maybe_parent_folder_token.as_ref(),
     maybe_color_code: request.maybe_color_code.as_deref(),
-  }, &server_state.mysql_pool).await.map_err(|err| {
+    mysql_executor: &mut *conn,
+    phantom: PhantomData,
+  }).await.map_err(|err| {
     warn!("insert_folder failed: {:?}", err);
     CommonWebError::from_error(err)
   })?;
 
   // Re-fetch so we return the canonical FolderInfo including is_orphaned.
-  let row = get_folder_for_owner(&token, &user_session.user_token, &server_state.mysql_pool)
-    .await
-    .map_err(|err| {
-      warn!("Post-insert folder fetch failed: {:?}", err);
-      CommonWebError::from_error(err)
-    })?
-    .ok_or_else(|| CommonWebError::server_error_with_message("folder vanished after insert"))?;
+  let row = get_folder_for_owner(GetFolderForOwnerArgs {
+    folder_token: &token,
+    owner_user_token: &user_session.user_token,
+    mysql_executor: &mut *conn,
+    phantom: PhantomData,
+  }).await.map_err(|err| {
+    warn!("Post-insert folder fetch failed: {:?}", err);
+    CommonWebError::from_error(err)
+  })?
+  .ok_or_else(|| CommonWebError::server_error_with_message("folder vanished after insert"))?;
 
   let folder: FolderInfo = folder_row_to_info(row);
 

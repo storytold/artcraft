@@ -1,3 +1,4 @@
+use std::marker::PhantomData;
 use std::sync::Arc;
 
 use actix_web::web::{Json, Path};
@@ -8,9 +9,15 @@ use artcraft_api_defs::folders::media_files::{
   BulkAddFolderMediaFilesRequest, BulkAddFolderMediaFilesSuccessResponse,
   FolderMediaFilesPathInfo,
 };
-use mysql_queries::queries::folders::folder::get_folder_for_owner::get_folder_for_owner;
-use mysql_queries::queries::folders::media_files::bulk_insert_folder_media_files::bulk_insert_folder_media_files;
-use mysql_queries::queries::folders::media_files::filter_existing_media_file_tokens::filter_existing_media_file_tokens;
+use mysql_queries::queries::folders::folder::get_folder_for_owner::{
+  get_folder_for_owner, GetFolderForOwnerArgs,
+};
+use mysql_queries::queries::folders::media_files::bulk_insert_folder_media_files::{
+  bulk_insert_folder_media_files, BulkInsertFolderMediaFilesArgs,
+};
+use mysql_queries::queries::folders::media_files::filter_existing_media_file_tokens::{
+  filter_existing_media_file_tokens, FilterExistingMediaFileTokensArgs,
+};
 use tokens::tokens::folders::FolderToken;
 
 use crate::http_server::common_responses::common_web_error::CommonWebError;
@@ -60,32 +67,35 @@ pub async fn bulk_add_folder_media_files_handler(
 
   let folder_token = FolderToken::new_from_str(path.folder_token.trim());
 
-  // Confirm the folder exists + is owned.
-  let folder = get_folder_for_owner(&folder_token, &user_session.user_token, &server_state.mysql_pool)
-    .await
-    .map_err(|err| {
-      warn!("Folder lookup failed: {:?}", err);
-      CommonWebError::from_error(err)
-    })?;
+  let folder = get_folder_for_owner(GetFolderForOwnerArgs {
+    folder_token: &folder_token,
+    owner_user_token: &user_session.user_token,
+    mysql_executor: &mut *conn,
+    phantom: PhantomData,
+  }).await.map_err(|err| {
+    warn!("Folder lookup failed: {:?}", err);
+    CommonWebError::from_error(err)
+  })?;
   if folder.is_none() {
     return Err(CommonWebError::NotFound);
   }
 
-  // Filter to media files that actually exist + aren't deleted.
-  let accepted = filter_existing_media_file_tokens(
-    &request.media_file_tokens,
-    &server_state.mysql_pool,
-  ).await.map_err(|err| {
+  let accepted = filter_existing_media_file_tokens(FilterExistingMediaFileTokensArgs {
+    candidate_tokens: &request.media_file_tokens,
+    mysql_executor: &mut *conn,
+    phantom: PhantomData,
+  }).await.map_err(|err| {
     warn!("filter_existing_media_file_tokens failed: {:?}", err);
     CommonWebError::from_error(err)
   })?;
 
   if !accepted.is_empty() {
-    bulk_insert_folder_media_files(
-      &folder_token,
-      &accepted,
-      &server_state.mysql_pool,
-    ).await.map_err(|err| {
+    bulk_insert_folder_media_files(BulkInsertFolderMediaFilesArgs {
+      folder_token: &folder_token,
+      media_file_tokens: &accepted,
+      mysql_executor: &mut *conn,
+      phantom: PhantomData,
+    }).await.map_err(|err| {
       warn!("bulk_insert_folder_media_files failed: {:?}", err);
       CommonWebError::from_error(err)
     })?;

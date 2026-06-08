@@ -1,3 +1,4 @@
+use std::marker::PhantomData;
 use std::sync::Arc;
 
 use actix_web::web::{Json, Query};
@@ -67,7 +68,8 @@ pub async fn list_folders_handler(
     owner_user_token: &user_session.user_token,
     maybe_cursor_id,
     limit,
-    pool: &server_state.mysql_pool,
+    mysql_executor: &mut *conn,
+    phantom: PhantomData,
   }).await.map_err(|err| {
     warn!("list_folders_for_user failed: {:?}", err);
     CommonWebError::from_error(err)

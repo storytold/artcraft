@@ -1,3 +1,4 @@
+use std::marker::PhantomData;
 use std::sync::Arc;
 
 use actix_web::web::{Json, Path};
@@ -7,7 +8,9 @@ use log::warn;
 use artcraft_api_defs::folders::folder::{
   FolderPathInfo, RenameFolderRequest, RenameFolderSuccessResponse,
 };
-use mysql_queries::queries::folders::folder::update_folder_name::update_folder_name;
+use mysql_queries::queries::folders::folder::update_folder_name::{
+  update_folder_name, UpdateFolderNameArgs,
+};
 use tokens::tokens::folders::FolderToken;
 
 use crate::http_server::common_responses::common_web_error::CommonWebError;
@@ -57,20 +60,18 @@ pub async fn rename_folder_handler(
 
   let folder_token = FolderToken::new_from_str(path.folder_token.trim());
 
-  let rows_affected = update_folder_name(
-    &folder_token,
-    &user_session.user_token,
-    &new_name,
-    &server_state.mysql_pool,
-  ).await.map_err(|err| {
+  let rows_affected = update_folder_name(UpdateFolderNameArgs {
+    folder_token: &folder_token,
+    owner_user_token: &user_session.user_token,
+    new_name: &new_name,
+    mysql_executor: &mut *conn,
+    phantom: PhantomData,
+  }).await.map_err(|err| {
     warn!("update_folder_name failed: {:?}", err);
     CommonWebError::from_error(err)
   })?;
 
   if rows_affected == 0 {
-    // No live row matched the (token, owner) pair — either it doesn't
-    // exist, is owned by someone else, or is soft-deleted. Don't leak
-    // which.
     return Err(CommonWebError::NotFound);
   }
 

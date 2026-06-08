@@ -1,4 +1,6 @@
-use sqlx::MySqlPool;
+use std::marker::PhantomData;
+
+use sqlx::{Executor, MySql};
 
 use tokens::tokens::folders::FolderToken;
 use tokens::tokens::media_files::MediaFileToken;
@@ -6,14 +8,25 @@ use tokens::tokens::users::UserToken;
 
 use crate::queries::folders::folder::folder_row::FolderRow;
 
+pub struct GetFolderForOwnerArgs<'e, 'c, E>
+where
+  E: 'e + Executor<'c, Database = MySql>,
+{
+  pub folder_token: &'e FolderToken,
+  pub owner_user_token: &'e UserToken,
+  pub mysql_executor: E,
+  pub phantom: PhantomData<&'c E>,
+}
+
 /// Fetch a single (live) folder by token, scoped to an owner. Returns
 /// `Ok(None)` if the folder doesn't exist, is soft-deleted, or is owned
 /// by a different user (don't leak existence of others' folders).
-pub async fn get_folder_for_owner(
-  folder_token: &FolderToken,
-  owner_user_token: &UserToken,
-  pool: &MySqlPool,
-) -> Result<Option<FolderRow>, sqlx::Error> {
+pub async fn get_folder_for_owner<'e, 'c: 'e, E>(
+  args: GetFolderForOwnerArgs<'e, 'c, E>,
+) -> Result<Option<FolderRow>, sqlx::Error>
+where
+  E: 'e + Executor<'c, Database = MySql>,
+{
   let result = sqlx::query!(
     r#"
 SELECT
@@ -43,10 +56,10 @@ WHERE f.token = ?
   AND f.maybe_deleted_at IS NULL
 LIMIT 1
     "#,
-    folder_token.as_str(),
-    owner_user_token.as_str(),
+    args.folder_token.as_str(),
+    args.owner_user_token.as_str(),
   )
-    .fetch_optional(pool)
+    .fetch_optional(args.mysql_executor)
     .await?;
 
   Ok(result.map(|r| FolderRow {

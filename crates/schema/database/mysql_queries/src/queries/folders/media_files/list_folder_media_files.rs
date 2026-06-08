@@ -1,5 +1,7 @@
+use std::marker::PhantomData;
+
 use chrono::{DateTime, Utc};
-use sqlx::MySqlPool;
+use sqlx::{Executor, MySql};
 
 use tokens::tokens::folders::FolderToken;
 use tokens::tokens::media_files::MediaFileToken;
@@ -26,22 +28,27 @@ pub struct FolderMediaFileRow {
   pub maybe_title: Option<String>,
 }
 
-pub struct ListFolderMediaFilesArgs<'a> {
-  pub folder_token: &'a FolderToken,
+pub struct ListFolderMediaFilesArgs<'e, 'c, E>
+where
+  E: 'e + Executor<'c, Database = MySql>,
+{
+  pub folder_token: &'e FolderToken,
   pub maybe_cursor_id: Option<u64>,
   pub limit: u32,
-  pub pool: &'a MySqlPool,
+  pub mysql_executor: E,
+  pub phantom: PhantomData<&'c E>,
 }
 
 /// Paginated list of media files in the given folder. Joins `media_files`
-/// and filters out rows that are soft-deleted on the media-file side
-/// (`user_deleted_at` or `mod_deleted_at` set). Most-recently-added first.
-///
-/// The caller is expected to have already authorized the folder access
-/// (i.e. confirmed the folder is owned by the requesting user).
-pub async fn list_folder_media_files(
-  args: ListFolderMediaFilesArgs<'_>,
-) -> Result<Vec<FolderMediaFileRow>, sqlx::Error> {
+/// and filters out rows that are soft-deleted on the media-file side.
+/// Most-recently-added first. The caller is expected to have already
+/// authorized the folder access.
+pub async fn list_folder_media_files<'e, 'c: 'e, E>(
+  args: ListFolderMediaFilesArgs<'e, 'c, E>,
+) -> Result<Vec<FolderMediaFileRow>, sqlx::Error>
+where
+  E: 'e + Executor<'c, Database = MySql>,
+{
   let limit = args.limit as i64;
 
   let rows = match args.maybe_cursor_id {
@@ -76,7 +83,7 @@ LIMIT ?
         cursor_id,
         limit,
       )
-        .fetch_all(args.pool)
+        .fetch_all(args.mysql_executor)
         .await?
         .into_iter()
         .map(|r| FolderMediaFileRow {
@@ -125,7 +132,7 @@ LIMIT ?
         args.folder_token.as_str(),
         limit,
       )
-        .fetch_all(args.pool)
+        .fetch_all(args.mysql_executor)
         .await?
         .into_iter()
         .map(|r| FolderMediaFileRow {

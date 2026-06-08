@@ -1,3 +1,4 @@
+use std::marker::PhantomData;
 use std::sync::Arc;
 
 use actix_web::web::{Json, Path, Query};
@@ -7,7 +8,9 @@ use log::warn;
 use artcraft_api_defs::folders::subfolder::{
   ListSubfoldersQueryParams, ListSubfoldersSuccessResponse, SubfolderPathInfo,
 };
-use mysql_queries::queries::folders::folder::get_folder_for_owner::get_folder_for_owner;
+use mysql_queries::queries::folders::folder::get_folder_for_owner::{
+  get_folder_for_owner, GetFolderForOwnerArgs,
+};
 use mysql_queries::queries::folders::subfolder::list_subfolders::{
   list_subfolders, ListSubfoldersArgs,
 };
@@ -56,12 +59,15 @@ pub async fn list_subfolders_handler(
   let parent_token = FolderToken::new_from_str(path.folder_token.trim());
 
   // Confirm the parent exists + is owned by the caller before listing.
-  let parent = get_folder_for_owner(&parent_token, &user_session.user_token, &server_state.mysql_pool)
-    .await
-    .map_err(|err| {
-      warn!("Parent folder lookup failed: {:?}", err);
-      CommonWebError::from_error(err)
-    })?;
+  let parent = get_folder_for_owner(GetFolderForOwnerArgs {
+    folder_token: &parent_token,
+    owner_user_token: &user_session.user_token,
+    mysql_executor: &mut *conn,
+    phantom: PhantomData,
+  }).await.map_err(|err| {
+    warn!("Parent folder lookup failed: {:?}", err);
+    CommonWebError::from_error(err)
+  })?;
   if parent.is_none() {
     return Err(CommonWebError::NotFound);
   }
@@ -86,7 +92,8 @@ pub async fn list_subfolders_handler(
     owner_user_token: &user_session.user_token,
     maybe_cursor_id,
     limit,
-    pool: &server_state.mysql_pool,
+    mysql_executor: &mut *conn,
+    phantom: PhantomData,
   }).await.map_err(|err| {
     warn!("list_subfolders failed: {:?}", err);
     CommonWebError::from_error(err)

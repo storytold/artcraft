@@ -1,20 +1,29 @@
-use sqlx::MySqlPool;
+use std::marker::PhantomData;
+
+use sqlx::{Executor, MySql};
 
 use tokens::tokens::folders::FolderToken;
 use tokens::tokens::users::UserToken;
 
-pub struct InsertFolderArgs<'a> {
-  pub token: &'a FolderToken,
-  pub name: &'a str,
-  pub owner_user_token: &'a UserToken,
-  pub maybe_parent_folder_token: Option<&'a FolderToken>,
-  pub maybe_color_code: Option<&'a str>,
+pub struct InsertFolderArgs<'e, 'c, E>
+where
+  E: 'e + Executor<'c, Database = MySql>,
+{
+  pub token: &'e FolderToken,
+  pub name: &'e str,
+  pub owner_user_token: &'e UserToken,
+  pub maybe_parent_folder_token: Option<&'e FolderToken>,
+  pub maybe_color_code: Option<&'e str>,
+  pub mysql_executor: E,
+  pub phantom: PhantomData<&'c E>,
 }
 
-pub async fn insert_folder(
-  args: InsertFolderArgs<'_>,
-  pool: &MySqlPool,
-) -> Result<(), sqlx::Error> {
+pub async fn insert_folder<'e, 'c: 'e, E>(
+  args: InsertFolderArgs<'e, 'c, E>,
+) -> Result<(), sqlx::Error>
+where
+  E: 'e + Executor<'c, Database = MySql>,
+{
   sqlx::query!(
     r#"
 INSERT INTO folders
@@ -31,7 +40,7 @@ SET
     args.maybe_parent_folder_token.map(|t| t.as_str()),
     args.maybe_color_code,
   )
-    .execute(pool)
+    .execute(args.mysql_executor)
     .await?;
   Ok(())
 }

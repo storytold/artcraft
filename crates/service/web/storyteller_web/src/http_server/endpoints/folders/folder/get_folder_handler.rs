@@ -1,3 +1,4 @@
+use std::marker::PhantomData;
 use std::sync::Arc;
 
 use actix_web::web::{Json, Path};
@@ -5,7 +6,9 @@ use actix_web::{web, HttpRequest};
 use log::warn;
 
 use artcraft_api_defs::folders::folder::{FolderPathInfo, GetFolderSuccessResponse};
-use mysql_queries::queries::folders::folder::get_folder_for_owner::get_folder_for_owner;
+use mysql_queries::queries::folders::folder::get_folder_for_owner::{
+  get_folder_for_owner, GetFolderForOwnerArgs,
+};
 use tokens::tokens::folders::FolderToken;
 
 use crate::http_server::common_responses::common_web_error::CommonWebError;
@@ -42,13 +45,16 @@ pub async fn get_folder_handler(
 
   let folder_token = FolderToken::new_from_str(path.folder_token.trim());
 
-  let row = get_folder_for_owner(&folder_token, &user_session.user_token, &server_state.mysql_pool)
-    .await
-    .map_err(|err| {
-      warn!("get_folder_for_owner failed: {:?}", err);
-      CommonWebError::from_error(err)
-    })?
-    .ok_or(CommonWebError::NotFound)?;
+  let row = get_folder_for_owner(GetFolderForOwnerArgs {
+    folder_token: &folder_token,
+    owner_user_token: &user_session.user_token,
+    mysql_executor: &mut *conn,
+    phantom: PhantomData,
+  }).await.map_err(|err| {
+    warn!("get_folder_for_owner failed: {:?}", err);
+    CommonWebError::from_error(err)
+  })?
+  .ok_or(CommonWebError::NotFound)?;
 
   Ok(Json(GetFolderSuccessResponse {
     success: true,

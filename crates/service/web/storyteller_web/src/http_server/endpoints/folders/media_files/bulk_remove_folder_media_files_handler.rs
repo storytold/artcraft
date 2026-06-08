@@ -1,3 +1,4 @@
+use std::marker::PhantomData;
 use std::sync::Arc;
 
 use actix_web::web::{Json, Path};
@@ -8,8 +9,12 @@ use artcraft_api_defs::folders::media_files::{
   BulkRemoveFolderMediaFilesRequest, BulkRemoveFolderMediaFilesSuccessResponse,
   FolderMediaFilesPathInfo,
 };
-use mysql_queries::queries::folders::folder::get_folder_for_owner::get_folder_for_owner;
-use mysql_queries::queries::folders::media_files::bulk_delete_folder_media_files::bulk_delete_folder_media_files;
+use mysql_queries::queries::folders::folder::get_folder_for_owner::{
+  get_folder_for_owner, GetFolderForOwnerArgs,
+};
+use mysql_queries::queries::folders::media_files::bulk_delete_folder_media_files::{
+  bulk_delete_folder_media_files, BulkDeleteFolderMediaFilesArgs,
+};
 use tokens::tokens::folders::FolderToken;
 
 use crate::http_server::common_responses::common_web_error::CommonWebError;
@@ -57,24 +62,25 @@ pub async fn bulk_remove_folder_media_files_handler(
 
   let folder_token = FolderToken::new_from_str(path.folder_token.trim());
 
-  // Confirm the folder exists + is owned. We don't strictly need this for
-  // correctness (the DELETE's folder_token guard suffices), but it keeps
-  // the 404 vs 200 semantics consistent with the rest of the API.
-  let folder = get_folder_for_owner(&folder_token, &user_session.user_token, &server_state.mysql_pool)
-    .await
-    .map_err(|err| {
-      warn!("Folder lookup failed: {:?}", err);
-      CommonWebError::from_error(err)
-    })?;
+  let folder = get_folder_for_owner(GetFolderForOwnerArgs {
+    folder_token: &folder_token,
+    owner_user_token: &user_session.user_token,
+    mysql_executor: &mut *conn,
+    phantom: PhantomData,
+  }).await.map_err(|err| {
+    warn!("Folder lookup failed: {:?}", err);
+    CommonWebError::from_error(err)
+  })?;
   if folder.is_none() {
     return Err(CommonWebError::NotFound);
   }
 
-  let removed_count = bulk_delete_folder_media_files(
-    &folder_token,
-    &request.media_file_tokens,
-    &server_state.mysql_pool,
-  ).await.map_err(|err| {
+  let removed_count = bulk_delete_folder_media_files(BulkDeleteFolderMediaFilesArgs {
+    folder_token: &folder_token,
+    media_file_tokens: &request.media_file_tokens,
+    mysql_executor: &mut *conn,
+    phantom: PhantomData,
+  }).await.map_err(|err| {
     warn!("bulk_delete_folder_media_files failed: {:?}", err);
     CommonWebError::from_error(err)
   })?;

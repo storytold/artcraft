@@ -1,3 +1,4 @@
+use std::marker::PhantomData;
 use std::sync::Arc;
 
 use actix_web::web::{Json, Path};
@@ -7,7 +8,9 @@ use log::warn;
 use artcraft_api_defs::folders::subfolder::{
   BulkRemoveSubfoldersRequest, BulkRemoveSubfoldersSuccessResponse, SubfolderPathInfo,
 };
-use mysql_queries::queries::folders::subfolder::bulk_clear_parent_folder::bulk_clear_parent_folder;
+use mysql_queries::queries::folders::subfolder::bulk_clear_parent_folder::{
+  bulk_clear_parent_folder, BulkClearParentFolderArgs,
+};
 use tokens::tokens::folders::FolderToken;
 
 use crate::http_server::common_responses::common_web_error::CommonWebError;
@@ -57,12 +60,13 @@ pub async fn bulk_remove_subfolders_handler(
   // No parent existence check — the UPDATE's WHERE clause already gates
   // on owner_user_token AND current parent, so this is naturally a no-op
   // for rows we shouldn't touch.
-  let removed_count = bulk_clear_parent_folder(
-    &request.subfolder_tokens,
-    &from_parent_token,
-    &user_session.user_token,
-    &server_state.mysql_pool,
-  ).await.map_err(|err| {
+  let removed_count = bulk_clear_parent_folder(BulkClearParentFolderArgs {
+    child_tokens: &request.subfolder_tokens,
+    from_parent_token: &from_parent_token,
+    owner_user_token: &user_session.user_token,
+    mysql_executor: &mut *conn,
+    phantom: PhantomData,
+  }).await.map_err(|err| {
     warn!("bulk_clear_parent_folder failed: {:?}", err);
     CommonWebError::from_error(err)
   })?;
