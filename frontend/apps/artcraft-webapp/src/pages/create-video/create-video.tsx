@@ -54,6 +54,10 @@ import {
 import { GenerationCountPicker } from "../create-image/components/GenerationCountPicker";
 import { useVideoCostEstimate } from "../../lib/cost-estimate-api";
 import {
+  resolveModelOption,
+  resolveModelCount,
+} from "../../lib/resolve-model-setting";
+import {
   useOmniGenVideoModels,
   getModelCreatorIconPath,
   getModelDescription,
@@ -255,7 +259,17 @@ export default function CreateVideo() {
 
   const prompt = ui.prompt;
   const setPrompt = useCallback((v: string) => setUi({ prompt: v }), [setUi]);
-  const selectedSize = ui.selectedSize;
+
+  // Settings are sticky across model switches: the store keeps the user's
+  // chosen value untouched; we resolve an *effective* value against the current
+  // model here (keep when supported, else fall back to the model default for
+  // display + generation). See lib/resolve-model-setting.
+  const selectedSize =
+    resolveModelOption(
+      ui.selectedSize,
+      selectedModel?.aspect_ratio_options,
+      selectedModel?.aspect_ratio_default,
+    ) ?? ui.selectedSize;
   const setSelectedSize = useCallback(
     (v: string) => setUi({ selectedSize: v }),
     [setUi],
@@ -265,13 +279,23 @@ export default function CreateVideo() {
     (v: number | null) => setUi({ duration: v }),
     [setUi],
   );
-  const resolution = ui.resolution ?? selectedModel?.resolution_default ?? null;
+  const resolution =
+    resolveModelOption(
+      ui.resolution ?? undefined,
+      selectedModel?.resolution_options,
+      selectedModel?.resolution_default,
+    ) ?? null;
   const setResolution = useCallback(
     (v: string | null) => setUi({ resolution: v }),
     [setUi],
   );
   const generateWithSound = ui.generateWithSound;
-  const numVideos = ui.numVideos;
+  const numVideos = resolveModelCount(
+    ui.numVideos,
+    selectedModel?.batch_size_options,
+    selectedModel?.batch_size_max,
+    selectedModel?.batch_size_default,
+  );
   const setNumVideos = useCallback(
     (v: number) => setUi({ numVideos: v }),
     [setUi],
@@ -376,6 +400,16 @@ export default function CreateVideo() {
   const needsImage =
     !!selectedModel?.starting_keyframe_required && referenceImages.length === 0;
 
+  // Effective duration: keep the user's chosen seconds when the model supports
+  // them, else clamp/snap to this model's range for display + generation. The
+  // stored preference (ui.duration) stays untouched, so switching back restores
+  // it — same sticky behavior as the other settings.
+  const effectiveDuration = selectedModel
+    ? (resolveDurationForModel(selectedModel, duration, isReferenceMode) ??
+      selectedModel.duration_seconds_default ??
+      5)
+    : (duration ?? 5);
+
   // Jobs + gallery
   const jobs = useGenerationJobs({ mediaType: "video", enabled: !!user });
   const gallery = useGalleryData({
@@ -424,7 +458,7 @@ export default function CreateVideo() {
     model: selectedModel?.model ?? "",
     aspectRatio: selectedSize,
     resolution,
-    duration: duration ?? selectedModel?.duration_seconds_default ?? null,
+    duration: effectiveDuration,
     numVideos,
     hasStartFrame: !isReferenceMode && referenceImages.length > 0,
     hasEndFrame: !isReferenceMode && hasEndFrame && !!endFrameImage,
@@ -509,8 +543,6 @@ export default function CreateVideo() {
     }
     return null;
   }, [selectedModel, isReferenceMode]);
-  const effectiveDuration =
-    duration ?? selectedModel?.duration_seconds_default ?? 5;
   const [localDuration, setLocalDuration] = useState(effectiveDuration);
   const durationTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
   useEffect(() => {
@@ -655,23 +687,12 @@ export default function CreateVideo() {
           ? "reference"
           : "keyframe";
 
-      const nextDuration = resolveDurationForModel(
-        model,
-        currentState.duration,
-        nextInputMode === "reference",
-      );
-
+      // Aspect ratio / resolution / count / duration / sound are preserved and
+      // resolved against the new model at read time, so the user's choices
+      // survive model switches. Only input mode (capability-bound) is recomputed.
       setUi({
         selectedModelId: model.model,
-        selectedSize: model.aspect_ratio_default ?? "wide_sixteen_by_nine",
-        duration: nextDuration,
-        resolution: model.resolution_default ?? null,
-        generateWithSound: false,
         inputMode: nextInputMode,
-        numVideos: Math.min(
-          model.batch_size_max ?? 4,
-          model.batch_size_default ?? 1,
-        ),
       });
 
       // Only clear media that the new model can't use in any mode.
@@ -869,7 +890,7 @@ export default function CreateVideo() {
       model: selectedModel.model,
       numVideos,
       aspectRatio: selectedSize,
-      duration: duration ?? selectedModel.duration_seconds_default ?? undefined,
+      duration: effectiveDuration,
       resolution: hasResolutionOptions
         ? (resolution ?? selectedModel.resolution_default ?? undefined)
         : undefined,
@@ -961,7 +982,7 @@ export default function CreateVideo() {
     selectedModel,
     selectedSize,
     numVideos,
-    duration,
+    effectiveDuration,
     resolution,
     generateWithSound,
     hasResolutionOptions,

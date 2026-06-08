@@ -47,6 +47,10 @@ import {
 } from "./components/QualityPicker";
 import { useImageCostEstimate } from "../../lib/cost-estimate-api";
 import {
+  resolveModelOption,
+  resolveModelCount,
+} from "../../lib/resolve-model-setting";
+import {
   useOmniGenImageModels,
   getModelCreatorIconPath,
   getModelDescription,
@@ -115,22 +119,46 @@ export default function CreateImage() {
 
   const prompt = ui.prompt;
   const setPrompt = useCallback((v: string) => setUi({ prompt: v }), [setUi]);
-  const aspectRatio = ui.aspectRatio;
+
+  // Settings are sticky across model switches: the store holds the user's
+  // chosen value (set by the setters below) untouched, and we resolve an
+  // *effective* value against the current model here — keeping the choice when
+  // supported, otherwise falling back to the model's default for display +
+  // generation only. See lib/resolve-model-setting.
+  const aspectRatio =
+    resolveModelOption(
+      ui.aspectRatio,
+      selectedModel?.aspect_ratio_options,
+      selectedModel?.aspect_ratio_default,
+    ) ?? ui.aspectRatio;
   const setAspectRatio = useCallback(
     (v: string) => setUi({ aspectRatio: v }),
     [setUi],
   );
-  const numImages = ui.numImages;
+  const numImages = resolveModelCount(
+    ui.numImages,
+    selectedModel?.batch_size_options,
+    selectedModel?.batch_size_max,
+    selectedModel?.batch_size_default,
+  );
   const setNumImages = useCallback(
     (v: number) => setUi({ numImages: v }),
     [setUi],
   );
-  const resolution = ui.resolution;
+  const resolution = resolveModelOption(
+    ui.resolution,
+    selectedModel?.resolution_options,
+    selectedModel?.resolution_default,
+  );
   const setResolution = useCallback(
     (v: string | undefined) => setUi({ resolution: v }),
     [setUi],
   );
-  const quality = ui.quality;
+  const quality = resolveModelOption(
+    ui.quality,
+    selectedModel?.quality_options,
+    selectedModel?.default_quality,
+  );
   const setQuality = useCallback(
     (v: string | undefined) => setUi({ quality: v }),
     [setUi],
@@ -276,16 +304,10 @@ export default function CreateImage() {
     (item: PopoverItem) => {
       const model = item.action ? _modelLookup.get(item.action) : undefined;
       if (!model) return;
-      setUi({
-        selectedModelId: model.model,
-        aspectRatio: model.aspect_ratio_default ?? "square",
-        numImages: Math.min(
-          model.batch_size_max ?? 4,
-          model.batch_size_default ?? 1,
-        ),
-        resolution: model.resolution_default ?? undefined,
-        quality: model.default_quality ?? undefined,
-      });
+      // Only switch the model — aspect ratio / count / resolution / quality are
+      // preserved and resolved against the new model at read time, so the user's
+      // choices survive model switches instead of resetting to defaults.
+      setUi({ selectedModelId: model.model });
     },
     [setUi],
   );
