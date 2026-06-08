@@ -36,6 +36,10 @@ export const MODEL_TYPE_TO_CREATOR: Record<string, ModelCreator> = {
   seedance_2p0_fast: ModelCreator.Bytedance,
   seedance_2p0_bp: ModelCreator.Bytedance,
   seedance_2p0_bp_fast: ModelCreator.Bytedance,
+  seedance_2p0_u: ModelCreator.Bytedance,
+  seedance_2p0_u_fast: ModelCreator.Bytedance,
+  seedance_2p0_bpu: ModelCreator.Bytedance,
+  seedance_2p0_bpu_fast: ModelCreator.Bytedance,
   // Seedance — dot-normalized aliases
   seedance_1_0_lite: ModelCreator.Bytedance,
   // Seedream
@@ -69,6 +73,8 @@ export const MODEL_TYPE_TO_CREATOR: Record<string, ModelCreator> = {
   marble_0p1_mini: ModelCreator.WorldLabs,
   marble_0p1_plus: ModelCreator.WorldLabs,
   grok_image: ModelCreator.Grok,
+  grok_imagine_image: ModelCreator.Grok,
+  grok_imagine_image_q: ModelCreator.Grok,
   grok_video: ModelCreator.Grok,
   grok_imagine_video: ModelCreator.Grok,
   grok_imagine_video_1p5: ModelCreator.Grok,
@@ -79,6 +85,10 @@ export const MODEL_TYPE_TO_CREATOR: Record<string, ModelCreator> = {
   midjourney_v7: ModelCreator.Midjourney,
   midjourney_v7_raw: ModelCreator.Midjourney,
   midjourney_v7_draft_raw: ModelCreator.Midjourney,
+  // Underscore-numbered IDs the backend actually sends for current MJ models
+  midjourney_7: ModelCreator.Midjourney,
+  midjourney_7_niji: ModelCreator.Midjourney,
+  midjourney_8: ModelCreator.Midjourney,
   // Angles
   flux_2_lora_angles: ModelCreator.BlackForestLabs,
   qwen_edit_2511_angles: ModelCreator.Alibaba,
@@ -158,6 +168,8 @@ export const getModelDisplayName = (modelType: string): string => {
   const displayNames: Record<string, string> = {
     // Grok
     grok_image: "Grok Image",
+    grok_imagine_image: "Grok Imagine",
+    grok_imagine_image_q: "Grok Imagine Quality",
     grok_video: "Grok Video",
     grok_imagine_video: "Grok Imagine",
     grok_imagine_video_1p5: "Grok Imagine 1.5",
@@ -201,6 +213,10 @@ export const getModelDisplayName = (modelType: string): string => {
     seedance_2p0_fast: "Seedance 2.0 Fast",
     seedance_2p0_bp: "Seedance 2.0 Plus",
     seedance_2p0_bp_fast: "Seedance 2.0 Plus Fast",
+    seedance_2p0_u: "Seedance 2.0 Ultra",
+    seedance_2p0_u_fast: "Seedance 2.0 Ultra Fast",
+    seedance_2p0_bpu: "Seedance 2.0 Plus Ultra",
+    seedance_2p0_bpu_fast: "Seedance 2.0 Plus Ultra Fast",
     // Seedance — dot-normalized aliases
     seedance_1_0_lite: "Seedance 1.0 Lite",
 
@@ -213,7 +229,7 @@ export const getModelDisplayName = (modelType: string): string => {
     seedream_5_lite: "Seedream 5 Lite",
 
     // Google
-    veo_2: "Veo 2",
+    veo_2: "Google Veo 2",
     veo_3: "Google Veo 3",
     veo_3_fast: "Google Veo 3 Fast",
     veo_3p1: "Google Veo 3.1",
@@ -251,6 +267,10 @@ export const getModelDisplayName = (modelType: string): string => {
     midjourney_v7: "Midjourney V7",
     midjourney_v7_raw: "Midjourney V7 (Raw)",
     midjourney_v7_draft_raw: "Midjourney V7 (Draft Raw)",
+    // Underscore-numbered IDs the backend actually sends for current MJ models
+    midjourney_7: "Midjourney v7",
+    midjourney_7_niji: "Midjourney v7 Niji (Anime)",
+    midjourney_8: "Midjourney v8",
 
     // Angles
     flux_2_lora_angles: "Flux 2 LoRA Angles",

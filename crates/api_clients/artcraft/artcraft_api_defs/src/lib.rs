@@ -2,6 +2,7 @@ pub mod analytics;
 pub mod characters;
 pub mod common;
 pub mod credits;
+pub mod folders;
 pub mod generate;
 pub mod jobs;
 pub mod media_file;

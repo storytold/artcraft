@@ -12,6 +12,7 @@ import {
   faCircleExclamation,
   faCopy,
   faCheck,
+  faArrowRotateRight,
 } from "@fortawesome/pro-solid-svg-icons";
 import { Modal } from "@storyteller/ui-modal";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -30,11 +31,14 @@ import { ActionReminderModal } from "@storyteller/ui-action-reminder-modal";
 import { Lightbox } from "../lightbox/lightbox";
 import { showToast } from "../toast/toast";
 import { getModelCreatorIconPath } from "../../lib/omni-gen-hooks";
+import { useRecreateFromPromptToken } from "../../lib/recreate";
 import { getMediaThumbnail, THUMBNAIL_SIZES } from "@storyteller/common";
 import { twMerge } from "tailwind-merge";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
+// `promptToken` + `mediaClass` power the "Recreate" action shared with the
+// create-page gallery cards. Present on every task state.
 type InProgressTask = {
   id: string;
   title: string;
@@ -45,6 +49,8 @@ type InProgressTask = {
   estimatedTimeLeftMs?: number;
   modelType?: string;
   prompt?: string;
+  promptToken?: string;
+  mediaClass: "image" | "video";
 };
 
 type CompletedTask = {
@@ -57,6 +63,8 @@ type CompletedTask = {
   imageUrls?: string[];
   mediaTokens?: string[];
   prompt?: string;
+  promptToken?: string;
+  mediaClass: "image" | "video";
 };
 
 type FailedTask = {
@@ -68,6 +76,8 @@ type FailedTask = {
   failureReason?: string;
   failureMessage?: string;
   prompt?: string;
+  promptToken?: string;
+  mediaClass: "image" | "video";
 };
 
 // ── Helpers ────────────────────────────────────────────────────────────────
@@ -200,6 +210,42 @@ const CopyPromptButton = ({ prompt }: { prompt: string }) => {
   );
 };
 
+const RecreateTaskButton = ({
+  promptToken,
+  mediaClass,
+}: {
+  promptToken?: string;
+  mediaClass: "image" | "video";
+}) => {
+  const { isRecreating, handleRecreate } = useRecreateFromPromptToken(
+    promptToken,
+    mediaClass,
+  );
+  if (!promptToken) return null;
+  return (
+    <Tooltip
+      content="Recreate"
+      position="bottom"
+      strategy="fixed"
+      className="text-xs"
+      zIndex={50}
+      delay={300}
+    >
+      <button
+        className="flex h-6 w-6 items-center justify-center rounded-full text-base-fg/60 hover:bg-ui-controls disabled:opacity-60"
+        aria-label="Recreate"
+        disabled={isRecreating}
+        onClick={handleRecreate}
+      >
+        <FontAwesomeIcon
+          icon={isRecreating ? faSpinnerThird : faArrowRotateRight}
+          className={isRecreating ? "animate-spin" : ""}
+        />
+      </button>
+    </Tooltip>
+  );
+};
+
 // ── Card Components ────────────────────────────────────────────────────────
 
 const InProgressCard = ({
@@ -267,6 +313,10 @@ const InProgressCard = ({
           {task.prompt && <PromptLine prompt={task.prompt} className="mt-0" />}
         </div>
         <div className="ml-auto flex shrink-0 items-center gap-1">
+          <RecreateTaskButton
+            promptToken={task.promptToken}
+            mediaClass={task.mediaClass}
+          />
           {task.prompt && <CopyPromptButton prompt={task.prompt} />}
           {onDismiss && (
             <button
@@ -335,6 +385,10 @@ const CompletedCard = ({
         {task.prompt && <PromptLine prompt={task.prompt} />}
       </div>
       <div className="ml-auto flex shrink-0 items-center gap-1">
+        <RecreateTaskButton
+          promptToken={task.promptToken}
+          mediaClass={task.mediaClass}
+        />
         {task.prompt && <CopyPromptButton prompt={task.prompt} />}
         {onDismiss && (
           <button
@@ -424,6 +478,10 @@ const FailedCard = ({
           )}
         </div>
         <div className="ml-auto flex shrink-0 items-center gap-1">
+          <RecreateTaskButton
+            promptToken={task.promptToken}
+            mediaClass={task.mediaClass}
+          />
           {task.prompt && <CopyPromptButton prompt={task.prompt} />}
           {onDismiss && (
             <button
@@ -444,6 +502,12 @@ const FailedCard = ({
 };
 
 // ── Job → Task transformers ────────────────────────────────────────────────
+
+function getTaskMediaClass(job: Job): "image" | "video" {
+  return job.request.inference_category?.toLowerCase().includes("video")
+    ? "video"
+    : "image";
+}
 
 function getPrompt(job: Job, promptsMap?: Map<string, Prompts>): string {
   const promptToken = job.request.maybe_prompt_token;
@@ -549,6 +613,8 @@ function jobsToInProgress(
         estimatedTimeLeftMs,
         modelType: modelType ?? undefined,
         prompt: getPrompt(j, promptsMap) || undefined,
+        promptToken: promptToken ?? undefined,
+        mediaClass: getTaskMediaClass(j),
       };
     });
 
@@ -572,11 +638,7 @@ function jobsToCompleted(
     )
     .map((j): CompletedTask => {
       const cdnUrl = j.maybe_result?.media_links?.cdn_url;
-      const mediaClass = j.request.inference_category
-        ?.toLowerCase()
-        .includes("video")
-        ? "video"
-        : "image";
+      const mediaClass = getTaskMediaClass(j);
       const thumbnailUrl =
         getMediaThumbnail(j.maybe_result?.media_links, mediaClass, {
           size: THUMBNAIL_SIZES.MEDIUM,
@@ -597,6 +659,8 @@ function jobsToCompleted(
           ? [j.maybe_result.entity_token]
           : [],
         prompt: getPrompt(j, promptsMap) || undefined,
+        promptToken: j.request.maybe_prompt_token ?? undefined,
+        mediaClass,
       };
     });
 }
@@ -634,6 +698,8 @@ function jobsToFailed(
         failureReason,
         failureMessage,
         prompt: getPrompt(j, promptsMap) || undefined,
+        promptToken: j.request.maybe_prompt_token ?? undefined,
+        mediaClass: getTaskMediaClass(j),
       };
     });
 }

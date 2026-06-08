@@ -1,0 +1,25 @@
+{
+  "db_name": "MySQL",
+  "query": "\nWITH RECURSIVE ancestor_chain (token, parent_token, depth) AS (\n  SELECT token, maybe_parent_folder_token, 0\n  FROM folders\n  WHERE token = ?\n    AND owner_user_token = ?\n    AND maybe_deleted_at IS NULL\n  UNION ALL\n  SELECT f.token, f.maybe_parent_folder_token, ac.depth + 1\n  FROM folders f\n  INNER JOIN ancestor_chain ac\n    ON f.token = ac.parent_token\n  WHERE f.owner_user_token = ?\n    AND f.maybe_deleted_at IS NULL\n    AND ac.depth < ?\n)\nSELECT token as `token!: FolderToken`\nFROM ancestor_chain\nWHERE depth > 0\nORDER BY depth ASC\n    ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "token!: FolderToken",
+        "type_info": {
+          "type": "VarString",
+          "flags": "BINARY",
+          "char_set": 224,
+          "max_size": 128
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 4
+    },
+    "nullable": [
+      true
+    ]
+  },
+  "hash": "780891e8294b78cc0e5a05a8b5a8949a763bcb8c5d6526a621234020b154bdc9"
+}

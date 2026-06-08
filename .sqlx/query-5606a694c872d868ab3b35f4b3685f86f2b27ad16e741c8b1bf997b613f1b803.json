@@ -1,0 +1,58 @@
+{
+  "db_name": "MySQL",
+  "query": "\nSELECT\n  maybe_creator_user_token as `maybe_creator_user_token: UserToken`,\n  media_class as `media_class: MediaFileClass`,\n  media_type as `media_type: MediaFileType`,\n  maybe_cover_image_media_file_token as `maybe_cover_image_media_file_token: MediaFileToken`\nFROM media_files\nWHERE token = ?\n  AND user_deleted_at IS NULL\n  AND mod_deleted_at IS NULL\nLIMIT 1\n    ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "maybe_creator_user_token: UserToken",
+        "type_info": {
+          "type": "VarString",
+          "flags": "MULTIPLE_KEY | BINARY",
+          "char_set": 224,
+          "max_size": 128
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "media_class: MediaFileClass",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NOT_NULL | MULTIPLE_KEY | BINARY",
+          "char_set": 224,
+          "max_size": 64
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "media_type: MediaFileType",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NOT_NULL | MULTIPLE_KEY | BINARY | NO_DEFAULT_VALUE",
+          "char_set": 224,
+          "max_size": 64
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "maybe_cover_image_media_file_token: MediaFileToken",
+        "type_info": {
+          "type": "VarString",
+          "flags": "BINARY",
+          "char_set": 224,
+          "max_size": 128
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      true,
+      false,
+      false,
+      true
+    ]
+  },
+  "hash": "5606a694c872d868ab3b35f4b3685f86f2b27ad16e741c8b1bf997b613f1b803"
+}

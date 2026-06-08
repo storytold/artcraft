@@ -74,6 +74,8 @@ export function GenerationGalleryGrid({
                 progress={entry.job.progress}
                 estimatedTimeLeftMs={entry.job.estimatedTimeLeftMs}
                 batchCount={entry.job.batchCount}
+                promptToken={entry.job.promptToken}
+                recreateMediaClass={entry.job.mediaClass}
               />
             )}
             {entry.kind === "failed" && (

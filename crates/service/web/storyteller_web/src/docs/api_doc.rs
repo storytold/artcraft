@@ -94,6 +94,26 @@ use crate::http_server::endpoints::moderation::staff_audit_logs::moderator_list_
 use crate::http_server::endpoints::moderation::user_bans::moderation_ban_user_handler::*;
 use crate::http_server::endpoints::moderation::user_emails::moderator_change_user_email_handler::*;
 use crate::http_server::endpoints::moderation::user_emails::moderator_list_email_address_changes_for_user_handler::*;
+
+// Folder endpoints
+use crate::http_server::endpoints::folders::folder::color_code_folder_handler::*;
+use crate::http_server::endpoints::folders::folder::cover_image_folder_handler::*;
+use crate::http_server::endpoints::folders::folder::create_folder_handler::*;
+use crate::http_server::endpoints::folders::folder::delete_folder_handler::*;
+use crate::http_server::endpoints::folders::folder::get_folder_handler::*;
+use crate::http_server::endpoints::folders::folder::list_folders_handler::*;
+use crate::http_server::endpoints::folders::folder::rename_folder_handler::*;
+use crate::http_server::endpoints::folders::folder::star_folder_handler::*;
+use crate::http_server::endpoints::folders::media_files::bulk_add_folder_media_files_handler::*;
+use crate::http_server::endpoints::folders::media_files::bulk_remove_folder_media_files_handler::*;
+use crate::http_server::endpoints::folders::media_files::list_folder_media_files_handler::*;
+use crate::http_server::endpoints::folders::subfolder::bulk_add_subfolders_handler::*;
+use crate::http_server::endpoints::folders::subfolder::bulk_remove_subfolders_handler::*;
+use crate::http_server::endpoints::folders::subfolder::list_subfolders_handler::*;
+use artcraft_api_defs::folders::common::*;
+use artcraft_api_defs::folders::folder::*;
+use artcraft_api_defs::folders::media_files::*;
+use artcraft_api_defs::folders::subfolder::*;
 use artcraft_api_defs::moderation::user_referrals::list_global_user_referrals::*;
 use artcraft_api_defs::moderation::user_referrals::list_user_referrals_for_user::*;
 use crate::http_server::endpoints::moderation::user_sessions::moderator_list_user_session_impersonation_requests_for_user_handler::*;
@@ -535,8 +555,24 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     crate::http_server::endpoints::moderation::user_referrals::moderator_list_global_user_referrals_handler::moderator_list_global_user_referrals_handler,
     crate::http_server::endpoints::moderation::user_referrals::moderator_list_user_referrals_for_user_handler::moderator_list_user_referrals_for_user_handler,
     crate::http_server::endpoints::moderation::user_bans::moderation_ban_user_handler::moderation_ban_user_handler,
-    crate::http_server::endpoints::moderation::user_emails::moderator_change_user_email::moderator_change_user_email_handler,
-    crate::http_server::endpoints::moderation::user_emails::moderator_list_email_address_changes_for_user::moderator_list_email_address_changes_for_user_handler,
+    crate::http_server::endpoints::moderation::user_emails::moderator_change_user_email_handler::moderator_change_user_email_handler,
+    crate::http_server::endpoints::moderation::user_emails::moderator_list_email_address_changes_for_user_handler::moderator_list_email_address_changes_for_user_handler,
+
+    // Folders
+    crate::http_server::endpoints::folders::folder::create_folder_handler::create_folder_handler,
+    crate::http_server::endpoints::folders::folder::list_folders_handler::list_folders_handler,
+    crate::http_server::endpoints::folders::folder::get_folder_handler::get_folder_handler,
+    crate::http_server::endpoints::folders::folder::rename_folder_handler::rename_folder_handler,
+    crate::http_server::endpoints::folders::folder::star_folder_handler::star_folder_handler,
+    crate::http_server::endpoints::folders::folder::color_code_folder_handler::color_code_folder_handler,
+    crate::http_server::endpoints::folders::folder::cover_image_folder_handler::cover_image_folder_handler,
+    crate::http_server::endpoints::folders::folder::delete_folder_handler::delete_folder_handler,
+    crate::http_server::endpoints::folders::subfolder::list_subfolders_handler::list_subfolders_handler,
+    crate::http_server::endpoints::folders::subfolder::bulk_add_subfolders_handler::bulk_add_subfolders_handler,
+    crate::http_server::endpoints::folders::subfolder::bulk_remove_subfolders_handler::bulk_remove_subfolders_handler,
+    crate::http_server::endpoints::folders::media_files::list_folder_media_files_handler::list_folder_media_files_handler,
+    crate::http_server::endpoints::folders::media_files::bulk_add_folder_media_files_handler::bulk_add_folder_media_files_handler,
+    crate::http_server::endpoints::folders::media_files::bulk_remove_folder_media_files_handler::bulk_remove_folder_media_files_handler,
     crate::http_server::endpoints::moderation::user_sessions::moderator_list_user_session_impersonation_requests_for_user_handler::moderator_list_user_session_impersonation_requests_for_user_handler,
     crate::http_server::endpoints::moderation::user_sessions::moderator_list_user_session_impersonation_requests_handler::moderator_list_user_session_impersonation_requests_handler,
     crate::http_server::endpoints::moderation::user_sessions::moderator_user_session_impersonation_request_handler::moderator_user_session_impersonation_request_handler,
@@ -1205,6 +1241,39 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
 
     // User Emails (Moderation)
     ModeratorListUserEmailChangesQueryParams,
+
+    // Folders
+    FolderInfo,
+    FolderMediaFileInfo,
+    FolderPathInfo,
+    FolderMediaFilesPathInfo,
+    SubfolderPathInfo,
+    CreateFolderRequest,
+    CreateFolderSuccessResponse,
+    ListFoldersQueryParams,
+    ListFoldersSuccessResponse,
+    GetFolderSuccessResponse,
+    RenameFolderRequest,
+    RenameFolderSuccessResponse,
+    SetFolderStarRequest,
+    SetFolderStarSuccessResponse,
+    SetFolderColorCodeRequest,
+    SetFolderColorCodeSuccessResponse,
+    SetFolderCoverImageRequest,
+    SetFolderCoverImageSuccessResponse,
+    DeleteFolderSuccessResponse,
+    ListSubfoldersQueryParams,
+    ListSubfoldersSuccessResponse,
+    BulkAddSubfoldersRequest,
+    BulkAddSubfoldersSuccessResponse,
+    BulkRemoveSubfoldersRequest,
+    BulkRemoveSubfoldersSuccessResponse,
+    ListFolderMediaFilesQueryParams,
+    ListFolderMediaFilesSuccessResponse,
+    BulkAddFolderMediaFilesRequest,
+    BulkAddFolderMediaFilesSuccessResponse,
+    BulkRemoveFolderMediaFilesRequest,
+    BulkRemoveFolderMediaFilesSuccessResponse,
   ))
 )]
 pub struct ApiDoc;

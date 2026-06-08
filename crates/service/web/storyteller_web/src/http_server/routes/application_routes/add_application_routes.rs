@@ -5,6 +5,7 @@ use crate::http_server::routes::application_routes::comments_routes::add_comment
 use crate::http_server::routes::application_routes::credits_routes::add_credits_routes;
 use crate::http_server::routes::application_routes::dev_routes::add_dev_routes;
 use crate::http_server::routes::application_routes::featured_item_routes::add_featured_item_routes;
+use crate::http_server::routes::application_routes::folders_routes::add_folders_routes;
 use crate::http_server::routes::application_routes::generate_routes::add_generate_routes;
 use crate::http_server::routes::application_routes::job_routes::add_job_routes;
 use crate::http_server::routes::application_routes::media_files_routes::add_media_file_routes;
@@ -55,6 +56,7 @@ where
 
   // Media files routes
   app = add_media_file_routes(app); // /v1/media_files/...
+  app = add_folders_routes(app); // /v1/folders/...
   app = add_featured_item_routes(app); // /v1/featured_item/...
   app = add_prompts_routes(app); // /v1/prompts/...
 

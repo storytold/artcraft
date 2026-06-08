@@ -8,6 +8,7 @@ pub mod credits;
 pub mod dev;
 pub mod download_job;
 pub mod featured_items;
+pub mod folders;
 pub mod generate;
 pub mod image_studio;
 pub mod inference_job;

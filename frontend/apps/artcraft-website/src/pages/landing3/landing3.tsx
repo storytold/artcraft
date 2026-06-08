@@ -26,7 +26,7 @@ import {
   faFilm,
   faPaintBrush,
   faCamera,
-  faRocket,
+  faGlobe,
   faVolumeXmark,
 } from "@fortawesome/pro-solid-svg-icons";
 import Seo from "../../components/seo";
@@ -34,8 +34,9 @@ import Footer from "../../components/footer";
 import { DownloadModal } from "../../components/download-modal";
 import ModelBadgeGrid from "../../components/model-badge-grid";
 import { getSession } from "../../lib/session";
+import { BillingApi } from "@storyteller/api";
 import { DOWNLOAD_LINKS } from "../../config/github_download_links";
-import { appLink, SOCIAL_LINKS } from "../../config/links";
+import { webappUrl, SOCIAL_LINKS } from "../../config/links";
 import { Button } from "@storyteller/ui-button";
 import { Tooltip } from "@storyteller/ui-tooltip";
 import { Link } from "react-router-dom";
@@ -212,10 +213,48 @@ const TruchetBlob = ({
   </div>
 );
 
+// Primary CTA: routes subscribers straight to the webapp homepage and everyone
+// else (logged out, or logged in without an active subscription) to /pricing.
+const UseOnWebButton = ({
+  isLoggedIn,
+  hasSubscription,
+}: {
+  isLoggedIn: boolean;
+  hasSubscription: boolean;
+}) => {
+  const className =
+    "group inline-flex items-center gap-2 h-11 px-5 rounded-full bg-primary hover:bg-primary-600 text-white text-[14px] font-semibold transition-all shadow-[0_4px_24px_-4px_rgba(45,129,255,0.4)] hover:shadow-[0_8px_32px_-4px_rgba(45,129,255,0.5)] hover:-translate-y-px";
+  const inner = (
+    <>
+      <FontAwesomeIcon icon={faGlobe} className="text-[13px]" />
+      Use on Web
+    </>
+  );
+  return (
+    <Tooltip
+      content="Use ArtCraft in your browser"
+      position="top"
+      delay={0}
+      className="rounded-full"
+    >
+      {isLoggedIn && hasSubscription ? (
+        <a href={webappUrl("/")} className={className}>
+          {inner}
+        </a>
+      ) : (
+        <Link to="/pricing" className={className}>
+          {inner}
+        </Link>
+      )}
+    </Tooltip>
+  );
+};
+
 const Landing3 = () => {
   const [activeVideo, setActiveVideo] = useState<number | null>(null);
   const [showDownloadModal, setShowDownloadModal] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [hasSubscription, setHasSubscription] = useState(false);
   const [heroVideoMuted, setHeroVideoMuted] = useState(true);
   const heroVideoRef = useRef<HTMLVideoElement>(null);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -234,10 +273,20 @@ const Landing3 = () => {
 
   useEffect(() => {
     let cancelled = false;
-    getSession().then((response) => {
-      if (!cancelled && response.success && response.data?.loggedIn) {
-        setIsLoggedIn(true);
-      }
+    getSession().then(async (response) => {
+      if (cancelled || !response.success || !response.data?.loggedIn) return;
+      setIsLoggedIn(true);
+      try {
+        const subResponse = await new BillingApi().ListActiveSubscriptions();
+        if (
+          !cancelled &&
+          subResponse.success &&
+          subResponse.data &&
+          subResponse.data.active_subscriptions.length > 0
+        ) {
+          setHasSubscription(true);
+        }
+      } catch (e) {}
     });
     return () => {
       cancelled = true;
@@ -553,20 +602,10 @@ const Landing3 = () => {
               </Button>
             ) : (
               <>
-                <Tooltip
-                  content="Buy credits and support open source"
-                  position="top"
-                  delay={0}
-                  className="rounded-full"
-                >
-                  <Link
-                    to="/pricing"
-                    className="group inline-flex items-center gap-2 h-11 px-5 rounded-full bg-primary hover:bg-primary-600 text-white text-[14px] font-semibold transition-all shadow-[0_4px_24px_-4px_rgba(45,129,255,0.4)] hover:shadow-[0_8px_32px_-4px_rgba(45,129,255,0.5)] hover:-translate-y-px"
-                  >
-                    <FontAwesomeIcon icon={faRocket} className="text-[13px]" />
-                    Supercharge Credits
-                  </Link>
-                </Tooltip>
+                <UseOnWebButton
+                  isLoggedIn={isLoggedIn}
+                  hasSubscription={hasSubscription}
+                />
                 <a
                   href={downloadUrl}
                   onClick={onDownloadClick}
@@ -582,26 +621,8 @@ const Landing3 = () => {
             )}
           </div>
 
-          {/* Secondary: try in browser */}
-          <div
-            className="flex items-center justify-center gap-3 mb-12 sm:mb-16 text-[13px] text-white/45"
-            data-reveal
-          >
-            <span>or generate in your browser:</span>
-            <a
-              href={appLink("/create-image")}
-              className="group inline-flex items-center gap-1 text-white/65 hover:text-white underline-offset-4 hover:underline transition-colors"
-            >
-              Image
-            </a>
-            <span className="text-white/25">·</span>
-            <a
-              href={appLink("/create-video")}
-              className="group inline-flex items-center gap-1 text-white/65 hover:text-white underline-offset-4 hover:underline transition-colors"
-            >
-              Video
-            </a>
-          </div>
+          {/* Spacer below CTAs */}
+          <div className="mb-12 sm:mb-16" />
 
           {/* Hero video */}
           <div
@@ -1168,6 +1189,42 @@ const Landing3 = () => {
           </div>
         </div>
       </section>
+      {/* COMMUNITY CTA */}
+      <section className="relative px-4 sm:px-8 pt-8 sm:pt-12 overflow-hidden">
+        <div className="relative z-10 max-w-3xl mx-auto" data-reveal>
+          <div className="rounded-2xl sm:rounded-3xl bg-white/[0.02] border border-white/[0.08] px-6 py-10 sm:px-10 sm:py-12 text-center">
+            <h2 className="text-2xl sm:text-3xl tracking-[-0.025em] font-medium leading-tight mb-3 text-white">
+              Open source & community-driven
+            </h2>
+            <p className="max-w-xl mx-auto text-base text-white/60 leading-relaxed mb-8">
+              Join the conversation on Discord and star us on GitHub.
+            </p>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+              <a
+                href={SOCIAL_LINKS.DISCORD}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 h-11 px-5 rounded-full bg-white/[0.06] hover:bg-white/[0.1] text-white text-[14px] font-semibold border border-white/[0.1] transition-all hover:-translate-y-px"
+              >
+                <FontAwesomeIcon
+                  icon={faDiscord}
+                  className="text-[13px] text-[#5865F2]"
+                />
+                Join Discord
+              </a>
+              <a
+                href={SOCIAL_LINKS.GITHUB}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 h-11 px-5 rounded-full bg-white/[0.06] hover:bg-white/[0.1] text-white text-[14px] font-semibold border border-white/[0.1] transition-all hover:-translate-y-px"
+              >
+                <FontAwesomeIcon icon={faGithub} className="text-[13px]" />
+                Star on GitHub
+              </a>
+            </div>
+          </div>
+        </div>
+      </section>
       {/* FINAL CTA */}
       <section className="relative px-4 sm:px-8 py-20 sm:py-32 overflow-hidden">
         <div
@@ -1214,23 +1271,10 @@ const Landing3 = () => {
                   </button>
                 ) : (
                   <>
-                    <Tooltip
-                      content="Buy credits and support open source"
-                      position="top"
-                      delay={0}
-                      className="rounded-full"
-                    >
-                      <Link
-                        to="/pricing"
-                        className="group inline-flex items-center gap-2 h-11 px-5 rounded-full bg-primary hover:bg-primary-600 text-white text-[14px] font-semibold transition-all shadow-[0_4px_24px_-4px_rgba(45,129,255,0.4)] hover:shadow-[0_8px_32px_-4px_rgba(45,129,255,0.5)] hover:-translate-y-px"
-                      >
-                        <FontAwesomeIcon
-                          icon={faRocket}
-                          className="text-[13px]"
-                        />
-                        Supercharge Credits
-                      </Link>
-                    </Tooltip>
+                    <UseOnWebButton
+                      isLoggedIn={isLoggedIn}
+                      hasSubscription={hasSubscription}
+                    />
                     <a
                       href={downloadUrl}
                       onClick={onDownloadClick}
@@ -1242,52 +1286,9 @@ const Landing3 = () => {
                       />
                       Download for {isMacOs ? "Mac" : "Windows"}
                     </a>
-                    <a
-                      href={SOCIAL_LINKS.DISCORD}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-2 h-11 px-5 rounded-full bg-white/[0.06] hover:bg-white/[0.1] text-white text-[14px] font-semibold border border-white/[0.1] transition-all hover:-translate-y-px"
-                    >
-                      <FontAwesomeIcon
-                        icon={faDiscord}
-                        className="text-[13px] text-[#5865F2]"
-                      />
-                      Join Discord
-                    </a>
-                    <a
-                      href={SOCIAL_LINKS.GITHUB}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-2 h-11 px-5 rounded-full bg-white/[0.06] hover:bg-white/[0.1] text-white text-[14px] font-semibold border border-white/[0.1] transition-all hover:-translate-y-px"
-                    >
-                      <FontAwesomeIcon
-                        icon={faGithub}
-                        className="text-[13px]"
-                      />
-                      Star on GitHub
-                    </a>
                   </>
                 )}
               </div>
-
-              {!isMobile && (
-                <div className="mt-6 flex items-center justify-center gap-3 text-[13px] text-white/45">
-                  <span>or generate in your browser:</span>
-                  <a
-                    href={appLink("/create-image")}
-                    className="group inline-flex items-center gap-1 text-white/65 hover:text-white underline-offset-4 hover:underline transition-colors"
-                  >
-                    Image
-                  </a>
-                  <span className="text-white/25">·</span>
-                  <a
-                    href={appLink("/create-video")}
-                    className="group inline-flex items-center gap-1 text-white/65 hover:text-white underline-offset-4 hover:underline transition-colors"
-                  >
-                    Video
-                  </a>
-                </div>
-              )}
             </div>
           </div>
         </div>

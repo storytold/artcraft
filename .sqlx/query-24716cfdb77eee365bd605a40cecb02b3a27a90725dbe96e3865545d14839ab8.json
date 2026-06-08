@@ -1,0 +1,12 @@
+{
+  "db_name": "MySQL",
+  "query": "\nUPDATE folders\nSET has_star = ?\nWHERE token = ?\n  AND owner_user_token = ?\n  AND maybe_deleted_at IS NULL\nLIMIT 1\n    ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 3
+    },
+    "nullable": []
+  },
+  "hash": "24716cfdb77eee365bd605a40cecb02b3a27a90725dbe96e3865545d14839ab8"
+}

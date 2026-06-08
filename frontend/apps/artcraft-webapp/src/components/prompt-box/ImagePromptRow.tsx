@@ -442,6 +442,11 @@ const AddButton = ({
           open={drawerOpen}
           onOpenChange={setDrawerOpen}
           title="Add image"
+          // Non-modal: this drawer opens the library modal on top of itself.
+          // Two overlapping modal Radix layers each lock <body>, and the
+          // sheet's close/cleanup strands a `pointer-events: none` lock on
+          // <body> — freezing the whole page (mobile-only). See SettingsDrawer.
+          modal={false}
         >
           <div className="flex flex-col gap-2 pb-2">
             <Button
@@ -460,8 +465,8 @@ const AddButton = ({
               icon={faImages}
               className="w-full bg-white/15 hover:bg-white/20"
               onClick={() => {
-                onPickFromLibrary();
                 setDrawerOpen(false);
+                onPickFromLibrary();
               }}
             >
               Pick from library

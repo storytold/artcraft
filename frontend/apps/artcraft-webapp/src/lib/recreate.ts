@@ -1,4 +1,5 @@
-import type { NavigateFunction } from "react-router-dom";
+import { useCallback, useState, type MouseEvent } from "react";
+import { useNavigate, type NavigateFunction } from "react-router-dom";
 import {
   MediaFilesApi,
   PromptsApi,
@@ -99,6 +100,38 @@ export async function applyRecreateFromPromptToken(
   } catch {
     toast.error("Failed to load recreate data");
   }
+}
+
+// Hook wrapping the prompt-token recreate flow with its own loading state.
+// Shared by every card that recreates from a known prompt token (in-progress /
+// failed gallery cards and the task-queue rows) so the button behaves
+// identically everywhere. `handleRecreate` swallows the click so it doesn't
+// bubble to a parent card's onClick.
+export function useRecreateFromPromptToken(
+  promptToken: string | undefined,
+  mediaClass: RecreateMediaClass,
+): {
+  isRecreating: boolean;
+  handleRecreate: (e?: MouseEvent) => void;
+} {
+  const navigate = useNavigate();
+  const [isRecreating, setIsRecreating] = useState(false);
+
+  const handleRecreate = useCallback(
+    async (e?: MouseEvent) => {
+      e?.stopPropagation();
+      if (!promptToken || isRecreating) return;
+      setIsRecreating(true);
+      try {
+        await applyRecreateFromPromptToken(promptToken, mediaClass, navigate);
+      } finally {
+        setIsRecreating(false);
+      }
+    },
+    [promptToken, mediaClass, navigate, isRecreating],
+  );
+
+  return { isRecreating, handleRecreate };
 }
 
 function applyRecreateFromPromptData(

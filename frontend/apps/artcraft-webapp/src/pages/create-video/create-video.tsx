@@ -54,10 +54,15 @@ import {
 import { GenerationCountPicker } from "../create-image/components/GenerationCountPicker";
 import { useVideoCostEstimate } from "../../lib/cost-estimate-api";
 import {
+  resolveModelOption,
+  resolveModelCount,
+} from "../../lib/resolve-model-setting";
+import {
   useOmniGenVideoModels,
   getModelCreatorIconPath,
   getModelDescription,
   getModelInfo,
+  OMNI_GENERATE_OUTAGE_MESSAGE,
 } from "../../lib/omni-gen-hooks";
 import { useSignupCta } from "../../components/signup-cta-modal";
 import { useInsufficientCredits } from "../../components/insufficient-credits-modal";
@@ -204,17 +209,21 @@ function resolveDurationForModel(
   if (current == null) return model.duration_seconds_default ?? null;
   const max = maxDurationForMode(model, isReferenceMode);
   if (model.duration_seconds_min != null && max != null) {
-    if (current >= model.duration_seconds_min && current <= max) {
-      return current;
-    }
-    return Math.min(
-      model.duration_seconds_default ?? model.duration_seconds_min,
-      max,
-    );
+    // Clamp the user's chosen seconds into this model's range rather than
+    // resetting to the default — switching from a 15s model to a 10s-max model
+    // should land on 10s (closest available), not jump down to the minimum.
+    return Math.min(Math.max(current, model.duration_seconds_min), max);
   }
   if (model.duration_seconds_options?.length) {
-    if (model.duration_seconds_options.includes(current)) return current;
-    return model.duration_seconds_default ?? model.duration_seconds_options[0]!;
+    const options = model.duration_seconds_options;
+    if (options.includes(current)) return current;
+    // Snap to the nearest supported option (ties → longer) instead of the
+    // default, so e.g. 15s on a 5s/10s model resolves to 10s, not 5s.
+    return options.reduce((best, o) => {
+      const dBest = Math.abs(best - current);
+      const dO = Math.abs(o - current);
+      return dO < dBest || (dO === dBest && o > best) ? o : best;
+    }, options[0]!);
   }
   return model.duration_seconds_default ?? null;
 }
@@ -255,7 +264,17 @@ export default function CreateVideo() {
 
   const prompt = ui.prompt;
   const setPrompt = useCallback((v: string) => setUi({ prompt: v }), [setUi]);
-  const selectedSize = ui.selectedSize;
+
+  // Settings are sticky across model switches: the store keeps the user's
+  // chosen value untouched; we resolve an *effective* value against the current
+  // model here (keep when supported, else fall back to the model default for
+  // display + generation). See lib/resolve-model-setting.
+  const selectedSize =
+    resolveModelOption(
+      ui.selectedSize,
+      selectedModel?.aspect_ratio_options,
+      selectedModel?.aspect_ratio_default,
+    ) ?? ui.selectedSize;
   const setSelectedSize = useCallback(
     (v: string) => setUi({ selectedSize: v }),
     [setUi],
@@ -265,13 +284,23 @@ export default function CreateVideo() {
     (v: number | null) => setUi({ duration: v }),
     [setUi],
   );
-  const resolution = ui.resolution ?? selectedModel?.resolution_default ?? null;
+  const resolution =
+    resolveModelOption(
+      ui.resolution ?? undefined,
+      selectedModel?.resolution_options,
+      selectedModel?.resolution_default,
+    ) ?? null;
   const setResolution = useCallback(
     (v: string | null) => setUi({ resolution: v }),
     [setUi],
   );
   const generateWithSound = ui.generateWithSound;
-  const numVideos = ui.numVideos;
+  const numVideos = resolveModelCount(
+    ui.numVideos,
+    selectedModel?.batch_size_options,
+    selectedModel?.batch_size_max,
+    selectedModel?.batch_size_default,
+  );
   const setNumVideos = useCallback(
     (v: number) => setUi({ numVideos: v }),
     [setUi],
@@ -376,6 +405,16 @@ export default function CreateVideo() {
   const needsImage =
     !!selectedModel?.starting_keyframe_required && referenceImages.length === 0;
 
+  // Effective duration: keep the user's chosen seconds when the model supports
+  // them, else clamp/snap to this model's range for display + generation. The
+  // stored preference (ui.duration) stays untouched, so switching back restores
+  // it — same sticky behavior as the other settings.
+  const effectiveDuration = selectedModel
+    ? (resolveDurationForModel(selectedModel, duration, isReferenceMode) ??
+      selectedModel.duration_seconds_default ??
+      5)
+    : (duration ?? 5);
+
   // Jobs + gallery
   const jobs = useGenerationJobs({ mediaType: "video", enabled: !!user });
   const gallery = useGalleryData({
@@ -424,7 +463,7 @@ export default function CreateVideo() {
     model: selectedModel?.model ?? "",
     aspectRatio: selectedSize,
     resolution,
-    duration: duration ?? selectedModel?.duration_seconds_default ?? null,
+    duration: effectiveDuration,
     numVideos,
     hasStartFrame: !isReferenceMode && referenceImages.length > 0,
     hasEndFrame: !isReferenceMode && hasEndFrame && !!endFrameImage,
@@ -509,8 +548,6 @@ export default function CreateVideo() {
     }
     return null;
   }, [selectedModel, isReferenceMode]);
-  const effectiveDuration =
-    duration ?? selectedModel?.duration_seconds_default ?? 5;
   const [localDuration, setLocalDuration] = useState(effectiveDuration);
   const durationTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
   useEffect(() => {
@@ -520,11 +557,17 @@ export default function CreateVideo() {
   }, [effectiveDuration]);
   const handleDurationSlide = useCallback(
     (v: number) => {
-      setLocalDuration(v);
+      // Snap to a model-valid duration so the thumb and the chip never disagree
+      // (no-op for continuous-range models; snaps to the nearest option for
+      // models with sparse second options like 5s / 10s).
+      const snapped = selectedModel
+        ? (resolveDurationForModel(selectedModel, v, isReferenceMode) ?? v)
+        : v;
+      setLocalDuration(snapped);
       clearTimeout(durationTimerRef.current);
-      durationTimerRef.current = setTimeout(() => setDuration(v), 300);
+      durationTimerRef.current = setTimeout(() => setDuration(snapped), 300);
     },
-    [setDuration],
+    [setDuration, selectedModel, isReferenceMode],
   );
   const resolutionItems = useMemo(
     (): PopoverItem[] | null =>
@@ -655,23 +698,12 @@ export default function CreateVideo() {
           ? "reference"
           : "keyframe";
 
-      const nextDuration = resolveDurationForModel(
-        model,
-        currentState.duration,
-        nextInputMode === "reference",
-      );
-
+      // Aspect ratio / resolution / count / duration / sound are preserved and
+      // resolved against the new model at read time, so the user's choices
+      // survive model switches. Only input mode (capability-bound) is recomputed.
       setUi({
         selectedModelId: model.model,
-        selectedSize: model.aspect_ratio_default ?? "wide_sixteen_by_nine",
-        duration: nextDuration,
-        resolution: model.resolution_default ?? null,
-        generateWithSound: false,
         inputMode: nextInputMode,
-        numVideos: Math.min(
-          model.batch_size_max ?? 4,
-          model.batch_size_default ?? 1,
-        ),
       });
 
       // Only clear media that the new model can't use in any mode.
@@ -869,7 +901,7 @@ export default function CreateVideo() {
       model: selectedModel.model,
       numVideos,
       aspectRatio: selectedSize,
-      duration: duration ?? selectedModel.duration_seconds_default ?? undefined,
+      duration: effectiveDuration,
       resolution: hasResolutionOptions
         ? (resolution ?? selectedModel.resolution_default ?? undefined)
         : undefined,
@@ -913,6 +945,9 @@ export default function CreateVideo() {
           dismissBatch(batchId);
           openInsufficientCredits();
         } else {
+          if (result.errorCode != null && result.errorCode >= 500) {
+            toast.error(OMNI_GENERATE_OUTAGE_MESSAGE);
+          }
           failBatch(batchId, result.error ?? "Failed to start generation");
         }
       } else {
@@ -961,7 +996,7 @@ export default function CreateVideo() {
     selectedModel,
     selectedSize,
     numVideos,
-    duration,
+    effectiveDuration,
     resolution,
     generateWithSound,
     hasResolutionOptions,
@@ -1241,7 +1276,7 @@ export default function CreateVideo() {
       promptBox={
         <div
           ref={promptBoxRef}
-          className="animate-fade-in-up fixed bottom-2 sm:bottom-3 right-0 z-30 mx-auto w-full max-w-5xl px-2 sm:px-4 transition-[left] duration-200 ease-linear"
+          className="animate-fade-in-up fixed bottom-2 sm:bottom-3 right-0 z-30 mx-auto max-w-5xl px-2 sm:px-4 transition-[left] duration-200 ease-linear"
           style={{
             animationDelay: "150ms",
             left: "var(--ac-sidebar-offset, 0px)",

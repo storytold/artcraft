@@ -13,7 +13,7 @@ const SheetOverlay = React.forwardRef<
   <DialogPrimitive.Overlay
     ref={ref}
     className={cn(
-      "ac-sheet-overlay fixed inset-0 z-50 bg-black/60 backdrop-blur-sm",
+      "ac-sheet-overlay fixed inset-0 z-50 bg-black/60",
       className,
     )}
     {...props}
@@ -21,40 +21,63 @@ const SheetOverlay = React.forwardRef<
 ));
 SheetOverlay.displayName = "SheetOverlay";
 
-type SheetContentProps = React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content> & {
+type SheetContentProps = React.ComponentPropsWithoutRef<
+  typeof DialogPrimitive.Content
+> & {
   side?: "left" | "right" | "top" | "bottom";
+  // When the sheet is non-modal (`modal={false}` on Sheet), Radix renders no
+  // <Dialog.Overlay>, so we draw our own dimmed backdrop to keep the focus.
+  // Pass `open` so it can play the same fade in/out via `.ac-sheet-overlay`.
+  modal?: boolean;
+  open?: boolean;
 };
 
 const SheetContent = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Content>,
   SheetContentProps
->(({ side = "right", className, children, ...props }, ref) => (
-  <SheetPortal>
-    <SheetOverlay />
-    <DialogPrimitive.Content
-      ref={ref}
-      className={cn(
-        "fixed z-50 flex flex-col bg-[#1F1F1F] shadow-lg transition ease-in-out",
-        "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:duration-200 data-[state=open]:duration-300",
-        side === "left" &&
-          "inset-y-0 left-0 h-full border-r border-white/[0.08] data-[state=open]:slide-in-from-left data-[state=closed]:slide-out-to-left",
-        side === "right" &&
-          "inset-y-0 right-0 h-full border-l border-white/[0.08] data-[state=open]:slide-in-from-right data-[state=closed]:slide-out-to-right",
-        side === "top" &&
-          "inset-x-0 top-0 border-b border-white/[0.08] data-[state=open]:slide-in-from-top data-[state=closed]:slide-out-to-top",
-        side === "bottom" &&
-          "inset-x-0 bottom-0 border-t border-white/[0.08] data-[state=open]:slide-in-from-bottom data-[state=closed]:slide-out-to-bottom",
-        className,
+>(
+  (
+    { side = "right", className, children, modal = true, open, ...props },
+    ref,
+  ) => (
+    <SheetPortal>
+      {modal ? (
+        <SheetOverlay />
+      ) : (
+        <div
+          aria-hidden
+          data-state={open ? "open" : "closed"}
+          className="ac-sheet-overlay fixed inset-0 z-50 bg-black/60"
+        />
       )}
-      {...props}
-    >
-      {children}
-    </DialogPrimitive.Content>
-  </SheetPortal>
-));
+      <DialogPrimitive.Content
+        ref={ref}
+        className={cn(
+          "fixed z-50 flex flex-col bg-[#1F1F1F] shadow-lg transition ease-in-out",
+          "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:duration-200 data-[state=open]:duration-300",
+          side === "left" &&
+            "inset-y-0 left-0 h-full border-r border-white/[0.08] data-[state=open]:slide-in-from-left data-[state=closed]:slide-out-to-left",
+          side === "right" &&
+            "inset-y-0 right-0 h-full border-l border-white/[0.08] data-[state=open]:slide-in-from-right data-[state=closed]:slide-out-to-right",
+          side === "top" &&
+            "inset-x-0 top-0 border-b border-white/[0.08] data-[state=open]:slide-in-from-top data-[state=closed]:slide-out-to-top",
+          side === "bottom" &&
+            "inset-x-0 bottom-0 border-t border-white/[0.08] data-[state=open]:slide-in-from-bottom data-[state=closed]:slide-out-to-bottom",
+          className,
+        )}
+        {...props}
+      >
+        {children}
+      </DialogPrimitive.Content>
+    </SheetPortal>
+  ),
+);
 SheetContent.displayName = "SheetContent";
 
-const SheetHeader = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
+const SheetHeader = ({
+  className,
+  ...props
+}: React.HTMLAttributes<HTMLDivElement>) => (
   <div className={cn("flex flex-col gap-1 p-4", className)} {...props} />
 );
 
