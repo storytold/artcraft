@@ -95,7 +95,7 @@ async fn run_generate_image(prompt: &str) -> Result<String> {
   }
 
   let request = OmniGenImageCostAndGenerateRequest {
-    idempotency_token: None,
+    idempotency_token: Some(uuid::Uuid::new_v4().hyphenated().to_string()),
     model: Some(DEFAULT_MODEL),
     prompt: Some(trimmed.to_string()),
     image_media_tokens: None,
