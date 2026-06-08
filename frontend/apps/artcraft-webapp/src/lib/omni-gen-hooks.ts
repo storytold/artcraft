@@ -4,6 +4,7 @@ import type {
   OmniGenImageModelInfo,
   OmniGenVideoModelInfo,
 } from "@storyteller/api";
+import { getModelDisplayName as getCanonicalModelDisplayName } from "@storyteller/model-list";
 
 // ── Singleton caches (fetch once per session) ────────────────────────────
 
@@ -165,58 +166,15 @@ export function useOmniGenVideoModels(): {
 
 // ── Display name helper ──────────────────────────────────────────────────
 
-const MODEL_DISPLAY_NAMES: Record<string, string> = {
-  // Image models
-  flux_1_dev: "Flux 1 Dev",
-  flux_1_schnell: "Flux 1 Schnell",
-  flux_pro_1p1: "Flux Pro 1.1",
-  flux_pro_1p1_ultra: "Flux Pro 1.1 Ultra",
-  gpt_image_1p5: "GPT Image 1.5",
-  gpt_image_2: "GPT Image 2",
-  midjourney_7: "Midjourney v7",
-  midjourney_7_niji: "Midjourney v7 Niji (Anime)",
-  midjourney_8: "Midjourney v8",
-  nano_banana: "Nano Banana",
-  nano_banana_2: "Nano Banana 2",
-  nano_banana_pro: "Nano Banana Pro",
-  seedream_4: "Seedream 4",
-  seedream_4p5: "Seedream 4.5",
-  seedream_5_lite: "Seedream 5 Lite",
-  // Video models
-  grok_video: "Grok Video",
-  grok_imagine_video: "Grok Imagine",
-  grok_imagine_video_1p5: "Grok Imagine 1.5",
-  kling_1p6_pro: "Kling 1.6 Pro",
-  kling_2p1_pro: "Kling 2.1 Pro",
-  kling_2p1_master: "Kling 2.1 Master",
-  kling_2p5_turbo_pro: "Kling 2.5 Turbo Pro",
-  kling_2p6_pro: "Kling 2.6 Pro",
-  kling_3p0_standard: "Kling 3.0 Standard",
-  kling_3p0_pro: "Kling 3.0 Pro",
-  seedance_1p0_lite: "Seedance 1.0 Lite",
-  seedance_1p5_pro: "Seedance 1.5 Pro",
-  seedance_2p0: "Seedance 2.0",
-  seedance_2p0_fast: "Seedance 2.0 Fast",
-  seedance_2p0_bp: "Seedance 2.0 Plus",
-  seedance_2p0_bp_fast: "Seedance 2.0 Plus Fast",
-  happy_horse_1p0: "Happy Horse 1.0",
-  sora_2: "Sora 2",
-  sora_2_pro: "Sora 2 Pro",
-  veo_2: "Google Veo 2",
-  veo_3: "Google Veo 3",
-  veo_3_fast: "Google Veo 3 Fast",
-  veo_3p1: "Google Veo 3.1",
-  veo_3p1_fast: "Google Veo 3.1 Fast",
-  // Edit / VFX models
-  switch_x: "SwitchX",
-};
-
+// The actual name map lives in `@storyteller/model-list` so the gallery cards,
+// task queue, and lightbox all resolve names from a single source of truth.
+// The API-provided `fullName` (when present) still wins over the static map.
 export function getModelDisplayName(
   modelId: string,
   fullName?: string | null,
 ): string {
   if (fullName) return fullName;
-  return MODEL_DISPLAY_NAMES[modelId] ?? modelId;
+  return getCanonicalModelDisplayName(modelId);
 }
 
 // ── Description / info helpers ─────────────────────────────────────────────

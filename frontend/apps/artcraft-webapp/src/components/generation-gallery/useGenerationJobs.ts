@@ -21,6 +21,10 @@ export interface InProgressJob {
   estimatedTimeLeftMs?: number;
   createdAt: string;
   batchCount?: number;
+  // Prompt token + media class enable the "Recreate" action while the job is
+  // still running, mirroring the failed/completed cards.
+  promptToken?: string;
+  mediaClass: "image" | "video";
 }
 
 export interface FailedJob {
@@ -143,6 +147,8 @@ function jobToInProgress(
     progress,
     estimatedTimeLeftMs,
     createdAt: job.created_at,
+    promptToken: job.request.maybe_prompt_token ?? undefined,
+    mediaClass: isVideo ? "video" : "image",
   };
 }
 

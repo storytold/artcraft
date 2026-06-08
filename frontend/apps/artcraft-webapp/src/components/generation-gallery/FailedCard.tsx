@@ -1,5 +1,4 @@
-import { memo, useCallback, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { memo } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faArrowRotateRight,
@@ -8,7 +7,7 @@ import {
   faXmark,
 } from "@fortawesome/pro-solid-svg-icons";
 import { getModelCreatorIconPath } from "../../lib/omni-gen-hooks";
-import { applyRecreateFromPromptToken } from "../../lib/recreate";
+import { useRecreateFromPromptToken } from "../../lib/recreate";
 
 export interface FailedCardProps {
   id: string;
@@ -40,23 +39,11 @@ export const FailedCard = memo(function FailedCard({
   recreateMediaClass,
   onDismiss,
 }: FailedCardProps) {
-  const navigate = useNavigate();
-  const [isRecreating, setIsRecreating] = useState(false);
   const iconPath = modelId ? getModelCreatorIconPath(modelId) : null;
-
-  const handleRecreate = useCallback(async () => {
-    if (!promptToken || isRecreating) return;
-    setIsRecreating(true);
-    try {
-      await applyRecreateFromPromptToken(
-        promptToken,
-        recreateMediaClass,
-        navigate,
-      );
-    } finally {
-      setIsRecreating(false);
-    }
-  }, [promptToken, recreateMediaClass, navigate, isRecreating]);
+  const { isRecreating, handleRecreate } = useRecreateFromPromptToken(
+    promptToken,
+    recreateMediaClass,
+  );
 
   return (
     <div className="relative aspect-square w-full overflow-hidden rounded-lg bg-red-500/10">

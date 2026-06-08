@@ -1,5 +1,4 @@
-import { memo, useCallback, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { memo } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faArrowRotateRight,
@@ -9,7 +8,7 @@ import {
 } from "@fortawesome/pro-solid-svg-icons";
 import { Tooltip } from "@storyteller/ui-tooltip";
 import { getModelCreatorIconPath } from "../../lib/omni-gen-hooks";
-import { applyRecreateFromPromptToken } from "../../lib/recreate";
+import { useRecreateFromPromptToken } from "../../lib/recreate";
 import { CopyPromptButton } from "./CopyPromptButton";
 import type { FailedCardProps } from "./FailedCard";
 
@@ -25,23 +24,11 @@ export const FailedRow = memo(function FailedRow({
   recreateMediaClass,
   onDismiss,
 }: FailedCardProps) {
-  const navigate = useNavigate();
-  const [isRecreating, setIsRecreating] = useState(false);
   const iconPath = modelId ? getModelCreatorIconPath(modelId) : null;
-
-  const handleRecreate = useCallback(async () => {
-    if (!promptToken || isRecreating) return;
-    setIsRecreating(true);
-    try {
-      await applyRecreateFromPromptToken(
-        promptToken,
-        recreateMediaClass,
-        navigate,
-      );
-    } finally {
-      setIsRecreating(false);
-    }
-  }, [promptToken, recreateMediaClass, navigate, isRecreating]);
+  const { isRecreating, handleRecreate } = useRecreateFromPromptToken(
+    promptToken,
+    recreateMediaClass,
+  );
 
   return (
     <div className="flex items-center gap-3 rounded-lg px-2.5 py-2">
