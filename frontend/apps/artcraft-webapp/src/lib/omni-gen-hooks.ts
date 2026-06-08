@@ -5,6 +5,16 @@ import type {
   OmniGenVideoModelInfo,
 } from "@storyteller/api";
 import { getModelDisplayName as getCanonicalModelDisplayName } from "@storyteller/model-list";
+import { toast } from "../components/toast/toast";
+
+// Shown when the OmniGen service is unavailable (e.g. returns 5xx). Separate
+// copy for the two failure points so the user knows which step failed. The
+// toast dedups on identical messages within a short window, so concurrent
+// failures surface a single notice.
+export const OMNI_MODELS_OUTAGE_MESSAGE =
+  "Couldn't load models - the generation service may be down. Try again shortly.";
+export const OMNI_GENERATE_OUTAGE_MESSAGE =
+  "Couldn't start generation - the service is temporarily unavailable. Try again shortly.";
 
 // ── Singleton caches (fetch once per session) ────────────────────────────
 
@@ -41,6 +51,7 @@ function fetchImageModelsOnce() {
       } else {
         imageModelsError = "No image models returned from API";
         console.warn("[OmniGen] Image models response:", res);
+        toast.error(OMNI_MODELS_OUTAGE_MESSAGE);
       }
       notifyImageListeners();
     },
@@ -48,6 +59,7 @@ function fetchImageModelsOnce() {
       imageModelsFetching = false;
       imageModelsError = err?.message ?? "Failed to fetch image models";
       console.error("[OmniGen] Failed to fetch image models:", err);
+      toast.error(OMNI_MODELS_OUTAGE_MESSAGE);
       notifyImageListeners();
     },
   );
@@ -66,6 +78,7 @@ function fetchVideoModelsOnce() {
       } else {
         videoModelsError = "No video models returned from API";
         console.warn("[OmniGen] Video models response:", res);
+        toast.error(OMNI_MODELS_OUTAGE_MESSAGE);
       }
       notifyVideoListeners();
     },
@@ -73,6 +86,7 @@ function fetchVideoModelsOnce() {
       videoModelsFetching = false;
       videoModelsError = err?.message ?? "Failed to fetch video models";
       console.error("[OmniGen] Failed to fetch video models:", err);
+      toast.error(OMNI_MODELS_OUTAGE_MESSAGE);
       notifyVideoListeners();
     },
   );

@@ -55,7 +55,9 @@ import {
   getModelCreatorIconPath,
   getModelDescription,
   getModelInfo,
+  OMNI_GENERATE_OUTAGE_MESSAGE,
 } from "../../lib/omni-gen-hooks";
+import { toast } from "../../components/toast/toast";
 import { useSignupCta } from "../../components/signup-cta-modal";
 import { useInsufficientCredits } from "../../components/insufficient-credits-modal";
 import { faSparkles } from "@fortawesome/pro-solid-svg-icons";
@@ -370,6 +372,9 @@ export default function CreateImage() {
           dismissBatch(batchId);
           openInsufficientCredits();
         } else {
+          if (result.errorCode != null && result.errorCode >= 500) {
+            toast.error(OMNI_GENERATE_OUTAGE_MESSAGE);
+          }
           failBatch(batchId, result.error ?? "Failed to start generation");
         }
         setIsGenerating(false);

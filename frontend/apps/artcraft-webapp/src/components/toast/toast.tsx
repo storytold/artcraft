@@ -92,7 +92,7 @@ export const ToastContainer = () => {
       {toasts.map((toast) => (
         <div
           key={toast.id}
-          className="glass flex items-center gap-3 rounded-xl px-4 py-2.5 text-sm text-white animate-toast-in"
+          className="glass flex max-w-full items-center gap-3 rounded-xl px-4 py-2.5 text-sm text-white animate-toast-in sm:max-w-md"
         >
           <div
             className={`flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full ${
@@ -104,7 +104,7 @@ export const ToastContainer = () => {
               className="h-3 w-3 text-white"
             />
           </div>
-          <span className="flex-1 text-white/90 whitespace-nowrap overflow-hidden text-ellipsis">
+          <span className="min-w-0 break-words text-white/90">
             {toast.message}
           </span>
           <button
