@@ -8,6 +8,9 @@ use log::warn;
 use artcraft_api_defs::folders::folder::{
   FolderPathInfo, SetFolderStarRequest, SetFolderStarSuccessResponse,
 };
+use mysql_queries::queries::folders::folder::get_folder_for_owner::{
+  get_folder_for_owner, GetFolderForOwnerArgs,
+};
 use mysql_queries::queries::folders::folder::update_folder_has_star::{
   update_folder_has_star, UpdateFolderHasStarArgs,
 };
@@ -45,7 +48,21 @@ pub async fn star_folder_handler(
     &http_request, &server_state.session_checker, &mut conn,
   ).await.map_err(|_| CommonWebError::NotAuthorized)?;
 
-  let rows_affected = update_folder_has_star(UpdateFolderHasStarArgs {
+  // Confirm the folder exists + is owned before issuing the update.
+  // A 404 here is the authoritative "not found" signal — the update
+  // itself is idempotent and we don't gate on rows_affected.
+  get_folder_for_owner(GetFolderForOwnerArgs {
+    folder_token: &path.folder_token,
+    owner_user_token: &user_session.user_token,
+    mysql_executor: &mut *conn,
+    phantom: PhantomData,
+  }).await.map_err(|err| {
+    warn!("Folder lookup failed: {:?}", err);
+    CommonWebError::from_error(err)
+  })?
+  .ok_or(CommonWebError::NotFound)?;
+
+  update_folder_has_star(UpdateFolderHasStarArgs {
     folder_token: &path.folder_token,
     owner_user_token: &user_session.user_token,
     has_star: request.has_star,
@@ -55,10 +72,6 @@ pub async fn star_folder_handler(
     warn!("update_folder_has_star failed: {:?}", err);
     CommonWebError::from_error(err)
   })?;
-
-  if rows_affected == 0 {
-    return Err(CommonWebError::NotFound);
-  }
 
   Ok(Json(SetFolderStarSuccessResponse { success: true }))
 }

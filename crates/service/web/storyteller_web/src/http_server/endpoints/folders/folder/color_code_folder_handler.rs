@@ -8,6 +8,9 @@ use log::warn;
 use artcraft_api_defs::folders::folder::{
   FolderPathInfo, SetFolderColorCodeRequest, SetFolderColorCodeSuccessResponse,
 };
+use mysql_queries::queries::folders::folder::get_folder_for_owner::{
+  get_folder_for_owner, GetFolderForOwnerArgs,
+};
 use mysql_queries::queries::folders::folder::update_folder_color_code::{
   update_folder_color_code, UpdateFolderColorCodeArgs,
 };
@@ -63,7 +66,21 @@ pub async fn color_code_folder_handler(
     }
   }
 
-  let rows_affected = update_folder_color_code(UpdateFolderColorCodeArgs {
+  // Confirm the folder exists + is owned before issuing the update.
+  // A 404 here is the authoritative "not found" signal — the update
+  // itself is idempotent and we don't gate on rows_affected.
+  get_folder_for_owner(GetFolderForOwnerArgs {
+    folder_token: &path.folder_token,
+    owner_user_token: &user_session.user_token,
+    mysql_executor: &mut *conn,
+    phantom: PhantomData,
+  }).await.map_err(|err| {
+    warn!("Folder lookup failed: {:?}", err);
+    CommonWebError::from_error(err)
+  })?
+  .ok_or(CommonWebError::NotFound)?;
+
+  update_folder_color_code(UpdateFolderColorCodeArgs {
     folder_token: &path.folder_token,
     owner_user_token: &user_session.user_token,
     maybe_color_code: trimmed.as_deref(),
@@ -73,10 +90,6 @@ pub async fn color_code_folder_handler(
     warn!("update_folder_color_code failed: {:?}", err);
     CommonWebError::from_error(err)
   })?;
-
-  if rows_affected == 0 {
-    return Err(CommonWebError::NotFound);
-  }
 
   Ok(Json(SetFolderColorCodeSuccessResponse { success: true }))
 }
