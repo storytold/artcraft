@@ -49,14 +49,23 @@ impl ArtcraftServer {
   }
 
   #[tool(
-    description = "Generate an image with Artcraft from a text prompt. Blocks up to 90 seconds for completion. Returns the CDN URL of the generated image."
+    description = "Generate an image with Artcraft from a text prompt. Blocks up to 90 seconds for completion. Returns the generated image inline plus its CDN URL."
   )]
   async fn generate_image(
     &self,
     Parameters(GenerateImageArgs { prompt }): Parameters<GenerateImageArgs>,
   ) -> Result<CallToolResult, McpError> {
     match run_generate_image(&prompt).await {
-      Ok(url) => Ok(CallToolResult::success(vec![Content::text(url)])),
+      Ok(url) => match fetch_image_for_inline(&url).await {
+        Ok((data_b64, mime)) => Ok(CallToolResult::success(vec![
+          Content::image(data_b64, mime),
+          Content::text(url),
+        ])),
+        Err(err) => {
+          tracing::warn!("inline image fetch failed, returning URL only: {:#}", err);
+          Ok(CallToolResult::success(vec![Content::text(url)]))
+        }
+      },
       Err(err) => Ok(CallToolResult::error(vec![Content::text(format!(
         "{:#}",
         err
@@ -290,6 +299,37 @@ fn read_trimmed(path: &PathBuf) -> Result<Option<String>> {
   } else {
     Ok(Some(trimmed.to_string()))
   }
+}
+
+async fn fetch_image_for_inline(url: &str) -> Result<(String, String)> {
+  use base64::Engine as _;
+
+  let client = reqwest::Client::builder()
+    .timeout(Duration::from_secs(30))
+    .gzip(true)
+    .build()?;
+
+  let response = client.get(url).send().await?.error_for_status()?;
+
+  let mime = response
+    .headers()
+    .get(reqwest::header::CONTENT_TYPE)
+    .and_then(|v| v.to_str().ok())
+    .map(|s| s.split(';').next().unwrap_or(s).trim().to_string())
+    .unwrap_or_else(|| guess_mime_from_url(url).to_string());
+
+  let bytes = response.bytes().await?;
+  let data_b64 = base64::engine::general_purpose::STANDARD.encode(&bytes);
+  Ok((data_b64, mime))
+}
+
+fn guess_mime_from_url(url: &str) -> &'static str {
+  let lower = url.split('?').next().unwrap_or(url).to_ascii_lowercase();
+  if lower.ends_with(".png") { "image/png" }
+  else if lower.ends_with(".jpg") || lower.ends_with(".jpeg") { "image/jpeg" }
+  else if lower.ends_with(".webp") { "image/webp" }
+  else if lower.ends_with(".gif") { "image/gif" }
+  else { "image/png" }
 }
 
 fn home_dir() -> Result<PathBuf> {

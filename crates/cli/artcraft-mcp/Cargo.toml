@@ -35,6 +35,10 @@ directories = "6.0.0"
 # Idempotency token generation — backend rejects requests without a v4 UUID
 uuid = { version = "1.8.0", features = ["v4"] }
 
+# Fetch generated image bytes + base64-encode for MCP image content
+reqwest = { version = "0.12.23", default-features = false, features = ["rustls-tls", "gzip"] }
+base64 = "0.22.1"
+
 # Internal crates — path deps into the parent workspace.
 # Cargo resolves their own `.workspace = true` deps against the root
 # workspace at storyteller-rust/Cargo.toml (Cargo walks up from each
