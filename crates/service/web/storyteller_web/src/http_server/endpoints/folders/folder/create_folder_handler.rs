@@ -11,7 +11,6 @@ use mysql_queries::queries::folders::folder::get_folder_for_owner::{
   get_folder_for_owner, GetFolderForOwnerArgs,
 };
 use mysql_queries::queries::folders::folder::insert_folder::{insert_folder, InsertFolderArgs};
-use tokens::tokens::folders::FolderToken;
 
 use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::endpoints::folders::folder::folder_info_conversion::folder_row_to_info;
@@ -78,10 +77,7 @@ pub async fn create_folder_handler(
     }
   }
 
-  let token = FolderToken::generate();
-
-  insert_folder(InsertFolderArgs {
-    token: &token,
+  let token = insert_folder(InsertFolderArgs {
     name: &name,
     owner_user_token: &user_session.user_token,
     maybe_parent_folder_token: request.maybe_parent_folder_token.as_ref(),
