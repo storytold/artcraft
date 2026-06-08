@@ -75,6 +75,14 @@ export class EditorErrorBoundary extends Component<
         </div>
       );
     }
-    return <div key={this.state.retryKey}>{this.props.children}</div>;
+    // h-full w-full so the keyed remount wrapper doesn't collapse the
+    // editor's percentage-height chain — without it the inner shell's
+    // `h-full` resolves against an auto-height div and the timeline /
+    // panels get ~0px.
+    return (
+      <div className="h-full w-full" key={this.state.retryKey}>
+        {this.props.children}
+      </div>
+    );
   }
 }
