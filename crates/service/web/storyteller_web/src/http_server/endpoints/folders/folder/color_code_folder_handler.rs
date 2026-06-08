@@ -63,7 +63,6 @@ pub async fn color_code_folder_handler(
     }
   }
 
-
   let rows_affected = update_folder_color_code(UpdateFolderColorCodeArgs {
     folder_token: &path.folder_token,
     owner_user_token: &user_session.user_token,

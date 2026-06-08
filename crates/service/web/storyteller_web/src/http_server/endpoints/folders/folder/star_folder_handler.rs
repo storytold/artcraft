@@ -45,7 +45,6 @@ pub async fn star_folder_handler(
     &http_request, &server_state.session_checker, &mut conn,
   ).await.map_err(|_| CommonWebError::NotAuthorized)?;
 
-
   let rows_affected = update_folder_has_star(UpdateFolderHasStarArgs {
     folder_token: &path.folder_token,
     owner_user_token: &user_session.user_token,

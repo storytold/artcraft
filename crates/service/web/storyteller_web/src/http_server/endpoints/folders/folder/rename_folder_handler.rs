@@ -60,7 +60,6 @@ pub async fn rename_folder_handler(
     ));
   }
 
-
   let rows_affected = update_folder_name(UpdateFolderNameArgs {
     folder_token: &path.folder_token,
     owner_user_token: &user_session.user_token,
