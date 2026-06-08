@@ -9,6 +9,7 @@ use artcraft_api_defs::folders::folder::{
   FolderPathInfo, SetFolderCoverImageRequest, SetFolderCoverImageSuccessResponse,
 };
 use enums::by_table::media_files::media_file_class::MediaFileClass;
+use enums::by_table::media_files::media_file_type::MediaFileType;
 use mysql_queries::queries::folders::folder::get_folder_for_owner::{
   get_folder_for_owner, GetFolderForOwnerArgs,
 };
@@ -32,9 +33,11 @@ use crate::state::server_state::ServerState;
 ///
 /// 1. The media file must exist, not be soft-deleted, and be owned by the
 ///    requesting user (same owner as the folder).
-/// 2. If the media file is an `image` or `video`, the token is used as-is.
-/// 3. Otherwise, if the media file has its own `maybe_cover_image_media_file_token`
-///    set, that token is used instead.
+/// 2. If the media file has its own `maybe_cover_image_media_file_token`
+///    set, that cover token wins outright and is used as the folder
+///    cover.
+/// 3. Otherwise, if the media file's `media_class` is `image`/`video` OR
+///    its `media_type` is `jpg`/`png`/`mp4`, the file's own token is used.
 /// 4. If neither path applies, the request is rejected with 400.
 #[utoipa::path(
   put,
@@ -108,9 +111,11 @@ pub async fn cover_image_folder_handler(
 }
 
 /// Look up `media_file_token`, verify ownership matches the session, and
-/// pick a usable token to store: the media file itself if it's an
-/// image/video, otherwise its own self-referential cover image. Returns
-/// `Err(CommonWebError::BadInputWithSimpleMessage(_))` if neither applies.
+/// pick a usable token to store. The file's own cover image wins outright
+/// — if `maybe_cover_image_media_file_token` is set, that token is
+/// returned regardless of the file's class/type. Otherwise we fall back
+/// to the file itself if it's a directly-renderable image/video, and
+/// `Err(CommonWebError::BadInputWithSimpleMessage(_))` if not.
 async fn resolve_cover_image_token(
   media_file_token: &MediaFileToken,
   session_user_token: &UserToken,
@@ -141,12 +146,33 @@ async fn resolve_cover_image_token(
     ));
   }
 
-  match media_file.media_class {
-    MediaFileClass::Image | MediaFileClass::Video => Ok(media_file_token.clone()),
-    _ => media_file.maybe_cover_image_media_file_token.ok_or_else(|| {
-      CommonWebError::BadInputWithSimpleMessage(
-        "media file isn't an image or video and has no cover image".to_string(),
-      )
-    }),
+  // The file's own cover image wins outright — if there is one, we use
+  // it regardless of the underlying file's class/type. This covers
+  // arbitrary 3D/audio/scene files that have a curated thumbnail.
+  if let Some(cover_token) = media_file.maybe_cover_image_media_file_token {
+    return Ok(cover_token);
   }
+
+  // No cover image present — fall back to using the file itself, which
+  // is only valid if it's directly renderable.
+  if is_directly_usable_as_cover(media_file.media_class, media_file.media_type) {
+    return Ok(media_file_token.clone());
+  }
+
+  Err(CommonWebError::BadInputWithSimpleMessage(
+    "media file has no cover image and isn't a renderable image or video".to_string(),
+  ))
+}
+
+/// A media file can be used as a cover directly if it's classified as an
+/// image/video OR if its concrete type is one of the well-known
+/// browser-renderable formats. We check both because `media_class` is a
+/// soft category that some legacy rows leave as `unknown`, while
+/// `media_type` is the more reliable indicator for newer rows.
+fn is_directly_usable_as_cover(
+  media_class: MediaFileClass,
+  media_type: MediaFileType,
+) -> bool {
+  matches!(media_class, MediaFileClass::Image | MediaFileClass::Video)
+    || matches!(media_type, MediaFileType::Jpg | MediaFileType::Png | MediaFileType::Mp4)
 }
