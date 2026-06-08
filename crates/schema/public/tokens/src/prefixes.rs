@@ -33,6 +33,7 @@ pub(crate) enum TokenPrefix {
   DebugLogEvent,
   DownloadJob,
   EmailSenderJob,
+  Folder,
   GoogleSignInAccount,
   InferenceJob,
   MediaFile,
@@ -121,6 +122,7 @@ impl PrefixGenerator for TokenPrefix {
       Self::DebugLogEvent => "dbg_",
       Self::DownloadJob => "jdown_", // NB: Previously "JGUP:"
       Self::EmailSenderJob => "email_job_",
+      Self::Folder => "folder_",
       Self::GoogleSignInAccount => "gsi_",
       Self::InferenceJob => "jinf_",
       Self::MediaFile => "m_",
