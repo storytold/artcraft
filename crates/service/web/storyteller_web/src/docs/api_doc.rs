@@ -105,6 +105,7 @@ use crate::http_server::endpoints::folders::folder::list_folders_handler::*;
 use crate::http_server::endpoints::folders::folder::rename_folder_handler::*;
 use crate::http_server::endpoints::folders::folder::star_folder_handler::*;
 use crate::http_server::endpoints::folders::media_files::bulk_add_folder_media_files_handler::*;
+use crate::http_server::endpoints::folders::media_files::bulk_move_folder_media_files_handler::*;
 use crate::http_server::endpoints::folders::media_files::bulk_remove_folder_media_files_handler::*;
 use crate::http_server::endpoints::folders::media_files::list_folder_media_files_handler::*;
 use crate::http_server::endpoints::folders::subfolder::bulk_add_subfolders_handler::*;
@@ -572,6 +573,7 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     crate::http_server::endpoints::folders::subfolder::bulk_remove_subfolders_handler::bulk_remove_subfolders_handler,
     crate::http_server::endpoints::folders::media_files::list_folder_media_files_handler::list_folder_media_files_handler,
     crate::http_server::endpoints::folders::media_files::bulk_add_folder_media_files_handler::bulk_add_folder_media_files_handler,
+    crate::http_server::endpoints::folders::media_files::bulk_move_folder_media_files_handler::bulk_move_folder_media_files_handler,
     crate::http_server::endpoints::folders::media_files::bulk_remove_folder_media_files_handler::bulk_remove_folder_media_files_handler,
     crate::http_server::endpoints::moderation::user_sessions::moderator_list_user_session_impersonation_requests_for_user_handler::moderator_list_user_session_impersonation_requests_for_user_handler,
     crate::http_server::endpoints::moderation::user_sessions::moderator_list_user_session_impersonation_requests_handler::moderator_list_user_session_impersonation_requests_handler,
@@ -1274,6 +1276,8 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     BulkAddFolderMediaFilesSuccessResponse,
     BulkRemoveFolderMediaFilesRequest,
     BulkRemoveFolderMediaFilesSuccessResponse,
+    BulkMoveFolderMediaFilesRequest,
+    BulkMoveFolderMediaFilesSuccessResponse,
   ))
 )]
 pub struct ApiDoc;

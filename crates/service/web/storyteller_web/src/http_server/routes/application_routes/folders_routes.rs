@@ -12,6 +12,7 @@ use crate::http_server::endpoints::folders::folder::list_folders_handler::list_f
 use crate::http_server::endpoints::folders::folder::rename_folder_handler::rename_folder_handler;
 use crate::http_server::endpoints::folders::folder::star_folder_handler::star_folder_handler;
 use crate::http_server::endpoints::folders::media_files::bulk_add_folder_media_files_handler::bulk_add_folder_media_files_handler;
+use crate::http_server::endpoints::folders::media_files::bulk_move_folder_media_files_handler::bulk_move_folder_media_files_handler;
 use crate::http_server::endpoints::folders::media_files::bulk_remove_folder_media_files_handler::bulk_remove_folder_media_files_handler;
 use crate::http_server::endpoints::folders::media_files::list_folder_media_files_handler::list_folder_media_files_handler;
 use crate::http_server::endpoints::folders::subfolder::bulk_add_subfolders_handler::bulk_add_subfolders_handler;
@@ -106,6 +107,11 @@ where
           .service(
             web::resource("/{folder_token}/bulk_remove")
               .route(web::post().to(bulk_remove_folder_media_files_handler))
+              .route(web::head().to(|| HttpResponse::Ok())),
+          )
+          .service(
+            web::resource("/{folder_token}/bulk_move")
+              .route(web::post().to(bulk_move_folder_media_files_handler))
               .route(web::head().to(|| HttpResponse::Ok())),
           ),
       ),

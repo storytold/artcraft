@@ -1,3 +1,4 @@
 pub mod bulk_add_folder_media_files_handler;
+pub mod bulk_move_folder_media_files_handler;
 pub mod bulk_remove_folder_media_files_handler;
 pub mod list_folder_media_files_handler;
