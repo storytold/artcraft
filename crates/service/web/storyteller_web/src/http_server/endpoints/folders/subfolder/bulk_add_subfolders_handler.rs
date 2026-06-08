@@ -72,13 +72,25 @@ pub async fn bulk_add_subfolders_handler(
     warn!("Parent folder lookup failed: {:?}", err);
     CommonWebError::from_error(err)
   })?;
-  
-  if parent.is_none() {
-    return Err(CommonWebError::NotFound);
-  }
+
+  let parent = match parent {
+    Some(parent) => parent,
+    None => return Err(CommonWebError::NotFound),
+  };
+
+  // Drop any self-reference up front. A folder can't be its own parent;
+  // reporting it as "accepted" would be a lie since the SQL guard
+  // silently excludes it from the UPDATE.
+  let parent_str = parent.token.as_str();
+
+  let candidates: Vec<FolderToken> = request.subfolder_tokens
+    .iter()
+    .filter(|t| t.as_str() != parent_str)
+    .cloned()
+    .collect();
 
   let accepted = filter_existing_owned_folder_tokens(FilterExistingOwnedFolderTokensArgs {
-    candidate_tokens: &request.subfolder_tokens,
+    candidate_tokens: &candidates,
     owner_user_token: &user_session.user_token,
     mysql_executor: &mut *conn,
     phantom: PhantomData,
@@ -100,9 +112,6 @@ pub async fn bulk_add_subfolders_handler(
     })?;
   }
 
-  // Note: `accepted` may include the parent itself; the SQL guard excludes
-  // it from the UPDATE. We still report it as "accepted" for client
-  // simplicity — no-op tokens are normal in idempotent bulk endpoints.
   Ok(Json(BulkAddSubfoldersSuccessResponse {
     success: true,
     accepted_subfolder_tokens: accepted,
