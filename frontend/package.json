@@ -39,7 +39,6 @@
     "lucide-react": "^0.512.0",
     "mediabunny": "^1.29.1",
     "opencut-wasm": "^0.2.10",
-    "pnpm": "^10.27.0",
     "soundtouchjs": "^0.3.0",
     "posthog-js": "^1.141.0",
     "react": "18.3.1",
