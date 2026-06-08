@@ -3,8 +3,10 @@ use std::sync::Arc;
 
 use actix_web::web::{Json, Path};
 use actix_web::{web, HttpRequest};
-use log::warn;
-use sqlx::Acquire;
+use log::{error, warn};
+use sqlx::pool::PoolConnection;
+use sqlx::{Acquire, MySql, Transaction};
+use tokens::tokens::media_files::MediaFileToken;
 
 use artcraft_api_defs::folders::media_files::{
   BulkMoveFolderMediaFilesRequest, BulkMoveFolderMediaFilesSuccessResponse,
@@ -123,17 +125,81 @@ pub async fn bulk_move_folder_media_files_handler(
     ));
   }
 
-  // Atomic move: a single MySQL transaction wraps the delete + filter +
-  // insert so a partial failure rolls back both sides.
+  let outcome = perform_atomic_move(
+    &mut conn,
+    &request.source_folder,
+    &path.folder_token,
+    &request.media_file_tokens,
+  ).await?;
+
+  Ok(Json(BulkMoveFolderMediaFilesSuccessResponse {
+    success: true,
+    removed_from_source_count: outcome.removed_from_source_count,
+    added_to_destination_count: outcome.added_to_destination_count,
+    accepted_media_file_tokens: outcome.accepted_media_file_tokens,
+  }))
+}
+
+struct MoveOutcome {
+  removed_from_source_count: u64,
+  added_to_destination_count: u64,
+  accepted_media_file_tokens: Vec<MediaFileToken>,
+}
+
+/// Open a transaction, run the delete + filter + insert as one unit, and
+/// commit on success. On any failure inside [`perform_move_work`], the
+/// transaction is explicitly rolled back before the original error is
+/// re-raised — sqlx would roll back on drop too, but doing it explicitly
+/// makes the failure path obvious and surfaces any rollback error in the
+/// log.
+async fn perform_atomic_move(
+  conn: &mut PoolConnection<MySql>,
+  source_folder_token: &FolderToken,
+  destination_folder_token: &FolderToken,
+  media_file_tokens: &[MediaFileToken],
+) -> Result<MoveOutcome, CommonWebError> {
   let mut tx = conn.begin().await.map_err(|err| {
     warn!("Failed to begin transaction: {:?}", err);
     CommonWebError::from_error(err)
   })?;
 
+  let work_result = perform_move_work(
+    &mut tx,
+    source_folder_token,
+    destination_folder_token,
+    media_file_tokens,
+  ).await;
+
+  match work_result {
+    Ok(outcome) => {
+      tx.commit().await.map_err(|err| {
+        warn!("Failed to commit move transaction: {:?}", err);
+        CommonWebError::from_error(err)
+      })?;
+      Ok(outcome)
+    }
+    Err(err) => {
+      if let Err(rollback_err) = tx.rollback().await {
+        error!(
+          "Rollback after move failure also failed: {:?} (original error: {:?})",
+          rollback_err, err,
+        );
+      }
+      Err(err)
+    }
+  }
+}
+
+async fn perform_move_work(
+  tx: &mut Transaction<'_, MySql>,
+  source_folder_token: &FolderToken,
+  destination_folder_token: &FolderToken,
+  media_file_tokens: &[MediaFileToken],
+) -> Result<MoveOutcome, CommonWebError> {
   let removed_from_source_count = bulk_delete_folder_media_files(BulkDeleteFolderMediaFilesArgs {
-    folder_token: &request.source_folder,
-    media_file_tokens: &request.media_file_tokens,
-    mysql_executor: &mut *tx,
+    folder_token: source_folder_token,
+    media_file_tokens,
+    mysql_executor: &mut **tx,
     phantom: PhantomData,
   }).await.map_err(|err| {
     warn!("bulk_delete_folder_media_files (source) failed: {:?}", err);
@@ -141,8 +207,8 @@ pub async fn bulk_move_folder_media_files_handler(
   })?;
 
   let accepted_media_file_tokens = filter_existing_media_file_tokens(FilterExistingMediaFileTokensArgs {
-    candidate_tokens: &request.media_file_tokens,
-    mysql_executor: &mut *tx,
+    candidate_tokens: media_file_tokens,
+    mysql_executor: &mut **tx,
     phantom: PhantomData,
   }).await.map_err(|err| {
     warn!("filter_existing_media_file_tokens failed: {:?}", err);
@@ -153,9 +219,9 @@ pub async fn bulk_move_folder_media_files_handler(
     0
   } else {
     bulk_insert_folder_media_files(BulkInsertFolderMediaFilesArgs {
-      folder_token: &path.folder_token,
+      folder_token: destination_folder_token,
       media_file_tokens: &accepted_media_file_tokens,
-      mysql_executor: &mut *tx,
+      mysql_executor: &mut **tx,
       phantom: PhantomData,
     }).await.map_err(|err| {
       warn!("bulk_insert_folder_media_files (destination) failed: {:?}", err);
@@ -163,15 +229,9 @@ pub async fn bulk_move_folder_media_files_handler(
     })?
   };
 
-  tx.commit().await.map_err(|err| {
-    warn!("Failed to commit move transaction: {:?}", err);
-    CommonWebError::from_error(err)
-  })?;
-
-  Ok(Json(BulkMoveFolderMediaFilesSuccessResponse {
-    success: true,
+  Ok(MoveOutcome {
     removed_from_source_count,
     added_to_destination_count,
     accepted_media_file_tokens,
-  }))
+  })
 }
