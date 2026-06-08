@@ -38,6 +38,9 @@
   ],
   "references": [
     {
+      "path": "../../libs/components/video-editor/tsconfig.lib.json"
+    },
+    {
       "path": "../../libs/components/pricing-table/tsconfig.lib.json"
     },
     {
@@ -83,6 +86,9 @@
       "path": "../../libs/components/loading-spinner/tsconfig.lib.json"
     },
     {
+      "path": "../../libs/components/tab-selector/tsconfig.lib.json"
+    },
+    {
       "path": "../../libs/components/popover/tsconfig.lib.json"
     },
     {
@@ -105,9 +111,6 @@
     },
     {
       "path": "../../libs/api/tsconfig.lib.json"
-    },
-    {
-      "path": "../../libs/components/video-editor/tsconfig.lib.json"
     }
   ]
 }
