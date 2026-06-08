@@ -48,9 +48,11 @@ pub async fn create_folder_handler(
   ).await.map_err(|_| CommonWebError::NotAuthorized)?;
 
   let name = request.name.trim().to_string();
+
   if name.is_empty() {
     return Err(CommonWebError::BadInputWithSimpleMessage("name is empty".to_string()));
   }
+
   if name.len() > MAX_NAME_LEN {
     return Err(CommonWebError::BadInputWithSimpleMessage(
       format!("name too long (max {} chars)", MAX_NAME_LEN),
@@ -68,6 +70,7 @@ pub async fn create_folder_handler(
       warn!("Parent folder lookup failed: {:?}", err);
       CommonWebError::from_error(err)
     })?;
+
     if parent.is_none() {
       return Err(CommonWebError::BadInputWithSimpleMessage(
         "parent folder does not exist".to_string(),
