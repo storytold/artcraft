@@ -8,8 +8,13 @@ use log::warn;
 use artcraft_api_defs::folders::subfolder::{
   BulkAddSubfoldersRequest, BulkAddSubfoldersSuccessResponse, SubfolderPathInfo,
 };
+use std::collections::HashSet;
+
 use mysql_queries::queries::folders::folder::get_folder_for_owner::{
   get_folder_for_owner, GetFolderForOwnerArgs,
+};
+use mysql_queries::queries::folders::folder::list_ancestor_folder_tokens::{
+  list_ancestor_folder_tokens, ListAncestorFolderTokensArgs,
 };
 use mysql_queries::queries::folders::subfolder::bulk_set_parent_folder::{
   bulk_set_parent_folder, BulkSetParentFolderArgs,
@@ -87,6 +92,30 @@ pub async fn bulk_add_subfolders_handler(
     .iter()
     .filter(|t| t.as_str() != parent_str)
     .cloned()
+    .collect();
+
+  // Block ancestor cycles: reparenting a folder under one of its own
+  // descendants would close a loop. Equivalently, the new parent must
+  // not be a descendant of any candidate — i.e. no candidate may appear
+  // in the new parent's ancestor chain.
+  let ancestor_tokens = list_ancestor_folder_tokens(ListAncestorFolderTokensArgs {
+    folder_token: &path.folder_token,
+    owner_user_token: &user_session.user_token,
+    mysql_executor: &mut *conn,
+    phantom: PhantomData,
+  }).await.map_err(|err| {
+    warn!("list_ancestor_folder_tokens failed: {:?}", err);
+    CommonWebError::from_error(err)
+  })?;
+
+  let ancestor_set: HashSet<&str> = ancestor_tokens
+    .iter()
+    .map(|t| t.as_str())
+    .collect();
+
+  let candidates: Vec<FolderToken> = candidates
+    .into_iter()
+    .filter(|t| !ancestor_set.contains(t.as_str()))
     .collect();
 
   let accepted = filter_existing_owned_folder_tokens(FilterExistingOwnedFolderTokensArgs {
