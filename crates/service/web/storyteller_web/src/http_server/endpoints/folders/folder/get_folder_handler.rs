@@ -12,7 +12,10 @@ use mysql_queries::queries::folders::folder::get_folder_for_owner::{
 use tokens::tokens::folders::FolderToken;
 
 use crate::http_server::common_responses::common_web_error::CommonWebError;
-use crate::http_server::endpoints::folders::folder::folder_info_conversion::folder_row_to_info;
+use crate::http_server::endpoints::folders::folder::folder_info_conversion::{
+  build_folder_thumbnails_lookup, folder_row_to_info,
+};
+use crate::http_server::endpoints::media_files::helpers::get_media_domain::get_media_domain;
 use crate::http_server::web_utils::user_session::require_user_session_using_connection::require_user_session_using_connection;
 use crate::state::server_state::ServerState;
 
@@ -43,7 +46,6 @@ pub async fn get_folder_handler(
     &http_request, &server_state.session_checker, &mut conn,
   ).await.map_err(|_| CommonWebError::NotAuthorized)?;
 
-
   let row = get_folder_for_owner(GetFolderForOwnerArgs {
     folder_token: &path.folder_token,
     owner_user_token: &user_session.user_token,
@@ -55,8 +57,21 @@ pub async fn get_folder_handler(
   })?
   .ok_or(CommonWebError::NotFound)?;
 
+  let media_domain = get_media_domain(&http_request);
+  let server_environment = server_state.server_environment;
+
+  let thumbnails = build_folder_thumbnails_lookup(
+    std::slice::from_ref(&row),
+    &mut *conn,
+    media_domain,
+    server_environment,
+  ).await.map_err(|err| {
+    warn!("Folder thumbnail lookup failed: {:?}", err);
+    CommonWebError::from_error(err)
+  })?;
+
   Ok(Json(GetFolderSuccessResponse {
     success: true,
-    folder: folder_row_to_info(row),
+    folder: folder_row_to_info(row, &thumbnails),
   }))
 }

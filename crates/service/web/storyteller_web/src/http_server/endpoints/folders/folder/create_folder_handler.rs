@@ -13,7 +13,10 @@ use mysql_queries::queries::folders::folder::get_folder_for_owner::{
 use mysql_queries::queries::folders::folder::insert_folder::{insert_folder, InsertFolderArgs};
 
 use crate::http_server::common_responses::common_web_error::CommonWebError;
-use crate::http_server::endpoints::folders::folder::folder_info_conversion::folder_row_to_info;
+use crate::http_server::endpoints::folders::folder::folder_info_conversion::{
+  build_folder_thumbnails_lookup, folder_row_to_info,
+};
+use crate::http_server::endpoints::media_files::helpers::get_media_domain::get_media_domain;
 use crate::http_server::web_utils::user_session::require_user_session_using_connection::require_user_session_using_connection;
 use crate::state::server_state::ServerState;
 
@@ -101,7 +104,20 @@ pub async fn create_folder_handler(
   })?
   .ok_or_else(|| CommonWebError::server_error_with_message("folder vanished after insert"))?;
 
-  let folder: FolderInfo = folder_row_to_info(row);
+  let media_domain = get_media_domain(&http_request);
+  let server_environment = server_state.server_environment;
+
+  let thumbnails = build_folder_thumbnails_lookup(
+    std::slice::from_ref(&row),
+    &mut *conn,
+    media_domain,
+    server_environment,
+  ).await.map_err(|err| {
+    warn!("Folder thumbnail lookup failed: {:?}", err);
+    CommonWebError::from_error(err)
+  })?;
+
+  let folder: FolderInfo = folder_row_to_info(row, &thumbnails);
 
   Ok(Json(CreateFolderSuccessResponse {
     success: true,

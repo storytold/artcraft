@@ -17,7 +17,10 @@ use mysql_queries::queries::folders::subfolder::list_subfolders::{
 use tokens::tokens::folders::FolderToken;
 
 use crate::http_server::common_responses::common_web_error::CommonWebError;
-use crate::http_server::endpoints::folders::folder::folder_info_conversion::folder_row_to_info;
+use crate::http_server::endpoints::folders::folder::folder_info_conversion::{
+  build_folder_thumbnails_lookup, folder_row_to_info,
+};
+use crate::http_server::endpoints::media_files::helpers::get_media_domain::get_media_domain;
 use crate::http_server::web_utils::user_session::require_user_session_using_connection::require_user_session_using_connection;
 use crate::state::server_state::ServerState;
 
@@ -105,7 +108,22 @@ pub async fn list_subfolders_handler(
     CommonWebError::server_error_with_message("Failed to encode cursor")
   })?;
 
-  let subfolders = rows.into_iter().map(folder_row_to_info).collect();
+  let media_domain = get_media_domain(&http_request);
+  let server_environment = server_state.server_environment;
+
+  let thumbnails = build_folder_thumbnails_lookup(
+    &rows,
+    &mut *conn,
+    media_domain,
+    server_environment,
+  ).await.map_err(|err| {
+    warn!("Folder thumbnail lookup failed: {:?}", err);
+    CommonWebError::from_error(err)
+  })?;
+
+  let subfolders = rows.into_iter()
+    .map(|row| folder_row_to_info(row, &thumbnails))
+    .collect();
 
   Ok(Json(ListSubfoldersSuccessResponse {
     success: true,

@@ -1,7 +1,10 @@
 use chrono::{DateTime, Utc};
 use serde_derive::{Deserialize, Serialize};
+use url::Url;
 use utoipa::ToSchema;
 
+use enums::by_table::media_files::media_file_class::MediaFileClass;
+use enums::by_table::media_files::media_file_type::MediaFileType;
 use tokens::tokens::folders::FolderToken;
 use tokens::tokens::media_files::MediaFileToken;
 use tokens::tokens::users::UserToken;
@@ -20,12 +23,16 @@ pub struct FolderInfo {
   pub owner_user_token: UserToken,
   pub maybe_parent_folder_token: Option<FolderToken>,
 
-  pub maybe_last_media_file_token_1: Option<MediaFileToken>,
-  pub maybe_last_media_file_token_2: Option<MediaFileToken>,
-  pub maybe_last_media_file_token_3: Option<MediaFileToken>,
-  pub maybe_last_media_file_token_4: Option<MediaFileToken>,
+  /// The four most-recent media files added to the folder, in slot order
+  /// (the schema stores them as `maybe_last_media_file_token_1..4`).
+  /// Slots whose media file has been deleted are skipped, so the vec
+  /// may contain 0-4 entries.
+  pub last_media_thumbnails: Vec<FolderThumbnail>,
 
-  pub maybe_cover_image_custom_media_token: Option<MediaFileToken>,
+  /// User-chosen cover image. When present, the frontend should use this
+  /// as the folder's primary thumbnail instead of the
+  /// `last_media_thumbnails` grid.
+  pub maybe_custom_cover_thumbnail: Option<FolderThumbnail>,
 
   pub maybe_color_code: Option<String>,
   pub has_star: bool,
@@ -38,3 +45,25 @@ pub struct FolderInfo {
   pub is_orphaned: bool,
 }
 
+/// A compact thumbnail descriptor for a media file referenced by a
+/// folder (either one of the `last_media_*` slots or the custom cover).
+///
+/// Intentionally narrower than `MediaLinks` / `CoverImageLinks` — folders
+/// only need the bare minimum to render a thumbnail card. The CDN URL is
+/// the direct asset link; `maybe_thumbnail_template` carries the resizing
+/// template URL (with `{{width}}` / `{{height}}` placeholders) when the
+/// media class supports it.
+#[derive(Clone, Debug, Serialize, Deserialize, ToSchema)]
+pub struct FolderThumbnail {
+  pub token: MediaFileToken,
+  pub media_class: MediaFileClass,
+  pub media_type: MediaFileType,
+
+  /// Direct CDN URL to the underlying media asset.
+  pub cdn_url: Url,
+
+  /// Resizing template URL (with `{{width}}` / `{{height}}` placeholders)
+  /// when the media class supports it. `None` for media classes without
+  /// a thumbnail variant.
+  pub maybe_thumbnail_template: Option<String>,
+}
