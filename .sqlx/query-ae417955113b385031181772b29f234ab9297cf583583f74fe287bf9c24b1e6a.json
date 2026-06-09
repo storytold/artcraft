@@ -1,0 +1,12 @@
+{
+  "db_name": "MySQL",
+  "query": "\nUPDATE folders\nSET\n  maybe_last_media_file_token_1 = (\n    SELECT mf.token\n    FROM folder_media_files fmf\n    JOIN media_files mf\n      ON mf.token = fmf.media_file_token\n    WHERE fmf.folder_token = ?\n      AND mf.user_deleted_at IS NULL\n      AND mf.mod_deleted_at IS NULL\n    ORDER BY fmf.id DESC\n    LIMIT 1 OFFSET 0\n  ),\n  maybe_last_media_file_token_2 = (\n    SELECT mf.token\n    FROM folder_media_files fmf\n    JOIN media_files mf\n      ON mf.token = fmf.media_file_token\n    WHERE fmf.folder_token = ?\n      AND mf.user_deleted_at IS NULL\n      AND mf.mod_deleted_at IS NULL\n    ORDER BY fmf.id DESC\n    LIMIT 1 OFFSET 1\n  ),\n  maybe_last_media_file_token_3 = (\n    SELECT mf.token\n    FROM folder_media_files fmf\n    JOIN media_files mf\n      ON mf.token = fmf.media_file_token\n    WHERE fmf.folder_token = ?\n      AND mf.user_deleted_at IS NULL\n      AND mf.mod_deleted_at IS NULL\n    ORDER BY fmf.id DESC\n    LIMIT 1 OFFSET 2\n  ),\n  maybe_last_media_file_token_4 = (\n    SELECT mf.token\n    FROM folder_media_files fmf\n    JOIN media_files mf\n      ON mf.token = fmf.media_file_token\n    WHERE fmf.folder_token = ?\n      AND mf.user_deleted_at IS NULL\n      AND mf.mod_deleted_at IS NULL\n    ORDER BY fmf.id DESC\n    LIMIT 1 OFFSET 3\n  )\nWHERE token = ?\n    ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 5
+    },
+    "nullable": []
+  },
+  "hash": "ae417955113b385031181772b29f234ab9297cf583583f74fe287bf9c24b1e6a"
+}
