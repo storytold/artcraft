@@ -55,14 +55,14 @@ pub struct ListFolderMediaFilesSuccessResponse {
 pub struct FolderMediaFileListItem {
   pub token: MediaFileToken,
 
-  /// When the media file was added to the folder.
-  pub added_to_folder_at: DateTime<Utc>,
-
   /// Coarse-grained class (image / video / audio / dimensional).
   pub media_class: MediaFileClass,
 
   /// Specific format (jpg, png, mp4, etc.) — closer to a MIME type.
   pub media_type: MediaFileType,
+
+  /// Link to the prompt
+  pub maybe_prompt_token: Option<PromptToken>,
 
   /// If this file was generated as part of a batch, the batch token —
   /// useful for showing "siblings" in the UI.
@@ -77,23 +77,25 @@ pub struct FolderMediaFileListItem {
   /// (image_index + color_index) the frontend uses for placeholders.
   pub cover_image: MediaFileCoverImageDetails,
 
-  pub creator_set_visibility: Visibility,
-  pub is_user_upload: bool,
-  pub is_intermediate_system_file: bool,
-
   pub maybe_title: Option<String>,
-  pub maybe_prompt_token: Option<PromptToken>,
-  pub maybe_origin_filename: Option<String>,
-
-  /// Duration for audio and video files, if available. Milliseconds.
-  pub maybe_duration_millis: Option<u64>,
+  pub maybe_original_filename: Option<String>,
 
   /// Original pixel width / height for image and video files when known.
   pub maybe_frame_width: Option<i32>,
   pub maybe_frame_height: Option<i32>,
 
+  /// Duration for audio and video files, if available. Milliseconds.
+  pub maybe_duration_millis: Option<u64>,
+
+  pub creator_set_visibility: Visibility,
+  pub is_user_upload: bool,
+  pub is_intermediate_system_file: bool,
+
   pub created_at: DateTime<Utc>,
   pub updated_at: DateTime<Utc>,
+
+  /// When the media file was added to the folder.
+  pub added_to_folder_at: DateTime<Utc>,
 }
 
 // ── Handler ──
@@ -229,7 +231,7 @@ fn folder_media_file_row_to_list_item(
     is_intermediate_system_file: row.is_intermediate_system_file,
     maybe_title: row.maybe_title,
     maybe_prompt_token: row.maybe_prompt_token,
-    maybe_origin_filename: row.maybe_origin_filename,
+    maybe_original_filename: row.maybe_origin_filename,
     // Schema stores `INT(10)`; widen to u64 for the wire shape.
     maybe_duration_millis: row.maybe_duration_millis.map(|n| n as u64),
     maybe_frame_width: row.maybe_frame_width,
