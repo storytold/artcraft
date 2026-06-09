@@ -4,6 +4,7 @@ use std::sync::Arc;
 use actix_web::web::{Json, Path};
 use actix_web::{web, HttpRequest};
 use log::warn;
+use sqlx::Acquire;
 
 use artcraft_api_defs::folders::media_files::{
   BulkAddFolderMediaFilesRequest, BulkAddFolderMediaFilesSuccessResponse,
@@ -17,6 +18,9 @@ use mysql_queries::queries::folders::media_files::bulk_insert_folder_media_files
 };
 use mysql_queries::queries::folders::media_files::filter_existing_media_file_tokens::{
   filter_existing_media_file_tokens, FilterExistingMediaFileTokensArgs,
+};
+use mysql_queries::queries::folders::media_files::recompute_folder_last_media_files::{
+  recompute_folder_last_media_files, RecomputeFolderLastMediaFilesArgs,
 };
 use tokens::tokens::folders::FolderToken;
 
@@ -88,14 +92,37 @@ pub async fn bulk_add_folder_media_files_handler(
     CommonWebError::from_error(err)
   })?;
 
+  // Insert + recompute the denormalized `maybe_last_media_file_token_1..4`
+  // columns inside a single transaction so they stay in sync with
+  // membership. Empty `accepted` is a no-op — no membership change means
+  // no recompute needed.
   if !accepted.is_empty() {
+    let mut tx = conn.begin().await.map_err(|err| {
+      warn!("Failed to begin transaction: {:?}", err);
+      CommonWebError::from_error(err)
+    })?;
+
     bulk_insert_folder_media_files(BulkInsertFolderMediaFilesArgs {
       folder_token: &path.folder_token,
       media_file_tokens: &accepted,
-      mysql_executor: &mut *conn,
+      mysql_executor: &mut *tx,
       phantom: PhantomData,
     }).await.map_err(|err| {
       warn!("bulk_insert_folder_media_files failed: {:?}", err);
+      CommonWebError::from_error(err)
+    })?;
+
+    recompute_folder_last_media_files(RecomputeFolderLastMediaFilesArgs {
+      folder_token: &path.folder_token,
+      mysql_executor: &mut *tx,
+      phantom: PhantomData,
+    }).await.map_err(|err| {
+      warn!("recompute_folder_last_media_files failed: {:?}", err);
+      CommonWebError::from_error(err)
+    })?;
+
+    tx.commit().await.map_err(|err| {
+      warn!("Failed to commit bulk_add transaction: {:?}", err);
       CommonWebError::from_error(err)
     })?;
   }

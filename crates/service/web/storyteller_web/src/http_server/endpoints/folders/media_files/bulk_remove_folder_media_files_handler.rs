@@ -15,6 +15,10 @@ use mysql_queries::queries::folders::folder::get_folder_for_owner::{
 use mysql_queries::queries::folders::media_files::bulk_delete_folder_media_files::{
   bulk_delete_folder_media_files, BulkDeleteFolderMediaFilesArgs,
 };
+use mysql_queries::queries::folders::media_files::recompute_folder_last_media_files::{
+  recompute_folder_last_media_files, RecomputeFolderLastMediaFilesArgs,
+};
+use sqlx::Acquire;
 use tokens::tokens::folders::FolderToken;
 
 use crate::http_server::common_responses::common_web_error::CommonWebError;
@@ -74,13 +78,42 @@ pub async fn bulk_remove_folder_media_files_handler(
     return Err(CommonWebError::NotFound);
   }
 
+  // Delete + recompute the denormalized `maybe_last_media_file_token_1..4`
+  // columns inside a single transaction so they stay in sync with
+  // membership. Empty input short-circuits with zero work.
+  if request.media_file_tokens.is_empty() {
+    return Ok(Json(BulkRemoveFolderMediaFilesSuccessResponse {
+      success: true,
+      removed_count: 0,
+    }));
+  }
+
+  let mut tx = conn.begin().await.map_err(|err| {
+    warn!("Failed to begin transaction: {:?}", err);
+    CommonWebError::from_error(err)
+  })?;
+
   let removed_count = bulk_delete_folder_media_files(BulkDeleteFolderMediaFilesArgs {
     folder_token: &path.folder_token,
     media_file_tokens: &request.media_file_tokens,
-    mysql_executor: &mut *conn,
+    mysql_executor: &mut *tx,
     phantom: PhantomData,
   }).await.map_err(|err| {
     warn!("bulk_delete_folder_media_files failed: {:?}", err);
+    CommonWebError::from_error(err)
+  })?;
+
+  recompute_folder_last_media_files(RecomputeFolderLastMediaFilesArgs {
+    folder_token: &path.folder_token,
+    mysql_executor: &mut *tx,
+    phantom: PhantomData,
+  }).await.map_err(|err| {
+    warn!("recompute_folder_last_media_files failed: {:?}", err);
+    CommonWebError::from_error(err)
+  })?;
+
+  tx.commit().await.map_err(|err| {
+    warn!("Failed to commit bulk_remove transaction: {:?}", err);
     CommonWebError::from_error(err)
   })?;
 

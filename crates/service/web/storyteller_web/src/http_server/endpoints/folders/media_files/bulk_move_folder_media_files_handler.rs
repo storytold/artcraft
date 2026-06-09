@@ -24,6 +24,9 @@ use mysql_queries::queries::folders::media_files::bulk_insert_folder_media_files
 use mysql_queries::queries::folders::media_files::filter_existing_media_file_tokens::{
   filter_existing_media_file_tokens, FilterExistingMediaFileTokensArgs,
 };
+use mysql_queries::queries::folders::media_files::recompute_folder_last_media_files::{
+  recompute_folder_last_media_files, RecomputeFolderLastMediaFilesArgs,
+};
 use tokens::tokens::folders::FolderToken;
 
 use crate::http_server::common_responses::common_web_error::CommonWebError;
@@ -228,6 +231,28 @@ async fn perform_move_work(
       CommonWebError::from_error(err)
     })?
   };
+
+  // Recompute the denormalized `maybe_last_media_file_token_1..4` on
+  // BOTH folders inside the same transaction. The source needs it because
+  // we may have removed one of its cached recent items; the destination
+  // needs it because we just added new recent items.
+  recompute_folder_last_media_files(RecomputeFolderLastMediaFilesArgs {
+    folder_token: source_folder_token,
+    mysql_executor: &mut **tx,
+    phantom: PhantomData,
+  }).await.map_err(|err| {
+    warn!("recompute_folder_last_media_files (source) failed: {:?}", err);
+    CommonWebError::from_error(err)
+  })?;
+
+  recompute_folder_last_media_files(RecomputeFolderLastMediaFilesArgs {
+    folder_token: destination_folder_token,
+    mysql_executor: &mut **tx,
+    phantom: PhantomData,
+  }).await.map_err(|err| {
+    warn!("recompute_folder_last_media_files (destination) failed: {:?}", err);
+    CommonWebError::from_error(err)
+  })?;
 
   Ok(MoveOutcome {
     removed_from_source_count,
