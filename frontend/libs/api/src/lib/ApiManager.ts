@@ -158,6 +158,22 @@ export class ApiManager {
     });
   }
 
+  protected put<B, T>({
+    endpoint,
+    query,
+    body,
+  }: {
+    endpoint: string;
+    query?: Record<string, string | boolean | number | undefined>;
+    body?: B;
+  }): Promise<T> {
+    return this.fetch<B, T>(endpoint, {
+      method: "PUT",
+      query,
+      body,
+    });
+  }
+
   protected delete<B, T>({
     endpoint,
     query,

@@ -8,7 +8,6 @@ import {
   faCube,
   faFilm,
   faWandMagicSparkles,
-  faGrid2,
   faGraduationCap,
   faNewspaper,
   faCircleQuestion,
@@ -36,6 +35,7 @@ import {
 import type { IconDefinition } from "@fortawesome/fontawesome-svg-core";
 import { MARKETING_SITE, SOCIAL_LINKS } from "../../config/links";
 import { useSceneCacheStore } from "../../pages/pagescene/scene-cache-store";
+import { LibraryFoldersNav } from "./library-folders-nav";
 
 type NavItem = {
   label: string;
@@ -78,10 +78,6 @@ function useCreateItems(): NavItem[] {
     [lastSceneToken],
   );
 }
-
-const ASSETS_ITEMS: NavItem[] = [
-  { label: "Library", href: "/library", icon: faGrid2 },
-];
 
 const REFERRALS_ITEM: NavItem = {
   label: "Referrals",
@@ -257,12 +253,7 @@ export function AppSidebar() {
           pathname={pathname}
           onClick={handleNavClick}
         />
-        <NavSection
-          label="Assets"
-          items={ASSETS_ITEMS}
-          pathname={pathname}
-          onClick={handleNavClick}
-        />
+        <LibraryFoldersNav pathname={pathname} onNavClick={handleNavClick} />
         {hasReferralsFlag && (
           <NavSection
             label="Invite"

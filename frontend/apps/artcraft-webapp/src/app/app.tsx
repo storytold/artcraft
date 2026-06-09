@@ -39,6 +39,7 @@ import { MobileBottomNav } from "../components/sidebar/mobile-bottom-nav";
 import { TopBar } from "../components/topbar/topbar";
 import { SignupCtaModal } from "../components/signup-cta-modal";
 import { InsufficientCreditsModal } from "../components/insufficient-credits-modal";
+import { GlobalActionReminder } from "../components/global-action-reminder";
 import { useSession } from "../lib/session";
 
 function ScrollToTop() {
@@ -188,6 +189,7 @@ export function App() {
       <ToastContainer />
       <SignupCtaModal />
       <InsufficientCreditsModal />
+      <GlobalActionReminder />
     </>
   );
 }

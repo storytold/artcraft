@@ -28,6 +28,8 @@ type ModalMode = "select" | "view";
 export interface GalleryFolder {
   id: string;
   name: string;
+  /** Parent folder id, or null/undefined for a root-level folder. */
+  parentId?: string | null;
 }
 
 interface GalleryDraggableItemProps {
@@ -288,7 +290,7 @@ export const GalleryDraggableItem: React.FC<GalleryDraggableItemProps> = ({
           >
             {(close) => (
               <div className="flex flex-col">
-                {item.mediaClass === "image" && (
+                {item.mediaClass === "image" && onEditClicked && (
                   <button
                     type="button"
                     className="flex items-center gap-2 px-2 py-2 rounded-md hover:bg-ui-controls/60 text-base-fg text-sm"
@@ -385,8 +387,8 @@ export const GalleryDraggableItem: React.FC<GalleryDraggableItemProps> = ({
           </PopoverMenu>
         </div>
       )}
-      {/* Bulk selection checkbox — top-left */}
-      {mode !== "select" && (
+      {/* Bulk selection checkbox — top-left (only when a bulk handler is wired) */}
+      {mode !== "select" && onBulkSelectToggle && (
         <div
           className={twMerge(
             "absolute left-2 top-2 z-30 flex h-5 w-5 items-center justify-center rounded border-2 cursor-pointer transition-all duration-100",
