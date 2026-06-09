@@ -4,9 +4,12 @@ use utoipa::{IntoParams, ToSchema};
 use tokens::tokens::folders::FolderToken;
 use tokens::tokens::media_files::MediaFileToken;
 
-use crate::folders::common::FolderMediaFileInfo;
-
 // ── GET /v1/folders/media_files/{folder_token} ──
+//
+// NB: `ListFolderMediaFilesSuccessResponse` and `FolderMediaFileListItem`
+// live in `storyteller_web`'s handler because the wire shape embeds
+// `MediaFileCoverImageDetails` and `MediaLinks` constructors that depend
+// on the request's `MediaDomain` + `ServerEnvironment`.
 
 #[derive(Deserialize, ToSchema)]
 pub struct FolderMediaFilesPathInfo {
@@ -17,13 +20,6 @@ pub struct FolderMediaFilesPathInfo {
 pub struct ListFolderMediaFilesQueryParams {
   pub cursor: Option<String>,
   pub limit: Option<u32>,
-}
-
-#[derive(Serialize, ToSchema)]
-pub struct ListFolderMediaFilesSuccessResponse {
-  pub success: bool,
-  pub media_files: Vec<FolderMediaFileInfo>,
-  pub maybe_cursor: Option<String>,
 }
 
 // ── PUT /v1/folders/media_files/{folder_token}/bulk_add ──

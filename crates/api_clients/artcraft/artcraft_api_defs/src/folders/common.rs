@@ -6,6 +6,11 @@ use tokens::tokens::folders::FolderToken;
 use tokens::tokens::media_files::MediaFileToken;
 use tokens::tokens::users::UserToken;
 
+// NB: The "folder media file" list-item shape lives in storyteller_web
+// (see `endpoints/folders/media_files/list_folder_media_files_handler.rs`)
+// because it embeds `MediaFileCoverImageDetails` and other domain types
+// that depend on the request's `MediaDomain` + `ServerEnvironment`.
+
 /// Canonical wire shape for a folder. Used by single-folder GETs, create
 /// responses, list rows, and subfolder list rows.
 #[derive(Clone, Debug, Serialize, Deserialize, ToSchema)]
@@ -33,22 +38,3 @@ pub struct FolderInfo {
   pub is_orphaned: bool,
 }
 
-/// Canonical wire shape for a media file inside a folder. Lean enough for
-/// thumbnail rendering; callers that need richer fields should hit the
-/// media-file batch-get endpoint.
-#[derive(Clone, Debug, Serialize, Deserialize, ToSchema)]
-pub struct FolderMediaFileInfo {
-  pub media_file_token: MediaFileToken,
-  pub added_to_folder_at: DateTime<Utc>,
-
-  pub media_type: String,
-  pub media_class: String,
-  pub maybe_mime_type: Option<String>,
-  pub public_bucket_directory_hash: String,
-  pub maybe_public_bucket_prefix: Option<String>,
-  pub maybe_public_bucket_extension: Option<String>,
-  pub maybe_frame_width: Option<i32>,
-  pub maybe_frame_height: Option<i32>,
-  pub maybe_duration_millis: Option<i32>,
-  pub maybe_title: Option<String>,
-}

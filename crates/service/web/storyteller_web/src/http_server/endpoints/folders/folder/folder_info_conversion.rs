@@ -1,6 +1,5 @@
-use artcraft_api_defs::folders::common::{FolderInfo, FolderMediaFileInfo};
+use artcraft_api_defs::folders::common::FolderInfo;
 use mysql_queries::queries::folders::folder::folder_row::FolderRow;
-use mysql_queries::queries::folders::media_files::list_folder_media_files::FolderMediaFileRow;
 
 pub fn folder_row_to_info(row: FolderRow) -> FolderInfo {
   FolderInfo {
@@ -18,22 +17,5 @@ pub fn folder_row_to_info(row: FolderRow) -> FolderInfo {
     created_at: row.created_at,
     updated_at: row.updated_at,
     is_orphaned: row.is_orphaned,
-  }
-}
-
-pub fn folder_media_file_row_to_info(row: FolderMediaFileRow) -> FolderMediaFileInfo {
-  FolderMediaFileInfo {
-    media_file_token: row.media_file_token,
-    added_to_folder_at: row.added_to_folder_at,
-    media_type: row.media_type,
-    media_class: row.media_class,
-    maybe_mime_type: row.maybe_mime_type,
-    public_bucket_directory_hash: row.public_bucket_directory_hash,
-    maybe_public_bucket_prefix: row.maybe_public_bucket_prefix,
-    maybe_public_bucket_extension: row.maybe_public_bucket_extension,
-    maybe_frame_width: row.maybe_frame_width,
-    maybe_frame_height: row.maybe_frame_height,
-    maybe_duration_millis: row.maybe_duration_millis,
-    maybe_title: row.maybe_title,
   }
 }
