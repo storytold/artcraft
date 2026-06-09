@@ -5,6 +5,7 @@ use crate::billing::wallets::attempt_wallet_deduction::attempt_wallet_deduction_
 use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::endpoints::generate::common::payments_error_test::payments_error_test;
 use crate::http_server::validations::validate_idempotency_token_format::validate_idempotency_token_format;
+use crate::http_server::web_utils::get_request_platform_type::get_request_platform_type;
 use crate::state::server_state::ServerState;
 use crate::util::lookup::lookup_image_urls_as_map::lookup_image_urls_as_map;
 use actix_web::web::Json;
@@ -334,6 +335,7 @@ pub async fn seedance_1p5_pro_multi_function_video_gen_handler(
     maybe_avt_token: maybe_avt_token.as_ref(),
     creator_ip_address: &ip_address,
     creator_set_visibility: Visibility::Public,
+    maybe_platform_type: get_request_platform_type(&http_request),
     mysql_executor: &mut *transaction,
     starting_job_status_override: None,
     maybe_frontend_failure_category: None,

@@ -10,6 +10,7 @@ use enums::by_table::media_files::media_file_type::MediaFileType;
 use enums::common::visibility::Visibility;
 use sqlx::MySqlPool;
 use enums::common::generation_provider::GenerationProvider;
+use enums::common::platform_type::PlatformType;
 use tokens::tokens::anonymous_visitor_tracking::AnonymousVisitorTrackingToken;
 use tokens::tokens::batch_generations::BatchGenerationToken;
 use tokens::tokens::media_files::MediaFileToken;
@@ -82,6 +83,10 @@ pub struct MediaFileInsertBuilder {
 
   // Generation details
   maybe_generation_provider: Option<GenerationProvider>,
+
+  // The platform the creating request came from. For inference results, this
+  // is copied from the originating generic_inference_jobs row.
+  maybe_platform_type: Option<PlatformType>,
 }
 
 impl MediaFileInsertBuilder {
@@ -116,6 +121,7 @@ impl MediaFileInsertBuilder {
       public_bucket_directory_hash: None,
       maybe_prompt_token: None,
       maybe_generation_provider: None,
+      maybe_platform_type: None,
     }
   }
 
@@ -272,6 +278,11 @@ impl MediaFileInsertBuilder {
     self
   }
 
+  pub fn maybe_platform_type(mut self, maybe_platform_type: Option<PlatformType>) -> Self {
+    self.maybe_platform_type = maybe_platform_type;
+    self
+  }
+
   // TODO(bt,2025-04-26): Other connector options.
   pub async fn insert_pool(self, mysql_pool: &MySqlPool) -> Result<MediaFileToken, MediaFileInsertBuilderError> {
     let media_file_type = self.media_file_type
@@ -341,6 +352,7 @@ impl MediaFileInsertBuilder {
       maybe_creator_category_synthetic_id_category: IdCategory::FileUpload, // TODO: Remove this
       maybe_extra_media_info: None, // TODO
       maybe_generation_provider: self.maybe_generation_provider,
+      maybe_platform_type: self.maybe_platform_type,
       maybe_cover_image_media_file_token: self.maybe_cover_image_media_file_token.as_ref(),
       is_generated_on_prem: false, // TODO
       generated_by_worker: None, // TODO

@@ -1,6 +1,6 @@
 {
   "db_name": "MySQL",
-  "query": "\nSELECT\n    jobs.token as `job_token: tokens::tokens::generic_inference_jobs::InferenceJobToken`,\n\n    jobs.status as `status: enums::common::job_status_plus::JobStatusPlus`,\n\n    jobs.maybe_external_third_party as `external_third_party: enums::by_table::generic_inference_jobs::inference_job_external_third_party::InferenceJobExternalThirdParty`,\n    jobs.maybe_external_third_party_id as `external_third_party_id`,\n\n    jobs.maybe_creator_user_token as `maybe_creator_user_token: tokens::tokens::users::UserToken`,\n    jobs.maybe_creator_anonymous_visitor_token as `maybe_creator_anonymous_visitor_token: tokens::tokens::anonymous_visitor_tracking::AnonymousVisitorTrackingToken`,\n    jobs.creator_ip_address,\n\n    jobs.maybe_prompt_token as `maybe_prompt_token: tokens::tokens::prompts::PromptToken`,\n    jobs.maybe_debug_log_event_token as `maybe_debug_log_event_token: tokens::tokens::non_unique::debug_logs_event_token::DebugLogEventToken`,\n\n    jobs.created_at,\n    jobs.updated_at\n\nFROM generic_inference_jobs as jobs\n\nWHERE jobs.maybe_external_third_party = ?\nAND jobs.maybe_external_third_party_id = ?\n        ",
+  "query": "\nSELECT\n    jobs.token as `job_token: tokens::tokens::generic_inference_jobs::InferenceJobToken`,\n\n    jobs.status as `status: enums::common::job_status_plus::JobStatusPlus`,\n    \n    jobs.maybe_external_third_party as `external_third_party: enums::by_table::generic_inference_jobs::inference_job_external_third_party::InferenceJobExternalThirdParty`,\n    jobs.maybe_external_third_party_id as `external_third_party_id`,\n\n    jobs.maybe_creator_user_token as `maybe_creator_user_token: tokens::tokens::users::UserToken`,\n    jobs.maybe_creator_anonymous_visitor_token as `maybe_creator_anonymous_visitor_token: tokens::tokens::anonymous_visitor_tracking::AnonymousVisitorTrackingToken`,\n    jobs.creator_ip_address,\n    \n    jobs.maybe_prompt_token as `maybe_prompt_token: tokens::tokens::prompts::PromptToken`,\n    jobs.maybe_debug_log_event_token as `maybe_debug_log_event_token: tokens::tokens::non_unique::debug_logs_event_token::DebugLogEventToken`,\n\n    jobs.platform_type as `maybe_platform_type: enums::common::platform_type::PlatformType`,\n\n    jobs.created_at,\n    jobs.updated_at\n\nFROM generic_inference_jobs as jobs\n\nWHERE jobs.maybe_external_third_party = ?\nAND jobs.maybe_external_third_party_id = ?\n        ",
   "describe": {
     "columns": [
       {
@@ -95,6 +95,16 @@
       },
       {
         "ordinal": 9,
+        "name": "maybe_platform_type: enums::common::platform_type::PlatformType",
+        "type_info": {
+          "type": "VarString",
+          "flags": "BINARY",
+          "char_set": 224,
+          "max_size": 64
+        }
+      },
+      {
+        "ordinal": 10,
         "name": "created_at",
         "type_info": {
           "type": "Timestamp",
@@ -104,7 +114,7 @@
         }
       },
       {
-        "ordinal": 10,
+        "ordinal": 11,
         "name": "updated_at",
         "type_info": {
           "type": "Timestamp",
@@ -127,9 +137,10 @@
       false,
       true,
       true,
+      true,
       false,
       false
     ]
   },
-  "hash": "31d85cc0013f29e6db2d272ee6e709cca79b46496a2c222960f1a1419175f00b"
+  "hash": "3a846909a725eb776b4a4637dc64dcaf1ed70ad8891f9d012c7f3cdcb16a613e"
 }

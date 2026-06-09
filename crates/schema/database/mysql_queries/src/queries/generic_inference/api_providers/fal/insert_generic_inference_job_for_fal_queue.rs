@@ -2,6 +2,7 @@ use sqlx::{Executor, MySql};
 use std::marker::PhantomData;
 
 use enums::common::generation::common_model_type::CommonModelType;
+use enums::common::platform_type::PlatformType;
 use enums::common::visibility::Visibility;
 use tokens::tokens::anonymous_visitor_tracking::AnonymousVisitorTrackingToken;
 use tokens::tokens::generic_inference_jobs::InferenceJobToken;
@@ -41,6 +42,9 @@ pub struct InsertGenericInferenceForFalArgs<'e, 'c, E>
   pub creator_ip_address: &'e str,
   pub creator_set_visibility: Visibility,
 
+  /// The platform the enqueuing request came from, inferred from its User-Agent.
+  pub maybe_platform_type: Option<PlatformType>,
+
   pub mysql_executor: E,
   
   // TODO: Not sure if this works to tell the compiler we need the lifetime annotation.
@@ -66,6 +70,7 @@ pub async fn insert_generic_inference_job_for_fal_queue<'e, 'c : 'e, E>(args: In
     maybe_avt_token: args.maybe_avt_token,
     creator_ip_address: args.creator_ip_address,
     creator_set_visibility: args.creator_set_visibility,
+    maybe_platform_type: args.maybe_platform_type,
     starting_job_status_override: None,
     maybe_frontend_failure_category: None,
     maybe_failure_reason: None,

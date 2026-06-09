@@ -208,6 +208,10 @@ CREATE TABLE generic_inference_jobs (
   -- Multiple debug_logs rows can share the same event token.
   maybe_debug_log_event_token VARCHAR(32) DEFAULT NULL,
 
+  -- The platform the enqueuing request came from ('web', 'desktop_app', 'curl'),
+  -- inferred from the request's User-Agent header.
+  platform_type VARCHAR(16) DEFAULT NULL,
+
   -- ========== JOB SYSTEM DETAILS ==========
 
   -- Jobs begin as "pending", then transition to other states.

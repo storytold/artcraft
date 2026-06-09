@@ -27,6 +27,7 @@ use enums::by_table::generic_inference_jobs::inference_job_product_category::Inf
 use enums::by_table::generic_inference_jobs::inference_job_type::InferenceJobType;
 use enums::by_table::generic_inference_jobs::inference_model_type::InferenceModelType;
 use enums::common::job_status_plus::JobStatusPlus;
+use enums::common::platform_type::PlatformType;
 use enums::common::visibility::Visibility;
 use tokens::tokens::anonymous_visitor_tracking::AnonymousVisitorTrackingToken;
 use tokens::tokens::generic_inference_jobs::InferenceJobToken;
@@ -75,6 +76,9 @@ pub(crate) struct InsertFullGenericInferenceJobRecordArgs<'e, 'c, E>
   pub maybe_avt_token: Option<&'e AnonymousVisitorTrackingToken>,
   pub creator_ip_address: &'e str,
   pub creator_set_visibility: Visibility,
+
+  /// The platform the enqueuing request came from, inferred from its User-Agent.
+  pub maybe_platform_type: Option<PlatformType>,
 
   pub priority_level: u8,
   pub requires_keepalive: bool,
@@ -157,6 +161,8 @@ SET
   creator_ip_address = ?,
   creator_set_visibility = ?,
 
+  platform_type = ?,
+
   priority_level = ?,
   is_keepalive_required = ?,
   max_duration_seconds = ?,
@@ -202,6 +208,8 @@ SET
         args.maybe_avt_token.map(|t| t.to_string()),
         args.creator_ip_address,
         args.creator_set_visibility.to_str(),
+
+        args.maybe_platform_type.map(|p| p.to_str()),
 
         args.priority_level,
         args.requires_keepalive,

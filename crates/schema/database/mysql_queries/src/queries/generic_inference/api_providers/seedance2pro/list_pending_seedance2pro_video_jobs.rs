@@ -3,6 +3,7 @@ use sqlx::MySqlPool;
 
 use enums::by_table::generic_inference_jobs::inference_job_external_third_party::InferenceJobExternalThirdParty;
 use enums::by_table::generic_inference_jobs::inference_job_type::InferenceJobType;
+use enums::common::platform_type::PlatformType;
 use enums::common::visibility::Visibility;
 use tokens::tokens::anonymous_visitor_tracking::AnonymousVisitorTrackingToken;
 use tokens::tokens::generic_inference_jobs::InferenceJobToken;
@@ -26,6 +27,8 @@ pub struct PendingSeedance2ProJob {
   pub maybe_prompt_token: Option<PromptToken>,
 
   pub maybe_wallet_ledger_entry_token: Option<WalletLedgerEntryToken>,
+
+  pub maybe_platform_type: Option<PlatformType>,
 }
 
 #[derive(Debug, Default)]
@@ -38,6 +41,7 @@ struct RawRecord {
   creator_set_visibility: Visibility,
   maybe_prompt_token: Option<PromptToken>,
   maybe_wallet_ledger_entry_token: Option<WalletLedgerEntryToken>,
+  maybe_platform_type: Option<PlatformType>,
 }
 
 /// Returns all non-terminal Seedance2Pro video jobs that have an associated order_id.
@@ -57,7 +61,8 @@ SELECT
     jobs.creator_ip_address,
     jobs.creator_set_visibility as `creator_set_visibility: enums::common::visibility::Visibility`,
     jobs.maybe_prompt_token as `maybe_prompt_token: tokens::tokens::prompts::PromptToken`,
-    jobs.maybe_wallet_ledger_entry_token as `maybe_wallet_ledger_entry_token: tokens::tokens::wallet_ledger_entries::WalletLedgerEntryToken`
+    jobs.maybe_wallet_ledger_entry_token as `maybe_wallet_ledger_entry_token: tokens::tokens::wallet_ledger_entries::WalletLedgerEntryToken`,
+    jobs.platform_type as `maybe_platform_type: enums::common::platform_type::PlatformType`
 
 FROM generic_inference_jobs as jobs
 
@@ -94,6 +99,7 @@ LIMIT 25000
         creator_set_visibility: record.creator_set_visibility,
         maybe_prompt_token: record.maybe_prompt_token,
         maybe_wallet_ledger_entry_token: record.maybe_wallet_ledger_entry_token,
+        maybe_platform_type: record.maybe_platform_type,
       })
     })
     .collect();

@@ -1,6 +1,7 @@
 pub mod bucket_urls;
 pub mod filter_model_name;
 pub mod get_host_header;
+pub mod get_request_platform_type;
 pub mod handle_multipart_error;
 pub mod open_zip_archive;
 pub mod read_multipart_field_bytes;

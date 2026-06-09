@@ -7,6 +7,7 @@ use crate::http_server::endpoint_helpers::refund_wallet_after_api_failure::refun
 use crate::http_server::endpoints::generate::common::payments_error_test::payments_error_test;
 use crate::http_server::session::lookup::user_session_feature_flags::UserSessionFeatureFlags;
 use crate::http_server::validations::validate_idempotency_token_format::validate_idempotency_token_format;
+use crate::http_server::web_utils::get_request_platform_type::get_request_platform_type;
 use crate::state::server_state::ServerState;
 use crate::util::http_download_url_to_bytes::http_download_url_to_bytes;
 use crate::util::lookup::lookup_media_file_urls_as_map::lookup_media_file_urls_as_map;
@@ -421,6 +422,7 @@ pub async fn seedance_2p0_multi_function_video_gen_handler(
         maybe_avt_token: maybe_avt_token.as_ref(),
         creator_ip_address: &ip_address,
         creator_set_visibility: Visibility::Public,
+        maybe_platform_type: get_request_platform_type(&http_request),
         maybe_debug_log_event_token: None,
         mysql_executor: &mut *transaction,
         phantom: Default::default(),

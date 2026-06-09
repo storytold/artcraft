@@ -30,6 +30,7 @@ pub async fn insert_grok_api_job(args: InsertGrokApiJobArgs<'_, '_>) -> Result<I
       maybe_creator_user_token: Some(shared.user_token),
       maybe_avt_token: shared.maybe_avt_token,
       creator_ip_address: shared.ip_address,
+      maybe_platform_type: shared.maybe_platform_type,
       maybe_debug_log_event_token: shared.maybe_debug_log_event_token,
       mysql_executor: &mut **shared.transaction,
       phantom: Default::default(),

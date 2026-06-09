@@ -8,6 +8,7 @@ use enums::by_table::generic_inference_jobs::inference_job_product_category::Inf
 use enums::by_table::generic_inference_jobs::inference_job_type::InferenceJobType;
 use enums::common::generation::common_model_type::CommonModelType;
 use enums::common::job_status_plus::JobStatusPlus;
+use enums::common::platform_type::PlatformType;
 use enums::common::visibility::Visibility;
 use tokens::tokens::anonymous_visitor_tracking::AnonymousVisitorTrackingToken;
 use tokens::tokens::generic_inference_jobs::InferenceJobToken;
@@ -33,6 +34,7 @@ where
   pub maybe_creator_user_token: Option<&'e UserToken>,
   pub maybe_avt_token: Option<&'e AnonymousVisitorTrackingToken>,
   pub creator_ip_address: &'e str,
+  pub maybe_platform_type: Option<PlatformType>,
   pub maybe_debug_log_event_token: Option<&'e DebugLogEventToken>,
   pub mysql_executor: E,
   pub phantom: PhantomData<&'c E>,
@@ -60,6 +62,7 @@ where
     maybe_avt_token: args.maybe_avt_token,
     creator_ip_address: args.creator_ip_address,
     creator_set_visibility: Visibility::Public,
+    maybe_platform_type: args.maybe_platform_type,
     maybe_debug_log_event_token: args.maybe_debug_log_event_token,
     maybe_frontend_failure_category: None,
     maybe_failure_reason: None,

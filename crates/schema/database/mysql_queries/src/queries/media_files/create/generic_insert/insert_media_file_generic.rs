@@ -10,6 +10,7 @@ use enums::by_table::media_files::media_file_origin_model_type::MediaFileOriginM
 use enums::by_table::media_files::media_file_origin_product_category::MediaFileOriginProductCategory;
 use enums::by_table::media_files::media_file_type::MediaFileType;
 use enums::common::generation_provider::GenerationProvider;
+use enums::common::platform_type::PlatformType;
 use enums::common::visibility::Visibility;
 use errors::AnyhowResult;
 use tokens::tokens::anonymous_visitor_tracking::AnonymousVisitorTrackingToken;
@@ -91,6 +92,10 @@ pub struct InsertArgs<'a> {
 
     /// If provided, the third-party provider that generated this file.
     pub maybe_generation_provider: Option<GenerationProvider>,
+
+    /// The platform the creating request came from, inferred from its User-Agent.
+    /// For inference results, this is copied from the originating job.
+    pub maybe_platform_type: Option<PlatformType>,
 
     // Cover image (e.g. thumbnail for 3D splats)
     pub maybe_cover_image_media_file_token: Option<&'a MediaFileToken>,
@@ -204,6 +209,8 @@ pub async fn insert_media_file_generic(
 
             maybe_generation_provider = ?,
 
+            platform_type = ?,
+
             maybe_cover_image_media_file_token = ?,
 
             maybe_mod_user_token = ?,
@@ -261,6 +268,8 @@ pub async fn insert_media_file_generic(
         extra_file_modification_info,
 
         maybe_generation_provider_str,
+
+        args.maybe_platform_type.map(|p| p.to_str()),
 
         args.maybe_cover_image_media_file_token.map(|t| t.as_str()),
 

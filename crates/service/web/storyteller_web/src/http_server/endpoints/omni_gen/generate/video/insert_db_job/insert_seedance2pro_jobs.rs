@@ -65,6 +65,7 @@ pub async fn insert_seedance2pro_jobs(args: InsertSeedance2proJobsArgs<'_, '_>) 
         maybe_avt_token: shared.maybe_avt_token,
         creator_ip_address: shared.ip_address,
         creator_set_visibility: Visibility::Public,
+        maybe_platform_type: shared.maybe_platform_type,
         maybe_debug_log_event_token: shared.maybe_debug_log_event_token,
         mysql_executor: &mut **shared.transaction,
         maybe_inference_args: None,

@@ -1,6 +1,6 @@
 {
   "db_name": "MySQL",
-  "query": "\nSELECT\n    jobs.token as `job_token: tokens::tokens::generic_inference_jobs::InferenceJobToken`,\n    jobs.maybe_external_third_party_id as `operation_id`,\n    jobs.maybe_creator_user_token as `maybe_creator_user_token: tokens::tokens::users::UserToken`,\n    jobs.maybe_creator_anonymous_visitor_token as `maybe_creator_anonymous_visitor_token: tokens::tokens::anonymous_visitor_tracking::AnonymousVisitorTrackingToken`,\n    jobs.creator_ip_address,\n    jobs.creator_set_visibility as `creator_set_visibility: enums::common::visibility::Visibility`,\n    jobs.maybe_prompt_token as `maybe_prompt_token: tokens::tokens::prompts::PromptToken`,\n    jobs.maybe_wallet_ledger_entry_token as `maybe_wallet_ledger_entry_token: tokens::tokens::wallet_ledger_entries::WalletLedgerEntryToken`\n\nFROM generic_inference_jobs as jobs\n\nWHERE jobs.maybe_external_third_party = ?\n  AND jobs.status NOT IN ('complete_success', 'complete_failure')\n  AND jobs.maybe_external_third_party_id IS NOT NULL\n\nLIMIT 25000\n    ",
+  "query": "\nSELECT\n    jobs.token as `job_token: tokens::tokens::generic_inference_jobs::InferenceJobToken`,\n    jobs.maybe_external_third_party_id as `request_id`,\n    jobs.maybe_creator_user_token as `maybe_creator_user_token: tokens::tokens::users::UserToken`,\n    jobs.maybe_creator_anonymous_visitor_token as `maybe_creator_anonymous_visitor_token: tokens::tokens::anonymous_visitor_tracking::AnonymousVisitorTrackingToken`,\n    jobs.creator_ip_address,\n    jobs.creator_set_visibility as `creator_set_visibility: enums::common::visibility::Visibility`,\n    jobs.maybe_prompt_token as `maybe_prompt_token: tokens::tokens::prompts::PromptToken`,\n    jobs.maybe_wallet_ledger_entry_token as `maybe_wallet_ledger_entry_token: tokens::tokens::wallet_ledger_entries::WalletLedgerEntryToken`,\n    jobs.platform_type as `maybe_platform_type: enums::common::platform_type::PlatformType`\n\nFROM generic_inference_jobs as jobs\n\nWHERE jobs.maybe_external_third_party = ?\n  AND jobs.status NOT IN ('complete_success', 'complete_failure')\n  AND jobs.maybe_external_third_party_id IS NOT NULL\n\nLIMIT 25000\n    ",
   "describe": {
     "columns": [
       {
@@ -15,7 +15,7 @@
       },
       {
         "ordinal": 1,
-        "name": "operation_id",
+        "name": "request_id",
         "type_info": {
           "type": "VarString",
           "flags": "MULTIPLE_KEY | BINARY",
@@ -82,6 +82,16 @@
           "char_set": 224,
           "max_size": 128
         }
+      },
+      {
+        "ordinal": 8,
+        "name": "maybe_platform_type: enums::common::platform_type::PlatformType",
+        "type_info": {
+          "type": "VarString",
+          "flags": "BINARY",
+          "char_set": 224,
+          "max_size": 64
+        }
       }
     ],
     "parameters": {
@@ -95,8 +105,9 @@
       false,
       false,
       true,
+      true,
       true
     ]
   },
-  "hash": "d56a26a7300495fac9741e77e390f16402e2273dbab9a15d7c17eb1f0da7a1b1"
+  "hash": "1a0b60602debe525529f50566fc545f1cb4b77005f423a10464652be7fbfa839"
 }

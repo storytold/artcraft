@@ -107,6 +107,7 @@ pub async fn process_model_mesh_payload(
       .maybe_engine_category(Some(MediaFileEngineCategory::Object))
       .maybe_generation_provider(Some(GenerationProvider::Artcraft))
       .maybe_prompt_token(job.maybe_prompt_token.as_ref())
+      .maybe_platform_type(job.maybe_platform_type)
       .media_file_class(MediaFileClass::Dimensional)
       .media_file_origin_category(MediaFileOriginCategory::Inference)
       .media_file_type(media_file_type)

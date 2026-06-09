@@ -5,6 +5,7 @@ use std::marker::PhantomData;
 use enums::by_table::generic_inference_jobs::frontend_failure_category::FrontendFailureCategory;
 use enums::common::generation::common_model_type::CommonModelType;
 use enums::common::job_status_plus::JobStatusPlus;
+use enums::common::platform_type::PlatformType;
 use enums::common::visibility::Visibility;
 use tokens::tokens::anonymous_visitor_tracking::AnonymousVisitorTrackingToken;
 use tokens::tokens::generic_inference_jobs::InferenceJobToken;
@@ -41,6 +42,9 @@ pub struct InsertGenericInferenceForFalMockFailureArgs<'e, 'c, E>
   pub creator_ip_address: &'e str,
   pub creator_set_visibility: Visibility,
 
+  /// The platform the enqueuing request came from, inferred from its User-Agent.
+  pub maybe_platform_type: Option<PlatformType>,
+
   pub maybe_frontend_failure_category: Option<FrontendFailureCategory>,
   pub maybe_failure_reason: Option<&'e str>,
 
@@ -69,6 +73,7 @@ pub async fn insert_generic_inference_job_for_fal_queue_mock_failure<'e, 'c: 'e,
     maybe_avt_token: args.maybe_avt_token,
     creator_ip_address: args.creator_ip_address,
     creator_set_visibility: args.creator_set_visibility,
+    maybe_platform_type: args.maybe_platform_type,
     starting_job_status_override: Some(JobStatusPlus::CompleteFailure),
     maybe_frontend_failure_category: args.maybe_frontend_failure_category,
     maybe_failure_reason: args.maybe_failure_reason,

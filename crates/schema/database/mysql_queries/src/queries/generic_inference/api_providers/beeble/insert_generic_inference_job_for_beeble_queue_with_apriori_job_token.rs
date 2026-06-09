@@ -83,6 +83,7 @@ pub async fn insert_generic_inference_job_for_beeble_queue_with_apriori_job_toke
     maybe_avt_token: args.maybe_avt_token,
     creator_ip_address: args.creator_ip_address,
     creator_set_visibility: args.creator_set_visibility,
+    maybe_platform_type: None,
     maybe_debug_log_event_token: args.maybe_debug_log_event_token,
     maybe_frontend_failure_category: args.maybe_frontend_failure_category,
     maybe_failure_reason: args.maybe_failure_reason,

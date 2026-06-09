@@ -8,6 +8,7 @@ use enums::by_table::generic_inference_jobs::inference_job_product_category::Inf
 use enums::by_table::generic_inference_jobs::inference_job_type::InferenceJobType;
 use enums::common::generation::common_model_type::CommonModelType;
 use enums::common::job_status_plus::JobStatusPlus;
+use enums::common::platform_type::PlatformType;
 use enums::common::visibility::Visibility;
 use tokens::tokens::anonymous_visitor_tracking::AnonymousVisitorTrackingToken;
 use tokens::tokens::generic_inference_jobs::InferenceJobToken;
@@ -45,6 +46,9 @@ pub struct InsertGenericInferenceForWorldlabsWithAprioriJobTokenArgs<'e, 'c, E>
   pub creator_ip_address: &'e str,
   pub creator_set_visibility: Visibility,
 
+  /// The platform the enqueuing request came from, inferred from its User-Agent.
+  pub maybe_platform_type: Option<PlatformType>,
+
   pub mysql_executor: E,
 
   pub phantom: PhantomData<&'c E>,
@@ -71,6 +75,7 @@ pub async fn insert_generic_inference_job_for_worldlabs_queue_with_apriori_job_t
     maybe_avt_token: args.maybe_avt_token,
     creator_ip_address: args.creator_ip_address,
     creator_set_visibility: args.creator_set_visibility,
+    maybe_platform_type: args.maybe_platform_type,
     maybe_debug_log_event_token: None,
     maybe_frontend_failure_category: None,
     maybe_failure_reason: None,

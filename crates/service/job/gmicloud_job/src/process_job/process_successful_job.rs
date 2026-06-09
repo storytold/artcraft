@@ -121,6 +121,7 @@ pub async fn process_successful_job(
     .file_size_bytes(video_bytes.len() as u64)
     .checksum_sha2(&checksum)
     .maybe_prompt_token(job.maybe_prompt_token.as_ref())
+    .maybe_platform_type(job.maybe_platform_type)
     .maybe_cover_image_media_file_token(maybe_cover_token.as_ref())
     .public_bucket_directory_hash(&bucket_path)
     .insert_pool(&deps.mysql_pool)
@@ -226,6 +227,7 @@ async fn download_and_upload_thumbnail(
     .file_size_bytes(thumb_bytes.len() as u64)
     .checksum_sha2(&checksum)
     .maybe_prompt_token(job.maybe_prompt_token.as_ref())
+    .maybe_platform_type(job.maybe_platform_type)
     .public_bucket_directory_hash(&bucket_path)
     .insert_pool(&deps.mysql_pool)
     .await

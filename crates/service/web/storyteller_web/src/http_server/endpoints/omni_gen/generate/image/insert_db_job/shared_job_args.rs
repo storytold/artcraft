@@ -1,4 +1,5 @@
 use enums::common::generation::common_model_type::CommonModelType;
+use enums::common::platform_type::PlatformType;
 use tokens::tokens::anonymous_visitor_tracking::AnonymousVisitorTrackingToken;
 use tokens::tokens::generic_inference_jobs::InferenceJobToken;
 use tokens::tokens::non_unique::debug_logs_event_token::DebugLogEventToken;
@@ -15,6 +16,7 @@ pub struct SharedJobArgs<'a, 'tx> {
   pub maybe_prompt_token: Option<&'a PromptToken>,
   pub maybe_debug_log_event_token: Option<&'a DebugLogEventToken>,
   pub maybe_model_type: Option<CommonModelType>,
+  pub maybe_platform_type: Option<PlatformType>,
   pub ip_address: &'a str,
   pub transaction: &'a mut sqlx::Transaction<'tx, sqlx::MySql>,
 }

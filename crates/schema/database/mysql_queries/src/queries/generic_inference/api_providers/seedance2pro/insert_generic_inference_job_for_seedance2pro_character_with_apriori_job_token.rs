@@ -63,6 +63,7 @@ pub async fn insert_generic_inference_job_for_seedance2pro_character_with_aprior
     maybe_avt_token: args.maybe_avt_token,
     creator_ip_address: args.creator_ip_address,
     creator_set_visibility: args.creator_set_visibility,
+    maybe_platform_type: None,
     maybe_debug_log_event_token: None,
     maybe_frontend_failure_category: None,
     maybe_failure_reason: None,

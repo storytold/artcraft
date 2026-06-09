@@ -65,6 +65,11 @@ CREATE TABLE media_files (
   -- What service provided the generation (if any).
   maybe_generation_provider VARCHAR(16) DEFAULT NULL,
 
+  -- The platform the creating request came from ('web', 'desktop_app', 'curl'),
+  -- inferred from the request's User-Agent header. Copied from the originating
+  -- generic_inference_jobs row for inference results.
+  platform_type VARCHAR(16) DEFAULT NULL,
+
   -- For inference that can be tied back to a model, the type of model.
   -- There are multiple indices on this column!
   -- DO NOT EXPOSE THIS TO USERS VIA THE API, as we may leak secrets in doing so.

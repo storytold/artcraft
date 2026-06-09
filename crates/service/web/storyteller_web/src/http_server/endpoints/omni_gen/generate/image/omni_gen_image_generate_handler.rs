@@ -34,6 +34,7 @@ use crate::http_server::endpoints::omni_gen::generate::image::insert_db_job::sha
 use crate::http_server::endpoints::omni_gen::generate::image::pipeline_v2::run_pipeline_v2::{run_pipeline_v2, RunPipelineV2Args};
 use crate::http_server::session::lookup::user_session_feature_flags::UserSessionFeatureFlags;
 use crate::http_server::validations::validate_idempotency_token_format::validate_idempotency_token_format;
+use crate::http_server::web_utils::get_request_platform_type::get_request_platform_type;
 use crate::state::server_state::ServerState;
 use crate::util::lookup::lookup_media_files_as_cdn_url_list_and_map::lookup_media_files_as_cdn_url_list_and_map;
 
@@ -170,6 +171,7 @@ pub async fn omni_gen_image_generate_handler(
   // ==================== WRITE RESULT ==================== //
 
   let ip_address = get_request_ip(&http_request);
+  let maybe_platform_type = get_request_platform_type(&http_request);
 
   let mut transaction = mysql_connection
     .begin()
@@ -268,6 +270,7 @@ pub async fn omni_gen_image_generate_handler(
           maybe_model_type: request.model.map(|v| v.to_common_model_type()),
           maybe_prompt_token: prompt_token.as_ref(),
           maybe_debug_log_event_token: Some(&debug_log_event_token),
+          maybe_platform_type,
           ip_address: &ip_address,
           transaction: &mut transaction,
         },
@@ -287,6 +290,7 @@ pub async fn omni_gen_image_generate_handler(
           maybe_model_type: request.model.map(|v| v.to_common_model_type()),
           maybe_prompt_token: prompt_token.as_ref(),
           maybe_debug_log_event_token: Some(&debug_log_event_token),
+          maybe_platform_type,
           ip_address: &ip_address,
           transaction: &mut transaction,
         },
