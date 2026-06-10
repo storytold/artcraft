@@ -4,6 +4,9 @@
 root_dir=$(pwd)
 frontend_path="${root_dir}/frontend"
 
+source "${root_dir}/script/common/frontend_preflight.sh"
+frontend_preflight "${frontend_path}"
+
 echo "Running Artcraft Frontend in Dev Mode..."
 echo ""
 
@@ -20,7 +23,7 @@ fi
 
 pushd "${frontend_path}" || exit
 
-npm install --verbose
+frontend_npm_install
 
 export VITE_ENVIRONMENT_TYPE="production"
 
