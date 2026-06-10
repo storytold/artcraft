@@ -14,6 +14,7 @@ import {
   GalleryFolderChip,
   GalleryDragComponent,
   FolderColorRow,
+  FolderNameDialog,
   compareFolders,
   promptFolderDrop,
   FOLDER_DROP_EVENT,
@@ -155,11 +156,6 @@ export default function Library() {
   );
   const bulkSelectionMode = bulkSelectedIds.size > 0;
   const [bulkFolderPopoverOpen, setBulkFolderPopoverOpen] = useState(false);
-
-  // Folder dialog state local to the page
-  const [newFolderName, setNewFolderName] = useState("New Folder");
-  const [renameValue, setRenameValue] = useState("");
-  const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
 
   const api = useMemo(() => new GalleryModalApi(), []);
 
@@ -507,24 +503,39 @@ export default function Library() {
   }, [loadItems]);
 
   // ── Folder dialog handlers ────────────────────────────────────────────────
-  const submitNewFolder = () => {
-    const name = newFolderName.trim();
-    if (!name) return;
+  const submitNewFolder = (name: string) => {
     createFolder(name, newFolderModal.parentId);
-    setNewFolderName("New Folder");
     closeNewFolderModal();
   };
 
-  const startRename = (folderId: string) => {
-    const folder = folders.find((f) => f.id === folderId);
-    setRenameValue(folder?.name ?? "");
-    setRenameTarget(folderId);
+  const startRename = (folderId: string) => setRenameTarget(folderId);
+
+  const submitRename = (name: string) => {
+    if (renameTarget) renameFolderAction(renameTarget, name);
+    setRenameTarget(null);
   };
 
-  const submitRename = () => {
-    const name = renameValue.trim();
-    if (name && renameTarget) renameFolderAction(renameTarget, name);
-    setRenameTarget(null);
+  const confirmDeleteFolder = (folderId: string) => {
+    const folder = folders.find((f) => f.id === folderId);
+    showActionReminder({
+      reminderType: "default",
+      title: `Delete "${folder?.name ?? "folder"}"?`,
+      message: (
+        <p className="text-sm text-white/70">
+          Subfolders move to the top level. Items stay in your library.
+        </p>
+      ),
+      primaryActionText: "Delete",
+      secondaryActionText: "Cancel",
+      primaryActionBtnClassName: "bg-red text-white hover:bg-red/90",
+      onPrimaryAction: async () => {
+        try {
+          await deleteFolderAction(folderId);
+        } finally {
+          isActionReminderOpen.value = false;
+        }
+      },
+    });
   };
 
   // ── Not logged in / loading auth ──────────────────────────────────────────
@@ -801,16 +812,28 @@ export default function Library() {
                 </div>
               ) : null
             ) : folderEmpty ? (
-              <div className="flex flex-col items-center justify-center py-20 gap-3">
-                <p className="text-white/40 text-sm">This folder is empty.</p>
-                <Button
-                  variant="secondary"
-                  icon={faFolderPlus}
-                  onClick={() => openNewFolderModal(activeFolderId)}
-                  className="rounded-full text-sm px-4 py-2 border border-ui-panel-border"
-                >
-                  New folder
-                </Button>
+              <div className="flex flex-col items-center justify-center py-20">
+                <p className="text-white/40 text-sm mb-4">
+                  This folder is empty.
+                </p>
+                <div className="flex gap-3">
+                  <Link to="/create-image">
+                    <Button
+                      variant="primary"
+                      className="rounded-full text-sm px-4 py-2"
+                    >
+                      Create Image
+                    </Button>
+                  </Link>
+                  <Link to="/create-video">
+                    <Button
+                      variant="secondary"
+                      className="rounded-full text-sm px-4 py-2 border border-ui-panel-border"
+                    >
+                      Create Video
+                    </Button>
+                  </Link>
+                </div>
               </div>
             ) : (
               <>
@@ -997,52 +1020,30 @@ export default function Library() {
         onDeleted={handleItemDeleted}
       />
 
-      {/* New Folder modal */}
-      {newFolderModal.open && (
-        <FolderDialog
-          title="New Folder"
-          subtitle={
-            newFolderModal.parentId
-              ? `in ${folders.find((f) => f.id === newFolderModal.parentId)?.name ?? "My Library"}`
-              : "in My Library"
-          }
-          value={newFolderName}
-          onChange={setNewFolderName}
-          confirmLabel="Create"
-          onConfirm={submitNewFolder}
-          onCancel={() => {
-            setNewFolderName("New Folder");
-            closeNewFolderModal();
-          }}
-        />
-      )}
+      {/* New folder dialog */}
+      <FolderNameDialog
+        isOpen={newFolderModal.open}
+        title="New folder"
+        subtitle={
+          newFolderModal.parentId
+            ? `in ${folders.find((f) => f.id === newFolderModal.parentId)?.name ?? "My Library"}`
+            : "in My Library"
+        }
+        initialValue="New Folder"
+        confirmLabel="Create"
+        onConfirm={submitNewFolder}
+        onClose={closeNewFolderModal}
+      />
 
-      {/* Rename modal */}
-      {renameTarget && (
-        <FolderDialog
-          title="Rename Folder"
-          value={renameValue}
-          onChange={setRenameValue}
-          confirmLabel="Rename"
-          onConfirm={submitRename}
-          onCancel={() => setRenameTarget(null)}
-        />
-      )}
-
-      {/* Delete confirm */}
-      {deleteTarget && (
-        <FolderDialog
-          title={`Delete "${folders.find((f) => f.id === deleteTarget)?.name ?? "folder"}"?`}
-          subtitle="Subfolders move to the top level. Items stay in your library."
-          confirmLabel="Delete"
-          destructive
-          onConfirm={() => {
-            deleteFolderAction(deleteTarget);
-            setDeleteTarget(null);
-          }}
-          onCancel={() => setDeleteTarget(null)}
-        />
-      )}
+      {/* Rename dialog */}
+      <FolderNameDialog
+        isOpen={!!renameTarget}
+        title="Rename folder"
+        initialValue={folders.find((f) => f.id === renameTarget)?.name ?? ""}
+        confirmLabel="Rename"
+        onConfirm={submitRename}
+        onClose={() => setRenameTarget(null)}
+      />
 
       {/* Folder context menu (portaled) */}
       {contextMenu &&
@@ -1115,8 +1116,9 @@ export default function Library() {
                 type="button"
                 className="flex w-full items-center gap-2 px-2 py-2 rounded-md hover:bg-ui-controls/60 text-sm text-red"
                 onClick={() => {
-                  setDeleteTarget(contextMenu.folderId);
+                  const folderId = contextMenu.folderId;
                   setContextMenu(null);
+                  confirmDeleteFolder(folderId);
                 }}
               >
                 <FontAwesomeIcon icon={faTrashCan} className="w-4" />
@@ -1162,71 +1164,3 @@ function BulkThumb({ item }: { item: GalleryItem }) {
   );
 }
 
-// ── Folder dialog ────────────────────────────────────────────────────────────
-
-function FolderDialog({
-  title,
-  subtitle,
-  value,
-  onChange,
-  confirmLabel,
-  destructive,
-  onConfirm,
-  onCancel,
-}: {
-  title: string;
-  subtitle?: string;
-  value?: string;
-  onChange?: (v: string) => void;
-  confirmLabel: string;
-  destructive?: boolean;
-  onConfirm: () => void;
-  onCancel: () => void;
-}) {
-  const inputRef = useRef<HTMLInputElement>(null);
-  useEffect(() => {
-    if (onChange) setTimeout(() => inputRef.current?.select(), 50);
-  }, [onChange]);
-
-  return (
-    <div className="fixed inset-0 z-[9000] flex items-center justify-center bg-black/50 p-4">
-      <div
-        className="w-72 rounded-lg bg-ui-panel border border-ui-panel-border p-4 shadow-xl"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <h3 className="text-sm font-semibold text-base-fg mb-1">{title}</h3>
-        {subtitle && <p className="text-xs text-base-fg/40 mb-3">{subtitle}</p>}
-        {onChange && (
-          <input
-            ref={inputRef}
-            type="text"
-            value={value}
-            onChange={(e) => onChange(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") onConfirm();
-              if (e.key === "Escape") onCancel();
-            }}
-            className={`w-full rounded-md bg-ui-controls/40 border border-ui-panel-border px-3 py-1.5 text-sm text-base-fg outline-none focus:ring-1 focus:ring-primary/50 ${subtitle ? "" : "mt-2"}`}
-            autoFocus
-          />
-        )}
-        <div className="flex justify-end gap-2 mt-3">
-          <Button
-            variant="action"
-            onClick={onCancel}
-            className="px-3 py-1 text-sm"
-          >
-            Cancel
-          </Button>
-          <Button
-            onClick={onConfirm}
-            disabled={!!onChange && !value?.trim()}
-            className={`px-3 py-1 text-sm ${destructive ? "bg-red text-white hover:bg-red/90" : ""}`}
-          >
-            {confirmLabel}
-          </Button>
-        </div>
-      </div>
-    </div>
-  );
-}

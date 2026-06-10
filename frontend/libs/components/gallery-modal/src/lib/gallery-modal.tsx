@@ -30,6 +30,7 @@ import {
 } from "./folderMapping";
 import { promptFolderDrop } from "./promptFolderDrop";
 import { FolderColorRow } from "./FolderColorRow";
+import { FolderNameDialog } from "./FolderNameDialog";
 import { toast } from "@storyteller/ui-toaster";
 import { twMerge } from "tailwind-merge";
 import { GalleryDraggableItem } from "./GalleryDraggableItem";
@@ -557,12 +558,10 @@ export const GalleryModal = React.memo(
     const galleryTabRef = useRef(galleryTab);
     galleryTabRef.current = galleryTab;
     const [newFolderModalOpen, setNewFolderModalOpen] = useState(false);
-    const [newFolderName, setNewFolderName] = useState("New Folder");
     // Parent the next-created folder will be nested under (null = root).
     const [newFolderParentId, setNewFolderParentId] = useState<string | null>(
       null,
     );
-    const newFolderInputRef = useRef<HTMLInputElement>(null);
 
     // Active folder view. Resolved media items are cached per folder so
     // reopening a folder shows instantly while a fresh fetch runs in the background.
@@ -1197,28 +1196,30 @@ export const GalleryModal = React.memo(
     );
 
     // Folder creation — nests under `newFolderParentId` (null = root).
-    const handleCreateFolder = useCallback(async () => {
-      const name = newFolderName.trim();
-      if (!name) return;
-      const parentId = newFolderParentId;
-      setNewFolderModalOpen(false);
-      setNewFolderName("New Folder");
-      try {
-        const res = await foldersApi.CreateFolder({
-          name,
-          maybe_parent_folder_token: parentId,
-        });
-        if (res.success && res.data) {
-          setFolders((prev) => [...prev, mapFolder(res.data!)]);
-        } else {
-          toast.error(res.errorMessage || "Failed to create folder.");
+    const handleCreateFolder = useCallback(
+      async (rawName: string) => {
+        const name = rawName.trim();
+        if (!name) return;
+        const parentId = newFolderParentId;
+        setNewFolderModalOpen(false);
+        try {
+          const res = await foldersApi.CreateFolder({
+            name,
+            maybe_parent_folder_token: parentId,
+          });
+          if (res.success && res.data) {
+            setFolders((prev) => [...prev, mapFolder(res.data!)]);
+          } else {
+            toast.error(res.errorMessage || "Failed to create folder.");
+          }
+        } catch (err) {
+          toast.error(
+            `Failed to create folder: ${err instanceof Error ? err.message : String(err)}`,
+          );
         }
-      } catch (err) {
-        toast.error(
-          `Failed to create folder: ${err instanceof Error ? err.message : String(err)}`,
-        );
-      }
-    }, [newFolderName, newFolderParentId, foldersApi, mapFolder]);
+      },
+      [newFolderParentId, foldersApi, mapFolder],
+    );
 
     // Open the new-folder modal. `parentId` undefined → create in the folder
     // currently being viewed; pass `null` to force a root folder.
@@ -1227,9 +1228,7 @@ export const GalleryModal = React.memo(
         setNewFolderParentId(
           parentId !== undefined ? parentId : activeFolderId,
         );
-        setNewFolderName("New Folder");
         setNewFolderModalOpen(true);
-        setTimeout(() => newFolderInputRef.current?.select(), 50);
       },
       [activeFolderId],
     );
@@ -1282,9 +1281,14 @@ export const GalleryModal = React.memo(
       [folders, closeFolderMenus],
     );
 
-    const handleConfirmRename = useCallback(async () => {
-      const trimmed = renameValue.trim();
-      if (!trimmed || !renamingFolderId) return;
+    const handleConfirmRename = useCallback(async (nameArg?: unknown) => {
+      if (!renamingFolderId) return;
+      // `nameArg` is a string from the rename dialog; the inline header rename's
+      // onBlur passes a focus event, so fall back to `renameValue` for non-strings.
+      const trimmed = (
+        typeof nameArg === "string" ? nameArg : renameValue
+      ).trim();
+      if (!trimmed) return;
       const folderId = renamingFolderId;
       // Optimistic — the rename feels instant; reconcile on error.
       setFolders((prev) =>
@@ -1892,7 +1896,7 @@ export const GalleryModal = React.memo(
                       ))}
                     </div>
                   )}
-                  {galleryTab === "folders" && !activeFolder && (
+                  {mode === "view" && galleryTab === "folders" && !activeFolder && (
                     <button
                       type="button"
                       onClick={() => handleOpenNewFolderModal(null)}
@@ -2191,14 +2195,16 @@ export const GalleryModal = React.memo(
                       <div className="text-base-fg/40 text-sm text-center max-w-[16rem]">
                         Create a folder to organize your media.
                       </div>
-                      <Button
-                        variant="action"
-                        icon={faFolderPlus}
-                        onClick={() => handleOpenNewFolderModal(null)}
-                        className="mt-1 px-3 py-1.5 text-sm"
-                      >
-                        New folder
-                      </Button>
+                      {mode === "view" && (
+                        <Button
+                          variant="action"
+                          icon={faFolderPlus}
+                          onClick={() => handleOpenNewFolderModal(null)}
+                          className="mt-1 px-3 py-1.5 text-sm"
+                        >
+                          New folder
+                        </Button>
+                      )}
                     </div>
                   ) : null
                 ) : activeFolderId ? (
@@ -2222,19 +2228,22 @@ export const GalleryModal = React.memo(
                           This folder is empty
                         </div>
                         <div className="text-base-fg/40 text-sm text-center max-w-[16rem]">
-                          Drag images here, generate new ones, or create a
-                          subfolder.
+                          {mode === "view"
+                            ? "Drag images here, generate new ones, or create a subfolder."
+                            : "There's nothing in this folder yet."}
                         </div>
-                        <Button
-                          variant="action"
-                          icon={faFolderPlus}
-                          onClick={() =>
-                            handleOpenNewFolderModal(activeFolderId)
-                          }
-                          className="mt-1 px-3 py-1.5 text-sm"
-                        >
-                          New folder
-                        </Button>
+                        {mode === "view" && (
+                          <Button
+                            variant="action"
+                            icon={faFolderPlus}
+                            onClick={() =>
+                              handleOpenNewFolderModal(activeFolderId)
+                            }
+                            className="mt-1 px-3 py-1.5 text-sm"
+                          >
+                            New folder
+                          </Button>
+                        )}
                       </div>
                     )
                   ) : (
@@ -2459,96 +2468,36 @@ export const GalleryModal = React.memo(
               </div>
             </div>
 
-            {/* ── New Folder Modal ── */}
-            {newFolderModalOpen && (
-              <div className="absolute inset-0 z-[60] flex items-center justify-center bg-black/50 rounded-xl">
-                <div className="w-72 rounded-lg bg-ui-panel border border-ui-panel-border p-4 shadow-xl">
-                  <h3 className="text-sm font-semibold text-base-fg mb-1">
-                    New Folder
-                  </h3>
-                  <p className="text-xs text-base-fg/40 mb-3">
-                    in{" "}
-                    {newFolderParentId
-                      ? (folders.find((f) => f.id === newFolderParentId)
-                          ?.name ?? "My Library")
-                      : "My Library"}
-                  </p>
-                  <input
-                    ref={newFolderInputRef}
-                    type="text"
-                    value={newFolderName}
-                    onChange={(e) => setNewFolderName(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") handleCreateFolder();
-                      if (e.key === "Escape") setNewFolderModalOpen(false);
-                    }}
-                    className="w-full rounded-md bg-ui-controls/40 border border-ui-panel-border px-3 py-1.5 text-sm text-base-fg outline-none focus:ring-1 focus:ring-primary/50"
-                    autoFocus
-                  />
-                  <div className="flex justify-end gap-2 mt-3">
-                    <Button
-                      variant="action"
-                      onClick={() => setNewFolderModalOpen(false)}
-                      className="px-3 py-1 text-sm"
-                    >
-                      Cancel
-                    </Button>
-                    <Button
-                      onClick={handleCreateFolder}
-                      disabled={!newFolderName.trim()}
-                      className="px-3 py-1 text-sm"
-                    >
-                      Create
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            )}
+            {/* ── New Folder dialog ── */}
+            <FolderNameDialog
+              isOpen={newFolderModalOpen}
+              title="New folder"
+              subtitle={`in ${
+                newFolderParentId
+                  ? (folders.find((f) => f.id === newFolderParentId)?.name ??
+                    "My Library")
+                  : "My Library"
+              }`}
+              initialValue="New Folder"
+              confirmLabel="Create"
+              onConfirm={handleCreateFolder}
+              onClose={() => setNewFolderModalOpen(false)}
+            />
 
-            {/* ── Rename Folder Modal (sidebar context menu) ── */}
-            {renameViaModal && renamingFolderId && (
-              <div className="absolute inset-0 z-[60] flex items-center justify-center bg-black/50 rounded-xl">
-                <div className="w-72 rounded-lg bg-ui-panel border border-ui-panel-border p-4 shadow-xl">
-                  <h3 className="text-sm font-semibold text-base-fg mb-3">
-                    Rename Folder
-                  </h3>
-                  <input
-                    ref={renameInputRef}
-                    type="text"
-                    value={renameValue}
-                    onChange={(e) => setRenameValue(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") handleConfirmRename();
-                      if (e.key === "Escape") {
-                        setRenamingFolderId(null);
-                        setRenameViaModal(false);
-                      }
-                    }}
-                    className="w-full rounded-md bg-ui-controls/40 border border-ui-panel-border px-3 py-1.5 text-sm text-base-fg outline-none focus:ring-1 focus:ring-primary/50"
-                    autoFocus
-                  />
-                  <div className="flex justify-end gap-2 mt-3">
-                    <Button
-                      variant="action"
-                      onClick={() => {
-                        setRenamingFolderId(null);
-                        setRenameViaModal(false);
-                      }}
-                      className="px-3 py-1 text-sm"
-                    >
-                      Cancel
-                    </Button>
-                    <Button
-                      onClick={handleConfirmRename}
-                      disabled={!renameValue.trim()}
-                      className="px-3 py-1 text-sm"
-                    >
-                      Rename
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            )}
+            {/* ── Rename Folder dialog (sidebar context menu) ── */}
+            <FolderNameDialog
+              isOpen={!!(renameViaModal && renamingFolderId)}
+              title="Rename folder"
+              initialValue={
+                folders.find((f) => f.id === renamingFolderId)?.name ?? ""
+              }
+              confirmLabel="Rename"
+              onConfirm={handleConfirmRename}
+              onClose={() => {
+                setRenamingFolderId(null);
+                setRenameViaModal(false);
+              }}
+            />
 
             {mode === "view" && bulkSelectionMode && (
               <div className="flex items-center justify-between border-t border-ui-panel-border bg-ui-background p-3 py-2 rounded-b-xl">

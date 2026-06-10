@@ -5,6 +5,7 @@ export * from "./lib/GalleryDraggableItem";
 export * from "./lib/GalleryItemMenuItems";
 export * from "./lib/GalleryFolderChip";
 export * from "./lib/FolderColorRow";
+export * from "./lib/FolderNameDialog";
 export * from "./lib/folderUtils";
 export * from "./lib/folderMapping";
 export * from "./lib/promptFolderDrop";
