@@ -5,6 +5,7 @@ import {
   faVideo,
   faWandMagicSparkles,
   faCube,
+  faFilm,
   faArrowRight,
 } from "@fortawesome/pro-solid-svg-icons";
 import type { IconDefinition } from "@fortawesome/fontawesome-svg-core";
@@ -18,6 +19,7 @@ type AppCard = {
   accent: string;
   iconBg: string;
   iconColor: string;
+  badge?: string;
 };
 
 const APPS: AppCard[] = [
@@ -57,6 +59,16 @@ const APPS: AppCard[] = [
     iconBg: "bg-emerald-500/25 border-emerald-400/30",
     iconColor: "text-emerald-300",
   },
+  {
+    label: "Edit Video",
+    description: "Trim, arrange, and edit clips on a timeline.",
+    href: "/video-editor",
+    icon: faFilm,
+    accent: "from-rose-500/20 to-rose-500/0",
+    iconBg: "bg-rose-500/25 border-rose-400/30",
+    iconColor: "text-rose-300",
+    badge: "BETA",
+  },
 ];
 
 export function Home() {
@@ -91,9 +103,16 @@ export function Home() {
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center justify-between gap-2">
-                    <h3 className="text-base font-semibold text-white">
-                      {app.label}
-                    </h3>
+                    <div className="flex items-center gap-2 min-w-0">
+                      <h3 className="text-base font-semibold text-white truncate">
+                        {app.label}
+                      </h3>
+                      {app.badge && (
+                        <span className="shrink-0 rounded-full bg-amber-600 px-1.5 py-0.5 text-[9px] font-semibold uppercase leading-none text-white">
+                          {app.badge}
+                        </span>
+                      )}
+                    </div>
                     <FontAwesomeIcon
                       icon={faArrowRight}
                       className="text-sm text-white/40 group-hover:text-white/70 group-hover:translate-x-0.5 transition-all"

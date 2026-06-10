@@ -624,7 +624,7 @@ export default function Library() {
     >
       <div className="mx-auto max-w-[1600px]">
         {/* Header — sticky below navbar */}
-        <div className="sticky top-0 z-10 -mx-3 sm:-mx-4 md:-mx-8 lg:-mx-12 px-3 sm:px-4 md:px-8 lg:px-12 pb-3 pt-3 bg-[#101014] mb-6">
+        <div className="sticky top-0 z-50 -mx-3 sm:-mx-4 md:-mx-8 lg:-mx-12 px-3 sm:px-4 md:px-8 lg:px-12 pb-3 pt-3 bg-[#101014] mb-6">
           <div className="flex flex-col gap-6">
             {/* Tabs + actions */}
             <div className="flex items-center justify-between gap-3">

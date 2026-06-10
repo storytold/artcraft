@@ -216,6 +216,7 @@ export const GalleryDraggableItem: React.FC<GalleryDraggableItemProps> = ({
   };
 
   const handlePointerUp = (event: React.PointerEvent) => {
+    if (event.button !== 0) return; // right/middle click → context menu, not lightbox
     if (bulkSelectionMode) return;
     const globalDrag = galleryDnd.getDragState();
     if (globalDrag.isDragging) return;
@@ -228,6 +229,7 @@ export const GalleryDraggableItem: React.FC<GalleryDraggableItemProps> = ({
   };
 
   const handleButtonClick = (event: React.MouseEvent) => {
+    if (event.button !== 0) return;
     if (dragStarted.current) return;
     const globalDrag = galleryDnd.getDragState();
     if (globalDrag.isDragging) return;
