@@ -11,6 +11,7 @@ use artcraft_api_defs::moderation::user_stripe_data::moderator_get_user_stripe_c
   ModeratorUserStripeCustomerIdEntry,
 };
 use mysql_queries::queries::users::user_stripe_customer_links::list_user_stripe_customer_links_for_user::list_user_stripe_customer_links_for_user;
+use enums::common::payments_namespace::PaymentsNamespace;
 use mysql_queries::queries::users::user_subscriptions::list_stripe_customer_ids_for_user_subscriptions::list_stripe_customer_ids_for_user_subscriptions;
 use tokens::tokens::users::UserToken;
 
@@ -67,12 +68,14 @@ pub async fn moderator_get_user_stripe_customer_ids_handler(
   let mut customer_ids = Vec::with_capacity(customer_links.len() + subscription_customer_ids.len());
 
   customer_ids.extend(customer_links.into_iter().map(|link| ModeratorUserStripeCustomerIdEntry {
+    stripe_dashboard_url: stripe_dashboard_customer_url(&server_state, link.payments_namespace, &link.stripe_customer_id),
     stripe_customer_id: link.stripe_customer_id,
     payments_namespace: link.payments_namespace,
     source: ModeratorStripeCustomerIdSource::CustomerLink,
   }));
 
   customer_ids.extend(subscription_customer_ids.into_iter().map(|subscription| ModeratorUserStripeCustomerIdEntry {
+    stripe_dashboard_url: stripe_dashboard_customer_url(&server_state, subscription.subscription_namespace, &subscription.stripe_customer_id),
     stripe_customer_id: subscription.stripe_customer_id,
     payments_namespace: subscription.subscription_namespace,
     source: ModeratorStripeCustomerIdSource::Subscription,
@@ -82,4 +85,17 @@ pub async fn moderator_get_user_stripe_customer_ids_handler(
     success: true,
     customer_ids,
   }))
+}
+
+/// Each payments namespace bills through a different Stripe account.
+fn stripe_dashboard_customer_url(
+  server_state: &ServerState,
+  payments_namespace: PaymentsNamespace,
+  stripe_customer_id: &str,
+) -> String {
+  let stripe_account_id = match payments_namespace {
+    PaymentsNamespace::Artcraft => &server_state.stripe_artcraft.stripe_account_id,
+    PaymentsNamespace::FakeYou => &server_state.stripe.stripe_account_id,
+  };
+  format!("https://dashboard.stripe.com/{}/customers/{}", stripe_account_id, stripe_customer_id)
 }

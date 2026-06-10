@@ -219,6 +219,9 @@ pub struct EphemeralInMemoryCaches {
 pub struct StripeSettings {
   pub config: StripeConfig,
   pub client: stripe::Client,
+
+  /// The Stripe account id (eg. "acct_..."), used to build dashboard links.
+  pub stripe_account_id: String,
 }
 
 /// Flags set at service startup

@@ -27,6 +27,9 @@ pub struct ModeratorUserStripeCustomerIdEntry {
   pub stripe_customer_id: String,
   pub payments_namespace: PaymentsNamespace,
   pub source: ModeratorStripeCustomerIdSource,
+
+  /// Link to the customer in the Stripe dashboard for the namespace's account.
+  pub stripe_dashboard_url: String,
 }
 
 /// Which table the customer id was found in.

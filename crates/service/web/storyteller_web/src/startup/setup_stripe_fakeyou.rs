@@ -31,5 +31,6 @@ pub fn setup_stripe_fakeyou() -> AnyhowResult<StripeSettings> {
   Ok(StripeSettings {
     config: stripe_configs,
     client: stripe_client,
+    stripe_account_id: easyenv::get_env_string_required("STRIPE_FAKEYOU_ACCOUNT_ID")?,
   })
 }

@@ -2,6 +2,8 @@ use stripe::Client;
 
 #[derive(Clone)]
 pub struct ArtcraftStripeConfig {
+  /// The Stripe account id (eg. "acct_..."), used to build dashboard links.
+  pub stripe_account_id: String,
   pub secret_key: String,
   pub secret_webhook_signing_key: String,
   pub checkout_success_url: String,
@@ -11,6 +13,8 @@ pub struct ArtcraftStripeConfig {
 
 #[derive(Clone)]
 pub struct ArtcraftStripeConfigWithClient {
+  /// The Stripe account id (eg. "acct_..."), used to build dashboard links.
+  pub stripe_account_id: String,
   pub secret_key: String,
   pub secret_webhook_signing_key: String,
   pub checkout_success_url: String,
@@ -22,6 +26,7 @@ pub struct ArtcraftStripeConfigWithClient {
 impl ArtcraftStripeConfig {
   pub fn to_config_with_client(&self) -> ArtcraftStripeConfigWithClient {
     ArtcraftStripeConfigWithClient {
+      stripe_account_id: self.stripe_account_id.clone(),
       secret_key: self.secret_key.clone(),
       secret_webhook_signing_key: self.secret_webhook_signing_key.clone(),
       checkout_success_url: self.checkout_success_url.clone(),
