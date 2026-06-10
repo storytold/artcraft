@@ -9,6 +9,7 @@ use enums::by_table::generic_inference_jobs::inference_job_product_category::Inf
 use enums::by_table::generic_inference_jobs::inference_job_type::InferenceJobType;
 use enums::common::generation::common_model_type::CommonModelType;
 use enums::common::job_status_plus::JobStatusPlus;
+use enums::common::platform_type::PlatformType;
 use enums::common::visibility::Visibility;
 use tokens::tokens::anonymous_visitor_tracking::AnonymousVisitorTrackingToken;
 use tokens::tokens::generic_inference_jobs::InferenceJobToken;
@@ -45,6 +46,9 @@ pub struct InsertGenericInferenceForBeebleWithAprioriJobTokenArgs<'e, 'c, E>
   pub maybe_avt_token: Option<&'e AnonymousVisitorTrackingToken>,
   pub creator_ip_address: &'e str,
   pub creator_set_visibility: Visibility,
+
+  /// The platform the enqueuing request came from, inferred from its User-Agent.
+  pub maybe_platform_type: Option<PlatformType>,
 
   pub maybe_debug_log_event_token: Option<&'e DebugLogEventToken>,
 
@@ -83,7 +87,7 @@ pub async fn insert_generic_inference_job_for_beeble_queue_with_apriori_job_toke
     maybe_avt_token: args.maybe_avt_token,
     creator_ip_address: args.creator_ip_address,
     creator_set_visibility: args.creator_set_visibility,
-    maybe_platform_type: None,
+    maybe_platform_type: args.maybe_platform_type,
     maybe_debug_log_event_token: args.maybe_debug_log_event_token,
     maybe_frontend_failure_category: args.maybe_frontend_failure_category,
     maybe_failure_reason: args.maybe_failure_reason,
