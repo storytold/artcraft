@@ -138,9 +138,9 @@ function NavMenuItem({
   const inner = (
     <>
       <FontAwesomeIcon icon={item.icon} />
-      <span>{item.label}</span>
+      <span className="group-data-[collapsible=icon]:hidden">{item.label}</span>
       {item.badge && (
-        <span className="ml-auto rounded-sm bg-amber-500 px-1.5 py-0.5 text-[9px] font-semibold uppercase leading-none text-white group-data-[collapsible=icon]:hidden">
+        <span className="ml-auto bg-amber-600 px-1.5 py-0.5 text-[10px] font-semibold uppercase leading-none text-white group-data-[collapsible=icon]:hidden rounded-full">
           {item.badge}
         </span>
       )}
