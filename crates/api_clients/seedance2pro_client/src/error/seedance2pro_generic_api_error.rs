@@ -16,8 +16,12 @@ pub enum Seedance2ProGenericApiError {
   /// Includes the original body.
   SerdeParseErrorWithBodyOnNon200(serde_json::Error, String),
 
-  /// An uncategorized bad HTTP response.
-  UncategorizedBadResponse(String),
+  /// A response that parsed, but didn't have the shape we expected
+  /// (eg. an empty batch response array).
+  UnexpectedResponseShape {
+    explanation: String,
+    raw_body: String,
+  },
 
   /// An uncategorized bad HTTP response with status code and body.
   UncategorizedBadResponseWithStatusAndBody {
@@ -37,7 +41,7 @@ impl Display for Seedance2ProGenericApiError {
       Self::CloudflareError(err) => write!(f, "Cloudflare error: {}", err),
       Self::SerdeResponseParseErrorWithBody(err, body) => write!(f, "Failed to parse response body: {:?}. Body: {}", err, body),
       Self::SerdeParseErrorWithBodyOnNon200(err, body) => write!(f, "Failed to parse non-200 response body: {:?}. Body: {}", err, body),
-      Self::UncategorizedBadResponse(msg) => write!(f, "Uncategorized bad response: {}", msg),
+      Self::UnexpectedResponseShape { explanation, raw_body } => write!(f, "Unexpected response shape: {}. Body: {}", explanation, raw_body),
       Self::UncategorizedBadResponseWithStatusAndBody { status_code, body } => write!(f, "Uncategorized bad response: status code {}, body: {}", status_code, body),
       Self::WreqError(err) => write!(f, "Wreq client error: {}", err),
     }

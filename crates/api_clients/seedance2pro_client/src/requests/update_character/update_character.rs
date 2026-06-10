@@ -102,9 +102,10 @@ pub async fn update_character(args: UpdateCharacterArgs<'_>) -> Result<UpdateCha
   let data = batch_response
     .into_iter()
     .next()
-    .ok_or_else(|| Seedance2ProGenericApiError::UncategorizedBadResponse(
-      "Empty batch response array".to_string()
-    ))?
+    .ok_or_else(|| Seedance2ProGenericApiError::UnexpectedResponseShape {
+      explanation: "Empty batch response array".to_string(),
+      raw_body: response_body.clone(),
+    })?
     .result
     .data
     .json;
