@@ -10,8 +10,15 @@ import {
   faFolder,
   faPlus,
 } from "@fortawesome/pro-solid-svg-icons";
+import { twMerge } from "tailwind-merge";
 import { GalleryItem } from "./gallery-modal";
 import { GalleryFolder } from "./GalleryDraggableItem";
+
+// Touch-first devices have no hover and narrow viewports — the folder submenu
+// expands inline (accordion) instead of flying out past the screen edge.
+const COARSE_POINTER =
+  typeof window !== "undefined" &&
+  window.matchMedia?.("(pointer: coarse)").matches === true;
 
 export interface GalleryItemMenuItemsProps {
   item: GalleryItem;
@@ -30,7 +37,7 @@ export interface GalleryItemMenuItemsProps {
 }
 
 const ROW =
-  "flex w-full items-center gap-2 px-2 py-2 rounded-md hover:bg-ui-controls/60 text-base-fg text-sm";
+  "flex w-full items-center gap-2 px-2 py-2 rounded-md hover:bg-ui-controls/60 text-base-fg text-sm whitespace-nowrap";
 
 /**
  * The gallery-tile menu body (Open / Edit / Add to Folder ▸ / Remove from
@@ -63,7 +70,13 @@ export const GalleryItemMenuItems: React.FC<GalleryItemMenuItemsProps> = ({
           }}
         >
           <FontAwesomeIcon icon={faEye} className="text-base-fg w-4" />
-          <span>Open</span>
+          <span>
+            {item.mediaClass === "video"
+              ? "View video"
+              : item.mediaClass === "dimensional"
+                ? "View 3D"
+                : "View image"}
+          </span>
         </button>
       )}
 
@@ -88,12 +101,16 @@ export const GalleryItemMenuItems: React.FC<GalleryItemMenuItemsProps> = ({
       {onAddToFolder && (
         <div
           className="relative"
-          onMouseEnter={() => setFolderSubmenuOpen(true)}
-          onMouseLeave={() => setFolderSubmenuOpen(false)}
+          onMouseEnter={
+            COARSE_POINTER ? undefined : () => setFolderSubmenuOpen(true)
+          }
+          onMouseLeave={
+            COARSE_POINTER ? undefined : () => setFolderSubmenuOpen(false)
+          }
         >
           <button
             type="button"
-            className="flex w-full items-center justify-between gap-2 px-2 py-2 rounded-md hover:bg-ui-controls/60 text-base-fg text-sm"
+            className="flex w-full items-center justify-between gap-2 px-2 py-2 rounded-md hover:bg-ui-controls/60 text-base-fg text-sm whitespace-nowrap"
             onClick={(e) => {
               e.stopPropagation();
               setFolderSubmenuOpen((v) => !v);
@@ -105,51 +122,44 @@ export const GalleryItemMenuItems: React.FC<GalleryItemMenuItemsProps> = ({
             </div>
             <FontAwesomeIcon
               icon={faChevronRight}
-              className="text-[10px] text-base-fg/50"
+              className={twMerge(
+                "text-[10px] text-base-fg/50 transition-transform",
+                COARSE_POINTER && folderSubmenuOpen && "rotate-90",
+              )}
             />
           </button>
-          {folderSubmenuOpen && (
-            <div className="absolute left-full top-0 -ml-1 pl-2 z-50">
-              <div className="max-h-64 overflow-y-auto min-w-36 rounded-lg border border-ui-panel-border bg-ui-panel p-1 shadow-xl">
-                {folders.map((folder) => (
-                  <button
-                    key={folder.id}
-                    type="button"
-                    className="flex w-full items-center gap-2 px-2 py-1.5 rounded-md hover:bg-ui-controls/60 text-base-fg text-sm"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onAddToFolder([item.id], folder.id);
+          {folderSubmenuOpen &&
+            (COARSE_POINTER ? (
+              // Touch: expand inline (accordion) — a fly-out would overflow
+              // the screen edge on narrow viewports.
+              <div className="mb-1 max-h-48 overflow-y-auto rounded-md bg-ui-controls/20 p-1">
+                <FolderList
+                  item={item}
+                  folders={folders}
+                  onAddToFolder={onAddToFolder}
+                  onCreateFolderFromMenu={onCreateFolderFromMenu}
+                  closeAll={() => {
+                    setFolderSubmenuOpen(false);
+                    close();
+                  }}
+                />
+              </div>
+            ) : (
+              <div className="absolute left-full top-0 -ml-1 pl-2 z-50">
+                <div className="max-h-64 overflow-y-auto w-max min-w-36 rounded-lg border border-ui-panel-border bg-ui-panel p-1 shadow-xl">
+                  <FolderList
+                    item={item}
+                    folders={folders}
+                    onAddToFolder={onAddToFolder}
+                    onCreateFolderFromMenu={onCreateFolderFromMenu}
+                    closeAll={() => {
                       setFolderSubmenuOpen(false);
                       close();
                     }}
-                  >
-                    <FontAwesomeIcon
-                      icon={faFolder}
-                      className={folder.colorCode ? "text-xs" : "text-primary text-xs"}
-                      style={folder.colorCode ? { color: folder.colorCode } : undefined}
-                    />
-                    <span className="truncate">{folder.name}</span>
-                  </button>
-                ))}
-                {folders.length > 0 && (
-                  <div className="mx-1.5 my-1 border-t border-ui-panel-border" />
-                )}
-                <button
-                  type="button"
-                  className="flex w-full items-center gap-2 px-2 py-1.5 rounded-md hover:bg-ui-controls/60 text-base-fg/70 text-sm"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setFolderSubmenuOpen(false);
-                    close();
-                    onCreateFolderFromMenu?.();
-                  }}
-                >
-                  <FontAwesomeIcon icon={faPlus} className="text-xs w-4" />
-                  <span>New Folder</span>
-                </button>
+                  />
+                </div>
               </div>
-            </div>
-          )}
+            ))}
         </div>
       )}
 
@@ -171,7 +181,7 @@ export const GalleryItemMenuItems: React.FC<GalleryItemMenuItemsProps> = ({
       {onDelete && (
         <button
           type="button"
-          className="flex w-full items-center gap-2 px-2 py-2 rounded-md hover:bg-ui-controls/60 text-sm"
+          className="flex w-full items-center gap-2 px-2 py-2 rounded-md hover:bg-ui-controls/60 text-sm whitespace-nowrap"
           onClick={(e) => {
             e.stopPropagation();
             close();
@@ -185,3 +195,55 @@ export const GalleryItemMenuItems: React.FC<GalleryItemMenuItemsProps> = ({
     </div>
   );
 };
+
+/** The folder target list inside "Add to Folder" (shared by the fly-out and the inline accordion). */
+const FolderList = ({
+  item,
+  folders,
+  onAddToFolder,
+  onCreateFolderFromMenu,
+  closeAll,
+}: {
+  item: GalleryItem;
+  folders: GalleryFolder[];
+  onAddToFolder?: (itemIds: string[], folderId: string) => void;
+  onCreateFolderFromMenu?: () => void;
+  closeAll: () => void;
+}) => (
+  <>
+    {folders.map((folder) => (
+      <button
+        key={folder.id}
+        type="button"
+        className="flex w-full items-center gap-2 px-2 py-1.5 rounded-md hover:bg-ui-controls/60 text-base-fg text-sm"
+        onClick={(e) => {
+          e.stopPropagation();
+          onAddToFolder?.([item.id], folder.id);
+          closeAll();
+        }}
+      >
+        <FontAwesomeIcon
+          icon={faFolder}
+          className={folder.colorCode ? "text-xs" : "text-primary text-xs"}
+          style={folder.colorCode ? { color: folder.colorCode } : undefined}
+        />
+        <span className="truncate">{folder.name}</span>
+      </button>
+    ))}
+    {folders.length > 0 && (
+      <div className="mx-1.5 my-1 border-t border-ui-panel-border" />
+    )}
+    <button
+      type="button"
+      className="flex w-full items-center gap-2 px-2 py-1.5 rounded-md hover:bg-ui-controls/60 text-base-fg/70 text-sm whitespace-nowrap"
+      onClick={(e) => {
+        e.stopPropagation();
+        closeAll();
+        onCreateFolderFromMenu?.();
+      }}
+    >
+      <FontAwesomeIcon icon={faPlus} className="text-xs w-4" />
+      <span>New Folder</span>
+    </button>
+  </>
+);

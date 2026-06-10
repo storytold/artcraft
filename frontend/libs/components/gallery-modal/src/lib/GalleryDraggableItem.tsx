@@ -188,6 +188,9 @@ export const GalleryDraggableItem: React.FC<GalleryDraggableItemProps> = ({
     // Left button only — right/middle click must not trigger the click→lightbox
     // (right-click opens the context menu via onContextMenu instead).
     if (event.button !== 0) return;
+    // No drag tracking on touch: a finger drag should scroll the page, and a
+    // tap still clicks via the button's onClick.
+    if (event.pointerType === "touch") return;
     dragStarted.current = false;
     const moveListener = (moveEvent: PointerEvent) => {
       const dx = moveEvent.pageX - event.pageX;
@@ -206,28 +209,16 @@ export const GalleryDraggableItem: React.FC<GalleryDraggableItemProps> = ({
     };
     window.addEventListener("pointermove", moveListener);
     const upListener = () => {
+      // Cleanup only — the click itself is handled once by handleButtonClick
+      // (multiple firing paths used to double-toggle bulk selection).
       window.removeEventListener("pointermove", moveListener);
       window.removeEventListener("pointerup", upListener);
-      if (!dragStarted.current) {
-        onClick();
-      }
     };
     window.addEventListener("pointerup", upListener);
   };
 
-  const handlePointerUp = (event: React.PointerEvent) => {
-    if (event.button !== 0) return; // right/middle click → context menu, not lightbox
-    if (bulkSelectionMode) return;
-    const globalDrag = galleryDnd.getDragState();
-    if (globalDrag.isDragging) return;
-    if (
-      !dragStarted.current &&
-      (mode === "select" || !disableTooltipAndBadge)
-    ) {
-      onClick();
-    }
-  };
-
+  // Single click path for the whole tile surface: open the lightbox, or toggle
+  // selection when bulk-selecting / in select mode (handled by the host's onClick).
   const handleButtonClick = (event: React.MouseEvent) => {
     if (event.button !== 0) return;
     if (dragStarted.current) return;
@@ -258,7 +249,6 @@ export const GalleryDraggableItem: React.FC<GalleryDraggableItemProps> = ({
             : "cursor-grab hover:cursor-grab active:cursor-grabbing",
       )}
       onPointerDown={handlePointerDown}
-      onPointerUp={handlePointerUp}
       onClick={handleButtonClick}
       aria-label={item.label}
     >
@@ -308,6 +298,7 @@ export const GalleryDraggableItem: React.FC<GalleryDraggableItemProps> = ({
   return (
     <div
       className="group relative w-full aspect-square"
+      data-media-id={item.id}
       onContextMenu={(e) => {
         if (mode === "select") return;
         e.preventDefault();
@@ -318,7 +309,7 @@ export const GalleryDraggableItem: React.FC<GalleryDraggableItemProps> = ({
       {/* dropdown menu */}
       {mode !== "select" && (
         <div
-          className="absolute right-2 top-2 z-30 opacity-0 group-hover:opacity-100 transition-opacity duration-75"
+          className="absolute right-2 top-2 z-30 opacity-0 group-hover:opacity-100 [@media(pointer:coarse)]:opacity-100 transition-opacity duration-75"
           onPointerDown={(e) => e.stopPropagation()}
           onClick={(e) => {
             e.stopPropagation();
@@ -332,13 +323,14 @@ export const GalleryDraggableItem: React.FC<GalleryDraggableItemProps> = ({
               <FontAwesomeIcon icon={faEllipsis} className="text-base-fg" />
             }
             buttonClassName="h-7 w-7 p-0 rounded-full bg-ui-controls/60 hover:bg-ui-controls/90 text-base-fg border border-ui-controls-border"
-            panelClassName="min-w-36 p-1"
+            panelClassName="w-max min-w-44 p-1"
             closeOnUnhover
           >
             {(close) => (
               <GalleryItemMenuItems
                 item={item}
                 folders={folders}
+                onOpen={onClick}
                 onEditClicked={onEditClicked}
                 onAddToFolder={onAddToFolder}
                 onCreateFolderFromMenu={onCreateFolderFromMenu}
@@ -365,7 +357,7 @@ export const GalleryDraggableItem: React.FC<GalleryDraggableItemProps> = ({
             />
             <div
               ref={ctxPanelRef}
-              className="fixed z-[9999] min-w-44 rounded-lg border border-ui-panel-border bg-ui-panel p-1 shadow-xl"
+              className="fixed z-[9999] w-max min-w-44 rounded-lg border border-ui-panel-border bg-ui-panel p-1 shadow-xl"
               style={{ left: ctxMenu.x, top: ctxMenu.y }}
             >
               <GalleryItemMenuItems
@@ -395,7 +387,7 @@ export const GalleryDraggableItem: React.FC<GalleryDraggableItemProps> = ({
               : "border-white/60 bg-black/40 hover:border-white",
             bulkSelectionMode
               ? "opacity-100"
-              : "opacity-0 group-hover:opacity-100",
+              : "opacity-0 group-hover:opacity-100 [@media(pointer:coarse)]:opacity-100",
           )}
           onPointerDown={(e) => e.stopPropagation()}
           onClick={(e) => {

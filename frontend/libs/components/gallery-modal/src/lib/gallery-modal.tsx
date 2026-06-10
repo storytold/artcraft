@@ -153,7 +153,7 @@ const SkeletonGrid = ({ columns }: { columns: number }) => {
 // and unmounts them when they scroll beyond that range. Measured heights are
 // used for placeholders so scroll position stays rock-solid.
 
-interface LazyDateGroupProps {
+export interface LazyDateGroupProps {
   /** If true the group renders on mount (use for first N visible groups). */
   eager: boolean;
   /** Estimated item count for placeholder height calculation. */
@@ -165,7 +165,7 @@ interface LazyDateGroupProps {
   children: React.ReactNode;
 }
 
-const LazyDateGroup = React.memo(
+export const LazyDateGroup = React.memo(
   ({
     eager,
     itemCount,
@@ -1828,8 +1828,11 @@ export const GalleryModal = React.memo(
                 folder={folder}
                 childCount={folderChildCount(folder.id)}
                 onOpen={handleOpenFolder}
-                onContextMenu={(folderId, x, y) =>
-                  setContextMenu({ folderId, x, y })
+                // Folder management is view-mode only; the select picker just browses.
+                onContextMenu={
+                  mode === "view"
+                    ? (folderId, x, y) => setContextMenu({ folderId, x, y })
+                    : undefined
                 }
               />
             ))}

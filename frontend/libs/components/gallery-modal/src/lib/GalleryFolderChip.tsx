@@ -9,8 +9,12 @@ interface GalleryFolderChipProps {
   /** Direct subfolder count, shown as a subtitle. */
   childCount: number;
   onOpen: (folderId: string) => void;
-  /** Opens the shared folder context menu (rename / delete / color / star / new subfolder). */
-  onContextMenu: (folderId: string, x: number, y: number) => void;
+  /**
+   * Opens the shared folder context menu (rename / delete / color / star /
+   * new subfolder). When absent (e.g. select-mode pickers) the ellipsis button
+   * is hidden and right-click does nothing.
+   */
+  onContextMenu?: (folderId: string, x: number, y: number) => void;
 }
 
 /** A folder thumbnail that removes itself on error so a fallback can show. */
@@ -50,7 +54,7 @@ export const GalleryFolderChip: React.FC<GalleryFolderChipProps> = ({
 
   const openMenuAt = (target: HTMLElement) => {
     const rect = target.getBoundingClientRect();
-    onContextMenu(folder.id, rect.right, rect.bottom);
+    onContextMenu?.(folder.id, rect.right, rect.bottom);
   };
 
   return (
@@ -60,7 +64,7 @@ export const GalleryFolderChip: React.FC<GalleryFolderChipProps> = ({
       onClick={() => onOpen(folder.id)}
       onContextMenu={(e) => {
         e.preventDefault();
-        onContextMenu(folder.id, e.clientX, e.clientY);
+        onContextMenu?.(folder.id, e.clientX, e.clientY);
       }}
       style={colorCode ? { borderColor: colorCode } : undefined}
       className={twMerge(
@@ -155,20 +159,22 @@ export const GalleryFolderChip: React.FC<GalleryFolderChipProps> = ({
         )}
       </div>
 
-      {/* Options menu */}
-      <span
-        role="button"
-        tabIndex={-1}
-        aria-label="Folder options"
-        onPointerDown={(e) => e.stopPropagation()}
-        onClick={(e) => {
-          e.stopPropagation();
-          openMenuAt(e.currentTarget as HTMLElement);
-        }}
-        className="absolute right-1.5 top-1.5 flex h-7 w-7 items-center justify-center rounded-full bg-black/40 text-white opacity-0 transition-opacity hover:bg-black/60 group-hover/chip:opacity-100"
-      >
-        <FontAwesomeIcon icon={faEllipsis} className="text-sm" />
-      </span>
+      {/* Options menu — hidden when no menu handler is wired (select mode) */}
+      {onContextMenu && (
+        <span
+          role="button"
+          tabIndex={-1}
+          aria-label="Folder options"
+          onPointerDown={(e) => e.stopPropagation()}
+          onClick={(e) => {
+            e.stopPropagation();
+            openMenuAt(e.currentTarget as HTMLElement);
+          }}
+          className="absolute right-1.5 top-1.5 flex h-7 w-7 items-center justify-center rounded-full bg-black/40 text-white opacity-0 transition-opacity hover:bg-black/60 group-hover/chip:opacity-100 [@media(pointer:coarse)]:opacity-100"
+        >
+          <FontAwesomeIcon icon={faEllipsis} className="text-sm" />
+        </span>
+      )}
     </button>
   );
 };

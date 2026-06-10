@@ -14,6 +14,45 @@ import {
 import { getMediaThumbnail, THUMBNAIL_SIZES } from "@storyteller/common";
 import { toast } from "../../components/toast/toast";
 
+// ── Bulk selection store ────────────────────────────────────────────────────
+// Kept in its own module store (not page state) so each gallery tile can
+// subscribe to just its own membership: a marquee/selection commit re-renders
+// only the tiles whose checked state flipped, never the whole library page.
+
+interface LibrarySelectionState {
+  ids: Set<string>;
+  toggle: (id: string) => void;
+  setIds: (ids: Set<string>) => void;
+  removeIds: (ids: string[]) => void;
+  clear: () => void;
+}
+
+export const useLibrarySelectionStore = create<LibrarySelectionState>(
+  (set) => ({
+    ids: new Set<string>(),
+    toggle: (id) =>
+      set((s) => {
+        const next = new Set(s.ids);
+        if (next.has(id)) {
+          next.delete(id);
+        } else {
+          next.add(id);
+        }
+        return { ids: next };
+      }),
+    setIds: (ids) => set({ ids }),
+    removeIds: (ids) =>
+      set((s) => {
+        if (!ids.some((id) => s.ids.has(id))) return s;
+        const next = new Set(s.ids);
+        ids.forEach((id) => next.delete(id));
+        return { ids: next };
+      }),
+    clear: () =>
+      set((s) => (s.ids.size === 0 ? s : { ids: new Set<string>() })),
+  }),
+);
+
 // ── Types ──────────────────────────────────────────────────────────────────
 
 /** Folder shape the UI navigates + renders by. */

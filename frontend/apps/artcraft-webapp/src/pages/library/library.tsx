@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Link, useParams, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@storyteller/ui-button";
@@ -15,6 +15,7 @@ import {
   GalleryDragComponent,
   FolderColorRow,
   FolderNameDialog,
+  LazyDateGroup,
   compareFolders,
   promptFolderDrop,
   FOLDER_DROP_EVENT,
@@ -44,8 +45,10 @@ import {
 import { Lightbox } from "../../components/lightbox/lightbox";
 import {
   useLibraryFoldersStore,
+  useLibrarySelectionStore,
   mapRawToGalleryItem,
   deleteLibraryMedia,
+  type UiFolder,
 } from "./library-folders-store";
 
 const PAGE_SIZE = 60;
@@ -150,12 +153,11 @@ export default function Library() {
   const [lightboxItem, setLightboxItem] = useState<GalleryItem | null>(null);
   const [lightboxOpen, setLightboxOpen] = useState(false);
 
-  // Bulk selection state
-  const [bulkSelectedIds, setBulkSelectedIds] = useState<Set<string>>(
-    () => new Set(),
-  );
-  const bulkSelectionMode = bulkSelectedIds.size > 0;
-  const [bulkFolderPopoverOpen, setBulkFolderPopoverOpen] = useState(false);
+  // Bulk selection lives in `useLibrarySelectionStore` (module store) so each
+  // tile subscribes to its own membership and the page itself never re-renders
+  // on selection changes. The page reads it via getState() in callbacks only.
+  // Clear it when leaving the library area.
+  useEffect(() => () => useLibrarySelectionStore.getState().clear(), []);
 
   const api = useMemo(() => new GalleryModalApi(), []);
 
@@ -369,52 +371,170 @@ export default function Library() {
   }, [requestFolderDrop]);
 
   // ── Bulk selection ──────────────────────────────────────────────────────────
-  const bulkSelectedIdsRef = useRef(bulkSelectedIds);
-  bulkSelectedIdsRef.current = bulkSelectedIds;
-
-  const toggleBulkSelect = useCallback((id: string) => {
-    setBulkSelectedIds((prev) => {
-      const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
-      return next;
-    });
-  }, []);
-
-  const clearBulkSelection = useCallback(() => {
-    setBulkSelectedIds(new Set());
-    setBulkFolderPopoverOpen(false);
-  }, []);
-
-  // Stable across renders — read live values from refs (only called on drag start).
+  // Stable across renders — reads live values at call time (only on drag start).
   const getBulkDragItems = useCallback(
     () =>
       displayItemsRef.current.filter((it) =>
-        bulkSelectedIdsRef.current.has(it.id),
+        useLibrarySelectionStore.getState().ids.has(it.id),
       ),
     [],
   );
 
-  const bulkSelectedItems = useMemo(
-    () => displayItems.filter((it) => bulkSelectedIds.has(it.id)),
-    [displayItems, bulkSelectedIds],
-  );
+  // ── Marquee (drag) selection ────────────────────────────────────────────────
+  // Dragging from blank background draws a selection rectangle; tiles it covers
+  // are added to the bulk selection (additive to whatever was selected on start).
+  // Perf-sensitive: the rectangle is positioned imperatively (no React state per
+  // frame), tile rects are cached at drag start, and selection state only commits
+  // when the covered set actually changes.
+  const marqueeRef = useRef<HTMLDivElement>(null);
+  const marqueeRaf = useRef(0);
 
-  // Clear the selection whenever the view changes (filter or folder).
-  useEffect(() => {
-    setBulkSelectedIds(new Set());
-    setBulkFolderPopoverOpen(false);
-  }, [activeFilter, activeFolderId]);
+  const handleMarqueePointerDown = useCallback(
+    (e: React.PointerEvent<HTMLDivElement>) => {
+      if (e.button !== 0 || lightboxOpen) return;
+      const target = e.target as HTMLElement;
+      // Start only on blank background — never from tiles, folder cards,
+      // controls, or opted-out chrome (header / bulk bar).
+      if (
+        target.closest(
+          "[data-media-id], [data-folder-id], button, a, input, [data-no-marquee]",
+        )
+      ) {
+        return;
+      }
 
-  const handleBulkAddToFolder = useCallback(
-    (folderId: string) => {
-      requestFolderDrop(Array.from(bulkSelectedIdsRef.current), folderId);
-      clearBulkSelection();
+      const startX = e.clientX;
+      const startY = e.clientY;
+      // No marquee on touch — a finger drag should scroll. A still tap on
+      // blank space still clears the selection below.
+      const isTouch = e.pointerType !== "mouse";
+      const base = new Set(useLibrarySelectionStore.getState().ids);
+      let applied = base;
+      let active = false;
+
+      // Tile rects are stable during the drag (no auto-scroll); cache once and
+      // refresh only if something scrolls mid-drag.
+      let tiles: {
+        id: string;
+        left: number;
+        top: number;
+        right: number;
+        bottom: number;
+      }[] = [];
+      const cacheTiles = () => {
+        tiles = [];
+        rootRef.current
+          ?.querySelectorAll<HTMLElement>("[data-media-id]")
+          .forEach((el) => {
+            const id = el.dataset.mediaId;
+            if (!id) return;
+            const r = el.getBoundingClientRect();
+            tiles.push({
+              id,
+              left: r.left,
+              top: r.top,
+              right: r.right,
+              bottom: r.bottom,
+            });
+          });
+      };
+      if (!isTouch) cacheTiles();
+
+      const applyMarquee = (cx: number, cy: number) => {
+        const left = Math.min(startX, cx);
+        const top = Math.min(startY, cy);
+        const width = Math.abs(cx - startX);
+        const height = Math.abs(cy - startY);
+        const box = marqueeRef.current;
+        if (box) {
+          box.style.display = "block";
+          box.style.left = `${left}px`;
+          box.style.top = `${top}px`;
+          box.style.width = `${width}px`;
+          box.style.height = `${height}px`;
+        }
+        const right = left + width;
+        const bottom = top + height;
+        const next = new Set(base);
+        for (const t of tiles) {
+          if (
+            t.left < right &&
+            t.right > left &&
+            t.top < bottom &&
+            t.bottom > top
+          ) {
+            next.add(t.id);
+          }
+        }
+        // Commit only when coverage changed — most frames it hasn't.
+        let changed = next.size !== applied.size;
+        if (!changed) {
+          for (const id of next) {
+            if (!applied.has(id)) {
+              changed = true;
+              break;
+            }
+          }
+        }
+        if (changed) {
+          applied = next;
+          useLibrarySelectionStore.getState().setIds(next);
+        }
+      };
+
+      const handleMove = (ev: PointerEvent) => {
+        if (isTouch) {
+          // Track movement only so a scroll gesture doesn't count as a
+          // "blank tap" (which would clear the selection on pointerup).
+          if (
+            Math.abs(ev.clientX - startX) > 10 ||
+            Math.abs(ev.clientY - startY) > 10
+          ) {
+            active = true;
+          }
+          return;
+        }
+        if (!active) {
+          // Small threshold so plain background clicks don't flash a marquee.
+          if (
+            Math.abs(ev.clientX - startX) < 5 &&
+            Math.abs(ev.clientY - startY) < 5
+          ) {
+            return;
+          }
+          active = true;
+          document.body.style.userSelect = "none";
+        }
+        cancelAnimationFrame(marqueeRaf.current);
+        marqueeRaf.current = requestAnimationFrame(() =>
+          applyMarquee(ev.clientX, ev.clientY),
+        );
+      };
+      const handleScroll = () => {
+        if (active && !isTouch) cacheTiles();
+      };
+      const handleUp = () => {
+        window.removeEventListener("pointermove", handleMove);
+        window.removeEventListener("pointerup", handleUp);
+        window.removeEventListener("scroll", handleScroll, true);
+        cancelAnimationFrame(marqueeRaf.current);
+        document.body.style.userSelect = "";
+        if (marqueeRef.current) marqueeRef.current.style.display = "none";
+        // Plain click on blank background (no marquee drawn) clears the
+        // selection, like clicking the desktop on an OS.
+        if (!active) {
+          useLibrarySelectionStore.getState().clear();
+        }
+      };
+      window.addEventListener("pointermove", handleMove);
+      window.addEventListener("pointerup", handleUp);
+      window.addEventListener("scroll", handleScroll, true);
     },
-    [requestFolderDrop, clearBulkSelection],
+    [lightboxOpen],
   );
 
   const handleBulkDelete = useCallback(() => {
-    const ids = Array.from(bulkSelectedIdsRef.current);
+    const ids = Array.from(useLibrarySelectionStore.getState().ids);
     if (ids.length === 0) return;
     showActionReminder({
       reminderType: "default",
@@ -434,13 +554,13 @@ export default function Library() {
           await Promise.allSettled(ids.map((id) => deleteLibraryMedia(id)));
           const idSet = new Set(ids);
           setAllItems((prev) => prev.filter((it) => !idSet.has(it.id)));
-          clearBulkSelection();
+          useLibrarySelectionStore.getState().clear();
         } finally {
           isActionReminderOpen.value = false;
         }
       },
     });
-  }, [clearBulkSelection]);
+  }, []);
 
   const groupedItems = useMemo(() => groupByDate(displayItems), [displayItems]);
   const flatItems = useMemo(
@@ -463,6 +583,7 @@ export default function Library() {
 
   const handleItemDeleted = useCallback((id: string) => {
     setAllItems((prev) => prev.filter((item) => item.id !== id));
+    useLibrarySelectionStore.getState().removeIds([id]);
     // Also drop it from any cached folder views (e.g. deleted via the lightbox).
     useLibraryFoldersStore.setState((s) => {
       const next: Record<string, GalleryItem[]> = {};
@@ -473,17 +594,15 @@ export default function Library() {
     });
   }, []);
 
-  const handleCardClick = useCallback(
-    (item: GalleryItem) => {
-      if (bulkSelectionMode) {
-        toggleBulkSelect(item.id);
-        return;
-      }
-      setLightboxItem(item);
-      setLightboxOpen(true);
-    },
-    [bulkSelectionMode, toggleBulkSelect],
-  );
+  const handleCardClick = useCallback((item: GalleryItem) => {
+    const selection = useLibrarySelectionStore.getState();
+    if (selection.ids.size > 0) {
+      selection.toggle(item.id);
+      return;
+    }
+    setLightboxItem(item);
+    setLightboxOpen(true);
+  }, []);
 
   const handleImageError = useCallback(
     (e: React.SyntheticEvent<HTMLImageElement>) => {
@@ -587,43 +706,40 @@ export default function Library() {
     currentSubfolders.length === 0 &&
     !folderContentLoading;
 
-  // Shared date-grouped media grid (source items differ per mode via displayItems).
+  // Shared date-grouped media grid (source items differ per mode via
+  // displayItems). Each date group is virtualized: groups outside the
+  // viewport (+800px) unmount behind a measured-height placeholder, keeping
+  // scrolling smooth for large libraries (same component the desktop modal uses).
   const mediaGrid = (
     <>
-      {groupedItems.map(([date, dateItems]) => (
-        <div key={date}>
+      {groupedItems.map(([date, dateItems], groupIndex) => (
+        <LazyDateGroup
+          key={date}
+          eager={groupIndex < 2}
+          itemCount={dateItems.length}
+          gridColumns={4}
+          scrollRoot={null}
+        >
           <h3 className="text-sm font-medium text-white/50 mb-2">{date}</h3>
           <div className={GRID_CLASS}>
             {dateItems.map((item) => (
-              <GalleryDraggableItem
+              <LibraryTile
                 key={item.id}
                 item={item}
-                mode="view"
                 activeFilter={activeFilter}
-                selected={false}
-                onClick={() => handleCardClick(item)}
-                onImageError={handleImageError}
-                imageFit="cover"
-                onDeleted={handleItemDeleted}
-                onDelete={deleteLibraryMedia}
+                activeFolderId={activeFolderId}
                 folders={folders}
+                onCardClick={handleCardClick}
+                onImageError={handleImageError}
+                onDeleted={handleItemDeleted}
                 onAddToFolder={requestFolderDrop}
-                onCreateFolderFromMenu={() =>
-                  openNewFolderModal(activeFolderId)
-                }
-                onRemoveFromFolder={
-                  activeFolderId
-                    ? (ids) => removeMediaFromFolder(ids, activeFolderId)
-                    : undefined
-                }
-                bulkSelected={bulkSelectedIds.has(item.id)}
-                bulkSelectionMode={bulkSelectionMode}
-                onBulkSelectToggle={() => toggleBulkSelect(item.id)}
+                onNewFolder={openNewFolderModal}
+                onRemoveFromFolder={removeMediaFromFolder}
                 getBulkDragItems={getBulkDragItems}
               />
             ))}
           </div>
-        </div>
+        </LazyDateGroup>
       ))}
     </>
   );
@@ -632,10 +748,14 @@ export default function Library() {
     <div
       ref={rootRef}
       className="relative min-h-full w-full bg-[#101014] pb-8 px-3 sm:px-4 md:px-8 lg:px-12"
+      onPointerDown={handleMarqueePointerDown}
     >
       <div className="mx-auto max-w-[1600px]">
         {/* Header — sticky below navbar */}
-        <div className="sticky top-0 z-50 -mx-3 sm:-mx-4 md:-mx-8 lg:-mx-12 px-3 sm:px-4 md:px-8 lg:px-12 pb-3 pt-3 bg-[#101014] mb-6">
+        <div
+          data-no-marquee
+          className="sticky top-0 z-50 -mx-3 sm:-mx-4 md:-mx-8 lg:-mx-12 px-3 sm:px-4 md:px-8 lg:px-12 pb-3 pt-3 bg-[#101014] mb-4 sm:mb-6"
+        >
           <div className="flex flex-col gap-6">
             {/* Tabs + actions */}
             <div className="flex items-center justify-between gap-3">
@@ -904,100 +1024,24 @@ export default function Library() {
           )}
         </div>
 
-        {/* Bulk selection bar */}
-        {bulkSelectionMode && (
-          <div className="sticky bottom-20 sm:bottom-4 z-30 mx-auto mt-4 flex w-fit items-center gap-2 rounded-full border border-ui-panel-border bg-ui-panel/95 px-2.5 py-2 shadow-xl backdrop-blur">
-            <div className="hidden sm:flex pl-1">
-              {bulkSelectedItems.slice(0, 4).map((si) => (
-                <BulkThumb key={si.id} item={si} />
-              ))}
-              {bulkSelectedItems.length > 4 && (
-                <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded border-2 border-ui-panel bg-black/20">
-                  <span className="text-[11px] text-white/70">
-                    +{bulkSelectedItems.length - 4}
-                  </span>
-                </div>
-              )}
-            </div>
-            <span className="px-1 text-sm font-medium text-white/80">
-              {bulkSelectedIds.size} selected
-            </span>
+        {/* Marquee selection rectangle — always mounted, positioned imperatively
+            during the drag so sweeping doesn't re-render the page */}
+        <div
+          ref={marqueeRef}
+          style={{ display: "none" }}
+          className="pointer-events-none fixed z-40 rounded-sm border border-primary/60 bg-primary/10"
+        />
 
-            {/* Add to folder */}
-            <div className="relative">
-              <button
-                type="button"
-                onClick={() => setBulkFolderPopoverOpen((v) => !v)}
-                className="flex items-center gap-2 rounded-full bg-ui-controls/60 px-3 py-1.5 text-sm font-medium text-white hover:bg-ui-controls/90 transition-colors"
-              >
-                <FontAwesomeIcon icon={faFolderPlus} className="text-xs" />
-                Add to folder
-              </button>
-              {bulkFolderPopoverOpen && (
-                <>
-                  <div
-                    className="fixed inset-0 z-[59]"
-                    onClick={() => setBulkFolderPopoverOpen(false)}
-                  />
-                  <div className="absolute bottom-full right-0 z-[60] mb-2 max-h-72 w-56 overflow-y-auto rounded-lg border border-ui-panel-border bg-ui-panel p-2 shadow-xl">
-                    <div className="px-2 py-1 text-[11px] font-semibold uppercase tracking-wider text-white/40">
-                      Folders
-                    </div>
-                    {folders.length === 0 ? (
-                      <div className="px-2 py-1.5 text-xs italic text-white/30">
-                        No folders yet
-                      </div>
-                    ) : (
-                      folders.map((folder) => (
-                        <button
-                          key={folder.id}
-                          type="button"
-                          onClick={() => handleBulkAddToFolder(folder.id)}
-                          className="flex w-full items-center gap-2.5 rounded-md px-2 py-1.5 text-sm text-white hover:bg-ui-controls/50 transition-colors"
-                        >
-                          <FontAwesomeIcon
-                            icon={faFolder}
-                            className="text-xs text-primary"
-                          />
-                          <span className="truncate">{folder.name}</span>
-                        </button>
-                      ))
-                    )}
-                    <div className="mx-1.5 my-1 border-t border-ui-panel-border" />
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setBulkFolderPopoverOpen(false);
-                        openNewFolderModal(activeFolderId);
-                      }}
-                      className="flex w-full items-center gap-2.5 rounded-md px-2 py-1.5 text-sm text-white/70 hover:bg-ui-controls/50 transition-colors"
-                    >
-                      <FontAwesomeIcon icon={faPlus} className="w-4 text-xs" />
-                      <span>Create new folder</span>
-                    </button>
-                  </div>
-                </>
-              )}
-            </div>
-
-            <button
-              type="button"
-              onClick={handleBulkDelete}
-              className="flex items-center gap-2 rounded-full bg-red/90 px-3 py-1.5 text-sm font-medium text-white hover:bg-red transition-colors"
-            >
-              <FontAwesomeIcon icon={faTrashCan} className="text-xs" />
-              Delete
-            </button>
-            <button
-              type="button"
-              onClick={clearBulkSelection}
-              aria-label="Clear selection"
-              className="flex h-8 w-8 items-center justify-center rounded-full bg-ui-controls/60 text-white hover:bg-ui-controls/90 transition-colors"
-            >
-              <FontAwesomeIcon icon={faXmark} />
-            </button>
-          </div>
-        )}
+        {/* Bulk selection bar — subscribes to the selection store itself so
+            the page doesn't re-render as the selection changes */}
+        <BulkSelectionBar
+          allItems={allItems}
+          folders={folders}
+          activeFolderId={activeFolderId}
+          onAddToFolder={requestFolderDrop}
+          onDeleteSelected={handleBulkDelete}
+          onNewFolder={openNewFolderModal}
+        />
       </div>
 
       {/* Floating drag preview (multi-select count chip) */}
@@ -1132,6 +1176,230 @@ export default function Library() {
   );
 }
 
+// ── Memoized gallery tile ─────────────────────────────────────────────────────
+// Keeps the per-item closures out of the page render, and subscribes to its OWN
+// slice of the selection store: a marquee/selection commit re-renders only the
+// tiles whose checked state flipped — the page itself doesn't render at all.
+
+interface LibraryTileProps {
+  item: GalleryItem;
+  activeFilter: string;
+  activeFolderId: string | null;
+  folders: UiFolder[];
+  onCardClick: (item: GalleryItem) => void;
+  onImageError: (e: React.SyntheticEvent<HTMLImageElement>) => void;
+  onDeleted: (id: string) => void;
+  onAddToFolder: (itemIds: string[], folderId: string) => void;
+  onNewFolder: (parentId: string | null) => void;
+  onRemoveFromFolder: (itemIds: string[], folderId: string) => void;
+  getBulkDragItems: () => GalleryItem[];
+}
+
+const LibraryTile = memo(function LibraryTile({
+  item,
+  activeFilter,
+  activeFolderId,
+  folders,
+  onCardClick,
+  onImageError,
+  onDeleted,
+  onAddToFolder,
+  onNewFolder,
+  onRemoveFromFolder,
+  getBulkDragItems,
+}: LibraryTileProps) {
+  const bulkSelected = useLibrarySelectionStore((s) => s.ids.has(item.id));
+  const bulkSelectionMode = useLibrarySelectionStore((s) => s.ids.size > 0);
+  return (
+    <GalleryDraggableItem
+      item={item}
+      mode="view"
+      activeFilter={activeFilter}
+      selected={false}
+      onClick={() => onCardClick(item)}
+      onImageError={onImageError}
+      imageFit="cover"
+      onDeleted={onDeleted}
+      onDelete={deleteLibraryMedia}
+      folders={folders}
+      onAddToFolder={onAddToFolder}
+      onCreateFolderFromMenu={() => onNewFolder(activeFolderId)}
+      onRemoveFromFolder={
+        activeFolderId
+          ? (ids) => onRemoveFromFolder(ids, activeFolderId)
+          : undefined
+      }
+      bulkSelected={bulkSelected}
+      bulkSelectionMode={bulkSelectionMode}
+      onBulkSelectToggle={() =>
+        useLibrarySelectionStore.getState().toggle(item.id)
+      }
+      getBulkDragItems={getBulkDragItems}
+    />
+  );
+});
+
+// ── Bulk selection bar ────────────────────────────────────────────────────────
+// Owns its own subscription to the selection store (and the folder popover
+// state), so selection changes re-render only this small bar, never the page.
+
+interface BulkSelectionBarProps {
+  allItems: GalleryItem[];
+  folders: UiFolder[];
+  activeFolderId: string | null;
+  onAddToFolder: (itemIds: string[], folderId: string) => void;
+  onDeleteSelected: () => void;
+  onNewFolder: (parentId: string | null) => void;
+}
+
+function BulkSelectionBar({
+  allItems,
+  folders,
+  activeFolderId,
+  onAddToFolder,
+  onDeleteSelected,
+  onNewFolder,
+}: BulkSelectionBarProps) {
+  const ids = useLibrarySelectionStore((s) => s.ids);
+  const folderMediaItems = useLibraryFoldersStore((s) => s.folderMediaItems);
+  const [popoverOpen, setPopoverOpen] = useState(false);
+
+  // Close the popover when navigating so it doesn't dangle over the new view.
+  useEffect(() => {
+    setPopoverOpen(false);
+  }, [activeFolderId]);
+
+  // Resolve selected items from everything loaded (root library + folder
+  // caches) — the selection survives navigation, so selected items may not be
+  // part of the currently displayed view.
+  const selectedItems = useMemo(() => {
+    const byId = new Map(allItems.map((it) => [it.id, it] as const));
+    for (const arr of Object.values(folderMediaItems)) {
+      for (const it of arr) {
+        if (!byId.has(it.id)) byId.set(it.id, it);
+      }
+    }
+    return Array.from(ids)
+      .map((id) => byId.get(id))
+      .filter((it): it is GalleryItem => !!it);
+  }, [allItems, folderMediaItems, ids]);
+
+  if (ids.size === 0) return null;
+  const clear = () => useLibrarySelectionStore.getState().clear();
+
+  return (
+    <div
+      data-no-marquee
+      className="fixed bottom-20 sm:bottom-4 z-30 flex w-fit -translate-x-1/2 items-center gap-2 rounded-full border border-ui-panel-border bg-ui-panel/95 px-2.5 py-2 shadow-xl backdrop-blur"
+      style={{
+        // Center within the content area (viewport minus the app sidebar).
+        left: "calc(50% + var(--ac-sidebar-offset, 0px) / 2)",
+      }}
+    >
+      <div className="hidden sm:flex pl-1">
+        {selectedItems.slice(0, 4).map((si) => (
+          <BulkThumb key={si.id} item={si} />
+        ))}
+        {selectedItems.length > 4 && (
+          <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded border-2 border-ui-panel bg-black/20">
+            <span className="text-[11px] text-white/70">
+              +{selectedItems.length - 4}
+            </span>
+          </div>
+        )}
+      </div>
+      <span className="px-1 text-sm font-medium text-white/80">
+        {ids.size} selected
+      </span>
+
+      {/* Add to folder */}
+      <div className="relative">
+        <button
+          type="button"
+          onClick={() => setPopoverOpen((v) => !v)}
+          className="flex items-center gap-2 rounded-full bg-ui-controls/60 px-3 py-1.5 text-sm font-medium text-white hover:bg-ui-controls/90 transition-colors"
+        >
+          <FontAwesomeIcon icon={faFolderPlus} className="text-xs" />
+          Add to folder
+        </button>
+        {popoverOpen && (
+          <>
+            <div
+              className="fixed inset-0 z-[59]"
+              onClick={() => setPopoverOpen(false)}
+            />
+            <div className="absolute bottom-full right-0 z-[60] mb-2 max-h-72 w-56 overflow-y-auto rounded-lg border border-ui-panel-border bg-ui-panel p-2 shadow-xl">
+              <div className="px-2 py-1 text-[11px] font-semibold uppercase tracking-wider text-white/40">
+                Folders
+              </div>
+              {folders.length === 0 ? (
+                <div className="px-2 py-1.5 text-xs italic text-white/30">
+                  No folders yet
+                </div>
+              ) : (
+                folders.map((folder) => (
+                  <button
+                    key={folder.id}
+                    type="button"
+                    onClick={() => {
+                      onAddToFolder(Array.from(ids), folder.id);
+                      setPopoverOpen(false);
+                      clear();
+                    }}
+                    className="flex w-full items-center gap-2.5 rounded-md px-2 py-1.5 text-sm text-white hover:bg-ui-controls/50 transition-colors"
+                  >
+                    <FontAwesomeIcon
+                      icon={faFolder}
+                      className={
+                        folder.colorCode ? "text-xs" : "text-xs text-primary"
+                      }
+                      style={
+                        folder.colorCode
+                          ? { color: folder.colorCode }
+                          : undefined
+                      }
+                    />
+                    <span className="truncate">{folder.name}</span>
+                  </button>
+                ))
+              )}
+              <div className="mx-1.5 my-1 border-t border-ui-panel-border" />
+              <button
+                type="button"
+                onClick={() => {
+                  setPopoverOpen(false);
+                  onNewFolder(activeFolderId);
+                }}
+                className="flex w-full items-center gap-2.5 rounded-md px-2 py-1.5 text-sm text-white/70 hover:bg-ui-controls/50 transition-colors"
+              >
+                <FontAwesomeIcon icon={faPlus} className="w-4 text-xs" />
+                <span>Create new folder</span>
+              </button>
+            </div>
+          </>
+        )}
+      </div>
+
+      <button
+        type="button"
+        onClick={onDeleteSelected}
+        className="flex items-center gap-2 rounded-full bg-red/90 px-3 py-1.5 text-sm font-medium text-white hover:bg-red transition-colors"
+      >
+        <FontAwesomeIcon icon={faTrashCan} className="text-xs" />
+        Delete
+      </button>
+      <button
+        type="button"
+        onClick={clear}
+        aria-label="Clear selection"
+        className="flex h-8 w-8 items-center justify-center rounded-full bg-ui-controls/60 text-white hover:bg-ui-controls/90 transition-colors"
+      >
+        <FontAwesomeIcon icon={faXmark} />
+      </button>
+    </div>
+  );
+}
+
 // ── Bulk selection thumbnail ──────────────────────────────────────────────────
 
 function BulkThumb({ item }: { item: GalleryItem }) {
@@ -1163,4 +1431,3 @@ function BulkThumb({ item }: { item: GalleryItem }) {
     </div>
   );
 }
-
