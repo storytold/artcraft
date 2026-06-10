@@ -117,7 +117,9 @@ mod tests {
     fn test_serialization() {
       assert_serialization(PromptContextSemanticType::VidStartFrame, "vid_start_frame");
       assert_serialization(PromptContextSemanticType::VidEndFrame, "vid_end_frame");
-      assert_serialization(PromptContextSemanticType::VidRef, "vidref");
+      // NB: serde serialization ("vid_ref") intentionally differs from to_str()/the DB value
+      // ("vidref"); see the "Current DB values" comment at the top of this file.
+      assert_serialization(PromptContextSemanticType::VidRef, "vid_ref");
       assert_serialization(PromptContextSemanticType::Imgsrc, "imgsrc");
       assert_serialization(PromptContextSemanticType::Imgmask, "imgmask");
       assert_serialization(PromptContextSemanticType::Imgref, "imgref");

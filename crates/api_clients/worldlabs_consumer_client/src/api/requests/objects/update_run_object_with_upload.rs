@@ -405,6 +405,10 @@ mod tests {
   use crate::api::api_types::pano_object_id::PanoObjectId;
   use crate::api::api_types::run_object_id::RunObjectId;
   use crate::api::requests::objects::update_run_object_with_upload::{RawRequest, UpdateRunObjectWithUploadPayloadArgs};
+  use serde_json::{json, Value};
+
+  /// Any timestamp from `Utc::now()` should exceed this (2023-11-14 in epoch millis).
+  const MIN_PLAUSIBLE_EPOCH_MILLIS: u64 = 1_700_000_000_000;
 
   #[test]
   fn request_default() {
@@ -432,9 +436,88 @@ mod tests {
 
     let request = RawRequest::from_args(&args);
 
-    let json = serde_json::to_string_pretty(&request).unwrap();
-    println!("{}", json);
+    // The `createdAt` / `updatedAt` timestamps come from `Utc::now()` at build time,
+    // so they're nondeterministic. Sanity-check them, then zero them out before
+    // comparing the rest of the document.
+    assert!(request.object.metadata.created_at > MIN_PLAUSIBLE_EPOCH_MILLIS);
+    assert!(request.object.metadata.updated_at >= request.object.metadata.created_at);
 
-    assert_eq!(json, r#"{"type":"abcxyz_image_input_id","value":"image_input_id"}"#);
+    let mut actual = serde_json::to_value(&request).unwrap();
+    zero_out_timestamps(&mut actual);
+
+    let expected = json!({
+      "object": {
+        "metadata": {
+          "version": "0.0.1",
+          "createdAt": 0,
+          "updatedAt": 0,
+          "usesAdvancedEditing": false,
+          "draftMode": false,
+          "nodes": {
+            "bc17252b-811e-49d7-be3e-b7c538df9d30": {
+              "id": "bc17252b-811e-49d7-be3e-b7c538df9d30",
+              "type": "input",
+              "parentId": null,
+              "source": {
+                "type": "image",
+                "image_url": "https://todo.com"
+              },
+              "createdAt": 0
+            },
+            "82f6b488-8afe-4311-9022-80ad5789ad92": {
+              "id": "82f6b488-8afe-4311-9022-80ad5789ad92",
+              "type": "pano",
+              "parentId": "bc17252b-811e-49d7-be3e-b7c538df9d30",
+              "source": {
+                "type": "generate_world",
+                "world_id": "pending",
+                "status": "pending"
+              },
+              "createdAt": 0
+            },
+            "f08ec501-601c-47c6-a104-402d1820b8f0": {
+              "id": "f08ec501-601c-47c6-a104-402d1820b8f0",
+              "type": "world",
+              "parentId": "82f6b488-8afe-4311-9022-80ad5789ad92",
+              "source": {
+                "type": "generate_world",
+                "world_id": "pending",
+                "posed_cubemaps_url": "",
+                "minimap_url": "",
+                "minimap_metadata": "",
+                "status": "pending"
+              },
+              "createdAt": 0
+            }
+          }
+        }
+      },
+      "update_mask": [
+        "metadata"
+      ]
+    });
+
+    assert_eq!(actual, expected);
+  }
+
+  /// Recursively replaces nondeterministic `createdAt` / `updatedAt` values with 0.
+  fn zero_out_timestamps(value: &mut Value) {
+    match value {
+      Value::Object(map) => {
+        for (key, child) in map.iter_mut() {
+          if key == "createdAt" || key == "updatedAt" {
+            *child = json!(0);
+          } else {
+            zero_out_timestamps(child);
+          }
+        }
+      },
+      Value::Array(items) => {
+        for item in items.iter_mut() {
+          zero_out_timestamps(item);
+        }
+      },
+      _ => {},
+    }
   }
 }

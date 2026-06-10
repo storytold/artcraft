@@ -222,14 +222,15 @@ mod tests {
       assert_eq!(variants.pop_first(), Some(MediaFileOriginModelType::LivePortrait));
       assert_eq!(variants.pop_first(), Some(MediaFileOriginModelType::RvcV2));
       assert_eq!(variants.pop_first(), Some(MediaFileOriginModelType::SadTalker));
-      assert_eq!(variants.pop_first(), Some(MediaFileOriginModelType::SeedVc));
       assert_eq!(variants.pop_first(), Some(MediaFileOriginModelType::SoVitsSvc));
       assert_eq!(variants.pop_first(), Some(MediaFileOriginModelType::Tacotron2));
       assert_eq!(variants.pop_first(), Some(MediaFileOriginModelType::MocapNet));
+      assert_eq!(variants.pop_first(), Some(MediaFileOriginModelType::SeedVc));
       assert_eq!(variants.pop_first(), Some(MediaFileOriginModelType::StyleTTS2));
       assert_eq!(variants.pop_first(), Some(MediaFileOriginModelType::StableDiffusion15));
       assert_eq!(variants.pop_first(), Some(MediaFileOriginModelType::GptSovits));
       assert_eq!(variants.pop_first(), Some(MediaFileOriginModelType::StorytellerStudio));
+      assert_eq!(variants.pop_first(), Some(MediaFileOriginModelType::StorytellerStudioImageGen));
       assert_eq!(variants.pop_first(), Some(MediaFileOriginModelType::VideoStyleTransfer));
       assert_eq!(variants.pop_first(), Some(MediaFileOriginModelType::ComfyUi));
       assert_eq!(variants.pop_first(), Some(MediaFileOriginModelType::VallEX));

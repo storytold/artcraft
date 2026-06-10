@@ -41,6 +41,11 @@ pub fn is_job_failure_test(prompt: &str) -> bool {
 mod tests {
   use super::*;
 
+  const EXPECTED_FAILURE_MESSAGE: &str =
+      "This was a simulated failure. This message comes from the backend and \
+      database to simulate a dynamic failure message. This message could in \
+      theory be anything.";
+
   #[test]
   fn no_trigger_returns_none() {
     assert!(test_synthetic_failure_reason("a normal prompt").is_none());
@@ -50,14 +55,14 @@ mod tests {
   fn trigger_simulate_with_no_category_defaults_to_generation_failed() {
     let result = test_synthetic_failure_reason("simulate_artcraft_failure").unwrap();
     assert_eq!(result.frontend_failure_category, FrontendFailureCategory::GenerationFailed);
-    assert_eq!(result.frontend_failure_message.as_deref(), Some("This was a simulated failure"));
+    assert_eq!(result.frontend_failure_message.as_deref(), Some(EXPECTED_FAILURE_MESSAGE));
   }
 
   #[test]
   fn trigger_test_with_no_category_defaults_to_generation_failed() {
     let result = test_synthetic_failure_reason("test_artcraft_failure").unwrap();
     assert_eq!(result.frontend_failure_category, FrontendFailureCategory::GenerationFailed);
-    assert_eq!(result.frontend_failure_message.as_deref(), Some("This was a simulated failure"));
+    assert_eq!(result.frontend_failure_message.as_deref(), Some(EXPECTED_FAILURE_MESSAGE));
   }
 
   #[test]

@@ -136,12 +136,12 @@ struct RawResponse {
 #[cfg(test)]
 mod tests {
   use crate::api::api_types::upload_object_id::UploadObjectId;
-  use crate::api::requests::objects::begin_object_image_upload::get_url;
+  use crate::api::requests::objects::begin_object_image_upload::{get_url, BASE_URL};
 
   #[test]
   fn test_get_url() {
     let upload_id = UploadObjectId("foo-bar-baz-bin".to_string());
-    let expected = "https://marble2-kgw-prod-iac1.wlt-ai.art/api/v1/objects/foo-bar-baz-bin:upload";
+    let expected = format!("{}/foo-bar-baz-bin:upload", BASE_URL);
     assert_eq!(get_url(&upload_id), expected);
   }
 }

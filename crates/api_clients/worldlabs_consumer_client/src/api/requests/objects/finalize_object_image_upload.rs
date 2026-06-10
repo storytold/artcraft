@@ -135,7 +135,7 @@ struct RawResponse {
 #[cfg(test)]
 mod tests {
   use crate::api::api_types::upload_object_id::UploadObjectId;
-  use crate::api::requests::objects::finalize_object_image_upload::{finalize_object_image_upload, get_url, FinalizeObjectImageUploadArgs};
+  use crate::api::requests::objects::finalize_object_image_upload::{finalize_object_image_upload, get_url, FinalizeObjectImageUploadArgs, BASE_URL};
   use crate::test_utils::get_test_bearer_token::get_test_bearer_token;
   use crate::test_utils::get_test_cookies::get_typed_test_cookies;
   use crate::test_utils::setup_test_logging::setup_test_logging;
@@ -144,7 +144,7 @@ mod tests {
   #[test]
   fn test_get_url() {
     let upload_id = UploadObjectId("foo-bar-baz-bin".to_string());
-    let expected = "https://marble2-kgw-prod-iac1.wlt-ai.art/api/v1/objects/foo-bar-baz-bin:complete";
+    let expected = format!("{}/foo-bar-baz-bin:complete", BASE_URL);
     assert_eq!(get_url(&upload_id), expected);
   }
 

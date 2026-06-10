@@ -123,14 +123,14 @@ mod tests {
 
     assert_eq!(cover_image.maybe_cover_image_public_bucket_path, Some("/media/b/u/c/k/e/bucket_hash/image_bucket_hash.png".to_string()));
     assert_eq!(cover_image.maybe_cover_image_public_bucket_url,
-               Some(Url::parse("https://storage.googleapis.com/vocodes-public/media/b/u/c/k/e/bucket_hash/image_bucket_hash.png").unwrap()));
+               Some(Url::parse("https://cdn-2.fakeyou.com/media/b/u/c/k/e/bucket_hash/image_bucket_hash.png").unwrap()));
     assert_eq!(cover_image.default_cover.image_index, 18);
 
     let links = cover_image.maybe_links.unwrap();
 
     assert_eq!(links.cdn_url, Url::parse(
-      "https://cdn.storyteller.ai/media/b/u/c/k/e/bucket_hash/image_bucket_hash.png").unwrap());
+      "https://cdn-2.fakeyou.com/media/b/u/c/k/e/bucket_hash/image_bucket_hash.png").unwrap());
     assert_eq!(links.thumbnail_template,
-               "https://cdn.storyteller.ai/cdn-cgi/image/width={WIDTH},quality=95/media/b/u/c/k/e/bucket_hash/image_bucket_hash.png");
+               "https://cdn-2.fakeyou.com/cdn-cgi/image/width={WIDTH},quality=95/media/b/u/c/k/e/bucket_hash/image_bucket_hash.png");
   }
 }

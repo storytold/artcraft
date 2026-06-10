@@ -89,7 +89,15 @@ mod tests {
     let cookies = format!("cookie={}", "a".repeat(10000));
     assert_eq!(has_session_cookie(&cookies).unwrap(), SessionCookiePresence::MaybePresent);
 
-    let cookies = "";
+    // Synthetic fixture (the original real session token was redacted); the session
+    // cookie name is what matters for detection.
+    let cookies = "__Host-authjs.csrf-token=abc123; \
+      __Secure-authjs.callback-url=https%3A%2F%2Fsora.com%2F; \
+      __Secure-authjs.session-token=fake-session-token-value";
+
+    assert_eq!(has_session_cookie(cookies).unwrap(), SessionCookiePresence::Present);
+
+    let cookies = "__Secure-next-auth.session-token=fake-session-token-value";
 
     assert_eq!(has_session_cookie(cookies).unwrap(), SessionCookiePresence::Present);
   }

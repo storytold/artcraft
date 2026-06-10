@@ -147,6 +147,9 @@ mod tests {
   #[test]
   fn test_request() {
     let request = RawRequest::for_mime_type(UploadMimeType::ImageJpeg);
-    assert_eq!(request.display_name, "uploaded_image_jpeg");
+    // The display name embeds a random uuid, eg. "uploaded_image_{uuid}.jpeg"
+    assert!(request.display_name.starts_with("uploaded_image_"));
+    assert!(request.display_name.ends_with(".jpeg"));
+    assert_eq!(request.mime_type, "image/jpeg");
   }
 }

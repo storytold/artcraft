@@ -394,7 +394,7 @@ mod tests {
     let result = payload.maybe_result.expect("should have result");
 
     assert_eq!(
-      Url::parse("https://cdn.storyteller.ai/media/t/p/k/8/4/tpk848b5s5zwhnwrph75jhyfyja3j42v/fakeyou_tpk848b5s5zwhnwrph75jhyfyja3j42v.wav").unwrap(),
+      Url::parse("https://cdn-2.fakeyou.com/media/t/p/k/8/4/tpk848b5s5zwhnwrph75jhyfyja3j42v/fakeyou_tpk848b5s5zwhnwrph75jhyfyja3j42v.wav").unwrap(),
       result.media_links.cdn_url
     );
 
@@ -433,7 +433,7 @@ mod tests {
     let result = payload.maybe_result.expect("should have result");
 
     assert_eq!(
-      Url::parse("https://cdn.fakeyou.com/tts_inference_output/9/9/7/vocodes_997e710c-d733-406c-9b6e-5e1d0c471816.wav").unwrap(),
+      Url::parse("https://cdn-2.fakeyou.com/tts_inference_output/9/9/7/vocodes_997e710c-d733-406c-9b6e-5e1d0c471816.wav").unwrap(),
       result.media_links.cdn_url
     );
 
