@@ -10,5 +10,6 @@ pub mod user_emails;
 pub mod user_feature_flags;
 pub mod user_referrals;
 pub mod user_sessions;
+pub mod user_stripe_data;
 pub mod wallet_ledger_entries;
 pub mod wallets;

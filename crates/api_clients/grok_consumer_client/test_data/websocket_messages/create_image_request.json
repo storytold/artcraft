@@ -1,0 +1,21 @@
+{
+  "type": "conversation.item.create",
+  "timestamp": 1761010203630,
+  "item": {
+    "type": "message",
+    "content": [
+      {
+        "requestId": "fc39cefd-fcf9-4775-b490-7e17ce670060",
+        "text": "a dog typing on a keyboard",
+        "type": "input_text",
+        "properties": {
+          "section_count": 0,
+          "is_kids_mode": false,
+          "enable_nsfw": true,
+          "skip_upsampler": false,
+          "is_initial": false
+        }
+      }
+    ]
+  }
+}

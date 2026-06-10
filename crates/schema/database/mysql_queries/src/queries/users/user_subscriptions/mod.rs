@@ -1,7 +1,8 @@
 pub mod find_possibly_inactive_first_subscription_for_owner_user;
-pub mod lookup_users_by_stripe_customer_id;
 pub mod find_subscription_for_owner_user;
 pub mod get_user_subscription_by_stripe_subscription_id;
 pub mod list_active_user_subscriptions;
+pub mod list_stripe_customer_ids_for_user_subscriptions;
+pub mod lookup_users_by_stripe_customer_id;
 pub mod upsert_user_subscription_by_stripe_id;
 pub mod upsert_user_subscription_with_invoice_paid_status_by_stripe_id;

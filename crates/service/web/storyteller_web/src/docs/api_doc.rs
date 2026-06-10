@@ -117,6 +117,7 @@ use artcraft_api_defs::folders::media_files::*;
 use artcraft_api_defs::folders::subfolder::*;
 use artcraft_api_defs::moderation::user_referrals::list_global_user_referrals::*;
 use artcraft_api_defs::moderation::user_referrals::list_user_referrals_for_user::*;
+use artcraft_api_defs::moderation::user_stripe_data::moderator_get_user_stripe_customer_ids::*;
 use crate::http_server::endpoints::moderation::user_sessions::moderator_list_user_session_impersonation_requests_for_user_handler::*;
 use crate::http_server::endpoints::moderation::user_sessions::moderator_list_user_session_impersonation_requests_handler::*;
 use crate::http_server::endpoints::moderation::user_sessions::moderator_user_session_impersonation_request_handler::*;
@@ -558,6 +559,7 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     crate::http_server::endpoints::moderation::user_bans::moderation_ban_user_handler::moderation_ban_user_handler,
     crate::http_server::endpoints::moderation::user_emails::moderator_change_user_email_handler::moderator_change_user_email_handler,
     crate::http_server::endpoints::moderation::user_emails::moderator_list_email_address_changes_for_user_handler::moderator_list_email_address_changes_for_user_handler,
+    crate::http_server::endpoints::moderation::user_stripe_data::moderator_get_user_stripe_customer_ids_handler::moderator_get_user_stripe_customer_ids_handler,
 
     // Folders
     crate::http_server::endpoints::folders::folder::create_folder_handler::create_folder_handler,
@@ -816,6 +818,10 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     ModeratorGetWalletLedgerEntryPathInfo,
     ModeratorGetWalletLedgerEntryResponse,
     ModeratorGetWalletLedgerEntryDetails,
+    ModeratorGetUserStripeCustomerIdsPathInfo,
+    ModeratorGetUserStripeCustomerIdsResponse,
+    ModeratorUserStripeCustomerIdEntry,
+    ModeratorStripeCustomerIdSource,
     GptImage1EditImageRequest,
     GptImage1EditImageImageSize,
     GptImage1EditImageNumImages,

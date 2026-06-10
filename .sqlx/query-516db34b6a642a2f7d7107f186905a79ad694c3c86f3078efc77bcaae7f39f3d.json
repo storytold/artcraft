@@ -1,0 +1,36 @@
+{
+  "db_name": "MySQL",
+  "query": "\nSELECT DISTINCT\n  subscription_namespace as `subscription_namespace: enums::common::payments_namespace::PaymentsNamespace`,\n  maybe_stripe_customer_id as `stripe_customer_id!`\n\nFROM user_subscriptions\n\nWHERE\n  user_token = ?\n  AND maybe_stripe_customer_id IS NOT NULL\n  AND deleted_at IS NULL\nORDER BY subscription_namespace ASC, maybe_stripe_customer_id ASC\n    ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "subscription_namespace: enums::common::payments_namespace::PaymentsNamespace",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NOT_NULL | MULTIPLE_KEY | BINARY | NO_DEFAULT_VALUE",
+          "char_set": 224,
+          "max_size": 128
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "stripe_customer_id!",
+        "type_info": {
+          "type": "VarString",
+          "flags": "MULTIPLE_KEY | BINARY",
+          "char_set": 224,
+          "max_size": 1020
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false,
+      true
+    ]
+  },
+  "hash": "516db34b6a642a2f7d7107f186905a79ad694c3c86f3078efc77bcaae7f39f3d"
+}

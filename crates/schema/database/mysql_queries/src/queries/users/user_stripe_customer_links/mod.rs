@@ -1,2 +1,3 @@
 pub mod find_user_stripe_customer_link;
+pub mod list_user_stripe_customer_links_for_user;
 pub mod upsert_user_stripe_customer_link;

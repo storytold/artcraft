@@ -1,0 +1,47 @@
+{
+  "db_name": "MySQL",
+  "query": "\nSELECT\n  user_token as `user_token: tokens::tokens::users::UserToken`,\n  payments_namespace as `payments_namespace: enums::common::payments_namespace::PaymentsNamespace`,\n  stripe_customer_id\n\nFROM user_stripe_customer_links\n\nWHERE user_token = ?\nORDER BY id ASC\n    ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "user_token: tokens::tokens::users::UserToken",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NOT_NULL | MULTIPLE_KEY | BINARY | NO_DEFAULT_VALUE",
+          "char_set": 224,
+          "max_size": 128
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "payments_namespace: enums::common::payments_namespace::PaymentsNamespace",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NOT_NULL | BINARY | NO_DEFAULT_VALUE",
+          "char_set": 224,
+          "max_size": 128
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "stripe_customer_id",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NOT_NULL | UNIQUE_KEY | BINARY | NO_DEFAULT_VALUE",
+          "char_set": 224,
+          "max_size": 1020
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "ffb5717340f21f21693bfcade201bc055fb3fb8a26da8d0574e3de44b033586c"
+}
