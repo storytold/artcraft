@@ -1,8 +1,8 @@
 use crate::creds::seedance2pro_session::Seedance2ProSession;
+use crate::error::seedance2pro_bad_request_api_error::Seedance2ProBadRequestApiError;
 use crate::error::seedance2pro_client_error::Seedance2ProClientError;
 use crate::error::seedance2pro_error::Seedance2ProError;
 use crate::error::seedance2pro_generic_api_error::Seedance2ProGenericApiError;
-use crate::error::seedance2pro_specific_api_error::Seedance2ProSpecificApiError;
 use crate::requests::generate_video::request_types::*;
 use crate::requests::kinovi_host::{KinoviHost, resolve_host};
 use crate::utils::categorize_seedance2pro_error::categorize_seedance2pro_error;
@@ -411,7 +411,7 @@ pub async fn generate_video(args: GenerateVideoArgs<'_>) -> Result<GenerateVideo
     .json;
 
   if task_data.violation_warning {
-    return Err(Seedance2ProSpecificApiError::VideoGenerationViolation(response_body).into());
+    return Err(Seedance2ProBadRequestApiError::VideoGenerationViolation { raw_body: response_body }.into());
   }
 
   Ok(GenerateVideoResponse {

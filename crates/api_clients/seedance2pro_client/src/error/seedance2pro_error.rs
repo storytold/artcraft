@@ -1,3 +1,4 @@
+use crate::error::seedance2pro_bad_request_api_error::Seedance2ProBadRequestApiError;
 use crate::error::seedance2pro_client_error::Seedance2ProClientError;
 use crate::error::seedance2pro_generic_api_error::Seedance2ProGenericApiError;
 use crate::error::seedance2pro_specific_api_error::Seedance2ProSpecificApiError;
@@ -9,6 +10,7 @@ pub enum Seedance2ProError {
   Client(Seedance2ProClientError),
   ApiSpecific(Seedance2ProSpecificApiError),
   ApiGeneric(Seedance2ProGenericApiError),
+  ApiBadRequest(Seedance2ProBadRequestApiError),
 }
 
 impl Seedance2ProError {
@@ -38,6 +40,7 @@ impl std::fmt::Display for Seedance2ProError {
       Self::Client(e) => write!(f, "Seedance2ProClientError: {:?}", e),
       Self::ApiSpecific(e) => write!(f, "Seedance2ProSpecificApiError: {:?}", e),
       Self::ApiGeneric(e) => write!(f, "Seedance2ProGenericApiError: {:?}", e),
+      Self::ApiBadRequest(e) => write!(f, "Seedance2ProBadRequestApiError: {:?}", e),
     }
   }
 }
@@ -57,5 +60,11 @@ impl From<Seedance2ProSpecificApiError> for Seedance2ProError {
 impl From<Seedance2ProGenericApiError> for Seedance2ProError {
   fn from(error: Seedance2ProGenericApiError) -> Self {
     Self::ApiGeneric(error)
+  }
+}
+
+impl From<Seedance2ProBadRequestApiError> for Seedance2ProError {
+  fn from(error: Seedance2ProBadRequestApiError) -> Self {
+    Self::ApiBadRequest(error)
   }
 }
