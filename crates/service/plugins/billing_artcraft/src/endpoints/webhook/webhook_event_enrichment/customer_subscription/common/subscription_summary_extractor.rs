@@ -127,8 +127,11 @@ mod tests {
       {"id":"sub_1LhA3MEU5se17MekeWvmTNyk","automatic_tax":{"enabled":false},
       "billing_cycle_anchor":1662979188,"cancel_at_period_end":false,
       "collection_method":"charge_automatically","created":1662979188,"current_period_end":1665571188,
-      "current_period_start":1662979188,"customer":"cus_MQ03py0gWUh0Ox","default_tax_rates":[],
-      "items":{"data":[{"id":"si_MQ03hadVNfRnaS","created":1662979188,"deleted":false,"metadata":{},
+      "current_period_start":1662979188,"customer":"cus_MQ03py0gWUh0Ox","currency":"usd","default_tax_rates":[],"discounts":[],
+      "invoice_settings":{"issuer":{"type":"self"}},
+      "items":{"data":[{"id":"si_MQ03hadVNfRnaS","created":1662979188,"current_period_end":1665571188,
+      "current_period_start":1662979188,"deleted":false,"discounts":[],
+      "plan":{"id":"price_1LeDnKEU5se17MekVr1iYYNf","object":"plan","active":true,"amount":700,"amount_decimal":"700","billing_scheme":"per_unit","created":1662278586,"currency":"usd","interval":"month","interval_count":1,"livemode":false,"metadata":{},"product":"prod_MMxi2J5y69VPbO","usage_type":"licensed"},"metadata":{},
       "price":{"id":"price_1LeDnKEU5se17MekVr1iYYNf","active":true,"billing_scheme":"per_unit",
       "created":1662278586,"currency":"usd","deleted":false,"livemode":false,"metadata":{},
       "product":"prod_MMxi2J5y69VPbO","recurring":{"interval":"month","interval_count":1,
@@ -172,8 +175,11 @@ mod tests {
       "cancel_at_period_end":false,"collection_method":"charge_automatically","created":1662948037,
       "current_period_end":1665540037,"current_period_start":1662948037,
       "customer":"cus_MPrgIen5Wh6QKG",
-      "default_payment_method":"pm_1Lh1wtEU5se17MekpirKtMJm","default_tax_rates":[],
-      "items":{"data":[{"id":"si_MPrgTAV333Nq7c","created":1662948037,"deleted":false,"metadata":{},
+      "default_payment_method":"pm_1Lh1wtEU5se17MekpirKtMJm","currency":"usd","default_tax_rates":[],"discounts":[],
+      "invoice_settings":{"issuer":{"type":"self"}},
+      "items":{"data":[{"id":"si_MPrgTAV333Nq7c","created":1662948037,"current_period_end":1665540037,
+      "current_period_start":1662948037,"deleted":false,"discounts":[],
+      "plan":{"id":"price_1LeDnKEU5se17MekVr1iYYNf","object":"plan","active":true,"amount":700,"amount_decimal":"700","billing_scheme":"per_unit","created":1662278586,"currency":"usd","interval":"month","interval_count":1,"livemode":false,"metadata":{},"product":"prod_MMxi2J5y69VPbO","usage_type":"licensed"},"metadata":{},
       "price":{"id":"price_1LeDnKEU5se17MekVr1iYYNf","active":true,"billing_scheme":"per_unit",
       "created":1662278586,"currency":"usd","deleted":false,"livemode":false,"metadata":{},
       "product":"prod_MMxi2J5y69VPbO","recurring":{"interval":"month","interval_count":1,
@@ -216,9 +222,12 @@ mod tests {
       "billing_cycle_anchor":1662979188,"cancel_at_period_end":false,"canceled_at":1662979740,
       "collection_method":"charge_automatically","created":1662979188,"current_period_end":1665571188,
       "current_period_start":1662979188,"customer":"cus_MQ03py0gWUh0Ox",
-      "default_payment_method":"pm_1LhA3LEU5se17MekViNvoYAx","default_tax_rates":[],
+      "default_payment_method":"pm_1LhA3LEU5se17MekViNvoYAx","currency":"usd","default_tax_rates":[],"discounts":[],
+      "invoice_settings":{"issuer":{"type":"self"}},
       "ended_at":1662979740,"items":{"data":[{"id":"si_MQ03hadVNfRnaS","created":1662979188,
-      "deleted":false,"metadata":{},"price":{"id":"price_1LeDnKEU5se17MekVr1iYYNf","active":true,
+      "current_period_end":1665571188,"current_period_start":1662979188,
+      "deleted":false,"discounts":[],
+      "plan":{"id":"price_1LeDnKEU5se17MekVr1iYYNf","object":"plan","active":true,"amount":700,"amount_decimal":"700","billing_scheme":"per_unit","created":1662278586,"currency":"usd","interval":"month","interval_count":1,"livemode":false,"metadata":{},"product":"prod_MMxi2J5y69VPbO","usage_type":"licensed"},"metadata":{},"price":{"id":"price_1LeDnKEU5se17MekVr1iYYNf","active":true,
       "billing_scheme":"per_unit","created":1662278586,"currency":"usd","deleted":false,
       "livemode":false,"metadata":{},"product":"prod_MMxi2J5y69VPbO",
       "recurring":{"interval":"month","interval_count":1,"usage_type":"licensed"},
@@ -283,7 +292,14 @@ mod tests {
         ],
         "description": null,
         "discount": null,
+        "discounts": [
+        ],
         "ended_at": null,
+        "invoice_settings": {
+          "issuer": {
+            "type": "self"
+          }
+        },
         "items": {
           "object": "list",
           "data": [
@@ -292,6 +308,9 @@ mod tests {
               "object": "subscription_item",
               "billing_thresholds": null,
               "created": 1663430298,
+              "current_period_end": 1666022298,
+              "current_period_start": 1663430298,
+              "discounts": [],
               "metadata": {
               },
               "plan": {
