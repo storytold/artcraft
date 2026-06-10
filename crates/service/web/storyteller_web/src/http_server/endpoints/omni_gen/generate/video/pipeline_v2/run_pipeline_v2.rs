@@ -19,6 +19,7 @@ use crate::http_server::endpoints::omni_gen::generate::video::helpers::build_rou
 use crate::http_server::endpoints::omni_gen::generate::video::helpers::pipeline_result::PipelineResult;
 use crate::http_server::endpoints::omni_gen::generate::video::helpers::resolve_media_tokens_to_urls::resolve_media_tokens_to_urls;
 use crate::http_server::endpoints::omni_gen::generate::video::kinovi_account::KinoviAccount;
+use crate::http_server::endpoints::omni_gen::shared_utils::map_seedance2pro_router_error::map_router_error_to_web_error;
 use crate::state::server_state::ServerState;
 
 pub struct RunPipelineV2Args<'a> {
@@ -170,7 +171,7 @@ async fn upload_and_generate(
           .await
           .map_err(|err| {
             warn!("Failed to finalize v2 draft: {:?}", err);
-            CommonWebError::from_error(err)
+            map_router_error_to_web_error(err)
           })?
     }
   };
@@ -179,6 +180,6 @@ async fn upload_and_generate(
       .await
       .map_err(|err| {
         warn!("v2 video generation failed: {:?}", err);
-        CommonWebError::from_error(err)
+        map_router_error_to_web_error(err)
       })
 }

@@ -1,9 +1,10 @@
 use std::collections::HashMap;
 use std::sync::Arc;
-
+use actix_http::StatusCode;
 use crate::billing::wallets::attempt_wallet_deduction::attempt_wallet_deduction_else_common_web_error;
 use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::endpoint_helpers::refund_wallet_after_api_failure::refund_wallet_after_api_failure;
+use crate::http_server::endpoints::generate::common::map_seedance2pro_web_errors::map_seedance2pro_error_to_web_error;
 use crate::http_server::endpoints::generate::common::payments_error_test::payments_error_test;
 use crate::http_server::session::lookup::user_session_feature_flags::UserSessionFeatureFlags;
 use crate::http_server::validations::validate_idempotency_token_format::validate_idempotency_token_format;
@@ -12,7 +13,7 @@ use crate::state::server_state::ServerState;
 use crate::util::http_download_url_to_bytes::http_download_url_to_bytes;
 use crate::util::lookup::lookup_media_file_urls_as_map::lookup_media_file_urls_as_map;
 use actix_web::web::Json;
-use actix_web::{web, HttpRequest};
+use actix_web::{web, HttpRequest, ResponseError};
 use artcraft_api_defs::generate::video::multi_function::seedance_2p0_multi_function_video_gen::{
   Seedance2p0AspectRatio, Seedance2p0BatchCount, Seedance2p0MultiFunctionVideoGenRequest,
   Seedance2p0MultiFunctionVideoGenResponse, Seedance2p0OutputResolution,
@@ -234,13 +235,19 @@ pub async fn seedance_2p0_multi_function_video_gen_handler(
           }
           Err(err) => {
             warn!("Regular session fallback also failed for user {:?}: {:?}", user_token, err);
-            let notification = NotificationDetailsBuilder::from_boxed_error(err.clone().into())
-                .set_title("Seedance 2.0 generation failed (whitelist + fallback)".to_string())
-                .set_urgency(Some(NotificationUrgency::High))
-                .build();
-            if let Err(page_err) = server_state.pager.enqueue_page(notification) {
-              warn!("Failed to enqueue pager alert: {:?}", page_err);
+
+            // Client-fault errors (eg. content violations, over-long prompts)
+            // surface to the user as 400s and shouldn't page.
+            if err.status_code() != StatusCode::BAD_REQUEST {
+              let notification = NotificationDetailsBuilder::from_boxed_error(err.clone().into())
+                  .set_title("Seedance 2.0 generation failed (whitelist + fallback)".to_string())
+                  .set_urgency(Some(NotificationUrgency::High))
+                  .build();
+              if let Err(page_err) = server_state.pager.enqueue_page(notification) {
+                warn!("Failed to enqueue pager alert: {:?}", page_err);
+              }
             }
+
             refund_wallet_after_api_failure(&deduction_result.ledger_entry_token, &mut mysql_connection).await?;
             return Err(err);
           }
@@ -269,13 +276,19 @@ pub async fn seedance_2p0_multi_function_video_gen_handler(
       Ok(result) => result,
       Err(err) => {
         warn!("Error calling seedance2pro generate_video: {:?}", err);
-        let notification = NotificationDetailsBuilder::from_boxed_error(err.clone().into())
-            .set_title("Seedance 2.0 generation failed".to_string())
-            .set_urgency(Some(NotificationUrgency::High))
-            .build();
-        if let Err(page_err) = server_state.pager.enqueue_page(notification) {
-          warn!("Failed to enqueue pager alert: {:?}", page_err);
+
+        // Client-fault errors (eg. content violations, over-long prompts)
+        // surface to the user as 400s and shouldn't page.
+        if err.status_code() != StatusCode::BAD_REQUEST {
+          let notification = NotificationDetailsBuilder::from_boxed_error(err.clone().into())
+              .set_title("Seedance 2.0 generation failed".to_string())
+              .set_urgency(Some(NotificationUrgency::High))
+              .build();
+          if let Err(page_err) = server_state.pager.enqueue_page(notification) {
+            warn!("Failed to enqueue pager alert: {:?}", page_err);
+          }
         }
+
         refund_wallet_after_api_failure(&deduction_result.ledger_entry_token, &mut mysql_connection).await?;
         return Err(err);
       }
@@ -613,7 +626,7 @@ async fn upload_and_generate(
   let gen_response = generate_video(video_gen_args).await
     .map_err(|err| {
       warn!("Error calling seedance2pro generate_video: {:?}", err);
-      CommonWebError::from_error(err)
+      map_seedance2pro_error_to_web_error(err)
     })?;
 
   Ok(SeedanceGenerationResult {

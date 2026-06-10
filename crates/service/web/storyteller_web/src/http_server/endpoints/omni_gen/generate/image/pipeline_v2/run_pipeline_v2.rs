@@ -18,6 +18,7 @@ use tokens::tokens::users::UserToken;
 use crate::billing::wallets::attempt_wallet_deduction::attempt_wallet_deduction_else_common_web_error;
 use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::endpoints::omni_gen::generate::image::pipeline_result::ImagePipelineResult;
+use crate::http_server::endpoints::omni_gen::shared_utils::map_seedance2pro_router_error::map_router_error_to_web_error;
 use crate::state::server_state::ServerState;
 use crate::util::lookup::lookup_media_files_as_cdn_url_list_and_map::MediaFilesAsCdnUrlListAndMap;
 
@@ -155,7 +156,7 @@ async fn finalize_and_generate(
         .await
         .map_err(|err| {
           warn!("Failed to finalize image v2 draft: {:?}", err);
-          CommonWebError::from_error(err)
+          map_router_error_to_web_error(err)
         })?
     }
   };
@@ -164,7 +165,7 @@ async fn finalize_and_generate(
     .await
     .map_err(|err| {
       warn!("v2 image generation failed: {:?}", err);
-      CommonWebError::from_error(err)
+      map_router_error_to_web_error(err)
     })
 }
 
