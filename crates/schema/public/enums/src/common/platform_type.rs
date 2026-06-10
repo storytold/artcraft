@@ -18,8 +18,16 @@ use utoipa::ToSchema;
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Ord, PartialOrd, Serialize, Deserialize, ToSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum PlatformType {
+  // ========== Our clients ==========
+
+  /// Website users
   Web,
+
+  /// Desktop app users
   DesktopApp,
+
+  // ========== Other clients ==========
+
   Curl,
   PythonRequests,
   Postman,

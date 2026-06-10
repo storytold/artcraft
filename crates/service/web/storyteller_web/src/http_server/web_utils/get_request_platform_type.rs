@@ -21,6 +21,8 @@ const PYTHON_REQUESTS_USER_AGENT_PREFIX : &str = "python-requests";
 /// (Compared case-insensitively.)
 const POSTMAN_USER_AGENT_PREFIX : &str = "postmanruntime";
 
+const USER_AGENT_HEADER_NAME : HeaderName = HeaderName::from_static("user-agent");
+
 /// Infer the calling platform from the request's User-Agent header.
 ///
 /// Returns `None` if the header is absent or unreadable. Otherwise, the ArtCraft
@@ -28,9 +30,8 @@ const POSTMAN_USER_AGENT_PREFIX : &str = "postmanruntime";
 /// CLI/API tools (curl, python-requests, Postman) are flagged as such, and
 /// anything else is assumed to be a browser.
 pub fn get_request_platform_type(http_request: &HttpRequest) -> Option<PlatformType> {
-  let user_agent_header_name = HeaderName::from_static("user-agent");
   let header_map : &HeaderMap = http_request.headers();
-  let user_agent = header_map.get(user_agent_header_name)?
+  let user_agent = header_map.get(USER_AGENT_HEADER_NAME)?
       .to_str()
       .ok()?;
 
