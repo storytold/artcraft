@@ -26,7 +26,7 @@ fn user_facing_bad_request_message(error: &Seedance2ProBadRequestApiError) -> St
        Please adjust your prompt or input media and try again.".to_string()
     }
     Seedance2ProBadRequestApiError::PromptIsTooLong { .. } => {
-      "The prompt is too long. Please shorten it and try again.".to_string()
+      "The prompt is too long. Please shorten it below 10,000 characters and try again.".to_string()
     }
     Seedance2ProBadRequestApiError::TooManyUrls { .. } => {
       "Too many input files were attached. \
