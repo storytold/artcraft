@@ -1,22 +1,19 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, {
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
+import { createPortal } from "react-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faCheck,
-  faEllipsis,
-  faPencil,
-  faTrashCan,
-  faUpload,
-  faFolderPlus,
-  faChevronRight,
-  faFolder,
-  faPlus,
-} from "@fortawesome/pro-solid-svg-icons";
+import { faCheck, faEllipsis, faUpload } from "@fortawesome/pro-solid-svg-icons";
 import { LoadingSpinner } from "@storyteller/ui-loading-spinner";
 import { twMerge } from "tailwind-merge";
 import galleryDnd from "./galleryDnd";
 import { Tooltip } from "@storyteller/ui-tooltip";
 import { GalleryItem } from "./gallery-modal";
 import { PopoverMenu } from "@storyteller/ui-popover";
+import { GalleryItemMenuItems } from "./GalleryItemMenuItems";
 import {
   showActionReminder,
   isActionReminderOpen,
@@ -30,6 +27,13 @@ export interface GalleryFolder {
   name: string;
   /** Parent folder id, or null/undefined for a root-level folder. */
   parentId?: string | null;
+  hasStar?: boolean;
+  /** Arbitrary color string (hex / named). Applied via inline style, never a class. */
+  colorCode?: string | null;
+  /** Resolved url of the user-chosen cover image, when set. */
+  coverUrl?: string | null;
+  /** Up to four resolved thumbnail urls for an auto cover collage. */
+  collageUrls?: string[];
 }
 
 interface GalleryDraggableItemProps {
@@ -53,6 +57,8 @@ interface GalleryDraggableItemProps {
   folders?: GalleryFolder[];
   onAddToFolder?: (itemIds: string[], folderId: string) => void;
   onCreateFolderFromMenu?: () => void;
+  /** Remove from the folder currently being viewed. Presence = inside a folder. */
+  onRemoveFromFolder?: (itemIds: string[]) => void;
 }
 
 export const GalleryDraggableItem: React.FC<GalleryDraggableItemProps> = ({
@@ -75,10 +81,12 @@ export const GalleryDraggableItem: React.FC<GalleryDraggableItemProps> = ({
   folders = [],
   onAddToFolder,
   onCreateFolderFromMenu,
+  onRemoveFromFolder,
 }) => {
   const imgRef = useRef<HTMLImageElement>(null);
   const dragStarted = useRef(false);
-  const [folderSubmenuOpen, setFolderSubmenuOpen] = useState(false);
+  // Right-click context menu position (null = closed).
+  const [ctxMenu, setCtxMenu] = useState<{ x: number; y: number } | null>(null);
 
   // For freshly-completed videos the backend may still be generating the
   // preview GIF, so the thumbnail URL 404s for a while. Show a spinner and
@@ -150,7 +158,36 @@ export const GalleryDraggableItem: React.FC<GalleryDraggableItemProps> = ({
     });
   };
 
+  // Right-click context menu: clamp into the viewport + close on Escape.
+  const ctxPanelRef = useRef<HTMLDivElement>(null);
+  useLayoutEffect(() => {
+    if (!ctxMenu || !ctxPanelRef.current) return;
+    const el = ctxPanelRef.current;
+    const rect = el.getBoundingClientRect();
+    const x =
+      ctxMenu.x + rect.width > window.innerWidth
+        ? Math.max(8, window.innerWidth - rect.width - 8)
+        : ctxMenu.x;
+    const y =
+      ctxMenu.y + rect.height > window.innerHeight
+        ? Math.max(8, window.innerHeight - rect.height - 8)
+        : ctxMenu.y;
+    el.style.left = `${x}px`;
+    el.style.top = `${y}px`;
+  }, [ctxMenu]);
+  useEffect(() => {
+    if (!ctxMenu) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setCtxMenu(null);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [ctxMenu]);
+
   const handlePointerDown = (event: React.PointerEvent<HTMLButtonElement>) => {
+    // Left button only — right/middle click must not trigger the click→lightbox
+    // (right-click opens the context menu via onContextMenu instead).
+    if (event.button !== 0) return;
     dragStarted.current = false;
     const moveListener = (moveEvent: PointerEvent) => {
       const dx = moveEvent.pageX - event.pageX;
@@ -267,7 +304,15 @@ export const GalleryDraggableItem: React.FC<GalleryDraggableItemProps> = ({
   );
 
   return (
-    <div className="group relative w-full aspect-square">
+    <div
+      className="group relative w-full aspect-square"
+      onContextMenu={(e) => {
+        if (mode === "select") return;
+        e.preventDefault();
+        e.stopPropagation();
+        setCtxMenu({ x: e.clientX, y: e.clientY });
+      }}
+    >
       {/* dropdown menu */}
       {mode !== "select" && (
         <div
@@ -289,104 +334,55 @@ export const GalleryDraggableItem: React.FC<GalleryDraggableItemProps> = ({
             closeOnUnhover
           >
             {(close) => (
-              <div className="flex flex-col">
-                {item.mediaClass === "image" && onEditClicked && (
-                  <button
-                    type="button"
-                    className="flex items-center gap-2 px-2 py-2 rounded-md hover:bg-ui-controls/60 text-base-fg text-sm"
-                    onClick={async (e) => {
-                      e.stopPropagation();
-                      if (onEditClicked && (item.fullImage || item.thumbnail)) {
-                        await onEditClicked(
-                          item.fullImage || item.thumbnail!,
-                          item.id,
-                        );
-                      }
-                      close();
-                    }}
-                  >
-                    <FontAwesomeIcon icon={faPencil} className="text-base-fg w-4" />
-                    <span>Edit image</span>
-                  </button>
-                )}
-                {/* Add to Folder — with submenu */}
-                <div
-                  className="relative"
-                  onMouseEnter={() => setFolderSubmenuOpen(true)}
-                  onMouseLeave={() => setFolderSubmenuOpen(false)}
-                >
-                  <button
-                    type="button"
-                    className="flex w-full items-center justify-between gap-2 px-2 py-2 rounded-md hover:bg-ui-controls/60 text-base-fg text-sm"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setFolderSubmenuOpen((v) => !v);
-                    }}
-                  >
-                    <div className="flex items-center gap-2">
-                      <FontAwesomeIcon icon={faFolderPlus} className="text-base-fg w-4" />
-                      <span>Add to Folder</span>
-                    </div>
-                    <FontAwesomeIcon icon={faChevronRight} className="text-[10px] text-base-fg/50" />
-                  </button>
-                  {folderSubmenuOpen && (
-                    <div className="absolute left-full top-0 -ml-1 pl-2 z-50">
-                    <div className="min-w-36 rounded-lg border border-ui-panel-border bg-ui-panel p-1 shadow-xl">
-                      {folders.map((folder) => (
-                        <button
-                          key={folder.id}
-                          type="button"
-                          className="flex w-full items-center gap-2 px-2 py-1.5 rounded-md hover:bg-ui-controls/60 text-base-fg text-sm"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onAddToFolder?.([item.id], folder.id);
-                            setFolderSubmenuOpen(false);
-                            close();
-                          }}
-                        >
-                          <FontAwesomeIcon icon={faFolder} className="text-primary text-xs" />
-                          <span className="truncate">{folder.name}</span>
-                        </button>
-                      ))}
-                      {folders.length > 0 && (
-                        <div className="mx-1.5 my-1 border-t border-ui-panel-border" />
-                      )}
-                      <button
-                        type="button"
-                        className="flex w-full items-center gap-2 px-2 py-1.5 rounded-md hover:bg-ui-controls/60 text-base-fg/70 text-sm"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setFolderSubmenuOpen(false);
-                          close();
-                          onCreateFolderFromMenu?.();
-                        }}
-                      >
-                        <FontAwesomeIcon icon={faPlus} className="text-xs w-4" />
-                        <span>New Folder</span>
-                      </button>
-                    </div>
-                    </div>
-                  )}
-                </div>
-                {onDelete && (
-                  <button
-                    type="button"
-                    className="flex items-center gap-2 px-2 py-2 rounded-md hover:bg-ui-controls/60 text-sm"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDelete();
-                      close();
-                    }}
-                  >
-                    <FontAwesomeIcon icon={faTrashCan} className="text-red w-4" />
-                    <span className="text-red">Delete</span>
-                  </button>
-                )}
-              </div>
+              <GalleryItemMenuItems
+                item={item}
+                folders={folders}
+                onEditClicked={onEditClicked}
+                onAddToFolder={onAddToFolder}
+                onCreateFolderFromMenu={onCreateFolderFromMenu}
+                onRemoveFromFolder={onRemoveFromFolder}
+                onDelete={onDelete ? handleDelete : undefined}
+                close={close}
+              />
             )}
           </PopoverMenu>
         </div>
       )}
+
+      {/* Right-click context menu (portaled to body, positioned at cursor) */}
+      {ctxMenu &&
+        createPortal(
+          <>
+            <div
+              className="fixed inset-0 z-[9998]"
+              onClick={() => setCtxMenu(null)}
+              onContextMenu={(e) => {
+                e.preventDefault();
+                setCtxMenu(null);
+              }}
+            />
+            <div
+              ref={ctxPanelRef}
+              className="fixed z-[9999] min-w-44 rounded-lg border border-ui-panel-border bg-ui-panel p-1 shadow-xl"
+              style={{ left: ctxMenu.x, top: ctxMenu.y }}
+            >
+              <GalleryItemMenuItems
+                item={item}
+                folders={folders}
+                onOpen={onClick}
+                onEditClicked={onEditClicked}
+                onAddToFolder={onAddToFolder}
+                onCreateFolderFromMenu={onCreateFolderFromMenu}
+                onRemoveFromFolder={onRemoveFromFolder}
+                onDelete={onDelete ? handleDelete : undefined}
+                close={() => setCtxMenu(null)}
+              />
+            </div>
+          </>,
+          document.body,
+        )}
+
+      {/* legacy delete button placeholder (kept conditional below) */}
       {/* Bulk selection checkbox — top-left (only when a bulk handler is wired) */}
       {mode !== "select" && onBulkSelectToggle && (
         <div

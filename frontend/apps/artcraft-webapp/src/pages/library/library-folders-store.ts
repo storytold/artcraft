@@ -1,21 +1,30 @@
 import { create } from "zustand";
 import {
   FoldersApi,
-  GalleryModalApi,
   MediaFilesApi,
-  type Folder,
+  type FolderInfo,
+  type FolderMediaFileListItem,
 } from "@storyteller/api";
 import type { GalleryItem } from "@storyteller/ui-gallery-modal";
+import {
+  mapFolderInfo,
+  galleryItemToCollageUrl,
+  mergeCollageUrls,
+} from "@storyteller/ui-gallery-modal";
 import { getMediaThumbnail, THUMBNAIL_SIZES } from "@storyteller/common";
 import { toast } from "../../components/toast/toast";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
-/** Lean folder shape the UI navigates by (the rest of the wire shape is unused here). */
+/** Folder shape the UI navigates + renders by. */
 export interface UiFolder {
   id: string;
   name: string;
   parentId: string | null;
+  hasStar?: boolean;
+  colorCode?: string | null;
+  coverUrl?: string | null;
+  collageUrls?: string[];
 }
 
 interface LibraryFoldersState {
@@ -39,11 +48,23 @@ interface LibraryFoldersState {
   loadFolderMedia: (folderId: string, reset?: boolean) => Promise<void>;
   createFolder: (name: string, parentId: string | null) => Promise<void>;
   renameFolder: (folderId: string, name: string) => Promise<void>;
+  setFolderStar: (folderId: string, hasStar: boolean) => Promise<void>;
+  setFolderColor: (folderId: string, colorCode: string | null) => Promise<void>;
   deleteFolder: (folderId: string) => Promise<void>;
   addMediaToFolder: (
     itemIds: string[],
     folderId: string,
     known: GalleryItem[],
+  ) => Promise<void>;
+  moveMediaToFolder: (
+    itemIds: string[],
+    sourceFolderId: string,
+    targetFolderId: string,
+    known: GalleryItem[],
+  ) => Promise<void>;
+  removeMediaFromFolder: (
+    itemIds: string[],
+    folderId: string,
   ) => Promise<void>;
   openNewFolderModal: (parentId: string | null) => void;
   closeNewFolderModal: () => void;
@@ -56,7 +77,6 @@ interface LibraryFoldersState {
 // ── Singletons + mappers ────────────────────────────────────────────────────
 
 const foldersApi = new FoldersApi();
-const galleryApi = new GalleryModalApi();
 const mediaFilesApi = new MediaFilesApi();
 
 // Folder media is paginated via cursor; one scroll page at a time.
@@ -79,7 +99,7 @@ const getLabel = (item: any): string => {
   }
 };
 
-/** Map a raw media-file row onto the gallery-modal `GalleryItem` the tiles render. */
+/** Map a raw user-media list row (origin_category shape) → GalleryItem (root library). */
 export function mapRawToGalleryItem(item: any): GalleryItem {
   const thumbnail =
     item.media_class === "dimensional"
@@ -100,15 +120,77 @@ export function mapRawToGalleryItem(item: any): GalleryItem {
   };
 }
 
-// Orphaned folders (parent soft-deleted) surface at root so they stay reachable.
-const mapFolder = (f: Folder): UiFolder => ({
-  id: f.token,
-  name: f.name,
-  parentId: f.is_orphaned ? null : (f.maybe_parent_folder_token ?? null),
-});
+/** Map a `FolderMediaFileListItem` → GalleryItem (folder view; carries media_links inline). */
+function mapFolderListItemToGalleryItem(
+  item: FolderMediaFileListItem,
+): GalleryItem {
+  const thumbnail =
+    item.media_class === "dimensional"
+      ? (item.cover_image?.maybe_cover_image_public_bucket_url ?? null)
+      : getMediaThumbnail(item.media_links, item.media_class, {
+          size: THUMBNAIL_SIZES.LARGE,
+        });
+  return {
+    id: item.token,
+    label: getLabel(item),
+    thumbnail,
+    thumbnailUrlTemplate: item.media_links?.maybe_thumbnail_template ?? undefined,
+    fullImage: item.media_links?.cdn_url ?? null,
+    createdAt: item.created_at,
+    mediaClass: item.media_class || "image",
+    isUpload: !!item.is_user_upload,
+    batchImageToken: item.maybe_batch_token ?? undefined,
+  };
+}
+
+// Shared API-folder → UI-folder mapper (UiFolder ≡ GalleryFolder; coalesce
+// parentId so the optional GalleryFolder field satisfies UiFolder).
+const mapFolder = (f: FolderInfo): UiFolder => {
+  const g = mapFolderInfo(f);
+  return { ...g, parentId: g.parentId ?? null };
+};
 
 const errMsg = (err: unknown) =>
   err instanceof Error ? err.message : String(err);
+
+// NB: only `collageUrls` is touched — `coverUrl` is the user's *custom* cover
+// (`maybe_custom_cover_thumbnail`) and must never be derived from the collage,
+// or the chip would render one full-bleed image instead of the 2×2 grid.
+
+/** Prepend added items' still-thumbnails to a folder's auto collage (optimistic). */
+const withBumpedCollage = (
+  folders: UiFolder[],
+  folderId: string,
+  items: GalleryItem[],
+): UiFolder[] =>
+  folders.map((f) =>
+    f.id === folderId
+      ? {
+          ...f,
+          collageUrls: mergeCollageUrls(
+            f.collageUrls,
+            items.map(galleryItemToCollageUrl),
+          ),
+        }
+      : f,
+  );
+
+/** Drop removed items' thumbnails from a folder's auto collage. */
+const withDroppedCollage = (
+  folders: UiFolder[],
+  folderId: string,
+  removeUrls: Set<string>,
+): UiFolder[] =>
+  folders.map((f) =>
+    f.id === folderId
+      ? { ...f, collageUrls: (f.collageUrls ?? []).filter((u) => !removeUrls.has(u)) }
+      : f,
+  );
+
+const collageUrlSet = (items: GalleryItem[]): Set<string> =>
+  new Set(
+    items.map(galleryItemToCollageUrl).filter((u): u is string => !!u),
+  );
 
 // ── Store ───────────────────────────────────────────────────────────────────
 
@@ -127,7 +209,7 @@ export const useLibraryFoldersStore = create<LibraryFoldersState>(
 
     loadFolders: async () => {
       try {
-        const all: Folder[] = [];
+        const all: FolderInfo[] = [];
         let cursor: string | undefined = undefined;
         for (let page = 0; page < 50; page++) {
           const res = await foldersApi.ListAllFolders({ cursor });
@@ -172,26 +254,10 @@ export const useLibraryFoldersStore = create<LibraryFoldersState>(
           },
         });
         if (!listRes.success || !listRes.data) return;
-        const tokens = listRes.data.map((m) => m.media_file_token);
         const nextCursor = listRes.pagination?.maybe_cursor ?? undefined;
         folderCursors[folderId] = nextCursor;
-
-        let ordered: GalleryItem[] = [];
-        if (tokens.length > 0) {
-          const filesRes = await galleryApi.ListMediaFilesByTokens({
-            mediaTokens: tokens,
-          });
-          if (filesRes.success && filesRes.data) {
-            const byId = new Map(
-              filesRes.data.map(
-                (f: any) => [f.token, mapRawToGalleryItem(f)] as const,
-              ),
-            );
-            ordered = tokens
-              .map((t) => byId.get(t))
-              .filter((it): it is GalleryItem => !!it);
-          }
-        }
+        // The list item carries media_links/cover, so map directly — no batch-get.
+        const ordered = listRes.data.map(mapFolderListItemToGalleryItem);
         set((s) => {
           const existing = reset ? [] : (s.folderMediaItems[folderId] ?? []);
           const seen = new Set(existing.map((i) => i.id));
@@ -253,6 +319,45 @@ export const useLibraryFoldersStore = create<LibraryFoldersState>(
       }
     },
 
+    setFolderStar: async (folderId, hasStar) => {
+      set((s) => ({
+        folders: s.folders.map((f) =>
+          f.id === folderId ? { ...f, hasStar } : f,
+        ),
+      }));
+      try {
+        const res = await foldersApi.SetStar({ folderToken: folderId, hasStar });
+        if (!res.success) {
+          toast.error(res.errorMessage || "Failed to update folder.");
+          get().loadFolders();
+        }
+      } catch (err) {
+        toast.error(`Failed to update folder: ${errMsg(err)}`);
+        get().loadFolders();
+      }
+    },
+
+    setFolderColor: async (folderId, colorCode) => {
+      set((s) => ({
+        folders: s.folders.map((f) =>
+          f.id === folderId ? { ...f, colorCode } : f,
+        ),
+      }));
+      try {
+        const res = await foldersApi.SetColorCode({
+          folderToken: folderId,
+          colorCode,
+        });
+        if (!res.success) {
+          toast.error(res.errorMessage || "Failed to update folder color.");
+          get().loadFolders();
+        }
+      } catch (err) {
+        toast.error(`Failed to update folder color: ${errMsg(err)}`);
+        get().loadFolders();
+      }
+    },
+
     deleteFolder: async (folderId) => {
       const folder = get().folders.find((f) => f.id === folderId);
       // Optimistic: drop the folder and reparent its direct children to root
@@ -289,16 +394,16 @@ export const useLibraryFoldersStore = create<LibraryFoldersState>(
         .map((id) => knownById.get(id))
         .filter((it): it is GalleryItem => !!it);
       set((s) => {
+        const folders = withBumpedCollage(s.folders, folderId, addedItems);
         const existing = s.folderMediaItems[folderId];
-        if (!existing) return s; // not loaded yet — fetched fresh on open
+        if (!existing) return { folders }; // media not loaded → fetched on open
         const seen = new Set(existing.map((i) => i.id));
         const fresh = addedItems.filter((i) => !seen.has(i.id));
-        if (fresh.length === 0) return s;
         return {
-          folderMediaItems: {
-            ...s.folderMediaItems,
-            [folderId]: [...fresh, ...existing],
-          },
+          folders,
+          folderMediaItems: fresh.length
+            ? { ...s.folderMediaItems, [folderId]: [...fresh, ...existing] }
+            : s.folderMediaItems,
         };
       });
       try {
@@ -317,6 +422,85 @@ export const useLibraryFoldersStore = create<LibraryFoldersState>(
         }
       } catch (err) {
         toast.error(`Failed to add to folder: ${errMsg(err)}`);
+      }
+    },
+
+    moveMediaToFolder: async (itemIds, source, target, known) => {
+      if (itemIds.length === 0) return;
+      const knownById = new Map(known.map((it) => [it.id, it] as const));
+      const movedItems = itemIds
+        .map((id) => knownById.get(id))
+        .filter((it): it is GalleryItem => !!it);
+      const idSet = new Set(itemIds);
+      const movedUrls = collageUrlSet(movedItems);
+      set((s) => {
+        const fmi = { ...s.folderMediaItems };
+        if (fmi[source]) {
+          fmi[source] = fmi[source].filter((it) => !idSet.has(it.id));
+        }
+        if (fmi[target]) {
+          const seen = new Set(fmi[target].map((i) => i.id));
+          fmi[target] = [
+            ...movedItems.filter((i) => !seen.has(i.id)),
+            ...fmi[target],
+          ];
+        }
+        let folders = withBumpedCollage(s.folders, target, movedItems);
+        folders = withDroppedCollage(folders, source, movedUrls);
+        return { folderMediaItems: fmi, folders };
+      });
+      try {
+        const res = await foldersApi.MoveMediaFiles({
+          folderToken: target,
+          sourceFolderToken: source,
+          mediaFileTokens: itemIds,
+        });
+        if (res.success) {
+          const name =
+            get().folders.find((f) => f.id === target)?.name ?? "folder";
+          toast.success(
+            `Moved ${itemIds.length} item${itemIds.length === 1 ? "" : "s"} to ${name}`,
+          );
+        } else {
+          toast.error(res.errorMessage || "Failed to move items.");
+          get().loadFolders();
+        }
+      } catch (err) {
+        toast.error(`Failed to move items: ${errMsg(err)}`);
+        get().loadFolders();
+      }
+    },
+
+    removeMediaFromFolder: async (itemIds, folderId) => {
+      if (itemIds.length === 0) return;
+      const idSet = new Set(itemIds);
+      const existing = get().folderMediaItems[folderId] ?? [];
+      const removedUrls = collageUrlSet(
+        existing.filter((it) => idSet.has(it.id)),
+      );
+      set((s) => ({
+        folderMediaItems: s.folderMediaItems[folderId]
+          ? {
+              ...s.folderMediaItems,
+              [folderId]: s.folderMediaItems[folderId].filter(
+                (it) => !idSet.has(it.id),
+              ),
+            }
+          : s.folderMediaItems,
+        folders: withDroppedCollage(s.folders, folderId, removedUrls),
+      }));
+      try {
+        const res = await foldersApi.RemoveMediaFiles({
+          folderToken: folderId,
+          mediaFileTokens: itemIds,
+        });
+        if (!res.success) {
+          toast.error(res.errorMessage || "Failed to remove from folder.");
+          get().loadFolders();
+        }
+      } catch (err) {
+        toast.error(`Failed to remove from folder: ${errMsg(err)}`);
+        get().loadFolders();
       }
     },
 

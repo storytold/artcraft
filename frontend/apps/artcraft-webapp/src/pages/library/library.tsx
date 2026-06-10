@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { Link, useParams, useNavigate } from "react-router-dom";
+import { Link, useParams, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@storyteller/ui-button";
 import { LoadingSpinner } from "@storyteller/ui-loading-spinner";
 import {
@@ -13,6 +13,9 @@ import {
   GalleryDraggableItem,
   GalleryFolderChip,
   GalleryDragComponent,
+  FolderColorRow,
+  compareFolders,
+  promptFolderDrop,
   FOLDER_DROP_EVENT,
   type GalleryItem,
 } from "@storyteller/ui-gallery-modal";
@@ -32,8 +35,10 @@ import {
   faTrashCan,
   faFolderPlus,
   faFolder,
+  faFolderOpen,
   faPlus,
   faXmark,
+  faStar,
 } from "@fortawesome/pro-solid-svg-icons";
 import { Lightbox } from "../../components/lightbox/lightbox";
 import {
@@ -116,11 +121,19 @@ const GRID_CLASS =
 // ── Component ──────────────────────────────────────────────────────────────
 
 export default function Library() {
-  const { filter: filterParam } = useParams<{ filter?: string }>();
+  // `:slug` is either a media-class filter (images/videos/meshes) or a folder
+  // token (prefixed `folder_`). `/library/folders` (static) has no slug.
+  const { slug } = useParams<{ slug?: string }>();
+  const { pathname } = useLocation();
   const navigate = useNavigate();
+  const folderToken = slug?.startsWith("folder_") ? slug : undefined;
+  const filterParam = slug && !folderToken ? slug : undefined;
   const activeFilter = filterParam
     ? (ROUTE_TO_FILTER[filterParam] ?? "all")
     : "all";
+  // Top-level tab derived from the route: All Assets (flat library) vs Folders.
+  const onFoldersRoute = pathname === "/library/folders" || !!folderToken;
+  const tab: "unsorted" | "folders" = onFoldersRoute ? "folders" : "unsorted";
 
   const [username, setUsername] = useState<string | null>(null);
   const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
@@ -166,9 +179,17 @@ export default function Library() {
   const setActiveFolder = useLibraryFoldersStore((s) => s.setActiveFolder);
   const createFolder = useLibraryFoldersStore((s) => s.createFolder);
   const renameFolderAction = useLibraryFoldersStore((s) => s.renameFolder);
+  const setFolderStar = useLibraryFoldersStore((s) => s.setFolderStar);
+  const setFolderColor = useLibraryFoldersStore((s) => s.setFolderColor);
   const deleteFolderAction = useLibraryFoldersStore((s) => s.deleteFolder);
   const addMediaToFolder = useLibraryFoldersStore((s) => s.addMediaToFolder);
-  const openNewFolderModal = useLibraryFoldersStore((s) => s.openNewFolderModal);
+  const moveMediaToFolder = useLibraryFoldersStore((s) => s.moveMediaToFolder);
+  const removeMediaFromFolder = useLibraryFoldersStore(
+    (s) => s.removeMediaFromFolder,
+  );
+  const openNewFolderModal = useLibraryFoldersStore(
+    (s) => s.openNewFolderModal,
+  );
   const closeNewFolderModal = useLibraryFoldersStore(
     (s) => s.closeNewFolderModal,
   );
@@ -180,8 +201,17 @@ export default function Library() {
     : null;
 
   const currentSubfolders = useMemo(
-    () => folders.filter((f) => (f.parentId ?? null) === activeFolderId),
+    () =>
+      folders
+        .filter((f) => (f.parentId ?? null) === activeFolderId)
+        .sort(compareFolders),
     [folders, activeFolderId],
+  );
+
+  // Folder navigation goes through the URL (so back/forward + deep-links work).
+  const goToFolder = useCallback(
+    (id: string | null) => navigate(id ? `/library/${id}` : "/library/folders"),
+    [navigate],
   );
 
   const folderPath = useMemo(() => {
@@ -222,9 +252,14 @@ export default function Library() {
     if (username) loadFolders();
   }, [username, loadFolders]);
 
-  // Leaving the Library resets folder context so a fresh visit starts at root
-  // (folders aren't reflected in the URL).
-  useEffect(() => () => setActiveFolder(null), [setActiveFolder]);
+  // The URL owns *which* folder is open (`/library/:token`); mirror it into the
+  // store. Read via getState() + inequality guard so this never loops.
+  useEffect(() => {
+    const target = folderToken ?? null;
+    if (useLibraryFoldersStore.getState().activeFolderId !== target) {
+      setActiveFolder(target);
+    }
+  }, [folderToken, setActiveFolder]);
 
   // ── Root media loading (library view, no folder open) ─────────────────────
   const loadItems = useCallback(
@@ -243,7 +278,9 @@ export default function Library() {
         });
         if (response.success && response.data) {
           const newItems = response.data
-            .filter((item: any) => item.media_type !== FilterMediaType.SCENE_JSON)
+            .filter(
+              (item: any) => item.media_type !== FilterMediaType.SCENE_JSON,
+            )
             .map(mapRawToGalleryItem);
           setAllItems((prev) => (reset ? newItems : [...prev, ...newItems]));
           const current = response.pagination?.current ?? 0;
@@ -286,13 +323,13 @@ export default function Library() {
       if (scrollBottom >= 500) return;
       if (activeFolderId) {
         loadFolderMedia(activeFolderId, false);
-      } else if (hasMore && !isLoadingRef.current) {
+      } else if (tab === "unsorted" && hasMore && !isLoadingRef.current) {
         loadItems();
       }
     };
     scroller.addEventListener("scroll", handleScroll, { passive: true });
     return () => scroller.removeEventListener("scroll", handleScroll);
-  }, [activeFolderId, hasMore, loadItems, loadFolderMedia]);
+  }, [activeFolderId, tab, hasMore, loadItems, loadFolderMedia]);
 
   // ── Drag media → folder ───────────────────────────────────────────────────
   const displayItems = activeFolderId
@@ -301,18 +338,39 @@ export default function Library() {
   const displayItemsRef = useRef(displayItems);
   displayItemsRef.current = displayItems;
 
+  // Single entry point for drops + add-to-folder: prompt Move/Add when the
+  // source is another folder, else add directly (root → always add).
+  const requestFolderDrop = useCallback(
+    (itemIds: string[], targetFolderId: string) => {
+      if (itemIds.length === 0) return;
+      const source = useLibraryFoldersStore.getState().activeFolderId;
+      const known = displayItemsRef.current;
+      if (source && source !== targetFolderId) {
+        promptFolderDrop({
+          count: itemIds.length,
+          targetFolderName: folders.find((f) => f.id === targetFolderId)?.name,
+          onMove: () =>
+            moveMediaToFolder(itemIds, source, targetFolderId, known),
+          onAdd: () => addMediaToFolder(itemIds, targetFolderId, known),
+        });
+      } else {
+        addMediaToFolder(itemIds, targetFolderId, known);
+      }
+    },
+    [folders, addMediaToFolder, moveMediaToFolder],
+  );
+
   useEffect(() => {
     const handler = (e: Event) => {
       const { items, folderId } = (e as CustomEvent).detail;
-      addMediaToFolder(
+      requestFolderDrop(
         items.map((i: GalleryItem) => i.id),
         folderId,
-        displayItemsRef.current,
       );
     };
     window.addEventListener(FOLDER_DROP_EVENT, handler);
     return () => window.removeEventListener(FOLDER_DROP_EVENT, handler);
-  }, [addMediaToFolder]);
+  }, [requestFolderDrop]);
 
   // ── Bulk selection ──────────────────────────────────────────────────────────
   const bulkSelectedIdsRef = useRef(bulkSelectedIds);
@@ -353,14 +411,10 @@ export default function Library() {
 
   const handleBulkAddToFolder = useCallback(
     (folderId: string) => {
-      addMediaToFolder(
-        Array.from(bulkSelectedIdsRef.current),
-        folderId,
-        displayItemsRef.current,
-      );
+      requestFolderDrop(Array.from(bulkSelectedIdsRef.current), folderId);
       clearBulkSelection();
     },
-    [addMediaToFolder, clearBulkSelection],
+    [requestFolderDrop, clearBulkSelection],
   );
 
   const handleBulkDelete = useCallback(() => {
@@ -522,6 +576,47 @@ export default function Library() {
     currentSubfolders.length === 0 &&
     !folderContentLoading;
 
+  // Shared date-grouped media grid (source items differ per mode via displayItems).
+  const mediaGrid = (
+    <>
+      {groupedItems.map(([date, dateItems]) => (
+        <div key={date}>
+          <h3 className="text-sm font-medium text-white/50 mb-2">{date}</h3>
+          <div className={GRID_CLASS}>
+            {dateItems.map((item) => (
+              <GalleryDraggableItem
+                key={item.id}
+                item={item}
+                mode="view"
+                activeFilter={activeFilter}
+                selected={false}
+                onClick={() => handleCardClick(item)}
+                onImageError={handleImageError}
+                imageFit="cover"
+                onDeleted={handleItemDeleted}
+                onDelete={deleteLibraryMedia}
+                folders={folders}
+                onAddToFolder={requestFolderDrop}
+                onCreateFolderFromMenu={() =>
+                  openNewFolderModal(activeFolderId)
+                }
+                onRemoveFromFolder={
+                  activeFolderId
+                    ? (ids) => removeMediaFromFolder(ids, activeFolderId)
+                    : undefined
+                }
+                bulkSelected={bulkSelectedIds.has(item.id)}
+                bulkSelectionMode={bulkSelectionMode}
+                onBulkSelectToggle={() => toggleBulkSelect(item.id)}
+                getBulkDragItems={getBulkDragItems}
+              />
+            ))}
+          </div>
+        </div>
+      ))}
+    </>
+  );
+
   return (
     <div
       ref={rootRef}
@@ -529,22 +624,98 @@ export default function Library() {
     >
       <div className="mx-auto max-w-[1600px]">
         {/* Header — sticky below navbar */}
-        <div className="sticky top-0 z-10 -mx-3 sm:-mx-4 md:-mx-8 lg:-mx-12 px-3 sm:px-4 md:px-8 lg:px-12 pb-3 pt-3 bg-[#101014]">
-          <div className="flex items-center justify-between gap-3">
-            {inFolder ? (
-              /* Breadcrumb */
+        <div className="sticky top-0 z-10 -mx-3 sm:-mx-4 md:-mx-8 lg:-mx-12 px-3 sm:px-4 md:px-8 lg:px-12 pb-3 pt-3 bg-[#101014] mb-6">
+          <div className="flex flex-col gap-6">
+            {/* Tabs + actions */}
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1 bg-ui-controls/40 rounded-lg p-1">
+                  <Link
+                    to="/library"
+                    className={`flex items-center gap-2 px-3 sm:px-4 py-1 sm:py-1.5 rounded-md text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
+                      tab === "unsorted"
+                        ? "bg-ui-controls text-white"
+                        : "text-white/60 hover:text-white"
+                    }`}
+                  >
+                    <FontAwesomeIcon icon={faBorderAll} className="text-xs" />
+                    <span>All Assets</span>
+                  </Link>
+                  <Link
+                    to="/library/folders"
+                    className={`flex items-center gap-2 px-3 sm:px-4 py-1 sm:py-1.5 rounded-md text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
+                      tab === "folders"
+                        ? "bg-ui-controls text-white"
+                        : "text-white/60 hover:text-white"
+                    }`}
+                  >
+                    <FontAwesomeIcon icon={faFolder} className="text-xs" />
+                    <span>Folders</span>
+                  </Link>
+                </div>
+                {tab === "unsorted" && (
+                  <button
+                    onClick={refreshRoot}
+                    className="h-8 w-8 flex items-center justify-center rounded-lg text-white/50 hover:text-white hover:bg-ui-controls/40 transition-colors"
+                    title="Refresh library"
+                  >
+                    <FontAwesomeIcon
+                      icon={faArrowsRotate}
+                      className={`text-sm ${initialLoading ? "animate-spin" : ""}`}
+                    />
+                  </button>
+                )}
+              </div>
+
+              <div className="flex items-center gap-2">
+                {tab === "unsorted" && (
+                  <div className="flex items-center gap-1 bg-ui-controls/40 rounded-lg p-1 overflow-x-auto">
+                    {FILTERS.map((filter) => (
+                      <button
+                        key={filter.id}
+                        onClick={() => navigate(filter.route)}
+                        className={`flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-4 py-1 sm:py-1.5 rounded-md text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
+                          activeFilter === filter.id
+                            ? "bg-ui-controls text-white"
+                            : "text-white/60 hover:text-white"
+                        }`}
+                      >
+                        <FontAwesomeIcon
+                          icon={filter.icon}
+                          className="text-xs"
+                        />
+                        <span className="hidden sm:inline">{filter.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {tab === "folders" && !inFolder && (
+                  <Button
+                    variant="primary"
+                    icon={faFolderPlus}
+                    onClick={() => openNewFolderModal(null)}
+                    className="rounded-full text-xs sm:text-sm px-3 sm:px-4 py-2"
+                  >
+                    New folder
+                  </Button>
+                )}
+              </div>
+            </div>
+
+            {/* Breadcrumb (inside a folder) */}
+            {tab === "folders" && inFolder && (
               <div className="flex items-center gap-1.5 flex-wrap min-w-0">
                 <button
-                  onClick={() => setActiveFolder(null)}
+                  onClick={() => goToFolder(null)}
                   className="text-white/50 hover:text-white text-sm transition-colors"
                 >
-                  My Library
+                  Folders
                 </button>
                 {folderPath.slice(0, -1).map((crumb) => (
                   <span key={crumb.id} className="flex items-center gap-1.5">
                     <span className="text-white/30">/</span>
                     <button
-                      onClick={() => setActiveFolder(crumb.id)}
+                      onClick={() => goToFolder(crumb.id)}
                       className="text-white/50 hover:text-white text-sm transition-colors truncate max-w-[10rem]"
                     >
                       {crumb.name}
@@ -570,58 +741,27 @@ export default function Library() {
                   <FontAwesomeIcon icon={faFolderPlus} className="text-xs" />
                 </button>
               </div>
-            ) : (
-              <>
-                <div className="flex items-center gap-2 shrink-0">
-                  <h1 className="text-lg sm:text-2xl font-medium text-white">
-                    My Library
-                  </h1>
-                  <button
-                    onClick={refreshRoot}
-                    className="h-7 w-7 sm:h-8 sm:w-8 flex items-center justify-center rounded-lg text-white/50 hover:text-white hover:bg-ui-controls/40 transition-colors"
-                    title="Refresh library"
-                  >
-                    <FontAwesomeIcon
-                      icon={faArrowsRotate}
-                      className={`text-xs sm:text-sm ${initialLoading ? "animate-spin" : ""}`}
-                    />
-                  </button>
-                </div>
-
-                <div className="flex items-center gap-1 bg-ui-controls/40 rounded-lg p-1 overflow-x-auto">
-                  {FILTERS.map((filter) => (
-                    <button
-                      key={filter.id}
-                      onClick={() => navigate(filter.route)}
-                      className={`flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-4 py-1 sm:py-1.5 rounded-md text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
-                        activeFilter === filter.id
-                          ? "bg-ui-controls text-white"
-                          : "text-white/60 hover:text-white"
-                      }`}
-                    >
-                      <FontAwesomeIcon icon={filter.icon} className="text-xs" />
-                      <span className="hidden sm:inline">{filter.label}</span>
-                    </button>
-                  ))}
-                </div>
-              </>
             )}
           </div>
         </div>
 
         {/* Content */}
         <div className="space-y-6">
-          {/* Subfolders */}
-          {currentSubfolders.length > 0 && (
+          {/* Folder cards — Folders tab only */}
+          {tab === "folders" && currentSubfolders.length > 0 && (
             <div>
-              <h3 className="text-sm font-medium text-white/50 mb-2">Folders</h3>
+              {inFolder && (
+                <h3 className="text-sm font-medium text-white/50 mb-2">
+                  Folders
+                </h3>
+              )}
               <div className={GRID_CLASS}>
                 {currentSubfolders.map((folder) => (
                   <GalleryFolderChip
                     key={folder.id}
                     folder={folder}
                     childCount={subfolderCount(folder.id)}
-                    onOpen={setActiveFolder}
+                    onOpen={goToFolder}
                     onContextMenu={(folderId, x, y) =>
                       setContextMenu({ folderId, x, y })
                     }
@@ -631,8 +771,58 @@ export default function Library() {
             </div>
           )}
 
-          {/* Skeleton (root first load) */}
-          {!inFolder && initialLoading && allItems.length === 0 ? (
+          {tab === "folders" && !inFolder ? (
+            /* ── Folders tab, root: cards only (above) ── */
+            currentSubfolders.length === 0 && (
+              <div className="flex flex-col items-center justify-center py-20 gap-3">
+                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-ui-controls/30">
+                  <FontAwesomeIcon
+                    icon={faFolderOpen}
+                    className="text-2xl text-white/40"
+                  />
+                </div>
+                <p className="text-white/40 text-sm">No folders yet.</p>
+                <Button
+                  variant="primary"
+                  icon={faFolderPlus}
+                  onClick={() => openNewFolderModal(null)}
+                  className="rounded-full text-sm px-4 py-2"
+                >
+                  New folder
+                </Button>
+              </div>
+            )
+          ) : tab === "folders" && inFolder ? (
+            /* ── Inside a folder ── */
+            folderContentLoading && displayItems.length === 0 ? (
+              currentSubfolders.length === 0 ? (
+                <div className="flex justify-center py-20">
+                  <LoadingSpinner className="h-8 w-8 text-white/60" />
+                </div>
+              ) : null
+            ) : folderEmpty ? (
+              <div className="flex flex-col items-center justify-center py-20 gap-3">
+                <p className="text-white/40 text-sm">This folder is empty.</p>
+                <Button
+                  variant="secondary"
+                  icon={faFolderPlus}
+                  onClick={() => openNewFolderModal(activeFolderId)}
+                  className="rounded-full text-sm px-4 py-2 border border-ui-panel-border"
+                >
+                  New folder
+                </Button>
+              </div>
+            ) : (
+              <>
+                {mediaGrid}
+                {folderLoadingMore && (
+                  <div className="flex justify-center py-4">
+                    <LoadingSpinner className="h-8 w-8 text-white/60" />
+                  </div>
+                )}
+              </>
+            )
+          ) : /* ── Unsorted ── */ initialLoading && allItems.length === 0 ? (
             <div>
               <div className="h-4 w-24 rounded bg-white/[0.06] mb-3" />
               <div className={GRID_CLASS}>
@@ -652,12 +842,6 @@ export default function Library() {
               </div>
               <style>{`@keyframes pulse {0%,100%{opacity:.4}50%{opacity:.8}}`}</style>
             </div>
-          ) : inFolder && folderContentLoading && displayItems.length === 0 ? (
-            currentSubfolders.length === 0 ? (
-              <div className="flex justify-center py-20">
-                <LoadingSpinner className="h-8 w-8 text-white/60" />
-              </div>
-            ) : null
           ) : rootEmpty ? (
             <div className="flex flex-col items-center justify-center py-20">
               <p className="text-white/40 text-sm mb-4">No items yet.</p>
@@ -680,62 +864,15 @@ export default function Library() {
                 </Link>
               </div>
             </div>
-          ) : folderEmpty ? (
-            <div className="flex flex-col items-center justify-center py-20 gap-3">
-              <p className="text-white/40 text-sm">This folder is empty.</p>
-              <Button
-                variant="secondary"
-                icon={faFolderPlus}
-                onClick={() => openNewFolderModal(activeFolderId)}
-                className="rounded-full text-sm px-4 py-2 border border-ui-panel-border"
-              >
-                New folder
-              </Button>
-            </div>
           ) : (
             <>
-              {groupedItems.map(([date, dateItems]) => (
-                <div key={date}>
-                  <h3 className="text-sm font-medium text-white/50 mb-2">
-                    {date}
-                  </h3>
-                  <div className={GRID_CLASS}>
-                    {dateItems.map((item) => (
-                      <GalleryDraggableItem
-                        key={item.id}
-                        item={item}
-                        mode="view"
-                        activeFilter={activeFilter}
-                        selected={false}
-                        onClick={() => handleCardClick(item)}
-                        onImageError={handleImageError}
-                        imageFit="cover"
-                        onDeleted={handleItemDeleted}
-                        onDelete={deleteLibraryMedia}
-                        folders={folders}
-                        onAddToFolder={(ids, folderId) =>
-                          addMediaToFolder(ids, folderId, displayItemsRef.current)
-                        }
-                        onCreateFolderFromMenu={() =>
-                          openNewFolderModal(activeFolderId)
-                        }
-                        bulkSelected={bulkSelectedIds.has(item.id)}
-                        bulkSelectionMode={bulkSelectionMode}
-                        onBulkSelectToggle={() => toggleBulkSelect(item.id)}
-                        getBulkDragItems={getBulkDragItems}
-                      />
-                    ))}
-                  </div>
-                </div>
-              ))}
-
-              {((!inFolder && loading && allItems.length > 0) ||
-                (inFolder && folderLoadingMore)) && (
+              {mediaGrid}
+              {loading && allItems.length > 0 && (
                 <div className="flex justify-center py-4">
                   <LoadingSpinner className="h-8 w-8 text-white/60" />
                 </div>
               )}
-              {!inFolder && !hasMore && allItems.length > 0 && (
+              {!hasMore && allItems.length > 0 && (
                 <div className="flex justify-center py-4 text-white/40 text-xs">
                   No more items
                 </div>
@@ -920,9 +1057,42 @@ export default function Library() {
               }}
             />
             <div
-              className="fixed z-[9999] min-w-36 rounded-lg border border-ui-panel-border bg-ui-panel p-1 shadow-xl"
+              className="fixed z-[9999] min-w-44 rounded-lg border border-ui-panel-border bg-ui-panel p-1 shadow-xl"
               style={{ left: contextMenu.x, top: contextMenu.y }}
             >
+              {(() => {
+                const menuFolder = folders.find(
+                  (f) => f.id === contextMenu.folderId,
+                );
+                return (
+                  <>
+                    <button
+                      type="button"
+                      className="flex w-full items-center gap-2 px-2 py-2 rounded-md hover:bg-ui-controls/60 text-sm text-base-fg"
+                      onClick={() => {
+                        setFolderStar(
+                          contextMenu.folderId,
+                          !menuFolder?.hasStar,
+                        );
+                        setContextMenu(null);
+                      }}
+                    >
+                      <FontAwesomeIcon
+                        icon={faStar}
+                        className={`w-4 ${menuFolder?.hasStar ? "text-amber-400" : "text-base-fg/40"}`}
+                      />
+                      <span>{menuFolder?.hasStar ? "Unstar" : "Star"}</span>
+                    </button>
+                    <FolderColorRow
+                      colorCode={menuFolder?.colorCode}
+                      onSetColor={(c) =>
+                        setFolderColor(contextMenu.folderId, c)
+                      }
+                    />
+                    <div className="mx-1.5 my-1 border-t border-ui-panel-border" />
+                  </>
+                );
+              })()}
               <button
                 type="button"
                 className="flex w-full items-center gap-2 px-2 py-2 rounded-md hover:bg-ui-controls/60 text-sm text-base-fg"

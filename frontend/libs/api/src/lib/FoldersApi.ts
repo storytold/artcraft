@@ -1,5 +1,5 @@
 import { ApiManager, ApiResponse } from "./ApiManager.js";
-import { Folder, FolderMediaFile } from "./models/Folder.js";
+import { FolderInfo, FolderMediaFileListItem } from "./models/Folder.js";
 
 // ─── Request types ────────────────────────────────────────────────────────────
 
@@ -41,11 +41,11 @@ export class FoldersApi extends ApiManager {
   /** Create a folder owned by the logged-in user, optionally under a parent. */
   public CreateFolder(
     params: CreateFolderRequest,
-  ): Promise<ApiResponse<Folder>> {
+  ): Promise<ApiResponse<FolderInfo>> {
     const endpoint = `${this.getApiSchemeAndHost()}/v1/folders/create`;
     return this.post<
       CreateFolderRequest,
-      { success: boolean; folder: Folder; message?: string }
+      { success: boolean; folder: FolderInfo; message?: string }
     >({ endpoint, body: params })
       .then((response) => ({
         success: response.success ?? false,
@@ -60,9 +60,9 @@ export class FoldersApi extends ApiManager {
     folderToken,
   }: {
     folderToken: string;
-  }): Promise<ApiResponse<Folder>> {
+  }): Promise<ApiResponse<FolderInfo>> {
     const endpoint = `${this.getApiSchemeAndHost()}/v1/folders/folder/${folderToken}`;
-    return this.get<{ success: boolean; folder: Folder }>({ endpoint })
+    return this.get<{ success: boolean; folder: FolderInfo }>({ endpoint })
       .then((response) => ({ success: response.success, data: response.folder }))
       .catch((err) => ({ success: false, errorMessage: err.message }));
   }
@@ -91,11 +91,11 @@ export class FoldersApi extends ApiManager {
   /** List every live folder owned by the logged-in user (newest first). */
   public ListAllFolders(
     query: ListFoldersQuery = {},
-  ): Promise<ApiResponse<Folder[], FolderCursor>> {
+  ): Promise<ApiResponse<FolderInfo[], FolderCursor>> {
     const endpoint = `${this.getApiSchemeAndHost()}/v1/folders/list_all`;
     return this.get<{
       success: boolean;
-      folders: Folder[];
+      folders: FolderInfo[];
       maybe_cursor?: string | null;
     }>({ endpoint, query: toCursorQuery(query) })
       .then((response) => ({
@@ -207,11 +207,11 @@ export class FoldersApi extends ApiManager {
   }: {
     folderToken: string;
     query?: ListFoldersQuery;
-  }): Promise<ApiResponse<Folder[], FolderCursor>> {
+  }): Promise<ApiResponse<FolderInfo[], FolderCursor>> {
     const endpoint = `${this.getApiSchemeAndHost()}/v1/folders/subfolders/${folderToken}`;
     return this.get<{
       success: boolean;
-      subfolders: Folder[];
+      subfolders: FolderInfo[];
       maybe_cursor?: string | null;
     }>({ endpoint, query: toCursorQuery(query) })
       .then((response) => ({
@@ -235,7 +235,7 @@ export class FoldersApi extends ApiManager {
     subfolderTokens: string[];
   }): Promise<ApiResponse<string[]>> {
     const endpoint = `${this.getApiSchemeAndHost()}/v1/folders/subfolders/${folderToken}/bulk_add`;
-    return this.put<
+    return this.post<
       { subfolder_tokens: string[] },
       {
         success: boolean;
@@ -260,7 +260,7 @@ export class FoldersApi extends ApiManager {
     subfolderTokens: string[];
   }): Promise<ApiResponse<number>> {
     const endpoint = `${this.getApiSchemeAndHost()}/v1/folders/subfolders/${folderToken}/bulk_remove`;
-    return this.put<
+    return this.post<
       { subfolder_tokens: string[] },
       { success: boolean; removed_count?: number; message?: string }
     >({ endpoint, body: { subfolder_tokens: subfolderTokens } })
@@ -281,11 +281,11 @@ export class FoldersApi extends ApiManager {
   }: {
     folderToken: string;
     query?: ListFoldersQuery;
-  }): Promise<ApiResponse<FolderMediaFile[], FolderCursor>> {
+  }): Promise<ApiResponse<FolderMediaFileListItem[], FolderCursor>> {
     const endpoint = `${this.getApiSchemeAndHost()}/v1/folders/media_files/${folderToken}`;
     return this.get<{
       success: boolean;
-      media_files: FolderMediaFile[];
+      media_files: FolderMediaFileListItem[];
       maybe_cursor?: string | null;
     }>({ endpoint, query: toCursorQuery(query) })
       .then((response) => ({
@@ -308,7 +308,7 @@ export class FoldersApi extends ApiManager {
     mediaFileTokens: string[];
   }): Promise<ApiResponse<string[]>> {
     const endpoint = `${this.getApiSchemeAndHost()}/v1/folders/media_files/${folderToken}/bulk_add`;
-    return this.put<
+    return this.post<
       { media_file_tokens: string[] },
       {
         success: boolean;
@@ -378,7 +378,7 @@ export class FoldersApi extends ApiManager {
     mediaFileTokens: string[];
   }): Promise<ApiResponse<number>> {
     const endpoint = `${this.getApiSchemeAndHost()}/v1/folders/media_files/${folderToken}/bulk_remove`;
-    return this.put<
+    return this.post<
       { media_file_tokens: string[] },
       { success: boolean; removed_count?: number; message?: string }
     >({ endpoint, body: { media_file_tokens: mediaFileTokens } })

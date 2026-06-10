@@ -11,7 +11,6 @@ const ROUTE_CRUMBS: Record<string, Crumb[]> = {
     { label: "Create", href: "/" },
     { label: "Background Change" },
   ],
-  "/library": [{ label: "Library" }],
   "/media": [{ label: "Library", href: "/library" }, { label: "Media" }],
   "/pricing": [{ label: "Pricing" }],
   "/support": [{ label: "Support" }],
@@ -31,6 +30,17 @@ const ROUTE_CRUMBS: Record<string, Crumb[]> = {
 };
 
 function resolveCrumbs(pathname: string): Crumb[] {
+  // Library has sub-tabs (Unsorted / Folders) that live under /library/* rather
+  // than being separate top-level pages.
+  if (pathname === "/library" || pathname.startsWith("/library/")) {
+    const onFolders =
+      pathname === "/library/folders" ||
+      pathname.startsWith("/library/folder_");
+    return [
+      { label: "Library", href: "/library" },
+      { label: onFolders ? "Folders" : "All Assets" },
+    ];
+  }
   if (ROUTE_CRUMBS[pathname]) return ROUTE_CRUMBS[pathname];
   const matchedKey = Object.keys(ROUTE_CRUMBS).find(
     (k) => k !== "/" && pathname.startsWith(k + "/"),

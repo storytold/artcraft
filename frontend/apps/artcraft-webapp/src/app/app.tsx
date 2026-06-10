@@ -164,7 +164,10 @@ export function App() {
             <Route path="/media" element={<Media />} />
             <Route path="/media/:id" element={<Media />} />
             <Route path="/library" element={<Library />} />
-            <Route path="/library/:filter" element={<Library />} />
+            <Route path="/library/folders" element={<Library />} />
+            {/* `:slug` is a media-class filter (images/videos/meshes) OR a
+                folder token (prefixed `folder_`); the page disambiguates. */}
+            <Route path="/library/:slug" element={<Library />} />
             <Route path="/referrals" element={<Referrals />} />
             <Route path="/onboarding" element={<Onboarding />} />
             <Route path="/checkout/success" element={<CheckoutSuccess />} />

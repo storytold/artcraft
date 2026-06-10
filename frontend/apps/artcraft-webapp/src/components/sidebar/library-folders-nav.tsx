@@ -1,7 +1,13 @@
 import { useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faGrid2, faFolder, faPlus } from "@fortawesome/pro-solid-svg-icons";
+import {
+  faBorderAll,
+  faFolder,
+  faPlus,
+  faStar,
+} from "@fortawesome/pro-solid-svg-icons";
+import { compareFolders } from "@storyteller/ui-gallery-modal";
 import {
   SidebarGroup,
   SidebarGroupContent,
@@ -13,10 +19,9 @@ import {
 import { useLibraryFoldersStore } from "../../pages/library/library-folders-store";
 
 /**
- * The "Library" sidebar section. The root entry is always shown; the user's
- * folders appear (and are navigable) only while on a /library route. Folder
- * rows carry `data-folder-id` so gallery tiles can be dragged onto them, and
- * right-click opens the shared folder context menu rendered by the page.
+ * The "Library" sidebar section: Unsorted + Folders entries, plus the user's
+ * root folders while in the library area. Folder rows carry `data-folder-id`
+ * (drag-drop target) and right-click opens the page's folder context menu.
  */
 export function LibraryFoldersNav({
   pathname,
@@ -26,17 +31,21 @@ export function LibraryFoldersNav({
   onNavClick: () => void;
 }) {
   const navigate = useNavigate();
-  const isLibrary =
-    pathname === "/library" || pathname.startsWith("/library/");
+  const onFolders =
+    pathname === "/library/folders" ||
+    pathname.startsWith("/library/folder_");
+  const onUnsorted =
+    !onFolders &&
+    (pathname === "/library" || pathname.startsWith("/library/"));
+  const inLibraryArea = onUnsorted || onFolders;
 
   const folders = useLibraryFoldersStore((s) => s.folders);
   const activeFolderId = useLibraryFoldersStore((s) => s.activeFolderId);
-  const setActiveFolder = useLibraryFoldersStore((s) => s.setActiveFolder);
   const openNewFolderModal = useLibraryFoldersStore((s) => s.openNewFolderModal);
   const setContextMenu = useLibraryFoldersStore((s) => s.setContextMenu);
 
   const rootFolders = useMemo(
-    () => folders.filter((f) => !f.parentId),
+    () => folders.filter((f) => !f.parentId).sort(compareFolders),
     [folders],
   );
 
@@ -53,17 +62,16 @@ export function LibraryFoldersNav({
     return cursor?.id ?? null;
   }, [folders, activeFolderId]);
 
-  const goToFolder = (id: string | null) => {
-    setActiveFolder(id);
-    if (!isLibrary) navigate("/library");
+  const goToFolder = (id: string) => {
+    navigate(`/library/${id}`);
     onNavClick();
   };
 
   return (
     <SidebarGroup>
       <div className="flex items-center justify-between">
-        <SidebarGroupLabel>Library</SidebarGroupLabel>
-        {isLibrary && (
+        <SidebarGroupLabel>Assets</SidebarGroupLabel>
+        {inLibraryArea && (
           <button
             type="button"
             onClick={() => openNewFolderModal(null)}
@@ -77,19 +85,27 @@ export function LibraryFoldersNav({
       <SidebarGroupContent>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton
-              asChild
-              isActive={isLibrary && !activeFolderId}
-              tooltip="Library"
-            >
-              <Link to="/library" onClick={() => goToFolder(null)}>
-                <FontAwesomeIcon icon={faGrid2} />
+            <SidebarMenuButton asChild isActive={onUnsorted} tooltip="Library">
+              <Link to="/library" onClick={onNavClick}>
+                <FontAwesomeIcon icon={faBorderAll} />
                 <span>Library</span>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              asChild
+              isActive={onFolders && !activeFolderId}
+              tooltip="Folders"
+            >
+              <Link to="/library/folders" onClick={onNavClick}>
+                <FontAwesomeIcon icon={faFolder} />
+                <span>Folders</span>
+              </Link>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
 
-          {isLibrary &&
+          {inLibraryArea &&
             rootFolders.map((folder) => (
               <SidebarMenuItem
                 key={folder.id}
@@ -108,10 +124,22 @@ export function LibraryFoldersNav({
                       y: e.clientY,
                     });
                   }}
-                  className="[&.folder-drag-over]:bg-primary/20 [&.folder-drag-over]:text-sidebar-foreground"
+                  className="pl-5 [&.folder-drag-over]:bg-primary/20 [&.folder-drag-over]:text-sidebar-foreground"
                 >
-                  <FontAwesomeIcon icon={faFolder} className="text-primary" />
-                  <span>{folder.name}</span>
+                  <FontAwesomeIcon
+                    icon={faFolder}
+                    className={folder.colorCode ? "" : "text-primary"}
+                    style={
+                      folder.colorCode ? { color: folder.colorCode } : undefined
+                    }
+                  />
+                  <span className="truncate">{folder.name}</span>
+                  {folder.hasStar && (
+                    <FontAwesomeIcon
+                      icon={faStar}
+                      className="ml-auto text-[10px] text-amber-400"
+                    />
+                  )}
                 </SidebarMenuButton>
               </SidebarMenuItem>
             ))}
