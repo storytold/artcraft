@@ -21,6 +21,8 @@ pub enum PlatformType {
   Web,
   DesktopApp,
   Curl,
+  PythonRequests,
+  Postman,
 }
 
 impl_enum_display_and_debug_using_to_str!(PlatformType);
@@ -33,6 +35,8 @@ impl PlatformType {
       Self::Web => "web",
       Self::DesktopApp => "desktop_app",
       Self::Curl => "curl",
+      Self::PythonRequests => "python_requests",
+      Self::Postman => "postman",
     }
   }
 
@@ -41,6 +45,8 @@ impl PlatformType {
       "web" => Ok(Self::Web),
       "desktop_app" => Ok(Self::DesktopApp),
       "curl" => Ok(Self::Curl),
+      "python_requests" => Ok(Self::PythonRequests),
+      "postman" => Ok(Self::Postman),
       _ => Err(EnumError::CouldNotConvertFromString(value.to_string())),
     }
   }
@@ -51,6 +57,8 @@ impl PlatformType {
       Self::Web,
       Self::DesktopApp,
       Self::Curl,
+      Self::PythonRequests,
+      Self::Postman,
     ])
   }
 }
@@ -69,6 +77,8 @@ mod tests {
       assert_serialization(PlatformType::Web, "web");
       assert_serialization(PlatformType::DesktopApp, "desktop_app");
       assert_serialization(PlatformType::Curl, "curl");
+      assert_serialization(PlatformType::PythonRequests, "python_requests");
+      assert_serialization(PlatformType::Postman, "postman");
     }
 
     #[test]
@@ -76,6 +86,8 @@ mod tests {
       assert_eq!(PlatformType::Web.to_str(), "web");
       assert_eq!(PlatformType::DesktopApp.to_str(), "desktop_app");
       assert_eq!(PlatformType::Curl.to_str(), "curl");
+      assert_eq!(PlatformType::PythonRequests.to_str(), "python_requests");
+      assert_eq!(PlatformType::Postman.to_str(), "postman");
     }
 
     #[test]
@@ -83,6 +95,8 @@ mod tests {
       assert_eq!(PlatformType::from_str("web").unwrap(), PlatformType::Web);
       assert_eq!(PlatformType::from_str("desktop_app").unwrap(), PlatformType::DesktopApp);
       assert_eq!(PlatformType::from_str("curl").unwrap(), PlatformType::Curl);
+      assert_eq!(PlatformType::from_str("python_requests").unwrap(), PlatformType::PythonRequests);
+      assert_eq!(PlatformType::from_str("postman").unwrap(), PlatformType::Postman);
     }
 
     #[test]
@@ -99,10 +113,12 @@ mod tests {
     #[test]
     fn all_variants() {
       let mut variants = PlatformType::all_variants();
-      assert_eq!(variants.len(), 3);
+      assert_eq!(variants.len(), 5);
       assert_eq!(variants.pop_first(), Some(PlatformType::Web));
       assert_eq!(variants.pop_first(), Some(PlatformType::DesktopApp));
       assert_eq!(variants.pop_first(), Some(PlatformType::Curl));
+      assert_eq!(variants.pop_first(), Some(PlatformType::PythonRequests));
+      assert_eq!(variants.pop_first(), Some(PlatformType::Postman));
       assert_eq!(variants.pop_first(), None);
     }
   }

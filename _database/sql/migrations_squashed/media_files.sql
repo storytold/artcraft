@@ -65,7 +65,8 @@ CREATE TABLE media_files (
   -- What service provided the generation (if any).
   maybe_generation_provider VARCHAR(16) DEFAULT NULL,
 
-  -- The platform the creating request came from ('web', 'desktop_app', 'curl'),
+  -- The platform the creating request came from ('web', 'desktop_app',
+  -- 'curl', 'python_requests', 'postman'),
   -- inferred from the request's User-Agent header. Copied from the originating
   -- generic_inference_jobs row for inference results.
   platform_type VARCHAR(16) DEFAULT NULL,
