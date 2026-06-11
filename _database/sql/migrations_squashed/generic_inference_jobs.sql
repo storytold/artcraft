@@ -56,6 +56,19 @@ CREATE TABLE generic_inference_jobs (
   -- service uses.
   maybe_external_third_party_id VARCHAR(64) DEFAULT NULL,
 
+  -- What the third-party service charges us for the job, in the service's
+  -- own credit denomination (if it bills in credits).
+  maybe_external_third_party_cost_credits INT(10) UNSIGNED DEFAULT NULL,
+
+  -- What the third-party service charges us for the job, in USD cents.
+  maybe_external_third_party_cost_usd_cents INT(10) UNSIGNED DEFAULT NULL,
+
+  -- What we charge the user for the job, in our own credits.
+  maybe_system_cost_credits INT(10) UNSIGNED DEFAULT NULL,
+
+  -- What we charge the user for the job, in USD cents.
+  maybe_system_cost_usd_cents INT(10) UNSIGNED DEFAULT NULL,
+
   -- There is an index on this column.
   -- NB: See notes on inference_category. This is becoming a problematic field. We're using
   -- this to load the container spin-up arguments and dependencies, but the former is being
