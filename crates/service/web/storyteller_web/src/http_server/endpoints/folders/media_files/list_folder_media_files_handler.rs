@@ -172,7 +172,7 @@ pub async fn list_folder_media_files_handler(
   })?;
 
   let maybe_cursor = rows.last().map(|last| {
-    server_state.opaque_cursors.encode_last_id_cursor(CURSOR_NAME, last.membership_id)
+    server_state.opaque_cursors.encode_last_id_cursor(CURSOR_NAME, last.media_file_id)
   }).transpose().map_err(|err| {
     warn!("Failed to encode cursor: {:?}", err);
     CommonWebError::server_error_with_message("Failed to encode cursor")

@@ -1,14 +1,14 @@
 {
   "db_name": "MySQL",
-  "query": "\nSELECT\n  fmf.id as `membership_id: u64`,\n  fmf.created_at as `added_to_folder_at: DateTime<Utc>`,\n\n  mf.token as `media_file_token: MediaFileToken`,\n  mf.media_class as `media_class: MediaFileClass`,\n  mf.media_type as `media_type: MediaFileType`,\n\n  mf.maybe_batch_token as `maybe_batch_token: BatchGenerationToken`,\n\n  mf.public_bucket_directory_hash,\n  mf.maybe_public_bucket_prefix,\n  mf.maybe_public_bucket_extension,\n\n  cover.public_bucket_directory_hash as `maybe_cover_public_bucket_directory_hash?`,\n  cover.maybe_public_bucket_prefix as `maybe_cover_public_bucket_prefix?`,\n  cover.maybe_public_bucket_extension as `maybe_cover_public_bucket_extension?`,\n\n  mf.creator_set_visibility as `creator_set_visibility: Visibility`,\n  mf.is_user_upload as `is_user_upload: bool`,\n  mf.is_intermediate_system_file as `is_intermediate_system_file: bool`,\n\n  mf.maybe_title,\n  mf.maybe_prompt_token as `maybe_prompt_token: PromptToken`,\n  mf.maybe_origin_filename,\n\n  mf.maybe_duration_millis,\n  mf.maybe_frame_width,\n  mf.maybe_frame_height,\n\n  mf.created_at,\n  mf.updated_at\nFROM folder_media_files fmf\nJOIN media_files mf\n  ON mf.token = fmf.media_file_token\nLEFT JOIN media_files cover\n  ON cover.token = mf.maybe_cover_image_media_file_token\nWHERE fmf.folder_token = ?\n  AND mf.user_deleted_at IS NULL\n  AND mf.mod_deleted_at IS NULL\nORDER BY fmf.id DESC\nLIMIT ?\n        ",
+  "query": "\nSELECT\n  mf.id as `media_file_id: u64`,\n  fmf.created_at as `added_to_folder_at: DateTime<Utc>`,\n\n  mf.token as `media_file_token: MediaFileToken`,\n  mf.media_class as `media_class: MediaFileClass`,\n  mf.media_type as `media_type: MediaFileType`,\n\n  mf.maybe_batch_token as `maybe_batch_token: BatchGenerationToken`,\n\n  mf.public_bucket_directory_hash,\n  mf.maybe_public_bucket_prefix,\n  mf.maybe_public_bucket_extension,\n\n  cover.public_bucket_directory_hash as `maybe_cover_public_bucket_directory_hash?`,\n  cover.maybe_public_bucket_prefix as `maybe_cover_public_bucket_prefix?`,\n  cover.maybe_public_bucket_extension as `maybe_cover_public_bucket_extension?`,\n\n  mf.creator_set_visibility as `creator_set_visibility: Visibility`,\n  mf.is_user_upload as `is_user_upload: bool`,\n  mf.is_intermediate_system_file as `is_intermediate_system_file: bool`,\n\n  mf.maybe_title,\n  mf.maybe_prompt_token as `maybe_prompt_token: PromptToken`,\n  mf.maybe_origin_filename,\n\n  mf.maybe_duration_millis,\n  mf.maybe_frame_width,\n  mf.maybe_frame_height,\n\n  mf.created_at,\n  mf.updated_at\nFROM folder_media_files fmf\nJOIN media_files mf\n  ON mf.token = fmf.media_file_token\nLEFT JOIN media_files cover\n  ON cover.token = mf.maybe_cover_image_media_file_token\nWHERE fmf.folder_token = ?\n  AND mf.user_deleted_at IS NULL\n  AND mf.mod_deleted_at IS NULL\n  AND mf.id < ?\nORDER BY mf.id DESC\nLIMIT ?\n        ",
   "describe": {
     "columns": [
       {
         "ordinal": 0,
-        "name": "membership_id: u64",
+        "name": "media_file_id: u64",
         "type_info": {
           "type": "LongLong",
-          "flags": "NOT_NULL | UNIQUE_KEY | UNSIGNED | AUTO_INCREMENT",
+          "flags": "NOT_NULL | PRIMARY_KEY | AUTO_INCREMENT",
           "char_set": 63,
           "max_size": 20
         }
@@ -235,7 +235,7 @@
       }
     ],
     "parameters": {
-      "Right": 2
+      "Right": 3
     },
     "nullable": [
       false,
@@ -263,5 +263,5 @@
       false
     ]
   },
-  "hash": "88673127b54626dc38d28693e709dfaeced9a05300a26b3f3c52a17f28171c9a"
+  "hash": "c0ba9f9aa3184b1cb3d714173b31e530e201a6c24afd29ad534cf7f3954c7316"
 }

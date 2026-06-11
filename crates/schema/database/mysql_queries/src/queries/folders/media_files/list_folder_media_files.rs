@@ -16,8 +16,10 @@ use tokens::tokens::prompts::PromptToken;
 /// and the rest of the typed response shape.
 #[derive(Debug, Clone)]
 pub struct FolderMediaFileRow {
-  /// `folder_media_files.id` — used as the pagination cursor.
-  pub membership_id: u64,
+  /// `media_files.id` — used as the pagination cursor. The list is sorted
+  /// by this (descending) rather than by folder-membership order so the
+  /// frontend's group-by-date view doesn't interleave across pages.
+  pub media_file_id: u64,
 
   /// When the media file was added to the folder.
   pub added_to_folder_at: DateTime<Utc>,
@@ -71,7 +73,8 @@ where
 /// for the file's own metadata and LEFT JOINs `media_files` again on
 /// `maybe_cover_image_media_file_token` so the cover-image bucket fields
 /// come back in a single round-trip. Filters out media files that are
-/// soft-deleted on the media-file side. Most-recently-added first.
+/// soft-deleted on the media-file side. Newest media files first
+/// (`media_files.id` descending — NOT folder-membership order).
 ///
 /// The caller is expected to have already authorized the folder access.
 pub async fn list_folder_media_files<'e, 'c: 'e, E>(
@@ -87,7 +90,7 @@ where
       sqlx::query!(
         r#"
 SELECT
-  fmf.id as `membership_id: u64`,
+  mf.id as `media_file_id: u64`,
   fmf.created_at as `added_to_folder_at: DateTime<Utc>`,
 
   mf.token as `media_file_token: MediaFileToken`,
@@ -126,8 +129,8 @@ LEFT JOIN media_files cover
 WHERE fmf.folder_token = ?
   AND mf.user_deleted_at IS NULL
   AND mf.mod_deleted_at IS NULL
-  AND fmf.id < ?
-ORDER BY fmf.id DESC
+  AND mf.id < ?
+ORDER BY mf.id DESC
 LIMIT ?
         "#,
         args.folder_token.as_str(),
@@ -138,7 +141,7 @@ LIMIT ?
         .await?
         .into_iter()
         .map(|r| FolderMediaFileRow {
-          membership_id: r.membership_id,
+          media_file_id: r.media_file_id,
           added_to_folder_at: r.added_to_folder_at,
           media_file_token: r.media_file_token,
           media_class: r.media_class,
@@ -168,7 +171,7 @@ LIMIT ?
       sqlx::query!(
         r#"
 SELECT
-  fmf.id as `membership_id: u64`,
+  mf.id as `media_file_id: u64`,
   fmf.created_at as `added_to_folder_at: DateTime<Utc>`,
 
   mf.token as `media_file_token: MediaFileToken`,
@@ -207,7 +210,7 @@ LEFT JOIN media_files cover
 WHERE fmf.folder_token = ?
   AND mf.user_deleted_at IS NULL
   AND mf.mod_deleted_at IS NULL
-ORDER BY fmf.id DESC
+ORDER BY mf.id DESC
 LIMIT ?
         "#,
         args.folder_token.as_str(),
@@ -217,7 +220,7 @@ LIMIT ?
         .await?
         .into_iter()
         .map(|r| FolderMediaFileRow {
-          membership_id: r.membership_id,
+          media_file_id: r.media_file_id,
           added_to_folder_at: r.added_to_folder_at,
           media_file_token: r.media_file_token,
           media_class: r.media_class,
