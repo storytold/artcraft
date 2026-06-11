@@ -2378,6 +2378,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "comet_api_client"
+version = "0.0.1"
+dependencies = [
+ "log",
+ "reqwest 0.12.23",
+ "serde",
+ "serde_derive",
+ "serde_json",
+ "tokio",
+ "workspace-build-acceleration",
+]
+
+[[package]]
 name = "compact_str"
 version = "0.7.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"

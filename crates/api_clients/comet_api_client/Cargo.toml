@@ -1,0 +1,29 @@
+[package]
+name = "comet_api_client"
+edition = "2024"
+version = "0.0.1"
+publish = false
+
+[package.metadata.cargo-udeps.ignore]
+normal = ["workspace-build-acceleration"]
+
+[lib]
+name = "comet_api_client"
+path = "src/lib.rs"
+
+[dependencies]
+# Workspace hack (faster compile times)
+workspace-build-acceleration.workspace = true
+
+# External
+log.workspace = true
+# `multipart` is enabled on top of the workspace feature set because the
+# CometAPI video creation endpoint takes `multipart/form-data` (the
+# `input_reference` image fields are binary parts).
+reqwest = { workspace = true, features = ["multipart"] }
+serde.workspace = true
+serde_derive.workspace = true
+serde_json.workspace = true
+
+[dev-dependencies]
+tokio = { version = "1", features = ["full"] }
