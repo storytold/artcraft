@@ -76,6 +76,7 @@ pub async fn insert_generic_inference_job_for_worldlabs_queue_with_apriori_job_t
     creator_ip_address: args.creator_ip_address,
     creator_set_visibility: args.creator_set_visibility,
     maybe_platform_type: args.maybe_platform_type,
+    maybe_cost_estimates: None,
     maybe_debug_log_event_token: None,
     maybe_frontend_failure_category: None,
     maybe_failure_reason: None,

@@ -1,3 +1,5 @@
+use std::convert::TryFrom;
+
 use std::collections::HashMap;
 
 use log::{error, info, warn};
@@ -18,6 +20,7 @@ use crate::http_server::endpoints::omni_gen::generate::video::helpers::bill_wall
 use crate::http_server::endpoints::omni_gen::generate::video::helpers::build_router_client::build_router_client;
 use crate::http_server::endpoints::omni_gen::generate::video::helpers::pipeline_result::PipelineResult;
 use crate::http_server::endpoints::omni_gen::generate::video::helpers::resolve_media_tokens_to_urls::resolve_media_tokens_to_urls;
+use mysql_queries::queries::generic_inference::common::job_cost_estimates::JobCostEstimates;
 use crate::http_server::endpoints::omni_gen::generate::video::kinovi_account::KinoviAccount;
 use crate::http_server::endpoints::omni_gen::shared_utils::map_seedance2pro_router_error::map_router_error_to_web_error;
 use crate::state::server_state::ServerState;
@@ -89,7 +92,7 @@ pub async fn run_pipeline_v2(args: RunPipelineV2Args<'_>) -> Result<PipelineResu
   // 2. Calculate cost.
   //    For Artcraft-billable models, swap provider to Artcraft so credits = cents.
   //    For GmiCloud, use the execution request's cost directly (no Artcraft equivalent).
-  let cost = {
+  let system_cost_estimate = {
     let mut cost_builder = router_builder.clone();
     cost_builder.provider = RouterProvider::Artcraft;
 
@@ -103,11 +106,36 @@ pub async fn run_pipeline_v2(args: RunPipelineV2Args<'_>) -> Result<PipelineResu
         warn!("Failed to estimate cost for v2: {}", e);
         CommonWebError::from_error(e)
       })?
-      .cost_in_credits
-      .unwrap_or(0)
   };
 
-  info!("v2 estimated cost: {} credits", cost);
+  let cost = system_cost_estimate.cost_in_credits.unwrap_or(0);
+
+  // Provider-side estimate (what the fulfilling provider charges us). The
+  // router defers to the underlying provider crates (seedance2pro_client,
+  // gmicloud_client, grok_api_client, the fal pricing modules, etc.) per
+  // request variant. Bookkeeping only — failures must not block generation.
+  let maybe_provider_cost_estimate = match draft_or_request.estimate_cost() {
+    Ok(estimate) => Some(estimate),
+    Err(err) => {
+      warn!("Failed to estimate provider cost for v2 video: {}", err);
+      None
+    }
+  };
+
+  let cost_estimates = JobCostEstimates {
+    maybe_external_third_party_cost_credits: maybe_provider_cost_estimate.as_ref()
+      .and_then(|e| e.cost_in_credits)
+      .and_then(|v| u32::try_from(v).ok()),
+    maybe_external_third_party_cost_usd_cents: maybe_provider_cost_estimate.as_ref()
+      .and_then(|e| e.cost_in_usd_cents)
+      .and_then(|v| u32::try_from(v).ok()),
+    maybe_system_cost_credits: system_cost_estimate.cost_in_credits
+      .and_then(|v| u32::try_from(v).ok()),
+    maybe_system_cost_usd_cents: system_cost_estimate.cost_in_usd_cents
+      .and_then(|v| u32::try_from(v).ok()),
+  };
+
+  info!("v2 estimated cost: {} credits (estimates: {:?})", cost, cost_estimates);
 
   // 3. Bill wallet
   let billing = bill_wallet(user_token, cost, mysql_connection).await?;
@@ -141,7 +169,7 @@ pub async fn run_pipeline_v2(args: RunPipelineV2Args<'_>) -> Result<PipelineResu
 
   info!("v2 generation response: {:?}", response);
 
-  Ok(PipelineResult { billing, response })
+  Ok(PipelineResult { billing, response, cost_estimates })
 }
 
 /// Finalize the draft (uploading media if needed), then send the generation request.

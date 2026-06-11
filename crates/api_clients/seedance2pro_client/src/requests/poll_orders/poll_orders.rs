@@ -137,6 +137,10 @@ pub struct OrderStatus {
   /// polling responses that didn't include the field — those came from the
   /// video-only era and can be treated as video by callers that need to.
   pub media_type: Option<OrderMediaType>,
+
+  /// The Kinovi credits charged for the order (the API's `totalCredits`).
+  /// `None` for older polling responses that didn't include the field.
+  pub total_credits: Option<u32>,
 }
 
 // --- Implementation ---
@@ -239,6 +243,7 @@ pub async fn poll_orders(args: PollOrdersArgs<'_>) -> Result<PollOrdersResponse,
         created_at: o.created_at,
         created_at_utc,
         media_type,
+        total_credits: o.total_credits,
       }
     })
     .collect();
@@ -272,6 +277,48 @@ mod tests {
   fn test_session() -> AnyhowResult<Seedance2ProSession> {
     let cookies = get_test_cookies()?;
     Ok(Seedance2ProSession::from_cookies_string(cookies))
+  }
+
+  /// Diagnostic: fetch the raw getOrders JSON (no typed parsing) and print
+  /// the complete field set per order, so schema additions can be checked
+  /// against reality. Requires real cookies.
+  ///   cargo test -p seedance2pro_client live_dump_raw_orders_json -- --ignored --nocapture
+  #[tokio::test]
+  #[ignore]
+  async fn live_dump_raw_orders_json() -> AnyhowResult<()> {
+    let session = test_session()?;
+    let host = resolve_host(None);
+    let base_url = host.api_base_url();
+    let get_orders_url = format!("{}/api/trpc/userOrder.getOrders", base_url);
+    let input_json = build_input_json(None);
+
+    let client = Client::builder()
+      .emulation(Emulation::Firefox143)
+      .build()?;
+
+    let response = client.get(&get_orders_url)
+      .query(&[("batch", "1"), ("input", input_json.as_str())])
+      .header("User-Agent", FIREFOX_USER_AGENT)
+      .header("Accept", "*/*")
+      .header("Referer", format!("{}/app/gallery", base_url))
+      .header("content-type", "application/json")
+      .header("x-trpc-source", "client")
+      .header("Cookie", session.cookies.as_str())
+      .send()
+      .await?;
+
+    let body = response.text().await?;
+    let parsed: serde_json::Value = serde_json::from_str(&body)?;
+    let orders = &parsed[0]["result"]["data"]["json"]["orders"];
+
+    if let Some(first) = orders.get(0) {
+      let keys: Vec<&str> = first.as_object().map(|o| o.keys().map(|k| k.as_str()).collect()).unwrap_or_default();
+      println!("FIELDS ON AN ORDER: {:?}", keys);
+      println!("FIRST ORDER RAW: {}", serde_json::to_string_pretty(first)?);
+    } else {
+      println!("no orders; raw body head: {}", &body[..body.len().min(500)]);
+    }
+    Ok(())
   }
 
   // ── Offline parsing tests against captured responses ──
@@ -385,6 +432,7 @@ mod tests {
           created_at: o.created_at,
           created_at_utc,
           media_type,
+          total_credits: o.total_credits,
         }
       }).collect()
     }

@@ -241,6 +241,7 @@ pub async fn flux_2_lora_edit_image_angle_handler(
     creator_ip_address: &ip_address,
     creator_set_visibility: Visibility::Public,
     maybe_platform_type: get_request_platform_type(&http_request),
+    maybe_cost_estimates: None,
     mysql_executor: &mut *transaction,
     starting_job_status_override: None,
     maybe_frontend_failure_category: None,

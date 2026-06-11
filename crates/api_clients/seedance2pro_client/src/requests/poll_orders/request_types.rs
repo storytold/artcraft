@@ -36,6 +36,11 @@ pub(super) struct RawOrder {
   /// orders. `None` for older response shapes that didn't include the field.
   #[serde(default)]
   pub media_type: Option<String>,
+
+  /// The Kinovi credits charged for the order. `None` for older response
+  /// shapes that didn't include the field.
+  #[serde(default)]
+  pub total_credits: Option<u32>,
 }
 
 #[derive(Deserialize, Debug)]

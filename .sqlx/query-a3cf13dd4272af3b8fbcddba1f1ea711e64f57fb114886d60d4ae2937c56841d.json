@@ -160,7 +160,7 @@
           "type": "LongLong",
           "flags": "NOT_NULL",
           "char_set": 63,
-          "max_size": 10
+          "max_size": 20
         }
       },
       {

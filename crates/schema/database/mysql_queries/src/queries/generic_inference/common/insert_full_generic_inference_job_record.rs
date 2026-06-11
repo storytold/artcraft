@@ -38,6 +38,7 @@ use tokens::tokens::users::UserToken;
 use tokens::tokens::wallet_ledger_entries::WalletLedgerEntryToken;
 
 use crate::errors::database_query_error::DatabaseQueryError;
+use crate::queries::generic_inference::common::job_cost_estimates::JobCostEstimates;
 use crate::payloads::generic_inference_args::generic_inference_args::GenericInferenceArgs;
 
 pub(crate) struct InsertFullGenericInferenceJobRecordArgs<'e, 'c, E>
@@ -79,6 +80,10 @@ pub(crate) struct InsertFullGenericInferenceJobRecordArgs<'e, 'c, E>
 
   /// The platform the enqueuing request came from, inferred from its User-Agent.
   pub maybe_platform_type: Option<PlatformType>,
+
+  /// Estimated system (user-facing) and provider-side costs. `None` writes
+  /// DB NULL for all four columns.
+  pub maybe_cost_estimates: Option<JobCostEstimates>,
 
   pub priority_level: u8,
   pub requires_keepalive: bool,
@@ -163,6 +168,11 @@ SET
 
   platform_type = ?,
 
+  maybe_external_third_party_cost_credits = ?,
+  maybe_external_third_party_cost_usd_cents = ?,
+  maybe_system_cost_credits = ?,
+  maybe_system_cost_usd_cents = ?,
+
   priority_level = ?,
   is_keepalive_required = ?,
   max_duration_seconds = ?,
@@ -210,6 +220,11 @@ SET
         args.creator_set_visibility.to_str(),
 
         args.maybe_platform_type.map(|p| p.to_str()),
+
+        args.maybe_cost_estimates.and_then(|c| c.maybe_external_third_party_cost_credits),
+        args.maybe_cost_estimates.and_then(|c| c.maybe_external_third_party_cost_usd_cents),
+        args.maybe_cost_estimates.and_then(|c| c.maybe_system_cost_credits),
+        args.maybe_cost_estimates.and_then(|c| c.maybe_system_cost_usd_cents),
 
         args.priority_level,
         args.requires_keepalive,

@@ -71,6 +71,7 @@ pub async fn insert_generic_inference_job_for_fal_queue<'e, 'c : 'e, E>(args: In
     creator_ip_address: args.creator_ip_address,
     creator_set_visibility: args.creator_set_visibility,
     maybe_platform_type: args.maybe_platform_type,
+    maybe_cost_estimates: None,
     starting_job_status_override: None,
     maybe_frontend_failure_category: None,
     maybe_failure_reason: None,

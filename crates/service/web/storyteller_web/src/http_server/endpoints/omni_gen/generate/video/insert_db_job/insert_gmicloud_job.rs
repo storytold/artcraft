@@ -31,6 +31,7 @@ pub async fn insert_gmicloud_job(args: InsertGmiCloudJobArgs<'_, '_>) -> Result<
       maybe_avt_token: shared.maybe_avt_token,
       creator_ip_address: shared.ip_address,
       maybe_platform_type: shared.maybe_platform_type,
+      maybe_cost_estimates: shared.maybe_cost_estimates,
       maybe_debug_log_event_token: shared.maybe_debug_log_event_token,
       mysql_executor: &mut **shared.transaction,
       phantom: Default::default(),

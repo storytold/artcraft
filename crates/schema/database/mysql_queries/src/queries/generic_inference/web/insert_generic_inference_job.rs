@@ -123,6 +123,8 @@ pub async fn insert_generic_inference_job(args: InsertGenericInferenceArgs<'_>)
 
     maybe_platform_type: None,
 
+    maybe_cost_estimates: None,
+
     maybe_debug_log_event_token: None,
     maybe_frontend_failure_category: None,
     maybe_failure_reason: None,

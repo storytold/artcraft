@@ -190,7 +190,7 @@
           "type": "Long",
           "flags": "",
           "char_set": 63,
-          "max_size": 10
+          "max_size": 11
         }
       },
       {

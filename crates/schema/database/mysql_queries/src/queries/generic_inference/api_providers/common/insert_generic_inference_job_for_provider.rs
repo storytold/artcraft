@@ -36,6 +36,7 @@ use tokens::tokens::users::UserToken;
 use tokens::tokens::wallet_ledger_entries::WalletLedgerEntryToken;
 
 use crate::errors::database_query_error::DatabaseQueryError;
+use crate::queries::generic_inference::common::job_cost_estimates::JobCostEstimates;
 use crate::payloads::generic_inference_args::generic_inference_args::GenericInferenceArgs;
 use crate::queries::generic_inference::common::insert_full_generic_inference_job_record::{
   insert_full_generic_inference_job_record,
@@ -74,6 +75,9 @@ pub(crate) struct InsertGenericInferenceJobForProviderArgs<'e, 'c, E>
 
   /// The platform the enqueuing request came from, inferred from its User-Agent.
   pub maybe_platform_type: Option<PlatformType>,
+
+  /// Estimated system (user-facing) and provider-side costs.
+  pub maybe_cost_estimates: Option<JobCostEstimates>,
 
   pub maybe_debug_log_event_token: Option<&'e DebugLogEventToken>,
 
@@ -119,6 +123,8 @@ pub(crate) async fn insert_generic_inference_job_for_provider<'e, 'c: 'e, E>(
     creator_set_visibility: args.creator_set_visibility,
 
     maybe_platform_type: args.maybe_platform_type,
+
+    maybe_cost_estimates: args.maybe_cost_estimates,
 
     maybe_debug_log_event_token: args.maybe_debug_log_event_token,
 

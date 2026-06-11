@@ -18,6 +18,7 @@ use tokens::tokens::prompts::PromptToken;
 use tokens::tokens::users::UserToken;
 
 use crate::errors::database_query_error::DatabaseQueryError;
+use crate::queries::generic_inference::common::job_cost_estimates::JobCostEstimates;
 use crate::payloads::generic_inference_args::generic_inference_args::GenericInferenceArgs;
 use crate::queries::generic_inference::api_providers::common::insert_generic_inference_job_for_provider::{
   insert_generic_inference_job_for_provider,
@@ -52,6 +53,9 @@ pub struct InsertGenericInferenceForFalWithAprioriJobTokenArgs<'e, 'c, E>
 
   /// The platform the enqueuing request came from, inferred from its User-Agent.
   pub maybe_platform_type: Option<PlatformType>,
+
+  /// Estimated system (user-facing) and provider-side costs.
+  pub maybe_cost_estimates: Option<JobCostEstimates>,
 
   /// Override the initial job status. Defaults to `Pending` when `None`.
   /// Set to `Some(JobStatusPlus::CompleteFailure)` for mock/test failure jobs.
@@ -110,6 +114,7 @@ pub async fn insert_generic_inference_job_for_fal_queue_with_apriori_job_token<'
     creator_ip_address: args.creator_ip_address,
     creator_set_visibility: args.creator_set_visibility,
     maybe_platform_type: args.maybe_platform_type,
+    maybe_cost_estimates: args.maybe_cost_estimates,
     maybe_debug_log_event_token: args.maybe_debug_log_event_token,
     maybe_frontend_failure_category: args.maybe_frontend_failure_category,
     maybe_failure_reason: args.maybe_failure_reason,
