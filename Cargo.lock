@@ -2386,6 +2386,7 @@ dependencies = [
  "serde",
  "serde_derive",
  "serde_json",
+ "test_data",
  "tokio",
  "workspace-build-acceleration",
 ]

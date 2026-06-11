@@ -288,4 +288,184 @@ mod tests {
       input_reference_images: vec![],
     }
   }
+
+  // ─────────────────────────────────────────────────────────────────────
+  // ⚠️  EXPENSIVE LIVE TESTS  ⚠️
+  //
+  // Each test below enqueues a REAL 10-second Seedance 2.0 generation with
+  // four reference images and polls it to completion. These INCUR REAL
+  // COSTS (per CometAPI's per-second pricing):
+  //
+  //   480p:  10s × $0.063  ≈ $0.63
+  //   720p:  10s × $0.1368 ≈ $1.37
+  //   1080p: 10s × $0.3366 ≈ $3.37
+  //
+  // They also take a while — generations have been observed to run well
+  // past 10 minutes. Run one at a time, manually:
+  //
+  //   cargo test -p comet_api_client live_generate_480p -- --ignored --nocapture
+  // ─────────────────────────────────────────────────────────────────────
+  mod live_tests {
+    use std::time::Duration;
+
+    use test_data::web::image_urls::{
+      ERNEST_GHOST_TREX_IMAGE_URL,
+      FOREST_BACKDROP_IMAGE_URL,
+      GHOST_IMAGE_URL,
+      GRASSY_HILL_TRANSPARENT_IMAGE_URL,
+      JUNO_AT_LAKE_IMAGE_URL,
+      MOUNTAIN_TREE_IMAGE_URL,
+      SUPER_WIDE_FALL_MOUNTAINS_IMAGE_URL,
+      TALL_CORGI_SHIBA_TREASURE_OCEAN_URL,
+      TALL_MOCHI_WITH_GLASSES_IMAGE_URL,
+      TREX_SKELETON_IMAGE_URL,
+      WHITE_HOUSE_SUNSET_IMAGE_URL,
+      WIDE_CORGI_SHIBA_TREASURE_OCEAN_URL,
+    };
+
+    use super::*;
+    use crate::requests::get_video_task::get_video_task::{get_video_task, GetVideoTaskArgs};
+    use crate::test_utils::load_api_key;
+
+    /// ⚠️ EXPENSIVE: real 10s 480p generation (~$0.63) + a long poll.
+    #[ignore]
+    #[tokio::test]
+    async fn live_generate_480p_with_references() {
+      let input_reference_images = download_reference_images(&[
+        ERNEST_GHOST_TREX_IMAGE_URL,
+        GHOST_IMAGE_URL,
+        TREX_SKELETON_IMAGE_URL,
+        FOREST_BACKDROP_IMAGE_URL,
+      ]).await;
+
+      run_generation_to_completion(GenerateDoubaoSeedance2p0Request {
+        prompt: "The frightened man from [Image 1] runs through the dark forest \
+          from [Image 4], chased by the glowing ghost from [Image 2]. The t-rex \
+          skeleton from [Image 3] rises out of the leaves behind them. Spooky, \
+          comedic 90s horror movie tone."
+          .to_string(),
+        duration_seconds: Some(10),
+        aspect_ratio: Some(DoubaoSeedance2p0AspectRatio::Landscape16x9),
+        resolution: Some(DoubaoSeedance2p0Resolution::FourEightyP),
+        input_reference_images,
+      }).await;
+    }
+
+    /// ⚠️ EXPENSIVE: real 10s 720p generation (~$1.37) + a long poll.
+    #[ignore]
+    #[tokio::test]
+    async fn live_generate_720p_with_references() {
+      let input_reference_images = download_reference_images(&[
+        JUNO_AT_LAKE_IMAGE_URL,
+        TALL_MOCHI_WITH_GLASSES_IMAGE_URL,
+        TALL_CORGI_SHIBA_TREASURE_OCEAN_URL,
+        WIDE_CORGI_SHIBA_TREASURE_OCEAN_URL,
+      ]).await;
+
+      run_generation_to_completion(GenerateDoubaoSeedance2p0Request {
+        prompt: "The dog from [Image 1] and the bespectacled dog from [Image 2] \
+          join the corgi and shiba from [Image 3] on the beach, digging up the \
+          treasure chest from [Image 4] as waves roll in. Joyful, sunny \
+          adventure-film tone."
+          .to_string(),
+        duration_seconds: Some(10),
+        aspect_ratio: Some(DoubaoSeedance2p0AspectRatio::Landscape16x9),
+        resolution: Some(DoubaoSeedance2p0Resolution::SevenTwentyP),
+        input_reference_images,
+      }).await;
+    }
+
+    /// ⚠️ EXPENSIVE: real 10s 1080p generation (~$3.37) + a long poll.
+    #[ignore]
+    #[tokio::test]
+    async fn live_generate_1080p_with_references() {
+      let input_reference_images = download_reference_images(&[
+        GRASSY_HILL_TRANSPARENT_IMAGE_URL,
+        MOUNTAIN_TREE_IMAGE_URL,
+        SUPER_WIDE_FALL_MOUNTAINS_IMAGE_URL,
+        WHITE_HOUSE_SUNSET_IMAGE_URL,
+      ]).await;
+
+      run_generation_to_completion(GenerateDoubaoSeedance2p0Request {
+        prompt: "A cinematic drone shot glides over the grassy hill from \
+          [Image 1], past the lone tree on the mountainside from [Image 2], \
+          across the sweeping autumn mountain range from [Image 3], and settles \
+          on the white house at sunset from [Image 4]. Golden hour, slow and \
+          steady camera movement."
+          .to_string(),
+        duration_seconds: Some(10),
+        aspect_ratio: Some(DoubaoSeedance2p0AspectRatio::Landscape16x9),
+        resolution: Some(DoubaoSeedance2p0Resolution::TenEightyP),
+        input_reference_images,
+      }).await;
+    }
+
+    // ── Helpers ──
+
+    async fn download_reference_images(urls: &[&str]) -> Vec<CometInputReferenceImage> {
+      let mut images = Vec::with_capacity(urls.len());
+      for url in urls {
+        images.push(download_reference_image(url).await);
+      }
+      images
+    }
+
+    async fn download_reference_image(url: &str) -> CometInputReferenceImage {
+      let response = reqwest::get(url).await.expect("image download should succeed");
+      assert!(response.status().is_success(), "image download failed: {} ({})", url, response.status());
+
+      let filename = url.rsplit('/').next().expect("url should have a path").to_string();
+      let maybe_content_type = if filename.ends_with(".png") {
+        Some("image/png".to_string())
+      } else {
+        Some("image/jpeg".to_string())
+      };
+      let file_bytes = response.bytes().await.expect("image body should download").to_vec();
+
+      println!("Downloaded reference: {} ({} bytes)", filename, file_bytes.len());
+
+      CometInputReferenceImage {
+        file_bytes,
+        filename,
+        maybe_content_type,
+      }
+    }
+
+    /// Enqueue the generation, poll until terminal, and assert success.
+    async fn run_generation_to_completion(request: GenerateDoubaoSeedance2p0Request) {
+      // NB: Generations have been observed to run well past 10 minutes.
+      const POLL_INTERVAL: Duration = Duration::from_secs(15);
+      const MAX_POLLS: u32 = 120; // ~30 minutes
+
+      let api_key = load_api_key();
+      println!("Estimated cost: {}¢", request.estimate_cost_in_usd_cents());
+
+      let created = generate_doubao_seedance_2p0(GenerateDoubaoSeedance2p0Args {
+        request,
+        api_key: &api_key,
+      }).await.expect("generate_doubao_seedance_2p0 should succeed");
+
+      println!("Enqueued task: {} (status: {})", created.task_id, created.status);
+
+      for poll in 1..=MAX_POLLS {
+        tokio::time::sleep(POLL_INTERVAL).await;
+
+        let task = get_video_task(GetVideoTaskArgs {
+          api_key: &api_key,
+          task_id: &created.task_id,
+        }).await.expect("get_video_task should succeed");
+
+        println!("Poll {}: status {} (progress: {:?})", poll, task.status, task.maybe_progress);
+
+        if task.status.is_terminal() {
+          assert!(task.status.is_success(), "task should complete successfully: {:?}", task);
+          let video_url = task.maybe_video_url.expect("completed task should have a video url");
+          println!("Video URL: {}", video_url);
+          return;
+        }
+      }
+
+      panic!("Task {} did not reach a terminal state in time", created.task_id);
+    }
+  }
 }

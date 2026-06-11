@@ -26,4 +26,5 @@ serde_derive.workspace = true
 serde_json.workspace = true
 
 [dev-dependencies]
+test_data = { path = "../../testing/test_data" }
 tokio = { version = "1", features = ["full"] }
