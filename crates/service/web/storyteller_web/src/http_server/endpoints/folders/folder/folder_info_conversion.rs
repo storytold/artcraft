@@ -3,7 +3,7 @@ use std::marker::PhantomData;
 
 use sqlx::{Executor, MySql};
 
-use artcraft_api_defs::folders::common::{FolderInfo, FolderThumbnail};
+use artcraft_api_defs::folders::common::{FolderInfo, FolderThumbnail, FolderThumbnailVideoPreviews};
 use bucket_paths::legacy::typified_paths::public::media_files::bucket_file_path::MediaFileBucketPath;
 use mysql_queries::queries::folders::folder::folder_row::FolderRow;
 use mysql_queries::queries::media_files::get::batch_get_media_file_thumbnails_by_tokens::{
@@ -122,8 +122,8 @@ fn build_folder_thumbnail(
     row.maybe_public_bucket_extension.as_deref(),
   );
 
-  // Reuse `MediaLinksBuilder` to produce the CDN URL + thumbnail
-  // template, then pull just those two fields onto the compact
+  // Reuse `MediaLinksBuilder` to produce the CDN URL, thumbnail template,
+  // and video previews, then pull those fields onto the compact
   // FolderThumbnail wire shape.
   let media_links = MediaLinksBuilder::from_media_path_and_env(
     media_domain,
@@ -131,11 +131,81 @@ fn build_folder_thumbnail(
     &bucket_path,
   );
 
+  // Only video media files have previews; `MediaLinksBuilder` returns
+  // `None` for everything else.
+  let maybe_video_previews = media_links.maybe_video_previews
+    .map(|previews| FolderThumbnailVideoPreviews {
+      still: previews.still,
+      animated: previews.animated,
+      still_thumbnail_template: previews.still_thumbnail_template,
+      animated_thumbnail_template: previews.animated_thumbnail_template,
+    });
+
   FolderThumbnail {
     token: row.token,
     media_class: row.media_class,
     media_type: row.media_type,
     cdn_url: media_links.cdn_url,
     maybe_thumbnail_template: media_links.maybe_thumbnail_template,
+    maybe_video_previews,
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use enums::by_table::media_files::media_file_class::MediaFileClass;
+  use enums::by_table::media_files::media_file_type::MediaFileType;
+
+  use super::*;
+
+  const PROD_CDN: &str = "https://cdn-2.fakeyou.com";
+  const OBJECT_HASH: &str = "t6cnyw4g3e8k7carkk2bvrt6nd3fycjv";
+
+  #[test]
+  fn mp4_video_gets_video_previews() {
+    let thumbnail = build_thumbnail_for_extension(MediaFileClass::Video, MediaFileType::Mp4, ".mp4");
+
+    assert_eq!(thumbnail.maybe_thumbnail_template, None);
+
+    let previews = thumbnail.maybe_video_previews.expect("video should have previews");
+    assert_eq!(
+      previews.still.as_str(),
+      format!("{PROD_CDN}/media/t/6/c/n/y/{OBJECT_HASH}/storyteller_{OBJECT_HASH}.mp4-thumb.jpg"));
+    assert_eq!(
+      previews.animated.as_str(),
+      format!("{PROD_CDN}/media/t/6/c/n/y/{OBJECT_HASH}/storyteller_{OBJECT_HASH}.mp4-thumb.gif"));
+    assert_eq!(
+      previews.still_thumbnail_template,
+      format!("{PROD_CDN}/cdn-cgi/image/width={{WIDTH}},quality=95/media/t/6/c/n/y/{OBJECT_HASH}/storyteller_{OBJECT_HASH}.mp4-thumb.jpg"));
+    assert_eq!(
+      previews.animated_thumbnail_template,
+      format!("{PROD_CDN}/cdn-cgi/image/width={{WIDTH}},quality=95/media/t/6/c/n/y/{OBJECT_HASH}/storyteller_{OBJECT_HASH}.mp4-thumb.gif"));
+  }
+
+  #[test]
+  fn png_image_gets_thumbnail_template_but_no_video_previews() {
+    let thumbnail = build_thumbnail_for_extension(MediaFileClass::Image, MediaFileType::Png, ".png");
+
+    assert_eq!(
+      thumbnail.maybe_thumbnail_template,
+      Some(format!("{PROD_CDN}/cdn-cgi/image/width={{WIDTH}},quality=95/media/t/6/c/n/y/{OBJECT_HASH}/storyteller_{OBJECT_HASH}.png")));
+    assert!(thumbnail.maybe_video_previews.is_none());
+  }
+
+  fn build_thumbnail_for_extension(
+    media_class: MediaFileClass,
+    media_type: MediaFileType,
+    extension: &str,
+  ) -> FolderThumbnail {
+    let row = MediaFileThumbnailRow {
+      token: MediaFileToken::new_from_str("m_test"),
+      media_class,
+      media_type,
+      public_bucket_directory_hash: OBJECT_HASH.to_string(),
+      maybe_public_bucket_prefix: Some("storyteller_".to_string()),
+      maybe_public_bucket_extension: Some(extension.to_string()),
+    };
+
+    build_folder_thumbnail(row, MediaDomain::FakeYou, ServerEnvironment::Production)
   }
 }
