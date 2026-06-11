@@ -171,6 +171,8 @@ mod tests {
             println!("    raw message:       {}", reason.raw_message);
             println!("    underlying status: {}", reason.maybe_underlying_status.as_deref().unwrap_or("(unparsed)"));
             println!("    content violation: {}", reason.is_content_violation());
+            println!("    error type:        {}", reason.maybe_error_type.as_deref().unwrap_or("(none)"));
+            println!("    request id:        {}", reason.maybe_request_id.as_deref().unwrap_or("(none)"));
           }
           Ok(None) => println!("  failure probe: content unexpectedly downloadable"),
           Err(err) => println!("  failure probe error: {err}"),
