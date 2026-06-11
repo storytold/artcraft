@@ -12,10 +12,6 @@ use crate::requests::comet_host::COMET_API_BASE_URL;
 use crate::requests::create_video::request_types::CreateVideoRawResponse;
 use crate::requests::video_task_status::CometVideoTaskStatus;
 
-/// Seedance 2.0 models support 4-15 second durations.
-const MIN_DURATION_SECONDS: u8 = 4;
-const MAX_DURATION_SECONDS: u8 = 15;
-
 // ── Public args ──
 
 /// Top-level argument to [`create_video`]. Borrows the API key separately
@@ -27,16 +23,20 @@ pub struct CreateVideoArgs<'a> {
 }
 
 /// The material part of a video creation request (`POST /v1/videos`).
+///
+/// This is the generic, model-agnostic wire shape. Per-model duration and
+/// size constraints are NOT enforced here — use the strongly-typed bindings
+/// in [`crate::generate::video`] which validate before delegating to this.
 #[derive(Clone)]
 pub struct CreateVideoRequest {
-  /// Which Doubao Seedance model fulfils the request.
-  pub model: DoubaoSeedance2p0Model,
+  /// Which video model fulfils the request.
+  pub model: CometVideoModelRaw,
 
   /// Text description of the desired video. Reference attached images in
   /// the prompt as `[Image 1]`, `[Image 2]`, etc.
   pub prompt: String,
 
-  /// Video duration in seconds (4-15 for Seedance 2.0 models). Default: 5.
+  /// Video duration in seconds. Valid ranges are model-specific. Default: 5.
   pub maybe_seconds: Option<u8>,
 
   /// Output size: an aspect-ratio preset or exact dimensions.
@@ -44,16 +44,29 @@ pub struct CreateVideoRequest {
 
   /// Optional reference images (JPEG, PNG, WebP) for image-to-video.
   /// Each is sent as a repeated `input_reference` multipart field.
+  /// Not all models support image input.
   pub input_reference_images: Vec<CometInputReferenceImage>,
 }
 
-/// The Doubao Seedance 2.0 models CometAPI fronts.
+/// The video models CometAPI fronts on `POST /v1/videos`.
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
-pub enum DoubaoSeedance2p0Model {
+pub enum CometVideoModelRaw {
   /// Seedance 2.0
   DoubaoSeedance2p0,
   /// Seedance 2.0 Fast
   DoubaoSeedance2p0Fast,
+  /// Seedance 1.5 Pro (text-only)
+  DoubaoSeedance1p5Pro,
+  /// Seedance 1.0 Pro (text-only)
+  DoubaoSeedance1p0Pro,
+  /// Vidu Q3
+  ViduQ3,
+  /// Vidu Q3 Turbo
+  ViduQ3Turbo,
+  /// Alibaba Wan 2.7
+  Wan2p7,
+  /// Alibaba Wan 2.6
+  Wan2p6,
 }
 
 /// Output video size: a ratio preset or exact pixel dimensions.
@@ -199,25 +212,21 @@ impl CreateVideoRequest {
       });
     }
 
-    if let Some(seconds) = self.maybe_seconds {
-      if !(MIN_DURATION_SECONDS..=MAX_DURATION_SECONDS).contains(&seconds) {
-        return Err(CometClientError::InvalidRequestField {
-          field: "seconds",
-          raw_value: seconds.to_string(),
-          reason: format!("duration must be {MIN_DURATION_SECONDS}-{MAX_DURATION_SECONDS} seconds for Seedance 2.0 models"),
-        });
-      }
-    }
-
     Ok(())
   }
 }
 
-impl DoubaoSeedance2p0Model {
+impl CometVideoModelRaw {
   pub fn as_api_str(&self) -> &'static str {
     match self {
       Self::DoubaoSeedance2p0 => "doubao-seedance-2-0",
       Self::DoubaoSeedance2p0Fast => "doubao-seedance-2-0-fast",
+      Self::DoubaoSeedance1p5Pro => "doubao-seedance-1-5-pro",
+      Self::DoubaoSeedance1p0Pro => "doubao-seedance-1-0-pro",
+      Self::ViduQ3 => "viduq3",
+      Self::ViduQ3Turbo => "viduq3-turbo",
+      Self::Wan2p7 => "wan2.7",
+      Self::Wan2p6 => "wan2.6",
     }
   }
 }
@@ -269,8 +278,14 @@ mod tests {
 
     #[test]
     fn model_api_strings() {
-      assert_eq!(DoubaoSeedance2p0Model::DoubaoSeedance2p0.as_api_str(), "doubao-seedance-2-0");
-      assert_eq!(DoubaoSeedance2p0Model::DoubaoSeedance2p0Fast.as_api_str(), "doubao-seedance-2-0-fast");
+      assert_eq!(CometVideoModelRaw::DoubaoSeedance2p0.as_api_str(), "doubao-seedance-2-0");
+      assert_eq!(CometVideoModelRaw::DoubaoSeedance2p0Fast.as_api_str(), "doubao-seedance-2-0-fast");
+      assert_eq!(CometVideoModelRaw::DoubaoSeedance1p5Pro.as_api_str(), "doubao-seedance-1-5-pro");
+      assert_eq!(CometVideoModelRaw::DoubaoSeedance1p0Pro.as_api_str(), "doubao-seedance-1-0-pro");
+      assert_eq!(CometVideoModelRaw::ViduQ3.as_api_str(), "viduq3");
+      assert_eq!(CometVideoModelRaw::ViduQ3Turbo.as_api_str(), "viduq3-turbo");
+      assert_eq!(CometVideoModelRaw::Wan2p7.as_api_str(), "wan2.7");
+      assert_eq!(CometVideoModelRaw::Wan2p6.as_api_str(), "wan2.6");
     }
 
     #[test]
@@ -287,7 +302,7 @@ mod tests {
     #[test]
     fn minimal_form_fields() {
       let request = CreateVideoRequest {
-        model: DoubaoSeedance2p0Model::DoubaoSeedance2p0Fast,
+        model: CometVideoModelRaw::DoubaoSeedance2p0Fast,
         prompt: "a corgi running through a field".to_string(),
         maybe_seconds: None,
         maybe_size: None,
@@ -303,7 +318,7 @@ mod tests {
     #[test]
     fn full_form_fields() {
       let request = CreateVideoRequest {
-        model: DoubaoSeedance2p0Model::DoubaoSeedance2p0,
+        model: CometVideoModelRaw::DoubaoSeedance2p0,
         prompt: "make [Image 1] come alive".to_string(),
         maybe_seconds: Some(10),
         maybe_size: Some(CometVideoSize::Portrait9x16),
@@ -329,18 +344,12 @@ mod tests {
       assert!(matches!(error, CometClientError::InvalidRequestField { field: "prompt", .. }));
     }
 
-    #[test]
-    fn duration_bounds() {
-      assert!(request_with_prompt_and_seconds("ok", Some(3)).validate().is_err());
-      assert!(request_with_prompt_and_seconds("ok", Some(4)).validate().is_ok());
-      assert!(request_with_prompt_and_seconds("ok", Some(15)).validate().is_ok());
-      assert!(request_with_prompt_and_seconds("ok", Some(16)).validate().is_err());
-      assert!(request_with_prompt_and_seconds("ok", None).validate().is_ok());
-    }
+    // NB: Duration ranges are model-specific and validated by the concrete
+    // bindings in `generate::video`; the generic layer accepts any value.
 
     fn request_with_prompt_and_seconds(prompt: &str, maybe_seconds: Option<u8>) -> CreateVideoRequest {
       CreateVideoRequest {
-        model: DoubaoSeedance2p0Model::DoubaoSeedance2p0,
+        model: CometVideoModelRaw::DoubaoSeedance2p0,
         prompt: prompt.to_string(),
         maybe_seconds,
         maybe_size: None,
@@ -364,7 +373,7 @@ mod tests {
       let result = create_video(CreateVideoArgs {
         api_key: &api_key,
         request: CreateVideoRequest {
-          model: DoubaoSeedance2p0Model::DoubaoSeedance2p0Fast,
+          model: CometVideoModelRaw::DoubaoSeedance2p0Fast,
           prompt: "a corgi running through a sunny meadow, cinematic".to_string(),
           maybe_seconds: Some(4),
           maybe_size: Some(CometVideoSize::Landscape16x9),
@@ -396,7 +405,7 @@ mod tests {
       let created = create_video(CreateVideoArgs {
         api_key: &api_key,
         request: CreateVideoRequest {
-          model: DoubaoSeedance2p0Model::DoubaoSeedance2p0Fast,
+          model: CometVideoModelRaw::DoubaoSeedance2p0Fast,
           prompt: "a corgi running through a sunny meadow, cinematic".to_string(),
           maybe_seconds: Some(4),
           maybe_size: Some(CometVideoSize::Landscape16x9),
