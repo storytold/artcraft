@@ -90,7 +90,23 @@ pub async fn get_video_task(args: GetVideoTaskArgs<'_>) -> Result<CometVideoTask
 mod tests {
   use super::*;
   use crate::error::comet_specific_api_error::CometSpecificApiError;
+  use crate::requests::get_video_content::get_video_content::{
+    probe_video_failure_reason, ProbeVideoFailureReasonArgs,
+  };
   use crate::test_utils::load_api_key;
+
+  /// Historical task ids from real generations, kept for diagnosing how
+  /// CometAPI reports terminal states. Several of these failed content
+  /// moderation ("VIOLATION").
+  const KNOWN_TASK_IDS: &[&str] = &[
+    "task_ZISEWaXgmyqXWiesd287qTyAZLapbwz8",
+    "task_ZvwV2nhp08ng4krT16CPxtHZ2SgABElj",
+    "task_GZPVhcnIZKLJBqsCGTBvMiUFN9uDnwJv",
+    "task_iGnAQ5lwqhMltxhN5k9yATAjs7AgjV39",
+    "task_hGhShys2Wi2gPf2qUkuQ38VKIytWAw1d",
+    "task_t84NmrcT3k8s6Il4xJeKtfxXipA3n8RQ",
+    "task_6OhdGVFZjHNtOKKx8Ewz37mENaVIhC3X",
+  ];
 
   /// Live test: makes a REAL network request (no generation cost — the task
   /// id is bogus, so this exercises auth + the TaskNotFound error path).
@@ -111,6 +127,56 @@ mod tests {
         assert_eq!(task_id, "task_does_not_exist_artcraft_test");
       }
       other => panic!("Expected TaskNotFound, got: {:?}", other),
+    }
+  }
+
+  /// Live diagnostic: polls the known historical tasks and prints their full
+  /// state, including the failure reason recovered from the content
+  /// endpoint for failed tasks. Free (read-only GETs, no generation cost),
+  /// but hits the real API. Run manually with:
+  ///   cargo test -p comet_api_client live_poll_known_task_ids -- --ignored --nocapture
+  ///
+  /// NB: The poll endpoint reports failures as a bare `status: "failed"`.
+  /// The ONLY way to learn WHY is `GET /v1/videos/{id}/content`, whose error
+  /// message leaks the underlying provider status (eg. "VIOLATION" for
+  /// content-moderation rejections — these run to progress 100 and then
+  /// fail when the finished output is moderated).
+  #[ignore]
+  #[tokio::test]
+  async fn live_poll_known_task_ids() {
+    let api_key = load_api_key();
+
+    for task_id in KNOWN_TASK_IDS {
+      println!("===== {task_id}");
+
+      let task = match get_video_task(GetVideoTaskArgs { api_key: &api_key, task_id }).await {
+        Ok(task) => task,
+        Err(err) => {
+          println!("  poll error: {err}");
+          continue;
+        }
+      };
+
+      println!("  status:       {}", task.status);
+      println!("  model:        {}", task.maybe_model.as_deref().unwrap_or("?"));
+      println!("  progress:     {:?}", task.maybe_progress);
+      println!("  created_at:   {:?}", task.maybe_created_at);
+      println!("  completed_at: {:?}", task.maybe_completed_at);
+      println!("  video_url:    {}", task.maybe_video_url.as_deref().unwrap_or("(none)"));
+
+      if task.status.is_failure() {
+        match probe_video_failure_reason(ProbeVideoFailureReasonArgs { api_key: &api_key, task_id }).await {
+          Ok(Some(reason)) => {
+            println!("  failure reason (via /content):");
+            println!("    raw message:       {}", reason.raw_message);
+            println!("    underlying status: {}", reason.maybe_underlying_status.as_deref().unwrap_or("(unparsed)"));
+            println!("    content violation: {}", reason.is_content_violation());
+          }
+          Ok(None) => println!("  failure probe: content unexpectedly downloadable"),
+          Err(err) => println!("  failure probe error: {err}"),
+        }
+      }
+      println!();
     }
   }
 }
