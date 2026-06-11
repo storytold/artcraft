@@ -62,6 +62,7 @@ export function useImageCostEstimate(params: ImageCostParams): number | null {
     params.model,
     params.aspectRatio,
     params.resolution,
+    params.quality,
     params.numImages,
     params.hasReferenceImages,
     params.imageMediaTokenCount,

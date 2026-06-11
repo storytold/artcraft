@@ -18,6 +18,7 @@ import { faCircleInfo } from "@fortawesome/pro-regular-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { GalleryItem, GalleryModal } from "@storyteller/ui-gallery-modal";
 import {
+  CommonResolution,
   SizeIconOption,
   SizeOption,
   VideoModel,
@@ -57,6 +58,27 @@ declare global {
 type GROK_ASPECT_RATIO = "landscape" | "portrait" | "square";
 
 const EMPTY_CHARACTERS: StoredCharacter[] = [];
+
+// The video store keeps resolution as a legacy display string ("480p" / "720p"
+// / "1080p") taken from the model's `resolutionOptions`. The generate request,
+// however, needs the `CommonResolution` enum. Map here so the user's resolution
+// choice is actually sent: omitting it makes the backend fall back to the
+// model's default resolution (and bill for it), which is what made the charge
+// disagree with the cost preview — the preview reads the same store value and
+// converts it correctly. Snake_case forms are accepted too for robustness.
+const RESOLUTION_STRING_TO_COMMON: Record<string, CommonResolution> = {
+  "480p": CommonResolution.FourEightyP,
+  "720p": CommonResolution.SevenTwentyP,
+  "1080p": CommonResolution.TenEightyP,
+  half_k: CommonResolution.HalfK,
+  one_k: CommonResolution.OneK,
+  two_k: CommonResolution.TwoK,
+  three_k: CommonResolution.ThreeK,
+  four_k: CommonResolution.FourK,
+  four_eighty_p: CommonResolution.FourEightyP,
+  seven_twenty_p: CommonResolution.SevenTwentyP,
+  ten_eighty_p: CommonResolution.TenEightyP,
+};
 
 const DEFAULT_RESOLUTIONS: SizeOption[] = [
   {
@@ -765,6 +787,17 @@ export const PromptBoxVideo = ({
       // Pass duration if model supports it
       if (selectedModel.durationOptions && duration !== null) {
         request.duration_seconds = duration;
+      }
+
+      // Pass the chosen resolution when the model exposes a resolution picker.
+      // Guarded on `resolutionOptions` so a stale store value (left over from a
+      // model that did support resolution) isn't sent for one that doesn't.
+      if (selectedModel.resolutionOptions?.length) {
+        const mappedResolution =
+          RESOLUTION_STRING_TO_COMMON[resolution as string];
+        if (mappedResolution) {
+          request.resolution = mappedResolution;
+        }
       }
 
       switch (selectedModel?.tauriId) {
