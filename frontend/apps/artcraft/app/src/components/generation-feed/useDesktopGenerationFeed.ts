@@ -2,6 +2,10 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { listen, UnlistenFn } from "@tauri-apps/api/event";
 import { GetTaskQueue, MarkTaskAsDismissed } from "@storyteller/tauri-api";
 import type { TaskQueueItem } from "@storyteller/tauri-api";
+import {
+  useTextToImageGenerationCompleteEvent,
+  useVideoGenerationCompleteEvent,
+} from "@storyteller/tauri-events";
 import { MediaFilesApi } from "@storyteller/api";
 import {
   getMediaThumbnail,
@@ -134,6 +138,62 @@ export function useDesktopGenerationFeed(options: {
       // ignore — next poll retries
     }
   }, [mediaType]);
+
+  /** Prepend completed items (deduped) ahead of the next poll. */
+  const addCompletedItems = useCallback((items: GalleryItem[]) => {
+    if (items.length === 0) return;
+    setNewlyCompleted((prev) => {
+      const existingIds = new Set(prev.map((i) => i.id));
+      const fresh = items.filter((i) => !existingIds.has(i.id));
+      if (fresh.length === 0) return prev;
+      return [...fresh, ...prev];
+    });
+  }, []);
+
+  // Push-style completion: the Rust backend emits typed completion events
+  // carrying the generated media inline, so results appear instantly instead
+  // of waiting on the next task-queue poll. The follow-up load() reconciles
+  // the pending chip; the poll's own newly-completed detection dedupes by
+  // media token against these. NB: the tauri-events hooks subscribe once on
+  // mount, so the callbacks must only capture stable values (mediaType is a
+  // constant per page; addCompletedItems/load are stable).
+  useTextToImageGenerationCompleteEvent(async (event) => {
+    if (mediaType !== "image" || !event.generated_images?.length) return;
+    const createdAt = new Date().toISOString();
+    addCompletedItems(
+      event.generated_images.map((img) => ({
+        id: img.media_token,
+        label: "Image Generation",
+        thumbnail:
+          getThumbnailUrl(img.maybe_thumbnail_template, {
+            width: THUMBNAIL_SIZES.LARGE,
+          }) ?? img.cdn_url,
+        fullImage: img.cdn_url,
+        createdAt,
+        mediaClass: "image",
+      })),
+    );
+    load();
+  });
+
+  useVideoGenerationCompleteEvent(async (event) => {
+    if (mediaType !== "video" || !event.generated_video) return;
+    const video = event.generated_video;
+    addCompletedItems([
+      {
+        id: video.media_token,
+        label: "Video Generation",
+        thumbnail:
+          getThumbnailUrl(video.maybe_thumbnail_template, {
+            width: THUMBNAIL_SIZES.LARGE,
+          }) ?? null,
+        fullImage: video.cdn_url,
+        createdAt: new Date().toISOString(),
+        mediaClass: "video",
+      },
+    ]);
+    load();
+  });
 
   // Poll + reload on Tauri generation events and local "task-queue-update"
   // dispatches (fired by the pages right after enqueueing).
