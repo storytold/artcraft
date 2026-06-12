@@ -75,6 +75,9 @@ pub enum KinoviSeedance2p0FastBatchCount {
 impl GenerateSeedance2p0FastRequest {
   /// Calculate the cost of this generation request, in Kinovi credits and
   /// USD cents (rounded up).
+  ///
+  /// NB: Unlike Seedance 2.0, attaching reference videos does NOT add a
+  /// surcharge on the Fast model (per Kinovi's pricing page).
   pub fn calculate_costs(&self) -> KinoviGenerationCost {
     let credits_per_second: u64 = match self.output_resolution {
       Some(KinoviSeedance2p0FastOutputResolution::FourEightyP) => 14,
@@ -391,6 +394,53 @@ mod tests {
         let costs = request.calculate_costs();
         assert_eq!(u64::from(request.estimate_credits()), costs.kinovi_credits);
         assert_eq!(request.estimate_cost_in_usd_cents(), costs.usd_cents_rounded_up);
+      }
+    }
+
+    // ── Video references are FREE on Fast ──
+    //
+    // Per Kinovi's pricing page ("With Video Uploads"), attaching a
+    // reference video does NOT change the price on Seedance 2.0 Fast —
+    // unlike regular Seedance 2.0.
+
+    mod video_reference_tests {
+      use super::*;
+
+      fn with_video_ref(mut request: GenerateSeedance2p0FastRequest) -> GenerateSeedance2p0FastRequest {
+        request.reference_video_urls = Some(vec!["https://example.com/ref.mp4".to_string()]);
+        request
+      }
+
+      /// The full Fast table from Kinovi's pricing page, with a 10 sec
+      /// video reference attached — identical to the base prices.
+      #[test]
+      fn kinovi_pricing_table_with_video_reference() {
+        let cases: &[(fn(u8) -> GenerateSeedance2p0FastRequest, u8, u64)] = &[
+          // 480p: unchanged
+          (r480, 4, 56),
+          (r480, 5, 70),
+          (r480, 10, 140),
+          (r480, 15, 210),
+          // 720p: unchanged
+          (r720, 4, 112),
+          (r720, 5, 140),
+          (r720, 10, 280),
+          (r720, 15, 420),
+        ];
+
+        for (make, duration, expected_credits) in cases {
+          let costs = with_video_ref(make(*duration)).calculate_costs();
+          assert_eq!(costs.kinovi_credits, *expected_credits,
+            "duration {duration}s should cost {expected_credits} credits even with a video reference");
+        }
+      }
+
+      #[test]
+      fn video_reference_does_not_change_cost() {
+        let base = r720(5).calculate_costs();
+        let with_ref = with_video_ref(r720(5)).calculate_costs();
+        assert_eq!(base.kinovi_credits, with_ref.kinovi_credits);
+        assert_eq!(base.usd_cents_rounded_up, with_ref.usd_cents_rounded_up);
       }
     }
 
