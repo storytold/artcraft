@@ -13,6 +13,8 @@ use crate::generate::generate_video::providers::artcraft::seedance_2p0_fast::req
 
 /// USD cents per second by resolution, derived from upstream Fast rates:
 ///   480p:  10 upstream-credits/sec / 193 upstream-credits/$1 * 100 ~= 5.181 c/s
+///   (historical 193 credits/$1 derivation; the upstream package is now
+///   ~231 credits/$1 but user pricing is intentionally unchanged)
 ///   720p:  28 upstream-credits/sec / 220 upstream-credits/$1 * 100 ~= 12.727 c/s
 ///
 /// We keep these as f64 because per-second rates are fractional; rounding

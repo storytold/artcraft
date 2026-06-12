@@ -86,27 +86,27 @@ mod tests {
     }
   }
 
-  // ── USD pricing (193 credits per dollar; rounded) ──
+  // ── USD pricing (231 credits per dollar; rounded up) ──
 
   mod usd {
     use super::*;
 
     #[test]
     fn batch_one_is_six_cents() {
-      // 12 / 193 × 100 = 6.21 → 6¢
-      assert_eq!(usd_cents_for(KinoviMidjourneyBatchCount::One), 7); // rounds UP
+      // 12/231 × 100 = 5.19 → 6¢
+      assert_eq!(usd_cents_for(KinoviMidjourneyBatchCount::One), 6); // rounds UP
     }
 
     #[test]
-    fn batch_two_is_twelve_cents() {
-      // 24 / 193 × 100 = 12.44 → 12¢
-      assert_eq!(usd_cents_for(KinoviMidjourneyBatchCount::Two), 13); // rounds UP
+    fn batch_two_is_eleven_cents() {
+      // 24/231 × 100 = 10.39 → 11¢
+      assert_eq!(usd_cents_for(KinoviMidjourneyBatchCount::Two), 11); // rounds UP
     }
 
     #[test]
-    fn batch_four_is_twentyfive_cents() {
-      // 48 / 193 × 100 = 24.87 → 25¢
-      assert_eq!(usd_cents_for(KinoviMidjourneyBatchCount::Four), 25);
+    fn batch_four_is_twentyone_cents() {
+      // 48/231 × 100 = 20.78 → 21¢
+      assert_eq!(usd_cents_for(KinoviMidjourneyBatchCount::Four), 21);
     }
   }
 

@@ -60,7 +60,7 @@ mod tests {
     let cost = KinoviMidjourney7NijiCostState { batch_count: KinoviMidjourneyBatchCount::One }
       .estimate_cost();
     assert_eq!(cost.cost_in_credits, Some(12));
-    assert_eq!(cost.cost_in_usd_cents, Some(7)); // 1200/193 = 6.22 -> rounds UP
+    assert_eq!(cost.cost_in_usd_cents, Some(6)); // 1200/231 = 5.19 -> rounds UP
   }
 
   #[test]
@@ -68,7 +68,7 @@ mod tests {
     let cost = KinoviMidjourney7NijiCostState { batch_count: KinoviMidjourneyBatchCount::Two }
       .estimate_cost();
     assert_eq!(cost.cost_in_credits, Some(24));
-    assert_eq!(cost.cost_in_usd_cents, Some(13)); // 2400/193 = 12.44 -> rounds UP
+    assert_eq!(cost.cost_in_usd_cents, Some(11)); // 2400/231 = 10.39 -> rounds UP
   }
 
   #[test]
@@ -76,7 +76,7 @@ mod tests {
     let cost = KinoviMidjourney7NijiCostState { batch_count: KinoviMidjourneyBatchCount::Four }
       .estimate_cost();
     assert_eq!(cost.cost_in_credits, Some(48));
-    assert_eq!(cost.cost_in_usd_cents, Some(25));
+    assert_eq!(cost.cost_in_usd_cents, Some(21));
   }
 
   #[test]

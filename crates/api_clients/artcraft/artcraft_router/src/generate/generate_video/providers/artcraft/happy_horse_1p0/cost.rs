@@ -14,13 +14,16 @@ use crate::generate::generate_video::providers::artcraft::happy_horse_1p0::reque
 //
 // Default resolution (None) is 720p.
 // Batch count multiplies the total cost.
-// Credit package: 22,000 credits for $114 (~192.98 credits/$1, rounded to 193).
+// Credit package (historical): 22,000 credits for $114 (~193 credits/$1).
+// The upstream package is now 500,000 credits for $2,159.09 (~231 credits/$1),
+// but user pricing is intentionally kept at the 193-derived rates.
 //
 // ArtCraft credits: 100 credits = $1.00, so ArtCraft credits = USD cents.
 // We compute USD cents from upstream credits ÷ credits_per_dollar × 100.
 
 const UPSTREAM_CREDITS_PER_SECOND_720P: u32 = 33;
 const UPSTREAM_CREDITS_PER_SECOND_1080P: u32 = 66;
+// Frozen at the historical rate so user pricing doesn't shift with the package deal.
 const UPSTREAM_CREDITS_PER_DOLLAR: f64 = 193.0;
 
 pub struct ArtcraftHappyHorse1p0CostState {
@@ -207,7 +210,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn artcraft_matches_kinovi_all_combos() {
+    fn artcraft_price_covers_kinovi_cost_all_combos() {
       let resolutions = [
         Some(RouterResolution::SevenTwentyP),
         None,
@@ -234,15 +237,15 @@ mod tests {
               .estimate_cost()
               .expect("kinovi estimate_cost");
 
-            // NB: The kinovi provider estimate rounds fractional cents UP
-            // (KinoviGenerationCost), while the artcraft user-facing price
-            // here rounds to nearest — so kinovi may exceed artcraft by at
-            // most one cent.
+            // Under the 500,000-credit package (~231 credits/$1) Kinovi's
+            // cost sits below the artcraft user-facing price. Assert the
+            // user price covers the provider cost (1¢ tolerance for
+            // Kinovi's round-up).
             let artcraft_cents = artcraft_cost.cost_in_usd_cents.expect("artcraft cents");
             let kinovi_cents = kinovi_cost.cost_in_usd_cents.expect("kinovi cents");
             assert!(
-              kinovi_cents == artcraft_cents || kinovi_cents == artcraft_cents + 1,
-              "USD cents mismatch: res={:?} dur={}s batch={} (artcraft={}, kinovi={})",
+              kinovi_cents <= artcraft_cents + 1,
+              "kinovi cost exceeds artcraft price: res={:?} dur={}s batch={} (artcraft={}, kinovi={})",
               res, dur, batch, artcraft_cents, kinovi_cents,
             );
           }

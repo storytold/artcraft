@@ -284,16 +284,16 @@ mod tests {
 
     #[test]
     fn usd_cents_batch_one_is_six() {
-      assert_eq!(make_request(KinoviMidjourneyBatchCount::One).calculate_costs().usd_cents_rounded_up, 7); // 1200/193 = 6.22 -> rounds UP
-      assert_eq!(make_request(KinoviMidjourneyBatchCount::One).calculate_costs().usd_cents_rounded_down, 6);
-      assert!((make_request(KinoviMidjourneyBatchCount::One).calculate_costs().usd_cents_fractional - (1200.0 / 193.0)).abs() < 1e-9);
+      assert_eq!(make_request(KinoviMidjourneyBatchCount::One).calculate_costs().usd_cents_rounded_up, 6); // 1200/231 = 5.19 -> rounds UP
+      assert_eq!(make_request(KinoviMidjourneyBatchCount::One).calculate_costs().usd_cents_rounded_down, 5);
+      assert!((make_request(KinoviMidjourneyBatchCount::One).calculate_costs().usd_cents_fractional - (1200.0 / 231.0)).abs() < 1e-9);
     }
 
     #[test]
-    fn usd_cents_batch_four_is_twentyfive() {
-      assert_eq!(make_request(KinoviMidjourneyBatchCount::Four).calculate_costs().usd_cents_rounded_up, 25); // 4800/193 = 24.87 -> rounds UP
-      assert_eq!(make_request(KinoviMidjourneyBatchCount::Four).calculate_costs().usd_cents_rounded_down, 24);
-      assert!((make_request(KinoviMidjourneyBatchCount::Four).calculate_costs().usd_cents_fractional - (4800.0 / 193.0)).abs() < 1e-9);
+    fn usd_cents_batch_four_is_twentyone() {
+      assert_eq!(make_request(KinoviMidjourneyBatchCount::Four).calculate_costs().usd_cents_rounded_up, 21); // 4800/231 = 20.78 -> rounds UP
+      assert_eq!(make_request(KinoviMidjourneyBatchCount::Four).calculate_costs().usd_cents_rounded_down, 20);
+      assert!((make_request(KinoviMidjourneyBatchCount::Four).calculate_costs().usd_cents_fractional - (4800.0 / 231.0)).abs() < 1e-9);
     }
 
     /// Pricing must match the inner module exactly.

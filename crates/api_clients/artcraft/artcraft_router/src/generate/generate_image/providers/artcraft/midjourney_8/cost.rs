@@ -82,54 +82,54 @@ mod tests {
     }
   }
 
-  // ── 1:1 cost parity with Kinovi v8 ──
+  // ── Cost coverage vs Kinovi v8 ──
 
-  mod kinovi_parity {
+  mod kinovi_margin {
     use super::*;
     use crate::generate::generate_image::providers::kinovi::midjourney_8::cost::KinoviMidjourney8CostState;
     use seedance2pro_client::generate::image::generate_midjourney_v8::KinoviMidjourneyBatchCount;
 
     #[test]
-    fn batch_1_matches_kinovi() {
+    fn batch_1_covers_kinovi_cost() {
       let kinovi = KinoviMidjourney8CostState { batch_count: KinoviMidjourneyBatchCount::One }
         .estimate_cost();
-      // NB: The kinovi provider estimate rounds fractional cents UP
-      // (KinoviGenerationCost) while this artcraft user price rounds to
-      // nearest — kinovi may exceed it by at most one cent.
+      // Under the 500,000-credit package (~231 credits/$1) Kinovi's cost
+      // sits below this artcraft user price. Assert the user price covers
+      // the provider cost (1¢ tolerance for Kinovi's round-up).
       let artcraft_cents = cost_cents(1);
       let kinovi_cents = kinovi.cost_in_usd_cents.unwrap();
       assert!(
-        kinovi_cents == artcraft_cents || kinovi_cents == artcraft_cents + 1,
+        kinovi_cents <= artcraft_cents + 1,
         "batch 1: artcraft={artcraft_cents}, kinovi={kinovi_cents}",
       );
     }
 
     #[test]
-    fn batch_2_matches_kinovi() {
+    fn batch_2_covers_kinovi_cost() {
       let kinovi = KinoviMidjourney8CostState { batch_count: KinoviMidjourneyBatchCount::Two }
         .estimate_cost();
-      // NB: The kinovi provider estimate rounds fractional cents UP
-      // (KinoviGenerationCost) while this artcraft user price rounds to
-      // nearest — kinovi may exceed it by at most one cent.
+      // Under the 500,000-credit package (~231 credits/$1) Kinovi's cost
+      // sits below this artcraft user price. Assert the user price covers
+      // the provider cost (1¢ tolerance for Kinovi's round-up).
       let artcraft_cents = cost_cents(2);
       let kinovi_cents = kinovi.cost_in_usd_cents.unwrap();
       assert!(
-        kinovi_cents == artcraft_cents || kinovi_cents == artcraft_cents + 1,
+        kinovi_cents <= artcraft_cents + 1,
         "batch 2: artcraft={artcraft_cents}, kinovi={kinovi_cents}",
       );
     }
 
     #[test]
-    fn batch_4_matches_kinovi() {
+    fn batch_4_covers_kinovi_cost() {
       let kinovi = KinoviMidjourney8CostState { batch_count: KinoviMidjourneyBatchCount::Four }
         .estimate_cost();
-      // NB: The kinovi provider estimate rounds fractional cents UP
-      // (KinoviGenerationCost) while this artcraft user price rounds to
-      // nearest — kinovi may exceed it by at most one cent.
+      // Under the 500,000-credit package (~231 credits/$1) Kinovi's cost
+      // sits below this artcraft user price. Assert the user price covers
+      // the provider cost (1¢ tolerance for Kinovi's round-up).
       let artcraft_cents = cost_cents(4);
       let kinovi_cents = kinovi.cost_in_usd_cents.unwrap();
       assert!(
-        kinovi_cents == artcraft_cents || kinovi_cents == artcraft_cents + 1,
+        kinovi_cents <= artcraft_cents + 1,
         "batch 4: artcraft={artcraft_cents}, kinovi={kinovi_cents}",
       );
     }

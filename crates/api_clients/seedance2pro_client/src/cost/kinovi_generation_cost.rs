@@ -50,14 +50,14 @@ mod tests {
 
   #[test]
   fn exact_dollar_boundaries_do_not_round() {
-    // 193 credits = exactly $1.00 — all three representations agree.
-    let cost = KinoviGenerationCost::from_kinovi_credits(193);
-    assert_eq!(cost.kinovi_credits, 193);
+    // 231 credits = exactly $1.00 — all three representations agree.
+    let cost = KinoviGenerationCost::from_kinovi_credits(231);
+    assert_eq!(cost.kinovi_credits, 231);
     assert_eq!(cost.usd_cents_rounded_up, 100);
     assert_eq!(cost.usd_cents_rounded_down, 100);
     assert!((cost.usd_cents_fractional - 100.0).abs() < FLOAT_TOLERANCE);
 
-    let cost = KinoviGenerationCost::from_kinovi_credits(386);
+    let cost = KinoviGenerationCost::from_kinovi_credits(462);
     assert_eq!(cost.usd_cents_rounded_up, 200);
     assert_eq!(cost.usd_cents_rounded_down, 200);
     assert!((cost.usd_cents_fractional - 200.0).abs() < FLOAT_TOLERANCE);
@@ -65,22 +65,22 @@ mod tests {
 
   #[test]
   fn fractional_cents_round_in_both_directions() {
-    // 194 credits = 100.518... cents.
-    let cost = KinoviGenerationCost::from_kinovi_credits(194);
+    // 232 credits = 100.432... cents.
+    let cost = KinoviGenerationCost::from_kinovi_credits(232);
     assert_eq!(cost.usd_cents_rounded_up, 101);
     assert_eq!(cost.usd_cents_rounded_down, 100);
-    assert!((cost.usd_cents_fractional - (19400.0 / 193.0)).abs() < FLOAT_TOLERANCE);
+    assert!((cost.usd_cents_fractional - (23200.0 / 231.0)).abs() < FLOAT_TOLERANCE);
 
-    // 1 credit = 0.518... cents.
+    // 1 credit = 0.432... cents.
     let cost = KinoviGenerationCost::from_kinovi_credits(1);
     assert_eq!(cost.usd_cents_rounded_up, 1);
     assert_eq!(cost.usd_cents_rounded_down, 0);
-    assert!((cost.usd_cents_fractional - (100.0 / 193.0)).abs() < FLOAT_TOLERANCE);
+    assert!((cost.usd_cents_fractional - (100.0 / 231.0)).abs() < FLOAT_TOLERANCE);
   }
 
   #[test]
   fn rounded_bounds_bracket_the_fractional_value() {
-    for credits in [0, 1, 12, 75, 193, 194, 200, 450, 1350] {
+    for credits in [0, 1, 12, 75, 200, 231, 232, 450, 1350] {
       let cost = KinoviGenerationCost::from_kinovi_credits(credits);
       assert!(cost.usd_cents_rounded_down as f64 <= cost.usd_cents_fractional);
       assert!(cost.usd_cents_fractional <= cost.usd_cents_rounded_up as f64);

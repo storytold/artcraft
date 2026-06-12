@@ -50,11 +50,11 @@ mod tests {
 
     assert!(cost.video_reference_surcharge_cost.is_none());
 
-    // Base: 200 credits; 20000/193 = 103.63.
+    // Base: 200 credits; 20000/231 = 86.58.
     assert_eq!(cost.base_cost.kinovi_credits, 200);
-    assert_eq!(cost.base_cost.usd_cents_rounded_up, 104);
-    assert_eq!(cost.base_cost.usd_cents_rounded_down, 103);
-    assert!((cost.base_cost.usd_cents_fractional - (20000.0 / 193.0)).abs() < FLOAT_TOLERANCE);
+    assert_eq!(cost.base_cost.usd_cents_rounded_up, 87);
+    assert_eq!(cost.base_cost.usd_cents_rounded_down, 86);
+    assert!((cost.base_cost.usd_cents_fractional - (20000.0 / 231.0)).abs() < FLOAT_TOLERANCE);
 
     // Total equals base when there's no surcharge.
     assert_eq!(cost.total_cost, cost.base_cost);
@@ -64,24 +64,24 @@ mod tests {
   fn with_surcharge() {
     let cost = KinoviSeedanceGenerationCost::from_base_and_surcharge(200, Some(40));
 
-    // Base: 200 credits; 20000/193 = 103.63.
+    // Base: 200 credits; 20000/231 = 86.58.
     assert_eq!(cost.base_cost.kinovi_credits, 200);
-    assert_eq!(cost.base_cost.usd_cents_rounded_up, 104);
-    assert_eq!(cost.base_cost.usd_cents_rounded_down, 103);
-    assert!((cost.base_cost.usd_cents_fractional - (20000.0 / 193.0)).abs() < FLOAT_TOLERANCE);
+    assert_eq!(cost.base_cost.usd_cents_rounded_up, 87);
+    assert_eq!(cost.base_cost.usd_cents_rounded_down, 86);
+    assert!((cost.base_cost.usd_cents_fractional - (20000.0 / 231.0)).abs() < FLOAT_TOLERANCE);
 
-    // Surcharge: 40 credits; 4000/193 = 20.73.
+    // Surcharge: 40 credits; 4000/231 = 17.32.
     let surcharge = cost.video_reference_surcharge_cost.expect("should have surcharge");
     assert_eq!(surcharge.kinovi_credits, 40);
-    assert_eq!(surcharge.usd_cents_rounded_up, 21);
-    assert_eq!(surcharge.usd_cents_rounded_down, 20);
-    assert!((surcharge.usd_cents_fractional - (4000.0 / 193.0)).abs() < FLOAT_TOLERANCE);
+    assert_eq!(surcharge.usd_cents_rounded_up, 18);
+    assert_eq!(surcharge.usd_cents_rounded_down, 17);
+    assert!((surcharge.usd_cents_fractional - (4000.0 / 231.0)).abs() < FLOAT_TOLERANCE);
 
-    // Total: 240 credits; 24000/193 = 124.35.
+    // Total: 240 credits; 24000/231 = 103.90.
     assert_eq!(cost.total_cost.kinovi_credits, 240);
-    assert_eq!(cost.total_cost.usd_cents_rounded_up, 125);
-    assert_eq!(cost.total_cost.usd_cents_rounded_down, 124);
-    assert!((cost.total_cost.usd_cents_fractional - (24000.0 / 193.0)).abs() < FLOAT_TOLERANCE);
+    assert_eq!(cost.total_cost.usd_cents_rounded_up, 104);
+    assert_eq!(cost.total_cost.usd_cents_rounded_down, 103);
+    assert!((cost.total_cost.usd_cents_fractional - (24000.0 / 231.0)).abs() < FLOAT_TOLERANCE);
   }
 
   #[test]
@@ -99,9 +99,10 @@ mod tests {
     let cost = KinoviSeedanceGenerationCost::from_base_and_surcharge(200, Some(40));
     let surcharge = cost.video_reference_surcharge_cost.unwrap();
 
-    // Parts round up to 104 + 21 = 125 — which happens to match here…
-    assert_eq!(cost.base_cost.usd_cents_rounded_up + surcharge.usd_cents_rounded_up, 125);
-    assert_eq!(cost.total_cost.usd_cents_rounded_up, 125);
+    // Parts round up to 87 + 18 = 105, but the total (240 credits) rounds
+    // once to 104 — one cent less than summing the rounded parts.
+    assert_eq!(cost.base_cost.usd_cents_rounded_up + surcharge.usd_cents_rounded_up, 105);
+    assert_eq!(cost.total_cost.usd_cents_rounded_up, 104);
 
     // …but the fractional parts always sum exactly to the fractional total.
     let parts = cost.base_cost.usd_cents_fractional + surcharge.usd_cents_fractional;
