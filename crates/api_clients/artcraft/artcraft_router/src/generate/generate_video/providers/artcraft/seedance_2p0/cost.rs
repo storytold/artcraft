@@ -227,7 +227,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn artcraft_price_covers_kinovi_cost_all_combos() {
+    fn artcraft_price_covers_kinovi_cost_almost_all_combos() {
       let resolutions = [
         Some(RouterResolution::FourEightyP),
         Some(RouterResolution::TenEightyP),
@@ -236,7 +236,7 @@ mod tests {
         //Some(RouterResolution::SevenTwentyP),
         //None,
       ];
-      let durations: [u16; 4] = [4, 5, 10, 15];
+      let durations: [u16; 4] = [15, 10, 5, 4];
       let batches: [u16; 3] = [1, 2, 4];
 
       for res in &resolutions {
@@ -263,8 +263,49 @@ mod tests {
             let artcraft_cents = artcraft_cost.cost_in_usd_cents.expect("artcraft cents");
             let kinovi_cents = kinovi_cost.cost_in_usd_cents.expect("kinovi cents");
             assert!(
-              kinovi_cents <= artcraft_cents + 1,
-              "kinovi cost exceeds artcraft price: res={:?} dur={}s batch={} (artcraft={}, kinovi={})",
+              kinovi_cents <= artcraft_cents,
+              "kinovi price vs artcraft price: res={:?} dur={}s batch={} (artcraft={}, kinovi={})",
+              res, dur, batch, artcraft_cents, kinovi_cents,
+            );
+          }
+        }
+      }
+    }
+
+    #[test]
+    fn artcraft_price_does_not_cover_kinovi_cost_here() {
+      let resolutions = [
+        Some(RouterResolution::SevenTwentyP),
+      ];
+      let durations: [u16; 4] = [15, 10, 5, 4];
+      let batches: [u16; 3] = [1, 2, 4];
+
+      for res in &resolutions {
+        for dur in &durations {
+          for batch in &batches {
+            let artcraft_cost = build_cost(*res, *dur, *batch);
+
+            let kinovi = GenerateVideoRequestBuilder {
+              provider: RouterProvider::Seedance2Pro,
+              resolution: *res,
+              duration_seconds: Some(*dur),
+              video_batch_count: Some(*batch),
+              ..Default::default()
+            };
+            let kinovi_cost = kinovi.build2()
+                .expect("kinovi build2")
+                .estimate_cost()
+                .expect("kinovi estimate_cost");
+
+            // Under the 500,000-credit package (~231 credits/$1) Kinovi's
+            // cost sits below the artcraft user-facing price. Assert the
+            // user price covers the provider cost (1¢ tolerance for
+            // Kinovi's round-up).
+            let artcraft_cents = artcraft_cost.cost_in_usd_cents.expect("artcraft cents");
+            let kinovi_cents = kinovi_cost.cost_in_usd_cents.expect("kinovi cents");
+            assert!(
+              kinovi_cents < artcraft_cents,
+              "kinovi price vs artcraft price: res={:?} dur={}s batch={} (artcraft={}, kinovi={})",
               res, dur, batch, artcraft_cents, kinovi_cents,
             );
           }
@@ -278,13 +319,14 @@ mod tests {
     #[test]
     fn artcraft_price_covers_kinovi_cost_all_combos_with_video_reference() {
       let resolutions = [
+        Some(RouterResolution::SevenTwentyP),
         Some(RouterResolution::TenEightyP),
         Some(RouterResolution::FourEightyP),
         // NB: Still underpriced even at 231 credits/$1
         // (e.g. 5s: kinovi 87¢ vs user price 80¢).
-        //Some(RouterResolution::SevenTwentyP),
         //None,
       ];
+
       let durations: [u16; 4] = [15, 10, 5, 4];
       let batches: [u16; 3] = [1, 2, 4];
 
@@ -325,7 +367,7 @@ mod tests {
             let artcraft_cents = artcraft_cost.cost_in_usd_cents.expect("artcraft cents");
             let kinovi_cents = kinovi_cost.cost_in_usd_cents.expect("kinovi cents");
             assert!(
-              kinovi_cents <= artcraft_cents + 1,
+              kinovi_cents < artcraft_cents,
               "kinovi cost exceeds artcraft price: res={:?} dur={}s batch={} (artcraft={}, kinovi={})",
               res, dur, batch, artcraft_cents, kinovi_cents,
             );
