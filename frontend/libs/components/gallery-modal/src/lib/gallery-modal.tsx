@@ -608,6 +608,13 @@ export const GalleryModal = React.memo(
       [folders, activeFolderId],
     );
 
+    // Root-level folders for the filter sidebar — always roots, regardless of
+    // which folder is open in the browser tab (mirrors the webapp sidebar).
+    const rootFolders = useMemo(
+      () => folders.filter((f) => !f.parentId).sort(compareFolders),
+      [folders],
+    );
+
     // Breadcrumb trail from root → active folder (inclusive), guarded against
     // cycles so a corrupted parent chain can never loop forever.
     const folderPath = useMemo(() => {
@@ -1279,6 +1286,16 @@ export const GalleryModal = React.memo(
       setFolderMenuOpen(false);
       setContextMenu(null);
     }, []);
+
+    // Open a folder from the filter sidebar: jump to the folder browser tab
+    // with that folder active.
+    const handleOpenFolderFromSidebar = useCallback(
+      (folderId: string) => {
+        setGalleryTab("folders");
+        handleOpenFolder(folderId);
+      },
+      [handleOpenFolder],
+    );
 
     // Close any open folder menus
     const closeFolderMenus = useCallback(() => {
@@ -2170,46 +2187,109 @@ export const GalleryModal = React.memo(
               {/* ── Filter sidebar ── (Unsorted tab / picker only; the Folders
                   tab is a full-width browser) */}
               {!hideFilter && galleryTab === "unsorted" && (
-                <div className="w-52 min-w-[13rem] border-r border-ui-panel-border bg-ui-background flex flex-col overflow-y-auto">
-                  {/* Filter items — hidden when the gallery is used as a constrained picker */}
-                  {!hideFilter && (
-                    <>
-                      <div className="flex flex-col px-1.5 pt-2 pb-1">
-                        {SIDEBAR_FILTERS.map((f) => {
-                          const isActive = activeFilter === f.id;
-                          return (
-                            <button
-                              key={f.id}
-                              type="button"
-                              onClick={() => {
-                                if (!forceFilter) {
-                                  setActiveFilter(f.id);
-                                  setActiveFolderId(null);
-                                }
-                              }}
-                              className={twMerge(
-                                "flex items-center justify-between gap-2 rounded-md px-2.5 py-1.5 text-sm transition-colors",
-                                isActive && !activeFolderId
-                                  ? "bg-ui-controls/60 text-base-fg font-medium"
-                                  : "text-base-fg/70 hover:bg-ui-controls/30 hover:text-base-fg",
-                                forceFilter &&
-                                  f.id !== activeFilter &&
-                                  "opacity-50 pointer-events-none",
-                              )}
-                            >
-                              <div className="flex items-center gap-2.5">
-                                <FontAwesomeIcon
-                                  icon={f.icon}
-                                  className="text-xs w-4"
-                                />
-                                <span>{f.label}</span>
-                              </div>
-                            </button>
-                          );
-                        })}
+                <div className="w-52 min-w-[13rem] border-r border-ui-panel-border bg-ui-panel flex flex-col overflow-hidden">
+                  {/* Filter items — pinned; they never scroll out of view */}
+                  <div className="flex flex-col px-1.5 pt-2 pb-1 flex-shrink-0">
+                    {SIDEBAR_FILTERS.map((f) => {
+                      const isActive = activeFilter === f.id;
+                      return (
+                        <button
+                          key={f.id}
+                          type="button"
+                          onClick={() => {
+                            if (!forceFilter) {
+                              setActiveFilter(f.id);
+                              setActiveFolderId(null);
+                            }
+                          }}
+                          className={twMerge(
+                            "flex items-center justify-between gap-2 rounded-md px-2.5 py-1.5 text-sm transition-colors",
+                            isActive && !activeFolderId
+                              ? "bg-ui-controls/60 text-base-fg font-medium"
+                              : "text-base-fg/70 hover:bg-ui-controls/30 hover:text-base-fg",
+                            forceFilter &&
+                              f.id !== activeFilter &&
+                              "opacity-50 pointer-events-none",
+                          )}
+                        >
+                          <div className="flex items-center gap-2.5">
+                            <FontAwesomeIcon
+                              icon={f.icon}
+                              className="text-xs w-4"
+                            />
+                            <span>{f.label}</span>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                  {/* Folders header — pinned alongside the filters */}
+                  <div className="flex items-center justify-between px-3 pt-2 pb-1 flex-shrink-0">
+                    <span className="text-[11px] font-semibold uppercase tracking-wider text-base-fg/40">
+                      Folders
+                    </span>
+                    {mode === "view" && (
+                      <button
+                        type="button"
+                        onClick={() => handleOpenNewFolderModal(null)}
+                        aria-label="New folder"
+                        className="flex h-5 w-5 items-center justify-center rounded text-base-fg/50 hover:bg-ui-controls/60 hover:text-base-fg transition-colors"
+                      >
+                        <FontAwesomeIcon icon={faPlus} className="text-[10px]" />
+                      </button>
+                    )}
+                  </div>
+                  {/* Folder list — the only scrolling region; fills the rest of the column */}
+                  <div className="flex flex-1 min-h-0 flex-col overflow-y-auto px-1.5 pb-2">
+                    {rootFolders.length === 0 ? (
+                      <div className="px-2.5 py-1.5 text-xs text-base-fg/30 italic">
+                        No folders yet
                       </div>
-                    </>
-                  )}
+                    ) : (
+                      rootFolders.map((folder) => (
+                        <button
+                          key={folder.id}
+                          type="button"
+                          data-folder-id={folder.id}
+                          onClick={() => handleOpenFolderFromSidebar(folder.id)}
+                          onContextMenu={
+                            // Folder management is view-mode only; the select picker just browses.
+                            mode === "view"
+                              ? (e) => {
+                                  e.preventDefault();
+                                  setContextMenu({
+                                    folderId: folder.id,
+                                    x: e.clientX,
+                                    y: e.clientY,
+                                  });
+                                }
+                              : undefined
+                          }
+                          className="flex w-full flex-shrink-0 items-center gap-2.5 rounded-md px-2.5 py-1.5 text-sm text-base-fg/70 hover:bg-ui-controls/30 hover:text-base-fg transition-colors [&.folder-drag-over]:bg-primary/20 [&.folder-drag-over]:text-base-fg"
+                        >
+                          <FontAwesomeIcon
+                            icon={faFolder}
+                            className={twMerge(
+                              "text-xs w-4",
+                              !folder.colorCode && "text-primary",
+                            )}
+                            style={
+                              folder.colorCode
+                                ? { color: folder.colorCode }
+                                : undefined
+                            }
+                          />
+                          <span className="truncate">{folder.name}</span>
+                          {folder.hasStar && (
+                            <FontAwesomeIcon
+                              icon={faStar}
+                              className="ml-auto text-[10px] text-amber-400"
+                            />
+                          )}
+                        </button>
+                      ))
+                    )}
+                  </div>
                 </div>
               )}
 

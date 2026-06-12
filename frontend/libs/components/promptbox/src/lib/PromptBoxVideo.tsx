@@ -997,7 +997,7 @@ export const PromptBoxVideo = ({
         )}
         <div
           className={twMerge(
-            "glass relative w-[860px] rounded-xl p-4",
+            "glass relative w-[860px] rounded-2xl p-4",
             isImageRowVisible && "rounded-t-none",
             isFocused
               ? "ring-1 ring-primary border-primary"

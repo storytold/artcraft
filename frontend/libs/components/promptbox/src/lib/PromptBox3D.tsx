@@ -41,7 +41,11 @@ import {
 } from "@storyteller/tauri-api";
 import { usePrompt3DStore, useEnterToGenerateStore } from "./promptStore";
 import { gtagEvent } from "@storyteller/google-analytics";
-import { CommonAspectRatio, CommonResolution, ImageModel } from "@storyteller/model-list";
+import {
+  CommonAspectRatio,
+  CommonResolution,
+  ImageModel,
+} from "@storyteller/model-list";
 import { GenerationProvider } from "@storyteller/api-enums";
 import { ImagePromptRow } from "./ImagePromptRow";
 import { AspectRatioPicker } from "./common/AspectRatioPicker";
@@ -69,11 +73,11 @@ interface PromptBox3DProps {
   selectedImageModel?: ImageModel;
   selectedProvider?: GenerationProvider;
   snapshotCurrentFrame:
-  | ((shouldDownload?: boolean) => {
-    base64Snapshot: string;
-    file: File;
-  } | null)
-  | undefined;
+    | ((shouldDownload?: boolean) => {
+        base64Snapshot: string;
+        file: File;
+      } | null)
+    | undefined;
   credits?: number | null;
   /** Optional model-picker slot rendered at the start of the toolbar
    *  (left of the aspect-ratio picker). Tauri leaves this unset and
@@ -298,7 +302,9 @@ export const PromptBox3D = ({
       return;
     }
     if (isFinite(maxLen) && prompt.length > maxLen) {
-      toast.error(`Prompt exceeds the ${maxLen} character limit for this model`);
+      toast.error(
+        `Prompt exceeds the ${maxLen} character limit for this model`,
+      );
       return;
     }
     gtagEvent("enqueue_3d");
@@ -479,8 +485,7 @@ export const PromptBox3D = ({
             ?.map((image) => image.url)
             .filter(Boolean),
           modelType:
-            (selectedImageModel as any)?.tauriId ||
-            String(selectedImageModel),
+            (selectedImageModel as any)?.tauriId || String(selectedImageModel),
           timestamp: Date.now(),
         });
 
@@ -628,11 +633,11 @@ export const PromptBox3D = ({
         )}
         <div
           className={twMerge(
-            "glass relative w-[860px] rounded-xl p-4",
+            "glass relative w-[860px] rounded-2xl p-4",
             isPromptBoxFocused ? "!border !border-primary" : "",
             selectedImageModel?.canUseImagePrompt &&
-            isImageRowVisible &&
-            "rounded-t-none",
+              isImageRowVisible &&
+              "rounded-t-none",
           )}
           onMouseDown={(e) => e.stopPropagation()}
           onClick={(e) => e.stopPropagation()}
@@ -693,7 +698,9 @@ export const PromptBox3D = ({
                   setIsPromptBoxFocused(false);
                 }}
               />
-              <span className={`absolute -bottom-1 right-0 text-[10px] tabular-nums ${isFinite(maxLen) && prompt.length > maxLen ? "text-red-500" : "text-base-fg/40"}`}>
+              <span
+                className={`absolute -bottom-1 right-0 text-[10px] tabular-nums ${isFinite(maxLen) && prompt.length > maxLen ? "text-red-500" : "text-base-fg/40"}`}
+              >
                 {prompt.length} / {isFinite(maxLen) ? maxLen : "∞"}
               </span>
             </div>
@@ -836,13 +843,20 @@ export const PromptBox3D = ({
             </div>
           </div>
           <div className="absolute -bottom-1 left-1/2 -translate-x-1/2">
-            <Tooltip content={isExpanded ? "Collapse" : "Expand"} position="top" className="-mb-2">
+            <Tooltip
+              content={isExpanded ? "Collapse" : "Expand"}
+              position="top"
+              className="-mb-2"
+            >
               <button
                 type="button"
                 onClick={toggleExpand}
                 className="text-base-fg/30 hover:text-base-fg/90 transition-colors px-3 py-0.5"
               >
-                <FontAwesomeIcon icon={isExpanded ? faChevronUp : faChevronDown} className="text-xs" />
+                <FontAwesomeIcon
+                  icon={isExpanded ? faChevronUp : faChevronDown}
+                  className="text-xs"
+                />
               </button>
             </Tooltip>
           </div>

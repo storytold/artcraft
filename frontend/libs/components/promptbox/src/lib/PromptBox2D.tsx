@@ -18,7 +18,11 @@ import {
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { IconProp } from "@fortawesome/fontawesome-svg-core";
 
-import { Prompt2DStore, RefImage, useEnterToGenerateStore } from "./promptStore";
+import {
+  Prompt2DStore,
+  RefImage,
+  useEnterToGenerateStore,
+} from "./promptStore";
 import { ImageModel } from "@storyteller/model-list";
 import { ImagePromptRow, UploadImageFn } from "./ImagePromptRow";
 import { twMerge } from "tailwind-merge";
@@ -376,7 +380,7 @@ export const PromptBox2D = ({
         )}
         <div
           className={twMerge(
-            "glass relative w-[860px] rounded-xl p-4",
+            "glass relative w-[860px] rounded-2xl p-4",
             selectedImageModel?.canUseImagePrompt &&
               isImageRowVisible &&
               "rounded-t-none",
