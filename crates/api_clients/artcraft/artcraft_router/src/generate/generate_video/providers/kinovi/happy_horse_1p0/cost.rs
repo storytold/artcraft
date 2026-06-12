@@ -42,11 +42,12 @@ impl KinoviHappyHorse1p0CostState {
       start_frame_url: None,
     };
 
-    let cost_in_credits = pricing_request.estimate_credits();
-    let cost_in_usd_cents = pricing_request.estimate_cost_in_usd_cents();
+    let costs = pricing_request.calculate_costs();
+    let cost_in_credits = costs.kinovi_credits;
+    let cost_in_usd_cents = costs.usd_cents_rounded_up;
 
     VideoGenerationCostEstimate {
-      cost_in_credits: Some(cost_in_credits as u64),
+      cost_in_credits: Some(cost_in_credits),
       cost_in_usd_cents: Some(cost_in_usd_cents),
       is_free: false,
       is_unlimited: false,
@@ -98,9 +99,9 @@ mod tests {
     #[test]
     fn usd_cents_720p() {
       // 165 credits / 193 * 100 = 85.49 → 85¢
-      assert_eq!(usd_cents(None, 5, None), 85);
+      assert_eq!(usd_cents(None, 5, None), 86); // 16500/193 = 85.49 -> rounds UP
       // 495 credits / 193 * 100 = 256.48 → 256¢
-      assert_eq!(usd_cents(None, 15, None), 256);
+      assert_eq!(usd_cents(None, 15, None), 257); // 49500/193 = 256.48 -> rounds UP
     }
   }
 

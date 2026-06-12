@@ -35,8 +35,9 @@ impl KinoviMidjourney8CostState {
       reference_image_urls: None,
     };
 
-    let cost_in_credits = pricing_request.estimate_credits() as u64;
-    let cost_in_usd_cents = pricing_request.estimate_cost_in_usd_cents();
+    let costs = pricing_request.calculate_costs();
+    let cost_in_credits = costs.kinovi_credits;
+    let cost_in_usd_cents = costs.usd_cents_rounded_up;
 
     ImageGenerationCostEstimate {
       cost_in_credits: Some(cost_in_credits),
@@ -59,7 +60,7 @@ mod tests {
     let cost = KinoviMidjourney8CostState { batch_count: KinoviMidjourneyBatchCount::One }
       .estimate_cost();
     assert_eq!(cost.cost_in_credits, Some(12));
-    assert_eq!(cost.cost_in_usd_cents, Some(6));
+    assert_eq!(cost.cost_in_usd_cents, Some(7)); // 1200/193 = 6.22 -> rounds UP
   }
 
   #[test]
@@ -67,7 +68,7 @@ mod tests {
     let cost = KinoviMidjourney8CostState { batch_count: KinoviMidjourneyBatchCount::Two }
       .estimate_cost();
     assert_eq!(cost.cost_in_credits, Some(24));
-    assert_eq!(cost.cost_in_usd_cents, Some(12));
+    assert_eq!(cost.cost_in_usd_cents, Some(13)); // 2400/193 = 12.44 -> rounds UP
   }
 
   #[test]

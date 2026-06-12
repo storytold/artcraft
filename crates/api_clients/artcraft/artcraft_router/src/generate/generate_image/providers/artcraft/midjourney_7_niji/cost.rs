@@ -93,21 +93,45 @@ mod tests {
     fn batch_1_matches_kinovi() {
       let kinovi = KinoviMidjourney7NijiCostState { batch_count: KinoviMidjourneyBatchCount::One }
         .estimate_cost();
-      assert_eq!(cost_cents(1), kinovi.cost_in_usd_cents.unwrap());
+      // NB: The kinovi provider estimate rounds fractional cents UP
+      // (KinoviGenerationCost) while this artcraft user price rounds to
+      // nearest — kinovi may exceed it by at most one cent.
+      let artcraft_cents = cost_cents(1);
+      let kinovi_cents = kinovi.cost_in_usd_cents.unwrap();
+      assert!(
+        kinovi_cents == artcraft_cents || kinovi_cents == artcraft_cents + 1,
+        "batch 1: artcraft={artcraft_cents}, kinovi={kinovi_cents}",
+      );
     }
 
     #[test]
     fn batch_2_matches_kinovi() {
       let kinovi = KinoviMidjourney7NijiCostState { batch_count: KinoviMidjourneyBatchCount::Two }
         .estimate_cost();
-      assert_eq!(cost_cents(2), kinovi.cost_in_usd_cents.unwrap());
+      // NB: The kinovi provider estimate rounds fractional cents UP
+      // (KinoviGenerationCost) while this artcraft user price rounds to
+      // nearest — kinovi may exceed it by at most one cent.
+      let artcraft_cents = cost_cents(2);
+      let kinovi_cents = kinovi.cost_in_usd_cents.unwrap();
+      assert!(
+        kinovi_cents == artcraft_cents || kinovi_cents == artcraft_cents + 1,
+        "batch 2: artcraft={artcraft_cents}, kinovi={kinovi_cents}",
+      );
     }
 
     #[test]
     fn batch_4_matches_kinovi() {
       let kinovi = KinoviMidjourney7NijiCostState { batch_count: KinoviMidjourneyBatchCount::Four }
         .estimate_cost();
-      assert_eq!(cost_cents(4), kinovi.cost_in_usd_cents.unwrap());
+      // NB: The kinovi provider estimate rounds fractional cents UP
+      // (KinoviGenerationCost) while this artcraft user price rounds to
+      // nearest — kinovi may exceed it by at most one cent.
+      let artcraft_cents = cost_cents(4);
+      let kinovi_cents = kinovi.cost_in_usd_cents.unwrap();
+      assert!(
+        kinovi_cents == artcraft_cents || kinovi_cents == artcraft_cents + 1,
+        "batch 4: artcraft={artcraft_cents}, kinovi={kinovi_cents}",
+      );
     }
   }
 }

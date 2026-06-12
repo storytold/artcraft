@@ -1,3 +1,4 @@
+use crate::generate::cost::KinoviGenerationCost;
 use crate::creds::seedance2pro_session::Seedance2ProSession;
 use crate::error::seedance2pro_bad_request_api_error::Seedance2ProBadRequestApiError;
 use crate::error::seedance2pro_client_error::Seedance2ProClientError;
@@ -22,7 +23,6 @@ const CREDITS_PER_MIDJOURNEY_TASK: u32 = 12;
 /// Midjourney image generation flow.
 ///
 /// 22,000 credits / $114 = 192.98 ≈ 193 credits per dollar.
-const CREDITS_PER_DOLLAR: f64 = 193.0;
 
 /// Kinovi only currently exposes a single Midjourney resolution preset.
 const MIDJOURNEY_RESOLUTION: &str = "1k";
@@ -121,19 +121,27 @@ impl std::fmt::Debug for GenerateImageArgs<'_> {
 }
 
 impl KinoviGenerateImageRequest {
-  /// Estimates the Kinovi credit cost for this request.
+  /// Calculate the cost of this request, in Kinovi credits and USD cents
+  /// (rounded up).
   ///
   /// Pricing for Midjourney is flat: 12 credits per task, regardless of
   /// model or aspect ratio. Batches multiply the cost by `batch_count`.
-  pub fn estimate_credits(&self) -> u32 {
-    CREDITS_PER_MIDJOURNEY_TASK * u32::from(self.batch_count.as_u8())
+  pub fn calculate_costs(&self) -> KinoviGenerationCost {
+    let credits = u64::from(CREDITS_PER_MIDJOURNEY_TASK) * u64::from(self.batch_count.as_u8());
+    KinoviGenerationCost::from_kinovi_credits(credits)
   }
 
-  /// Estimates the dollar cost (in USD cents, rounded to the nearest cent).
+  /// Estimates the Kinovi credit cost for this request.
+  #[deprecated(note = "Use calculate_costs() instead")]
+  pub fn estimate_credits(&self) -> u32 {
+    self.calculate_costs().kinovi_credits as u32
+  }
+
+  /// Estimates the dollar cost in USD cents.
+  /// NB: Rounds UP fractional cents (the historical behavior rounded to nearest).
+  #[deprecated(note = "Use calculate_costs() instead")]
   pub fn estimate_cost_in_usd_cents(&self) -> u64 {
-    let credits = self.estimate_credits() as f64;
-    let cost = credits / CREDITS_PER_DOLLAR * 100.0;
-    cost.round() as u64
+    self.calculate_costs().usd_cents_rounded_up
   }
 }
 
@@ -348,50 +356,50 @@ mod tests {
 
     #[test]
     fn batch_one_is_twelve_credits() {
-      assert_eq!(make_request(KinoviMidjourneyBatchCount::One).estimate_credits(), 12);
+      assert_eq!(make_request(KinoviMidjourneyBatchCount::One).calculate_costs().kinovi_credits, 12);
     }
 
     #[test]
     fn batch_two_is_twentyfour_credits() {
-      assert_eq!(make_request(KinoviMidjourneyBatchCount::Two).estimate_credits(), 24);
+      assert_eq!(make_request(KinoviMidjourneyBatchCount::Two).calculate_costs().kinovi_credits, 24);
     }
 
     #[test]
     fn batch_four_is_fortyeight_credits() {
-      assert_eq!(make_request(KinoviMidjourneyBatchCount::Four).estimate_credits(), 48);
+      assert_eq!(make_request(KinoviMidjourneyBatchCount::Four).calculate_costs().kinovi_credits, 48);
     }
 
     /// Pricing is identical across all three Midjourney models.
     #[test]
     fn pricing_is_model_agnostic() {
-      let baseline = make_request(KinoviMidjourneyBatchCount::One).estimate_credits();
+      let baseline = make_request(KinoviMidjourneyBatchCount::One).calculate_costs().kinovi_credits;
       for model in [
         KinoviMidjourneyModel::V7,
         KinoviMidjourneyModel::V7Niji,
         KinoviMidjourneyModel::V8,
       ] {
         let req = KinoviGenerateImageRequest { model, ..make_request(KinoviMidjourneyBatchCount::One) };
-        assert_eq!(req.estimate_credits(), baseline, "model={:?}", model);
+        assert_eq!(req.calculate_costs().kinovi_credits, baseline, "model={:?}", model);
       }
     }
 
     /// Pricing does not vary by aspect ratio.
     #[test]
     fn pricing_is_aspect_ratio_agnostic() {
-      let baseline = make_request(KinoviMidjourneyBatchCount::One).estimate_credits();
+      let baseline = make_request(KinoviMidjourneyBatchCount::One).calculate_costs().kinovi_credits;
       for ar in ["1:1", "16:9", "9:16", "21:9", "9:21", "4:3", "3:4", "5:4", "4:5", "3:2", "2:3"] {
         let req = KinoviGenerateImageRequest {
           aspect_ratio: ar.to_string(),
           ..make_request(KinoviMidjourneyBatchCount::One)
         };
-        assert_eq!(req.estimate_credits(), baseline, "aspect_ratio={:?}", ar);
+        assert_eq!(req.calculate_costs().kinovi_credits, baseline, "aspect_ratio={:?}", ar);
       }
     }
 
     /// Pricing does not vary with the Midjourney style knobs.
     #[test]
     fn pricing_is_independent_of_style_knobs() {
-      let baseline = make_request(KinoviMidjourneyBatchCount::One).estimate_credits();
+      let baseline = make_request(KinoviMidjourneyBatchCount::One).calculate_costs().kinovi_credits;
       let req = KinoviGenerateImageRequest {
         stylize: Some(1000),
         weird: Some(3000),
@@ -401,7 +409,7 @@ mod tests {
         negative_prompt: Some("ugly, blurry".to_string()),
         ..make_request(KinoviMidjourneyBatchCount::One)
       };
-      assert_eq!(req.estimate_credits(), baseline);
+      assert_eq!(req.calculate_costs().kinovi_credits, baseline);
     }
 
     // ── USD cents conversion ──
@@ -409,19 +417,19 @@ mod tests {
     #[test]
     fn usd_cents_batch_one() {
       // 12 / 193 × 100 = 6.21¢ → 6¢
-      assert_eq!(make_request(KinoviMidjourneyBatchCount::One).estimate_cost_in_usd_cents(), 6);
+      assert_eq!(make_request(KinoviMidjourneyBatchCount::One).calculate_costs().usd_cents_rounded_up, 7); // 1200/193 = 6.22 -> rounds UP
     }
 
     #[test]
     fn usd_cents_batch_two() {
       // 24 / 193 × 100 = 12.43¢ → 12¢
-      assert_eq!(make_request(KinoviMidjourneyBatchCount::Two).estimate_cost_in_usd_cents(), 12);
+      assert_eq!(make_request(KinoviMidjourneyBatchCount::Two).calculate_costs().usd_cents_rounded_up, 13); // 2400/193 = 12.44 -> rounds UP
     }
 
     #[test]
     fn usd_cents_batch_four() {
       // 48 / 193 × 100 = 24.87¢ → 25¢
-      assert_eq!(make_request(KinoviMidjourneyBatchCount::Four).estimate_cost_in_usd_cents(), 25);
+      assert_eq!(make_request(KinoviMidjourneyBatchCount::Four).calculate_costs().usd_cents_rounded_up, 25); // 4800/193 = 24.87 -> rounds UP
     }
 
     /// Batch 4 should be exactly 4× the credit cost of batch 1, and the USD
@@ -431,13 +439,16 @@ mod tests {
       let one = make_request(KinoviMidjourneyBatchCount::One);
       let four = make_request(KinoviMidjourneyBatchCount::Four);
 
-      assert_eq!(four.estimate_credits(), one.estimate_credits() * 4);
+      assert_eq!(four.calculate_costs().kinovi_credits, one.calculate_costs().kinovi_credits * 4);
 
-      let one_cents = one.estimate_cost_in_usd_cents();
-      let four_cents = four.estimate_cost_in_usd_cents();
-      let expected = one_cents * 4;
-      let delta = (four_cents as i64 - expected as i64).abs();
-      assert!(delta <= 1, "expected ~{}¢, got {}¢", expected, four_cents);
+      // With round-up pricing, a batch rounds up ONCE while four singles
+      // round up four times — so the batch price is at most 4× the single
+      // price, and within 4¢ of it.
+      let one_cents = one.calculate_costs().usd_cents_rounded_up;
+      let four_cents = four.calculate_costs().usd_cents_rounded_up;
+      let four_singles = one_cents * 4;
+      assert!(four_cents <= four_singles && four_cents + 4 > four_singles,
+        "expected within 4¢ under {}¢, got {}¢", four_singles, four_cents);
     }
   }
 

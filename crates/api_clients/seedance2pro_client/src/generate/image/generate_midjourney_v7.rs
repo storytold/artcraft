@@ -1,3 +1,4 @@
+use crate::generate::cost::KinoviGenerationCost;
 use crate::creds::seedance2pro_session::Seedance2ProSession;
 use crate::error::seedance2pro_error::Seedance2ProError;
 use crate::requests::generate_image::generate_image::{
@@ -36,12 +37,21 @@ pub struct GenerateMidjourneyV7Request {
 }
 
 impl GenerateMidjourneyV7Request {
-  pub fn estimate_credits(&self) -> u32 {
-    self.to_inner_request().estimate_credits()
+  /// Calculate the cost of this request, in Kinovi credits and USD cents
+  /// (rounded up).
+  pub fn calculate_costs(&self) -> KinoviGenerationCost {
+    self.to_inner_request().calculate_costs()
   }
 
+  #[deprecated(note = "Use calculate_costs() instead")]
+  pub fn estimate_credits(&self) -> u32 {
+    self.calculate_costs().kinovi_credits as u32
+  }
+
+  /// NB: Rounds UP fractional cents (the historical behavior rounded to nearest).
+  #[deprecated(note = "Use calculate_costs() instead")]
   pub fn estimate_cost_in_usd_cents(&self) -> u64 {
-    self.to_inner_request().estimate_cost_in_usd_cents()
+    self.calculate_costs().usd_cents_rounded_up
   }
 
   pub(crate) fn to_inner_request(&self) -> KinoviGenerateImageRequest {
@@ -264,27 +274,27 @@ mod tests {
 
     #[test]
     fn batch_one_is_twelve_credits() {
-      assert_eq!(make_request(KinoviMidjourneyBatchCount::One).estimate_credits(), 12);
+      assert_eq!(make_request(KinoviMidjourneyBatchCount::One).calculate_costs().kinovi_credits, 12);
     }
 
     #[test]
     fn batch_two_is_twentyfour_credits() {
-      assert_eq!(make_request(KinoviMidjourneyBatchCount::Two).estimate_credits(), 24);
+      assert_eq!(make_request(KinoviMidjourneyBatchCount::Two).calculate_costs().kinovi_credits, 24);
     }
 
     #[test]
     fn batch_four_is_fortyeight_credits() {
-      assert_eq!(make_request(KinoviMidjourneyBatchCount::Four).estimate_credits(), 48);
+      assert_eq!(make_request(KinoviMidjourneyBatchCount::Four).calculate_costs().kinovi_credits, 48);
     }
 
     #[test]
     fn usd_cents_batch_one_is_six() {
-      assert_eq!(make_request(KinoviMidjourneyBatchCount::One).estimate_cost_in_usd_cents(), 6);
+      assert_eq!(make_request(KinoviMidjourneyBatchCount::One).calculate_costs().usd_cents_rounded_up, 7); // 1200/193 = 6.22 -> rounds UP
     }
 
     #[test]
     fn usd_cents_batch_four_is_twentyfive() {
-      assert_eq!(make_request(KinoviMidjourneyBatchCount::Four).estimate_cost_in_usd_cents(), 25);
+      assert_eq!(make_request(KinoviMidjourneyBatchCount::Four).calculate_costs().usd_cents_rounded_up, 25); // 4800/193 = 24.87 -> rounds UP
     }
 
     /// Pricing must match the inner module byte-for-byte (sanity that no
@@ -298,8 +308,8 @@ mod tests {
       ] {
         let outer = make_request(batch);
         let inner = outer.to_inner_request();
-        assert_eq!(outer.estimate_credits(), inner.estimate_credits(), "batch={:?}", batch);
-        assert_eq!(outer.estimate_cost_in_usd_cents(), inner.estimate_cost_in_usd_cents(), "batch={:?}", batch);
+        assert_eq!(outer.calculate_costs().kinovi_credits, inner.calculate_costs().kinovi_credits, "batch={:?}", batch);
+        assert_eq!(outer.calculate_costs().usd_cents_rounded_up, inner.calculate_costs().usd_cents_rounded_up, "batch={:?}", batch);
       }
     }
   }
