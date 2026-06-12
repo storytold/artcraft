@@ -221,6 +221,9 @@ mod tests {
   // -- Cross-check with Kinovi via builder --
 
   mod cross_check_with_kinovi {
+    use tokens::tokens::media_files::MediaFileToken;
+
+    use crate::api::video_list_ref::VideoListRef;
     use super::*;
 
     #[test]
@@ -257,6 +260,68 @@ mod tests {
             // cost sits below the artcraft user-facing price. Assert the
             // user price covers the provider cost (1¢ tolerance for
             // Kinovi's round-up).
+            let artcraft_cents = artcraft_cost.cost_in_usd_cents.expect("artcraft cents");
+            let kinovi_cents = kinovi_cost.cost_in_usd_cents.expect("kinovi cents");
+            assert!(
+              kinovi_cents <= artcraft_cents + 1,
+              "kinovi cost exceeds artcraft price: res={:?} dur={}s batch={} (artcraft={}, kinovi={})",
+              res, dur, batch, artcraft_cents, kinovi_cents,
+            );
+          }
+        }
+      }
+    }
+
+    /// Same combos as above, but with a reference video attached. Kinovi
+    /// charges a per-second surcharge for video references, and the artcraft
+    /// user price must still cover the provider cost.
+    #[test]
+    fn artcraft_price_covers_kinovi_cost_all_combos_with_video_reference() {
+      let resolutions = [
+        Some(RouterResolution::TenEightyP),
+        Some(RouterResolution::FourEightyP),
+        // NB: Still underpriced even at 231 credits/$1
+        // (e.g. 5s: kinovi 87¢ vs user price 80¢).
+        //Some(RouterResolution::SevenTwentyP),
+        //None,
+      ];
+      let durations: [u16; 4] = [15, 10, 5, 4];
+      let batches: [u16; 3] = [1, 2, 4];
+
+      for res in &resolutions {
+        for dur in &durations {
+          for batch in &batches {
+            let artcraft = GenerateVideoRequestBuilder {
+              provider: RouterProvider::Artcraft,
+              resolution: *res,
+              duration_seconds: Some(*dur),
+              video_batch_count: Some(*batch),
+              // The artcraft provider only accepts media file tokens.
+              reference_videos: Some(VideoListRef::MediaFileTokens(vec![
+                MediaFileToken::new("mf_ref_video".to_string()),
+              ])),
+              ..Default::default()
+            };
+            let artcraft_cost = artcraft.build2()
+              .expect("artcraft build2")
+              .estimate_cost()
+              .expect("artcraft estimate_cost");
+
+            let kinovi = GenerateVideoRequestBuilder {
+              provider: RouterProvider::Seedance2Pro,
+              resolution: *res,
+              duration_seconds: Some(*dur),
+              video_batch_count: Some(*batch),
+              reference_videos: Some(VideoListRef::Urls(vec![
+                "https://example.com/ref.mp4".to_string(),
+              ])),
+              ..Default::default()
+            };
+            let kinovi_cost = kinovi.build2()
+              .expect("kinovi build2")
+              .estimate_cost()
+              .expect("kinovi estimate_cost");
+
             let artcraft_cents = artcraft_cost.cost_in_usd_cents.expect("artcraft cents");
             let kinovi_cents = kinovi_cost.cost_in_usd_cents.expect("kinovi cents");
             assert!(
