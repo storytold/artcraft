@@ -38,6 +38,7 @@ script/socat_dev_database_connect.sh
 venv/
 
 # LLM Testing
+/external/
 /prompts/
 /reports/
 /requests/
