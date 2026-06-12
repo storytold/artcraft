@@ -4,7 +4,7 @@ use crate::cost::kinovi_generation_cost::KinoviGenerationCost;
 /// surcharge broken out from the base price.
 ///
 /// `total_cost` covers `base_credits_cost + video_reference_surcharge_cost`.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub struct KinoviSeedanceGenerationCost {
   /// The full cost (base + any surcharge), in credits and USD cents.
   pub total_cost: KinoviGenerationCost,
@@ -39,14 +39,18 @@ impl KinoviSeedanceGenerationCost {
 mod tests {
   use super::*;
 
+  const FLOAT_TOLERANCE: f64 = 1e-9;
+
   #[test]
   fn without_surcharge() {
     let cost = KinoviSeedanceGenerationCost::from_base_and_surcharge(200, None);
     assert_eq!(cost.base_credits_cost, 200);
     assert_eq!(cost.video_reference_surcharge_cost, None);
     assert_eq!(cost.total_cost.kinovi_credits, 200);
-    // 20000/193 = 103.63 -> 104.
+    // 20000/193 = 103.63.
     assert_eq!(cost.total_cost.usd_cents_rounded_up, 104);
+    assert_eq!(cost.total_cost.usd_cents_rounded_down, 103);
+    assert!((cost.total_cost.usd_cents_fractional - (20000.0 / 193.0)).abs() < FLOAT_TOLERANCE);
   }
 
   #[test]
@@ -55,8 +59,10 @@ mod tests {
     assert_eq!(cost.base_credits_cost, 200);
     assert_eq!(cost.video_reference_surcharge_cost, Some(40));
     assert_eq!(cost.total_cost.kinovi_credits, 240);
-    // 24000/193 = 124.35 -> 125.
+    // 24000/193 = 124.35.
     assert_eq!(cost.total_cost.usd_cents_rounded_up, 125);
+    assert_eq!(cost.total_cost.usd_cents_rounded_down, 124);
+    assert!((cost.total_cost.usd_cents_fractional - (24000.0 / 193.0)).abs() < FLOAT_TOLERANCE);
   }
 
   #[test]

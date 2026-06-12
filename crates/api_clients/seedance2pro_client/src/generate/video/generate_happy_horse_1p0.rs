@@ -338,6 +338,8 @@ mod tests {
         let costs = r720(5).calculate_costs();
         assert_eq!(costs.kinovi_credits, 165);
         assert_eq!(costs.usd_cents_rounded_up, 86);
+        assert_eq!(costs.usd_cents_rounded_down, 85);
+        assert!((costs.usd_cents_fractional - (16500.0 / 193.0)).abs() < 1e-9);
       }
 
       #[test]
@@ -346,6 +348,8 @@ mod tests {
         let costs = r1080(5).calculate_costs();
         assert_eq!(costs.kinovi_credits, 330);
         assert_eq!(costs.usd_cents_rounded_up, 171);
+        assert_eq!(costs.usd_cents_rounded_down, 170);
+        assert!((costs.usd_cents_fractional - (33000.0 / 193.0)).abs() < 1e-9);
       }
 
       #[test]
@@ -354,6 +358,8 @@ mod tests {
         let costs = r720(15).calculate_costs();
         assert_eq!(costs.kinovi_credits, 495);
         assert_eq!(costs.usd_cents_rounded_up, 257);
+        assert_eq!(costs.usd_cents_rounded_down, 256);
+        assert!((costs.usd_cents_fractional - (49500.0 / 193.0)).abs() < 1e-9);
       }
 
       #[test]
@@ -362,6 +368,8 @@ mod tests {
         let costs = r1080(15).calculate_costs();
         assert_eq!(costs.kinovi_credits, 990);
         assert_eq!(costs.usd_cents_rounded_up, 513);
+        assert_eq!(costs.usd_cents_rounded_down, 512);
+        assert!((costs.usd_cents_fractional - (99000.0 / 193.0)).abs() < 1e-9);
       }
 
       #[test]
@@ -370,6 +378,8 @@ mod tests {
         let costs = make_request(5, None, Some(KinoviHappyHorse1p0BatchCount::Two)).calculate_costs();
         assert_eq!(costs.kinovi_credits, 330);
         assert_eq!(costs.usd_cents_rounded_up, 171);
+        assert_eq!(costs.usd_cents_rounded_down, 170);
+        assert!((costs.usd_cents_fractional - (33000.0 / 193.0)).abs() < 1e-9);
       }
 
       /// The deprecated shims return the corresponding struct fields.

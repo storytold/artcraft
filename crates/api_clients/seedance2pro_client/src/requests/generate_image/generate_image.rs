@@ -418,18 +418,24 @@ mod tests {
     fn usd_cents_batch_one() {
       // 12 / 193 × 100 = 6.21¢ → 6¢
       assert_eq!(make_request(KinoviMidjourneyBatchCount::One).calculate_costs().usd_cents_rounded_up, 7); // 1200/193 = 6.22 -> rounds UP
+      assert_eq!(make_request(KinoviMidjourneyBatchCount::One).calculate_costs().usd_cents_rounded_down, 6);
+      assert!((make_request(KinoviMidjourneyBatchCount::One).calculate_costs().usd_cents_fractional - (1200.0 / 193.0)).abs() < 1e-9);
     }
 
     #[test]
     fn usd_cents_batch_two() {
       // 24 / 193 × 100 = 12.43¢ → 12¢
       assert_eq!(make_request(KinoviMidjourneyBatchCount::Two).calculate_costs().usd_cents_rounded_up, 13); // 2400/193 = 12.44 -> rounds UP
+      assert_eq!(make_request(KinoviMidjourneyBatchCount::Two).calculate_costs().usd_cents_rounded_down, 12);
+      assert!((make_request(KinoviMidjourneyBatchCount::Two).calculate_costs().usd_cents_fractional - (2400.0 / 193.0)).abs() < 1e-9);
     }
 
     #[test]
     fn usd_cents_batch_four() {
       // 48 / 193 × 100 = 24.87¢ → 25¢
       assert_eq!(make_request(KinoviMidjourneyBatchCount::Four).calculate_costs().usd_cents_rounded_up, 25); // 4800/193 = 24.87 -> rounds UP
+      assert_eq!(make_request(KinoviMidjourneyBatchCount::Four).calculate_costs().usd_cents_rounded_down, 24);
+      assert!((make_request(KinoviMidjourneyBatchCount::Four).calculate_costs().usd_cents_fractional - (4800.0 / 193.0)).abs() < 1e-9);
     }
 
     /// Batch 4 should be exactly 4× the credit cost of batch 1, and the USD

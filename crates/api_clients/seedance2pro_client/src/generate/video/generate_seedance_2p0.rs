@@ -431,6 +431,8 @@ mod tests {
         let costs = r480(5).calculate_costs();
         assert_eq!(costs.total_cost.kinovi_credits, 75);
         assert_eq!(costs.total_cost.usd_cents_rounded_up, 39);
+        assert_eq!(costs.total_cost.usd_cents_rounded_down, 38);
+        assert!((costs.total_cost.usd_cents_fractional - (7500.0 / 193.0)).abs() < 1e-9);
         assert_eq!(costs.base_credits_cost, 75);
         assert_eq!(costs.video_reference_surcharge_cost, None);
       }
@@ -441,6 +443,8 @@ mod tests {
         let costs = r720(5).calculate_costs();
         assert_eq!(costs.total_cost.kinovi_credits, 200);
         assert_eq!(costs.total_cost.usd_cents_rounded_up, 104);
+        assert_eq!(costs.total_cost.usd_cents_rounded_down, 103);
+        assert!((costs.total_cost.usd_cents_fractional - (20000.0 / 193.0)).abs() < 1e-9);
         assert_eq!(costs.base_credits_cost, 200);
         assert_eq!(costs.video_reference_surcharge_cost, None);
       }
@@ -451,6 +455,8 @@ mod tests {
         let costs = r1080(5).calculate_costs();
         assert_eq!(costs.total_cost.kinovi_credits, 450);
         assert_eq!(costs.total_cost.usd_cents_rounded_up, 234);
+        assert_eq!(costs.total_cost.usd_cents_rounded_down, 233);
+        assert!((costs.total_cost.usd_cents_fractional - (45000.0 / 193.0)).abs() < 1e-9);
         assert_eq!(costs.base_credits_cost, 450);
         assert_eq!(costs.video_reference_surcharge_cost, None);
       }
@@ -461,6 +467,8 @@ mod tests {
         let costs = r720(15).calculate_costs();
         assert_eq!(costs.total_cost.kinovi_credits, 600);
         assert_eq!(costs.total_cost.usd_cents_rounded_up, 311);
+        assert_eq!(costs.total_cost.usd_cents_rounded_down, 310);
+        assert!((costs.total_cost.usd_cents_fractional - (60000.0 / 193.0)).abs() < 1e-9);
         assert_eq!(costs.base_credits_cost, 600);
         assert_eq!(costs.video_reference_surcharge_cost, None);
       }
@@ -471,6 +479,8 @@ mod tests {
         let costs = r1080(15).calculate_costs();
         assert_eq!(costs.total_cost.kinovi_credits, 1350);
         assert_eq!(costs.total_cost.usd_cents_rounded_up, 700);
+        assert_eq!(costs.total_cost.usd_cents_rounded_down, 699);
+        assert!((costs.total_cost.usd_cents_fractional - (135000.0 / 193.0)).abs() < 1e-9);
         assert_eq!(costs.base_credits_cost, 1350);
         assert_eq!(costs.video_reference_surcharge_cost, None);
       }
@@ -481,6 +491,8 @@ mod tests {
         let costs = build_request(5, None, Some(KinoviSeedance2p0BatchCount::Four)).calculate_costs();
         assert_eq!(costs.total_cost.kinovi_credits, 800);
         assert_eq!(costs.total_cost.usd_cents_rounded_up, 415);
+        assert_eq!(costs.total_cost.usd_cents_rounded_down, 414);
+        assert!((costs.total_cost.usd_cents_fractional - (80000.0 / 193.0)).abs() < 1e-9);
         assert_eq!(costs.base_credits_cost, 800);
         assert_eq!(costs.video_reference_surcharge_cost, None);
       }
@@ -549,6 +561,8 @@ mod tests {
         assert_eq!(costs.video_reference_surcharge_cost, Some(40));
         assert_eq!(costs.total_cost.kinovi_credits, 240);
         assert_eq!(costs.total_cost.usd_cents_rounded_up, 125);
+        assert_eq!(costs.total_cost.usd_cents_rounded_down, 124);
+        assert!((costs.total_cost.usd_cents_fractional - (24000.0 / 193.0)).abs() < 1e-9);
       }
 
       #[test]
