@@ -810,6 +810,7 @@ dependencies = [
  "serde",
  "serde_derive",
  "serde_json",
+ "speculoos",
  "strum",
  "test_data",
  "tokens",
