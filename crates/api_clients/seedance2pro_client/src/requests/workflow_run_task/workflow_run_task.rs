@@ -150,7 +150,7 @@ impl WorkflowRunTaskRequest {
   /// Credits per dollar for billing conversion.
   ///
   /// Legacy 720p pricing uses the original Kinovi credit package rates.
-  /// All other model/resolution combos use the newer rate: 22,000 credits / $114.
+  /// All other model/resolution combos use the newer rate: 525,000 credits / $2,159.0909.
   fn credits_per_dollar(&self) -> f64 {
     match (self.model_type, self.output_resolution) {
       // Legacy: Seedance 2.0 Pro @ 720p — 25,000 credits for $99.99
@@ -161,8 +161,8 @@ impl WorkflowRunTaskRequest {
       (KinoviModelTypeRaw::Seedance2Fast, None)
       | (KinoviModelTypeRaw::Seedance2Fast, Some(KinoviOutputResolutionRaw::SevenTwentyP)) => 220.0,
 
-      // New pricing: 22,000 credits for $114 (~192.98 credits/$1)
-      _ => 193.0,
+      // New pricing: 525,000 credits for $2,159.0909 (~243.16 credits/$1)
+      _ => 243.0,
     }
   }
 
@@ -661,20 +661,20 @@ mod tests {
 
     #[test]
     fn usd_cents_new_pro_480p() {
-      assert_eq!(pro_res(5, KinoviBatchCountRaw::One, KinoviOutputResolutionRaw::FourEightyP).estimate_cost_in_usd_cents(), 39);
-      assert_eq!(pro_res(10, KinoviBatchCountRaw::One, KinoviOutputResolutionRaw::FourEightyP).estimate_cost_in_usd_cents(), 78);
+      assert_eq!(pro_res(5, KinoviBatchCountRaw::One, KinoviOutputResolutionRaw::FourEightyP).estimate_cost_in_usd_cents(), 31);
+      assert_eq!(pro_res(10, KinoviBatchCountRaw::One, KinoviOutputResolutionRaw::FourEightyP).estimate_cost_in_usd_cents(), 62);
     }
 
     #[test]
     fn usd_cents_new_pro_1080p() {
-      assert_eq!(pro_res(5, KinoviBatchCountRaw::One, KinoviOutputResolutionRaw::TenEightyP).estimate_cost_in_usd_cents(), 233);
-      assert_eq!(pro_res(10, KinoviBatchCountRaw::One, KinoviOutputResolutionRaw::TenEightyP).estimate_cost_in_usd_cents(), 466);
+      assert_eq!(pro_res(5, KinoviBatchCountRaw::One, KinoviOutputResolutionRaw::TenEightyP).estimate_cost_in_usd_cents(), 185);
+      assert_eq!(pro_res(10, KinoviBatchCountRaw::One, KinoviOutputResolutionRaw::TenEightyP).estimate_cost_in_usd_cents(), 370);
     }
 
     #[test]
     fn usd_cents_new_fast_480p() {
-      assert_eq!(fast_res(5, KinoviBatchCountRaw::One, KinoviOutputResolutionRaw::FourEightyP).estimate_cost_in_usd_cents(), 26);
-      assert_eq!(fast_res(10, KinoviBatchCountRaw::One, KinoviOutputResolutionRaw::FourEightyP).estimate_cost_in_usd_cents(), 52);
+      assert_eq!(fast_res(5, KinoviBatchCountRaw::One, KinoviOutputResolutionRaw::FourEightyP).estimate_cost_in_usd_cents(), 21);
+      assert_eq!(fast_res(10, KinoviBatchCountRaw::One, KinoviOutputResolutionRaw::FourEightyP).estimate_cost_in_usd_cents(), 41);
     }
 
     #[test]
@@ -687,10 +687,10 @@ mod tests {
 
     #[test]
     fn credits_per_dollar_new_rate() {
-      assert_eq!(pro_res(5, KinoviBatchCountRaw::One, KinoviOutputResolutionRaw::FourEightyP).credits_per_dollar(), 193.0);
-      assert_eq!(pro_res(5, KinoviBatchCountRaw::One, KinoviOutputResolutionRaw::TenEightyP).credits_per_dollar(), 193.0);
-      assert_eq!(fast_res(5, KinoviBatchCountRaw::One, KinoviOutputResolutionRaw::FourEightyP).credits_per_dollar(), 193.0);
-      assert_eq!(fast_res(5, KinoviBatchCountRaw::One, KinoviOutputResolutionRaw::TenEightyP).credits_per_dollar(), 193.0);
+      assert_eq!(pro_res(5, KinoviBatchCountRaw::One, KinoviOutputResolutionRaw::FourEightyP).credits_per_dollar(), 243.0);
+      assert_eq!(pro_res(5, KinoviBatchCountRaw::One, KinoviOutputResolutionRaw::TenEightyP).credits_per_dollar(), 243.0);
+      assert_eq!(fast_res(5, KinoviBatchCountRaw::One, KinoviOutputResolutionRaw::FourEightyP).credits_per_dollar(), 243.0);
+      assert_eq!(fast_res(5, KinoviBatchCountRaw::One, KinoviOutputResolutionRaw::TenEightyP).credits_per_dollar(), 243.0);
     }
 
     // ── Happy Horse 1.0 ──
@@ -724,17 +724,17 @@ mod tests {
 
     #[test]
     fn happy_horse_uses_new_pricing_rate() {
-      // All Happy Horse resolutions use the new 193 credits/$1 rate (not legacy)
-      assert_eq!(happy_horse(5, KinoviBatchCountRaw::One).credits_per_dollar(), 193.0);
-      assert_eq!(happy_horse_res(5, KinoviBatchCountRaw::One, KinoviOutputResolutionRaw::SevenTwentyP).credits_per_dollar(), 193.0);
-      assert_eq!(happy_horse_res(5, KinoviBatchCountRaw::One, KinoviOutputResolutionRaw::FourEightyP).credits_per_dollar(), 193.0);
-      assert_eq!(happy_horse_res(5, KinoviBatchCountRaw::One, KinoviOutputResolutionRaw::TenEightyP).credits_per_dollar(), 193.0);
+      // All Happy Horse resolutions use the new 243 credits/$1 rate (not legacy)
+      assert_eq!(happy_horse(5, KinoviBatchCountRaw::One).credits_per_dollar(), 243.0);
+      assert_eq!(happy_horse_res(5, KinoviBatchCountRaw::One, KinoviOutputResolutionRaw::SevenTwentyP).credits_per_dollar(), 243.0);
+      assert_eq!(happy_horse_res(5, KinoviBatchCountRaw::One, KinoviOutputResolutionRaw::FourEightyP).credits_per_dollar(), 243.0);
+      assert_eq!(happy_horse_res(5, KinoviBatchCountRaw::One, KinoviOutputResolutionRaw::TenEightyP).credits_per_dollar(), 243.0);
     }
 
     #[test]
     fn happy_horse_usd_cents_1080p() {
-      // 193 credits/$1: 360 credits (4s×90) = 186.53 → 187¢
-      assert_eq!(happy_horse_res(4, KinoviBatchCountRaw::One, KinoviOutputResolutionRaw::TenEightyP).estimate_cost_in_usd_cents(), 187);
+      // 243 credits/$1: 360 credits (4s×90) = 148.15 → 148¢
+      assert_eq!(happy_horse_res(4, KinoviBatchCountRaw::One, KinoviOutputResolutionRaw::TenEightyP).estimate_cost_in_usd_cents(), 148);
     }
   }
 

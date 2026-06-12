@@ -38,6 +38,7 @@ script/socat_dev_database_connect.sh
 venv/
 
 # LLM Testing
+/external/
 /prompts/
 /reports/
 /requests/
@@ -102,3 +103,4 @@ windows/sqlite/sqlite3.lib
 # ArtCraft Windows DLLs
 crates/desktop/src-tauri/*.dll
 windows_dlls/
+

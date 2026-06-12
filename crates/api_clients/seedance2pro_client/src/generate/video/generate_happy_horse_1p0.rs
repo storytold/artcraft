@@ -1,6 +1,6 @@
 use crate::creds::seedance2pro_session::Seedance2ProSession;
 use crate::error::seedance2pro_error::Seedance2ProError;
-use crate::generate::cost::KinoviGenerationCost;
+use crate::cost::kinovi_generation_cost::KinoviGenerationCost;
 use crate::requests::kinovi_host::KinoviHost;
 use crate::requests::workflow_run_task::workflow_run_task::{
   workflow_run_task, KinoviAspectRatioRaw, KinoviBatchCountRaw,
@@ -63,7 +63,7 @@ pub enum KinoviHappyHorse1p0BatchCount {
 //
 // Default resolution (None) is 720p.
 // Batch count multiplies the total cost.
-// Credit package: 22,000 credits for $114 (~192.98 credits/$1, rounded to 193).
+// Credit package: 525,000 credits for $2,159.0909 (~243.16 credits/$1, rounded down to 243).
 
 impl GenerateHappyHorse1p0Request {
   /// Estimate the credit cost for this generation request.
@@ -334,42 +334,52 @@ mod tests {
       /// (USD cents are always rounded UP when fractional.)
       #[test]
       fn costs_720p_5s() {
-        // 33 credits/s × 5s = 165 credits; 16500/193 = 85.49 → rounds UP to 86¢
+        // 33 credits/s × 5s = 165 credits; 16500/243 = 67.90 → rounds UP to 68¢
         let costs = r720(5).calculate_costs();
         assert_eq!(costs.kinovi_credits, 165);
-        assert_eq!(costs.usd_cents_rounded_up, 86);
+        assert_eq!(costs.usd_cents_rounded_up, 68);
+        assert_eq!(costs.usd_cents_rounded_down, 67);
+        assert!((costs.usd_cents_fractional - (16500.0 / 243.0)).abs() < 1e-9);
       }
 
       #[test]
       fn costs_1080p_5s() {
-        // 66 credits/s × 5s = 330 credits; 33000/193 = 170.98 → 171¢
+        // 66 credits/s × 5s = 330 credits; 33000/243 = 135.80 → 136¢
         let costs = r1080(5).calculate_costs();
         assert_eq!(costs.kinovi_credits, 330);
-        assert_eq!(costs.usd_cents_rounded_up, 171);
+        assert_eq!(costs.usd_cents_rounded_up, 136);
+        assert_eq!(costs.usd_cents_rounded_down, 135);
+        assert!((costs.usd_cents_fractional - (33000.0 / 243.0)).abs() < 1e-9);
       }
 
       #[test]
       fn costs_720p_15s() {
-        // 33 credits/s × 15s = 495 credits; 49500/193 = 256.48 → rounds UP to 257¢
+        // 33 credits/s × 15s = 495 credits; 49500/243 = 203.70 → rounds UP to 204¢
         let costs = r720(15).calculate_costs();
         assert_eq!(costs.kinovi_credits, 495);
-        assert_eq!(costs.usd_cents_rounded_up, 257);
+        assert_eq!(costs.usd_cents_rounded_up, 204);
+        assert_eq!(costs.usd_cents_rounded_down, 203);
+        assert!((costs.usd_cents_fractional - (49500.0 / 243.0)).abs() < 1e-9);
       }
 
       #[test]
       fn costs_1080p_15s() {
-        // 66 credits/s × 15s = 990 credits; 99000/193 = 512.95 → 513¢
+        // 66 credits/s × 15s = 990 credits; 99000/243 = 407.41 → 408¢
         let costs = r1080(15).calculate_costs();
         assert_eq!(costs.kinovi_credits, 990);
-        assert_eq!(costs.usd_cents_rounded_up, 513);
+        assert_eq!(costs.usd_cents_rounded_up, 408);
+        assert_eq!(costs.usd_cents_rounded_down, 407);
+        assert!((costs.usd_cents_fractional - (99000.0 / 243.0)).abs() < 1e-9);
       }
 
       #[test]
       fn costs_batch_2_720p_5s() {
-        // 165 credits × 2 = 330 credits; 33000/193 = 170.98 → 171¢
+        // 165 credits × 2 = 330 credits; 33000/243 = 135.80 → 136¢
         let costs = make_request(5, None, Some(KinoviHappyHorse1p0BatchCount::Two)).calculate_costs();
         assert_eq!(costs.kinovi_credits, 330);
-        assert_eq!(costs.usd_cents_rounded_up, 171);
+        assert_eq!(costs.usd_cents_rounded_up, 136);
+        assert_eq!(costs.usd_cents_rounded_down, 135);
+        assert!((costs.usd_cents_fractional - (33000.0 / 243.0)).abs() < 1e-9);
       }
 
       /// The deprecated shims return the corresponding struct fields.

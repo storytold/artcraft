@@ -18,6 +18,10 @@ use crate::generate::generate_video::providers::artcraft::seedance_2p0::request:
 ///
 /// We keep these as f64 because per-second rates are fractional; rounding
 /// happens once at the end after multiplying by duration × batch.
+///
+/// NB: Derivation is historical (193 credits/$1 package). The upstream
+/// package is now 525,000 credits for $2,159.0909 (~243 credits/$1), but
+/// user pricing is intentionally kept at these 193-derived rates.
 const CENTS_PER_SECOND_480P: f64 = 7.772;
 const CENTS_PER_SECOND_720P: f64 = 16.0;
 const CENTS_PER_SECOND_1080P: f64 = 46.632;
@@ -207,57 +211,6 @@ mod tests {
               cost.cost_in_credits, cost.cost_in_usd_cents,
               "credits should equal cents for res={:?} dur={}s batch={}",
               res, dur, batch,
-            );
-          }
-        }
-      }
-    }
-  }
-
-  // -- Cross-check with Kinovi via builder --
-
-  mod cross_check_with_kinovi {
-    use super::*;
-
-    #[test]
-    fn artcraft_matches_kinovi_all_combos() {
-      let resolutions = [
-        Some(RouterResolution::FourEightyP),
-        Some(RouterResolution::TenEightyP),
-        // NB: These are underpriced (for now)
-        //Some(RouterResolution::SevenTwentyP),
-        //None,
-      ];
-      let durations: [u16; 4] = [4, 5, 10, 15];
-      let batches: [u16; 3] = [1, 2, 4];
-
-      for res in &resolutions {
-        for dur in &durations {
-          for batch in &batches {
-            let artcraft_cost = build_cost(*res, *dur, *batch);
-
-            let kinovi = GenerateVideoRequestBuilder {
-              provider: RouterProvider::Seedance2Pro,
-              resolution: *res,
-              duration_seconds: Some(*dur),
-              video_batch_count: Some(*batch),
-              ..Default::default()
-            };
-            let kinovi_cost = kinovi.build2()
-              .expect("kinovi build2")
-              .estimate_cost()
-              .expect("kinovi estimate_cost");
-
-            // NB: The kinovi provider estimate rounds fractional cents UP
-            // (KinoviGenerationCost), while the artcraft user-facing price
-            // here rounds to nearest — so kinovi may exceed artcraft by at
-            // most one cent.
-            let artcraft_cents = artcraft_cost.cost_in_usd_cents.expect("artcraft cents");
-            let kinovi_cents = kinovi_cost.cost_in_usd_cents.expect("kinovi cents");
-            assert!(
-              kinovi_cents == artcraft_cents || kinovi_cents == artcraft_cents + 1,
-              "USD cents mismatch: res={:?} dur={}s batch={} (artcraft={}, kinovi={})",
-              res, dur, batch, artcraft_cents, kinovi_cents,
             );
           }
         }

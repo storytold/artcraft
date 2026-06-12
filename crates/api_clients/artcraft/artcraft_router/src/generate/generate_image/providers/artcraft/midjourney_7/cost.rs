@@ -11,9 +11,11 @@ use crate::generate::generate_image::providers::artcraft::midjourney_7::request:
 /// |   3   |   19    |   19¢     |  (interpolated; Kinovi doesn't expose 3)
 /// |   4   |   25    |   25¢     |
 ///
-/// Kinovi-side math: 12 Kinovi credits per Midjourney task; 193 Kinovi
-/// credits per USD. Kinovi rounds to nearest cent, so batches 1/2/4 land
-/// on 6/12/25. Batch 3 is `ceil((12 × 3 / 193) × 100) = 19`.
+/// Kinovi-side math (historical, 22,000-credit package at 193 credits/$1):
+/// 12 Kinovi credits per Midjourney task → batches 1/2/4 land on 6/12/25¢;
+/// batch 3 is `ceil((12 × 3 / 193) × 100) = 19`. Under the current
+/// 525,000-credit package (243 credits/$1) Kinovi costs only 5/10/20¢ —
+/// user pricing is intentionally kept at the 193-derived values.
 #[derive(Clone, Debug)]
 pub struct ArtcraftMidjourney7CostState {
   pub num_images: u16,
@@ -124,62 +126,6 @@ mod tests {
     for batch in 1..=4u16 {
       assert_eq!(cost_credits(batch), cost_cents(batch),
         "credits should equal usd cents at batch {}", batch);
-    }
-  }
-
-  // ── 1:1 cost parity with Kinovi for batches 1/2/4 ──
-  //
-  // Kinovi midjourney_7 returns 6/12/25¢ for batches 1/2/4. The artcraft
-  // provider must match those values byte-for-byte so users pay the same.
-
-  mod kinovi_parity {
-    use super::*;
-    use crate::generate::generate_image::providers::kinovi::midjourney_7::cost::KinoviMidjourney7CostState;
-    use seedance2pro_client::generate::image::generate_midjourney_v7::KinoviMidjourneyBatchCount;
-
-    #[test]
-    fn batch_1_matches_kinovi() {
-      let kinovi = KinoviMidjourney7CostState { batch_count: KinoviMidjourneyBatchCount::One }
-        .estimate_cost();
-      // NB: The kinovi provider estimate rounds fractional cents UP
-      // (KinoviGenerationCost) while this artcraft user price rounds to
-      // nearest — kinovi may exceed it by at most one cent.
-      let artcraft_cents = cost_cents(1);
-      let kinovi_cents = kinovi.cost_in_usd_cents.unwrap();
-      assert!(
-        kinovi_cents == artcraft_cents || kinovi_cents == artcraft_cents + 1,
-        "batch 1: artcraft={artcraft_cents}, kinovi={kinovi_cents}",
-      );
-    }
-
-    #[test]
-    fn batch_2_matches_kinovi() {
-      let kinovi = KinoviMidjourney7CostState { batch_count: KinoviMidjourneyBatchCount::Two }
-        .estimate_cost();
-      // NB: The kinovi provider estimate rounds fractional cents UP
-      // (KinoviGenerationCost) while this artcraft user price rounds to
-      // nearest — kinovi may exceed it by at most one cent.
-      let artcraft_cents = cost_cents(2);
-      let kinovi_cents = kinovi.cost_in_usd_cents.unwrap();
-      assert!(
-        kinovi_cents == artcraft_cents || kinovi_cents == artcraft_cents + 1,
-        "batch 2: artcraft={artcraft_cents}, kinovi={kinovi_cents}",
-      );
-    }
-
-    #[test]
-    fn batch_4_matches_kinovi() {
-      let kinovi = KinoviMidjourney7CostState { batch_count: KinoviMidjourneyBatchCount::Four }
-        .estimate_cost();
-      // NB: The kinovi provider estimate rounds fractional cents UP
-      // (KinoviGenerationCost) while this artcraft user price rounds to
-      // nearest — kinovi may exceed it by at most one cent.
-      let artcraft_cents = cost_cents(4);
-      let kinovi_cents = kinovi.cost_in_usd_cents.unwrap();
-      assert!(
-        kinovi_cents == artcraft_cents || kinovi_cents == artcraft_cents + 1,
-        "batch 4: artcraft={artcraft_cents}, kinovi={kinovi_cents}",
-      );
     }
   }
 

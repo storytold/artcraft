@@ -1,4 +1,4 @@
-use crate::generate::cost::KinoviGenerationCost;
+use crate::cost::kinovi_generation_cost::KinoviGenerationCost;
 use crate::creds::seedance2pro_session::Seedance2ProSession;
 use crate::error::seedance2pro_error::Seedance2ProError;
 use crate::requests::generate_image::generate_image::{
@@ -286,13 +286,17 @@ mod tests {
     }
 
     #[test]
-    fn usd_cents_batch_one_is_six() {
-      assert_eq!(make_request(KinoviMidjourneyBatchCount::One).calculate_costs().usd_cents_rounded_up, 7); // 1200/193 = 6.22 -> rounds UP
+    fn usd_cents_batch_one_is_five() {
+      assert_eq!(make_request(KinoviMidjourneyBatchCount::One).calculate_costs().usd_cents_rounded_up, 5); // 1200/243 = 4.94 -> rounds UP
+      assert_eq!(make_request(KinoviMidjourneyBatchCount::One).calculate_costs().usd_cents_rounded_down, 4);
+      assert!((make_request(KinoviMidjourneyBatchCount::One).calculate_costs().usd_cents_fractional - (1200.0 / 243.0)).abs() < 1e-9);
     }
 
     #[test]
-    fn usd_cents_batch_four_is_twentyfive() {
-      assert_eq!(make_request(KinoviMidjourneyBatchCount::Four).calculate_costs().usd_cents_rounded_up, 25); // 4800/193 = 24.87 -> rounds UP
+    fn usd_cents_batch_four_is_twenty() {
+      assert_eq!(make_request(KinoviMidjourneyBatchCount::Four).calculate_costs().usd_cents_rounded_up, 20); // 4800/243 = 19.75 -> rounds UP
+      assert_eq!(make_request(KinoviMidjourneyBatchCount::Four).calculate_costs().usd_cents_rounded_down, 19);
+      assert!((make_request(KinoviMidjourneyBatchCount::Four).calculate_costs().usd_cents_fractional - (4800.0 / 243.0)).abs() < 1e-9);
     }
 
     /// Pricing must match the inner module exactly.

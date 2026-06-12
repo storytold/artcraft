@@ -141,7 +141,7 @@ impl KinoviGenerateVideoRequest {
   /// Credits per dollar for billing conversion.
   ///
   /// Legacy 720p pricing uses the original Kinovi credit package rates.
-  /// All other model/resolution combos use the newer rate: 22,000 credits / $114.
+  /// All other model/resolution combos use the newer rate: 525,000 credits / $2,159.0909.
   fn credits_per_dollar(&self) -> f64 {
     match (self.model_type, self.output_resolution) {
       // Legacy: Seedance 2.0 Pro @ 720p — 25,000 credits for $99.99
@@ -152,8 +152,8 @@ impl KinoviGenerateVideoRequest {
       (KinoviModelType::Seedance2Fast, None)
       | (KinoviModelType::Seedance2Fast, Some(KinoviOutputResolution::SevenTwentyP)) => 220.0,
 
-      // New pricing: 22,000 credits for $114 (~192.98 credits/$1)
-      _ => 193.0,
+      // New pricing: 525,000 credits for $2,159.0909 (~243.16 credits/$1)
+      _ => 243.0,
     }
   }
 
@@ -669,7 +669,7 @@ mod tests {
 
     #[test]
     fn usd_cents_legacy_fast_720p() {
-      // 220 credits/$1: 140 credits = 63.6 → 64¢
+      // 220 credits/$1: 140 credits = 57.61 → 58¢
       assert_eq!(fast(5, KinoviBatchCount::One).estimate_cost_in_usd_cents(), 64);
       assert_eq!(fast(10, KinoviBatchCount::One).estimate_cost_in_usd_cents(), 127);
     }
@@ -678,24 +678,24 @@ mod tests {
 
     #[test]
     fn usd_cents_new_pro_480p() {
-      // 192.98 credits/$1: 75 credits = 38.86 → 39¢
-      assert_eq!(pro_res(5, KinoviBatchCount::One, KinoviOutputResolution::FourEightyP).estimate_cost_in_usd_cents(), 39);
-      assert_eq!(pro_res(10, KinoviBatchCount::One, KinoviOutputResolution::FourEightyP).estimate_cost_in_usd_cents(), 78);
+      // 243 credits/$1: 75 credits = 30.86 → 31¢
+      assert_eq!(pro_res(5, KinoviBatchCount::One, KinoviOutputResolution::FourEightyP).estimate_cost_in_usd_cents(), 31);
+      assert_eq!(pro_res(10, KinoviBatchCount::One, KinoviOutputResolution::FourEightyP).estimate_cost_in_usd_cents(), 62);
     }
 
     #[test]
     fn usd_cents_new_pro_1080p() {
-      // 192.98 credits/$1: 450 credits = 233.18 → 233¢
-      assert_eq!(pro_res(5, KinoviBatchCount::One, KinoviOutputResolution::TenEightyP).estimate_cost_in_usd_cents(), 233);
-      // 900 credits = 466.36 → 466¢
-      assert_eq!(pro_res(10, KinoviBatchCount::One, KinoviOutputResolution::TenEightyP).estimate_cost_in_usd_cents(), 466);
+      // 243 credits/$1: 450 credits = 185.19 → 185¢
+      assert_eq!(pro_res(5, KinoviBatchCount::One, KinoviOutputResolution::TenEightyP).estimate_cost_in_usd_cents(), 185);
+      // 900 credits = 370.37 → 370¢
+      assert_eq!(pro_res(10, KinoviBatchCount::One, KinoviOutputResolution::TenEightyP).estimate_cost_in_usd_cents(), 370);
     }
 
     #[test]
     fn usd_cents_new_fast_480p() {
-      // 192.98 credits/$1: 50 credits = 25.91 → 26¢
-      assert_eq!(fast_res(5, KinoviBatchCount::One, KinoviOutputResolution::FourEightyP).estimate_cost_in_usd_cents(), 26);
-      assert_eq!(fast_res(10, KinoviBatchCount::One, KinoviOutputResolution::FourEightyP).estimate_cost_in_usd_cents(), 52);
+      // 243 credits/$1: 50 credits = 20.58 → 21¢
+      assert_eq!(fast_res(5, KinoviBatchCount::One, KinoviOutputResolution::FourEightyP).estimate_cost_in_usd_cents(), 21);
+      assert_eq!(fast_res(10, KinoviBatchCount::One, KinoviOutputResolution::FourEightyP).estimate_cost_in_usd_cents(), 41);
     }
 
     // ── credits_per_dollar: verify the rates directly ──
@@ -711,11 +711,11 @@ mod tests {
 
     #[test]
     fn credits_per_dollar_new_rate() {
-      assert_eq!(pro_res(5, KinoviBatchCount::One, KinoviOutputResolution::FourEightyP).credits_per_dollar(), 193.0);
-      assert_eq!(pro_res(5, KinoviBatchCount::One, KinoviOutputResolution::TenEightyP).credits_per_dollar(), 193.0);
-      assert_eq!(fast_res(5, KinoviBatchCount::One, KinoviOutputResolution::FourEightyP).credits_per_dollar(), 193.0);
+      assert_eq!(pro_res(5, KinoviBatchCount::One, KinoviOutputResolution::FourEightyP).credits_per_dollar(), 243.0);
+      assert_eq!(pro_res(5, KinoviBatchCount::One, KinoviOutputResolution::TenEightyP).credits_per_dollar(), 243.0);
+      assert_eq!(fast_res(5, KinoviBatchCount::One, KinoviOutputResolution::FourEightyP).credits_per_dollar(), 243.0);
       // Fast 1080p (not officially supported) also uses new rate
-      assert_eq!(fast_res(5, KinoviBatchCount::One, KinoviOutputResolution::TenEightyP).credits_per_dollar(), 193.0);
+      assert_eq!(fast_res(5, KinoviBatchCount::One, KinoviOutputResolution::TenEightyP).credits_per_dollar(), 243.0);
     }
   }
 

@@ -1,4 +1,4 @@
-use crate::generate::cost::KinoviGenerationCost;
+use crate::cost::kinovi_generation_cost::KinoviGenerationCost;
 use crate::creds::seedance2pro_session::Seedance2ProSession;
 use crate::error::seedance2pro_bad_request_api_error::Seedance2ProBadRequestApiError;
 use crate::error::seedance2pro_client_error::Seedance2ProClientError;
@@ -22,7 +22,7 @@ const CREDITS_PER_MIDJOURNEY_TASK: u32 = 12;
 /// Newer Kinovi credit-package rate. Used to convert credits to USD for the
 /// Midjourney image generation flow.
 ///
-/// 22,000 credits / $114 = 192.98 ≈ 193 credits per dollar.
+/// 500,000 credits / $2,159.09 = 231.58 ≈ 243 credits per dollar (rounded down).
 
 /// Kinovi only currently exposes a single Midjourney resolution preset.
 const MIDJOURNEY_RESOLUTION: &str = "1k";
@@ -416,20 +416,26 @@ mod tests {
 
     #[test]
     fn usd_cents_batch_one() {
-      // 12 / 193 × 100 = 6.21¢ → 6¢
-      assert_eq!(make_request(KinoviMidjourneyBatchCount::One).calculate_costs().usd_cents_rounded_up, 7); // 1200/193 = 6.22 -> rounds UP
+      // 12/243 × 100 = 4.94¢ → 5¢
+      assert_eq!(make_request(KinoviMidjourneyBatchCount::One).calculate_costs().usd_cents_rounded_up, 5); // 1200/243 = 4.94 -> rounds UP
+      assert_eq!(make_request(KinoviMidjourneyBatchCount::One).calculate_costs().usd_cents_rounded_down, 4);
+      assert!((make_request(KinoviMidjourneyBatchCount::One).calculate_costs().usd_cents_fractional - (1200.0 / 243.0)).abs() < 1e-9);
     }
 
     #[test]
     fn usd_cents_batch_two() {
-      // 24 / 193 × 100 = 12.43¢ → 12¢
-      assert_eq!(make_request(KinoviMidjourneyBatchCount::Two).calculate_costs().usd_cents_rounded_up, 13); // 2400/193 = 12.44 -> rounds UP
+      // 24/243 × 100 = 9.88¢ → 10¢
+      assert_eq!(make_request(KinoviMidjourneyBatchCount::Two).calculate_costs().usd_cents_rounded_up, 10); // 2400/243 = 9.88 -> rounds UP
+      assert_eq!(make_request(KinoviMidjourneyBatchCount::Two).calculate_costs().usd_cents_rounded_down, 9);
+      assert!((make_request(KinoviMidjourneyBatchCount::Two).calculate_costs().usd_cents_fractional - (2400.0 / 243.0)).abs() < 1e-9);
     }
 
     #[test]
     fn usd_cents_batch_four() {
-      // 48 / 193 × 100 = 24.87¢ → 25¢
-      assert_eq!(make_request(KinoviMidjourneyBatchCount::Four).calculate_costs().usd_cents_rounded_up, 25); // 4800/193 = 24.87 -> rounds UP
+      // 48/243 × 100 = 19.75¢ → 20¢
+      assert_eq!(make_request(KinoviMidjourneyBatchCount::Four).calculate_costs().usd_cents_rounded_up, 20); // 4800/243 = 19.75 -> rounds UP
+      assert_eq!(make_request(KinoviMidjourneyBatchCount::Four).calculate_costs().usd_cents_rounded_down, 19);
+      assert!((make_request(KinoviMidjourneyBatchCount::Four).calculate_costs().usd_cents_fractional - (4800.0 / 243.0)).abs() < 1e-9);
     }
 
     /// Batch 4 should be exactly 4× the credit cost of batch 1, and the USD

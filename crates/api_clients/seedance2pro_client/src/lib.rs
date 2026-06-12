@@ -2,6 +2,7 @@
 pub (crate) mod test_utils;
 
 // User API
+pub mod cost;
 pub mod creds;
 pub mod error;
 pub mod generate;

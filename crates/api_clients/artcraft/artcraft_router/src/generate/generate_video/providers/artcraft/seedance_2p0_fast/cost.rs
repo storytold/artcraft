@@ -13,6 +13,8 @@ use crate::generate::generate_video::providers::artcraft::seedance_2p0_fast::req
 
 /// USD cents per second by resolution, derived from upstream Fast rates:
 ///   480p:  10 upstream-credits/sec / 193 upstream-credits/$1 * 100 ~= 5.181 c/s
+///   (historical 193 credits/$1 derivation; the upstream package is now
+///   ~243 credits/$1 but user pricing is intentionally unchanged)
 ///   720p:  28 upstream-credits/sec / 220 upstream-credits/$1 * 100 ~= 12.727 c/s
 ///
 /// We keep these as f64 because per-second rates are fractional; rounding
@@ -183,50 +185,6 @@ mod tests {
       }
     }
   }
-
-  // -- Cross-check with Kinovi Fast via builder --
-
-  //mod cross_check_with_kinovi {
-  //  use super::*;
-  //
-  //  #[test]
-  //  fn artcraft_fast_matches_kinovi_fast_all_combos() {
-  //    let resolutions = [
-  //      Some(RouterResolution::FourEightyP),
-  //      Some(RouterResolution::SevenTwentyP),
-  //      None,
-  //    ];
-  //    let durations: [u16; 4] = [4, 5, 10, 15];
-  //    let batches: [u16; 3] = [1, 2, 4];
-  //
-  //    for res in &resolutions {
-  //      for dur in &durations {
-  //        for batch in &batches {
-  //          let artcraft_cost = build_cost(*res, *dur, *batch);
-  //
-  //          let kinovi = GenerateVideoRequestBuilder {
-  //            model: RouterVideoModel::Seedance2p0Fast,
-  //            provider: RouterProvider::Seedance2Pro,
-  //            resolution: *res,
-  //            duration_seconds: Some(*dur),
-  //            video_batch_count: Some(*batch),
-  //            ..Default::default()
-  //          };
-  //          let kinovi_cost = kinovi.build2()
-  //            .expect("kinovi build2")
-  //            .estimate_cost()
-  //            .expect("kinovi estimate_cost");
-  //
-  //          assert_eq!(
-  //            artcraft_cost.cost_in_usd_cents, kinovi_cost.cost_in_usd_cents,
-  //            "USD cents mismatch: res={:?} dur={}s batch={}",
-  //            res, dur, batch,
-  //          );
-  //        }
-  //      }
-  //    }
-  //  }
-  //}
 
   // -- Helpers --
 

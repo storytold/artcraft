@@ -125,6 +125,8 @@ mod tests {
     }
   }
 
+  // -- Helpers --
+
   fn build_cost(
     resolution: Option<RouterResolution>,
     duration_seconds: u16,
