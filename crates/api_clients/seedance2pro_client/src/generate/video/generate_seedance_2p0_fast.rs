@@ -110,16 +110,16 @@ impl GenerateSeedance2p0FastRequest {
     };
 
     let duration = u64::from(self.duration_seconds);
-    let base_credits_cost = duration * credits_per_second * batch_multiplier;
-    let video_reference_surcharge_cost = if self.has_video_reference() {
+    let base_credits = duration * credits_per_second * batch_multiplier;
+    let maybe_video_reference_surcharge_credits = if self.has_video_reference() {
       Some(duration * video_reference_surcharge_per_second * batch_multiplier)
     } else {
       None
     };
 
     KinoviSeedanceGenerationCost::from_base_and_surcharge(
-      base_credits_cost,
-      video_reference_surcharge_cost,
+      base_credits,
+      maybe_video_reference_surcharge_credits,
     )
   }
 
@@ -389,8 +389,8 @@ mod tests {
         assert_eq!(costs.total_cost.usd_cents_rounded_up, 37);
         assert_eq!(costs.total_cost.usd_cents_rounded_down, 36);
         assert!((costs.total_cost.usd_cents_fractional - (7000.0 / 193.0)).abs() < 1e-9);
-        assert_eq!(costs.base_credits_cost, 70);
-        assert_eq!(costs.video_reference_surcharge_cost, None);
+        assert_eq!(costs.base_cost.kinovi_credits, 70);
+        assert!(costs.video_reference_surcharge_cost.is_none());
       }
 
       #[test]
@@ -401,8 +401,8 @@ mod tests {
         assert_eq!(costs.total_cost.usd_cents_rounded_up, 73);
         assert_eq!(costs.total_cost.usd_cents_rounded_down, 72);
         assert!((costs.total_cost.usd_cents_fractional - (14000.0 / 193.0)).abs() < 1e-9);
-        assert_eq!(costs.base_credits_cost, 140);
-        assert_eq!(costs.video_reference_surcharge_cost, None);
+        assert_eq!(costs.base_cost.kinovi_credits, 140);
+        assert!(costs.video_reference_surcharge_cost.is_none());
       }
 
       #[test]
@@ -413,8 +413,8 @@ mod tests {
         assert_eq!(costs.total_cost.usd_cents_rounded_up, 218);
         assert_eq!(costs.total_cost.usd_cents_rounded_down, 217);
         assert!((costs.total_cost.usd_cents_fractional - (42000.0 / 193.0)).abs() < 1e-9);
-        assert_eq!(costs.base_credits_cost, 420);
-        assert_eq!(costs.video_reference_surcharge_cost, None);
+        assert_eq!(costs.base_cost.kinovi_credits, 420);
+        assert!(costs.video_reference_surcharge_cost.is_none());
       }
 
       #[test]
@@ -425,8 +425,8 @@ mod tests {
         assert_eq!(costs.total_cost.usd_cents_rounded_up, 109);
         assert_eq!(costs.total_cost.usd_cents_rounded_down, 108);
         assert!((costs.total_cost.usd_cents_fractional - (21000.0 / 193.0)).abs() < 1e-9);
-        assert_eq!(costs.base_credits_cost, 210);
-        assert_eq!(costs.video_reference_surcharge_cost, None);
+        assert_eq!(costs.base_cost.kinovi_credits, 210);
+        assert!(costs.video_reference_surcharge_cost.is_none());
       }
 
       #[test]
@@ -437,8 +437,8 @@ mod tests {
         assert_eq!(costs.total_cost.usd_cents_rounded_up, 146);
         assert_eq!(costs.total_cost.usd_cents_rounded_down, 145);
         assert!((costs.total_cost.usd_cents_fractional - (28000.0 / 193.0)).abs() < 1e-9);
-        assert_eq!(costs.base_credits_cost, 280);
-        assert_eq!(costs.video_reference_surcharge_cost, None);
+        assert_eq!(costs.base_cost.kinovi_credits, 280);
+        assert!(costs.video_reference_surcharge_cost.is_none());
       }
 
       /// The deprecated shims return the corresponding struct fields.
@@ -487,8 +487,8 @@ mod tests {
 
         for (make, duration, base, surcharge) in cases {
           let costs = with_video_ref(make(*duration)).calculate_costs();
-          assert_eq!(costs.base_credits_cost, *base, "base for {duration}s");
-          assert_eq!(costs.video_reference_surcharge_cost, Some(*surcharge), "surcharge for {duration}s");
+          assert_eq!(costs.base_cost.kinovi_credits, *base, "base for {duration}s");
+          assert_eq!(costs.video_reference_surcharge_cost.map(|c| c.kinovi_credits), Some(*surcharge), "surcharge for {duration}s");
           assert_eq!(costs.total_cost.kinovi_credits, base + surcharge, "total for {duration}s");
         }
       }
@@ -497,12 +497,30 @@ mod tests {
       fn surcharge_includes_usd_cents() {
         // 720p 5s + video ref = 140 + 30 = 170 credits; 17000/193 = 88.08 → 89¢
         let costs = with_video_ref(r720(5)).calculate_costs();
-        assert_eq!(costs.base_credits_cost, 140);
-        assert_eq!(costs.video_reference_surcharge_cost, Some(30));
+        assert_eq!(costs.base_cost.kinovi_credits, 140);
+        assert_eq!(costs.video_reference_surcharge_cost.map(|c| c.kinovi_credits), Some(30));
         assert_eq!(costs.total_cost.kinovi_credits, 170);
         assert_eq!(costs.total_cost.usd_cents_rounded_up, 89);
         assert_eq!(costs.total_cost.usd_cents_rounded_down, 88);
         assert!((costs.total_cost.usd_cents_fractional - (17000.0 / 193.0)).abs() < 1e-9);
+      }
+
+      /// The base and surcharge parts each carry their own USD conversions.
+      #[test]
+      fn parts_have_their_own_usd_conversions() {
+        let costs = with_video_ref(r720(5)).calculate_costs();
+
+        // Base: 140 credits; 14000/193 = 72.54.
+        assert_eq!(costs.base_cost.usd_cents_rounded_up, 73);
+        assert_eq!(costs.base_cost.usd_cents_rounded_down, 72);
+        assert!((costs.base_cost.usd_cents_fractional - (14000.0 / 193.0)).abs() < 1e-9);
+
+        // Surcharge: 30 credits; 3000/193 = 15.54.
+        let surcharge = costs.video_reference_surcharge_cost.expect("should have surcharge");
+        assert_eq!(surcharge.kinovi_credits, 30);
+        assert_eq!(surcharge.usd_cents_rounded_up, 16);
+        assert_eq!(surcharge.usd_cents_rounded_down, 15);
+        assert!((surcharge.usd_cents_fractional - (3000.0 / 193.0)).abs() < 1e-9);
       }
 
       #[test]
@@ -511,7 +529,7 @@ mod tests {
         request.reference_video_urls = Some(vec![]);
         let costs = request.calculate_costs();
         assert_eq!(costs.total_cost.kinovi_credits, 140);
-        assert_eq!(costs.video_reference_surcharge_cost, None);
+        assert!(costs.video_reference_surcharge_cost.is_none());
       }
 
       /// Surcharge is flat per generation regardless of how many reference
@@ -532,8 +550,8 @@ mod tests {
         let request = with_video_ref(build_request(5, None, Some(KinoviSeedance2p0FastBatchCount::Two)));
         // (140 base + 30 surcharge) × 2 = 340 credits
         let costs = request.calculate_costs();
-        assert_eq!(costs.base_credits_cost, 280);
-        assert_eq!(costs.video_reference_surcharge_cost, Some(60));
+        assert_eq!(costs.base_cost.kinovi_credits, 280);
+        assert_eq!(costs.video_reference_surcharge_cost.map(|c| c.kinovi_credits), Some(60));
         assert_eq!(costs.total_cost.kinovi_credits, 340);
       }
     }
