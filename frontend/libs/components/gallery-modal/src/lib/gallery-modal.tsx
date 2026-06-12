@@ -562,6 +562,9 @@ export const GalleryModal = React.memo(
     const [newFolderParentId, setNewFolderParentId] = useState<string | null>(
       null,
     );
+    // Items to drop into the folder once it's created (set when the new-folder
+    // modal is opened from the bulk "Add to folder" flow; empty otherwise).
+    const [newFolderItemIds, setNewFolderItemIds] = useState<string[]>([]);
 
     // Active folder view. Resolved media items are cached per folder so
     // reopening a folder shows instantly while a fresh fetch runs in the background.
@@ -1195,20 +1198,35 @@ export const GalleryModal = React.memo(
       [foldersApi],
     );
 
-    // Folder creation — nests under `newFolderParentId` (null = root).
+    // `handleAddToFolder` is defined further down; reach it through a ref so the
+    // earlier `handleCreateFolder` can add the just-created folder's seed items.
+    const addToFolderRef = useRef<
+      ((itemIds: string[], folderId: string) => Promise<void>) | null
+    >(null);
+
+    // Folder creation — nests under `newFolderParentId` (null = root). When opened
+    // from the bulk "Add to folder" flow, `newFolderItemIds` holds the selected
+    // items, which are dropped into the new folder right after it's created.
     const handleCreateFolder = useCallback(
       async (rawName: string) => {
         const name = rawName.trim();
         if (!name) return;
         const parentId = newFolderParentId;
+        const seedItemIds = newFolderItemIds;
         setNewFolderModalOpen(false);
+        setNewFolderItemIds([]);
         try {
           const res = await foldersApi.CreateFolder({
             name,
             maybe_parent_folder_token: parentId,
           });
           if (res.success && res.data) {
-            setFolders((prev) => [...prev, mapFolder(res.data!)]);
+            const created = mapFolder(res.data);
+            setFolders((prev) => [...prev, created]);
+            if (seedItemIds.length > 0) {
+              await addToFolderRef.current?.(seedItemIds, created.id);
+              setBulkSelectedIds(new Set());
+            }
           } else {
             toast.error(res.errorMessage || "Failed to create folder.");
           }
@@ -1218,16 +1236,17 @@ export const GalleryModal = React.memo(
           );
         }
       },
-      [newFolderParentId, foldersApi, mapFolder],
+      [newFolderParentId, newFolderItemIds, foldersApi, mapFolder],
     );
 
     // Open the new-folder modal. `parentId` undefined → create in the folder
     // currently being viewed; pass `null` to force a root folder.
     const handleOpenNewFolderModal = useCallback(
-      (parentId?: string | null) => {
+      (parentId?: string | null, seedItemIds?: string[]) => {
         setNewFolderParentId(
           parentId !== undefined ? parentId : activeFolderId,
         );
+        setNewFolderItemIds(seedItemIds ?? []);
         setNewFolderModalOpen(true);
       },
       [activeFolderId],
@@ -1507,6 +1526,8 @@ export const GalleryModal = React.memo(
       },
       [resolveItems, bumpFolderCollage, folders, foldersApi],
     );
+    // Expose to `handleCreateFolder` (defined above) for the new-folder-with-items flow.
+    addToFolderRef.current = handleAddToFolder;
 
     // Move media from one folder to another (atomic). Drops from source, adds to target.
     const handleMoveMedia = useCallback(
@@ -2502,7 +2523,10 @@ export const GalleryModal = React.memo(
               initialValue="New Folder"
               confirmLabel="Create"
               onConfirm={handleCreateFolder}
-              onClose={() => setNewFolderModalOpen(false)}
+              onClose={() => {
+                setNewFolderModalOpen(false);
+                setNewFolderItemIds([]);
+              }}
             />
 
             {/* ── Rename Folder dialog (sidebar context menu) ── */}
@@ -2604,8 +2628,9 @@ export const GalleryModal = React.memo(
                             type="button"
                             className="flex w-full items-center gap-2.5 px-2 py-1.5 rounded-md hover:bg-ui-controls/50 text-sm text-base-fg/70 transition-colors"
                             onClick={() => {
+                              const ids = Array.from(bulkSelectedIds);
                               setBulkFolderPopoverOpen(false);
-                              handleOpenNewFolderModal();
+                              handleOpenNewFolderModal(undefined, ids);
                             }}
                           >
                             <FontAwesomeIcon

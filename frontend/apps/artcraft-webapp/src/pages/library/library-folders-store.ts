@@ -78,14 +78,23 @@ interface LibraryFoldersState {
   /** Whether the open folder has more media pages to load. */
   folderHasMore: Record<string, boolean>;
   // Dialog state — rendered by the library page, triggered from sidebar or page.
-  newFolderModal: { open: boolean; parentId: string | null };
+  // `addItemIds` holds the items to drop into the folder once it's created
+  // (set when opened from the bulk "Add to folder" flow; empty otherwise).
+  newFolderModal: {
+    open: boolean;
+    parentId: string | null;
+    addItemIds: string[];
+  };
   renameTarget: string | null;
   contextMenu: { folderId: string; x: number; y: number } | null;
 
   loadFolders: () => Promise<void>;
   setActiveFolder: (id: string | null) => void;
   loadFolderMedia: (folderId: string, reset?: boolean) => Promise<void>;
-  createFolder: (name: string, parentId: string | null) => Promise<void>;
+  createFolder: (
+    name: string,
+    parentId: string | null,
+  ) => Promise<UiFolder | null>;
   renameFolder: (folderId: string, name: string) => Promise<void>;
   setFolderStar: (folderId: string, hasStar: boolean) => Promise<void>;
   setFolderColor: (folderId: string, colorCode: string | null) => Promise<void>;
@@ -105,7 +114,7 @@ interface LibraryFoldersState {
     itemIds: string[],
     folderId: string,
   ) => Promise<void>;
-  openNewFolderModal: (parentId: string | null) => void;
+  openNewFolderModal: (parentId: string | null, addItemIds?: string[]) => void;
   closeNewFolderModal: () => void;
   setRenameTarget: (folderId: string | null) => void;
   setContextMenu: (
@@ -242,7 +251,7 @@ export const useLibraryFoldersStore = create<LibraryFoldersState>(
     folderContentLoading: false,
     folderLoadingMore: false,
     folderHasMore: {},
-    newFolderModal: { open: false, parentId: null },
+    newFolderModal: { open: false, parentId: null, addItemIds: [] },
     renameTarget: null,
     contextMenu: null,
 
@@ -319,19 +328,22 @@ export const useLibraryFoldersStore = create<LibraryFoldersState>(
 
     createFolder: async (name, parentId) => {
       const trimmed = name.trim();
-      if (!trimmed) return;
+      if (!trimmed) return null;
       try {
         const res = await foldersApi.CreateFolder({
           name: trimmed,
           maybe_parent_folder_token: parentId,
         });
         if (res.success && res.data) {
-          set((s) => ({ folders: [...s.folders, mapFolder(res.data!)] }));
-        } else {
-          toast.error(res.errorMessage || "Failed to create folder.");
+          const created = mapFolder(res.data);
+          set((s) => ({ folders: [...s.folders, created] }));
+          return created;
         }
+        toast.error(res.errorMessage || "Failed to create folder.");
+        return null;
       } catch (err) {
         toast.error(`Failed to create folder: ${errMsg(err)}`);
+        return null;
       }
     },
 
@@ -543,10 +555,13 @@ export const useLibraryFoldersStore = create<LibraryFoldersState>(
       }
     },
 
-    openNewFolderModal: (parentId) =>
-      set({ newFolderModal: { open: true, parentId }, contextMenu: null }),
+    openNewFolderModal: (parentId, addItemIds = []) =>
+      set({
+        newFolderModal: { open: true, parentId, addItemIds },
+        contextMenu: null,
+      }),
     closeNewFolderModal: () =>
-      set({ newFolderModal: { open: false, parentId: null } }),
+      set({ newFolderModal: { open: false, parentId: null, addItemIds: [] } }),
     setRenameTarget: (folderId) => set({ renameTarget: folderId, contextMenu: null }),
     setContextMenu: (menu) => set({ contextMenu: menu }),
   }),

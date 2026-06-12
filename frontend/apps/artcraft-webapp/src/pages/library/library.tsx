@@ -402,6 +402,10 @@ export default function Library() {
       ) {
         return;
       }
+      // Blank-background press: suppress the browser's native text-selection /
+      // focus default so it can't hijack the marquee drag (the cause of the
+      // drag "dying" once the viewport fills with content after scrolling).
+      e.preventDefault();
 
       const startX = e.clientX;
       const startY = e.clientY;
@@ -412,8 +416,21 @@ export default function Library() {
       let applied = base;
       let active = false;
 
-      // Tile rects are stable during the drag (no auto-scroll); cache once and
-      // refresh only if something scrolls mid-drag.
+      // Edge auto-scroll runs the list under a held cursor, so tile rects move
+      // on screen — read them in viewport space and re-cache on every scroll.
+      const scroller = getScrollParent(rootRef.current);
+      const readScrollTop = () =>
+        scroller ? scroller.scrollTop : window.scrollY;
+      const readScrollLeft = () =>
+        scroller ? scroller.scrollLeft : window.scrollX;
+      // The anchor is pinned in content space; scrolling shifts it on screen,
+      // so compensate by the scroll delta since the drag began.
+      const startScrollTop = readScrollTop();
+      const startScrollLeft = readScrollLeft();
+      let lastCx = startX;
+      let lastCy = startY;
+      let edgeRaf = 0;
+
       let tiles: {
         id: string;
         left: number;
@@ -441,21 +458,40 @@ export default function Library() {
       if (!isTouch) cacheTiles();
 
       const applyMarquee = (cx: number, cy: number) => {
-        const left = Math.min(startX, cx);
-        const top = Math.min(startY, cy);
-        const width = Math.abs(cx - startX);
-        const height = Math.abs(cy - startY);
-        const box = marqueeRef.current;
-        if (box) {
-          box.style.display = "block";
-          box.style.left = `${left}px`;
-          box.style.top = `${top}px`;
-          box.style.width = `${width}px`;
-          box.style.height = `${height}px`;
-        }
+        // Compensate the anchor for scrolling since drag start so the rectangle
+        // keeps growing in content space, not viewport space.
+        const ax = startX - (readScrollLeft() - startScrollLeft);
+        const ay = startY - (readScrollTop() - startScrollTop);
+        const left = Math.min(ax, cx);
+        const top = Math.min(ay, cy);
+        const width = Math.abs(cx - ax);
+        const height = Math.abs(cy - ay);
         const right = left + width;
         const bottom = top + height;
+        const box = marqueeRef.current;
+        if (box) {
+          // Clamp the *visible* rectangle to the scroll viewport so it never
+          // paints over the top bar / breadcrumb chrome above the gallery.
+          // Selection math below still uses the unclamped rect, so tiles
+          // scrolled above the fold stay selected.
+          const vr = scroller?.getBoundingClientRect();
+          const vTop = vr ? vr.top : 0;
+          const vBottom = vr ? vr.bottom : window.innerHeight;
+          const dispTop = Math.max(top, vTop);
+          const dispBottom = Math.min(bottom, vBottom);
+          box.style.display = "block";
+          box.style.left = `${left}px`;
+          box.style.top = `${dispTop}px`;
+          box.style.width = `${width}px`;
+          box.style.height = `${Math.max(0, dispBottom - dispTop)}px`;
+        }
+        const mounted = new Set(tiles.map((t) => t.id));
         const next = new Set(base);
+        // Tiles swept over earlier may have unmounted (virtualized list) once
+        // scrolled far away — keep them selected since we can't re-test them.
+        for (const id of applied) {
+          if (!base.has(id) && !mounted.has(id)) next.add(id);
+        }
         for (const t of tiles) {
           if (
             t.left < right &&
@@ -482,6 +518,39 @@ export default function Library() {
         }
       };
 
+      // Auto-scroll while the cursor sits within EDGE px of the viewport's top
+      // or bottom; speed ramps up nearer the edge. Self-perpetuating via rAF
+      // until the cursor leaves the zone or the drag ends.
+      const EDGE = 64;
+      const MAX_SPEED = 24;
+      const edgeBounds = () => {
+        if (scroller) {
+          const r = scroller.getBoundingClientRect();
+          return { top: r.top, bottom: r.bottom };
+        }
+        return { top: 0, bottom: window.innerHeight };
+      };
+      const autoScrollTick = () => {
+        edgeRaf = 0;
+        if (!active || isTouch) return;
+        const { top, bottom } = edgeBounds();
+        let dy = 0;
+        if (lastCy < top + EDGE) {
+          dy = -Math.min(MAX_SPEED, Math.ceil((top + EDGE - lastCy) / 3));
+        } else if (lastCy > bottom - EDGE) {
+          dy = Math.min(MAX_SPEED, Math.ceil((lastCy - (bottom - EDGE)) / 3));
+        }
+        if (dy === 0) return;
+        if (scroller) scroller.scrollTop += dy;
+        else window.scrollBy(0, dy);
+        cacheTiles();
+        applyMarquee(lastCx, lastCy);
+        edgeRaf = requestAnimationFrame(autoScrollTick);
+      };
+      const ensureAutoScroll = () => {
+        if (!edgeRaf) edgeRaf = requestAnimationFrame(autoScrollTick);
+      };
+
       const handleMove = (ev: PointerEvent) => {
         if (isTouch) {
           // Track movement only so a scroll gesture doesn't count as a
@@ -505,19 +574,26 @@ export default function Library() {
           active = true;
           document.body.style.userSelect = "none";
         }
+        lastCx = ev.clientX;
+        lastCy = ev.clientY;
+        ensureAutoScroll();
         cancelAnimationFrame(marqueeRaf.current);
         marqueeRaf.current = requestAnimationFrame(() =>
           applyMarquee(ev.clientX, ev.clientY),
         );
       };
       const handleScroll = () => {
-        if (active && !isTouch) cacheTiles();
+        if (active && !isTouch) {
+          cacheTiles();
+          applyMarquee(lastCx, lastCy);
+        }
       };
       const handleUp = () => {
         window.removeEventListener("pointermove", handleMove);
         window.removeEventListener("pointerup", handleUp);
         window.removeEventListener("scroll", handleScroll, true);
         cancelAnimationFrame(marqueeRaf.current);
+        cancelAnimationFrame(edgeRaf);
         document.body.style.userSelect = "";
         if (marqueeRef.current) marqueeRef.current.style.display = "none";
         // Plain click on blank background (no marquee drawn) clears the
@@ -622,9 +698,20 @@ export default function Library() {
   }, [loadItems]);
 
   // ── Folder dialog handlers ────────────────────────────────────────────────
-  const submitNewFolder = (name: string) => {
-    createFolder(name, newFolderModal.parentId);
+  const submitNewFolder = async (name: string) => {
+    // Capture before closing — `closeNewFolderModal` resets these fields.
+    const { parentId, addItemIds } = newFolderModal;
     closeNewFolderModal();
+    const folder = await createFolder(name, parentId);
+    if (folder && addItemIds.length > 0) {
+      // The selection can span the root library and folder caches, so resolve
+      // known items from both (incomplete `known` only weakens the optimistic
+      // preview — the server add still uses the ids and reconciles on open).
+      const fmi = useLibraryFoldersStore.getState().folderMediaItems;
+      const known = [...allItems, ...Object.values(fmi).flat()];
+      addMediaToFolder(addItemIds, folder.id, known);
+      useLibrarySelectionStore.getState().clear();
+    }
   };
 
   const startRename = (folderId: string) => setRenameTarget(folderId);
@@ -747,7 +834,16 @@ export default function Library() {
   return (
     <div
       ref={rootRef}
-      className="relative min-h-full w-full bg-[#101014] pb-8 px-3 sm:px-4 md:px-8 lg:px-12"
+      // `shrink-0` is critical: the scroll parent (`SidebarInset`) is a flex
+      // column, so without it the flex algorithm shrinks this box down to one
+      // viewport while the tall grid overflows below it — leaving the lower
+      // page outside this element, so the marquee handler (and its padding
+      // gutters) never receive pointer events there. `min-h-full` then only
+      // fills the background when content is shorter than the viewport.
+      // `select-none` blocks the blue text/image highlight when sweeping a
+      // marquee or fat-fingering a click; native selection would otherwise also
+      // hijack the drag. Form fields opt back in so dialog inputs stay editable.
+      className="relative min-h-full w-full shrink-0 select-none [&_input]:select-text [&_textarea]:select-text bg-[#101014] pb-8 px-3 sm:px-4 md:px-8 lg:px-12"
       onPointerDown={handleMarqueePointerDown}
     >
       <div className="mx-auto max-w-[1600px]">
@@ -1249,7 +1345,7 @@ interface BulkSelectionBarProps {
   activeFolderId: string | null;
   onAddToFolder: (itemIds: string[], folderId: string) => void;
   onDeleteSelected: () => void;
-  onNewFolder: (parentId: string | null) => void;
+  onNewFolder: (parentId: string | null, addItemIds?: string[]) => void;
 }
 
 function BulkSelectionBar({
@@ -1368,7 +1464,7 @@ function BulkSelectionBar({
                 type="button"
                 onClick={() => {
                   setPopoverOpen(false);
-                  onNewFolder(activeFolderId);
+                  onNewFolder(activeFolderId, Array.from(ids));
                 }}
                 className="flex w-full items-center gap-2.5 rounded-md px-2 py-1.5 text-sm text-white/70 hover:bg-ui-controls/50 transition-colors"
               >
