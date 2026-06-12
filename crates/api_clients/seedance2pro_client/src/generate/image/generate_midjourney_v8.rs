@@ -1,4 +1,4 @@
-use crate::generate::cost::KinoviGenerationCost;
+use crate::cost::kinovi_generation_cost::KinoviGenerationCost;
 use crate::creds::seedance2pro_session::Seedance2ProSession;
 use crate::error::seedance2pro_error::Seedance2ProError;
 use crate::requests::generate_image::generate_image::{

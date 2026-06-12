@@ -1,8 +1,7 @@
-/// Kinovi credits per US dollar.
-/// Credit package: 22,000 credits for $114 (~192.98 credits/$1, rounded to 193).
-const CREDITS_PER_DOLLAR: u64 = 193;
+use crate::cost::constants::CREDITS_PER_DOLLAR;
 
 /// The cost of a Kinovi generation, in both native credits and USD cents.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct KinoviGenerationCost {
   /// The cost of the generation in Kinovi credits.
   pub kinovi_credits: u64,

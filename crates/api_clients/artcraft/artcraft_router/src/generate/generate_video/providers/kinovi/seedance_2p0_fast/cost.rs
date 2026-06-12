@@ -66,8 +66,8 @@ impl KinoviSeedance2p0FastCostState {
     };
 
     let costs = pricing_request.calculate_costs();
-    let cost_in_credits = costs.kinovi_credits;
-    let cost_in_usd_cents = costs.usd_cents_rounded_up;
+    let cost_in_credits = costs.total_cost.kinovi_credits;
+    let cost_in_usd_cents = costs.total_cost.usd_cents_rounded_up;
 
     VideoGenerationCostEstimate {
       cost_in_credits: Some(cost_in_credits),
