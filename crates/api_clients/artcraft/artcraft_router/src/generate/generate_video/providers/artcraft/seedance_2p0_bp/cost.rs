@@ -154,6 +154,239 @@ mod tests {
     }
   }
 
+  // -- Price comparison with Kinovi, case by case --
+  //
+  // This model runs on Kinovi Seedance 2.0 (RouterVideoModel::Seedance2p0).
+  // Every combination of resolution (480p/720p/1080p), duration (4/5/10/15s), and
+  // video references (with/without), at batch 1.
+  // Every combination is profitable — there is no not-covered group.
+
+  mod price_comparison_tests {
+    use speculoos::prelude::*;
+    use tokens::tokens::media_files::MediaFileToken;
+
+    use crate::api::video_list_ref::VideoListRef;
+    use super::*;
+
+    #[test]
+    fn kinovi_cost_covered_by_artcraft_price() {
+      // -- 480p, no video references --
+
+      let prices = compare_prices(RouterResolution::FourEightyP, Duration(4), VideoReferences(false));
+      asserting("480p 4s no-ref: kinovi cost is below the artcraft price")
+        .that(&prices.kinovi_usd_cents).is_less_than(prices.artcraft_usd_cents);
+      asserting("480p 4s no-ref: margin is 14 cents")
+        .that(&(prices.artcraft_usd_cents - prices.kinovi_usd_cents)).is_equal_to(14);
+
+      let prices = compare_prices(RouterResolution::FourEightyP, Duration(5), VideoReferences(false));
+      asserting("480p 5s no-ref: kinovi cost is below the artcraft price")
+        .that(&prices.kinovi_usd_cents).is_less_than(prices.artcraft_usd_cents);
+      asserting("480p 5s no-ref: margin is 17 cents")
+        .that(&(prices.artcraft_usd_cents - prices.kinovi_usd_cents)).is_equal_to(17);
+
+      let prices = compare_prices(RouterResolution::FourEightyP, Duration(10), VideoReferences(false));
+      asserting("480p 10s no-ref: kinovi cost is below the artcraft price")
+        .that(&prices.kinovi_usd_cents).is_less_than(prices.artcraft_usd_cents);
+      asserting("480p 10s no-ref: margin is 35 cents")
+        .that(&(prices.artcraft_usd_cents - prices.kinovi_usd_cents)).is_equal_to(35);
+
+      let prices = compare_prices(RouterResolution::FourEightyP, Duration(15), VideoReferences(false));
+      asserting("480p 15s no-ref: kinovi cost is below the artcraft price")
+        .that(&prices.kinovi_usd_cents).is_less_than(prices.artcraft_usd_cents);
+      asserting("480p 15s no-ref: margin is 52 cents")
+        .that(&(prices.artcraft_usd_cents - prices.kinovi_usd_cents)).is_equal_to(52);
+
+      // -- 720p, no video references --
+
+      let prices = compare_prices(RouterResolution::SevenTwentyP, Duration(4), VideoReferences(false));
+      asserting("720p 4s no-ref: kinovi cost is below the artcraft price")
+        .that(&prices.kinovi_usd_cents).is_less_than(prices.artcraft_usd_cents);
+      asserting("720p 4s no-ref: margin is 30 cents")
+        .that(&(prices.artcraft_usd_cents - prices.kinovi_usd_cents)).is_equal_to(30);
+
+      let prices = compare_prices(RouterResolution::SevenTwentyP, Duration(5), VideoReferences(false));
+      asserting("720p 5s no-ref: kinovi cost is below the artcraft price")
+        .that(&prices.kinovi_usd_cents).is_less_than(prices.artcraft_usd_cents);
+      asserting("720p 5s no-ref: margin is 38 cents")
+        .that(&(prices.artcraft_usd_cents - prices.kinovi_usd_cents)).is_equal_to(38);
+
+      let prices = compare_prices(RouterResolution::SevenTwentyP, Duration(10), VideoReferences(false));
+      asserting("720p 10s no-ref: kinovi cost is below the artcraft price")
+        .that(&prices.kinovi_usd_cents).is_less_than(prices.artcraft_usd_cents);
+      asserting("720p 10s no-ref: margin is 76 cents")
+        .that(&(prices.artcraft_usd_cents - prices.kinovi_usd_cents)).is_equal_to(76);
+
+      let prices = compare_prices(RouterResolution::SevenTwentyP, Duration(15), VideoReferences(false));
+      asserting("720p 15s no-ref: kinovi cost is below the artcraft price")
+        .that(&prices.kinovi_usd_cents).is_less_than(prices.artcraft_usd_cents);
+      asserting("720p 15s no-ref: margin is 115 cents")
+        .that(&(prices.artcraft_usd_cents - prices.kinovi_usd_cents)).is_equal_to(115);
+
+      // -- 1080p, no video references --
+
+      let prices = compare_prices(RouterResolution::TenEightyP, Duration(4), VideoReferences(false));
+      asserting("1080p 4s no-ref: kinovi cost is below the artcraft price")
+        .that(&prices.kinovi_usd_cents).is_less_than(prices.artcraft_usd_cents);
+      asserting("1080p 4s no-ref: margin is 44 cents")
+        .that(&(prices.artcraft_usd_cents - prices.kinovi_usd_cents)).is_equal_to(44);
+
+      let prices = compare_prices(RouterResolution::TenEightyP, Duration(5), VideoReferences(false));
+      asserting("1080p 5s no-ref: kinovi cost is below the artcraft price")
+        .that(&prices.kinovi_usd_cents).is_less_than(prices.artcraft_usd_cents);
+      asserting("1080p 5s no-ref: margin is 55 cents")
+        .that(&(prices.artcraft_usd_cents - prices.kinovi_usd_cents)).is_equal_to(55);
+
+      let prices = compare_prices(RouterResolution::TenEightyP, Duration(10), VideoReferences(false));
+      asserting("1080p 10s no-ref: kinovi cost is below the artcraft price")
+        .that(&prices.kinovi_usd_cents).is_less_than(prices.artcraft_usd_cents);
+      asserting("1080p 10s no-ref: margin is 110 cents")
+        .that(&(prices.artcraft_usd_cents - prices.kinovi_usd_cents)).is_equal_to(110);
+
+      let prices = compare_prices(RouterResolution::TenEightyP, Duration(15), VideoReferences(false));
+      asserting("1080p 15s no-ref: kinovi cost is below the artcraft price")
+        .that(&prices.kinovi_usd_cents).is_less_than(prices.artcraft_usd_cents);
+      asserting("1080p 15s no-ref: margin is 165 cents")
+        .that(&(prices.artcraft_usd_cents - prices.kinovi_usd_cents)).is_equal_to(165);
+
+      // -- 480p, with video references --
+
+      let prices = compare_prices(RouterResolution::FourEightyP, Duration(4), VideoReferences(true));
+      asserting("480p 4s with-ref: kinovi cost is below the artcraft price")
+        .that(&prices.kinovi_usd_cents).is_less_than(prices.artcraft_usd_cents);
+      asserting("480p 4s with-ref: margin is 7 cents")
+        .that(&(prices.artcraft_usd_cents - prices.kinovi_usd_cents)).is_equal_to(7);
+
+      let prices = compare_prices(RouterResolution::FourEightyP, Duration(5), VideoReferences(true));
+      asserting("480p 5s with-ref: kinovi cost is below the artcraft price")
+        .that(&prices.kinovi_usd_cents).is_less_than(prices.artcraft_usd_cents);
+      asserting("480p 5s with-ref: margin is 8 cents")
+        .that(&(prices.artcraft_usd_cents - prices.kinovi_usd_cents)).is_equal_to(8);
+
+      let prices = compare_prices(RouterResolution::FourEightyP, Duration(10), VideoReferences(true));
+      asserting("480p 10s with-ref: kinovi cost is below the artcraft price")
+        .that(&prices.kinovi_usd_cents).is_less_than(prices.artcraft_usd_cents);
+      asserting("480p 10s with-ref: margin is 17 cents")
+        .that(&(prices.artcraft_usd_cents - prices.kinovi_usd_cents)).is_equal_to(17);
+
+      let prices = compare_prices(RouterResolution::FourEightyP, Duration(15), VideoReferences(true));
+      asserting("480p 15s with-ref: kinovi cost is below the artcraft price")
+        .that(&prices.kinovi_usd_cents).is_less_than(prices.artcraft_usd_cents);
+      asserting("480p 15s with-ref: margin is 26 cents")
+        .that(&(prices.artcraft_usd_cents - prices.kinovi_usd_cents)).is_equal_to(26);
+
+      // -- 720p, with video references --
+
+      let prices = compare_prices(RouterResolution::SevenTwentyP, Duration(4), VideoReferences(true));
+      asserting("720p 4s with-ref: kinovi cost is below the artcraft price")
+        .that(&prices.kinovi_usd_cents).is_less_than(prices.artcraft_usd_cents);
+      asserting("720p 4s with-ref: margin is 16 cents")
+        .that(&(prices.artcraft_usd_cents - prices.kinovi_usd_cents)).is_equal_to(16);
+
+      let prices = compare_prices(RouterResolution::SevenTwentyP, Duration(5), VideoReferences(true));
+      asserting("720p 5s with-ref: kinovi cost is below the artcraft price")
+        .that(&prices.kinovi_usd_cents).is_less_than(prices.artcraft_usd_cents);
+      asserting("720p 5s with-ref: margin is 21 cents")
+        .that(&(prices.artcraft_usd_cents - prices.kinovi_usd_cents)).is_equal_to(21);
+
+      let prices = compare_prices(RouterResolution::SevenTwentyP, Duration(10), VideoReferences(true));
+      asserting("720p 10s with-ref: kinovi cost is below the artcraft price")
+        .that(&prices.kinovi_usd_cents).is_less_than(prices.artcraft_usd_cents);
+      asserting("720p 10s with-ref: margin is 42 cents")
+        .that(&(prices.artcraft_usd_cents - prices.kinovi_usd_cents)).is_equal_to(42);
+
+      let prices = compare_prices(RouterResolution::SevenTwentyP, Duration(15), VideoReferences(true));
+      asserting("720p 15s with-ref: kinovi cost is below the artcraft price")
+        .that(&prices.kinovi_usd_cents).is_less_than(prices.artcraft_usd_cents);
+      asserting("720p 15s with-ref: margin is 63 cents")
+        .that(&(prices.artcraft_usd_cents - prices.kinovi_usd_cents)).is_equal_to(63);
+
+      // -- 1080p, with video references --
+
+      let prices = compare_prices(RouterResolution::TenEightyP, Duration(4), VideoReferences(true));
+      asserting("1080p 4s with-ref: kinovi cost is below the artcraft price")
+        .that(&prices.kinovi_usd_cents).is_less_than(prices.artcraft_usd_cents);
+      asserting("1080p 4s with-ref: margin is 12 cents")
+        .that(&(prices.artcraft_usd_cents - prices.kinovi_usd_cents)).is_equal_to(12);
+
+      let prices = compare_prices(RouterResolution::TenEightyP, Duration(5), VideoReferences(true));
+      asserting("1080p 5s with-ref: kinovi cost is below the artcraft price")
+        .that(&prices.kinovi_usd_cents).is_less_than(prices.artcraft_usd_cents);
+      asserting("1080p 5s with-ref: margin is 16 cents")
+        .that(&(prices.artcraft_usd_cents - prices.kinovi_usd_cents)).is_equal_to(16);
+
+      let prices = compare_prices(RouterResolution::TenEightyP, Duration(10), VideoReferences(true));
+      asserting("1080p 10s with-ref: kinovi cost is below the artcraft price")
+        .that(&prices.kinovi_usd_cents).is_less_than(prices.artcraft_usd_cents);
+      asserting("1080p 10s with-ref: margin is 32 cents")
+        .that(&(prices.artcraft_usd_cents - prices.kinovi_usd_cents)).is_equal_to(32);
+
+      let prices = compare_prices(RouterResolution::TenEightyP, Duration(15), VideoReferences(true));
+      asserting("1080p 15s with-ref: kinovi cost is below the artcraft price")
+        .that(&prices.kinovi_usd_cents).is_less_than(prices.artcraft_usd_cents);
+      asserting("1080p 15s with-ref: margin is 48 cents")
+        .that(&(prices.artcraft_usd_cents - prices.kinovi_usd_cents)).is_equal_to(48);
+    }
+
+    // -- Helpers --
+
+    struct ComparedPrices {
+      kinovi_usd_cents: u64,
+      artcraft_usd_cents: u64,
+    }
+
+    struct Duration(u16);
+
+    struct VideoReferences(bool);
+
+    /// Estimate the same generation (batch 1) through both providers and
+    /// return the two USD-cent prices side by side.
+    fn compare_prices(
+      resolution: RouterResolution,
+      duration: Duration,
+      video_references: VideoReferences,
+    ) -> ComparedPrices {
+      let artcraft = GenerateVideoRequestBuilder {
+        model: RouterVideoModel::Seedance2p0BytePlus,
+        provider: RouterProvider::Artcraft,
+        resolution: Some(resolution),
+        duration_seconds: Some(duration.0),
+        video_batch_count: Some(1),
+        // The artcraft provider only accepts media file tokens.
+        reference_videos: video_references.0.then(|| VideoListRef::MediaFileTokens(vec![
+          MediaFileToken::new("mf_ref_video".to_string()),
+        ])),
+        ..Default::default()
+      };
+      let artcraft_cost = artcraft.build2()
+        .expect("artcraft build2")
+        .estimate_cost()
+        .expect("artcraft estimate_cost");
+
+      let kinovi = GenerateVideoRequestBuilder {
+        model: RouterVideoModel::Seedance2p0,
+        provider: RouterProvider::Seedance2Pro,
+        resolution: Some(resolution),
+        duration_seconds: Some(duration.0),
+        video_batch_count: Some(1),
+        reference_videos: video_references.0.then(|| VideoListRef::Urls(vec![
+          "https://example.com/ref.mp4".to_string(),
+        ])),
+        ..Default::default()
+      };
+      let kinovi_cost = kinovi.build2()
+        .expect("kinovi build2")
+        .estimate_cost()
+        .expect("kinovi estimate_cost");
+
+      ComparedPrices {
+        kinovi_usd_cents: kinovi_cost.cost_in_usd_cents.expect("kinovi cents"),
+        artcraft_usd_cents: artcraft_cost.cost_in_usd_cents.expect("artcraft cents"),
+      }
+    }
+  }
+
+  // -- Helpers --
+
   fn build_cost(
     resolution: Option<RouterResolution>,
     duration_seconds: u16,
