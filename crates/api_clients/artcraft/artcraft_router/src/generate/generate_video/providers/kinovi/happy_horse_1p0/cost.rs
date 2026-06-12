@@ -98,8 +98,8 @@ mod tests {
 
     #[test]
     fn usd_cents_720p() {
-      assert_eq!(usd_cents(None, 5, None), 72); // 16500/231 = 71.43 -> rounds UP
-      assert_eq!(usd_cents(None, 15, None), 215); // 49500/231 = 214.29 -> rounds UP
+      assert_eq!(usd_cents(None, 5, None), 68); // 16500/243 = 67.90 -> rounds UP
+      assert_eq!(usd_cents(None, 15, None), 204); // 49500/243 = 203.70 -> rounds UP
     }
   }
 
@@ -129,10 +129,10 @@ mod tests {
     #[test]
     fn usd_cents_1080p() {
       let r = Some(KinoviHappyHorse1p0OutputResolution::TenEightyP);
-      // 330 credits; 33000/231 = 142.86 → rounds UP to 143¢
-      assert_eq!(usd_cents(r, 5, None), 143);
-      // 990 credits; 99000/231 = 428.57 → rounds UP to 429¢
-      assert_eq!(usd_cents(r, 15, None), 429);
+      // 330 credits; 33000/243 = 135.80 → rounds UP to 136¢
+      assert_eq!(usd_cents(r, 5, None), 136);
+      // 990 credits; 99000/243 = 407.41 → rounds UP to 408¢
+      assert_eq!(usd_cents(r, 15, None), 408);
     }
   }
 
@@ -236,7 +236,7 @@ mod tests {
       );
       let cost = KinoviHappyHorse1p0CostState::from_request(&req);
       assert_eq!(cost.estimate_cost().cost_in_credits, Some(330));
-      assert_eq!(cost.estimate_cost().cost_in_usd_cents, Some(143));
+      assert_eq!(cost.estimate_cost().cost_in_usd_cents, Some(136));
     }
   }
 

@@ -15,7 +15,7 @@ use crate::generate::generate_video::providers::artcraft::happy_horse_1p0::reque
 // Default resolution (None) is 720p.
 // Batch count multiplies the total cost.
 // Credit package (historical): 22,000 credits for $114 (~193 credits/$1).
-// The upstream package is now 500,000 credits for $2,159.09 (~231 credits/$1),
+// The upstream package is now 525,000 credits for $2,159.0909 (~243 credits/$1),
 // but user pricing is intentionally kept at the 193-derived rates.
 //
 // ArtCraft credits: 100 credits = $1.00, so ArtCraft credits = USD cents.
@@ -237,7 +237,7 @@ mod tests {
               .estimate_cost()
               .expect("kinovi estimate_cost");
 
-            // Under the 500,000-credit package (~231 credits/$1) Kinovi's
+            // Under the 525,000-credit package (~243 credits/$1) Kinovi's
             // cost sits below the artcraft user-facing price. Assert the
             // user price covers the provider cost (1¢ tolerance for
             // Kinovi's round-up).

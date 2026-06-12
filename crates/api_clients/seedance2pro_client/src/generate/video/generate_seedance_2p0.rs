@@ -72,7 +72,7 @@ pub enum KinoviSeedance2p0BatchCount {
 //
 // Default resolution (None) is 720p.
 // Batch count multiplies the total cost.
-// Credit package: 500,000 credits for $2,159.09 (~231.58 credits/$1, rounded down to 231).
+// Credit package: 525,000 credits for $2,159.0909 (~243.16 credits/$1, rounded down to 243).
 
 impl GenerateSeedance2p0Request {
   /// Calculate the cost of this generation request, in Kinovi credits and
@@ -292,19 +292,19 @@ mod tests {
         fn test_without_reference_video() {
           let costs = r480(5).calculate_costs();
 
-          // Base: 15 credits/s × 5s = 75 credits; 7500/231 = 32.4675.
+          // Base: 15 credits/s × 5s = 75 credits; 7500/243 = 30.8642.
           assert_eq!(costs.base_cost.kinovi_credits, 75);
-          assert_eq!(costs.base_cost.usd_cents_rounded_up, 33);
-          assert_eq!(costs.base_cost.usd_cents_rounded_down, 32);
-          assert!((costs.base_cost.usd_cents_fractional - (7500.0 / 231.0)).abs() < FLOAT_TOLERANCE);
+          assert_eq!(costs.base_cost.usd_cents_rounded_up, 31);
+          assert_eq!(costs.base_cost.usd_cents_rounded_down, 30);
+          assert!((costs.base_cost.usd_cents_fractional - (7500.0 / 243.0)).abs() < FLOAT_TOLERANCE);
 
           // No reference video: no surcharge, and the total equals the base.
           assert!(costs.video_reference_surcharge_cost.is_none());
 
           assert_eq!(costs.total_cost.kinovi_credits, 75);
-          assert_eq!(costs.total_cost.usd_cents_rounded_up, 33);
-          assert_eq!(costs.total_cost.usd_cents_rounded_down, 32);
-          assert!((costs.total_cost.usd_cents_fractional - (7500.0 / 231.0)).abs() < FLOAT_TOLERANCE);
+          assert_eq!(costs.total_cost.usd_cents_rounded_up, 31);
+          assert_eq!(costs.total_cost.usd_cents_rounded_down, 30);
+          assert!((costs.total_cost.usd_cents_fractional - (7500.0 / 243.0)).abs() < FLOAT_TOLERANCE);
         }
 
         #[test]
@@ -313,24 +313,24 @@ mod tests {
           request.reference_video_urls = Some(vec!["https://example.com/ref.mp4".to_string()]);
           let costs = request.calculate_costs();
 
-          // Base: 15 credits/s × 5s = 75 credits; 7500/231 = 32.4675.
+          // Base: 15 credits/s × 5s = 75 credits; 7500/243 = 30.8642.
           assert_eq!(costs.base_cost.kinovi_credits, 75);
-          assert_eq!(costs.base_cost.usd_cents_rounded_up, 33);
-          assert_eq!(costs.base_cost.usd_cents_rounded_down, 32);
-          assert!((costs.base_cost.usd_cents_fractional - (7500.0 / 231.0)).abs() < FLOAT_TOLERANCE);
+          assert_eq!(costs.base_cost.usd_cents_rounded_up, 31);
+          assert_eq!(costs.base_cost.usd_cents_rounded_down, 30);
+          assert!((costs.base_cost.usd_cents_fractional - (7500.0 / 243.0)).abs() < FLOAT_TOLERANCE);
 
-          // Surcharge: 4 credits/s × 5s = 20 credits; 2000/231 = 8.6580.
+          // Surcharge: 4 credits/s × 5s = 20 credits; 2000/243 = 8.2305.
           let surcharge = costs.video_reference_surcharge_cost.expect("should have surcharge");
           assert_eq!(surcharge.kinovi_credits, 20);
           assert_eq!(surcharge.usd_cents_rounded_up, 9);
           assert_eq!(surcharge.usd_cents_rounded_down, 8);
-          assert!((surcharge.usd_cents_fractional - (2000.0 / 231.0)).abs() < FLOAT_TOLERANCE);
+          assert!((surcharge.usd_cents_fractional - (2000.0 / 243.0)).abs() < FLOAT_TOLERANCE);
 
-          // Total: 75 + 20 = 95 credits; 9500/231 = 41.1255.
+          // Total: 75 + 20 = 95 credits; 9500/243 = 39.0947.
           assert_eq!(costs.total_cost.kinovi_credits, 95);
-          assert_eq!(costs.total_cost.usd_cents_rounded_up, 42);
-          assert_eq!(costs.total_cost.usd_cents_rounded_down, 41);
-          assert!((costs.total_cost.usd_cents_fractional - (9500.0 / 231.0)).abs() < FLOAT_TOLERANCE);
+          assert_eq!(costs.total_cost.usd_cents_rounded_up, 40);
+          assert_eq!(costs.total_cost.usd_cents_rounded_down, 39);
+          assert!((costs.total_cost.usd_cents_fractional - (9500.0 / 243.0)).abs() < FLOAT_TOLERANCE);
         }
       }
 
@@ -342,19 +342,19 @@ mod tests {
         fn test_without_reference_video() {
           let costs = r720(5).calculate_costs();
 
-          // Base: 40 credits/s × 5s = 200 credits; 20000/231 = 86.5801.
+          // Base: 40 credits/s × 5s = 200 credits; 20000/243 = 82.3045.
           assert_eq!(costs.base_cost.kinovi_credits, 200);
-          assert_eq!(costs.base_cost.usd_cents_rounded_up, 87);
-          assert_eq!(costs.base_cost.usd_cents_rounded_down, 86);
-          assert!((costs.base_cost.usd_cents_fractional - (20000.0 / 231.0)).abs() < FLOAT_TOLERANCE);
+          assert_eq!(costs.base_cost.usd_cents_rounded_up, 83);
+          assert_eq!(costs.base_cost.usd_cents_rounded_down, 82);
+          assert!((costs.base_cost.usd_cents_fractional - (20000.0 / 243.0)).abs() < FLOAT_TOLERANCE);
 
           // No reference video: no surcharge, and the total equals the base.
           assert!(costs.video_reference_surcharge_cost.is_none());
 
           assert_eq!(costs.total_cost.kinovi_credits, 200);
-          assert_eq!(costs.total_cost.usd_cents_rounded_up, 87);
-          assert_eq!(costs.total_cost.usd_cents_rounded_down, 86);
-          assert!((costs.total_cost.usd_cents_fractional - (20000.0 / 231.0)).abs() < FLOAT_TOLERANCE);
+          assert_eq!(costs.total_cost.usd_cents_rounded_up, 83);
+          assert_eq!(costs.total_cost.usd_cents_rounded_down, 82);
+          assert!((costs.total_cost.usd_cents_fractional - (20000.0 / 243.0)).abs() < FLOAT_TOLERANCE);
         }
 
         #[test]
@@ -363,24 +363,24 @@ mod tests {
           request.reference_video_urls = Some(vec!["https://example.com/ref.mp4".to_string()]);
           let costs = request.calculate_costs();
 
-          // Base: 40 credits/s × 5s = 200 credits; 20000/231 = 86.5801.
+          // Base: 40 credits/s × 5s = 200 credits; 20000/243 = 82.3045.
           assert_eq!(costs.base_cost.kinovi_credits, 200);
-          assert_eq!(costs.base_cost.usd_cents_rounded_up, 87);
-          assert_eq!(costs.base_cost.usd_cents_rounded_down, 86);
-          assert!((costs.base_cost.usd_cents_fractional - (20000.0 / 231.0)).abs() < FLOAT_TOLERANCE);
+          assert_eq!(costs.base_cost.usd_cents_rounded_up, 83);
+          assert_eq!(costs.base_cost.usd_cents_rounded_down, 82);
+          assert!((costs.base_cost.usd_cents_fractional - (20000.0 / 243.0)).abs() < FLOAT_TOLERANCE);
 
-          // Surcharge: 8 credits/s × 5s = 40 credits; 4000/231 = 17.3160.
+          // Surcharge: 8 credits/s × 5s = 40 credits; 4000/243 = 16.4609.
           let surcharge = costs.video_reference_surcharge_cost.expect("should have surcharge");
           assert_eq!(surcharge.kinovi_credits, 40);
-          assert_eq!(surcharge.usd_cents_rounded_up, 18);
-          assert_eq!(surcharge.usd_cents_rounded_down, 17);
-          assert!((surcharge.usd_cents_fractional - (4000.0 / 231.0)).abs() < FLOAT_TOLERANCE);
+          assert_eq!(surcharge.usd_cents_rounded_up, 17);
+          assert_eq!(surcharge.usd_cents_rounded_down, 16);
+          assert!((surcharge.usd_cents_fractional - (4000.0 / 243.0)).abs() < FLOAT_TOLERANCE);
 
-          // Total: 200 + 40 = 240 credits; 24000/231 = 103.8961.
+          // Total: 200 + 40 = 240 credits; 24000/243 = 98.7654.
           assert_eq!(costs.total_cost.kinovi_credits, 240);
-          assert_eq!(costs.total_cost.usd_cents_rounded_up, 104);
-          assert_eq!(costs.total_cost.usd_cents_rounded_down, 103);
-          assert!((costs.total_cost.usd_cents_fractional - (24000.0 / 231.0)).abs() < FLOAT_TOLERANCE);
+          assert_eq!(costs.total_cost.usd_cents_rounded_up, 99);
+          assert_eq!(costs.total_cost.usd_cents_rounded_down, 98);
+          assert!((costs.total_cost.usd_cents_fractional - (24000.0 / 243.0)).abs() < FLOAT_TOLERANCE);
         }
       }
 
@@ -392,19 +392,19 @@ mod tests {
         fn test_without_reference_video() {
           let costs = r1080(5).calculate_costs();
 
-          // Base: 90 credits/s × 5s = 450 credits; 45000/231 = 194.8052.
+          // Base: 90 credits/s × 5s = 450 credits; 45000/243 = 185.1852.
           assert_eq!(costs.base_cost.kinovi_credits, 450);
-          assert_eq!(costs.base_cost.usd_cents_rounded_up, 195);
-          assert_eq!(costs.base_cost.usd_cents_rounded_down, 194);
-          assert!((costs.base_cost.usd_cents_fractional - (45000.0 / 231.0)).abs() < FLOAT_TOLERANCE);
+          assert_eq!(costs.base_cost.usd_cents_rounded_up, 186);
+          assert_eq!(costs.base_cost.usd_cents_rounded_down, 185);
+          assert!((costs.base_cost.usd_cents_fractional - (45000.0 / 243.0)).abs() < FLOAT_TOLERANCE);
 
           // No reference video: no surcharge, and the total equals the base.
           assert!(costs.video_reference_surcharge_cost.is_none());
 
           assert_eq!(costs.total_cost.kinovi_credits, 450);
-          assert_eq!(costs.total_cost.usd_cents_rounded_up, 195);
-          assert_eq!(costs.total_cost.usd_cents_rounded_down, 194);
-          assert!((costs.total_cost.usd_cents_fractional - (45000.0 / 231.0)).abs() < FLOAT_TOLERANCE);
+          assert_eq!(costs.total_cost.usd_cents_rounded_up, 186);
+          assert_eq!(costs.total_cost.usd_cents_rounded_down, 185);
+          assert!((costs.total_cost.usd_cents_fractional - (45000.0 / 243.0)).abs() < FLOAT_TOLERANCE);
         }
 
         #[test]
@@ -413,24 +413,24 @@ mod tests {
           request.reference_video_urls = Some(vec!["https://example.com/ref.mp4".to_string()]);
           let costs = request.calculate_costs();
 
-          // Base: 90 credits/s × 5s = 450 credits; 45000/231 = 194.8052.
+          // Base: 90 credits/s × 5s = 450 credits; 45000/243 = 185.1852.
           assert_eq!(costs.base_cost.kinovi_credits, 450);
-          assert_eq!(costs.base_cost.usd_cents_rounded_up, 195);
-          assert_eq!(costs.base_cost.usd_cents_rounded_down, 194);
-          assert!((costs.base_cost.usd_cents_fractional - (45000.0 / 231.0)).abs() < FLOAT_TOLERANCE);
+          assert_eq!(costs.base_cost.usd_cents_rounded_up, 186);
+          assert_eq!(costs.base_cost.usd_cents_rounded_down, 185);
+          assert!((costs.base_cost.usd_cents_fractional - (45000.0 / 243.0)).abs() < FLOAT_TOLERANCE);
 
-          // Surcharge: 18 credits/s × 5s = 90 credits; 9000/231 = 38.9610.
+          // Surcharge: 18 credits/s × 5s = 90 credits; 9000/243 = 37.0370.
           let surcharge = costs.video_reference_surcharge_cost.expect("should have surcharge");
           assert_eq!(surcharge.kinovi_credits, 90);
-          assert_eq!(surcharge.usd_cents_rounded_up, 39);
-          assert_eq!(surcharge.usd_cents_rounded_down, 38);
-          assert!((surcharge.usd_cents_fractional - (9000.0 / 231.0)).abs() < FLOAT_TOLERANCE);
+          assert_eq!(surcharge.usd_cents_rounded_up, 38);
+          assert_eq!(surcharge.usd_cents_rounded_down, 37);
+          assert!((surcharge.usd_cents_fractional - (9000.0 / 243.0)).abs() < FLOAT_TOLERANCE);
 
-          // Total: 450 + 90 = 540 credits; 54000/231 = 233.7662.
+          // Total: 450 + 90 = 540 credits; 54000/243 = 222.2222.
           assert_eq!(costs.total_cost.kinovi_credits, 540);
-          assert_eq!(costs.total_cost.usd_cents_rounded_up, 234);
-          assert_eq!(costs.total_cost.usd_cents_rounded_down, 233);
-          assert!((costs.total_cost.usd_cents_fractional - (54000.0 / 231.0)).abs() < FLOAT_TOLERANCE);
+          assert_eq!(costs.total_cost.usd_cents_rounded_up, 223);
+          assert_eq!(costs.total_cost.usd_cents_rounded_down, 222);
+          assert!((costs.total_cost.usd_cents_fractional - (54000.0 / 243.0)).abs() < FLOAT_TOLERANCE);
         }
       }
 
@@ -592,72 +592,72 @@ mod tests {
       /// (USD cents are always rounded UP when fractional.)
       #[test]
       fn costs_480p_5s() {
-        // 15 credits/s × 5s = 75 credits; 7500/231 = 32.47 → 33¢
+        // 15 credits/s × 5s = 75 credits; 7500/243 = 30.86 → 31¢
         let costs = r480(5).calculate_costs();
         assert_eq!(costs.total_cost.kinovi_credits, 75);
-        assert_eq!(costs.total_cost.usd_cents_rounded_up, 33);
-        assert_eq!(costs.total_cost.usd_cents_rounded_down, 32);
-        assert!((costs.total_cost.usd_cents_fractional - (7500.0 / 231.0)).abs() < 1e-9);
+        assert_eq!(costs.total_cost.usd_cents_rounded_up, 31);
+        assert_eq!(costs.total_cost.usd_cents_rounded_down, 30);
+        assert!((costs.total_cost.usd_cents_fractional - (7500.0 / 243.0)).abs() < 1e-9);
         assert_eq!(costs.base_cost.kinovi_credits, 75);
         assert!(costs.video_reference_surcharge_cost.is_none());
       }
 
       #[test]
       fn costs_720p_5s() {
-        // 40 credits/s × 5s = 200 credits; 20000/231 = 86.58 → 87¢
+        // 40 credits/s × 5s = 200 credits; 20000/243 = 82.30 → 83¢
         let costs = r720(5).calculate_costs();
         assert_eq!(costs.total_cost.kinovi_credits, 200);
-        assert_eq!(costs.total_cost.usd_cents_rounded_up, 87);
-        assert_eq!(costs.total_cost.usd_cents_rounded_down, 86);
-        assert!((costs.total_cost.usd_cents_fractional - (20000.0 / 231.0)).abs() < 1e-9);
+        assert_eq!(costs.total_cost.usd_cents_rounded_up, 83);
+        assert_eq!(costs.total_cost.usd_cents_rounded_down, 82);
+        assert!((costs.total_cost.usd_cents_fractional - (20000.0 / 243.0)).abs() < 1e-9);
         assert_eq!(costs.base_cost.kinovi_credits, 200);
         assert!(costs.video_reference_surcharge_cost.is_none());
       }
 
       #[test]
       fn costs_1080p_5s() {
-        // 90 credits/s × 5s = 450 credits; 45000/231 = 194.81 → rounds UP to 195¢
+        // 90 credits/s × 5s = 450 credits; 45000/243 = 185.19 → rounds UP to 186¢
         let costs = r1080(5).calculate_costs();
         assert_eq!(costs.total_cost.kinovi_credits, 450);
-        assert_eq!(costs.total_cost.usd_cents_rounded_up, 195);
-        assert_eq!(costs.total_cost.usd_cents_rounded_down, 194);
-        assert!((costs.total_cost.usd_cents_fractional - (45000.0 / 231.0)).abs() < 1e-9);
+        assert_eq!(costs.total_cost.usd_cents_rounded_up, 186);
+        assert_eq!(costs.total_cost.usd_cents_rounded_down, 185);
+        assert!((costs.total_cost.usd_cents_fractional - (45000.0 / 243.0)).abs() < 1e-9);
         assert_eq!(costs.base_cost.kinovi_credits, 450);
         assert!(costs.video_reference_surcharge_cost.is_none());
       }
 
       #[test]
       fn costs_720p_15s() {
-        // 40 credits/s × 15s = 600 credits; 60000/231 = 259.74 → 260¢
+        // 40 credits/s × 15s = 600 credits; 60000/243 = 246.91 → 247¢
         let costs = r720(15).calculate_costs();
         assert_eq!(costs.total_cost.kinovi_credits, 600);
-        assert_eq!(costs.total_cost.usd_cents_rounded_up, 260);
-        assert_eq!(costs.total_cost.usd_cents_rounded_down, 259);
-        assert!((costs.total_cost.usd_cents_fractional - (60000.0 / 231.0)).abs() < 1e-9);
+        assert_eq!(costs.total_cost.usd_cents_rounded_up, 247);
+        assert_eq!(costs.total_cost.usd_cents_rounded_down, 246);
+        assert!((costs.total_cost.usd_cents_fractional - (60000.0 / 243.0)).abs() < 1e-9);
         assert_eq!(costs.base_cost.kinovi_credits, 600);
         assert!(costs.video_reference_surcharge_cost.is_none());
       }
 
       #[test]
       fn costs_1080p_15s() {
-        // 90 credits/s × 15s = 1350 credits; 135000/231 = 584.42 → rounds UP to 585¢
+        // 90 credits/s × 15s = 1350 credits; 135000/243 = 555.56 → rounds UP to 556¢
         let costs = r1080(15).calculate_costs();
         assert_eq!(costs.total_cost.kinovi_credits, 1350);
-        assert_eq!(costs.total_cost.usd_cents_rounded_up, 585);
-        assert_eq!(costs.total_cost.usd_cents_rounded_down, 584);
-        assert!((costs.total_cost.usd_cents_fractional - (135000.0 / 231.0)).abs() < 1e-9);
+        assert_eq!(costs.total_cost.usd_cents_rounded_up, 556);
+        assert_eq!(costs.total_cost.usd_cents_rounded_down, 555);
+        assert!((costs.total_cost.usd_cents_fractional - (135000.0 / 243.0)).abs() < 1e-9);
         assert_eq!(costs.base_cost.kinovi_credits, 1350);
         assert!(costs.video_reference_surcharge_cost.is_none());
       }
 
       #[test]
       fn costs_batch_4_720p_5s() {
-        // 200 credits × 4 = 800 credits; 80000/231 = 346.32 → 347¢
+        // 200 credits × 4 = 800 credits; 80000/243 = 329.22 → 330¢
         let costs = build_request(5, None, Some(KinoviSeedance2p0BatchCount::Four)).calculate_costs();
         assert_eq!(costs.total_cost.kinovi_credits, 800);
-        assert_eq!(costs.total_cost.usd_cents_rounded_up, 347);
-        assert_eq!(costs.total_cost.usd_cents_rounded_down, 346);
-        assert!((costs.total_cost.usd_cents_fractional - (80000.0 / 231.0)).abs() < 1e-9);
+        assert_eq!(costs.total_cost.usd_cents_rounded_up, 330);
+        assert_eq!(costs.total_cost.usd_cents_rounded_down, 329);
+        assert!((costs.total_cost.usd_cents_fractional - (80000.0 / 243.0)).abs() < 1e-9);
         assert_eq!(costs.base_cost.kinovi_credits, 800);
         assert!(costs.video_reference_surcharge_cost.is_none());
       }
@@ -720,14 +720,14 @@ mod tests {
 
       #[test]
       fn surcharge_includes_usd_cents() {
-        // 720p 5s + video ref = 200 + 40 = 240 credits; 24000/231 = 103.90 → 104¢
+        // 720p 5s + video ref = 200 + 40 = 240 credits; 24000/243 = 98.77 → 99¢
         let costs = with_video_ref(r720(5)).calculate_costs();
         assert_eq!(costs.base_cost.kinovi_credits, 200);
         assert_eq!(costs.video_reference_surcharge_cost.map(|c| c.kinovi_credits), Some(40));
         assert_eq!(costs.total_cost.kinovi_credits, 240);
-        assert_eq!(costs.total_cost.usd_cents_rounded_up, 104);
-        assert_eq!(costs.total_cost.usd_cents_rounded_down, 103);
-        assert!((costs.total_cost.usd_cents_fractional - (24000.0 / 231.0)).abs() < 1e-9);
+        assert_eq!(costs.total_cost.usd_cents_rounded_up, 99);
+        assert_eq!(costs.total_cost.usd_cents_rounded_down, 98);
+        assert!((costs.total_cost.usd_cents_fractional - (24000.0 / 243.0)).abs() < 1e-9);
       }
 
       /// The base and surcharge parts each carry their own USD conversions.
@@ -735,17 +735,17 @@ mod tests {
       fn parts_have_their_own_usd_conversions() {
         let costs = with_video_ref(r720(5)).calculate_costs();
 
-        // Base: 200 credits; 20000/231 = 86.58.
-        assert_eq!(costs.base_cost.usd_cents_rounded_up, 87);
-        assert_eq!(costs.base_cost.usd_cents_rounded_down, 86);
-        assert!((costs.base_cost.usd_cents_fractional - (20000.0 / 231.0)).abs() < 1e-9);
+        // Base: 200 credits; 20000/243 = 82.30.
+        assert_eq!(costs.base_cost.usd_cents_rounded_up, 83);
+        assert_eq!(costs.base_cost.usd_cents_rounded_down, 82);
+        assert!((costs.base_cost.usd_cents_fractional - (20000.0 / 243.0)).abs() < 1e-9);
 
-        // Surcharge: 40 credits; 4000/231 = 17.32.
+        // Surcharge: 40 credits; 4000/243 = 16.46.
         let surcharge = costs.video_reference_surcharge_cost.expect("should have surcharge");
         assert_eq!(surcharge.kinovi_credits, 40);
-        assert_eq!(surcharge.usd_cents_rounded_up, 18);
-        assert_eq!(surcharge.usd_cents_rounded_down, 17);
-        assert!((surcharge.usd_cents_fractional - (4000.0 / 231.0)).abs() < 1e-9);
+        assert_eq!(surcharge.usd_cents_rounded_up, 17);
+        assert_eq!(surcharge.usd_cents_rounded_down, 16);
+        assert!((surcharge.usd_cents_fractional - (4000.0 / 243.0)).abs() < 1e-9);
       }
 
       #[test]

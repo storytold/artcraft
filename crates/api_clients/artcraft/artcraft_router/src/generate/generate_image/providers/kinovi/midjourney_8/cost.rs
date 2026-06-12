@@ -56,11 +56,11 @@ mod tests {
   use super::*;
 
   #[test]
-  fn batch_one_is_twelve_credits_and_six_cents() {
+  fn batch_one_is_twelve_credits_and_five_cents() {
     let cost = KinoviMidjourney8CostState { batch_count: KinoviMidjourneyBatchCount::One }
       .estimate_cost();
     assert_eq!(cost.cost_in_credits, Some(12));
-    assert_eq!(cost.cost_in_usd_cents, Some(6)); // 1200/231 = 5.19 -> rounds UP
+    assert_eq!(cost.cost_in_usd_cents, Some(5)); // 1200/243 = 4.94 -> rounds UP
   }
 
   #[test]
@@ -68,7 +68,7 @@ mod tests {
     let cost = KinoviMidjourney8CostState { batch_count: KinoviMidjourneyBatchCount::Two }
       .estimate_cost();
     assert_eq!(cost.cost_in_credits, Some(24));
-    assert_eq!(cost.cost_in_usd_cents, Some(11)); // 2400/231 = 10.39 -> rounds UP
+    assert_eq!(cost.cost_in_usd_cents, Some(10)); // 2400/243 = 9.88 -> rounds UP
   }
 
   #[test]
@@ -76,6 +76,6 @@ mod tests {
     let cost = KinoviMidjourney8CostState { batch_count: KinoviMidjourneyBatchCount::Four }
       .estimate_cost();
     assert_eq!(cost.cost_in_credits, Some(48));
-    assert_eq!(cost.cost_in_usd_cents, Some(21));
+    assert_eq!(cost.cost_in_usd_cents, Some(20));
   }
 }

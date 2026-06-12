@@ -93,7 +93,7 @@ mod tests {
     fn batch_1_covers_kinovi_cost() {
       let kinovi = KinoviMidjourney8CostState { batch_count: KinoviMidjourneyBatchCount::One }
         .estimate_cost();
-      // Under the 500,000-credit package (~231 credits/$1) Kinovi's cost
+      // Under the 525,000-credit package (~243 credits/$1) Kinovi's cost
       // sits below this artcraft user price. Assert the user price covers
       // the provider cost (1¢ tolerance for Kinovi's round-up).
       let artcraft_cents = cost_cents(1);
@@ -108,7 +108,7 @@ mod tests {
     fn batch_2_covers_kinovi_cost() {
       let kinovi = KinoviMidjourney8CostState { batch_count: KinoviMidjourneyBatchCount::Two }
         .estimate_cost();
-      // Under the 500,000-credit package (~231 credits/$1) Kinovi's cost
+      // Under the 525,000-credit package (~243 credits/$1) Kinovi's cost
       // sits below this artcraft user price. Assert the user price covers
       // the provider cost (1¢ tolerance for Kinovi's round-up).
       let artcraft_cents = cost_cents(2);
@@ -123,7 +123,7 @@ mod tests {
     fn batch_4_covers_kinovi_cost() {
       let kinovi = KinoviMidjourney8CostState { batch_count: KinoviMidjourneyBatchCount::Four }
         .estimate_cost();
-      // Under the 500,000-credit package (~231 credits/$1) Kinovi's cost
+      // Under the 525,000-credit package (~243 credits/$1) Kinovi's cost
       // sits below this artcraft user price. Assert the user price covers
       // the provider cost (1¢ tolerance for Kinovi's round-up).
       let artcraft_cents = cost_cents(4);

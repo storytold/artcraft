@@ -155,6 +155,7 @@ mod tests {
     use speculoos::prelude::*;
     use tokens::tokens::media_files::MediaFileToken;
 
+    use crate::api::router_video_model::RouterVideoModel;
     use crate::api::video_list_ref::VideoListRef;
     use super::*;
 
@@ -165,104 +166,104 @@ mod tests {
       let prices = compare_prices(RouterResolution::FourEightyP, Duration(4), VideoReferences(false));
       asserting("480p 4s no-ref: kinovi cost exceeds the artcraft price")
         .that(&prices.kinovi_usd_cents).is_greater_than(prices.artcraft_usd_cents);
-      asserting("480p 4s no-ref: shortfall is 10 cents")
-        .that(&(prices.kinovi_usd_cents - prices.artcraft_usd_cents)).is_equal_to(10);
+      asserting("480p 4s no-ref: shortfall is 9 cents")
+        .that(&(prices.kinovi_usd_cents - prices.artcraft_usd_cents)).is_equal_to(9);
 
       let prices = compare_prices(RouterResolution::FourEightyP, Duration(5), VideoReferences(false));
       asserting("480p 5s no-ref: kinovi cost exceeds the artcraft price")
         .that(&prices.kinovi_usd_cents).is_greater_than(prices.artcraft_usd_cents);
-      asserting("480p 5s no-ref: shortfall is 12 cents")
-        .that(&(prices.kinovi_usd_cents - prices.artcraft_usd_cents)).is_equal_to(12);
+      asserting("480p 5s no-ref: shortfall is 10 cents")
+        .that(&(prices.kinovi_usd_cents - prices.artcraft_usd_cents)).is_equal_to(10);
 
       let prices = compare_prices(RouterResolution::FourEightyP, Duration(10), VideoReferences(false));
       asserting("480p 10s no-ref: kinovi cost exceeds the artcraft price")
         .that(&prices.kinovi_usd_cents).is_greater_than(prices.artcraft_usd_cents);
-      asserting("480p 10s no-ref: shortfall is 24 cents")
-        .that(&(prices.kinovi_usd_cents - prices.artcraft_usd_cents)).is_equal_to(24);
+      asserting("480p 10s no-ref: shortfall is 21 cents")
+        .that(&(prices.kinovi_usd_cents - prices.artcraft_usd_cents)).is_equal_to(21);
 
       let prices = compare_prices(RouterResolution::FourEightyP, Duration(15), VideoReferences(false));
       asserting("480p 15s no-ref: kinovi cost exceeds the artcraft price")
         .that(&prices.kinovi_usd_cents).is_greater_than(prices.artcraft_usd_cents);
-      asserting("480p 15s no-ref: shortfall is 36 cents")
-        .that(&(prices.kinovi_usd_cents - prices.artcraft_usd_cents)).is_equal_to(36);
+      asserting("480p 15s no-ref: shortfall is 32 cents")
+        .that(&(prices.kinovi_usd_cents - prices.artcraft_usd_cents)).is_equal_to(32);
 
       // -- 720p, no video references --
 
       let prices = compare_prices(RouterResolution::SevenTwentyP, Duration(4), VideoReferences(false));
       asserting("720p 4s no-ref: kinovi cost exceeds the artcraft price")
         .that(&prices.kinovi_usd_cents).is_greater_than(prices.artcraft_usd_cents);
-      asserting("720p 4s no-ref: shortfall is 13 cents")
-        .that(&(prices.kinovi_usd_cents - prices.artcraft_usd_cents)).is_equal_to(13);
+      asserting("720p 4s no-ref: shortfall is 11 cents")
+        .that(&(prices.kinovi_usd_cents - prices.artcraft_usd_cents)).is_equal_to(11);
 
       let prices = compare_prices(RouterResolution::SevenTwentyP, Duration(5), VideoReferences(false));
       asserting("720p 5s no-ref: kinovi cost exceeds the artcraft price")
         .that(&prices.kinovi_usd_cents).is_greater_than(prices.artcraft_usd_cents);
-      asserting("720p 5s no-ref: shortfall is 16 cents")
-        .that(&(prices.kinovi_usd_cents - prices.artcraft_usd_cents)).is_equal_to(16);
+      asserting("720p 5s no-ref: shortfall is 13 cents")
+        .that(&(prices.kinovi_usd_cents - prices.artcraft_usd_cents)).is_equal_to(13);
 
       let prices = compare_prices(RouterResolution::SevenTwentyP, Duration(10), VideoReferences(false));
       asserting("720p 10s no-ref: kinovi cost exceeds the artcraft price")
         .that(&prices.kinovi_usd_cents).is_greater_than(prices.artcraft_usd_cents);
-      asserting("720p 10s no-ref: shortfall is 32 cents")
-        .that(&(prices.kinovi_usd_cents - prices.artcraft_usd_cents)).is_equal_to(32);
+      asserting("720p 10s no-ref: shortfall is 26 cents")
+        .that(&(prices.kinovi_usd_cents - prices.artcraft_usd_cents)).is_equal_to(26);
 
       let prices = compare_prices(RouterResolution::SevenTwentyP, Duration(15), VideoReferences(false));
       asserting("720p 15s no-ref: kinovi cost exceeds the artcraft price")
         .that(&prices.kinovi_usd_cents).is_greater_than(prices.artcraft_usd_cents);
-      asserting("720p 15s no-ref: shortfall is 48 cents")
-        .that(&(prices.kinovi_usd_cents - prices.artcraft_usd_cents)).is_equal_to(48);
+      asserting("720p 15s no-ref: shortfall is 39 cents")
+        .that(&(prices.kinovi_usd_cents - prices.artcraft_usd_cents)).is_equal_to(39);
 
       // -- 480p, with video references --
 
       let prices = compare_prices(RouterResolution::FourEightyP, Duration(4), VideoReferences(true));
       asserting("480p 4s with-ref: kinovi cost exceeds the artcraft price")
         .that(&prices.kinovi_usd_cents).is_greater_than(prices.artcraft_usd_cents);
-      asserting("480p 4s with-ref: shortfall is 17 cents")
-        .that(&(prices.kinovi_usd_cents - prices.artcraft_usd_cents)).is_equal_to(17);
+      asserting("480p 4s with-ref: shortfall is 15 cents")
+        .that(&(prices.kinovi_usd_cents - prices.artcraft_usd_cents)).is_equal_to(15);
 
       let prices = compare_prices(RouterResolution::FourEightyP, Duration(5), VideoReferences(true));
       asserting("480p 5s with-ref: kinovi cost exceeds the artcraft price")
         .that(&prices.kinovi_usd_cents).is_greater_than(prices.artcraft_usd_cents);
-      asserting("480p 5s with-ref: shortfall is 20 cents")
-        .that(&(prices.kinovi_usd_cents - prices.artcraft_usd_cents)).is_equal_to(20);
+      asserting("480p 5s with-ref: shortfall is 19 cents")
+        .that(&(prices.kinovi_usd_cents - prices.artcraft_usd_cents)).is_equal_to(19);
 
       let prices = compare_prices(RouterResolution::FourEightyP, Duration(10), VideoReferences(true));
       asserting("480p 10s with-ref: kinovi cost exceeds the artcraft price")
         .that(&prices.kinovi_usd_cents).is_greater_than(prices.artcraft_usd_cents);
-      asserting("480p 10s with-ref: shortfall is 41 cents")
-        .that(&(prices.kinovi_usd_cents - prices.artcraft_usd_cents)).is_equal_to(41);
+      asserting("480p 10s with-ref: shortfall is 38 cents")
+        .that(&(prices.kinovi_usd_cents - prices.artcraft_usd_cents)).is_equal_to(38);
 
       let prices = compare_prices(RouterResolution::FourEightyP, Duration(15), VideoReferences(true));
       asserting("480p 15s with-ref: kinovi cost exceeds the artcraft price")
         .that(&prices.kinovi_usd_cents).is_greater_than(prices.artcraft_usd_cents);
-      asserting("480p 15s with-ref: shortfall is 62 cents")
-        .that(&(prices.kinovi_usd_cents - prices.artcraft_usd_cents)).is_equal_to(62);
+      asserting("480p 15s with-ref: shortfall is 57 cents")
+        .that(&(prices.kinovi_usd_cents - prices.artcraft_usd_cents)).is_equal_to(57);
 
       // -- 720p, with video references --
 
       let prices = compare_prices(RouterResolution::SevenTwentyP, Duration(4), VideoReferences(true));
       asserting("720p 4s with-ref: kinovi cost exceeds the artcraft price")
         .that(&prices.kinovi_usd_cents).is_greater_than(prices.artcraft_usd_cents);
-      asserting("720p 4s with-ref: shortfall is 23 cents")
-        .that(&(prices.kinovi_usd_cents - prices.artcraft_usd_cents)).is_equal_to(23);
+      asserting("720p 4s with-ref: shortfall is 20 cents")
+        .that(&(prices.kinovi_usd_cents - prices.artcraft_usd_cents)).is_equal_to(20);
 
       let prices = compare_prices(RouterResolution::SevenTwentyP, Duration(5), VideoReferences(true));
       asserting("720p 5s with-ref: kinovi cost exceeds the artcraft price")
         .that(&prices.kinovi_usd_cents).is_greater_than(prices.artcraft_usd_cents);
-      asserting("720p 5s with-ref: shortfall is 29 cents")
-        .that(&(prices.kinovi_usd_cents - prices.artcraft_usd_cents)).is_equal_to(29);
+      asserting("720p 5s with-ref: shortfall is 25 cents")
+        .that(&(prices.kinovi_usd_cents - prices.artcraft_usd_cents)).is_equal_to(25);
 
       let prices = compare_prices(RouterResolution::SevenTwentyP, Duration(10), VideoReferences(true));
       asserting("720p 10s with-ref: kinovi cost exceeds the artcraft price")
         .that(&prices.kinovi_usd_cents).is_greater_than(prices.artcraft_usd_cents);
-      asserting("720p 10s with-ref: shortfall is 58 cents")
-        .that(&(prices.kinovi_usd_cents - prices.artcraft_usd_cents)).is_equal_to(58);
+      asserting("720p 10s with-ref: shortfall is 50 cents")
+        .that(&(prices.kinovi_usd_cents - prices.artcraft_usd_cents)).is_equal_to(50);
 
       let prices = compare_prices(RouterResolution::SevenTwentyP, Duration(15), VideoReferences(true));
       asserting("720p 15s with-ref: kinovi cost exceeds the artcraft price")
         .that(&prices.kinovi_usd_cents).is_greater_than(prices.artcraft_usd_cents);
-      asserting("720p 15s with-ref: shortfall is 87 cents")
-        .that(&(prices.kinovi_usd_cents - prices.artcraft_usd_cents)).is_equal_to(87);
+      asserting("720p 15s with-ref: shortfall is 76 cents")
+        .that(&(prices.kinovi_usd_cents - prices.artcraft_usd_cents)).is_equal_to(76);
     }
 
     // -- Helpers --
