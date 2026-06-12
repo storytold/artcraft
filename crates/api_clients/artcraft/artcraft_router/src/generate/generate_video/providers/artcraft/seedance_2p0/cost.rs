@@ -248,10 +248,16 @@ mod tests {
               .estimate_cost()
               .expect("kinovi estimate_cost");
 
-            assert_eq!(
-              artcraft_cost.cost_in_usd_cents, kinovi_cost.cost_in_usd_cents,
-              "USD cents mismatch: res={:?} dur={}s batch={}",
-              res, dur, batch,
+            // NB: The kinovi provider estimate rounds fractional cents UP
+            // (KinoviGenerationCost), while the artcraft user-facing price
+            // here rounds to nearest — so kinovi may exceed artcraft by at
+            // most one cent.
+            let artcraft_cents = artcraft_cost.cost_in_usd_cents.expect("artcraft cents");
+            let kinovi_cents = kinovi_cost.cost_in_usd_cents.expect("kinovi cents");
+            assert!(
+              kinovi_cents == artcraft_cents || kinovi_cents == artcraft_cents + 1,
+              "USD cents mismatch: res={:?} dur={}s batch={} (artcraft={}, kinovi={})",
+              res, dur, batch, artcraft_cents, kinovi_cents,
             );
           }
         }

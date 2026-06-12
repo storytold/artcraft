@@ -1,5 +1,6 @@
 use crate::creds::seedance2pro_session::Seedance2ProSession;
 use crate::error::seedance2pro_error::Seedance2ProError;
+use crate::generate::cost::KinoviGenerationCost;
 use crate::requests::kinovi_host::KinoviHost;
 use crate::requests::workflow_run_task::workflow_run_task::{
   workflow_run_task, KinoviAspectRatioRaw, KinoviBatchCountRaw,
@@ -72,33 +73,35 @@ pub enum KinoviSeedance2p0FastBatchCount {
 // Credit package: 22,000 credits for $114 (~192.98 credits/$1, rounded to 193).
 
 impl GenerateSeedance2p0FastRequest {
-  /// Estimate the credit cost for this generation request.
-  pub fn estimate_credits(&self) -> u32 {
-    let credits_per_second: u32 = match self.output_resolution {
+  /// Calculate the cost of this generation request, in Kinovi credits and
+  /// USD cents (rounded up).
+  pub fn calculate_costs(&self) -> KinoviGenerationCost {
+    let credits_per_second: u64 = match self.output_resolution {
       Some(KinoviSeedance2p0FastOutputResolution::FourEightyP) => 14,
       Some(KinoviSeedance2p0FastOutputResolution::SevenTwentyP) | None => 28,
     };
 
-    let per_video = u32::from(self.duration_seconds) * credits_per_second;
-    let batch_multiplier: u32 = match self.batch_count {
+    let per_video = u64::from(self.duration_seconds) * credits_per_second;
+    let batch_multiplier: u64 = match self.batch_count {
       None | Some(KinoviSeedance2p0FastBatchCount::One) => 1,
       Some(KinoviSeedance2p0FastBatchCount::Two) => 2,
       Some(KinoviSeedance2p0FastBatchCount::Four) => 4,
     };
-    per_video * batch_multiplier
+
+    KinoviGenerationCost::from_kinovi_credits(per_video * batch_multiplier)
   }
 
-  /// Credits per dollar for billing conversion.
-  /// 22,000 credits / $114 ≈ 192.98, rounded to 193.
-  fn credits_per_dollar() -> f64 {
-    193.0
+  /// Estimate the credit cost for this generation request.
+  #[deprecated(note = "Use calculate_costs() instead")]
+  pub fn estimate_credits(&self) -> u32 {
+    self.calculate_costs().kinovi_credits as u32
   }
 
   /// Estimate the USD cost in cents for this generation request.
+  /// NB: Rounds UP fractional cents (the historical behavior rounded to nearest).
+  #[deprecated(note = "Use calculate_costs() instead")]
   pub fn estimate_cost_in_usd_cents(&self) -> u64 {
-    let credits = self.estimate_credits() as f64;
-    let cost = credits / Self::credits_per_dollar() * 100.0;
-    cost.round() as u64
+    self.calculate_costs().usd_cents_rounded_up
   }
 }
 
@@ -227,19 +230,19 @@ mod tests {
 
       #[test]
       fn every_duration() {
-        assert_eq!(r480(3).estimate_credits(), 42);
-        assert_eq!(r480(4).estimate_credits(), 56);
-        assert_eq!(r480(5).estimate_credits(), 70);
-        assert_eq!(r480(6).estimate_credits(), 84);
-        assert_eq!(r480(7).estimate_credits(), 98);
-        assert_eq!(r480(8).estimate_credits(), 112);
-        assert_eq!(r480(9).estimate_credits(), 126);
-        assert_eq!(r480(10).estimate_credits(), 140);
-        assert_eq!(r480(11).estimate_credits(), 154);
-        assert_eq!(r480(12).estimate_credits(), 168);
-        assert_eq!(r480(13).estimate_credits(), 182);
-        assert_eq!(r480(14).estimate_credits(), 196);
-        assert_eq!(r480(15).estimate_credits(), 210);
+        assert_eq!(r480(3).calculate_costs().kinovi_credits, 42);
+        assert_eq!(r480(4).calculate_costs().kinovi_credits, 56);
+        assert_eq!(r480(5).calculate_costs().kinovi_credits, 70);
+        assert_eq!(r480(6).calculate_costs().kinovi_credits, 84);
+        assert_eq!(r480(7).calculate_costs().kinovi_credits, 98);
+        assert_eq!(r480(8).calculate_costs().kinovi_credits, 112);
+        assert_eq!(r480(9).calculate_costs().kinovi_credits, 126);
+        assert_eq!(r480(10).calculate_costs().kinovi_credits, 140);
+        assert_eq!(r480(11).calculate_costs().kinovi_credits, 154);
+        assert_eq!(r480(12).calculate_costs().kinovi_credits, 168);
+        assert_eq!(r480(13).calculate_costs().kinovi_credits, 182);
+        assert_eq!(r480(14).calculate_costs().kinovi_credits, 196);
+        assert_eq!(r480(15).calculate_costs().kinovi_credits, 210);
       }
     }
 
@@ -250,25 +253,25 @@ mod tests {
 
       #[test]
       fn every_duration() {
-        assert_eq!(r720(3).estimate_credits(), 84);
-        assert_eq!(r720(4).estimate_credits(), 112);
-        assert_eq!(r720(5).estimate_credits(), 140);
-        assert_eq!(r720(6).estimate_credits(), 168);
-        assert_eq!(r720(7).estimate_credits(), 196);
-        assert_eq!(r720(8).estimate_credits(), 224);
-        assert_eq!(r720(9).estimate_credits(), 252);
-        assert_eq!(r720(10).estimate_credits(), 280);
-        assert_eq!(r720(11).estimate_credits(), 308);
-        assert_eq!(r720(12).estimate_credits(), 336);
-        assert_eq!(r720(13).estimate_credits(), 364);
-        assert_eq!(r720(14).estimate_credits(), 392);
-        assert_eq!(r720(15).estimate_credits(), 420);
+        assert_eq!(r720(3).calculate_costs().kinovi_credits, 84);
+        assert_eq!(r720(4).calculate_costs().kinovi_credits, 112);
+        assert_eq!(r720(5).calculate_costs().kinovi_credits, 140);
+        assert_eq!(r720(6).calculate_costs().kinovi_credits, 168);
+        assert_eq!(r720(7).calculate_costs().kinovi_credits, 196);
+        assert_eq!(r720(8).calculate_costs().kinovi_credits, 224);
+        assert_eq!(r720(9).calculate_costs().kinovi_credits, 252);
+        assert_eq!(r720(10).calculate_costs().kinovi_credits, 280);
+        assert_eq!(r720(11).calculate_costs().kinovi_credits, 308);
+        assert_eq!(r720(12).calculate_costs().kinovi_credits, 336);
+        assert_eq!(r720(13).calculate_costs().kinovi_credits, 364);
+        assert_eq!(r720(14).calculate_costs().kinovi_credits, 392);
+        assert_eq!(r720(15).calculate_costs().kinovi_credits, 420);
       }
 
       #[test]
       fn explicit_720p_same_as_default() {
-        let default = r720(5).estimate_credits();
-        let explicit = build_request(5, Some(KinoviSeedance2p0FastOutputResolution::SevenTwentyP), None).estimate_credits();
+        let default = r720(5).calculate_costs().kinovi_credits;
+        let explicit = build_request(5, Some(KinoviSeedance2p0FastOutputResolution::SevenTwentyP), None).calculate_costs().kinovi_credits;
         assert_eq!(default, explicit);
       }
     }
@@ -280,30 +283,30 @@ mod tests {
 
       #[test]
       fn batch_1_is_base() {
-        let base = r720(5).estimate_credits();
-        let explicit = build_request(5, None, Some(KinoviSeedance2p0FastBatchCount::One)).estimate_credits();
+        let base = r720(5).calculate_costs().kinovi_credits;
+        let explicit = build_request(5, None, Some(KinoviSeedance2p0FastBatchCount::One)).calculate_costs().kinovi_credits;
         assert_eq!(base, explicit);
       }
 
       #[test]
       fn batch_2_doubles() {
-        let base = r720(5).estimate_credits();
-        let batch2 = build_request(5, None, Some(KinoviSeedance2p0FastBatchCount::Two)).estimate_credits();
+        let base = r720(5).calculate_costs().kinovi_credits;
+        let batch2 = build_request(5, None, Some(KinoviSeedance2p0FastBatchCount::Two)).calculate_costs().kinovi_credits;
         assert_eq!(batch2, base * 2);
       }
 
       #[test]
       fn batch_4_quadruples() {
-        let base = r720(5).estimate_credits();
-        let batch4 = build_request(5, None, Some(KinoviSeedance2p0FastBatchCount::Four)).estimate_credits();
+        let base = r720(5).calculate_costs().kinovi_credits;
+        let batch4 = build_request(5, None, Some(KinoviSeedance2p0FastBatchCount::Four)).calculate_costs().kinovi_credits;
         assert_eq!(batch4, base * 4);
       }
 
       #[test]
       fn batch_multiplier_applies_to_480p() {
-        let base = r480(5).estimate_credits();
-        let batch2 = build_request(5, Some(KinoviSeedance2p0FastOutputResolution::FourEightyP), Some(KinoviSeedance2p0FastBatchCount::Two)).estimate_credits();
-        let batch4 = build_request(5, Some(KinoviSeedance2p0FastOutputResolution::FourEightyP), Some(KinoviSeedance2p0FastBatchCount::Four)).estimate_credits();
+        let base = r480(5).calculate_costs().kinovi_credits;
+        let batch2 = build_request(5, Some(KinoviSeedance2p0FastOutputResolution::FourEightyP), Some(KinoviSeedance2p0FastBatchCount::Two)).calculate_costs().kinovi_credits;
+        let batch4 = build_request(5, Some(KinoviSeedance2p0FastOutputResolution::FourEightyP), Some(KinoviSeedance2p0FastBatchCount::Four)).calculate_costs().kinovi_credits;
         assert_eq!(batch2, base * 2);
         assert_eq!(batch4, base * 4);
       }
@@ -316,9 +319,9 @@ mod tests {
 
       #[test]
       fn cost_scales_with_duration() {
-        let c3 = r720(3).estimate_credits();
-        let c10 = r720(10).estimate_credits();
-        let c15 = r720(15).estimate_credits();
+        let c3 = r720(3).calculate_costs().kinovi_credits;
+        let c10 = r720(10).calculate_costs().kinovi_credits;
+        let c15 = r720(15).calculate_costs().kinovi_credits;
         assert!(c3 < c10);
         assert!(c10 < c15);
       }
@@ -326,8 +329,8 @@ mod tests {
       #[test]
       fn resolution_ordering() {
         for dur in 3..=15u8 {
-          let c480 = build_request(dur, Some(KinoviSeedance2p0FastOutputResolution::FourEightyP), None).estimate_credits();
-          let c720 = build_request(dur, None, None).estimate_credits();
+          let c480 = build_request(dur, Some(KinoviSeedance2p0FastOutputResolution::FourEightyP), None).calculate_costs().kinovi_credits;
+          let c720 = build_request(dur, None, None).calculate_costs().kinovi_credits;
           assert!(c480 < c720, "480p should be cheaper than 720p at {}s", dur);
         }
       }
@@ -335,44 +338,59 @@ mod tests {
 
     // ── USD cents ──
 
-    mod usd_cents_tests {
+    mod calculate_costs_tests {
       use super::*;
 
+      /// Both fields together: credits and ceil-rounded USD cents.
+      /// (USD cents are always rounded UP when fractional.)
       #[test]
-      fn credits_per_dollar_is_193() {
-        assert_eq!(GenerateSeedance2p0FastRequest::credits_per_dollar(), 193.0);
+      fn costs_480p_5s() {
+        // 14 credits/s × 5s = 70 credits; 7000/193 = 36.27 → rounds UP to 37¢
+        let costs = r480(5).calculate_costs();
+        assert_eq!(costs.kinovi_credits, 70);
+        assert_eq!(costs.usd_cents_rounded_up, 37);
       }
 
       #[test]
-      fn usd_cents_720p_5s() {
-        // 140 credits / 193 * 100 = 72.54 → 73¢
-        assert_eq!(r720(5).estimate_cost_in_usd_cents(), 73);
+      fn costs_720p_5s() {
+        // 28 credits/s × 5s = 140 credits; 14000/193 = 72.54 → 73¢
+        let costs = r720(5).calculate_costs();
+        assert_eq!(costs.kinovi_credits, 140);
+        assert_eq!(costs.usd_cents_rounded_up, 73);
       }
 
       #[test]
-      fn usd_cents_480p_5s() {
-        // 70 credits / 193 * 100 = 36.27 → 36¢
-        assert_eq!(r480(5).estimate_cost_in_usd_cents(), 36);
+      fn costs_720p_15s() {
+        // 28 credits/s × 15s = 420 credits; 42000/193 = 217.62 → 218¢
+        let costs = r720(15).calculate_costs();
+        assert_eq!(costs.kinovi_credits, 420);
+        assert_eq!(costs.usd_cents_rounded_up, 218);
       }
 
       #[test]
-      fn usd_cents_720p_15s() {
-        // 420 credits / 193 * 100 = 217.62 → 218¢
-        assert_eq!(r720(15).estimate_cost_in_usd_cents(), 218);
+      fn costs_480p_15s() {
+        // 14 credits/s × 15s = 210 credits; 21000/193 = 108.81 → 109¢
+        let costs = r480(15).calculate_costs();
+        assert_eq!(costs.kinovi_credits, 210);
+        assert_eq!(costs.usd_cents_rounded_up, 109);
       }
 
       #[test]
-      fn usd_cents_480p_15s() {
-        // 210 credits / 193 * 100 = 108.81 → 109¢
-        assert_eq!(r480(15).estimate_cost_in_usd_cents(), 109);
+      fn costs_batch_2_720p_5s() {
+        // 140 credits × 2 = 280 credits; 28000/193 = 145.07 → 146¢
+        let costs = build_request(5, None, Some(KinoviSeedance2p0FastBatchCount::Two)).calculate_costs();
+        assert_eq!(costs.kinovi_credits, 280);
+        assert_eq!(costs.usd_cents_rounded_up, 146);
       }
 
+      /// The deprecated shims return the corresponding struct fields.
       #[test]
-      fn batch_multiplies_usd_cents() {
-        let base = r720(5).estimate_cost_in_usd_cents();
-        let batch2 = build_request(5, None, Some(KinoviSeedance2p0FastBatchCount::Two)).estimate_cost_in_usd_cents();
-        assert!(batch2 >= base * 2 - 1 && batch2 <= base * 2 + 1,
-          "batch 2 ({}) should be ~2× base ({})", batch2, base);
+      #[allow(deprecated)]
+      fn deprecated_methods_delegate() {
+        let request = r720(5);
+        let costs = request.calculate_costs();
+        assert_eq!(u64::from(request.estimate_credits()), costs.kinovi_credits);
+        assert_eq!(request.estimate_cost_in_usd_cents(), costs.usd_cents_rounded_up);
       }
     }
 
@@ -380,7 +398,7 @@ mod tests {
 
     #[test]
     fn aspect_ratio_does_not_affect_credits() {
-      let baseline = r720(5).estimate_credits();
+      let baseline = r720(5).calculate_costs().kinovi_credits;
 
       let ratios = [
         KinoviSeedance2p0FastAspectRatio::Landscape16x9,
@@ -407,7 +425,7 @@ mod tests {
           use_face_blur_hack: None,
         };
         assert_eq!(
-          req.estimate_credits(), baseline,
+          req.calculate_costs().kinovi_credits, baseline,
           "Aspect ratio {:?} should not change credits from baseline {}", ar, baseline,
         );
       }

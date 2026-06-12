@@ -58,11 +58,12 @@ impl KinoviSeedance2p0CostState {
       use_face_blur_hack: None,
     };
 
-    let cost_in_credits = pricing_request.estimate_credits();
-    let cost_in_usd_cents = pricing_request.estimate_cost_in_usd_cents();
+    let costs = pricing_request.calculate_costs();
+    let cost_in_credits = costs.kinovi_credits;
+    let cost_in_usd_cents = costs.usd_cents_rounded_up;
 
     VideoGenerationCostEstimate {
-      cost_in_credits: Some(cost_in_credits as u64),
+      cost_in_credits: Some(cost_in_credits),
       cost_in_usd_cents: Some(cost_in_usd_cents),
       is_free: false,
       is_unlimited: false,
@@ -97,16 +98,16 @@ mod tests {
     fn cost_720p_batch_1() {
       assert_eq!(usd_cents(KinoviOutputResolution::SevenTwentyP, 4, KinoviBatchCount::One), 83);
       assert_eq!(usd_cents(KinoviOutputResolution::SevenTwentyP, 5, KinoviBatchCount::One), 104);
-      assert_eq!(usd_cents(KinoviOutputResolution::SevenTwentyP, 6, KinoviBatchCount::One), 124);
-      assert_eq!(usd_cents(KinoviOutputResolution::SevenTwentyP, 7, KinoviBatchCount::One), 145);
-      assert_eq!(usd_cents(KinoviOutputResolution::SevenTwentyP, 10, KinoviBatchCount::One), 207);
+      assert_eq!(usd_cents(KinoviOutputResolution::SevenTwentyP, 6, KinoviBatchCount::One), 125);
+      assert_eq!(usd_cents(KinoviOutputResolution::SevenTwentyP, 7, KinoviBatchCount::One), 146);
+      assert_eq!(usd_cents(KinoviOutputResolution::SevenTwentyP, 10, KinoviBatchCount::One), 208);
       assert_eq!(usd_cents(KinoviOutputResolution::SevenTwentyP, 15, KinoviBatchCount::One), 311);
     }
 
     #[test]
     fn cost_720p_batch_2() {
       assert_eq!(usd_cents(KinoviOutputResolution::SevenTwentyP, 4, KinoviBatchCount::Two), 166);
-      assert_eq!(usd_cents(KinoviOutputResolution::SevenTwentyP, 5, KinoviBatchCount::Two), 207);
+      assert_eq!(usd_cents(KinoviOutputResolution::SevenTwentyP, 5, KinoviBatchCount::Two), 208);
       assert_eq!(usd_cents(KinoviOutputResolution::SevenTwentyP, 15, KinoviBatchCount::Two), 622);
     }
 
@@ -125,7 +126,7 @@ mod tests {
 
     #[test]
     fn cost_480p_batch_1() {
-      assert_eq!(usd_cents(KinoviOutputResolution::FourEightyP, 4, KinoviBatchCount::One), 31);
+      assert_eq!(usd_cents(KinoviOutputResolution::FourEightyP, 4, KinoviBatchCount::One), 32);
       assert_eq!(usd_cents(KinoviOutputResolution::FourEightyP, 5, KinoviBatchCount::One), 39);
       assert_eq!(usd_cents(KinoviOutputResolution::FourEightyP, 10, KinoviBatchCount::One), 78);
       assert_eq!(usd_cents(KinoviOutputResolution::FourEightyP, 15, KinoviBatchCount::One), 117);
@@ -138,7 +139,7 @@ mod tests {
 
     #[test]
     fn cost_480p_batch_4() {
-      assert_eq!(usd_cents(KinoviOutputResolution::FourEightyP, 5, KinoviBatchCount::Four), 155);
+      assert_eq!(usd_cents(KinoviOutputResolution::FourEightyP, 5, KinoviBatchCount::Four), 156);
     }
   }
 
@@ -150,14 +151,14 @@ mod tests {
     #[test]
     fn cost_1080p_batch_1() {
       assert_eq!(usd_cents(KinoviOutputResolution::TenEightyP, 4, KinoviBatchCount::One), 187);
-      assert_eq!(usd_cents(KinoviOutputResolution::TenEightyP, 5, KinoviBatchCount::One), 233);
-      assert_eq!(usd_cents(KinoviOutputResolution::TenEightyP, 10, KinoviBatchCount::One), 466);
-      assert_eq!(usd_cents(KinoviOutputResolution::TenEightyP, 15, KinoviBatchCount::One), 699);
+      assert_eq!(usd_cents(KinoviOutputResolution::TenEightyP, 5, KinoviBatchCount::One), 234);
+      assert_eq!(usd_cents(KinoviOutputResolution::TenEightyP, 10, KinoviBatchCount::One), 467);
+      assert_eq!(usd_cents(KinoviOutputResolution::TenEightyP, 15, KinoviBatchCount::One), 700);
     }
 
     #[test]
     fn cost_1080p_batch_2() {
-      assert_eq!(usd_cents(KinoviOutputResolution::TenEightyP, 5, KinoviBatchCount::Two), 466);
+      assert_eq!(usd_cents(KinoviOutputResolution::TenEightyP, 5, KinoviBatchCount::Two), 467);
     }
 
     #[test]
@@ -250,7 +251,7 @@ mod tests {
     fn from_request_1080p_batch_2() {
       let req = make_request_state(Some(KinoviOutputResolution::TenEightyP), 5, KinoviBatchCount::Two, false);
       let cost = KinoviSeedance2p0CostState::from_request(&req);
-      assert_eq!(cost.estimate_cost().cost_in_usd_cents, Some(466));
+      assert_eq!(cost.estimate_cost().cost_in_usd_cents, Some(467));
     }
 
     #[test]
