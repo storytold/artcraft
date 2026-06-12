@@ -76,15 +76,35 @@ impl GenerateSeedance2p0FastRequest {
   /// Calculate the cost of this generation request, in Kinovi credits and
   /// USD cents (rounded up).
   ///
-  /// NB: Unlike Seedance 2.0, attaching reference videos does NOT add a
-  /// surcharge on the Fast model (per Kinovi's pricing page).
+  /// Attaching reference VIDEOS adds a per-output-second surcharge (see the
+  /// pricing table below). Reference images and audio are free.
   pub fn calculate_costs(&self) -> KinoviGenerationCost {
     let credits_per_second: u64 = match self.output_resolution {
       Some(KinoviSeedance2p0FastOutputResolution::FourEightyP) => 14,
       Some(KinoviSeedance2p0FastOutputResolution::SevenTwentyP) | None => 28,
     };
 
-    let per_video = u64::from(self.duration_seconds) * credits_per_second;
+    // Video-reference surcharge, billed per second of OUTPUT duration
+    // (not the reference video's duration):
+    //
+    // | Resolution | Surcharge credits/sec |
+    // |------------|-----------------------|
+    // | 480p       |                     4 |
+    // | 720p       |                     6 |
+    //
+    // NB: Assumed flat per generation regardless of how many reference
+    // videos are attached (Kinovi's pricing page only shows one).
+    let video_reference_surcharge_per_second: u64 = if self.has_video_reference() {
+      match self.output_resolution {
+        Some(KinoviSeedance2p0FastOutputResolution::FourEightyP) => 4,
+        Some(KinoviSeedance2p0FastOutputResolution::SevenTwentyP) | None => 6,
+      }
+    } else {
+      0
+    };
+
+    let per_video = u64::from(self.duration_seconds)
+      * (credits_per_second + video_reference_surcharge_per_second);
     let batch_multiplier: u64 = match self.batch_count {
       None | Some(KinoviSeedance2p0FastBatchCount::One) => 1,
       Some(KinoviSeedance2p0FastBatchCount::Two) => 2,
@@ -92,6 +112,12 @@ impl GenerateSeedance2p0FastRequest {
     };
 
     KinoviGenerationCost::from_kinovi_credits(per_video * batch_multiplier)
+  }
+
+  fn has_video_reference(&self) -> bool {
+    self.reference_video_urls
+      .as_ref()
+      .is_some_and(|urls| !urls.is_empty())
   }
 
   /// Estimate the credit cost for this generation request.
@@ -397,13 +423,13 @@ mod tests {
       }
     }
 
-    // ── Video references are FREE on Fast ──
+    // ── Video-reference surcharge ──
     //
-    // Per Kinovi's pricing page ("With Video Uploads"), attaching a
-    // reference video does NOT change the price on Seedance 2.0 Fast —
-    // unlike regular Seedance 2.0.
+    // Per Kinovi's pricing page ("Seedance 2.0 Fast With Video Ref"),
+    // attaching a reference video adds a per-output-second surcharge
+    // (480p: +4/s, 720p: +6/s).
 
-    mod video_reference_tests {
+    mod video_reference_surcharge_tests {
       use super::*;
 
       fn with_video_ref(mut request: GenerateSeedance2p0FastRequest) -> GenerateSeedance2p0FastRequest {
@@ -411,36 +437,63 @@ mod tests {
         request
       }
 
-      /// The full Fast table from Kinovi's pricing page, with a 10 sec
-      /// video reference attached — identical to the base prices.
+      /// The full base + surcharge table from Kinovi's pricing page
+      /// ("Seedance 2.0 Fast With Video Ref", 10 sec video ref).
       #[test]
       fn kinovi_pricing_table_with_video_reference() {
         let cases: &[(fn(u8) -> GenerateSeedance2p0FastRequest, u8, u64)] = &[
-          // 480p: unchanged
-          (r480, 4, 56),
-          (r480, 5, 70),
-          (r480, 10, 140),
-          (r480, 15, 210),
-          // 720p: unchanged
-          (r720, 4, 112),
-          (r720, 5, 140),
-          (r720, 10, 280),
-          (r720, 15, 420),
+          // 480p: base + 4/s
+          (r480, 4, 56 + 16),
+          (r480, 5, 70 + 20),
+          (r480, 10, 140 + 40),
+          (r480, 15, 210 + 60),
+          // 720p: base + 6/s
+          (r720, 4, 112 + 24),
+          (r720, 5, 140 + 30),
+          (r720, 10, 280 + 60),
+          (r720, 15, 420 + 90),
         ];
 
         for (make, duration, expected_credits) in cases {
           let costs = with_video_ref(make(*duration)).calculate_costs();
           assert_eq!(costs.kinovi_credits, *expected_credits,
-            "duration {duration}s should cost {expected_credits} credits even with a video reference");
+            "duration {duration}s should cost {expected_credits} credits with a video reference");
         }
       }
 
       #[test]
-      fn video_reference_does_not_change_cost() {
-        let base = r720(5).calculate_costs();
-        let with_ref = with_video_ref(r720(5)).calculate_costs();
-        assert_eq!(base.kinovi_credits, with_ref.kinovi_credits);
-        assert_eq!(base.usd_cents_rounded_up, with_ref.usd_cents_rounded_up);
+      fn surcharge_includes_usd_cents() {
+        // 720p 5s + video ref = 170 credits; 17000/193 = 88.08 → 89¢
+        let costs = with_video_ref(r720(5)).calculate_costs();
+        assert_eq!(costs.kinovi_credits, 170);
+        assert_eq!(costs.usd_cents_rounded_up, 89);
+      }
+
+      #[test]
+      fn empty_video_reference_list_has_no_surcharge() {
+        let mut request = r720(5);
+        request.reference_video_urls = Some(vec![]);
+        assert_eq!(request.calculate_costs().kinovi_credits, 140);
+      }
+
+      /// Surcharge is flat per generation regardless of how many reference
+      /// videos are attached (assumption — Kinovi's page only shows one).
+      #[test]
+      fn multiple_video_references_charge_once() {
+        let mut request = r720(5);
+        request.reference_video_urls = Some(vec![
+          "https://example.com/a.mp4".to_string(),
+          "https://example.com/b.mp4".to_string(),
+        ]);
+        assert_eq!(request.calculate_costs().kinovi_credits, 170);
+      }
+
+      /// The surcharge applies per generated video, so batches multiply it.
+      #[test]
+      fn batch_multiplies_surcharge() {
+        let request = with_video_ref(build_request(5, None, Some(KinoviSeedance2p0FastBatchCount::Two)));
+        // (140 base + 30 surcharge) × 2 = 340 credits
+        assert_eq!(request.calculate_costs().kinovi_credits, 340);
       }
     }
 

@@ -46,13 +46,20 @@ impl KinoviSeedance2p0FastCostState {
       duration_seconds: self.duration_seconds,
       batch_count: self.batch_count,
 
+      // PRESENCE of reference videos changes the price (per-second
+      // surcharge); the URL contents don't.
+      reference_video_urls: if self.has_video_reference {
+        Some(vec!["pricing-placeholder".to_string()])
+      } else {
+        None
+      },
+
       // No impact on price
       prompt: String::new(),
       aspect_ratio: None,
       start_frame_url: None,
       end_frame_url: None,
       reference_image_urls: None,
-      reference_video_urls: None,
       reference_audio_urls: None,
       character_ids: None,
       use_face_blur_hack: None,
@@ -175,7 +182,7 @@ mod tests {
   // -- Video reference does NOT affect cost (yet) --
 
   #[test]
-  fn video_reference_does_not_affect_cost() {
+  fn video_reference_adds_surcharge() {
     let base = KinoviSeedance2p0FastCostState {
       resolution: Some(KinoviOutputResolution::SevenTwentyP),
       duration_seconds: 5,
@@ -184,8 +191,10 @@ mod tests {
     };
     let without = base.estimate_cost();
     let with = KinoviSeedance2p0FastCostState { has_video_reference: true, ..base }.estimate_cost();
-    assert_eq!(without.cost_in_usd_cents, with.cost_in_usd_cents);
-    assert_eq!(without.cost_in_credits, with.cost_in_credits);
+    // Fast 720p surcharge is +6 credits/s: 140 -> 170 credits (17000/193 = 88.08 -> 89 cents).
+    assert_eq!(without.cost_in_credits, Some(140));
+    assert_eq!(with.cost_in_credits, Some(170));
+    assert_eq!(with.cost_in_usd_cents, Some(89));
   }
 
   // ── from_request() tests ──
@@ -224,8 +233,9 @@ mod tests {
       let req = make_request_state(Some(KinoviOutputResolution::SevenTwentyP), 5, KinoviBatchCount::One, true);
       let cost = KinoviSeedance2p0FastCostState::from_request(&req);
       assert!(cost.has_video_reference);
-      // Video refs don't affect cost yet
-      assert_eq!(cost.estimate_cost().cost_in_usd_cents, Some(73));
+      // Video refs add a +6 credits/s surcharge at 720p: 170 credits -> 89 cents.
+      assert_eq!(cost.estimate_cost().cost_in_credits, Some(170));
+      assert_eq!(cost.estimate_cost().cost_in_usd_cents, Some(89));
     }
 
     #[test]
@@ -265,8 +275,9 @@ mod tests {
       let draft = make_draft(5, 1, None, true);
       let cost = KinoviSeedance2p0FastCostState::from_draft(&draft);
       assert!(cost.has_video_reference);
-      // Video refs don't affect cost yet
-      assert_eq!(cost.estimate_cost().cost_in_usd_cents, Some(73));
+      // Video refs add a +6 credits/s surcharge at 720p: 170 credits -> 89 cents.
+      assert_eq!(cost.estimate_cost().cost_in_credits, Some(170));
+      assert_eq!(cost.estimate_cost().cost_in_usd_cents, Some(89));
     }
 
     #[test]
