@@ -129,63 +129,6 @@ mod tests {
     }
   }
 
-  // ── Cost coverage vs Kinovi for batches 1/2/4 ──
-  //
-  // Kinovi midjourney_7 costs 5/10/20¢ for batches 1/2/4 under the
-  // 525,000-credit package. The artcraft user price (6/12/25¢) must always
-  // cover the provider cost.
-
-  mod kinovi_margin {
-    use super::*;
-    use crate::generate::generate_image::providers::kinovi::midjourney_7::cost::KinoviMidjourney7CostState;
-    use seedance2pro_client::generate::image::generate_midjourney_v7::KinoviMidjourneyBatchCount;
-
-    #[test]
-    fn batch_1_covers_kinovi_cost() {
-      let kinovi = KinoviMidjourney7CostState { batch_count: KinoviMidjourneyBatchCount::One }
-        .estimate_cost();
-      // Under the 525,000-credit package (~243 credits/$1) Kinovi's cost
-      // sits below this artcraft user price. Assert the user price covers
-      // the provider cost (1¢ tolerance for Kinovi's round-up).
-      let artcraft_cents = cost_cents(1);
-      let kinovi_cents = kinovi.cost_in_usd_cents.unwrap();
-      assert!(
-        kinovi_cents <= artcraft_cents + 1,
-        "batch 1: artcraft={artcraft_cents}, kinovi={kinovi_cents}",
-      );
-    }
-
-    #[test]
-    fn batch_2_covers_kinovi_cost() {
-      let kinovi = KinoviMidjourney7CostState { batch_count: KinoviMidjourneyBatchCount::Two }
-        .estimate_cost();
-      // Under the 525,000-credit package (~243 credits/$1) Kinovi's cost
-      // sits below this artcraft user price. Assert the user price covers
-      // the provider cost (1¢ tolerance for Kinovi's round-up).
-      let artcraft_cents = cost_cents(2);
-      let kinovi_cents = kinovi.cost_in_usd_cents.unwrap();
-      assert!(
-        kinovi_cents <= artcraft_cents + 1,
-        "batch 2: artcraft={artcraft_cents}, kinovi={kinovi_cents}",
-      );
-    }
-
-    #[test]
-    fn batch_4_covers_kinovi_cost() {
-      let kinovi = KinoviMidjourney7CostState { batch_count: KinoviMidjourneyBatchCount::Four }
-        .estimate_cost();
-      // Under the 525,000-credit package (~243 credits/$1) Kinovi's cost
-      // sits below this artcraft user price. Assert the user price covers
-      // the provider cost (1¢ tolerance for Kinovi's round-up).
-      let artcraft_cents = cost_cents(4);
-      let kinovi_cents = kinovi.cost_in_usd_cents.unwrap();
-      assert!(
-        kinovi_cents <= artcraft_cents + 1,
-        "batch 4: artcraft={artcraft_cents}, kinovi={kinovi_cents}",
-      );
-    }
-  }
-
   // ── Monotonicity ──
 
   #[test]

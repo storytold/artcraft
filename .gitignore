@@ -103,3 +103,6 @@ windows/sqlite/sqlite3.lib
 # ArtCraft Windows DLLs
 crates/desktop/src-tauri/*.dll
 windows_dlls/
+
+# External (non-checked-in) Rust workspace
+/external/

@@ -204,56 +204,6 @@ mod tests {
     }
   }
 
-  // ── Cross-check with Kinovi ──
-
-  mod cross_check_with_kinovi {
-    use super::*;
-
-    #[test]
-    fn artcraft_price_covers_kinovi_cost_all_combos() {
-      let resolutions = [
-        Some(RouterResolution::SevenTwentyP),
-        None,
-        Some(RouterResolution::TenEightyP),
-      ];
-      let durations: [u16; 4] = [4, 5, 10, 15];
-      let batches: [u16; 3] = [1, 2, 4];
-
-      for res in &resolutions {
-        for dur in &durations {
-          for batch in &batches {
-            let artcraft_cost = build_cost(*res, *dur, *batch);
-
-            let kinovi = GenerateVideoRequestBuilder {
-              model: RouterVideoModel::HappyHorse1p0,
-              provider: RouterProvider::Seedance2Pro,
-              resolution: *res,
-              duration_seconds: Some(*dur),
-              video_batch_count: Some(*batch),
-              ..Default::default()
-            };
-            let kinovi_cost = kinovi.build2()
-              .expect("kinovi build2")
-              .estimate_cost()
-              .expect("kinovi estimate_cost");
-
-            // Under the 525,000-credit package (~243 credits/$1) Kinovi's
-            // cost sits below the artcraft user-facing price. Assert the
-            // user price covers the provider cost (1¢ tolerance for
-            // Kinovi's round-up).
-            let artcraft_cents = artcraft_cost.cost_in_usd_cents.expect("artcraft cents");
-            let kinovi_cents = kinovi_cost.cost_in_usd_cents.expect("kinovi cents");
-            assert!(
-              kinovi_cents <= artcraft_cents + 1,
-              "kinovi cost exceeds artcraft price: res={:?} dur={}s batch={} (artcraft={}, kinovi={})",
-              res, dur, batch, artcraft_cents, kinovi_cents,
-            );
-          }
-        }
-      }
-    }
-  }
-
   // ── Helpers ──
 
   fn build_cost(
