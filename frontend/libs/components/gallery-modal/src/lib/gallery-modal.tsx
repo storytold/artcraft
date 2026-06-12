@@ -615,6 +615,20 @@ export const GalleryModal = React.memo(
       [folders],
     );
 
+    // Root ancestor of the open folder — drives the sidebar highlight (the
+    // sidebar lists only root folders), guarded against parent-chain cycles.
+    const activeRootFolderId = useMemo(() => {
+      if (galleryTab !== "folders" || !activeFolderId) return null;
+      const byId = new Map(folders.map((f) => [f.id, f]));
+      const seen = new Set<string>();
+      let cursor = byId.get(activeFolderId);
+      while (cursor && cursor.parentId && !seen.has(cursor.id)) {
+        seen.add(cursor.id);
+        cursor = byId.get(cursor.parentId);
+      }
+      return cursor?.id ?? null;
+    }, [galleryTab, folders, activeFolderId]);
+
     // Breadcrumb trail from root → active folder (inclusive), guarded against
     // cycles so a corrupted parent chain can never loop forever.
     const folderPath = useMemo(() => {
@@ -2184,14 +2198,15 @@ export const GalleryModal = React.memo(
             </div>
 
             <div className="flex flex-1 overflow-hidden" data-gallery-modal>
-              {/* ── Filter sidebar ── (Unsorted tab / picker only; the Folders
-                  tab is a full-width browser) */}
-              {!hideFilter && galleryTab === "unsorted" && (
+              {/* ── Filter sidebar ── shown on both tabs; clicking a filter
+                  jumps back to the library, clicking a folder into the browser */}
+              {!hideFilter && (
                 <div className="w-52 min-w-[13rem] border-r border-ui-panel-border bg-ui-panel flex flex-col overflow-hidden">
                   {/* Filter items — pinned; they never scroll out of view */}
                   <div className="flex flex-col px-1.5 pt-2 pb-1 flex-shrink-0">
                     {SIDEBAR_FILTERS.map((f) => {
-                      const isActive = activeFilter === f.id;
+                      const isActive =
+                        galleryTab === "unsorted" && activeFilter === f.id;
                       return (
                         <button
                           key={f.id}
@@ -2199,7 +2214,7 @@ export const GalleryModal = React.memo(
                           onClick={() => {
                             if (!forceFilter) {
                               setActiveFilter(f.id);
-                              setActiveFolderId(null);
+                              switchGalleryTab("unsorted");
                             }
                           }}
                           className={twMerge(
@@ -2265,7 +2280,12 @@ export const GalleryModal = React.memo(
                                 }
                               : undefined
                           }
-                          className="flex w-full flex-shrink-0 items-center gap-2.5 rounded-md px-2.5 py-1.5 text-sm text-base-fg/70 hover:bg-ui-controls/30 hover:text-base-fg transition-colors [&.folder-drag-over]:bg-primary/20 [&.folder-drag-over]:text-base-fg"
+                          className={twMerge(
+                            "flex w-full flex-shrink-0 items-center gap-2.5 rounded-md px-2.5 py-1.5 text-sm transition-colors [&.folder-drag-over]:bg-primary/20 [&.folder-drag-over]:text-base-fg",
+                            activeRootFolderId === folder.id
+                              ? "bg-ui-controls/60 text-base-fg font-medium"
+                              : "text-base-fg/70 hover:bg-ui-controls/30 hover:text-base-fg",
+                          )}
                         >
                           <FontAwesomeIcon
                             icon={faFolder}

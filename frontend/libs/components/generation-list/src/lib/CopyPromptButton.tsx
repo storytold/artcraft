@@ -2,12 +2,18 @@ import { useCallback, useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCheck, faCopy } from "@fortawesome/pro-solid-svg-icons";
 import { Tooltip } from "@storyteller/ui-tooltip";
-import { toast } from "../toast/toast";
 
 // Copies a prompt to the clipboard, with copy→check feedback. Sits at the
 // right of a row's prompt line. Shared by the completed / pending / failed
 // rows. stopPropagation keeps a tap from also triggering the row's onClick.
-export function CopyPromptButton({ text }: { text: string }) {
+// Hosts surface success/failure feedback (e.g. a toast) via `onCopyResult`.
+export function CopyPromptButton({
+  text,
+  onCopyResult,
+}: {
+  text: string;
+  onCopyResult?: (success: boolean) => void;
+}) {
   const [copied, setCopied] = useState(false);
 
   const handleCopy = useCallback(
@@ -15,14 +21,14 @@ export function CopyPromptButton({ text }: { text: string }) {
       e.stopPropagation();
       try {
         await navigator.clipboard.writeText(text);
-        toast.success("Prompt copied");
+        onCopyResult?.(true);
         setCopied(true);
         setTimeout(() => setCopied(false), 1500);
       } catch {
-        toast.error("Unable to copy prompt");
+        onCopyResult?.(false);
       }
     },
-    [text],
+    [text, onCopyResult],
   );
 
   return (

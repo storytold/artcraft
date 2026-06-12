@@ -196,6 +196,16 @@ export function CreateMediaPageShell({
             </div>
           )}
 
+          {/* Bottom fade behind the floating prompt box so it stays legible
+              over the feed. Sits under the prompt box (z-30). */}
+          {hasContent && (
+            <div
+              aria-hidden
+              className="pointer-events-none fixed bottom-0 right-0 z-20 h-48 bg-gradient-to-t from-[#101014] to-transparent"
+              style={{ left: "var(--ac-sidebar-offset, 0px)" }}
+            />
+          )}
+
           {promptBox}
         </div>
       </div>

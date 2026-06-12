@@ -1,7 +1,15 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { JobContextType } from "@storyteller/common";
-import { PromptBoxVideo, usePromptVideoStore, PromptBoxErrorBoundary } from "@storyteller/ui-promptbox";
-import { UploadImageMedia, UploadVideoMedia, UploadAudioMedia } from "@storyteller/api";
+import {
+  PromptBoxVideo,
+  PromptBoxErrorBoundary,
+} from "@storyteller/ui-promptbox";
+import {
+  UploadImageMedia,
+  UploadVideoMedia,
+  UploadAudioMedia,
+  FilterMediaClasses,
+} from "@storyteller/api";
 import BackgroundGallery from "./BackgroundGallery";
 import {
   ClassyModelSelector,
@@ -9,26 +17,38 @@ import {
   ModelPage,
   useSelectedVideoModel,
   useSelectedProviderForModel,
-  //ProviderSelector,
-  //PROVIDER_LOOKUP_BY_PAGE,
 } from "@storyteller/ui-model-selector";
 import { VideoModel } from "@storyteller/model-list";
-import { animated, useSpring } from "@react-spring/web";
 import { useImageToVideoStore } from "./ImageToVideoStore";
 import {
   useVideoGenerationCompleteEvent,
   VideoGenerationCompleteEvent,
 } from "@storyteller/tauri-events";
-// import { Badge } from "@storyteller/ui-badge";
-import { twMerge } from "tailwind-merge";
+import {
+  galleryModalLightboxImage,
+  galleryModalLightboxMediaId,
+  galleryModalLightboxVisible,
+  galleryModalLightboxNavPrev,
+  galleryModalLightboxNavNext,
+} from "@storyteller/ui-gallery-modal";
 import { HelpMenuButton } from "@storyteller/ui-help-menu";
 import {
   CostCalculatorButton,
   useCostBreakdownModalStore,
 } from "@storyteller/ui-pricing-modal";
 import { GenerationProvider } from "@storyteller/api-enums";
+import {
+  useGalleryData,
+  type GalleryItem,
+} from "@storyteller/ui-generation-list";
+import { useDesktopGenerationFeed } from "~/components/generation-feed/useDesktopGenerationFeed";
+import { useDesktopUsername } from "~/components/generation-feed/useDesktopUsername";
+import { DesktopCreatePageShell } from "~/components/generation-feed/DesktopCreatePageShell";
+import { DesktopGenerationGallery } from "~/components/generation-feed/DesktopGenerationGallery";
 
 const PAGE_ID: ModelPage = ModelPage.ImageToVideo;
+
+const VIDEO_FILTER = [FilterMediaClasses.VIDEO];
 
 interface ImageToVideoProps {
   imageMediaId?: string;
@@ -36,15 +56,10 @@ interface ImageToVideoProps {
 }
 
 const ImageToVideo = ({ imageMediaId, imageUrl }: ImageToVideoProps) => {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const batches = useImageToVideoStore((s) => s.batches);
   const startBatch = useImageToVideoStore((s) => s.startBatch);
   const completeBatch = useImageToVideoStore((s) => s.completeBatch);
-  // const resetBatches = useImageToVideoStore((s) => s.reset);
-  const [imageRowVisible, setImageRowVisible] = useState(true);
-  const inputMode = usePromptVideoStore((s) => s.inputMode);
   const promptContentRef = useRef<HTMLDivElement>(null);
-  const [_promptHeight, setPromptHeight] = useState<number>(138);
+  const [promptHeight, setPromptHeight] = useState<number>(138);
 
   const selectedVideoModel: VideoModel | undefined =
     useSelectedVideoModel(PAGE_ID);
@@ -58,11 +73,13 @@ const ImageToVideo = ({ imageMediaId, imageUrl }: ImageToVideoProps) => {
 
   const jobContext: JobContextType = {
     jobTokens: [],
-    addJobToken: () => { },
-    removeJobToken: () => { },
-    clearJobTokens: () => { },
+    addJobToken: () => {},
+    removeJobToken: () => {},
+    clearJobTokens: () => {},
   };
 
+  // Keep the local batch store in sync (other listeners may rely on it); the
+  // visible feed below is driven by the task queue + library instead.
   useVideoGenerationCompleteEvent(
     async (event: VideoGenerationCompleteEvent) => {
       if (!event.generated_video) return;
@@ -76,18 +93,7 @@ const ImageToVideo = ({ imageMediaId, imageUrl }: ImageToVideoProps) => {
     },
   );
 
-  const hasAnyBatches = batches.length > 0;
-  const showPromptAtBottom = useMemo(() => hasAnyBatches, [hasAnyBatches]);
-
-  const [vh, setVh] = useState<number>(
-    typeof window !== "undefined" ? window.innerHeight : 800,
-  );
-  useEffect(() => {
-    const onResize = () => setVh(window.innerHeight);
-    window.addEventListener("resize", onResize);
-    return () => window.removeEventListener("resize", onResize);
-  }, []);
-
+  // Track the promptbox height so the feed can pad past it.
   useEffect(() => {
     const el = promptContentRef.current;
     if (!el || typeof ResizeObserver === "undefined") return;
@@ -98,153 +104,142 @@ const ImageToVideo = ({ imageMediaId, imageUrl }: ImageToVideoProps) => {
     return () => ro.disconnect();
   }, []);
 
-  // TODO: Uncomment when backend supports history frontend id
-  // const bottomMarginPx = 24;
-  // const bottomOffsetPx = promptHeight + bottomMarginPx;
-  const targetTop = showPromptAtBottom
-    ? Math.floor(vh / 2) //change to Math.max(0, vh - bottomOffsetPx) when backend supports history frontend id
-    : Math.floor(vh / 2);
-  const promptAnim = useSpring({
-    top: targetTop,
-    config: { tension: 200, friction: 28, mass: 1.1 },
+  // The merged generation feed: in-progress / failed from the Tauri task
+  // queue, completed history from the library (like the webapp list view).
+  const username = useDesktopUsername();
+  const feed = useDesktopGenerationFeed({ mediaType: "video" });
+  const gallery = useGalleryData({
+    username,
+    filterMediaClasses: VIDEO_FILTER,
+    excludeUploads: true,
   });
 
-  // const inverseBatch = [...batches].reverse();
+  // Content only — while the gallery is still loading the shell keeps the
+  // hero + background up as a splash and fades them out when items land.
+  const hasContent =
+    feed.inProgress.length > 0 ||
+    feed.failed.length > 0 ||
+    feed.newlyCompleted.length > 0 ||
+    gallery.items.length > 0;
+
+  const newlyCompletedTokens = useMemo(
+    () => new Set(feed.newlyCompleted.map((item) => item.id)),
+    [feed.newlyCompleted],
+  );
+
+  // Flat, time-sorted completed list driving lightbox prev/next navigation.
+  const flatCompleted = useMemo(() => {
+    const seen = new Set<string>();
+    const merged: GalleryItem[] = [];
+    for (const item of feed.newlyCompleted) {
+      if (!seen.has(item.id)) {
+        seen.add(item.id);
+        merged.push(item);
+      }
+    }
+    for (const item of gallery.items) {
+      if (!seen.has(item.id)) {
+        seen.add(item.id);
+        merged.push(item);
+      }
+    }
+    merged.sort(
+      (a, b) =>
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+    );
+    return merged;
+  }, [feed.newlyCompleted, gallery.items]);
+
+  const flatCompletedRef = useRef(flatCompleted);
+  flatCompletedRef.current = flatCompleted;
+
+  // Open a completed row in the global lightbox (rendered by TopBar's
+  // gallery modal); prev/next walk the merged feed order.
+  const openInLightbox = useCallback((item: GalleryItem) => {
+    const list = flatCompletedRef.current;
+    const index = list.findIndex((i) => i.id === item.id);
+    galleryModalLightboxNavPrev.value =
+      index > 0 ? () => openInLightbox(list[index - 1]) : null;
+    galleryModalLightboxNavNext.value =
+      index >= 0 && index < list.length - 1
+        ? () => openInLightbox(list[index + 1])
+        : null;
+    galleryModalLightboxMediaId.value = item.id;
+    galleryModalLightboxImage.value = {
+      id: item.id,
+      label: item.label,
+      thumbnail: item.thumbnail,
+      fullImage: item.fullImage,
+      createdAt: item.createdAt,
+      mediaClass: item.mediaClass,
+    };
+    galleryModalLightboxVisible.value = true;
+  }, []);
 
   return (
-    <div
-      ref={containerRef}
-      className="flex h-[calc(100vh-56px)] w-full bg-ui-background"
-    >
-      <div className="relative h-full w-full p-16">
-        <div className="flex h-full w-full flex-col items-center justify-center rounded-md pb-12">
-          {/* TODO: Uncomment when backend supports history frontend id */}
-          {/* {!showPromptAtBottom && ( */}
-          <div
-            className={twMerge(
-              "relative z-20 mb-52 flex flex-col items-center justify-center text-center drop-shadow-xl",
-              imageRowVisible &&
-              (inputMode === "reference" &&
-                selectedVideoModel?.supportsReferenceMode
-                ? "mb-[30rem]"
-                : "mb-80"),
-            )}
-          >
-            <h1 className="text-7xl font-bold text-base-fg">Generate Video</h1>
-            <span className="pt-2 text-xl text-base-fg opacity-80">
-              Choose an image, add a prompt, then generate
-            </span>
-          </div>
-          {/* )} */}
-
-          {/* TODO: Uncomment when backend supports history frontend id */}
-          {/* {hasAnyBatches && (
-            <div
-              className="h-full w-full overflow-y-auto"
-              style={{ paddingBottom: bottomOffsetPx + 24 }}
-            >
-              <div className="mx-auto flex max-w-screen-2xl flex-col gap-8 pr-2">
-                {inverseBatch.map((batch) => (
-                  <div key={batch.id} className="flex items-start gap-4">
-                    <div className="grid flex-1 grid-cols-1 gap-4">
-                      {batch.status === "pending" && !batch.video ? (
-                        <div className="aspect-video w-full animate-pulse rounded-lg bg-white/5" />
-                      ) : batch.video ? (
-                        <button
-                          className="aspect-video w-full overflow-hidden rounded-lg"
-                          onClick={() => {
-                            // No-op for now (could open lightbox if desired)
-                          }}
-                        >
-                          <video
-                            className="h-full w-full object-cover"
-                            src={batch.video.cdn_url}
-                            controls
-                          />
-                        </button>
-                      ) : null}
-                    </div>
-                    <div>
-                      <div className="glass inline-block w-[320px] shrink-0 rounded-xl px-4 py-3 text-left text-sm text-white/90">
-                        <div>{batch.prompt}</div>
-                      </div>
-                      <div className="mt-2 flex justify-end">
-                        <Badge
-                          label={batch.modelLabel}
-                          className="px-2 py-1 text-xs opacity-70"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )} */}
-
-          <animated.div
-            className="fixed left-1/2 z-20 w-[860px] -translate-x-1/2"
-            style={promptAnim}
-          >
-            {/* TODO: Uncomment when backend supports history frontend id */}
-            {/* {showPromptAtBottom && batches.length > 0 && (
-              <div
-                className={`absolute ${imageRowVisible ? "-top-[108px]" : "-top-9"} flex w-full justify-end`}
-              >
-                <button
-                  onClick={() => resetBatches()}
-                  className="rounded-md bg-red/20 px-3 py-1 text-xs text-white/70 transition-colors hover:bg-red/30"
-                >
-                  Clear session
-                </button>
-              </div>
-            )} */}
-            <div ref={promptContentRef}>
-              <PromptBoxErrorBoundary>
-                <PromptBoxVideo
-                  useJobContext={() => jobContext}
-                  selectedModel={selectedVideoModel}
-                  selectedProvider={selectedProvider}
-                  imageMediaId={imageMediaId}
-                  url={imageUrl ?? undefined}
-                  onImageRowVisibilityChange={setImageRowVisible}
-                  uploadImage={UploadImageMedia}
-                  uploadVideo={UploadVideoMedia}
-                  uploadAudio={UploadAudioMedia}
-                  credits={videoCredits}
-                  onEnqueuePressed={async (prompt, subscriberIds) => {
-                    const modelLabel = selectedVideoModel?.fullName ?? "";
-                    for (const subscriberId of subscriberIds) {
-                      startBatch(prompt, modelLabel, subscriberId);
-                    }
-                  }}
-                />
-              </PromptBoxErrorBoundary>
-            </div>
-          </animated.div>
-
-          {/* TODO: Uncomment when backend supports history frontend id */}
-          {/* {!showPromptAtBottom && */}
-          <BackgroundGallery />
-          {/* } */}
-
-          <div className="absolute bottom-6 left-6 z-20 flex items-center gap-5">
-            <ClassyModelSelector
-              items={IMAGE_TO_VIDEO_PAGE_MODEL_LIST}
-              page={PAGE_ID}
-              panelTitle="Select Model"
-              panelClassName="min-w-[300px]"
-              buttonClassName="bg-transparent p-0 text-lg hover:bg-transparent text-white/80 hover:text-white"
-              showIconsInList
-              triggerLabel="Model"
-            />
-          </div>
-          <div className="absolute bottom-6 right-6 z-20 flex items-center gap-2">
-            <CostCalculatorButton modelPage={PAGE_ID} />
-            <HelpMenuButton />
+    <DesktopCreatePageShell
+      hasContent={hasContent}
+      emptyStateTitle="Create Video"
+      emptyStateSubtitle="Choose an image, add a prompt, then generate"
+      background={<BackgroundGallery />}
+      bottomOffset={promptHeight + 40}
+      listContent={
+        <DesktopGenerationGallery
+          inProgressJobs={feed.inProgress}
+          failedJobs={feed.failed}
+          onDismissFailed={feed.dismissFailed}
+          newlyCompletedItems={feed.newlyCompleted}
+          galleryItems={gallery.items}
+          newlyCompletedTokens={newlyCompletedTokens}
+          hasMore={gallery.hasMore}
+          isLoading={gallery.isLoading}
+          isInitialLoading={gallery.isInitialLoading}
+          onLoadMore={gallery.loadMore}
+          onGalleryItemClick={openInLightbox}
+        />
+      }
+      promptBox={
+        <div className="fixed bottom-4 left-1/2 z-20 w-full max-w-5xl -translate-x-1/2 px-2 sm:px-4">
+          <div ref={promptContentRef}>
+            <PromptBoxErrorBoundary>
+              <PromptBoxVideo
+                useJobContext={() => jobContext}
+                selectedModel={selectedVideoModel}
+                selectedProvider={selectedProvider}
+                imageMediaId={imageMediaId}
+                url={imageUrl ?? undefined}
+                uploadImage={UploadImageMedia}
+                uploadVideo={UploadVideoMedia}
+                uploadAudio={UploadAudioMedia}
+                credits={videoCredits}
+                modelSelector={
+                  <ClassyModelSelector
+                    variant="embedded"
+                    items={IMAGE_TO_VIDEO_PAGE_MODEL_LIST}
+                    page={PAGE_ID}
+                  />
+                }
+                onEnqueuePressed={async (prompt, subscriberIds) => {
+                  const modelLabel = selectedVideoModel?.fullName ?? "";
+                  for (const subscriberId of subscriberIds) {
+                    startBatch(prompt, modelLabel, subscriberId);
+                  }
+                  // Nudge the feed (and the TopBar task queue) to refetch so
+                  // the pending row appears immediately.
+                  window.dispatchEvent(new Event("task-queue-update"));
+                }}
+              />
+            </PromptBoxErrorBoundary>
           </div>
         </div>
-      </div>
-    </div>
+      }
+      bottomRight={
+        <>
+          <CostCalculatorButton modelPage={PAGE_ID} />
+          <HelpMenuButton />
+        </>
+      }
+    />
   );
 };
 

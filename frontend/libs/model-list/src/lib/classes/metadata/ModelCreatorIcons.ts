@@ -2,7 +2,7 @@ import React, { ReactNode } from "react";
 import { ModelCreator } from "./ModelCreator.js";
 import { IsDesktopApp } from "@storyteller/tauri-utils";
 
-const getServicesBasePath = (): string => {
+export const getServicesBasePath = (): string => {
   return IsDesktopApp() ? "/resources/images/services" : "/images/services";
 };
 

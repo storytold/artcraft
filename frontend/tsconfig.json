@@ -203,6 +203,9 @@
     },
     {
       "path": "./libs/components/video-editor"
+    },
+    {
+      "path": "./libs/components/generation-list"
     }
   ]
 }

@@ -1,15 +1,23 @@
-import { memo } from "react";
+import { memo, type ReactNode } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faArrowRotateRight,
-  faSpinnerThird,
-} from "@fortawesome/pro-solid-svg-icons";
-import { Tooltip } from "@storyteller/ui-tooltip";
-import { getModelCreatorIconPath } from "../../lib/omni-gen-hooks";
-import { useRecreateFromPromptToken } from "../../lib/recreate";
+import { faSpinnerThird } from "@fortawesome/pro-solid-svg-icons";
+import { getCreatorIconPathForModelId } from "@storyteller/model-list";
 import { CopyPromptButton } from "./CopyPromptButton";
 import { derivePendingStatus } from "./pending-status";
-import type { PendingCardProps } from "./PendingCard";
+
+export interface PendingRowProps {
+  id: string;
+  modelId: string;
+  modelLabel: string;
+  prompt: string;
+  progress?: number;
+  estimatedTimeLeftMs?: number;
+  batchCount?: number;
+  mediaClass: "image" | "video";
+  /** Hover-revealed action (e.g. a Recreate button) after the model label. */
+  recreateSlot?: ReactNode;
+  onCopyPromptResult?: (success: boolean) => void;
+}
 
 export const PendingRow = memo(function PendingRow({
   modelId,
@@ -18,18 +26,15 @@ export const PendingRow = memo(function PendingRow({
   progress,
   estimatedTimeLeftMs,
   batchCount,
-  promptToken,
-  recreateMediaClass,
-}: PendingCardProps) {
+  mediaClass,
+  recreateSlot,
+  onCopyPromptResult,
+}: PendingRowProps) {
   const { progressPercent, timeLabel } = derivePendingStatus(
     progress,
     estimatedTimeLeftMs,
   );
-  const iconPath = getModelCreatorIconPath(modelId);
-  const { isRecreating, handleRecreate } = useRecreateFromPromptToken(
-    promptToken,
-    recreateMediaClass,
-  );
+  const iconPath = getCreatorIconPathForModelId(modelId);
 
   return (
     <div className="group flex items-center gap-3 rounded-lg px-2.5 py-2">
@@ -58,7 +63,9 @@ export const PendingRow = memo(function PendingRow({
               Generating…
             </p>
           )}
-          {prompt.trim() && <CopyPromptButton text={prompt} />}
+          {prompt.trim() && (
+            <CopyPromptButton text={prompt} onCopyResult={onCopyPromptResult} />
+          )}
         </div>
         <div className="mt-1 flex items-center gap-1.5 text-xs text-white/45">
           <img
@@ -70,27 +77,16 @@ export const PendingRow = memo(function PendingRow({
           {batchCount != null && batchCount > 1 && (
             <>
               <span className="text-white/25">·</span>
-              <span className="shrink-0">{batchCount} videos</span>
+              <span className="shrink-0">
+                {batchCount} {mediaClass === "image" ? "images" : "videos"}
+              </span>
             </>
           )}
           {/* Recreate is hover-revealed on desktop (always visible on mobile),
               mirroring the completed GalleryRow's quick actions. */}
-          {promptToken && (
+          {recreateSlot && (
             <div className="flex shrink-0 items-center sm:ms-1 sm:opacity-0 transition-opacity sm:group-hover:opacity-100 sm:focus-within:opacity-100">
-              <Tooltip content="Recreate" position="top">
-                <button
-                  type="button"
-                  onClick={handleRecreate}
-                  disabled={isRecreating}
-                  aria-label="Recreate"
-                  className="flex h-7 w-7 items-center justify-center rounded-md text-white/60 transition-colors hover:bg-white/10 hover:text-white disabled:opacity-60"
-                >
-                  <FontAwesomeIcon
-                    icon={isRecreating ? faSpinnerThird : faArrowRotateRight}
-                    className={`text-sm ${isRecreating ? "animate-spin" : ""}`}
-                  />
-                </button>
-              </Tooltip>
+              {recreateSlot}
             </div>
           )}
         </div>

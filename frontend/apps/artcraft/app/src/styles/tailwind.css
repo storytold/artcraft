@@ -17,6 +17,6 @@
 
   .glass {
     @apply relative border border-white/10 shadow-lg backdrop-blur-xl transition-colors duration-300;
-    @apply bg-ui-controls/50 !important;
+    @apply bg-[#303032]/90 !important;
   }
 }

@@ -51,6 +51,7 @@ declare global {
       refImageUrls?: string[];
       modelType?: string;
       timestamp: number;
+      batchCount?: number;
     }) => void;
   }
 }
@@ -108,6 +109,9 @@ interface PromptBoxVideoProps {
   uploadVideo?: UploadImageFn;
   uploadAudio?: UploadImageFn;
   credits?: number | null;
+  /** Optional model-picker slot rendered at the start of the toolbar
+   *  (left of the aspect-ratio picker). */
+  modelSelector?: React.ReactNode;
 }
 
 export const PromptBoxVideo = ({
@@ -122,6 +126,7 @@ export const PromptBoxVideo = ({
   uploadVideo,
   uploadAudio,
   credits,
+  modelSelector,
 }: PromptBoxVideoProps) => {
   useSignals();
 
@@ -997,7 +1002,7 @@ export const PromptBoxVideo = ({
         )}
         <div
           className={twMerge(
-            "glass relative w-[860px] rounded-2xl p-4",
+            "glass relative w-full rounded-2xl p-4",
             isImageRowVisible && "rounded-t-none",
             isFocused
               ? "ring-1 ring-primary border-primary"
@@ -1071,6 +1076,7 @@ export const PromptBoxVideo = ({
           </div>
           <div className="mt-2 flex items-center justify-between gap-2">
             <div className="flex items-center gap-2">
+              {modelSelector}
               <Tooltip
                 content="Aspect Ratio"
                 position="top"

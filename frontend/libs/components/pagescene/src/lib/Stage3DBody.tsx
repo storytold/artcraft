@@ -545,7 +545,7 @@ export const Stage3DBody = ({
               </div>
             )}
             {(showCostCalculator || showHelpMenu) && (
-              <div className="absolute bottom-6 right-6 z-20 flex items-center gap-2">
+              <div className="absolute bottom-4 right-4 z-20 flex items-center gap-2">
                 {showCostCalculator && (
                   <CostCalculatorButton modelPage={PAGE_ID} />
                 )}

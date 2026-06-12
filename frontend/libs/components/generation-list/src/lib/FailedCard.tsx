@@ -1,13 +1,7 @@
-import { memo } from "react";
+import { memo, type ReactNode } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faArrowRotateRight,
-  faCircleExclamation,
-  faSpinnerThird,
-  faXmark,
-} from "@fortawesome/pro-solid-svg-icons";
-import { getModelCreatorIconPath } from "../../lib/omni-gen-hooks";
-import { useRecreateFromPromptToken } from "../../lib/recreate";
+import { faCircleExclamation, faXmark } from "@fortawesome/pro-solid-svg-icons";
+import { getCreatorIconPathForModelId } from "@storyteller/model-list";
 
 export interface FailedCardProps {
   id: string;
@@ -20,10 +14,8 @@ export interface FailedCardProps {
   // at low opacity so failed cards still hint at what the user was trying to
   // generate.
   refImageUrl?: string;
-  // Prompt token + media class enable the "Recreate" action. Without a prompt
-  // token there's nothing to seed the create page with, so the button hides.
-  promptToken?: string;
-  recreateMediaClass: "image" | "video";
+  /** Inline action (e.g. a labeled Recreate button) next to Dismiss. */
+  recreateSlot?: ReactNode;
   onDismiss: (id: string) => void;
 }
 
@@ -35,15 +27,10 @@ export const FailedCard = memo(function FailedCard({
   modelId,
   modelLabel,
   refImageUrl,
-  promptToken,
-  recreateMediaClass,
+  recreateSlot,
   onDismiss,
 }: FailedCardProps) {
-  const iconPath = modelId ? getModelCreatorIconPath(modelId) : null;
-  const { isRecreating, handleRecreate } = useRecreateFromPromptToken(
-    promptToken,
-    recreateMediaClass,
-  );
+  const iconPath = modelId ? getCreatorIconPathForModelId(modelId) : null;
 
   return (
     <div className="relative aspect-square w-full overflow-hidden rounded-lg bg-red-500/10">
@@ -69,20 +56,7 @@ export const FailedCard = memo(function FailedCard({
           </span>
         )}
         <div className="mt-1 flex items-center gap-1.5">
-          {promptToken && (
-            <button
-              type="button"
-              onClick={handleRecreate}
-              disabled={isRecreating}
-              className="flex items-center gap-1.5 rounded-md bg-white/5 px-3 py-1.5 text-xs text-white/70 transition-colors hover:bg-white/10 hover:text-white disabled:opacity-60"
-            >
-              <FontAwesomeIcon
-                icon={isRecreating ? faSpinnerThird : faArrowRotateRight}
-                className={isRecreating ? "animate-spin" : ""}
-              />
-              Recreate
-            </button>
-          )}
+          {recreateSlot}
           <button
             type="button"
             onClick={() => onDismiss(id)}

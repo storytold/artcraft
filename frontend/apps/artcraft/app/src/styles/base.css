@@ -647,3 +647,26 @@ img {
     transform: translateX(-100%);
   }
 }
+
+/* Shimmer skeleton used by the shared generation-list rows (matches the
+   webapp's .animate-shimmer — gradient sweep over a translucent base). */
+@keyframes generation-shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+.animate-shimmer {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.08) 50%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  animation: generation-shimmer 1.5s ease-in-out infinite;
+}

@@ -1,17 +1,12 @@
-import { memo, useCallback, useState } from "react";
+import { memo, useCallback, useState, type ReactNode } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faCube, faImage, faVideo } from "@fortawesome/pro-solid-svg-icons";
 import {
-  faArrowDownToLine,
-  faArrowRotateRight,
-  faCheck,
-  faLink,
-  faSpinnerThird,
-  faVideo,
-} from "@fortawesome/pro-solid-svg-icons";
-import { Tooltip } from "@storyteller/ui-tooltip";
+  getCreatorIconPathForModelId,
+  getModelDisplayName,
+} from "@storyteller/model-list";
 import { GalleryThumbnail } from "./GalleryThumbnail";
-import { useGalleryItemActions } from "./useGalleryItemActions";
-import type { GalleryItem } from "./useGalleryData";
+import type { GalleryItem } from "./types";
 
 // ── Persistent aspect ratio cache ─────────────────────────────────────────
 
@@ -58,43 +53,36 @@ export const aspectRatioCache = loadCache();
 
 // ── Component ──────────────────────────────────────────────────────────────
 
-interface GalleryCardProps {
+export interface GalleryCardProps {
   item: GalleryItem;
   onClick: (item: GalleryItem) => void;
   // "auto" = dynamic aspect ratio from the loaded image (masonry layouts).
   // "square" = fixed 1:1; skips the ratio measurement path (uniform grids).
   shape?: "auto" | "square";
-  // When true, image cards show a "Make Video" quick action that seeds the
-  // create-video page with the image as a reference. Enabled on the create
-  // image page only.
-  enableMakeVideo?: boolean;
+  /** Hover-revealed quick-action cluster (recreate / share / download …). */
+  actionsSlot?: ReactNode;
 }
 
 export const GalleryCard = memo(function GalleryCard({
   item,
   onClick,
   shape = "auto",
-  enableMakeVideo = false,
+  actionsSlot,
 }: GalleryCardProps) {
   const isSquare = shape === "square";
   const cached = aspectRatioCache.get(item.id);
   const [ratio, setRatio] = useState<number | undefined>(cached);
 
-  const {
-    mediaIcon,
-    mediaLabel,
-    modelDisplayName,
-    modelIconPath,
-    recreateMediaClass,
-    canMakeVideo,
-    isRecreating,
-    isDownloading,
-    shareCopied,
-    handleRecreate,
-    handleMakeVideo,
-    handleShare,
-    handleDownload,
-  } = useGalleryItemActions(item, { enableMakeVideo });
+  const isVideo = item.mediaClass === "video";
+  const is3D = item.mediaClass === "dimensional";
+  const mediaIcon = isVideo ? faVideo : is3D ? faCube : faImage;
+  const mediaLabel = isVideo ? "Video" : is3D ? "3D" : "Image";
+  const modelDisplayName = item.modelId
+    ? getModelDisplayName(item.modelId)
+    : null;
+  const modelIconPath = item.modelId
+    ? getCreatorIconPathForModelId(item.modelId)
+    : null;
 
   const displayRatio = ratio ? Math.min(ratio, MAX_RATIO) : 1;
 
@@ -151,7 +139,7 @@ export const GalleryCard = memo(function GalleryCard({
         <GalleryThumbnail
           thumbnail={item.thumbnail}
           alt={item.label}
-          isVideo={item.mediaClass === "video"}
+          isVideo={isVideo}
           fallbackIcon={mediaIcon}
           onLoad={measureRatio}
         />
@@ -176,65 +164,11 @@ export const GalleryCard = memo(function GalleryCard({
           )}
         </div>
 
-        <div className="pointer-events-auto flex shrink-0 items-center gap-0.5 rounded-lg bg-black/60 p-1 backdrop-blur-sm">
-          {recreateMediaClass && (
-            <Tooltip content="Recreate" position="top">
-              <button
-                type="button"
-                className="flex h-7 w-7 items-center justify-center rounded-md text-white/85 transition-colors hover:bg-white/15 hover:text-white disabled:opacity-60"
-                onClick={handleRecreate}
-                disabled={isRecreating}
-                aria-label="Recreate"
-              >
-                <FontAwesomeIcon
-                  icon={isRecreating ? faSpinnerThird : faArrowRotateRight}
-                  className={`text-sm ${isRecreating ? "animate-spin" : ""}`}
-                />
-              </button>
-            </Tooltip>
-          )}
-          {canMakeVideo && (
-            <Tooltip content="Make Video" position="top">
-              <button
-                type="button"
-                className="flex h-7 w-7 items-center justify-center rounded-md text-white/85 transition-colors hover:bg-white/15 hover:text-white"
-                onClick={handleMakeVideo}
-                aria-label="Make Video"
-              >
-                <FontAwesomeIcon icon={faVideo} className="text-sm" />
-              </button>
-            </Tooltip>
-          )}
-          <Tooltip content={shareCopied ? "Copied" : "Share"} position="top">
-            <button
-              type="button"
-              className="flex h-7 w-7 items-center justify-center rounded-md text-white/85 transition-colors hover:bg-white/15 hover:text-white"
-              onClick={handleShare}
-              aria-label="Share"
-            >
-              <FontAwesomeIcon
-                icon={shareCopied ? faCheck : faLink}
-                className="text-sm"
-              />
-            </button>
-          </Tooltip>
-          {item.fullImage && (
-            <Tooltip content="Download" position="top">
-              <button
-                type="button"
-                onClick={handleDownload}
-                disabled={isDownloading}
-                className="flex h-7 w-7 items-center justify-center rounded-md text-white/85 transition-colors hover:bg-white/15 hover:text-white disabled:opacity-60"
-                aria-label="Download"
-              >
-                <FontAwesomeIcon
-                  icon={isDownloading ? faSpinnerThird : faArrowDownToLine}
-                  className={`text-sm ${isDownloading ? "animate-spin" : ""}`}
-                />
-              </button>
-            </Tooltip>
-          )}
-        </div>
+        {actionsSlot && (
+          <div className="pointer-events-auto flex shrink-0 items-center gap-0.5 rounded-lg bg-black/60 p-1 backdrop-blur-sm">
+            {actionsSlot}
+          </div>
+        )}
       </div>
     </div>
   );

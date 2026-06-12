@@ -11,7 +11,11 @@ import {
 } from "@fortawesome/pro-solid-svg-icons";
 import { Button, GenerateButton } from "@storyteller/ui-button";
 import { GalleryItem, GalleryModal } from "@storyteller/ui-gallery-modal";
-import { MediaUploadApi, MediaFilesApi, downloadFileFromUrl } from "@storyteller/api";
+import {
+  MediaUploadApi,
+  MediaFilesApi,
+  downloadFileFromUrl,
+} from "@storyteller/api";
 import toast from "react-hot-toast";
 import { v4 as uuidv4 } from "uuid";
 
@@ -43,7 +47,11 @@ import {
   useCostBreakdownModalStore,
 } from "@storyteller/ui-pricing-modal";
 import { HelpMenuButton } from "@storyteller/ui-help-menu";
-import { HistoryStack, type ImageBundle, type BaseSelectorImage } from "@storyteller/ui-pagedraw";
+import {
+  HistoryStack,
+  type ImageBundle,
+  type BaseSelectorImage,
+} from "@storyteller/ui-pagedraw";
 
 const ANGLES_MODEL_PAGE = ModelPage.Angles;
 
@@ -76,7 +84,9 @@ export const Angles = () => {
   // State selectors (only re-render when specific values change)
   const sourceImageUrl = useAnglesStore((s) => s.sourceImageUrl);
   const sourceMediaToken = useAnglesStore((s) => s.sourceMediaToken);
-  const sourceThumbnailUrlTemplate = useAnglesStore((s) => s.sourceThumbnailUrlTemplate);
+  const sourceThumbnailUrlTemplate = useAnglesStore(
+    (s) => s.sourceThumbnailUrlTemplate,
+  );
   const imageDimensions = useAnglesStore((s) => s.imageDimensions);
   const angleConfig = useAnglesStore((s) => s.angleConfig);
   // const generateFromBestAngles = useAnglesStore(
@@ -194,11 +204,23 @@ export const Angles = () => {
         let thumbnailUrlTemplate: string | undefined;
         try {
           const api = new MediaFilesApi();
-          const mediaFile = await api.GetMediaFileByToken({ mediaFileToken: mediaToken });
+          const mediaFile = await api.GetMediaFileByToken({
+            mediaFileToken: mediaToken,
+          });
           if (mediaFile.success && mediaFile.data) {
-            const links = mediaFile.data.media_links as { cdn_url?: string; thumbnail_template?: string; maybe_thumbnail_template?: string } | undefined;
-            cdnUrl = links?.cdn_url || (mediaFile.data as any).public_bucket_url || objectUrl;
-            thumbnailUrlTemplate = links?.thumbnail_template || links?.maybe_thumbnail_template;
+            const links = mediaFile.data.media_links as
+              | {
+                  cdn_url?: string;
+                  thumbnail_template?: string;
+                  maybe_thumbnail_template?: string;
+                }
+              | undefined;
+            cdnUrl =
+              links?.cdn_url ||
+              (mediaFile.data as any).public_bucket_url ||
+              objectUrl;
+            thumbnailUrlTemplate =
+              links?.thumbnail_template || links?.maybe_thumbnail_template;
           }
         } catch {
           // Fall back to blob URL if fetching CDN info fails
@@ -288,7 +310,6 @@ export const Angles = () => {
         adjust_zoom: state.angleConfig.zoom,
         frontend_subscriber_id: subscriberId,
       });
-
     } catch (error) {
       console.error("Error generating angle:", error);
       toast.error("Failed to generate angle");
@@ -435,7 +456,12 @@ export const Angles = () => {
       ],
     };
     return [sourceBundle, ...historyBundles];
-  }, [sourceImageUrl, sourceMediaToken, sourceThumbnailUrlTemplate, historyBundles]);
+  }, [
+    sourceImageUrl,
+    sourceMediaToken,
+    sourceThumbnailUrlTemplate,
+    historyBundles,
+  ]);
 
   const handleHistoryImageSelect = useCallback(
     (image: BaseSelectorImage) => {
@@ -705,6 +731,11 @@ export const Angles = () => {
                     </div>
                   </Switch.Group> */}
 
+                  <ClassyModelSelector
+                    variant="embedded"
+                    items={ANGLES_PAGE_MODEL_LIST}
+                    page={ANGLES_MODEL_PAGE}
+                  />
                   <GenerateButton
                     variant="primary"
                     onClick={handleGenerate}
@@ -718,20 +749,8 @@ export const Angles = () => {
               </div>
             </div>
 
-            {/* ── Model selector (bottom-left) ── */}
-            <div className="absolute bottom-6 left-6 z-20 flex items-center gap-5">
-              <ClassyModelSelector
-                items={ANGLES_PAGE_MODEL_LIST}
-                page={ANGLES_MODEL_PAGE}
-                mode="hoverSelect"
-                panelTitle="Select Model"
-                panelClassName="min-w-[300px]"
-                showIconsInList
-              />
-            </div>
-
             {/* ── Cost calculator + Help (bottom-right) ── */}
-            <div className="absolute bottom-6 right-6 z-20 flex items-center gap-2">
+            <div className="absolute bottom-4 right-4 z-20 flex items-center gap-2">
               <CostCalculatorButton modelPage={ANGLES_MODEL_PAGE} />
               <HelpMenuButton />
             </div>

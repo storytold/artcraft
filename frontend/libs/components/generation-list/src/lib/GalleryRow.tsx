@@ -1,47 +1,50 @@
-import { memo, useCallback } from "react";
+import { memo, useCallback, type ReactNode } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faCube, faImage, faPlay, faVideo } from "@fortawesome/pro-solid-svg-icons";
 import {
-  faArrowDownToLine,
-  faArrowRotateRight,
-  faCheck,
-  faLink,
-  faPlay,
-  faSpinnerThird,
-  faVideo,
-} from "@fortawesome/pro-solid-svg-icons";
-import { Tooltip } from "@storyteller/ui-tooltip";
+  getCreatorIconPathForModelId,
+  getModelDisplayName,
+} from "@storyteller/model-list";
 import { GalleryThumbnail } from "./GalleryThumbnail";
 import { CopyPromptButton } from "./CopyPromptButton";
-import {
-  useGalleryItemActions,
-  type GalleryItemActions,
-} from "./useGalleryItemActions";
-import { formatTimeAgo } from "../../lib/format-time-ago";
-import type { GalleryItem } from "./useGalleryData";
+import { formatTimeAgo } from "./format-time-ago";
+import type { GalleryItem } from "./types";
 
-interface GalleryRowProps {
+export interface GalleryRowProps {
   item: GalleryItem;
   onClick: (item: GalleryItem) => void;
-  enableMakeVideo?: boolean;
   // Prompt + model resolved from the prompt record by the list. Fall back to
   // the item's own fields when the prompt hasn't loaded (or has no text).
   title?: string;
   modelId?: string;
   // The prompt record is still resolving — show a skeleton in place of the title.
   loading?: boolean;
+  /** Hover-revealed quick-action cluster (recreate / share / download …). */
+  actionsSlot?: ReactNode;
+  onCopyPromptResult?: (success: boolean) => void;
 }
 
 export const GalleryRow = memo(function GalleryRow({
   item,
   onClick,
-  enableMakeVideo = false,
   title,
   modelId,
   loading = false,
+  actionsSlot,
+  onCopyPromptResult,
 }: GalleryRowProps) {
-  const actions = useGalleryItemActions(item, { enableMakeVideo, modelId });
-  const { isVideo, mediaIcon, mediaLabel, modelDisplayName, modelIconPath } =
-    actions;
+  const isVideo = item.mediaClass === "video";
+  const is3D = item.mediaClass === "dimensional";
+  const mediaIcon = isVideo ? faVideo : is3D ? faCube : faImage;
+  const mediaLabel = isVideo ? "Video" : is3D ? "3D" : "Image";
+
+  const effectiveModelId = modelId ?? item.modelId;
+  const modelDisplayName = effectiveModelId
+    ? getModelDisplayName(effectiveModelId)
+    : null;
+  const modelIconPath = effectiveModelId
+    ? getCreatorIconPathForModelId(effectiveModelId)
+    : null;
 
   const handleRowClick = useCallback(() => onClick(item), [item, onClick]);
   const handleRowKeyDown = useCallback(
@@ -97,7 +100,12 @@ export const GalleryRow = memo(function GalleryRow({
             <p className="line-clamp-3 min-w-0 flex-1 text-sm leading-snug text-white/90">
               {title || item.label}
             </p>
-            {title && <CopyPromptButton text={title} />}
+            {title && (
+              <CopyPromptButton
+                text={title}
+                onCopyResult={onCopyPromptResult}
+              />
+            )}
           </div>
         )}
         <div className="mt-1 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-xs text-white/45">
@@ -121,12 +129,11 @@ export const GalleryRow = memo(function GalleryRow({
           {/* Quick actions, right after the media type. Always visible on
               mobile (no hover); hover-revealed on desktop. The prompt above
               spans the full row width either way. */}
-          <div className="flex shrink-0 items-center gap-0.5 sm:ms-1.5 transition-opacity sm:opacity-0 sm:group-hover:opacity-100 sm:focus-within:opacity-100">
-            <GalleryRowActions
-              actions={actions}
-              hasDownload={!!item.fullImage}
-            />
-          </div>
+          {actionsSlot && (
+            <div className="flex shrink-0 items-center gap-0.5 sm:ms-1.5 transition-opacity sm:opacity-0 sm:group-hover:opacity-100 sm:focus-within:opacity-100">
+              {actionsSlot}
+            </div>
+          )}
           <span className="ml-auto shrink-0 whitespace-nowrap text-white/40">
             {timeAgo}
           </span>
@@ -135,91 +142,3 @@ export const GalleryRow = memo(function GalleryRow({
     </div>
   );
 });
-
-// Recreate / make-video / share / download buttons, shared by the desktop
-// (hover) and mobile (inline) clusters. Each handler stops propagation so taps
-// don't also open the lightbox.
-function GalleryRowActions({
-  actions,
-  hasDownload,
-}: {
-  actions: GalleryItemActions;
-  hasDownload: boolean;
-}) {
-  const {
-    recreateMediaClass,
-    canMakeVideo,
-    isRecreating,
-    isDownloading,
-    shareCopied,
-    handleRecreate,
-    handleMakeVideo,
-    handleShare,
-    handleDownload,
-  } = actions;
-
-  const buttonClass =
-    "flex h-8 w-8 items-center justify-center rounded-md text-white/70 transition-colors hover:bg-white/10 hover:text-white disabled:opacity-60";
-
-  return (
-    <>
-      {recreateMediaClass && (
-        <Tooltip content="Recreate" position="top">
-          <button
-            type="button"
-            onClick={handleRecreate}
-            disabled={isRecreating}
-            aria-label="Recreate"
-            className={buttonClass}
-          >
-            <FontAwesomeIcon
-              icon={isRecreating ? faSpinnerThird : faArrowRotateRight}
-              className={`text-sm ${isRecreating ? "animate-spin" : ""}`}
-            />
-          </button>
-        </Tooltip>
-      )}
-      {canMakeVideo && (
-        <Tooltip content="Make Video" position="top">
-          <button
-            type="button"
-            onClick={handleMakeVideo}
-            aria-label="Make Video"
-            className={buttonClass}
-          >
-            <FontAwesomeIcon icon={faVideo} className="text-sm" />
-          </button>
-        </Tooltip>
-      )}
-      <Tooltip content={shareCopied ? "Copied" : "Share"} position="top">
-        <button
-          type="button"
-          onClick={handleShare}
-          aria-label="Share"
-          className={buttonClass}
-        >
-          <FontAwesomeIcon
-            icon={shareCopied ? faCheck : faLink}
-            className="text-sm"
-          />
-        </button>
-      </Tooltip>
-      {hasDownload && (
-        <Tooltip content="Download" position="top">
-          <button
-            type="button"
-            onClick={handleDownload}
-            disabled={isDownloading}
-            aria-label="Download"
-            className={buttonClass}
-          >
-            <FontAwesomeIcon
-              icon={isDownloading ? faSpinnerThird : faArrowDownToLine}
-              className={`text-sm ${isDownloading ? "animate-spin" : ""}`}
-            />
-          </button>
-        </Tooltip>
-      )}
-    </>
-  );
-}

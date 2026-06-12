@@ -1,16 +1,25 @@
-import { memo } from "react";
+import { memo, type ReactNode } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faArrowRotateRight,
-  faCircleExclamation,
-  faSpinnerThird,
-  faXmark,
-} from "@fortawesome/pro-solid-svg-icons";
-import { Tooltip } from "@storyteller/ui-tooltip";
-import { getModelCreatorIconPath } from "../../lib/omni-gen-hooks";
-import { useRecreateFromPromptToken } from "../../lib/recreate";
+import { faCircleExclamation, faXmark } from "@fortawesome/pro-solid-svg-icons";
+import { getCreatorIconPathForModelId } from "@storyteller/model-list";
 import { CopyPromptButton } from "./CopyPromptButton";
-import type { FailedCardProps } from "./FailedCard";
+
+export interface FailedRowProps {
+  id: string;
+  failureReason?: string;
+  failureMessage?: string;
+  prompt: string;
+  modelId: string;
+  modelLabel: string;
+  // First user-supplied still image, if any. Rendered behind the error overlay
+  // at low opacity so failed rows still hint at what the user was trying to
+  // generate.
+  refImageUrl?: string;
+  /** Inline action (e.g. a Recreate button) after the failure reason. */
+  recreateSlot?: ReactNode;
+  onDismiss: (id: string) => void;
+  onCopyPromptResult?: (success: boolean) => void;
+}
 
 export const FailedRow = memo(function FailedRow({
   id,
@@ -20,15 +29,11 @@ export const FailedRow = memo(function FailedRow({
   modelId,
   modelLabel,
   refImageUrl,
-  promptToken,
-  recreateMediaClass,
+  recreateSlot,
   onDismiss,
-}: FailedCardProps) {
-  const iconPath = modelId ? getModelCreatorIconPath(modelId) : null;
-  const { isRecreating, handleRecreate } = useRecreateFromPromptToken(
-    promptToken,
-    recreateMediaClass,
-  );
+  onCopyPromptResult,
+}: FailedRowProps) {
+  const iconPath = modelId ? getCreatorIconPathForModelId(modelId) : null;
 
   return (
     <div className="flex items-center gap-3 rounded-lg px-2.5 py-2">
@@ -54,23 +59,10 @@ export const FailedRow = memo(function FailedRow({
           <p className="min-w-0 flex-1 truncate text-sm font-medium text-red-400">
             {failureReason || "Generation failed"}
           </p>
-          {prompt && <CopyPromptButton text={prompt} />}
-          {promptToken && (
-            <Tooltip content="Recreate" position="top">
-              <button
-                type="button"
-                onClick={handleRecreate}
-                disabled={isRecreating}
-                aria-label="Recreate"
-                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-white/40 transition-colors hover:bg-white/10 hover:text-white disabled:opacity-60"
-              >
-                <FontAwesomeIcon
-                  icon={isRecreating ? faSpinnerThird : faArrowRotateRight}
-                  className={`text-sm ${isRecreating ? "animate-spin" : ""}`}
-                />
-              </button>
-            </Tooltip>
+          {prompt && (
+            <CopyPromptButton text={prompt} onCopyResult={onCopyPromptResult} />
           )}
+          {recreateSlot}
         </div>
         {prompt && (
           <p className="mt-0.5 truncate text-xs text-white/45">{prompt}</p>

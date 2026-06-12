@@ -48,12 +48,12 @@ export interface AppDescriptor {
 export const APP_DESCRIPTORS: AppDescriptor[] = [
   {
     id: "IMAGE",
-    label: "Text to Image",
+    label: "Create Image",
     icon: faImage,
   },
   {
     id: "VIDEO",
-    label: "Generate Video",
+    label: "Create Video",
     icon: faFilm,
   },
   {
@@ -88,7 +88,7 @@ export interface FullAppItem {
 export const ALL_APPS: FullAppItem[] = [
   {
     id: "text-to-image",
-    label: "Text to Image",
+    label: "Create Image",
     description: "Generate AI images",
     icon: faImage,
     category: "generate",
@@ -97,7 +97,7 @@ export const ALL_APPS: FullAppItem[] = [
   },
   {
     id: "image-to-video",
-    label: "Generate Video",
+    label: "Create Video",
     description: "Create video from images",
     icon: faFilm,
     category: "generate",

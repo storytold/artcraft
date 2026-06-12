@@ -208,6 +208,28 @@ export default function CreateImage() {
     excludeUploads: true,
   });
 
+  // Map job token → batch count so the pending card/row can show
+  // "Generating N images" — the batch runs as a single job chip.
+  const batches = useCreateImageStore((s) => s.batches);
+  const jobTokenToBatchCount = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const batch of batches) {
+      if (batch.jobToken && batch.requestedCount > 1) {
+        map.set(batch.jobToken, batch.requestedCount);
+      }
+    }
+    return map;
+  }, [batches]);
+
+  const enrichedInProgress = useMemo(
+    () =>
+      jobs.inProgress.map((job) => {
+        const batchCount = jobTokenToBatchCount.get(job.id);
+        return batchCount ? { ...job, batchCount } : job;
+      }),
+    [jobs.inProgress, jobTokenToBatchCount],
+  );
+
   const newlyCompletedTokens = useMemo(
     () => new Set(jobs.newlyCompleted.map((i) => i.id)),
     [jobs.newlyCompleted],
@@ -565,7 +587,7 @@ export default function CreateImage() {
       promptForm={mobileForm}
       gridContent={
         <GenerationGallery
-          inProgressJobs={jobs.inProgress}
+          inProgressJobs={enrichedInProgress}
           failedJobs={jobs.failed}
           onDismissFailed={jobs.dismissFailed}
           newlyCompletedItems={jobs.newlyCompleted}

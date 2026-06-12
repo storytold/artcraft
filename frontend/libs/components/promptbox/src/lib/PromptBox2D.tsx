@@ -54,6 +54,9 @@ export interface PromptBox2DProps {
   onAspectRatioChange?: (ratio: AspectRatio) => void;
   onFitPressed?: () => void | Promise<void>;
   usePrompt2DStore: UseBoundStore<StoreApi<Prompt2DStore>>;
+  /** Optional model-picker slot rendered at the start of the toolbar
+   *  (left of the aspect-ratio picker). */
+  modelSelector?: React.ReactNode;
 }
 
 export const PromptBox2D = ({
@@ -69,6 +72,7 @@ export const PromptBox2D = ({
   onAspectRatioChange,
   onFitPressed,
   usePrompt2DStore,
+  modelSelector,
 }: PromptBox2DProps) => {
   useSignals();
 
@@ -442,6 +446,7 @@ export const PromptBox2D = ({
           </div>
           <div className="mt-2 flex items-center justify-between gap-2">
             <div className="flex items-center gap-2">
+              {modelSelector}
               {selectedImageModel?.canChangeAspectRatio && (
                 <Tooltip
                   content="Aspect ratio"

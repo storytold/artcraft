@@ -203,7 +203,7 @@
 @layer components {
   .glass {
     @apply relative border border-white/10 shadow-lg backdrop-blur-3xl transition-colors duration-300;
-    @apply bg-[#303034]/90 !important;
+    @apply bg-[#303032]/90 !important;
   }
 }
 

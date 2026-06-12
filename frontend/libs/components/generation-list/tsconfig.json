@@ -1,0 +1,28 @@
+{
+  "files": [],
+  "include": [],
+  "references": [
+    {
+      "path": "../tooltip"
+    },
+    {
+      "path": "../loading-spinner"
+    },
+    {
+      "path": "../../common"
+    },
+    {
+      "path": "../../api"
+    },
+    {
+      "path": "../../model-list"
+    },
+    {
+      "path": "./tsconfig.lib.json"
+    },
+    {
+      "path": "./tsconfig.spec.json"
+    }
+  ],
+  "extends": "../../../tsconfig.base.json"
+}

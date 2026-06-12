@@ -1,12 +1,7 @@
-import { memo } from "react";
+import { memo, type ReactNode } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faArrowRotateRight,
-  faSpinnerThird,
-} from "@fortawesome/pro-solid-svg-icons";
-import { Tooltip } from "@storyteller/ui-tooltip";
-import { getModelCreatorIconPath } from "../../lib/omni-gen-hooks";
-import { useRecreateFromPromptToken } from "../../lib/recreate";
+import { faSpinnerThird } from "@fortawesome/pro-solid-svg-icons";
+import { getCreatorIconPathForModelId } from "@storyteller/model-list";
 import { derivePendingStatus } from "./pending-status";
 
 export interface PendingCardProps {
@@ -17,9 +12,9 @@ export interface PendingCardProps {
   progress?: number;
   estimatedTimeLeftMs?: number;
   batchCount?: number;
-  // Prompt token + media class enable the "Recreate" action mid-generation.
-  promptToken?: string;
-  recreateMediaClass: "image" | "video";
+  mediaClass: "image" | "video";
+  /** Hover-revealed action (e.g. a Recreate button) next to the prompt. */
+  recreateSlot?: ReactNode;
 }
 
 export const PendingCard = memo(function PendingCard({
@@ -29,26 +24,24 @@ export const PendingCard = memo(function PendingCard({
   progress,
   estimatedTimeLeftMs,
   batchCount,
-  promptToken,
-  recreateMediaClass,
+  mediaClass,
+  recreateSlot,
 }: PendingCardProps) {
   const { progressPercent, timeLabel } = derivePendingStatus(
     progress,
     estimatedTimeLeftMs,
   );
 
-  const iconPath = getModelCreatorIconPath(modelId);
-  const { isRecreating, handleRecreate } = useRecreateFromPromptToken(
-    promptToken,
-    recreateMediaClass,
-  );
+  const iconPath = getCreatorIconPathForModelId(modelId);
 
   return (
     <div className="group relative aspect-square w-full overflow-hidden rounded-lg bg-white/[0.03]">
       <div className="animate-shimmer h-full w-full" />
       {batchCount != null && batchCount > 1 && (
         <div className="absolute left-2 right-2 top-2 z-10 rounded-md bg-black/60 px-2.5 py-1.5 text-center text-[10px] leading-snug text-white/70 backdrop-blur-sm">
-          Generating {batchCount} videos · Results may appear one at a time
+          Generating {batchCount}{" "}
+          {mediaClass === "image" ? "images" : "videos"} · Results may appear
+          one at a time
         </div>
       )}
       <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
@@ -70,22 +63,7 @@ export const PendingCard = memo(function PendingCard({
           <p className="line-clamp-3 min-w-0 flex-1 text-xs leading-relaxed text-white/80">
             {prompt}
           </p>
-          {promptToken && (
-            <Tooltip content="Recreate" position="top">
-              <button
-                type="button"
-                onClick={handleRecreate}
-                disabled={isRecreating}
-                aria-label="Recreate"
-                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-white/70 opacity-0 transition hover:bg-white/15 hover:text-white focus-visible:opacity-100 group-hover:opacity-100 disabled:opacity-60"
-              >
-                <FontAwesomeIcon
-                  icon={isRecreating ? faSpinnerThird : faArrowRotateRight}
-                  className={`text-sm ${isRecreating ? "animate-spin" : ""}`}
-                />
-              </button>
-            </Tooltip>
-          )}
+          {recreateSlot}
         </div>
         <div className="mt-1.5 flex items-center gap-1.5">
           <img

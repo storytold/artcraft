@@ -6,6 +6,7 @@ export * from "./lib/classes/properties/CommonResolution.js";
 export * from "./lib/classes/properties/CommonQuality.js";
 export * from "./lib/classes/metadata/ModelCreator.js";
 export * from "./lib/classes/metadata/ModelCreatorIcons.js";
+export * from "./lib/classes/metadata/ModelCreatorIconForId.js";
 export * from "./lib/classes/metadata/ModelMapping.js";
 export * from "./lib/classes/metadata/PromptFormatters.js";
 export * from "./lib/classes/metadata/ModelTag.js";

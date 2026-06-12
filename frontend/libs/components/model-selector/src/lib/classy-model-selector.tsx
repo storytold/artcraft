@@ -11,6 +11,7 @@ import { Model } from "@storyteller/model-list";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCircleCheck, faChevronUp } from "@fortawesome/pro-solid-svg-icons";
 import { GenerationProvider } from "@storyteller/api-enums";
+import { Tooltip } from "@storyteller/ui-tooltip";
 import { defaultModelForPage } from "./defaultModelForPage";
 
 interface ClassyModelSelectorProps {
@@ -25,6 +26,14 @@ interface ClassyModelSelectorProps {
   providersByModel?: Partial<Record<string, Provider[]>>;
   providerTooltipDelayMs?: number;
   maxListHeight?: number | string;
+  /**
+   * "floating": the original standalone selector (large two-line trigger with
+   * model name + provider, hover-to-open list). "embedded": a compact pill
+   * (creator icon + model name) for use inside a promptbox option row; opens
+   * a webapp-style rich list on click. Both share the same store wiring and
+   * provider-selection rows.
+   */
+  variant?: "floating" | "embedded";
 }
 
 const DEFAULT_PROVIDER_OPTIONS: GenerationProvider[] = [GenerationProvider.Artcraft];
@@ -103,6 +112,7 @@ export function ClassyModelSelector({
   providersByModel,
   providerTooltipDelayMs = 300,
   maxListHeight = "60vh",
+  variant = "floating",
   ...popoverProps
 }: ClassyModelSelectorProps) {
   const { selectedModels, setSelectedModel, setSelectedProvider } =
@@ -205,6 +215,31 @@ export function ClassyModelSelector({
       providerTooltipDelayMs,
     ],
   );
+
+  if (variant === "embedded") {
+    const selectedIcon = modelList.find((i) => i.selected)?.icon;
+    return (
+      <Tooltip content="Model" position="top" className="z-50" closeOnClick>
+        <PopoverMenu
+          items={modelList}
+          onSelect={handleModelSelect}
+          mode="toggle"
+          richList
+          panelTitle="Select Model"
+          panelClassName="w-[360px]"
+          maxListHeight={maxListHeight}
+          buttonClassName="max-w-48"
+          triggerIcon={
+            selectedIcon ? (
+              <span className="flex h-4 w-4 shrink-0 items-center justify-center">
+                {selectedIcon}
+              </span>
+            ) : undefined
+          }
+        />
+      </Tooltip>
+    );
+  }
 
   return (
     <div className="flex items-center gap-3">

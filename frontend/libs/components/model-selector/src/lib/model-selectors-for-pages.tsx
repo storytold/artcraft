@@ -1,5 +1,5 @@
 import type { PopoverItem } from "@storyteller/ui-popover";
-import { faClock, faCube, faFilm, faImage } from "@fortawesome/pro-solid-svg-icons";
+import { faCube, faFilm, faImage } from "@fortawesome/pro-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   getCreatorIcon,
@@ -24,10 +24,6 @@ const buildItems = (
     label: model.selectorName,
     icon: withIcon(getCreatorIcon(model.creator), fallbackIcon),
     description: model.selectorDescription,
-    badges: model.toLegacyBadges()?.map((b) => ({
-      label: b.label,
-      icon: <FontAwesomeIcon icon={faClock} />,
-    })),
     modelConfig: model.toLegacyModelConfig(), // Access to full object.
     model: model,
   }));

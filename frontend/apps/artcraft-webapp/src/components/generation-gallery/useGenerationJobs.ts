@@ -11,35 +11,11 @@ import type { GalleryItem } from "./useGalleryData";
 import { getCachedPrompt, usePrompts } from "../../lib/prompts-cache";
 
 // ── Types ──────────────────────────────────────────────────────────────────
+// The job shapes moved to the shared generation-list lib; re-exported here so
+// existing import sites keep working.
 
-export interface InProgressJob {
-  id: string;
-  prompt: string;
-  modelId: string;
-  modelLabel: string;
-  progress: number;
-  estimatedTimeLeftMs?: number;
-  createdAt: string;
-  batchCount?: number;
-  // Prompt token + media class enable the "Recreate" action while the job is
-  // still running, mirroring the failed/completed cards.
-  promptToken?: string;
-  mediaClass: "image" | "video";
-}
-
-export interface FailedJob {
-  id: string;
-  prompt: string;
-  modelId: string;
-  modelLabel: string;
-  failureReason?: string;
-  failureMessage?: string;
-  status: string;
-  createdAt: string;
-  promptToken?: string;
-  refImageUrl?: string;
-  mediaClass: "image" | "video";
-}
+export type { InProgressJob, FailedJob } from "@storyteller/ui-generation-list";
+import type { InProgressJob, FailedJob } from "@storyteller/ui-generation-list";
 
 // ── Constants ──────────────────────────────────────────────────────────────
 

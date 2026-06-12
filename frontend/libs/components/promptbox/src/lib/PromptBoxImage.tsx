@@ -54,6 +54,9 @@ interface PromptBoxImageProps {
   url?: string;
   onImageRowVisibilityChange?: (visible: boolean) => void;
   credits?: number | null;
+  /** Optional model-picker slot rendered at the start of the toolbar
+   *  (left of the aspect-ratio picker). */
+  modelSelector?: ReactNode;
 }
 
 export const PromptBoxImage = ({
@@ -66,6 +69,7 @@ export const PromptBoxImage = ({
   url,
   onImageRowVisibilityChange,
   credits,
+  modelSelector,
 }: PromptBoxImageProps) => {
   useSignals();
 
@@ -338,6 +342,7 @@ export const PromptBoxImage = ({
         refImageUrls: referenceImages?.map((img) => img.url).filter(Boolean),
         modelType: (selectedModel as any)?.tauriId || String(selectedModel),
         timestamp: Date.now(),
+        batchCount: generationCount,
       });
 
       console.debug("Image Generation Request", request);
@@ -419,7 +424,7 @@ export const PromptBoxImage = ({
 
         <div
           className={twMerge(
-            "glass relative w-[860px] rounded-2xl p-4",
+            "glass relative w-full rounded-2xl p-4",
             isImageRowVisible &&
               selectedModel?.canUseImagePrompt &&
               "rounded-t-none",
@@ -484,6 +489,7 @@ export const PromptBoxImage = ({
           </div>
           <div className="mt-2 flex items-center justify-between gap-2">
             <div className="flex items-center gap-2">
+              {modelSelector}
               {selectedModel?.supportsNewAspectRatio() && (
                 <AspectRatioPicker
                   model={selectedModel}

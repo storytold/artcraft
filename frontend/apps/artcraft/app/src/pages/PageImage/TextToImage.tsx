@@ -1,37 +1,17 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import {
-  JobContextType,
-  getThumbnailUrl,
-  THUMBNAIL_SIZES,
-} from "@storyteller/common";
+import { JobContextType } from "@storyteller/common";
 import { PromptBoxImage } from "@storyteller/ui-promptbox";
-import { UploadImageMedia } from "@storyteller/api";
+import { UploadImageMedia, FilterMediaClasses } from "@storyteller/api";
 import BackgroundGallery from "./BackgroundGallery";
-import { listen, UnlistenFn } from "@tauri-apps/api/event";
 import {
   TEXT_TO_IMAGE_PAGE_MODEL_LIST,
   ModelPage,
   ClassyModelSelector,
   useSelectedImageModel,
   useSelectedProviderForModel,
-  //ProviderSelector,
-  //PROVIDER_LOOKUP_BY_PAGE,
 } from "@storyteller/ui-model-selector";
-import { ImageModel, getCreatorIcon } from "@storyteller/model-list";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faCheck,
-  faCircleExclamation,
-  faCopy,
-  faXmark,
-} from "@fortawesome/pro-solid-svg-icons";
-interface TextToImageProps {
-  imageMediaId?: string;
-  imageUrl?: string;
-}
-//import { useTextToImageGenerationCompleteEvent } from "@storyteller/tauri-events";
+import { ImageModel } from "@storyteller/model-list";
 import { useTextToImageStore } from "./TextToImageStore";
-import { animated, useSpring } from "@react-spring/web";
 import {
   galleryModalLightboxImage,
   galleryModalLightboxMediaId,
@@ -39,28 +19,32 @@ import {
   galleryModalLightboxNavPrev,
   galleryModalLightboxNavNext,
 } from "@storyteller/ui-gallery-modal";
-import { Badge } from "@storyteller/ui-badge";
-import { twMerge } from "tailwind-merge";
 import { HelpMenuButton } from "@storyteller/ui-help-menu";
 import {
   CostCalculatorButton,
   useCostBreakdownModalStore,
 } from "@storyteller/ui-pricing-modal";
 import { GenerationProvider } from "@storyteller/api-enums";
-import Button from "node_modules/@storyteller/ui-button/src/lib/button";
+import {
+  useGalleryData,
+  type GalleryItem,
+} from "@storyteller/ui-generation-list";
+import { useDesktopGenerationFeed } from "~/components/generation-feed/useDesktopGenerationFeed";
+import { useDesktopUsername } from "~/components/generation-feed/useDesktopUsername";
+import { DesktopCreatePageShell } from "~/components/generation-feed/DesktopCreatePageShell";
+import { DesktopGenerationGallery } from "~/components/generation-feed/DesktopGenerationGallery";
 
 const PAGE_ID: ModelPage = ModelPage.TextToImage;
 
+const IMAGE_FILTER = [FilterMediaClasses.IMAGE];
+
+interface TextToImageProps {
+  imageMediaId?: string;
+  imageUrl?: string;
+}
+
 const TextToImage = ({ imageMediaId, imageUrl }: TextToImageProps) => {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const batches = useTextToImageStore((s) => s.batches);
   const startBatch = useTextToImageStore((s) => s.startBatch);
-  //const completeBatch = useTextToImageStore((s) => s.completeBatch);
-  const failBatch = useTextToImageStore((s) => s.failBatch);
-  const dismissBatch = useTextToImageStore((s) => s.dismissBatch);
-  const resetBatches = useTextToImageStore((s) => s.reset);
-  const [imageRowVisible, setImageRowVisible] = useState(false);
-  const [copiedBatchId, setCopiedBatchId] = useState<string | null>(null);
   const promptContentRef = useRef<HTMLDivElement>(null);
   const [promptHeight, setPromptHeight] = useState<number>(138);
 
@@ -76,23 +60,12 @@ const TextToImage = ({ imageMediaId, imageUrl }: TextToImageProps) => {
 
   const jobContext: JobContextType = {
     jobTokens: [],
-    addJobToken: () => { },
-    removeJobToken: () => { },
-    clearJobTokens: () => { },
+    addJobToken: () => {},
+    removeJobToken: () => {},
+    clearJobTokens: () => {},
   };
 
-  const hasAnyBatches = batches.length > 0;
-  const showPromptAtBottom = useMemo(() => hasAnyBatches, [hasAnyBatches]);
-
-  const [vh, setVh] = useState<number>(
-    typeof window !== "undefined" ? window.innerHeight : 800,
-  );
-  useEffect(() => {
-    const onResize = () => setVh(window.innerHeight);
-    window.addEventListener("resize", onResize);
-    return () => window.removeEventListener("resize", onResize);
-  }, []);
-
+  // Track the promptbox height so the feed can pad past it.
   useEffect(() => {
     const el = promptContentRef.current;
     if (!el || typeof ResizeObserver === "undefined") return;
@@ -103,323 +76,145 @@ const TextToImage = ({ imageMediaId, imageUrl }: TextToImageProps) => {
     return () => ro.disconnect();
   }, []);
 
-  const bottomMarginPx = 24;
-  const bottomOffsetPx = promptHeight + bottomMarginPx;
-  const targetTop = showPromptAtBottom
-    ? Math.max(0, vh - bottomOffsetPx)
-    : Math.floor(vh / 2);
-  const promptAnim = useSpring({
-    top: targetTop,
-    config: { tension: 200, friction: 28, mass: 1.1 },
+  // The merged generation feed: in-progress / failed from the Tauri task
+  // queue, completed history from the library (like the webapp list view).
+  const username = useDesktopUsername();
+  const feed = useDesktopGenerationFeed({ mediaType: "image" });
+  const gallery = useGalleryData({
+    username,
+    filterMediaClasses: IMAGE_FILTER,
+    excludeUploads: true,
   });
 
-  // Listen for generation-failed-event and mark the oldest pending image batch as failed
-  useEffect(() => {
-    let unlisten: Promise<UnlistenFn> | null = null;
-    unlisten = listen<{ data: { action: string; reason?: string } }>(
-      "generation-failed-event",
-      (event) => {
-        const { action, reason } = event.payload.data;
-        if (action === "generate_image") {
-          failBatch(reason || "Generation failed");
-        }
-      },
-    );
-    return () => {
-      if (unlisten) unlisten.then((f) => f());
-    };
-  }, [failBatch]);
+  // Content only — while the gallery is still loading the shell keeps the
+  // hero + background up as a splash and fades them out when items land.
+  const hasContent =
+    feed.inProgress.length > 0 ||
+    feed.failed.length > 0 ||
+    feed.newlyCompleted.length > 0 ||
+    gallery.items.length > 0;
 
-  // Show the batches in reverse order, with the newest items at top.
-  // Like Midjourney instead of a "chat history" style.
-  const inverseBatch = [...batches].reverse();
-
-  // Keep a ref so nav callbacks always see the latest batch list without
-  // needing to be recreated on every render.
-  const inverseBatchRef = useRef(inverseBatch);
-  inverseBatchRef.current = inverseBatch;
-
-  const openBatchInLightbox = useCallback(
-    (targetBatch: (typeof inverseBatch)[0], startIndex = 0) => {
-      const images = targetBatch.images;
-      if (!images.length) return;
-
-      const imageUrls = images.map(
-        (img) =>
-          getThumbnailUrl(img.maybe_thumbnail_template, { width: 3200 }) ??
-          img.cdn_url,
-      );
-      const mediaTokens = images.map((img) => img.media_token);
-      const actionUrls = images.map((img) => img.cdn_url);
-
-      const clickedImg = images[startIndex];
-      const batchIndex = inverseBatchRef.current.findIndex(
-        (b) => b.id === targetBatch.id,
-      );
-
-      galleryModalLightboxNavPrev.value =
-        batchIndex > 0
-          ? () => {
-              const prevBatch = inverseBatchRef.current[batchIndex - 1];
-              openBatchInLightbox(
-                prevBatch,
-                Math.max(0, prevBatch.images.length - 1),
-              );
-            }
-          : null;
-      galleryModalLightboxNavNext.value =
-        batchIndex < inverseBatchRef.current.length - 1
-          ? () => openBatchInLightbox(inverseBatchRef.current[batchIndex + 1])
-          : null;
-
-      galleryModalLightboxMediaId.value = clickedImg.media_token;
-      galleryModalLightboxImage.value = {
-        id: clickedImg.media_token,
-        label: targetBatch.prompt || "Generated Image",
-        thumbnail:
-          getThumbnailUrl(clickedImg.maybe_thumbnail_template, {
-            width: THUMBNAIL_SIZES.MEDIUM,
-          }) ?? clickedImg.cdn_url,
-        fullImage:
-          getThumbnailUrl(clickedImg.maybe_thumbnail_template, {
-            width: 2048,
-          }) ?? clickedImg.cdn_url,
-        createdAt: new Date(targetBatch.createdAt).toISOString(),
-        mediaClass: "image" as const,
-        mediaTokens,
-        imageUrls,
-        actionUrls,
-        initialIndex: startIndex,
-        thumbnailUrlTemplate: clickedImg.maybe_thumbnail_template,
-      };
-      galleryModalLightboxVisible.value = true;
-    },
-    [],
+  const newlyCompletedTokens = useMemo(
+    () => new Set(feed.newlyCompleted.map((item) => item.id)),
+    [feed.newlyCompleted],
   );
 
+  // Flat, time-sorted completed list driving lightbox prev/next navigation.
+  const flatCompleted = useMemo(() => {
+    const seen = new Set<string>();
+    const merged: GalleryItem[] = [];
+    for (const item of feed.newlyCompleted) {
+      if (!seen.has(item.id)) {
+        seen.add(item.id);
+        merged.push(item);
+      }
+    }
+    for (const item of gallery.items) {
+      if (!seen.has(item.id)) {
+        seen.add(item.id);
+        merged.push(item);
+      }
+    }
+    merged.sort(
+      (a, b) =>
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+    );
+    return merged;
+  }, [feed.newlyCompleted, gallery.items]);
+
+  const flatCompletedRef = useRef(flatCompleted);
+  flatCompletedRef.current = flatCompleted;
+
+  // Open a completed row in the global lightbox (rendered by TopBar's
+  // gallery modal); prev/next walk the merged feed order.
+  const openInLightbox = useCallback((item: GalleryItem) => {
+    const list = flatCompletedRef.current;
+    const index = list.findIndex((i) => i.id === item.id);
+    galleryModalLightboxNavPrev.value =
+      index > 0 ? () => openInLightbox(list[index - 1]) : null;
+    galleryModalLightboxNavNext.value =
+      index >= 0 && index < list.length - 1
+        ? () => openInLightbox(list[index + 1])
+        : null;
+    galleryModalLightboxMediaId.value = item.id;
+    galleryModalLightboxImage.value = {
+      id: item.id,
+      label: item.label,
+      thumbnail: item.thumbnail,
+      fullImage: item.fullImage,
+      createdAt: item.createdAt,
+      mediaClass: item.mediaClass,
+    };
+    galleryModalLightboxVisible.value = true;
+  }, []);
+
   return (
-    <div
-      ref={containerRef}
-      className="flex h-[calc(100vh-56px)] w-full bg-ui-background"
-    >
-      <div className="relative h-full w-full p-16">
-        <div className="flex h-full w-full flex-col items-center justify-center rounded-md pb-12">
-          {!showPromptAtBottom && (
-            <div
-              className={twMerge(
-                "relative z-20 mb-52 flex flex-col items-center justify-center text-center drop-shadow-xl",
-                imageRowVisible && "mb-80",
-              )}
-            >
-              <h1 className="text-7xl font-bold text-base-fg">
-                Generate Image
-              </h1>
-              <span className="pt-2 text-xl text-base-fg opacity-80">
-                Add a prompt, then generate
-              </span>
-            </div>
-          )}
-
-          {hasAnyBatches && (
-            <div
-              className="h-full w-full overflow-y-auto"
-              style={{ paddingBottom: bottomOffsetPx + 24 }}
-            >
-              <div className="mx-auto flex max-w-screen-2xl flex-col gap-8 pr-2">
-                {inverseBatch.map((batch) => (
-                  <div
-                    key={batch.id}
-                    className="relative flex items-stretch gap-4"
-                  >
-                    <div className="grid flex-1 grid-cols-4 gap-4">
-                      {batch.status === "failed" ? (
-                        <>
-                          <div className="flex aspect-square w-full flex-col items-center justify-center gap-3 rounded-lg bg-red-500/10 text-red-400">
-                            <FontAwesomeIcon
-                              icon={faCircleExclamation}
-                              size="2x"
-                            />
-                            <span className="px-4 text-center text-sm font-medium">
-                              {batch.failureReason || "Generation failed"}
-                            </span>
-                            <button
-                              onClick={() => dismissBatch(batch.id)}
-                              className="mt-1 flex items-center gap-1.5 rounded-md bg-white/5 px-3 py-1.5 text-xs text-white/50 transition-colors hover:bg-white/10 hover:text-white/70"
-                            >
-                              <FontAwesomeIcon icon={faXmark} />
-                              Dismiss
-                            </button>
-                          </div>
-                          {Array.from({ length: 3 }).map((_, i) => (
-                            <div
-                              key={`empty-${batch.id}-${i}`}
-                              className="aspect-square w-full rounded-lg bg-white/[0.02]"
-                            />
-                          ))}
-                        </>
-                      ) : batch.status === "pending" &&
-                        batch.images.length === 0 ? (
-                        <>
-                          {Array.from({
-                            length: Math.max(
-                              1,
-                              Math.min(4, batch.requestedCount ?? 4),
-                            ),
-                          }).map((_, i) => (
-                            <div
-                              key={`sk-${batch.id}-${i}`}
-                              className="aspect-square w-full overflow-hidden rounded-lg bg-white/[0.03]"
-                            >
-                              <div className="h-full w-full animate-shimmer bg-gradient-to-r from-transparent via-white/10 to-transparent bg-[length:200%_100%]" />
-                            </div>
-                          ))}
-                          {Array.from({
-                            length: Math.max(
-                              0,
-                              4 -
-                              Math.max(
-                                1,
-                                Math.min(4, batch.requestedCount ?? 4),
-                              ),
-                            ),
-                          }).map((_, i) => (
-                            <div
-                              key={`filler-sk-${batch.id}-${i}`}
-                              className="aspect-square w-full rounded-lg bg-white/[0.02]"
-                            />
-                          ))}
-                        </>
-                      ) : (
-                        <>
-                          {batch.images.slice(0, 4).map((img) => (
-                            <button
-                              key={img.media_token}
-                              onClick={() => {
-                                const startIndex = batch.images.indexOf(img);
-                                openBatchInLightbox(batch, startIndex);
-                              }}
-                              className="aspect-square w-full overflow-hidden rounded-lg transition-opacity duration-200 hover:cursor-pointer hover:opacity-75"
-                            >
-                              <img
-                                src={
-                                  getThumbnailUrl(
-                                    img.maybe_thumbnail_template,
-                                    { width: THUMBNAIL_SIZES.LARGE },
-                                  ) ?? img.cdn_url
-                                }
-                                alt="Generated"
-                                loading="lazy"
-                                className="h-full w-full bg-black/10 object-cover"
-                              />
-                            </button>
-                          ))}
-                          {Array.from({
-                            length: Math.max(
-                              0,
-                              4 - batch.images.slice(0, 4).length,
-                            ),
-                          }).map((_, i) => (
-                            <div
-                              key={`filler-${batch.id}-${i}`}
-                              className="aspect-square w-full rounded-lg bg-white/[0.02]"
-                            />
-                          ))}
-                        </>
-                      )}
-                    </div>
-                    <div
-                      className="flex w-[320px] shrink-0"
-                      aria-hidden="true"
-                    />
-                    <div className="absolute bottom-0 right-0 top-0 flex w-[320px] flex-col">
-                      <div className="glass min-h-0 overflow-y-auto rounded-xl px-4 py-3 text-left text-sm text-base-fg/90">
-                        <div>{batch.prompt}</div>
-                      </div>
-                      <div className="flex items-center justify-end gap-2 pt-2">
-                        <Button
-                          onClick={() => {
-                            navigator.clipboard.writeText(batch.prompt || "");
-                            setCopiedBatchId(batch.id);
-                            setTimeout(() => setCopiedBatchId(null), 2000);
-                          }}
-                          className="flex items-center gap-1 rounded-md px-2 py-1 text-xs text-white/50 transition-colors bg-transparent hover:bg-white/10 hover:text-white/70"
-                        >
-                          <FontAwesomeIcon
-                            icon={copiedBatchId === batch.id ? faCheck : faCopy}
-                            className="h-3 w-3"
-                          />
-                          {copiedBatchId === batch.id ? "Copied" : "Copy"}
-                        </Button>
-                        <Badge
-                          label={batch.modelLabel}
-                          icon={batch.modelCreator ? getCreatorIcon(batch.modelCreator, "h-3.5 w-3.5 icon-auto-contrast") : undefined}
-                          className="px-2 py-1 text-xs opacity-70"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          <animated.div
-            className="fixed left-1/2 z-20 -translate-x-1/2"
-            style={promptAnim}
-          >
-            {showPromptAtBottom && batches.length > 0 && (
-              <div
-                className={`absolute ${imageRowVisible ? "-top-[108px]" : "-top-9"} flex w-full justify-end`}
-              >
-                <button
-                  onClick={() => resetBatches()}
-                  className="rounded-md bg-red/20 px-3 py-1 text-xs text-white/70 transition-colors hover:bg-red/30"
-                >
-                  Clear session
-                </button>
-              </div>
-            )}
-            <div ref={promptContentRef}>
-              <PromptBoxImage
-                useJobContext={() => {
-                  return jobContext;
-                }}
-                uploadImage={UploadImageMedia}
-                selectedModel={selectedImageModel}
-                selectedProvider={selectedProvider}
-                imageMediaId={imageMediaId}
-                url={imageUrl ?? undefined}
-                onImageRowVisibilityChange={setImageRowVisible}
-                credits={imageCredits}
-                onEnqueuePressed={async (prompt, count, subscriberId) => {
-                  const modelLabel = selectedImageModel?.fullName ?? "";
-                  startBatch(prompt, count, modelLabel, subscriberId, selectedImageModel?.creator);
-                }}
-              />
-            </div>
-          </animated.div>
-
-          {!showPromptAtBottom && <BackgroundGallery />}
-
-          <div className="absolute bottom-6 left-6 z-20 flex items-center gap-5">
-            <ClassyModelSelector
-              items={TEXT_TO_IMAGE_PAGE_MODEL_LIST}
-              page={PAGE_ID}
-              mode="hoverSelect"
-              panelTitle="Select Model"
-              panelClassName="min-w-[300px]"
-              buttonClassName="bg-transparent p-0 text-lg hover:bg-transparent text-white/80 hover:text-white"
-              showIconsInList
-              triggerLabel="Model"
+    <DesktopCreatePageShell
+      hasContent={hasContent}
+      emptyStateTitle="Create Image"
+      emptyStateSubtitle="Add a prompt, then generate"
+      background={<BackgroundGallery />}
+      bottomOffset={promptHeight + 40}
+      listContent={
+        <DesktopGenerationGallery
+          inProgressJobs={feed.inProgress}
+          failedJobs={feed.failed}
+          onDismissFailed={feed.dismissFailed}
+          newlyCompletedItems={feed.newlyCompleted}
+          galleryItems={gallery.items}
+          newlyCompletedTokens={newlyCompletedTokens}
+          hasMore={gallery.hasMore}
+          isLoading={gallery.isLoading}
+          isInitialLoading={gallery.isInitialLoading}
+          onLoadMore={gallery.loadMore}
+          onGalleryItemClick={openInLightbox}
+          enableMakeVideo
+        />
+      }
+      promptBox={
+        <div className="fixed bottom-4 left-1/2 z-20 w-full max-w-5xl -translate-x-1/2 px-2 sm:px-4">
+          <div ref={promptContentRef}>
+            <PromptBoxImage
+              useJobContext={() => {
+                return jobContext;
+              }}
+              uploadImage={UploadImageMedia}
+              selectedModel={selectedImageModel}
+              selectedProvider={selectedProvider}
+              imageMediaId={imageMediaId}
+              url={imageUrl ?? undefined}
+              credits={imageCredits}
+              modelSelector={
+                <ClassyModelSelector
+                  variant="embedded"
+                  items={TEXT_TO_IMAGE_PAGE_MODEL_LIST}
+                  page={PAGE_ID}
+                />
+              }
+              onEnqueuePressed={async (prompt, count, subscriberId) => {
+                const modelLabel = selectedImageModel?.fullName ?? "";
+                startBatch(
+                  prompt,
+                  count,
+                  modelLabel,
+                  subscriberId,
+                  selectedImageModel?.creator,
+                );
+                // Nudge the feed (and the TopBar task queue) to refetch so the
+                // pending row appears immediately.
+                window.dispatchEvent(new Event("task-queue-update"));
+              }}
             />
           </div>
-          <div className="absolute bottom-6 right-6 z-20 flex items-center gap-2">
-            <CostCalculatorButton modelPage={PAGE_ID} />
-            <HelpMenuButton />
-          </div>
         </div>
-      </div>
-    </div>
+      }
+      bottomRight={
+        <>
+          <CostCalculatorButton modelPage={PAGE_ID} />
+          <HelpMenuButton />
+        </>
+      }
+    />
   );
 };
 

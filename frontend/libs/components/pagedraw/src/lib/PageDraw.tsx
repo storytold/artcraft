@@ -1189,6 +1189,13 @@ const PageDraw = ({ adapter }: PageDrawProps) => {
           selectedImageModel={selectedImageModel}
           selectedProvider={selectedProvider}
           uploadImage={adapter.uploadImage}
+          modelSelector={
+            <ClassyModelSelector
+              variant="embedded"
+              items={CANVAS_2D_PAGE_MODEL_LIST}
+              page={PAGE_ID}
+            />
+          }
         />
       </div>
       <SideToolbar
@@ -1247,18 +1254,7 @@ const PageDraw = ({ adapter }: PageDrawProps) => {
           />
         </ContextMenuContainer>
       </div>
-      <div className="absolute bottom-6 left-6 z-20 flex items-center gap-5">
-        <ClassyModelSelector
-          items={CANVAS_2D_PAGE_MODEL_LIST}
-          page={PAGE_ID}
-          panelTitle="Select Model"
-          panelClassName="min-w-[300px]"
-          buttonClassName="bg-transparent p-0 text-lg hover:bg-transparent text-base-fg opacity-80 hover:opacity-100"
-          showIconsInList
-          triggerLabel="Model"
-        />
-      </div>
-      <div className="absolute bottom-6 right-6 z-20 flex items-center gap-2">
+      <div className="absolute bottom-4 right-4 z-20 flex items-center gap-2">
         <CostCalculatorButton modelPage={PAGE_ID} />
         <HelpMenuButton />
       </div>
