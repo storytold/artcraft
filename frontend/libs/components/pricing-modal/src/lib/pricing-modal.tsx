@@ -197,7 +197,7 @@ export function PricingContent({ title, subtitle }: PricingContentProps) {
           const cardBody = (
             <div
               className={twMerge(
-                getUnifiedCardClasses(),
+                getColorSchemeClasses(plan.colorScheme),
                 frame
                   ? `relative z-10 h-full w-full border-2 bg-[#101014] shadow-2xl ${frame.border}`
                   : "",
@@ -321,12 +321,43 @@ export function PricingContent({ title, subtitle }: PricingContentProps) {
   );
 }
 
-// Unified monochrome card base (mirrors the webapp pricing-table unifiedTheme).
-const getUnifiedCardClasses = () =>
-  twMerge(
-    "relative flex flex-col rounded-2xl border p-5 transition-all duration-300 sm:rounded-[28px] md:p-6",
-    "bg-white/5 border-white/10 hover:border-white/20",
-  );
+// Per-plan colored card scheme (mirrors the webapp pricing-table's
+// non-unified theme: green/purple/orange gradient tints + matching borders).
+// All hexes are arbitrary values, so they don't depend on the Tailwind config.
+const getColorSchemeClasses = (
+  colorScheme: SubscriptionPlanDetails["colorScheme"],
+) => {
+  const base =
+    "relative flex flex-col rounded-3xl border p-6 transition-all duration-300 backdrop-blur-md md:p-8";
+
+  switch (colorScheme) {
+    case "green":
+      return twMerge(
+        base,
+        "bg-gradient-to-b from-[#002D23]/80 via-[#006B54]/50 to-[#00D28B]/10 border-[#00a873]/50",
+        "hover:border-[#00a873] hover:shadow-[0_0_30px_rgba(0,210,139,0.2)]",
+      );
+    case "purple":
+      return twMerge(
+        base,
+        "bg-gradient-to-b from-[#2D004D]/80 via-[#6400A8]/50 to-[#C03FFF]/10 border-[#9D4CFF]/50",
+        "hover:border-[#9D4CFF] hover:shadow-[0_0_30px_rgba(192,63,255,0.2)]",
+      );
+    case "orange":
+      return twMerge(
+        base,
+        "bg-gradient-to-b from-[#332100]/80 via-[#B35C00]/50 to-[#FFB347]/10 border-[#FF8C00]/50",
+        "hover:border-[#FF8C00] hover:shadow-[0_0_30px_rgba(255,179,71,0.2)]",
+      );
+    case "dark":
+      return twMerge(
+        base,
+        "bg-[#1C1C20] border-white/10 hover:border-white/20",
+      );
+    default:
+      return twMerge(base, "bg-white/5 border-white/10 hover:border-white/20");
+  }
+};
 
 // Solid frame color for highlighted plans, keyed to each plan's color scheme.
 const frameClasses = (colorScheme: SubscriptionPlanDetails["colorScheme"]) => {

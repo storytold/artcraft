@@ -583,7 +583,7 @@ export const TopBar = ({ pageName }: Props) => {
                   onClick={toggleSubscriptionModal}
                   className="transition-all duration-300"
                 >
-                  Support
+                  Upgrade
                 </Button>
               )}
 
