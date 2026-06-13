@@ -38,6 +38,22 @@ pub (crate) async fn assert_preflight_method_invalid(cors: &Cors, hostname: &str
       .is_equal_to(StatusCode::BAD_REQUEST);
 }
 
+/// Assert that a request WITHOUT an Origin header (curl, server-to-server,
+/// native API clients) is never blocked by CORS, regardless of
+/// `block_on_origin_mismatch`.
+pub (crate) async fn assert_no_origin_header_ok(cors: &Cors) {
+  let cors = cors.new_transform(test::ok_service())
+      .await
+      .unwrap();
+
+  let request = TestRequest::default().to_srv_request();
+  let response = test::call_service(&cors, request).await;
+
+  asserting("Requests without an Origin header are not blocked")
+      .that(&response.status())
+      .is_equal_to(StatusCode::OK);
+}
+
 async fn make_test_request(cors: &Cors, hostname: &str) -> ServiceResponse<EitherBody<BoxBody>> {
   let cors= cors.new_transform(test::ok_service())
       .await
