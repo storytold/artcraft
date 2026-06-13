@@ -37,9 +37,7 @@ pub async fn moderator_create_wallet_for_user_handler(
   server_state: web::Data<Arc<ServerState>>,
 ) -> Result<Json<ModeratorCreateWalletForUserResponse>, CommonWebError> {
 
-  let _user_session = require_moderator(&http_request, &server_state.session_checker, &server_state.mysql_pool)
-    .await
-    .map_err(|_| CommonWebError::NotAuthorized)?;
+  let _user_session = require_moderator(&http_request, &server_state.session_checker, &server_state.mysql_pool).await?;
 
   let user_token = request.user_token.as_ref()
     .ok_or_else(|| CommonWebError::BadInputWithSimpleMessage("user_token is required".to_string()))?;

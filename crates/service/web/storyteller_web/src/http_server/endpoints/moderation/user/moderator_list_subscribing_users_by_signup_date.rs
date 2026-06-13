@@ -36,9 +36,7 @@ pub async fn moderator_list_subscribing_users_by_signup_date_handler(
   server_state: web::Data<Arc<ServerState>>,
 ) -> Result<Json<ModeratorListSubscribingUsersBySignupDateResponse>, CommonWebError> {
 
-  let _user_session = require_moderator(&http_request, &server_state.session_checker, &server_state.mysql_pool)
-    .await
-    .map_err(|_| CommonWebError::NotAuthorized)?;
+  let _user_session = require_moderator(&http_request, &server_state.session_checker, &server_state.mysql_pool).await?;
 
   let result = list_subscribing_users_by_signup_date_for_moderation(
     ListSubscribingUsersBySignupDateArgs {

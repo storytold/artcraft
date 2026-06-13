@@ -87,10 +87,7 @@ pub async fn moderator_edit_user_feature_flags_handler(
   redis_pool: Data<r2d2::Pool<Client>>,
 ) -> Result<HttpResponse, CommonWebError> {
 
-  let user_session = require_moderator(&http_request, &server_state.session_checker, &server_state.mysql_pool).await.map_err(|err| {
-    warn!("Moderator check failed: {:?}", err);
-    CommonWebError::NotAuthorized
-  })?;
+  let user_session = require_moderator(&http_request, &server_state.session_checker, &server_state.mysql_pool).await?;
 
   let username_or_token = path.username_or_token.trim();
 

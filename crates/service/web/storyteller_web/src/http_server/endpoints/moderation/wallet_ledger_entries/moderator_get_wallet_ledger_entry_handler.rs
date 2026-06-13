@@ -36,9 +36,7 @@ pub async fn moderator_get_wallet_ledger_entry_handler(
   server_state: web::Data<Arc<ServerState>>,
 ) -> Result<Json<ModeratorGetWalletLedgerEntryResponse>, CommonWebError> {
 
-  let _user_session = require_moderator(&http_request, &server_state.session_checker, &server_state.mysql_pool)
-    .await
-    .map_err(|_| CommonWebError::NotAuthorized)?;
+  let _user_session = require_moderator(&http_request, &server_state.session_checker, &server_state.mysql_pool).await?;
 
   let maybe_entry = get_wallet_ledger_entry_for_moderation(&path.wallet_ledger_entry_token, &server_state.mysql_pool)
     .await

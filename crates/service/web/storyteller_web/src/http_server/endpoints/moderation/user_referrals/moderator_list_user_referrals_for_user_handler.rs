@@ -45,10 +45,7 @@ pub async fn moderator_list_user_referrals_for_user_handler(
   server_state: web::Data<Arc<ServerState>>,
 ) -> Result<Json<ListUserReferralsForUserSuccessResponse>, CommonWebError> {
 
-  let _user_session = require_moderator(&http_request, &server_state.session_checker, &server_state.mysql_pool).await.map_err(|err| {
-    warn!("Moderator check failed: {:?}", err);
-    CommonWebError::NotAuthorized
-  })?;
+  let _user_session = require_moderator(&http_request, &server_state.session_checker, &server_state.mysql_pool).await?;
 
   let limit = query.limit
     .unwrap_or(DEFAULT_LIMIT)

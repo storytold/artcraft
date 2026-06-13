@@ -14,7 +14,7 @@ use tokens::tokens::w2l_results::W2lResultToken;
 
 use crate::http_server::web_utils::response_error_helpers::to_simple_json_error;
 use crate::http_server::common_responses::common_web_error::CommonWebError;
-use crate::http_server::web_utils::user_session::require_moderator::{require_moderator, RequireModeratorError};
+use crate::http_server::web_utils::user_session::require_moderator::require_moderator;
 use crate::state::server_state::ServerState;
 
 /// For the URL PathInfo
@@ -58,12 +58,7 @@ pub async fn edit_beta_key_distributed_flag_handler(
   server_state: web::Data<Arc<ServerState>>,
 ) -> Result<HttpResponse, CommonWebError>
 {
-  let user_session = require_moderator(&http_request, &server_state.session_checker, &server_state.mysql_pool)
-      .await
-      .map_err(|err| match err {
-        RequireModeratorError::ServerError => CommonWebError::from_error(err),
-        RequireModeratorError::NotAuthorized => CommonWebError::NotAuthorized,
-      })?;
+  let user_session = require_moderator(&http_request, &server_state.session_checker, &server_state.mysql_pool).await?;
 
   edit_beta_key_distributed_flag(&path.token, request.is_distributed, &server_state.mysql_pool)
       .await

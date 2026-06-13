@@ -90,10 +90,7 @@ pub async fn moderation_get_job_by_token_handler(
   path: web::Path<GetJobByTokenPathInfo>,
   server_state: web::Data<Arc<ServerState>>,
 ) -> Result<Json<GetJobByTokenSuccessResponse>, CommonWebError> {
-  let _user_session = require_moderator(&http_request, &server_state.session_checker, &server_state.mysql_pool).await.map_err(|err| {
-    warn!("Moderator check failed: {:?}", err);
-    CommonWebError::NotAuthorized
-  })?;
+  let _user_session = require_moderator(&http_request, &server_state.session_checker, &server_state.mysql_pool).await?;
 
   let mut mysql_connection = server_state.mysql_pool.acquire().await?;
 

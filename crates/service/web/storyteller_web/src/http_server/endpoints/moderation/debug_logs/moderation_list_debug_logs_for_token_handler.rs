@@ -72,10 +72,7 @@ pub async fn moderation_list_debug_logs_for_token_handler(
   query: web::Query<ListDebugLogsQueryParams>,
   server_state: web::Data<Arc<ServerState>>,
 ) -> Result<Json<ListDebugLogsSuccessResponse>, CommonWebError> {
-  let _user_session = require_moderator(&http_request, &server_state.session_checker, &server_state.mysql_pool).await.map_err(|err| {
-    warn!("Moderator check failed: {:?}", err);
-    CommonWebError::NotAuthorized
-  })?;
+  let _user_session = require_moderator(&http_request, &server_state.session_checker, &server_state.mysql_pool).await?;
 
   let mut mysql_connection = server_state.mysql_pool.acquire().await?;
 

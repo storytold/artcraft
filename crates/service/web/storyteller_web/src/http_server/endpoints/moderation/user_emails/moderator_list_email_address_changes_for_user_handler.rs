@@ -101,10 +101,7 @@ pub async fn moderator_list_email_address_changes_for_user_handler(
 ) -> Result<Json<ModeratorListUserEmailChangesSuccessResponse>, CommonWebError> {
 
   // 1. Require moderator.
-  let _user_session = require_moderator(&http_request, &server_state.session_checker, &server_state.mysql_pool).await.map_err(|err| {
-    warn!("Moderator check failed: {:?}", err);
-    CommonWebError::NotAuthorized
-  })?;
+  let _user_session = require_moderator(&http_request, &server_state.session_checker, &server_state.mysql_pool).await?;
 
   // 2. Resolve username → user_token. Not-found → 404; everything else → 500.
   let username = path.username.trim().to_lowercase();

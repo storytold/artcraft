@@ -54,10 +54,7 @@ pub async fn moderator_list_user_feature_flags_handler(
   path: Path<ListUserFeatureFlagsPathInfo>,
   server_state: web::Data<Arc<ServerState>>,
 ) -> Result<Json<ModeratorListUserFeatureFlagsResponse>, CommonWebError> {
-  let _user_session = require_moderator(&http_request, &server_state.session_checker, &server_state.mysql_pool).await.map_err(|err| {
-    warn!("Moderator check failed: {:?}", err);
-    CommonWebError::NotAuthorized
-  })?;
+  let _user_session = require_moderator(&http_request, &server_state.session_checker, &server_state.mysql_pool).await?;
 
   let username_or_token = path.username_or_token.trim();
 

@@ -23,7 +23,8 @@ use tokens::tokens::media_files::MediaFileToken;
 use crate::http_server::endpoints::media_files::upload::upload_error::MediaFileUploadError;
 use crate::http_server::endpoints::media_files::upload::upload_pmx::extract_and_upload_pmx_files::{extract_and_upload_pmx_files, PmxError};
 use crate::http_server::validations::validate_idempotency_token_format::validate_idempotency_token_format;
-use crate::http_server::web_utils::user_session::require_moderator::{require_moderator, RequireModeratorError};
+use crate::http_server::common_responses::common_web_error::CommonWebError;
+use crate::http_server::web_utils::user_session::require_moderator::require_moderator;
 use crate::state::server_state::ServerState;
 
 /// Form-multipart request fields.
@@ -118,8 +119,8 @@ pub async fn upload_pmx_media_file_handler(
   let user_session = require_moderator(&http_request, &server_state.session_checker, &mut *mysql_connection)
       .await
       .map_err(|err| match err {
-        RequireModeratorError::ServerError => MediaFileUploadError::ServerError,
-        RequireModeratorError::NotAuthorized => MediaFileUploadError::NotAuthorized,
+        CommonWebError::NotAuthorized => MediaFileUploadError::NotAuthorized,
+        _ => MediaFileUploadError::ServerError,
       })?;
 
   let maybe_avt_token = server_state

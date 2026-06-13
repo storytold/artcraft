@@ -69,10 +69,7 @@ pub async fn moderator_change_user_email_handler(
 ) -> Result<Json<ModeratorChangeUserEmailSuccessResponse>, CommonWebError> {
 
   // 1. Require moderator.
-  let user_session = require_moderator(&http_request, &server_state.session_checker, &server_state.mysql_pool).await.map_err(|err| {
-    warn!("Moderator check failed: {:?}", err);
-    CommonWebError::NotAuthorized
-  })?;
+  let user_session = require_moderator(&http_request, &server_state.session_checker, &server_state.mysql_pool).await?;
 
   // 2. Normalize + validate the new email.
   let new_email = request.new_email.trim().to_lowercase();

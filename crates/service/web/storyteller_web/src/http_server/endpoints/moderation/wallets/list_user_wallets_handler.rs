@@ -36,9 +36,7 @@ pub async fn list_user_wallets_handler(
   server_state: web::Data<Arc<ServerState>>,
 ) -> Result<Json<ListUserWalletsResponse>, CommonWebError> {
 
-  let _user_session = require_moderator(&http_request, &server_state.session_checker, &server_state.mysql_pool)
-    .await
-    .map_err(|_| CommonWebError::NotAuthorized)?;
+  let _user_session = require_moderator(&http_request, &server_state.session_checker, &server_state.mysql_pool).await?;
 
   let results = list_user_wallets_for_moderation(&path.user_token, &server_state.mysql_pool)
     .await
