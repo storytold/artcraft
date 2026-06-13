@@ -148,7 +148,8 @@ pub async fn upload_zs_sample_handler(
       .get_avt_token_from_request(&http_request);
 
   let maybe_user_token = maybe_user_session
-      .map(|session| session.get_strongly_typed_user_token());
+      .as_ref()
+      .map(|session| session.get_user_token());
 
   let maybe_file_size_bytes = upload_sample_request.file_bytes
       .as_ref()
@@ -322,7 +323,7 @@ pub async fn upload_zs_sample_handler(
     maybe_public_bucket_prefix: Some(&file_prefix),
     maybe_public_bucket_extension: Some(&file_extension),
     //maybe_extra_file_modification_info: None,
-    maybe_creator_user_token: maybe_user_token.as_ref(),
+    maybe_creator_user_token: maybe_user_token,
     maybe_creator_anonymous_visitor_token: maybe_avt_token.as_ref(),
     creator_ip_address: &ip_address,
     creator_set_visibility,

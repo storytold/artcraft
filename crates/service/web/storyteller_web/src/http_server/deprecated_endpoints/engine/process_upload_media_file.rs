@@ -127,7 +127,8 @@ pub async fn process_upload_media_file(
   let ip_address = get_request_ip(&http_request);
 
   let maybe_user_token = maybe_user_session
-      .map(|session| session.get_strongly_typed_user_token());
+      .as_ref()
+      .map(|session| session.get_user_token());
 
   let maybe_file_size_bytes = upload_media_request.file_bytes
       .as_ref()
@@ -325,7 +326,7 @@ pub async fn process_upload_media_file(
   let (token, record_id) = insert_media_file_from_file_upload(InsertMediaFileFromUploadArgs {
     maybe_media_class: None,
     media_file_type,
-    maybe_creator_user_token: maybe_user_token.as_ref(),
+    maybe_creator_user_token: maybe_user_token,
     maybe_creator_anonymous_visitor_token: maybe_avt_token.as_ref(),
     creator_ip_address: &ip_address,
     creator_set_visibility,

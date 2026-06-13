@@ -119,7 +119,7 @@ pub async fn upload_snapshot_media_file_handler(
 
   let maybe_user_token = maybe_user_session
       .as_ref()
-      .map(|session| session.get_strongly_typed_user_token());
+      .map(|session| session.get_user_token());
 
   let maybe_avt_token = server_state
       .avt_cookie_manager
@@ -247,7 +247,7 @@ pub async fn upload_snapshot_media_file_handler(
   let (token, record_id) = insert_media_file_from_file_upload(InsertMediaFileFromUploadArgs {
     maybe_media_class: Some(MediaFileClass::Image),
     media_file_type,
-    maybe_creator_user_token: maybe_user_token.as_ref(),
+    maybe_creator_user_token: maybe_user_token,
     maybe_creator_anonymous_visitor_token: maybe_avt_token.as_ref(),
     creator_ip_address: &ip_address,
     creator_set_visibility,

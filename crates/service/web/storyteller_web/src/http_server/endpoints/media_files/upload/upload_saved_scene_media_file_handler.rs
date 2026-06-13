@@ -109,7 +109,7 @@ pub async fn upload_saved_scene_media_file_handler(
 
   let maybe_user_token = maybe_user_session
       .as_ref()
-      .map(|session| session.get_strongly_typed_user_token());
+      .map(|session| session.get_user_token());
 
   let maybe_avt_token = server_state
       .avt_cookie_manager
@@ -148,7 +148,7 @@ pub async fn upload_saved_scene_media_file_handler(
 
   let creator_check = check_creator_tokens(CheckCreatorTokenArgs {
     maybe_creator_user_token: media_file.maybe_creator_user_token.as_ref(),
-    maybe_current_request_user_token: maybe_user_token.as_ref(),
+    maybe_current_request_user_token: maybe_user_token,
     maybe_creator_anonymous_visitor_token: media_file.maybe_creator_anonymous_visitor_token.as_ref(),
     maybe_current_request_anonymous_visitor_token: maybe_avt_token.as_ref(),
   });

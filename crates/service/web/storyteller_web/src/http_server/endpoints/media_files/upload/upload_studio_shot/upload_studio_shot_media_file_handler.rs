@@ -176,7 +176,7 @@ pub async fn upload_studio_shot_media_file_handler(
   let ip_address = get_request_ip(&http_request);
 
   //let maybe_user_token = maybe_user_session
-  //    .map(|session| session.get_strongly_typed_user_token());
+  //    .map(|session| session.get_user_token());
 
   // ==================== FILE DATA ==================== //
 
