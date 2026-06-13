@@ -98,7 +98,7 @@ pub async fn update_weight_handler(
     let user_session = require_user_session_extended(
         &http_request,
         &server_state.session_checker,
-        &mut mysql_connection)
+        &mut *mysql_connection)
         .await
         .map_err(|err| match err {
             RequireUserSessionError::NotAuthorized => CommonWebError::NotAuthorized,

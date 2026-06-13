@@ -125,7 +125,7 @@ pub async fn enqueue_live_portrait_workflow_handler(
   let user_session = require_user_session_extended(
     &http_request,
     &server_state.session_checker,
-    &mut mysql_connection)
+    &mut *mysql_connection)
       .await
       .map_err(|err| match err {
         RequireUserSessionError::ServerError => CommonWebError::from_error(err),

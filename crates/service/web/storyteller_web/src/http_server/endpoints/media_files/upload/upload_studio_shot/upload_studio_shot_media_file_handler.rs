@@ -111,7 +111,7 @@ pub async fn upload_studio_shot_media_file_handler(
   // ==================== READ SESSION ==================== //
 
   // NB: We require a moderator to upload PMX files.
-  let user_session = require_user_session_extended(&http_request, &server_state.session_checker, &mut mysql_connection)
+  let user_session = require_user_session_extended(&http_request, &server_state.session_checker, &mut *mysql_connection)
       .await
       .map_err(|e| {
         error!("User session error: {:?}", e);

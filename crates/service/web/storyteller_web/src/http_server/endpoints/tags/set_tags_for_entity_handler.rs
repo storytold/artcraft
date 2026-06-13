@@ -97,7 +97,7 @@ pub async fn set_tags_for_entity_handler(
   let user_session = require_user_session_extended(
     &http_request,
     &server_state.session_checker,
-    &mut mysql_connection)
+    &mut *mysql_connection)
       .await
       .map_err(|_err| {
         CommonWebError::NotAuthorized

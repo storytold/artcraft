@@ -3,7 +3,7 @@ use std::fmt::{Display, Formatter};
 
 use actix_web::HttpRequest;
 use log::warn;
-use sqlx::{Acquire, MySql};
+use sqlx::MySqlConnection;
 
 use crate::http_server::session::lookup::user_session_extended::UserSessionExtended;
 use crate::http_server::session::session_checker::SessionChecker;
@@ -25,16 +25,14 @@ impl Display for RequireUserSessionError {
 
 impl Error for RequireUserSessionError {}
 
-/// `mysql_executor` can be any sqlx acquirer — pass `&server_state.mysql_pool` to grab a
-/// fresh connection, or an in-flight connection (`&mut connection`) to reuse one the handler
-/// already holds. (The extended lookup runs two queries, so it acquires a connection rather
-/// than taking a bare `Executor`.)
-pub async fn require_user_session_extended<'a, A>(
+/// Pass an in-flight connection (`&mut *connection`) to reuse one the handler already holds.
+/// (The extended lookup runs two queries, so it takes a concrete `&mut MySqlConnection` — which
+/// it reborrows for each — rather than a by-value `Executor` that the first query would consume.)
+pub async fn require_user_session_extended(
   http_request: &HttpRequest,
   session_checker: &SessionChecker,
-  mysql_executor: A,
+  mysql_executor: &mut MySqlConnection,
 ) -> Result<UserSessionExtended, RequireUserSessionError>
-  where A: Acquire<'a, Database = MySql>
 {
   let maybe_user_session = session_checker
       .maybe_get_user_session_extended_from_executor(http_request, mysql_executor)
