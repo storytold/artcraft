@@ -65,7 +65,7 @@ fn do_build_cors_config(is_production: bool) -> Cors {
   }
 
   // Remaining setup
-  cors.allowed_methods(vec!["GET", "POST", "OPTIONS", "DELETE"])
+  cors.allowed_methods(vec!["GET", "POST", "PUT", "OPTIONS", "DELETE"])
       .supports_credentials()
       .allowed_headers(vec![
         actix_http::header::ACCEPT,
@@ -84,8 +84,30 @@ mod tests {
 
   use crate::testing::assert_origin_invalid;
   use crate::testing::assert_origin_ok;
+  use crate::testing::assert_preflight_method_invalid;
+  use crate::testing::assert_preflight_method_ok;
 
   use super::build_cors_config;
+
+  #[actix_rt::test]
+  async fn test_preflight_allows_every_supported_method() {
+    let production_cors = build_cors_config(ServerEnvironment::Production);
+
+    // PUT is used by e.g. the folders routes (rename/star/color_code/cover_image).
+    for method in ["GET", "POST", "PUT", "DELETE"] {
+      assert_preflight_method_ok(&production_cors, "https://app.getartcraft.com", method).await;
+      assert_preflight_method_ok(&production_cors, "https://storyteller.ai", method).await;
+    }
+  }
+
+  #[actix_rt::test]
+  async fn test_preflight_rejects_unsupported_methods() {
+    let production_cors = build_cors_config(ServerEnvironment::Production);
+
+    for method in ["PATCH", "TRACE", "CONNECT"] {
+      assert_preflight_method_invalid(&production_cors, "https://app.getartcraft.com", method).await;
+    }
+  }
 
   #[actix_rt::test]
   async fn test_fakeyou_production() {
