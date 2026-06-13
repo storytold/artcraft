@@ -1,6 +1,3 @@
-use std::error::Error;
-use std::fmt::{Display, Formatter};
-
 use actix_web::HttpRequest;
 use log::warn;
 use sqlx::{Executor, MySql};
@@ -9,26 +6,6 @@ use mysql_queries::queries::users::user_sessions::get_user_session_by_token::Ses
 
 use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::session::session_checker::SessionChecker;
-
-// NB: `RequireUserSessionError` is retained because `require_user_session_extended_using_connection`
-// (and `CommonWebError`'s `From` impl) still use it. `require_user_session` itself now returns
-// `CommonWebError` directly, since that's what nearly every endpoint uses.
-#[derive(Debug)]
-pub enum RequireUserSessionError {
-  ServerError,
-  NotAuthorized,
-}
-
-impl Display for RequireUserSessionError {
-  fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-    match self {
-      Self::ServerError => write!(f, "ServerError"),
-      Self::NotAuthorized => write!(f, "NotAuthorized"),
-    }
-  }
-}
-
-impl Error for RequireUserSessionError {}
 
 /// `mysql_executor` can be any sqlx executor — pass `&server_state.mysql_pool` to grab a
 /// fresh connection, or an in-flight connection/transaction (`&mut *connection`) to reuse

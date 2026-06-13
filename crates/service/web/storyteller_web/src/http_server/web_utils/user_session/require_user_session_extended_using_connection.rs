@@ -1,4 +1,5 @@
 use std::error::Error;
+use std::fmt::{Display, Formatter};
 
 use actix_web::HttpRequest;
 use log::warn;
@@ -8,7 +9,23 @@ use sqlx::MySql;
 
 use crate::http_server::session::lookup::user_session_extended::UserSessionExtended;
 use crate::http_server::session::session_checker::SessionChecker;
-use crate::http_server::web_utils::user_session::require_user_session::RequireUserSessionError;
+
+#[derive(Debug)]
+pub enum RequireUserSessionError {
+  ServerError,
+  NotAuthorized,
+}
+
+impl Display for RequireUserSessionError {
+  fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+    match self {
+      Self::ServerError => write!(f, "ServerError"),
+      Self::NotAuthorized => write!(f, "NotAuthorized"),
+    }
+  }
+}
+
+impl Error for RequireUserSessionError {}
 
 pub async fn require_user_session_extended_using_connection(
   http_request: &HttpRequest,
