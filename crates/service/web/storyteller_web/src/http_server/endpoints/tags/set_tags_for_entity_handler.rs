@@ -9,7 +9,7 @@ use std::sync::Arc;
 use crate::http_server::common_responses::tag_info::TagInfo;
 use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::web_utils::response_error_helpers::to_simple_json_error;
-use crate::http_server::web_utils::user_session::require_user_session_extended_using_connection::require_user_session_extended_using_connection;
+use crate::http_server::web_utils::user_session::require_user_session_extended::require_user_session_extended;
 use crate::state::server_state::ServerState;
 use actix_web::error::ResponseError;
 use actix_web::http::StatusCode;
@@ -94,7 +94,7 @@ pub async fn set_tags_for_entity_handler(
         CommonWebError::from_error(err)
       })?;
 
-  let user_session = require_user_session_extended_using_connection(
+  let user_session = require_user_session_extended(
     &http_request,
     &server_state.session_checker,
     &mut mysql_connection)

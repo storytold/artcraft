@@ -12,7 +12,7 @@ use artcraft_api_defs::users::edit_username::{EditUsernameRequest, EditUsernameR
 use crate::http_server::validations::is_reserved_username::is_reserved_username;
 use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::validations::validate_username::validate_username;
-use crate::http_server::web_utils::user_session::require_user_session_extended_using_connection::require_user_session_extended_using_connection;
+use crate::http_server::web_utils::user_session::require_user_session_extended::require_user_session_extended;
 use crate::state::server_state::ServerState;
 use http_server_common::request::get_request_ip::get_request_ip;
 use mysql_queries::queries::users::user::update::update_username::{update_username, UpdateUsernameArgs, UpdateUsernameError};
@@ -63,7 +63,7 @@ pub async fn edit_username_handler(
         CommonWebError::from_error(err)
       })?;
 
-  let user_session = require_user_session_extended_using_connection(
+  let user_session = require_user_session_extended(
     &http_request,
     &server_state.session_checker,
     &mut mysql_connection)

@@ -6,13 +6,13 @@
 use actix_artcraft::sessions::user_sessions::http_user_session_manager::HttpUserSessionManager;
 use actix_web::HttpRequest;
 use log::warn;
-use mysql_queries::queries::users::user_sessions::get_user_session_by_token::{get_user_session_by_token, get_user_session_by_token_pooled_connection, SessionUserRecord};
+use mysql_queries::queries::users::user_sessions::get_user_session_by_token::{get_user_session_by_token, SessionUserRecord};
 use mysql_queries::queries::users::user_sessions::get_user_session_by_token_light::{get_user_session_by_token_light, SessionRecord};
 use mysql_queries::queries::users::user_subscriptions::list_active_user_subscriptions::list_active_user_subscriptions;
 use redis_caching::redis_ttl_cache::{RedisTtlCache, RedisTtlCacheConnection};
 use redis_common::redis_cache_keys::RedisCacheKeys;
 use sqlx::pool::PoolConnection;
-use sqlx::{Executor, MySql, MySqlPool};
+use sqlx::{Acquire, Executor, MySql, MySqlConnection, MySqlPool};
 
 use crate::http_server::session::lookup::user_session_extended::{UserSessionExtended, UserSessionPreferences, UserSessionPremiumPlanInfo, UserSessionRoleAndPermissions, UserSessionSubscriptionPlan, UserSessionUserDetails};
 use crate::http_server::session::lookup::user_session_feature_flags::UserSessionFeatureFlags;
@@ -210,6 +210,28 @@ impl SessionChecker {
     mysql_connection: &mut PoolConnection<MySql>,
   ) -> Result<Option<UserSessionExtended>, SessionCheckerError>
   {
+    self.do_user_session_extended_lookup(request, &mut **mysql_connection).await
+  }
+
+  pub async fn maybe_get_user_session_extended_from_executor<'a, A>(
+    &self,
+    request: &HttpRequest,
+    mysql_executor: A,
+  ) -> Result<Option<UserSessionExtended>, SessionCheckerError>
+    where A: Acquire<'a, Database = MySql>
+  {
+    // NB: The extended lookup runs two queries, so we acquire a connection up front and
+    // run both against it (an `Executor` would be consumed by the first query).
+    let mut connection = mysql_executor.acquire().await?;
+    self.do_user_session_extended_lookup(request, &mut *connection).await
+  }
+
+  async fn do_user_session_extended_lookup(
+    &self,
+    request: &HttpRequest,
+    mysql_connection: &mut MySqlConnection,
+  ) -> Result<Option<UserSessionExtended>, SessionCheckerError>
+  {
     let session_payload= match self.cookie_manager.decode_session_payload_from_request(request)? {
       None => return Ok(None),
       Some(session_payload) => session_payload,
@@ -217,7 +239,7 @@ impl SessionChecker {
 
     // TODO: Fire both requests off simultaneously.
     let user_session = {
-      match get_user_session_by_token_pooled_connection(mysql_connection, &session_payload.session_token).await? {
+      match get_user_session_by_token(&mut *mysql_connection, &session_payload.session_token).await? {
         None => return Ok(None),
         Some(u) => u,
       }
@@ -226,7 +248,7 @@ impl SessionChecker {
     // TODO: Cache this so we don't hit the database twice.
     let subscriptions =
         list_active_user_subscriptions(
-          mysql_connection,
+          &mut *mysql_connection,
           user_session.user_token.as_str()
         ).await
         .map_err(SessionCheckerError::OtherError)?;
