@@ -19,7 +19,7 @@ export type TabId =
   | "BACKGROUND_CHANGE"
   | "VIDEO_EDITOR";
 
-const DEFAULT_TAB: TabId = "IMAGE";
+const DEFAULT_TAB: TabId = "APPS";
 
 interface TabState {
   // Current active tab

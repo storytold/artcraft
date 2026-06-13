@@ -9,6 +9,7 @@ import {
   faGear,
   faGem,
   faGrid2,
+  faHouse,
   faImages,
   faCalculator,
   faExclamation,
@@ -97,8 +98,19 @@ type SettingsSection =
 const SWITCHER_THROTTLE_TIME = 500; // milliseconds
 const CREDITS_POLL_INTERVAL = 60_000; // milliseconds
 
-// NB: See `TabState` for the default tab.
+// NB: See `TabState` for the default tab. The Apps ("More") entry is first so
+// it's the landing tab and leftmost in the switcher.
 const appMenuTabs: MenuIconItem[] = [
+  {
+    id: "APPS",
+    label: "Home",
+    icon: <FontAwesomeIcon icon={faHouse} />,
+    description: "Explore all apps and miniapps",
+    large: true,
+    tooltipContent: <AppsQuickMenu />,
+    tooltipInteractive: true,
+    tooltipPosition: "bottom",
+  },
   ...APP_DESCRIPTORS.map((d) => ({
     id: d.id,
     label: d.label,
@@ -107,16 +119,6 @@ const appMenuTabs: MenuIconItem[] = [
     description: d.description,
     large: d.large,
   })),
-  {
-    id: "APPS",
-    label: "More",
-    icon: <FontAwesomeIcon icon={faGrid2} />,
-    description: "Explore more apps and miniapps",
-    large: true,
-    tooltipContent: <AppsQuickMenu />,
-    tooltipInteractive: true,
-    tooltipPosition: "bottom",
-  },
 ];
 
 export const topNavMediaId = signal<string>("");
@@ -368,7 +370,7 @@ export const TopBar = ({ pageName }: Props) => {
       case "IMAGE_TO_3D_WORLD":
         return "Image to 3D World";
       case "APPS":
-        return "ArtCraft Apps";
+        return "ArtCraft";
       case "BACKGROUND_CHANGE":
         return "Background Change";
       default:

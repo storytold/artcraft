@@ -82,8 +82,110 @@ export interface FullAppItem {
   category: "generate" | "edit";
   badge?: "NEW" | "BEST" | "SOON" | "BETA";
   action?: AppId;
+  /** Legacy single-tone icon-square background (e.g. "bg-blue-600/40"). Still
+   *  used as the fallback for the apps-page card styling. */
   color?: string;
 }
+
+// Per-app card palette for the Apps page (webapp-home-style cards). Derived
+// from each app's Tailwind color family so the icon box, its border, and the
+// hover gradient all share a hue. Keyed by app id; falls back to a neutral
+// slate when an id is missing.
+interface AppCardPalette {
+  /** Hover gradient overlay, e.g. "from-blue-500/20 to-blue-500/0". */
+  accent: string;
+  /** Icon box background + border, e.g. "bg-blue-500/20 border-blue-400/30". */
+  iconBg: string;
+  /** Icon glyph color, e.g. "text-blue-300". */
+  iconColor: string;
+}
+
+const APP_CARD_PALETTES: Record<string, AppCardPalette> = {
+  "text-to-image": {
+    accent: "from-blue-500/20 to-blue-500/0",
+    iconBg: "bg-blue-500/20 border-blue-400/30",
+    iconColor: "text-blue-300",
+  },
+  "image-to-video": {
+    accent: "from-amber-500/20 to-amber-500/0",
+    iconBg: "bg-amber-500/20 border-amber-400/30",
+    iconColor: "text-amber-300",
+  },
+  "image-to-3d-object": {
+    accent: "from-emerald-500/20 to-emerald-500/0",
+    iconBg: "bg-emerald-500/20 border-emerald-400/30",
+    iconColor: "text-emerald-300",
+  },
+  "image-to-3d-world": {
+    accent: "from-sky-500/20 to-sky-500/0",
+    iconBg: "bg-sky-500/20 border-sky-400/30",
+    iconColor: "text-sky-300",
+  },
+  angles: {
+    accent: "from-lime-500/20 to-lime-500/0",
+    iconBg: "bg-lime-500/20 border-lime-400/30",
+    iconColor: "text-lime-300",
+  },
+  storyboard: {
+    accent: "from-fuchsia-500/20 to-fuchsia-500/0",
+    iconBg: "bg-fuchsia-500/20 border-fuchsia-400/30",
+    iconColor: "text-fuchsia-300",
+  },
+  "2d-canvas": {
+    accent: "from-sky-500/20 to-sky-500/0",
+    iconBg: "bg-sky-500/20 border-sky-400/30",
+    iconColor: "text-sky-300",
+  },
+  "3d-editor": {
+    accent: "from-emerald-500/20 to-emerald-500/0",
+    iconBg: "bg-emerald-500/20 border-emerald-400/30",
+    iconColor: "text-emerald-300",
+  },
+  "edit-image": {
+    accent: "from-purple-500/20 to-purple-500/0",
+    iconBg: "bg-purple-500/20 border-purple-400/30",
+    iconColor: "text-purple-300",
+  },
+  "remove-background": {
+    accent: "from-violet-500/20 to-violet-500/0",
+    iconBg: "bg-violet-500/20 border-violet-400/30",
+    iconColor: "text-violet-300",
+  },
+  "video-frame-extractor": {
+    accent: "from-rose-500/20 to-rose-500/0",
+    iconBg: "bg-rose-500/20 border-rose-400/30",
+    iconColor: "text-rose-300",
+  },
+  "background-change": {
+    accent: "from-orange-500/20 to-orange-500/0",
+    iconBg: "bg-orange-500/20 border-orange-400/30",
+    iconColor: "text-orange-300",
+  },
+  "video-editor": {
+    accent: "from-teal-500/20 to-teal-500/0",
+    iconBg: "bg-teal-500/20 border-teal-400/30",
+    iconColor: "text-teal-300",
+  },
+  "video-watermark-removal": {
+    accent: "from-cyan-500/20 to-cyan-500/0",
+    iconBg: "bg-cyan-500/20 border-cyan-400/30",
+    iconColor: "text-cyan-300",
+  },
+  "image-watermark-removal": {
+    accent: "from-indigo-500/20 to-indigo-500/0",
+    iconBg: "bg-indigo-500/20 border-indigo-400/30",
+    iconColor: "text-indigo-300",
+  },
+};
+
+const FALLBACK_APP_CARD_PALETTE: AppCardPalette = {
+  accent: "from-white/10 to-white/0",
+  iconBg: "bg-ui-controls border-ui-controls-border",
+  iconColor: "text-base-fg",
+};
+
+export const getAppCardPalette = (id: string): AppCardPalette =>
+  APP_CARD_PALETTES[id] ?? FALLBACK_APP_CARD_PALETTE;
 
 export const ALL_APPS: FullAppItem[] = [
   {
@@ -213,7 +315,7 @@ export const ALL_APPS: FullAppItem[] = [
     label: "Image Editor",
     description: "Easy edits. Great for graphic design.",
     icon: faPenNib,
-    category: "generate",
+    category: "edit",
     action: "2D",
     color: "bg-sky-500/40",
   },

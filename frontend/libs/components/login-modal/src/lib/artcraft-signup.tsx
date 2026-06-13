@@ -2,10 +2,10 @@ import React, { useState, useEffect } from "react";
 import { Input } from "@storyteller/ui-input";
 import { Button } from "@storyteller/ui-button";
 import {
-  faUser,
-  faKey,
-  faEnvelope,
+  faEye,
+  faEyeSlash,
   faExclamationTriangle,
+  faSpinnerThird,
 } from "@fortawesome/pro-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 
@@ -14,13 +14,18 @@ interface ArtCraftSignUpProps {
     username: string,
     email: string,
     password: string,
-    passwordConfirmation: string
+    passwordConfirmation: string,
   ) => void;
   isSignUp: boolean;
   onToggleMode: () => void;
   formRef?: React.RefObject<HTMLFormElement | null>;
   errorMessage?: string;
+  isLoading?: boolean;
 }
+
+const FIELD_LABEL = "text-xs font-semibold text-white/70 ml-1";
+const FIELD_INPUT =
+  "w-full bg-black/40 border border-white/10 focus:border-primary/50 rounded-xl px-4 py-3 text-white placeholder-white/20 outline-none transition-colors";
 
 export const ArtCraftSignUp = ({
   onSubmit,
@@ -28,13 +33,16 @@ export const ArtCraftSignUp = ({
   onToggleMode,
   formRef,
   errorMessage,
+  isLoading = false,
 }: ArtCraftSignUpProps) => {
   const [localError, setLocalError] = useState<string | undefined>(undefined);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
 
   useEffect(() => {
     if (errorMessage) {
       setLocalError(
-        errorMessage.charAt(0).toUpperCase() + errorMessage.slice(1)
+        errorMessage.charAt(0).toUpperCase() + errorMessage.slice(1),
       );
     } else {
       setLocalError(undefined);
@@ -69,111 +77,128 @@ export const ArtCraftSignUp = ({
     }
   };
 
-  const handleInputFocus = () => {
-
-  };
-
-  const handleInputBlur = () => {
-
-  };
-
   return (
-    <div className="flex flex-col items-center justify-center flex-1 min-h-0">
-      <h2 className="text-3xl font-bold mb-3 text-center">
-        {isSignUp ? "Sign up for ArtCraft" : "Log in to ArtCraft"}
-      </h2>
-      <form
-        className="flex flex-col gap-3 w-full max-w-md"
-        onSubmit={handleSubmit}
-        ref={formRef}
-      >
-        {isSignUp ? (
-          <>
+    <form
+      className="flex w-full flex-col gap-2"
+      onSubmit={handleSubmit}
+      ref={formRef}
+    >
+      {localError && (
+        <div className="flex items-center justify-center gap-2 rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-center text-sm text-red-500">
+          <FontAwesomeIcon icon={faExclamationTriangle} />
+          {localError}
+        </div>
+      )}
+
+      {isSignUp ? (
+        <>
+          <div className="space-y-1">
+            <label className={FIELD_LABEL}>Username</label>
             <Input
-              label="Username"
-              icon={faUser}
               name="username"
               placeholder="Username"
               required
               autoComplete="off"
-              onFocus={handleInputFocus}
-              onBlur={handleInputBlur}
+              inputClassName={FIELD_INPUT}
             />
+          </div>
+          <div className="space-y-1">
+            <label className={FIELD_LABEL}>Email</label>
             <Input
-              label="Email"
-              icon={faEnvelope}
               name="email"
               type="email"
-              placeholder="Email"
-              required={isSignUp}
-              style={isSignUp ? {} : { display: "none" }}
+              placeholder="you@example.com"
+              required
               autoComplete="off"
-              onFocus={handleInputFocus}
-              onBlur={handleInputBlur}
+              inputClassName={FIELD_INPUT}
             />
-          </>
-        ) : (
-          <Input
-            label="Email or Username"
-            icon={faUser}
-            name="usernameOrEmail"
-            placeholder="Email or Username"
-            required
-            autoComplete="off"
-            onFocus={handleInputFocus}
-            onBlur={handleInputBlur}
-          />
-        )}
-
-        <Input
-          label="Password"
-          icon={faKey}
-          type="password"
-          name="password"
-          placeholder="Password"
-          required
-          autoComplete="off"
-          onFocus={handleInputFocus}
-          onBlur={handleInputBlur}
-        />
-        {isSignUp && (
-          <Input
-            label="Confirm Password"
-            icon={faKey}
-            type="password"
-            name="confirmPassword"
-            placeholder="Confirm Password"
-            required
-            autoComplete="off"
-            onFocus={handleInputFocus}
-            onBlur={handleInputBlur}
-          />
-        )}
-        <button type="submit" className="hidden" />
-        <div className="relative mt-3 flex flex-col items-center justify-center">
-          <div className="flex gap-2 items-center justify-center p-2 px-3 bg-white/5 rounded-lg">
-            <p className="text-sm opacity-80">
-              {isSignUp ? "Already have an account?" : "Don't have an account?"}{" "}
-            </p>
-            <Button
-              variant="secondary"
-              className="p-0 bg-transparent hover:bg-transparent border-none shadow-none"
-              type="button"
-              onClick={onToggleMode}
-            >
-              <span className="text-sm text-primary-400 underline hover:text-primary-300 transition-colors duration-200">
-                {isSignUp ? "Log in" : "Sign up"}
-              </span>
-            </Button>
           </div>
-          {localError && (
-            <div className="absolute w-fit -bottom-12 left-1/2 -translate-x-1/2 text-red bg-red/10 border border-red/20 rounded-lg py-1 px-2 justify-center text-sm text-center mb-2 font-semibold flex items-center gap-2">
-              <FontAwesomeIcon icon={faExclamationTriangle} />
-              {localError}
-            </div>
-          )}
+        </>
+      ) : (
+        <div className="space-y-1">
+          <label className={FIELD_LABEL}>Email or Username</label>
+          <Input
+            name="usernameOrEmail"
+            placeholder="you@example.com or username"
+            required
+            autoComplete="off"
+            inputClassName={FIELD_INPUT}
+          />
         </div>
-      </form>
-    </div>
+      )}
+
+      <div className="space-y-1">
+        <label className={FIELD_LABEL}>Password</label>
+        <div className="relative">
+          <Input
+            name="password"
+            type={showPassword ? "text" : "password"}
+            placeholder="Min. 8 characters"
+            required
+            autoComplete="off"
+            inputClassName={`${FIELD_INPUT} pr-12`}
+          />
+          <button
+            type="button"
+            onClick={() => setShowPassword((v) => !v)}
+            className="absolute right-4 top-1/2 -translate-y-1/2 text-white/30 transition-colors hover:text-white/60"
+            tabIndex={-1}
+          >
+            <FontAwesomeIcon icon={showPassword ? faEyeSlash : faEye} />
+          </button>
+        </div>
+      </div>
+
+      {isSignUp && (
+        <div className="space-y-1">
+          <label className={FIELD_LABEL}>Confirm Password</label>
+          <div className="relative">
+            <Input
+              name="confirmPassword"
+              type={showConfirm ? "text" : "password"}
+              placeholder="Re-enter password"
+              required
+              autoComplete="off"
+              inputClassName={`${FIELD_INPUT} pr-12`}
+            />
+            <button
+              type="button"
+              onClick={() => setShowConfirm((v) => !v)}
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-white/30 transition-colors hover:text-white/60"
+              tabIndex={-1}
+            >
+              <FontAwesomeIcon icon={showConfirm ? faEyeSlash : faEye} />
+            </button>
+          </div>
+        </div>
+      )}
+
+      <div className="pt-4">
+        <Button
+          type="submit"
+          disabled={isLoading}
+          className="h-10 w-full justify-center rounded-full border-none bg-primary font-bold text-white hover:bg-primary-600"
+        >
+          {isLoading ? (
+            <FontAwesomeIcon icon={faSpinnerThird} className="animate-spin" />
+          ) : isSignUp ? (
+            "Sign up"
+          ) : (
+            "Log in"
+          )}
+        </Button>
+      </div>
+
+      <div className="mt-2 text-center text-sm text-white/60">
+        {isSignUp ? "Already have an account?" : "Don't have an account?"}{" "}
+        <button
+          type="button"
+          onClick={onToggleMode}
+          className="font-semibold text-primary transition-colors hover:text-primary-400"
+        >
+          {isSignUp ? "Log in" : "Sign up"}
+        </button>
+      </div>
+    </form>
   );
 };

@@ -29,7 +29,7 @@
   },
   "references": [
     {
-      "path": "../../libs/components/badge"
+      "path": "../../libs/components/video-editor"
     },
     {
       "path": "../../libs/components/vfx"
@@ -39,12 +39,6 @@
     },
     {
       "path": "../../libs/components/loading-spinner"
-    },
-    {
-      "path": "../../libs/components/video-editor"
-    },
-    {
-      "path": "../../libs/components/toaster"
     },
     {
       "path": "../../libs/components/login-modal"
@@ -59,13 +53,7 @@
       "path": "../../libs/components/settings-modal"
     },
     {
-      "path": "../../libs/components/promptbox"
-    },
-    {
       "path": "../../libs/components/menu-icon-selector"
-    },
-    {
-      "path": "../../libs/tauri-events"
     },
     {
       "path": "../../libs/state/subscription"
@@ -81,9 +69,6 @@
     },
     {
       "path": "../../libs/state/credits"
-    },
-    {
-      "path": "../../libs/common"
     },
     {
       "path": "../../libs/api-enums"
@@ -117,6 +102,21 @@
     },
     {
       "path": "../../libs/components/checkbox"
+    },
+    {
+      "path": "../../libs/common"
+    },
+    {
+      "path": "../../libs/tauri-events"
+    },
+    {
+      "path": "../../libs/components/promptbox"
+    },
+    {
+      "path": "../../libs/components/generation-list"
+    },
+    {
+      "path": "../../libs/components/toaster"
     },
     {
       "path": "../../libs/components/help-menu"
