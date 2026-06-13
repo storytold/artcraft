@@ -162,12 +162,10 @@ tempfile.workspace = true
 # https://github.com/durch/rust-s3/pull/254
 rust-s3.workspace = true
 
-actix.workspace = true
 actix-http.workspace = true
 actix-multipart.workspace = true
 actix-service.workspace = true
 actix-web.workspace = true
-actix-web-actors.workspace = true
 actix-web-lab.workspace = true
 
 # Crypto

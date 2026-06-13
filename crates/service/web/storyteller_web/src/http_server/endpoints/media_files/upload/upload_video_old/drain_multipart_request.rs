@@ -43,7 +43,7 @@ pub async fn drain_multipart_request(mut multipart_payload: Multipart) -> Anyhow
     let mut field_name = None;
     let mut field_filename = None;
 
-    if let content_disposition = field.content_disposition() {
+    if let Some(content_disposition) = field.content_disposition() {
       field_name = content_disposition.get_name()
           .map(|s| s.to_string());
       field_filename = content_disposition.get_filename() // NB: Only used for the file bytes.

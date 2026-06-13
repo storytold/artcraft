@@ -19,7 +19,6 @@
 
 use std::sync::Arc;
 
-use actix::Actor;
 use actix_artcraft::sessions::user_sessions::http_user_session_manager::HttpUserSessionManager;
 use actix_cors_configs::cors::build_cors_config;
 use actix_cors_configs::shared_array_buffer_cors::shared_array_buffer_cors;

@@ -65,7 +65,13 @@ fn do_build_cors_config(is_production: bool) -> Cors {
   }
 
   // Remaining setup
-  cors.allowed_methods(vec!["GET", "POST", "PUT", "OPTIONS", "DELETE"])
+  //
+  // NB: actix-cors 0.7 flipped the `block_on_origin_mismatch` default to
+  // false (mismatched origins get a 200 without CORS headers and the browser
+  // enforces the block). We keep the long-standing 0.6 behavior of rejecting
+  // mismatched origins server-side with a 400.
+  cors.block_on_origin_mismatch(true)
+      .allowed_methods(vec!["GET", "POST", "PUT", "OPTIONS", "DELETE"])
       .supports_credentials()
       .allowed_headers(vec![
         actix_http::header::ACCEPT,
