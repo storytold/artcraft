@@ -21,6 +21,16 @@ macro_rules! impl_mysql_enum_coders {
         // NB: https://docs.rs/sqlx-core/0.6.2/src/sqlx_core/mysql/types/uuid.rs.html#38-66 serves as an example
         <str as sqlx::Type<sqlx::MySql>>::type_info()
       }
+
+      // NB(sqlx 0.9): The default `compatible()` compares `type_info()` for exact equality,
+      // which is VARCHAR here. But our whole DB uses the `utf8mb4_bin` collation, which sqlx
+      // reports at runtime as VARBINARY (the BINARY column flag is set for `_bin` collations).
+      // sqlx 0.9 teaches `str`/`String` to accept this by checking the collation (not the
+      // flag); we delegate to `str` so our enum columns accept the same set of SQL types and
+      // don't fail runtime decoding with "VARCHAR is not compatible with VARBINARY".
+      fn compatible(ty: &sqlx_mysql::MySqlTypeInfo) -> bool {
+        <str as sqlx::Type<sqlx::MySql>>::compatible(ty)
+      }
     }
 
     impl<'q> sqlx::Encode<'q, sqlx::MySql> for $t {
