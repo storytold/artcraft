@@ -15,7 +15,7 @@ publish = false
 
 ### BEGIN HAKARI SECTION
 [dependencies]
-actix-router = { version = "0.5.3" }
+actix-router = { version = "0.5.4" }
 actix-rt = { version = "2.11.0" }
 ahash = { version = "0.8.11" }
 anstream = { version = "0.6.14" }
@@ -104,7 +104,7 @@ void = { version = "1.0.2" }
 zeroize = { version = "1.8.1", features = ["zeroize_derive"] }
 
 [build-dependencies]
-actix-router = { version = "0.5.3" }
+actix-router = { version = "0.5.4" }
 ahash = { version = "0.8.11" }
 base64-3c51e837cfc5589a = { package = "base64", version = "0.22.1" }
 base64-647d43efb71741da = { package = "base64", version = "0.21.7" }
