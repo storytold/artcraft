@@ -59,7 +59,7 @@ pub async fn moderation_ban_user_handler(
 ) -> Result<Json<ModerationBanUserSuccessResponse>, CommonWebError> {
 
   // 1. Require moderator with ban permissions.
-  let user_session = require_moderator(&http_request, &server_state, &server_state.mysql_pool).await.map_err(|err| {
+  let user_session = require_moderator(&http_request, &server_state.session_checker, &server_state.mysql_pool).await.map_err(|err| {
     warn!("Moderator check failed: {:?}", err);
     CommonWebError::NotAuthorized
   })?;

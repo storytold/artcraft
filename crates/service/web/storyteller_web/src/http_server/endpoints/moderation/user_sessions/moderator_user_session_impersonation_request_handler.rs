@@ -69,7 +69,7 @@ pub async fn moderator_user_session_impersonation_request_handler(
 ) -> Result<Json<ModerationImpersonateSuccessResponse>, CommonWebError> {
 
   // 1. Require moderator session.
-  let user_session = require_moderator(&http_request, &server_state, &server_state.mysql_pool).await.map_err(|err| {
+  let user_session = require_moderator(&http_request, &server_state.session_checker, &server_state.mysql_pool).await.map_err(|err| {
     warn!("Moderator check failed: {:?}", err);
     CommonWebError::NotAuthorized
   })?;

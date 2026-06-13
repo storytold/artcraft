@@ -115,7 +115,7 @@ pub async fn upload_pmx_media_file_handler(
   // ==================== READ SESSION ==================== //
 
   // NB: We require a moderator to upload PMX files.
-  let user_session = require_moderator(&http_request, &server_state, &mut *mysql_connection)
+  let user_session = require_moderator(&http_request, &server_state.session_checker, &mut *mysql_connection)
       .await
       .map_err(|err| match err {
         RequireModeratorError::ServerError => MediaFileUploadError::ServerError,

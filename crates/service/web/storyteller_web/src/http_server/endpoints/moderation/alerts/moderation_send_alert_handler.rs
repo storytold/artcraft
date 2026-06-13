@@ -35,7 +35,7 @@ pub async fn moderation_send_alert_handler(
   server_state: web::Data<Arc<ServerState>>,
 ) -> Result<Json<ModerationSendAlertResponse>, CommonWebError> {
 
-  let user_session = require_moderator(&http_request, &server_state, &server_state.mysql_pool)
+  let user_session = require_moderator(&http_request, &server_state.session_checker, &server_state.mysql_pool)
     .await
     .map_err(|err| {
       warn!("Moderator check failed: {:?}", err);

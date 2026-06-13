@@ -40,7 +40,7 @@ pub async fn moderator_user_lookup_handler(
   server_state: web::Data<Arc<ServerState>>,
 ) -> Result<Json<ModeratorUserLookupSuccessResponse>, CommonWebError> {
 
-  let _user_session = require_moderator(&http_request, &server_state, &server_state.mysql_pool)
+  let _user_session = require_moderator(&http_request, &server_state.session_checker, &server_state.mysql_pool)
     .await
     .map_err(|_| CommonWebError::NotAuthorized)?;
 

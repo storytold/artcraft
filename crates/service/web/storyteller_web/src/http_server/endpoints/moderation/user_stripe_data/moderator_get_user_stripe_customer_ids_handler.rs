@@ -43,7 +43,7 @@ pub async fn moderator_get_user_stripe_customer_ids_handler(
       .acquire()
       .await?;
 
-  let _moderator_session = require_moderator(&http_request, &server_state, &mut *mysql_connection)
+  let _moderator_session = require_moderator(&http_request, &server_state.session_checker, &mut *mysql_connection)
       .await
       .map_err(|_| CommonWebError::NotAuthorized)?;
 

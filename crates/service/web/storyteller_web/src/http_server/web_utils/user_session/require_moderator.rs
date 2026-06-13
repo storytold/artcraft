@@ -7,7 +7,7 @@ use sqlx::{Executor, MySql};
 
 use mysql_queries::queries::users::user_sessions::get_user_session_by_token::SessionUserRecord;
 
-use crate::state::server_state::ServerState;
+use crate::http_server::session::session_checker::SessionChecker;
 
 #[derive(Debug)]
 pub enum RequireModeratorError {
@@ -31,13 +31,12 @@ impl Error for RequireModeratorError {}
 /// one the handler already holds.
 pub async fn require_moderator<'e, 'c : 'e, E>(
   http_request: &HttpRequest,
-  server_state: &ServerState,
+  session_checker: &SessionChecker,
   mysql_executor: E,
 ) -> Result<SessionUserRecord, RequireModeratorError>
   where E: 'e + Executor<'c, Database = MySql>
 {
-  let maybe_user_session = server_state
-      .session_checker
+  let maybe_user_session = session_checker
       .maybe_get_user_session_from_executor(http_request, mysql_executor)
       .await
       .map_err(|e| {
