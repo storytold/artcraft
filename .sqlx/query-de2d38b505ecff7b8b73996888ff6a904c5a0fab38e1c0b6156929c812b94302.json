@@ -9,8 +9,14 @@
         "type_info": {
           "type": "VarString",
           "flags": "NOT_NULL | UNIQUE_KEY | BINARY | NO_DEFAULT_VALUE",
-          "char_set": 224,
+          "collation": 255,
           "max_size": 128
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.users",
+            "name": "token"
+          }
         }
       },
       {
@@ -19,8 +25,14 @@
         "type_info": {
           "type": "VarString",
           "flags": "NOT_NULL | UNIQUE_KEY | BINARY | NO_DEFAULT_VALUE",
-          "char_set": 224,
+          "collation": 255,
           "max_size": 80
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.users",
+            "name": "username"
+          }
         }
       },
       {
@@ -29,8 +41,14 @@
         "type_info": {
           "type": "VarString",
           "flags": "NOT_NULL | BINARY | NO_DEFAULT_VALUE",
-          "char_set": 224,
+          "collation": 255,
           "max_size": 80
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.users",
+            "name": "display_name"
+          }
         }
       },
       {
@@ -39,8 +57,14 @@
         "type_info": {
           "type": "String",
           "flags": "NOT_NULL | UNIQUE_KEY | BINARY | NO_DEFAULT_VALUE",
-          "char_set": 224,
+          "collation": 255,
           "max_size": 64
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.user_roles",
+            "name": "slug"
+          }
         }
       },
       {
@@ -49,8 +73,14 @@
         "type_info": {
           "type": "VarString",
           "flags": "NOT_NULL | BINARY | NO_DEFAULT_VALUE",
-          "char_set": 224,
+          "collation": 255,
           "max_size": 1020
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.user_roles",
+            "name": "name"
+          }
         }
       }
     ],

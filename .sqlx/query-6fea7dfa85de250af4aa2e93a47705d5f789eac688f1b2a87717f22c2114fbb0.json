@@ -9,8 +9,14 @@
         "type_info": {
           "type": "VarString",
           "flags": "NOT_NULL | UNIQUE_KEY | BINARY | NO_DEFAULT_VALUE",
-          "char_set": 224,
+          "collation": 255,
           "max_size": 1020
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.stripe_webhook_event_logs",
+            "name": "stripe_event_id"
+          }
         }
       },
       {
@@ -19,8 +25,14 @@
         "type_info": {
           "type": "Tiny",
           "flags": "NOT_NULL",
-          "char_set": 63,
+          "collation": 63,
           "max_size": 1
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.stripe_webhook_event_logs",
+            "name": "should_ignore_retry"
+          }
         }
       }
     ],

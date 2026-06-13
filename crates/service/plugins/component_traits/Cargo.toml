@@ -47,7 +47,7 @@ serde_json.workspace = true
 # include support for async fn in traits.
 async-trait = "0.1.58"
 
-sqlx = { version = "0.7.4", features = [ "mysql", "runtime-tokio-rustls", "chrono" ] }
+sqlx = { version = "0.9", features = [ "mysql", "runtime-tokio", "tls-rustls", "chrono" ] }
 #sqlx = { version = "0.7.4", features = [ "mysql", "runtime-tokio", "tls-rustls", "chrono" ] }
 #utoipa = { version = "4", features = ["chrono","actix_extras"] }
 

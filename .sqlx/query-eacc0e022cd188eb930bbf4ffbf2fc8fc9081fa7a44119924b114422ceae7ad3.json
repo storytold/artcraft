@@ -9,8 +9,14 @@
         "type_info": {
           "type": "VarString",
           "flags": "NOT_NULL | UNIQUE_KEY | BINARY | NO_DEFAULT_VALUE",
-          "char_set": 224,
+          "collation": 255,
           "max_size": 128
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.twitch_event_rules",
+            "name": "token"
+          }
         }
       },
       {
@@ -19,8 +25,14 @@
         "type_info": {
           "type": "String",
           "flags": "NOT_NULL | MULTIPLE_KEY | BINARY | ENUM | NO_DEFAULT_VALUE",
-          "char_set": 224,
+          "collation": 255,
           "max_size": 56
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.twitch_event_rules",
+            "name": "event_category"
+          }
         }
       },
       {
@@ -29,8 +41,14 @@
         "type_info": {
           "type": "Blob",
           "flags": "NOT_NULL | BLOB | BINARY | NO_DEFAULT_VALUE",
-          "char_set": 224,
+          "collation": 255,
           "max_size": 67108860
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.twitch_event_rules",
+            "name": "event_match_predicate"
+          }
         }
       },
       {
@@ -39,8 +57,14 @@
         "type_info": {
           "type": "Blob",
           "flags": "NOT_NULL | BLOB | BINARY | NO_DEFAULT_VALUE",
-          "char_set": 224,
+          "collation": 255,
           "max_size": 67108860
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.twitch_event_rules",
+            "name": "event_response"
+          }
         }
       },
       {
@@ -49,8 +73,14 @@
         "type_info": {
           "type": "Long",
           "flags": "NOT_NULL | UNSIGNED",
-          "char_set": 63,
+          "collation": 63,
           "max_size": 10
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.twitch_event_rules",
+            "name": "user_specified_rule_order"
+          }
         }
       },
       {
@@ -59,8 +89,14 @@
         "type_info": {
           "type": "Tiny",
           "flags": "NOT_NULL",
-          "char_set": 63,
+          "collation": 63,
           "max_size": 1
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.twitch_event_rules",
+            "name": "rule_is_disabled"
+          }
         }
       },
       {
@@ -69,8 +105,14 @@
         "type_info": {
           "type": "Timestamp",
           "flags": "NOT_NULL | BINARY | TIMESTAMP",
-          "char_set": 63,
+          "collation": 63,
           "max_size": 19
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.twitch_event_rules",
+            "name": "created_at"
+          }
         }
       },
       {
@@ -79,8 +121,14 @@
         "type_info": {
           "type": "Timestamp",
           "flags": "NOT_NULL | BINARY | TIMESTAMP | ON_UPDATE_NOW",
-          "char_set": 63,
+          "collation": 63,
           "max_size": 19
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.twitch_event_rules",
+            "name": "updated_at"
+          }
         }
       }
     ],

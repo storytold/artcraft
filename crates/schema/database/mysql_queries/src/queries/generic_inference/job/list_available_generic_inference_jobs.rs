@@ -189,7 +189,7 @@ async fn list_sorted_by_id(args: ListAvailableGenericInferenceJobArgs<'_>) -> Re
     LIMIT ?
   "#);
 
-  let query = sqlx::query_as::<_, AvailableInferenceJobRawInternal>(&query)
+  let query = sqlx::query_as::<_, AvailableInferenceJobRawInternal>(sqlx::AssertSqlSafe(&*query))
       .bind(args.is_debug_worker)
       .bind(args.num_records);
 
@@ -206,7 +206,7 @@ async fn list_sorted_by_priority(args: ListAvailableGenericInferenceJobArgs<'_>)
     LIMIT ?
   "#);
 
-  let query = sqlx::query_as::<_, AvailableInferenceJobRawInternal>(&query)
+  let query = sqlx::query_as::<_, AvailableInferenceJobRawInternal>(sqlx::AssertSqlSafe(&*query))
       .bind(args.is_debug_worker)
       .bind(args.num_records);
 

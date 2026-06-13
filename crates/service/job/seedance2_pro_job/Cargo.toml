@@ -44,7 +44,7 @@ anyhow.workspace = true
 chrono.workspace = true
 log.workspace = true
 
-sqlx = { version = "0.7.4", features = [ "mysql", "runtime-tokio-rustls", "chrono" ] }
+sqlx = { version = "0.9", features = [ "mysql", "runtime-tokio", "tls-rustls", "chrono" ] }
 
 # Runtime
 tokio = { version = "1.40.0", features = ["macros", "sync"] }

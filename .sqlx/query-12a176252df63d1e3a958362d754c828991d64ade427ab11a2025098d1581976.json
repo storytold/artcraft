@@ -9,8 +9,14 @@
         "type_info": {
           "type": "VarString",
           "flags": "NOT_NULL | MULTIPLE_KEY | BINARY | NO_DEFAULT_VALUE",
-          "char_set": 224,
+          "collation": 255,
           "max_size": 128
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.tts_category_assignments",
+            "name": "model_token"
+          }
         }
       },
       {
@@ -19,8 +25,14 @@
         "type_info": {
           "type": "VarString",
           "flags": "NOT_NULL | MULTIPLE_KEY | BINARY | NO_DEFAULT_VALUE",
-          "char_set": 224,
+          "collation": 255,
           "max_size": 128
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.tts_category_assignments",
+            "name": "category_token"
+          }
         }
       }
     ],

@@ -193,7 +193,7 @@ fn query_builder<'a>(
   cursor_is_reversed: bool,
   sort_ascending: bool,
   view_as: ViewAs,
-) -> QueryBuilder<'a, MySql> {
+) -> QueryBuilder<MySql> {
 
   let mut sort_ascending = sort_ascending;
   // NB: Query cannot be statically checked by sqlx

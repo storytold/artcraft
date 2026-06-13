@@ -6,97 +6,211 @@
       {
         "name": "id",
         "ordinal": 0,
-        "type_info": "Text"
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "tasks",
+            "name": "id"
+          }
+        }
       },
       {
         "name": "task_status",
         "ordinal": 1,
-        "type_info": "Text"
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "tasks",
+            "name": "task_status"
+          }
+        }
       },
       {
         "name": "task_type",
         "ordinal": 2,
-        "type_info": "Text"
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "tasks",
+            "name": "task_type"
+          }
+        }
       },
       {
         "name": "model_type",
         "ordinal": 3,
-        "type_info": "Text"
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "tasks",
+            "name": "model_type"
+          }
+        }
       },
       {
         "name": "provider",
         "ordinal": 4,
-        "type_info": "Text"
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "tasks",
+            "name": "provider"
+          }
+        }
       },
       {
         "name": "provider_job_id",
         "ordinal": 5,
-        "type_info": "Text"
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "tasks",
+            "name": "provider_job_id"
+          }
+        }
       },
       {
         "name": "frontend_caller",
         "ordinal": 6,
-        "type_info": "Text"
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "tasks",
+            "name": "frontend_caller"
+          }
+        }
       },
       {
         "name": "frontend_subscriber_id",
         "ordinal": 7,
-        "type_info": "Text"
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "tasks",
+            "name": "frontend_subscriber_id"
+          }
+        }
       },
       {
         "name": "frontend_subscriber_payload",
         "ordinal": 8,
-        "type_info": "Text"
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "tasks",
+            "name": "frontend_subscriber_payload"
+          }
+        }
       },
       {
         "name": "on_complete_primary_media_file_token",
         "ordinal": 9,
-        "type_info": "Text"
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "tasks",
+            "name": "on_complete_primary_media_file_token"
+          }
+        }
       },
       {
         "name": "on_complete_primary_media_file_class",
         "ordinal": 10,
-        "type_info": "Text"
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "tasks",
+            "name": "on_complete_primary_media_file_class"
+          }
+        }
       },
       {
         "name": "on_complete_batch_token",
         "ordinal": 11,
-        "type_info": "Text"
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "tasks",
+            "name": "on_complete_batch_token"
+          }
+        }
       },
       {
         "name": "on_complete_primary_media_file_cdn_url",
         "ordinal": 12,
-        "type_info": "Text"
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "tasks",
+            "name": "on_complete_primary_media_file_cdn_url"
+          }
+        }
       },
       {
         "name": "on_complete_primary_media_file_thumbnail_url_template",
         "ordinal": 13,
-        "type_info": "Text"
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "tasks",
+            "name": "on_complete_primary_media_file_thumbnail_url_template"
+          }
+        }
       },
       {
         "name": "on_failure_type",
         "ordinal": 14,
-        "type_info": "Text"
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "tasks",
+            "name": "on_failure_type"
+          }
+        }
       },
       {
         "name": "on_failure_message",
         "ordinal": 15,
-        "type_info": "Text"
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "tasks",
+            "name": "on_failure_message"
+          }
+        }
       },
       {
         "name": "created_at: DateTime<Utc>",
         "ordinal": 16,
-        "type_info": "Int64"
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "tasks",
+            "name": "created_at"
+          }
+        }
       },
       {
         "name": "updated_at: DateTime<Utc>",
         "ordinal": 17,
-        "type_info": "Int64"
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "tasks",
+            "name": "updated_at"
+          }
+        }
       },
       {
         "name": "completed_at: DateTime<Utc>",
         "ordinal": 18,
-        "type_info": "Int64"
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "tasks",
+            "name": "completed_at"
+          }
+        }
       }
     ],
     "parameters": {

@@ -24,10 +24,13 @@ macro_rules! impl_mysql_enum_coders {
     }
 
     impl<'q> sqlx::Encode<'q, sqlx::MySql> for $t {
+      // NB(sqlx 0.9): `HasArguments` was folded into `Database`, so the buffer type is now
+      // `<MySql as Database>::ArgumentBuffer` (no lifetime), and `encode_by_ref` returns
+      // `Result<IsNull, BoxDynError>` instead of a bare `IsNull`.
       fn encode_by_ref(
         &self,
-        buf: &mut <sqlx::MySql as sqlx_core::database::HasArguments<'q>>::ArgumentBuffer
-      ) -> sqlx_core::encode::IsNull {
+        buf: &mut <sqlx::MySql as sqlx::Database>::ArgumentBuffer
+      ) -> Result<sqlx_core::encode::IsNull, sqlx_core::error::BoxDynError> {
         // // 0.4.x series:
         // // NB: In the absence of `#[derive(sqlx::Type)]` and `#sqlx(rename_all="lowercase")]`,
         // // this controls the casing of the variants when sent to MySQL.

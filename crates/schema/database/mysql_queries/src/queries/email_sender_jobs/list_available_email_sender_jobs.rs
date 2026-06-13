@@ -167,7 +167,7 @@ FROM email_sender_jobs"#.to_string();
   LIMIT ?
         "#);
 
-  let query = sqlx::query_as::<_, AvailableEmailSenderJobRawInternal>(&query)
+  let query = sqlx::query_as::<_, AvailableEmailSenderJobRawInternal>(sqlx::AssertSqlSafe(&*query))
       .bind(args.is_debug_worker)
       .bind(args.num_records);
 
@@ -230,7 +230,7 @@ FROM email_sender_jobs"#.to_string();
   LIMIT ?
         "#);
 
-  let query = sqlx::query_as::<_, AvailableEmailSenderJobRawInternal>(&query)
+  let query = sqlx::query_as::<_, AvailableEmailSenderJobRawInternal>(sqlx::AssertSqlSafe(&*query))
       .bind(args.is_debug_worker)
       .bind(args.num_records);
 

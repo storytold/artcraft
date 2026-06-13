@@ -216,7 +216,7 @@ fn query_builder<'a>(
   sort_ascending: bool,
   view_as: ViewAs,
   select_fields: &'a str,
-) -> QueryBuilder<'a, MySql> {
+) -> QueryBuilder<MySql> {
 
   // NB: Query cannot be statically checked by sqlx
   let mut query_builder: QueryBuilder<MySql> = QueryBuilder::new(

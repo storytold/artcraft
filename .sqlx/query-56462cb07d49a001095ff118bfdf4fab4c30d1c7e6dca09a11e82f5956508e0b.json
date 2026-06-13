@@ -9,8 +9,14 @@
         "type_info": {
           "type": "VarString",
           "flags": "NOT_NULL | UNIQUE_KEY | BINARY | NO_DEFAULT_VALUE",
-          "char_set": 224,
+          "collation": 255,
           "max_size": 128
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.user_referral_codes",
+            "name": "token"
+          }
         }
       },
       {
@@ -19,8 +25,14 @@
         "type_info": {
           "type": "VarString",
           "flags": "NOT_NULL | MULTIPLE_KEY | BINARY | NO_DEFAULT_VALUE",
-          "char_set": 224,
+          "collation": 255,
           "max_size": 128
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.user_referral_codes",
+            "name": "owner_user_token"
+          }
         }
       },
       {
@@ -29,8 +41,14 @@
         "type_info": {
           "type": "VarString",
           "flags": "NOT_NULL | BINARY | NO_DEFAULT_VALUE",
-          "char_set": 224,
+          "collation": 255,
           "max_size": 128
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.user_referral_codes",
+            "name": "code"
+          }
         }
       },
       {
@@ -39,8 +57,14 @@
         "type_info": {
           "type": "VarString",
           "flags": "NOT_NULL | UNIQUE_KEY | BINARY | NO_DEFAULT_VALUE",
-          "char_set": 224,
+          "collation": 255,
           "max_size": 128
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.user_referral_codes",
+            "name": "code_lowercase"
+          }
         }
       }
     ],

@@ -9,8 +9,14 @@
         "type_info": {
           "type": "LongLong",
           "flags": "NOT_NULL | PRIMARY_KEY | AUTO_INCREMENT",
-          "char_set": 63,
+          "collation": 63,
           "max_size": 20
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.media_files",
+            "name": "id"
+          }
         }
       },
       {
@@ -19,8 +25,14 @@
         "type_info": {
           "type": "VarString",
           "flags": "NOT_NULL | UNIQUE_KEY | BINARY | NO_DEFAULT_VALUE",
-          "char_set": 224,
+          "collation": 255,
           "max_size": 128
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.media_files",
+            "name": "token"
+          }
         }
       },
       {
@@ -29,8 +41,14 @@
         "type_info": {
           "type": "Timestamp",
           "flags": "NOT_NULL | MULTIPLE_KEY | BINARY | TIMESTAMP",
-          "char_set": 63,
+          "collation": 63,
           "max_size": 19
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.media_files",
+            "name": "created_at"
+          }
         }
       },
       {
@@ -39,8 +57,14 @@
         "type_info": {
           "type": "Tiny",
           "flags": "UNSIGNED",
-          "char_set": 63,
+          "collation": 63,
           "max_size": 3
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.media_files",
+            "name": "maybe_thumbnail_version"
+          }
         }
       },
       {
@@ -49,8 +73,14 @@
         "type_info": {
           "type": "VarString",
           "flags": "NOT_NULL | BINARY | NO_DEFAULT_VALUE",
-          "char_set": 224,
+          "collation": 255,
           "max_size": 128
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.media_files",
+            "name": "public_bucket_directory_hash"
+          }
         }
       },
       {
@@ -59,8 +89,14 @@
         "type_info": {
           "type": "VarString",
           "flags": "BINARY",
-          "char_set": 224,
+          "collation": 255,
           "max_size": 64
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.media_files",
+            "name": "maybe_public_bucket_prefix"
+          }
         }
       },
       {
@@ -69,8 +105,14 @@
         "type_info": {
           "type": "VarString",
           "flags": "BINARY",
-          "char_set": 224,
+          "collation": 255,
           "max_size": 64
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.media_files",
+            "name": "maybe_public_bucket_extension"
+          }
         }
       }
     ],

@@ -9,8 +9,14 @@
         "type_info": {
           "type": "LongLong",
           "flags": "NOT_NULL | PRIMARY_KEY | AUTO_INCREMENT",
-          "char_set": 63,
+          "collation": 63,
           "max_size": 20
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.tts_inference_jobs",
+            "name": "id"
+          }
         }
       },
       {
@@ -19,8 +25,14 @@
         "type_info": {
           "type": "VarString",
           "flags": "NOT_NULL | UNIQUE_KEY | BINARY | NO_DEFAULT_VALUE",
-          "char_set": 224,
+          "collation": 255,
           "max_size": 128
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.tts_inference_jobs",
+            "name": "token"
+          }
         }
       },
       {
@@ -29,8 +41,14 @@
         "type_info": {
           "type": "VarString",
           "flags": "NOT_NULL | UNIQUE_KEY | BINARY | NO_DEFAULT_VALUE",
-          "char_set": 224,
+          "collation": 255,
           "max_size": 144
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.tts_inference_jobs",
+            "name": "uuid_idempotency_token"
+          }
         }
       },
       {
@@ -39,8 +57,14 @@
         "type_info": {
           "type": "VarString",
           "flags": "NOT_NULL | MULTIPLE_KEY | BINARY | NO_DEFAULT_VALUE",
-          "char_set": 224,
+          "collation": 255,
           "max_size": 128
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.tts_inference_jobs",
+            "name": "model_token"
+          }
         }
       },
       {
@@ -49,8 +73,14 @@
         "type_info": {
           "type": "Blob",
           "flags": "NOT_NULL | BLOB | BINARY | NO_DEFAULT_VALUE",
-          "char_set": 224,
+          "collation": 255,
           "max_size": 262140
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.tts_inference_jobs",
+            "name": "raw_inference_text"
+          }
         }
       },
       {
@@ -59,8 +89,14 @@
         "type_info": {
           "type": "Long",
           "flags": "NOT_NULL",
-          "char_set": 63,
+          "collation": 63,
           "max_size": 11
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.tts_inference_jobs",
+            "name": "max_duration_seconds"
+          }
         }
       },
       {
@@ -69,8 +105,14 @@
         "type_info": {
           "type": "VarString",
           "flags": "NOT_NULL | MULTIPLE_KEY | BINARY | NO_DEFAULT_VALUE",
-          "char_set": 224,
+          "collation": 255,
           "max_size": 160
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.tts_inference_jobs",
+            "name": "creator_ip_address"
+          }
         }
       },
       {
@@ -79,8 +121,14 @@
         "type_info": {
           "type": "VarString",
           "flags": "MULTIPLE_KEY | BINARY",
-          "char_set": 224,
+          "collation": 255,
           "max_size": 128
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.tts_inference_jobs",
+            "name": "maybe_creator_user_token"
+          }
         }
       },
       {
@@ -89,8 +137,14 @@
         "type_info": {
           "type": "String",
           "flags": "NOT_NULL | BINARY | ENUM",
-          "char_set": 224,
+          "collation": 255,
           "max_size": 28
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.tts_inference_jobs",
+            "name": "creator_set_visibility"
+          }
         }
       },
       {
@@ -99,8 +153,14 @@
         "type_info": {
           "type": "Tiny",
           "flags": "NOT_NULL",
-          "char_set": 63,
+          "collation": 63,
           "max_size": 1
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.tts_inference_jobs",
+            "name": "is_from_api"
+          }
         }
       },
       {
@@ -109,8 +169,14 @@
         "type_info": {
           "type": "Tiny",
           "flags": "NOT_NULL",
-          "char_set": 63,
+          "collation": 63,
           "max_size": 1
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.tts_inference_jobs",
+            "name": "is_for_twitch"
+          }
         }
       },
       {
@@ -119,8 +185,14 @@
         "type_info": {
           "type": "Tiny",
           "flags": "NOT_NULL | MULTIPLE_KEY",
-          "char_set": 63,
+          "collation": 63,
           "max_size": 1
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.tts_inference_jobs",
+            "name": "is_debug_request"
+          }
         }
       },
       {
@@ -129,8 +201,14 @@
         "type_info": {
           "type": "String",
           "flags": "NOT_NULL | MULTIPLE_KEY | BINARY | ENUM",
-          "char_set": 224,
+          "collation": 255,
           "max_size": 64
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.tts_inference_jobs",
+            "name": "status"
+          }
         }
       },
       {
@@ -139,8 +217,14 @@
         "type_info": {
           "type": "Tiny",
           "flags": "NOT_NULL | UNSIGNED",
-          "char_set": 63,
+          "collation": 63,
           "max_size": 3
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.tts_inference_jobs",
+            "name": "priority_level"
+          }
         }
       },
       {
@@ -149,8 +233,14 @@
         "type_info": {
           "type": "Long",
           "flags": "NOT_NULL",
-          "char_set": 63,
-          "max_size": 11
+          "collation": 63,
+          "max_size": 3
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.tts_inference_jobs",
+            "name": "attempt_count"
+          }
         }
       },
       {
@@ -159,8 +249,14 @@
         "type_info": {
           "type": "VarString",
           "flags": "BINARY",
-          "char_set": 224,
+          "collation": 255,
           "max_size": 2048
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.tts_inference_jobs",
+            "name": "failure_reason"
+          }
         }
       },
       {
@@ -169,8 +265,14 @@
         "type_info": {
           "type": "Timestamp",
           "flags": "NOT_NULL | BINARY | TIMESTAMP",
-          "char_set": 63,
+          "collation": 63,
           "max_size": 19
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.tts_inference_jobs",
+            "name": "created_at"
+          }
         }
       },
       {
@@ -179,8 +281,14 @@
         "type_info": {
           "type": "Timestamp",
           "flags": "NOT_NULL | BINARY | TIMESTAMP | ON_UPDATE_NOW",
-          "char_set": 63,
+          "collation": 63,
           "max_size": 19
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.tts_inference_jobs",
+            "name": "updated_at"
+          }
         }
       },
       {
@@ -189,8 +297,14 @@
         "type_info": {
           "type": "Timestamp",
           "flags": "BINARY",
-          "char_set": 63,
+          "collation": 63,
           "max_size": 19
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.tts_inference_jobs",
+            "name": "retry_at"
+          }
         }
       }
     ],

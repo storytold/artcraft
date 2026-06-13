@@ -143,7 +143,7 @@ pub async fn list_session_jobs_from_connection(
   Ok(raw_records_to_public_result(records))
 }
 
-fn make_query_builder() -> QueryBuilder<'static, MySql> {
+fn make_query_builder() -> QueryBuilder<MySql> {
   // NB(bt): jobs.uuid_idempotency_token is the current way to reconstruct the hash of the
   // TTS result since we don't store a bucket hash on the table. This is an ugly hack :(
   // TODO(bt,2023-10-12): ^^^ Is this comment still accurate? I don't see that field referenced below.

@@ -9,8 +9,14 @@
         "type_info": {
           "type": "LongLong",
           "flags": "NOT_NULL | PRIMARY_KEY | AUTO_INCREMENT",
-          "char_set": 63,
+          "collation": 63,
           "max_size": 20
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.tts_models",
+            "name": "id"
+          }
         }
       },
       {
@@ -19,8 +25,14 @@
         "type_info": {
           "type": "VarString",
           "flags": "NOT_NULL | UNIQUE_KEY | BINARY | NO_DEFAULT_VALUE",
-          "char_set": 224,
+          "collation": 255,
           "max_size": 128
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.tts_models",
+            "name": "token"
+          }
         }
       },
       {
@@ -29,8 +41,14 @@
         "type_info": {
           "type": "String",
           "flags": "NOT_NULL | MULTIPLE_KEY | BINARY | ENUM",
-          "char_set": 224,
+          "collation": 255,
           "max_size": 60
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.tts_models",
+            "name": "tts_model_type"
+          }
         }
       },
       {
@@ -39,8 +57,14 @@
         "type_info": {
           "type": "VarString",
           "flags": "BINARY",
-          "char_set": 224,
+          "collation": 255,
           "max_size": 256
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.tts_models",
+            "name": "text_pipeline_type"
+          }
         }
       },
       {
@@ -49,8 +73,14 @@
         "type_info": {
           "type": "Tiny",
           "flags": "NOT_NULL",
-          "char_set": 63,
+          "collation": 63,
           "max_size": 1
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.tts_models",
+            "name": "has_self_contained_vocoder"
+          }
         }
       },
       {
@@ -59,8 +89,14 @@
         "type_info": {
           "type": "Tiny",
           "flags": "NOT_NULL",
-          "char_set": 63,
+          "collation": 63,
           "max_size": 1
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.tts_models",
+            "name": "has_self_contained_duration_model"
+          }
         }
       },
       {
@@ -69,8 +105,14 @@
         "type_info": {
           "type": "Tiny",
           "flags": "NOT_NULL",
-          "char_set": 63,
+          "collation": 63,
           "max_size": 1
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.tts_models",
+            "name": "has_self_contained_pitch_model"
+          }
         }
       },
       {
@@ -79,8 +121,14 @@
         "type_info": {
           "type": "String",
           "flags": "NOT_NULL | BINARY | ENUM",
-          "char_set": 224,
+          "collation": 255,
           "max_size": 28
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.tts_models",
+            "name": "text_preprocessing_algorithm"
+          }
         }
       },
       {
@@ -89,8 +137,14 @@
         "type_info": {
           "type": "Tiny",
           "flags": "NOT_NULL",
-          "char_set": 63,
+          "collation": 63,
           "max_size": 1
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.tts_models",
+            "name": "use_default_mel_multiply_factor"
+          }
         }
       },
       {
@@ -99,8 +153,14 @@
         "type_info": {
           "type": "Double",
           "flags": "",
-          "char_set": 63,
+          "collation": 63,
           "max_size": 22
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.tts_models",
+            "name": "maybe_custom_mel_multiply_factor"
+          }
         }
       },
       {
@@ -109,8 +169,14 @@
         "type_info": {
           "type": "VarString",
           "flags": "BINARY",
-          "char_set": 224,
+          "collation": 255,
           "max_size": 256
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.tts_models",
+            "name": "maybe_default_pretrained_vocoder"
+          }
         }
       },
       {
@@ -119,8 +185,14 @@
         "type_info": {
           "type": "VarString",
           "flags": "MULTIPLE_KEY | BINARY",
-          "char_set": 224,
+          "collation": 255,
           "max_size": 128
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.tts_models",
+            "name": "maybe_custom_vocoder_token"
+          }
         }
       },
       {
@@ -129,8 +201,14 @@
         "type_info": {
           "type": "VarString",
           "flags": "NOT_NULL | BINARY",
-          "char_set": 224,
+          "collation": 255,
           "max_size": 256
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.tts_models",
+            "name": "ietf_language_tag"
+          }
         }
       },
       {
@@ -139,8 +217,14 @@
         "type_info": {
           "type": "VarString",
           "flags": "NOT_NULL | BINARY",
-          "char_set": 224,
+          "collation": 255,
           "max_size": 48
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.tts_models",
+            "name": "ietf_primary_language_subtag"
+          }
         }
       },
       {
@@ -149,8 +233,14 @@
         "type_info": {
           "type": "VarString",
           "flags": "NOT_NULL | BINARY | NO_DEFAULT_VALUE",
-          "char_set": 224,
+          "collation": 255,
           "max_size": 1020
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.tts_models",
+            "name": "title"
+          }
         }
       },
       {
@@ -159,8 +249,14 @@
         "type_info": {
           "type": "Blob",
           "flags": "NOT_NULL | BLOB | BINARY | NO_DEFAULT_VALUE",
-          "char_set": 224,
+          "collation": 255,
           "max_size": 262140
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.tts_models",
+            "name": "description_markdown"
+          }
         }
       },
       {
@@ -169,8 +265,14 @@
         "type_info": {
           "type": "Blob",
           "flags": "NOT_NULL | BLOB | BINARY | NO_DEFAULT_VALUE",
-          "char_set": 224,
+          "collation": 255,
           "max_size": 262140
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.tts_models",
+            "name": "description_rendered_html"
+          }
         }
       },
       {
@@ -179,8 +281,14 @@
         "type_info": {
           "type": "VarString",
           "flags": "BINARY",
-          "char_set": 224,
+          "collation": 255,
           "max_size": 1020
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.tts_models",
+            "name": "voice_name"
+          }
         }
       },
       {
@@ -189,8 +297,14 @@
         "type_info": {
           "type": "VarString",
           "flags": "BINARY",
-          "char_set": 224,
+          "collation": 255,
           "max_size": 1020
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.tts_models",
+            "name": "actor_name"
+          }
         }
       },
       {
@@ -199,8 +313,14 @@
         "type_info": {
           "type": "VarString",
           "flags": "BINARY",
-          "char_set": 224,
+          "collation": 255,
           "max_size": 1020
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.tts_models",
+            "name": "characteristic"
+          }
         }
       },
       {
@@ -209,8 +329,14 @@
         "type_info": {
           "type": "VarString",
           "flags": "BINARY",
-          "char_set": 224,
+          "collation": 255,
           "max_size": 1020
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.tts_models",
+            "name": "version_string"
+          }
         }
       },
       {
@@ -219,8 +345,14 @@
         "type_info": {
           "type": "Tiny",
           "flags": "NOT_NULL",
-          "char_set": 63,
+          "collation": 63,
           "max_size": 1
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.tts_models",
+            "name": "is_front_page_featured"
+          }
         }
       },
       {
@@ -229,8 +361,14 @@
         "type_info": {
           "type": "Tiny",
           "flags": "NOT_NULL",
-          "char_set": 63,
+          "collation": 63,
           "max_size": 1
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.tts_models",
+            "name": "is_twitch_featured"
+          }
         }
       },
       {
@@ -239,8 +377,14 @@
         "type_info": {
           "type": "VarString",
           "flags": "UNIQUE_KEY | BINARY",
-          "char_set": 224,
+          "collation": 255,
           "max_size": 1020
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.tts_models",
+            "name": "maybe_suggested_unique_bot_command"
+          }
         }
       },
       {
@@ -249,8 +393,14 @@
         "type_info": {
           "type": "VarString",
           "flags": "BINARY",
-          "char_set": 224,
+          "collation": 255,
           "max_size": 2048
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.tts_models",
+            "name": "original_download_url"
+          }
         }
       },
       {
@@ -259,8 +409,14 @@
         "type_info": {
           "type": "VarString",
           "flags": "BINARY",
-          "char_set": 224,
+          "collation": 255,
           "max_size": 1020
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.tts_models",
+            "name": "original_filename"
+          }
         }
       },
       {
@@ -269,8 +425,14 @@
         "type_info": {
           "type": "Long",
           "flags": "NOT_NULL",
-          "char_set": 63,
-          "max_size": 11
+          "collation": 63,
+          "max_size": 10
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.tts_models",
+            "name": "file_size_bytes"
+          }
         }
       },
       {
@@ -279,8 +441,14 @@
         "type_info": {
           "type": "VarString",
           "flags": "NOT_NULL | MULTIPLE_KEY | BINARY | NO_DEFAULT_VALUE",
-          "char_set": 224,
+          "collation": 255,
           "max_size": 128
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.tts_models",
+            "name": "creator_user_token"
+          }
         }
       },
       {
@@ -289,8 +457,14 @@
         "type_info": {
           "type": "VarString",
           "flags": "NOT_NULL | MULTIPLE_KEY | BINARY | NO_DEFAULT_VALUE",
-          "char_set": 224,
+          "collation": 255,
           "max_size": 160
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.tts_models",
+            "name": "creator_ip_address_creation"
+          }
         }
       },
       {
@@ -299,8 +473,14 @@
         "type_info": {
           "type": "VarString",
           "flags": "NOT_NULL | MULTIPLE_KEY | BINARY | NO_DEFAULT_VALUE",
-          "char_set": 224,
+          "collation": 255,
           "max_size": 160
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.tts_models",
+            "name": "creator_ip_address_last_update"
+          }
         }
       },
       {
@@ -309,8 +489,14 @@
         "type_info": {
           "type": "String",
           "flags": "NOT_NULL | MULTIPLE_KEY | BINARY | ENUM",
-          "char_set": 224,
+          "collation": 255,
           "max_size": 28
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.tts_models",
+            "name": "creator_set_visibility"
+          }
         }
       },
       {
@@ -319,8 +505,14 @@
         "type_info": {
           "type": "String",
           "flags": "NOT_NULL | MULTIPLE_KEY | BINARY | NO_DEFAULT_VALUE",
-          "char_set": 224,
+          "collation": 255,
           "max_size": 256
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.tts_models",
+            "name": "private_bucket_hash"
+          }
         }
       },
       {
@@ -329,8 +521,14 @@
         "type_info": {
           "type": "VarString",
           "flags": "NOT_NULL | BINARY | NO_DEFAULT_VALUE",
-          "char_set": 224,
+          "collation": 255,
           "max_size": 1020
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.tts_models",
+            "name": "private_bucket_object_name"
+          }
         }
       },
       {
@@ -339,8 +537,14 @@
         "type_info": {
           "type": "Tiny",
           "flags": "NOT_NULL",
-          "char_set": 63,
+          "collation": 63,
           "max_size": 1
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.tts_models",
+            "name": "private_bucket_object_is_archive"
+          }
         }
       },
       {
@@ -349,8 +553,14 @@
         "type_info": {
           "type": "Long",
           "flags": "NOT_NULL | UNSIGNED",
-          "char_set": 63,
+          "collation": 63,
           "max_size": 10
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.tts_models",
+            "name": "user_ratings_total_count"
+          }
         }
       },
       {
@@ -359,8 +569,14 @@
         "type_info": {
           "type": "Long",
           "flags": "NOT_NULL | UNSIGNED",
-          "char_set": 63,
+          "collation": 63,
           "max_size": 10
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.tts_models",
+            "name": "user_ratings_positive_count"
+          }
         }
       },
       {
@@ -369,8 +585,14 @@
         "type_info": {
           "type": "Long",
           "flags": "NOT_NULL | UNSIGNED",
-          "char_set": 63,
+          "collation": 63,
           "max_size": 10
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.tts_models",
+            "name": "user_ratings_negative_count"
+          }
         }
       },
       {
@@ -379,8 +601,14 @@
         "type_info": {
           "type": "Tiny",
           "flags": "MULTIPLE_KEY",
-          "char_set": 63,
+          "collation": 63,
           "max_size": 1
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.tts_models",
+            "name": "is_public_listing_approved"
+          }
         }
       },
       {
@@ -389,8 +617,14 @@
         "type_info": {
           "type": "Tiny",
           "flags": "NOT_NULL | MULTIPLE_KEY",
-          "char_set": 63,
+          "collation": 63,
           "max_size": 1
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.tts_models",
+            "name": "is_locked_from_user_modification"
+          }
         }
       },
       {
@@ -399,8 +633,14 @@
         "type_info": {
           "type": "Tiny",
           "flags": "NOT_NULL | MULTIPLE_KEY",
-          "char_set": 63,
+          "collation": 63,
           "max_size": 1
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.tts_models",
+            "name": "is_locked_from_use"
+          }
         }
       },
       {
@@ -409,8 +649,14 @@
         "type_info": {
           "type": "VarString",
           "flags": "BINARY",
-          "char_set": 224,
+          "collation": 255,
           "max_size": 1020
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.tts_models",
+            "name": "maybe_mod_comments"
+          }
         }
       },
       {
@@ -419,8 +665,14 @@
         "type_info": {
           "type": "VarString",
           "flags": "MULTIPLE_KEY | BINARY",
-          "char_set": 224,
+          "collation": 255,
           "max_size": 128
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.tts_models",
+            "name": "maybe_mod_user_token"
+          }
         }
       },
       {
@@ -429,8 +681,14 @@
         "type_info": {
           "type": "VarString",
           "flags": "UNIQUE_KEY | BINARY",
-          "char_set": 224,
+          "collation": 255,
           "max_size": 128
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.tts_models",
+            "name": "maybe_migration_new_model_weights_token"
+          }
         }
       },
       {
@@ -439,8 +697,14 @@
         "type_info": {
           "type": "Long",
           "flags": "NOT_NULL",
-          "char_set": 63,
+          "collation": 63,
           "max_size": 11
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.tts_models",
+            "name": "version"
+          }
         }
       },
       {
@@ -449,8 +713,14 @@
         "type_info": {
           "type": "Timestamp",
           "flags": "NOT_NULL | BINARY | TIMESTAMP",
-          "char_set": 63,
+          "collation": 63,
           "max_size": 19
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.tts_models",
+            "name": "created_at"
+          }
         }
       },
       {
@@ -459,8 +729,14 @@
         "type_info": {
           "type": "Timestamp",
           "flags": "NOT_NULL | BINARY | TIMESTAMP | ON_UPDATE_NOW",
-          "char_set": 63,
+          "collation": 63,
           "max_size": 19
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.tts_models",
+            "name": "updated_at"
+          }
         }
       },
       {
@@ -469,8 +745,14 @@
         "type_info": {
           "type": "Timestamp",
           "flags": "BINARY",
-          "char_set": 63,
+          "collation": 63,
           "max_size": 19
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.tts_models",
+            "name": "user_deleted_at"
+          }
         }
       },
       {
@@ -479,8 +761,14 @@
         "type_info": {
           "type": "Timestamp",
           "flags": "BINARY",
-          "char_set": 63,
+          "collation": 63,
           "max_size": 19
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.tts_models",
+            "name": "mod_deleted_at"
+          }
         }
       }
     ],

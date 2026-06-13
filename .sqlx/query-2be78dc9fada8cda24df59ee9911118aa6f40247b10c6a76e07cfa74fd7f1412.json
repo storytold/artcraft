@@ -9,8 +9,14 @@
         "type_info": {
           "type": "VarString",
           "flags": "NOT_NULL | UNIQUE_KEY | BINARY | NO_DEFAULT_VALUE",
-          "char_set": 224,
+          "collation": 255,
           "max_size": 128
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.wallets",
+            "name": "token"
+          }
         }
       },
       {
@@ -19,8 +25,14 @@
         "type_info": {
           "type": "VarString",
           "flags": "NOT_NULL | MULTIPLE_KEY | BINARY | NO_DEFAULT_VALUE",
-          "char_set": 224,
+          "collation": 255,
           "max_size": 128
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.wallets",
+            "name": "wallet_namespace"
+          }
         }
       },
       {
@@ -29,8 +41,14 @@
         "type_info": {
           "type": "VarString",
           "flags": "NOT_NULL | MULTIPLE_KEY | BINARY | NO_DEFAULT_VALUE",
-          "char_set": 224,
+          "collation": 255,
           "max_size": 128
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.wallets",
+            "name": "owner_user_token"
+          }
         }
       },
       {
@@ -39,8 +57,14 @@
         "type_info": {
           "type": "Long",
           "flags": "NOT_NULL | UNSIGNED",
-          "char_set": 63,
+          "collation": 63,
           "max_size": 10
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.wallets",
+            "name": "banked_credits"
+          }
         }
       },
       {
@@ -49,8 +73,14 @@
         "type_info": {
           "type": "Long",
           "flags": "NOT_NULL | UNSIGNED",
-          "char_set": 63,
+          "collation": 63,
           "max_size": 10
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.wallets",
+            "name": "monthly_credits"
+          }
         }
       }
     ],

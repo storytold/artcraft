@@ -54,7 +54,7 @@ async-stripe = { version = "0.26.0", default-features = false, features = ["runt
 # include support for async fn in traits.
 async-trait = "0.1.58"
 
-sqlx = { version = "0.7.4", features = [ "mysql", "runtime-tokio-rustls", "chrono" ] }
+sqlx = { version = "0.9", features = [ "mysql", "runtime-tokio", "tls-rustls", "chrono" ] }
 
 utoipa.workspace = true
 

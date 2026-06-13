@@ -283,7 +283,7 @@ pub async fn batch_get_media_files(
       .collect::<Vec<_>>())
 }
 
-fn make_query_builder() -> QueryBuilder<'static, MySql> {
+fn make_query_builder() -> QueryBuilder<MySql> {
   QueryBuilder::new(r#"
 SELECT
     m.token,

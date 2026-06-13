@@ -9,8 +9,14 @@
         "type_info": {
           "type": "VarString",
           "flags": "NOT_NULL | UNIQUE_KEY | BINARY | NO_DEFAULT_VALUE",
-          "char_set": 224,
+          "collation": 255,
           "max_size": 128
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.prompts",
+            "name": "token"
+          }
         }
       },
       {
@@ -19,8 +25,14 @@
         "type_info": {
           "type": "VarString",
           "flags": "NOT_NULL | BINARY | NO_DEFAULT_VALUE",
-          "char_set": 224,
+          "collation": 255,
           "max_size": 64
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.prompts",
+            "name": "prompt_type"
+          }
         }
       },
       {
@@ -29,8 +41,14 @@
         "type_info": {
           "type": "VarString",
           "flags": "BINARY",
-          "char_set": 224,
+          "collation": 255,
           "max_size": 128
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.prompts",
+            "name": "maybe_model_type"
+          }
         }
       },
       {
@@ -39,8 +57,14 @@
         "type_info": {
           "type": "VarString",
           "flags": "BINARY",
-          "char_set": 224,
+          "collation": 255,
           "max_size": 64
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.prompts",
+            "name": "maybe_generation_provider"
+          }
         }
       },
       {
@@ -49,8 +73,14 @@
         "type_info": {
           "type": "VarString",
           "flags": "MULTIPLE_KEY | BINARY",
-          "char_set": 224,
+          "collation": 255,
           "max_size": 128
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.prompts",
+            "name": "maybe_creator_user_token"
+          }
         }
       },
       {
@@ -59,8 +89,14 @@
         "type_info": {
           "type": "Blob",
           "flags": "BLOB | BINARY",
-          "char_set": 224,
+          "collation": 255,
           "max_size": 262140
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.prompts",
+            "name": "maybe_positive_prompt"
+          }
         }
       },
       {
@@ -69,8 +105,14 @@
         "type_info": {
           "type": "Blob",
           "flags": "BLOB | BINARY",
-          "char_set": 224,
+          "collation": 255,
           "max_size": 262140
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.prompts",
+            "name": "maybe_negative_prompt"
+          }
         }
       },
       {
@@ -79,8 +121,14 @@
         "type_info": {
           "type": "VarString",
           "flags": "BINARY",
-          "char_set": 224,
+          "collation": 255,
           "max_size": 96
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.prompts",
+            "name": "maybe_generation_mode"
+          }
         }
       },
       {
@@ -89,8 +137,14 @@
         "type_info": {
           "type": "VarString",
           "flags": "BINARY",
-          "char_set": 224,
+          "collation": 255,
           "max_size": 96
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.prompts",
+            "name": "maybe_aspect_ratio"
+          }
         }
       },
       {
@@ -99,8 +153,14 @@
         "type_info": {
           "type": "VarString",
           "flags": "BINARY",
-          "char_set": 224,
+          "collation": 255,
           "max_size": 64
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.prompts",
+            "name": "maybe_resolution"
+          }
         }
       },
       {
@@ -109,8 +169,14 @@
         "type_info": {
           "type": "Tiny",
           "flags": "UNSIGNED",
-          "char_set": 63,
+          "collation": 63,
           "max_size": 3
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.prompts",
+            "name": "maybe_batch_count"
+          }
         }
       },
       {
@@ -119,8 +185,14 @@
         "type_info": {
           "type": "Tiny",
           "flags": "",
-          "char_set": 63,
+          "collation": 63,
           "max_size": 1
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.prompts",
+            "name": "maybe_generate_audio"
+          }
         }
       },
       {
@@ -129,8 +201,14 @@
         "type_info": {
           "type": "Long",
           "flags": "UNSIGNED",
-          "char_set": 63,
+          "collation": 63,
           "max_size": 10
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.prompts",
+            "name": "maybe_duration_seconds"
+          }
         }
       },
       {
@@ -139,8 +217,14 @@
         "type_info": {
           "type": "Blob",
           "flags": "BLOB | BINARY",
-          "char_set": 224,
+          "collation": 255,
           "max_size": 262140
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.prompts",
+            "name": "maybe_other_args"
+          }
         }
       },
       {
@@ -149,8 +233,14 @@
         "type_info": {
           "type": "VarString",
           "flags": "NOT_NULL | BINARY | NO_DEFAULT_VALUE",
-          "char_set": 224,
+          "collation": 255,
           "max_size": 160
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.prompts",
+            "name": "creator_ip_address"
+          }
         }
       },
       {
@@ -159,8 +249,14 @@
         "type_info": {
           "type": "Timestamp",
           "flags": "NOT_NULL | MULTIPLE_KEY | BINARY | TIMESTAMP",
-          "char_set": 63,
+          "collation": 63,
           "max_size": 19
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.prompts",
+            "name": "created_at"
+          }
         }
       }
     ],

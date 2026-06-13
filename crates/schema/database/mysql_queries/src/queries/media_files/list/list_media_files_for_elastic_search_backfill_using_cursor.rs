@@ -208,7 +208,7 @@ pub async fn list_media_files_for_elastic_search_backfill_using_cursor(
 
 fn query_builder<'a>(
   args: &ListArgs<'a>
-) -> QueryBuilder<'a, MySql> {
+) -> QueryBuilder<MySql> {
   // NB: Query cannot be statically checked by sqlx
   let mut query_builder: QueryBuilder<MySql> = QueryBuilder::new(r#"
 SELECT

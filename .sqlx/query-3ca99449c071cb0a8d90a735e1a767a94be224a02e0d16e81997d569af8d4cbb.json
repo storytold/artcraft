@@ -9,8 +9,14 @@
         "type_info": {
           "type": "VarString",
           "flags": "NOT_NULL | UNIQUE_KEY | BINARY | NO_DEFAULT_VALUE",
-          "char_set": 224,
+          "collation": 255,
           "max_size": 128
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.users",
+            "name": "token"
+          }
         }
       },
       {
@@ -19,8 +25,14 @@
         "type_info": {
           "type": "VarString",
           "flags": "NOT_NULL | UNIQUE_KEY | BINARY | NO_DEFAULT_VALUE",
-          "char_set": 224,
+          "collation": 255,
           "max_size": 80
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.users",
+            "name": "username"
+          }
         }
       },
       {
@@ -29,8 +41,14 @@
         "type_info": {
           "type": "VarString",
           "flags": "NOT_NULL | BINARY | NO_DEFAULT_VALUE",
-          "char_set": 224,
+          "collation": 255,
           "max_size": 80
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.users",
+            "name": "display_name"
+          }
         }
       },
       {
@@ -39,8 +57,14 @@
         "type_info": {
           "type": "VarString",
           "flags": "NOT_NULL | UNIQUE_KEY | BINARY | NO_DEFAULT_VALUE",
-          "char_set": 224,
+          "collation": 255,
           "max_size": 1020
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.users",
+            "name": "email_address"
+          }
         }
       },
       {
@@ -49,8 +73,14 @@
         "type_info": {
           "type": "String",
           "flags": "NOT_NULL | BINARY | NO_DEFAULT_VALUE",
-          "char_set": 224,
+          "collation": 255,
           "max_size": 128
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.users",
+            "name": "email_gravatar_hash"
+          }
         }
       },
       {
@@ -59,8 +89,14 @@
         "type_info": {
           "type": "Tiny",
           "flags": "NOT_NULL",
-          "char_set": 63,
+          "collation": 63,
           "max_size": 1
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.users",
+            "name": "email_confirmed"
+          }
         }
       },
       {
@@ -69,8 +105,14 @@
         "type_info": {
           "type": "Tiny",
           "flags": "NOT_NULL",
-          "char_set": 63,
+          "collation": 63,
           "max_size": 1
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.users",
+            "name": "email_confirmed_by_google"
+          }
         }
       },
       {
@@ -79,8 +121,14 @@
         "type_info": {
           "type": "Tiny",
           "flags": "NOT_NULL",
-          "char_set": 63,
+          "collation": 63,
           "max_size": 1
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.users",
+            "name": "email_is_synthetic"
+          }
         }
       },
       {
@@ -89,8 +137,14 @@
         "type_info": {
           "type": "Tiny",
           "flags": "NOT_NULL",
-          "char_set": 63,
+          "collation": 63,
           "max_size": 1
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.users",
+            "name": "is_without_password"
+          }
         }
       },
       {
@@ -99,8 +153,14 @@
         "type_info": {
           "type": "Tiny",
           "flags": "NOT_NULL",
-          "char_set": 63,
+          "collation": 63,
           "max_size": 1
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.users",
+            "name": "username_is_not_customized"
+          }
         }
       },
       {
@@ -109,8 +169,14 @@
         "type_info": {
           "type": "VarString",
           "flags": "BINARY",
-          "char_set": 224,
+          "collation": 255,
           "max_size": 1020
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.users",
+            "name": "maybe_stripe_customer_id"
+          }
         }
       },
       {
@@ -119,8 +185,14 @@
         "type_info": {
           "type": "VarString",
           "flags": "BINARY",
-          "char_set": 224,
+          "collation": 255,
           "max_size": 128
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.users",
+            "name": "maybe_loyalty_program_key"
+          }
         }
       },
       {
@@ -129,8 +201,14 @@
         "type_info": {
           "type": "Tiny",
           "flags": "NOT_NULL",
-          "char_set": 63,
+          "collation": 63,
           "max_size": 1
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.users",
+            "name": "disable_gravatar"
+          }
         }
       },
       {
@@ -139,8 +217,14 @@
         "type_info": {
           "type": "Tiny",
           "flags": "",
-          "char_set": 63,
+          "collation": 63,
           "max_size": 1
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.users",
+            "name": "auto_play_audio_preference"
+          }
         }
       },
       {
@@ -149,8 +233,14 @@
         "type_info": {
           "type": "Tiny",
           "flags": "",
-          "char_set": 63,
+          "collation": 63,
           "max_size": 1
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.users",
+            "name": "auto_play_video_preference"
+          }
         }
       },
       {
@@ -159,8 +249,14 @@
         "type_info": {
           "type": "String",
           "flags": "NOT_NULL | BINARY | ENUM",
-          "char_set": 224,
+          "collation": 255,
           "max_size": 28
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.users",
+            "name": "preferred_tts_result_visibility"
+          }
         }
       },
       {
@@ -169,8 +265,14 @@
         "type_info": {
           "type": "String",
           "flags": "NOT_NULL | BINARY | ENUM",
-          "char_set": 224,
+          "collation": 255,
           "max_size": 28
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.users",
+            "name": "preferred_w2l_result_visibility"
+          }
         }
       },
       {
@@ -179,8 +281,14 @@
         "type_info": {
           "type": "VarString",
           "flags": "NOT_NULL | MULTIPLE_KEY | BINARY | NO_DEFAULT_VALUE",
-          "char_set": 224,
+          "collation": 255,
           "max_size": 64
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.users",
+            "name": "user_role_slug"
+          }
         }
       },
       {
@@ -189,8 +297,14 @@
         "type_info": {
           "type": "Tiny",
           "flags": "NOT_NULL",
-          "char_set": 63,
+          "collation": 63,
           "max_size": 1
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.users",
+            "name": "is_banned"
+          }
         }
       },
       {
@@ -199,8 +313,14 @@
         "type_info": {
           "type": "Tiny",
           "flags": "NOT_NULL | MULTIPLE_KEY",
-          "char_set": 63,
+          "collation": 63,
           "max_size": 1
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.users",
+            "name": "can_access_studio"
+          }
         }
       },
       {
@@ -209,8 +329,14 @@
         "type_info": {
           "type": "VarString",
           "flags": "BINARY",
-          "char_set": 224,
+          "collation": 255,
           "max_size": 1020
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.users",
+            "name": "maybe_feature_flags"
+          }
         }
       },
       {
@@ -219,8 +345,14 @@
         "type_info": {
           "type": "Tiny",
           "flags": "",
-          "char_set": 63,
+          "collation": 63,
           "max_size": 1
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.user_roles",
+            "name": "can_use_tts"
+          }
         }
       },
       {
@@ -229,8 +361,14 @@
         "type_info": {
           "type": "Tiny",
           "flags": "",
-          "char_set": 63,
+          "collation": 63,
           "max_size": 1
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.user_roles",
+            "name": "can_use_w2l"
+          }
         }
       },
       {
@@ -239,8 +377,14 @@
         "type_info": {
           "type": "Tiny",
           "flags": "",
-          "char_set": 63,
+          "collation": 63,
           "max_size": 1
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.user_roles",
+            "name": "can_delete_own_tts_results"
+          }
         }
       },
       {
@@ -249,8 +393,14 @@
         "type_info": {
           "type": "Tiny",
           "flags": "",
-          "char_set": 63,
+          "collation": 63,
           "max_size": 1
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.user_roles",
+            "name": "can_delete_own_w2l_results"
+          }
         }
       },
       {
@@ -259,8 +409,14 @@
         "type_info": {
           "type": "Tiny",
           "flags": "",
-          "char_set": 63,
+          "collation": 63,
           "max_size": 1
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.user_roles",
+            "name": "can_delete_own_account"
+          }
         }
       },
       {
@@ -269,8 +425,14 @@
         "type_info": {
           "type": "Tiny",
           "flags": "",
-          "char_set": 63,
+          "collation": 63,
           "max_size": 1
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.user_roles",
+            "name": "can_upload_tts_models"
+          }
         }
       },
       {
@@ -279,8 +441,14 @@
         "type_info": {
           "type": "Tiny",
           "flags": "",
-          "char_set": 63,
+          "collation": 63,
           "max_size": 1
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.user_roles",
+            "name": "can_upload_w2l_templates"
+          }
         }
       },
       {
@@ -289,8 +457,14 @@
         "type_info": {
           "type": "Tiny",
           "flags": "",
-          "char_set": 63,
+          "collation": 63,
           "max_size": 1
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.user_roles",
+            "name": "can_delete_own_tts_models"
+          }
         }
       },
       {
@@ -299,8 +473,14 @@
         "type_info": {
           "type": "Tiny",
           "flags": "",
-          "char_set": 63,
+          "collation": 63,
           "max_size": 1
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.user_roles",
+            "name": "can_delete_own_w2l_templates"
+          }
         }
       },
       {
@@ -309,8 +489,14 @@
         "type_info": {
           "type": "Tiny",
           "flags": "",
-          "char_set": 63,
+          "collation": 63,
           "max_size": 1
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.user_roles",
+            "name": "can_approve_w2l_templates"
+          }
         }
       },
       {
@@ -319,8 +505,14 @@
         "type_info": {
           "type": "Tiny",
           "flags": "",
-          "char_set": 63,
+          "collation": 63,
           "max_size": 1
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.user_roles",
+            "name": "can_edit_other_users_profiles"
+          }
         }
       },
       {
@@ -329,8 +521,14 @@
         "type_info": {
           "type": "Tiny",
           "flags": "",
-          "char_set": 63,
+          "collation": 63,
           "max_size": 1
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.user_roles",
+            "name": "can_edit_other_users_tts_models"
+          }
         }
       },
       {
@@ -339,8 +537,14 @@
         "type_info": {
           "type": "Tiny",
           "flags": "",
-          "char_set": 63,
+          "collation": 63,
           "max_size": 1
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.user_roles",
+            "name": "can_edit_other_users_w2l_templates"
+          }
         }
       },
       {
@@ -349,8 +553,14 @@
         "type_info": {
           "type": "Tiny",
           "flags": "",
-          "char_set": 63,
+          "collation": 63,
           "max_size": 1
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.user_roles",
+            "name": "can_delete_other_users_tts_models"
+          }
         }
       },
       {
@@ -359,8 +569,14 @@
         "type_info": {
           "type": "Tiny",
           "flags": "",
-          "char_set": 63,
+          "collation": 63,
           "max_size": 1
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.user_roles",
+            "name": "can_delete_other_users_tts_results"
+          }
         }
       },
       {
@@ -369,8 +585,14 @@
         "type_info": {
           "type": "Tiny",
           "flags": "",
-          "char_set": 63,
+          "collation": 63,
           "max_size": 1
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.user_roles",
+            "name": "can_delete_other_users_w2l_templates"
+          }
         }
       },
       {
@@ -379,8 +601,14 @@
         "type_info": {
           "type": "Tiny",
           "flags": "",
-          "char_set": 63,
+          "collation": 63,
           "max_size": 1
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.user_roles",
+            "name": "can_delete_other_users_w2l_results"
+          }
         }
       },
       {
@@ -389,8 +617,14 @@
         "type_info": {
           "type": "Tiny",
           "flags": "",
-          "char_set": 63,
+          "collation": 63,
           "max_size": 1
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.user_roles",
+            "name": "can_ban_users"
+          }
         }
       },
       {
@@ -399,8 +633,14 @@
         "type_info": {
           "type": "Tiny",
           "flags": "",
-          "char_set": 63,
+          "collation": 63,
           "max_size": 1
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.user_roles",
+            "name": "can_delete_users"
+          }
         }
       }
     ],

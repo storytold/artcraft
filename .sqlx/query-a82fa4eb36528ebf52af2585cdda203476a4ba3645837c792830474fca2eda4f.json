@@ -9,8 +9,14 @@
         "type_info": {
           "type": "VarString",
           "flags": "NOT_NULL | UNIQUE_KEY | BINARY | NO_DEFAULT_VALUE",
-          "char_set": 224,
+          "collation": 255,
           "max_size": 80
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.users",
+            "name": "username"
+          }
         }
       },
       {
@@ -19,8 +25,14 @@
         "type_info": {
           "type": "VarString",
           "flags": "NOT_NULL | BINARY | NO_DEFAULT_VALUE",
-          "char_set": 224,
+          "collation": 255,
           "max_size": 80
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.users",
+            "name": "display_name"
+          }
         }
       },
       {
@@ -29,8 +41,14 @@
         "type_info": {
           "type": "String",
           "flags": "NOT_NULL | BINARY | NO_DEFAULT_VALUE",
-          "char_set": 224,
+          "collation": 255,
           "max_size": 128
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.users",
+            "name": "email_gravatar_hash"
+          }
         }
       },
       {
@@ -39,8 +57,14 @@
         "type_info": {
           "type": "VarString",
           "flags": "NOT_NULL | MULTIPLE_KEY | BINARY | NO_DEFAULT_VALUE",
-          "char_set": 224,
+          "collation": 255,
           "max_size": 128
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.tts_models",
+            "name": "creator_user_token"
+          }
         }
       },
       {
@@ -49,9 +73,10 @@
         "type_info": {
           "type": "LongLong",
           "flags": "NOT_NULL | BINARY",
-          "char_set": 63,
+          "collation": 63,
           "max_size": 21
-        }
+        },
+        "origin": "Expression"
       }
     ],
     "parameters": {

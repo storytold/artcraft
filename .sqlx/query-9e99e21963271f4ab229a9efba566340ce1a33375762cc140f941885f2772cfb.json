@@ -9,9 +9,10 @@
         "type_info": {
           "type": "VarString",
           "flags": "BINARY",
-          "char_set": 224,
+          "collation": 255,
           "max_size": 128
-        }
+        },
+        "origin": "Expression"
       },
       {
         "ordinal": 1,
@@ -19,8 +20,14 @@
         "type_info": {
           "type": "Long",
           "flags": "MULTIPLE_KEY | UNSIGNED",
-          "char_set": 63,
+          "collation": 63,
           "max_size": 10
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.model_weight_usage_counts",
+            "name": "usage_count"
+          }
         }
       },
       {
@@ -29,9 +36,10 @@
         "type_info": {
           "type": "LongLong",
           "flags": "NOT_NULL | BINARY",
-          "char_set": 63,
+          "collation": 63,
           "max_size": 21
-        }
+        },
+        "origin": "Expression"
       }
     ],
     "parameters": {

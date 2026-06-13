@@ -9,8 +9,14 @@
         "type_info": {
           "type": "String",
           "flags": "NOT_NULL | MULTIPLE_KEY | BINARY | ENUM",
-          "char_set": 224,
+          "collation": 255,
           "max_size": 32
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.user_ratings",
+            "name": "rating_value"
+          }
         }
       },
       {
@@ -19,8 +25,14 @@
         "type_info": {
           "type": "Timestamp",
           "flags": "NOT_NULL | BINARY | TIMESTAMP",
-          "char_set": 63,
+          "collation": 63,
           "max_size": 19
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.user_ratings",
+            "name": "created_at"
+          }
         }
       },
       {
@@ -29,8 +41,14 @@
         "type_info": {
           "type": "Timestamp",
           "flags": "NOT_NULL | BINARY | TIMESTAMP | ON_UPDATE_NOW",
-          "char_set": 63,
+          "collation": 63,
           "max_size": 19
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.user_ratings",
+            "name": "updated_at"
+          }
         }
       },
       {
@@ -39,8 +57,14 @@
         "type_info": {
           "type": "Long",
           "flags": "UNSIGNED",
-          "char_set": 63,
+          "collation": 63,
           "max_size": 10
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.entity_stats",
+            "name": "ratings_positive_count"
+          }
         }
       }
     ],

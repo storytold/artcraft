@@ -9,8 +9,14 @@
         "type_info": {
           "type": "VarString",
           "flags": "NOT_NULL | UNIQUE_KEY | BINARY | NO_DEFAULT_VALUE",
-          "char_set": 224,
+          "collation": 255,
           "max_size": 128
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.media_files",
+            "name": "token"
+          }
         }
       },
       {
@@ -19,8 +25,14 @@
         "type_info": {
           "type": "VarString",
           "flags": "NOT_NULL | MULTIPLE_KEY | BINARY | NO_DEFAULT_VALUE",
-          "char_set": 224,
+          "collation": 255,
           "max_size": 64
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.media_files",
+            "name": "media_type"
+          }
         }
       },
       {
@@ -29,8 +41,14 @@
         "type_info": {
           "type": "VarString",
           "flags": "MULTIPLE_KEY | BINARY",
-          "char_set": 224,
+          "collation": 255,
           "max_size": 128
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.media_files",
+            "name": "maybe_creator_user_token"
+          }
         }
       },
       {
@@ -39,8 +57,14 @@
         "type_info": {
           "type": "String",
           "flags": "NOT_NULL | BINARY | ENUM",
-          "char_set": 224,
+          "collation": 255,
           "max_size": 28
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.media_files",
+            "name": "creator_set_visibility"
+          }
         }
       },
       {
@@ -49,8 +73,14 @@
         "type_info": {
           "type": "Long",
           "flags": "NOT_NULL",
-          "char_set": 63,
-          "max_size": 11
+          "collation": 63,
+          "max_size": 10
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.media_files",
+            "name": "file_size_bytes"
+          }
         }
       },
       {
@@ -59,8 +89,14 @@
         "type_info": {
           "type": "Long",
           "flags": "",
-          "char_set": 63,
-          "max_size": 11
+          "collation": 63,
+          "max_size": 10
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.media_files",
+            "name": "maybe_duration_millis"
+          }
         }
       },
       {
@@ -69,8 +105,14 @@
         "type_info": {
           "type": "VarString",
           "flags": "NOT_NULL | BINARY | NO_DEFAULT_VALUE",
-          "char_set": 224,
+          "collation": 255,
           "max_size": 128
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.media_files",
+            "name": "public_bucket_directory_hash"
+          }
         }
       },
       {
@@ -79,8 +121,14 @@
         "type_info": {
           "type": "VarString",
           "flags": "BINARY",
-          "char_set": 224,
+          "collation": 255,
           "max_size": 64
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.media_files",
+            "name": "maybe_public_bucket_prefix"
+          }
         }
       },
       {
@@ -89,8 +137,14 @@
         "type_info": {
           "type": "VarString",
           "flags": "BINARY",
-          "char_set": 224,
+          "collation": 255,
           "max_size": 64
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.media_files",
+            "name": "maybe_public_bucket_extension"
+          }
         }
       }
     ],

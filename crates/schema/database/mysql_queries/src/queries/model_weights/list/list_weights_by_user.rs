@@ -193,7 +193,7 @@ fn query_builder<'a>(
     view_as: ViewAs,
     maybe_scoped_weight_type: Option<WeightsType>,
     maybe_scoped_weight_category: Option<WeightsCategory>,
-) -> QueryBuilder<'a, MySql> {
+) -> QueryBuilder<MySql> {
 
     // NB: Query cannot be statically checked by sqlx
     let mut query_builder: QueryBuilder<MySql> = QueryBuilder::new(

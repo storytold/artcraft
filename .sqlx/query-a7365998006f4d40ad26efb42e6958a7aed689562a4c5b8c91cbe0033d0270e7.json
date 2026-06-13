@@ -9,8 +9,14 @@
         "type_info": {
           "type": "VarString",
           "flags": "NOT_NULL | MULTIPLE_KEY | BINARY | NO_DEFAULT_VALUE",
-          "char_set": 224,
+          "collation": 255,
           "max_size": 128
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.wallet_ledger_entries",
+            "name": "wallet_token"
+          }
         }
       },
       {
@@ -19,8 +25,14 @@
         "type_info": {
           "type": "VarString",
           "flags": "NOT_NULL | BINARY | NO_DEFAULT_VALUE",
-          "char_set": 224,
+          "collation": 255,
           "max_size": 128
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.wallet_ledger_entries",
+            "name": "entry_type"
+          }
         }
       },
       {
@@ -29,8 +41,14 @@
         "type_info": {
           "type": "Tiny",
           "flags": "NOT_NULL",
-          "char_set": 63,
+          "collation": 63,
           "max_size": 1
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.wallet_ledger_entries",
+            "name": "is_refunded"
+          }
         }
       },
       {
@@ -39,8 +57,14 @@
         "type_info": {
           "type": "Long",
           "flags": "NOT_NULL",
-          "char_set": 63,
+          "collation": 63,
           "max_size": 11
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.wallet_ledger_entries",
+            "name": "credits_delta"
+          }
         }
       },
       {
@@ -49,8 +73,14 @@
         "type_info": {
           "type": "Long",
           "flags": "NOT_NULL | UNSIGNED",
-          "char_set": 63,
+          "collation": 63,
           "max_size": 10
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.wallet_ledger_entries",
+            "name": "banked_credits_before"
+          }
         }
       },
       {
@@ -59,8 +89,14 @@
         "type_info": {
           "type": "Long",
           "flags": "NOT_NULL | UNSIGNED",
-          "char_set": 63,
+          "collation": 63,
           "max_size": 10
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.wallet_ledger_entries",
+            "name": "banked_credits_after"
+          }
         }
       },
       {
@@ -69,8 +105,14 @@
         "type_info": {
           "type": "Long",
           "flags": "NOT_NULL | UNSIGNED",
-          "char_set": 63,
+          "collation": 63,
           "max_size": 10
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.wallet_ledger_entries",
+            "name": "monthly_credits_before"
+          }
         }
       },
       {
@@ -79,8 +121,14 @@
         "type_info": {
           "type": "Long",
           "flags": "NOT_NULL | UNSIGNED",
-          "char_set": 63,
+          "collation": 63,
           "max_size": 10
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.wallet_ledger_entries",
+            "name": "monthly_credits_after"
+          }
         }
       }
     ],
