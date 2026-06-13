@@ -12,7 +12,7 @@ use mysql_queries::queries::folders::folder::soft_delete_folder::{
 use tokens::tokens::folders::FolderToken;
 
 use crate::http_server::common_responses::common_web_error::CommonWebError;
-use crate::http_server::web_utils::user_session::require_user_session_using_connection::require_user_session_using_connection;
+use crate::http_server::web_utils::user_session::require_user_session::require_user_session;
 use crate::state::server_state::ServerState;
 
 /// Soft-delete a folder. Children retain their parent pointer and become
@@ -39,9 +39,7 @@ pub async fn delete_folder_handler(
     CommonWebError::from_error(err)
   })?;
 
-  let user_session = require_user_session_using_connection(
-    &http_request, &server_state.session_checker, &mut conn,
-  ).await.map_err(|_| CommonWebError::NotAuthorized)?;
+  let user_session = require_user_session(&http_request, &server_state.session_checker, &mut *conn).await.map_err(|_| CommonWebError::NotAuthorized)?;
 
 
   let rows_affected = soft_delete_folder(SoftDeleteFolderArgs {

@@ -10,7 +10,7 @@ use mysql_queries::queries::characters::delete_character::delete_character;
 use mysql_queries::queries::characters::get_character_by_token_including_deleted::get_character_by_token_including_deleted;
 
 use crate::http_server::common_responses::common_web_error::CommonWebError;
-use crate::http_server::web_utils::user_session::require_user_session_using_connection::require_user_session_using_connection;
+use crate::http_server::web_utils::user_session::require_user_session::require_user_session;
 use crate::state::server_state::ServerState;
 
 /// Delete a character.
@@ -40,11 +40,7 @@ pub async fn delete_character_handler(
 
   let mut mysql_connection = server_state.mysql_pool.acquire().await?;
 
-  let user_session = require_user_session_using_connection(
-    &http_request,
-    &server_state.session_checker,
-    &mut mysql_connection,
-  ).await?;
+  let user_session = require_user_session(&http_request, &server_state.session_checker, &mut *mysql_connection).await?;
 
   let user_token = &user_session.user_token;
   let is_mod = user_session.is_mod();

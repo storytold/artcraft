@@ -27,7 +27,7 @@ use mysql_queries::queries::folders::media_files::recompute_folder_last_media_fi
 use tokens::tokens::folders::FolderToken;
 
 use crate::http_server::common_responses::common_web_error::CommonWebError;
-use crate::http_server::web_utils::user_session::require_user_session_using_connection::require_user_session_using_connection;
+use crate::http_server::web_utils::user_session::require_user_session::require_user_session;
 use crate::state::server_state::ServerState;
 
 const MAX_BULK: usize = 500;
@@ -61,9 +61,7 @@ pub async fn bulk_add_folder_media_files_handler(
     CommonWebError::from_error(err)
   })?;
 
-  let user_session = require_user_session_using_connection(
-    &http_request, &server_state.session_checker, &mut conn,
-  ).await.map_err(|_| CommonWebError::NotAuthorized)?;
+  let user_session = require_user_session(&http_request, &server_state.session_checker, &mut *conn).await.map_err(|_| CommonWebError::NotAuthorized)?;
 
   if request.media_file_tokens.len() > MAX_BULK {
     return Err(CommonWebError::BadInputWithSimpleMessage(

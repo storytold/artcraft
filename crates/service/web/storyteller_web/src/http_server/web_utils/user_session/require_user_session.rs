@@ -3,11 +3,11 @@ use std::fmt::{Display, Formatter};
 
 use actix_web::HttpRequest;
 use log::warn;
+use sqlx::{Executor, MySql};
 
 use mysql_queries::queries::users::user_sessions::get_user_session_by_token::SessionUserRecord;
 
-use crate::http_server::web_utils::user_session::require_user_session_using_connection::require_user_session_using_connection;
-use crate::state::server_state::ServerState;
+use crate::http_server::session::session_checker::SessionChecker;
 
 #[derive(Debug)]
 pub enum RequireUserSessionError {
@@ -26,21 +26,36 @@ impl Display for RequireUserSessionError {
 
 impl Error for RequireUserSessionError {}
 
-#[deprecated(note = "Use require_user_session_using_connection instead, which reuses an existing connection")]
-pub async fn require_user_session(
+/// `mysql_executor` can be any sqlx executor — pass `&server_state.mysql_pool` to grab a
+/// fresh connection, or an in-flight connection/transaction (`&mut *connection`) to reuse
+/// one the handler already holds.
+pub async fn require_user_session<'e, 'c : 'e, E>(
   http_request: &HttpRequest,
-  server_state: &ServerState,
-) -> Result<SessionUserRecord, RequireUserSessionError> {
-
-  let mut mysql_connection = server_state.mysql_pool
-      .acquire()
+  session_checker: &SessionChecker,
+  mysql_executor: E,
+) -> Result<SessionUserRecord, RequireUserSessionError>
+  where E: 'e + Executor<'c, Database = MySql>
+{
+  let maybe_user_session = session_checker
+      .maybe_get_user_session_from_executor(http_request, mysql_executor)
       .await
-      .map_err(|err| {
-        warn!("MySql pool error: {:?}", err);
+      .map_err(|e| {
+        warn!("Session checker error: {:?}", e);
         RequireUserSessionError::ServerError
       })?;
 
-  require_user_session_using_connection(
-      http_request, &server_state.session_checker, &mut mysql_connection)
-      .await
+  let user_session = match maybe_user_session {
+    Some(session) => session,
+    None => {
+      warn!("not logged in");
+      return Err(RequireUserSessionError::NotAuthorized);
+    }
+  };
+
+  if user_session.is_banned {
+    warn!("user is banned: {:?}", user_session.user_token.as_str());
+    return Err(RequireUserSessionError::NotAuthorized);
+  }
+
+  Ok(user_session)
 }

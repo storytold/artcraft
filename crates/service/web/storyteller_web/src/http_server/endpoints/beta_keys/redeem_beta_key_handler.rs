@@ -52,7 +52,7 @@ pub async fn redeem_beta_key_handler(
   server_state: web::Data<Arc<ServerState>>,
 ) -> Result<HttpResponse, CommonWebError>
 {
-  let user_session = require_user_session(&http_request, &server_state).await?;
+  let user_session = require_user_session(&http_request, &server_state.session_checker, &server_state.mysql_pool).await?;
 
   let rate_limiter = &server_state.redis_rate_limiters.logged_out;
 

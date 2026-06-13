@@ -21,7 +21,7 @@ use crate::http_server::endpoints::folders::folder::folder_info_conversion::{
   build_folder_thumbnails_lookup, folder_row_to_info,
 };
 use crate::http_server::endpoints::media_files::helpers::get_media_domain::get_media_domain;
-use crate::http_server::web_utils::user_session::require_user_session_using_connection::require_user_session_using_connection;
+use crate::http_server::web_utils::user_session::require_user_session::require_user_session;
 use crate::state::server_state::ServerState;
 
 const CURSOR_NAME: &str = "subfolders";
@@ -55,9 +55,7 @@ pub async fn list_subfolders_handler(
     CommonWebError::from_error(err)
   })?;
 
-  let user_session = require_user_session_using_connection(
-    &http_request, &server_state.session_checker, &mut conn,
-  ).await.map_err(|_| CommonWebError::NotAuthorized)?;
+  let user_session = require_user_session(&http_request, &server_state.session_checker, &mut *conn).await.map_err(|_| CommonWebError::NotAuthorized)?;
 
 
   // Confirm the parent exists + is owned by the caller before listing.

@@ -17,7 +17,7 @@ use mysql_queries::queries::folders::folder::update_folder_name::{
 use tokens::tokens::folders::FolderToken;
 
 use crate::http_server::common_responses::common_web_error::CommonWebError;
-use crate::http_server::web_utils::user_session::require_user_session_using_connection::require_user_session_using_connection;
+use crate::http_server::web_utils::user_session::require_user_session::require_user_session;
 use crate::state::server_state::ServerState;
 
 const MAX_NAME_LEN: usize = 255;
@@ -47,9 +47,7 @@ pub async fn rename_folder_handler(
     CommonWebError::from_error(err)
   })?;
 
-  let user_session = require_user_session_using_connection(
-    &http_request, &server_state.session_checker, &mut conn,
-  ).await.map_err(|_| CommonWebError::NotAuthorized)?;
+  let user_session = require_user_session(&http_request, &server_state.session_checker, &mut *conn).await.map_err(|_| CommonWebError::NotAuthorized)?;
 
   let new_name = request.new_name.trim().to_string();
 

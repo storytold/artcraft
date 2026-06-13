@@ -19,7 +19,7 @@ use serde::Serialize;
 /// ```ignore
 /// pub async fn my_handler(...) -> Result<Json<MyResponse>, CommonWebError> {
 ///   // sqlx errors, anyhow errors, session errors — all convert via ?
-///   let user = require_user_session_using_connection(&req, ...)?;
+///   let user = require_user_session(&req, ...)?;
 ///   let data = some_db_query(&pool).await?;
 ///
 ///   if data.is_none() {

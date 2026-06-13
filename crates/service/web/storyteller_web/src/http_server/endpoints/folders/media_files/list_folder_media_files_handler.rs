@@ -32,7 +32,7 @@ use crate::http_server::common_responses::media::media_domain::MediaDomain;
 use crate::http_server::common_responses::media::media_file_cover_image_details::MediaFileCoverImageDetails;
 use crate::http_server::common_responses::media::media_links_builder::MediaLinksBuilder;
 use crate::http_server::endpoints::media_files::helpers::get_media_domain::get_media_domain;
-use crate::http_server::web_utils::user_session::require_user_session_using_connection::require_user_session_using_connection;
+use crate::http_server::web_utils::user_session::require_user_session::require_user_session;
 use crate::state::server_state::ServerState;
 
 const CURSOR_NAME: &str = "folder_mf";
@@ -127,9 +127,7 @@ pub async fn list_folder_media_files_handler(
     CommonWebError::from_error(err)
   })?;
 
-  let user_session = require_user_session_using_connection(
-    &http_request, &server_state.session_checker, &mut conn,
-  ).await.map_err(|_| CommonWebError::NotAuthorized)?;
+  let user_session = require_user_session(&http_request, &server_state.session_checker, &mut *conn).await.map_err(|_| CommonWebError::NotAuthorized)?;
 
   let folder = get_folder_for_owner(GetFolderForOwnerArgs {
     folder_token: &path.folder_token,

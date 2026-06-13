@@ -108,7 +108,7 @@ pub async fn list_beta_keys_handler(
   query: Query<ListBetaKeysQueryParams>,
   server_state: web::Data<Arc<ServerState>>
 ) -> Result<HttpResponse, CommonWebError> {
-  let user_session = require_user_session(&http_request, &server_state)
+  let user_session = require_user_session(&http_request, &server_state.session_checker, &server_state.mysql_pool)
       .await
       .map_err(|err| match err {
         RequireUserSessionError::ServerError => CommonWebError::from_error(err),

@@ -8,7 +8,7 @@ use utoipa::ToSchema;
 use mysql_queries::queries::generic_inference::web::dismiss_finished_jobs_for_user::dismiss_finished_jobs_for_user;
 
 use crate::http_server::common_responses::common_web_error::CommonWebError;
-use crate::http_server::web_utils::user_session::require_user_session_using_connection::require_user_session_using_connection;
+use crate::http_server::web_utils::user_session::require_user_session::require_user_session;
 use crate::state::server_state::ServerState;
 
 #[derive(Serialize, ToSchema)]
@@ -40,8 +40,7 @@ pub async fn dismiss_finished_session_jobs_handler(
         CommonWebError::from_error(e)
       })?;
 
-  let user_session = require_user_session_using_connection(
-      &http_request, &server_state.session_checker, &mut mysql_connection)
+  let user_session = require_user_session(&http_request, &server_state.session_checker, &mut *mysql_connection)
       .await?;
 
   dismiss_finished_jobs_for_user(&mut mysql_connection, &user_session.user_token)

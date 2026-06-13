@@ -56,7 +56,7 @@ pub async fn change_media_file_animation_type_handler(
     server_state: web::Data<Arc<ServerState>>
 ) -> Result<Json<SimpleResponse>, CommonWebError> {
 
-    let user_session = require_user_session(&http_request, &server_state)
+    let user_session = require_user_session(&http_request, &server_state.session_checker, &server_state.mysql_pool)
         .await
         .map_err(|e| {
             warn!("Not authorized: {:?}", e);
