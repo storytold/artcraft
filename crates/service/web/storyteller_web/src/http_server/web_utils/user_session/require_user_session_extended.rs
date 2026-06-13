@@ -1,29 +1,10 @@
-use std::error::Error;
-use std::fmt::{Display, Formatter};
-
 use actix_web::HttpRequest;
 use log::warn;
 use sqlx::MySqlConnection;
 
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::session::lookup::user_session_extended::UserSessionExtended;
 use crate::http_server::session::session_checker::SessionChecker;
-
-#[derive(Debug)]
-pub enum RequireUserSessionError {
-  ServerError,
-  NotAuthorized,
-}
-
-impl Display for RequireUserSessionError {
-  fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-    match self {
-      Self::ServerError => write!(f, "ServerError"),
-      Self::NotAuthorized => write!(f, "NotAuthorized"),
-    }
-  }
-}
-
-impl Error for RequireUserSessionError {}
 
 /// Pass an in-flight connection (`&mut *connection`) to reuse one the handler already holds.
 /// (The extended lookup runs two queries, so it takes a concrete `&mut MySqlConnection` — which
@@ -32,27 +13,27 @@ pub async fn require_user_session_extended(
   http_request: &HttpRequest,
   session_checker: &SessionChecker,
   mysql_executor: &mut MySqlConnection,
-) -> Result<UserSessionExtended, RequireUserSessionError>
+) -> Result<UserSessionExtended, CommonWebError>
 {
   let maybe_user_session = session_checker
       .maybe_get_user_session_extended_from_executor(http_request, mysql_executor)
       .await
       .map_err(|e| {
         warn!("Session checker error: {:?}", e);
-        RequireUserSessionError::ServerError
+        CommonWebError::from_error(e)
       })?;
 
   let user_session = match maybe_user_session {
     Some(session) => session,
     None => {
       warn!("not logged in");
-      return Err(RequireUserSessionError::NotAuthorized);
+      return Err(CommonWebError::NotAuthorized);
     }
   };
 
   if user_session.role.is_banned {
     warn!("user is banned: {:?}", user_session.user_token.as_str());
-    return Err(RequireUserSessionError::NotAuthorized);
+    return Err(CommonWebError::NotAuthorized);
   }
 
   Ok(user_session)

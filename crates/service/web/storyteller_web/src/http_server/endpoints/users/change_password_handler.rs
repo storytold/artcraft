@@ -57,11 +57,7 @@ pub async fn change_password_handler(
   let user_session = require_user_session_extended(
     &http_request,
     &server_state.session_checker,
-    &mut *mysql_connection)
-      .await
-      .map_err(|_err| {
-        CommonWebError::NotAuthorized
-      })?;
+    &mut *mysql_connection).await?;
 
   if user_session.role.is_banned {
     return Err(CommonWebError::NotAuthorized);

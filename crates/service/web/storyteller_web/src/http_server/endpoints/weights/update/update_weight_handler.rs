@@ -11,7 +11,6 @@ use utoipa::ToSchema;
 
 use crate::configs::supported_languages_for_models::{get_canonicalized_language_tag_for_model, get_primary_language_subtag};
 use crate::http_server::common_responses::common_web_error::CommonWebError;
-use crate::http_server::web_utils::user_session::require_user_session_extended::RequireUserSessionError;
 use crate::http_server::web_utils::user_session::require_user_session_extended::require_user_session_extended;
 use crate::state::server_state::ServerState;
 use enums::by_table::media_files::media_file_type::MediaFileType;
@@ -98,15 +97,7 @@ pub async fn update_weight_handler(
     let user_session = require_user_session_extended(
         &http_request,
         &server_state.session_checker,
-        &mut *mysql_connection)
-        .await
-        .map_err(|err| match err {
-            RequireUserSessionError::NotAuthorized => CommonWebError::NotAuthorized,
-            _ => {
-                warn!("get user session error: {:?}", err);
-                CommonWebError::from_error(err)
-            },
-        })?;
+        &mut *mysql_connection).await?;
 
     let weight_token = path.weight_token.clone();
 

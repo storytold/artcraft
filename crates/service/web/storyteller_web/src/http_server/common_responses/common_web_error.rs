@@ -2,7 +2,6 @@ use std::fmt::{Display, Formatter};
 use std::sync::Arc;
 
 use crate::http_server::session::session_checker_error::SessionCheckerError;
-use crate::http_server::web_utils::user_session::require_user_session_extended::RequireUserSessionError;
 use actix_artcraft::sessions::anonymous_visitor_tracking::avt_cookie_payload_error::AvtCookiePayloadError;
 use actix_artcraft::sessions::user_sessions::http_user_session_payload_error::HttpUserSessionPayloadError;
 use actix_http::StatusCode;
@@ -317,15 +316,6 @@ impl From<serde_json::Error> for CommonWebError {
   }
 }
 
-impl From<RequireUserSessionError> for CommonWebError {
-  fn from(value: RequireUserSessionError) -> Self {
-    match value {
-      RequireUserSessionError::NotAuthorized => Self::NotAuthorized,
-      RequireUserSessionError::ServerError => Self::from_error(value),
-    }
-  }
-}
-
 impl From<HttpUserSessionPayloadError> for CommonWebError {
   fn from(err: HttpUserSessionPayloadError) -> Self {
     if err.is_server_error() {
@@ -543,22 +533,6 @@ mod tests {
     // The original io error should be in the source chain
     let source = cause.source();
     assert!(source.is_some());
-  }
-
-  #[test]
-  fn require_user_session_not_authorized_maps_to_401() {
-    let error: CommonWebError = RequireUserSessionError::NotAuthorized.into();
-    assert_eq!(error.status_code(), StatusCode::UNAUTHORIZED);
-    assert!(!error.is_server_error());
-  }
-
-  #[test]
-  fn require_user_session_server_error_wraps_cause() {
-    let error: CommonWebError = RequireUserSessionError::ServerError.into();
-    assert_eq!(error.status_code(), StatusCode::INTERNAL_SERVER_ERROR);
-    assert!(error.is_server_error());
-    assert!(error.cause().is_some());
-    assert!(format!("{}", error.cause().unwrap()).contains("ServerError"));
   }
 
   #[test]

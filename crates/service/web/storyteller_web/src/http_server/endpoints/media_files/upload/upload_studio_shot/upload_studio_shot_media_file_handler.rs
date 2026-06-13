@@ -19,7 +19,7 @@ use http_server_common::request::get_request_ip::get_request_ip;
 use mysql_queries::queries::idepotency_tokens::insert_idempotency_token::insert_idempotency_token;
 use mysql_queries::queries::media_files::create::insert_media_file_from_studio_scene_render::{insert_media_file_from_studio_scene_render, InsertStudioSceneRenderArgs};
 use tokens::tokens::media_files::MediaFileToken;
-
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::endpoints::media_files::upload::upload_error::MediaFileUploadError;
 use crate::http_server::endpoints::media_files::upload::upload_studio_shot::extract_frames_from_zip::{extract_frames_from_zip, ExtractFramesError};
 use crate::http_server::endpoints::media_files::upload::upload_studio_shot::ffmpeg_frames_to_mp4::ffmpeg_frames_to_mp4;
@@ -115,7 +115,10 @@ pub async fn upload_studio_shot_media_file_handler(
       .await
       .map_err(|e| {
         error!("User session error: {:?}", e);
-        MediaFileUploadError::NotAuthorized
+        match e {
+          CommonWebError::NotAuthorized => MediaFileUploadError::NotAuthorized,
+          _ => MediaFileUploadError::ServerError,
+        }
       })?;
 
   let maybe_avt_token = server_state
