@@ -56,7 +56,7 @@ pub async fn bulk_remove_folder_media_files_handler(
     CommonWebError::from_error(err)
   })?;
 
-  let user_session = require_user_session(&http_request, &server_state.session_checker, &mut *conn).await.map_err(|_| CommonWebError::NotAuthorized)?;
+  let user_session = require_user_session(&http_request, &server_state.session_checker, &mut *conn).await?;
 
   if request.media_file_tokens.len() > MAX_BULK {
     return Err(CommonWebError::BadInputWithSimpleMessage(

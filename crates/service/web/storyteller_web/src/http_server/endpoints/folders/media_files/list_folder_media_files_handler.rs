@@ -127,7 +127,7 @@ pub async fn list_folder_media_files_handler(
     CommonWebError::from_error(err)
   })?;
 
-  let user_session = require_user_session(&http_request, &server_state.session_checker, &mut *conn).await.map_err(|_| CommonWebError::NotAuthorized)?;
+  let user_session = require_user_session(&http_request, &server_state.session_checker, &mut *conn).await?;
 
   let folder = get_folder_for_owner(GetFolderForOwnerArgs {
     folder_token: &path.folder_token,

@@ -48,7 +48,7 @@ pub async fn list_folders_handler(
     CommonWebError::from_error(err)
   })?;
 
-  let user_session = require_user_session(&http_request, &server_state.session_checker, &mut *conn).await.map_err(|_| CommonWebError::NotAuthorized)?;
+  let user_session = require_user_session(&http_request, &server_state.session_checker, &mut *conn).await?;
 
   let limit = query.limit.unwrap_or(DEFAULT_LIMIT).min(MAX_LIMIT);
 

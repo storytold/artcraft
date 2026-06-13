@@ -47,7 +47,7 @@ pub async fn color_code_folder_handler(
     CommonWebError::from_error(err)
   })?;
 
-  let user_session = require_user_session(&http_request, &server_state.session_checker, &mut *conn).await.map_err(|_| CommonWebError::NotAuthorized)?;
+  let user_session = require_user_session(&http_request, &server_state.session_checker, &mut *conn).await?;
 
   // Normalize: trim, treat empty after trim as `None`. This lets clients
   // clear by passing `""` or by omitting the field entirely.
