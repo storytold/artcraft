@@ -19,7 +19,7 @@ use mysql_queries::queries::users::user_profiles::get_user_profile_by_username::
 
 use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::web_utils::user_session::require_moderator::{
-  require_moderator, UseDatabase,
+  require_moderator, RequireModeratorArgs,
 };
 use crate::state::server_state::ServerState;
 
@@ -61,11 +61,12 @@ pub async fn moderation_ban_user_handler(
 ) -> Result<Json<ModerationBanUserSuccessResponse>, CommonWebError> {
 
   // 1. Require moderator with ban permissions.
-  let user_session = require_moderator(
-    &http_request,
-    &server_state,
-    UseDatabase::GrabNewConnection,
-  ).await.map_err(|err| {
+  let user_session = require_moderator(RequireModeratorArgs {
+    http_request: &http_request,
+    server_state: &server_state,
+    mysql_executor: &server_state.mysql_pool,
+    phantom: Default::default(),
+  }).await.map_err(|err| {
     warn!("Moderator check failed: {:?}", err);
     CommonWebError::NotAuthorized
   })?;

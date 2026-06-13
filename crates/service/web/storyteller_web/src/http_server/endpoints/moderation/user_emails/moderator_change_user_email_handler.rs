@@ -25,7 +25,7 @@ use users::email::validate_email_address_format::validate_email_address_format;
 
 use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::web_utils::user_session::require_moderator::{
-  require_moderator, UseDatabase,
+  require_moderator, RequireModeratorArgs,
 };
 use crate::state::server_state::ServerState;
 
@@ -71,11 +71,12 @@ pub async fn moderator_change_user_email_handler(
 ) -> Result<Json<ModeratorChangeUserEmailSuccessResponse>, CommonWebError> {
 
   // 1. Require moderator.
-  let user_session = require_moderator(
-    &http_request,
-    &server_state,
-    UseDatabase::GrabNewConnection,
-  ).await.map_err(|err| {
+  let user_session = require_moderator(RequireModeratorArgs {
+    http_request: &http_request,
+    server_state: &server_state,
+    mysql_executor: &server_state.mysql_pool,
+    phantom: Default::default(),
+  }).await.map_err(|err| {
     warn!("Moderator check failed: {:?}", err);
     CommonWebError::NotAuthorized
   })?;

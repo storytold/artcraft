@@ -23,7 +23,7 @@ use tokens::tokens::media_files::MediaFileToken;
 use crate::http_server::endpoints::media_files::upload::upload_error::MediaFileUploadError;
 use crate::http_server::endpoints::media_files::upload::upload_pmx::extract_and_upload_pmx_files::{extract_and_upload_pmx_files, PmxError};
 use crate::http_server::validations::validate_idempotency_token_format::validate_idempotency_token_format;
-use crate::http_server::web_utils::user_session::require_moderator::{require_moderator, RequireModeratorError, UseDatabase};
+use crate::http_server::web_utils::user_session::require_moderator::{require_moderator, RequireModeratorError, RequireModeratorArgs};
 use crate::state::server_state::ServerState;
 
 /// Form-multipart request fields.
@@ -115,7 +115,12 @@ pub async fn upload_pmx_media_file_handler(
   // ==================== READ SESSION ==================== //
 
   // NB: We require a moderator to upload PMX files.
-  let user_session = require_moderator(&http_request, &server_state, UseDatabase::FromPool(&mut mysql_connection))
+  let user_session = require_moderator(RequireModeratorArgs {
+    http_request: &http_request,
+    server_state: &server_state,
+    mysql_executor: &mut *mysql_connection,
+    phantom: Default::default(),
+  })
       .await
       .map_err(|err| match err {
         RequireModeratorError::ServerError => MediaFileUploadError::ServerError,

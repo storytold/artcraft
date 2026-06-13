@@ -25,7 +25,7 @@ use tokens::tokens::users::UserToken;
 
 use crate::http_server::web_utils::serialize_as_json_error::serialize_as_json_error;
 use crate::http_server::common_responses::common_web_error::CommonWebError;
-use crate::http_server::web_utils::user_session::require_moderator::{require_moderator, RequireModeratorError, UseDatabase};
+use crate::http_server::web_utils::user_session::require_moderator::{require_moderator, RequireModeratorError, RequireModeratorArgs};
 use crate::state::server_state::ServerState;
 
 /// For the URL PathInfo
@@ -60,7 +60,12 @@ pub async fn moderator_get_token_info_handler(
   server_state: web::Data<Arc<ServerState>>
 ) -> Result<HttpResponse, CommonWebError> {
 
-  let user_session = require_moderator(&http_request, &server_state, UseDatabase::GrabNewConnection)
+  let user_session = require_moderator(RequireModeratorArgs {
+    http_request: &http_request,
+    server_state: &server_state,
+    mysql_executor: &server_state.mysql_pool,
+    phantom: Default::default(),
+  })
       .await
       .map_err(|err| match err {
         RequireModeratorError::ServerError => CommonWebError::from_error(err),

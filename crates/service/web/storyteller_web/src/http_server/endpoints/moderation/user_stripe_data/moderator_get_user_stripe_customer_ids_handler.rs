@@ -16,7 +16,7 @@ use mysql_queries::queries::users::user_subscriptions::list_stripe_customer_ids_
 use tokens::tokens::users::UserToken;
 
 use crate::http_server::common_responses::common_web_error::CommonWebError;
-use crate::http_server::web_utils::user_session::require_moderator::{require_moderator, UseDatabase};
+use crate::http_server::web_utils::user_session::require_moderator::{require_moderator, RequireModeratorArgs};
 use crate::state::server_state::ServerState;
 
 /// Get all stripe customer ids on file for a user (moderation)
@@ -43,11 +43,12 @@ pub async fn moderator_get_user_stripe_customer_ids_handler(
       .acquire()
       .await?;
 
-  let _moderator_session = require_moderator(
-    &http_request,
-    &server_state,
-    UseDatabase::FromPool(&mut mysql_connection),
-  )
+  let _moderator_session = require_moderator(RequireModeratorArgs {
+    http_request: &http_request,
+    server_state: &server_state,
+    mysql_executor: &mut *mysql_connection,
+    phantom: Default::default(),
+  })
       .await
       .map_err(|_| CommonWebError::NotAuthorized)?;
 

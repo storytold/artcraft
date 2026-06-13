@@ -140,6 +140,17 @@ impl SessionChecker {
   }
 
 
+  pub async fn maybe_get_user_session_from_executor<'e, 'c : 'e, E>(
+    &self,
+    request: &HttpRequest,
+    mysql_executor: E,
+  ) -> Result<Option<SessionUserRecord>, SessionCheckerError>
+    where E: 'e + Executor<'c, Database = MySql>
+  {
+    self.do_user_session_lookup_and_cookie_decode(request, mysql_executor).await
+  }
+
+
   async fn do_user_session_lookup_and_cookie_decode<'e, 'c : 'e, E>(
     &self,
     request: &HttpRequest,
