@@ -27,9 +27,7 @@ use crate::http_server::session::lookup::user_session_feature_flags::UserSession
 use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::web_utils::response_error_helpers::to_simple_json_error;
 use crate::http_server::web_utils::response_success_helpers::simple_json_success;
-use crate::http_server::web_utils::user_session::require_moderator::{
-  require_moderator, RequireModeratorArgs,
-};
+use crate::http_server::web_utils::user_session::require_moderator::require_moderator;
 use crate::state::server_state::ServerState;
 use artcraft_api_defs::common::responses::simple_generic_json_success::SimpleGenericJsonSuccess;
 
@@ -89,12 +87,7 @@ pub async fn moderator_edit_user_feature_flags_handler(
   redis_pool: Data<r2d2::Pool<Client>>,
 ) -> Result<HttpResponse, CommonWebError> {
 
-  let user_session = require_moderator(RequireModeratorArgs {
-    http_request: &http_request,
-    server_state: &server_state,
-    mysql_executor: &server_state.mysql_pool,
-    phantom: Default::default(),
-  }).await.map_err(|err| {
+  let user_session = require_moderator(&http_request, &server_state, &server_state.mysql_pool).await.map_err(|err| {
     warn!("Moderator check failed: {:?}", err);
     CommonWebError::NotAuthorized
   })?;

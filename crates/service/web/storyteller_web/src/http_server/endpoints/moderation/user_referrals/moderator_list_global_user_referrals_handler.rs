@@ -13,9 +13,7 @@ use mysql_queries::queries::user_referrals::list_global_user_referrals::{
 };
 
 use crate::http_server::common_responses::common_web_error::CommonWebError;
-use crate::http_server::web_utils::user_session::require_moderator::{
-  require_moderator, RequireModeratorArgs,
-};
+use crate::http_server::web_utils::user_session::require_moderator::require_moderator;
 use crate::state::server_state::ServerState;
 
 const CURSOR_NAME: &str = "modusrref";
@@ -42,12 +40,7 @@ pub async fn moderator_list_global_user_referrals_handler(
   server_state: web::Data<Arc<ServerState>>,
 ) -> Result<Json<ListGlobalUserReferralsSuccessResponse>, CommonWebError> {
 
-  let _user_session = require_moderator(RequireModeratorArgs {
-    http_request: &http_request,
-    server_state: &server_state,
-    mysql_executor: &server_state.mysql_pool,
-    phantom: Default::default(),
-  }).await.map_err(|err| {
+  let _user_session = require_moderator(&http_request, &server_state, &server_state.mysql_pool).await.map_err(|err| {
     warn!("Moderator check failed: {:?}", err);
     CommonWebError::NotAuthorized
   })?;

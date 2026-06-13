@@ -14,7 +14,7 @@ use mysql_queries::queries::users::user_profiles::get_user_profile_by_username::
 
 use crate::http_server::web_utils::response_error_helpers::to_simple_json_error;
 use crate::http_server::common_responses::common_web_error::CommonWebError;
-use crate::http_server::web_utils::user_session::require_moderator::{require_moderator, RequireModeratorError, RequireModeratorArgs};
+use crate::http_server::web_utils::user_session::require_moderator::{require_moderator, RequireModeratorError};
 use crate::state::server_state::ServerState;
 
 const MAXIMUM_KEYS : u32 = 100;
@@ -60,12 +60,7 @@ pub async fn create_beta_keys_handler(
   server_state: web::Data<Arc<ServerState>>,
 ) -> Result<HttpResponse, CommonWebError>
 {
-  let user_session = require_moderator(RequireModeratorArgs {
-    http_request: &http_request,
-    server_state: &server_state,
-    mysql_executor: &server_state.mysql_pool,
-    phantom: Default::default(),
-  })
+  let user_session = require_moderator(&http_request, &server_state, &server_state.mysql_pool)
       .await
       .map_err(|err| match err {
         RequireModeratorError::ServerError => CommonWebError::from_error(err),

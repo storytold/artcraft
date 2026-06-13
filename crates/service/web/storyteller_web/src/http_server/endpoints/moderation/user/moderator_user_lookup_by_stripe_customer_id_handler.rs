@@ -12,7 +12,7 @@ use artcraft_api_defs::moderation::user::user_lookup_by_stripe_customer_id::{
 use mysql_queries::queries::users::user_subscriptions::lookup_users_by_stripe_customer_id::lookup_users_by_stripe_customer_id;
 
 use crate::http_server::common_responses::common_web_error::CommonWebError;
-use crate::http_server::web_utils::user_session::require_moderator::{require_moderator, RequireModeratorArgs};
+use crate::http_server::web_utils::user_session::require_moderator::require_moderator;
 use crate::state::server_state::ServerState;
 
 /// Moderator User Lookup by Stripe Customer ID
@@ -33,12 +33,7 @@ pub async fn moderator_user_lookup_by_stripe_customer_id_handler(
   server_state: web::Data<Arc<ServerState>>,
 ) -> Result<Json<ModeratorUserLookupByStripeCustomerIdResponse>, CommonWebError> {
 
-  let _user_session = require_moderator(RequireModeratorArgs {
-    http_request: &http_request,
-    server_state: &server_state,
-    mysql_executor: &server_state.mysql_pool,
-    phantom: Default::default(),
-  })
+  let _user_session = require_moderator(&http_request, &server_state, &server_state.mysql_pool)
     .await
     .map_err(|_| CommonWebError::NotAuthorized)?;
 

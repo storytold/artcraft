@@ -13,7 +13,7 @@ use mysql_queries::queries::generic_inference::web::list_user_jobs_for_moderatio
 
 use tokens::tokens::users::UserToken;
 use crate::http_server::common_responses::common_web_error::CommonWebError;
-use crate::http_server::web_utils::user_session::require_moderator::{require_moderator, RequireModeratorArgs};
+use crate::http_server::web_utils::user_session::require_moderator::require_moderator;
 use crate::state::server_state::ServerState;
 
 /// List jobs for a user (moderation)
@@ -36,12 +36,7 @@ pub async fn list_user_jobs_handler(
   server_state: web::Data<Arc<ServerState>>,
 ) -> Result<Json<ListUserJobsResponse>, CommonWebError> {
 
-  let _user_session = require_moderator(RequireModeratorArgs {
-    http_request: &http_request,
-    server_state: &server_state,
-    mysql_executor: &server_state.mysql_pool,
-    phantom: Default::default(),
-  })
+  let _user_session = require_moderator(&http_request, &server_state, &server_state.mysql_pool)
     .await
     .map_err(|_| CommonWebError::NotAuthorized)?;
 

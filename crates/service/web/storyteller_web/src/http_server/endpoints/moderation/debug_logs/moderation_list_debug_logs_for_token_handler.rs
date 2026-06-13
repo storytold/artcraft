@@ -15,9 +15,7 @@ use tokens::tokens::non_unique::debug_logs_event_token::DebugLogEventToken;
 use tokens::tokens::users::UserToken;
 
 use crate::http_server::common_responses::common_web_error::CommonWebError;
-use crate::http_server::web_utils::user_session::require_moderator::{
-  require_moderator, RequireModeratorArgs,
-};
+use crate::http_server::web_utils::user_session::require_moderator::require_moderator;
 use crate::state::server_state::ServerState;
 
 // ── Path params ──
@@ -74,12 +72,7 @@ pub async fn moderation_list_debug_logs_for_token_handler(
   query: web::Query<ListDebugLogsQueryParams>,
   server_state: web::Data<Arc<ServerState>>,
 ) -> Result<Json<ListDebugLogsSuccessResponse>, CommonWebError> {
-  let _user_session = require_moderator(RequireModeratorArgs {
-    http_request: &http_request,
-    server_state: &server_state,
-    mysql_executor: &server_state.mysql_pool,
-    phantom: Default::default(),
-  }).await.map_err(|err| {
+  let _user_session = require_moderator(&http_request, &server_state, &server_state.mysql_pool).await.map_err(|err| {
     warn!("Moderator check failed: {:?}", err);
     CommonWebError::NotAuthorized
   })?;
