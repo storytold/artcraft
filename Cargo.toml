@@ -342,11 +342,11 @@ sha2 = "0.11.0-rc.5"
 sha3 = "0.10.8"
 speculoos = "0.11.0"
 strum = { version = "0.28.0", features = ["derive"] }
-tauri = { version = "2.8.3", features = ["unstable", "devtools", "protocol-asset"] } # NB: "devtools" prevents App Store distribution; "ubstable" is needed for window access
-tauri-plugin-dialog = "2.3.3"
-tauri-plugin-fs = "2.4.2"
-tauri-plugin-log = "2.6.0"
-tauri-plugin-upload = "2.3.1"
+tauri = { version = "2.11.2", features = ["unstable", "devtools", "protocol-asset"] } # NB: "devtools" prevents App Store distribution; "ubstable" is needed for window access
+tauri-plugin-dialog = "2.7.1"
+tauri-plugin-fs = "2.5.1"
+tauri-plugin-log = "2.8.0"
+tauri-plugin-upload = "2.4.0"
 tempdir = "0.3.7"
 tempfile = "3.27.0"
 thiserror = "2.0.18"

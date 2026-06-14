@@ -91,7 +91,7 @@ sqlx-sqlite = { version = "0.7.3", default-features = false, features = ["any", 
 stable_deref_trait = { version = "1.2.0" }
 subtle = { version = "2.5.0", default-features = false, features = ["i128"] }
 syn-f595c2ba2a3f28df = { package = "syn", version = "2.0.87", features = ["extra-traits", "fold", "full", "visit", "visit-mut"] }
-tauri-utils = { version = "2.4.0", default-features = false, features = ["build", "compression", "resources"] }
+tauri-utils = { version = "2.9.2", default-features = false, features = ["build", "compression", "resources"] }
 time = { version = "0.3.36", features = ["local-offset", "macros", "serde-well-known"] }
 tokio = { version = "1.45.1", features = ["full"] }
 tokio-stream = { version = "0.1.16", features = ["fs"] }
@@ -171,8 +171,8 @@ stable_deref_trait = { version = "1.2.0" }
 subtle = { version = "2.5.0", default-features = false, features = ["i128"] }
 syn-dff4ba8e3ae991db = { package = "syn", version = "1.0.109", features = ["extra-traits", "fold", "full", "visit-mut"] }
 syn-f595c2ba2a3f28df = { package = "syn", version = "2.0.87", features = ["extra-traits", "fold", "full", "visit", "visit-mut"] }
-tauri-build = { version = "2.1.1" }
-tauri-utils = { version = "2.4.0", default-features = false, features = ["build", "compression", "resources"] }
+tauri-build = { version = "2.6.2" }
+tauri-utils = { version = "2.9.2", default-features = false, features = ["build", "compression", "resources"] }
 time-macros = { version = "0.2.18", default-features = false, features = ["formatting", "parsing", "serde"] }
 tokio = { version = "1.45.1", features = ["full"] }
 tokio-stream = { version = "0.1.16", features = ["fs"] }
