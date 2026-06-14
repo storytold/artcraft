@@ -143,13 +143,19 @@ pub async fn omni_gen_image_generate_handler(
 
   // ==================== PIPELINE ==================== //
 
+  // NB: Release the pooled DB connection before the (slow, external) generation call so we don't
+  // hold a pool slot idle while waiting on the provider — that's what starves the pool and causes
+  // PoolTimedOut on unrelated endpoints. We re-acquire below to write the result.
+  drop(mysql_connection);
+
   let pipeline_result = run_pipeline_v2(RunPipelineV2Args {
     router_builder: &router_builder,
     server_state: &server_state,
-    mysql_connection: &mut mysql_connection,
     user_token,
     resolved_media: &resolved_media,
   }).await?;
+
+  let mut mysql_connection = server_state.mysql_pool.acquire().await?;
 
   // ==================== DEBUG LOG: FAL REQUEST ==================== //
 

@@ -192,6 +192,10 @@ pub async fn enqueue_studio_gen2_handler(
         CommonWebError::BadInputWithSimpleMessage("invalid idempotency token".to_string())
       })?;
 
+  // NB: The connection isn't needed past this point (the enqueue below uses the pool directly),
+  // so release it now rather than holding a pool slot for the rest of the handler.
+  drop(mysql_connection);
+
   // ==================== LOOK UP MODEL INFO ==================== //
 
   // TODO(bt): CHECK DATABASE FOR TOKENS!

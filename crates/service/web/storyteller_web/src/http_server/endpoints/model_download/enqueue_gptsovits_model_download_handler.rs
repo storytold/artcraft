@@ -86,6 +86,10 @@ pub async fn enqueue_gptsovits_model_download_handler(
     &server_state.session_checker,
     &mut *mysql_connection).await?;
 
+  // NB: The connection isn't needed past this point (the enqueue below uses the pool directly),
+  // so release it now rather than holding a pool slot for the rest of the handler.
+  drop(mysql_connection);
+
   // ==================== PAID PLAN + PRIORITY ==================== //
 
   let plan = get_correct_plan_for_session(server_state.server_environment, Some(&user_session));

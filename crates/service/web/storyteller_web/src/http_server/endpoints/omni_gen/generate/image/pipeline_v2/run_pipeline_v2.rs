@@ -25,18 +25,20 @@ use crate::util::lookup::lookup_media_files_as_cdn_url_list_and_map::MediaFilesA
 pub struct RunPipelineV2Args<'a> {
   pub router_builder: &'a GenerateImageRequestBuilder,
   pub server_state: &'a ServerState,
-  pub mysql_connection: &'a mut sqlx::pool::PoolConnection<sqlx::MySql>,
   pub user_token: &'a UserToken,
   pub resolved_media: &'a MediaFilesAsCdnUrlListAndMap,
 }
 
+// NB: This pipeline does an external generation call (`finalize_and_generate`) that can take many
+// seconds. It deliberately does NOT hold a pooled DB connection across that call — it acquires a
+// short-lived connection only for the wallet deduction. Holding a pooled connection across the
+// external call is what starves the pool and causes `PoolTimedOut`.
 pub async fn run_pipeline_v2(
   args: RunPipelineV2Args<'_>,
 ) -> Result<ImagePipelineResult, CommonWebError> {
   let RunPipelineV2Args {
     router_builder,
     server_state,
-    mysql_connection,
     user_token,
     resolved_media,
   } = args;
@@ -55,17 +57,24 @@ pub async fn run_pipeline_v2(
   let apriori_job_token = InferenceJobToken::generate();
 
   let maybe_wallet_ledger_entry_token = if cost > 0 {
+    // NB: Short-lived connection — released before the external call below.
+    let mut billing_connection = server_state.mysql_pool.acquire().await
+      .map_err(|err| {
+        warn!("Failed to acquire MySQL connection for image billing: {:?}", err);
+        CommonWebError::from_error(err)
+      })?;
     let deduction = attempt_wallet_deduction_else_common_web_error(
       user_token,
       Some(apriori_job_token.as_str()),
       cost,
-      mysql_connection,
+      &mut billing_connection,
     ).await?;
     Some(deduction.ledger_entry_token)
   } else {
     None
   };
 
+  // NB: No pooled DB connection is held across this external generation call.
   let response = finalize_and_generate(draft_or_request, server_state, resolved_media).await?;
 
   Ok(ImagePipelineResult {

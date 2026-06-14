@@ -3,7 +3,6 @@ use std::convert::TryFrom;
 use std::collections::HashMap;
 
 use log::{error, info, warn};
-use sqlx::pool::PoolConnection;
 use artcraft_router::api::router_video_model::RouterVideoModel;
 use artcraft_router::api::router_provider::RouterProvider;
 use artcraft_router::generate::generate_video::generate_video_request_builder::GenerateVideoRequestBuilder;
@@ -28,18 +27,20 @@ use crate::state::server_state::ServerState;
 pub struct RunPipelineV2Args<'a> {
   pub router_builder: &'a GenerateVideoRequestBuilder,
   pub server_state: &'a ServerState,
-  pub mysql_connection: &'a mut PoolConnection<sqlx::MySql>,
   pub user_token: &'a UserToken,
   pub media_file_to_url_map: &'a Option<HashMap<MediaFileToken, String>>,
   pub kinovi_character_id_map: &'a Option<HashMap<CharacterToken, String>>,
   pub kinovi_account: KinoviAccount,
 }
 
+// NB: This pipeline does an external generation call (`upload_and_generate`) that can take many
+// seconds. It deliberately does NOT hold a pooled DB connection across that call — it acquires
+// short-lived connections only for the billing and (on failure) refund writes. Holding a pooled
+// connection across the external call is what starves the pool and causes `PoolTimedOut`.
 pub async fn run_pipeline_v2(args: RunPipelineV2Args<'_>) -> Result<PipelineResult, CommonWebError> {
   let RunPipelineV2Args {
     router_builder,
     server_state,
-    mysql_connection,
     user_token,
     media_file_to_url_map,
     kinovi_character_id_map,
@@ -137,11 +138,19 @@ pub async fn run_pipeline_v2(args: RunPipelineV2Args<'_>) -> Result<PipelineResu
 
   info!("v2 estimated cost: {} credits (estimates: {:?})", cost, cost_estimates);
 
-  // 3. Bill wallet
-  let billing = bill_wallet(user_token, cost, mysql_connection).await?;
+  // 3. Bill wallet (short-lived connection — released before the external call below).
+  let billing = {
+    let mut billing_connection = server_state.mysql_pool.acquire().await
+      .map_err(|err| {
+        error!("Failed to acquire MySQL connection for billing: {:?}", err);
+        CommonWebError::from_error(err)
+      })?;
+    bill_wallet(user_token, cost, &mut billing_connection).await?
+  };
 
   // 4. Upload media (if draft) and generate video.
   //    The entire block is wrapped so Kinovi failures trigger a refund.
+  //    NB: No pooled DB connection is held across this call.
   let result = upload_and_generate(
     draft_or_request,
     server_state,
@@ -156,10 +165,15 @@ pub async fn run_pipeline_v2(args: RunPipelineV2Args<'_>) -> Result<PipelineResu
       if let Some(ledger_entry_token) = billing.maybe_wallet_ledger_entry_token.as_ref() {
         warn!("Kinovi v2 generation failed, issuing refund for {}: {:?}", ledger_entry_token.as_str(), err);
 
-        let result = refund_wallet_after_api_failure(ledger_entry_token, mysql_connection).await;
-
-        if let Err(refund_err) = result {
-          error!("Failed to refund wallet after Kinovi v2 failure: {:?}", refund_err);
+        match server_state.mysql_pool.acquire().await {
+          Ok(mut refund_connection) => {
+            if let Err(refund_err) = refund_wallet_after_api_failure(ledger_entry_token, &mut refund_connection).await {
+              error!("Failed to refund wallet after Kinovi v2 failure: {:?}", refund_err);
+            }
+          }
+          Err(acquire_err) => {
+            error!("Failed to acquire MySQL connection to refund wallet after Kinovi v2 failure: {:?}", acquire_err);
+          }
         }
       }
     }
