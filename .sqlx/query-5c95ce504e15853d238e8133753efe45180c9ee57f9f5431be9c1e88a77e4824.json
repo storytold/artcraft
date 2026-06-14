@@ -9,9 +9,10 @@
         "type_info": {
           "type": "NewDecimal",
           "flags": "BINARY",
-          "char_set": 63,
+          "collation": 63,
           "max_size": 33
-        }
+        },
+        "origin": "Expression"
       }
     ],
     "parameters": {

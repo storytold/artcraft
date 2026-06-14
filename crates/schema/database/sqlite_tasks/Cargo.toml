@@ -27,7 +27,7 @@ log.workspace = true
 
 # TODO(bt,2025-07-09): Update sqlx ASAP. We're stuck on 0.7 because of the complex use of internal types and macros in the database crate.
 # We're going to embed in-memory SQLite
-sqlx = { package = "sqlx", version = "0.7.4", features = ["runtime-tokio-rustls", "sqlite", "chrono"] }
+sqlx = { package = "sqlx", version = "0.9", features = ["runtime-tokio", "tls-rustls", "sqlite", "chrono"] }
 
 # Needed to safety check some queries we can't use escaping for
 once_cell.workspace = true
@@ -43,5 +43,5 @@ serde_json.workspace = true
 
 [build-dependencies]
 tempfile.workspace = true
-sqlx = { package = "sqlx", version = "0.7.4", features = ["runtime-tokio-rustls", "sqlite", "chrono"] }
+sqlx = { package = "sqlx", version = "0.9", features = ["runtime-tokio", "tls-rustls", "sqlite", "chrono"] }
 #rusqlite = "0.25.4" # NB: For the build.rs file

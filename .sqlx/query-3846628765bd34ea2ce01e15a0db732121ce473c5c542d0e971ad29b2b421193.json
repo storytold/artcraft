@@ -9,8 +9,14 @@
         "type_info": {
           "type": "LongLong",
           "flags": "NOT_NULL | PRIMARY_KEY | UNSIGNED | AUTO_INCREMENT",
-          "char_set": 63,
+          "collation": 63,
           "max_size": 20
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.staff_audit_logs",
+            "name": "id"
+          }
         }
       },
       {
@@ -19,8 +25,14 @@
         "type_info": {
           "type": "VarString",
           "flags": "NOT_NULL | UNIQUE_KEY | BINARY | NO_DEFAULT_VALUE",
-          "char_set": 224,
+          "collation": 255,
           "max_size": 128
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.staff_audit_logs",
+            "name": "token"
+          }
         }
       },
       {
@@ -29,8 +41,14 @@
         "type_info": {
           "type": "VarString",
           "flags": "NOT_NULL | BINARY | NO_DEFAULT_VALUE",
-          "char_set": 224,
+          "collation": 255,
           "max_size": 128
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.staff_audit_logs",
+            "name": "audit_action"
+          }
         }
       },
       {
@@ -39,8 +57,14 @@
         "type_info": {
           "type": "VarString",
           "flags": "MULTIPLE_KEY | BINARY",
-          "char_set": 224,
+          "collation": 255,
           "max_size": 64
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.staff_audit_logs",
+            "name": "maybe_entity_type"
+          }
         }
       },
       {
@@ -49,8 +73,14 @@
         "type_info": {
           "type": "VarString",
           "flags": "NOT_NULL | MULTIPLE_KEY | BINARY | NO_DEFAULT_VALUE",
-          "char_set": 224,
+          "collation": 255,
           "max_size": 128
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.staff_audit_logs",
+            "name": "maybe_entity_token"
+          }
         }
       },
       {
@@ -59,8 +89,14 @@
         "type_info": {
           "type": "VarString",
           "flags": "UNIQUE_KEY | BINARY | NO_DEFAULT_VALUE",
-          "char_set": 224,
+          "collation": 255,
           "max_size": 80
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.users",
+            "name": "username"
+          }
         }
       },
       {
@@ -69,8 +105,14 @@
         "type_info": {
           "type": "VarString",
           "flags": "BINARY | NO_DEFAULT_VALUE",
-          "char_set": 224,
+          "collation": 255,
           "max_size": 80
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.users",
+            "name": "display_name"
+          }
         }
       },
       {
@@ -79,8 +121,14 @@
         "type_info": {
           "type": "VarString",
           "flags": "MULTIPLE_KEY | BINARY",
-          "char_set": 224,
+          "collation": 255,
           "max_size": 128
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.staff_audit_logs",
+            "name": "staff_user_token"
+          }
         }
       },
       {
@@ -89,8 +137,14 @@
         "type_info": {
           "type": "VarString",
           "flags": "UNIQUE_KEY | BINARY | NO_DEFAULT_VALUE",
-          "char_set": 224,
+          "collation": 255,
           "max_size": 80
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.users",
+            "name": "username"
+          }
         }
       },
       {
@@ -99,8 +153,14 @@
         "type_info": {
           "type": "VarString",
           "flags": "BINARY | NO_DEFAULT_VALUE",
-          "char_set": 224,
+          "collation": 255,
           "max_size": 80
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.users",
+            "name": "display_name"
+          }
         }
       },
       {
@@ -109,8 +169,14 @@
         "type_info": {
           "type": "VarString",
           "flags": "NOT_NULL | BINARY | NO_DEFAULT_VALUE",
-          "char_set": 224,
+          "collation": 255,
           "max_size": 160
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.staff_audit_logs",
+            "name": "staff_ip_address"
+          }
         }
       },
       {
@@ -119,8 +185,14 @@
         "type_info": {
           "type": "Timestamp",
           "flags": "NOT_NULL | MULTIPLE_KEY | BINARY | TIMESTAMP",
-          "char_set": 63,
+          "collation": 63,
           "max_size": 19
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.staff_audit_logs",
+            "name": "created_at"
+          }
         }
       }
     ],

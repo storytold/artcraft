@@ -9,8 +9,14 @@
         "type_info": {
           "type": "VarString",
           "flags": "NOT_NULL | UNIQUE_KEY | BINARY | NO_DEFAULT_VALUE",
-          "char_set": 224,
+          "collation": 255,
           "max_size": 128
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.zs_voices",
+            "name": "token"
+          }
         }
       },
       {
@@ -19,8 +25,14 @@
         "type_info": {
           "type": "VarString",
           "flags": "NOT_NULL | BINARY | NO_DEFAULT_VALUE",
-          "char_set": 224,
+          "collation": 255,
           "max_size": 1020
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.zs_voices",
+            "name": "title"
+          }
         }
       },
       {
@@ -29,8 +41,14 @@
         "type_info": {
           "type": "VarString",
           "flags": "NOT_NULL | BINARY",
-          "char_set": 224,
+          "collation": 255,
           "max_size": 256
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.zs_voices",
+            "name": "ietf_language_tag"
+          }
         }
       },
       {
@@ -39,8 +57,14 @@
         "type_info": {
           "type": "VarString",
           "flags": "NOT_NULL | MULTIPLE_KEY | BINARY",
-          "char_set": 224,
+          "collation": 255,
           "max_size": 48
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.zs_voices",
+            "name": "ietf_primary_language_subtag"
+          }
         }
       },
       {
@@ -49,8 +73,14 @@
         "type_info": {
           "type": "VarString",
           "flags": "NOT_NULL | UNIQUE_KEY | BINARY | NO_DEFAULT_VALUE",
-          "char_set": 224,
+          "collation": 255,
           "max_size": 128
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.users",
+            "name": "token"
+          }
         }
       },
       {
@@ -59,8 +89,14 @@
         "type_info": {
           "type": "VarString",
           "flags": "NOT_NULL | UNIQUE_KEY | BINARY | NO_DEFAULT_VALUE",
-          "char_set": 224,
+          "collation": 255,
           "max_size": 80
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.users",
+            "name": "username"
+          }
         }
       },
       {
@@ -69,8 +105,14 @@
         "type_info": {
           "type": "VarString",
           "flags": "NOT_NULL | BINARY | NO_DEFAULT_VALUE",
-          "char_set": 224,
+          "collation": 255,
           "max_size": 80
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.users",
+            "name": "display_name"
+          }
         }
       },
       {
@@ -79,8 +121,14 @@
         "type_info": {
           "type": "String",
           "flags": "NOT_NULL | BINARY | NO_DEFAULT_VALUE",
-          "char_set": 224,
+          "collation": 255,
           "max_size": 128
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.users",
+            "name": "email_gravatar_hash"
+          }
         }
       },
       {
@@ -89,8 +137,14 @@
         "type_info": {
           "type": "String",
           "flags": "NOT_NULL | BINARY | ENUM",
-          "char_set": 224,
+          "collation": 255,
           "max_size": 28
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.zs_voices",
+            "name": "creator_set_visibility"
+          }
         }
       },
       {
@@ -99,8 +153,14 @@
         "type_info": {
           "type": "Timestamp",
           "flags": "NOT_NULL | BINARY | TIMESTAMP",
-          "char_set": 63,
+          "collation": 63,
           "max_size": 19
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.zs_voices",
+            "name": "created_at"
+          }
         }
       },
       {
@@ -109,8 +169,14 @@
         "type_info": {
           "type": "Timestamp",
           "flags": "NOT_NULL | BINARY | TIMESTAMP | ON_UPDATE_NOW",
-          "char_set": 63,
+          "collation": 63,
           "max_size": 19
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.zs_voices",
+            "name": "updated_at"
+          }
         }
       }
     ],

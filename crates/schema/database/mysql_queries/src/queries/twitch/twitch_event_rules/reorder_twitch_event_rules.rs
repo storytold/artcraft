@@ -93,7 +93,7 @@ SET
   "#, query_inner_positions, query_inner_ip_addresses, user_token, rule_tokens);
 
   // NB: This, unfortunately, cannot be statically checked.
-  let query = sqlx::query(&query);
+  let query = sqlx::query(sqlx::AssertSqlSafe(&*query));
 
   let result = query.execute(mysql_pool).await;
 

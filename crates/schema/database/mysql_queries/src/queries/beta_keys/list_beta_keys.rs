@@ -185,7 +185,7 @@ fn query_builder<'a>(
   page_index: usize,
   page_size: usize,
   sort_ascending: bool,
-) -> QueryBuilder<'a, MySql> {
+) -> QueryBuilder<MySql> {
 
   let mut sort_ascending = sort_ascending;
 

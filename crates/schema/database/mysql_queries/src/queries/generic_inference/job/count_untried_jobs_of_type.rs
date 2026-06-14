@@ -45,7 +45,7 @@ async fn perform_query(args: CountUntriedJobsOfTypeArgs<'_>) -> Result<UntriedJo
   // NB: Can't be type checked because of WHERE IN clause with dynamic contents
   let mut query = core_query(&args);
 
-  let query = sqlx::query_as::<_, UntriedJobCountRawInternal>(&query);
+  let query = sqlx::query_as::<_, UntriedJobCountRawInternal>(sqlx::AssertSqlSafe(&*query));
 
   query.fetch_one(args.mysql_pool)
       .await

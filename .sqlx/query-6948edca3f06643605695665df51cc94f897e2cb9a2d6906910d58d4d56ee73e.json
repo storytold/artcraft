@@ -9,8 +9,14 @@
         "type_info": {
           "type": "VarString",
           "flags": "NOT_NULL | UNIQUE_KEY | BINARY | NO_DEFAULT_VALUE",
-          "char_set": 224,
+          "collation": 255,
           "max_size": 128
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.generic_inference_jobs",
+            "name": "token"
+          }
         }
       },
       {
@@ -19,8 +25,14 @@
         "type_info": {
           "type": "String",
           "flags": "NOT_NULL | MULTIPLE_KEY | BINARY | ENUM",
-          "char_set": 224,
+          "collation": 255,
           "max_size": 76
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.generic_inference_jobs",
+            "name": "status"
+          }
         }
       },
       {
@@ -29,8 +41,14 @@
         "type_info": {
           "type": "Short",
           "flags": "NOT_NULL | UNSIGNED",
-          "char_set": 63,
+          "collation": 63,
           "max_size": 5
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.generic_inference_jobs",
+            "name": "attempt_count"
+          }
         }
       },
       {
@@ -39,8 +57,14 @@
         "type_info": {
           "type": "VarString",
           "flags": "MULTIPLE_KEY | BINARY",
-          "char_set": 224,
+          "collation": 255,
           "max_size": 128
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.generic_inference_jobs",
+            "name": "maybe_creator_user_token"
+          }
         }
       },
       {
@@ -49,8 +73,14 @@
         "type_info": {
           "type": "VarString",
           "flags": "MULTIPLE_KEY | BINARY",
-          "char_set": 224,
+          "collation": 255,
           "max_size": 128
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.generic_inference_jobs",
+            "name": "maybe_creator_anonymous_visitor_token"
+          }
         }
       },
       {
@@ -59,8 +89,14 @@
         "type_info": {
           "type": "VarString",
           "flags": "NOT_NULL | MULTIPLE_KEY | BINARY | NO_DEFAULT_VALUE",
-          "char_set": 224,
+          "collation": 255,
           "max_size": 160
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.generic_inference_jobs",
+            "name": "creator_ip_address"
+          }
         }
       },
       {
@@ -69,8 +105,14 @@
         "type_info": {
           "type": "VarString",
           "flags": "MULTIPLE_KEY | BINARY",
-          "char_set": 224,
+          "collation": 255,
           "max_size": 128
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.generic_inference_jobs",
+            "name": "product_category"
+          }
         }
       },
       {
@@ -79,8 +121,14 @@
         "type_info": {
           "type": "VarString",
           "flags": "NOT_NULL | MULTIPLE_KEY | BINARY | NO_DEFAULT_VALUE",
-          "char_set": 224,
+          "collation": 255,
           "max_size": 128
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.generic_inference_jobs",
+            "name": "inference_category"
+          }
         }
       },
       {
@@ -89,8 +137,14 @@
         "type_info": {
           "type": "VarString",
           "flags": "MULTIPLE_KEY | BINARY",
-          "char_set": 224,
+          "collation": 255,
           "max_size": 128
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.generic_inference_jobs",
+            "name": "maybe_model_type"
+          }
         }
       },
       {
@@ -99,8 +153,14 @@
         "type_info": {
           "type": "VarString",
           "flags": "MULTIPLE_KEY | BINARY",
-          "char_set": 224,
+          "collation": 255,
           "max_size": 128
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.generic_inference_jobs",
+            "name": "maybe_model_token"
+          }
         }
       },
       {
@@ -109,8 +169,14 @@
         "type_info": {
           "type": "Blob",
           "flags": "BLOB | BINARY",
-          "char_set": 224,
+          "collation": 255,
           "max_size": 262140
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.generic_inference_jobs",
+            "name": "maybe_raw_inference_text"
+          }
         }
       },
       {
@@ -119,8 +185,14 @@
         "type_info": {
           "type": "Blob",
           "flags": "BLOB | BINARY",
-          "char_set": 224,
+          "collation": 255,
           "max_size": 262140
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.generic_inference_jobs",
+            "name": "maybe_inference_args"
+          }
         }
       },
       {
@@ -129,8 +201,14 @@
         "type_info": {
           "type": "VarString",
           "flags": "BINARY",
-          "char_set": 224,
+          "collation": 255,
           "max_size": 128
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.generic_inference_jobs",
+            "name": "maybe_prompt_token"
+          }
         }
       },
       {
@@ -139,8 +217,14 @@
         "type_info": {
           "type": "VarString",
           "flags": "BINARY",
-          "char_set": 224,
+          "collation": 255,
           "max_size": 128
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.generic_inference_jobs",
+            "name": "frontend_failure_category"
+          }
         }
       },
       {
@@ -149,8 +233,14 @@
         "type_info": {
           "type": "VarString",
           "flags": "BINARY",
-          "char_set": 224,
+          "collation": 255,
           "max_size": 2048
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.generic_inference_jobs",
+            "name": "failure_reason"
+          }
         }
       },
       {
@@ -159,8 +249,14 @@
         "type_info": {
           "type": "VarString",
           "flags": "BINARY",
-          "char_set": 224,
+          "collation": 255,
           "max_size": 128
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.generic_inference_jobs",
+            "name": "on_success_result_entity_type"
+          }
         }
       },
       {
@@ -169,8 +265,14 @@
         "type_info": {
           "type": "VarString",
           "flags": "MULTIPLE_KEY | BINARY",
-          "char_set": 224,
+          "collation": 255,
           "max_size": 128
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.generic_inference_jobs",
+            "name": "on_success_result_entity_token"
+          }
         }
       },
       {
@@ -179,8 +281,14 @@
         "type_info": {
           "type": "VarString",
           "flags": "BINARY",
-          "char_set": 224,
+          "collation": 255,
           "max_size": 128
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.generic_inference_jobs",
+            "name": "on_success_result_batch_token"
+          }
         }
       },
       {
@@ -189,8 +297,14 @@
         "type_info": {
           "type": "VarString",
           "flags": "BINARY | NO_DEFAULT_VALUE",
-          "char_set": 224,
+          "collation": 255,
           "max_size": 1020
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.model_weights",
+            "name": "title"
+          }
         }
       },
       {
@@ -199,8 +313,14 @@
         "type_info": {
           "type": "VarString",
           "flags": "BINARY | NO_DEFAULT_VALUE",
-          "char_set": 224,
+          "collation": 255,
           "max_size": 1020
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.tts_models",
+            "name": "title"
+          }
         }
       },
       {
@@ -209,8 +329,14 @@
         "type_info": {
           "type": "VarString",
           "flags": "BINARY | NO_DEFAULT_VALUE",
-          "char_set": 224,
+          "collation": 255,
           "max_size": 1020
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.voice_conversion_models",
+            "name": "title"
+          }
         }
       },
       {
@@ -219,8 +345,14 @@
         "type_info": {
           "type": "VarString",
           "flags": "BINARY | NO_DEFAULT_VALUE",
-          "char_set": 224,
+          "collation": 255,
           "max_size": 1020
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.tts_results",
+            "name": "public_bucket_wav_audio_path"
+          }
         }
       },
       {
@@ -229,8 +361,14 @@
         "type_info": {
           "type": "VarString",
           "flags": "BINARY | NO_DEFAULT_VALUE",
-          "char_set": 224,
+          "collation": 255,
           "max_size": 256
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.voice_conversion_results",
+            "name": "public_bucket_hash"
+          }
         }
       },
       {
@@ -239,8 +377,14 @@
         "type_info": {
           "type": "VarString",
           "flags": "BINARY | NO_DEFAULT_VALUE",
-          "char_set": 224,
+          "collation": 255,
           "max_size": 128
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.media_files",
+            "name": "public_bucket_directory_hash"
+          }
         }
       },
       {
@@ -249,8 +393,14 @@
         "type_info": {
           "type": "VarString",
           "flags": "BINARY",
-          "char_set": 224,
+          "collation": 255,
           "max_size": 64
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.media_files",
+            "name": "maybe_public_bucket_prefix"
+          }
         }
       },
       {
@@ -259,8 +409,14 @@
         "type_info": {
           "type": "VarString",
           "flags": "BINARY",
-          "char_set": 224,
+          "collation": 255,
           "max_size": 64
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.media_files",
+            "name": "maybe_public_bucket_extension"
+          }
         }
       },
       {
@@ -269,8 +425,14 @@
         "type_info": {
           "type": "VarString",
           "flags": "BINARY",
-          "char_set": 224,
+          "collation": 255,
           "max_size": 512
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.generic_inference_jobs",
+            "name": "assigned_worker"
+          }
         }
       },
       {
@@ -279,8 +441,14 @@
         "type_info": {
           "type": "VarString",
           "flags": "BINARY",
-          "char_set": 224,
+          "collation": 255,
           "max_size": 512
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.generic_inference_jobs",
+            "name": "assigned_cluster"
+          }
         }
       },
       {
@@ -289,8 +457,14 @@
         "type_info": {
           "type": "Tiny",
           "flags": "NOT_NULL",
-          "char_set": 63,
+          "collation": 63,
           "max_size": 1
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.generic_inference_jobs",
+            "name": "is_keepalive_required"
+          }
         }
       },
       {
@@ -299,8 +473,14 @@
         "type_info": {
           "type": "Timestamp",
           "flags": "NOT_NULL | MULTIPLE_KEY | BINARY | TIMESTAMP",
-          "char_set": 63,
+          "collation": 63,
           "max_size": 19
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.generic_inference_jobs",
+            "name": "created_at"
+          }
         }
       },
       {
@@ -309,8 +489,14 @@
         "type_info": {
           "type": "Timestamp",
           "flags": "NOT_NULL | BINARY | TIMESTAMP | ON_UPDATE_NOW",
-          "char_set": 63,
+          "collation": 63,
           "max_size": 19
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.generic_inference_jobs",
+            "name": "updated_at"
+          }
         }
       },
       {
@@ -319,8 +505,14 @@
         "type_info": {
           "type": "Timestamp",
           "flags": "BINARY",
-          "char_set": 63,
+          "collation": 63,
           "max_size": 19
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.generic_inference_jobs",
+            "name": "first_started_at"
+          }
         }
       },
       {
@@ -329,8 +521,14 @@
         "type_info": {
           "type": "Timestamp",
           "flags": "BINARY",
-          "char_set": 63,
+          "collation": 63,
           "max_size": 19
+        },
+        "origin": {
+          "Table": {
+            "table": "storyteller.generic_inference_jobs",
+            "name": "successfully_completed_at"
+          }
         }
       },
       {
@@ -339,9 +537,10 @@
         "type_info": {
           "type": "Datetime",
           "flags": "NOT_NULL | BINARY",
-          "char_set": 63,
+          "collation": 63,
           "max_size": 19
-        }
+        },
+        "origin": "Expression"
       }
     ],
     "parameters": {

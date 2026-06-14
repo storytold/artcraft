@@ -86,8 +86,8 @@ sha1 = { version = "0.10.6" }
 sha2 = { version = "0.10.8", features = ["oid"] }
 smallvec = { version = "1.13.2", default-features = false, features = ["const_new", "union"] }
 socket2 = { version = "0.5.7", default-features = false, features = ["all"] }
-sqlx-mysql = { version = "0.7.3", default-features = false, features = ["any", "bigdecimal", "chrono", "json", "migrate", "offline"] }
-sqlx-sqlite = { version = "0.7.3", default-features = false, features = ["any", "chrono", "json", "migrate", "offline"] }
+sqlx-mysql = { version = "0.9", default-features = false, features = ["any", "bigdecimal", "chrono", "json", "migrate", "offline"] }
+sqlx-sqlite = { version = "0.9", default-features = false, features = ["any", "chrono", "json", "migrate", "offline", "bundled"] }
 stable_deref_trait = { version = "1.2.0" }
 subtle = { version = "2.5.0", default-features = false, features = ["i128"] }
 syn-f595c2ba2a3f28df = { package = "syn", version = "2.0.87", features = ["extra-traits", "fold", "full", "visit", "visit-mut"] }
@@ -165,8 +165,8 @@ serde_json = { version = "1.0.140", features = ["alloc", "preserve_order", "raw_
 sha1 = { version = "0.10.6" }
 sha2 = { version = "0.10.8", features = ["oid"] }
 smallvec = { version = "1.13.2", default-features = false, features = ["const_new", "union"] }
-sqlx-mysql = { version = "0.7.3", default-features = false, features = ["any", "bigdecimal", "chrono", "json", "migrate", "offline"] }
-sqlx-sqlite = { version = "0.7.3", default-features = false, features = ["any", "chrono", "json", "migrate", "offline"] }
+sqlx-mysql = { version = "0.9", default-features = false, features = ["any", "bigdecimal", "chrono", "json", "migrate", "offline"] }
+sqlx-sqlite = { version = "0.9", default-features = false, features = ["any", "chrono", "json", "migrate", "offline", "bundled"] }
 stable_deref_trait = { version = "1.2.0" }
 subtle = { version = "2.5.0", default-features = false, features = ["i128"] }
 syn-dff4ba8e3ae991db = { package = "syn", version = "1.0.109", features = ["extra-traits", "fold", "full", "visit-mut"] }

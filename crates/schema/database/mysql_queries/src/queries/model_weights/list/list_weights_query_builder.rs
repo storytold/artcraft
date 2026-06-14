@@ -165,7 +165,7 @@ impl ListWeightsQueryBuilder {
     ) -> AnyhowResult<Vec<RawWeightJoinUser>> {
         let query = self.build_query_string();
 
-        let mut query = sqlx::query_as::<_, RawWeightJoinUser>(&query);
+        let mut query = sqlx::query_as::<_, RawWeightJoinUser>(sqlx::AssertSqlSafe(&*query));
 
         // NB: The following bindings must match the order of the query builder !!
 

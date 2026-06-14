@@ -21,13 +21,26 @@ macro_rules! impl_mysql_enum_coders {
         // NB: https://docs.rs/sqlx-core/0.6.2/src/sqlx_core/mysql/types/uuid.rs.html#38-66 serves as an example
         <str as sqlx::Type<sqlx::MySql>>::type_info()
       }
+
+      // NB(sqlx 0.9): The default `compatible()` compares `type_info()` for exact equality,
+      // which is VARCHAR here. But our whole DB uses the `utf8mb4_bin` collation, which sqlx
+      // reports at runtime as VARBINARY (the BINARY column flag is set for `_bin` collations).
+      // sqlx 0.9 teaches `str`/`String` to accept this by checking the collation (not the
+      // flag); we delegate to `str` so our enum columns accept the same set of SQL types and
+      // don't fail runtime decoding with "VARCHAR is not compatible with VARBINARY".
+      fn compatible(ty: &sqlx_mysql::MySqlTypeInfo) -> bool {
+        <str as sqlx::Type<sqlx::MySql>>::compatible(ty)
+      }
     }
 
     impl<'q> sqlx::Encode<'q, sqlx::MySql> for $t {
+      // NB(sqlx 0.9): `HasArguments` was folded into `Database`, so the buffer type is now
+      // `<MySql as Database>::ArgumentBuffer` (no lifetime), and `encode_by_ref` returns
+      // `Result<IsNull, BoxDynError>` instead of a bare `IsNull`.
       fn encode_by_ref(
         &self,
-        buf: &mut <sqlx::MySql as sqlx_core::database::HasArguments<'q>>::ArgumentBuffer
-      ) -> sqlx_core::encode::IsNull {
+        buf: &mut <sqlx::MySql as sqlx::Database>::ArgumentBuffer
+      ) -> Result<sqlx_core::encode::IsNull, sqlx_core::error::BoxDynError> {
         // // 0.4.x series:
         // // NB: In the absence of `#[derive(sqlx::Type)]` and `#sqlx(rename_all="lowercase")]`,
         // // this controls the casing of the variants when sent to MySQL.

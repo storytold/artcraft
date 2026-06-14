@@ -9,9 +9,10 @@
         "type_info": {
           "type": "VarString",
           "flags": "BINARY",
-          "char_set": 224,
+          "collation": 255,
           "max_size": 128
-        }
+        },
+        "origin": "Expression"
       }
     ],
     "parameters": {

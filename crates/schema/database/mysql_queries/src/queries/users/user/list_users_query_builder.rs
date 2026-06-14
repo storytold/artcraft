@@ -106,7 +106,7 @@ impl ListUsersQueryBuilder {
   ) -> AnyhowResult<Vec<UserForListRaw>> {
 
     let query = self.build_query_string();
-    let query = sqlx::query_as::<_, UserForListRaw>(&query);
+    let query = sqlx::query_as::<_, UserForListRaw>(sqlx::AssertSqlSafe(&*query));
 
 
     let results = query.fetch_all(mysql_pool)

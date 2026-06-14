@@ -111,7 +111,7 @@ impl ListVoicesQueryBuilder {
         mysql_pool: &MySqlPool
     ) -> AnyhowResult<Vec<RawInternalVoiceRecordForList>> {
         let query = self.build_query_string();
-        let mut query = sqlx::query_as::<_, RawInternalVoiceRecordForList>(&query);
+        let mut query = sqlx::query_as::<_, RawInternalVoiceRecordForList>(sqlx::AssertSqlSafe(&*query));
 
         // NB: The following bindings must match the order of the query builder !!
 

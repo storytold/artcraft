@@ -6,62 +6,134 @@
       {
         "name": "id",
         "ordinal": 0,
-        "type_info": "Text"
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "tasks",
+            "name": "id"
+          }
+        }
       },
       {
         "name": "task_status",
         "ordinal": 1,
-        "type_info": "Text"
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "tasks",
+            "name": "task_status"
+          }
+        }
       },
       {
         "name": "task_type",
         "ordinal": 2,
-        "type_info": "Text"
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "tasks",
+            "name": "task_type"
+          }
+        }
       },
       {
         "name": "model_type",
         "ordinal": 3,
-        "type_info": "Text"
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "tasks",
+            "name": "model_type"
+          }
+        }
       },
       {
         "name": "provider",
         "ordinal": 4,
-        "type_info": "Text"
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "tasks",
+            "name": "provider"
+          }
+        }
       },
       {
         "name": "provider_job_id",
         "ordinal": 5,
-        "type_info": "Text"
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "tasks",
+            "name": "provider_job_id"
+          }
+        }
       },
       {
         "name": "frontend_caller",
         "ordinal": 6,
-        "type_info": "Text"
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "tasks",
+            "name": "frontend_caller"
+          }
+        }
       },
       {
         "name": "queue_status_url",
         "ordinal": 7,
-        "type_info": "Text"
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "tasks",
+            "name": "queue_status_url"
+          }
+        }
       },
       {
         "name": "queue_response_url",
         "ordinal": 8,
-        "type_info": "Text"
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "tasks",
+            "name": "queue_response_url"
+          }
+        }
       },
       {
         "name": "prompt_token",
         "ordinal": 9,
-        "type_info": "Text"
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "tasks",
+            "name": "prompt_token"
+          }
+        }
       },
       {
         "name": "frontend_subscriber_id",
         "ordinal": 10,
-        "type_info": "Text"
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "tasks",
+            "name": "frontend_subscriber_id"
+          }
+        }
       },
       {
         "name": "frontend_subscriber_payload",
         "ordinal": 11,
-        "type_info": "Text"
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "tasks",
+            "name": "frontend_subscriber_payload"
+          }
+        }
       }
     ],
     "parameters": {

@@ -98,7 +98,7 @@ fn query_builder<'a>(
     page_size: usize,
     sort_ascending: bool,
     select_fields: &'a str,
-) -> QueryBuilder<'a, MySql> {
+) -> QueryBuilder<MySql> {
 
     let mut first_predicate_added = false;
     // NB: Query cannot be statically checked by sqlx

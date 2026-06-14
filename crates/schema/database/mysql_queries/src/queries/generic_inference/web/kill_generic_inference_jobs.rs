@@ -54,7 +54,7 @@ fn query_builder(
   job_statuses: HashSet<KillableStatus>,
   target: KillableTarget,
   maybe_priority_or_lower: Option<u8>,
-) -> QueryBuilder<'static, MySql> {
+) -> QueryBuilder<MySql> {
 
   // NB: Query cannot be statically checked by sqlx
   let mut query_builder: QueryBuilder<MySql> = QueryBuilder::new(
@@ -122,12 +122,12 @@ mod tests {
   fn test_statuses() {
     let statuses = HashSet::from([KillableStatus::Failed]);
     let builder = query_builder(statuses, KillableTarget::AllJobs, None);
-    let query = cleanup_query(&builder.into_sql());
+    let query = cleanup_query(builder.into_sql().as_str());
     assert_eq!(query, "UPDATE generic_inference_jobs SET status='cancelled_by_system' WHERE status IN( ?)".to_string());
 
     let statuses = HashSet::from([KillableStatus::Failed, KillableStatus::Pending, KillableStatus::Started]);
     let builder = query_builder(statuses, KillableTarget::AllJobs, None);
-    let query = cleanup_query(&builder.into_sql());
+    let query = cleanup_query(builder.into_sql().as_str());
     assert_eq!(query, "UPDATE generic_inference_jobs SET status='cancelled_by_system' WHERE status IN( ?, ?, ?)".to_string());
   }
 
@@ -135,7 +135,7 @@ mod tests {
   fn test_priority() {
     let statuses = HashSet::from([KillableStatus::Failed]);
     let builder = query_builder(statuses, KillableTarget::AllJobs, Some(10));
-    let query = cleanup_query(&builder.into_sql());
+    let query = cleanup_query(builder.into_sql().as_str());
     assert_eq!(query, "UPDATE generic_inference_jobs SET status='cancelled_by_system' WHERE status IN( ?) AND priority_level <= 10".to_string());
   }
 
@@ -143,7 +143,7 @@ mod tests {
   fn test_category_target() {
     let statuses = HashSet::from([KillableStatus::Failed]);
     let builder = query_builder(statuses, KillableTarget::Category(InferenceCategory::LipsyncAnimation), None);
-    let query = cleanup_query(&builder.into_sql());
+    let query = cleanup_query(builder.into_sql().as_str());
     assert_eq!(query, "UPDATE generic_inference_jobs SET status='cancelled_by_system' WHERE status IN( ?) AND inference_category = ?".to_string());
   }
 
@@ -151,7 +151,7 @@ mod tests {
   fn test_model_target() {
     let statuses = HashSet::from([KillableStatus::Failed]);
     let builder = query_builder(statuses, KillableTarget::ModelType(InferenceModelType::RvcV2), None);
-    let query = cleanup_query(&builder.into_sql());
+    let query = cleanup_query(builder.into_sql().as_str());
     assert_eq!(query, "UPDATE generic_inference_jobs SET status='cancelled_by_system' WHERE status IN( ?) AND maybe_model_type = ?".to_string());
   }
 }

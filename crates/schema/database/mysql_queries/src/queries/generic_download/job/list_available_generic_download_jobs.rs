@@ -91,7 +91,7 @@ WHERE
     LIMIT {}
   "#, num_records));
 
-  let job_records = sqlx::query_as::<_, AvailableDownloadJobRawInternal>(&query)
+  let job_records = sqlx::query_as::<_, AvailableDownloadJobRawInternal>(sqlx::AssertSqlSafe(&*query))
       .fetch_all(pool)
       .await?;
 

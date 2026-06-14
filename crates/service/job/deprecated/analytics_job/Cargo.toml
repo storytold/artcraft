@@ -38,7 +38,7 @@ hostname.workspace = true
 log = "0.4.14"
 rand = "0.8.5"
 
-sqlx = { version = "0.7.4", features = [ "mysql", "runtime-tokio-rustls", "chrono" ] }
+sqlx = { version = "0.9", features = [ "mysql", "runtime-tokio", "tls-rustls", "chrono" ] }
 
 # Runtime
 # NB: We switched to Tokio from `async-std` for broader ecosystem support.

@@ -128,8 +128,8 @@ impl TwitchOauthTokenFinder {
   ) -> AnyhowResult<Option<TwitchOauthTokenRecordInternal>> {
 
     let query = self.build_query_string();
-    let mut query = sqlx::query_as::<_, TwitchOauthTokenRecordInternal>(&query);
-    //let mut query = sqlx::query(&query);
+    let mut query = sqlx::query_as::<_, TwitchOauthTokenRecordInternal>(sqlx::AssertSqlSafe(&*query));
+    //let mut query = sqlx::query(sqlx::AssertSqlSafe(&*query));
 
     // NB: The following bindings must match the order of the query builder !!
 

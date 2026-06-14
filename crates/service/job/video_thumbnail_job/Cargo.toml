@@ -43,6 +43,6 @@ log.workspace = true
 serde.workspace = true
 serde_derive.workspace = true
 serde_json.workspace = true
-sqlx = { version = "0.7.4", features = [ "mysql", "runtime-tokio-rustls", "chrono" ] }
+sqlx = { version = "0.9", features = [ "mysql", "runtime-tokio", "tls-rustls", "chrono" ] }
 tempdir.workspace = true
 tokio.workspace = true

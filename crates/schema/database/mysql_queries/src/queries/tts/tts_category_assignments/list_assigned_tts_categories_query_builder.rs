@@ -152,7 +152,7 @@ impl ListAssignedTtsCategoriesQueryBuilder {
   ) -> AnyhowResult<Vec<RawInternalCategoryRecord>> {
 
     let query = self.build_query_string();
-    let mut query = sqlx::query_as::<_, RawInternalCategoryRecord>(&query);
+    let mut query = sqlx::query_as::<_, RawInternalCategoryRecord>(sqlx::AssertSqlSafe(&*query));
 
     // NB: The following bindings must match the order of the query builder !!
 
