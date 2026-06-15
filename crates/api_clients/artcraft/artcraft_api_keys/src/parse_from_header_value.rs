@@ -64,7 +64,7 @@ mod tests {
   const SAMPLE_KEY: &str = "artcraft_api_55ax0zhd580m598r6n4n7szdwjb2b28sypapvawh";
 
   fn parsed(header_value: &str) -> Option<String> {
-    parse_from_header_value(header_value).map(|key| key.as_str().to_string())
+    parse_from_header_value(header_value).map(|key| key.to_string())
   }
 
   #[test]

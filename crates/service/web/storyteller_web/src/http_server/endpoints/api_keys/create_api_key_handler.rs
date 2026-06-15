@@ -88,6 +88,6 @@ pub async fn create_api_key_handler(
     api_key_token: token,
     // Return the full secret value (never the redacted Debug/Display form). This is the only
     // time it is ever exposed.
-    api_key: api_key.as_str().to_string(),
+    api_key: api_key.to_string(),
   }))
 }

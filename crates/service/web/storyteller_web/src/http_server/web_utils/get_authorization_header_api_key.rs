@@ -60,7 +60,7 @@ mod tests {
             .insert_header((header_name, value.as_str()))
             .to_http_request();
         assert_eq!(
-          get_authorization_header_api_key(&http_request).map(|key| key.as_str().to_string()),
+          get_authorization_header_api_key(&http_request).map(|key| key.to_string()),
           Some(SAMPLE_KEY.to_string()),
           "failed for header name {header_name:?}");
       }
@@ -132,13 +132,13 @@ mod tests {
 
   fn parse_authorization_header_api_key(header_value: &str) -> Option<String> {
     ArtcraftApiKey::parse_from_authorization_header_value(header_value)
-        .map(|key| key.as_str().to_string())
+        .map(|key| key.to_string())
   }
 
   fn api_key_for_authorization_header(value: &str) -> Option<String> {
     let http_request = TestRequest::default()
         .insert_header(("Authorization", value))
         .to_http_request();
-    get_authorization_header_api_key(&http_request).map(|key| key.as_str().to_string())
+    get_authorization_header_api_key(&http_request).map(|key| key.to_string())
   }
 }

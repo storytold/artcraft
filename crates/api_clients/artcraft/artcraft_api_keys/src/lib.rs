@@ -32,6 +32,15 @@ impl ArtcraftApiKey {
     &self.0
   }
 
+  /// The full, unredacted key value as an owned `String`.
+  ///
+  /// NB: unlike `Display`/`Debug` (which redact), this returns the complete secret — use it only
+  /// where the real value is needed (storage, the create-key response, tests).
+  #[allow(clippy::inherent_to_string_shadow_display)]
+  pub fn to_string(&self) -> String {
+    self.0.clone()
+  }
+
   /// The redacted form used by both `Debug` and `Display`: the first
   /// [`REDACTED_PREFIX_CHAR_COUNT`] characters followed by an ellipsis.
   fn redacted(&self) -> String {
