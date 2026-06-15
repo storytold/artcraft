@@ -54,19 +54,19 @@ mod tests {
 
   #[test]
   fn starts_with_prefix() {
-    assert!(generate_api_key().as_str().starts_with("artcraft_api_"));
-    assert!(generate_api_key().as_str().starts_with(API_KEY_PREFIX));
+    assert!(generate_api_key().as_str_be_careful().starts_with("artcraft_api_"));
+    assert!(generate_api_key().as_str_be_careful().starts_with(API_KEY_PREFIX));
   }
 
   #[test]
   fn has_expected_total_length() {
-    assert_eq!(generate_api_key().as_str().len(), API_KEY_PREFIX.len() + ENTROPY_CHAR_COUNT);
+    assert_eq!(generate_api_key().as_str_be_careful().len(), API_KEY_PREFIX.len() + ENTROPY_CHAR_COUNT);
   }
 
   #[test]
   fn entropy_suffix_is_crockford_lowercase() {
     let key = generate_api_key();
-    let suffix = key.as_str().strip_prefix(API_KEY_PREFIX).expect("key must start with the prefix");
+    let suffix = key.as_str_be_careful().strip_prefix(API_KEY_PREFIX).expect("key must start with the prefix");
 
     assert_eq!(suffix.len(), ENTROPY_CHAR_COUNT);
     for byte in suffix.bytes() {
@@ -84,21 +84,21 @@ mod tests {
   fn forbidden_characters_are_absent() {
     let key = generate_api_key();
     for forbidden in ['.', '+', '/'] {
-      assert!(!key.as_str().contains(forbidden), "key must not contain {:?}", forbidden);
+      assert!(!key.as_str_be_careful().contains(forbidden), "key must not contain {:?}", forbidden);
     }
   }
 
   #[test]
   fn underscores_only_appear_in_the_prefix() {
     let key = generate_api_key();
-    let suffix = key.as_str().strip_prefix(API_KEY_PREFIX).expect("key must start with the prefix");
+    let suffix = key.as_str_be_careful().strip_prefix(API_KEY_PREFIX).expect("key must start with the prefix");
     assert!(!suffix.contains('_'), "the random body must not contain underscores");
   }
 
   #[test]
   fn entropy_suffix_is_alphanumeric() {
     let key = generate_api_key();
-    let suffix = key.as_str().strip_prefix(API_KEY_PREFIX).expect("key must start with the prefix");
+    let suffix = key.as_str_be_careful().strip_prefix(API_KEY_PREFIX).expect("key must start with the prefix");
     assert!(suffix.chars().all(|c| c.is_ascii_alphanumeric()));
   }
 

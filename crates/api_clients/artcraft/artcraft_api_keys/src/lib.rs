@@ -28,16 +28,18 @@ impl ArtcraftApiKey {
     parse_from_header_value(header_value)
   }
 
-  pub fn as_str(&self) -> &str {
+  /// The full, unredacted key value as a borrowed `&str`.
+  ///
+  /// NB: unlike `Display`/`Debug` (which redact), this exposes the complete secret — the
+  /// `_be_careful` suffix is a reminder to use it only where the real value is genuinely needed
+  /// (storage, the create-key response, tests), never in logs or error messages.
+  pub fn as_str_be_careful(&self) -> &str {
     &self.0
   }
 
-  /// The full, unredacted key value as an owned `String`.
-  ///
-  /// NB: unlike `Display`/`Debug` (which redact), this returns the complete secret — use it only
-  /// where the real value is needed (storage, the create-key response, tests).
-  #[allow(clippy::inherent_to_string_shadow_display)]
-  pub fn to_string(&self) -> String {
+  /// The full, unredacted key value as an owned `String`. See [`Self::as_str_be_careful`] for the
+  /// caveat behind the `_be_careful` suffix.
+  pub fn to_string_be_careful(&self) -> String {
     self.0.clone()
   }
 
@@ -70,7 +72,7 @@ mod tests {
   #[test]
   fn new_from_str_and_as_str_round_trip() {
     let key = ArtcraftApiKey::new_from_str(SAMPLE_KEY);
-    assert_eq!(key.as_str(), SAMPLE_KEY);
+    assert_eq!(key.as_str_be_careful(), SAMPLE_KEY);
     assert_eq!(key.0, SAMPLE_KEY);
   }
 
