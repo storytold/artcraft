@@ -7,12 +7,14 @@ use tokio::time::{sleep, Instant};
 
 use artcraft_api_defs::omni_gen::cost_and_generate_requests::omni_gen_image_cost_and_generate_request::OmniGenImageCostAndGenerateRequest;
 use artcraft_client::credentials::storyteller_credential_set::StorytellerCredentialSet;
+use artcraft_client::endpoints::credits::get_session_credits::get_session_credits;
 use artcraft_client::endpoints::jobs::list_session_jobs::{list_session_jobs, States};
 use artcraft_client::endpoints::media_files::list_batch_generated_redux_media_files::list_batch_generated_redux_media_files;
 use artcraft_client::endpoints::media_files::upload_image_media_file_from_bytes::{
   upload_image_media_file_from_bytes, ImageType, UploadImageBytesArgs,
 };
 use artcraft_client::endpoints::omni_gen::generate::image::omni_gen_image::omni_gen_image_generate;
+use enums::common::payments_namespace::PaymentsNamespace;
 use artcraft_client::utils::api_host::ApiHost;
 use enums::common::generation::common_aspect_ratio::CommonAspectRatio;
 use enums::common::generation::common_image_model::CommonImageModel;
@@ -38,6 +40,15 @@ pub struct GeneratedImage {
 
 pub struct GeneratedImages {
   pub images: Vec<GeneratedImage>,
+  /// None if either credit lookup failed; otherwise the realized cost
+  /// of this generation derived by diffing the user's credit balance
+  /// from just-before-submit to just-after-success.
+  pub cost: Option<CostInfo>,
+}
+
+pub struct CostInfo {
+  pub credits_charged: u64,
+  pub credits_balance_after: u64,
 }
 
 #[derive(Debug, Deserialize, schemars::JsonSchema)]
@@ -113,6 +124,16 @@ pub async fn run(args: Args) -> Result<GeneratedImages, ToolError> {
     adjust_zoom: None,
   };
 
+  // Snapshot credits before submit so we can compute the realized cost
+  // by diffing against the balance after success. Best-effort — if the
+  // credits API hiccups we still complete the generation, we just don't
+  // report a cost.
+  let credits_before = get_session_credits(&api_host, Some(&creds), PaymentsNamespace::Artcraft)
+    .await
+    .map(|c| c.sum_total_credits)
+    .map_err(|e| tracing::warn!("pre-submit credits lookup failed: {:?}", e))
+    .ok();
+
   tracing::info!("submitting omni_gen image request, model={:?}", model);
 
   let submit = omni_gen_image_generate(&api_host, Some(&creds), request)
@@ -125,7 +146,34 @@ pub async fn run(args: Args) -> Result<GeneratedImages, ToolError> {
 
   tracing::info!("submitted; inference_job_token={:?}", submit.inference_job_token);
 
-  poll_for_image_url(&api_host, &creds, &submit.inference_job_token).await
+  let mut result = poll_for_image_url(&api_host, &creds, &submit.inference_job_token).await?;
+
+  // Compute realized cost. If concurrent generations on other tools
+  // settle in this window the diff can over-count, so we annotate
+  // the value in the log; the LLM gets the number either way.
+  let credits_after = get_session_credits(&api_host, Some(&creds), PaymentsNamespace::Artcraft)
+    .await
+    .map(|c| c.sum_total_credits)
+    .map_err(|e| {
+      tracing::warn!("post-success credits lookup failed: {:?}", e);
+    })
+    .ok();
+
+  if let (Some(before), Some(after)) = (credits_before, credits_after) {
+    let charged = before.saturating_sub(after);
+    tracing::info!(
+      "realized cost: {} credits (balance {} -> {})",
+      charged,
+      before,
+      after
+    );
+    result.cost = Some(CostInfo {
+      credits_charged: charged,
+      credits_balance_after: after,
+    });
+  }
+
+  Ok(result)
 }
 
 async fn poll_for_image_url(
@@ -194,9 +242,10 @@ async fn poll_for_image_url(
                     .maybe_thumbnail_template
                     .clone(),
                 }],
+                cost: None,
               });
             }
-            return Ok(GeneratedImages { images });
+            return Ok(GeneratedImages { images, cost: None });
           }
 
           return Ok(GeneratedImages {
@@ -204,6 +253,7 @@ async fn poll_for_image_url(
               cdn_url: result.media_links.cdn_url.to_string(),
               maybe_thumbnail_template: result.media_links.maybe_thumbnail_template.clone(),
             }],
+            cost: None,
           });
         }
         JobStatusPlus::CompleteFailure | JobStatusPlus::Dead => {

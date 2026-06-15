@@ -99,7 +99,7 @@ impl ArtcraftServer {
   }
 
   #[tool(
-    description = "Generate an image with Artcraft. Required: `prompt`. Optional: `model` (snake_case id — call list_image_models for valid values; defaults to nano_banana_pro), `aspect_ratio`, `resolution`, `quality`, `num_images`, `reference_image_urls` (https URLs for image-edit / img2img — only valid on models with image_refs_supported=true). Each parameter must satisfy the constraints reported by list_image_models for the chosen model. Blocks up to 90 seconds for completion. Returns the generated image inline plus its full-resolution CDN URL."
+    description = "Generate an image with Artcraft. Required: `prompt`. Optional: `model` (snake_case id — call list_image_models for valid values; defaults to nano_banana_pro), `aspect_ratio`, `resolution`, `quality`, `num_images`, `reference_image_urls` (https URLs for image-edit / img2img — only valid on models with image_refs_supported=true). Each parameter must satisfy the constraints reported by list_image_models for the chosen model. Blocks up to 90 seconds for completion. Returns the generated images inline, plus their full-resolution CDN URLs and the realized cost (credits charged + remaining balance). The cost is derived by diffing the credit balance before and after generation."
   )]
   async fn generate_image(
     &self,
@@ -157,7 +157,15 @@ async fn success_images_result(images: generate_image::GeneratedImages) -> CallT
       .collect::<Vec<_>>()
       .join("\n")
   };
-  content.push(Content::text(urls_text));
+
+  let text = match &images.cost {
+    Some(cost) => format!(
+      "{}\n\nCost: {} credits charged. Balance after: {} credits.",
+      urls_text, cost.credits_charged, cost.credits_balance_after
+    ),
+    None => urls_text,
+  };
+  content.push(Content::text(text));
 
   CallToolResult::success(content)
 }
