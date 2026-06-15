@@ -1,5 +1,9 @@
 use std::fmt;
 
+use crate::parse_from_header_value::parse_from_header_value;
+
+pub mod parse_from_header_value;
+
 /// Number of leading characters shown when an [`ArtcraftApiKey`] is formatted. The remainder of
 /// the secret is redacted so the full key never lands in logs or error messages.
 const REDACTED_PREFIX_CHAR_COUNT: usize = 20;
@@ -15,6 +19,13 @@ pub struct ArtcraftApiKey(pub String);
 impl ArtcraftApiKey {
   pub fn new_from_str(value: &str) -> ArtcraftApiKey {
     ArtcraftApiKey(value.to_string())
+  }
+
+  /// Parse an [`ArtcraftApiKey`] from the value of an HTTP `Authorization` header, accepting the
+  /// `Bearer <key>`, `Key <key>`, and bare `<key>` forms. See [`parse_from_header_value`] for the
+  /// full parsing rules.
+  pub fn parse_from_authorization_header_value(header_value: &str) -> Option<ArtcraftApiKey> {
+    parse_from_header_value(header_value)
   }
 
   pub fn as_str(&self) -> &str {
