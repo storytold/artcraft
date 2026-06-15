@@ -2,7 +2,7 @@ use std::fmt;
 
 /// Number of leading characters shown when an [`ArtcraftApiKey`] is formatted. The remainder of
 /// the secret is redacted so the full key never lands in logs or error messages.
-const REDACTED_PREFIX_CHAR_COUNT: usize = 10;
+const REDACTED_PREFIX_CHAR_COUNT: usize = 20;
 
 /// An Artcraft API key (e.g. `artcraft_api_<entropy>`).
 ///
@@ -55,15 +55,15 @@ mod tests {
   }
 
   #[test]
-  fn display_redacts_to_first_ten_characters() {
+  fn display_redacts_to_first_twenty_characters() {
     let key = ArtcraftApiKey::new_from_str(SAMPLE_KEY);
-    assert_eq!(format!("{key}"), "artcraft_a…");
+    assert_eq!(format!("{key}"), "artcraft_api_55ax0zh…");
   }
 
   #[test]
-  fn debug_redacts_to_first_ten_characters() {
+  fn debug_redacts_to_first_twenty_characters() {
     let key = ArtcraftApiKey::new_from_str(SAMPLE_KEY);
-    assert_eq!(format!("{key:?}"), "ArtcraftApiKey(\"artcraft_a…\")");
+    assert_eq!(format!("{key:?}"), "ArtcraftApiKey(\"artcraft_api_55ax0zh…\")");
   }
 
   #[test]
