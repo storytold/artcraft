@@ -75,7 +75,7 @@ pub async fn create_api_key_handler(
     ip_address: &ip_address,
     name: &name,
     maybe_description: maybe_description.as_deref(),
-    api_key: &api_key,
+    api_key: api_key.as_str(),
     mysql_executor: &mut *conn,
     phantom: PhantomData,
   }).await.map_err(|err| {
@@ -86,6 +86,8 @@ pub async fn create_api_key_handler(
   Ok(Json(CreateApiKeySuccessResponse {
     success: true,
     api_key_token: token,
-    api_key,
+    // Return the full secret value (never the redacted Debug/Display form). This is the only
+    // time it is ever exposed.
+    api_key: api_key.as_str().to_string(),
   }))
 }

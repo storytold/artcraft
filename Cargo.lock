@@ -11563,6 +11563,7 @@ dependencies = [
  "actix_helpers",
  "anyhow",
  "artcraft_api_defs",
+ "artcraft_api_keys",
  "artcraft_router",
  "async-stripe 0.26.0",
  "async-trait",

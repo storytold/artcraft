@@ -1,74 +1,23 @@
 use actix_http::header::{HeaderMap, HeaderName};
 use actix_web::HttpRequest;
 
-/// `Authorization: Bearer <api_key>` — the widely-accepted style for most APIs.
-const BEARER_SCHEME: &str = "bearer";
-
-/// `Authorization: Key <api_key>` — legacy GitHub-style / Fal-style.
-const KEY_SCHEME: &str = "key";
-
+use artcraft_api_keys::ArtcraftApiKey;
 
 const AUTHORIZATION_HEADER_NAME: HeaderName = HeaderName::from_static("authorization");
 
-/// Extract an API key from a request's `Authorization` header.
+/// Extract an [`ArtcraftApiKey`] from a request's `Authorization` header.
 ///
-/// The header name is matched case-insensitively (HTTP header names always are),
-/// and the value is accepted in three forms:
-///
-/// - `Authorization: Bearer <api_key>` (widely-accepted style for most APIs)
-/// - `Authorization: Key <api_key>` (legacy GitHub-style / Fal-style)
-/// - `Authorization: <api_key>` (AWS-style — the bare key, no scheme)
-///
-/// The scheme keyword is matched case-insensitively. Returns `None` if the
-/// header is absent, unreadable (non-ASCII bytes), empty, carries an
-/// unsupported scheme (e.g. `Basic ...`), or names a scheme with no credential.
-pub fn get_authorization_header_api_key(http_request: &HttpRequest) -> Option<String> {
+/// The header name is matched case-insensitively (HTTP header names always are). The value parsing
+/// — the `Bearer <api_key>`, `Key <api_key>`, and bare `<api_key>` forms — lives in the
+/// [`artcraft_api_keys`] crate. Returns `None` if the header is absent, unreadable (non-ASCII
+/// bytes), or does not contain a usable key.
+pub fn get_authorization_header_api_key(http_request: &HttpRequest) -> Option<ArtcraftApiKey> {
   let header_map: &HeaderMap = http_request.headers();
   let header_value = header_map.get(AUTHORIZATION_HEADER_NAME)?
       .to_str()
       .ok()?;
 
-  parse_authorization_header_api_key(header_value)
-}
-
-fn parse_authorization_header_api_key(header_value: &str) -> Option<String> {
-  let trimmed = header_value.trim();
-  if trimmed.is_empty() {
-    return None;
-  }
-
-  match trimmed.split_once(char::is_whitespace) {
-    // A scheme word followed by a value: "Bearer <key>" / "Key <key>".
-    Some((scheme, rest)) => {
-      if is_supported_scheme(scheme) {
-        let key = rest.trim();
-        if key.is_empty() {
-          // A supported scheme with no credential.
-          None
-        } else {
-          Some(key.to_string())
-        }
-      } else {
-        // An unsupported scheme (e.g. "Basic ..."). A bare API key never
-        // contains whitespace, so a multi-token value we don't recognize is
-        // not a usable key.
-        None
-      }
-    }
-    // No whitespace: AWS-style bare API key ("<api_key>") — unless the value is
-    // just a bare scheme keyword (a malformed header carrying no credential).
-    None => {
-      if is_supported_scheme(trimmed) {
-        None
-      } else {
-        Some(trimmed.to_string())
-      }
-    }
-  }
-}
-
-fn is_supported_scheme(word: &str) -> bool {
-  word.eq_ignore_ascii_case(BEARER_SCHEME) || word.eq_ignore_ascii_case(KEY_SCHEME)
+  ArtcraftApiKey::parse_from_authorization_header_value(header_value)
 }
 
 #[cfg(test)]
@@ -111,7 +60,7 @@ mod tests {
             .insert_header((header_name, value.as_str()))
             .to_http_request();
         assert_eq!(
-          get_authorization_header_api_key(&http_request),
+          get_authorization_header_api_key(&http_request).map(|key| key.as_str().to_string()),
           Some(SAMPLE_KEY.to_string()),
           "failed for header name {header_name:?}");
       }
@@ -178,10 +127,18 @@ mod tests {
     }
   }
 
+  // Thin string-returning adapters over the real implementation so the original test cases above
+  // can stay unchanged after the parser moved into the `artcraft_api_keys` crate.
+
+  fn parse_authorization_header_api_key(header_value: &str) -> Option<String> {
+    ArtcraftApiKey::parse_from_authorization_header_value(header_value)
+        .map(|key| key.as_str().to_string())
+  }
+
   fn api_key_for_authorization_header(value: &str) -> Option<String> {
     let http_request = TestRequest::default()
         .insert_header(("Authorization", value))
         .to_http_request();
-    get_authorization_header_api_key(&http_request)
+    get_authorization_header_api_key(&http_request).map(|key| key.as_str().to_string())
   }
 }
