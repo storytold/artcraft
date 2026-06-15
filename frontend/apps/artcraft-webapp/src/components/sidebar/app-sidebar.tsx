@@ -6,6 +6,7 @@ import {
   faVideo,
   faImage,
   faCube,
+  faPencil,
   faFilm,
   faWandMagicSparkles,
   faGrid2,
@@ -53,6 +54,7 @@ const PRIMARY_ITEMS: NavItem[] = [{ label: "Home", href: "/", icon: faHouse }];
 const CREATE_ITEMS_STATIC: NavItem[] = [
   { label: "Image", href: "/create-image", icon: faImage },
   { label: "Video", href: "/create-video", icon: faVideo },
+  { label: "Edit Image", href: "/edit-image", icon: faPencil },
   { label: "Edit 3D", href: "/edit-3d", icon: faCube },
   { label: "Edit Video", href: "/video-editor", icon: faFilm, badge: "BETA" },
   {

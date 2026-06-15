@@ -16,6 +16,7 @@ import CreateImage from "../pages/create-image";
 import CreateVideo from "../pages/create-video";
 import CreateVFX from "../pages/create-vfx";
 import PageScene from "../pages/pagescene";
+import PageDraw from "../pages/pagedraw";
 import VideoEditorPage from "../pages/video-editor";
 import Pricing from "../pages/pricing";
 import Support from "../pages/support/support";
@@ -148,6 +149,7 @@ export function App() {
           <Route path="/background-change" element={<CreateVFX />} />
           <Route path="/edit-3d" element={<PageScene />} />
           <Route path="/edit-3d/:sceneToken" element={<PageScene />} />
+          <Route path="/edit-image" element={<PageDraw />} />
           <Route path="/video-editor" element={<VideoEditorPage />} />
           <Route path="/video-editor/:projectId" element={<VideoEditorPage />} />
           <Route path="/support" element={<Support />} />
