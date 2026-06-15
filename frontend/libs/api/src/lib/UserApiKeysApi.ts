@@ -1,32 +1,30 @@
 import { ApiManager, ApiResponse, buildSessionHeaders } from "./ApiManager.js";
 import { FetchProxy as fetch } from "@storyteller/tauri-utils";
 
-export interface ApiKeyItem {
+// Canonical wire shape for an API key (list rows + single-key GET). Mirrors the
+// backend `ApiKeyInfo`. The full secret is NEVER here — only
+// `truncated_api_key` (first 20 chars). The full value is returned exactly once
+// at creation time (see CreatedApiKey).
+export interface ApiKeyInfo {
   token: string;
+  truncated_api_key: string;
   name: string;
   maybe_description: string | null;
-  // TRUNCATED key value (display-only). The full secret is only ever returned
-  // once, from CreateApiKey — never from the list.
-  api_key: string;
+  owner_user_token: string;
+  ip_address_creation: string;
+  ip_address_update: string;
   created_at: string;
   updated_at: string;
-  // Soft-delete timestamp; null means the key is live. The list includes
-  // deleted keys, so the UI filters these out.
+  // Soft-delete timestamp; null means live. The list includes deleted keys, so
+  // the UI filters these out.
   maybe_deleted_at: string | null;
 }
 
-// Create response: the full secret, shown to the user exactly once, plus the
-// `token` used for subsequent update/delete calls.
+// Create response: the `api_key_token` (used for all subsequent management) plus
+// the full secret `api_key`, returned exactly once.
 export interface CreatedApiKey {
-  token: string;
-  name: string;
-  maybe_description: string | null;
+  api_key_token: string;
   api_key: string;
-}
-
-export interface ApiKeysPage {
-  current: number;
-  total_page_count: number;
 }
 
 interface ErrorBody {
@@ -38,21 +36,20 @@ interface ErrorBody {
 
 export class UserApiKeysApi extends ApiManager {
   public ListApiKeys({
-    pageSize,
-    pageIndex,
+    limit,
+    offset,
   }: {
-    pageSize?: number;
-    pageIndex?: number;
-  } = {}): Promise<ApiResponse<{ api_keys: ApiKeyItem[] }, ApiKeysPage>> {
+    limit?: number;
+    offset?: number;
+  } = {}): Promise<ApiResponse<{ api_keys: ApiKeyInfo[] }>> {
     const query = new URLSearchParams();
-    if (pageSize !== undefined) query.set("page_size", String(pageSize));
-    if (pageIndex !== undefined) query.set("page_index", String(pageIndex));
+    if (limit !== undefined) query.set("limit", String(limit));
+    if (offset !== undefined) query.set("offset", String(offset));
     const suffix = query.toString() ? `?${query.toString()}` : "";
     const endpoint = `${this.getApiSchemeAndHost()}/v1/api_keys/list${suffix}`;
     return this.jsonFetch<{
       success: boolean;
-      api_keys?: ApiKeyItem[];
-      pagination?: ApiKeysPage;
+      api_keys?: ApiKeyInfo[];
     } & ErrorBody>(endpoint, { method: "GET" })
       .then((response) => {
         if (!response.success) {
@@ -64,10 +61,6 @@ export class UserApiKeysApi extends ApiManager {
         return {
           success: true,
           data: { api_keys: response.api_keys ?? [] },
-          pagination: response.pagination ?? {
-            current: 0,
-            total_page_count: 1,
-          },
         };
       })
       .catch((err) => ({ success: false, errorMessage: err.message }));
@@ -75,24 +68,23 @@ export class UserApiKeysApi extends ApiManager {
 
   // Single-key lookup. Not currently used by the settings UI (the list already
   // carries everything), but provided for parity with the backend.
-  // TODO: confirm the response wrapper field name (`api_key_info` assumed).
   public GetApiKey({
     token,
   }: {
     token: string;
-  }): Promise<ApiResponse<ApiKeyItem>> {
+  }): Promise<ApiResponse<ApiKeyInfo>> {
     const endpoint = `${this.getApiSchemeAndHost()}/v1/api_keys/${encodeURIComponent(token)}`;
     return this.jsonFetch<
-      { success: boolean; api_key_info?: ApiKeyItem } & ErrorBody
+      { success: boolean; api_key?: ApiKeyInfo } & ErrorBody
     >(endpoint, { method: "GET" })
       .then((response) => {
-        if (!response.success || !response.api_key_info) {
+        if (!response.success || !response.api_key) {
           return {
             success: false,
             errorMessage: response.message ?? this.statusFallback(response),
           };
         }
-        return { success: true, data: response.api_key_info };
+        return { success: true, data: response.api_key };
       })
       .catch((err) => ({ success: false, errorMessage: err.message }));
   }
@@ -108,9 +100,7 @@ export class UserApiKeysApi extends ApiManager {
     return this.jsonFetch<
       {
         success: boolean;
-        token?: string;
-        name?: string;
-        maybe_description?: string | null;
+        api_key_token?: string;
         api_key?: string;
       } & ErrorBody
     >(endpoint, {
@@ -118,7 +108,7 @@ export class UserApiKeysApi extends ApiManager {
       body: { name, maybe_description: maybeDescription ?? null },
     })
       .then((response) => {
-        if (!response.success || !response.token || !response.api_key) {
+        if (!response.success || !response.api_key_token || !response.api_key) {
           return {
             success: false,
             errorMessage: response.message ?? this.statusFallback(response),
@@ -127,9 +117,7 @@ export class UserApiKeysApi extends ApiManager {
         return {
           success: true,
           data: {
-            token: response.token,
-            name: response.name ?? name,
-            maybe_description: response.maybe_description ?? null,
+            api_key_token: response.api_key_token,
             api_key: response.api_key,
           },
         };

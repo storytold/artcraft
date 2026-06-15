@@ -12,7 +12,7 @@ import {
 } from "@fortawesome/pro-solid-svg-icons";
 import {
   UserApiKeysApi,
-  type ApiKeyItem,
+  type ApiKeyInfo,
   type CreatedApiKey,
   type UserInfo,
 } from "@storyteller/api";
@@ -20,7 +20,7 @@ import { toast } from "../toast/toast";
 
 const NAME_MAX = 255;
 const DESCRIPTION_MAX = 512;
-const PAGE_SIZE = 10;
+const PAGE_SIZE = 20;
 
 const INPUT_CLASS =
   "w-full bg-black/20 border border-white/10 focus:border-primary/50 rounded-lg px-3 py-2 text-sm text-white placeholder-white/30 outline-none";
@@ -32,38 +32,46 @@ interface ApiKeySectionProps {
 export function ApiKeySection(_props: ApiKeySectionProps) {
   const [api] = useState(() => new UserApiKeysApi());
 
-  const [keys, setKeys] = useState<ApiKeyItem[]>([]);
-  const [page, setPage] = useState(0);
-  const [totalPages, setTotalPages] = useState(1);
+  const [keys, setKeys] = useState<ApiKeyInfo[]>([]);
+  // Rows fetched so far (including deleted ones we hide), drives the next
+  // offset. The backend returns no total count, so we offer "Load more" while
+  // the last page came back full.
+  const [fetchedCount, setFetchedCount] = useState(0);
+  const [hasMore, setHasMore] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
 
   const [creating, setCreating] = useState(false);
   const [editingToken, setEditingToken] = useState<string | null>(null);
-  const [pendingDelete, setPendingDelete] = useState<ApiKeyItem | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<ApiKeyInfo | null>(null);
   // The full secret, shown exactly once right after a key is created.
   const [createdKey, setCreatedKey] = useState<CreatedApiKey | null>(null);
 
-  const load = async (pageIndex: number) => {
-    setLoading(true);
-    const response = await api.ListApiKeys({
-      pageSize: PAGE_SIZE,
-      pageIndex,
-    });
+  // `reset` reloads from offset 0; otherwise appends the next page.
+  const load = async (reset: boolean) => {
+    if (reset) {
+      setLoading(true);
+    } else {
+      setLoadingMore(true);
+    }
+    const offset = reset ? 0 : fetchedCount;
+    const response = await api.ListApiKeys({ limit: PAGE_SIZE, offset });
     setLoading(false);
+    setLoadingMore(false);
     if (response.success && response.data) {
+      const fetched = response.data.api_keys;
       // The list includes soft-deleted keys; only show live ones.
-      setKeys(
-        response.data.api_keys.filter((k) => k.maybe_deleted_at === null),
-      );
-      setPage(response.pagination?.current ?? pageIndex);
-      setTotalPages(Math.max(1, response.pagination?.total_page_count ?? 1));
+      const live = fetched.filter((k) => k.maybe_deleted_at === null);
+      setKeys((prev) => (reset ? live : [...prev, ...live]));
+      setFetchedCount((prev) => (reset ? fetched.length : prev + fetched.length));
+      setHasMore(fetched.length === PAGE_SIZE);
     } else {
       toast.error(response.errorMessage ?? "Could not load API keys.");
     }
   };
 
   useEffect(() => {
-    load(0);
+    load(true);
     // Load once on mount; pagination drives subsequent loads explicitly.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -72,7 +80,7 @@ export function ApiKeySection(_props: ApiKeySectionProps) {
     setCreating(false);
     // Reveal the full secret once; the truncated key then appears in the list.
     setCreatedKey(created);
-    load(0);
+    load(true);
   };
 
   const handleDeleteConfirmed = async () => {
@@ -82,9 +90,8 @@ export function ApiKeySection(_props: ApiKeySectionProps) {
     const response = await api.DeleteApiKey({ token: target.token });
     if (response.success) {
       toast.success("API key deleted.");
-      // Reload the current page; step back if we just emptied it.
-      const nextPage = keys.length === 1 && page > 0 ? page - 1 : page;
-      load(nextPage);
+      // Drop it locally so the list updates without a full reload.
+      setKeys((prev) => prev.filter((k) => k.token !== target.token));
     } else {
       toast.error(response.errorMessage ?? "Could not delete API key.");
     }
@@ -146,9 +153,11 @@ export function ApiKeySection(_props: ApiKeySectionProps) {
               isEditing={editingToken === item.token}
               onOpenEdit={() => setEditingToken(item.token)}
               onCloseEdit={() => setEditingToken(null)}
-              onUpdated={() => {
+              onUpdated={(updated) => {
                 setEditingToken(null);
-                load(page);
+                setKeys((prev) =>
+                  prev.map((k) => (k.token === updated.token ? updated : k)),
+                );
               }}
               onRequestDelete={() => setPendingDelete(item)}
             />
@@ -156,28 +165,20 @@ export function ApiKeySection(_props: ApiKeySectionProps) {
         </div>
       )}
 
-      {totalPages > 1 && (
-        <div className="flex items-center justify-center gap-2 pt-1">
+      {hasMore && (
+        <div className="flex justify-center pt-1">
           <Button
             type="button"
             variant="secondary"
             className="h-8 px-3"
-            disabled={page <= 0 || loading}
-            onClick={() => load(page - 1)}
+            disabled={loadingMore}
+            onClick={() => load(false)}
           >
-            Previous
-          </Button>
-          <span className="text-xs opacity-60">
-            Page {page + 1} of {totalPages}
-          </span>
-          <Button
-            type="button"
-            variant="secondary"
-            className="h-8 px-3"
-            disabled={page >= totalPages - 1 || loading}
-            onClick={() => load(page + 1)}
-          >
-            Next
+            {loadingMore ? (
+              <FontAwesomeIcon icon={faSpinnerThird} className="animate-spin" />
+            ) : (
+              "Load more"
+            )}
           </Button>
         </div>
       )}
@@ -287,7 +288,7 @@ function NewKeyReveal({
     <div className="flex flex-col gap-2 rounded-lg border border-primary/40 bg-primary/10 p-3">
       <div className="flex items-center gap-2 text-sm font-medium">
         <FontAwesomeIcon icon={faKey} className="opacity-80" />
-        <span>"{created.name}" created</span>
+        <span>API key created</span>
       </div>
       <p className="text-xs opacity-80">
         Copy your key now. For security, you won't be able to see it again.
@@ -330,11 +331,11 @@ function ApiKeyRow({
   onRequestDelete,
 }: {
   api: UserApiKeysApi;
-  item: ApiKeyItem;
+  item: ApiKeyInfo;
   isEditing: boolean;
   onOpenEdit: () => void;
   onCloseEdit: () => void;
-  onUpdated: () => void;
+  onUpdated: (updated: ApiKeyInfo) => void;
   onRequestDelete: () => void;
 }) {
   return (
@@ -350,7 +351,7 @@ function ApiKeyRow({
           <div className="flex items-center gap-2 pt-1">
             {/* Truncated, display-only — the full secret is only shown on create. */}
             <code className="min-w-0 truncate rounded bg-black/30 px-2 py-1 font-mono text-[11px] text-white/70">
-              {item.api_key}
+              {item.truncated_api_key}
             </code>
             <span className="text-[10px] uppercase tracking-wider text-white/40">
               {formatDate(item.created_at)}
@@ -397,8 +398,8 @@ function EditDescriptionForm({
   onCancel,
 }: {
   api: UserApiKeysApi;
-  item: ApiKeyItem;
-  onUpdated: () => void;
+  item: ApiKeyInfo;
+  onUpdated: (updated: ApiKeyInfo) => void;
   onCancel: () => void;
 }) {
   const initial = item.maybe_description ?? "";
@@ -419,15 +420,17 @@ function EditDescriptionForm({
     }
 
     setSubmitting(true);
+    const nextDescription = trimmed.length > 0 ? trimmed : null;
     const response = await api.UpdateApiKey({
       token: item.token,
-      maybeDescription: trimmed.length > 0 ? trimmed : null,
+      maybeDescription: nextDescription,
     });
     setSubmitting(false);
 
     if (response.success) {
       toast.success("API key updated.");
-      onUpdated();
+      // Update endpoint returns only { success }; merge the new description in.
+      onUpdated({ ...item, maybe_description: nextDescription });
     } else {
       setError(response.errorMessage ?? "Could not update API key.");
     }
@@ -460,7 +463,7 @@ function DeleteConfirmModal({
   onCancel,
   onConfirm,
 }: {
-  item: ApiKeyItem | null;
+  item: ApiKeyInfo | null;
   onCancel: () => void;
   onConfirm: () => void;
 }) {
