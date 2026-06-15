@@ -7304,6 +7304,7 @@ name = "mysql_queries"
 version = "0.0.1"
 dependencies = [
  "anyhow",
+ "artcraft_api_keys",
  "bucket_paths",
  "chrono",
  "composite_identifiers",

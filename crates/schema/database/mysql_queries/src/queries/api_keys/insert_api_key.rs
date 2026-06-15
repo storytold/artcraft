@@ -2,6 +2,7 @@ use std::marker::PhantomData;
 
 use sqlx::{Executor, MySql};
 
+use artcraft_api_keys::ArtcraftApiKey;
 use tokens::tokens::api_keys::ApiKeyToken;
 use tokens::tokens::users::UserToken;
 
@@ -13,7 +14,7 @@ where
   pub ip_address: &'e str,
   pub name: &'e str,
   pub maybe_description: Option<&'e str>,
-  pub api_key: &'e str,
+  pub api_key: &'e ArtcraftApiKey,
   pub mysql_executor: E,
   pub phantom: PhantomData<&'c E>,
 }
@@ -44,7 +45,7 @@ SET
   created_at = NOW()
     "#,
     token.as_str(),
-    args.api_key,
+    args.api_key.as_str_be_careful(), // NB: This is okay in this case.
     args.name,
     args.maybe_description,
     args.owner_user_token.as_str(),
