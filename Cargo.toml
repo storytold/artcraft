@@ -7,7 +7,7 @@ members = [
   # API clients for external services
   # These might be custom implementations or wrappers over other client libraries.
   "crates/api_clients/artcraft/artcraft_api_defs",
-  "crates/api_clients/artcraft/artcraft_api_key",
+  "crates/api_clients/artcraft/artcraft_api_keys",
   "crates/api_clients/artcraft/artcraft_client",
   "crates/api_clients/artcraft/artcraft_router",
   "crates/api_clients/cloud_storage",
@@ -233,7 +233,7 @@ workspace-build-acceleration = { path = "crates/workspace-build-acceleration" }
 actix_artcraft = { path = "crates/lib/actix_artcraft" }
 actix_helpers = { path = "crates/lib/actix_helpers" }
 artcraft_api_defs = { path = "crates/api_clients/artcraft/artcraft_api_defs" }
-artcraft_api_key = { path = "crates/api_clients/artcraft/artcraft_api_key" }
+artcraft_api_keys = { path = "crates/api_clients/artcraft/artcraft_api_keys" }
 artcraft_client = { path = "crates/api_clients/artcraft/artcraft_client" }
 artcraft_router = { path = "crates/api_clients/artcraft/artcraft_router" }
 bootstrap = { path = "crates/lib/bootstrap" }
