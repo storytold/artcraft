@@ -1,4 +1,3 @@
-use anyhow::{anyhow, Result};
 use serde::Deserialize;
 use serde_json::{json, Value};
 
@@ -13,6 +12,7 @@ use enums::common::generation::common_resolution::CommonResolution;
 use enums::common::generation_provider::GenerationProvider;
 
 use crate::creds::load_session;
+use crate::errors::ToolError;
 
 #[derive(Debug, Deserialize, rmcp::schemars::JsonSchema)]
 pub struct Args {
@@ -41,7 +41,7 @@ pub struct Args {
   pub num_images: Option<u16>,
 }
 
-pub async fn run(args: Args) -> Result<Value> {
+pub async fn run(args: Args) -> Result<Value, ToolError> {
   let (api_host, creds) = load_session()?;
 
   let model = parse_enum::<CommonImageModel>("model", &args.model)?;
@@ -66,7 +66,7 @@ pub async fn run(args: Args) -> Result<Value> {
 
   let response = estimate_image_cost(&api_host, Some(&creds), request)
     .await
-    .map_err(|e| anyhow!("cost estimate failed: {:?}", e))?;
+    .map_err(|e| ToolError::backend(format!("cost estimate failed: {:?}", e)))?;
 
   Ok(json!({
     "cost_in_credits": response.cost_in_credits,
@@ -78,15 +78,19 @@ pub async fn run(args: Args) -> Result<Value> {
   }))
 }
 
-fn parse_enum<T: serde::de::DeserializeOwned>(field: &str, raw: &str) -> Result<T> {
-  serde_json::from_value::<T>(serde_json::Value::String(raw.to_string()))
-    .map_err(|_| anyhow!("invalid {}: {}. Call list_image_models for valid values.", field, raw))
+fn parse_enum<T: serde::de::DeserializeOwned>(field: &str, raw: &str) -> Result<T, ToolError> {
+  serde_json::from_value::<T>(serde_json::Value::String(raw.to_string())).map_err(|_| {
+    ToolError::invalid_params(format!(
+      "invalid {}: {}. Call list_image_models for valid values.",
+      field, raw
+    ))
+  })
 }
 
 fn parse_optional_enum<T: serde::de::DeserializeOwned>(
   field: &str,
   raw: Option<&str>,
-) -> Result<Option<T>> {
+) -> Result<Option<T>, ToolError> {
   match raw.map(str::trim).filter(|s| !s.is_empty()) {
     None => Ok(None),
     Some(s) => parse_enum::<T>(field, s).map(Some),

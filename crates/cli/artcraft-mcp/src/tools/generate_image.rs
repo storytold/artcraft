@@ -1,7 +1,6 @@
 use std::collections::HashSet;
 use std::time::Duration;
 
-use anyhow::{anyhow, Result};
 use rmcp::schemars;
 use serde::Deserialize;
 use tokio::time::{sleep, Instant};
@@ -23,6 +22,7 @@ use tokens::tokens::generic_inference_jobs::InferenceJobToken;
 use tokens::tokens::media_files::MediaFileToken;
 
 use crate::creds::load_session;
+use crate::errors::ToolError;
 
 const POLL_INTERVAL: Duration = Duration::from_secs(3);
 const POLL_TIMEOUT: Duration = Duration::from_secs(90);
@@ -73,10 +73,10 @@ pub struct Args {
   pub reference_image_urls: Option<Vec<String>>,
 }
 
-pub async fn run(args: Args) -> Result<GeneratedImage> {
+pub async fn run(args: Args) -> Result<GeneratedImage, ToolError> {
   let prompt = args.prompt.trim();
   if prompt.is_empty() {
-    return Err(anyhow!("prompt is empty"));
+    return Err(ToolError::invalid_params("prompt is empty"));
   }
 
   let model = resolve_model(args.model.as_deref())?;
@@ -112,10 +112,10 @@ pub async fn run(args: Args) -> Result<GeneratedImage> {
 
   let submit = omni_gen_image_generate(&api_host, Some(&creds), request)
     .await
-    .map_err(|e| anyhow!("submit failed: {:?}", e))?;
+    .map_err(|e| ToolError::backend(format!("submit failed: {:?}", e)))?;
 
   if !submit.success {
-    return Err(anyhow!("submit returned success=false"));
+    return Err(ToolError::backend("submit returned success=false"));
   }
 
   tracing::info!("submitted; inference_job_token={:?}", submit.inference_job_token);
@@ -127,7 +127,7 @@ async fn poll_for_image_url(
   api_host: &ApiHost,
   creds: &StorytellerCredentialSet,
   target: &InferenceJobToken,
-) -> Result<GeneratedImage> {
+) -> Result<GeneratedImage, ToolError> {
   let deadline = Instant::now() + POLL_TIMEOUT;
 
   let mut include_states = HashSet::new();
@@ -137,11 +137,7 @@ async fn poll_for_image_url(
 
   loop {
     if Instant::now() >= deadline {
-      return Err(anyhow!(
-        "Generation did not complete within {}s. Job token: {:?}",
-        POLL_TIMEOUT.as_secs(),
-        target
-      ));
+      return Err(ToolError::generation_timeout(format!("{:?}", target)));
     }
 
     let response = list_session_jobs(
@@ -150,15 +146,14 @@ async fn poll_for_image_url(
       States::Include(include_states.clone()),
     )
     .await
-    .map_err(|e| anyhow!("poll failed: {:?}", e))?;
+    .map_err(|e| ToolError::backend(format!("poll failed: {:?}", e)))?;
 
     if let Some(job) = response.jobs.iter().find(|j| &j.job_token == target) {
       match job.status.status {
         JobStatusPlus::CompleteSuccess => {
-          let result = job
-            .maybe_result
-            .as_ref()
-            .ok_or_else(|| anyhow!("job marked complete but result missing"))?;
+          let result = job.maybe_result.as_ref().ok_or_else(|| {
+            ToolError::backend("job marked complete but result missing")
+          })?;
           return Ok(GeneratedImage {
             cdn_url: result.media_links.cdn_url.to_string(),
             maybe_thumbnail_template: result.media_links.maybe_thumbnail_template.clone(),
@@ -170,7 +165,7 @@ async fn poll_for_image_url(
             .maybe_failure_message
             .clone()
             .unwrap_or_else(|| format!("{:?}", job.status.status));
-          return Err(anyhow!("generation failed: {}", msg));
+          return Err(ToolError::generation_failed(msg));
         }
         _ => {}
       }
@@ -184,11 +179,12 @@ async fn upload_reference_images(
   urls: &[String],
   api_host: &ApiHost,
   creds: &StorytellerCredentialSet,
-) -> Result<Vec<MediaFileToken>> {
+) -> Result<Vec<MediaFileToken>, ToolError> {
   let client = reqwest::Client::builder()
     .timeout(REFERENCE_FETCH_TIMEOUT)
     .gzip(true)
-    .build()?;
+    .build()
+    .map_err(|e| ToolError::internal(format!("client build failed: {:?}", e)))?;
 
   let mut tokens = Vec::with_capacity(urls.len());
   for url in urls {
@@ -203,12 +199,21 @@ async fn upload_one_reference(
   client: &reqwest::Client,
   api_host: &ApiHost,
   creds: &StorytellerCredentialSet,
-) -> Result<MediaFileToken> {
+) -> Result<MediaFileToken, ToolError> {
   if !url.starts_with("https://") {
-    return Err(anyhow!("reference image URL must use https://: {}", url));
+    return Err(ToolError::reference_image(format!(
+      "URL must use https://: {}",
+      url
+    )));
   }
 
-  let response = client.get(url).send().await?.error_for_status()?;
+  let response = client
+    .get(url)
+    .send()
+    .await
+    .map_err(|e| ToolError::reference_image(format!("fetch failed for {}: {:?}", url, e)))?
+    .error_for_status()
+    .map_err(|e| ToolError::reference_image(format!("HTTP error for {}: {:?}", url, e)))?;
 
   let mime_raw = response
     .headers()
@@ -222,22 +227,24 @@ async fn upload_one_reference(
     "image/jpeg" | "image/jpg" => ImageType::Jpeg,
     "image/gif" => ImageType::Gif,
     other => {
-      return Err(anyhow!(
-        "unsupported reference image content-type {:?} for url {}",
-        other,
-        url
-      ))
+      return Err(ToolError::reference_image(format!(
+        "unsupported content-type {:?} for {}",
+        other, url
+      )))
     }
   };
 
-  let bytes = response.bytes().await?;
+  let bytes = response
+    .bytes()
+    .await
+    .map_err(|e| ToolError::reference_image(format!("read body failed for {}: {:?}", url, e)))?;
   if bytes.len() > MAX_REFERENCE_IMAGE_BYTES {
-    return Err(anyhow!(
+    return Err(ToolError::reference_image(format!(
       "reference image is {} bytes (cap {}): {}",
       bytes.len(),
       MAX_REFERENCE_IMAGE_BYTES,
       url
-    ));
+    )));
   }
 
   tracing::info!("uploading reference image: {} bytes from {}", bytes.len(), url);
@@ -251,15 +258,15 @@ async fn upload_one_reference(
     maybe_generation_provider: None,
   })
   .await
-  .map_err(|e| anyhow!("media upload failed: {:?}", e))?;
+  .map_err(|e| ToolError::backend(format!("media upload failed: {:?}", e)))?;
 
   if !upload.success {
-    return Err(anyhow!("media upload returned success=false"));
+    return Err(ToolError::backend("media upload returned success=false"));
   }
   Ok(upload.media_file_token)
 }
 
-fn resolve_model(raw: Option<&str>) -> Result<CommonImageModel> {
+fn resolve_model(raw: Option<&str>) -> Result<CommonImageModel, ToolError> {
   match raw.map(str::trim).filter(|s| !s.is_empty()) {
     None => Ok(DEFAULT_MODEL),
     Some(s) => parse_enum::<CommonImageModel>("model", s),
@@ -269,14 +276,18 @@ fn resolve_model(raw: Option<&str>) -> Result<CommonImageModel> {
 fn parse_optional_enum<T: serde::de::DeserializeOwned>(
   field: &str,
   raw: Option<&str>,
-) -> Result<Option<T>> {
+) -> Result<Option<T>, ToolError> {
   match raw.map(str::trim).filter(|s| !s.is_empty()) {
     None => Ok(None),
     Some(s) => parse_enum::<T>(field, s).map(Some),
   }
 }
 
-fn parse_enum<T: serde::de::DeserializeOwned>(field: &str, raw: &str) -> Result<T> {
-  serde_json::from_value::<T>(serde_json::Value::String(raw.to_string()))
-    .map_err(|_| anyhow!("invalid {}: {}. Call list_image_models for valid values.", field, raw))
+fn parse_enum<T: serde::de::DeserializeOwned>(field: &str, raw: &str) -> Result<T, ToolError> {
+  serde_json::from_value::<T>(serde_json::Value::String(raw.to_string())).map_err(|_| {
+    ToolError::invalid_params(format!(
+      "invalid {}: {}. Call list_image_models for valid values.",
+      field, raw
+    ))
+  })
 }

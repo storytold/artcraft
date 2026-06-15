@@ -8,17 +8,17 @@ use artcraft_client::credentials::storyteller_credential_set::StorytellerCredent
 use artcraft_client::credentials::storyteller_session_cookie::StorytellerSessionCookie;
 use artcraft_client::utils::api_host::ApiHost;
 
+use crate::errors::ToolError;
+
 const STORYTELLER_API_HOST: &str = "api.storyteller.ai";
 
 /// Shared entry for every tool: returns the API host plus loaded session
-/// cookies, or a structured "not authenticated" error if the desktop app
-/// hasn't been signed in.
-pub fn load_session() -> Result<(ApiHost, StorytellerCredentialSet)> {
-  let creds = load_storyteller_credentials()?;
+/// cookies, or a structured ToolError (NOT_LOGGED_IN / ARTCRAFT_NOT_INSTALLED)
+/// with a clear remediation if the desktop app hasn't been signed in.
+pub fn load_session() -> Result<(ApiHost, StorytellerCredentialSet), ToolError> {
+  let creds = load_storyteller_credentials().map_err(|e| ToolError::internal(format!("{:#}", e)))?;
   if creds.is_empty() {
-    return Err(anyhow!(
-      "No Storyteller credentials found. Sign in to the Artcraft desktop app first."
-    ));
+    return Err(ToolError::not_logged_in());
   }
   Ok((ApiHost::Storyteller, creds))
 }
