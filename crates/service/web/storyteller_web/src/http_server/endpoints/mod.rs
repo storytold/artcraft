@@ -1,4 +1,5 @@
 pub mod analytics;
+pub mod api_keys;
 pub mod app_state;
 pub mod beta_keys;
 pub mod billing_fakeyou;

@@ -1,5 +1,6 @@
 
 pub mod analytics_active_users;
+pub mod api_keys;
 pub mod api_tokens;
 pub mod audit_logs;
 pub mod batch_generations;

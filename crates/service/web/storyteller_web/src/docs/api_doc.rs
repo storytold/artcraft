@@ -95,6 +95,19 @@ use crate::http_server::endpoints::moderation::user_bans::moderation_ban_user_ha
 use crate::http_server::endpoints::moderation::user_emails::moderator_change_user_email_handler::*;
 use crate::http_server::endpoints::moderation::user_emails::moderator_list_email_address_changes_for_user_handler::*;
 
+// API key endpoints
+use crate::http_server::endpoints::api_keys::create_api_key_handler::*;
+use crate::http_server::endpoints::api_keys::list_api_keys_handler::*;
+use crate::http_server::endpoints::api_keys::get_api_key_handler::*;
+use crate::http_server::endpoints::api_keys::delete_api_key_handler::*;
+use crate::http_server::endpoints::api_keys::update_api_key_handler::*;
+use artcraft_api_defs::api_keys::common::*;
+use artcraft_api_defs::api_keys::create_api_key::*;
+use artcraft_api_defs::api_keys::list_api_keys::*;
+use artcraft_api_defs::api_keys::get_api_key::*;
+use artcraft_api_defs::api_keys::delete_api_key::*;
+use artcraft_api_defs::api_keys::update_api_key::*;
+
 // Folder endpoints
 use crate::http_server::endpoints::folders::folder::color_code_folder_handler::*;
 use crate::http_server::endpoints::folders::folder::cover_image_folder_handler::*;
@@ -560,6 +573,13 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     crate::http_server::endpoints::moderation::user_emails::moderator_change_user_email_handler::moderator_change_user_email_handler,
     crate::http_server::endpoints::moderation::user_emails::moderator_list_email_address_changes_for_user_handler::moderator_list_email_address_changes_for_user_handler,
     crate::http_server::endpoints::moderation::user_stripe_data::moderator_get_user_stripe_customer_ids_handler::moderator_get_user_stripe_customer_ids_handler,
+
+    // API keys
+    crate::http_server::endpoints::api_keys::create_api_key_handler::create_api_key_handler,
+    crate::http_server::endpoints::api_keys::list_api_keys_handler::list_api_keys_handler,
+    crate::http_server::endpoints::api_keys::get_api_key_handler::get_api_key_handler,
+    crate::http_server::endpoints::api_keys::delete_api_key_handler::delete_api_key_handler,
+    crate::http_server::endpoints::api_keys::update_api_key_handler::update_api_key_handler,
 
     // Folders
     crate::http_server::endpoints::folders::folder::create_folder_handler::create_folder_handler,
@@ -1249,6 +1269,18 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
 
     // User Emails (Moderation)
     ModeratorListUserEmailChangesQueryParams,
+
+    // API keys
+    ApiKeyInfo,
+    ApiKeyPathInfo,
+    CreateApiKeyRequest,
+    CreateApiKeySuccessResponse,
+    ListApiKeysQueryParams,
+    ListApiKeysSuccessResponse,
+    GetApiKeySuccessResponse,
+    DeleteApiKeySuccessResponse,
+    UpdateApiKeyRequest,
+    UpdateApiKeySuccessResponse,
 
     // Folders
     FolderInfo,
