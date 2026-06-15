@@ -7,11 +7,13 @@ import {
   faSpinnerThird,
   faCopy,
   faCheck,
+  faKey,
   faTrash,
 } from "@fortawesome/pro-solid-svg-icons";
 import {
   UserApiKeysApi,
   type ApiKeyItem,
+  type CreatedApiKey,
   type UserInfo,
 } from "@storyteller/api";
 import { toast } from "../toast/toast";
@@ -38,6 +40,8 @@ export function ApiKeySection(_props: ApiKeySectionProps) {
   const [creating, setCreating] = useState(false);
   const [editingToken, setEditingToken] = useState<string | null>(null);
   const [pendingDelete, setPendingDelete] = useState<ApiKeyItem | null>(null);
+  // The full secret, shown exactly once right after a key is created.
+  const [createdKey, setCreatedKey] = useState<CreatedApiKey | null>(null);
 
   const load = async (pageIndex: number) => {
     setLoading(true);
@@ -47,7 +51,10 @@ export function ApiKeySection(_props: ApiKeySectionProps) {
     });
     setLoading(false);
     if (response.success && response.data) {
-      setKeys(response.data.api_keys);
+      // The list includes soft-deleted keys; only show live ones.
+      setKeys(
+        response.data.api_keys.filter((k) => k.maybe_deleted_at === null),
+      );
       setPage(response.pagination?.current ?? pageIndex);
       setTotalPages(Math.max(1, response.pagination?.total_page_count ?? 1));
     } else {
@@ -61,9 +68,10 @@ export function ApiKeySection(_props: ApiKeySectionProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const handleCreated = () => {
+  const handleCreated = (created: CreatedApiKey) => {
     setCreating(false);
-    // The new key shows up at the top of the first page.
+    // Reveal the full secret once; the truncated key then appears in the list.
+    setCreatedKey(created);
     load(0);
   };
 
@@ -102,6 +110,13 @@ export function ApiKeySection(_props: ApiKeySectionProps) {
           </Button>
         )}
       </div>
+
+      {createdKey && (
+        <NewKeyReveal
+          created={createdKey}
+          onDismiss={() => setCreatedKey(null)}
+        />
+      )}
 
       {creating && (
         <CreateKeyForm
@@ -182,7 +197,7 @@ function CreateKeyForm({
   onCancel,
 }: {
   api: UserApiKeysApi;
-  onCreated: () => void;
+  onCreated: (created: CreatedApiKey) => void;
   onCancel: () => void;
 }) {
   const [name, setName] = useState("");
@@ -211,9 +226,9 @@ function CreateKeyForm({
     });
     setSubmitting(false);
 
-    if (response.success) {
+    if (response.success && response.data) {
       toast.success("API key created.");
-      onCreated();
+      onCreated(response.data);
     } else {
       setError(response.errorMessage ?? "Could not create API key.");
     }
@@ -249,6 +264,62 @@ function CreateKeyForm({
   );
 }
 
+function NewKeyReveal({
+  created,
+  onDismiss,
+}: {
+  created: CreatedApiKey;
+  onDismiss: () => void;
+}) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(created.api_key);
+      setCopied(true);
+      toast.success("Copied to clipboard.");
+    } catch {
+      toast.error("Could not copy. Select and copy it manually.");
+    }
+  };
+
+  return (
+    <div className="flex flex-col gap-2 rounded-lg border border-primary/40 bg-primary/10 p-3">
+      <div className="flex items-center gap-2 text-sm font-medium">
+        <FontAwesomeIcon icon={faKey} className="opacity-80" />
+        <span>"{created.name}" created</span>
+      </div>
+      <p className="text-xs opacity-80">
+        Copy your key now. For security, you won't be able to see it again.
+      </p>
+      <div className="flex items-center gap-2">
+        <code className="min-w-0 flex-1 truncate rounded-md bg-black/40 px-3 py-2 font-mono text-xs text-white">
+          {created.api_key}
+        </code>
+        <Button
+          type="button"
+          variant="secondary"
+          className="h-9 px-3 shrink-0"
+          onClick={handleCopy}
+        >
+          <FontAwesomeIcon icon={copied ? faCheck : faCopy} className="mr-1.5" />
+          {copied ? "Copied" : "Copy"}
+        </Button>
+      </div>
+      <div className="flex justify-end pt-0.5">
+        <Button
+          type="button"
+          variant="secondary"
+          className="h-8 px-3"
+          onClick={onDismiss}
+        >
+          Done
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 function ApiKeyRow({
   api,
   item,
@@ -266,19 +337,6 @@ function ApiKeyRow({
   onUpdated: () => void;
   onRequestDelete: () => void;
 }) {
-  const [copied, setCopied] = useState(false);
-
-  const handleCopy = async () => {
-    try {
-      await navigator.clipboard.writeText(item.api_key);
-      setCopied(true);
-      toast.success("Copied to clipboard.");
-      window.setTimeout(() => setCopied(false), 1500);
-    } catch {
-      toast.error("Could not copy. Select and copy it manually.");
-    }
-  };
-
   return (
     <div className="flex flex-col gap-2 rounded-lg border border-ui-panel-border p-3">
       <div className="flex items-start justify-between gap-3">
@@ -290,21 +348,14 @@ function ApiKeyRow({
             </p>
           )}
           <div className="flex items-center gap-2 pt-1">
-            <code className="min-w-0 flex-1 truncate rounded bg-black/30 px-2 py-1 font-mono text-[11px] text-white/80">
+            {/* Truncated, display-only — the full secret is only shown on create. */}
+            <code className="min-w-0 truncate rounded bg-black/30 px-2 py-1 font-mono text-[11px] text-white/70">
               {item.api_key}
             </code>
-            <button
-              type="button"
-              onClick={handleCopy}
-              title="Copy key"
-              className="shrink-0 rounded p-1 text-white/60 transition-colors hover:bg-white/[0.06] hover:text-white"
-            >
-              <FontAwesomeIcon icon={copied ? faCheck : faCopy} />
-            </button>
+            <span className="text-[10px] uppercase tracking-wider text-white/40">
+              {formatDate(item.created_at)}
+            </span>
           </div>
-          <span className="pt-0.5 text-[10px] uppercase tracking-wider text-white/40">
-            {formatDate(item.created_at)}
-          </span>
         </div>
         {!isEditing && (
           <div className="flex shrink-0 items-center gap-2">

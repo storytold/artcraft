@@ -5,10 +5,23 @@ export interface ApiKeyItem {
   token: string;
   name: string;
   maybe_description: string | null;
-  // The full key value, returned on every list so users can copy it any time.
+  // TRUNCATED key value (display-only). The full secret is only ever returned
+  // once, from CreateApiKey — never from the list.
   api_key: string;
   created_at: string;
   updated_at: string;
+  // Soft-delete timestamp; null means the key is live. The list includes
+  // deleted keys, so the UI filters these out.
+  maybe_deleted_at: string | null;
+}
+
+// Create response: the full secret, shown to the user exactly once, plus the
+// `token` used for subsequent update/delete calls.
+export interface CreatedApiKey {
+  token: string;
+  name: string;
+  maybe_description: string | null;
+  api_key: string;
 }
 
 export interface ApiKeysPage {
@@ -60,26 +73,66 @@ export class UserApiKeysApi extends ApiManager {
       .catch((err) => ({ success: false, errorMessage: err.message }));
   }
 
+  // Single-key lookup. Not currently used by the settings UI (the list already
+  // carries everything), but provided for parity with the backend.
+  // TODO: confirm the response wrapper field name (`api_key_info` assumed).
+  public GetApiKey({
+    token,
+  }: {
+    token: string;
+  }): Promise<ApiResponse<ApiKeyItem>> {
+    const endpoint = `${this.getApiSchemeAndHost()}/v1/api_keys/${encodeURIComponent(token)}`;
+    return this.jsonFetch<
+      { success: boolean; api_key_info?: ApiKeyItem } & ErrorBody
+    >(endpoint, { method: "GET" })
+      .then((response) => {
+        if (!response.success || !response.api_key_info) {
+          return {
+            success: false,
+            errorMessage: response.message ?? this.statusFallback(response),
+          };
+        }
+        return { success: true, data: response.api_key_info };
+      })
+      .catch((err) => ({ success: false, errorMessage: err.message }));
+  }
+
   public CreateApiKey({
     name,
     maybeDescription,
   }: {
     name: string;
     maybeDescription?: string;
-  }): Promise<ApiResponse<null>> {
+  }): Promise<ApiResponse<CreatedApiKey>> {
     const endpoint = `${this.getApiSchemeAndHost()}/v1/api_keys/create`;
-    return this.jsonFetch<{ success: boolean } & ErrorBody>(endpoint, {
+    return this.jsonFetch<
+      {
+        success: boolean;
+        token?: string;
+        name?: string;
+        maybe_description?: string | null;
+        api_key?: string;
+      } & ErrorBody
+    >(endpoint, {
       method: "POST",
       body: { name, maybe_description: maybeDescription ?? null },
     })
       .then((response) => {
-        if (!response.success) {
+        if (!response.success || !response.token || !response.api_key) {
           return {
             success: false,
             errorMessage: response.message ?? this.statusFallback(response),
           };
         }
-        return { success: true };
+        return {
+          success: true,
+          data: {
+            token: response.token,
+            name: response.name ?? name,
+            maybe_description: response.maybe_description ?? null,
+            api_key: response.api_key,
+          },
+        };
       })
       .catch((err) => ({ success: false, errorMessage: err.message }));
   }
@@ -93,7 +146,7 @@ export class UserApiKeysApi extends ApiManager {
   }): Promise<ApiResponse<null>> {
     const endpoint = `${this.getApiSchemeAndHost()}/v1/api_keys/${encodeURIComponent(token)}`;
     return this.jsonFetch<{ success: boolean } & ErrorBody>(endpoint, {
-      method: "POST",
+      method: "PUT",
       body: { maybe_description: maybeDescription },
     })
       .then((response) => {
