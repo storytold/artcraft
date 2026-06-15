@@ -8,6 +8,7 @@ use tokio::time::{sleep, Instant};
 use artcraft_api_defs::omni_gen::cost_and_generate_requests::omni_gen_image_cost_and_generate_request::OmniGenImageCostAndGenerateRequest;
 use artcraft_client::credentials::storyteller_credential_set::StorytellerCredentialSet;
 use artcraft_client::endpoints::jobs::list_session_jobs::{list_session_jobs, States};
+use artcraft_client::endpoints::media_files::list_batch_generated_redux_media_files::list_batch_generated_redux_media_files;
 use artcraft_client::endpoints::media_files::upload_image_media_file_from_bytes::{
   upload_image_media_file_from_bytes, ImageType, UploadImageBytesArgs,
 };
@@ -33,6 +34,10 @@ const REFERENCE_FETCH_TIMEOUT: Duration = Duration::from_secs(30);
 pub struct GeneratedImage {
   pub cdn_url: String,
   pub maybe_thumbnail_template: Option<String>,
+}
+
+pub struct GeneratedImages {
+  pub images: Vec<GeneratedImage>,
 }
 
 #[derive(Debug, Deserialize, schemars::JsonSchema)]
@@ -73,7 +78,7 @@ pub struct Args {
   pub reference_image_urls: Option<Vec<String>>,
 }
 
-pub async fn run(args: Args) -> Result<GeneratedImage, ToolError> {
+pub async fn run(args: Args) -> Result<GeneratedImages, ToolError> {
   let prompt = args.prompt.trim();
   if prompt.is_empty() {
     return Err(ToolError::invalid_params("prompt is empty"));
@@ -127,7 +132,7 @@ async fn poll_for_image_url(
   api_host: &ApiHost,
   creds: &StorytellerCredentialSet,
   target: &InferenceJobToken,
-) -> Result<GeneratedImage, ToolError> {
+) -> Result<GeneratedImages, ToolError> {
   let deadline = Instant::now() + POLL_TIMEOUT;
 
   let mut include_states = HashSet::new();
@@ -154,9 +159,51 @@ async fn poll_for_image_url(
           let result = job.maybe_result.as_ref().ok_or_else(|| {
             ToolError::backend("job marked complete but result missing")
           })?;
-          return Ok(GeneratedImage {
-            cdn_url: result.media_links.cdn_url.to_string(),
-            maybe_thumbnail_template: result.media_links.maybe_thumbnail_template.clone(),
+
+          // Batched generation returns one media file per result, all
+          // tied together by maybe_batch_token. The single result on
+          // the job is just one of them — fetch the rest via the batch
+          // endpoint.
+          if let Some(batch_token) = &result.maybe_batch_token {
+            let batch = list_batch_generated_redux_media_files(
+              api_host,
+              Some(creds),
+              batch_token,
+            )
+            .await
+            .map_err(|e| ToolError::backend(format!("batch fetch failed: {:?}", e)))?;
+
+            let images: Vec<GeneratedImage> = batch
+              .media_files
+              .iter()
+              .map(|m| GeneratedImage {
+                cdn_url: m.media_links.cdn_url.to_string(),
+                maybe_thumbnail_template: m.media_links.maybe_thumbnail_template.clone(),
+              })
+              .collect();
+
+            tracing::info!("batch fetch returned {} images", images.len());
+
+            // Defensive: backend could in theory return zero items.
+            if images.is_empty() {
+              return Ok(GeneratedImages {
+                images: vec![GeneratedImage {
+                  cdn_url: result.media_links.cdn_url.to_string(),
+                  maybe_thumbnail_template: result
+                    .media_links
+                    .maybe_thumbnail_template
+                    .clone(),
+                }],
+              });
+            }
+            return Ok(GeneratedImages { images });
+          }
+
+          return Ok(GeneratedImages {
+            images: vec![GeneratedImage {
+              cdn_url: result.media_links.cdn_url.to_string(),
+              maybe_thumbnail_template: result.media_links.maybe_thumbnail_template.clone(),
+            }],
           });
         }
         JobStatusPlus::CompleteFailure | JobStatusPlus::Dead => {

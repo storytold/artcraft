@@ -13,10 +13,12 @@ use crate::tools::{
   list_image_models,
 };
 
-/// Width for the inline preview thumbnail. Claude Desktop caps tool
-/// results at ~1 MB; base64 adds ~33% overhead, so we target raw bytes
-/// under ~700 KB. 768 px is a safe ceiling for typical PNG output.
-const INLINE_THUMBNAIL_WIDTH: u32 = 768;
+/// Inline preview thumbnail width. Claude Desktop caps tool results at
+/// ~1 MB; base64 adds ~33% overhead, so the total raw payload needs to
+/// stay under ~700 KB. We scale the per-image width down for batches
+/// so all images fit in the same response.
+const INLINE_THUMBNAIL_WIDTH_SINGLE: u32 = 768;
+const INLINE_THUMBNAIL_WIDTH_BATCH: u32 = 512;
 
 const SERVER_INSTRUCTIONS: &str = "Artcraft MCP server.
 
@@ -104,7 +106,7 @@ impl ArtcraftServer {
     Parameters(args): Parameters<generate_image::Args>,
   ) -> Result<CallToolResult, McpError> {
     match generate_image::run(args).await {
-      Ok(image) => Ok(success_image_result(image).await),
+      Ok(images) => Ok(success_images_result(images).await),
       Err(err) => Ok(error_result(&err)),
     }
   }
@@ -120,23 +122,44 @@ impl ServerHandler for ArtcraftServer {
   }
 }
 
-async fn success_image_result(image: generate_image::GeneratedImage) -> CallToolResult {
-  let inline_url = image
-    .maybe_thumbnail_template
-    .as_ref()
-    .map(|t| t.replace("{WIDTH}", &INLINE_THUMBNAIL_WIDTH.to_string()))
-    .unwrap_or_else(|| image.cdn_url.clone());
+async fn success_images_result(images: generate_image::GeneratedImages) -> CallToolResult {
+  let width = if images.images.len() > 1 {
+    INLINE_THUMBNAIL_WIDTH_BATCH
+  } else {
+    INLINE_THUMBNAIL_WIDTH_SINGLE
+  };
+  let width_str = width.to_string();
 
-  match fetch_image_for_inline(&inline_url).await {
-    Ok((data_b64, mime)) => CallToolResult::success(vec![
-      Content::image(data_b64, mime),
-      Content::text(image.cdn_url),
-    ]),
-    Err(err) => {
-      tracing::warn!("inline image fetch failed, returning URL only: {:#}", err);
-      CallToolResult::success(vec![Content::text(image.cdn_url)])
+  let mut content: Vec<Content> = Vec::with_capacity(images.images.len() * 2 + 1);
+  for image in &images.images {
+    let inline_url = image
+      .maybe_thumbnail_template
+      .as_ref()
+      .map(|t| t.replace("{WIDTH}", &width_str))
+      .unwrap_or_else(|| image.cdn_url.clone());
+
+    match fetch_image_for_inline(&inline_url).await {
+      Ok((data_b64, mime)) => content.push(Content::image(data_b64, mime)),
+      Err(err) => {
+        tracing::warn!("inline fetch failed for {}: {:#}", image.cdn_url, err);
+      }
     }
   }
+
+  let urls_text = if images.images.len() == 1 {
+    images.images[0].cdn_url.clone()
+  } else {
+    images
+      .images
+      .iter()
+      .enumerate()
+      .map(|(i, img)| format!("Image {}: {}", i + 1, img.cdn_url))
+      .collect::<Vec<_>>()
+      .join("\n")
+  };
+  content.push(Content::text(urls_text));
+
+  CallToolResult::success(content)
 }
 
 fn json_or_error(result: Result<serde_json::Value, ToolError>) -> CallToolResult {
