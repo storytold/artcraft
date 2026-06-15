@@ -7,6 +7,7 @@ pub mod cleaners;
 pub mod delete_role_disambiguation;
 pub mod encrypted_sort_id;
 pub mod enroll_in_studio;
+pub mod generate_api_key;
 pub mod http_download_url_to_bytes;
 pub mod http_download_url_to_tempfile;
 pub mod lookup;

@@ -1,4 +1,5 @@
 pub mod anonymous_visitor_tracking;
+pub mod api_keys;
 pub mod api_tokens_external;
 pub mod api_tokens_internal;
 pub mod app_session;
