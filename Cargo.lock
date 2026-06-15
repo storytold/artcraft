@@ -713,6 +713,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "artcraft_api_key"
+version = "0.0.1"
+dependencies = [
+ "workspace-build-acceleration",
+]
+
+[[package]]
 name = "artcraft_client"
 version = "0.0.1"
 dependencies = [
