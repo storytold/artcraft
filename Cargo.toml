@@ -30,6 +30,7 @@ members = [
   "crates/api_clients/worldlabs_consumer_client",
 
   # CLI tools for operations, etc.
+  "crates/cli/artcraft-mcp",
   "crates/cli/devenv/dev-database-seed",
   "crates/cli/devenv/dev-upload-media-file",
   "crates/cli/production/db-backfill",

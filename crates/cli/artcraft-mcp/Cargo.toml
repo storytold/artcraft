@@ -1,9 +1,3 @@
-[workspace]
-# Standalone workspace during the MVP spike — keeps us out of the root
-# workspace's Cargo.toml until the final commit so other agents on `main`
-# don't collide with this work. Will be merged into the parent workspace
-# as the last step (see docs/mcp-integration-plan.md, Phase 6).
-
 [package]
 name = "artcraft-mcp"
 version = "0.0.1"
