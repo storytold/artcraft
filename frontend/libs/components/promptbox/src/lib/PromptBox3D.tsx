@@ -606,7 +606,7 @@ export const PromptBox3D = ({
       >
         {content}
       </Modal>
-      <div className="absolute bottom-4 left-1/2 flex -translate-x-1/2 flex-col gap-3">
+      <div className="absolute bottom-4 left-1/2 flex w-[90vw] max-w-5xl -translate-x-1/2 flex-col gap-3">
         {aboveStackSlot}
         {selectedImageModel?.canUseImagePrompt && isImageRowVisible && (
           <ImagePromptRow
@@ -633,7 +633,7 @@ export const PromptBox3D = ({
         )}
         <div
           className={twMerge(
-            "glass relative w-[860px] rounded-2xl p-4",
+            "glass relative w-full rounded-2xl p-4",
             isPromptBoxFocused ? "!border !border-primary" : "",
             selectedImageModel?.canUseImagePrompt &&
               isImageRowVisible &&

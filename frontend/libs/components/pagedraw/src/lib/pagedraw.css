@@ -5,7 +5,7 @@
   z-index: 0;
   /* Themeable canvas backdrop; hosts may set --st-canvas, otherwise the
      original dark grey is used. */
-  background-color: var(--st-canvas, #1b1b1b);
+  background-color: var(--st-canvas, #101014);
   background-size: 50px 50px;
   background-position:
     0 0,

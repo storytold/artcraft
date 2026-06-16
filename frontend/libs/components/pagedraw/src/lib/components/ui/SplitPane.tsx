@@ -16,6 +16,12 @@ export type SplitPaneProps = {
   /** Extra classes for the outer wrapper */
   className?: string;
   singlePaneMode: boolean;
+  /**
+   * Fill the parent box instead of reserving 56px for a global top bar. Hosts
+   * that hide their top bar on this route pass true so the backdrop reaches
+   * every edge.
+   */
+  fillParentHeight?: boolean;
 };
 
 export default function SplitPane({
@@ -27,7 +33,9 @@ export default function SplitPane({
   onChange,
   className = "",
   singlePaneMode = true,
+  fillParentHeight = false,
 }: SplitPaneProps) {
+  const heightClass = fillParentHeight ? "h-full" : "h-[calc(100vh-56px)]";
   const rootRef = useRef<HTMLDivElement>(null);
   const [leftPct, setLeftPct] = useState(initialPercent);
 
@@ -65,7 +73,7 @@ export default function SplitPane({
   return singlePaneMode ? (
     <div
       ref={rootRef}
-      className={`pegboard-bg relative flex h-[calc(100vh-56px)] w-full items-center justify-center overflow-hidden ${className}`}
+      className={`pegboard-bg relative flex ${heightClass} w-full items-center justify-center overflow-hidden ${className}`}
     >
       <div style={leftStyle} className="h-full min-w-0 overflow-hidden">
         {left}
@@ -74,7 +82,7 @@ export default function SplitPane({
   ) : (
     <div
       ref={rootRef}
-      className={`pegboard-bg relative flex h-[calc(100vh-56px)] w-full overflow-hidden ${className}`}
+      className={`pegboard-bg relative flex ${heightClass} w-full overflow-hidden ${className}`}
     >
       <div style={leftStyle} className="h-full min-w-0 overflow-hidden">
         {left}

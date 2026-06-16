@@ -90,15 +90,16 @@ function ProtectedContent() {
       ? "var(--sidebar-width)"
       : "calc(var(--sidebar-width-icon) + 1.5rem)";
 
-  // The Edit 3D and video editors host the header's actions
+  // The Edit 3D, Edit Image, and video editors host the header's actions
   // (pricing/credits/task queue/profile) inside their own toolbar/header to
   // reclaim vertical space, so the global header is hidden there — desktop
-  // only, since the mobile route shows a gate that still needs the header's
-  // nav chrome.
+  // only, since the mobile routes show the global chrome (Edit Image keeps the
+  // bar on mobile; Edit 3D shows a gate that still needs the header's nav).
   const hideTopBar =
     !isMobile &&
     (pathname === "/edit-3d" ||
       pathname.startsWith("/edit-3d/") ||
+      pathname === "/edit-image" ||
       pathname === "/video-editor" ||
       pathname.startsWith("/video-editor/"));
 
@@ -108,7 +109,14 @@ function ProtectedContent() {
       style={{ "--ac-sidebar-offset": sidebarOffset } as React.CSSProperties}
     >
       {!hideTopBar && <TopBar />}
-      <SidebarInset className="flex-1 min-h-0 overflow-y-auto bg-[#121212]">
+      {/* The immersive editors (hideTopBar routes) paint their own #101014
+          canvas backdrop; match the inset to it so no lighter strip shows at
+          the edges. Other pages keep the standard #121212 surface. */}
+      <SidebarInset
+        className={`flex-1 min-h-0 overflow-y-auto ${
+          hideTopBar ? "bg-[#101014]" : "bg-[#121212]"
+        }`}
+      >
         <Outlet />
       </SidebarInset>
       {isMobile && <MobileBottomNav />}

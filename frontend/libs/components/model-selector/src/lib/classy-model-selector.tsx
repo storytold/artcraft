@@ -34,6 +34,14 @@ interface ClassyModelSelectorProps {
    * provider-selection rows.
    */
   variant?: "floating" | "embedded";
+  /**
+   * Whether models that support multiple providers expose the provider-picker
+   * submenu (hover panel) and the per-row provider icon chips. Defaults to
+   * true. Pages locked to a single provider (e.g. PageDraw) pass false to show
+   * only the model name — the default provider is still resolved into the
+   * store so downstream generation calls keep working.
+   */
+  showProviderSelection?: boolean;
 }
 
 const DEFAULT_PROVIDER_OPTIONS: GenerationProvider[] = [GenerationProvider.Artcraft];
@@ -113,6 +121,7 @@ export function ClassyModelSelector({
   providerTooltipDelayMs = 300,
   maxListHeight = "60vh",
   variant = "floating",
+  showProviderSelection = true,
   ...popoverProps
 }: ClassyModelSelectorProps) {
   const { selectedModels, setSelectedModel, setSelectedProvider } =
@@ -159,7 +168,10 @@ export function ClassyModelSelector({
         const modelId = item.model?.id;
         const allowedProviders = item.model?.getProviders() || DEFAULT_PROVIDER_OPTIONS;
 
-        const hasMultipleProviders = allowedProviders.length >= 2;
+        // When provider selection is hidden, treat every model as
+        // single-provider so the submenu and provider chips never render.
+        const hasMultipleProviders =
+          showProviderSelection && allowedProviders.length >= 2;
 
         return {
           ...item,
@@ -213,6 +225,7 @@ export function ClassyModelSelector({
       page,
       providersByModel,
       providerTooltipDelayMs,
+      showProviderSelection,
     ],
   );
 
