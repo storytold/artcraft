@@ -28,8 +28,21 @@ deprecated or only used when setting other HTTP headers, like cookies.
 
 Prefer `CommonWebError` for new handlers unless you need custom error variants.
 
-When a handler uses `require_user_session`, prefer `require_user_session_using_connection` 
-which reuses an existing DB connection.
+The session helpers (`require_user_session`, `require_user_session_extended`, `require_moderator`
+in `http_server/web_utils/user_session/`) take a generic `mysql_executor` argument. Pass an
+already-open connection (`&mut *conn`) so the helper reuses it; do NOT pass
+`&server_state.mysql_pool` when the handler already holds a connection, since that self-acquires a
+second one and adds pool pressure (this crate has had pool-timeout incidents). There is no
+`require_user_session_using_connection` / `require_moderator_using_connection` — the
+reuse-vs-acquire behavior is determined by the argument.
+
+## Database Access
+
+Do NOT write SQLx queries in this crate. `storyteller-web` contains **zero** direct SQLx queries —
+all MySQL access goes through the `mysql_queries` crate. Add a function there (or reuse an existing
+one) and call it from the handler; never embed `sqlx::query!` / `sqlx::query()` in a handler or
+helper here. See `crates/schema/database/mysql_queries/CLAUDE.md` for the query-writing conventions
+(compile-time `query!` / `query_as!` macros, offline cache, the `Args`/`Executor` pattern, etc.).
 
 ## api_doc.rs
 

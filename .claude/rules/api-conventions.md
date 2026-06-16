@@ -19,9 +19,18 @@ Handlers in `storyteller_web` follow this structure:
 
 ### Session/Auth
 
-- `require_user_session_using_connection()` reuses an open DB connection (preferred)
-- `require_user_session()` acquires its own connection (deprecated)
-- `require_moderator()` for admin-only endpoints
+Helpers live in `storyteller_web` under `http_server/web_utils/user_session/`. Each takes a
+generic `mysql_executor: E` (any `sqlx::Executor`), so whether it reuses a connection or acquires
+its own depends on the **argument you pass**:
+
+- `require_user_session(http_request, session_checker, mysql_executor)` — require a logged-in user.
+- `require_user_session_extended(...)` — same, with extra session detail.
+- `require_moderator(http_request, session_checker, mysql_executor)` — admin-only endpoints.
+
+PREFER passing an already-open connection (`&mut *conn`) so the helper reuses it. Passing
+`&server_state.mysql_pool` makes it acquire a fresh connection — avoid that when the handler
+already holds one (the double-acquire adds pool pressure; this crate has had pool-timeout
+incidents). There is no `*_using_connection` variant — the reuse/acquire choice is the argument.
 
 ### API Type Definitions
 

@@ -7,10 +7,11 @@
 - `#[macro_use] extern crate serde_derive;` is used in binary crates; library crates use `use serde_derive::{Serialize, Deserialize};`
 - Never use `println!` or `eprintln!` outside of tests; use `log` crate macros (`info!`, `warn!`, `error!`, `debug!`, `trace!`) instead
 - Use `anyhow::Result` / `AnyhowResult` for fallible functions in application code; new database queries should use `Result<T, sqlx::Error>` instead
-- SQLx queries: prefer `sqlx::query!` and `sqlx::query_as!` compile-time checked macros over 
-  runtime `sqlx::query()` / `sqlx::query_as()`. The macros catch SQL typos, column mismatches, 
-  and type errors at build time. Use runtime queries only when assembling complicated 
-  dynamic/branching queries that cannot be expressed as a compile-time macro.
+- SQLx: MySQL queries belong in the `mysql_queries` crate. Do NOT write `sqlx::query!` /
+  `sqlx::query()` in application/service crates (e.g. `storyteller-web`, which has zero direct
+  SQLx queries) — add or reuse a function in `mysql_queries` and call it. The compile-time
+  `query!` / `query_as!` macro conventions for that crate are documented in
+  `crates/schema/database/mysql_queries/CLAUDE.md`.
 - Enum Display/Debug: use `impl_enum_display_and_debug_using_to_str!` macro, not `derive_more::Display` (CLion doesn't understand it)
 - Fields that are optional use the `maybe_` prefix: `maybe_creator_user_token`, `maybe_prompt_token`
 - When implementing `fmt::Display` for error types, use the pattern: `write!(f, "{:?}", self)`
