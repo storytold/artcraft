@@ -10,6 +10,7 @@ use http_server_common::request::get_request_ip::get_request_ip;
 use mysql_queries::queries::api_keys::insert_api_key::{insert_api_key, InsertApiKeyArgs};
 
 use crate::http_server::common_responses::common_web_error::CommonWebError;
+use crate::http_server::session::lookup::user_session_feature_flags::UserSessionFeatureFlags;
 use crate::http_server::web_utils::user_session::require_user_session::require_user_session;
 use crate::state::server_state::ServerState;
 use crate::util::generate_api_key::generate_api_key;
@@ -29,6 +30,7 @@ const MAX_DESCRIPTION_LEN: usize = 512;
     (status = 200, body = CreateApiKeySuccessResponse),
     (status = 400, body = CommonWebError),
     (status = 401, body = CommonWebError),
+    (status = 403, body = CommonWebError),
     (status = 500, body = CommonWebError),
   ),
 )]
@@ -43,6 +45,14 @@ pub async fn create_api_key_handler(
   })?;
 
   let user_session = require_user_session(&http_request, &server_state.session_checker, &mut *conn).await?;
+
+  // API key creation is gated behind the `api_key` feature flag.
+  let feature_flags = UserSessionFeatureFlags::new(user_session.maybe_feature_flags.as_deref());
+
+  if !feature_flags.can_create_api_key() {
+    warn!("User {:?} attempted to create an API key without the api_key feature flag", user_session.user_token.as_str());
+    return Err(CommonWebError::Forbidden);
+  }
 
   let name = request.name.trim().to_string();
 
