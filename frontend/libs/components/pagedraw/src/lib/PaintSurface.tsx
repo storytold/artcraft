@@ -15,12 +15,10 @@ import {
   Line,
   Image,
   Transformer,
-  Group,
 } from "react-konva";
 import Konva from "konva";
 import { LineNode, SceneState, useSceneStore } from "./stores/SceneState";
 import { Node } from "./Node";
-import { useStageSnapshot } from "./hooks/useUpdateSnapshot";
 import "./pagedraw.css";
 import SplitPane from "./components/ui/SplitPane";
 import { useRightPanelLayoutManagement } from "./hooks/useRightPanelLayoutManagement";

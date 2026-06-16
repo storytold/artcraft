@@ -198,7 +198,7 @@ function DragScrubButton({
 interface Edit3DScrubControlsProps {
   nodeId: string;
   stageRef: { current: Konva.Stage };
-  overlayHandle: React.RefObject<Model3DOverlayHandle>;
+  overlayHandle: React.RefObject<Model3DOverlayHandle | null>;
 }
 
 const Edit3DScrubControls = memo(function Edit3DScrubControls({
@@ -351,7 +351,6 @@ const PageDraw = ({ adapter }: PageDrawProps) => {
     historyImageBundles,
     pendingGenerations,
     getAspectRatioDimensions,
-    finishRemoveBackground,
     createImageFromUrl,
     createImageFromFile,
     createImageFrom3DModel,
@@ -361,7 +360,6 @@ const PageDraw = ({ adapter }: PageDrawProps) => {
     removeHistoryImage,
     addHistoryImageBundle,
     addPendingGeneration,
-    resolvePendingGeneration,
     removePendingGeneration,
     clearPendingGenerations,
     setAspectRatioType,
@@ -391,8 +389,6 @@ const PageDraw = ({ adapter }: PageDrawProps) => {
     (state) => state.setGenerationCount,
   );
   const useSystemPrompt = promptStoreProvider((state) => state.useSystemPrompt);
-  const referenceImages = promptStoreProvider((state) => state.referenceImages);
-  const prompt = promptStoreProvider((state) => state.prompt);
 
   const baseImageKonvaRef = useRef<Konva.Image>({} as Konva.Image);
   const baseImageUrl = baseImageInfo?.url;
@@ -524,13 +520,13 @@ const PageDraw = ({ adapter }: PageDrawProps) => {
 
     window.addEventListener(
       "gallery-2d-drop",
-      handleGallery2DDrop as EventListener,
+      handleGallery2DDrop as unknown as EventListener,
     );
 
     return () => {
       window.removeEventListener(
         "gallery-2d-drop",
-        handleGallery2DDrop as EventListener,
+        handleGallery2DDrop as unknown as EventListener,
       );
     };
   }, [createImageFromUrl, createImageFrom3DModel]);

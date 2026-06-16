@@ -18,7 +18,7 @@ export const useViewportSize = (): { width: number; height: number } => {
   );
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
+    if (typeof window === "undefined") return undefined;
     const onResize = () => {
       setSize(
         adapterGet?.() ?? {

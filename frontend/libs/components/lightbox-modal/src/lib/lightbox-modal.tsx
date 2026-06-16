@@ -17,7 +17,6 @@ import {
   faVideo,
   faWandMagicSparkles,
   faArrowRotateRight,
-  faWaveformLines,
 } from "@fortawesome/pro-solid-svg-icons";
 import { MediaFileDelete } from "@storyteller/tauri-api";
 import { LoadingSpinner } from "@storyteller/ui-loading-spinner";

@@ -92,6 +92,7 @@ export class SceneManager implements SceneManagerAPI {
     } else {
       return this.scene.instantiate(name, position);
     }
+    return undefined;
   }
 
   updateSkybox(media_id: string) {

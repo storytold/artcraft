@@ -25,7 +25,7 @@ export const useViewportPointer = (
   );
 
   useEffect(() => {
-    if (!canvas || !editor) return;
+    if (!canvas || !editor) return undefined;
 
     const onPointerMove = (e: PointerEvent) => {
       if (!editor.mouse) return;

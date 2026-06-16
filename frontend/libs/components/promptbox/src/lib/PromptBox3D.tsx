@@ -547,7 +547,7 @@ export const PromptBox3D = ({
   };
 
   const getCurrentAspectRatio = (): CommonAspectRatio => {
-    switch (cameraAspectRatio.value) {
+    switch (cameraAspectRatio) {
       case CameraAspectRatio.HORIZONTAL_3_2:
         return CommonAspectRatio.Wide;
       case CameraAspectRatio.VERTICAL_2_3:

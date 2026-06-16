@@ -44,7 +44,7 @@ export const useViewportKeyboard = (editor: Editor | null) => {
   const bindings = useMemo(() => buildKeymap(), []);
 
   useEffect(() => {
-    if (!editor) return;
+    if (!editor) return undefined;
 
     const onKeyDown = (event: KeyboardEvent) => {
       if (isEventFromEditableElement(event)) return;

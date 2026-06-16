@@ -372,7 +372,7 @@ class Scene {
         );
         if (obj_keyframe_uuid === keyframe_uuid) {
           keyframe_point = object;
-          return object;
+          return;
         }
       }
     });
@@ -611,7 +611,7 @@ class Scene {
   async loadObjectFromUrl(
     url: string,
     position: THREE.Vector3 = new THREE.Vector3(-0.5, 1.5, 0),
-  ): Promise<THREE.Object3D> {
+  ): Promise<THREE.Object3D | undefined> {
     console.log("loadObjectFromUrl!!!!!!!!", url);
     if (
       url.includes(".png") ||
@@ -628,6 +628,7 @@ class Scene {
       }
       return obj;
     }
+    return undefined;
   }
 
   async loadObject(
@@ -910,8 +911,8 @@ class Scene {
     media_url: string,
     onComplete: () => void,
     signal?: AbortSignal,
-  ) {
-    return new Promise(async (resolve, reject) => {
+  ): Promise<GLTF> {
+    return new Promise<GLTF>(async (resolve, reject) => {
       let buffer;
       try {
         // Host-supplied CORS-bypassed binary fetch (FetchProxy under

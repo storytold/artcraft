@@ -59,7 +59,7 @@ export const EngineProvider = ({
     // available; callback refs in SceneContainer / EditorCanvas /
     // CameraViewCanvas drive this by setting their nodes (and clearing
     // them to null on unmount).
-    if (!sceneContainer || !editorCanvas || !camViewCanvas) return;
+    if (!sceneContainer || !editorCanvas || !camViewCanvas) return undefined;
 
     const newEditor = new Editor(adapterRef.current);
     newEditor.initialize({

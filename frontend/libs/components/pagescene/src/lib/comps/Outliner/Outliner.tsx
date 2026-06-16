@@ -151,14 +151,12 @@ export const Outliner = () => {
       }
     }
 
-    if (viewport.width < 2000) {
-      if (camAspect === CameraAspectRatio.VERTICAL_9_16) {
-        return `${editorHeight * 0.7 - 10}px`;
-      } else if (camAspect === CameraAspectRatio.SQUARE_1_1) {
-        return `${editorHeight * 0.7}px`;
-      } else {
-        return `${editorHeight * 0.7}px`;
-      }
+    if (camAspect === CameraAspectRatio.VERTICAL_9_16) {
+      return `${editorHeight * 0.7 - 10}px`;
+    } else if (camAspect === CameraAspectRatio.SQUARE_1_1) {
+      return `${editorHeight * 0.7}px`;
+    } else {
+      return `${editorHeight * 0.7}px`;
     }
   };
 

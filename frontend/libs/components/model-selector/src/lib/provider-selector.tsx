@@ -6,7 +6,7 @@ import { useEffect, useMemo } from "react";
 import { PopoverMenu, type PopoverItem } from "@storyteller/ui-popover";
 import { ModelPage } from "./model-pages";
 import { Model } from "@storyteller/model-list";
-import { Provider } from "@storyteller/tauri-api";
+import { GenerationProvider } from "@storyteller/api-enums";
 import { getProviderDisplayName, getProviderIcon } from "./provider-icons";
 import {
   useClassyModelSelectorStore,
@@ -16,17 +16,17 @@ import {
 interface ProviderSelectorProps {
   page: ModelPage;
   model: Model | undefined;
-  providersByModel?: Partial<Record<string, Provider[]>>;
+  providersByModel?: Partial<Record<string, GenerationProvider[]>>;
   panelTitle?: string;
   buttonClassName?: string;
   panelClassName?: string;
   triggerLabel?: string;
 }
 
-const DEFAULT_PROVIDER_OPTIONS: Provider[] = [
-  Provider.ArtCraft,
-  Provider.Fal,
-  Provider.Sora,
+const DEFAULT_PROVIDER_OPTIONS: GenerationProvider[] = [
+  GenerationProvider.Artcraft,
+  GenerationProvider.Fal,
+  GenerationProvider.Sora,
 ];
 
 export function ProviderSelector({
@@ -38,7 +38,7 @@ export function ProviderSelector({
   const { setSelectedProvider } = useClassyModelSelectorStore();
 
   const modelId = model?.id;
-  const allowedProviders: Provider[] = useMemo(() => {
+  const allowedProviders: GenerationProvider[] = useMemo(() => {
     if (!modelId) return DEFAULT_PROVIDER_OPTIONS;
     return providersByModel?.[modelId] ?? DEFAULT_PROVIDER_OPTIONS;
   }, [providersByModel, modelId]);
@@ -74,8 +74,8 @@ export function ProviderSelector({
 
   const handleSelect = (item: PopoverItem) => {
     if (!modelId) return;
-    const prov: Provider | undefined = (item as any).provider as
-      | Provider
+    const prov: GenerationProvider | undefined = (item as any).provider as
+      | GenerationProvider
       | undefined;
     if (!prov) return;
     setSelectedProvider(page, modelId, prov);
