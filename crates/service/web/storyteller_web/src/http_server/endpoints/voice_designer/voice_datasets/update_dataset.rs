@@ -1,16 +1,13 @@
 use std::fmt;
 use std::sync::Arc;
 
-use actix_web::error::ResponseError;
-use actix_web::http::StatusCode;
 use actix_web::web::Path;
-use actix_web::{web, HttpRequest, HttpResponse};
+use actix_web::{web, HttpRequest};
 use log::{error, warn};
 
+use artcraft_api_defs::common::responses::simple_generic_json_success::SimpleGenericJsonSuccess;
 use enums::common::visibility::Visibility;
 use http_server_common::request::get_request_ip::get_request_ip;
-use http_server_common::response::response_success_helpers::simple_json_success;
-use http_server_common::response::serialize_as_json_error::serialize_as_json_error;
 use mysql_queries::queries::voice_designer::datasets::get_dataset::get_dataset_by_token;
 use mysql_queries::queries::voice_designer::datasets::update_dataset::{update_dataset, UpdateDatasetArgs};
 use tokens::tokens::zs_voice_datasets::ZsVoiceDatasetToken;
@@ -49,7 +46,7 @@ pub async fn update_dataset_handler(
   http_request: HttpRequest,
   path: Path<UpdateDatasetPathInfo>,
   request: web::Json<UpdateDatasetRequest>,
-  server_state: web::Data<Arc<ServerState>>) -> Result<HttpResponse, CommonWebError>
+  server_state: web::Data<Arc<ServerState>>) -> Result<web::Json<SimpleGenericJsonSuccess>, CommonWebError>
 {
   let maybe_user_session = server_state
       .session_checker
@@ -169,5 +166,5 @@ pub async fn update_dataset_handler(
     }
   };
 
-  Ok(simple_json_success())
+  Ok(web::Json(SimpleGenericJsonSuccess { success: true }))
 }

@@ -1,14 +1,11 @@
 use std::fmt;
 use std::sync::Arc;
 
-use actix_web::error::ResponseError;
-use actix_web::http::StatusCode;
-use actix_web::{web, HttpRequest, HttpResponse};
+use actix_web::{web, HttpRequest};
 use log::{error, warn};
 
 use enums::common::visibility::Visibility;
 use http_server_common::request::get_request_ip::get_request_ip;
-use http_server_common::response::serialize_as_json_error::serialize_as_json_error;
 use mysql_queries::queries::voice_designer::datasets::create_dataset::{create_dataset, CreateDatasetArgs};
 use tokens::tokens::zs_voice_datasets::ZsVoiceDatasetToken;
 
@@ -34,7 +31,7 @@ pub struct CreateDatasetResponse {
 // NB: Not using DeriveMore since Clion doesn't understand it.
 // =============== Handler ===============
 
-pub async fn create_dataset_handler(http_request: HttpRequest, request: web::Json<CreateDatasetRequest>, server_state: web::Data<Arc<ServerState>>) -> Result<HttpResponse, CommonWebError> {
+pub async fn create_dataset_handler(http_request: HttpRequest, request: web::Json<CreateDatasetRequest>, server_state: web::Data<Arc<ServerState>>) -> Result<web::Json<CreateDatasetResponse>, CommonWebError> {
   let maybe_user_session = server_state.session_checker.maybe_get_user_session(&http_request, &server_state.mysql_pool).await.map_err(|e| {
     error!("Error getting user session: {:?}", e);
     CommonWebError::from_error(e)
@@ -78,10 +75,5 @@ pub async fn create_dataset_handler(http_request: HttpRequest, request: web::Jso
   };
 
 
-  let body = serde_json::to_string(&response)
-      .map_err(|e| CommonWebError::from_error(e))?;
-
-  Ok(HttpResponse::Ok()
-      .content_type("application/json")
-      .body(body))
+  Ok(web::Json(response))
 }

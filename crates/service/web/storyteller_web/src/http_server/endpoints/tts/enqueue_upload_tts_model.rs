@@ -5,7 +5,7 @@
 
 use std::sync::Arc;
 
-use actix_web::{web, HttpRequest, HttpResponse};
+use actix_web::{web, HttpRequest};
 use log::warn;
 
 use crate::http_server::validations::validate_model_title::validate_model_title;
@@ -71,8 +71,8 @@ pub async fn upload_tts_model_handler(
   http_request: HttpRequest,
   request: web::Json<UploadTtsModelRequest>,
   server_state: web::Data<Arc<ServerState>>
-) -> Result<HttpResponse, CommonWebError> {
-  
+) -> Result<web::Json<UploadTtsModelSuccessResponse>, CommonWebError> {
+
   if server_state.flags.disable_tts {
     return Err(CommonWebError::TooManyRequests);
   }
@@ -186,18 +186,11 @@ pub async fn upload_tts_model_handler(
         CommonWebError::from_anyhow_error(e)
       })?;
 
-  let response = UploadTtsModelSuccessResponse {
+  Ok(web::Json(UploadTtsModelSuccessResponse {
     success: true,
     job_token: job_token.to_string(),
     job_type: download_job_type,
-  };
-
-  let body = serde_json::to_string(&response)
-    ?;
-
-  Ok(HttpResponse::Ok()
-    .content_type("application/json")
-    .body(body))
+  }))
 }
 
 fn validate_idempotency_token(token: &str) -> Result<(), String> {

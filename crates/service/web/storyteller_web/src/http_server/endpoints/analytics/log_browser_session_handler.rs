@@ -89,7 +89,7 @@ pub async fn log_browser_session_handler(
   http_request: HttpRequest,
   request: web::Json<LogBrowserSessionRequest>,
   server_state: web::Data<Arc<ServerState>>,
-) -> Result<HttpResponse, LogBrowserSessionError>
+) -> Result<web::Json<LogBrowserSessionSuccessResponse>, LogBrowserSessionError>
 {
   let mut mysql_connection = server_state.mysql_pool
       .acquire()
@@ -131,11 +131,6 @@ pub async fn log_browser_session_handler(
     log_token: token,
   };
 
-  let body = serde_json::to_string(&response)
-      .map_err(|_e| LogBrowserSessionError::ServerError)?;
-
-  Ok(HttpResponse::Ok()
-      .content_type("application/json")
-      .body(body))
+  Ok(web::Json(response))
 }
 

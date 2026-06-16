@@ -3,7 +3,7 @@ use std::sync::Arc;
 use actix_web::error::ResponseError;
 use actix_web::http::StatusCode;
 use actix_web::web::Path;
-use actix_web::{web, HttpMessage, HttpRequest, HttpResponse};
+use actix_web::{web, HttpMessage, HttpRequest};
 use chrono::{DateTime, Utc};
 use derive_more::Display;
 use log::{error, warn};
@@ -49,7 +49,7 @@ pub struct GetTtsUploadModelStatusSuccessResponse {
 pub async fn get_tts_upload_model_job_status_handler(
   http_request: HttpRequest,
   path: Path<GetTtsUploadModelStatusPathInfo>,
-  server_state: web::Data<Arc<ServerState>>) -> Result<HttpResponse, CommonWebError>
+  server_state: web::Data<Arc<ServerState>>) -> Result<web::Json<GetTtsUploadModelStatusSuccessResponse>, CommonWebError>
 {
   // NB: Since this is publicly exposed, we don't query sensitive data.
   let record = get_tts_model_upload_job_status(&path.token, &server_state.mysql_pool)
@@ -92,15 +92,8 @@ pub async fn get_tts_upload_model_job_status_handler(
     updated_at: record.updated_at,
   };
 
-  let response = GetTtsUploadModelStatusSuccessResponse {
+  Ok(web::Json(GetTtsUploadModelStatusSuccessResponse {
     success: true,
     state: model_for_response,
-  };
-
-  let body = serde_json::to_string(&response)
-      .map_err(|e| CommonWebError::from_error(e))?;
-
-  Ok(HttpResponse::Ok()
-      .content_type("application/json")
-      .body(body))
+  }))
 }

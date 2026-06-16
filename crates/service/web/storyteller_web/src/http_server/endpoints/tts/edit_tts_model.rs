@@ -6,15 +6,15 @@
 use std::sync::Arc;
 
 use actix_web::web::{Json, Path};
-use actix_web::{web, HttpRequest, HttpResponse};
+use actix_web::{web, HttpRequest};
 use language_tags::LanguageTag;
 use log::{error, info, warn};
 use sqlx::MySqlPool;
 
 use crate::configs::supported_languages_for_models::get_canonicalized_language_tag_for_model;
 use crate::http_server::common_responses::common_web_error::CommonWebError;
-use crate::http_server::web_utils::response_success_helpers::simple_json_success;
 use crate::state::server_state::ServerState;
+use artcraft_api_defs::common::responses::simple_generic_json_success::SimpleGenericJsonSuccess;
 use enums::common::visibility::Visibility;
 use http_server_common::request::get_request_ip::get_request_ip;
 use markdown::simple_markdown_to_html::simple_markdown_to_html;
@@ -92,7 +92,7 @@ pub async fn edit_tts_model_handler(
   http_request: HttpRequest,
   path: Path<EditTtsModelPathInfo>,
   request: Json<EditTtsModelRequest>,
-  server_state: web::Data<Arc<ServerState>>) -> Result<HttpResponse, CommonWebError>
+  server_state: web::Data<Arc<ServerState>>) -> Result<web::Json<SimpleGenericJsonSuccess>, CommonWebError>
 {
   // NB: Disable if we've migrated to model_weights
   if server_state.flags.switch_tts_to_model_weights {
@@ -300,7 +300,7 @@ pub async fn edit_tts_model_handler(
     let _r = redis_ttl_cache.delete_from_cache(&cache_key).ok();
   }
 
-  Ok(simple_json_success())
+  Ok(web::Json(SimpleGenericJsonSuccess { success: true }))
 }
 
 async fn update_mod_details(

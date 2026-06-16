@@ -3,7 +3,7 @@ use std::sync::Arc;
 use actix_web::error::ResponseError;
 use actix_web::http::StatusCode;
 use actix_web::web::Query;
-use actix_web::{web, HttpRequest, HttpResponse};
+use actix_web::{web, HttpRequest};
 use chrono::{DateTime, Utc};
 use log::warn;
 use utoipa::{IntoParams, ToSchema};
@@ -140,7 +140,7 @@ pub async fn list_featured_weights_handler(
   http_request: HttpRequest,
   query: Query<ListFeaturedWeightsQueryParams>,
   server_state: web::Data<Arc<ServerState>>
-) -> Result<HttpResponse, impl ResponseError> {
+) -> Result<web::Json<ListFeaturedWeightsSuccessResponse>, impl ResponseError> {
 
   let maybe_user_session = server_state
       .session_checker
@@ -280,10 +280,5 @@ pub async fn list_featured_weights_handler(
         }).collect::<Vec<_>>(),
   };
 
-  let body = serde_json::to_string(&response)
-      .map_err(|e| ListFeaturedWeightsError::ServerError)?;
-
-  Ok(HttpResponse::Ok()
-      .content_type("application/json")
-      .body(body))
+  Ok(web::Json(response))
 }

@@ -1,18 +1,15 @@
 use std::fmt;
 use std::sync::Arc;
 
-use actix_web::error::ResponseError;
-use actix_web::http::StatusCode;
 use actix_web::web::Path;
-use actix_web::{web, HttpRequest, HttpResponse};
+use actix_web::{web, HttpRequest};
 use log::warn;
 
-use http_server_common::response::serialize_as_json_error::serialize_as_json_error;
+use artcraft_api_defs::common::responses::simple_generic_json_success::SimpleGenericJsonSuccess;
 use mysql_queries::queries::voice_designer::datasets::delete_dataset::{delete_dataset_as_mod, delete_dataset_as_user, undelete_dataset_as_mod, undelete_dataset_as_user};
 use mysql_queries::queries::voice_designer::datasets::get_dataset::get_dataset_by_token;
 use tokens::tokens::zs_voice_datasets::ZsVoiceDatasetToken;
 
-use crate::http_server::web_utils::response_success_helpers::simple_json_success;
 use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::state::server_state::ServerState;
 use crate::util::delete_role_disambiguation::{delete_role_disambiguation, DeleteRole};
@@ -39,7 +36,7 @@ pub async fn delete_dataset_handler(
     path: Path<DeleteDatasetPathInfo>,
     request: web::Json<DeleteDatasetRequest>,
     server_state: web::Data<Arc<ServerState>>
-) -> Result<HttpResponse, CommonWebError>{
+) -> Result<web::Json<SimpleGenericJsonSuccess>, CommonWebError>{
     let maybe_user_session = server_state
         .session_checker
         .maybe_get_user_session(&http_request, &server_state.mysql_pool)
@@ -140,6 +137,6 @@ pub async fn delete_dataset_handler(
         }
     };
 
-    Ok(simple_json_success())
+    Ok(web::Json(SimpleGenericJsonSuccess { success: true }))
 
   }

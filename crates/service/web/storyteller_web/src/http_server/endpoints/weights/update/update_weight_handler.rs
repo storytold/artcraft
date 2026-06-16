@@ -1,10 +1,7 @@
-use std::fmt;
 use std::sync::Arc;
 
-use actix_web::error::ResponseError;
-use actix_web::http::StatusCode;
 use actix_web::web::Path;
-use actix_web::{web, HttpRequest, HttpResponse};
+use actix_web::{web, HttpRequest};
 use log::warn;
 use sqlx::MySqlPool;
 use utoipa::ToSchema;
@@ -16,8 +13,7 @@ use crate::state::server_state::ServerState;
 use enums::by_table::media_files::media_file_type::MediaFileType;
 use enums::by_table::model_weights::weights_types::WeightsType;
 use enums::common::visibility::Visibility;
-use http_server_common::response::response_success_helpers::{simple_json_success, SimpleGenericJsonSuccess};
-use http_server_common::response::serialize_as_json_error::serialize_as_json_error;
+use http_server_common::response::response_success_helpers::SimpleGenericJsonSuccess;
 use markdown::simple_markdown_to_html::simple_markdown_to_html;
 use mysql_queries::queries::media_files::get::get_media_file::get_media_file;
 use mysql_queries::queries::model_weights::edit::update_weight::{update_weights, CoverImageOption, UpdateWeightArgs};
@@ -85,7 +81,7 @@ pub async fn update_weight_handler(
     request: web::Json<UpdateWeightRequest>,
     mysql_pool: web::Data<MySqlPool>,
     server_state: web::Data<Arc<ServerState>>
-) -> Result<HttpResponse, CommonWebError> {
+) -> Result<web::Json<SimpleGenericJsonSuccess>, CommonWebError> {
     let mut mysql_connection = mysql_pool
         .acquire()
         .await
@@ -222,5 +218,5 @@ pub async fn update_weight_handler(
         }
     }
 
-    Ok(simple_json_success())
+    Ok(web::Json(SimpleGenericJsonSuccess { success: true }))
 }

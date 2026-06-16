@@ -3,15 +3,15 @@ use std::sync::Arc;
 use actix_web::error::ResponseError;
 use actix_web::http::StatusCode;
 use actix_web::web::Path;
-use actix_web::{web, HttpRequest, HttpResponse};
+use actix_web::{web, HttpRequest};
 use derive_more::Display;
 use log::{info, warn};
 
+use artcraft_api_defs::common::responses::simple_generic_json_success::SimpleGenericJsonSuccess;
 use mysql_queries::queries::ip_bans::toggle_ip_ban::{toggle_ip_ban, IpBanToggleState};
 
 use crate::http_server::web_utils::response_error_helpers::to_simple_json_error;
 use crate::http_server::common_responses::common_web_error::CommonWebError;
-use crate::http_server::web_utils::response_success_helpers::simple_json_success;
 use crate::state::server_state::ServerState;
 
 /// For the URL PathInfo
@@ -29,7 +29,7 @@ pub async fn delete_ip_ban_handler(
   path: Path<DeleteIpBanPathInfo>,
   request: web::Json<DeleteIpBanRequest>,
   server_state: web::Data<Arc<ServerState>>
-) -> Result<HttpResponse, CommonWebError> {
+) -> Result<web::Json<SimpleGenericJsonSuccess>, CommonWebError> {
 
   let maybe_user_session = server_state
       .session_checker
@@ -77,5 +77,5 @@ pub async fn delete_ip_ban_handler(
     }
   };
 
-  Ok(simple_json_success())
+  Ok(web::Json(SimpleGenericJsonSuccess { success: true }))
 }

@@ -4,9 +4,10 @@ use std::sync::Arc;
 use actix_web::error::ResponseError;
 use actix_web::http::StatusCode;
 use actix_web::web::Path;
-use actix_web::{web, HttpRequest, HttpResponse};
+use actix_web::{web, HttpRequest};
 use log::warn;
 
+use artcraft_api_defs::common::responses::simple_generic_json_success::SimpleGenericJsonSuccess;
 use http_server_common::request::get_request_ip::get_request_ip;
 use mysql_queries::queries::tts::tts_models::delete_tts_model_various_scopes::delete_tts_model_as_mod;
 use mysql_queries::queries::tts::tts_models::delete_tts_model_various_scopes::delete_tts_model_as_user;
@@ -16,7 +17,6 @@ use mysql_queries::queries::tts::tts_models::get_tts_model::get_tts_model_by_tok
 
 use crate::http_server::web_utils::response_error_helpers::to_simple_json_error;
 use crate::http_server::common_responses::common_web_error::CommonWebError;
-use crate::http_server::web_utils::response_success_helpers::simple_json_success;
 use crate::state::server_state::ServerState;
 use crate::util::delete_role_disambiguation::delete_role_disambiguation;
 use crate::util::delete_role_disambiguation::DeleteRole;
@@ -39,7 +39,7 @@ pub async fn delete_tts_model_handler(
   path: Path<DeleteTtsModelPathInfo>,
   request: web::Json<DeleteTtsModelRequest>,
   server_state: web::Data<Arc<ServerState>>
-) -> Result<HttpResponse, CommonWebError> {
+) -> Result<web::Json<SimpleGenericJsonSuccess>, CommonWebError> {
   // NB: Disable if we've migrated to model_weights
   if server_state.flags.switch_tts_to_model_weights {
     warn!("Migration to model_weights for tts. Cannot delete old model.");
@@ -154,5 +154,5 @@ pub async fn delete_tts_model_handler(
     }
   };
 
-  Ok(simple_json_success())
+  Ok(web::Json(SimpleGenericJsonSuccess { success: true }))
 }

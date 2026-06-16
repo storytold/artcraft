@@ -70,7 +70,7 @@ impl fmt::Display for EnqueueGenericDownloadError {
 pub async fn enqueue_generic_download_handler(
   http_request: HttpRequest,
   request: web::Json<EnqueueGenericDownloadRequest>,
-  server_state: web::Data<Arc<ServerState>>) -> Result<HttpResponse, EnqueueGenericDownloadError>
+  server_state: web::Data<Arc<ServerState>>) -> Result<web::Json<EnqueueGenericDownloadSuccessResponse>, EnqueueGenericDownloadError>
 {
   if let Err(_err) = server_state.redis_rate_limiters.model_upload.rate_limit_request(&http_request).await {
     return Err(EnqueueGenericDownloadError::RateLimited);
@@ -150,10 +150,5 @@ pub async fn enqueue_generic_download_handler(
     job_token: job_token.to_string(),
   };
 
-  let body = serde_json::to_string(&response)
-    .map_err(|e| EnqueueGenericDownloadError::ServerError)?;
-
-  Ok(HttpResponse::Ok()
-    .content_type("application/json")
-    .body(body))
+  Ok(web::Json(response))
 }

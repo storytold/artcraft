@@ -1,16 +1,11 @@
-use std::fmt;
 use std::sync::Arc;
 
-use actix_web::error::ResponseError;
-use actix_web::http::StatusCode;
 use actix_web::web::Path;
-use actix_web::{web, HttpRequest, HttpResponse};
+use actix_web::{web, HttpRequest};
 use log::warn;
 
 use enums::common::visibility::Visibility;
 use http_server_common::request::get_request_ip::get_request_ip;
-use http_server_common::response::response_success_helpers::simple_json_success;
-use http_server_common::response::serialize_as_json_error::serialize_as_json_error;
 use mysql_queries::queries::media_files::edit::update_media_file_visibility::{update_media_file_visibility, UpdateMediaFileArgs};
 use mysql_queries::queries::media_files::get::get_media_file::get_media_file;
 use tokens::tokens::media_files::MediaFileToken;
@@ -42,7 +37,7 @@ pub async fn update_media_file_handler(
     http_request: HttpRequest,
     path: Path<UpdateMediaFilePathInfo>,
     request: web::Json<UpdateMediaFileRequest>,
-    server_state: web::Data<Arc<ServerState>>) -> Result<HttpResponse, CommonWebError>
+    server_state: web::Data<Arc<ServerState>>) -> Result<web::Json<UpdateMediaFileResponse>, CommonWebError>
 {
     let maybe_user_session = server_state
         .session_checker
@@ -121,5 +116,5 @@ pub async fn update_media_file_handler(
         }
     };
 
-    Ok(simple_json_success())
+    Ok(web::Json(UpdateMediaFileResponse { success: true }))
 }

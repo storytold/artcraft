@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use actix_web::error::ResponseError;
 use actix_web::http::StatusCode;
-use actix_web::{web, HttpRequest, HttpResponse};
+use actix_web::{web, HttpRequest};
 use chrono::{DateTime, Utc};
 use log::{error, warn};
 
@@ -34,7 +34,7 @@ pub struct IpBanRecordForList {
 pub async fn list_ip_bans_handler(
   http_request: HttpRequest,
   server_state: web::Data<Arc<ServerState>>
-) -> Result<HttpResponse, CommonWebError> {
+) -> Result<web::Json<ListIpBansResponse>, CommonWebError> {
 
   let maybe_user_session = server_state
       .session_checker
@@ -85,10 +85,5 @@ pub async fn list_ip_bans_handler(
     ip_address_bans: results,
   };
 
-  let body = serde_json::to_string(&response)
-      .map_err(CommonWebError::from_error)?;
-
-  Ok(HttpResponse::Ok()
-      .content_type("application/json")
-      .body(body))
+  Ok(web::Json(response))
 }

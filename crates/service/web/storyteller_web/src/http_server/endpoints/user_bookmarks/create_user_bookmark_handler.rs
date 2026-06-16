@@ -97,7 +97,7 @@ pub async fn create_user_bookmark_handler(
   http_request: HttpRequest,
   request: web::Json<CreateUserBookmarkRequest>,
   server_state: web::Data<Arc<ServerState>>,
-) -> Result<HttpResponse, CreateUserBookmarkError>
+) -> Result<web::Json<CreateUserBookmarkSuccessResponse>, CreateUserBookmarkError>
 {
   // NB(bt,2023-12-14): Kasisnu found that we're getting entity type mismatches in production. Apart from
   // querying the database for entity existence, this is the next best way to prevent incorrect comment
@@ -226,10 +226,5 @@ pub async fn create_user_bookmark_handler(
     new_bookmark_count_for_entity: count.total_count,
   };
 
-  let body = serde_json::to_string(&response)
-      .map_err(|_e| CreateUserBookmarkError::ServerError)?;
-
-  Ok(HttpResponse::Ok()
-      .content_type("application/json")
-      .body(body))
+  Ok(web::Json(response))
 }

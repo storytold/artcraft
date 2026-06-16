@@ -87,7 +87,7 @@ impl fmt::Display for GetGenericDownloadJobStatusError {
 pub async fn get_generic_download_job_status_handler(
   http_request: HttpRequest,
   path: Path<GetGenericDownloadJobStatusPathInfo>,
-  server_state: web::Data<Arc<ServerState>>) -> Result<HttpResponse, GetGenericDownloadJobStatusError>
+  server_state: web::Data<Arc<ServerState>>) -> Result<web::Json<GetGenericDownloadJobStatusSuccessResponse>, GetGenericDownloadJobStatusError>
 {
   let maybe_job_status = get_generic_download_job_status(
     &path.token,
@@ -142,10 +142,5 @@ pub async fn get_generic_download_job_status_handler(
     state: model_for_response,
   };
 
-  let body = serde_json::to_string(&response)
-      .map_err(|e| GetGenericDownloadJobStatusError::ServerError)?;
-
-  Ok(HttpResponse::Ok()
-      .content_type("application/json")
-      .body(body))
+  Ok(web::Json(response))
 }

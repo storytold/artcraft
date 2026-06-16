@@ -4,7 +4,7 @@ use std::sync::Arc;
 use actix_web::error::ResponseError;
 use actix_web::http::StatusCode;
 use actix_web::web::Path;
-use actix_web::{web, HttpRequest, HttpResponse};
+use actix_web::{web, HttpRequest};
 use log::warn;
 use serde::Serialize;
 use sqlx::MySqlPool;
@@ -58,7 +58,7 @@ pub async fn moderator_get_token_info_handler(
   path: Path<ModeratorTokenInfoPath>,
   http_request: HttpRequest,
   server_state: web::Data<Arc<ServerState>>
-) -> Result<HttpResponse, CommonWebError> {
+) -> Result<web::Json<ModeratorTokenInfoResponse>, CommonWebError> {
 
   let user_session = require_moderator(&http_request, &server_state.session_checker, &server_state.mysql_pool).await?;
 
@@ -75,12 +75,7 @@ pub async fn moderator_get_token_info_handler(
     maybe_payload: maybe_result,
   };
 
-  let body = serde_json::to_string(&response)
-      .map_err(CommonWebError::from_error)?;
-
-  Ok(HttpResponse::Ok()
-      .content_type("application/json")
-      .body(body))
+  Ok(web::Json(response))
 }
 
 const LEGACY_USER_TOKEN_PREFIX : &str = "U:";

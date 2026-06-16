@@ -92,7 +92,7 @@ pub async fn list_user_bookmarks_for_entity_handler(
   _http_request: HttpRequest,
   path: Path<ListUserBookmarksForEntityPathInfo>,
   server_state: web::Data<Arc<ServerState>>
-) -> Result<HttpResponse, ListUserBookmarksForEntityError>
+) -> Result<web::Json<ListUserBookmarksForEntitySuccessResponse>, ListUserBookmarksForEntityError>
 {
   let entity_token = UserBookmarkEntityToken::from_entity_type_and_token(
     path.entity_type, &path.entity_token);
@@ -128,10 +128,5 @@ pub async fn list_user_bookmarks_for_entity_handler(
         .collect(),
   };
 
-  let body = serde_json::to_string(&response)
-      .map_err(|_e| ListUserBookmarksForEntityError::ServerError)?;
-
-  Ok(HttpResponse::Ok()
-      .content_type("application/json")
-      .body(body))
+  Ok(web::Json(response))
 }

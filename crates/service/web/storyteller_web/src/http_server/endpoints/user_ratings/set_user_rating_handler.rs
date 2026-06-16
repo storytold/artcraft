@@ -1,7 +1,6 @@
 use std::sync::Arc;
 
-use actix_web::http::StatusCode;
-use actix_web::{web, HttpRequest, HttpResponse, ResponseError};
+use actix_web::{web, HttpRequest};
 use log::{error, info, warn};
 use sqlx::Acquire;
 use utoipa::ToSchema;
@@ -9,7 +8,6 @@ use utoipa::ToSchema;
 use enums::by_table::user_ratings::entity_type::UserRatingEntityType;
 use enums::by_table::user_ratings::rating_value::UserRatingValue;
 use http_server_common::request::get_request_ip::get_request_ip;
-use http_server_common::response::serialize_as_json_error::serialize_as_json_error;
 use mysql_queries::composite_keys::by_table::user_ratings::user_rating_entity::UserRatingEntity;
 use mysql_queries::queries::entity_stats::stats_entity_token::StatsEntityToken;
 use mysql_queries::queries::entity_stats::upsert_entity_stats_on_ratings_event::{upsert_entity_stats_on_ratings_event, RatingsAction, UpsertEntityStatsArgs};
@@ -70,7 +68,7 @@ pub struct SetUserRatingResponse {
 pub async fn set_user_rating_handler(
   http_request: HttpRequest,
   request: web::Json<SetUserRatingRequest>,
-  server_state: web::Data<Arc<ServerState>>) -> Result<HttpResponse, CommonWebError>
+  server_state: web::Data<Arc<ServerState>>) -> Result<web::Json<SetUserRatingResponse>, CommonWebError>
 {
   // NB(bt,2023-12-14): Kasisnu found that we're getting entity type mismatches in production. Apart from
   // querying the database for entity existence, this is the next best way to prevent incorrect comment
@@ -239,10 +237,5 @@ pub async fn set_user_rating_handler(
     new_positive_rating_count_for_entity: count.positive_count,
   };
 
-  let body = serde_json::to_string(&response)
-      .map_err(CommonWebError::from_error)?;
-
-  Ok(HttpResponse::Ok()
-      .content_type("application/json")
-      .body(body))
+  Ok(web::Json(response))
 }

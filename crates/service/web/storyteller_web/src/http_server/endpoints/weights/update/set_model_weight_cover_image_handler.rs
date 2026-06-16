@@ -1,17 +1,12 @@
-use std::fmt;
 use std::sync::Arc;
 
-use actix_web::error::ResponseError;
-use actix_web::http::StatusCode;
 use actix_web::web::Path;
-use actix_web::{web, HttpRequest, HttpResponse};
+use actix_web::{web, HttpRequest};
 use log::warn;
 use utoipa::ToSchema;
 
 use enums::by_table::media_files::media_file_type::MediaFileType;
 use http_server_common::request::get_request_ip::get_request_ip;
-use http_server_common::response::response_success_helpers::simple_json_success;
-use http_server_common::response::serialize_as_json_error::serialize_as_json_error;
 use mysql_queries::queries::media_files::get::get_media_file::get_media_file;
 use mysql_queries::queries::model_weights::edit::set_model_weight_cover_image::{set_model_weight_cover_image, UpdateArgs};
 use mysql_queries::queries::model_weights::get::get_weight::get_weight_by_token;
@@ -60,7 +55,7 @@ pub async fn set_model_weight_cover_image_handler(
   http_request: HttpRequest,
   path: Path<SetModelWeightCoverImagePathInfo>,
   request: web::Json<SetModelWeightCoverImageRequest>,
-  server_state: web::Data<Arc<ServerState>>) -> Result<HttpResponse, CommonWebError>
+  server_state: web::Data<Arc<ServerState>>) -> Result<web::Json<SetModelWeightCoverImageResponse>, CommonWebError>
 {
   let maybe_user_session = server_state
       .session_checker
@@ -165,5 +160,5 @@ pub async fn set_model_weight_cover_image_handler(
     }
   };
 
-  Ok(simple_json_success())
+  Ok(web::Json(SetModelWeightCoverImageResponse { success: true }))
 }

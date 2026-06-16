@@ -1,13 +1,11 @@
 use std::sync::Arc;
 
-use actix_web::http::StatusCode;
-use actix_web::{web, HttpRequest, HttpResponse, ResponseError};
+use actix_web::{web, HttpRequest};
 use log::{error, info};
 use utoipa::ToSchema;
 
 use enums::by_table::user_ratings::entity_type::UserRatingEntityType;
 use enums::by_table::user_ratings::rating_value::UserRatingValue;
-use http_server_common::response::serialize_as_json_error::serialize_as_json_error;
 use mysql_queries::composite_keys::by_table::user_ratings::user_rating_entity::UserRatingEntity;
 use mysql_queries::queries::users::user_ratings::get_user_rating::{get_user_rating, Args};
 use tokens::tokens::media_files::MediaFileToken;
@@ -64,7 +62,7 @@ pub struct GetUserRatingResponse {
 pub async fn get_user_rating_handler(
   http_request: HttpRequest,
   path: web::Path<GetUserRatingPath>,
-  server_state: web::Data<Arc<ServerState>>) -> Result<HttpResponse, CommonWebError>
+  server_state: web::Data<Arc<ServerState>>) -> Result<web::Json<GetUserRatingResponse>, CommonWebError>
 {
   let mut mysql_connection = server_state.mysql_pool.acquire()
       .await
@@ -121,10 +119,5 @@ pub async fn get_user_rating_handler(
     maybe_rating_value: maybe_rating.map(|rating| rating.rating_value),
   };
 
-  let body = serde_json::to_string(&response)
-      .map_err(CommonWebError::from_error)?;
-
-  Ok(HttpResponse::Ok()
-      .content_type("application/json")
-      .body(body))
+  Ok(web::Json(response))
 }

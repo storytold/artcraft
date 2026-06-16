@@ -1,8 +1,6 @@
 use std::sync::Arc;
 
-use actix_web::error::ResponseError;
-use actix_web::http::StatusCode;
-use actix_web::{web, HttpRequest, HttpResponse};
+use actix_web::{web, HttpRequest};
 use chrono::{DateTime, Utc};
 use log::warn;
 
@@ -47,7 +45,7 @@ pub async fn list_samples_by_dataset_handler(
   http_request: HttpRequest,
   path: web::Path<ListSamplesByDatasetPathInfo>,
   server_state: web::Data<Arc<ServerState>>
-) -> Result<HttpResponse, CommonWebError> {
+) -> Result<web::Json<ListSamplesByDatasetSuccessResponse>, CommonWebError> {
   let maybe_user_session = server_state.session_checker.maybe_get_user_session(
     &http_request,
     &server_state.mysql_pool
@@ -108,10 +106,5 @@ pub async fn list_samples_by_dataset_handler(
     samples
   };
 
-  let body = serde_json::to_string(&response).map_err(|e| {
-    warn!("json serialization error: {:?}", e);
-    CommonWebError::from_error(e)
-  })?;
-
-  Ok(HttpResponse::Ok().content_type("application/json").body(body))
+  Ok(web::Json(response))
 }

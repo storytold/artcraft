@@ -1,17 +1,13 @@
-use std::fmt;
 use std::sync::Arc;
 
-use actix_web::error::ResponseError;
-use actix_web::http::StatusCode;
 use actix_web::web::Path;
-use actix_web::{web, HttpRequest, HttpResponse};
+use actix_web::{web, HttpRequest};
 use log::warn;
 use utoipa::ToSchema;
 
 use enums::common::visibility::Visibility;
 use http_server_common::request::get_request_ip::get_request_ip;
-use http_server_common::response::response_success_helpers::{simple_json_success, SimpleGenericJsonSuccess};
-use http_server_common::response::serialize_as_json_error::serialize_as_json_error;
+use http_server_common::response::response_success_helpers::SimpleGenericJsonSuccess;
 use mysql_queries::queries::media_files::edit::update_media_file_visibility::{update_media_file_visibility, UpdateMediaFileArgs};
 use mysql_queries::queries::media_files::get::get_media_file::get_media_file;
 
@@ -48,7 +44,7 @@ pub async fn change_media_file_visibility_handler(
     http_request: HttpRequest,
     path: Path<MediaFileTokenPathInfo>,
     request: web::Json<ChangeMediaFileVisibilityRequest>,
-    server_state: web::Data<Arc<ServerState>>) -> Result<HttpResponse, CommonWebError>
+    server_state: web::Data<Arc<ServerState>>) -> Result<web::Json<SimpleGenericJsonSuccess>, CommonWebError>
 {
     let maybe_user_session = server_state
         .session_checker
@@ -127,5 +123,5 @@ pub async fn change_media_file_visibility_handler(
         }
     };
 
-    Ok(simple_json_success())
+    Ok(web::Json(SimpleGenericJsonSuccess { success: true }))
 }

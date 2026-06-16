@@ -1,8 +1,6 @@
 use std::sync::Arc;
 
-use actix_web::error::ResponseError;
-use actix_web::http::StatusCode;
-use actix_web::{web, HttpRequest, HttpResponse};
+use actix_web::{web, HttpRequest};
 use chrono::{DateTime, Utc};
 use log::{info, warn};
 
@@ -48,7 +46,7 @@ pub async fn list_available_voices_handler(
     http_request: HttpRequest,
     query: web::Query<ListZsVoicesQuery>,
     server_state: web::Data<Arc<ServerState>>
-) -> Result<HttpResponse, CommonWebError> {
+) -> Result<web::Json<ListZsVoicesSuccessResponse>, CommonWebError> {
 
       let maybe_user_session = server_state.session_checker.maybe_get_user_session(
           &http_request,
@@ -158,12 +156,7 @@ pub async fn list_available_voices_handler(
         cursor_previous,
     };
 
-    let body = serde_json::to_string(&response)
-        .map_err(CommonWebError::from_error)?;
-
-    Ok(HttpResponse::Ok()
-        .content_type("application/json")
-        .body(body))
+    Ok(web::Json(response))
 }
 
 

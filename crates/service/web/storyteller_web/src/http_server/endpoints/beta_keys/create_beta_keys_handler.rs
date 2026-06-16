@@ -3,7 +3,7 @@ use std::sync::Arc;
 
 use actix_web::error::ResponseError;
 use actix_web::http::StatusCode;
-use actix_web::{web, HttpRequest, HttpResponse};
+use actix_web::{web, HttpRequest};
 use log::warn;
 use utoipa::ToSchema;
 
@@ -58,7 +58,7 @@ pub async fn create_beta_keys_handler(
   http_request: HttpRequest,
   request: web::Json<CreateBetaKeysRequest>,
   server_state: web::Data<Arc<ServerState>>,
-) -> Result<HttpResponse, CommonWebError>
+) -> Result<web::Json<CreateBetaKeysSuccessResponse>, CommonWebError>
 {
   let user_session = require_moderator(&http_request, &server_state.session_checker, &server_state.mysql_pool).await?;
 
@@ -106,11 +106,6 @@ pub async fn create_beta_keys_handler(
     beta_keys,
   };
 
-  let body = serde_json::to_string(&response)
-      .map_err(CommonWebError::from_error)?;
-
-  Ok(HttpResponse::Ok()
-      .content_type("application/json")
-      .body(body))
+  Ok(web::Json(response))
 }
 

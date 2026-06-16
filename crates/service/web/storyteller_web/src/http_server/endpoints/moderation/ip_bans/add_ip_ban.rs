@@ -3,15 +3,15 @@ use std::sync::Arc;
 
 use actix_web::error::ResponseError;
 use actix_web::http::StatusCode;
-use actix_web::{web, HttpRequest, HttpResponse};
+use actix_web::{web, HttpRequest};
 use log::{info, warn};
 
+use artcraft_api_defs::common::responses::simple_generic_json_success::SimpleGenericJsonSuccess;
 use mysql_queries::queries::ip_bans::upsert_ip_ban::{upsert_ip_ban, UpsertIpBanArgs};
 use user_input_common::validate_user_provided_ip_address::validate_user_provided_ip_address;
 
 use crate::http_server::web_utils::response_error_helpers::to_simple_json_error;
 use crate::http_server::common_responses::common_web_error::CommonWebError;
-use crate::http_server::web_utils::response_success_helpers::simple_json_success;
 use crate::state::server_state::ServerState;
 
 #[derive(Deserialize)]
@@ -25,7 +25,7 @@ pub async fn add_ip_ban_handler(
   http_request: HttpRequest,
   request: web::Json<AddIpBanRequest>,
   server_state: web::Data<Arc<ServerState>>
-) -> Result<HttpResponse, CommonWebError> {
+) -> Result<web::Json<SimpleGenericJsonSuccess>, CommonWebError> {
 
   let maybe_user_session = server_state
       .session_checker
@@ -70,5 +70,5 @@ pub async fn add_ip_ban_handler(
         CommonWebError::from_anyhow_error(err)
       })?;
 
-  Ok(simple_json_success())
+  Ok(web::Json(SimpleGenericJsonSuccess { success: true }))
 }

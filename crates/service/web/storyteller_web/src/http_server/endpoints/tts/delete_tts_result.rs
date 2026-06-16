@@ -4,9 +4,10 @@ use std::sync::Arc;
 use actix_web::error::ResponseError;
 use actix_web::http::StatusCode;
 use actix_web::web::Path;
-use actix_web::{web, HttpRequest, HttpResponse};
+use actix_web::{web, HttpRequest};
 use log::warn;
 
+use artcraft_api_defs::common::responses::simple_generic_json_success::SimpleGenericJsonSuccess;
 use mysql_queries::queries::tts::tts_results::delete_tts_result_various_scopes::delete_tts_inference_result_as_mod;
 use mysql_queries::queries::tts::tts_results::delete_tts_result_various_scopes::delete_tts_inference_result_as_user;
 use mysql_queries::queries::tts::tts_results::delete_tts_result_various_scopes::undelete_tts_inference_result_as_mod;
@@ -15,7 +16,6 @@ use mysql_queries::queries::tts::tts_results::query_tts_result::select_tts_resul
 
 use crate::http_server::web_utils::response_error_helpers::to_simple_json_error;
 use crate::http_server::common_responses::common_web_error::CommonWebError;
-use crate::http_server::web_utils::response_success_helpers::simple_json_success;
 use crate::state::server_state::ServerState;
 use crate::util::delete_role_disambiguation::delete_role_disambiguation;
 use crate::util::delete_role_disambiguation::DeleteRole;
@@ -38,7 +38,7 @@ pub async fn delete_tts_inference_result_handler(
   path: Path<DeleteTtsInferenceResultPathInfo>,
   request: web::Json<DeleteTtsInferenceResultRequest>,
   server_state: web::Data<Arc<ServerState>>
-) -> Result<HttpResponse, CommonWebError> {
+) -> Result<web::Json<SimpleGenericJsonSuccess>, CommonWebError> {
   let maybe_user_session = server_state
       .session_checker
       .maybe_get_user_session(&http_request, &server_state.mysql_pool)
@@ -141,5 +141,5 @@ pub async fn delete_tts_inference_result_handler(
     }
   };
 
-  Ok(simple_json_success())
+  Ok(web::Json(SimpleGenericJsonSuccess { success: true }))
 }

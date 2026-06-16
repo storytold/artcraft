@@ -4,7 +4,7 @@
 
 use std::sync::Arc;
 
-use actix_web::{web, HttpRequest, HttpResponse};
+use actix_web::{web, HttpRequest};
 use log::warn;
 use serde::Deserialize;
 use serde::Serialize;
@@ -78,8 +78,8 @@ pub async fn enqueue_tts_request(
     http_request: HttpRequest,
     request: web::Json<EnqueueTTSRequest>,
     server_state: web::Data<Arc<ServerState>>
-) -> Result<HttpResponse, CommonWebError> {
-    
+) -> Result<web::Json<EnqueueTTSRequestSuccessResponse>, CommonWebError> {
+
     let mut maybe_user_token: Option<UserToken> = None;
 
     let mut mysql_connection = server_state.mysql_pool.acquire().await.map_err(|err| {
@@ -194,8 +194,5 @@ pub async fn enqueue_tts_request(
         inference_job_token: job_token,
     };
 
-    let body = serde_json::to_string(&response)?;
-
-    // Error handling 101 rust result type returned like so.
-    Ok(HttpResponse::Ok().content_type("application/json").body(body))
+    Ok(web::Json(response))
 }

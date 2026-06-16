@@ -5,7 +5,7 @@
 
 
 use actix_web::web::Path;
-use actix_web::{web, HttpRequest, HttpResponse};
+use actix_web::{web, HttpRequest};
 use log::warn;
 use sqlx::MySqlPool;
 
@@ -65,7 +65,7 @@ pub async fn edit_profile_handler(
   mysql_pool: web::Data<MySqlPool>,
   redis_ttl_cache: web::Data<RedisTtlCache>,
   session_checker: web::Data<SessionChecker>,
-) -> Result<HttpResponse, CommonWebError>
+) -> Result<web::Json<EditProfileSuccessResponse>, CommonWebError>
 {
   let maybe_user_session = session_checker
       .maybe_get_user_session(&http_request, &mysql_pool)
@@ -285,10 +285,5 @@ pub async fn edit_profile_handler(
     success: true,
   };
 
-  let body = serde_json::to_string(&response)
-      .map_err(|_e| CommonWebError::BadInputWithSimpleMessage("".to_string()))?;
-
-  Ok(HttpResponse::Ok()
-      .content_type("application/json")
-      .body(body))
+  Ok(web::Json(response))
 }

@@ -84,7 +84,7 @@ pub async fn list_user_bookmarks_for_session_handler(
   http_request: HttpRequest,
   query: Query<ListUserBookmarksQueryData>,
   server_state: web::Data<Arc<ServerState>>
-) -> Result<HttpResponse, ListUserBookmarksError>
+) -> Result<web::Json<ListUserBookmarksSuccessResponse>, ListUserBookmarksError>
 {
   let user_session = server_state.session_checker
       .maybe_get_user_session(&http_request, &server_state.mysql_pool)
@@ -108,10 +108,5 @@ pub async fn list_user_bookmarks_for_session_handler(
     user_bookmarks: Vec::new()
   };
 
-  let body = serde_json::to_string(&response)
-      .map_err(|_e| ListUserBookmarksError::ServerError)?;
-
-  Ok(HttpResponse::Ok()
-      .content_type("application/json")
-      .body(body))
+  Ok(web::Json(response))
 }

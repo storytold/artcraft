@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use actix_web::http::StatusCode;
-use actix_web::{web, HttpRequest, HttpResponse, ResponseError};
+use actix_web::{web, HttpRequest};
 use log::{error, info};
 
 use http_server_common::request::get_request_ip::get_request_ip;
@@ -32,7 +32,7 @@ pub struct SetUnsubscribeReasonResponse {
 pub async fn set_unsubscribe_reason_handler(
   http_request: HttpRequest,
   request: web::Json<SetUnsubscribeReasonRequest>,
-  server_state: web::Data<Arc<ServerState>>) -> Result<HttpResponse, CommonWebError>
+  server_state: web::Data<Arc<ServerState>>) -> Result<web::Json<SetUnsubscribeReasonResponse>, CommonWebError>
 {
   let mut mysql_connection = server_state.mysql_pool.acquire()
       .await
@@ -73,10 +73,5 @@ pub async fn set_unsubscribe_reason_handler(
     success: true,
   };
 
-  let body = serde_json::to_string(&response)
-      .map_err(|_e| CommonWebError::from_error(_e))?;
-
-  Ok(HttpResponse::Ok()
-      .content_type("application/json")
-      .body(body))
+  Ok(web::Json(response))
 }

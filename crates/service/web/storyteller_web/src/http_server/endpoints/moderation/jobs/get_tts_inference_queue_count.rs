@@ -3,7 +3,7 @@ use std::sync::Arc;
 
 use actix_web::error::ResponseError;
 use actix_web::http::StatusCode;
-use actix_web::{web, HttpRequest, HttpResponse};
+use actix_web::{web, HttpRequest};
 use log::warn;
 
 use mysql_queries::queries::tts::tts_inference_jobs::get_pending_tts_inference_job_detailed_stats::{get_pending_tts_inference_job_detailed_stats, PendingCountResult};
@@ -34,7 +34,7 @@ pub struct GetTtsInferenceQueueCountResponse {
 pub async fn get_tts_inference_queue_count_handler(
   http_request: HttpRequest,
   server_state: web::Data<Arc<ServerState>>
-) -> Result<HttpResponse, CommonWebError> {
+) -> Result<web::Json<GetTtsInferenceQueueCountResponse>, CommonWebError> {
 
   let maybe_user_session = server_state
       .session_checker
@@ -85,10 +85,5 @@ pub async fn get_tts_inference_queue_count_handler(
     attempt_failed_count: result.attempt_failed_count,
   };
 
-  let body = serde_json::to_string(&response)
-      .map_err(CommonWebError::from_error)?;
-
-  Ok(HttpResponse::Ok()
-      .content_type("application/json")
-      .body(body))
+  Ok(web::Json(response))
 }

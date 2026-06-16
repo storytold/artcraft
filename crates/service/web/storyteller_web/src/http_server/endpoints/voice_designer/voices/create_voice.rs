@@ -5,9 +5,7 @@
 use std::fmt::Debug;
 use std::sync::Arc;
 
-use actix_web::error::ResponseError;
-use actix_web::http::StatusCode;
-use actix_web::{web, HttpRequest, HttpResponse};
+use actix_web::{web, HttpRequest};
 use log::{info, warn};
 use serde::Deserialize;
 use serde::Serialize;
@@ -33,7 +31,6 @@ use tokens::tokens::users::UserToken;
 
 use crate::configs::plans::get_correct_plan_for_session::get_correct_plan_for_session;
 use crate::http_server::common_responses::common_web_error::CommonWebError;
-use crate::http_server::web_utils::response_error_helpers::to_simple_json_error;
 use crate::state::server_state::ServerState;
 
 #[derive(Deserialize)]
@@ -60,7 +57,7 @@ pub async fn create_voice_handler(
     http_request: HttpRequest,
     request: web::Json<EnqueueCreateVoiceRequest>,
     server_state: web::Data<Arc<ServerState>>
-) -> Result<HttpResponse, CommonWebError> {
+) -> Result<web::Json<EnqueueCreateVoiceRequestSuccessResponse>, CommonWebError> {
     // voice data set token ... zsd_wb08asm0m4a4cz42wwqked6tfg6e e.g
 
     // need this for the job
@@ -184,9 +181,5 @@ pub async fn create_voice_handler(
             inference_job_token: job_token,
         };
 
-    let body = serde_json
-        ::to_string(&response)
-        ?;
-    // Error handling 101 rust result type returned like so.
-    Ok(HttpResponse::Ok().content_type("application/json").body(body))
+    Ok(web::Json(response))
 }
