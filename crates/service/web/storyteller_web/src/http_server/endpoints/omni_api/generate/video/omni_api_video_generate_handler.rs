@@ -91,10 +91,6 @@ pub async fn omni_api_video_generate_handler(
 
   let user_token = &api_session.user_token;
 
-  let maybe_avt_token = server_state
-      .avt_cookie_manager
-      .get_avt_token_from_request(&http_request);
-
   // ==================== MODEL ACCESS CHECK ==================== //
 
   // API-key users have no per-user feature flags today.
@@ -344,7 +340,7 @@ pub async fn omni_api_video_generate_handler(
           apriori_job_token: &pipeline_result.billing.apriori_job_token,
           idempotency_token: &idempotency_token,
           user_token,
-          maybe_avt_token: maybe_avt_token.as_ref(),
+          maybe_avt_token: None, // AVT tokens are web-session only; API-key callers have none.
           maybe_model_type: request.model.map(|v| v.to_common_model_type()),
           maybe_prompt_token: prompt_token.as_ref(),
           maybe_debug_log_event_token: Some(&debug_log_event_token),
@@ -368,7 +364,7 @@ pub async fn omni_api_video_generate_handler(
           apriori_job_token: &pipeline_result.billing.apriori_job_token,
           idempotency_token: &idempotency_token,
           user_token,
-          maybe_avt_token: maybe_avt_token.as_ref(),
+          maybe_avt_token: None, // AVT tokens are web-session only; API-key callers have none.
           maybe_model_type: request.model.map(|v| v.to_common_model_type()),
           maybe_prompt_token: prompt_token.as_ref(),
           maybe_debug_log_event_token: Some(&debug_log_event_token),
@@ -398,7 +394,7 @@ pub async fn omni_api_video_generate_handler(
           apriori_job_token: &pipeline_result.billing.apriori_job_token,
           idempotency_token: &idempotency_token,
           user_token,
-          maybe_avt_token: maybe_avt_token.as_ref(),
+          maybe_avt_token: None, // AVT tokens are web-session only; API-key callers have none.
           maybe_model_type: request.model.map(|v| v.to_common_model_type()),
           maybe_prompt_token: prompt_token.as_ref(),
           maybe_debug_log_event_token: Some(&debug_log_event_token),
@@ -422,7 +418,7 @@ pub async fn omni_api_video_generate_handler(
           apriori_job_token: &pipeline_result.billing.apriori_job_token,
           idempotency_token: &idempotency_token,
           user_token,
-          maybe_avt_token: maybe_avt_token.as_ref(),
+          maybe_avt_token: None, // AVT tokens are web-session only; API-key callers have none.
           maybe_model_type: request.model.map(|v| v.to_common_model_type()),
           maybe_prompt_token: prompt_token.as_ref(),
           maybe_debug_log_event_token: Some(&debug_log_event_token),

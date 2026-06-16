@@ -165,10 +165,6 @@ pub async fn omni_upload_video_media_file_handler(
 
   let maybe_user_token = Some(&api_session.user_token);
 
-  let maybe_avt_token = server_state
-      .avt_cookie_manager
-      .get_avt_token_from_request(&http_request);
-
   // ==================== RATE LIMIT ==================== //
 
   let rate_limiter = &server_state.redis_rate_limiters.file_upload_logged_in;
@@ -464,7 +460,8 @@ pub async fn omni_upload_video_media_file_handler(
     maybe_media_class: Some(MediaFileClass::Video),
     media_file_type: MediaFileType::Video,
     maybe_creator_user_token: maybe_user_token,
-    maybe_creator_anonymous_visitor_token: maybe_avt_token.as_ref(),
+    // NB: AVT (anonymous visitor) tokens are a web-session concept; API-key callers have none.
+    maybe_creator_anonymous_visitor_token: None,
     creator_ip_address: &ip_address,
     creator_set_visibility,
     upload_type,
