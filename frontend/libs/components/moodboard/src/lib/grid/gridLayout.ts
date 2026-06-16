@@ -88,6 +88,56 @@ export const computeMasonryLayout = (
   };
 };
 
+export type NavDirection = "up" | "down" | "left" | "right";
+
+// Spatial navigation: the nearest card to `fromId` in a direction, biased toward
+// staying in the same row/column (cross-axis distance weighted more). Used for
+// arrow-key focus movement across the masonry.
+export const nearestInDirection = (
+  byId: Record<string, PositionedItem>,
+  fromId: string,
+  dir: NavDirection,
+): string | null => {
+  const from = byId[fromId];
+  if (!from) return null;
+  const fcx = from.x + from.width / 2;
+  const fcy = from.y + from.height / 2;
+  let best: string | null = null;
+  let bestScore = Infinity;
+  for (const p of Object.values(byId)) {
+    if (p.id === fromId) continue;
+    const cx = p.x + p.width / 2;
+    const cy = p.y + p.height / 2;
+    const dx = cx - fcx;
+    const dy = cy - fcy;
+    let primary: number;
+    let cross: number;
+    if (dir === "right") {
+      if (dx <= 1) continue;
+      primary = dx;
+      cross = Math.abs(dy);
+    } else if (dir === "left") {
+      if (dx >= -1) continue;
+      primary = -dx;
+      cross = Math.abs(dy);
+    } else if (dir === "down") {
+      if (dy <= 1) continue;
+      primary = dy;
+      cross = Math.abs(dx);
+    } else {
+      if (dy >= -1) continue;
+      primary = -dy;
+      cross = Math.abs(dx);
+    }
+    const score = primary + cross * 2;
+    if (score < bestScore) {
+      bestScore = score;
+      best = p.id;
+    }
+  }
+  return best;
+};
+
 // Returns only positions intersecting the scroll viewport (± buffer). Linear
 // scan is fine to ~thousands of items; positions are already y-ordered enough
 // for the predicate to be cheap.

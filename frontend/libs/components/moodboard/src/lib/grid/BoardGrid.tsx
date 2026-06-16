@@ -3,9 +3,18 @@ import { BoardItem, GridDensity } from "../boards/boardTypes";
 import { BoardCard } from "./BoardCard";
 import {
   DENSITY_CONFIG,
+  NavDirection,
   computeMasonryLayout,
+  nearestInDirection,
   sliceVisible,
 } from "./gridLayout";
+
+const ARROW_DIRS: Record<string, NavDirection> = {
+  ArrowUp: "up",
+  ArrowDown: "down",
+  ArrowLeft: "left",
+  ArrowRight: "right",
+};
 
 interface Props {
   items: BoardItem[];
@@ -45,10 +54,12 @@ export const BoardGrid = ({
   onDelete,
 }: Props) => {
   const scrollRef = useRef<HTMLDivElement | null>(null);
+  const revealedRef = useRef<Set<string>>(new Set());
   const [width, setWidth] = useState(0);
   const [scrollTop, setScrollTop] = useState(0);
   const [viewportH, setViewportH] = useState(0);
   const [marquee, setMarquee] = useState<Marquee | null>(null);
+  const [focusedId, setFocusedId] = useState<string | null>(null);
   const marqueeRef = useRef<{ active: boolean; moved: boolean; additive: boolean }>(
     { active: false, moved: false, additive: false },
   );
@@ -86,6 +97,48 @@ export const BoardGrid = ({
     () => sliceVisible(layout.positions, scrollTop, viewportH, VIRTUAL_BUFFER),
     [layout, scrollTop, viewportH],
   );
+
+  // ----- keyboard navigation (roving tabindex) -----
+  // Exactly one card is a tab stop: the focused one, falling back to the first.
+  // Arrows move focus geometrically; Enter opens, Space selects, Delete removes.
+  const activeId = focusedId ?? items[0]?.id ?? null;
+
+  const scrollCardIntoView = (id: string) => {
+    const el = scrollRef.current;
+    const p = layout.byId[id];
+    if (!el || !p) return;
+    // Positions are content-relative; the scroll container adds OUTER_PADDING.
+    const top = p.y + OUTER_PADDING;
+    const bottom = top + p.height;
+    if (top < el.scrollTop) {
+      el.scrollTop = Math.max(0, top - OUTER_PADDING);
+    } else if (bottom > el.scrollTop + el.clientHeight) {
+      el.scrollTop = bottom - el.clientHeight + OUTER_PADDING;
+    }
+  };
+
+  const handleCardKeyDown = (id: string, e: React.KeyboardEvent) => {
+    const dir = ARROW_DIRS[e.key];
+    if (dir) {
+      const next = nearestInDirection(layout.byId, id, dir);
+      if (next) {
+        e.preventDefault();
+        setFocusedId(next);
+        scrollCardIntoView(next);
+      }
+      return;
+    }
+    if (e.key === "Enter") {
+      e.preventDefault();
+      onOpen(id);
+    } else if (e.key === " ") {
+      e.preventDefault();
+      onSelect(id, e.shiftKey || e.metaKey || e.ctrlKey);
+    } else if (e.key === "Delete" || e.key === "Backspace") {
+      e.preventDefault();
+      onDelete(id);
+    }
+  };
 
   // ----- marquee selection on empty canvas -----
   const pointToContent = (clientX: number, clientY: number) => {
@@ -160,15 +213,26 @@ export const BoardGrid = ({
       onPointerDown={handlePointerDown}
     >
       <div className="relative" style={{ height: layout.totalHeight }}>
-        {visible.map((pos) => {
+        {visible.map((pos, i) => {
           const item = itemsById[pos.id];
           if (!item) return null;
+          // Animate each card in only the first time it's revealed this session,
+          // so scrolling (which mounts/unmounts virtualized cards) never
+          // re-triggers the entry motion.
+          const firstReveal = !revealedRef.current.has(pos.id);
+          if (firstReveal) revealedRef.current.add(pos.id);
           return (
             <BoardCard
               key={pos.id}
               item={item}
               pos={pos}
               selected={selectedIds.has(pos.id)}
+              animateIn={firstReveal}
+              revealDelayMs={firstReveal ? Math.min(i, 8) * 25 : 0}
+              tabStop={pos.id === activeId}
+              focused={pos.id === focusedId}
+              onFocusCard={setFocusedId}
+              onKeyNav={handleCardKeyDown}
               onSelect={onSelect}
               onOpen={onOpen}
               onUseReference={onUseReference}

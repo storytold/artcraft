@@ -140,7 +140,6 @@ export const MoodboardToolbar = ({ onUploadClick, onGalleryClick }: Props) => {
         options={MODES}
         onOptionChange={(value) => setTool(value as Tool)}
         selectedOption={tool}
-        tooltipDelay={100}
       />
 
       <FloatingToolbarDivider />

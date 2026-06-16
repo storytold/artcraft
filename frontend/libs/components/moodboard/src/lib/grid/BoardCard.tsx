@@ -1,4 +1,4 @@
-import { memo } from "react";
+import { memo, useEffect, useRef, useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faUpRightAndDownLeftFromCenter,
@@ -15,11 +15,33 @@ interface Props {
   item: BoardItem;
   pos: PositionedItem;
   selected: boolean;
+  /** Play a one-time fade-up the first time this card is revealed. */
+  animateIn?: boolean;
+  revealDelayMs?: number;
+  /** Roving tabindex: only the active card is keyboard-reachable via Tab. */
+  tabStop?: boolean;
+  /** Programmatically pull DOM focus here (set after arrow-key navigation). */
+  focused?: boolean;
+  onFocusCard?: (id: string) => void;
+  onKeyNav?: (id: string, e: React.KeyboardEvent) => void;
   onSelect: (id: string, additive: boolean) => void;
   onOpen: (id: string) => void;
   onDelete: (id: string) => void;
   onUseReference: (id: string) => void;
 }
+
+const KIND_NOUN: Record<BoardItem["kind"], string> = {
+  image: "image",
+  video: "video",
+  text: "note",
+  link: "link",
+  color: "color swatch",
+};
+
+const prefersReducedMotion = (): boolean =>
+  typeof window !== "undefined" &&
+  typeof window.matchMedia === "function" &&
+  window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 // One masonry tile. Absolutely positioned by the grid; the card owns only its
 // visual treatment (double-bezel shell), per-kind content, and hover affordances.
@@ -27,15 +49,57 @@ const BoardCardInner = ({
   item,
   pos,
   selected,
+  animateIn,
+  revealDelayMs = 0,
+  tabStop = false,
+  focused = false,
+  onFocusCard,
+  onKeyNav,
   onSelect,
   onOpen,
   onDelete,
   onUseReference,
 }: Props) => {
+  const rootRef = useRef<HTMLDivElement | null>(null);
+  const [entering, setEntering] = useState(
+    Boolean(animateIn) && !prefersReducedMotion(),
+  );
+  useEffect(() => {
+    if (!entering) return undefined;
+    const r = requestAnimationFrame(() => setEntering(false));
+    return () => cancelAnimationFrame(r);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Pull DOM focus here when the grid hands us focus via arrow navigation.
+  useEffect(() => {
+    if (focused && rootRef.current && document.activeElement !== rootRef.current) {
+      rootRef.current.focus();
+    }
+  }, [focused]);
+
+  const caption = "caption" in item ? item.caption : undefined;
+  const label = `${KIND_NOUN[item.kind]}${caption ? `: ${caption}` : ""}${
+    item.rating > 0 ? `, rated ${item.rating}` : ""
+  }${selected ? ", selected" : ""}`;
+
   return (
     <div
-      className="group absolute"
-      style={{ left: pos.x, top: pos.y, width: pos.width, height: pos.height }}
+      ref={rootRef}
+      role="button"
+      tabIndex={tabStop ? 0 : -1}
+      aria-label={label}
+      aria-pressed={selected}
+      className="group absolute rounded-[18px] transition-[opacity,transform] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-ui-panel motion-reduce:transition-none"
+      style={{
+        left: pos.x,
+        top: pos.y,
+        width: pos.width,
+        height: pos.height,
+        transitionDelay: `${revealDelayMs}ms`,
+        opacity: entering ? 0 : 1,
+        transform: entering ? "translateY(8px)" : undefined,
+      }}
       onPointerDown={(e) => {
         // Left-click selects; modifier-click extends. Action buttons stop
         // propagation so they don't double as a select.
@@ -43,6 +107,8 @@ const BoardCardInner = ({
         onSelect(item.id, e.shiftKey || e.metaKey || e.ctrlKey);
       }}
       onDoubleClick={() => onOpen(item.id)}
+      onFocus={() => onFocusCard?.(item.id)}
+      onKeyDown={(e) => onKeyNav?.(item.id, e)}
     >
       {/* Outer shell — double-bezel. Lifts slightly on hover; ring turns to the
           brand blue when selected. */}

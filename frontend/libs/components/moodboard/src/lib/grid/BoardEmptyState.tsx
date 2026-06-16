@@ -30,10 +30,10 @@ export const BoardEmptyState = ({ onUpload, onLibrary }: Props) => {
           <button
             type="button"
             onClick={onUpload}
-            className="group flex items-center gap-2.5 rounded-full bg-primary py-2.5 pl-5 pr-2.5 text-sm font-medium text-white transition-all duration-200 ease-[cubic-bezier(0.4,0,0.2,1)] hover:bg-primary-600 active:scale-[0.98]"
+            className="group flex items-center gap-2.5 rounded-full bg-primary py-2.5 pl-5 pr-2.5 text-sm font-medium text-white transition-all duration-200 ease-[cubic-bezier(0.4,0,0.2,1)] hover:bg-primary/90 active:scale-[0.98] focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
           >
             Upload
-            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white/15 transition-transform duration-200 group-hover:translate-x-0.5">
+            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white/15 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:scale-105">
               <FontAwesomeIcon
                 icon={faArrowUpFromBracket}
                 className="h-3.5 w-3.5"
@@ -43,7 +43,7 @@ export const BoardEmptyState = ({ onUpload, onLibrary }: Props) => {
           <button
             type="button"
             onClick={onLibrary}
-            className="flex items-center gap-2 rounded-full border border-ui-divider px-5 py-2.5 text-sm font-medium text-base-fg/80 transition-colors duration-200 hover:bg-base-fg/5 hover:text-base-fg"
+            className="flex items-center gap-2 rounded-full border border-ui-divider px-5 py-2.5 text-sm font-medium text-base-fg/80 transition-colors duration-200 hover:bg-base-fg/5 hover:text-base-fg focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
           >
             <FontAwesomeIcon icon={faImages} className="h-3.5 w-3.5" />
             From library

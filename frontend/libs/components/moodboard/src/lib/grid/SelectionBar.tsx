@@ -37,7 +37,7 @@ export const SelectionBar = ({
         <button
           type="button"
           onClick={onUseReference}
-          className="flex items-center gap-2 rounded-full px-3 py-1.5 text-sm text-base-fg/80 transition-colors duration-150 hover:bg-primary/15 hover:text-primary"
+          className="flex items-center gap-2 rounded-full px-3 py-1.5 text-sm text-base-fg/80 transition-colors duration-150 hover:bg-primary/15 hover:text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
         >
           <FontAwesomeIcon icon={faWandMagicSparkles} className="h-3.5 w-3.5" />
           Use as reference
@@ -45,7 +45,7 @@ export const SelectionBar = ({
         <button
           type="button"
           onClick={onDelete}
-          className="flex items-center gap-2 rounded-full px-3 py-1.5 text-sm text-base-fg/80 transition-colors duration-150 hover:bg-danger/15 hover:text-danger"
+          className="flex items-center gap-2 rounded-full px-3 py-1.5 text-sm text-base-fg/80 transition-colors duration-150 hover:bg-danger/15 hover:text-danger focus:outline-none focus-visible:ring-2 focus-visible:ring-danger"
         >
           <FontAwesomeIcon icon={faTrashCan} className="h-3.5 w-3.5" />
           Delete
@@ -54,7 +54,7 @@ export const SelectionBar = ({
           type="button"
           aria-label="Clear selection"
           onClick={onClear}
-          className="flex h-8 w-8 items-center justify-center rounded-full text-base-fg/60 transition-colors duration-150 hover:bg-base-fg/10 hover:text-base-fg"
+          className="flex h-8 w-8 items-center justify-center rounded-full text-base-fg/60 transition-colors duration-150 hover:bg-base-fg/10 hover:text-base-fg focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
         >
           <FontAwesomeIcon icon={faXmark} className="h-4 w-4" />
         </button>

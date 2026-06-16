@@ -126,7 +126,7 @@ export const ItemInspector = ({
                 type="button"
                 aria-label="Close"
                 onClick={onClose}
-                className="flex h-8 w-8 items-center justify-center rounded-full text-base-fg/60 transition-colors hover:bg-base-fg/10 hover:text-base-fg"
+                className="flex h-8 w-8 items-center justify-center rounded-full text-base-fg/60 transition-colors hover:bg-base-fg/10 hover:text-base-fg focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
               >
                 <FontAwesomeIcon icon={faXmark} className="h-4 w-4" />
               </button>
@@ -141,7 +141,7 @@ export const ItemInspector = ({
                     type="button"
                     aria-label={`Rate ${n}`}
                     onClick={() => onSetRating(item.rating === n ? 0 : n)}
-                    className="p-0.5"
+                    className="rounded p-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                   >
                     <FontAwesomeIcon
                       icon={faStar}
@@ -164,7 +164,7 @@ export const ItemInspector = ({
                     key={tag}
                     type="button"
                     onClick={() => onRemoveTag(tag)}
-                    className="group/tag flex items-center gap-1 rounded-full bg-base-fg/10 px-2.5 py-1 text-[11px] font-medium text-base-fg/80 transition-colors hover:bg-danger/15 hover:text-danger"
+                    className="group/tag flex items-center gap-1 rounded-full bg-base-fg/10 px-2.5 py-1 text-[11px] font-medium text-base-fg/80 transition-colors hover:bg-danger/15 hover:text-danger focus:outline-none focus-visible:ring-2 focus-visible:ring-danger"
                   >
                     {tag}
                     <FontAwesomeIcon icon={faXmark} className="h-2.5 w-2.5" />
@@ -178,7 +178,7 @@ export const ItemInspector = ({
                   }}
                   onBlur={commitTag}
                   placeholder="Add tag"
-                  className="w-20 rounded-full bg-base-fg/5 px-2.5 py-1 text-[11px] text-base-fg placeholder:text-base-fg/40 focus:outline-none"
+                  className="w-20 rounded-full bg-base-fg/5 px-2.5 py-1 text-[11px] text-base-fg placeholder:text-base-fg/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                 />
               </div>
             </Section>
@@ -196,7 +196,7 @@ export const ItemInspector = ({
                         void navigator.clipboard?.writeText(hex);
                         toast.success(`Copied ${hex}`);
                       }}
-                      className="h-7 w-7 rounded-md ring-1 ring-inset ring-black/10"
+                      className="h-7 w-7 rounded-md ring-1 ring-inset ring-black/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                       style={{ background: hex }}
                     />
                   ))}
@@ -204,7 +204,7 @@ export const ItemInspector = ({
                 <button
                   type="button"
                   onClick={() => onAddPaletteToBoard(palette)}
-                  className="mt-2.5 flex items-center gap-1.5 text-xs font-medium text-base-fg/60 transition-colors hover:text-base-fg"
+                  className="mt-2.5 flex items-center gap-1.5 rounded text-xs font-medium text-base-fg/60 transition-colors hover:text-base-fg focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                 >
                   <FontAwesomeIcon icon={faPlus} className="h-3 w-3" />
                   Add swatches to board
@@ -220,19 +220,21 @@ export const ItemInspector = ({
                 <button
                   type="button"
                   onClick={onUseReference}
-                  className="group flex items-center justify-center gap-2.5 rounded-full bg-primary py-2.5 text-sm font-medium text-white transition-all duration-200 ease-[cubic-bezier(0.4,0,0.2,1)] hover:bg-primary-600 active:scale-[0.98]"
+                  className="group flex items-center justify-center gap-2.5 rounded-full bg-primary py-2 pl-5 pr-2 text-sm font-medium text-white transition-all duration-200 ease-[cubic-bezier(0.4,0,0.2,1)] hover:bg-primary/90 active:scale-[0.98] focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
                 >
-                  <FontAwesomeIcon
-                    icon={faWandMagicSparkles}
-                    className="h-3.5 w-3.5"
-                  />
                   Use as reference
+                  <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white/15 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:scale-105">
+                    <FontAwesomeIcon
+                      icon={faWandMagicSparkles}
+                      className="h-3.5 w-3.5"
+                    />
+                  </span>
                 </button>
               )}
               <button
                 type="button"
                 onClick={onDelete}
-                className="flex items-center justify-center gap-2 rounded-full border border-ui-divider py-2.5 text-sm font-medium text-base-fg/70 transition-colors hover:bg-danger/10 hover:text-danger"
+                className="flex items-center justify-center gap-2 rounded-full border border-ui-divider py-2.5 text-sm font-medium text-base-fg/70 transition-colors hover:bg-danger/10 hover:text-danger focus:outline-none focus-visible:ring-2 focus-visible:ring-danger"
               >
                 <FontAwesomeIcon icon={faTrashCan} className="h-3.5 w-3.5" />
                 Delete
@@ -342,7 +344,7 @@ const NavArrow = ({
       onClick={onClick}
       className={[
         "absolute top-1/2 z-20 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full",
-        "border border-white/15 bg-black/40 text-white/85 backdrop-blur-md transition-colors hover:bg-black/60 hover:text-white",
+        "border border-white/15 bg-black/40 text-white/85 backdrop-blur-md transition-colors hover:bg-black/60 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70",
         side === "left" ? "left-4" : "right-4",
       ].join(" ")}
     >

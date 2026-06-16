@@ -111,6 +111,7 @@ export const BoardGridToolbar = ({
                 onClick={() => onDensityChange(d)}
                 className={[
                   "flex h-7 w-7 items-center justify-center rounded-full transition-colors duration-150",
+                  "focus:outline-none focus-visible:ring-2 focus-visible:ring-primary",
                   active
                     ? "bg-base-fg/15 text-base-fg"
                     : "text-base-fg/50 hover:text-base-fg",
@@ -136,6 +137,7 @@ export const BoardGridToolbar = ({
           onClick={onCycleRatingFilter}
           className={[
             "flex h-8 items-center gap-1 rounded-full px-2.5 transition-colors duration-150",
+            "focus:outline-none focus-visible:ring-2 focus-visible:ring-primary",
             ratingFilter > 0
               ? "bg-yellow-400/15 text-yellow-500"
               : "text-base-fg/55 hover:bg-base-fg/10 hover:text-base-fg",

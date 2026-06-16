@@ -82,7 +82,7 @@ const ViewSwitch = ({
           onClick={() => onChange(opt.mode)}
           className={[
             "flex items-center gap-2 rounded-full px-3.5 py-1.5 text-sm font-medium",
-            "transition-colors duration-150",
+            "transition-colors duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary",
             active
               ? "bg-base-fg/15 text-base-fg"
               : "text-base-fg/55 hover:text-base-fg",
@@ -99,7 +99,7 @@ const ViewSwitch = ({
       onClick={onPresent}
       title="Present"
       aria-label="Present"
-      className="flex items-center gap-2 rounded-full px-3.5 py-1.5 text-sm font-medium text-base-fg/55 transition-colors duration-150 hover:text-base-fg"
+      className="flex items-center gap-2 rounded-full px-3.5 py-1.5 text-sm font-medium text-base-fg/55 transition-colors duration-150 hover:text-base-fg focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
     >
       <FontAwesomeIcon icon={faPlay} className="h-3 w-3" />
       Present
