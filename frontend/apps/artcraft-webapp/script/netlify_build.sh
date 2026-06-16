@@ -1,6 +1,12 @@
 #!/bin/bash
 
-set -euxo pipefail 
+set -euxo pipefail
+
+# The webapp bundles every workspace lib's source into one large bundle, and the
+# vite-plugin-top-level-await (swc) transform over it exhausts V8's default heap on
+# Netlify's builder ("Reached heap limit / heap out of memory"). Raise the heap ceiling
+# for the build. (Caps don't pre-allocate; tasks only use what they need.)
+export NODE_OPTIONS="${NODE_OPTIONS:-} --max-old-space-size=8192"
 
 echo "Run build script (TODO: Make strict)"
 nx build artcraft-webapp
