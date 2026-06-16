@@ -4,6 +4,7 @@ import { Group, Rect } from "react-konva";
 import { useShallow } from "zustand/react/shallow";
 import { GroupNode as GroupNodeData, MoodboardNode } from "../types";
 import { useMoodboardStore } from "../MoodboardStore";
+import { useNodeDrag } from "../interactions/useNodeDrag";
 import { ImageNode } from "./ImageNode";
 import { TextNode } from "./TextNode";
 
@@ -23,8 +24,7 @@ interface Props {
 const NO_OP_SELECT = () => {};
 
 const GroupNodeInner = ({ node, selected, onSelect }: Props) => {
-  const updateNode = useMoodboardStore((s) => s.updateNode);
-  const pushHistory = useMoodboardStore((s) => s.pushHistory);
+  const drag = useNodeDrag(node.id);
 
   // Subscribe only to this group's own children, with a shallow compare on
   // the returned array. Avoids re-rendering every group whenever any node
@@ -53,12 +53,9 @@ const GroupNodeInner = ({ node, selected, onSelect }: Props) => {
       draggable
       onMouseDown={handleSelect}
       onTouchStart={handleSelect}
-      onDragStart={() => {
-        pushHistory();
-      }}
-      onDragEnd={(e) => {
-        updateNode(node.id, { x: e.target.x(), y: e.target.y() });
-      }}
+      onDragStart={drag.onDragStart}
+      onDragMove={drag.onDragMove}
+      onDragEnd={drag.onDragEnd}
     >
       {/* Transparent hit/transform target so the Transformer has stable bounds. */}
       <Rect

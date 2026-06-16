@@ -13,6 +13,7 @@ import {
   faImages,
   faArrowUpFromBracket,
   faText,
+  faMagnet,
 } from "@fortawesome/pro-solid-svg-icons";
 import { ButtonIconSelect } from "@storyteller/ui-button-icon-select";
 import { PopoverMenu } from "@storyteller/ui-popover";
@@ -60,6 +61,8 @@ export const MoodboardToolbar = ({ onUploadClick, onGalleryClick }: Props) => {
   const nodes = useMoodboardStore((s) => s.nodes);
   const rootOrder = useMoodboardStore((s) => s.rootOrder);
   const gridSpacing = useMoodboardStore((s) => s.gridSpacing);
+  const snapEnabled = useMoodboardStore((s) => s.snapEnabled);
+  const toggleSnap = useMoodboardStore((s) => s.toggleSnap);
 
   const handleFitToGrid = () => {
     if (selectedIds.size === 0) return;
@@ -178,6 +181,13 @@ export const MoodboardToolbar = ({ onUploadClick, onGalleryClick }: Props) => {
         icon={faDiagramProject}
         label="Auto-group by proximity"
         onClick={handleAutoGroup}
+        tooltipDelay={100}
+      />
+      <FloatingToolbarButton
+        icon={faMagnet}
+        label={snapEnabled ? "Snapping on" : "Snapping off"}
+        active={snapEnabled}
+        onClick={toggleSnap}
         tooltipDelay={100}
       />
 

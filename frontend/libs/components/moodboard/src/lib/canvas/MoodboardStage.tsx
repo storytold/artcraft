@@ -30,10 +30,11 @@ export const MoodboardStage = ({ containerRef, stageRef }: Props) => {
   // Only subscribe to the transient fields this component actually renders
   // (marquee + lasso). Skips re-renders on `editingTextId` and `isPanning`
   // toggles, which don't affect Stage JSX.
-  const { marquee, lassoPath } = useMoodboardStore(
+  const { marquee, lassoPath, guides } = useMoodboardStore(
     useShallow((s) => ({
       marquee: s.transient.marquee,
       lassoPath: s.transient.lassoPath,
+      guides: s.transient.guides,
     })),
   );
   const viewport = useMoodboardStore((s) => s.viewport);
@@ -281,6 +282,19 @@ export const MoodboardStage = ({ containerRef, stageRef }: Props) => {
             closed={false}
           />
         )}
+        {guides.map((g, i) => (
+          <Line
+            key={`guide-${i}`}
+            points={
+              g.axis === "x"
+                ? [g.pos, g.from, g.pos, g.to]
+                : [g.from, g.pos, g.to, g.pos]
+            }
+            stroke="#f43f5e"
+            strokeWidth={1 / zoom}
+            listening={false}
+          />
+        ))}
       </Layer>
     </Stage>
   );

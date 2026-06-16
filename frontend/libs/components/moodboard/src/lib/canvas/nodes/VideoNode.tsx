@@ -2,7 +2,7 @@ import { memo, useEffect, useRef, useState } from "react";
 import Konva from "konva";
 import { Image as KonvaImage, Rect } from "react-konva";
 import { VideoNode as VideoNodeData } from "../types";
-import { useMoodboardStore } from "../MoodboardStore";
+import { useNodeDrag } from "../interactions/useNodeDrag";
 
 interface Props {
   node: VideoNodeData;
@@ -21,8 +21,7 @@ interface Props {
 // element imperatively and run a Konva.Animation tied to the node's layer to
 // repaint each frame while the video plays. This mirrors ImageNode otherwise.
 const VideoNodeInner = ({ node, draggable, selected, onSelect }: Props) => {
-  const updateNode = useMoodboardStore((s) => s.updateNode);
-  const pushHistory = useMoodboardStore((s) => s.pushHistory);
+  const drag = useNodeDrag(node.id);
   const ref = useRef<Konva.Image | null>(null);
   const [video, setVideo] = useState<HTMLVideoElement | null>(null);
 
@@ -95,12 +94,9 @@ const VideoNodeInner = ({ node, draggable, selected, onSelect }: Props) => {
         draggable={draggable}
         onMouseDown={handleSelect}
         onTouchStart={handleSelect}
-        onDragStart={() => {
-          pushHistory();
-        }}
-        onDragEnd={(e) => {
-          updateNode(node.id, { x: e.target.x(), y: e.target.y() });
-        }}
+        onDragStart={drag.onDragStart}
+        onDragMove={drag.onDragMove}
+        onDragEnd={drag.onDragEnd}
       />
     </>
   );

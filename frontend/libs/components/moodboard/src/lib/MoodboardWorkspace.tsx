@@ -37,7 +37,10 @@ export const MoodboardWorkspace = ({ adapter }: Props) => {
     : [];
 
   return (
-    <div className="relative h-full w-full overflow-hidden bg-ui-background">
+    <div
+      data-moodboard-root
+      className="relative h-full w-full overflow-hidden bg-ui-background"
+    >
       {viewMode === "grid" ? (
         <BoardGridView active={!presenting} adapter={adapter} />
       ) : (

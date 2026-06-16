@@ -11,7 +11,9 @@ import {
 } from "@fortawesome/pro-regular-svg-icons";
 import { faStar } from "@fortawesome/pro-solid-svg-icons";
 import { BoardItem } from "../boards/boardTypes";
+import { hostnameOf } from "../boards/linkMeta";
 import { extractPalette } from "../boards/palette";
+import { Favicon } from "./Favicon";
 
 interface Props {
   item: BoardItem;
@@ -314,11 +316,16 @@ const Media = ({ item }: { item: BoardItem }) => {
           {item.image && (
             <img src={item.image} alt="" className="w-full object-cover" />
           )}
-          <div className="p-5">
-            <p className="text-base font-medium text-base-fg">
-              {item.title || item.url}
-            </p>
-            <p className="mt-1 truncate text-sm text-base-fg/55">{item.url}</p>
+          <div className="flex items-start gap-3 p-5">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-base-fg/8">
+              <Favicon url={item.url} className="h-5 w-5" />
+            </span>
+            <div className="min-w-0">
+              <p className="text-base font-medium text-base-fg">
+                {item.title || hostnameOf(item.url)}
+              </p>
+              <p className="mt-1 truncate text-sm text-base-fg/55">{item.url}</p>
+            </div>
           </div>
         </a>
       );

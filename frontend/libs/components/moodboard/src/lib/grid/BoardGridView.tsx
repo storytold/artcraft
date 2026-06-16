@@ -9,6 +9,7 @@ import {
 import toast from "react-hot-toast";
 import { useBoardItemEntry } from "../boards/useBoardItemEntry";
 import { measureImage } from "../boards/measureMedia";
+import { useGalleryBoardDrop } from "./useGalleryBoardDrop";
 import { BoardImageItem, BoardItem } from "../boards/boardTypes";
 import type { MoodboardAdapter } from "../adapter";
 import { BoardGrid } from "./BoardGrid";
@@ -69,6 +70,9 @@ export const BoardGridView = ({ active, adapter }: Props) => {
   useEffect(() => {
     if (active) ensureActiveBoard();
   }, [active, ensureActiveBoard]);
+
+  // Accept gallery items dragged onto the grid (mirrors the canvas listener).
+  useGalleryBoardDrop(active);
 
   const filtered = useMemo(
     () =>

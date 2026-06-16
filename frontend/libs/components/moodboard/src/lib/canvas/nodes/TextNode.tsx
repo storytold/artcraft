@@ -3,6 +3,7 @@ import Konva from "konva";
 import { Text as KonvaText } from "react-konva";
 import { TextNode as TextNodeData } from "../types";
 import { useMoodboardStore } from "../MoodboardStore";
+import { useNodeDrag } from "../interactions/useNodeDrag";
 
 interface Props {
   node: TextNodeData;
@@ -15,8 +16,7 @@ interface Props {
 }
 
 const TextNodeInner = ({ node, draggable, selected, onSelect }: Props) => {
-  const updateNode = useMoodboardStore((s) => s.updateNode);
-  const pushHistory = useMoodboardStore((s) => s.pushHistory);
+  const drag = useNodeDrag(node.id);
   const setEditingText = useMoodboardStore((s) => s.setEditingText);
   // Selector compares a single id — only the TextNode whose isEditing
   // actually flips will re-render when someone enters/exits text edit.
@@ -45,12 +45,9 @@ const TextNodeInner = ({ node, draggable, selected, onSelect }: Props) => {
       onTouchStart={handleSelect}
       onDblClick={() => setEditingText(node.id)}
       onDblTap={() => setEditingText(node.id)}
-      onDragStart={() => {
-        pushHistory();
-      }}
-      onDragEnd={(e) => {
-        updateNode(node.id, { x: e.target.x(), y: e.target.y() });
-      }}
+      onDragStart={drag.onDragStart}
+      onDragMove={drag.onDragMove}
+      onDragEnd={drag.onDragEnd}
       stroke={selected ? "#3b82f6" : undefined}
       strokeWidth={selected ? 0.5 : 0}
     />

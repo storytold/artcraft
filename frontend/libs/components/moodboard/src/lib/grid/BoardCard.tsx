@@ -4,12 +4,13 @@ import {
   faUpRightAndDownLeftFromCenter,
   faTrashCan,
   faCheck,
-  faLink,
   faWandMagicSparkles,
 } from "@fortawesome/pro-regular-svg-icons";
 import { faStar } from "@fortawesome/pro-solid-svg-icons";
 import { BoardItem } from "../boards/boardTypes";
+import { hostnameOf } from "../boards/linkMeta";
 import { PositionedItem } from "./gridLayout";
+import { Favicon } from "./Favicon";
 
 interface Props {
   item: BoardItem;
@@ -266,13 +267,17 @@ const CardContent = ({ item }: { item: BoardItem }) => {
               className="min-h-0 flex-1 select-none object-cover"
             />
           )}
-          <div className="flex items-center gap-2 px-3 py-2">
-            <FontAwesomeIcon
-              icon={faLink}
-              className="h-3 w-3 shrink-0 text-base-fg/50"
-            />
-            <span className="truncate text-xs font-medium text-base-fg/90">
-              {item.title || item.url}
+          <div className="flex items-center gap-2.5 px-3 py-2.5">
+            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-base-fg/8">
+              <Favicon url={item.url} className="h-4 w-4" />
+            </span>
+            <span className="flex min-w-0 flex-col">
+              <span className="truncate text-xs font-medium text-base-fg/90">
+                {item.title || hostnameOf(item.url)}
+              </span>
+              <span className="truncate text-[10px] text-base-fg/45">
+                {hostnameOf(item.url)}
+              </span>
             </span>
           </div>
         </a>

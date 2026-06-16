@@ -1,6 +1,14 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { MoodboardWorkspace } from "@storyteller/ui-moodboard";
+import {
+  MoodboardWorkspace,
+  dispatchGalleryMoodboardDrop,
+} from "@storyteller/ui-moodboard";
+import {
+  GalleryItem,
+  onImageDrop,
+  removeImageDropListener,
+} from "@storyteller/ui-gallery-modal";
 import {
   webappMoodboardAdapter,
   setMoodboardNavigate,
@@ -15,6 +23,19 @@ export default function MoodboardPage() {
   useEffect(() => {
     setMoodboardNavigate((path) => navigate(path));
   }, [navigate]);
+
+  // Drag a library image onto the grid/canvas to add it to the board.
+  useEffect(() => {
+    const handler = onImageDrop(
+      (item: GalleryItem, position: { x: number; y: number }) => {
+        dispatchGalleryMoodboardDrop(item, position);
+      },
+    );
+    return () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      if (handler) removeImageDropListener(handler as any);
+    };
+  }, []);
 
   return (
     <div className="h-full w-full">

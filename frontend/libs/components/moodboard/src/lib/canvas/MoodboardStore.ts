@@ -26,6 +26,7 @@ import {
   computeContentBounds,
   fitViewportToBounds,
 } from "./layout/geometry";
+import { SnapGuide } from "./layout/snapping";
 
 // Hover state published during a node drag so overlay UI can highlight the card
 // (or to-be card) the dragged node would land in. `targetId` is null when the
@@ -41,6 +42,8 @@ interface Transient {
   editingTextId: string | null;
   isPanning: boolean;
   dragPreview: DragPreview | null;
+  // Alignment guides shown live during a snapped drag.
+  guides: SnapGuide[];
 }
 
 interface MoodboardState {
@@ -49,12 +52,16 @@ interface MoodboardState {
   selectedIds: Set<string>;
   tool: Tool;
   gridSpacing: number;
+  // Snap a dragged node to nearby node edges/centers + the grid.
+  snapEnabled: boolean;
   lastDropPoint: Vec2;
   viewport: Viewport;
   canvasSize: CanvasSize;
   transient: Transient;
 
   setTool: (t: Tool) => void;
+  toggleSnap: () => void;
+  setGuides: (guides: SnapGuide[]) => void;
   setLastDropPoint: (p: Vec2) => void;
   setZoom: (z: number) => void;
   setPan: (p: Vec2) => void;
@@ -137,6 +144,7 @@ export const useMoodboardStore = create<MoodboardState>((set, get) => ({
   selectedIds: new Set(),
   tool: "select",
   gridSpacing: 32,
+  snapEnabled: true,
   lastDropPoint: { x: 200, y: 200 },
   viewport: { zoom: 1, pan: { x: 0, y: 0 } },
   canvasSize: { width: 800, height: 600 },
@@ -146,9 +154,13 @@ export const useMoodboardStore = create<MoodboardState>((set, get) => ({
     editingTextId: null,
     isPanning: false,
     dragPreview: null,
+    guides: [],
   },
 
   setTool: (t) => set({ tool: t }),
+  toggleSnap: () => set((s) => ({ snapEnabled: !s.snapEnabled })),
+  setGuides: (guides) =>
+    set((s) => ({ transient: { ...s.transient, guides } })),
   setLastDropPoint: (p) => set({ lastDropPoint: p }),
   setZoom: (z) => set((s) => ({ viewport: { ...s.viewport, zoom: z } })),
   setPan: (p) => set((s) => ({ viewport: { ...s.viewport, pan: p } })),
@@ -640,6 +652,7 @@ export const useMoodboardStore = create<MoodboardState>((set, get) => ({
         editingTextId: null,
         isPanning: false,
         dragPreview: null,
+        guides: [],
       },
     });
   },

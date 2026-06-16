@@ -1,15 +1,13 @@
 import { useEffect } from "react";
 import Konva from "konva";
 import { useMoodboardStore } from "../MoodboardStore";
-
-interface GalleryItem {
-  id?: string;
-  thumbnail?: string | null;
-  fullImage?: string | null;
-}
+import {
+  DroppedGalleryItem,
+  GALLERY_MOODBOARD_DROP_EVENT,
+} from "../../galleryDrop";
 
 interface GalleryMoodboardDropDetail {
-  item: GalleryItem;
+  item: DroppedGalleryItem;
   canvasPosition: { x: number; y: number };
 }
 
@@ -54,8 +52,8 @@ export const useGalleryDropEvent = (
       addImage(url, stagePoint, dims.w, dims.h, item.id ?? null);
     };
 
-    window.addEventListener("gallery-moodboard-drop", handler);
+    window.addEventListener(GALLERY_MOODBOARD_DROP_EVENT, handler);
     return () =>
-      window.removeEventListener("gallery-moodboard-drop", handler);
+      window.removeEventListener(GALLERY_MOODBOARD_DROP_EVENT, handler);
   }, [active, addImage, stageRef]);
 };

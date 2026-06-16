@@ -25,6 +25,14 @@ export type {
   MoodboardLibraryPickerProps,
 } from "./lib/adapter";
 
+// Gallery → board drop bridge. Host apps wire their gallery's drop callback to
+// this; the grid + canvas views listen for the event it dispatches.
+export {
+  dispatchGalleryMoodboardDrop,
+  GALLERY_MOODBOARD_DROP_EVENT,
+} from "./lib/galleryDrop";
+export type { DroppedGalleryItem } from "./lib/galleryDrop";
+
 // Board model types
 export type {
   Board,

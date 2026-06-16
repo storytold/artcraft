@@ -2,7 +2,7 @@ import { memo, useEffect, useRef, useState } from "react";
 import Konva from "konva";
 import { Image as KonvaImage, Rect } from "react-konva";
 import { ImageNode as ImageNodeData } from "../types";
-import { useMoodboardStore } from "../MoodboardStore";
+import { useNodeDrag } from "../interactions/useNodeDrag";
 
 interface Props {
   node: ImageNodeData;
@@ -17,8 +17,7 @@ interface Props {
 }
 
 const ImageNodeInner = ({ node, draggable, selected, onSelect }: Props) => {
-  const updateNode = useMoodboardStore((s) => s.updateNode);
-  const pushHistory = useMoodboardStore((s) => s.pushHistory);
+  const drag = useNodeDrag(node.id);
   const ref = useRef<Konva.Image | null>(null);
   const [img, setImg] = useState<HTMLImageElement | null>(null);
 
@@ -64,12 +63,9 @@ const ImageNodeInner = ({ node, draggable, selected, onSelect }: Props) => {
         draggable={draggable}
         onMouseDown={handleSelect}
         onTouchStart={handleSelect}
-        onDragStart={() => {
-          pushHistory();
-        }}
-        onDragEnd={(e) => {
-          updateNode(node.id, { x: e.target.x(), y: e.target.y() });
-        }}
+        onDragStart={drag.onDragStart}
+        onDragMove={drag.onDragMove}
+        onDragEnd={drag.onDragEnd}
       />
     </>
   );
