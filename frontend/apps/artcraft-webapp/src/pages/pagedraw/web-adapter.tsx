@@ -29,6 +29,7 @@ import {
 } from "@storyteller/api";
 import { UploaderStates } from "@storyteller/common";
 import { showToast } from "../../components/toast/toast";
+import { useInsufficientCredits } from "../../components/insufficient-credits-modal";
 import { BaseImageSelector } from "./base-image-selector";
 import { startPolling, type PolledImage } from "./job-polling";
 
@@ -149,9 +150,21 @@ const modelIdOf = (model: unknown): string => {
   return m.id ?? m.tauriId ?? String(model);
 };
 
+// ApiManager throws Error("HTTP error! status: 402") on a non-2xx response, and
+// our inlined bg-removal fetch throws "Background removal HTTP 402"; the JSON
+// body isn't surfaced either way. Pull the 3-digit status out of the message so
+// callers can special-case 402 Payment Required.
+const httpStatusFromError = (e: unknown): number | undefined => {
+  const message = e instanceof Error ? e.message : String(e);
+  const match = /(\d{3})/.exec(message);
+  return match ? Number(match[1]) : undefined;
+};
+
 // ─── Adapter ───────────────────────────────────────────────────────────────────
 
 export const useWebPageDrawAdapter = (): PageDrawAdapter => {
+  const openInsufficientCredits = useInsufficientCredits();
+
   return useMemo<PageDrawAdapter>(
     () => ({
       enqueueEditImage: async (req) => {
@@ -186,6 +199,13 @@ export const useWebPageDrawAdapter = (): PageDrawAdapter => {
           showToast("error", "Generation failed to enqueue");
           return { status: "fail" };
         } catch (e: any) {
+          // 402 Payment Required → the user is out of credits. Open the
+          // upgrade/credits modal instead of a raw error toast, matching the
+          // create-image / create-video generate handlers.
+          if (httpStatusFromError(e) === 402) {
+            openInsufficientCredits();
+            return { status: "fail" };
+          }
           showToast("error", `Generation error: ${e?.message ?? e}`);
           return { status: "fail" };
         }
@@ -233,6 +253,10 @@ export const useWebPageDrawAdapter = (): PageDrawAdapter => {
             (reason) => showToast("error", reason),
           );
         } catch (e: any) {
+          if (httpStatusFromError(e) === 402) {
+            openInsufficientCredits();
+            return;
+          }
           showToast("error", `Background removal error: ${e?.message ?? e}`);
         }
       },
@@ -246,6 +270,6 @@ export const useWebPageDrawAdapter = (): PageDrawAdapter => {
         />
       ),
     }),
-    [],
+    [openInsufficientCredits],
   );
 };
