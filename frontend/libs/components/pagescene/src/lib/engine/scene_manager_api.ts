@@ -239,7 +239,7 @@ export class SceneManager implements SceneManagerAPI {
 
       const obj = await this.create(media_id, name, position);
       if (!obj) {
-        return;
+        return undefined;
       }
       this.scene.setColor(obj.uuid, color);
       obj.position.copy(position.add(new THREE.Vector3(0.5, 0.0, 0.5)));
