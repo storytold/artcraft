@@ -1,10 +1,14 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { BoardItem, GridDensity } from "../boards/boardTypes";
+import { BoardItem, BoardSection, GridDensity } from "../boards/boardTypes";
 import { BoardCard } from "./BoardCard";
+import { SectionHeader } from "./SectionHeader";
 import {
   DENSITY_CONFIG,
   NavDirection,
+  SectionGroup,
+  SectionedLayout,
   computeMasonryLayout,
+  computeSectionedLayout,
   nearestInDirection,
   sliceVisible,
 } from "./gridLayout";
@@ -26,6 +30,12 @@ interface Props {
   onOpen: (id: string) => void;
   onUseReference: (id: string) => void;
   onDelete: (id: string) => void;
+  // When present (non-empty), the grid groups items into section lanes with
+  // header rows. Absent → flat masonry (the default).
+  sections?: BoardSection[];
+  onRenameSection?: (id: string, name: string) => void;
+  onDeleteSection?: (id: string) => void;
+  onToggleSectionCollapsed?: (id: string) => void;
 }
 
 const OUTER_PADDING = 24;
@@ -52,6 +62,10 @@ export const BoardGrid = ({
   onOpen,
   onUseReference,
   onDelete,
+  sections,
+  onRenameSection,
+  onDeleteSection,
+  onToggleSectionCollapsed,
 }: Props) => {
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const revealedRef = useRef<Set<string>>(new Set());
@@ -77,15 +91,43 @@ export const BoardGrid = ({
     return () => ro.disconnect();
   }, []);
 
-  const layout = useMemo(
-    () =>
-      computeMasonryLayout(
-        items.map((it) => ({ id: it.id, aspect: it.aspect })),
-        Math.max(width, 1),
-        DENSITY_CONFIG[density],
-      ),
-    [items, width, density],
-  );
+  // Group items into section lanes (ungrouped lane first) when sections exist.
+  // null = flat masonry.
+  const groups = useMemo<SectionGroup[] | null>(() => {
+    if (!sections || sections.length === 0) return null;
+    const known = new Set(sections.map((s) => s.id));
+    const bySection = new Map<string | null, Array<{ id: string; aspect: number }>>();
+    for (const it of items) {
+      const key = it.sectionId && known.has(it.sectionId) ? it.sectionId : null;
+      const entry = { id: it.id, aspect: it.aspect };
+      const arr = bySection.get(key);
+      if (arr) arr.push(entry);
+      else bySection.set(key, [entry]);
+    }
+    const named: SectionGroup[] = sections.map((s) => ({
+      id: s.id,
+      name: s.name,
+      collapsed: Boolean(s.collapsed),
+      items: bySection.get(s.id) ?? [],
+    }));
+    const ungrouped = bySection.get(null) ?? [];
+    return ungrouped.length > 0
+      ? [{ id: null, name: "Ungrouped", collapsed: false, items: ungrouped }, ...named]
+      : named;
+  }, [items, sections]);
+
+  const layout = useMemo<SectionedLayout>(() => {
+    const w = Math.max(width, 1);
+    if (groups) {
+      return computeSectionedLayout(groups, w, DENSITY_CONFIG[density]);
+    }
+    const flat = computeMasonryLayout(
+      items.map((it) => ({ id: it.id, aspect: it.aspect })),
+      w,
+      DENSITY_CONFIG[density],
+    );
+    return { ...flat, bands: [] };
+  }, [groups, items, width, density]);
 
   const itemsById = useMemo(() => {
     const map: Record<string, BoardItem> = {};
@@ -101,7 +143,7 @@ export const BoardGrid = ({
   // ----- keyboard navigation (roving tabindex) -----
   // Exactly one card is a tab stop: the focused one, falling back to the first.
   // Arrows move focus geometrically; Enter opens, Space selects, Delete removes.
-  const activeId = focusedId ?? items[0]?.id ?? null;
+  const activeId = focusedId ?? layout.positions[0]?.id ?? null;
 
   const scrollCardIntoView = (id: string) => {
     const el = scrollRef.current;
@@ -213,6 +255,25 @@ export const BoardGrid = ({
       onPointerDown={handlePointerDown}
     >
       <div className="relative" style={{ height: layout.totalHeight }}>
+        {layout.bands.map((band) => (
+          <div
+            key={band.id ?? "__ungrouped"}
+            className="group/section absolute inset-x-0"
+            style={{ top: band.headerY }}
+          >
+            <SectionHeader
+              name={band.name}
+              count={band.count}
+              collapsed={band.collapsed}
+              editable={band.id !== null}
+              onToggleCollapse={() =>
+                band.id && onToggleSectionCollapsed?.(band.id)
+              }
+              onRename={(name) => band.id && onRenameSection?.(band.id, name)}
+              onDelete={() => band.id && onDeleteSection?.(band.id)}
+            />
+          </div>
+        ))}
         {visible.map((pos, i) => {
           const item = itemsById[pos.id];
           if (!item) return null;

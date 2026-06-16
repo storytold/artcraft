@@ -8,6 +8,7 @@ import {
   faTableCells,
   faTableCellsLarge,
   faGrip,
+  faLayerGroup,
 } from "@fortawesome/pro-regular-svg-icons";
 import { faStar } from "@fortawesome/pro-solid-svg-icons";
 import { GridDensity } from "../boards/boardTypes";
@@ -31,6 +32,7 @@ interface Props {
   canPickLibrary: boolean;
   onAddNote: () => void;
   onAddColor: () => void;
+  onNewSection: () => void;
 }
 
 const DENSITY_ICON: Record<GridDensity, IconDefinition> = {
@@ -63,6 +65,7 @@ export const BoardGridToolbar = ({
   canPickLibrary,
   onAddNote,
   onAddColor,
+  onNewSection,
 }: Props) => {
   return (
     <div className="pointer-events-none absolute inset-x-0 top-0 z-20 flex justify-center px-4 pt-4">
@@ -94,6 +97,11 @@ export const BoardGridToolbar = ({
           )}
           <IslandButton icon={faNoteSticky} label="Add note" onClick={onAddNote} />
           <IslandButton icon={faPalette} label="Add color" onClick={onAddColor} />
+          <IslandButton
+            icon={faLayerGroup}
+            label="New section"
+            onClick={onNewSection}
+          />
         </div>
 
         <Divider />

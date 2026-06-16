@@ -69,6 +69,8 @@ export type BoardItem =
 export interface BoardSection {
   id: string;
   name: string;
+  // Header-collapsed in the grid. Persists so a tidied board stays tidy.
+  collapsed?: boolean;
 }
 
 export interface Board {

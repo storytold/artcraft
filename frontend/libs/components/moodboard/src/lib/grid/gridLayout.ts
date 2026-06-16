@@ -88,6 +88,82 @@ export const computeMasonryLayout = (
   };
 };
 
+// ---------- sectioned layout ----------
+
+export const SECTION_HEADER_HEIGHT = 48;
+export const SECTION_BOTTOM_GAP = 20;
+
+export interface SectionGroup {
+  // null id = the ungrouped default flow.
+  id: string | null;
+  name: string;
+  collapsed: boolean;
+  items: Array<{ id: string; aspect: number }>;
+}
+
+export interface SectionBand {
+  id: string | null;
+  name: string;
+  count: number;
+  collapsed: boolean;
+  // Absolute y (content space) of the header row's top edge.
+  headerY: number;
+}
+
+export interface SectionedLayout extends MasonryLayout {
+  bands: SectionBand[];
+}
+
+// Stacks a masonry per section within one content plane: a header band, then the
+// section's (non-collapsed) masonry, then a gap, repeated. Positions are absolute
+// in the shared content space — so virtualization, marquee hit-testing, and
+// spatial keyboard nav all keep working over the flat `positions`/`byId`.
+export const computeSectionedLayout = (
+  groups: SectionGroup[],
+  containerWidth: number,
+  density: DensityConfig,
+): SectionedLayout => {
+  let cursorY = 0;
+  const positions: PositionedItem[] = [];
+  const byId: Record<string, PositionedItem> = {};
+  const bands: SectionBand[] = [];
+  let columnWidth = 0;
+  let columnCount = 0;
+
+  for (const group of groups) {
+    bands.push({
+      id: group.id,
+      name: group.name,
+      count: group.items.length,
+      collapsed: group.collapsed,
+      headerY: cursorY,
+    });
+    cursorY += SECTION_HEADER_HEIGHT;
+
+    if (!group.collapsed && group.items.length > 0) {
+      const sub = computeMasonryLayout(group.items, containerWidth, density);
+      columnWidth = sub.columnWidth;
+      columnCount = sub.columnCount;
+      for (const p of sub.positions) {
+        const moved: PositionedItem = { ...p, y: p.y + cursorY };
+        positions.push(moved);
+        byId[p.id] = moved;
+      }
+      cursorY += sub.totalHeight;
+    }
+    cursorY += SECTION_BOTTOM_GAP;
+  }
+
+  return {
+    positions,
+    byId,
+    bands,
+    totalHeight: Math.max(0, cursorY - SECTION_BOTTOM_GAP),
+    columnWidth,
+    columnCount,
+  };
+};
+
 export type NavDirection = "up" | "down" | "left" | "right";
 
 // Spatial navigation: the nearest card to `fromId` in a direction, biased toward

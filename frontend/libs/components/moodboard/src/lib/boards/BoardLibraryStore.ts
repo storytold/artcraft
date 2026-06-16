@@ -64,6 +64,18 @@ interface BoardLibraryState extends PersistedLibrary {
   // Triage: set the same rating (0-5) on many items in one history step.
   rateItems: (boardId: string, ids: string[], rating: number) => void;
 
+  // Sections — organize items into named lanes within a board.
+  createSection: (boardId: string, name?: string) => string;
+  renameSection: (boardId: string, sectionId: string, name: string) => void;
+  deleteSection: (boardId: string, sectionId: string) => void;
+  toggleSectionCollapsed: (boardId: string, sectionId: string) => void;
+  // Move items into a section (or back to the ungrouped flow with null).
+  assignItemsToSection: (
+    boardId: string,
+    ids: string[],
+    sectionId: string | null,
+  ) => void;
+
   // View + filters
   setViewMode: (mode: ViewMode) => void;
   setDensity: (density: GridDensity) => void;
@@ -80,6 +92,7 @@ interface BoardLibraryState extends PersistedLibrary {
 }
 
 const DEFAULT_BOARD_NAME = "Untitled board";
+const DEFAULT_SECTION_NAME = "New section";
 
 // Monotonic counter for stable createdAt-like ordering. Date.now() is avoided
 // so behaviour stays deterministic and testable; ordering is all we need.
@@ -273,6 +286,109 @@ export const useBoardLibraryStore = create<BoardLibraryState>()(
           ids.forEach((id) => {
             const it = items[id];
             if (it) items[id] = { ...it, rating: clamped };
+          });
+          return {
+            boards: {
+              ...s.boards,
+              [boardId]: { ...board, items, updatedAt: nextSeq() },
+            },
+          };
+        });
+      },
+
+      createSection: (boardId, name) => {
+        const id = uuidv4();
+        set((s) => {
+          const board = s.boards[boardId];
+          if (!board) return s;
+          const section = { id, name: name?.trim() || DEFAULT_SECTION_NAME };
+          return {
+            boards: {
+              ...s.boards,
+              [boardId]: {
+                ...board,
+                sections: [...board.sections, section],
+                updatedAt: nextSeq(),
+              },
+            },
+          };
+        });
+        return id;
+      },
+
+      renameSection: (boardId, sectionId, name) => {
+        set((s) => {
+          const board = s.boards[boardId];
+          if (!board) return s;
+          return {
+            boards: {
+              ...s.boards,
+              [boardId]: {
+                ...board,
+                sections: board.sections.map((sec) =>
+                  sec.id === sectionId
+                    ? { ...sec, name: name.trim() || DEFAULT_SECTION_NAME }
+                    : sec,
+                ),
+              },
+            },
+          };
+        });
+      },
+
+      deleteSection: (boardId, sectionId) => {
+        set((s) => {
+          const board = s.boards[boardId];
+          if (!board) return s;
+          // Items in the section fall back to the ungrouped flow.
+          const items = { ...board.items };
+          for (const [id, it] of Object.entries(items)) {
+            if (it.sectionId === sectionId) items[id] = { ...it, sectionId: null };
+          }
+          return {
+            boards: {
+              ...s.boards,
+              [boardId]: {
+                ...board,
+                items,
+                sections: board.sections.filter((sec) => sec.id !== sectionId),
+                updatedAt: nextSeq(),
+              },
+            },
+          };
+        });
+      },
+
+      toggleSectionCollapsed: (boardId, sectionId) => {
+        set((s) => {
+          const board = s.boards[boardId];
+          if (!board) return s;
+          return {
+            boards: {
+              ...s.boards,
+              [boardId]: {
+                ...board,
+                sections: board.sections.map((sec) =>
+                  sec.id === sectionId
+                    ? { ...sec, collapsed: !sec.collapsed }
+                    : sec,
+                ),
+              },
+            },
+          };
+        });
+      },
+
+      assignItemsToSection: (boardId, ids, sectionId) => {
+        if (ids.length === 0) return;
+        set((s) => {
+          const board = s.boards[boardId];
+          if (!board) return s;
+          const target = new Set(ids);
+          const items = { ...board.items };
+          target.forEach((id) => {
+            const it = items[id];
+            if (it) items[id] = { ...it, sectionId };
           });
           return {
             boards: {

@@ -50,6 +50,15 @@ export const BoardGridView = ({ active, adapter }: Props) => {
   const removeItems = useBoardLibraryStore((s) => s.removeItems);
   const updateItem = useBoardLibraryStore((s) => s.updateItem);
   const addColorItem = useBoardLibraryStore((s) => s.addColorItem);
+  const createSection = useBoardLibraryStore((s) => s.createSection);
+  const renameSection = useBoardLibraryStore((s) => s.renameSection);
+  const deleteSection = useBoardLibraryStore((s) => s.deleteSection);
+  const toggleSectionCollapsed = useBoardLibraryStore(
+    (s) => s.toggleSectionCollapsed,
+  );
+  const assignItemsToSection = useBoardLibraryStore(
+    (s) => s.assignItemsToSection,
+  );
 
   const { triggerUpload, triggerGallery, triggerAddColor, addNote, modals } =
     useBoardItemEntry(adapter, active);
@@ -98,6 +107,18 @@ export const BoardGridView = ({ active, adapter }: Props) => {
         .map((id) => board.items[id])
         .filter((it): it is BoardItem => Boolean(it)),
     );
+  };
+
+  const handleNewSection = () => {
+    if (board) createSection(board.id);
+  };
+  const handleAssignToSection = (sectionId: string | null) => {
+    if (board) assignItemsToSection(board.id, Array.from(selectedItemIds), sectionId);
+  };
+  const handleGroupSelectionIntoNewSection = () => {
+    if (!board) return;
+    const sectionId = createSection(board.id);
+    assignItemsToSection(board.id, Array.from(selectedItemIds), sectionId);
   };
 
   // Grid keyboard: delete / escape + Lightroom-style triage (0-5 rate, P pick)
@@ -198,6 +219,7 @@ export const BoardGridView = ({ active, adapter }: Props) => {
         canPickLibrary={Boolean(adapter.renderLibraryPicker)}
         onAddNote={addNote}
         onAddColor={triggerAddColor}
+        onNewSection={handleNewSection}
       />
 
       <div className="h-full w-full pt-[68px]">
@@ -231,6 +253,14 @@ export const BoardGridView = ({ active, adapter }: Props) => {
             onOpen={(id) => setOpenId(id)}
             onUseReference={referenceById}
             onDelete={(id) => board && removeItems(board.id, [id])}
+            sections={board?.sections}
+            onRenameSection={(id, name) =>
+              board && renameSection(board.id, id, name)
+            }
+            onDeleteSection={(id) => board && deleteSection(board.id, id)}
+            onToggleSectionCollapsed={(id) =>
+              board && toggleSectionCollapsed(board.id, id)
+            }
           />
         )}
       </div>
@@ -241,7 +271,10 @@ export const BoardGridView = ({ active, adapter }: Props) => {
 
       <SelectionBar
         count={selectedItemIds.size}
+        sections={board?.sections ?? []}
         onUseReference={referenceSelected}
+        onAssignToSection={handleAssignToSection}
+        onCreateSectionWithSelection={handleGroupSelectionIntoNewSection}
         onDelete={deleteSelected}
         onClear={clearSelection}
       />

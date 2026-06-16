@@ -1,9 +1,18 @@
 import { describe, expect, it } from "vitest";
 import {
   PositionedItem,
+  SECTION_HEADER_HEIGHT,
   computeMasonryLayout,
+  computeSectionedLayout,
   nearestInDirection,
 } from "./gridLayout";
+
+const DENSITY = {
+  targetColumnWidth: 280,
+  gap: 20,
+  minColumns: 1,
+  maxColumns: 8,
+};
 
 // A 3x3 grid of 100x100 tiles on a 20px pitch — centers at 50/170/290.
 const GRID: Record<string, PositionedItem> = {};
@@ -51,9 +60,47 @@ describe("computeMasonryLayout", () => {
         { id: "y", aspect: 1.5 },
       ],
       600,
-      { targetColumnWidth: 280, gap: 20, minColumns: 1, maxColumns: 8 },
+      DENSITY,
     );
     expect(Object.keys(layout.byId)).toHaveLength(2);
     expect(layout.byId.x).toBe(layout.positions[0]);
+  });
+});
+
+describe("computeSectionedLayout", () => {
+  it("emits a band per group and stacks them top-to-bottom", () => {
+    const layout = computeSectionedLayout(
+      [
+        { id: null, name: "Ungrouped", collapsed: false, items: [{ id: "a", aspect: 1 }] },
+        { id: "s1", name: "Refs", collapsed: false, items: [{ id: "b", aspect: 1 }] },
+      ],
+      600,
+      DENSITY,
+    );
+    expect(layout.bands.map((b) => b.id)).toEqual([null, "s1"]);
+    expect(layout.bands[0].headerY).toBe(0);
+    // Second band starts below the first header + its single row of content.
+    expect(layout.bands[1].headerY).toBeGreaterThan(SECTION_HEADER_HEIGHT);
+  });
+
+  it("offsets a section's cards below its own header", () => {
+    const layout = computeSectionedLayout(
+      [{ id: "s1", name: "Refs", collapsed: false, items: [{ id: "b", aspect: 1 }] }],
+      600,
+      DENSITY,
+    );
+    expect(layout.byId.b.y).toBeGreaterThanOrEqual(SECTION_HEADER_HEIGHT);
+  });
+
+  it("renders a header but no cards for a collapsed section", () => {
+    const layout = computeSectionedLayout(
+      [{ id: "s1", name: "Refs", collapsed: true, items: [{ id: "b", aspect: 1 }] }],
+      600,
+      DENSITY,
+    );
+    expect(layout.bands).toHaveLength(1);
+    expect(layout.bands[0].count).toBe(1);
+    expect(layout.positions).toHaveLength(0);
+    expect(layout.byId.b).toBeUndefined();
   });
 });
