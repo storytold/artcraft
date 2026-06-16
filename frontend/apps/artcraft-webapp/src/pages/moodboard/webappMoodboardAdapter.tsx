@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import { UploaderStates } from "@storyteller/common";
 import { GalleryModal, GalleryItem } from "@storyteller/ui-gallery-modal";
@@ -63,6 +64,7 @@ const WebappLibraryPicker = ({
   onClose,
   onPick,
 }: MoodboardLibraryPickerProps) => {
+  const navigate = useNavigate();
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const close = () => {
     setSelectedIds([]);
@@ -72,6 +74,10 @@ const WebappLibraryPicker = ({
     <GalleryModal
       isOpen={open}
       onClose={close}
+      onLoginClick={() => {
+        close();
+        navigate("/login");
+      }}
       mode="select"
       selectedItemIds={selectedIds}
       onSelectItem={(id: string) =>

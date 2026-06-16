@@ -252,6 +252,10 @@ interface GalleryModalProps {
   maxSelections?: number;
   onUseSelected?: (selectedItems: GalleryItem[]) => void;
   useSelectedLoading?: boolean;
+  /** When set, the "not logged in" state shows a Login button that calls this
+   *  (e.g. open the login modal on desktop, navigate to /login on web) instead
+   *  of a Retry link. */
+  onLoginClick?: () => void;
   onDownloadClicked?: (url: string, mediaClass?: string) => Promise<void>;
   onAddToSceneClicked?: (
     url: string,
@@ -472,6 +476,7 @@ export const GalleryModal = React.memo(
     maxSelections = 4,
     onUseSelected,
     useSelectedLoading,
+    onLoginClick,
     onDownloadClicked,
     onAddToSceneClicked,
     isOpen,
@@ -2686,20 +2691,28 @@ export const GalleryModal = React.memo(
                   <>
                     {usernameError && allItems.length === 0 ? (
                       <div className="flex h-full items-center justify-center">
-                        <div className="flex flex-col items-center gap-3 text-sm">
+                        <div className="flex max-w-xs flex-col items-center gap-4 text-center text-sm">
                           <div className="text-base-fg/60">
-                            Unable to load gallery. Please ensure you are logged
-                            in.
+                            Log in to browse and use your library.
                           </div>
-                          <button
-                            className="text-xs text-blue-400 hover:text-blue-300 underline"
-                            onClick={() => {
-                              setUsernameError(false);
-                              setUsernameRetryCount((c) => c + 1);
-                            }}
-                          >
-                            Retry
-                          </button>
+                          {onLoginClick ? (
+                            <button
+                              className="rounded-full bg-primary px-5 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+                              onClick={() => onLoginClick()}
+                            >
+                              Log in
+                            </button>
+                          ) : (
+                            <button
+                              className="text-xs text-blue-400 underline hover:text-blue-300"
+                              onClick={() => {
+                                setUsernameError(false);
+                                setUsernameRetryCount((c) => c + 1);
+                              }}
+                            >
+                              Retry
+                            </button>
+                          )}
                         </div>
                       </div>
                     ) : itemsLoadError && allItems.length === 0 ? (

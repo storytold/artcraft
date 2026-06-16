@@ -3,6 +3,7 @@ import toast from "react-hot-toast";
 import { UploaderStates } from "@storyteller/common";
 import { UploadImageMedia } from "@storyteller/api";
 import { GalleryModal, GalleryItem } from "@storyteller/ui-gallery-modal";
+import { useLoginModalStore } from "@storyteller/ui-login-modal";
 import { usePromptImageStore, RefImage } from "@storyteller/ui-promptbox";
 import type {
   MoodboardAdapter,
@@ -60,6 +61,10 @@ const DesktopLibraryPicker = ({
     <GalleryModal
       isOpen={open}
       onClose={close}
+      onLoginClick={() => {
+        close();
+        useLoginModalStore.getState().openModal();
+      }}
       mode="select"
       selectedItemIds={selectedIds}
       onSelectItem={(id: string) =>
