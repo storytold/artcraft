@@ -80,6 +80,9 @@ use crate::http_server::endpoints::media_files::upload::upload_spz_media_file_ha
 use crate::http_server::endpoints::media_files::upload::upload_studio_shot::upload_studio_shot_media_file_handler::*;
 use crate::http_server::endpoints::media_files::upload::upload_video_new::upload_new_video_media_file_handler::*;
 use crate::http_server::endpoints::media_files::upload::upload_video_old::upload_video_media_file_handler::*;
+use crate::http_server::endpoints::omni_api::upload::omni_upload_audio_media_file_handler::*;
+use crate::http_server::endpoints::omni_api::upload::omni_upload_image_media_file_handler::*;
+use crate::http_server::endpoints::omni_api::upload::omni_upload_video_media_file_handler::*;
 use crate::http_server::endpoints::media_files::upsert_upload::write_engine_asset::write_engine_asset_media_file_handler::*;
 use crate::http_server::endpoints::media_files::upsert_upload::write_error::MediaFileWriteError;
 use crate::http_server::endpoints::media_files::upsert_upload::write_scene_file::write_scene_file_media_file_handler::*;
@@ -343,6 +346,9 @@ use artcraft_api_defs::omni_gen::generate_response::omni_gen_image_generate_resp
 use artcraft_api_defs::omni_gen::generate_response::omni_gen_video_generate_response::*;
 use artcraft_api_defs::omni_gen::models::omni_gen_image_models::*;
 use artcraft_api_defs::omni_gen::models::omni_gen_video_models::*;
+use artcraft_api_defs::omni_api::omni_upload_audio::*;
+use artcraft_api_defs::omni_api::omni_upload_image::*;
+use artcraft_api_defs::omni_api::omni_upload_video::*;
 use artcraft_api_defs::moderation::user::list_subscribing_users_by_signup_date::*;
 use artcraft_api_defs::moderation::user::list_users_by_signup_date::*;
 use artcraft_api_defs::moderation::user::user_lookup::*;
@@ -553,6 +559,9 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     // Omni API (API-key authenticated generate)
     crate::http_server::endpoints::omni_api::generate::image::omni_api_image_generate_handler::omni_api_image_generate_handler,
     crate::http_server::endpoints::omni_api::generate::video::omni_api_video_generate_handler::omni_api_video_generate_handler,
+    crate::http_server::endpoints::omni_api::upload::omni_upload_audio_media_file_handler::omni_upload_audio_media_file_handler,
+    crate::http_server::endpoints::omni_api::upload::omni_upload_image_media_file_handler::omni_upload_image_media_file_handler,
+    crate::http_server::endpoints::omni_api::upload::omni_upload_video_media_file_handler::omni_upload_video_media_file_handler,
     // Moderation
     crate::http_server::endpoints::moderation::alerts::moderation_send_alert_handler::moderation_send_alert_handler,
     crate::http_server::endpoints::moderation::info::moderator_token_info_handler::moderator_get_token_info_handler,
@@ -1080,6 +1089,12 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     UploadEngineAssetMediaSuccessResponse,
     UploadImageMediaFileForm,
     UploadImageMediaFileSuccessResponse,
+    OmniUploadAudioMediaFileForm,
+    OmniUploadAudioMediaFileSuccessResponse,
+    OmniUploadImageMediaFileForm,
+    OmniUploadImageMediaFileSuccessResponse,
+    OmniUploadVideoMediaFileForm,
+    OmniUploadVideoMediaFileSuccessResponse,
     UserImpersonationRequestResponse,
     UploadMediaSuccessResponse,
     UploadNewEngineAssetFileForm,
