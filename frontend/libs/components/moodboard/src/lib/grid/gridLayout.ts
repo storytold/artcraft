@@ -1,0 +1,103 @@
+import { GridDensity } from "../boards/boardTypes";
+
+export interface DensityConfig {
+  targetColumnWidth: number;
+  gap: number;
+  minColumns: number;
+  maxColumns: number;
+}
+
+// Density presets map to a target column width + gap. The masonry resolves the
+// actual column count + width from the container, so these are targets not hard
+// sizes (Savee-style adjustable density).
+export const DENSITY_CONFIG: Record<GridDensity, DensityConfig> = {
+  comfortable: { targetColumnWidth: 280, gap: 20, minColumns: 1, maxColumns: 8 },
+  cozy: { targetColumnWidth: 216, gap: 14, minColumns: 1, maxColumns: 10 },
+  compact: { targetColumnWidth: 164, gap: 10, minColumns: 2, maxColumns: 14 },
+};
+
+export const DENSITY_ORDER: GridDensity[] = ["compact", "cozy", "comfortable"];
+
+export interface PositionedItem {
+  id: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+export interface MasonryLayout {
+  positions: PositionedItem[];
+  byId: Record<string, PositionedItem>;
+  totalHeight: number;
+  columnWidth: number;
+  columnCount: number;
+}
+
+const MIN_ITEM_HEIGHT = 48;
+
+// Classic shortest-column masonry. Heights come from each item's deterministic
+// `aspect`, so the full layout is known without measuring the DOM — which is
+// exactly what lets the grid virtualize by slicing on y.
+export const computeMasonryLayout = (
+  items: Array<{ id: string; aspect: number }>,
+  containerWidth: number,
+  density: DensityConfig,
+): MasonryLayout => {
+  const usable = Math.max(containerWidth, density.targetColumnWidth);
+  const rawColumns = Math.round(usable / (density.targetColumnWidth + density.gap));
+  const columnCount = Math.min(
+    density.maxColumns,
+    Math.max(density.minColumns, rawColumns || 1),
+  );
+  const totalGap = density.gap * (columnCount - 1);
+  const columnWidth = (usable - totalGap) / columnCount;
+
+  const columnHeights = new Array<number>(columnCount).fill(0);
+  const positions: PositionedItem[] = [];
+  const byId: Record<string, PositionedItem> = {};
+
+  for (const item of items) {
+    let col = 0;
+    for (let c = 1; c < columnCount; c++) {
+      if (columnHeights[c] < columnHeights[col]) col = c;
+    }
+    // Guard against a non-finite aspect (a single NaN would poison totalHeight
+    // and collapse the whole virtualized slice).
+    const aspect = Number.isFinite(item.aspect) && item.aspect > 0 ? item.aspect : 1;
+    const height = Math.max(columnWidth * aspect, MIN_ITEM_HEIGHT);
+    const pos: PositionedItem = {
+      id: item.id,
+      x: col * (columnWidth + density.gap),
+      y: columnHeights[col],
+      width: columnWidth,
+      height,
+    };
+    positions.push(pos);
+    byId[item.id] = pos;
+    columnHeights[col] = pos.y + height + density.gap;
+  }
+
+  const tallest = columnHeights.reduce((m, h) => Math.max(m, h), 0);
+  return {
+    positions,
+    byId,
+    totalHeight: Math.max(0, tallest - density.gap),
+    columnWidth,
+    columnCount,
+  };
+};
+
+// Returns only positions intersecting the scroll viewport (± buffer). Linear
+// scan is fine to ~thousands of items; positions are already y-ordered enough
+// for the predicate to be cheap.
+export const sliceVisible = (
+  positions: PositionedItem[],
+  scrollTop: number,
+  viewportHeight: number,
+  buffer: number,
+): PositionedItem[] => {
+  const top = scrollTop - buffer;
+  const bottom = scrollTop + viewportHeight + buffer;
+  return positions.filter((p) => p.y + p.height >= top && p.y <= bottom);
+};

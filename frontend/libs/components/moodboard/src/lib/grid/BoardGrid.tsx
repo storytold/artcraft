@@ -1,0 +1,212 @@
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { BoardItem, GridDensity } from "../boards/boardTypes";
+import { BoardCard } from "./BoardCard";
+import {
+  DENSITY_CONFIG,
+  computeMasonryLayout,
+  sliceVisible,
+} from "./gridLayout";
+
+interface Props {
+  items: BoardItem[];
+  density: GridDensity;
+  selectedIds: Set<string>;
+  onSelect: (id: string, additive: boolean) => void;
+  onSelectMany: (ids: string[], additive: boolean) => void;
+  onClearSelection: () => void;
+  onOpen: (id: string) => void;
+  onUseReference: (id: string) => void;
+  onDelete: (id: string) => void;
+}
+
+const OUTER_PADDING = 24;
+const VIRTUAL_BUFFER = 600;
+const MARQUEE_THRESHOLD = 4;
+
+interface Marquee {
+  x0: number;
+  y0: number;
+  x1: number;
+  y1: number;
+}
+
+// Virtualized masonry. The layout is precomputed from item aspects, so we only
+// mount the cards intersecting the viewport (± buffer) — this is what keeps the
+// grid at 60fps with thousands of items (the competitor failure mode).
+export const BoardGrid = ({
+  items,
+  density,
+  selectedIds,
+  onSelect,
+  onSelectMany,
+  onClearSelection,
+  onOpen,
+  onUseReference,
+  onDelete,
+}: Props) => {
+  const scrollRef = useRef<HTMLDivElement | null>(null);
+  const [width, setWidth] = useState(0);
+  const [scrollTop, setScrollTop] = useState(0);
+  const [viewportH, setViewportH] = useState(0);
+  const [marquee, setMarquee] = useState<Marquee | null>(null);
+  const marqueeRef = useRef<{ active: boolean; moved: boolean; additive: boolean }>(
+    { active: false, moved: false, additive: false },
+  );
+
+  useLayoutEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return undefined;
+    const measure = () => {
+      setWidth(el.clientWidth - OUTER_PADDING * 2);
+      setViewportH(el.clientHeight);
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  const layout = useMemo(
+    () =>
+      computeMasonryLayout(
+        items.map((it) => ({ id: it.id, aspect: it.aspect })),
+        Math.max(width, 1),
+        DENSITY_CONFIG[density],
+      ),
+    [items, width, density],
+  );
+
+  const itemsById = useMemo(() => {
+    const map: Record<string, BoardItem> = {};
+    items.forEach((it) => (map[it.id] = it));
+    return map;
+  }, [items]);
+
+  const visible = useMemo(
+    () => sliceVisible(layout.positions, scrollTop, viewportH, VIRTUAL_BUFFER),
+    [layout, scrollTop, viewportH],
+  );
+
+  // ----- marquee selection on empty canvas -----
+  const pointToContent = (clientX: number, clientY: number) => {
+    const el = scrollRef.current;
+    if (!el) return { x: 0, y: 0 };
+    const rect = el.getBoundingClientRect();
+    // Positions are relative to the inner content div, which begins after the
+    // scroll container's padding — so subtract OUTER_PADDING on both axes.
+    return {
+      x: clientX - rect.left - OUTER_PADDING + el.scrollLeft,
+      y: clientY - rect.top - OUTER_PADDING + el.scrollTop,
+    };
+  };
+
+  const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    // Only start a marquee from bare canvas (not from a card).
+    if (e.target !== e.currentTarget) return;
+    if (e.button !== 0) return;
+    const p = pointToContent(e.clientX, e.clientY);
+    marqueeRef.current = {
+      active: true,
+      moved: false,
+      additive: e.shiftKey || e.metaKey || e.ctrlKey,
+    };
+    setMarquee({ x0: p.x, y0: p.y, x1: p.x, y1: p.y });
+  };
+
+  useEffect(() => {
+    const onMove = (e: PointerEvent) => {
+      if (!marqueeRef.current.active) return;
+      const p = pointToContent(e.clientX, e.clientY);
+      setMarquee((m) => {
+        if (!m) return m;
+        if (
+          !marqueeRef.current.moved &&
+          (Math.abs(p.x - m.x0) > MARQUEE_THRESHOLD ||
+            Math.abs(p.y - m.y0) > MARQUEE_THRESHOLD)
+        ) {
+          marqueeRef.current.moved = true;
+        }
+        return { ...m, x1: p.x, y1: p.y };
+      });
+    };
+    const onUp = () => {
+      const st = marqueeRef.current;
+      if (!st.active) return;
+      marqueeRef.current.active = false;
+      setMarquee((m) => {
+        if (m && st.moved) {
+          const hit = intersectIds(layout, m);
+          onSelectMany(hit, st.additive);
+        } else if (!st.moved) {
+          onClearSelection();
+        }
+        return null;
+      });
+    };
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
+    return () => {
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+    };
+  }, [layout, onSelectMany, onClearSelection]);
+
+  return (
+    <div
+      ref={scrollRef}
+      className="h-full w-full overflow-y-auto overflow-x-hidden"
+      style={{ padding: OUTER_PADDING }}
+      onScroll={(e) => setScrollTop(e.currentTarget.scrollTop)}
+      onPointerDown={handlePointerDown}
+    >
+      <div className="relative" style={{ height: layout.totalHeight }}>
+        {visible.map((pos) => {
+          const item = itemsById[pos.id];
+          if (!item) return null;
+          return (
+            <BoardCard
+              key={pos.id}
+              item={item}
+              pos={pos}
+              selected={selectedIds.has(pos.id)}
+              onSelect={onSelect}
+              onOpen={onOpen}
+              onUseReference={onUseReference}
+              onDelete={onDelete}
+            />
+          );
+        })}
+        {marquee && marqueeRef.current.moved && (
+          <div
+            className="pointer-events-none absolute rounded-[4px] border border-primary bg-primary/10"
+            style={{
+              left: Math.min(marquee.x0, marquee.x1),
+              top: Math.min(marquee.y0, marquee.y1),
+              width: Math.abs(marquee.x1 - marquee.x0),
+              height: Math.abs(marquee.y1 - marquee.y0),
+            }}
+          />
+        )}
+      </div>
+    </div>
+  );
+};
+
+const intersectIds = (
+  layout: ReturnType<typeof computeMasonryLayout>,
+  m: Marquee,
+): string[] => {
+  const left = Math.min(m.x0, m.x1);
+  const right = Math.max(m.x0, m.x1);
+  const top = Math.min(m.y0, m.y1);
+  const bottom = Math.max(m.y0, m.y1);
+  return layout.positions
+    .filter(
+      (p) =>
+        p.x < right &&
+        p.x + p.width > left &&
+        p.y < bottom &&
+        p.y + p.height > top,
+    )
+    .map((p) => p.id);
+};

@@ -3,13 +3,16 @@
   "include": [],
   "references": [
     {
-      "path": "../../api"
+      "path": "../popover"
+    },
+    {
+      "path": "../button-icon-select"
+    },
+    {
+      "path": "../tooltip"
     },
     {
       "path": "../button"
-    },
-    {
-      "path": "../input"
     },
     {
       "path": "./tsconfig.lib.json"

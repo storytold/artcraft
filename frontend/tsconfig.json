@@ -206,6 +206,9 @@
     },
     {
       "path": "./libs/components/generation-list"
+    },
+    {
+      "path": "./libs/components/moodboard"
     }
   ]
 }

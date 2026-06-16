@@ -1,0 +1,219 @@
+import { memo } from "react";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import {
+  faUpRightAndDownLeftFromCenter,
+  faTrashCan,
+  faCheck,
+  faLink,
+  faWandMagicSparkles,
+} from "@fortawesome/pro-regular-svg-icons";
+import { faStar } from "@fortawesome/pro-solid-svg-icons";
+import { BoardItem } from "../boards/boardTypes";
+import { PositionedItem } from "./gridLayout";
+
+interface Props {
+  item: BoardItem;
+  pos: PositionedItem;
+  selected: boolean;
+  onSelect: (id: string, additive: boolean) => void;
+  onOpen: (id: string) => void;
+  onDelete: (id: string) => void;
+  onUseReference: (id: string) => void;
+}
+
+// One masonry tile. Absolutely positioned by the grid; the card owns only its
+// visual treatment (double-bezel shell), per-kind content, and hover affordances.
+const BoardCardInner = ({
+  item,
+  pos,
+  selected,
+  onSelect,
+  onOpen,
+  onDelete,
+  onUseReference,
+}: Props) => {
+  return (
+    <div
+      className="group absolute"
+      style={{ left: pos.x, top: pos.y, width: pos.width, height: pos.height }}
+      onPointerDown={(e) => {
+        // Left-click selects; modifier-click extends. Action buttons stop
+        // propagation so they don't double as a select.
+        if (e.button !== 0) return;
+        onSelect(item.id, e.shiftKey || e.metaKey || e.ctrlKey);
+      }}
+      onDoubleClick={() => onOpen(item.id)}
+    >
+      {/* Outer shell — double-bezel. Lifts slightly on hover; ring turns to the
+          brand blue when selected. */}
+      <div
+        className={[
+          "h-full w-full rounded-[18px] p-1 transition-all duration-200",
+          "ease-[cubic-bezier(0.4,0,0.2,1)]",
+          "ring-1 group-hover:-translate-y-0.5",
+          "bg-[var(--mb-plane-1,rgba(127,127,127,0.04))]",
+          selected
+            ? "ring-2 ring-primary"
+            : "ring-[var(--mb-hairline,rgba(127,127,127,0.12))] group-hover:ring-[var(--mb-hairline,rgba(127,127,127,0.22))]",
+          selected
+            ? "shadow-[0_8px_28px_-10px_rgba(0,0,0,0.45)]"
+            : "shadow-[0_1px_2px_rgba(0,0,0,0.10)] group-hover:shadow-[0_10px_30px_-12px_rgba(0,0,0,0.4)]",
+        ].join(" ")}
+      >
+        {/* Inner core — concentric radius, holds the content. */}
+        <div className="relative h-full w-full overflow-hidden rounded-[14px] bg-ui-panel shadow-[inset_0_1px_1px_rgba(255,255,255,0.08)]">
+          <CardContent item={item} />
+
+          {/* Rating — persistent when set (Lightroom-style triage marker).
+              No backdrop-blur: this tile lives in a virtualized scroll
+              container, where blur filters trigger GPU repaints on every
+              scroll frame. A solid scrim keeps the icons legible instead. */}
+          {item.rating > 0 && (
+            <div className="absolute bottom-2 left-2 flex items-center gap-0.5 rounded-full bg-black/65 px-2 py-1">
+              {Array.from({ length: item.rating }).map((_, i) => (
+                <FontAwesomeIcon
+                  key={i}
+                  icon={faStar}
+                  className="h-2.5 w-2.5 text-yellow-400"
+                />
+              ))}
+            </div>
+          )}
+
+          {/* Selection check — visible when selected or on hover. */}
+          <div
+            className={[
+              "absolute left-2 top-2 flex h-6 w-6 items-center justify-center rounded-full",
+              "border transition-all duration-150",
+              selected
+                ? "border-primary bg-primary text-white opacity-100"
+                : "border-white/40 bg-black/45 text-white/0 opacity-0 group-hover:opacity-100",
+            ].join(" ")}
+          >
+            <FontAwesomeIcon icon={faCheck} className="h-3 w-3" />
+          </div>
+
+          {/* Action rail — solid scrim pill (no blur in the scroll container),
+              fades up on hover. */}
+          <div className="absolute right-2 top-2 flex translate-y-1 items-center gap-1 rounded-full border border-white/15 bg-black/65 p-0.5 opacity-0 transition-all duration-200 group-hover:translate-y-0 group-hover:opacity-100">
+            <RailButton
+              label="Open"
+              icon={faUpRightAndDownLeftFromCenter}
+              onClick={() => onOpen(item.id)}
+            />
+            {item.kind === "image" && (
+              <RailButton
+                label="Use as reference"
+                icon={faWandMagicSparkles}
+                onClick={() => onUseReference(item.id)}
+              />
+            )}
+            <RailButton
+              label="Delete"
+              icon={faTrashCan}
+              onClick={() => onDelete(item.id)}
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const RailButton = ({
+  label,
+  icon,
+  onClick,
+}: {
+  label: string;
+  icon: typeof faCheck;
+  onClick: () => void;
+}) => (
+  <button
+    type="button"
+    aria-label={label}
+    title={label}
+    className="flex h-7 w-7 items-center justify-center rounded-full text-white/85 transition-colors duration-150 hover:bg-white/15 hover:text-white focus:outline-none focus-visible:bg-white/15 focus-visible:text-white focus-visible:ring-2 focus-visible:ring-white/70"
+    onPointerDown={(e) => e.stopPropagation()}
+    onClick={(e) => {
+      e.stopPropagation();
+      onClick();
+    }}
+  >
+    <FontAwesomeIcon icon={icon} className="h-3.5 w-3.5" />
+  </button>
+);
+
+const CardContent = ({ item }: { item: BoardItem }) => {
+  switch (item.kind) {
+    case "image":
+      return (
+        <img
+          src={item.src}
+          alt={item.caption || ""}
+          draggable={false}
+          className="h-full w-full select-none object-cover"
+        />
+      );
+    case "video":
+      return (
+        <video
+          src={item.src}
+          autoPlay
+          muted
+          loop
+          playsInline
+          preload="metadata"
+          className="h-full w-full object-cover"
+        />
+      );
+    case "color":
+      return (
+        <div className="h-full w-full" style={{ background: item.color }}>
+          <span className="absolute bottom-2 left-2 rounded-full bg-black/40 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-white backdrop-blur">
+            {item.color}
+          </span>
+        </div>
+      );
+    case "text":
+      return (
+        <div className="h-full w-full overflow-hidden p-4">
+          <p className="whitespace-pre-wrap text-sm leading-relaxed text-base-fg/90">
+            {item.text || "Note"}
+          </p>
+        </div>
+      );
+    case "link":
+      return (
+        <a
+          href={item.url}
+          target="_blank"
+          rel="noreferrer"
+          className="flex h-full w-full flex-col"
+          onPointerDown={(e) => e.stopPropagation()}
+        >
+          {item.image && (
+            <img
+              src={item.image}
+              alt=""
+              draggable={false}
+              className="min-h-0 flex-1 select-none object-cover"
+            />
+          )}
+          <div className="flex items-center gap-2 px-3 py-2">
+            <FontAwesomeIcon
+              icon={faLink}
+              className="h-3 w-3 shrink-0 text-base-fg/50"
+            />
+            <span className="truncate text-xs font-medium text-base-fg/90">
+              {item.title || item.url}
+            </span>
+          </div>
+        </a>
+      );
+    default:
+      return null;
+  }
+};
+
+export const BoardCard = memo(BoardCardInner);

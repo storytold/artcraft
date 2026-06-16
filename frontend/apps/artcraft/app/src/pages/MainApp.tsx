@@ -74,6 +74,7 @@ import { Storyboard } from "./PageStoryboard";
 import { PageBackgroundChange } from "./PageBackgroundChange";
 import { PageScene } from "./PageScene";
 import { PageVideoEditor } from "./PageVideoEditor";
+import { PageMoodboard } from "./PageMoodboard";
 import {
   topNavMediaId,
   topNavMediaUrl,
@@ -257,6 +258,8 @@ const TabBody = ({ sceneToken }: { sceneToken?: string }) => {
       return <div><PageBackgroundChange /></div>;
     case "VIDEO_EDITOR":
       return <div className="h-[calc(100vh-3rem)] w-full"><PageVideoEditor /></div>;
+    case "MOODBOARD":
+      return <div className="h-[calc(100vh-3rem)] w-full"><PageMoodboard /></div>;
     default:
       return null;
   }

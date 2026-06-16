@@ -17,7 +17,8 @@ export type TabId =
   | "ANGLES"
   | "STORYBOARD"
   | "BACKGROUND_CHANGE"
-  | "VIDEO_EDITOR";
+  | "VIDEO_EDITOR"
+  | "MOODBOARD";
 
 const DEFAULT_TAB: TabId = "APPS";
 

@@ -11,6 +11,7 @@ import {
   faPenNib,
   faCrosshairs,
   faSparkles,
+  faObjectGroup,
 } from "@fortawesome/pro-solid-svg-icons";
 import { useMemo } from "react";
 import {
@@ -34,7 +35,8 @@ export type AppId =
   | "ANGLES"
   | "STORYBOARD"
   | "BACKGROUND_CHANGE"
-  | "VIDEO_EDITOR";
+  | "VIDEO_EDITOR"
+  | "MOODBOARD";
 
 export interface AppDescriptor {
   id: AppId;
@@ -291,6 +293,16 @@ export const ALL_APPS: FullAppItem[] = [
     badge: "NEW",
   },
   {
+    id: "moodboard",
+    label: "Moodboard",
+    description: "Collect references and steer generations from a board",
+    icon: faObjectGroup,
+    category: "generate",
+    action: "MOODBOARD",
+    color: "bg-orange-500/40",
+    badge: "BETA",
+  },
+  {
     id: "background-change",
     label: "Background Change",
     description: "Swap the backdrop of a video using a reference image",
@@ -398,6 +410,7 @@ export const goToApp = (action?: string) => {
       "STORYBOARD",
       "BACKGROUND_CHANGE",
       "VIDEO_EDITOR",
+      "MOODBOARD",
     ].includes(action)
   ) {
     if (action === "STORYBOARD") {

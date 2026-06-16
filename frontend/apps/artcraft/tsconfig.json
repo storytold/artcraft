@@ -32,6 +32,9 @@
       "path": "../../libs/components/video-editor"
     },
     {
+      "path": "../../libs/components/moodboard"
+    },
+    {
       "path": "../../libs/components/vfx"
     },
     {
