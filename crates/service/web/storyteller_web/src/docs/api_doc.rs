@@ -550,6 +550,9 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     crate::http_server::endpoints::omni_gen::generate::video::omni_gen_video_generate_handler::omni_gen_video_generate_handler,
     crate::http_server::endpoints::omni_gen::models::image::omni_gen_image_models_handler::omni_gen_image_models_handler,
     crate::http_server::endpoints::omni_gen::models::video::omni_gen_video_models_handler::omni_gen_video_models_handler,
+    // Omni API (API-key authenticated generate)
+    crate::http_server::endpoints::omni_api::generate::image::omni_api_image_generate_handler::omni_api_image_generate_handler,
+    crate::http_server::endpoints::omni_api::generate::video::omni_api_video_generate_handler::omni_api_video_generate_handler,
     // Moderation
     crate::http_server::endpoints::moderation::alerts::moderation_send_alert_handler::moderation_send_alert_handler,
     crate::http_server::endpoints::moderation::info::moderator_token_info_handler::moderator_get_token_info_handler,

@@ -17,6 +17,7 @@ pub mod media_files;
 pub mod misc;
 pub mod model_download;
 pub mod moderation;
+pub mod omni_api;
 pub mod omni_gen;
 pub mod prompts;
 pub mod service;

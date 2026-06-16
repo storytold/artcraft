@@ -7,5 +7,6 @@ pub mod middleware;
 pub mod requests;
 pub mod routes;
 pub mod session;
+pub mod user_lookup;
 pub mod validations;
 pub mod web_utils;
