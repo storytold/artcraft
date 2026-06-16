@@ -16,6 +16,6 @@ pub fn serialize_as_json_error<T>(
   };
 
   HttpResponseBuilder::new(error_payload.status_code())
-      .set_header(CONTENT_TYPE, "application/json")
+      .insert_header((CONTENT_TYPE, "application/json"))
       .body(body)
 }
