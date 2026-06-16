@@ -14,6 +14,7 @@ use enums::by_table::prompts::prompt_type::PromptType;
 use enums::common::generation::common_generation_mode::CommonGenerationMode;
 use enums::common::generation::common_model_type::CommonModelType;
 use enums::common::generation_provider::GenerationProvider;
+use enums::common::platform_type::PlatformType;
 use http_server_common::request::get_request_ip::get_request_ip;
 use mysql_queries::queries::debug_logs::insert_debug_log::{insert_debug_log, InsertDebugLogArgs};
 use mysql_queries::queries::generic_inference::api_providers::seedance2pro::insert_generic_inference_job_for_seedance2pro_queue_with_apriori_job_token::KinoviVersion;
@@ -35,7 +36,6 @@ use crate::http_server::endpoints::omni_api::generate::image::pipeline_v2::run_p
 use crate::http_server::session::lookup::user_session_feature_flags::UserSessionFeatureFlags;
 use crate::http_server::user_lookup::api_keys::require_api_key_user::require_api_key_user;
 use crate::http_server::validations::validate_idempotency_token_format::validate_idempotency_token_format;
-use crate::http_server::web_utils::get_request_platform_type::get_request_platform_type;
 use crate::state::server_state::ServerState;
 use crate::util::lookup::lookup_media_files_as_cdn_url_list_and_map::lookup_media_files_as_cdn_url_list_and_map;
 
@@ -163,7 +163,8 @@ pub async fn omni_api_image_generate_handler(
   // ==================== WRITE RESULT ==================== //
 
   let ip_address = get_request_ip(&http_request);
-  let maybe_platform_type = get_request_platform_type(&http_request);
+  // Omni API requests are always API-key authenticated; hardcode the platform type.
+  let maybe_platform_type = Some(PlatformType::ApiKey);
 
   let mut transaction = mysql_connection
     .begin()
