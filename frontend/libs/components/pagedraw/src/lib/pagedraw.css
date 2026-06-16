@@ -3,7 +3,9 @@
 .pegboard-bg {
   inset: 0;
   z-index: 0;
-  background-color: #1b1b1b;
+  /* Themeable canvas backdrop; hosts may set --st-canvas, otherwise the
+     original dark grey is used. */
+  background-color: var(--st-canvas, #1b1b1b);
   background-size: 50px 50px;
   background-position:
     0 0,

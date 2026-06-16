@@ -154,7 +154,7 @@ const Edit3DButton = memo(function Edit3DButton({
 
   return (
     <button
-      className="pointer-events-auto fixed z-40 -translate-x-1/2 -translate-y-1/2 rounded-full bg-blue-600 px-3 py-1 text-xs font-semibold text-white shadow-lg hover:bg-blue-500"
+      className="pointer-events-auto fixed z-40 -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary px-3 py-1 text-xs font-semibold text-white shadow-lg hover:bg-primary-400"
       style={{ left: btnLeft, top: btnTop }}
       onPointerDown={(e) => e.stopPropagation()}
       onClick={() => onEdit(nodeId)}
@@ -185,7 +185,7 @@ function DragScrubButton({
   return (
     <button
       title={title}
-      className="flex h-10 w-10 cursor-move items-center justify-center rounded-full bg-black/70 text-white shadow-lg hover:bg-black/90 active:bg-blue-600"
+      className="flex h-10 w-10 cursor-move items-center justify-center rounded-full bg-black/70 text-white shadow-lg hover:bg-black/90 active:bg-primary"
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
     >
@@ -254,7 +254,7 @@ const Edit3DScrubControls = memo(function Edit3DScrubControls({
       />
       <button
         onClick={() => overlayHandle.current?.commit()}
-        className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-600 text-sm font-bold text-white shadow-lg hover:bg-blue-500"
+        className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-sm font-bold text-white shadow-lg hover:bg-primary-400"
         onPointerDown={(e) => e.stopPropagation()}
       >
         ✓

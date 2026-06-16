@@ -81,8 +81,8 @@ export default function SplitPane({
       </div>
 
       <div
-        className="w-1 cursor-col-resize select-none bg-gray-500/80
-                   transition hover:bg-gray-600"
+        className="w-1 cursor-col-resize select-none bg-white/20
+                   transition hover:bg-white/30"
         onMouseDown={beginDrag}
         onTouchStart={beginDrag}
       />

@@ -58,7 +58,7 @@ const SliderWithIndicator: React.FC<SliderWithIndicatorProps> = ({
               absolute
               top-6 -translate-x-1/2
               transform rounded
-              bg-[#5F5F68]
+              bg-ui-controls
               px-2 py-1
               text-xs font-medium
               text-white shadow-lg
