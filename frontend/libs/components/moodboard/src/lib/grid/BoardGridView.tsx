@@ -61,7 +61,7 @@ export const BoardGridView = ({ active, adapter }: Props) => {
     (s) => s.assignItemsToSection,
   );
 
-  const { triggerUpload, triggerGallery, triggerAddColor, addNote, modals } =
+  const { triggerUpload, triggerGallery, addNote, modals } =
     useBoardItemEntry(adapter, active);
 
   const [dragOver, setDragOver] = useState(false);
@@ -222,7 +222,7 @@ export const BoardGridView = ({ active, adapter }: Props) => {
         onLibrary={triggerGallery}
         canPickLibrary={Boolean(adapter.renderLibraryPicker)}
         onAddNote={addNote}
-        onAddColor={triggerAddColor}
+        onAddColor={(color) => addColorItem(ensureActiveBoard(), color)}
         onNewSection={handleNewSection}
       />
 

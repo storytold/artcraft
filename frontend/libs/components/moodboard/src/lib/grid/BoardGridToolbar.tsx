@@ -4,7 +4,6 @@ import {
   faArrowUpFromBracket,
   faImages,
   faNoteSticky,
-  faPalette,
   faTableCells,
   faTableCellsLarge,
   faGrip,
@@ -14,6 +13,8 @@ import { faStar } from "@fortawesome/pro-solid-svg-icons";
 import { GridDensity } from "../boards/boardTypes";
 import { DENSITY_ORDER } from "./gridLayout";
 import { SmartSearchBar } from "./SmartSearchBar";
+import { ColorPickerPopover } from "./ColorPickerPopover";
+import { ToolbarShell, ToolbarIconButton, ToolbarDivider } from "../ui/Toolbar";
 
 interface Props {
   boardName: string;
@@ -31,7 +32,7 @@ interface Props {
   onLibrary: () => void;
   canPickLibrary: boolean;
   onAddNote: () => void;
-  onAddColor: () => void;
+  onAddColor: (color: string) => void;
   onNewSection: () => void;
 }
 
@@ -47,7 +48,8 @@ const DENSITY_LABEL: Record<GridDensity, string> = {
   comfortable: "Comfortable",
 };
 
-// Floating glass island — detached from the top edge, not glued to it.
+// Floating glass island — detached from the top edge, not glued to it. Shares
+// its shell, buttons, and dividers with the Canvas toolbar (see ../ui/Toolbar).
 export const BoardGridToolbar = ({
   boardName,
   itemCount,
@@ -68,8 +70,8 @@ export const BoardGridToolbar = ({
   onNewSection,
 }: Props) => {
   return (
-    <div className="pointer-events-none absolute inset-x-0 top-0 z-20 flex justify-center px-4 pt-4">
-      <div className="glass pointer-events-auto flex max-w-full items-center gap-3 rounded-2xl border border-ui-divider px-3 py-2 shadow-[0_8px_28px_-12px_rgba(0,0,0,0.45)]">
+    <div className="pointer-events-none absolute inset-x-0 top-0 z-20 flex justify-center px-3 pt-3">
+      <ToolbarShell className="max-w-full">
         <div className="flex min-w-0 flex-col pl-1 pr-2">
           <span className="truncate text-sm font-semibold leading-tight text-base-fg">
             {boardName}
@@ -79,32 +81,36 @@ export const BoardGridToolbar = ({
           </span>
         </div>
 
-        <Divider />
+        <ToolbarDivider />
 
         {/* Add cluster */}
         <div className="flex items-center gap-1">
-          <IslandButton
+          <ToolbarIconButton
             icon={faArrowUpFromBracket}
             label="Upload"
             onClick={onUpload}
           />
           {canPickLibrary && (
-            <IslandButton
+            <ToolbarIconButton
               icon={faImages}
               label="From library"
               onClick={onLibrary}
             />
           )}
-          <IslandButton icon={faNoteSticky} label="Add note" onClick={onAddNote} />
-          <IslandButton icon={faPalette} label="Add color" onClick={onAddColor} />
-          <IslandButton
+          <ToolbarIconButton
+            icon={faNoteSticky}
+            label="Add note"
+            onClick={onAddNote}
+          />
+          <ColorPickerPopover onAdd={onAddColor} />
+          <ToolbarIconButton
             icon={faLayerGroup}
             label="New section"
             onClick={onNewSection}
           />
         </div>
 
-        <Divider />
+        <ToolbarDivider />
 
         {/* Density segmented control */}
         <div className="flex items-center gap-0.5 rounded-full bg-base-fg/5 p-0.5">
@@ -125,13 +131,16 @@ export const BoardGridToolbar = ({
                     : "text-base-fg/50 hover:text-base-fg",
                 ].join(" ")}
               >
-                <FontAwesomeIcon icon={DENSITY_ICON[d]} className="h-3.5 w-3.5" />
+                <FontAwesomeIcon
+                  icon={DENSITY_ICON[d]}
+                  className="h-3.5 w-3.5"
+                />
               </button>
             );
           })}
         </div>
 
-        <Divider />
+        <ToolbarDivider />
 
         {/* Rating filter — cycles off → ≥1 … ≥5 → off (Lightroom-style sift). */}
         <button
@@ -157,7 +166,7 @@ export const BoardGridToolbar = ({
           </span>
         </button>
 
-        <Divider />
+        <ToolbarDivider />
 
         <SmartSearchBar
           query={query}
@@ -166,29 +175,7 @@ export const BoardGridToolbar = ({
           activeTags={activeTags}
           onToggleTag={onToggleTag}
         />
-      </div>
+      </ToolbarShell>
     </div>
   );
 };
-
-const Divider = () => <div className="h-7 w-px shrink-0 bg-ui-divider" />;
-
-const IslandButton = ({
-  icon,
-  label,
-  onClick,
-}: {
-  icon: IconDefinition;
-  label: string;
-  onClick: () => void;
-}) => (
-  <button
-    type="button"
-    title={label}
-    aria-label={label}
-    onClick={onClick}
-    className="flex h-8 w-8 items-center justify-center rounded-[10px] text-base-fg/70 transition-colors duration-150 hover:bg-base-fg/10 hover:text-base-fg focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-  >
-    <FontAwesomeIcon icon={icon} className="h-4 w-4" />
-  </button>
-);

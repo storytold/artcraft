@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { ReactNode, useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { IconDefinition } from "@fortawesome/fontawesome-svg-core";
 import {
@@ -16,13 +16,18 @@ import { Moodboard } from "./canvas/Moodboard";
 
 interface Props {
   adapter: MoodboardAdapter;
+  // Host chrome rendered in the top-right cluster, left of nothing — beside the
+  // Present button. Webapp hosts that hide the global topbar inject their nav
+  // actions (pricing/credits/task queue/profile) here, mirroring the 3D and
+  // video editors. Tauri leaves it unset.
+  topBarEndSlot?: ReactNode;
 }
 
 // Root moodboard surface. Switches how the board is rendered — Grid (virtualized
 // masonry) vs Canvas (freeform Konva planning) — plus a transient Presentation
 // overlay. Fills its parent; the host app sizes the container. Platform seams
 // (upload, library picker, send-to-generation) arrive via the adapter.
-export const MoodboardWorkspace = ({ adapter }: Props) => {
+export const MoodboardWorkspace = ({ adapter, topBarEndSlot }: Props) => {
   const viewMode = useBoardLibraryStore((s) => s.viewMode);
   const setViewMode = useBoardLibraryStore((s) => s.setViewMode);
   const board = useActiveBoard();
@@ -31,9 +36,7 @@ export const MoodboardWorkspace = ({ adapter }: Props) => {
   const [presenting, setPresenting] = useState(false);
 
   const presentItems = board
-    ? board.itemOrder
-        .map((id) => board.items[id])
-        .filter((it) => Boolean(it))
+    ? board.itemOrder.map((id) => board.items[id]).filter((it) => Boolean(it))
     : [];
 
   return (
@@ -46,10 +49,10 @@ export const MoodboardWorkspace = ({ adapter }: Props) => {
       ) : (
         <Moodboard adapter={adapter} />
       )}
-      <ViewSwitch
-        mode={viewMode}
-        onChange={setViewMode}
+      <ViewSwitch mode={viewMode} onChange={setViewMode} />
+      <TopRightCluster
         onPresent={() => setPresenting(true)}
+        endSlot={topBarEndSlot}
       />
       {presenting && (
         <PresentationView
@@ -61,21 +64,20 @@ export const MoodboardWorkspace = ({ adapter }: Props) => {
   );
 };
 
-const OPTIONS: Array<{ mode: ViewMode; label: string; icon: IconDefinition }> = [
-  { mode: "grid", label: "Grid", icon: faTableCells },
-  { mode: "canvas", label: "Canvas", icon: faVectorSquare },
-];
+const OPTIONS: Array<{ mode: ViewMode; label: string; icon: IconDefinition }> =
+  [
+    { mode: "grid", label: "Grid", icon: faTableCells },
+    { mode: "canvas", label: "Canvas", icon: faVectorSquare },
+  ];
 
 const ViewSwitch = ({
   mode,
   onChange,
-  onPresent,
 }: {
   mode: ViewMode;
   onChange: (m: ViewMode) => void;
-  onPresent: () => void;
 }) => (
-  <div className="glass absolute left-4 top-4 z-40 flex items-center gap-0.5 rounded-full border border-ui-divider p-0.5 shadow-[0_8px_24px_-12px_rgba(0,0,0,0.45)]">
+  <div className="glass absolute left-3 top-3 z-40 flex items-center gap-0.5 rounded-full border border-ui-divider p-0.5 shadow-[0_8px_24px_-12px_rgba(0,0,0,0.45)]">
     {OPTIONS.map((opt) => {
       const active = opt.mode === mode;
       return (
@@ -96,16 +98,32 @@ const ViewSwitch = ({
         </button>
       );
     })}
-    <div className="mx-0.5 h-5 w-px bg-ui-divider" />
-    <button
-      type="button"
-      onClick={onPresent}
-      title="Present"
-      aria-label="Present"
-      className="flex items-center gap-2 rounded-full px-3.5 py-1.5 text-sm font-medium text-base-fg/55 transition-colors duration-150 hover:text-base-fg focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-    >
-      <FontAwesomeIcon icon={faPlay} className="h-3 w-3" />
-      Present
-    </button>
+  </div>
+);
+
+// Top-right chrome: the Present action (always present, including Tauri) and the
+// host's relocated nav actions (webapp only, via endSlot). The wrapper is
+// click-through so the gap between the two never blocks the board beneath.
+const TopRightCluster = ({
+  onPresent,
+  endSlot,
+}: {
+  onPresent: () => void;
+  endSlot?: ReactNode;
+}) => (
+  <div className="pointer-events-none absolute right-3 top-3 z-40 flex items-center gap-2">
+    <div className="glass pointer-events-auto flex items-center rounded-full border border-ui-divider p-0.5 shadow-[0_8px_24px_-12px_rgba(0,0,0,0.45)]">
+      <button
+        type="button"
+        onClick={onPresent}
+        title="Present"
+        aria-label="Present"
+        className="flex items-center gap-2 rounded-full px-3.5 py-1.5 text-sm font-medium text-base-fg/55 transition-colors duration-150 hover:text-base-fg focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+      >
+        <FontAwesomeIcon icon={faPlay} className="h-3 w-3" />
+        Present
+      </button>
+    </div>
+    {endSlot && <div className="pointer-events-auto">{endSlot}</div>}
   </div>
 );

@@ -13,11 +13,17 @@ import {
   webappMoodboardAdapter,
   setMoodboardNavigate,
 } from "./webappMoodboardAdapter";
+import { TopBarActions } from "../../components/topbar/TopBarActions";
+import { useSidebar } from "../../components/ui/sidebar";
 
 // Web moodboard page. Renders the full shared workspace (Grid + freeform Konva
 // Canvas + Presentation). Fills the SidebarInset content area below the TopBar.
 export default function MoodboardPage() {
   const navigate = useNavigate();
+  // On desktop the global TopBar is hidden for this route (see app.tsx), so we
+  // relocate its nav actions into the board. On mobile the TopBar stays, so we
+  // skip the in-page copy to avoid doubling the profile/credits chrome.
+  const { isMobile } = useSidebar();
 
   // Let the (non-hook) generation bridge navigate via the SPA router.
   useEffect(() => {
@@ -39,7 +45,10 @@ export default function MoodboardPage() {
 
   return (
     <div className="h-full w-full">
-      <MoodboardWorkspace adapter={webappMoodboardAdapter} />
+      <MoodboardWorkspace
+        adapter={webappMoodboardAdapter}
+        topBarEndSlot={isMobile ? undefined : <TopBarActions />}
+      />
     </div>
   );
 }

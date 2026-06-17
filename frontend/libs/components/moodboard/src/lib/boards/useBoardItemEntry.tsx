@@ -8,26 +8,22 @@ import type { MoodboardAdapter, MoodboardPickedItem } from "../adapter";
 interface UseReturn {
   triggerUpload: () => void;
   triggerGallery: () => void;
-  triggerAddColor: () => void;
   addNote: () => void;
   modals: ReactNode;
 }
 
-const DEFAULT_COLOR = "#6384F4"; // character-selected — seeds the OS color picker
-
 // Generic add-flows: upload, library pick (via adapter render-prop), clipboard
-// paste (image + URL), note, color. The platform-specific bits — how a file is
-// uploaded and what the library picker is — come from the adapter.
+// paste (image + URL), note. The platform-specific bits — how a file is
+// uploaded and what the library picker is — come from the adapter. (Color entry
+// lives in the toolbar's ColorPickerPopover, which commits via addColorItem.)
 export const useBoardItemEntry = (
   adapter: MoodboardAdapter,
   enabled: boolean,
 ): UseReturn => {
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const colorInputRef = useRef<HTMLInputElement>(null);
   const [pickerOpen, setPickerOpen] = useState(false);
 
   const triggerUpload = useCallback(() => fileInputRef.current?.click(), []);
-  const triggerAddColor = useCallback(() => colorInputRef.current?.click(), []);
   const triggerGallery = useCallback(() => {
     if (adapter.renderLibraryPicker) setPickerOpen(true);
     else
@@ -155,17 +151,6 @@ export const useBoardItemEntry = (
         className="hidden"
         onChange={handleFileChange}
       />
-      <input
-        ref={colorInputRef}
-        type="color"
-        defaultValue={DEFAULT_COLOR}
-        className="hidden"
-        onChange={(e) => {
-          const store = useBoardLibraryStore.getState();
-          const boardId = store.ensureActiveBoard();
-          store.addColorItem(boardId, e.target.value.toUpperCase());
-        }}
-      />
       {adapter.renderLibraryPicker?.({
         open: pickerOpen,
         onClose: () => setPickerOpen(false),
@@ -174,7 +159,7 @@ export const useBoardItemEntry = (
     </>
   );
 
-  return { triggerUpload, triggerGallery, triggerAddColor, addNote, modals };
+  return { triggerUpload, triggerGallery, addNote, modals };
 };
 
 // ---------- helpers ----------
