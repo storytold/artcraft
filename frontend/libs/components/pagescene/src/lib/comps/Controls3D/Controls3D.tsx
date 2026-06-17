@@ -20,6 +20,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   galleryModalVisibleViewMode,
   galleryModalVisibleDuringDrag,
+  galleryModalDraggingUnder,
 } from "@storyteller/ui-gallery-modal";
 import { twMerge } from "tailwind-merge";
 
@@ -43,6 +44,7 @@ export const Controls3D = ({
     assetModalVisible,
     setAssetModalVisible,
     setAssetModalVisibleDuringDrag,
+    setAssetDraggingUnder,
     selectedMode,
     transformSpace,
     currentUserToken,
@@ -52,6 +54,7 @@ export const Controls3D = ({
       assetModalVisible: s.assetModalVisible,
       setAssetModalVisible: s.setAssetModalVisible,
       setAssetModalVisibleDuringDrag: s.setAssetModalVisibleDuringDrag,
+      setAssetDraggingUnder: s.setAssetDraggingUnder,
       selectedMode: s.selectedMode,
       transformSpace: s.transformSpace,
       currentUserToken: s.currentUserToken,
@@ -100,6 +103,9 @@ export const Controls3D = ({
   const handleOpenModal = () => {
     setAssetModalVisibleDuringDrag(true);
     setAssetModalVisible(true);
+    // Clear any leftover drag-under state so the panel opens fully shown (a
+    // reopen-off drag leaves it faded-hidden until the next open).
+    setAssetDraggingUnder(false);
   };
 
   const handleOpenCreate3dModal = () => {
@@ -109,6 +115,9 @@ export const Controls3D = ({
   const handleOpenGalleryModal = () => {
     galleryModalVisibleViewMode.value = true;
     galleryModalVisibleDuringDrag.value = true;
+    // Clear any leftover drag-under state so the panel opens fully shown (a
+    // reopen-off drag leaves it faded-hidden until the next open).
+    galleryModalDraggingUnder.value = false;
   };
 
   const handleAddAssetAction = (action: string) => {

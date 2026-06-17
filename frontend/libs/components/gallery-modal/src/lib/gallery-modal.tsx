@@ -43,7 +43,7 @@ import {
   PLACEHOLDER_IMAGES,
 } from "@storyteller/common";
 import {
-  galleryModalVisibleDuringDrag,
+  galleryModalDraggingUnder,
   galleryReopenAfterDragSignal,
   galleryModalVisibleViewMode,
   galleryModalLightboxMediaId,
@@ -2125,10 +2125,23 @@ export const GalleryModal = React.memo(
       <>
         <Modal
           resizable={mode === "view"}
+          // While dragging an item out, the panel becomes pointer-transparent so
+          // the drag passes under it onto the canvas. With "Reopen after adding"
+          // ON it steps back to translucent (stays to keep adding); with it OFF
+          // it eases all the way out (it's closing after the drop anyway). Both
+          // go through the same spring, so neither is abrupt.
+          contentInteractive={!galleryModalDraggingUnder.value}
+          contentDimmed={
+            galleryModalDraggingUnder.value &&
+            galleryReopenAfterDragSignal.value
+          }
+          contentHidden={
+            galleryModalDraggingUnder.value &&
+            !galleryReopenAfterDragSignal.value
+          }
           isOpen={
             mode === "view"
-              ? galleryModalVisibleViewMode.value &&
-                galleryModalVisibleDuringDrag.value
+              ? galleryModalVisibleViewMode.value
               : typeof isOpen === "boolean"
                 ? isOpen
                 : true

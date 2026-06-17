@@ -38,6 +38,22 @@ export default defineConfig(() => ({
           Origin: 'https://api.storyteller.ai',
         },
       },
+      // Dev-only CDN proxy. Media assets (splats, GLBs, images) are fetched
+      // from the CDN with fetch(), but the CDN only sends CORS headers for the
+      // production origin — not localhost. The web adapter's fetchAsset rewrites
+      // absolute CDN URLs to `/__cdn/<host>/<path>` in DEV; this forwards them
+      // server-side (no browser CORS). The target host is taken from the path
+      // so any cdn-N.fakeyou.com / Cloudflare host works.
+      '/__cdn': {
+        target: 'https://cdn-2.fakeyou.com',
+        changeOrigin: true,
+        secure: true,
+        router: (req) => {
+          const match = req.url?.match(/^\/__cdn\/([^/]+)/);
+          return match ? `https://${match[1]}` : 'https://cdn-2.fakeyou.com';
+        },
+        rewrite: (path) => path.replace(/^\/__cdn\/[^/]+/, ''),
+      },
     },
   },
   preview:{

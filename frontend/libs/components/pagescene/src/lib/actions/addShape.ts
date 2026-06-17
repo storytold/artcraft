@@ -26,6 +26,9 @@ export async function addShape(
   obj.userData.color = "#ffffff";
   obj.name = item.name ?? "shape";
 
+  // Animate it in (see addObject).
+  editor.entranceAnimator.play(obj);
+
   editor.history.record(new CreateAction(editor, obj));
 
   editor.bus.emit(

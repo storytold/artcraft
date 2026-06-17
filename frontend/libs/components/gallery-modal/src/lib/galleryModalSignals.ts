@@ -4,6 +4,11 @@ import { signal } from "@preact/signals-react";
 export const galleryModalVisibleDuringDrag = signal(true);
 export const galleryReopenAfterDragSignal = signal(false);
 export const galleryModalVisibleViewMode = signal(false);
+// True while an item is being dragged out of the gallery. The modal stays open
+// but goes translucent and pointer-transparent so the drag can pass "under" it
+// onto the canvas; it refocuses (or closes, per the reopen-after-adding setting)
+// on drop.
+export const galleryModalDraggingUnder = signal(false);
 
 // Lightbox Modal Signals
 export const galleryModalLightboxMediaId = signal<string | null>(null);

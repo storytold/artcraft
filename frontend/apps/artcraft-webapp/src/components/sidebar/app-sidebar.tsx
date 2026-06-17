@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { Link, useLocation } from "react-router-dom";
+import { motion, useReducedMotion } from "framer-motion";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faHouse,
@@ -137,9 +138,16 @@ function NavMenuItem({
   pathname: string;
   onClick: () => void;
 }) {
+  const reduceMotion = useReducedMotion();
+  const active = !item.external && isActive(pathname, item.href);
   const inner = (
     <>
-      <FontAwesomeIcon icon={item.icon} />
+      {/* Icon nudges up in scale on hover — a small tactile cue that the row is
+          interactive, kept subtle to stay within the "restrained chrome" lane. */}
+      <FontAwesomeIcon
+        icon={item.icon}
+        className="transition-transform duration-200 ease-out group-hover/menu-item:scale-110"
+      />
       <span className="group-data-[collapsible=icon]:hidden">{item.label}</span>
       {item.badge && (
         <span className="ml-auto bg-amber-600 px-1.5 py-0.5 text-[10px] font-semibold uppercase leading-none text-white group-data-[collapsible=icon]:hidden rounded-full">
@@ -150,9 +158,24 @@ function NavMenuItem({
   );
   return (
     <SidebarMenuItem>
+      {/* Brand accent bar that glides between nav rows as the active route
+          changes (shared-element layout animation via `layoutId`). One is
+          mounted at a time, so framer-motion tweens it from the old row to the
+          new one. */}
+      {active && (
+        <motion.span
+          layoutId="sidebar-active-indicator"
+          className="pointer-events-none absolute inset-y-1.5 left-0 z-10 w-1 rounded-full bg-primary"
+          transition={
+            reduceMotion
+              ? { duration: 0 }
+              : { type: "spring", stiffness: 520, damping: 40, mass: 0.7 }
+          }
+        />
+      )}
       <SidebarMenuButton
         asChild
-        isActive={!item.external && isActive(pathname, item.href)}
+        isActive={active}
         tooltip={item.label}
       >
         {item.external ? (

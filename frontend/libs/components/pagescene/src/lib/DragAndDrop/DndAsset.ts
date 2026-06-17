@@ -47,7 +47,6 @@ class DndAsset {
       this.isDragging = false;
       store.setCanDrop(false);
       this.notDropText = "";
-      store.setAssetModalVisibleDuringDrag(false);
       window.addEventListener("pointerup", this.onPointerUp);
       window.addEventListener("pointermove", this.onPointerMove);
     }
@@ -60,8 +59,17 @@ class DndAsset {
       store.setCanDrop(false);
       this.overElement = null;
       this.notDropText = "";
-      store.setAssetModalVisibleDuringDrag(store.reopenAfterDrag);
     }
+    if (store.reopenAfterDrag) {
+      // Refocus the library (un-dim, restore pointer events).
+      store.setAssetDraggingUnder(false);
+    } else {
+      // Close it after adding. Keep `assetDraggingUnder` true so the panel stays
+      // faded-out through the close instead of flashing back up; it's reset when
+      // the library is reopened.
+      store.setAssetModalVisible(false);
+    }
+    this.isDragging = false;
     this.editor = null;
   }
 
@@ -88,7 +96,7 @@ class DndAsset {
 
     const store = usePageSceneStore.getState();
     if (!this.isDragging) {
-      store.setAssetModalVisibleDuringDrag(true);
+      // A click, not a drag — leave the library as-is, just clear drag state.
       store.setDragItem(null);
       store.setDragPosition({ currX: 0, currY: 0 });
       this.editor = null;
@@ -137,10 +145,15 @@ class DndAsset {
       const deltaX = event.pageX - this.initX;
       const deltaY = event.pageY - this.initY;
       if (
-        Math.abs(deltaX) > this.dragThreshold ||
-        Math.abs(deltaY) > this.dragThreshold
+        !this.isDragging &&
+        (Math.abs(deltaX) > this.dragThreshold ||
+          Math.abs(deltaY) > this.dragThreshold)
       ) {
         this.isDragging = true;
+        // Let pointer events pass through the library the moment the drag begins.
+        // The panel eases to translucent (reopen on) or all the way out (reopen
+        // off) via AssetModal's contentDimmed/contentHidden — never abrupt.
+        store.setAssetDraggingUnder(true);
       }
       store.setDragPosition({
         currX: this.initX + deltaX,

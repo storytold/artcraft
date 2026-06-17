@@ -1,6 +1,8 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Link, useParams, useNavigate, useLocation } from "react-router-dom";
+import { motion } from "framer-motion";
+import { EASE_EMPHASIS } from "../../lib/motion";
 import { Button } from "@storyteller/ui-button";
 import { LoadingSpinner } from "@storyteller/ui-loading-spinner";
 import {
@@ -859,25 +861,45 @@ export default function Library() {
                 <div className="flex items-center gap-1 bg-ui-controls/40 rounded-lg p-1">
                   <Link
                     to="/library"
-                    className={`flex items-center gap-2 px-3 sm:px-4 py-1 sm:py-1.5 rounded-md text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
+                    className={`relative flex items-center gap-2 px-3 sm:px-4 py-1 sm:py-1.5 rounded-md text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
                       tab === "unsorted"
-                        ? "bg-ui-controls text-white"
+                        ? "text-white"
                         : "text-white/60 hover:text-white"
                     }`}
                   >
-                    <FontAwesomeIcon icon={faBorderAll} className="text-xs" />
-                    <span>All Assets</span>
+                    {tab === "unsorted" && (
+                      <motion.span
+                        layoutId="library-tab-indicator"
+                        className="absolute inset-0 rounded-md bg-ui-controls"
+                        transition={{ duration: 0.32, ease: EASE_EMPHASIS }}
+                      />
+                    )}
+                    <FontAwesomeIcon
+                      icon={faBorderAll}
+                      className="relative z-10 text-xs"
+                    />
+                    <span className="relative z-10">All Assets</span>
                   </Link>
                   <Link
                     to="/library/folders"
-                    className={`flex items-center gap-2 px-3 sm:px-4 py-1 sm:py-1.5 rounded-md text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
+                    className={`relative flex items-center gap-2 px-3 sm:px-4 py-1 sm:py-1.5 rounded-md text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
                       tab === "folders"
-                        ? "bg-ui-controls text-white"
+                        ? "text-white"
                         : "text-white/60 hover:text-white"
                     }`}
                   >
-                    <FontAwesomeIcon icon={faFolder} className="text-xs" />
-                    <span>Folders</span>
+                    {tab === "folders" && (
+                      <motion.span
+                        layoutId="library-tab-indicator"
+                        className="absolute inset-0 rounded-md bg-ui-controls"
+                        transition={{ duration: 0.32, ease: EASE_EMPHASIS }}
+                      />
+                    )}
+                    <FontAwesomeIcon
+                      icon={faFolder}
+                      className="relative z-10 text-xs"
+                    />
+                    <span className="relative z-10">Folders</span>
                   </Link>
                 </div>
                 {tab === "unsorted" && (
@@ -901,17 +923,26 @@ export default function Library() {
                       <button
                         key={filter.id}
                         onClick={() => navigate(filter.route)}
-                        className={`flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-4 py-1 sm:py-1.5 rounded-md text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
+                        className={`relative flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-4 py-1 sm:py-1.5 rounded-md text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
                           activeFilter === filter.id
-                            ? "bg-ui-controls text-white"
+                            ? "text-white"
                             : "text-white/60 hover:text-white"
                         }`}
                       >
+                        {activeFilter === filter.id && (
+                          <motion.span
+                            layoutId="library-filter-indicator"
+                            className="absolute inset-0 rounded-md bg-ui-controls"
+                            transition={{ duration: 0.32, ease: EASE_EMPHASIS }}
+                          />
+                        )}
                         <FontAwesomeIcon
                           icon={filter.icon}
-                          className="text-xs"
+                          className="relative z-10 text-xs"
                         />
-                        <span className="hidden sm:inline">{filter.label}</span>
+                        <span className="relative z-10 hidden sm:inline">
+                          {filter.label}
+                        </span>
                       </button>
                     ))}
                   </div>
@@ -1063,7 +1094,15 @@ export default function Library() {
             )
           ) : /* ── Unsorted ── */ initialLoading && allItems.length === 0 ? (
             <div>
-              <div className="h-4 w-24 rounded bg-white/[0.06] mb-3" />
+              <div
+                className="h-4 w-24 rounded mb-3"
+                style={{
+                  background:
+                    "linear-gradient(100deg, rgba(255,255,255,0.05) 30%, rgba(255,255,255,0.1) 50%, rgba(255,255,255,0.05) 70%)",
+                  backgroundSize: "200% 100%",
+                  animation: "lib-shimmer 1.6s ease-in-out infinite",
+                }}
+              />
               <div className={GRID_CLASS}>
                 {Array.from({ length: 15 }).map((_, i) => (
                   <div
@@ -1071,15 +1110,18 @@ export default function Library() {
                     className="aspect-square rounded-lg overflow-hidden"
                   >
                     <div
-                      className="h-full w-full bg-white/[0.06]"
+                      className="h-full w-full"
                       style={{
-                        animation: `pulse 1.8s ease-in-out ${i * 0.07}s infinite`,
+                        background:
+                          "linear-gradient(100deg, rgba(255,255,255,0.04) 30%, rgba(255,255,255,0.09) 50%, rgba(255,255,255,0.04) 70%)",
+                        backgroundSize: "200% 100%",
+                        animation: `lib-shimmer 1.6s ease-in-out ${i * 0.08}s infinite`,
                       }}
                     />
                   </div>
                 ))}
               </div>
-              <style>{`@keyframes pulse {0%,100%{opacity:.4}50%{opacity:.8}}`}</style>
+              <style>{`@keyframes lib-shimmer {0%{background-position:200% 0}100%{background-position:-200% 0}}`}</style>
             </div>
           ) : rootEmpty ? (
             <div className="flex flex-col items-center justify-center py-20">

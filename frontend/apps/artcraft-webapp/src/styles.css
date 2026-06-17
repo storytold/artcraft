@@ -35,6 +35,39 @@
     --border: 0 0% 18%;
     --input: 0 0% 18%;
     --ring: 217 91% 60%;
+
+    /* ── Motion tokens ──────────────────────────────────────────────────
+       Shared easing curves + durations so motion across the app feels like
+       one system, not a pile of one-offs. Mirrored as JS constants in
+       src/lib/motion.ts for framer-motion. "Balanced" direction: chrome and
+       navigation stay restrained; the creative canvas gets to be expressive.
+
+       Curves:
+       --ease-out      decelerate-to-rest; the default for things entering.
+       --ease-in-out   symmetric; for things that move and settle in place.
+       --ease-spring   gentle overshoot; for playful, tactile moments.
+       --ease-emphasis Apple/Linear "expo" curve; for confident, premium slides. */
+    --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+    --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+    --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+    --ease-emphasis: cubic-bezier(0.32, 0.72, 0, 1);
+
+    /* Durations — keep chrome snappy, reserve longer ones for canvas drama. */
+    --dur-fast: 140ms;
+    --dur-base: 220ms;
+    --dur-slow: 340ms;
+    --dur-page: 260ms;
+  }
+
+  /* Respect users who ask for less motion: collapse durations to near-zero
+     so transitions become instant cuts rather than being removed wholesale. */
+  @media (prefers-reduced-motion: reduce) {
+    :root {
+      --dur-fast: 1ms;
+      --dur-base: 1ms;
+      --dur-slow: 1ms;
+      --dur-page: 1ms;
+    }
   }
 }
 
