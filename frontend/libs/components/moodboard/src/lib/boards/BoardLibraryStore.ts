@@ -86,7 +86,9 @@ interface BoardLibraryState extends PersistedLibrary {
 
   // Selection (operates on the active board)
   setSelection: (ids: Iterable<string>) => void;
-  toggleSelection: (id: string, additive: boolean) => void;
+  // Clicks accumulate; `additive` is accepted for caller compatibility but no
+  // longer changes behavior (a plain click already toggles within the set).
+  toggleSelection: (id: string, additive?: boolean) => void;
   clearSelection: () => void;
   deleteSelected: () => void;
 }
@@ -413,10 +415,15 @@ export const useBoardLibraryStore = create<BoardLibraryState>()(
         set({ searchQuery: "", activeTagFilters: [], ratingFilter: 0 }),
 
       setSelection: (ids) => set({ selectedItemIds: new Set(ids) }),
-      toggleSelection: (id, additive) =>
+      // Every click accumulates: a plain click adds the item to the current
+      // selection (or removes it if already selected), so clicking item after
+      // item builds up a multi-selection without needing a modifier. The
+      // `additive` flag (ctrl/cmd/shift-click) behaves identically here; the
+      // distinction is only meaningful for marquee/range selection.
+      toggleSelection: (id) =>
         set((s) => {
-          const next = additive ? new Set(s.selectedItemIds) : new Set<string>();
-          if (additive && s.selectedItemIds.has(id)) next.delete(id);
+          const next = new Set(s.selectedItemIds);
+          if (next.has(id)) next.delete(id);
           else next.add(id);
           return { selectedItemIds: next };
         }),

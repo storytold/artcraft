@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { IconDefinition } from "@fortawesome/fontawesome-svg-core";
 import {
@@ -18,6 +19,7 @@ import { ToolbarShell, ToolbarIconButton, ToolbarDivider } from "../ui/Toolbar";
 
 interface Props {
   boardName: string;
+  onRenameBoard: (name: string) => void;
   itemCount: number;
   density: GridDensity;
   onDensityChange: (d: GridDensity) => void;
@@ -52,6 +54,7 @@ const DENSITY_LABEL: Record<GridDensity, string> = {
 // its shell, buttons, and dividers with the Canvas toolbar (see ../ui/Toolbar).
 export const BoardGridToolbar = ({
   boardName,
+  onRenameBoard,
   itemCount,
   density,
   onDensityChange,
@@ -73,10 +76,8 @@ export const BoardGridToolbar = ({
     <div className="pointer-events-none absolute inset-x-0 top-0 z-20 flex justify-center px-3 pt-3">
       <ToolbarShell className="max-w-full">
         <div className="flex min-w-0 flex-col pl-1 pr-2">
-          <span className="truncate text-sm font-semibold leading-tight text-base-fg">
-            {boardName}
-          </span>
-          <span className="text-[11px] leading-tight text-base-fg/45">
+          <BoardTitle name={boardName} onRename={onRenameBoard} />
+          <span className="pl-1.5 text-[11px] leading-tight text-base-fg/45">
             {itemCount} {itemCount === 1 ? "item" : "items"}
           </span>
         </div>
@@ -177,5 +178,62 @@ export const BoardGridToolbar = ({
         />
       </ToolbarShell>
     </div>
+  );
+};
+
+// Inline-editable board title — click to rename (mirrors SectionHeader). Commits
+// on Enter / blur, Escape cancels; empty or unchanged input is ignored.
+const BoardTitle = ({
+  name,
+  onRename,
+}: {
+  name: string;
+  onRename: (name: string) => void;
+}) => {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(name);
+  const inputRef = useRef<HTMLInputElement | null>(null);
+
+  useEffect(() => {
+    if (editing) {
+      inputRef.current?.focus();
+      inputRef.current?.select();
+    }
+  }, [editing]);
+
+  const commit = () => {
+    const next = draft.trim();
+    if (next && next !== name) onRename(next);
+    setEditing(false);
+  };
+
+  if (editing) {
+    return (
+      <input
+        ref={inputRef}
+        value={draft}
+        onChange={(e) => setDraft(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") commit();
+          else if (e.key === "Escape") setEditing(false);
+        }}
+        onBlur={commit}
+        className="min-w-0 rounded-md bg-base-fg/5 px-1.5 py-0.5 text-sm font-semibold leading-tight text-base-fg focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+      />
+    );
+  }
+
+  return (
+    <button
+      type="button"
+      title="Rename board"
+      onClick={() => {
+        setDraft(name);
+        setEditing(true);
+      }}
+      className="truncate rounded-md px-1.5 py-0.5 text-left text-sm font-semibold leading-tight text-base-fg transition-colors hover:bg-base-fg/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+    >
+      {name}
+    </button>
   );
 };

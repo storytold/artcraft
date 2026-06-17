@@ -4,6 +4,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPalette } from "@fortawesome/pro-regular-svg-icons";
 import { PopoverMenu } from "@storyteller/ui-popover";
 import { Button } from "@storyteller/ui-button";
+import { Tooltip } from "@storyteller/ui-tooltip";
 
 const DEFAULT_COLOR = "#6384F4"; // character-selected — seeds the picker
 
@@ -15,23 +16,32 @@ interface Props {
 // board until the explicit "Add color" button — so dragging through the spectrum
 // no longer spams the board with a swatch on every tick.
 export const ColorPickerPopover = ({ onAdd }: Props) => (
-  <PopoverMenu
-    mode="default"
-    position="bottom"
-    panelTitle="Add a color"
-    panelClassName="w-60"
-    triggerIcon={<FontAwesomeIcon icon={faPalette} className="h-4 w-4" />}
-    buttonClassName="h-9 w-9 rounded-[10px] border-transparent bg-transparent p-0 text-base-fg/80 shadow-none hover:bg-base-fg/10 hover:text-base-fg"
-  >
-    {(close) => (
-      <ColorPickerPanel
-        onAdd={(color) => {
-          onAdd(color);
-          close();
-        }}
-      />
-    )}
-  </PopoverMenu>
+  // Tooltip matches the sibling ToolbarIconButtons (bottom, 300ms, close on click).
+  <Tooltip content="Add color" position="bottom" delay={300} closeOnClick>
+    <PopoverMenu
+      mode="default"
+      position="bottom"
+      panelTitle="Add a color"
+      panelClassName="w-60"
+      triggerIcon={
+        <FontAwesomeIcon
+          icon={faPalette}
+          className="h-4 w-4"
+          aria-label="Add color"
+        />
+      }
+      buttonClassName="h-9 w-9 rounded-[10px] border-transparent bg-transparent p-0 text-base-fg/80 shadow-none hover:bg-base-fg/10 hover:text-base-fg"
+    >
+      {(close) => (
+        <ColorPickerPanel
+          onAdd={(color) => {
+            onAdd(color);
+            close();
+          }}
+        />
+      )}
+    </PopoverMenu>
+  </Tooltip>
 );
 
 const ColorPickerPanel = ({ onAdd }: Props) => {

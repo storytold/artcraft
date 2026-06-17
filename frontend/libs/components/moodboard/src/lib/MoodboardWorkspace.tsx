@@ -42,7 +42,11 @@ export const MoodboardWorkspace = ({ adapter, topBarEndSlot }: Props) => {
   return (
     <div
       data-moodboard-root
-      className="relative h-full w-full overflow-hidden bg-ui-background"
+      className="relative h-full w-full overflow-hidden"
+      // Desktop themes set --st-bg (gray/light/black/aurora) so the board follows
+      // the active theme. The webapp never defines --st-bg, so it falls back to
+      // its own --background token (0 0% 9% / #171717), matching the rest of the app.
+      style={{ background: "var(--st-bg, hsl(0 0% 9%))" }}
     >
       {viewMode === "grid" ? (
         <BoardGridView active={!presenting} adapter={adapter} />
@@ -77,7 +81,7 @@ const ViewSwitch = ({
   mode: ViewMode;
   onChange: (m: ViewMode) => void;
 }) => (
-  <div className="glass absolute left-3 top-3 z-40 flex items-center gap-0.5 rounded-full border border-ui-divider p-0.5 shadow-[0_8px_24px_-12px_rgba(0,0,0,0.45)]">
+  <div className="glass absolute left-3 top-3 z-40 flex items-center gap-0.5 rounded-2xl border border-ui-divider p-1 shadow-[0_8px_24px_-12px_rgba(0,0,0,0.45)]">
     {OPTIONS.map((opt) => {
       const active = opt.mode === mode;
       return (
@@ -86,7 +90,7 @@ const ViewSwitch = ({
           type="button"
           onClick={() => onChange(opt.mode)}
           className={[
-            "flex items-center gap-2 rounded-full px-3.5 py-1.5 text-sm font-medium",
+            "flex items-center gap-2 rounded-xl px-3.5 py-1.5 text-sm font-medium",
             "transition-colors duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary",
             active
               ? "bg-base-fg/15 text-base-fg"
@@ -112,13 +116,13 @@ const TopRightCluster = ({
   endSlot?: ReactNode;
 }) => (
   <div className="pointer-events-none absolute right-3 top-3 z-40 flex items-center gap-2">
-    <div className="glass pointer-events-auto flex items-center rounded-full border border-ui-divider p-0.5 shadow-[0_8px_24px_-12px_rgba(0,0,0,0.45)]">
+    <div className="glass pointer-events-auto flex items-center rounded-xl border border-ui-divider p-0.5 shadow-[0_8px_24px_-12px_rgba(0,0,0,0.45)]">
       <button
         type="button"
         onClick={onPresent}
         title="Present"
         aria-label="Present"
-        className="flex items-center gap-2 rounded-full px-3.5 py-1.5 text-sm font-medium text-base-fg/55 transition-colors duration-150 hover:text-base-fg focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+        className="flex items-center gap-2 rounded-xl px-3.5 py-1.5 text-sm font-medium text-base-fg/55 transition-colors duration-150 hover:text-base-fg focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
       >
         <FontAwesomeIcon icon={faPlay} className="h-3 w-3" />
         Present

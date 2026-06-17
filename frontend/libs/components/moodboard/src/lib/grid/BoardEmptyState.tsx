@@ -1,13 +1,17 @@
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faArrowUpFromBracket,
   faImages,
 } from "@fortawesome/pro-regular-svg-icons";
+import { Button } from "@storyteller/ui-button";
 
 interface Props {
   onUpload: () => void;
   onLibrary: () => void;
 }
+
+// Shared sizing so both CTAs match the webapp create pages' empty-state buttons
+// (h-12, pill, semibold). Centralized so the pair stays visually aligned.
+const CTA_CLASS = "h-12 px-6 text-base font-semibold rounded-full";
 
 // Editorial empty state — the board's first impression. Doubles as the
 // drop / paste affordance (the whole grid accepts drops; this just says so).
@@ -27,27 +31,22 @@ export const BoardEmptyState = ({ onUpload, onLibrary }: Props) => {
         </p>
 
         <div className="mt-7 flex items-center gap-3">
-          <button
-            type="button"
+          <Button
+            variant="primary"
             onClick={onUpload}
-            className="group flex items-center gap-2.5 rounded-full bg-primary py-2.5 pl-5 pr-2.5 text-sm font-medium text-white transition-all duration-200 ease-[cubic-bezier(0.4,0,0.2,1)] hover:bg-primary/90 active:scale-[0.98] focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+            icon={faArrowUpFromBracket}
+            className={CTA_CLASS}
           >
             Upload
-            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white/15 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:scale-105">
-              <FontAwesomeIcon
-                icon={faArrowUpFromBracket}
-                className="h-3.5 w-3.5"
-              />
-            </span>
-          </button>
-          <button
-            type="button"
+          </Button>
+          <Button
+            variant="secondary"
             onClick={onLibrary}
-            className="flex items-center gap-2 rounded-full border border-ui-divider px-5 py-2.5 text-sm font-medium text-base-fg/80 transition-colors duration-200 hover:bg-base-fg/5 hover:text-base-fg focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+            icon={faImages}
+            className={CTA_CLASS}
           >
-            <FontAwesomeIcon icon={faImages} className="h-3.5 w-3.5" />
             From library
-          </button>
+          </Button>
         </div>
       </div>
     </div>

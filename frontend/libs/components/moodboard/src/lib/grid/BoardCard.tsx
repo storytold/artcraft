@@ -29,6 +29,12 @@ interface Props {
   onOpen: (id: string) => void;
   onDelete: (id: string) => void;
   onUseReference: (id: string) => void;
+  /** This text card is in inline-edit mode (renders an editable textarea). */
+  editing?: boolean;
+  /** Enter inline edit for a text card (double-click). */
+  onEditText?: (id: string) => void;
+  /** Commit edited note text (blur / Enter). */
+  onCommitText?: (id: string, text: string) => void;
 }
 
 const KIND_NOUN: Record<BoardItem["kind"], string> = {
@@ -60,6 +66,9 @@ const BoardCardInner = ({
   onOpen,
   onDelete,
   onUseReference,
+  editing = false,
+  onEditText,
+  onCommitText,
 }: Props) => {
   const rootRef = useRef<HTMLDivElement | null>(null);
   const [entering, setEntering] = useState(
@@ -107,7 +116,11 @@ const BoardCardInner = ({
         if (e.button !== 0) return;
         onSelect(item.id, e.shiftKey || e.metaKey || e.ctrlKey);
       }}
-      onDoubleClick={() => onOpen(item.id)}
+      onDoubleClick={() =>
+        item.kind === "text" && onEditText
+          ? onEditText(item.id)
+          : onOpen(item.id)
+      }
       onFocus={() => onFocusCard?.(item.id)}
       onKeyDown={(e) => onKeyNav?.(item.id, e)}
     >
@@ -129,7 +142,11 @@ const BoardCardInner = ({
       >
         {/* Inner core — concentric radius, holds the content. */}
         <div className="relative h-full w-full overflow-hidden rounded-[14px] bg-ui-panel shadow-[inset_0_1px_1px_rgba(255,255,255,0.08)]">
-          <CardContent item={item} />
+          <CardContent
+            item={item}
+            editing={editing}
+            onCommitText={onCommitText}
+          />
 
           {/* Rating — persistent when set (Lightroom-style triage marker).
               No backdrop-blur: this tile lives in a virtualized scroll
@@ -211,7 +228,15 @@ const RailButton = ({
   </button>
 );
 
-const CardContent = ({ item }: { item: BoardItem }) => {
+const CardContent = ({
+  item,
+  editing,
+  onCommitText,
+}: {
+  item: BoardItem;
+  editing?: boolean;
+  onCommitText?: (id: string, text: string) => void;
+}) => {
   switch (item.kind) {
     case "image":
       return (
@@ -243,9 +268,22 @@ const CardContent = ({ item }: { item: BoardItem }) => {
         </div>
       );
     case "text":
-      return (
-        <div className="h-full w-full overflow-hidden p-4">
-          <p className="whitespace-pre-wrap text-sm leading-relaxed text-base-fg/90">
+      return editing && onCommitText ? (
+        <NoteEditor
+          initial={item.text}
+          onCommit={(text) => onCommitText(item.id, text)}
+        />
+      ) : (
+        // Extra top padding clears the selection check (top-left) so it never
+        // overlaps the first line of the note.
+        <div className="h-full w-full overflow-hidden px-4 pb-4 pt-10">
+          <p
+            // Clicking the text itself shouldn't toggle the card's selection —
+            // stop the pointer-down from reaching the card root. Double-click
+            // (a separate event) still bubbles, so it opens the editor.
+            onPointerDown={(e) => e.stopPropagation()}
+            className="whitespace-pre-wrap text-sm leading-relaxed text-base-fg/90"
+          >
             {item.text || "Note"}
           </p>
         </div>
@@ -285,6 +323,55 @@ const CardContent = ({ item }: { item: BoardItem }) => {
     default:
       return null;
   }
+};
+
+// Inline note editor. Autofocuses, commits on blur or Enter (Shift+Enter inserts
+// a newline), reverts on Escape. Pointer events are stopped so typing/selecting
+// inside the textarea never triggers card selection, drag, or marquee.
+const NoteEditor = ({
+  initial,
+  onCommit,
+}: {
+  initial: string;
+  onCommit: (text: string) => void;
+}) => {
+  const ref = useRef<HTMLTextAreaElement | null>(null);
+  const [draft, setDraft] = useState(initial);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    el.focus();
+    el.select();
+  }, []);
+
+  return (
+    <div
+      // Matches the static note: top padding clears the selection check.
+      className="h-full w-full px-4 pb-4 pt-10"
+      onPointerDown={(e) => e.stopPropagation()}
+      onDoubleClick={(e) => e.stopPropagation()}
+    >
+      <textarea
+        ref={ref}
+        value={draft}
+        onChange={(e) => setDraft(e.target.value)}
+        onBlur={() => onCommit(draft.trim())}
+        onKeyDown={(e) => {
+          e.stopPropagation();
+          if (e.key === "Enter" && !e.shiftKey) {
+            e.preventDefault();
+            onCommit(draft.trim());
+          } else if (e.key === "Escape") {
+            e.preventDefault();
+            onCommit(initial.trim());
+          }
+        }}
+        placeholder="Write a note…"
+        className="h-full w-full resize-none bg-transparent text-sm leading-relaxed text-base-fg/90 placeholder:text-base-fg/35 focus:outline-none"
+      />
+    </div>
+  );
 };
 
 export const BoardCard = memo(BoardCardInner);

@@ -10,6 +10,8 @@ import {
   faChevronRight,
 } from "@fortawesome/pro-regular-svg-icons";
 import { faStar } from "@fortawesome/pro-solid-svg-icons";
+import { Modal } from "@storyteller/ui-modal";
+import { Button } from "@storyteller/ui-button";
 import { BoardItem } from "../boards/boardTypes";
 import { hostnameOf } from "../boards/linkMeta";
 import { extractPalette } from "../boards/palette";
@@ -38,8 +40,10 @@ const KIND_LABEL: Record<BoardItem["kind"], string> = {
   color: "Color",
 };
 
-// Full-screen lightbox + inspector. Large media on the left, metadata / tags /
-// palette / actions on the right. Keyboard: Esc closes, ←/→ navigate.
+// Lightbox + inspector. Mirrors the shared LightboxModal design: a bounded,
+// centered, draggable/resizable panel with the media on the left (object-contain
+// on a dark plate) and a fixed-width info/actions column on the right. The shared
+// Modal owns the backdrop, Esc, drag/resize and a11y; we own ←/→ navigation.
 export const ItemInspector = ({
   item,
   hasPrev,
@@ -59,13 +63,12 @@ export const ItemInspector = ({
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-      else if (e.key === "ArrowLeft" && hasPrev) onPrev();
+      if (e.key === "ArrowLeft" && hasPrev) onPrev();
       else if (e.key === "ArrowRight" && hasNext) onNext();
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [onClose, onPrev, onNext, hasPrev, hasNext]);
+  }, [onPrev, onNext, hasPrev, hasNext]);
 
   // Pull a palette for images, keyed on the image src — NOT the whole item, so
   // editing tags/rating (which produce a new item object) doesn't re-decode the
@@ -83,15 +86,6 @@ export const ItemInspector = ({
     };
   }, [imageSrc]);
 
-  // Lock background scroll while the lightbox is open.
-  useEffect(() => {
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = prev;
-    };
-  }, []);
-
   const commitTag = () => {
     const t = tagDraft.trim().toLowerCase();
     if (t) onAddTag(t);
@@ -99,42 +93,39 @@ export const ItemInspector = ({
   };
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-label="Item details"
-      className="fixed inset-0 z-50 flex bg-black/80 backdrop-blur-md"
+    <Modal
+      isOpen
+      onClose={onClose}
+      accessibleTitle="Item details"
+      className="rounded-xl bg-ui-modal h-[760px] w-[1200px] max-w-screen min-w-[1000px] min-h-[600px] p-4"
+      draggable
+      resizable
+      expandable
+      showClose
     >
-      {/* Backdrop click closes */}
-      <div className="absolute inset-0" onClick={onClose} />
+      {/* Invisible drag strip along the top, matching the shared lightbox. */}
+      <Modal.DragHandle>
+        <div className="absolute left-0 top-0 z-20 h-12 w-full cursor-move rounded-t-xl" />
+      </Modal.DragHandle>
 
-      <NavArrow side="left" show={hasPrev} onClick={onPrev} />
-      <NavArrow side="right" show={hasNext} onClick={onNext} />
-
-      <div className="relative z-10 flex w-full items-stretch gap-4 p-6">
-        {/* Media */}
-        <div className="flex min-w-0 flex-1 items-center justify-center">
+      <div className="flex h-full gap-4">
+        {/* Media panel — flexible width, dark plate, contained media. */}
+        <div className="group/nav relative flex h-full flex-1 items-center justify-center overflow-hidden rounded-l-xl bg-black/30">
           <Media item={item} />
+
+          {hasPrev && <NavArrow side="left" onClick={onPrev} />}
+          {hasNext && <NavArrow side="right" onClick={onNext} />}
         </div>
 
-        {/* Inspector panel — double-bezel */}
-        <div className="w-[320px] shrink-0 rounded-[20px] bg-[var(--mb-plane-1,rgba(127,127,127,0.05))] p-1.5 ring-1 ring-[var(--mb-hairline,rgba(127,127,127,0.14))]">
-          <div className="flex h-full flex-col rounded-[14px] bg-ui-panel p-4">
-            <div className="mb-4 flex items-center justify-between">
-              <span className="rounded-full border border-ui-divider px-2.5 py-1 text-[10px] font-medium uppercase tracking-[0.18em] text-base-fg/55">
+        {/* Info + actions — fixed width, scrollable body, buttons pinned bottom. */}
+        <div className="flex h-full w-[280px] shrink-0 flex-col">
+          <div className="min-h-0 flex-1 space-y-5 overflow-y-auto pb-2 text-base-fg">
+            <div className="flex items-center gap-2.5 border-b border-white/5 pb-3 pr-10">
+              <span className="rounded-full border border-ui-panel-border px-2.5 py-1 text-[10px] font-medium uppercase tracking-[0.18em] text-base-fg/55">
                 {KIND_LABEL[item.kind]}
               </span>
-              <button
-                type="button"
-                aria-label="Close"
-                onClick={onClose}
-                className="flex h-8 w-8 items-center justify-center rounded-full text-base-fg/60 transition-colors hover:bg-base-fg/10 hover:text-base-fg focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-              >
-                <FontAwesomeIcon icon={faXmark} className="h-4 w-4" />
-              </button>
             </div>
 
-            {/* Rating */}
             <Section title="Rating">
               <div className="flex items-center gap-1">
                 {[1, 2, 3, 4, 5].map((n) => (
@@ -158,7 +149,6 @@ export const ItemInspector = ({
               </div>
             </Section>
 
-            {/* Tags */}
             <Section title="Tags">
               <div className="flex flex-wrap gap-1.5">
                 {item.tags.map((tag) => (
@@ -166,7 +156,7 @@ export const ItemInspector = ({
                     key={tag}
                     type="button"
                     onClick={() => onRemoveTag(tag)}
-                    className="group/tag flex items-center gap-1 rounded-full bg-base-fg/10 px-2.5 py-1 text-[11px] font-medium text-base-fg/80 transition-colors hover:bg-danger/15 hover:text-danger focus:outline-none focus-visible:ring-2 focus-visible:ring-danger"
+                    className="group/tag flex items-center gap-1 rounded-full bg-base-fg/10 px-2.5 py-1 text-[11px] font-medium text-base-fg/80 transition-colors hover:bg-red/15 hover:text-red focus:outline-none focus-visible:ring-2 focus-visible:ring-red"
                   >
                     {tag}
                     <FontAwesomeIcon icon={faXmark} className="h-2.5 w-2.5" />
@@ -185,7 +175,6 @@ export const ItemInspector = ({
               </div>
             </Section>
 
-            {/* Palette */}
             {item.kind === "image" && palette.length > 0 && (
               <Section title="Palette">
                 <div className="flex flex-wrap gap-1.5">
@@ -213,39 +202,32 @@ export const ItemInspector = ({
                 </button>
               </Section>
             )}
+          </div>
 
-            <div className="flex-1" />
-
-            {/* Actions */}
-            <div className="flex flex-col gap-2">
-              {item.kind === "image" && (
-                <button
-                  type="button"
-                  onClick={onUseReference}
-                  className="group flex items-center justify-center gap-2.5 rounded-full bg-primary py-2 pl-5 pr-2 text-sm font-medium text-white transition-all duration-200 ease-[cubic-bezier(0.4,0,0.2,1)] hover:bg-primary/90 active:scale-[0.98] focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
-                >
-                  Use as reference
-                  <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white/15 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:scale-105">
-                    <FontAwesomeIcon
-                      icon={faWandMagicSparkles}
-                      className="h-3.5 w-3.5"
-                    />
-                  </span>
-                </button>
-              )}
-              <button
-                type="button"
-                onClick={onDelete}
-                className="flex items-center justify-center gap-2 rounded-full border border-ui-divider py-2.5 text-sm font-medium text-base-fg/70 transition-colors hover:bg-danger/10 hover:text-danger focus:outline-none focus-visible:ring-2 focus-visible:ring-danger"
+          {/* Actions — shared Button, lightbox-style 2-col grid. */}
+          <div className="mt-4 grid grid-cols-2 gap-1.5">
+            {item.kind === "image" && (
+              <Button
+                variant="primary"
+                icon={faWandMagicSparkles}
+                onClick={onUseReference}
+                className="w-full col-span-2 py-1.5 text-[13px]"
               >
-                <FontAwesomeIcon icon={faTrashCan} className="h-3.5 w-3.5" />
-                Delete
-              </button>
-            </div>
+                Use as reference
+              </Button>
+            )}
+            <Button
+              variant="destructive"
+              icon={faTrashCan}
+              onClick={onDelete}
+              className="w-full col-span-2 py-1.5 text-[13px]"
+            >
+              Delete
+            </Button>
           </div>
         </div>
       </div>
-    </div>
+    </Modal>
   );
 };
 
@@ -256,10 +238,8 @@ const Section = ({
   title: string;
   children: React.ReactNode;
 }) => (
-  <div className="mb-4">
-    <h3 className="mb-2 text-[10px] font-medium uppercase tracking-[0.18em] text-base-fg/45">
-      {title}
-    </h3>
+  <div className="space-y-1.5">
+    <div className="text-sm font-medium text-base-fg/90">{title}</div>
     {children}
   </div>
 );
@@ -271,7 +251,7 @@ const Media = ({ item }: { item: BoardItem }) => {
         <img
           src={item.src}
           alt={item.caption || ""}
-          className="max-h-full max-w-full rounded-xl object-contain shadow-2xl"
+          className="h-full w-full object-contain"
         />
       );
     case "video":
@@ -283,7 +263,7 @@ const Media = ({ item }: { item: BoardItem }) => {
           loop
           controls
           playsInline
-          className="max-h-full max-w-full rounded-xl shadow-2xl"
+          className="h-full w-full object-contain"
         />
       );
     case "color":
@@ -334,31 +314,31 @@ const Media = ({ item }: { item: BoardItem }) => {
   }
 };
 
+// Hover-reveal navigation arrow, styled to match the shared LightboxModal.
 const NavArrow = ({
   side,
-  show,
   onClick,
 }: {
   side: "left" | "right";
-  show: boolean;
   onClick: () => void;
-}) => {
-  if (!show) return null;
-  return (
-    <button
-      type="button"
-      aria-label={side === "left" ? "Previous" : "Next"}
-      onClick={onClick}
-      className={[
-        "absolute top-1/2 z-20 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full",
-        "border border-white/15 bg-black/40 text-white/85 backdrop-blur-md transition-colors hover:bg-black/60 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70",
-        side === "left" ? "left-4" : "right-4",
-      ].join(" ")}
-    >
-      <FontAwesomeIcon
-        icon={side === "left" ? faChevronLeft : faChevronRight}
-        className="h-4 w-4"
-      />
-    </button>
-  );
-};
+}) => (
+  <button
+    type="button"
+    aria-label={side === "left" ? "Previous" : "Next"}
+    onClick={(e) => {
+      e.stopPropagation();
+      onClick();
+    }}
+    className={[
+      "absolute top-1/2 z-30 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full",
+      "bg-black/50 text-white/70 opacity-0 transition-opacity duration-200",
+      "hover:bg-black/70 hover:text-white group-hover/nav:opacity-100 focus:outline-none",
+      side === "left" ? "left-3" : "right-3",
+    ].join(" ")}
+  >
+    <FontAwesomeIcon
+      icon={side === "left" ? faChevronLeft : faChevronRight}
+      className="text-lg"
+    />
+  </button>
+);

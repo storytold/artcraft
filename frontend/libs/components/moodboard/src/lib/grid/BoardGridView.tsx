@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { useBoardLibraryStore } from "../boards/BoardLibraryStore";
 import {
@@ -51,6 +51,7 @@ export const BoardGridView = ({ active, adapter }: Props) => {
   const removeItems = useBoardLibraryStore((s) => s.removeItems);
   const updateItem = useBoardLibraryStore((s) => s.updateItem);
   const addColorItem = useBoardLibraryStore((s) => s.addColorItem);
+  const renameBoard = useBoardLibraryStore((s) => s.renameBoard);
   const createSection = useBoardLibraryStore((s) => s.createSection);
   const renameSection = useBoardLibraryStore((s) => s.renameSection);
   const deleteSection = useBoardLibraryStore((s) => s.deleteSection);
@@ -66,6 +67,20 @@ export const BoardGridView = ({ active, adapter }: Props) => {
 
   const [dragOver, setDragOver] = useState(false);
   const [openId, setOpenId] = useState<string | null>(null);
+  // Which text card is in inline-edit mode (e.g. a freshly-added note).
+  const [editingTextId, setEditingTextId] = useState<string | null>(null);
+
+  const handleAddNote = useCallback(
+    () => setEditingTextId(addNote()),
+    [addNote],
+  );
+  const commitText = useCallback(
+    (id: string, text: string) => {
+      if (board) updateItem(board.id, id, { text });
+      setEditingTextId((cur) => (cur === id ? null : cur));
+    },
+    [board, updateItem],
+  );
 
   useEffect(() => {
     if (active) ensureActiveBoard();
@@ -112,6 +127,18 @@ export const BoardGridView = ({ active, adapter }: Props) => {
         .filter((it): it is BoardItem => Boolean(it)),
     );
   };
+  // "Use as reference" only applies to reference-capable items (images with a
+  // media token) — never notes/colors/links. Mirrors sendReference's filter.
+  const canUseReference = useMemo(
+    () =>
+      board
+        ? Array.from(selectedItemIds).some((id) => {
+            const it = board.items[id];
+            return it?.kind === "image" && Boolean(it.mediaId);
+          })
+        : false,
+    [board, selectedItemIds],
+  );
 
   const handleNewSection = () => {
     if (board) createSection(board.id);
@@ -192,7 +219,11 @@ export const BoardGridView = ({ active, adapter }: Props) => {
 
   return (
     <div
-      className="relative h-full w-full bg-ui-background"
+      className="relative h-full w-full overflow-hidden"
+      // Matches MoodboardWorkspace: desktop themes drive --st-bg, the webapp
+      // falls back to its --background token (#171717). overflow-hidden keeps
+      // the view root from ever scrolling — the grid scrolls internally.
+      style={{ background: "var(--st-bg, hsl(0 0% 9%))" }}
       onDragOver={(e) => {
         if (e.dataTransfer.types.includes("Files")) {
           e.preventDefault();
@@ -206,6 +237,7 @@ export const BoardGridView = ({ active, adapter }: Props) => {
     >
       <BoardGridToolbar
         boardName={board?.name ?? "Moodboard"}
+        onRenameBoard={(name) => renameBoard(ensureActiveBoard(), name)}
         itemCount={board?.itemOrder.length ?? 0}
         density={density}
         onDensityChange={setDensity}
@@ -221,7 +253,7 @@ export const BoardGridView = ({ active, adapter }: Props) => {
         onUpload={triggerUpload}
         onLibrary={triggerGallery}
         canPickLibrary={Boolean(adapter.renderLibraryPicker)}
-        onAddNote={addNote}
+        onAddNote={handleAddNote}
         onAddColor={(color) => addColorItem(ensureActiveBoard(), color)}
         onNewSection={handleNewSection}
       />
@@ -257,6 +289,9 @@ export const BoardGridView = ({ active, adapter }: Props) => {
             onOpen={(id) => setOpenId(id)}
             onUseReference={referenceById}
             onDelete={(id) => board && removeItems(board.id, [id])}
+            editingTextId={editingTextId}
+            onEditText={setEditingTextId}
+            onCommitText={commitText}
             sections={board?.sections}
             onRenameSection={(id, name) =>
               board && renameSection(board.id, id, name)
@@ -275,6 +310,7 @@ export const BoardGridView = ({ active, adapter }: Props) => {
 
       <SelectionBar
         count={selectedItemIds.size}
+        canUseReference={canUseReference}
         sections={board?.sections ?? []}
         onUseReference={referenceSelected}
         onAssignToSection={handleAssignToSection}

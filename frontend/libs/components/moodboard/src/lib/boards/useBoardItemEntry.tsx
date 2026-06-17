@@ -8,7 +8,8 @@ import type { MoodboardAdapter, MoodboardPickedItem } from "../adapter";
 interface UseReturn {
   triggerUpload: () => void;
   triggerGallery: () => void;
-  addNote: () => void;
+  /** Adds an empty note and returns its id so the grid can open it for editing. */
+  addNote: () => string;
   modals: ReactNode;
 }
 
@@ -34,7 +35,11 @@ export const useBoardItemEntry = (
 
   const addNote = useCallback(() => {
     const store = useBoardLibraryStore.getState();
-    store.addTextItem(store.ensureActiveBoard(), "New note");
+    // Empty text → the card shows its "Note" placeholder and the grid drops
+    // straight into edit mode so the user types instead of clearing "New note".
+    const id = store.addTextItem(store.ensureActiveBoard(), "");
+    store.setSelection([id]);
+    return id;
   }, []);
 
   // Place the image immediately from a blob, then (if the platform supports it)

@@ -46,10 +46,7 @@ import {
 } from "@storyteller/tauri-events";
 import { SoundManager } from "@storyteller/soundboard";
 import { useStoryboardPageEnabled } from "@storyteller/ui-settings-modal";
-import {
-  DomLevels,
-  usePageSceneStore,
-} from "@storyteller/ui-pagescene";
+import { DomLevels, usePageSceneStore } from "@storyteller/ui-pagescene";
 
 import { useActiveJobs } from "~/hooks/useActiveJobs";
 import { useBackgroundLoadingMedia } from "~/hooks/useBackgroundLoadingMedia";
@@ -224,9 +221,17 @@ const TabBody = ({ sceneToken }: { sceneToken?: string }) => {
     case "3D":
       return <PageScene sceneToken={sceneToken} />;
     case "APPS":
-      return <div><AppsIndexPage /></div>;
+      return (
+        <div>
+          <AppsIndexPage />
+        </div>
+      );
     case "2D":
-      return <div><PageDrawWithGalleryDrop /></div>;
+      return (
+        <div>
+          <PageDrawWithGalleryDrop />
+        </div>
+      );
     case "IMAGE":
       return (
         <div>
@@ -237,29 +242,83 @@ const TabBody = ({ sceneToken }: { sceneToken?: string }) => {
         </div>
       );
     case "VIDEO":
-      return <div><ImageToVideo /></div>;
+      return (
+        <div>
+          <ImageToVideo />
+        </div>
+      );
     case "VIDEO_FRAME_EXTRACTOR":
-      return <div><VideoFrameExtractor /></div>;
+      return (
+        <div>
+          <VideoFrameExtractor />
+        </div>
+      );
     case "VIDEO_WATERMARK_REMOVAL":
-      return <div><VideoWatermarkRemover /></div>;
+      return (
+        <div>
+          <VideoWatermarkRemover />
+        </div>
+      );
     case "IMAGE_WATERMARK_REMOVAL":
-      return <div><ImageWatermarkRemover /></div>;
+      return (
+        <div>
+          <ImageWatermarkRemover />
+        </div>
+      );
     case "IMAGE_TO_3D_OBJECT":
-      return <div><ImageTo3DObject /></div>;
+      return (
+        <div>
+          <ImageTo3DObject />
+        </div>
+      );
     case "IMAGE_TO_3D_WORLD":
-      return <div><ImageTo3DWorld /></div>;
+      return (
+        <div>
+          <ImageTo3DWorld />
+        </div>
+      );
     case "REMOVE_BACKGROUND":
-      return <div><RemoveBackground /></div>;
+      return (
+        <div>
+          <RemoveBackground />
+        </div>
+      );
     case "ANGLES":
-      return <div><Angles /></div>;
+      return (
+        <div>
+          <Angles />
+        </div>
+      );
     case "STORYBOARD":
-      return storyboardPageEnabled ? <div><Storyboard /></div> : null;
+      return storyboardPageEnabled ? (
+        <div>
+          <Storyboard />
+        </div>
+      ) : null;
     case "BACKGROUND_CHANGE":
-      return <div><PageBackgroundChange /></div>;
+      return (
+        <div>
+          <PageBackgroundChange />
+        </div>
+      );
     case "VIDEO_EDITOR":
-      return <div className="h-[calc(100vh-3rem)] w-full"><PageVideoEditor /></div>;
+      return (
+        <div className="h-[calc(100vh-3rem)] w-full">
+          <PageVideoEditor />
+        </div>
+      );
     case "MOODBOARD":
-      return <div className="h-[calc(100vh-3rem)] w-full"><PageMoodboard /></div>;
+      // The TopBar is fixed and 56px tall, so the board sits below it and fills
+      // the rest of the viewport. h-screen + pt-[56px] (border-box) makes the
+      // board area exactly viewport-minus-topbar, and overflow-hidden keeps
+      // sub-pixel 100vh rounding from spawning page scrollbars (which w-screen
+      // ancestors would turn into a horizontal scrollbar via the Windows
+      // scrollbar gutter).
+      return (
+        <div className="h-[calc(100vh-56px)] w-full overflow-hidden">
+          <PageMoodboard />
+        </div>
+      );
     default:
       return null;
   }

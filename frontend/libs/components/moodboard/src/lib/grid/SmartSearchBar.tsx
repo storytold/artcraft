@@ -1,8 +1,5 @@
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faMagnifyingGlass,
-  faXmark,
-} from "@fortawesome/pro-regular-svg-icons";
+import { faMagnifyingGlass, faXmark } from "@fortawesome/pro-regular-svg-icons";
 
 interface Props {
   query: string;
@@ -23,7 +20,7 @@ export const SmartSearchBar = ({
 }: Props) => {
   return (
     <div className="flex min-w-0 items-center gap-2">
-      <div className="glass flex h-9 min-w-[200px] items-center gap-2 rounded-full border border-ui-divider px-3 focus-within:ring-2 focus-within:ring-primary/50">
+      <div className="bg-ui-controls flex h-9 min-w-[200px] transition-all items-center gap-2 rounded-xl border border-ui-controls px-3 focus-within:ring-2 focus-within:ring-primary/50">
         <FontAwesomeIcon
           icon={faMagnifyingGlass}
           className="h-3.5 w-3.5 text-base-fg/45"

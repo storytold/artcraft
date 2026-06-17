@@ -30,6 +30,10 @@ interface Props {
   onOpen: (id: string) => void;
   onUseReference: (id: string) => void;
   onDelete: (id: string) => void;
+  // Inline text editing: which text card is being edited, plus enter/commit.
+  editingTextId?: string | null;
+  onEditText?: (id: string) => void;
+  onCommitText?: (id: string, text: string) => void;
   // When present (non-empty), the grid groups items into section lanes with
   // header rows. Absent → flat masonry (the default).
   sections?: BoardSection[];
@@ -62,6 +66,9 @@ export const BoardGrid = ({
   onOpen,
   onUseReference,
   onDelete,
+  editingTextId,
+  onEditText,
+  onCommitText,
   sections,
   onRenameSection,
   onDeleteSection,
@@ -298,6 +305,9 @@ export const BoardGrid = ({
               onOpen={onOpen}
               onUseReference={onUseReference}
               onDelete={onDelete}
+              editing={editingTextId === pos.id}
+              onEditText={onEditText}
+              onCommitText={onCommitText}
             />
           );
         })}

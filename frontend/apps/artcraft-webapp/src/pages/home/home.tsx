@@ -6,6 +6,7 @@ import {
   faWandMagicSparkles,
   faCube,
   faFilm,
+  faObjectGroup,
   faArrowRight,
 } from "@fortawesome/pro-solid-svg-icons";
 import type { IconDefinition } from "@fortawesome/fontawesome-svg-core";
@@ -67,6 +68,16 @@ const APPS: AppCard[] = [
     accent: "from-rose-500/20 to-rose-500/0",
     iconBg: "bg-rose-500/25 border-rose-400/30",
     iconColor: "text-rose-300",
+    badge: "BETA",
+  },
+  {
+    label: "Moodboard",
+    description: "Collect references and ideas to steer a generation.",
+    href: "/moodboard",
+    icon: faObjectGroup,
+    accent: "from-indigo-500/20 to-indigo-500/0",
+    iconBg: "bg-indigo-500/25 border-indigo-400/30",
+    iconColor: "text-indigo-300",
     badge: "BETA",
   },
 ];
