@@ -38,6 +38,7 @@ module.exports = {
       gray: colors.gray,
       black: colors.black,
       rose: colors.rose,
+      indigo: colors.indigo,
       red: { ...colors.red, DEFAULT: "#D33242" },
       blue: { ...colors.blue, DEFAULT: "#2E70FF" },
       orange: colors.orange,
