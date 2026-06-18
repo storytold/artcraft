@@ -457,6 +457,30 @@ mod tests {
       assert_eq!(orders[0].task_status, TaskStatus::Processing);
     }
 
+    /// Regression: the Kinovi API started returning result `width`/`height`
+    /// (and `totalCredits`) as floats (e.g. `568.5`). They must parse and
+    /// coerce to unsigned ints instead of failing with
+    /// "invalid type: floating point ..., expected u32".
+    #[test]
+    fn float_dimensions_and_credits_are_coerced() {
+      let body = r#"[{"result":{"data":{"json":{"orders":[{
+        "orderId":"ord_float",
+        "resultUrl":"https://example.com/v.mp4",
+        "taskStatus":"COMPLETED",
+        "results":[{"url":"https://example.com/v.mp4","width":568.5,"height":1023.4}],
+        "failReason":null,
+        "createdAt":"2026-02-19T01:20:50.398Z",
+        "mediaType":"video",
+        "totalCredits":12.9
+      }],"nextCursor":394062.0}}}}]"#;
+      let orders = parse_orders(body);
+      assert_eq!(orders.len(), 1);
+      assert_eq!(orders[0].results.len(), 1);
+      assert_eq!(orders[0].results[0].width, 569);
+      assert_eq!(orders[0].results[0].height, 1023);
+      assert_eq!(orders[0].total_credits, Some(13));
+    }
+
     /// Unrecognised mediaType values shouldn't crash deserialisation;
     /// they end up as `Unknown(_)`.
     #[test]
