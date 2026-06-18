@@ -163,6 +163,19 @@
   }
 }
 
+/* For marquee tracks that render two identical copies of their content:
+   translating by -50% lands exactly on the start of the second copy, so the
+   loop is seamless. */
+@keyframes marquee-track {
+  from {
+    transform: translateX(0);
+  }
+
+  to {
+    transform: translateX(-50%);
+  }
+}
+
 @keyframes shimmer {
   0% {
     background-position: 200% 0;
