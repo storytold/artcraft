@@ -37,7 +37,7 @@ CREATE TABLE uploaded_video_notes (
   comment_create_ip_address VARCHAR(40) NOT NULL,
 
   -- IP address that last updated the note. Wide enough for IPv4/IPv6.
-  comment_update_ip_address VARCHAR(40) DEFAULT NULL,
+  maybe_comment_update_ip_address VARCHAR(40) DEFAULT NULL,
 
   -- ========== TIMESTAMPS ==========
 
