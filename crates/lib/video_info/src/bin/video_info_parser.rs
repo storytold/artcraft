@@ -191,13 +191,16 @@ fn summary_row(
       let signer = if i.has_c2pa { signer_line(&i.signer_country, &i.cert_serial) } else { String::new() };
       ("Dreamina", i.product.clone(), i.video_id.clone().unwrap_or_default(), String::new(), signer)
     }
-    Ok(VideoInfo::Kling(i)) => (
-      "Kling",
-      "Kling".to_string(),
-      i.produce_id.clone().unwrap_or_default(),
-      String::new(),
-      i.content_producer.clone().unwrap_or_default(),
-    ),
+    Ok(VideoInfo::Kling(i)) => {
+      let model = match &i.model_version {
+        Some(v) => format!("Kling {v}"),
+        None => "Kling".to_string(),
+      };
+      let detail = i.produce_id.clone().unwrap_or_else(|| {
+        if i.has_stream_watermark { "watermark-only".to_string() } else { String::new() }
+      });
+      ("Kling", model, detail, String::new(), i.content_producer.clone().unwrap_or_default())
+    }
     Err(VideoInfoError::Unrecognized) => ("—", String::new(), String::new(), String::new(), String::new()),
     Err(err) => ("error", err.to_string(), String::new(), String::new(), String::new()),
   };
@@ -354,9 +357,15 @@ fn print_dreamina(filename: &str, info: &DreaminaInfo) {
 
 fn print_kling(filename: &str, info: &KlingInfo) {
   header("Kling (Kuaishou) video provenance", filename);
+  opt("model version", &info.model_version);
+  row("ai-generated", if info.is_ai_generated { "yes" } else { "no" });
   opt("aigc label", &info.label);
   opt("content producer", &info.content_producer);
   opt("produce id", &info.produce_id);
   opt("content propagator", &info.content_propagator);
   opt("propagate id", &info.propagate_id);
+  opt("reserved code 1", &info.reserved_code_1);
+  opt("reserved code 2", &info.reserved_code_2);
+  row("stream watermark", if info.has_stream_watermark { "yes" } else { "no" });
+  opt("watermark uuid", &info.watermark_uuid);
 }
