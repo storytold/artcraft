@@ -112,9 +112,7 @@ pub fn model_family_for_type(
     | Type::Seedance2p0Ultra
     | Type::Seedance2p0UltraFast
     | Type::Seedance2p0BytePlusUltra
-    | Type::Seedance2p0BytePlusUltraFast
-    | Type::PreviewModel
-    | Type::PreviewModelFast => Family::Seedance,
+    | Type::Seedance2p0BytePlusUltraFast => Family::Seedance,
     Type::Sora2 | Type::Sora2Pro => Family::Sora,
     Type::Veo2 | Type::Veo3 | Type::Veo3Fast | Type::Veo3p1 | Type::Veo3p1Fast => Family::Veo,
   }

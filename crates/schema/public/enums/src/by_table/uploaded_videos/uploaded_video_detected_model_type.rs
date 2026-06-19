@@ -43,9 +43,11 @@ pub enum UploadedVideoDetectedModelType {
   Seedance10Lite,
   #[serde(rename = "seedance_1p5_pro")]
   Seedance1p5Pro,
-  #[serde(rename = "seedance_2p0")]
+  // `preview_model` is a retired alias that collapses onto Seedance 2.0.
+  #[serde(rename = "seedance_2p0", alias = "preview_model")]
   Seedance2p0,
-  #[serde(rename = "seedance_2p0_fast")]
+  // `preview_model_fast` is a retired alias that collapses onto Seedance 2.0 Fast.
+  #[serde(rename = "seedance_2p0_fast", alias = "preview_model_fast")]
   Seedance2p0Fast,
   #[serde(rename = "seedance_2p0_bp")]
   Seedance2p0BytePlus,
@@ -73,10 +75,6 @@ pub enum UploadedVideoDetectedModelType {
   Veo3p1,
   #[serde(rename = "veo_3p1_fast")]
   Veo3p1Fast,
-  #[serde(rename = "preview_model")]
-  PreviewModel,
-  #[serde(rename = "preview_model_fast")]
-  PreviewModelFast,
 }
 
 impl_enum_display_and_debug_using_to_str!(UploadedVideoDetectedModelType);
@@ -114,8 +112,6 @@ impl UploadedVideoDetectedModelType {
       Self::Veo3Fast => "veo_3_fast",
       Self::Veo3p1 => "veo_3p1",
       Self::Veo3p1Fast => "veo_3p1_fast",
-      Self::PreviewModel => "preview_model",
-      Self::PreviewModelFast => "preview_model_fast",
     }
   }
 
@@ -149,8 +145,9 @@ impl UploadedVideoDetectedModelType {
       "veo_3_fast" => Ok(Self::Veo3Fast),
       "veo_3p1" => Ok(Self::Veo3p1),
       "veo_3p1_fast" => Ok(Self::Veo3p1Fast),
-      "preview_model" => Ok(Self::PreviewModel),
-      "preview_model_fast" => Ok(Self::PreviewModelFast),
+      // Retired values: collapse onto the Seedance 2.0 equivalents.
+      "preview_model" => Ok(Self::Seedance2p0),
+      "preview_model_fast" => Ok(Self::Seedance2p0Fast),
       _ => Err(format!("invalid value: {:?}", value)),
     }
   }
@@ -185,8 +182,6 @@ impl UploadedVideoDetectedModelType {
       Self::Veo3Fast,
       Self::Veo3p1,
       Self::Veo3p1Fast,
-      Self::PreviewModel,
-      Self::PreviewModelFast,
     ])
   }
 }
@@ -227,7 +222,23 @@ mod tests {
   fn variant_count() {
     use strum::IntoEnumIterator;
     assert_eq!(UploadedVideoDetectedModelType::all_variants().len(), UploadedVideoDetectedModelType::iter().len());
-    assert_eq!(UploadedVideoDetectedModelType::COUNT, 30);
+    assert_eq!(UploadedVideoDetectedModelType::COUNT, 28);
+  }
+
+  /// Retired `preview_model*` values must still decode, collapsing onto Seedance 2.0.
+  #[test]
+  fn legacy_preview_values_map_to_seedance() {
+    assert_eq!(
+      UploadedVideoDetectedModelType::from_str("preview_model").unwrap(),
+      UploadedVideoDetectedModelType::Seedance2p0
+    );
+    assert_eq!(
+      UploadedVideoDetectedModelType::from_str("preview_model_fast").unwrap(),
+      UploadedVideoDetectedModelType::Seedance2p0Fast
+    );
+    let decoded: UploadedVideoDetectedModelType =
+      serde_json::from_str("\"preview_model\"").unwrap();
+    assert_eq!(decoded, UploadedVideoDetectedModelType::Seedance2p0);
   }
 
   #[test]
