@@ -11667,6 +11667,7 @@ dependencies = [
  "utoipa",
  "utoipa-swagger-ui",
  "uuid_utils",
+ "video_info",
  "videos",
  "workspace-build-acceleration",
  "worldlabs_api_client",

@@ -32,6 +32,7 @@ pub mod user_ratings;
 pub mod user_referral_codes;
 pub mod user_wallets;
 pub mod users;
+pub mod video_info;
 pub mod voice_clone_requests;
 pub mod voice_conversion;
 pub mod voice_designer;

@@ -38,6 +38,7 @@ actix_helpers.workspace = true
 artcraft_api_defs.workspace = true
 artcraft_api_keys.workspace = true
 artcraft_router.workspace = true
+video_info.workspace = true
 bootstrap.workspace = true
 bucket_paths.workspace = true
 cloud_storage.workspace = true

@@ -16,4 +16,5 @@ pub mod subscriptions;
 pub mod user_referral_codes;
 pub mod users;
 pub mod utils;
+pub mod video_info;
 pub mod web_referrals;
