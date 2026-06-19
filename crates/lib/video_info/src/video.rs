@@ -7,6 +7,7 @@ use crate::dreamina_info::DreaminaInfo;
 use crate::error::VideoInfoError;
 use crate::kling_info::KlingInfo;
 use crate::seedance_info::SeedanceInfo;
+use crate::sora_info::SoraInfo;
 use crate::veo_info::VeoInfo;
 
 /// Recognized AI-video provenance, dispatched by [`VideoInfo::from_bytes`].
@@ -16,6 +17,8 @@ pub enum VideoInfo {
   Seedance(SeedanceInfo),
   /// Google Veo (Google Generative AI video C2PA).
   Veo(VeoInfo),
+  /// OpenAI Sora (OpenAI Generative AI video C2PA).
+  Sora(SoraInfo),
   /// Dreamina (ByteDance/CapCut consumer app `ilst` metadata).
   Dreamina(DreaminaInfo),
   /// Kling (Kuaishou AIGC-label `ilst` metadata).
@@ -45,6 +48,11 @@ impl VideoInfo {
     match VeoInfo::from_bytes(data) {
       Ok(info) => return Ok(VideoInfo::Veo(info)),
       Err(VideoInfoError::NotVeo) => {}
+      Err(other) => return Err(other),
+    }
+    match SoraInfo::from_bytes(data) {
+      Ok(info) => return Ok(VideoInfo::Sora(info)),
+      Err(VideoInfoError::NotSora) => {}
       Err(other) => return Err(other),
     }
     match DreaminaInfo::from_bytes(data) {

@@ -8,7 +8,7 @@
 use std::process::ExitCode;
 
 use video_info::error::VideoInfoError;
-use video_info::{DreaminaInfo, KlingInfo, SeedanceInfo, VeoInfo, VideoInfo};
+use video_info::{DreaminaInfo, KlingInfo, SeedanceInfo, SoraInfo, VeoInfo, VideoInfo};
 
 fn main() -> ExitCode {
   let filename = match parse_filename(std::env::args().skip(1)) {
@@ -30,6 +30,10 @@ fn main() -> ExitCode {
       print_veo(&filename, &info);
       ExitCode::SUCCESS
     }
+    Ok(VideoInfo::Sora(info)) => {
+      print_sora(&filename, &info);
+      ExitCode::SUCCESS
+    }
     Ok(VideoInfo::Dreamina(info)) => {
       print_dreamina(&filename, &info);
       ExitCode::SUCCESS
@@ -39,7 +43,7 @@ fn main() -> ExitCode {
       ExitCode::SUCCESS
     }
     Err(VideoInfoError::Unrecognized) => {
-      println!("No recognized provenance (not Seedance, Veo, Dreamina, or Kling)");
+      println!("No recognized provenance (not Seedance, Veo, Sora, Dreamina, or Kling)");
       ExitCode::SUCCESS
     }
     Err(err) => {
@@ -129,6 +133,18 @@ fn print_veo(filename: &str, info: &VeoInfo) {
   opt("instance id", &info.instance_id);
   opt("cert serial", &info.cert_serial);
   row("model name", "(not embedded in metadata)");
+}
+
+fn print_sora(filename: &str, info: &SoraInfo) {
+  header("OpenAI Sora video provenance", filename);
+  row("producer", &info.producer);
+  opt("model name", &info.model_name);
+  opt("created description", &info.created_description);
+  opt("digital source type", &info.digital_source_type);
+  opt("claim generator", &info.claim_generator);
+  opt("manifest id", &info.manifest_id);
+  opt("instance id", &info.instance_id);
+  opt("cert serial", &info.cert_serial);
 }
 
 fn print_dreamina(filename: &str, info: &DreaminaInfo) {
