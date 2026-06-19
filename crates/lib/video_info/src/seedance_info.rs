@@ -73,8 +73,16 @@ pub struct SeedanceInfo {
   /// Parsed [`generated_at`](Self::generated_at), when it is valid RFC 3339.
   pub generated_at_utc: Option<DateTime<Utc>>,
 
-  /// Opaque per-generation log / request id (e.g. `"ATIAA7b8D_iKjF32GukAAAAA"`).
+  /// Per-generation log / request id, base64url-encoded
+  /// (e.g. `"ATIAA7b8D_iKjF32GukAAAAA"`).
   pub log_id: Option<String>,
+
+  /// [`log_id`](Self::log_id) base64url-decoded to hex (18 bytes). It is a
+  /// structured id: byte 0 = version (`01`), byte 1 = region/platform
+  /// (`0x32` = Volcengine, `0x33` = BytePlus), bytes 2–3 constant (`0003`),
+  /// bytes 4–13 a per-generation value, bytes 14–17 zero padding. The region
+  /// byte independently corroborates [`platform`](Self::platform).
+  pub log_id_decoded_hex: Option<String>,
 
   /// IPTC digital source type URL — always trained-algorithmic-media for these.
   pub digital_source_type: Option<String>,
@@ -155,6 +163,12 @@ impl SeedanceInfo {
 
     let (model_brand, model_version, is_fast) = parse_model_name(&model_name);
 
+    let log_id = text_after_key(data, b"log_id");
+    let log_id_decoded_hex = log_id
+      .as_deref()
+      .and_then(decode_base64url)
+      .map(|bytes| bytes.iter().map(|b| format!("{:02x}", b)).collect::<String>());
+
     let software_agent_version = text_after_key_from(data, b"version", vendor_end);
 
     let claim_generator = find(data, b"c2pa-rs").map(|_| "c2pa-rs".to_string());
@@ -176,7 +190,8 @@ impl SeedanceInfo {
       is_fast,
       generated_at,
       generated_at_utc,
-      log_id: text_after_key(data, b"log_id"),
+      log_id,
+      log_id_decoded_hex,
       digital_source_type: text_after_key(data, b"digitalSourceType"),
       claim_generator,
       claim_generator_version,
@@ -358,6 +373,37 @@ fn find_cert_serial(data: &[u8]) -> Option<String> {
   Some(bytes.iter().map(|b| format!("{:02X}", b)).collect())
 }
 
+/// Minimal base64url (RFC 4648 §5) decoder — no external dependency. Ignores
+/// `=` padding; returns `None` on any invalid character.
+fn decode_base64url(input: &str) -> Option<Vec<u8>> {
+  fn sextet(c: u8) -> Option<u8> {
+    match c {
+      b'A'..=b'Z' => Some(c - b'A'),
+      b'a'..=b'z' => Some(c - b'a' + 26),
+      b'0'..=b'9' => Some(c - b'0' + 52),
+      b'-' => Some(62),
+      b'_' => Some(63),
+      _ => None,
+    }
+  }
+  let chars: Vec<u8> = input.bytes().filter(|&b| b != b'=').collect();
+  let mut out = Vec::with_capacity(chars.len() * 3 / 4);
+  for chunk in chars.chunks(4) {
+    let mut buf = [0u8; 4];
+    for (i, &c) in chunk.iter().enumerate() {
+      buf[i] = sextet(c)?;
+    }
+    out.push((buf[0] << 2) | (buf[1] >> 4));
+    if chunk.len() >= 3 {
+      out.push((buf[1] << 4) | (buf[2] >> 2));
+    }
+    if chunk.len() >= 4 {
+      out.push((buf[2] << 6) | buf[3]);
+    }
+  }
+  Some(out)
+}
+
 // ── Byte search ──
 
 fn find(haystack: &[u8], needle: &[u8]) -> Option<usize> {
@@ -451,6 +497,7 @@ mod tests {
     assert_eq!(info.generated_at, "2026-06-19T01:32:58Z");
     assert!(info.generated_at_utc.is_some());
     assert_eq!(info.log_id.as_deref(), Some("ATIAA7b8D_iKjF32GukAAAAA"));
+    assert_eq!(info.log_id_decoded_hex.as_deref(), Some("01320003b6fc0ff88a8c5df61ae900000000"));
     assert_eq!(info.claim_generator.as_deref(), Some("c2pa-rs"));
     assert_eq!(info.claim_generator_version.as_deref(), Some("0.78.4"));
     assert_eq!(info.manifest_id.as_deref(), Some("urn:c2pa:40a5f6fe-b88a-4a2c-ae72-f76a1e5a6012"));
@@ -474,6 +521,8 @@ mod tests {
     assert_eq!(info.signer_email.as_deref(), Some("certificate@byteplus.com"));
     assert_eq!(info.signer_org_id.as_deref(), Some("NTRSG-202024632W"));
     assert_eq!(info.signer_country.as_deref(), Some("SG"));
+    // BytePlus region byte is 0x33 (vs 0x32 for Volcengine).
+    assert_eq!(info.log_id_decoded_hex.as_deref(), Some("01330003b6f7e89f1c2d93b6894900000000"));
   }
 
   #[test]

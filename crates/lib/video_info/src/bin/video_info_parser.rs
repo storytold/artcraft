@@ -85,6 +85,7 @@ fn print_info(filename: &str, info: &SeedanceInfo) {
     &info.generated_at_utc.map(|t| t.to_rfc3339()).unwrap_or_else(|| "(unparseable)".to_string()),
   );
   opt("log id", &info.log_id);
+  opt("log id (decoded hex)", &info.log_id_decoded_hex);
   opt("digital source type", &info.digital_source_type);
   opt("claim generator", &info.claim_generator);
   opt("claim generator version", &info.claim_generator_version);
