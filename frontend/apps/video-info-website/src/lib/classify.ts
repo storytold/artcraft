@@ -74,7 +74,7 @@ export function classify(response: VideoInfoReadOnlyResponse): Verdict {
 
   return {
     level: 'unknown',
-    scammed: false,
+    scammed: true,
     headline: "We don't know what that is.",
     modelLabel: 'Unknown',
     subline:
