@@ -210,7 +210,7 @@ export function App() {
         )}
 
         <footer className="mt-16 text-center text-xs text-slate-400 dark:text-slate-600">
-          Drag &amp; drop a video anywhere, any time — analyzed in-memory.
+          Drag &amp; drop a video anywhere, any time.
         </footer>
       </div>
     </div>

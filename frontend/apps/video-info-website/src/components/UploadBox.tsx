@@ -55,9 +55,6 @@ export function UploadBox({ busy, busyFileName, onFile }: UploadBoxProps) {
         <>
           <div className="space-y-1">
             <p className="text-xl font-semibold">Drag &amp; drop your video anywhere</p>
-            <p className="text-sm text-slate-500 dark:text-slate-400">
-              MP4 / MOV — we read it, we don&apos;t keep the bytes.
-            </p>
           </div>
 
           <button
