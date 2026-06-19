@@ -3,17 +3,23 @@
 use std::fs;
 use std::path::Path;
 
+use crate::dreamina_info::DreaminaInfo;
 use crate::error::VideoInfoError;
+use crate::kling_info::KlingInfo;
 use crate::seedance_info::SeedanceInfo;
 use crate::veo_info::VeoInfo;
 
 /// Recognized AI-video provenance, dispatched by [`VideoInfo::from_bytes`].
 #[derive(Debug, Clone, PartialEq)]
 pub enum VideoInfo {
-  /// ByteDance Seedance (Volcengine / BytePlus).
+  /// ByteDance Seedance API (Volcengine / BytePlus C2PA).
   Seedance(SeedanceInfo),
-  /// Google Veo (Google Generative AI video).
+  /// Google Veo (Google Generative AI video C2PA).
   Veo(VeoInfo),
+  /// Dreamina (ByteDance/CapCut consumer app `ilst` metadata).
+  Dreamina(DreaminaInfo),
+  /// Kling (Kuaishou AIGC-label `ilst` metadata).
+  Kling(KlingInfo),
 }
 
 impl VideoInfo {
@@ -23,20 +29,35 @@ impl VideoInfo {
     Self::from_bytes(&bytes)
   }
 
-  /// Detect and parse provenance from raw video bytes. Tries Seedance, then Veo.
-  /// Returns [`VideoInfoError::Unrecognized`] if neither format is present.
+  /// Detect and parse provenance from raw video bytes.
+  ///
+  /// C2PA-based formats (Seedance, Veo) are tried before the `ilst`-based
+  /// consumer-app formats (Dreamina, Kling): some Dreamina exports carry *both*
+  /// a Bytedance C2PA box and Dreamina `ilst` JSON, but they lack the Ark
+  /// vendor markers so [`SeedanceInfo`] declines them and they fall through to
+  /// Dreamina. Returns [`VideoInfoError::Unrecognized`] if no format matches.
   pub fn from_bytes(data: &[u8]) -> Result<VideoInfo, VideoInfoError> {
     match SeedanceInfo::from_bytes(data) {
-      Ok(info) => Ok(VideoInfo::Seedance(info)),
-      // Not Seedance — try Veo next.
-      Err(VideoInfoError::NotSeedance) => match VeoInfo::from_bytes(data) {
-        Ok(info) => Ok(VideoInfo::Veo(info)),
-        Err(VideoInfoError::NotVeo) => Err(VideoInfoError::Unrecognized),
-        Err(other) => Err(other),
-      },
-      // A Seedance manifest was present but malformed (or I/O) — surface it.
-      Err(other) => Err(other),
+      Ok(info) => return Ok(VideoInfo::Seedance(info)),
+      Err(VideoInfoError::NotSeedance) => {}
+      Err(other) => return Err(other),
     }
+    match VeoInfo::from_bytes(data) {
+      Ok(info) => return Ok(VideoInfo::Veo(info)),
+      Err(VideoInfoError::NotVeo) => {}
+      Err(other) => return Err(other),
+    }
+    match DreaminaInfo::from_bytes(data) {
+      Ok(info) => return Ok(VideoInfo::Dreamina(info)),
+      Err(VideoInfoError::NotDreamina) => {}
+      Err(other) => return Err(other),
+    }
+    match KlingInfo::from_bytes(data) {
+      Ok(info) => return Ok(VideoInfo::Kling(info)),
+      Err(VideoInfoError::NotKling) => {}
+      Err(other) => return Err(other),
+    }
+    Err(VideoInfoError::Unrecognized)
   }
 }
 

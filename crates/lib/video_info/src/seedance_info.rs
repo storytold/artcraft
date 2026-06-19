@@ -17,8 +17,8 @@ use chrono::{DateTime, Utc};
 
 use crate::error::VideoInfoError;
 use crate::scan::{
-  decode_base64url, find, find_cert_serial, find_prefixed_uuid, find_rfc3339, text_after_key,
-  text_after_key_from,
+  decode_base64url, find, find_cert_serial, find_org_identifier, find_prefixed_uuid, find_rfc3339,
+  text_after_key, text_after_key_from,
 };
 
 // ── Markers in the embedded C2PA manifest ──
@@ -250,30 +250,6 @@ fn find_signer_email(data: &[u8]) -> Option<String> {
         if email.starts_with(|c: char| c.is_ascii_alphanumeric()) {
           return Some(email.to_string());
         }
-      }
-    }
-  }
-  None
-}
-
-/// The X.509 organization identifier (OID 2.5.4.97) from the signing cert, plus
-/// the country implied by its registration scheme. The value is a DER string
-/// whose length byte immediately precedes it, so we read exactly that many bytes
-/// (avoids running past the value into the next DER element).
-fn find_org_identifier(data: &[u8]) -> Option<(String, &'static str)> {
-  for (prefix, country) in [(b"NTRSG-".as_slice(), "SG"), (b"NTRCN-".as_slice(), "CN")] {
-    let Some(start) = find(data, prefix) else { continue };
-    if start == 0 {
-      continue;
-    }
-    let len = data[start - 1] as usize;
-    if len < prefix.len() || len > 40 {
-      continue;
-    }
-    let Some(bytes) = data.get(start..start + len) else { continue };
-    if bytes.iter().all(|b| b.is_ascii_graphic()) {
-      if let Ok(value) = std::str::from_utf8(bytes) {
-        return Some((value.to_string(), country));
       }
     }
   }

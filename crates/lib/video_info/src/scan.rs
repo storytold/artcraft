@@ -135,6 +135,81 @@ pub(crate) fn decode_base64url(input: &str) -> Option<Vec<u8>> {
   Some(out)
 }
 
+/// The X.509 organization identifier (OID 2.5.4.97) from the signing cert, plus
+/// the country implied by its registration scheme (`NTRSG-…` = SG, `NTRCN-…` = CN).
+/// The value is a DER string whose length byte immediately precedes it.
+pub(crate) fn find_org_identifier(data: &[u8]) -> Option<(String, &'static str)> {
+  for (prefix, country) in [(b"NTRSG-".as_slice(), "SG"), (b"NTRCN-".as_slice(), "CN")] {
+    let Some(start) = find(data, prefix) else { continue };
+    if start == 0 {
+      continue;
+    }
+    let len = data[start - 1] as usize;
+    if len < prefix.len() || len > 40 {
+      continue;
+    }
+    let Some(bytes) = data.get(start..start + len) else { continue };
+    if bytes.iter().all(|b| b.is_ascii_graphic()) {
+      if let Ok(value) = std::str::from_utf8(bytes) {
+        return Some((value.to_string(), country));
+      }
+    }
+  }
+  None
+}
+
+/// Read the iTunes-style `©too` encoder atom's value (the `encoder` tag exposed
+/// by ffprobe). Layout: `©too` → `data` sub-box → 4-byte version/flags + 4-byte
+/// reserved → the ASCII value. Returns the printable value (e.g. `"Google"`,
+/// `"Lavf60.16.100"`).
+pub(crate) fn find_encoder_tag(data: &[u8]) -> Option<String> {
+  const TOO: &[u8] = &[0xA9, b't', b'o', b'o'];
+  let too = find(data, TOO)?;
+  // The `data` sub-box header sits a few bytes after `©too`; its value begins 8
+  // bytes past the `data` marker (4 version/flags + 4 reserved/locale).
+  let data_marker = find_from(data, b"data", too)?;
+  let start = data_marker + 4 + 8;
+  let end = (start..data.len())
+    .take_while(|&j| {
+      let b = data[j];
+      b.is_ascii_graphic() || b == b'.'
+    })
+    .last()
+    .map(|j| j + 1)?;
+  if end <= start {
+    return None;
+  }
+  std::str::from_utf8(&data[start..end]).ok().map(str::to_string)
+}
+
+/// Extract a flat JSON string field value (`"key":"value"`) from raw bytes.
+/// Assumes the value contains no escaped quotes (true for these manifests).
+pub(crate) fn json_str_field(data: &[u8], key: &str) -> Option<String> {
+  let pat = format!("\"{}\":\"", key);
+  let i = find(data, pat.as_bytes())?;
+  let start = i + pat.len();
+  let rel_end = data[start..].iter().position(|&b| b == b'"')?;
+  String::from_utf8(data[start..start + rel_end].to_vec()).ok()
+}
+
+/// Extract a flat JSON integer field value (`"key":<int>`) from raw bytes.
+pub(crate) fn json_int_field(data: &[u8], key: &str) -> Option<i64> {
+  let pat = format!("\"{}\":", key);
+  let i = find(data, pat.as_bytes())?;
+  let mut e = i + pat.len();
+  let start = e;
+  if data.get(e) == Some(&b'-') {
+    e += 1;
+  }
+  while data.get(e).is_some_and(|b| b.is_ascii_digit()) {
+    e += 1;
+  }
+  if e == start || (e == start + 1 && data[start] == b'-') {
+    return None;
+  }
+  std::str::from_utf8(&data[start..e]).ok()?.parse().ok()
+}
+
 /// CBOR-encode a text string (major type 3) — test helper for building manifests.
 #[cfg(test)]
 pub(crate) fn push_cbor_text(buf: &mut Vec<u8>, s: &str) {

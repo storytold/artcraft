@@ -15,7 +15,7 @@ use std::fs;
 use std::path::Path;
 
 use crate::error::VideoInfoError;
-use crate::scan::{find, find_cert_serial, find_prefixed_uuid, text_after_key};
+use crate::scan::{find, find_cert_serial, find_encoder_tag, find_prefixed_uuid, text_after_key};
 
 // ── Detection markers ──
 
@@ -25,12 +25,23 @@ const CREATED_BY_GOOGLE: &[u8] = b"Created by Google Generative AI";
 const GOOGLE_C2PA_MARKER: &[u8] = b"Google C2PA";
 /// The SynthID watermark edit description.
 const SYNTHID_MARKER: &[u8] = b"SynthID watermark";
+/// The bare `©too` encoder value Google stamps on Veo/Flow exports — survives a
+/// re-encode that strips the C2PA box, so it's a weaker fallback signal.
+const GOOGLE_ENCODER: &str = "Google";
 
 /// Provenance extracted from a Google Veo (Google Generative AI) video.
 #[derive(Debug, Clone, PartialEq)]
 pub struct VeoInfo {
   /// Always `"Google"` — the producer established by the signer chain + encoder.
   pub producer: String,
+
+  /// Whether a full Google C2PA manifest is present. `false` means the video was
+  /// recognized only by its `encoder=Google` tag (C2PA likely stripped by a
+  /// re-encode) — all the C2PA fields below will be `None`.
+  pub has_c2pa_manifest: bool,
+
+  /// The `©too` encoder atom value, e.g. `"Google"`.
+  pub encoder: Option<String>,
 
   /// The `c2pa.created` action description, e.g. `"Created by Google Generative AI."`.
   pub created_description: Option<String>,
@@ -74,9 +85,11 @@ impl VeoInfo {
   /// Returns [`VideoInfoError::NotVeo`] if no Google generative C2PA manifest is
   /// present.
   pub fn from_bytes(data: &[u8]) -> Result<VeoInfo, VideoInfoError> {
-    let is_google_generative =
+    let has_c2pa_manifest =
       find(data, CREATED_BY_GOOGLE).is_some() || find(data, GOOGLE_C2PA_MARKER).is_some();
-    if !is_google_generative {
+    let encoder = find_encoder_tag(data);
+    let encoder_is_google = encoder.as_deref() == Some(GOOGLE_ENCODER);
+    if !has_c2pa_manifest && !encoder_is_google {
       return Err(VideoInfoError::NotVeo);
     }
 
@@ -99,6 +112,8 @@ impl VeoInfo {
 
     Ok(VeoInfo {
       producer: "Google".to_string(),
+      has_c2pa_manifest,
+      encoder,
       created_description,
       has_synthid_watermark,
       synthid_description,
@@ -157,6 +172,7 @@ mod tests {
   fn parses_veo_manifest() {
     let info = VeoInfo::from_bytes(&synth_veo()).expect("should parse");
     assert_eq!(info.producer, "Google");
+    assert!(info.has_c2pa_manifest);
     assert_eq!(info.created_description.as_deref(), Some("Created by Google Generative AI."));
     assert!(info.has_synthid_watermark);
     assert_eq!(info.synthid_description.as_deref(), Some("Applied imperceptible SynthID watermark."));
@@ -166,6 +182,22 @@ mod tests {
     assert_eq!(info.instance_id.as_deref(), Some("e9738dbe-1dbb-9b61-516c-46a64daa7499"));
     assert_eq!(info.cert_serial.as_deref(), Some("E2139E"));
     assert!(info.digital_source_type.as_deref().unwrap().contains("trainedAlgorithmicMedia"));
+  }
+
+  #[test]
+  fn detects_veo_by_encoder_tag_when_c2pa_stripped() {
+    // A re-encoded Veo: no C2PA manifest, but the `©too` encoder atom is "Google".
+    let mut v = Vec::new();
+    v.extend_from_slice(b"....ftypisom....moov....udta....meta....ilst");
+    v.extend_from_slice(&[0xA9, b't', b'o', b'o']);
+    v.extend_from_slice(b"....data");
+    v.extend_from_slice(&[0, 0, 0, 1, 0, 0, 0, 0]); // version/flags + reserved
+    v.extend_from_slice(b"Google");
+    let info = VeoInfo::from_bytes(&v).expect("should parse via encoder tag");
+    assert_eq!(info.producer, "Google");
+    assert!(!info.has_c2pa_manifest);
+    assert_eq!(info.encoder.as_deref(), Some("Google"));
+    assert_eq!(info.cert_serial, None);
   }
 
   #[test]

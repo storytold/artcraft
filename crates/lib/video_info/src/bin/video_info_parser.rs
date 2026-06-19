@@ -8,7 +8,7 @@
 use std::process::ExitCode;
 
 use video_info::error::VideoInfoError;
-use video_info::{SeedanceInfo, VeoInfo, VideoInfo};
+use video_info::{DreaminaInfo, KlingInfo, SeedanceInfo, VeoInfo, VideoInfo};
 
 fn main() -> ExitCode {
   let filename = match parse_filename(std::env::args().skip(1)) {
@@ -30,8 +30,16 @@ fn main() -> ExitCode {
       print_veo(&filename, &info);
       ExitCode::SUCCESS
     }
+    Ok(VideoInfo::Dreamina(info)) => {
+      print_dreamina(&filename, &info);
+      ExitCode::SUCCESS
+    }
+    Ok(VideoInfo::Kling(info)) => {
+      print_kling(&filename, &info);
+      ExitCode::SUCCESS
+    }
     Err(VideoInfoError::Unrecognized) => {
-      println!("No recognized provenance (not Seedance or Veo)");
+      println!("No recognized provenance (not Seedance, Veo, Dreamina, or Kling)");
       ExitCode::SUCCESS
     }
     Err(err) => {
@@ -109,6 +117,8 @@ fn print_seedance(filename: &str, info: &SeedanceInfo) {
 fn print_veo(filename: &str, info: &VeoInfo) {
   header("Google Veo video provenance", filename);
   row("producer", &info.producer);
+  row("c2pa manifest", if info.has_c2pa_manifest { "yes" } else { "no (encoder tag only)" });
+  opt("encoder", &info.encoder);
   opt("created description", &info.created_description);
   row("synthid watermark", if info.has_synthid_watermark { "yes" } else { "no" });
   opt("synthid description", &info.synthid_description);
@@ -119,4 +129,30 @@ fn print_veo(filename: &str, info: &VeoInfo) {
   opt("instance id", &info.instance_id);
   opt("cert serial", &info.cert_serial);
   row("model name", "(not embedded in metadata)");
+}
+
+fn print_dreamina(filename: &str, info: &DreaminaInfo) {
+  header("Dreamina (ByteDance/CapCut) video provenance", filename);
+  row("product", &info.product);
+  opt("export type", &info.export_type);
+  opt("os", &info.os);
+  opt("source info", &info.source_info);
+  row(
+    "aigc label type",
+    &info.aigc_label_type.map(|n| n.to_string()).unwrap_or_else(|| "(none)".to_string()),
+  );
+  opt("video id", &info.video_id);
+  row("has c2pa", if info.has_c2pa { "yes" } else { "no" });
+  opt("signer org id", &info.signer_org_id);
+  opt("signer country", &info.signer_country);
+  opt("cert serial", &info.cert_serial);
+}
+
+fn print_kling(filename: &str, info: &KlingInfo) {
+  header("Kling (Kuaishou) video provenance", filename);
+  opt("aigc label", &info.label);
+  opt("content producer", &info.content_producer);
+  opt("produce id", &info.produce_id);
+  opt("content propagator", &info.content_propagator);
+  opt("propagate id", &info.propagate_id);
 }
