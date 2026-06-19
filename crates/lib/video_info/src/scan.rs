@@ -104,6 +104,23 @@ pub(crate) fn find_cert_serial(data: &[u8]) -> Option<String> {
   Some(bytes.iter().map(|b| format!("{:02X}", b)).collect())
 }
 
+/// Read a DER length-prefixed string that begins with `prefix` — the byte
+/// immediately before `prefix` is its DER length (as in an X.509 subject/issuer
+/// CN). Returns the full string, e.g. given `b"Google C2PA Media Services"`
+/// returns `"Google C2PA Media Services 1P ICA G3"`.
+pub(crate) fn read_der_string(data: &[u8], prefix: &[u8]) -> Option<String> {
+  let i = find(data, prefix)?;
+  let len = *data.get(i.checked_sub(1)?)? as usize;
+  if len < prefix.len() || len > 128 {
+    return None;
+  }
+  let bytes = data.get(i..i + len)?;
+  if !bytes.iter().all(|b| b.is_ascii_graphic() || *b == b' ') {
+    return None;
+  }
+  std::str::from_utf8(bytes).ok().map(str::to_string)
+}
+
 /// Minimal base64url (RFC 4648 §5) decoder — no external dependency. Ignores
 /// `=` padding; returns `None` on any invalid character.
 pub(crate) fn decode_base64url(input: &str) -> Option<Vec<u8>> {

@@ -15,7 +15,9 @@ use std::fs;
 use std::path::Path;
 
 use crate::error::VideoInfoError;
-use crate::scan::{find, find_cert_serial, find_encoder_tag, find_prefixed_uuid, text_after_key};
+use crate::scan::{
+  find, find_cert_serial, find_encoder_tag, find_prefixed_uuid, read_der_string, text_after_key,
+};
 
 // ── Detection markers ──
 
@@ -25,6 +27,10 @@ const CREATED_BY_GOOGLE: &[u8] = b"Created by Google Generative AI";
 const GOOGLE_C2PA_MARKER: &[u8] = b"Google C2PA";
 /// The SynthID watermark edit description.
 const SYNTHID_MARKER: &[u8] = b"SynthID watermark";
+/// Prefix of the issuing intermediate-CA CN that signs Veo manifests.
+const SIGNER_CA_PREFIX: &[u8] = b"Google C2PA Media Services";
+/// Prefix of the RFC 3161 time-stamping CA CN.
+const TIMESTAMP_CA_PREFIX: &[u8] = b"Google C2PA Core Time-Stamping";
 /// The bare `©too` encoder value Google stamps on Veo/Flow exports — survives a
 /// re-encode that strips the C2PA box, so it's a weaker fallback signal.
 const GOOGLE_ENCODER: &str = "Google";
@@ -71,6 +77,18 @@ pub struct VeoInfo {
   /// Hex serial number of the leaf signing certificate (Google's `pki.goog`),
   /// e.g. `"E2139E2DAA977AC13E775A1CBD006D32BF4ACB"`.
   pub cert_serial: Option<String>,
+
+  /// Issuing intermediate-CA common name, e.g.
+  /// `"Google C2PA Media Services 1P ICA G3"` — identifies Google's signing path.
+  pub signer_ca: Option<String>,
+
+  /// Whether the manifest carries an RFC 3161 trusted timestamp (a
+  /// `Google C2PA Core Time-Stamping` authority is present in the chain).
+  pub is_timestamped: bool,
+
+  /// The time-stamping authority CN when present, e.g.
+  /// `"Google C2PA Core Time-Stamping ICA G3"`.
+  pub timestamp_authority: Option<String>,
 }
 
 impl VeoInfo {
@@ -123,6 +141,9 @@ impl VeoInfo {
       manifest_id: find_prefixed_uuid(data, b"urn:c2pa:"),
       instance_id: text_after_key(data, b"instanceID"),
       cert_serial: find_cert_serial(data),
+      signer_ca: read_der_string(data, SIGNER_CA_PREFIX),
+      is_timestamped: find(data, TIMESTAMP_CA_PREFIX).is_some(),
+      timestamp_authority: read_der_string(data, TIMESTAMP_CA_PREFIX),
     })
   }
 }
@@ -153,7 +174,13 @@ mod tests {
     v.extend_from_slice(b"....ftypisom....moov....c2pa");
     // X.509 v3 serial prefix.
     v.extend_from_slice(&[0xA0, 0x03, 0x02, 0x01, 0x02, 0x02, 0x03, 0xE2, 0x13, 0x9E]);
-    v.extend_from_slice(b"Google C2PA Media Services 1P ICA G3");
+    // DER length-prefixed issuer + time-stamping CA CNs (length byte precedes).
+    let signer_ca = b"Google C2PA Media Services 1P ICA G3";
+    v.push(signer_ca.len() as u8);
+    v.extend_from_slice(signer_ca);
+    let ts_ca = b"Google C2PA Core Time-Stamping ICA G3";
+    v.push(ts_ca.len() as u8);
+    v.extend_from_slice(ts_ca);
     v.extend_from_slice(b"urn:c2pa:a6b2b914-8d34-c7f1-717f-4c622328d8f0");
     v.extend_from_slice(b"c2pa.createdkdescription");
     push_text(&mut v, "Created by Google Generative AI.");
@@ -181,6 +208,9 @@ mod tests {
     assert_eq!(info.manifest_id.as_deref(), Some("urn:c2pa:a6b2b914-8d34-c7f1-717f-4c622328d8f0"));
     assert_eq!(info.instance_id.as_deref(), Some("e9738dbe-1dbb-9b61-516c-46a64daa7499"));
     assert_eq!(info.cert_serial.as_deref(), Some("E2139E"));
+    assert_eq!(info.signer_ca.as_deref(), Some("Google C2PA Media Services 1P ICA G3"));
+    assert!(info.is_timestamped);
+    assert_eq!(info.timestamp_authority.as_deref(), Some("Google C2PA Core Time-Stamping ICA G3"));
     assert!(info.digital_source_type.as_deref().unwrap().contains("trainedAlgorithmicMedia"));
   }
 
@@ -198,6 +228,8 @@ mod tests {
     assert!(!info.has_c2pa_manifest);
     assert_eq!(info.encoder.as_deref(), Some("Google"));
     assert_eq!(info.cert_serial, None);
+    assert_eq!(info.signer_ca, None);
+    assert!(!info.is_timestamped);
   }
 
   #[test]

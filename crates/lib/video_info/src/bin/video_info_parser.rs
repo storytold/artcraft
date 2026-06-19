@@ -356,6 +356,9 @@ fn print_veo(filename: &str, info: &VeoInfo) {
   opt("manifest id", &info.manifest_id);
   opt("instance id", &info.instance_id);
   opt("cert serial", &info.cert_serial);
+  opt("signer ca", &info.signer_ca);
+  row("timestamped", if info.is_timestamped { "yes" } else { "no" });
+  opt("timestamp authority", &info.timestamp_authority);
   row("model name", "(not embedded in metadata)");
 }
 
