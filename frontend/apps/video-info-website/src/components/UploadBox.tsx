@@ -1,5 +1,4 @@
-import { useRef, useState } from 'react';
-import type { DragEvent } from 'react';
+import { useRef } from 'react';
 import { FileVideo, FolderOpen, Loader2, UploadCloud } from 'lucide-react';
 
 interface UploadBoxProps {
@@ -8,17 +7,10 @@ interface UploadBoxProps {
   onFile: (file: File) => void;
 }
 
+// NB: Drag-and-drop is handled at the window level (see App.tsx) so a video can
+// be dropped anywhere on the page. This box is the visual hint + file picker.
 export function UploadBox({ busy, busyFileName, onFile }: UploadBoxProps) {
   const inputRef = useRef<HTMLInputElement>(null);
-  const [dragging, setDragging] = useState(false);
-
-  function handleDrop(event: DragEvent<HTMLDivElement>) {
-    event.preventDefault();
-    setDragging(false);
-    if (busy) return;
-    const file = event.dataTransfer.files?.[0];
-    if (file) onFile(file);
-  }
 
   function handleSelect(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
@@ -29,18 +21,9 @@ export function UploadBox({ busy, busyFileName, onFile }: UploadBoxProps) {
 
   return (
     <div
-      onDragOver={(e) => {
-        e.preventDefault();
-        if (!busy) setDragging(true);
-      }}
-      onDragLeave={() => setDragging(false)}
-      onDrop={handleDrop}
       className={[
         'glass relative flex flex-col items-center justify-center gap-5 px-8 py-14 text-center transition-all duration-300',
-        dragging
-          ? 'scale-[1.02] border-fuchsia-400/80 ring-4 ring-fuchsia-400/30'
-          : 'hover:border-violet-400/60',
-        busy ? 'pointer-events-none' : '',
+        busy ? 'pointer-events-none' : 'hover:border-violet-400/60',
       ].join(' ')}
     >
       {/* Animated ring icon */}
@@ -71,11 +54,9 @@ export function UploadBox({ busy, busyFileName, onFile }: UploadBoxProps) {
       ) : (
         <>
           <div className="space-y-1">
-            <p className="text-xl font-semibold">
-              {dragging ? 'Drop it!' : 'Drag & drop your video here'}
-            </p>
+            <p className="text-xl font-semibold">Drag &amp; drop your video anywhere</p>
             <p className="text-sm text-slate-500 dark:text-slate-400">
-              MP4 / MOV — we read it, we don't keep it.
+              MP4 / MOV — we read it, we don&apos;t keep the bytes.
             </p>
           </div>
 

@@ -1,5 +1,5 @@
-import { useCallback, useState } from 'react';
-import { ArrowDown, RotateCcw, ScanSearch, Sparkles } from 'lucide-react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { ArrowDown, RotateCcw, ScanSearch, Sparkles, UploadCloud } from 'lucide-react';
 
 import { uploadVideo, VideoInfoApiError } from '../api/client';
 import type { VideoInfoUploadResponse } from '../api/types';
@@ -25,13 +25,20 @@ export function App() {
   const [fileName, setFileName] = useState<string | null>(null);
   const [result, setResult] = useState<DoneState | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
+
+  // Monotonic id so only the newest upload's result is applied: if you drop a
+  // second video while the first is still processing, the latest one wins.
+  const requestIdRef = useRef(0);
 
   const handleFile = useCallback(async (file: File) => {
+    const requestId = ++requestIdRef.current;
     setFileName(file.name);
     setStatus('loading');
     setError(null);
     try {
       const response = await uploadVideo(file);
+      if (requestIdRef.current !== requestId) return; // superseded by a newer upload
       setResult({
         fileName: file.name,
         response,
@@ -40,6 +47,7 @@ export function App() {
       });
       setStatus('done');
     } catch (err) {
+      if (requestIdRef.current !== requestId) return; // superseded by a newer upload
       const message =
         err instanceof VideoInfoApiError
           ? err.message
@@ -50,37 +58,90 @@ export function App() {
   }, []);
 
   const reset = useCallback(() => {
+    requestIdRef.current++; // discard any in-flight upload
     setStatus('idle');
     setFileName(null);
     setResult(null);
     setError(null);
   }, []);
 
-  const showReset = status === 'done' || status === 'error';
+  // The entire window is a drop target — drop a video anywhere, at any time.
+  useEffect(() => {
+    let dragDepth = 0;
+    const hasFiles = (event: DragEvent) =>
+      !!event.dataTransfer && Array.from(event.dataTransfer.types).includes('Files');
+
+    const onDragEnter = (event: DragEvent) => {
+      if (!hasFiles(event)) return;
+      event.preventDefault();
+      dragDepth += 1;
+      setIsDragging(true);
+    };
+    const onDragOver = (event: DragEvent) => {
+      // Must preventDefault so the browser allows the drop (and doesn't navigate
+      // away to open the file) anywhere on the page.
+      if (hasFiles(event)) event.preventDefault();
+    };
+    const onDragLeave = (event: DragEvent) => {
+      if (!hasFiles(event)) return;
+      event.preventDefault();
+      dragDepth -= 1;
+      if (dragDepth <= 0) {
+        dragDepth = 0;
+        setIsDragging(false);
+      }
+    };
+    const onDrop = (event: DragEvent) => {
+      event.preventDefault();
+      dragDepth = 0;
+      setIsDragging(false);
+      const file = event.dataTransfer?.files?.[0];
+      if (file) handleFile(file);
+    };
+
+    window.addEventListener('dragenter', onDragEnter);
+    window.addEventListener('dragover', onDragOver);
+    window.addEventListener('dragleave', onDragLeave);
+    window.addEventListener('drop', onDrop);
+    return () => {
+      window.removeEventListener('dragenter', onDragEnter);
+      window.removeEventListener('dragover', onDragOver);
+      window.removeEventListener('dragleave', onDragLeave);
+      window.removeEventListener('drop', onDrop);
+    };
+  }, [handleFile]);
+
+  const notIdle = status !== 'idle';
 
   return (
     <div className="ambient-glow relative min-h-screen overflow-x-hidden">
+      {/* Full-window drag overlay — shown whenever a file is dragged over the page. */}
+      {isDragging && (
+        <div className="pointer-events-none fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 p-6 backdrop-blur-sm">
+          <div className="flex flex-col items-center gap-4 rounded-[2rem] border-2 border-dashed border-fuchsia-400/80 bg-white/5 px-12 py-16 text-center">
+            <UploadCloud className="h-16 w-16 animate-bounce-down text-fuchsia-300" />
+            <p className="brand-gradient font-display text-4xl font-extrabold sm:text-5xl">
+              Drop to analyze
+            </p>
+            <p className="text-sm text-slate-200">Release anywhere — the newest video wins</p>
+          </div>
+        </div>
+      )}
+
       <div className="mx-auto flex min-h-screen w-full max-w-3xl flex-col px-5 pb-16 sm:px-8">
         {/* Header */}
         <header className="flex items-center justify-between py-6">
-          <div className="flex items-center gap-2 font-display text-lg font-bold">
+          <button
+            type="button"
+            onClick={reset}
+            className="flex items-center gap-2 font-display text-lg font-bold transition hover:opacity-80"
+            title="Back to home"
+          >
             <ScanSearch className="h-6 w-6 text-violet-500 dark:text-cyan-400" />
             <span>realseedance</span>
             <span className="text-violet-500 dark:text-cyan-400">?</span>
-          </div>
-          <div className="flex items-center gap-3">
-            {showReset && (
-              <button
-                type="button"
-                onClick={reset}
-                className="inline-flex items-center gap-2 rounded-full border border-slate-300/70 bg-white/60 px-4 py-2 text-sm font-medium text-slate-600 transition hover:scale-105 hover:text-violet-600 dark:border-white/10 dark:bg-white/5 dark:text-slate-300 dark:hover:text-cyan-300"
-              >
-                <RotateCcw className="h-4 w-4" />
-                Reset
-              </button>
-            )}
-            <ThemeToggle />
-          </div>
+          </button>
+          <ThemeToggle />
         </header>
 
         {/* Hero */}
@@ -133,14 +194,7 @@ export function App() {
 
               <div className="flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
                 <UploadAnotherButton onFile={handleFile} />
-                <button
-                  type="button"
-                  onClick={reset}
-                  className="inline-flex items-center gap-2 rounded-full border border-slate-300/70 bg-white/60 px-6 py-3 text-sm font-semibold text-slate-600 transition hover:scale-105 hover:text-violet-600 dark:border-white/10 dark:bg-white/5 dark:text-slate-300 dark:hover:text-cyan-300"
-                >
-                  <RotateCcw className="h-4 w-4" />
-                  Reset
-                </button>
+                <BigResetButton onClick={reset} />
               </div>
 
               <SampleSubmitForm />
@@ -148,8 +202,15 @@ export function App() {
           )}
         </main>
 
+        {/* Prominent "start over" available any time something is on screen. */}
+        {notIdle && (
+          <div className="mt-14 flex justify-center">
+            <BigResetButton onClick={reset} />
+          </div>
+        )}
+
         <footer className="mt-16 text-center text-xs text-slate-400 dark:text-slate-600">
-          Videos are analyzed in-memory and never stored.
+          Drag &amp; drop a video anywhere, any time — analyzed in-memory.
         </footer>
       </div>
     </div>
@@ -169,11 +230,25 @@ function AnimatedPrompt() {
   );
 }
 
+/** Big, bold "start over" button — clears all state back to the home screen. */
+function BigResetButton({ onClick }: { onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="group inline-flex items-center gap-2.5 rounded-2xl bg-slate-900 px-8 py-4 text-lg font-extrabold text-white shadow-lg shadow-slate-900/25 transition hover:scale-105 active:scale-95 dark:bg-white dark:text-slate-900 dark:shadow-black/40"
+    >
+      <RotateCcw className="h-5 w-5 transition duration-500 group-hover:-rotate-180" />
+      Start Over
+    </button>
+  );
+}
+
 /** "Upload another" — opens a file picker that reuses the same handler. */
 function UploadAnotherButton({ onFile }: { onFile: (file: File) => void }) {
   return (
-    <label className="inline-flex cursor-pointer items-center gap-2 rounded-full bg-gradient-to-r from-violet-600 to-fuchsia-600 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-violet-500/30 transition hover:scale-105 active:scale-95">
-      <ScanSearch className="h-4 w-4" />
+    <label className="inline-flex cursor-pointer items-center gap-2.5 rounded-2xl bg-gradient-to-r from-violet-600 to-fuchsia-600 px-8 py-4 text-lg font-extrabold text-white shadow-lg shadow-violet-500/30 transition hover:scale-105 active:scale-95">
+      <ScanSearch className="h-5 w-5" />
       Upload another
       <input
         type="file"
