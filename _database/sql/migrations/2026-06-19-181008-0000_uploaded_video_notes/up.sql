@@ -8,6 +8,9 @@ CREATE TABLE uploaded_video_notes (
   -- Effective "primary key" (used internally for lookups and as a foreign key).
   token VARCHAR(32) NOT NULL,
 
+  -- The uploaded video this note is about (FK to uploaded_videos.token).
+  uploaded_video_token VARCHAR(32) NOT NULL,
+
   -- ========== SUBMISSION ==========
 
   -- Original filename of the submitted clip, as provided by the user.
@@ -17,7 +20,7 @@ CREATE TABLE uploaded_video_notes (
   reported_model_type VARCHAR(32) DEFAULT NULL,
 
   -- Free-form custom model name when the submitter's model isn't a known type.
-  reported_model_custom_name VARCHAR(64) DEFAULT NULL,
+  maybe_reported_model_name VARCHAR(64) DEFAULT NULL,
 
   -- The website / platform the video was obtained from.
   website VARCHAR(32) DEFAULT NULL,
@@ -40,6 +43,7 @@ CREATE TABLE uploaded_video_notes (
 
   -- INDICES --
   PRIMARY KEY (id),
-  UNIQUE KEY (token)
+  UNIQUE KEY (token),
+  KEY fk_uploaded_video_token (uploaded_video_token)
 
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;

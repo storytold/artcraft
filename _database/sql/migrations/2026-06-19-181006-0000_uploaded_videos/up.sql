@@ -17,24 +17,30 @@ CREATE TABLE uploaded_videos (
   filesize_bytes INT(10) UNSIGNED NOT NULL,
 
   -- Pixel dimensions, when they could be determined.
-  width INT(10) UNSIGNED DEFAULT NULL,
-  height INT(10) UNSIGNED DEFAULT NULL,
+  maybe_width INT(10) UNSIGNED DEFAULT NULL,
+  maybe_height INT(10) UNSIGNED DEFAULT NULL,
+
+  -- Resolution label (e.g. "1080p", "1920x1080"), when known.
+  maybe_resolution VARCHAR(12) DEFAULT NULL,
 
   -- ========== DETECTION ==========
 
   -- Detected provenance family (e.g. "seedance", "veo", "sora", "dreamina", "kling").
-  detected_model_family VARCHAR(32) DEFAULT NULL,
+  maybe_detected_model_family VARCHAR(32) DEFAULT NULL,
 
   -- Detected model type / variant (e.g. "full", "fast", "mini").
-  detected_model_type VARCHAR(32) DEFAULT NULL,
+  maybe_detected_model_type VARCHAR(32) DEFAULT NULL,
 
   -- Free-form model name for anything that doesn't map to a known type.
-  other_model_name VARCHAR(64) DEFAULT NULL,
+  maybe_reported_model_name VARCHAR(64) DEFAULT NULL,
 
-  -- ========== IP ADDRESS ==========
+  -- ========== IP ADDRESSES ==========
 
   -- IP address that uploaded the video. Wide enough for IPv4/IPv6.
   upload_ip_address VARCHAR(40) NOT NULL,
+
+  -- IP address that last updated the row. Wide enough for IPv4/IPv6.
+  maybe_updated_ip_address VARCHAR(40) DEFAULT NULL,
 
   -- ========== TIMESTAMPS ==========
 
@@ -45,6 +51,6 @@ CREATE TABLE uploaded_videos (
   PRIMARY KEY (id),
   UNIQUE KEY (token),
   UNIQUE KEY (sha1_checksum),
-  KEY index_detected_model_family (detected_model_family)
+  KEY index_maybe_detected_model_family (maybe_detected_model_family)
 
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
