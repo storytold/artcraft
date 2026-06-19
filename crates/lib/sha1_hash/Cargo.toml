@@ -1,0 +1,19 @@
+[package]
+name = "sha1_hash"
+edition = "2021"
+version = "0.0.1"
+publish = false
+
+[lib]
+name = "sha1_hash"
+path = "src/lib.rs"
+
+[package.metadata.cargo-udeps.ignore]
+normal = ["workspace-build-acceleration"]
+
+[dependencies]
+# Workspace hack (faster compile times)
+workspace-build-acceleration = { version = "0.1", path = "../../workspace-build-acceleration" }
+
+# External
+sha1 = "0.10"

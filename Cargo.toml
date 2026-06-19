@@ -87,6 +87,7 @@ members = [
   "crates/lib/pager",
   "crates/lib/password",
   "crates/lib/server_environment",
+  "crates/lib/sha1_hash",
   "crates/lib/sqlx_mysql_helpers",
   "crates/lib/storyteller_root",
   "crates/lib/url_config",
@@ -282,6 +283,7 @@ openai_sora_client = { path = "crates/api_clients/openai_sora_client" }
 primitives = { path = "crates/lib/data/primitives" }
 seedance2pro_client = { path = "crates/api_clients/seedance2pro_client" }
 server_environment = { path = "crates/lib/server_environment" }
+sha1_hash = { path = "crates/lib/sha1_hash" }
 shared_service_components = { path = "crates/lib/shared_service_components" }
 sqlite_tasks = { path = "crates/schema/database/sqlite_tasks" }
 subprocess_common = { path = "crates/lib/deprecated/subprocess_common" }

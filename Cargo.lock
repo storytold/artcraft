@@ -10997,6 +10997,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "sha1_hash"
+version = "0.0.1"
+dependencies = [
+ "sha1 0.10.6",
+ "workspace-build-acceleration",
+]
+
+[[package]]
 name = "sha1_smol"
 version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -11644,6 +11652,7 @@ dependencies = [
  "serde_derive",
  "serde_json",
  "server_environment",
+ "sha1_hash",
  "shared_env_var_config",
  "speculoos",
  "sqlx",
