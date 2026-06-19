@@ -98,3 +98,12 @@ export interface VideoInfoReadOnlyResponse {
   maybe_dreamina: DreaminaVideoInfo | null;
   maybe_kling: KlingVideoInfo | null;
 }
+
+/**
+ * Response from `POST /v1/video_info/upload` — the same detected provenance as
+ * the read-only endpoint, plus the persisted record token (kept for follow-up
+ * requests like attaching a note).
+ */
+export interface VideoInfoUploadResponse extends VideoInfoReadOnlyResponse {
+  uploaded_video_token: string;
+}

@@ -1,10 +1,12 @@
-import type { VideoInfoReadOnlyResponse } from './types';
+import type { VideoInfoUploadResponse } from './types';
 
 // Dev: same-origin `/v1/...`, proxied to http://localhost:12345 by Vite (see
 // vite.config.ts). Prod: call the public API host directly.
 const API_BASE = import.meta.env.DEV ? '' : 'https://api.storyteller.ai';
 
-const READ_ONLY_PATH = '/v1/video_info/read_only';
+// The upload endpoint persists a record (and returns its token) in addition to
+// returning the detected provenance.
+const UPLOAD_PATH = '/v1/video_info/upload';
 
 export class VideoInfoApiError extends Error {
   constructor(
@@ -16,16 +18,19 @@ export class VideoInfoApiError extends Error {
   }
 }
 
-/** Upload a video file and return the detected provenance. */
-export async function readVideoInfo(
+/**
+ * Upload a video file, persist a record, and return the detected provenance
+ * along with the stored record's token.
+ */
+export async function uploadVideo(
   file: File,
-): Promise<VideoInfoReadOnlyResponse> {
+): Promise<VideoInfoUploadResponse> {
   const form = new FormData();
   form.append('file', file, file.name || 'upload.mp4');
 
   let response: Response;
   try {
-    response = await fetch(`${API_BASE}${READ_ONLY_PATH}`, {
+    response = await fetch(`${API_BASE}${UPLOAD_PATH}`, {
       method: 'POST',
       body: form,
     });
@@ -52,5 +57,5 @@ export async function readVideoInfo(
     );
   }
 
-  return (await response.json()) as VideoInfoReadOnlyResponse;
+  return (await response.json()) as VideoInfoUploadResponse;
 }

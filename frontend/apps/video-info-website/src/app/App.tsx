@@ -1,8 +1,8 @@
 import { useCallback, useState } from 'react';
 import { ArrowDown, RotateCcw, ScanSearch, Sparkles } from 'lucide-react';
 
-import { readVideoInfo, VideoInfoApiError } from '../api/client';
-import type { VideoInfoReadOnlyResponse } from '../api/types';
+import { uploadVideo, VideoInfoApiError } from '../api/client';
+import type { VideoInfoUploadResponse } from '../api/types';
 import { classify } from '../lib/classify';
 import type { Verdict } from '../lib/classify';
 import { ThemeToggle } from '../components/ThemeToggle';
@@ -14,7 +14,9 @@ type Status = 'idle' | 'loading' | 'done' | 'error';
 
 interface DoneState {
   fileName: string;
-  response: VideoInfoReadOnlyResponse;
+  response: VideoInfoUploadResponse;
+  /** Persisted record token — kept for upcoming follow-up requests. */
+  uploadedVideoToken: string;
   verdict: Verdict;
 }
 
@@ -29,8 +31,13 @@ export function App() {
     setStatus('loading');
     setError(null);
     try {
-      const response = await readVideoInfo(file);
-      setResult({ fileName: file.name, response, verdict: classify(response) });
+      const response = await uploadVideo(file);
+      setResult({
+        fileName: file.name,
+        response,
+        uploadedVideoToken: response.uploaded_video_token,
+        verdict: classify(response),
+      });
       setStatus('done');
     } catch (err) {
       const message =
