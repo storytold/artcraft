@@ -28,6 +28,7 @@ use video_info::veo_info::VeoInfo;
 use video_info::VideoInfo;
 
 use crate::http_server::common_responses::common_web_error::CommonWebError;
+use crate::http_server::web_utils::redis_rate_limiter::RateLimiterError;
 use crate::state::server_state::ServerState;
 
 /// Form-multipart request: a single video file under the `file` field.
@@ -55,10 +56,19 @@ pub struct VideoInfoReadOnlyForm {
   )
 )]
 pub async fn video_info_read_info_handler(
-  _http_request: HttpRequest,
-  _server_state: web::Data<Arc<ServerState>>,
+  http_request: HttpRequest,
+  server_state: web::Data<Arc<ServerState>>,
   MultipartForm(mut form): MultipartForm<VideoInfoReadOnlyForm>,
 ) -> Result<Json<VideoInfoReadOnlyResponse>, CommonWebError> {
+  // IP-based rate limit (1 req / 5s by default, configurable). Fails open: the
+  // limiter already treats Redis/parse errors as allowed, and we allow on any
+  // non-"limit exceeded" outcome here too.
+  match server_state.redis_rate_limiters.video_info_read_only.rate_limit_request(&http_request).await {
+    Ok(()) => {}
+    Err(RateLimiterError::RateLimitExceededError) => return Err(CommonWebError::TooManyRequests),
+    Err(RateLimiterError::ClientError) => {} // fail open
+  }
+
   let mut bytes = Vec::new();
   form.file.file.read_to_end(&mut bytes).map_err(|err| {
     error!("video_info: problem reading uploaded file: {:?}", err);

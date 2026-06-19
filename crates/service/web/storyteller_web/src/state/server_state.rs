@@ -160,6 +160,9 @@ pub struct RedisRateLimiters {
 
   /// For uploading files for voice conversion, face animator, etc.
   pub file_upload_logged_in: RedisRateLimiter,
+
+  /// IP-based limiter for the read-only video-info upload endpoint. Fails open.
+  pub video_info_read_only: RedisRateLimiter,
 }
 
 /// In-memory caches of several types.
