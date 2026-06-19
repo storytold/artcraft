@@ -59,17 +59,23 @@ pub struct SeedanceInfo {
   pub software_agent_version: Option<String>,
 
   /// Full model identifier, e.g. `"doubao-seedance-2-0-fast"`,
-  /// `"doubao-seedance-2-0"`, `"dreamina-seedance-2-0"`.
+  /// `"doubao-seedance-2-0"`, `"dreamina-seedance-2-0"`,
+  /// `"doubao-seedance-1-0-lite"`.
   pub model_name: String,
 
   /// Brand prefix of the model, e.g. `"doubao"` (Volcengine) / `"dreamina"` (BytePlus).
   pub model_brand: Option<String>,
 
-  /// Model version parsed from the name, e.g. `"2.0"` (from `…-2-0`).
+  /// Model version parsed from the name, e.g. `"2.0"` (from `…-2-0`) or `"1.0"`
+  /// (from `…-1-0-lite`). The parser is version-agnostic — Seedance 1.0 and 2.0
+  /// share the same Ark C2PA shape and both land here.
   pub model_version: Option<String>,
 
   /// Whether this is the `-fast` variant of the model.
   pub is_fast: bool,
+
+  /// Whether this is the `-lite` variant of the model (e.g. Seedance 1.0 Lite).
+  pub is_lite: bool,
 
   /// Raw generation timestamp string (RFC 3339, e.g. `"2026-06-19T01:32:58Z"`).
   pub generated_at: String,
@@ -165,7 +171,7 @@ impl SeedanceInfo {
       .ok()
       .map(|dt| dt.with_timezone(&Utc));
 
-    let (model_brand, model_version, is_fast) = parse_model_name(&model_name);
+    let (model_brand, model_version, is_fast, is_lite) = parse_model_name(&model_name);
 
     let log_id = text_after_key(data, b"log_id");
     let log_id_decoded_hex = log_id
@@ -192,6 +198,7 @@ impl SeedanceInfo {
       model_brand,
       model_version,
       is_fast,
+      is_lite,
       generated_at,
       generated_at_utc,
       log_id,
@@ -211,22 +218,42 @@ impl SeedanceInfo {
 
 // ── Model name parsing ──
 
-/// Split `"{brand}-seedance-{maj}-{min}[-fast]"` into (brand, version, is_fast).
-/// e.g. `"doubao-seedance-2-0-fast"` → (`"doubao"`, `"2.0"`, `true`).
-fn parse_model_name(model_name: &str) -> (Option<String>, Option<String>, bool) {
-  let is_fast = model_name.ends_with("-fast");
-  let core = model_name.strip_suffix("-fast").unwrap_or(model_name);
-
-  let brand = core.split("-seedance").next()
-    .filter(|s| !s.is_empty() && *s != core)
+/// Split `"{brand}-seedance-{maj}-{min}[-{variant}]"` into
+/// (brand, version, is_fast, is_lite).
+///
+/// e.g. `"doubao-seedance-2-0-fast"` → (`"doubao"`, `"2.0"`, `true`, `false`);
+/// `"doubao-seedance-1-0-lite"` → (`"doubao"`, `"1.0"`, `false`, `true`).
+/// The version is the leading run of numeric segments after `seedance-`, so a
+/// trailing variant token (`fast`/`lite`) doesn't leak into it.
+fn parse_model_name(model_name: &str) -> (Option<String>, Option<String>, bool, bool) {
+  let brand = model_name.split("-seedance").next()
+    .filter(|s| !s.is_empty() && *s != model_name)
     .map(|s| s.to_string());
 
-  let version = core.split("seedance-").nth(1)
-    .filter(|v| !v.is_empty())
-    // "2-0" → "2.0"
-    .map(|v| v.replace('-', "."));
+  let mut version = None;
+  let mut is_fast = false;
+  let mut is_lite = false;
+  if let Some(after) = model_name.split("seedance-").nth(1) {
+    let segments: Vec<&str> = after.split('-').collect();
+    // Leading numeric segments form the version: ["1","0"] → "1.0".
+    let nums: Vec<&str> = segments
+      .iter()
+      .take_while(|s| !s.is_empty() && s.bytes().all(|b| b.is_ascii_digit()))
+      .copied()
+      .collect();
+    if !nums.is_empty() {
+      version = Some(nums.join("."));
+    }
+    for segment in &segments {
+      match *segment {
+        "fast" => is_fast = true,
+        "lite" => is_lite = true,
+        _ => {}
+      }
+    }
+  }
 
-  (brand, version, is_fast)
+  (brand, version, is_fast, is_lite)
 }
 
 // ── Seedance-specific scanners ──
@@ -320,6 +347,7 @@ mod tests {
     assert_eq!(info.model_brand.as_deref(), Some("doubao"));
     assert_eq!(info.model_version.as_deref(), Some("2.0"));
     assert!(info.is_fast);
+    assert!(!info.is_lite);
     assert_eq!(info.generated_at, "2026-06-19T01:32:58Z");
     assert!(info.generated_at_utc.is_some());
     assert_eq!(info.log_id.as_deref(), Some("ATIAA7b8D_iKjF32GukAAAAA"));
@@ -349,6 +377,22 @@ mod tests {
     assert_eq!(info.signer_country.as_deref(), Some("SG"));
     // BytePlus region byte is 0x33 (vs 0x32 for Volcengine).
     assert_eq!(info.log_id_decoded_hex.as_deref(), Some("01330003b6f7e89f1c2d93b6894900000000"));
+  }
+
+  #[test]
+  fn parses_seedance_1_0_lite() {
+    let data = synth_manifest(
+      "Volcengine_Ark_CN", "doubao-seedance-1-0-lite",
+      "2026-06-19T01:30:00Z", "ATIAA7b8D_iKjF32GukAAAAA",
+      "certificate_center@volcengine.com", "NTRCN-91110108MA01R70K8D",
+    );
+    let info = SeedanceInfo::from_bytes(&data).expect("should parse");
+    assert_eq!(info.model_name, "doubao-seedance-1-0-lite");
+    assert_eq!(info.model_brand.as_deref(), Some("doubao"));
+    // The `-lite` token must not leak into the version.
+    assert_eq!(info.model_version.as_deref(), Some("1.0"));
+    assert!(info.is_lite);
+    assert!(!info.is_fast);
   }
 
   #[test]

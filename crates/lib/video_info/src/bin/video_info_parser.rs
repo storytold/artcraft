@@ -86,14 +86,28 @@ fn parse_args(args: impl Iterator<Item = String>) -> Result<Args, String> {
 // ── Single-file mode ──
 
 fn run_single_file(filename: &str) -> ExitCode {
-  match VideoInfo::from_path(filename) {
+  let bytes = match fs::read(filename) {
+    Ok(bytes) => bytes,
+    Err(err) => {
+      eprintln!("error: cannot read {filename:?}: {err}");
+      return ExitCode::FAILURE;
+    }
+  };
+  match VideoInfo::from_bytes(&bytes) {
     Ok(VideoInfo::Seedance(info)) => print_seedance(filename, &info),
     Ok(VideoInfo::Veo(info)) => print_veo(filename, &info),
     Ok(VideoInfo::Sora(info)) => print_sora(filename, &info),
     Ok(VideoInfo::Dreamina(info)) => print_dreamina(filename, &info),
     Ok(VideoInfo::Kling(info)) => print_kling(filename, &info),
     Err(VideoInfoError::Unrecognized) => {
-      println!("No recognized provenance (not Seedance, Veo, Sora, Dreamina, or Kling)");
+      print!("No recognized provenance (not Seedance, Veo, Sora, Dreamina, or Kling)");
+      match video_info::encoder_tag(&bytes) {
+        Some(enc) if enc.starts_with("Lavf") => {
+          println!(" — re-encoded through ffmpeg (encoder: {enc}), which strips provenance");
+        }
+        Some(enc) => println!(" — encoder: {enc}"),
+        None => println!(),
+      }
     }
     Err(err) => {
       eprintln!("error: {err}");
@@ -124,7 +138,13 @@ fn run_directory(dir: &str, truncate_names: bool) -> ExitCode {
   let mut tally: std::collections::BTreeMap<String, usize> = std::collections::BTreeMap::new();
   for file in &files {
     let name = file.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
-    let row = summary_row(&name, &VideoInfo::from_path(file), truncate_names);
+    let row = match fs::read(file) {
+      Ok(bytes) => {
+        let encoder = video_info::encoder_tag(&bytes);
+        summary_row(&name, &VideoInfo::from_bytes(&bytes), encoder.as_deref(), truncate_names)
+      }
+      Err(err) => summary_row(&name, &Err(VideoInfoError::Io(err)), None, truncate_names),
+    };
     *tally.entry(row[1].clone()).or_default() += 1;
     rows.push(row);
   }
@@ -156,20 +176,25 @@ fn collect_mp4s(dir: &Path) -> std::io::Result<Vec<PathBuf>> {
 }
 
 /// Reduce a parse result to one table row: `[file, kind, model, detail, generated, signer]`.
-/// Filenames are shown in full unless `truncate_names` is set.
+/// Filenames are shown in full unless `truncate_names` is set. `encoder` is the
+/// `©too` tag, shown in DETAIL for unrecognized files to explain the absence.
 fn summary_row(
   name: &str,
   result: &Result<VideoInfo, VideoInfoError>,
+  encoder: Option<&str>,
   truncate_names: bool,
 ) -> [String; 6] {
   let file = if truncate_names { truncate(name, MAX_CELL) } else { name.to_string() };
   let (kind, model, detail, generated, signer) = match result {
     Ok(VideoInfo::Seedance(i)) => {
-      let detail = if i.is_fast {
-        format!("{} (fast)", i.platform.as_str())
+      let variant = if i.is_fast {
+        " (fast)"
+      } else if i.is_lite {
+        " (lite)"
       } else {
-        i.platform.as_str().to_string()
+        ""
       };
+      let detail = format!("{}{variant}", i.platform.as_str());
       ("Seedance", i.model_name.clone(), detail, i.generated_at.clone(), signer_line(&i.signer_country, &i.cert_serial))
     }
     Ok(VideoInfo::Veo(i)) => {
@@ -201,7 +226,14 @@ fn summary_row(
       });
       ("Kling", model, detail, String::new(), i.content_producer.clone().unwrap_or_default())
     }
-    Err(VideoInfoError::Unrecognized) => ("—", String::new(), String::new(), String::new(), String::new()),
+    Err(VideoInfoError::Unrecognized) => {
+      let detail = match encoder {
+        Some(enc) if enc.starts_with("Lavf") => format!("re-encoded: {enc}"),
+        Some(enc) => format!("encoder: {enc}"),
+        None => "no provenance".to_string(),
+      };
+      ("—", String::new(), detail, String::new(), String::new())
+    }
     Err(err) => ("error", err.to_string(), String::new(), String::new(), String::new()),
   };
   [
@@ -291,6 +323,7 @@ fn print_seedance(filename: &str, info: &SeedanceInfo) {
   opt("model brand", &info.model_brand);
   opt("model version", &info.model_version);
   row("fast variant", if info.is_fast { "yes" } else { "no" });
+  row("lite variant", if info.is_lite { "yes" } else { "no" });
   row("generated at", &info.generated_at);
   row(
     "generated at (parsed)",

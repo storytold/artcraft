@@ -28,3 +28,11 @@ pub use seedance_info::{SeedanceInfo, SeedancePlatform};
 pub use sora_info::SoraInfo;
 pub use veo_info::VeoInfo;
 pub use video::VideoInfo;
+
+/// Read the container's `©too` encoder tag (e.g. `"Lavf60.16.100"`, `"Google"`),
+/// if present. Useful context for videos with no recognized provenance: an
+/// `Lavf…` value means the file was re-encoded through ffmpeg, which strips C2PA
+/// manifests and AIGC metadata — explaining why provenance is absent.
+pub fn encoder_tag(data: &[u8]) -> Option<String> {
+  scan::find_encoder_tag(data)
+}
