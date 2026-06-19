@@ -13,7 +13,7 @@ use actix_multipart::form::tempfile::TempFile;
 use actix_multipart::form::MultipartForm;
 use actix_web::web::Json;
 use actix_web::{web, HttpRequest};
-use log::error;
+use log::{error, warn};
 use utoipa::ToSchema;
 
 use artcraft_api_defs::video_info::upload::VideoInfoUploadResponse;
@@ -107,7 +107,16 @@ pub async fn video_info_upload_handler(
 
   // ffprobe is a blocking subprocess — run it off the async executor, and BEFORE
   // acquiring a DB connection (never hold a pooled connection across this).
-  let maybe_dimensions = web::block(move || probe_dimensions(&bytes)).await.ok().flatten();
+  //
+  // Fail open: ffprobe being missing, slow, panicking, or erroring must never
+  // fail the upload — we just store the record without dimensions.
+  let maybe_dimensions = match web::block(move || probe_dimensions(&bytes)).await {
+    Ok(dimensions) => dimensions,
+    Err(err) => {
+      warn!("video_info upload: ffprobe task failed; storing without dimensions: {:?}", err);
+      None
+    }
+  };
   let maybe_width = maybe_dimensions.map(|(width, _)| width);
   let maybe_height = maybe_dimensions.map(|(_, height)| height);
   let maybe_resolution = maybe_dimensions.map(|(width, height)| format!("{width}x{height}"));
@@ -172,12 +181,30 @@ pub async fn video_info_upload_handler(
 }
 
 /// Write the bytes to a temp file and ffprobe its video dimensions. Fail-soft:
-/// returns `None` if it isn't a probeable video or ffprobe is unavailable.
+/// returns `None` on any failure (not a probeable video, ffprobe missing, I/O
+/// error) so the caller can proceed without dimensions. Never panics.
 fn probe_dimensions(bytes: &[u8]) -> Option<(u32, u32)> {
-  let mut temp_file = tempfile::NamedTempFile::new().ok()?;
-  temp_file.write_all(bytes).ok()?;
-  temp_file.flush().ok()?;
+  let mut temp_file = match tempfile::NamedTempFile::new() {
+    Ok(temp_file) => temp_file,
+    Err(err) => {
+      warn!("video_info upload: could not create temp file for ffprobe: {:?}", err);
+      return None;
+    }
+  };
 
-  let dimensions = ffprobe_get_dimensions(temp_file.path()).ok()??;
-  Some((dimensions.width as u32, dimensions.height as u32))
+  if let Err(err) = temp_file.write_all(bytes) {
+    warn!("video_info upload: could not write temp file for ffprobe: {:?}", err);
+    return None;
+  }
+  let _ = temp_file.flush();
+
+  match ffprobe_get_dimensions(temp_file.path()) {
+    Ok(Some(dimensions)) => Some((dimensions.width as u32, dimensions.height as u32)),
+    // Not a probeable video (no video stream / no duration) — not an error.
+    Ok(None) => None,
+    Err(err) => {
+      warn!("video_info upload: ffprobe failed; storing without dimensions: {:?}", err);
+      None
+    }
+  }
 }
