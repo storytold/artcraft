@@ -94,6 +94,7 @@ members = [
   "crates/lib/user_input_common",
   "crates/lib/users",
   "crates/lib/uuid_utils",
+  "crates/lib/video_info",
   #"crates/lib/api_clients/fakeyou_client",
   #"crates/lib/deprecated/machine_learning/ml_models",
 
@@ -290,6 +291,7 @@ tokens = { path = "crates/schema/public/tokens" }
 url_utils = { path = "crates/lib/url_utils" }
 users = { path = "crates/lib/users" }
 uuid_utils = { path = "crates/lib/uuid_utils" }
+video_info = { path = "crates/lib/video_info" }
 web_base64 = { path = "crates/lib/data/web_base64" }
 worldlabs_api_client = { path = "crates/api_clients/worldlabs_api_client" }
 worldlabs_consumer_client = { path = "crates/api_clients/worldlabs_consumer_client" }

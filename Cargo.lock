@@ -13897,6 +13897,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "video_info"
+version = "0.0.1"
+dependencies = [
+ "chrono",
+ "workspace-build-acceleration",
+]
+
+[[package]]
 name = "videos"
 version = "0.0.1"
 dependencies = [
