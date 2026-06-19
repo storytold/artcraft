@@ -366,8 +366,12 @@ use artcraft_api_defs::user_referral_codes::list_referral_codes::*;
 use artcraft_api_defs::web_referrals::log_web_referral::*;
 use artcraft_api_defs::video_info::read_only::*;
 use artcraft_api_defs::video_info::upload::*;
+use artcraft_api_defs::video_info::notes::*;
+use enums::by_table::uploaded_video_notes::uploaded_video_note_reported_model_type::UploadedVideoNoteReportedModelType;
+use enums::by_table::uploaded_video_notes::uploaded_video_note_reported_website::UploadedVideoNoteReportedWebsite;
 use crate::http_server::endpoints::video_info::video_info_read_info_handler::*;
 use crate::http_server::endpoints::video_info::video_info_upload_handler::*;
+use crate::http_server::endpoints::video_info::video_info_notes_handler::*;
 use crate::http_server::endpoints::web_referrals::log_web_referral_handler::*;
 use crate::http_server::endpoints::image_studio::update_gpt_image_job_status_handler::*;
 use crate::http_server::endpoints::voice_conversion::enqueue_seed_vc_inference_handler::*;
@@ -623,6 +627,7 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     // Web Referrals
     crate::http_server::endpoints::video_info::video_info_read_info_handler::video_info_read_info_handler,
     crate::http_server::endpoints::video_info::video_info_upload_handler::video_info_upload_handler,
+    crate::http_server::endpoints::video_info::video_info_notes_handler::video_info_notes_handler,
     crate::http_server::endpoints::web_referrals::log_web_referral_handler::log_web_referral_handler,
     // User Referral Codes
     crate::http_server::endpoints::user_referral_codes::create_referral_code_handler::create_referral_code_handler,
@@ -1260,6 +1265,10 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     VideoInfoReadOnlyResponse,
     VideoInfoUploadForm,
     VideoInfoUploadResponse,
+    VideoInfoNoteRequest,
+    VideoInfoNoteResponse,
+    UploadedVideoNoteReportedModelType,
+    UploadedVideoNoteReportedWebsite,
     VideoProvenanceKind,
     SeedanceVideoInfo,
     VeoVideoInfo,
