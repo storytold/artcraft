@@ -31,6 +31,8 @@ pub mod tts_results;
 pub mod twitch_event_rule;
 pub mod twitch_oauth_tokens_grouping;
 pub mod twitch_oauth_tokens_internal;
+pub mod uploaded_video_notes;
+pub mod uploaded_videos;
 pub mod user_bookmarks;
 pub mod user_impersonation_requests;
 pub mod user_referral_codes;

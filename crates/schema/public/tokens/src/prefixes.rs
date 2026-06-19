@@ -46,6 +46,8 @@ pub(crate) enum TokenPrefix {
   StaffAuditLog,
   Tag,
   TtsRenderTask, // NB: aichatbot / sqlite
+  UploadedVideo,
+  UploadedVideoNote,
   User,
   UserImpersonationRequest,
   UserBookmark,
@@ -136,6 +138,8 @@ impl PrefixGenerator for TokenPrefix {
       Self::StaffAuditLog => "stfaud_",
       Self::Tag => "tag_",
       Self::TtsRenderTask => "tts_task_",
+      Self::UploadedVideo => "uvt_",
+      Self::UploadedVideoNote => "uvnote_",
       Self::User => "user_", // NB: Previously "U:"
       Self::UserImpersonationRequest => "uimpr_",
       Self::UserBookmark => "ub_",
