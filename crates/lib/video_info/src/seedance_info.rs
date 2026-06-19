@@ -90,6 +90,16 @@ pub struct SeedanceInfo {
 
   /// Signing certificate email, e.g. `"certificate_center@volcengine.com"`.
   pub signer_email: Option<String>,
+
+  /// Signing certificate organization identifier (X.509 OID 2.5.4.97), e.g.
+  /// `"NTRSG-202024632W"` (Byteplus Pte. Ltd., Singapore) or
+  /// `"NTRCN-91110108MA01R70K8D"` (Beijing Volcano Engine, China). The `NTRxx`
+  /// scheme prefix is itself a strong jurisdiction signal.
+  pub signer_org_id: Option<String>,
+
+  /// Two-letter country of the signing organization, derived from the org
+  /// identifier scheme (`"SG"` for BytePlus, `"CN"` for Volcengine).
+  pub signer_country: Option<String>,
 }
 
 impl SeedanceInfo {
@@ -140,6 +150,11 @@ impl SeedanceInfo {
     let claim_generator_version = find(data, b"c2pa-rs")
       .and_then(|i| text_after_key_from(data, b"version", i + b"c2pa-rs".len()));
 
+    let (signer_org_id, signer_country) = match find_org_identifier(data) {
+      Some((org_id, country)) => (Some(org_id), Some(country.to_string())),
+      None => (None, None),
+    };
+
     Ok(SeedanceInfo {
       platform,
       software_agent,
@@ -156,6 +171,8 @@ impl SeedanceInfo {
       claim_generator_version,
       manifest_id: find_manifest_urn(data),
       signer_email: find_signer_email(data),
+      signer_org_id,
+      signer_country,
     })
   }
 }
@@ -272,6 +289,30 @@ fn find_signer_email(data: &[u8]) -> Option<String> {
   None
 }
 
+/// The X.509 organization identifier (OID 2.5.4.97) from the signing cert, plus
+/// the country implied by its registration scheme. The value is a DER string
+/// whose length byte immediately precedes it, so we read exactly that many bytes
+/// (avoids running past the value into the next DER element).
+fn find_org_identifier(data: &[u8]) -> Option<(String, &'static str)> {
+  for (prefix, country) in [(b"NTRSG-".as_slice(), "SG"), (b"NTRCN-".as_slice(), "CN")] {
+    let Some(start) = find(data, prefix) else { continue };
+    if start == 0 {
+      continue;
+    }
+    let len = data[start - 1] as usize;
+    if len < prefix.len() || len > 40 {
+      continue;
+    }
+    let Some(bytes) = data.get(start..start + len) else { continue };
+    if bytes.iter().all(|b| b.is_ascii_graphic()) {
+      if let Ok(value) = std::str::from_utf8(bytes) {
+        return Some((value.to_string(), country));
+      }
+    }
+  }
+  None
+}
+
 // ── Byte search ──
 
 fn find(haystack: &[u8], needle: &[u8]) -> Option<usize> {
@@ -305,7 +346,7 @@ mod tests {
     buf.extend_from_slice(b);
   }
 
-  fn synth_manifest(vendor: &str, model: &str, time: &str, log_id: &str, signer: &str) -> Vec<u8> {
+  fn synth_manifest(vendor: &str, model: &str, time: &str, log_id: &str, signer: &str, org_id: &str) -> Vec<u8> {
     let mut v = Vec::new();
     v.extend_from_slice(b"....ftypisom....moov....c2pa");
     v.extend_from_slice(b"urn:c2pa:40a5f6fe-b88a-4a2c-ae72-f76a1e5a6012");
@@ -331,6 +372,11 @@ mod tests {
     // emulate that boundary so the email local-part walk-back terminates here.
     v.push(0x00);
     v.extend_from_slice(signer.as_bytes());
+    // Org identifier (2.5.4.97) preceded by its DER length byte, as in a real cert.
+    v.push(0x31); // a DER tag byte before the length, like a real subject RDN
+    v.push(org_id.len() as u8);
+    v.extend_from_slice(org_id.as_bytes());
+    v.push(0x31); // trailing DER byte after the value
     v
   }
 
@@ -339,10 +385,12 @@ mod tests {
     let data = synth_manifest(
       "Volcengine_Ark_CN", "doubao-seedance-2-0-fast",
       "2026-06-19T01:32:58Z", "ATIAA7b8D_iKjF32GukAAAAA",
-      "certificate_center@volcengine.com",
+      "certificate_center@volcengine.com", "NTRCN-91110108MA01R70K8D",
     );
     let info = SeedanceInfo::from_bytes(&data).expect("should parse");
     assert_eq!(info.platform, SeedancePlatform::Volcengine);
+    assert_eq!(info.signer_org_id.as_deref(), Some("NTRCN-91110108MA01R70K8D"));
+    assert_eq!(info.signer_country.as_deref(), Some("CN"));
     assert_eq!(info.software_agent, "Volcengine_Ark_CN");
     assert_eq!(info.software_agent_version.as_deref(), Some("1.0.0"));
     assert_eq!(info.model_name, "doubao-seedance-2-0-fast");
@@ -364,7 +412,7 @@ mod tests {
     let data = synth_manifest(
       "BytePlus_ModelArk", "dreamina-seedance-2-0",
       "2026-06-19T01:27:48Z", "ATMAA7b36J8cLZO2iUkAAAAA",
-      "certificate@byteplus.com",
+      "certificate@byteplus.com", "NTRSG-202024632W",
     );
     let info = SeedanceInfo::from_bytes(&data).expect("should parse");
     assert_eq!(info.platform, SeedancePlatform::BytePlus);
@@ -372,6 +420,8 @@ mod tests {
     assert_eq!(info.model_version.as_deref(), Some("2.0"));
     assert!(!info.is_fast);
     assert_eq!(info.signer_email.as_deref(), Some("certificate@byteplus.com"));
+    assert_eq!(info.signer_org_id.as_deref(), Some("NTRSG-202024632W"));
+    assert_eq!(info.signer_country.as_deref(), Some("SG"));
   }
 
   #[test]

@@ -90,4 +90,6 @@ fn print_info(filename: &str, info: &SeedanceInfo) {
   opt("claim generator version", &info.claim_generator_version);
   opt("manifest id", &info.manifest_id);
   opt("signer email", &info.signer_email);
+  opt("signer org id", &info.signer_org_id);
+  opt("signer country", &info.signer_country);
 }
