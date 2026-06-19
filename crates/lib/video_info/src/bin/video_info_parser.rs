@@ -93,4 +93,5 @@ fn print_info(filename: &str, info: &SeedanceInfo) {
   opt("signer email", &info.signer_email);
   opt("signer org id", &info.signer_org_id);
   opt("signer country", &info.signer_country);
+  opt("cert serial", &info.cert_serial);
 }

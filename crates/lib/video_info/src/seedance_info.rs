@@ -105,6 +105,12 @@ pub struct SeedanceInfo {
   /// Two-letter country of the signing organization, derived from the org
   /// identifier scheme (`"SG"` for BytePlus, `"CN"` for Volcengine).
   pub signer_country: Option<String>,
+
+  /// Hex serial number of the leaf signing certificate, e.g.
+  /// `"3687D48590A2FD5101AB0316"`. Stable per signing certificate (Volcengine
+  /// and BytePlus each reuse one), so it identifies the signer across assets —
+  /// useful for grouping/auditing, not as a per-asset id.
+  pub cert_serial: Option<String>,
 }
 
 impl SeedanceInfo {
@@ -179,6 +185,7 @@ impl SeedanceInfo {
       signer_email: find_signer_email(data),
       signer_org_id,
       signer_country,
+      cert_serial: find_cert_serial(data),
     })
   }
 }
@@ -332,6 +339,25 @@ fn find_org_identifier(data: &[u8]) -> Option<(String, &'static str)> {
   None
 }
 
+/// Hex serial number of the leaf signing certificate.
+///
+/// X.509 v3 certs encode the TBS prefix as `A0 03 02 01 02` (the `[0] EXPLICIT`
+/// version = v3) immediately followed by the serial `INTEGER` (`02 <len> <bytes>`).
+/// That fixed prefix lets us read the serial without a full DER parser; the leaf
+/// cert is the first such occurrence.
+fn find_cert_serial(data: &[u8]) -> Option<String> {
+  const TBS_VERSION_PREFIX: &[u8] = &[0xA0, 0x03, 0x02, 0x01, 0x02, 0x02];
+  let i = find(data, TBS_VERSION_PREFIX)?;
+  let len_pos = i + TBS_VERSION_PREFIX.len();
+  let len = *data.get(len_pos)? as usize;
+  if len == 0 || len > 40 {
+    return None;
+  }
+  let start = len_pos + 1;
+  let bytes = data.get(start..start + len)?;
+  Some(bytes.iter().map(|b| format!("{:02X}", b)).collect())
+}
+
 // ── Byte search ──
 
 fn find(haystack: &[u8], needle: &[u8]) -> Option<usize> {
@@ -368,6 +394,9 @@ mod tests {
   fn synth_manifest(vendor: &str, model: &str, time: &str, log_id: &str, signer: &str, org_id: &str) -> Vec<u8> {
     let mut v = Vec::new();
     v.extend_from_slice(b"....ftypisom....moov....c2pa");
+    // X.509 v3 TBS prefix + serial INTEGER (02 <len> <bytes>) for serial 3687D485…
+    v.extend_from_slice(&[0xA0, 0x03, 0x02, 0x01, 0x02, 0x02, 0x0C]);
+    v.extend_from_slice(&[0x36, 0x87, 0xD4, 0x85, 0x90, 0xA2, 0xFD, 0x51, 0x01, 0xAB, 0x03, 0x16]);
     v.extend_from_slice(b"urn:c2pa:40a5f6fe-b88a-4a2c-ae72-f76a1e5a6012");
     v.extend_from_slice(b"c2pa.createddwhen");
     push_text(&mut v, time);
@@ -412,6 +441,7 @@ mod tests {
     assert_eq!(info.platform, SeedancePlatform::Volcengine);
     assert_eq!(info.signer_org_id.as_deref(), Some("NTRCN-91110108MA01R70K8D"));
     assert_eq!(info.signer_country.as_deref(), Some("CN"));
+    assert_eq!(info.cert_serial.as_deref(), Some("3687D48590A2FD5101AB0316"));
     assert_eq!(info.software_agent, "Volcengine_Ark_CN");
     assert_eq!(info.software_agent_version.as_deref(), Some("1.0.0"));
     assert_eq!(info.model_name, "doubao-seedance-2-0-fast");
