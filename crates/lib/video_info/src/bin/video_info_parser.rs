@@ -1,78 +1,266 @@
-//! `video-info-parser` — inspect a video file's AI-generation C2PA provenance
-//! (Seedance or Veo) and print it.
+//! `video-info-parser` — inspect AI-generation C2PA provenance (Seedance, Veo,
+//! Sora, Dreamina, Kling) for a single video, or a whole directory of them.
 //!
 //! Usage:
-//!   video-info-parser <FILE>
-//!   video-info-parser --filename <FILE>
+//!   video-info-parser <FILE>        # detailed report for one video
+//!   video-info-parser <DIR>         # summary table for every .mp4 in the dir
+//!   video-info-parser --filename <PATH>
+//!   video-info-parser <DIR> --truncate   # shorten long filenames in the table
 
+use std::fs;
+use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 
 use video_info::error::VideoInfoError;
 use video_info::{DreaminaInfo, KlingInfo, SeedanceInfo, SoraInfo, VeoInfo, VideoInfo};
 
+/// Max width before a cell value is truncated with an ellipsis.
+const MAX_CELL: usize = 30;
+
+/// Parsed command-line arguments.
+struct Args {
+  /// File or directory to inspect.
+  path: String,
+  /// Whether to shorten long filenames in directory-table output. Defaults to
+  /// `false` so full filenames are always shown.
+  truncate_names: bool,
+}
+
 fn main() -> ExitCode {
-  let filename = match parse_filename(std::env::args().skip(1)) {
-    Ok(name) => name,
+  let args = match parse_args(std::env::args().skip(1)) {
+    Ok(args) => args,
     Err(msg) => {
       eprintln!("{msg}");
-      eprintln!("usage: video-info-parser <FILE>");
-      eprintln!("       video-info-parser --filename <FILE>");
+      eprintln!("usage: video-info-parser <FILE|DIR> [--truncate]");
+      eprintln!("       video-info-parser --filename <PATH>");
       return ExitCode::from(2);
     }
   };
 
-  match VideoInfo::from_path(&filename) {
-    Ok(VideoInfo::Seedance(info)) => {
-      print_seedance(&filename, &info);
-      ExitCode::SUCCESS
-    }
-    Ok(VideoInfo::Veo(info)) => {
-      print_veo(&filename, &info);
-      ExitCode::SUCCESS
-    }
-    Ok(VideoInfo::Sora(info)) => {
-      print_sora(&filename, &info);
-      ExitCode::SUCCESS
-    }
-    Ok(VideoInfo::Dreamina(info)) => {
-      print_dreamina(&filename, &info);
-      ExitCode::SUCCESS
-    }
-    Ok(VideoInfo::Kling(info)) => {
-      print_kling(&filename, &info);
-      ExitCode::SUCCESS
-    }
-    Err(VideoInfoError::Unrecognized) => {
-      println!("No recognized provenance (not Seedance, Veo, Sora, Dreamina, or Kling)");
-      ExitCode::SUCCESS
-    }
+  match fs::metadata(&args.path) {
+    Ok(meta) if meta.is_dir() => run_directory(&args.path, args.truncate_names),
+    Ok(_) => run_single_file(&args.path),
     Err(err) => {
-      eprintln!("error: {err}");
+      eprintln!("error: cannot read {:?}: {err}", args.path);
       ExitCode::FAILURE
     }
   }
 }
 
-/// Accept the filename as the first positional arg, or via `--filename <FILE>` /
-/// `--filename=<FILE>`.
-fn parse_filename(args: impl Iterator<Item = String>) -> Result<String, String> {
+/// Accept the path as the first positional arg, or via `--filename <PATH>` /
+/// `--filename=<PATH>`. The path may be a single file or a directory.
+/// `--truncate` shortens long filenames in directory-table output.
+fn parse_args(args: impl Iterator<Item = String>) -> Result<Args, String> {
+  let mut path: Option<String> = None;
+  let mut truncate_names = false;
   let mut args = args.peekable();
   while let Some(arg) = args.next() {
-    if arg == "--filename" || arg == "-f" {
-      return args.next().ok_or_else(|| "error: --filename requires a value".to_string());
+    match arg.as_str() {
+      "--filename" | "-f" => {
+        let value = args.next().ok_or_else(|| "error: --filename requires a value".to_string())?;
+        path = Some(value);
+      }
+      "--truncate" | "--truncate-names" => truncate_names = true,
+      "--help" | "-h" => {
+        return Err("video-info-parser: print AI-generation provenance for a file or directory".to_string());
+      }
+      _ => {
+        if let Some(value) = arg.strip_prefix("--filename=") {
+          path = Some(value.to_string());
+        } else if arg.starts_with('-') {
+          return Err(format!("error: unknown flag {arg:?}"));
+        } else if path.is_none() {
+          path = Some(arg);
+        } else {
+          return Err(format!("error: unexpected extra argument {arg:?}"));
+        }
+      }
     }
-    if let Some(value) = arg.strip_prefix("--filename=") {
-      return Ok(value.to_string());
-    }
-    if arg == "--help" || arg == "-h" {
-      return Err("video-info-parser: print a video's AI-generation provenance".to_string());
-    }
-    if arg.starts_with('-') {
-      return Err(format!("error: unknown flag {arg:?}"));
-    }
-    return Ok(arg);
   }
-  Err("error: no filename provided".to_string())
+  match path {
+    Some(path) => Ok(Args { path, truncate_names }),
+    None => Err("error: no path provided".to_string()),
+  }
+}
+
+// ── Single-file mode ──
+
+fn run_single_file(filename: &str) -> ExitCode {
+  match VideoInfo::from_path(filename) {
+    Ok(VideoInfo::Seedance(info)) => print_seedance(filename, &info),
+    Ok(VideoInfo::Veo(info)) => print_veo(filename, &info),
+    Ok(VideoInfo::Sora(info)) => print_sora(filename, &info),
+    Ok(VideoInfo::Dreamina(info)) => print_dreamina(filename, &info),
+    Ok(VideoInfo::Kling(info)) => print_kling(filename, &info),
+    Err(VideoInfoError::Unrecognized) => {
+      println!("No recognized provenance (not Seedance, Veo, Sora, Dreamina, or Kling)");
+    }
+    Err(err) => {
+      eprintln!("error: {err}");
+      return ExitCode::FAILURE;
+    }
+  }
+  ExitCode::SUCCESS
+}
+
+// ── Directory mode (summary table) ──
+
+const TABLE_HEADERS: [&str; 6] = ["FILE", "KIND", "MODEL", "DETAIL", "GENERATED", "SIGNER"];
+
+fn run_directory(dir: &str, truncate_names: bool) -> ExitCode {
+  let files = match collect_mp4s(Path::new(dir)) {
+    Ok(files) => files,
+    Err(err) => {
+      eprintln!("error: cannot list {dir:?}: {err}");
+      return ExitCode::FAILURE;
+    }
+  };
+  if files.is_empty() {
+    println!("no .mp4 files found in {dir}");
+    return ExitCode::SUCCESS;
+  }
+
+  let mut rows: Vec<[String; 6]> = Vec::with_capacity(files.len());
+  let mut tally: std::collections::BTreeMap<String, usize> = std::collections::BTreeMap::new();
+  for file in &files {
+    let name = file.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
+    let row = summary_row(&name, &VideoInfo::from_path(file), truncate_names);
+    *tally.entry(row[1].clone()).or_default() += 1;
+    rows.push(row);
+  }
+
+  render_table(&TABLE_HEADERS, &rows);
+  println!();
+  let total = files.len();
+  let breakdown =
+    tally.iter().map(|(kind, n)| format!("{kind}: {n}")).collect::<Vec<_>>().join(", ");
+  println!("{total} file(s) — {breakdown}");
+  ExitCode::SUCCESS
+}
+
+/// Collect every `.mp4` (case-insensitive) directly under `dir`, sorted by name.
+fn collect_mp4s(dir: &Path) -> std::io::Result<Vec<PathBuf>> {
+  let mut out = Vec::new();
+  for entry in fs::read_dir(dir)? {
+    let path = entry?.path();
+    let is_mp4 = path
+      .extension()
+      .and_then(|e| e.to_str())
+      .is_some_and(|e| e.eq_ignore_ascii_case("mp4"));
+    if path.is_file() && is_mp4 {
+      out.push(path);
+    }
+  }
+  out.sort();
+  Ok(out)
+}
+
+/// Reduce a parse result to one table row: `[file, kind, model, detail, generated, signer]`.
+/// Filenames are shown in full unless `truncate_names` is set.
+fn summary_row(
+  name: &str,
+  result: &Result<VideoInfo, VideoInfoError>,
+  truncate_names: bool,
+) -> [String; 6] {
+  let file = if truncate_names { truncate(name, MAX_CELL) } else { name.to_string() };
+  let (kind, model, detail, generated, signer) = match result {
+    Ok(VideoInfo::Seedance(i)) => {
+      let detail = if i.is_fast {
+        format!("{} (fast)", i.platform.as_str())
+      } else {
+        i.platform.as_str().to_string()
+      };
+      ("Seedance", i.model_name.clone(), detail, i.generated_at.clone(), signer_line(&i.signer_country, &i.cert_serial))
+    }
+    Ok(VideoInfo::Veo(i)) => {
+      let detail = if i.has_c2pa_manifest {
+        if i.has_synthid_watermark { "c2pa + synthid".to_string() } else { "c2pa".to_string() }
+      } else {
+        format!("encoder={}", i.encoder.as_deref().unwrap_or("?"))
+      };
+      ("Veo", "Google Veo".to_string(), detail, String::new(), short_opt(&i.cert_serial))
+    }
+    Ok(VideoInfo::Sora(i)) => (
+      "Sora",
+      "OpenAI Sora".to_string(),
+      i.model_name.clone().unwrap_or_default(),
+      String::new(),
+      short_opt(&i.cert_serial),
+    ),
+    Ok(VideoInfo::Dreamina(i)) => {
+      let signer = if i.has_c2pa { signer_line(&i.signer_country, &i.cert_serial) } else { String::new() };
+      ("Dreamina", i.product.clone(), i.video_id.clone().unwrap_or_default(), String::new(), signer)
+    }
+    Ok(VideoInfo::Kling(i)) => (
+      "Kling",
+      "Kling".to_string(),
+      i.produce_id.clone().unwrap_or_default(),
+      String::new(),
+      i.content_producer.clone().unwrap_or_default(),
+    ),
+    Err(VideoInfoError::Unrecognized) => ("—", String::new(), String::new(), String::new(), String::new()),
+    Err(err) => ("error", err.to_string(), String::new(), String::new(), String::new()),
+  };
+  [
+    file,
+    kind.to_string(),
+    truncate(&model, MAX_CELL),
+    truncate(&detail, MAX_CELL),
+    generated,
+    truncate(&signer, MAX_CELL),
+  ]
+}
+
+/// `"<country> <short-cert>"`, omitting whichever parts are absent.
+fn signer_line(country: &Option<String>, cert: &Option<String>) -> String {
+  match (country.as_deref(), cert.as_deref()) {
+    (Some(c), Some(s)) => format!("{c} {}", short(s, 14)),
+    (Some(c), None) => c.to_string(),
+    (None, Some(s)) => short(s, 14),
+    (None, None) => String::new(),
+  }
+}
+
+fn short_opt(value: &Option<String>) -> String {
+  value.as_deref().map(|s| short(s, 14)).unwrap_or_default()
+}
+
+fn short(value: &str, max: usize) -> String {
+  truncate(value, max)
+}
+
+/// Truncate to `max` characters, appending `…` when shortened.
+fn truncate(value: &str, max: usize) -> String {
+  if value.chars().count() <= max {
+    return value.to_string();
+  }
+  let kept: String = value.chars().take(max.saturating_sub(1)).collect();
+  format!("{kept}…")
+}
+
+/// Render left-aligned columns sized to the widest cell in each.
+fn render_table(headers: &[&str], rows: &[[String; 6]]) {
+  let mut widths: Vec<usize> = headers.iter().map(|h| h.chars().count()).collect();
+  for row in rows {
+    for (i, cell) in row.iter().enumerate() {
+      widths[i] = widths[i].max(cell.chars().count());
+    }
+  }
+  let render = |cells: &[String]| {
+    cells
+      .iter()
+      .enumerate()
+      .map(|(i, c)| format!("{:<width$}", c, width = widths[i]))
+      .collect::<Vec<_>>()
+      .join("  ")
+  };
+  let header_cells: Vec<String> = headers.iter().map(|h| h.to_string()).collect();
+  println!("{}", render(&header_cells).trim_end());
+  let separators: Vec<String> = widths.iter().map(|w| "-".repeat(*w)).collect();
+  println!("{}", render(&separators).trim_end());
+  for row in rows {
+    println!("{}", render(row).trim_end());
+  }
 }
 
 // ── Printing ──
