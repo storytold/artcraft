@@ -86,7 +86,12 @@ pub struct SeedanceInfo {
   pub claim_generator_version: Option<String>,
 
   /// The manifest URN, e.g. `"urn:c2pa:40a5f6fe-b88a-4a2c-ae72-f76a1e5a6012"`.
+  /// Identifies the manifest; not a stable per-asset identity.
   pub manifest_id: Option<String>,
+
+  /// The XMP asset instance id, e.g. `"xmp:iid:95a3ac67-cb28-4a0d-ac54-911f1787b7de"`.
+  /// Unique per generated asset (distinct from [`manifest_id`](Self::manifest_id)).
+  pub instance_id: Option<String>,
 
   /// Signing certificate email, e.g. `"certificate_center@volcengine.com"`.
   pub signer_email: Option<String>,
@@ -170,6 +175,7 @@ impl SeedanceInfo {
       claim_generator,
       claim_generator_version,
       manifest_id: find_manifest_urn(data),
+      instance_id: find_xmp_iid(data),
       signer_email: find_signer_email(data),
       signer_org_id,
       signer_country,
@@ -262,6 +268,19 @@ fn find_manifest_urn(data: &[u8]) -> Option<String> {
     .map(|j| j + 1)?;
   let uuid = std::str::from_utf8(&data[start..end]).ok()?;
   Some(format!("urn:c2pa:{}", uuid))
+}
+
+/// `xmp:iid:<uuid>` — the per-asset instance identifier.
+fn find_xmp_iid(data: &[u8]) -> Option<String> {
+  const PREFIX: &[u8] = b"xmp:iid:";
+  let i = find(data, PREFIX)?;
+  let start = i + PREFIX.len();
+  let end = (start..data.len().min(start + 36))
+    .take_while(|&j| data[j].is_ascii_hexdigit() || data[j] == b'-')
+    .last()
+    .map(|j| j + 1)?;
+  let uuid = std::str::from_utf8(&data[start..end]).ok()?;
+  Some(format!("xmp:iid:{}", uuid))
 }
 
 /// Signing certificate email (`…@volcengine.com` / `…@byteplus.com`), recovered
@@ -364,6 +383,8 @@ mod tests {
     push_text(&mut v, model);
     v.extend_from_slice(b"qdigitalSourceType");
     push_text(&mut v, "http://cv.iptc.org/newscodes/digitalsourcetype/trainedAlgorithmicMedia");
+    v.extend_from_slice(b"jinstanceID");
+    push_text(&mut v, "xmp:iid:95a3ac67-cb28-4a0d-ac54-911f1787b7de");
     v.extend_from_slice(b"tclaim_generator_infodname");
     push_text(&mut v, "c2pa-rs");
     v.extend_from_slice(b"gversion");
@@ -403,6 +424,7 @@ mod tests {
     assert_eq!(info.claim_generator.as_deref(), Some("c2pa-rs"));
     assert_eq!(info.claim_generator_version.as_deref(), Some("0.78.4"));
     assert_eq!(info.manifest_id.as_deref(), Some("urn:c2pa:40a5f6fe-b88a-4a2c-ae72-f76a1e5a6012"));
+    assert_eq!(info.instance_id.as_deref(), Some("xmp:iid:95a3ac67-cb28-4a0d-ac54-911f1787b7de"));
     assert_eq!(info.signer_email.as_deref(), Some("certificate_center@volcengine.com"));
     assert!(info.digital_source_type.as_deref().unwrap().contains("trainedAlgorithmicMedia"));
   }
