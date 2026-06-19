@@ -31,8 +31,8 @@ CREATE TABLE uploaded_videos (
   -- Detected model type / variant (e.g. "full", "fast", "mini").
   maybe_detected_model_type VARCHAR(32) DEFAULT NULL,
 
-  -- Free-form model name for anything that doesn't map to a known type.
-  maybe_reported_model_name VARCHAR(64) DEFAULT NULL,
+  -- Free-form report / analysis blob for this upload.
+  maybe_report MEDIUMTEXT DEFAULT NULL,
 
   -- ========== IP ADDRESSES ==========
 
