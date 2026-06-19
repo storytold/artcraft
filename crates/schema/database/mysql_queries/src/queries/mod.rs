@@ -37,6 +37,8 @@ pub mod trending_model_analytics;
 pub mod tts;
 pub mod twitch;
 pub mod unsubscribe_reason;
+pub mod uploaded_video_notes;
+pub mod uploaded_videos;
 pub mod user_impersonation_requests;
 pub mod user_referral_codes;
 pub mod user_referrals;
