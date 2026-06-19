@@ -16,6 +16,10 @@ use std::path::Path;
 use chrono::{DateTime, Utc};
 
 use crate::error::VideoInfoError;
+use crate::scan::{
+  decode_base64url, find, find_cert_serial, find_prefixed_uuid, find_rfc3339, text_after_key,
+  text_after_key_from,
+};
 
 // ── Markers in the embedded C2PA manifest ──
 
@@ -195,8 +199,8 @@ impl SeedanceInfo {
       digital_source_type: text_after_key(data, b"digitalSourceType"),
       claim_generator,
       claim_generator_version,
-      manifest_id: find_manifest_urn(data),
-      instance_id: find_xmp_iid(data),
+      manifest_id: find_prefixed_uuid(data, b"urn:c2pa:"),
+      instance_id: find_prefixed_uuid(data, b"xmp:iid:"),
       signer_email: find_signer_email(data),
       signer_org_id,
       signer_country,
@@ -225,85 +229,7 @@ fn parse_model_name(model_name: &str) -> (Option<String>, Option<String>, bool) 
   (brand, version, is_fast)
 }
 
-// ── CBOR text-string extraction ──
-
-/// Read a CBOR text string (major type 3) starting at `at`. Supports inline
-/// length (0x60–0x77), 1-byte length (0x78), and 2-byte length (0x79).
-fn read_cbor_text(data: &[u8], at: usize) -> Option<String> {
-  let first = *data.get(at)?;
-  let (len, value_offset) = match first {
-    0x60..=0x77 => ((first - 0x60) as usize, 1),
-    0x78 => (*data.get(at + 1)? as usize, 2),
-    0x79 => {
-      let hi = *data.get(at + 1)? as usize;
-      let lo = *data.get(at + 2)? as usize;
-      ((hi << 8) | lo, 3)
-    }
-    _ => return None,
-  };
-  let start = at + value_offset;
-  let bytes = data.get(start..start + len)?;
-  String::from_utf8(bytes.to_vec()).ok()
-}
-
-/// Find `key` and read the CBOR text string immediately following it.
-fn text_after_key(data: &[u8], key: &[u8]) -> Option<String> {
-  let idx = find(data, key)?;
-  read_cbor_text(data, idx + key.len())
-}
-
-/// Like [`text_after_key`] but only searches at/after `start`.
-fn text_after_key_from(data: &[u8], key: &[u8], start: usize) -> Option<String> {
-  let idx = find_from(data, key, start)?;
-  read_cbor_text(data, idx + key.len())
-}
-
-// ── Targeted scanners ──
-
-/// First RFC 3339 `YYYY-MM-DDTHH:MM:SSZ` (20 chars) timestamp in the buffer.
-fn find_rfc3339(data: &[u8]) -> Option<String> {
-  const LEN: usize = 20;
-  data.windows(LEN).find(|w| is_rfc3339(w)).map(|w| String::from_utf8_lossy(w).into_owned())
-}
-
-fn is_rfc3339(w: &[u8]) -> bool {
-  // YYYY-MM-DDTHH:MM:SSZ
-  let d = |i: usize| w[i].is_ascii_digit();
-  w.len() == 20
-    && d(0) && d(1) && d(2) && d(3) && w[4] == b'-'
-    && d(5) && d(6) && w[7] == b'-'
-    && d(8) && d(9) && w[10] == b'T'
-    && d(11) && d(12) && w[13] == b':'
-    && d(14) && d(15) && w[16] == b':'
-    && d(17) && d(18) && w[19] == b'Z'
-}
-
-/// `urn:c2pa:<uuid>` — the manifest identifier.
-fn find_manifest_urn(data: &[u8]) -> Option<String> {
-  const PREFIX: &[u8] = b"urn:c2pa:";
-  let i = find(data, PREFIX)?;
-  let start = i + PREFIX.len();
-  // UUID is 36 chars of hex + dashes.
-  let end = (start..data.len().min(start + 36))
-    .take_while(|&j| data[j].is_ascii_hexdigit() || data[j] == b'-')
-    .last()
-    .map(|j| j + 1)?;
-  let uuid = std::str::from_utf8(&data[start..end]).ok()?;
-  Some(format!("urn:c2pa:{}", uuid))
-}
-
-/// `xmp:iid:<uuid>` — the per-asset instance identifier.
-fn find_xmp_iid(data: &[u8]) -> Option<String> {
-  const PREFIX: &[u8] = b"xmp:iid:";
-  let i = find(data, PREFIX)?;
-  let start = i + PREFIX.len();
-  let end = (start..data.len().min(start + 36))
-    .take_while(|&j| data[j].is_ascii_hexdigit() || data[j] == b'-')
-    .last()
-    .map(|j| j + 1)?;
-  let uuid = std::str::from_utf8(&data[start..end]).ok()?;
-  Some(format!("xmp:iid:{}", uuid))
-}
+// ── Seedance-specific scanners ──
 
 /// Signing certificate email (`…@volcengine.com` / `…@byteplus.com`), recovered
 /// by finding the domain and walking back over the local part.
@@ -354,88 +280,12 @@ fn find_org_identifier(data: &[u8]) -> Option<(String, &'static str)> {
   None
 }
 
-/// Hex serial number of the leaf signing certificate.
-///
-/// X.509 v3 certs encode the TBS prefix as `A0 03 02 01 02` (the `[0] EXPLICIT`
-/// version = v3) immediately followed by the serial `INTEGER` (`02 <len> <bytes>`).
-/// That fixed prefix lets us read the serial without a full DER parser; the leaf
-/// cert is the first such occurrence.
-fn find_cert_serial(data: &[u8]) -> Option<String> {
-  const TBS_VERSION_PREFIX: &[u8] = &[0xA0, 0x03, 0x02, 0x01, 0x02, 0x02];
-  let i = find(data, TBS_VERSION_PREFIX)?;
-  let len_pos = i + TBS_VERSION_PREFIX.len();
-  let len = *data.get(len_pos)? as usize;
-  if len == 0 || len > 40 {
-    return None;
-  }
-  let start = len_pos + 1;
-  let bytes = data.get(start..start + len)?;
-  Some(bytes.iter().map(|b| format!("{:02X}", b)).collect())
-}
-
-/// Minimal base64url (RFC 4648 §5) decoder — no external dependency. Ignores
-/// `=` padding; returns `None` on any invalid character.
-fn decode_base64url(input: &str) -> Option<Vec<u8>> {
-  fn sextet(c: u8) -> Option<u8> {
-    match c {
-      b'A'..=b'Z' => Some(c - b'A'),
-      b'a'..=b'z' => Some(c - b'a' + 26),
-      b'0'..=b'9' => Some(c - b'0' + 52),
-      b'-' => Some(62),
-      b'_' => Some(63),
-      _ => None,
-    }
-  }
-  let chars: Vec<u8> = input.bytes().filter(|&b| b != b'=').collect();
-  let mut out = Vec::with_capacity(chars.len() * 3 / 4);
-  for chunk in chars.chunks(4) {
-    let mut buf = [0u8; 4];
-    for (i, &c) in chunk.iter().enumerate() {
-      buf[i] = sextet(c)?;
-    }
-    out.push((buf[0] << 2) | (buf[1] >> 4));
-    if chunk.len() >= 3 {
-      out.push((buf[1] << 4) | (buf[2] >> 2));
-    }
-    if chunk.len() >= 4 {
-      out.push((buf[2] << 6) | buf[3]);
-    }
-  }
-  Some(out)
-}
-
-// ── Byte search ──
-
-fn find(haystack: &[u8], needle: &[u8]) -> Option<usize> {
-  find_from(haystack, needle, 0)
-}
-
-fn find_from(haystack: &[u8], needle: &[u8], start: usize) -> Option<usize> {
-  if needle.is_empty() || start >= haystack.len() || needle.len() > haystack.len() - start {
-    return None;
-  }
-  haystack[start..]
-    .windows(needle.len())
-    .position(|w| w == needle)
-    .map(|p| p + start)
-}
-
 #[cfg(test)]
 mod tests {
   use super::*;
+  use crate::scan::push_cbor_text as push_text;
 
   // ── Helpers to synthesize a minimal C2PA-like manifest ──
-
-  fn push_text(buf: &mut Vec<u8>, s: &str) {
-    let b = s.as_bytes();
-    if b.len() <= 0x17 {
-      buf.push(0x60 + b.len() as u8);
-    } else {
-      buf.push(0x78);
-      buf.push(b.len() as u8);
-    }
-    buf.extend_from_slice(b);
-  }
 
   fn synth_manifest(vendor: &str, model: &str, time: &str, log_id: &str, signer: &str, org_id: &str) -> Vec<u8> {
     let mut v = Vec::new();
@@ -543,18 +393,5 @@ mod tests {
       Err(VideoInfoError::MalformedManifest(_)) => {}
       other => panic!("expected MalformedManifest, got {:?}", other),
     }
-  }
-
-  #[test]
-  fn cbor_text_reader_handles_length_encodings() {
-    // inline (0x73 = len 19)
-    let mut inline = Vec::new();
-    push_text(&mut inline, "doubao-seedance-2-0");
-    assert_eq!(read_cbor_text(&inline, 0).as_deref(), Some("doubao-seedance-2-0"));
-    // 1-byte length (0x78)
-    let mut long = Vec::new();
-    push_text(&mut long, "doubao-seedance-2-0-fast"); // 24 chars
-    assert_eq!(long[0], 0x78);
-    assert_eq!(read_cbor_text(&long, 0).as_deref(), Some("doubao-seedance-2-0-fast"));
   }
 }

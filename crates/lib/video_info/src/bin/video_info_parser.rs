@@ -1,5 +1,5 @@
-//! `video-info-parser` — inspect a video file's Seedance (ByteDance) C2PA
-//! provenance and print it.
+//! `video-info-parser` — inspect a video file's AI-generation C2PA provenance
+//! (Seedance or Veo) and print it.
 //!
 //! Usage:
 //!   video-info-parser <FILE>
@@ -8,7 +8,7 @@
 use std::process::ExitCode;
 
 use video_info::error::VideoInfoError;
-use video_info::SeedanceInfo;
+use video_info::{SeedanceInfo, VeoInfo, VideoInfo};
 
 fn main() -> ExitCode {
   let filename = match parse_filename(std::env::args().skip(1)) {
@@ -21,13 +21,17 @@ fn main() -> ExitCode {
     }
   };
 
-  match SeedanceInfo::from_path(&filename) {
-    Ok(info) => {
-      print_info(&filename, &info);
+  match VideoInfo::from_path(&filename) {
+    Ok(VideoInfo::Seedance(info)) => {
+      print_seedance(&filename, &info);
       ExitCode::SUCCESS
     }
-    Err(VideoInfoError::NotSeedance) => {
-      println!("Not seedance");
+    Ok(VideoInfo::Veo(info)) => {
+      print_veo(&filename, &info);
+      ExitCode::SUCCESS
+    }
+    Err(VideoInfoError::Unrecognized) => {
+      println!("No recognized provenance (not Seedance or Veo)");
       ExitCode::SUCCESS
     }
     Err(err) => {
@@ -49,29 +53,34 @@ fn parse_filename(args: impl Iterator<Item = String>) -> Result<String, String> 
       return Ok(value.to_string());
     }
     if arg == "--help" || arg == "-h" {
-      return Err("video-info-parser: print a video's Seedance provenance".to_string());
+      return Err("video-info-parser: print a video's AI-generation provenance".to_string());
     }
     if arg.starts_with('-') {
       return Err(format!("error: unknown flag {arg:?}"));
     }
-    // First positional argument.
     return Ok(arg);
   }
   Err("error: no filename provided".to_string())
 }
 
-fn print_info(filename: &str, info: &SeedanceInfo) {
-  // Right-aligned labels for a tidy column.
-  fn row(label: &str, value: &str) {
-    println!("  {label:>24} : {value}");
-  }
-  fn opt(label: &str, value: &Option<String>) {
-    row(label, value.as_deref().unwrap_or("(none)"));
-  }
+// ── Printing ──
 
-  println!("Seedance video provenance");
-  println!("  {:>24} : {}", "file", filename);
+fn row(label: &str, value: &str) {
+  println!("  {label:>24} : {value}");
+}
+
+fn opt(label: &str, value: &Option<String>) {
+  row(label, value.as_deref().unwrap_or("(none)"));
+}
+
+fn header(title: &str, filename: &str) {
+  println!("{title}");
+  row("file", filename);
   println!("  {}", "-".repeat(60));
+}
+
+fn print_seedance(filename: &str, info: &SeedanceInfo) {
+  header("Seedance video provenance", filename);
   row("platform", info.platform.as_str());
   row("software agent", &info.software_agent);
   opt("software agent version", &info.software_agent_version);
@@ -95,4 +104,19 @@ fn print_info(filename: &str, info: &SeedanceInfo) {
   opt("signer org id", &info.signer_org_id);
   opt("signer country", &info.signer_country);
   opt("cert serial", &info.cert_serial);
+}
+
+fn print_veo(filename: &str, info: &VeoInfo) {
+  header("Google Veo video provenance", filename);
+  row("producer", &info.producer);
+  opt("created description", &info.created_description);
+  row("synthid watermark", if info.has_synthid_watermark { "yes" } else { "no" });
+  opt("synthid description", &info.synthid_description);
+  opt("digital source type", &info.digital_source_type);
+  opt("claim generator", &info.claim_generator);
+  opt("claim generator version", &info.claim_generator_version);
+  opt("manifest id", &info.manifest_id);
+  opt("instance id", &info.instance_id);
+  opt("cert serial", &info.cert_serial);
+  row("model name", "(not embedded in metadata)");
 }
