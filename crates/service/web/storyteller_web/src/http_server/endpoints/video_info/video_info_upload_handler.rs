@@ -10,6 +10,7 @@ use std::marker::PhantomData;
 use std::sync::Arc;
 
 use actix_multipart::form::tempfile::TempFile;
+use actix_multipart::form::text::Text;
 use actix_multipart::form::MultipartForm;
 use actix_web::web::Json;
 use actix_web::{web, HttpRequest};
@@ -47,6 +48,11 @@ pub struct VideoInfoUploadForm {
   #[multipart(limit = "256 MiB")]
   #[schema(value_type = Vec<u8>, format = Binary)]
   file: TempFile,
+
+  /// Optional filename to record. Falls back to the uploaded file's own name.
+  #[multipart(limit = "2 KiB")]
+  #[schema(value_type = Option<String>, format = Binary)]
+  maybe_filename: Option<Text<String>>,
 }
 
 /// Detect a video's AI-generation provenance and persist the result.
@@ -89,6 +95,16 @@ pub async fn video_info_upload_handler(
 
   let filesize_bytes = bytes.len().min(u32::MAX as usize) as u32;
   let ip_address = get_request_ip(&http_request);
+
+  // Prefer an explicit `maybe_filename` field; otherwise use the uploaded file's
+  // own name. Trimmed; empty becomes absent.
+  let maybe_filename = form
+    .maybe_filename
+    .as_ref()
+    .map(|filename| filename.as_str().to_string())
+    .or_else(|| form.file.file_name.clone())
+    .map(|filename| filename.trim().to_string())
+    .filter(|filename| !filename.is_empty());
 
   let sha1_checksum =
     sha1_hash_bytes_as_crockford(&bytes).map_err(CommonWebError::from_error)?;
@@ -154,6 +170,7 @@ pub async fn video_info_upload_handler(
     Some(existing) => {
       update_uploaded_video(UpdateUploadedVideoArgs {
         token: &existing.token,
+        maybe_filename: maybe_filename.as_deref(),
         maybe_width,
         maybe_height,
         maybe_resolution: maybe_resolution.as_deref(),
@@ -171,6 +188,7 @@ pub async fn video_info_upload_handler(
       insert_uploaded_video(InsertUploadedVideoArgs {
         sha1_checksum: &sha1_checksum,
         filesize_bytes,
+        maybe_filename: maybe_filename.as_deref(),
         maybe_width,
         maybe_height,
         maybe_resolution: maybe_resolution.as_deref(),

@@ -12,6 +12,7 @@ where
 {
   pub sha1_checksum: &'e str,
   pub filesize_bytes: u32,
+  pub maybe_filename: Option<&'e str>,
 
   pub maybe_width: Option<u32>,
   pub maybe_height: Option<u32>,
@@ -45,6 +46,7 @@ SET
   token = ?,
   sha1_checksum = ?,
   filesize_bytes = ?,
+  maybe_filename = ?,
   maybe_width = ?,
   maybe_height = ?,
   maybe_resolution = ?,
@@ -57,6 +59,7 @@ SET
     token.as_str(),
     args.sha1_checksum,
     args.filesize_bytes,
+    args.maybe_filename,
     args.maybe_width,
     args.maybe_height,
     args.maybe_resolution,

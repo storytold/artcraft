@@ -12,6 +12,8 @@ where
 {
   pub token: &'e UploadedVideoToken,
 
+  pub maybe_filename: Option<&'e str>,
+
   pub maybe_width: Option<u32>,
   pub maybe_height: Option<u32>,
   pub maybe_resolution: Option<&'e str>,
@@ -41,6 +43,7 @@ where
     r#"
 UPDATE uploaded_videos
 SET
+  maybe_filename = ?,
   maybe_width = ?,
   maybe_height = ?,
   maybe_resolution = ?,
@@ -52,6 +55,7 @@ SET
 WHERE token = ?
 LIMIT 1
     "#,
+    args.maybe_filename,
     args.maybe_width,
     args.maybe_height,
     args.maybe_resolution,
