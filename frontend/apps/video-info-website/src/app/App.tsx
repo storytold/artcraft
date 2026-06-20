@@ -8,7 +8,7 @@ import type { Verdict } from '../lib/classify';
 import { ThemeToggle } from '../components/ThemeToggle';
 import { UploadBox } from '../components/UploadBox';
 import { VerdictCard } from '../components/VerdictCard';
-import { SampleSubmitForm } from '../components/SampleSubmitForm';
+import { ReportForm } from '../components/ReportForm';
 
 type Status = 'idle' | 'loading' | 'done' | 'error';
 
@@ -197,7 +197,10 @@ export function App() {
                 <BigResetButton onClick={reset} />
               </div>
 
-              <SampleSubmitForm />
+              <ReportForm
+                key={result.uploadedVideoToken}
+                uploadedVideoToken={result.uploadedVideoToken}
+              />
             </div>
           )}
         </main>

@@ -107,3 +107,22 @@ export interface VideoInfoReadOnlyResponse {
 export interface VideoInfoUploadResponse extends VideoInfoReadOnlyResponse {
   uploaded_video_token: string;
 }
+
+/** Request body for `POST /v1/video_info/notes`. */
+export interface VideoInfoNoteRequest {
+  uploaded_video_token: string;
+  /** Present → update that note instead of creating a new one. */
+  maybe_uploaded_video_note_token?: string;
+  maybe_filename?: string | null;
+  maybe_reported_model_type?: string | null;
+  maybe_reported_model_name?: string | null;
+  maybe_website?: string | null;
+  maybe_other_website?: string | null;
+  maybe_comments?: string | null;
+}
+
+/** Response from `POST /v1/video_info/notes`. */
+export interface VideoInfoNoteResponse {
+  success: boolean;
+  uploaded_video_note_token: string;
+}
