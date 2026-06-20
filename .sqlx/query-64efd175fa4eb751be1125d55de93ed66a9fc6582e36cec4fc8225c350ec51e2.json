@@ -1,0 +1,12 @@
+{
+  "db_name": "MySQL",
+  "query": "\nINSERT INTO uploaded_videos\nSET\n  token = ?,\n  sha1_checksum = ?,\n  filesize_bytes = ?,\n  maybe_width = ?,\n  maybe_height = ?,\n  maybe_resolution = ?,\n  maybe_detected_model_family = ?,\n  maybe_detected_model_type = ?,\n  maybe_report = ?,\n  upload_ip_address = ?,\n  created_at = NOW()\n    ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 10
+    },
+    "nullable": []
+  },
+  "hash": "64efd175fa4eb751be1125d55de93ed66a9fc6582e36cec4fc8225c350ec51e2"
+}
