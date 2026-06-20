@@ -16,6 +16,9 @@ CREATE TABLE uploaded_videos (
   -- Size of the uploaded file in bytes.
   filesize_bytes INT(10) UNSIGNED NOT NULL,
 
+  -- Original filename of the uploaded clip, as provided by the user.
+  maybe_filename VARCHAR(512) DEFAULT NULL,
+
   -- Pixel dimensions, when they could be determined.
   maybe_width INT(10) UNSIGNED DEFAULT NULL,
   maybe_height INT(10) UNSIGNED DEFAULT NULL,
