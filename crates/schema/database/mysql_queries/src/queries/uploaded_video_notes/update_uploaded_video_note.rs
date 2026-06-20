@@ -26,9 +26,10 @@ where
   pub phantom: PhantomData<&'c E>,
 }
 
-/// Update the mutable fields of an `uploaded_video_notes` record by `token`.
-/// `updated_at` is refreshed via the column's `ON UPDATE` clause. Returns the
-/// number of rows affected (0 if no row matched).
+/// Update the mutable fields of an `uploaded_video_notes` record by `token`. The
+/// `version` vector clock is incremented by 1, and `updated_at` is refreshed via
+/// the column's `ON UPDATE` clause. Returns the number of rows affected (0 if no
+/// row matched).
 pub async fn update_uploaded_video_note<'e, 'c: 'e, E>(
   args: UpdateUploadedVideoNoteArgs<'e, 'c, E>,
 ) -> Result<u64, sqlx::Error>
@@ -45,7 +46,8 @@ SET
   maybe_website = ?,
   maybe_other_website = ?,
   maybe_comments = ?,
-  maybe_comment_update_ip_address = ?
+  maybe_comment_update_ip_address = ?,
+  version = version + 1
 WHERE token = ?
 LIMIT 1
     "#,

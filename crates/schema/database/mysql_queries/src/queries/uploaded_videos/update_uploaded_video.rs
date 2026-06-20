@@ -28,9 +28,9 @@ where
 }
 
 /// Update the mutable fields of an `uploaded_videos` record by `token`
-/// (dimensions, detection, report, updater IP). `updated_at` is refreshed via
-/// the column's `ON UPDATE` clause. Returns the number of rows affected (0 if no
-/// row matched).
+/// (dimensions, detection, report, updater IP). The `version` vector clock is
+/// incremented by 1, and `updated_at` is refreshed via the column's `ON UPDATE`
+/// clause. Returns the number of rows affected (0 if no row matched).
 pub async fn update_uploaded_video<'e, 'c: 'e, E>(
   args: UpdateUploadedVideoArgs<'e, 'c, E>,
 ) -> Result<u64, sqlx::Error>
@@ -47,7 +47,8 @@ SET
   maybe_detected_model_family = ?,
   maybe_detected_model_type = ?,
   maybe_report = ?,
-  maybe_updated_ip_address = ?
+  maybe_updated_ip_address = ?,
+  version = version + 1
 WHERE token = ?
 LIMIT 1
     "#,
