@@ -9,6 +9,7 @@ use crate::configs::artcraft_website::add_artcraft_website;
 use crate::configs::development_only::add_development_only;
 use crate::configs::fakeyou::{add_fakeyou, add_fakeyou_dev_proxy};
 use crate::configs::legacy::{add_legacy_storyteller_stream, add_legacy_trumped, add_legacy_vocodes, add_power_stream};
+use crate::configs::realseedance::add_realseedance;
 use crate::configs::storyteller::{add_storyteller, add_storyteller_dev_proxy};
 use crate::configs::storyteller_board::add_storyteller_board;
 use crate::configs::storyteller_render::add_storyteller_render;
@@ -52,6 +53,7 @@ fn do_build_cors_config(is_production: bool) -> Cors {
   cors = add_artcraft_webapp(cors, is_production);
   cors = add_artcraft_website(cors, is_production);
   cors = add_artcraft_admin_dashboard(cors, is_production);
+  cors = add_realseedance(cors, is_production);
 
   // Legacy
   cors = add_legacy_trumped(cors, is_production);
@@ -117,6 +119,9 @@ mod tests {
       "https://artcraft.ai",
       "https://www.artcraft.ai",
       "https://artcraft-dashboard.netlify.app",
+      "https://realseedance.com",
+      "https://www.realseedance.com",
+      "https://real-seedance.netlify.app",
     ];
     for origin in origins {
       assert_origin_ok(&production_cors, origin).await;
@@ -179,6 +184,26 @@ mod tests {
     assert_origin_invalid(&development_cors, "https://fakeyou.com").await;
     assert_origin_invalid(&development_cors, "https://api.fakeyou.com").await;
     assert_origin_invalid(&development_cors, "https://staging.fakeyou.com").await;
+  }
+
+  #[actix_rt::test]
+  async fn test_realseedance_production() {
+    let production_cors = build_cors_config(ServerEnvironment::Production);
+
+    // Valid origins
+    assert_origin_ok(&production_cors, "https://realseedance.com").await;
+    assert_origin_ok(&production_cors, "https://www.realseedance.com").await;
+    assert_origin_ok(&production_cors, "https://real-seedance.netlify.app").await;
+    // Netlify deploy-preview / branch subdomain
+    assert_origin_ok(
+      &production_cors,
+      "https://deploy-preview-12--real-seedance.netlify.app",
+    )
+    .await;
+
+    // Invalid origins
+    assert_origin_invalid(&production_cors, "https://realseedance.fake.com").await;
+    assert_origin_invalid(&production_cors, "https://realseedance.netlify.app").await;
   }
 
   #[actix_rt::test]
