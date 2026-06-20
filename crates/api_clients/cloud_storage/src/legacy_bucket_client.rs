@@ -17,7 +17,7 @@ use tokio::io::AsyncReadExt;
 use errors::AnyhowResult;
 
 #[derive(Clone)]
-pub struct BucketClient {
+pub struct LegacyBucketClient {
   bucket: Bucket,
   /// If set, put all files under this root path.
   optional_bucket_root: Option<String>,
@@ -25,21 +25,21 @@ pub struct BucketClient {
 
 
 #[derive(Debug)]
-pub enum BucketClientError {
+pub enum LegacyBucketClientError {
     ErrorWithCodeAndMessage { code: u16, message: String },
 }
 
-impl std::fmt::Display for BucketClientError {
+impl std::fmt::Display for LegacyBucketClientError {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         match self {
-            BucketClientError::ErrorWithCodeAndMessage { code, message } => write!(f, "Error {}: {}", code, message),
+            LegacyBucketClientError::ErrorWithCodeAndMessage { code, message } => write!(f, "Error {}: {}", code, message),
         }
     }
 }
-impl Error for BucketClientError {}
+impl Error for LegacyBucketClientError {}
 
 
-impl BucketClient {
+impl LegacyBucketClient {
   pub fn bucket_name(&self) -> String {
     self.bucket.name().to_string()
   }

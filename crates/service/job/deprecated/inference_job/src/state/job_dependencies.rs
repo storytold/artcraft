@@ -10,7 +10,7 @@ use r2d2_redis::RedisConnectionManager;
 use sqlx::MySqlPool;
 
 use bootstrap::bootstrap::ContainerEnvironment;
-use cloud_storage::bucket_client::BucketClient;
+use cloud_storage::legacy_bucket_client::LegacyBucketClient;
 use bucket_paths::legacy::old_bespoke_paths::bucket_path_unifier::BucketPathUnifier;
 use concurrency::relaxed_atomic_bool::RelaxedAtomicBool;
 use jobs_common::job_progress_reporter::job_progress_reporter::JobProgressReporterBuilder;
@@ -135,9 +135,9 @@ pub struct DatabaseDependencies {
 }
 
 pub struct BucketDependencies {
-  pub private_bucket_client: BucketClient,
-  pub public_bucket_client: BucketClient,
-  pub auto_gc_bucket_client: BucketClient,
+  pub private_bucket_client: LegacyBucketClient,
+  pub public_bucket_client: LegacyBucketClient,
+  pub auto_gc_bucket_client: LegacyBucketClient,
   pub bucket_path_unifier: BucketPathUnifier,
 }
 

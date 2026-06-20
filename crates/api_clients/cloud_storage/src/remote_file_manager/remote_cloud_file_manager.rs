@@ -20,7 +20,7 @@ pub struct RemoteCloudFileClient {
 
 impl RemoteCloudFileClient {
 
-    #[deprecated(note="DO NOT USE THIS AWFUL CLOUD BUCKET CLIENT. These abstractions are complicated. See `BucketClient`")]
+    #[deprecated(note="DO NOT USE THIS AWFUL CLOUD BUCKET CLIENT. These abstractions are complicated. See `LegacyBucketClient`")]
     pub async fn get_remote_cloud_file_client() -> AnyhowResult<Self> {
         let bucket_orchestration = match BucketOrchestration::new_bucket_client_from_existing_env() {
             Ok(client) => client,
@@ -34,7 +34,7 @@ impl RemoteCloudFileClient {
         })
     }
 
-    #[deprecated(note="DO NOT USE THIS AWFUL CLOUD BUCKET CLIENT. These abstractions are complicated. See `BucketClient`")]
+    #[deprecated(note="DO NOT USE THIS AWFUL CLOUD BUCKET CLIENT. These abstractions are complicated. See `LegacyBucketClient`")]
     pub fn new(bucket_orchestration_client: Box<dyn BucketOrchestrationCore>) -> Self {
         Self {
             bucket_orchestration_client
@@ -42,7 +42,7 @@ impl RemoteCloudFileClient {
     }
 
     // Where the to_system_file_path is  let sd_checkpoint_path = work_temp_dir.path().join("sd_checkpoint.safetensors"); path and file name and extension
-    #[deprecated(note="DO NOT USE THIS AWFUL CLOUD BUCKET CLIENT. These abstractions are complicated. See `BucketClient`")]
+    #[deprecated(note="DO NOT USE THIS AWFUL CLOUD BUCKET CLIENT. These abstractions are complicated. See `LegacyBucketClient`")]
     pub async fn download_file(&self, remote_cloud_bucket_details:RemoteCloudBucketDetails, to_system_file_path:String) -> AnyhowResult<()> {
         let file_descriptor = remote_cloud_bucket_details.file_descriptor_from_bucket_details();
         let file_bucket_directory = FileBucketDirectory::from_existing_bucket_details(remote_cloud_bucket_details);
@@ -53,7 +53,7 @@ impl RemoteCloudFileClient {
         Ok(())
     }
 
-    #[deprecated(note="DO NOT USE THIS AWFUL CLOUD BUCKET CLIENT. These abstractions are complicated. See `BucketClient`")]
+    #[deprecated(note="DO NOT USE THIS AWFUL CLOUD BUCKET CLIENT. These abstractions are complicated. See `LegacyBucketClient`")]
     pub async fn download_media_file(&self, media_file_path: &MediaFileBucketPath, to_system_file_path: String) -> AnyhowResult<()> {
         const IS_PUBLIC: bool = true; // NB: Media files are always public
         let full_remote_cloud_file_path = media_file_path.get_full_object_path_str().to_string();
@@ -63,7 +63,7 @@ impl RemoteCloudFileClient {
     }
 
     // return error or success with meta data.
-    #[deprecated(note="DO NOT USE THIS AWFUL CLOUD BUCKET CLIENT. These abstractions are complicated. See `BucketClient`")]
+    #[deprecated(note="DO NOT USE THIS AWFUL CLOUD BUCKET CLIENT. These abstractions are complicated. See `LegacyBucketClient`")]
     pub async fn upload_file(&self, file_descriptor:Box<dyn FileDescriptor>, from_system_file_path:&str) -> AnyhowResult<FileMetaData> {
      
         // get file meta data
@@ -99,7 +99,7 @@ impl RemoteCloudFileClient {
     }
 
     // Retrieve the metadata from the file
-    #[deprecated(note="DO NOT USE THIS AWFUL CLOUD BUCKET CLIENT. These abstractions are complicated. See `BucketClient`")]
+    #[deprecated(note="DO NOT USE THIS AWFUL CLOUD BUCKET CLIENT. These abstractions are complicated. See `LegacyBucketClient`")]
     pub fn get_file_meta_data(system_file_path:&str) -> AnyhowResult<FileMetaData> {
         let file_size_bytes = file_size(system_file_path.clone())?;
         let sha256_checksum = sha256_hash_file(system_file_path.clone())?;

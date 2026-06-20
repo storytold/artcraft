@@ -2,7 +2,7 @@ use std::path::Path;
 
 use log::{info, warn};
 
-use cloud_storage::bucket_client::BucketClient;
+use cloud_storage::legacy_bucket_client::LegacyBucketClient;
 use jobs_common::job_progress_reporter::job_progress_reporter::JobProgressReporter;
 
 use crate::{ProcessSingleJobError, ScopedTempDirCreator};
@@ -13,7 +13,7 @@ pub async fn maybe_download_file_from_bucket(
   name_or_description_of_file: &str,
   file_path: &Path,
   bucket_object_path: &Path,
-  bucket_client: &BucketClient,
+  bucket_client: &LegacyBucketClient,
   job_progress_reporter: &mut Box<dyn JobProgressReporter>,
   job_progress_update_description: &str,
   job_id: i64,

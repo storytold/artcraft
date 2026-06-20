@@ -24,7 +24,7 @@ use actix_helpers::middleware::banned_ip_filter::ip_ban_list::ip_ban_list::IpBan
 use billing_artcraft_component::utils::artcraft_stripe_config::ArtcraftStripeConfigWithClient;
 use billing_component::stripe::stripe_config::StripeConfig;
 use chrono::{DateTime, Utc};
-use cloud_storage::bucket_client::BucketClient;
+use cloud_storage::legacy_bucket_client::LegacyBucketClient;
 use bucket_client::BucketClient as SeedanceVideoBucketClient;
 use elasticsearch::Elasticsearch;
 use memory_caching::arc_ttl_sieve::ArcTtlSieve;
@@ -85,9 +85,9 @@ pub struct ServerState {
   pub firehose_publisher: FirehosePublisher,
   pub badge_granter: BadgeGranter,
 
-  pub private_bucket_client: BucketClient,
-  pub public_bucket_client: BucketClient,
-  pub auto_gc_bucket_client: BucketClient,
+  pub private_bucket_client: LegacyBucketClient,
+  pub public_bucket_client: LegacyBucketClient,
+  pub auto_gc_bucket_client: LegacyBucketClient,
 
   /// Optional archive bucket for uploaded Seedance videos. `None` when the
   /// `SEEDANCE_VIDEO_BUCKET_*` env vars aren't configured.

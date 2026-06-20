@@ -11,7 +11,7 @@ use actix_web::{web, HttpMessage, HttpRequest, HttpResponse};
 use base64::prelude::BASE64_STANDARD;
 use base64::Engine;
 use bucket_paths::legacy::typified_paths::public::media_files::bucket_file_path::MediaFileBucketPath;
-use cloud_storage::bucket_client::BucketClient;
+use cloud_storage::legacy_bucket_client::LegacyBucketClient;
 use enums::by_table::media_files::media_file_class::MediaFileClass;
 use enums::by_table::media_files::media_file_origin_category::MediaFileOriginCategory;
 use enums::by_table::media_files::media_file_origin_product_category::MediaFileOriginProductCategory;
@@ -163,7 +163,7 @@ async fn upload_and_save_image(
   base64_image: &str,
   inference_job: &GenericInferenceJobStatus,
   mysql_pool: &MySqlPool,
-  public_bucket_client: &BucketClient,
+  public_bucket_client: &LegacyBucketClient,
 ) -> AnyhowResult<MediaFileToken> {
 
   let image_bytes = BASE64_STANDARD.decode(base64_image)?;

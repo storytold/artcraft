@@ -16,7 +16,7 @@ use log::{info, warn};
 use sqlx::mysql::MySqlPoolOptions;
 
 use bootstrap::bootstrap::{bootstrap, BootstrapArgs};
-use cloud_storage::bucket_client::BucketClient;
+use cloud_storage::legacy_bucket_client::LegacyBucketClient;
 use concurrency::relaxed_atomic_bool::RelaxedAtomicBool;
 use shared_env_var_config::logging::DEFAULT_RUST_LOG;
 use errors::AnyhowResult;
@@ -88,7 +88,7 @@ async fn main() -> AnyhowResult<()> {
     Duration::from_secs(60 * 5),
   );
 
-  let public_bucket_client = BucketClient::create(
+  let public_bucket_client = LegacyBucketClient::create(
     &access_key,
     &secret_key,
     &region_name,

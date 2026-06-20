@@ -28,7 +28,7 @@ use sqlx::mysql::MySqlPoolOptions;
 use tokio::runtime::Runtime;
 
 use bootstrap::bootstrap::{bootstrap, BootstrapArgs};
-use cloud_storage::bucket_client::BucketClient;
+use cloud_storage::legacy_bucket_client::LegacyBucketClient;
 use bucket_paths::legacy::old_bespoke_paths::bucket_path_unifier::BucketPathUnifier;
 use config::common_env::CommonEnv;
 use shared_env_var_config::logging::DEFAULT_RUST_LOG;
@@ -96,7 +96,7 @@ async fn main() -> AnyhowResult<()> {
   let bucket_timeout = easyenv::get_env_duration_seconds_or_default("BUCKET_TIMEOUT_SECONDS",
     Duration::from_secs(60 * 5));
 
-  let private_bucket_client = BucketClient::create(
+  let private_bucket_client = LegacyBucketClient::create(
     &access_key,
     &secret_key,
     &region_name,
@@ -106,7 +106,7 @@ async fn main() -> AnyhowResult<()> {
     Some(bucket_timeout),
   )?;
 
-  let public_bucket_client = BucketClient::create(
+  let public_bucket_client = LegacyBucketClient::create(
     &access_key,
     &secret_key,
     &region_name,

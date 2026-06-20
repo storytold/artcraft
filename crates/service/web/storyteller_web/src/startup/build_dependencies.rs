@@ -5,7 +5,7 @@ use actix_artcraft::sessions::anonymous_visitor_tracking::avt_cookie_manager::Av
 use actix_artcraft::sessions::user_sessions::http_user_session_manager::HttpUserSessionManager;
 use anyhow::anyhow;
 use chrono::Utc;
-use cloud_storage::bucket_client::BucketClient;
+use cloud_storage::legacy_bucket_client::LegacyBucketClient;
 use elasticsearch::http::transport::Transport;
 use elasticsearch::Elasticsearch;
 use errors::AnyhowResult;
@@ -124,17 +124,17 @@ pub async fn setup_dependencies(server_hostname: &str) -> AnyhowResult<SetupResu
   let s3_compatible_endpoint_url = easyenv::get_env_string_or_default("S3_COMPATIBLE_ENDPOINT_URL", "https://storage.googleapis.com");
   let bucket_timeout = easyenv::get_env_duration_seconds_or_default("BUCKET_TIMEOUT_SECONDS", Duration::from_secs(60 * 5));
 
-  let private_bucket_client = BucketClient::create(
+  let private_bucket_client = LegacyBucketClient::create(
     &access_key, &secret_key, &region_name, &private_bucket_name,
     &s3_compatible_endpoint_url, None, Some(bucket_timeout),
   )?;
 
-  let public_bucket_client = BucketClient::create(
+  let public_bucket_client = LegacyBucketClient::create(
     &access_key, &secret_key, &region_name, &public_bucket_name,
     &s3_compatible_endpoint_url, None, Some(bucket_timeout),
   )?;
 
-  let auto_gc_bucket_client = BucketClient::create(
+  let auto_gc_bucket_client = LegacyBucketClient::create(
     &access_key, &secret_key, &region_name, &gc_enabled_public_bucket_name,
     &s3_compatible_endpoint_url, None, Some(bucket_timeout),
   )?;

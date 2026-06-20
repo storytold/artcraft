@@ -28,7 +28,7 @@ use sqlx::mysql::MySqlPoolOptions;
 use sqlx::MySqlPool;
 use tempdir::TempDir;
 
-use cloud_storage::bucket_client::BucketClient;
+use cloud_storage::legacy_bucket_client::LegacyBucketClient;
 use bucket_paths::legacy::old_bespoke_paths::bucket_path_unifier::BucketPathUnifier;
 use config::bad_urls::is_bad_tts_model_download_url;
 use config::common_env::CommonEnv;
@@ -74,7 +74,7 @@ struct Downloader {
 
   pub redis_pool: r2d2::Pool<RedisConnectionManager>,
 
-  pub bucket_client: BucketClient,
+  pub bucket_client: LegacyBucketClient,
   pub firehose_publisher: FirehosePublisher,
   pub badge_granter: BadgeGranter,
   pub google_drive_downloader: GoogleDriveDownloadCommand,
@@ -128,7 +128,7 @@ async fn main() -> AnyhowResult<()> {
   let bucket_timeout = easyenv::get_env_duration_seconds_or_default("BUCKET_TIMEOUT_SECONDS",
     Duration::from_secs(60 * 5));
 
-  let bucket_client = BucketClient::create(
+  let bucket_client = LegacyBucketClient::create(
     &access_key,
     &secret_key,
     &region_name,
