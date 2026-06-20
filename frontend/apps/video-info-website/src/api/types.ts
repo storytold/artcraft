@@ -119,6 +119,9 @@ export interface VideoInfoNoteRequest {
   maybe_website?: string | null;
   maybe_other_website?: string | null;
   maybe_comments?: string | null;
+  maybe_email_address?: string | null;
+  can_share_report?: boolean;
+  was_scammed?: boolean;
 }
 
 /** Response from `POST /v1/video_info/notes`. */

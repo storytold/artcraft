@@ -24,6 +24,9 @@ export function ReportForm({ uploadedVideoToken }: ReportFormProps) {
   const [website, setWebsite] = useState('');
   const [customWebsite, setCustomWebsite] = useState('');
   const [comments, setComments] = useState('');
+  const [email, setEmail] = useState('');
+  const [wasScammed, setWasScammed] = useState(false);
+  const [canShare, setCanShare] = useState(false);
 
   // The note token is kept so subsequent saves update the same record.
   const [noteToken, setNoteToken] = useState<string | null>(null);
@@ -37,7 +40,10 @@ export function ReportForm({ uploadedVideoToken }: ReportFormProps) {
     (modelType === CUSTOM_VALUE && customModelName.trim() !== '') ||
     websiteChosen ||
     (website === CUSTOM_VALUE && customWebsite.trim() !== '') ||
-    comments.trim() !== '';
+    comments.trim() !== '' ||
+    email.trim() !== '' ||
+    wasScammed ||
+    canShare;
 
   const submit = useCallback(async () => {
     if (!hasContent) return;
@@ -52,6 +58,9 @@ export function ReportForm({ uploadedVideoToken }: ReportFormProps) {
       maybe_other_website:
         website === CUSTOM_VALUE ? customWebsite.trim() || undefined : undefined,
       maybe_comments: comments.trim() || undefined,
+      maybe_email_address: email.trim() || undefined,
+      can_share_report: canShare,
+      was_scammed: wasScammed,
     };
     try {
       const response = await saveVideoNote(request);
@@ -75,6 +84,9 @@ export function ReportForm({ uploadedVideoToken }: ReportFormProps) {
     website,
     customWebsite,
     comments,
+    email,
+    canShare,
+    wasScammed,
   ]);
 
   // Auto-save 4s after the last change.
@@ -155,6 +167,25 @@ export function ReportForm({ uploadedVideoToken }: ReportFormProps) {
         />
       </Field>
 
+      {/* Flags */}
+      <div className="space-y-2.5">
+        <FancyCheckbox
+          checked={wasScammed}
+          onChange={onChange(setWasScammed)}
+          label="Did you get scammed?"
+        />
+        <FancyCheckbox
+          checked={canShare}
+          onChange={onChange(setCanShare)}
+          label="Can we share this statistic with the community?"
+        />
+      </div>
+
+      {/* Optional email */}
+      <Field label="Want us to share better alternatives with you?">
+        <TextInput value={email} onChange={onChange(setEmail)} placeholder="you@example.com (optional)" />
+      </Field>
+
       <div className="flex items-center justify-between gap-3">
         <StatusLine status={status} dirty={dirty} hasContent={hasContent} />
         <button
@@ -226,6 +257,48 @@ function Hint({
       {icon}
       {children}
     </span>
+  );
+}
+
+function FancyCheckbox({
+  checked,
+  onChange,
+  label,
+}: {
+  checked: boolean;
+  onChange: (value: boolean) => void;
+  label: string;
+}) {
+  return (
+    <button
+      type="button"
+      role="checkbox"
+      aria-checked={checked}
+      onClick={() => onChange(!checked)}
+      className={[
+        'group flex w-full items-center gap-3 rounded-2xl border px-4 py-3 text-left text-sm font-medium transition',
+        checked
+          ? 'border-violet-400/70 bg-violet-500/10 text-slate-800 dark:border-cyan-400/40 dark:bg-cyan-400/10 dark:text-slate-100'
+          : 'border-slate-300/70 text-slate-600 hover:border-violet-400/50 dark:border-white/10 dark:text-slate-300',
+      ].join(' ')}
+    >
+      <span
+        className={[
+          'flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border-2 transition',
+          checked
+            ? 'border-transparent bg-gradient-to-tr from-violet-600 to-fuchsia-600 text-white shadow-md shadow-fuchsia-500/30'
+            : 'border-slate-400/60 group-hover:border-violet-400/70 dark:border-white/20',
+        ].join(' ')}
+      >
+        <Check
+          className={[
+            'h-4 w-4 transition',
+            checked ? 'scale-100 opacity-100' : 'scale-50 opacity-0',
+          ].join(' ')}
+        />
+      </span>
+      <span>{label}</span>
+    </button>
   );
 }
 
