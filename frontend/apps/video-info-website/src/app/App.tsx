@@ -200,6 +200,7 @@ export function App() {
               <ReportForm
                 key={result.uploadedVideoToken}
                 uploadedVideoToken={result.uploadedVideoToken}
+                fileName={result.fileName}
               />
             </div>
           )}

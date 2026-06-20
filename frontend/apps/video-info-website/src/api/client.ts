@@ -33,6 +33,9 @@ export async function uploadVideo(
 ): Promise<VideoInfoUploadResponse> {
   const form = new FormData();
   form.append('file', file, file.name || 'upload');
+  if (file.name) {
+    form.append('maybe_filename', file.name);
+  }
 
   let response: Response;
   try {

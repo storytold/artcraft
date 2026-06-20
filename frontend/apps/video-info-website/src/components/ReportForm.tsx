@@ -16,9 +16,11 @@ type SaveStatus = 'idle' | 'saving' | 'saved' | 'error';
 interface ReportFormProps {
   /** The uploaded video this report is about. */
   uploadedVideoToken: string;
+  /** The original filename of the uploaded video, recorded with the note. */
+  fileName: string;
 }
 
-export function ReportForm({ uploadedVideoToken }: ReportFormProps) {
+export function ReportForm({ uploadedVideoToken, fileName }: ReportFormProps) {
   const [modelType, setModelType] = useState('');
   const [customModelName, setCustomModelName] = useState('');
   const [website, setWebsite] = useState('');
@@ -51,6 +53,7 @@ export function ReportForm({ uploadedVideoToken }: ReportFormProps) {
     const request: VideoInfoNoteRequest = {
       uploaded_video_token: uploadedVideoToken,
       maybe_uploaded_video_note_token: noteToken ?? undefined,
+      maybe_filename: fileName.trim() || undefined,
       maybe_reported_model_type: modelChosen ? modelType : undefined,
       maybe_reported_model_name:
         modelType === CUSTOM_VALUE ? customModelName.trim() || undefined : undefined,
@@ -76,6 +79,7 @@ export function ReportForm({ uploadedVideoToken }: ReportFormProps) {
   }, [
     hasContent,
     uploadedVideoToken,
+    fileName,
     noteToken,
     modelChosen,
     modelType,
