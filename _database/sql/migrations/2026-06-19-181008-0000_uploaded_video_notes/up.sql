@@ -31,6 +31,17 @@ CREATE TABLE uploaded_video_notes (
   -- Free-form comments from the submitter.
   maybe_comments VARCHAR(1024) DEFAULT NULL,
 
+  -- ========== CONTACT & FLAGS ==========
+
+  -- Optional email address for follow-up.
+  email_address VARCHAR(255) DEFAULT NULL,
+
+  -- Whether the submitter consents to us sharing the report.
+  can_share_report BOOLEAN NOT NULL DEFAULT FALSE,
+
+  -- Whether the submitter believes they were scammed.
+  was_scammed BOOLEAN NOT NULL DEFAULT FALSE,
+
   -- ========== IP ADDRESSES ==========
 
   -- IP address that submitted the note. Wide enough for IPv4/IPv6.
@@ -38,6 +49,12 @@ CREATE TABLE uploaded_video_notes (
 
   -- IP address that last updated the note. Wide enough for IPv4/IPv6.
   maybe_comment_update_ip_address VARCHAR(40) DEFAULT NULL,
+
+  -- ========== VERSION ==========
+
+  -- Optimistic-concurrency "vector clock". Bump by 1 on every update — set in
+  -- the UPDATE statement (MySQL can't auto-increment a plain column via schema).
+  version INT(8) UNSIGNED NOT NULL DEFAULT 0,
 
   -- ========== TIMESTAMPS ==========
 

@@ -42,6 +42,12 @@ CREATE TABLE uploaded_videos (
   -- IP address that last updated the row. Wide enough for IPv4/IPv6.
   maybe_updated_ip_address VARCHAR(40) DEFAULT NULL,
 
+  -- ========== VERSION ==========
+
+  -- Optimistic-concurrency "vector clock". Bump by 1 on every update — set in
+  -- the UPDATE statement (MySQL can't auto-increment a plain column via schema).
+  version INT(8) UNSIGNED NOT NULL DEFAULT 0,
+
   -- ========== TIMESTAMPS ==========
 
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
