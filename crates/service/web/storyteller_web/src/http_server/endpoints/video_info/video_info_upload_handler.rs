@@ -230,23 +230,31 @@ fn seedance_video_object_name(sha1_checksum: &str) -> String {
   format!("uploads/{shard}{sha1_checksum}.mp4")
 }
 
-/// A coarse resolution bucket, classified by the longest dimension (so portrait
-/// and landscape orientations bucket the same). Stored in `maybe_resolution`.
+/// A coarse resolution bucket, classified by **total pixel area** so that
+/// orientation (portrait/landscape/square) doesn't matter — `1080×1920` and
+/// `1920×1080` bucket the same. Stored in `maybe_resolution`.
+///
+/// Thresholds are placed between the standard tiers' pixel areas:
+/// - 0.5K ≈ 512×512 (0.26 MP)
+/// - 1K  ≈ 720p / 1280×720 (0.92 MP)
+/// - 2K  ≈ 1080p–1440p (2.07–3.69 MP)
+/// - 3K  ≈ ~4.5–5 MP
+/// - 4K  ≈ 2160p / 3840×2160 (8.3 MP)
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum VideoResolutionClass {
-  /// Below ~0.5K (longest dimension under 512px).
+  /// Below ~0.5K (under ~0.13 MP).
   Tiny,
-  /// ~0.5K — e.g. 512×512.
+  /// ~0.5K — e.g. 512×512, VGA.
   HalfK,
-  /// ~1K — e.g. 720p (1280×720), 1024×1024, 1024×768.
+  /// ~1K — e.g. 720p (1280×720), 1024×1024, 1080×1080.
   OneK,
-  /// ~2K — e.g. 1080p (1920×1080), 1440p.
+  /// ~2K — e.g. 1080p (1920×1080), 1440×1080, 2048×2048, 2560×1600.
   TwoK,
-  /// ~3K — roughly 3,000px on the longest dimension.
+  /// ~3K — e.g. 2160×2160 (~4.7 MP).
   ThreeK,
-  /// ~4K — e.g. 3840×2160 (and DCI 4096).
+  /// ~4K — e.g. 3840×2160 / 4096×2160 (~8.3–8.8 MP).
   FourK,
-  /// Anything beyond 4K.
+  /// Beyond 4K — e.g. 5K, 8K.
   Huge,
 }
 
@@ -264,15 +272,17 @@ impl VideoResolutionClass {
   }
 }
 
-/// Bucket a video's resolution by its longest dimension.
+/// Bucket a video's resolution by total pixel area (`width × height`). Boundaries
+/// sit roughly at the geometric midpoints between adjacent standard tiers.
 fn classify_resolution(width: u32, height: u32) -> VideoResolutionClass {
-  match width.max(height) {
-    0..=511 => VideoResolutionClass::Tiny,
-    512..=999 => VideoResolutionClass::HalfK,
-    1000..=1699 => VideoResolutionClass::OneK,
-    1700..=2699 => VideoResolutionClass::TwoK,
-    2700..=3399 => VideoResolutionClass::ThreeK,
-    3400..=4199 => VideoResolutionClass::FourK,
+  let area = width as u64 * height as u64;
+  match area {
+    0..=129_999 => VideoResolutionClass::Tiny,
+    130_000..=499_999 => VideoResolutionClass::HalfK,
+    500_000..=1_399_999 => VideoResolutionClass::OneK,
+    1_400_000..=4_399_999 => VideoResolutionClass::TwoK,
+    4_400_000..=6_299_999 => VideoResolutionClass::ThreeK,
+    6_300_000..=10_999_999 => VideoResolutionClass::FourK,
     _ => VideoResolutionClass::Huge,
   }
 }
@@ -319,27 +329,45 @@ mod tests {
   }
 
   #[test]
-  fn classifies_resolution_by_longest_dimension() {
+  fn classifies_resolution_by_area() {
     let class = |w, h| classify_resolution(w, h).as_str();
+
     // Tiny
     assert_eq!(class(320, 240), "tiny");
-    assert_eq!(class(480, 480), "tiny");
     // HalfK
     assert_eq!(class(512, 512), "half_k");
-    assert_eq!(class(854, 480), "half_k");
-    // OneK
+    assert_eq!(class(640, 480), "half_k");
+    // OneK (incl. square)
     assert_eq!(class(1280, 720), "one_k");
     assert_eq!(class(1024, 1024), "one_k");
-    assert_eq!(class(1024, 768), "one_k");
-    // TwoK (incl. portrait 1080p)
-    assert_eq!(class(1920, 1080), "two_k");
-    assert_eq!(class(1080, 1920), "two_k");
+    assert_eq!(class(1080, 1080), "one_k");
+    // TwoK — tall, wide, and square all by area
+    assert_eq!(class(1440, 1080), "two_k");
+    assert_eq!(class(1920, 1200), "two_k");
+    assert_eq!(class(2048, 1080), "two_k");
+    assert_eq!(class(2160, 1440), "two_k");
+    assert_eq!(class(2560, 1600), "two_k");
+    assert_eq!(class(2048, 2048), "two_k");
     // ThreeK
-    assert_eq!(class(3000, 1500), "three_k");
+    assert_eq!(class(2160, 2160), "three_k");
     // FourK (UHD + DCI)
     assert_eq!(class(3840, 2160), "four_k");
     assert_eq!(class(4096, 2160), "four_k");
-    // Huge
+    // Huge (5K / 8K)
+    assert_eq!(class(5120, 2880), "huge");
     assert_eq!(class(7680, 4320), "huge");
+  }
+
+  /// Flipping a video (swapping width/height) must not change its class, and the
+  /// same holds for square videos — they're all classified purely by area.
+  #[test]
+  fn resolution_class_is_orientation_independent() {
+    for (w, h) in [(1920, 1080), (2048, 1080), (3840, 2160), (1280, 720)] {
+      assert_eq!(
+        classify_resolution(w, h),
+        classify_resolution(h, w),
+        "{w}x{h} should match its flip {h}x{w}",
+      );
+    }
   }
 }
