@@ -1,6 +1,6 @@
 //! Optional setup for the Seedance video archive bucket.
 //!
-//! Reads the four `SEEDANCE_VIDEO_BUCKET_*` env vars. All must be present to
+//! Reads the five `SEEDANCE_VIDEO_BUCKET_*` env vars. All must be present to
 //! build a client; otherwise the client is `None` and archival uploads are
 //! simply skipped. A *partial* configuration is treated as a misconfiguration
 //! (warned, not built).
@@ -14,16 +14,18 @@ use log::{info, warn};
 pub fn setup_seedance_video_bucket() -> Option<BucketClient> {
   let bucket_name = read_non_empty_env("SEEDANCE_VIDEO_BUCKET_NAME");
   let region = read_non_empty_env("SEEDANCE_VIDEO_BUCKET_REGION");
+  let endpoint = read_non_empty_env("SEEDANCE_VIDEO_BUCKET_ENDPOINT");
   let access_key = read_non_empty_env("SEEDANCE_VIDEO_BUCKET_ACCESS_KEY_ID");
   let secret_key = read_non_empty_env("SEEDANCE_VIDEO_BUCKET_SECRET_ACCESS_KEY");
 
-  match (bucket_name, region, access_key, secret_key) {
-    (Some(bucket_name), Some(region), Some(access_key), Some(secret_key)) => {
+  match (bucket_name, region, endpoint, access_key, secret_key) {
+    (Some(bucket_name), Some(region), Some(endpoint), Some(access_key), Some(secret_key)) => {
       match BucketClientBuilder::new()
         .access_key(access_key)
         .secret_key(secret_key)
         .region_name(region)
         .bucket_name(&bucket_name)
+        .endpoint(endpoint)
         .build()
       {
         Ok(client) => {
@@ -36,15 +38,15 @@ pub fn setup_seedance_video_bucket() -> Option<BucketClient> {
         }
       }
     }
-    (None, None, None, None) => {
+    (None, None, None, None, None) => {
       info!("Seedance video bucket not configured; archival uploads disabled.");
       None
     }
     _ => {
       warn!(
         "Seedance video bucket is only partially configured \
-         (need all of SEEDANCE_VIDEO_BUCKET_NAME / _REGION / _ACCESS_KEY_ID / \
-         _SECRET_ACCESS_KEY); skipping setup."
+         (need all of SEEDANCE_VIDEO_BUCKET_NAME / _REGION / _ENDPOINT / \
+         _ACCESS_KEY_ID / _SECRET_ACCESS_KEY); skipping setup."
       );
       None
     }

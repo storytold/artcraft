@@ -11589,6 +11589,7 @@ dependencies = [
  "billing_artcraft_component",
  "billing_component",
  "bootstrap",
+ "bucket_client",
  "bucket_paths",
  "bytes",
  "chrono",
