@@ -27,6 +27,12 @@ impl fmt::Display for ObjectName {
   }
 }
 
+impl AsRef<str> for ObjectName {
+  fn as_ref(&self) -> &str {
+    &self.0
+  }
+}
+
 #[cfg(test)]
 mod tests {
   use super::*;
