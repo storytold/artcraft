@@ -19,6 +19,10 @@ where
   pub maybe_other_website: Option<&'e str>,
   pub maybe_comments: Option<&'e str>,
 
+  pub maybe_email_address: Option<&'e str>,
+  pub can_share_report: bool,
+  pub was_scammed: bool,
+
   /// IP address of the request making the update; stamped on `maybe_comment_update_ip_address`.
   pub maybe_comment_update_ip_address: Option<&'e str>,
 
@@ -46,6 +50,9 @@ SET
   maybe_website = ?,
   maybe_other_website = ?,
   maybe_comments = ?,
+  email_address = ?,
+  can_share_report = ?,
+  was_scammed = ?,
   maybe_comment_update_ip_address = ?,
   version = version + 1
 WHERE token = ?
@@ -57,6 +64,9 @@ LIMIT 1
     args.maybe_website.map(|website| website.to_str()),
     args.maybe_other_website,
     args.maybe_comments,
+    args.maybe_email_address,
+    args.can_share_report,
+    args.was_scammed,
     args.maybe_comment_update_ip_address,
     args.token.as_str(),
   )

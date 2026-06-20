@@ -55,6 +55,9 @@ pub async fn video_info_notes_handler(
   let maybe_reported_model_name = normalize_optional(&request.maybe_reported_model_name);
   let maybe_other_website = normalize_optional(&request.maybe_other_website);
   let maybe_comments = normalize_optional(&request.maybe_comments);
+  let maybe_email_address = normalize_optional(&request.maybe_email_address);
+  let can_share_report = request.can_share_report.unwrap_or(false);
+  let was_scammed = request.was_scammed.unwrap_or(false);
 
   let mut mysql_connection = server_state.mysql_pool.acquire().await?;
 
@@ -69,6 +72,9 @@ pub async fn video_info_notes_handler(
         maybe_website: request.maybe_website,
         maybe_other_website: maybe_other_website.as_deref(),
         maybe_comments: maybe_comments.as_deref(),
+        maybe_email_address: maybe_email_address.as_deref(),
+        can_share_report,
+        was_scammed,
         maybe_comment_update_ip_address: Some(ip_address.as_str()),
         mysql_executor: &mut *mysql_connection,
         phantom: PhantomData,
@@ -86,6 +92,9 @@ pub async fn video_info_notes_handler(
         maybe_website: request.maybe_website,
         maybe_other_website: maybe_other_website.as_deref(),
         maybe_comments: maybe_comments.as_deref(),
+        maybe_email_address: maybe_email_address.as_deref(),
+        can_share_report,
+        was_scammed,
         comment_create_ip_address: &ip_address,
         mysql_executor: &mut *mysql_connection,
         phantom: PhantomData,

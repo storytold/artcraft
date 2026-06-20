@@ -39,6 +39,15 @@ pub struct VideoInfoNoteRequest {
 
   /// Free-form comments (trimmed; empty becomes absent).
   pub maybe_comments: Option<String>,
+
+  /// Optional contact email (trimmed; empty becomes absent).
+  pub maybe_email_address: Option<String>,
+
+  /// Whether the submitter consents to us sharing the report. Defaults to false.
+  pub can_share_report: Option<bool>,
+
+  /// Whether the submitter believes they were scammed. Defaults to false.
+  pub was_scammed: Option<bool>,
 }
 
 /// Response body for `POST /v1/video_info/notes`.

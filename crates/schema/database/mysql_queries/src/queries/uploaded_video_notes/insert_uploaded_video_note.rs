@@ -20,6 +20,10 @@ where
   pub maybe_other_website: Option<&'e str>,
   pub maybe_comments: Option<&'e str>,
 
+  pub maybe_email_address: Option<&'e str>,
+  pub can_share_report: bool,
+  pub was_scammed: bool,
+
   pub comment_create_ip_address: &'e str,
 
   pub mysql_executor: E,
@@ -49,6 +53,9 @@ SET
   maybe_website = ?,
   maybe_other_website = ?,
   maybe_comments = ?,
+  email_address = ?,
+  can_share_report = ?,
+  was_scammed = ?,
   comment_create_ip_address = ?,
   created_at = NOW()
     "#,
@@ -60,6 +67,9 @@ SET
     args.maybe_website.map(|website| website.to_str()),
     args.maybe_other_website,
     args.maybe_comments,
+    args.maybe_email_address,
+    args.can_share_report,
+    args.was_scammed,
     args.comment_create_ip_address,
   )
     .execute(args.mysql_executor)
