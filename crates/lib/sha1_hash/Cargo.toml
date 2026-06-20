@@ -1,6 +1,6 @@
 [package]
 name = "sha1_hash"
-edition = "2021"
+edition = "2024"
 version = "0.0.1"
 publish = false
 
