@@ -34,6 +34,7 @@ use crate::startup::setup_bans::{
   load_static_container_ip_bans, load_troll_user_token_bans,
 };
 use crate::startup::setup_inference_providers::setup_inference_providers;
+use crate::startup::setup_seedance_video_bucket::setup_seedance_video_bucket;
 use crate::startup::setup_static_feature_flags::setup_static_feature_flags;
 use crate::startup::setup_stripe_artcraft::setup_stripe_artcraft;
 use crate::startup::setup_stripe_fakeyou::setup_stripe_fakeyou;
@@ -236,6 +237,7 @@ pub async fn setup_dependencies(server_hostname: &str) -> AnyhowResult<SetupResu
     private_bucket_client,
     public_bucket_client,
     auto_gc_bucket_client,
+    seedance_video_bucket: setup_seedance_video_bucket(),
     audio_uploads_bucket_root,
     sort_key_crypto,
     opaque_cursors: opaque_cursor_encoder,

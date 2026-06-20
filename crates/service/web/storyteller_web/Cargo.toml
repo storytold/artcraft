@@ -41,6 +41,7 @@ artcraft_router.workspace = true
 sha1_hash.workspace = true
 video_info.workspace = true
 bootstrap.workspace = true
+bucket_client.workspace = true
 bucket_paths.workspace = true
 cloud_storage.workspace = true
 collections.workspace = true

@@ -17,6 +17,7 @@ use log::{error, warn};
 use utoipa::ToSchema;
 
 use artcraft_api_defs::video_info::upload::VideoInfoUploadResponse;
+use bucket_client::UploadFileBytesArgs;
 use ffmpeg_utils::ffprobe::ffprobe_get_dimensions::ffprobe_get_dimensions;
 use http_server_common::request::get_request_ip::get_request_ip;
 use mysql_queries::queries::uploaded_videos::get_uploaded_video_by_sha1_checksum::{
@@ -105,6 +106,23 @@ pub async fn video_info_upload_handler(
 
   let provenance = to_provenance(&parse_result, maybe_encoder);
 
+  // Archive the original bytes to the Seedance video bucket, if configured.
+  // Done before moving `bytes` into the ffprobe task, and before acquiring a DB
+  // connection. Fail-soft: a storage error must not fail provenance detection.
+  if let Some(bucket) = server_state.seedance_video_bucket.as_ref() {
+    let object_name = seedance_video_object_name(&sha1_checksum);
+    if let Err(err) = bucket
+      .upload_file_bytes(UploadFileBytesArgs {
+        object_name: object_name.as_str(),
+        bytes: &bytes,
+        content_type: Some("video/mp4"),
+      })
+      .await
+    {
+      warn!("seedance video bucket upload failed for {}: {:?}", object_name, err);
+    }
+  }
+
   // ffprobe is a blocking subprocess — run it off the async executor, and BEFORE
   // acquiring a DB connection (never hold a pooled connection across this).
   //
@@ -180,6 +198,19 @@ pub async fn video_info_upload_handler(
   }))
 }
 
+/// Object key for archiving an uploaded video, sharded into four directory
+/// levels by the first four characters of the checksum:
+/// `uploads/{c0}/{c1}/{c2}/{c3}/{checksum}.mp4`
+/// (e.g. checksum `f0a2cda0…` → `uploads/f/0/a/2/f0a2cda0….mp4`).
+fn seedance_video_object_name(sha1_checksum: &str) -> String {
+  let shard: String = sha1_checksum
+    .chars()
+    .take(4)
+    .map(|character| format!("{character}/"))
+    .collect();
+  format!("uploads/{shard}{sha1_checksum}.mp4")
+}
+
 /// Write the bytes to a temp file and ffprobe its video dimensions. Fail-soft:
 /// returns `None` on any failure (not a probeable video, ffprobe missing, I/O
 /// error) so the caller can proceed without dimensions. Never panics.
@@ -206,5 +237,18 @@ fn probe_dimensions(bytes: &[u8]) -> Option<(u32, u32)> {
       warn!("video_info upload: ffprobe failed; storing without dimensions: {:?}", err);
       None
     }
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use super::seedance_video_object_name;
+
+  #[test]
+  fn shards_object_name_by_first_four_checksum_chars() {
+    assert_eq!(
+      seedance_video_object_name("f0a2cda0deadbeef"),
+      "uploads/f/0/a/2/f0a2cda0deadbeef.mp4"
+    );
   }
 }

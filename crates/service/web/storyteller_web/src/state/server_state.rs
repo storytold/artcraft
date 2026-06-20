@@ -25,6 +25,7 @@ use billing_artcraft_component::utils::artcraft_stripe_config::ArtcraftStripeCon
 use billing_component::stripe::stripe_config::StripeConfig;
 use chrono::{DateTime, Utc};
 use cloud_storage::bucket_client::BucketClient;
+use bucket_client::BucketClient as SeedanceVideoBucketClient;
 use elasticsearch::Elasticsearch;
 use memory_caching::arc_ttl_sieve::ArcTtlSieve;
 use memory_caching::single_item_ttl_cache::SingleItemTtlCache;
@@ -87,6 +88,10 @@ pub struct ServerState {
   pub private_bucket_client: BucketClient,
   pub public_bucket_client: BucketClient,
   pub auto_gc_bucket_client: BucketClient,
+
+  /// Optional archive bucket for uploaded Seedance videos. `None` when the
+  /// `SEEDANCE_VIDEO_BUCKET_*` env vars aren't configured.
+  pub seedance_video_bucket: Option<SeedanceVideoBucketClient>,
 
   pub inference_providers: InferenceProviders,
 
