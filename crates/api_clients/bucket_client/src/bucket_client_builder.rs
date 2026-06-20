@@ -10,14 +10,20 @@ use crate::bucket_client_error::BucketClientError;
 /// Builder for [`BucketClient`].
 ///
 /// `access_key`, `secret_key`, `region_name`, and `bucket_name` are required;
-/// `bucket_request_timeout` is optional. The region name is parsed into an AWS
-/// region (e.g. `"us-east-1"`), which determines the endpoint.
+/// `endpoint` and `bucket_request_timeout` are optional.
+///
+/// - With an `endpoint` set, the bucket targets a custom S3-compatible host
+///   (R2, GCS, MinIO, etc.) via `Region::Custom`, and uses path-style addressing
+///   (subdomain-style for Google Cloud Storage).
+/// - Without an `endpoint`, the `region_name` is parsed as an AWS region
+///   (e.g. `"us-east-1"`), which determines the AWS endpoint automatically.
 #[derive(Debug, Default, Clone)]
 pub struct BucketClientBuilder {
   access_key: Option<String>,
   secret_key: Option<String>,
   region_name: Option<String>,
   bucket_name: Option<String>,
+  endpoint: Option<String>,
   bucket_request_timeout: Option<Duration>,
 }
 
@@ -46,6 +52,13 @@ impl BucketClientBuilder {
     self
   }
 
+  /// Optional custom S3-compatible endpoint (e.g. an R2/GCS/MinIO URL). When
+  /// unset, an AWS endpoint is derived from `region_name`.
+  pub fn endpoint(mut self, endpoint: impl Into<String>) -> Self {
+    self.endpoint = Some(endpoint.into());
+    self
+  }
+
   pub fn bucket_request_timeout(mut self, timeout: Duration) -> Self {
     self.bucket_request_timeout = Some(timeout);
     self
@@ -66,14 +79,33 @@ impl BucketClientBuilder {
       expiration: None,
     };
 
-    let region: Region = region_name.parse().map_err(|err| {
-      BucketClientError::ClientBuilderSetupError(format!(
-        "invalid region {region_name:?}: {err:?}"
-      ))
-    })?;
+    // A custom endpoint targets an S3-compatible host via `Region::Custom`;
+    // otherwise the region name is parsed as a standard AWS region.
+    let region = match self.endpoint.as_deref() {
+      Some(endpoint) => Region::Custom {
+        region: region_name.clone(),
+        endpoint: endpoint.to_string(),
+      },
+      None => region_name.parse().map_err(|err| {
+        BucketClientError::ClientBuilderSetupError(format!(
+          "invalid region {region_name:?}: {err:?}"
+        ))
+      })?,
+    };
 
     let mut bucket = Bucket::new(&bucket_name, region, credentials)?;
     bucket.set_request_timeout(self.bucket_request_timeout);
+
+    // Addressing style only matters for custom endpoints: Google Cloud Storage
+    // needs subdomain (virtual-hosted) style; other S3-compatible stores use
+    // path style. AWS uses the crate default (virtual-hosted).
+    if let Some(endpoint) = self.endpoint.as_deref() {
+      if endpoint == "https://storage.googleapis.com" {
+        bucket.set_subdomain_style();
+      } else {
+        bucket.set_path_style();
+      }
+    }
 
     Ok(BucketClient::from_bucket(*bucket))
   }
