@@ -1731,6 +1731,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "bucket_client"
+version = "0.0.1"
+dependencies = [
+ "rust-s3",
+ "workspace-build-acceleration",
+]
+
+[[package]]
 name = "bucket_paths"
 version = "0.0.1"
 dependencies = [

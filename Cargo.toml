@@ -10,6 +10,7 @@ members = [
   "crates/api_clients/artcraft/artcraft_api_keys",
   "crates/api_clients/artcraft/artcraft_client",
   "crates/api_clients/artcraft/artcraft_router",
+  "crates/api_clients/bucket_client",
   "crates/api_clients/cloud_storage",
   "crates/api_clients/comet_api_client",
   "crates/api_clients/datadog_client",
@@ -239,6 +240,7 @@ artcraft_api_keys = { path = "crates/api_clients/artcraft/artcraft_api_keys" }
 artcraft_client = { path = "crates/api_clients/artcraft/artcraft_client" }
 artcraft_router = { path = "crates/api_clients/artcraft/artcraft_router" }
 bootstrap = { path = "crates/lib/bootstrap" }
+bucket_client = { path = "crates/api_clients/bucket_client" }
 bucket_paths = { path = "crates/schema/buckets/bucket_paths" }
 build_metadata = { path = "crates/lib/build_metadata" }
 cloud_storage = { path = "crates/api_clients/cloud_storage" }
