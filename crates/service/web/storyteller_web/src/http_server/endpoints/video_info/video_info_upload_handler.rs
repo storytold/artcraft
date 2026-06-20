@@ -153,7 +153,8 @@ pub async fn video_info_upload_handler(
   };
   let maybe_width = maybe_dimensions.map(|(width, _)| width);
   let maybe_height = maybe_dimensions.map(|(_, height)| height);
-  let maybe_resolution = maybe_dimensions.map(|(width, height)| format!("{width}x{height}"));
+  let maybe_resolution = maybe_dimensions
+    .map(|(width, height)| classify_resolution(width, height).as_str().to_string());
 
   // ── Persist (upsert by SHA-1) ──
 
@@ -229,6 +230,53 @@ fn seedance_video_object_name(sha1_checksum: &str) -> String {
   format!("uploads/{shard}{sha1_checksum}.mp4")
 }
 
+/// A coarse resolution bucket, classified by the longest dimension (so portrait
+/// and landscape orientations bucket the same). Stored in `maybe_resolution`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum VideoResolutionClass {
+  /// Below ~0.5K (longest dimension under 512px).
+  Tiny,
+  /// ~0.5K — e.g. 512×512.
+  HalfK,
+  /// ~1K — e.g. 720p (1280×720), 1024×1024, 1024×768.
+  OneK,
+  /// ~2K — e.g. 1080p (1920×1080), 1440p.
+  TwoK,
+  /// ~3K — roughly 3,000px on the longest dimension.
+  ThreeK,
+  /// ~4K — e.g. 3840×2160 (and DCI 4096).
+  FourK,
+  /// Anything beyond 4K.
+  Huge,
+}
+
+impl VideoResolutionClass {
+  fn as_str(self) -> &'static str {
+    match self {
+      Self::Tiny => "tiny",
+      Self::HalfK => "half_k",
+      Self::OneK => "one_k",
+      Self::TwoK => "two_k",
+      Self::ThreeK => "three_k",
+      Self::FourK => "four_k",
+      Self::Huge => "huge",
+    }
+  }
+}
+
+/// Bucket a video's resolution by its longest dimension.
+fn classify_resolution(width: u32, height: u32) -> VideoResolutionClass {
+  match width.max(height) {
+    0..=511 => VideoResolutionClass::Tiny,
+    512..=999 => VideoResolutionClass::HalfK,
+    1000..=1699 => VideoResolutionClass::OneK,
+    1700..=2699 => VideoResolutionClass::TwoK,
+    2700..=3399 => VideoResolutionClass::ThreeK,
+    3400..=4199 => VideoResolutionClass::FourK,
+    _ => VideoResolutionClass::Huge,
+  }
+}
+
 /// Write the bytes to a temp file and ffprobe its video dimensions. Fail-soft:
 /// returns `None` on any failure (not a probeable video, ffprobe missing, I/O
 /// error) so the caller can proceed without dimensions. Never panics.
@@ -260,7 +308,7 @@ fn probe_dimensions(bytes: &[u8]) -> Option<(u32, u32)> {
 
 #[cfg(test)]
 mod tests {
-  use super::seedance_video_object_name;
+  use super::{classify_resolution, seedance_video_object_name};
 
   #[test]
   fn shards_object_name_by_first_four_checksum_chars() {
@@ -268,5 +316,30 @@ mod tests {
       seedance_video_object_name("f0a2cda0deadbeef"),
       "uploads/f/0/a/2/f0a2cda0deadbeef.mp4"
     );
+  }
+
+  #[test]
+  fn classifies_resolution_by_longest_dimension() {
+    let class = |w, h| classify_resolution(w, h).as_str();
+    // Tiny
+    assert_eq!(class(320, 240), "tiny");
+    assert_eq!(class(480, 480), "tiny");
+    // HalfK
+    assert_eq!(class(512, 512), "half_k");
+    assert_eq!(class(854, 480), "half_k");
+    // OneK
+    assert_eq!(class(1280, 720), "one_k");
+    assert_eq!(class(1024, 1024), "one_k");
+    assert_eq!(class(1024, 768), "one_k");
+    // TwoK (incl. portrait 1080p)
+    assert_eq!(class(1920, 1080), "two_k");
+    assert_eq!(class(1080, 1920), "two_k");
+    // ThreeK
+    assert_eq!(class(3000, 1500), "three_k");
+    // FourK (UHD + DCI)
+    assert_eq!(class(3840, 2160), "four_k");
+    assert_eq!(class(4096, 2160), "four_k");
+    // Huge
+    assert_eq!(class(7680, 4320), "huge");
   }
 }
