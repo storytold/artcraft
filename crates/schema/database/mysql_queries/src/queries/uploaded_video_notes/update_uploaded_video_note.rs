@@ -50,7 +50,7 @@ SET
   maybe_website = ?,
   maybe_other_website = ?,
   maybe_comments = ?,
-  email_address = ?,
+  maybe_email_address = ?,
   can_share_report = ?,
   was_scammed = ?,
   maybe_comment_update_ip_address = ?,

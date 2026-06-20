@@ -34,7 +34,7 @@ CREATE TABLE uploaded_video_notes (
   -- ========== CONTACT & FLAGS ==========
 
   -- Optional email address for follow-up.
-  email_address VARCHAR(255) DEFAULT NULL,
+  maybe_email_address VARCHAR(255) DEFAULT NULL,
 
   -- Whether the submitter consents to us sharing the report.
   can_share_report BOOLEAN NOT NULL DEFAULT FALSE,
