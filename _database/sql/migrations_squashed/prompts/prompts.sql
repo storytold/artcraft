@@ -72,6 +72,10 @@ CREATE TABLE prompts (
   -- The quality setting (eg. high, medium, low)
   maybe_quality VARCHAR(16) DEFAULT NULL,
 
+  -- Represented by the enum `CommonBitrate`.
+  -- The output bitrate setting (eg. normal, high)
+  maybe_bitrate VARCHAR(16) DEFAULT NULL,
+
   -- The duration in seconds
   maybe_duration_seconds INT UNSIGNED DEFAULT NULL,
 
