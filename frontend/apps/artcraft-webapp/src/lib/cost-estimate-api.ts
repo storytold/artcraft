@@ -117,6 +117,7 @@ export interface VideoCostParams {
   model: string;
   aspectRatio?: string;
   resolution?: string | null;
+  bitrate?: string | null;
   duration?: number | null;
   numVideos?: number;
   hasStartFrame: boolean;
@@ -142,6 +143,7 @@ export function useVideoCostEstimate(params: VideoCostParams): number | null {
       model: params.model,
       aspect_ratio: params.aspectRatio ?? null,
       resolution: params.resolution ?? null,
+      bitrate: params.bitrate ?? null,
       duration_seconds: params.duration ?? null,
       generate_audio: params.generateAudio ?? null,
       video_batch_count: params.numVideos ?? 1,
@@ -178,6 +180,7 @@ export function useVideoCostEstimate(params: VideoCostParams): number | null {
     params.model,
     params.aspectRatio,
     params.resolution,
+    params.bitrate,
     params.duration,
     params.numVideos,
     params.hasStartFrame,

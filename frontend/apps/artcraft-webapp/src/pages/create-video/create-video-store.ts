@@ -33,6 +33,7 @@ export type VideoUiState = {
   selectedSize: string;
   duration: number | null;
   resolution: string | null;
+  bitrate: string | null;
   generateWithSound: boolean;
   inputMode: VideoInputMode;
   numVideos: number;
@@ -69,6 +70,7 @@ const DEFAULT_UI: VideoUiState = {
   selectedSize: "wide_sixteen_by_nine",
   duration: null,
   resolution: null,
+  bitrate: null,
   generateWithSound: false,
   inputMode: "keyframe",
   numVideos: 1,
