@@ -114,3 +114,60 @@ fn convert_bitrate(
     )
   })
 }
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  mod bitrate_hydration {
+    use super::*;
+
+    #[test]
+    fn high_is_hydrated() {
+      let request = OmniGenVideoCostAndGenerateRequest {
+        bitrate: Some(CommonBitrateEnum::High),
+        ..base_request()
+      };
+      let builder = hydrate_to_router_request(&request).expect("hydrate should succeed");
+      assert_eq!(builder.bitrate, Some(RouterBitrate::High));
+    }
+
+    #[test]
+    fn normal_is_hydrated() {
+      let request = OmniGenVideoCostAndGenerateRequest {
+        bitrate: Some(CommonBitrateEnum::Normal),
+        ..base_request()
+      };
+      let builder = hydrate_to_router_request(&request).expect("hydrate should succeed");
+      assert_eq!(builder.bitrate, Some(RouterBitrate::Normal));
+    }
+
+    #[test]
+    fn none_stays_none() {
+      let builder = hydrate_to_router_request(&base_request()).expect("hydrate should succeed");
+      assert!(builder.bitrate.is_none());
+    }
+  }
+
+  fn base_request() -> OmniGenVideoCostAndGenerateRequest {
+    OmniGenVideoCostAndGenerateRequest {
+      idempotency_token: None,
+      model: Some(CommonVideoModelEnum::Seedance2p0),
+      prompt: None,
+      negative_prompt: None,
+      start_frame_image_media_token: None,
+      end_frame_image_media_token: None,
+      reference_image_media_tokens: None,
+      reference_video_media_tokens: None,
+      reference_audio_media_tokens: None,
+      reference_character_tokens: None,
+      resolution: None,
+      aspect_ratio: None,
+      bitrate: None,
+      quality: None,
+      duration_seconds: None,
+      video_batch_count: None,
+      generate_audio: None,
+    }
+  }
+}
