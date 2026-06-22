@@ -261,6 +261,7 @@ pub async fn omni_api_video_generate_handler(
     maybe_generation_mode: Some(determine_generation_mode(&request)),
     maybe_aspect_ratio: request.aspect_ratio,
     maybe_resolution: request.resolution,
+    maybe_bitrate: request.bitrate,
     maybe_batch_count: request.video_batch_count.map(|c| c as u8),
     maybe_generate_audio: request.generate_audio,
     maybe_duration_seconds: request.duration_seconds.map(|d| d as u32),

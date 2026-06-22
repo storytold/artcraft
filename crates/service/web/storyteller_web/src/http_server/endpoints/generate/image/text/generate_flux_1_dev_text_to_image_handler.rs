@@ -211,6 +211,7 @@ pub async fn generate_flux_1_dev_text_to_image_handler(
   };
 
   let prompt_result = insert_prompt(InsertPromptArgs {
+    maybe_bitrate: None,
     maybe_apriori_prompt_token: None,
     prompt_type: PromptType::ArtcraftApp,
     maybe_creator_user_token: maybe_user_session
@@ -301,6 +302,7 @@ async fn insert_mock_failure_job(
       })?;
 
   let prompt_result = insert_prompt(InsertPromptArgs {
+    maybe_bitrate: None,
     maybe_apriori_prompt_token: None,
     prompt_type: PromptType::ArtcraftApp,
     maybe_creator_user_token,

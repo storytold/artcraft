@@ -8,6 +8,7 @@ use chrono::{DateTime, Utc};
 use enums::by_table::prompts::prompt_type::PromptType;
 use enums::common::generation_provider::GenerationProvider;
 use enums::common::generation::common_aspect_ratio::CommonAspectRatio;
+use enums::common::generation::common_bitrate::CommonBitrate;
 use enums::common::generation::common_generation_mode::CommonGenerationMode;
 use enums::common::generation::common_model_type::CommonModelType;
 use enums::common::generation::common_resolution::CommonResolution;
@@ -38,6 +39,7 @@ pub struct Prompt {
   pub maybe_generation_mode: Option<CommonGenerationMode>,
   pub maybe_aspect_ratio: Option<CommonAspectRatio>,
   pub maybe_resolution: Option<CommonResolution>,
+  pub maybe_bitrate: Option<CommonBitrate>,
   pub maybe_batch_count: Option<u8>,
   pub maybe_generate_audio: Option<bool>,
   pub maybe_duration_seconds: Option<u32>,
@@ -67,6 +69,7 @@ pub struct PromptRaw {
   pub maybe_generation_mode: Option<CommonGenerationMode>,
   pub maybe_aspect_ratio: Option<CommonAspectRatio>,
   pub maybe_resolution: Option<CommonResolution>,
+  pub maybe_bitrate: Option<CommonBitrate>,
   pub maybe_batch_count: Option<u8>,
   pub maybe_generate_audio: Option<bool>,
   pub maybe_duration_seconds: Option<u32>,
@@ -114,6 +117,7 @@ pub async fn get_prompt_from_connection(
     maybe_generation_mode: record.maybe_generation_mode,
     maybe_aspect_ratio: record.maybe_aspect_ratio,
     maybe_resolution: record.maybe_resolution,
+    maybe_bitrate: record.maybe_bitrate,
     maybe_batch_count: record.maybe_batch_count,
     maybe_generate_audio: record.maybe_generate_audio,
     maybe_duration_seconds: record.maybe_duration_seconds,
@@ -149,6 +153,7 @@ SELECT
     p.maybe_generation_mode as `maybe_generation_mode: enums::common::generation::common_generation_mode::CommonGenerationMode`,
     p.maybe_aspect_ratio as `maybe_aspect_ratio: enums::common::generation::common_aspect_ratio::CommonAspectRatio`,
     p.maybe_resolution as `maybe_resolution: enums::common::generation::common_resolution::CommonResolution`,
+    p.maybe_bitrate as `maybe_bitrate: enums::common::generation::common_bitrate::CommonBitrate`,
     p.maybe_batch_count as `maybe_batch_count: u8`,
     p.maybe_generate_audio as `maybe_generate_audio: bool`,
     p.maybe_duration_seconds as `maybe_duration_seconds: u32`,

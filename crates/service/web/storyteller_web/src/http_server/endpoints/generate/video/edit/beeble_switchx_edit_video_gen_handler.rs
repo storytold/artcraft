@@ -253,6 +253,7 @@ pub async fn beeble_switchx_edit_video_gen_handler(
 
   // -- Prompt --
   let prompt_token = match insert_prompt(InsertPromptArgs {
+    maybe_bitrate: None,
     maybe_apriori_prompt_token: None,
     prompt_type: PromptType::ArtcraftApp,
     maybe_creator_user_token: Some(user_token),
