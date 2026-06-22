@@ -1,6 +1,7 @@
 use crate::api::audio_list_ref::AudioListRef;
 use crate::api::character_list_ref::CharacterListRef;
 use crate::api::router_aspect_ratio::RouterAspectRatio;
+use crate::api::router_bitrate::RouterBitrate;
 use crate::api::router_resolution::RouterResolution;
 use crate::api::router_video_model::RouterVideoModel;
 use crate::api::image_list_ref::ImageListRef;
@@ -103,6 +104,10 @@ pub struct GenerateVideoRequestBuilder {
   /// The aspect ratio to use
   pub aspect_ratio: Option<RouterAspectRatio>,
 
+  /// The output bitrate to use.
+  /// Not all models support this; models that don't simply ignore it.
+  pub bitrate: Option<RouterBitrate>,
+
   /// How many seconds to generate.
   pub duration_seconds: Option<u16>,
 
@@ -139,6 +144,7 @@ impl Default for GenerateVideoRequestBuilder {
       reference_character_tokens: None,
       resolution: None,
       aspect_ratio: None,
+      bitrate: None,
       duration_seconds: None,
       video_batch_count: None,
       generate_audio: None,

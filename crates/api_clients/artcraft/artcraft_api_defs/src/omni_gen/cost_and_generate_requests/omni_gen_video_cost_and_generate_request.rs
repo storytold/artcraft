@@ -2,6 +2,7 @@ use serde_derive::{Deserialize, Serialize};
 use utoipa::ToSchema;
 
 use enums::common::generation::common_aspect_ratio::CommonAspectRatio;
+use enums::common::generation::common_bitrate::CommonBitrate;
 use enums::common::generation::common_quality::CommonQuality;
 use enums::common::generation::common_resolution::CommonResolution;
 use enums::common::generation::common_video_model::CommonVideoModel;
@@ -49,6 +50,10 @@ pub struct OmniGenVideoCostAndGenerateRequest {
 
   /// The aspect ratio to use.
   pub aspect_ratio: Option<CommonAspectRatio>,
+
+  /// The output bitrate to use.
+  /// Not all models support this; models that don't simply ignore it.
+  pub bitrate: Option<CommonBitrate>,
 
   /// The quality to use.
   pub quality: Option<CommonQuality>,

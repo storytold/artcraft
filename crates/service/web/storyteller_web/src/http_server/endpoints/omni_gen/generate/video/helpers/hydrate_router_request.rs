@@ -55,6 +55,7 @@ pub fn hydrate_to_router_request(
       .map(CharacterListRef::CharacterTokens),
     resolution,
     aspect_ratio,
+    bitrate: None,
     duration_seconds: request.duration_seconds,
     video_batch_count: request.video_batch_count,
     generate_audio: request.generate_audio,
