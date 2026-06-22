@@ -28,7 +28,6 @@ import {
   faPaintBrush,
   faCamera,
   faGlobe,
-  faVolumeXmark,
 } from "@fortawesome/pro-solid-svg-icons";
 import Seo from "../../components/seo";
 import Footer from "../../components/footer";
@@ -47,6 +46,11 @@ import {
 } from "../../components/truchet-pattern";
 
 gsap.registerPlugin(ScrollTrigger);
+
+// Hero embed — matches the Seedance 2 page (/seedance-2): an autoplaying,
+// looping, muted Vimeo background embed rather than a self-hosted <video>.
+const HERO_VIMEO_URL =
+  "https://player.vimeo.com/video/1169289718?autoplay=1&muted=1&loop=1&background=0&byline=0&portrait=0&title=0";
 
 const FEATURES = [
   {
@@ -111,6 +115,69 @@ const MADE_WITH_VIDEOS = [
   "https://www.youtube.com/embed/HDdsKJl92H4?si=0Hm4AweSRHq3qRt6",
   "https://www.youtube.com/embed/oqoCWdOwr2U?si=ILMPk8hGHo9hP8RU",
   "https://www.youtube.com/embed/H4NFXGMuwpY?si=wPuQl5cJOu1v8MJu",
+];
+
+// Overview copy, written from ArtCraft's own point of view (control-first,
+// honest about hype) rather than as a spec sheet. Deliberately hedged because
+// 2.5 is unannounced — we say plainly what's rumor and pivot to what artists
+// can actually do today.
+const OVERVIEW_PARAGRAPHS: ReadonlyArray<string> = [
+  "Seedance 2.5 is shaping up to be the most anticipated release in AI video. It's the expected next step for ByteDance's Seedance line — the same line whose 2.0 release took the #1 spot on the Artificial Analysis Video Arena in early 2026, leading both text-to-video and image-to-video at once. ByteDance still hasn't put out an official 2.5 spec as of mid-2026, but between the reporting, the leaks, and the obvious 1.0 → 1.5 → 2.0 march, the direction is hard to miss: a real step up, not a minor patch.",
+  "What people are hearing is that 2.5 blows past today's ceiling. The chatter points to as much as 4K output, where current generations top out around 720p and 1080p; generation quick enough to feel near-instant; clips that run past the roughly 15-second wall; characters that stay consistent from one session to the next without you re-uploading references every time; and a lot more you can feed in at once — many reference images plus audio and video, all in a single pass.",
+  "The part that isn't a rumor is the ground it stands on, and you can put it to work in ArtCraft right now through Seedance 2.0: audio that's generated jointly with the picture and lands in sync, accurate lip-sync across languages, multi-shot stories that keep a character and a style intact through every cut, precise camera control, and a reference mode that anchors a generation to your own images, video, and audio. Every one of those is exactly what 2.5 is expected to push further — and the moment it's out, it'll be in ArtCraft.",
+  "One thing worth remembering through all of this: in ArtCraft a video model is never a black box you toss a sentence into and cross your fingers. It's one stage of a pipeline you direct — set up the scene, place your references, frame the camera, then hand the shot off. A better model just makes that last step better. The control is still yours.",
+];
+
+// Q&A framed around what an artist actually wonders about an unreleased model —
+// not an SEO spec recap. Honest about rumor vs. fact throughout.
+const FAQ_ITEMS: ReadonlyArray<{ question: string; answer: string }> = [
+  {
+    question: "Is Seedance 2.5 real, or just hype?",
+    answer:
+      "Both, a little. The Seedance line is real and very good, so a 2.5 is a safe bet eventually. But as of now there's no official announcement and no published spec — everything you've read about it, including on this page, is informed speculation. We've flagged it as such rather than dress rumors up as a feature list.",
+  },
+  {
+    question: "When can I actually use it?",
+    answer:
+      "We don't know, and anyone giving you a hard date is guessing. The moment ByteDance ships it and we can integrate it, it goes into ArtCraft — and we'll update this page. Until then, you're not waiting on us: the current Seedance is already here.",
+  },
+  {
+    question: "What should I do in the meantime?",
+    answer:
+      "Build the workflow now so you're fast when 2.5 lands. Seedance 2.0 is in ArtCraft today with the features 2.5 is expected to extend — synced audio generated with the video, multi-language lip-sync, multi-shot scenes that hold a character and style across cuts, precise camera control, and reference mode. Direct your shots with those instead of one-off prompts, and the habits transfer straight to the next model.",
+  },
+  {
+    question: "Why use Seedance in ArtCraft instead of a website?",
+    answer:
+      "Because a browser tab gives you a prompt box and a paywall. ArtCraft gives you the whole stage — compose with images and 3D, lock your characters, frame the camera, then generate. You also keep your work: it's a desktop app you own, not a subscription you rent.",
+  },
+  {
+    question: "Will my older Seedance projects still work when 2.5 arrives?",
+    answer:
+      "Yes. New models are added alongside the ones you already use — nothing you've made disappears, and you choose which model runs each generation. When 2.5 is available you can switch to it where it helps and keep everything else exactly as it is.",
+  },
+];
+
+// Craft tips for getting more out of Seedance in ArtCraft. Our own advice,
+// tied to how ArtCraft works (references, blocking, camera) rather than generic
+// prompt-engineering lists.
+const PROMPT_TIPS: ReadonlyArray<{ title: string; body: string }> = [
+  {
+    title: "Direct it, don't describe it",
+    body: "Treat the prompt like notes to a crew. Call the shot, the move, and the action separately — a short beat at a time — instead of one long wish that the model has to untangle.",
+  },
+  {
+    title: "Make your references do the work",
+    body: "Bring in your own images and footage and be explicit about what each is for. A reference you've chosen beats a paragraph of adjectives trying to conjure the same thing.",
+  },
+  {
+    title: "Start from a real frame",
+    body: "Compose your opening shot in ArtCraft first — layout, characters, camera — and let the model animate from something solid. Generations grounded in an actual frame drift far less.",
+  },
+  {
+    title: "Keep characters on a leash",
+    body: "Give the model clear, consistent looks at your subject from a few angles. The more grounded it is up front, the better your character holds together across a multi-shot sequence.",
+  },
 ];
 
 const MANIFESTO_WORDS: ReadonlyArray<string> = [
@@ -288,13 +355,11 @@ const UseOnWebButton = ({
   );
 };
 
-const Landing3 = () => {
+const LandingSD25 = () => {
   const [activeVideo, setActiveVideo] = useState<number | null>(null);
   const [showDownloadModal, setShowDownloadModal] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [hasSubscription, setHasSubscription] = useState(false);
-  const [heroVideoMuted, setHeroVideoMuted] = useState(true);
-  const heroVideoRef = useRef<HTMLVideoElement>(null);
   const rootRef = useRef<HTMLDivElement>(null);
   const manifestoProgressRef = useRef(0);
   // Separate progress for the character — extends past the text-reveal end so
@@ -605,8 +670,9 @@ const Landing3 = () => {
       className="relative min-h-screen bg-[#101014] text-white selection:bg-primary/30 selection:text-white overflow-x-clip"
     >
       <Seo
-        title="ArtCraft - Controllable AI for Artists"
-        description="ArtCraft is the opensource desktop app for generating AI video and images - built for artists who want real control."
+        title="Seedance 2.5 in ArtCraft. AI Video Generation. Fast and Open Desktop App."
+        ogTitle="Seedance 2.5"
+        description="Seedance 2.5 is ByteDance's anticipated next-generation AI video model — reports point to 4K, real-time generation, longer clips, and persistent characters. See what's expected, and create with Seedance in ArtCraft today."
       />
       {/* Top primary-blue accent, matches the pricing page */}
       <div
@@ -658,23 +724,23 @@ const Landing3 = () => {
 
         <div className="relative z-10 max-w-6xl mx-auto text-center">
           {/* Eyebrow chip */}
-          <div
+          {/* <div
             className="inline-flex items-center gap-2 px-3 py-1.5 mb-7 rounded-full bg-white/[0.04] border border-white/[0.08] backdrop-blur-md text-xs sm:text-[13px] font-medium text-white/70"
             data-reveal
           >
             <span className="flex h-1.5 w-1.5 rounded-full bg-primary" />
-            Now with Seedance 2.0, Nano Banana 2 & more
-          </div>
+            Seedance 2.5 is here — before anywhere else
+          </div> */}
 
           {/* Headline */}
           <h1
             className="text-[44px] leading-[1.02] sm:text-6xl md:text-7xl lg:text-[88px] tracking-[-0.045em] font-medium mb-6 text-white"
             data-reveal
           >
-            Controllable AI
+            Seedance 2.5
             <br />
-            <span className="font-serif-italic text-white/95">for artists</span>
-            .
+            soon in{" "}
+            <span className="font-serif-italic text-white/95">ArtCraft</span>.
           </h1>
 
           {/* Subtitle */}
@@ -682,8 +748,8 @@ const Landing3 = () => {
             className="max-w-xl mx-auto text-base sm:text-lg md:text-xl text-white/55 leading-relaxed mb-10"
             data-reveal
           >
-            Artists need and deserve unparalleled control and precision.
-            ArtCraft’s got you covered.
+            Generate jaw-dropping AI videos with Seedance 2.5 before it’s
+            available anywhere else.
           </p>
 
           {/* CTAs */}
@@ -722,7 +788,7 @@ const Landing3 = () => {
           {/* Spacer below CTAs */}
           <div className="mb-12 sm:mb-16" />
 
-          {/* Hero video */}
+          {/* Hero video — Vimeo embed, same as the Seedance 2 page */}
           <div
             className="relative rounded-2xl sm:rounded-[24px] overflow-hidden bg-[#080808] border border-white/[0.08]"
             data-reveal
@@ -731,38 +797,123 @@ const Landing3 = () => {
               className="relative w-full rounded-xl sm:rounded-[20px] overflow-hidden bg-black"
               style={{ paddingTop: "56.25%" }}
             >
-              <video
-                ref={heroVideoRef}
-                src="https://pub-f7441936e5804042a1ea2bdc92e4dc71.r2.dev/website-commercial-2026.05.mp4"
+              <iframe
+                src={HERO_VIMEO_URL}
                 className="absolute inset-0 w-full h-full"
-                autoPlay
-                loop
-                muted
-                playsInline
-                controls
-                preload="auto"
-                onVolumeChange={(e) => setHeroVideoMuted(e.currentTarget.muted)}
+                allow="autoplay; fullscreen; picture-in-picture"
+                allowFullScreen
+                title="Seedance 2.5 in ArtCraft"
               />
-              {heroVideoMuted && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    const v = heroVideoRef.current;
-                    if (!v) return;
-                    v.muted = false;
-                    setHeroVideoMuted(false);
-                    void v.play().catch(() => {});
-                  }}
-                  className="absolute top-4 left-1/2 -translate-x-1/2 inline-flex items-center gap-2 h-9 px-4 rounded-full bg-black/65 hover:bg-black/80 backdrop-blur-md text-white text-[12px] font-semibold border border-white/15 transition-colors"
-                >
-                  <FontAwesomeIcon
-                    icon={faVolumeXmark}
-                    className="text-[12px]"
-                  />
-                  Tap to unmute
-                </button>
-              )}
             </div>
+          </div>
+        </div>
+      </section>
+      {/* OVERVIEW */}
+      <section className="relative px-4 sm:px-8 pt-4 sm:pt-8 pb-12 sm:pb-20">
+        <div className="max-w-4xl mx-auto" data-reveal>
+          <div className="text-center mb-8 sm:mb-10">
+            <span className="inline-block text-xs font-semibold uppercase tracking-[0.18em] text-primary mb-5">
+              Overview
+            </span>
+            <h2 className="text-3xl sm:text-4xl md:text-5xl tracking-[-0.035em] font-medium leading-[1.05]">
+              What is <span className="font-serif-italic">Seedance 2.5</span>?
+            </h2>
+          </div>
+          <div className="space-y-5 text-base sm:text-lg text-white/60 leading-relaxed">
+            {OVERVIEW_PARAGRAPHS.map((paragraph, i) => (
+              <p key={i}>{paragraph}</p>
+            ))}
+          </div>
+          {/* Transparency note — 2.5 is unannounced, so we flag estimates. */}
+          <div className="mt-8 flex items-start gap-3 rounded-2xl border border-white/[0.08] bg-white/[0.03] px-5 py-4 text-sm text-white/45 leading-relaxed">
+            <FontAwesomeIcon
+              icon={faXmark}
+              className="mt-0.5 shrink-0 text-white/30 text-[12px]"
+            />
+            <p>
+              To be clear: Seedance 2.5 isn't out. Anything specific on this
+              page — numbers, speeds, lengths — is our read on the rumors, not a
+              promise from ByteDance, and it can change the day it actually
+              ships.
+            </p>
+          </div>
+        </div>
+      </section>
+      {/* PROMPT TIPS */}
+      <section className="relative px-4 sm:px-8 py-12 sm:py-20 overflow-hidden">
+        <TruchetBlob
+          className="top-[10%] -right-36 w-[560px] h-[560px]"
+          variant="content"
+          intensity={0.75}
+          speed={-18}
+          rotate={-14}
+        />
+        <div className="max-w-5xl mx-auto" data-reveal>
+          <div className="text-center mb-10 sm:mb-12">
+            <span className="inline-block text-xs font-semibold uppercase tracking-[0.18em] text-primary mb-5">
+              Prompt tips
+            </span>
+            <h2 className="text-3xl sm:text-4xl md:text-5xl tracking-[-0.035em] font-medium leading-[1.05] mb-5">
+              Get more out of{" "}
+              <span className="font-serif-italic">Seedance</span>.
+            </h2>
+            <p className="max-w-2xl mx-auto text-base sm:text-lg text-white/55 leading-relaxed">
+              A few habits that pay off with Seedance today — and will carry
+              right over to 2.5 when it arrives.
+            </p>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
+            {PROMPT_TIPS.map((tip, i) => (
+              <div
+                key={tip.title}
+                className="rounded-2xl sm:rounded-[24px] bg-[#080808] border border-white/[0.08] p-6 sm:p-7"
+              >
+                <div className="flex items-center gap-3 mb-3">
+                  <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/15 border border-primary/25 text-primary text-[13px] font-semibold">
+                    {i + 1}
+                  </span>
+                  <h3 className="text-lg sm:text-xl font-medium tracking-[-0.01em] text-white">
+                    {tip.title}
+                  </h3>
+                </div>
+                <p className="text-[15px] text-white/55 leading-relaxed">
+                  {tip.body}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+      {/* FAQ */}
+      <section className="relative px-4 sm:px-8 py-12 sm:py-20">
+        <div className="max-w-3xl mx-auto" data-reveal>
+          <div className="text-center mb-10 sm:mb-12">
+            <span className="inline-block text-xs font-semibold uppercase tracking-[0.18em] text-primary mb-5">
+              FAQ
+            </span>
+            <h2 className="text-3xl sm:text-4xl md:text-5xl tracking-[-0.035em] font-medium leading-[1.05]">
+              Frequently asked{" "}
+              <span className="font-serif-italic">questions</span>.
+            </h2>
+          </div>
+          <div className="space-y-3">
+            {FAQ_ITEMS.map((item) => (
+              <details
+                key={item.question}
+                className="group rounded-2xl bg-[#080808] border border-white/[0.08] open:border-white/[0.16] transition-colors"
+              >
+                <summary className="flex items-center justify-between gap-4 cursor-pointer list-none px-6 py-5 text-left text-base sm:text-lg font-medium text-white [&::-webkit-details-marker]:hidden">
+                  {item.question}
+                  <FontAwesomeIcon
+                    icon={faPlay}
+                    className="shrink-0 text-[12px] text-white/40 rotate-90 transition-transform duration-300 group-open:rotate-[270deg]"
+                  />
+                </summary>
+                <div className="px-6 pb-5 -mt-1 text-[15px] sm:text-base text-white/55 leading-relaxed">
+                  {item.answer}
+                </div>
+              </details>
+            ))}
           </div>
         </div>
       </section>
@@ -1313,9 +1464,6 @@ const Landing3 = () => {
         <div className="relative z-10 max-w-5xl mx-auto" data-reveal>
           <div className="relative overflow-hidden flex flex-col gap-7 md:flex-row md:items-center md:justify-between rounded-2xl sm:rounded-[28px] bg-[#080808] border border-white/[0.1] px-7 py-8 sm:px-10 sm:py-10">
             <div className="flex flex-col sm:flex-row items-center gap-5 text-center sm:text-left">
-              {/* <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-primary/15 border border-primary/25 text-primary">
-                <FontAwesomeIcon icon={faDiscord} className="text-2xl" />
-              </span> */}
               <div>
                 <h2 className="text-2xl sm:text-3xl tracking-[-0.02em] font-medium leading-tight text-white">
                   Join our <span className="font-serif-italic">community</span>
@@ -1426,4 +1574,4 @@ const Landing3 = () => {
   );
 };
 
-export default Landing3;
+export default LandingSD25;

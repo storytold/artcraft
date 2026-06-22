@@ -5,6 +5,9 @@ set -euxo pipefail
 echo "Run build script (TODO: Make strict)"
 nx build artcraft-website
 
+echo "Prerender per-route social-share (OG/Twitter) meta tags into dist"
+node scripts/prerender-meta.mjs
+
 echo "Change to project dir"
 pushd apps/artcraft-website/
 
