@@ -25,6 +25,8 @@ mod tests {
   use enums::common::generation::common_aspect_ratio::CommonAspectRatio as CommonAspectRatioEnum;
   use enums::common::generation::common_resolution::CommonResolution as CommonResolutionEnum;
   use enums::common::generation::common_video_model::CommonVideoModel as CommonVideoModelEnum;
+  use enums::common::generation::common_bitrate::CommonBitrate as CommonBitrateEnum;
+  use crate::api::router_bitrate::RouterBitrate;
   use tokens::tokens::characters::CharacterToken;
   use tokens::tokens::media_files::MediaFileToken;
 
@@ -82,6 +84,12 @@ mod tests {
     fn batch_count_passed_through() {
       let req = unwrap_request(artcraft_fast_builder_with(|b| { b.video_batch_count = Some(4); }));
       assert_eq!(req.request.video_batch_count, Some(4));
+    }
+
+    #[test]
+    fn bitrate_passed_through() {
+      let req = unwrap_request(artcraft_fast_builder_with(|b| { b.bitrate = Some(RouterBitrate::High); }));
+      assert_eq!(req.request.bitrate, Some(CommonBitrateEnum::High));
     }
   }
 
