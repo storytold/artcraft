@@ -90,6 +90,7 @@ impl KinoviSeedance2p0FastDraftState {
       reference_audio_urls,
       character_ids,
       use_face_blur_hack: None,
+      bitrate: None,
     };
 
     Ok(KinoviSeedance2p0FastRequestState { request })
