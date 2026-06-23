@@ -35,6 +35,41 @@ pub struct PollOrdersResponse {
 
 // --- Public types ---
 
+/// The status of one order (one generation task — video or image).
+#[derive(Debug, Clone)]
+pub struct OrderStatus {
+  pub order_id: String,
+
+  pub task_status: TaskStatus,
+
+  /// Top-level result URL (video file for video orders, the first image of
+  /// the 4-image grid for Midjourney image orders). Populated when
+  /// `task_status` is `Completed`.
+  pub result_url: Option<String>,
+
+  /// Detailed result entries. One entry per video frame (video orders), or
+  /// four entries per Midjourney task (image orders).
+  pub results: Vec<MediaResult>,
+
+  /// Structured failure reason. Populated when `task_status` is `Failed` or `fail_reason` is present.
+  pub fail_reason: Option<FailureReason>,
+
+  /// ISO 8601 creation timestamp (e.g. `"2026-02-19T01:20:50.398Z"`).
+  pub created_at: String,
+
+  /// Parsed `created_at` as a `DateTime<Utc>`. `None` if the raw string could not be parsed.
+  pub created_at_utc: Option<DateTime<Utc>>,
+
+  /// Whether this order produced an image or a video. `None` for older
+  /// polling responses that didn't include the field — those came from the
+  /// video-only era and can be treated as video by callers that need to.
+  pub media_type: Option<OrderMediaType>,
+
+  /// The Kinovi credits charged for the order (the API's `totalCredits`).
+  /// `None` for older polling responses that didn't include the field.
+  pub total_credits: Option<u32>,
+}
+
 /// The lifecycle status of a video generation task.
 #[derive(Debug, Clone, PartialEq)]
 pub enum TaskStatus {
@@ -102,41 +137,6 @@ impl OrderMediaType {
 
   pub fn is_image(&self) -> bool { matches!(self, Self::Image) }
   pub fn is_video(&self) -> bool { matches!(self, Self::Video) }
-}
-
-/// The status of one order (one generation task — video or image).
-#[derive(Debug, Clone)]
-pub struct OrderStatus {
-  pub order_id: String,
-
-  pub task_status: TaskStatus,
-
-  /// Top-level result URL (video file for video orders, the first image of
-  /// the 4-image grid for Midjourney image orders). Populated when
-  /// `task_status` is `Completed`.
-  pub result_url: Option<String>,
-
-  /// Detailed result entries. One entry per video frame (video orders), or
-  /// four entries per Midjourney task (image orders).
-  pub results: Vec<MediaResult>,
-
-  /// Structured failure reason. Populated when `task_status` is `Failed` or `fail_reason` is present.
-  pub fail_reason: Option<FailureReason>,
-
-  /// ISO 8601 creation timestamp (e.g. `"2026-02-19T01:20:50.398Z"`).
-  pub created_at: String,
-
-  /// Parsed `created_at` as a `DateTime<Utc>`. `None` if the raw string could not be parsed.
-  pub created_at_utc: Option<DateTime<Utc>>,
-
-  /// Whether this order produced an image or a video. `None` for older
-  /// polling responses that didn't include the field — those came from the
-  /// video-only era and can be treated as video by callers that need to.
-  pub media_type: Option<OrderMediaType>,
-
-  /// The Kinovi credits charged for the order (the API's `totalCredits`).
-  /// `None` for older polling responses that didn't include the field.
-  pub total_credits: Option<u32>,
 }
 
 // --- Implementation ---
