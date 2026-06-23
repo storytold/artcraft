@@ -107,10 +107,13 @@ impl TaskStatus {
 #[derive(Debug, Clone)]
 pub struct MediaResult {
   pub url: String,
-  pub width: u32,
-  pub height: u32,
+  /// Frame width in pixels. `None` when the API returns `null`/omits it
+  /// (it does so intermittently); callers should persist NULL, not a sentinel.
+  pub maybe_width: Option<u32>,
+  /// Frame height in pixels. `None` when the API returns `null`/omits it.
+  pub maybe_height: Option<u32>,
   // NB: We don't need these.
-  // /// Width / height ratio (e.g. 1.777… for 16:9). `None` when the server returns null (e.g. width/height are 0).
+  // /// Width / height ratio (e.g. 1.777… for 16:9). `None` when the server returns null.
   // pub ratio: Option<f64>,
 }
 
@@ -232,8 +235,8 @@ pub async fn poll_orders(args: PollOrdersArgs<'_>) -> Result<PollOrdersResponse,
         result_url: o.result_url,
         results: o.results.into_iter().map(|r| MediaResult {
           url: r.url,
-          width: r.width,
-          height: r.height,
+          maybe_width: r.maybe_width,
+          maybe_height: r.maybe_height,
         }).collect(),
         fail_reason,
         created_at: o.created_at,
@@ -422,7 +425,7 @@ mod tests {
           task_status,
           result_url: o.result_url,
           results: o.results.into_iter().map(|r| MediaResult {
-            url: r.url, width: r.width, height: r.height,
+            url: r.url, maybe_width: r.maybe_width, maybe_height: r.maybe_height,
           }).collect(),
           fail_reason,
           created_at: o.created_at,
@@ -472,17 +475,17 @@ mod tests {
       let orders = parse_orders(body);
       assert_eq!(orders.len(), 1);
       assert_eq!(orders[0].results.len(), 1);
-      assert_eq!(orders[0].results[0].width, 569);
-      assert_eq!(orders[0].results[0].height, 1023);
+      assert_eq!(orders[0].results[0].maybe_width, Some(569));
+      assert_eq!(orders[0].results[0].maybe_height, Some(1023));
       assert_eq!(orders[0].total_credits, Some(13));
     }
 
     /// Regression (paging outage): the Kinovi API started returning result
     /// `width`/`height` as `null`, which blew up the whole poll with
     /// "invalid type: null, expected a JSON number" and stalled the queue.
-    /// They must coerce to `0` and let the rest of the response parse.
+    /// They must parse as `None` and let the rest of the response parse.
     #[test]
-    fn null_dimensions_are_coerced_to_zero() {
+    fn null_dimensions_parse_as_none() {
       let body = r#"[{"result":{"data":{"json":{"orders":[{
         "orderId":"ord_foo",
         "resultUrl":"https://static.seedance2-pro.com/videos/seedance_video.mp4",
@@ -495,9 +498,27 @@ mod tests {
       let orders = parse_orders(body);
       assert_eq!(orders.len(), 1);
       assert_eq!(orders[0].results.len(), 1);
-      assert_eq!(orders[0].results[0].width, 0);
-      assert_eq!(orders[0].results[0].height, 0);
+      assert_eq!(orders[0].results[0].maybe_width, None);
+      assert_eq!(orders[0].results[0].maybe_height, None);
       assert_eq!(orders[0].task_status, TaskStatus::Completed);
+    }
+
+    /// Omitted `width`/`height` keys (not just `null`) also parse as `None`.
+    #[test]
+    fn missing_dimensions_parse_as_none() {
+      let body = r#"[{"result":{"data":{"json":{"orders":[{
+        "orderId":"ord_no_dims",
+        "resultUrl":"https://example.com/v.mp4",
+        "taskStatus":"COMPLETED",
+        "results":[{"url":"https://example.com/v.mp4"}],
+        "failReason":null,
+        "createdAt":"2026-02-19T01:20:50.398Z",
+        "mediaType":"video"
+      }],"nextCursor":null}}}}]"#;
+      let orders = parse_orders(body);
+      assert_eq!(orders.len(), 1);
+      assert_eq!(orders[0].results[0].maybe_width, None);
+      assert_eq!(orders[0].results[0].maybe_height, None);
     }
 
     /// Unrecognised mediaType values shouldn't crash deserialisation;

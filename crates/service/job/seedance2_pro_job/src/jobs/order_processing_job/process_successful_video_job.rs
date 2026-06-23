@@ -118,8 +118,9 @@ pub async fn process_successful_video_job(
   );
 
   // Optionally extract frame dimensions from the order results.
-  let maybe_frame_width = order.results.first().map(|r| r.width);
-  let maybe_frame_height = order.results.first().map(|r| r.height);
+  // Persist the integer dimensions when the API provides them, NULL otherwise.
+  let maybe_frame_width = order.results.first().and_then(|r| r.maybe_width);
+  let maybe_frame_height = order.results.first().and_then(|r| r.maybe_height);
 
   // Insert media file record.
   let media_file_result = MediaFileInsertBuilder::new()
