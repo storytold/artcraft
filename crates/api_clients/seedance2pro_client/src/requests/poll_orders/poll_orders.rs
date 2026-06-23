@@ -481,6 +481,29 @@ mod tests {
       assert_eq!(orders[0].total_credits, Some(13));
     }
 
+    /// Regression (paging outage): the Kinovi API started returning result
+    /// `width`/`height` as `null`, which blew up the whole poll with
+    /// "invalid type: null, expected a JSON number" and stalled the queue.
+    /// They must coerce to `0` and let the rest of the response parse.
+    #[test]
+    fn null_dimensions_are_coerced_to_zero() {
+      let body = r#"[{"result":{"data":{"json":{"orders":[{
+        "orderId":"ord_foo",
+        "resultUrl":"https://static.seedance2-pro.com/videos/seedance_video.mp4",
+        "taskStatus":"COMPLETED",
+        "results":[{"url":"https://static.seedance2-pro.com/videos/seedance_video.mp4","width":null,"height":null}],
+        "failReason":null,
+        "createdAt":"2026-02-19T01:20:50.398Z",
+        "mediaType":"video"
+      }],"nextCursor":null}}}}]"#;
+      let orders = parse_orders(body);
+      assert_eq!(orders.len(), 1);
+      assert_eq!(orders[0].results.len(), 1);
+      assert_eq!(orders[0].results[0].width, 0);
+      assert_eq!(orders[0].results[0].height, 0);
+      assert_eq!(orders[0].task_status, TaskStatus::Completed);
+    }
+
     /// Unrecognised mediaType values shouldn't crash deserialisation;
     /// they end up as `Unknown(_)`.
     #[test]
@@ -633,5 +656,85 @@ mod tests {
     println!("Total orders across {} pages: {}", page, total_orders);
     assert_eq!(1, 2); // NB: Intentional failure to inspect output.
     Ok(())
+  }
+
+  /// Live diagnostic for the paging outage: try EACH Kinovi account's cookies
+  /// from the job's secrets env file and cursor across several pages, reporting
+  /// which account(s) parse cleanly and which blow up. Never prints cookies.
+  ///
+  ///   cargo test -p seedance2pro_client live_cursor_all_accounts -- --ignored --nocapture
+  #[tokio::test]
+  #[ignore]
+  async fn live_cursor_all_accounts() -> AnyhowResult<()> {
+    setup_test_logging(LevelFilter::Info);
+
+    const SECRETS_ENV: &str = concat!(
+      env!("CARGO_MANIFEST_DIR"),
+      "/../../../crates/service/job/seedance2_pro_job/config/seedance2-pro-job.development-secrets.env",
+    );
+    const ACCOUNTS: &[&str] = &[
+      "SEEDANCE2PRO_VOLCENGINE_COOKIES",
+      "SEEDANCE2PRO_BYTEPLUS_COOKIES",
+      "SEEDANCE2PRO_BYTEPLUS_ULTRA_COOKIES",
+    ];
+    const MAX_PAGES: usize = 5;
+
+    let env_contents = std::fs::read_to_string(SECRETS_ENV)
+      .unwrap_or_else(|e| panic!("could not read secrets env at {}: {}", SECRETS_ENV, e));
+
+    for account in ACCOUNTS {
+      let Some(cookies) = read_env_value(&env_contents, account) else {
+        println!("[{}] not present in secrets env — skipping", account);
+        continue;
+      };
+      if cookies.is_empty() {
+        println!("[{}] empty — skipping", account);
+        continue;
+      }
+
+      let session = Seedance2ProSession::from_cookies_string(cookies);
+      let mut cursor: Option<u64> = None;
+      let mut pages = 0usize;
+      let mut total = 0usize;
+      let mut ok = true;
+
+      for _ in 0..MAX_PAGES {
+        match poll_orders(PollOrdersArgs { session: &session, cursor, host_override: None }).await {
+          Ok(result) => {
+            pages += 1;
+            total += result.orders.len();
+            cursor = result.next_cursor;
+            if cursor.is_none() { break; }
+          }
+          Err(err) => {
+            ok = false;
+            println!("[{}] FAILED on page {}: {:?}", account, pages + 1, err);
+            break;
+          }
+        }
+      }
+
+      println!(
+        "[{}] {} — {} page(s), {} order(s) parsed cleanly",
+        account, if ok { "OK" } else { "ERROR" }, pages, total,
+      );
+    }
+
+    Ok(())
+  }
+
+  /// Minimal dotenv value reader: returns the value for `KEY=...` from raw env
+  /// file contents, trimming surrounding quotes. Used so the diagnostic can try
+  /// each account without depending on process-wide env being loaded.
+  fn read_env_value(contents: &str, key: &str) -> Option<String> {
+    for line in contents.lines() {
+      let line = line.trim();
+      if line.starts_with('#') { continue; }
+      let Some((k, v)) = line.split_once('=') else { continue; };
+      if k.trim() != key { continue; }
+      let v = v.trim().trim_matches('"').trim_matches('\'').to_string();
+      return Some(v);
+    }
+    None
   }
 }

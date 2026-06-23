@@ -29,13 +29,15 @@ fn coerce_to_u32(number: &Number) -> u32 {
 }
 
 /// `#[serde(deserialize_with = "...")]` for a required `u64` field that may
-/// arrive as an integer or a float.
+/// arrive as an integer or a float — or, increasingly, as `null`. A `null`
+/// (or JSON `null`) coerces to `0` rather than failing the whole parse; the
+/// Kinovi API intermittently returns `null` for fields it used to populate.
 pub fn de_u64_int_or_float<'de, D>(deserializer: D) -> Result<u64, D::Error>
 where
   D: Deserializer<'de>,
 {
-  let number = Number::deserialize(deserializer)?;
-  Ok(coerce_to_u64(&number))
+  let maybe_number = Option::<Number>::deserialize(deserializer)?;
+  Ok(maybe_number.as_ref().map(coerce_to_u64).unwrap_or(0))
 }
 
 /// `#[serde(deserialize_with = "...")]` for an optional `u64` field (handles
@@ -59,13 +61,15 @@ where
 }
 
 /// `#[serde(deserialize_with = "...")]` for a required `u32` field that may
-/// arrive as an integer or a float.
+/// arrive as an integer or a float — or, increasingly, as `null`. A `null`
+/// coerces to `0` rather than failing the whole parse; the Kinovi API
+/// intermittently returns `null` for result `width`/`height`.
 pub fn de_u32_int_or_float<'de, D>(deserializer: D) -> Result<u32, D::Error>
 where
   D: Deserializer<'de>,
 {
-  let number = Number::deserialize(deserializer)?;
-  Ok(coerce_to_u32(&number))
+  let maybe_number = Option::<Number>::deserialize(deserializer)?;
+  Ok(maybe_number.as_ref().map(coerce_to_u32).unwrap_or(0))
 }
 
 #[cfg(test)]
@@ -124,6 +128,15 @@ mod tests {
   fn negative_and_nonfinite_clamp_to_zero() {
     assert_eq!(parse_u64(r#"{"value": -5}"#), 0);
     assert_eq!(parse_u64(r#"{"value": -5.5}"#), 0);
+  }
+
+  #[test]
+  fn required_fields_coerce_null_to_zero() {
+    // The Kinovi API intermittently returns `null` for numbers it used to
+    // populate (e.g. result width/height). Required coercers must treat that
+    // as 0 rather than failing the whole response parse.
+    assert_eq!(parse_u32(r#"{"value": null}"#), 0);
+    assert_eq!(parse_u64(r#"{"value": null}"#), 0);
   }
 
   #[test]
