@@ -142,6 +142,9 @@ async fn walk_orders(
       .map(|job| (job.order_id.clone(), job))
       .collect();
 
+  let pending_db_job_count = job_by_order_id.len();
+
+  let iteration_start = Instant::now();
   let mut result = WalkResult::default();
   let mut cursor: Option<u64> = None;
   let mut pages_since_head_recheck: u32 = 0;
@@ -170,12 +173,24 @@ async fn walk_orders(
         .filter_map(|order| order.created_at_utc)
         .last();
 
+    let iteration_elapsed = iteration_start.elapsed();
+
     info!(
-      "Polled Kinovi page {}: {} orders (oldest on page created at {:?}); {} finished orders staged from this page.",
-      result.pages_seen,
-      response.orders.len(),
-      maybe_oldest_created_at,
-      page_summary.staged,
+      "Polled Kinovi page {page}:\n  \
+         orders on page:        {orders}\n  \
+         oldest order on page:  {oldest:?}\n  \
+         staged from this page: {staged}\n  \
+         pending DB jobs:       {pending}\n  \
+         reconciler backlog:    {backlog} order(s) awaiting processing\n  \
+         iteration elapsed:     {secs}s ({millis}ms)",
+      page = result.pages_seen,
+      orders = response.orders.len(),
+      oldest = maybe_oldest_created_at,
+      staged = page_summary.staged,
+      pending = pending_db_job_count,
+      backlog = deps.order_reconciler.len(),
+      secs = iteration_elapsed.as_secs(),
+      millis = iteration_elapsed.as_millis(),
     );
 
     cursor = response.next_cursor;
