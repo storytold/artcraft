@@ -17,7 +17,7 @@ CREATE TABLE staff_audit_logs (
   maybe_entity_type VARCHAR(16) DEFAULT NULL,
 
   -- The token of the entity mutated (if any)
-  maybe_entity_token VARCHAR(32) NOT NULL,
+  maybe_entity_token VARCHAR(32) DEFAULT NULL,
 
   -- The staff user who performed the action.
   staff_user_token VARCHAR(32) DEFAULT NULL,
