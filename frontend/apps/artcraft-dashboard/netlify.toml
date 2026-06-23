@@ -1,0 +1,36 @@
+# Netlify configuration for the ArtCraft admin dashboard.
+#
+# This app is deliberately ISOLATED from the Nx/npm workspace. It pins its own
+# toolchain (React 19 + Vite 7 + Tailwind 4) and installs with pnpm into its own
+# node_modules — none of which is compatible with the rest of the workspace
+# (React 18.3.1 / npm). Keeping it self-contained is what prevents the
+# multi-minute install hangs we hit when it was a workspace member.
+#
+# IMPORTANT — Netlify site settings:
+#   * Base directory:    frontend/apps/artcraft-dashboard
+#   * (leave Build command / Publish directory to this file)
+#
+# With the base directory set to this folder, Netlify runs the whole build
+# *inside* this folder: it detects pnpm-lock.yaml, installs only this app's
+# dependencies with pnpm, and never touches the root npm workspace. Do NOT set
+# the base directory to `frontend/` (that was the old, broken setup that pulled
+# in the entire React-18 workspace).
+
+[build]
+  # `pnpm build` is `tsc -b && vite build` (see package.json). Netlify enables
+  # pnpm via corepack from the `packageManager` field; the explicit install with
+  # a frozen lockfile keeps CI installs deterministic and fast.
+  command = "pnpm install --frozen-lockfile && pnpm build"
+  publish = "dist"
+
+[build.environment]
+  # The dashboard targets a modern Node; pin it so Netlify doesn't drift.
+  NODE_VERSION = "22"
+
+# Vite emits content-hashed assets under /assets/*, so they can be cached
+# forever — a new deploy produces new filenames.
+[[headers]]
+  for = "/assets/*"
+
+  [headers.values]
+    "Cache-Control" = "public, max-age=31536000, immutable"
