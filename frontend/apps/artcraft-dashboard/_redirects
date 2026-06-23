@@ -1,0 +1,41 @@
+# Netlify redirects for the ArtCraft admin dashboard.
+# Rules are evaluated top-to-bottom; the first match wins, so the SPA
+# fallback MUST stay last.
+
+# API proxy — mirrors the dev Vite proxy in vite.config.ts. The app's
+# ApiManager defaults its host to "/api" (see src/api/ApiManager.ts), so
+# in production "/api/v1/foo" must be forwarded to the real API as
+# "/v1/foo". status 200 = proxy (no client-visible redirect).
+/api/*  https://api.storyteller.ai/:splat  200
+
+# SPA fallback — this is a client-side React Router app (BrowserRouter in
+# src/App.tsx). Every page below is rendered client-side, so every deep
+# link (including dynamic params) must serve index.html and let the router
+# take over. A per-page list is unnecessary and would break param routes;
+# the single catch-all covers them all:
+#
+#   /login
+#   /                                   (DashboardHome)
+#   /user/search
+#   /user/profile/:username
+#   /user/profile/:username/wallet
+#   /user/profile/:username/jobs
+#   /user/profile/:username/creations
+#   /user/profile/:username/referrals
+#   /stripe-lookup
+#   /user-signups
+#   /subscriber-signups
+#   /impersonation
+#   /staff-audit-logs
+#   /send-pager
+#   /feature-flags
+#   /email-changes
+#   /referrals
+#   /explore/media
+#   /explore/media/:mediaToken
+#   /moderation/job-search
+#   /moderation/job/:jobToken
+#   /moderation/debug-logs-search
+#   /moderation/debug-logs/:eventToken
+#
+/*  /index.html  200

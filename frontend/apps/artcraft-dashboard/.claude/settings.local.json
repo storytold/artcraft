@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx shadcn@latest add:*)",
+      "Bash(node -e:*)",
+      "WebFetch(domain:docs.gravatar.com)"
+    ]
+  }
+}

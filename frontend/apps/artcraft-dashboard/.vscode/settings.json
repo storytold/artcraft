@@ -1,0 +1,23 @@
+{
+    "files.exclude": {
+        "**/.git": true,
+        "**/.svn": true,
+        "**/.hg": true,
+        "**/.DS_Store": true,
+        "**/Thumbs.db": true,
+        "**/.vexp/daemon.pid": true,
+        "**/.vexp/daemon.sock": true,
+        "**/.vexp/daemon.pipe": true,
+        "**/.vexp/daemon.log": true,
+        "**/.vexp/vexp.log": true,
+        "**/.vexp/healthy": true,
+        "**/.vexp/mcp.port": true,
+        "**/.vexp/mcp.token": true,
+        "**/.vexp/index.db": true,
+        "**/.vexp/index.db-wal": true,
+        "**/.vexp/index.db-shm": true,
+        "**/.vexp/parent_workspace.json": true,
+        "**/.vexp/.gitignore": true,
+        "**/.vexp/.gitattributes": true
+    }
+}
