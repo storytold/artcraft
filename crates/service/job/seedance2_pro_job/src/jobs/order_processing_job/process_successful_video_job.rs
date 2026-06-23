@@ -18,13 +18,13 @@ use seedance2pro_client::requests::poll_orders::poll_orders::OrderStatus;
 
 use crate::alert_on_error::alert_pager_and_return_err;
 use crate::job_dependencies::JobDependencies;
-use crate::jobs::order_processing_job::is_job_status_terminal;
+use crate::jobs::order_processing_job::is_job_status_terminal::is_job_status_terminal;
 
 const PREFIX: &str = "artcraft_";
 const SUFFIX: &str = ".mp4";
 
 /// Download the completed video, upload to bucket, create media file record, and mark job done.
-pub async fn process_successful_job(
+pub async fn process_successful_video_job(
   deps: &JobDependencies,
   job: &PendingSeedance2ProJob,
   order: &OrderStatus,
@@ -185,16 +185,16 @@ async fn finalize_success(
     .await
     .map_err(|err| anyhow!("error locking job {} for finalize: {:?}", job.job_token.as_str(), err))?;
 
-  match maybe_status {
-    Some(status) if is_job_status_terminal(status) => {
-      warn!(
-        "Job {} became terminal ({:?}) before finalize; skipping mark-done (order {}). \
-        Media file {} may be orphaned.",
-        job.job_token.as_str(), status, order.order_id, media_file_token,
-      );
-      let _ = transaction.rollback().await;
-      return Ok(());
-    }
+  // ── Terminal-state guard (do NOT remove) ──
+  //
+  // Bail unless the job is still pending. A concurrent finalizer (another poll,
+  // a web cancel) may have settled it between the processing loop's pre-check
+  // and this locked re-read. If we don't stop here we'd re-mark a finished job
+  // and leak the just-uploaded media file. This is the single most important
+  // check in this function, so it's a discrete, early-returning step.
+
+  let status = match maybe_status {
+    Some(status) => status,
     None => {
       let _ = transaction.rollback().await;
       return Err(anyhow!(
@@ -202,10 +202,19 @@ async fn finalize_success(
         job.job_token.as_str(), order.order_id,
       ));
     }
-    Some(_) => {
-      // Still pending — proceed to mark it done within the locked transaction.
-    }
+  };
+
+  if is_job_status_terminal(status) {
+    warn!(
+      "Job {} is already terminal ({:?}); skipping mark-done (order {}). \
+      Media file {} may be orphaned.",
+      job.job_token.as_str(), status, order.order_id, media_file_token,
+    );
+    let _ = transaction.rollback().await;
+    return Ok(());
   }
+
+  // Still pending — mark it done within the locked transaction.
 
   if let Err(err) = mark_generic_inference_job_successfully_done_by_token_with_executor(
     &mut *transaction,

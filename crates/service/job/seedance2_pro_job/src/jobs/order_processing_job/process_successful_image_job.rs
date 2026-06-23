@@ -20,7 +20,7 @@ use tokens::tokens::media_files::MediaFileToken;
 
 use crate::alert_on_error::alert_pager_and_return_err;
 use crate::job_dependencies::JobDependencies;
-use crate::jobs::order_processing_job::is_job_status_terminal;
+use crate::jobs::order_processing_job::is_job_status_terminal::is_job_status_terminal;
 
 const PREFIX: &str = "artcraft_";
 const SUFFIX: &str = ".png";
@@ -100,7 +100,7 @@ pub async fn process_successful_image_job(
   );
 
   // Finalize inside a transaction: re-check the job is still pending under a row
-  // lock, then mark it complete. See `process_successful_job` for the rationale.
+  // lock, then mark it complete. See `process_successful_video_job` for the rationale.
   let mut transaction = deps.mysql_pool.begin().await.map_err(|err| {
     anyhow!("error beginning finalize transaction for job {}: {:?}", job.job_token.as_str(), err)
   })?;
@@ -109,16 +109,16 @@ pub async fn process_successful_image_job(
     .await
     .map_err(|err| anyhow!("error locking job {} for finalize: {:?}", job.job_token.as_str(), err))?;
 
-  match maybe_status {
-    Some(status) if is_job_status_terminal(status) => {
-      warn!(
-        "Job {} became terminal ({:?}) before finalize; skipping mark-done (order {}). \
-        {} media file(s) may be orphaned.",
-        job.job_token.as_str(), status, order.order_id, created_tokens.len(),
-      );
-      let _ = transaction.rollback().await;
-      return Ok(());
-    }
+  // ── Terminal-state guard (do NOT remove) ──
+  //
+  // Bail unless the job is still pending. A concurrent finalizer (another poll,
+  // a web cancel) may have settled it between the processing loop's pre-check
+  // and this locked re-read. If we don't stop here we'd re-mark a finished job
+  // and leak the just-uploaded media files. This is the single most important
+  // check in this function, so it's a discrete, early-returning step.
+
+  let status = match maybe_status {
+    Some(status) => status,
     None => {
       let _ = transaction.rollback().await;
       return Err(anyhow!(
@@ -126,10 +126,19 @@ pub async fn process_successful_image_job(
         job.job_token.as_str(), order.order_id,
       ));
     }
-    Some(_) => {
-      // Still pending — proceed.
-    }
+  };
+
+  if is_job_status_terminal(status) {
+    warn!(
+      "Job {} is already terminal ({:?}); skipping mark-done (order {}). \
+      {} media file(s) may be orphaned.",
+      job.job_token.as_str(), status, order.order_id, created_tokens.len(),
+    );
+    let _ = transaction.rollback().await;
+    return Ok(());
   }
+
+  // Still pending — mark it done within the locked transaction.
 
   if let Err(err) = mark_generic_inference_job_successfully_done_by_token_with_executor(
     &mut *transaction,

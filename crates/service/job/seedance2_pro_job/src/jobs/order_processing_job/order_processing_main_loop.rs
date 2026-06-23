@@ -4,7 +4,7 @@ use log::{error, info, warn};
 use mysql_queries::queries::generic_inference::web::get_inference_job_status_value::get_inference_job_status_value;
 
 use crate::job_dependencies::JobDependencies;
-use crate::jobs::order_processing_job::is_job_status_terminal;
+use crate::jobs::order_processing_job::is_job_status_terminal::is_job_status_terminal;
 use crate::jobs::order_processing_job::process_one_order::process_one_order;
 
 /// How long to nap when the reconciler is empty before peeking again.

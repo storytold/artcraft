@@ -11,7 +11,7 @@ use seedance2pro_client::requests::poll_orders::failure_type::FailureType;
 use seedance2pro_client::requests::poll_orders::poll_orders::OrderStatus;
 
 use crate::job_dependencies::JobDependencies;
-use crate::jobs::order_processing_job::is_job_status_terminal;
+use crate::jobs::order_processing_job::is_job_status_terminal::is_job_status_terminal;
 
 /// Reconcile a failed order: refund the user (if billed) and mark the job
 /// failed — atomically, in one transaction.
@@ -58,28 +58,16 @@ pub async fn process_failed_job(
     }
   };
 
-  // Re-check under a row lock: another finalizer may have already settled this
-  // job between the processing loop's pre-check and now.
-  match select_inference_job_status_for_update(&mut *transaction, &job.job_token).await {
-    Ok(Some(status)) if is_job_status_terminal(status) => {
-      info!(
-        "Job {} already terminal ({:?}) before failure finalize (order {}); skipping.",
-        job.job_token.as_str(), status, order.order_id,
-      );
-      let _ = transaction.rollback().await;
-      return;
-    }
-    Ok(Some(_)) => {
-      // Still pending — proceed.
-    }
-    Ok(None) => {
-      warn!(
-        "Job {} vanished before failure finalize (order {}); skipping.",
-        job.job_token.as_str(), order.order_id,
-      );
-      let _ = transaction.rollback().await;
-      return;
-    }
+  // ── Terminal-state guard (do NOT remove) ──
+  //
+  // Bail unless the job is still pending. Another finalizer may have already
+  // settled (and refunded) this job between the processing loop's pre-check and
+  // this locked re-read. If we don't stop here we could double-refund the user.
+  // This is the single most important check in this function, so it's a
+  // discrete, early-returning step.
+
+  let maybe_status = match select_inference_job_status_for_update(&mut *transaction, &job.job_token).await {
+    Ok(maybe_status) => maybe_status,
     Err(err) => {
       error!(
         "Failed to lock job {} for failure finalize: {:?}. Will retry next poll.",
@@ -88,8 +76,31 @@ pub async fn process_failed_job(
       let _ = transaction.rollback().await;
       return;
     }
+  };
+
+  let status = match maybe_status {
+    Some(status) => status,
+    None => {
+      warn!(
+        "Job {} vanished before failure finalize (order {}); skipping.",
+        job.job_token.as_str(), order.order_id,
+      );
+      let _ = transaction.rollback().await;
+      return;
+    }
+  };
+
+  if is_job_status_terminal(status) {
+    info!(
+      "Job {} is already terminal ({:?}) before failure finalize (order {}); skipping.",
+      job.job_token.as_str(), status, order.order_id,
+    );
+    let _ = transaction.rollback().await;
+    return;
   }
 
+  // Still pending — refund and mark failed within the locked transaction.
+  //
   // Refund first (within the same transaction), so the refund and the failure
   // write commit or roll back together.
   match &job.maybe_wallet_ledger_entry_token {

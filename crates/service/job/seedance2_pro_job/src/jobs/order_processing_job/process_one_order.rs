@@ -6,7 +6,7 @@ use seedance2pro_client::requests::poll_orders::poll_orders::{OrderMediaType, Ta
 use crate::job_dependencies::JobDependencies;
 use crate::jobs::order_processing_job::process_failed_job::process_failed_job;
 use crate::jobs::order_processing_job::process_successful_image_job::process_successful_image_job;
-use crate::jobs::order_processing_job::process_successful_job::process_successful_job;
+use crate::jobs::order_processing_job::process_successful_video_job::process_successful_video_job;
 use crate::order_reconciler::OrderDetails;
 
 /// Reconcile a single finished order into our system, dispatching on its
@@ -26,13 +26,13 @@ pub async fn process_one_order(
       // both fall to the video handler for back-compat.
       match &order.media_type {
         Some(OrderMediaType::Image) => process_successful_image_job(deps, job, order).await,
-        Some(OrderMediaType::Video) | None => process_successful_job(deps, job, order).await,
+        Some(OrderMediaType::Video) | None => process_successful_video_job(deps, job, order).await,
         Some(OrderMediaType::Unknown(other)) => {
           warn!(
             "Order {} has unrecognised media_type {:?}; treating as video.",
             order.order_id, other,
           );
-          process_successful_job(deps, job, order).await
+          process_successful_video_job(deps, job, order).await
         }
       }
     }
