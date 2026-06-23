@@ -1,6 +1,8 @@
 use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
 
+use rand::Rng;
+
 use mysql_queries::queries::generic_inference::api_providers::seedance2pro::list_pending_seedance2pro_video_jobs::PendingSeedance2ProJob;
 use seedance2pro_client::requests::poll_orders::poll_orders::OrderStatus;
 
@@ -62,12 +64,24 @@ impl OrderReconciler {
     true
   }
 
-  /// Clone out one staged order without removing it, so the caller can consult
-  /// the database before committing to (and popping) it. Returns `None` when
-  /// nothing is staged.
-  pub fn peek_one(&self) -> Option<OrderDetails> {
+  /// Clone out one *randomly chosen* staged order without removing it, so the
+  /// caller can consult the database before committing to (and popping) it.
+  /// Returns `None` when nothing is staged.
+  ///
+  /// Selection is random on purpose: if we always handed back the same
+  /// (deterministically ordered) entry, a single order that keeps failing to
+  /// process — and keeps getting re-staged by the poller — could monopolize the
+  /// consumer and starve everything behind it. Random pick spreads attempts
+  /// across the whole backlog so one poison order can't wedge the queue.
+  pub fn peek_random(&self) -> Option<OrderDetails> {
     let map = self.inner.read().expect("order reconciler lock poisoned");
-    map.values().next().cloned()
+
+    if map.is_empty() {
+      return None;
+    }
+
+    let index = rand::rng().random_range(0..map.len());
+    map.values().nth(index).cloned()
   }
 
   /// Remove and return a staged order by id.

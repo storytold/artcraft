@@ -23,7 +23,7 @@ const ERROR_BACKOFF: Duration = Duration::from_secs(2);
 /// soon as it's staged rather than after a whole batch.
 pub async fn order_processing_main_loop(deps: JobDependencies) {
   while !deps.application_shutdown.get() {
-    let details = match deps.order_reconciler.peek_one() {
+    let details = match deps.order_reconciler.peek_random() {
       Some(details) => details,
       None => {
         nap(&deps, IDLE_SLEEP).await;

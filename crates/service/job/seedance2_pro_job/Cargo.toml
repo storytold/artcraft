@@ -43,6 +43,7 @@ tokens.workspace = true
 anyhow.workspace = true
 chrono.workspace = true
 log.workspace = true
+rand.workspace = true
 
 sqlx = { version = "0.7.4", features = [ "mysql", "runtime-tokio-rustls", "chrono" ] }
 
