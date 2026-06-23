@@ -70,7 +70,7 @@ impl TaskStatus {
 /// orders, or one of Midjourney's 4 generated images for image orders.
 /// (Originally named for the video-only days; the underlying shape is shared.)
 #[derive(Debug, Clone)]
-pub struct VideoResult {
+pub struct MediaResult {
   pub url: String,
   pub width: u32,
   pub height: u32,
@@ -78,10 +78,6 @@ pub struct VideoResult {
   // /// Width / height ratio (e.g. 1.777… for 16:9). `None` when the server returns null (e.g. width/height are 0).
   // pub ratio: Option<f64>,
 }
-
-/// Type-neutral alias for [`VideoResult`]. Prefer this name in new
-/// callers that deal with both image and video orders.
-pub type MediaResult = VideoResult;
 
 /// Media type of an order. Midjourney orders are `Image`; the various
 /// Seedance/keyframe/reference flows are `Video`.
@@ -122,7 +118,7 @@ pub struct OrderStatus {
 
   /// Detailed result entries. One entry per video frame (video orders), or
   /// four entries per Midjourney task (image orders).
-  pub results: Vec<VideoResult>,
+  pub results: Vec<MediaResult>,
 
   /// Structured failure reason. Populated when `task_status` is `Failed` or `fail_reason` is present.
   pub fail_reason: Option<FailureReason>,
@@ -234,7 +230,7 @@ pub async fn poll_orders(args: PollOrdersArgs<'_>) -> Result<PollOrdersResponse,
         order_id: o.order_id,
         task_status,
         result_url: o.result_url,
-        results: o.results.into_iter().map(|r| VideoResult {
+        results: o.results.into_iter().map(|r| MediaResult {
           url: r.url,
           width: r.width,
           height: r.height,
@@ -425,7 +421,7 @@ mod tests {
           order_id: o.order_id,
           task_status,
           result_url: o.result_url,
-          results: o.results.into_iter().map(|r| VideoResult {
+          results: o.results.into_iter().map(|r| MediaResult {
             url: r.url, width: r.width, height: r.height,
           }).collect(),
           fail_reason,
