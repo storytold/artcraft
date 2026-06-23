@@ -1,3 +1,4 @@
+use chrono::{DateTime, Utc};
 use log::warn;
 use sqlx::MySqlPool;
 
@@ -29,9 +30,13 @@ pub struct PendingSeedance2ProJob {
   pub maybe_wallet_ledger_entry_token: Option<WalletLedgerEntryToken>,
 
   pub maybe_platform_type: Option<PlatformType>,
+
+  /// When the job row was created. Useful for surfacing how long the oldest
+  /// pending job has been waiting.
+  pub created_at: DateTime<Utc>,
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug)]
 struct RawRecord {
   job_token: InferenceJobToken,
   order_id: Option<String>,
@@ -42,6 +47,7 @@ struct RawRecord {
   maybe_prompt_token: Option<PromptToken>,
   maybe_wallet_ledger_entry_token: Option<WalletLedgerEntryToken>,
   maybe_platform_type: Option<PlatformType>,
+  created_at: DateTime<Utc>,
 }
 
 /// Returns all non-terminal Seedance2Pro video jobs that have an associated order_id.
@@ -62,7 +68,8 @@ SELECT
     jobs.creator_set_visibility as `creator_set_visibility: enums::common::visibility::Visibility`,
     jobs.maybe_prompt_token as `maybe_prompt_token: tokens::tokens::prompts::PromptToken`,
     jobs.maybe_wallet_ledger_entry_token as `maybe_wallet_ledger_entry_token: tokens::tokens::wallet_ledger_entries::WalletLedgerEntryToken`,
-    jobs.platform_type as `maybe_platform_type: enums::common::platform_type::PlatformType`
+    jobs.platform_type as `maybe_platform_type: enums::common::platform_type::PlatformType`,
+    jobs.created_at
 
 FROM generic_inference_jobs as jobs
 
@@ -100,6 +107,7 @@ LIMIT 25000
         maybe_prompt_token: record.maybe_prompt_token,
         maybe_wallet_ledger_entry_token: record.maybe_wallet_ledger_entry_token,
         maybe_platform_type: record.maybe_platform_type,
+        created_at: record.created_at,
       })
     })
     .collect();

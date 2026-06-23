@@ -143,6 +143,7 @@ async fn walk_orders(
       .collect();
 
   let pending_db_job_count = job_by_order_id.len();
+  let oldest_pending_created_at = job_by_order_id.values().map(|job| job.created_at).min();
 
   let iteration_start = Instant::now();
   let mut result = WalkResult::default();
@@ -159,18 +160,27 @@ async fn walk_orders(
     // itself fails, we still have the surrounding context in the logs.
     let iteration_elapsed = iteration_start.elapsed();
 
+    let pending_db_jobs_display = match oldest_pending_created_at {
+      Some(oldest) if pending_db_job_count > 0 => format!(
+        "{} (oldest: {} ago)",
+        pending_db_job_count,
+        format_duration_ago(Utc::now() - oldest),
+      ),
+      _ => pending_db_job_count.to_string(),
+    };
+
     info!(
       "Requesting Kinovi page:\n  \
-         page:                  {page}\n  \
-         cursor:                {cursor:?}\n  \
+         kinovi page:           {page}\n  \
+         kinovi cursor:         {cursor:?}\n  \
          orders seen so far:    {orders_seen}\n  \
-         pending DB jobs:       {pending}\n  \
+         pending DB jobs:       {pending_db}\n  \
          reconciler backlog:    {backlog} order(s) awaiting processing\n  \
          iteration elapsed:     {secs}s ({millis}ms)",
       page = result.pages_seen,
       cursor = cursor,
       orders_seen = result.orders_seen,
-      pending = pending_db_job_count,
+      pending_db = pending_db_jobs_display,
       backlog = deps.order_reconciler.len(),
       secs = iteration_elapsed.as_secs(),
       millis = iteration_elapsed.as_millis(),
@@ -307,6 +317,17 @@ fn stage_finished_orders(
   }
 
   PageStageSummary { staged }
+}
+
+/// Format a positive elapsed duration as `"{h} hours {m} minutes {s} seconds"`
+/// (hours are unbounded; e.g. a 50-hour-old job reads `"50 hours ..."`).
+/// Negative durations clamp to zero.
+fn format_duration_ago(elapsed: chrono::Duration) -> String {
+  let total_seconds = elapsed.num_seconds().max(0);
+  let hours = total_seconds / 3600;
+  let minutes = (total_seconds % 3600) / 60;
+  let seconds = total_seconds % 60;
+  format!("{} hours {} minutes {} seconds", hours, minutes, seconds)
 }
 
 /// Poll orders from Kinovi with retries. On transient failures, waits with
