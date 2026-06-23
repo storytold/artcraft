@@ -48,7 +48,7 @@
         "name": "maybe_entity_token",
         "type_info": {
           "type": "VarString",
-          "flags": "NOT_NULL | MULTIPLE_KEY | BINARY | NO_DEFAULT_VALUE",
+          "flags": "MULTIPLE_KEY | BINARY",
           "char_set": 224,
           "max_size": 128
         }
@@ -132,7 +132,7 @@
       false,
       false,
       true,
-      false,
+      true,
       true,
       true,
       true,
