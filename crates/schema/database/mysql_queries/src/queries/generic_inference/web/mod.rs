@@ -11,3 +11,4 @@ pub mod kill_jobs_in_development;
 pub mod list_session_jobs;
 pub mod mark_generic_inference_job_cancelled_by_user;
 pub mod mark_generic_inference_job_successfully_done_by_token;
+pub mod mark_generic_inference_job_successfully_done_by_token_with_executor;

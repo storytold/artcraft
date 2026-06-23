@@ -12,7 +12,7 @@ use errors::AnyhowResult;
 use hashing::sha256::sha256_hash_bytes::sha256_hash_bytes;
 use mysql_queries::queries::generic_inference::api_providers::seedance2pro::list_pending_seedance2pro_video_jobs::PendingSeedance2ProJob;
 use mysql_queries::queries::generic_inference::job::select_inference_job_status_for_update::select_inference_job_status_for_update;
-use mysql_queries::queries::generic_inference::web::mark_generic_inference_job_successfully_done_by_token::mark_generic_inference_job_successfully_done_by_token_with_executor;
+use mysql_queries::queries::generic_inference::web::mark_generic_inference_job_successfully_done_by_token_with_executor::{mark_generic_inference_job_successfully_done_by_token_with_executor, MarkGenericInferenceJobSuccessfullyDoneByTokenWithExecutorArgs};
 use mysql_queries::queries::media_files::create::insert_builder::media_file_insert_builder::MediaFileInsertBuilder;
 use seedance2pro_client::requests::poll_orders::poll_orders::{OrderStatus, VideoResult};
 use tokens::tokens::batch_generations::BatchGenerationToken;
@@ -141,12 +141,14 @@ pub async fn process_successful_image_job(
   // Still pending — mark it done within the locked transaction.
 
   if let Err(err) = mark_generic_inference_job_successfully_done_by_token_with_executor(
-    &mut *transaction,
-    &job.job_token,
-    Some(InferenceResultType::MediaFile),
-    Some(primary_token.as_str()),
-    None,
-    None,
+    MarkGenericInferenceJobSuccessfullyDoneByTokenWithExecutorArgs {
+      executor: &mut *transaction,
+      token: &job.job_token,
+      maybe_entity_type: Some(InferenceResultType::MediaFile),
+      maybe_entity_token: Some(primary_token.as_str()),
+      total_job_duration: None,
+      inference_duration: None,
+    },
   ).await {
     let _ = transaction.rollback().await;
     error!("Error marking image job {} done: {:?}", job.job_token.as_str(), err);
