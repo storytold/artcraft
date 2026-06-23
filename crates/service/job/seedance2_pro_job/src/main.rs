@@ -30,15 +30,19 @@ use shared_env_var_config::mysql::env_get_mysql_connection_string_or_default;
 use crate::http_server::run_http_server::{launch_http_server, CreateServerArgs};
 use crate::jobs::character_polling_job::character_polling_main_loop::character_polling_main_loop;
 use crate::jobs::credits_checking_job::credits_checking_main_loop::credits_checking_main_loop;
-use crate::jobs::video_polling_job::video_polling_main_loop::video_polling_main_loop;
+use crate::jobs::order_polling_job::order_polling_main_loop::order_polling_main_loop;
+use crate::jobs::order_processing_job::order_processing_main_loop::order_processing_main_loop;
 use crate::job_dependencies::JobDependencies;
+use crate::order_reconciler::OrderReconciler;
 use crate::startup::build_pager::build_pager;
 use crate::startup::kinovi_setup::{get_kinovi_session, get_kinovi_version};
 
+pub mod alert_on_error;
 pub mod http_server;
 pub mod job_dependencies;
 pub mod jobs;
 pub mod kinovi_version;
+pub mod order_reconciler;
 pub mod startup;
 
 // Bucket config
@@ -112,12 +116,6 @@ async fn main() -> AnyhowResult<()> {
     5_000,
   )?;
 
-  let maybe_pages_per_batch: Option<u32> = easyenv::try_get_env_num_optional("BATCH_PAGE_COUNT")?;
-
-  if let Some(count) = maybe_pages_per_batch {
-    info!("Batch page count: {}", count);
-  }
-
   let maybe_max_job_age = easyenv::try_get_env_num_optional::<i64>(ENV_MAX_JOB_AGE_THRESHOLD_HOURS)?
       .and_then(chrono::Duration::try_hours);
 
@@ -160,6 +158,9 @@ async fn main() -> AnyhowResult<()> {
   let shutdown_notify = Arc::new(Notify::new());
   let job_stats = JobStats::new();
 
+  // Shared hand-off between the polling loop (producer) and processing loop (consumer).
+  let order_reconciler = OrderReconciler::new();
+
   let pager_for_shutdown = pager.clone();
 
   let create_server_args = CreateServerArgs {
@@ -176,7 +177,6 @@ async fn main() -> AnyhowResult<()> {
     server_environment,
     job_stats,
     poll_interval_millis,
-    maybe_pages_per_batch,
     maybe_max_job_age,
     poll_max_retries,
     poll_retry_max_delay_millis,
@@ -184,6 +184,7 @@ async fn main() -> AnyhowResult<()> {
     application_shutdown: application_shutdown.clone(),
     shutdown_notify: shutdown_notify.clone(),
     pager,
+    order_reconciler,
   };
 
   // HTTP server runs on a separate OS thread with its own actix System.
@@ -214,12 +215,18 @@ async fn main() -> AnyhowResult<()> {
     }
   });
 
-  // Spawn all polling loops as concurrent tasks.
-  let video_deps = job_dependencies.clone();
+  // Spawn all loops as concurrent tasks. Order polling (producer) and order
+  // processing (consumer) run independently and hand off via the reconciler.
+  let polling_deps = job_dependencies.clone();
+  let processing_deps = job_dependencies.clone();
   let credits_deps = job_dependencies.clone();
 
-  let video_handle = tokio::spawn(async move {
-    video_polling_main_loop(video_deps).await;
+  let polling_handle = tokio::spawn(async move {
+    order_polling_main_loop(polling_deps).await;
+  });
+
+  let processing_handle = tokio::spawn(async move {
+    order_processing_main_loop(processing_deps).await;
   });
 
   let credits_handle = tokio::spawn(async move {
@@ -231,11 +238,11 @@ async fn main() -> AnyhowResult<()> {
     let character_handle = tokio::spawn(async move {
       character_polling_main_loop(character_deps).await;
     });
-    let _ = tokio::join!(video_handle, character_handle, credits_handle);
+    let _ = tokio::join!(polling_handle, processing_handle, character_handle, credits_handle);
   } else {
     // skip character polling entirely.
     info!("Alternate mode: character polling is disabled.");
-    let _ = tokio::join!(video_handle, credits_handle);
+    let _ = tokio::join!(polling_handle, processing_handle, credits_handle);
   }
 
   info!("Shutting down pager worker...");

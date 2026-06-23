@@ -12,7 +12,7 @@ use tokens::tokens::users::UserToken;
 use tokens::tokens::wallet_ledger_entries::WalletLedgerEntryToken;
 
 /// A Seedance2Pro job that is waiting for a result from the external API.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct PendingSeedance2ProJob {
   pub job_token: InferenceJobToken,
 

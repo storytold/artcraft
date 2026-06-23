@@ -11,14 +11,16 @@ use enums::common::generation_provider::GenerationProvider;
 use errors::AnyhowResult;
 use hashing::sha256::sha256_hash_bytes::sha256_hash_bytes;
 use mysql_queries::queries::generic_inference::api_providers::seedance2pro::list_pending_seedance2pro_video_jobs::PendingSeedance2ProJob;
-use mysql_queries::queries::generic_inference::web::mark_generic_inference_job_successfully_done_by_token::mark_generic_inference_job_successfully_done_by_token;
+use mysql_queries::queries::generic_inference::job::select_inference_job_status_for_update::select_inference_job_status_for_update;
+use mysql_queries::queries::generic_inference::web::mark_generic_inference_job_successfully_done_by_token::mark_generic_inference_job_successfully_done_by_token_with_executor;
 use mysql_queries::queries::media_files::create::insert_builder::media_file_insert_builder::MediaFileInsertBuilder;
 use seedance2pro_client::requests::poll_orders::poll_orders::{OrderStatus, VideoResult};
 use tokens::tokens::batch_generations::BatchGenerationToken;
 use tokens::tokens::media_files::MediaFileToken;
 
+use crate::alert_on_error::alert_pager_and_return_err;
 use crate::job_dependencies::JobDependencies;
-use crate::jobs::video_polling_job::alert_on_error::alert_pager_and_return_err;
+use crate::jobs::order_processing_job::is_job_status_terminal;
 
 const PREFIX: &str = "artcraft_";
 const SUFFIX: &str = ".png";
@@ -90,29 +92,66 @@ pub async fn process_successful_image_job(
   })?;
 
   info!(
-    "Created {} media file(s) for order {} (primary={}). Marking job {} complete.",
+    "Created {} media file(s) for order {} (primary={}). Finalizing job {}.",
     created_tokens.len(),
     order.order_id,
     primary_token.as_str(),
     job.job_token.as_str(),
   );
 
-  if let Err(err) = mark_generic_inference_job_successfully_done_by_token(
-    &deps.mysql_pool,
+  // Finalize inside a transaction: re-check the job is still pending under a row
+  // lock, then mark it complete. See `process_successful_job` for the rationale.
+  let mut transaction = deps.mysql_pool.begin().await.map_err(|err| {
+    anyhow!("error beginning finalize transaction for job {}: {:?}", job.job_token.as_str(), err)
+  })?;
+
+  let maybe_status = select_inference_job_status_for_update(&mut *transaction, &job.job_token)
+    .await
+    .map_err(|err| anyhow!("error locking job {} for finalize: {:?}", job.job_token.as_str(), err))?;
+
+  match maybe_status {
+    Some(status) if is_job_status_terminal(status) => {
+      warn!(
+        "Job {} became terminal ({:?}) before finalize; skipping mark-done (order {}). \
+        {} media file(s) may be orphaned.",
+        job.job_token.as_str(), status, order.order_id, created_tokens.len(),
+      );
+      let _ = transaction.rollback().await;
+      return Ok(());
+    }
+    None => {
+      let _ = transaction.rollback().await;
+      return Err(anyhow!(
+        "Job {} vanished before finalize (order {})",
+        job.job_token.as_str(), order.order_id,
+      ));
+    }
+    Some(_) => {
+      // Still pending — proceed.
+    }
+  }
+
+  if let Err(err) = mark_generic_inference_job_successfully_done_by_token_with_executor(
+    &mut *transaction,
     &job.job_token,
     Some(InferenceResultType::MediaFile),
     Some(primary_token.as_str()),
     None,
     None,
   ).await {
+    let _ = transaction.rollback().await;
     error!("Error marking image job {} done: {:?}", job.job_token.as_str(), err);
     return alert_pager_and_return_err(
       &deps.pager,
-      "Seedance2Pro image job completion update failed",
+      "Kinovi image job completion update failed",
       anyhow!("error marking job done: {:?}", err),
       Some(job),
     );
   }
+
+  transaction.commit().await.map_err(|err| {
+    anyhow!("error committing finalize transaction for job {}: {:?}", job.job_token.as_str(), err)
+  })?;
 
   info!("Image job {} completed successfully.", job.job_token.as_str());
 

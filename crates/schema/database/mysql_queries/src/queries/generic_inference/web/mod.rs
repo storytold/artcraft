@@ -1,6 +1,7 @@
 pub mod batch_get_inference_job_status;
 pub mod dismiss_finished_jobs_for_user;
 pub mod get_inference_job_status;
+pub mod get_inference_job_status_value;
 pub mod get_pending_inference_job_count;
 pub mod insert_generic_inference_job;
 pub mod job_status;
