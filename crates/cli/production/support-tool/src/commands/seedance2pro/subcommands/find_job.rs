@@ -60,8 +60,8 @@ fn order_to_json(order: &seedance2pro_client::requests::poll_orders::poll_orders
     "results": order.results.iter().map(|r| {
       serde_json::json!({
         "url": r.url,
-        "width": r.width,
-        "height": r.height,
+        "width": r.maybe_width,
+        "height": r.maybe_height,
       })
     }).collect::<Vec<_>>(),
   })
