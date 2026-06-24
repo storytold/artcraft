@@ -69,6 +69,10 @@ pub struct WorkflowRunTaskRequest {
 
   /// Controls the `faceBlurMode` field: true sends "on", false sends "off", None omits it.
   pub use_face_blur_hack: Option<bool>,
+
+  /// Output video bitrate. None defaults to "standard" (the field is omitted);
+  /// `High` sends `bitrate_mode: "high"`. Does not affect cost.
+  pub bitrate: Option<KinoviBitrateRaw>,
 }
 
 impl std::fmt::Debug for WorkflowRunTaskRequest {
@@ -87,6 +91,7 @@ impl std::fmt::Debug for WorkflowRunTaskRequest {
       .field("character_ids", &self.character_ids)
       .field("output_resolution", &self.output_resolution)
       .field("use_face_blur_hack", &self.use_face_blur_hack)
+      .field("bitrate", &self.bitrate)
       .finish()
   }
 }
@@ -268,6 +273,23 @@ impl KinoviModelTypeRaw {
   }
 }
 
+/// Output video bitrate. When omitted, defaults to "standard".
+#[derive(Debug, Clone, Copy)]
+pub enum KinoviBitrateRaw {
+  /// High bitrate (`bitrate_mode: "high"`).
+  High,
+}
+
+impl KinoviBitrateRaw {
+  /// Returns the API string to send, or None for "standard" (the default,
+  /// which is expressed by omitting the field entirely).
+  pub fn as_api_str(&self) -> Option<&'static str> {
+    match self {
+      Self::High => Some("high"),
+    }
+  }
+}
+
 // --- Response ---
 
 pub struct WorkflowRunTaskResponse {
@@ -361,6 +383,7 @@ pub async fn workflow_run_task(args: WorkflowRunTaskArgs<'_>) -> Result<Workflow
           uploaded_urls,
           audio_urls,
           batch_count,
+          bitrate_mode: req.bitrate.and_then(|bitrate| bitrate.as_api_str()),
         },
       },
     },
@@ -470,6 +493,7 @@ mod tests {
         character_ids: None,
         output_resolution,
         use_face_blur_hack: None,
+        bitrate: None,
       }
     }
 
@@ -635,6 +659,7 @@ mod tests {
           character_ids: None,
           output_resolution: None,
           use_face_blur_hack: None,
+          bitrate: None,
         };
         assert_eq!(
           req.estimate_credits(), baseline,
@@ -738,6 +763,49 @@ mod tests {
     }
   }
 
+  // ── Bitrate serialization ──
+  //
+  // The optional `bitrate_mode` field is sent only when `High` is requested;
+  // the standard (default) bitrate omits the field entirely.
+
+  mod bitrate_tests {
+    use super::*;
+
+    #[test]
+    fn high_bitrate_serializes_to_high() {
+      assert_eq!(KinoviBitrateRaw::High.as_api_str(), Some("high"));
+
+      let api_params = base_api_params(Some("high"));
+      let json = serde_json::to_string(&api_params).unwrap();
+      assert!(json.contains(r#""bitrate_mode":"high""#), "expected bitrate_mode in {json}");
+    }
+
+    #[test]
+    fn standard_bitrate_omits_field() {
+      let api_params = base_api_params(None);
+      let json = serde_json::to_string(&api_params).unwrap();
+      assert!(!json.contains("bitrate_mode"), "expected no bitrate_mode in {json}");
+    }
+
+    fn base_api_params(bitrate_mode: Option<&'static str>) -> ApiParams {
+      ApiParams {
+        prompt: "a corgi".to_string(),
+        resolution: "1280x720".to_string(),
+        content_mode: "normal",
+        model: "seedance-20",
+        duration: "5s".to_string(),
+        mode: "keyframe",
+        output_resolution: None,
+        face_blur_mode: None,
+        character_ids: None,
+        uploaded_urls: None,
+        audio_urls: None,
+        batch_count: None,
+        bitrate_mode,
+      }
+    }
+  }
+
   mod real_requests {
     use super::*;
 
@@ -767,6 +835,7 @@ mod tests {
           reference_audio_urls: None,
           character_ids: None,
           use_face_blur_hack: None,
+          bitrate: None,
           output_resolution: None,
         },
       };
@@ -800,6 +869,7 @@ mod tests {
           reference_audio_urls: None,
           character_ids: None,
           use_face_blur_hack: None,
+          bitrate: None,
           output_resolution: None,
         },
       };
@@ -835,6 +905,7 @@ mod tests {
           reference_audio_urls: None,
           character_ids: None,
           use_face_blur_hack: None,
+          bitrate: None,
           output_resolution: None,
         },
       };
@@ -869,6 +940,7 @@ mod tests {
           reference_audio_urls: None,
           character_ids: None,
           use_face_blur_hack: None,
+          bitrate: None,
           output_resolution: None,
         },
       };
@@ -905,6 +977,7 @@ mod tests {
           reference_audio_urls: None,
           character_ids: None,
           use_face_blur_hack: None,
+          bitrate: None,
           output_resolution: None,
         },
       };
@@ -958,6 +1031,7 @@ mod tests {
           reference_audio_urls: None,
           character_ids: None,
           use_face_blur_hack: None,
+          bitrate: None,
           output_resolution: None,
         },
       };
@@ -1010,6 +1084,7 @@ mod tests {
           reference_audio_urls: None,
           character_ids: None,
           use_face_blur_hack: None,
+          bitrate: None,
           output_resolution: None,
         },
       };
@@ -1062,6 +1137,7 @@ mod tests {
           reference_audio_urls: None,
           character_ids: None,
           use_face_blur_hack: None,
+          bitrate: None,
           output_resolution: None,
         },
       };
@@ -1123,6 +1199,7 @@ mod tests {
           reference_audio_urls: None,
           character_ids: None,
           use_face_blur_hack: None,
+          bitrate: None,
           output_resolution: None,
         },
       };
@@ -1177,6 +1254,7 @@ mod tests {
           reference_audio_urls: Some(vec![upload_result.public_url]),
           character_ids: None,
           use_face_blur_hack: None,
+          bitrate: None,
           output_resolution: None,
         },
       };
@@ -1216,6 +1294,7 @@ mod tests {
             reference_audio_urls: None,
             character_ids: Some(vec![STEAMPUNK_CLOWN_ID.to_string()]),
             use_face_blur_hack: None,
+            bitrate: None,
             output_resolution: None,
           },
         };
@@ -1249,6 +1328,7 @@ mod tests {
             reference_audio_urls: None,
             character_ids: Some(vec![MOCHI_ID.to_string()]),
             use_face_blur_hack: None,
+            bitrate: None,
             output_resolution: None,
           },
         };
@@ -1284,6 +1364,7 @@ mod tests {
             reference_audio_urls: None,
             character_ids: Some(vec![STEAMPUNK_CLOWN_ID.to_string()]),
             use_face_blur_hack: None,
+            bitrate: None,
             output_resolution: None,
           },
         };
@@ -1320,6 +1401,7 @@ mod tests {
               MOCHI_ID.to_string(),
             ]),
             use_face_blur_hack: None,
+            bitrate: None,
             output_resolution: None,
           },
         };
@@ -1357,6 +1439,7 @@ mod tests {
             reference_audio_urls: None,
             character_ids: None,
             use_face_blur_hack: Some(false),
+            bitrate: None,
             output_resolution: Some(KinoviOutputResolutionRaw::TenEightyP),
           },
         };
@@ -1408,6 +1491,7 @@ mod tests {
             reference_audio_urls: None,
             character_ids: None,
             use_face_blur_hack: Some(false),
+            bitrate: None,
             output_resolution: None,
           },
         };
@@ -1459,6 +1543,7 @@ mod tests {
             reference_audio_urls: None,
             character_ids: None,
             use_face_blur_hack: Some(false),
+            bitrate: None,
             output_resolution: Some(KinoviOutputResolutionRaw::TenEightyP),
           },
         };
@@ -1503,6 +1588,7 @@ mod tests {
           character_ids: None,
           output_resolution,
           use_face_blur_hack: None,
+          bitrate: None,
         },
       }
     }

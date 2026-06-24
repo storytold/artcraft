@@ -186,6 +186,7 @@ pub async fn generate_flux_pro_11_ultra_text_to_image_handler(
   };
 
   let prompt_result = insert_prompt(InsertPromptArgs {
+    maybe_bitrate: None,
     maybe_apriori_prompt_token: None,
     prompt_type: PromptType::ArtcraftApp,
     maybe_creator_user_token: Some(&user_token),

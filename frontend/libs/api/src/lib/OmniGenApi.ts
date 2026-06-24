@@ -45,6 +45,7 @@ export interface OmniGenVideoRequest {
   aspect_ratio?: string | null;
   resolution?: string | null;
   quality?: string | null;
+  bitrate?: string | null;
   duration_seconds?: number | null;
   video_batch_count?: number | null;
   generate_audio?: boolean | null;
@@ -124,6 +125,8 @@ export interface OmniGenVideoModelInfo {
   batch_size_max: number | null;
   quality_options: string[] | null;
   default_quality: string | null;
+  bitrate_options: string[] | null;
+  bitrate_default: string | null;
   duration_seconds_options: number[] | null;
   duration_seconds_default: number | null;
   duration_seconds_min: number | null;

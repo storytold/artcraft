@@ -268,6 +268,7 @@ use enums::by_table::users::user_feature_flag::UserFeatureFlag;
 use enums::common::generation::common_model_class::CommonModelClass;
 use enums::common::generation::common_model_type::CommonModelType;
 use enums::common::generation::common_aspect_ratio::CommonAspectRatio;
+use enums::common::generation::common_bitrate::CommonBitrate;
 use enums::common::generation::common_generation_mode::CommonGenerationMode;
 use enums::common::generation::common_resolution::CommonResolution;
 use enums::common::generation_provider::GenerationProvider;
@@ -338,6 +339,8 @@ use artcraft_api_defs::characters::edit_character::*;
 use artcraft_api_defs::characters::get_character::*;
 use artcraft_api_defs::characters::list_characters::*;
 use artcraft_api_defs::moderation::alerts::moderation_send_alert::*;
+use artcraft_api_defs::omni_api::generate_requests::omni_api_image_generate_request::*;
+use artcraft_api_defs::omni_api::generate_requests::omni_api_video_generate_request::*;
 use artcraft_api_defs::omni_gen::cost_and_generate_requests::omni_gen_image_cost_and_generate_request::*;
 use artcraft_api_defs::omni_gen::cost_and_generate_requests::omni_gen_video_cost_and_generate_request::*;
 use artcraft_api_defs::omni_gen::cost_response::omni_gen_image_cost_response::*;
@@ -364,6 +367,14 @@ use artcraft_api_defs::user_referral_codes::create_referral_code::*;
 use artcraft_api_defs::user_referral_codes::delete_referral_code::*;
 use artcraft_api_defs::user_referral_codes::list_referral_codes::*;
 use artcraft_api_defs::web_referrals::log_web_referral::*;
+use artcraft_api_defs::video_info::read_only::*;
+use artcraft_api_defs::video_info::upload::*;
+use artcraft_api_defs::video_info::notes::*;
+use enums::by_table::uploaded_video_notes::uploaded_video_note_reported_model_type::UploadedVideoNoteReportedModelType;
+use enums::by_table::uploaded_video_notes::uploaded_video_note_reported_website::UploadedVideoNoteReportedWebsite;
+use crate::http_server::endpoints::video_info::video_info_read_info_handler::*;
+use crate::http_server::endpoints::video_info::video_info_upload_handler::*;
+use crate::http_server::endpoints::video_info::video_info_notes_handler::*;
 use crate::http_server::endpoints::web_referrals::log_web_referral_handler::*;
 use crate::http_server::endpoints::image_studio::update_gpt_image_job_status_handler::*;
 use crate::http_server::endpoints::voice_conversion::enqueue_seed_vc_inference_handler::*;
@@ -617,6 +628,9 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     // Subscriptions
     crate::http_server::endpoints::subscriptions::get_session_subscription_handler::get_session_subscription_handler,
     // Web Referrals
+    crate::http_server::endpoints::video_info::video_info_read_info_handler::video_info_read_info_handler,
+    crate::http_server::endpoints::video_info::video_info_upload_handler::video_info_upload_handler,
+    crate::http_server::endpoints::video_info::video_info_notes_handler::video_info_notes_handler,
     crate::http_server::endpoints::web_referrals::log_web_referral_handler::log_web_referral_handler,
     // User Referral Codes
     crate::http_server::endpoints::user_referral_codes::create_referral_code_handler::create_referral_code_handler,
@@ -657,6 +671,7 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     CommonModelClass,
     CommonModelType,
     CommonAspectRatio,
+    CommonBitrate,
     CommonGenerationMode,
     CommonResolution,
     PromptContextSemanticType,
@@ -811,6 +826,8 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     GetCharacterResponse,
     ListCharactersEntry,
     ListCharactersResponse,
+    OmniApiImageGenerateRequest,
+    OmniApiVideoGenerateRequest,
     OmniGenImageCostAndGenerateRequest,
     OmniGenImageCostResponse,
     OmniGenImageGenerateResponse,
@@ -1248,6 +1265,22 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     Veo3p1MultiFunctionVideoGenResponse,
     Veo3p1FastMultiFunctionVideoGenRequest,
     Veo3p1FastMultiFunctionVideoGenResponse,
+
+    // Video info (provenance detection)
+    VideoInfoReadOnlyForm,
+    VideoInfoReadOnlyResponse,
+    VideoInfoUploadForm,
+    VideoInfoUploadResponse,
+    VideoInfoNoteRequest,
+    VideoInfoNoteResponse,
+    UploadedVideoNoteReportedModelType,
+    UploadedVideoNoteReportedWebsite,
+    VideoProvenanceKind,
+    SeedanceVideoInfo,
+    VeoVideoInfo,
+    SoraVideoInfo,
+    DreaminaVideoInfo,
+    KlingVideoInfo,
 
     // Object Multi-Function types
     Hunyuan3dV3MultiFunctionObjectGenRequest,

@@ -2,7 +2,7 @@ use std::path::PathBuf;
 
 use sqlx::MySqlPool;
 
-use cloud_storage::bucket_client::BucketClient;
+use cloud_storage::legacy_bucket_client::LegacyBucketClient;
 use bucket_paths::legacy::old_bespoke_paths::bucket_path_unifier::BucketPathUnifier;
 use jobs_common::job_progress_reporter::job_progress_reporter::JobProgressReporterBuilder;
 use jobs_common::job_stats::JobStats;
@@ -25,8 +25,8 @@ pub struct JobArgs {
 
   pub job_progress_reporter: Box<dyn JobProgressReporterBuilder>,
 
-  pub private_bucket_client: BucketClient,
-  pub public_bucket_client: BucketClient,
+  pub private_bucket_client: LegacyBucketClient,
+  pub public_bucket_client: LegacyBucketClient,
 
   pub firehose_publisher: FirehosePublisher,
 

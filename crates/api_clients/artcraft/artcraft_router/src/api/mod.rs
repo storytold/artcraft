@@ -3,6 +3,7 @@ pub mod character_list_ref;
 pub mod image_list_ref;
 pub mod image_ref;
 pub mod router_aspect_ratio;
+pub mod router_bitrate;
 pub mod router_image_model;
 pub mod router_provider;
 pub mod router_quality;

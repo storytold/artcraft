@@ -50,6 +50,8 @@ export type MiraiProps = {
   transformerRefs: React.RefObject<{ [key: string]: Konva.Transformer }>;
   baseImageRef: React.RefObject<Konva.Image>;
   showMaskLayer: boolean;
+  /** Forwarded to SplitPane so the backdrop fills the parent (no 56px top-bar reserve). */
+  fillParentHeight?: boolean;
 };
 
 const InpaintingColor = "rgba(39, 187, 245, 0.54)";
@@ -74,6 +76,7 @@ export const PaintSurface = ({
   transformerRefs,
   baseImageRef,
   showMaskLayer = false,
+  fillParentHeight = false,
 }: MiraiProps) => {
   const singlePaneMode = true;
 
@@ -1659,6 +1662,7 @@ export const PaintSurface = ({
   return (
     <SplitPane
       singlePaneMode={singlePaneMode}
+      fillParentHeight={fillParentHeight}
       initialPercent={singlePaneMode ? 100 : 50}
       onChange={setLeftPct}
       left={

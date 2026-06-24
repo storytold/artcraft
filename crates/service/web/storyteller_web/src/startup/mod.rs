@@ -2,6 +2,7 @@ pub mod build_dependencies;
 pub mod setup_bans;
 pub mod setup_metrics;
 pub mod setup_pager;
+pub mod setup_seedance_video_bucket;
 pub mod setup_disabled_endpoints;
 pub mod setup_inference_providers;
 pub mod setup_static_feature_flags;

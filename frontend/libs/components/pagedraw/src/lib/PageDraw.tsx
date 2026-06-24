@@ -154,7 +154,7 @@ const Edit3DButton = memo(function Edit3DButton({
 
   return (
     <button
-      className="pointer-events-auto fixed z-40 -translate-x-1/2 -translate-y-1/2 rounded-full bg-blue-600 px-3 py-1 text-xs font-semibold text-white shadow-lg hover:bg-blue-500"
+      className="pointer-events-auto fixed z-40 -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary px-3 py-1 text-xs font-semibold text-white shadow-lg hover:bg-primary-400"
       style={{ left: btnLeft, top: btnTop }}
       onPointerDown={(e) => e.stopPropagation()}
       onClick={() => onEdit(nodeId)}
@@ -185,7 +185,7 @@ function DragScrubButton({
   return (
     <button
       title={title}
-      className="flex h-10 w-10 cursor-move items-center justify-center rounded-full bg-black/70 text-white shadow-lg hover:bg-black/90 active:bg-blue-600"
+      className="flex h-10 w-10 cursor-move items-center justify-center rounded-full bg-black/70 text-white shadow-lg hover:bg-black/90 active:bg-primary"
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
     >
@@ -254,7 +254,7 @@ const Edit3DScrubControls = memo(function Edit3DScrubControls({
       />
       <button
         onClick={() => overlayHandle.current?.commit()}
-        className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-600 text-sm font-bold text-white shadow-lg hover:bg-blue-500"
+        className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-sm font-bold text-white shadow-lg hover:bg-primary-400"
         onPointerDown={(e) => e.stopPropagation()}
       >
         ✓
@@ -267,9 +267,32 @@ const Edit3DScrubControls = memo(function Edit3DScrubControls({
 
 interface PageDrawProps {
   adapter: PageDrawAdapter;
+  /**
+   * Tailwind class for the full-viewport canvas backdrop (and the base-image
+   * selector surface). Defaults to the app's `bg-ui-background`; hosts that
+   * embed PageDraw under their own page chrome can pass a matching color (e.g.
+   * the webapp's `bg-[#101014]`).
+   */
+  backgroundClassName?: string;
+  /**
+   * When true the base-image selector fills its parent box instead of
+   * reserving 56px for a global top bar. Hosts that hide their top bar on this
+   * route (so the editor reclaims the full vertical strip) should set this.
+   */
+  fillParentHeight?: boolean;
+  /**
+   * Show the bottom-right cost-calculator + help cluster. Defaults to true;
+   * hosts that surface those elsewhere (e.g. the webapp) pass false.
+   */
+  showBottomRightControls?: boolean;
 }
 
-const PageDraw = ({ adapter }: PageDrawProps) => {
+const PageDraw = ({
+  adapter,
+  backgroundClassName = "bg-ui-background",
+  fillParentHeight = false,
+  showBottomRightControls = true,
+}: PageDrawProps) => {
   const canvasWidth = useRef<number>(1024);
   const canvasHeight = useRef<number>(1024);
   const [isSelecting, setIsSelecting] = useState<boolean>(false);
@@ -1111,9 +1134,9 @@ const PageDraw = ({ adapter }: PageDrawProps) => {
   if (!baseImageInfo || (!baseImageBitmap && !baseImageInfo.isBlankCanvas)) {
     return (
       <div
-        className={
-          "bg-ui-panel-gradient flex h-[calc(100vh-56px)] w-full items-center justify-center p-8"
-        }
+        className={`${backgroundClassName} flex ${
+          fillParentHeight ? "h-full" : "h-[calc(100vh-56px)]"
+        } w-full items-center justify-center p-8`}
       >
         <div className="w-full max-w-5xl">
           <div className="aspect-video overflow-hidden rounded-2xl border border-ui-panel-border bg-ui-background shadow-lg">
@@ -1135,9 +1158,9 @@ const PageDraw = ({ adapter }: PageDrawProps) => {
 
   return (
     <>
-      <div className="fixed inset-0 -z-10 bg-ui-background" />
+      <div className={`fixed inset-0 -z-10 ${backgroundClassName}`} />
       <div
-        className={`preserve-aspect-ratio fixed right-4 top-1/2 z-10 -translate-y-1/2 transform ${
+        className={`preserve-aspect-ratio fixed right-4 top-[calc(50%_-_var(--pd-bottom-reserve,0px))] z-10 -translate-y-1/2 transform ${
           isSelecting ? "pointer-events-none" : "pointer-events-auto"
         }`}
       >
@@ -1167,8 +1190,12 @@ const PageDraw = ({ adapter }: PageDrawProps) => {
           selectedImageToken={baseImageInfo?.mediaToken}
         />
       </div>
+      {/* The page wrapper's `translateZ(0)` already scopes this fixed box to
+          the content area (right of the sidebar). It spans 0..right so the
+          promptbox's own `left-1/2 -translate-x-1/2` centers within the content
+          area — do NOT re-apply the sidebar offset or it double-shifts right. */}
       <div
-        className={`preserve-aspect-ratio fixed bottom-0 left-1/2 z-10 -translate-x-1/2 transform ${
+        className={`preserve-aspect-ratio fixed inset-x-0 bottom-0 z-10 ${
           isSelecting ? "pointer-events-none" : "pointer-events-auto"
         }`}
       >
@@ -1190,12 +1217,13 @@ const PageDraw = ({ adapter }: PageDrawProps) => {
               variant="embedded"
               items={CANVAS_2D_PAGE_MODEL_LIST}
               page={PAGE_ID}
+              showProviderSelection={false}
             />
           }
         />
       </div>
       <SideToolbar
-        className="fixed left-0 top-1/2 z-10 -translate-y-1/2 transform"
+        className="fixed left-0 top-[calc(50%_-_var(--pd-bottom-reserve,0px))] z-10 -translate-y-1/2 transform"
         onSelect={handleSelectTool}
         onActivateShapeTool={handleActivateShapeTool}
         onPaintBrush={handlePaintBrush}
@@ -1247,13 +1275,16 @@ const PageDraw = ({ adapter }: PageDrawProps) => {
             transformerRefs={transformerRefs}
             baseImageRef={baseImageKonvaRef}
             showMaskLayer={supportsMaskedInpainting}
+            fillParentHeight={fillParentHeight}
           />
         </ContextMenuContainer>
       </div>
-      <div className="absolute bottom-4 right-4 z-20 flex items-center gap-2">
-        <CostCalculatorButton modelPage={PAGE_ID} />
-        <HelpMenuButton />
-      </div>
+      {showBottomRightControls && (
+        <div className="absolute bottom-4 right-4 z-20 flex items-center gap-2">
+          <CostCalculatorButton modelPage={PAGE_ID} />
+          <HelpMenuButton />
+        </div>
+      )}
       {!editing3DNodeId && selectedNodeWithModel?.modelUrl && (
         <Edit3DButton
           nodeId={selectedNodeIds[0]}

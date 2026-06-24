@@ -41,7 +41,7 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({ items, onAction, onClo
         left: `${position.x}px`,
         top: `${position.y}px`,
       }}
-      className="fixed z-[9999999] min-w-[220px] bg-[#1A1A1A] rounded-lg shadow-xl border border-[#333333] py-1 select-none"
+      className="fixed z-[9999999] min-w-[220px] bg-ui-panel rounded-lg shadow-xl border border-white/10 py-1 select-none"
     >
       {items.map((item, index) => (
         <React.Fragment key={index}>
@@ -50,14 +50,14 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({ items, onAction, onClo
               onAction(item.action);  // Pass the action identifier up
               onClose();
             }}
-            className="w-full px-4 py-2.5 flex items-center gap-3 hover:bg-[#333333] text-[#ECECEC] text-[13px] transition-colors duration-75 ease-in-out"
+            className="w-full px-4 py-2.5 flex items-center gap-3 hover:bg-white/10 text-base-fg/90 text-[13px] transition-colors duration-75 ease-in-out"
           >
-            <span className="w-5 h-5 flex items-center justify-center text-[#ECECEC]">
+            <span className="w-5 h-5 flex items-center justify-center text-base-fg/90">
               {item.icon}
             </span>
             <span className="font-normal">{item.label}</span>
           </button>
-          {item.divider && <div className="h-[1px] bg-[#333333] mx-2 my-1" />}
+          {item.divider && <div className="h-[1px] bg-white/10 mx-2 my-1" />}
         </React.Fragment>
       ))}
     </div>,

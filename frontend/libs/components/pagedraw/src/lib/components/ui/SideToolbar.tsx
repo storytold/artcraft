@@ -169,7 +169,7 @@ const SideToolbar: React.FC<SideToolbarProps> = ({
     extra?: React.ReactNode,
   ) => (
     <div className={`glass relative w-fit rounded-2xl p-4 shadow-lg`}>
-      <button className="bg-zinc-700 text-zinc-300 hover:bg-zinc-600 absolute left-4 top-4 flex h-8 w-8 items-center justify-center rounded-full">
+      <button className="bg-ui-controls/60 text-base-fg hover:bg-ui-controls/80 absolute left-4 top-4 flex h-8 w-8 items-center justify-center rounded-full">
         <FontAwesomeIcon icon={faEyeDropper} size="sm" />
       </button>
 
@@ -377,7 +377,7 @@ const SideToolbar: React.FC<SideToolbarProps> = ({
             {open === "shape-color" && (
               <div
                 onMouseLeave={() => setOpen(null)}
-                className="absolute left-14 top-1/2 -translate-y-1/2 rounded-xl border border-[#404040] bg-[#303030] transition-all duration-200 ease-in-out"
+                className="absolute left-14 top-1/2 -translate-y-1/2 rounded-xl border border-white/10 bg-ui-panel transition-all duration-200 ease-in-out"
               >
                 {ShapePopout}
               </div>
@@ -546,7 +546,7 @@ const SideToolbar: React.FC<SideToolbarProps> = ({
                 onMouseLeave={() => {
                   setOpen(null);
                 }}
-                className="absolute left-14 top-1/2 -translate-y-1/2 rounded-xl border border-[#404040] bg-[#303030] transition-all duration-200 ease-in-out"
+                className="absolute left-14 top-1/2 -translate-y-1/2 rounded-xl border border-white/10 bg-ui-panel transition-all duration-200 ease-in-out"
               >
                 {popout}
               </div>

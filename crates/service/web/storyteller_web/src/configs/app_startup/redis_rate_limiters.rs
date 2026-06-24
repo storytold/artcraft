@@ -116,6 +116,19 @@ pub fn configure_redis_rate_limiters() -> AnyhowResult<RedisRateLimiters> {
     RedisRateLimiter::new(limiter, "file_upload_logged_in", limiter_enabled)
   };
 
+  let video_info_read_only_rate_limiter = {
+    let limiter_enabled = easyenv::get_env_bool_or_default("LIMITER_VIDEO_INFO_READ_ONLY_ENABLED", true);
+    let limiter_max_requests = easyenv::get_env_num("LIMITER_VIDEO_INFO_READ_ONLY_MAX_REQUESTS", 1)?;
+    let limiter_window_seconds = easyenv::get_env_num("LIMITER_VIDEO_INFO_READ_ONLY_WINDOW_SECONDS", 5)?;
+
+    let limiter = Limiter::build(&redis_connection_string)
+        .limit(limiter_max_requests)
+        .period(Duration::from_secs(limiter_window_seconds))
+        .finish()?;
+
+    RedisRateLimiter::new(limiter, "video_info_read_only", limiter_enabled)
+  };
+
   Ok(RedisRateLimiters {
     logged_out: logged_out_redis_rate_limiter,
     logged_in: logged_in_redis_rate_limiter,
@@ -125,5 +138,6 @@ pub fn configure_redis_rate_limiters() -> AnyhowResult<RedisRateLimiters> {
     model_upload: model_upload_rate_limiter,
     file_upload_logged_out: file_upload_logged_out_redis_rate_limiter,
     file_upload_logged_in: file_upload_logged_in_redis_rate_limiter,
+    video_info_read_only: video_info_read_only_rate_limiter,
   })
 }

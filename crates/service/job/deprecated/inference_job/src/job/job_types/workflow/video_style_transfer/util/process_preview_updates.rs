@@ -14,7 +14,7 @@ use crate::job::job_types::workflow::video_style_transfer::util::preview_process
 use crate::job::job_types::workflow::video_style_transfer::util::preview_processor::dir_walker::{DirWalker, PathBatch};
 use bucket_paths::legacy::typified_paths::public::media_files::bucket_directory::MediaFileBucketDirectory;
 use bucket_paths::legacy::typified_paths::public::media_files::bucket_file_path::MediaFileBucketPath;
-use cloud_storage::bucket_client::BucketClient;
+use cloud_storage::legacy_bucket_client::LegacyBucketClient;
 use crockford::crockford_entropy_lower;
 use redis_schema::keys::inference_job::style_transfer_progress_key::StyleTransferProgressKey;
 use redis_schema::payloads::inference_job::style_transfer_progress_state::{InferenceProgressDetailsResponse, InferenceStageDetails};
@@ -306,7 +306,7 @@ impl StageDirectoryState {
   }
 
 
-  async fn upload_frame_from_disk(&self, bucket_client: &BucketClient, frame_number: u32, disk_path: PathBuf) -> PreviewFrameUpdate {
+  async fn upload_frame_from_disk(&self, bucket_client: &LegacyBucketClient, frame_number: u32, disk_path: PathBuf) -> PreviewFrameUpdate {
     let local_file_extension = match disk_path.extension().and_then(|s| s.to_str()) {
       Some(e) => {
         if ALLOWED_TYPES_FRAMES.contains(e) {
@@ -355,7 +355,7 @@ impl StageDirectoryState {
     }
   }
 
-  async fn upload_frame_from_disk_with_retry(&self, bucket_client: &BucketClient, frame_number: u32, disk_path: PathBuf) -> PreviewFrameUpdate {
+  async fn upload_frame_from_disk_with_retry(&self, bucket_client: &LegacyBucketClient, frame_number: u32, disk_path: PathBuf) -> PreviewFrameUpdate {
     let mut retries = 0;
     loop {
       if retries > 3 {
@@ -385,7 +385,7 @@ impl StageDirectoryState {
   }
 
 
-  async fn upload_multiple_frames_from_disk(&self, bucket_client: &BucketClient, frames: Vec<(u32, PathBuf)>) -> Vec<PreviewFrameUpdate> {
+  async fn upload_multiple_frames_from_disk(&self, bucket_client: &LegacyBucketClient, frames: Vec<(u32, PathBuf)>) -> Vec<PreviewFrameUpdate> {
     let mut bucket_upload_requests = Vec::with_capacity(frames.len());
     let mut updates = Vec::with_capacity(frames.len());
 
@@ -635,7 +635,7 @@ impl PreviewProcessor {
     let _r: String = redis.set_ex(key.to_string(), serde_json::to_string(&status).unwrap(), expire_at).unwrap();
   }
 
-  pub async fn start_processing(&mut self, bucket_client: &BucketClient) -> () {
+  pub async fn start_processing(&mut self, bucket_client: &LegacyBucketClient) -> () {
     let (frames_tx, mut frames_rx) = mpsc::channel(100);
     let walker = DirWalker::new_with_batch_size(self.base_directory.clone(), frames_tx.clone(), 30);
     let mut interval = tokio::time::interval(tokio::time::Duration::from_secs(5));
@@ -693,7 +693,7 @@ impl PreviewProcessor {
     }
   }
 
-  pub async fn process_upload(&mut self, bucket_client: &BucketClient, disk_path: PathBuf) -> () {
+  pub async fn process_upload(&mut self, bucket_client: &LegacyBucketClient, disk_path: PathBuf) -> () {
     if !self.is_disk_path_valid(&disk_path) {
       log::warn!("Invalid disk path: {:?}", disk_path);
       return;
@@ -707,7 +707,7 @@ impl PreviewProcessor {
     };
   }
 
-  async fn process_batch_upload(&mut self, bucket_client: &BucketClient, disk_paths: PathBatch) -> () {
+  async fn process_batch_upload(&mut self, bucket_client: &LegacyBucketClient, disk_paths: PathBatch) -> () {
     let mut paths_by_stage: HashMap<PreviewStage, Vec<(u32, PathBuf)>> = HashMap::new();
     for disk_path in disk_paths.get_paths() {
       if !self.is_disk_path_valid(&disk_path) {
@@ -749,7 +749,7 @@ impl PreviewProcessor {
     }
   }
 
- async fn upload_frame_from_disk(&self, stage: PreviewStage, frame_number: u32, bucket_client: &BucketClient, disk_path: PathBuf) -> PreviewFrameUploadResult {
+ async fn upload_frame_from_disk(&self, stage: PreviewStage, frame_number: u32, bucket_client: &LegacyBucketClient, disk_path: PathBuf) -> PreviewFrameUploadResult {
     let stage_state = self.stages.get(&stage).unwrap();
     if stage_state.state == PreviewStageState::UploadComplete {
       log::debug!("Skipped re-uploading frame: {:?}", disk_path);

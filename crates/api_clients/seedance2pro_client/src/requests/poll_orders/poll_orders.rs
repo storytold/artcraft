@@ -35,6 +35,41 @@ pub struct PollOrdersResponse {
 
 // --- Public types ---
 
+/// The status of one order (one generation task — video or image).
+#[derive(Debug, Clone)]
+pub struct OrderStatus {
+  pub order_id: String,
+
+  pub task_status: TaskStatus,
+
+  /// Top-level result URL (video file for video orders, the first image of
+  /// the 4-image grid for Midjourney image orders). Populated when
+  /// `task_status` is `Completed`.
+  pub result_url: Option<String>,
+
+  /// Detailed result entries. One entry per video frame (video orders), or
+  /// four entries per Midjourney task (image orders).
+  pub results: Vec<MediaResult>,
+
+  /// Structured failure reason. Populated when `task_status` is `Failed` or `fail_reason` is present.
+  pub fail_reason: Option<FailureReason>,
+
+  /// ISO 8601 creation timestamp (e.g. `"2026-02-19T01:20:50.398Z"`).
+  pub created_at: String,
+
+  /// Parsed `created_at` as a `DateTime<Utc>`. `None` if the raw string could not be parsed.
+  pub created_at_utc: Option<DateTime<Utc>>,
+
+  /// Whether this order produced an image or a video. `None` for older
+  /// polling responses that didn't include the field — those came from the
+  /// video-only era and can be treated as video by callers that need to.
+  pub media_type: Option<OrderMediaType>,
+
+  /// The Kinovi credits charged for the order (the API's `totalCredits`).
+  /// `None` for older polling responses that didn't include the field.
+  pub total_credits: Option<u32>,
+}
+
 /// The lifecycle status of a video generation task.
 #[derive(Debug, Clone, PartialEq)]
 pub enum TaskStatus {
@@ -70,18 +105,17 @@ impl TaskStatus {
 /// orders, or one of Midjourney's 4 generated images for image orders.
 /// (Originally named for the video-only days; the underlying shape is shared.)
 #[derive(Debug, Clone)]
-pub struct VideoResult {
+pub struct MediaResult {
   pub url: String,
-  pub width: u32,
-  pub height: u32,
+  /// Frame width in pixels. `None` when the API returns `null`/omits it
+  /// (it does so intermittently); callers should persist NULL, not a sentinel.
+  pub maybe_width: Option<u32>,
+  /// Frame height in pixels. `None` when the API returns `null`/omits it.
+  pub maybe_height: Option<u32>,
   // NB: We don't need these.
-  // /// Width / height ratio (e.g. 1.777… for 16:9). `None` when the server returns null (e.g. width/height are 0).
+  // /// Width / height ratio (e.g. 1.777… for 16:9). `None` when the server returns null.
   // pub ratio: Option<f64>,
 }
-
-/// Type-neutral alias for [`VideoResult`]. Prefer this name in new
-/// callers that deal with both image and video orders.
-pub type MediaResult = VideoResult;
 
 /// Media type of an order. Midjourney orders are `Image`; the various
 /// Seedance/keyframe/reference flows are `Video`.
@@ -106,41 +140,6 @@ impl OrderMediaType {
 
   pub fn is_image(&self) -> bool { matches!(self, Self::Image) }
   pub fn is_video(&self) -> bool { matches!(self, Self::Video) }
-}
-
-/// The status of one order (one generation task — video or image).
-#[derive(Debug, Clone)]
-pub struct OrderStatus {
-  pub order_id: String,
-
-  pub task_status: TaskStatus,
-
-  /// Top-level result URL (video file for video orders, the first image of
-  /// the 4-image grid for Midjourney image orders). Populated when
-  /// `task_status` is `Completed`.
-  pub result_url: Option<String>,
-
-  /// Detailed result entries. One entry per video frame (video orders), or
-  /// four entries per Midjourney task (image orders).
-  pub results: Vec<VideoResult>,
-
-  /// Structured failure reason. Populated when `task_status` is `Failed` or `fail_reason` is present.
-  pub fail_reason: Option<FailureReason>,
-
-  /// ISO 8601 creation timestamp (e.g. `"2026-02-19T01:20:50.398Z"`).
-  pub created_at: String,
-
-  /// Parsed `created_at` as a `DateTime<Utc>`. `None` if the raw string could not be parsed.
-  pub created_at_utc: Option<DateTime<Utc>>,
-
-  /// Whether this order produced an image or a video. `None` for older
-  /// polling responses that didn't include the field — those came from the
-  /// video-only era and can be treated as video by callers that need to.
-  pub media_type: Option<OrderMediaType>,
-
-  /// The Kinovi credits charged for the order (the API's `totalCredits`).
-  /// `None` for older polling responses that didn't include the field.
-  pub total_credits: Option<u32>,
 }
 
 // --- Implementation ---
@@ -234,10 +233,10 @@ pub async fn poll_orders(args: PollOrdersArgs<'_>) -> Result<PollOrdersResponse,
         order_id: o.order_id,
         task_status,
         result_url: o.result_url,
-        results: o.results.into_iter().map(|r| VideoResult {
+        results: o.results.into_iter().map(|r| MediaResult {
           url: r.url,
-          width: r.width,
-          height: r.height,
+          maybe_width: r.maybe_width,
+          maybe_height: r.maybe_height,
         }).collect(),
         fail_reason,
         created_at: o.created_at,
@@ -425,8 +424,8 @@ mod tests {
           order_id: o.order_id,
           task_status,
           result_url: o.result_url,
-          results: o.results.into_iter().map(|r| VideoResult {
-            url: r.url, width: r.width, height: r.height,
+          results: o.results.into_iter().map(|r| MediaResult {
+            url: r.url, maybe_width: r.maybe_width, maybe_height: r.maybe_height,
           }).collect(),
           fail_reason,
           created_at: o.created_at,
@@ -455,6 +454,71 @@ mod tests {
       assert_eq!(orders.len(), 1);
       assert!(orders[0].media_type.is_none(), "legacy responses without mediaType should map to None");
       assert_eq!(orders[0].task_status, TaskStatus::Processing);
+    }
+
+    /// Regression: the Kinovi API started returning result `width`/`height`
+    /// (and `totalCredits`) as floats (e.g. `568.5`). They must parse and
+    /// coerce to unsigned ints instead of failing with
+    /// "invalid type: floating point ..., expected u32".
+    #[test]
+    fn float_dimensions_and_credits_are_coerced() {
+      let body = r#"[{"result":{"data":{"json":{"orders":[{
+        "orderId":"ord_float",
+        "resultUrl":"https://example.com/v.mp4",
+        "taskStatus":"COMPLETED",
+        "results":[{"url":"https://example.com/v.mp4","width":568.5,"height":1023.4}],
+        "failReason":null,
+        "createdAt":"2026-02-19T01:20:50.398Z",
+        "mediaType":"video",
+        "totalCredits":12.9
+      }],"nextCursor":394062.0}}}}]"#;
+      let orders = parse_orders(body);
+      assert_eq!(orders.len(), 1);
+      assert_eq!(orders[0].results.len(), 1);
+      assert_eq!(orders[0].results[0].maybe_width, Some(569));
+      assert_eq!(orders[0].results[0].maybe_height, Some(1023));
+      assert_eq!(orders[0].total_credits, Some(13));
+    }
+
+    /// Regression (paging outage): the Kinovi API started returning result
+    /// `width`/`height` as `null`, which blew up the whole poll with
+    /// "invalid type: null, expected a JSON number" and stalled the queue.
+    /// They must parse as `None` and let the rest of the response parse.
+    #[test]
+    fn null_dimensions_parse_as_none() {
+      let body = r#"[{"result":{"data":{"json":{"orders":[{
+        "orderId":"ord_foo",
+        "resultUrl":"https://static.seedance2-pro.com/videos/seedance_video.mp4",
+        "taskStatus":"COMPLETED",
+        "results":[{"url":"https://static.seedance2-pro.com/videos/seedance_video.mp4","width":null,"height":null}],
+        "failReason":null,
+        "createdAt":"2026-02-19T01:20:50.398Z",
+        "mediaType":"video"
+      }],"nextCursor":null}}}}]"#;
+      let orders = parse_orders(body);
+      assert_eq!(orders.len(), 1);
+      assert_eq!(orders[0].results.len(), 1);
+      assert_eq!(orders[0].results[0].maybe_width, None);
+      assert_eq!(orders[0].results[0].maybe_height, None);
+      assert_eq!(orders[0].task_status, TaskStatus::Completed);
+    }
+
+    /// Omitted `width`/`height` keys (not just `null`) also parse as `None`.
+    #[test]
+    fn missing_dimensions_parse_as_none() {
+      let body = r#"[{"result":{"data":{"json":{"orders":[{
+        "orderId":"ord_no_dims",
+        "resultUrl":"https://example.com/v.mp4",
+        "taskStatus":"COMPLETED",
+        "results":[{"url":"https://example.com/v.mp4"}],
+        "failReason":null,
+        "createdAt":"2026-02-19T01:20:50.398Z",
+        "mediaType":"video"
+      }],"nextCursor":null}}}}]"#;
+      let orders = parse_orders(body);
+      assert_eq!(orders.len(), 1);
+      assert_eq!(orders[0].results[0].maybe_width, None);
+      assert_eq!(orders[0].results[0].maybe_height, None);
     }
 
     /// Unrecognised mediaType values shouldn't crash deserialisation;
@@ -609,5 +673,85 @@ mod tests {
     println!("Total orders across {} pages: {}", page, total_orders);
     assert_eq!(1, 2); // NB: Intentional failure to inspect output.
     Ok(())
+  }
+
+  /// Live diagnostic for the paging outage: try EACH Kinovi account's cookies
+  /// from the job's secrets env file and cursor across several pages, reporting
+  /// which account(s) parse cleanly and which blow up. Never prints cookies.
+  ///
+  ///   cargo test -p seedance2pro_client live_cursor_all_accounts -- --ignored --nocapture
+  #[tokio::test]
+  #[ignore]
+  async fn live_cursor_all_accounts() -> AnyhowResult<()> {
+    setup_test_logging(LevelFilter::Info);
+
+    const SECRETS_ENV: &str = concat!(
+      env!("CARGO_MANIFEST_DIR"),
+      "/../../../crates/service/job/seedance2_pro_job/config/seedance2-pro-job.development-secrets.env",
+    );
+    const ACCOUNTS: &[&str] = &[
+      "SEEDANCE2PRO_VOLCENGINE_COOKIES",
+      "SEEDANCE2PRO_BYTEPLUS_COOKIES",
+      "SEEDANCE2PRO_BYTEPLUS_ULTRA_COOKIES",
+    ];
+    const MAX_PAGES: usize = 5;
+
+    let env_contents = std::fs::read_to_string(SECRETS_ENV)
+      .unwrap_or_else(|e| panic!("could not read secrets env at {}: {}", SECRETS_ENV, e));
+
+    for account in ACCOUNTS {
+      let Some(cookies) = read_env_value(&env_contents, account) else {
+        println!("[{}] not present in secrets env — skipping", account);
+        continue;
+      };
+      if cookies.is_empty() {
+        println!("[{}] empty — skipping", account);
+        continue;
+      }
+
+      let session = Seedance2ProSession::from_cookies_string(cookies);
+      let mut cursor: Option<u64> = None;
+      let mut pages = 0usize;
+      let mut total = 0usize;
+      let mut ok = true;
+
+      for _ in 0..MAX_PAGES {
+        match poll_orders(PollOrdersArgs { session: &session, cursor, host_override: None }).await {
+          Ok(result) => {
+            pages += 1;
+            total += result.orders.len();
+            cursor = result.next_cursor;
+            if cursor.is_none() { break; }
+          }
+          Err(err) => {
+            ok = false;
+            println!("[{}] FAILED on page {}: {:?}", account, pages + 1, err);
+            break;
+          }
+        }
+      }
+
+      println!(
+        "[{}] {} — {} page(s), {} order(s) parsed cleanly",
+        account, if ok { "OK" } else { "ERROR" }, pages, total,
+      );
+    }
+
+    Ok(())
+  }
+
+  /// Minimal dotenv value reader: returns the value for `KEY=...` from raw env
+  /// file contents, trimming surrounding quotes. Used so the diagnostic can try
+  /// each account without depending on process-wide env being loaded.
+  fn read_env_value(contents: &str, key: &str) -> Option<String> {
+    for line in contents.lines() {
+      let line = line.trim();
+      if line.starts_with('#') { continue; }
+      let Some((k, v)) = line.split_once('=') else { continue; };
+      if k.trim() != key { continue; }
+      let v = v.trim().trim_matches('"').trim_matches('\'').to_string();
+      return Some(v);
+    }
+    None
   }
 }

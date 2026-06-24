@@ -12,6 +12,9 @@
       "path": "../../libs/components/upload-modal"
     },
     {
+      "path": "../../libs/components/pagedraw"
+    },
+    {
       "path": "../../libs/components/slider-v2"
     },
     {

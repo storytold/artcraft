@@ -4,7 +4,7 @@ use anyhow::anyhow;
 use tempdir::TempDir;
 
 use bucket_paths::legacy::typified_paths::public::media_files::bucket_file_path::MediaFileBucketPath;
-use cloud_storage::bucket_client::BucketClient;
+use cloud_storage::legacy_bucket_client::LegacyBucketClient;
 use jobs_common::job_progress_reporter::job_progress_reporter::JobProgressReporter;
 use mysql_queries::queries::generic_inference::job::list_available_generic_inference_jobs::AvailableInferenceJob;
 use mysql_queries::queries::model_weights::get::get_weight::RetrievedModelWeight;
@@ -19,7 +19,7 @@ pub struct ModelFile {
 // TODO replace this with remote cloud file manager.
 pub async fn download_model_file(
     model_record: &Option<RetrievedModelWeight>,
-    public_bucket_client: &BucketClient,
+    public_bucket_client: &LegacyBucketClient,
     job_progress_reporter: &mut Box<dyn JobProgressReporter>,
     job: &AvailableInferenceJob,
     temp_dir_creator: &ScopedTempDirCreator,

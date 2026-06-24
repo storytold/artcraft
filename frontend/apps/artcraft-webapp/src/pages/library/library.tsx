@@ -858,7 +858,7 @@ export default function Library() {
             {/* Tabs + actions */}
             <div className="flex items-center justify-between gap-3">
               <div className="flex items-center gap-2">
-                <div className="flex items-center gap-1 bg-ui-controls/40 rounded-lg p-1">
+                <div className="flex items-center gap-1 bg-ui-controls/40 rounded-xl p-1">
                   <Link
                     to="/library"
                     className={`relative flex items-center gap-2 px-3 sm:px-4 py-1 sm:py-1.5 rounded-md text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
@@ -918,7 +918,7 @@ export default function Library() {
 
               <div className="flex items-center gap-2">
                 {tab === "unsorted" && (
-                  <div className="flex items-center gap-1 bg-ui-controls/40 rounded-lg p-1 overflow-x-auto">
+                  <div className="flex items-center gap-1 bg-ui-controls/40 rounded-xl p-1 overflow-x-auto">
                     {FILTERS.map((filter) => (
                       <button
                         key={filter.id}

@@ -18,6 +18,11 @@ if (import.meta.env.DEV) {
     StorytellerApiHostStore.getInstance().setApiSchemeAndHost(
       window.location.origin,
     );
+    // NB: This is for Brandon to test with storyteller-web locally:
+    // (disabled — it overrides the origin above and points at localhost:12345,
+    // which breaks dev unless a local backend is running. Re-enable only when
+    // testing against a local storyteller-web.)
+    // StorytellerApiHostStore.getInstance().setDevelopment();
   } catch (e) {
     console.warn("Failed to set dev API host override", e);
   }

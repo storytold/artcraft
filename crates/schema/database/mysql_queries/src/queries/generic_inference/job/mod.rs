@@ -7,3 +7,4 @@ pub mod mark_job_failed_by_token;
 pub mod mark_generic_inference_job_pending_and_grab_lock;
 pub mod mark_generic_inference_job_successfully_done;
 pub mod reap_stale_fakeyou_jobs;
+pub mod select_inference_job_status_for_update;

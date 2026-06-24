@@ -1,8 +1,9 @@
 use crate::http_server::common_responses::common_web_error::CommonWebError;
-use artcraft_api_defs::omni_gen::cost_and_generate_requests::omni_gen_video_cost_and_generate_request::OmniGenVideoCostAndGenerateRequest;
+use artcraft_api_defs::omni_api::generate_requests::omni_api_video_generate_request::OmniApiVideoGenerateRequest;
 use artcraft_router::api::audio_list_ref::AudioListRef;
 use artcraft_router::api::character_list_ref::CharacterListRef;
 use artcraft_router::api::router_aspect_ratio::RouterAspectRatio;
+use artcraft_router::api::router_bitrate::RouterBitrate;
 use artcraft_router::api::router_resolution::RouterResolution;
 use artcraft_router::api::router_video_model::RouterVideoModel;
 use artcraft_router::api::image_list_ref::ImageListRef;
@@ -12,11 +13,12 @@ use artcraft_router::api::video_list_ref::VideoListRef;
 use artcraft_router::client::request_mismatch_mitigation_strategy::RequestMismatchMitigationStrategy;
 use artcraft_router::generate::generate_video::generate_video_request_builder::GenerateVideoRequestBuilder;
 use enums::common::generation::common_aspect_ratio::CommonAspectRatio as CommonAspectRatioEnum;
+use enums::common::generation::common_bitrate::CommonBitrate as CommonBitrateEnum;
 use enums::common::generation::common_resolution::CommonResolution as CommonResolutionEnum;
 use enums::common::generation::common_video_model::CommonVideoModel as CommonVideoModelEnum;
 
 pub fn hydrate_to_router_request(
-  request: &OmniGenVideoCostAndGenerateRequest,
+  request: &OmniApiVideoGenerateRequest,
 ) -> Result<GenerateVideoRequestBuilder, CommonWebError> {
   let api_model = request.model
     .as_ref()
@@ -34,6 +36,11 @@ pub fn hydrate_to_router_request(
   let resolution = request.resolution
     .as_ref()
     .map(convert_resolution)
+    .transpose()?;
+
+  let bitrate = request.bitrate
+    .as_ref()
+    .map(convert_bitrate)
     .transpose()?;
 
   Ok(GenerateVideoRequestBuilder {
@@ -55,6 +62,7 @@ pub fn hydrate_to_router_request(
       .map(CharacterListRef::CharacterTokens),
     resolution,
     aspect_ratio,
+    bitrate,
     duration_seconds: request.duration_seconds,
     video_batch_count: request.video_batch_count,
     generate_audio: request.generate_audio,
@@ -94,4 +102,77 @@ fn convert_resolution(
       format!("Unsupported resolution: {}", e),
     )
   })
+}
+
+fn convert_bitrate(
+  bitrate: &CommonBitrateEnum,
+) -> Result<RouterBitrate, CommonWebError> {
+  let json = serde_json::to_string(bitrate)?;
+  serde_json::from_str(&json).map_err(|e| {
+    CommonWebError::BadInputWithSimpleMessage(
+      format!("Unsupported bitrate: {}", e),
+    )
+  })
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  mod bitrate_hydration {
+    use super::*;
+
+    #[test]
+    fn high_is_hydrated() {
+      let request = OmniApiVideoGenerateRequest {
+        bitrate: Some(CommonBitrateEnum::High),
+        ..base_request()
+      };
+      let builder = hydrate_to_router_request(&request).expect("hydrate should succeed");
+      assert_eq!(builder.bitrate, Some(RouterBitrate::High));
+    }
+
+    #[test]
+    fn normal_is_hydrated() {
+      let request = OmniApiVideoGenerateRequest {
+        bitrate: Some(CommonBitrateEnum::Normal),
+        ..base_request()
+      };
+      let builder = hydrate_to_router_request(&request).expect("hydrate should succeed");
+      assert_eq!(builder.bitrate, Some(RouterBitrate::Normal));
+    }
+
+    #[test]
+    fn none_stays_none() {
+      let builder = hydrate_to_router_request(&base_request()).expect("hydrate should succeed");
+      assert!(builder.bitrate.is_none());
+    }
+  }
+
+  fn base_request() -> OmniApiVideoGenerateRequest {
+    OmniApiVideoGenerateRequest {
+      idempotency_token: None,
+      model: Some(CommonVideoModelEnum::Seedance2p0),
+      prompt: None,
+      negative_prompt: None,
+      start_frame_image_media_token: None,
+      start_frame_image_url: None,
+      end_frame_image_media_token: None,
+      end_frame_image_url: None,
+      reference_image_media_tokens: None,
+      reference_image_urls: None,
+      reference_video_media_tokens: None,
+      reference_video_urls: None,
+      reference_audio_media_tokens: None,
+      reference_audio_urls: None,
+      reference_character_tokens: None,
+      resolution: None,
+      aspect_ratio: None,
+      bitrate: None,
+      quality: None,
+      duration_seconds: None,
+      video_batch_count: None,
+      generate_audio: None,
+    }
+  }
 }

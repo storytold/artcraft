@@ -336,7 +336,7 @@ export default function Library() {
             </div>
 
             {/* Filter tabs */}
-            <div className="flex items-center gap-1 bg-ui-controls/40 rounded-lg p-1 overflow-x-auto">
+            <div className="flex items-center gap-1 bg-ui-controls/40 rounded-xl p-1 overflow-x-auto">
               {FILTERS.map((filter) => (
                 <button
                   key={filter.id}
@@ -390,7 +390,10 @@ export default function Library() {
               <p className="text-white/40 text-sm mb-4">No items yet.</p>
               <div className="flex gap-3">
                 <Link to="/create-image">
-                  <Button variant="primary" className="rounded-full text-sm px-4 py-2">
+                  <Button
+                    variant="primary"
+                    className="rounded-full text-sm px-4 py-2"
+                  >
                     Create Image
                   </Button>
                 </Link>

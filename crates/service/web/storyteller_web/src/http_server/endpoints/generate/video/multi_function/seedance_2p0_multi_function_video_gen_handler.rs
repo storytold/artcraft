@@ -317,6 +317,7 @@ pub async fn seedance_2p0_multi_function_video_gen_handler(
 
   // NB: Don't fail the job if the prompt insert fails.
   let prompt_result = insert_prompt(InsertPromptArgs {
+    maybe_bitrate: None,
     maybe_apriori_prompt_token: None,
     prompt_type: PromptType::ArtcraftApp,
     maybe_creator_user_token: Some(user_token),

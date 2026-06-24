@@ -91,15 +91,16 @@ function ProtectedContent() {
       ? "var(--sidebar-width)"
       : "calc(var(--sidebar-width-icon) + 1.5rem)";
 
-  // The Edit 3D and video editors host the header's actions
+  // The Edit 3D, Edit Image, and video editors host the header's actions
   // (pricing/credits/task queue/profile) inside their own toolbar/header to
   // reclaim vertical space, so the global header is hidden there — desktop
-  // only, since the mobile route shows a gate that still needs the header's
-  // nav chrome.
+  // only, since the mobile routes show the global chrome (Edit Image keeps the
+  // bar on mobile; Edit 3D shows a gate that still needs the header's nav).
   const hideTopBar =
     !isMobile &&
     (pathname === "/edit-3d" ||
       pathname.startsWith("/edit-3d/") ||
+      pathname === "/edit-image" ||
       pathname === "/video-editor" ||
       pathname.startsWith("/video-editor/"));
 

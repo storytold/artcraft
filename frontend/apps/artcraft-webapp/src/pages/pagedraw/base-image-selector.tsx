@@ -148,8 +148,8 @@ export function BaseImageSelector({
         onDrop={onDrop}
         className={`flex h-full w-full cursor-pointer flex-col items-center justify-center gap-4 rounded-2xl border-2 border-dashed p-8 text-center transition-colors ${
           isDragging
-            ? "border-blue-400 bg-blue-500/10"
-            : "border-ui-panel-border bg-ui-background hover:border-blue-400/50"
+            ? "border-primary-400 bg-primary/10"
+            : "border-ui-panel-border bg-ui-background hover:border-primary-400/50"
         } ${busy ? "pointer-events-none opacity-60" : ""}`}
       >
         <input
@@ -159,7 +159,7 @@ export function BaseImageSelector({
           onChange={onFileInput}
           disabled={busy}
         />
-        <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-blue-400/30 bg-blue-500/30 text-blue-300">
+        <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-primary-400/30 bg-primary/30 text-primary-300">
           <FontAwesomeIcon
             icon={busy ? faSpinnerThird : faPencil}
             className={`text-xl ${busy ? "animate-spin" : ""}`}

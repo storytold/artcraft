@@ -1,0 +1,19 @@
+[package]
+name = "bucket_client"
+edition = "2024"
+version = "0.0.1"
+publish = false
+
+[lib]
+name = "bucket_client"
+path = "src/lib.rs"
+
+[package.metadata.cargo-udeps.ignore]
+normal = ["workspace-build-acceleration"]
+
+[dependencies]
+# cargo-hakari workspace hack (faster compile times)
+workspace-build-acceleration.workspace = true
+
+# External
+rust-s3.workspace = true

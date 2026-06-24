@@ -51,8 +51,11 @@
 /media/ /index.html 200
 /media/* /index.html 200
 
-/pricing /index.html 200
-/pricing/ /index.html 200
+# Prerendered: serve the per-route index.html so social crawlers get the
+# correct OG/title tags (see scripts/prerender-meta.mjs). The SPA still boots
+# from this file and React Router takes over for users.
+/pricing /pricing/index.html 200
+/pricing/ /pricing/index.html 200
 /pricing/* /index.html 200
 
 /faq /index.html 200
@@ -92,8 +95,17 @@
 /password-reset/ /index.html 200
 /password-reset/* /index.html 200
 
-/seedance-2 /index.html 200
-/seedance-2/ /index.html 200
+# Prerendered: exact paths serve their per-route index.html (correct OG tags
+# for social crawlers); deep sub-paths fall back to the SPA shell. See
+# scripts/prerender-meta.mjs. NOTE: these exact-match serving rules MUST come
+# before the /seedance2* alias below, otherwise that wildcard would 301
+# /seedance2-5 away to /seedance-2 (first match wins in _redirects).
+/seedance2-5 /seedance2-5/index.html 200
+/seedance2-5/ /seedance2-5/index.html 200
+/seedance2-5/* /index.html 200
+
+/seedance-2 /seedance-2/index.html 200
+/seedance-2/ /seedance-2/index.html 200
 /seedance-2/* /index.html 200
 
 # Google ads breakage
@@ -102,7 +114,15 @@
 /seedance-2%7Bignore%7D  /seedance-2 301
 /seedance-2%7Bignore%7D* /seedance-2 301
 
-# Similar URLs
+# Similar URLs — Seedance 2.5 aliases (kept above the broad /seedance2* rule)
+/seedance-2-5    /seedance2-5 301
+/seedance-2-5*   /seedance2-5 301
+/seedance-2.5    /seedance2-5 301
+/seedance-2.5*   /seedance2-5 301
+/seedance25      /seedance2-5 301
+/seedance25*     /seedance2-5 301
+
+# Similar URLs — Seedance 2.0 aliases
 /seedance2       /seedance-2 301
 /seedance2*      /seedance-2 301
 /seedance-2.0    /seedance-2 301

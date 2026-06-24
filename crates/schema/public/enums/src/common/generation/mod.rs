@@ -1,4 +1,5 @@
 pub mod common_aspect_ratio;
+pub mod common_bitrate;
 pub mod common_generation_mode;
 pub mod common_image_model;
 pub mod common_quality;

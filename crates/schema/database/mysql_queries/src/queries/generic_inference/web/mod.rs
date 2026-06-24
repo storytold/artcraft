@@ -1,6 +1,7 @@
 pub mod batch_get_inference_job_status;
 pub mod dismiss_finished_jobs_for_user;
 pub mod get_inference_job_status;
+pub mod get_inference_job_status_value;
 pub mod get_pending_inference_job_count;
 pub mod insert_generic_inference_job;
 pub mod job_status;
@@ -10,3 +11,4 @@ pub mod kill_jobs_in_development;
 pub mod list_session_jobs;
 pub mod mark_generic_inference_job_cancelled_by_user;
 pub mod mark_generic_inference_job_successfully_done_by_token;
+pub mod mark_generic_inference_job_successfully_done_by_token_with_executor;

@@ -8,7 +8,7 @@ use tempdir::TempDir;
 use bucket_paths::legacy::typified_paths::public::media_files::bucket_file_path::MediaFileBucketPath;
 use bucket_paths::legacy::typified_paths::public::media_uploads::bucket_file_path::MediaUploadOriginalFilePath;
 use bucket_paths::legacy::typified_paths::public::voice_conversion_results::bucket_file_path::VoiceConversionResultOriginalFilePath;
-use cloud_storage::bucket_client::BucketClient;
+use cloud_storage::legacy_bucket_client::LegacyBucketClient;
 use jobs_common::job_progress_reporter::job_progress_reporter::JobProgressReporter;
 use mysql_queries::payloads::generic_inference_args::inner_payloads::lipsync_payload::LipsyncAnimationAudioSource;
 use mysql_queries::queries::generic_inference::job::list_available_generic_inference_jobs::AvailableInferenceJob;
@@ -28,7 +28,7 @@ pub struct AudioFile {
 
 pub struct DownloadAudioFileArgs<'a> {
   pub audio_source: &'a LipsyncAnimationAudioSource,
-  pub public_bucket_client: &'a BucketClient,
+  pub public_bucket_client: &'a LegacyBucketClient,
   pub job_progress_reporter: &'a mut Box<dyn JobProgressReporter>,
   pub job: &'a AvailableInferenceJob,
   pub temp_dir_creator: &'a ScopedTempDirCreator,

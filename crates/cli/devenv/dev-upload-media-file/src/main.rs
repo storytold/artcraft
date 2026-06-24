@@ -4,7 +4,7 @@ use log::info;
 use sqlx::mysql::MySqlPoolOptions;
 
 use bucket_paths::legacy::typified_paths::public::media_files::bucket_file_path::MediaFileBucketPath;
-use cloud_storage::bucket_client::BucketClient;
+use cloud_storage::legacy_bucket_client::LegacyBucketClient;
 use shared_env_var_config::logging::DEFAULT_RUST_LOG;
 use shared_env_var_config::mysql::env_get_mysql_connection_string_or_default;
 use enums::by_table::media_files::media_file_type::MediaFileType;
@@ -48,7 +48,7 @@ pub async fn main() -> AnyhowResult<()> {
 
   info!("Configuring GCS bucket...");
 
-  let public_bucket_client = BucketClient::create(
+  let public_bucket_client = LegacyBucketClient::create(
     &access_key,
     &secret_key,
     &region_name,

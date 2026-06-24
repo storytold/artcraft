@@ -9,7 +9,7 @@ use log::info;
 use sqlx::{MySql, Pool};
 use sqlx::mysql::MySqlPoolOptions;
 
-use cloud_storage::bucket_client::BucketClient;
+use cloud_storage::legacy_bucket_client::LegacyBucketClient;
 use shared_env_var_config::logging::DEFAULT_RUST_LOG;
 use errors::AnyhowResult;
 
@@ -68,7 +68,7 @@ async fn get_mysql(env_var_name: &str) -> AnyhowResult<Pool<MySql>> {
   Ok(pool)
 }
 
-pub fn get_bucket_client(env_var_suffix: &str) -> AnyhowResult<BucketClient> {
+pub fn get_bucket_client(env_var_suffix: &str) -> AnyhowResult<LegacyBucketClient> {
   let env_var_suffix = env_var_suffix.to_uppercase();
   let access_key = easyenv::get_env_string_required(&format!("ACCESS_KEY_{env_var_suffix}"))?;
   let secret_key = easyenv::get_env_string_required(&format!("SECRET_KEY_{env_var_suffix}"))?;
@@ -84,7 +84,7 @@ pub fn get_bucket_client(env_var_suffix: &str) -> AnyhowResult<BucketClient> {
 
   info!("Configuring GCS bucket {env_var_suffix} ...");
 
-  Ok(BucketClient::create(
+  Ok(LegacyBucketClient::create(
     &access_key,
     &secret_key,
     &region_name,

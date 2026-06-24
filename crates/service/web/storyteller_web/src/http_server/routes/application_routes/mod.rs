@@ -21,6 +21,7 @@ mod user_bookmarks_routes;
 mod user_rating_routes;
 mod user_referral_code_routes;
 mod user_routes;
+mod video_info_routes;
 mod wallet_routes;
 mod web_referrals_routes;
 mod webhook_routes;

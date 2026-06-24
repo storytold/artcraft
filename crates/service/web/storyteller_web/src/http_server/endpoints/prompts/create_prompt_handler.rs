@@ -70,6 +70,7 @@ pub async fn create_prompt_handler(
       .map(|prompt| prompt.trim());
 
   let result = insert_prompt(InsertPromptArgs {
+    maybe_bitrate: None,
     maybe_apriori_prompt_token: None,
     prompt_type: PromptType::ArtcraftApp,
     maybe_creator_user_token: maybe_user_session

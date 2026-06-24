@@ -21,6 +21,8 @@ pub mod staff_audit_logs;
 pub mod tag_uses;
 pub mod trending_model_analytics;
 pub mod tts_models;
+pub mod uploaded_video_notes;
+pub mod uploaded_videos;
 pub mod usages;
 pub mod user_bookmarks;
 pub mod user_ratings;

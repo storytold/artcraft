@@ -1,4 +1,4 @@
-use artcraft_api_defs::omni_gen::cost_and_generate_requests::omni_gen_image_cost_and_generate_request::OmniGenImageCostAndGenerateRequest;
+use artcraft_api_defs::omni_api::generate_requests::omni_api_image_generate_request::OmniApiImageGenerateRequest;
 use artcraft_router::api::router_aspect_ratio::RouterAspectRatio;
 use artcraft_router::api::router_image_model::RouterImageModel;
 use artcraft_router::api::router_quality::RouterQuality;
@@ -15,7 +15,7 @@ use enums::common::generation::common_resolution::CommonResolution as CommonReso
 use crate::http_server::common_responses::common_web_error::CommonWebError;
 
 pub fn hydrate_to_router_request(
-  request: &OmniGenImageCostAndGenerateRequest,
+  request: &OmniApiImageGenerateRequest,
 ) -> Result<GenerateImageRequestBuilder, CommonWebError> {
   let api_model = request.model.as_ref()
     .ok_or_else(|| CommonWebError::BadInputWithSimpleMessage(

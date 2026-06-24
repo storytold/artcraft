@@ -21,6 +21,7 @@ import {
   type BaseSelectorImage,
   useSceneStore,
 } from "@storyteller/ui-pagedraw";
+import { CommonAspectRatio, CommonResolution } from "@storyteller/model-list";
 import {
   OmniGenApi,
   StorytellerApiHostStore,
@@ -141,6 +142,29 @@ const uploadBlobAsImage = async (
   return mediaToken;
 };
 
+// The PromptBox UI emits resolution/aspect-ratio as display labels ("1k",
+// "wide", …); the omni-gen REST body wants the CommonResolution /
+// CommonAspectRatio enum values ("one_k", "wide", …). Mirror the desktop
+// PageDraw adapter's mappers so an unmapped "1k" doesn't 400 the request.
+const mapAspectRatio = (ratio?: string): CommonAspectRatio | undefined => {
+  switch (ratio) {
+    case "auto":   return CommonAspectRatio.Auto;
+    case "wide":   return CommonAspectRatio.Wide;
+    case "tall":   return CommonAspectRatio.Tall;
+    case "square": return CommonAspectRatio.Square;
+    default:       return undefined;
+  }
+};
+
+const mapResolution = (res?: string): CommonResolution | undefined => {
+  switch (res) {
+    case "1k": return CommonResolution.OneK;
+    case "2k": return CommonResolution.TwoK;
+    case "4k": return CommonResolution.FourK;
+    default:   return undefined;
+  }
+};
+
 // PageDrawEditRequest.model is an ImageModel object (or possibly a raw id);
 // the omni-gen REST body wants the string id.
 const modelIdOf = (model: unknown): string => {
@@ -177,8 +201,8 @@ export const useWebPageDrawAdapter = (): PageDrawAdapter => {
           model: modelIdOf(req.model),
           prompt: req.prompt ?? null,
           idempotency_token: crypto.randomUUID(),
-          aspect_ratio: req.aspectRatio ?? null,
-          resolution: req.imageResolution ?? null,
+          aspect_ratio: mapAspectRatio(req.aspectRatio) ?? null,
+          resolution: mapResolution(req.imageResolution) ?? null,
           image_batch_count: req.imageCount ?? 1,
           image_media_tokens: refTokens.length ? refTokens : null,
         };

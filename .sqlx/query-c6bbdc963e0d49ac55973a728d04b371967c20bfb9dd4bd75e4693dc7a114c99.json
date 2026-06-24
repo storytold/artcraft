@@ -1,0 +1,12 @@
+{
+  "db_name": "MySQL",
+  "query": "\nUPDATE uploaded_videos\nSET\n  maybe_filename = ?,\n  maybe_width = ?,\n  maybe_height = ?,\n  maybe_resolution = ?,\n  maybe_detected_model_family = ?,\n  maybe_detected_model_type = ?,\n  maybe_report = ?,\n  maybe_updated_ip_address = ?,\n  version = version + 1\nWHERE token = ?\nLIMIT 1\n    ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 9
+    },
+    "nullable": []
+  },
+  "hash": "c6bbdc963e0d49ac55973a728d04b371967c20bfb9dd4bd75e4693dc7a114c99"
+}

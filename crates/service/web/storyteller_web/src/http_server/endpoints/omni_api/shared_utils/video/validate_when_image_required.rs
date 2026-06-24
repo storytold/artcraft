@@ -1,4 +1,4 @@
-use artcraft_api_defs::omni_gen::cost_and_generate_requests::omni_gen_video_cost_and_generate_request::OmniGenVideoCostAndGenerateRequest;
+use artcraft_api_defs::omni_api::generate_requests::omni_api_video_generate_request::OmniApiVideoGenerateRequest;
 use enums::common::generation::common_video_model::CommonVideoModel;
 
 use crate::http_server::common_responses::common_web_error::CommonWebError;
@@ -8,7 +8,7 @@ use crate::http_server::common_responses::common_web_error::CommonWebError;
 /// a clean 400 with an actionable message and we don't charge their wallet
 /// for an inference job we know will fail.
 pub (super) fn validate_when_image_required(
-  request: &OmniGenVideoCostAndGenerateRequest,
+  request: &OmniApiVideoGenerateRequest,
 ) -> Result<(), CommonWebError> {
   match request.model {
     Some(CommonVideoModel::GrokImagineVideo1p5) => {}, // Fall-through
@@ -21,12 +21,20 @@ pub (super) fn validate_when_image_required(
     return Ok(());
   }
 
-  let has_start_frame = request.start_frame_image_media_token.is_some();
-  
+  // NB: A start frame / reference image may be supplied either as a media token
+  // or as a URL (URLs are converted to media files later in the handler), so
+  // both satisfy the image requirement here.
+  let has_start_frame = request.start_frame_image_media_token.is_some()
+    || request.start_frame_image_url.is_some();
+
   let has_reference_images = request
     .reference_image_media_tokens
     .as_ref()
-    .is_some_and(|v| !v.is_empty());
+    .is_some_and(|v| !v.is_empty())
+    || request
+      .reference_image_urls
+      .as_ref()
+      .is_some_and(|v| !v.is_empty());
 
   if has_start_frame || has_reference_images {
     return Ok(());
@@ -42,20 +50,26 @@ mod tests {
   use super::*;
   use tokens::tokens::media_files::MediaFileToken;
 
-  fn base_request() -> OmniGenVideoCostAndGenerateRequest {
-    OmniGenVideoCostAndGenerateRequest {
+  fn base_request() -> OmniApiVideoGenerateRequest {
+    OmniApiVideoGenerateRequest {
       idempotency_token: Some("a1b2c3d4-e5f6-7890-abcd-ef1234567890".to_string()),
       model: None,
       prompt: Some("test".to_string()),
       negative_prompt: None,
       start_frame_image_media_token: None,
+      start_frame_image_url: None,
       end_frame_image_media_token: None,
+      end_frame_image_url: None,
       reference_image_media_tokens: None,
+      reference_image_urls: None,
       reference_video_media_tokens: None,
+      reference_video_urls: None,
       reference_audio_media_tokens: None,
+      reference_audio_urls: None,
       reference_character_tokens: None,
       resolution: None,
       aspect_ratio: None,
+      bitrate: None,
       quality: None,
       duration_seconds: Some(5),
       video_batch_count: Some(1),
@@ -76,7 +90,7 @@ mod tests {
   #[test]
   fn passes_for_other_models_without_image() {
     // Only v1.5 needs the gate; other models can do text-to-video.
-    let req = OmniGenVideoCostAndGenerateRequest {
+    let req = OmniApiVideoGenerateRequest {
       model: Some(CommonVideoModel::Seedance2p0),
       ..base_request()
     };
@@ -85,7 +99,7 @@ mod tests {
 
   #[test]
   fn rejects_v1p5_with_no_image_inputs() {
-    let req = OmniGenVideoCostAndGenerateRequest {
+    let req = OmniApiVideoGenerateRequest {
       model: Some(CommonVideoModel::GrokImagineVideo1p5),
       ..base_request()
     };
@@ -100,7 +114,7 @@ mod tests {
 
   #[test]
   fn rejects_v1p5_with_empty_reference_list_and_no_start_frame() {
-    let req = OmniGenVideoCostAndGenerateRequest {
+    let req = OmniApiVideoGenerateRequest {
       model: Some(CommonVideoModel::GrokImagineVideo1p5),
       reference_image_media_tokens: Some(vec![]),
       ..base_request()
@@ -113,7 +127,7 @@ mod tests {
 
   #[test]
   fn accepts_v1p5_with_start_frame_only() {
-    let req = OmniGenVideoCostAndGenerateRequest {
+    let req = OmniApiVideoGenerateRequest {
       model: Some(CommonVideoModel::GrokImagineVideo1p5),
       start_frame_image_media_token: Some(token("mf_start")),
       ..base_request()
@@ -123,7 +137,7 @@ mod tests {
 
   #[test]
   fn accepts_v1p5_with_reference_images_only() {
-    let req = OmniGenVideoCostAndGenerateRequest {
+    let req = OmniApiVideoGenerateRequest {
       model: Some(CommonVideoModel::GrokImagineVideo1p5),
       reference_image_media_tokens: Some(vec![token("mf_a"), token("mf_b")]),
       ..base_request()
@@ -133,7 +147,7 @@ mod tests {
 
   #[test]
   fn accepts_v1p5_with_both_start_frame_and_reference_images() {
-    let req = OmniGenVideoCostAndGenerateRequest {
+    let req = OmniApiVideoGenerateRequest {
       model: Some(CommonVideoModel::GrokImagineVideo1p5),
       start_frame_image_media_token: Some(token("mf_start")),
       reference_image_media_tokens: Some(vec![token("mf_a")]),
@@ -147,7 +161,7 @@ mod tests {
     // end_frame_image_media_token is technically an image, but xAI's v1.5
     // wire shape only uses start_frame / reference_images. end_frame
     // shouldn't satisfy the gate.
-    let req = OmniGenVideoCostAndGenerateRequest {
+    let req = OmniApiVideoGenerateRequest {
       model: Some(CommonVideoModel::GrokImagineVideo1p5),
       end_frame_image_media_token: Some(token("mf_end")),
       ..base_request()
