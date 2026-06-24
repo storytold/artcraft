@@ -22,7 +22,15 @@ pub (super) struct BatchRequestJson {
 #[derive(Serialize, Debug)]
 pub (super) struct ApiParams {
   pub prompt: String,
-  pub resolution: String,
+  /// Aspect ratio as pixel dimensions (e.g. "1280x720"). Most Kinovi
+  /// models carry the aspect ratio here. None for models that use the
+  /// `aspectRatio` field instead (Seedance 2.0 Mini).
+  #[serde(skip_serializing_if = "Option::is_none")]
+  pub resolution: Option<String>,
+  /// Aspect ratio as a ratio string (e.g. "16:9"). Used by Seedance 2.0
+  /// Mini instead of `resolution`. None for models that use `resolution`.
+  #[serde(rename = "aspectRatio", skip_serializing_if = "Option::is_none")]
+  pub aspect_ratio: Option<&'static str>,
   #[serde(rename = "contentMode")]
   pub content_mode: &'static str,
   pub model: &'static str,
