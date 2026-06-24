@@ -1,0 +1,28 @@
+[package]
+name = "video_info"
+edition = "2024"
+version = "0.0.1"
+authors = [
+    "Brandon Thomas <bt@brand.io>",
+    "Brandon Thomas <echelon@gmail.com>",
+]
+publish = false
+
+[package.metadata.cargo-udeps.ignore]
+normal = ["workspace-build-acceleration"]
+
+[lib]
+name = "video_info"
+path = "src/lib.rs"
+
+# Optional CLI utility for inspecting a video's Seedance provenance.
+[[bin]]
+name = "video-info-parser"
+path = "src/bin/video_info_parser.rs"
+
+[dependencies]
+# Workspace hack (faster compile times)
+workspace-build-acceleration.workspace = true
+
+# External
+chrono.workspace = true

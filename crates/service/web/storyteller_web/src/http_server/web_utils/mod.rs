@@ -1,5 +1,6 @@
 pub mod bucket_urls;
 pub mod filter_model_name;
+pub mod get_authorization_header_api_key;
 pub mod get_host_header;
 pub mod get_request_platform_type;
 pub mod handle_multipart_error;
@@ -11,4 +12,3 @@ pub mod response_success_helpers;
 pub mod scoped_temp_dir_creator;
 pub mod serialize_as_json_error;
 pub mod try_delete_session_cache;
-pub mod user_session;

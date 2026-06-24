@@ -19,6 +19,7 @@ pub enum UserFeatureFlag {
   /// (For now, it's hidden until we get an NSFW filter.)
   ExploreMedia,
 
+
   /// Access to studio features
   Studio,
 
@@ -44,6 +45,10 @@ pub enum UserFeatureFlag {
   /// Access to the referrals program
   #[serde(rename = "referrals")]
   ReferralsProgram,
+
+  /// Access to API key creation
+  #[serde(rename = "api_key")]
+  ApiKey,
 }
 
 // TODO(bt, 2022-12-21): This desperately needs MySQL integration tests!
@@ -63,6 +68,7 @@ impl UserFeatureFlag {
       Self::HappyHorse => "hh",
       Self::HappyHorseRateLimit => "hh_rl",
       Self::ReferralsProgram => "referrals",
+      Self::ApiKey => "api_key",
     }
   }
 
@@ -76,6 +82,7 @@ impl UserFeatureFlag {
       "hh" => Ok(Self::HappyHorse),
       "hh_rl" => Ok(Self::HappyHorseRateLimit),
       "referrals" => Ok(Self::ReferralsProgram),
+      "api_key" => Ok(Self::ApiKey),
       _ => Err(format!("invalid value: {:?}", value)),
     }
   }
@@ -90,6 +97,7 @@ impl UserFeatureFlag {
       Self::HappyHorse => "Happy Horse (no Rate Limit)",
       Self::HappyHorseRateLimit => "Happy Horse (with Rate Limit)",
       Self::ReferralsProgram => "Referrals Program",
+      Self::ApiKey => "API Keys",
     }
   }
 
@@ -103,6 +111,7 @@ impl UserFeatureFlag {
       Self::HappyHorse => "Access to Happy Horse (without a rate limit - dangerous)",
       Self::HappyHorseRateLimit => "Access to Happy Horse (with a rate limit)",
       Self::ReferralsProgram => "Access to the referrals program",
+      Self::ApiKey => "Access to API key creation",
     }
   }
 
@@ -118,6 +127,7 @@ impl UserFeatureFlag {
       Self::HappyHorse,
       Self::HappyHorseRateLimit,
       Self::ReferralsProgram,
+      Self::ApiKey,
     ])
   }
 }
@@ -140,6 +150,7 @@ mod tests {
       assert_serialization(UserFeatureFlag::HappyHorse, "hh");
       assert_serialization(UserFeatureFlag::HappyHorseRateLimit, "hh_rl");
       assert_serialization(UserFeatureFlag::ReferralsProgram, "referrals");
+      assert_serialization(UserFeatureFlag::ApiKey, "api_key");
     }
 
     #[test]
@@ -152,6 +163,7 @@ mod tests {
       assert_eq!(UserFeatureFlag::HappyHorse.to_str(), "hh");
       assert_eq!(UserFeatureFlag::HappyHorseRateLimit.to_str(), "hh_rl");
       assert_eq!(UserFeatureFlag::ReferralsProgram.to_str(), "referrals");
+      assert_eq!(UserFeatureFlag::ApiKey.to_str(), "api_key");
     }
 
     #[test]
@@ -164,13 +176,14 @@ mod tests {
       assert_eq!(UserFeatureFlag::from_str("hh").unwrap(), UserFeatureFlag::HappyHorse);
       assert_eq!(UserFeatureFlag::from_str("hh_rl").unwrap(), UserFeatureFlag::HappyHorseRateLimit);
       assert_eq!(UserFeatureFlag::from_str("referrals").unwrap(), UserFeatureFlag::ReferralsProgram);
+      assert_eq!(UserFeatureFlag::from_str("api_key").unwrap(), UserFeatureFlag::ApiKey);
       assert!(UserFeatureFlag::from_str("foo").is_err());
     }
 
     #[test]
     fn all_variants() {
       let mut variants = UserFeatureFlag::all_variants();
-      assert_eq!(variants.len(), 8);
+      assert_eq!(variants.len(), 9);
       assert_eq!(variants.pop_first(), Some(UserFeatureFlag::ExploreMedia));
       assert_eq!(variants.pop_first(), Some(UserFeatureFlag::Studio));
       assert_eq!(variants.pop_first(), Some(UserFeatureFlag::Upload3d));
@@ -179,6 +192,7 @@ mod tests {
       assert_eq!(variants.pop_first(), Some(UserFeatureFlag::HappyHorse));
       assert_eq!(variants.pop_first(), Some(UserFeatureFlag::HappyHorseRateLimit));
       assert_eq!(variants.pop_first(), Some(UserFeatureFlag::ReferralsProgram));
+      assert_eq!(variants.pop_first(), Some(UserFeatureFlag::ApiKey));
       assert_eq!(variants.pop_first(), None);
     }
   }

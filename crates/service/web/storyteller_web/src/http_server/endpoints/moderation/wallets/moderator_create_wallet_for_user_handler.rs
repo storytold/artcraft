@@ -15,7 +15,7 @@ use mysql_queries::queries::wallets::create_new_wallet_for_owner_user::create_ne
 use mysql_queries::queries::wallets::find_primary_wallet_token_for_owner::find_primary_wallet_token_for_owner_using_connection;
 
 use crate::http_server::common_responses::common_web_error::CommonWebError;
-use crate::http_server::web_utils::user_session::require_moderator::require_moderator;
+use crate::http_server::user_lookup::user_session::require_moderator::require_moderator;
 use crate::state::server_state::ServerState;
 
 /// Create a wallet for a user (moderation)

@@ -1,6 +1,6 @@
 use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::endpoints::users::google_sso::handle_new_sso_account::NewSsoAccountInfo;
-use crate::http_server::session::lookup::user_session_feature_flags::UserSessionFeatureFlags;
+use crate::http_server::user_lookup::user_session::session_utils::lookup::user_session_feature_flags::UserSessionFeatureFlags;
 use actix_artcraft::requests::get_request_signup_source_enum::get_request_signup_source_enum;
 use actix_web::HttpRequest;
 use enums::by_table::users::user_feature_flag::UserFeatureFlag;

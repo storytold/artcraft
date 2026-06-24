@@ -5,6 +5,7 @@ use sqlx::{FromRow, MySql, QueryBuilder, Row};
 
 use enums::by_table::prompts::prompt_type::PromptType;
 use enums::common::generation::common_aspect_ratio::CommonAspectRatio;
+use enums::common::generation::common_bitrate::CommonBitrate;
 use enums::common::generation::common_generation_mode::CommonGenerationMode;
 use enums::common::generation::common_model_type::CommonModelType;
 use enums::common::generation::common_resolution::CommonResolution;
@@ -23,6 +24,7 @@ pub struct BatchPromptResult {
   pub maybe_generation_mode: Option<CommonGenerationMode>,
   pub maybe_aspect_ratio: Option<CommonAspectRatio>,
   pub maybe_resolution: Option<CommonResolution>,
+  pub maybe_bitrate: Option<CommonBitrate>,
   pub maybe_batch_count: Option<u8>,
   pub maybe_generate_audio: Option<bool>,
   pub maybe_duration_seconds: Option<u32>,
@@ -46,6 +48,8 @@ impl FromRow<'_, MySqlRow> for BatchPromptResult {
         .and_then(|s| CommonAspectRatio::from_str(&s).ok()),
       maybe_resolution: row.try_get::<Option<String>, _>("maybe_resolution")?
         .and_then(|s| CommonResolution::from_str(&s).ok()),
+      maybe_bitrate: row.try_get::<Option<String>, _>("maybe_bitrate")?
+        .and_then(|s| CommonBitrate::from_str(&s).ok()),
       maybe_batch_count: row.try_get("maybe_batch_count")?,
       maybe_generate_audio: row.try_get("maybe_generate_audio")?,
       maybe_duration_seconds: row.try_get("maybe_duration_seconds")?,
@@ -73,6 +77,7 @@ SELECT
     p.maybe_generation_mode,
     p.maybe_aspect_ratio,
     p.maybe_resolution,
+    p.maybe_bitrate,
     p.maybe_batch_count,
     p.maybe_generate_audio,
     p.maybe_duration_seconds,

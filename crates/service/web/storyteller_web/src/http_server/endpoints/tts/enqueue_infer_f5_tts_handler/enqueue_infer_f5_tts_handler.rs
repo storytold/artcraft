@@ -37,7 +37,7 @@ use crate::configs::app_startup::username_set::UsernameSet;
 use crate::configs::plans::get_correct_plan_for_session::get_correct_plan_for_session;
 use crate::configs::plans::plan::Plan;
 use crate::http_server::deprecated_endpoints::investor_demo::demo_cookie::request_has_demo_cookie;
-use crate::http_server::session::lookup::user_session_extended::UserSessionExtended;
+use crate::http_server::user_lookup::user_session::session_utils::lookup::user_session_extended::UserSessionExtended;
 use crate::http_server::web_utils::response_error_helpers::to_simple_json_error;
 use crate::state::server_state::ServerState;
 

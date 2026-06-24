@@ -37,7 +37,7 @@ use crate::http_server::deprecated_endpoints::workflows::enqueue::vst_common::vs
 use crate::http_server::requests::get_request_domain_branding::{get_request_domain_branding, DomainBranding};
 use crate::http_server::requests::request_headers::get_routing_tag_header::get_routing_tag_header;
 use crate::http_server::requests::request_headers::has_debug_header::has_debug_header;
-use crate::http_server::session::lookup::user_session_extended::UserSessionExtended;
+use crate::http_server::user_lookup::user_session::session_utils::lookup::user_session_extended::UserSessionExtended;
 use crate::http_server::validations::validate_idempotency_token_format::validate_idempotency_token_format;
 use crate::state::server_state::ServerState;
 use crate::util::allowed_video_style_transfer_access::allowed_video_style_transfer_access;

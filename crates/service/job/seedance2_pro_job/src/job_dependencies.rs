@@ -1,8 +1,9 @@
 use std::sync::Arc;
 
 use crate::kinovi_version::KinoviVersion;
+use crate::order_reconciler::OrderReconciler;
 use chrono::Duration;
-use cloud_storage::bucket_client::BucketClient;
+use cloud_storage::legacy_bucket_client::LegacyBucketClient;
 use concurrency::relaxed_atomic_bool::RelaxedAtomicBool;
 use jobs_common::job_stats::JobStats;
 use pager::client::pager::Pager;
@@ -16,7 +17,7 @@ pub struct JobDependencies {
   pub mysql_pool: MySqlPool,
 
   /// Public GCS/S3 bucket for storing generated videos.
-  pub public_bucket_client: BucketClient,
+  pub public_bucket_client: LegacyBucketClient,
 
   /// Session credentials for polling seedance2-pro.com.
   pub seedance2pro_session: Seedance2ProSession,
@@ -30,11 +31,6 @@ pub struct JobDependencies {
 
   /// How long to sleep between poll iterations (milliseconds).
   pub poll_interval_millis: u64,
-
-  /// If set, process jobs in batches of this many pages instead of
-  /// exhausting all pages before processing. This prevents starvation
-  /// when the order list is very long.
-  pub maybe_pages_per_batch: Option<u32>,
 
   /// If set, stop paginating backwards through orders once we encounter
   /// an order older than this duration. This prevents endlessly scanning
@@ -61,4 +57,8 @@ pub struct JobDependencies {
 
   /// Pager client for sending alerts.
   pub pager: Pager,
+
+  /// Hand-off between the polling loop (producer) and the processing loop
+  /// (consumer): finished Kinovi orders staged for reconciliation into our DB.
+  pub order_reconciler: OrderReconciler,
 }

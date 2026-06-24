@@ -16,7 +16,7 @@ use mysql_queries::queries::users::user_subscriptions::list_stripe_customer_ids_
 use tokens::tokens::users::UserToken;
 
 use crate::http_server::common_responses::common_web_error::CommonWebError;
-use crate::http_server::web_utils::user_session::require_moderator::require_moderator;
+use crate::http_server::user_lookup::user_session::require_moderator::require_moderator;
 use crate::state::server_state::ServerState;
 
 /// Get all stripe customer ids on file for a user (moderation)

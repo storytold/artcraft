@@ -1,5 +1,9 @@
 use serde_derive::Deserialize;
 
+use crate::utils::number_coercion::{
+  de_opt_u32_int_or_float, de_opt_u64_int_or_float,
+};
+
 #[derive(Deserialize, Debug)]
 pub(super) struct BatchResponseItem {
   pub result: BatchResponseResult,
@@ -19,6 +23,7 @@ pub(super) struct BatchResponseData {
 #[serde(rename_all = "camelCase")]
 pub(super) struct OrdersResponseJson {
   pub orders: Vec<RawOrder>,
+  #[serde(default, deserialize_with = "de_opt_u64_int_or_float")]
   pub next_cursor: Option<u64>,
 }
 
@@ -39,14 +44,18 @@ pub(super) struct RawOrder {
 
   /// The Kinovi credits charged for the order. `None` for older response
   /// shapes that didn't include the field.
-  #[serde(default)]
+  #[serde(default, deserialize_with = "de_opt_u32_int_or_float")]
   pub total_credits: Option<u32>,
 }
 
 #[derive(Deserialize, Debug)]
 pub(super) struct RawVideoResult {
   pub url: String,
-  pub width: u32,
-  pub height: u32,
+  /// The API intermittently returns `null` (or omits) these dimensions, so
+  /// they're optional rather than coerced to a sentinel.
+  #[serde(rename = "width", default, deserialize_with = "de_opt_u32_int_or_float")]
+  pub maybe_width: Option<u32>,
+  #[serde(rename = "height", default, deserialize_with = "de_opt_u32_int_or_float")]
+  pub maybe_height: Option<u32>,
   // pub ratio: Option<f64>,
 }

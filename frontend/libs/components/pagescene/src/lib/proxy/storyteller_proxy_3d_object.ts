@@ -22,6 +22,10 @@ export interface ObjectJSON {
   object_uuid: string;
   object_user_data_name: string;
   media_file_token: string;
+  // Legacy top-level field. Not written by toJSON() (the value is
+  // carried inside user_data.media_file_type); kept optional so reads
+  // that reference it directly type-check without changing behavior.
+  media_file_type?: MediaFileType;
   color: string;
   metalness: number;
   shininess: number;

@@ -15,7 +15,7 @@ use mysql_queries::queries::api_keys::update_api_key::{update_api_key, UpdateApi
 use tokens::tokens::api_keys::ApiKeyToken;
 
 use crate::http_server::common_responses::common_web_error::CommonWebError;
-use crate::http_server::web_utils::user_session::require_user_session::require_user_session;
+use crate::http_server::user_lookup::user_session::require_user_session::require_user_session;
 use crate::state::server_state::ServerState;
 
 const MAX_DESCRIPTION_LEN: usize = 512;

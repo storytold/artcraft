@@ -24,7 +24,7 @@ use crate::http_server::endpoints::media_files::upload::upload_error::MediaFileU
 use crate::http_server::endpoints::media_files::upload::upload_pmx::extract_and_upload_pmx_files::{extract_and_upload_pmx_files, PmxError};
 use crate::http_server::validations::validate_idempotency_token_format::validate_idempotency_token_format;
 use crate::http_server::common_responses::common_web_error::CommonWebError;
-use crate::http_server::web_utils::user_session::require_moderator::require_moderator;
+use crate::http_server::user_lookup::user_session::require_moderator::require_moderator;
 use crate::state::server_state::ServerState;
 
 /// Form-multipart request fields.

@@ -7,6 +7,7 @@ use sqlx::{Executor, MySql};
 
 use enums::by_table::prompts::prompt_type::PromptType;
 use enums::common::generation::common_aspect_ratio::CommonAspectRatio;
+use enums::common::generation::common_bitrate::CommonBitrate;
 use enums::common::generation::common_generation_mode::CommonGenerationMode;
 use enums::common::generation::common_model_type::CommonModelType;
 use enums::common::generation::common_resolution::CommonResolution;
@@ -36,6 +37,7 @@ pub struct InsertPromptArgs<'e, 'c,  E>
   pub maybe_generation_mode: Option<CommonGenerationMode>,
   pub maybe_aspect_ratio: Option<CommonAspectRatio>,
   pub maybe_resolution: Option<CommonResolution>,
+  pub maybe_bitrate: Option<CommonBitrate>,
   pub maybe_batch_count: Option<u8>,
   pub maybe_generate_audio: Option<bool>,
   pub maybe_duration_seconds: Option<u32>,
@@ -89,6 +91,7 @@ SET
   maybe_generation_mode = ?,
   maybe_aspect_ratio = ?,
   maybe_resolution = ?,
+  maybe_bitrate = ?,
   maybe_batch_count = ?,
   maybe_generate_audio = ?,
   maybe_duration_seconds = ?,
@@ -107,6 +110,7 @@ SET
     args.maybe_generation_mode.map(|m| m.to_str()),
     args.maybe_aspect_ratio.map(|a| a.to_str()),
     args.maybe_resolution.map(|r| r.to_str()),
+    args.maybe_bitrate.map(|b| b.to_str()),
     args.maybe_batch_count,
     args.maybe_generate_audio,
     args.maybe_duration_seconds,

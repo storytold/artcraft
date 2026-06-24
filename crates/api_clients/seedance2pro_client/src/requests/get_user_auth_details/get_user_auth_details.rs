@@ -125,6 +125,23 @@ mod tests {
     Ok(Seedance2ProSession::from_cookies_string(cookies))
   }
 
+  /// Regression: the Kinovi API started returning `credits` as a float
+  /// (e.g. `372215.18`) while `availableCredits` stays an int. Both must parse
+  /// and coerce to `u64` instead of failing with
+  /// "invalid type: floating point ..., expected u64".
+  #[test]
+  fn float_credits_are_coerced() {
+    let body = r#"[{"result":{"data":{"json":{
+      "email":"hello@storyteller.ai",
+      "credits":372215.18,
+      "availableCredits":372215
+    }}}}]"#;
+    let batch: Vec<BatchResponseItem> = serde_json::from_str(body).expect("parse user auth");
+    let json = batch.into_iter().next().expect("non-empty batch").result.data.json;
+    assert_eq!(json.credits, 372215);
+    assert_eq!(json.available_credits, 372215);
+  }
+
   #[tokio::test]
   #[ignore] // manually test — requires real cookies
   async fn test_get_user_auth_details() -> AnyhowResult<()> {

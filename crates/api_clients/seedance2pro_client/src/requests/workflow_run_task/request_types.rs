@@ -40,6 +40,8 @@ pub (super) struct ApiParams {
   pub audio_urls: Option<Vec<String>>,
   #[serde(rename = "batchCount", skip_serializing_if = "Option::is_none")]
   pub batch_count: Option<u8>,
+  #[serde(rename = "bitrate_mode", skip_serializing_if = "Option::is_none")]
+  pub bitrate_mode: Option<&'static str>,
 }
 
 #[derive(Deserialize, Debug)]

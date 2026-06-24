@@ -6,7 +6,7 @@ use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::endpoint_helpers::refund_wallet_after_api_failure::refund_wallet_after_api_failure;
 use crate::http_server::endpoints::generate::common::map_seedance2pro_web_errors::map_seedance2pro_error_to_web_error;
 use crate::http_server::endpoints::generate::common::payments_error_test::payments_error_test;
-use crate::http_server::session::lookup::user_session_feature_flags::UserSessionFeatureFlags;
+use crate::http_server::user_lookup::user_session::session_utils::lookup::user_session_feature_flags::UserSessionFeatureFlags;
 use crate::http_server::validations::validate_idempotency_token_format::validate_idempotency_token_format;
 use crate::http_server::web_utils::get_request_platform_type::get_request_platform_type;
 use crate::state::server_state::ServerState;
@@ -317,6 +317,7 @@ pub async fn seedance_2p0_multi_function_video_gen_handler(
 
   // NB: Don't fail the job if the prompt insert fails.
   let prompt_result = insert_prompt(InsertPromptArgs {
+    maybe_bitrate: None,
     maybe_apriori_prompt_token: None,
     prompt_type: PromptType::ArtcraftApp,
     maybe_creator_user_token: Some(user_token),

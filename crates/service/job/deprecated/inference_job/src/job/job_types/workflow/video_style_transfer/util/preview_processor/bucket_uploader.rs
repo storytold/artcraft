@@ -1,5 +1,5 @@
 use bucket_paths::legacy::typified_paths::public::media_files::bucket_file_path::MediaFileBucketPath;
-use cloud_storage::bucket_client::BucketClient;
+use cloud_storage::legacy_bucket_client::LegacyBucketClient;
 use filesys::file_read_bytes::file_read_bytes;
 use log::{debug, warn};
 use std::path::PathBuf;
@@ -20,12 +20,12 @@ pub enum BucketUploadMessage {
   UploadFrame {
     disk_path: PathBuf,
     bucket_path: MediaFileBucketPath,
-    bucket_client: BucketClient,
+    bucket_client: LegacyBucketClient,
     result: oneshot::Sender<BucketUploadResult>
   },
   UploadMultipleFrames {
     requests: Vec<BucketUploadRequest>,
-    bucket_client: BucketClient,
+    bucket_client: LegacyBucketClient,
     result: oneshot::Sender<Vec<(PathBuf, BucketUploadResult)>>,
   },
 }
@@ -39,7 +39,7 @@ struct BucketUploadActor {
   rx: mpsc::Receiver<BucketUploadMessage>,
 }
 
-fn handle_single_frame_upload(disk_path: PathBuf, bucket_path: MediaFileBucketPath, bucket_client: BucketClient) -> (PathBuf,BucketUploadResult) {
+fn handle_single_frame_upload(disk_path: PathBuf, bucket_path: MediaFileBucketPath, bucket_client: LegacyBucketClient) -> (PathBuf,BucketUploadResult) {
   let disk_path2 = disk_path.clone();
   let handle = tokio::runtime::Handle::current();
   let attempt = handle.block_on(
@@ -139,7 +139,7 @@ impl BucketUploadActorHandle {
     }
   }
 
-  pub async fn upload_frame(&self, disk_path: PathBuf, bucket_path: MediaFileBucketPath, bucket_client: BucketClient) -> () {
+  pub async fn upload_frame(&self, disk_path: PathBuf, bucket_path: MediaFileBucketPath, bucket_client: LegacyBucketClient) -> () {
     let (tx, rx) = oneshot::channel();
     let message = BucketUploadMessage::UploadFrame {
       disk_path,
@@ -151,7 +151,7 @@ impl BucketUploadActorHandle {
     let _ = rx.await;
   }
   
-  pub async fn upload_multiple_frames(&self, requests: Vec<BucketUploadRequest>, bucket_client: BucketClient) -> Vec<(PathBuf,BucketUploadResult)> {
+  pub async fn upload_multiple_frames(&self, requests: Vec<BucketUploadRequest>, bucket_client: LegacyBucketClient) -> Vec<(PathBuf,BucketUploadResult)> {
     let (tx, rx) = oneshot::channel();
     let message = BucketUploadMessage::UploadMultipleFrames {
       requests,

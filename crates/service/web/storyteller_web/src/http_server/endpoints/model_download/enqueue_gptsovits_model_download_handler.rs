@@ -28,7 +28,7 @@ use crate::http_server::requests::request_headers::get_routing_tag_header::get_r
 use crate::http_server::requests::request_headers::has_debug_header::has_debug_header;
 use crate::http_server::validations::validate_idempotency_token_format::validate_idempotency_token_format;
 use crate::http_server::validations::validate_model_title::validate_model_title;
-use crate::http_server::web_utils::user_session::require_user_session_extended::require_user_session_extended;
+use crate::http_server::user_lookup::user_session::require_user_session_extended::require_user_session_extended;
 use crate::state::server_state::ServerState;
 
 #[derive(Deserialize, ToSchema)]

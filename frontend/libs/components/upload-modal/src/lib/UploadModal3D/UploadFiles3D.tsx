@@ -349,8 +349,8 @@ export const UploadFiles3D = ({
       {selectionError && <h6 className="z-10 text-red">{selectionError}</h6>}
 
       {isMulti ? (
-        <PanelGroup orientation="horizontal">
-          <Panel defaultSize="33%" minSize="20%">
+        <PanelGroup direction="horizontal">
+          <Panel defaultSize={33} minSize={20}>
           <ul className="flex h-full flex-col gap-1 overflow-y-auto rounded-lg bg-brand-secondary p-2">
             {fileEntries.map((entry, i) => (
               <li
@@ -412,11 +412,14 @@ export const UploadFiles3D = ({
           </ul>
           </Panel>
 
-          <PanelResizeHandle className="flex w-4 items-center justify-center" onPointerDown={(e) => e.stopPropagation()}>
-            <div className="h-8 w-1 rounded-full bg-white/20 transition-colors hover:bg-white/40" />
+          <PanelResizeHandle className="flex w-4 items-center justify-center">
+            <div
+              className="h-8 w-1 rounded-full bg-white/20 transition-colors hover:bg-white/40"
+              onPointerDown={(e) => e.stopPropagation()}
+            />
           </PanelResizeHandle>
 
-          <Panel defaultSize="67%" minSize="25%">
+          <Panel defaultSize={67} minSize={25}>
           <div className="flex h-full flex-col gap-2">
             <div className="relative w-full min-h-48 overflow-hidden rounded-lg bg-brand-secondary">
               <canvas

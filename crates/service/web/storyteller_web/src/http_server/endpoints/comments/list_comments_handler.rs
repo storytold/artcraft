@@ -7,6 +7,7 @@ use std::fmt;
 use std::sync::Arc;
 
 use actix_web::error::ResponseError;
+use actix_web::web::Json;
 use actix_web::http::StatusCode;
 use actix_web::web::Path;
 use actix_web::{web, HttpRequest, HttpResponse};
@@ -129,7 +130,7 @@ pub async fn list_comments_handler(
   _http_request: HttpRequest,
   path: Path<ListCommentsPathInfo>,
   server_state: web::Data<Arc<ServerState>>
-) -> Result<HttpResponse, ListCommentsError>
+) -> Result<Json<ListCommentsSuccessResponse>, ListCommentsError>
 {
   let entity_token = CommentEntityToken::from_entity_type_and_token(
     path.entity_type, &path.entity_token);
@@ -174,10 +175,5 @@ pub async fn list_comments_handler(
         .collect(),
   };
 
-  let body = serde_json::to_string(&response)
-      .map_err(|_e| ListCommentsError::ServerError)?;
-
-  Ok(HttpResponse::Ok()
-      .content_type("application/json")
-      .body(body))
+  Ok(Json(response))
 }

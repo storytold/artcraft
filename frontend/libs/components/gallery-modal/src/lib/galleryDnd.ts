@@ -1,6 +1,7 @@
 import { GalleryItem } from "./gallery-modal";
 import {
-  galleryModalVisibleDuringDrag,
+  galleryModalDraggingUnder,
+  galleryModalVisibleViewMode,
   galleryReopenAfterDragSignal,
 } from "./galleryModalSignals";
 
@@ -12,7 +13,6 @@ interface DragState {
   startY: number;
   currX: number;
   currY: number;
-  modalHidden: boolean;
 }
 
 const dragState: DragState = {
@@ -23,7 +23,6 @@ const dragState: DragState = {
   startY: 0,
   currX: 0,
   currY: 0,
-  modalHidden: false,
 };
 
 const dragThreshold = 5;
@@ -73,6 +72,40 @@ function removeDragPreview() {
   }
 }
 
+// ── Drop-success ripple ──────────────────────────────────────────────────────
+// A quick brand-colored ring that expands and fades at the drop point, so a
+// successful drop reads as a deliberate landing instead of the item silently
+// vanishing. Self-removing; skipped under reduced-motion.
+function spawnDropRipple(x: number, y: number) {
+  if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
+
+  const ring = document.createElement("div");
+  ring.style.cssText = `
+    position: fixed;
+    left: ${x}px;
+    top: ${y}px;
+    z-index: 99998;
+    width: 30px;
+    height: 30px;
+    margin-left: -15px;
+    margin-top: -15px;
+    border-radius: 9999px;
+    border: 2px solid var(--primary, #2d81ff);
+    pointer-events: none;
+  `;
+  document.body.appendChild(ring);
+
+  const anim = ring.animate(
+    [
+      { transform: "scale(0.4)", opacity: 0.9 },
+      { transform: "scale(2.6)", opacity: 0 },
+    ],
+    { duration: 460, easing: "cubic-bezier(0.22, 1, 0.36, 1)" },
+  );
+  anim.onfinish = () => ring.remove();
+  anim.oncancel = () => ring.remove();
+}
+
 // ── Drag lifecycle ───────────────────────────────────────────────────────────
 
 function onPointerDown(
@@ -88,10 +121,33 @@ function onPointerDown(
   dragState.currX = event.pageX;
   dragState.currY = event.pageY;
   dragState.isDragging = false;
-  dragState.modalHidden = false;
   document.body.style.cursor = "grabbing";
   window.addEventListener("pointermove", onPointerMove);
   window.addEventListener("pointerup", onPointerUp);
+}
+
+/**
+ * The folder chip under a screen point, found geometrically. We can't use
+ * `elementFromPoint` here: once a drag begins the modal goes pointer-transparent
+ * (so the drag can reach the canvas), which would make hit-testing skip the
+ * folder chips entirely.
+ */
+function folderIdAt(clientX: number, clientY: number): string | null {
+  const chips = Array.from(
+    document.querySelectorAll<HTMLElement>("[data-folder-id]"),
+  );
+  for (const chip of chips) {
+    const rect = chip.getBoundingClientRect();
+    if (
+      clientX >= rect.left &&
+      clientX <= rect.right &&
+      clientY >= rect.top &&
+      clientY <= rect.bottom
+    ) {
+      return chip.getAttribute("data-folder-id");
+    }
+  }
+  return null;
 }
 
 function onPointerMove(event: PointerEvent) {
@@ -104,39 +160,27 @@ function onPointerMove(event: PointerEvent) {
   ) {
     dragState.isDragging = true;
     createDragPreview(dragState.items.length);
+    // Let pointer events pass through the gallery the moment the drag begins, so
+    // the item can be dropped anywhere — including under the modal. The panel
+    // eases to translucent (reopen on) or all the way out (reopen off) via the
+    // Modal's contentDimmed/contentHidden, so the transition is never abrupt.
+    galleryModalDraggingUnder.value = true;
   }
   dragState.currX = event.pageX;
   dragState.currY = event.pageY;
 
   if (dragState.isDragging) {
     updateDragPreviewPosition(event.clientX, event.clientY);
-  }
 
-  if (dragState.isDragging && !dragState.modalHidden) {
-    // Check if cursor left the modal area - if so, hide modal for scene drop
-    const modalEl = document.querySelector("[data-gallery-modal]");
-    if (modalEl) {
-      const rect = modalEl.getBoundingClientRect();
-      const isOutside =
-        event.clientX < rect.left ||
-        event.clientX > rect.right ||
-        event.clientY < rect.top ||
-        event.clientY > rect.bottom;
-      if (isOutside) {
-        dragState.modalHidden = true;
-        galleryModalVisibleDuringDrag.value = false;
-      }
-    }
-
-    // Update folder hover indicators while inside the modal
-    if (!dragState.modalHidden) {
-      const folderEl = document
-        .elementFromPoint(event.clientX, event.clientY)
-        ?.closest("[data-folder-id]");
-      document.querySelectorAll("[data-folder-id]").forEach((el) => {
-        el.classList.toggle("folder-drag-over", el === folderEl);
-      });
-    }
+    // Highlight the folder under the cursor (if any) — folders still accept
+    // drops even while the gallery is dimmed.
+    const overFolder = folderIdAt(event.clientX, event.clientY);
+    document.querySelectorAll("[data-folder-id]").forEach((el) => {
+      el.classList.toggle(
+        "folder-drag-over",
+        el.getAttribute("data-folder-id") === overFolder,
+      );
+    });
   }
 }
 
@@ -187,25 +231,28 @@ export function removeFolderDropListener(handler: (e: any) => void) {
 }
 
 function onPointerUp(event: PointerEvent) {
-  const wasModalHidden = dragState.modalHidden;
+  // When closing after an add (reopen off), keep `draggingUnder` true so the
+  // panel stays faded-out through the close — clearing it would race the close
+  // animation and flash the hidden panel back up.
+  let closedHidden = false;
 
   if (dragState.item && dragState.isDragging) {
-    if (!dragState.modalHidden) {
-      // Still inside modal - check for folder drop
-      const folderEl = document
-        .elementFromPoint(event.clientX, event.clientY)
-        ?.closest("[data-folder-id]");
-      if (folderEl) {
-        const folderId = folderEl.getAttribute("data-folder-id")!;
-        emitFolderDrop(dragState.items, folderId);
-      }
-    } else {
-      // Modal was hidden - scene drop (existing behavior)
-      if (
-        dragState.item.mediaClass === "image" ||
-        dragState.item.mediaClass === "dimensional"
-      ) {
-        emitImageDrop(dragState.item, { x: event.pageX, y: event.pageY });
+    const folderId = folderIdAt(event.clientX, event.clientY);
+    if (folderId) {
+      // Dropped onto a folder — organize, and keep the gallery open.
+      emitFolderDrop(dragState.items, folderId);
+      spawnDropRipple(event.clientX, event.clientY);
+    } else if (
+      dragState.item.mediaClass === "image" ||
+      dragState.item.mediaClass === "dimensional"
+    ) {
+      // Dropped onto the canvas (anywhere not on a folder) — add to the scene.
+      emitImageDrop(dragState.item, { x: event.pageX, y: event.pageY });
+      spawnDropRipple(event.clientX, event.clientY);
+      // Close the gallery after adding unless the user asked it to stay open.
+      if (!galleryReopenAfterDragSignal.value) {
+        galleryModalVisibleViewMode.value = false;
+        closedHidden = true;
       }
     }
   }
@@ -220,10 +267,11 @@ function onPointerUp(event: PointerEvent) {
   dragState.item = null;
   dragState.items = [];
   dragState.isDragging = false;
-  dragState.modalHidden = false;
 
-  if (wasModalHidden) {
-    galleryModalVisibleDuringDrag.value = galleryReopenAfterDragSignal.value;
+  // Refocus the gallery (un-dim, restore pointer events) — unless it's closing,
+  // in which case it stays faded until reopened (reset on open).
+  if (!closedHidden) {
+    galleryModalDraggingUnder.value = false;
   }
 
   document.body.style.cursor = "";

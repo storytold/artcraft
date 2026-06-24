@@ -9,7 +9,7 @@ use std::sync::Arc;
 use crate::http_server::common_responses::tag_info::TagInfo;
 use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::web_utils::response_error_helpers::to_simple_json_error;
-use crate::http_server::web_utils::user_session::require_user_session_extended::require_user_session_extended;
+use crate::http_server::user_lookup::user_session::require_user_session_extended::require_user_session_extended;
 use crate::state::server_state::ServerState;
 use actix_web::error::ResponseError;
 use actix_web::http::StatusCode;

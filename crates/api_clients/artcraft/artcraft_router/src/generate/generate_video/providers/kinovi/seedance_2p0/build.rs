@@ -1,10 +1,12 @@
 use seedance2pro_client::generate::video::generate_seedance_2p0::{
   KinoviSeedance2p0AspectRatio as KinoviAspectRatio,
+  KinoviSeedance2p0Bitrate as KinoviBitrate,
   KinoviSeedance2p0BatchCount as KinoviBatchCount,
   KinoviSeedance2p0OutputResolution as KinoviOutputResolution,
 };
 
 use crate::api::router_aspect_ratio::RouterAspectRatio;
+use crate::api::router_bitrate::RouterBitrate;
 use crate::api::router_resolution::RouterResolution;
 use crate::client::request_mismatch_mitigation_strategy::RequestMismatchMitigationStrategy;
 use crate::errors::artcraft_router_error::ArtcraftRouterError;
@@ -26,6 +28,7 @@ fn do_build_kinovi_seedance_2p0(mut builder: GenerateVideoRequestBuilder) -> Res
   let resolution = plan_output_resolution(builder.resolution.take(), strategy)?;
   let batch_count = plan_batch_count(builder.video_batch_count.take(), strategy)?;
   let duration_seconds = plan_duration(builder.duration_seconds.take(), strategy)?;
+  let bitrate = plan_bitrate(builder.bitrate.take());
   let prompt = builder.prompt.take().unwrap_or_default();
 
   let unhandled_request_state = KinoviSeedance2p0RemainingItems {
@@ -42,6 +45,7 @@ fn do_build_kinovi_seedance_2p0(mut builder: GenerateVideoRequestBuilder) -> Res
     resolution,
     batch_count,
     duration_seconds,
+    bitrate,
     prompt,
     unhandled_request_state: Some(unhandled_request_state),
   })
@@ -192,6 +196,16 @@ fn plan_duration(
       }
       _ => Ok(d.clamp(MIN, MAX) as u8),
     },
+  }
+}
+
+// Seedance 2.0 Pro bitrate: "standard" (default, field omitted) or "high".
+// Bitrate does not affect cost. `Normal` and an unset value both map to the
+// standard bitrate (None); only `High` requests the higher bitrate.
+fn plan_bitrate(bitrate: Option<RouterBitrate>) -> Option<KinoviBitrate> {
+  match bitrate {
+    Some(RouterBitrate::High) => Some(KinoviBitrate::High),
+    Some(RouterBitrate::Normal) | None => None,
   }
 }
 
@@ -388,6 +402,39 @@ mod tests {
       };
       let draft = unwrap_draft(build_kinovi_seedance_2p0(builder));
       assert!(matches!(draft.resolution, Some(KinoviOutputResolution::TenEightyP)));
+    }
+  }
+
+  // ── Bitrate conversions ──
+
+  mod bitrate_conversions {
+    use super::*;
+
+    #[test]
+    fn bitrate_high() {
+      let builder = GenerateVideoRequestBuilder {
+        bitrate: Some(RouterBitrate::High),
+        ..seedance2pro_builder()
+      };
+      let draft = unwrap_draft(build_kinovi_seedance_2p0(builder));
+      assert!(matches!(draft.bitrate, Some(KinoviBitrate::High)));
+    }
+
+    #[test]
+    fn bitrate_normal_maps_to_standard() {
+      let builder = GenerateVideoRequestBuilder {
+        bitrate: Some(RouterBitrate::Normal),
+        ..seedance2pro_builder()
+      };
+      let draft = unwrap_draft(build_kinovi_seedance_2p0(builder));
+      assert!(draft.bitrate.is_none());
+    }
+
+    #[test]
+    fn bitrate_none_maps_to_standard() {
+      let builder = GenerateVideoRequestBuilder { bitrate: None, ..seedance2pro_builder() };
+      let draft = unwrap_draft(build_kinovi_seedance_2p0(builder));
+      assert!(draft.bitrate.is_none());
     }
   }
 

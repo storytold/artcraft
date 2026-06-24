@@ -1,0 +1,157 @@
+{
+  "db_name": "MySQL",
+  "query": "\nSELECT\n  token as `token: UploadedVideoToken`,\n  sha1_checksum,\n  filesize_bytes as `filesize_bytes: u32`,\n  maybe_width as `maybe_width: u32`,\n  maybe_height as `maybe_height: u32`,\n  maybe_resolution,\n  maybe_detected_model_family as `maybe_detected_model_family: UploadedVideoDetectedModelFamily`,\n  maybe_detected_model_type as `maybe_detected_model_type: UploadedVideoDetectedModelType`,\n  maybe_report,\n  upload_ip_address,\n  maybe_updated_ip_address,\n  created_at,\n  updated_at\nFROM uploaded_videos\nWHERE sha1_checksum = ?\nLIMIT 1\n    ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "token: UploadedVideoToken",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NOT_NULL | UNIQUE_KEY | BINARY | NO_DEFAULT_VALUE",
+          "char_set": 224,
+          "max_size": 128
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "sha1_checksum",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NOT_NULL | UNIQUE_KEY | BINARY | NO_DEFAULT_VALUE",
+          "char_set": 224,
+          "max_size": 160
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "filesize_bytes: u32",
+        "type_info": {
+          "type": "Long",
+          "flags": "NOT_NULL | UNSIGNED | NO_DEFAULT_VALUE",
+          "char_set": 63,
+          "max_size": 10
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "maybe_width: u32",
+        "type_info": {
+          "type": "Long",
+          "flags": "UNSIGNED",
+          "char_set": 63,
+          "max_size": 10
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "maybe_height: u32",
+        "type_info": {
+          "type": "Long",
+          "flags": "UNSIGNED",
+          "char_set": 63,
+          "max_size": 10
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "maybe_resolution",
+        "type_info": {
+          "type": "VarString",
+          "flags": "BINARY",
+          "char_set": 224,
+          "max_size": 48
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "maybe_detected_model_family: UploadedVideoDetectedModelFamily",
+        "type_info": {
+          "type": "VarString",
+          "flags": "MULTIPLE_KEY | BINARY",
+          "char_set": 224,
+          "max_size": 128
+        }
+      },
+      {
+        "ordinal": 7,
+        "name": "maybe_detected_model_type: UploadedVideoDetectedModelType",
+        "type_info": {
+          "type": "VarString",
+          "flags": "BINARY",
+          "char_set": 224,
+          "max_size": 128
+        }
+      },
+      {
+        "ordinal": 8,
+        "name": "maybe_report",
+        "type_info": {
+          "type": "Blob",
+          "flags": "BLOB | BINARY",
+          "char_set": 224,
+          "max_size": 67108860
+        }
+      },
+      {
+        "ordinal": 9,
+        "name": "upload_ip_address",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NOT_NULL | BINARY | NO_DEFAULT_VALUE",
+          "char_set": 224,
+          "max_size": 160
+        }
+      },
+      {
+        "ordinal": 10,
+        "name": "maybe_updated_ip_address",
+        "type_info": {
+          "type": "VarString",
+          "flags": "BINARY",
+          "char_set": 224,
+          "max_size": 160
+        }
+      },
+      {
+        "ordinal": 11,
+        "name": "created_at",
+        "type_info": {
+          "type": "Timestamp",
+          "flags": "NOT_NULL | BINARY | TIMESTAMP",
+          "char_set": 63,
+          "max_size": 19
+        }
+      },
+      {
+        "ordinal": 12,
+        "name": "updated_at",
+        "type_info": {
+          "type": "Timestamp",
+          "flags": "NOT_NULL | BINARY | TIMESTAMP | ON_UPDATE_NOW",
+          "char_set": 63,
+          "max_size": 19
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      false,
+      true,
+      false,
+      false
+    ]
+  },
+  "hash": "408c893a0ced805de4c3c6cfdf0c6a4bcc93dd1eaf98382522eae46e72eb3aa5"
+}

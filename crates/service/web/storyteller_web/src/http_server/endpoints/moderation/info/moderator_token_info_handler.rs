@@ -2,9 +2,10 @@ use std::fmt;
 use std::sync::Arc;
 
 use actix_web::error::ResponseError;
+use actix_web::web::Json;
 use actix_web::http::StatusCode;
 use actix_web::web::Path;
-use actix_web::{web, HttpRequest, HttpResponse};
+use actix_web::{web, HttpRequest};
 use log::warn;
 use serde::Serialize;
 use sqlx::MySqlPool;
@@ -25,7 +26,7 @@ use tokens::tokens::users::UserToken;
 
 use crate::http_server::web_utils::serialize_as_json_error::serialize_as_json_error;
 use crate::http_server::common_responses::common_web_error::CommonWebError;
-use crate::http_server::web_utils::user_session::require_moderator::require_moderator;
+use crate::http_server::user_lookup::user_session::require_moderator::require_moderator;
 use crate::state::server_state::ServerState;
 
 /// For the URL PathInfo
@@ -58,7 +59,7 @@ pub async fn moderator_get_token_info_handler(
   path: Path<ModeratorTokenInfoPath>,
   http_request: HttpRequest,
   server_state: web::Data<Arc<ServerState>>
-) -> Result<HttpResponse, CommonWebError> {
+) -> Result<Json<ModeratorTokenInfoResponse>, CommonWebError> {
 
   let user_session = require_moderator(&http_request, &server_state.session_checker, &server_state.mysql_pool).await?;
 
@@ -75,12 +76,7 @@ pub async fn moderator_get_token_info_handler(
     maybe_payload: maybe_result,
   };
 
-  let body = serde_json::to_string(&response)
-      .map_err(CommonWebError::from_error)?;
-
-  Ok(HttpResponse::Ok()
-      .content_type("application/json")
-      .body(body))
+  Ok(Json(response))
 }
 
 const LEGACY_USER_TOKEN_PREFIX : &str = "U:";

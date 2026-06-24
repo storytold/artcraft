@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use anyhow::anyhow;
 use log::{error, info};
 
-use cloud_storage::bucket_client::BucketClient;
+use cloud_storage::legacy_bucket_client::LegacyBucketClient;
 use filesys::create_dir_all_if_missing::create_dir_all_if_missing;
 use filesys::file_exists::file_exists;
 use filesys::rename_across_devices::rename_across_devices;
@@ -41,7 +41,7 @@ impl PretrainedHubertModel {
 
   pub async fn download_if_not_on_filesystem(
     &self,
-    bucket_client: &BucketClient,
+    bucket_client: &LegacyBucketClient,
     scoped_tempdir_creator: &ScopedTempDirCreator,
   ) -> Result<(), ProcessSingleJobError> {
     if file_exists(&self.filesystem_path) {

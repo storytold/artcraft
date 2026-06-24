@@ -30,7 +30,7 @@ use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::configs::plans::plan_category::PlanCategory;
 use crate::http_server::requests::request_headers::get_routing_tag_header::get_routing_tag_header;
 use crate::http_server::requests::request_headers::has_debug_header::has_debug_header;
-use crate::http_server::session::lookup::user_session_extended::UserSessionExtended;
+use crate::http_server::user_lookup::user_session::session_utils::lookup::user_session_extended::UserSessionExtended;
 use crate::http_server::validations::validate_idempotency_token_format::validate_idempotency_token_format;
 use crate::http_server::web_utils::response_error_helpers::to_simple_json_error;
 use crate::state::server_state::ServerState;

@@ -18,6 +18,9 @@ export async function addCharacter(
 
   obj.userData.isCharacter = true;
 
+  // Animate it in (see addObject).
+  editor.entranceAnimator.play(obj);
+
   editor.history.record(new CreateAction(editor, obj));
 
   editor.bus.emit(

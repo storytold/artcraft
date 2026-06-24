@@ -1,7 +1,7 @@
 use enums::by_table::users::user_feature_flag::UserFeatureFlag;
 use mysql_queries::queries::users::user_sessions::get_user_session_by_token::SessionUserRecord;
-use crate::http_server::session::lookup::user_session_extended::UserSessionExtended;
-use crate::http_server::session::lookup::user_session_feature_flags::UserSessionFeatureFlags;
+use crate::http_server::user_lookup::user_session::session_utils::lookup::user_session_extended::UserSessionExtended;
+use crate::http_server::user_lookup::user_session::session_utils::lookup::user_session_feature_flags::UserSessionFeatureFlags;
 
 /// Check whether we should allow the request access to explore media.
 pub fn allowed_explore_media_access(maybe_session: Option<impl UserSessionExploreMediaFlag>) -> bool {

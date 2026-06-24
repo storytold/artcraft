@@ -25,6 +25,6 @@ pub fn to_simple_json_error(
   };
 
   HttpResponseBuilder::new(status_code)
-      .set_header(CONTENT_TYPE, "application/json")
+      .insert_header((CONTENT_TYPE, "application/json"))
       .body(body)
 }

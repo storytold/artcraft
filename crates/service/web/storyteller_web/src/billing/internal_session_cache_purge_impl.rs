@@ -3,7 +3,7 @@ use actix_web::HttpRequest;
 use redis_caching::redis_ttl_cache::RedisTtlCache;
 use redis_common::redis_cache_keys::RedisCacheKeys;
 use user_traits_component::traits::internal_session_cache_purge::InternalSessionCachePurge;
-use crate::http_server::session::session_checker::SessionChecker;
+use crate::http_server::user_lookup::user_session::session_utils::session_checker::SessionChecker;
 
 pub struct InternalSessionCachePurgeImpl {
   session_checker: SessionChecker,

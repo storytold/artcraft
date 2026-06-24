@@ -14,7 +14,7 @@ use tokens::tokens::api_keys::ApiKeyToken;
 
 use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::endpoints::api_keys::api_key_info_conversion::api_key_row_to_info;
-use crate::http_server::web_utils::user_session::require_user_session::require_user_session;
+use crate::http_server::user_lookup::user_session::require_user_session::require_user_session;
 use crate::state::server_state::ServerState;
 
 /// Fetch a single API key by its `token`, scoped to the logged-in user.

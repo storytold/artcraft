@@ -7,6 +7,7 @@ use std::fmt;
 use std::sync::Arc;
 
 use actix_web::error::ResponseError;
+use actix_web::web::Json;
 use actix_web::http::StatusCode;
 use actix_web::web::Path;
 use actix_web::{web, HttpRequest, HttpResponse};
@@ -22,7 +23,6 @@ use tokens::tokens::user_bookmarks::UserBookmarkToken;
 
 use artcraft_api_defs::common::responses::simple_generic_json_success::SimpleGenericJsonSuccess;
 use crate::http_server::web_utils::response_error_helpers::to_simple_json_error;
-use crate::http_server::web_utils::response_success_helpers::simple_json_success;
 use crate::state::server_state::ServerState;
 
 /// For the URL PathInfo
@@ -92,9 +92,9 @@ impl fmt::Display for DeleteUserBookmarkError {
 pub async fn delete_user_bookmark_handler(
   http_request: HttpRequest,
   path: Path<DeleteUserBookmarkPathInfo>,
-  _request: web::Json<DeleteUserBookmarkRequest>,
+  _request: Json<DeleteUserBookmarkRequest>,
   server_state: web::Data<Arc<ServerState>>
-) -> Result<HttpResponse, DeleteUserBookmarkError> {
+) -> Result<Json<SimpleGenericJsonSuccess>, DeleteUserBookmarkError> {
   let mut mysql_connection = server_state.mysql_pool
       .acquire()
       .await
@@ -181,5 +181,5 @@ pub async fn delete_user_bookmark_handler(
     }
   };
 
-  Ok(simple_json_success())
+  Ok(Json(SimpleGenericJsonSuccess { success: true }))
 }

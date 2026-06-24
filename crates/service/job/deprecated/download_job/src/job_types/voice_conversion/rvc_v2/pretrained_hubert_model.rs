@@ -4,7 +4,7 @@ use anyhow::anyhow;
 use log::info;
 use tempdir::TempDir;
 
-use cloud_storage::bucket_client::BucketClient;
+use cloud_storage::legacy_bucket_client::LegacyBucketClient;
 use errors::AnyhowResult;
 use filesys::create_dir_all_if_missing::create_dir_all_if_missing;
 use filesys::file_exists::file_exists;
@@ -38,7 +38,7 @@ impl PretrainedHubertModel {
 
   pub async fn download_if_not_on_filesystem(
     &self,
-    bucket_client: &BucketClient,
+    bucket_client: &LegacyBucketClient,
     temp_dir: &TempDir,
   ) -> AnyhowResult<()> {
     if file_exists(&self.filesystem_path) {

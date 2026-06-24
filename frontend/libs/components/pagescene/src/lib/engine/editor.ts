@@ -9,6 +9,7 @@ import { SaveManager } from "./save_manager";
 
 import { SceneGenereationMetaData } from "../models/sceneGenerationMetadata";
 import { SceneManager } from "./scene_manager_api";
+import { EntranceAnimator } from "./entranceAnimation";
 import { ViewportController } from "./editor/ViewportController";
 import { PostProcessingPipeline } from "./editor/PostProcessingPipeline";
 import { GizmoController } from "./editor/GizmoController";
@@ -80,6 +81,12 @@ class Editor {
   // instances via editor.history.record(...); each action class under
   // engine/editor/actions/ encapsulates its own apply/revert.
   history: HistoryManager;
+
+  // Plays the entrance animation for newly added objects (per-gaussian radial
+  // settle for splats, silhouette mask-reveal for meshes). The drop actions
+  // (addObject/addCharacter/addShape) register the object here and the per-frame
+  // render loop ticks it. Field initializer so it's always ready.
+  readonly entranceAnimator = new EntranceAnimator();
 
   // Typed event bus the engine emits onto. EngineStoreBridge subscribes
   // once at construction and is the only file under engine/ that
@@ -867,6 +874,9 @@ class Editor {
     const delta_time = this.clock.getDelta();
 
     this.cameraController.tickPerFrame(delta_time);
+
+    // Advance any in-flight entrance animations.
+    this.entranceAnimator.tick(delta_time);
 
     this.activeScene.shader_objects.forEach((shader) => {
       shader.material.uniforms["time"].value += 0.5 * delta_time;

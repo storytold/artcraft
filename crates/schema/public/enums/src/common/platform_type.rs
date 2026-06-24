@@ -26,6 +26,9 @@ pub enum PlatformType {
   /// Desktop app users
   DesktopApp,
 
+  /// Requests authenticated via an `Authorization` header API key (the Omni API surface).
+  ApiKey,
+
   // ========== Other clients ==========
 
   Curl,
@@ -42,6 +45,7 @@ impl PlatformType {
     match self {
       Self::Web => "web",
       Self::DesktopApp => "desktop_app",
+      Self::ApiKey => "api_key",
       Self::Curl => "curl",
       Self::PythonRequests => "python_requests",
       Self::Postman => "postman",
@@ -52,6 +56,7 @@ impl PlatformType {
     match value {
       "web" => Ok(Self::Web),
       "desktop_app" => Ok(Self::DesktopApp),
+      "api_key" => Ok(Self::ApiKey),
       "curl" => Ok(Self::Curl),
       "python_requests" => Ok(Self::PythonRequests),
       "postman" => Ok(Self::Postman),
@@ -64,6 +69,7 @@ impl PlatformType {
     BTreeSet::from([
       Self::Web,
       Self::DesktopApp,
+      Self::ApiKey,
       Self::Curl,
       Self::PythonRequests,
       Self::Postman,
@@ -84,6 +90,7 @@ mod tests {
     fn test_serialization() {
       assert_serialization(PlatformType::Web, "web");
       assert_serialization(PlatformType::DesktopApp, "desktop_app");
+      assert_serialization(PlatformType::ApiKey, "api_key");
       assert_serialization(PlatformType::Curl, "curl");
       assert_serialization(PlatformType::PythonRequests, "python_requests");
       assert_serialization(PlatformType::Postman, "postman");
@@ -93,6 +100,7 @@ mod tests {
     fn to_str() {
       assert_eq!(PlatformType::Web.to_str(), "web");
       assert_eq!(PlatformType::DesktopApp.to_str(), "desktop_app");
+      assert_eq!(PlatformType::ApiKey.to_str(), "api_key");
       assert_eq!(PlatformType::Curl.to_str(), "curl");
       assert_eq!(PlatformType::PythonRequests.to_str(), "python_requests");
       assert_eq!(PlatformType::Postman.to_str(), "postman");
@@ -102,6 +110,7 @@ mod tests {
     fn from_str() {
       assert_eq!(PlatformType::from_str("web").unwrap(), PlatformType::Web);
       assert_eq!(PlatformType::from_str("desktop_app").unwrap(), PlatformType::DesktopApp);
+      assert_eq!(PlatformType::from_str("api_key").unwrap(), PlatformType::ApiKey);
       assert_eq!(PlatformType::from_str("curl").unwrap(), PlatformType::Curl);
       assert_eq!(PlatformType::from_str("python_requests").unwrap(), PlatformType::PythonRequests);
       assert_eq!(PlatformType::from_str("postman").unwrap(), PlatformType::Postman);
@@ -121,9 +130,10 @@ mod tests {
     #[test]
     fn all_variants() {
       let mut variants = PlatformType::all_variants();
-      assert_eq!(variants.len(), 5);
+      assert_eq!(variants.len(), 6);
       assert_eq!(variants.pop_first(), Some(PlatformType::Web));
       assert_eq!(variants.pop_first(), Some(PlatformType::DesktopApp));
+      assert_eq!(variants.pop_first(), Some(PlatformType::ApiKey));
       assert_eq!(variants.pop_first(), Some(PlatformType::Curl));
       assert_eq!(variants.pop_first(), Some(PlatformType::PythonRequests));
       assert_eq!(variants.pop_first(), Some(PlatformType::Postman));

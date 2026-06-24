@@ -119,6 +119,8 @@
   },
   "workspaces": [
     "apps/**/*",
-    "libs/**/*"
+    "libs/**/*",
+    "!apps/artcraft-dashboard",
+    "!apps/artcraft-dashboard/**"
   ]
 }

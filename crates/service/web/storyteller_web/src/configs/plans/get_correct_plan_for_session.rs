@@ -5,7 +5,7 @@ use server_environment::ServerEnvironment;
 
 use crate::configs::plans::plan::Plan;
 use crate::configs::plans::plan_list::{DEVELOPMENT_PREMIUM_PLANS_BY_SLUG, FREE_LOGGED_IN_PLAN, FREE_LOGGED_OUT_PLAN, LOYALTY_PLANS_BY_SLUG, PRODUCTION_PREMIUM_PLANS_BY_SLUG};
-use crate::http_server::session::lookup::user_session_extended::UserSessionExtended;
+use crate::http_server::user_lookup::user_session::session_utils::lookup::user_session_extended::UserSessionExtended;
 
 /// Look up the most appropriate plan for the session.
 /// This will probably grow to include a lot of factors.
@@ -70,7 +70,7 @@ pub mod tests {
 
   use crate::configs::plans::get_correct_plan_for_session::get_correct_plan_for_session;
   use crate::configs::plans::plan_list::{ALL_PLANS_BY_SLUG, FREE_LOGGED_IN_PLAN, FREE_LOGGED_OUT_PLAN};
-  use crate::http_server::session::lookup::user_session_extended::{UserSessionExtended, UserSessionSubscriptionPlan};
+  use crate::http_server::user_lookup::user_session::session_utils::lookup::user_session_extended::{UserSessionExtended, UserSessionSubscriptionPlan};
 
   #[test]
   fn test_free_logged_out_plan() {

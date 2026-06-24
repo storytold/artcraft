@@ -24,6 +24,8 @@ pub fn build_artcraft_seedance_2p0_bpu_fast(builder: GenerateVideoRequestBuilder
 mod tests {
   use enums::common::generation::common_resolution::CommonResolution as CommonResolutionEnum;
   use enums::common::generation::common_video_model::CommonVideoModel as CommonVideoModelEnum;
+  use enums::common::generation::common_bitrate::CommonBitrate as CommonBitrateEnum;
+  use crate::api::router_bitrate::RouterBitrate;
   use tokens::tokens::characters::CharacterToken;
   use tokens::tokens::media_files::MediaFileToken;
 
@@ -71,6 +73,12 @@ mod tests {
     fn batch_count_passed_through() {
       let req = unwrap_request(make_builder(|b| { b.video_batch_count = Some(4); }));
       assert_eq!(req.request.video_batch_count, Some(4));
+    }
+
+    #[test]
+    fn bitrate_passed_through() {
+      let req = unwrap_request(make_builder(|b| { b.bitrate = Some(RouterBitrate::High); }));
+      assert_eq!(req.request.bitrate, Some(CommonBitrateEnum::High));
     }
   }
 

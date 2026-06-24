@@ -6,7 +6,7 @@ import { IconDefinition } from "@fortawesome/pro-solid-svg-icons";
 import { CloseButton } from "@storyteller/ui-close-button";
 import { useRef, useState, useEffect, useContext, createContext } from "react";
 import { cloneElement, isValidElement } from "react";
-import { useTransition, animated } from "@react-spring/web";
+import { useTransition, useSpring, to, animated } from "@react-spring/web";
 import {
   faUpRightAndDownLeftFromCenter,
   faDownLeftAndUpRightToCenter,
@@ -183,6 +183,9 @@ export const Modal = ({
   closeOnOutsideClick = true,
   closeOnEsc = true,
   allowBackgroundInteraction = false,
+  contentInteractive = true,
+  contentDimmed = false,
+  contentHidden = false,
   expandable = false,
   accessibleTitle,
   accessibleDescription,
@@ -207,6 +210,28 @@ export const Modal = ({
   closeOnOutsideClick?: boolean;
   closeOnEsc?: boolean;
   allowBackgroundInteraction?: boolean;
+  /**
+   * When false, the modal's content panel ignores pointer events (events fall
+   * through to whatever is behind it). Lets a caller make the panel a passive,
+   * see-through overlay — e.g. the gallery going translucent so a drag can pass
+   * under it onto the canvas. Defaults to true.
+   */
+  contentInteractive?: boolean;
+  /**
+   * When true, fades the content panel down (transition-eased). Applied to an
+   * inner wrapper so it composes with — rather than fights — the spring opacity
+   * the modal animates on open/close. Pair with `contentInteractive={false}` for
+   * a passive, see-through overlay. Defaults to false.
+   */
+  contentDimmed?: boolean;
+  /**
+   * When true, eases the whole panel all the way out (opacity → 0, slightly more
+   * scale-down) through the same spring as `contentDimmed`, so a "hide it" reads
+   * as a smooth step-away rather than an abrupt close. The panel stays mounted;
+   * the caller flips `isOpen` once it's faded if it wants to fully unmount.
+   * Takes precedence over `contentDimmed`. Defaults to false.
+   */
+  contentHidden?: boolean;
   expandable?: boolean;
   accessibleTitle?: string;
   accessibleDescription?: string;
@@ -248,6 +273,17 @@ export const Modal = ({
       friction: 30,
       mass: 0.8,
     },
+  });
+
+  // Smoothly drives the `contentDimmed`/`contentHidden` "step back": the panel
+  // eases to a target opacity factor (1 = shown, 0.4 = translucent, 0 = hidden)
+  // with a paired scale-down, so going translucent or hiding reads as a
+  // deliberate recede rather than a flicker or an abrupt cut. easeOutCubic over
+  // 280ms: responsive on the way down, calm as it settles.
+  const dimFactor = contentHidden ? 0 : contentDimmed ? 0.4 : 1;
+  const dimSpring = useSpring({
+    factor: dimFactor,
+    config: { duration: 280, easing: (t: number) => 1 - Math.pow(1 - t, 3) },
   });
 
   const backdropTransitions = useTransition(isOpen, {
@@ -872,6 +908,16 @@ export const Modal = ({
   }, [isOpen, zIndex, onClose, closeOnEsc]);
 
   const getModalStyle = (): React.CSSProperties => {
+    // Pointer behavior of the content panel: explicitly off when the caller
+    // wants it passive (drag-through); otherwise re-enabled when the rest of the
+    // screen is click-through (allowBackgroundInteraction makes the wrappers
+    // pointer-none, so the panel needs pointer-auto to stay interactive).
+    const pointerStyle: React.CSSProperties = !contentInteractive
+      ? { pointerEvents: "none" }
+      : allowBackgroundInteraction
+        ? { pointerEvents: "auto" }
+        : {};
+
     // fill the entire viewport even if theres a stored size or position
     if (expanded) {
       return {
@@ -882,7 +928,7 @@ export const Modal = ({
         zIndex,
         width: "100vw",
         height: "100vh",
-        ...(allowBackgroundInteraction ? { pointerEvents: "auto" } : {}),
+        ...pointerStyle,
       };
     }
 
@@ -892,7 +938,7 @@ export const Modal = ({
         ...(resizable && size
           ? { width: size.width, height: size.height }
           : {}),
-        ...(allowBackgroundInteraction ? { pointerEvents: "auto" } : {}),
+        ...pointerStyle,
       };
     }
     return {
@@ -902,7 +948,7 @@ export const Modal = ({
       margin: 0,
       zIndex,
       ...(resizable && size ? { width: size.width, height: size.height } : {}),
-      ...(allowBackgroundInteraction ? { pointerEvents: "auto" } : {}),
+      ...pointerStyle,
     };
   };
 
@@ -985,14 +1031,35 @@ export const Modal = ({
                       ref={modalRef}
                       style={{
                         ...getModalStyle(),
-                        opacity: styles.opacity,
-                        transform: styles.transform,
+                        // The dim/hide factor eases the whole panel (background
+                        // included): translucent (0.4) or hidden (0), with a
+                        // paired scale-down. Composed with the open/close spring
+                        // so both animations coexist (factor multiplies opacity;
+                        // the scale-down is appended to the spring transform).
+                        opacity: to(
+                          [styles.opacity, dimSpring.factor],
+                          (o, f) => (o as number) * (f as number),
+                        ),
+                        transform: to(
+                          [styles.transform, dimSpring.factor],
+                          (tr, f) => `${tr} scale(${0.93 + 0.07 * (f as number)})`,
+                        ),
                         transformOrigin: "center center",
                         willChange: "transform, opacity", // Optimize for animations
                         outline: "none",
                       }}
                     >
-                      <div className="w-full h-full">
+                      <div
+                        className={twMerge(
+                          "w-full h-full",
+                          // When dimmed/hiding for a drag-under, fade out media so
+                          // the colored thumbnails don't block the view of
+                          // whatever's behind the translucent panel — the layout
+                          // (faint card outlines) stays as a placeholder.
+                          (contentDimmed || contentHidden) &&
+                            "[&_img]:opacity-0 [&_video]:opacity-0 [&_img]:transition-opacity [&_video]:transition-opacity [&_img]:duration-200 [&_video]:duration-200",
+                        )}
+                      >
                         {accessibleDescription && (
                           <VisuallyHidden asChild>
                             <Dialog.Description>

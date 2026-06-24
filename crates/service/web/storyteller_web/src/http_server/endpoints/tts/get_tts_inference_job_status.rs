@@ -2,9 +2,10 @@ use std::fmt;
 use std::sync::Arc;
 
 use actix_web::error::ResponseError;
+use actix_web::web::Json;
 use actix_web::http::StatusCode;
 use actix_web::web::Path;
-use actix_web::{web, HttpMessage, HttpRequest, HttpResponse};
+use actix_web::{web, HttpMessage, HttpRequest};
 use chrono::{DateTime, Utc};
 use log::error;
 use redis::{Commands, RedisResult};
@@ -61,7 +62,7 @@ pub struct GetTtsInferenceStatusSuccessResponse {
 pub async fn get_tts_inference_job_status_handler(
   http_request: HttpRequest,
   path: Path<GetTtsInferenceStatusPathInfo>,
-  server_state: web::Data<Arc<ServerState>>) -> Result<HttpResponse, CommonWebError>
+  server_state: web::Data<Arc<ServerState>>) -> Result<Json<GetTtsInferenceStatusSuccessResponse>, CommonWebError>
 {
   let job_token = path.into_inner().token;
 
@@ -80,20 +81,10 @@ pub async fn get_tts_inference_job_status_handler(
     legacy_lookup(&job_token, &server_state).await?
   };
 
-  let response = GetTtsInferenceStatusSuccessResponse {
+  Ok(Json(GetTtsInferenceStatusSuccessResponse {
     success: true,
     state: record_for_response,
-  };
-
-  let body = serde_json::to_string(&response)
-      .map_err(|e| {
-        error!("error returning response: {:?}",  e);
-        CommonWebError::from_error(e)
-      })?;
-
-  Ok(HttpResponse::Ok()
-      .content_type("application/json")
-      .body(body))
+  }))
 }
 
 async fn legacy_lookup(job_token: &str, server_state: &ServerState)

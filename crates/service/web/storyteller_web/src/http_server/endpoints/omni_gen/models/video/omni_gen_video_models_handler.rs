@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use crate::configs::omni_gen::video_models::OMNI_GEN_VIDEO_MODELS_AND_PROVIDERS;
 use crate::http_server::common_responses::common_web_error::CommonWebError;
-use crate::http_server::session::lookup::user_session_feature_flags::UserSessionFeatureFlags;
+use crate::http_server::user_lookup::user_session::session_utils::lookup::user_session_feature_flags::UserSessionFeatureFlags;
 use crate::state::server_state::ServerState;
 use actix_web::web::{Json, Query};
 use actix_web::{web, HttpRequest};

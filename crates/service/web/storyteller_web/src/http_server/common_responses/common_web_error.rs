@@ -1,7 +1,7 @@
 use std::fmt::{Display, Formatter};
 use std::sync::Arc;
 
-use crate::http_server::session::session_checker_error::SessionCheckerError;
+use crate::http_server::user_lookup::user_session::session_utils::session_checker_error::SessionCheckerError;
 use actix_artcraft::sessions::anonymous_visitor_tracking::avt_cookie_payload_error::AvtCookiePayloadError;
 use actix_artcraft::sessions::user_sessions::http_user_session_payload_error::HttpUserSessionPayloadError;
 use actix_http::StatusCode;

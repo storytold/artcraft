@@ -172,6 +172,7 @@ pub async fn flux_2_lora_edit_image_angle_handler(
       })?;
 
   let prompt_result = insert_prompt(InsertPromptArgs {
+    maybe_bitrate: None,
     maybe_apriori_prompt_token: None,
     prompt_type: PromptType::ArtcraftApp,
     maybe_creator_user_token: Some(&user_token),

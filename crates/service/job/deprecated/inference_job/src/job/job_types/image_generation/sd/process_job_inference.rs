@@ -332,6 +332,7 @@ pub async fn process_job_inference(
 
   // NB: Don't fail the job if the query fails.
   let prompt_result = insert_prompt(InsertPromptArgs {
+    maybe_bitrate: None,
     maybe_apriori_prompt_token: Some(&prompt_token),
     prompt_type: PromptType::StableDiffusion,
     maybe_creator_user_token: job.maybe_creator_user_token_typed.as_ref(),

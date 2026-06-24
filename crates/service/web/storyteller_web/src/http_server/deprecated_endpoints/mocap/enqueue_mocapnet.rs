@@ -10,7 +10,7 @@ use actix_web::http::StatusCode;
 use actix_web::{web, HttpRequest, HttpResponse};
 use log::{error, info, warn};
 
-use crate::http_server::session::lookup::user_session_extended::UserSessionExtended;
+use crate::http_server::user_lookup::user_session::session_utils::lookup::user_session_extended::UserSessionExtended;
 use enums::by_table::generic_inference_jobs::inference_category::InferenceCategory;
 use enums::by_table::generic_inference_jobs::inference_job_type::InferenceJobType;
 use enums::by_table::generic_inference_jobs::inference_model_type::InferenceModelType;

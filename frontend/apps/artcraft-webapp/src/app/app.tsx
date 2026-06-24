@@ -16,6 +16,7 @@ import CreateImage from "../pages/create-image";
 import CreateVideo from "../pages/create-video";
 import CreateVFX from "../pages/create-vfx";
 import PageScene from "../pages/pagescene";
+import PageDraw from "../pages/pagedraw";
 import VideoEditorPage from "../pages/video-editor";
 import MoodboardPage from "../pages/moodboard";
 import Pricing from "../pages/pricing";
@@ -36,6 +37,7 @@ import {
   useSidebar,
 } from "../components/ui/sidebar";
 import { AppSidebar } from "../components/sidebar/app-sidebar";
+import { PageTransition } from "../components/motion/page-transition";
 import { MobileBottomNav } from "../components/sidebar/mobile-bottom-nav";
 import { TopBar } from "../components/topbar/topbar";
 import { SignupCtaModal } from "../components/signup-cta-modal";
@@ -93,12 +95,13 @@ function ProtectedContent() {
   // The Edit 3D, video editor, and moodboard host the header's actions
   // (pricing/credits/task queue/profile) inside their own toolbar/header to
   // reclaim vertical space, so the global header is hidden there — desktop
-  // only, since the mobile route shows a gate that still needs the header's
-  // nav chrome.
+  // only, since the mobile routes show the global chrome (Edit Image keeps the
+  // bar on mobile; Edit 3D shows a gate that still needs the header's nav).
   const hideTopBar =
     !isMobile &&
     (pathname === "/edit-3d" ||
       pathname.startsWith("/edit-3d/") ||
+      pathname === "/edit-image" ||
       pathname === "/video-editor" ||
       pathname.startsWith("/video-editor/") ||
       pathname === "/moodboard");
@@ -110,7 +113,9 @@ function ProtectedContent() {
     >
       {!hideTopBar && <TopBar />}
       <SidebarInset className="flex-1 min-h-0 overflow-y-auto bg-[#121212]">
-        <Outlet />
+        <PageTransition>
+          <Outlet />
+        </PageTransition>
       </SidebarInset>
       {isMobile && <MobileBottomNav />}
     </div>
@@ -152,6 +157,7 @@ export function App() {
           <Route path="/moodboard" element={<MoodboardPage />} />
           <Route path="/edit-3d" element={<PageScene />} />
           <Route path="/edit-3d/:sceneToken" element={<PageScene />} />
+          <Route path="/edit-image" element={<PageDraw />} />
           <Route path="/video-editor" element={<VideoEditorPage />} />
           <Route
             path="/video-editor/:projectId"

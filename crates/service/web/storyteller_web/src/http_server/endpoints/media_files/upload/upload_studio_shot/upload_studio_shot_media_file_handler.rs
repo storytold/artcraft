@@ -25,7 +25,7 @@ use crate::http_server::endpoints::media_files::upload::upload_studio_shot::extr
 use crate::http_server::endpoints::media_files::upload::upload_studio_shot::ffmpeg_frames_to_mp4::ffmpeg_frames_to_mp4;
 use crate::http_server::requests::request_headers::has_debug_header::has_debug_header;
 use crate::http_server::validations::validate_idempotency_token_format::validate_idempotency_token_format;
-use crate::http_server::web_utils::user_session::require_user_session_extended::require_user_session_extended;
+use crate::http_server::user_lookup::user_session::require_user_session_extended::require_user_session_extended;
 use crate::state::server_state::ServerState;
 
 const DEFAULT_FPS : u8 = 12;

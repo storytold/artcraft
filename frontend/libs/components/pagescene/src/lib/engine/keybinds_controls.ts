@@ -399,7 +399,8 @@ export class MouseControls {
         event.preventDefault();
         this.isProcessing = true;
         try {
-          await this.sceneManager?.undo();
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          await (this.sceneManager as any)?.undo();
         } finally {
           this.isProcessing = false;
         }
@@ -408,7 +409,8 @@ export class MouseControls {
         event.preventDefault();
         this.isProcessing = true;
         try {
-          await this.sceneManager?.redo();
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          await (this.sceneManager as any)?.redo();
         } finally {
           this.isProcessing = false;
         }
@@ -417,7 +419,8 @@ export class MouseControls {
         event.preventDefault();
         this.isProcessing = true;
         try {
-          await this.sceneManager?.redo();
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          await (this.sceneManager as any)?.redo();
         } finally {
           this.isProcessing = false;
         }

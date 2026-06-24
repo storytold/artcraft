@@ -1,12 +1,11 @@
 use std::sync::Arc;
 
-use actix_web::http::StatusCode;
 use actix_web::web::Path;
-use actix_web::{web, HttpRequest, HttpResponse, ResponseError};
+use actix_web::web::Json;
+use actix_web::{web, HttpRequest};
 use log::warn;
 
-use http_server_common::response::response_error_helpers::to_simple_json_error;
-use http_server_common::response::response_success_helpers::simple_json_success;
+use artcraft_api_defs::common::responses::simple_generic_json_success::SimpleGenericJsonSuccess;
 use mysql_queries::queries::voice_designer::voice_samples::delete_sample::{delete_sample_as_mod, delete_sample_as_user, undelete_sample_as_mod, undelete_sample_as_user};
 use mysql_queries::queries::voice_designer::voice_samples::get_dataset_sample::get_dataset_sample_by_token;
 use tokens::tokens::zs_voice_dataset_samples::ZsVoiceDatasetSampleToken;
@@ -33,9 +32,9 @@ pub struct DeleteSampleRequest {
 pub async fn delete_sample_handler(
   http_request: HttpRequest,
   path: Path<DeleteSamplePathInfo>,
-  request: web::Json<DeleteSampleRequest>,
+  request: Json<DeleteSampleRequest>,
   server_state: web::Data<Arc<ServerState>>
-) -> Result<HttpResponse, CommonWebError> {
+) -> Result<Json<SimpleGenericJsonSuccess>, CommonWebError> {
 
   let maybe_user_session = server_state
       .session_checker
@@ -122,5 +121,5 @@ pub async fn delete_sample_handler(
     }
   };
 
-  Ok(simple_json_success())
+  Ok(Json(SimpleGenericJsonSuccess { success: true }))
 }

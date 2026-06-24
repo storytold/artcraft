@@ -1,14 +1,11 @@
-use std::fmt;
 use std::sync::Arc;
 
-use actix_web::error::ResponseError;
-use actix_web::http::StatusCode;
 use actix_web::web::Path;
-use actix_web::{web, HttpRequest, HttpResponse};
+use actix_web::web::Json;
+use actix_web::{web, HttpRequest};
 use log::warn;
 use utoipa::ToSchema;
 
-use http_server_common::response::serialize_as_json_error::serialize_as_json_error;
 use mysql_queries::queries::model_weights::delete_weights::{
   delete_weights_as_mod,
   delete_weights_as_user,
@@ -18,7 +15,6 @@ use mysql_queries::queries::model_weights::get::get_weight::get_weight_by_token;
 use tokens::tokens::model_weights::ModelWeightToken;
 
 use artcraft_api_defs::common::responses::simple_generic_json_success::SimpleGenericJsonSuccess;
-use crate::http_server::web_utils::response_success_helpers::simple_json_success;
 use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::state::server_state::ServerState;
 use crate::util::delete_role_disambiguation::{delete_role_disambiguation, DeleteRole};
@@ -55,9 +51,9 @@ pub struct DeleteWeightRequest {
 pub async fn delete_weight_handler(
     http_request: HttpRequest,
     path: Path<DeleteWeightPathInfo>,
-    request: web::Json<DeleteWeightRequest>,
+    request: Json<DeleteWeightRequest>,
     server_state: web::Data<Arc<ServerState>>
-  ) -> Result<HttpResponse, CommonWebError>{
+  ) -> Result<Json<SimpleGenericJsonSuccess>, CommonWebError>{
     let maybe_user_session = server_state
         .session_checker
         .maybe_get_user_session(&http_request, &server_state.mysql_pool)
@@ -155,5 +151,5 @@ pub async fn delete_weight_handler(
       }
     };
   
-    Ok(simple_json_success())
+    Ok(Json(SimpleGenericJsonSuccess { success: true }))
   }

@@ -47,6 +47,28 @@ pub async fn mark_job_failed_by_token_from_connection(args: MarkJobFailedByToken
   }).await
 }
 
+/// Permanently mark an inference job as failed using an arbitrary executor.
+/// Pass `&mut *transaction` to write inside an existing transaction (e.g.
+/// alongside a refund, after a `SELECT ... FOR UPDATE` re-check).
+pub async fn mark_job_failed_by_token_with_executor<'e, E>(
+  executor: E,
+  job_token: &InferenceJobToken,
+  maybe_public_failure_reason: Option<&str>,
+  internal_debugging_failure_reason: &str,
+  maybe_frontend_failure_category: Option<FrontendFailureCategory>,
+) -> AnyhowResult<()>
+where
+  E: sqlx::Executor<'e, Database = MySql>,
+{
+  execute_mark_failed(ExecuteMarkJobFailedByTokenArgs {
+    executor,
+    job_token,
+    maybe_public_failure_reason,
+    internal_debugging_failure_reason,
+    maybe_frontend_failure_category,
+  }).await
+}
+
 struct ExecuteMarkJobFailedByTokenArgs<'a, E> {
   executor: E,
   job_token: &'a InferenceJobToken,

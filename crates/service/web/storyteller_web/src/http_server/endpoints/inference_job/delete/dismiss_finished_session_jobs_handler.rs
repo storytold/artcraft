@@ -8,7 +8,7 @@ use utoipa::ToSchema;
 use mysql_queries::queries::generic_inference::web::dismiss_finished_jobs_for_user::dismiss_finished_jobs_for_user;
 
 use crate::http_server::common_responses::common_web_error::CommonWebError;
-use crate::http_server::web_utils::user_session::require_user_session::require_user_session;
+use crate::http_server::user_lookup::user_session::require_user_session::require_user_session;
 use crate::state::server_state::ServerState;
 
 #[derive(Serialize, ToSchema)]

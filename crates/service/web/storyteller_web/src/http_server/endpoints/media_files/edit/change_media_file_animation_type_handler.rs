@@ -17,7 +17,7 @@ use mysql_queries::queries::media_files::get::get_media_file::get_media_file;
 use crate::http_server::common_requests::media_file_token_path_info::MediaFileTokenPathInfo;
 use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::common_responses::simple_response::SimpleResponse;
-use crate::http_server::web_utils::user_session::require_user_session::require_user_session;
+use crate::http_server::user_lookup::user_session::require_user_session::require_user_session;
 use crate::state::server_state::ServerState;
 
 #[derive(Deserialize, ToSchema)]

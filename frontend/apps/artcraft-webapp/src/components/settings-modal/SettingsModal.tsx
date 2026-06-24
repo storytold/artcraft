@@ -37,7 +37,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   );
 
   const tabs = useMemo(
-    () => (!hasApiKeyFlag ? [...BASE_TABS, API_KEYS_TAB] : BASE_TABS),
+    () => (hasApiKeyFlag ? [...BASE_TABS, API_KEYS_TAB] : BASE_TABS),
     [hasApiKeyFlag],
   );
 

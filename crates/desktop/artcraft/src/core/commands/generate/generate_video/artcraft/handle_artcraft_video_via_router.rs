@@ -54,6 +54,7 @@ pub(super) async fn handle_artcraft_video_via_router(
     reference_character_tokens,
     resolution: request.resolution,
     aspect_ratio: request.aspect_ratio,
+    bitrate: None,
     duration_seconds: request.duration_seconds,
     video_batch_count: request.video_batch_count,
     generate_audio: request.generate_audio,

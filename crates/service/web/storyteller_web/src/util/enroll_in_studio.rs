@@ -7,7 +7,7 @@ use mysql_queries::queries::users::user::update::set_can_access_studio_transacti
 use mysql_queries::queries::users::user::update::set_user_feature_flags_transactional::{set_user_feature_flags_transactional, SetUserFeatureFlagTransactionalArgs};
 use tokens::tokens::users::UserToken;
 
-use crate::http_server::session::lookup::user_session_feature_flags::UserSessionFeatureFlags;
+use crate::http_server::user_lookup::user_session::session_utils::lookup::user_session_feature_flags::UserSessionFeatureFlags;
 
 pub async fn enroll_in_studio(
   user_token: &UserToken,

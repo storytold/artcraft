@@ -12,7 +12,7 @@ use artcraft_api_defs::moderation::user::user_lookup_by_stripe_customer_id::{
 use mysql_queries::queries::users::user_subscriptions::lookup_users_by_stripe_customer_id::lookup_users_by_stripe_customer_id;
 
 use crate::http_server::common_responses::common_web_error::CommonWebError;
-use crate::http_server::web_utils::user_session::require_moderator::require_moderator;
+use crate::http_server::user_lookup::user_session::require_moderator::require_moderator;
 use crate::state::server_state::ServerState;
 
 /// Moderator User Lookup by Stripe Customer ID

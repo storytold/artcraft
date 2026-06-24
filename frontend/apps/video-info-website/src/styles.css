@@ -1,0 +1,100 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    color-scheme: light;
+  }
+  :root.dark {
+    color-scheme: dark;
+  }
+
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  body {
+    @apply font-sans antialiased;
+    @apply bg-slate-50 text-slate-900;
+    @apply transition-colors duration-500;
+  }
+
+  .dark body {
+    @apply bg-[#070710] text-slate-100;
+  }
+}
+
+@layer components {
+  /* Animated brand gradient text. */
+  .brand-gradient {
+    @apply bg-clip-text text-transparent;
+    background-image: linear-gradient(
+      110deg,
+      #7c3aed,
+      #d946ef,
+      #06b6d4,
+      #7c3aed
+    );
+    background-size: 300% 100%;
+    @apply animate-gradient-x;
+  }
+
+  /* Frosted card surface that adapts to theme. */
+  .glass {
+    @apply rounded-3xl border backdrop-blur-xl transition-colors duration-500;
+    @apply border-slate-200/80 bg-white/70 shadow-xl shadow-slate-300/30;
+  }
+  .dark .glass {
+    @apply border-white/10 bg-white/[0.04] shadow-2xl shadow-black/40;
+  }
+
+  /* Shimmering "scanning" bar used during upload. */
+  .scan-shimmer {
+    background-image: linear-gradient(
+      90deg,
+      transparent,
+      rgba(217, 70, 239, 0.7),
+      rgba(6, 182, 212, 0.7),
+      transparent
+    );
+    background-size: 200% 100%;
+    @apply animate-shimmer;
+  }
+}
+
+/* Ambient mesh-gradient glows behind the page content. */
+.ambient-glow::before,
+.ambient-glow::after {
+  content: '';
+  position: fixed;
+  z-index: -1;
+  border-radius: 9999px;
+  filter: blur(120px);
+  opacity: 0.45;
+  pointer-events: none;
+  animation: pulse-glow 9s ease-in-out infinite;
+}
+.ambient-glow::before {
+  top: -10%;
+  left: -5%;
+  width: 45vw;
+  height: 45vw;
+  background: radial-gradient(circle, #7c3aed, transparent 70%);
+}
+.ambient-glow::after {
+  bottom: -15%;
+  right: -10%;
+  width: 50vw;
+  height: 50vw;
+  background: radial-gradient(circle, #06b6d4, transparent 70%);
+  animation-delay: 2s;
+}
+.dark .ambient-glow::before {
+  opacity: 0.35;
+}
+.dark .ambient-glow::after {
+  opacity: 0.3;
+}

@@ -121,6 +121,15 @@ const LABEL_TO_RES: Record<string, string> = Object.fromEntries(
   Object.entries(RES_LABELS).map(([k, v]) => [v, k]),
 );
 
+const BITRATE_LABELS: Record<string, string> = {
+  normal: "Normal",
+  high: "High",
+};
+
+const LABEL_TO_BITRATE: Record<string, string> = Object.fromEntries(
+  Object.entries(BITRATE_LABELS).map(([k, v]) => [v, k]),
+);
+
 // ── Model lookup ─────────────────────────────────────────────────────────
 
 // Placeholder entries shown in the picker as disabled "SOON" items. These are
@@ -294,6 +303,16 @@ export default function CreateVideo() {
     (v: string | null) => setUi({ resolution: v }),
     [setUi],
   );
+  const bitrate =
+    resolveModelOption(
+      ui.bitrate ?? undefined,
+      selectedModel?.bitrate_options,
+      selectedModel?.bitrate_default,
+    ) ?? null;
+  const setBitrate = useCallback(
+    (v: string | null) => setUi({ bitrate: v }),
+    [setUi],
+  );
   const generateWithSound = ui.generateWithSound;
   const numVideos = resolveModelCount(
     ui.numVideos,
@@ -386,6 +405,8 @@ export default function CreateVideo() {
   const hasSizeOptions = (selectedModel?.aspect_ratio_options?.length ?? 0) > 0;
   const hasResolutionOptions =
     (selectedModel?.resolution_options?.length ?? 0) > 0;
+  const hasBitrateOptions =
+    (selectedModel?.bitrate_options?.length ?? 0) > 0;
   const hasSound = !!selectedModel?.show_generate_with_sound_toggle;
   const supportsImagePrompts =
     !!selectedModel?.starting_keyframe_supported ||
@@ -463,6 +484,7 @@ export default function CreateVideo() {
     model: selectedModel?.model ?? "",
     aspectRatio: selectedSize,
     resolution,
+    bitrate,
     duration: effectiveDuration,
     numVideos,
     hasStartFrame: !isReferenceMode && referenceImages.length > 0,
@@ -578,6 +600,16 @@ export default function CreateVideo() {
           }))
         : null,
     [selectedModel, resolution],
+  );
+  const bitrateItems = useMemo(
+    (): PopoverItem[] | null =>
+      selectedModel?.bitrate_options
+        ? selectedModel.bitrate_options.map((b) => ({
+            label: BITRATE_LABELS[b] ?? b,
+            selected: b === (bitrate ?? selectedModel.bitrate_default),
+          }))
+        : null,
+    [selectedModel, bitrate],
   );
   const inputModeItems = useMemo(
     (): PopoverItem[] | null =>
@@ -734,6 +766,12 @@ export default function CreateVideo() {
     (item: PopoverItem) =>
       setResolution(LABEL_TO_RES[item.label] ?? item.label),
     [setResolution],
+  );
+
+  const handleBitrateChange = useCallback(
+    (item: PopoverItem) =>
+      setBitrate(LABEL_TO_BITRATE[item.label] ?? item.label),
+    [setBitrate],
   );
 
   const handleInputModeChange = useCallback(
@@ -905,6 +943,9 @@ export default function CreateVideo() {
       resolution: hasResolutionOptions
         ? (resolution ?? selectedModel.resolution_default ?? undefined)
         : undefined,
+      bitrate: hasBitrateOptions
+        ? (bitrate ?? selectedModel.bitrate_default ?? undefined)
+        : undefined,
       generateAudio: hasSound ? generateWithSound : undefined,
       startFrameImageMediaToken: startFrameToken?.length
         ? startFrameToken
@@ -998,8 +1039,10 @@ export default function CreateVideo() {
     numVideos,
     effectiveDuration,
     resolution,
+    bitrate,
     generateWithSound,
     hasResolutionOptions,
+    hasBitrateOptions,
     hasSound,
     supportsImagePrompts,
     hasEndFrame,
@@ -1018,7 +1061,12 @@ export default function CreateVideo() {
   // ── Mobile form ───────────────────────────────────────────────────────
 
   const activeResolutionLabel = resolutionItems?.find((i) => i.selected)?.label;
-  const outputSummary = [`${effectiveDuration}s`, activeResolutionLabel]
+  const activeBitrateLabel = bitrateItems?.find((i) => i.selected)?.label;
+  const outputSummary = [
+    `${effectiveDuration}s`,
+    activeResolutionLabel,
+    activeBitrateLabel,
+  ]
     .filter(Boolean)
     .join(" · ");
 
@@ -1147,7 +1195,7 @@ export default function CreateVideo() {
               />
             </div>
           )}
-          {(durationRange || resolutionItems) && (
+          {(durationRange || resolutionItems || bitrateItems) && (
             <>
               <MobileFieldButton
                 label="Output"
@@ -1191,6 +1239,14 @@ export default function CreateVideo() {
                     <DrawerOptionList
                       items={resolutionItems}
                       onSelect={handleResolutionChange}
+                    />
+                  </DrawerSection>
+                )}
+                {bitrateItems && (
+                  <DrawerSection label="Bitrate">
+                    <DrawerOptionList
+                      items={bitrateItems}
+                      onSelect={handleBitrateChange}
                     />
                   </DrawerSection>
                 )}
@@ -1428,6 +1484,21 @@ export default function CreateVideo() {
                       onSelect={handleResolutionChange}
                       mode="toggle"
                       panelTitle="Resolution"
+                    />
+                  </Tooltip>
+                )}
+                {bitrateItems && (
+                  <Tooltip
+                    content="Bitrate"
+                    position="top"
+                    className="z-50"
+                    closeOnClick
+                  >
+                    <PopoverMenu
+                      items={bitrateItems}
+                      onSelect={handleBitrateChange}
+                      mode="toggle"
+                      panelTitle="Bitrate"
                     />
                   </Tooltip>
                 )}

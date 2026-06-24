@@ -17,7 +17,7 @@ use mysql_queries::queries::folders::folder::update_folder_name::{
 use tokens::tokens::folders::FolderToken;
 
 use crate::http_server::common_responses::common_web_error::CommonWebError;
-use crate::http_server::web_utils::user_session::require_user_session::require_user_session;
+use crate::http_server::user_lookup::user_session::require_user_session::require_user_session;
 use crate::state::server_state::ServerState;
 
 const MAX_NAME_LEN: usize = 255;

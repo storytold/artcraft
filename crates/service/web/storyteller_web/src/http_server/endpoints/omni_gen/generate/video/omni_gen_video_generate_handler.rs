@@ -41,7 +41,7 @@ use crate::http_server::endpoints::omni_gen::generate::video::insert_db_job::sha
 use crate::http_server::endpoints::omni_gen::generate::video::kinovi_account::KinoviAccount;
 use crate::http_server::endpoints::omni_gen::generate::video::pipeline_v2::run_pipeline_v2::{run_pipeline_v2, RunPipelineV2Args};
 use crate::http_server::endpoints::omni_gen::shared_utils::video::validate_video_request::validate_video_request;
-use crate::http_server::session::lookup::user_session_feature_flags::UserSessionFeatureFlags;
+use crate::http_server::user_lookup::user_session::session_utils::lookup::user_session_feature_flags::UserSessionFeatureFlags;
 use crate::http_server::validations::validate_idempotency_token_format::validate_idempotency_token_format;
 use crate::http_server::web_utils::get_request_platform_type::get_request_platform_type;
 use crate::state::server_state::ServerState;
@@ -274,6 +274,7 @@ pub async fn omni_gen_video_generate_handler(
     maybe_generation_mode: Some(determine_generation_mode(&request)),
     maybe_aspect_ratio: request.aspect_ratio,
     maybe_resolution: request.resolution,
+    maybe_bitrate: request.bitrate,
     maybe_batch_count: request.video_batch_count.map(|c| c as u8),
     maybe_generate_audio: request.generate_audio,
     maybe_duration_seconds: request.duration_seconds.map(|d| d as u32),

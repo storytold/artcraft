@@ -2,9 +2,10 @@ use std::fmt;
 use std::sync::Arc;
 
 use actix_web::error::ResponseError;
+use actix_web::web::Json;
 use actix_web::http::StatusCode;
 use actix_web::web::Path;
-use actix_web::{web, HttpRequest, HttpResponse};
+use actix_web::{web, HttpRequest};
 use log::warn;
 use utoipa::ToSchema;
 
@@ -14,7 +15,7 @@ use tokens::tokens::w2l_results::W2lResultToken;
 
 use crate::http_server::web_utils::response_error_helpers::to_simple_json_error;
 use crate::http_server::common_responses::common_web_error::CommonWebError;
-use crate::http_server::web_utils::user_session::require_moderator::require_moderator;
+use crate::http_server::user_lookup::user_session::require_moderator::require_moderator;
 use crate::state::server_state::ServerState;
 
 /// For the URL PathInfo
@@ -53,10 +54,10 @@ pub struct EditBetaKeyDistributedFlagSuccessResponse {
 )]
 pub async fn edit_beta_key_distributed_flag_handler(
   http_request: HttpRequest,
-  request: web::Json<EditBetaKeyDistributedFlagRequest>,
+  request: Json<EditBetaKeyDistributedFlagRequest>,
   path: Path<EditBetaKeyDistributedFlagPathInfo>,
   server_state: web::Data<Arc<ServerState>>,
-) -> Result<HttpResponse, CommonWebError>
+) -> Result<Json<EditBetaKeyDistributedFlagSuccessResponse>, CommonWebError>
 {
   let user_session = require_moderator(&http_request, &server_state.session_checker, &server_state.mysql_pool).await?;
 
@@ -71,10 +72,5 @@ pub async fn edit_beta_key_distributed_flag_handler(
     success: true,
   };
 
-  let body = serde_json::to_string(&response)
-      .map_err(CommonWebError::from_error)?;
-
-  Ok(HttpResponse::Ok()
-      .content_type("application/json")
-      .body(body))
+  Ok(Json(response))
 }

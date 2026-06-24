@@ -2,8 +2,9 @@ use std::fmt;
 use std::sync::Arc;
 
 use actix_web::error::ResponseError;
+use actix_web::web::Json;
 use actix_web::http::StatusCode;
-use actix_web::{web, HttpRequest, HttpResponse};
+use actix_web::{web, HttpRequest};
 use log::{error, warn};
 use sqlx::Acquire;
 use utoipa::ToSchema;
@@ -50,9 +51,9 @@ pub struct CreateFeaturedItemSuccessResponse {
 )]
 pub async fn create_featured_item_handler(
   http_request: HttpRequest,
-  request: web::Json<CreateFeaturedItemRequest>,
+  request: Json<CreateFeaturedItemRequest>,
   server_state: web::Data<Arc<ServerState>>,
-) -> Result<HttpResponse, CommonWebError>
+) -> Result<Json<CreateFeaturedItemSuccessResponse>, CommonWebError>
 {
   // NB(bt,2023-12-14): Kasisnu found that we're getting entity type mismatches in production. Apart from
   // querying the database for entity existence, this is the next best way to prevent incorrect comment
@@ -163,10 +164,5 @@ pub async fn create_featured_item_handler(
     success: true,
   };
 
-  let body = serde_json::to_string(&response)
-      .map_err(CommonWebError::from_error)?;
-
-  Ok(HttpResponse::Ok()
-      .content_type("application/json")
-      .body(body))
+  Ok(Json(response))
 }

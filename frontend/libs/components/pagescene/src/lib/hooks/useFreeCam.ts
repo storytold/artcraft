@@ -89,7 +89,7 @@ export const useFreeCam = (
 
   // Hand the state to the editor so its render loop can integrate it.
   useEffect(() => {
-    if (!editor) return;
+    if (!editor) return undefined;
     editor.cameraController.setFreeCamState(stateRef.current);
     return () => editor.cameraController.setFreeCamState(null);
   }, [editor]);
@@ -98,7 +98,7 @@ export const useFreeCam = (
   // inside the viewport); keys on document so the user doesn't need
   // to click canvas first for WASD to work.
   useEffect(() => {
-    if (!canvas || !editor) return;
+    if (!canvas || !editor) return undefined;
     const state = stateRef.current;
     state.enabled = true;
 

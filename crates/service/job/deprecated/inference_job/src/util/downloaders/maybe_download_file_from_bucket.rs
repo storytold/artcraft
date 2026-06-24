@@ -2,7 +2,7 @@ use std::path::Path;
 
 use log::{error, info, warn};
 
-use cloud_storage::bucket_client::BucketClient;
+use cloud_storage::legacy_bucket_client::LegacyBucketClient;
 use filesys::file_size::file_size;
 use filesys::rename_across_devices::{rename_across_devices, RenameError};
 use filesys::file_deletion::safe_delete_directory::safe_delete_directory;
@@ -19,7 +19,7 @@ pub struct MaybeDownloadArgs<'a> {
   pub name_or_description_of_file: &'a str,
   pub final_filesystem_file_path: &'a Path,
   pub bucket_object_path: &'a Path,
-  pub bucket_client: &'a BucketClient,
+  pub bucket_client: &'a LegacyBucketClient,
   pub job_progress_reporter: &'a mut Box<dyn JobProgressReporter>,
   pub job_progress_update_description: &'a str,
   pub job_id: i64,

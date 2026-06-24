@@ -37,6 +37,21 @@ import { useSceneCacheStore } from "./scene-cache-store";
 const apiHost = () =>
   StorytellerApiHostStore.getInstance().getApiSchemeAndHost();
 
+// In local dev, route absolute cross-origin asset URLs (CDN splats/GLBs/images)
+// through the Vite `/__cdn` proxy so they aren't blocked by CORS — the CDN only
+// sends CORS headers for the production origin. In production this is a no-op:
+// the asset is fetched directly from its real URL.
+function maybeProxyCdnUrl(url: string): string {
+  if (!import.meta.env.DEV) return url;
+  try {
+    const parsed = new URL(url, window.location.origin);
+    if (parsed.origin === window.location.origin) return url;
+    return `/__cdn/${parsed.host}${parsed.pathname}${parsed.search}`;
+  } catch {
+    return url;
+  }
+}
+
 // ─── Scene file IO ─────────────────────────────────────────────────────────
 
 const saveSceneViaApi = async (
@@ -206,7 +221,7 @@ export const useWebAppPageSceneAdapter = (
       },
 
       fetchAsset: (url: string, init?: { signal?: AbortSignal }) =>
-        fetch(url, { mode: "cors", signal: init?.signal }),
+        fetch(maybeProxyCdnUrl(url), { mode: "cors", signal: init?.signal }),
 
       getCdnOrigin: () => GetCdnOrigin(),
       getApiSchemeAndHost: apiHost,

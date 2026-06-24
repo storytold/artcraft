@@ -13,7 +13,7 @@ use mysql_queries::queries::wallet_ledger_entries::get_wallet_ledger_entry_for_m
 
 use tokens::tokens::wallet_ledger_entries::WalletLedgerEntryToken;
 use crate::http_server::common_responses::common_web_error::CommonWebError;
-use crate::http_server::web_utils::user_session::require_moderator::require_moderator;
+use crate::http_server::user_lookup::user_session::require_moderator::require_moderator;
 use crate::state::server_state::ServerState;
 
 /// Get a single wallet ledger entry by token (moderation)

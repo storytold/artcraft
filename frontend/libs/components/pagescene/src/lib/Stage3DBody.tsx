@@ -51,6 +51,7 @@ import { EditorCanvas } from "./comps/EngineCanvases";
 import { FocalLengthDisplay } from "./comps/FocalLengthDisplay/FocalLengthDisplay";
 import { OnboardingHelper } from "./comps/OnboardingHelper";
 import { PerfStatsOverlay } from "./comps/PerfStatsOverlay";
+import { EntranceDebugPanel } from "./comps/EntranceDebugPanel";
 import { Outliner } from "./comps/Outliner";
 import { PoseModeSelector } from "./comps/PoseModeSelector";
 import { PreviewBox } from "./comps/PreviewBox";
@@ -433,6 +434,7 @@ export const Stage3DBody = ({
             </SceneContainer>
 
             <PerfStatsOverlay />
+            {import.meta.env.DEV && <EntranceDebugPanel />}
             <FocalLengthDisplay />
             <PoseModeSelector />
 

@@ -23,7 +23,7 @@ use tokens::tokens::folders::FolderToken;
 use tokens::tokens::media_files::MediaFileToken;
 use tokens::tokens::users::UserToken;
 use crate::http_server::common_responses::common_web_error::CommonWebError;
-use crate::http_server::web_utils::user_session::require_user_session::require_user_session;
+use crate::http_server::user_lookup::user_session::require_user_session::require_user_session;
 use crate::state::server_state::ServerState;
 
 /// Set or clear the custom cover image on a folder.

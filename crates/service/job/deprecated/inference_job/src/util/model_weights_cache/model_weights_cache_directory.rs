@@ -4,7 +4,7 @@ use std::sync::Arc;
 use log::{error, info, warn};
 
 use bucket_paths::legacy::typified_paths::public::weight_files::bucket_file_path::WeightFileBucketPath;
-use cloud_storage::bucket_client::BucketClient;
+use cloud_storage::legacy_bucket_client::LegacyBucketClient;
 use errors::AnyhowResult;
 use filesys::file_size::file_size;
 use filesys::rename_across_devices::{rename_across_devices, RenameError};
@@ -26,7 +26,7 @@ pub struct ModelWeightsCacheDirectory {
   pub scoped_tempdir_creator: ScopedTempDirCreator,
 
   /// A client to download from the public bucket.
-  pub public_bucket_client: BucketClient,
+  pub public_bucket_client: LegacyBucketClient,
 
   /// NB: Sometimes the downloader incompletely downloads files. Typically, this is a zero file
   /// size, but the Rust system may report a non-zero (but small) number of bytes. This should
@@ -49,7 +49,7 @@ impl ModelWeightsCacheDirectory {
   /// Configure and try to create the directory if it doesn't exist.
   pub fn setup_from_env_and_deps(
     scoped_temp_dir_creator: &ScopedTempDirCreator,
-    public_bucket_client: &BucketClient,
+    public_bucket_client: &LegacyBucketClient,
   ) -> AnyhowResult<Self> {
     let directory = easyenv::get_env_pathbuf_or_default(
       "MODEL_WEIGHTS_CACHE_DIR",

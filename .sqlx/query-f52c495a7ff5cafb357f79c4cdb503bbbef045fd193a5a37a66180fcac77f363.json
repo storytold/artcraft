@@ -1,0 +1,47 @@
+{
+  "db_name": "MySQL",
+  "query": "\nSELECT\n  api_keys.token as `api_key_token: ApiKeyToken`,\n  users.token as `user_token: UserToken`,\n  users.is_banned\nFROM api_keys\nINNER JOIN users\n  ON users.token = api_keys.owner_user_token\nWHERE api_keys.api_key = ?\n  AND api_keys.maybe_deleted_at IS NULL\nLIMIT 1\n    ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "api_key_token: ApiKeyToken",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NOT_NULL | UNIQUE_KEY | BINARY | NO_DEFAULT_VALUE",
+          "char_set": 224,
+          "max_size": 128
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "user_token: UserToken",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NOT_NULL | UNIQUE_KEY | BINARY | NO_DEFAULT_VALUE",
+          "char_set": 224,
+          "max_size": 128
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "is_banned",
+        "type_info": {
+          "type": "Tiny",
+          "flags": "NOT_NULL",
+          "char_set": 63,
+          "max_size": 1
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "f52c495a7ff5cafb357f79c4cdb503bbbef045fd193a5a37a66180fcac77f363"
+}

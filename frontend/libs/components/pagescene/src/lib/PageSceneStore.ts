@@ -145,6 +145,10 @@ interface PageSceneState {
   // layout / panels
   assetModalVisible: boolean;
   assetModalVisibleDuringDrag: boolean;
+  // True while an asset is being dragged out of the library modal. The modal
+  // stays open but goes pointer-transparent (and translucent when reopen is on)
+  // so the drag passes under it onto the canvas.
+  assetDraggingUnder: boolean;
   reopenAfterDrag: boolean;
 
   // overlays
@@ -239,6 +243,7 @@ interface PageSceneState {
   // layout
   setAssetModalVisible: (visible: boolean) => void;
   setAssetModalVisibleDuringDrag: (visible: boolean) => void;
+  setAssetDraggingUnder: (dragging: boolean) => void;
   setReopenAfterDrag: (reopen: boolean) => void;
 
   // overlays
@@ -318,6 +323,7 @@ export const usePageSceneStore = create<PageSceneState>((set, get) => ({
 
   assetModalVisible: false,
   assetModalVisibleDuringDrag: true,
+  assetDraggingUnder: false,
   reopenAfterDrag: false,
 
   editorLoader: { isShowing: false, message: "Loading Editor Engine 🦊" },
@@ -430,6 +436,7 @@ export const usePageSceneStore = create<PageSceneState>((set, get) => ({
   setAssetModalVisible: (visible) => set({ assetModalVisible: visible }),
   setAssetModalVisibleDuringDrag: (visible) =>
     set({ assetModalVisibleDuringDrag: visible }),
+  setAssetDraggingUnder: (dragging) => set({ assetDraggingUnder: dragging }),
   setReopenAfterDrag: (reopen) => set({ reopenAfterDrag: reopen }),
 
   // overlays actions

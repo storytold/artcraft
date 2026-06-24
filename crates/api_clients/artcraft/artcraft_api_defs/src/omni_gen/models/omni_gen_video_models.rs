@@ -6,6 +6,7 @@ use enums::common::generation::model_creator::ModelCreator;
 use enums::common::generation_provider::GenerationProvider;
 use serde_derive::{Deserialize, Serialize};
 use utoipa::{IntoParams, ToSchema};
+use enums::common::generation::common_bitrate::CommonBitrate;
 
 /// Video model to default to if none is specified
 const DEFAULT_VIDEO_MODEL : CommonVideoModel = CommonVideoModel::Seedance2p0;
@@ -151,6 +152,12 @@ pub struct OmniGenVideoModelDetails {
   pub resolution_default: Option<CommonResolution>,
 
   #[serde(skip_serializing_if = "Option::is_none")]
+  pub bitrate_options: Option<Vec<CommonBitrate>>,
+
+  #[serde(skip_serializing_if = "Option::is_none")]
+  pub bitrate_default: Option<CommonBitrate>,
+  
+  #[serde(skip_serializing_if = "Option::is_none")]
   pub quality_options: Option<Vec<CommonQuality>>,
   
   #[serde(skip_serializing_if = "Option::is_none")]
@@ -220,6 +227,8 @@ impl Default for OmniGenVideoModelDetails {
       aspect_ratio_default: None,
       resolution_options: None,
       resolution_default: None,
+      bitrate_options: None,
+      bitrate_default: None,
       quality_options: None,
       default_quality: None,
       duration_seconds_min: None,

@@ -16,6 +16,11 @@ export async function addObject(
   );
   if (!obj) return undefined;
 
+  // Animate it in (mask-reveal for meshes, per-gaussian radial settle for
+  // splats). Runs synchronously before the next render frame, so the object is
+  // never shown fully-formed first.
+  editor.entranceAnimator.play(obj);
+
   editor.history.record(new CreateAction(editor, obj));
 
   editor.bus.emit(

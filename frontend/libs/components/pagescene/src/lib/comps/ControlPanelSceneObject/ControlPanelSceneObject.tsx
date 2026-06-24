@@ -210,7 +210,7 @@ export const ControlPanelSceneObject = () => {
   // document mouseup/keydown listeners can interact poorly with the
   // freecam pointer-capture and canvas keydown handlers).
   useEffect(() => {
-    if (!isShowing) return;
+    if (!isShowing) return undefined;
     const flush = () => {
       transformSessionRef.current?.commit();
       transformSessionRef.current = null;

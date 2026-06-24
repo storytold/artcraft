@@ -2,8 +2,9 @@ use std::fmt;
 use std::sync::Arc;
 
 use actix_web::error::ResponseError;
+use actix_web::web::Json;
 use actix_web::http::StatusCode;
-use actix_web::{web, HttpRequest, HttpResponse};
+use actix_web::{web, HttpRequest};
 use log::warn;
 use utoipa::ToSchema;
 
@@ -14,7 +15,7 @@ use mysql_queries::queries::users::user_profiles::get_user_profile_by_username::
 
 use crate::http_server::web_utils::response_error_helpers::to_simple_json_error;
 use crate::http_server::common_responses::common_web_error::CommonWebError;
-use crate::http_server::web_utils::user_session::require_moderator::require_moderator;
+use crate::http_server::user_lookup::user_session::require_moderator::require_moderator;
 use crate::state::server_state::ServerState;
 
 const MAXIMUM_KEYS : u32 = 100;
@@ -56,9 +57,9 @@ pub struct CreateBetaKeysSuccessResponse {
 )]
 pub async fn create_beta_keys_handler(
   http_request: HttpRequest,
-  request: web::Json<CreateBetaKeysRequest>,
+  request: Json<CreateBetaKeysRequest>,
   server_state: web::Data<Arc<ServerState>>,
-) -> Result<HttpResponse, CommonWebError>
+) -> Result<Json<CreateBetaKeysSuccessResponse>, CommonWebError>
 {
   let user_session = require_moderator(&http_request, &server_state.session_checker, &server_state.mysql_pool).await?;
 
@@ -106,11 +107,6 @@ pub async fn create_beta_keys_handler(
     beta_keys,
   };
 
-  let body = serde_json::to_string(&response)
-      .map_err(CommonWebError::from_error)?;
-
-  Ok(HttpResponse::Ok()
-      .content_type("application/json")
-      .body(body))
+  Ok(Json(response))
 }
 

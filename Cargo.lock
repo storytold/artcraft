@@ -713,6 +713,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "artcraft_api_keys"
+version = "0.0.1"
+dependencies = [
+ "workspace-build-acceleration",
+]
+
+[[package]]
 name = "artcraft_client"
 version = "0.0.1"
 dependencies = [
@@ -1721,6 +1728,14 @@ dependencies = [
  "memchr",
  "regex-automata",
  "serde",
+]
+
+[[package]]
+name = "bucket_client"
+version = "0.0.1"
+dependencies = [
+ "rust-s3",
+ "workspace-build-acceleration",
 ]
 
 [[package]]
@@ -7297,6 +7312,7 @@ name = "mysql_queries"
 version = "0.0.1"
 dependencies = [
  "anyhow",
+ "artcraft_api_keys",
  "bucket_paths",
  "chrono",
  "composite_identifiers",
@@ -10500,6 +10516,7 @@ dependencies = [
  "log",
  "mysql_queries",
  "pager",
+ "rand 0.9.2",
  "reqwest 0.12.23",
  "rootly_client",
  "rootly_config",
@@ -10986,6 +11003,14 @@ dependencies = [
  "cfg-if",
  "cpufeatures 0.3.0",
  "digest 0.11.2",
+]
+
+[[package]]
+name = "sha1_hash"
+version = "0.0.1"
+dependencies = [
+ "sha1 0.10.6",
+ "workspace-build-acceleration",
 ]
 
 [[package]]
@@ -11556,6 +11581,7 @@ dependencies = [
  "actix_helpers",
  "anyhow",
  "artcraft_api_defs",
+ "artcraft_api_keys",
  "artcraft_router",
  "async-stripe 0.26.0",
  "async-trait",
@@ -11564,6 +11590,7 @@ dependencies = [
  "billing_artcraft_component",
  "billing_component",
  "bootstrap",
+ "bucket_client",
  "bucket_paths",
  "bytes",
  "chrono",
@@ -11635,6 +11662,7 @@ dependencies = [
  "serde_derive",
  "serde_json",
  "server_environment",
+ "sha1_hash",
  "shared_env_var_config",
  "speculoos",
  "sqlx",
@@ -11658,6 +11686,7 @@ dependencies = [
  "utoipa",
  "utoipa-swagger-ui",
  "uuid_utils",
+ "video_info",
  "videos",
  "workspace-build-acceleration",
  "worldlabs_api_client",
@@ -13884,6 +13913,14 @@ dependencies = [
  "sqlx",
  "tempdir",
  "tokio",
+ "workspace-build-acceleration",
+]
+
+[[package]]
+name = "video_info"
+version = "0.0.1"
+dependencies = [
+ "chrono",
  "workspace-build-acceleration",
 ]
 

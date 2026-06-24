@@ -11,6 +11,7 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { UsersApi } from "@storyteller/api";
 import { AuthHeader, AuthFooter, GoogleLoginButton } from "../../components/auth";
 import Seo from "../../components/seo";
+import { Reveal, RevealGroup } from "../../components/motion/reveal";
 import { refreshSession } from "../../lib/session";
 import { hasActiveSubscription } from "../../lib/billing";
 
@@ -71,6 +72,8 @@ const Login = () => {
       />
       <AuthHeader title="Welcome Back" subtitle="Log in to your account" />
 
+      <RevealGroup inView={false} delayChildren={0.24} stagger={0.07}>
+      <Reveal>
       <form
         className="space-y-4"
         onSubmit={(e) => {
@@ -141,31 +144,37 @@ const Login = () => {
           </Button>
         </div>
       </form>
+      </Reveal>
 
-      <div className="relative my-6 flex items-center justify-center">
+      <Reveal className="relative my-6 flex items-center justify-center">
         <div className="absolute inset-0 flex items-center">
           <div className="w-full border-t border-white/10" />
         </div>
         <span className="relative bg-[#1C1C20] px-4 text-xs uppercase tracking-widest text-white/40">
           or
         </span>
-      </div>
+      </Reveal>
 
-      <GoogleLoginButton
-        mode="login"
-        onSuccess={handleGoogleSuccess}
-        onError={handleGoogleError}
-      />
+      <Reveal>
+        <GoogleLoginButton
+          mode="login"
+          onSuccess={handleGoogleSuccess}
+          onError={handleGoogleError}
+        />
+      </Reveal>
 
-      <AuthFooter>
-        Don't have an account?{" "}
-        <Link
-          to="/signup"
-          className="font-semibold text-primary transition-colors hover:text-primary-400"
-        >
-          Sign up
-        </Link>
-      </AuthFooter>
+      <Reveal>
+        <AuthFooter>
+          Don't have an account?{" "}
+          <Link
+            to="/signup"
+            className="font-semibold text-primary transition-colors hover:text-primary-400"
+          >
+            Sign up
+          </Link>
+        </AuthFooter>
+      </Reveal>
+      </RevealGroup>
     </>
   );
 };

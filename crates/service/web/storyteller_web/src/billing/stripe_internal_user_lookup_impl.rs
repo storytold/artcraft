@@ -1,4 +1,4 @@
-use crate::http_server::session::session_checker::SessionChecker;
+use crate::http_server::user_lookup::user_session::session_utils::session_checker::SessionChecker;
 use actix_web::HttpRequest;
 use async_trait::async_trait;
 use chrono::Utc;

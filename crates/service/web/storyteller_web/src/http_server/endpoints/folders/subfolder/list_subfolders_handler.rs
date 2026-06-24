@@ -21,7 +21,7 @@ use crate::http_server::endpoints::folders::folder::folder_info_conversion::{
   build_folder_thumbnails_lookup, folder_row_to_info,
 };
 use crate::http_server::endpoints::media_files::helpers::get_media_domain::get_media_domain;
-use crate::http_server::web_utils::user_session::require_user_session::require_user_session;
+use crate::http_server::user_lookup::user_session::require_user_session::require_user_session;
 use crate::state::server_state::ServerState;
 
 const CURSOR_NAME: &str = "subfolders";

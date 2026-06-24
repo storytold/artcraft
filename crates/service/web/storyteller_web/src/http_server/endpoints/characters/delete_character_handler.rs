@@ -10,7 +10,7 @@ use mysql_queries::queries::characters::delete_character::delete_character;
 use mysql_queries::queries::characters::get_character_by_token_including_deleted::get_character_by_token_including_deleted;
 
 use crate::http_server::common_responses::common_web_error::CommonWebError;
-use crate::http_server::web_utils::user_session::require_user_session::require_user_session;
+use crate::http_server::user_lookup::user_session::require_user_session::require_user_session;
 use crate::state::server_state::ServerState;
 
 /// Delete a character.

@@ -170,7 +170,7 @@ export const HistoryStack = ({
         <div className="mb-2 flex w-full items-center justify-center">
           <FontAwesomeIcon
             icon={faClockRotateLeft}
-            className="p-1 text-gray-400"
+            className="p-1 text-base-fg/50"
           />
         </div>
         <div

@@ -13,7 +13,7 @@ use mysql_queries::queries::wallets::list_user_wallets_for_moderation::list_user
 
 use tokens::tokens::users::UserToken;
 use crate::http_server::common_responses::common_web_error::CommonWebError;
-use crate::http_server::web_utils::user_session::require_moderator::require_moderator;
+use crate::http_server::user_lookup::user_session::require_moderator::require_moderator;
 use crate::state::server_state::ServerState;
 
 /// List wallets for a user (moderation)

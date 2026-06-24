@@ -21,7 +21,7 @@ use mysql_queries::queries::wallets::add_durable_banked_balance_to_wallet::add_d
 
 use tokens::tokens::wallets::WalletToken;
 use crate::http_server::common_responses::common_web_error::CommonWebError;
-use crate::http_server::web_utils::user_session::require_moderator::require_moderator;
+use crate::http_server::user_lookup::user_session::require_moderator::require_moderator;
 use crate::state::server_state::ServerState;
 
 /// Add banked credits to a wallet (moderation)

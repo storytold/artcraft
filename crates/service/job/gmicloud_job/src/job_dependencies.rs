@@ -1,4 +1,4 @@
-use cloud_storage::bucket_client::BucketClient;
+use cloud_storage::legacy_bucket_client::LegacyBucketClient;
 use concurrency::relaxed_atomic_bool::RelaxedAtomicBool;
 use gmicloud_client::creds::gmicloud_api_key::GmiCloudApiKey;
 use jobs_common::job_stats::JobStats;
@@ -10,7 +10,7 @@ pub struct JobDependencies {
   pub mysql_pool: MySqlPool,
 
   /// Public GCS/S3 bucket for storing generated videos.
-  pub public_bucket_client: BucketClient,
+  pub public_bucket_client: LegacyBucketClient,
 
   /// API key for GmiCloud.
   pub gmicloud_api_key: GmiCloudApiKey,

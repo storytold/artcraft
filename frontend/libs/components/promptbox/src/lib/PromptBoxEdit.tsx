@@ -5,8 +5,6 @@ import {
 } from "@fortawesome/pro-regular-svg-icons";
 import {
   faEdit,
-  faMessageCheck,
-  faMessageXmark,
   faMousePointer,
   faFrame,
   faPen,
@@ -19,7 +17,7 @@ import {
   faChevronUp,
 } from "@fortawesome/pro-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Button, ToggleButton, GenerateButton } from "@storyteller/ui-button";
+import { Button, GenerateButton } from "@storyteller/ui-button";
 import { ButtonIconSelect } from "@storyteller/ui-button-icon-select";
 import { PopoverMenu, PopoverItem } from "@storyteller/ui-popover";
 import { Tooltip } from "@storyteller/ui-tooltip";
@@ -83,7 +81,6 @@ export const PromptBoxEdit = ({
   credits,
 }: PromptBoxEditProps) => {
   const [prompt, setPrompt] = useState("");
-  const [useSystemPrompt, setUseSystemPrompt] = useState(true);
   const [isFocused, setIsFocused] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
 

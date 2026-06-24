@@ -274,7 +274,7 @@ export const PromptBoxVideo = ({
     aspectRatioOptions = buildAspectRatioOptions(DEFAULT_RESOLUTIONS);
   }
 
-  const [aspectRatioList, setAspectRatioList] =
+  const [, setAspectRatioList] =
     useState<PopoverItem[]>(aspectRatioOptions);
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);

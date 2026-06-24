@@ -55,6 +55,9 @@
       "path": "./apps/artcraft-website"
     },
     {
+      "path": "./apps/video-info-website"
+    },
+    {
       "path": "./apps/artcraft-webapp"
     },
     {

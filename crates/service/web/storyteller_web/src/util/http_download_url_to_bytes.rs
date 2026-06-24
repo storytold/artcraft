@@ -2,9 +2,16 @@ use bytes::Bytes;
 use log::warn;
 use std::error::Error;
 use std::fmt::{Display, Formatter};
+use wreq::redirect::Policy;
 use wreq::{Client, StatusCode};
 
 const USER_AGENT: &str = "storyteller-web/1.0";
+
+/// Follow up to this many redirects. Many legitimate file URLs (CDN edges,
+/// Wikimedia's `Special:FilePath`, S3 pre-sign indirections) answer with a 3xx
+/// before serving the bytes, so we must follow them rather than treat the 3xx
+/// as a download failure.
+const MAX_REDIRECTS: usize = 10;
 
 // TODO(bt, 2025-06-03): Don't load the entire file into memory!
 
@@ -22,6 +29,7 @@ pub enum DownloadFileToBytesError {
 pub async fn http_download_url_to_bytes(url: &str) -> Result<Bytes, DownloadFileToBytesError> {
   let client = Client::builder()
       .gzip(true)
+      .redirect(Policy::limited(MAX_REDIRECTS))
       .build()?;
 
   let response = client.get(url) // NB: No IntoUrl for &Url.

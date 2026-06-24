@@ -15,7 +15,7 @@ use mysql_queries::queries::users::user_email_changes::list_user_email_changes_f
 use tokens::tokens::users::UserToken;
 
 use crate::http_server::common_responses::common_web_error::CommonWebError;
-use crate::http_server::web_utils::user_session::require_moderator::require_moderator;
+use crate::http_server::user_lookup::user_session::require_moderator::require_moderator;
 use crate::state::server_state::ServerState;
 
 const CURSOR_NAME: &str = "modemchg";

@@ -2,7 +2,7 @@ use log::info;
 use sqlx::{MySql, Pool};
 
 use bucket_paths::legacy::typified_paths::public::media_files::bucket_file_path::MediaFileBucketPath;
-use cloud_storage::bucket_client::BucketClient;
+use cloud_storage::legacy_bucket_client::LegacyBucketClient;
 use enums::by_table::media_files::media_file_origin_category::MediaFileOriginCategory;
 use enums::by_table::media_uploads::media_upload_type::MediaUploadType;
 use enums::by_table::zs_voices::encoding_type::ZsVoiceEncodingType;
@@ -128,7 +128,7 @@ async fn create_voice_records(
   Ok((voice_token, dataset_token))
 }
 
-async fn seed_file_to_bucket(wav_file: &str, bucket_client: &BucketClient) -> AnyhowResult<MediaFileBucketPath> {
+async fn seed_file_to_bucket(wav_file: &str, bucket_client: &LegacyBucketClient) -> AnyhowResult<MediaFileBucketPath> {
   info!("Uploading wav file {} ...", wav_file);
 
   let public_upload_path = MediaFileBucketPath::generate_new(

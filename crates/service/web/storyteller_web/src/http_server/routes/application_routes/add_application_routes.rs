@@ -11,6 +11,7 @@ use crate::http_server::routes::application_routes::generate_routes::add_generat
 use crate::http_server::routes::application_routes::job_routes::add_job_routes;
 use crate::http_server::routes::application_routes::media_files_routes::add_media_file_routes;
 use crate::http_server::routes::application_routes::moderation_routes::add_moderator_routes;
+use crate::http_server::routes::application_routes::omni_api_routes::add_omni_api_routes;
 use crate::http_server::routes::application_routes::omni_gen_routes::add_omni_gen_routes;
 use crate::http_server::routes::application_routes::prompts_routes::add_prompts_routes;
 use crate::http_server::routes::application_routes::stripe_artcraft_routes::add_stripe_artcraft_routes;
@@ -20,6 +21,7 @@ use crate::http_server::routes::application_routes::user_bookmarks_routes::add_u
 use crate::http_server::routes::application_routes::user_rating_routes::add_user_rating_routes;
 use crate::http_server::routes::application_routes::user_referral_code_routes::add_user_referral_code_routes;
 use crate::http_server::routes::application_routes::user_routes::add_user_routes;
+use crate::http_server::routes::application_routes::video_info_routes::add_video_info_routes;
 use crate::http_server::routes::application_routes::wallet_routes::add_wallet_routes;
 use crate::http_server::routes::application_routes::web_referrals_routes::add_web_referrals_routes;
 use crate::http_server::routes::application_routes::webhook_routes::add_webhook_routes;
@@ -48,6 +50,7 @@ where
   // Artcraft surface area
   app = add_generate_routes(app); // /v1/generate/...
   app = add_omni_gen_routes(app); // /v1/omni_gen/...
+  app = add_omni_api_routes(app); // /v1/omni_api/... (API-key authenticated generate)
   app = add_character_routes(app); // /v1/character/... and /v1/characters/...
   app = add_webhook_routes(app); // /v1/webhooks/... (fal)
   
@@ -66,6 +69,7 @@ where
   app = add_job_routes(app);
 
   // Other useful tools
+  app = add_video_info_routes(app); // /v1/video_info/... (video provenance detection)
   app = add_analytics_routes(app); // /v1/analytics/...
   app = add_web_referrals_routes(app); // /v1/web_referrals/...
   app = add_dev_routes(app); // /v1/dev/... — dev-only error/response shape probes

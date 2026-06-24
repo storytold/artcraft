@@ -75,6 +75,7 @@ export interface LightboxDetailsProps {
   onClose?: () => void;
   onRecreate?: () => void;
   onMakeVideo?: () => void;
+  onEditOnCanvas?: () => void;
   onDelete?: () => void;
   showDownloadAppCta?: boolean;
 }
@@ -90,6 +91,7 @@ export function LightboxDetails({
   onClose,
   onRecreate,
   onMakeVideo,
+  onEditOnCanvas,
   onDelete,
   showDownloadAppCta,
 }: LightboxDetailsProps) {
@@ -472,6 +474,16 @@ export function LightboxDetails({
             onClick={onMakeVideo}
           >
             Make Video
+          </Button>
+        )}
+        {onEditOnCanvas && (
+          <Button
+            icon={faPencil}
+            className="w-full border border-ui-panel-border bg-ui-controls/40 hover:bg-ui-controls/60 text-white"
+            variant="secondary"
+            onClick={onEditOnCanvas}
+          >
+            Edit on Canvas
           </Button>
         )}
         {onRecreate && promptData.hasToken && (

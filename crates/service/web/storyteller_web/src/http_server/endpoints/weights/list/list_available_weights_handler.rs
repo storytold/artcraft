@@ -1,8 +1,9 @@
 use std::sync::Arc;
 
 use actix_web::error::ResponseError;
+use actix_web::web::Json;
 use actix_web::http::StatusCode;
-use actix_web::{web, HttpRequest, HttpResponse};
+use actix_web::{web, HttpRequest};
 use chrono::{DateTime, Utc};
 use log::warn;
 use rand::Rng;
@@ -142,7 +143,7 @@ pub async fn list_available_weights_handler(
     http_request: HttpRequest,
     query: web::Query<ListAvailableWeightsQuery>,
     server_state: web::Data<Arc<ServerState>>
-) -> Result<HttpResponse, impl ResponseError> {
+) -> Result<Json<ListAvailableWeightsSuccessResponse>, impl ResponseError> {
     let maybe_user_session = server_state.session_checker
         .maybe_get_user_session(&http_request, &server_state.mysql_pool).await
         .map_err(|e| {
@@ -296,8 +297,5 @@ pub async fn list_available_weights_handler(
         },
     };
 
-    let body = serde_json::to_string(&response)
-      .map_err(|e| ListWeightError::ServerError)?;
-
-    Ok(HttpResponse::Ok().content_type("application/json").body(body))
+    Ok(Json(response))
 }

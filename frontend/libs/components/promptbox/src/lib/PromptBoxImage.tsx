@@ -4,18 +4,16 @@ import { JobContextType, UploaderState } from "@storyteller/common";
 import { toast } from "@storyteller/ui-toaster";
 import { PopoverMenu, PopoverItem } from "@storyteller/ui-popover";
 import { Tooltip } from "@storyteller/ui-tooltip";
-import { Button, ToggleButton, GenerateButton } from "@storyteller/ui-button";
+import { Button, GenerateButton } from "@storyteller/ui-button";
 import { Modal } from "@storyteller/ui-modal";
 import { GenerateImage, GenerateImageRequest } from "@storyteller/tauri-api";
 import {
-  faMessageXmark,
-  faMessageCheck,
   faExpand,
   faChevronDown,
   faChevronUp,
 } from "@fortawesome/pro-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { CommonAspectRatio, ImageModel } from "@storyteller/model-list";
+import { ImageModel } from "@storyteller/model-list";
 import {
   usePromptImageStore,
   RefImage,
@@ -30,7 +28,6 @@ import { AspectRatioIcon } from "./common/AspectRatioIcon";
 import { GenerationCountPicker } from "./common/GenerationCountPicker";
 import { ResolutionPicker } from "./common/ResolutionPicker";
 import { QualityPicker } from "./common/QualityPicker";
-import { CommonResolution } from "@storyteller/model-list";
 
 interface PromptBoxImageProps {
   useJobContext: () => JobContextType;
@@ -96,8 +93,6 @@ export const PromptBoxImage = ({
 
   const prompt = usePromptImageStore((s) => s.prompt);
   const setPrompt = usePromptImageStore((s) => s.setPrompt);
-  const useSystemPrompt = usePromptImageStore((s) => s.useSystemPrompt);
-  const setUseSystemPrompt = usePromptImageStore((s) => s.setUseSystemPrompt);
   const aspectRatio = usePromptImageStore((s) => s.aspectRatio);
   const setAspectRatio = usePromptImageStore((s) => s.setAspectRatio);
   const resolution = usePromptImageStore((s) => s.resolution);

@@ -11,7 +11,7 @@ use log::warn;
 use artcraft_api_defs::users::change_password::{ChangePasswordRequest, ChangePasswordResponse};
 use crate::http_server::validations::validate_passwords::validate_passwords;
 use crate::http_server::common_responses::common_web_error::CommonWebError;
-use crate::http_server::web_utils::user_session::require_user_session_extended::require_user_session_extended;
+use crate::http_server::user_lookup::user_session::require_user_session_extended::require_user_session_extended;
 use crate::state::server_state::ServerState;
 use http_server_common::request::get_request_ip::get_request_ip;
 use mysql_queries::queries::users::user::update::update_password::{update_password, UpdatePasswordArgs};

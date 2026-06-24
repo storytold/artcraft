@@ -10,7 +10,7 @@ use actix_web::{web, HttpRequest};
 use log::warn;
 use artcraft_api_defs::users::edit_email::{EditEmailRequest, EditEmailResponse};
 use crate::http_server::common_responses::common_web_error::CommonWebError;
-use crate::http_server::web_utils::user_session::require_user_session_extended::require_user_session_extended;
+use crate::http_server::user_lookup::user_session::require_user_session_extended::require_user_session_extended;
 use crate::state::server_state::ServerState;
 use http_server_common::request::get_request_ip::get_request_ip;
 use mysql_queries::queries::users::user::update::update_email::{update_email, UpdateEmailArgs, UpdateEmailError};

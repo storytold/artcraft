@@ -23,6 +23,7 @@ import {
   type PromptData,
 } from "./shared";
 import { LightboxDetails } from "./LightboxDetails";
+import { applyEditOnCanvasFromImage } from "../../pages/pagedraw/edit-on-canvas";
 import {
   applyMakeVideoFromImage,
   applyRecreateFromMediaToken,
@@ -334,6 +335,13 @@ export function Lightbox({
     applyMakeVideoFromImage(selectedMediaToken, selectedImageUrl, navigate);
   }, [selectedMediaToken, selectedImageUrl, canMakeVideo, navigate, onClose]);
 
+  const canEditOnCanvas = !isVideo && !is3D;
+  const handleEditOnCanvas = useCallback(() => {
+    if (!selectedMediaToken || !selectedImageUrl || !canEditOnCanvas) return;
+    onClose();
+    applyEditOnCanvasFromImage(selectedMediaToken, selectedImageUrl, navigate);
+  }, [selectedMediaToken, selectedImageUrl, canEditOnCanvas, navigate, onClose]);
+
   return (
     <>
       <Modal
@@ -503,6 +511,11 @@ export function Lightbox({
             onMakeVideo={
               canMakeVideo && selectedMediaToken && selectedImageUrl
                 ? handleMakeVideo
+                : undefined
+            }
+            onEditOnCanvas={
+              canEditOnCanvas && selectedMediaToken && selectedImageUrl
+                ? handleEditOnCanvas
                 : undefined
             }
             onDelete={

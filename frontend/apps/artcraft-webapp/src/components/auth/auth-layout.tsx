@@ -6,6 +6,7 @@ import { TruchetPattern } from "@storyteller/ui-vfx";
 import { AuthShowcase } from "./auth-showcase";
 import { useMediaQuery } from "../ui/use-media-query";
 import { useSession } from "../../lib/session";
+import { Reveal, RevealGroup } from "../motion/reveal";
 
 /**
  * Persistent shell for the auth pages. Rendered as a layout route so the
@@ -108,16 +109,22 @@ interface AuthHeaderProps {
 }
 
 export const AuthHeader = ({ title, subtitle }: AuthHeaderProps) => (
-  <div className="mb-8 text-center">
-    <img
-      src="/images/artcraft-icon.png"
-      alt="ArtCraft"
-      className="mx-auto mb-6 h-12 w-auto select-none pointer-events-none"
-      draggable={false}
-    />
-    <h1 className="mb-2 text-2xl font-semibold">{title}</h1>
-    <p className="text-sm text-white/60">{subtitle}</p>
-  </div>
+  <RevealGroup inView={false} stagger={0.08} className="mb-8 text-center">
+    <Reveal y={10}>
+      <img
+        src="/images/artcraft-icon.png"
+        alt="ArtCraft"
+        className="mx-auto mb-6 h-12 w-auto select-none pointer-events-none"
+        draggable={false}
+      />
+    </Reveal>
+    <Reveal as="h1" y={10} className="mb-2 text-2xl font-semibold">
+      {title}
+    </Reveal>
+    <Reveal as="p" y={10} className="text-sm text-white/60">
+      {subtitle}
+    </Reveal>
+  </RevealGroup>
 );
 
 export const AuthFooter = ({ children }: { children: ReactNode }) => (

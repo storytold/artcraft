@@ -8,7 +8,7 @@ use utoipa::ToSchema;
 use enums::by_table::users::user_feature_flag::UserFeatureFlag;
 
 use crate::http_server::common_responses::common_web_error::CommonWebError;
-use crate::http_server::web_utils::user_session::require_moderator::require_moderator;
+use crate::http_server::user_lookup::user_session::require_moderator::require_moderator;
 use crate::state::server_state::ServerState;
 
 // ── Response ──

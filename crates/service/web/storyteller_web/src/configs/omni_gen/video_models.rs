@@ -5,6 +5,7 @@ use enums::common::generation::common_video_model::CommonVideoModel;
 use enums::common::generation::model_creator::ModelCreator;
 use enums::common::generation_provider::GenerationProvider;
 use once_cell::sync::Lazy;
+use enums::common::generation::common_bitrate::CommonBitrate;
 
 pub const OMNI_GEN_VIDEO_MODELS_AND_PROVIDERS: Lazy<OmniGenVideoModelsResponse> = Lazy::new(|| {
   let models = build_omni_gen_video_models();
@@ -246,6 +247,11 @@ fn build_omni_gen_video_models() -> Vec<OmniGenVideoModelDetails> {
       CommonResolution::TenEightyP,
     ]),
     resolution_default: Some(CommonResolution::SevenTwentyP),
+    bitrate_options: Some(vec![
+      CommonBitrate::Normal,
+      CommonBitrate::High,
+    ]),
+    bitrate_default: Some(CommonBitrate::Normal),
     batch_size_options: Some(vec![1, 2, 4]),
     batch_size_default: Some(1),
     duration_seconds_min: Some(4),
@@ -287,6 +293,11 @@ fn build_omni_gen_video_models() -> Vec<OmniGenVideoModelDetails> {
       CommonResolution::SevenTwentyP,
     ]),
     resolution_default: Some(CommonResolution::SevenTwentyP),
+    bitrate_options: Some(vec![
+      CommonBitrate::Normal,
+      CommonBitrate::High,
+    ]),
+    bitrate_default: Some(CommonBitrate::Normal),
     batch_size_options: Some(vec![1, 2, 4]),
     batch_size_default: Some(1),
     duration_seconds_min: Some(4),
@@ -329,6 +340,11 @@ fn build_omni_gen_video_models() -> Vec<OmniGenVideoModelDetails> {
       CommonResolution::TenEightyP,
     ]),
     resolution_default: Some(CommonResolution::SevenTwentyP),
+    bitrate_options: Some(vec![
+      CommonBitrate::Normal,
+      CommonBitrate::High,
+    ]),
+    bitrate_default: Some(CommonBitrate::Normal),
     batch_size_options: Some(vec![1, 2, 4]),
     batch_size_default: Some(1),
     duration_seconds_min: Some(4),
@@ -370,6 +386,11 @@ fn build_omni_gen_video_models() -> Vec<OmniGenVideoModelDetails> {
       CommonResolution::SevenTwentyP,
     ]),
     resolution_default: Some(CommonResolution::SevenTwentyP),
+    bitrate_options: Some(vec![
+      CommonBitrate::Normal,
+      CommonBitrate::High,
+    ]),
+    bitrate_default: Some(CommonBitrate::Normal),
     batch_size_options: Some(vec![1, 2, 4]),
     batch_size_default: Some(1),
     duration_seconds_min: Some(4),
@@ -412,6 +433,11 @@ fn build_omni_gen_video_models() -> Vec<OmniGenVideoModelDetails> {
       CommonResolution::TenEightyP,
     ]),
     resolution_default: Some(CommonResolution::SevenTwentyP),
+    bitrate_options: Some(vec![
+      CommonBitrate::Normal,
+      CommonBitrate::High,
+    ]),
+    bitrate_default: Some(CommonBitrate::Normal),
     batch_size_options: Some(vec![1, 2, 4]),
     batch_size_default: Some(1),
     duration_seconds_min: Some(4),
@@ -453,6 +479,10 @@ fn build_omni_gen_video_models() -> Vec<OmniGenVideoModelDetails> {
       CommonResolution::SevenTwentyP,
     ]),
     resolution_default: Some(CommonResolution::SevenTwentyP),
+    bitrate_options: Some(vec![
+      CommonBitrate::Normal,
+      CommonBitrate::High,
+    ]),
     batch_size_options: Some(vec![1, 2, 4]),
     batch_size_default: Some(1),
     duration_seconds_min: Some(4),

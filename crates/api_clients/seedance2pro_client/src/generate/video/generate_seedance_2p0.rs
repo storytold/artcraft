@@ -3,7 +3,7 @@ use crate::error::seedance2pro_error::Seedance2ProError;
 use crate::cost::kinovi_seedance_generation_cost::KinoviSeedanceGenerationCost;
 use crate::requests::kinovi_host::KinoviHost;
 use crate::requests::workflow_run_task::workflow_run_task::{
-  workflow_run_task, KinoviAspectRatioRaw, KinoviBatchCountRaw,
+  workflow_run_task, KinoviAspectRatioRaw, KinoviBatchCountRaw, KinoviBitrateRaw,
   KinoviModelTypeRaw, KinoviOutputResolutionRaw, WorkflowRunTaskArgs,
   WorkflowRunTaskRequest,
 };
@@ -32,6 +32,9 @@ pub struct GenerateSeedance2p0Request {
   pub reference_audio_urls: Option<Vec<String>>,
   pub character_ids: Option<Vec<String>>,
   pub use_face_blur_hack: Option<bool>,
+  /// Output video bitrate. None defaults to "standard"; `High` requests a
+  /// higher bitrate. Does not affect cost.
+  pub bitrate: Option<KinoviSeedance2p0Bitrate>,
 }
 
 // ── Enums ──
@@ -58,6 +61,11 @@ pub enum KinoviSeedance2p0BatchCount {
   One,
   Two,
   Four,
+}
+
+#[derive(Debug, Clone, Copy)]
+pub enum KinoviSeedance2p0Bitrate {
+  High,
 }
 
 // ── Pricing ──
@@ -178,6 +186,7 @@ pub async fn generate_seedance_2p0(
     reference_audio_urls: req.reference_audio_urls,
     character_ids: req.character_ids,
     use_face_blur_hack: req.use_face_blur_hack,
+    bitrate: map_bitrate(req.bitrate),
   };
 
   let raw_response = workflow_run_task(WorkflowRunTaskArgs {
@@ -224,6 +233,13 @@ fn map_batch_count(bc: Option<KinoviSeedance2p0BatchCount>) -> KinoviBatchCountR
   }
 }
 
+fn map_bitrate(bitrate: Option<KinoviSeedance2p0Bitrate>) -> Option<KinoviBitrateRaw> {
+  match bitrate {
+    Some(KinoviSeedance2p0Bitrate::High) => Some(KinoviBitrateRaw::High),
+    None => None,
+  }
+}
+
 // ── Tests ──
 
 #[cfg(test)]
@@ -256,6 +272,7 @@ mod tests {
         reference_audio_urls: None,
         character_ids: None,
         use_face_blur_hack: None,
+        bitrate: None,
       }
     }
 
@@ -810,12 +827,28 @@ mod tests {
           reference_audio_urls: None,
           character_ids: None,
           use_face_blur_hack: None,
+          bitrate: None,
         };
         assert_eq!(
           req.calculate_costs().total_cost.kinovi_credits, baseline,
           "Aspect ratio {:?} should not change credits from baseline {}", ar, baseline,
         );
       }
+    }
+
+    // ── Bitrate doesn't affect cost ──
+
+    #[test]
+    fn high_bitrate_does_not_affect_credits() {
+      let baseline = r720(5).calculate_costs().total_cost.kinovi_credits;
+
+      let mut high = r720(5);
+      high.bitrate = Some(KinoviSeedance2p0Bitrate::High);
+
+      assert_eq!(
+        high.calculate_costs().total_cost.kinovi_credits, baseline,
+        "High bitrate should not change credits from baseline {}", baseline,
+      );
     }
   }
 
@@ -849,6 +882,7 @@ mod tests {
           reference_audio_urls: None,
           character_ids: None,
           use_face_blur_hack: None,
+          bitrate: None,
         },
       }).await?;
       println!("t2v default — task_id={}, order_id={}", result.task_id, result.order_id);
@@ -879,6 +913,7 @@ mod tests {
           reference_audio_urls: None,
           character_ids: None,
           use_face_blur_hack: None,
+          bitrate: None,
         },
       }).await?;
       println!("t2v 1080p — task_id={}, order_id={}", result.task_id, result.order_id);
@@ -912,6 +947,7 @@ mod tests {
           reference_audio_urls: None,
           character_ids: None,
           use_face_blur_hack: None,
+          bitrate: None,
         },
       }).await?;
       println!("t2v 21:9 — task_id={}, order_id={}", result.task_id, result.order_id);
@@ -943,6 +979,7 @@ mod tests {
           reference_audio_urls: None,
           character_ids: None,
           use_face_blur_hack: None,
+          bitrate: None,
         },
       }).await?;
       println!("keyframe 21:9 — task_id={}, order_id={}", result.task_id, result.order_id);
@@ -978,6 +1015,7 @@ mod tests {
           reference_audio_urls: None,
           character_ids: None,
           use_face_blur_hack: None,
+          bitrate: None,
         },
       }).await?;
       println!("keyframe — task_id={}, order_id={}", result.task_id, result.order_id);
@@ -1010,6 +1048,7 @@ mod tests {
           reference_audio_urls: None,
           character_ids: None,
           use_face_blur_hack: None,
+          bitrate: None,
         },
       }).await?;
       println!("keyframe start+end — task_id={}, order_id={}", result.task_id, result.order_id);
@@ -1046,6 +1085,7 @@ mod tests {
           reference_audio_urls: None,
           character_ids: None,
           use_face_blur_hack: None,
+          bitrate: None,
         },
       }).await?;
       println!("image ref — task_id={}, order_id={}", result.task_id, result.order_id);
@@ -1082,6 +1122,7 @@ mod tests {
           reference_audio_urls: None,
           character_ids: None,
           use_face_blur_hack: None,
+          bitrate: None,
         },
       }).await?;
       println!("video ref — task_id={}, order_id={}", result.task_id, result.order_id);
@@ -1116,6 +1157,7 @@ mod tests {
           reference_audio_urls: None,
           character_ids: Some(vec![STEAMPUNK_CLOWN_ID.to_string()]),
           use_face_blur_hack: None,
+          bitrate: None,
         },
       }).await?;
       println!("character ref — task_id={}, order_id={}", result.task_id, result.order_id);
@@ -1146,6 +1188,7 @@ mod tests {
           reference_audio_urls: None,
           character_ids: Some(vec![STEAMPUNK_CLOWN_ID.to_string(), MOCHI_ID.to_string()]),
           use_face_blur_hack: None,
+          bitrate: None,
         },
       }).await?;
       println!("two characters — task_id={}, order_id={}", result.task_id, result.order_id);

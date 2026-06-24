@@ -153,29 +153,35 @@ function removeObject3D(object3D) {
 
     obj.traverse(child => {
       (child as THREE.Mesh)?.geometry?.dispose()
-      if (Array.isArray((child as THREE.Mesh).texture)) {
-        (child as THREE.Mesh).texture.forEach(mat => mat.dispose());
-      } else if ((child as THREE.Mesh).texture) {
-        (child as THREE.Mesh).texture.dispose();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const childTexture = (child as any).texture;
+      if (Array.isArray(childTexture)) {
+        childTexture.forEach(mat => mat.dispose());
+      } else if (childTexture) {
+        childTexture.dispose();
       }
 
-      if (Array.isArray((child as THREE.Mesh).material)) {
-        (child as THREE.Mesh).material.forEach(mat => mat.dispose());
-      } else if ((child as THREE.Mesh).material) {
-        (child as THREE.Mesh).material.dispose();
+      const childMaterial = (child as THREE.Mesh).material;
+      if (Array.isArray(childMaterial)) {
+        childMaterial.forEach(mat => mat.dispose());
+      } else if (childMaterial) {
+        childMaterial.dispose();
       }
     })
 
-    if (Array.isArray((obj as THREE.Mesh).texture)) {
-      (obj as THREE.Mesh).texture.forEach(mat => mat.dispose());
-    } else if ((obj as THREE.Mesh).texture) {
-      (obj as THREE.Mesh).texture.dispose();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const objTexture = (obj as any).texture;
+    if (Array.isArray(objTexture)) {
+      objTexture.forEach(mat => mat.dispose());
+    } else if (objTexture) {
+      objTexture.dispose();
     }
 
-    if (Array.isArray((obj as THREE.Mesh).material)) {
-      (obj as THREE.Mesh).material.forEach(mat => mat.dispose());
-    } else if ((obj as THREE.Mesh).material) {
-      (obj as THREE.Mesh).material.dispose();
+    const objMaterial = (obj as THREE.Mesh).material;
+    if (Array.isArray(objMaterial)) {
+      objMaterial.forEach(mat => mat.dispose());
+    } else if (objMaterial) {
+      objMaterial.dispose();
     }
 
     if ((obj as THREE.Mesh).geometry) {

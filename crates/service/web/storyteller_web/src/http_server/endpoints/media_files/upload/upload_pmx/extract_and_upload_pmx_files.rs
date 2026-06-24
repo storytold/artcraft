@@ -7,7 +7,7 @@ use once_cell::sync::Lazy;
 use zip::ZipArchive;
 
 use bucket_paths::legacy::typified_paths::public::media_files::bucket_file_path::MediaFileBucketPath;
-use cloud_storage::bucket_client::BucketClient;
+use cloud_storage::legacy_bucket_client::LegacyBucketClient;
 use filesys::path_to_string::path_to_string;
 use hashing::sha256::sha256_hash_bytes::sha256_hash_bytes;
 use mimetypes::mimetype_for_bytes::get_mimetype_for_bytes;
@@ -40,7 +40,7 @@ pub struct PmxDetails {
 
 pub async fn extract_and_upload_pmx_files(
   zip_container_file_bytes: &[u8],
-  bucket_client: &BucketClient,
+  bucket_client: &LegacyBucketClient,
   prefix: Option<&str>,
   suffix: Option<&str>
 ) -> Result<PmxDetails, PmxError> {
