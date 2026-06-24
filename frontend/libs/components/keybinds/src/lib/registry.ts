@@ -80,7 +80,14 @@ function act(
 }
 
 function cam(id: ActionId, label: string): ActionDef {
-  return { id, label, group: "Camera", surface: "pagescene", continuous: true };
+  return {
+    id,
+    label,
+    group: "Camera",
+    surface: "pagescene",
+    continuous: true,
+    important: true,
+  };
 }
 
 function surfaceOf(id: ActionId): Surface {

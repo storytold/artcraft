@@ -10,3 +10,5 @@ export { useKeybindCapture } from "./lib/useKeybindCapture";
 export { Kbd, KbdBindings } from "./lib/components/Kbd";
 export { KeybindCaptureInput } from "./lib/components/KeybindCaptureInput";
 export { KeybindsSettings } from "./lib/settings/KeybindsSettings";
+export { Cheatsheet } from "./lib/cheatsheet/Cheatsheet";
+export { useCheatsheetVisibility } from "./lib/cheatsheet/useCheatsheetVisibility";
