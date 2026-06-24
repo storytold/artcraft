@@ -52,6 +52,13 @@ const defs: ActionDef[] = [
   act("pagescene.edit.redo", "Redo", "History", { important: true, preventDefault: true }),
   act("pagescene.edit.copy", "Copy", "Edit", { preventDefault: true }),
   act("pagescene.edit.paste", "Paste", "Edit", { preventDefault: true }),
+
+  // ── PageDraw (2D editor) ──────────────────────────────────────────────────
+  act("pagedraw.edit.delete", "Delete selected", "Edit", { important: true }),
+  act("pagedraw.edit.copy", "Copy", "Edit", { important: true, preventDefault: true }),
+  act("pagedraw.edit.paste", "Paste", "Edit", { important: true, preventDefault: true }),
+  act("pagedraw.history.undo", "Undo", "History", { important: true, preventDefault: true }),
+  act("pagedraw.history.redo", "Redo", "History", { important: true, preventDefault: true }),
 ];
 
 export const ACTIONS: Record<ActionId, ActionDef> = Object.fromEntries(

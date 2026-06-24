@@ -41,6 +41,13 @@ export const BASE_BINDINGS: Record<ActionId, Binding[]> = {
   "pagescene.edit.redo": [b("KeyZ", { ctrl: true, shift: true }), b("KeyY", { ctrl: true })],
   "pagescene.edit.copy": [b("KeyC", { ctrl: true })],
   "pagescene.edit.paste": [b("KeyV", { ctrl: true })],
+
+  // PageDraw (2D) — preset-independent.
+  "pagedraw.edit.delete": [b("Delete"), b("Backspace")],
+  "pagedraw.edit.copy": [b("KeyC", { ctrl: true })],
+  "pagedraw.edit.paste": [b("KeyV", { ctrl: true })],
+  "pagedraw.history.undo": [b("KeyZ", { ctrl: true })],
+  "pagedraw.history.redo": [b("KeyZ", { ctrl: true, shift: true }), b("KeyY", { ctrl: true })],
 };
 
 export const PRESETS: Record<PresetId, Preset> = {

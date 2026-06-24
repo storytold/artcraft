@@ -16,9 +16,8 @@ import {
   type SceneState,
   useSceneStore,
 } from "./stores/SceneState";
-import { useUndoRedoHotkeys } from "./hooks/useUndoRedoHotkeys";
-import { useDeleteHotkeys } from "./hooks/useDeleteHotkeys";
-import { useCopyPasteHotkeys } from "./hooks/useCopyPasteHotkeys";
+import { usePagedrawKeybinds } from "./hooks/usePagedrawKeybinds";
+import { Cheatsheet, useCheatsheetVisibility } from "@storyteller/keybinds";
 import Konva from "konva";
 import { ContextMenuContainer } from "./components/ui/ContextMenu";
 import InpaintToolBar from "./components/ui/InpaintToolBar";
@@ -432,12 +431,14 @@ const PageDraw = ({
   const supportsMaskedInpainting =
     selectedImageModel?.usesInpaintingMask ?? false;
 
-  useDeleteHotkeys({ onDelete: deleteSelectedItems });
-  useUndoRedoHotkeys({ undo, redo });
-  useCopyPasteHotkeys({
+  usePagedrawKeybinds({
+    undo,
+    redo,
     onCopy: copySelectedItems,
     onPaste: pasteItems,
+    onDelete: deleteSelectedItems,
   });
+  const cheatsheetVisible = useCheatsheetVisibility();
 
   // Read the inpaint mask off the Konva layer and encode it on a worker thread.
   // The Konva readback itself runs on main (Konva is DOM-bound), but everything
@@ -1242,6 +1243,7 @@ const PageDraw = ({
         />
       )}
       <div className="relative z-0">
+        <Cheatsheet surface="pagedraw" visible={cheatsheetVisible} />
         <ContextMenuContainer
           onAction={(e, action) => {
             if (action === "contextMenu") {
