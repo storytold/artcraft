@@ -121,7 +121,7 @@ fn records_to_response(
   Json(OmniApiBatchGetJobStatusSuccessResponse {
     success: true,
     job_states: records.into_iter()
-        .map(|record| record_to_payload(record, None, server_environment, media_domain))
+        .map(|record| record_to_payload(record, server_environment, media_domain))
         .collect::<Vec<_>>(),
   })
 }

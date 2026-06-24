@@ -1,5 +1,10 @@
 # ArtCraft Omni API
 
+> # 📚 Full API reference: **<https://storyteller-docs.netlify.app/>**
+>
+> **Every ArtCraft API endpoint is documented there.** This guide covers only the Omni API video
+> endpoints — for everything else, start at the link above.
+
 The **Omni API** is the API-key–authenticated surface for ArtCraft generation. It mirrors the
 in-app "Omni Gen" endpoints but is designed for programmatic use: you authenticate with an API key
 in the `Authorization` header instead of a browser session cookie.

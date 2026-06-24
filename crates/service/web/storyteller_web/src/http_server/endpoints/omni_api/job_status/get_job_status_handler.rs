@@ -3,7 +3,7 @@ use std::sync::Arc;
 use actix_web::web::{Json, Path};
 use actix_web::{web, HttpRequest};
 use log::{error, warn};
-use redis::{Commands, RedisResult};
+use redis::Commands;
 
 use artcraft_api_defs::omni_api::job_status::omni_api_get_job_status::{OmniApiGetJobStatusPathInfo, OmniApiGetJobStatusSuccessResponse};
 use mysql_queries::queries::generic_inference::web::get_inference_job_status::get_inference_job_status;
@@ -79,28 +79,9 @@ pub async fn omni_api_get_job_status_handler(
         CommonWebError::from_error(e)
       })?;
 
-  // TODO(bt,2023-05-21): Make async.
-  let extra_status_key = RedisKeys::generic_inference_extra_status_info(path.token.as_str());
-  let maybe_extra_status_value: RedisResult<Option<String>> = redis.get(&extra_status_key);
-
-  let maybe_extra_status_description = match maybe_extra_status_value {
-    Err(e) => {
-      error!("redis error: {:?}", e);
-      None // Fail open
-    }
-    Ok(maybe_value) => match maybe_value.as_deref() {
-      Some("1") => {
-        // TODO(bt,2023-10-20): Redis is reporting "1" and it's been surfacing this as a weird
-        //  message to the frontend for months. This needs proper fixing.
-        None
-      }
-      Some(value) => Some(value.to_string()),
-      None => None,
-    },
-  };
-
   if record.is_keepalive_required {
     // TODO(bt,2023-05-21): Make async.
+    let extra_status_key = RedisKeys::generic_inference_extra_status_info(path.token.as_str());
     let _: Option<String> = match redis.set_ex(&extra_status_key, "1", JOB_KEEPALIVE_TTL_SECONDS) {
       Ok(Some(status)) => Some(status),
       Ok(None) => None,
@@ -115,7 +96,6 @@ pub async fn omni_api_get_job_status_handler(
 
   let state = record_to_payload(
     record,
-    maybe_extra_status_description,
     server_state.server_environment,
     media_domain,
   );

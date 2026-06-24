@@ -10,8 +10,6 @@ use server_environment::ServerEnvironment;
 use crate::http_server::common_responses::media::media_domain::MediaDomain;
 use crate::http_server::common_responses::media::media_links_builder::MediaLinksBuilder;
 use crate::http_server::endpoints::inference_job::utils::estimates::estimate_job_progress::estimate_job_progress;
-use crate::http_server::endpoints::inference_job::utils::extractors::extract_lipsync_details::extract_lipsync_details;
-use crate::http_server::endpoints::inference_job::utils::extractors::extract_live_portrait_details::extract_live_portrait_details;
 use crate::http_server::endpoints::inference_job::utils::extractors::extract_polymorphic_inference_args::extract_polymorphic_inference_args;
 use crate::http_server::web_utils::filter_model_name::maybe_filter_model_name;
 
@@ -19,10 +17,9 @@ use crate::http_server::web_utils::filter_model_name::maybe_filter_model_name;
 ///
 /// This is the same mapping the cookie-authenticated `/v1/jobs/*` handlers use;
 /// it's shared by both the single and batch Omni API status handlers.
-#[allow(deprecated)] // We still populate the deprecated `maybe_public_bucket_media_path` field.
+#[allow(deprecated)] // We match deprecated `InferenceCategory` variants in the result-path mapping.
 pub fn record_to_payload(
   record: GenericInferenceJobStatus,
-  maybe_extra_status_description: Option<String>,
   server_environment: ServerEnvironment,
   media_domain: MediaDomain,
 ) -> OmniApiJobStatusPayload {
@@ -42,24 +39,10 @@ pub fn record_to_payload(
       maybe_prompt_token: record.request_details.maybe_prompt_token,
       maybe_model_type: maybe_filter_model_name(record.request_details.maybe_model_type.as_deref()),
       maybe_model_token: record.request_details.maybe_model_token,
-      maybe_model_title: record.request_details.maybe_model_title,
-      maybe_raw_inference_text: record.request_details.maybe_raw_inference_text,
-      maybe_style_name: record.request_details.maybe_style_name,
-      maybe_live_portrait_details: maybe_polymorphic_args
-          .as_ref()
-          .and_then(|args| extract_live_portrait_details(args)),
-      maybe_lipsync_details: maybe_polymorphic_args
-          .as_ref()
-          .and_then(|args| extract_lipsync_details(args)),
     },
     status: OmniApiJobStatusDetails {
       status: record.status,
-      maybe_extra_status_description,
-      maybe_assigned_worker: maybe_filter_model_name(record.maybe_assigned_worker.as_deref()),
-      maybe_assigned_cluster: record.maybe_assigned_cluster,
       maybe_first_started_at: record.maybe_first_started_at,
-      attempt_count: record.attempt_count as u8,
-      requires_keepalive: record.is_keepalive_required,
       maybe_failure_category: record.maybe_frontend_failure_category,
       progress_percentage,
     },
@@ -135,7 +118,6 @@ pub fn record_to_payload(
           server_environment,
           &public_bucket_media_path,
         ),
-        maybe_public_bucket_media_path: Some(public_bucket_media_path),
         maybe_successfully_completed_at: result_details.maybe_successfully_completed_at,
       }
     }),
