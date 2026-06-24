@@ -33,17 +33,37 @@ pub struct OmniApiVideoGenerateRequest {
   /// Starting keyframe (optional).
   pub start_frame_image_media_token: Option<MediaFileToken>,
 
+  /// URL alternative to `start_frame_image_media_token`. Mutually exclusive with it.
+  /// Downloaded and stored as a media file before generation.
+  pub start_frame_image_url: Option<String>,
+
   /// Ending keyframe (optional).
   pub end_frame_image_media_token: Option<MediaFileToken>,
+
+  /// URL alternative to `end_frame_image_media_token`. Mutually exclusive with it.
+  /// Downloaded and stored as a media file before generation.
+  pub end_frame_image_url: Option<String>,
 
   /// Reference images (optional).
   pub reference_image_media_tokens: Option<Vec<MediaFileToken>>,
 
+  /// URL alternative to `reference_image_media_tokens`. Mutually exclusive with it.
+  /// Each URL is downloaded and stored as a media file before generation.
+  pub reference_image_urls: Option<Vec<String>>,
+
   /// Reference videos (optional).
   pub reference_video_media_tokens: Option<Vec<MediaFileToken>>,
 
+  /// URL alternative to `reference_video_media_tokens`. Mutually exclusive with it.
+  /// Each URL is downloaded and stored as a media file before generation.
+  pub reference_video_urls: Option<Vec<String>>,
+
   /// Reference audio (optional).
   pub reference_audio_media_tokens: Option<Vec<MediaFileToken>>,
+
+  /// URL alternative to `reference_audio_media_tokens`. Mutually exclusive with it.
+  /// Each URL is downloaded and stored as a media file before generation.
+  pub reference_audio_urls: Option<Vec<String>>,
 
   /// Optional character tokens to reference in the prompt.
   /// Characters are referenced in prompts as @CharacterName.

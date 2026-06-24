@@ -21,12 +21,20 @@ pub (super) fn validate_when_image_required(
     return Ok(());
   }
 
-  let has_start_frame = request.start_frame_image_media_token.is_some();
-  
+  // NB: A start frame / reference image may be supplied either as a media token
+  // or as a URL (URLs are converted to media files later in the handler), so
+  // both satisfy the image requirement here.
+  let has_start_frame = request.start_frame_image_media_token.is_some()
+    || request.start_frame_image_url.is_some();
+
   let has_reference_images = request
     .reference_image_media_tokens
     .as_ref()
-    .is_some_and(|v| !v.is_empty());
+    .is_some_and(|v| !v.is_empty())
+    || request
+      .reference_image_urls
+      .as_ref()
+      .is_some_and(|v| !v.is_empty());
 
   if has_start_frame || has_reference_images {
     return Ok(());
@@ -49,10 +57,15 @@ mod tests {
       prompt: Some("test".to_string()),
       negative_prompt: None,
       start_frame_image_media_token: None,
+      start_frame_image_url: None,
       end_frame_image_media_token: None,
+      end_frame_image_url: None,
       reference_image_media_tokens: None,
+      reference_image_urls: None,
       reference_video_media_tokens: None,
+      reference_video_urls: None,
       reference_audio_media_tokens: None,
+      reference_audio_urls: None,
       reference_character_tokens: None,
       resolution: None,
       aspect_ratio: None,

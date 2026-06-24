@@ -28,7 +28,9 @@ use tokens::tokens::non_unique::debug_logs_event_token::DebugLogEventToken;
 
 use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::endpoints::generate::common::payments_error_test::payments_error_test;
+use crate::http_server::endpoints::omni_api::generate::image::check_request::check_request;
 use crate::http_server::endpoints::omni_api::generate::image::hydrate_to_router_request::hydrate_to_router_request;
+use crate::http_server::endpoints::omni_api::generate::image::ingest_url_inputs::ingest_url_inputs;
 use crate::http_server::endpoints::omni_api::generate::image::insert_db_job::insert_fal_job::{insert_fal_job, InsertFalJobArgs};
 use crate::http_server::endpoints::omni_api::generate::image::insert_db_job::insert_seedance2pro_jobs::{insert_seedance2pro_jobs, InsertSeedance2proJobsArgs};
 use crate::http_server::endpoints::omni_api::generate::image::insert_db_job::shared_job_args::SharedJobArgs;
@@ -55,11 +57,14 @@ use crate::util::lookup::lookup_media_files_as_cdn_url_list_and_map::lookup_medi
 )]
 pub async fn omni_api_image_generate_handler(
   http_request: HttpRequest,
-  request: Json<OmniApiImageGenerateRequest>,
+  mut request: Json<OmniApiImageGenerateRequest>,
   server_state: web::Data<Arc<ServerState>>,
 ) -> Result<Json<OmniGenImageGenerateResponse>, CommonWebError> {
 
   info!("request: {:?}", request);
+
+  // Validate URL/media-token preconditions before any billable or DB-mutating work.
+  check_request(&request)?;
 
   payments_error_test(&request.prompt.as_deref().unwrap_or(""))?;
 
@@ -99,6 +104,19 @@ pub async fn omni_api_image_generate_handler(
       error!("Error inserting idempotency token: {:?}", err);
       CommonWebError::BadInputWithSimpleMessage("repeated idempotency token".to_string())
     })?;
+
+  let ip_address = get_request_ip(&http_request);
+
+  // ==================== INGEST URL INPUTS ==================== //
+
+  // Download any URL image inputs into media files owned by this user, then
+  // treat them as media tokens. Release the pooled connection first so we don't
+  // hold a pool slot during the (network) downloads.
+  if request.image_urls.is_some() {
+    drop(mysql_connection);
+    ingest_url_inputs(&mut request, &server_state, user_token, &ip_address).await?;
+    mysql_connection = server_state.mysql_pool.acquire().await?;
+  }
 
   // ==================== RESOLVE MEDIA TOKENS ==================== //
 
@@ -162,7 +180,6 @@ pub async fn omni_api_image_generate_handler(
 
   // ==================== WRITE RESULT ==================== //
 
-  let ip_address = get_request_ip(&http_request);
   // Omni API requests are always API-key authenticated; hardcode the platform type.
   let maybe_platform_type = Some(PlatformType::ApiKey);
 

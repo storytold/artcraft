@@ -31,6 +31,10 @@ pub struct OmniApiImageGenerateRequest {
   /// If absent, we're doing text-to-image.
   pub image_media_tokens: Option<Vec<MediaFileToken>>,
 
+  /// URL alternative to `image_media_tokens`. Mutually exclusive with it.
+  /// Each URL is downloaded and stored as a media file before generation.
+  pub image_urls: Option<Vec<String>>,
+
   /// The resolution to use.
   pub resolution: Option<CommonResolution>,
 
