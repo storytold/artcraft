@@ -1,4 +1,5 @@
 import { useEffect, useMemo } from "react";
+import { useResolvedKeybinds } from "@storyteller/keybinds";
 import type Editor from "../engine/editor";
 import { buildKeymap, dispatchBinding } from "../engine/keymap";
 import { usePageSceneStore } from "../PageSceneStore";
@@ -41,7 +42,10 @@ const isEventFromEditableElement = (event: KeyboardEvent): boolean => {
 // owned by useFreeCam since they're continuous motion, not one-shots.
 
 export const useViewportKeyboard = (editor: Editor | null) => {
-  const bindings = useMemo(() => buildKeymap(), []);
+  // Resolve from the unified keybinds store; `forAction` identity changes when
+  // the preset or any override changes, rebuilding the keymap + re-binding.
+  const { forAction } = useResolvedKeybinds();
+  const bindings = useMemo(() => buildKeymap(forAction), [forAction]);
 
   useEffect(() => {
     if (!editor) return undefined;

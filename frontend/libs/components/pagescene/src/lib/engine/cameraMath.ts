@@ -132,33 +132,37 @@ export const createFreeCamControlState = (): FreeCamControlState => ({
   smoothing: 0.2,
 });
 
-// Translate a code from a KeyboardEvent into the move-state slot it
-// drives, if any. Returns the property name on HeldMoveKeys, or null.
+// Maps the keybinds-registry camera action ids to the held-key state slot each
+// drives. The actual key codes come from the resolved bindings (preset +
+// overrides), built into a `code → slot` map by useFreeCam at bind time.
+export const CAMERA_MOVE_ACTION_SLOTS: Record<string, keyof HeldMoveKeys> = {
+  "pagescene.camera.forward": "forward",
+  "pagescene.camera.back": "back",
+  "pagescene.camera.left": "left",
+  "pagescene.camera.right": "right",
+  "pagescene.camera.up": "up",
+  "pagescene.camera.down": "down",
+};
+
+export const CAMERA_ROTATE_ACTION_SLOTS: Record<string, keyof HeldRotateKeys> = {
+  "pagescene.camera.pitchUp": "pitchUp",
+  "pagescene.camera.pitchDown": "pitchDown",
+  "pagescene.camera.yawLeft": "yawLeft",
+  "pagescene.camera.yawRight": "yawRight",
+};
+
+// Translate a KeyboardEvent code into the move/rotate slot it drives via a
+// resolved `code → slot` map, or null. (The map replaces the old hardcoded
+// WASD/QE + arrow switches so camera keys are remappable.)
 export const moveSlotForKeyCode = (
   code: string,
-): keyof HeldMoveKeys | null => {
-  switch (code) {
-    case "KeyW": return "forward";
-    case "KeyS": return "back";
-    case "KeyA": return "left";
-    case "KeyD": return "right";
-    case "KeyQ": return "down";
-    case "KeyE": return "up";
-    default: return null;
-  }
-};
+  map: Record<string, keyof HeldMoveKeys>,
+): keyof HeldMoveKeys | null => map[code] ?? null;
 
 export const rotateSlotForKeyCode = (
   code: string,
-): keyof HeldRotateKeys | null => {
-  switch (code) {
-    case "ArrowUp":    return "pitchUp";
-    case "ArrowDown":  return "pitchDown";
-    case "ArrowLeft":  return "yawLeft";
-    case "ArrowRight": return "yawRight";
-    default: return null;
-  }
-};
+  map: Record<string, keyof HeldRotateKeys>,
+): keyof HeldRotateKeys | null => map[code] ?? null;
 
 // Per-frame integration step. Reads `state` (held keys + velocity),
 // applies the resulting movement / rotation to `camera`, and returns

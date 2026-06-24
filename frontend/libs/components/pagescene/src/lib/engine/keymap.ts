@@ -1,3 +1,10 @@
+import {
+  ACTIONS,
+  useKeybindsStore,
+  type ActionId,
+  type Binding,
+  type KeyGroup as KeybindsKeyGroup,
+} from "@storyteller/keybinds";
 import type Editor from "./editor";
 import { CreateAction } from "./editor/actions/CreateAction";
 import {
@@ -8,11 +15,13 @@ import {
 } from "./events/EngineEvent";
 import type { PoseMode } from "../PageSceneStore";
 
-// One declarative table for every viewport keyboard shortcut.
-// useViewportKeyboard dispatches against this list; a future Ctrl-hold
-// cheatsheet overlay can render the same data without duplication.
+// One declarative table mapping viewport actions to their handlers. The actual
+// key bindings now come from the unified @storyteller/keybinds registry (preset
+// + per-user overrides), so this file owns *what each action does*, not *which
+// key triggers it*. useViewportKeyboard dispatches against the resolved list;
+// the cheatsheet overlay renders the same registry.
 
-export type KeyGroup = "Transform" | "Selection" | "Edit" | "View";
+export type KeyGroup = KeybindsKeyGroup;
 
 export interface KeyBinding {
   code: string; // matches event.code (e.g. "KeyT", "Backspace")
@@ -103,47 +112,51 @@ const toggleStats = (editor: Editor) => {
   editor.toggle_stats();
 };
 
-export const buildKeymap = (): KeyBinding[] => [
-  // Transform
-  { code: "KeyT", label: "Translate", group: "Transform",
-    run: (e) => setGizmoMode(e, "translate", "move") },
-  { code: "KeyR", label: "Rotate", group: "Transform",
-    run: (e) => setGizmoMode(e, "rotate", "rotate") },
-  { code: "KeyG", label: "Scale", group: "Transform",
-    run: (e) => setGizmoMode(e, "scale", "scale") },
-  { code: "KeyX", label: "Toggle local/world", group: "Transform",
-    run: (e) => e.gizmo.toggleTransformSpace() },
-  { code: "KeyK", label: "Toggle pose (FK)", group: "Transform",
-    run: (e) => e.mouse_controls?.toggleFKMode() },
+// Action id → handler. Bindings live in the keybinds registry; this maps each
+// registered PageScene action to what it actually does.
+const HANDLERS: Record<ActionId, (editor: Editor) => void | Promise<void>> = {
+  "pagescene.transform.translate": (e) => setGizmoMode(e, "translate", "move"),
+  "pagescene.transform.rotate": (e) => setGizmoMode(e, "rotate", "rotate"),
+  "pagescene.transform.scale": (e) => setGizmoMode(e, "scale", "scale"),
+  "pagescene.transform.toggleSpace": (e) => e.gizmo.toggleTransformSpace(),
+  "pagescene.transform.poseFK": (e) => e.mouse_controls?.toggleFKMode(),
+  "pagescene.view.focus": focusSelected,
+  "pagescene.view.assetMenu": openAssetModal,
+  "pagescene.view.toggleCameraView": toggleCameraView,
+  "pagescene.view.toggleStats": toggleStats,
+  "pagescene.selection.clearOrExit": onEscape,
+  "pagescene.edit.delete": deleteSelected,
+  "pagescene.edit.undo": undo,
+  "pagescene.edit.redo": redo,
+  "pagescene.edit.copy": copy,
+  "pagescene.edit.paste": paste,
+};
 
-  // Selection / view
-  { code: "KeyF", label: "Focus selection", group: "View",
-    run: focusSelected },
-  { code: "KeyB", label: "Open asset menu", group: "View",
-    run: openAssetModal },
-  { code: "Space", label: "Toggle camera view", group: "View",
-    run: toggleCameraView, preventDefault: true },
-  { code: "Escape", label: "Clear selection / exit pose", group: "Selection",
-    run: onEscape },
-  { code: "Backquote", label: "Toggle perf stats", group: "View",
-    run: toggleStats },
-
-  // Edit
-  { code: "Backspace", label: "Delete selected", group: "Edit",
-    run: deleteSelected },
-  { code: "Delete", label: "Delete selected", group: "Edit",
-    run: deleteSelected },
-  { code: "KeyZ", modifiers: { ctrl: true }, label: "Undo", group: "Edit",
-    run: undo, preventDefault: true },
-  { code: "KeyZ", modifiers: { ctrl: true, shift: true }, label: "Redo",
-    group: "Edit", run: redo, preventDefault: true },
-  { code: "KeyY", modifiers: { ctrl: true }, label: "Redo", group: "Edit",
-    run: redo, preventDefault: true },
-  { code: "KeyC", modifiers: { ctrl: true }, label: "Copy", group: "Edit",
-    run: copy, preventDefault: true },
-  { code: "KeyV", modifiers: { ctrl: true }, label: "Paste", group: "Edit",
-    run: paste, preventDefault: true },
-];
+// Expand the handler table into concrete KeyBindings using the resolved bindings
+// for each action (one KeyBinding per bound key — so Delete+Backspace and the
+// two Redo combos each stay live). `forAction` defaults to the store so non-React
+// callers keep working; useViewportKeyboard passes a reactive resolver.
+export const buildKeymap = (
+  forAction: (id: ActionId) => Binding[] = (id) =>
+    useKeybindsStore.getState().resolveBindings(id),
+): KeyBinding[] => {
+  const out: KeyBinding[] = [];
+  for (const [id, run] of Object.entries(HANDLERS)) {
+    const def = ACTIONS[id];
+    if (!def) continue;
+    for (const binding of forAction(id)) {
+      out.push({
+        code: binding.code,
+        modifiers: { ctrl: binding.ctrl, shift: binding.shift, alt: binding.alt },
+        label: def.label,
+        group: def.group,
+        run,
+        preventDefault: def.preventDefault,
+      });
+    }
+  }
+  return out;
+};
 
 const matches = (binding: KeyBinding, e: KeyboardEvent): boolean => {
   if (binding.code !== e.code) return false;

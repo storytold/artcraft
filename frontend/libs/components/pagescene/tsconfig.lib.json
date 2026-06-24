@@ -51,6 +51,9 @@
   ],
   "references": [
     {
+      "path": "../keybinds/tsconfig.lib.json"
+    },
+    {
       "path": "../button-icon/tsconfig.lib.json"
     },
     {
