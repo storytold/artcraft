@@ -349,6 +349,9 @@ use artcraft_api_defs::omni_gen::generate_response::omni_gen_image_generate_resp
 use artcraft_api_defs::omni_gen::generate_response::omni_gen_video_generate_response::*;
 use artcraft_api_defs::omni_gen::models::omni_gen_image_models::*;
 use artcraft_api_defs::omni_gen::models::omni_gen_video_models::*;
+use artcraft_api_defs::omni_api::job_status::omni_api_batch_get_job_status::*;
+use artcraft_api_defs::omni_api::job_status::omni_api_get_job_status::*;
+use artcraft_api_defs::omni_api::job_status::omni_api_job_status_payload::*;
 use artcraft_api_defs::omni_api::omni_upload_audio::*;
 use artcraft_api_defs::omni_api::omni_upload_image::*;
 use artcraft_api_defs::omni_api::omni_upload_video::*;
@@ -573,6 +576,8 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     crate::http_server::endpoints::omni_api::upload::omni_upload_audio_media_file_handler::omni_upload_audio_media_file_handler,
     crate::http_server::endpoints::omni_api::upload::omni_upload_image_media_file_handler::omni_upload_image_media_file_handler,
     crate::http_server::endpoints::omni_api::upload::omni_upload_video_media_file_handler::omni_upload_video_media_file_handler,
+    crate::http_server::endpoints::omni_api::job_status::get_job_status_handler::omni_api_get_job_status_handler,
+    crate::http_server::endpoints::omni_api::job_status::batch_get_job_status_handler::omni_api_batch_get_job_status_handler,
     // Moderation
     crate::http_server::endpoints::moderation::alerts::moderation_send_alert_handler::moderation_send_alert_handler,
     crate::http_server::endpoints::moderation::info::moderator_token_info_handler::moderator_get_token_info_handler,
@@ -826,7 +831,13 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     GetCharacterResponse,
     ListCharactersEntry,
     ListCharactersResponse,
+    OmniApiBatchGetJobStatusSuccessResponse,
+    OmniApiGetJobStatusSuccessResponse,
     OmniApiImageGenerateRequest,
+    OmniApiJobRequestDetails,
+    OmniApiJobResultDetails,
+    OmniApiJobStatusDetails,
+    OmniApiJobStatusPayload,
     OmniApiVideoGenerateRequest,
     OmniGenImageCostAndGenerateRequest,
     OmniGenImageCostResponse,
