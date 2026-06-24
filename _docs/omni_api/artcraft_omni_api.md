@@ -25,43 +25,21 @@ All paths below are relative to the base URL (e.g. `POST /v1/omni_api/generate/v
 The examples in this guide use the **development** base URL. To run against production, swap
 `http://localhost:12345` for `https://api.storyteller.ai`.
 
+Note: Our APIs are hosted on "`api.storyteller.ai`", not "`api.getartcraft.com`". This is not a 
+typo. Our Cloudflare CDN URLs are `cdn-2.fakeyou.com`.
+
 ---
 
 ## Getting an API key
 
-API keys are created from a logged-in session. You only need to do this once; store the key
-somewhere safe.
+Create and manage API keys from the ArtCraft web app:
 
-1. **Log in** to obtain a session (browser, or the `/v1/login` endpoint).
-2. **Create a key** by calling `POST /v1/api_keys/create` with your session:
+1. Go to **<https://app.getartcraft.com/>**
+2. Click **Account → Settings → API Keys** (your account must have API keys enabled from our staff)
+3. Create a key and copy it. The secret is shown **once** — store it somewhere safe.
 
-   ```bash
-   curl -s -c /tmp/cookies.txt -X POST http://localhost:12345/v1/login \
-     -H "Content-Type: application/json" \
-     -d '{"username_or_email":"YOUR_USERNAME","password":"YOUR_PASSWORD"}'
-
-   curl -s -b /tmp/cookies.txt -X POST http://localhost:12345/v1/api_keys/create \
-     -H "Content-Type: application/json" \
-     -d '{"name":"my-integration","maybe_description":"server-to-server video gen"}'
-   ```
-
-   The response returns the secret **once** — it can never be retrieved again:
-
-   ```json
-   {
-     "success": true,
-     "api_key_token": "api_key_xxxxxxxxxxxxxxxxxxxxxxxxx",
-     "api_key": "artcraft_api_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-   }
-   ```
-
-   - `api_key` — the **secret**. Store it now; treat it like a password. This is the value you put
-     in the `Authorization` header.
-   - `api_key_token` — a non-secret handle (prefix `api_key_`) used to manage the key later
-     (get / update / delete). Safe to log and store.
-
-> **403 Forbidden when creating a key?** API-key creation is gated per account. Contact the
-> Storyteller team to enable API access for your account.
+> **Don't see the API Keys section?** API access is gated per account. Contact the Artcraft team
+> to enable it.
 
 ### What an API key looks like
 
@@ -69,7 +47,7 @@ somewhere safe.
 - Followed by 40 random lowercase Crockford-base32 characters (`0-9 a-z`, excluding `i l o u`)
 - Total length: **53 characters**, e.g. `artcraft_api_3k7q9w0xv2hs5n8m4d6r1t8y0p2s4f6h8j0k2m4n6`
 
-Never commit a key to source control or paste it into logs.
+Treat the key like a password: never commit it to source control or paste it into logs.
 
 ---
 
