@@ -111,12 +111,15 @@ impl WorkflowRunTaskRequest {
   /// Pricing is per-second × batch count, with the per-second rate
   /// depending on model type and output resolution:
   ///
-  /// | Model        | 480p | 720p | 1080p |
-  /// |--------------|------|------|-------|
-  /// | Pro          |   15 |   40 |    90 |
-  /// | Fast         |   10 |   28 |   n/a |
-  /// | HappyHorse   |   15 |   40 |    90 |
+  /// | Model        | 480p | 720p | 1080p |  4K |
+  /// |--------------|------|------|-------|-----|
+  /// | Pro          |   15 |   40 |    90 | 360 |
+  /// | Fast         |   10 |   28 |   n/a | n/a |
+  /// | HappyHorse   |   15 |   40 |    90 | 360 |
   /// TODO(bt,2026-04-23): Not sure pricing for Happy Horse is correct here.
+  /// TODO(2026-06-24): Confirm the official 4K credit rate with Kinovi. The 360
+  /// placeholder is the pixel-proportional estimate (4× the 1080p rate). 4K is
+  /// Seedance 2.0 (Pro) only; Fast does not support it.
   ///
   /// Input mode (text, keyframe, reference) has no effect on cost.
   /// Aspect ratio (`resolution` field) has no effect on cost.
@@ -127,6 +130,8 @@ impl WorkflowRunTaskRequest {
       (KinoviModelTypeRaw::Seedance2Pro, None)
       | (KinoviModelTypeRaw::Seedance2Pro, Some(KinoviOutputResolutionRaw::SevenTwentyP)) => 40,
       (KinoviModelTypeRaw::Seedance2Pro, Some(KinoviOutputResolutionRaw::TenEightyP)) => 90,
+      // TODO(2026-06-24): Confirm 4K rate with Kinovi. Placeholder = 4× the 1080p rate.
+      (KinoviModelTypeRaw::Seedance2Pro, Some(KinoviOutputResolutionRaw::FourK)) => 360,
 
       // Seedance 2.0 Fast
       (KinoviModelTypeRaw::Seedance2Fast, Some(KinoviOutputResolutionRaw::FourEightyP)) => 10,
@@ -134,6 +139,8 @@ impl WorkflowRunTaskRequest {
       | (KinoviModelTypeRaw::Seedance2Fast, Some(KinoviOutputResolutionRaw::SevenTwentyP)) => 28,
       // NB: 1080p not officially supported for Fast, but price as 720p if requested
       (KinoviModelTypeRaw::Seedance2Fast, Some(KinoviOutputResolutionRaw::TenEightyP)) => 28,
+      // NB: 4K is NOT supported for Fast; price defensively at the 720p rate if ever requested.
+      (KinoviModelTypeRaw::Seedance2Fast, Some(KinoviOutputResolutionRaw::FourK)) => 28,
 
       // TODO(bt,2026-04-23): Not sure pricing for Happy Horse is correct here.
       // Happy Horse 1.0 — same credit rates as Seedance 2.0 Pro
@@ -141,6 +148,8 @@ impl WorkflowRunTaskRequest {
       (KinoviModelTypeRaw::HappyHorse1p0, None)
       | (KinoviModelTypeRaw::HappyHorse1p0, Some(KinoviOutputResolutionRaw::SevenTwentyP)) => 40,
       (KinoviModelTypeRaw::HappyHorse1p0, Some(KinoviOutputResolutionRaw::TenEightyP)) => 90,
+      // Mirrors Pro's 4K placeholder rate.
+      (KinoviModelTypeRaw::HappyHorse1p0, Some(KinoviOutputResolutionRaw::FourK)) => 360,
     };
 
     let per_video = u32::from(self.duration_seconds) * credits_per_second;
@@ -220,6 +229,9 @@ pub enum KinoviOutputResolutionRaw {
   SevenTwentyP,
   /// 1080p
   TenEightyP,
+  /// 4K. Only supported by Seedance 2.0 (Pro). Seedance 2.0 Fast does NOT
+  /// offer 4K — requesting it for Fast is not valid upstream.
+  FourK,
 }
 
 impl KinoviOutputResolutionRaw {
@@ -230,6 +242,7 @@ impl KinoviOutputResolutionRaw {
       Self::FourEightyP => Some("480p"),
       Self::SevenTwentyP => None, // Default — omit from request
       Self::TenEightyP => Some("1080p"),
+      Self::FourK => Some("4k"),
     }
   }
 }
@@ -546,6 +559,20 @@ mod tests {
     }
 
     #[test]
+    fn spot_check_pro_4k() {
+      // 4K is Seedance 2.0 (Pro) only. Placeholder rate: 360 credits/sec (4× 1080p).
+      assert_eq!(pro_res(5, KinoviBatchCountRaw::One, KinoviOutputResolutionRaw::FourK).estimate_credits(), 1800);
+      assert_eq!(pro_res(6, KinoviBatchCountRaw::One, KinoviOutputResolutionRaw::FourK).estimate_credits(), 2160);
+    }
+
+    #[test]
+    fn pro_4k_more_expensive_than_1080p() {
+      let c1080 = pro_res(5, KinoviBatchCountRaw::One, KinoviOutputResolutionRaw::TenEightyP).estimate_credits();
+      let c4k = pro_res(5, KinoviBatchCountRaw::One, KinoviOutputResolutionRaw::FourK).estimate_credits();
+      assert!(c4k > c1080, "4K ({}) should cost more than 1080p ({})", c4k, c1080);
+    }
+
+    #[test]
     fn spot_check_fast_720p() {
       assert_eq!(fast(5, KinoviBatchCountRaw::One).estimate_credits(), 140);
       assert_eq!(fast(10, KinoviBatchCountRaw::One).estimate_credits(), 280);
@@ -802,6 +829,53 @@ mod tests {
         audio_urls: None,
         batch_count: None,
         bitrate_mode,
+      }
+    }
+  }
+
+  // ── Output-resolution serialization ──
+  //
+  // `outputResolution` is sent only when non-default; 720p (the default) omits
+  // the field. 4K serializes to the literal "4k".
+
+  mod output_resolution_serialization_tests {
+    use super::*;
+
+    #[test]
+    fn four_k_maps_to_4k() {
+      assert_eq!(KinoviOutputResolutionRaw::FourK.as_api_str(), Some("4k"));
+    }
+
+    #[test]
+    fn four_k_serializes_on_the_wire() {
+      let api_params = base_api_params(KinoviOutputResolutionRaw::FourK.as_api_str());
+      let json = serde_json::to_string(&api_params).unwrap();
+      assert!(json.contains(r#""outputResolution":"4k""#), "expected outputResolution in {json}");
+    }
+
+    #[test]
+    fn default_720p_omits_output_resolution() {
+      assert_eq!(KinoviOutputResolutionRaw::SevenTwentyP.as_api_str(), None);
+      let api_params = base_api_params(KinoviOutputResolutionRaw::SevenTwentyP.as_api_str());
+      let json = serde_json::to_string(&api_params).unwrap();
+      assert!(!json.contains("outputResolution"), "expected no outputResolution in {json}");
+    }
+
+    fn base_api_params(output_resolution: Option<&'static str>) -> ApiParams {
+      ApiParams {
+        prompt: "a corgi".to_string(),
+        resolution: "1280x720".to_string(),
+        content_mode: "normal",
+        model: "seedance-20",
+        duration: "5s".to_string(),
+        mode: "reference",
+        output_resolution,
+        face_blur_mode: None,
+        character_ids: None,
+        uploaded_urls: None,
+        audio_urls: None,
+        batch_count: None,
+        bitrate_mode: None,
       }
     }
   }
@@ -1638,6 +1712,69 @@ mod tests {
         let args = make_args_with_prompt(prompt, &session, KinoviModelTypeRaw::Seedance2Pro, Some(KinoviOutputResolutionRaw::TenEightyP));
         let result = workflow_run_task(args).await?;
         println!("Seedance 2.0 @ 1080p — task_id={}, order_id={}", result.task_id, result.order_id);
+        assert_eq!(1, 2, "Inspect output above");
+        Ok(())
+      }
+
+      /// 4K with image references (Seedance 2.0 Pro only), 5-second sample.
+      #[tokio::test]
+      #[ignore]
+      async fn test_4k_image_references() -> AnyhowResult<()> {
+        setup_test_logging(LevelFilter::Trace);
+        let session = test_session()?;
+
+        // Upload a few reference images first, then drive a 5-second 4K job.
+        let image_urls_to_upload = [
+          test_data::web::image_urls::JUNO_AT_LAKE_IMAGE_URL,
+          test_data::web::image_urls::WHITE_HOUSE_SUNSET_IMAGE_URL,
+          test_data::web::image_urls::FOREST_BACKDROP_IMAGE_URL,
+        ];
+
+        let mut uploaded_urls = Vec::new();
+        for (i, source_url) in image_urls_to_upload.iter().enumerate() {
+          let image_bytes = crate::test_utils::http_download::http_download_to_bytes(source_url).await?;
+          let ext = if source_url.ends_with(".png") { "png" } else { "jpg" };
+
+          let prepare_result = prepare_file_upload(PrepareFileUploadArgs {
+            session: &session,
+            extension: ext.to_string(),
+            host_override: None,
+          }).await?;
+
+          let upload_result = upload_file(UploadFileArgs {
+            upload_url: prepare_result.upload_url,
+            file_bytes: image_bytes,
+            host_override: None,
+          }).await?;
+
+          println!("Uploaded ref image {}: {}", i + 1, upload_result.public_url);
+          uploaded_urls.push(upload_result.public_url);
+        }
+
+        let args = WorkflowRunTaskArgs {
+          session: &session,
+          host_override: None,
+          request: WorkflowRunTaskRequest {
+            model_type: KinoviModelTypeRaw::Seedance2Pro,
+            prompt: "The dog in @1 explores the scenery in @3 near the building in @2. Cinematic 4K detail.".to_string(),
+            aspect_ratio: KinoviAspectRatioRaw::Landscape16x9,
+            duration_seconds: 5,
+            batch_count: KinoviBatchCountRaw::One,
+            start_frame_url: None,
+            end_frame_url: None,
+            reference_image_urls: Some(uploaded_urls),
+            reference_video_urls: None,
+            reference_audio_urls: None,
+            character_ids: None,
+            use_face_blur_hack: None,
+            bitrate: None,
+            output_resolution: Some(KinoviOutputResolutionRaw::FourK),
+          },
+        };
+        let result = workflow_run_task(args).await?;
+        println!("Seedance 2.0 @ 4K (image refs) — task_id={}, order_id={}", result.task_id, result.order_id);
+        assert!(!result.task_id.is_empty());
+        assert!(!result.order_id.is_empty());
         assert_eq!(1, 2, "Inspect output above");
         Ok(())
       }
