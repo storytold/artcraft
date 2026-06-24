@@ -310,6 +310,10 @@ mod tests {
       request.calculate_costs().total_cost.kinovi_credits
     }
 
+    fn total_usd_cents(request: &GenerateSeedance2p0Request) -> u64 {
+      request.calculate_costs().total_cost.usd_cents_rounded_up
+    }
+
     // ── 4K pricing (Seedance 2.0 only) ──
     //
     // Base: 200 credits/sec. With a video reference: 240 credits/sec
@@ -361,6 +365,54 @@ mod tests {
       #[test]
       fn four_k_with_video_ref_15_seconds_is_3600_credits() {
         assert_eq!(total_credits(&r4k_with_video_ref(15)), 3600);
+      }
+
+      // ── Total cost in USD cents — no video reference ──
+      //
+      // 200 credits/sec; usd_cents = ceil(total_credits / 243 * 100).
+
+      #[test]
+      fn four_k_no_video_ref_4_seconds_is_330_cents() {
+        assert_eq!(total_usd_cents(&r4k(4)), 330);
+      }
+
+      #[test]
+      fn four_k_no_video_ref_5_seconds_is_412_cents() {
+        assert_eq!(total_usd_cents(&r4k(5)), 412);
+      }
+
+      #[test]
+      fn four_k_no_video_ref_10_seconds_is_824_cents() {
+        assert_eq!(total_usd_cents(&r4k(10)), 824);
+      }
+
+      #[test]
+      fn four_k_no_video_ref_15_seconds_is_1235_cents() {
+        assert_eq!(total_usd_cents(&r4k(15)), 1235);
+      }
+
+      // ── Total cost in USD cents — with video reference ──
+      //
+      // 240 credits/sec (200 base + 40 surcharge); usd_cents = ceil(total_credits / 243 * 100).
+
+      #[test]
+      fn four_k_with_video_ref_4_seconds_is_396_cents() {
+        assert_eq!(total_usd_cents(&r4k_with_video_ref(4)), 396);
+      }
+
+      #[test]
+      fn four_k_with_video_ref_5_seconds_is_494_cents() {
+        assert_eq!(total_usd_cents(&r4k_with_video_ref(5)), 494);
+      }
+
+      #[test]
+      fn four_k_with_video_ref_10_seconds_is_988_cents() {
+        assert_eq!(total_usd_cents(&r4k_with_video_ref(10)), 988);
+      }
+
+      #[test]
+      fn four_k_with_video_ref_15_seconds_is_1482_cents() {
+        assert_eq!(total_usd_cents(&r4k_with_video_ref(15)), 1482);
       }
 
       // ── Base / surcharge breakdown (5 seconds) ──
