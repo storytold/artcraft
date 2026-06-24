@@ -395,6 +395,144 @@ console.log(resp.status, await resp.json());
 
 ---
 
+## Checking job status
+
+Generation is asynchronous. The generate call returns an `inference_job_token`; poll the job-status
+endpoint until the job reaches a terminal state, then read the result URL.
+
+### Endpoints
+
+- **Single job:** `GET /v1/omni_api/job_status/job/{token}`
+- **Batch (many jobs):** `GET /v1/omni_api/job_status/batch?tokens=jinf_aaa&tokens=jinf_bbb`
+
+Both require the same `Authorization: Bearer …` header (no cookies).
+
+### Response shape
+
+```json
+{
+  "success": true,
+  "state": {
+    "job_token": "jinf_xxxxxxxxxxxxxxxxxxxxxxxxx",
+    "request": {
+      "inference_category": "video_generation",
+      "maybe_prompt_token": "prompt_xxxxxxxxxxxxxxxxxxxxxxxxx",
+      "maybe_model_type": "seedance_2p0",
+      "maybe_model_token": null
+    },
+    "status": {
+      "status": "pending",
+      "maybe_first_started_at": null,
+      "maybe_failure_category": null,
+      "progress_percentage": 0
+    },
+    "maybe_result": null,
+    "created_at": "2026-06-24T04:06:14Z",
+    "updated_at": "2026-06-24T04:06:14Z"
+  }
+}
+```
+
+- `state.status.status` — the job state. Keep polling while it's `pending`, `started`, or
+  `attempt_failed`. **Terminal** states are `complete_success`, `complete_failure`, `dead`,
+  `cancelled_by_user`, and `cancelled_by_system`.
+- `state.status.progress_percentage` — an integer 0–100.
+- `state.maybe_result` — `null` until the job succeeds. On `complete_success` it contains the
+  finished media; the playable/downloadable URL is **`state.maybe_result.media_links.cdn_url`**.
+  For video, `media_links.maybe_video_previews` also carries still/animated preview URLs.
+
+The batch endpoint returns `{ "success": true, "job_states": [ … ] }` where each entry is the same
+`state` payload as above.
+
+### Poll until complete
+
+#### bash
+
+```bash
+JOB_TOKEN="jinf_xxxxxxxxxxxxxxxxxxxxxxxxx"
+
+while :; do
+  resp=$(curl -s "http://localhost:12345/v1/omni_api/job_status/job/$JOB_TOKEN" \
+    -H "Authorization: Bearer YOUR_API_KEY")
+  status=$(echo "$resp" | python3 -c "import sys,json;print(json.load(sys.stdin)['state']['status']['status'])")
+  echo "status=$status"
+  case "$status" in
+    complete_success)
+      echo "$resp" | python3 -c "import sys,json;print(json.load(sys.stdin)['state']['maybe_result']['media_links']['cdn_url'])"
+      break ;;
+    complete_failure|dead|cancelled_by_user|cancelled_by_system)
+      echo "job ended without a result: $status"; break ;;
+  esac
+  sleep 5
+done
+```
+
+#### python
+
+```python
+import time
+import requests
+
+BASE_URL = "http://localhost:12345"  # production: https://api.storyteller.ai
+API_KEY = "YOUR_API_KEY"
+JOB_TOKEN = "jinf_xxxxxxxxxxxxxxxxxxxxxxxxx"
+
+TERMINAL_FAILURES = {"complete_failure", "dead", "cancelled_by_user", "cancelled_by_system"}
+
+while True:
+    resp = requests.get(
+        f"{BASE_URL}/v1/omni_api/job_status/job/{JOB_TOKEN}",
+        headers={"Authorization": f"Bearer {API_KEY}"},
+        timeout=30,
+    )
+    resp.raise_for_status()
+    state = resp.json()["state"]
+    status = state["status"]["status"]
+    print("status:", status, state["status"]["progress_percentage"], "%")
+
+    if status == "complete_success":
+        print("result URL:", state["maybe_result"]["media_links"]["cdn_url"])
+        break
+    if status in TERMINAL_FAILURES:
+        print("job ended without a result:", status)
+        break
+    time.sleep(5)
+```
+
+#### javascript
+
+```javascript
+const BASE_URL = "http://localhost:12345"; // production: https://api.storyteller.ai
+const API_KEY = "YOUR_API_KEY";
+const JOB_TOKEN = "jinf_xxxxxxxxxxxxxxxxxxxxxxxxx";
+
+const TERMINAL_FAILURES = new Set([
+  "complete_failure", "dead", "cancelled_by_user", "cancelled_by_system",
+]);
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+while (true) {
+  const resp = await fetch(`${BASE_URL}/v1/omni_api/job_status/job/${JOB_TOKEN}`, {
+    headers: { Authorization: `Bearer ${API_KEY}` },
+  });
+  const { state } = await resp.json();
+  const status = state.status.status;
+  console.log("status:", status, state.status.progress_percentage, "%");
+
+  if (status === "complete_success") {
+    console.log("result URL:", state.maybe_result.media_links.cdn_url);
+    break;
+  }
+  if (TERMINAL_FAILURES.has(status)) {
+    console.log("job ended without a result:", status);
+    break;
+  }
+  await sleep(5000);
+}
+```
+
+---
+
 ## Notes & troubleshooting
 
 - **Always send a fresh `idempotency_token`** (UUID). Reusing one is rejected as a duplicate.
