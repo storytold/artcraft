@@ -1,5 +1,5 @@
 use crate::http_server::common_responses::common_web_error::CommonWebError;
-use artcraft_api_defs::omni_gen::cost_and_generate_requests::omni_gen_video_cost_and_generate_request::OmniGenVideoCostAndGenerateRequest;
+use artcraft_api_defs::omni_api::generate_requests::omni_api_video_generate_request::OmniApiVideoGenerateRequest;
 use artcraft_router::api::audio_list_ref::AudioListRef;
 use artcraft_router::api::character_list_ref::CharacterListRef;
 use artcraft_router::api::router_aspect_ratio::RouterAspectRatio;
@@ -18,7 +18,7 @@ use enums::common::generation::common_resolution::CommonResolution as CommonReso
 use enums::common::generation::common_video_model::CommonVideoModel as CommonVideoModelEnum;
 
 pub fn hydrate_to_router_request(
-  request: &OmniGenVideoCostAndGenerateRequest,
+  request: &OmniApiVideoGenerateRequest,
 ) -> Result<GenerateVideoRequestBuilder, CommonWebError> {
   let api_model = request.model
     .as_ref()
@@ -124,7 +124,7 @@ mod tests {
 
     #[test]
     fn high_is_hydrated() {
-      let request = OmniGenVideoCostAndGenerateRequest {
+      let request = OmniApiVideoGenerateRequest {
         bitrate: Some(CommonBitrateEnum::High),
         ..base_request()
       };
@@ -134,7 +134,7 @@ mod tests {
 
     #[test]
     fn normal_is_hydrated() {
-      let request = OmniGenVideoCostAndGenerateRequest {
+      let request = OmniApiVideoGenerateRequest {
         bitrate: Some(CommonBitrateEnum::Normal),
         ..base_request()
       };
@@ -149,8 +149,8 @@ mod tests {
     }
   }
 
-  fn base_request() -> OmniGenVideoCostAndGenerateRequest {
-    OmniGenVideoCostAndGenerateRequest {
+  fn base_request() -> OmniApiVideoGenerateRequest {
+    OmniApiVideoGenerateRequest {
       idempotency_token: None,
       model: Some(CommonVideoModelEnum::Seedance2p0),
       prompt: None,

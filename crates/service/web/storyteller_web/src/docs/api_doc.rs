@@ -339,6 +339,8 @@ use artcraft_api_defs::characters::edit_character::*;
 use artcraft_api_defs::characters::get_character::*;
 use artcraft_api_defs::characters::list_characters::*;
 use artcraft_api_defs::moderation::alerts::moderation_send_alert::*;
+use artcraft_api_defs::omni_api::generate_requests::omni_api_image_generate_request::*;
+use artcraft_api_defs::omni_api::generate_requests::omni_api_video_generate_request::*;
 use artcraft_api_defs::omni_gen::cost_and_generate_requests::omni_gen_image_cost_and_generate_request::*;
 use artcraft_api_defs::omni_gen::cost_and_generate_requests::omni_gen_video_cost_and_generate_request::*;
 use artcraft_api_defs::omni_gen::cost_response::omni_gen_image_cost_response::*;
@@ -824,6 +826,8 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     GetCharacterResponse,
     ListCharactersEntry,
     ListCharactersResponse,
+    OmniApiImageGenerateRequest,
+    OmniApiVideoGenerateRequest,
     OmniGenImageCostAndGenerateRequest,
     OmniGenImageCostResponse,
     OmniGenImageGenerateResponse,

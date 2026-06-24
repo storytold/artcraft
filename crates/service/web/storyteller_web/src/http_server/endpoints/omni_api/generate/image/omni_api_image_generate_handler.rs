@@ -5,7 +5,7 @@ use actix_web::{web, HttpRequest};
 use log::{error, info, warn};
 use sqlx::Acquire;
 
-use artcraft_api_defs::omni_gen::cost_and_generate_requests::omni_gen_image_cost_and_generate_request::OmniGenImageCostAndGenerateRequest;
+use artcraft_api_defs::omni_api::generate_requests::omni_api_image_generate_request::OmniApiImageGenerateRequest;
 use artcraft_api_defs::omni_gen::generate_response::omni_gen_image_generate_response::OmniGenImageGenerateResponse;
 use artcraft_router::generate::generate_image::generate_image_response::GenerateImageResponse;
 use enums::by_table::debug_logs::debug_log_type::DebugLogType;
@@ -44,7 +44,7 @@ use crate::util::lookup::lookup_media_files_as_cdn_url_list_and_map::lookup_medi
   post,
   tag = "Omni API",
   path = "/v1/omni_api/generate/image",
-  request_body = OmniGenImageCostAndGenerateRequest,
+  request_body = OmniApiImageGenerateRequest,
   responses(
     (status = 200, description = "Success", body = OmniGenImageGenerateResponse),
     (status = 400, description = "Bad input"),
@@ -55,7 +55,7 @@ use crate::util::lookup::lookup_media_files_as_cdn_url_list_and_map::lookup_medi
 )]
 pub async fn omni_api_image_generate_handler(
   http_request: HttpRequest,
-  request: Json<OmniGenImageCostAndGenerateRequest>,
+  request: Json<OmniApiImageGenerateRequest>,
   server_state: web::Data<Arc<ServerState>>,
 ) -> Result<Json<OmniGenImageGenerateResponse>, CommonWebError> {
 

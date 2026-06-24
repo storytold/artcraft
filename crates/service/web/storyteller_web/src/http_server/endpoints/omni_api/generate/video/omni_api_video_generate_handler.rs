@@ -6,7 +6,7 @@ use actix_web::{web, HttpRequest};
 use log::{error, info, warn};
 use sqlx::Acquire;
 
-use artcraft_api_defs::omni_gen::cost_and_generate_requests::omni_gen_video_cost_and_generate_request::OmniGenVideoCostAndGenerateRequest;
+use artcraft_api_defs::omni_api::generate_requests::omni_api_video_generate_request::OmniApiVideoGenerateRequest;
 use artcraft_api_defs::omni_gen::generate_response::omni_gen_video_generate_response::OmniGenVideoGenerateResponse;
 use artcraft_router::generate::generate_video::generate_video_response::GenerateVideoResponse;
 use enums::by_table::debug_logs::debug_log_type::DebugLogType;
@@ -53,7 +53,7 @@ use crate::util::lookup::lookup_media_files_as_cdn_url_list_and_map::lookup_medi
   post,
   tag = "Omni API",
   path = "/v1/omni_api/generate/video",
-  request_body = OmniGenVideoCostAndGenerateRequest,
+  request_body = OmniApiVideoGenerateRequest,
   responses(
     (status = 200, description = "Success", body = OmniGenVideoGenerateResponse),
     (status = 400, description = "Bad input"),
@@ -64,7 +64,7 @@ use crate::util::lookup::lookup_media_files_as_cdn_url_list_and_map::lookup_medi
 )]
 pub async fn omni_api_video_generate_handler(
   http_request: HttpRequest,
-  request: Json<OmniGenVideoCostAndGenerateRequest>,
+  request: Json<OmniApiVideoGenerateRequest>,
   server_state: web::Data<Arc<ServerState>>,
 ) -> Result<Json<OmniGenVideoGenerateResponse>, CommonWebError> {
 
@@ -454,7 +454,7 @@ pub async fn omni_api_video_generate_handler(
   }))
 }
 
-fn determine_generation_mode(request: &OmniGenVideoCostAndGenerateRequest) -> CommonGenerationMode {
+fn determine_generation_mode(request: &OmniApiVideoGenerateRequest) -> CommonGenerationMode {
   let has_keyframe = request.start_frame_image_media_token.is_some()
     || request.end_frame_image_media_token.is_some();
 
