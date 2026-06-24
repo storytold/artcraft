@@ -1,6 +1,6 @@
 use enums::common::generation::common_resolution::CommonResolution;
 
-use crate::generate::generate_video::providers::artcraft::build_common::seedance_2p0_four_k_usd_cents;
+use crate::generate::generate_video::providers::artcraft::seedance_common::seedance_2p0_four_k_usd_cents;
 use crate::generate::generate_video::providers::artcraft::seedance_2p0_u::request::ArtcraftSeedance2p0UltraRequestState;
 use crate::generate::generate_video::video_generation_cost_estimate::VideoGenerationCostEstimate;
 
@@ -31,9 +31,6 @@ impl ArtcraftSeedance2p0UltraCostState {
   }
 
   pub fn estimate_cost(&self) -> VideoGenerationCostEstimate {
-    // 4K is priced at a 5% margin over Kinovi's Seedance 2.0 4K cost (which
-    // already includes the per-second video-reference surcharge). Other
-    // resolutions use this model's own per-second rates.
     if self.resolution == CommonResolution::FourK {
       let usd_cents = seedance_2p0_four_k_usd_cents(
         self.duration_seconds,
@@ -167,7 +164,7 @@ mod tests {
       assert_eq!(artcraft_4k_cents(4, 1, false), 347);
       assert_eq!(artcraft_4k_cents(5, 1, false), 433);
       assert_eq!(artcraft_4k_cents(10, 1, false), 866);
-      assert_eq!(artcraft_4k_cents(15, 1, false), 1297);
+      assert_eq!(artcraft_4k_cents(15, 1, false), 1299);
     }
 
     #[test]

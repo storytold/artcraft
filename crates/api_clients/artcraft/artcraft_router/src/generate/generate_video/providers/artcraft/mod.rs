@@ -1,4 +1,5 @@
 pub(crate) mod build_common;
+pub(crate) mod seedance_common;
 #[cfg(test)]
 mod parity_tests;
 pub mod grok_imagine_video;
