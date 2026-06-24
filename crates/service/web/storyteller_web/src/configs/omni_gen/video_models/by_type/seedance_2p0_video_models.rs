@@ -43,6 +43,7 @@ pub fn seedance_2p0_video_models() -> Vec<OmniGenVideoModelDetails> {
       CommonResolution::FourEightyP,
       CommonResolution::SevenTwentyP,
       CommonResolution::TenEightyP,
+      CommonResolution::FourK,
     ]),
     resolution_default: Some(CommonResolution::SevenTwentyP),
     bitrate_options: Some(vec![
@@ -136,6 +137,7 @@ pub fn seedance_2p0_video_models() -> Vec<OmniGenVideoModelDetails> {
       CommonResolution::FourEightyP,
       CommonResolution::SevenTwentyP,
       CommonResolution::TenEightyP,
+      CommonResolution::FourK,
     ]),
     resolution_default: Some(CommonResolution::SevenTwentyP),
     bitrate_options: Some(vec![
@@ -229,6 +231,7 @@ pub fn seedance_2p0_video_models() -> Vec<OmniGenVideoModelDetails> {
       CommonResolution::FourEightyP,
       CommonResolution::SevenTwentyP,
       CommonResolution::TenEightyP,
+      CommonResolution::FourK,
     ]),
     resolution_default: Some(CommonResolution::SevenTwentyP),
     bitrate_options: Some(vec![
