@@ -40,3 +40,38 @@ pub fn seedance_1p5_video_models() -> Vec<OmniGenVideoModelDetails> {
 
   models
 }
+
+/// Seedance 1.0 video models.
+pub fn seedance_1p0_video_models() -> Vec<OmniGenVideoModelDetails> {
+  let mut models = Vec::new();
+
+  models.push(OmniGenVideoModelDetails {
+    is_disabled: Some(true), // TODO: Temporarily disable
+    model: CommonVideoModel::Seedance10Lite,
+    model_creator: Some(ModelCreator::Bytedance),
+    full_name: Some("Seedance 1.0 Lite".to_string()),
+    starting_keyframe_supported: Some(true),
+    ending_keyframe_supported: Some(true),
+    aspect_ratio_options: Some(vec![
+      CommonAspectRatio::Auto,
+      CommonAspectRatio::WideTwentyOneByNine,
+      CommonAspectRatio::WideSixteenByNine,
+      CommonAspectRatio::WideFourByThree,
+      CommonAspectRatio::Square,
+      CommonAspectRatio::TallThreeByFour,
+      CommonAspectRatio::TallNineBySixteen,
+    ]),
+    aspect_ratio_default: Some(CommonAspectRatio::WideSixteenByNine),
+    resolution_options: Some(vec![
+      CommonResolution::FourEightyP,
+      CommonResolution::SevenTwentyP,
+      CommonResolution::TenEightyP,
+    ]),
+    resolution_default: Some(CommonResolution::SevenTwentyP),
+    duration_seconds_options: Some(vec![5, 10]),
+    duration_seconds_default: Some(5),
+    ..Default::default()
+  });
+
+  models
+}

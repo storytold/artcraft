@@ -1,15 +1,12 @@
 use artcraft_api_defs::omni_gen::models::omni_gen_video_models::{OmniGenVideoModelDetails, OmniGenVideoModelProviderDetails, OmniGenVideoModelsResponse, OmniGenVideoProviderModelDetails};
-use enums::common::generation::common_aspect_ratio::CommonAspectRatio;
-use enums::common::generation::common_resolution::CommonResolution;
 use enums::common::generation::common_video_model::CommonVideoModel;
-use enums::common::generation::model_creator::ModelCreator;
 use enums::common::generation_provider::GenerationProvider;
 use once_cell::sync::Lazy;
 
 use super::by_type::grok_video_models::grok_video_models;
 use super::by_type::happy_horse_video_models::happy_horse_video_models;
 use super::by_type::kling_video_models::{kling_disabled_video_models, kling_video_models};
-use super::by_type::seedance_1p5_video_models::seedance_1p5_video_models;
+use super::by_type::seedance_1x_video_models::{seedance_1p0_video_models, seedance_1p5_video_models};
 use super::by_type::seedance_2p0_video_models::seedance_2p0_video_models;
 use super::by_type::sora_video_models::sora_video_models;
 use super::by_type::veo_video_models::veo_video_models;
@@ -35,35 +32,7 @@ fn build_omni_gen_video_models() -> Vec<OmniGenVideoModelDetails> {
   models.extend(veo_video_models());
   models.extend(kling_disabled_video_models());
 
-  // Seedance 1.0 Lite (not part of a moved model family).
-  models.push(OmniGenVideoModelDetails {
-    is_disabled: Some(true), // TODO: Temporarily disable
-    model: CommonVideoModel::Seedance10Lite,
-    model_creator: Some(ModelCreator::Bytedance),
-    full_name: Some("Seedance 1.0 Lite".to_string()),
-    starting_keyframe_supported: Some(true),
-    ending_keyframe_supported: Some(true),
-    aspect_ratio_options: Some(vec![
-      CommonAspectRatio::Auto,
-      CommonAspectRatio::WideTwentyOneByNine,
-      CommonAspectRatio::WideSixteenByNine,
-      CommonAspectRatio::WideFourByThree,
-      CommonAspectRatio::Square,
-      CommonAspectRatio::TallThreeByFour,
-      CommonAspectRatio::TallNineBySixteen,
-    ]),
-    aspect_ratio_default: Some(CommonAspectRatio::WideSixteenByNine),
-    resolution_options: Some(vec![
-      CommonResolution::FourEightyP,
-      CommonResolution::SevenTwentyP,
-      CommonResolution::TenEightyP,
-    ]),
-    resolution_default: Some(CommonResolution::SevenTwentyP),
-    duration_seconds_options: Some(vec![5, 10]),
-    duration_seconds_default: Some(5),
-    ..Default::default()
-  });
-
+  models.extend(seedance_1p0_video_models());
   models.extend(sora_video_models());
 
   models
