@@ -111,7 +111,7 @@ fn nearest_aspect_ratio(aspect_ratio: RouterAspectRatio) -> KinoviAspectRatio {
   }
 }
 
-// Seedance 2.0 Pro supports output resolutions: 480p, 720p, 1080p.
+// Seedance 2.0 Pro supports output resolutions: 480p, 720p, 1080p, 4K.
 fn plan_output_resolution(
   resolution: Option<RouterResolution>,
   strategy: RequestMismatchMitigationStrategy,
@@ -123,6 +123,7 @@ fn plan_output_resolution(
     Some(RouterResolution::FourEightyP) => Ok(Some(KinoviOutputResolution::FourEightyP)),
     Some(RouterResolution::SevenTwentyP) => Ok(Some(KinoviOutputResolution::SevenTwentyP)),
     Some(RouterResolution::TenEightyP) => Ok(Some(KinoviOutputResolution::TenEightyP)),
+    Some(RouterResolution::FourK) => Ok(Some(KinoviOutputResolution::FourK)),
 
     // Mismatches
     Some(unsupported) => match strategy {
@@ -377,6 +378,16 @@ mod tests {
     }
 
     #[test]
+    fn resolution_4k() {
+      let builder = GenerateVideoRequestBuilder {
+        resolution: Some(RouterResolution::FourK),
+        ..seedance2pro_builder()
+      };
+      let draft = unwrap_draft(build_kinovi_seedance_2p0(builder));
+      assert!(matches!(draft.resolution, Some(KinoviOutputResolution::FourK)));
+    }
+
+    #[test]
     fn resolution_none() {
       let builder = GenerateVideoRequestBuilder { resolution: None, ..seedance2pro_builder() };
       let draft = unwrap_draft(build_kinovi_seedance_2p0(builder));
@@ -386,7 +397,7 @@ mod tests {
     #[test]
     fn unsupported_resolution_error_out() {
       let builder = GenerateVideoRequestBuilder {
-        resolution: Some(RouterResolution::FourK),
+        resolution: Some(RouterResolution::ThreeK),
         request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::ErrorOut,
         ..seedance2pro_builder()
       };
@@ -396,7 +407,7 @@ mod tests {
     #[test]
     fn unsupported_resolution_rounds_up() {
       let builder = GenerateVideoRequestBuilder {
-        resolution: Some(RouterResolution::FourK),
+        resolution: Some(RouterResolution::ThreeK),
         request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::PayMoreUpgrade,
         ..seedance2pro_builder()
       };
