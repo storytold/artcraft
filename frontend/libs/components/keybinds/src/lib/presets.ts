@@ -32,7 +32,11 @@ export const BASE_BINDINGS: Record<ActionId, Binding[]> = {
   "pagescene.view.toggleCameraView": [b("Space")],
   "pagescene.view.toggleStats": [b("Backquote")],
   "pagescene.selection.clearOrExit": [b("Escape")],
+  "pagescene.selection.deselectAll": [b("KeyA", { ctrl: true, alt: true })],
   "pagescene.edit.delete": [b("Delete"), b("Backspace")],
+  "pagescene.edit.duplicate": [b("KeyD", { ctrl: true })],
+  "pagescene.edit.toggleSnapping": [b("KeyN")],
+  "pagescene.view.toggleGrid": [b("KeyH")],
   "pagescene.edit.undo": [b("KeyZ", { ctrl: true })],
   "pagescene.edit.redo": [b("KeyZ", { ctrl: true, shift: true }), b("KeyY", { ctrl: true })],
   "pagescene.edit.copy": [b("KeyC", { ctrl: true })],
@@ -57,6 +61,8 @@ export const PRESETS: Record<PresetId, Preset> = {
       "pagescene.transform.scale": [b("KeyS")],
       // R (rotate) is the same in both schemes.
       "pagescene.transform.toggleSpace": [b("Backslash")], // X freed for axis-lock (added in a later phase).
+      "pagescene.edit.duplicate": [b("KeyD", { shift: true })],
+      "pagescene.selection.deselectAll": [b("KeyA", { alt: true })],
     },
   },
 };

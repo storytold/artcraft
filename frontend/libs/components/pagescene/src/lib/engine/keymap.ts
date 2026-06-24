@@ -72,6 +72,14 @@ const onEscape = (editor: Editor) => {
   }
 };
 
+const deselectAll = (editor: Editor) => {
+  const mc = editor.mouse_controls;
+  if (!mc?.selected?.length) return;
+  mc.removeTransformControls();
+  mc.selected = [];
+  editor.bus.emit(new PoseControlsVisibilityChangedEvent(false));
+};
+
 const focusSelected = (editor: Editor) => {
   if (
     editor.mouse_controls?.selected?.length &&
@@ -125,7 +133,11 @@ const HANDLERS: Record<ActionId, (editor: Editor) => void | Promise<void>> = {
   "pagescene.view.toggleCameraView": toggleCameraView,
   "pagescene.view.toggleStats": toggleStats,
   "pagescene.selection.clearOrExit": onEscape,
+  "pagescene.selection.deselectAll": deselectAll,
   "pagescene.edit.delete": deleteSelected,
+  "pagescene.edit.duplicate": (e) => e.duplicateSelected(),
+  "pagescene.edit.toggleSnapping": (e) => e.toggleSnapping(),
+  "pagescene.view.toggleGrid": (e) => e.toggleGrid(),
   "pagescene.edit.undo": undo,
   "pagescene.edit.redo": redo,
   "pagescene.edit.copy": copy,

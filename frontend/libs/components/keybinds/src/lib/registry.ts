@@ -41,9 +41,13 @@ const defs: ActionDef[] = [
   act("pagescene.selection.clearOrExit", "Clear selection / exit pose", "Selection", {
     important: true,
   }),
+  act("pagescene.selection.deselectAll", "Deselect all", "Selection"),
 
   // ── PageScene: edit ───────────────────────────────────────────────────────
   act("pagescene.edit.delete", "Delete selected", "Edit", { important: true }),
+  act("pagescene.edit.duplicate", "Duplicate selected", "Edit", { important: true }),
+  act("pagescene.edit.toggleSnapping", "Toggle grid snapping", "Edit"),
+  act("pagescene.view.toggleGrid", "Toggle grid", "View"),
   act("pagescene.edit.undo", "Undo", "History", { important: true, preventDefault: true }),
   act("pagescene.edit.redo", "Redo", "History", { important: true, preventDefault: true }),
   act("pagescene.edit.copy", "Copy", "Edit", { preventDefault: true }),

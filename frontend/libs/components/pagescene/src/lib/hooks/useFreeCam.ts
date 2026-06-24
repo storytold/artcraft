@@ -120,6 +120,9 @@ export const useFreeCam = (
     const onKeyDown = (e: KeyboardEvent) => {
       if (usePageSceneStore.getState().isPromptBoxFocused) return;
       if (isEventFromEditableElement(e)) return;
+      // Ctrl/Cmd chords are commands (undo, duplicate, copy…), not camera
+      // movement — don't let e.g. Ctrl+D both duplicate and strafe right.
+      if (e.ctrlKey || e.metaKey) return;
       // Browser-shortcut conflicts for Alt-slow-mode:
       //   - Alt+D focuses the address bar in Chrome / Firefox / Edge.
       //   - Tapping Alt on its own shows the menu bar in Firefox / Edge
@@ -141,6 +144,7 @@ export const useFreeCam = (
     const onKeyUp = (e: KeyboardEvent) => {
       if (usePageSceneStore.getState().isPromptBoxFocused) return;
       if (isEventFromEditableElement(e)) return;
+      if (e.ctrlKey || e.metaKey) return;
       state.movementSpeed = movementSpeedForEvent(e);
       const moveSlot = moveSlotForKeyCode(e.code, moveMap);
       if (moveSlot) state.moveKeys[moveSlot] = 0;
