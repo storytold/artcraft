@@ -444,6 +444,85 @@ Both require the same `Authorization: Bearer …` header (no cookies).
 The batch endpoint returns `{ "success": true, "job_states": [ … ] }` where each entry is the same
 `state` payload as above.
 
+### Where the result video / image lives
+
+When `state.status.status` is `complete_success`, the finished media is under `state.maybe_result`:
+
+- **`state.maybe_result.media_links.cdn_url`** — the primary, playable/downloadable URL of the
+  finished asset. **This is the field you want.** For a video job it's the `.mp4`; for an image job
+  it's the image file (`.jpg` / `.png` / etc.).
+- `state.maybe_result.entity_token` — the `m_…` media-file token for the result.
+- `state.maybe_result.media_links.maybe_video_previews` — **video jobs only**. Contains a `still`
+  (poster `.jpg`) and an `animated` (`.gif`) preview URL, plus `{WIDTH}` thumbnail templates. This
+  is `null` for image jobs.
+- `state.maybe_result.media_links.maybe_thumbnail_template` — **image jobs only**. A URL template;
+  replace `{WIDTH}` with a pixel width to fetch a resized thumbnail. `null` for video jobs.
+
+**Example — completed video job:**
+
+```json
+{
+  "success": true,
+  "state": {
+    "job_token": "jinf_9fcn2qv4dv3vvbrrxbnmfgen06v",
+    "request": {
+      "inference_category": "video_generation",
+      "maybe_prompt_token": "prompt_q53tp4rh97qh8q159p21tazzt",
+      "maybe_model_type": "seedance_2p0",
+      "maybe_model_token": null
+    },
+    "status": {
+      "status": "complete_success",
+      "maybe_first_started_at": "2026-06-24T04:07:11Z",
+      "maybe_failure_category": null,
+      "progress_percentage": 100
+    },
+    "maybe_result": {
+      "entity_type": "media_file",
+      "entity_token": "m_ss682134tx19yhqs5y0nbnd0bd59a6",
+      "media_links": {
+        "cdn_url": "https://pub-c8a4a5bdbdb048f286b77bdf9f786ff2.r2.dev/media/8/p/n/0/4/8pn04v7q3vfhf60wy173f6awcwkre1qj/artcraft_8pn04v7q3vfhf60wy173f6awcwkre1qj.mp4",
+        "maybe_thumbnail_template": null,
+        "maybe_video_previews": {
+          "still": "https://pub-c8a4a5bdbdb048f286b77bdf9f786ff2.r2.dev/media/8/p/n/0/4/8pn04v7q3vfhf60wy173f6awcwkre1qj/artcraft_8pn04v7q3vfhf60wy173f6awcwkre1qj.mp4-thumb.jpg",
+          "animated": "https://pub-c8a4a5bdbdb048f286b77bdf9f786ff2.r2.dev/media/8/p/n/0/4/8pn04v7q3vfhf60wy173f6awcwkre1qj/artcraft_8pn04v7q3vfhf60wy173f6awcwkre1qj.mp4-thumb.gif",
+          "still_thumbnail_template": "https://pub-c8a4a5bdbdb048f286b77bdf9f786ff2.r2.dev/media/8/p/n/0/4/8pn04v7q3vfhf60wy173f6awcwkre1qj/artcraft_8pn04v7q3vfhf60wy173f6awcwkre1qj.mp4-thumb-{WIDTH}.jpg",
+          "animated_thumbnail_template": "https://pub-c8a4a5bdbdb048f286b77bdf9f786ff2.r2.dev/media/8/p/n/0/4/8pn04v7q3vfhf60wy173f6awcwkre1qj/artcraft_8pn04v7q3vfhf60wy173f6awcwkre1qj.mp4-thumb-{WIDTH}.gif"
+        }
+      },
+      "maybe_successfully_completed_at": "2026-06-24T04:17:30Z"
+    },
+    "created_at": "2026-06-24T04:06:14Z",
+    "updated_at": "2026-06-24T04:17:30Z"
+  }
+}
+```
+
+→ The video is at
+`https://pub-c8a4a5bdbdb048f286b77bdf9f786ff2.r2.dev/media/8/p/n/0/4/8pn04v7q3vfhf60wy173f6awcwkre1qj/artcraft_8pn04v7q3vfhf60wy173f6awcwkre1qj.mp4`
+(example, not a live URL).
+
+**Example — completed image job** (from `POST /v1/omni_api/generate/image`):
+
+```json
+{
+  "maybe_result": {
+    "entity_type": "media_file",
+    "entity_token": "m_3kq9w0xv2hs5n8m4d6r1t8y0p2s4f6",
+    "media_links": {
+      "cdn_url": "https://pub-c8a4a5bdbdb048f286b77bdf9f786ff2.r2.dev/media/3/k/q/9/w/3kq9w0xv2hs5n8m4d6r1t8y0p2s4f6/artcraft_3kq9w0xv2hs5n8m4d6r1t8y0p2s4f6.jpg",
+      "maybe_thumbnail_template": "https://pub-c8a4a5bdbdb048f286b77bdf9f786ff2.r2.dev/media/3/k/q/9/w/3kq9w0xv2hs5n8m4d6r1t8y0p2s4f6/artcraft_3kq9w0xv2hs5n8m4d6r1t8y0p2s4f6.jpg-thumb-{WIDTH}.jpg",
+      "maybe_video_previews": null
+    },
+    "maybe_successfully_completed_at": "2026-06-24T04:09:02Z"
+  }
+}
+```
+
+→ The image is at
+`https://pub-c8a4a5bdbdb048f286b77bdf9f786ff2.r2.dev/media/3/k/q/9/w/3kq9w0xv2hs5n8m4d6r1t8y0p2s4f6/artcraft_3kq9w0xv2hs5n8m4d6r1t8y0p2s4f6.jpg`
+(example, not a live URL).
+
 ### Poll until complete
 
 #### bash
