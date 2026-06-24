@@ -3,6 +3,9 @@
   "include": [],
   "references": [
     {
+      "path": "../keybinds"
+    },
+    {
       "path": "../../tauri-utils"
     },
     {

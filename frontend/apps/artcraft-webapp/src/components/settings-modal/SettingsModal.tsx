@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { Modal } from "@storyteller/ui-modal";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faCog, faUser, faKey } from "@fortawesome/pro-solid-svg-icons";
+import { faCog, faUser, faKey, faKeyboard } from "@fortawesome/pro-solid-svg-icons";
 import { Switch } from "@storyteller/ui-switch";
+import { KeybindsSettings } from "@storyteller/keybinds";
 import { USER_FEATURE_FLAGS } from "@storyteller/api";
 import { twMerge } from "tailwind-merge";
 import { useEnterToGenerateStore } from "../../lib/enter-to-generate-store";
@@ -10,7 +11,7 @@ import { useSession } from "../../lib/session";
 import { AccountSection } from "./AccountSection";
 import { ApiKeySection } from "./ApiKeySection";
 
-type Tab = "general" | "account" | "apiKeys";
+type Tab = "general" | "keybinds" | "account" | "apiKeys";
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -19,6 +20,7 @@ interface SettingsModalProps {
 
 const BASE_TABS: { id: Tab; label: string; icon: typeof faCog }[] = [
   { id: "general", label: "General", icon: faCog },
+  { id: "keybinds", label: "Keybinds", icon: faKeyboard },
   { id: "account", label: "Account", icon: faUser },
 ];
 
@@ -92,6 +94,11 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
             </div>
             <div className="h-full p-4 text-sm sm:p-3 sm:ps-0">
               {tab === "general" && <GeneralPanel />}
+              {tab === "keybinds" && (
+                <div className="pt-3">
+                  <KeybindsSettings />
+                </div>
+              )}
               {tab === "account" && <AccountPanel />}
               {tab === "apiKeys" && <ApiKeysPanel />}
             </div>

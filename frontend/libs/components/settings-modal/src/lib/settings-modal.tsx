@@ -5,6 +5,7 @@ import {
   faUser,
   faCog,
   faKey,
+  faKeyboard,
   faVolumeHigh,
   faCircleInfo,
   faCreditCard,
@@ -12,6 +13,7 @@ import {
   faFlask,
 } from "@fortawesome/pro-solid-svg-icons";
 import { twMerge } from "tailwind-merge";
+import { KeybindsSettings } from "@storyteller/keybinds";
 import { MiscSettingsPane } from "./panes/MiscSettingsPane";
 import { AudioSettingsPane } from "./panes/AudioSettingsPane";
 import { AccountSettingsPane } from "./panes/AccountSettings/AccountSettingsPane";
@@ -37,6 +39,7 @@ interface SettingsModalProps {
 type SettingsSection =
   | "general"
   | "appearance"
+  | "keybinds"
   | "accounts"
   | "api_keys"
   | "alerts"
@@ -86,6 +89,7 @@ export const SettingsModal = ({
       icon: faRoute,
     }, */
     { id: "appearance" as const, label: "Appearance", icon: faPalette },
+    { id: "keybinds" as const, label: "Keybinds", icon: faKeyboard },
     { id: "alerts" as const, label: "Alerts", icon: faVolumeHigh },
     { id: "about" as const, label: "About", icon: faCircleInfo },
     //{ id: "video" as const, label: "Video", icon: faVideo },
@@ -99,6 +103,8 @@ export const SettingsModal = ({
     switch (selectedSection) {
       case "appearance":
         return <AppearanceSettingsPane />;
+      case "keybinds":
+        return <KeybindsSettings />;
       case "alerts":
         return <AudioSettingsPane />;
       case "general":

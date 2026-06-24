@@ -9,3 +9,4 @@ export type { ResolvedKeybinds } from "./lib/useResolvedKeybinds";
 export { useKeybindCapture } from "./lib/useKeybindCapture";
 export { Kbd, KbdBindings } from "./lib/components/Kbd";
 export { KeybindCaptureInput } from "./lib/components/KeybindCaptureInput";
+export { KeybindsSettings } from "./lib/settings/KeybindsSettings";
