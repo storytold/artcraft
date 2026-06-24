@@ -42,10 +42,24 @@ import {
   useSortable,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import {
+  useDropTarget,
+  type DragPayload,
+  type GalleryItemLike,
+} from "@storyteller/ui-dnd";
 
 import type { UploadMediaFn } from "@storyteller/api";
 export type { UploadMediaFn as UploadImageFn } from "@storyteller/api";
 type UploadImageFn = UploadMediaFn;
+
+// Accept/reject highlight applied to a reference slot while a compatible (or
+// incompatible) drag hovers it.
+const dropHighlightClass = (s: { isOver: boolean; isRejecting: boolean }) =>
+  s.isOver
+    ? "ring-2 ring-primary/80 bg-primary/10"
+    : s.isRejecting
+      ? "ring-2 ring-red-500/80 bg-red-500/10 cursor-not-allowed"
+      : "";
 
 interface ImagePromptRowProps {
   visible: boolean;
@@ -185,6 +199,10 @@ export const ImagePromptRow = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const videoFileInputRef = useRef<HTMLInputElement>(null);
   const audioFileInputRef = useRef<HTMLInputElement>(null);
+  const imagesDropRef = useRef<HTMLDivElement>(null);
+  const endFrameDropRef = useRef<HTMLDivElement>(null);
+  const videoDropRef = useRef<HTMLDivElement>(null);
+  const audioDropRef = useRef<HTMLDivElement>(null);
   const [uploadingImages, setUploadingImages] = useState<
     { id: string; file: File }[]
   >([]);
@@ -465,6 +483,101 @@ export const ImagePromptRow = ({
     if (videoFileInputRef.current) videoFileInputRef.current.value = "";
   };
 
+  // Single-file video upload for drag-and-drop (the input handler batches).
+  const processVideoFileForDrop = async (file: File) => {
+    const baseVideos = [...referenceVideosRef.current];
+    if (baseVideos.length >= maxVideoCount) {
+      toast.error(`Max ${maxVideoCount} videos / ${maxVideoRefDuration}s total`, {
+        id: "video-ref-limit",
+      });
+      return;
+    }
+    const duration = await getVideoDuration(file);
+    const currentTotal = baseVideos.reduce((sum, v) => sum + v.duration, 0);
+    if (currentTotal + duration > maxVideoRefDuration) {
+      toast.error(`Total video duration cannot exceed ${maxVideoRefDuration}s`, {
+        id: "video-ref-limit",
+      });
+      return;
+    }
+    const uploadId = Math.random().toString(36).substring(7);
+    setUploadingVideo({ id: uploadId, file });
+    if (uploadVideo) {
+      await uploadVideo({
+        title: `reference-video-${Math.random().toString(36).substring(2, 15)}`,
+        assetFile: file,
+        progressCallback: (newState) => {
+          if (newState.status === UploaderStates.success && newState.data) {
+            setUploadingVideo(null);
+            setReferenceVideos?.([
+              ...referenceVideosRef.current,
+              {
+                id: Math.random().toString(36).substring(7),
+                url: URL.createObjectURL(file),
+                file,
+                mediaToken: newState.data,
+                duration,
+              },
+            ]);
+          } else if (
+            newState.status === UploaderStates.assetError ||
+            newState.status === UploaderStates.imageCreateError
+          ) {
+            setUploadingVideo(null);
+            toast.error("Failed to upload video. Please upload an MP4 file.");
+          }
+        },
+      });
+    } else {
+      setUploadingVideo(null);
+      setReferenceVideos?.([
+        ...referenceVideosRef.current,
+        {
+          id: Math.random().toString(36).substring(7),
+          url: URL.createObjectURL(file),
+          file,
+          mediaToken: "",
+          duration,
+        },
+      ]);
+    }
+  };
+
+  const attachGalleryVideo = async (item: GalleryItemLike) => {
+    const baseVideos = [...referenceVideosRef.current];
+    if (baseVideos.length >= maxVideoCount) {
+      toast.error(`Max ${maxVideoCount} videos / ${maxVideoRefDuration}s total`, {
+        id: "video-ref-limit",
+      });
+      return;
+    }
+    const url = item.fullImage || item.thumbnail || "";
+    if (!url) return;
+    const duration = await getVideoDurationFromSrc(url);
+    const currentTotal = baseVideos.reduce((sum, v) => sum + v.duration, 0);
+    if (duration > 0 && currentTotal + duration > maxVideoRefDuration) {
+      toast.error(`Total video duration cannot exceed ${maxVideoRefDuration}s`, {
+        id: "video-ref-limit",
+      });
+      return;
+    }
+    setReferenceVideos?.([
+      ...baseVideos,
+      {
+        id: Math.random().toString(36).substring(7),
+        url,
+        file: new File([], "library-video"),
+        mediaToken: item.id,
+        duration,
+      },
+    ]);
+  };
+
+  const handleVideoDrop = (payload: DragPayload) => {
+    if (payload.source === "gallery") void attachGalleryVideo(payload.item);
+    else payload.getFile().then((file) => processVideoFileForDrop(file));
+  };
+
   const handleUploadClickAudio = () => {
     audioFileInputRef.current?.click();
   };
@@ -474,20 +587,19 @@ export const ImagePromptRow = ({
     referenceAudiosRef.current = referenceAudios;
   }, [referenceAudios]);
 
-  const getAudioDuration = (file: File): Promise<number> =>
+  const getAudioDurationFromSrc = (src: string): Promise<number> =>
     new Promise((resolve) => {
       const audio = document.createElement("audio");
       audio.preload = "metadata";
-      audio.onloadedmetadata = () => {
-        URL.revokeObjectURL(audio.src);
-        resolve(Math.round(audio.duration));
-      };
-      audio.onerror = () => {
-        URL.revokeObjectURL(audio.src);
-        resolve(0);
-      };
-      audio.src = URL.createObjectURL(file);
+      audio.onloadedmetadata = () => resolve(Math.round(audio.duration) || 0);
+      audio.onerror = () => resolve(0);
+      audio.src = src;
     });
+
+  const getAudioDuration = (file: File): Promise<number> => {
+    const src = URL.createObjectURL(file);
+    return getAudioDurationFromSrc(src).finally(() => URL.revokeObjectURL(src));
+  };
 
   const totalAudioDuration = useMemo(
     () => referenceAudios.reduce((sum, a) => sum + a.duration, 0),
@@ -571,6 +683,141 @@ export const ImagePromptRow = ({
     if (audioFileInputRef.current) audioFileInputRef.current.value = "";
   };
 
+  // Single-file audio upload for drag-and-drop (the input handler batches).
+  const processAudioFileForDrop = async (file: File) => {
+    const baseAudios = [...referenceAudiosRef.current];
+    if (baseAudios.length >= maxAudioCount) return;
+    const duration = await getAudioDuration(file);
+    const currentTotal = baseAudios.reduce((sum, a) => sum + a.duration, 0);
+    if (currentTotal + duration > maxAudioRefDuration) {
+      toast.error(`Total audio duration cannot exceed ${maxAudioRefDuration}s`);
+      return;
+    }
+    const uploadId = Math.random().toString(36).substring(7);
+    setUploadingAudio({ id: uploadId, file });
+    if (uploadAudio) {
+      await uploadAudio({
+        title: `reference-audio-${Math.random().toString(36).substring(2, 15)}`,
+        assetFile: file,
+        progressCallback: (newState) => {
+          if (newState.status === UploaderStates.success && newState.data) {
+            setUploadingAudio(null);
+            setReferenceAudios?.([
+              ...referenceAudiosRef.current,
+              {
+                id: Math.random().toString(36).substring(7),
+                url: URL.createObjectURL(file),
+                file,
+                mediaToken: newState.data,
+                duration,
+              },
+            ]);
+          } else if (
+            newState.status === UploaderStates.assetError ||
+            newState.status === UploaderStates.imageCreateError
+          ) {
+            setUploadingAudio(null);
+          }
+        },
+      });
+    } else {
+      setUploadingAudio(null);
+      setReferenceAudios?.([
+        ...referenceAudiosRef.current,
+        {
+          id: Math.random().toString(36).substring(7),
+          url: URL.createObjectURL(file),
+          file,
+          mediaToken: "",
+          duration,
+        },
+      ]);
+    }
+  };
+
+  const attachGalleryAudio = async (item: GalleryItemLike) => {
+    const baseAudios = [...referenceAudiosRef.current];
+    if (baseAudios.length >= maxAudioCount) return;
+    const url = item.fullImage || item.thumbnail || "";
+    if (!url) return;
+    const duration = await getAudioDurationFromSrc(url);
+    const currentTotal = baseAudios.reduce((sum, a) => sum + a.duration, 0);
+    if (duration > 0 && currentTotal + duration > maxAudioRefDuration) {
+      toast.error(`Total audio duration cannot exceed ${maxAudioRefDuration}s`);
+      return;
+    }
+    setReferenceAudios?.([
+      ...baseAudios,
+      {
+        id: Math.random().toString(36).substring(7),
+        url,
+        file: new File([], "library-audio"),
+        mediaToken: item.id,
+        duration,
+      },
+    ]);
+  };
+
+  const handleAudioDrop = (payload: DragPayload) => {
+    if (payload.source === "gallery") void attachGalleryAudio(payload.item);
+    else payload.getFile().then((file) => processAudioFileForDrop(file));
+  };
+
+  // Upload a single image file into either the start-frame/image list or the
+  // end-frame slot. Shared by the hidden <input> and drag-and-drop.
+  const processImageFile = (file: File, target: "start" | "end") => {
+    const uploadId = Math.random().toString(36).substring(7);
+    if (target === "end") {
+      setUploadingEnd({ id: uploadId, file });
+    } else {
+      setUploadingImages((prev) => [...prev, { id: uploadId, file }]);
+    }
+
+    const clearUploading = () => {
+      if (target === "end") setUploadingEnd(null);
+      else
+        setUploadingImages((prev) => prev.filter((img) => img.id !== uploadId));
+    };
+
+    const commit = (mediaToken: string, url: string) => {
+      const referenceImage: RefImage = {
+        id: Math.random().toString(36).substring(7),
+        url,
+        file,
+        mediaToken,
+      };
+      clearUploading();
+      if (target === "end") setEndFrameImage?.(referenceImage);
+      else setReferenceImages([...referenceImagesRef.current, referenceImage]);
+    };
+
+    const reader = new FileReader();
+    reader.onloadend = async () => {
+      const url = reader.result as string;
+      if (uploadImage) {
+        await uploadImage({
+          title: `reference-image-${Math.random()
+            .toString(36)
+            .substring(2, 15)}`,
+          assetFile: file,
+          progressCallback: (newState) => {
+            if (newState.status === UploaderStates.success && newState.data) {
+              commit(newState.data, url);
+            } else if (
+              newState.status === UploaderStates.assetError ||
+              newState.status === UploaderStates.imageCreateError
+            ) {
+              clearUploading();
+            }
+          },
+        });
+      } else {
+        commit("", url);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files || []);
     if (files.length === 0) return;
@@ -582,89 +829,48 @@ export const ImagePromptRow = ({
       return;
     }
 
+    const target = uploadTarget === "end" ? "end" : "start";
     const filesToProcess =
-      uploadTarget === "end"
-        ? files.slice(0, 1)
-        : files.slice(0, availableSlots);
+      target === "end" ? files.slice(0, 1) : files.slice(0, availableSlots);
 
-    filesToProcess.forEach((file) => {
-      const uploadId = Math.random().toString(36).substring(7);
-      if (uploadTarget === "end") {
-        setUploadingEnd({ id: uploadId, file });
-      } else {
-        setUploadingImages((prev) => [...prev, { id: uploadId, file }]);
-      }
+    filesToProcess.forEach((file) => processImageFile(file, target));
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
 
-      const reader = new FileReader();
-      reader.onloadend = async () => {
-        if (uploadImage) {
-          await uploadImage({
-            title: `reference-image-${Math.random()
-              .toString(36)
-              .substring(2, 15)}`,
-            assetFile: file,
-            progressCallback: (newState) => {
-              if (newState.status === UploaderStates.success && newState.data) {
-                const referenceImage: RefImage = {
-                  id: Math.random().toString(36).substring(7),
-                  url: reader.result as string,
-                  file,
-                  mediaToken: newState.data,
-                };
-                if (uploadTarget === "end") {
-                  setUploadingEnd(null);
-                } else {
-                  setUploadingImages((prev) =>
-                    prev.filter((img) => img.id !== uploadId),
-                  );
-                }
-                if (uploadTarget === "end") {
-                  setEndFrameImage?.(referenceImage);
-                } else {
-                  setReferenceImages([
-                    ...referenceImagesRef.current,
-                    referenceImage,
-                  ]);
-                }
-              } else if (
-                newState.status === UploaderStates.assetError ||
-                newState.status === UploaderStates.imageCreateError
-              ) {
-                if (uploadTarget === "end") {
-                  setUploadingEnd(null);
-                } else {
-                  setUploadingImages((prev) =>
-                    prev.filter((img) => img.id !== uploadId),
-                  );
-                }
-              }
-            },
-          });
-        } else {
-          const referenceImage: RefImage = {
-            id: Math.random().toString(36).substring(7),
-            url: reader.result as string,
-            file,
-            mediaToken: "",
-          };
-          if (uploadTarget === "end") {
-            setUploadingEnd(null);
-          } else {
-            setUploadingImages((prev) =>
-              prev.filter((img) => img.id !== uploadId),
-            );
-          }
-          if (uploadTarget === "end") {
-            setEndFrameImage?.(referenceImage);
-          } else {
-            setReferenceImages([...referenceImagesRef.current, referenceImage]);
-          }
-        }
+  // Attach a gallery item to the image list by reusing its media token.
+  const attachGalleryImage = (item: GalleryItemLike) => {
+    const availableSlots = Math.max(
+      0,
+      maxImagePromptCount - referenceImages.length,
+    );
+    if (availableSlots <= 0) return;
+    setReferenceImages([
+      ...referenceImagesRef.current,
+      {
+        id: Math.random().toString(36).substring(7),
+        url: item.fullImage || item.thumbnail || "",
+        file: new File([], "library-image"),
+        mediaToken: item.id,
+      },
+    ]);
+  };
 
-        if (fileInputRef.current) fileInputRef.current.value = "";
-      };
-      reader.readAsDataURL(file);
-    });
+  const handleImagesDrop = (payload: DragPayload) => {
+    if (payload.source === "gallery") attachGalleryImage(payload.item);
+    else payload.getFile().then((file) => processImageFile(file, "start"));
+  };
+
+  const handleEndFrameDrop = (payload: DragPayload) => {
+    if (payload.source === "gallery") {
+      setEndFrameImage?.({
+        id: Math.random().toString(36).substring(7),
+        url: payload.item.fullImage || payload.item.thumbnail || "",
+        file: new File([], "library-image"),
+        mediaToken: payload.item.id,
+      });
+    } else {
+      payload.getFile().then((file) => processImageFile(file, "end"));
+    }
   };
 
   const handleGalleryClose = () => {
@@ -791,6 +997,35 @@ export const ImagePromptRow = ({
     setSelectedGalleryImages([]);
   };
 
+  // Drop targets: drag a gallery asset or OS file straight onto a slot.
+  const imagesDrop = useDropTarget({
+    ref: imagesDropRef,
+    accepts: ["image"],
+    label: isVideo ? (isReferenceMode ? "Image Ref" : "Start Frame") : "Image",
+    onDrop: handleImagesDrop,
+  });
+  const endFrameDrop = useDropTarget({
+    ref: endFrameDropRef,
+    accepts: ["image"],
+    label: "End Frame",
+    onDrop: handleEndFrameDrop,
+    disabled: !(isVideo && showEndFrameSection),
+  });
+  const videoDrop = useDropTarget({
+    ref: videoDropRef,
+    accepts: ["video"],
+    label: "Video Ref",
+    onDrop: handleVideoDrop,
+    disabled: !(isVideo && showVideoReferenceSection),
+  });
+  const audioDrop = useDropTarget({
+    ref: audioDropRef,
+    accepts: ["audio"],
+    label: "Audio Ref",
+    onDrop: handleAudioDrop,
+    disabled: !(isVideo && showVideoReferenceSection),
+  });
+
   if (!visible) {
     return null;
   }
@@ -842,7 +1077,13 @@ export const ImagePromptRow = ({
               isVideo && showEndFrameSection && "grid-cols-2",
             )}
           >
-            <div className="flex gap-2 py-2 px-3">
+            <div
+              ref={imagesDropRef}
+              className={twMerge(
+                "flex gap-2 py-2 px-3 rounded-2xl transition-shadow",
+                dropHighlightClass(imagesDrop),
+              )}
+            >
               <div className="flex flex-col grow gap-1">
                 <div className="flex items-center gap-2 opacity-90 text-base-fg">
                   <FontAwesomeIcon icon={faImage} className="h-3.5 w-3.5" />
@@ -1009,7 +1250,13 @@ export const ImagePromptRow = ({
               </div>
             </div>
             {isVideo && showEndFrameSection && (
-              <div className="flex gap-3 pe-3">
+              <div
+                ref={endFrameDropRef}
+                className={twMerge(
+                  "flex gap-3 pe-3 rounded-2xl transition-shadow",
+                  dropHighlightClass(endFrameDrop),
+                )}
+              >
                 <div className="flex grow gap-1">
                   <div className="w-[1px] h-full bg-white/10" />
                   <div className="flex flex-col grow gap-1 p-2">
@@ -1125,7 +1372,13 @@ export const ImagePromptRow = ({
           {isVideo && showVideoReferenceSection && (
             <div className="grid grid-cols-2 border-t border-white/10">
               {/* Video References - Left */}
-              <div className="flex gap-2 py-2 px-3">
+              <div
+                ref={videoDropRef}
+                className={twMerge(
+                  "flex gap-2 py-2 px-3 rounded-2xl transition-shadow",
+                  dropHighlightClass(videoDrop),
+                )}
+              >
                 <div className="flex flex-col grow gap-1">
                   <div className="flex items-center gap-2 opacity-90 text-base-fg">
                     <FontAwesomeIcon icon={faVideo} className="h-3.5 w-3.5" />
@@ -1234,7 +1487,13 @@ export const ImagePromptRow = ({
                 </div>
               </div>
               {/* Audio References - Right */}
-              <div className="flex gap-2 pe-3">
+              <div
+                ref={audioDropRef}
+                className={twMerge(
+                  "flex gap-2 pe-3 rounded-2xl transition-shadow",
+                  dropHighlightClass(audioDrop),
+                )}
+              >
                 <div className="flex grow gap-1">
                   <div className="w-[1px] h-full bg-white/10" />
                   <div className="flex flex-col grow gap-1 p-2">

@@ -11,6 +11,11 @@ import {
 } from "@fortawesome/pro-solid-svg-icons";
 import { twMerge } from "tailwind-merge";
 import { UploaderStates } from "@storyteller/common";
+import {
+  useDropTarget,
+  type DragPayload,
+  type GalleryItemLike,
+} from "@storyteller/ui-dnd";
 import { toast } from "../toast/toast";
 import type { RefVideo, RefAudio } from "./types";
 import {
@@ -19,6 +24,25 @@ import {
   getVideoDuration,
   getAudioDuration,
 } from "./upload-media";
+
+const dropHighlightClass = (s: { isOver: boolean; isRejecting: boolean }) =>
+  s.isOver
+    ? "ring-2 ring-primary/80 bg-primary/10"
+    : s.isRejecting
+      ? "ring-2 ring-red-500/80 bg-red-500/10 cursor-not-allowed"
+      : "";
+
+// Best-effort duration probe for a gallery item's URL (no File available).
+// Returns 0 when the preview asset can't report metadata; the media token still
+// drives generation, so a 0 here only affects the duration cap/label.
+const durationFromUrl = (url: string, kind: "video" | "audio"): Promise<number> =>
+  new Promise((resolve) => {
+    const el = document.createElement(kind);
+    el.preload = "metadata";
+    el.onloadedmetadata = () => resolve(Math.round(el.duration) || 0);
+    el.onerror = () => resolve(0);
+    el.src = url;
+  });
 
 interface MediaReferenceRowProps {
   videoSupported: boolean;
@@ -49,6 +73,8 @@ export const MediaReferenceRow = ({
 }: MediaReferenceRowProps) => {
   const videoInputRef = useRef<HTMLInputElement>(null);
   const audioInputRef = useRef<HTMLInputElement>(null);
+  const videoDropRef = useRef<HTMLDivElement>(null);
+  const audioDropRef = useRef<HTMLDivElement>(null);
   const [uploadingVideo, setUploadingVideo] = useState(false);
   const [uploadingAudio, setUploadingAudio] = useState(false);
 
@@ -70,15 +96,10 @@ export const MediaReferenceRow = ({
     totalAudioDuration < maxAudioRefDuration &&
     !uploadingAudio;
 
-  const handleVideoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []);
-    if (videoInputRef.current) videoInputRef.current.value = "";
-    if (files.length === 0) return;
-
+  const processVideoFile = async (file: File) => {
     // Snapshot at call time so a stale read inside the async callback can't overwrite a remove.
     const baseVideos = [...referenceVideos];
 
-    const file = files[0];
     const duration = await getVideoDuration(file);
 
     if (duration <= 0) {
@@ -125,14 +146,43 @@ export const MediaReferenceRow = ({
     }
   };
 
-  const handleAudioUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleVideoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
-    if (audioInputRef.current) audioInputRef.current.value = "";
-    if (files.length === 0) return;
+    if (videoInputRef.current) videoInputRef.current.value = "";
+    if (files[0]) await processVideoFile(files[0]);
+  };
 
+  const attachGalleryVideo = async (item: GalleryItemLike) => {
+    if (!canAddVideo) return;
+    const url = item.fullImage || item.thumbnail || "";
+    const duration = url ? await durationFromUrl(url, "video") : 0;
+    const currentTotal = referenceVideos.reduce((sum, v) => sum + v.duration, 0);
+    if (duration > 0 && currentTotal + duration > maxVideoRefDuration) {
+      toast.error(
+        `Video too long — max ${maxVideoRefDuration}s total (${maxVideoRefDuration - currentTotal}s remaining)`,
+      );
+      return;
+    }
+    onReferenceVideosChange([
+      ...referenceVideos,
+      {
+        id: Math.random().toString(36).substring(7),
+        url,
+        file: new File([], "library-video"),
+        mediaToken: item.id,
+        duration,
+      },
+    ]);
+  };
+
+  const handleVideoDrop = (payload: DragPayload) => {
+    if (payload.source === "gallery") void attachGalleryVideo(payload.item);
+    else payload.getFile().then((file) => processVideoFile(file));
+  };
+
+  const processAudioFile = async (file: File) => {
     const baseAudios = [...referenceAudios];
 
-    const file = files[0];
     const duration = await getAudioDuration(file);
 
     if (duration <= 0) {
@@ -179,6 +229,40 @@ export const MediaReferenceRow = ({
     }
   };
 
+  const handleAudioUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (audioInputRef.current) audioInputRef.current.value = "";
+    if (files[0]) await processAudioFile(files[0]);
+  };
+
+  const attachGalleryAudio = async (item: GalleryItemLike) => {
+    if (!canAddAudio) return;
+    const url = item.fullImage || item.thumbnail || "";
+    const duration = url ? await durationFromUrl(url, "audio") : 0;
+    const currentTotal = referenceAudios.reduce((sum, a) => sum + a.duration, 0);
+    if (duration > 0 && currentTotal + duration > maxAudioRefDuration) {
+      toast.error(
+        `Audio too long — max ${maxAudioRefDuration}s total (${maxAudioRefDuration - currentTotal}s remaining)`,
+      );
+      return;
+    }
+    onReferenceAudiosChange([
+      ...referenceAudios,
+      {
+        id: Math.random().toString(36).substring(7),
+        url,
+        file: new File([], "library-audio"),
+        mediaToken: item.id,
+        duration,
+      },
+    ]);
+  };
+
+  const handleAudioDrop = (payload: DragPayload) => {
+    if (payload.source === "gallery") void attachGalleryAudio(payload.item);
+    else payload.getFile().then((file) => processAudioFile(file));
+  };
+
   const removeVideo = (id: string) => {
     const video = referenceVideos.find((v) => v.id === id);
     if (video) URL.revokeObjectURL(video.url);
@@ -190,6 +274,21 @@ export const MediaReferenceRow = ({
     if (audio) URL.revokeObjectURL(audio.url);
     onReferenceAudiosChange(referenceAudios.filter((a) => a.id !== id));
   };
+
+  const videoDrop = useDropTarget({
+    ref: videoDropRef,
+    accepts: ["video"],
+    label: "Video Ref",
+    onDrop: handleVideoDrop,
+    disabled: !videoSupported,
+  });
+  const audioDrop = useDropTarget({
+    ref: audioDropRef,
+    accepts: ["audio"],
+    label: "Audio Ref",
+    onDrop: handleAudioDrop,
+    disabled: !audioSupported,
+  });
 
   return (
     <>
@@ -218,7 +317,13 @@ export const MediaReferenceRow = ({
       >
         {/* Video section */}
         {videoSupported && (
-          <div className="flex grow gap-2 px-3 py-2">
+          <div
+            ref={videoDropRef}
+            className={twMerge(
+              "flex grow gap-2 px-3 py-2 rounded-2xl transition-shadow",
+              dropHighlightClass(videoDrop),
+            )}
+          >
             <div className="flex grow flex-col gap-1">
               <div className="flex items-center gap-2 text-white/90">
                 <FontAwesomeIcon icon={faVideo} className="h-3.5 w-3.5" />
@@ -271,7 +376,13 @@ export const MediaReferenceRow = ({
 
         {/* Audio section */}
         {audioSupported && (
-          <div className="flex grow gap-2 px-3 py-2">
+          <div
+            ref={audioDropRef}
+            className={twMerge(
+              "flex grow gap-2 px-3 py-2 rounded-2xl transition-shadow",
+              dropHighlightClass(audioDrop),
+            )}
+          >
             <div className="flex grow flex-col gap-1">
               <div className="flex items-center gap-2 text-white/90">
                 <FontAwesomeIcon icon={faMusic} className="h-3.5 w-3.5" />

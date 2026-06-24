@@ -3,6 +3,9 @@
   "include": [],
   "references": [
     {
+      "path": "../dnd"
+    },
+    {
       "path": "../checkbox"
     },
     {
