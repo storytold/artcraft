@@ -113,13 +113,13 @@ impl WorkflowRunTaskRequest {
   ///
   /// | Model        | 480p | 720p | 1080p |  4K |
   /// |--------------|------|------|-------|-----|
-  /// | Pro          |   15 |   40 |    90 | 360 |
+  /// | Pro          |   15 |   40 |    90 | 200 |
   /// | Fast         |   10 |   28 |   n/a | n/a |
-  /// | HappyHorse   |   15 |   40 |    90 | 360 |
+  /// | HappyHorse   |   15 |   40 |    90 | n/a |
   /// TODO(bt,2026-04-23): Not sure pricing for Happy Horse is correct here.
-  /// TODO(2026-06-24): Confirm the official 4K credit rate with Kinovi. The 360
-  /// placeholder is the pixel-proportional estimate (4× the 1080p rate). 4K is
-  /// Seedance 2.0 (Pro) only; Fast does not support it.
+  /// NB: 4K is Seedance 2.0 (Pro) only; Fast does not support it. (This base-only
+  /// estimate doesn't model the video-reference surcharge — see
+  /// `generate_seedance_2p0::calculate_costs` for the authoritative cost.)
   ///
   /// Input mode (text, keyframe, reference) has no effect on cost.
   /// Aspect ratio (`resolution` field) has no effect on cost.
@@ -130,8 +130,8 @@ impl WorkflowRunTaskRequest {
       (KinoviModelTypeRaw::Seedance2Pro, None)
       | (KinoviModelTypeRaw::Seedance2Pro, Some(KinoviOutputResolutionRaw::SevenTwentyP)) => 40,
       (KinoviModelTypeRaw::Seedance2Pro, Some(KinoviOutputResolutionRaw::TenEightyP)) => 90,
-      // TODO(2026-06-24): Confirm 4K rate with Kinovi. Placeholder = 4× the 1080p rate.
-      (KinoviModelTypeRaw::Seedance2Pro, Some(KinoviOutputResolutionRaw::FourK)) => 360,
+      // 4K: 200 credits/sec (base). 4K is Seedance 2.0 (Pro) only.
+      (KinoviModelTypeRaw::Seedance2Pro, Some(KinoviOutputResolutionRaw::FourK)) => 200,
 
       // Seedance 2.0 Fast
       (KinoviModelTypeRaw::Seedance2Fast, Some(KinoviOutputResolutionRaw::FourEightyP)) => 10,
@@ -148,8 +148,9 @@ impl WorkflowRunTaskRequest {
       (KinoviModelTypeRaw::HappyHorse1p0, None)
       | (KinoviModelTypeRaw::HappyHorse1p0, Some(KinoviOutputResolutionRaw::SevenTwentyP)) => 40,
       (KinoviModelTypeRaw::HappyHorse1p0, Some(KinoviOutputResolutionRaw::TenEightyP)) => 90,
-      // Mirrors Pro's 4K placeholder rate.
-      (KinoviModelTypeRaw::HappyHorse1p0, Some(KinoviOutputResolutionRaw::FourK)) => 360,
+      // NB: Happy Horse does NOT support 4K (only Seedance 2.0 Pro does); price
+      // defensively at its 1080p rate if it's ever somehow requested.
+      (KinoviModelTypeRaw::HappyHorse1p0, Some(KinoviOutputResolutionRaw::FourK)) => 90,
     };
 
     let per_video = u32::from(self.duration_seconds) * credits_per_second;
@@ -560,9 +561,9 @@ mod tests {
 
     #[test]
     fn spot_check_pro_4k() {
-      // 4K is Seedance 2.0 (Pro) only. Placeholder rate: 360 credits/sec (4× 1080p).
-      assert_eq!(pro_res(5, KinoviBatchCountRaw::One, KinoviOutputResolutionRaw::FourK).estimate_credits(), 1800);
-      assert_eq!(pro_res(6, KinoviBatchCountRaw::One, KinoviOutputResolutionRaw::FourK).estimate_credits(), 2160);
+      // 4K is Seedance 2.0 (Pro) only. Base rate: 200 credits/sec.
+      assert_eq!(pro_res(5, KinoviBatchCountRaw::One, KinoviOutputResolutionRaw::FourK).estimate_credits(), 1000);
+      assert_eq!(pro_res(15, KinoviBatchCountRaw::One, KinoviOutputResolutionRaw::FourK).estimate_credits(), 3000);
     }
 
     #[test]
