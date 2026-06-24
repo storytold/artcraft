@@ -21,6 +21,8 @@ use crate::generate::generate_video::providers::artcraft::resolve::{
 pub enum SupportedResolutions {
   /// 480p, 720p, 1080p
   Full,
+  /// 480p, 720p, 1080p, 4K
+  FullWith4k,
   /// 480p, 720p only (1080p downgrades to 720p)
   Fast,
   /// 720p, 1080p only (480p upgrades)
@@ -157,7 +159,7 @@ fn plan_output_resolution(
     None => Ok(None),
 
     Some(RouterResolution::FourEightyP) => match supported {
-      SupportedResolutions::Full | SupportedResolutions::Fast => {
+      SupportedResolutions::Full | SupportedResolutions::FullWith4k | SupportedResolutions::Fast => {
         Ok(Some(CommonResolutionEnum::FourEightyP))
       }
       SupportedResolutions::NoFourEightyP => match strategy {
@@ -175,7 +177,7 @@ fn plan_output_resolution(
     Some(RouterResolution::SevenTwentyP) => Ok(Some(CommonResolutionEnum::SevenTwentyP)),
 
     Some(RouterResolution::TenEightyP) => match supported {
-      SupportedResolutions::Full | SupportedResolutions::NoFourEightyP => {
+      SupportedResolutions::Full | SupportedResolutions::FullWith4k | SupportedResolutions::NoFourEightyP => {
         Ok(Some(CommonResolutionEnum::TenEightyP))
       }
       SupportedResolutions::Fast => match strategy {
@@ -187,6 +189,20 @@ fn plan_output_resolution(
         }
         _ => Ok(Some(CommonResolutionEnum::SevenTwentyP)),
       },
+    },
+
+    // 4K is only available on models flagged `FullWith4k` (the non-Fast Seedance
+    // 2.0 family). Other models error out or fall back to their best resolution.
+    Some(RouterResolution::FourK) => match (supported, strategy) {
+      (SupportedResolutions::FullWith4k, _) => Ok(Some(CommonResolutionEnum::FourK)),
+      (_, RequestMismatchMitigationStrategy::ErrorOut) => {
+        Err(ArtcraftRouterError::Client(ClientError::ModelDoesNotSupportOption {
+          field: "resolution",
+          value: format!("{:?}", RouterResolution::FourK),
+        }))
+      }
+      (SupportedResolutions::Fast, _) => Ok(Some(CommonResolutionEnum::SevenTwentyP)),
+      (_, _) => Ok(Some(CommonResolutionEnum::TenEightyP)),
     },
 
     Some(unsupported) => match strategy {

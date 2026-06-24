@@ -10,6 +10,8 @@ use crate::generate::generate_video::providers::artcraft::seedance_2p0_bpu::requ
 const CENTS_PER_SECOND_480P: f64 = 10.0;
 const CENTS_PER_SECOND_720P: f64 = 25.0;
 const CENTS_PER_SECOND_1080P: f64 = 50.0;
+/// 4K: 1080p rate scaled by the upstream 4K/1080p credit ratio (200/90 credits/sec).
+const CENTS_PER_SECOND_4K: f64 = 111.111;
 
 pub struct ArtcraftSeedance2p0BytePlusUltraCostState {
   pub resolution: CommonResolution,
@@ -30,6 +32,7 @@ impl ArtcraftSeedance2p0BytePlusUltraCostState {
     let cents_per_second = match self.resolution {
       CommonResolution::FourEightyP => CENTS_PER_SECOND_480P,
       CommonResolution::TenEightyP => CENTS_PER_SECOND_1080P,
+      CommonResolution::FourK => CENTS_PER_SECOND_4K,
       _ => CENTS_PER_SECOND_720P,
     };
 
@@ -122,6 +125,23 @@ mod tests {
     #[test]
     fn batch_4() {
       assert_eq!(cost_cents(Some(RouterResolution::TenEightyP), 5, 4), 1000);
+    }
+  }
+
+  mod pricing_4k {
+    use super::*;
+
+    #[test]
+    fn batch_1() {
+      assert_eq!(cost_cents(Some(RouterResolution::FourK), 5, 1), 556);
+      assert_eq!(cost_cents(Some(RouterResolution::FourK), 10, 1), 1111);
+    }
+
+    #[test]
+    fn more_expensive_than_1080p() {
+      let c1080 = cost_cents(Some(RouterResolution::TenEightyP), 5, 1);
+      let c4k = cost_cents(Some(RouterResolution::FourK), 5, 1);
+      assert!(c4k > c1080);
     }
   }
 

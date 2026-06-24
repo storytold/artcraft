@@ -13,7 +13,7 @@ pub fn build_artcraft_seedance_2p0_bpu(builder: GenerateVideoRequestBuilder) -> 
   let request = build_artcraft_omni_video_request(
     builder,
     CommonVideoModelEnum::Seedance2p0BytePlusUltra,
-    SupportedResolutions::Full,
+    SupportedResolutions::FullWith4k,
     UltraWideSupport::Supported,
   )?;
   let state = ArtcraftSeedance2p0BytePlusUltraRequestState { request };
@@ -99,6 +99,12 @@ mod tests {
     fn res_1080p() {
       let req = unwrap_request(make_builder(|b| { b.resolution = Some(RouterResolution::TenEightyP); }));
       assert_eq!(req.request.resolution, Some(CommonResolutionEnum::TenEightyP));
+    }
+
+    #[test]
+    fn res_4k() {
+      let req = unwrap_request(make_builder(|b| { b.resolution = Some(RouterResolution::FourK); }));
+      assert_eq!(req.request.resolution, Some(CommonResolutionEnum::FourK));
     }
 
     #[test]
