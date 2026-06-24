@@ -27,13 +27,12 @@ fn build_omni_gen_video_models() -> Vec<OmniGenVideoModelDetails> {
   models.extend(grok_video_models());
   models.extend(happy_horse_video_models());
   models.extend(kling_video_models());
+  models.extend(kling_disabled_video_models());
+  models.extend(seedance_1p0_video_models());
   models.extend(seedance_1p5_video_models());
   models.extend(seedance_2p0_video_models());
-  models.extend(veo_video_models());
-  models.extend(kling_disabled_video_models());
-
-  models.extend(seedance_1p0_video_models());
   models.extend(sora_video_models());
+  models.extend(veo_video_models());
 
   models
 }
