@@ -289,6 +289,70 @@ pub fn plan_duration(
   }
 }
 
+// ── Seedance 2.0 4K pricing (5% margin over Kinovi) ──
+//
+// 4K is priced uniformly across the non-Fast Seedance 2.0 ArtCraft providers,
+// off the Kinovi Seedance 2.0 4K cost (the `seedance2pro_client` source of
+// truth) plus a 5% margin. Kinovi's 4K cost already includes the per-second
+// video-reference surcharge, so both with- and without-reference are handled.
+
+/// Margin applied to Kinovi's Seedance 2.0 4K cost to set ArtCraft's user price.
+const SEEDANCE_2P0_FOUR_K_MARGIN_MULTIPLIER: f64 = 1.05;
+
+/// Kinovi's cost (USD cents) for Seedance 2.0 at 4K — the source of truth.
+/// `has_video_reference` toggles Kinovi's per-second video-reference surcharge.
+pub fn kinovi_seedance_2p0_four_k_usd_cents(
+  duration_seconds: u16,
+  batch_count: u16,
+  has_video_reference: bool,
+) -> u64 {
+  use seedance2pro_client::generate::video::generate_seedance_2p0::{
+    GenerateSeedance2p0Request, KinoviSeedance2p0BatchCount, KinoviSeedance2p0OutputResolution,
+  };
+
+  let batch_count = match batch_count {
+    2 => Some(KinoviSeedance2p0BatchCount::Two),
+    4 => Some(KinoviSeedance2p0BatchCount::Four),
+    _ => Some(KinoviSeedance2p0BatchCount::One),
+  };
+  let reference_video_urls = if has_video_reference {
+    // Presence drives the surcharge; the URL contents don't matter for pricing.
+    Some(vec!["pricing-placeholder".to_string()])
+  } else {
+    None
+  };
+
+  GenerateSeedance2p0Request {
+    output_resolution: Some(KinoviSeedance2p0OutputResolution::FourK),
+    duration_seconds: duration_seconds as u8,
+    batch_count,
+    reference_video_urls,
+    prompt: String::new(),
+    aspect_ratio: None,
+    start_frame_url: None,
+    end_frame_url: None,
+    reference_image_urls: None,
+    reference_audio_urls: None,
+    character_ids: None,
+    use_face_blur_hack: None,
+    bitrate: None,
+  }
+  .calculate_costs()
+  .total_cost
+  .usd_cents_rounded_up
+}
+
+/// ArtCraft's user-facing price (USD cents) for Seedance 2.0 at 4K: a 5% margin
+/// over Kinovi's cost, rounded up so the margin never drops below 5%.
+pub fn seedance_2p0_four_k_usd_cents(
+  duration_seconds: u16,
+  batch_count: u16,
+  has_video_reference: bool,
+) -> u64 {
+  let kinovi_cents = kinovi_seedance_2p0_four_k_usd_cents(duration_seconds, batch_count, has_video_reference);
+  (kinovi_cents as f64 * SEEDANCE_2P0_FOUR_K_MARGIN_MULTIPLIER).ceil() as u64
+}
+
 #[cfg(test)]
 mod tests {
   use super::*;
