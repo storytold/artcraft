@@ -35,7 +35,14 @@ pub (super) struct ApiParams {
   pub content_mode: &'static str,
   pub model: &'static str,
   pub duration: String,
-  pub mode: &'static str,
+  /// Generation mode ("keyframe" / "reference"). Omitted for models that use
+  /// `happyhorseMode` instead (Happy Horse).
+  #[serde(skip_serializing_if = "Option::is_none")]
+  pub mode: Option<&'static str>,
+  /// Happy Horse generation mode ("t2v" / "i2v"). Used instead of `mode` by
+  /// Happy Horse; None for every other model.
+  #[serde(rename = "happyhorseMode", skip_serializing_if = "Option::is_none")]
+  pub happyhorse_mode: Option<&'static str>,
   #[serde(rename = "outputResolution", skip_serializing_if = "Option::is_none")]
   pub output_resolution: Option<&'static str>,
   #[serde(rename = "faceBlurMode", skip_serializing_if = "Option::is_none")]
