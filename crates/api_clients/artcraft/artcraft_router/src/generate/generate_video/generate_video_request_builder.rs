@@ -32,6 +32,9 @@ use crate::generate::generate_video::providers::artcraft::seedance_2p0_bp::build
 use crate::generate::generate_video::providers::artcraft::seedance_2p0_bp_fast::build::build_artcraft_seedance_2p0_bp_fast;
 use crate::generate::generate_video::providers::artcraft::seedance_2p0_bpu::build::build_artcraft_seedance_2p0_bpu;
 use crate::generate::generate_video::providers::artcraft::seedance_2p0_bpu_fast::build::build_artcraft_seedance_2p0_bpu_fast;
+use crate::generate::generate_video::providers::artcraft::seedance_2p0_mini::build::build_artcraft_seedance_2p0_mini;
+use crate::generate::generate_video::providers::artcraft::seedance_2p0_bp_mini::build::build_artcraft_seedance_2p0_bp_mini;
+use crate::generate::generate_video::providers::artcraft::seedance_2p0_bpu_mini::build::build_artcraft_seedance_2p0_bpu_mini;
 use crate::generate::generate_video::providers::artcraft::sora_2::build::build_artcraft_sora_2;
 use crate::generate::generate_video::providers::artcraft::sora_2_pro::build::build_artcraft_sora_2_pro;
 use crate::generate::generate_video::providers::artcraft::veo_2::build::build_artcraft_veo_2;
@@ -176,6 +179,9 @@ impl GenerateVideoRequestBuilder {
       (RouterProvider::Artcraft, RouterVideoModel::Seedance2p0BytePlusFast) => build_artcraft_seedance_2p0_bp_fast(self),
       (RouterProvider::Artcraft, RouterVideoModel::Seedance2p0BytePlusUltra) => build_artcraft_seedance_2p0_bpu(self),
       (RouterProvider::Artcraft, RouterVideoModel::Seedance2p0BytePlusUltraFast) => build_artcraft_seedance_2p0_bpu_fast(self),
+      (RouterProvider::Artcraft, RouterVideoModel::Seedance2p0Mini) => build_artcraft_seedance_2p0_mini(self),
+      (RouterProvider::Artcraft, RouterVideoModel::Seedance2p0BytePlusMini) => build_artcraft_seedance_2p0_bp_mini(self),
+      (RouterProvider::Artcraft, RouterVideoModel::Seedance2p0BytePlusUltraMini) => build_artcraft_seedance_2p0_bpu_mini(self),
       (RouterProvider::Artcraft, RouterVideoModel::PreviewModel) => build_artcraft_preview_model(self),
       (RouterProvider::Artcraft, RouterVideoModel::PreviewModelFast) => build_artcraft_preview_model_fast(self),
       (RouterProvider::Artcraft, RouterVideoModel::Seedance10Lite) => build_artcraft_seedance_1p0_lite(self),
