@@ -5,7 +5,9 @@ import {
   bindingMatchesEvent,
   bindingsEqual,
 } from "./matcher";
-import { BASE_BINDINGS } from "./presets";
+import { BASE_BINDINGS, PRESETS } from "./presets";
+import { ACTIONS } from "./registry";
+import { ActionId, PresetId } from "./types";
 
 const reset = () =>
   useKeybindsStore.setState({ selectedPreset: "gamer", overrides: {} });
@@ -25,17 +27,29 @@ describe("keybinds-store", () => {
       ]);
     });
 
-    it("blender preset overrides 3D transform keys but leaves base untouched", () => {
+    it("blender preset applies its deltas but leaves base untouched", () => {
       store().setPreset("blender");
-      expect(store().resolveBindings("pagescene.transform.translate")).toEqual([
+      // Blender adds a modal "grab" on G and remaps scale to S.
+      expect(store().resolveBindings("pagescene.transform.grab")).toEqual([
         { code: "KeyG" },
       ]);
       expect(store().resolveBindings("pagescene.transform.scale")).toEqual([
         { code: "KeyS" },
       ]);
-      // Not in the preset delta → falls through to BASE.
+      // Translate is NOT a blender delta — grab (G) is its own action, so
+      // translate-mode stays on its BASE key (T).
+      expect(store().resolveBindings("pagescene.transform.translate")).toEqual([
+        { code: "KeyT" },
+      ]);
+      // Camera moves off the letters onto numpad + top-row digits so they don't
+      // collide with the transform keys (S etc.).
       expect(store().resolveBindings("pagescene.camera.forward")).toEqual([
-        { code: "KeyW" },
+        { code: "Numpad8" },
+        { code: "Digit8" },
+      ]);
+      // Look is NOT a blender delta → falls through to BASE (arrows).
+      expect(store().resolveBindings("pagescene.camera.pitchUp")).toEqual([
+        { code: "ArrowUp" },
       ]);
     });
 
@@ -87,6 +101,26 @@ describe("keybinds-store", () => {
       expect(
         store().findConflicts("pagescene.transform.scale", { code: "KeyM" }),
       ).toEqual([]);
+    });
+  });
+
+  describe("preset integrity", () => {
+    // Guards against ships like blender's old WASD-vs-scale (S) clash: no two
+    // actions on the same surface may resolve to the same binding in any preset.
+    const presetIds = Object.keys(PRESETS) as PresetId[];
+    const actionIds = Object.keys(ACTIONS) as ActionId[];
+
+    it.each(presetIds)("'%s' preset has no same-surface conflicts", (preset) => {
+      store().setPreset(preset);
+      const collisions: string[] = [];
+      for (const id of actionIds) {
+        for (const binding of store().resolveBindings(id)) {
+          for (const other of store().findConflicts(id, binding)) {
+            collisions.push(`${id} <-> ${other} on ${JSON.stringify(binding)}`);
+          }
+        }
+      }
+      expect(collisions).toEqual([]);
     });
   });
 });

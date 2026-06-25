@@ -77,6 +77,16 @@ export const PRESETS: Record<PresetId, Preset> = {
     description:
       "Familiar to Blender users — G/R/S for grab/rotate/scale and X/Y/Z axis locking during a transform.",
     bindings: {
+      // Camera moves off WASD/QE onto the numpad (Blender's navigation cluster),
+      // with the top-row digits as the laptop-friendly "Emulate Numpad" mirror.
+      // This frees the letter keys for transform ops below — without it, scale (S)
+      // would collide with camera-back (S). Look stays on the arrow keys (BASE).
+      "pagescene.camera.forward": [b("Numpad8"), b("Digit8")],
+      "pagescene.camera.back": [b("Numpad2"), b("Digit2")],
+      "pagescene.camera.left": [b("Numpad4"), b("Digit4")],
+      "pagescene.camera.right": [b("Numpad6"), b("Digit6")],
+      "pagescene.camera.up": [b("Numpad9"), b("Digit9")],
+      "pagescene.camera.down": [b("Numpad3"), b("Digit3")],
       // G is Blender's modal "grab" (move with the mouse + X/Y/Z axis lock),
       // not a gizmo-mode toggle — so translate-mode stays on its BASE key (T).
       "pagescene.transform.grab": [b("KeyG")],
