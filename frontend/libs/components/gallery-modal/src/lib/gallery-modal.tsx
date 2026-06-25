@@ -1298,11 +1298,21 @@ export const GalleryModal = React.memo(
     }, [selectedItemIds, onSelectItem]);
 
     const handleUseSelected = useCallback(() => {
-      const selectedItems = Object.values(groupedItems)
-        .flat()
-        .filter((item) => selectedItemIds.includes(item.id));
+      // Selected items can live in the root library (groupedItems) or inside
+      // the active folder (folderGroupedItems). Search both, deduping by id,
+      // so picks made while browsing a folder still resolve to real items.
+      const itemsById = new Map<string, GalleryItem>();
+      for (const item of [
+        ...Object.values(groupedItems).flat(),
+        ...Object.values(folderGroupedItems).flat(),
+      ]) {
+        itemsById.set(item.id, item);
+      }
+      const selectedItems = selectedItemIds
+        .map((id: string) => itemsById.get(id))
+        .filter((item): item is GalleryItem => item !== undefined);
       onUseSelected?.(selectedItems);
-    }, [groupedItems, selectedItemIds, onUseSelected]);
+    }, [groupedItems, folderGroupedItems, selectedItemIds, onUseSelected]);
 
     const handleItemDeleted = useCallback((id: string) => {
       // Drop from local state (functional setter — must stay pure).
