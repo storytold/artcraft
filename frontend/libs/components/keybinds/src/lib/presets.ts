@@ -77,10 +77,12 @@ export const PRESETS: Record<PresetId, Preset> = {
     description:
       "Familiar to Blender users — G/R/S for grab/rotate/scale and X/Y/Z axis locking during a transform.",
     bindings: {
-      "pagescene.transform.translate": [b("KeyG")],
+      // G is Blender's modal "grab" (move with the mouse + X/Y/Z axis lock),
+      // not a gizmo-mode toggle — so translate-mode stays on its BASE key (T).
+      "pagescene.transform.grab": [b("KeyG")],
       "pagescene.transform.scale": [b("KeyS")],
       // R (rotate) is the same in both schemes.
-      "pagescene.transform.toggleSpace": [b("Backslash")], // X freed for axis-lock (added in a later phase).
+      "pagescene.transform.toggleSpace": [b("Backslash")], // X freed for axis-lock.
       "pagescene.edit.duplicate": [b("KeyD", { shift: true })],
       "pagescene.selection.deselectAll": [b("KeyA", { alt: true })],
     },

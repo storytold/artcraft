@@ -19,6 +19,7 @@ import { HistoryManager } from "./editor/HistoryManager";
 import { DeleteAction } from "./editor/actions/DeleteAction";
 import { TransformAction } from "./editor/actions/TransformAction";
 import { CreateAction } from "./editor/actions/CreateAction";
+import { ModalTransformController } from "./editor/ModalTransformController";
 
 import Stats from "three/examples/jsm/libs/stats.module.js";
 import { SparkRenderer } from "@sparkjsdev/spark";
@@ -101,6 +102,15 @@ class Editor {
   // Holds the in-flight transform action between gizmo dragstart and
   // dragend. Null whenever no drag is in progress.
   private activeTransform: TransformAction | null = null;
+
+  // Blender-style modal grab/move (keyboard axis-lock). Created up front; reads
+  // camera/renderer/selection at begin() time.
+  readonly modalTransform: ModalTransformController =
+    new ModalTransformController(this);
+
+  public beginModalTransform(mode: "translate") {
+    this.modalTransform.begin(mode);
+  }
 
   // Forwarding getter — ControlPanelSceneObject reads `editor.selected`.
   get selected(): THREE.Object3D | undefined {

@@ -141,6 +141,9 @@ interface PageSceneState {
   ignoreKeyDelete: boolean;
   hotkeyStatus: HotkeyStatus;
   isPromptBoxFocused: boolean;
+  // True while a Blender-style modal transform (grab/move) is in progress, so
+  // free-cam and the normal keymap stand down and let the modal own input.
+  modalTransformActive: boolean;
 
   // layout / panels
   assetModalVisible: boolean;
@@ -239,6 +242,7 @@ interface PageSceneState {
   disableHotkeyInput: (level: DomLevels) => void;
   enableHotkeyInput: (level: DomLevels) => void;
   setIsPromptBoxFocused: (focused: boolean) => void;
+  setModalTransformActive: (active: boolean) => void;
 
   // layout
   setAssetModalVisible: (visible: boolean) => void;
@@ -320,6 +324,7 @@ export const usePageSceneStore = create<PageSceneState>((set, get) => ({
   ignoreKeyDelete: false,
   hotkeyStatus: { disabled: false, disabledBy: DomLevels.NONE },
   isPromptBoxFocused: false,
+  modalTransformActive: false,
 
   assetModalVisible: false,
   assetModalVisibleDuringDrag: true,
@@ -431,6 +436,7 @@ export const usePageSceneStore = create<PageSceneState>((set, get) => ({
     }
   },
   setIsPromptBoxFocused: (focused) => set({ isPromptBoxFocused: focused }),
+  setModalTransformActive: (active) => set({ modalTransformActive: active }),
 
   // layout actions
   setAssetModalVisible: (visible) => set({ assetModalVisible: visible }),

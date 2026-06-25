@@ -123,6 +123,7 @@ const toggleStats = (editor: Editor) => {
 // Action id → handler. Bindings live in the keybinds registry; this maps each
 // registered PageScene action to what it actually does.
 const HANDLERS: Record<ActionId, (editor: Editor) => void | Promise<void>> = {
+  "pagescene.transform.grab": (e) => e.beginModalTransform("translate"),
   "pagescene.transform.translate": (e) => setGizmoMode(e, "translate", "move"),
   "pagescene.transform.rotate": (e) => setGizmoMode(e, "rotate", "rotate"),
   "pagescene.transform.scale": (e) => setGizmoMode(e, "scale", "scale"),

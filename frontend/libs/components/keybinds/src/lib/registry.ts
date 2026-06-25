@@ -22,6 +22,7 @@ const defs: ActionDef[] = [
   cam("pagescene.camera.yawRight", "Look right"),
 
   // ── PageScene: transform ──────────────────────────────────────────────────
+  act("pagescene.transform.grab", "Grab / move (modal)", "Transform", { important: true }),
   act("pagescene.transform.translate", "Move (translate)", "Transform", { important: true }),
   act("pagescene.transform.rotate", "Rotate", "Transform", { important: true }),
   act("pagescene.transform.scale", "Scale", "Transform", { important: true }),

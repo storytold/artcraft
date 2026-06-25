@@ -53,6 +53,9 @@ export const useViewportKeyboard = (editor: Editor | null) => {
     const onKeyDown = (event: KeyboardEvent) => {
       if (isEventFromEditableElement(event)) return;
       if (usePageSceneStore.getState().hotkeyStatus.disabled) return;
+      // While a modal transform owns input (axis-lock keys, confirm/cancel),
+      // don't also fire normal viewport shortcuts.
+      if (usePageSceneStore.getState().modalTransformActive) return;
       dispatchBinding(bindings, event, editor);
     };
 

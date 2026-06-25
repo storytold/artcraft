@@ -119,6 +119,7 @@ export const useFreeCam = (
 
     const onKeyDown = (e: KeyboardEvent) => {
       if (usePageSceneStore.getState().isPromptBoxFocused) return;
+      if (usePageSceneStore.getState().modalTransformActive) return;
       if (isEventFromEditableElement(e)) return;
       // Ctrl/Cmd chords are commands (undo, duplicate, copy…), not camera
       // movement — don't let e.g. Ctrl+D both duplicate and strafe right.
@@ -143,6 +144,7 @@ export const useFreeCam = (
 
     const onKeyUp = (e: KeyboardEvent) => {
       if (usePageSceneStore.getState().isPromptBoxFocused) return;
+      if (usePageSceneStore.getState().modalTransformActive) return;
       if (isEventFromEditableElement(e)) return;
       if (e.ctrlKey || e.metaKey) return;
       state.movementSpeed = movementSpeedForEvent(e);
@@ -154,6 +156,8 @@ export const useFreeCam = (
 
     const onPointerDown = (e: PointerEvent) => {
       if (e.button !== 2) return;
+      // The modal transform owns the pointer (right-click cancels it).
+      if (usePageSceneStore.getState().modalTransformActive) return;
       dragRef.current = { x: e.clientX, y: e.clientY, pointerId: e.pointerId };
       state.velocity.set(0, 0, 0);
       try {
