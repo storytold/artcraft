@@ -65,6 +65,15 @@ pub enum RouterVideoModel {
   #[serde(rename = "seedance_2p0_bpu_fast")]
   Seedance2p0BytePlusUltraFast,
 
+  #[serde(rename = "seedance_2p0_mini")]
+  Seedance2p0Mini,
+
+  #[serde(rename = "seedance_2p0_bp_mini")]
+  Seedance2p0BytePlusMini,
+
+  #[serde(rename = "seedance_2p0_bpu_mini")]
+  Seedance2p0BytePlusUltraMini,
+
   #[serde(rename = "happy_horse_1p0")]
   HappyHorse1p0,
 
@@ -94,4 +103,24 @@ pub enum RouterVideoModel {
 
   #[serde(rename = "preview_model_fast")]
   PreviewModelFast,
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  fn assert_serde_round_trip(model: RouterVideoModel, expected: &str) {
+    let json = serde_json::to_string(&model).unwrap();
+    assert_eq!(json, format!("\"{expected}\""));
+    let parsed: RouterVideoModel = serde_json::from_str(&json).unwrap();
+    // RouterVideoModel isn't PartialEq, so round-trip back to the wire form.
+    assert_eq!(serde_json::to_string(&parsed).unwrap(), json);
+  }
+
+  #[test]
+  fn seedance_2p0_mini_variants_serialize() {
+    assert_serde_round_trip(RouterVideoModel::Seedance2p0Mini, "seedance_2p0_mini");
+    assert_serde_round_trip(RouterVideoModel::Seedance2p0BytePlusMini, "seedance_2p0_bp_mini");
+    assert_serde_round_trip(RouterVideoModel::Seedance2p0BytePlusUltraMini, "seedance_2p0_bpu_mini");
+  }
 }

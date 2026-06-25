@@ -71,6 +71,15 @@ pub enum CommonVideoModel {
   #[serde(rename = "seedance_2p0_bpu_fast")]
   Seedance2p0BytePlusUltraFast,
 
+  #[serde(rename = "seedance_2p0_mini")]
+  Seedance2p0Mini,
+
+  #[serde(rename = "seedance_2p0_bp_mini")]
+  Seedance2p0BytePlusMini,
+
+  #[serde(rename = "seedance_2p0_bpu_mini")]
+  Seedance2p0BytePlusUltraMini,
+
   #[serde(rename = "sora_2")]
   Sora2,
 
@@ -128,6 +137,9 @@ impl CommonVideoModel {
       Self::Seedance2p0UltraFast => CommonModelType::Seedance2p0UltraFast,
       Self::Seedance2p0BytePlusUltra => CommonModelType::Seedance2p0BytePlusUltra,
       Self::Seedance2p0BytePlusUltraFast => CommonModelType::Seedance2p0BytePlusUltraFast,
+      Self::Seedance2p0Mini => CommonModelType::Seedance2p0Mini,
+      Self::Seedance2p0BytePlusMini => CommonModelType::Seedance2p0BytePlusMini,
+      Self::Seedance2p0BytePlusUltraMini => CommonModelType::Seedance2p0BytePlusUltraMini,
       Self::Sora2 => CommonModelType::Sora2,
       Self::Sora2Pro => CommonModelType::Sora2Pro,
       Self::Veo2 => CommonModelType::Veo2,
@@ -170,6 +182,9 @@ mod tests {
     assert_serialization(CommonVideoModel::Seedance2p0UltraFast, "seedance_2p0_u_fast");
     assert_serialization(CommonVideoModel::Seedance2p0BytePlusUltra, "seedance_2p0_bpu");
     assert_serialization(CommonVideoModel::Seedance2p0BytePlusUltraFast, "seedance_2p0_bpu_fast");
+    assert_serialization(CommonVideoModel::Seedance2p0Mini, "seedance_2p0_mini");
+    assert_serialization(CommonVideoModel::Seedance2p0BytePlusMini, "seedance_2p0_bp_mini");
+    assert_serialization(CommonVideoModel::Seedance2p0BytePlusUltraMini, "seedance_2p0_bpu_mini");
     assert_serialization(CommonVideoModel::Sora2, "sora_2");
     assert_serialization(CommonVideoModel::Sora2Pro, "sora_2_pro");
     assert_serialization(CommonVideoModel::Veo2, "veo_2");
@@ -205,6 +220,9 @@ mod tests {
       ("seedance_2p0_u_fast", CommonVideoModel::Seedance2p0UltraFast),
       ("seedance_2p0_bpu", CommonVideoModel::Seedance2p0BytePlusUltra),
       ("seedance_2p0_bpu_fast", CommonVideoModel::Seedance2p0BytePlusUltraFast),
+      ("seedance_2p0_mini", CommonVideoModel::Seedance2p0Mini),
+      ("seedance_2p0_bp_mini", CommonVideoModel::Seedance2p0BytePlusMini),
+      ("seedance_2p0_bpu_mini", CommonVideoModel::Seedance2p0BytePlusUltraMini),
       ("sora_2", CommonVideoModel::Sora2),
       ("sora_2_pro", CommonVideoModel::Sora2Pro),
       ("veo_2", CommonVideoModel::Veo2),
@@ -247,6 +265,9 @@ mod tests {
       CommonVideoModel::Seedance2p0UltraFast,
       CommonVideoModel::Seedance2p0BytePlusUltra,
       CommonVideoModel::Seedance2p0BytePlusUltraFast,
+      CommonVideoModel::Seedance2p0Mini,
+      CommonVideoModel::Seedance2p0BytePlusMini,
+      CommonVideoModel::Seedance2p0BytePlusUltraMini,
       CommonVideoModel::Sora2,
       CommonVideoModel::Sora2Pro,
       CommonVideoModel::Veo2,
@@ -288,6 +309,9 @@ mod tests {
       (CommonVideoModel::Seedance2p0UltraFast, CommonModelType::Seedance2p0UltraFast),
       (CommonVideoModel::Seedance2p0BytePlusUltra, CommonModelType::Seedance2p0BytePlusUltra),
       (CommonVideoModel::Seedance2p0BytePlusUltraFast, CommonModelType::Seedance2p0BytePlusUltraFast),
+      (CommonVideoModel::Seedance2p0Mini, CommonModelType::Seedance2p0Mini),
+      (CommonVideoModel::Seedance2p0BytePlusMini, CommonModelType::Seedance2p0BytePlusMini),
+      (CommonVideoModel::Seedance2p0BytePlusUltraMini, CommonModelType::Seedance2p0BytePlusUltraMini),
       (CommonVideoModel::Sora2, CommonModelType::Sora2),
       (CommonVideoModel::Sora2Pro, CommonModelType::Sora2Pro),
       (CommonVideoModel::Veo2, CommonModelType::Veo2),

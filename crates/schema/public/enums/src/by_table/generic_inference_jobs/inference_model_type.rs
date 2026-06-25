@@ -198,6 +198,12 @@ pub enum InferenceModelType {
   Seedance2p0BytePlusUltra,
   #[serde(rename = "seedance_2p0_bpu_fast")]
   Seedance2p0BytePlusUltraFast,
+  #[serde(rename = "seedance_2p0_mini")]
+  Seedance2p0Mini,
+  #[serde(rename = "seedance_2p0_bp_mini")]
+  Seedance2p0BytePlusMini,
+  #[serde(rename = "seedance_2p0_bpu_mini")]
+  Seedance2p0BytePlusUltraMini,
   #[serde(rename = "sora_2")]
   Sora2,
   #[serde(rename = "sora_2_pro")]
@@ -320,6 +326,9 @@ impl InferenceModelType {
       Self::Seedance2p0UltraFast => "seedance_2p0_u_fast",
       Self::Seedance2p0BytePlusUltra => "seedance_2p0_bpu",
       Self::Seedance2p0BytePlusUltraFast => "seedance_2p0_bpu_fast",
+      Self::Seedance2p0Mini => "seedance_2p0_mini",
+      Self::Seedance2p0BytePlusMini => "seedance_2p0_bp_mini",
+      Self::Seedance2p0BytePlusUltraMini => "seedance_2p0_bpu_mini",
       Self::Sora2 => "sora_2",
       Self::Sora2Pro => "sora_2_pro",
       Self::Veo2 => "veo_2",
@@ -422,6 +431,9 @@ impl InferenceModelType {
       "seedance_2p0_u_fast" => Ok(Self::Seedance2p0UltraFast),
       "seedance_2p0_bpu" => Ok(Self::Seedance2p0BytePlusUltra),
       "seedance_2p0_bpu_fast" => Ok(Self::Seedance2p0BytePlusUltraFast),
+      "seedance_2p0_mini" => Ok(Self::Seedance2p0Mini),
+      "seedance_2p0_bp_mini" => Ok(Self::Seedance2p0BytePlusMini),
+      "seedance_2p0_bpu_mini" => Ok(Self::Seedance2p0BytePlusUltraMini),
       "sora_2" => Ok(Self::Sora2),
       "sora_2_pro" => Ok(Self::Sora2Pro),
       "veo_2" => Ok(Self::Veo2),
@@ -528,6 +540,9 @@ impl InferenceModelType {
       Self::Seedance2p0UltraFast,
       Self::Seedance2p0BytePlusUltra,
       Self::Seedance2p0BytePlusUltraFast,
+      Self::Seedance2p0Mini,
+      Self::Seedance2p0BytePlusMini,
+      Self::Seedance2p0BytePlusUltraMini,
       Self::Sora2,
       Self::Sora2Pro,
       Self::Veo2,
@@ -617,6 +632,9 @@ impl InferenceModelType {
       CommonModelType::Seedance2p0UltraFast => Self::Seedance2p0UltraFast,
       CommonModelType::Seedance2p0BytePlusUltra => Self::Seedance2p0BytePlusUltra,
       CommonModelType::Seedance2p0BytePlusUltraFast => Self::Seedance2p0BytePlusUltraFast,
+      CommonModelType::Seedance2p0Mini => Self::Seedance2p0Mini,
+      CommonModelType::Seedance2p0BytePlusMini => Self::Seedance2p0BytePlusMini,
+      CommonModelType::Seedance2p0BytePlusUltraMini => Self::Seedance2p0BytePlusUltraMini,
       CommonModelType::Sora2 => Self::Sora2,
       CommonModelType::Sora2Pro => Self::Sora2Pro,
       CommonModelType::Veo2 => Self::Veo2,
@@ -729,6 +747,9 @@ mod tests {
       assert_serialization(InferenceModelType::Seedance2p0UltraFast, "seedance_2p0_u_fast");
       assert_serialization(InferenceModelType::Seedance2p0BytePlusUltra, "seedance_2p0_bpu");
       assert_serialization(InferenceModelType::Seedance2p0BytePlusUltraFast, "seedance_2p0_bpu_fast");
+      assert_serialization(InferenceModelType::Seedance2p0Mini, "seedance_2p0_mini");
+      assert_serialization(InferenceModelType::Seedance2p0BytePlusMini, "seedance_2p0_bp_mini");
+      assert_serialization(InferenceModelType::Seedance2p0BytePlusUltraMini, "seedance_2p0_bpu_mini");
       assert_serialization(InferenceModelType::Sora2, "sora_2");
       assert_serialization(InferenceModelType::Sora2Pro, "sora_2_pro");
       assert_serialization(InferenceModelType::Veo2, "veo_2");
@@ -830,6 +851,9 @@ mod tests {
       assert_eq!(InferenceModelType::Seedance2p0UltraFast.to_str(), "seedance_2p0_u_fast");
       assert_eq!(InferenceModelType::Seedance2p0BytePlusUltra.to_str(), "seedance_2p0_bpu");
       assert_eq!(InferenceModelType::Seedance2p0BytePlusUltraFast.to_str(), "seedance_2p0_bpu_fast");
+      assert_eq!(InferenceModelType::Seedance2p0Mini.to_str(), "seedance_2p0_mini");
+      assert_eq!(InferenceModelType::Seedance2p0BytePlusMini.to_str(), "seedance_2p0_bp_mini");
+      assert_eq!(InferenceModelType::Seedance2p0BytePlusUltraMini.to_str(), "seedance_2p0_bpu_mini");
       assert_eq!(InferenceModelType::Sora2.to_str(), "sora_2");
       assert_eq!(InferenceModelType::Sora2Pro.to_str(), "sora_2_pro");
       assert_eq!(InferenceModelType::Veo2.to_str(), "veo_2");
@@ -931,6 +955,9 @@ mod tests {
       assert_eq!(InferenceModelType::from_str("seedance_2p0_u_fast").unwrap(), InferenceModelType::Seedance2p0UltraFast);
       assert_eq!(InferenceModelType::from_str("seedance_2p0_bpu").unwrap(), InferenceModelType::Seedance2p0BytePlusUltra);
       assert_eq!(InferenceModelType::from_str("seedance_2p0_bpu_fast").unwrap(), InferenceModelType::Seedance2p0BytePlusUltraFast);
+      assert_eq!(InferenceModelType::from_str("seedance_2p0_mini").unwrap(), InferenceModelType::Seedance2p0Mini);
+      assert_eq!(InferenceModelType::from_str("seedance_2p0_bp_mini").unwrap(), InferenceModelType::Seedance2p0BytePlusMini);
+      assert_eq!(InferenceModelType::from_str("seedance_2p0_bpu_mini").unwrap(), InferenceModelType::Seedance2p0BytePlusUltraMini);
       assert_eq!(InferenceModelType::from_str("sora_2").unwrap(), InferenceModelType::Sora2);
       assert_eq!(InferenceModelType::from_str("sora_2_pro").unwrap(), InferenceModelType::Sora2Pro);
       assert_eq!(InferenceModelType::from_str("veo_2").unwrap(), InferenceModelType::Veo2);
