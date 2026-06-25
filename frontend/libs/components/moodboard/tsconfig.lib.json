@@ -26,16 +26,19 @@
   "include": ["src/**/*.js", "src/**/*.jsx", "src/**/*.ts", "src/**/*.tsx"],
   "references": [
     {
-      "path": "../popover/tsconfig.lib.json"
+      "path": "../modal/tsconfig.lib.json"
     },
     {
-      "path": "../button-icon-select/tsconfig.lib.json"
+      "path": "../button/tsconfig.lib.json"
     },
     {
       "path": "../tooltip/tsconfig.lib.json"
     },
     {
-      "path": "../button/tsconfig.lib.json"
+      "path": "../popover/tsconfig.lib.json"
+    },
+    {
+      "path": "../button-icon-select/tsconfig.lib.json"
     }
   ]
 }
