@@ -65,6 +65,7 @@ use crate::generate::generate_video::providers::fal::veo_3_fast::build::build_fa
 use crate::generate::generate_video::providers::fal::veo_3p1::build::build_fal_veo_3p1;
 use crate::generate::generate_video::providers::fal::veo_3p1_fast::build::build_fal_veo_3p1_fast;
 use crate::generate::generate_video::providers::kinovi::seedance_2p0_fast::build::build_kinovi_seedance_2p0_fast;
+use crate::generate::generate_video::providers::kinovi::seedance_2p0_mini::build::build_kinovi_seedance_2p0_mini;
 use crate::generate::generate_video::video_generation_draft_or_request::VideoGenerationDraftOrRequest;
 
 /// RouterProvider-agnostic video generation request. Distilled by `build2()` into a
@@ -220,6 +221,7 @@ impl GenerateVideoRequestBuilder {
       (RouterProvider::Seedance2Pro, RouterVideoModel::HappyHorse1p0) => build_kinovi_happy_horse_1p0(self),
       (RouterProvider::Seedance2Pro, RouterVideoModel::Seedance2p0) => build_kinovi_seedance_2p0(self),
       (RouterProvider::Seedance2Pro, RouterVideoModel::Seedance2p0Fast) => build_kinovi_seedance_2p0_fast(self),
+      (RouterProvider::Seedance2Pro, RouterVideoModel::Seedance2p0Mini) => build_kinovi_seedance_2p0_mini(self),
       _ => self.unsupported_provider_and_model(),
     }
   }
