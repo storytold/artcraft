@@ -222,6 +222,8 @@ impl GenerateVideoRequestBuilder {
       (RouterProvider::Seedance2Pro, RouterVideoModel::Seedance2p0) => build_kinovi_seedance_2p0(self),
       (RouterProvider::Seedance2Pro, RouterVideoModel::Seedance2p0Fast) => build_kinovi_seedance_2p0_fast(self),
       (RouterProvider::Seedance2Pro, RouterVideoModel::Seedance2p0Mini) => build_kinovi_seedance_2p0_mini(self),
+      (RouterProvider::Seedance2Pro, RouterVideoModel::Seedance2p0BytePlusMini) => build_kinovi_seedance_2p0_mini(self),
+      (RouterProvider::Seedance2Pro, RouterVideoModel::Seedance2p0BytePlusUltraMini) => build_kinovi_seedance_2p0_mini(self),
       _ => self.unsupported_provider_and_model(),
     }
   }

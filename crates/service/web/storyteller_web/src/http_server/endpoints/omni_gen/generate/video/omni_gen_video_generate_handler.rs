@@ -178,9 +178,11 @@ pub async fn omni_gen_video_generate_handler(
     // BytePlus Ultra
     Some(CommonVideoModel::Seedance2p0BytePlusUltra) => KinoviAccount::BytePlusUltra,
     Some(CommonVideoModel::Seedance2p0BytePlusUltraFast) => KinoviAccount::BytePlusUltra,
+    Some(CommonVideoModel::Seedance2p0BytePlusUltraMini) => KinoviAccount::BytePlusUltra,
     // BytePlus
     Some(CommonVideoModel::Seedance2p0BytePlus) => KinoviAccount::BytePlus,
     Some(CommonVideoModel::Seedance2p0BytePlusFast) => KinoviAccount::BytePlus,
+    Some(CommonVideoModel::Seedance2p0BytePlusMini) => KinoviAccount::BytePlus,
     Some(CommonVideoModel::PreviewModel) => KinoviAccount::BytePlus,
     Some(CommonVideoModel::PreviewModelFast) => KinoviAccount::BytePlus,
     // Everything else goes through Volcengine
