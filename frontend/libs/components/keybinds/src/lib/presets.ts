@@ -48,6 +48,19 @@ export const BASE_BINDINGS: Record<ActionId, Binding[]> = {
   "pagedraw.edit.paste": [b("KeyV", { ctrl: true })],
   "pagedraw.history.undo": [b("KeyZ", { ctrl: true })],
   "pagedraw.history.redo": [b("KeyZ", { ctrl: true, shift: true }), b("KeyY", { ctrl: true })],
+
+  // Moodboard — preset-independent (Figma-style).
+  "moodboard.tools.select": [b("KeyV")],
+  "moodboard.tools.lasso": [b("KeyL")],
+  "moodboard.tools.text": [b("KeyT")],
+  "moodboard.selection.selectAll": [b("KeyA", { ctrl: true })],
+  "moodboard.selection.clear": [b("Escape")],
+  "moodboard.edit.delete": [b("Delete"), b("Backspace")],
+  "moodboard.edit.group": [b("KeyG", { ctrl: true })],
+  "moodboard.edit.ungroup": [b("KeyG", { ctrl: true, shift: true })],
+  "moodboard.view.fitToContent": [b("Digit1", { shift: true })],
+  "moodboard.history.undo": [b("KeyZ", { ctrl: true })],
+  "moodboard.history.redo": [b("KeyZ", { ctrl: true, shift: true }), b("KeyY", { ctrl: true })],
 };
 
 export const PRESETS: Record<PresetId, Preset> = {

@@ -59,6 +59,31 @@ const defs: ActionDef[] = [
   act("pagedraw.edit.paste", "Paste", "Edit", { important: true, preventDefault: true }),
   act("pagedraw.history.undo", "Undo", "History", { important: true, preventDefault: true }),
   act("pagedraw.history.redo", "Redo", "History", { important: true, preventDefault: true }),
+
+  // ── Moodboard ─────────────────────────────────────────────────────────────
+  act("moodboard.tools.select", "Select tool", "Tools", { important: true }),
+  act("moodboard.tools.lasso", "Lasso tool", "Tools", { important: true }),
+  act("moodboard.tools.text", "Text tool", "Tools", { important: true }),
+  act("moodboard.selection.selectAll", "Select all", "Selection", {
+    important: true,
+    preventDefault: true,
+  }),
+  act("moodboard.selection.clear", "Clear selection", "Selection", { important: true }),
+  act("moodboard.edit.delete", "Delete selection", "Edit", { important: true }),
+  act("moodboard.edit.group", "Group selection", "Edit", {
+    important: true,
+    preventDefault: true,
+  }),
+  act("moodboard.edit.ungroup", "Ungroup selection", "Edit", {
+    important: true,
+    preventDefault: true,
+  }),
+  act("moodboard.view.fitToContent", "Zoom to fit", "View", {
+    important: true,
+    preventDefault: true,
+  }),
+  act("moodboard.history.undo", "Undo", "History", { important: true, preventDefault: true }),
+  act("moodboard.history.redo", "Redo", "History", { important: true, preventDefault: true }),
 ];
 
 export const ACTIONS: Record<ActionId, ActionDef> = Object.fromEntries(
