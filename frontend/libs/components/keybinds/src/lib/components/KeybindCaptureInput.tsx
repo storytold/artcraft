@@ -10,10 +10,13 @@ import { KbdBindings } from "./Kbd";
 export function KeybindCaptureInput({
   bindings,
   onCapture,
+  accent,
   className,
 }: {
   bindings: Binding[];
   onCapture: (binding: Binding) => void;
+  /** Tint the resting state to mark a customized (overridden) binding. */
+  accent?: boolean;
   className?: string;
 }) {
   const [capturing, setCapturing] = useState(false);
@@ -36,7 +39,9 @@ export function KeybindCaptureInput({
         "inline-flex min-h-8 min-w-[7rem] items-center justify-center rounded-md border px-2 py-1 text-sm transition-colors",
         capturing
           ? "border-primary/80 bg-primary/10 text-primary animate-pulse"
-          : "border-ui-controls-border bg-ui-controls hover:bg-ui-controls/80",
+          : accent
+            ? "border-primary/40 bg-primary/[0.06] hover:bg-primary/10"
+            : "border-ui-controls-border bg-ui-controls hover:bg-ui-controls/80",
         className,
       )}
     >
