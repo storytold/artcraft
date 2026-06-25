@@ -1298,9 +1298,19 @@ export const GalleryModal = React.memo(
     }, [selectedItemIds, onSelectItem]);
 
     const handleUseSelected = useCallback(() => {
-      const selectedItems = Object.values(groupedItems)
-        .flat()
-        .filter((item) => selectedItemIds.includes(item.id));
+      const flat = Object.values(groupedItems).flat();
+      const selectedItems = flat.filter((item) =>
+        selectedItemIds.includes(item.id),
+      );
+      // [IMGREF-DEBUG] temporary diagnostic — remove once root cause is found.
+      // Distinguishes "confirm button never reached onUseSelected" from
+      // "confirm fired but selectedIds didn't match any grouped item".
+      console.log("[IMGREF-DEBUG] gallery.handleUseSelected", {
+        selectedItemIds,
+        groupedFlatCount: flat.length,
+        matchedCount: selectedItems.length,
+        hasOnUseSelected: !!onUseSelected,
+      });
       onUseSelected?.(selectedItems);
     }, [groupedItems, selectedItemIds, onUseSelected]);
 

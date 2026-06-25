@@ -837,6 +837,24 @@ export default function CreateVideo() {
           file: new File([], "library-image"),
           mediaToken: item.id,
         }));
+      // [IMGREF-DEBUG] temporary diagnostic — remove once root cause is found.
+      // Tells us whether onUseSelected fired, what items it received, the slot
+      // math, and what we're about to commit to the store.
+      console.log("[IMGREF-DEBUG] handleLibraryImageSelect", {
+        receivedItemCount: items.length,
+        items: items.map((it) => ({
+          id: it.id,
+          fullImage: it.fullImage,
+          thumbnail: it.thumbnail,
+          mediaClass: (it as { mediaClass?: string }).mediaClass,
+        })),
+        isReferenceMode,
+        maxImages,
+        currentRefCount: referenceImages.length,
+        availableSlots,
+        newImageCount: newImages.length,
+        nextRefCount: referenceImages.length + newImages.length,
+      });
       setReferenceImages([...referenceImages, ...newImages]);
       setIsImagePickerOpen(false);
     },
