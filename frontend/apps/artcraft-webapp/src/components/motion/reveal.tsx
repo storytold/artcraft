@@ -102,19 +102,27 @@ export function Reveal({
   const reduceMotion = useReducedMotion();
   const MotionTag = motionTag(as);
 
+  // When `inView` is left undefined the element behaves as a stagger child:
+  // it inherits the parent RevealGroup's orchestration and must NOT drive its
+  // own initial/animate props (that would override the cascade).
+  const standalone = inView !== undefined;
+
+  // Only a standalone reveal sets its own `delay`. For a stagger child the
+  // delay MUST be omitted: framer-motion lets a child's explicit transition
+  // `delay` override the parent's `staggerChildren`/`delayChildren`, so leaving
+  // it in (even as 0) collapses the cascade and every child animates at once.
   const variants: Variants = {
     initial: reduceMotion ? { opacity: 0 } : { opacity: 0, y },
     animate: {
       opacity: 1,
       y: 0,
-      transition: { duration: DUR_SLOW, ease: EASE_OUT, delay },
+      transition: {
+        duration: DUR_SLOW,
+        ease: EASE_OUT,
+        ...(standalone ? { delay } : {}),
+      },
     },
   };
-
-  // When `inView` is left undefined the element behaves as a stagger child:
-  // it inherits the parent RevealGroup's orchestration and must NOT drive its
-  // own initial/animate props (that would override the cascade).
-  const standalone = inView !== undefined;
 
   return (
     <MotionTag
