@@ -580,6 +580,7 @@ export const PromptBoxEdit = ({
               referenceImages={referenceImages}
               setReferenceImages={setReferenceImages}
               uploadImage={uploadImage}
+              className="relative top-auto rounded-2xl"
             />
           ) : undefined
         }

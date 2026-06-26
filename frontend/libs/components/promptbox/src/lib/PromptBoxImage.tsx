@@ -587,6 +587,9 @@ export const PromptBoxImage = ({
               referenceImages={referenceImages}
               setReferenceImages={setReferenceImages}
               uploadImage={uploadImage as any}
+              // Reset the inline row's absolute "float above the box"
+              // positioning so it sits in-flow in the modal, with rounded corners.
+              className="relative top-auto rounded-2xl"
             />
           ) : undefined
         }

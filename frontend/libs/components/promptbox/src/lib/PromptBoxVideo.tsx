@@ -967,9 +967,10 @@ export const PromptBoxVideo = ({
     }
   }, [selectedModel, endFrameImage, setEndFrameImage]);
 
-  // Shared reference-image row, used both inline (gated by isImageRowVisible)
-  // and always-on in the fullscreen focus modal.
-  const imagePromptRowEl = (
+  // Shared reference-image row. Inline it floats above the box (default absolute
+  // positioning); the fullscreen modal passes a className to reset that so it
+  // sits in-flow above the controls with rounded corners.
+  const renderImagePromptRow = (className?: string) => (
     <ImagePromptRow
       visible={true}
       isVideo={true}
@@ -1004,6 +1005,7 @@ export const PromptBoxVideo = ({
       maxAudioCount={selectedModel?.maxReferenceAudios ?? 2}
       maxAudioRefDuration={selectedModel?.maxAudioRefDuration ?? 15}
       uploadAudio={uploadAudio}
+      className={className}
     />
   );
 
@@ -1043,7 +1045,7 @@ export const PromptBoxVideo = ({
         {content}
       </Modal>
       <div className="relative z-20 flex flex-col gap-3">
-        {isImageRowVisible && imagePromptRowEl}
+        {isImageRowVisible && renderImagePromptRow()}
         <div
           className={twMerge(
             "glass relative w-full rounded-2xl p-4",
@@ -1345,7 +1347,7 @@ export const PromptBoxVideo = ({
             {characterButtonEl}
           </>
         }
-        imagePromptRow={imagePromptRowEl}
+        imagePromptRow={renderImagePromptRow("relative top-auto rounded-2xl")}
       >
         {hasAnyMentionables ? (
           <MentionTextarea

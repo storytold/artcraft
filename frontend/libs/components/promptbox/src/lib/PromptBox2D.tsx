@@ -571,6 +571,7 @@ export const PromptBox2D = ({
               referenceImages={referenceImages}
               setReferenceImages={setReferenceImages}
               uploadImage={uploadImage as any}
+              className="relative top-auto rounded-2xl"
             />
           ) : undefined
         }

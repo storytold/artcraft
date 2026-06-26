@@ -323,28 +323,31 @@ export const PromptBox = forwardRef<HTMLDivElement, PromptBoxProps>(
       });
     }, [prompt, hasMentionItems, mentionRegex, mentionLabelMap, mentionItems]);
 
-    // Shared reference-image row, used both inline (gated by isImageRowVisible)
-    // and always-on in the fullscreen focus modal.
-    const imagePromptRowEl = supportsImagePrompts ? (
-      <ImagePromptRow
-        maxImagePromptCount={maxImagePromptCount}
-        referenceImages={referenceImages}
-        setReferenceImages={onReferenceImagesChange}
-        onPickFromLibrary={onPickFromLibrary}
-        onClearAll={onClearAllRefs}
-        isVideo={isVideo}
-        isReferenceMode={isReferenceMode}
-        endFrameImage={endFrameImage}
-        setEndFrameImage={onEndFrameImageChange}
-        showEndFrameSection={showEndFrameSection}
-        onPickEndFrameFromLibrary={onPickEndFrameFromLibrary}
-      />
-    ) : null;
+    // Shared reference-image row. Inline it attaches to the top of the box
+    // (square bottom); the fullscreen modal passes a className to round the
+    // bottom corners since it sits in-flow above the controls there.
+    const renderImagePromptRow = (className?: string) =>
+      supportsImagePrompts ? (
+        <ImagePromptRow
+          maxImagePromptCount={maxImagePromptCount}
+          referenceImages={referenceImages}
+          setReferenceImages={onReferenceImagesChange}
+          onPickFromLibrary={onPickFromLibrary}
+          onClearAll={onClearAllRefs}
+          isVideo={isVideo}
+          isReferenceMode={isReferenceMode}
+          endFrameImage={endFrameImage}
+          setEndFrameImage={onEndFrameImageChange}
+          showEndFrameSection={showEndFrameSection}
+          onPickEndFrameFromLibrary={onPickEndFrameFromLibrary}
+          className={className}
+        />
+      ) : null;
 
     return (
       <div ref={ref} className="prompt-box-root">
         <div className="relative flex flex-col">
-          {isImageRowVisible && imagePromptRowEl}
+          {isImageRowVisible && renderImagePromptRow()}
 
           {mediaReferenceRow}
 
@@ -568,7 +571,7 @@ export const PromptBox = forwardRef<HTMLDivElement, PromptBoxProps>(
               {leftToolbar}
             </>
           }
-          imagePromptRow={imagePromptRowEl}
+          imagePromptRow={renderImagePromptRow("rounded-2xl sm:rounded-b-2xl")}
         >
           {hasMentionItems && mentionItems ? (
             <MentionTextarea
