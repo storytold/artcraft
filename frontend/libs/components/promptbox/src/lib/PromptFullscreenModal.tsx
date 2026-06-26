@@ -46,17 +46,23 @@ export const PromptFullscreenModal = ({
       accessibleTitle="Prompt focus mode"
       closeOnOutsideClick
       closeOnEsc
-      className="h-[70vh] w-full max-w-4xl"
+      className="w-full max-w-4xl"
       backdropClassName="backdrop-blur-md"
     >
-      {/* Title lives inside the flex column (not the Modal title slot) so the
-          editor + counter fit the fixed panel height cleanly. No overflow-hidden
-          here — the mention autocomplete dropdown renders outside the editor
-          bounds and must not be clipped. */}
-      <div className="flex h-full flex-col gap-2">
-        <h2 className="text-lg font-bold text-base-fg">Prompt</h2>
-        {/* flex column so a flex-1 editor (the MentionTextarea root wrapper)
-            or an h-full textarea fills the remaining space. */}
+      {/* Explicit inline height (not a Tailwind arbitrary class) so the column
+          is reliably bounded across the modal's nested wrappers — that's what
+          lets the editor's textarea scroll instead of stretching the panel.
+          min-h-0 on the flex children lets them shrink below content size. No
+          overflow-hidden on the editor holder — the mention autocomplete
+          dropdown renders outside it and must not be clipped; the editor scrolls
+          via its own overflow-y-auto. */}
+      <div
+        className="flex min-h-0 flex-col gap-2"
+        style={{ height: "70vh" }}
+      >
+        <h2 className="shrink-0 text-lg font-bold text-base-fg">Prompt</h2>
+        {/* flex-col so a flex-1 editor (MentionTextarea root) fills it; min-h-0
+            so the editor area can shrink and its content scrolls. */}
         <div ref={contentRef} className="flex min-h-0 flex-1 flex-col">
           {children}
         </div>

@@ -1348,12 +1348,14 @@ export const PromptBoxVideo = ({
                 ? "Use @Image1, @Video1, @Audio1... to reference uploads in prompt..."
                 : "Describe what you want to happen in the video..."
             }
-            className="promptbox-scrollbar text-md h-full w-full resize-none overflow-y-auto rounded bg-transparent text-base-fg"
+            className="promptbox-scrollbar text-md h-full min-h-0 w-full resize-none overflow-y-auto rounded bg-transparent text-base-fg"
+            style={{ maxHeight: "calc(70vh - 7rem)", resize: "none" }}
           />
         ) : (
           <textarea
             placeholder="Describe what you want to happen in the video..."
-            className="promptbox-scrollbar text-md h-full w-full resize-none rounded bg-transparent text-base-fg placeholder-base-fg/60 focus:outline-none"
+            className="promptbox-scrollbar text-md h-full min-h-0 w-full resize-none overflow-y-auto rounded bg-transparent text-base-fg placeholder-base-fg/60 focus:outline-none"
+            style={{ maxHeight: "calc(70vh - 7rem)" }}
             value={prompt}
             onChange={handleChange}
             onPaste={handlePaste}

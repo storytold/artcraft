@@ -562,7 +562,8 @@ export const PromptBox = forwardRef<HTMLDivElement, PromptBoxProps>(
               onChange={onPromptChange}
               mentionItems={mentionItems}
               placeholder={placeholder}
-              className="promptbox-scrollbar h-full w-full text-base-fg placeholder-base-fg/60"
+              className="promptbox-scrollbar h-full min-h-0 w-full overflow-y-auto text-base-fg placeholder-base-fg/60"
+              style={{ maxHeight: "calc(70vh - 7rem)", resize: "none" }}
               colorMap={mentionColorMap}
               onKeyDown={(e) => {
                 if (
@@ -579,7 +580,8 @@ export const PromptBox = forwardRef<HTMLDivElement, PromptBoxProps>(
           ) : (
             <textarea
               placeholder={placeholder}
-              className="promptbox-scrollbar text-md h-full w-full resize-none bg-transparent text-base-fg placeholder-base-fg/60 focus:outline-none"
+              className="promptbox-scrollbar text-md h-full min-h-0 w-full resize-none overflow-y-auto bg-transparent text-base-fg placeholder-base-fg/60 focus:outline-none"
+              style={{ maxHeight: "calc(70vh - 7rem)" }}
               value={prompt}
               onChange={handleChange}
               onKeyDown={handleKeyDown}

@@ -577,7 +577,8 @@ export const PromptBoxImage = ({
       >
         <textarea
           placeholder="Describe what you want in the image..."
-          className="promptbox-scrollbar text-md h-full w-full resize-none rounded bg-transparent text-base-fg placeholder-base-fg/60 focus:outline-none"
+          className="promptbox-scrollbar text-md h-full min-h-0 w-full resize-none overflow-y-auto rounded bg-transparent text-base-fg placeholder-base-fg/60 focus:outline-none"
+          style={{ maxHeight: "calc(70vh - 7rem)" }}
           value={prompt}
           onChange={handleChange}
           onPaste={handlePaste}
