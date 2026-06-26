@@ -12,6 +12,7 @@ import { faSpinnerThird } from "@fortawesome/pro-solid-svg-icons";
 import Home from "../pages/home";
 import Media from "../pages/media";
 import { ToastContainer } from "../components/toast/toast";
+import { GlobalFileDropHandler } from "../components/GlobalFileDropHandler";
 import CreateImage from "../pages/create-image";
 import CreateVideo from "../pages/create-video";
 import CreateVFX from "../pages/create-vfx";
@@ -202,6 +203,7 @@ export function App() {
         </Route>
       </Routes>
       <ToastContainer />
+      <GlobalFileDropHandler />
       <SignupCtaModal />
       <InsufficientCreditsModal />
       <GlobalActionReminder />

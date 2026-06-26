@@ -1,3 +1,4 @@
+import { dndCoordinator, mediaKindFromMediaClass } from "@storyteller/ui-dnd";
 import { GalleryItem } from "./gallery-modal";
 import {
   galleryModalDraggingUnder,
@@ -165,6 +166,21 @@ function onPointerMove(event: PointerEvent) {
     // eases to translucent (reopen on) or all the way out (reopen off) via the
     // Modal's contentDimmed/contentHidden, so the transition is never abrupt.
     galleryModalDraggingUnder.value = true;
+    // Join the unified DnD registry so the item can be dropped onto typed fields
+    // (image/video reference slots, etc.). Only single-item drags of a known
+    // media kind participate; bulk/unknown drags fall back to the legacy
+    // canvas/folder behaviour below.
+    const kind =
+      dragState.items.length === 1
+        ? mediaKindFromMediaClass(dragState.item.mediaClass)
+        : null;
+    if (kind) {
+      dndCoordinator.beginDrag({
+        source: "gallery",
+        kind,
+        item: dragState.item,
+      });
+    }
   }
   dragState.currX = event.pageX;
   dragState.currY = event.pageY;
@@ -181,6 +197,17 @@ function onPointerMove(event: PointerEvent) {
         el.getAttribute("data-folder-id") === overFolder,
       );
     });
+
+    // Drive accept/reject highlighting on any registered drop target (reference
+    // fields, etc.) under the cursor. Folders take visual priority, so clear the
+    // registry highlight while hovering one.
+    if (dndCoordinator.isDragging()) {
+      if (overFolder) {
+        dndCoordinator.updateHover(-1, -1);
+      } else {
+        dndCoordinator.updateHover(event.clientX, event.clientY);
+      }
+    }
   }
 }
 
@@ -238,10 +265,28 @@ function onPointerUp(event: PointerEvent) {
 
   if (dragState.item && dragState.isDragging) {
     const folderId = folderIdAt(event.clientX, event.clientY);
+    const payload = dndCoordinator.getActivePayload();
+    const dropTarget = payload
+      ? dndCoordinator.hitTest(event.clientX, event.clientY)
+      : null;
+
     if (folderId) {
       // Dropped onto a folder — organize, and keep the gallery open.
       emitFolderDrop(dragState.items, folderId);
       spawnDropRipple(event.clientX, event.clientY);
+    } else if (dropTarget && payload) {
+      // Dropped onto a registered typed field (e.g. an image-reference slot).
+      // The coordinator routes the payload, or rejects it (media-type mismatch).
+      const accepted = dropTarget.accepts.includes(payload.kind);
+      void dndCoordinator.drop(event.clientX, event.clientY);
+      if (accepted) {
+        spawnDropRipple(event.clientX, event.clientY);
+        // Close the gallery after a successful attach unless asked to stay open.
+        if (!galleryReopenAfterDragSignal.value) {
+          galleryModalVisibleViewMode.value = false;
+          closedHidden = true;
+        }
+      }
     } else if (
       dragState.item.mediaClass === "image" ||
       dragState.item.mediaClass === "dimensional"
@@ -259,6 +304,7 @@ function onPointerUp(event: PointerEvent) {
 
   // Cleanup
   removeDragPreview();
+  dndCoordinator.endDrag();
 
   document.querySelectorAll("[data-folder-id]").forEach((el) => {
     el.classList.remove("folder-drag-over");

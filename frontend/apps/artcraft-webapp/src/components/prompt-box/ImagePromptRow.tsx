@@ -36,9 +36,23 @@ import {
   useSortable,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import {
+  useDropTarget,
+  type DragPayload,
+  type GalleryItemLike,
+} from "@storyteller/ui-dnd";
 import type { RefImage } from "./types";
 import { uploadImage } from "./upload-image";
 import { useIsMobile } from "../ui/use-mobile";
+
+// Accept/reject highlight applied to a reference slot while a compatible (or
+// incompatible) drag hovers it.
+const dropHighlightClass = (s: { isOver: boolean; isRejecting: boolean }) =>
+  s.isOver
+    ? "ring-2 ring-primary/80 bg-primary/10"
+    : s.isRejecting
+      ? "ring-2 ring-red-500/80 bg-red-500/10 cursor-not-allowed"
+      : "";
 import { SettingsDrawer } from "./mobile/SettingsDrawer";
 
 interface ImagePromptRowProps {
@@ -75,6 +89,8 @@ export const ImagePromptRow = ({
   const rootRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const endFrameInputRef = useRef<HTMLInputElement>(null);
+  const imagesDropRef = useRef<HTMLDivElement>(null);
+  const endFrameDropRef = useRef<HTMLDivElement>(null);
 
   // Stop in-row interactions from bubbling (drag/prompt-box behind), but let
   // events from portaled children (e.g. the mobile Add drawer) pass through so
@@ -110,16 +126,14 @@ export const ImagePromptRow = ({
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(event.target.files || []);
+  // Shared by the hidden <input> and drag-and-drop. Uploads each file, holding a
+  // blurred local preview until the media token resolves, then appends a ref.
+  const processImageFiles = (files: File[]) => {
     if (files.length === 0) return;
 
     const currentCount = referenceImages.length + uploadingImages.length;
     const availableSlots = Math.max(0, maxImagePromptCount - currentCount);
-    if (availableSlots <= 0) {
-      if (fileInputRef.current) fileInputRef.current.value = "";
-      return;
-    }
+    if (availableSlots <= 0) return;
 
     const filesToProcess = files.slice(0, availableSlots);
 
@@ -154,11 +168,34 @@ export const ImagePromptRow = ({
             }
           },
         });
-
-        if (fileInputRef.current) fileInputRef.current.value = "";
       };
       reader.readAsDataURL(file);
     });
+  };
+
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    processImageFiles(Array.from(event.target.files || []));
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  // Attach a gallery item by reusing its existing media token (no re-upload).
+  const attachGalleryImage = (item: GalleryItemLike) => {
+    const currentCount = referenceImages.length + uploadingImages.length;
+    if (currentCount >= maxImagePromptCount) return;
+    setReferenceImages([
+      ...referenceImagesRef.current,
+      {
+        id: Math.random().toString(36).substring(7),
+        url: item.fullImage || item.thumbnail || "",
+        fullUrl: item.fullImage ?? undefined,
+        mediaToken: item.id,
+      },
+    ]);
+  };
+
+  const handleImagesDrop = (payload: DragPayload) => {
+    if (payload.source === "gallery") attachGalleryImage(payload.item);
+    else payload.getFile().then((file) => processImageFiles([file]));
   };
 
   const handleDragEnd = (event: DragEndEvent) => {
@@ -170,9 +207,8 @@ export const ImagePromptRow = ({
     setReferenceImages(arrayMove(referenceImages, oldIndex, newIndex));
   };
 
-  const handleEndFrameUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file || !setEndFrameImage) return;
+  const processEndFrameFile = (file: File) => {
+    if (!setEndFrameImage) return;
 
     setUploadingEndFrame(true);
     const reader = new FileReader();
@@ -197,9 +233,28 @@ export const ImagePromptRow = ({
           }
         },
       });
-      if (endFrameInputRef.current) endFrameInputRef.current.value = "";
     };
     reader.readAsDataURL(file);
+  };
+
+  const handleEndFrameUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) processEndFrameFile(file);
+    if (endFrameInputRef.current) endFrameInputRef.current.value = "";
+  };
+
+  const handleEndFrameDrop = (payload: DragPayload) => {
+    if (!setEndFrameImage) return;
+    if (payload.source === "gallery") {
+      setEndFrameImage({
+        id: Math.random().toString(36).substring(7),
+        url: payload.item.fullImage || payload.item.thumbnail || "",
+        fullUrl: payload.item.fullImage ?? undefined,
+        mediaToken: payload.item.id,
+      });
+    } else {
+      payload.getFile().then(processEndFrameFile);
+    }
   };
 
   const canAddMore =
@@ -219,6 +274,21 @@ export const ImagePromptRow = ({
     : "Use the elements of an image";
 
   const showCount = !isVideo || isReferenceMode;
+
+  // Drop targets: drag a gallery asset or an OS file straight onto the slot.
+  const imagesDrop = useDropTarget({
+    ref: imagesDropRef,
+    accepts: ["image"],
+    label: sectionLabel,
+    onDrop: handleImagesDrop,
+  });
+  const endFrameDrop = useDropTarget({
+    ref: endFrameDropRef,
+    accepts: ["image"],
+    label: "End Frame",
+    onDrop: handleEndFrameDrop,
+    disabled: !(isVideo && showEndFrameSection),
+  });
 
   return (
     <>
@@ -249,7 +319,13 @@ export const ImagePromptRow = ({
         onClick={stopIfInside}
         onPointerDown={stopIfInside}
       >
-        <div className="flex min-w-0 flex-1 gap-2 px-3 py-2">
+        <div
+          ref={imagesDropRef}
+          className={twMerge(
+            "flex min-w-0 flex-1 gap-2 px-3 py-2 rounded-2xl transition-shadow",
+            dropHighlightClass(imagesDrop),
+          )}
+        >
           <div className="flex grow flex-col gap-1 min-w-32">
             <div className="flex items-center gap-2 text-white/90">
               <FontAwesomeIcon icon={faImage} className="h-3.5 w-3.5" />
@@ -324,7 +400,13 @@ export const ImagePromptRow = ({
 
         {/* End frame section */}
         {isVideo && showEndFrameSection && (
-          <div className="flex min-w-0 flex-1 items-stretch gap-2 px-3 py-2 sm:py-0 sm:pe-3 sm:ps-0 border-t sm:border-t-0 border-white/10">
+          <div
+            ref={endFrameDropRef}
+            className={twMerge(
+              "flex min-w-0 flex-1 items-stretch gap-2 px-3 py-2 sm:py-0 sm:pe-3 sm:ps-0 border-t sm:border-t-0 border-white/10 rounded-2xl transition-shadow",
+              dropHighlightClass(endFrameDrop),
+            )}
+          >
             <div className="flex grow gap-1">
               <div className="hidden sm:block w-[1px] bg-white/10" />
               <div className="flex grow flex-col gap-1 sm:p-2">

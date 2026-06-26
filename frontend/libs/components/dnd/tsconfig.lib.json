@@ -42,48 +42,5 @@
     "src/**/*.ts",
     "src/**/*.tsx"
   ],
-  "references": [
-    {
-      "path": "../dnd/tsconfig.lib.json"
-    },
-    {
-      "path": "../checkbox/tsconfig.lib.json"
-    },
-    {
-      "path": "../slider-v2/tsconfig.lib.json"
-    },
-    {
-      "path": "../../common/tsconfig.lib.json"
-    },
-    {
-      "path": "../../api/tsconfig.lib.json"
-    },
-    {
-      "path": "../close-button/tsconfig.lib.json"
-    },
-    {
-      "path": "../button/tsconfig.lib.json"
-    },
-    {
-      "path": "../lightbox-modal/tsconfig.lib.json"
-    },
-    {
-      "path": "../modal/tsconfig.lib.json"
-    },
-    {
-      "path": "../toaster/tsconfig.lib.json"
-    },
-    {
-      "path": "../action-reminder-modal/tsconfig.lib.json"
-    },
-    {
-      "path": "../popover/tsconfig.lib.json"
-    },
-    {
-      "path": "../tooltip/tsconfig.lib.json"
-    },
-    {
-      "path": "../loading-spinner/tsconfig.lib.json"
-    }
-  ]
+  "references": []
 }
