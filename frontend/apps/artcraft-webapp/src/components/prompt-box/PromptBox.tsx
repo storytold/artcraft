@@ -323,24 +323,28 @@ export const PromptBox = forwardRef<HTMLDivElement, PromptBoxProps>(
       });
     }, [prompt, hasMentionItems, mentionRegex, mentionLabelMap, mentionItems]);
 
+    // Shared reference-image row, used both inline (gated by isImageRowVisible)
+    // and always-on in the fullscreen focus modal.
+    const imagePromptRowEl = supportsImagePrompts ? (
+      <ImagePromptRow
+        maxImagePromptCount={maxImagePromptCount}
+        referenceImages={referenceImages}
+        setReferenceImages={onReferenceImagesChange}
+        onPickFromLibrary={onPickFromLibrary}
+        onClearAll={onClearAllRefs}
+        isVideo={isVideo}
+        isReferenceMode={isReferenceMode}
+        endFrameImage={endFrameImage}
+        setEndFrameImage={onEndFrameImageChange}
+        showEndFrameSection={showEndFrameSection}
+        onPickEndFrameFromLibrary={onPickEndFrameFromLibrary}
+      />
+    ) : null;
+
     return (
       <div ref={ref} className="prompt-box-root">
         <div className="relative flex flex-col">
-          {isImageRowVisible && (
-            <ImagePromptRow
-              maxImagePromptCount={maxImagePromptCount}
-              referenceImages={referenceImages}
-              setReferenceImages={onReferenceImagesChange}
-              onPickFromLibrary={onPickFromLibrary}
-              onClearAll={onClearAllRefs}
-              isVideo={isVideo}
-              isReferenceMode={isReferenceMode}
-              endFrameImage={endFrameImage}
-              setEndFrameImage={onEndFrameImageChange}
-              showEndFrameSection={showEndFrameSection}
-              onPickEndFrameFromLibrary={onPickEndFrameFromLibrary}
-            />
-          )}
+          {isImageRowVisible && imagePromptRowEl}
 
           {mediaReferenceRow}
 
@@ -555,7 +559,17 @@ export const PromptBox = forwardRef<HTMLDivElement, PromptBoxProps>(
             </div>
           </div>
         </div>
-        <PromptFullscreenModal isOpen={isFullscreen} onClose={closeFullscreen}>
+        <PromptFullscreenModal
+          isOpen={isFullscreen}
+          onClose={closeFullscreen}
+          footerControls={
+            <>
+              {modelSelector}
+              {leftToolbar}
+            </>
+          }
+          imagePromptRow={imagePromptRowEl}
+        >
           {hasMentionItems && mentionItems ? (
             <MentionTextarea
               value={prompt}
@@ -563,7 +577,7 @@ export const PromptBox = forwardRef<HTMLDivElement, PromptBoxProps>(
               mentionItems={mentionItems}
               placeholder={placeholder}
               className="promptbox-scrollbar h-full min-h-0 w-full overflow-y-auto text-base-fg placeholder-base-fg/60"
-              style={{ maxHeight: "calc(70vh - 7rem)", resize: "none" }}
+              style={{ resize: "none" }}
               colorMap={mentionColorMap}
               onKeyDown={(e) => {
                 if (
@@ -581,7 +595,6 @@ export const PromptBox = forwardRef<HTMLDivElement, PromptBoxProps>(
             <textarea
               placeholder={placeholder}
               className="promptbox-scrollbar text-md h-full min-h-0 w-full resize-none overflow-y-auto bg-transparent text-base-fg placeholder-base-fg/60 focus:outline-none"
-              style={{ maxHeight: "calc(70vh - 7rem)" }}
               value={prompt}
               onChange={handleChange}
               onKeyDown={handleKeyDown}

@@ -6,6 +6,7 @@ import {
   useState,
 } from "react";
 import { Modal } from "@storyteller/ui-modal";
+import { Button } from "@storyteller/ui-button";
 import { Tooltip } from "@storyteller/ui-tooltip";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faUpRightAndDownLeftFromCenter } from "@fortawesome/pro-solid-svg-icons";
@@ -56,12 +57,19 @@ interface PromptFullscreenModalProps {
   isOpen: boolean;
   onClose: () => void;
   children: ReactNode;
+  /** Controls rendered in the footer, left of the Done button (e.g. the model
+   *  selector + character button). */
+  footerControls?: ReactNode;
+  /** Reference-image row, always shown in focus mode. */
+  imagePromptRow?: ReactNode;
 }
 
 export const PromptFullscreenModal = ({
   isOpen,
   onClose,
   children,
+  footerControls,
+  imagePromptRow,
 }: PromptFullscreenModalProps) => {
   const contentRef = useRef<HTMLDivElement>(null);
 
@@ -79,18 +87,30 @@ export const PromptFullscreenModal = ({
       accessibleTitle="Prompt focus mode"
       closeOnOutsideClick
       closeOnEsc
-      className="h-[70vh] w-full max-w-4xl"
+      className="w-full max-w-4xl"
       backdropClassName="backdrop-blur-md"
     >
-      {/* Title lives inside the flex column (not the Modal title slot) so the
-          editor fits the fixed panel height cleanly. No overflow-hidden here —
-          the mention autocomplete dropdown renders outside the editor bounds
-          and must not be clipped. */}
-      <div ref={contentRef} className="flex h-full flex-col gap-2">
-        <h2 className="text-lg font-bold text-base-fg">Prompt</h2>
-        {/* flex column so a flex-1 editor (the MentionTextarea root wrapper)
-            or an h-full textarea fills the remaining space. */}
-        <div className="flex min-h-0 flex-1 flex-col">{children}</div>
+      {/* Explicit inline height (not a Tailwind arbitrary class) so the column
+          is reliably bounded across the modal's nested wrappers — that's what
+          lets the editor scroll instead of stretching the panel. min-h-0 lets
+          the flex children shrink below content size. */}
+      <div className="flex min-h-0 flex-col gap-2" style={{ height: "70vh" }}>
+        <h2 className="shrink-0 text-lg font-bold text-base-fg">Prompt</h2>
+        {/* flex-1 so the editor takes only the space left after the (shrink-0)
+            image row + footer — keeps it from overflowing when the window is
+            shorter. min-h-0 + overflow-hidden bound the editor area so its own
+            textarea scrolls instead of pushing the layout. */}
+        <div
+          ref={contentRef}
+          className="flex min-h-0 flex-1 flex-col overflow-hidden"
+        >
+          {children}
+        </div>
+        {imagePromptRow && <div className="shrink-0">{imagePromptRow}</div>}
+        <div className="flex shrink-0 items-center justify-between gap-2">
+          <div className="flex items-center gap-2">{footerControls}</div>
+          <Button onClick={onClose}>Done</Button>
+        </div>
       </div>
     </Modal>
   );

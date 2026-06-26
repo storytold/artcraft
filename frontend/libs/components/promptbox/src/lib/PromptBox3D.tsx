@@ -898,11 +898,26 @@ export const PromptBox3D = ({
         onClose={closeFullscreen}
         promptLength={prompt.length}
         maxLength={maxLen}
+        footerControls={modelSelector}
+        imagePromptRow={
+          selectedImageModel?.canUseImagePrompt ? (
+            <ImagePromptRow
+              visible={true}
+              maxImagePromptCount={Math.max(
+                1,
+                selectedImageModel?.maxImagePromptCount ?? 1,
+              )}
+              allowUpload={true}
+              referenceImages={referenceImages}
+              setReferenceImages={setReferenceImages}
+              uploadImage={uploadImage as any}
+            />
+          ) : undefined
+        }
       >
         <textarea
           placeholder="Describe your image..."
           className="promptbox-scrollbar text-md h-full min-h-0 w-full resize-none overflow-y-auto rounded bg-transparent text-base-fg placeholder-base-fg/60 focus:outline-none"
-          style={{ maxHeight: "calc(70vh - 7rem)" }}
           value={prompt}
           onChange={handleChange}
           onPaste={handlePaste}
