@@ -56,6 +56,25 @@ export class StoryTellerProxyScene {
     const boneHelper = new BoneJSONHelper(child);
     proxyObject3D.rigData = boneHelper.toJSON();
 
+    // Capture raw vertex data for geometry-backed meshes (experimental
+    // scene-descriptor objects) so they round-trip through save/load.
+    if (child.userData["isMeshGeometry"]) {
+      const posAttr = (child as THREE.Mesh).geometry?.getAttribute?.("position");
+      if (posAttr) {
+        proxyObject3D.geometry = {
+          positions: Array.from(posAttr.array as ArrayLike<number>),
+        };
+      }
+    }
+    // Instancing + custom-shader specs are stashed on userData at creation;
+    // re-serialize them so they round-trip through save/load.
+    if (child.userData["instancingSpec"]) {
+      proxyObject3D.instancing = child.userData["instancingSpec"];
+    }
+    if (child.userData["shaderMaterialSpec"]) {
+      proxyObject3D.shaderMaterial = child.userData["shaderMaterialSpec"];
+    }
+
     const json_data = proxyObject3D.toJSON();
     return json_data;
   }
@@ -184,6 +203,31 @@ export class StoryTellerProxyScene {
         if (token === "DirectionalLight") {
           return { json_object, obj: this.scene._create_base_lighting() };
         }
+        if (token.includes("Mesh::")) {
+          // Geometry-backed mesh (experimental scene descriptor): rebuild
+          // from the stored non-indexed vertex positions.
+          const positions = json_object.geometry?.positions ?? [];
+          const created = await this.scene.instantiateMeshFromPositions(
+            positions,
+            json_object.color || "#9a9a9a",
+          );
+          return {
+            json_object,
+            obj: this.scene.get_object_by_uuid(created.uuid),
+          };
+        }
+        if (token.includes("Instanced::")) {
+          // Instanced field (trees/grass): rebuild the InstancedMesh from
+          // the stored base geometry + per-instance transforms.
+          const created = await this.scene.instantiateInstancedMesh(
+            json_object.instancing,
+            json_object.color || "#9a9a9a",
+          );
+          return {
+            json_object,
+            obj: this.scene.get_object_by_uuid(created.uuid),
+          };
+        }
         if (token.includes("m_")) {
           const obj = await this.scene.loadObject(
             token,
@@ -285,6 +329,11 @@ export class StoryTellerProxyScene {
         this.scene.setVisible(obj.uuid, json_object.visible);
       }
       this.scene.setColor(obj.uuid, json_object.color);
+      // Re-attach a custom shader material last, so it isn't clobbered by
+      // setColor (which only touches standard materials).
+      if (json_object.shaderMaterial) {
+        this.scene.applyShaderMaterial(obj.uuid, json_object.shaderMaterial);
+      }
     }
 
     this.scene._createGrid();

@@ -34,6 +34,18 @@ export interface ObjectJSON {
   visible: boolean | undefined;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   rigData: any;
+  // Optional raw vertex data for objects defined by geometry rather than a
+  // media asset (experimental scene-descriptor meshes). Non-indexed
+  // positions [x,y,z, ...] in the object's local space. Can be large, so
+  // it's only present on geometry-backed objects.
+  geometry?: { positions: number[] };
+  // Experimental scene-descriptor: instancing spec (InstancedMesh) and a
+  // custom ShaderMaterial spec. Loosely typed here to avoid coupling the
+  // proxy to the descriptor layer; the descriptor owns the precise shapes.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  instancing?: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  shaderMaterial?: any;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   user_data: Record<string, any>;
 }
@@ -57,6 +69,11 @@ export class StoryTellerProxy3DObject {
   visible: boolean;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   rigData: any;
+  geometry?: { positions: number[] };
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  instancing?: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  shaderMaterial?: any;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   userData: Record<string, any>;
 
@@ -140,6 +157,15 @@ export class StoryTellerProxy3DObject {
       user_data: this.userData,
       rigData: this.rigData,
     };
+    if (this.geometry) {
+      json.geometry = this.geometry;
+    }
+    if (this.instancing) {
+      json.instancing = this.instancing;
+    }
+    if (this.shaderMaterial) {
+      json.shaderMaterial = this.shaderMaterial;
+    }
     return json;
   }
 }

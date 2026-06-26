@@ -51,6 +51,22 @@ export async function exportSceneToGltf(
   return new Blob([JSON.stringify(result)], { type: "model/gltf+json" });
 }
 
+// glTF as pretty-printed JSON text — for the "copy in either format"
+// affordance (binary GLB can't go on the clipboard as text).
+export async function exportSceneToGltfText(editor: Editor): Promise<string> {
+  const group = buildExportGroup(editor);
+  const exporter = new GLTFExporter();
+  const result = await new Promise<object>((resolve, reject) => {
+    exporter.parse(
+      group,
+      (out) => resolve(out as object),
+      (err) => reject(err),
+      { binary: false, onlyVisible: false },
+    );
+  });
+  return JSON.stringify(result, null, 2);
+}
+
 // USDZ. Returns a Blob ready to download.
 //
 // three 0.171 exposes `parseAsync(scene, options): Promise<Uint8Array>`,

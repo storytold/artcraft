@@ -61,21 +61,23 @@ export const ExperimentalSettingsPane = ({ onStoryboardPageDisable }: Props) => 
     <>
       <div className="space-y-4 text-base-fg">
         <div className="flex items-start justify-between gap-4">
-          <div className="flex flex-col gap-0.5">
+          <div className="flex min-w-0 flex-1 flex-col gap-0.5">
             <Label htmlFor="experimental-storyboard-page">Storyboard page</Label>
             <p className="text-xs opacity-70">
               Show the Storyboard page in the apps menu. In-development; expect
               rough edges.
             </p>
           </div>
-          <Switch
-            enabled={storyboardPageEnabled}
-            setEnabled={handleStoryboardToggle}
-          />
+          <div className="shrink-0">
+            <Switch
+              enabled={storyboardPageEnabled}
+              setEnabled={handleStoryboardToggle}
+            />
+          </div>
         </div>
 
         <div className="flex items-start justify-between gap-4">
-          <div className="flex flex-col gap-0.5">
+          <div className="flex min-w-0 flex-1 flex-col gap-0.5">
             <Label htmlFor="experimental-scene-enhancement">
               Scene enhancement
             </Label>
@@ -85,10 +87,12 @@ export const ExperimentalSettingsPane = ({ onStoryboardPageDisable }: Props) => 
               In-development; expect rough edges.
             </p>
           </div>
-          <Switch
-            enabled={sceneEnhancementEnabled}
-            setEnabled={handleSceneEnhancementToggle}
-          />
+          <div className="shrink-0">
+            <Switch
+              enabled={sceneEnhancementEnabled}
+              setEnabled={handleSceneEnhancementToggle}
+            />
+          </div>
         </div>
       </div>
       <ExperimentalConfirmModal

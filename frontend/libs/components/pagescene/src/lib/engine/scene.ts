@@ -14,6 +14,40 @@ import toast from "react-hot-toast";
 import { SplatMesh } from "@sparkjsdev/spark";
 import { ensureInternalBbox } from "./internalBbox";
 
+// ── Experimental scene-descriptor: shader/instancing helpers ────────────
+
+// One per-instance transform for instantiateInstancedMesh.
+type InstanceLike = {
+  position?: { x: number; y: number; z: number };
+  rotationDeg?: { x: number; y: number; z: number };
+  scale?: { x: number; y: number; z: number };
+  color?: string;
+};
+
+// Default vertex shader for LLM-authored materials: exposes the varyings a
+// fragment shader most commonly wants, so a bare `fragmentShader` works.
+const DEFAULT_VERTEX_SHADER = `
+varying vec2 vUv;
+varying vec3 vNormal;
+varying vec3 vPosition;
+void main() {
+  vUv = uv;
+  vNormal = normalize(normalMatrix * normal);
+  vPosition = position;
+  gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+}
+`;
+
+// Prepended to every custom fragment shader so the injected uniforms and
+// the default vertex varyings are always in scope.
+const SHADER_PREAMBLE = `
+uniform float time;
+uniform vec2 resolution;
+varying vec2 vUv;
+varying vec3 vNormal;
+varying vec3 vPosition;
+`;
+
 // Capabilities Scene needs from outside its own state. Editor wires
 // these in inline at construction (Phase 2 idiom — same shape as
 // SceneUtilsDeps, SaveManagerDeps, etc.). Scene does NOT import the
@@ -283,6 +317,193 @@ class Scene {
 
     this.updateSurfaceIdAttributeToMesh(this.scene);
     return obj;
+  }
+
+  // Build a gray-box mesh from a raw, non-indexed vertex position buffer
+  // ([x,y,z, ...], every 3 vertices = 1 triangle). Used by the
+  // experimental scene-descriptor path to reconstruct per-object vertex
+  // data. Registers like instantiate() so selection/post-processing work,
+  // and tags userData so the proxy serializer round-trips the geometry.
+  async instantiateMeshFromPositions(
+    positions: number[],
+    color = "#9a9a9a",
+  ): Promise<THREE.Mesh> {
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute(
+      "position",
+      new THREE.BufferAttribute(new Float32Array(positions), 3),
+    );
+    geometry.computeVertexNormals();
+    geometry.computeBoundingBox();
+    geometry.computeBoundingSphere();
+
+    const material = new THREE.MeshPhongMaterial({ color: new THREE.Color(color) });
+    material.shininess = 0.0;
+    const obj = new THREE.Mesh(geometry, material);
+    obj.receiveShadow = true;
+    obj.castShadow = true;
+    obj.name = "Mesh";
+    obj.userData["media_id"] = "Mesh::" + obj.uuid;
+    obj.userData["isMeshGeometry"] = true;
+    // isShape lets setColor() apply a flat constant color (gray-box).
+    obj.userData["isShape"] = true;
+    obj.userData["color"] = color;
+    obj.userData["metalness"] = 0.0;
+    obj.userData["shininess"] = 0.5;
+    obj.userData["specular"] = 0.0;
+    obj.userData["locked"] = false;
+    obj.userData["media_file_type"] = MediaFileType.None;
+
+    this.scene.add(obj);
+    this.updateSurfaceIdAttributeToMesh(this.scene);
+    return obj;
+  }
+
+  // ── Experimental scene-descriptor: instancing + custom shaders ──────────
+
+  // Build one InstancedMesh from a base geometry + a list of per-instance
+  // transforms (and optional per-instance color). One draw call for many
+  // copies — the path for performance forests / grass fields. The resolved
+  // spec is stashed on userData so the proxy serializer round-trips it.
+  async instantiateInstancedMesh(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    spec: any,
+    color = "#9a9a9a",
+  ): Promise<THREE.InstancedMesh> {
+    const instances: InstanceLike[] = spec?.instances ?? [];
+    const geometry = this.buildBaseGeometry(spec?.base);
+    const material = new THREE.MeshPhongMaterial({
+      color: new THREE.Color(color),
+      side: THREE.DoubleSide,
+    });
+    material.shininess = 0.0;
+
+    const count = Math.max(1, instances.length);
+    const mesh = new THREE.InstancedMesh(geometry, material, count);
+
+    const m = new THREE.Matrix4();
+    const p = new THREE.Vector3();
+    const q = new THREE.Quaternion();
+    const e = new THREE.Euler();
+    const s = new THREE.Vector3(1, 1, 1);
+    const hasColors = instances.some((i) => !!i.color);
+    if (hasColors) {
+      mesh.instanceColor = new THREE.InstancedBufferAttribute(
+        new Float32Array(count * 3),
+        3,
+      );
+    }
+    instances.forEach((it, i) => {
+      p.set(it.position?.x ?? 0, it.position?.y ?? 0, it.position?.z ?? 0);
+      e.set(
+        THREE.MathUtils.degToRad(it.rotationDeg?.x ?? 0),
+        THREE.MathUtils.degToRad(it.rotationDeg?.y ?? 0),
+        THREE.MathUtils.degToRad(it.rotationDeg?.z ?? 0),
+      );
+      q.setFromEuler(e);
+      s.set(it.scale?.x ?? 1, it.scale?.y ?? 1, it.scale?.z ?? 1);
+      m.compose(p, q, s);
+      mesh.setMatrixAt(i, m);
+      if (hasColors) mesh.setColorAt(i, new THREE.Color(it.color || color));
+    });
+    mesh.instanceMatrix.needsUpdate = true;
+    if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
+    mesh.name = "Instances";
+    mesh.userData["media_id"] = "Instanced::" + mesh.uuid;
+    mesh.userData["isInstanced"] = true;
+    mesh.userData["instancingSpec"] = spec;
+    mesh.userData["isShape"] = true; // lets setColor apply a flat base color
+    mesh.userData["color"] = color;
+    mesh.userData["metalness"] = 0.0;
+    mesh.userData["shininess"] = 0.5;
+    mesh.userData["specular"] = 0.0;
+    mesh.userData["locked"] = false;
+    mesh.userData["media_file_type"] = MediaFileType.None;
+
+    this.scene.add(mesh);
+    this.updateSurfaceIdAttributeToMesh(this.scene);
+    return mesh;
+  }
+
+  // Build (or replace) a custom ShaderMaterial on an object's meshes from a
+  // spec — the path for LLM-described materials. Injects `time`/`resolution`
+  // uniforms and a default vertex shader exposing vUv/vNormal/vPosition, so
+  // a bare fragment shader "just works". Animated specs are registered for
+  // the per-frame `time` tick. Stashes the spec on userData for round-trip.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  applyShaderMaterial(object_uuid: string, spec: any): void {
+    const object = this.get_object_by_uuid(object_uuid);
+    if (!object || !spec?.fragmentShader) return;
+    const material = this.buildShaderMaterial(spec);
+    let registered = false;
+    object.traverse((c: THREE.Object3D) => {
+      if (!(c instanceof THREE.Mesh)) return;
+      c.material = material;
+      // Register a single representative mesh for the time tick.
+      if (spec.animated && !registered) {
+        this.shader_objects.push(c);
+        registered = true;
+      }
+    });
+    object.userData["shaderMaterialSpec"] = spec;
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private buildShaderMaterial(spec: any): THREE.ShaderMaterial {
+    const uniforms: Record<string, THREE.IUniform> = {
+      time: { value: 0 },
+      resolution: { value: new THREE.Vector2(1, 1) },
+    };
+    const raw = spec.uniforms ?? {};
+    for (const key of Object.keys(raw)) {
+      const v = raw[key];
+      uniforms[key] = {
+        value: Array.isArray(v)
+          ? v.length === 2
+            ? new THREE.Vector2(v[0], v[1])
+            : v.length === 3
+              ? new THREE.Vector3(v[0], v[1], v[2])
+              : new THREE.Vector4(v[0], v[1], v[2], v[3] ?? 1)
+          : v,
+      };
+    }
+    return new THREE.ShaderMaterial({
+      uniforms,
+      vertexShader: spec.vertexShader || DEFAULT_VERTEX_SHADER,
+      fragmentShader: SHADER_PREAMBLE + spec.fragmentShader,
+      transparent: !!spec.transparent,
+      side: spec.doubleSide ? THREE.DoubleSide : THREE.FrontSide,
+    });
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private buildBaseGeometry(base: any): THREE.BufferGeometry {
+    if (base?.positions?.length) {
+      const g = new THREE.BufferGeometry();
+      g.setAttribute(
+        "position",
+        new THREE.BufferAttribute(new Float32Array(base.positions), 3),
+      );
+      g.computeVertexNormals();
+      return g;
+    }
+    if (base?.plane) {
+      return new THREE.PlaneGeometry(base.plane.width ?? 1, base.plane.height ?? 1);
+    }
+    switch (base?.shape) {
+      case "Cone":
+        return new THREE.ConeGeometry(0.5, 1, 6);
+      case "Cylinder":
+        return new THREE.CylinderGeometry(0.5, 0.5, 1, 6);
+      case "Sphere":
+        return new THREE.SphereGeometry(0.5, 8, 6);
+      case "Donut":
+        return new THREE.TorusGeometry(0.5, 0.2, 6, 12);
+      default:
+        return new THREE.BoxGeometry(1, 1, 1);
+    }
   }
 
   get_objects_name(uuid: string): string {

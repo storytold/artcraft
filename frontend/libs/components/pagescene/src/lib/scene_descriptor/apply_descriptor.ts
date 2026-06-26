@@ -1,27 +1,43 @@
-// Apply: SceneDescriptor → live PageScene.
+// Apply: SceneDescriptor → live PageScene, by in-place reconciliation.
 //
-// We translate the descriptor back into the ObjectJSON[] the editor's
-// existing load path already understands, then hand it to
-// editor.applyJson (which clears the undo stack and rebuilds the scene).
-// Existing entities are reconstructed from their lossless `source`;
-// entities the editor never saw (e.g. an LLM-authored primitive) are
-// synthesized from the editable fields.
+// Rather than tearing down and rebuilding the scene (which reloads every
+// mesh over the network), we reconcile the descriptor against the objects
+// already in the scene, keyed by id:
+//
+//   - id matches an existing object  → update it in place (transform,
+//     color, visibility, mixamo pose). No reload.
+//   - primitive with no match        → instantiate locally (no network).
+//   - model/character with no match  → skipped (creating new rigged assets
+//     from text is out of scope for the test phase).
+//   - existing object absent from    → removed.
+//     the descriptor
+//
+// The whole reconciliation is recorded as ONE undoable history entry, so a
+// single undo reverts the entire apply at once.
 
 import * as THREE from "three";
-import { v4 as uuidv4 } from "uuid";
 import type Editor from "../engine/editor";
-import { ObjectJSON } from "../proxy/storyteller_proxy_3d_object";
+import type Scene from "../engine/scene";
 import { MediaFileType } from "../enums";
+import { isInternalBbox } from "../engine/internalBbox";
+import { BoneJSONHelper } from "../engine/KinHelpers/BoneJSONHelper";
+import { getSceneGenerationMetaData } from "../sceneMetadata";
+import { ApplyDescriptorAction } from "./apply_action";
+import { applyPose } from "./pose_codec";
+import { resolveInstancing } from "./instancing_codec";
 import {
   DescriptorEntity,
   GRAY_BOX_COLOR,
   SceneDescriptor,
-  Vec3,
 } from "./scene_descriptor";
 
 export interface ApplyResult {
   applied: number;
   skipped: number;
+  removed: number;
+  // Whether the apply changed the scene (and was recorded as one
+  // undoable history entry).
+  recorded: boolean;
 }
 
 export async function applySceneDescriptor(
@@ -29,121 +45,235 @@ export async function applySceneDescriptor(
   descriptor: SceneDescriptor,
 ): Promise<ApplyResult> {
   const entities = descriptor?.entities ?? [];
+  const scene = editor.activeScene;
+
+  // Undo target — full scene snapshot before we touch anything.
+  const before = snapshotSceneJson(editor);
+
+  const existing = indexExistingObjects(scene);
+  const seen = new Set<string>();
+  let applied = 0;
   let skipped = 0;
 
-  const sceneJson: ObjectJSON[] = [];
   for (const entity of entities) {
-    const obj = entityToObjectJson(entity, editor.version);
+    let obj = entity.id ? existing.get(entity.id) : undefined;
+
+    // A primitive whose shape changed can't swap geometry in place —
+    // drop it and recreate below.
+    if (obj && entity.kind === "primitive" && shapeChanged(obj, entity)) {
+      editor.utils.deleteObject(obj.uuid);
+      existing.delete(entity.id);
+      obj = undefined;
+    }
+
     if (obj) {
-      sceneJson.push(obj);
+      updateObjectInPlace(scene, obj, entity);
+      seen.add(entity.id);
+      applied++;
+    } else if (entity.kind === "primitive" && entity.shape) {
+      const created = await createPrimitive(scene, entity);
+      if (created) {
+        seen.add(created.uuid);
+        applied++;
+      } else {
+        skipped++;
+      }
+    } else if (entity.kind === "mesh") {
+      const created = await createMesh(scene, entity);
+      if (created) {
+        seen.add(created.uuid);
+        applied++;
+      } else {
+        skipped++;
+      }
+    } else if (entity.kind === "instances") {
+      const created = await createInstances(scene, entity);
+      if (created) {
+        seen.add(created.uuid);
+        applied++;
+      } else {
+        skipped++;
+      }
     } else {
+      // New model/character: not supported in the test phase (would
+      // require loading an asset we can't synthesize from text).
       skipped++;
     }
   }
 
-  const wrapper = {
-    version: editor.version,
-    scene: sceneJson,
-    skybox: descriptor?.environment?.skybox ?? editor.activeScene.skybox ?? "",
-  };
+  // Remove objects the descriptor dropped.
+  let removed = 0;
+  for (const uuid of existing.keys()) {
+    if (!seen.has(uuid)) {
+      editor.utils.deleteObject(uuid);
+      removed++;
+    }
+  }
 
-  await editor.applyJson(JSON.stringify(wrapper));
-  return { applied: sceneJson.length, skipped };
+  // Environment + a frame so the result is visible immediately.
+  const skybox = descriptor?.environment?.skybox;
+  if (skybox) scene.updateSkybox(skybox);
+  editor.renderScene();
+
+  const after = snapshotSceneJson(editor);
+  const recorded = before !== after;
+  if (recorded) {
+    editor.history.record(new ApplyDescriptorAction(editor, before, after));
+  }
+  return { applied, skipped, removed, recorded };
 }
 
-// Build an ObjectJSON for a single entity. Returns undefined when the
-// entity can't be reconstructed (a new model/character with no `source`,
-// since the asset token is unknown).
-function entityToObjectJson(
-  entity: DescriptorEntity,
-  version: number,
-): ObjectJSON | undefined {
-  const base = entity.source
-    ? cloneObjectJson(entity.source)
-    : synthesize(entity, version);
-  if (!base) return undefined;
-
-  // Overlay the editable surface onto the (possibly preserved) base.
-  base.object_uuid = entity.id || base.object_uuid || uuidv4();
-  if (entity.name) {
-    base.object_user_data_name = entity.name;
-    base.user_data = { ...base.user_data, name: entity.name };
+// Index the scene's real, top-level objects by uuid. Mirrors the filter
+// the serializer uses (media_id present, not an internal bbox helper).
+function indexExistingObjects(scene: Scene): Map<string, THREE.Object3D> {
+  const map = new Map<string, THREE.Object3D>();
+  for (const child of scene.scene?.children ?? []) {
+    if (isInternalBbox(child)) continue;
+    if (child.userData?.["media_id"] == null) continue;
+    map.set(child.uuid, child);
   }
-  if (entity.color) base.color = entity.color;
-  if (entity.visible !== undefined) base.visible = entity.visible;
+  return map;
+}
 
+// Update an existing object from an entity — no reload. Transform, name,
+// visibility, color, and (for characters) mixamo pose.
+function updateObjectInPlace(
+  scene: Scene,
+  obj: THREE.Object3D,
+  entity: DescriptorEntity,
+): void {
   const t = entity.transform;
   if (t) {
-    base.position = vec(t.position);
-    base.rotation = eulerDegToRad(t.rotationDeg);
-    base.scale = vec(t.scale, 1);
+    if (t.position) obj.position.set(t.position.x, t.position.y, t.position.z);
+    if (t.rotationDeg) {
+      obj.rotation.set(
+        THREE.MathUtils.degToRad(t.rotationDeg.x ?? 0),
+        THREE.MathUtils.degToRad(t.rotationDeg.y ?? 0),
+        THREE.MathUtils.degToRad(t.rotationDeg.z ?? 0),
+      );
+    }
+    if (t.scale) obj.scale.set(t.scale.x ?? 1, t.scale.y ?? 1, t.scale.z ?? 1);
   }
 
-  // A primitive whose shape changed needs the geometry key updated so the
-  // loader's instantiate() picks the new geometry on rebuild.
-  if (base.media_file_token === "Parim" && entity.shape) {
-    base.object_name = entity.shape;
-    base.user_data = {
-      ...base.user_data,
-      shapeKey: entity.shape,
-      shapeType: entity.shape,
-      isShape: true,
-    };
+  if (entity.name) {
+    obj.name = entity.name;
+    obj.userData["name"] = entity.name;
+  }
+  if (entity.visible !== undefined) scene.setVisible(obj.uuid, entity.visible);
+  if (entity.color) scene.setColor(obj.uuid, entity.color);
+
+  if (entity.kind === "character") {
+    if (entity.pose) {
+      applyPose(obj, entity.pose);
+    } else if (entity.source?.rigData) {
+      // No edited pose — restore the lossless rig fallback.
+      new BoneJSONHelper(obj).poseFromBoneJSON(entity.source.rigData);
+    }
   }
 
-  return base;
+  // Custom (LLM-authored) shader material — applies to any kind, after
+  // setColor so it isn't clobbered.
+  if (entity.material?.fragmentShader) {
+    scene.applyShaderMaterial(obj.uuid, entity.material);
+  }
 }
 
-// Synthesize an ObjectJSON for an entity that has no `source`. Only
-// primitives are supported — models/characters require an asset token we
-// can't invent.
-function synthesize(
+// Instantiate a primitive locally (no network) and stamp the userData the
+// serializer + loader expect, then apply the entity's editable fields.
+async function createPrimitive(
+  scene: Scene,
   entity: DescriptorEntity,
-  version: number,
-): ObjectJSON | undefined {
-  if (entity.kind !== "primitive" || !entity.shape) return undefined;
+): Promise<THREE.Object3D | undefined> {
   const shape = entity.shape;
-  return {
-    version,
-    position: { x: 0, y: 0, z: 0 },
-    rotation: { x: 0, y: 0, z: 0 },
-    scale: { x: 1, y: 1, z: 1 },
-    object_name: shape,
-    object_uuid: entity.id || uuidv4(),
-    object_user_data_name: entity.name || shape,
-    media_file_token: "Parim",
-    color: entity.color || GRAY_BOX_COLOR,
-    metalness: 0,
-    shininess: 0.5,
-    specular: 0.5,
-    locked: false,
-    visible: entity.visible ?? true,
-    rigData: undefined,
-    user_data: {
-      name: entity.name || shape,
-      isShape: true,
-      shapeKey: shape,
-      shapeType: shape,
-      media_file_type: MediaFileType.None,
-    },
-  };
+  if (!shape) return undefined;
+
+  const created = await scene.instantiate(shape);
+  const obj = scene.get_object_by_uuid(created.uuid);
+  if (!obj) return undefined;
+
+  // Adopt the descriptor's stable id so later applies match in place.
+  if (entity.id) obj.uuid = entity.id;
+
+  obj.userData["media_id"] = "Parim";
+  obj.userData["isShape"] = true;
+  obj.userData["shapeKey"] = shape;
+  obj.userData["shapeType"] = shape;
+  obj.userData["media_file_type"] = MediaFileType.None;
+  obj.userData["color"] = entity.color || GRAY_BOX_COLOR;
+  obj.userData["metalness"] = 0;
+  obj.userData["shininess"] = 0.5;
+  obj.userData["specular"] = 0.5;
+  obj.userData["locked"] = false;
+
+  updateObjectInPlace(scene, obj, entity);
+  return obj;
 }
 
-// Deep-clone so we never mutate the descriptor the caller still holds.
-function cloneObjectJson(obj: ObjectJSON): ObjectJSON {
-  return JSON.parse(JSON.stringify(obj));
+// Reconstruct a geometry-backed mesh from the entity's raw vertex data
+// (no asset reload — the vertices are self-contained). Used for `mesh`
+// entities with no existing match.
+async function createMesh(
+  scene: Scene,
+  entity: DescriptorEntity,
+): Promise<THREE.Object3D | undefined> {
+  const positions =
+    entity.geometry?.positions ?? entity.source?.geometry?.positions;
+  if (!positions || positions.length === 0) return undefined;
+
+  const created = await scene.instantiateMeshFromPositions(
+    positions,
+    entity.color || GRAY_BOX_COLOR,
+  );
+  const obj = scene.get_object_by_uuid(created.uuid);
+  if (!obj) return undefined;
+
+  // Adopt the descriptor's stable id so later applies match in place.
+  if (entity.id) {
+    obj.uuid = entity.id;
+    obj.userData["media_id"] = "Mesh::" + entity.id;
+  }
+  updateObjectInPlace(scene, obj, entity);
+  return obj;
 }
 
-function vec(v: Vec3 | undefined, fallback = 0): { x: number; y: number; z: number } {
-  if (!v) return { x: fallback, y: fallback, z: fallback };
-  return { x: v.x ?? fallback, y: v.y ?? fallback, z: v.z ?? fallback };
+// Reconstruct an instanced field (trees/grass) from the entity's
+// instancing spec. Scatter specs are expanded deterministically first.
+async function createInstances(
+  scene: Scene,
+  entity: DescriptorEntity,
+): Promise<THREE.Object3D | undefined> {
+  const resolved = resolveInstancing(entity.instancing);
+  if (!resolved?.base) return undefined;
+
+  const created = await scene.instantiateInstancedMesh(
+    resolved,
+    entity.color || GRAY_BOX_COLOR,
+  );
+  const obj = scene.get_object_by_uuid(created.uuid);
+  if (!obj) return undefined;
+
+  if (entity.id) {
+    obj.uuid = entity.id;
+    obj.userData["media_id"] = "Instanced::" + entity.id;
+  }
+  updateObjectInPlace(scene, obj, entity);
+  return obj;
 }
 
-function eulerDegToRad(v: Vec3 | undefined): { x: number; y: number; z: number } {
-  if (!v) return { x: 0, y: 0, z: 0 };
-  return {
-    x: THREE.MathUtils.degToRad(v.x ?? 0),
-    y: THREE.MathUtils.degToRad(v.y ?? 0),
-    z: THREE.MathUtils.degToRad(v.z ?? 0),
-  };
+function shapeChanged(obj: THREE.Object3D, entity: DescriptorEntity): boolean {
+  const current =
+    (obj.userData?.["shapeKey"] as string | undefined) ??
+    (obj.userData?.["shapeType"] as string | undefined);
+  return !!entity.shape && !!current && entity.shape !== current;
+}
+
+// Full-scene snapshot in the JSON form SaveManager.getSceneJson emits
+// (the same shape the load path consumes), stringified. Used as the
+// before/after targets for the single undoable history entry.
+function snapshotSceneJson(editor: Editor): string {
+  return JSON.stringify(
+    editor.save_manager.getSceneJson({
+      sceneGenerationMetadata: getSceneGenerationMetaData(editor),
+    }),
+  );
 }

@@ -40,7 +40,11 @@ export function useExperimentalFlag(featureKey: string): boolean {
   return enabled;
 }
 
-// The scene-enhancement feature gate.
+// The scene-enhancement feature gate. The flag lives in localStorage and
+// is toggled from Settings → Experimental. In dev it's seeded on by the
+// experimental store (the production 7-click unlock isn't reachable in
+// every host, e.g. the webapp), so the panel shows by default in dev but
+// the toggle still controls it.
 export const SCENE_ENHANCEMENT_FLAG_KEY =
   "artcraft_experimental_scene_enhancement";
 

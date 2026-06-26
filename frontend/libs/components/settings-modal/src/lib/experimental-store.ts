@@ -12,6 +12,20 @@ const SCENE_ENHANCEMENT_STORAGE_KEY =
 // tabs). Listeners: see useExperimentalFlag in @storyteller/ui-pagescene.
 export const EXPERIMENTAL_FLAGS_CHANGED_EVENT = "artcraft_experimental_changed";
 
+// In dev the production unlock (7 clicks on the version number) isn't
+// reachable in every host — the webapp has no version chip — so the whole
+// Experimental section would be permanently hidden. Production builds
+// (DEV === false) still require the real unlock.
+const isDev = (): boolean => {
+  try {
+    return Boolean(
+      (import.meta as unknown as { env?: { DEV?: boolean } }).env?.DEV,
+    );
+  } catch {
+    return false;
+  }
+};
+
 const readBoolFlag = (key: string): boolean => {
   if (typeof window === "undefined") return false;
   try {
@@ -52,6 +66,28 @@ interface ExperimentalState {
   setStoryboardPageEnabled: (enabled: boolean) => void;
   setSceneEnhancementEnabled: (enabled: boolean) => void;
 }
+
+// One-time dev seed: the first time we run in dev, turn on the
+// experimental section + scene enhancement by writing THROUGH to
+// localStorage, so every reader shares one source of truth — this store
+// AND the 3D editor's panel (which reads the same keys, see
+// useExperimentalFlag in @storyteller/ui-pagescene). A sentinel means we
+// seed only once, so a manual toggle-off sticks across reloads.
+const DEV_SEED_SENTINEL_KEY = "artcraft_experimental_dev_seeded";
+
+const seedDevDefaultsOnce = () => {
+  if (!isDev() || typeof window === "undefined") return;
+  try {
+    if (window.localStorage.getItem(DEV_SEED_SENTINEL_KEY) === "true") return;
+    window.localStorage.setItem(DEV_SEED_SENTINEL_KEY, "true");
+    window.localStorage.setItem(ENABLED_STORAGE_KEY, "true");
+    window.localStorage.setItem(SCENE_ENHANCEMENT_STORAGE_KEY, "true");
+  } catch {
+    // ignore storage failures
+  }
+};
+
+seedDevDefaultsOnce();
 
 export const useExperimentalStore = create<ExperimentalState>((set) => ({
   enabled: readBoolFlag(ENABLED_STORAGE_KEY),

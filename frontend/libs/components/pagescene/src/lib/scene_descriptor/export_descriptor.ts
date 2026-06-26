@@ -9,6 +9,8 @@ import * as THREE from "three";
 import type Editor from "../engine/editor";
 import { StoryTellerProxyScene } from "../proxy/storyteller_proxy_scene";
 import { ObjectJSON } from "../proxy/storyteller_proxy_3d_object";
+import { extractPose } from "./pose_codec";
+import { extractGeometry } from "./geometry_codec";
 import {
   DescriptorCamera,
   DescriptorEntity,
@@ -18,12 +20,31 @@ import {
   Vec3,
 } from "./scene_descriptor";
 
-export function buildSceneDescriptor(editor: Editor): SceneDescriptor {
+export interface BuildDescriptorOptions {
+  // Attach raw per-object vertex data to every mesh-bearing entity
+  // (primitives/models). Off by default — it can be large. Geometry-
+  // defined `mesh` entities always carry their geometry regardless.
+  includeGeometry?: boolean;
+}
+
+export function buildSceneDescriptor(
+  editor: Editor,
+  options: BuildDescriptorOptions = {},
+): SceneDescriptor {
   const scene = editor.activeScene;
   const proxy = new StoryTellerProxyScene(editor.version, scene);
   const objects = proxy.saveToScene(editor.version);
 
-  const entities = objects.map(objectJsonToEntity);
+  // Map live scene objects by uuid so we can read pose/geometry off the
+  // actual object (the ObjectJSON snapshot doesn't expose bones directly).
+  const liveByUuid = new Map<string, THREE.Object3D>();
+  for (const child of scene.scene?.children ?? []) {
+    liveByUuid.set(child.uuid, child);
+  }
+
+  const entities = objects.map((obj) =>
+    objectJsonToEntity(obj, liveByUuid.get(obj.object_uuid), options),
+  );
 
   return {
     descriptorVersion: SCENE_DESCRIPTOR_VERSION,
@@ -35,7 +56,11 @@ export function buildSceneDescriptor(editor: Editor): SceneDescriptor {
   };
 }
 
-function objectJsonToEntity(obj: ObjectJSON): DescriptorEntity {
+function objectJsonToEntity(
+  obj: ObjectJSON,
+  liveObject: THREE.Object3D | undefined,
+  options: BuildDescriptorOptions,
+): DescriptorEntity {
   const kind = classifyKind(obj);
   const entity: DescriptorEntity = {
     id: obj.object_uuid,
@@ -57,9 +82,31 @@ function objectJsonToEntity(obj: ObjectJSON): DescriptorEntity {
       (obj.user_data?.shapeKey as string | undefined) ??
       obj.object_name;
   }
-  if (obj.rigData) {
+  if (kind === "character" && obj.rigData) {
     entity.hasPose = true;
+    if (liveObject) {
+      entity.pose = extractPose(liveObject);
+    }
   }
+
+  // Geometry: a `mesh` entity is defined by it (always include, from the
+  // serialized ObjectJSON if present, else from the live object). Other
+  // kinds get a vertex snapshot only when explicitly requested.
+  if (kind === "mesh") {
+    entity.geometry =
+      obj.geometry ?? (liveObject ? extractGeometry(liveObject) : undefined);
+  } else if (options.includeGeometry && liveObject) {
+    entity.geometry = extractGeometry(liveObject);
+  }
+
+  // Instancing + custom shader specs round-trip verbatim from ObjectJSON.
+  if (kind === "instances" && obj.instancing) {
+    entity.instancing = obj.instancing;
+  }
+  if (obj.shaderMaterial) {
+    entity.material = obj.shaderMaterial;
+  }
+
   return entity;
 }
 
@@ -67,6 +114,12 @@ function objectJsonToEntity(obj: ObjectJSON): DescriptorEntity {
 // the media_file_token is the discriminator the loader switches on.
 function classifyKind(obj: ObjectJSON): DescriptorEntityKind {
   const token = obj.media_file_token ?? "";
+  if (token.includes("Instanced::") || obj.user_data?.isInstanced === true) {
+    return "instances";
+  }
+  if (token.includes("Mesh::") || obj.user_data?.isMeshGeometry === true) {
+    return "mesh";
+  }
   if (token === "Parim" || obj.user_data?.isShape === true) return "primitive";
   if (token === "DirectionalLight") return "light";
   if (token.includes("Point::")) return "point";

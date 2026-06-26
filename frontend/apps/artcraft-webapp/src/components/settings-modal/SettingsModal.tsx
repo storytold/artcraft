@@ -1,16 +1,17 @@
 import { useEffect, useMemo, useState } from "react";
 import { Modal } from "@storyteller/ui-modal";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faCog, faUser, faKey } from "@fortawesome/pro-solid-svg-icons";
+import { faCog, faUser, faKey, faFlask } from "@fortawesome/pro-solid-svg-icons";
 import { Switch } from "@storyteller/ui-switch";
 import { USER_FEATURE_FLAGS } from "@storyteller/api";
+import { useExperimentalStore } from "@storyteller/ui-settings-modal";
 import { twMerge } from "tailwind-merge";
 import { useEnterToGenerateStore } from "../../lib/enter-to-generate-store";
 import { useSession } from "../../lib/session";
 import { AccountSection } from "./AccountSection";
 import { ApiKeySection } from "./ApiKeySection";
 
-type Tab = "general" | "account" | "apiKeys";
+type Tab = "general" | "account" | "apiKeys" | "experimental";
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -28,6 +29,12 @@ const API_KEYS_TAB: { id: Tab; label: string; icon: typeof faCog } = {
   icon: faKey,
 };
 
+const EXPERIMENTAL_TAB: { id: Tab; label: string; icon: typeof faCog } = {
+  id: "experimental",
+  label: "Experimental",
+  icon: faFlask,
+};
+
 export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   const { user } = useSession();
   const [tab, setTab] = useState<Tab>("general");
@@ -35,11 +42,16 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   const hasApiKeyFlag = !!user?.maybe_feature_flags?.includes(
     USER_FEATURE_FLAGS.API_KEY,
   );
+  // Source of truth shared with the 3D editor's scene-enhancement panel.
+  // Unlocked in dev by default (see experimental-store); production needs
+  // the experimental unlock.
+  const experimentalEnabled = useExperimentalStore((s) => s.enabled);
 
-  const tabs = useMemo(
-    () => (hasApiKeyFlag ? [...BASE_TABS, API_KEYS_TAB] : BASE_TABS),
-    [hasApiKeyFlag],
-  );
+  const tabs = useMemo(() => {
+    const list = hasApiKeyFlag ? [...BASE_TABS, API_KEYS_TAB] : [...BASE_TABS];
+    if (experimentalEnabled) list.push(EXPERIMENTAL_TAB);
+    return list;
+  }, [hasApiKeyFlag, experimentalEnabled]);
 
   useEffect(() => {
     if (isOpen) setTab("general");
@@ -94,6 +106,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
               {tab === "general" && <GeneralPanel />}
               {tab === "account" && <AccountPanel />}
               {tab === "apiKeys" && <ApiKeysPanel />}
+              {tab === "experimental" && <ExperimentalPanel />}
             </div>
           </div>
         </div>
@@ -122,6 +135,39 @@ function GeneralPanel() {
           setEnabled={setEnterToGenerate}
           offClassName="bg-white/20"
         />
+      </div>
+    </div>
+  );
+}
+
+function ExperimentalPanel() {
+  const sceneEnhancementEnabled = useExperimentalStore(
+    (s) => s.sceneEnhancementEnabled,
+  );
+  const setSceneEnhancementEnabled = useExperimentalStore(
+    (s) => s.setSceneEnhancementEnabled,
+  );
+
+  return (
+    <div className="space-y-4 text-base-fg">
+      <div className="flex flex-col gap-2 pt-3">
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+            <p className="text-sm font-medium">Scene enhancement</p>
+            <p className="text-xs opacity-70">
+              Adds an Enhance panel to the 3D editor for exporting and
+              re-importing a universal scene descriptor (and glTF/USDZ).
+              In-development; expect rough edges.
+            </p>
+          </div>
+          <div className="shrink-0">
+            <Switch
+              enabled={sceneEnhancementEnabled}
+              setEnabled={setSceneEnhancementEnabled}
+              offClassName="bg-white/20"
+            />
+          </div>
+        </div>
       </div>
     </div>
   );

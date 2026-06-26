@@ -879,7 +879,10 @@ class Editor {
     this.entranceAnimator.tick(delta_time);
 
     this.activeScene.shader_objects.forEach((shader) => {
-      shader.material.uniforms["time"].value += 0.5 * delta_time;
+      // Guard: custom (LLM-authored) shader materials may not carry a
+      // `time` uniform — only tick the ones that do.
+      const timeUniform = shader.material?.uniforms?.["time"];
+      if (timeUniform) timeUniform.value += 0.5 * delta_time;
     });
 
     if (this.utils.getSelectedSum() !== this.selection.last_selected_sum) {
