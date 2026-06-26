@@ -181,6 +181,32 @@ export { default as dragAndDrop } from "./lib/DragAndDrop/DndAsset";
 // Scene-generation metadata helper (used by save flow + cache snapshot).
 export { getSceneGenerationMetaData } from "./lib/sceneMetadata";
 
+// Experimental "scene enhancement" — universal scene descriptor round-trip
+// (export → edit/LLM → apply) plus glTF/USDZ universal export.
+export {
+  SCENE_DESCRIPTOR_VERSION,
+  GRAY_BOX_COLOR,
+  buildSceneDescriptor,
+  applySceneDescriptor,
+  exportSceneToGltf,
+  exportSceneToUsdz,
+} from "./lib/scene_descriptor";
+export type {
+  SceneDescriptor,
+  DescriptorEntity,
+  DescriptorEntityKind,
+  DescriptorTransform,
+  DescriptorCamera,
+  DescriptorEnvironment,
+  ApplyResult,
+} from "./lib/scene_descriptor";
+export { SceneDescriptorPanel } from "./lib/comps/SceneDescriptorPanel";
+export {
+  useExperimentalFlag,
+  useSceneEnhancementFlag,
+  SCENE_ENHANCEMENT_FLAG_KEY,
+} from "./lib/hooks/useExperimentalFlag";
+
 // React UI components. Viewport-dependent comps read viewport size
 // through useViewportSize, which falls back to window.innerWidth/
 // innerHeight when no host adapter is available.

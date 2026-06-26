@@ -52,6 +52,7 @@ import { FocalLengthDisplay } from "./comps/FocalLengthDisplay/FocalLengthDispla
 import { OnboardingHelper } from "./comps/OnboardingHelper";
 import { PerfStatsOverlay } from "./comps/PerfStatsOverlay";
 import { EntranceDebugPanel } from "./comps/EntranceDebugPanel";
+import { SceneDescriptorPanel } from "./comps/SceneDescriptorPanel";
 import { Outliner } from "./comps/Outliner";
 import { PoseModeSelector } from "./comps/PoseModeSelector";
 import { PreviewBox } from "./comps/PreviewBox";
@@ -63,6 +64,7 @@ import { useFreeCam } from "./hooks/useFreeCam";
 import { useViewportPointer } from "./hooks/useViewportPointer";
 import { useViewportKeyboard } from "./hooks/useViewportKeyboard";
 import { useViewportSize } from "./hooks/useViewportSize";
+import { useSceneEnhancementFlag } from "./hooks/useExperimentalFlag";
 import { GridVisibleChangedEvent } from "./engine/events/EngineEvent";
 import { pickDropPosition } from "./engine/pickDropPosition";
 import { AssetType, CameraAspectRatio } from "./enums";
@@ -212,6 +214,7 @@ export const Stage3DBody = ({
   );
 
   const editor = useContext(EngineContext);
+  const sceneEnhancementEnabled = useSceneEnhancementFlag();
 
   // Reactive viewport sizing. useViewportSize listens to window
   // resize and re-renders the component. Falls back to
@@ -435,6 +438,7 @@ export const Stage3DBody = ({
 
             <PerfStatsOverlay />
             {import.meta.env.DEV && <EntranceDebugPanel />}
+            {sceneEnhancementEnabled && <SceneDescriptorPanel />}
             <FocalLengthDisplay />
             <PoseModeSelector />
 

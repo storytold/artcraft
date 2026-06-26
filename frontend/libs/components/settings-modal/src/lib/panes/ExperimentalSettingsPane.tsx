@@ -18,11 +18,25 @@ export const ExperimentalSettingsPane = ({ onStoryboardPageDisable }: Props) => 
   const setStoryboardPageEnabled = useExperimentalStore(
     (s) => s.setStoryboardPageEnabled,
   );
+  const sceneEnhancementEnabled = useExperimentalStore(
+    (s) => s.sceneEnhancementEnabled,
+  );
+  const setSceneEnhancementEnabled = useExperimentalStore(
+    (s) => s.setSceneEnhancementEnabled,
+  );
   const [isDisableConfirmOpen, setIsDisableConfirmOpen] = useState(false);
 
   const fireToggleEvent = (enabled: boolean) => {
     gtagEvent("toggle_experimental_feature", {
       feature: "storyboard_page",
+      enabled: String(enabled),
+    });
+  };
+
+  const handleSceneEnhancementToggle = (enabled: boolean) => {
+    setSceneEnhancementEnabled(enabled);
+    gtagEvent("toggle_experimental_feature", {
+      feature: "scene_enhancement",
       enabled: String(enabled),
     });
   };
@@ -57,6 +71,23 @@ export const ExperimentalSettingsPane = ({ onStoryboardPageDisable }: Props) => 
           <Switch
             enabled={storyboardPageEnabled}
             setEnabled={handleStoryboardToggle}
+          />
+        </div>
+
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex flex-col gap-0.5">
+            <Label htmlFor="experimental-scene-enhancement">
+              Scene enhancement
+            </Label>
+            <p className="text-xs opacity-70">
+              Adds an Enhance panel to the 3D editor for exporting and
+              re-importing a universal scene descriptor (and glTF/USDZ).
+              In-development; expect rough edges.
+            </p>
+          </div>
+          <Switch
+            enabled={sceneEnhancementEnabled}
+            setEnabled={handleSceneEnhancementToggle}
           />
         </div>
       </div>
