@@ -748,6 +748,12 @@ export const GalleryModal = React.memo(
       const modalIsOpen =
         isOpen || (mode === "view" && galleryModalVisibleViewMode.value);
       if (!modalIsOpen) return;
+      // Clear any stale drag-under state from a previous session. A canvas-drop
+      // close (reopen-off) intentionally leaves this true so the panel stays
+      // faded through the close animation; if we didn't reset it on reopen, the
+      // freshly-opened modal would render hidden (contentHidden) and the user
+      // couldn't see it — making the library button appear broken.
+      galleryModalDraggingUnder.value = false;
       let cancelled = false;
       (async () => {
         setUsernameError(false);

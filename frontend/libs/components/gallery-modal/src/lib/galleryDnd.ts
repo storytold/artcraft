@@ -1,5 +1,6 @@
 import { GalleryItem } from "./gallery-modal";
 import {
+  galleryDragHidesImmediately,
   galleryModalDraggingUnder,
   galleryModalVisibleViewMode,
   galleryReopenAfterDragSignal,
@@ -13,6 +14,11 @@ interface DragState {
   startY: number;
   currX: number;
   currY: number;
+  // True once the cursor has left the modal bounds during a drag. We only then
+  // make the modal pointer-transparent so the drop can pass through to the
+  // canvas. While the cursor is still over the modal (e.g. aiming at a sidebar
+  // folder), the modal stays fully visible and interactive.
+  modalHidden: boolean;
 }
 
 const dragState: DragState = {
@@ -23,6 +29,7 @@ const dragState: DragState = {
   startY: 0,
   currX: 0,
   currY: 0,
+  modalHidden: false,
 };
 
 const dragThreshold = 5;
@@ -121,9 +128,28 @@ function onPointerDown(
   dragState.currX = event.pageX;
   dragState.currY = event.pageY;
   dragState.isDragging = false;
+  dragState.modalHidden = false;
   document.body.style.cursor = "grabbing";
   window.addEventListener("pointermove", onPointerMove);
   window.addEventListener("pointerup", onPointerUp);
+}
+
+/**
+ * Whether a screen point is outside the gallery modal's content bounds. Used to
+ * decide when to make the modal pointer-transparent so a drag can pass under it
+ * onto the canvas. Returns false (treat as inside) when the modal element can't
+ * be found, so we never hide it spuriously.
+ */
+function isOutsideModal(clientX: number, clientY: number): boolean {
+  const modalEl = document.querySelector("[data-gallery-modal]");
+  if (!modalEl) return false;
+  const rect = modalEl.getBoundingClientRect();
+  return (
+    clientX < rect.left ||
+    clientX > rect.right ||
+    clientY < rect.top ||
+    clientY > rect.bottom
+  );
 }
 
 /**
@@ -160,17 +186,30 @@ function onPointerMove(event: PointerEvent) {
   ) {
     dragState.isDragging = true;
     createDragPreview(dragState.items.length);
-    // Let pointer events pass through the gallery the moment the drag begins, so
-    // the item can be dropped anywhere — including under the modal. The panel
-    // eases to translucent (reopen on) or all the way out (reopen off) via the
-    // Modal's contentDimmed/contentHidden, so the transition is never abrupt.
-    galleryModalDraggingUnder.value = true;
+    // Hosts with a full-screen canvas behind the modal (e.g. the 3D editor)
+    // hide the gallery the instant the drag starts so the asset can drop
+    // straight into the scene — folders are still hit-tested geometrically.
+    if (galleryDragHidesImmediately.value) {
+      dragState.modalHidden = true;
+      galleryModalDraggingUnder.value = true;
+    }
   }
   dragState.currX = event.pageX;
   dragState.currY = event.pageY;
 
   if (dragState.isDragging) {
     updateDragPreviewPosition(event.clientX, event.clientY);
+
+    // Otherwise only make the modal pointer-transparent once the cursor leaves
+    // its bounds — that's when the user intends a drop onto the canvas behind
+    // it. While the cursor is still over the modal (e.g. aiming at a sidebar
+    // folder) the modal stays fully visible and interactive so folders can be
+    // targeted. Once hidden it stays hidden for the rest of the drag, so
+    // re-entering the (now transparent) panel area doesn't flicker it back.
+    if (!dragState.modalHidden && isOutsideModal(event.clientX, event.clientY)) {
+      dragState.modalHidden = true;
+      galleryModalDraggingUnder.value = true;
+    }
 
     // Highlight the folder under the cursor (if any) — folders still accept
     // drops even while the gallery is dimmed.
@@ -243,10 +282,13 @@ function onPointerUp(event: PointerEvent) {
       emitFolderDrop(dragState.items, folderId);
       spawnDropRipple(event.clientX, event.clientY);
     } else if (
-      dragState.item.mediaClass === "image" ||
-      dragState.item.mediaClass === "dimensional"
+      dragState.modalHidden &&
+      (dragState.item.mediaClass === "image" ||
+        dragState.item.mediaClass === "dimensional")
     ) {
-      // Dropped onto the canvas (anywhere not on a folder) — add to the scene.
+      // The cursor left the modal and dropped onto the canvas (not a folder) —
+      // add to the scene. Gated on `modalHidden` so a missed folder drop *inside*
+      // the modal is a harmless no-op rather than a scene-add that closes it.
       emitImageDrop(dragState.item, { x: event.pageX, y: event.pageY });
       spawnDropRipple(event.clientX, event.clientY);
       // Close the gallery after adding unless the user asked it to stay open.
@@ -267,6 +309,7 @@ function onPointerUp(event: PointerEvent) {
   dragState.item = null;
   dragState.items = [];
   dragState.isDragging = false;
+  dragState.modalHidden = false;
 
   // Refocus the gallery (un-dim, restore pointer events) — unless it's closing,
   // in which case it stays faded until reopened (reset on open).
