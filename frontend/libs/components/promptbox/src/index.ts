@@ -3,5 +3,8 @@ export * from "./lib/PromptBox3D";
 export * from "./lib/PromptBoxEdit";
 export * from "./lib/PromptBoxVideo";
 export * from "./lib/PromptBoxImage";
+export * from "./lib/useAutoGrowEditorHeight";
+export * from "./lib/PromptFullscreenModal";
+export * from "./lib/PromptFullscreenButton";
 export * from "./lib/promptStore";
 export * from "./lib/PromptBoxErrorBoundary";

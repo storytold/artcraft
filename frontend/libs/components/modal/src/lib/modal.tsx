@@ -1042,7 +1042,8 @@ export const Modal = ({
                         ),
                         transform: to(
                           [styles.transform, dimSpring.factor],
-                          (tr, f) => `${tr} scale(${0.93 + 0.07 * (f as number)})`,
+                          (tr, f) =>
+                            `${tr} scale(${0.93 + 0.07 * (f as number)})`,
                         ),
                         transformOrigin: "center center",
                         willChange: "transform, opacity", // Optimize for animations

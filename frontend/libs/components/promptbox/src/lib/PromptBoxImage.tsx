@@ -19,6 +19,9 @@ import {
   RefImage,
   useEnterToGenerateStore,
 } from "./promptStore";
+import { useAutoGrowEditorHeight } from "./useAutoGrowEditorHeight";
+import { PromptFullscreenModal, useFullscreenPrompt } from "./PromptFullscreenModal";
+import { PromptFullscreenButton } from "./PromptFullscreenButton";
 import { gtagEvent } from "@storyteller/google-analytics";
 import { twMerge } from "tailwind-merge";
 import { ImagePromptRow } from "./ImagePromptRow";
@@ -101,20 +104,16 @@ export const PromptBoxImage = ({
   const setGenerationCount = usePromptImageStore((s) => s.setGenerationCount);
   const [isEnqueueing, setIsEnqueueing] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
-  const [isExpanded, setIsExpanded] = useState(false);
 
-  // CSS viewport units handle resize reactivity automatically
-  const EXPANDED_HEIGHT = "clamp(120px, calc(100vh - 700px), 500px)";
-
-  const toggleExpand = () => {
-    setIsExpanded((prev) => {
-      const next = !prev;
-      if (textareaRef.current) {
-        textareaRef.current.style.height = next ? EXPANDED_HEIGHT : "auto";
-      }
-      return next;
-    });
-  };
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  // Collapsed auto-grow + manual expand, position-aware and recomputed only on
+  // toggle / content change / viewport resize (not every render).
+  const { isExpanded, toggleExpand } = useAutoGrowEditorHeight(
+    textareaRef,
+    prompt,
+  );
+  const { isFullscreen, openFullscreen, closeFullscreen } =
+    useFullscreenPrompt();
 
   const referenceImages = usePromptImageStore((s) => s.referenceImages);
   const setReferenceImages = usePromptImageStore((s) => s.setReferenceImages);
@@ -175,22 +174,6 @@ export const PromptBoxImage = ({
       icon: <FontAwesomeIcon icon={faExpand} className="h-4 w-4" />,
     },
   ]);
-
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
-
-  useEffect(() => {
-    if (textareaRef.current) {
-      // Hard pixel limit so the resize handle can never exceed viewport
-      const maxH = isExpanded ? 500 : Math.min(window.innerHeight - 700, 500);
-      textareaRef.current.style.maxHeight = `${Math.max(maxH, 88)}px`;
-      textareaRef.current.style.minHeight = "0";
-      if (!isExpanded) {
-        // Cap auto-grow at ~5.5em so it doesn't fight with manual resize
-        const capped = Math.min(textareaRef.current.scrollHeight, 88);
-        textareaRef.current.style.minHeight = `${capped}px`;
-      }
-    }
-  });
 
   useEffect(() => {
     if (imageMediaId && url) {
@@ -467,7 +450,7 @@ export const PromptBoxImage = ({
                 ref={textareaRef}
                 rows={1}
                 placeholder="Describe what you want in the image..."
-                className="promptbox-scrollbar text-md mb-2 min-h-[2.5em] w-full resize-y overflow-y-auto rounded bg-transparent pb-2 pr-2 pt-1 text-base-fg placeholder-base-fg/60 focus:outline-none"
+                className="promptbox-scrollbar text-md mb-2 min-h-[2.5em] w-full resize-y overflow-y-auto rounded bg-transparent pb-2 pr-8 pt-1 text-base-fg placeholder-base-fg/60 transition-[height] duration-200 ease-out focus:outline-none"
                 value={prompt}
                 onChange={handleChange}
                 onPaste={handlePaste}
@@ -475,6 +458,7 @@ export const PromptBoxImage = ({
                 onFocus={() => setIsFocused(true)}
                 onBlur={() => setIsFocused(false)}
               />
+              <PromptFullscreenButton onClick={openFullscreen} />
               <span
                 className={`absolute -bottom-1 right-0 text-[10px] tabular-nums ${isFinite(maxLen) && prompt.length > maxLen ? "text-red-500" : "text-base-fg/40"}`}
               >
@@ -585,6 +569,21 @@ export const PromptBoxImage = ({
           </div>
         </div>
       </div>
+      <PromptFullscreenModal
+        isOpen={isFullscreen}
+        onClose={closeFullscreen}
+        promptLength={prompt.length}
+        maxLength={maxLen}
+      >
+        <textarea
+          placeholder="Describe what you want in the image..."
+          className="promptbox-scrollbar text-md h-full w-full resize-none rounded bg-transparent text-base-fg placeholder-base-fg/60 focus:outline-none"
+          value={prompt}
+          onChange={handleChange}
+          onPaste={handlePaste}
+          onKeyDown={handleKeyDown}
+        />
+      </PromptFullscreenModal>
     </>
   );
 };

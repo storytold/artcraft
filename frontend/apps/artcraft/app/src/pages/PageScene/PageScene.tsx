@@ -70,6 +70,7 @@ export const PageScene = ({ sceneToken }: { sceneToken?: string }) => {
         sceneToken={sceneToken}
         cacheJsonString={cacheJsonString}
         onSceneSerialized={onSceneSerialized}
+        modelSelectorPlacement="prompt-box"
       />
     </div>
   );

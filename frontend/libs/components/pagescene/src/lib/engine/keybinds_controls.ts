@@ -239,6 +239,10 @@ export class MouseControls {
 
     if (currentObject.userData.isCharacter) {
       this.deps.bus.emit(new PoseControlsVisibilityChangedEvent(true));
+    } else {
+      // Selecting a non-character object must hide the pose controls; otherwise
+      // the floating pose button stays stuck from a prior character selection.
+      this.deps.bus.emit(new PoseControlsVisibilityChangedEvent(false));
     }
 
     // Normal selection behavior
@@ -306,6 +310,10 @@ export class MouseControls {
       if (this.deps.getPoseMode() === "pose") {
         this.deps.bus.emit(new PoseModeChangedEvent("select"));
       }
+      // NB: Do NOT hide the pose controls here. Leaving pose mode ("Done") while
+      // the character is still selected should keep the button visible and just
+      // flip it back to "Enter Pose Mode". It only dismisses on actual
+      // deselection (empty-space / Escape / Delete / selecting a non-character).
       console.log("FK mode off");
       return;
     }

@@ -305,6 +305,9 @@ export function Viewer3D({
       });
     } else {
       const loader = new GLTFLoader();
+      // Anonymous CORS keeps the WebGL canvas untainted so thumbnail capture
+      // (offscreen toDataURL elsewhere) works on models loaded from the CDN.
+      loader.setCrossOrigin("anonymous");
       loader.load(
         modelUrl,
         (gltf) => {

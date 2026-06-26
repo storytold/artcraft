@@ -49,6 +49,11 @@ import {
 import { GenerationProvider } from "@storyteller/api-enums";
 import { ImagePromptRow } from "./ImagePromptRow";
 import { AspectRatioPicker } from "./common/AspectRatioPicker";
+import {
+  PromptFullscreenModal,
+  useFullscreenPrompt,
+} from "./PromptFullscreenModal";
+import { PromptFullscreenButton } from "./PromptFullscreenButton";
 
 interface PromptBox3DProps {
   cameras: Camera[];
@@ -136,6 +141,8 @@ export const PromptBox3D = ({
   const setResolution = usePrompt3DStore((s) => s.setResolution);
   const [isEnqueueing, setIsEnqueueing] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
+  const { isFullscreen, openFullscreen, closeFullscreen } =
+    useFullscreenPrompt();
 
   const toggleExpand = () => {
     setIsExpanded((prev) => {
@@ -684,7 +691,7 @@ export const PromptBox3D = ({
                 ref={textareaRef}
                 rows={1}
                 placeholder="Describe your image..."
-                className={`promptbox-scrollbar text-md mb-2 min-h-[2.5em] w-full resize-y overflow-y-auto rounded bg-transparent pb-2 pr-2 pt-1 text-base-fg placeholder-base-fg/60 focus:outline-none ${isExpanded ? "max-h-[300px]" : "max-h-[5.5em]"}`}
+                className={`promptbox-scrollbar text-md mb-2 min-h-[2.5em] w-full resize-y overflow-y-auto rounded bg-transparent pb-2 pr-8 pt-1 text-base-fg placeholder-base-fg/60 focus:outline-none ${isExpanded ? "max-h-[300px]" : "max-h-[5.5em]"}`}
                 value={prompt}
                 onChange={handleChange}
                 onPaste={handlePaste}
@@ -698,6 +705,7 @@ export const PromptBox3D = ({
                   setIsPromptBoxFocused(false);
                 }}
               />
+              <PromptFullscreenButton onClick={openFullscreen} />
               <span
                 className={`absolute -bottom-1 right-0 text-[10px] tabular-nums ${isFinite(maxLen) && prompt.length > maxLen ? "text-red-500" : "text-base-fg/40"}`}
               >
@@ -885,6 +893,29 @@ export const PromptBox3D = ({
           setFocalLengthDragging={setFocalLengthDragging}
         />
       </div>
+      <PromptFullscreenModal
+        isOpen={isFullscreen}
+        onClose={closeFullscreen}
+        promptLength={prompt.length}
+        maxLength={maxLen}
+      >
+        <textarea
+          placeholder="Describe your image..."
+          className="promptbox-scrollbar text-md h-full w-full resize-none rounded bg-transparent text-base-fg placeholder-base-fg/60 focus:outline-none"
+          value={prompt}
+          onChange={handleChange}
+          onPaste={handlePaste}
+          onKeyDown={handleKeyDown}
+          onFocus={() => {
+            disableHotkeyInput(DomLevels.INPUT);
+            setIsPromptBoxFocused(true);
+          }}
+          onBlur={() => {
+            enableHotkeyInput(DomLevels.INPUT);
+            setIsPromptBoxFocused(false);
+          }}
+        />
+      </PromptFullscreenModal>
     </>
   );
 };

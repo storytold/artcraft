@@ -43,6 +43,11 @@ import { CharactersModal } from "./CharactersModal";
 import { CharactersApi } from "@storyteller/api";
 import { MentionTextarea } from "./MentionTextarea";
 import type { MentionItem } from "./MentionTextarea";
+import {
+  PromptFullscreenModal,
+  useFullscreenPrompt,
+} from "./PromptFullscreenModal";
+import { PromptFullscreenButton } from "./PromptFullscreenButton";
 
 declare global {
   interface Window {
@@ -165,6 +170,8 @@ export const PromptBoxVideo = ({
   const [isEnqueueing, setIsEnqueueing] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
+  const { isFullscreen, openFullscreen, closeFullscreen } =
+    useFullscreenPrompt();
   const [isCharactersModalOpen, setIsCharactersModalOpen] = useState(false);
 
   // Characters store for @-mentions
@@ -1048,7 +1055,7 @@ export const PromptBoxVideo = ({
                       ? "Use @Image1, @Video1, @Audio1... to reference uploads in prompt..."
                       : "Describe what you want to happen in the video..."
                   }
-                  className="promptbox-scrollbar text-md relative mb-2 min-h-[2.5em] w-full resize-y overflow-y-auto rounded bg-transparent pb-2 pr-2 pt-1 text-base-fg"
+                  className="promptbox-scrollbar text-md relative mb-2 min-h-[2.5em] w-full resize-y overflow-y-auto rounded bg-transparent pb-2 pr-8 pt-1 text-base-fg"
                   onKeyDown={(e) => {
                     if (e.key !== "Enter") return;
                     const isSubmitCombo = enterToGenerate && !e.shiftKey;
@@ -1071,7 +1078,7 @@ export const PromptBoxVideo = ({
                   ref={textareaRef}
                   rows={1}
                   placeholder="Describe what you want to happen in the video..."
-                  className="promptbox-scrollbar text-md relative mb-2 min-h-[2.5em] w-full resize-y overflow-y-auto rounded bg-transparent pb-2 pr-2 pt-1 text-base-fg placeholder-base-fg/60 focus:outline-none"
+                  className="promptbox-scrollbar text-md relative mb-2 min-h-[2.5em] w-full resize-y overflow-y-auto rounded bg-transparent pb-2 pr-8 pt-1 text-base-fg placeholder-base-fg/60 focus:outline-none"
                   value={prompt}
                   onChange={handleChange}
                   onPaste={handlePaste}
@@ -1080,6 +1087,7 @@ export const PromptBoxVideo = ({
                   onBlur={() => setIsFocused(false)}
                 />
               )}
+              <PromptFullscreenButton onClick={openFullscreen} />
               <span
                 className={`absolute -bottom-1 right-0 text-[10px] tabular-nums ${isFinite(maxLen) && prompt.length > maxLen ? "text-red-500" : "text-base-fg/40"}`}
               >
@@ -1323,6 +1331,36 @@ export const PromptBoxVideo = ({
         onDownloadClicked={downloadFileFromUrl}
         forceFilter="image"
       />
+      <PromptFullscreenModal
+        isOpen={isFullscreen}
+        onClose={closeFullscreen}
+        promptLength={prompt.length}
+        maxLength={maxLen}
+      >
+        {hasAnyMentionables ? (
+          <MentionTextarea
+            value={prompt}
+            onChange={setPrompt}
+            mentionItems={allMentionItems}
+            colorMap={mentionColorMap}
+            placeholder={
+              isReferenceMode
+                ? "Use @Image1, @Video1, @Audio1... to reference uploads in prompt..."
+                : "Describe what you want to happen in the video..."
+            }
+            className="promptbox-scrollbar text-md h-full w-full resize-none overflow-y-auto rounded bg-transparent text-base-fg"
+          />
+        ) : (
+          <textarea
+            placeholder="Describe what you want to happen in the video..."
+            className="promptbox-scrollbar text-md h-full w-full resize-none rounded bg-transparent text-base-fg placeholder-base-fg/60 focus:outline-none"
+            value={prompt}
+            onChange={handleChange}
+            onPaste={handlePaste}
+            onKeyDown={handleKeyDown}
+          />
+        )}
+      </PromptFullscreenModal>
     </>
   );
 };

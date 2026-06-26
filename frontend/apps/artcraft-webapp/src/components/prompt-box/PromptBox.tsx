@@ -23,6 +23,11 @@ import { MentionTextarea } from "./MentionTextarea";
 import { getMentionColor, buildMentionColorMap } from "./mention-colors";
 import type { RefImage, MentionItem } from "./types";
 import { useEnterToGenerateStore } from "../../lib/enter-to-generate-store";
+import {
+  PromptFullscreenButton,
+  PromptFullscreenModal,
+  useFullscreenPrompt,
+} from "./PromptFullscreen";
 
 // ── Props ───────────────────────────────────────────────────────────────
 
@@ -107,6 +112,8 @@ export const PromptBox = forwardRef<HTMLDivElement, PromptBoxProps>(
     const [isFocused, setIsFocused] = useState(false);
     const [isExpanded, setIsExpanded] = useState(false);
     const [showImagePrompts, setShowImagePrompts] = useState(false);
+    const { isFullscreen, openFullscreen, closeFullscreen } =
+      useFullscreenPrompt();
 
     const EXPANDED_HEIGHT = "clamp(120px, calc(100vh - 700px), 500px)";
 
@@ -386,7 +393,7 @@ export const PromptBox = forwardRef<HTMLDivElement, PromptBoxProps>(
                     mentionItems={mentionItems}
                     placeholder={placeholder}
                     className={twMerge(
-                      "promptbox-scrollbar min-h-[2.5em] w-full text-base-fg placeholder-base-fg/60",
+                      "promptbox-scrollbar min-h-[2.5em] w-full pr-8 text-base-fg placeholder-base-fg/60",
                       isExpanded ? "max-h-[500px]" : "max-h-[5.5em]",
                     )}
                     colorMap={mentionColorMap}
@@ -411,7 +418,7 @@ export const PromptBox = forwardRef<HTMLDivElement, PromptBoxProps>(
                         ref={highlightRef}
                         aria-hidden
                         className={twMerge(
-                          "pointer-events-none absolute inset-0 overflow-y-auto whitespace-pre-wrap break-words text-sm text-base-fg",
+                          "pointer-events-none absolute inset-0 overflow-y-auto whitespace-pre-wrap break-words pr-8 text-sm text-base-fg",
                           isExpanded ? "max-h-[500px]" : "max-h-[5.5em]",
                         )}
                       >
@@ -425,7 +432,7 @@ export const PromptBox = forwardRef<HTMLDivElement, PromptBoxProps>(
                       autoFocus
                       placeholder={placeholder}
                       className={twMerge(
-                        "promptbox-scrollbar min-h-[2.5em] w-full flex-1 resize-y overflow-y-auto bg-transparent text-md text-base-fg placeholder-base-fg/60 focus:outline-none",
+                        "promptbox-scrollbar min-h-[2.5em] w-full flex-1 resize-y overflow-y-auto bg-transparent pr-8 text-md text-base-fg placeholder-base-fg/60 focus:outline-none",
                         isExpanded ? "max-h-[500px]" : "max-h-[5.5em]",
                         hasMentionItems && "text-transparent caret-white",
                       )}
@@ -504,6 +511,7 @@ export const PromptBox = forwardRef<HTMLDivElement, PromptBoxProps>(
                     )}
                   </>
                 )}
+                <PromptFullscreenButton onClick={openFullscreen} />
               </div>
             </div>
 
@@ -547,6 +555,37 @@ export const PromptBox = forwardRef<HTMLDivElement, PromptBoxProps>(
             </div>
           </div>
         </div>
+        <PromptFullscreenModal isOpen={isFullscreen} onClose={closeFullscreen}>
+          {hasMentionItems && mentionItems ? (
+            <MentionTextarea
+              value={prompt}
+              onChange={onPromptChange}
+              mentionItems={mentionItems}
+              placeholder={placeholder}
+              className="promptbox-scrollbar h-full w-full text-base-fg placeholder-base-fg/60"
+              colorMap={mentionColorMap}
+              onKeyDown={(e) => {
+                if (
+                  e.key === "Enter" &&
+                  enterToGenerate &&
+                  !e.shiftKey &&
+                  !e.metaKey
+                ) {
+                  e.preventDefault();
+                  onSubmit();
+                }
+              }}
+            />
+          ) : (
+            <textarea
+              placeholder={placeholder}
+              className="promptbox-scrollbar text-md h-full w-full resize-none bg-transparent text-base-fg placeholder-base-fg/60 focus:outline-none"
+              value={prompt}
+              onChange={handleChange}
+              onKeyDown={handleKeyDown}
+            />
+          )}
+        </PromptFullscreenModal>
       </div>
     );
   },

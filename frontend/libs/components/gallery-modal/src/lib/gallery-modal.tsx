@@ -793,7 +793,10 @@ export const GalleryModal = React.memo(
           item.media_class === "video"
             ? item.media_links.maybe_video_previews?.animated
             : item.media_class === "dimensional"
-              ? item.cover_image?.maybe_cover_image_public_bucket_url
+              ? // Prefer the modern CDN link; fall back to the deprecated
+                // bucket URL for older responses.
+                (item.cover_image?.maybe_links?.cdn_url ??
+                item.cover_image?.maybe_cover_image_public_bucket_url)
               : getThumbnailUrl(item.media_links.maybe_thumbnail_template, {
                   width: THUMBNAIL_SIZES.MEDIUM,
                 }),
@@ -825,7 +828,9 @@ export const GalleryModal = React.memo(
         label: getLabel(item),
         thumbnail:
           item.media_class === "dimensional"
-            ? (item.cover_image?.maybe_cover_image_public_bucket_url ?? null)
+            ? (item.cover_image?.maybe_links?.cdn_url ??
+              item.cover_image?.maybe_cover_image_public_bucket_url ??
+              null)
             : getMediaThumbnail(item.media_links, item.media_class, {
                 size: THUMBNAIL_SIZES.MEDIUM,
               }),

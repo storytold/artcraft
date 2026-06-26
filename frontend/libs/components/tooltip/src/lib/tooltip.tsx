@@ -263,22 +263,51 @@ export const Tooltip = ({
     onOpenChange?.(isShowing);
   }, [isShowing, onOpenChange]);
 
+  // Force-dismiss when the trigger may have moved out from under the cursor
+  // without firing a pointerleave: window/focus loss (e.g. a tab/route change
+  // that re-renders the element under the pointer) and component unmount. Without
+  // this the tooltip stays stuck open until the user manually hovers + leaves.
+  useEffect(() => {
+    const forceClose = () => {
+      setIsHoveringTrigger(false);
+      setIsHoveringTooltip(false);
+      setIsShowing(false);
+    };
+    window.addEventListener("blur", forceClose);
+    document.addEventListener("visibilitychange", forceClose);
+    return () => {
+      window.removeEventListener("blur", forceClose);
+      document.removeEventListener("visibilitychange", forceClose);
+      forceClose();
+    };
+  }, []);
+
   const isFixed = strategy === "fixed";
 
   return (
     <div
       ref={triggerRef}
-      onMouseEnter={() => {
+      onPointerEnter={() => {
         setIsHoveringTrigger(true);
         if (!checkForOpenPopovers() && !disabled) {
           setIsShowing(true);
         }
       }}
-      onMouseLeave={() => {
+      onPointerLeave={() => {
         setIsHoveringTrigger(false);
         if (!interactive) {
           setIsShowing(false);
         }
+      }}
+      onPointerCancel={() => {
+        setIsHoveringTrigger(false);
+        setIsHoveringTooltip(false);
+        setIsShowing(false);
+      }}
+      onBlur={() => {
+        setIsHoveringTrigger(false);
+        setIsHoveringTooltip(false);
+        setIsShowing(false);
       }}
       onClick={handleClick}
       className="relative"
@@ -298,8 +327,8 @@ export const Tooltip = ({
       >
         <div
           ref={setTooltipRef}
-          onMouseEnter={() => interactive && setIsHoveringTooltip(true)}
-          onMouseLeave={() => interactive && setIsHoveringTooltip(false)}
+          onPointerEnter={() => interactive && setIsHoveringTooltip(true)}
+          onPointerLeave={() => interactive && setIsHoveringTooltip(false)}
           onClick={() => {
             if (closeOnClick) {
               setIsShowing(false);

@@ -50,6 +50,9 @@ async function captureModelThumbnail(modelUrl: string): Promise<string | null> {
       scene.add(frontLight);
 
       const loader = new GLTFLoader();
+      // Without anonymous CORS the GLTF + textures taint the WebGL canvas, so
+      // toDataURL() below throws a SecurityError and the thumbnail is lost.
+      loader.setCrossOrigin("anonymous");
       loader.load(
         modelUrl,
         (gltf) => {
@@ -99,7 +102,17 @@ async function captureModelThumbnail(modelUrl: string): Promise<string | null> {
 
           // Render and capture
           renderer.render(scene, camera);
-          const dataUrl = renderer.domElement.toDataURL("image/png");
+          let dataUrl: string | null = null;
+          try {
+            dataUrl = renderer.domElement.toDataURL("image/png");
+          } catch (err) {
+            // A tainted canvas (CORS) throws SecurityError here. Log so the
+            // failure is diagnosable instead of silently producing no thumbnail.
+            console.warn(
+              "[captureModelThumbnail] toDataURL failed (likely CORS taint):",
+              err,
+            );
+          }
 
           // Cleanup
           renderer.dispose();
