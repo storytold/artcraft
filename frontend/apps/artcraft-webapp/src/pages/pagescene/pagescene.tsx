@@ -13,6 +13,7 @@ import { Stage3D, usePageSceneStore } from "@storyteller/ui-pagescene";
 import {
   GalleryModal,
   GalleryDragComponent,
+  galleryDragHidesImmediately,
 } from "@storyteller/ui-gallery-modal";
 import { useSession } from "../../lib/session";
 import { useStage3DCostEstimate } from "../../lib/cost-estimate-api";
@@ -121,6 +122,17 @@ function PageSceneEditor() {
     setOpen(false);
     didAutoCollapseRef.current = true;
   }, [setOpen]);
+
+  // On the 3D editor the primary drop target is the scene behind the gallery
+  // modal, so dragging an asset should hide the gallery immediately (rather than
+  // only once the cursor leaves the modal). This page mounts/unmounts with the
+  // /edit-3d route, so flip the flag back off on leave.
+  useEffect(() => {
+    galleryDragHidesImmediately.value = true;
+    return () => {
+      galleryDragHidesImmediately.value = false;
+    };
+  }, []);
 
   useEffect(() => {
     usePageSceneStore.getState().setCurrentUserToken(user?.user_token);
