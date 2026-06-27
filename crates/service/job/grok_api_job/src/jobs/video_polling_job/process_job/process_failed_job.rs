@@ -45,7 +45,7 @@ pub async fn process_video_status_error(
   err: GrokError,
 ) {
   match &err {
-    GrokError::ApiSpecific(GrokSpecificApiError::NotFound) => {
+    GrokError::ApiSpecific(GrokSpecificApiError::NotFound { .. }) => {
       let reason_text = "Grok video job not found (likely expired)";
       info!(
         "Grok request {} for job {} not found. Marking job failed.",

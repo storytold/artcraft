@@ -103,12 +103,12 @@ pub async fn upload_file(args: UploadFileArgs<'_>) -> Result<UploadFileSuccess, 
   let req = args.request;
 
   if req.file_bytes.is_empty() {
-    return Err(crate::error::grok_specific_api_error::GrokSpecificApiError::BadRequest(
+    return Err(GrokClientError::InvalidRequest(
       "upload_file: file_bytes is empty".to_string(),
     ).into());
   }
   if req.file_bytes.len() as u64 > MAX_FILE_BYTES {
-    return Err(crate::error::grok_specific_api_error::GrokSpecificApiError::BadRequest(
+    return Err(GrokClientError::InvalidRequest(
       format!("upload_file: file_bytes is {} bytes, exceeds xAI's 50 MB limit", req.file_bytes.len()),
     ).into());
   }
@@ -192,7 +192,7 @@ mod tests {
       },
     }).await;
     let err = result.unwrap_err();
-    assert!(matches!(err, GrokError::ApiSpecific(GrokSpecificApiError::BadRequest(_))));
+    assert!(matches!(err, GrokError::Client(GrokClientError::InvalidRequest(_))));
   }
 
   #[tokio::test]
@@ -210,7 +210,7 @@ mod tests {
       },
     }).await;
     let err = result.unwrap_err();
-    assert!(matches!(err, GrokError::ApiSpecific(GrokSpecificApiError::BadRequest(_))));
+    assert!(matches!(err, GrokError::Client(GrokClientError::InvalidRequest(_))));
   }
 
   // ── Public Request shape — must not leak api_key OR file_bytes ──

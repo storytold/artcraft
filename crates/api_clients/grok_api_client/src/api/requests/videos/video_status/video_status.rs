@@ -400,7 +400,7 @@ mod tests {
   #[test]
   fn moderation_4xx_body_becomes_failed_content_moderated() {
     // The real-world body that previously surfaced as
-    // `Err(GrokSpecificApiError::PromptModerated(..))`. It should now be
+    // `Err(GrokSpecificApiError::PromptModerated { .. })`. It should now be
     // an Ok(Failed { ContentModerated }) with all fields populated from
     // the JSON.
     let body = r#"{"code":"Client specified an invalid argument","error":"Generated video rejected by content moderation.","usage":{"cost_in_usd_ticks":11300000000}}"#;
@@ -482,7 +482,7 @@ mod tests {
 
     println!("Result: {:?}", result.as_ref().map(|r| &r.status));
     let err = result.unwrap_err();
-    assert!(matches!(err, GrokError::ApiSpecific(GrokSpecificApiError::NotFound)),
+    assert!(matches!(err, GrokError::ApiSpecific(GrokSpecificApiError::NotFound { .. })),
       "expected NotFound, got: {:?}", err);
     Ok(())
   }

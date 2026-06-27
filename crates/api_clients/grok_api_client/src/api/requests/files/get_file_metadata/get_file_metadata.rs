@@ -134,7 +134,7 @@ mod tests {
       },
     }).await;
     let err = result.unwrap_err();
-    assert!(matches!(err, GrokError::ApiSpecific(GrokSpecificApiError::NotFound)),
+    assert!(matches!(err, GrokError::ApiSpecific(GrokSpecificApiError::NotFound { .. })),
       "expected NotFound, got: {:?}", err);
     Ok(())
   }
