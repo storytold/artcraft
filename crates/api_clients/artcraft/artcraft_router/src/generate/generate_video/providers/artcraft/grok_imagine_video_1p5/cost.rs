@@ -71,7 +71,7 @@ impl ArtcraftGrokImagineVideo1p5CostState {
     if self.input_image_count == 0 {
       return Err(ArtcraftRouterError::Client(ClientError::ModelDoesNotSupportOption {
         field: "image_inputs",
-        value: "text-to-video isn't supported by grok-imagine-video-1.5-preview; supply a start_frame or at least one reference image".to_string(),
+        value: "text-to-video isn't supported by grok-imagine-video-1.5; supply a start_frame or at least one reference image".to_string(),
       }));
     }
 
@@ -99,8 +99,9 @@ impl ArtcraftGrokImagineVideo1p5CostState {
   fn build_equivalent_grok_request(&self) -> GrokVideoGenerationRequest {
     let resolution = Some(match self.resolution {
       CommonResolution::FourEightyP => GrokResolution::FourEightyP,
-      // Grok Imagine caps at 720p (and our build step downgrades higher
-      // tiers via SupportedResolutions::Fast); price anything else as 720p.
+      CommonResolution::TenEightyP => GrokResolution::TenEightyP,
+      // Grok Imagine 1.5 tops out at 1080p (the build step downgrades higher
+      // tiers via SupportedResolutions::Full); price anything else as 720p.
       _ => GrokResolution::SevenTwentyP,
     });
 
@@ -119,7 +120,7 @@ impl ArtcraftGrokImagineVideo1p5CostState {
 
     GrokVideoGenerationRequest {
       prompt: String::new(),
-      model: Some(GrokVideoModel::GrokImagineVideo1p5Preview),
+      model: Some(GrokVideoModel::GrokImagineVideo1p5),
       image,
       reference_images,
       aspect_ratio: None,
@@ -317,12 +318,13 @@ mod tests {
     }
 
     #[test]
-    fn ten_eighty_p_request_clamps_to_720p_pricing() {
+    fn ten_eighty_p_prices_higher_than_720p() {
+      // Grok Imagine 1.5 now renders genuine 1080p ($0.25/s vs $0.14/s @ 720p).
       let p1080 = build_cost_via_builder(Some(RouterResolution::TenEightyP), 10, 1)
         .cost_in_usd_cents.unwrap();
       let p720 = build_cost_via_builder(Some(RouterResolution::SevenTwentyP), 10, 1)
         .cost_in_usd_cents.unwrap();
-      assert_eq!(p1080, p720);
+      assert!(p1080 > p720, "1080p ({p1080}) should cost more than 720p ({p720})");
     }
   }
 

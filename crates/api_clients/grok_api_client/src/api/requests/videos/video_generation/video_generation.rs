@@ -414,7 +414,7 @@ mod tests {
         api_key: &api_key,
         request: VideoGenerationRequest {
           prompt: "Timelapse of a flower blooming in a sunlit garden.".to_string(),
-          model: Some(VideoModel::GrokImagineVideo1p5Preview),
+          model: Some(VideoModel::GrokImagineVideo1p5),
           image: None,
           reference_images: None,
           aspect_ratio: Some(VideoAspectRatio::Landscape16x9),
@@ -441,7 +441,7 @@ mod tests {
         api_key: &api_key,
         request: VideoGenerationRequest {
           prompt: "The camera slowly pushes in toward the building as the sun sinks below the horizon. Soft golden light, gentle breeze rustling the trees.".to_string(),
-          model: Some(VideoModel::GrokImagineVideo1p5Preview),
+          model: Some(VideoModel::GrokImagineVideo1p5),
           image: Some(VideoImageSource::Url(WHITE_HOUSE_SUNSET_IMAGE_URL.to_string())),
           reference_images: None,
           aspect_ratio: Some(VideoAspectRatio::Landscape16x9),
@@ -472,7 +472,7 @@ mod tests {
         api_key: &api_key,
         request: VideoGenerationRequest {
           prompt: "The dogs from <IMAGE_1> in the scene from <IMAGE_2>. Make them play together.".to_string(),
-          model: Some(VideoModel::GrokImagineVideo1p5Preview),
+          model: Some(VideoModel::GrokImagineVideo1p5),
           image: None,
           reference_images: Some(vec![
             VideoImageSource::Url(TALL_MOCHI_WITH_GLASSES_IMAGE_URL.to_string()),

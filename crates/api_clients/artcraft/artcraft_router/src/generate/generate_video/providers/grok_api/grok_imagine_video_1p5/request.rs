@@ -15,7 +15,7 @@ use crate::generate::generate_video::generate_video_response::{
 #[derive(Clone, Debug)]
 pub struct GrokApiGrokImagineVideo1p5RequestState {
   /// The fully-resolved Grok request body, with `model` set to
-  /// `VideoModel::GrokImagineVideo1p5Preview`. Doesn't carry the API key —
+  /// `VideoModel::GrokImagineVideo1p5`. Doesn't carry the API key —
   /// that gets borrowed at send time from the router client.
   pub request: GrokVideoGenerationRequest,
 }
@@ -27,7 +27,7 @@ impl GrokApiGrokImagineVideo1p5RequestState {
     if self.request.image.is_none() && self.request.reference_images.is_none() {
       return Err(ArtcraftRouterError::Client(ClientError::ModelDoesNotSupportOption {
         field: "image_inputs",
-        value: "text-to-video isn't supported by grok-imagine-video-1.5-preview; supply a start_frame or at least one reference image".to_string(),
+        value: "text-to-video isn't supported by grok-imagine-video-1.5; supply a start_frame or at least one reference image".to_string(),
       }));
     }
 
@@ -77,7 +77,7 @@ mod tests {
       ..grok_builder()
     };
     let request = unwrap_request(builder);
-    assert_eq!(request.request.model, Some(VideoModel::GrokImagineVideo1p5Preview));
+    assert_eq!(request.request.model, Some(VideoModel::GrokImagineVideo1p5));
   }
 
   // ── Live API tests (manual) ──

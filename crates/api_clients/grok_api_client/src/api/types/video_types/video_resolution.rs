@@ -1,14 +1,7 @@
 /// Output resolution for `/v1/videos/generations`.
 ///
-/// Currently `480p` (server default) and `720p` are the only supported output
-/// resolutions. The xAI REST schema also lists `"1080p"`, but the capability
-/// page contradicts this — it documents that "a 1080p input will be downsized
-/// to 720p", indicating 720p is the actual output cap. We follow the
-/// capability page since it describes observed behavior rather than just the
-/// wire schema.
-///
-/// If/when xAI removes the cap and 1080p is genuinely produced as output,
-/// add a `TenEightyP` variant here.
+/// `480p` (server default), `720p`, and `1080p`. The 1.5 model produces
+/// genuine 1080p output (the original `grok-imagine-video` capped at 720p).
 ///
 /// Video edits (`/v1/videos/edits`) and extensions (`/v1/videos/extensions`)
 /// don't accept this field — they inherit the source video's resolution
@@ -22,8 +15,11 @@ pub enum VideoResolution {
   /// `"480p"` — standard definition, faster processing. Server default.
   FourEightyP,
 
-  /// `"720p"` — HD quality. Currently the maximum supported output resolution.
+  /// `"720p"` — HD quality.
   SevenTwentyP,
+
+  /// `"1080p"` — full HD. Supported by `grok-imagine-video-1.5`.
+  TenEightyP,
 }
 
 impl VideoResolution {
@@ -33,6 +29,7 @@ impl VideoResolution {
     match self {
       Self::FourEightyP  => "480p",
       Self::SevenTwentyP => "720p",
+      Self::TenEightyP   => "1080p",
     }
   }
 }
@@ -52,11 +49,13 @@ mod tests {
   fn matches_docs_strings() {
     assert_eq!(VideoResolution::FourEightyP.as_str(), "480p");
     assert_eq!(VideoResolution::SevenTwentyP.as_str(), "720p");
+    assert_eq!(VideoResolution::TenEightyP.as_str(), "1080p");
   }
 
   #[test]
   fn serializes_as_plain_wire_string() {
     assert_eq!(serde_json::to_string(&VideoResolution::FourEightyP).unwrap(), "\"480p\"");
     assert_eq!(serde_json::to_string(&VideoResolution::SevenTwentyP).unwrap(), "\"720p\"");
+    assert_eq!(serde_json::to_string(&VideoResolution::TenEightyP).unwrap(), "\"1080p\"");
   }
 }

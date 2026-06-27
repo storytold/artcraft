@@ -21,13 +21,13 @@ impl GrokApiGrokImagineVideo1p5CostState {
     if self.request.request.image.is_none() && self.request.request.reference_images.is_none() {
       return Err(ArtcraftRouterError::Client(ClientError::ModelDoesNotSupportOption {
         field: "image_inputs",
-        value: "text-to-video isn't supported by grok-imagine-video-1.5-preview; supply a start_frame or at least one reference image".to_string(),
+        value: "text-to-video isn't supported by grok-imagine-video-1.5; supply a start_frame or at least one reference image".to_string(),
       }));
     }
 
     // grok_api_client's calculator picks the v1.5 pricing tier from the
     // request's `model` field (see VideoModel::pricing_tier). The build step
-    // sets `model = Some(GrokImagineVideo1p5Preview)`, so this returns the
+    // sets `model = Some(GrokImagineVideo1p5)`, so this returns the
     // v1.5 rates:
     //   Output: 80 mills/s @ 480p, 140 mills/s @ 720p
     //   Input:  10 mills per source image
@@ -205,10 +205,11 @@ mod tests {
     }
 
     #[test]
-    fn ten_eighty_p_request_clamps_to_720p_pricing() {
+    fn ten_eighty_p_prices_higher_than_720p() {
+      // Grok Imagine 1.5 now renders genuine 1080p ($0.25/s vs $0.14/s @ 720p).
       let p1080 = cost_cents(Some(RouterResolution::TenEightyP), 10, None, None);
       let p720 = cost_cents(Some(RouterResolution::SevenTwentyP), 10, None, None);
-      assert_eq!(p1080, p720);
+      assert!(p1080 > p720, "1080p ({p1080}) should cost more than 720p ({p720})");
     }
   }
 
@@ -305,7 +306,7 @@ mod tests {
     fn estimate_cost_returns_err_when_no_image_sources() {
       let request = GrokVideoGenerationRequest {
         prompt: "text only".to_string(),
-        model: Some(GrokVideoModel::GrokImagineVideo1p5Preview),
+        model: Some(GrokVideoModel::GrokImagineVideo1p5),
         image: None,
         reference_images: None,
         aspect_ratio: None,

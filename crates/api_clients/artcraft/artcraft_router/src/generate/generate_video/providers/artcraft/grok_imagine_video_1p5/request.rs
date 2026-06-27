@@ -20,7 +20,7 @@ impl ArtcraftGrokImagineVideo1p5RequestState {
     {
       return Err(ArtcraftRouterError::Client(ClientError::ModelDoesNotSupportOption {
         field: "image_inputs",
-        value: "text-to-video isn't supported by grok-imagine-video-1.5-preview; supply a start_frame or at least one reference image".to_string(),
+        value: "text-to-video isn't supported by grok-imagine-video-1.5; supply a start_frame or at least one reference image".to_string(),
       }));
     }
 

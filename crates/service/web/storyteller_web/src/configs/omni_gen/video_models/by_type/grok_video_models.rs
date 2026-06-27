@@ -48,8 +48,8 @@ pub fn grok_video_models() -> Vec<OmniGenVideoModelDetails> {
   models.push(OmniGenVideoModelDetails {
     model: CommonVideoModel::GrokImagineVideo1p5,
     model_creator: Some(ModelCreator::Grok),
-    full_name: Some("Grok Imagine 1.5 Preview".to_string()),
-    extra_info: Some("Fast and high quality".to_string()),
+    full_name: Some("Grok Imagine 1.5".to_string()),
+    extra_info: Some("Fast and high quality. Requires a starting frame.".to_string()),
     extra_info_short: Some("Fast and high quality".to_string()),
     text_to_video_supported: Some(false), // NB: This might be temporary
     text_prompt_supported: Some(true),
@@ -75,6 +75,7 @@ pub fn grok_video_models() -> Vec<OmniGenVideoModelDetails> {
     resolution_options: Some(vec![
       CommonResolution::FourEightyP,
       CommonResolution::SevenTwentyP,
+      CommonResolution::TenEightyP,
     ]),
     resolution_default: Some(CommonResolution::SevenTwentyP),
     //batch_size_options: Some(vec![1, 2, 4]),

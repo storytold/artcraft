@@ -14,7 +14,7 @@ use crate::generate::generate_video::video_generation_request::VideoGenerationRe
 ///
 /// Same constraints as the v1 variant — xAI v1.5 still supports only 480p
 /// and 720p and no 21:9 ultra-wide. The on-wire model identifier is
-/// `grok-imagine-video-1.5-preview`; the cost calculator in
+/// `grok-imagine-video-1.5`; the cost calculator in
 /// [`super::cost`] keys off that to apply the v1.5 pricing tier (with a 5%
 /// ArtCraft markup on top of the upstream rates).
 pub fn build_artcraft_grok_imagine_video_1p5(
@@ -23,7 +23,7 @@ pub fn build_artcraft_grok_imagine_video_1p5(
   let request = build_artcraft_omni_video_request(
     builder,
     CommonVideoModelEnum::GrokImagineVideo1p5,
-    SupportedResolutions::Fast,
+    SupportedResolutions::Full,
     UltraWideSupport::Unsupported,
   )?;
 
@@ -34,7 +34,7 @@ pub fn build_artcraft_grok_imagine_video_1p5(
   {
     return Err(ArtcraftRouterError::Client(ClientError::ModelDoesNotSupportOption {
       field: "image_inputs",
-      value: "text-to-video isn't supported by grok-imagine-video-1.5-preview; supply a start_frame or at least one reference image".to_string(),
+      value: "text-to-video isn't supported by grok-imagine-video-1.5; supply a start_frame or at least one reference image".to_string(),
     }));
   }
 
@@ -113,10 +113,10 @@ mod tests {
     }
 
     #[test]
-    fn res_1080p_downgrades_to_720p() {
-      // SupportedResolutions::Fast caps at 720p (Grok Imagine doesn't render 1080p output).
+    fn res_1080p_is_supported() {
+      // Grok Imagine 1.5 produces genuine 1080p output.
       let req = unwrap_request(make_builder(|b| { b.resolution = Some(RouterResolution::TenEightyP); }));
-      assert_eq!(req.request.resolution, Some(CommonResolutionEnum::SevenTwentyP));
+      assert_eq!(req.request.resolution, Some(CommonResolutionEnum::TenEightyP));
     }
 
     #[test]

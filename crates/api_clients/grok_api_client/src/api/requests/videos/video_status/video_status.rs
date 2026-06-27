@@ -286,7 +286,7 @@ mod tests {
   #[test]
   fn pending_response_with_v1p5_model_does_not_break_dispatch() {
     // `model` doesn't surface on Pending; it flows through on Complete only.
-    let json = r#"{ "status": "pending", "progress": 5, "model": "grok-imagine-video-1.5-preview" }"#;
+    let json = r#"{ "status": "pending", "progress": 5, "model": "grok-imagine-video-1.5" }"#;
     let parsed: VideoStatusResponseBody = serde_json::from_str(json).unwrap();
     let result = classify_status_field(&parsed, json).unwrap();
     assert!(matches!(result.status, VideoStatus::Pending { .. }));
