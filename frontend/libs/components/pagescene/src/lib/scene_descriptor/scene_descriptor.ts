@@ -81,6 +81,10 @@ export interface DescriptorEntity {
   // The LLM-authored "custom mat" path. See ShaderMaterialSpec.
   material?: ShaderMaterialSpec;
 
+  // Keyframe animation that plays on this entity (transform and, for
+  // characters, bones). See AnimationSpec.
+  animation?: AnimationSpec;
+
   // Flat hex color, e.g. "#9a9a9a". Absent ⇒ gray-box default.
   color?: string;
   visible?: boolean;
@@ -135,12 +139,25 @@ export interface InstanceTransform {
 
 // Procedural placement — far cheaper for an LLM to emit than N explicit
 // instances. Deterministic given `seed`. Expanded to instances on apply.
+// The jitter knobs give an organic look (no two instances alike).
 export interface InstancingScatter {
   count: number;
   area: { x: number; z: number }; // spread, centered on the field origin
   seed?: number;
   yJitterDeg?: number; // random yaw range, default 360
   scaleRange?: [number, number]; // uniform scale range, default [1,1]
+  tiltDeg?: number; // random lean on X/Z, default 0 (e.g. 8 for trees)
+  colorJitter?: number; // 0..1 per-instance HSL variance off the base color
+}
+
+// GPU wind animation for an instanced field — a vertex shader driven by a
+// shared `time` uniform + per-instance phase. All instances sway together
+// (phase-shifted), one draw call, no per-frame CPU. Height-weighted, so
+// each instance pivots at its base (grass/foliage).
+export interface InstancingWind {
+  strength?: number; // sway distance at the tip, default 0.15
+  speed?: number; // oscillation speed, default 1.5
+  turbulence?: number; // adds a second frequency for choppier motion, default 0
 }
 
 export interface DescriptorInstancing {
@@ -148,6 +165,8 @@ export interface DescriptorInstancing {
   // Provide explicit instances OR a scatter spec (scatter wins if both).
   instances?: InstanceTransform[];
   scatter?: InstancingScatter;
+  // Optional GPU wind animation applied to every instance.
+  wind?: InstancingWind;
 }
 
 // ── Custom shader material (LLM-authored) ───────────────────────────────
@@ -164,6 +183,49 @@ export interface ShaderMaterialSpec {
   transparent?: boolean;
   doubleSide?: boolean;
   animated?: boolean; // tick the injected `time` uniform each frame
+}
+
+// ── Keyframe animation ──────────────────────────────────────────────────
+
+// One animated channel. Times are seconds; values are one per keyframe.
+//  - property "position" / "scale": values are Vec3 (world/local units)
+//  - property "rotationDeg":        values are Vec3 Euler degrees
+// target "object" (default) animates the entity itself; target "bone"
+// animates a named mixamo bone (characters only).
+export interface AnimationTrack {
+  target?: "object" | "bone";
+  bone?: string;
+  property: "position" | "rotationDeg" | "scale";
+  times: number[];
+  values: Vec3[];
+  interpolation?: "linear" | "smooth" | "discrete";
+}
+
+// A whole-body keyframe: the character's pose at one moment. Same sparse
+// shape as a static `pose` (only the bones you set), plus a time. This is
+// the easy way to author character motion — block a few key poses and the
+// engine interpolates between them. Bones omitted at a given keyframe just
+// don't get a key there (they interpolate between the keys that do set
+// them), so each limb can move on its own cadence.
+export interface PoseKeyframe {
+  timeSec: number;
+  rootPosition?: Vec3; // hip translation at this keyframe (for locomotion)
+  bones: Record<string, BonePose>;
+}
+
+// A keyframe animation on one entity, driven by a THREE.AnimationMixer.
+// Author it ONE of these ways:
+//  - poses:  a timeline of whole-body poses (best for characters: dance, walk)
+//  - tracks: per-channel curves (object transform or individual bones)
+//  - clip:   play a baked GLTF clip by name (e.g. a mixamo "Walk")
+export interface AnimationSpec {
+  clip?: string;
+  durationSec?: number; // inferred from key times if omitted
+  loop?: "repeat" | "once" | "pingpong"; // default repeat
+  timeScale?: number; // default 1
+  autoplay?: boolean; // default true
+  poses?: PoseKeyframe[];
+  tracks?: AnimationTrack[];
 }
 
 // One bone's editable local transform. Rotation only for now — that's

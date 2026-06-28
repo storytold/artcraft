@@ -46,6 +46,9 @@ export interface ObjectJSON {
   instancing?: any;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   shaderMaterial?: any;
+  // Keyframe animation spec (experimental scene descriptor).
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  animation?: any;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   user_data: Record<string, any>;
 }
@@ -74,6 +77,8 @@ export class StoryTellerProxy3DObject {
   instancing?: any;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   shaderMaterial?: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  animation?: any;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   userData: Record<string, any>;
 
@@ -165,6 +170,9 @@ export class StoryTellerProxy3DObject {
     }
     if (this.shaderMaterial) {
       json.shaderMaterial = this.shaderMaterial;
+    }
+    if (this.animation) {
+      json.animation = this.animation;
     }
     return json;
   }

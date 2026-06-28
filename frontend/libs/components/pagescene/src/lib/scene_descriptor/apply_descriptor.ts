@@ -176,6 +176,11 @@ function updateObjectInPlace(
   if (entity.material?.fragmentShader) {
     scene.applyShaderMaterial(obj.uuid, entity.material);
   }
+
+  // Keyframe animation — drives transform/bones each frame.
+  if (entity.animation) {
+    scene.attachAnimation(obj.uuid, entity.animation);
+  }
 }
 
 // Instantiate a primitive locally (no network) and stamp the userData the
@@ -242,7 +247,10 @@ async function createInstances(
   scene: Scene,
   entity: DescriptorEntity,
 ): Promise<THREE.Object3D | undefined> {
-  const resolved = resolveInstancing(entity.instancing);
+  const resolved = resolveInstancing(
+    entity.instancing,
+    entity.color || GRAY_BOX_COLOR,
+  );
   if (!resolved?.base) return undefined;
 
   const created = await scene.instantiateInstancedMesh(

@@ -38,6 +38,22 @@ void main() {
 }
 `;
 
+// Instancing-aware default vertex shader: same varyings, but places each
+// vertex through the per-instance `instanceMatrix` so a custom material on
+// an InstancedMesh keeps every instance in its scattered position.
+const DEFAULT_VERTEX_SHADER_INSTANCED = `
+attribute mat4 instanceMatrix;
+varying vec2 vUv;
+varying vec3 vNormal;
+varying vec3 vPosition;
+void main() {
+  vUv = uv;
+  vNormal = normalize(normalMatrix * normal);
+  vPosition = position;
+  gl_Position = projectionMatrix * modelViewMatrix * instanceMatrix * vec4(position, 1.0);
+}
+`;
+
 // Prepended to every custom fragment shader so the injected uniforms and
 // the default vertex varyings are always in scope.
 const SHADER_PREAMBLE = `
@@ -46,6 +62,40 @@ uniform vec2 resolution;
 varying vec2 vUv;
 varying vec3 vNormal;
 varying vec3 vPosition;
+`;
+
+// Built-in GPU wind for instanced fields (grass/foliage). Height-weighted
+// sway so each instance pivots at its base, with a per-instance phase so
+// the field doesn't move in unison — all on the GPU, one draw call.
+const WIND_VERTEX_SHADER = `
+attribute mat4 instanceMatrix;
+attribute float instancePhase;
+uniform float time;
+uniform float windStrength;
+uniform float windSpeed;
+uniform float windTurbulence;
+varying float vPhase;
+void main() {
+  vec3 pos = position;
+  float h = max(pos.y, 0.0);
+  float w = sin(time * windSpeed + instancePhase)
+          + windTurbulence * sin(time * windSpeed * 2.3 + instancePhase * 1.7);
+  float sway = w * windStrength * h;
+  pos.x += sway;
+  pos.z += sway * 0.35;
+  vPhase = instancePhase;
+  gl_Position = projectionMatrix * modelViewMatrix * instanceMatrix * vec4(pos, 1.0);
+}
+`;
+
+const WIND_FRAGMENT_SHADER = `
+uniform vec3 baseColor;
+varying float vPhase;
+void main() {
+  // Subtle per-instance shade variation (free organic colour).
+  float v = 0.85 + 0.15 * sin(vPhase * 3.1);
+  gl_FragColor = vec4(baseColor * v, 1.0);
+}
 `;
 
 // Capabilities Scene needs from outside its own state. Editor wires
@@ -89,6 +139,10 @@ class Scene {
 
   shader_objects: Water[] = [];
   video_planes: HTMLVideoElement[] = [];
+
+  // Per-object animation mixers (experimental scene descriptor), keyed by
+  // object uuid. Ticked each frame from the editor render loop.
+  animationMixers: Map<string, THREE.AnimationMixer> = new Map();
 
   skybox: string;
 
@@ -372,11 +426,33 @@ class Scene {
   ): Promise<THREE.InstancedMesh> {
     const instances: InstanceLike[] = spec?.instances ?? [];
     const geometry = this.buildBaseGeometry(spec?.base);
-    const material = new THREE.MeshPhongMaterial({
-      color: new THREE.Color(color),
-      side: THREE.DoubleSide,
-    });
-    material.shininess = 0.0;
+    const wind = spec?.wind;
+
+    // Wind = a GPU vertex shader driven by the shared `time` uniform +
+    // per-instance phase (one draw call, no per-frame CPU). Otherwise a
+    // flat gray-box Phong material.
+    let material: THREE.Material;
+    if (wind) {
+      material = new THREE.ShaderMaterial({
+        uniforms: {
+          time: { value: 0 },
+          windStrength: { value: wind.strength ?? 0.15 },
+          windSpeed: { value: wind.speed ?? 1.5 },
+          windTurbulence: { value: wind.turbulence ?? 0 },
+          baseColor: { value: new THREE.Color(color) },
+        },
+        vertexShader: WIND_VERTEX_SHADER,
+        fragmentShader: WIND_FRAGMENT_SHADER,
+        side: THREE.DoubleSide,
+      });
+    } else {
+      const phong = new THREE.MeshPhongMaterial({
+        color: new THREE.Color(color),
+        side: THREE.DoubleSide,
+      });
+      phong.shininess = 0.0;
+      material = phong;
+    }
 
     const count = Math.max(1, instances.length);
     const mesh = new THREE.InstancedMesh(geometry, material, count);
@@ -386,7 +462,8 @@ class Scene {
     const q = new THREE.Quaternion();
     const e = new THREE.Euler();
     const s = new THREE.Vector3(1, 1, 1);
-    const hasColors = instances.some((i) => !!i.color);
+    // Per-instance color only applies to the flat (non-wind) material.
+    const hasColors = !wind && instances.some((i) => !!i.color);
     if (hasColors) {
       mesh.instanceColor = new THREE.InstancedBufferAttribute(
         new Float32Array(count * 3),
@@ -408,6 +485,20 @@ class Scene {
     });
     mesh.instanceMatrix.needsUpdate = true;
     if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
+
+    // Wind: per-instance phase attribute + register for the per-frame
+    // `time` tick so the GPU sway animates.
+    if (wind) {
+      const phases = new Float32Array(count);
+      for (let i = 0; i < count; i++) phases[i] = (i * 2.399963) % 6.28318;
+      geometry.setAttribute(
+        "instancePhase",
+        new THREE.InstancedBufferAttribute(phases, 1),
+      );
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      this.shader_objects.push(mesh as any);
+    }
+
     mesh.castShadow = true;
     mesh.receiveShadow = true;
     mesh.name = "Instances";
@@ -436,14 +527,18 @@ class Scene {
   applyShaderMaterial(object_uuid: string, spec: any): void {
     const object = this.get_object_by_uuid(object_uuid);
     if (!object || !spec?.fragmentShader) return;
-    const material = this.buildShaderMaterial(spec);
     let registered = false;
     object.traverse((c: THREE.Object3D) => {
       if (!(c instanceof THREE.Mesh)) return;
-      c.material = material;
+      // InstancedMesh needs an instancing-aware vertex shader so each
+      // instance keeps its scattered position.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const instanced = (c as any).isInstancedMesh === true;
+      c.material = this.buildShaderMaterial(spec, instanced);
       // Register a single representative mesh for the time tick.
       if (spec.animated && !registered) {
-        this.shader_objects.push(c);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        this.shader_objects.push(c as any);
         registered = true;
       }
     });
@@ -451,14 +546,28 @@ class Scene {
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private buildShaderMaterial(spec: any): THREE.ShaderMaterial {
+  private buildShaderMaterial(spec: any, instanced = false): THREE.ShaderMaterial {
     const uniforms: Record<string, THREE.IUniform> = {
       time: { value: 0 },
       resolution: { value: new THREE.Vector2(1, 1) },
     };
+    // Build the value objects AND the GLSL declarations for custom
+    // uniforms. ShaderMaterial does NOT auto-declare uniforms in the shader
+    // source, so without these any custom uniform the author references
+    // (e.g. `tint`) is an undeclared identifier and the shader fails to
+    // compile. We infer the GLSL type from the value's arity.
     const raw = spec.uniforms ?? {};
+    const customDecls: string[] = [];
     for (const key of Object.keys(raw)) {
       const v = raw[key];
+      const glslType = Array.isArray(v)
+        ? v.length === 2
+          ? "vec2"
+          : v.length === 3
+            ? "vec3"
+            : "vec4"
+        : "float";
+      customDecls.push(`uniform ${glslType} ${key};`);
       uniforms[key] = {
         value: Array.isArray(v)
           ? v.length === 2
@@ -469,10 +578,16 @@ class Scene {
           : v,
       };
     }
+    const customUniformGlsl = customDecls.length
+      ? customDecls.join("\n") + "\n"
+      : "";
+
     return new THREE.ShaderMaterial({
       uniforms,
-      vertexShader: spec.vertexShader || DEFAULT_VERTEX_SHADER,
-      fragmentShader: SHADER_PREAMBLE + spec.fragmentShader,
+      vertexShader:
+        spec.vertexShader ||
+        (instanced ? DEFAULT_VERTEX_SHADER_INSTANCED : DEFAULT_VERTEX_SHADER),
+      fragmentShader: SHADER_PREAMBLE + customUniformGlsl + spec.fragmentShader,
       transparent: !!spec.transparent,
       side: spec.doubleSide ? THREE.DoubleSide : THREE.FrontSide,
     });
@@ -504,6 +619,181 @@ class Scene {
       default:
         return new THREE.BoxGeometry(1, 1, 1);
     }
+  }
+
+  // Attach (or replace) a keyframe animation on an object. Builds a
+  // THREE.AnimationClip from the spec's tracks (or plays a baked GLTF clip
+  // by name), drives it with an AnimationMixer, and registers the mixer for
+  // the per-frame tick. The spec is stashed on userData for round-trip.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  attachAnimation(object_uuid: string, spec: any): void {
+    const object = this.get_object_by_uuid(object_uuid);
+    if (!object || !spec) return;
+
+    // Replace any existing mixer on this object.
+    const existing = this.animationMixers.get(object_uuid);
+    if (existing) {
+      existing.stopAllAction();
+      this.animationMixers.delete(object_uuid);
+    }
+
+    const mixer = new THREE.AnimationMixer(object);
+    let clip: THREE.AnimationClip | null = null;
+
+    // Baked GLTF clip by name (e.g. a mixamo "Walk") if present.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const baked = (object as any).animations as THREE.AnimationClip[] | undefined;
+    if (spec.clip && baked && baked.length > 0) {
+      clip = THREE.AnimationClip.findByName(baked, spec.clip) ?? null;
+    }
+    if (!clip) clip = this.buildAnimationClip(spec);
+    if (!clip) return;
+
+    const action = mixer.clipAction(clip);
+    action.loop =
+      spec.loop === "once"
+        ? THREE.LoopOnce
+        : spec.loop === "pingpong"
+          ? THREE.LoopPingPong
+          : THREE.LoopRepeat;
+    if (spec.loop === "once") action.clampWhenFinished = true;
+    mixer.timeScale = spec.timeScale ?? 1;
+    if (spec.autoplay !== false) action.play();
+
+    this.animationMixers.set(object_uuid, mixer);
+    object.userData["animationSpec"] = spec;
+  }
+
+  // Advance all mixers. Called from the editor render loop each frame.
+  tickAnimations(delta: number): void {
+    this.animationMixers.forEach((mixer) => mixer.update(delta));
+  }
+
+  // Stop and drop all mixers (scene reset / reload).
+  clearAnimations(): void {
+    this.animationMixers.forEach((mixer) => mixer.stopAllAction());
+    this.animationMixers.clear();
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private buildAnimationClip(spec: any): THREE.AnimationClip | null {
+    const tracks: THREE.KeyframeTrack[] = [];
+    const q = new THREE.Quaternion();
+    const e = new THREE.Euler();
+    let maxTime = 0;
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    for (const t of (spec.tracks ?? []) as any[]) {
+      const times: number[] = t.times ?? [];
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const values: any[] = t.values ?? [];
+      if (times.length === 0 || values.length === 0) continue;
+      maxTime = Math.max(maxTime, ...times);
+
+      // Track node: "" → the object itself (root), else a child by name
+      // (e.g. a mixamo bone). PropertyBinding resolves names in the subtree.
+      const node = t.target === "bone" && t.bone ? t.bone : "";
+
+      if (t.property === "position" || t.property === "scale") {
+        const flat: number[] = [];
+        for (const v of values) flat.push(v.x ?? 0, v.y ?? 0, v.z ?? 0);
+        const track = new THREE.VectorKeyframeTrack(
+          `${node}.${t.property}`,
+          times,
+          flat,
+        );
+        this.applyTrackInterpolation(track, t.interpolation);
+        tracks.push(track);
+      } else if (t.property === "rotationDeg") {
+        const flat: number[] = [];
+        for (const v of values) {
+          e.set(
+            THREE.MathUtils.degToRad(v.x ?? 0),
+            THREE.MathUtils.degToRad(v.y ?? 0),
+            THREE.MathUtils.degToRad(v.z ?? 0),
+          );
+          q.setFromEuler(e);
+          flat.push(q.x, q.y, q.z, q.w);
+        }
+        // Quaternion tracks interpolate spherically by default.
+        tracks.push(
+          new THREE.QuaternionKeyframeTrack(`${node}.quaternion`, times, flat),
+        );
+      }
+    }
+
+    // Pose-keyframes: a timeline of whole-body poses → one
+    // QuaternionKeyframeTrack per bone (+ a root position track). Each
+    // bone only gets keys at the poses that set it, so limbs interpolate
+    // on their own cadence. This is the character-friendly authoring path.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const poses = spec.poses as any[] | undefined;
+    if (poses && poses.length > 0) {
+      const sorted = [...poses].sort(
+        (a, b) => (a.timeSec ?? 0) - (b.timeSec ?? 0),
+      );
+      const boneTimes: Record<string, number[]> = {};
+      const boneQuats: Record<string, number[]> = {};
+      const rootTimes: number[] = [];
+      const rootVals: number[] = [];
+
+      for (const pk of sorted) {
+        const t = pk.timeSec ?? 0;
+        maxTime = Math.max(maxTime, t);
+        if (pk.rootPosition) {
+          rootTimes.push(t);
+          rootVals.push(
+            pk.rootPosition.x ?? 0,
+            pk.rootPosition.y ?? 0,
+            pk.rootPosition.z ?? 0,
+          );
+        }
+        const bones = pk.bones ?? {};
+        for (const boneName of Object.keys(bones)) {
+          const rot = bones[boneName]?.rotationDeg ?? bones[boneName];
+          if (!rot) continue;
+          e.set(
+            THREE.MathUtils.degToRad(rot.x ?? 0),
+            THREE.MathUtils.degToRad(rot.y ?? 0),
+            THREE.MathUtils.degToRad(rot.z ?? 0),
+          );
+          q.setFromEuler(e);
+          if (!boneTimes[boneName]) {
+            boneTimes[boneName] = [];
+            boneQuats[boneName] = [];
+          }
+          boneTimes[boneName].push(t);
+          boneQuats[boneName].push(q.x, q.y, q.z, q.w);
+        }
+      }
+
+      for (const boneName of Object.keys(boneTimes)) {
+        tracks.push(
+          new THREE.QuaternionKeyframeTrack(
+            `${boneName}.quaternion`,
+            boneTimes[boneName],
+            boneQuats[boneName],
+          ),
+        );
+      }
+      if (rootTimes.length > 0) {
+        tracks.push(new THREE.VectorKeyframeTrack(`.position`, rootTimes, rootVals));
+      }
+    }
+
+    if (tracks.length === 0) return null;
+    const duration = spec.durationSec ?? (maxTime > 0 ? maxTime : -1);
+    return new THREE.AnimationClip(spec.name ?? "clip", duration, tracks);
+  }
+
+  private applyTrackInterpolation(
+    track: THREE.KeyframeTrack,
+    interpolation: string | undefined,
+  ): void {
+    if (interpolation === "smooth") track.setInterpolation(THREE.InterpolateSmooth);
+    else if (interpolation === "discrete")
+      track.setInterpolation(THREE.InterpolateDiscrete);
+    // default: linear (THREE.InterpolateLinear)
   }
 
   get_objects_name(uuid: string): string {

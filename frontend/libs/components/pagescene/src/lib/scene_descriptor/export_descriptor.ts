@@ -106,6 +106,9 @@ function objectJsonToEntity(
   if (obj.shaderMaterial) {
     entity.material = obj.shaderMaterial;
   }
+  if (obj.animation) {
+    entity.animation = obj.animation;
+  }
 
   return entity;
 }

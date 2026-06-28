@@ -17,8 +17,12 @@ export type {
   DescriptorInstancing,
   InstancingBase,
   InstancingScatter,
+  InstancingWind,
   InstanceTransform,
   ShaderMaterialSpec,
+  AnimationSpec,
+  AnimationTrack,
+  PoseKeyframe,
   BonePose,
   Vec3,
 } from "./scene_descriptor";

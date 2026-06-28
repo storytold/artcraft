@@ -74,6 +74,9 @@ export class StoryTellerProxyScene {
     if (child.userData["shaderMaterialSpec"]) {
       proxyObject3D.shaderMaterial = child.userData["shaderMaterialSpec"];
     }
+    if (child.userData["animationSpec"]) {
+      proxyObject3D.animation = child.userData["animationSpec"];
+    }
 
     const json_data = proxyObject3D.toJSON();
     return json_data;
@@ -150,6 +153,10 @@ export class StoryTellerProxyScene {
     while (this.scene.scene.children.length > 0) {
       this.scene.scene.remove(this.scene.scene.children[0]);
     }
+    // Drop any animation mixers + per-frame shader registrations from the
+    // previous scene before rebuilding (they're re-added as objects load).
+    this.scene.clearAnimations();
+    this.scene.shader_objects.length = 0;
 
     // Warm Scene's URL cache up front so per-asset loadObject() calls
     // never hit the network for token→URL resolution. One batch call
@@ -333,6 +340,10 @@ export class StoryTellerProxyScene {
       // setColor (which only touches standard materials).
       if (json_object.shaderMaterial) {
         this.scene.applyShaderMaterial(obj.uuid, json_object.shaderMaterial);
+      }
+      // Re-attach keyframe animation (drives transform/bones each frame).
+      if (json_object.animation) {
+        this.scene.attachAnimation(obj.uuid, json_object.animation);
       }
     }
 

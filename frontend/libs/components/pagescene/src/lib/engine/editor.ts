@@ -878,6 +878,9 @@ class Editor {
     // Advance any in-flight entrance animations.
     this.entranceAnimator.tick(delta_time);
 
+    // Advance keyframe-animation mixers (experimental scene descriptor).
+    this.activeScene.tickAnimations(delta_time);
+
     this.activeScene.shader_objects.forEach((shader) => {
       // Guard: custom (LLM-authored) shader materials may not carry a
       // `time` uniform — only tick the ones that do.
