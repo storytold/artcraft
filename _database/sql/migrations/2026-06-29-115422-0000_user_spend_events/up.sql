@@ -25,7 +25,8 @@ CREATE TABLE user_spend_events (
   -- PaymentEventType enum. Splits subscription vs credit-pack revenue:
   --  'subscription_initial'        -- first paid invoice of a new subscription
   --  'subscription_renewal'        -- recurring paid invoice (monthly, or annual once/yr)
-  --  'subscription_proration'      -- upgrade/downgrade proration charge
+  --  'subscription_proration_upgrade'   -- mid-cycle upgrade proration charge (positive)
+  --  'subscription_proration_downgrade' -- mid-cycle downgrade proration credit (rare as a settled event)
   --  'credit_pack_purchase'        -- one-time credit pack (the ~10x-volume case)
   --  'refund'                      -- refund (amount negative)
   --  'chargeback'                  -- dispute/chargeback (amount negative)

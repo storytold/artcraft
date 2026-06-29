@@ -26,6 +26,7 @@ pub mod uploaded_videos;
 pub mod usages;
 pub mod user_bookmarks;
 pub mod user_ratings;
+pub mod user_spend_events;
 pub mod users;
 pub mod voice_conversion_models;
 pub mod voice_conversion_results;
