@@ -149,7 +149,7 @@ export function KeybindsSettings({
   };
 
   return (
-    <div className="flex flex-col gap-8 font-display">
+    <div className="flex flex-col gap-8">
       {/* ── Preset + layering explainer ────────────────────────────────────── */}
       <section className="flex flex-col gap-3">
         <Eyebrow>Preset</Eyebrow>
@@ -159,7 +159,7 @@ export function KeybindsSettings({
 
       {/* ── Sticky control bar: search (name|key) + reset, conflict alert ──── */}
       <div className="sticky top-0 z-10 -mt-2 flex flex-col gap-3 border-b border-white/[0.06] bg-ui-modal/80 py-3 backdrop-blur-xl">
-        <div className="flex items-center gap-1.5 rounded-2xl bg-white/[0.02] p-1.5 ring-1 ring-white/[0.06]">
+        <div className="flex items-center gap-1.5 rounded-2xl bg-white/[0.04] p-1.5 ring-1 ring-white/[0.06]">
           <ModeToggle mode={searchMode} onChange={switchMode} />
           {searchMode === "name" ? (
             <NameSearchField value={nameSearch} onChange={setNameSearch} />
@@ -194,7 +194,7 @@ export function KeybindsSettings({
       </div>
 
       {/* ── Meta row: counts + expand/collapse ─────────────────────────────── */}
-      <div className="-my-2 flex items-center justify-between px-1 text-[11px] tracking-wide text-base-fg/40">
+      <div className="-my-2 flex items-center justify-between px-1 text-xs tracking-wide text-base-fg/40">
         <span className="tabular-nums">
           {searchActive
             ? `${totalMatches} ${totalMatches === 1 ? "match" : "matches"}`
@@ -206,7 +206,7 @@ export function KeybindsSettings({
           <button
             type="button"
             onClick={toggleAll}
-            className="font-medium text-base-fg/45 transition-colors hover:text-base-fg/80"
+            className="font-medium text-base-fg/50 transition-colors hover:text-base-fg/80"
           >
             {allOpen ? "Collapse all" : "Expand all"}
           </button>
@@ -242,7 +242,10 @@ export function KeybindsSettings({
                         key={action.id}
                         action={action}
                         bindings={forAction(action.id)}
-                        defaultBindings={presetDefault(action.id, selectedPreset)}
+                        defaultBindings={presetDefault(
+                          action.id,
+                          selectedPreset,
+                        )}
                         overridden={!!overrides[action.id]}
                         onCapture={(b) => handleCapture(action.id, b)}
                         onReset={() => resetAction(action.id)}
@@ -298,7 +301,8 @@ function PresetDropdown({
   useEffect(() => {
     if (!open) return;
     const onDown = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+      if (ref.current && !ref.current.contains(e.target as Node))
+        setOpen(false);
     };
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
     window.addEventListener("mousedown", onDown);
@@ -317,7 +321,7 @@ function PresetDropdown({
         aria-haspopup="listbox"
         aria-expanded={open}
         className={twMerge(
-          "flex w-full items-center gap-3 rounded-2xl bg-white/[0.02] p-1.5 text-left ring-1 ring-white/[0.06] transition-all hover:bg-white/[0.04] active:scale-[0.995]",
+          "flex w-full items-center gap-3 rounded-2xl bg-white/[0.04] p-1.5 text-left ring-1 ring-white/[0.08] transition-all hover:bg-white/[0.06] active:scale-[0.995]",
           EASE,
           open && "ring-primary/40",
         )}
@@ -341,7 +345,7 @@ function PresetDropdown({
         role="listbox"
         aria-label="Preset"
         className={twMerge(
-          "absolute left-0 right-0 top-full z-20 mt-2 origin-top rounded-2xl bg-ui-modal p-1.5 shadow-[0_20px_50px_-16px_rgba(0,0,0,0.7)] ring-1 ring-white/10 transition-all duration-200",
+          "absolute left-0 right-0 top-full z-20 mt-2 origin-top rounded-2xl bg-ui-modal shadow-[0_20px_50px_-16px_rgba(0,0,0,0.7)] ring-1 ring-white/10 transition-all duration-200 overflow-hidden",
           EASE,
           open
             ? "scale-100 opacity-100"
@@ -362,7 +366,7 @@ function PresetDropdown({
                 setOpen(false);
               }}
               className={twMerge(
-                "flex w-full items-start gap-3 rounded-xl px-3 py-2.5 text-left transition-colors",
+                "flex w-full items-start gap-3 px-3 py-2.5 text-left transition-colors",
                 EASE,
                 selected ? "bg-primary/[0.08]" : "hover:bg-white/[0.04]",
               )}
@@ -395,10 +399,12 @@ function LayeringNote({ preset }: { preset: PresetId }) {
   return (
     <p className="text-[13px] leading-relaxed text-base-fg/55">
       Every shortcut starts from the{" "}
-      <span className="font-medium text-base-fg/80">{PRESETS[preset].label}</span>{" "}
+      <span className="font-medium text-base-fg/80">
+        {PRESETS[preset].label}
+      </span>{" "}
       preset. Any key you change is saved as your own{" "}
-      <span className="font-medium text-base-fg/80">override</span> on top — these
-      sit beside the dimmed preset default
+      <span className="font-medium text-base-fg/80">override</span> on top —
+      these sit beside the dimmed preset default
       <span className="mx-1 inline-block h-1.5 w-1.5 translate-y-px rounded-full bg-primary align-middle" />
       and revert with ↺.
     </p>
@@ -427,7 +433,7 @@ function ModeToggle({
             EASE,
             mode === m
               ? "bg-white/10 text-base-fg shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]"
-              : "text-base-fg/45 hover:text-base-fg/80",
+              : "text-base-fg/50 hover:text-base-fg/80",
           )}
         >
           {m}
@@ -559,7 +565,7 @@ function CollapsibleSurface({
   children: React.ReactNode;
 }) {
   return (
-    <div className="rounded-2xl bg-white/[0.02] p-1.5 ring-1 ring-white/[0.06]">
+    <div className="rounded-2xl bg-white/[0.04] ring-1 ring-white/[0.06]">
       <div className="overflow-hidden rounded-[0.625rem] bg-ui-modal/40">
         <button
           type="button"
@@ -584,9 +590,9 @@ function CollapsibleSurface({
             <span className="truncate text-sm font-medium text-base-fg">
               {title}
             </span>
-            <span className="truncate text-[11px] text-base-fg/40">{hint}</span>
+            <span className="truncate text-xs text-base-fg/40">{hint}</span>
           </div>
-          <span className="shrink-0 rounded-full bg-white/[0.06] px-2 py-0.5 text-[11px] tabular-nums text-base-fg/55">
+          <span className="shrink-0 rounded-full bg-white/[0.06] px-2 py-0.5 text-xs tabular-nums text-base-fg/55">
             {count}
           </span>
         </button>
@@ -647,7 +653,7 @@ function ActionRow({
       {/* Layering made literal: dimmed preset default → revert → live override. */}
       {overridden && (
         <span
-          className="hidden items-center gap-1.5 text-[11px] text-base-fg/35 opacity-70 sm:inline-flex"
+          className="hidden items-center gap-1.5 text-xs text-base-fg/35 opacity-70 sm:inline-flex"
           title="Preset default"
         >
           <KbdBindings bindings={defaultBindings} />
@@ -733,7 +739,7 @@ function EmptyState({
   binding: Binding | null;
 }) {
   return (
-    <div className="flex flex-col items-center gap-3 rounded-2xl bg-white/[0.02] px-6 py-12 text-center ring-1 ring-white/[0.06]">
+    <div className="flex flex-col items-center gap-3 rounded-2xl bg-white/[0.06] px-6 py-12 text-center ring-1 ring-white/[0.06]">
       {mode === "key" ? (
         <KeyIcon className="h-6 w-6 text-base-fg/25" />
       ) : (
@@ -756,7 +762,7 @@ function EmptyState({
 
 function Eyebrow({ children }: { children: React.ReactNode }) {
   return (
-    <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-base-fg/45">
+    <span className="text-xs font-medium tracking-wide text-base-fg/50">
       {children}
     </span>
   );
@@ -764,7 +770,7 @@ function Eyebrow({ children }: { children: React.ReactNode }) {
 
 function GroupLabel({ children }: { children: React.ReactNode }) {
   return (
-    <div className="px-3 pb-1 pt-4 text-[10px] font-medium uppercase tracking-[0.16em] text-base-fg/30 first:pt-2">
+    <div className="px-3 pb-1 pt-4 text-[11px] font-medium uppercase tracking-[0.13em] text-base-fg/45 first:pt-2">
       {children}
     </div>
   );
@@ -778,7 +784,12 @@ function presetDefault(id: ActionId, preset: PresetId): Binding[] {
 
 function SearchIcon({ className }: { className?: string }) {
   return (
-    <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      className={className}
+      aria-hidden="true"
+    >
       <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="1.5" />
       <path
         d="m20 20-3.4-3.4"
@@ -792,7 +803,12 @@ function SearchIcon({ className }: { className?: string }) {
 
 function KeyIcon({ className }: { className?: string }) {
   return (
-    <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      className={className}
+      aria-hidden="true"
+    >
       <circle cx="8" cy="8" r="4.5" stroke="currentColor" strokeWidth="1.5" />
       <path
         d="m11.2 11.2 8 8M16 16l2.2-2.2M18.4 18.4 21 15.8"
@@ -807,7 +823,12 @@ function KeyIcon({ className }: { className?: string }) {
 
 function ChevronIcon({ className }: { className?: string }) {
   return (
-    <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      className={className}
+      aria-hidden="true"
+    >
       <path
         d="m9 6 6 6-6 6"
         stroke="currentColor"
@@ -821,7 +842,12 @@ function ChevronIcon({ className }: { className?: string }) {
 
 function ClearIcon({ className }: { className?: string }) {
   return (
-    <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      className={className}
+      aria-hidden="true"
+    >
       <path
         d="M6 6l12 12M18 6 6 18"
         stroke="currentColor"
@@ -834,7 +860,12 @@ function ClearIcon({ className }: { className?: string }) {
 
 function CheckIcon({ className }: { className?: string }) {
   return (
-    <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      className={className}
+      aria-hidden="true"
+    >
       <path
         d="m5 12.5 4.5 4.5L19 7"
         stroke="currentColor"
@@ -848,7 +879,12 @@ function CheckIcon({ className }: { className?: string }) {
 
 function ResetIcon({ className }: { className?: string }) {
   return (
-    <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      className={className}
+      aria-hidden="true"
+    >
       <path
         d="M4 5v4h4"
         stroke="currentColor"
@@ -869,7 +905,12 @@ function ResetIcon({ className }: { className?: string }) {
 
 function InfoIcon({ className }: { className?: string }) {
   return (
-    <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      className={className}
+      aria-hidden="true"
+    >
       <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.5" />
       <path
         d="M12 11v5"

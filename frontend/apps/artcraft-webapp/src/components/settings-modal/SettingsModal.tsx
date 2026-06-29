@@ -1,7 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { Modal } from "@storyteller/ui-modal";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faCog, faUser, faKey, faKeyboard } from "@fortawesome/pro-solid-svg-icons";
+import {
+  faCog,
+  faUser,
+  faKey,
+  faKeyboard,
+} from "@fortawesome/pro-solid-svg-icons";
 import { Switch } from "@storyteller/ui-switch";
 import { KeybindsSettings } from "@storyteller/keybinds";
 import { USER_FEATURE_FLAGS } from "@storyteller/api";
@@ -59,10 +64,10 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      className="max-w-3xl"
+      className="max-w-4xl"
       childPadding={false}
     >
-      <div className="h-[100dvh] sm:h-[560px]">
+      <div className="h-[100dvh] sm:h-[600px]">
         <div className="flex h-full flex-col sm:grid sm:grid-cols-12 sm:gap-3">
           <div className="relative shrink-0 border-b border-ui-panel-border p-4 sm:col-span-4 sm:border-b-0 sm:p-3 sm:pt-2 sm:after:absolute sm:after:right-0 sm:after:top-0 sm:after:h-full sm:after:w-px sm:after:bg-ui-panel-border">
             <div className="hidden items-center gap-2.5 py-0.5 sm:flex">
@@ -88,14 +93,14 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
             </div>
           </div>
 
-          <div className="relative flex min-h-0 flex-1 flex-col overflow-y-auto sm:col-span-8 sm:h-full">
+          <div className="relative flex min-h-0 flex-1 flex-col overflow-y-auto sm:col-span-8 sm:h-full pl-0.5">
             <div className="w-full border-b border-ui-panel-border px-4 py-2.5 sm:px-0">
               <h2 className="text-[18px] font-semibold">{activeLabel}</h2>
             </div>
             <div className="h-full p-4 text-sm sm:p-3 sm:ps-0">
               {tab === "general" && <GeneralPanel />}
               {tab === "keybinds" && (
-                <div className="pt-3">
+                <div className="pb-4">
                   <KeybindsSettings />
                 </div>
               )}
