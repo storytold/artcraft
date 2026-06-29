@@ -3,6 +3,7 @@ use std::convert::TryFrom;
 use std::fs::File;
 use std::io::Write;
 use std::marker::PhantomData;
+use std::time::Instant;
 
 use chrono::{DateTime, NaiveDate, TimeZone, Utc};
 use log::{info, warn};
@@ -43,6 +44,7 @@ pub async fn backfill_user_spend_events(
   stripe: &StripeApi,
   args: BackfillUserSpendEventsArgs,
 ) -> AnyhowResult<()> {
+  let started = Instant::now();
   let since = parse_since(&args.since)?;
   info!("Backfill user_spend_events since {since} (UTC). dry_run={}", args.dry_run);
 
@@ -94,6 +96,11 @@ pub async fn backfill_user_spend_events(
   info!("  subscription payments upserted: {}", stats.subscriptions);
   info!("  skipped (not a tracked type):   {}", stats.skipped);
   info!("  UNATTRIBUTED (no user account): {} -> {}", unattributed.len(), args.unattributed_report);
+  let elapsed = started.elapsed();
+  info!("  elapsed: {:.1}s ({:.0} payments/sec)",
+    elapsed.as_secs_f64(),
+    (stats.credit_packs + stats.subscriptions) as f64 / elapsed.as_secs_f64().max(0.001),
+  );
   if args.dry_run {
     info!("  (dry run — NOTHING was written to the database)");
   }
