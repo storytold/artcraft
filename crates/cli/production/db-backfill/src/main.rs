@@ -10,6 +10,8 @@ use easyenv::init_all_with_default_logging;
 use errors::AnyhowResult;
 
 use crate::args::{Command, parse_cli_args};
+use crate::operations::backfill_user_spend_events::backfill_user_spend_events::backfill_user_spend_events;
+use crate::operations::backfill_user_spend_events::sub_args::parse_backfill_user_spend_events_args;
 use crate::operations::calculate_legacy_tts_results_usages::calculate_legacy_tts_results_usages::calculate_legacy_tts_result_usages;
 use crate::operations::calculate_model_weights_usages::run_migration::run_migration;
 
@@ -41,13 +43,26 @@ async fn main() -> AnyhowResult<()> {
   // (Hopefully this isn't getting out of hand at this point.)
   easyenv::from_filename(".env-db-backfill-secrets")?;
 
-  let mysql = get_mysql("MYSQL_PRODUCTION_URL").await?;
-
   info!("dispatching command: {:?}", command);
 
   match command.sub_command {
-    Command::CalculateModelWeightsUsages => run_migration(mysql).await?,
-    Command::CalculateLegacyTtsResultsUsages => calculate_legacy_tts_result_usages(mysql).await?,
+    Command::CalculateModelWeightsUsages => {
+      let mysql = get_mysql("MYSQL_PRODUCTION_URL").await?;
+      run_migration(mysql).await?
+    }
+    Command::CalculateLegacyTtsResultsUsages => {
+      let mysql = get_mysql("MYSQL_PRODUCTION_URL").await?;
+      calculate_legacy_tts_result_usages(mysql).await?
+    }
+    Command::BackfillUserSpendEvents => {
+      // Read pool = the replica (source); write pool = your target DB (local in
+      // a dry run, prod when you go live). Stripe key = the ArtCraft account.
+      let sub_args = parse_backfill_user_spend_events_args();
+      let read_pool = get_mysql("MYSQL_READ_URL").await?;
+      let write_pool = get_mysql("MYSQL_WRITE_URL").await?;
+      let stripe_client = stripe::Client::new(easyenv::get_env_string_required("STRIPE_ARTCRAFT_SECRET_KEY")?);
+      backfill_user_spend_events(&read_pool, &write_pool, &stripe_client, sub_args).await?;
+    }
   }
 
   Ok(())

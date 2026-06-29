@@ -20,6 +20,7 @@ pub struct Args {
 // #[derive(Debug, Deserialize, Copy, Clone)]
 #[derive(ValueEnum, Clone, Copy, Debug)]
 pub enum Command {
+  BackfillUserSpendEvents,
   CalculateLegacyTtsResultsUsages,
   CalculateModelWeightsUsages,
 }
