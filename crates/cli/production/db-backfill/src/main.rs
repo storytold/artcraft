@@ -1,7 +1,7 @@
 use std::io::Write;
 
 use chrono::Local;
-use log::{info, LevelFilter};
+use log::{info, warn, LevelFilter};
 use sqlx::{MySql, Pool};
 use sqlx::mysql::MySqlPoolOptions;
 
@@ -41,7 +41,19 @@ async fn main() -> AnyhowResult<()> {
 
   // NB: This secrets file differs from the rest because we might want to backfill production from local dev.
   // (Hopefully this isn't getting out of hand at this point.)
-  easyenv::from_filename(".env-db-backfill-secrets")?;
+  // The path is resolved relative to the current working directory — log the
+  // absolute path so a "not found" is actionable.
+  let secrets_filename = ".env-db-backfill-secrets";
+  let secrets_path = std::env::current_dir()
+      .map(|dir| dir.join(secrets_filename))
+      .unwrap_or_else(|_| std::path::PathBuf::from(secrets_filename));
+  info!("Loading secrets from: {}", secrets_path.display());
+  // NB: We deliberately do NOT use `dotenv` here. Its parser treats `$`, spaces,
+  // and `\` as special INSIDE the value (quoted or not), which mangles DB
+  // connection URLs and generated passwords. This loader takes each value
+  // verbatim, so `MYSQL_READ_URL=mysql://user:p$ss w@host:25060/db?ssl-mode=required`
+  // just works.
+  load_secrets_file(&secrets_path)?;
 
   info!("dispatching command: {:?}", command);
 
@@ -66,6 +78,78 @@ async fn main() -> AnyhowResult<()> {
   }
 
   Ok(())
+}
+
+/// Minimal, forgiving `.env`-style loader that sets process env vars from a
+/// `KEY=VALUE` file. The value is the remainder of the line taken VERBATIM
+/// (after one optional layer of surrounding quotes is stripped). Blank lines and
+/// `#` comment lines are ignored. Unlike `dotenv`, it does not interpret `$`,
+/// spaces, `\`, or `#` inside the value — so DB URLs and generated passwords
+/// pass through unchanged.
+fn load_secrets_file(path: &std::path::Path) -> AnyhowResult<()> {
+  let contents = std::fs::read_to_string(path)
+      .map_err(|err| anyhow::anyhow!("Could not read secrets file at {} : {}", path.display(), err))?;
+
+  for (line_index, raw_line) in contents.lines().enumerate() {
+    let line = raw_line.trim();
+    if line.is_empty() || line.starts_with('#') {
+      continue;
+    }
+    let (key, value) = match line.split_once('=') {
+      Some((key, value)) => (key.trim(), strip_matching_quotes(value.trim())),
+      None => {
+        warn!("secrets {}:{}: ignoring line without '=': {:?}", path.display(), line_index + 1, line);
+        continue;
+      }
+    };
+    if key.is_empty() {
+      warn!("secrets {}:{}: ignoring empty key", path.display(), line_index + 1);
+      continue;
+    }
+    std::env::set_var(key, value);
+  }
+
+  Ok(())
+}
+
+#[cfg(test)]
+mod secrets_loader_tests {
+  use super::strip_matching_quotes;
+
+  // The whole point: a DB URL with a password containing `$`, a space, `#`, and a
+  // query string with `=` must survive verbatim (this is exactly what `dotenv` mangled).
+  #[test]
+  fn url_value_is_taken_verbatim() {
+    let line = r#"MYSQL_READ_URL=mysql://user:p$ss w#x@host:25060/db?ssl-mode=required"#;
+    let (key, value) = line.split_once('=').unwrap();
+    assert_eq!(key.trim(), "MYSQL_READ_URL");
+    assert_eq!(
+      strip_matching_quotes(value.trim()),
+      "mysql://user:p$ss w#x@host:25060/db?ssl-mode=required",
+    );
+  }
+
+  #[test]
+  fn strips_one_layer_of_matching_quotes_only() {
+    assert_eq!(strip_matching_quotes("\"abc\""), "abc");
+    assert_eq!(strip_matching_quotes("'abc'"), "abc");
+    assert_eq!(strip_matching_quotes("abc"), "abc");
+    assert_eq!(strip_matching_quotes("\"abc'"), "\"abc'"); // mismatched: untouched
+    assert_eq!(strip_matching_quotes("\""), "\"");          // single char: untouched
+  }
+}
+
+/// Strip a single layer of matching surrounding single or double quotes, if any.
+fn strip_matching_quotes(value: &str) -> &str {
+  let bytes = value.as_bytes();
+  if bytes.len() >= 2 {
+    let first = bytes[0];
+    let last = bytes[bytes.len() - 1];
+    if (first == b'"' && last == b'"') || (first == b'\'' && last == b'\'') {
+      return &value[1..value.len() - 1];
+    }
+  }
+  value
 }
 
 async fn get_mysql(env_var_name: &str) -> AnyhowResult<Pool<MySql>> {
