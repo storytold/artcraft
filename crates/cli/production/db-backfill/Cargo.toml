@@ -41,7 +41,7 @@ tokio = { version = "1.38.0", features = ["macros", "rt-multi-thread"] }
 
 # Stripe (authoritative payment enumeration for the user_spend_events backfill)
 async-stripe = { version = "1.0.0-alpha.2", default-features = false, features = ["rustls-tls-native"] }
-async-stripe-core = { version = "1.0.0-alpha.2", features = ["payment_intent"] }
+async-stripe-core = { version = "1.0.0-alpha.2", features = ["payment_intent", "customer"] }
 async-stripe-billing = { version = "1.0.0-alpha.2", features = ["invoice"] }
 async-stripe-shared = { version = "1.0.0-alpha.2", features = ["deserialize"] }
 async-stripe-types = { version = "1.0.0-alpha.2" }

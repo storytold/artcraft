@@ -18,6 +18,9 @@ use mysql_queries::queries::user_spend_events::backfill_list_artcraft_customer_l
 use mysql_queries::queries::user_spend_events::backfill_list_artcraft_ledger_payments::{
   backfill_list_artcraft_ledger_payments, BackfillListLedgerPaymentsArgs, LedgerPaymentRef,
 };
+use mysql_queries::queries::user_spend_events::backfill_get_user_token_by_email::{
+  backfill_get_user_token_by_email, BackfillGetUserTokenByEmailArgs,
+};
 use mysql_queries::queries::user_spend_events::insert_user_spend_event::{
   insert_user_spend_event, InsertUserSpendEventArgs,
 };
@@ -25,6 +28,7 @@ use tokens::tokens::users::UserToken;
 
 use stripe::Client;
 use stripe_billing::invoice::ListInvoice;
+use stripe_core::customer::{RetrieveCustomer, RetrieveCustomerReturned};
 use stripe_core::payment_intent::ListPaymentIntent;
 use stripe_shared::{Invoice, InvoiceBillingReason, InvoiceStatus, PaymentIntent, PaymentIntentStatus};
 use stripe_types::{List, RangeQueryTs};
@@ -72,16 +76,21 @@ pub async fn backfill_user_spend_events(
 
   let mut stats = Stats::default();
   let mut unattributed: Vec<UnattributedRow> = Vec::new();
+  // Stripe customer -> resolved user, cached so deep attribution retrieves each
+  // customer at most once.
+  let mut customer_cache: HashMap<String, Option<UserToken>> = HashMap::new();
 
   // ---- 2. Credit-pack purchases: succeeded one-off PaymentIntents ----
   backfill_payment_intents(
-    stripe_client, write_pool, since, &args, &ledger_by_id, &user_by_customer, &mut stats, &mut unattributed,
+    stripe_client, read_pool, write_pool, since, &args, &ledger_by_id, &user_by_customer,
+    &mut customer_cache, &mut stats, &mut unattributed,
   )
   .await?;
 
   // ---- 3. Subscription payments: paid invoices (create/cycle) ----
   backfill_invoices(
-    stripe_client, write_pool, since, &args, &ledger_by_id, &user_by_customer, &mut stats, &mut unattributed,
+    stripe_client, read_pool, write_pool, since, &args, &ledger_by_id, &user_by_customer,
+    &mut customer_cache, &mut stats, &mut unattributed,
   )
   .await?;
 
@@ -103,11 +112,13 @@ pub async fn backfill_user_spend_events(
 
 async fn backfill_payment_intents(
   stripe_client: &Client,
+  read_pool: &Pool<MySql>,
   write_pool: &Pool<MySql>,
   since: DateTime<Utc>,
   args: &BackfillUserSpendEventsArgs,
   ledger_by_id: &HashMap<String, LedgerPaymentRef>,
   user_by_customer: &HashMap<String, UserToken>,
+  customer_cache: &mut HashMap<String, Option<UserToken>>,
   stats: &mut Stats,
   unattributed: &mut Vec<UnattributedRow>,
 ) -> AnyhowResult<()> {
@@ -155,10 +166,16 @@ async fn backfill_payment_intents(
       let customer_id = pi.customer.as_ref().map(|c| c.id().to_string());
       let charge_id = pi.latest_charge.as_ref().map(|c| c.id().to_string());
       let occurred_at = DateTime::from_timestamp(pi.created, 0).unwrap_or_else(Utc::now);
-      let maybe_user = resolve_user(
+      let mut maybe_user = resolve_user(
         pi.metadata.get("user_token").map(|s| s.as_str()),
         &pi_id, customer_id.as_deref(), ledger_by_id, user_by_customer,
       );
+      if maybe_user.is_none() && args.deep_attribution {
+        maybe_user = deep_resolve_user(
+          stripe_client, read_pool, customer_cache, customer_id.as_deref(), None,
+        )
+        .await;
+      }
 
       match maybe_user {
         Some(user) => {
@@ -198,11 +215,13 @@ async fn backfill_payment_intents(
 
 async fn backfill_invoices(
   stripe_client: &Client,
+  read_pool: &Pool<MySql>,
   write_pool: &Pool<MySql>,
   since: DateTime<Utc>,
   args: &BackfillUserSpendEventsArgs,
   ledger_by_id: &HashMap<String, LedgerPaymentRef>,
   user_by_customer: &HashMap<String, UserToken>,
+  customer_cache: &mut HashMap<String, Option<UserToken>>,
   stats: &mut Stats,
   unattributed: &mut Vec<UnattributedRow>,
 ) -> AnyhowResult<()> {
@@ -254,10 +273,16 @@ async fn backfill_invoices(
 
       let customer_id = inv.customer.as_ref().map(|c| c.id().to_string());
       let occurred_at = DateTime::from_timestamp(inv.created, 0).unwrap_or_else(Utc::now);
-      let maybe_user = resolve_user(
+      let mut maybe_user = resolve_user(
         invoice_metadata_user_token(inv),
         &inv_id, customer_id.as_deref(), ledger_by_id, user_by_customer,
       );
+      if maybe_user.is_none() && args.deep_attribution {
+        maybe_user = deep_resolve_user(
+          stripe_client, read_pool, customer_cache, customer_id.as_deref(), inv.customer_email.as_deref(),
+        )
+        .await;
+      }
 
       match maybe_user {
         Some(user) => {
@@ -355,6 +380,67 @@ fn invoice_metadata_user_token(inv: &Invoice) -> Option<&str> {
     }
   }
   None
+}
+
+/// Deep attribution (opt-in): when the cheap path fails, interrogate Stripe.
+/// (1) invoice email -> users; (2) retrieve the Stripe Customer and use its
+/// `user_token` metadata, then its email -> users. Customer retrieval is cached.
+async fn deep_resolve_user(
+  stripe_client: &Client,
+  read_pool: &Pool<MySql>,
+  customer_cache: &mut HashMap<String, Option<UserToken>>,
+  customer_id: Option<&str>,
+  invoice_email: Option<&str>,
+) -> Option<UserToken> {
+  if let Some(email) = invoice_email {
+    if let Some(user) = lookup_user_token_by_email(read_pool, email).await {
+      return Some(user);
+    }
+  }
+
+  let customer_id = customer_id?;
+  if let Some(cached) = customer_cache.get(customer_id) {
+    return cached.clone();
+  }
+
+  let mut resolved: Option<UserToken> = None;
+  match RetrieveCustomer::new(customer_id.to_string()).send(stripe_client).await {
+    Ok(RetrieveCustomerReturned::Customer(customer)) => {
+      if let Some(metadata) = &customer.metadata {
+        if let Some(user_token) = metadata.get("user_token") {
+          if !user_token.is_empty() {
+            resolved = Some(UserToken(user_token.clone()));
+          }
+        }
+      }
+      if resolved.is_none() {
+        if let Some(email) = &customer.email {
+          resolved = lookup_user_token_by_email(read_pool, email).await;
+        }
+      }
+    }
+    Ok(RetrieveCustomerReturned::DeletedCustomer(_)) => {}
+    Err(err) => warn!("deep attribution: retrieve customer {customer_id} failed: {err:?}"),
+  }
+
+  customer_cache.insert(customer_id.to_string(), resolved.clone());
+  resolved
+}
+
+async fn lookup_user_token_by_email(read_pool: &Pool<MySql>, email: &str) -> Option<UserToken> {
+  match backfill_get_user_token_by_email(BackfillGetUserTokenByEmailArgs {
+    email_address: email,
+    mysql_executor: read_pool,
+    phantom: PhantomData,
+  })
+  .await
+  {
+    Ok(user) => user,
+    Err(err) => {
+      warn!("deep attribution: email lookup for {email:?} failed: {err:?}");
+      None
+    }
+  }
 }
 
 struct UpsertInput<'a> {

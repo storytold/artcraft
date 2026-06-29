@@ -25,6 +25,14 @@ pub struct BackfillUserSpendEventsArgs {
   /// testing against the read replica without walking the whole account.
   #[arg(long)]
   pub limit: Option<usize>,
+
+  /// For payments that don't resolve to a user via metadata / ledger / customer
+  /// links, additionally interrogate Stripe: retrieve the Customer and use its
+  /// `user_token` metadata, then fall back to matching the customer/invoice
+  /// email against our users table. Costs extra Stripe API calls (cached per
+  /// customer), so it's opt-in.
+  #[arg(long, default_value_t = false)]
+  pub deep_attribution: bool,
 }
 
 /// Parse the sub-command flags. The first element of `args()` is the binary and
