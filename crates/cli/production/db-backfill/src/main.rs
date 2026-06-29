@@ -11,6 +11,7 @@ use errors::AnyhowResult;
 
 use crate::args::{Command, parse_cli_args};
 use crate::operations::backfill_user_spend_events::backfill_user_spend_events::backfill_user_spend_events;
+use crate::operations::backfill_user_spend_events::stripe_api::StripeApi;
 use crate::operations::backfill_user_spend_events::sub_args::parse_backfill_user_spend_events_args;
 use crate::operations::calculate_legacy_tts_results_usages::calculate_legacy_tts_results_usages::calculate_legacy_tts_result_usages;
 use crate::operations::calculate_model_weights_usages::run_migration::run_migration;
@@ -22,6 +23,12 @@ pub mod operations;
 #[tokio::main]
 async fn main() -> AnyhowResult<()> {
   println!("db-backfill: run backfill or migration operations");
+
+  // rustls 0.23 requires a process-wide crypto provider before the first TLS
+  // handshake (the replica's `ssl-mode=required` connection and Stripe HTTPS).
+  // The dependency graph enables BOTH ring and aws-lc-rs, so rustls refuses to
+  // auto-select and panics — install one explicitly. (`Err` = already installed.)
+  let _ = rustls::crypto::ring::default_provider().install_default();
 
   // init_all_with_default_logging(None);
   Builder::new()
@@ -72,8 +79,8 @@ async fn main() -> AnyhowResult<()> {
       let sub_args = parse_backfill_user_spend_events_args();
       let read_pool = get_mysql("MYSQL_READ_URL").await?;
       let write_pool = get_mysql("MYSQL_WRITE_URL").await?;
-      let stripe_client = stripe::Client::new(easyenv::get_env_string_required("STRIPE_ARTCRAFT_SECRET_KEY")?);
-      backfill_user_spend_events(&read_pool, &write_pool, &stripe_client, sub_args).await?;
+      let stripe = StripeApi::new(easyenv::get_env_string_required("STRIPE_ARTCRAFT_SECRET_KEY")?)?;
+      backfill_user_spend_events(&read_pool, &write_pool, &stripe, sub_args).await?;
     }
   }
 
@@ -90,6 +97,7 @@ fn load_secrets_file(path: &std::path::Path) -> AnyhowResult<()> {
   let contents = std::fs::read_to_string(path)
       .map_err(|err| anyhow::anyhow!("Could not read secrets file at {} : {}", path.display(), err))?;
 
+  let mut loaded_keys: Vec<String> = Vec::new();
   for (line_index, raw_line) in contents.lines().enumerate() {
     let line = raw_line.trim();
     if line.is_empty() || line.starts_with('#') {
@@ -107,7 +115,16 @@ fn load_secrets_file(path: &std::path::Path) -> AnyhowResult<()> {
       continue;
     }
     std::env::set_var(key, value);
+    loaded_keys.push(key.to_string());
   }
+
+  info!(
+    "Loaded {} key(s) from {} ({} bytes): [{}]",
+    loaded_keys.len(),
+    path.display(),
+    contents.len(),
+    loaded_keys.join(", "),
+  );
 
   Ok(())
 }
@@ -153,12 +170,27 @@ fn strip_matching_quotes(value: &str) -> &str {
 }
 
 async fn get_mysql(env_var_name: &str) -> AnyhowResult<Pool<MySql>> {
-  info!("Connecting to MySQL {env_var_name}...");
+  let url = easyenv::get_env_string_required(env_var_name)?;
+  // Redacted so you can SEE the host + database + params actually being used
+  // (e.g. whether a database path is present) without leaking the password.
+  info!("Connecting to MySQL {env_var_name}: {}", redact_db_url(&url));
 
   let pool = MySqlPoolOptions::new()
       .max_connections(easyenv::get_env_num("MYSQL_MAX_CONNECTIONS", 20)?)
-      .connect(&easyenv::get_env_string_required(env_var_name)?)
+      .connect(&url)
       .await?;
 
   Ok(pool)
+}
+
+/// Mask the user:password portion of a DB URL for logging, leaving scheme, host,
+/// port, database path, and query params visible.
+fn redact_db_url(url: &str) -> String {
+  if let Some(scheme_end) = url.find("://") {
+    let after = &url[scheme_end + 3..];
+    if let Some(at) = after.rfind('@') {
+      return format!("{}://***@{}", &url[..scheme_end], &after[at + 1..]);
+    }
+  }
+  url.to_string()
 }

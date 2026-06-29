@@ -3039,11 +3039,6 @@ name = "db-backfill"
 version = "0.0.1"
 dependencies = [
  "anyhow",
- "async-stripe 1.0.0-alpha.2",
- "async-stripe-billing",
- "async-stripe-core",
- "async-stripe-shared",
- "async-stripe-types",
  "chrono",
  "clap 4.5.60",
  "datetimes",
@@ -3054,6 +3049,8 @@ dependencies = [
  "futures 0.3.32",
  "log",
  "mysql_queries",
+ "reqwest 0.12.23",
+ "rustls 0.23.36",
  "serde",
  "serde_derive",
  "serde_json",

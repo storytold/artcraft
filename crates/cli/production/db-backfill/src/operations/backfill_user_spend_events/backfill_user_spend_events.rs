@@ -12,35 +12,27 @@ use enums::by_table::user_spend_events::payment_event_type::PaymentEventType;
 use enums::by_table::user_spend_events::payment_source::PaymentSource;
 use enums::common::payments_namespace::PaymentsNamespace;
 use errors::AnyhowResult;
+use mysql_queries::queries::user_spend_events::backfill_get_user_token_by_email::{
+  backfill_get_user_token_by_email, BackfillGetUserTokenByEmailArgs,
+};
 use mysql_queries::queries::user_spend_events::backfill_list_artcraft_customer_links::{
   backfill_list_artcraft_customer_links, BackfillListCustomerLinksArgs,
 };
 use mysql_queries::queries::user_spend_events::backfill_list_artcraft_ledger_payments::{
   backfill_list_artcraft_ledger_payments, BackfillListLedgerPaymentsArgs, LedgerPaymentRef,
 };
-use mysql_queries::queries::user_spend_events::backfill_get_user_token_by_email::{
-  backfill_get_user_token_by_email, BackfillGetUserTokenByEmailArgs,
-};
 use mysql_queries::queries::user_spend_events::insert_user_spend_event::{
   insert_user_spend_event, InsertUserSpendEventArgs,
 };
 use tokens::tokens::users::UserToken;
 
-use stripe::Client;
-use stripe_billing::invoice::ListInvoice;
-use stripe_core::customer::{RetrieveCustomer, RetrieveCustomerReturned};
-use stripe_core::payment_intent::ListPaymentIntent;
-use stripe_shared::{Invoice, InvoiceBillingReason, InvoiceStatus, PaymentIntent, PaymentIntentStatus};
-use stripe_types::{List, RangeQueryTs};
-
+use crate::operations::backfill_user_spend_events::stripe_api::{Invoice, StripeApi};
 use crate::operations::backfill_user_spend_events::sub_args::BackfillUserSpendEventsArgs;
-
-const PAGE_SIZE: i64 = 100;
 
 /// Backfill `user_spend_events` from historical Stripe payments.
 ///
-/// Stripe is the authoritative payment list (so we don't miss charged-but-
-/// unfulfilled payments); the ArtCraft ledger (read pool) only ENRICHES each
+/// Stripe (REST) is the authoritative payment list (so we don't miss charged-
+/// but-unfulfilled payments); the ArtCraft ledger (read pool) only ENRICHES each
 /// payment with the granted credits + ledger-entry FK. Every event is upserted
 /// (write pool) on the same `(payment_source, source_object_id)` dedup key the
 /// webhook path uses, so rows already written live are no-ops. Payments that
@@ -48,7 +40,7 @@ const PAGE_SIZE: i64 = 100;
 pub async fn backfill_user_spend_events(
   read_pool: &Pool<MySql>,
   write_pool: &Pool<MySql>,
-  stripe_client: &Client,
+  stripe: &StripeApi,
   args: BackfillUserSpendEventsArgs,
 ) -> AnyhowResult<()> {
   let since = parse_since(&args.since)?;
@@ -82,14 +74,14 @@ pub async fn backfill_user_spend_events(
 
   // ---- 2. Credit-pack purchases: succeeded one-off PaymentIntents ----
   backfill_payment_intents(
-    stripe_client, read_pool, write_pool, since, &args, &ledger_by_id, &user_by_customer,
+    stripe, read_pool, write_pool, since, &args, &ledger_by_id, &user_by_customer,
     &mut customer_cache, &mut stats, &mut unattributed,
   )
   .await?;
 
   // ---- 3. Subscription payments: paid invoices (create/cycle) ----
   backfill_invoices(
-    stripe_client, read_pool, write_pool, since, &args, &ledger_by_id, &user_by_customer,
+    stripe, read_pool, write_pool, since, &args, &ledger_by_id, &user_by_customer,
     &mut customer_cache, &mut stats, &mut unattributed,
   )
   .await?;
@@ -111,7 +103,7 @@ pub async fn backfill_user_spend_events(
 // ---- Enumerators ----
 
 async fn backfill_payment_intents(
-  stripe_client: &Client,
+  stripe: &StripeApi,
   read_pool: &Pool<MySql>,
   write_pool: &Pool<MySql>,
   since: DateTime<Utc>,
@@ -122,25 +114,18 @@ async fn backfill_payment_intents(
   stats: &mut Stats,
   unattributed: &mut Vec<UnattributedRow>,
 ) -> AnyhowResult<()> {
+  info!("Enumerating Stripe PaymentIntents (credit packs) since {} …", since.format("%Y-%m-%d"));
   let mut starting_after: Option<String> = None;
   let mut processed = 0usize;
+  let mut page_num = 0usize;
 
   loop {
-    let mut req = ListPaymentIntent::new()
-      .created(RangeQueryTs::gte(since.timestamp()))
-      .limit(PAGE_SIZE);
-    if let Some(cursor) = &starting_after {
-      req = req.starting_after(cursor.clone());
-    }
-    let page: List<PaymentIntent> = req
-      .send(stripe_client)
-      .await
-      .map_err(|err| anyhow::anyhow!("Stripe ListPaymentIntent error: {err:?}"))?;
-
+    let page = stripe.list_payment_intents(since.timestamp(), starting_after.as_deref()).await?;
+    page_num += 1;
     if page.data.is_empty() {
       break;
     }
-    let last_id = page.data.last().map(|pi| pi.id.to_string());
+    let last_id = page.data.last().map(|pi| pi.id.clone());
 
     for pi in &page.data {
       if let Some(limit) = args.limit {
@@ -148,10 +133,10 @@ async fn backfill_payment_intents(
           return Ok(());
         }
       }
-      if !matches!(pi.status, PaymentIntentStatus::Succeeded) {
+      if pi.status != "succeeded" {
         continue;
       }
-      let pi_id = pi.id.to_string();
+      let pi_id = pi.id.clone();
       // A one-off credit-pack PI carries our `user_token` metadata; subscription
       // PIs have empty metadata. The ledger `credit_banked` match is a backstop
       // for any historical pack PI that lacks metadata.
@@ -163,18 +148,15 @@ async fn backfill_payment_intents(
       }
       processed += 1;
 
-      let customer_id = pi.customer.as_ref().map(|c| c.id().to_string());
-      let charge_id = pi.latest_charge.as_ref().map(|c| c.id().to_string());
+      let customer_id = pi.customer.clone();
+      let charge_id = pi.latest_charge.clone();
       let occurred_at = DateTime::from_timestamp(pi.created, 0).unwrap_or_else(Utc::now);
       let mut maybe_user = resolve_user(
         pi.metadata.get("user_token").map(|s| s.as_str()),
         &pi_id, customer_id.as_deref(), ledger_by_id, user_by_customer,
       );
       if maybe_user.is_none() && args.deep_attribution {
-        maybe_user = deep_resolve_user(
-          stripe_client, read_pool, customer_cache, customer_id.as_deref(), None,
-        )
-        .await;
+        maybe_user = deep_resolve_user(stripe, read_pool, customer_cache, customer_id.as_deref(), None).await;
       }
 
       match maybe_user {
@@ -205,16 +187,21 @@ async fn backfill_payment_intents(
       }
     }
 
+    info!(
+      "  payment_intents page {page_num}: {} fetched | packs={} skipped={} unattributed={}",
+      page.data.len(), stats.credit_packs, stats.skipped, unattributed.len(),
+    );
     if !page.has_more {
       break;
     }
     starting_after = last_id;
   }
+  info!("PaymentIntents done: {} credit-pack event(s) across {page_num} page(s).", stats.credit_packs);
   Ok(())
 }
 
 async fn backfill_invoices(
-  stripe_client: &Client,
+  stripe: &StripeApi,
   read_pool: &Pool<MySql>,
   write_pool: &Pool<MySql>,
   since: DateTime<Utc>,
@@ -225,26 +212,18 @@ async fn backfill_invoices(
   stats: &mut Stats,
   unattributed: &mut Vec<UnattributedRow>,
 ) -> AnyhowResult<()> {
+  info!("Enumerating Stripe paid invoices (subscriptions) since {} …", since.format("%Y-%m-%d"));
   let mut starting_after: Option<String> = None;
   let mut processed = 0usize;
+  let mut page_num = 0usize;
 
   loop {
-    let mut req = ListInvoice::new()
-      .created(RangeQueryTs::gte(since.timestamp()))
-      .status(InvoiceStatus::Paid)
-      .limit(PAGE_SIZE);
-    if let Some(cursor) = &starting_after {
-      req = req.starting_after(cursor.clone());
-    }
-    let page: List<Invoice> = req
-      .send(stripe_client)
-      .await
-      .map_err(|err| anyhow::anyhow!("Stripe ListInvoice error: {err:?}"))?;
-
+    let page = stripe.list_paid_invoices(since.timestamp(), starting_after.as_deref()).await?;
+    page_num += 1;
     if page.data.is_empty() {
       break;
     }
-    let last_id = page.data.last().and_then(|inv| inv.id.as_ref().map(|id| id.to_string()));
+    let last_id = page.data.last().and_then(|inv| inv.id.clone());
 
     for inv in &page.data {
       if let Some(limit) = args.limit {
@@ -254,16 +233,16 @@ async fn backfill_invoices(
       }
       // Only subscription creation + renewal are in scope (prorations / manual
       // invoices are skipped, matching the webhook write-path).
-      let event_type = match inv.billing_reason {
-        Some(InvoiceBillingReason::SubscriptionCreate) => PaymentEventType::SubscriptionInitial,
-        Some(InvoiceBillingReason::SubscriptionCycle) => PaymentEventType::SubscriptionRenewal,
+      let event_type = match inv.billing_reason.as_deref() {
+        Some("subscription_create") => PaymentEventType::SubscriptionInitial,
+        Some("subscription_cycle") => PaymentEventType::SubscriptionRenewal,
         _ => {
           stats.skipped += 1;
           continue;
         }
       };
-      let inv_id = match inv.id.as_ref() {
-        Some(id) => id.to_string(),
+      let inv_id = match inv.id.clone() {
+        Some(id) => id,
         None => {
           stats.skipped += 1;
           continue;
@@ -271,7 +250,7 @@ async fn backfill_invoices(
       };
       processed += 1;
 
-      let customer_id = inv.customer.as_ref().map(|c| c.id().to_string());
+      let customer_id = inv.customer.clone();
       let occurred_at = DateTime::from_timestamp(inv.created, 0).unwrap_or_else(Utc::now);
       let mut maybe_user = resolve_user(
         invoice_metadata_user_token(inv),
@@ -279,7 +258,7 @@ async fn backfill_invoices(
       );
       if maybe_user.is_none() && args.deep_attribution {
         maybe_user = deep_resolve_user(
-          stripe_client, read_pool, customer_cache, customer_id.as_deref(), inv.customer_email.as_deref(),
+          stripe, read_pool, customer_cache, customer_id.as_deref(), inv.customer_email.as_deref(),
         )
         .await;
       }
@@ -312,11 +291,16 @@ async fn backfill_invoices(
       }
     }
 
+    info!(
+      "  invoices page {page_num}: {} fetched | subscriptions={} skipped={} unattributed={}",
+      page.data.len(), stats.subscriptions, stats.skipped, unattributed.len(),
+    );
     if !page.has_more {
       break;
     }
     starting_after = last_id;
   }
+  info!("Invoices done: {} subscription event(s) across {page_num} page(s).", stats.subscriptions);
   Ok(())
 }
 
@@ -356,19 +340,15 @@ fn resolve_user(
 /// it on the subscription/line-item metadata, NOT the top-level invoice metadata
 /// (which is typically empty), so we check all three locations.
 fn invoice_metadata_user_token(inv: &Invoice) -> Option<&str> {
-  if let Some(m) = inv.metadata.as_ref() {
-    if let Some(v) = m.get("user_token") {
-      if !v.is_empty() {
-        return Some(v.as_str());
-      }
+  if let Some(v) = inv.metadata.get("user_token") {
+    if !v.is_empty() {
+      return Some(v.as_str());
     }
   }
   if let Some(sd) = inv.parent.as_ref().and_then(|p| p.subscription_details.as_ref()) {
-    if let Some(m) = sd.metadata.as_ref() {
-      if let Some(v) = m.get("user_token") {
-        if !v.is_empty() {
-          return Some(v.as_str());
-        }
+    if let Some(v) = sd.metadata.get("user_token") {
+      if !v.is_empty() {
+        return Some(v.as_str());
       }
     }
   }
@@ -386,7 +366,7 @@ fn invoice_metadata_user_token(inv: &Invoice) -> Option<&str> {
 /// (1) invoice email -> users; (2) retrieve the Stripe Customer and use its
 /// `user_token` metadata, then its email -> users. Customer retrieval is cached.
 async fn deep_resolve_user(
-  stripe_client: &Client,
+  stripe: &StripeApi,
   read_pool: &Pool<MySql>,
   customer_cache: &mut HashMap<String, Option<UserToken>>,
   customer_id: Option<&str>,
@@ -404,13 +384,11 @@ async fn deep_resolve_user(
   }
 
   let mut resolved: Option<UserToken> = None;
-  match RetrieveCustomer::new(customer_id.to_string()).send(stripe_client).await {
-    Ok(RetrieveCustomerReturned::Customer(customer)) => {
-      if let Some(metadata) = &customer.metadata {
-        if let Some(user_token) = metadata.get("user_token") {
-          if !user_token.is_empty() {
-            resolved = Some(UserToken(user_token.clone()));
-          }
+  match stripe.retrieve_customer(customer_id).await {
+    Ok(customer) if !customer.deleted => {
+      if let Some(user_token) = customer.metadata.get("user_token") {
+        if !user_token.is_empty() {
+          resolved = Some(UserToken(user_token.clone()));
         }
       }
       if resolved.is_none() {
@@ -419,7 +397,7 @@ async fn deep_resolve_user(
         }
       }
     }
-    Ok(RetrieveCustomerReturned::DeletedCustomer(_)) => {}
+    Ok(_deleted) => {}
     Err(err) => warn!("deep attribution: retrieve customer {customer_id} failed: {err:?}"),
   }
 
