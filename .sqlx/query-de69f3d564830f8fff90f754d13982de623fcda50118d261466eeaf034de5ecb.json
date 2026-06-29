@@ -1,0 +1,80 @@
+{
+  "db_name": "MySQL",
+  "query": "\nSELECT\n  wle.maybe_entity_ref AS `stripe_object_id!`,\n  wle.entry_type       AS `entry_type!`,\n  wle.token            AS `ledger_token!: WalletLedgerEntryToken`,\n  w.owner_user_token   AS `owner_user_token!: UserToken`,\n  wle.credits_delta    AS `credits_delta!`,\n  wle.created_at        AS `created_at!: DateTime<Utc>`\nFROM wallet_ledger_entries wle\nJOIN wallets w ON w.token = wle.wallet_token\nWHERE w.wallet_namespace = 'artcraft'\n  AND wle.entry_type IN ('credit_banked', 'credit_monthly')\n  AND wle.created_at >= ?\n  AND (wle.maybe_entity_ref LIKE 'pi\\_%' OR wle.maybe_entity_ref LIKE 'in\\_%')\n    ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "stripe_object_id!",
+        "type_info": {
+          "type": "VarString",
+          "flags": "BINARY",
+          "char_set": 224,
+          "max_size": 1020
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "entry_type!",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NOT_NULL | BINARY | NO_DEFAULT_VALUE",
+          "char_set": 224,
+          "max_size": 128
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "ledger_token!: WalletLedgerEntryToken",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NOT_NULL | UNIQUE_KEY | BINARY | NO_DEFAULT_VALUE",
+          "char_set": 224,
+          "max_size": 128
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "owner_user_token!: UserToken",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NOT_NULL | MULTIPLE_KEY | BINARY | NO_DEFAULT_VALUE",
+          "char_set": 224,
+          "max_size": 128
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "credits_delta!",
+        "type_info": {
+          "type": "Long",
+          "flags": "NOT_NULL",
+          "char_set": 63,
+          "max_size": 11
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "created_at!: DateTime<Utc>",
+        "type_info": {
+          "type": "Timestamp",
+          "flags": "NOT_NULL | BINARY | TIMESTAMP",
+          "char_set": 63,
+          "max_size": 19
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      true,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "de69f3d564830f8fff90f754d13982de623fcda50118d261466eeaf034de5ecb"
+}

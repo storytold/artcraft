@@ -1,0 +1,36 @@
+{
+  "db_name": "MySQL",
+  "query": "\nSELECT\n  stripe_customer_id AS `stripe_customer_id!`,\n  user_token         AS `user_token!: UserToken`\nFROM user_stripe_customer_links\nWHERE payments_namespace = 'artcraft'\n    ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "stripe_customer_id!",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NOT_NULL | UNIQUE_KEY | BINARY | NO_DEFAULT_VALUE",
+          "char_set": 224,
+          "max_size": 1020
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "user_token!: UserToken",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NOT_NULL | MULTIPLE_KEY | BINARY | NO_DEFAULT_VALUE",
+          "char_set": 224,
+          "max_size": 128
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 0
+    },
+    "nullable": [
+      false,
+      false
+    ]
+  },
+  "hash": "2d49cfbafc29bce35f3e03135054c7521fb0182663aefa971245f91f33a6fc49"
+}
