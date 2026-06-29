@@ -74,10 +74,8 @@ where
 /// with a `NULL` source_object_id are exempt and always insert, since MySQL
 /// treats each `NULL` in a unique index as distinct.)
 ///
-/// NB: This uses the runtime `sqlx::query()` rather than the compile-time
-/// `query!` macro because `user_spend_events` is a brand-new table that isn't in
-/// the `.sqlx/` offline cache yet. Once the migration has been applied to a dev
-/// DB and `cargo sqlx prepare` has been run, convert this to `query!`.
+/// Compile-time-checked via `sqlx::query!` against the offline `.sqlx` cache
+/// (regenerate with `cargo sqlx prepare` after schema changes).
 pub async fn insert_user_spend_event<'e, 'c: 'e, E>(
   args: InsertUserSpendEventArgs<'e, 'c, E>,
 ) -> Result<(), sqlx::Error>
@@ -86,7 +84,7 @@ where
 {
   let token = UserSpendEventToken::generate();
 
-  sqlx::query(
+  sqlx::query!(
     r#"
 INSERT INTO user_spend_events
 SET
@@ -109,24 +107,24 @@ SET
   payment_occurred_at = ?
 ON DUPLICATE KEY UPDATE token = token
     "#,
+    token.as_str(),
+    args.payments_namespace.to_str(),
+    args.maybe_user_token.map(|t| t.as_str()),
+    args.event_type.to_str(),
+    args.amount_usd_cents,
+    args.maybe_credits_granted,
+    args.maybe_user_subscription_token.map(|t| t.as_str()),
+    args.maybe_wallet_ledger_entry_token.map(|t| t.as_str()),
+    args.payment_source.to_str(),
+    args.maybe_source_object_id,
+    args.maybe_stripe_customer_id,
+    args.maybe_stripe_invoice_id,
+    args.maybe_stripe_payment_intent_id,
+    args.maybe_stripe_charge_id,
+    args.maybe_stripe_event_id,
+    args.is_production,
+    args.payment_occurred_at,
   )
-    .bind(token.as_str())
-    .bind(args.payments_namespace.to_str())
-    .bind(args.maybe_user_token.map(|t| t.as_str()))
-    .bind(args.event_type.to_str())
-    .bind(args.amount_usd_cents)
-    .bind(args.maybe_credits_granted)
-    .bind(args.maybe_user_subscription_token.map(|t| t.as_str()))
-    .bind(args.maybe_wallet_ledger_entry_token.map(|t| t.as_str()))
-    .bind(args.payment_source.to_str())
-    .bind(args.maybe_source_object_id)
-    .bind(args.maybe_stripe_customer_id)
-    .bind(args.maybe_stripe_invoice_id)
-    .bind(args.maybe_stripe_payment_intent_id)
-    .bind(args.maybe_stripe_charge_id)
-    .bind(args.maybe_stripe_event_id)
-    .bind(args.is_production)
-    .bind(args.payment_occurred_at)
     .execute(args.mysql_executor)
     .await?;
 

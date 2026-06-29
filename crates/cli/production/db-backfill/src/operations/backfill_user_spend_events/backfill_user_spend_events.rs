@@ -155,7 +155,10 @@ async fn backfill_payment_intents(
       let customer_id = pi.customer.as_ref().map(|c| c.id().to_string());
       let charge_id = pi.latest_charge.as_ref().map(|c| c.id().to_string());
       let occurred_at = DateTime::from_timestamp(pi.created, 0).unwrap_or_else(Utc::now);
-      let maybe_user = resolve_user(Some(&pi.metadata), &pi_id, customer_id.as_deref(), ledger_by_id, user_by_customer);
+      let maybe_user = resolve_user(
+        pi.metadata.get("user_token").map(|s| s.as_str()),
+        &pi_id, customer_id.as_deref(), ledger_by_id, user_by_customer,
+      );
 
       match maybe_user {
         Some(user) => {
@@ -251,7 +254,10 @@ async fn backfill_invoices(
 
       let customer_id = inv.customer.as_ref().map(|c| c.id().to_string());
       let occurred_at = DateTime::from_timestamp(inv.created, 0).unwrap_or_else(Utc::now);
-      let maybe_user = resolve_user(inv.metadata.as_ref(), &inv_id, customer_id.as_deref(), ledger_by_id, user_by_customer);
+      let maybe_user = resolve_user(
+        invoice_metadata_user_token(inv),
+        &inv_id, customer_id.as_deref(), ledger_by_id, user_by_customer,
+      );
 
       match maybe_user {
         Some(user) => {
@@ -291,20 +297,23 @@ async fn backfill_invoices(
 
 // ---- Helpers ----
 
-/// Attribute a payment to a user: (1) Stripe object metadata `user_token`,
-/// (2) ledger entry by Stripe id, (3) `user_stripe_customer_links` by customer.
+/// Attribute a payment to a user, in order of reliability:
+///   1. Stripe object metadata `user_token` (set at checkout).
+///   2. The wallet ledger by Stripe id (`wallets.owner_user_token`) — this is
+///      the "other half" that covers fulfilled subscriptions, which the customer
+///      links table does NOT reliably have.
+///   3. `user_stripe_customer_links` by customer id — LAST resort (sparse for
+///      subscriptions).
 fn resolve_user(
-  metadata: Option<&HashMap<String, String>>,
+  metadata_user_token: Option<&str>,
   stripe_object_id: &str,
   customer_id: Option<&str>,
   ledger_by_id: &HashMap<String, LedgerPaymentRef>,
   user_by_customer: &HashMap<String, UserToken>,
 ) -> Option<UserToken> {
-  if let Some(md) = metadata {
-    if let Some(user_token) = md.get("user_token") {
-      if !user_token.is_empty() {
-        return Some(UserToken(user_token.clone()));
-      }
+  if let Some(user_token) = metadata_user_token {
+    if !user_token.is_empty() {
+      return Some(UserToken(user_token.to_string()));
     }
   }
   if let Some(ledger) = ledger_by_id.get(stripe_object_id) {
@@ -313,6 +322,36 @@ fn resolve_user(
   if let Some(customer_id) = customer_id {
     if let Some(user_token) = user_by_customer.get(customer_id) {
       return Some(user_token.clone());
+    }
+  }
+  None
+}
+
+/// Extract our `user_token` from an invoice. Subscription invoices usually carry
+/// it on the subscription/line-item metadata, NOT the top-level invoice metadata
+/// (which is typically empty), so we check all three locations.
+fn invoice_metadata_user_token(inv: &Invoice) -> Option<&str> {
+  if let Some(m) = inv.metadata.as_ref() {
+    if let Some(v) = m.get("user_token") {
+      if !v.is_empty() {
+        return Some(v.as_str());
+      }
+    }
+  }
+  if let Some(sd) = inv.parent.as_ref().and_then(|p| p.subscription_details.as_ref()) {
+    if let Some(m) = sd.metadata.as_ref() {
+      if let Some(v) = m.get("user_token") {
+        if !v.is_empty() {
+          return Some(v.as_str());
+        }
+      }
+    }
+  }
+  if let Some(line) = inv.lines.data.get(0) {
+    if let Some(v) = line.metadata.get("user_token") {
+      if !v.is_empty() {
+        return Some(v.as_str());
+      }
     }
   }
   None
