@@ -1,6 +1,7 @@
 use crate::configs::credits_packs::stripe_artcraft_credits_pack_info::StripeArtcraftCreditsPackInfo;
 use crate::configs::subscriptions::stripe_artcraft_subscription_info::StripeArtcraftSubscriptionInfo;
-use chrono::NaiveDateTime;
+use chrono::{DateTime, NaiveDateTime, Utc};
+use enums::by_table::user_spend_events::payment_event_type::PaymentEventType;
 use reusable_types::stripe::stripe_recurring_interval::StripeRecurringInterval;
 use reusable_types::stripe::stripe_subscription_status::StripeSubscriptionStatus;
 use tokens::tokens::users::UserToken;
@@ -50,6 +51,21 @@ pub struct WalletCreditsPurchaseEvent {
 
   /// Also potentially save to `user_stripe_customer_links` table.
   pub maybe_stripe_customer_id: Option<String>,
+
+  /// USD cents actually collected (Stripe `payment_intent.amount_received`).
+  pub amount_usd_cents: i64,
+
+  /// Stripe livemode.
+  pub is_production: bool,
+
+  /// When the money moved (Stripe `payment_intent.created`).
+  pub payment_occurred_at: DateTime<Utc>,
+
+  /// The successful charge behind the payment intent, if present.
+  pub maybe_stripe_charge_id: Option<String>,
+
+  /// The Stripe webhook event id (`evt_...`) that produced this row.
+  pub maybe_stripe_event_id: Option<String>,
 }
 
 
@@ -146,4 +162,16 @@ pub struct SubscriptionPaidEvent {
   /// For eagerly created user records (in the new checkout flow), we need to update the user's email.
   /// We started creating user accounts without a username, email, and password - so we need to collect it here.
   pub customer_email: Option<String>,
+
+  /// USD cents actually collected (Stripe `invoice.amount_paid`).
+  pub amount_usd_cents: i64,
+
+  /// Whether this is the first paid invoice (initial) or a renewal.
+  pub payment_event_type: PaymentEventType,
+
+  /// When the money moved (Stripe `invoice.created`).
+  pub payment_occurred_at: DateTime<Utc>,
+
+  /// The Stripe webhook event id (`evt_...`) that produced this row.
+  pub maybe_stripe_event_id: Option<String>,
 }

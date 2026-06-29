@@ -9,6 +9,8 @@ use crate::stripe_requests::stripe_lookup_purchase_from_payment_intent_success::
 use crate::utils::expand_ids::expand_customer_id::expand_customer_id;
 use crate::utils::metadata::get_metadata_user_token::get_metadata_user_token;
 use crate::utils::metadata::get_metadata_wallet_token::get_metadata_wallet_token;
+use crate::utils::stripe_event_descriptor::StripeEventDescriptor;
+use chrono::{DateTime, Utc};
 use log::{error, info, warn};
 use server_environment::ServerEnvironment;
 use sqlx::{MySql, Transaction};
@@ -20,6 +22,7 @@ use tokens::tokens::wallets::WalletToken;
 
 // Handle event type: 'payment_intent.succeeded'
 pub async fn payment_intent_succeeded_extractor(
+  stripe_event_descriptor: &StripeEventDescriptor,
   payment_intent: &PaymentIntent,
   server_environment: ServerEnvironment,
   stripe_client: &Client,
@@ -112,6 +115,11 @@ pub async fn payment_intent_succeeded_extractor(
       quantity: purchase.quantity,
       ledger_event_ref: Some(payment_intent_id),
       maybe_stripe_customer_id,
+      amount_usd_cents: payment_intent.amount_received,
+      is_production: payment_intent.livemode,
+      payment_occurred_at: DateTime::from_timestamp(payment_intent.created, 0).unwrap_or_else(Utc::now),
+      maybe_stripe_charge_id: payment_intent.latest_charge.as_ref().map(|charge| charge.id().to_string()),
+      maybe_stripe_event_id: Some(stripe_event_descriptor.stripe_event_id.clone()),
     })),
     webhook_event_log_summary: event_log_summary,
   })

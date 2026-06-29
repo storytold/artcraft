@@ -6,6 +6,9 @@ use mysql_queries::queries::users::user_subscriptions::upsert_user_subscription_
 use mysql_queries::queries::wallets::create_new_artcraft_wallet_for_owner_user::create_new_artcraft_wallet_for_owner_user;
 use mysql_queries::queries::wallets::find_primary_wallet_token_for_owner::find_primary_wallet_token_for_owner_using_transaction;
 use mysql_queries::queries::wallets::refill_monthly_credits_balance_on_wallet::refill_monthly_credits_balance_on_wallet;
+use mysql_queries::queries::user_spend_events::insert_user_spend_event::{insert_user_spend_event, InsertUserSpendEventArgs};
+use enums::by_table::user_spend_events::payment_source::PaymentSource;
+use std::marker::PhantomData;
 use reusable_types::stripe::stripe_subscription_status::StripeSubscriptionStatus;
 
 pub async fn mark_subscription_as_paid(
@@ -87,12 +90,37 @@ pub async fn mark_subscription_as_paid(
 
   info!("Adding {} monthly credits to wallet: {}", monthly_credits , wallet_token.as_str());
 
-  let _result = refill_monthly_credits_balance_on_wallet(
+  let wallet_update = refill_monthly_credits_balance_on_wallet(
     &wallet_token, 
     monthly_credits, 
     maybe_ledger_ref,
     transaction
   ).await?;
+
+  // Record the money movement in the spend-events ledger, in this SAME
+  // transaction. Idempotent on (payment_source, source_object_id), so a replayed
+  // `invoice.paid` webhook is a no-op.
+  insert_user_spend_event(InsertUserSpendEventArgs {
+    payments_namespace: PaymentsNamespace::Artcraft,
+    maybe_user_token: Some(&details.owner_user_token),
+    event_type: details.payment_event_type,
+    amount_usd_cents: details.amount_usd_cents,
+    // NULL rather than a clamped/garbage value if it somehow doesn't fit u32.
+    maybe_credits_granted: u32::try_from(monthly_credits).ok(),
+    maybe_user_subscription_token: None,
+    maybe_wallet_ledger_entry_token: Some(&wallet_update.wallet_ledger_entry_token),
+    payment_source: PaymentSource::Stripe,
+    maybe_source_object_id: maybe_ledger_ref,
+    maybe_stripe_customer_id: Some(&details.stripe_customer_id),
+    maybe_stripe_invoice_id: maybe_ledger_ref,
+    maybe_stripe_payment_intent_id: None,
+    maybe_stripe_charge_id: None,
+    maybe_stripe_event_id: details.maybe_stripe_event_id.as_deref(),
+    is_production: details.stripe_is_production,
+    payment_occurred_at: details.payment_occurred_at,
+    mysql_executor: &mut **transaction,
+    phantom: PhantomData,
+  }).await?;
 
   Ok(())
 }

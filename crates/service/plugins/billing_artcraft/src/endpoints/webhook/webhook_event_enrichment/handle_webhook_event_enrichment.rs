@@ -51,6 +51,7 @@ pub async fn handle_webhook_event_enrichment(
       info!("Event {}, data: {:?}", stripe_event_descriptor, payment_intent);
 
       return payment_intent_succeeded_extractor(
+        &stripe_event_descriptor,
         &payment_intent,
         server_environment,
         stripe_client,

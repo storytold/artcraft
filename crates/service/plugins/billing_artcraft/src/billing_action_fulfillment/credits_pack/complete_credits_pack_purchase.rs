@@ -8,6 +8,11 @@ use mysql_queries::queries::wallets::add_durable_banked_balance_to_wallet::add_d
 use mysql_queries::queries::wallets::create_new_artcraft_wallet_for_owner_user::create_new_artcraft_wallet_for_owner_user;
 use mysql_queries::queries::wallets::find_primary_wallet_token_for_owner::find_primary_wallet_token_for_owner_using_transaction;
 use tokens::tokens::users::UserToken;
+use std::marker::PhantomData;
+use chrono::{DateTime, Utc};
+use enums::by_table::user_spend_events::payment_event_type::PaymentEventType;
+use enums::by_table::user_spend_events::payment_source::PaymentSource;
+use mysql_queries::queries::user_spend_events::insert_user_spend_event::{insert_user_spend_event, InsertUserSpendEventArgs};
 
 /// Record the credits pack purchase
 pub async fn complete_credits_pack_purchase(
@@ -16,6 +21,11 @@ pub async fn complete_credits_pack_purchase(
   quantity: u64,
   maybe_ledger_ref: Option<&str>,
   maybe_stripe_customer_id: Option<&str>,
+  maybe_stripe_charge_id: Option<&str>,
+  maybe_stripe_event_id: Option<&str>,
+  amount_usd_cents: i64,
+  is_production: bool,
+  payment_occurred_at: DateTime<Utc>,
   transaction: &mut sqlx::Transaction<'_, sqlx::MySql>,
 ) -> anyhow::Result<()> {
 
@@ -37,13 +47,38 @@ pub async fn complete_credits_pack_purchase(
   
   info!("Adding {} credits to wallet: {}", credits_purchased, wallet_token.as_str());
   
-  let _result = add_durable_banked_balance_to_wallet(
+  let wallet_update = add_durable_banked_balance_to_wallet(
     &wallet_token,
     credits_purchased,
     maybe_ledger_ref,
     None,
     transaction,
   ).await?;
+
+  // Record the money movement in the spend-events ledger, in this SAME
+  // transaction. Idempotent on (payment_source, source_object_id), so a replayed
+  // `payment_intent.succeeded` webhook is a no-op.
+  insert_user_spend_event(InsertUserSpendEventArgs {
+    payments_namespace: PaymentsNamespace::Artcraft,
+    maybe_user_token: Some(owner_user_token),
+    event_type: PaymentEventType::CreditPackPurchase,
+    amount_usd_cents,
+    // NULL rather than a clamped/garbage value if it somehow doesn't fit u32.
+    maybe_credits_granted: u32::try_from(credits_purchased).ok(),
+    maybe_user_subscription_token: None,
+    maybe_wallet_ledger_entry_token: Some(&wallet_update.wallet_ledger_entry_token),
+    payment_source: PaymentSource::Stripe,
+    maybe_source_object_id: maybe_ledger_ref,
+    maybe_stripe_customer_id,
+    maybe_stripe_invoice_id: None,
+    maybe_stripe_payment_intent_id: maybe_ledger_ref,
+    maybe_stripe_charge_id,
+    maybe_stripe_event_id,
+    is_production,
+    payment_occurred_at,
+    mysql_executor: &mut **transaction,
+    phantom: PhantomData,
+  }).await?;
 
   if let Some(stripe_customer_id) = maybe_stripe_customer_id {
     optionally_link_user_to_stripe_customer(
