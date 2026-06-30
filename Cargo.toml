@@ -136,6 +136,7 @@ members = [
   "crates/service/job/grok_api_job",
   "crates/service/job/seedance2_pro_job",
   "crates/service/job/video_thumbnail_job",
+  "crates/service/job/user_spend_analytics_job",
   "crates/service/job/worldlabs_job",
   "crates/service/web/dummy_service",
   "crates/service/web/storyteller_web",

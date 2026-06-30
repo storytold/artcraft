@@ -13705,6 +13705,36 @@ dependencies = [
 ]
 
 [[package]]
+name = "user-spend-analytics-job"
+version = "0.0.1"
+dependencies = [
+ "actix-web",
+ "actix_helpers",
+ "anyhow",
+ "bootstrap",
+ "chrono",
+ "concurrency",
+ "easyenv",
+ "enums",
+ "errors",
+ "jobs_common",
+ "log",
+ "mysql_queries",
+ "pager",
+ "rootly_client",
+ "rootly_config",
+ "serde",
+ "serde_derive",
+ "serde_json",
+ "server_environment",
+ "shared_env_var_config",
+ "sqlx",
+ "tokens",
+ "tokio",
+ "workspace-build-acceleration",
+]
+
+[[package]]
 name = "user_input_common"
 version = "0.0.1"
 dependencies = [
