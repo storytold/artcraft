@@ -610,6 +610,12 @@ export function UserProfile() {
                 Spend Summary
               </Link>
             </Button>
+            <Button variant="outline" size="sm" asChild>
+              <Link to={`/user/spend-history/${username}`}>
+                <IconHistory className="size-4" />
+                Spend History
+              </Link>
+            </Button>
             <Button
               variant="outline"
               size="sm"

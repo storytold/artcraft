@@ -35,6 +35,7 @@ import {
   IconAlertCircle,
   IconArrowLeft,
   IconCoin,
+  IconHistory,
 } from "@tabler/icons-react";
 import { usePageTitle } from "@/hooks/usePageTitle";
 
@@ -240,6 +241,12 @@ export function UserSpendSummary() {
             )}
           </p>
         </div>
+        <Button variant="outline" size="sm" asChild>
+          <Link to={`/user/spend-history/${username}`}>
+            <IconHistory className="size-4" />
+            Spend History
+          </Link>
+        </Button>
       </div>
 
       {/* Interactive spending-over-time graph */}
