@@ -38,6 +38,7 @@ import {
   IconHistory,
 } from "@tabler/icons-react";
 import { usePageTitle } from "@/hooks/usePageTitle";
+import { UserBillingSection } from "@/components/UserBillingSection";
 
 // --- formatting helpers ---
 const usd = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" });
@@ -370,6 +371,9 @@ export function UserSpendSummary() {
           <p className="text-muted-foreground">No spend summary for this user.</p>
         </div>
       )}
+
+      {/* Billing (same Stripe block as the profile page) */}
+      {user && <UserBillingSection userToken={user.token} />}
     </div>
   );
 }

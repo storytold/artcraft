@@ -6,12 +6,10 @@ import * as Flags from "country-flag-icons/react/3x2";
 import {
   ModerationApi,
   type ModeratorUserLookupResponse,
-  type ModeratorStripeCustomerIdSource,
-  type ModeratorUserStripeCustomerIdEntry,
 } from "@/api/ModerationApi";
-import { formatNamespace, stripeCustomerDashboardUrl } from "@/lib/stripe";
 import { MediaApi, type MediaInfo } from "@/api/MediaApi";
 import { MediaCard } from "@/components/MediaCard";
+import { UserBillingSection } from "@/components/UserBillingSection";
 import type { Wallet, UserJob } from "@/types";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { getIdenticonUrl } from "@/lib/identicon";
@@ -19,9 +17,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   IconAlertCircle,
-  IconAlertTriangle,
   IconArrowLeft,
-  IconExternalLink,
   IconPhoto,
   IconInfoCircle,
   IconCopy,
@@ -32,7 +28,6 @@ import {
   IconCoin,
   IconEye,
   IconEyeOff,
-  IconCreditCard,
   IconCalendar,
   IconHistory,
   IconBriefcase,
@@ -63,11 +58,6 @@ import { UserFeatureFlagsDialog } from "@/components/UserFeatureFlagsDialog";
 import { getJobStatusBadgeProps } from "@/components/JobsTable";
 import { usePageTitle } from "@/hooks/usePageTitle";
 
-const STRIPE_SOURCE_LABELS: Record<ModeratorStripeCustomerIdSource, string> = {
-  customer_link: "Customer Link",
-  subscription: "Subscription",
-};
-
 export function UserProfile() {
   const { username } = useParams<{ username: string }>();
   usePageTitle(username ? `@${username}` : undefined);
@@ -80,10 +70,6 @@ export function UserProfile() {
   const [media, setMedia] = useState<MediaInfo[]>([]);
   const [wallets, setWallets] = useState<Wallet[]>([]);
   const [isWalletsLoading, setIsWalletsLoading] = useState(false);
-  const [stripeCustomerIds, setStripeCustomerIds] = useState<
-    ModeratorUserStripeCustomerIdEntry[]
-  >([]);
-  const [isStripeIdsLoading, setIsStripeIdsLoading] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showIPs, setShowIPs] = useState<boolean>(false);
@@ -100,34 +86,6 @@ export function UserProfile() {
   const totalMonthly = wallets.reduce((sum, w) => sum + w.monthly_credits, 0);
   const totalBanked = wallets.reduce((sum, w) => sum + w.banked_credits, 0);
   const totalCredits = totalMonthly + totalBanked;
-
-  // One row per unique customer id, with all the (namespace, source) pairs
-  // it was found under.
-  const stripeCustomers = stripeCustomerIds.reduce<
-    { id: string; entries: ModeratorUserStripeCustomerIdEntry[] }[]
-  >((acc, entry) => {
-    const group = acc.find((g) => g.id === entry.stripe_customer_id);
-    if (group) {
-      group.entries.push(entry);
-    } else {
-      acc.push({ id: entry.stripe_customer_id, entries: [entry] });
-    }
-    return acc;
-  }, []);
-
-  // A namespace mapping to more than one distinct customer id means the
-  // subscription and credits customer drifted apart — worth flagging.
-  const namespaceIdSets = stripeCustomerIds.reduce<Map<string, Set<string>>>(
-    (map, entry) => {
-      const ids = map.get(entry.payments_namespace) ?? new Set<string>();
-      ids.add(entry.stripe_customer_id);
-      return map.set(entry.payments_namespace, ids);
-    },
-    new Map(),
-  );
-  const mismatchedNamespaces = [...namespaceIdSets.entries()]
-    .filter(([, ids]) => ids.size > 1)
-    .map(([ns]) => ns);
 
   const createWallet = async () => {
     if (!user || isCreatingWallet) return;
@@ -241,14 +199,6 @@ export function UserProfile() {
             setIsJobsLoading(false);
           });
 
-          setIsStripeIdsLoading(true);
-          modApi.GetUserStripeCustomerIds(fetchedUser.token).then((resp) => {
-            if (cancelled) return;
-            if (resp.success && resp.data) {
-              setStripeCustomerIds(resp.data.customer_ids);
-            }
-            setIsStripeIdsLoading(false);
-          });
         } else {
           setError(userResp.errorMessage || "User not found");
         }
@@ -951,81 +901,8 @@ export function UserProfile() {
             </div>
           </div>
 
-          {/* Billing & Subscription Group */}
-          <div className="rounded-xl border bg-card text-card-foreground shadow-sm flex flex-col p-5">
-            <h4 className="text-sm font-semibold mb-4 text-foreground/80 uppercase tracking-wider pb-3 border-b border-border/50 flex items-center gap-2 h-11.25">
-              <IconCreditCard className="size-4" />
-              Billing
-            </h4>
-            <div className="flex flex-col gap-5">
-              <div className="flex flex-col gap-1.5">
-                <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                  Stripe Customers
-                </span>
-                {isStripeIdsLoading ? (
-                  <Skeleton className="h-12 w-full rounded-lg" />
-                ) : stripeCustomers.length > 0 ? (
-                  <div className="flex flex-col gap-2">
-                    {stripeCustomers.map(({ id, entries }) => (
-                      <div
-                        key={id}
-                        className="flex flex-col gap-1.5 p-2 bg-secondary/30 rounded-lg"
-                      >
-                        <div className="flex items-center gap-1.5 min-w-0">
-                          <a
-                            href={stripeCustomerDashboardUrl(id)}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 min-w-0 font-mono text-xs hover:underline"
-                            title="Open in Stripe Dashboard"
-                          >
-                            <span className="truncate">{id}</span>
-                            <IconExternalLink className="size-3 shrink-0 text-muted-foreground" />
-                          </a>
-                          <button
-                            type="button"
-                            className="ml-auto shrink-0 text-muted-foreground hover:text-foreground transition-colors cursor-pointer p-0.5"
-                            onClick={() => copyToClipboard(id, `stripe_${id}`)}
-                            title="Copy customer ID"
-                          >
-                            {copiedStates[`stripe_${id}`] ? (
-                              <IconCheck className="size-3 text-emerald-400" />
-                            ) : (
-                              <IconCopy className="size-3 opacity-50" />
-                            )}
-                          </button>
-                        </div>
-                        <div className="flex flex-wrap gap-1">
-                          {entries.map((entry) => (
-                            <Badge
-                              key={`${entry.payments_namespace}_${entry.source}`}
-                              variant="secondary"
-                              className="text-[10px] py-0 px-1.5"
-                            >
-                              {formatNamespace(entry.payments_namespace)}
-                              {" · "}
-                              {STRIPE_SOURCE_LABELS[entry.source]}
-                            </Badge>
-                          ))}
-                        </div>
-                      </div>
-                    ))}
-                    {mismatchedNamespaces.length > 0 && (
-                      <p className="flex items-center gap-1 text-[11px] text-amber-400">
-                        <IconAlertTriangle className="size-3 shrink-0" />
-                        Multiple customer IDs in{" "}
-                        {mismatchedNamespaces.map(formatNamespace).join(", ")}
-                      </p>
-                    )}
-                  </div>
-                ) : (
-                  <span className="text-sm text-muted-foreground italic">
-                    Not Connected
-                  </span>
-                )}
-              </div>
-            </div>
-          </div>
+          {/* Billing (shared component, also on the spend-summary page) */}
+          <UserBillingSection userToken={user.token} />
 
           {/* Security & System Identifiers Group */}
           <div className="rounded-xl border bg-card text-card-foreground shadow-sm flex flex-col p-5">
