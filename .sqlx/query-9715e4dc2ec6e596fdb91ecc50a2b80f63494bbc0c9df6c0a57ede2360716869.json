@@ -1,0 +1,443 @@
+{
+  "db_name": "MySQL",
+  "query": "\nSELECT\n  payments_namespace AS `payments_namespace!: PaymentsNamespace`,\n  user_token AS `user_token!: UserToken`,\n  lifetime_gross_spend_usd_cents,\n  lifetime_subscription_spend_usd_cents,\n  lifetime_credits_spend_usd_cents,\n  lifetime_refund_usd_cents,\n  lifetime_net_spend_usd_cents,\n  lifetime_payment_count,\n  lifetime_refund_count,\n  first_payment_at AS `maybe_first_payment_at: DateTime<Utc>`,\n  first_spend_usd_cents,\n  last_payment_at AS `maybe_last_payment_at: DateTime<Utc>`,\n  last_spend_usd_cents,\n  days_since_first_payment AS `maybe_days_since_first_payment: u32`,\n  days_since_last_payment AS `maybe_days_since_last_payment: u32`,\n  net_spend_7d_usd_cents,\n  net_spend_prev_7d_usd_cents,\n  net_spend_14d_usd_cents,\n  net_spend_prev_14d_usd_cents,\n  net_spend_30d_usd_cents,\n  net_spend_prev_30d_usd_cents,\n  net_spend_60d_usd_cents,\n  net_spend_90d_usd_cents,\n  net_spend_this_year_usd_cents,\n  avg_weekly_net_spend_4w_usd_cents,\n  avg_weekly_net_spend_12w_usd_cents,\n  active_weeks_in_last_4,\n  active_weeks_in_last_8,\n  active_weeks_in_last_12,\n  active_weeks_in_last_24,\n  active_weeks_in_last_52,\n  consecutive_active_weeks,\n  consecutive_inactive_weeks,\n  weeks_since_last_spend AS `maybe_weeks_since_last_spend: u32`,\n  is_active_subscriber AS `is_active_subscriber: bool`,\n  maybe_subscription_interval,\n  maybe_reengagement_score AS `maybe_reengagement_score: u32`,\n  created_at AS `created_at: DateTime<Utc>`,\n  updated_at AS `updated_at: DateTime<Utc>`\nFROM user_spend_summaries\nWHERE payments_namespace = ?\n  AND user_token = ?\nLIMIT 1\n    ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "payments_namespace!: PaymentsNamespace",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NOT_NULL | MULTIPLE_KEY | BINARY | NO_DEFAULT_VALUE",
+          "char_set": 224,
+          "max_size": 128
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "user_token!: UserToken",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NOT_NULL | BINARY | NO_DEFAULT_VALUE",
+          "char_set": 224,
+          "max_size": 128
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "lifetime_gross_spend_usd_cents",
+        "type_info": {
+          "type": "LongLong",
+          "flags": "NOT_NULL | UNSIGNED",
+          "char_set": 63,
+          "max_size": 20
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "lifetime_subscription_spend_usd_cents",
+        "type_info": {
+          "type": "LongLong",
+          "flags": "NOT_NULL | UNSIGNED",
+          "char_set": 63,
+          "max_size": 20
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "lifetime_credits_spend_usd_cents",
+        "type_info": {
+          "type": "LongLong",
+          "flags": "NOT_NULL | UNSIGNED",
+          "char_set": 63,
+          "max_size": 20
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "lifetime_refund_usd_cents",
+        "type_info": {
+          "type": "LongLong",
+          "flags": "NOT_NULL | UNSIGNED",
+          "char_set": 63,
+          "max_size": 20
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "lifetime_net_spend_usd_cents",
+        "type_info": {
+          "type": "LongLong",
+          "flags": "NOT_NULL | UNSIGNED",
+          "char_set": 63,
+          "max_size": 20
+        }
+      },
+      {
+        "ordinal": 7,
+        "name": "lifetime_payment_count",
+        "type_info": {
+          "type": "Long",
+          "flags": "NOT_NULL | UNSIGNED",
+          "char_set": 63,
+          "max_size": 10
+        }
+      },
+      {
+        "ordinal": 8,
+        "name": "lifetime_refund_count",
+        "type_info": {
+          "type": "Long",
+          "flags": "NOT_NULL | UNSIGNED",
+          "char_set": 63,
+          "max_size": 10
+        }
+      },
+      {
+        "ordinal": 9,
+        "name": "maybe_first_payment_at: DateTime<Utc>",
+        "type_info": {
+          "type": "Timestamp",
+          "flags": "BINARY",
+          "char_set": 63,
+          "max_size": 19
+        }
+      },
+      {
+        "ordinal": 10,
+        "name": "first_spend_usd_cents",
+        "type_info": {
+          "type": "LongLong",
+          "flags": "NOT_NULL | UNSIGNED",
+          "char_set": 63,
+          "max_size": 20
+        }
+      },
+      {
+        "ordinal": 11,
+        "name": "maybe_last_payment_at: DateTime<Utc>",
+        "type_info": {
+          "type": "Timestamp",
+          "flags": "BINARY",
+          "char_set": 63,
+          "max_size": 19
+        }
+      },
+      {
+        "ordinal": 12,
+        "name": "last_spend_usd_cents",
+        "type_info": {
+          "type": "LongLong",
+          "flags": "NOT_NULL | UNSIGNED",
+          "char_set": 63,
+          "max_size": 20
+        }
+      },
+      {
+        "ordinal": 13,
+        "name": "maybe_days_since_first_payment: u32",
+        "type_info": {
+          "type": "Long",
+          "flags": "UNSIGNED",
+          "char_set": 63,
+          "max_size": 10
+        }
+      },
+      {
+        "ordinal": 14,
+        "name": "maybe_days_since_last_payment: u32",
+        "type_info": {
+          "type": "Long",
+          "flags": "UNSIGNED",
+          "char_set": 63,
+          "max_size": 10
+        }
+      },
+      {
+        "ordinal": 15,
+        "name": "net_spend_7d_usd_cents",
+        "type_info": {
+          "type": "LongLong",
+          "flags": "NOT_NULL",
+          "char_set": 63,
+          "max_size": 20
+        }
+      },
+      {
+        "ordinal": 16,
+        "name": "net_spend_prev_7d_usd_cents",
+        "type_info": {
+          "type": "LongLong",
+          "flags": "NOT_NULL",
+          "char_set": 63,
+          "max_size": 20
+        }
+      },
+      {
+        "ordinal": 17,
+        "name": "net_spend_14d_usd_cents",
+        "type_info": {
+          "type": "LongLong",
+          "flags": "NOT_NULL",
+          "char_set": 63,
+          "max_size": 20
+        }
+      },
+      {
+        "ordinal": 18,
+        "name": "net_spend_prev_14d_usd_cents",
+        "type_info": {
+          "type": "LongLong",
+          "flags": "NOT_NULL",
+          "char_set": 63,
+          "max_size": 20
+        }
+      },
+      {
+        "ordinal": 19,
+        "name": "net_spend_30d_usd_cents",
+        "type_info": {
+          "type": "LongLong",
+          "flags": "NOT_NULL",
+          "char_set": 63,
+          "max_size": 20
+        }
+      },
+      {
+        "ordinal": 20,
+        "name": "net_spend_prev_30d_usd_cents",
+        "type_info": {
+          "type": "LongLong",
+          "flags": "NOT_NULL",
+          "char_set": 63,
+          "max_size": 20
+        }
+      },
+      {
+        "ordinal": 21,
+        "name": "net_spend_60d_usd_cents",
+        "type_info": {
+          "type": "LongLong",
+          "flags": "NOT_NULL",
+          "char_set": 63,
+          "max_size": 20
+        }
+      },
+      {
+        "ordinal": 22,
+        "name": "net_spend_90d_usd_cents",
+        "type_info": {
+          "type": "LongLong",
+          "flags": "NOT_NULL",
+          "char_set": 63,
+          "max_size": 20
+        }
+      },
+      {
+        "ordinal": 23,
+        "name": "net_spend_this_year_usd_cents",
+        "type_info": {
+          "type": "LongLong",
+          "flags": "NOT_NULL",
+          "char_set": 63,
+          "max_size": 20
+        }
+      },
+      {
+        "ordinal": 24,
+        "name": "avg_weekly_net_spend_4w_usd_cents",
+        "type_info": {
+          "type": "LongLong",
+          "flags": "NOT_NULL",
+          "char_set": 63,
+          "max_size": 20
+        }
+      },
+      {
+        "ordinal": 25,
+        "name": "avg_weekly_net_spend_12w_usd_cents",
+        "type_info": {
+          "type": "LongLong",
+          "flags": "NOT_NULL",
+          "char_set": 63,
+          "max_size": 20
+        }
+      },
+      {
+        "ordinal": 26,
+        "name": "active_weeks_in_last_4",
+        "type_info": {
+          "type": "Tiny",
+          "flags": "NOT_NULL | UNSIGNED",
+          "char_set": 63,
+          "max_size": 3
+        }
+      },
+      {
+        "ordinal": 27,
+        "name": "active_weeks_in_last_8",
+        "type_info": {
+          "type": "Tiny",
+          "flags": "NOT_NULL | UNSIGNED",
+          "char_set": 63,
+          "max_size": 3
+        }
+      },
+      {
+        "ordinal": 28,
+        "name": "active_weeks_in_last_12",
+        "type_info": {
+          "type": "Tiny",
+          "flags": "NOT_NULL | UNSIGNED",
+          "char_set": 63,
+          "max_size": 3
+        }
+      },
+      {
+        "ordinal": 29,
+        "name": "active_weeks_in_last_24",
+        "type_info": {
+          "type": "Tiny",
+          "flags": "NOT_NULL | UNSIGNED",
+          "char_set": 63,
+          "max_size": 3
+        }
+      },
+      {
+        "ordinal": 30,
+        "name": "active_weeks_in_last_52",
+        "type_info": {
+          "type": "Tiny",
+          "flags": "NOT_NULL | UNSIGNED",
+          "char_set": 63,
+          "max_size": 3
+        }
+      },
+      {
+        "ordinal": 31,
+        "name": "consecutive_active_weeks",
+        "type_info": {
+          "type": "Long",
+          "flags": "NOT_NULL | UNSIGNED",
+          "char_set": 63,
+          "max_size": 10
+        }
+      },
+      {
+        "ordinal": 32,
+        "name": "consecutive_inactive_weeks",
+        "type_info": {
+          "type": "Long",
+          "flags": "NOT_NULL | UNSIGNED",
+          "char_set": 63,
+          "max_size": 10
+        }
+      },
+      {
+        "ordinal": 33,
+        "name": "maybe_weeks_since_last_spend: u32",
+        "type_info": {
+          "type": "Long",
+          "flags": "UNSIGNED",
+          "char_set": 63,
+          "max_size": 10
+        }
+      },
+      {
+        "ordinal": 34,
+        "name": "is_active_subscriber: bool",
+        "type_info": {
+          "type": "Tiny",
+          "flags": "NOT_NULL",
+          "char_set": 63,
+          "max_size": 1
+        }
+      },
+      {
+        "ordinal": 35,
+        "name": "maybe_subscription_interval",
+        "type_info": {
+          "type": "VarString",
+          "flags": "BINARY",
+          "char_set": 224,
+          "max_size": 64
+        }
+      },
+      {
+        "ordinal": 36,
+        "name": "maybe_reengagement_score: u32",
+        "type_info": {
+          "type": "Long",
+          "flags": "UNSIGNED",
+          "char_set": 63,
+          "max_size": 10
+        }
+      },
+      {
+        "ordinal": 37,
+        "name": "created_at: DateTime<Utc>",
+        "type_info": {
+          "type": "Timestamp",
+          "flags": "NOT_NULL | BINARY | TIMESTAMP",
+          "char_set": 63,
+          "max_size": 19
+        }
+      },
+      {
+        "ordinal": 38,
+        "name": "updated_at: DateTime<Utc>",
+        "type_info": {
+          "type": "Timestamp",
+          "flags": "NOT_NULL | BINARY | TIMESTAMP | ON_UPDATE_NOW",
+          "char_set": 63,
+          "max_size": 19
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      true,
+      false,
+      true,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      true,
+      true,
+      false,
+      false
+    ]
+  },
+  "hash": "9715e4dc2ec6e596fdb91ecc50a2b80f63494bbc0c9df6c0a57ede2360716869"
+}
