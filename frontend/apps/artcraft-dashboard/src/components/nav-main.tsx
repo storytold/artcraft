@@ -4,6 +4,7 @@ import { type Icon } from "@tabler/icons-react";
 import {
   SidebarGroup,
   SidebarGroupContent,
+  SidebarGroupLabel,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
@@ -12,12 +13,14 @@ import {
 
 export function NavMain({
   items,
+  label,
 }: {
   items: {
     title: string;
     url: string;
     icon?: Icon;
   }[];
+  label?: string;
 }) {
   const { pathname } = useLocation();
   const { isMobile, setOpenMobile } = useSidebar();
@@ -30,6 +33,7 @@ export function NavMain({
 
   return (
     <SidebarGroup>
+      {label && <SidebarGroupLabel>{label}</SidebarGroupLabel>}
       <SidebarGroupContent className="flex flex-col gap-2">
         <SidebarMenu>
           {items.map((item) => (

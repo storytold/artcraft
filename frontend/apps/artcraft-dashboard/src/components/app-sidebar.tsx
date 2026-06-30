@@ -6,7 +6,6 @@ import {
   IconCamera,
   IconCompass,
   IconCreditCard,
-  IconDashboard,
   IconFlag,
   IconKey,
   IconClipboardList,
@@ -39,86 +38,46 @@ import {
 import { Link } from "react-router-dom";
 
 const data = {
-  navMain: [
+  navGroups: [
     {
-      title: "Dashboard",
-      url: "/",
-      icon: IconDashboard,
+      label: "Media",
+      items: [
+        { title: "Explore Media", url: "/explore/media", icon: IconCompass },
+      ],
     },
     {
-      title: "Explore Media",
-      url: "/explore/media",
-      icon: IconCompass,
+      label: "Users",
+      items: [
+        { title: "User Search", url: "/user/search", icon: IconUsers },
+        { title: "Stripe Lookup", url: "/stripe-lookup", icon: IconBrandStripe },
+      ],
     },
     {
-      title: "User Search",
-      url: "/user/search",
-      icon: IconUsers,
+      label: "User Growth",
+      items: [
+        { title: "User Signups", url: "/user-signups", icon: IconUserPlus },
+        { title: "Subscriber Signups", url: "/subscriber-signups", icon: IconCreditCard },
+        { title: "Referrals", url: "/referrals", icon: IconShare },
+      ],
     },
     {
-      title: "Stripe Lookup",
-      url: "/stripe-lookup",
-      icon: IconBrandStripe,
+      label: "Business Growth",
+      items: [
+        { title: "Spend Events", url: "/spend-events", icon: IconCoin },
+        { title: "Reengagement List", url: "/reengagement-list", icon: IconHeartHandshake },
+      ],
     },
     {
-      title: "Search Job by Token",
-      url: "/moderation/job-search",
-      icon: IconBriefcase,
-    },
-    {
-      title: "Search Debug Logs",
-      url: "/moderation/debug-logs-search",
-      icon: IconBug,
-    },
-    {
-      title: "User Signups",
-      url: "/user-signups",
-      icon: IconUserPlus,
-    },
-    {
-      title: "Subscriber Signups",
-      url: "/subscriber-signups",
-      icon: IconCreditCard,
-    },
-    {
-      title: "Spend Events",
-      url: "/spend-events",
-      icon: IconCoin,
-    },
-    {
-      title: "Reengagement List",
-      url: "/reengagement-list",
-      icon: IconHeartHandshake,
-    },
-    {
-      title: "Impersonation Logs",
-      url: "/impersonation",
-      icon: IconKey,
-    },
-    {
-      title: "Staff Audit Logs",
-      url: "/staff-audit-logs",
-      icon: IconClipboardList,
-    },
-    {
-      title: "Send Pager",
-      url: "/send-pager",
-      icon: IconBellRinging,
-    },
-    {
-      title: "Feature Flags",
-      url: "/feature-flags",
-      icon: IconFlag,
-    },
-    {
-      title: "Email Changes",
-      url: "/email-changes",
-      icon: IconMail,
-    },
-    {
-      title: "Referrals",
-      url: "/referrals",
-      icon: IconShare,
+      label: "Oncall",
+      items: [
+        { title: "Page Oncall", url: "/send-pager", icon: IconBellRinging },
+        { title: "Search Job by Token", url: "/moderation/job-search", icon: IconBriefcase },
+        { title: "Search Debug Logs", url: "/moderation/debug-logs-search", icon: IconBug },
+        { title: "Impersonation Logs", url: "/impersonation", icon: IconKey },
+        { title: "Staff Audit Logs", url: "/staff-audit-logs", icon: IconClipboardList },
+        { title: "Feature Flags", url: "/feature-flags", icon: IconFlag },
+        { title: "Email Changes", url: "/email-changes", icon: IconMail },
+      ],
     },
   ],
   navClouds: [
@@ -237,7 +196,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           </SidebarMenu>
         </SidebarHeader>
         <SidebarContent>
-          <NavMain items={data.navMain} />
+          {data.navGroups.map((group) => (
+            <NavMain key={group.label} label={group.label} items={group.items} />
+          ))}
           {/* <NavDocuments items={data.documents} /> */}
           <NavSecondary items={navSecondaryConfig} className="mt-auto" />
         </SidebarContent>
