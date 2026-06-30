@@ -11,6 +11,7 @@ import {
   IconKey,
   IconClipboardList,
   IconCoin,
+  IconHeartHandshake,
   IconMail,
   IconBellRinging,
   IconFileAi,
@@ -83,6 +84,11 @@ const data = {
       title: "Spend Events",
       url: "/spend-events",
       icon: IconCoin,
+    },
+    {
+      title: "Reengagement List",
+      url: "/reengagement-list",
+      icon: IconHeartHandshake,
     },
     {
       title: "Impersonation Logs",

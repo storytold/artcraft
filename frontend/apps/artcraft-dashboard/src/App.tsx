@@ -24,6 +24,7 @@ import { JobTokenSearch } from "@/pages/JobTokenSearch";
 import { DebugLogs } from "@/pages/DebugLogs";
 import { DebugLogsSearch } from "@/pages/DebugLogsSearch";
 import { SpendEvents } from "@/pages/SpendEvents";
+import { ReengagementList } from "@/pages/ReengagementList";
 import { UserSpendSummary } from "@/pages/UserSpendSummary";
 import { UserSpendHistory } from "@/pages/UserSpendHistory";
 import { NotFoundPage } from "@/pages/NotFound";
@@ -68,6 +69,7 @@ function AppRoutes() {
         <Route path="user-signups" element={<UserSignups />} />
         <Route path="subscriber-signups" element={<SubscriberSignups />} />
         <Route path="spend-events" element={<SpendEvents />} />
+        <Route path="reengagement-list" element={<ReengagementList />} />
         <Route path="impersonation" element={<Impersonation />} />
         <Route path="staff-audit-logs" element={<StaffAuditLogs />} />
         <Route path="send-pager" element={<SendPager />} />

@@ -161,7 +161,54 @@ export interface UserDailySpend {
   updated_at: string;
 }
 
+export interface ReengagementCandidate {
+  user_token: string;
+  username: string;
+  display_name: string;
+  email_gravatar_hash: string;
+  reengagement_score: number;
+  lifetime_net_spend_usd_cents: number;
+  maybe_last_payment_at: string | null;
+  maybe_days_since_last_payment: number | null;
+  maybe_weeks_since_last_spend: number | null;
+  is_active_subscriber: boolean;
+}
+
 export class ModerationApi extends ApiManager {
+  // Users to re-engage (lapsed spenders), highest re-engagement score first.
+  public async ListReengagementCandidates(
+    offset?: number | null,
+    payments_namespace?: string,
+  ): Promise<
+    ApiResponse<{
+      candidates: ReengagementCandidate[];
+      next_offset: number | null;
+    }>
+  > {
+    const endpoint = `${this.getApiSchemeAndHost()}/v1/moderation/user_spend_summaries/reengagement_list`;
+    return await this.get<{
+      success: boolean;
+      candidates: ReengagementCandidate[];
+      maybe_next_offset: number | null;
+      error_message?: string;
+    }>({
+      endpoint,
+      query: {
+        offset: offset ?? undefined,
+        payments_namespace: payments_namespace ?? undefined,
+      },
+    })
+      .then((response) => ({
+        success: response.success,
+        data: {
+          candidates: response.candidates || [],
+          next_offset: response.maybe_next_offset ?? null,
+        },
+        errorMessage: response.error_message,
+      }))
+      .catch((err) => ({ success: false, errorMessage: err.message }));
+  }
+
   // Full spend summary for one user.
   public async GetUserSpendSummary(
     user_token: string,
