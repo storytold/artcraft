@@ -1,0 +1,113 @@
+{
+  "db_name": "MySQL",
+  "query": "\nSELECT\n  maybe_user_token AS `user_token!: UserToken`,\n  payments_namespace AS `payments_namespace!: PaymentsNamespace`,\n  CAST(SUM(CASE WHEN amount_usd_cents > 0\n                 AND event_type IN ('subscription_initial', 'subscription_renewal', 'subscription_proration_upgrade')\n            THEN amount_usd_cents ELSE 0 END) AS UNSIGNED) AS `subscription_spend_usd_cents!: u64`,\n  CAST(SUM(CASE WHEN amount_usd_cents > 0 AND event_type = 'credit_pack_purchase'\n            THEN amount_usd_cents ELSE 0 END) AS UNSIGNED) AS `credits_spend_usd_cents!: u64`,\n  CAST(SUM(CASE WHEN amount_usd_cents > 0 THEN amount_usd_cents ELSE 0 END) AS UNSIGNED) AS `gross_spend_usd_cents!: u64`,\n  CAST(SUM(CASE WHEN amount_usd_cents < 0 THEN -amount_usd_cents ELSE 0 END) AS UNSIGNED) AS `refund_usd_cents!: u64`,\n  CAST(SUM(amount_usd_cents) AS SIGNED) AS `net_spend_usd_cents!: i64`,\n  CAST(SUM(CASE WHEN amount_usd_cents > 0 THEN 1 ELSE 0 END) AS UNSIGNED) AS `payment_count!: u64`,\n  CAST(COALESCE(SUM(maybe_credits_granted), 0) AS UNSIGNED) AS `credits_granted!: u64`\nFROM user_spend_events\nWHERE maybe_user_token IS NOT NULL\n  AND is_production = TRUE\n  AND payment_occurred_at >= ?\n  AND payment_occurred_at < ?\nGROUP BY maybe_user_token, payments_namespace\nHAVING SUM(CASE WHEN amount_usd_cents <> 0 THEN 1 ELSE 0 END) > 0\n    ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "user_token!: UserToken",
+        "type_info": {
+          "type": "VarString",
+          "flags": "MULTIPLE_KEY | BINARY",
+          "char_set": 224,
+          "max_size": 128
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "payments_namespace!: PaymentsNamespace",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NOT_NULL | MULTIPLE_KEY | BINARY | NO_DEFAULT_VALUE",
+          "char_set": 224,
+          "max_size": 128
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "subscription_spend_usd_cents!: u64",
+        "type_info": {
+          "type": "LongLong",
+          "flags": "UNSIGNED | BINARY",
+          "char_set": 63,
+          "max_size": 21
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "credits_spend_usd_cents!: u64",
+        "type_info": {
+          "type": "LongLong",
+          "flags": "UNSIGNED | BINARY",
+          "char_set": 63,
+          "max_size": 21
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "gross_spend_usd_cents!: u64",
+        "type_info": {
+          "type": "LongLong",
+          "flags": "UNSIGNED | BINARY",
+          "char_set": 63,
+          "max_size": 21
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "refund_usd_cents!: u64",
+        "type_info": {
+          "type": "LongLong",
+          "flags": "UNSIGNED | BINARY",
+          "char_set": 63,
+          "max_size": 21
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "net_spend_usd_cents!: i64",
+        "type_info": {
+          "type": "LongLong",
+          "flags": "BINARY",
+          "char_set": 63,
+          "max_size": 21
+        }
+      },
+      {
+        "ordinal": 7,
+        "name": "payment_count!: u64",
+        "type_info": {
+          "type": "LongLong",
+          "flags": "UNSIGNED | BINARY",
+          "char_set": 63,
+          "max_size": 21
+        }
+      },
+      {
+        "ordinal": 8,
+        "name": "credits_granted!: u64",
+        "type_info": {
+          "type": "LongLong",
+          "flags": "NOT_NULL | UNSIGNED | BINARY",
+          "char_set": 63,
+          "max_size": 21
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": [
+      true,
+      false,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      false
+    ]
+  },
+  "hash": "83fc05a3594b379482745f851cd5a22786adde9968dd70490c91100cf21f8023"
+}
