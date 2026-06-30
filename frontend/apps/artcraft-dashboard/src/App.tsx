@@ -24,6 +24,7 @@ import { JobTokenSearch } from "@/pages/JobTokenSearch";
 import { DebugLogs } from "@/pages/DebugLogs";
 import { DebugLogsSearch } from "@/pages/DebugLogsSearch";
 import { SpendEvents } from "@/pages/SpendEvents";
+import { UserSpendSummary } from "@/pages/UserSpendSummary";
 import { NotFoundPage } from "@/pages/NotFound";
 import { Spinner } from "./components/ui/spinner";
 import { ThemeProvider } from "@/components/theme-provider";
@@ -60,6 +61,7 @@ function AppRoutes() {
         <Route path="user/profile/:username/jobs" element={<JobHistory />} />
         <Route path="user/profile/:username/creations" element={<UserCreations />} />
         <Route path="user/profile/:username/referrals" element={<UserReferrals />} />
+        <Route path="user/spend-summary/:username" element={<UserSpendSummary />} />
         <Route path="stripe-lookup" element={<StripeLookup />} />
         <Route path="user-signups" element={<UserSignups />} />
         <Route path="subscriber-signups" element={<SubscriberSignups />} />
