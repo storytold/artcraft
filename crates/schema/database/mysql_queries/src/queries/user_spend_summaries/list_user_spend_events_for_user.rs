@@ -3,6 +3,7 @@ use std::marker::PhantomData;
 use chrono::{DateTime, Utc};
 use sqlx::{Executor, MySql};
 
+use enums::by_table::user_spend_events::payment_event_type::PaymentEventType;
 use enums::common::payments_namespace::PaymentsNamespace;
 use tokens::tokens::users::UserToken;
 
@@ -10,7 +11,7 @@ use tokens::tokens::users::UserToken;
 pub struct UserSpendEventRow {
   pub payment_occurred_at: DateTime<Utc>,
   pub amount_usd_cents: i64,
-  pub event_type: String,
+  pub event_type: PaymentEventType,
   pub maybe_credits_granted: Option<u32>,
 }
 
@@ -36,7 +37,7 @@ where
 SELECT
   payment_occurred_at AS `payment_occurred_at!: DateTime<Utc>`,
   amount_usd_cents,
-  event_type,
+  event_type AS `event_type!: PaymentEventType`,
   maybe_credits_granted AS `maybe_credits_granted: u32`
 FROM user_spend_events
 WHERE maybe_user_token = ?

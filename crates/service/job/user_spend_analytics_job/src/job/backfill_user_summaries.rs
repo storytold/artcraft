@@ -4,11 +4,16 @@ use std::marker::PhantomData;
 use chrono::{DateTime, Datelike, Utc};
 use log::{error, info};
 
+use enums::by_table::user_spend_events::payment_event_type::PaymentEventType;
+use enums::common::payments_namespace::PaymentsNamespace;
+use mysql_queries::queries::user_spend_summaries::list_payments_namespaces_with_spend_activity::{
+  list_payments_namespaces_with_spend_activity, ListPaymentsNamespacesWithSpendActivityArgs,
+};
 use mysql_queries::queries::user_spend_summaries::list_user_spend_events_for_user::{
   list_user_spend_events_for_user, ListUserSpendEventsForUserArgs, UserSpendEventRow,
 };
 use mysql_queries::queries::user_spend_summaries::list_user_tokens_with_spend_activity::{
-  list_user_tokens_with_spend_activity, ListUserTokensWithSpendActivityArgs, UserActivityKey,
+  list_user_tokens_with_spend_activity, ListUserTokensWithSpendActivityArgs,
 };
 use mysql_queries::queries::user_spend_summaries::upsert_user_spend_summary::{
   upsert_user_spend_summary, UpsertUserSpendSummaryArgs,
@@ -16,73 +21,95 @@ use mysql_queries::queries::user_spend_summaries::upsert_user_spend_summary::{
 use mysql_queries::queries::users::user_subscriptions::get_active_subscription_status_for_user::{
   get_active_subscription_status_for_user, GetActiveSubscriptionStatusArgs,
 };
+use tokens::tokens::users::UserToken;
 
 use crate::job::alert_on_error::alert_pager;
 use crate::job::reengagement_score::reengagement_score;
 use crate::job_dependencies::JobDependencies;
 
-const SUBSCRIPTION_EVENT_TYPES: [&str; 3] =
-  ["subscription_initial", "subscription_renewal", "subscription_proration_upgrade"];
-const CREDIT_PACK_EVENT_TYPE: &str = "credit_pack_purchase";
 const DAYS_PER_WEEK: i64 = 7;
 
 /// Recompute `user_spend_summaries` for every (user, namespace) with spend
 /// activity. Window/cadence/score fields are time-relative, so all users are
-/// refreshed each cycle against a single reference time.
+/// refreshed each cycle against a single reference time. We iterate one namespace
+/// at a time, keyset-paginating users by `user_token`.
 pub async fn backfill_user_summaries(deps: &JobDependencies) {
   let now = Utc::now();
   info!("User-summaries backfill starting (reference time {now}).");
 
-  let mut after_user_token = String::new();
-  let mut after_payments_namespace = String::new();
-  let mut total_upserted = 0u64;
+  let namespaces = match list_payments_namespaces_with_spend_activity(
+    ListPaymentsNamespacesWithSpendActivityArgs {
+      mysql_executor: &deps.mysql_pool,
+      phantom: PhantomData,
+    },
+  )
+  .await
+  {
+    Ok(namespaces) => namespaces,
+    Err(err) => {
+      error!("User-summaries: listing namespaces failed: {err:?}");
+      alert_pager(&deps.pager, "user-spend-analytics: namespace list error", &format!("{err:?}"));
+      let _ = deps.job_stats.increment_failure_count();
+      return;
+    }
+  };
 
-  loop {
+  let mut total_upserted = 0u64;
+  for namespace in namespaces {
+    total_upserted += backfill_namespace(deps, namespace, now).await;
     if deps.application_shutdown.get() {
       return;
     }
-    let keys = match list_user_tokens_with_spend_activity(ListUserTokensWithSpendActivityArgs {
+  }
+
+  info!("User-summaries backfill complete: {total_upserted} user(s) upserted.");
+}
+
+async fn backfill_namespace(deps: &JobDependencies, namespace: PaymentsNamespace, now: DateTime<Utc>) -> u64 {
+  let mut after_user_token = String::new();
+  let mut upserted = 0u64;
+
+  loop {
+    if deps.application_shutdown.get() {
+      return upserted;
+    }
+    let user_tokens = match list_user_tokens_with_spend_activity(ListUserTokensWithSpendActivityArgs {
+      payments_namespace: namespace,
       after_user_token: &after_user_token,
-      after_payments_namespace: &after_payments_namespace,
       limit: deps.summary_user_page_size,
       mysql_executor: &deps.mysql_pool,
       phantom: PhantomData,
     })
     .await
     {
-      Ok(keys) => keys,
+      Ok(user_tokens) => user_tokens,
       Err(err) => {
-        error!("User-summaries: listing users failed: {err:?}");
-        alert_pager(&deps.pager, "user-spend-analytics: user list error", &format!("{err:?}"));
+        error!("User-summaries: listing users for {} failed: {err:?}", namespace.to_str());
+        alert_pager(&deps.pager, "user-spend-analytics: user list error", &format!("ns={}: {err:?}", namespace.to_str()));
         let _ = deps.job_stats.increment_failure_count();
-        // Without the user list we can't paginate further this cycle.
-        return;
+        return upserted; // can't paginate further this cycle
       }
     };
 
-    if keys.is_empty() {
+    if user_tokens.is_empty() {
       break;
     }
 
-    for key in &keys {
+    for user_token in &user_tokens {
       if deps.application_shutdown.get() {
-        return;
+        return upserted;
       }
-      match process_user(deps, key, now).await {
+      match process_user(deps, namespace, user_token, now).await {
         Ok(()) => {
-          total_upserted += 1;
+          upserted += 1;
           let _ = deps.job_stats.increment_success_count();
         }
         Err(err) => {
-          error!(
-            "User-summaries: failed for {} ({}): {err:?}",
-            key.user_token.as_str(),
-            key.payments_namespace.to_str(),
-          );
+          error!("User-summaries: failed for {} ({}): {err:?}", user_token.as_str(), namespace.to_str());
           alert_pager(
             &deps.pager,
             "user-spend-analytics: summary error",
-            &format!("user={} ns={}: {err:?}", key.user_token.as_str(), key.payments_namespace.to_str()),
+            &format!("user={} ns={}: {err:?}", user_token.as_str(), namespace.to_str()),
           );
           let _ = deps.job_stats.increment_failure_count();
           tokio::time::sleep(deps.error_recovery).await;
@@ -91,22 +118,21 @@ pub async fn backfill_user_summaries(deps: &JobDependencies) {
       tokio::time::sleep(deps.query_delay).await;
     }
 
-    let last = keys.last().expect("non-empty page");
-    after_user_token = last.user_token.as_str().to_string();
-    after_payments_namespace = last.payments_namespace.to_str().to_string();
+    after_user_token = user_tokens.last().expect("non-empty page").as_str().to_string();
   }
 
-  info!("User-summaries backfill complete: {total_upserted} user(s) upserted.");
+  upserted
 }
 
 async fn process_user(
   deps: &JobDependencies,
-  key: &UserActivityKey,
+  namespace: PaymentsNamespace,
+  user_token: &UserToken,
   now: DateTime<Utc>,
 ) -> Result<(), sqlx::Error> {
   let events = list_user_spend_events_for_user(ListUserSpendEventsForUserArgs {
-    user_token: &key.user_token,
-    payments_namespace: key.payments_namespace,
+    user_token,
+    payments_namespace: namespace,
     mysql_executor: &deps.mysql_pool,
     phantom: PhantomData,
   })
@@ -116,8 +142,8 @@ async fn process_user(
 
   // Authoritative subscription state (from user_subscriptions, not the events).
   let subscription_row = get_active_subscription_status_for_user(GetActiveSubscriptionStatusArgs {
-    user_token: &key.user_token,
-    subscription_namespace: key.payments_namespace,
+    user_token,
+    subscription_namespace: namespace,
     mysql_executor: &deps.mysql_pool,
     phantom: PhantomData,
   })
@@ -140,8 +166,8 @@ async fn process_user(
   );
 
   upsert_user_spend_summary(UpsertUserSpendSummaryArgs {
-    payments_namespace: key.payments_namespace,
-    user_token: &key.user_token,
+    payments_namespace: namespace,
+    user_token,
     lifetime_gross_spend_usd_cents: aggregate.lifetime_gross_spend_usd_cents,
     lifetime_subscription_spend_usd_cents: aggregate.lifetime_subscription_spend_usd_cents,
     lifetime_credits_spend_usd_cents: aggregate.lifetime_credits_spend_usd_cents,
@@ -219,10 +245,12 @@ fn compute_summary(events: &[UserSpendEventRow], now: DateTime<Utc>) -> SummaryA
     if event.amount_usd_cents > 0 {
       gross += amount;
       payment_count += 1;
-      if SUBSCRIPTION_EVENT_TYPES.contains(&event.event_type.as_str()) {
-        subscription += amount;
-      } else if event.event_type == CREDIT_PACK_EVENT_TYPE {
-        credits += amount;
+      match event.event_type {
+        PaymentEventType::SubscriptionInitial
+        | PaymentEventType::SubscriptionRenewal
+        | PaymentEventType::SubscriptionProrationUpgrade => subscription += amount,
+        PaymentEventType::CreditPackPurchase => credits += amount,
+        _ => {}
       }
       if first_payment.is_none() {
         first_payment = Some(event);
@@ -286,11 +314,11 @@ mod tests {
 
   use super::*;
 
-  fn event(days_ago: i64, amount_usd_cents: i64, event_type: &str, now: DateTime<Utc>) -> UserSpendEventRow {
+  fn event(days_ago: i64, amount_usd_cents: i64, event_type: PaymentEventType, now: DateTime<Utc>) -> UserSpendEventRow {
     UserSpendEventRow {
       payment_occurred_at: now - ChronoDuration::days(days_ago),
       amount_usd_cents,
-      event_type: event_type.to_string(),
+      event_type,
       maybe_credits_granted: None,
     }
   }
@@ -300,10 +328,10 @@ mod tests {
     let now = Utc::now();
     // ascending by time => furthest in the past first
     let events = vec![
-      event(40, 1999, "subscription_initial", now),   // ~6 wks ago
-      event(20, 999, "credit_pack_purchase", now),    // ~3 wks (week 2)
-      event(5, 2999, "subscription_renewal", now),     // week 0
-      event(3, -999, "refund", now),                   // refund, week 0
+      event(40, 1999, PaymentEventType::SubscriptionInitial, now),  // ~6 wks ago
+      event(20, 999, PaymentEventType::CreditPackPurchase, now),    // ~3 wks (week 2)
+      event(5, 2999, PaymentEventType::SubscriptionRenewal, now),    // week 0
+      event(3, -999, PaymentEventType::Refund, now),                // refund, week 0
     ];
 
     let agg = compute_summary(&events, now);
@@ -317,17 +345,15 @@ mod tests {
     assert_eq!(agg.lifetime_refund_count, 1);
     assert_eq!(agg.first_spend_usd_cents, 1999);
     assert_eq!(agg.last_spend_usd_cents, 2999);
-    // most recent payment is 5 days ago => week 0
     assert_eq!(agg.maybe_weeks_since_last_spend, Some(0));
     assert_eq!(agg.consecutive_inactive_weeks, 0);
-    // active weeks present: {0, 2, 5/6} -> consecutive from 0 is just week 0
     assert_eq!(agg.consecutive_active_weeks, 1);
   }
 
   #[test]
   fn lapsed_user_has_inactive_streak() {
     let now = Utc::now();
-    let events = vec![event(60, 4999, "subscription_initial", now)]; // ~8-9 weeks ago
+    let events = vec![event(60, 4999, PaymentEventType::SubscriptionInitial, now)];
     let agg = compute_summary(&events, now);
     assert_eq!(agg.maybe_weeks_since_last_spend, Some(60 / 7));
     assert_eq!(agg.consecutive_inactive_weeks, (60 / 7) as u32);

@@ -1,3 +1,4 @@
+pub mod list_payments_namespaces_with_spend_activity;
 pub mod list_user_tokens_with_spend_activity;
 pub mod list_user_spend_events_for_user;
 pub mod upsert_user_spend_summary;
