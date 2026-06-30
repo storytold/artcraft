@@ -185,6 +185,18 @@ export function UserSpendSummary() {
     [chartData],
   );
 
+  // Fit the Y axis tightly to the currently-displayed data (recomputes on every
+  // period change), with ~10% headroom so peaks never touch/overflow the top.
+  const yDomain = useMemo<[number, number]>(() => {
+    if (chartData.length === 0) return [0, 1];
+    const values = chartData.map((d) => d.net);
+    const dataMax = Math.max(0, ...values);
+    const dataMin = Math.min(0, ...values);
+    const max = dataMax === 0 ? 1 : dataMax * 1.1;
+    const min = dataMin === 0 ? 0 : dataMin * 1.1;
+    return [min, max];
+  }, [chartData]);
+
   if (isLoading) {
     return (
       <div className="flex flex-col gap-6">
@@ -309,7 +321,8 @@ export function UserSpendSummary() {
                   axisLine={false}
                   width={56}
                   tickMargin={8}
-                  domain={["auto", "auto"]}
+                  domain={yDomain}
+                  allowDataOverflow
                   tickFormatter={(value) => formatUsdCompact(Number(value) * 100)}
                 />
                 <ChartTooltip
@@ -330,10 +343,17 @@ export function UserSpendSummary() {
                 />
                 <Area
                   dataKey="net"
-                  type="natural"
+                  type="monotone"
                   fill="url(#fillNet)"
                   stroke="var(--color-net)"
                   strokeWidth={2}
+                  dot={{
+                    r: 2.5,
+                    fill: "var(--color-net)",
+                    stroke: "var(--background)",
+                    strokeWidth: 1,
+                  }}
+                  activeDot={{ r: 5 }}
                 />
               </AreaChart>
             </ChartContainer>

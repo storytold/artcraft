@@ -17,7 +17,9 @@ import {
 import { useTableHeight } from "@/hooks/useTableHeight";
 import {
   IconAlertCircle,
+  IconChartLine,
   IconCoin,
+  IconReceipt2,
   IconRefresh,
   IconLoader2,
 } from "@tabler/icons-react";
@@ -229,19 +231,33 @@ export function SpendEvents() {
                       </TableCell>
                       <TableCell className="text-sm font-medium">
                         {event.maybe_username ? (
-                          <Link
-                            to={`/user/profile/${event.maybe_username}`}
-                            className="hover:underline text-foreground"
-                          >
-                            @{event.maybe_username}
-                          </Link>
+                          <div className="flex items-center gap-2">
+                            <Link
+                              to={`/user/profile/${event.maybe_username}`}
+                              className="hover:underline text-foreground"
+                            >
+                              @{event.maybe_username}
+                            </Link>
+                            <span className="flex items-center gap-1.5">
+                              <Link
+                                to={`/user/spend-summary/${event.maybe_username}`}
+                                className="text-muted-foreground hover:text-foreground"
+                                title="Spend summary"
+                              >
+                                <IconChartLine className="size-4" />
+                              </Link>
+                              <span className="text-muted-foreground/30">|</span>
+                              <Link
+                                to={`/user/spend-history/${event.maybe_username}`}
+                                className="text-muted-foreground hover:text-foreground"
+                                title="Spend history"
+                              >
+                                <IconReceipt2 className="size-4" />
+                              </Link>
+                            </span>
+                          </div>
                         ) : (
                           <span className="text-muted-foreground/30">&mdash;</span>
-                        )}
-                        {event.maybe_display_name && (
-                          <span className="ml-2 text-xs text-muted-foreground">
-                            {event.maybe_display_name}
-                          </span>
                         )}
                       </TableCell>
                       <TableCell className="text-xs">
