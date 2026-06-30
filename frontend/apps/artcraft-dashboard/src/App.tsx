@@ -23,6 +23,7 @@ import { JobInfo } from "@/pages/JobInfo";
 import { JobTokenSearch } from "@/pages/JobTokenSearch";
 import { DebugLogs } from "@/pages/DebugLogs";
 import { DebugLogsSearch } from "@/pages/DebugLogsSearch";
+import { SpendEvents } from "@/pages/SpendEvents";
 import { NotFoundPage } from "@/pages/NotFound";
 import { Spinner } from "./components/ui/spinner";
 import { ThemeProvider } from "@/components/theme-provider";
@@ -62,6 +63,7 @@ function AppRoutes() {
         <Route path="stripe-lookup" element={<StripeLookup />} />
         <Route path="user-signups" element={<UserSignups />} />
         <Route path="subscriber-signups" element={<SubscriberSignups />} />
+        <Route path="spend-events" element={<SpendEvents />} />
         <Route path="impersonation" element={<Impersonation />} />
         <Route path="staff-audit-logs" element={<StaffAuditLogs />} />
         <Route path="send-pager" element={<SendPager />} />

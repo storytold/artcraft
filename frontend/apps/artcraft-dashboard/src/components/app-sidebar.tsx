@@ -10,6 +10,7 @@ import {
   IconFlag,
   IconKey,
   IconClipboardList,
+  IconCoin,
   IconMail,
   IconBellRinging,
   IconFileAi,
@@ -77,6 +78,11 @@ const data = {
       title: "Subscriber Signups",
       url: "/subscriber-signups",
       icon: IconCreditCard,
+    },
+    {
+      title: "Spend Events",
+      url: "/spend-events",
+      icon: IconCoin,
     },
     {
       title: "Impersonation Logs",

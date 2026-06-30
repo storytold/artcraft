@@ -84,7 +84,65 @@ export interface ModeratorUserLookupResponse {
   username_is_not_customized: boolean;
 }
 
+export interface UserSpendEvent {
+  token: string;
+  payments_namespace: string;
+  maybe_user_token: string | null;
+  maybe_username: string | null;
+  maybe_display_name: string | null;
+  maybe_email_gravatar_hash: string | null;
+  event_type: string;
+  amount_usd_cents: number;
+  maybe_credits_granted: number | null;
+  payment_source: string;
+  maybe_source_object_id: string | null;
+  maybe_stripe_invoice_id: string | null;
+  maybe_stripe_payment_intent_id: string | null;
+  maybe_stripe_charge_id: string | null;
+  maybe_stripe_customer_id: string | null;
+  is_production: boolean;
+  payment_occurred_at: string;
+  created_at: string;
+}
+
 export class ModerationApi extends ApiManager {
+  // Spend events list (offset-paginated, newest payment first).
+  public async ListUserSpendEvents(
+    offset?: number | null,
+    payments_namespace?: string,
+  ): Promise<
+    ApiResponse<{
+      events: UserSpendEvent[];
+      next_offset: number | null;
+    }>
+  > {
+    const endpoint = `${this.getApiSchemeAndHost()}/v1/moderation/user_spend_events/list`;
+    return await this.get<{
+      success: boolean;
+      events: UserSpendEvent[];
+      maybe_next_offset: number | null;
+      error_message?: string;
+    }>({
+      endpoint,
+      query: {
+        offset: offset ?? undefined,
+        payments_namespace: payments_namespace ?? undefined,
+      },
+    })
+      .then((response) => ({
+        success: response.success,
+        data: {
+          events: response.events || [],
+          next_offset: response.maybe_next_offset ?? null,
+        },
+        errorMessage: response.error_message,
+      }))
+      .catch((err) => ({
+        success: false,
+        errorMessage: err.message,
+      }));
+  }
+
   public async UserLookup(
     search: string,
   ): Promise<ApiResponse<{ maybe_user?: ModeratorUserLookupResponse }>> {
