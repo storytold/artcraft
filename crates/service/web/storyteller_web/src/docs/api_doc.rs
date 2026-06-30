@@ -130,6 +130,10 @@ use crate::http_server::endpoints::folders::subfolder::list_subfolders_handler::
 use artcraft_api_defs::folders::common::*;
 use artcraft_api_defs::folders::folder::*;
 use artcraft_api_defs::folders::media_files::*;
+use artcraft_api_defs::moderation::user_spend_summaries::get_summary::*;
+use artcraft_api_defs::moderation::user_spend_summaries::reengagement_list::*;
+use artcraft_api_defs::moderation::user_spend_summaries::top_users_list::*;
+use artcraft_api_defs::moderation::user_daily_spends::user_daily_spends_list::*;
 use artcraft_api_defs::folders::subfolder::*;
 use artcraft_api_defs::moderation::user_referrals::list_global_user_referrals::*;
 use artcraft_api_defs::moderation::user_referrals::list_user_referrals_for_user::*;
@@ -390,6 +394,10 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
 #[derive(OpenApi)]
 #[openapi(
   paths(
+    crate::http_server::endpoints::moderation::user_spend_summaries::moderator_get_user_spend_summary_handler::moderator_get_user_spend_summary_handler,
+    crate::http_server::endpoints::moderation::user_spend_summaries::moderator_reengagement_list_handler::moderator_reengagement_list_handler,
+    crate::http_server::endpoints::moderation::user_spend_summaries::moderator_top_users_list_handler::moderator_top_users_list_handler,
+    crate::http_server::endpoints::moderation::user_daily_spends::moderator_user_daily_spends_handler::moderator_user_daily_spends_handler,
     billing_component::stripe::http_endpoints::checkout::create::stripe_create_checkout_session_json_handler::stripe_create_checkout_session_json_handler,
     crate::http_server::endpoints::billing_fakeyou::list_active_user_subscriptions_handler::list_active_user_subscriptions_handler,
     crate::http_server::deprecated_endpoints::conversion::enqueue_fbx_to_gltf_handler::enqueue_fbx_to_gltf_handler,
@@ -645,6 +653,15 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     crate::http_server::endpoints::image_studio::update_gpt_image_job_status_handler::update_gpt_image_job_status_handler,
   ),
   components(schemas(
+    ModeratorGetUserSpendSummaryResponse,
+    UserSpendSummaryView,
+    ModeratorReengagementListResponse,
+    ReengagementCandidateEntry,
+    ModeratorTopUsersListResponse,
+    TopUserEntry,
+    TopUsersWindow,
+    ModeratorUserDailySpendsResponse,
+    UserDailySpendEntry,
     // Tokens
     BatchGenerationToken,
     BetaKeyToken,

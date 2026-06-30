@@ -47,6 +47,10 @@ use crate::http_server::endpoints::moderation::user_referrals::moderator_list_us
 use crate::http_server::endpoints::moderation::user_sessions::moderator_list_user_session_impersonation_requests_handler::moderator_list_user_session_impersonation_requests_handler;
 use crate::http_server::endpoints::moderation::user_sessions::moderator_user_session_impersonation_request_handler::moderator_user_session_impersonation_request_handler;
 use crate::http_server::endpoints::moderation::user_stripe_data::moderator_get_user_stripe_customer_ids_handler::moderator_get_user_stripe_customer_ids_handler;
+use crate::http_server::endpoints::moderation::user_spend_summaries::moderator_get_user_spend_summary_handler::moderator_get_user_spend_summary_handler;
+use crate::http_server::endpoints::moderation::user_spend_summaries::moderator_reengagement_list_handler::moderator_reengagement_list_handler;
+use crate::http_server::endpoints::moderation::user_spend_summaries::moderator_top_users_list_handler::moderator_top_users_list_handler;
+use crate::http_server::endpoints::moderation::user_daily_spends::moderator_user_daily_spends_handler::moderator_user_daily_spends_handler;
 
 pub fn add_moderator_routes<T, B> (app: App<T>) -> App<T>
   where
@@ -60,6 +64,26 @@ pub fn add_moderator_routes<T, B> (app: App<T>) -> App<T>
       >,
 {
   app.service(web::scope("/v1/moderation")
+        .service(web::scope("/user_spend_summaries")
+            .service(web::resource("/summary/{user_token}")
+                .route(web::get().to(moderator_get_user_spend_summary_handler))
+                .route(web::head().to(|| HttpResponse::Ok()))
+            )
+            .service(web::resource("/reengagement_list")
+                .route(web::get().to(moderator_reengagement_list_handler))
+                .route(web::head().to(|| HttpResponse::Ok()))
+            )
+            .service(web::resource("/top_users_list")
+                .route(web::get().to(moderator_top_users_list_handler))
+                .route(web::head().to(|| HttpResponse::Ok()))
+            )
+        )
+        .service(web::scope("/user_daily_spends")
+            .service(web::resource("/user/{user_token}")
+                .route(web::get().to(moderator_user_daily_spends_handler))
+                .route(web::head().to(|| HttpResponse::Ok()))
+            )
+        )
         .service(web::scope("/alerts")
             .service(web::resource("/send")
                 .route(web::post().to(moderation_send_alert_handler))

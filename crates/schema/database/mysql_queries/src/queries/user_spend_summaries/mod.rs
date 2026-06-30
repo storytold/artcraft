@@ -1,3 +1,6 @@
+pub mod list_top_users_by_net_spend;
+pub mod list_reengagement_candidates;
+pub mod get_user_spend_summary;
 pub mod list_payments_namespaces_with_spend_activity;
 pub mod list_user_tokens_with_spend_activity;
 pub mod list_user_spend_events_for_user;
