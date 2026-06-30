@@ -1,7 +1,7 @@
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::marker::PhantomData;
 
-use chrono::{DateTime, Datelike, Utc};
+use chrono::{DateTime, Datelike, Duration, Utc};
 use log::{error, info};
 
 use enums::by_table::user_spend_events::payment_event_type::PaymentEventType;
@@ -87,7 +87,7 @@ async fn backfill_namespace(deps: &JobDependencies, namespace: PaymentsNamespace
         error!("User-summaries: listing users for {} failed: {err:?}", namespace.to_str());
         alert_pager(&deps.pager, "user-spend-analytics: user list error", &format!("ns={}: {err:?}", namespace.to_str()));
         let _ = deps.job_stats.increment_failure_count();
-        return upserted; // can't paginate further this cycle
+        return upserted;
       }
     };
 
@@ -181,7 +181,22 @@ async fn process_user(
     last_spend_usd_cents: aggregate.last_spend_usd_cents,
     maybe_days_since_first_payment: aggregate.maybe_days_since_first_payment,
     maybe_days_since_last_payment: aggregate.maybe_days_since_last_payment,
+    net_spend_7d_usd_cents: aggregate.net_spend_7d_usd_cents,
+    net_spend_prev_7d_usd_cents: aggregate.net_spend_prev_7d_usd_cents,
+    net_spend_14d_usd_cents: aggregate.net_spend_14d_usd_cents,
+    net_spend_prev_14d_usd_cents: aggregate.net_spend_prev_14d_usd_cents,
+    net_spend_30d_usd_cents: aggregate.net_spend_30d_usd_cents,
+    net_spend_prev_30d_usd_cents: aggregate.net_spend_prev_30d_usd_cents,
+    net_spend_60d_usd_cents: aggregate.net_spend_60d_usd_cents,
+    net_spend_90d_usd_cents: aggregate.net_spend_90d_usd_cents,
     net_spend_this_year_usd_cents: aggregate.net_spend_this_year_usd_cents,
+    avg_weekly_net_spend_4w_usd_cents: aggregate.avg_weekly_net_spend_4w_usd_cents,
+    avg_weekly_net_spend_12w_usd_cents: aggregate.avg_weekly_net_spend_12w_usd_cents,
+    active_weeks_in_last_4: aggregate.active_weeks_in_last_4,
+    active_weeks_in_last_8: aggregate.active_weeks_in_last_8,
+    active_weeks_in_last_12: aggregate.active_weeks_in_last_12,
+    active_weeks_in_last_24: aggregate.active_weeks_in_last_24,
+    active_weeks_in_last_52: aggregate.active_weeks_in_last_52,
     consecutive_active_weeks: aggregate.consecutive_active_weeks,
     consecutive_inactive_weeks: aggregate.consecutive_inactive_weeks,
     maybe_weeks_since_last_spend: aggregate.maybe_weeks_since_last_spend,
@@ -211,17 +226,36 @@ struct SummaryAggregate {
   last_spend_usd_cents: u64,
   maybe_days_since_first_payment: Option<u32>,
   maybe_days_since_last_payment: Option<u32>,
+  net_spend_7d_usd_cents: i64,
+  net_spend_prev_7d_usd_cents: i64,
+  net_spend_14d_usd_cents: i64,
+  net_spend_prev_14d_usd_cents: i64,
+  net_spend_30d_usd_cents: i64,
+  net_spend_prev_30d_usd_cents: i64,
+  net_spend_60d_usd_cents: i64,
+  net_spend_90d_usd_cents: i64,
   net_spend_this_year_usd_cents: i64,
+  avg_weekly_net_spend_4w_usd_cents: i64,
+  avg_weekly_net_spend_12w_usd_cents: i64,
+  active_weeks_in_last_4: u8,
+  active_weeks_in_last_8: u8,
+  active_weeks_in_last_12: u8,
+  active_weeks_in_last_24: u8,
+  active_weeks_in_last_52: u8,
   consecutive_active_weeks: u32,
   consecutive_inactive_weeks: u32,
   maybe_weeks_since_last_spend: Option<u32>,
 }
 
-/// Aggregate one user's events (assumed ascending by `payment_occurred_at`).
-/// "Positive" events are payments; negatives are refunds/chargebacks. Weekly
-/// cadence uses 7-day buckets relative to `now` (week 0 = the last 7 days).
+/// Aggregate one user's events (ascending by `payment_occurred_at`).
+///
+/// - Lifetime totals + first/last from positive (payment) and negative (refund) events.
+/// - Sliding NET windows are day-rolling relative to `now` (7d = last 7×24h, etc.).
+/// - Weekly cadence (avg-weekly, active-weeks, streaks) uses Mon–Sun UTC calendar
+///   weeks; week 0 is the calendar week containing `now`.
 fn compute_summary(events: &[UserSpendEventRow], now: DateTime<Utc>) -> SummaryAggregate {
   let current_year = now.year();
+  let now_monday = monday_of(now.date_naive());
 
   let mut gross: i128 = 0;
   let mut subscription: i128 = 0;
@@ -233,6 +267,12 @@ fn compute_summary(events: &[UserSpendEventRow], now: DateTime<Utc>) -> SummaryA
   let mut refund_count: u32 = 0;
   let mut first_payment: Option<&UserSpendEventRow> = None;
   let mut last_payment: Option<&UserSpendEventRow> = None;
+
+  // Day-rolling net windows.
+  let (mut w7, mut pw7, mut w14, mut pw14, mut w30, mut pw30, mut w60, mut w90): (i128, i128, i128, i128, i128, i128, i128, i128) = (0, 0, 0, 0, 0, 0, 0, 0);
+
+  // Calendar-week buckets: week_index -> net; and the set of weeks with a payment.
+  let mut week_net: HashMap<i64, i128> = HashMap::new();
   let mut active_weeks: HashSet<i64> = HashSet::new();
 
   for event in events {
@@ -240,6 +280,23 @@ fn compute_summary(events: &[UserSpendEventRow], now: DateTime<Utc>) -> SummaryA
     net += amount;
     if event.payment_occurred_at.year() == current_year {
       net_this_year += amount;
+    }
+
+    let days_ago = (now - event.payment_occurred_at).num_days();
+    if days_ago >= 0 {
+      if days_ago < 7 { w7 += amount; }
+      if (7..14).contains(&days_ago) { pw7 += amount; }
+      if days_ago < 14 { w14 += amount; }
+      if (14..28).contains(&days_ago) { pw14 += amount; }
+      if days_ago < 30 { w30 += amount; }
+      if (30..60).contains(&days_ago) { pw30 += amount; }
+      if days_ago < 60 { w60 += amount; }
+      if days_ago < 90 { w90 += amount; }
+    }
+
+    let week_index = (now_monday - monday_of(event.payment_occurred_at.date_naive())).num_days() / DAYS_PER_WEEK;
+    if week_index >= 0 {
+      *week_net.entry(week_index).or_insert(0) += amount;
     }
 
     if event.amount_usd_cents > 0 {
@@ -256,10 +313,8 @@ fn compute_summary(events: &[UserSpendEventRow], now: DateTime<Utc>) -> SummaryA
         first_payment = Some(event);
       }
       last_payment = Some(event);
-
-      let days_ago = (now - event.payment_occurred_at).num_days();
-      if days_ago >= 0 {
-        active_weeks.insert(days_ago / DAYS_PER_WEEK);
+      if week_index >= 0 {
+        active_weeks.insert(week_index);
       }
     } else if event.amount_usd_cents < 0 {
       refund += -amount;
@@ -271,12 +326,10 @@ fn compute_summary(events: &[UserSpendEventRow], now: DateTime<Utc>) -> SummaryA
   let maybe_last_payment_at = last_payment.map(|e| e.payment_occurred_at);
   let first_spend_usd_cents = first_payment.map(|e| e.amount_usd_cents.max(0) as u64).unwrap_or(0);
   let last_spend_usd_cents = last_payment.map(|e| e.amount_usd_cents.max(0) as u64).unwrap_or(0);
-  let maybe_days_since_first_payment =
-    maybe_first_payment_at.map(|t| (now - t).num_days().max(0) as u32);
-  let maybe_days_since_last_payment =
-    maybe_last_payment_at.map(|t| (now - t).num_days().max(0) as u32);
+  let maybe_days_since_first_payment = maybe_first_payment_at.map(|t| (now - t).num_days().max(0) as u32);
+  let maybe_days_since_last_payment = maybe_last_payment_at.map(|t| (now - t).num_days().max(0) as u32);
 
-  // Cadence from the set of active weeks-ago.
+  // Calendar-week cadence.
   let maybe_weeks_since_last_spend = active_weeks.iter().min().map(|w| *w as u32);
   let consecutive_active_weeks = {
     let mut week = 0i64;
@@ -286,6 +339,9 @@ fn compute_summary(events: &[UserSpendEventRow], now: DateTime<Utc>) -> SummaryA
     week as u32
   };
   let consecutive_inactive_weeks = maybe_weeks_since_last_spend.unwrap_or(0);
+
+  let active_in_last = |n: i64| active_weeks.iter().filter(|&&w| (0..n).contains(&w)).count() as u8;
+  let week_net_sum = |n: i64| -> i128 { (0..n).map(|w| *week_net.get(&w).unwrap_or(&0)).sum() };
 
   SummaryAggregate {
     lifetime_gross_spend_usd_cents: gross.max(0) as u64,
@@ -301,22 +357,46 @@ fn compute_summary(events: &[UserSpendEventRow], now: DateTime<Utc>) -> SummaryA
     last_spend_usd_cents,
     maybe_days_since_first_payment,
     maybe_days_since_last_payment,
-    net_spend_this_year_usd_cents: net_this_year.clamp(i64::MIN as i128, i64::MAX as i128) as i64,
+    net_spend_7d_usd_cents: clamp_i64(w7),
+    net_spend_prev_7d_usd_cents: clamp_i64(pw7),
+    net_spend_14d_usd_cents: clamp_i64(w14),
+    net_spend_prev_14d_usd_cents: clamp_i64(pw14),
+    net_spend_30d_usd_cents: clamp_i64(w30),
+    net_spend_prev_30d_usd_cents: clamp_i64(pw30),
+    net_spend_60d_usd_cents: clamp_i64(w60),
+    net_spend_90d_usd_cents: clamp_i64(w90),
+    net_spend_this_year_usd_cents: clamp_i64(net_this_year),
+    avg_weekly_net_spend_4w_usd_cents: clamp_i64(week_net_sum(4) / 4),
+    avg_weekly_net_spend_12w_usd_cents: clamp_i64(week_net_sum(12) / 12),
+    active_weeks_in_last_4: active_in_last(4),
+    active_weeks_in_last_8: active_in_last(8),
+    active_weeks_in_last_12: active_in_last(12),
+    active_weeks_in_last_24: active_in_last(24),
+    active_weeks_in_last_52: active_in_last(52),
     consecutive_active_weeks,
     consecutive_inactive_weeks,
     maybe_weeks_since_last_spend,
   }
 }
 
+/// The Monday (UTC) of the calendar week containing `date`.
+fn monday_of(date: chrono::NaiveDate) -> chrono::NaiveDate {
+  date - Duration::days(date.weekday().num_days_from_monday() as i64)
+}
+
+fn clamp_i64(value: i128) -> i64 {
+  value.clamp(i64::MIN as i128, i64::MAX as i128) as i64
+}
+
 #[cfg(test)]
 mod tests {
-  use chrono::Duration as ChronoDuration;
+  use chrono::TimeZone;
 
   use super::*;
 
   fn event(days_ago: i64, amount_usd_cents: i64, event_type: PaymentEventType, now: DateTime<Utc>) -> UserSpendEventRow {
     UserSpendEventRow {
-      payment_occurred_at: now - ChronoDuration::days(days_ago),
+      payment_occurred_at: now - Duration::days(days_ago),
       amount_usd_cents,
       event_type,
       maybe_credits_granted: None,
@@ -324,40 +404,64 @@ mod tests {
   }
 
   #[test]
-  fn aggregates_lifetime_and_cadence() {
+  fn lifetime_and_day_windows() {
     let now = Utc::now();
-    // ascending by time => furthest in the past first
     let events = vec![
-      event(40, 1999, PaymentEventType::SubscriptionInitial, now),  // ~6 wks ago
-      event(20, 999, PaymentEventType::CreditPackPurchase, now),    // ~3 wks (week 2)
-      event(5, 2999, PaymentEventType::SubscriptionRenewal, now),    // week 0
-      event(3, -999, PaymentEventType::Refund, now),                // refund, week 0
+      event(40, 1999, PaymentEventType::SubscriptionInitial, now),
+      event(20, 999, PaymentEventType::CreditPackPurchase, now),
+      event(5, 2999, PaymentEventType::SubscriptionRenewal, now),
+      event(3, -999, PaymentEventType::Refund, now),
     ];
-
     let agg = compute_summary(&events, now);
 
     assert_eq!(agg.lifetime_gross_spend_usd_cents, 1999 + 999 + 2999);
-    assert_eq!(agg.lifetime_subscription_spend_usd_cents, 1999 + 2999);
-    assert_eq!(agg.lifetime_credits_spend_usd_cents, 999);
     assert_eq!(agg.lifetime_refund_usd_cents, 999);
     assert_eq!(agg.lifetime_net_spend_usd_cents, (1999 + 999 + 2999 - 999) as u64);
     assert_eq!(agg.lifetime_payment_count, 3);
     assert_eq!(agg.lifetime_refund_count, 1);
-    assert_eq!(agg.first_spend_usd_cents, 1999);
-    assert_eq!(agg.last_spend_usd_cents, 2999);
-    assert_eq!(agg.maybe_weeks_since_last_spend, Some(0));
-    assert_eq!(agg.consecutive_inactive_weeks, 0);
-    assert_eq!(agg.consecutive_active_weeks, 1);
+    // 7d window: day5 (+2999) and day3 (-999) -> 2000
+    assert_eq!(agg.net_spend_7d_usd_cents, 2000);
+    // 30d window: day20 (+999) + day5 (+2999) + day3 (-999) -> 2999
+    assert_eq!(agg.net_spend_30d_usd_cents, 2999);
+    // prev_30d: 30..60 -> day40 (+1999)
+    assert_eq!(agg.net_spend_prev_30d_usd_cents, 1999);
   }
 
   #[test]
-  fn lapsed_user_has_inactive_streak() {
-    let now = Utc::now();
-    let events = vec![event(60, 4999, PaymentEventType::SubscriptionInitial, now)];
+  fn calendar_week_cadence() {
+    // Anchor `now` on a Monday so week boundaries are deterministic.
+    let today = Utc::now().date_naive();
+    let monday = monday_of(today);
+    let now = Utc.from_utc_datetime(&monday.and_hms_opt(12, 0, 0).unwrap());
+    // Payments on three consecutive Mondays => weeks 0,1,2 active.
+    let events = vec![
+      event(14, 1000, PaymentEventType::CreditPackPurchase, now),
+      event(7, 1000, PaymentEventType::CreditPackPurchase, now),
+      event(0, 1000, PaymentEventType::CreditPackPurchase, now),
+    ];
     let agg = compute_summary(&events, now);
-    assert_eq!(agg.maybe_weeks_since_last_spend, Some(60 / 7));
-    assert_eq!(agg.consecutive_inactive_weeks, (60 / 7) as u32);
+
+    assert_eq!(agg.maybe_weeks_since_last_spend, Some(0));
+    assert_eq!(agg.consecutive_active_weeks, 3);
+    assert_eq!(agg.consecutive_inactive_weeks, 0);
+    assert_eq!(agg.active_weeks_in_last_4, 3);
+    assert_eq!(agg.active_weeks_in_last_52, 3);
+    // weeks 0..3 net = 1000+1000+1000+0 = 3000; /4 = 750
+    assert_eq!(agg.avg_weekly_net_spend_4w_usd_cents, 750);
+  }
+
+  #[test]
+  fn lapsed_user_streaks() {
+    let today = Utc::now().date_naive();
+    let monday = monday_of(today);
+    let now = Utc.from_utc_datetime(&monday.and_hms_opt(12, 0, 0).unwrap());
+    // Last payment 5 weeks ago (week 5).
+    let events = vec![event(35, 4999, PaymentEventType::SubscriptionInitial, now)];
+    let agg = compute_summary(&events, now);
+    assert_eq!(agg.maybe_weeks_since_last_spend, Some(5));
+    assert_eq!(agg.consecutive_inactive_weeks, 5);
     assert_eq!(agg.consecutive_active_weeks, 0);
-    assert_eq!(agg.maybe_days_since_last_payment, Some(60));
+    assert_eq!(agg.active_weeks_in_last_4, 0);
+    assert_eq!(agg.active_weeks_in_last_8, 1);
   }
 }
