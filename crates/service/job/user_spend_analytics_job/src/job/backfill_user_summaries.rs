@@ -28,6 +28,8 @@ use crate::job::reengagement_score::reengagement_score;
 use crate::job_dependencies::JobDependencies;
 
 const DAYS_PER_WEEK: i64 = 7;
+/// Emit a progress line every N users during the (long, otherwise silent) summaries pass.
+const SUMMARY_LOG_EVERY: u64 = 200;
 
 /// Recompute `user_spend_summaries` for every (user, namespace) with spend
 /// activity. Window/cadence/score fields are time-relative, so all users are
@@ -66,8 +68,10 @@ pub async fn backfill_user_summaries(deps: &JobDependencies) {
 }
 
 async fn backfill_namespace(deps: &JobDependencies, namespace: PaymentsNamespace, now: DateTime<Utc>) -> u64 {
+  info!("User-summaries: backfilling namespace '{}'…", namespace.to_str());
   let mut after_user_token = String::new();
   let mut upserted = 0u64;
+  let mut processed = 0u64;
 
   loop {
     if deps.application_shutdown.get() {
@@ -115,12 +119,23 @@ async fn backfill_namespace(deps: &JobDependencies, namespace: PaymentsNamespace
           tokio::time::sleep(deps.error_recovery).await;
         }
       }
+      processed += 1;
+      if processed % SUMMARY_LOG_EVERY == 0 {
+        info!(
+          "  user-summaries [{}]: {processed} processed, {upserted} upserted so far…",
+          namespace.to_str(),
+        );
+      }
       tokio::time::sleep(deps.query_delay).await;
     }
 
     after_user_token = user_tokens.last().expect("non-empty page").as_str().to_string();
   }
 
+  info!(
+    "User-summaries: namespace '{}' done — {processed} processed, {upserted} upserted.",
+    namespace.to_str(),
+  );
   upserted
 }
 
