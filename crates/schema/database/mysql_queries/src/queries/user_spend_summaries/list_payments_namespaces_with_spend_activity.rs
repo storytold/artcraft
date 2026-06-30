@@ -24,6 +24,7 @@ where
 SELECT DISTINCT payments_namespace AS `payments_namespace!: PaymentsNamespace`
 FROM user_spend_events
 WHERE maybe_user_token IS NOT NULL
+  AND is_production = TRUE
     "#,
   )
     .fetch_all(args.mysql_executor)

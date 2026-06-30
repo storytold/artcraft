@@ -60,6 +60,7 @@ SELECT
   CAST(COALESCE(SUM(maybe_credits_granted), 0) AS UNSIGNED) AS `credits_granted!: u64`
 FROM user_spend_events
 WHERE maybe_user_token IS NOT NULL
+  AND is_production = TRUE
   AND payment_occurred_at >= ?
   AND payment_occurred_at < ?
 GROUP BY maybe_user_token, payments_namespace

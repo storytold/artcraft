@@ -29,6 +29,7 @@ where
 SELECT DISTINCT maybe_user_token AS `user_token!: UserToken`
 FROM user_spend_events
 WHERE maybe_user_token IS NOT NULL
+  AND is_production = TRUE
   AND payments_namespace = ?
   AND maybe_user_token > ?
 ORDER BY maybe_user_token

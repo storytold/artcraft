@@ -24,6 +24,7 @@ use jobs_common::job_stats::JobStats;
 use server_environment::ServerEnvironment;
 use shared_env_var_config::logging::DEFAULT_RUST_LOG;
 use shared_env_var_config::mysql::env_get_mysql_connection_string_or_default;
+use tokio::signal::unix::{signal, SignalKind};
 
 use crate::http_server::run_http_server::{launch_http_server, CreateServerArgs};
 use crate::job::main_loop::main_loop;
@@ -147,18 +148,29 @@ async fn main() -> AnyhowResult<()> {
     warn!("HTTP server thread is shut down.");
   });
 
-  // Listen for SIGTERM / Ctrl-C to trigger graceful shutdown.
+  // Listen for SIGTERM (k8s pod termination) and SIGINT (Ctrl-C) to trigger
+  // graceful shutdown of the main loop.
   let application_shutdown_for_signal = application_shutdown.clone();
   tokio::spawn(async move {
-    match tokio::signal::ctrl_c().await {
-      Ok(()) => {
-        info!("Received shutdown signal. Shutting down...");
-        application_shutdown_for_signal.set(true);
-      }
+    let mut sigterm = match signal(SignalKind::terminate()) {
+      Ok(stream) => stream,
       Err(err) => {
-        warn!("Error listening for shutdown signal: {:?}", err);
+        warn!("Failed to install SIGTERM handler: {:?}", err);
+        return;
       }
+    };
+    let mut sigint = match signal(SignalKind::interrupt()) {
+      Ok(stream) => stream,
+      Err(err) => {
+        warn!("Failed to install SIGINT handler: {:?}", err);
+        return;
+      }
+    };
+    tokio::select! {
+      _ = sigterm.recv() => info!("Received SIGTERM. Shutting down..."),
+      _ = sigint.recv() => info!("Received SIGINT. Shutting down..."),
     }
+    application_shutdown_for_signal.set(true);
   });
 
   main_loop(job_dependencies).await;

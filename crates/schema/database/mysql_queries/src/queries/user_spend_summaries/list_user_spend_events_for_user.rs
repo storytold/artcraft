@@ -42,6 +42,7 @@ SELECT
 FROM user_spend_events
 WHERE maybe_user_token = ?
   AND payments_namespace = ?
+  AND is_production = TRUE
 ORDER BY payment_occurred_at ASC
     "#,
     args.user_token.as_str(),
