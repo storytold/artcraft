@@ -1,3 +1,4 @@
+pub mod list_user_spend_events_for_moderation;
 pub mod backfill_get_user_token_by_email;
 pub mod backfill_list_artcraft_customer_links;
 pub mod backfill_list_artcraft_ledger_payments;

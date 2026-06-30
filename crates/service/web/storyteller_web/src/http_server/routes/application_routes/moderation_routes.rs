@@ -51,6 +51,7 @@ use crate::http_server::endpoints::moderation::user_spend_summaries::moderator_g
 use crate::http_server::endpoints::moderation::user_spend_summaries::moderator_reengagement_list_handler::moderator_reengagement_list_handler;
 use crate::http_server::endpoints::moderation::user_spend_summaries::moderator_top_users_list_handler::moderator_top_users_list_handler;
 use crate::http_server::endpoints::moderation::user_daily_spends::moderator_user_daily_spends_handler::moderator_user_daily_spends_handler;
+use crate::http_server::endpoints::moderation::user_spend_events::moderator_list_user_spend_events_handler::moderator_list_user_spend_events_handler;
 
 pub fn add_moderator_routes<T, B> (app: App<T>) -> App<T>
   where
@@ -75,6 +76,12 @@ pub fn add_moderator_routes<T, B> (app: App<T>) -> App<T>
             )
             .service(web::resource("/top_users_list")
                 .route(web::get().to(moderator_top_users_list_handler))
+                .route(web::head().to(|| HttpResponse::Ok()))
+            )
+        )
+        .service(web::scope("/user_spend_events")
+            .service(web::resource("/list")
+                .route(web::get().to(moderator_list_user_spend_events_handler))
                 .route(web::head().to(|| HttpResponse::Ok()))
             )
         )
