@@ -138,6 +138,7 @@ RUN SQLX_OFFLINE=true \
   $HOME/.cargo/bin/cargo build \
   --release \
   --bin storyteller-web \
+  --bin user-spend-analytics-job \
   --bin seedance2-pro-job \
   --bin worldlabs-job \
   --bin video-thumbnail-job \
@@ -190,6 +191,7 @@ COPY --from=builder /tmp/target/release/analytics-job /
 COPY --from=builder /tmp/target/release/email-sender-job  /
 COPY --from=builder /tmp/target/release/es-update-job  /
 COPY --from=builder /tmp/target/release/grok-api-job  /
+COPY --from=builder /tmp/target/release/user-spend-analytics-job /
 
 # Legacy apps:
 # COPY --from=builder /tmp/target/release/tts-download-job /
