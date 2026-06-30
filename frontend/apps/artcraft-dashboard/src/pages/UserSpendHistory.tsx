@@ -22,6 +22,7 @@ import {
   IconArrowLeft,
   IconChartLine,
   IconCoin,
+  IconReceipt2,
   IconLoader2,
 } from "@tabler/icons-react";
 import { usePageTitle } from "@/hooks/usePageTitle";
@@ -171,7 +172,7 @@ export function UserSpendHistory() {
             Back to profile
           </Button>
           <h1 className="text-3xl font-bold tracking-tight flex items-center gap-3">
-            <IconCoin className="size-6 text-muted-foreground" />
+            <IconReceipt2 className="size-6 text-muted-foreground" />
             Spend History
           </h1>
           <p className="text-muted-foreground">

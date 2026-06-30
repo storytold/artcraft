@@ -25,7 +25,9 @@ import {
   IconMail,
   IconUser,
   IconShieldLock,
+  IconChartLine,
   IconCoin,
+  IconReceipt2,
   IconEye,
   IconEyeOff,
   IconCalendar,
@@ -556,13 +558,13 @@ export function UserProfile() {
             </Button>
             <Button variant="outline" size="sm" asChild>
               <Link to={`/user/spend-summary/${username}`}>
-                <IconCoin className="size-4" />
+                <IconChartLine className="size-4" />
                 Spend Summary
               </Link>
             </Button>
             <Button variant="outline" size="sm" asChild>
               <Link to={`/user/spend-history/${username}`}>
-                <IconHistory className="size-4" />
+                <IconReceipt2 className="size-4" />
                 Spend History
               </Link>
             </Button>

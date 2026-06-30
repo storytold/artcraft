@@ -86,7 +86,7 @@ export function UserBillingSection({ userToken }: { userToken: string }) {
     <div className="rounded-xl border bg-card text-card-foreground shadow-sm flex flex-col p-5">
       <h4 className="text-sm font-semibold mb-4 text-foreground/80 uppercase tracking-wider pb-3 border-b border-border/50 flex items-center gap-2 h-11.25">
         <IconCreditCard className="size-4" />
-        Billing
+        Stripe Customer Data
       </h4>
       <div className="flex flex-col gap-5">
         <div className="flex flex-col gap-1.5">

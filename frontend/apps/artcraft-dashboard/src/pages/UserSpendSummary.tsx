@@ -34,8 +34,9 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   IconAlertCircle,
   IconArrowLeft,
+  IconChartLine,
   IconCoin,
-  IconHistory,
+  IconReceipt2,
 } from "@tabler/icons-react";
 import { usePageTitle } from "@/hooks/usePageTitle";
 import { UserBillingSection } from "@/components/UserBillingSection";
@@ -242,7 +243,7 @@ export function UserSpendSummary() {
             Back to profile
           </Button>
           <h1 className="text-3xl font-bold tracking-tight flex items-center gap-3">
-            <IconCoin className="size-6 text-muted-foreground" />
+            <IconChartLine className="size-6 text-muted-foreground" />
             Spend Summary
           </h1>
           <p className="text-muted-foreground">
@@ -256,7 +257,7 @@ export function UserSpendSummary() {
         </div>
         <Button variant="outline" size="sm" asChild>
           <Link to={`/user/spend-history/${username}`}>
-            <IconHistory className="size-4" />
+            <IconReceipt2 className="size-4" />
             Spend History
           </Link>
         </Button>
