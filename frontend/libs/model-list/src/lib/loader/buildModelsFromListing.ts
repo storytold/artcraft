@@ -11,6 +11,9 @@
 import { ImageModel } from "../classes/ImageModel.js";
 import { VideoModel } from "../classes/VideoModel.js";
 import { ModelCreator } from "../classes/metadata/ModelCreator.js";
+import { CommonAspectRatio } from "../classes/properties/CommonAspectRatio.js";
+import { CommonResolution } from "../classes/properties/CommonResolution.js";
+import { CommonQuality } from "../classes/properties/CommonQuality.js";
 import {
   BACKEND_TO_TAURI_IMAGE_ID,
   BACKEND_TO_TAURI_VIDEO_ID,
@@ -30,6 +33,14 @@ export interface ListingImageModel extends ListingModelBase {
   text_prompt_supported?: boolean | null;
   image_refs_supported?: boolean | null;
   image_refs_max?: number | null;
+  aspect_ratio_options?: string[] | null;
+  aspect_ratio_default?: string | null;
+  resolution_options?: string[] | null;
+  resolution_default?: string | null;
+  quality_options?: string[] | null;
+  default_quality?: string | null;
+  batch_size_max?: number | null;
+  batch_size_default?: number | null;
 }
 
 export interface ListingVideoModel extends ListingModelBase {
@@ -71,10 +82,16 @@ const build = <T extends { tauriId: string }, L extends ListingModelBase>(
   const knownTauriIds = new Set(listing.map((m) => alias[m.model] ?? m.model));
 
   const result: T[] = [];
+  const seenTauriIds = new Set<string>();
   // Backend drives membership + order.
   for (const m of listing) {
     if (m.is_disabled === true) continue;
     const tauriId = alias[m.model] ?? m.model;
+    // Several backend ids can alias to one frontend model (e.g. the three
+    // Midjourney versions all map to the single "midjourney" entry) — only
+    // surface the first.
+    if (seenTauriIds.has(tauriId)) continue;
+    seenTauriIds.add(tauriId);
     result.push(overlayByTauriId.get(tauriId) ?? makeMinimal(m, tauriId));
   }
   // Append frontend-only models the backend has never heard of (switch_x,
@@ -87,8 +104,15 @@ const build = <T extends { tauriId: string }, L extends ListingModelBase>(
 
 // ── Minimal models (backend model with no overlay entry) ───────────────────
 
-const minimalImageModel = (m: ListingImageModel, tauriId: string): ImageModel =>
-  new ImageModel({
+const minimalImageModel = (m: ListingImageModel, tauriId: string): ImageModel => {
+  // Backend option strings share the CommonAspectRatio / CommonResolution /
+  // CommonQuality serde spellings; filter out any values this build doesn't
+  // know (forward-compat with newer servers).
+  const aspectRatios = knownValues(m.aspect_ratio_options, COMMON_ASPECT_RATIO_VALUES);
+  const resolutions = knownValues(m.resolution_options, COMMON_RESOLUTION_VALUES);
+  const qualityOptions = knownValues(m.quality_options, COMMON_QUALITY_VALUES);
+
+  return new ImageModel({
     id: tauriId,
     tauriId,
     fullName: displayName(m),
@@ -97,12 +121,27 @@ const minimalImageModel = (m: ListingImageModel, tauriId: string): ImageModel =>
     selectorName: displayName(m),
     selectorDescription: "",
     selectorBadges: [],
-    maxGenerationCount: 4,
-    defaultGenerationCount: 1,
+    maxGenerationCount: m.batch_size_max ?? 4,
+    defaultGenerationCount: m.batch_size_default ?? 1,
     canTextToImage: m.text_prompt_supported !== false,
     canUseImagePrompt: m.image_refs_supported === true,
     maxImagePromptCount: m.image_refs_max ?? 1,
+    canChangeAspectRatio: aspectRatios.length > 0,
+    aspectRatios: aspectRatios as CommonAspectRatio[],
+    defaultAspectRatio: knownValue(m.aspect_ratio_default, COMMON_ASPECT_RATIO_VALUES) as
+      | CommonAspectRatio
+      | undefined,
+    canChangeResolution: resolutions.length > 0,
+    resolutions: resolutions as CommonResolution[],
+    defaultResolution: knownValue(m.resolution_default, COMMON_RESOLUTION_VALUES) as
+      | CommonResolution
+      | undefined,
+    qualityOptions: qualityOptions as CommonQuality[],
+    defaultQuality: knownValue(m.default_quality, COMMON_QUALITY_VALUES) as
+      | CommonQuality
+      | undefined,
   });
+};
 
 const minimalVideoModel = (m: ListingVideoModel, tauriId: string): VideoModel =>
   new VideoModel({
@@ -129,6 +168,18 @@ const minimalVideoModel = (m: ListingVideoModel, tauriId: string): VideoModel =>
 // ── Helpers ────────────────────────────────────────────────────────────────
 
 const displayName = (m: ListingModelBase): string => m.full_name || m.model;
+
+const COMMON_ASPECT_RATIO_VALUES: Set<string> = new Set(Object.values(CommonAspectRatio));
+const COMMON_RESOLUTION_VALUES: Set<string> = new Set(Object.values(CommonResolution));
+const COMMON_QUALITY_VALUES: Set<string> = new Set(Object.values(CommonQuality));
+
+const knownValues = (values: string[] | null | undefined, known: Set<string>): string[] =>
+  (values ?? []).filter((v) => known.has(v));
+
+const knownValue = (
+  value: string | null | undefined,
+  known: Set<string>,
+): string | undefined => (value != null && known.has(value) ? value : undefined);
 
 // Guess a creator from the `model_creator` field, falling back to the model-id
 // prefix, then to ArtCraft.

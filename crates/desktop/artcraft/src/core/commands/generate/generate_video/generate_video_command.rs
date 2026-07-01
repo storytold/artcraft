@@ -150,6 +150,7 @@ async fn handle_request(
 
   let provider = match (model, request.provider) {
     (TauriVideoModel::GrokVideo, _) => GenerationProvider::Grok,
+    (TauriVideoModel::GrokImagineVideo1p5, _) => GenerationProvider::Grok,
     _ => request.provider.unwrap_or(GenerationProvider::Artcraft),
   };
 

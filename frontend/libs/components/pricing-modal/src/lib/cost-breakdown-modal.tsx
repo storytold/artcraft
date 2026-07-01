@@ -279,8 +279,10 @@ export function CostBreakdownModal({ activeTabId }: CostBreakdownModalProps) {
   const MODELS_WITH_COST_DATA = new Set([
     "flux_1_dev",
     "flux_1_schnell",
-    "flux_pro_11",
-    "flux_pro_11_ultra",
+    "flux_pro_11", // Legacy id
+    "flux_pro_1p1",
+    "flux_pro_11_ultra", // Legacy id
+    "flux_pro_1p1_ultra",
     "gpt_image_1p5",
     "gpt_image_2",
     "nano_banana",

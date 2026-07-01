@@ -826,7 +826,8 @@ export const PromptBoxVideo = ({
       }
 
       switch (selectedModel?.tauriId) {
-        case "grok_video":
+        case "grok_video": // Legacy id
+        case "grok_imagine_video":
           request.grok_aspect_ratio = getGrokAspectRatio();
           break;
 

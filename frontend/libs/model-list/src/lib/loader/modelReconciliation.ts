@@ -17,26 +17,16 @@ import { ModelCreator } from "../classes/metadata/ModelCreator.js";
 
 /**
  * Backend omni model id (the `CommonImageModel` serde string) -> frontend `tauriId`.
- * Only the MISMATCHES need entries; matching ids pass through unchanged.
+ *
+ * MIGRATION (2026-07): RETIRED. The overlay `tauriId`s now use the
+ * storyteller-web omni identifiers directly, and the Tauri generate commands
+ * accept them, so no aliasing remains. Do not add entries — fix ids at the
+ * source instead. (Kept exported until the reconcile helpers are deleted.)
  * See external/reports/2026-07/storyteller-web-omni-vs-tauri-model-differences.md.
  */
-export const BACKEND_TO_TAURI_IMAGE_ID: Record<string, string> = {
-  flux_pro_1p1: "flux_pro_11",
-  flux_pro_1p1_ultra: "flux_pro_11_ultra",
-  grok_imagine_image: "grok_image",
-  // The backend has three versioned Midjourney models; the frontend has one "midjourney".
-  midjourney_7: "midjourney",
-  midjourney_7_niji: "midjourney",
-  midjourney_8: "midjourney",
-};
+export const BACKEND_TO_TAURI_IMAGE_ID: Record<string, string> = {};
 
-export const BACKEND_TO_TAURI_VIDEO_ID: Record<string, string> = {
-  kling_1p6_pro: "kling_1.6_pro",
-  kling_2p1_pro: "kling_2.1_pro",
-  kling_2p1_master: "kling_2.1_master",
-  seedance_1p0_lite: "seedance_1.0_lite",
-  grok_imagine_video: "grok_video",
-};
+export const BACKEND_TO_TAURI_VIDEO_ID: Record<string, string> = {};
 
 /** Backend `model_creator` snake_case string -> frontend `ModelCreator` enum. */
 export const modelCreatorFromBackend = (raw?: string): ModelCreator | undefined => {

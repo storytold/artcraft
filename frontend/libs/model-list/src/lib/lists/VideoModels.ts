@@ -6,7 +6,7 @@ import { SizeIconOption } from "../classes/metadata/SizeOption.js";
 export const VIDEO_MODELS: VideoModel[] = [
   new VideoModel({
     id: "grok_video",
-    tauriId: "grok_video",
+    tauriId: "grok_imagine_video",
     fullName: "Grok Video",
     category: "video",
     creator: ModelCreator.Grok,
@@ -75,7 +75,7 @@ export const VIDEO_MODELS: VideoModel[] = [
   }),
   new VideoModel({
     id: "kling_1_6_pro",
-    tauriId: "kling_1.6_pro",
+    tauriId: "kling_1p6_pro",
     fullName: "Kling 1.6 Pro",
     category: "video",
     creator: ModelCreator.Kling,
@@ -91,7 +91,7 @@ export const VIDEO_MODELS: VideoModel[] = [
   }),
   new VideoModel({
     id: "kling_2_1_pro",
-    tauriId: "kling_2.1_pro",
+    tauriId: "kling_2p1_pro",
     fullName: "Kling 2.1 Pro",
     category: "video",
     creator: ModelCreator.Kling,
@@ -107,7 +107,7 @@ export const VIDEO_MODELS: VideoModel[] = [
   }),
   new VideoModel({
     id: "kling_2_1_master",
-    tauriId: "kling_2.1_master",
+    tauriId: "kling_2p1_master",
     fullName: "Kling 2.1 Master",
     category: "video",
     creator: ModelCreator.Kling,
@@ -274,7 +274,7 @@ export const VIDEO_MODELS: VideoModel[] = [
   }),
   new VideoModel({
     id: "seedance_1_0_lite",
-    tauriId: "seedance_1.0_lite",
+    tauriId: "seedance_1p0_lite",
     fullName: "Seedance 1.0 Lite",
     category: "video",
     creator: ModelCreator.Bytedance,

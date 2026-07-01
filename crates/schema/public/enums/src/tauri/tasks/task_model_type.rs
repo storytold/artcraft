@@ -59,10 +59,18 @@ pub enum TaskModelType {
   // Generic Midjourney model, version unknown.
   #[serde(rename = "midjourney")]
   Midjourney,
+  #[serde(rename = "midjourney_7")]
+  Midjourney7,
+  #[serde(rename = "midjourney_7_niji")]
+  Midjourney7Niji,
+  #[serde(rename = "midjourney_8")]
+  Midjourney8,
 
   // Video models
   #[serde(rename = "grok_video")]
   GrokVideo, // Video version unspecified/unknown
+  #[serde(rename = "grok_imagine_video_1p5")]
+  GrokImagineVideo1p5,
   #[serde(rename = "kling_1.6_pro")]
   Kling16Pro,
   #[serde(rename = "kling_2.1_pro")]
@@ -149,8 +157,12 @@ impl TaskModelType {
       Self::GrokImage => "grok_image",
       Self::Recraft3 => "recraft_3",
       Self::Midjourney => "midjourney",
+      Self::Midjourney7 => "midjourney_7",
+      Self::Midjourney7Niji => "midjourney_7_niji",
+      Self::Midjourney8 => "midjourney_8",
       // Video models
       Self::GrokVideo => "grok_video",
+      Self::GrokImagineVideo1p5 => "grok_imagine_video_1p5",
       Self::Kling16Pro => "kling_1.6_pro",
       Self::Kling21Pro => "kling_2.1_pro",
       Self::Kling21Master => "kling_2.1_master",
@@ -205,8 +217,12 @@ impl TaskModelType {
       "grok_image" => Ok(Self::GrokImage),
       "recraft_3" => Ok(Self::Recraft3),
       "midjourney" => Ok(Self::Midjourney),
+      "midjourney_7" => Ok(Self::Midjourney7),
+      "midjourney_7_niji" => Ok(Self::Midjourney7Niji),
+      "midjourney_8" => Ok(Self::Midjourney8),
       // Video models
       "grok_video" => Ok(Self::GrokVideo),
+      "grok_imagine_video_1p5" => Ok(Self::GrokImagineVideo1p5),
       "kling_1.6_pro" => Ok(Self::Kling16Pro),
       "kling_2.1_pro" => Ok(Self::Kling21Pro),
       "kling_2.1_master" => Ok(Self::Kling21Master),
@@ -264,8 +280,12 @@ impl TaskModelType {
       Self::GrokImage,
       Self::Recraft3,
       Self::Midjourney,
+      Self::Midjourney7,
+      Self::Midjourney7Niji,
+      Self::Midjourney8,
       // Video models
       Self::GrokVideo,
+      Self::GrokImagineVideo1p5,
       Self::Kling16Pro,
       Self::Kling21Pro,
       Self::Kling21Master,
@@ -331,7 +351,11 @@ mod tests {
       assert_serialization(TaskModelType::Recraft3, "recraft_3");
       assert_serialization(TaskModelType::Midjourney, "midjourney");
       // Video models
+      assert_serialization(TaskModelType::Midjourney7, "midjourney_7");
+      assert_serialization(TaskModelType::Midjourney7Niji, "midjourney_7_niji");
+      assert_serialization(TaskModelType::Midjourney8, "midjourney_8");
       assert_serialization(TaskModelType::GrokVideo, "grok_video");
+      assert_serialization(TaskModelType::GrokImagineVideo1p5, "grok_imagine_video_1p5");
       assert_serialization(TaskModelType::Kling16Pro, "kling_1.6_pro");
       assert_serialization(TaskModelType::Kling21Pro, "kling_2.1_pro");
       assert_serialization(TaskModelType::Kling21Master, "kling_2.1_master");
@@ -387,6 +411,7 @@ mod tests {
       assert_eq!(TaskModelType::Midjourney.to_str(), "midjourney");
       // Video models
       assert_eq!(TaskModelType::GrokVideo.to_str(), "grok_video");
+      assert_eq!(TaskModelType::GrokImagineVideo1p5.to_str(), "grok_imagine_video_1p5");
       assert_eq!(TaskModelType::Kling16Pro.to_str(), "kling_1.6_pro");
       assert_eq!(TaskModelType::Kling21Pro.to_str(), "kling_2.1_pro");
       assert_eq!(TaskModelType::Kling21Master.to_str(), "kling_2.1_master");
@@ -442,6 +467,7 @@ mod tests {
       assert_eq!(TaskModelType::from_str("midjourney").unwrap(), TaskModelType::Midjourney);
       // Video models
       assert_eq!(TaskModelType::from_str("grok_video").unwrap(), TaskModelType::GrokVideo);
+      assert_eq!(TaskModelType::from_str("grok_imagine_video_1p5").unwrap(), TaskModelType::GrokImagineVideo1p5);
       assert_eq!(TaskModelType::from_str("kling_1.6_pro").unwrap(), TaskModelType::Kling16Pro);
       assert_eq!(TaskModelType::from_str("kling_2.1_pro").unwrap(), TaskModelType::Kling21Pro);
       assert_eq!(TaskModelType::from_str("kling_2.1_master").unwrap(), TaskModelType::Kling21Master);
@@ -484,7 +510,7 @@ mod tests {
     #[test]
     fn all_variants() {
       let mut variants = TaskModelType::all_variants();
-      assert_eq!(variants.len(), 48);
+      assert_eq!(variants.len(), 52);
       // Image models
       assert_eq!(variants.pop_first(), Some(TaskModelType::Flux1Dev));
       assert_eq!(variants.pop_first(), Some(TaskModelType::Flux1Schnell));
@@ -508,8 +534,12 @@ mod tests {
       assert_eq!(variants.pop_first(), Some(TaskModelType::GrokImage));
       assert_eq!(variants.pop_first(), Some(TaskModelType::Recraft3));
       assert_eq!(variants.pop_first(), Some(TaskModelType::Midjourney));
+      assert_eq!(variants.pop_first(), Some(TaskModelType::Midjourney7));
+      assert_eq!(variants.pop_first(), Some(TaskModelType::Midjourney7Niji));
+      assert_eq!(variants.pop_first(), Some(TaskModelType::Midjourney8));
       // Video models
       assert_eq!(variants.pop_first(), Some(TaskModelType::GrokVideo));
+      assert_eq!(variants.pop_first(), Some(TaskModelType::GrokImagineVideo1p5));
       assert_eq!(variants.pop_first(), Some(TaskModelType::Kling16Pro));
       assert_eq!(variants.pop_first(), Some(TaskModelType::Kling21Pro));
       assert_eq!(variants.pop_first(), Some(TaskModelType::Kling21Master));

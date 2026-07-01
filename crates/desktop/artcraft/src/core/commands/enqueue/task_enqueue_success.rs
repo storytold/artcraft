@@ -85,6 +85,7 @@ impl TaskEnqueueSuccess{
       Some(GenerationModel::GrokImage) => Some(TaskModelType::GrokImage),
       Some(GenerationModel::Recraft3) => Some(TaskModelType::Recraft3),
       Some(GenerationModel::GrokVideo) => Some(TaskModelType::GrokVideo),
+      Some(GenerationModel::GrokImagineVideo1p5) => Some(TaskModelType::GrokImagineVideo1p5),
       Some(GenerationModel::Kling21Pro) => Some(TaskModelType::Kling21Pro),
       Some(GenerationModel::Kling21Master) => Some(TaskModelType::Kling21Master),
       Some(GenerationModel::Kling2p5TurboPro) => Some(TaskModelType::Kling2p5TurboPro),
@@ -110,6 +111,9 @@ impl TaskEnqueueSuccess{
       Some(GenerationModel::WorldlabsMarble0p1Mini) => Some(TaskModelType::WorldlabsMarble0p1Mini),
       Some(GenerationModel::WorldlabsMarble0p1Plus) => Some(TaskModelType::WorldlabsMarble0p1Plus),
       Some(GenerationModel::Midjourney) => Some(TaskModelType::Midjourney), // NB: This is a generic Midjourney model, version unknown.
+      Some(GenerationModel::Midjourney7) => Some(TaskModelType::Midjourney7),
+      Some(GenerationModel::Midjourney7Niji) => Some(TaskModelType::Midjourney7Niji),
+      Some(GenerationModel::Midjourney8) => Some(TaskModelType::Midjourney8),
 
       // TODO: These seem wrong -
       Some(GenerationModel::Kling1_6) => Some(TaskModelType::Kling16Pro), // NB: `VideoModel::Kling16Pro`.
