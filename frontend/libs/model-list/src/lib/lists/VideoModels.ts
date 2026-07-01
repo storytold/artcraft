@@ -43,7 +43,9 @@ export const VIDEO_MODELS: VideoModel[] = [
     fullName: "Grok Imagine 1.5",
     category: "video",
     creator: ModelCreator.Grok,
-    providers: [GenerationProvider.Grok],
+    // Served via Artcraft (storyteller-web / artcraft_router) for now, even
+    // though the model is made by xAI. See generate_video_command.rs.
+    providers: [GenerationProvider.Artcraft],
     selectorName: "Grok Imagine 1.5",
     selectorDescription: "Image-to-video by xAI",
     selectorBadges: ["Preview"],
