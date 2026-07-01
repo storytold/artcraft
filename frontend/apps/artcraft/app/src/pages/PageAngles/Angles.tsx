@@ -37,7 +37,7 @@ import { SliderV2 } from "@storyteller/ui-sliderv2";
 import { GenerateImage } from "@storyteller/tauri-api";
 import {
   ClassyModelSelector,
-  ANGLES_PAGE_MODEL_LIST,
+  useAnglesPageModelList,
   ModelPage,
   useSelectedModel,
   useSelectedProviderForModel,
@@ -58,6 +58,7 @@ const ANGLES_MODEL_PAGE = ModelPage.Angles;
 // ─── Main Angles Component ─────────────────────────────────────────────────────
 
 export const Angles = () => {
+  const anglesModelList = useAnglesPageModelList();
   const [isGalleryModalOpen, setIsGalleryModalOpen] = useState(false);
   const [selectedGalleryImages, setSelectedGalleryImages] = useState<string[]>(
     [],
@@ -733,7 +734,7 @@ export const Angles = () => {
 
                   <ClassyModelSelector
                     variant="embedded"
-                    items={ANGLES_PAGE_MODEL_LIST}
+                    items={anglesModelList}
                     page={ANGLES_MODEL_PAGE}
                   />
                   <GenerateButton

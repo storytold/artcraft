@@ -14,6 +14,7 @@ import { pageHeight, pageWidth, persistLogin } from "~/signals";
 import { SyncStorytellerApiConfig } from "./api/SyncStorytellerApiConfig";
 import { posthog } from "posthog-js";
 import { SoundManager } from "@storyteller/soundboard";
+import { useModelsStore } from "@storyteller/tauri-api";
 
 config.autoAddCss = false; /* eslint-disable import/first */
 
@@ -87,6 +88,13 @@ const GlobalSettingsManager = ({ env }: { env: Record<string, string> }) => {
 
   useEffect(() => {
     SoundManager.install();
+  }, []);
+
+  // Reconcile the model dropdowns against the backend omni listing once on boot.
+  // The store is already seeded with the static overlay, so a failure here is a
+  // no-op (the UI keeps the overlay models).
+  useEffect(() => {
+    void useModelsStore.getState().loadModelsFromBackend();
   }, []);
 
   return null;

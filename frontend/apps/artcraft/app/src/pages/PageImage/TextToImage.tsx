@@ -4,7 +4,7 @@ import { PromptBoxImage } from "@storyteller/ui-promptbox";
 import { UploadImageMedia, FilterMediaClasses } from "@storyteller/api";
 import BackgroundGallery from "./BackgroundGallery";
 import {
-  TEXT_TO_IMAGE_PAGE_MODEL_LIST,
+  useTextToImagePageModelList,
   ModelPage,
   ClassyModelSelector,
   useSelectedImageModel,
@@ -44,6 +44,7 @@ interface TextToImageProps {
 }
 
 const TextToImage = ({ imageMediaId, imageUrl }: TextToImageProps) => {
+  const textToImageModelList = useTextToImagePageModelList();
   const startBatch = useTextToImageStore((s) => s.startBatch);
   const promptContentRef = useRef<HTMLDivElement>(null);
   const [promptHeight, setPromptHeight] = useState<number>(138);
@@ -187,7 +188,7 @@ const TextToImage = ({ imageMediaId, imageUrl }: TextToImageProps) => {
               modelSelector={
                 <ClassyModelSelector
                   variant="embedded"
-                  items={TEXT_TO_IMAGE_PAGE_MODEL_LIST}
+                  items={textToImageModelList}
                   page={PAGE_ID}
                 />
               }

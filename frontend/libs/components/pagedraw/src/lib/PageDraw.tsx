@@ -24,7 +24,7 @@ import { ContextMenuContainer } from "./components/ui/ContextMenu";
 import InpaintToolBar from "./components/ui/InpaintToolBar";
 import { ImageModel } from "@storyteller/model-list";
 import {
-  CANVAS_2D_PAGE_MODEL_LIST,
+  useCanvas2dPageModelList,
   ClassyModelSelector,
   ModelPage,
   useSelectedImageModel,
@@ -293,6 +293,7 @@ const PageDraw = ({
   fillParentHeight = false,
   showBottomRightControls = true,
 }: PageDrawProps) => {
+  const canvas2dModelList = useCanvas2dPageModelList();
   const canvasWidth = useRef<number>(1024);
   const canvasHeight = useRef<number>(1024);
   const [isSelecting, setIsSelecting] = useState<boolean>(false);
@@ -1215,7 +1216,7 @@ const PageDraw = ({
           modelSelector={
             <ClassyModelSelector
               variant="embedded"
-              items={CANVAS_2D_PAGE_MODEL_LIST}
+              items={canvas2dModelList}
               page={PAGE_ID}
               showProviderSelection={false}
             />
