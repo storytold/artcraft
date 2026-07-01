@@ -185,3 +185,53 @@ mod tests {
     assert!(resp.providers.is_empty());
   }
 }
+
+/// Live tests that hit real servers. All `#[ignore]` so they never run by default.
+/// Run explicitly, e.g.:
+///   cargo test -p artcraft_client omni_gen_list_image_models::live_tests -- --ignored --nocapture
+#[cfg(test)]
+mod live_tests {
+  mod localhost {
+    use super::super::{omni_gen_list_image_models, OmniGenListImageModelsArgs};
+    use crate::utils::api_host::ApiHost;
+
+    #[tokio::test]
+    #[ignore] // live: hits http://localhost:12345
+    async fn list_image_models() {
+      let api_host = ApiHost::Localhost { port: 12345 };
+      let response = omni_gen_list_image_models(OmniGenListImageModelsArgs {
+        api_host: &api_host,
+        maybe_creds: None,
+        provider: None,
+      })
+      .await
+      .expect("request should succeed");
+
+      println!("[localhost] image models response: {:#?}", response);
+      assert!(response.success);
+      assert!(!response.models.is_empty(), "expected at least one image model");
+    }
+  }
+
+  mod production {
+    use super::super::{omni_gen_list_image_models, OmniGenListImageModelsArgs};
+    use crate::utils::api_host::ApiHost;
+
+    #[tokio::test]
+    #[ignore] // live: hits https://api.storyteller.ai
+    async fn list_image_models() {
+      let api_host = ApiHost::Storyteller;
+      let response = omni_gen_list_image_models(OmniGenListImageModelsArgs {
+        api_host: &api_host,
+        maybe_creds: None,
+        provider: None,
+      })
+      .await
+      .expect("request should succeed");
+
+      println!("[production] image models response: {:#?}", response);
+      assert!(response.success);
+      assert!(!response.models.is_empty(), "expected at least one image model");
+    }
+  }
+}
