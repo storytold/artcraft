@@ -47,6 +47,10 @@ pub async fn list_video_models_command(
     }
     Err(error_message) => {
       warn!("list_video_models_command failed after {} attempts: {}", MAX_ATTEMPTS, error_message);
+      if let Some(stale) = any_cached_response() {
+        warn!("list_video_models_command: refresh failed; serving stale cached response");
+        return Ok(stale.into());
+      }
       Err(error_message.into())
     }
   }
@@ -60,6 +64,13 @@ fn cached_response() -> Option<ListVideoModelsResponse> {
   } else {
     None
   }
+}
+
+/// The cached response regardless of age. Used as a fallback so that a failed
+/// refresh still returns the last-known-good data instead of an error.
+fn any_cached_response() -> Option<ListVideoModelsResponse> {
+  let guard = CACHE.read().ok()?;
+  guard.as_ref().map(|entry| entry.response.clone())
 }
 
 fn store_response(response: ListVideoModelsResponse) {
