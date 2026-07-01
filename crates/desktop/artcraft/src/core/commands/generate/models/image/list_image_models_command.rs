@@ -29,6 +29,29 @@ struct CacheEntry {
 
 static CACHE: Lazy<RwLock<Option<CacheEntry>>> = Lazy::new(|| RwLock::new(None));
 
+
+#[tauri::command]
+pub async fn list_image_models_command(
+  app_env_configs: State<'_, AppEnvConfigs>,
+) -> ResponseOrErrorMessage<ListImageModelsResponse> {
+  if let Some(cached) = cached_response() {
+    debug!("list_image_models_command: serving cached response");
+    return Ok(cached.into());
+  }
+
+  match fetch_with_retry(&app_env_configs.storyteller_host).await {
+    Ok(api_response) => {
+      let response: ListImageModelsResponse = api_response.into();
+      store_response(response.clone());
+      Ok(response.into())
+    }
+    Err(error_message) => {
+      warn!("list_image_models_command failed after {} attempts: {}", MAX_ATTEMPTS, error_message);
+      Err(error_message.into())
+    }
+  }
+}
+
 fn cached_response() -> Option<ListImageModelsResponse> {
   let guard = CACHE.read().ok()?;
   let entry = guard.as_ref()?;
@@ -61,26 +84,4 @@ async fn fetch_with_retry(api_host: &ApiHost) -> Result<OmniGenImageModelsRespon
     }
   }
   Err(last_error)
-}
-
-#[tauri::command]
-pub async fn list_image_models_command(
-  app_env_configs: State<'_, AppEnvConfigs>,
-) -> ResponseOrErrorMessage<ListImageModelsResponse> {
-  if let Some(cached) = cached_response() {
-    debug!("list_image_models_command: serving cached response");
-    return Ok(cached.into());
-  }
-
-  match fetch_with_retry(&app_env_configs.storyteller_host).await {
-    Ok(api_response) => {
-      let response: ListImageModelsResponse = api_response.into();
-      store_response(response.clone());
-      Ok(response.into())
-    }
-    Err(error_message) => {
-      warn!("list_image_models_command failed after {} attempts: {}", MAX_ATTEMPTS, error_message);
-      Err(error_message.into())
-    }
-  }
 }
