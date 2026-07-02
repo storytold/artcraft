@@ -5,9 +5,9 @@ import { faCube, faImage, faVideo } from "@fortawesome/pro-solid-svg-icons";
 import { toast } from "../toast/toast";
 import { downloadMediaFile } from "../../lib/download-media";
 import {
-  getModelCreatorIconPath,
+  getCreatorIconPathForModelId,
   getModelDisplayName,
-} from "../../lib/omni-gen-hooks";
+} from "@storyteller/model-list";
 import {
   applyMakeVideoFromImage,
   applyRecreateFromMediaToken,
@@ -72,7 +72,7 @@ export function useGalleryItemActions(
     ? getModelDisplayName(effectiveModelId)
     : null;
   const modelIconPath = effectiveModelId
-    ? getModelCreatorIconPath(effectiveModelId)
+    ? getCreatorIconPathForModelId(effectiveModelId)
     : null;
 
   const handleRecreate = useCallback(

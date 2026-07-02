@@ -16,9 +16,9 @@ import { Tooltip } from "@storyteller/ui-tooltip";
 import { toast } from "../toast/toast";
 import { downloadMediaFile } from "../../lib/download-media";
 import {
-  getModelCreatorIconPath,
+  getCreatorIconPathForModelId,
   getModelDisplayName,
-} from "../../lib/omni-gen-hooks";
+} from "@storyteller/model-list";
 import {
   applyMakeVideoFromImage,
   applyRecreateFromMediaToken,
@@ -191,7 +191,7 @@ export const GalleryCard = memo(function GalleryCard({
     ? getModelDisplayName(item.modelId)
     : null;
   const modelIconPath = item.modelId
-    ? getModelCreatorIconPath(item.modelId)
+    ? getCreatorIconPathForModelId(item.modelId)
     : null;
 
   const mediaIcon =

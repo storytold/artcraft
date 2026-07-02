@@ -12,13 +12,16 @@
       "path": "../../libs/components/upload-modal"
     },
     {
-      "path": "../../libs/components/moodboard"
-    },
-    {
       "path": "../../libs/components/pagedraw"
     },
     {
+      "path": "../../libs/components/moodboard"
+    },
+    {
       "path": "../../libs/components/slider-v2"
+    },
+    {
+      "path": "../../libs/omni-gen"
     },
     {
       "path": "../../libs/components/pricing-modal"

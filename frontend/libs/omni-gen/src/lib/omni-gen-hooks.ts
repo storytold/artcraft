@@ -5,6 +5,27 @@ import type {
   OmniGenVideoModelInfo,
 } from "@storyteller/api";
 
+// Shown when the OmniGen service is unavailable (e.g. returns 5xx). Separate
+// copy for the two failure points so the user knows which step failed.
+export const OMNI_MODELS_OUTAGE_MESSAGE =
+  "Couldn't load models - the generation service may be down. Try again shortly.";
+export const OMNI_GENERATE_OUTAGE_MESSAGE =
+  "Couldn't start generation - the service is temporarily unavailable. Try again shortly.";
+
+// ── Error notifier ───────────────────────────────────────────────────────
+
+// User-facing outage notifications are injected by the host app (each app has
+// its own toast component) via `setOmniGenErrorNotifier` at startup, before the
+// first hook mounts. Defaults to a no-op; the console logging below always runs
+// so failures are never silent.
+export type OmniGenErrorNotifier = (message: string) => void;
+
+let errorNotifier: OmniGenErrorNotifier = () => {};
+
+export const setOmniGenErrorNotifier = (notifier: OmniGenErrorNotifier): void => {
+  errorNotifier = notifier;
+};
+
 // ── Singleton caches (fetch once per session) ────────────────────────────
 
 let imageModelsCache: OmniGenImageModelInfo[] | null = null;
@@ -40,6 +61,7 @@ function fetchImageModelsOnce() {
       } else {
         imageModelsError = "No image models returned from API";
         console.warn("[OmniGen] Image models response:", res);
+        errorNotifier(OMNI_MODELS_OUTAGE_MESSAGE);
       }
       notifyImageListeners();
     },
@@ -47,6 +69,7 @@ function fetchImageModelsOnce() {
       imageModelsFetching = false;
       imageModelsError = err?.message ?? "Failed to fetch image models";
       console.error("[OmniGen] Failed to fetch image models:", err);
+      errorNotifier(OMNI_MODELS_OUTAGE_MESSAGE);
       notifyImageListeners();
     },
   );
@@ -65,6 +88,7 @@ function fetchVideoModelsOnce() {
       } else {
         videoModelsError = "No video models returned from API";
         console.warn("[OmniGen] Video models response:", res);
+        errorNotifier(OMNI_MODELS_OUTAGE_MESSAGE);
       }
       notifyVideoListeners();
     },
@@ -72,6 +96,7 @@ function fetchVideoModelsOnce() {
       videoModelsFetching = false;
       videoModelsError = err?.message ?? "Failed to fetch video models";
       console.error("[OmniGen] Failed to fetch video models:", err);
+      errorNotifier(OMNI_MODELS_OUTAGE_MESSAGE);
       notifyVideoListeners();
     },
   );
@@ -112,7 +137,9 @@ export function useOmniGenImageModels(): {
     fetchImageModelsOnce();
 
     return () => {
-      imageModelsListeners = imageModelsListeners.filter((cb) => cb !== onReady);
+      imageModelsListeners = imageModelsListeners.filter(
+        (cb) => cb !== onReady,
+      );
     };
   }, []);
 
@@ -152,88 +179,11 @@ export function useOmniGenVideoModels(): {
     fetchVideoModelsOnce();
 
     return () => {
-      videoModelsListeners = videoModelsListeners.filter((cb) => cb !== onReady);
+      videoModelsListeners = videoModelsListeners.filter(
+        (cb) => cb !== onReady,
+      );
     };
   }, []);
 
   return { models, isLoading, error };
-}
-
-// ── Display name helper ──────────────────────────────────────────────────
-
-const MODEL_DISPLAY_NAMES: Record<string, string> = {
-  // Image models
-  flux_1_dev: "Flux 1 Dev",
-  flux_1_schnell: "Flux 1 Schnell",
-  flux_pro_1p1: "Flux Pro 1.1",
-  flux_pro_1p1_ultra: "Flux Pro 1.1 Ultra",
-  gpt_image_1p5: "GPT Image 1.5",
-  nano_banana: "Nano Banana",
-  nano_banana_2: "Nano Banana 2",
-  nano_banana_pro: "Nano Banana Pro",
-  seedream_4: "Seedream 4",
-  seedream_4p5: "Seedream 4.5",
-  seedream_5_lite: "Seedream 5 Lite",
-  // Video models
-  grok_video: "Grok Video",
-  kling_1p6_pro: "Kling 1.6 Pro",
-  kling_2p1_pro: "Kling 2.1 Pro",
-  kling_2p1_master: "Kling 2.1 Master",
-  kling_2p5_turbo_pro: "Kling 2.5 Turbo Pro",
-  kling_2p6_pro: "Kling 2.6 Pro",
-  kling_3p0_standard: "Kling 3.0 Standard",
-  kling_3p0_pro: "Kling 3.0 Pro",
-  seedance_1p0_lite: "Seedance 1.0 Lite",
-  seedance_1p5_pro: "Seedance 1.5 Pro",
-  seedance_2p0: "Seedance 2.0",
-  happy_horse_1p0: "Happy Horse 1.0",
-  sora_2: "Sora 2",
-  sora_2_pro: "Sora 2 Pro",
-  veo_2: "Google Veo 2",
-  veo_3: "Google Veo 3",
-  veo_3_fast: "Google Veo 3 Fast",
-  veo_3p1: "Google Veo 3.1",
-  veo_3p1_fast: "Google Veo 3.1 Fast",
-};
-
-export function getModelDisplayName(modelId: string, fullName?: string | null): string {
-  if (fullName) return fullName;
-  return MODEL_DISPLAY_NAMES[modelId] ?? modelId;
-}
-
-// ── Creator icon helper ──────────────────────────────────────────────────
-
-const MODEL_CREATOR_ICON_MAP: Record<string, string> = {
-  flux: "blackforestlabs",
-  nano_banana: "google",
-  gpt_image: "openai",
-  seedream: "bytedance",
-  seedance: "bytedance",
-  kling: "kling",
-  sora: "openai",
-  veo: "google",
-  grok: "grok",
-  happy_horse: "alibaba",
-};
-
-const ICON_FILES: Record<string, string> = {
-  blackforestlabs: "blackforestlabs.svg",
-  artcraft: "artcraft.svg",
-  openai: "openai.svg",
-  bytedance: "bytedance.svg",
-  kling: "kling.svg",
-  google: "google.svg",
-  grok: "grok.svg",
-  alibaba: "alibaba.svg",
-};
-
-export function getModelCreatorIconPath(modelId: string): string {
-  const basePath = "/images/services";
-  for (const [prefix, creator] of Object.entries(MODEL_CREATOR_ICON_MAP)) {
-    if (modelId.startsWith(prefix)) {
-      const file = ICON_FILES[creator] ?? "generic.svg";
-      return `${basePath}/${file}`;
-    }
-  }
-  return `${basePath}/generic.svg`;
 }

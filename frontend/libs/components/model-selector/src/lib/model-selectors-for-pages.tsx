@@ -7,8 +7,6 @@ import {
   Model,
   ImageModel,
   VideoModel,
-  VIDEO_MODELS,
-  IMAGE_MODELS,
   SPLAT_MODELS,
   OBJECT_3D_MODELS,
 } from "@storyteller/model-list";
@@ -45,9 +43,9 @@ const cubeIcon = <FontAwesomeIcon icon={faCube} className="h-4 w-4" />;
  * the InstructiveEdit tag, etc.). Those flags do not exist in the storyteller-web
  * omni backend, so this subsetting is maintained here in the frontend overlay.
  *
- * Each builder is a pure function over a model list, so it can run against either
- * the static overlay (the `*_PAGE_MODEL_LIST` constants below) or the live,
- * backend-reconciled list from `useModelsStore` (the `use*PageModelList` hooks).
+ * Each builder is a pure function over a model list. React components consume
+ * them through the `use*PageModelList` hooks, which run them against the live,
+ * backend-reconciled list from `useModelsStore`.
  */
 
 export const buildTextToImagePageList = (imageModels: ImageModel[]): ModelList =>
@@ -95,28 +93,9 @@ export const buildImageToVideoPageList = (videoModels: VideoModel[]): ModelList 
   );
 
 // ---------------------------------------------------------------------------
-// Backward-compatible static constants (computed from the frontend overlay).
-// Prefer the `use*PageModelList` hooks in React components so the dropdowns
-// reflect the backend-reconciled model set.
+// Static constants for the 3D pages. Splat/3D-object models are not served by
+// the omni backend, so these stay overlay-driven (no hook counterparts).
 // ---------------------------------------------------------------------------
-
-export const TEXT_TO_IMAGE_PAGE_MODEL_LIST: ModelList =
-  buildTextToImagePageList(IMAGE_MODELS);
-
-export const CANVAS_2D_PAGE_MODEL_LIST: ModelList =
-  buildCanvas2dPageList(IMAGE_MODELS);
-
-export const STAGE_3D_PAGE_MODEL_LIST: ModelList =
-  buildStage3dPageList(IMAGE_MODELS);
-
-export const IMAGE_EDITOR_PAGE_MODEL_LIST: ModelList =
-  buildImageEditorPageList(IMAGE_MODELS);
-
-export const IMAGE_TO_VIDEO_PAGE_MODEL_LIST: ModelList =
-  buildImageToVideoPageList(VIDEO_MODELS);
-
-export const ANGLES_PAGE_MODEL_LIST: ModelList =
-  buildAnglesPageList(IMAGE_MODELS);
 
 export const IMAGE_TO_3D_WORLD_PAGE_MODEL_LIST: ModelList = buildItems(
   SPLAT_MODELS as Model[],

@@ -27,10 +27,8 @@ import { GenerationCountPicker } from "./components/GenerationCountPicker";
 import { ResolutionPicker } from "./components/ResolutionPicker";
 import { QualityPicker } from "./components/QualityPicker";
 import { useImageCostEstimate } from "../../lib/cost-estimate-api";
-import {
-  useOmniGenImageModels,
-  getModelCreatorIconPath,
-} from "../../lib/omni-gen-hooks";
+import { useOmniGenImageModels } from "@storyteller/omni-gen";
+import { getCreatorIconPathForModelId } from "@storyteller/model-list";
 
 // ── Constants ────────────────────────────────────────────────────────────
 
@@ -51,7 +49,7 @@ function buildModelPopoverItems(
     selected: model.model === selectedId,
     icon: (
       <img
-        src={getModelCreatorIconPath(model.model)}
+        src={getCreatorIconPathForModelId(model.model)}
         alt={`${model.model} logo`}
         className="h-4 w-4 icon-auto-contrast"
       />
@@ -414,7 +412,7 @@ export default function CreateImage() {
                   showIconsInList
                   triggerIcon={
                     <img
-                      src={getModelCreatorIconPath(selectedModel?.model ?? "")}
+                      src={getCreatorIconPathForModelId(selectedModel?.model ?? "")}
                       alt=""
                       className="h-4 w-4 icon-auto-contrast"
                     />

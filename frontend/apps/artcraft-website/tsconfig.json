@@ -15,6 +15,9 @@
       "path": "../../libs/components/gallery-modal"
     },
     {
+      "path": "../../libs/omni-gen"
+    },
+    {
       "path": "../../libs/components/switch"
     },
     {
@@ -30,13 +33,13 @@
       "path": "../../libs/components/gravatar"
     },
     {
-      "path": "../../libs/model-list"
-    },
-    {
       "path": "../../libs/components/loading-spinner"
     },
     {
       "path": "../../libs/components/tooltip"
+    },
+    {
+      "path": "../../libs/model-list"
     },
     {
       "path": "../../libs/components/popover"

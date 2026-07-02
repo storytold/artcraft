@@ -1,7 +1,7 @@
 import { memo } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCircleExclamation, faXmark } from "@fortawesome/pro-solid-svg-icons";
-import { getModelCreatorIconPath } from "../../lib/omni-gen-hooks";
+import { getCreatorIconPathForModelId } from "@storyteller/model-list";
 
 export interface FailedCardProps {
   id: string;
@@ -22,7 +22,7 @@ export const FailedCard = memo(function FailedCard({
   modelLabel,
   onDismiss,
 }: FailedCardProps) {
-  const iconPath = modelId ? getModelCreatorIconPath(modelId) : null;
+  const iconPath = modelId ? getCreatorIconPathForModelId(modelId) : null;
   return (
     <div className="relative aspect-square w-full overflow-hidden rounded-lg bg-red-500/10">
       <div className="flex h-full flex-col items-center justify-center gap-2 px-4 sm:px-6">
