@@ -44,6 +44,11 @@ interface ClassyModelSelectorProps {
   showProviderSelection?: boolean;
 }
 
+// Model instances are rebuilt when the backend listing hydrates, so compare by
+// tauriId rather than object identity.
+const isSameModel = (a: Model | undefined, b: Model | undefined): boolean =>
+  a !== undefined && b !== undefined && a.tauriId === b.tauriId;
+
 const DEFAULT_PROVIDER_OPTIONS: GenerationProvider[] = [GenerationProvider.Artcraft];
 
 function ProviderTooltipContent({
@@ -143,6 +148,20 @@ export function ClassyModelSelector({
     }
   }, []);
 
+  // The backend listing hydrates asynchronously and rebuilds the model
+  // instances with API capabilities. Swap a stale selected instance for the
+  // fresh one so capability-driven UI (keyframes, references, pickers)
+  // reflects the API data without needing a manual re-select.
+  useEffect(() => {
+    const selected = selectedModels[page];
+    if (!selected) return;
+    const fresh = itemModels.find((m) => m.tauriId === selected.tauriId);
+    if (fresh !== undefined && fresh !== selected) {
+      setSelectedModel(page, fresh);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [items, selectedModels, page]);
+
   // Initialize a default provider for each model so we can render icons even when not selected
   useEffect(() => {
     for (const item of items) {
@@ -175,7 +194,7 @@ export function ClassyModelSelector({
 
         return {
           ...item,
-          selected: item.model === selectedModel,
+          selected: isSameModel(item.model as Model | undefined, selectedModel),
           hoverTooltip: hasMultipleProviders
             ? (close: () => void) => (
                 <ProviderTooltipContent
@@ -190,7 +209,7 @@ export function ClassyModelSelector({
             : undefined,
           tooltipDelayMs: providerTooltipDelayMs,
           trailing:
-            item.model !== selectedModel && hasMultipleProviders
+            !isSameModel(item.model as Model | undefined, selectedModel) && hasMultipleProviders
               ? (() => {
                   const prov = modelId
                     ? selectedProvidersByModel[modelId]
@@ -206,7 +225,7 @@ export function ClassyModelSelector({
                 })()
               : undefined,
           selectedRight:
-            item.model === selectedModel &&
+            isSameModel(item.model as Model | undefined, selectedModel) &&
             selectedProvider &&
             hasMultipleProviders ? (
               <div className="mr-1 rounded-md p-1.5 bg-primary/60 group-hover:bg-primary/80 transition-colors">
@@ -265,7 +284,7 @@ export function ClassyModelSelector({
         {...popoverProps}
         buttonClassName="rounded-xl bg-ui-controls/90 hover:bg-ui-controls text-left shadow-sm px-3 py-1 gap-3 border border-ui-controls-border"
         renderTrigger={(selectedItem) => {
-          const modelTitle = selectedItem?.label ?? "";
+          const modelTitle = selectedItem?.label ?? selectedModel?.selectorName ?? "";
           const providerIcon = selectedProvider
             ? getProviderIcon(selectedProvider)
             : null;

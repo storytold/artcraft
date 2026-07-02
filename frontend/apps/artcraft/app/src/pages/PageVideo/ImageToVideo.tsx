@@ -13,7 +13,7 @@ import {
 import BackgroundGallery from "./BackgroundGallery";
 import {
   ClassyModelSelector,
-  IMAGE_TO_VIDEO_PAGE_MODEL_LIST,
+  useImageToVideoPageModelList,
   ModelPage,
   useSelectedVideoModel,
   useSelectedProviderForModel,
@@ -56,6 +56,7 @@ interface ImageToVideoProps {
 }
 
 const ImageToVideo = ({ imageMediaId, imageUrl }: ImageToVideoProps) => {
+  const imageToVideoModelList = useImageToVideoPageModelList();
   const startBatch = useImageToVideoStore((s) => s.startBatch);
   const completeBatch = useImageToVideoStore((s) => s.completeBatch);
   const promptContentRef = useRef<HTMLDivElement>(null);
@@ -215,7 +216,7 @@ const ImageToVideo = ({ imageMediaId, imageUrl }: ImageToVideoProps) => {
                 modelSelector={
                   <ClassyModelSelector
                     variant="embedded"
-                    items={IMAGE_TO_VIDEO_PAGE_MODEL_LIST}
+                    items={imageToVideoModelList}
                     page={PAGE_ID}
                   />
                 }

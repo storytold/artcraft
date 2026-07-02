@@ -20,7 +20,10 @@ pub fn tauri_image_model_to_generation_model(model: TauriImageModel) -> Generati
     TauriImageModel::Seedream4 => GenerationModel::Seedream4,
     TauriImageModel::Seedream4p5 => GenerationModel::Seedream4p5,
     TauriImageModel::Seedream5Lite => GenerationModel::Seedream5Lite,
-    TauriImageModel::Midjourney => GenerationModel::Flux1Dev, // Fallback
+    TauriImageModel::Midjourney => GenerationModel::Midjourney,
+    TauriImageModel::Midjourney7 => GenerationModel::Midjourney7,
+    TauriImageModel::Midjourney7Niji => GenerationModel::Midjourney7Niji,
+    TauriImageModel::Midjourney8 => GenerationModel::Midjourney8,
     TauriImageModel::FluxProKontextMax => GenerationModel::FluxProKontextMax,
     TauriImageModel::QwenEdit2511Angles => GenerationModel::QwenEdit2511Angles,
     TauriImageModel::Flux2LoraAngles => GenerationModel::Flux2LoraAngles,

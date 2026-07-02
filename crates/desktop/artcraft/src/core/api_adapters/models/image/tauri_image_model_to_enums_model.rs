@@ -23,10 +23,13 @@ pub fn tauri_image_model_to_enums_model(model: TauriImageModel) -> Option<Common
     TauriImageModel::Seedream5Lite => Some(CommonImageModel::Seedream5Lite),
     TauriImageModel::QwenEdit2511Angles => Some(CommonImageModel::QwenEdit2511Angles),
     TauriImageModel::Flux2LoraAngles => Some(CommonImageModel::Flux2LoraAngles),
+    TauriImageModel::Midjourney7 => Some(CommonImageModel::Midjourney7),
+    TauriImageModel::Midjourney7Niji => Some(CommonImageModel::Midjourney7Niji),
+    TauriImageModel::Midjourney8 => Some(CommonImageModel::Midjourney8),
     // Not accounted for yet
     TauriImageModel::GrokImage => None,
     TauriImageModel::Recraft3 => None,
-    TauriImageModel::Midjourney => None,
+    TauriImageModel::Midjourney => None, // NB: Generic Midjourney is served by the native Midjourney provider.
     TauriImageModel::FluxProKontextMax => None,
     TauriImageModel::FluxDevJuggernaut => None,
   }

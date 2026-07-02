@@ -150,6 +150,10 @@ async fn handle_request(
 
   let provider = match (model, request.provider) {
     (TauriVideoModel::GrokVideo, _) => GenerationProvider::Grok,
+    // NB: Grok Imagine 1.5 is served via Artcraft (storyteller-web / artcraft_router)
+    // for now — force it regardless of the requested provider. In the future we
+    // may serve it natively via the Grok provider.
+    (TauriVideoModel::GrokImagineVideo1p5, _) => GenerationProvider::Artcraft,
     _ => request.provider.unwrap_or(GenerationProvider::Artcraft),
   };
 

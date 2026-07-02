@@ -20,7 +20,7 @@ import {
   removeImageDropListener,
 } from "@storyteller/ui-gallery-modal";
 import {
-  STAGE_3D_PAGE_MODEL_LIST,
+  useStage3dPageModelList,
   ModelPage,
   defaultModelForPage,
   useClassyModelSelectorStore,
@@ -109,6 +109,7 @@ export const Stage3DBody = ({
   topBarStartSlot,
   topBarEndSlot,
 }: Stage3DBodyProps = {}) => {
+  const stage3dModelList = useStage3dPageModelList();
   const camAspect = usePageSceneStore((s) => s.cameraAspectRatio);
   const outlinerShowing = usePageSceneStore((s) => s.outlinerShowing);
   const editorLoader = usePageSceneStore((s) => s.editorLoader);
@@ -165,20 +166,25 @@ export const Stage3DBody = ({
   useEffect(() => {
     if (modelSelectorPlacement !== "prompt-box") return;
     if (selectedImageModel) return;
-    const models = STAGE_3D_PAGE_MODEL_LIST.map((i) => i.model).filter(
+    const models = stage3dModelList.map((i) => i.model).filter(
       (m): m is NonNullable<typeof m> => m !== undefined,
     );
     const def = defaultModelForPage(models, PAGE_ID);
     if (def) setSelectedModel(PAGE_ID, def);
-  }, [modelSelectorPlacement, selectedImageModel, setSelectedModel]);
+  }, [
+    modelSelectorPlacement,
+    selectedImageModel,
+    setSelectedModel,
+    stage3dModelList,
+  ]);
 
   const inlineModelItems: PopoverItem[] = useMemo(
     () =>
-      STAGE_3D_PAGE_MODEL_LIST.map((item) => ({
+      stage3dModelList.map((item) => ({
         ...item,
         selected: item.model === selectedImageModel,
       })),
-    [selectedImageModel],
+    [selectedImageModel, stage3dModelList],
   );
   const handleInlineModelSelect = useCallback(
     (item: PopoverItem) => {
@@ -188,9 +194,9 @@ export const Stage3DBody = ({
   );
   const selectedModelIcon = useMemo(
     () =>
-      STAGE_3D_PAGE_MODEL_LIST.find((i) => i.model === selectedImageModel)
+      stage3dModelList.find((i) => i.model === selectedImageModel)
         ?.icon,
-    [selectedImageModel],
+    [selectedImageModel, stage3dModelList],
   );
   const inlineModelSelector =
     modelSelectorPlacement === "prompt-box" ? (
@@ -536,7 +542,7 @@ export const Stage3DBody = ({
             {modelSelectorPlacement === "bottom-left" && (
               <div className="absolute bottom-6 left-6 z-20 flex items-center gap-3">
                 <ClassyModelSelector
-                  items={STAGE_3D_PAGE_MODEL_LIST}
+                  items={stage3dModelList}
                   page={PAGE_ID}
                   panelTitle="Select Model"
                   panelClassName="min-w-[300px]"
