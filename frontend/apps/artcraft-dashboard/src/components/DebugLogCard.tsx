@@ -217,43 +217,53 @@ export function DebugLogCard({
 
       {expanded && (
         <div className="border-t border-border/50 p-4 flex flex-col gap-3">
-          <div className="flex flex-wrap gap-x-6 gap-y-1 text-xs text-muted-foreground">
+          {/* Line 1: timestamp, path, ip, event token — all click-to-copy. */}
+          <div className="flex flex-wrap items-center gap-x-6 gap-y-1 text-xs text-muted-foreground">
             <span className="tabular-nums whitespace-nowrap">
               {formatDebugLogDateTime(log.created_at)}
             </span>
-            <div>
-              <span className="uppercase tracking-wider font-medium">
-                Event:
-              </span>{" "}
-              <Link
-                to={`/debug_logs/${encodeURIComponent(log.event_token)}`}
-                className="font-mono text-foreground/80 hover:underline"
-              >
-                {log.event_token}
-              </Link>
-            </div>
-            {log.maybe_creator_user_token && (
-              <span className="inline-flex items-center gap-3 min-w-0">
-                <button
-                  type="button"
-                  onClick={() =>
-                    onCopy(log.maybe_creator_user_token!, `user_token_${log.id}`)
-                  }
-                  className="inline-flex items-center gap-1 text-muted-foreground hover:text-foreground cursor-pointer min-w-0"
-                  title="Copy user token"
-                >
-                  <span className="whitespace-nowrap">user token:</span>
-                  <span className="font-mono truncate">
-                    {log.maybe_creator_user_token}
-                  </span>
-                  {copiedId === `user_token_${log.id}` ? (
-                    <IconCheck className="size-3 shrink-0 text-emerald-400" />
-                  ) : (
-                    <IconCopy className="size-3 shrink-0 opacity-60" />
-                  )}
-                </button>
-                <span className="text-muted-foreground/40">|</span>
-                {maybeUser && (
+            {log.maybe_url && (
+              <CopyText
+                label="Path:"
+                value={log.maybe_url}
+                display={log.maybe_url}
+                copyKey={`url_${log.id}`}
+                copiedId={copiedId}
+                onCopy={onCopy}
+                title="Copy URL"
+                className="font-mono truncate max-w-[32rem]"
+              />
+            )}
+            {log.maybe_ip_address && (
+              <CopyText
+                label="IP:"
+                value={log.maybe_ip_address}
+                display={log.maybe_ip_address}
+                copyKey={`ip_${log.id}`}
+                copiedId={copiedId}
+                onCopy={onCopy}
+                title="Copy IP address"
+                className="font-mono truncate max-w-[16rem]"
+              />
+            )}
+            <CopyText
+              label="Event Token:"
+              value={log.event_token}
+              display={log.event_token}
+              copyKey={`event_${log.id}`}
+              copiedId={copiedId}
+              onCopy={onCopy}
+              title="Copy event token"
+              className="font-mono truncate"
+            />
+          </div>
+
+          {/* Line 2: the user and their event logs. */}
+          {log.maybe_creator_user_token && (
+            <div className="flex flex-wrap items-center gap-x-6 gap-y-1 text-xs text-muted-foreground">
+              <span className="inline-flex items-center gap-1.5 min-w-0">
+                <span className="whitespace-nowrap">User:</span>
+                {maybeUser ? (
                   <Link
                     to={`/user/profile/${encodeURIComponent(maybeUser.username)}`}
                     className="inline-flex items-center gap-1.5 text-foreground/80 hover:text-foreground hover:underline min-w-0"
@@ -262,60 +272,79 @@ export function DebugLogCard({
                     <IconUser className="size-3.5 shrink-0" />
                     <span className="truncate">{maybeUser.display_name}</span>
                   </Link>
+                ) : (
+                  <CopyText
+                    value={log.maybe_creator_user_token}
+                    display={log.maybe_creator_user_token}
+                    copyKey={`user_token_${log.id}`}
+                    copiedId={copiedId}
+                    onCopy={onCopy}
+                    title="Copy user token"
+                    className="font-mono truncate"
+                    icon={<IconUser className="size-3.5 shrink-0" />}
+                  />
                 )}
-                <Link
-                  to={`/debug_logs/user/${encodeURIComponent(log.maybe_creator_user_token)}`}
-                  className="inline-flex items-center gap-1 text-muted-foreground hover:text-foreground hover:underline shrink-0"
-                  title="View this user's debug logs"
-                >
-                  <IconListSearch className="size-3.5" />
-                  logs
-                </Link>
               </span>
-            )}
-          </div>
-          {(log.maybe_ip_address || log.maybe_url) && (
-            <div className="flex flex-wrap gap-x-6 gap-y-1 text-xs text-muted-foreground">
-              {log.maybe_ip_address && (
-                <button
-                  type="button"
-                  onClick={() => onCopy(log.maybe_ip_address!, `ip_${log.id}`)}
-                  className="inline-flex items-center gap-1 hover:text-foreground cursor-pointer"
-                  title="Copy IP address"
-                >
-                  <span className="whitespace-nowrap">ip:</span>
-                  <span className="font-mono">{log.maybe_ip_address}</span>
-                  {copiedId === `ip_${log.id}` ? (
-                    <IconCheck className="size-3 shrink-0 text-emerald-400" />
-                  ) : (
-                    <IconCopy className="size-3 shrink-0 opacity-60" />
-                  )}
-                </button>
-              )}
-              {log.maybe_url && (
-                <button
-                  type="button"
-                  onClick={() => onCopy(log.maybe_url!, `url_${log.id}`)}
-                  className="inline-flex items-center gap-1 hover:text-foreground cursor-pointer min-w-0"
-                  title={log.maybe_url}
-                >
-                  <span className="whitespace-nowrap">url:</span>
-                  <span className="font-mono truncate max-w-[32rem]">
-                    {log.maybe_url}
-                  </span>
-                  {copiedId === `url_${log.id}` ? (
-                    <IconCheck className="size-3 shrink-0 text-emerald-400" />
-                  ) : (
-                    <IconCopy className="size-3 shrink-0 opacity-60" />
-                  )}
-                </button>
-              )}
+              <Link
+                to={`/debug_logs/user/${encodeURIComponent(log.maybe_creator_user_token)}`}
+                className="inline-flex items-center gap-1 hover:text-foreground hover:underline shrink-0"
+                title="View this user's debug logs"
+              >
+                <IconListSearch className="size-3.5" />
+                user event logs
+              </Link>
             </div>
           )}
           <PrettyPayload raw={log.message} />
         </div>
       )}
     </div>
+  );
+}
+
+
+interface CopyTextProps {
+  /** Optional label rendered before the value, eg. "Path:". */
+  label?: string;
+  /** The raw value copied to the clipboard. */
+  value: string;
+  /** The rendered text (may differ from the copied value). */
+  display: string;
+  copyKey: string;
+  copiedId: string | null;
+  onCopy: (value: string, id: string) => void;
+  title: string;
+  className?: string;
+  icon?: React.ReactNode;
+}
+
+function CopyText({
+  label,
+  value,
+  display,
+  copyKey,
+  copiedId,
+  onCopy,
+  title,
+  className,
+  icon,
+}: CopyTextProps) {
+  return (
+    <button
+      type="button"
+      onClick={() => onCopy(value, copyKey)}
+      className="inline-flex items-center gap-1 hover:text-foreground cursor-pointer min-w-0"
+      title={title}
+    >
+      {label && <span className="whitespace-nowrap">{label}</span>}
+      {icon}
+      <span className={className}>{display}</span>
+      {copiedId === copyKey ? (
+        <IconCheck className="size-3 shrink-0 text-emerald-400" />
+      ) : (
+        <IconCopy className="size-3 shrink-0 opacity-60" />
+      )}
+    </button>
   );
 }
 
