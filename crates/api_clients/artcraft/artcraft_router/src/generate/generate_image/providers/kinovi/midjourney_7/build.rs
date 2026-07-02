@@ -138,6 +138,7 @@ pub(crate) fn plan_batch_count(
     0 => Err(ArtcraftRouterError::Client(ClientError::UserRequestedZeroGenerations)),
     1 => Ok(KinoviMidjourneyBatchCount::One),
     2 => Ok(KinoviMidjourneyBatchCount::Two),
+    3 => Ok(KinoviMidjourneyBatchCount::Three),
     4 => Ok(KinoviMidjourneyBatchCount::Four),
     other => match strategy {
       RequestMismatchMitigationStrategy::ErrorOut => {
@@ -146,13 +147,11 @@ pub(crate) fn plan_batch_count(
           value: format!("{}", other),
         }))
       }
-      RequestMismatchMitigationStrategy::PayMoreUpgrade => {
-        // 3 → 4, anything > 4 → 4
-        Ok(if other < 3 { KinoviMidjourneyBatchCount::Two } else { KinoviMidjourneyBatchCount::Four })
-      }
-      RequestMismatchMitigationStrategy::PayLessDowngrade => {
-        // 3 → 2, anything > 4 → 4
-        Ok(if other < 4 { KinoviMidjourneyBatchCount::Two } else { KinoviMidjourneyBatchCount::Four })
+      // Kinovi supports batches of 1–4; only counts of 5+ reach here, so both
+      // mitigation strategies clamp to the maximum supported batch.
+      RequestMismatchMitigationStrategy::PayMoreUpgrade
+      | RequestMismatchMitigationStrategy::PayLessDowngrade => {
+        Ok(KinoviMidjourneyBatchCount::Four)
       }
     },
   }
@@ -379,9 +378,10 @@ mod tests {
     }
 
     #[test]
-    fn one_two_four_map_directly() {
+    fn one_two_three_four_map_directly() {
       assert_eq!(batch_for(Some(1)), KinoviMidjourneyBatchCount::One);
       assert_eq!(batch_for(Some(2)), KinoviMidjourneyBatchCount::Two);
+      assert_eq!(batch_for(Some(3)), KinoviMidjourneyBatchCount::Three);
       assert_eq!(batch_for(Some(4)), KinoviMidjourneyBatchCount::Four);
     }
 
@@ -394,43 +394,57 @@ mod tests {
       ));
     }
 
+    /// Kinovi now supports batches of 3, so 3 is a first-class value and the
+    /// mitigation strategy no longer applies to it.
     #[test]
-    fn three_errors_under_strict() {
-      let builder = GenerateImageRequestBuilder {
-        image_batch_count: Some(3),
+    fn three_maps_directly_regardless_of_strategy() {
+      for strategy in [
+        RequestMismatchMitigationStrategy::ErrorOut,
+        RequestMismatchMitigationStrategy::PayMoreUpgrade,
+        RequestMismatchMitigationStrategy::PayLessDowngrade,
+      ] {
+        let builder = GenerateImageRequestBuilder {
+          image_batch_count: Some(3),
+          request_mismatch_mitigation_strategy: strategy,
+          ..base_builder()
+        };
+        assert_eq!(
+          unwrap_direct_request(build_kinovi_midjourney_7(builder)).request.batch_count,
+          KinoviMidjourneyBatchCount::Three,
+          "strategy={:?}", strategy,
+        );
+      }
+    }
+
+    /// Counts above 4 are still unsupported: strict errors out, and both
+    /// pay-more/pay-less strategies clamp to the maximum supported batch (4).
+    #[test]
+    fn five_errors_under_strict_and_clamps_to_four_otherwise() {
+      let strict = GenerateImageRequestBuilder {
+        image_batch_count: Some(5),
         request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::ErrorOut,
         ..base_builder()
       };
       assert!(matches!(
-        build_kinovi_midjourney_7(builder),
+        build_kinovi_midjourney_7(strict),
         Err(ArtcraftRouterError::Client(ClientError::ModelDoesNotSupportOption { .. })),
       ));
-    }
 
-    #[test]
-    fn three_upgrades_to_four_with_pay_more() {
-      let builder = GenerateImageRequestBuilder {
-        image_batch_count: Some(3),
-        request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::PayMoreUpgrade,
-        ..base_builder()
-      };
-      assert_eq!(
-        unwrap_direct_request(build_kinovi_midjourney_7(builder)).request.batch_count,
-        KinoviMidjourneyBatchCount::Four,
-      );
-    }
-
-    #[test]
-    fn three_downgrades_to_two_with_pay_less() {
-      let builder = GenerateImageRequestBuilder {
-        image_batch_count: Some(3),
-        request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::PayLessDowngrade,
-        ..base_builder()
-      };
-      assert_eq!(
-        unwrap_direct_request(build_kinovi_midjourney_7(builder)).request.batch_count,
-        KinoviMidjourneyBatchCount::Two,
-      );
+      for strategy in [
+        RequestMismatchMitigationStrategy::PayMoreUpgrade,
+        RequestMismatchMitigationStrategy::PayLessDowngrade,
+      ] {
+        let builder = GenerateImageRequestBuilder {
+          image_batch_count: Some(5),
+          request_mismatch_mitigation_strategy: strategy,
+          ..base_builder()
+        };
+        assert_eq!(
+          unwrap_direct_request(build_kinovi_midjourney_7(builder)).request.batch_count,
+          KinoviMidjourneyBatchCount::Four,
+          "strategy={:?}", strategy,
+        );
+      }
     }
   }
 

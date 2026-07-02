@@ -281,6 +281,11 @@ mod tests {
     }
 
     #[test]
+    fn batch_three_is_thirtysix_credits() {
+      assert_eq!(make_request(KinoviMidjourneyBatchCount::Three).calculate_costs().kinovi_credits, 36);
+    }
+
+    #[test]
     fn batch_four_is_fortyeight_credits() {
       assert_eq!(make_request(KinoviMidjourneyBatchCount::Four).calculate_costs().kinovi_credits, 48);
     }
@@ -305,6 +310,7 @@ mod tests {
       for batch in [
         KinoviMidjourneyBatchCount::One,
         KinoviMidjourneyBatchCount::Two,
+        KinoviMidjourneyBatchCount::Three,
         KinoviMidjourneyBatchCount::Four,
       ] {
         let outer = make_request(batch);

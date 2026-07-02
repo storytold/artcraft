@@ -25,7 +25,8 @@ const CREDITS_PER_MIDJOURNEY_TASK: u32 = 12;
 /// 500,000 credits / $2,159.09 = 231.58 ≈ 243 credits per dollar (rounded down).
 
 /// Kinovi only currently exposes a single Midjourney resolution preset.
-const MIDJOURNEY_RESOLUTION: &str = "1k";
+/// Kinovi moved these Midjourney models to `2k`; `1k` is no longer accepted.
+const MIDJOURNEY_RESOLUTION: &str = "2k";
 
 const BUSINESS_TYPE: &str = "midjourney-image-generation";
 
@@ -174,6 +175,7 @@ impl KinoviMidjourneyModel {
 pub enum KinoviMidjourneyBatchCount {
   One,
   Two,
+  Three,
   Four,
 }
 
@@ -182,6 +184,7 @@ impl KinoviMidjourneyBatchCount {
     match self {
       Self::One => 1,
       Self::Two => 2,
+      Self::Three => 3,
       Self::Four => 4,
     }
   }
@@ -365,6 +368,11 @@ mod tests {
     }
 
     #[test]
+    fn batch_three_is_thirtysix_credits() {
+      assert_eq!(make_request(KinoviMidjourneyBatchCount::Three).calculate_costs().kinovi_credits, 36);
+    }
+
+    #[test]
     fn batch_four_is_fortyeight_credits() {
       assert_eq!(make_request(KinoviMidjourneyBatchCount::Four).calculate_costs().kinovi_credits, 48);
     }
@@ -525,11 +533,11 @@ mod tests {
 
     #[test]
     fn minimal_v7_matches_captured_sample() {
-      // Sample #1: `{"prompt":"Anime dinosaur","aspectRatio":"1:1","resolution":"1k","model":"midjourney-v7"}`
-      let params = api_params(minimal_request(KinoviMidjourneyModel::V7, "Anime dinosaur"));
-      assert_eq!(params["prompt"], "Anime dinosaur");
+      // Sample #1: `{"prompt":"A corgi walking in the park","aspectRatio":"1:1","resolution":"2k","model":"midjourney-v7"}`
+      let params = api_params(minimal_request(KinoviMidjourneyModel::V7, "A corgi walking in the park"));
+      assert_eq!(params["prompt"], "A corgi walking in the park");
       assert_eq!(params["aspectRatio"], "1:1");
-      assert_eq!(params["resolution"], "1k");
+      assert_eq!(params["resolution"], "2k");
       assert_eq!(params["model"], "midjourney-v7");
 
       let obj = params.as_object().unwrap();
@@ -705,6 +713,12 @@ mod tests {
     }
 
     #[test]
+    fn batch_three_sends_batch_count_3() {
+      let req = KinoviGenerateImageRequest { batch_count: KinoviMidjourneyBatchCount::Three, ..minimal_request(KinoviMidjourneyModel::V7Niji, "p") };
+      assert_eq!(api_params(req)["batchCount"], 3);
+    }
+
+    #[test]
     fn batch_four_sends_batch_count_4() {
       let req = KinoviGenerateImageRequest { batch_count: KinoviMidjourneyBatchCount::Four, ..minimal_request(KinoviMidjourneyModel::V7, "p") };
       assert_eq!(api_params(req)["batchCount"], 4);
@@ -719,9 +733,9 @@ mod tests {
     }
 
     #[test]
-    fn resolution_is_1k() {
+    fn resolution_is_2k() {
       let p = api_params(minimal_request(KinoviMidjourneyModel::V7, "p"));
-      assert_eq!(p["resolution"], "1k");
+      assert_eq!(p["resolution"], "2k");
     }
 
     // ── Captured-sample replay (#9: kitchen sink) ──
@@ -745,7 +759,7 @@ mod tests {
       };
       let got = api_params(req);
       let expected: Value = serde_json::from_str(
-        r#"{"prompt":"abandoned skyscrapers","aspectRatio":"1:1","resolution":"1k","model":"midjourney-v7","stylize":1000,"chaos":100,"weird":3000,"quality":0.5,"style":"raw","no":"dark, gloomy, night"}"#,
+        r#"{"prompt":"abandoned skyscrapers","aspectRatio":"1:1","resolution":"2k","model":"midjourney-v7","stylize":1000,"chaos":100,"weird":3000,"quality":0.5,"style":"raw","no":"dark, gloomy, night"}"#,
       ).unwrap();
       assert_eq!(got, expected);
     }
@@ -768,7 +782,32 @@ mod tests {
       };
       let got = api_params(req);
       let expected: Value = serde_json::from_str(
-        r#"{"prompt":"desolate cliff overlooking the ocean","aspectRatio":"9:16","resolution":"1k","model":"midjourney-v8","batchCount":4,"quality":1.0}"#,
+        r#"{"prompt":"desolate cliff overlooking the ocean","aspectRatio":"9:16","resolution":"2k","model":"midjourney-v8","batchCount":4,"quality":1.0}"#,
+      ).unwrap();
+      assert_eq!(got, expected);
+    }
+
+    /// Real capture (2026-07-01): V7-niji + batch 3 + all knobs. `seed` is
+    /// present in the real request but not yet supported by the client, so
+    /// it is excluded from the expected shape here.
+    #[test]
+    fn captured_v7_niji_batch_3_matches_except_seed() {
+      let req = KinoviGenerateImageRequest {
+        model: KinoviMidjourneyModel::V7Niji,
+        prompt: "A shiba walking in the park".to_string(),
+        aspect_ratio: "16:9".to_string(),
+        negative_prompt: Some("bad quality, green".to_string()),
+        stylize: Some(80),
+        weird: Some(700),
+        chaos: Some(15),
+        quality: Some("0.25".to_string()),
+        raw_mode: false,
+        batch_count: KinoviMidjourneyBatchCount::Three,
+        reference_image_urls: None,
+      };
+      let got = api_params(req);
+      let expected: Value = serde_json::from_str(
+        r#"{"prompt":"A shiba walking in the park","aspectRatio":"16:9","resolution":"2k","model":"midjourney-v7-niji","batchCount":3,"stylize":80,"chaos":15,"weird":700,"quality":0.25,"no":"bad quality, green"}"#,
       ).unwrap();
       assert_eq!(got, expected);
     }
