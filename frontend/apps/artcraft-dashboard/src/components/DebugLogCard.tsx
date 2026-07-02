@@ -13,6 +13,18 @@ import {
   IconUser,
 } from "@tabler/icons-react";
 
+/** Compact form for the header row, eg. "Jul 2, 18:02:47". */
+export function formatDebugLogDateTimeCompact(iso: string): string {
+  return new Date(iso).toLocaleString("en-US", {
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false,
+  });
+}
+
 export function formatDebugLogDateTime(iso: string): string {
   return new Date(iso).toLocaleString("en-US", {
     month: "short",
@@ -133,7 +145,7 @@ export function DebugLogCard({
           </Badge>
         )}
         <span className="text-xs text-muted-foreground tabular-nums whitespace-nowrap">
-          {formatDebugLogDateTime(log.created_at)}
+          {formatDebugLogDateTimeCompact(log.created_at)}
         </span>
         {log.maybe_url && (
           <span
@@ -159,7 +171,10 @@ export function DebugLogCard({
           </span>
         )}
         {log.maybe_ip_address && (
-          <span className="font-mono text-xs text-muted-foreground whitespace-nowrap">
+          <span
+            className="font-mono text-xs text-muted-foreground truncate min-w-0 max-w-[10rem]"
+            title={log.maybe_ip_address}
+          >
             {log.maybe_ip_address}
           </span>
         )}
@@ -203,6 +218,9 @@ export function DebugLogCard({
       {expanded && (
         <div className="border-t border-border/50 p-4 flex flex-col gap-3">
           <div className="flex flex-wrap gap-x-6 gap-y-1 text-xs text-muted-foreground">
+            <span className="tabular-nums whitespace-nowrap">
+              {formatDebugLogDateTime(log.created_at)}
+            </span>
             <div>
               <span className="uppercase tracking-wider font-medium">
                 Event:
