@@ -10,10 +10,13 @@ import { usePageTitle } from "@/hooks/usePageTitle";
 import {
   DebugLogCard,
   getLogLevelBadgeClassName,
+  type ExpandAllState,
 } from "@/components/DebugLogCard";
 import {
   IconAlertCircle,
   IconBug,
+  IconChevronsDown,
+  IconChevronsUp,
   IconLoader2,
   IconRefresh,
   IconSearch,
@@ -38,6 +41,11 @@ export function DebugLogsAll() {
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [expandAll, setExpandAll] = useState<ExpandAllState | undefined>();
+
+  const broadcastExpandAll = (mode: ExpandAllState["mode"]) => {
+    setExpandAll((prev) => ({ mode, generation: (prev?.generation ?? 0) + 1 }));
+  };
   const [severities, setSeverities] = useState<DebugLogLevel[]>([]);
 
   const observerRef = useRef<IntersectionObserver | null>(null);
@@ -228,6 +236,31 @@ export function DebugLogsAll() {
         </div>
       )}
 
+      {/* Sticky expand/collapse toolbar */}
+      <div className="sticky top-0 z-20 -mx-4 lg:-mx-6 px-4 lg:px-6 py-2 -my-4 bg-background/80 backdrop-blur-md border-b flex items-center gap-2">
+        <span className="text-xs text-muted-foreground mr-1">
+          {logs.length} log{logs.length === 1 ? "" : "s"}
+        </span>
+        <Button
+          variant="outline"
+          size="sm"
+          className="h-7"
+          onClick={() => broadcastExpandAll("expand")}
+        >
+          <IconChevronsDown className="size-4" />
+          Expand all
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          className="h-7"
+          onClick={() => broadcastExpandAll("collapse")}
+        >
+          <IconChevronsUp className="size-4" />
+          Collapse all
+        </Button>
+      </div>
+
       {!isLoading && logs.length > 0 && (
         <div className="flex flex-col gap-3">
           {logs.map((log) => (
@@ -239,6 +272,7 @@ export function DebugLogsAll() {
               maybeUser={log.maybe_user}
               showEventLink
               defaultExpanded={false}
+              expandAll={expandAll}
             />
           ))}
         </div>

@@ -6,11 +6,13 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { usePageTitle } from "@/hooks/usePageTitle";
-import { DebugLogCard } from "@/components/DebugLogCard";
+import { DebugLogCard, type ExpandAllState } from "@/components/DebugLogCard";
 import {
   IconAlertCircle,
   IconArrowLeft,
   IconBug,
+  IconChevronsDown,
+  IconChevronsUp,
   IconLoader2,
   IconRefresh,
   IconUser,
@@ -34,6 +36,11 @@ export function UserDebugLogs() {
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [expandAll, setExpandAll] = useState<ExpandAllState | undefined>();
+
+  const broadcastExpandAll = (mode: ExpandAllState["mode"]) => {
+    setExpandAll((prev) => ({ mode, generation: (prev?.generation ?? 0) + 1 }));
+  };
 
   usePageTitle(
     user ? `Debug Logs · ${user.display_name}` : "User Debug Logs",
@@ -143,13 +150,13 @@ export function UserDebugLogs() {
           <p className="text-muted-foreground text-sm mt-1 flex items-center gap-2 min-w-0">
             {user ? (
               <>
-                <IconUser className="size-4 shrink-0" />
                 <Link
                   to={`/user/profile/${encodeURIComponent(user.username)}`}
-                  className="hover:underline text-foreground/80 truncate"
+                  className="inline-flex items-center gap-1.5 hover:underline text-foreground/80 min-w-0"
                   title="View profile"
                 >
-                  {user.display_name}
+                  <IconUser className="size-4 shrink-0" />
+                  <span className="truncate">{user.display_name}</span>
                 </Link>
                 <span className="font-mono text-muted-foreground/70 truncate">
                   {userToken}
@@ -214,6 +221,31 @@ export function UserDebugLogs() {
         </div>
       )}
 
+      {/* Sticky expand/collapse toolbar */}
+      <div className="sticky top-0 z-20 -mx-4 lg:-mx-6 px-4 lg:px-6 py-2 -my-4 bg-background/80 backdrop-blur-md border-b flex items-center gap-2">
+        <span className="text-xs text-muted-foreground mr-1">
+          {logs.length} log{logs.length === 1 ? "" : "s"}
+        </span>
+        <Button
+          variant="outline"
+          size="sm"
+          className="h-7"
+          onClick={() => broadcastExpandAll("expand")}
+        >
+          <IconChevronsDown className="size-4" />
+          Expand all
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          className="h-7"
+          onClick={() => broadcastExpandAll("collapse")}
+        >
+          <IconChevronsUp className="size-4" />
+          Collapse all
+        </Button>
+      </div>
+
       {!isLoading && logs.length > 0 && (
         <div className="flex flex-col gap-3">
           {logs.map((log) => (
@@ -224,6 +256,7 @@ export function UserDebugLogs() {
               onCopy={copy}
               showEventLink
               defaultExpanded={false}
+              expandAll={expandAll}
             />
           ))}
         </div>

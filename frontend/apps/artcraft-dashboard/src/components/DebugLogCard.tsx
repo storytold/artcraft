@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -77,6 +77,12 @@ export function getLogLevelBadgeClassName(level: string): string {
   }
 }
 
+/** Broadcast expand/collapse-all. Bump `generation` to re-apply. */
+export interface ExpandAllState {
+  mode: "expand" | "collapse";
+  generation: number;
+}
+
 export interface DebugLogCardProps {
   log: DebugLog;
   copiedId: string | null;
@@ -87,6 +93,8 @@ export interface DebugLogCardProps {
   showEventLink?: boolean;
   /** Start expanded (defaults to true). */
   defaultExpanded?: boolean;
+  /** Expand/collapse-all broadcast from the page. */
+  expandAll?: ExpandAllState;
 }
 
 export function DebugLogCard({
@@ -96,8 +104,14 @@ export function DebugLogCard({
   maybeUser,
   showEventLink = false,
   defaultExpanded = true,
+  expandAll,
 }: DebugLogCardProps) {
   const [expanded, setExpanded] = useState(defaultExpanded);
+
+  // Apply page-level expand/collapse-all; individual toggles keep working after.
+  useEffect(() => {
+    if (expandAll) setExpanded(expandAll.mode === "expand");
+  }, [expandAll?.generation]);
   const badge = getLogTypeBadgeProps(log.debug_log_type);
   const copyId = `log_${log.id}`;
 
@@ -144,13 +158,13 @@ export function DebugLogCard({
             className="inline-flex items-center gap-1 text-xs text-muted-foreground min-w-0"
             onClick={(e) => e.stopPropagation()}
           >
-            <IconUser className="size-3.5 shrink-0" />
             <Link
               to={`/user/profile/${encodeURIComponent(maybeUser.username)}`}
-              className="hover:underline text-foreground/80 truncate"
+              className="inline-flex items-center gap-1 hover:underline text-foreground/80 min-w-0"
               title={maybeUser.username}
             >
-              {maybeUser.display_name}
+              <IconUser className="size-3.5 shrink-0" />
+              <span className="truncate">{maybeUser.display_name}</span>
             </Link>
             <Link
               to={`/debug_logs/user/${encodeURIComponent(maybeUser.user_token)}`}
@@ -205,18 +219,17 @@ export function DebugLogCard({
               </Link>
             </div>
             {log.maybe_creator_user_token && (
-              <div>
-                <span className="uppercase tracking-wider font-medium">
-                  User Token:
-                </span>{" "}
-                <Link
-                  to={`/debug_logs/user/${encodeURIComponent(log.maybe_creator_user_token)}`}
-                  className="font-mono text-foreground/80 hover:underline"
-                  title="View this user's debug logs"
-                >
+              <Link
+                to={`/debug_logs/user/${encodeURIComponent(log.maybe_creator_user_token)}`}
+                className="inline-flex items-center gap-1.5 text-foreground/80 hover:text-foreground hover:underline min-w-0"
+                title="View this user's debug logs"
+              >
+                <IconUser className="size-3.5 shrink-0" />
+                {maybeUser && <span className="truncate">{maybeUser.display_name}</span>}
+                <span className="font-mono truncate">
                   {log.maybe_creator_user_token}
-                </Link>
-              </div>
+                </span>
+              </Link>
             )}
           </div>
           <PrettyPayload raw={log.message} />
