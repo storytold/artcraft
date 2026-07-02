@@ -126,6 +126,8 @@ export interface DebugLog {
   id: number;
   maybe_log_level: DebugLogLevel | null;
   maybe_creator_user_token: string | null;
+  maybe_ip_address: string | null;
+  maybe_url: string | null;
   message: string;
   maybe_user: DebugLogUser | null;
 }

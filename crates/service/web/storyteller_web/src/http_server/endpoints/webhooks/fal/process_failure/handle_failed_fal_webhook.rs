@@ -53,6 +53,8 @@ pub async fn handle_failed_fal_webhook(
       maybe_creator_user_token: job.maybe_creator_user_token.as_ref(),
       debug_log_type: DebugLogType::FalWebhook,
       maybe_log_level: None,
+      maybe_ip_address: None,
+      maybe_url: None,
       message: raw_body,
       mysql_executor: &mut **mysql_connection,
       phantom: Default::default(),

@@ -256,6 +256,44 @@ export function DebugLogCard({
               </span>
             )}
           </div>
+          {(log.maybe_ip_address || log.maybe_url) && (
+            <div className="flex flex-wrap gap-x-6 gap-y-1 text-xs text-muted-foreground">
+              {log.maybe_ip_address && (
+                <button
+                  type="button"
+                  onClick={() => onCopy(log.maybe_ip_address!, `ip_${log.id}`)}
+                  className="inline-flex items-center gap-1 hover:text-foreground cursor-pointer"
+                  title="Copy IP address"
+                >
+                  <span className="whitespace-nowrap">ip:</span>
+                  <span className="font-mono">{log.maybe_ip_address}</span>
+                  {copiedId === `ip_${log.id}` ? (
+                    <IconCheck className="size-3 shrink-0 text-emerald-400" />
+                  ) : (
+                    <IconCopy className="size-3 shrink-0 opacity-60" />
+                  )}
+                </button>
+              )}
+              {log.maybe_url && (
+                <button
+                  type="button"
+                  onClick={() => onCopy(log.maybe_url!, `url_${log.id}`)}
+                  className="inline-flex items-center gap-1 hover:text-foreground cursor-pointer min-w-0"
+                  title={log.maybe_url}
+                >
+                  <span className="whitespace-nowrap">url:</span>
+                  <span className="font-mono truncate max-w-[32rem]">
+                    {log.maybe_url}
+                  </span>
+                  {copiedId === `url_${log.id}` ? (
+                    <IconCheck className="size-3 shrink-0 text-emerald-400" />
+                  ) : (
+                    <IconCopy className="size-3 shrink-0 opacity-60" />
+                  )}
+                </button>
+              )}
+            </div>
+          )}
           <PrettyPayload raw={log.message} />
         </div>
       )}

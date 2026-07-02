@@ -191,11 +191,16 @@ pub async fn omni_gen_video_generate_handler(
 
   // ==================== DEBUG LOG: HTTP REQUEST ==================== //
 
+  let ip_address = get_request_ip(&http_request);
+  let request_url = http_request.uri().to_string();
+
   if let Err(err) = insert_debug_log(InsertDebugLogArgs {
     apriori_debug_log_event_token: Some(&debug_log_event_token),
     maybe_creator_user_token: Some(user_token),
     debug_log_type: DebugLogType::HttpRequest,
     maybe_log_level: None,
+    maybe_ip_address: Some(&ip_address),
+    maybe_url: Some(&request_url),
     message: &serde_json::to_string(&*request).unwrap_or_default(),
     mysql_executor: &mut *mysql_connection,
     phantom: Default::default(),
@@ -228,6 +233,8 @@ pub async fn omni_gen_video_generate_handler(
         maybe_creator_user_token: Some(user_token),
         debug_log_type: DebugLogType::FalRequest,
         maybe_log_level: None,
+    maybe_ip_address: Some(&ip_address),
+    maybe_url: Some(&request_url),
         message: &format!("{:#?}", outbound_request),
         mysql_executor: &mut *mysql_connection,
         phantom: Default::default(),
@@ -246,6 +253,8 @@ pub async fn omni_gen_video_generate_handler(
         maybe_creator_user_token: Some(user_token),
         debug_log_type: DebugLogType::GrokApiRequest,
         maybe_log_level: None,
+    maybe_ip_address: Some(&ip_address),
+    maybe_url: Some(&request_url),
         message: &format!("{:#?}", outbound_request),
         mysql_executor: &mut *mysql_connection,
         phantom: Default::default(),
@@ -257,7 +266,6 @@ pub async fn omni_gen_video_generate_handler(
 
   // ==================== WRITE RESULT ==================== //
 
-  let ip_address = get_request_ip(&http_request);
   let maybe_platform_type = get_request_platform_type(&http_request);
 
   let mut transaction = mysql_connection.begin().await.map_err(|err| {
