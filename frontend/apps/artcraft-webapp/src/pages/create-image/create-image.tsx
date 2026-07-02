@@ -52,11 +52,13 @@ import {
 } from "../../lib/resolve-model-setting";
 import {
   useOmniGenImageModels,
-  getModelCreatorIconPath,
+  OMNI_GENERATE_OUTAGE_MESSAGE,
+} from "@storyteller/omni-gen";
+import {
+  getCreatorIconPathForModelId,
   getModelDescription,
   getModelInfo,
-  OMNI_GENERATE_OUTAGE_MESSAGE,
-} from "../../lib/omni-gen-hooks";
+} from "@storyteller/model-list";
 import { toast } from "../../components/toast/toast";
 import { useSignupCta } from "../../components/signup-cta-modal";
 import { useInsufficientCredits } from "../../components/insufficient-credits-modal";
@@ -83,7 +85,7 @@ function buildModelPopoverItems(
     info: getModelInfo(model.model, model.extra_info) || undefined,
     icon: (
       <img
-        src={getModelCreatorIconPath(model.model)}
+        src={getCreatorIconPathForModelId(model.model)}
         alt={`${model.model} logo`}
         className="h-4 w-4 icon-auto-contrast"
       />
@@ -638,7 +640,7 @@ export default function CreateImage() {
                   richList
                   triggerIcon={
                     <img
-                      src={getModelCreatorIconPath(selectedModel?.model ?? "")}
+                      src={getCreatorIconPathForModelId(selectedModel?.model ?? "")}
                       alt=""
                       className="h-4 w-4 icon-auto-contrast"
                     />

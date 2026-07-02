@@ -22,11 +22,7 @@ import { SizeIconOption, SizeOption } from "../classes/metadata/SizeOption.js";
 import { CommonAspectRatio } from "../classes/properties/CommonAspectRatio.js";
 import { CommonResolution } from "../classes/properties/CommonResolution.js";
 import { CommonQuality } from "../classes/properties/CommonQuality.js";
-import {
-  BACKEND_TO_TAURI_IMAGE_ID,
-  BACKEND_TO_TAURI_VIDEO_ID,
-  modelCreatorFromBackend,
-} from "./modelReconciliation.js";
+import { MODEL_ID_PREFIX_CREATORS } from "../classes/metadata/ModelCreatorIconForId.js";
 
 // ── Structural shapes of the backend listing (subset we read) ──────────────
 
@@ -77,15 +73,13 @@ export const buildImageModelsFromListing = (
   overlay: ImageModel[],
   listing: ListingImageModel[],
   offeredModelIds: string[] = [],
-): ImageModel[] =>
-  build(overlay, listing, offeredModelIds, BACKEND_TO_TAURI_IMAGE_ID, mergedImageModel);
+): ImageModel[] => build(overlay, listing, offeredModelIds, mergedImageModel);
 
 export const buildVideoModelsFromListing = (
   overlay: VideoModel[],
   listing: ListingVideoModel[],
   offeredModelIds: string[] = [],
-): VideoModel[] =>
-  build(overlay, listing, offeredModelIds, BACKEND_TO_TAURI_VIDEO_ID, mergedVideoModel);
+): VideoModel[] => build(overlay, listing, offeredModelIds, mergedVideoModel);
 
 // ── Core assembly ──────────────────────────────────────────────────────────
 
@@ -104,21 +98,20 @@ const build = <T extends { tauriId: string }, L extends ListingModelBase>(
   overlay: T[],
   listing: L[],
   offeredModelIds: string[],
-  alias: Record<string, string>,
   merge: (m: L, tauriId: string, overlayEntry: T | undefined) => T,
 ): T[] => {
-  const toTauriId = (backendId: string) => alias[backendId] ?? backendId;
+  // Backend model ids and overlay `tauriId`s share the same identifier space
+  // (the 2026-07 id migration retired all aliasing).
   const overlayByTauriId = new Map(overlay.map((m) => [m.tauriId, m]));
-  const knownTauriIds = new Set(listing.map((m) => toTauriId(m.model)));
-  const offeredTauriIds = new Set(offeredModelIds.map(toTauriId));
+  const knownTauriIds = new Set(listing.map((m) => m.model));
+  const offeredTauriIds = new Set(offeredModelIds);
 
   // Capability lookup — prefer the enabled detail entry when duplicated.
   const detailsByTauriId = new Map<string, L>();
   for (const m of listing) {
-    const tauriId = toTauriId(m.model);
-    const existing = detailsByTauriId.get(tauriId);
+    const existing = detailsByTauriId.get(m.model);
     if (existing === undefined || existing.is_disabled === true) {
-      detailsByTauriId.set(tauriId, m);
+      detailsByTauriId.set(m.model, m);
     }
   }
 
@@ -126,7 +119,7 @@ const build = <T extends { tauriId: string }, L extends ListingModelBase>(
   const seenTauriIds = new Set<string>();
   // Backend details order drives ordering.
   for (const m of listing) {
-    const tauriId = toTauriId(m.model);
+    const tauriId = m.model;
     if (seenTauriIds.has(tauriId)) continue;
 
     const overlayEntry = overlayByTauriId.get(tauriId);
@@ -141,12 +134,11 @@ const build = <T extends { tauriId: string }, L extends ListingModelBase>(
   }
   // Offered models with no detail entry at all (unusual, but the publish
   // switch wins): surface minimally.
-  for (const backendId of offeredModelIds) {
-    const tauriId = toTauriId(backendId);
+  for (const tauriId of offeredModelIds) {
     if (seenTauriIds.has(tauriId)) continue;
     seenTauriIds.add(tauriId);
     result.push(
-      merge({ model: backendId } as L, tauriId, overlayByTauriId.get(tauriId)),
+      merge({ model: tauriId } as L, tauriId, overlayByTauriId.get(tauriId)),
     );
   }
   // Append frontend-only models the backend has never heard of.
@@ -366,21 +358,6 @@ const resolutionLabel = (value: string): string => {
 
 // Guess a creator from the API's `model_creator`, then the overlay, then the
 // model-id prefix, then ArtCraft.
-const CREATOR_BY_PREFIX: Array<[string, ModelCreator]> = [
-  ["flux", ModelCreator.BlackForestLabs],
-  ["nano_banana", ModelCreator.Google],
-  ["gpt_image", ModelCreator.OpenAi],
-  ["seedream", ModelCreator.Bytedance],
-  ["seedance", ModelCreator.Bytedance],
-  ["kling", ModelCreator.Kling],
-  ["sora", ModelCreator.OpenAi],
-  ["veo", ModelCreator.Google],
-  ["grok", ModelCreator.Grok],
-  ["happy_horse", ModelCreator.Alibaba],
-  ["midjourney", ModelCreator.Midjourney],
-  ["qwen", ModelCreator.Alibaba],
-];
-
 const creatorFor = (
   raw: string | null | undefined,
   modelId: string,
@@ -389,8 +366,37 @@ const creatorFor = (
   const mapped = modelCreatorFromBackend(raw ?? undefined);
   if (mapped) return mapped;
   if (overlayCreator) return overlayCreator;
-  for (const [prefix, creator] of CREATOR_BY_PREFIX) {
+  for (const [prefix, creator] of MODEL_ID_PREFIX_CREATORS) {
     if (modelId.startsWith(prefix)) return creator;
   }
   return ModelCreator.ArtCraft;
+};
+
+/** Backend `model_creator` snake_case string -> frontend `ModelCreator` enum. */
+const modelCreatorFromBackend = (raw?: string): ModelCreator | undefined => {
+  switch (raw) {
+    case "alibaba": return ModelCreator.Alibaba;
+    case "artcraft": return ModelCreator.ArtCraft;
+    case "black_forest_labs": return ModelCreator.BlackForestLabs;
+    case "bytedance": return ModelCreator.Bytedance;
+    case "fal": return ModelCreator.Fal;
+    case "google": return ModelCreator.Google;
+    case "grok": return ModelCreator.Grok;
+    case "hailuo": return ModelCreator.Hailuo;
+    case "higgsfield": return ModelCreator.Higgsfield;
+    case "kling": return ModelCreator.Kling;
+    case "krea": return ModelCreator.Krea;
+    case "midjourney": return ModelCreator.Midjourney;
+    case "open_ai": return ModelCreator.OpenAi;
+    case "open_art": return ModelCreator.OpenArt;
+    case "recraft": return ModelCreator.Recraft;
+    case "replicate": return ModelCreator.Replicate;
+    case "runway": return ModelCreator.Runway;
+    case "stability": return ModelCreator.Stability;
+    case "tencent": return ModelCreator.Tencent;
+    case "tensor_art": return ModelCreator.TensorArt;
+    case "vidu": return ModelCreator.Vidu;
+    case "world_labs": return ModelCreator.WorldLabs;
+    default: return undefined;
+  }
 };

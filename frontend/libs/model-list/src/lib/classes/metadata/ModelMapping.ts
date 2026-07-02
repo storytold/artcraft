@@ -163,8 +163,14 @@ export const getModelCreatorName = (modelType: string): string | null => {
   }
 };
 
-// Convert model type string to human-readable display name
-export const getModelDisplayName = (modelType: string): string => {
+// Convert model type string to human-readable display name. An API-provided
+// full name (when present) wins over the static map.
+export const getModelDisplayName = (
+  modelType: string,
+  fullName?: string | null,
+): string => {
+  if (fullName) return fullName;
+
   const displayNames: Record<string, string> = {
     // Grok
     grok_image: "Grok Image",

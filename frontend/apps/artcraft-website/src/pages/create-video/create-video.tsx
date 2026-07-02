@@ -45,10 +45,8 @@ import {
 } from "../create-image/components/AspectRatioIcon";
 import { GenerationCountPicker } from "../create-image/components/GenerationCountPicker";
 import { useVideoCostEstimate } from "../../lib/cost-estimate-api";
-import {
-  useOmniGenVideoModels,
-  getModelCreatorIconPath,
-} from "../../lib/omni-gen-hooks";
+import { useOmniGenVideoModels } from "@storyteller/omni-gen";
+import { getCreatorIconPathForModelId } from "@storyteller/model-list";
 
 // ── Constants ────────────────────────────────────────────────────────────
 
@@ -110,7 +108,7 @@ function buildModelPopoverItems(
     selected: model.model === selectedId,
     icon: (
       <img
-        src={getModelCreatorIconPath(model.model)}
+        src={getCreatorIconPathForModelId(model.model)}
         alt={`${model.model} logo`}
         className="h-4 w-4 icon-auto-contrast"
       />
@@ -972,7 +970,7 @@ export default function CreateVideo() {
                   showIconsInList
                   triggerIcon={
                     <img
-                      src={getModelCreatorIconPath(selectedModel?.model ?? "")}
+                      src={getCreatorIconPathForModelId(selectedModel?.model ?? "")}
                       alt=""
                       className="h-4 w-4 icon-auto-contrast"
                     />

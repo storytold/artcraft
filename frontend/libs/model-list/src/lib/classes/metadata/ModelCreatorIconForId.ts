@@ -6,8 +6,8 @@ import {
 import { ALL_MODELS_LIST } from "../../lists/AllModels.js";
 
 // Fallback prefix → creator map for model ids that aren't in ALL_MODELS_LIST
-// (legacy / API-only ids). Mirrors the webapp's omni-gen icon mapping.
-const MODEL_ID_PREFIX_CREATORS: Array<[string, ModelCreator]> = [
+// (legacy / API-only ids). Shared with the model-list loader's creator guess.
+export const MODEL_ID_PREFIX_CREATORS: Array<[string, ModelCreator]> = [
   ["flux", ModelCreator.BlackForestLabs],
   ["nano_banana", ModelCreator.Google],
   ["gpt_image", ModelCreator.OpenAi],
@@ -19,6 +19,7 @@ const MODEL_ID_PREFIX_CREATORS: Array<[string, ModelCreator]> = [
   ["veo", ModelCreator.Google],
   ["grok", ModelCreator.Grok],
   ["happy_horse", ModelCreator.Alibaba],
+  ["qwen", ModelCreator.Alibaba],
   // Beeble SwitchX (background change) has no provider icon — use the ArtCraft
   // mark since it's surfaced as an ArtCraft feature.
   ["switch_x", ModelCreator.ArtCraft],

@@ -59,11 +59,13 @@ import {
 } from "../../lib/resolve-model-setting";
 import {
   useOmniGenVideoModels,
-  getModelCreatorIconPath,
+  OMNI_GENERATE_OUTAGE_MESSAGE,
+} from "@storyteller/omni-gen";
+import {
+  getCreatorIconPathForModelId,
   getModelDescription,
   getModelInfo,
-  OMNI_GENERATE_OUTAGE_MESSAGE,
-} from "../../lib/omni-gen-hooks";
+} from "@storyteller/model-list";
 import { useSignupCta } from "../../components/signup-cta-modal";
 import { useInsufficientCredits } from "../../components/insufficient-credits-modal";
 import { toast } from "../../components/toast/toast";
@@ -153,7 +155,7 @@ function buildModelPopoverItems(
     info: getModelInfo(model.model, model.extra_info) || undefined,
     icon: (
       <img
-        src={getModelCreatorIconPath(model.model)}
+        src={getCreatorIconPathForModelId(model.model)}
         alt={`${model.model} logo`}
         className="h-4 w-4 icon-auto-contrast"
       />
@@ -167,7 +169,7 @@ function buildModelPopoverItems(
       disabled: true,
       icon: (
         <img
-          src={getModelCreatorIconPath(id)}
+          src={getCreatorIconPathForModelId(id)}
           alt={`${id} logo`}
           className="h-5 w-5 icon-auto-contrast"
         />
@@ -1398,7 +1400,7 @@ export default function CreateVideo() {
                   richList
                   triggerIcon={
                     <img
-                      src={getModelCreatorIconPath(selectedModel?.model ?? "")}
+                      src={getCreatorIconPathForModelId(selectedModel?.model ?? "")}
                       alt=""
                       className="h-4 w-4 icon-auto-contrast"
                     />

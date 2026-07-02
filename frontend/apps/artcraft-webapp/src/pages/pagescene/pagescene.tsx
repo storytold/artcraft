@@ -232,7 +232,7 @@ function PageSceneEditor() {
   // that output so the user lands in a working starting point. Without a
   // `?output=`, Stage3DBody's cold-sync handles the default letterbox by
   // reading the selected model's defaultAspectRatio (now 16:9 for the
-  // InstructiveEdit-tagged models that populate STAGE_3D_PAGE_MODEL_LIST).
+  // InstructiveEdit-tagged models that populate the Stage3D page model list).
   usePromptPrefillFromOutput(imageToken);
 
   const navigateToImageTo3D = useCallback(() => {
