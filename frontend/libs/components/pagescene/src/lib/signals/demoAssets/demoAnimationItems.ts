@@ -64,7 +64,7 @@ export const demoAnimationItems: MediaItem[] = [
     type: AssetType.ANIMATION,
     length: 100,
     name: "Jump Forward",
-    thumbnail: "/resources/characters_gif/Jump Forward.gif",
+    thumbnail: "/resources/characters_gif/Jump Forward.webp",
     media_type: "glb",
   },
   {
@@ -73,7 +73,7 @@ export const demoAnimationItems: MediaItem[] = [
     type: AssetType.ANIMATION,
     length: 100,
     name: "Tonic Seizure",
-    thumbnail: "/resources/characters_gif/Tonic Seizure.gif",
+    thumbnail: "/resources/characters_gif/Tonic Seizure.webp",
     media_type: "glb",
   },
   {
@@ -82,7 +82,7 @@ export const demoAnimationItems: MediaItem[] = [
     type: AssetType.ANIMATION,
     length: 100,
     name: "Ginga Variation 3",
-    thumbnail: "/resources/characters_gif/Ginga Variation 3.gif",
+    thumbnail: "/resources/characters_gif/Ginga Variation 3.webp",
     media_type: "glb",
   },
   {
@@ -91,7 +91,7 @@ export const demoAnimationItems: MediaItem[] = [
     type: AssetType.ANIMATION,
     length: 100,
     name: "Texting",
-    thumbnail: "/resources/characters_gif/Texting.gif",
+    thumbnail: "/resources/characters_gif/Texting.webp",
     media_type: "glb",
   },
   {
@@ -100,7 +100,7 @@ export const demoAnimationItems: MediaItem[] = [
     type: AssetType.ANIMATION,
     length: 100,
     name: "Pushing",
-    thumbnail: "/resources/characters_gif/Pushing.gif",
+    thumbnail: "/resources/characters_gif/Pushing.webp",
     media_type: "glb",
   },
   {
@@ -109,7 +109,7 @@ export const demoAnimationItems: MediaItem[] = [
     type: AssetType.ANIMATION,
     length: 100,
     name: "Texting While Standing",
-    thumbnail: "/resources/characters_gif/Texting While Standing.gif",
+    thumbnail: "/resources/characters_gif/Texting While Standing.webp",
     media_type: "glb",
   },
   {
@@ -118,7 +118,7 @@ export const demoAnimationItems: MediaItem[] = [
     type: AssetType.ANIMATION,
     length: 100,
     name: "Getting Bit",
-    thumbnail: "/resources/characters_gif/Getting Bit.gif",
+    thumbnail: "/resources/characters_gif/Getting Bit.webp",
     media_type: "glb",
   },
   {
@@ -127,7 +127,7 @@ export const demoAnimationItems: MediaItem[] = [
     type: AssetType.ANIMATION,
     length: 100,
     name: "Twist Dance",
-    thumbnail: "/resources/characters_gif/Twist Dance.gif",
+    thumbnail: "/resources/characters_gif/Twist Dance.webp",
     media_type: "glb",
   },
   {
@@ -136,7 +136,7 @@ export const demoAnimationItems: MediaItem[] = [
     type: AssetType.ANIMATION,
     length: 100,
     name: "Peek Around Corner",
-    thumbnail: "/resources/characters_gif/Femme Peek Around Corner.gif",
+    thumbnail: "/resources/characters_gif/Femme Peek Around Corner.webp",
     media_type: "glb",
   },
   {
@@ -145,7 +145,7 @@ export const demoAnimationItems: MediaItem[] = [
     type: AssetType.ANIMATION,
     length: 100,
     name: "Sword And Shield Casting",
-    thumbnail: "/resources/characters_gif/Sword And Shield Casting.gif",
+    thumbnail: "/resources/characters_gif/Sword And Shield Casting.webp",
     media_type: "glb",
   },
   {
@@ -154,7 +154,7 @@ export const demoAnimationItems: MediaItem[] = [
     type: AssetType.ANIMATION,
     length: 100,
     name: "Breakdance Ready",
-    thumbnail: "/resources/characters_gif/Breakdance Ready.gif",
+    thumbnail: "/resources/characters_gif/Breakdance Ready.webp",
     media_type: "glb",
   },
   {
@@ -163,7 +163,7 @@ export const demoAnimationItems: MediaItem[] = [
     type: AssetType.ANIMATION,
     length: 100,
     name: "Sitting Yell",
-    thumbnail: "/resources/characters_gif/Sitting Yell.gif",
+    thumbnail: "/resources/characters_gif/Sitting Yell.webp",
     media_type: "glb",
   },
   {
@@ -172,7 +172,7 @@ export const demoAnimationItems: MediaItem[] = [
     type: AssetType.ANIMATION,
     length: 100,
     name: "Uppercut",
-    thumbnail: "/resources/characters_gif/Uppercut.gif",
+    thumbnail: "/resources/characters_gif/Uppercut.webp",
     media_type: "glb",
   },
   {
@@ -181,7 +181,7 @@ export const demoAnimationItems: MediaItem[] = [
     type: AssetType.ANIMATION,
     length: 100,
     name: "Breakdance Uprock Var 1",
-    thumbnail: "/resources/characters_gif/Breakdance Uprock Var 1.gif",
+    thumbnail: "/resources/characters_gif/Breakdance Uprock Var 1.webp",
     media_type: "glb",
   },
   {
@@ -190,7 +190,7 @@ export const demoAnimationItems: MediaItem[] = [
     type: AssetType.ANIMATION,
     length: 100,
     name: "Standard Walk",
-    thumbnail: "/resources/characters_gif/Standard Walk.gif",
+    thumbnail: "/resources/characters_gif/Standard Walk.webp",
     media_type: "glb",
   },
   {
@@ -199,7 +199,7 @@ export const demoAnimationItems: MediaItem[] = [
     type: AssetType.ANIMATION,
     length: 100,
     name: "Sword And Shield Jump",
-    thumbnail: "/resources/characters_gif/Sword And Shield Jump.gif",
+    thumbnail: "/resources/characters_gif/Sword And Shield Jump.webp",
     media_type: "glb",
   },
   {
@@ -208,7 +208,7 @@ export const demoAnimationItems: MediaItem[] = [
     type: AssetType.ANIMATION,
     length: 100,
     name: "Baseball Bunt",
-    thumbnail: "/resources/characters_gif/Baseball Bunt.gif",
+    thumbnail: "/resources/characters_gif/Baseball Bunt.webp",
     media_type: "glb",
   },
 
@@ -218,7 +218,7 @@ export const demoAnimationItems: MediaItem[] = [
     type: AssetType.ANIMATION,
     length: 100,
     name: "Sneaking Forward",
-    thumbnail: "/resources/characters_gif/Sneaking Forward.gif",
+    thumbnail: "/resources/characters_gif/Sneaking Forward.webp",
     media_type: "glb",
   },
   {
@@ -227,7 +227,7 @@ export const demoAnimationItems: MediaItem[] = [
     type: AssetType.ANIMATION,
     length: 100,
     name: "Right Strafe Walking",
-    thumbnail: "/resources/characters_gif/Right Strafe Walking.gif",
+    thumbnail: "/resources/characters_gif/Right Strafe Walking.webp",
     media_type: "glb",
   },
   {
@@ -236,7 +236,7 @@ export const demoAnimationItems: MediaItem[] = [
     type: AssetType.ANIMATION,
     length: 100,
     name: "Laying Breathless",
-    thumbnail: "/resources/characters_gif/Laying Breathless.gif",
+    thumbnail: "/resources/characters_gif/Laying Breathless.webp",
     media_type: "glb",
   },
   {
@@ -245,7 +245,7 @@ export const demoAnimationItems: MediaItem[] = [
     type: AssetType.ANIMATION,
     length: 100,
     name: "Orc Walk",
-    thumbnail: "/resources/characters_gif/Orc Walk.gif",
+    thumbnail: "/resources/characters_gif/Orc Walk.webp",
     media_type: "glb",
   },
   {
@@ -254,7 +254,7 @@ export const demoAnimationItems: MediaItem[] = [
     type: AssetType.ANIMATION,
     length: 100,
     name: "Run Look Back",
-    thumbnail: "/resources/characters_gif/Run Look Back.gif",
+    thumbnail: "/resources/characters_gif/Run Look Back.webp",
     media_type: "glb",
   },
   {
@@ -263,7 +263,7 @@ export const demoAnimationItems: MediaItem[] = [
     type: AssetType.ANIMATION,
     length: 100,
     name: "Lengthy Head Nod",
-    thumbnail: "/resources/characters_gif/Lengthy Head Nod.gif",
+    thumbnail: "/resources/characters_gif/Lengthy Head Nod.webp",
     media_type: "glb",
   },
   {
@@ -272,7 +272,7 @@ export const demoAnimationItems: MediaItem[] = [
     type: AssetType.ANIMATION,
     length: 100,
     name: "Right Hook",
-    thumbnail: "/resources/characters_gif/Right Hook.gif",
+    thumbnail: "/resources/characters_gif/Right Hook.webp",
     media_type: "glb",
   },
   {
@@ -281,7 +281,7 @@ export const demoAnimationItems: MediaItem[] = [
     type: AssetType.ANIMATION,
     length: 100,
     name: "Great Sword Impact",
-    thumbnail: "/resources/characters_gif/Great Sword Impact.gif",
+    thumbnail: "/resources/characters_gif/Great Sword Impact.webp",
     media_type: "glb",
   },
   {
@@ -290,7 +290,7 @@ export const demoAnimationItems: MediaItem[] = [
     type: AssetType.ANIMATION,
     length: 100,
     name: "Zombie Biting",
-    thumbnail: "/resources/characters_gif/Zombie Biting.gif",
+    thumbnail: "/resources/characters_gif/Zombie Biting.webp",
     media_type: "glb",
   },
   {
@@ -299,7 +299,7 @@ export const demoAnimationItems: MediaItem[] = [
     type: AssetType.ANIMATION,
     length: 100,
     name: "Leaning",
-    thumbnail: "/resources/characters_gif/Leaning.gif",
+    thumbnail: "/resources/characters_gif/Leaning.webp",
     media_type: "glb",
   },
   {
@@ -308,7 +308,7 @@ export const demoAnimationItems: MediaItem[] = [
     type: AssetType.ANIMATION,
     length: 100,
     name: "Corkscrew Evade",
-    thumbnail: "/resources/characters_gif/Corkscrew Evade.gif",
+    thumbnail: "/resources/characters_gif/Corkscrew Evade.webp",
     media_type: "glb",
   },
   {
@@ -317,7 +317,7 @@ export const demoAnimationItems: MediaItem[] = [
     type: AssetType.ANIMATION,
     length: 100,
     name: "Catwalk Walk Forward Crossed",
-    thumbnail: "/resources/characters_gif/Catwalk Walk Forward Crossed.gif",
+    thumbnail: "/resources/characters_gif/Catwalk Walk Forward Crossed.webp",
     media_type: "glb",
   },
   {
@@ -326,7 +326,7 @@ export const demoAnimationItems: MediaItem[] = [
     type: AssetType.ANIMATION,
     length: 100,
     name: "Look Around",
-    thumbnail: "/resources/characters_gif/Look Around.gif",
+    thumbnail: "/resources/characters_gif/Look Around.webp",
     media_type: "glb",
   },
   {
@@ -335,7 +335,7 @@ export const demoAnimationItems: MediaItem[] = [
     type: AssetType.ANIMATION,
     length: 100,
     name: "Convulsing",
-    thumbnail: "/resources/characters_gif/Convulsing.gif",
+    thumbnail: "/resources/characters_gif/Convulsing.webp",
     media_type: "glb",
   },
 ];

@@ -1075,12 +1075,12 @@ class Scene {
 
     if (this.skybox == "Default") {
       const texture = loader.load([
-        "/resources/skybox/day/px.png",
-        "/resources/skybox/day/nx.png",
-        "/resources/skybox/day/py.png",
-        "/resources/skybox/day/ny.png",
-        "/resources/skybox/day/pz.png",
-        "/resources/skybox/day/nz.png",
+        "/resources/skybox/day/px.webp",
+        "/resources/skybox/day/nx.webp",
+        "/resources/skybox/day/py.webp",
+        "/resources/skybox/day/ny.webp",
+        "/resources/skybox/day/pz.webp",
+        "/resources/skybox/day/nz.webp",
       ]);
       this.scene.background = texture;
       if (this.ambientLight) this.scene.remove(this.ambientLight);
@@ -1088,12 +1088,12 @@ class Scene {
       if (this.hemisphereLight) this.scene.add(this.hemisphereLight);
     } else if (this.skybox == "m_0") {
       const texture = loader.load([
-        "/resources/skybox/night/Night_Moon_Burst_Cam_2_LeftX.png",
-        "/resources/skybox/night/Night_Moon_Burst_Cam_3_Right-X.png",
-        "/resources/skybox/night/Night_Moon_Burst_Cam_4_UpY.png",
-        "/resources/skybox/night/Night_Moon_Burst_Cam_5_Down-Y.png",
-        "/resources/skybox/night/Night_Moon_Burst_Cam_0_FrontZ.png",
-        "/resources/skybox/night/Night_Moon_Burst_Cam_1_Back-Z.png",
+        "/resources/skybox/night/Night_Moon_Burst_Cam_2_LeftX.webp",
+        "/resources/skybox/night/Night_Moon_Burst_Cam_3_Right-X.webp",
+        "/resources/skybox/night/Night_Moon_Burst_Cam_4_UpY.webp",
+        "/resources/skybox/night/Night_Moon_Burst_Cam_5_Down-Y.webp",
+        "/resources/skybox/night/Night_Moon_Burst_Cam_0_FrontZ.webp",
+        "/resources/skybox/night/Night_Moon_Burst_Cam_1_Back-Z.webp",
       ]);
       this.scene.background = texture;
       if (this.ambientLight) this.scene.remove(this.ambientLight);
@@ -1112,12 +1112,12 @@ class Scene {
       if (this.hemisphereLight) this.scene.remove(this.hemisphereLight);
     } else if (this.skybox == "m_3") {
       const texture = loader.load([
-        "/resources/skybox/gray/Sky_AllSky_Overcast4_Low_Cam_2_LeftX.png",
-        "/resources/skybox/gray/Sky_AllSky_Overcast4_Low_Cam_3_Right-X.png",
-        "/resources/skybox/gray/Sky_AllSky_Overcast4_Low_Cam_4_UpY.png",
-        "/resources/skybox/gray/Sky_AllSky_Overcast4_Low_Cam_5_Down-Y.png",
-        "/resources/skybox/gray/Sky_AllSky_Overcast4_Low_Cam_0_FrontZ.png",
-        "/resources/skybox/gray/Sky_AllSky_Overcast4_Low_Cam_1_Back-Z.png",
+        "/resources/skybox/gray/Sky_AllSky_Overcast4_Low_Cam_2_LeftX.webp",
+        "/resources/skybox/gray/Sky_AllSky_Overcast4_Low_Cam_3_Right-X.webp",
+        "/resources/skybox/gray/Sky_AllSky_Overcast4_Low_Cam_4_UpY.webp",
+        "/resources/skybox/gray/Sky_AllSky_Overcast4_Low_Cam_5_Down-Y.webp",
+        "/resources/skybox/gray/Sky_AllSky_Overcast4_Low_Cam_0_FrontZ.webp",
+        "/resources/skybox/gray/Sky_AllSky_Overcast4_Low_Cam_1_Back-Z.webp",
       ]);
       this.scene.background = texture;
       if (this.ambientLight) this.scene.remove(this.ambientLight);
@@ -1142,7 +1142,7 @@ class Scene {
   // deafult image skybox.
   _create_single_skybox() {
     const loader = new THREE.TextureLoader();
-    const texture = loader.load("/resources/skybox/single.jpg", () => {
+    const texture = loader.load("/resources/skybox/single.webp", () => {
       texture.mapping = THREE.EquirectangularReflectionMapping;
       texture.colorSpace = THREE.SRGBColorSpace;
       this.scene.background = texture;
