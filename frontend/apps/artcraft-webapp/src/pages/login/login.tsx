@@ -9,6 +9,10 @@ import { Input } from "@storyteller/ui-input";
 import { useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { UsersApi } from "@storyteller/api";
+import {
+  checkoutIntentFromSearchParams,
+  redirectToCheckout,
+} from "@storyteller/ui-pricing-table";
 import { AuthHeader, AuthFooter, GoogleLoginButton } from "../../components/auth";
 import Seo from "../../components/seo";
 import { Reveal, RevealGroup } from "../../components/motion/reveal";
@@ -20,6 +24,9 @@ const Login = () => {
   const [searchParams] = useSearchParams();
   const fromParam = searchParams.get("from");
   const redirectTo = fromParam && fromParam.startsWith("/") ? fromParam : "/";
+  // Set when a pricing-page purchase click routed the user through auth;
+  // after login we resume Stripe checkout for that plan.
+  const checkoutIntent = checkoutIntentFromSearchParams(searchParams);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -44,6 +51,9 @@ const Login = () => {
       // navigating — otherwise RequireAuth on the destination sees loggedIn=false
       // and bounces straight back to /login?from=…
       await refreshSession(true);
+      if (checkoutIntent && (await redirectToCheckout(checkoutIntent))) {
+        return;
+      }
       navigate(redirectTo);
     } else {
       setError(response.errorMessage || "Invalid credentials");
@@ -57,6 +67,9 @@ const Login = () => {
       refreshSession(true),
       hasActiveSubscription(),
     ]);
+    if (checkoutIntent && (await redirectToCheckout(checkoutIntent))) {
+      return;
+    }
     navigate(subscribed ? redirectTo : "/pricing");
   };
 
@@ -180,7 +193,7 @@ const Login = () => {
           <AuthFooter>
             Don't have an account?{" "}
             <Link
-              to="/signup"
+              to={{ pathname: "/signup", search: searchParams.toString() }}
               className="font-semibold text-primary transition-colors hover:text-primary-400"
             >
               Sign up

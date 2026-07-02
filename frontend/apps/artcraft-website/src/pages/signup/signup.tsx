@@ -1,9 +1,24 @@
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import {
+  checkoutIntentFromSearchParams,
+  redirectToCheckout,
+} from "@storyteller/ui-pricing-table";
 import { SignupForm } from "../../components/auth";
 import Seo from "../../components/seo";
 
 const Signup = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const checkoutIntent = checkoutIntentFromSearchParams(searchParams);
+
+  const handleSuccess = async () => {
+    // A pricing-page purchase click brought the user here; resume Stripe
+    // checkout for the plan they picked instead of the welcome flow.
+    if (checkoutIntent && (await redirectToCheckout(checkoutIntent))) {
+      return;
+    }
+    navigate("/welcome");
+  };
 
   return (
     <div className="relative min-h-screen bg-[#101014] text-white overflow-hidden flex flex-col">
@@ -28,14 +43,14 @@ const Signup = () => {
           </div>
 
           <SignupForm
-            onSuccess={() => navigate("/welcome")}
+            onSuccess={handleSuccess}
             signupSource="artcraft"
           />
 
           <div className="mt-8 text-center text-sm text-white/60">
             Already have an account?{" "}
             <Link
-              to="/login"
+              to={{ pathname: "/login", search: searchParams.toString() }}
               className="text-primary hover:text-primary-400 font-semibold transition-colors"
             >
               Log in

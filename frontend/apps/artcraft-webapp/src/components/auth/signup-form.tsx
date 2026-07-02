@@ -7,8 +7,12 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Button } from "@storyteller/ui-button";
 import { Input } from "@storyteller/ui-input";
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { UsersApi } from "@storyteller/api";
+import {
+  checkoutIntentFromSearchParams,
+  redirectToCheckout,
+} from "@storyteller/ui-pricing-table";
 import {
   getLandingUrl,
   getReferralCode,
@@ -34,6 +38,7 @@ export const SignupForm = ({
   autoFocus = false,
 }: SignupFormProps) => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -94,6 +99,14 @@ export const SignupForm = ({
       refreshSession(true),
       hasActiveSubscription(),
     ]);
+
+    // A pricing-page purchase click brought the user here; resume Stripe
+    // checkout for the plan they picked.
+    const checkoutIntent = checkoutIntentFromSearchParams(searchParams);
+    if (checkoutIntent && (await redirectToCheckout(checkoutIntent))) {
+      return;
+    }
+
     navigate(subscribed ? "/" : "/pricing");
   };
 

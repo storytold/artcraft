@@ -7,12 +7,20 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Button } from "@storyteller/ui-button";
 import { Input } from "@storyteller/ui-input";
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { UsersApi } from "@storyteller/api";
+import {
+  checkoutIntentFromSearchParams,
+  redirectToCheckout,
+} from "@storyteller/ui-pricing-table";
 import Seo from "../../components/seo";
 
 const Login = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  // Set when a pricing-page purchase click routed the user through auth;
+  // after login we resume Stripe checkout for that plan.
+  const checkoutIntent = checkoutIntentFromSearchParams(searchParams);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -34,6 +42,9 @@ const Login = () => {
 
     if (response.success) {
       window.dispatchEvent(new Event("auth-change"));
+      if (checkoutIntent && (await redirectToCheckout(checkoutIntent))) {
+        return;
+      }
       navigate("/");
     } else {
       setError(response.errorMessage || "Invalid credentials");
@@ -169,7 +180,7 @@ const Login = () => {
           <div className="mt-8 text-center text-sm text-white/60">
             Don't have an account?{" "}
             <Link
-              to="/signup"
+              to={{ pathname: "/signup", search: searchParams.toString() }}
               className="text-primary hover:text-primary-400 font-semibold transition-colors"
             >
               Sign up

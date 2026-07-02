@@ -1,10 +1,25 @@
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import {
+  checkoutIntentFromSearchParams,
+  redirectToCheckout,
+} from "@storyteller/ui-pricing-table";
 import { AuthHeader, AuthFooter, SignupForm } from "../../components/auth";
 import Seo from "../../components/seo";
 import { Reveal } from "../../components/motion/reveal";
 
 const Signup = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const checkoutIntent = checkoutIntentFromSearchParams(searchParams);
+
+  const handleSuccess = async () => {
+    // A pricing-page purchase click brought the user here; resume Stripe
+    // checkout for the plan they picked instead of the welcome flow.
+    if (checkoutIntent && (await redirectToCheckout(checkoutIntent))) {
+      return;
+    }
+    navigate("/welcome");
+  };
 
   return (
     <>
@@ -18,7 +33,7 @@ const Signup = () => {
           The footer picks up the tail of that cascade — the form's six staggered
           steps land by ~0.36s, so the footer follows at ~0.44s. */}
       <SignupForm
-        onSuccess={() => navigate("/welcome")}
+        onSuccess={handleSuccess}
         signupSource="artcraft"
       />
 
@@ -26,7 +41,7 @@ const Signup = () => {
         <AuthFooter>
           Already have an account?{" "}
           <Link
-            to="/login"
+            to={{ pathname: "/login", search: searchParams.toString() }}
             className="font-semibold text-primary transition-colors hover:text-primary-400"
           >
             Log in
