@@ -10,6 +10,7 @@ import {
   IconChevronDown,
   IconChevronRight,
   IconCopy,
+  IconListSearch,
   IconUser,
 } from "@tabler/icons-react";
 
@@ -82,6 +83,8 @@ export interface DebugLogCardProps {
   onCopy: (value: string, id: string) => void;
   /** Joined creator user info (list-all page). */
   maybeUser?: DebugLogUser | null;
+  /** Show a direct link to the event's debug-logs page in the header row. */
+  showEventLink?: boolean;
   /** Start expanded (defaults to true). */
   defaultExpanded?: boolean;
 }
@@ -91,6 +94,7 @@ export function DebugLogCard({
   copiedId,
   onCopy,
   maybeUser,
+  showEventLink = false,
   defaultExpanded = true,
 }: DebugLogCardProps) {
   const [expanded, setExpanded] = useState(defaultExpanded);
@@ -121,6 +125,20 @@ export function DebugLogCard({
           </Badge>
         )}
         <RawTag value={log.debug_log_type} />
+        {showEventLink && (
+          <span
+            className="inline-flex items-center min-w-0"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <Link
+              to={`/debug_logs/${encodeURIComponent(log.event_token)}`}
+              className="font-mono text-xs text-muted-foreground hover:text-foreground hover:underline truncate"
+              title={`View event ${log.event_token}`}
+            >
+              {log.event_token}
+            </Link>
+          </span>
+        )}
         {maybeUser && (
           <span
             className="inline-flex items-center gap-1 text-xs text-muted-foreground min-w-0"
@@ -133,6 +151,14 @@ export function DebugLogCard({
               title={maybeUser.username}
             >
               {maybeUser.display_name}
+            </Link>
+            <Link
+              to={`/debug_logs/user/${encodeURIComponent(maybeUser.user_token)}`}
+              className="inline-flex items-center gap-1 text-muted-foreground hover:text-foreground shrink-0 hover:underline"
+              title="View this user's debug logs"
+            >
+              <IconListSearch className="size-3.5" />
+              logs
             </Link>
           </span>
         )}
@@ -172,7 +198,7 @@ export function DebugLogCard({
                 Event:
               </span>{" "}
               <Link
-                to={`/moderation/debug-logs/${encodeURIComponent(log.event_token)}`}
+                to={`/debug_logs/${encodeURIComponent(log.event_token)}`}
                 className="font-mono text-foreground/80 hover:underline"
               >
                 {log.event_token}

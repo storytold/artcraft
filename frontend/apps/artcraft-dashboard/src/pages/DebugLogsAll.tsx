@@ -237,6 +237,7 @@ export function DebugLogsAll() {
               copiedId={copiedId}
               onCopy={copy}
               maybeUser={log.maybe_user}
+              showEventLink
               defaultExpanded={false}
             />
           ))}

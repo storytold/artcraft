@@ -222,6 +222,7 @@ export function UserDebugLogs() {
               log={log}
               copiedId={copiedId}
               onCopy={copy}
+              showEventLink
               defaultExpanded={false}
             />
           ))}
