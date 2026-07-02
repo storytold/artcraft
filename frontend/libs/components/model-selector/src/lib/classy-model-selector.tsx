@@ -149,6 +149,20 @@ export function ClassyModelSelector({
     }
   }, []);
 
+  // The backend listing hydrates asynchronously and rebuilds the model
+  // instances with API capabilities. Swap a stale selected instance for the
+  // fresh one so capability-driven UI (keyframes, references, pickers)
+  // reflects the API data without needing a manual re-select.
+  useEffect(() => {
+    const selected = selectedModels[page];
+    if (!selected) return;
+    const fresh = itemModels.find((m) => m.tauriId === selected.tauriId);
+    if (fresh !== undefined && fresh !== selected) {
+      setSelectedModel(page, fresh);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [items, selectedModels, page]);
+
   // Initialize a default provider for each model so we can render icons even when not selected
   useEffect(() => {
     for (const item of items) {
