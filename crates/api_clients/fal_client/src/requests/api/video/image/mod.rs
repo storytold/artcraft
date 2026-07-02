@@ -8,3 +8,5 @@ pub mod veo_3_fast;
 pub mod veo_3p1;
 pub mod veo_3p1_fast;
 pub mod veo_3p1_lite;
+pub mod vidu_q3;
+pub mod vidu_q3_turbo;
