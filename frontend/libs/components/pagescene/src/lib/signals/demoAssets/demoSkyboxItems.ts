@@ -14,14 +14,14 @@ export const demoSkyboxItems: MediaItem[] = [
     media_id: "SKY::Default",
     type: AssetType.SKYBOX,
     name: "Day Skybox",
-    thumbnail: "/resources/skybox/day/px.png",
+    thumbnail: "/resources/skybox/day/px.webp",
   },
   {
     version: 1,
     media_id: "SKY::m_0",
     type: AssetType.SKYBOX,
     name: "Night Skybox",
-    thumbnail: "/resources/skybox/night/Night_Moon_Burst_Cam_2_LeftX.png",
+    thumbnail: "/resources/skybox/night/Night_Moon_Burst_Cam_2_LeftX.webp",
   },
   {
     version: 1,
@@ -29,7 +29,7 @@ export const demoSkyboxItems: MediaItem[] = [
     type: AssetType.SKYBOX,
     name: "Gray Skybox",
     thumbnail:
-      "/resources/skybox/gray/Sky_AllSky_Overcast4_Low_Cam_2_LeftX.png",
+      "/resources/skybox/gray/Sky_AllSky_Overcast4_Low_Cam_2_LeftX.webp",
   },
   {
     version: 1,

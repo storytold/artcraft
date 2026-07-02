@@ -5,7 +5,7 @@
       rgb(var(--st-photo-tint-rgb) / var(--st-photo-tint-alpha)),
       rgb(var(--st-photo-tint-rgb) / var(--st-photo-tint-alpha))
     ),
-    url("/resources/images/digital-mountains.png");
+    url("/resources/images/digital-mountains.webp");
   background-repeat: no-repeat;
   background-size: cover;
   position: fixed;
