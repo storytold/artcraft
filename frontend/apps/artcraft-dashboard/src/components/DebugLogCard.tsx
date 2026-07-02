@@ -3,7 +3,6 @@ import { Link } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { humanize } from "@/lib/utils";
-import { RawTag } from "@/components/RawTag";
 import type { DebugLog } from "@/types";
 import {
   IconCheck,
@@ -136,7 +135,6 @@ export function DebugLogCard({
             {log.maybe_log_level.toUpperCase()}
           </Badge>
         )}
-        <RawTag value={log.debug_log_type} />
         {showEventLink && (
           <span
             className="inline-flex items-center min-w-0"
@@ -218,7 +216,26 @@ export function DebugLogCard({
             </div>
             {log.maybe_creator_user_token && (
               <span className="inline-flex items-center gap-3 min-w-0">
-                {maybeUser ? (
+                <button
+                  type="button"
+                  onClick={() =>
+                    onCopy(log.maybe_creator_user_token!, `user_token_${log.id}`)
+                  }
+                  className="inline-flex items-center gap-1 text-muted-foreground hover:text-foreground cursor-pointer min-w-0"
+                  title="Copy user token"
+                >
+                  <span className="whitespace-nowrap">user token:</span>
+                  <span className="font-mono truncate">
+                    {log.maybe_creator_user_token}
+                  </span>
+                  {copiedId === `user_token_${log.id}` ? (
+                    <IconCheck className="size-3 shrink-0 text-emerald-400" />
+                  ) : (
+                    <IconCopy className="size-3 shrink-0 opacity-60" />
+                  )}
+                </button>
+                <span className="text-muted-foreground/40">|</span>
+                {maybeUser && (
                   <Link
                     to={`/user/profile/${encodeURIComponent(maybeUser.username)}`}
                     className="inline-flex items-center gap-1.5 text-foreground/80 hover:text-foreground hover:underline min-w-0"
@@ -226,17 +243,7 @@ export function DebugLogCard({
                   >
                     <IconUser className="size-3.5 shrink-0" />
                     <span className="truncate">{maybeUser.display_name}</span>
-                    <span className="font-mono truncate">
-                      {log.maybe_creator_user_token}
-                    </span>
                   </Link>
-                ) : (
-                  <span className="inline-flex items-center gap-1.5 text-foreground/80 min-w-0">
-                    <IconUser className="size-3.5 shrink-0" />
-                    <span className="font-mono truncate">
-                      {log.maybe_creator_user_token}
-                    </span>
-                  </span>
                 )}
                 <Link
                   to={`/debug_logs/user/${encodeURIComponent(log.maybe_creator_user_token)}`}
