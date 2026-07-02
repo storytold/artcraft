@@ -86,8 +86,6 @@ export interface DebugLogCardProps {
   log: DebugLog;
   copiedId: string | null;
   onCopy: (value: string, id: string) => void;
-  /** Show a direct link to the event's debug-logs page in the header row. */
-  showEventLink?: boolean;
   /** Start expanded (defaults to true). */
   defaultExpanded?: boolean;
   /** Expand/collapse-all broadcast from the page. */
@@ -98,7 +96,6 @@ export function DebugLogCard({
   log,
   copiedId,
   onCopy,
-  showEventLink = false,
   defaultExpanded = true,
   expandAll,
 }: DebugLogCardProps) {
@@ -135,48 +132,51 @@ export function DebugLogCard({
             {log.maybe_log_level.toUpperCase()}
           </Badge>
         )}
-        {showEventLink && (
+        <span className="text-xs text-muted-foreground tabular-nums whitespace-nowrap">
+          {formatDebugLogDateTime(log.created_at)}
+        </span>
+        {log.maybe_url && (
+          <span
+            className="font-mono text-xs text-muted-foreground truncate max-w-[18rem]"
+            title={log.maybe_url}
+          >
+            {log.maybe_url}
+          </span>
+        )}
+        {maybeUser && (
           <span
             className="inline-flex items-center min-w-0"
             onClick={(e) => e.stopPropagation()}
           >
             <Link
-              to={`/debug_logs/${encodeURIComponent(log.event_token)}`}
-              className="font-mono text-xs text-muted-foreground hover:text-foreground hover:underline truncate"
-              title={`View event ${log.event_token}`}
-            >
-              {log.event_token}
-            </Link>
-          </span>
-        )}
-        {maybeUser && (
-          <span
-            className="inline-flex items-center gap-1 text-xs text-muted-foreground min-w-0"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <Link
               to={`/user/profile/${encodeURIComponent(maybeUser.username)}`}
-              className="inline-flex items-center gap-1 hover:underline text-foreground/80 min-w-0"
+              className="inline-flex items-center gap-1 hover:underline text-foreground/80 text-xs min-w-0"
               title={maybeUser.username}
             >
               <IconUser className="size-3.5 shrink-0" />
               <span className="truncate">{maybeUser.display_name}</span>
             </Link>
-            <Link
-              to={`/debug_logs/user/${encodeURIComponent(maybeUser.user_token)}`}
-              className="inline-flex items-center gap-1 text-muted-foreground hover:text-foreground shrink-0 hover:underline"
-              title="View this user's debug logs"
-            >
-              <IconListSearch className="size-3.5" />
-              logs
-            </Link>
           </span>
         )}
-        <span className="text-xs text-muted-foreground tabular-nums whitespace-nowrap">
-          {formatDebugLogDateTime(log.created_at)}
-        </span>
-        <span className="text-xs text-muted-foreground/60 font-mono ml-auto">
-          #{log.id}
+        {log.maybe_ip_address && (
+          <span className="font-mono text-xs text-muted-foreground whitespace-nowrap">
+            {log.maybe_ip_address}
+          </span>
+        )}
+        <span
+          className="ml-auto inline-flex items-center gap-1.5 min-w-0"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <Link
+            to={`/debug_logs/${encodeURIComponent(log.event_token)}`}
+            className="font-mono text-xs text-muted-foreground hover:text-foreground hover:underline truncate"
+            title={`View event ${log.event_token}`}
+          >
+            {log.event_token}
+          </Link>
+          <span className="text-xs text-muted-foreground/60 font-mono whitespace-nowrap">
+            (#{log.id})
+          </span>
         </span>
         <span
           className="ml-2 inline-flex items-center"

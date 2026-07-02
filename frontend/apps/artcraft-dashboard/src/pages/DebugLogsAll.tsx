@@ -269,7 +269,6 @@ export function DebugLogsAll() {
               log={log}
               copiedId={copiedId}
               onCopy={copy}
-              showEventLink
               defaultExpanded={false}
               expandAll={expandAll}
             />
