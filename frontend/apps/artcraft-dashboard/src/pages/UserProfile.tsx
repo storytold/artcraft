@@ -25,6 +25,7 @@ import {
   IconMail,
   IconUser,
   IconShieldLock,
+  IconBug,
   IconChartLine,
   IconCoin,
   IconReceipt2,
@@ -566,6 +567,12 @@ export function UserProfile() {
               <Link to={`/user/spend-history/${username}`}>
                 <IconReceipt2 className="size-4" />
                 Spend History
+              </Link>
+            </Button>
+            <Button variant="outline" size="sm" asChild>
+              <Link to={`/debug_logs/user/${user.token}`}>
+                <IconBug className="size-4" />
+                User Debug Logs
               </Link>
             </Button>
             <Button

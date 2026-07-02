@@ -22,6 +22,8 @@ import { UserReferrals } from "@/pages/UserReferrals";
 import { JobInfo } from "@/pages/JobInfo";
 import { JobTokenSearch } from "@/pages/JobTokenSearch";
 import { DebugLogs } from "@/pages/DebugLogs";
+import { DebugLogsAll } from "@/pages/DebugLogsAll";
+import { UserDebugLogs } from "@/pages/UserDebugLogs";
 import { DebugLogsSearch } from "@/pages/DebugLogsSearch";
 import { SpendEvents } from "@/pages/SpendEvents";
 import { ReengagementList } from "@/pages/ReengagementList";
@@ -88,6 +90,8 @@ function AppRoutes() {
           path="moderation/debug-logs/:eventToken"
           element={<DebugLogs />}
         />
+        <Route path="debug_logs/list" element={<DebugLogsAll />} />
+        <Route path="debug_logs/user/:userToken" element={<UserDebugLogs />} />
       </Route>
 
       {/* 404 */}

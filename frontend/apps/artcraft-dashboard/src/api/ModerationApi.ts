@@ -1,5 +1,6 @@
 import { ApiManager, type ApiResponse } from "./ApiManager";
 import type {
+  AllDebugLog,
   Wallet,
   WalletWithOwner,
   WalletLedgerEntry,
@@ -731,6 +732,74 @@ export class ModerationApi extends ApiManager {
       .then((response) => ({
         success: response.success,
         data: { debug_logs: response.debug_logs || [] },
+        errorMessage: response.error_message,
+      }))
+      .catch((err) => ({
+        success: false,
+        errorMessage: err.message,
+      }));
+  }
+
+  public async ListAllDebugLogs(params: {
+    severities?: string[];
+    cursor?: number;
+    limit?: number;
+  }): Promise<
+    ApiResponse<{ debug_logs: AllDebugLog[]; next_cursor: number | null }>
+  > {
+    const endpoint = `${this.getApiSchemeAndHost()}/v1/moderation/debug_logs/list_all`;
+    return await this.get<{
+      success: boolean;
+      debug_logs: AllDebugLog[];
+      next_cursor: number | null;
+      error_message?: string;
+    }>({
+      endpoint,
+      query: {
+        severities: params.severities?.length
+          ? params.severities.join(",")
+          : undefined,
+        cursor: params.cursor,
+        limit: params.limit,
+      },
+    })
+      .then((response) => ({
+        success: response.success,
+        data: {
+          debug_logs: response.debug_logs || [],
+          next_cursor: response.next_cursor ?? null,
+        },
+        errorMessage: response.error_message,
+      }))
+      .catch((err) => ({
+        success: false,
+        errorMessage: err.message,
+      }));
+  }
+
+  public async ListUserDebugLogs(
+    user_token: string,
+    cursor?: number,
+    limit?: number,
+  ): Promise<
+    ApiResponse<{ debug_logs: DebugLog[]; next_cursor: number | null }>
+  > {
+    const endpoint = `${this.getApiSchemeAndHost()}/v1/moderation/debug_logs/user_list/${encodeURIComponent(user_token)}`;
+    return await this.get<{
+      success: boolean;
+      debug_logs: DebugLog[];
+      next_cursor: number | null;
+      error_message?: string;
+    }>({
+      endpoint,
+      query: { cursor, limit },
+    })
+      .then((response) => ({
+        success: response.success,
+        data: {
+          debug_logs: response.debug_logs || [],
+          next_cursor: response.next_cursor ?? null,
+        },
         errorMessage: response.error_message,
       }))
       .catch((err) => ({
