@@ -14,6 +14,12 @@ import { GenerationProvider } from "@storyteller/api-enums";
 import { Tooltip } from "@storyteller/ui-tooltip";
 import { defaultModelForPage } from "./defaultModelForPage";
 
+// Model instances are rebuilt when the backend listing hydrates, so compare by
+// tauriId rather than object identity.
+const isSameModel = (a: Model | undefined, b: Model | undefined): boolean =>
+  a !== undefined && b !== undefined && a.tauriId === b.tauriId;
+
+
 interface ClassyModelSelectorProps {
   items: Omit<PopoverItem, "selected">[];
   page: ModelPage;
@@ -175,7 +181,7 @@ export function ClassyModelSelector({
 
         return {
           ...item,
-          selected: item.model === selectedModel,
+          selected: isSameModel(item.model as Model | undefined, selectedModel),
           hoverTooltip: hasMultipleProviders
             ? (close: () => void) => (
                 <ProviderTooltipContent
@@ -190,7 +196,7 @@ export function ClassyModelSelector({
             : undefined,
           tooltipDelayMs: providerTooltipDelayMs,
           trailing:
-            item.model !== selectedModel && hasMultipleProviders
+            !isSameModel(item.model as Model | undefined, selectedModel) && hasMultipleProviders
               ? (() => {
                   const prov = modelId
                     ? selectedProvidersByModel[modelId]
@@ -206,7 +212,7 @@ export function ClassyModelSelector({
                 })()
               : undefined,
           selectedRight:
-            item.model === selectedModel &&
+            isSameModel(item.model as Model | undefined, selectedModel) &&
             selectedProvider &&
             hasMultipleProviders ? (
               <div className="mr-1 rounded-md p-1.5 bg-primary/60 group-hover:bg-primary/80 transition-colors">
@@ -265,7 +271,7 @@ export function ClassyModelSelector({
         {...popoverProps}
         buttonClassName="rounded-xl bg-ui-controls/90 hover:bg-ui-controls text-left shadow-sm px-3 py-1 gap-3 border border-ui-controls-border"
         renderTrigger={(selectedItem) => {
-          const modelTitle = selectedItem?.label ?? "";
+          const modelTitle = selectedItem?.label ?? selectedModel?.selectorName ?? "";
           const providerIcon = selectedProvider
             ? getProviderIcon(selectedProvider)
             : null;

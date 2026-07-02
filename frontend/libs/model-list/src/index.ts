@@ -24,3 +24,5 @@ export * from "./lib/classes/Object3DModel.js";
 export * from "./lib/lists/Object3DModels.js";
 export * from "./lib/loader/modelReconciliation.js";
 export * from "./lib/loader/buildModelsFromListing.js";
+export * from "./lib/loader/imageModelFeatures.js";
+export * from "./lib/loader/videoModelFeatures.js";
