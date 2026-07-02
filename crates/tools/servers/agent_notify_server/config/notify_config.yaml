@@ -16,20 +16,20 @@
 
 # Paths can be absolute, or relative to this YAML file's directory.
 alert_beep_sound: test_beep.wav
-alert_done_sound: /Users/bt/dev/storyteller/artcraft/frontend/apps/artcraft/app/public/resources/sound/smrpg_flower.wav
-alert_await_user_input_sound: /Users/bt/dev/storyteller/artcraft/frontend/apps/artcraft/app/public/resources/sound/smrpg_ghost.wav
+alert_done_sound: ../../../../../frontend/apps/artcraft/app/public/resources/sound/smrpg_flower.wav
+alert_await_user_input_sound: ../../../../../frontend/apps/artcraft/app/public/resources/sound/smrpg_ghost.wav
 
 extra_alert_beep_sounds: []
 
 extra_alert_done_sounds:
-  - /Users/bt/dev/storyteller/artcraft/frontend/apps/artcraft/app/public/resources/sound/smrpg_specialflower.wav
-  - /Users/bt/dev/storyteller/artcraft/frontend/apps/artcraft/app/public/resources/sound/smrpg_correct.wav
-  - /Users/bt/dev/storyteller/artcraft/frontend/apps/artcraft/app/public/resources/sound/smrpg_character_extrapower.wav
+  - ../../../../../frontend/apps/artcraft/app/public/resources/sound/smrpg_specialflower.wav
+  - ../../../../../frontend/apps/artcraft/app/public/resources/sound/smrpg_correct.wav
+  - ../../../../../frontend/apps/artcraft/app/public/resources/sound/smrpg_character_extrapower.wav
 
 extra_alert_await_sounds:
-  - /Users/bt/dev/storyteller/artcraft/frontend/apps/artcraft/app/public/resources/sound/smrpg_wrong.wav
-  - /Users/bt/dev/storyteller/artcraft/frontend/apps/artcraft/app/public/resources/sound/smrpg_drybones_crumble.wav
-  - /Users/bt/dev/storyteller/artcraft/frontend/apps/artcraft/app/public/resources/sound/smrpg_enemy_spikethrow.wav
+  - ../../../../../frontend/apps/artcraft/app/public/resources/sound/smrpg_wrong.wav
+  - ../../../../../frontend/apps/artcraft/app/public/resources/sound/smrpg_drybones_crumble.wav
+  - ../../../../../frontend/apps/artcraft/app/public/resources/sound/smrpg_enemy_spikethrow.wav
 
 loop_alert_timeout_millis: 2000
 
