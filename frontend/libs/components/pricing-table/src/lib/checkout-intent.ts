@@ -30,7 +30,8 @@ export const checkoutIntentFromSearchParams = (
   if (!plan || !PAID_PLAN_SLUGS.has(plan)) {
     return null;
   }
-  const cadence = params.get(CADENCE_PARAM) === "monthly" ? "monthly" : "yearly";
+  const cadence =
+    params.get(CADENCE_PARAM) === "monthly" ? "monthly" : "yearly";
   return { plan, cadence };
 };
 

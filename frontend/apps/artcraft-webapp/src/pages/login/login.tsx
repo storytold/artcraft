@@ -9,11 +9,12 @@ import { Input } from "@storyteller/ui-input";
 import { useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { UsersApi } from "@storyteller/api";
+import { checkoutIntentFromSearchParams } from "@storyteller/ui-pricing-table";
 import {
-  checkoutIntentFromSearchParams,
-  redirectToCheckout,
-} from "@storyteller/ui-pricing-table";
-import { AuthHeader, AuthFooter, GoogleLoginButton } from "../../components/auth";
+  AuthHeader,
+  AuthFooter,
+  GoogleLoginButton,
+} from "../../components/auth";
 import Seo from "../../components/seo";
 import { Reveal, RevealGroup } from "../../components/motion/reveal";
 import { refreshSession } from "../../lib/session";
@@ -24,8 +25,9 @@ const Login = () => {
   const [searchParams] = useSearchParams();
   const fromParam = searchParams.get("from");
   const redirectTo = fromParam && fromParam.startsWith("/") ? fromParam : "/";
-  // Set when a pricing-page purchase click routed the user through auth;
-  // after login we resume Stripe checkout for that plan.
+  // Set when a pricing-page purchase click routed the user through auth.
+  // AuthLayout owns the Stripe redirect once loggedIn flips; this page just
+  // has to not navigate away in the meantime.
   const checkoutIntent = checkoutIntentFromSearchParams(searchParams);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -51,7 +53,7 @@ const Login = () => {
       // navigating — otherwise RequireAuth on the destination sees loggedIn=false
       // and bounces straight back to /login?from=…
       await refreshSession(true);
-      if (checkoutIntent && (await redirectToCheckout(checkoutIntent))) {
+      if (checkoutIntent) {
         return;
       }
       navigate(redirectTo);
@@ -67,7 +69,7 @@ const Login = () => {
       refreshSession(true),
       hasActiveSubscription(),
     ]);
-    if (checkoutIntent && (await redirectToCheckout(checkoutIntent))) {
+    if (checkoutIntent) {
       return;
     }
     navigate(subscribed ? redirectTo : "/pricing");
@@ -159,7 +161,10 @@ const Login = () => {
               disabled={isLoading}
             >
               {isLoading ? (
-                <FontAwesomeIcon icon={faSpinnerThird} className="animate-spin" />
+                <FontAwesomeIcon
+                  icon={faSpinnerThird}
+                  className="animate-spin"
+                />
               ) : (
                 "Log in"
               )}

@@ -1,8 +1,17 @@
-import { ReactNode } from "react";
-import { Outlet, useNavigate, Navigate } from "react-router-dom";
+import { ReactNode, useEffect, useRef } from "react";
+import {
+  Outlet,
+  useNavigate,
+  Navigate,
+  useSearchParams,
+} from "react-router-dom";
 import { faArrowLeft, faSpinnerThird } from "@fortawesome/pro-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { TruchetPattern } from "@storyteller/ui-vfx";
+import {
+  checkoutIntentFromSearchParams,
+  redirectToCheckout,
+} from "@storyteller/ui-pricing-table";
 import { AuthShowcase } from "./auth-showcase";
 import { useMediaQuery } from "../ui/use-media-query";
 import { useSession } from "../../lib/session";
@@ -21,13 +30,34 @@ export const AuthLayout = () => {
   const showShowcase = useMediaQuery("(min-width: 1024px)");
   const navigate = useNavigate();
   const { loggedIn, authChecked } = useSession();
+  const [searchParams] = useSearchParams();
+  // Set when a pricing-page purchase click routed the user through auth. The
+  // layout owns the Stripe redirect: as soon as the session flips to logged
+  // in (post signup/login, or arriving already signed in), it swaps the form
+  // for a spinner and sends the user to checkout, instead of bouncing home
+  // while the checkout session is still being created.
+  const checkoutIntent = checkoutIntentFromSearchParams(searchParams);
+  const startedCheckoutRef = useRef(false);
+
+  useEffect(() => {
+    if (!loggedIn || !checkoutIntent || startedCheckoutRef.current) {
+      return;
+    }
+    startedCheckoutRef.current = true;
+    redirectToCheckout(checkoutIntent).then((redirected) => {
+      if (!redirected) {
+        navigate("/", { replace: true });
+      }
+    });
+  }, [loggedIn, checkoutIntent, navigate]);
 
   const handleBack = () => {
     navigate("/");
   };
 
-  // Already signed in? Never show the auth form — go straight home.
-  if (loggedIn) {
+  // Already signed in? Never show the auth form — go straight home, unless a
+  // checkout redirect is pending (handled above).
+  if (loggedIn && !checkoutIntent) {
     return <Navigate to="/" replace />;
   }
 
@@ -74,7 +104,17 @@ export const AuthLayout = () => {
 
           <div className="flex flex-1 flex-col justify-center px-8 py-10 sm:px-10">
             <div className="mx-auto w-full max-w-sm">
-              {authChecked ? (
+              {loggedIn && checkoutIntent ? (
+                <div className="flex flex-col items-center gap-4 py-12 text-white/60">
+                  <FontAwesomeIcon
+                    icon={faSpinnerThird}
+                    className="animate-spin text-2xl text-white/40"
+                  />
+                  <span className="text-sm">
+                    Taking you to secure checkout…
+                  </span>
+                </div>
+              ) : authChecked ? (
                 <Outlet />
               ) : (
                 <div className="flex justify-center py-12">
