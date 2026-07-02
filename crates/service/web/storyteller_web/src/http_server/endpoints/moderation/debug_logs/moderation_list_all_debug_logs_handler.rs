@@ -4,9 +4,10 @@ use actix_web::web::Json;
 use actix_web::{web, HttpRequest};
 use log::warn;
 
+use artcraft_api_defs::moderation::debug_logs::debug_log_entry::ModerationDebugLogUser;
 use artcraft_api_defs::moderation::debug_logs::moderation_list_all_debug_logs::{
   ModerationListAllDebugLogsEntry, ModerationListAllDebugLogsQueryParams,
-  ModerationListAllDebugLogsSuccessResponse, ModerationListAllDebugLogsUser,
+  ModerationListAllDebugLogsSuccessResponse,
 };
 use mysql_queries::queries::debug_logs::list_all_debug_logs::{
   list_all_debug_logs, ListAllDebugLogsArgs,
@@ -58,7 +59,7 @@ pub async fn moderation_list_all_debug_logs_handler(
     // The join only yields user fields when the creator user exists.
     let maybe_user = match (row.maybe_creator_user_token.clone(), row.maybe_user_display_name, row.maybe_user_username, row.maybe_user_gravatar_hash) {
       (Some(user_token), Some(display_name), Some(username), Some(gravatar_hash)) => {
-        Some(ModerationListAllDebugLogsUser {
+        Some(ModerationDebugLogUser {
           user_token,
           display_name,
           username,

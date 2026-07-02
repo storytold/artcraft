@@ -8,6 +8,8 @@ use enums::error::enum_error::EnumError;
 use tokens::tokens::non_unique::debug_logs_event_token::DebugLogEventToken;
 use tokens::tokens::users::UserToken;
 
+use crate::moderation::debug_logs::debug_log_entry::ModerationDebugLogUser;
+
 pub const MODERATION_LIST_ALL_DEBUG_LOGS_PATH: &str = "/v1/moderation/debug_logs/list_all";
 
 // ── Query params ──
@@ -66,14 +68,5 @@ pub struct ModerationListAllDebugLogsEntry {
   pub maybe_creator_user_token: Option<UserToken>,
   pub message: String,
   pub created_at: DateTime<Utc>,
-  pub maybe_user: Option<ModerationListAllDebugLogsUser>,
-}
-
-/// The creator user of a debug log row.
-#[derive(Serialize, ToSchema)]
-pub struct ModerationListAllDebugLogsUser {
-  pub user_token: UserToken,
-  pub display_name: String,
-  pub username: String,
-  pub gravatar_hash: String,
+  pub maybe_user: Option<ModerationDebugLogUser>,
 }

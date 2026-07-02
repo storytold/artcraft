@@ -8,7 +8,7 @@ use tokens::tokens::non_unique::debug_logs_event_token::DebugLogEventToken;
 use tokens::tokens::users::UserToken;
 
 /// A single debug log row.
-/// Shared by the token-scoped and user-scoped moderation list endpoints.
+/// Shared by the moderation debug-log list endpoints.
 #[derive(Serialize, ToSchema)]
 pub struct ModerationDebugLogEntry {
   pub id: u64,
@@ -18,4 +18,15 @@ pub struct ModerationDebugLogEntry {
   pub maybe_creator_user_token: Option<UserToken>,
   pub message: String,
   pub created_at: DateTime<Utc>,
+  /// The creator user, joined in when the row has a user token.
+  pub maybe_user: Option<ModerationDebugLogUser>,
+}
+
+/// The creator user of a debug log row.
+#[derive(Serialize, ToSchema)]
+pub struct ModerationDebugLogUser {
+  pub user_token: UserToken,
+  pub display_name: String,
+  pub username: String,
+  pub gravatar_hash: String,
 }

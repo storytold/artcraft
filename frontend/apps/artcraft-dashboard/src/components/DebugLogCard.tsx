@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { humanize } from "@/lib/utils";
 import { RawTag } from "@/components/RawTag";
-import type { DebugLog, DebugLogUser } from "@/types";
+import type { DebugLog } from "@/types";
 import {
   IconCheck,
   IconChevronDown,
@@ -87,8 +87,6 @@ export interface DebugLogCardProps {
   log: DebugLog;
   copiedId: string | null;
   onCopy: (value: string, id: string) => void;
-  /** Joined creator user info (list-all page). */
-  maybeUser?: DebugLogUser | null;
   /** Show a direct link to the event's debug-logs page in the header row. */
   showEventLink?: boolean;
   /** Start expanded (defaults to true). */
@@ -101,11 +99,11 @@ export function DebugLogCard({
   log,
   copiedId,
   onCopy,
-  maybeUser,
   showEventLink = false,
   defaultExpanded = true,
   expandAll,
 }: DebugLogCardProps) {
+  const maybeUser = log.maybe_user;
   const [expanded, setExpanded] = useState(defaultExpanded);
 
   // Apply page-level expand/collapse-all; individual toggles keep working after.
@@ -219,17 +217,36 @@ export function DebugLogCard({
               </Link>
             </div>
             {log.maybe_creator_user_token && (
-              <Link
-                to={`/debug_logs/user/${encodeURIComponent(log.maybe_creator_user_token)}`}
-                className="inline-flex items-center gap-1.5 text-foreground/80 hover:text-foreground hover:underline min-w-0"
-                title="View this user's debug logs"
-              >
-                <IconUser className="size-3.5 shrink-0" />
-                {maybeUser && <span className="truncate">{maybeUser.display_name}</span>}
-                <span className="font-mono truncate">
-                  {log.maybe_creator_user_token}
-                </span>
-              </Link>
+              <span className="inline-flex items-center gap-3 min-w-0">
+                {maybeUser ? (
+                  <Link
+                    to={`/user/profile/${encodeURIComponent(maybeUser.username)}`}
+                    className="inline-flex items-center gap-1.5 text-foreground/80 hover:text-foreground hover:underline min-w-0"
+                    title="View profile"
+                  >
+                    <IconUser className="size-3.5 shrink-0" />
+                    <span className="truncate">{maybeUser.display_name}</span>
+                    <span className="font-mono truncate">
+                      {log.maybe_creator_user_token}
+                    </span>
+                  </Link>
+                ) : (
+                  <span className="inline-flex items-center gap-1.5 text-foreground/80 min-w-0">
+                    <IconUser className="size-3.5 shrink-0" />
+                    <span className="font-mono truncate">
+                      {log.maybe_creator_user_token}
+                    </span>
+                  </span>
+                )}
+                <Link
+                  to={`/debug_logs/user/${encodeURIComponent(log.maybe_creator_user_token)}`}
+                  className="inline-flex items-center gap-1 text-muted-foreground hover:text-foreground hover:underline shrink-0"
+                  title="View this user's debug logs"
+                >
+                  <IconListSearch className="size-3.5" />
+                  logs
+                </Link>
+              </span>
             )}
           </div>
           <PrettyPayload raw={log.message} />

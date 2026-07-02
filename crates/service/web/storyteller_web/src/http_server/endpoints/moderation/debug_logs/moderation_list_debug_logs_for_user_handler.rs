@@ -4,7 +4,7 @@ use actix_web::web::Json;
 use actix_web::{web, HttpRequest};
 use log::warn;
 
-use artcraft_api_defs::moderation::debug_logs::debug_log_entry::ModerationDebugLogEntry;
+use artcraft_api_defs::moderation::debug_logs::debug_log_entry::{ModerationDebugLogEntry, ModerationDebugLogUser};
 use artcraft_api_defs::moderation::debug_logs::moderation_list_debug_logs_for_user::{
   ModerationListDebugLogsForUserPathInfo, ModerationListDebugLogsForUserQueryParams,
   ModerationListDebugLogsForUserSuccessResponse,
@@ -53,6 +53,19 @@ pub async fn moderation_list_debug_logs_for_user_handler(
   })?;
 
   let debug_logs: Vec<ModerationDebugLogEntry> = result.debug_logs.into_iter().map(|row| {
+    // The join only yields user fields when the creator user exists.
+    let maybe_user = match (row.maybe_creator_user_token.clone(), row.maybe_user_display_name, row.maybe_user_username, row.maybe_user_gravatar_hash) {
+      (Some(user_token), Some(display_name), Some(username), Some(gravatar_hash)) => {
+        Some(ModerationDebugLogUser {
+          user_token,
+          display_name,
+          username,
+          gravatar_hash,
+        })
+      }
+      _ => None,
+    };
+
     ModerationDebugLogEntry {
       id: row.id,
       event_token: row.event_token,
@@ -61,6 +74,7 @@ pub async fn moderation_list_debug_logs_for_user_handler(
       maybe_creator_user_token: row.maybe_creator_user_token,
       message: row.message,
       created_at: row.created_at,
+      maybe_user,
     }
   }).collect();
 

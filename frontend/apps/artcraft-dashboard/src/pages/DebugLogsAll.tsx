@@ -269,7 +269,6 @@ export function DebugLogsAll() {
               log={log}
               copiedId={copiedId}
               onCopy={copy}
-              maybeUser={log.maybe_user}
               showEventLink
               defaultExpanded={false}
               expandAll={expandAll}

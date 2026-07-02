@@ -29,6 +29,11 @@ pub struct DebugLogRow {
   pub maybe_creator_user_token: Option<UserToken>,
   pub message: String,
   pub created_at: DateTime<Utc>,
+
+  // Joined user fields (present when the creator user exists).
+  pub maybe_user_display_name: Option<String>,
+  pub maybe_user_username: Option<String>,
+  pub maybe_user_gravatar_hash: Option<String>,
 }
 
 #[derive(Debug)]
@@ -40,6 +45,9 @@ struct RawDebugLogRow {
   maybe_creator_user_token: Option<UserToken>,
   message: String,
   created_at: NaiveDateTime,
+  maybe_user_display_name: Option<String>,
+  maybe_user_username: Option<String>,
+  maybe_user_gravatar_hash: Option<String>,
 }
 
 pub async fn list_debug_logs_for_token<'e, 'c: 'e, E>(
@@ -54,16 +62,21 @@ where
     RawDebugLogRow,
     r#"
 SELECT
-  id as `id: u64`,
-  event_token as `event_token: tokens::tokens::non_unique::debug_logs_event_token::DebugLogEventToken`,
-  debug_log_type as `debug_log_type: enums::by_table::debug_logs::debug_log_type::DebugLogType`,
-  maybe_log_level as `maybe_log_level: enums::by_table::debug_logs::debug_log_level::DebugLogLevel`,
-  maybe_creator_user_token as `maybe_creator_user_token: tokens::tokens::users::UserToken`,
-  message,
-  created_at
-FROM debug_logs
-WHERE event_token = ?
-ORDER BY id ASC
+  d.id as `id: u64`,
+  d.event_token as `event_token: tokens::tokens::non_unique::debug_logs_event_token::DebugLogEventToken`,
+  d.debug_log_type as `debug_log_type: enums::by_table::debug_logs::debug_log_type::DebugLogType`,
+  d.maybe_log_level as `maybe_log_level: enums::by_table::debug_logs::debug_log_level::DebugLogLevel`,
+  d.maybe_creator_user_token as `maybe_creator_user_token: tokens::tokens::users::UserToken`,
+  d.message,
+  d.created_at,
+  u.display_name as `maybe_user_display_name?`,
+  u.username as `maybe_user_username?`,
+  u.email_gravatar_hash as `maybe_user_gravatar_hash?`
+FROM debug_logs d
+LEFT OUTER JOIN users u
+  ON u.token = d.maybe_creator_user_token
+WHERE d.event_token = ?
+ORDER BY d.id ASC
 LIMIT ?
     "#,
     args.event_token.as_str(),
@@ -81,6 +94,9 @@ LIMIT ?
       maybe_creator_user_token: row.maybe_creator_user_token,
       message: row.message,
       created_at: row.created_at.and_utc(),
+      maybe_user_display_name: row.maybe_user_display_name,
+      maybe_user_username: row.maybe_user_username,
+      maybe_user_gravatar_hash: row.maybe_user_gravatar_hash,
     }
   }).collect();
 
