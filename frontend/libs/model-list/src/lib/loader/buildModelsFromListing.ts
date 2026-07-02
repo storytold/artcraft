@@ -76,43 +76,84 @@ export interface ListingVideoModel extends ListingModelBase {
 export const buildImageModelsFromListing = (
   overlay: ImageModel[],
   listing: ListingImageModel[],
+  offeredModelIds: string[] = [],
 ): ImageModel[] =>
-  build(overlay, listing, BACKEND_TO_TAURI_IMAGE_ID, mergedImageModel);
+  build(overlay, listing, offeredModelIds, BACKEND_TO_TAURI_IMAGE_ID, mergedImageModel);
 
 export const buildVideoModelsFromListing = (
   overlay: VideoModel[],
   listing: ListingVideoModel[],
+  offeredModelIds: string[] = [],
 ): VideoModel[] =>
-  build(overlay, listing, BACKEND_TO_TAURI_VIDEO_ID, mergedVideoModel);
+  build(overlay, listing, offeredModelIds, BACKEND_TO_TAURI_VIDEO_ID, mergedVideoModel);
 
 // ── Core assembly ──────────────────────────────────────────────────────────
 
+// Membership: a model appears in the picker when it is
+//   1. OFFERED by a provider in the response's `providers[]` (the backend's
+//      publish switch — `models[]` details also contain disabled entries and
+//      internal variants that must NOT surface), or
+//   2. an ENABLED `models[]` detail that the frontend knows (overlay entry) —
+//      covers desktop-native models like grok video that no backend provider
+//      offers yet, or
+//   3. a frontend-only overlay model the backend has never heard of
+//      (switch_x, inpaint models, …).
+// `models[]` details are the capability source either way (the enabled entry
+// wins when a model is detailed twice).
 const build = <T extends { tauriId: string }, L extends ListingModelBase>(
   overlay: T[],
   listing: L[],
+  offeredModelIds: string[],
   alias: Record<string, string>,
   merge: (m: L, tauriId: string, overlayEntry: T | undefined) => T,
 ): T[] => {
+  const toTauriId = (backendId: string) => alias[backendId] ?? backendId;
   const overlayByTauriId = new Map(overlay.map((m) => [m.tauriId, m]));
-  const knownTauriIds = new Set(listing.map((m) => alias[m.model] ?? m.model));
+  const knownTauriIds = new Set(listing.map((m) => toTauriId(m.model)));
+  const offeredTauriIds = new Set(offeredModelIds.map(toTauriId));
+
+  // Capability lookup — prefer the enabled detail entry when duplicated.
+  const detailsByTauriId = new Map<string, L>();
+  for (const m of listing) {
+    const tauriId = toTauriId(m.model);
+    const existing = detailsByTauriId.get(tauriId);
+    if (existing === undefined || existing.is_disabled === true) {
+      detailsByTauriId.set(tauriId, m);
+    }
+  }
 
   const result: T[] = [];
   const seenTauriIds = new Set<string>();
-  // Backend drives membership + order; every entry is rebuilt with API-first
-  // capabilities.
+  // Backend details order drives ordering.
   for (const m of listing) {
-    if (m.is_disabled === true) continue;
-    const tauriId = alias[m.model] ?? m.model;
-    // Guard: several backend ids aliasing to one frontend model would render
-    // duplicates — only surface the first.
+    const tauriId = toTauriId(m.model);
+    if (seenTauriIds.has(tauriId)) continue;
+
+    const overlayEntry = overlayByTauriId.get(tauriId);
+    const detail = detailsByTauriId.get(tauriId) ?? m;
+    const enabled = detail.is_disabled !== true;
+    const show =
+      offeredTauriIds.has(tauriId) || (enabled && overlayEntry !== undefined);
+    if (!show) continue;
+
+    seenTauriIds.add(tauriId);
+    result.push(merge(detail, tauriId, overlayEntry));
+  }
+  // Offered models with no detail entry at all (unusual, but the publish
+  // switch wins): surface minimally.
+  for (const backendId of offeredModelIds) {
+    const tauriId = toTauriId(backendId);
     if (seenTauriIds.has(tauriId)) continue;
     seenTauriIds.add(tauriId);
-    result.push(merge(m, tauriId, overlayByTauriId.get(tauriId)));
+    result.push(
+      merge({ model: backendId } as L, tauriId, overlayByTauriId.get(tauriId)),
+    );
   }
-  // Append frontend-only models the backend has never heard of (switch_x,
-  // inpaint models, …).
+  // Append frontend-only models the backend has never heard of.
   for (const m of overlay) {
-    if (!knownTauriIds.has(m.tauriId)) result.push(m);
+    if (!knownTauriIds.has(m.tauriId) && !seenTauriIds.has(m.tauriId)) {
+      result.push(m);
+    }
   }
   return result;
 };

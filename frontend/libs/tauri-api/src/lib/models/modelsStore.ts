@@ -47,8 +47,9 @@ export const useModelsStore = create<ModelsStoreState>((set, get) => ({
     const next: Partial<ModelsStoreState> = { isLoading: false, loaded: true };
 
     if (imageResult.status === "fulfilled") {
-      const { models } = imageResult.value.payload;
-      const built = buildImageModelsFromListing(IMAGE_MODELS, models);
+      const { models, providers } = imageResult.value.payload;
+      const offered = providers.flatMap((p) => p.models.map((pm) => pm.model));
+      const built = buildImageModelsFromListing(IMAGE_MODELS, models, offered);
       next.imageModels = built;
       console.log(
         `[models] image: backend returned ${models.length} → ${built.length} models shown`,
@@ -59,8 +60,9 @@ export const useModelsStore = create<ModelsStoreState>((set, get) => ({
     }
 
     if (videoResult.status === "fulfilled") {
-      const { models } = videoResult.value.payload;
-      const built = buildVideoModelsFromListing(VIDEO_MODELS, models);
+      const { models, providers } = videoResult.value.payload;
+      const offered = providers.flatMap((p) => p.models.map((pm) => pm.model));
+      const built = buildVideoModelsFromListing(VIDEO_MODELS, models, offered);
       next.videoModels = built;
       console.log(
         `[models] video: backend returned ${models.length} → ${built.length} models shown`,
