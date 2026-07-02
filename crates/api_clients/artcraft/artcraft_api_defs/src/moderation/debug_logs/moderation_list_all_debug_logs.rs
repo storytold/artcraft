@@ -66,6 +66,10 @@ pub struct ModerationListAllDebugLogsEntry {
   pub debug_log_type: DebugLogType,
   pub maybe_log_level: Option<DebugLogLevel>,
   pub maybe_creator_user_token: Option<UserToken>,
+  /// The client IP address of the request (if recorded).
+  pub maybe_ip_address: Option<String>,
+  /// The request URL (if recorded; truncated to 255 chars).
+  pub maybe_url: Option<String>,
   pub message: String,
   pub created_at: DateTime<Utc>,
   pub maybe_user: Option<ModerationDebugLogUser>,

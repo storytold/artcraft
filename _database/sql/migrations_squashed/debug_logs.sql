@@ -19,6 +19,12 @@ CREATE TABLE debug_logs (
   -- The user who created the log entry (if any).
   maybe_creator_user_token VARCHAR(32) DEFAULT NULL,
 
+  -- The client IP address of the request (if any). Wide enough for IPv6.
+  maybe_ip_address VARCHAR(40) DEFAULT NULL,
+
+  -- The request URL (if any). Truncated to 255 characters on insert.
+  maybe_url VARCHAR(255) DEFAULT NULL,
+
   -- The log message body.
   message MEDIUMTEXT NOT NULL,
 

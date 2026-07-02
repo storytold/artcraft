@@ -19,6 +19,12 @@ where
   /// The user associated with these debug log events (if any).
   pub maybe_creator_user_token: Option<&'e UserToken>,
 
+  /// The client IP address of the request (if any). Truncated on insert.
+  pub maybe_ip_address: Option<&'e str>,
+
+  /// The request URL (if any). Truncated to 255 characters on insert.
+  pub maybe_url: Option<&'e str>,
+
   /// The events to insert.
   pub events: Vec<DebugLogEvent>,
 
@@ -56,9 +62,11 @@ where
   }
 
   let maybe_user_token_str = args.maybe_creator_user_token.map(|t| t.as_str().to_string());
+  let maybe_ip_address = args.maybe_ip_address.map(|ip| truncate_chars(ip, MAX_IP_ADDRESS_CHARS));
+  let maybe_url = args.maybe_url.map(|url| truncate_chars(url, MAX_URL_CHARS));
 
   let mut query_builder = QueryBuilder::new(
-    "INSERT INTO debug_logs (event_token, debug_log_type, maybe_log_level, maybe_creator_user_token, message) VALUES "
+    "INSERT INTO debug_logs (event_token, debug_log_type, maybe_log_level, maybe_creator_user_token, maybe_ip_address, maybe_url, message) VALUES "
   );
 
   for (i, event) in args.events.iter().enumerate() {
@@ -70,6 +78,10 @@ where
     query_builder.push_bind(event.maybe_log_level.map(|l| l.to_str()));
     query_builder.push(", ");
     query_builder.push_bind(&maybe_user_token_str);
+    query_builder.push(", ");
+    query_builder.push_bind(maybe_ip_address);
+    query_builder.push(", ");
+    query_builder.push_bind(maybe_url);
     query_builder.push(", ");
     query_builder.push_bind(&event.message);
     query_builder.push(")");
@@ -84,4 +96,18 @@ where
     .await?;
 
   Ok(event_token)
+}
+
+/// Maximum stored length for `maybe_ip_address` (VARCHAR(40)).
+const MAX_IP_ADDRESS_CHARS: usize = 40;
+
+/// Maximum stored length for `maybe_url` (VARCHAR(255)).
+const MAX_URL_CHARS: usize = 255;
+
+/// Truncate to at most `max_chars` characters (UTF-8 safe).
+fn truncate_chars(value: &str, max_chars: usize) -> &str {
+  match value.char_indices().nth(max_chars) {
+    Some((idx, _)) => &value[..idx],
+    None => value,
+  }
 }

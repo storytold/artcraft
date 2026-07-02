@@ -71,6 +71,8 @@ pub async fn moderation_list_debug_logs_for_token_handler(
       debug_log_type: row.debug_log_type,
       maybe_log_level: row.maybe_log_level,
       maybe_creator_user_token: row.maybe_creator_user_token,
+      maybe_ip_address: row.maybe_ip_address,
+      maybe_url: row.maybe_url,
       message: row.message,
       created_at: row.created_at,
       maybe_user,

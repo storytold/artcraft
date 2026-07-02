@@ -13,6 +13,18 @@ import {
   IconUser,
 } from "@tabler/icons-react";
 
+/** Compact form for the header row, eg. "Jul 2, 18:02:47". */
+export function formatDebugLogDateTimeCompact(iso: string): string {
+  return new Date(iso).toLocaleString("en-US", {
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false,
+  });
+}
+
 export function formatDebugLogDateTime(iso: string): string {
   return new Date(iso).toLocaleString("en-US", {
     month: "short",
@@ -86,8 +98,6 @@ export interface DebugLogCardProps {
   log: DebugLog;
   copiedId: string | null;
   onCopy: (value: string, id: string) => void;
-  /** Show a direct link to the event's debug-logs page in the header row. */
-  showEventLink?: boolean;
   /** Start expanded (defaults to true). */
   defaultExpanded?: boolean;
   /** Expand/collapse-all broadcast from the page. */
@@ -98,7 +108,6 @@ export function DebugLogCard({
   log,
   copiedId,
   onCopy,
-  showEventLink = false,
   defaultExpanded = true,
   expandAll,
 }: DebugLogCardProps) {
@@ -135,48 +144,54 @@ export function DebugLogCard({
             {log.maybe_log_level.toUpperCase()}
           </Badge>
         )}
-        {showEventLink && (
+        <span className="text-xs text-muted-foreground tabular-nums whitespace-nowrap">
+          {formatDebugLogDateTimeCompact(log.created_at)}
+        </span>
+        {log.maybe_url && (
+          <span
+            className="font-mono text-xs text-muted-foreground truncate max-w-[18rem]"
+            title={log.maybe_url}
+          >
+            {log.maybe_url}
+          </span>
+        )}
+        {maybeUser && (
           <span
             className="inline-flex items-center min-w-0"
             onClick={(e) => e.stopPropagation()}
           >
             <Link
-              to={`/debug_logs/${encodeURIComponent(log.event_token)}`}
-              className="font-mono text-xs text-muted-foreground hover:text-foreground hover:underline truncate"
-              title={`View event ${log.event_token}`}
-            >
-              {log.event_token}
-            </Link>
-          </span>
-        )}
-        {maybeUser && (
-          <span
-            className="inline-flex items-center gap-1 text-xs text-muted-foreground min-w-0"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <Link
               to={`/user/profile/${encodeURIComponent(maybeUser.username)}`}
-              className="inline-flex items-center gap-1 hover:underline text-foreground/80 min-w-0"
+              className="inline-flex items-center gap-1 hover:underline text-foreground/80 text-xs min-w-0"
               title={maybeUser.username}
             >
               <IconUser className="size-3.5 shrink-0" />
               <span className="truncate">{maybeUser.display_name}</span>
             </Link>
-            <Link
-              to={`/debug_logs/user/${encodeURIComponent(maybeUser.user_token)}`}
-              className="inline-flex items-center gap-1 text-muted-foreground hover:text-foreground shrink-0 hover:underline"
-              title="View this user's debug logs"
-            >
-              <IconListSearch className="size-3.5" />
-              logs
-            </Link>
           </span>
         )}
-        <span className="text-xs text-muted-foreground tabular-nums whitespace-nowrap">
-          {formatDebugLogDateTime(log.created_at)}
-        </span>
-        <span className="text-xs text-muted-foreground/60 font-mono ml-auto">
-          #{log.id}
+        {log.maybe_ip_address && (
+          <span
+            className="font-mono text-xs text-muted-foreground truncate min-w-0 max-w-[10rem]"
+            title={log.maybe_ip_address}
+          >
+            {log.maybe_ip_address}
+          </span>
+        )}
+        <span
+          className="ml-auto inline-flex items-center gap-1.5 min-w-0"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <Link
+            to={`/debug_logs/${encodeURIComponent(log.event_token)}`}
+            className="font-mono text-xs text-muted-foreground hover:text-foreground hover:underline truncate"
+            title={`View event ${log.event_token}`}
+          >
+            {log.event_token}
+          </Link>
+          <span className="text-xs text-muted-foreground/60 font-mono whitespace-nowrap">
+            (#{log.id})
+          </span>
         </span>
         <span
           className="ml-2 inline-flex items-center"
@@ -202,40 +217,53 @@ export function DebugLogCard({
 
       {expanded && (
         <div className="border-t border-border/50 p-4 flex flex-col gap-3">
-          <div className="flex flex-wrap gap-x-6 gap-y-1 text-xs text-muted-foreground">
-            <div>
-              <span className="uppercase tracking-wider font-medium">
-                Event:
-              </span>{" "}
-              <Link
-                to={`/debug_logs/${encodeURIComponent(log.event_token)}`}
-                className="font-mono text-foreground/80 hover:underline"
-              >
-                {log.event_token}
-              </Link>
-            </div>
-            {log.maybe_creator_user_token && (
-              <span className="inline-flex items-center gap-3 min-w-0">
-                <button
-                  type="button"
-                  onClick={() =>
-                    onCopy(log.maybe_creator_user_token!, `user_token_${log.id}`)
-                  }
-                  className="inline-flex items-center gap-1 text-muted-foreground hover:text-foreground cursor-pointer min-w-0"
-                  title="Copy user token"
-                >
-                  <span className="whitespace-nowrap">user token:</span>
-                  <span className="font-mono truncate">
-                    {log.maybe_creator_user_token}
-                  </span>
-                  {copiedId === `user_token_${log.id}` ? (
-                    <IconCheck className="size-3 shrink-0 text-emerald-400" />
-                  ) : (
-                    <IconCopy className="size-3 shrink-0 opacity-60" />
-                  )}
-                </button>
-                <span className="text-muted-foreground/40">|</span>
-                {maybeUser && (
+          {/* Line 1: timestamp, path, ip, event token — all click-to-copy. */}
+          <div className="flex flex-wrap items-center gap-x-6 gap-y-1 text-xs text-muted-foreground">
+            <span className="tabular-nums whitespace-nowrap">
+              {formatDebugLogDateTime(log.created_at)}
+            </span>
+            {log.maybe_url && (
+              <CopyText
+                label="Path:"
+                value={log.maybe_url}
+                display={log.maybe_url}
+                copyKey={`url_${log.id}`}
+                copiedId={copiedId}
+                onCopy={onCopy}
+                title="Copy URL"
+                className="font-mono truncate max-w-[32rem]"
+              />
+            )}
+            {log.maybe_ip_address && (
+              <CopyText
+                label="IP:"
+                value={log.maybe_ip_address}
+                display={log.maybe_ip_address}
+                copyKey={`ip_${log.id}`}
+                copiedId={copiedId}
+                onCopy={onCopy}
+                title="Copy IP address"
+                className="font-mono truncate max-w-[16rem]"
+              />
+            )}
+            <CopyText
+              label="Event Token:"
+              value={log.event_token}
+              display={log.event_token}
+              copyKey={`event_${log.id}`}
+              copiedId={copiedId}
+              onCopy={onCopy}
+              title="Copy event token"
+              className="font-mono truncate"
+            />
+          </div>
+
+          {/* Line 2: the user and their event logs. */}
+          {log.maybe_creator_user_token && (
+            <div className="flex flex-wrap items-center gap-x-6 gap-y-1 text-xs text-muted-foreground">
+              <span className="inline-flex items-center gap-1.5 min-w-0">
+                <span className="whitespace-nowrap">User:</span>
+                {maybeUser ? (
                   <Link
                     to={`/user/profile/${encodeURIComponent(maybeUser.username)}`}
                     className="inline-flex items-center gap-1.5 text-foreground/80 hover:text-foreground hover:underline min-w-0"
@@ -244,22 +272,79 @@ export function DebugLogCard({
                     <IconUser className="size-3.5 shrink-0" />
                     <span className="truncate">{maybeUser.display_name}</span>
                   </Link>
+                ) : (
+                  <CopyText
+                    value={log.maybe_creator_user_token}
+                    display={log.maybe_creator_user_token}
+                    copyKey={`user_token_${log.id}`}
+                    copiedId={copiedId}
+                    onCopy={onCopy}
+                    title="Copy user token"
+                    className="font-mono truncate"
+                    icon={<IconUser className="size-3.5 shrink-0" />}
+                  />
                 )}
-                <Link
-                  to={`/debug_logs/user/${encodeURIComponent(log.maybe_creator_user_token)}`}
-                  className="inline-flex items-center gap-1 text-muted-foreground hover:text-foreground hover:underline shrink-0"
-                  title="View this user's debug logs"
-                >
-                  <IconListSearch className="size-3.5" />
-                  logs
-                </Link>
               </span>
-            )}
-          </div>
+              <Link
+                to={`/debug_logs/user/${encodeURIComponent(log.maybe_creator_user_token)}`}
+                className="inline-flex items-center gap-1 hover:text-foreground hover:underline shrink-0"
+                title="View this user's debug logs"
+              >
+                <IconListSearch className="size-3.5" />
+                user event logs
+              </Link>
+            </div>
+          )}
           <PrettyPayload raw={log.message} />
         </div>
       )}
     </div>
+  );
+}
+
+
+interface CopyTextProps {
+  /** Optional label rendered before the value, eg. "Path:". */
+  label?: string;
+  /** The raw value copied to the clipboard. */
+  value: string;
+  /** The rendered text (may differ from the copied value). */
+  display: string;
+  copyKey: string;
+  copiedId: string | null;
+  onCopy: (value: string, id: string) => void;
+  title: string;
+  className?: string;
+  icon?: React.ReactNode;
+}
+
+function CopyText({
+  label,
+  value,
+  display,
+  copyKey,
+  copiedId,
+  onCopy,
+  title,
+  className,
+  icon,
+}: CopyTextProps) {
+  return (
+    <button
+      type="button"
+      onClick={() => onCopy(value, copyKey)}
+      className="inline-flex items-center gap-1 hover:text-foreground cursor-pointer min-w-0"
+      title={title}
+    >
+      {label && <span className="whitespace-nowrap">{label}</span>}
+      {icon}
+      <span className={className}>{display}</span>
+      {copiedId === copyKey ? (
+        <IconCheck className="size-3 shrink-0 text-emerald-400" />
+      ) : (
+        <IconCopy className="size-3 shrink-0 opacity-60" />
+      )}
+    </button>
   );
 }
 

@@ -1,6 +1,6 @@
 {
   "db_name": "MySQL",
-  "query": "\nSELECT\n  d.id as `id: u64`,\n  d.event_token as `event_token: tokens::tokens::non_unique::debug_logs_event_token::DebugLogEventToken`,\n  d.debug_log_type as `debug_log_type: enums::by_table::debug_logs::debug_log_type::DebugLogType`,\n  d.maybe_log_level as `maybe_log_level: enums::by_table::debug_logs::debug_log_level::DebugLogLevel`,\n  d.maybe_creator_user_token as `maybe_creator_user_token: tokens::tokens::users::UserToken`,\n  d.message,\n  d.created_at,\n  u.display_name as `maybe_user_display_name?`,\n  u.username as `maybe_user_username?`,\n  u.email_gravatar_hash as `maybe_user_gravatar_hash?`\nFROM debug_logs d\nLEFT OUTER JOIN users u\n  ON u.token = d.maybe_creator_user_token\nWHERE d.event_token = ?\nORDER BY d.id ASC\nLIMIT ?\n    ",
+  "query": "\nSELECT\n  d.id as `id: u64`,\n  d.event_token as `event_token: tokens::tokens::non_unique::debug_logs_event_token::DebugLogEventToken`,\n  d.debug_log_type as `debug_log_type: enums::by_table::debug_logs::debug_log_type::DebugLogType`,\n  d.maybe_log_level as `maybe_log_level: enums::by_table::debug_logs::debug_log_level::DebugLogLevel`,\n  d.maybe_creator_user_token as `maybe_creator_user_token: tokens::tokens::users::UserToken`,\n  d.maybe_ip_address,\n  d.maybe_url,\n  d.message,\n  d.created_at,\n  u.display_name as `maybe_user_display_name?`,\n  u.username as `maybe_user_username?`,\n  u.email_gravatar_hash as `maybe_user_gravatar_hash?`\nFROM debug_logs d\nLEFT OUTER JOIN users u\n  ON u.token = d.maybe_creator_user_token\nWHERE d.maybe_creator_user_token = ?\n  AND d.id < ?\nORDER BY d.id DESC\nLIMIT ?\n    ",
   "describe": {
     "columns": [
       {
@@ -55,6 +55,26 @@
       },
       {
         "ordinal": 5,
+        "name": "maybe_ip_address",
+        "type_info": {
+          "type": "VarString",
+          "flags": "BINARY",
+          "char_set": 224,
+          "max_size": 160
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "maybe_url",
+        "type_info": {
+          "type": "VarString",
+          "flags": "BINARY",
+          "char_set": 224,
+          "max_size": 1020
+        }
+      },
+      {
+        "ordinal": 7,
         "name": "message",
         "type_info": {
           "type": "Blob",
@@ -64,7 +84,7 @@
         }
       },
       {
-        "ordinal": 6,
+        "ordinal": 8,
         "name": "created_at",
         "type_info": {
           "type": "Datetime",
@@ -74,7 +94,7 @@
         }
       },
       {
-        "ordinal": 7,
+        "ordinal": 9,
         "name": "maybe_user_display_name?",
         "type_info": {
           "type": "VarString",
@@ -84,7 +104,7 @@
         }
       },
       {
-        "ordinal": 8,
+        "ordinal": 10,
         "name": "maybe_user_username?",
         "type_info": {
           "type": "VarString",
@@ -94,7 +114,7 @@
         }
       },
       {
-        "ordinal": 9,
+        "ordinal": 11,
         "name": "maybe_user_gravatar_hash?",
         "type_info": {
           "type": "String",
@@ -105,12 +125,14 @@
       }
     ],
     "parameters": {
-      "Right": 2
+      "Right": 3
     },
     "nullable": [
       false,
       false,
       false,
+      true,
+      true,
       true,
       true,
       false,
@@ -120,5 +142,5 @@
       true
     ]
   },
-  "hash": "ae311f7fde7c73f166cd8c0a5c9965850e314936a401b24a3900585ab53a7db6"
+  "hash": "d1ade7fcfd3efac1cd3163c392110327bb73edb74fa0d9693fee5feddb8a3223"
 }

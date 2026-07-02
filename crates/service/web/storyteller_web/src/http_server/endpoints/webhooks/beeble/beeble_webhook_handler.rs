@@ -102,6 +102,8 @@ pub async fn beeble_webhook_handler(
       maybe_creator_user_token: job.maybe_creator_user_token.as_ref(),
       debug_log_type: DebugLogType::BeebleWebhook,
       maybe_log_level: None,
+      maybe_ip_address: None,
+      maybe_url: None,
       message: &raw_body,
       mysql_executor: &mut *mysql_connection,
       phantom: Default::default(),
