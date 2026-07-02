@@ -9,19 +9,31 @@ use tokens::tokens::non_unique::debug_logs_event_token::DebugLogEventToken;
 use tokens::tokens::users::UserToken;
 
 const DEFAULT_LIMIT: u32 = 50;
+const MAX_LIMIT: u32 = 200;
 
-pub struct ListDebugLogsForTokenArgs<'e, 'c, E>
+pub struct ListDebugLogsForUserArgs<'e, 'c, E>
 where
   E: 'e + Executor<'c, Database = MySql>,
 {
-  pub event_token: &'e DebugLogEventToken,
+  pub user_token: &'e UserToken,
+
+  /// Cursor for pagination: only rows with `id` strictly below this are
+  /// returned. Pass the `next_cursor` from a previous page.
+  pub maybe_id_cursor: Option<u64>,
+
   pub limit: Option<u32>,
   pub mysql_executor: E,
   pub phantom: PhantomData<&'c E>,
 }
 
+pub struct ListDebugLogsForUserResult {
+  pub debug_logs: Vec<UserDebugLogRow>,
+  /// Cursor for the next page. `None` if there are no more results.
+  pub next_cursor: Option<u64>,
+}
+
 #[derive(Debug)]
-pub struct DebugLogRow {
+pub struct UserDebugLogRow {
   pub id: u64,
   pub event_token: DebugLogEventToken,
   pub debug_log_type: DebugLogType,
@@ -37,7 +49,7 @@ pub struct DebugLogRow {
 }
 
 #[derive(Debug)]
-struct RawDebugLogRow {
+struct RawUserDebugLogRow {
   id: u64,
   event_token: DebugLogEventToken,
   debug_log_type: DebugLogType,
@@ -50,16 +62,22 @@ struct RawDebugLogRow {
   maybe_user_gravatar_hash: Option<String>,
 }
 
-pub async fn list_debug_logs_for_token<'e, 'c: 'e, E>(
-  args: ListDebugLogsForTokenArgs<'e, 'c, E>,
-) -> Result<Vec<DebugLogRow>, sqlx::Error>
+/// List debug logs for a user, most recent first, cursor-paginated by `id`.
+pub async fn list_debug_logs_for_user<'e, 'c: 'e, E>(
+  args: ListDebugLogsForUserArgs<'e, 'c, E>,
+) -> Result<ListDebugLogsForUserResult, sqlx::Error>
 where
   E: 'e + Executor<'c, Database = MySql>,
 {
-  let limit = args.limit.unwrap_or(DEFAULT_LIMIT).min(200) as i64;
+  let limit = args.limit.unwrap_or(DEFAULT_LIMIT).min(MAX_LIMIT);
+  // Fetch limit + 1 so we can detect whether there's a next page.
+  let fetch_limit = (limit + 1) as i64;
+
+  // Use u64::MAX when no cursor so all rows are included.
+  let id_cursor = args.maybe_id_cursor.unwrap_or(u64::MAX);
 
   let rows = sqlx::query_as!(
-    RawDebugLogRow,
+    RawUserDebugLogRow,
     r#"
 SELECT
   d.id as `id: u64`,
@@ -75,18 +93,20 @@ SELECT
 FROM debug_logs d
 LEFT OUTER JOIN users u
   ON u.token = d.maybe_creator_user_token
-WHERE d.event_token = ?
-ORDER BY d.id ASC
+WHERE d.maybe_creator_user_token = ?
+  AND d.id < ?
+ORDER BY d.id DESC
 LIMIT ?
     "#,
-    args.event_token.as_str(),
-    limit,
+    args.user_token.as_str(),
+    id_cursor,
+    fetch_limit,
   )
     .fetch_all(args.mysql_executor)
     .await?;
 
-  let results = rows.into_iter().map(|row| {
-    DebugLogRow {
+  let mut debug_logs: Vec<UserDebugLogRow> = rows.into_iter().map(|row| {
+    UserDebugLogRow {
       id: row.id,
       event_token: row.event_token,
       debug_log_type: row.debug_log_type,
@@ -100,5 +120,15 @@ LIMIT ?
     }
   }).collect();
 
-  Ok(results)
+  let next_cursor = if debug_logs.len() > limit as usize {
+    debug_logs.truncate(limit as usize);
+    debug_logs.last().map(|row| row.id)
+  } else {
+    None
+  };
+
+  Ok(ListDebugLogsForUserResult {
+    debug_logs,
+    next_cursor,
+  })
 }

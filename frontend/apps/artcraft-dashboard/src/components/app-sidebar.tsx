@@ -71,8 +71,8 @@ const data = {
       label: "Oncall",
       items: [
         { title: "Page Oncall", url: "/send-pager", icon: IconBellRinging },
+        { title: "Debug Logs", url: "/debug_logs/list", icon: IconBug },
         { title: "Search Job by Token", url: "/moderation/job-search", icon: IconBriefcase },
-        { title: "Search Debug Logs", url: "/moderation/debug-logs-search", icon: IconBug },
         { title: "Impersonation Logs", url: "/impersonation", icon: IconKey },
         { title: "Staff Audit Logs", url: "/staff-audit-logs", icon: IconClipboardList },
         { title: "Feature Flags", url: "/feature-flags", icon: IconFlag },

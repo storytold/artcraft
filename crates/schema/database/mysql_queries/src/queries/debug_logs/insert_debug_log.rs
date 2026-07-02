@@ -2,6 +2,7 @@ use std::marker::PhantomData;
 
 use sqlx::{Executor, MySql};
 
+use enums::by_table::debug_logs::debug_log_level::DebugLogLevel;
 use enums::by_table::debug_logs::debug_log_type::DebugLogType;
 use tokens::tokens::non_unique::debug_logs_event_token::DebugLogEventToken;
 use tokens::tokens::users::UserToken;
@@ -19,6 +20,9 @@ where
 
   /// The type of debug log event.
   pub debug_log_type: DebugLogType,
+
+  /// The severity level of the log event (if any).
+  pub maybe_log_level: Option<DebugLogLevel>,
 
   /// The log message body (pre-serialized JSON or any text).
   pub message: &'e str,
@@ -47,11 +51,13 @@ INSERT INTO debug_logs
 SET
   event_token = ?,
   debug_log_type = ?,
+  maybe_log_level = ?,
   maybe_creator_user_token = ?,
   message = ?
     "#,
     event_token.as_str(),
     args.debug_log_type.to_str(),
+    args.maybe_log_level.map(|l| l.to_str()),
     args.maybe_creator_user_token.map(|t| t.as_str()),
     args.message,
   )

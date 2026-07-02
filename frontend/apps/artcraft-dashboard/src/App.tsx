@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate, useLocation, useSearchParams } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation, useSearchParams, useParams } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
 import { DashboardLayout } from "@/layouts/DashboardLayout";
 import { LoginPage } from "@/pages/Login";
@@ -22,6 +22,8 @@ import { UserReferrals } from "@/pages/UserReferrals";
 import { JobInfo } from "@/pages/JobInfo";
 import { JobTokenSearch } from "@/pages/JobTokenSearch";
 import { DebugLogs } from "@/pages/DebugLogs";
+import { DebugLogsAll } from "@/pages/DebugLogsAll";
+import { UserDebugLogs } from "@/pages/UserDebugLogs";
 import { DebugLogsSearch } from "@/pages/DebugLogsSearch";
 import { SpendEvents } from "@/pages/SpendEvents";
 import { ReengagementList } from "@/pages/ReengagementList";
@@ -84,9 +86,13 @@ function AppRoutes() {
           path="moderation/debug-logs-search"
           element={<DebugLogsSearch />}
         />
+        <Route path="debug_logs/list" element={<DebugLogsAll />} />
+        <Route path="debug_logs/user/:userToken" element={<UserDebugLogs />} />
+        <Route path="debug_logs/:eventToken" element={<DebugLogs />} />
+        {/* Legacy URL — redirect old links/bookmarks to the new path. */}
         <Route
           path="moderation/debug-logs/:eventToken"
-          element={<DebugLogs />}
+          element={<LegacyDebugLogsRedirect />}
         />
       </Route>
 
@@ -109,3 +115,10 @@ function App() {
 }
 
 export default App;
+
+function LegacyDebugLogsRedirect() {
+  const { eventToken } = useParams<{ eventToken: string }>();
+  return (
+    <Navigate to={`/debug_logs/${encodeURIComponent(eventToken || "")}`} replace />
+  );
+}

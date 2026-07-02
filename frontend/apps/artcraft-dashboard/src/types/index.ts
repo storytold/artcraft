@@ -111,14 +111,34 @@ export type DebugLogType =
   | "kinovi_request"
   | (string & {});
 
+export type DebugLogLevel =
+  | "info"
+  | "warn"
+  | "error"
+  | "debug"
+  | "trace"
+  | (string & {});
+
 export interface DebugLog {
   created_at: string;
   debug_log_type: DebugLogType;
   event_token: string;
   id: number;
+  maybe_log_level: DebugLogLevel | null;
   maybe_creator_user_token: string | null;
   message: string;
+  maybe_user: DebugLogUser | null;
 }
+
+/** Creator user info joined onto a debug log row. */
+export interface DebugLogUser {
+  user_token: string;
+  display_name: string;
+  username: string;
+  gravatar_hash: string;
+}
+
+export type AllDebugLog = DebugLog;
 
 export interface SignupUser {
   created_at: string;

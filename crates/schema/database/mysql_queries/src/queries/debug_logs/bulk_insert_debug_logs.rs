@@ -3,6 +3,7 @@ use std::marker::PhantomData;
 use log::warn;
 use sqlx::{Executor, MySql, QueryBuilder};
 
+use enums::by_table::debug_logs::debug_log_level::DebugLogLevel;
 use enums::by_table::debug_logs::debug_log_type::DebugLogType;
 use tokens::tokens::non_unique::debug_logs_event_token::DebugLogEventToken;
 use tokens::tokens::users::UserToken;
@@ -31,6 +32,7 @@ where
 /// Callers should use `serde_json::to_string(...)` before constructing this.
 pub struct DebugLogEvent {
   pub debug_log_type: DebugLogType,
+  pub maybe_log_level: Option<DebugLogLevel>,
   pub message: String,
 }
 
@@ -56,7 +58,7 @@ where
   let maybe_user_token_str = args.maybe_creator_user_token.map(|t| t.as_str().to_string());
 
   let mut query_builder = QueryBuilder::new(
-    "INSERT INTO debug_logs (event_token, debug_log_type, maybe_creator_user_token, message) VALUES "
+    "INSERT INTO debug_logs (event_token, debug_log_type, maybe_log_level, maybe_creator_user_token, message) VALUES "
   );
 
   for (i, event) in args.events.iter().enumerate() {
@@ -64,6 +66,8 @@ where
     query_builder.push_bind(event_token.as_str());
     query_builder.push(", ");
     query_builder.push_bind(event.debug_log_type.to_str());
+    query_builder.push(", ");
+    query_builder.push_bind(event.maybe_log_level.map(|l| l.to_str()));
     query_builder.push(", ");
     query_builder.push_bind(&maybe_user_token_str);
     query_builder.push(", ");
