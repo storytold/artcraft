@@ -3,6 +3,9 @@ use std::sync::Arc;
 use crate::billing::wallets::attempt_wallet_deduction::attempt_wallet_deduction_else_common_web_error;
 use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::common_responses::media::media_links_builder::MediaLinksBuilder;
+use crate::http_server::endpoints::generate::common::generation_debug_logs::{
+  insert_generation_failure_debug_log, insert_generation_request_debug_log,
+};
 use crate::http_server::endpoints::generate::common::payments_error_test::payments_error_test;
 use crate::http_server::endpoints::media_files::helpers::get_media_domain::get_media_domain;
 use crate::http_server::validations::validate_idempotency_token_format::validate_idempotency_token_format;
@@ -38,6 +41,7 @@ use mysql_queries::queries::media_files::get::get_media_file::{get_media_file, g
 use mysql_queries::queries::prompts::insert_prompt::{insert_prompt, InsertPromptArgs};
 use sqlx::Acquire;
 use tokens::tokens::generic_inference_jobs::InferenceJobToken;
+use tokens::tokens::non_unique::debug_logs_event_token::DebugLogEventToken;
 use utoipa::ToSchema;
 
 /// Seedance 1.0 Lite Image to Video
@@ -83,6 +87,21 @@ pub async fn generate_seedance_1_0_lite_image_to_video_handler(
       return Err(CommonWebError::NotAuthorized);
     }
   };
+
+  // ==================== DEBUG LOG: HTTP REQUEST ==================== //
+
+  let debug_log_event_token = DebugLogEventToken::generate();
+  let ip_address = get_request_ip(&http_request);
+  let request_url = http_request.uri().to_string();
+
+  insert_generation_request_debug_log(
+    &debug_log_event_token,
+    user_token,
+    &ip_address,
+    &request_url,
+    &serde_json::to_string(&*request).unwrap_or_default(),
+    &mut *mysql_connection,
+  ).await;
 
   let start_frame_media_file_token = match &request.media_file_token {
     Some(token) => token,
@@ -208,12 +227,21 @@ pub async fn generate_seedance_1_0_lite_image_to_video_handler(
     api_key: &server_state.inference_providers.fal.api_key,
   };
 
-  let fal_result = enqueue_seedance_1_lite_image_to_video_webhook(args)
-      .await
-      .map_err(|err| {
-        warn!("Error calling enqueue_seedance_1_lite_image_to_video_webhook: {:?}", err);
-        CommonWebError::from_error(err)
-      })?;
+  let fal_result = match enqueue_seedance_1_lite_image_to_video_webhook(args).await {
+    Ok(result) => result,
+    Err(err) => {
+      warn!("Error calling enqueue_seedance_1_lite_image_to_video_webhook: {:?}", err);
+      insert_generation_failure_debug_log(
+        &debug_log_event_token,
+        user_token,
+        &ip_address,
+        &request_url,
+        &format!("Seedance 1.0 Lite generation failed: {:?}", err),
+        &mut *mysql_connection,
+      ).await;
+      return Err(CommonWebError::from_error(err));
+    }
+  };
 
   let external_job_id = fal_result.request_id
       .ok_or_else(|| {
@@ -223,8 +251,6 @@ pub async fn generate_seedance_1_0_lite_image_to_video_handler(
   
   info!("Fal request_id: {}", external_job_id);
   
-  let ip_address = get_request_ip(&http_request);
-
   let mut transaction = mysql_connection
       .begin()
       .await
@@ -294,7 +320,7 @@ pub async fn generate_seedance_1_0_lite_image_to_video_handler(
     starting_job_status_override: None,
     maybe_frontend_failure_category: None,
     maybe_failure_reason: None,
-      maybe_debug_log_event_token: None,
+    maybe_debug_log_event_token: Some(&debug_log_event_token),
     phantom: Default::default(),
   }).await;
 
