@@ -8,6 +8,9 @@ use crate::http_server::endpoints::generate::common::map_seedance2pro_web_errors
 use crate::http_server::endpoints::generate::common::generation_debug_logs::{
   insert_generation_failure_debug_log, insert_generation_request_debug_log,
 };
+use enums::by_table::debug_logs::debug_log_level::DebugLogLevel;
+use enums::by_table::debug_logs::debug_log_type::DebugLogType;
+use mysql_queries::queries::debug_logs::insert_debug_log::{insert_debug_log, InsertDebugLogArgs};
 use crate::http_server::endpoints::generate::common::payments_error_test::payments_error_test;
 use crate::http_server::user_lookup::user_session::session_utils::lookup::user_session_feature_flags::UserSessionFeatureFlags;
 use crate::http_server::validations::validate_idempotency_token_format::validate_idempotency_token_format;
@@ -53,6 +56,7 @@ use tokens::tokens::characters::CharacterToken;
 use tokens::tokens::generic_inference_jobs::InferenceJobToken;
 use tokens::tokens::media_files::MediaFileToken;
 use tokens::tokens::non_unique::debug_logs_event_token::DebugLogEventToken;
+use tokens::tokens::users::UserToken;
 
 use url::Url;
 use url_utils::extension::extract_extension_from_url::{extract_extension_from_url, ExtractExtensions};
@@ -63,6 +67,14 @@ use url_utils::extension::extract_extension_from_url::{extract_extension_from_ur
 struct SeedanceGenerationResult {
   gen_response: GenerateVideoResponse,
   generation_mode: CommonGenerationMode,
+}
+
+/// Request-scoped context for writing `debug_logs` rows.
+struct DebugLogContext<'a> {
+  event_token: &'a DebugLogEventToken,
+  user_token: &'a UserToken,
+  ip_address: &'a str,
+  request_url: &'a str,
 }
 
 // ======================== Handler ========================
@@ -127,6 +139,13 @@ pub async fn seedance_2p0_multi_function_video_gen_handler(
     &serde_json::to_string(&*request).unwrap_or_default(),
     &mut *mysql_connection,
   ).await;
+
+  let debug_log_context = DebugLogContext {
+    event_token: &debug_log_event_token,
+    user_token,
+    ip_address: &ip_address,
+    request_url: &request_url,
+  };
 
   if let Err(reason) = validate_idempotency_token_format(&request.uuid_idempotency_token) {
     return Err(CommonWebError::BadInputWithSimpleMessage(reason));
@@ -223,6 +242,8 @@ pub async fn seedance_2p0_multi_function_video_gen_handler(
       batch_count,
       duration_seconds,
       kinovi_character_ids.clone(),
+      &debug_log_context,
+      &mut mysql_connection,
     ).await;
 
     match result {
@@ -246,6 +267,8 @@ pub async fn seedance_2p0_multi_function_video_gen_handler(
           batch_count,
           duration_seconds,
           kinovi_character_ids.clone(),
+          &debug_log_context,
+          &mut mysql_connection,
         ).await;
 
         match result {
@@ -298,6 +321,8 @@ pub async fn seedance_2p0_multi_function_video_gen_handler(
       batch_count,
       duration_seconds,
       kinovi_character_ids,
+      &debug_log_context,
+      &mut mysql_connection,
     ).await;
 
     match result {
@@ -577,6 +602,8 @@ async fn upload_and_generate(
   batch_count: KinoviBatchCount,
   duration_seconds: u8,
   kinovi_character_ids: Option<Vec<String>>,
+  debug_log_context: &DebugLogContext<'_>,
+  mysql_connection: &mut sqlx::pool::PoolConnection<MySql>,
 ) -> Result<SeedanceGenerationResult, CommonWebError> {
 
   // --- Upload files to seedance2pro CDN ---
@@ -639,24 +666,44 @@ async fn upload_and_generate(
 
   let prompt = request.prompt.clone().unwrap_or_else(|| "".to_string());
 
+  let kinovi_request = KinoviGenerateVideoRequest {
+    model_type: KinoviModelType::Seedance2Pro,
+    prompt,
+    aspect_ratio,
+    output_resolution,
+    duration_seconds,
+    batch_count,
+    start_frame_url,
+    end_frame_url,
+    reference_image_urls,
+    reference_video_urls,
+    reference_audio_urls,
+    character_ids: kinovi_character_ids,
+    use_face_blur_hack: None,
+  };
+
+  // ==================== DEBUG LOG: KINOVI REQUEST ==================== //
+  // Logged BEFORE the send so the outbound payload is captured even when
+  // the generation call fails.
+
+  if let Err(err) = insert_debug_log(InsertDebugLogArgs {
+    apriori_debug_log_event_token: Some(debug_log_context.event_token),
+    maybe_creator_user_token: Some(debug_log_context.user_token),
+    debug_log_type: DebugLogType::KinoviRequest,
+    maybe_log_level: Some(DebugLogLevel::Info),
+    maybe_ip_address: Some(debug_log_context.ip_address),
+    maybe_url: Some(debug_log_context.request_url),
+    message: &format!("{:#?}", kinovi_request),
+    mysql_executor: &mut **mysql_connection,
+    phantom: Default::default(),
+  }).await {
+    warn!("Failed to insert Kinovi request debug log: {:?}", err);
+  }
+
   let video_gen_args = GenerateVideoArgs {
     session,
     host_override: None,
-    request: KinoviGenerateVideoRequest {
-      model_type: KinoviModelType::Seedance2Pro,
-      prompt,
-      aspect_ratio,
-      output_resolution,
-      duration_seconds,
-      batch_count,
-      start_frame_url,
-      end_frame_url,
-      reference_image_urls,
-      reference_video_urls,
-      reference_audio_urls,
-      character_ids: kinovi_character_ids,
-      use_face_blur_hack: None,
-    },
+    request: kinovi_request,
   };
 
   let gen_response = generate_video(video_gen_args).await
