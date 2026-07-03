@@ -107,6 +107,7 @@ pub async fn list_media_files_for_user(args: ListMediaFileForUserArgs<'_>) -> An
     args.sort_ascending,
     args.view_as,
     count_fields.as_str(),
+    true,
   );
 
   let row_count_query = count_query_builder.build_query_scalar::<i64>();
@@ -126,6 +127,7 @@ pub async fn list_media_files_for_user(args: ListMediaFileForUserArgs<'_>) -> An
     args.sort_ascending,
     args.view_as,
     result_fields.as_str(),
+    false,
   );
 
   let query = query.build_query_as::<MediaFileListItemInternal>();
@@ -250,13 +252,20 @@ fn query_builder<'a>(
   sort_ascending: bool,
   view_as: ViewAs,
   select_fields: &'a str,
+  count_only: bool,
 ) -> QueryBuilder<'a, MySql> {
 
-  // NB: Query cannot be statically checked by sqlx
-  let mut query_builder: QueryBuilder<MySql> = QueryBuilder::new(
-    format!(r#"
-SELECT
-     {select_fields}
+  // NB: The count query only needs the `users` join (for the username predicate).
+  // The other joins are all 1:1 and contribute nothing to the count — MySQL does
+  // not eliminate LEFT JOINs, so including them costs four index lookups per row.
+  let from_clause = if count_only {
+    r#"
+FROM media_files AS m
+LEFT OUTER JOIN users AS u
+    ON m.maybe_creator_user_token = u.token
+    "#
+  } else {
+    r#"
 FROM media_files AS m
 LEFT OUTER JOIN users AS u
     ON m.maybe_creator_user_token = u.token
@@ -270,6 +279,14 @@ LEFT OUTER JOIN entity_stats
 LEFT OUTER JOIN prompts
     ON prompts.token = m.maybe_prompt_token
     "#
+  };
+
+  // NB: Query cannot be statically checked by sqlx
+  let mut query_builder: QueryBuilder<MySql> = QueryBuilder::new(
+    format!(r#"
+SELECT
+     {select_fields}
+{from_clause}"#
   ));
 
   query_builder.push(" WHERE u.username = ");
@@ -353,10 +370,13 @@ LEFT OUTER JOIN prompts
     }
   }
 
-  if sort_ascending {
-    query_builder.push(" ORDER BY m.created_at ASC ");
-  } else {
-    query_builder.push(" ORDER BY m.created_at DESC ");
+  // NB: Ordering is meaningless for the single-row COUNT aggregate.
+  if !count_only {
+    if sort_ascending {
+      query_builder.push(" ORDER BY m.created_at ASC ");
+    } else {
+      query_builder.push(" ORDER BY m.created_at DESC ");
+    }
   }
 
   if enforce_limits {
