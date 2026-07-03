@@ -130,6 +130,7 @@ members = [
   "crates/schema/public/enums",
   "crates/schema/public/reusable_types", # TODO(bt, 2022-12-21): Deprecate
   "crates/schema/public/tokens",
+  "crates/schema/trace_id",
 
   # Services: API servers, jobs, workers, etc.
   "crates/service/job/gmicloud_job",
@@ -293,6 +294,7 @@ subprocess_common = { path = "crates/lib/deprecated/subprocess_common" }
 test_data = { path = "crates/testing/test_data" }
 test_utils = { path = "crates/testing/test_utils" }
 tokens = { path = "crates/schema/public/tokens" }
+trace_id = { path = "crates/schema/trace_id" }
 url_utils = { path = "crates/lib/url_utils" }
 users = { path = "crates/lib/users" }
 uuid_utils = { path = "crates/lib/uuid_utils" }

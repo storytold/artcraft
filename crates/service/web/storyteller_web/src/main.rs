@@ -26,6 +26,7 @@ use actix_helpers::middleware::banned_cidr_filter::banned_cidr_filter::BannedCid
 use actix_helpers::middleware::banned_ip_filter::banned_ip_filter::BannedIpFilter;
 use actix_helpers::middleware::disabled_endpoint_filter::disabled_endpoint_filter::DisabledEndpointFilter;
 use actix_multipart::form::MultipartFormConfig;
+use actix_web::HttpMessage;
 use actix_web::middleware::{DefaultHeaders, Logger};
 use actix_web::{middleware, web, App, HttpServer};
 use billing_component::stripe::traits::internal_product_to_stripe_lookup::InternalProductToStripeLookup;
@@ -66,9 +67,10 @@ pub mod state;
 pub mod threads;
 pub mod util;
 
-// Report cloudflare trace ID header (CF-Ray) in logs
+// Report cloudflare trace ID header (CF-Ray) and our request trace id in logs.
+// %{trace_id}xi is resolved by `custom_request_replace` below.
 const LOG_FORMAT: &str =
-  "[%{HOSTNAME}e] IP=[%{X-Forwarded-For}i] %{CF-Ray}i \"%r\" %s %b \"%{Referer}i\" \"%{User-Agent}i\" %T";
+  "[%{HOSTNAME}e] IP=[%{X-Forwarded-For}i] %{CF-Ray}i %{trace_id}xi \"%r\" %s %b \"%{Referer}i\" \"%{User-Agent}i\" %T";
 
 #[actix_web::main]
 async fn main() -> AnyhowResult<()> {
@@ -270,6 +272,15 @@ pub async fn serve(
       .wrap(BannedIpFilter::new(ip_ban_list))
       .wrap(BannedCidrFilter::new(cidr_ban_set))
       .wrap(Logger::new(LOG_FORMAT)
+        // NB: The access-log line is written after the response body completes,
+        // which is OUTSIDE the trace-id task-local scope — so we resolve the
+        // trace id from request extensions at request time instead.
+        .custom_request_replace("trace_id", |req| {
+          req.extensions()
+              .get::<trace_id::TraceId>()
+              .map(|t| t.to_string())
+              .unwrap_or_else(|| "-".to_string())
+        })
         .exclude("/liveness")
         .exclude("/readiness"))
       .wrap(middleware::Compress::default())
