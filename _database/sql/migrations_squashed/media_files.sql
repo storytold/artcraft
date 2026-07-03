@@ -364,6 +364,7 @@ CREATE TABLE media_files (
   KEY index_user_deleted_at (user_deleted_at),
   KEY index_mod_deleted_at (mod_deleted_at),
   KEY index_media_files_created_at (created_at),
-  KEY index_media_files_updated_at (updated_at)
+  KEY index_media_files_updated_at (updated_at),
+  KEY idx_creator_created_at (maybe_creator_user_token, created_at)
 
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
