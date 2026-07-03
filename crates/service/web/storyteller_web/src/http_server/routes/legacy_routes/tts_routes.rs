@@ -8,7 +8,6 @@ use crate::http_server::endpoints::tts::delete_tts_model::delete_tts_model_handl
 use crate::http_server::endpoints::tts::delete_tts_result::delete_tts_inference_result_handler;
 use crate::http_server::endpoints::tts::edit_tts_model::edit_tts_model_handler;
 use crate::http_server::endpoints::tts::edit_tts_result::edit_tts_inference_result_handler;
-use crate::http_server::endpoints::tts::enqueue_infer_f5_tts_handler::enqueue_infer_f5_tts_handler::enqueue_infer_f5_tts_handler;
 use crate::http_server::endpoints::tts::enqueue_infer_tts_handler::enqueue_infer_tts_handler::enqueue_infer_tts_handler;
 use crate::http_server::endpoints::tts::enqueue_upload_tts_model::upload_tts_model_handler;
 use crate::http_server::endpoints::tts::get_pending_tts_inference_job_count::get_pending_tts_inference_job_count_handler;
@@ -38,10 +37,6 @@ where
       .route(web::post().to(enqueue_infer_tts_handler))
       .route(web::head().to(|| HttpResponse::Ok()))
   )
-      .service(web::resource("/v1/tts/f5_inference")
-          .route(web::post().to(enqueue_infer_f5_tts_handler))
-          .route(web::head().to(|| HttpResponse::Ok()))
-      )
       // NB(bt,2024-04-03): Older root /tts/* routes should be drained of traffic. They are used in the Twitch Streamer API though.
       .service(
         web::scope("/tts")

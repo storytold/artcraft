@@ -47,7 +47,6 @@ pub mod user_spend_events;
 pub mod user_spend_summaries;
 pub mod users;
 pub mod vocoder;
-pub mod voice_clone_requests;
 pub mod voice_conversion;
 pub mod voice_designer;
 pub mod wallet_ledger_entries;
