@@ -9,3 +9,5 @@ export * from "./setObjectColor";
 export * from "./toggleObjectLock";
 export * from "./toggleObjectVisibility";
 export * from "./transformObject";
+export * from "./timeline";
+export * from "./cameraView";

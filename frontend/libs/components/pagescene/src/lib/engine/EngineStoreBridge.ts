@@ -34,6 +34,8 @@ import {
   SelectedCameraChangedEvent,
   SelectedModeChangedEvent,
   SelectionChangedEvent,
+  TimelineChangedEvent,
+  TimelinePlayheadEvent,
   TransformModeChangedEvent,
   TransformSpaceChangedEvent,
 } from "./events/EngineEvent";
@@ -136,6 +138,19 @@ export class EngineStoreBridge {
       bus.subscribe(CameraUpdatedEvent, (e) =>
         usePageSceneStore.getState().updateCamera(e.cameraId, e.updates),
       ),
+
+      // timeline
+      bus.subscribe(TimelineChangedEvent, (e) => {
+        const store = usePageSceneStore.getState();
+        store.setTimelineExists(e.exists);
+        store.setTimelineDuration(e.duration);
+        store.setTimelineTracks(e.tracks);
+      }),
+      bus.subscribe(TimelinePlayheadEvent, (e) => {
+        const store = usePageSceneStore.getState();
+        store.setTimelinePlayhead(e.playhead);
+        store.setTimelineIsPlaying(e.isPlaying);
+      }),
 
       // lifecycle
       bus.subscribe(EngineInitializedEvent, (e) =>

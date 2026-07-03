@@ -63,6 +63,9 @@
       "path": "../button-icon-select/tsconfig.lib.json"
     },
     {
+      "path": "../tab-selector/tsconfig.lib.json"
+    },
+    {
       "path": "../badge/tsconfig.lib.json"
     },
     {

@@ -46,6 +46,7 @@ import { EngineContext } from "./contexts/EngineContext/EngineContext";
 import { AnonHintChip } from "./comps/AnonHintChip";
 import { ControlPanelSceneObject } from "./comps/ControlPanelSceneObject";
 import { Controls3D } from "./comps/Controls3D";
+import { SceneModePill } from "./comps/SceneModePill";
 import { ControlsTopButtons } from "./comps/ControlsTopButtons";
 import { EditorCanvas } from "./comps/EngineCanvases";
 import { FocalLengthDisplay } from "./comps/FocalLengthDisplay/FocalLengthDisplay";
@@ -54,10 +55,13 @@ import { PerfStatsOverlay } from "./comps/PerfStatsOverlay";
 import { EntranceDebugPanel } from "./comps/EntranceDebugPanel";
 import { Outliner } from "./comps/Outliner";
 import { PoseModeSelector } from "./comps/PoseModeSelector";
+import { ExitCameraView } from "./comps/ExitCameraView";
+import { RecordControls } from "./comps/RecordControls";
 import { PreviewBox } from "./comps/PreviewBox";
 import { PreviewEngineCamera } from "./comps/PreviewEngineCamera";
 import { SceneContainer } from "./comps/SceneContainer";
-import { addCharacter, addObject, setCameraAspect } from "./actions";
+import { addCharacter, addObject, setCameraAspect, createTimeline } from "./actions";
+import { TimelineBar, TimelineEditor } from "./comps/Timeline";
 import { useEditorCanvas } from "./hooks/useEditorCanvas";
 import { useFreeCam } from "./hooks/useFreeCam";
 import { useViewportPointer } from "./hooks/useViewportPointer";
@@ -126,6 +130,13 @@ export const Stage3DBody = ({
     (s) => s.setIsPromptBoxFocused,
   );
   const gridVisible = usePageSceneStore((s) => s.gridVisible);
+  const buildMode = usePageSceneStore((s) => s.buildMode);
+  const setBuildMode = usePageSceneStore((s) => s.setBuildMode);
+  const timelineExists = usePageSceneStore((s) => s.timelineExists);
+  const timelineExpanded = usePageSceneStore((s) => s.timelineExpanded);
+  const setTimelineExpanded = usePageSceneStore((s) => s.setTimelineExpanded);
+  const sceneMode = usePageSceneStore((s) => s.sceneMode);
+  const isRecord = sceneMode === "record";
   const previewImageUrl = usePageSceneStore((s) => s.sceneMeta.previewImageUrl);
   const isVisitingOthersScene = useIsVisitingOthersScene();
   const addCamera = usePageSceneStore((s) => s.addCamera);
@@ -218,6 +229,19 @@ export const Stage3DBody = ({
   );
 
   const editor = useContext(EngineContext);
+
+  // Record mode is read-only playback through the render camera: enter
+  // camera view + lock the viewport on entry, restore on exit.
+  useEffect(() => {
+    if (!editor) return;
+    if (isRecord) {
+      editor.cameraController.enterCameraView();
+      editor.cameraController.setLocked(true);
+    } else {
+      editor.cameraController.setLocked(false);
+      editor.cameraController.exitCameraView();
+    }
+  }, [isRecord, editor]);
 
   // Reactive viewport sizing. useViewportSize listens to window
   // resize and re-renders the component. Falls back to
@@ -443,6 +467,7 @@ export const Stage3DBody = ({
             {import.meta.env.DEV && <EntranceDebugPanel />}
             <FocalLengthDisplay />
             <PoseModeSelector />
+            <ExitCameraView />
 
             <div
               className="absolute left-0 top-0 w-full"
@@ -450,15 +475,20 @@ export const Stage3DBody = ({
             >
               <div className="grid grid-cols-3 gap-4">
                 <div className="flex flex-col items-start gap-2">
-                  <ControlsTopButtons />
-                  {topBarStartSlot && (
+                  {!isRecord && <ControlsTopButtons />}
+                  {!isRecord && topBarStartSlot && (
                     <div className="pl-3">{topBarStartSlot}</div>
                   )}
                 </div>
-                <Controls3D showImageTo3DButton={showImageTo3DButton} />
+                <div className="flex flex-col items-center">
+                  <SceneModePill />
+                  {!isRecord && (
+                    <Controls3D showImageTo3DButton={showImageTo3DButton} />
+                  )}
+                </div>
                 <div className="flex items-start justify-end gap-2 pr-3 pt-3">
-                  {topBarEndSlot}
-                  <AnonHintChip />
+                  {!isRecord && topBarEndSlot}
+                  {!isRecord && <AnonHintChip />}
                 </div>
               </div>
             </div>
@@ -467,19 +497,26 @@ export const Stage3DBody = ({
               className="absolute bottom-0 left-0 right-0"
               onClick={handleOverlayClick}
             >
-              <div
-                className="absolute bottom-20 mb-4 ml-4 flex origin-bottom-left flex-col gap-2"
-                style={{ transform: `scale(${getScale()})` }}
-              >
-                <Outliner />
-                <PreviewEngineCamera />
-              </div>
+              {!isRecord && (
+                <div
+                  className="absolute bottom-20 mb-4 ml-4 flex origin-bottom-left flex-col gap-2"
+                  style={{ transform: `scale(${getScale()})` }}
+                >
+                  <Outliner />
+                  <PreviewEngineCamera />
+                </div>
+              )}
 
-              <ControlPanelSceneObject />
+              {!isRecord && <ControlPanelSceneObject />}
             </div>
 
             {isVisitingOthersScene && <PreviewBox imageUrl={previewImageUrl} />}
 
+            {timelineExpanded && !isRecord && <TimelineEditor />}
+
+            {isRecord && <RecordControls />}
+
+            {!timelineExpanded && !isRecord && (
             <PromptBox3D
               cameras={cameras}
               cameraAspectRatio={camAspect}
@@ -518,9 +555,11 @@ export const Stage3DBody = ({
               aboveStackSlot={
                 <>
                   <OnboardingHelper />
+                  {timelineExists && !timelineExpanded && <TimelineBar />}
                   {promptboxAboveStackSlot}
                 </>
               }
+              showAddTimelineButton={!timelineExists}
               onBeforeSubmit={() => {
                 const currentUserToken =
                   usePageSceneStore.getState().currentUserToken;
@@ -530,7 +569,15 @@ export const Stage3DBody = ({
                 }
                 return true;
               }}
+              buildMode={buildMode}
+              onBuildModeChange={setBuildMode}
+              onAddTimeline={() => {
+                if (!editor) return;
+                createTimeline(editor);
+                setTimelineExpanded(true);
+              }}
             />
+            )}
 
             <LoadingDots
               className="absolute left-0 top-0 z-50"

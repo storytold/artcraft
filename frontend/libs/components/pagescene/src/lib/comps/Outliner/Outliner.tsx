@@ -1,6 +1,7 @@
 import { ChangeEvent, useContext, useEffect, useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
+  faArrowRightToBracket,
   faCircleXmark,
   faEye,
   faEyeSlash,
@@ -20,6 +21,7 @@ import { useViewportSize } from "../../hooks/useViewportSize";
 import { CameraAspectRatio } from "../../enums";
 import { toggleObjectLock } from "../../actions/toggleObjectLock";
 import { toggleObjectVisibility } from "../../actions/toggleObjectVisibility";
+import { toggleCameraView } from "../../actions/cameraView";
 
 const OutlinerRow = ({ item }: { item: OutlinerItem }) => {
   const [hovered, setHovered] = useState(false);
@@ -58,6 +60,12 @@ const OutlinerRow = ({ item }: { item: OutlinerItem }) => {
     toggleObjectVisibility(editorEngine, item.id);
   };
 
+  const handleViewFromCamera = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!editorEngine) return;
+    toggleCameraView(editorEngine);
+  };
+
   return (
     <div
       role="button"
@@ -80,6 +88,16 @@ const OutlinerRow = ({ item }: { item: OutlinerItem }) => {
         {item.name}
       </span>
       <div className="flex gap-3">
+        {item.isCamera && (
+          <button onClick={handleViewFromCamera} title="View from camera">
+            <div className="w-4">
+              <FontAwesomeIcon
+                icon={faArrowRightToBracket}
+                className="opacity-80 transition-opacity duration-100 hover:opacity-100"
+              />
+            </div>
+          </button>
+        )}
         <button
           onClick={handleToggleLock}
           style={{

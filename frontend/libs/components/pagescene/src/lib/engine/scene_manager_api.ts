@@ -10,7 +10,10 @@ import { MouseControls } from "./keybinds_controls";
 import { ClipGroup, AssetType } from "../enums";
 import { XYZ } from "../datastructures/common";
 import type { EngineEventBus } from "./events/EngineEventBus";
-import { ObjectAddedEvent } from "./events/EngineEvent";
+import {
+  CameraViewToggleRequestedEvent,
+  ObjectAddedEvent,
+} from "./events/EngineEvent";
 import { isInternalBbox } from "./internalBbox";
 
 export type SceneObject = {
@@ -20,6 +23,7 @@ export type SceneObject = {
   type: string;
   visible: boolean;
   locked: boolean;
+  isCamera: boolean;
 };
 
 export interface SceneManagerAPI {
@@ -147,6 +151,13 @@ export class SceneManager implements SceneManagerAPI {
   }
 
   public async double_click() {
+    // Double-clicking the render-camera placeholder enters/exits camera view
+    // instead of the usual focus-zoom. editor.ts owns the transition.
+    const selected = this.selected_objects?.[0];
+    if (selected?.name === "::CAM::") {
+      this.bus.emit(new CameraViewToggleRequestedEvent());
+      return;
+    }
     this.mouse_controls.focus();
   }
 
@@ -215,6 +226,7 @@ export class SceneManager implements SceneManagerAPI {
       type: object.type,
       visible: object.visible,
       locked: object.userData["locked"],
+      isCamera: object.name == "::CAM::",
     };
   }
 

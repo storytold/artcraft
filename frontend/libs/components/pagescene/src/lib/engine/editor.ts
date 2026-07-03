@@ -16,6 +16,7 @@ import { GizmoController } from "./editor/GizmoController";
 import { SelectionBridge } from "./editor/SelectionBridge";
 import { CameraController } from "./editor/CameraController";
 import { HistoryManager } from "./editor/HistoryManager";
+import { TimelineController } from "./editor/TimelineController";
 import { DeleteAction } from "./editor/actions/DeleteAction";
 import { TransformAction } from "./editor/actions/TransformAction";
 
@@ -29,6 +30,7 @@ import {
   EditorStateChangedEvent,
   EngineInitializedEvent,
   GridVisibleChangedEvent,
+  CameraViewToggleRequestedEvent,
   InspectorPanelChangedEvent,
   SceneLoadedEvent,
   SceneResetEvent,
@@ -77,6 +79,8 @@ class Editor {
   selection: SelectionBridge;
   // Owns the camera state, FreeCam plumbing, and the per-frame camera tick.
   cameraController: CameraController;
+  // Owns the animation timeline + keyframe playback (evaluated per frame).
+  timelineController: TimelineController;
   // Owns the undo/redo stack. Mutation sites push UndoableAction
   // instances via editor.history.record(...); each action class under
   // engine/editor/actions/ encapsulates its own apply/revert.
@@ -96,6 +100,7 @@ class Editor {
   // Store→engine reactor for grid visibility (toggling the gridHelper
   // mesh in/out of the THREE.js scene). Cleared on unmountEngine.
   private gridSubscription: () => void;
+  private cameraViewSubscription: () => void;
 
   // Holds the in-flight transform action between gizmo dragstart and
   // dragend. Null whenever no drag is in progress.
@@ -173,6 +178,13 @@ class Editor {
     // THREE.js gridHelper. No "store→engine" subscription anywhere.
     this.gridSubscription = this.bus.subscribe(GridVisibleChangedEvent, (e) =>
       this.activeScene?.applyGridVisibility(e.visible),
+    );
+
+    // Look-through toggle. The double-click intercept and the outliner/exit
+    // buttons emit this; the controller owns the enter/exit transition.
+    this.cameraViewSubscription = this.bus.subscribe(
+      CameraViewToggleRequestedEvent,
+      () => this.cameraController.switchCameraView(),
     );
 
     // PostProcessingPipeline must exist before Scene because Scene's
@@ -308,6 +320,10 @@ class Editor {
     // Action classes under engine/editor/actions/ encapsulate their own
     // apply/revert + dependencies. HistoryManager just stores them.
     this.history = new HistoryManager({ capacity: 64 });
+
+    // Animation timeline. Holds keyframes + drives playback; ticked each
+    // frame in renderSingleFrame() after the entrance animator.
+    this.timelineController = new TimelineController(this);
 
     this.positive_prompt =
       "((masterpiece, best quality, 8K, detailed)), colorful, epic, fantasy, (fox, red fox:1.2), no humans, 1other, ((koi pond)), outdoors, pond, rocks, stones, koi fish, ((watercolor))), lilypad, fish swimming around.";
@@ -878,6 +894,10 @@ class Editor {
     // Advance any in-flight entrance animations.
     this.entranceAnimator.tick(delta_time);
 
+    // Evaluate the animation timeline (writes transforms only while
+    // playing or right after a seek).
+    this.timelineController.tick(delta_time);
+
     this.activeScene.shader_objects.forEach((shader) => {
       shader.material.uniforms["time"].value += 0.5 * delta_time;
     });
@@ -969,6 +989,7 @@ class Editor {
     this.isMounted = false;
     this.bus.emit(new EngineInitializedEvent(false));
     this.gridSubscription();
+    this.cameraViewSubscription();
     this.storeBridge.dispose();
     console.log("3D Editor Engine unmounted");
   }

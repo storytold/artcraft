@@ -54,6 +54,8 @@ export class CameraController {
   lockControls: PointerLockControls | undefined;
 
   freeCamState: FreeCamControlState | null = null;
+  // When true, FreeCam input is ignored (record mode: read-only viewport).
+  locked = false;
 
   last_cam_pos: THREE.Vector3 = new THREE.Vector3(0, 0, 0);
   last_cam_rot: THREE.Euler = new THREE.Euler(0, 0, 0);
@@ -83,70 +85,81 @@ export class CameraController {
   }
 
   // Toggles between free-camera (edit) mode and the active render
-  // camera's perspective. Lifted from SceneUtils.switchCameraView so
-  // the camera state stays in one place.
+  // camera's perspective. Split into idempotent enter/exit so callers
+  // (record mode) can force a specific state without double-toggling.
   switchCameraView() {
-    this.camera_person_mode = !this.camera_person_mode;
-    if (this.freeCamState) {
-      this.freeCamState.velocity.set(0, 0, 0);
-    }
-    if (!this.cam_obj) return;
+    if (this.camera_person_mode) this.exitCameraView();
+    else this.enterCameraView();
+  }
 
-    if (this.camera_person_mode && this.camera) {
+  // Look through the render camera. No-op if already in camera view.
+  enterCameraView() {
+    if (this.camera_person_mode || !this.cam_obj) return;
+    this.camera_person_mode = true;
+    if (this.freeCamState) this.freeCamState.velocity.set(0, 0, 0);
+
+    if (this.camera) {
       this.last_cam_pos.copy(this.camera.position);
       this.last_cam_rot.copy(this.camera.rotation);
-
       this.camera.position.copy(this.cam_obj.position);
       this.camera.rotation.copy(this.cam_obj.rotation);
+    }
 
-      if (this.lockControls) {
-        this.deps.getThreeScene().add(this.lockControls.getObject());
-      }
-      // useFreeCam reads editorState from the store and enables
-      // itself when CAMERA_VIEW; nothing to do here.
-      this.cam_obj.scale.set(0, 0, 0);
+    if (this.lockControls) {
+      this.deps.getThreeScene().add(this.lockControls.getObject());
+    }
+    this.cam_obj.scale.set(0, 0, 0);
 
-      this.deps.removeTransformControls();
-      this.deps.setSelected(this.cam_obj);
-      this.deps.setEditorState(EditorStates.CAMERA_VIEW);
+    this.deps.removeTransformControls();
+    this.deps.setSelected(this.cam_obj);
+    this.deps.setEditorState(EditorStates.CAMERA_VIEW);
 
-      const hot = this.deps.getHotItems();
-      if (hot) {
-        hot.forEach((element) => {
-          element.visible = false;
-        });
-      }
+    const hot = this.deps.getHotItems();
+    hot?.forEach((element) => {
+      element.visible = false;
+    });
 
-      // Workaround: in camera mode, a right-click should pan rather
-      // than open the browser context menu. Defer the listener attach
-      // until after the letterbox swap settles.
-      setTimeout(
-        () =>
-          document
-            .getElementById("letterbox")
-            ?.addEventListener("contextmenu", function (event) {
-              event.preventDefault();
-            }),
-        250,
-      );
-    } else if (this.camera) {
+    // Workaround: in camera mode, a right-click should pan rather than
+    // open the browser context menu. Defer until the letterbox settles.
+    setTimeout(
+      () =>
+        document
+          .getElementById("letterbox")
+          ?.addEventListener("contextmenu", function (event) {
+            event.preventDefault();
+          }),
+      250,
+    );
+  }
+
+  // Return to the free editing camera. No-op if not in camera view.
+  exitCameraView() {
+    if (!this.camera_person_mode || !this.cam_obj) return;
+    this.camera_person_mode = false;
+    if (this.freeCamState) this.freeCamState.velocity.set(0, 0, 0);
+
+    if (this.camera) {
       this.camera.position.copy(this.last_cam_pos);
       this.camera.rotation.copy(this.last_cam_rot);
-      if (this.lockControls) {
-        this.deps.getThreeScene().remove(this.lockControls.getObject());
-      }
-      this.cam_obj.scale.set(1, 1, 1);
-
-      const hot = this.deps.getHotItems();
-      if (hot) {
-        hot.forEach((element) => {
-          element.visible = true;
-        });
-      }
-
-      this.deps.hideObjectPanel();
-      this.deps.setEditorState(EditorStates.EDIT);
     }
+    if (this.lockControls) {
+      this.deps.getThreeScene().remove(this.lockControls.getObject());
+    }
+    this.cam_obj.scale.set(1, 1, 1);
+
+    const hot = this.deps.getHotItems();
+    hot?.forEach((element) => {
+      element.visible = true;
+    });
+
+    this.deps.hideObjectPanel();
+    this.deps.setEditorState(EditorStates.EDIT);
+  }
+
+  // Record mode locks the viewport: input is ignored so playback is
+  // strictly read-only. Gated in tickPerFrame's FreeCam integration.
+  setLocked(locked: boolean): void {
+    this.locked = locked;
   }
 
   setFreeCamState(state: FreeCamControlState | null) {
@@ -208,7 +221,7 @@ export class CameraController {
       }
     }
 
-    if (this.freeCamState && this.camera) {
+    if (this.freeCamState && this.camera && !this.locked) {
       const moved = freeCamFrameTick(
         this.camera,
         this.freeCamState,
