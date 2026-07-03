@@ -24,6 +24,8 @@ pub enum DebugLogType {
   GrokApiRequest,
   FalWebhook,
   BeebleWebhook,
+  /// A backend/pipeline failure while serving a request.
+  BackendFailure,
 }
 
 impl_enum_display_and_debug_using_to_str!(DebugLogType);
@@ -39,6 +41,7 @@ impl DebugLogType {
       Self::GrokApiRequest => "grok_api_request",
       Self::FalWebhook => "fal_webhook",
       Self::BeebleWebhook => "beeble_webhook",
+      Self::BackendFailure => "backend_failure",
     }
   }
 
@@ -50,6 +53,7 @@ impl DebugLogType {
       "grok_api_request" => Ok(Self::GrokApiRequest),
       "fal_webhook" => Ok(Self::FalWebhook),
       "beeble_webhook" => Ok(Self::BeebleWebhook),
+      "backend_failure" => Ok(Self::BackendFailure),
       _ => Err(EnumError::CouldNotConvertFromString(value.to_string())),
     }
   }
@@ -62,6 +66,7 @@ impl DebugLogType {
       Self::GrokApiRequest,
       Self::FalWebhook,
       Self::BeebleWebhook,
+      Self::BackendFailure,
     ])
   }
 }
@@ -84,6 +89,7 @@ mod tests {
       assert_serialization(DebugLogType::GrokApiRequest, "grok_api_request");
       assert_serialization(DebugLogType::FalWebhook, "fal_webhook");
       assert_serialization(DebugLogType::BeebleWebhook, "beeble_webhook");
+      assert_serialization(DebugLogType::BackendFailure, "backend_failure");
     }
 
     #[test]
@@ -94,6 +100,7 @@ mod tests {
       assert_eq!(DebugLogType::GrokApiRequest.to_str(), "grok_api_request");
       assert_eq!(DebugLogType::FalWebhook.to_str(), "fal_webhook");
       assert_eq!(DebugLogType::BeebleWebhook.to_str(), "beeble_webhook");
+      assert_eq!(DebugLogType::BackendFailure.to_str(), "backend_failure");
     }
 
     #[test]
@@ -104,6 +111,7 @@ mod tests {
       assert_eq!(DebugLogType::from_str("grok_api_request").unwrap(), DebugLogType::GrokApiRequest);
       assert_eq!(DebugLogType::from_str("fal_webhook").unwrap(), DebugLogType::FalWebhook);
       assert_eq!(DebugLogType::from_str("beeble_webhook").unwrap(), DebugLogType::BeebleWebhook);
+      assert_eq!(DebugLogType::from_str("backend_failure").unwrap(), DebugLogType::BackendFailure);
     }
 
     #[test]
@@ -120,13 +128,14 @@ mod tests {
     #[test]
     fn all_variants() {
       let mut variants = DebugLogType::all_variants();
-      assert_eq!(variants.len(), 6);
+      assert_eq!(variants.len(), 7);
       assert_eq!(variants.pop_first(), Some(DebugLogType::HttpRequest));
       assert_eq!(variants.pop_first(), Some(DebugLogType::FalRequest));
       assert_eq!(variants.pop_first(), Some(DebugLogType::KinoviRequest));
       assert_eq!(variants.pop_first(), Some(DebugLogType::GrokApiRequest));
       assert_eq!(variants.pop_first(), Some(DebugLogType::FalWebhook));
       assert_eq!(variants.pop_first(), Some(DebugLogType::BeebleWebhook));
+      assert_eq!(variants.pop_first(), Some(DebugLogType::BackendFailure));
       assert_eq!(variants.pop_first(), None);
     }
   }

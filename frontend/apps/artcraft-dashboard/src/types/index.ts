@@ -109,6 +109,7 @@ export type DebugLogType =
   | "fal_queue"
   | "fal_webhook"
   | "kinovi_request"
+  | "backend_failure"
   | (string & {});
 
 export type DebugLogLevel =

@@ -61,6 +61,11 @@ function getLogTypeBadgeProps(logType: string): {
         variant: "secondary",
         className: "bg-amber-500/10 text-amber-400 border-transparent",
       };
+    case "backend_failure":
+      return {
+        variant: "secondary",
+        className: "bg-red-500/10 text-red-400 border-transparent",
+      };
     case "kinovi_request":
       return {
         variant: "secondary",
