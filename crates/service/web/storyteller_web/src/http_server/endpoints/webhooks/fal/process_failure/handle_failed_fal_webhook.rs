@@ -1,6 +1,7 @@
 use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::state::server_state::ServerState;
 use actix_web::web::Json;
+use enums::by_table::debug_logs::debug_log_level::DebugLogLevel;
 use enums::by_table::debug_logs::debug_log_type::DebugLogType;
 use enums::by_table::generic_inference_jobs::frontend_failure_category::FrontendFailureCategory;
 use fal_client::webhook_payload::raw::webhook_error_type::WebhookErrorType;
@@ -52,7 +53,7 @@ pub async fn handle_failed_fal_webhook(
       apriori_debug_log_event_token: Some(debug_log_event_token),
       maybe_creator_user_token: job.maybe_creator_user_token.as_ref(),
       debug_log_type: DebugLogType::FalWebhook,
-      maybe_log_level: None,
+      maybe_log_level: Some(DebugLogLevel::Error),
       maybe_ip_address: None,
       maybe_url: None,
       message: raw_body,

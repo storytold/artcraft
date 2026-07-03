@@ -1,4 +1,5 @@
 use actix_web::web::Json;
+use enums::by_table::debug_logs::debug_log_level::DebugLogLevel;
 use enums::by_table::debug_logs::debug_log_type::DebugLogType;
 use fal_client::webhook_payload::hydrated::hydrated_webhook_contents::WebhookSuccessData;
 use http_server_common::response::response_success_helpers::SimpleGenericJsonSuccess;
@@ -52,7 +53,7 @@ pub async fn handle_successful_fal_webhook(
       apriori_debug_log_event_token: Some(debug_log_event_token),
       maybe_creator_user_token: job.maybe_creator_user_token.as_ref(),
       debug_log_type: DebugLogType::FalWebhook,
-      maybe_log_level: None,
+      maybe_log_level: Some(DebugLogLevel::Info),
       maybe_ip_address: None,
       maybe_url: None,
       message: raw_body,

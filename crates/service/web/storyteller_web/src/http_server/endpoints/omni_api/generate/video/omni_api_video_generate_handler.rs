@@ -18,6 +18,7 @@ use enums::common::generation::common_video_model::CommonVideoModel;
 use enums::common::generation_provider::GenerationProvider;
 use enums::common::platform_type::PlatformType;
 use http_server_common::request::get_request_ip::get_request_ip;
+use enums::by_table::debug_logs::debug_log_level::DebugLogLevel;
 use mysql_queries::queries::debug_logs::insert_debug_log::{insert_debug_log, InsertDebugLogArgs};
 use mysql_queries::queries::generic_inference::api_providers::seedance2pro::insert_generic_inference_job_for_seedance2pro_queue_with_apriori_job_token::KinoviVersion;
 use mysql_queries::queries::idepotency_tokens::insert_idempotency_token::insert_idempotency_token;
@@ -206,7 +207,7 @@ pub async fn omni_api_video_generate_handler(
     apriori_debug_log_event_token: Some(&debug_log_event_token),
     maybe_creator_user_token: Some(user_token),
     debug_log_type: DebugLogType::HttpRequest,
-    maybe_log_level: None,
+    maybe_log_level: Some(DebugLogLevel::Info),
     maybe_ip_address: Some(&ip_address),
     maybe_url: Some(&request_url),
     message: &serde_json::to_string(&*request).unwrap_or_default(),
@@ -228,7 +229,32 @@ pub async fn omni_api_video_generate_handler(
     media_file_to_url_map: &media_file_to_url_map,
     kinovi_character_id_map: &kinovi_character_id_map,
     kinovi_account,
-  }).await?;
+  }).await;
+
+  // ==================== DEBUG LOG: PIPELINE ERROR ==================== //
+
+  let pipeline_result = match pipeline_result {
+    Ok(result) => result,
+    Err(err) => {
+      // Best-effort error log; never mask the original error.
+      if let Ok(mut error_log_connection) = server_state.mysql_pool.acquire().await {
+        if let Err(log_err) = insert_debug_log(InsertDebugLogArgs {
+          apriori_debug_log_event_token: Some(&debug_log_event_token),
+          maybe_creator_user_token: Some(user_token),
+          debug_log_type: DebugLogType::BackendFailure,
+          maybe_log_level: Some(DebugLogLevel::Error),
+          maybe_ip_address: Some(&ip_address),
+          maybe_url: Some(&request_url),
+          message: &format!("Video generation pipeline failed: {:?}", err),
+          mysql_executor: &mut *error_log_connection,
+          phantom: Default::default(),
+        }).await {
+          warn!("Failed to insert pipeline error debug log: {:?}", log_err);
+        }
+      }
+      return Err(err);
+    }
+  };
 
   let mut mysql_connection = server_state.mysql_pool.acquire().await?;
 
@@ -240,9 +266,9 @@ pub async fn omni_api_video_generate_handler(
         apriori_debug_log_event_token: Some(&debug_log_event_token),
         maybe_creator_user_token: Some(user_token),
         debug_log_type: DebugLogType::FalRequest,
-        maybe_log_level: None,
-    maybe_ip_address: Some(&ip_address),
-    maybe_url: Some(&request_url),
+        maybe_log_level: Some(DebugLogLevel::Info),
+        maybe_ip_address: Some(&ip_address),
+        maybe_url: Some(&request_url),
         message: &format!("{:#?}", outbound_request),
         mysql_executor: &mut *mysql_connection,
         phantom: Default::default(),
@@ -260,9 +286,9 @@ pub async fn omni_api_video_generate_handler(
         apriori_debug_log_event_token: Some(&debug_log_event_token),
         maybe_creator_user_token: Some(user_token),
         debug_log_type: DebugLogType::GrokApiRequest,
-        maybe_log_level: None,
-    maybe_ip_address: Some(&ip_address),
-    maybe_url: Some(&request_url),
+        maybe_log_level: Some(DebugLogLevel::Info),
+        maybe_ip_address: Some(&ip_address),
+        maybe_url: Some(&request_url),
         message: &format!("{:#?}", outbound_request),
         mysql_executor: &mut *mysql_connection,
         phantom: Default::default(),
