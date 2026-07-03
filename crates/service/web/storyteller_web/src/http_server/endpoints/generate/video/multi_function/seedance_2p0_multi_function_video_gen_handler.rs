@@ -5,6 +5,9 @@ use crate::billing::wallets::attempt_wallet_deduction::attempt_wallet_deduction_
 use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::endpoint_helpers::refund_wallet_after_api_failure::refund_wallet_after_api_failure;
 use crate::http_server::endpoints::generate::common::map_seedance2pro_web_errors::map_seedance2pro_error_to_web_error;
+use crate::http_server::endpoints::generate::common::generation_debug_logs::{
+  insert_generation_failure_debug_log, insert_generation_request_debug_log,
+};
 use crate::http_server::endpoints::generate::common::payments_error_test::payments_error_test;
 use crate::http_server::user_lookup::user_session::session_utils::lookup::user_session_feature_flags::UserSessionFeatureFlags;
 use crate::http_server::validations::validate_idempotency_token_format::validate_idempotency_token_format;
@@ -49,6 +52,8 @@ use sqlx::MySql;
 use tokens::tokens::characters::CharacterToken;
 use tokens::tokens::generic_inference_jobs::InferenceJobToken;
 use tokens::tokens::media_files::MediaFileToken;
+use tokens::tokens::non_unique::debug_logs_event_token::DebugLogEventToken;
+
 use url::Url;
 use url_utils::extension::extract_extension_from_url::{extract_extension_from_url, ExtractExtensions};
 
@@ -107,6 +112,21 @@ pub async fn seedance_2p0_multi_function_video_gen_handler(
   };
 
   let user_token = &user_session.user_token;
+
+  // ==================== DEBUG LOG: HTTP REQUEST ==================== //
+
+  let debug_log_event_token = DebugLogEventToken::generate();
+  let ip_address = get_request_ip(&http_request);
+  let request_url = http_request.uri().to_string();
+
+  insert_generation_request_debug_log(
+    &debug_log_event_token,
+    user_token,
+    &ip_address,
+    &request_url,
+    &serde_json::to_string(&*request).unwrap_or_default(),
+    &mut *mysql_connection,
+  ).await;
 
   if let Err(reason) = validate_idempotency_token_format(&request.uuid_idempotency_token) {
     return Err(CommonWebError::BadInputWithSimpleMessage(reason));
@@ -248,6 +268,14 @@ pub async fn seedance_2p0_multi_function_video_gen_handler(
               }
             }
 
+            insert_generation_failure_debug_log(
+              &debug_log_event_token,
+              user_token,
+              &ip_address,
+              &request_url,
+              &format!("Seedance 2.0 generation failed: {:?}", err),
+              &mut *mysql_connection,
+            ).await;
             refund_wallet_after_api_failure(&deduction_result.ledger_entry_token, &mut mysql_connection).await?;
             return Err(err);
           }
@@ -289,6 +317,14 @@ pub async fn seedance_2p0_multi_function_video_gen_handler(
           }
         }
 
+        insert_generation_failure_debug_log(
+          &debug_log_event_token,
+          user_token,
+          &ip_address,
+          &request_url,
+          &format!("Seedance 2.0 generation failed: {:?}", err),
+          &mut *mysql_connection,
+        ).await;
         refund_wallet_after_api_failure(&deduction_result.ledger_entry_token, &mut mysql_connection).await?;
         return Err(err);
       }
@@ -304,8 +340,6 @@ pub async fn seedance_2p0_multi_function_video_gen_handler(
   );
 
   // --- DB writes in a transaction ---
-
-  let ip_address = get_request_ip(&http_request);
 
   let mut transaction = mysql_connection
       .begin()
@@ -438,7 +472,7 @@ pub async fn seedance_2p0_multi_function_video_gen_handler(
         creator_set_visibility: Visibility::Public,
         maybe_platform_type: get_request_platform_type(&http_request),
         maybe_cost_estimates: None,
-        maybe_debug_log_event_token: None,
+        maybe_debug_log_event_token: Some(&debug_log_event_token),
         mysql_executor: &mut *transaction,
         phantom: Default::default(),
       }
