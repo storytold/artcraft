@@ -267,45 +267,8 @@ pub async fn omni_api_video_generate_handler(
 
   let mut mysql_connection = server_state.mysql_pool.acquire().await?;
 
-  // ==================== DEBUG LOG: FAL REQUEST ==================== //
-
-  if let GenerateVideoResponse::Fal(ref fal_payload) = pipeline_result.response {
-    if let Some(ref outbound_request) = fal_payload.maybe_outbound_request {
-      if let Err(err) = insert_debug_log(InsertDebugLogArgs {
-        apriori_debug_log_event_token: Some(&debug_log_event_token),
-        maybe_creator_user_token: Some(user_token),
-        debug_log_type: DebugLogType::FalRequest,
-        maybe_log_level: Some(DebugLogLevel::Info),
-        maybe_ip_address: Some(&ip_address),
-        maybe_url: Some(&request_url),
-        message: &format!("{:#?}", outbound_request),
-        mysql_executor: &mut *mysql_connection,
-        phantom: Default::default(),
-      }).await {
-        warn!("Failed to insert Fal request debug log: {:?}", err);
-      }
-    }
-  }
-
-  // ==================== DEBUG LOG: GROK API REQUEST ==================== //
-
-  if let GenerateVideoResponse::Grok(ref grok_payload) = pipeline_result.response {
-    if let Some(ref outbound_request) = grok_payload.maybe_outbound_request {
-      if let Err(err) = insert_debug_log(InsertDebugLogArgs {
-        apriori_debug_log_event_token: Some(&debug_log_event_token),
-        maybe_creator_user_token: Some(user_token),
-        debug_log_type: DebugLogType::GrokApiRequest,
-        maybe_log_level: Some(DebugLogLevel::Info),
-        maybe_ip_address: Some(&ip_address),
-        maybe_url: Some(&request_url),
-        message: &format!("{:#?}", outbound_request),
-        mysql_executor: &mut *mysql_connection,
-        phantom: Default::default(),
-      }).await {
-        warn!("Failed to insert Grok API request debug log: {:?}", err);
-      }
-    }
-  }
+  // NB: Outbound provider requests (Fal/Grok/Kinovi) are debug-logged inside
+  // the pipeline BEFORE the send, so the payload is captured even on failure.
 
   // ==================== WRITE RESULT ==================== //
 

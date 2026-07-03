@@ -16,7 +16,7 @@ use tokens::tokens::users::UserToken;
 use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::endpoint_helpers::refund_wallet_after_api_failure::refund_wallet_after_api_failure;
 use crate::http_server::endpoints::generate::common::generation_debug_logs::{
-  insert_kinovi_request_debug_log, GenerationDebugLogContext,
+  insert_provider_request_debug_log, provider_request_debug_log_type, GenerationDebugLogContext,
 };
 use crate::http_server::endpoints::omni_gen::generate::video::helpers::bill_wallet::bill_wallet;
 use crate::http_server::endpoints::omni_gen::generate::video::helpers::build_router_client::build_router_client;
@@ -228,13 +228,13 @@ async fn upload_and_generate(
     }
   };
 
-  // ==================== DEBUG LOG: KINOVI REQUEST ==================== //
+  // ==================== DEBUG LOG: OUTBOUND PROVIDER REQUEST ==================== //
   // Logged BEFORE the send so the outbound payload is captured even when the
-  // enqueue fails. (Fal/Grok outbound requests are logged handler-side from
-  // the response payload instead — success path only.)
-  if matches!(provider, RouterProvider::Seedance2Pro) {
-    insert_kinovi_request_debug_log(
+  // enqueue fails.
+  if let Some(debug_log_type) = provider_request_debug_log_type(provider) {
+    insert_provider_request_debug_log(
       debug_log_context,
+      debug_log_type,
       &format!("{:#?}", video_request),
       &server_state.mysql_pool,
     ).await;
