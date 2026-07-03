@@ -17,6 +17,9 @@ use tokens::tokens::users::UserToken;
 
 use crate::billing::wallets::attempt_wallet_deduction::attempt_wallet_deduction_else_common_web_error;
 use crate::http_server::common_responses::common_web_error::CommonWebError;
+use crate::http_server::endpoints::generate::common::generation_debug_logs::{
+  insert_provider_request_debug_log, provider_request_debug_log_type, GenerationDebugLogContext,
+};
 use crate::http_server::endpoints::omni_api::generate::image::pipeline_result::ImagePipelineResult;
 use crate::http_server::endpoints::omni_api::shared_utils::map_seedance2pro_router_error::map_router_error_to_web_error;
 use crate::state::server_state::ServerState;
@@ -27,6 +30,11 @@ pub struct RunPipelineV2Args<'a> {
   pub server_state: &'a ServerState,
   pub user_token: &'a UserToken,
   pub resolved_media: &'a MediaFilesAsCdnUrlListAndMap,
+  pub debug_log_context: &'a GenerationDebugLogContext<'a>,
+  /// The handler's open connection. The pipeline uses it for its remaining
+  /// pre-request DB writes (billing, outbound-request debug log) and releases
+  /// it BEFORE the external provider call.
+  pub mysql_connection: sqlx::pool::PoolConnection<sqlx::MySql>,
 }
 
 // NB: This pipeline does an external generation call (`finalize_and_generate`) that can take many
@@ -41,6 +49,8 @@ pub async fn run_pipeline_v2(
     server_state,
     user_token,
     resolved_media,
+    debug_log_context,
+    mut mysql_connection,
   } = args;
 
   let hydrated_builder = apply_hydrated_media_inputs(
@@ -57,24 +67,36 @@ pub async fn run_pipeline_v2(
   let apriori_job_token = InferenceJobToken::generate();
 
   let maybe_wallet_ledger_entry_token = if cost > 0 {
-    // NB: Short-lived connection — released before the external call below.
-    let mut billing_connection = server_state.mysql_pool.acquire().await
-      .map_err(|err| {
-        warn!("Failed to acquire MySQL connection for image billing: {:?}", err);
-        CommonWebError::from_error(err)
-      })?;
+    // Billed on the handler's connection (same pre-request DB phase).
     let deduction = attempt_wallet_deduction_else_common_web_error(
       user_token,
       Some(apriori_job_token.as_str()),
       cost,
-      &mut billing_connection,
+      &mut mysql_connection,
     ).await?;
     Some(deduction.ledger_entry_token)
   } else {
     None
   };
 
-  // NB: No pooled DB connection is held across this external generation call.
+  // Debug-log the outbound provider request BEFORE the send — still on the
+  // handler's connection — so the payload is captured even when the
+  // upload/enqueue fails.
+  if let Some(debug_log_type) = provider_request_debug_log_type(draft_or_request.get_provider()) {
+    insert_provider_request_debug_log(
+      debug_log_context,
+      debug_log_type,
+      &format!("{:#?}", draft_or_request),
+      &mut *mysql_connection,
+    ).await;
+  }
+
+  // NB: Done with pre-request DB writes. Release the pooled connection before
+  // the (slow, external) provider call — holding it across that call is what
+  // starves the pool and causes PoolTimedOut. No pooled DB connection is held
+  // across the external generation call below.
+  drop(mysql_connection);
+
   let response = finalize_and_generate(draft_or_request, server_state, resolved_media).await?;
 
   Ok(ImagePipelineResult {
