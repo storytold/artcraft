@@ -31,6 +31,10 @@ pub struct RunPipelineV2Args<'a> {
   pub user_token: &'a UserToken,
   pub resolved_media: &'a MediaFilesAsCdnUrlListAndMap,
   pub debug_log_context: &'a GenerationDebugLogContext<'a>,
+  /// The handler's open connection. The pipeline uses it for its remaining
+  /// pre-request DB writes (billing, outbound-request debug log) and releases
+  /// it BEFORE the external provider call.
+  pub mysql_connection: sqlx::pool::PoolConnection<sqlx::MySql>,
 }
 
 // NB: This pipeline does an external generation call (`finalize_and_generate`) that can take many
@@ -46,6 +50,7 @@ pub async fn run_pipeline_v2(
     user_token,
     resolved_media,
     debug_log_context,
+    mut mysql_connection,
   } = args;
 
   let hydrated_builder = apply_hydrated_media_inputs(
@@ -62,30 +67,37 @@ pub async fn run_pipeline_v2(
   let apriori_job_token = InferenceJobToken::generate();
 
   let maybe_wallet_ledger_entry_token = if cost > 0 {
-    // NB: Short-lived connection — released before the external call below.
-    let mut billing_connection = server_state.mysql_pool.acquire().await
-      .map_err(|err| {
-        warn!("Failed to acquire MySQL connection for image billing: {:?}", err);
-        CommonWebError::from_error(err)
-      })?;
+    // Billed on the handler's connection (same pre-request DB phase).
     let deduction = attempt_wallet_deduction_else_common_web_error(
       user_token,
       Some(apriori_job_token.as_str()),
       cost,
-      &mut billing_connection,
+      &mut mysql_connection,
     ).await?;
     Some(deduction.ledger_entry_token)
   } else {
     None
   };
 
-  // NB: No pooled DB connection is held across this external generation call.
-  let response = finalize_and_generate(
-    draft_or_request,
-    server_state,
-    resolved_media,
-    debug_log_context,
-  ).await?;
+  // Debug-log the outbound provider request BEFORE the send — still on the
+  // handler's connection — so the payload is captured even when the
+  // upload/enqueue fails.
+  if let Some(debug_log_type) = provider_request_debug_log_type(draft_or_request.get_provider()) {
+    insert_provider_request_debug_log(
+      debug_log_context,
+      debug_log_type,
+      &format!("{:#?}", draft_or_request),
+      &mut *mysql_connection,
+    ).await;
+  }
+
+  // NB: Done with pre-request DB writes. Release the pooled connection before
+  // the (slow, external) provider call — holding it across that call is what
+  // starves the pool and causes PoolTimedOut. No pooled DB connection is held
+  // across the external generation call below.
+  drop(mysql_connection);
+
+  let response = finalize_and_generate(draft_or_request, server_state, resolved_media).await?;
 
   Ok(ImagePipelineResult {
     apriori_job_token,
@@ -159,7 +171,6 @@ async fn finalize_and_generate(
   draft_or_request: ImageGenerationDraftOrRequest,
   server_state: &ServerState,
   resolved_media: &MediaFilesAsCdnUrlListAndMap,
-  debug_log_context: &GenerationDebugLogContext<'_>,
 ) -> Result<GenerateImageResponse, CommonWebError> {
   let provider = draft_or_request.get_provider();
   let client = build_router_client(provider, server_state)?;
@@ -180,18 +191,6 @@ async fn finalize_and_generate(
         })?
     }
   };
-
-  // ==================== DEBUG LOG: OUTBOUND PROVIDER REQUEST ==================== //
-  // Logged BEFORE the send so the outbound payload is captured even when the
-  // enqueue fails.
-  if let Some(debug_log_type) = provider_request_debug_log_type(provider) {
-    insert_provider_request_debug_log(
-      debug_log_context,
-      debug_log_type,
-      &format!("{:#?}", request),
-      &server_state.mysql_pool,
-    ).await;
-  }
 
   request.send_request(&client)
     .await

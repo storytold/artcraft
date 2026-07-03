@@ -151,10 +151,10 @@ pub async fn omni_gen_image_generate_handler(
 
   // ==================== PIPELINE ==================== //
 
-  // NB: Release the pooled DB connection before the (slow, external) generation call so we don't
-  // hold a pool slot idle while waiting on the provider — that's what starves the pool and causes
-  // PoolTimedOut on unrelated endpoints. We re-acquire below to write the result.
-  drop(mysql_connection);
+  // NB: The pipeline takes over the connection for its remaining pre-request DB writes (billing,
+  // outbound provider request debug log) and releases it before the (slow, external) generation
+  // call — holding a pool slot across that call is what starves the pool and causes PoolTimedOut
+  // on unrelated endpoints. We re-acquire below to write the result.
 
   let debug_log_context = GenerationDebugLogContext {
     event_token: &debug_log_event_token,
@@ -169,6 +169,7 @@ pub async fn omni_gen_image_generate_handler(
     user_token,
     resolved_media: &resolved_media,
     debug_log_context: &debug_log_context,
+    mysql_connection,
   }).await;
 
   // ==================== DEBUG LOG: PIPELINE ERROR ==================== //

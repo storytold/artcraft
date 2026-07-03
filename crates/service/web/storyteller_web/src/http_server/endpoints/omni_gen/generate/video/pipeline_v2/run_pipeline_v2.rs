@@ -35,6 +35,10 @@ pub struct RunPipelineV2Args<'a> {
   pub kinovi_character_id_map: &'a Option<HashMap<CharacterToken, String>>,
   pub kinovi_account: KinoviAccount,
   pub debug_log_context: &'a GenerationDebugLogContext<'a>,
+  /// The handler's open connection. The pipeline uses it for its remaining
+  /// pre-request DB writes (billing, outbound-request debug log) and releases
+  /// it BEFORE the external provider call.
+  pub mysql_connection: sqlx::pool::PoolConnection<sqlx::MySql>,
 }
 
 // NB: This pipeline does an external generation call (`upload_and_generate`) that can take many
@@ -50,6 +54,7 @@ pub async fn run_pipeline_v2(args: RunPipelineV2Args<'_>) -> Result<PipelineResu
     kinovi_character_id_map,
     kinovi_account,
     debug_log_context,
+    mut mysql_connection,
   } = args;
 
   let mut router_builder = router_builder.clone();
@@ -146,15 +151,25 @@ pub async fn run_pipeline_v2(args: RunPipelineV2Args<'_>) -> Result<PipelineResu
 
   info!("v2 estimated cost: {} credits (estimates: {:?})", cost, cost_estimates);
 
-  // 3. Bill wallet (short-lived connection — released before the external call below).
-  let billing = {
-    let mut billing_connection = server_state.mysql_pool.acquire().await
-      .map_err(|err| {
-        error!("Failed to acquire MySQL connection for billing: {:?}", err);
-        CommonWebError::from_error(err)
-      })?;
-    bill_wallet(user_token, cost, &mut billing_connection).await?
-  };
+  // 3. Bill wallet on the handler's connection (same pre-request DB phase).
+  let billing = bill_wallet(user_token, cost, &mut mysql_connection).await?;
+
+  // Debug-log the outbound provider request BEFORE the send — still on the
+  // handler's connection — so the payload is captured even when the
+  // upload/enqueue fails.
+  if let Some(debug_log_type) = provider_request_debug_log_type(provider) {
+    insert_provider_request_debug_log(
+      debug_log_context,
+      debug_log_type,
+      &format!("{:#?}", draft_or_request),
+      &mut *mysql_connection,
+    ).await;
+  }
+
+  // NB: Done with pre-request DB writes. Release the pooled connection before
+  // the (slow, external) provider call — holding it across that call is what
+  // starves the pool and causes PoolTimedOut. Post-send writes re-acquire.
+  drop(mysql_connection);
 
   // 4. Upload media (if draft) and generate video.
   //    The entire block is wrapped so Kinovi failures trigger a refund.
@@ -165,7 +180,6 @@ pub async fn run_pipeline_v2(args: RunPipelineV2Args<'_>) -> Result<PipelineResu
     media_file_to_url_map.as_ref(),
     kinovi_character_id_map.as_ref(),
     kinovi_account,
-    debug_log_context,
   ).await;
 
   // 5. On failure, refund wallet for Kinovi requests.
@@ -204,7 +218,6 @@ async fn upload_and_generate(
   media_file_urls_by_token: Option<&HashMap<MediaFileToken, String>>,
   kinovi_character_ids: Option<&HashMap<CharacterToken, String>>,
   kinovi_account: KinoviAccount,
-  debug_log_context: &GenerationDebugLogContext<'_>,
 ) -> Result<GenerateVideoResponse, CommonWebError> {
 
   let provider = draft_or_request.get_provider();
@@ -227,18 +240,6 @@ async fn upload_and_generate(
           })?
     }
   };
-
-  // ==================== DEBUG LOG: OUTBOUND PROVIDER REQUEST ==================== //
-  // Logged BEFORE the send so the outbound payload is captured even when the
-  // enqueue fails.
-  if let Some(debug_log_type) = provider_request_debug_log_type(provider) {
-    insert_provider_request_debug_log(
-      debug_log_context,
-      debug_log_type,
-      &format!("{:#?}", video_request),
-      &server_state.mysql_pool,
-    ).await;
-  }
 
   video_request.send_request(&client)
       .await

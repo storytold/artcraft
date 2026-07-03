@@ -1,5 +1,5 @@
 use log::warn;
-use sqlx::{Executor, MySql, MySqlPool};
+use sqlx::{Executor, MySql};
 
 use artcraft_router::api::router_provider::RouterProvider;
 use enums::by_table::debug_logs::debug_log_level::DebugLogLevel;
@@ -86,27 +86,20 @@ pub fn provider_request_debug_log_type(provider: RouterProvider) -> Option<Debug
 }
 
 /// Best-effort info-level debug log of an outbound provider generation
-/// request. MUST be called BEFORE the request is sent so the outbound payload
-/// is captured even when the enqueue fails.
-///
-/// Takes the pool rather than an executor because the generation pipelines
-/// deliberately hold no DB connection around the external provider call —
-/// this acquires a short-lived connection and releases it immediately.
-/// Never fails the request — acquire/insert errors are logged and swallowed.
-pub async fn insert_provider_request_debug_log(
-  context: &GenerationDebugLogContext<'_>,
+/// request. MUST be inserted during the pre-request DB phase — on the same
+/// open connection as the session/billing/HTTP-request writes, BEFORE that
+/// connection is released and the external provider call is made — so the
+/// outbound payload is captured even when the upload/enqueue fails, without
+/// ever touching the pool.
+/// Never fails the request — insert errors are logged and swallowed.
+pub async fn insert_provider_request_debug_log<'e, 'c: 'e, E>(
+  context: &'e GenerationDebugLogContext<'e>,
   debug_log_type: DebugLogType,
-  outbound_request_debug: &str,
-  mysql_pool: &MySqlPool,
-) {
-  let mut connection = match mysql_pool.acquire().await {
-    Ok(connection) => connection,
-    Err(err) => {
-      warn!("Failed to acquire MySQL connection for {} debug log: {:?}", debug_log_type, err);
-      return;
-    }
-  };
-
+  outbound_request_debug: &'e str,
+  mysql_executor: E,
+) where
+  E: 'c + Executor<'c, Database = MySql>,
+{
   if let Err(err) = insert_debug_log(InsertDebugLogArgs {
     apriori_debug_log_event_token: Some(context.event_token),
     maybe_creator_user_token: Some(context.user_token),
@@ -115,7 +108,7 @@ pub async fn insert_provider_request_debug_log(
     maybe_ip_address: Some(context.ip_address),
     maybe_url: Some(context.request_url),
     message: outbound_request_debug,
-    mysql_executor: &mut *connection,
+    mysql_executor,
     phantom: Default::default(),
   }).await {
     warn!("Failed to insert {} debug log: {:?}", debug_log_type, err);
