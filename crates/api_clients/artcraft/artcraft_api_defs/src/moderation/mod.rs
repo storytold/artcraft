@@ -1,5 +1,6 @@
 pub mod alerts;
 pub mod debug_logs;
+pub mod top_spenders;
 pub mod jobs;
 pub mod user;
 pub mod user_referrals;
