@@ -1,5 +1,6 @@
 import * as React from "react";
 import {
+  IconTrophy,
   IconBrandStripe,
   IconBriefcase,
   IconBug,
@@ -63,6 +64,7 @@ const data = {
     {
       label: "Business Growth",
       items: [
+        { title: "Top Spenders", url: "/top-spenders", icon: IconTrophy },
         { title: "Spend Events", url: "/spend-events", icon: IconCoin },
         { title: "Reengagement List", url: "/reengagement-list", icon: IconHeartHandshake },
       ],

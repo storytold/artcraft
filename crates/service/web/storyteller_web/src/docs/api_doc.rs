@@ -137,6 +137,7 @@ use artcraft_api_defs::moderation::user_spend_summaries::get_summary::*;
 use artcraft_api_defs::moderation::user_spend_summaries::reengagement_list::*;
 use artcraft_api_defs::moderation::user_spend_summaries::top_users_list::*;
 use artcraft_api_defs::moderation::user_daily_spends::user_daily_spends_list::*;
+use artcraft_api_defs::moderation::top_spenders::list::*;
 use artcraft_api_defs::moderation::user_spend_events::list::*;
 use artcraft_api_defs::folders::subfolder::*;
 use artcraft_api_defs::moderation::user_referrals::list_global_user_referrals::*;
@@ -396,6 +397,7 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     crate::http_server::endpoints::moderation::user_spend_summaries::moderator_reengagement_list_handler::moderator_reengagement_list_handler,
     crate::http_server::endpoints::moderation::user_spend_summaries::moderator_top_users_list_handler::moderator_top_users_list_handler,
     crate::http_server::endpoints::moderation::user_daily_spends::moderator_user_daily_spends_handler::moderator_user_daily_spends_handler,
+    crate::http_server::endpoints::moderation::top_spenders::moderator_list_top_spenders_handler::moderator_list_top_spenders_handler,
     crate::http_server::endpoints::moderation::user_spend_events::moderator_list_user_spend_events_handler::moderator_list_user_spend_events_handler,
     billing_component::stripe::http_endpoints::checkout::create::stripe_create_checkout_session_json_handler::stripe_create_checkout_session_json_handler,
     crate::http_server::endpoints::billing_fakeyou::list_active_user_subscriptions_handler::list_active_user_subscriptions_handler,
@@ -656,6 +658,9 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     TopUserEntry,
     TopUsersWindow,
     ModeratorUserDailySpendsResponse,
+    ModeratorListTopSpendersResponse,
+    TopSpenderEntry,
+    TopSpendersWindow,
     ModeratorListUserSpendEventsResponse,
     UserSpendEventListEntry,
     UserDailySpendEntry,

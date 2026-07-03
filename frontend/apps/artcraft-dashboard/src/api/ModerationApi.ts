@@ -85,6 +85,18 @@ export interface ModeratorUserLookupResponse {
   username_is_not_customized: boolean;
 }
 
+export interface TopSpender {
+  user_token: string;
+  username: string;
+  display_name: string;
+  email_gravatar_hash: string;
+  gross_spend_usd_cents: number;
+  refund_usd_cents: number;
+  net_spend_usd_cents: number;
+  payment_count: number;
+  credits_granted: number;
+}
+
 export interface UserSpendEvent {
   token: string;
   payments_namespace: string;
@@ -262,6 +274,43 @@ export class ModerationApi extends ApiManager {
         errorMessage: response.error_message,
       }))
       .catch((err) => ({ success: false, errorMessage: err.message }));
+  }
+
+  // Top spenders over a rolling window (offset-paginated, biggest net spend first).
+  public async ListTopSpenders(
+    window: string,
+    offset?: number | null,
+  ): Promise<
+    ApiResponse<{
+      spenders: TopSpender[];
+      next_offset: number | null;
+    }>
+  > {
+    const endpoint = `${this.getApiSchemeAndHost()}/v1/moderation/top_spenders/list`;
+    return await this.get<{
+      success: boolean;
+      spenders: TopSpender[];
+      maybe_next_offset: number | null;
+      error_message?: string;
+    }>({
+      endpoint,
+      query: {
+        window,
+        offset: offset ?? undefined,
+      },
+    })
+      .then((response) => ({
+        success: response.success,
+        data: {
+          spenders: response.spenders || [],
+          next_offset: response.maybe_next_offset ?? null,
+        },
+        errorMessage: response.error_message,
+      }))
+      .catch((err) => ({
+        success: false,
+        errorMessage: err.message,
+      }));
   }
 
   // Spend events list (offset-paginated, newest payment first).

@@ -26,6 +26,7 @@ import { DebugLogsAll } from "@/pages/DebugLogsAll";
 import { UserDebugLogs } from "@/pages/UserDebugLogs";
 import { DebugLogsSearch } from "@/pages/DebugLogsSearch";
 import { SpendEvents } from "@/pages/SpendEvents";
+import { TopSpenders } from "@/pages/TopSpenders";
 import { ReengagementList } from "@/pages/ReengagementList";
 import { UserSpendSummary } from "@/pages/UserSpendSummary";
 import { UserSpendHistory } from "@/pages/UserSpendHistory";
@@ -70,6 +71,7 @@ function AppRoutes() {
         <Route path="stripe-lookup" element={<StripeLookup />} />
         <Route path="user-signups" element={<UserSignups />} />
         <Route path="subscriber-signups" element={<SubscriberSignups />} />
+        <Route path="top-spenders" element={<TopSpenders />} />
         <Route path="spend-events" element={<SpendEvents />} />
         <Route path="reengagement-list" element={<ReengagementList />} />
         <Route path="impersonation" element={<Impersonation />} />
