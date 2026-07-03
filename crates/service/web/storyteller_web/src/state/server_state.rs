@@ -5,7 +5,6 @@ use crate::http_server::deprecated_endpoints::leaderboard::get_leaderboard::Lead
 use crate::http_server::endpoints::media_files::list::list_featured_media_files_handler::ListFeaturedMediaFilesQueryParams;
 use crate::http_server::endpoints::stats::result_transformer::CacheableQueueStats;
 use crate::http_server::endpoints::tts::list_tts_models::TtsModelRecordForResponse;
-use crate::http_server::endpoints::voice_conversion::list_voice_conversion_models_handler::VoiceConversionModel;
 use crate::http_server::user_lookup::user_session::session_utils::session_checker::SessionChecker;
 use crate::http_server::web_utils::redis_rate_limiter::RedisRateLimiter;
 use crate::http_server::web_utils::scoped_temp_dir_creator::ScopedTempDirCreator;
@@ -34,7 +33,6 @@ use mysql_queries::mediators::firehose_publisher::FirehosePublisher;
 use mysql_queries::queries::generic_inference::web::get_pending_inference_job_count::InferenceQueueLengthResult;
 use mysql_queries::queries::media_files::list::list_featured_media_files::FeaturedMediaFileListPage;
 use mysql_queries::queries::model_categories::list_categories_query_builder::CategoryList;
-use mysql_queries::queries::tts::tts_inference_jobs::get_pending_tts_inference_job_count::TtsQueueLengthResult;
 use opaque_cursors::v2::opaque_cursor_encoder_v2::OpaqueCursorEncoderV2;
 use pager::client::pager::Pager;
 use redis::Client;
@@ -190,9 +188,6 @@ pub struct EphemeralInMemoryCaches {
   /// Contains a list of all TTS models.
   pub tts_model_list: SingleItemTtlCache<Vec<TtsModelRecordForResponse>>,
 
-  /// Contains a list of all voice conversion models.
-  pub voice_conversion_model_list: SingleItemTtlCache<Vec<VoiceConversionModel>>,
-
   /// Contains a list of all TTS categories in the database
   /// (before any enrichment with synthetic categories)
   /// This is used in several places (list categories, computed category assignments)
@@ -211,11 +206,6 @@ pub struct EphemeralInMemoryCaches {
   /// The frontend will consult a distributed cache and use the monotonic DB time as a
   /// vector clock.
   pub inference_queue_length: SingleItemTtlCache<InferenceQueueLengthResult>,
-
-  /// TTS queue length
-  /// The frontend will consult a distributed cache and use the monotonic DB time as a
-  /// vector clock.
-  pub tts_queue_length: SingleItemTtlCache<TtsQueueLengthResult>,
 
   pub leaderboard: SingleItemTtlCache<LeaderboardInfo>,
 
@@ -251,14 +241,8 @@ pub struct StaticFeatureFlags {
   /// Disable the live `/v1/model_inference/queue_length` endpoint for all users and serve a static value instead.
   pub disable_inference_queue_length_endpoint: bool,
 
-  /// Disable the live `/tts/queue_length` endpoint for all users and serve a static value instead.
-  pub disable_tts_queue_length_endpoint: bool,
-
   /// Disable the live `/tts/list` endpoint for all users and serve a static value instead.
   pub disable_tts_model_list_endpoint: bool,
-
-  /// Disable the live `/v1/voice_conversion/model_list` endpoint for all users and serve a static value instead.
-  pub disable_voice_conversion_model_list_endpoint: bool,
 
   /// Tell the frontend client how fast to refresh their view of queue stats.
   /// During an attack, we may want this to go extremely slow.
@@ -267,10 +251,6 @@ pub struct StaticFeatureFlags {
   /// Tell the frontend client how fast to refresh their view of the pending inference count.
   /// During an attack, we may want this to go extremely slow.
   pub frontend_pending_inference_refresh_interval_millis: u64,
-
-  /// Tell the frontend client how fast to refresh their view of the pending TTS count.
-  /// During an attack, we may want this to go extremely slow.
-  pub frontend_pending_tts_refresh_interval_millis: u64,
 
   /// For "troll banned" users, what percentage of the time will the service misbehave?
   /// This should be a number over 100.
@@ -294,10 +274,6 @@ pub struct StaticFeatureFlags {
   /// Disable TTS endpoints
   /// If true, respond with 429.
   pub disable_tts: bool,
-
-  /// Disable voice conversion endpoints
-  /// If true, respond with 429.
-  pub disable_voice_conversion: bool,
 
   /// Paging system flags.
   pub paging: PagingFlags,

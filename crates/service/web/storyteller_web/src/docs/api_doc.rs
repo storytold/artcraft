@@ -217,8 +217,6 @@ use billing_component::stripe::http_endpoints::checkout::create::stripe_create_c
 use crate::http_server::endpoints::billing_fakeyou::list_active_user_subscriptions_handler::*;
 use crate::http_server::endpoints::service::status_alert_handler::*;
 use crate::http_server::endpoints::stats::get_unified_queue_stats_handler::*;
-use crate::http_server::endpoints::studio_gen2::enqueue_studio_gen2_handler::*;
-use crate::http_server::endpoints::studio_gen2::enqueue_studio_gen2_handler::EnqueueStudioGen2Request;
 use crate::http_server::endpoints::tags::list_tags_for_entity_handler::*;
 use crate::http_server::endpoints::tags::set_tags_for_entity_handler::*;
 use crate::http_server::endpoints::tts::enqueue_infer_tts_handler::enqueue_infer_tts_handler::*;
@@ -241,9 +239,6 @@ use crate::http_server::endpoints::users::login_handler::LoginErrorResponse;
 use crate::http_server::endpoints::users::logout_handler::*;
 use crate::http_server::endpoints::users::session_info_handler::*;
 use crate::http_server::endpoints::users::session_token_info_handler::*;
-use crate::http_server::endpoints::voice_conversion::enqueue_voice_conversion_inference_handler::*;
-use crate::http_server::endpoints::voice_designer::inference::enqueue_tts_request::*;
-use crate::http_server::endpoints::voice_designer::voice_datasets::list_datasets_by_user::*;
 use crate::http_server::endpoints::weights::delete::delete_weight_handler::*;
 use crate::http_server::endpoints::weights::get::get_weight_handler::*;
 use crate::http_server::endpoints::weights::list::list_available_weights_handler::*;
@@ -388,7 +383,6 @@ use crate::http_server::endpoints::video_info::video_info_upload_handler::*;
 use crate::http_server::endpoints::video_info::video_info_notes_handler::*;
 use crate::http_server::endpoints::web_referrals::log_web_referral_handler::*;
 use crate::http_server::endpoints::image_studio::update_gpt_image_job_status_handler::*;
-use crate::http_server::endpoints::voice_conversion::enqueue_seed_vc_inference_handler::*;
 use crate::http_server::endpoints::credits::get_session_credits_handler::*;
 use crate::http_server::endpoints::subscriptions::get_session_subscription_handler::*;
 use crate::http_server::endpoints::analytics::log_app_active_user_handler::*;
@@ -487,7 +481,6 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     crate::http_server::endpoints::prompts::get_prompt_handler::get_prompt_handler,
     crate::http_server::endpoints::service::status_alert_handler::status_alert_handler,
     crate::http_server::endpoints::stats::get_unified_queue_stats_handler::get_unified_queue_stats_handler,
-    crate::http_server::endpoints::studio_gen2::enqueue_studio_gen2_handler::enqueue_studio_gen2_handler,
     crate::http_server::endpoints::tags::list_tags_for_entity_handler::list_tags_for_entity_handler,
     crate::http_server::endpoints::tags::set_tags_for_entity_handler::set_tags_for_entity_handler,
     crate::http_server::endpoints::tts::enqueue_infer_tts_handler::enqueue_infer_tts_handler::enqueue_infer_tts_handler,
@@ -509,9 +502,6 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     crate::http_server::endpoints::users::logout_handler::logout_handler,
     crate::http_server::endpoints::users::session_info_handler::session_info_handler,
     crate::http_server::endpoints::users::session_token_info_handler::session_token_info_handler,
-    crate::http_server::endpoints::voice_conversion::enqueue_voice_conversion_inference_handler::enqueue_voice_conversion_inference_handler,
-    crate::http_server::endpoints::voice_designer::inference::enqueue_tts_request::enqueue_tts_request,
-    crate::http_server::endpoints::voice_designer::voice_datasets::list_datasets_by_user::list_datasets_by_user_handler,
     crate::http_server::endpoints::weights::delete::delete_weight_handler::delete_weight_handler,
     crate::http_server::endpoints::weights::get::get_weight_handler::get_weight_handler,
     crate::http_server::endpoints::weights::list::list_available_weights_handler::list_available_weights_handler,
@@ -567,9 +557,7 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     crate::http_server::endpoints::analytics::log_app_active_user_handler::log_app_active_user_handler,
     crate::http_server::endpoints::analytics::log_app_active_user_json_handler::log_app_active_user_json_handler,
     // Voice Conversion
-    crate::http_server::endpoints::voice_conversion::enqueue_seed_vc_inference_handler::enqueue_infer_seed_vc_handler,
     // TTS
-    crate::http_server::endpoints::tts::enqueue_infer_f5_tts_handler::enqueue_infer_f5_tts_handler::enqueue_infer_f5_tts_handler,
     // Characters
     crate::http_server::endpoints::characters::list_characters_handler::list_characters_handler,
     crate::http_server::endpoints::characters::create_character_handler::create_character_handler,
@@ -931,17 +919,10 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     EnqueueLivePortraitCropDimensions,
     EnqueueLivePortraitWorkflowRequest,
     EnqueueLivePortraitWorkflowSuccessResponse,
-    EnqueueStudioGen2Request,
-    EnqueueStudioGen2Response,
-    EnqueueTTSRequest,
-    EnqueueTTSRequestSuccessResponse,
     EnqueueVideoStyleTransferRequest,
     EnqueueVideoStyleTransferSuccessResponse,
-    EnqueueVoiceConversionInferenceRequest,
-    EnqueueVoiceConversionInferenceSuccessResponse,
     FeaturedMediaFile,
     FeaturedModelWeightForList,
-    FundamentalFrequencyMethod,
     GenerateFlux1DevTextToImageAspectRatio,
     GenerateFlux1DevTextToImageNumImages,
     GenerateFlux1DevTextToImageRequest,
@@ -1021,9 +1002,6 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     ListCommentsError,
     ListCommentsPathInfo,
     ListCommentsSuccessResponse,
-    ListDatasetsByUserError,
-    ListDatasetsByUserPathInfo,
-    ListDatasetsByUserSuccessResponse,
     ListFeaturedMediaFilesQueryParams,
     ListFeaturedMediaFilesSuccessResponse,
     ListFeaturedWeightsError,
@@ -1194,7 +1172,6 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     WeightsData,
     WriteEngineAssetMediaSuccessResponse,
     WriteSceneFileMediaSuccessResponse,
-    ZsDatasetRecord,
 
     // Cost Estimate types
     EstimateImageCostRequest,
