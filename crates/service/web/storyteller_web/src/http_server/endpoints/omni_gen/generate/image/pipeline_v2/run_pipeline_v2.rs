@@ -17,6 +17,9 @@ use tokens::tokens::users::UserToken;
 
 use crate::billing::wallets::attempt_wallet_deduction::attempt_wallet_deduction_else_common_web_error;
 use crate::http_server::common_responses::common_web_error::CommonWebError;
+use crate::http_server::endpoints::generate::common::generation_debug_logs::{
+  insert_kinovi_request_debug_log, GenerationDebugLogContext,
+};
 use crate::http_server::endpoints::omni_gen::generate::image::pipeline_result::ImagePipelineResult;
 use crate::http_server::endpoints::omni_gen::shared_utils::map_seedance2pro_router_error::map_router_error_to_web_error;
 use crate::state::server_state::ServerState;
@@ -27,6 +30,7 @@ pub struct RunPipelineV2Args<'a> {
   pub server_state: &'a ServerState,
   pub user_token: &'a UserToken,
   pub resolved_media: &'a MediaFilesAsCdnUrlListAndMap,
+  pub debug_log_context: &'a GenerationDebugLogContext<'a>,
 }
 
 // NB: This pipeline does an external generation call (`finalize_and_generate`) that can take many
@@ -41,6 +45,7 @@ pub async fn run_pipeline_v2(
     server_state,
     user_token,
     resolved_media,
+    debug_log_context,
   } = args;
 
   let hydrated_builder = apply_hydrated_media_inputs(
@@ -75,7 +80,12 @@ pub async fn run_pipeline_v2(
   };
 
   // NB: No pooled DB connection is held across this external generation call.
-  let response = finalize_and_generate(draft_or_request, server_state, resolved_media).await?;
+  let response = finalize_and_generate(
+    draft_or_request,
+    server_state,
+    resolved_media,
+    debug_log_context,
+  ).await?;
 
   Ok(ImagePipelineResult {
     apriori_job_token,
@@ -149,6 +159,7 @@ async fn finalize_and_generate(
   draft_or_request: ImageGenerationDraftOrRequest,
   server_state: &ServerState,
   resolved_media: &MediaFilesAsCdnUrlListAndMap,
+  debug_log_context: &GenerationDebugLogContext<'_>,
 ) -> Result<GenerateImageResponse, CommonWebError> {
   let provider = draft_or_request.get_provider();
   let client = build_router_client(provider, server_state)?;
@@ -169,6 +180,18 @@ async fn finalize_and_generate(
         })?
     }
   };
+
+  // ==================== DEBUG LOG: KINOVI REQUEST ==================== //
+  // Logged BEFORE the send so the outbound payload is captured even when the
+  // enqueue fails. (Fal outbound requests are logged handler-side from the
+  // response payload instead — success path only.)
+  if matches!(provider, RouterProvider::Seedance2Pro) {
+    insert_kinovi_request_debug_log(
+      debug_log_context,
+      &format!("{:#?}", request),
+      &server_state.mysql_pool,
+    ).await;
+  }
 
   request.send_request(&client)
     .await

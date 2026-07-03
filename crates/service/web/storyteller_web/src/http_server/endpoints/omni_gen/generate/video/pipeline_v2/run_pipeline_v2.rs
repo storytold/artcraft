@@ -15,6 +15,9 @@ use tokens::tokens::users::UserToken;
 
 use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::endpoint_helpers::refund_wallet_after_api_failure::refund_wallet_after_api_failure;
+use crate::http_server::endpoints::generate::common::generation_debug_logs::{
+  insert_kinovi_request_debug_log, GenerationDebugLogContext,
+};
 use crate::http_server::endpoints::omni_gen::generate::video::helpers::bill_wallet::bill_wallet;
 use crate::http_server::endpoints::omni_gen::generate::video::helpers::build_router_client::build_router_client;
 use crate::http_server::endpoints::omni_gen::generate::video::helpers::pipeline_result::PipelineResult;
@@ -31,6 +34,7 @@ pub struct RunPipelineV2Args<'a> {
   pub media_file_to_url_map: &'a Option<HashMap<MediaFileToken, String>>,
   pub kinovi_character_id_map: &'a Option<HashMap<CharacterToken, String>>,
   pub kinovi_account: KinoviAccount,
+  pub debug_log_context: &'a GenerationDebugLogContext<'a>,
 }
 
 // NB: This pipeline does an external generation call (`upload_and_generate`) that can take many
@@ -45,6 +49,7 @@ pub async fn run_pipeline_v2(args: RunPipelineV2Args<'_>) -> Result<PipelineResu
     media_file_to_url_map,
     kinovi_character_id_map,
     kinovi_account,
+    debug_log_context,
   } = args;
 
   let mut router_builder = router_builder.clone();
@@ -160,6 +165,7 @@ pub async fn run_pipeline_v2(args: RunPipelineV2Args<'_>) -> Result<PipelineResu
     media_file_to_url_map.as_ref(),
     kinovi_character_id_map.as_ref(),
     kinovi_account,
+    debug_log_context,
   ).await;
 
   // 5. On failure, refund wallet for Kinovi requests.
@@ -198,6 +204,7 @@ async fn upload_and_generate(
   media_file_urls_by_token: Option<&HashMap<MediaFileToken, String>>,
   kinovi_character_ids: Option<&HashMap<CharacterToken, String>>,
   kinovi_account: KinoviAccount,
+  debug_log_context: &GenerationDebugLogContext<'_>,
 ) -> Result<GenerateVideoResponse, CommonWebError> {
 
   let provider = draft_or_request.get_provider();
@@ -220,6 +227,18 @@ async fn upload_and_generate(
           })?
     }
   };
+
+  // ==================== DEBUG LOG: KINOVI REQUEST ==================== //
+  // Logged BEFORE the send so the outbound payload is captured even when the
+  // enqueue fails. (Fal/Grok outbound requests are logged handler-side from
+  // the response payload instead — success path only.)
+  if matches!(provider, RouterProvider::Seedance2Pro) {
+    insert_kinovi_request_debug_log(
+      debug_log_context,
+      &format!("{:#?}", video_request),
+      &server_state.mysql_pool,
+    ).await;
+  }
 
   video_request.send_request(&client)
       .await

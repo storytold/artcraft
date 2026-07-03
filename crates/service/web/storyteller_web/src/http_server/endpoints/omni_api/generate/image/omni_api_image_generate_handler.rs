@@ -8,6 +8,7 @@ use sqlx::Acquire;
 use artcraft_api_defs::omni_api::generate_requests::omni_api_image_generate_request::OmniApiImageGenerateRequest;
 use artcraft_api_defs::omni_gen::generate_response::omni_gen_image_generate_response::OmniGenImageGenerateResponse;
 use artcraft_router::generate::generate_image::generate_image_response::GenerateImageResponse;
+use enums::by_table::debug_logs::debug_log_level::DebugLogLevel;
 use enums::by_table::debug_logs::debug_log_type::DebugLogType;
 use enums::by_table::prompt_context_items::prompt_context_semantic_type::PromptContextSemanticType;
 use enums::by_table::prompts::prompt_type::PromptType;
@@ -16,7 +17,6 @@ use enums::common::generation::common_model_type::CommonModelType;
 use enums::common::generation_provider::GenerationProvider;
 use enums::common::platform_type::PlatformType;
 use http_server_common::request::get_request_ip::get_request_ip;
-use enums::by_table::debug_logs::debug_log_level::DebugLogLevel;
 use mysql_queries::queries::debug_logs::insert_debug_log::{insert_debug_log, InsertDebugLogArgs};
 use mysql_queries::queries::generic_inference::api_providers::seedance2pro::insert_generic_inference_job_for_seedance2pro_queue_with_apriori_job_token::KinoviVersion;
 use mysql_queries::queries::idepotency_tokens::insert_idempotency_token::insert_idempotency_token;
@@ -28,6 +28,7 @@ use tokens::tokens::generic_inference_jobs::InferenceJobToken;
 use tokens::tokens::non_unique::debug_logs_event_token::DebugLogEventToken;
 
 use crate::http_server::common_responses::common_web_error::CommonWebError;
+use crate::http_server::endpoints::generate::common::generation_debug_logs::GenerationDebugLogContext;
 use crate::http_server::endpoints::generate::common::payments_error_test::payments_error_test;
 use crate::http_server::endpoints::omni_api::generate::image::check_request::check_request;
 use crate::http_server::endpoints::omni_api::generate::image::hydrate_to_router_request::hydrate_to_router_request;
@@ -36,8 +37,8 @@ use crate::http_server::endpoints::omni_api::generate::image::insert_db_job::ins
 use crate::http_server::endpoints::omni_api::generate::image::insert_db_job::insert_seedance2pro_jobs::{insert_seedance2pro_jobs, InsertSeedance2proJobsArgs};
 use crate::http_server::endpoints::omni_api::generate::image::insert_db_job::shared_job_args::SharedJobArgs;
 use crate::http_server::endpoints::omni_api::generate::image::pipeline_v2::run_pipeline_v2::{run_pipeline_v2, RunPipelineV2Args};
-use crate::http_server::user_lookup::user_session::session_utils::lookup::user_session_feature_flags::UserSessionFeatureFlags;
 use crate::http_server::user_lookup::api_keys::require_api_key_user::require_api_key_user;
+use crate::http_server::user_lookup::user_session::session_utils::lookup::user_session_feature_flags::UserSessionFeatureFlags;
 use crate::http_server::validations::validate_idempotency_token_format::validate_idempotency_token_format;
 use crate::state::server_state::ServerState;
 use crate::util::lookup::lookup_media_files_as_cdn_url_list_and_map::lookup_media_files_as_cdn_url_list_and_map;
@@ -157,11 +158,19 @@ pub async fn omni_api_image_generate_handler(
   // PoolTimedOut on unrelated endpoints. We re-acquire below to write the result.
   drop(mysql_connection);
 
+  let debug_log_context = GenerationDebugLogContext {
+    event_token: &debug_log_event_token,
+    user_token,
+    ip_address: &ip_address,
+    request_url: &request_url,
+  };
+
   let pipeline_result = run_pipeline_v2(RunPipelineV2Args {
     router_builder: &router_builder,
     server_state: &server_state,
     user_token,
     resolved_media: &resolved_media,
+    debug_log_context: &debug_log_context,
   }).await;
 
   // ==================== DEBUG LOG: PIPELINE ERROR ==================== //

@@ -27,6 +27,7 @@ use tokens::tokens::generic_inference_jobs::InferenceJobToken;
 use tokens::tokens::non_unique::debug_logs_event_token::DebugLogEventToken;
 
 use crate::http_server::common_responses::common_web_error::CommonWebError;
+use crate::http_server::endpoints::generate::common::generation_debug_logs::GenerationDebugLogContext;
 use crate::http_server::endpoints::generate::common::payments_error_test::payments_error_test;
 use crate::http_server::endpoints::omni_gen::generate::image::hydrate_to_router_request::hydrate_to_router_request;
 use crate::http_server::endpoints::omni_gen::generate::image::insert_db_job::insert_fal_job::{insert_fal_job, InsertFalJobArgs};
@@ -155,11 +156,19 @@ pub async fn omni_gen_image_generate_handler(
   // PoolTimedOut on unrelated endpoints. We re-acquire below to write the result.
   drop(mysql_connection);
 
+  let debug_log_context = GenerationDebugLogContext {
+    event_token: &debug_log_event_token,
+    user_token,
+    ip_address: &ip_address,
+    request_url: &request_url,
+  };
+
   let pipeline_result = run_pipeline_v2(RunPipelineV2Args {
     router_builder: &router_builder,
     server_state: &server_state,
     user_token,
     resolved_media: &resolved_media,
+    debug_log_context: &debug_log_context,
   }).await;
 
   // ==================== DEBUG LOG: PIPELINE ERROR ==================== //
