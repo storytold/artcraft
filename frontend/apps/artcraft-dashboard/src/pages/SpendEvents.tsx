@@ -27,6 +27,25 @@ import { usePageTitle } from "@/hooks/usePageTitle";
 
 const COLUMN_COUNT = 8;
 
+// Distinct pill colors per payment event type (see enums payment_event_type.rs).
+// Subscription lifecycle stays in the cool blue/green family; money-out events
+// are warm (rose/red); staff actions are fuchsia so they stand out.
+const EVENT_TYPE_BADGE_CLASSES: Record<string, string> = {
+  subscription_initial: "bg-green-500/10 text-green-300",
+  subscription_renewal: "bg-lime-500/10 text-lime-300",
+  subscription_proration_upgrade: "bg-cyan-500/10 text-cyan-300",
+  subscription_proration_downgrade: "bg-orange-500/10 text-orange-300",
+  subscription_monthly_refill: "bg-teal-500/10 text-teal-300",
+  credit_pack_purchase: "bg-indigo-500/10 text-indigo-300",
+  refund: "bg-rose-500/10 text-rose-300",
+  chargeback: "bg-red-500/15 text-red-400",
+  manual_adjustment: "bg-fuchsia-500/10 text-fuchsia-300",
+};
+
+// Neutral fallback for unknown/future event types, so indigo stays unique to
+// credit_pack_purchase.
+const DEFAULT_EVENT_TYPE_BADGE_CLASSES = "bg-slate-500/10 text-slate-300";
+
 const usdFormatter = new Intl.NumberFormat("en-US", {
   style: "currency",
   currency: "USD",
@@ -263,7 +282,10 @@ export function SpendEvents() {
                       <TableCell className="text-xs">
                         <Badge
                           variant="secondary"
-                          className="text-[10px] font-mono bg-indigo-500/10 text-indigo-300 border-transparent"
+                          className={`text-[10px] font-mono border-transparent ${
+                            EVENT_TYPE_BADGE_CLASSES[event.event_type] ??
+                            DEFAULT_EVENT_TYPE_BADGE_CLASSES
+                          }`}
                         >
                           {event.event_type}
                         </Badge>
