@@ -46,6 +46,7 @@ use crate::billing::stripe_internal_user_lookup_impl::StripeInternalUserLookupIm
 use crate::http_server::middleware::error_alerting_middleware::error_alerting_middleware::ErrorAlertingMiddleware;
 use crate::http_server::middleware::metrics_middleware::metrics_middleware::MetricsMiddleware;
 use crate::http_server::middleware::pushback_filter_middleware::PushbackFilter;
+use crate::http_server::middleware::trace_id_middleware::trace_id_middleware::TraceIdMiddleware;
 use crate::http_server::routes::add_routes::add_routes;
 use crate::http_server::web_utils::handle_multipart_error::handle_multipart_error;
 use crate::startup::build_dependencies::setup_dependencies;
@@ -271,7 +272,10 @@ pub async fn serve(
       .wrap(Logger::new(LOG_FORMAT)
         .exclude("/liveness")
         .exclude("/readiness"))
-      .wrap(middleware::Compress::default());
+      .wrap(middleware::Compress::default())
+      // NB: Registered last => runs FIRST. Every request gets a trace id
+      // before any other middleware or handler executes.
+      .wrap(TraceIdMiddleware);
 
     add_routes(app, server_environment)
   })

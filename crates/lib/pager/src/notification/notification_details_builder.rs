@@ -31,6 +31,10 @@ pub struct NotificationDetailsBuilder {
   pub(crate) avt_cookie_token: Option<String>,
   pub(crate) session_token: Option<String>,
   pub(crate) session_user_token: Option<String>,
+
+  /// The request-scoped trace id, if any. Auto-filled from the tokio
+  /// task-local at `build()` time when not explicitly set.
+  pub(crate) trace_id: Option<String>,
 }
 
 impl NotificationDetailsBuilder {
@@ -57,6 +61,7 @@ impl NotificationDetailsBuilder {
       avt_cookie_token: None,
       session_token: None,
       session_user_token: None,
+      trace_id: None,
     }
   }
 
@@ -87,6 +92,7 @@ impl NotificationDetailsBuilder {
       avt_cookie_token: None,
       session_token: None,
       session_user_token: None,
+      trace_id: None,
     }
   }
 
@@ -167,6 +173,11 @@ impl NotificationDetailsBuilder {
     self
   }
 
+  pub fn set_trace_id(mut self, trace_id: Option<String>) -> Self {
+    self.trace_id = trace_id;
+    self
+  }
+
   pub fn set_session_user_token(mut self, session_user_token: Option<String>) -> Self {
     self.session_user_token = session_user_token;
     self
@@ -199,6 +210,11 @@ impl NotificationDetailsBuilder {
       avt_cookie_token: self.avt_cookie_token,
       session_token: self.session_token,
       session_user_token: self.session_user_token,
+      // Auto-fill from the request's task-local so any page fired while
+      // serving a request is correlated even if the caller never set it.
+      trace_id: self.trace_id.or_else(|| {
+        trace_id::current_trace_id().map(|t| t.to_string())
+      }),
     }
   }
 

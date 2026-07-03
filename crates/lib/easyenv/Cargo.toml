@@ -25,6 +25,7 @@ workspace-build-acceleration = { version = "0.1", path = "../../workspace-build-
 # External
 dotenv.workspace = true
 env_logger = "0.11.3"
+trace_id.workspace = true
 log = "0.4.14"
 
 [dev-dependencies]

@@ -49,6 +49,9 @@ pub struct NotificationDetails {
   /// Third-party identifier associated with the event, if any.
   pub(crate) third_party_id: Option<String>,
 
+  /// The request-scoped trace id associated with the event, if any.
+  pub(crate) trace_id: Option<String>,
+
   /// IP address of the request that triggered this notification, if any.
   pub(crate) request_ip_address: Option<String>,
 
@@ -187,6 +190,10 @@ impl NotificationDetails {
 
     if let Some(ip) = &self.request_ip_address {
       parts.push(format!("Request IP: {}", ip));
+    }
+
+    if let Some(trace_id) = &self.trace_id {
+      parts.push(format!("Trace ID: {}", trace_id));
     }
 
     if parts.is_empty() { None } else { Some(parts.join("\n")) }
