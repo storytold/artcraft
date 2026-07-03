@@ -44,6 +44,7 @@ pub(crate) fn check_common_web_error(
       .set_urgency(Some(NotificationUrgency::Medium))
       .set_http_method(Some(method.to_string()))
       .set_http_path(Some(path.to_string()))
+      .set_trace_id(metadata.trace_id.clone())
       .set_http_status_code(Some(500))
       .set_request_ip_address(metadata.request_ip_address.clone())
       .set_avt_cookie_token(metadata.avt_cookie_token.clone())

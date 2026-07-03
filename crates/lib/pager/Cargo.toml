@@ -24,6 +24,7 @@ chrono.workspace = true
 sha2.workspace = true
 log.workspace = true
 tokio.workspace = true
+trace_id.workspace = true
 
 [dev-dependencies]
 tokio = { version = "1", features = ["full"] }

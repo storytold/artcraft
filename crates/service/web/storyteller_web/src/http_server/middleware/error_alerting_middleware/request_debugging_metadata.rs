@@ -2,8 +2,11 @@ use std::sync::Arc;
 
 use actix_web::dev::ServiceRequest;
 use actix_web::web;
+use actix_web::HttpMessage;
 use http_server_common::request::get_request_ip::get_request_ip;
 use log::debug;
+
+use trace_id::TraceId;
 
 use crate::state::server_state::ServerState;
 
@@ -16,6 +19,8 @@ pub(crate) struct RequestDebuggingMetadata {
   pub avt_cookie_token: Option<String>,
   pub session_token: Option<String>,
   pub session_user_token: Option<String>,
+  /// Set by `TraceIdMiddleware` (outermost middleware) on every request.
+  pub trace_id: Option<String>,
 }
 
 impl RequestDebuggingMetadata {
@@ -25,6 +30,10 @@ impl RequestDebuggingMetadata {
     let http_request = req.request();
 
     let request_ip_address = Some(get_request_ip(http_request));
+
+    let trace_id = http_request.extensions()
+      .get::<TraceId>()
+      .map(|t| t.to_string());
 
     let server_state = req.app_data::<web::Data<Arc<ServerState>>>();
 
@@ -58,6 +67,7 @@ impl RequestDebuggingMetadata {
       avt_cookie_token,
       session_token,
       session_user_token,
+      trace_id,
     }
   }
 }

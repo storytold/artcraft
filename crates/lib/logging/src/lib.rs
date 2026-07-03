@@ -68,6 +68,37 @@ pub fn init_env_logger(default_if_absent: Option<&str>) {
     env::set_var(ENV_RUST_LOG, default_log_level);
   }
 
-  env_logger::init();
+  // Custom format so that log lines emitted while serving an HTTP request
+  // automatically carry the request's trace id (see the `trace_id` crate and
+  // the `TraceIdMiddleware` in storyteller-web). Outside of a request scope
+  // the trace segment is simply omitted.
+  env_logger::Builder::from_env(env_logger::Env::default())
+      .format(|buf, record| {
+        use std::io::Write;
+
+        let timestamp = buf.timestamp();
+        let level_style = buf.default_level_style(record.level());
+
+        match trace_id::current_trace_id() {
+          Some(trace) => writeln!(
+            buf,
+            "[{} {level_style}{}{level_style:#} {} {}] {}",
+            timestamp,
+            record.level(),
+            record.target(),
+            trace,
+            record.args(),
+          ),
+          None => writeln!(
+            buf,
+            "[{} {level_style}{}{level_style:#} {}] {}",
+            timestamp,
+            record.level(),
+            record.target(),
+            record.args(),
+          ),
+        }
+      })
+      .init();
 }
 
