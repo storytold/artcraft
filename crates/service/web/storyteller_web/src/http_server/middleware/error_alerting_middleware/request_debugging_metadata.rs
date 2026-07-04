@@ -1,14 +1,19 @@
 use std::sync::Arc;
 
 use actix_web::dev::ServiceRequest;
+use actix_web::http::header::{HeaderName, ORIGIN, REFERER, USER_AGENT};
 use actix_web::web;
 use actix_web::HttpMessage;
+use actix_web::HttpRequest;
 use http_server_common::request::get_request_ip::get_request_ip;
 use log::debug;
 
 use trace_id::TraceId;
 
 use crate::state::server_state::ServerState;
+
+/// Optional header sent by ArtCraft clients identifying the app release.
+const ARTCRAFT_VERSION_HEADER: &str = "x-artcraft-version";
 
 /// Optional per-request context extracted by the error alerting middleware
 /// and forwarded to each handler-specific check. Every field fails open:
@@ -21,6 +26,18 @@ pub(crate) struct RequestDebuggingMetadata {
   pub session_user_token: Option<String>,
   /// Set by `TraceIdMiddleware` (outermost middleware) on every request.
   pub trace_id: Option<String>,
+  /// Hostname the client used to reach this server (Host / forwarded-host
+  /// headers). Distinguishes api.storyteller.ai vs api.fakeyou.com etc.
+  pub http_host: Option<String>,
+  /// `Origin` header — scheme+host of the frontend page making the XHR call.
+  pub http_origin: Option<String>,
+  /// `Referer` header — URL of the frontend page making the XHR call
+  /// (may be truncated to the origin by the browser's referrer policy).
+  pub http_referer: Option<String>,
+  /// `User-Agent` header.
+  pub http_user_agent: Option<String>,
+  /// `X-ArtCraft-Version` header — app release of the ArtCraft client, if sent.
+  pub artcraft_version: Option<String>,
 }
 
 impl RequestDebuggingMetadata {
@@ -62,12 +79,37 @@ impl RequestDebuggingMetadata {
       .map(|payload| (Some(payload.session_token), payload.maybe_user_token))
       .unwrap_or((None, None));
 
+    // `connection_info()` prefers Forwarded / X-Forwarded-Host over the raw
+    // Host header, so this reflects the hostname the client actually used
+    // even behind the load balancer.
+    let http_host = Some(http_request.connection_info().host().to_string())
+      .filter(|host| !host.is_empty());
+
+    let http_origin = get_header_value(http_request, ORIGIN);
+    let http_referer = get_header_value(http_request, REFERER);
+    let http_user_agent = get_header_value(http_request, USER_AGENT);
+    let artcraft_version =
+      get_header_value(http_request, HeaderName::from_static(ARTCRAFT_VERSION_HEADER));
+
     Self {
       request_ip_address,
       avt_cookie_token,
       session_token,
       session_user_token,
       trace_id,
+      http_host,
+      http_origin,
+      http_referer,
+      http_user_agent,
+      artcraft_version,
     }
   }
+}
+
+/// Read a header as a UTF-8 string; `None` if absent or not valid UTF-8.
+fn get_header_value(request: &HttpRequest, header_name: HeaderName) -> Option<String> {
+  request.headers()
+    .get(header_name)
+    .and_then(|value| value.to_str().ok())
+    .map(|value| value.to_string())
 }
