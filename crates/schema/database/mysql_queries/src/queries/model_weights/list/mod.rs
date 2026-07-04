@@ -1,6 +1,5 @@
 pub mod list_all_model_weight_tokens_for_backfill;
 pub mod list_all_model_weight_tokens_for_cached_usage_backfill;
-pub mod list_featured_weights;
 pub mod list_model_weight_tokens_updated_since;
 pub mod list_model_weights_for_elastic_search_backfill_using_cursor;
 pub mod list_model_weights_for_text_to_speech;
