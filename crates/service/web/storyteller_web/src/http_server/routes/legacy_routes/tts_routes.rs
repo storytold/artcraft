@@ -11,7 +11,7 @@ use crate::http_server::endpoints::tts::edit_tts_result::edit_tts_inference_resu
 use crate::http_server::endpoints::tts::enqueue_infer_tts_handler::enqueue_infer_tts_handler::enqueue_infer_tts_handler;
 use crate::http_server::endpoints::tts::enqueue_upload_tts_model::upload_tts_model_handler;
 use crate::http_server::endpoints::tts::get_pending_tts_inference_job_count::get_pending_tts_inference_job_count_handler;
-use crate::http_server::endpoints::tts::get_tts_inference_job_status::get_tts_inference_job_status_handler;
+use crate::http_server::endpoints::tts::get_tts_inference_job_status_handler::get_tts_inference_job_status_handler;
 use crate::http_server::endpoints::tts::get_tts_model::get_tts_model_handler;
 use crate::http_server::endpoints::tts::get_tts_model_use_count::get_tts_model_use_count_handler;
 use crate::http_server::endpoints::tts::get_tts_result::get_tts_inference_result_handler;
