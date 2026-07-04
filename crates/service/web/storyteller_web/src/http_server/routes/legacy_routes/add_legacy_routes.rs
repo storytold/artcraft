@@ -9,7 +9,6 @@ use crate::http_server::deprecated_endpoints::categories::get_category::get_cate
 use crate::http_server::deprecated_endpoints::categories::tts::assign_tts_category::assign_tts_category_handler;
 use crate::http_server::deprecated_endpoints::categories::tts::list_fully_computed_assigned_tts_categories::list_fully_computed_assigned_tts_categories::list_fully_computed_assigned_tts_categories_handler;
 use crate::http_server::deprecated_endpoints::categories::tts::list_tts_categories::list_tts_categories_handler;
-use crate::http_server::deprecated_endpoints::categories::tts::list_tts_model_assigned_categories::list_tts_model_assigned_categories_handler;
 use crate::http_server::deprecated_endpoints::conversion::enqueue_fbx_to_gltf_handler::enqueue_fbx_to_gltf_handler;
 use crate::http_server::deprecated_endpoints::conversion::enqueue_render_engine_scene_to_video_handler::enqueue_render_engine_scene_to_video_handler;
 use crate::http_server::deprecated_endpoints::engine::create_scene_handler::create_scene_handler;
@@ -230,14 +229,6 @@ where
                   .service(
                     web::resource("/tts")
                         .route(web::post().to(assign_tts_category_handler))
-                        .route(web::head().to(|| HttpResponse::Ok()))
-                  )
-            )
-            .service(
-              web::scope("/assignments")
-                  .service(
-                    web::resource("/tts/{token}")
-                        .route(web::get().to(list_tts_model_assigned_categories_handler))
                         .route(web::head().to(|| HttpResponse::Ok()))
                   )
             )
