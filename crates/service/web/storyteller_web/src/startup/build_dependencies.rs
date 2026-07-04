@@ -151,10 +151,6 @@ pub async fn setup_dependencies(server_hostname: &str) -> AnyhowResult<SetupResu
     easyenv::get_env_duration_seconds_or_default("TTS_MODEL_CATEGORY_ASSIGNMENTS_CACHE_TTL_SECONDS", Duration::from_secs(60))
   );
 
-  let leaderboard_cache = SingleItemTtlCache::create_with_duration(
-    easyenv::get_env_duration_seconds_or_default("LEADERBOARD_CACHE_TTL_SECONDS", Duration::from_secs(60))
-  );
-
   let inference_queue_length_cache = SingleItemTtlCache::create_with_duration(
     easyenv::get_env_duration_seconds_or_default("INFERENCE_QUEUE_LENGTH_CACHE_TTL_SECONDS", Duration::from_secs(30))
   );
@@ -251,12 +247,7 @@ pub async fn setup_dependencies(server_hostname: &str) -> AnyhowResult<SetupResu
         tts_model_list: voice_list_cache,
         database_tts_category_list: database_tts_category_list_cache,
         tts_model_category_assignments: tts_model_category_assignments_cache,
-        leaderboard: leaderboard_cache,
         inference_queue_length: inference_queue_length_cache,
-        queue_stats: SingleItemTtlCache::create_with_duration(
-          easyenv::get_env_duration_seconds_or_default(
-            "QUEUE_STATS_CACHE_TTL_SECONDS",
-            Duration::from_secs(60))),
         featured_media_files_sieve: ArcTtlSieve::with_capacity_and_ttl_duration(
           easyenv::get_env_num("FEATURED_MEDIA_FILES_CACHE_SIZE", 25)?,
           easyenv::get_env_duration_seconds_or_default("FEATURED_MEDIA_FILES_TTL_SECONDS", Duration::from_secs(60)),

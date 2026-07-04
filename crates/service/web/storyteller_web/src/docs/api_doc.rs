@@ -16,7 +16,6 @@ use crate::http_server::common_responses::tag_info::TagInfo;
 use crate::http_server::common_responses::user_details_lite::{UserDefaultAvatarInfo, UserDetailsLight};
 use crate::http_server::deprecated_endpoints::conversion::enqueue_fbx_to_gltf_handler::*;
 use crate::http_server::deprecated_endpoints::engine::create_scene_handler::*;
-use crate::http_server::deprecated_endpoints::image_gen::enqueue_image_generation::EnqueueImageGenRequestSuccessResponse;
 use crate::http_server::deprecated_endpoints::workflows::enqueue::enqueue_face_fusion_workflow_handler::*;
 use crate::http_server::deprecated_endpoints::workflows::enqueue::enqueue_live_portrait_workflow_handler::*;
 use crate::http_server::deprecated_endpoints::workflows::enqueue::vst_common::vst_error::*;
@@ -920,7 +919,6 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     EnqueueFbxToGltfRequestSuccessResponse,
     EnqueueGptSovitsModelDownloadRequest,
     EnqueueGptSovitsModelDownloadSuccessResponse,
-    EnqueueImageGenRequestSuccessResponse,
     EnqueueLivePortraitCropDimensions,
     EnqueueLivePortraitWorkflowRequest,
     EnqueueLivePortraitWorkflowSuccessResponse,
@@ -985,15 +983,12 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     GetProfilePathInfo,
     GetPromptPathInfo,
     GetPromptSuccessResponse,
-    GetUnifiedQueueStatsError,
     GetUnifiedQueueStatsSuccessResponse,
     GetUserRatingResponse,
     GetWeightPathInfo,
     GetWeightResponse,
     GoogleCreateAccountRequest,
     GoogleCreateAccountSuccessResponse,
-    InferTtsError,
-    InferTtsRequest,
     InferTtsSuccessResponse,
     InferenceJobStatusResponsePayload,
     InferenceJobTokenType,
