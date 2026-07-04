@@ -50,6 +50,7 @@ pub(crate) fn check_common_web_error(
       .set_http_origin(metadata.http_origin.clone())
       .set_http_referer(metadata.http_referer.clone())
       .set_http_user_agent(metadata.http_user_agent.clone())
+      .set_artcraft_version(metadata.artcraft_version.clone())
       .set_request_ip_address(metadata.request_ip_address.clone())
       .set_avt_cookie_token(metadata.avt_cookie_token.clone())
       .set_session_token(metadata.session_token.clone())

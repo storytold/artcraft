@@ -54,6 +54,10 @@ pub struct NotificationDetails {
   /// `User-Agent` header of the request, if any.
   pub(crate) http_user_agent: Option<String>,
 
+  /// `X-ArtCraft-Version` header of the request, if any. Sent by ArtCraft
+  /// clients to identify which app release made the call.
+  pub(crate) artcraft_version: Option<String>,
+
   /// User token associated with the event, if any.
   pub(crate) user_token: Option<String>,
 
@@ -219,6 +223,10 @@ impl NotificationDetails {
 
     if let Some(user_agent) = &self.http_user_agent {
       parts.push(format!("User Agent: {}", user_agent));
+    }
+
+    if let Some(version) = &self.artcraft_version {
+      parts.push(format!("ArtCraft Version: {}", version));
     }
 
     if let Some(ip) = &self.request_ip_address {

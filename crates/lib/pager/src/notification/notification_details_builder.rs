@@ -25,6 +25,7 @@ pub struct NotificationDetailsBuilder {
   pub(crate) http_origin: Option<String>,
   pub(crate) http_referer: Option<String>,
   pub(crate) http_user_agent: Option<String>,
+  pub(crate) artcraft_version: Option<String>,
 
   pub(crate) user_token: Option<String>,
   pub(crate) media_file_token: Option<String>,
@@ -61,6 +62,7 @@ impl NotificationDetailsBuilder {
       http_origin: None,
       http_referer: None,
       http_user_agent: None,
+      artcraft_version: None,
       user_token: None,
       media_file_token: None,
       inference_job_token: None,
@@ -96,6 +98,7 @@ impl NotificationDetailsBuilder {
       http_origin: None,
       http_referer: None,
       http_user_agent: None,
+      artcraft_version: None,
       user_token: None,
       media_file_token: None,
       inference_job_token: None,
@@ -170,6 +173,11 @@ impl NotificationDetailsBuilder {
     self
   }
 
+  pub fn set_artcraft_version(mut self, artcraft_version: Option<String>) -> Self {
+    self.artcraft_version = artcraft_version;
+    self
+  }
+
   pub fn set_user_token(mut self, user_token: Option<String>) -> Self {
     self.user_token = user_token;
     self
@@ -238,6 +246,7 @@ impl NotificationDetailsBuilder {
       http_origin: self.http_origin,
       http_referer: self.http_referer,
       http_user_agent: self.http_user_agent,
+      artcraft_version: self.artcraft_version,
       user_token: self.user_token,
       media_file_token: self.media_file_token,
       inference_job_token: self.inference_job_token,

@@ -12,6 +12,9 @@ use trace_id::TraceId;
 
 use crate::state::server_state::ServerState;
 
+/// Optional header sent by ArtCraft clients identifying the app release.
+const ARTCRAFT_VERSION_HEADER: &str = "x-artcraft-version";
+
 /// Optional per-request context extracted by the error alerting middleware
 /// and forwarded to each handler-specific check. Every field fails open:
 /// if extraction errors, the field is `None`.
@@ -33,6 +36,8 @@ pub(crate) struct RequestDebuggingMetadata {
   pub http_referer: Option<String>,
   /// `User-Agent` header.
   pub http_user_agent: Option<String>,
+  /// `X-ArtCraft-Version` header — app release of the ArtCraft client, if sent.
+  pub artcraft_version: Option<String>,
 }
 
 impl RequestDebuggingMetadata {
@@ -83,6 +88,8 @@ impl RequestDebuggingMetadata {
     let http_origin = get_header_value(http_request, ORIGIN);
     let http_referer = get_header_value(http_request, REFERER);
     let http_user_agent = get_header_value(http_request, USER_AGENT);
+    let artcraft_version =
+      get_header_value(http_request, HeaderName::from_static(ARTCRAFT_VERSION_HEADER));
 
     Self {
       request_ip_address,
@@ -94,6 +101,7 @@ impl RequestDebuggingMetadata {
       http_origin,
       http_referer,
       http_user_agent,
+      artcraft_version,
     }
   }
 }
