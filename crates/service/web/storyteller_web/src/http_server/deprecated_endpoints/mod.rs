@@ -5,8 +5,6 @@ pub mod conversion;
 pub mod engine;
 pub mod events;
 pub mod flags;
-pub mod image_gen;
-pub mod leaderboard;
 pub mod media_uploads;
 pub mod moderation;
 pub mod stubs;

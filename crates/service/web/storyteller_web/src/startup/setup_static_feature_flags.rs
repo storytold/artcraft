@@ -11,12 +11,10 @@ pub fn setup_static_feature_flags(paging_flags: PagingFlags) -> AnyhowResult<Sta
 
     // Permanent (control plane / safety) flags : disabling features
     global_429_pushback_filter_enabled: easyenv::get_env_bool_or_default("FF_GLOBAL_429_PUSHBACK_FILTER_ENABLED", false),
-    disable_unified_queue_stats_endpoint: easyenv::get_env_bool_or_default("FF_DISABLE_QUEUE_STATS_ENDPOINT", false),
     disable_inference_queue_length_endpoint: easyenv::get_env_bool_or_default("FF_DISABLE_INFERENCE_QUEUE_LENGTH_ENDPOINT", false),
     disable_tts_model_list_endpoint: easyenv::get_env_bool_or_default("FF_DISABLE_TTS_MODEL_LIST_ENDPOINT", false),
 
     // Refresh rates
-    frontend_unified_queue_stats_refresh_interval_millis: easyenv::get_env_num("FF_FRONTEND_QUEUE_STATS_REFRESH_INTERVAL_MILLIS", 15_000)?,
     frontend_pending_inference_refresh_interval_millis: easyenv::get_env_num("FF_FRONTEND_PENDING_INFERENCE_REFRESH_INTERVAL_MILLIS", 15_000)?,
 
     // Bans

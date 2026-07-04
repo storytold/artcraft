@@ -18,7 +18,6 @@ use crate::http_server::deprecated_endpoints::engine::update_scene_handler::upda
 use crate::http_server::deprecated_endpoints::events::list_events::list_events_handler;
 use crate::http_server::deprecated_endpoints::flags::design_refresh_flag::disable_design_refresh_flag_handler::disable_design_refresh_flag_handler;
 use crate::http_server::deprecated_endpoints::flags::design_refresh_flag::enable_design_refresh_flag_handler::enable_design_refresh_flag_handler;
-use crate::http_server::deprecated_endpoints::leaderboard::get_leaderboard::leaderboard_handler;
 use crate::http_server::deprecated_endpoints::media_uploads::list_user_media_uploads_of_type::list_user_media_uploads_of_type_handler;
 use crate::http_server::deprecated_endpoints::media_uploads::upload_audio::upload_audio_handler;
 use crate::http_server::deprecated_endpoints::media_uploads::upload_image::upload_image_handler;
@@ -94,11 +93,6 @@ where
       .add_post("/v1/conversion/enqueue_render_engine_scene", enqueue_render_engine_scene_to_video_handler)
       .into_app();
 
-  let app = app.service(web::resource("/leaderboard")
-      .route(web::get().to(leaderboard_handler))
-      .route(web::head().to(|| HttpResponse::Ok()))
-  );
-
   // ==================== FakeYou Frontend Application State ====================
 
   let mut app = RouteBuilder::from_app(app)
@@ -107,6 +101,8 @@ where
 
   // ==================== Stats ====================
 
+  // NB: Deprecated; serves a hardcoded snapshot for legacy clients that still poll it.
+  #[allow(deprecated)]
   let mut app = RouteBuilder::from_app(app)
       .add_get("/v1/stats/queues", get_unified_queue_stats_handler)
       .into_app();
@@ -363,32 +359,6 @@ where
       )
   )
 }
-
-//fn add_image_gen_routes<T,B> (app:App<T>)-> App<T>
-//    where
-//        B: MessageBody,
-//        T: ServiceFactory<
-//            ServiceRequest,
-//            Config = (),
-//            Response = ServiceResponse<B>,
-//            Error = Error,
-//            InitError = (),
-//        >,
-//{
-//  //
-//    app.service(
-//        web::scope("/v1/image_gen")
-//            .service(
-//                web::scope("/upload")
-//                    .route("/lora", web::post().to(enqueue_image_generation_request))
-//                    .route("/model", web::post().to(enqueue_image_generation_request))
-//            )
-//            .service(
-//                web::scope("/enqueue")
-//                    .route("/inference", web::post().to(enqueue_image_generation_request))
-//            )
-//    )
-//}
 
 // ==================== Engine Routes ====================
 
