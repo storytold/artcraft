@@ -37,6 +37,23 @@ pub struct NotificationDetails {
   /// HTTP status code associated with the event, if any.
   pub(crate) http_status_code: Option<u16>,
 
+  /// Hostname the client used to reach this server (from the `Host` or
+  /// forwarded-host headers), if any. Useful when a server is reachable
+  /// via multiple domains (eg. api.storyteller.ai, api.fakeyou.com).
+  pub(crate) http_host: Option<String>,
+
+  /// `Origin` header of the request, if any. For browser XHR/fetch this is
+  /// the scheme+host of the calling frontend.
+  pub(crate) http_origin: Option<String>,
+
+  /// `Referer` header of the request, if any. For browser XHR/fetch this is
+  /// the URL of the page that made the call (possibly truncated to the
+  /// origin by the browser's referrer policy).
+  pub(crate) http_referer: Option<String>,
+
+  /// `User-Agent` header of the request, if any.
+  pub(crate) http_user_agent: Option<String>,
+
   /// User token associated with the event, if any.
   pub(crate) user_token: Option<String>,
 
@@ -186,6 +203,22 @@ impl NotificationDetails {
 
     if let Some(status_code) = self.http_status_code {
       parts.push(format!("HTTP Status Code: {}", status_code));
+    }
+
+    if let Some(host) = &self.http_host {
+      parts.push(format!("HTTP Host: {}", host));
+    }
+
+    if let Some(origin) = &self.http_origin {
+      parts.push(format!("HTTP Origin: {}", origin));
+    }
+
+    if let Some(referer) = &self.http_referer {
+      parts.push(format!("HTTP Referer: {}", referer));
+    }
+
+    if let Some(user_agent) = &self.http_user_agent {
+      parts.push(format!("User Agent: {}", user_agent));
     }
 
     if let Some(ip) = &self.request_ip_address {

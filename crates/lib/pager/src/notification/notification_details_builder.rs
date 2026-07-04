@@ -21,6 +21,10 @@ pub struct NotificationDetailsBuilder {
   pub(crate) http_method: Option<String>,
   pub(crate) http_path: Option<String>,
   pub(crate) http_status_code: Option<u16>,
+  pub(crate) http_host: Option<String>,
+  pub(crate) http_origin: Option<String>,
+  pub(crate) http_referer: Option<String>,
+  pub(crate) http_user_agent: Option<String>,
 
   pub(crate) user_token: Option<String>,
   pub(crate) media_file_token: Option<String>,
@@ -53,6 +57,10 @@ impl NotificationDetailsBuilder {
       http_method: None,
       http_path: None,
       http_status_code: None,
+      http_host: None,
+      http_origin: None,
+      http_referer: None,
+      http_user_agent: None,
       user_token: None,
       media_file_token: None,
       inference_job_token: None,
@@ -84,6 +92,10 @@ impl NotificationDetailsBuilder {
       http_method: None,
       http_path: None,
       http_status_code: None,
+      http_host: None,
+      http_origin: None,
+      http_referer: None,
+      http_user_agent: None,
       user_token: None,
       media_file_token: None,
       inference_job_token: None,
@@ -135,6 +147,26 @@ impl NotificationDetailsBuilder {
 
   pub fn set_http_status_code(mut self, http_status_code: Option<u16>) -> Self {
     self.http_status_code = http_status_code;
+    self
+  }
+
+  pub fn set_http_host(mut self, http_host: Option<String>) -> Self {
+    self.http_host = http_host;
+    self
+  }
+
+  pub fn set_http_origin(mut self, http_origin: Option<String>) -> Self {
+    self.http_origin = http_origin;
+    self
+  }
+
+  pub fn set_http_referer(mut self, http_referer: Option<String>) -> Self {
+    self.http_referer = http_referer;
+    self
+  }
+
+  pub fn set_http_user_agent(mut self, http_user_agent: Option<String>) -> Self {
+    self.http_user_agent = http_user_agent;
     self
   }
 
@@ -202,6 +234,10 @@ impl NotificationDetailsBuilder {
       http_method: self.http_method,
       http_path: self.http_path,
       http_status_code: self.http_status_code,
+      http_host: self.http_host,
+      http_origin: self.http_origin,
+      http_referer: self.http_referer,
+      http_user_agent: self.http_user_agent,
       user_token: self.user_token,
       media_file_token: self.media_file_token,
       inference_job_token: self.inference_job_token,
