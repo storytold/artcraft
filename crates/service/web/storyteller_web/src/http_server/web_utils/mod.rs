@@ -4,6 +4,7 @@ pub mod get_authorization_header_api_key;
 pub mod get_host_header;
 pub mod get_request_platform_type;
 pub mod handle_multipart_error;
+pub mod job_keepalives;
 pub mod open_zip_archive;
 pub mod read_multipart_field_bytes;
 pub mod redis_rate_limiter;
