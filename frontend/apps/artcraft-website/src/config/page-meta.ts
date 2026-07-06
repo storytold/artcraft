@@ -19,7 +19,7 @@
 export const SITE_ORIGIN = "https://getartcraft.com";
 
 // Default share image, served from /public. Pages may override per-route.
-export const DEFAULT_OG_IMAGE = "/images/3d-interface-preview.jpg";
+export const DEFAULT_OG_IMAGE = "/images/og-image.png";
 
 export interface PageMeta {
   title: string;
