@@ -25,7 +25,7 @@ import {
   THUMBNAIL_SIZES,
 } from "@storyteller/common";
 import {
-  getModelCreatorIcon,
+  getCreatorIconPathForModelId,
   getModelDisplayName,
   getProviderDisplayName,
   getProviderIconByName,
@@ -297,7 +297,13 @@ export function LightboxDetails({
                       label="Model"
                       value={
                         <>
-                          {getModelCreatorIcon(promptData.modelType)}
+                          <img
+                            src={getCreatorIconPathForModelId(
+                              promptData.modelType,
+                            )}
+                            alt="Model creator logo"
+                            className="h-4 w-4 invert"
+                          />
                           <span>
                             {getModelDisplayName(promptData.modelType)}
                           </span>

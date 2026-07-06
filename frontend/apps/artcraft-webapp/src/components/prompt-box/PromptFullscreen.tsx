@@ -57,6 +57,10 @@ interface PromptFullscreenModalProps {
   isOpen: boolean;
   onClose: () => void;
   children: ReactNode;
+  /** Current prompt length, shown with the counter when a limit is set. */
+  promptLength?: number;
+  /** Soft prompt-length limit; undefined hides the counter entirely. */
+  maxPromptLength?: number;
   /** Controls rendered in the footer, left of the Done button (e.g. the model
    *  selector + character button). */
   footerControls?: ReactNode;
@@ -68,9 +72,15 @@ export const PromptFullscreenModal = ({
   isOpen,
   onClose,
   children,
+  promptLength,
+  maxPromptLength,
   footerControls,
   imagePromptRow,
 }: PromptFullscreenModalProps) => {
+  const showCounter =
+    promptLength !== undefined && maxPromptLength !== undefined;
+  const overLimit =
+    showCounter && isFinite(maxPromptLength) && promptLength > maxPromptLength;
   const contentRef = useRef<HTMLDivElement>(null);
 
   // Focus the editor and drop the caret at the end once the overlay opens.
@@ -106,6 +116,17 @@ export const PromptFullscreenModal = ({
         >
           {children}
         </div>
+        {showCounter && (
+          <div className="flex shrink-0 items-center justify-end">
+            <span
+              className={`text-[11px] tabular-nums ${
+                overLimit ? "text-red-500" : "text-base-fg/40"
+              }`}
+            >
+              {promptLength} / {isFinite(maxPromptLength) ? maxPromptLength : "∞"}
+            </span>
+          </div>
+        )}
         {imagePromptRow && <div className="shrink-0">{imagePromptRow}</div>}
         <div className="flex shrink-0 items-center justify-between gap-2">
           <div className="flex items-center gap-2">{footerControls}</div>

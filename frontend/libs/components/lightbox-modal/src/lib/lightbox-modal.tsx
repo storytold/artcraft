@@ -43,7 +43,7 @@ import {
   isActionReminderOpen,
 } from "@storyteller/ui-action-reminder-modal";
 import {
-  getModelCreatorIcon,
+  getCreatorIconPathForModelId,
   getModelDisplayName,
   getProviderDisplayName,
   getProviderIconByName,
@@ -1327,7 +1327,11 @@ function InfoSection({
             label="Model"
             value={
               <>
-                {getModelCreatorIcon(modelType)}
+                <img
+                  src={getCreatorIconPathForModelId(modelType)}
+                  alt="Model creator logo"
+                  className="h-4 w-4 invert"
+                />
                 <span>{getModelDisplayName(modelType)}</span>
               </>
             }

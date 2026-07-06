@@ -62,6 +62,7 @@ import {
   OMNI_GENERATE_OUTAGE_MESSAGE,
 } from "@storyteller/omni-gen";
 import {
+  effectivePromptMaxLength,
   getCreatorIconPathForModelId,
   getModelDescription,
   getModelInfo,
@@ -272,6 +273,18 @@ export default function CreateVideo() {
   }, [apiModels, ui.selectedModelId]);
 
   const requiresImageInput = selectedModel?.text_to_video_supported === false;
+
+  // Soft prompt limit from the API; undefined = unlimited. Seedance waives
+  // the limit (Infinity) when the prompt contains Chinese characters: the
+  // server counts CJK as more than one unit, so a client-side character
+  // count would false-positive.
+  const maxPromptLength = selectedModel
+    ? effectivePromptMaxLength(
+        selectedModel.model,
+        selectedModel.text_prompt_max_length ?? undefined,
+        ui.prompt,
+      )
+    : undefined;
 
   const prompt = ui.prompt;
   const setPrompt = useCallback((v: string) => setUi({ prompt: v }), [setUi]);
@@ -877,6 +890,12 @@ export default function CreateVideo() {
       });
       return;
     }
+    if (maxPromptLength !== undefined && prompt.length > maxPromptLength) {
+      toast.error(
+        `Prompt exceeds the ${maxPromptLength} character limit for this model`,
+      );
+      return;
+    }
     console.log("[generate-video] starting", {
       model: selectedModel.model,
       numVideos,
@@ -1036,6 +1055,7 @@ export default function CreateVideo() {
     needsImage,
     isReferenceMode,
     selectedModel,
+    maxPromptLength,
     selectedSize,
     numVideos,
     effectiveDuration,
@@ -1364,6 +1384,7 @@ export default function CreateVideo() {
             onSubmit={handleGenerate}
             isSubmitting={isGenerating}
             credits={estimatedCredits}
+            maxPromptLength={maxPromptLength}
             placeholder="Describe the video you want to generate..."
             supportsImagePrompts={supportsImagePrompts}
             maxImagePromptCount={

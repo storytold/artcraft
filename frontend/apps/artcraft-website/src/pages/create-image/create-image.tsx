@@ -20,6 +20,7 @@ import {
 } from "../../components/generation-gallery";
 import { Lightbox } from "../../components/lightbox/lightbox";
 import { AppDownloadCta } from "../../components/app-download-cta/AppDownloadCta";
+import { toast } from "../../components/toast/toast";
 import { useCreateImageStore } from "./create-image-store";
 import { enqueueImageGeneration, startPolling } from "./generate-image-api";
 import { AspectRatioPicker } from "./components/AspectRatioPicker";
@@ -82,6 +83,9 @@ export default function CreateImage() {
     }
     return apiModels.find((m) => m.model === DEFAULT_MODEL_ID) ?? apiModels[0];
   }, [apiModels, ui.selectedModelId]);
+
+  // Soft prompt limit from the API; undefined (no model / unset) = unlimited.
+  const maxPromptLength = selectedModel?.text_prompt_max_length ?? undefined;
 
   const prompt = ui.prompt;
   const setPrompt = useCallback((v: string) => setUi({ prompt: v }), [setUi]);
@@ -278,6 +282,13 @@ export default function CreateImage() {
   const handleGenerate = useCallback(async () => {
     if (!prompt.trim() || isGenerating || !selectedModel) return;
 
+    if (maxPromptLength !== undefined && prompt.length > maxPromptLength) {
+      toast.error(
+        `Prompt exceeds the ${maxPromptLength} character limit for this model`,
+      );
+      return;
+    }
+
     setIsGenerating(true);
     const batchId = startBatch(
       prompt,
@@ -337,6 +348,7 @@ export default function CreateImage() {
     prompt,
     isGenerating,
     selectedModel,
+    maxPromptLength,
     numImages,
     aspectRatio,
     resolution,
@@ -396,6 +408,7 @@ export default function CreateImage() {
             onSubmit={handleGenerate}
             isSubmitting={isGenerating}
             credits={estimatedCredits}
+            maxPromptLength={maxPromptLength}
             placeholder="Describe what you want in the image..."
             supportsImagePrompts={!!selectedModel?.image_refs_supported}
             maxImagePromptCount={maxImageRefs}

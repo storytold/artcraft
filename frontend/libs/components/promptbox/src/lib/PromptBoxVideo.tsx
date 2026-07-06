@@ -19,6 +19,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { GalleryItem, GalleryModal } from "@storyteller/ui-gallery-modal";
 import {
   CommonResolution,
+  effectivePromptMaxLength,
   SizeIconOption,
   SizeOption,
   VideoModel,
@@ -697,7 +698,12 @@ export const PromptBoxVideo = ({
     mentionAnchorRef.current = null;
   };
 
-  const maxLen = selectedModel?.maxPromptLength ?? 1000;
+  const maxLen =
+    effectivePromptMaxLength(
+      selectedModel?.tauriId ?? "",
+      selectedModel?.maxPromptLength,
+      prompt,
+    ) ?? 1000;
 
   const handleEnqueue = async () => {
     if (!prompt.trim()) {
