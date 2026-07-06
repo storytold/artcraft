@@ -10,6 +10,7 @@ use crate::http_server::endpoints::inference_job::utils::extractors::extract_liv
 use crate::http_server::endpoints::inference_job::utils::extractors::extract_polymorphic_inference_args::extract_polymorphic_inference_args;
 use crate::http_server::endpoints::media_files::helpers::get_media_domain::get_media_domain;
 use crate::http_server::web_utils::filter_model_name::maybe_filter_model_name;
+use crate::http_server::web_utils::job_keepalives::write_job_keepalives;
 use crate::state::server_state::ServerState;
 use actix_web::web::{Json, Path};
 use actix_web::{web, HttpRequest};
@@ -31,12 +32,6 @@ use server_environment::ServerEnvironment;
 use tokens::tokens::generic_inference_jobs::InferenceJobToken;
 use tokens::tokens::prompts::PromptToken;
 use utoipa::ToSchema;
-
-/// For certain jobs or job classes (eg. non-premium), we kill the jobs if the user hasn't
-/// maintained a keepalive. This prevents wasted work when users who are unlikely to return
-/// navigate away. Premium users have accounts and can always return to the site, so they
-/// typically do not require keepalive.
-const JOB_KEEPALIVE_TTL_SECONDS : u64 = 60 * 3;
 
 /// For the URL PathInfo
 #[derive(Deserialize, ToSchema)]
@@ -202,18 +197,10 @@ pub async fn get_inference_job_status_handler(
   };
 
   if record.is_keepalive_required {
-    // TODO(bt,2023-05-21): Make async.
-    let keepalive_key = RedisKeys::generic_inference_keepalive(path.token.as_str());
-    let _: Option<String> = match redis.set_ex(&extra_status_key, "1", JOB_KEEPALIVE_TTL_SECONDS) {
-      Ok(Some(status)) => {
-        Some(status)
-      },
-      Ok(None) => None,
-      Err(e) => {
-        error!("redis error setting job keepalive: {:?}", e);
-        None // Fail open (which in this case is bad! it will kill jobs if cluster has many jobs / is slow!)
-      },
-    };
+    // NB: This used to SET the *extra status* key instead of the keepalive key — which both
+    // clobbered the extra status with "1" (see the workaround above) and let keepalive-required
+    // jobs get killed while being actively polled.
+    write_job_keepalives(&server_state.redis_pool, &[path.token.as_str()]);
   }
 
   let media_domain = get_media_domain(&http_request);
