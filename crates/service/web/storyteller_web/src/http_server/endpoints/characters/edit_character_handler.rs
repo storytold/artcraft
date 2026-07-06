@@ -42,7 +42,7 @@ pub async fn edit_character_handler(
     &http_request,
     &server_state.session_checker,
     &server_state.avt_cookie_manager,
-    &mut mysql_connection,
+    &mut *mysql_connection,
   ).await?;
 
   let user_token = &user_session.user_token;

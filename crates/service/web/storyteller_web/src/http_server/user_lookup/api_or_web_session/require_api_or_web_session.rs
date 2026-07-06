@@ -3,7 +3,7 @@ use std::marker::PhantomData;
 use actix_web::http::header;
 use actix_web::HttpRequest;
 use log::warn;
-use sqlx::MySqlConnection;
+use sqlx::{Executor, MySql};
 
 use actix_artcraft::sessions::anonymous_visitor_tracking::avt_cookie_manager::AvtCookieManager;
 use mysql_queries::queries::users::api_or_web_sessions::api_or_web_session_user_record::ApiOrWebSessionUserRecord;
@@ -63,25 +63,30 @@ impl ApiOrWebSession {
 /// unknown key is a 401, never a fallthrough to cookies. Otherwise the session cookie is decoded
 /// and looked up, and the AVT (anonymous visitor tracking) cookie is captured alongside it.
 ///
-/// Neither path is cached: every request performs a fresh MySQL lookup. Pass an already-open
-/// connection (`&mut *connection`) rather than acquiring a fresh one.
-pub async fn require_api_or_web_session(
+/// Neither path is cached: every request performs a fresh MySQL lookup. `mysql_executor` can be
+/// any sqlx executor — prefer passing an already-open connection (`&mut *connection`) so the
+/// lookup reuses it rather than acquiring a fresh one from the pool.
+pub async fn require_api_or_web_session<'c, E>(
   http_request: &HttpRequest,
   session_checker: &SessionChecker,
   avt_cookie_manager: &AvtCookieManager,
-  mysql_connection: &mut MySqlConnection,
-) -> Result<ApiOrWebSession, CommonWebError> {
+  mysql_executor: E,
+) -> Result<ApiOrWebSession, CommonWebError>
+  where E: 'c + Executor<'c, Database = MySql>
+{
   if http_request.headers().contains_key(header::AUTHORIZATION) {
-    authenticate_by_api_key(http_request, mysql_connection).await
+    authenticate_by_api_key(http_request, mysql_executor).await
   } else {
-    authenticate_by_web_session(http_request, session_checker, avt_cookie_manager, mysql_connection).await
+    authenticate_by_web_session(http_request, session_checker, avt_cookie_manager, mysql_executor).await
   }
 }
 
-async fn authenticate_by_api_key(
+async fn authenticate_by_api_key<'c, E>(
   http_request: &HttpRequest,
-  mysql_connection: &mut MySqlConnection,
-) -> Result<ApiOrWebSession, CommonWebError> {
+  mysql_executor: E,
+) -> Result<ApiOrWebSession, CommonWebError>
+  where E: 'c + Executor<'c, Database = MySql>
+{
   let api_key = match get_authorization_header_api_key(http_request) {
     Some(api_key) => api_key,
     None => {
@@ -92,7 +97,7 @@ async fn authenticate_by_api_key(
 
   let maybe_record = get_api_or_web_session_user_by_api_key(GetApiOrWebSessionUserByApiKeyArgs {
     api_key: &api_key,
-    mysql_executor: &mut *mysql_connection,
+    mysql_executor,
     phantom: PhantomData,
   })
     .await
@@ -114,12 +119,14 @@ async fn authenticate_by_api_key(
   into_session_rejecting_banned(record, SessionType::Api, None)
 }
 
-async fn authenticate_by_web_session(
+async fn authenticate_by_web_session<'c, E>(
   http_request: &HttpRequest,
   session_checker: &SessionChecker,
   avt_cookie_manager: &AvtCookieManager,
-  mysql_connection: &mut MySqlConnection,
-) -> Result<ApiOrWebSession, CommonWebError> {
+  mysql_executor: E,
+) -> Result<ApiOrWebSession, CommonWebError>
+  where E: 'c + Executor<'c, Database = MySql>
+{
   let maybe_session_token = session_checker
       .get_session_token(http_request)
       .map_err(|err| {
@@ -137,7 +144,7 @@ async fn authenticate_by_web_session(
 
   let maybe_record = get_api_or_web_session_user_by_session_token(GetApiOrWebSessionUserBySessionTokenArgs {
     session_token: &session_token,
-    mysql_executor: &mut *mysql_connection,
+    mysql_executor,
     phantom: PhantomData,
   })
     .await
