@@ -109,6 +109,11 @@ interface PromptBoxProps {
 
   // @-mention support (enables colored prompt overlay + autocomplete)
   mentionItems?: MentionItem[];
+
+  // Soft prompt-length limit from the model API (`text_prompt_max_length`).
+  // Undefined = unlimited (no counter). The limit is not enforced here; the
+  // page's submit handler blocks generation when over.
+  maxPromptLength?: number;
 }
 
 export const PromptBox = forwardRef<HTMLDivElement, PromptBoxProps>(
@@ -139,6 +144,7 @@ export const PromptBox = forwardRef<HTMLDivElement, PromptBoxProps>(
       mediaReferenceRow,
       modelSelector,
       mentionItems,
+      maxPromptLength,
     },
     ref,
   ) => {
@@ -423,7 +429,7 @@ export const PromptBox = forwardRef<HTMLDivElement, PromptBoxProps>(
                 </Tooltip>
               )}
 
-              <div className="relative flex-1">
+              <div className="promptbox-resize-wrap relative flex-1">
                 {hasMentionItems && mentionItems ? (
                   <MentionTextarea
                     ref={mentionEditorRef}
@@ -544,6 +550,21 @@ export const PromptBox = forwardRef<HTMLDivElement, PromptBoxProps>(
                       </div>
                     )}
                   </>
+                )}
+
+                {maxPromptLength !== undefined && (
+                  <div
+                    className={twMerge(
+                      // right-4 keeps the counter clear of the textarea's resize grip.
+                      "pointer-events-none absolute -bottom-1 right-4 text-[10px] tabular-nums",
+                      isFinite(maxPromptLength) && prompt.length > maxPromptLength
+                        ? "text-red-500"
+                        : "text-base-fg/40",
+                    )}
+                  >
+                    {prompt.length} /{" "}
+                    {isFinite(maxPromptLength) ? maxPromptLength : "∞"}
+                  </div>
                 )}
               </div>
             </div>

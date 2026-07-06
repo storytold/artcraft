@@ -77,6 +77,8 @@ export interface OmniGenVideoGenerateResponse {
 
 export interface OmniGenImageModelInfo {
   model: string;
+  // ModelCreator enum as a snake_case string, e.g. "bytedance", "google".
+  model_creator?: string | null;
   is_disabled: boolean | null;
   full_name: string | null;
   extra_info_short?: string | null;
@@ -111,6 +113,8 @@ export interface OmniGenImageModelsResponse {
 
 export interface OmniGenVideoModelInfo {
   model: string;
+  // ModelCreator enum as a snake_case string, e.g. "bytedance", "open_ai".
+  model_creator?: string | null;
   is_disabled: boolean | null;
   full_name: string | null;
   extra_info_short?: string | null;
