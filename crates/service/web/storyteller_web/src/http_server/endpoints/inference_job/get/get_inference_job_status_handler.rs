@@ -162,11 +162,14 @@ pub async fn get_inference_job_status_handler(
     return Err(CommonWebError::TooManyRequests);
   }
 
-  if path.token.as_str().trim() == "None" {
+  match path.token.as_str().trim() {
     // NB: A bunch of Python clients use our API and can fail in this manner.
     // This was a large traffic driver during the 2023-03-08 outage.
     // Presumably, it's this client: https://github.com/shards-7/fakeyou.py
-    return Err(CommonWebError::NotFound);
+    "None" => return Err(CommonWebError::NotFound),
+    // NB: Broken Javascript clients poll with a stringified `undefined` token.
+    "undefined" => return Err(CommonWebError::NotFound),
+    _ => {}
   }
 
   // NB: Since this is publicly exposed, we don't query sensitive data.
