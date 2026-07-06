@@ -2,8 +2,9 @@ use actix_web::web::Json;
 use utoipa::ToSchema;
 
 /// Sentinel job token returned to legacy clients now that TTS inference is shut down.
-/// There is no real job behind it; status polls for it will never complete.
-const SYNTHETIC_INFERENCE_JOB_TOKEN: &str = "synthetic_too_many_requests";
+/// There is no real job behind it; status polls for it are rejected with a 429 before
+/// touching the database (see `get_inference_job_status_handler`).
+pub const SYNTHETIC_INFERENCE_JOB_TOKEN: &str = "synthetic_too_many_requests";
 
 #[derive(Serialize, ToSchema)]
 pub struct InferTtsSuccessResponse {

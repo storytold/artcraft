@@ -4,6 +4,7 @@ use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::common_responses::media::media_domain::MediaDomain;
 use crate::http_server::common_responses::media::media_links_builder::MediaLinksBuilder;
 use crate::http_server::endpoints::inference_job::utils::estimates::estimate_job_progress::estimate_job_progress;
+use crate::http_server::endpoints::tts::enqueue_infer_tts_handler::enqueue_infer_tts_handler::SYNTHETIC_INFERENCE_JOB_TOKEN;
 use crate::http_server::endpoints::inference_job::utils::extractors::extract_lipsync_details::extract_lipsync_details;
 use crate::http_server::endpoints::inference_job::utils::extractors::extract_live_portrait_details::extract_live_portrait_details;
 use crate::http_server::endpoints::inference_job::utils::extractors::extract_polymorphic_inference_args::extract_polymorphic_inference_args;
@@ -154,6 +155,13 @@ pub async fn get_inference_job_status_handler(
   path: Path<GetInferenceJobStatusPathInfo>,
   server_state: web::Data<Arc<ServerState>>,
 ) -> Result<Json<GetInferenceJobStatusSuccessResponse>, CommonWebError> {
+  // NB: The shut-down legacy TTS enqueue endpoint hands this sentinel token to old clients,
+  // and some of them poll it forever. Blackhole the traffic before it reaches MySQL or Redis.
+  // (Deliberately not logged — the whole point is to make these requests as cheap as possible.)
+  if path.token.as_str() == SYNTHETIC_INFERENCE_JOB_TOKEN {
+    return Err(CommonWebError::TooManyRequests);
+  }
+
   if path.token.as_str().trim() == "None" {
     // NB: A bunch of Python clients use our API and can fail in this manner.
     // This was a large traffic driver during the 2023-03-08 outage.
