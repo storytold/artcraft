@@ -155,22 +155,9 @@ pub async fn get_inference_job_status_handler(
   path: Path<GetInferenceJobStatusPathInfo>,
   server_state: web::Data<Arc<ServerState>>,
 ) -> Result<Json<GetInferenceJobStatusSuccessResponse>, CommonWebError> {
-  // NB: The shut-down legacy TTS enqueue endpoint hands this sentinel token to old clients,
-  // and some of them poll it forever. Blackhole the traffic before it reaches MySQL or Redis.
-  // (Deliberately not logged — the whole point is to make these requests as cheap as possible.)
-  if path.token.as_str() == SYNTHETIC_INFERENCE_JOB_TOKEN {
-    return Err(CommonWebError::TooManyRequests);
-  }
 
-  match path.token.as_str().trim() {
-    // NB: A bunch of Python clients use our API and can fail in this manner.
-    // This was a large traffic driver during the 2023-03-08 outage.
-    // Presumably, it's this client: https://github.com/shards-7/fakeyou.py
-    "None" => return Err(CommonWebError::NotFound),
-    // NB: Broken Javascript clients poll with a stringified `undefined` token.
-    "undefined" => return Err(CommonWebError::NotFound),
-    _ => {}
-  }
+  // Don't serve bad traffic
+  blackhole_jobs(&path.token)?;
 
   // NB: Since this is publicly exposed, we don't query sensitive data.
   let maybe_status = get_inference_job_status(
@@ -242,6 +229,24 @@ pub async fn get_inference_job_status_handler(
     success: true,
     state: record_for_response,
   }))
+}
+
+/// Reject junk job tokens that abusive or broken clients poll in high volume, before they reach
+/// MySQL or Redis. Deliberately not logged — the whole point is to make these requests as cheap
+/// as possible.
+fn blackhole_jobs(token: &InferenceJobToken) -> Result<(), CommonWebError> {
+  match token.as_str().trim() {
+    // NB: The shut-down legacy TTS enqueue endpoint hands this sentinel token to old clients,
+    // and some of them poll it forever.
+    SYNTHETIC_INFERENCE_JOB_TOKEN => Err(CommonWebError::TooManyRequests),
+    // NB: A bunch of Python clients use our API and can fail in this manner.
+    // This was a large traffic driver during the 2023-03-08 outage.
+    // Presumably, it's this client: https://github.com/shards-7/fakeyou.py
+    "None" => Err(CommonWebError::NotFound),
+    // NB: Broken Javascript clients poll with a stringified `undefined` token.
+    "undefined" => Err(CommonWebError::NotFound),
+    _ => Ok(()),
+  }
 }
 
 fn record_to_payload(
