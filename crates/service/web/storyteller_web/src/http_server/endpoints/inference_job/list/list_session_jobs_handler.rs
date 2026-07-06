@@ -66,9 +66,11 @@ pub async fn list_session_jobs_handler(
 
   // NB: SessionCheckerError → CommonWebError maps payload errors (bad cookie) to 401
   //     and DB / cache errors to 500.
+  // NB: The plain (non-extended) lookup is Redis-cached with a short TTL, which matters here:
+  //     this is the hottest polling endpoint in the app, and it only needs the user token.
   let maybe_user_session = server_state
       .session_checker
-      .maybe_get_user_session_extended_from_connection(&http_request, &mut mysql_connection)
+      .maybe_get_user_session_from_connection(&http_request, &mut mysql_connection)
       .await?;
 
   let include_states = query.include_states
@@ -84,7 +86,7 @@ pub async fn list_session_jobs_handler(
           .collect::<HashSet<_>>());
 
   let user = match (maybe_user_session.as_ref(), maybe_avt_token.as_ref()) {
-    (Some(session), _) => SessionUser::User(&session.user_token_typed),
+    (Some(session), _) => SessionUser::User(&session.user_token),
     (None, Some(avt_token)) => SessionUser::Anonymous(avt_token),
     (None, None) => {
       // TODO(bt,2025-04-15): We should install an AVT cookie.
