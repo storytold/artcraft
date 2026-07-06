@@ -24,6 +24,7 @@ use tokens::tokens::generic_inference_jobs::InferenceJobToken;
 use url_utils::extension::extract_extension_from_url::{extract_extension_from_url, ExtractExtensions};
 
 use crate::http_server::common_responses::common_web_error::CommonWebError;
+use crate::http_server::user_lookup::api_or_web_session::require_api_or_web_session::require_api_or_web_session;
 use crate::http_server::validations::validate_idempotency_token_format::validate_idempotency_token_format;
 use crate::state::server_state::ServerState;
 use crate::util::http_download_url_to_bytes::http_download_url_to_bytes;
@@ -58,19 +59,12 @@ pub async fn create_character_handler(
       .acquire()
       .await?;
 
-  let maybe_user_session = server_state
-      .session_checker
-      .maybe_get_user_session_from_connection(&http_request, &mut mysql_connection)
-      .await
-      .map_err(|e| {
-        warn!("Session checker error: {:?}", e);
-        CommonWebError::from(e)
-      })?;
-
-  let user_session = match maybe_user_session {
-    Some(session) => session,
-    None => return Err(CommonWebError::NotAuthorized),
-  };
+  let user_session = require_api_or_web_session(
+    &http_request,
+    &server_state.session_checker,
+    &server_state.avt_cookie_manager,
+    &mut mysql_connection,
+  ).await?;
 
   let user_token = &user_session.user_token;
   let ip_address = get_request_ip(&http_request);
@@ -194,7 +188,7 @@ pub async fn create_character_handler(
       kinovi_character_id: &gen_result.character_id,
       maybe_model_type: None,
       maybe_creator_user_token: Some(user_token),
-      maybe_avt_token: None,
+      maybe_avt_token: user_session.maybe_avt_token.as_ref(),
       creator_ip_address: &ip_address,
       creator_set_visibility: Visibility::Hidden,
       mysql_executor: &mut *transaction,
