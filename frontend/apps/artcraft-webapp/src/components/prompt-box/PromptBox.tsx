@@ -397,7 +397,7 @@ export const PromptBox = forwardRef<HTMLDivElement, PromptBoxProps>(
                 </Tooltip>
               )}
 
-              <div className="relative flex-1">
+              <div className="promptbox-resize-wrap relative flex-1">
                 {hasMentionItems && mentionItems ? (
                   <MentionTextarea
                     ref={mentionEditorRef}
