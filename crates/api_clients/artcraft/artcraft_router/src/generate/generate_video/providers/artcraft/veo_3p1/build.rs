@@ -23,7 +23,7 @@ pub fn build_artcraft_veo_3p1(mut builder: GenerateVideoRequestBuilder) -> Resul
   let mut request = build_artcraft_omni_video_request(
     builder,
     CommonVideoModelEnum::Veo3p1,
-    SupportedResolutions::Full,
+    SupportedResolutions::FullWith4k,
     UltraWideSupport::Unsupported,
   )?;
   request.generate_audio = generate_audio;
