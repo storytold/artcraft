@@ -1,63 +1,67 @@
-import { useContext, useState } from "react";
+import { useContext, useEffect, useRef, useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faTrash,
   faCloudArrowUp,
-  faPenToSquare,
-  faWandMagicSparkles,
-  faFilm,
-  faCheck,
+  faSpinnerThird,
+  faTriangleExclamation,
+  faRotateRight,
 } from "@fortawesome/pro-solid-svg-icons";
 import { EngineContext } from "../../contexts/EngineContext";
 import { usePageSceneStore } from "../../PageSceneStore";
 
-// Preview hub shown after Capture/Record. Previews the still (image) or plays
-// the clip (video), then routes it: Delete (discard), Upload (persist to
-// library), or Edit (hand off to 2D / video to prompt + generate). The
-// artifact is cached locally (object URL) — Edit keeps it alive for the
-// destination; only Delete revokes it.
+// Output modal shown immediately after Capture/Record — it previews the local
+// artifact (object URL, works offline), then uploads to the gallery and shows
+// status. On success it opens the app Lightbox (all destinations) on the
+// uploaded token; on failure it stays put with a Retry. Images auto-upload;
+// videos wait for a manual Upload (they're large).
+type UploadStatus = "idle" | "uploading" | "error";
+
 export const CompletionModal = () => {
   const editor = useContext(EngineContext);
   const artifact = usePageSceneStore((s) => s.producedArtifact);
-  const setProducedArtifact = usePageSceneStore((s) => s.setProducedArtifact);
   const clearProducedArtifact = usePageSceneStore(
     (s) => s.clearProducedArtifact,
   );
-  const [uploading, setUploading] = useState(false);
-  const [uploaded, setUploaded] = useState(false);
+  const [status, setStatus] = useState<UploadStatus>("idle");
+  const autoStartedRef = useRef(false);
 
-  if (!artifact) return null;
+  const isVideo = artifact?.kind === "video";
 
-  const isVideo = artifact.kind === "video";
-
-  const handleDelete = () => {
-    clearProducedArtifact(); // revokes the object URL
-  };
-
-  // Detach from the store WITHOUT revoking — the destination editor keeps
-  // using the object URL / blob.
-  const handoffAndClose = (invoke: () => void) => {
-    invoke();
-    setProducedArtifact(null);
-  };
-
-  const handleUpload = async () => {
-    if (!editor?.adapter.uploadMedia || uploading) return;
-    setUploading(true);
+  const upload = async () => {
+    if (!editor?.adapter.uploadMedia || !artifact) return;
+    setStatus("uploading");
     try {
-      await editor.adapter.uploadMedia({
+      const token = await editor.adapter.uploadMedia({
         kind: artifact.kind,
         blob: artifact.blob,
         fileName: artifact.fileName,
       });
-      setUploaded(true);
+      // Hand off to the app Lightbox (destinations for this kind). It shows via
+      // the uploaded CDN URL, so revoking the local object URL now is safe.
+      editor.adapter.openMediaLightbox?.(token, artifact.kind);
+      clearProducedArtifact();
     } catch {
-      // Upload failed (e.g. offline / no backend). Leave un-uploaded so the
-      // user can retry; don't throw an unhandled rejection.
-    } finally {
-      setUploading(false);
+      setStatus("error");
     }
   };
+
+  // Images auto-upload as soon as the modal appears; reset when it closes.
+  useEffect(() => {
+    if (artifact?.kind === "image" && !autoStartedRef.current) {
+      autoStartedRef.current = true;
+      void upload();
+    }
+    if (!artifact) {
+      autoStartedRef.current = false;
+      setStatus("idle");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [artifact]);
+
+  if (!artifact) return null;
+
+  const busy = status === "uploading";
 
   return (
     <div className="absolute inset-0 z-[70] flex items-center justify-center bg-black/60 p-6 backdrop-blur-sm">
@@ -66,7 +70,6 @@ export const CompletionModal = () => {
           {isVideo ? "Recording complete" : "Capture complete"}
         </div>
 
-        {/* preview */}
         <div className="flex max-h-[52vh] items-center justify-center overflow-hidden rounded-xl bg-black/30">
           {isVideo ? (
             <video
@@ -85,76 +88,57 @@ export const CompletionModal = () => {
           )}
         </div>
 
+        {/* upload status */}
+        {busy && (
+          <div className="flex items-center gap-2 text-sm text-base-fg/70">
+            <FontAwesomeIcon
+              icon={faSpinnerThird}
+              className="h-4 w-4 animate-spin"
+            />
+            Uploading to gallery…
+          </div>
+        )}
+        {status === "error" && (
+          <div className="flex items-center gap-2 text-sm text-red">
+            <FontAwesomeIcon
+              icon={faTriangleExclamation}
+              className="h-4 w-4"
+            />
+            Upload failed — check your connection and retry.
+          </div>
+        )}
+
         {/* actions */}
         <div className="flex items-center justify-between gap-2">
           <button
             type="button"
-            onClick={handleDelete}
-            className="flex h-9 items-center gap-2 rounded-full px-3 text-sm text-base-fg/60 transition-colors hover:bg-white/10 hover:text-base-fg"
+            onClick={() => clearProducedArtifact()}
+            disabled={busy}
+            className="flex h-9 items-center gap-2 rounded-full px-3 text-sm text-base-fg/60 transition-colors hover:bg-white/10 hover:text-base-fg disabled:opacity-50"
           >
             <FontAwesomeIcon icon={faTrash} className="h-3.5 w-3.5" />
-            Delete
+            Discard
           </button>
 
-          <div className="flex items-center gap-2">
+          {status === "error" ? (
             <button
               type="button"
-              onClick={handleUpload}
-              disabled={uploading || uploaded}
-              className="flex h-9 items-center gap-2 rounded-full border border-ui-controls-border bg-ui-controls/60 px-4 text-sm text-base-fg backdrop-blur-lg transition-colors hover:bg-ui-controls/90 disabled:opacity-60"
+              onClick={() => void upload()}
+              className="flex h-9 items-center gap-2 rounded-full bg-brand-primary px-4 text-sm font-medium text-white transition-transform hover:scale-[1.03]"
             >
-              <FontAwesomeIcon
-                icon={uploaded ? faCheck : faCloudArrowUp}
-                className="h-3.5 w-3.5"
-              />
-              {uploaded ? "Saved" : uploading ? "Saving…" : "Upload"}
+              <FontAwesomeIcon icon={faRotateRight} className="h-3.5 w-3.5" />
+              Retry
             </button>
-
-            {isVideo ? (
-              <>
-                <button
-                  type="button"
-                  onClick={() =>
-                    handoffAndClose(() =>
-                      editor?.adapter.openVideoInEditor?.(artifact, "edit"),
-                    )
-                  }
-                  className="flex h-9 items-center gap-2 rounded-full border border-ui-controls-border bg-ui-controls/60 px-4 text-sm text-base-fg transition-colors hover:bg-ui-controls/90"
-                >
-                  <FontAwesomeIcon icon={faFilm} className="h-3.5 w-3.5" />
-                  Video editor
-                </button>
-                <button
-                  type="button"
-                  onClick={() =>
-                    handoffAndClose(() =>
-                      editor?.adapter.openVideoInEditor?.(artifact, "generate"),
-                    )
-                  }
-                  className="flex h-9 items-center gap-2 rounded-full bg-brand-primary px-4 text-sm font-medium text-white transition-transform hover:scale-[1.03]"
-                >
-                  <FontAwesomeIcon
-                    icon={faWandMagicSparkles}
-                    className="h-3.5 w-3.5"
-                  />
-                  Prompt to video
-                </button>
-              </>
-            ) : (
-              <button
-                type="button"
-                onClick={() =>
-                  handoffAndClose(() =>
-                    editor?.adapter.openImageInEditor?.(artifact),
-                  )
-                }
-                className="flex h-9 items-center gap-2 rounded-full bg-brand-primary px-4 text-sm font-medium text-white transition-transform hover:scale-[1.03]"
-              >
-                <FontAwesomeIcon icon={faPenToSquare} className="h-3.5 w-3.5" />
-                Edit in 2D
-              </button>
-            )}
-          </div>
+          ) : isVideo && status === "idle" ? (
+            <button
+              type="button"
+              onClick={() => void upload()}
+              className="flex h-9 items-center gap-2 rounded-full bg-brand-primary px-4 text-sm font-medium text-white transition-transform hover:scale-[1.03]"
+            >
+              <FontAwesomeIcon icon={faCloudArrowUp} className="h-3.5 w-3.5" />
+              Upload &amp; continue
+            </button>
+          ) : null}
         </div>
       </div>
     </div>

@@ -7,9 +7,11 @@ import { usePageSceneStore } from "../../PageSceneStore";
 import { recordTimeline } from "../../engine/recording/TimelineRecorder";
 import { TimelineBar } from "../Timeline";
 
-// Bottom-center controls for Record mode: a read-only playback bar (only when
-// a timeline exists) plus Capture (still image) and Record (timeline → video).
-// Both produce a locally-cached artifact and open the completion modal.
+// Record-mode controls: a read-only playback bar (when a timeline exists) plus
+// Capture (still) and Record (timeline→video).
+//   Capture → auto-upload to gallery → open the app Lightbox on the token.
+//   Record  → produce the clip → hand to the video review modal (manual upload,
+//             since videos are large) via producedArtifact.
 export const RecordControls = () => {
   const editor = useContext(EngineContext);
   const timelineExists = usePageSceneStore((s) => s.timelineExists);
@@ -20,28 +22,33 @@ export const RecordControls = () => {
 
   const busy = recordingProgress !== null;
 
-  // Still capture of the composed (render-camera) frame.
+  // Snapshot the composed frame → hand to the review modal, which previews it
+  // immediately and auto-uploads to the gallery (with status) → app Lightbox.
   const handleCapture = () => {
     if (!editor || busy) return;
     setRecordingProgress({ phase: "capturing", pct: 0 });
-    // Defer a tick so the overlay paints before the (sync) snapshot work.
+    // Defer so the overlay paints before the (sync) snapshot work.
     requestAnimationFrame(() => {
-      const snap = editor.snapShotOfCurrentFrame(false);
-      if (snap) {
-        setProducedArtifact({
-          kind: "image",
-          blob: snap.file,
-          objectUrl: URL.createObjectURL(snap.file),
-          fileName: snap.file.name,
-          mimeType: "image/png",
-          aspectRatio,
-        });
+      try {
+        const snap = editor.snapShotOfCurrentFrame(false);
+        if (snap) {
+          setProducedArtifact({
+            kind: "image",
+            blob: snap.file,
+            objectUrl: URL.createObjectURL(snap.file),
+            fileName: snap.file.name,
+            mimeType: "image/png",
+            aspectRatio,
+          });
+        }
+      } finally {
+        setRecordingProgress(null);
       }
-      setRecordingProgress(null);
     });
   };
 
-  // Encode the whole timeline to a video.
+  // Encode the timeline; the produced clip opens the review modal for a manual
+  // upload (videos are large, so we don't auto-upload).
   const handleRecord = async () => {
     if (!editor || busy || !timelineExists) return;
     setRecordingProgress({ phase: "encoding", pct: 0 });

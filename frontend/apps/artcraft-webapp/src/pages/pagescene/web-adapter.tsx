@@ -18,10 +18,7 @@ import {
   UploadImageMedia,
   UsersApi,
 } from "@storyteller/api";
-import type {
-  PageSceneAdapter,
-  PageSceneArtifact,
-} from "@storyteller/ui-pagescene";
+import type { PageSceneAdapter } from "@storyteller/ui-pagescene";
 import { uploadByKind } from "../video-editor/adapters/upload-by-kind";
 import {
   getActiveEditor,
@@ -159,14 +156,10 @@ export interface WebAppPageSceneAdapterOptions {
   userToken: string | undefined;
   initialSceneToken: string | undefined;
   navigateToImageTo3D: () => void;
-  // Record-mode handoff: open a produced still in the 2D editor / a produced
-  // video in create-video or the video editor. Built page-side (they need
-  // `navigate`), passed through here like navigateToImageTo3D.
-  openImageInEditor: (artifact: PageSceneArtifact) => void;
-  openVideoInEditor: (
-    artifact: PageSceneArtifact,
-    target: "generate" | "edit",
-  ) => void;
+  // Record-mode handoff: open the app Lightbox on an uploaded media token
+  // (all destinations for the kind). Built page-side (needs local state +
+  // navigate), passed through here like navigateToImageTo3D.
+  openMediaLightbox: (token: string, kind: "image" | "video") => void;
   // Wrapper size — kept in a ref so the closure sees live values without
   // rebuilding the adapter on every resize.
   getViewportSize: () => { width: number; height: number };
@@ -185,8 +178,7 @@ export const useWebAppPageSceneAdapter = (
     userToken,
     initialSceneToken,
     navigateToImageTo3D,
-    openImageInEditor,
-    openVideoInEditor,
+    openMediaLightbox,
     getViewportSize,
     promptSignup,
     onRequestNewSceneSelector,
@@ -400,11 +392,10 @@ export const useWebAppPageSceneAdapter = (
 
       navigateToImageTo3D,
 
-      openImageInEditor,
-      openVideoInEditor,
+      openMediaLightbox,
 
-      // Persist a produced still/video to the media library (Upload action
-      // in the completion modal). Returns the media token.
+      // Persist a produced still/video to the media library. Images
+      // auto-upload after Capture; videos upload on demand. Returns the token.
       uploadMedia: ({ kind, blob, fileName, title }) =>
         uploadByKind({ kind, blob, fileName, title }),
 
@@ -447,8 +438,7 @@ export const useWebAppPageSceneAdapter = (
       userToken,
       initialSceneToken,
       navigateToImageTo3D,
-      openImageInEditor,
-      openVideoInEditor,
+      openMediaLightbox,
       getViewportSize,
       promptSignup,
       onRequestNewSceneSelector,

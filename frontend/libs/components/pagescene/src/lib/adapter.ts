@@ -225,25 +225,21 @@ export interface PageSceneAdapter {
   // implements via useTabStore.setActiveTab; web host via router push.
   navigateToImageTo3D(): void;
 
-  // Record-mode handoff: hand a produced still/video to another editor to
-  // prompt/edit + generate there. The lib caches the artifact locally (object
-  // URL) and does NOT upload — the destination uploads at generation time.
-  // Web host: seed the destination store + router push. Tauri host may leave
-  // these undefined (feature is web-first).
-  openImageInEditor?(artifact: PageSceneArtifact): void;
-  openVideoInEditor?(
-    artifact: PageSceneArtifact,
-    target: "generate" | "edit",
-  ): void;
-
-  // Explicitly persist a produced artifact to the user's media library and
-  // return its media token. Backs the completion modal's Upload action.
+  // Persist a produced still/video to the user's media library and return its
+  // media token. Images auto-upload after Capture; videos upload on demand
+  // (they're large). Host: MediaUploadApi via uploadByKind.
   uploadMedia?(args: {
     kind: "image" | "video";
     blob: Blob;
     fileName: string;
     title?: string;
   }): Promise<string>;
+
+  // Open the app's media Lightbox on an uploaded token — the shared modal that
+  // offers every destination for the media type (Edit-on-Canvas, Make-Video,
+  // Recreate, Share, Download). Host resolves the CDN URL from the token and
+  // renders <Lightbox>. Replaces bespoke per-destination handoffs.
+  openMediaLightbox?(token: string, kind: "image" | "video"): void;
 
   // Auth/logout — the SettingsModal in Controls3D needs a logout
   // callback. Tauri host: setLogoutStates. Web host: web auth flow.

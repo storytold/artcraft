@@ -334,8 +334,11 @@ class Editor {
     this.history = new HistoryManager({ capacity: 64 });
 
     // Animation timeline. Holds keyframes + drives playback; ticked each
-    // frame in renderSingleFrame() after the entrance animator.
+    // frame in renderSingleFrame() after the entrance animator. An empty
+    // timeline always exists so the collapsed timeline bar (the sole
+    // build-mode bottom UI) is functional; a loaded scene overrides it.
     this.timelineController = new TimelineController(this);
+    this.timelineController.create();
 
     this.positive_prompt =
       "((masterpiece, best quality, 8K, detailed)), colorful, epic, fantasy, (fox, red fox:1.2), no humans, 1other, ((koi pond)), outdoors, pond, rocks, stones, koi fish, ((watercolor))), lilypad, fish swimming around.";
@@ -850,6 +853,17 @@ class Editor {
       sceneToken: sceneToken,
       sceneGenerationMetadata: sceneGenerationMetadata,
     });
+  }
+
+  // True if any object in the scene carries a THREE animation clip (e.g. an
+  // animated GLB import). Used to auto-expand the timeline on load.
+  sceneHasAnimation(): boolean {
+    let found = false;
+    this.activeScene.scene.traverse((o) => {
+      const clips = (o as unknown as { animations?: unknown[] }).animations;
+      if (clips && clips.length > 0) found = true;
+    });
+    return found;
   }
 
   deleteObject(uuid: string) {

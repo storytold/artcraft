@@ -48,6 +48,30 @@ Rule: a scene with **no animations/keyframes (static)** defaults to **Build**.
 
 This mode does not exist in code today. It needs a new store field (e.g. `sceneMode: "build" | "record"`) and a new component rendered in `Stage3DBody`. Distinct from the existing `editorState` enum (`EDIT` | `CAMERA_VIEW`), which is a different axis — don't overload it.
 
+### Launch re-scope — drop promptbox, lightbox handoff, editable duration
+
+- **Promptbox removed**: `SceneBuilderPromptBox` deleted (MCP not ready). The **animation
+  timeline** is the sole build-mode bottom UI: collapsed `TimelineBar` by default, expanded
+  `TimelineEditor` via chevron. An empty timeline is auto-created on editor init
+  (`editor.timelineController.create()`), so the bar is always functional (no "Add timeline"
+  button). Auto-expands once on load when `timelineTracks.length > 0` or
+  `editor.sceneHasAnimation()` (imported THREE clips).
+- **Editable max duration**: `TimelineController.setDuration(s)` (clamped `[1,60]`, covers 5–30s) +
+  `comps/Timeline/DurationLabel.tsx` (click the total-time → number input). Persists via `getTimeline`.
+- **Capture/Record → review modal (appears first) → app Lightbox**:
+  - `CompletionModal` opens **immediately** for both kinds (`producedArtifact`) with a **local
+    preview** (object URL, works offline) + upload status. Images **auto-upload** on open; videos
+    show a manual **Upload** button (large). On success → `adapter.openMediaLightbox(token, kind)`
+    (destinations) + close; on failure → **Retry** (so the modal is always visible even when the
+    upload API is unreachable in dev). The modal — not `RenderOverlay` — owns the upload.
+  - `RecordControls`: Capture → produce image `producedArtifact`; Record → encode (overlay) →
+    produce video `producedArtifact`.
+  - Adapter: `openMediaLightbox(token, kind)` (host resolves cdnUrl via `MediaFilesApi` and renders
+    the app `<Lightbox>`); `uploadMedia` kept; `openImageInEditor`/`openVideoInEditor` **removed**
+    (the Lightbox owns destination routing — Edit-on-Canvas/Make-Video/Recreate/Share/Download).
+  - Uploading first means the Lightbox gets a real token + cdnUrl → its actions route correctly
+    (retires the earlier blob/data-URL handoff fragility).
+
 ### Spec revision — 3D delegates generation to 2D/Video (branch `feature/scene-builder`)
 
 The 3D editor no longer generates. It composes; 2D (pagedraw) and the video experiences generate.

@@ -100,6 +100,18 @@ export class TimelineController {
     this.emitPlayhead();
   }
 
+  // Set the max timeline duration (seconds). Clamped to [1, 60] — covers the
+  // required 5–30s range with headroom. Keeps the playhead in range.
+  setDuration(seconds: number): void {
+    if (!this.timeline || !Number.isFinite(seconds)) return;
+    this.timeline.duration = Math.max(1, Math.min(60, seconds));
+    if (this.playhead > this.timeline.duration) {
+      this.playhead = this.timeline.duration;
+    }
+    this.emitChanged();
+    this.emitPlayhead();
+  }
+
   // Advanced once per frame from editor.renderSingleFrame().
   tick(delta: number): void {
     if (!this.timeline || !this.isPlaying) return;

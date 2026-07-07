@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Link,
   useNavigate,
@@ -10,10 +10,7 @@ import { faDesktop, faHouse } from "@fortawesome/pro-solid-svg-icons";
 import { Button } from "@storyteller/ui-button";
 import { MediaFilesApi } from "@storyteller/api";
 import { Stage3D, usePageSceneStore } from "@storyteller/ui-pagescene";
-import type { PageSceneArtifact } from "@storyteller/ui-pagescene";
-import { applyEditOnCanvasFromImage } from "../pagedraw/edit-on-canvas";
-import { uploadByKind } from "../video-editor/adapters/upload-by-kind";
-import { useCreateVideoStore } from "../create-video/create-video-store";
+import { Lightbox } from "../../components/lightbox/lightbox";
 import {
   GalleryModal,
   GalleryDragComponent,
@@ -243,77 +240,39 @@ function PageSceneEditor() {
     navigate("/create-image");
   }, [navigate]);
 
-  // Record-mode handoff: a captured still opens in the 2D editor. NO upload
-  // here (2D uploads at generation time) — matches the "don't upload from 3D"
-  // flow and avoids a network call that rejects offline. We hand PageDraw a
-  // self-contained data URL rather than the blob: object URL, which Safari
-  // invalidates across the route change (WebKitBlobResource error). Empty
-  // mediaToken; PageDraw's generate path uploads the base if it lacks a token.
-  const openImageInEditor = useCallback(
-    (artifact: PageSceneArtifact) => {
-      void (async () => {
-        let url = artifact.objectUrl;
-        try {
-          url = await new Promise<string>((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onload = () => resolve(reader.result as string);
-            reader.onerror = () => reject(reader.error);
-            reader.readAsDataURL(artifact.blob);
-          });
-        } catch {
-          // fall back to the object URL
-        }
-        applyEditOnCanvasFromImage("", url, navigate);
-      })();
-    },
-    [navigate],
-  );
+  // Record-mode handoff: open the app Lightbox on an uploaded media token. The
+  // Lightbox offers every destination for the media kind (Edit-on-Canvas,
+  // Make-Video, Recreate, Share, Download). Resolve the CDN URL from the token
+  // so the preview + actions have a real URL to work with.
+  const [lightbox, setLightbox] = useState<{
+    token: string;
+    cdnUrl: string;
+    mediaClass: string;
+  } | null>(null);
 
-  // A recorded video either seeds Create-Video as a reference (lazy — the
-  // page uploads it at generation) or lands in the library + opens the video
-  // editor. TODO(scene-builder): auto-drop onto the video-editor timeline.
-  const openVideoInEditor = useCallback(
-    (artifact: PageSceneArtifact, target: "generate" | "edit") => {
-      if (target === "generate") {
-        const file = new File([artifact.blob], artifact.fileName, {
-          type: artifact.mimeType,
-        });
-        useCreateVideoStore.getState().setPendingRecreate({
-          prompt: "",
-          referenceImages: [],
-          referenceVideos: [
-            {
-              id: crypto.randomUUID(),
-              url: artifact.objectUrl,
-              file,
-              mediaToken: "",
-              duration: 0,
-            },
-          ],
-          referenceAudios: [],
-          inputMode: "reference",
-        });
-        navigate("/create-video");
-        return;
-      }
+  const openMediaLightbox = useCallback(
+    (token: string, kind: "image" | "video") => {
       void (async () => {
-        // Best-effort upload to the library (so the clip is reachable from the
-        // video editor's asset panel). Swallow failures — offline/no-backend
-        // must not throw an unhandled rejection; navigate regardless.
-        // TODO(scene-builder): auto-drop onto the video-editor timeline.
+        let cdnUrl = "";
         try {
-          await uploadByKind({
-            kind: "video",
-            blob: artifact.blob,
-            fileName: artifact.fileName,
+          const resp = await new MediaFilesApi().GetMediaFileByToken({
+            mediaFileToken: token,
           });
+          const links = (
+            resp?.data as { media_links?: { cdn_url?: string } } | undefined
+          )?.media_links;
+          cdnUrl = links?.cdn_url ?? "";
         } catch {
-          // ignore — upload is best-effort until auto-import lands
+          // ignore — open anyway; the sidebar metadata still loads by token
         }
-        navigate("/video-editor");
+        setLightbox({
+          token,
+          cdnUrl,
+          mediaClass: kind === "video" ? "video" : "image",
+        });
       })();
     },
-    [navigate],
+    [],
   );
 
   const wrapperRef = useRef<HTMLDivElement | null>(null);
@@ -349,8 +308,7 @@ function PageSceneEditor() {
     userToken: user?.user_token,
     initialSceneToken: sceneToken,
     navigateToImageTo3D,
-    openImageInEditor,
-    openVideoInEditor,
+    openMediaLightbox,
     getViewportSize,
     promptSignup: openSignupCta,
     onRequestNewSceneSelector: openSceneSplash,
@@ -407,6 +365,16 @@ function PageSceneEditor() {
           adds. Both components portal themselves out of this wrapper. */}
       <GalleryModal mode="view" />
       <GalleryDragComponent />
+      {/* Capture/Record handoff: the app Lightbox opens on the uploaded token
+          with all destinations for the media kind. */}
+      <Lightbox
+        isOpen={!!lightbox}
+        onClose={() => setLightbox(null)}
+        mediaToken={lightbox?.token}
+        cdnUrl={lightbox?.cdnUrl}
+        mediaClass={lightbox?.mediaClass}
+        showBatchCarousel={false}
+      />
       {demoToken && (
         <DemoOutputOverlay imageToken={imageToken} videoToken={videoToken} />
       )}

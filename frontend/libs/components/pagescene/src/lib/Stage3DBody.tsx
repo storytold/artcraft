@@ -58,7 +58,6 @@ import { PoseModeSelector } from "./comps/PoseModeSelector";
 import { ExitCameraView } from "./comps/ExitCameraView";
 import { RecordControls } from "./comps/RecordControls";
 import { CameraStatusPill } from "./comps/CameraStatusPill";
-import { SceneBuilderPromptBox } from "./comps/SceneBuilderPromptBox";
 import { RenderOverlay } from "./comps/RenderOverlay";
 import { CompletionModal } from "./comps/CompletionModal";
 import { PreviewBox } from "./comps/PreviewBox";
@@ -137,6 +136,8 @@ export const Stage3DBody = ({
   const timelineExists = usePageSceneStore((s) => s.timelineExists);
   const timelineExpanded = usePageSceneStore((s) => s.timelineExpanded);
   const setTimelineExpanded = usePageSceneStore((s) => s.setTimelineExpanded);
+  const timelineTracks = usePageSceneStore((s) => s.timelineTracks);
+  const is3DSceneLoaded = usePageSceneStore((s) => s.is3DSceneLoaded);
   const sceneMode = usePageSceneStore((s) => s.sceneMode);
   const isRecord = sceneMode === "record";
   const previewImageUrl = usePageSceneStore((s) => s.sceneMeta.previewImageUrl);
@@ -244,6 +245,17 @@ export const Stage3DBody = ({
       editor.cameraController.exitCameraView();
     }
   }, [isRecord, editor]);
+
+  // Auto-expand the timeline once when a loaded scene has keyframes or an
+  // imported Three.js animation; otherwise it stays collapsed by default.
+  const didAutoExpandTimelineRef = useRef(false);
+  useEffect(() => {
+    if (!editor || !is3DSceneLoaded || didAutoExpandTimelineRef.current) return;
+    didAutoExpandTimelineRef.current = true;
+    if (timelineTracks.length > 0 || editor.sceneHasAnimation()) {
+      setTimelineExpanded(true);
+    }
+  }, [editor, is3DSceneLoaded, timelineTracks, setTimelineExpanded]);
 
   // Reactive viewport sizing. useViewportSize listens to window
   // resize and re-renders the component. Falls back to
@@ -525,11 +537,16 @@ export const Stage3DBody = ({
 
             {isVisitingOthersScene && <PreviewBox imageUrl={previewImageUrl} />}
 
-            {timelineExpanded && !isRecord && <TimelineEditor />}
+            {/* Build mode: the animation timeline is the sole bottom UI —
+                collapsed bar by default, expanded editor via the chevron. */}
+            {!isRecord && !timelineExpanded && (
+              <div className="absolute bottom-4 left-1/2 w-[90vw] max-w-3xl -translate-x-1/2">
+                <TimelineBar />
+              </div>
+            )}
+            {!isRecord && timelineExpanded && <TimelineEditor />}
 
             {isRecord && <RecordControls />}
-
-            {!timelineExpanded && !isRecord && <SceneBuilderPromptBox />}
 
             <LoadingDots
               className="absolute left-0 top-0 z-50"

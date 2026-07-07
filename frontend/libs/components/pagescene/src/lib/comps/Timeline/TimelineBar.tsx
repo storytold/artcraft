@@ -5,6 +5,7 @@ import { EngineContext } from "../../contexts/EngineContext/EngineContext";
 import { pauseTimeline, playTimeline, seekTimeline } from "../../actions";
 import { usePageSceneStore } from "../../PageSceneStore";
 import { formatTimecode } from "./timelineUtils";
+import { DurationLabel } from "./DurationLabel";
 
 // Collapsed timeline bar: play/pause · time · scrubber · duration · expand.
 // Sits above the prompt card (rendered via the promptbox aboveStackSlot).
@@ -51,9 +52,13 @@ export const TimelineBar = ({ readOnly = false }: { readOnly?: boolean }) => {
         }}
         className="h-1 flex-1 cursor-pointer accent-white"
       />
-      <span className="w-9 shrink-0 text-right tabular-nums text-xs text-base-fg/70">
-        {formatTimecode(duration)}
-      </span>
+      {readOnly ? (
+        <span className="w-9 shrink-0 text-right tabular-nums text-xs text-base-fg/70">
+          {formatTimecode(duration)}
+        </span>
+      ) : (
+        <DurationLabel className="shrink-0 text-right text-xs text-base-fg/70" />
+      )}
       {!readOnly && (
         <button
           type="button"

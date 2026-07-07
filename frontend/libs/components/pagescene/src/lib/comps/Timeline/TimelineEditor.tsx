@@ -22,6 +22,7 @@ import { usePageSceneStore } from "../../PageSceneStore";
 import { formatTimecode, fractionToTime, timeToFraction } from "./timelineUtils";
 import { TimelineTrackRow } from "./TimelineTrackRow";
 import { MotionPopover } from "./MotionPopover";
+import { DurationLabel } from "./DurationLabel";
 
 // Lane geometry: label column (w-32=8rem) + gap-3(0.75rem) … gap-3 + add-btn(w-7=1.75rem).
 const LANE_LEFT = "8.75rem";
@@ -127,7 +128,7 @@ export const TimelineEditor = () => {
             <span className="absolute left-1/2 -translate-x-1/2">
               {formatTimecode(duration / 2)}
             </span>
-            <span className="absolute right-0">{formatTimecode(duration)}</span>
+            <DurationLabel className="absolute right-0" />
           </div>
           <div className="w-7 shrink-0" />
         </div>

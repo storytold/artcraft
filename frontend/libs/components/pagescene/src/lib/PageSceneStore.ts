@@ -35,7 +35,7 @@ export interface ProducedArtifact {
 // Progress of an in-flight Capture/Record so the RenderOverlay can cover the
 // viewport (freeing GPU) and show progress while frames encode.
 export interface RecordingProgress {
-  phase: "capturing" | "encoding";
+  phase: "capturing" | "encoding" | "uploading";
   pct: number; // 0..1
 }
 

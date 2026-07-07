@@ -6,10 +6,13 @@ import { usePageSceneStore } from "../../PageSceneStore";
 export const RenderOverlay = () => {
   const progress = usePageSceneStore((s) => s.recordingProgress);
 
+  const pct = Math.round((progress?.pct ?? 0) * 100);
   const message =
     progress?.phase === "encoding"
-      ? `Rendering video… ${Math.round((progress?.pct ?? 0) * 100)}%`
-      : "Capturing frame…";
+      ? `Rendering video… ${pct}%`
+      : progress?.phase === "uploading"
+        ? "Uploading to gallery…"
+        : "Capturing frame…";
 
   return (
     <LoadingDots

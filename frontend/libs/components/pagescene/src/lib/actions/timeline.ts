@@ -22,6 +22,10 @@ export function seekTimeline(editor: Editor, time: number): void {
   editor.timelineController.seekTo(time);
 }
 
+export function setTimelineDuration(editor: Editor, seconds: number): void {
+  editor.timelineController.setDuration(seconds);
+}
+
 export function addKeyframe(
   editor: Editor,
   objectUuid: string,
