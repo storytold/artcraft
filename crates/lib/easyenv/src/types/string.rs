@@ -37,3 +37,52 @@ pub fn get_env_string_required(env_name: &str) -> Result<String, EnvError> {
   }
 }
 
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  use crate::tests_common::EnvVarGuard;
+
+  #[test]
+  fn returns_empty_string_when_set_to_empty() {
+    let _g = EnvVarGuard::set("STRING_TEST_EMPTY", "");
+    assert_eq!(get_env_string_optional("STRING_TEST_EMPTY"), Some("".to_string()));
+    assert_eq!(get_env_string_required("STRING_TEST_EMPTY").unwrap(), "");
+    assert_eq!(get_env_string_or_default("STRING_TEST_EMPTY", "default"), "");
+  }
+
+  #[test]
+  fn preserves_unicode() {
+    let _g = EnvVarGuard::set("STRING_TEST_UNICODE", "café🎨");
+    assert_eq!(get_env_string_optional("STRING_TEST_UNICODE"), Some("café🎨".to_string()));
+    assert_eq!(get_env_string_required("STRING_TEST_UNICODE").unwrap(), "café🎨");
+    assert_eq!(get_env_string_or_default("STRING_TEST_UNICODE", "default"), "café🎨");
+  }
+
+  #[test]
+  fn preserves_whitespace() {
+    let _g = EnvVarGuard::set("STRING_TEST_WHITESPACE", "  hello  \t");
+    assert_eq!(get_env_string_optional("STRING_TEST_WHITESPACE"), Some("  hello  \t".to_string()));
+    assert_eq!(get_env_string_required("STRING_TEST_WHITESPACE").unwrap(), "  hello  \t");
+    assert_eq!(get_env_string_or_default("STRING_TEST_WHITESPACE", "default"), "  hello  \t");
+  }
+
+  #[test]
+  fn missing_returns_none_required_error_and_default() {
+    let _g = EnvVarGuard::unset("STRING_TEST_MISSING");
+    assert_eq!(get_env_string_optional("STRING_TEST_MISSING"), None);
+    assert!(matches!(get_env_string_required("STRING_TEST_MISSING"), Err(EnvError::RequiredNotPresent { .. })));
+    assert_eq!(get_env_string_or_default("STRING_TEST_MISSING", "fallback"), "fallback");
+  }
+
+  #[test]
+  fn required_not_present_carries_env_var_name() {
+    let _g = EnvVarGuard::unset("STRING_TEST_REQUIRED_NAME");
+    match get_env_string_required("STRING_TEST_REQUIRED_NAME") {
+      Err(EnvError::RequiredNotPresent { name }) => {
+        assert_eq!(name, "STRING_TEST_REQUIRED_NAME");
+      },
+      other => panic!("unexpected result: {:?}", other),
+    }
+  }
+}

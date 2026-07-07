@@ -63,3 +63,42 @@ fn get_env_duration_seconds_internal(env_name: &str) -> Result<Option<Duration>,
     }
   }
 }
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  use crate::tests_common::EnvVarGuard;
+
+  #[test]
+  fn zero_seconds_round_trips() {
+    let _g = EnvVarGuard::set("DURATION_TEST_ZERO", "0");
+    assert_eq!(get_env_duration_seconds_optional("DURATION_TEST_ZERO"), Some(Duration::from_secs(0)));
+    assert_eq!(get_env_duration_seconds_required("DURATION_TEST_ZERO").unwrap(), Duration::from_secs(0));
+    assert_eq!(get_env_duration_seconds_or_default("DURATION_TEST_ZERO", Duration::from_secs(99)), Duration::from_secs(0));
+  }
+
+  #[test]
+  fn u64_max_seconds_round_trips() {
+    let _g = EnvVarGuard::set("DURATION_TEST_U64_MAX", &u64::MAX.to_string());
+    assert_eq!(get_env_duration_seconds_optional("DURATION_TEST_U64_MAX"), Some(Duration::from_secs(u64::MAX)));
+    assert_eq!(get_env_duration_seconds_required("DURATION_TEST_U64_MAX").unwrap(), Duration::from_secs(u64::MAX));
+    assert_eq!(get_env_duration_seconds_or_default("DURATION_TEST_U64_MAX", Duration::from_secs(1)), Duration::from_secs(u64::MAX));
+  }
+
+  #[test]
+  fn negative_is_unparseable() {
+    let _g = EnvVarGuard::set("DURATION_TEST_NEGATIVE", "-1");
+    assert_eq!(get_env_duration_seconds_optional("DURATION_TEST_NEGATIVE"), None);
+    assert!(matches!(get_env_duration_seconds_required("DURATION_TEST_NEGATIVE"), Err(EnvError::ParseError { .. })));
+    assert_eq!(get_env_duration_seconds_or_default("DURATION_TEST_NEGATIVE", Duration::from_secs(5)), Duration::from_secs(5));
+  }
+
+  #[test]
+  fn missing_returns_none_required_error_and_default() {
+    let _g = EnvVarGuard::unset("DURATION_TEST_MISSING");
+    assert_eq!(get_env_duration_seconds_optional("DURATION_TEST_MISSING"), None);
+    assert!(matches!(get_env_duration_seconds_required("DURATION_TEST_MISSING"), Err(EnvError::RequiredNotPresent { .. })));
+    assert_eq!(get_env_duration_seconds_or_default("DURATION_TEST_MISSING", Duration::from_secs(42)), Duration::from_secs(42));
+  }
+}

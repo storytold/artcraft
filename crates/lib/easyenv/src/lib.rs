@@ -59,6 +59,9 @@ mod init;
 mod logging;
 pub (crate) mod types;
 
+#[cfg(test)]
+mod tests_common;
+
 /// Re-export of env_logger
 pub mod env_logger {
   pub use env_logger::Builder;
