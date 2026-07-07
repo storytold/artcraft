@@ -94,6 +94,7 @@ pub fn veo_video_models() -> Vec<OmniGenVideoModelDetails> {
     resolution_options: Some(vec![
       CommonResolution::SevenTwentyP,
       CommonResolution::TenEightyP,
+      CommonResolution::FourK,
     ]),
     resolution_default: Some(CommonResolution::TenEightyP),
     duration_seconds_min: Some(4),
@@ -123,6 +124,7 @@ pub fn veo_video_models() -> Vec<OmniGenVideoModelDetails> {
     resolution_options: Some(vec![
       CommonResolution::SevenTwentyP,
       CommonResolution::TenEightyP,
+      CommonResolution::FourK,
     ]),
     resolution_default: Some(CommonResolution::TenEightyP),
     duration_seconds_min: Some(4),
