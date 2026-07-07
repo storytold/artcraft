@@ -4,6 +4,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faImage,
   faVideo,
+  faMusic,
   faWandMagicSparkles,
   faCube,
   faFilm,
@@ -46,6 +47,15 @@ const APPS: AppCard[] = [
     accent: "from-purple-500/20 to-purple-500/0",
     iconBg: "bg-purple-500/25 border-purple-400/30",
     iconColor: "text-purple-300",
+  },
+  {
+    label: "Audio",
+    description: "Generate songs and sound effects from prompts.",
+    href: "/create-audio",
+    icon: faMusic,
+    accent: "from-pink-500/20 to-pink-500/0",
+    iconBg: "bg-pink-500/25 border-pink-400/30",
+    iconColor: "text-pink-300",
   },
   {
     label: "Edit 3D",
