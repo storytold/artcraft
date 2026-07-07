@@ -18,8 +18,10 @@ export type {
   Keyframe,
   TimelineTrack,
   TimelineData,
+  ClipLane,
+  ClipStrip,
 } from "./engine/timeline/types";
-import type { TimelineTrack } from "./engine/timeline/types";
+import type { TimelineTrack, ClipLane } from "./engine/timeline/types";
 
 // A still (Capture) or video (Record) produced by Record mode, cached
 // locally (object URL) before any upload. Powers the completion modal's
@@ -183,6 +185,7 @@ interface PageSceneState {
   timelineIsPlaying: boolean;
   timelineDuration: number;
   timelineTracks: TimelineTrack[];
+  timelineClipLanes: ClipLane[];
   timelineSelectedKeyframeId: string | null;
   // Left keyframe of the segment whose easing curve is being edited in the
   // Motion popover (opened from the curve chip BETWEEN two keyframes).
@@ -292,6 +295,7 @@ interface PageSceneState {
   setTimelineIsPlaying: (playing: boolean) => void;
   setTimelineDuration: (duration: number) => void;
   setTimelineTracks: (tracks: TimelineTrack[]) => void;
+  setTimelineClipLanes: (clipLanes: ClipLane[]) => void;
   setTimelineSelectedKeyframe: (id: string | null) => void;
   setTimelineEasingKeyframe: (id: string | null) => void;
   setProducedArtifact: (artifact: ProducedArtifact | null) => void;
@@ -387,6 +391,7 @@ export const usePageSceneStore = create<PageSceneState>((set, get) => ({
   timelineIsPlaying: false,
   timelineDuration: 10,
   timelineTracks: [],
+  timelineClipLanes: [],
   timelineSelectedKeyframeId: null,
   timelineEasingKeyframeId: null,
   producedArtifact: null,
@@ -493,6 +498,7 @@ export const usePageSceneStore = create<PageSceneState>((set, get) => ({
   setTimelineIsPlaying: (playing) => set({ timelineIsPlaying: playing }),
   setTimelineDuration: (duration) => set({ timelineDuration: duration }),
   setTimelineTracks: (tracks) => set({ timelineTracks: tracks }),
+  setTimelineClipLanes: (clipLanes) => set({ timelineClipLanes: clipLanes }),
   setTimelineSelectedKeyframe: (id) => set({ timelineSelectedKeyframeId: id }),
   setTimelineEasingKeyframe: (id) => set({ timelineEasingKeyframeId: id }),
   setProducedArtifact: (artifact) => set({ producedArtifact: artifact }),

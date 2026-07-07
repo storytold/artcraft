@@ -21,7 +21,7 @@ import type {
   TransformSpace,
 } from "../../PageSceneStore";
 import type { Camera } from "@storyteller/common";
-import type { TimelineTrack } from "../timeline/types";
+import type { ClipLane, TimelineTrack } from "../timeline/types";
 
 export abstract class EngineEvent {
   readonly timestamp: number = performance.now();
@@ -195,6 +195,7 @@ export class TimelineChangedEvent extends EngineEvent {
     readonly exists: boolean,
     readonly duration: number,
     readonly tracks: TimelineTrack[],
+    readonly clipLanes: ClipLane[],
   ) {
     super();
   }

@@ -29,10 +29,32 @@ export interface TimelineTrack {
   keyframes: Keyframe[]; // kept sorted ascending by time
 }
 
+// A skeletal animation clip (Mixamo) placed on a character's lane. Only the
+// reference + placement is serialized; the actual THREE.AnimationClip is
+// resolved from `sourceMediaId` and retargeted onto the character at runtime.
+export interface ClipStrip {
+  id: string;
+  sourceMediaId: string; // media id of the animation GLB (reload + retarget)
+  name: string; // display label
+  startTime: number; // seconds from timeline start
+  duration: number; // seconds (clip length; trimmable later)
+  loop: boolean;
+}
+
+// One animation lane under a character. Multiple lanes (stacked) = multiple
+// clips on the same character; each lane holds a single clip strip. Only
+// character objects get clip lanes.
+export interface ClipLane {
+  id: string;
+  objectUuid: string; // the character this lane animates
+  strip: ClipStrip;
+}
+
 export interface TimelineData {
   duration: number; // seconds
   fps: number;
-  tracks: TimelineTrack[];
+  tracks: TimelineTrack[]; // per-object transform keyframes
+  clipLanes: ClipLane[]; // per-character skeletal animation clips
 }
 
 export type EasingPresetName = "linear" | "easeIn" | "easeOut" | "easeInOut";

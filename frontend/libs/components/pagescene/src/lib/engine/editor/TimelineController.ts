@@ -16,6 +16,8 @@ import {
   DEFAULT_EASING,
   DEFAULT_TIMELINE_DURATION,
   DEFAULT_TIMELINE_FPS,
+  type ClipLane,
+  type ClipStrip,
   type EasingSpec,
   type Keyframe,
   type TimelineData,
@@ -52,6 +54,7 @@ export class TimelineController {
       duration: DEFAULT_TIMELINE_DURATION,
       fps: DEFAULT_TIMELINE_FPS,
       tracks: [],
+      clipLanes: [],
     };
     this.saved = cloneTimeline(this.timeline);
     this.playhead = 0;
@@ -81,6 +84,7 @@ export class TimelineController {
       this.timeline.duration = DEFAULT_TIMELINE_DURATION;
     }
     if (!Array.isArray(this.timeline.tracks)) this.timeline.tracks = [];
+    if (!Array.isArray(this.timeline.clipLanes)) this.timeline.clipLanes = [];
     this.saved = cloneTimeline(this.timeline);
     this.playhead = Math.min(this.playhead, this.timeline.duration);
     this.evaluate();
@@ -224,6 +228,55 @@ export class TimelineController {
     this.emitChanged();
   }
 
+  // ─── clip lanes (skeletal animation) ─────────────────────────────────────
+
+  // Add a new stacked clip lane for `objectUuid` (a character). The clip is
+  // dropped at `startTime`, clamped so it starts within the timeline. Returns
+  // the new lane id, or null if there is no timeline.
+  addClipLane(objectUuid: string, strip: Omit<ClipStrip, "id">): string | null {
+    if (!this.timeline) return null;
+    const startTime = Math.max(
+      0,
+      Math.min(strip.startTime, this.timeline.duration),
+    );
+    const lane: ClipLane = {
+      id: THREE.MathUtils.generateUUID(),
+      objectUuid,
+      strip: { ...strip, id: THREE.MathUtils.generateUUID(), startTime },
+    };
+    this.timeline.clipLanes.push(lane);
+    this.evaluate();
+    this.emitChanged();
+    return lane.id;
+  }
+
+  // Move a clip strip along its lane. Clamped so the strip stays within the
+  // timeline (its start never pushes the clip's end past `duration`).
+  moveClipLane(laneId: string, startTime: number): void {
+    if (!this.timeline) return;
+    const lane = this.timeline.clipLanes.find((l) => l.id === laneId);
+    if (!lane) return;
+    const maxStart = Math.max(0, this.timeline.duration - lane.strip.duration);
+    lane.strip.startTime = Math.max(0, Math.min(startTime, maxStart));
+    this.evaluate();
+    this.emitChanged();
+  }
+
+  removeClipLane(laneId: string): void {
+    if (!this.timeline) return;
+    this.timeline.clipLanes = this.timeline.clipLanes.filter(
+      (l) => l.id !== laneId,
+    );
+    this.evaluate();
+    this.emitChanged();
+  }
+
+  // All clip lanes for one character (stacked lanes, drop order).
+  clipLanesFor(objectUuid: string): ClipLane[] {
+    if (!this.timeline) return [];
+    return this.timeline.clipLanes.filter((l) => l.objectUuid === objectUuid);
+  }
+
   // ─── save / cancel ──────────────────────────────────────────────────────
 
   save(): void {
@@ -285,6 +338,7 @@ export class TimelineController {
         this.timeline !== null,
         this.timeline?.duration ?? DEFAULT_TIMELINE_DURATION,
         this.timeline ? cloneTimeline(this.timeline).tracks : [],
+        this.timeline ? cloneTimeline(this.timeline).clipLanes : [],
       ),
     );
   }

@@ -145,6 +145,7 @@ export class EngineStoreBridge {
         store.setTimelineExists(e.exists);
         store.setTimelineDuration(e.duration);
         store.setTimelineTracks(e.tracks);
+        store.setTimelineClipLanes(e.clipLanes);
       }),
       bus.subscribe(TimelinePlayheadEvent, (e) => {
         const store = usePageSceneStore.getState();
