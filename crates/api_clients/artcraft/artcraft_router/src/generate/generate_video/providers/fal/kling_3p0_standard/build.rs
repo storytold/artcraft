@@ -1,10 +1,10 @@
-use fal_client::requests_old::webhook::video::image::enqueue_kling_3p0_standard_image_to_video_webhook::{
-  EnqueueKling3p0StandardImageToVideoAspectRatio, EnqueueKling3p0StandardImageToVideoDuration,
-  EnqueueKling3p0StandardImageToVideoRequest,
+use fal_client::requests::api::video::image::kling_3p0_standard_image_to_video::api::{
+  Kling3p0StandardImageToVideoAspectRatio, Kling3p0StandardImageToVideoDuration,
+  Kling3p0StandardImageToVideoRequest,
 };
-use fal_client::requests_old::webhook::video::text::enqueue_kling_3p0_standard_text_to_video_webhook::{
-  EnqueueKling3p0StandardTextToVideoAspectRatio, EnqueueKling3p0StandardTextToVideoDuration,
-  EnqueueKling3p0StandardTextToVideoRequest,
+use fal_client::requests::api::video::text::kling_3p0_standard_text_to_video::api::{
+  Kling3p0StandardTextToVideoAspectRatio, Kling3p0StandardTextToVideoDuration,
+  Kling3p0StandardTextToVideoRequest,
 };
 
 use crate::errors::artcraft_router_error::ArtcraftRouterError;
@@ -23,6 +23,13 @@ use crate::generate::generate_video::video_generation_request::VideoGenerationRe
 pub fn build_fal_kling_3p0_standard(
   builder: GenerateVideoRequestBuilder,
 ) -> Result<VideoGenerationDraftOrRequest, ArtcraftRouterError> {
+  let state = build_fal_kling_3p0_standard_state(builder)?;
+  Ok(VideoGenerationDraftOrRequest::Request(VideoGenerationRequest::FalKling3p0Standard(state)))
+}
+
+pub(crate) fn build_fal_kling_3p0_standard_state(
+  builder: GenerateVideoRequestBuilder,
+) -> Result<FalKling3p0StandardRequestState, ArtcraftRouterError> {
   let strategy = builder.request_mismatch_mitigation_strategy;
 
   let aspect_ratio = plan_aspect_ratio(builder.aspect_ratio, strategy)?;
@@ -39,7 +46,7 @@ pub fn build_fal_kling_3p0_standard(
           value: "Kling 3.0 Standard requires a start_frame when end_frame is provided".to_string(),
         }));
       }
-      FalKling3p0StandardMode::TextToVideo(EnqueueKling3p0StandardTextToVideoRequest {
+      FalKling3p0StandardMode::TextToVideo(Kling3p0StandardTextToVideoRequest {
         prompt,
         generate_audio,
         negative_prompt,
@@ -48,7 +55,7 @@ pub fn build_fal_kling_3p0_standard(
         shot_type: None,
       })
     }
-    Some(image_url) => FalKling3p0StandardMode::ImageToVideo(EnqueueKling3p0StandardImageToVideoRequest {
+    Some(image_url) => FalKling3p0StandardMode::ImageToVideo(Kling3p0StandardImageToVideoRequest {
       prompt,
       image_url,
       end_image_url: optional_url(builder.end_frame.clone())?,
@@ -60,13 +67,11 @@ pub fn build_fal_kling_3p0_standard(
     }),
   };
 
-  Ok(VideoGenerationDraftOrRequest::Request(VideoGenerationRequest::FalKling3p0Standard(
-    FalKling3p0StandardRequestState { mode },
-  )))
+  Ok(FalKling3p0StandardRequestState { mode })
 }
 
-fn to_t2v_duration(d: PlanDuration) -> EnqueueKling3p0StandardTextToVideoDuration {
-  use EnqueueKling3p0StandardTextToVideoDuration as D;
+fn to_t2v_duration(d: PlanDuration) -> Kling3p0StandardTextToVideoDuration {
+  use Kling3p0StandardTextToVideoDuration as D;
   match d.0 {
     3 => D::ThreeSeconds,
     4 => D::FourSeconds,
@@ -84,8 +89,8 @@ fn to_t2v_duration(d: PlanDuration) -> EnqueueKling3p0StandardTextToVideoDuratio
   }
 }
 
-fn to_i2v_duration(d: PlanDuration) -> EnqueueKling3p0StandardImageToVideoDuration {
-  use EnqueueKling3p0StandardImageToVideoDuration as D;
+fn to_i2v_duration(d: PlanDuration) -> Kling3p0StandardImageToVideoDuration {
+  use Kling3p0StandardImageToVideoDuration as D;
   match d.0 {
     3 => D::ThreeSeconds,
     4 => D::FourSeconds,
@@ -103,19 +108,19 @@ fn to_i2v_duration(d: PlanDuration) -> EnqueueKling3p0StandardImageToVideoDurati
   }
 }
 
-fn to_t2v_aspect_ratio(a: PlanAspectRatio) -> EnqueueKling3p0StandardTextToVideoAspectRatio {
+fn to_t2v_aspect_ratio(a: PlanAspectRatio) -> Kling3p0StandardTextToVideoAspectRatio {
   match a {
-    PlanAspectRatio::Square => EnqueueKling3p0StandardTextToVideoAspectRatio::Square,
-    PlanAspectRatio::SixteenByNine => EnqueueKling3p0StandardTextToVideoAspectRatio::SixteenByNine,
-    PlanAspectRatio::NineBySixteen => EnqueueKling3p0StandardTextToVideoAspectRatio::NineBySixteen,
+    PlanAspectRatio::Square => Kling3p0StandardTextToVideoAspectRatio::Square,
+    PlanAspectRatio::SixteenByNine => Kling3p0StandardTextToVideoAspectRatio::SixteenByNine,
+    PlanAspectRatio::NineBySixteen => Kling3p0StandardTextToVideoAspectRatio::NineBySixteen,
   }
 }
 
-fn to_i2v_aspect_ratio(a: PlanAspectRatio) -> EnqueueKling3p0StandardImageToVideoAspectRatio {
+fn to_i2v_aspect_ratio(a: PlanAspectRatio) -> Kling3p0StandardImageToVideoAspectRatio {
   match a {
-    PlanAspectRatio::Square => EnqueueKling3p0StandardImageToVideoAspectRatio::Square,
-    PlanAspectRatio::SixteenByNine => EnqueueKling3p0StandardImageToVideoAspectRatio::SixteenByNine,
-    PlanAspectRatio::NineBySixteen => EnqueueKling3p0StandardImageToVideoAspectRatio::NineBySixteen,
+    PlanAspectRatio::Square => Kling3p0StandardImageToVideoAspectRatio::Square,
+    PlanAspectRatio::SixteenByNine => Kling3p0StandardImageToVideoAspectRatio::SixteenByNine,
+    PlanAspectRatio::NineBySixteen => Kling3p0StandardImageToVideoAspectRatio::NineBySixteen,
   }
 }
 
@@ -127,6 +132,27 @@ mod tests {
 
   use super::*;
 
+  #[test]
+  fn no_start_frame_picks_t2v() {
+    let state = build_fal_kling_3p0_standard_state(base_builder()).expect("build");
+    assert!(matches!(state.mode, FalKling3p0StandardMode::TextToVideo(_)));
+  }
+
+  #[test]
+  fn start_frame_picks_i2v() {
+    let mut b = base_builder();
+    b.start_frame = Some(ImageRef::Url("https://example.com/a.png".to_string()));
+    let state = build_fal_kling_3p0_standard_state(b).expect("build");
+    assert!(matches!(state.mode, FalKling3p0StandardMode::ImageToVideo(_)));
+  }
+
+  #[test]
+  fn end_frame_without_start_frame_errors() {
+    let mut b = base_builder();
+    b.end_frame = Some(ImageRef::Url("https://example.com/end.png".to_string()));
+    assert!(build_fal_kling_3p0_standard_state(b).is_err());
+  }
+
   fn base_builder() -> GenerateVideoRequestBuilder {
     GenerateVideoRequestBuilder {
       model: RouterVideoModel::Kling3p0Standard,
@@ -134,30 +160,5 @@ mod tests {
       prompt: Some("test".to_string()),
       ..Default::default()
     }
-  }
-
-  #[test]
-  fn no_start_frame_picks_t2v() {
-    let result = build_fal_kling_3p0_standard(base_builder()).expect("build");
-    if let VideoGenerationDraftOrRequest::Request(VideoGenerationRequest::FalKling3p0Standard(s)) = result {
-      assert!(matches!(s.mode, FalKling3p0StandardMode::TextToVideo(_)));
-    } else { panic!("expected FalKling3p0Standard"); }
-  }
-
-  #[test]
-  fn start_frame_picks_i2v() {
-    let mut b = base_builder();
-    b.start_frame = Some(ImageRef::Url("https://example.com/a.png".to_string()));
-    let result = build_fal_kling_3p0_standard(b).expect("build");
-    if let VideoGenerationDraftOrRequest::Request(VideoGenerationRequest::FalKling3p0Standard(s)) = result {
-      assert!(matches!(s.mode, FalKling3p0StandardMode::ImageToVideo(_)));
-    } else { panic!("expected FalKling3p0Standard"); }
-  }
-
-  #[test]
-  fn end_frame_without_start_frame_errors() {
-    let mut b = base_builder();
-    b.end_frame = Some(ImageRef::Url("https://example.com/end.png".to_string()));
-    assert!(build_fal_kling_3p0_standard(b).is_err());
   }
 }

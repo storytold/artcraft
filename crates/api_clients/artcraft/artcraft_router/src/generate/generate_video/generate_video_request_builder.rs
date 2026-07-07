@@ -42,6 +42,9 @@ use crate::generate::generate_video::providers::artcraft::veo_3::build::build_ar
 use crate::generate::generate_video::providers::artcraft::veo_3_fast::build::build_artcraft_veo_3_fast;
 use crate::generate::generate_video::providers::artcraft::veo_3p1::build::build_artcraft_veo_3p1;
 use crate::generate::generate_video::providers::artcraft::veo_3p1_fast::build::build_artcraft_veo_3p1_fast;
+use crate::generate::generate_video::providers::artcraft::veo_3p1_lite::build::build_artcraft_veo_3p1_lite;
+use crate::generate::generate_video::providers::artcraft::vidu_q3::build::build_artcraft_vidu_q3;
+use crate::generate::generate_video::providers::artcraft::vidu_q3_turbo::build::build_artcraft_vidu_q3_turbo;
 use crate::generate::generate_video::providers::kinovi::happy_horse_1p0::build::build_kinovi_happy_horse_1p0;
 use crate::generate::generate_video::providers::kinovi::seedance_2p0::build::build_kinovi_seedance_2p0;
 use crate::generate::generate_video::providers::gmicloud::seedance_2p0_g::build::build_gmicloud_seedance_2p0_u;
@@ -64,6 +67,9 @@ use crate::generate::generate_video::providers::fal::veo_3::build::build_fal_veo
 use crate::generate::generate_video::providers::fal::veo_3_fast::build::build_fal_veo_3_fast;
 use crate::generate::generate_video::providers::fal::veo_3p1::build::build_fal_veo_3p1;
 use crate::generate::generate_video::providers::fal::veo_3p1_fast::build::build_fal_veo_3p1_fast;
+use crate::generate::generate_video::providers::fal::veo_3p1_lite::build::build_fal_veo_3p1_lite;
+use crate::generate::generate_video::providers::fal::vidu_q3::build::build_fal_vidu_q3;
+use crate::generate::generate_video::providers::fal::vidu_q3_turbo::build::build_fal_vidu_q3_turbo;
 use crate::generate::generate_video::providers::kinovi::seedance_2p0_fast::build::build_kinovi_seedance_2p0_fast;
 use crate::generate::generate_video::providers::kinovi::seedance_2p0_mini::build::build_kinovi_seedance_2p0_mini;
 use crate::generate::generate_video::video_generation_draft_or_request::VideoGenerationDraftOrRequest;
@@ -194,6 +200,9 @@ impl GenerateVideoRequestBuilder {
       (RouterProvider::Artcraft, RouterVideoModel::Veo3Fast) => build_artcraft_veo_3_fast(self),
       (RouterProvider::Artcraft, RouterVideoModel::Veo3p1) => build_artcraft_veo_3p1(self),
       (RouterProvider::Artcraft, RouterVideoModel::Veo3p1Fast) => build_artcraft_veo_3p1_fast(self),
+      (RouterProvider::Artcraft, RouterVideoModel::Veo3p1Lite) => build_artcraft_veo_3p1_lite(self),
+      (RouterProvider::Artcraft, RouterVideoModel::ViduQ3) => build_artcraft_vidu_q3(self),
+      (RouterProvider::Artcraft, RouterVideoModel::ViduQ3Turbo) => build_artcraft_vidu_q3_turbo(self),
       // Fal
       (RouterProvider::Fal, RouterVideoModel::Kling16Pro) => build_fal_kling_1_6_pro(self),
       (RouterProvider::Fal, RouterVideoModel::Kling21Master) => build_fal_kling_2_1_master(self),
@@ -211,6 +220,9 @@ impl GenerateVideoRequestBuilder {
       (RouterProvider::Fal, RouterVideoModel::Veo3Fast) => build_fal_veo_3_fast(self),
       (RouterProvider::Fal, RouterVideoModel::Veo3p1) => build_fal_veo_3p1(self),
       (RouterProvider::Fal, RouterVideoModel::Veo3p1Fast) => build_fal_veo_3p1_fast(self),
+      (RouterProvider::Fal, RouterVideoModel::Veo3p1Lite) => build_fal_veo_3p1_lite(self),
+      (RouterProvider::Fal, RouterVideoModel::ViduQ3) => build_fal_vidu_q3(self),
+      (RouterProvider::Fal, RouterVideoModel::ViduQ3Turbo) => build_fal_vidu_q3_turbo(self),
       // GmiCloud
       (RouterProvider::GmiCloud, RouterVideoModel::Seedance2p0Ultra) => build_gmicloud_seedance_2p0_u(self),
       (RouterProvider::GmiCloud, RouterVideoModel::Seedance2p0UltraFast) => build_gmicloud_seedance_2p0_u_fast(self),

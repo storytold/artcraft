@@ -98,6 +98,15 @@ pub enum RouterVideoModel {
   #[serde(rename = "veo_3p1_fast")]
   Veo3p1Fast,
 
+  #[serde(rename = "veo_3p1_lite")]
+  Veo3p1Lite,
+
+  #[serde(rename = "vidu_q3")]
+  ViduQ3,
+
+  #[serde(rename = "vidu_q3_turbo")]
+  ViduQ3Turbo,
+
   #[serde(rename = "preview_model")]
   PreviewModel,
 
@@ -122,5 +131,14 @@ mod tests {
     assert_serde_round_trip(RouterVideoModel::Seedance2p0Mini, "seedance_2p0_mini");
     assert_serde_round_trip(RouterVideoModel::Seedance2p0BytePlusMini, "seedance_2p0_bp_mini");
     assert_serde_round_trip(RouterVideoModel::Seedance2p0BytePlusUltraMini, "seedance_2p0_bpu_mini");
+  }
+
+  #[test]
+  fn veo_3p1_lite_and_vidu_variants_serialize() {
+    // NB: These strings must match `CommonVideoModel` — the two enums convert
+    // via serde string round-trip in the omni handlers.
+    assert_serde_round_trip(RouterVideoModel::Veo3p1Lite, "veo_3p1_lite");
+    assert_serde_round_trip(RouterVideoModel::ViduQ3, "vidu_q3");
+    assert_serde_round_trip(RouterVideoModel::ViduQ3Turbo, "vidu_q3_turbo");
   }
 }

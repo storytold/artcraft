@@ -187,6 +187,12 @@ pub enum CommonModelType {
   Veo3p1,
   #[serde(rename = "veo_3p1_fast")]
   Veo3p1Fast,
+  #[serde(rename = "veo_3p1_lite")]
+  Veo3p1Lite,
+  #[serde(rename = "vidu_q3")]
+  ViduQ3,
+  #[serde(rename = "vidu_q3_turbo")]
+  ViduQ3Turbo,
   #[serde(rename = "preview_model")]
   PreviewModel,
   #[serde(rename = "preview_model_fast")]
@@ -289,6 +295,9 @@ impl CommonModelType {
       Self::Veo3Fast => "veo_3_fast",
       Self::Veo3p1 => "veo_3p1",
       Self::Veo3p1Fast => "veo_3p1_fast",
+      Self::Veo3p1Lite => "veo_3p1_lite",
+      Self::ViduQ3 => "vidu_q3",
+      Self::ViduQ3Turbo => "vidu_q3_turbo",
       Self::PreviewModel => "preview_model",
       Self::PreviewModelFast => "preview_model_fast",
       Self::SwitchX => "switch_x",
@@ -377,6 +386,9 @@ impl CommonModelType {
       "veo_3_fast" => Ok(Self::Veo3Fast),
       "veo_3p1" => Ok(Self::Veo3p1),
       "veo_3p1_fast" => Ok(Self::Veo3p1Fast),
+      "veo_3p1_lite" => Ok(Self::Veo3p1Lite),
+      "vidu_q3" => Ok(Self::ViduQ3),
+      "vidu_q3_turbo" => Ok(Self::ViduQ3Turbo),
       "preview_model" => Ok(Self::PreviewModel),
       "preview_model_fast" => Ok(Self::PreviewModelFast),
       "switch_x" => Ok(Self::SwitchX),
@@ -469,6 +481,9 @@ impl CommonModelType {
       Self::Veo3Fast,
       Self::Veo3p1,
       Self::Veo3p1Fast,
+      Self::Veo3p1Lite,
+      Self::ViduQ3,
+      Self::ViduQ3Turbo,
       Self::PreviewModel,
       Self::PreviewModelFast,
       Self::SwitchX,
@@ -558,6 +573,9 @@ impl CommonModelType {
       Self::Veo3Fast => CommonModelClass::Video,
       Self::Veo3p1 => CommonModelClass::Video,
       Self::Veo3p1Fast => CommonModelClass::Video,
+      Self::Veo3p1Lite => CommonModelClass::Video,
+      Self::ViduQ3 => CommonModelClass::Video,
+      Self::ViduQ3Turbo => CommonModelClass::Video,
       Self::PreviewModel => CommonModelClass::Video,
       Self::PreviewModelFast => CommonModelClass::Video,
       Self::SwitchX => CommonModelClass::Video,
@@ -656,6 +674,9 @@ mod tests {
       assert_serialization(CommonModelType::Veo3Fast, "veo_3_fast");
       assert_serialization(CommonModelType::Veo3p1, "veo_3p1");
       assert_serialization(CommonModelType::Veo3p1Fast, "veo_3p1_fast");
+      assert_serialization(CommonModelType::Veo3p1Lite, "veo_3p1_lite");
+      assert_serialization(CommonModelType::ViduQ3, "vidu_q3");
+      assert_serialization(CommonModelType::ViduQ3Turbo, "vidu_q3_turbo");
       assert_serialization(CommonModelType::PreviewModel, "preview_model");
       assert_serialization(CommonModelType::PreviewModelFast, "preview_model_fast");
       assert_serialization(CommonModelType::SwitchX, "switch_x");
@@ -741,6 +762,9 @@ mod tests {
       assert_eq!(CommonModelType::Veo3Fast.to_str(), "veo_3_fast");
       assert_eq!(CommonModelType::Veo3p1.to_str(), "veo_3p1");
       assert_eq!(CommonModelType::Veo3p1Fast.to_str(), "veo_3p1_fast");
+      assert_eq!(CommonModelType::Veo3p1Lite.to_str(), "veo_3p1_lite");
+      assert_eq!(CommonModelType::ViduQ3.to_str(), "vidu_q3");
+      assert_eq!(CommonModelType::ViduQ3Turbo.to_str(), "vidu_q3_turbo");
       assert_eq!(CommonModelType::PreviewModel.to_str(), "preview_model");
       assert_eq!(CommonModelType::PreviewModelFast.to_str(), "preview_model_fast");
       assert_eq!(CommonModelType::SwitchX.to_str(), "switch_x");
@@ -826,6 +850,9 @@ mod tests {
       assert_eq!(CommonModelType::from_str("veo_3_fast").unwrap(), CommonModelType::Veo3Fast);
       assert_eq!(CommonModelType::from_str("veo_3p1").unwrap(), CommonModelType::Veo3p1);
       assert_eq!(CommonModelType::from_str("veo_3p1_fast").unwrap(), CommonModelType::Veo3p1Fast);
+      assert_eq!(CommonModelType::from_str("veo_3p1_lite").unwrap(), CommonModelType::Veo3p1Lite);
+      assert_eq!(CommonModelType::from_str("vidu_q3").unwrap(), CommonModelType::ViduQ3);
+      assert_eq!(CommonModelType::from_str("vidu_q3_turbo").unwrap(), CommonModelType::ViduQ3Turbo);
       assert_eq!(CommonModelType::from_str("preview_model").unwrap(), CommonModelType::PreviewModel);
       assert_eq!(CommonModelType::from_str("preview_model_fast").unwrap(), CommonModelType::PreviewModelFast);
       assert_eq!(CommonModelType::from_str("switch_x").unwrap(), CommonModelType::SwitchX);
@@ -842,7 +869,7 @@ mod tests {
     #[test]
     fn all_variants() {
       let mut variants = CommonModelType::all_variants();
-      assert_eq!(variants.len(), 76);
+      assert_eq!(variants.len(), 79);
       // Image models
       assert_eq!(variants.pop_first(), Some(CommonModelType::Flux1Dev));
       assert_eq!(variants.pop_first(), Some(CommonModelType::Flux1Schnell));
@@ -913,6 +940,9 @@ mod tests {
       assert_eq!(variants.pop_first(), Some(CommonModelType::Veo3Fast));
       assert_eq!(variants.pop_first(), Some(CommonModelType::Veo3p1));
       assert_eq!(variants.pop_first(), Some(CommonModelType::Veo3p1Fast));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::Veo3p1Lite));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::ViduQ3));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::ViduQ3Turbo));
       assert_eq!(variants.pop_first(), Some(CommonModelType::PreviewModel));
       assert_eq!(variants.pop_first(), Some(CommonModelType::PreviewModelFast));
       assert_eq!(variants.pop_first(), Some(CommonModelType::SwitchX));

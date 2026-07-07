@@ -161,6 +161,9 @@ fn map_video_model(model: CommonVideoModel) -> Result<RouterVideoModel, HandlerE
     CommonVideoModel::Veo3Fast => RouterVideoModel::Veo3Fast,
     CommonVideoModel::Veo3p1 => RouterVideoModel::Veo3p1,
     CommonVideoModel::Veo3p1Fast => RouterVideoModel::Veo3p1Fast,
+    CommonVideoModel::Veo3p1Lite => RouterVideoModel::Veo3p1Lite,
+    CommonVideoModel::ViduQ3 => RouterVideoModel::ViduQ3,
+    CommonVideoModel::ViduQ3Turbo => RouterVideoModel::ViduQ3Turbo,
     CommonVideoModel::PreviewModel => RouterVideoModel::PreviewModel,
     CommonVideoModel::PreviewModelFast => RouterVideoModel::PreviewModelFast,
   };
