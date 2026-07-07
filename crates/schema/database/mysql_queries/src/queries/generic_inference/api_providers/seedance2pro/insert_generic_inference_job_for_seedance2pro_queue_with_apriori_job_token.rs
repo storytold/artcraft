@@ -6,6 +6,7 @@ use enums::by_table::generic_inference_jobs::inference_category::InferenceCatego
 use enums::by_table::generic_inference_jobs::inference_job_external_third_party::InferenceJobExternalThirdParty;
 use enums::by_table::generic_inference_jobs::inference_job_product_category::InferenceJobProductCategory;
 use enums::by_table::generic_inference_jobs::inference_job_type::InferenceJobType;
+use enums::common::generation::common_model_class::CommonModelClass;
 use enums::common::generation::common_model_type::CommonModelType;
 use enums::common::job_status_plus::JobStatusPlus;
 use enums::common::platform_type::PlatformType;
@@ -85,10 +86,14 @@ pub async fn insert_generic_inference_job_for_seedance2pro_queue_with_apriori_jo
     _ => false,
   };
 
+  let is_audio_model = args.maybe_model_type
+    .map(|model_type| model_type.get_model_class() == CommonModelClass::Audio)
+    .unwrap_or(false);
+
   let (
     job_type,
     external_third_party,
-    product_category
+    mut product_category
   ) = match (args.kinovi_version, is_image_model) {
     (KinoviVersion::Volcengine, true) => (
       InferenceJobType::Seedance2ProQueue,
@@ -112,7 +117,13 @@ pub async fn insert_generic_inference_job_for_seedance2pro_queue_with_apriori_jo
     ),
   };
 
-  let inference_category = if is_image_model {
+  if is_audio_model {
+    product_category = InferenceJobProductCategory::Seedance2ProAudio;
+  }
+
+  let inference_category = if is_audio_model {
+    InferenceCategory::AudioGeneration
+  } else if is_image_model {
     InferenceCategory::ImageGeneration
   } else {
     InferenceCategory::VideoGeneration

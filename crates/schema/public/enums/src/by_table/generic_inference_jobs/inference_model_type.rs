@@ -224,6 +224,19 @@ pub enum InferenceModelType {
   ViduQ3,
   #[serde(rename = "vidu_q3_turbo")]
   ViduQ3Turbo,
+
+  // Audio models
+  #[serde(rename = "suno_music")]
+  SunoMusic,
+  #[serde(rename = "suno_remix")]
+  SunoRemix,
+  #[serde(rename = "suno_sounds")]
+  SunoSounds,
+  #[serde(rename = "suno_sample")]
+  SunoSample,
+  #[serde(rename = "seed_audio_1p0")]
+  SeedAudio1p0,
+
   #[serde(rename = "preview_model")]
   PreviewModel,
   #[serde(rename = "preview_model_fast")]
@@ -345,6 +358,14 @@ impl InferenceModelType {
       Self::Veo3p1Lite => "veo_3p1_lite",
       Self::ViduQ3 => "vidu_q3",
       Self::ViduQ3Turbo => "vidu_q3_turbo",
+
+      // Audio models
+      Self::SunoMusic => "suno_music",
+      Self::SunoRemix => "suno_remix",
+      Self::SunoSounds => "suno_sounds",
+      Self::SunoSample => "suno_sample",
+      Self::SeedAudio1p0 => "seed_audio_1p0",
+
       Self::PreviewModel => "preview_model",
       Self::PreviewModelFast => "preview_model_fast",
       Self::SwitchX => "switch_x",
@@ -453,6 +474,14 @@ impl InferenceModelType {
       "veo_3p1_lite" => Ok(Self::Veo3p1Lite),
       "vidu_q3" => Ok(Self::ViduQ3),
       "vidu_q3_turbo" => Ok(Self::ViduQ3Turbo),
+
+      // Audio models
+      "suno_music" => Ok(Self::SunoMusic),
+      "suno_remix" => Ok(Self::SunoRemix),
+      "suno_sounds" => Ok(Self::SunoSounds),
+      "suno_sample" => Ok(Self::SunoSample),
+      "seed_audio_1p0" => Ok(Self::SeedAudio1p0),
+
       "preview_model" => Ok(Self::PreviewModel),
       "preview_model_fast" => Ok(Self::PreviewModelFast),
       "switch_x" => Ok(Self::SwitchX),
@@ -565,6 +594,14 @@ impl InferenceModelType {
       Self::Veo3p1Lite,
       Self::ViduQ3,
       Self::ViduQ3Turbo,
+
+      // Audio models
+      Self::SunoMusic,
+      Self::SunoRemix,
+      Self::SunoSounds,
+      Self::SunoSample,
+      Self::SeedAudio1p0,
+
       Self::PreviewModel,
       Self::PreviewModelFast,
       Self::SwitchX,
@@ -660,6 +697,14 @@ impl InferenceModelType {
       CommonModelType::Veo3p1Lite => Self::Veo3p1Lite,
       CommonModelType::ViduQ3 => Self::ViduQ3,
       CommonModelType::ViduQ3Turbo => Self::ViduQ3Turbo,
+
+      // Audio models
+      CommonModelType::SunoMusic => Self::SunoMusic,
+      CommonModelType::SunoRemix => Self::SunoRemix,
+      CommonModelType::SunoSounds => Self::SunoSounds,
+      CommonModelType::SunoSample => Self::SunoSample,
+      CommonModelType::SeedAudio1p0 => Self::SeedAudio1p0,
+
       CommonModelType::PreviewModel => Self::PreviewModel,
       CommonModelType::PreviewModelFast => Self::PreviewModelFast,
       CommonModelType::SwitchX => Self::SwitchX,
@@ -778,6 +823,12 @@ mod tests {
       assert_serialization(InferenceModelType::Veo3p1Lite, "veo_3p1_lite");
       assert_serialization(InferenceModelType::ViduQ3, "vidu_q3");
       assert_serialization(InferenceModelType::ViduQ3Turbo, "vidu_q3_turbo");
+      // Audio models
+      assert_serialization(InferenceModelType::SunoMusic, "suno_music");
+      assert_serialization(InferenceModelType::SunoRemix, "suno_remix");
+      assert_serialization(InferenceModelType::SunoSounds, "suno_sounds");
+      assert_serialization(InferenceModelType::SunoSample, "suno_sample");
+      assert_serialization(InferenceModelType::SeedAudio1p0, "seed_audio_1p0");
       assert_serialization(InferenceModelType::PreviewModel, "preview_model");
       assert_serialization(InferenceModelType::PreviewModelFast, "preview_model_fast");
       assert_serialization(InferenceModelType::SwitchX, "switch_x");
@@ -885,6 +936,14 @@ mod tests {
       assert_eq!(InferenceModelType::Veo3p1Lite.to_str(), "veo_3p1_lite");
       assert_eq!(InferenceModelType::ViduQ3.to_str(), "vidu_q3");
       assert_eq!(InferenceModelType::ViduQ3Turbo.to_str(), "vidu_q3_turbo");
+
+      // Audio models
+      assert_eq!(InferenceModelType::SunoMusic.to_str(), "suno_music");
+      assert_eq!(InferenceModelType::SunoRemix.to_str(), "suno_remix");
+      assert_eq!(InferenceModelType::SunoSounds.to_str(), "suno_sounds");
+      assert_eq!(InferenceModelType::SunoSample.to_str(), "suno_sample");
+      assert_eq!(InferenceModelType::SeedAudio1p0.to_str(), "seed_audio_1p0");
+
       assert_eq!(InferenceModelType::PreviewModel.to_str(), "preview_model");
       assert_eq!(InferenceModelType::PreviewModelFast.to_str(), "preview_model_fast");
       assert_eq!(InferenceModelType::SwitchX.to_str(), "switch_x");
@@ -992,6 +1051,12 @@ mod tests {
       assert_eq!(InferenceModelType::from_str("veo_3p1_lite").unwrap(), InferenceModelType::Veo3p1Lite);
       assert_eq!(InferenceModelType::from_str("vidu_q3").unwrap(), InferenceModelType::ViduQ3);
       assert_eq!(InferenceModelType::from_str("vidu_q3_turbo").unwrap(), InferenceModelType::ViduQ3Turbo);
+      // Audio models
+      assert_eq!(InferenceModelType::from_str("suno_music").unwrap(), InferenceModelType::SunoMusic);
+      assert_eq!(InferenceModelType::from_str("suno_remix").unwrap(), InferenceModelType::SunoRemix);
+      assert_eq!(InferenceModelType::from_str("suno_sounds").unwrap(), InferenceModelType::SunoSounds);
+      assert_eq!(InferenceModelType::from_str("suno_sample").unwrap(), InferenceModelType::SunoSample);
+      assert_eq!(InferenceModelType::from_str("seed_audio_1p0").unwrap(), InferenceModelType::SeedAudio1p0);
       assert_eq!(InferenceModelType::from_str("preview_model").unwrap(), InferenceModelType::PreviewModel);
       assert_eq!(InferenceModelType::from_str("preview_model_fast").unwrap(), InferenceModelType::PreviewModelFast);
       assert_eq!(InferenceModelType::from_str("switch_x").unwrap(), InferenceModelType::SwitchX);

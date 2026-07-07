@@ -87,6 +87,10 @@ pub async fn insert_generic_inference_job_for_fal_queue_with_apriori_job_token<'
           InferenceCategory::VideoGeneration,
           InferenceJobProductCategory::FalVideo
         ),
+        FalCategory::AudioGeneration => (
+          InferenceCategory::AudioGeneration,
+          InferenceJobProductCategory::FalAudio
+        ),
         FalCategory::BackgroundRemoval => (
           InferenceCategory::BackgroundRemoval,
           InferenceJobProductCategory::FalBgRemoval

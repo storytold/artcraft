@@ -1,2 +1,3 @@
+pub mod omni_gen_audio_models;
 pub mod omni_gen_image_models;
 pub mod omni_gen_video_models;

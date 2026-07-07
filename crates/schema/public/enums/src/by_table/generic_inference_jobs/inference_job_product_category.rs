@@ -26,6 +26,7 @@ pub enum InferenceJobProductCategory {
   
   FalImage,
   FalVideo,
+  FalAudio,
   /// Fal: 3D Object Generation
   FalObject,
   FalBgRemoval,
@@ -56,6 +57,10 @@ pub enum InferenceJobProductCategory {
   /// Seedance 2 Pro / Kinovi: Midjourney image generation.
   #[serde(rename = "seedance2pro_image")]
   Seedance2ProImage,
+
+  /// Seedance 2 Pro / Kinovi: Suno audio generation.
+  #[serde(rename = "seedance2pro_audio")]
+  Seedance2ProAudio,
 
   // =============== SEEDANCE 2 PRO ALT ===============
 
@@ -166,6 +171,7 @@ impl InferenceJobProductCategory {
       Self::DownloadGptSoVits => "download_gpt_so_vits",
       Self::FalImage => "fal_image",
       Self::FalVideo => "fal_video",
+      Self::FalAudio => "fal_audio",
       Self::FalObject => "fal_object",
       Self::FalBgRemoval => "fal_bg_removal",
       Self::GmiCloudVideo => "gmicloud_video",
@@ -174,6 +180,7 @@ impl InferenceJobProductCategory {
       Self::Seedance2ProVideo => "seedance2pro_video",
       Self::Seedance2ProCharacter => "seedance2pro_character",
       Self::Seedance2ProImage => "seedance2pro_image",
+      Self::Seedance2ProAudio => "seedance2pro_audio",
       Self::Seedance2ProVideoAlt => "seedance2pro_video_alt",
       Self::Seedance2ProVideoBytePlusUltra => "seedance2pro_video_bpu",
       Self::WorldlabsSplat => "worldlabs_splat",
@@ -207,6 +214,7 @@ impl InferenceJobProductCategory {
       "download_gpt_so_vits" => Ok(Self::DownloadGptSoVits),
       "fal_image" => Ok(Self::FalImage),
       "fal_video" => Ok(Self::FalVideo),
+      "fal_audio" => Ok(Self::FalAudio),
       "fal_object" => Ok(Self::FalObject),
       "fal_bg_removal" => Ok(Self::FalBgRemoval),
       "gmicloud_video" => Ok(Self::GmiCloudVideo),
@@ -215,6 +223,7 @@ impl InferenceJobProductCategory {
       "seedance2pro_video" => Ok(Self::Seedance2ProVideo),
       "seedance2pro_character" => Ok(Self::Seedance2ProCharacter),
       "seedance2pro_image" => Ok(Self::Seedance2ProImage),
+      "seedance2pro_audio" => Ok(Self::Seedance2ProAudio),
       "seedance2pro_video_alt" => Ok(Self::Seedance2ProVideoAlt),
       "seedance2pro_video_bpu" => Ok(Self::Seedance2ProVideoBytePlusUltra),
       "worldlabs_splat" => Ok(Self::WorldlabsSplat),
@@ -251,6 +260,7 @@ impl InferenceJobProductCategory {
       Self::DownloadGptSoVits,
       Self::FalImage,
       Self::FalVideo,
+      Self::FalAudio,
       Self::FalObject,
       Self::FalBgRemoval,
       Self::GmiCloudVideo,
@@ -259,6 +269,7 @@ impl InferenceJobProductCategory {
       Self::Seedance2ProVideo,
       Self::Seedance2ProCharacter,
       Self::Seedance2ProImage,
+      Self::Seedance2ProAudio,
       Self::Seedance2ProVideoAlt,
       Self::Seedance2ProVideoBytePlusUltra,
       Self::WorldlabsSplat,
@@ -301,6 +312,7 @@ mod tests {
       assert_serialization(InferenceJobProductCategory::DownloadGptSoVits, "download_gpt_so_vits");
       assert_serialization(InferenceJobProductCategory::FalImage, "fal_image");
       assert_serialization(InferenceJobProductCategory::FalVideo, "fal_video");
+      assert_serialization(InferenceJobProductCategory::FalAudio, "fal_audio");
       assert_serialization(InferenceJobProductCategory::FalObject, "fal_object");
       assert_serialization(InferenceJobProductCategory::FalBgRemoval, "fal_bg_removal");
       assert_serialization(InferenceJobProductCategory::GmiCloudVideo, "gmicloud_video");
@@ -309,6 +321,7 @@ mod tests {
       assert_serialization(InferenceJobProductCategory::Seedance2ProVideo, "seedance2pro_video");
       assert_serialization(InferenceJobProductCategory::Seedance2ProCharacter, "seedance2pro_character");
       assert_serialization(InferenceJobProductCategory::Seedance2ProImage, "seedance2pro_image");
+      assert_serialization(InferenceJobProductCategory::Seedance2ProAudio, "seedance2pro_audio");
       assert_serialization(InferenceJobProductCategory::Seedance2ProVideoAlt, "seedance2pro_video_alt");
       assert_serialization(InferenceJobProductCategory::Seedance2ProVideoBytePlusUltra, "seedance2pro_video_bpu");
       assert_serialization(InferenceJobProductCategory::WorldlabsSplat, "worldlabs_splat");
@@ -341,6 +354,7 @@ mod tests {
       assert_eq!(InferenceJobProductCategory::DownloadGptSoVits.to_str(), "download_gpt_so_vits");
       assert_eq!(InferenceJobProductCategory::FalImage.to_str(), "fal_image");
       assert_eq!(InferenceJobProductCategory::FalVideo.to_str(), "fal_video");
+      assert_eq!(InferenceJobProductCategory::FalAudio.to_str(), "fal_audio");
       assert_eq!(InferenceJobProductCategory::FalObject.to_str(), "fal_object");
       assert_eq!(InferenceJobProductCategory::FalBgRemoval.to_str(), "fal_bg_removal");
       assert_eq!(InferenceJobProductCategory::GmiCloudVideo.to_str(), "gmicloud_video");
@@ -349,6 +363,7 @@ mod tests {
       assert_eq!(InferenceJobProductCategory::Seedance2ProVideo.to_str(), "seedance2pro_video");
       assert_eq!(InferenceJobProductCategory::Seedance2ProCharacter.to_str(), "seedance2pro_character");
       assert_eq!(InferenceJobProductCategory::Seedance2ProImage.to_str(), "seedance2pro_image");
+      assert_eq!(InferenceJobProductCategory::Seedance2ProAudio.to_str(), "seedance2pro_audio");
       assert_eq!(InferenceJobProductCategory::Seedance2ProVideoAlt.to_str(), "seedance2pro_video_alt");
       assert_eq!(InferenceJobProductCategory::Seedance2ProVideoBytePlusUltra.to_str(), "seedance2pro_video_bpu");
       assert_eq!(InferenceJobProductCategory::WorldlabsSplat.to_str(), "worldlabs_splat");
@@ -380,6 +395,7 @@ mod tests {
       assert_eq!(InferenceJobProductCategory::from_str("download_gpt_so_vits").unwrap(), InferenceJobProductCategory::DownloadGptSoVits);
       assert_eq!(InferenceJobProductCategory::from_str("fal_image").unwrap(), InferenceJobProductCategory::FalImage);
       assert_eq!(InferenceJobProductCategory::from_str("fal_video").unwrap(), InferenceJobProductCategory::FalVideo);
+      assert_eq!(InferenceJobProductCategory::from_str("fal_audio").unwrap(), InferenceJobProductCategory::FalAudio);
       assert_eq!(InferenceJobProductCategory::from_str("fal_object").unwrap(), InferenceJobProductCategory::FalObject);
       assert_eq!(InferenceJobProductCategory::from_str("fal_bg_removal").unwrap(), InferenceJobProductCategory::FalBgRemoval);
       assert_eq!(InferenceJobProductCategory::from_str("gmicloud_video").unwrap(), InferenceJobProductCategory::GmiCloudVideo);
@@ -388,6 +404,7 @@ mod tests {
       assert_eq!(InferenceJobProductCategory::from_str("seedance2pro_video").unwrap(), InferenceJobProductCategory::Seedance2ProVideo);
       assert_eq!(InferenceJobProductCategory::from_str("seedance2pro_character").unwrap(), InferenceJobProductCategory::Seedance2ProCharacter);
       assert_eq!(InferenceJobProductCategory::from_str("seedance2pro_image").unwrap(), InferenceJobProductCategory::Seedance2ProImage);
+      assert_eq!(InferenceJobProductCategory::from_str("seedance2pro_audio").unwrap(), InferenceJobProductCategory::Seedance2ProAudio);
       assert_eq!(InferenceJobProductCategory::from_str("seedance2pro_video_alt").unwrap(), InferenceJobProductCategory::Seedance2ProVideoAlt);
       assert_eq!(InferenceJobProductCategory::from_str("seedance2pro_video_bpu").unwrap(), InferenceJobProductCategory::Seedance2ProVideoBytePlusUltra);
       assert_eq!(InferenceJobProductCategory::from_str("worldlabs_splat").unwrap(), InferenceJobProductCategory::WorldlabsSplat);
@@ -417,7 +434,7 @@ mod tests {
     #[test]
     fn all_variants() {
       // Static check
-      const EXPECTED_COUNT : usize = 36;
+      const EXPECTED_COUNT : usize = 38;
 
       assert_eq!(InferenceJobProductCategory::all_variants().len(), EXPECTED_COUNT);
       assert_eq!(InferenceJobProductCategory::iter().len(), EXPECTED_COUNT);
