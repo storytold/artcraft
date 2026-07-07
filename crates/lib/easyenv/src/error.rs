@@ -2,6 +2,17 @@ use std::error::Error;
 use std::fmt;
 use std::fmt::{Display, Formatter};
 
+/// Why an environment variable name was rejected.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum InvalidNameReason {
+  /// The name is an empty string.
+  Empty,
+  /// The name contains an equals sign.
+  ContainsEquals,
+  /// The name contains a NUL byte.
+  ContainsNul,
+}
+
 /// Errors with reading and parsing env variables.
 #[derive(Debug)]
 pub enum EnvError {
@@ -16,6 +27,13 @@ pub enum EnvError {
   RequiredNotPresent {
     /// The name of the missing environment variable.
     name: String
+  },
+  /// The environment variable name is invalid.
+  InvalidVariableName {
+    /// The invalid name that was supplied.
+    name: String,
+    /// Why the name was rejected.
+    reason: InvalidNameReason,
   },
 }
 
@@ -37,6 +55,18 @@ impl Display for EnvError {
 
           In production, make sure these environment variables are set in Kubernetes.
         "#, name),
+      EnvError::InvalidVariableName { name, reason } => {
+        let detail = match reason {
+          InvalidNameReason::Empty => "is empty",
+          InvalidNameReason::ContainsEquals => "contains an equals sign ('=')",
+          InvalidNameReason::ContainsNul => "contains a NUL byte",
+        };
+        return write!(f, r#"
+          EnvError::InvalidVariableName: the environment variable name {:?} {}.
+
+          This is likely a programming error, not an environment misconfiguration.
+        "#, name, detail);
+      },
     };
     write!(f, "{:?}", reason)
   }

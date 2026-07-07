@@ -5,6 +5,7 @@ use std::str::FromStr;
 use log::{error, warn};
 
 use crate::error::EnvError;
+use crate::validate::validate_env_name;
 
 /// Get an environment variable as a number, or fall back to the provided default if not set.
 /// If the env var is present but can't be parsed, an error is returned instead.
@@ -12,6 +13,7 @@ pub fn get_env_num<T>(env_name: &str, default: T) -> Result<T, EnvError>
   where T: FromStr + Display,
         T::Err: Debug
 {
+  validate_env_name(env_name)?;
   match env::var(env_name).as_ref().ok() {
     None => {
       warn!("Env var '{}' not supplied. Using default '{}'.", env_name, default);
@@ -34,6 +36,7 @@ pub fn try_get_env_num_optional<T>(env_name: &str) -> Result<Option<T>, EnvError
   where T: FromStr,
         T::Err: Debug
 {
+  validate_env_name(env_name)?;
   match env::var(env_name).as_ref().ok() {
     None => {
       warn!("Env var '{}' not supplied.", env_name);
@@ -96,5 +99,67 @@ mod tests {
     let _g = EnvVarGuard::set("NUM_TEST_UNPARSEABLE", "not_a_number");
     assert!(get_env_num("NUM_TEST_UNPARSEABLE", 0i32).is_err());
     assert!(try_get_env_num_optional::<i32>("NUM_TEST_UNPARSEABLE").is_err());
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use crate::error::{EnvError, InvalidNameReason};
+
+  use super::*;
+
+  #[test]
+  fn rejects_empty_name_get_env_num() {
+    assert!(matches!(
+      get_env_num::<u32>("", 42),
+      Err(EnvError::InvalidVariableName {
+        reason: InvalidNameReason::Empty,
+        ..
+      })
+    ));
+  }
+
+  #[test]
+  fn rejects_name_with_equals_sign_get_env_num() {
+    assert!(matches!(
+      get_env_num::<u32>("FOO=BAR", 42),
+      Err(EnvError::InvalidVariableName {
+        reason: InvalidNameReason::ContainsEquals,
+        ..
+      })
+    ));
+  }
+
+  #[test]
+  fn rejects_name_with_nul_byte_get_env_num() {
+    assert!(matches!(
+      get_env_num::<u32>("FOO\0BAR", 42),
+      Err(EnvError::InvalidVariableName {
+        reason: InvalidNameReason::ContainsNul,
+        ..
+      })
+    ));
+  }
+
+  #[test]
+  fn rejects_empty_name_try_get_env_num_optional() {
+    assert!(matches!(
+      try_get_env_num_optional::<u32>(""),
+      Err(EnvError::InvalidVariableName {
+        reason: InvalidNameReason::Empty,
+        ..
+      })
+    ));
+  }
+
+  #[test]
+  fn rejects_name_with_equals_sign_try_get_env_num_optional() {
+    assert!(matches!(
+      try_get_env_num_optional::<u32>("FOO=BAR"),
+      Err(EnvError::InvalidVariableName {
+        reason: InvalidNameReason::ContainsEquals,
+        ..
+      })
+    ));
   }
 }

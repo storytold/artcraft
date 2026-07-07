@@ -3,9 +3,14 @@ use std::env;
 use log::warn;
 
 use crate::error::EnvError;
+use crate::validate::validate_env_name;
 
 /// Get an environment variable as an optional `String`.
 pub fn get_env_string_optional(env_name: &str) -> Option<String> {
+  if let Err(e) = validate_env_name(env_name) {
+    warn!("Env var '{}': invalid name: {:?}. Returning no value.", env_name, e);
+    return None;
+  }
   match env::var(env_name).as_ref().ok() {
     Some(s) => Some(s.to_string()),
     None => {
@@ -17,6 +22,10 @@ pub fn get_env_string_optional(env_name: &str) -> Option<String> {
 
 /// Get an environment variable as a `String`, or fall back to the provided default.
 pub fn get_env_string_or_default(env_name: &str, default: &str) -> String {
+  if let Err(e) = validate_env_name(env_name) {
+    warn!("Env var '{}': invalid name: {:?}. Using default '{}'.", env_name, e, default);
+    return default.to_string();
+  }
   match env::var(env_name).as_ref().ok() {
     Some(s) => s.to_string(),
     None => {
@@ -28,6 +37,7 @@ pub fn get_env_string_or_default(env_name: &str, default: &str) -> String {
 
 /// Get an environment variable as a `String`, or return an error.
 pub fn get_env_string_required(env_name: &str) -> Result<String, EnvError> {
+  validate_env_name(env_name)?;
   match env::var(env_name).as_ref().ok() {
     Some(s) => Ok(s.to_string()),
     None => {
@@ -84,5 +94,58 @@ mod tests {
       },
       other => panic!("unexpected result: {:?}", other),
     }
+  }
+}
+#[cfg(test)]
+mod tests {
+  use crate::error::{EnvError, InvalidNameReason};
+
+  use super::*;
+
+  #[test]
+  fn rejects_empty_name_optional() {
+    assert_eq!(get_env_string_optional(""), None);
+  }
+
+  #[test]
+  fn rejects_name_with_equals_sign_optional() {
+    assert_eq!(get_env_string_optional("FOO=BAR"), None);
+  }
+
+  #[test]
+  fn rejects_name_with_nul_byte_optional() {
+    assert_eq!(get_env_string_optional("FOO\0BAR"), None);
+  }
+
+  #[test]
+  fn rejects_empty_name_or_default() {
+    assert_eq!(get_env_string_or_default("", "default"), "default");
+  }
+
+  #[test]
+  fn rejects_name_with_equals_sign_or_default() {
+    assert_eq!(get_env_string_or_default("FOO=BAR", "default"), "default");
+  }
+
+  #[test]
+  fn rejects_empty_name_required() {
+    assert!(matches!(
+      get_env_string_required(""),
+      Err(EnvError::InvalidVariableName {
+        reason: InvalidNameReason::Empty,
+        ..
+      })
+    ));
+  }
+
+  #[test]
+  fn rejects_name_with_equals_sign_required() {
+    assert!(matches!(
+      get_env_string_required("FOO=BAR"),
+      Err(EnvError::InvalidVariableName {
+        reason: InvalidNameReason::ContainsEquals,
+        ..
+      })
+    ));
   }
 }
