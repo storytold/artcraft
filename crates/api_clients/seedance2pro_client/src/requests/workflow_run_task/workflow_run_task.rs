@@ -274,10 +274,6 @@ pub struct WorkflowRunTaskResponse {
 // --- Implementation ---
 
 pub async fn workflow_run_task(args: WorkflowRunTaskArgs<'_>) -> Result<WorkflowRunTaskResponse, Seedance2ProError> {
-  let host = resolve_host(args.host_override.as_ref());
-  let base_url = host.api_base_url();
-  let run_task_url = format!("{}/api/trpc/workflow.runTask?batch=1", base_url);
-
   let req = args.request;
 
   info!("Requesting video from Seedance2Pro (v2): {:?}", req);
@@ -286,7 +282,53 @@ pub async fn workflow_run_task(args: WorkflowRunTaskArgs<'_>) -> Result<Workflow
 
   info!("Seedance2pro request (v2): {:?}", request_body);
 
-  let cookie = args.session.cookies.as_str();
+  send_run_task_request(args.session, args.host_override, &request_body).await
+}
+
+/// Run a `workflow.runTask` call whose `apiParams` shape differs from the
+/// standard video request — e.g. the Suno audio models, which carry their own
+/// parameter sets. The caller provides the tRPC `businessType` and a
+/// serializable `apiParams` payload; the HTTP plumbing and response handling
+/// are shared with [`workflow_run_task`].
+pub async fn workflow_run_task_custom<T: serde::Serialize + std::fmt::Debug>(
+  args: WorkflowRunTaskCustomArgs<'_, T>,
+) -> Result<WorkflowRunTaskResponse, Seedance2ProError> {
+  info!(
+    "Requesting {} from Seedance2Pro (custom): {:?}",
+    args.business_type, args.api_params,
+  );
+
+  let request_body = serde_json::json!({
+    "0": {
+      "json": {
+        "businessType": args.business_type,
+        "apiParams": args.api_params,
+      }
+    }
+  });
+
+  send_run_task_request(args.session, args.host_override, &request_body).await
+}
+
+/// Bundle for [`workflow_run_task_custom`].
+pub struct WorkflowRunTaskCustomArgs<'a, T: serde::Serialize + std::fmt::Debug> {
+  /// The tRPC `businessType` discriminator (e.g. "suno-music-generation").
+  pub business_type: &'static str,
+  pub api_params: T,
+  pub session: &'a Seedance2ProSession,
+  pub host_override: Option<KinoviHost>,
+}
+
+async fn send_run_task_request<B: serde::Serialize>(
+  session: &Seedance2ProSession,
+  host_override: Option<KinoviHost>,
+  request_body: &B,
+) -> Result<WorkflowRunTaskResponse, Seedance2ProError> {
+  let host = resolve_host(host_override.as_ref());
+  let base_url = host.api_base_url();
+  let run_task_url = format!("{}/api/trpc/workflow.runTask?batch=1", base_url);
+
+  let cookie = session.cookies.as_str();
 
   let client = Client::builder()
     .emulation(Emulation::Firefox143)
@@ -311,7 +353,7 @@ pub async fn workflow_run_task(args: WorkflowRunTaskArgs<'_>) -> Result<Workflow
     .header("Sec-Fetch-Site", "same-origin")
     .header("Priority", "u=4")
     .header("TE", "trailers")
-    .json(&request_body)
+    .json(request_body)
     .send()
     .await
     .map_err(|err| Seedance2ProGenericApiError::WreqError(err))?;
