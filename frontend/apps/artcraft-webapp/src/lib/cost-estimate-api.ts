@@ -111,6 +111,14 @@ export function useStage3DCostEstimate(): void {
   }, [credits, setEstimatedCreditsForPage]);
 }
 
+// ── Audio cost estimate hook ─────────────────────────────────────────────
+
+// Shared with the desktop PromptBoxAudio via the omni-gen lib.
+export {
+  useAudioCostEstimate,
+  type AudioCostParams,
+} from "@storyteller/omni-gen";
+
 // ── Video cost estimate hook ─────────────────────────────────────────────
 
 export interface VideoCostParams {

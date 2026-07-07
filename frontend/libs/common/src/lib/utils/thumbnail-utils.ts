@@ -61,6 +61,12 @@ export function getMediaThumbnail(
 
   let thumbnailUrl: string | null = null;
 
+  if (mediaClass === "audio") {
+    // Audio has no image thumbnail; falling through to cdn_url would hand an
+    // mp3 to an <img>. Callers render a placeholder/waveform instead.
+    return null;
+  }
+
   if (mediaClass === "video" && mediaLinks.maybe_video_previews?.animated) {
     thumbnailUrl = mediaLinks.maybe_video_previews.animated;
   } else if (mediaLinks.maybe_thumbnail_template) {

@@ -80,6 +80,9 @@
       "path": "../../libs/components/switch/tsconfig.lib.json"
     },
     {
+      "path": "../../libs/components/audio-player/tsconfig.lib.json"
+    },
+    {
       "path": "../../libs/components/viewer-3d/tsconfig.lib.json"
     },
     {

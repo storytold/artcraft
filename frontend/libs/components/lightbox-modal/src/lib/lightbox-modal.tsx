@@ -10,6 +10,7 @@ import {
   faDownToLine,
   faGlobe,
   faMagnifyingGlass,
+  faMusic,
   faPause,
   faPencil,
   faPlay,
@@ -21,6 +22,7 @@ import {
 import { MediaFileDelete } from "@storyteller/tauri-api";
 import { LoadingSpinner } from "@storyteller/ui-loading-spinner";
 import { Viewer3D } from "@storyteller/ui-viewer-3d";
+import { WaveformAudioPlayer } from "@storyteller/ui-audio-player";
 import {
   useEffect,
   useState,
@@ -608,6 +610,19 @@ export function LightboxModal({
                 <source src={selectedImageUrl as string} type="video/mp4" />
                 Your browser does not support the video tag.
               </video>
+            ) : mediaClass === "audio" ? (
+              <div className="flex h-full w-full items-center justify-center px-4 sm:px-8">
+                <div className="w-full max-w-xl rounded-2xl border border-white/10 bg-white/[0.04] px-2 py-8">
+                  <FontAwesomeIcon
+                    icon={faMusic}
+                    className="mx-auto mb-5 block text-3xl text-white/20"
+                  />
+                  <WaveformAudioPlayer
+                    key={selectedImageUrl as string}
+                    src={selectedImageUrl as string}
+                  />
+                </div>
+              </div>
             ) : (
               <div className="flex h-full w-full flex-col justify-center">
                 <div
@@ -692,7 +707,8 @@ export function LightboxModal({
 
             {!mediaLoaded &&
               selectedImageUrl &&
-              mediaClass !== "dimensional" && (
+              mediaClass !== "dimensional" &&
+              mediaClass !== "audio" && (
                 <div className="absolute inset-0 bg-ui-panel flex items-center justify-center">
                   <LoadingSpinner className="h-12 w-12 text-base-fg" />
                 </div>

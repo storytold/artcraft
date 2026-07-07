@@ -9,7 +9,12 @@ import {
 } from "./useGalleryEntries";
 import { usePrompts } from "./prompts-cache";
 import { useMediaPromptTokens } from "./media-prompt-token-cache";
-import type { FailedJob, GalleryItem, InProgressJob } from "./types";
+import type {
+  FailedJob,
+  GalleryItem,
+  GenerationMediaClass,
+  InProgressJob,
+} from "./types";
 
 // Constrains the feed to the promptbox width (max-w-5xl) and stacks one row
 // per generation: a single time-sorted merge of the in-progress / failed /
@@ -19,7 +24,7 @@ import type { FailedJob, GalleryItem, InProgressJob } from "./types";
 
 export interface RecreateSlotContext {
   promptToken: string;
-  mediaClass: "image" | "video";
+  mediaClass: GenerationMediaClass;
   kind: "pending" | "failed";
 }
 

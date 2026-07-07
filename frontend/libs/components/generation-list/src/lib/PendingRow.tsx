@@ -4,6 +4,8 @@ import { faSpinnerThird } from "@fortawesome/pro-solid-svg-icons";
 import { getCreatorIconPathForModelId } from "@storyteller/model-list";
 import { CopyPromptButton } from "./CopyPromptButton";
 import { derivePendingStatus } from "./pending-status";
+import { batchNoun } from "./types";
+import type { GenerationMediaClass } from "./types";
 
 export interface PendingRowProps {
   id: string;
@@ -13,7 +15,7 @@ export interface PendingRowProps {
   progress?: number;
   estimatedTimeLeftMs?: number;
   batchCount?: number;
-  mediaClass: "image" | "video";
+  mediaClass: GenerationMediaClass;
   /** Hover-revealed action (e.g. a Recreate button) after the model label. */
   recreateSlot?: ReactNode;
   onCopyPromptResult?: (success: boolean) => void;
@@ -78,7 +80,7 @@ export const PendingRow = memo(function PendingRow({
             <>
               <span className="text-white/25">·</span>
               <span className="shrink-0">
-                {batchCount} {mediaClass === "image" ? "images" : "videos"}
+                {batchCount} {batchNoun(mediaClass)}
               </span>
             </>
           )}

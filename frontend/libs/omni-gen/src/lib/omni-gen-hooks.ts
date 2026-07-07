@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { OmniGenApi } from "@storyteller/api";
 import type {
+  OmniGenAudioModelDetails,
   OmniGenImageModelInfo,
   OmniGenVideoModelInfo,
 } from "@storyteller/api";
@@ -38,6 +39,11 @@ let videoModelsFetching = false;
 let videoModelsError: string | null = null;
 let videoModelsListeners: Array<() => void> = [];
 
+let audioModelsCache: OmniGenAudioModelDetails[] | null = null;
+let audioModelsFetching = false;
+let audioModelsError: string | null = null;
+let audioModelsListeners: Array<() => void> = [];
+
 function notifyImageListeners() {
   imageModelsListeners.forEach((cb) => cb());
   imageModelsListeners = [];
@@ -46,6 +52,11 @@ function notifyImageListeners() {
 function notifyVideoListeners() {
   videoModelsListeners.forEach((cb) => cb());
   videoModelsListeners = [];
+}
+
+function notifyAudioListeners() {
+  audioModelsListeners.forEach((cb) => cb());
+  audioModelsListeners = [];
 }
 
 function fetchImageModelsOnce() {
@@ -98,6 +109,33 @@ function fetchVideoModelsOnce() {
       console.error("[OmniGen] Failed to fetch video models:", err);
       errorNotifier(OMNI_MODELS_OUTAGE_MESSAGE);
       notifyVideoListeners();
+    },
+  );
+}
+
+function fetchAudioModelsOnce() {
+  if (audioModelsCache || audioModelsFetching) return;
+  audioModelsFetching = true;
+  audioModelsError = null;
+  const api = new OmniGenApi();
+  api.getAudioModels().then(
+    (res) => {
+      audioModelsFetching = false;
+      if (res.success && res.models?.length) {
+        audioModelsCache = res.models.filter((m) => m.is_disabled !== true);
+      } else {
+        audioModelsError = "No audio models returned from API";
+        console.warn("[OmniGen] Audio models response:", res);
+        errorNotifier(OMNI_MODELS_OUTAGE_MESSAGE);
+      }
+      notifyAudioListeners();
+    },
+    (err) => {
+      audioModelsFetching = false;
+      audioModelsError = err?.message ?? "Failed to fetch audio models";
+      console.error("[OmniGen] Failed to fetch audio models:", err);
+      errorNotifier(OMNI_MODELS_OUTAGE_MESSAGE);
+      notifyAudioListeners();
     },
   );
 }
@@ -180,6 +218,48 @@ export function useOmniGenVideoModels(): {
 
     return () => {
       videoModelsListeners = videoModelsListeners.filter(
+        (cb) => cb !== onReady,
+      );
+    };
+  }, []);
+
+  return { models, isLoading, error };
+}
+
+export function useOmniGenAudioModels(): {
+  models: OmniGenAudioModelDetails[];
+  isLoading: boolean;
+  error: string | null;
+} {
+  const [models, setModels] = useState<OmniGenAudioModelDetails[]>(
+    audioModelsCache ?? [],
+  );
+  const [isLoading, setIsLoading] = useState(!audioModelsCache);
+  const [error, setError] = useState<string | null>(audioModelsError);
+
+  useEffect(() => {
+    if (audioModelsCache) {
+      setModels(audioModelsCache);
+      setIsLoading(false);
+      setError(null);
+      return;
+    }
+
+    const onReady = () => {
+      setIsLoading(false);
+      if (audioModelsCache) {
+        setModels(audioModelsCache);
+        setError(null);
+      } else {
+        setError(audioModelsError);
+      }
+    };
+
+    audioModelsListeners.push(onReady);
+    fetchAudioModelsOnce();
+
+    return () => {
+      audioModelsListeners = audioModelsListeners.filter(
         (cb) => cb !== onReady,
       );
     };

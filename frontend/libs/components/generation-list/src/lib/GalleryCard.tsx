@@ -1,10 +1,16 @@
 import { memo, useCallback, useState, type ReactNode } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faCube, faImage, faVideo } from "@fortawesome/pro-solid-svg-icons";
+import {
+  faCube,
+  faImage,
+  faMusic,
+  faVideo,
+} from "@fortawesome/pro-solid-svg-icons";
 import {
   getCreatorIconPathForModelId,
   getModelDisplayName,
 } from "@storyteller/model-list";
+import { WaveformAudioPlayer } from "@storyteller/ui-audio-player";
 import { GalleryThumbnail } from "./GalleryThumbnail";
 import type { GalleryItem } from "./types";
 
@@ -14,6 +20,9 @@ const STORAGE_KEY = "gallery-aspect-ratios";
 
 // Cap ratio so tall portraits don't dominate — 1.4 ≈ 5:7
 const MAX_RATIO = 1.4;
+
+// Audio cards have no image to measure — fixed square tile.
+const AUDIO_RATIO = 1;
 
 function loadCache(): Map<string, number> {
   const map = new Map<string, number>();
@@ -59,6 +68,9 @@ export interface GalleryCardProps {
   // "auto" = dynamic aspect ratio from the loaded image (masonry layouts).
   // "square" = fixed 1:1; skips the ratio measurement path (uniform grids).
   shape?: "auto" | "square";
+  /** Prompt text resolved by the view (via the prompts cache). Audio cards
+   *  show it inline since they have no image to speak for themselves. */
+  title?: string;
   /** Hover-revealed quick-action cluster (recreate / share / download …). */
   actionsSlot?: ReactNode;
 }
@@ -67,6 +79,7 @@ export const GalleryCard = memo(function GalleryCard({
   item,
   onClick,
   shape = "auto",
+  title,
   actionsSlot,
 }: GalleryCardProps) {
   const isSquare = shape === "square";
@@ -75,8 +88,15 @@ export const GalleryCard = memo(function GalleryCard({
 
   const isVideo = item.mediaClass === "video";
   const is3D = item.mediaClass === "dimensional";
-  const mediaIcon = isVideo ? faVideo : is3D ? faCube : faImage;
-  const mediaLabel = isVideo ? "Video" : is3D ? "3D" : "Image";
+  const isAudio = item.mediaClass === "audio";
+  const mediaIcon = isVideo
+    ? faVideo
+    : is3D
+      ? faCube
+      : isAudio
+        ? faMusic
+        : faImage;
+  const mediaLabel = isVideo ? "Video" : is3D ? "3D" : isAudio ? "Audio" : "Image";
   const modelDisplayName = item.modelId
     ? getModelDisplayName(item.modelId)
     : null;
@@ -84,7 +104,11 @@ export const GalleryCard = memo(function GalleryCard({
     ? getCreatorIconPathForModelId(item.modelId)
     : null;
 
-  const displayRatio = ratio ? Math.min(ratio, MAX_RATIO) : 1;
+  const displayRatio = isAudio
+    ? AUDIO_RATIO
+    : ratio
+      ? Math.min(ratio, MAX_RATIO)
+      : 1;
 
   // In square mode the wrapper sets the ratio via `aspect-square`; we only
   // compute the dynamic aspectRatio for masonry-style layouts.
@@ -136,13 +160,42 @@ export const GalleryCard = memo(function GalleryCard({
         className="absolute inset-0 overflow-hidden rounded-[inherit]"
         style={{ contentVisibility: "auto", containIntrinsicSize: "auto 200px" }}
       >
-        <GalleryThumbnail
-          thumbnail={item.thumbnail}
-          alt={item.label}
-          isVideo={isVideo}
-          fallbackIcon={mediaIcon}
-          onLoad={measureRatio}
-        />
+        {isAudio ? (
+          <div className="flex h-full flex-col bg-gradient-to-br from-white/[0.07] to-white/[0.02] p-3">
+            <div className="flex items-start gap-2">
+              <p className="line-clamp-3 min-w-0 flex-1 text-sm leading-snug text-white/85">
+                {title || item.label}
+              </p>
+              <FontAwesomeIcon
+                icon={faMusic}
+                className="pointer-events-none mt-0.5 shrink-0 text-base text-white/15"
+              />
+            </div>
+            {item.fullImage ? (
+              <div className="flex min-h-0 flex-1 items-center">
+                <div className="w-full">
+                  <WaveformAudioPlayer
+                    src={item.fullImage}
+                    durationMillis={item.durationMillis}
+                  />
+                </div>
+              </div>
+            ) : (
+              <FontAwesomeIcon
+                icon={faMusic}
+                className="m-auto text-2xl text-white/20"
+              />
+            )}
+          </div>
+        ) : (
+          <GalleryThumbnail
+            thumbnail={item.thumbnail}
+            alt={item.label}
+            isVideo={isVideo}
+            fallbackIcon={mediaIcon}
+            onLoad={measureRatio}
+          />
+        )}
       </div>
 
       {/* Hover overlay with media type + model badges and quick actions */}

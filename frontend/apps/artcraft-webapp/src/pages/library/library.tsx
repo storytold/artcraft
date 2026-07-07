@@ -34,6 +34,7 @@ import {
   faBorderAll,
   faCube,
   faImage,
+  faMusic,
   faVideo,
   faPencil,
   faTrashCan,
@@ -59,12 +60,14 @@ const FILTERS = [
   { id: "all", label: "All", icon: faBorderAll, route: "/library" },
   { id: "image", label: "Images", icon: faImage, route: "/library/images" },
   { id: "video", label: "Videos", icon: faVideo, route: "/library/videos" },
+  { id: "audio", label: "Audio", icon: faMusic, route: "/library/audio" },
   { id: "meshes", label: "Meshes", icon: faCube, route: "/library/meshes" },
 ];
 
 const ROUTE_TO_FILTER: Record<string, string> = {
   images: "image",
   videos: "video",
+  audio: "audio",
   meshes: "meshes",
 };
 
@@ -76,12 +79,15 @@ const getFilterMediaClass = (
       return [FilterMediaClasses.IMAGE];
     case "video":
       return [FilterMediaClasses.VIDEO];
+    case "audio":
+      return [FilterMediaClasses.AUDIO];
     case "meshes":
       return [FilterMediaClasses.DIMENSIONAL];
     default:
       return [
         FilterMediaClasses.IMAGE,
         FilterMediaClasses.VIDEO,
+        FilterMediaClasses.AUDIO,
         FilterMediaClasses.DIMENSIONAL,
       ];
   }
@@ -1547,7 +1553,9 @@ function BulkThumb({ item }: { item: GalleryItem }) {
       ? faVideo
       : item.mediaClass === "dimensional"
         ? faCube
-        : faImage;
+        : item.mediaClass === "audio"
+          ? faMusic
+          : faImage;
   const showImage = !!item.thumbnail && !failed;
   return (
     <div className="-ml-2 h-8 w-8 flex-shrink-0 overflow-hidden rounded border-2 border-ui-panel bg-black/30 first:ml-0">

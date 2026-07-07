@@ -116,13 +116,15 @@ function ItemActions({
 
   const isVideo = item.mediaClass === "video";
   const is3D = item.mediaClass === "dimensional";
+  const isAudio = item.mediaClass === "audio";
+  // Audio v1: no recreate / make-video — share + download only.
   const recreateMediaClass: "image" | "video" | null = isVideo
     ? "video"
-    : is3D
+    : is3D || isAudio
       ? null
       : "image";
   const canRecreate = !!promptToken && !!recreateMediaClass;
-  const canMakeVideo = !!enableMakeVideo && !isVideo && !is3D;
+  const canMakeVideo = !!enableMakeVideo && !isVideo && !is3D && !isAudio;
 
   const buttonClass =
     variant === "card"

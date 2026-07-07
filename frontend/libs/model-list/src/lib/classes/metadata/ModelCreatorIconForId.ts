@@ -20,6 +20,8 @@ export const MODEL_ID_PREFIX_CREATORS: Array<[string, ModelCreator]> = [
   ["grok", ModelCreator.Grok],
   ["happy_horse", ModelCreator.Alibaba],
   ["qwen", ModelCreator.Alibaba],
+  ["suno", ModelCreator.Suno],
+  ["seed_audio", ModelCreator.Bytedance],
   // Beeble SwitchX (background change) has no provider icon — use the ArtCraft
   // mark since it's surfaced as an ArtCraft feature.
   ["switch_x", ModelCreator.ArtCraft],

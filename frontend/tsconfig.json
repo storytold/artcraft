@@ -215,6 +215,9 @@
     },
     {
       "path": "./libs/omni-gen"
+    },
+    {
+      "path": "./libs/components/audio-player"
     }
   ]
 }

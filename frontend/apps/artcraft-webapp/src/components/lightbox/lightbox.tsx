@@ -8,17 +8,20 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faChevronLeft,
   faChevronRight,
+  faMusic,
   faTrashCan,
 } from "@fortawesome/pro-solid-svg-icons";
 import { addCorsParam, PLACEHOLDER_IMAGES } from "@storyteller/common";
 import { ActionReminderModal } from "@storyteller/ui-action-reminder-modal";
 import { Viewer3D } from "@storyteller/ui-viewer-3d";
+import { WaveformAudioPlayer } from "@storyteller/ui-audio-player";
 import useEmblaCarousel from "embla-carousel-react";
 import type { EmblaOptionsType } from "embla-carousel";
 import {
   createPromptData,
   EMPTY_PROMPT,
   is3DModelUrl,
+  isAudioUrl,
   isVideoUrl,
   type PromptData,
 } from "./shared";
@@ -275,6 +278,9 @@ export function Lightbox({
   const is3D = selectedImageUrl
     ? is3DModelUrl(selectedImageUrl)
     : propMediaClass === "dimensional";
+  const isAudio = selectedImageUrl
+    ? isAudioUrl(selectedImageUrl) || propMediaClass === "audio"
+    : propMediaClass === "audio";
 
   // Keyboard navigation
   useEffect(() => {
@@ -312,9 +318,10 @@ export function Lightbox({
     }
   }, [selectedMediaToken, mediaFilesApi, onDeleted, onClose]);
 
+  // Audio v1: no recreate / make-video / edit-on-canvas.
   const recreateMediaClass: "image" | "video" | null = isVideo
     ? "video"
-    : is3D
+    : is3D || isAudio
       ? null
       : "image";
 
@@ -328,14 +335,14 @@ export function Lightbox({
     );
   }, [selectedMediaToken, recreateMediaClass, navigate, onClose]);
 
-  const canMakeVideo = !isVideo && !is3D;
+  const canMakeVideo = !isVideo && !is3D && !isAudio;
   const handleMakeVideo = useCallback(() => {
     if (!selectedMediaToken || !selectedImageUrl || !canMakeVideo) return;
     onClose();
     applyMakeVideoFromImage(selectedMediaToken, selectedImageUrl, navigate);
   }, [selectedMediaToken, selectedImageUrl, canMakeVideo, navigate, onClose]);
 
-  const canEditOnCanvas = !isVideo && !is3D;
+  const canEditOnCanvas = !isVideo && !is3D && !isAudio;
   const handleEditOnCanvas = useCallback(() => {
     if (!selectedMediaToken || !selectedImageUrl || !canEditOnCanvas) return;
     onClose();
@@ -391,6 +398,19 @@ export function Lightbox({
               >
                 <source src={selectedImageUrl} type="video/mp4" />
               </video>
+            ) : isAudio ? (
+              <div className="flex h-full w-full items-center justify-center px-4 sm:px-8">
+                <div className="w-full max-w-xl rounded-2xl border border-white/10 bg-white/[0.04] px-2 py-8">
+                  <FontAwesomeIcon
+                    icon={faMusic}
+                    className="mx-auto mb-5 block text-3xl text-white/20"
+                  />
+                  <WaveformAudioPlayer
+                    key={selectedImageUrl}
+                    src={selectedImageUrl}
+                  />
+                </div>
+              </div>
             ) : (
               <div className="flex h-full w-full flex-col justify-center">
                 <div
@@ -465,7 +485,7 @@ export function Lightbox({
               </div>
             )}
 
-            {!mediaLoaded && selectedImageUrl && !isVideo && !is3D && (
+            {!mediaLoaded && selectedImageUrl && !isVideo && !is3D && !isAudio && (
               <div className="absolute inset-0 flex items-center justify-center bg-black">
                 <LoadingSpinner className="h-12 w-12 text-base-fg" />
               </div>
