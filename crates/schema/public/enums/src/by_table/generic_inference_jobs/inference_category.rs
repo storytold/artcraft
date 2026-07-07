@@ -43,7 +43,11 @@ pub enum InferenceCategory {
   /// (Also Seedance2-Pro.com)
   #[serde(rename = "video_generation")]
   VideoGeneration,
-  
+
+  /// Audio generation (eg. Suno music, Seed Audio)
+  #[serde(rename = "audio_generation")]
+  AudioGeneration,
+
   /// FAL-powered 3D object generation
   #[serde(rename = "object_generation")]
   ObjectGeneration,
@@ -111,6 +115,7 @@ impl InferenceCategory {
       Self::VoiceConversion => "voice_conversion",
       Self::ImageGeneration => "image_generation",
       Self::VideoGeneration => "video_generation",
+      Self::AudioGeneration => "audio_generation",
       Self::ObjectGeneration => "object_generation",
       Self::SplatGeneration => "splat_generation",
       Self::CharacterGeneration => "character_generation",
@@ -134,6 +139,7 @@ impl InferenceCategory {
       "voice_conversion" => Ok(Self::VoiceConversion),
       "image_generation" => Ok(Self::ImageGeneration),
       "video_generation" => Ok(Self::VideoGeneration),
+      "audio_generation" => Ok(Self::AudioGeneration),
       "object_generation" => Ok(Self::ObjectGeneration),
       "splat_generation" => Ok(Self::SplatGeneration),
       "character_generation" => Ok(Self::CharacterGeneration),
@@ -163,6 +169,7 @@ impl InferenceCategory {
       Self::SplatGeneration,
       Self::CharacterGeneration,
       Self::VideoGeneration,
+      Self::AudioGeneration,
       Self::BackgroundRemoval,
       Self::Mocap,
       Self::F5TTS,
@@ -192,6 +199,7 @@ mod tests {
       assert_serialization(InferenceCategory::VoiceConversion, "voice_conversion");
       assert_serialization(InferenceCategory::ImageGeneration, "image_generation");
       assert_serialization(InferenceCategory::VideoGeneration, "video_generation");
+      assert_serialization(InferenceCategory::AudioGeneration, "audio_generation");
       assert_serialization(InferenceCategory::ObjectGeneration, "object_generation");
       assert_serialization(InferenceCategory::SplatGeneration, "splat_generation");
       assert_serialization(InferenceCategory::CharacterGeneration, "character_generation");
@@ -214,6 +222,7 @@ mod tests {
       assert_eq!(InferenceCategory::VoiceConversion.to_str(), "voice_conversion");
       assert_eq!(InferenceCategory::ImageGeneration.to_str(), "image_generation");
       assert_eq!(InferenceCategory::VideoGeneration.to_str(), "video_generation");
+      assert_eq!(InferenceCategory::AudioGeneration.to_str(), "audio_generation");
       assert_eq!(InferenceCategory::ObjectGeneration.to_str(), "object_generation");
       assert_eq!(InferenceCategory::SplatGeneration.to_str(), "splat_generation");
       assert_eq!(InferenceCategory::CharacterGeneration.to_str(), "character_generation");
@@ -236,6 +245,7 @@ mod tests {
       assert_eq!(InferenceCategory::from_str("voice_conversion").unwrap(), InferenceCategory::VoiceConversion);
       assert_eq!(InferenceCategory::from_str("image_generation").unwrap(), InferenceCategory::ImageGeneration);
       assert_eq!(InferenceCategory::from_str("video_generation").unwrap(), InferenceCategory::VideoGeneration);
+      assert_eq!(InferenceCategory::from_str("audio_generation").unwrap(), InferenceCategory::AudioGeneration);
       assert_eq!(InferenceCategory::from_str("object_generation").unwrap(), InferenceCategory::ObjectGeneration);
       assert_eq!(InferenceCategory::from_str("splat_generation").unwrap(), InferenceCategory::SplatGeneration);
       assert_eq!(InferenceCategory::from_str("character_generation").unwrap(), InferenceCategory::CharacterGeneration);
@@ -253,7 +263,7 @@ mod tests {
     #[test]
     fn all_variants() {
       // Static check
-      const EXPECTED_COUNT : usize = 18;
+      const EXPECTED_COUNT : usize = 19;
 
       assert_eq!(InferenceCategory::all_variants().len(), EXPECTED_COUNT);
       assert_eq!(InferenceCategory::iter().len(), EXPECTED_COUNT);

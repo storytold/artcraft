@@ -1,7 +1,9 @@
 pub mod common_aspect_ratio;
+pub mod common_audio_model;
 pub mod common_bitrate;
 pub mod common_generation_mode;
 pub mod common_image_model;
+pub mod common_musical_key;
 pub mod common_quality;
 pub mod common_model_class;
 pub mod common_model_type;

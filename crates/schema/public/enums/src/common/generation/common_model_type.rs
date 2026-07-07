@@ -193,6 +193,19 @@ pub enum CommonModelType {
   ViduQ3,
   #[serde(rename = "vidu_q3_turbo")]
   ViduQ3Turbo,
+
+  // Audio models
+  #[serde(rename = "suno_music")]
+  SunoMusic,
+  #[serde(rename = "suno_remix")]
+  SunoRemix,
+  #[serde(rename = "suno_sounds")]
+  SunoSounds,
+  #[serde(rename = "suno_sample")]
+  SunoSample,
+  #[serde(rename = "seed_audio_1p0")]
+  SeedAudio1p0,
+
   #[serde(rename = "preview_model")]
   PreviewModel,
   #[serde(rename = "preview_model_fast")]
@@ -298,6 +311,14 @@ impl CommonModelType {
       Self::Veo3p1Lite => "veo_3p1_lite",
       Self::ViduQ3 => "vidu_q3",
       Self::ViduQ3Turbo => "vidu_q3_turbo",
+
+      // Audio models
+      Self::SunoMusic => "suno_music",
+      Self::SunoRemix => "suno_remix",
+      Self::SunoSounds => "suno_sounds",
+      Self::SunoSample => "suno_sample",
+      Self::SeedAudio1p0 => "seed_audio_1p0",
+
       Self::PreviewModel => "preview_model",
       Self::PreviewModelFast => "preview_model_fast",
       Self::SwitchX => "switch_x",
@@ -389,6 +410,14 @@ impl CommonModelType {
       "veo_3p1_lite" => Ok(Self::Veo3p1Lite),
       "vidu_q3" => Ok(Self::ViduQ3),
       "vidu_q3_turbo" => Ok(Self::ViduQ3Turbo),
+
+      // Audio models
+      "suno_music" => Ok(Self::SunoMusic),
+      "suno_remix" => Ok(Self::SunoRemix),
+      "suno_sounds" => Ok(Self::SunoSounds),
+      "suno_sample" => Ok(Self::SunoSample),
+      "seed_audio_1p0" => Ok(Self::SeedAudio1p0),
+
       "preview_model" => Ok(Self::PreviewModel),
       "preview_model_fast" => Ok(Self::PreviewModelFast),
       "switch_x" => Ok(Self::SwitchX),
@@ -484,6 +513,14 @@ impl CommonModelType {
       Self::Veo3p1Lite,
       Self::ViduQ3,
       Self::ViduQ3Turbo,
+
+      // Audio models
+      Self::SunoMusic,
+      Self::SunoRemix,
+      Self::SunoSounds,
+      Self::SunoSample,
+      Self::SeedAudio1p0,
+
       Self::PreviewModel,
       Self::PreviewModelFast,
       Self::SwitchX,
@@ -576,6 +613,14 @@ impl CommonModelType {
       Self::Veo3p1Lite => CommonModelClass::Video,
       Self::ViduQ3 => CommonModelClass::Video,
       Self::ViduQ3Turbo => CommonModelClass::Video,
+
+      // Audio models
+      Self::SunoMusic => CommonModelClass::Audio,
+      Self::SunoRemix => CommonModelClass::Audio,
+      Self::SunoSounds => CommonModelClass::Audio,
+      Self::SunoSample => CommonModelClass::Audio,
+      Self::SeedAudio1p0 => CommonModelClass::Audio,
+
       Self::PreviewModel => CommonModelClass::Video,
       Self::PreviewModelFast => CommonModelClass::Video,
       Self::SwitchX => CommonModelClass::Video,
@@ -677,6 +722,12 @@ mod tests {
       assert_serialization(CommonModelType::Veo3p1Lite, "veo_3p1_lite");
       assert_serialization(CommonModelType::ViduQ3, "vidu_q3");
       assert_serialization(CommonModelType::ViduQ3Turbo, "vidu_q3_turbo");
+      // Audio models
+      assert_serialization(CommonModelType::SunoMusic, "suno_music");
+      assert_serialization(CommonModelType::SunoRemix, "suno_remix");
+      assert_serialization(CommonModelType::SunoSounds, "suno_sounds");
+      assert_serialization(CommonModelType::SunoSample, "suno_sample");
+      assert_serialization(CommonModelType::SeedAudio1p0, "seed_audio_1p0");
       assert_serialization(CommonModelType::PreviewModel, "preview_model");
       assert_serialization(CommonModelType::PreviewModelFast, "preview_model_fast");
       assert_serialization(CommonModelType::SwitchX, "switch_x");
@@ -765,6 +816,14 @@ mod tests {
       assert_eq!(CommonModelType::Veo3p1Lite.to_str(), "veo_3p1_lite");
       assert_eq!(CommonModelType::ViduQ3.to_str(), "vidu_q3");
       assert_eq!(CommonModelType::ViduQ3Turbo.to_str(), "vidu_q3_turbo");
+
+      // Audio models
+      assert_eq!(CommonModelType::SunoMusic.to_str(), "suno_music");
+      assert_eq!(CommonModelType::SunoRemix.to_str(), "suno_remix");
+      assert_eq!(CommonModelType::SunoSounds.to_str(), "suno_sounds");
+      assert_eq!(CommonModelType::SunoSample.to_str(), "suno_sample");
+      assert_eq!(CommonModelType::SeedAudio1p0.to_str(), "seed_audio_1p0");
+
       assert_eq!(CommonModelType::PreviewModel.to_str(), "preview_model");
       assert_eq!(CommonModelType::PreviewModelFast.to_str(), "preview_model_fast");
       assert_eq!(CommonModelType::SwitchX.to_str(), "switch_x");
@@ -853,6 +912,12 @@ mod tests {
       assert_eq!(CommonModelType::from_str("veo_3p1_lite").unwrap(), CommonModelType::Veo3p1Lite);
       assert_eq!(CommonModelType::from_str("vidu_q3").unwrap(), CommonModelType::ViduQ3);
       assert_eq!(CommonModelType::from_str("vidu_q3_turbo").unwrap(), CommonModelType::ViduQ3Turbo);
+      // Audio models
+      assert_eq!(CommonModelType::from_str("suno_music").unwrap(), CommonModelType::SunoMusic);
+      assert_eq!(CommonModelType::from_str("suno_remix").unwrap(), CommonModelType::SunoRemix);
+      assert_eq!(CommonModelType::from_str("suno_sounds").unwrap(), CommonModelType::SunoSounds);
+      assert_eq!(CommonModelType::from_str("suno_sample").unwrap(), CommonModelType::SunoSample);
+      assert_eq!(CommonModelType::from_str("seed_audio_1p0").unwrap(), CommonModelType::SeedAudio1p0);
       assert_eq!(CommonModelType::from_str("preview_model").unwrap(), CommonModelType::PreviewModel);
       assert_eq!(CommonModelType::from_str("preview_model_fast").unwrap(), CommonModelType::PreviewModelFast);
       assert_eq!(CommonModelType::from_str("switch_x").unwrap(), CommonModelType::SwitchX);
@@ -869,7 +934,7 @@ mod tests {
     #[test]
     fn all_variants() {
       let mut variants = CommonModelType::all_variants();
-      assert_eq!(variants.len(), 79);
+      assert_eq!(variants.len(), 84);
       // Image models
       assert_eq!(variants.pop_first(), Some(CommonModelType::Flux1Dev));
       assert_eq!(variants.pop_first(), Some(CommonModelType::Flux1Schnell));
@@ -943,6 +1008,12 @@ mod tests {
       assert_eq!(variants.pop_first(), Some(CommonModelType::Veo3p1Lite));
       assert_eq!(variants.pop_first(), Some(CommonModelType::ViduQ3));
       assert_eq!(variants.pop_first(), Some(CommonModelType::ViduQ3Turbo));
+      // Audio models
+      assert_eq!(variants.pop_first(), Some(CommonModelType::SunoMusic));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::SunoRemix));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::SunoSounds));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::SunoSample));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::SeedAudio1p0));
       assert_eq!(variants.pop_first(), Some(CommonModelType::PreviewModel));
       assert_eq!(variants.pop_first(), Some(CommonModelType::PreviewModelFast));
       assert_eq!(variants.pop_first(), Some(CommonModelType::SwitchX));

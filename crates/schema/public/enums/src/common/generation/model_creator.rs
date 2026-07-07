@@ -46,6 +46,8 @@ pub enum ModelCreator {
   Runway,
   #[serde(rename = "stability")]
   Stability,
+  #[serde(rename = "suno")]
+  Suno,
   #[serde(rename = "tencent")]
   Tencent,
   #[serde(rename = "tensor_art")]
@@ -78,6 +80,7 @@ impl ModelCreator {
       Self::Replicate => "Replicate",
       Self::Runway => "Runway",
       Self::Stability => "Stability AI",
+      Self::Suno => "Suno",
       Self::Tencent => "Tencent",
       Self::TensorArt => "TensorArt",
       Self::Vidu => "Vidu",
@@ -105,6 +108,7 @@ impl ModelCreator {
       Self::Replicate => "replicate",
       Self::Runway => "runway",
       Self::Stability => "stability",
+      Self::Suno => "suno",
       Self::Tencent => "tencent",
       Self::TensorArt => "tensor_art",
       Self::Vidu => "vidu",
@@ -132,6 +136,7 @@ impl ModelCreator {
       "replicate" => Ok(Self::Replicate),
       "runway" => Ok(Self::Runway),
       "stability" => Ok(Self::Stability),
+      "suno" => Ok(Self::Suno),
       "tencent" => Ok(Self::Tencent),
       "tensor_art" => Ok(Self::TensorArt),
       "vidu" => Ok(Self::Vidu),
@@ -160,6 +165,7 @@ impl ModelCreator {
       Self::Replicate,
       Self::Runway,
       Self::Stability,
+      Self::Suno,
       Self::Tencent,
       Self::TensorArt,
       Self::Vidu,
@@ -198,6 +204,7 @@ mod tests {
       assert_serialization(ModelCreator::Replicate, "replicate");
       assert_serialization(ModelCreator::Runway, "runway");
       assert_serialization(ModelCreator::Stability, "stability");
+      assert_serialization(ModelCreator::Suno, "suno");
       assert_serialization(ModelCreator::Tencent, "tencent");
       assert_serialization(ModelCreator::TensorArt, "tensor_art");
       assert_serialization(ModelCreator::Vidu, "vidu");
@@ -210,6 +217,7 @@ mod tests {
       assert_eq!(ModelCreator::ArtCraft.to_str(), "artcraft");
       assert_eq!(ModelCreator::BlackForestLabs.to_str(), "black_forest_labs");
       assert_eq!(ModelCreator::OpenAi.to_str(), "open_ai");
+      assert_eq!(ModelCreator::Suno.to_str(), "suno");
       assert_eq!(ModelCreator::WorldLabs.to_str(), "world_labs");
     }
 
@@ -219,6 +227,7 @@ mod tests {
       assert_eq!(ModelCreator::from_str("artcraft").unwrap(), ModelCreator::ArtCraft);
       assert_eq!(ModelCreator::from_str("black_forest_labs").unwrap(), ModelCreator::BlackForestLabs);
       assert_eq!(ModelCreator::from_str("open_ai").unwrap(), ModelCreator::OpenAi);
+      assert_eq!(ModelCreator::from_str("suno").unwrap(), ModelCreator::Suno);
       assert_eq!(ModelCreator::from_str("world_labs").unwrap(), ModelCreator::WorldLabs);
       assert!(ModelCreator::from_str("invalid").is_err());
     }
@@ -233,12 +242,13 @@ mod tests {
       assert_eq!(ModelCreator::Google.get_name(), "Google");
       assert_eq!(ModelCreator::OpenAi.get_name(), "OpenAI");
       assert_eq!(ModelCreator::Stability.get_name(), "Stability AI");
+      assert_eq!(ModelCreator::Suno.get_name(), "Suno");
       assert_eq!(ModelCreator::WorldLabs.get_name(), "World Labs");
     }
 
     #[test]
     fn all_variants() {
-      const EXPECTED_COUNT: usize = 22;
+      const EXPECTED_COUNT: usize = 23;
       assert_eq!(ModelCreator::all_variants().len(), EXPECTED_COUNT);
     }
   }

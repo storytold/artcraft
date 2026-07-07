@@ -344,12 +344,16 @@ use artcraft_api_defs::characters::list_characters::*;
 use artcraft_api_defs::moderation::alerts::moderation_send_alert::*;
 use artcraft_api_defs::omni_api::generate_requests::omni_api_image_generate_request::*;
 use artcraft_api_defs::omni_api::generate_requests::omni_api_video_generate_request::*;
+use artcraft_api_defs::omni_gen::cost_and_generate_requests::omni_gen_audio_cost_and_generate_request::*;
 use artcraft_api_defs::omni_gen::cost_and_generate_requests::omni_gen_image_cost_and_generate_request::*;
 use artcraft_api_defs::omni_gen::cost_and_generate_requests::omni_gen_video_cost_and_generate_request::*;
+use artcraft_api_defs::omni_gen::cost_response::omni_gen_audio_cost_response::*;
 use artcraft_api_defs::omni_gen::cost_response::omni_gen_image_cost_response::*;
 use artcraft_api_defs::omni_gen::cost_response::omni_gen_video_cost_response::*;
+use artcraft_api_defs::omni_gen::generate_response::omni_gen_audio_generate_response::*;
 use artcraft_api_defs::omni_gen::generate_response::omni_gen_image_generate_response::*;
 use artcraft_api_defs::omni_gen::generate_response::omni_gen_video_generate_response::*;
+use artcraft_api_defs::omni_gen::models::omni_gen_audio_models::*;
 use artcraft_api_defs::omni_gen::models::omni_gen_image_models::*;
 use artcraft_api_defs::omni_gen::models::omni_gen_video_models::*;
 use artcraft_api_defs::omni_api::job_status::omni_api_batch_get_job_status::*;
@@ -566,10 +570,13 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     crate::http_server::endpoints::characters::edit_character_handler::edit_character_handler,
     crate::http_server::endpoints::characters::delete_character_handler::delete_character_handler,
     // Omni Gen
+    crate::http_server::endpoints::omni_gen::cost::audio::omni_gen_audio_cost_handler::omni_gen_audio_cost_handler,
     crate::http_server::endpoints::omni_gen::cost::image::omni_gen_image_cost_handler::omni_gen_image_cost_handler,
     crate::http_server::endpoints::omni_gen::cost::video::omni_gen_video_cost_handler::omni_gen_video_cost_handler,
+    crate::http_server::endpoints::omni_gen::generate::audio::omni_gen_audio_generate_handler::omni_gen_audio_generate_handler,
     crate::http_server::endpoints::omni_gen::generate::image::omni_gen_image_generate_handler::omni_gen_image_generate_handler,
     crate::http_server::endpoints::omni_gen::generate::video::omni_gen_video_generate_handler::omni_gen_video_generate_handler,
+    crate::http_server::endpoints::omni_gen::models::audio::omni_gen_audio_models_handler::omni_gen_audio_models_handler,
     crate::http_server::endpoints::omni_gen::models::image::omni_gen_image_models_handler::omni_gen_image_models_handler,
     crate::http_server::endpoints::omni_gen::models::video::omni_gen_video_models_handler::omni_gen_video_models_handler,
     // Omni API (API-key authenticated generate)
@@ -857,6 +864,13 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     OmniApiJobStatusDetails,
     OmniApiJobStatusPayload,
     OmniApiVideoGenerateRequest,
+    OmniGenAudioCostAndGenerateRequest,
+    OmniGenAudioCostResponse,
+    OmniGenAudioGenerateResponse,
+    OmniGenAudioModelDetails,
+    OmniGenAudioModelProviderDetails,
+    OmniGenAudioModelsResponse,
+    OmniGenAudioProviderModelDetails,
     OmniGenImageCostAndGenerateRequest,
     OmniGenImageCostResponse,
     OmniGenImageGenerateResponse,
