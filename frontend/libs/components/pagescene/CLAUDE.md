@@ -178,6 +178,38 @@ auto-import; audio in recordings; `snapShotOfCurrentFrame` render-camera reconci
   the record-mode "expand timeline into a grayed-out read-only editor" (currently the expand chevron
   is simply hidden in record).
 
+### Feature: Mixamo animation clips on the timeline (IN PROGRESS)
+
+Characters can carry skeletal (Mixamo) animation clips as **stacked clip lanes** on the timeline,
+alongside the transform-keyframe tracks. Answers locked with the user: fixed-length strip at the
+drop point; retarget onto the character's skeleton; clips + keyframes coexist; stacked lanes;
+default clip source = the 37 curated demo clips.
+
+- **Data model (phase A, done)**: `engine/timeline/types.ts` — `ClipStrip` (`sourceMediaId`,
+  `startTime`, `duration`, `loop`) + `ClipLane` (`objectUuid`, `strip`); `TimelineData.clipLanes[]`.
+  Only the reference + placement is serialized; the `AnimationClip` is resolved at runtime.
+  `TimelineController` has `addClipLane` / `moveClipLane` / `removeClipLane` / `clipLanesFor`;
+  `TimelineChangedEvent` carries `clipLanes` → store `timelineClipLanes`. Persists via the existing
+  `getTimeline`/`loadTimeline` (rides `TimelineData`).
+- **Playback engine (phase B, done — UNVERIFIED at runtime)**: `engine/animation/CharacterAnimationManager.ts`.
+  One `THREE.AnimationMixer` per character; each lane → an `AnimationAction`. Playhead-driven +
+  **deterministic**: on every `TimelineController.evaluate()` it sets each action's absolute `time`
+  from the playhead (paused actions) then `mixer.update(0)` — scrub, play, and frame-accurate record
+  all pose identically. `syncClipLanes()` reconciles the runtime on every clip-lane change; a
+  monotonic load token guards against superseded async clip loads. Clips are loaded via
+  `Scene.loadRawGlb(media_id)` (raw GLTF, not added to the scene) and bound **by node name** —
+  relies on the shared `mixorig:*` naming so a clip's tracks resolve against the character's bones
+  directly (direct-bind first; `SkeletonUtils.retargetClip` is the documented fallback if a rig uses
+  different bone names — **not yet wired**, pending the runtime spike).
+- **Trigger UI (minimal, done)**: `comps/AnimationsDrawer/` — right-docked, only when a character is
+  selected (build mode; hidden via CSS in record). Click a clip → `addClipToCharacter` drops a lane
+  at the playhead. **Deferred until playback is verified**: drag-and-drop onto a specific timeline
+  lane, stacked clip-strip rendering in `TimelineEditor`, trim/move handles, clip-lane undo,
+  updating `strip.duration` from the loaded clip length, character-has-mixamo-rig validation.
+- **⚠️ Runtime unknown to verify first**: whether the demo clips and character rigs share
+  `mixamorig:*` bone names (→ direct bind works) or need retargeting. Verify a dropped clip actually
+  moves the character on scrub/play before building the drawer/DnD/strip UI.
+
 ### ⚠️ Unverified — compiles but NOT runtime-tested
 
 Everything in slices 1–3 has been validated **only** by `tsc -b` (both `pagescene` and

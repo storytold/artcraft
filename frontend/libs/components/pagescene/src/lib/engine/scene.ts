@@ -944,6 +944,25 @@ class Scene {
    * @param onComplete
    * @returns
    */
+  // Load a GLB by media id and return the raw GLTF (scene + animations)
+  // WITHOUT adding it to the scene or attaching a loading placeholder. Used to
+  // source skeletal animation clips (their `animations[0]`) for retargeting
+  // onto characters — the clip's own mesh/armature is never rendered.
+  async loadRawGlb(
+    media_id: string,
+    signal?: AbortSignal,
+  ): Promise<GLTF | null> {
+    try {
+      const url = await this.getMediaURL(media_id);
+      return await this.load_glb_wrapped_no_cors(url, () => {}, signal);
+    } catch (error) {
+      if ((error as { name?: string })?.name !== "AbortError") {
+        console.error("loadRawGlb failed:", media_id, error);
+      }
+      return null;
+    }
+  }
+
   private async load_glb_wrapped_no_cors(
     media_url: string,
     onComplete: () => void,

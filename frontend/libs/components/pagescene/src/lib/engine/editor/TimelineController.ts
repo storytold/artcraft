@@ -46,6 +46,10 @@ export class TimelineController {
     return this.timeline;
   }
 
+  getPlayhead(): number {
+    return this.playhead;
+  }
+
   // ─── lifecycle ────────────────────────────────────────────────────────
 
   create(): void {
@@ -68,6 +72,7 @@ export class TimelineController {
     this.saved = null;
     this.playhead = 0;
     this.isPlaying = false;
+    this.editor.characterAnimationManager.clear();
     this.emitChanged();
     this.emitPlayhead();
   }
@@ -87,6 +92,7 @@ export class TimelineController {
     if (!Array.isArray(this.timeline.clipLanes)) this.timeline.clipLanes = [];
     this.saved = cloneTimeline(this.timeline);
     this.playhead = Math.min(this.playhead, this.timeline.duration);
+    this.syncClipLanes();
     this.evaluate();
     this.emitChanged();
     this.emitPlayhead();
@@ -245,6 +251,7 @@ export class TimelineController {
       strip: { ...strip, id: THREE.MathUtils.generateUUID(), startTime },
     };
     this.timeline.clipLanes.push(lane);
+    this.syncClipLanes();
     this.evaluate();
     this.emitChanged();
     return lane.id;
@@ -258,6 +265,7 @@ export class TimelineController {
     if (!lane) return;
     const maxStart = Math.max(0, this.timeline.duration - lane.strip.duration);
     lane.strip.startTime = Math.max(0, Math.min(startTime, maxStart));
+    this.syncClipLanes();
     this.evaluate();
     this.emitChanged();
   }
@@ -267,6 +275,7 @@ export class TimelineController {
     this.timeline.clipLanes = this.timeline.clipLanes.filter(
       (l) => l.id !== laneId,
     );
+    this.syncClipLanes();
     this.evaluate();
     this.emitChanged();
   }
@@ -293,6 +302,7 @@ export class TimelineController {
   cancel(): void {
     if (!this.saved) return;
     this.timeline = cloneTimeline(this.saved);
+    this.syncClipLanes();
     this.evaluate();
     this.emitChanged();
     this.emitPlayhead();
@@ -326,6 +336,13 @@ export class TimelineController {
         );
       }
     }
+    // Pose characters from their skeletal clip lanes at the same playhead.
+    this.editor.characterAnimationManager.evaluateAt(this.playhead);
+  }
+
+  // Reconcile the skeletal-animation runtime whenever the clip-lane set changes.
+  private syncClipLanes(): void {
+    this.editor.characterAnimationManager.sync(this.timeline?.clipLanes ?? []);
   }
 
   private sortTrack(track: TimelineTrack): void {

@@ -21,6 +21,7 @@ import { SelectionBridge } from "./editor/SelectionBridge";
 import { CameraController } from "./editor/CameraController";
 import { HistoryManager } from "./editor/HistoryManager";
 import { TimelineController } from "./editor/TimelineController";
+import { CharacterAnimationManager } from "./animation/CharacterAnimationManager";
 import { DeleteAction } from "./editor/actions/DeleteAction";
 import { TransformAction } from "./editor/actions/TransformAction";
 
@@ -86,6 +87,9 @@ class Editor {
   cameraController: CameraController;
   // Owns the animation timeline + keyframe playback (evaluated per frame).
   timelineController: TimelineController;
+  // Drives skeletal (Mixamo) clip lanes onto characters, deterministically
+  // from the timeline playhead. See CharacterAnimationManager.
+  characterAnimationManager: CharacterAnimationManager;
   // Owns the undo/redo stack. Mutation sites push UndoableAction
   // instances via editor.history.record(...); each action class under
   // engine/editor/actions/ encapsulates its own apply/revert.
@@ -342,6 +346,7 @@ class Editor {
     // frame in renderSingleFrame() after the entrance animator. An empty
     // timeline always exists so the collapsed timeline bar (the sole
     // build-mode bottom UI) is functional; a loaded scene overrides it.
+    this.characterAnimationManager = new CharacterAnimationManager(this);
     this.timelineController = new TimelineController(this);
     this.timelineController.create();
 

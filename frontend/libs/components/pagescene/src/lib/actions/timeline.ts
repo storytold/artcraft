@@ -5,6 +5,11 @@
 
 import type Editor from "../engine/editor";
 import type { EasingSpec } from "../engine/timeline/types";
+import type { MediaItem } from "../models";
+
+// Placeholder strip length (seconds) until the clip GLB reports its real
+// duration; playback uses the loaded clip's actual length regardless.
+const DEFAULT_CLIP_DURATION = 2;
 
 export function createTimeline(editor: Editor): void {
   editor.timelineController.create();
@@ -52,6 +57,29 @@ export function setKeyframeEasing(
   easing: EasingSpec,
 ): void {
   editor.timelineController.setEasing(keyframeId, easing);
+}
+
+// Place a skeletal-animation clip (a Mixamo demo item) as a new stacked lane
+// under `characterUuid`, dropped at the current playhead. The real clip length
+// is resolved after the GLB loads; `length` here seeds the strip width only.
+export function addClipToCharacter(
+  editor: Editor,
+  characterUuid: string,
+  item: MediaItem,
+): string | null {
+  if (!item.media_id) return null;
+  const startTime = editor.timelineController.getPlayhead();
+  return editor.timelineController.addClipLane(characterUuid, {
+    sourceMediaId: item.media_id,
+    name: item.name ?? "Animation",
+    startTime,
+    duration: DEFAULT_CLIP_DURATION,
+    loop: false,
+  });
+}
+
+export function removeClipLane(editor: Editor, laneId: string): void {
+  editor.timelineController.removeClipLane(laneId);
 }
 
 export function saveTimeline(editor: Editor): void {
