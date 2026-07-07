@@ -16,7 +16,7 @@ import {
   usePageSceneStore,
   useIsVisitingOthersScene,
 } from "../../PageSceneStore";
-import { CameraAspectRatio, ToastTypes } from "../../enums";
+import { DEFAULT_CAMERA_ASPECT_RATIO, ToastTypes } from "../../enums";
 import { getSceneGenerationMetaData } from "../../sceneMetadata";
 import { LoadUserScenes } from "./LoadUserScenes";
 import { Help } from "./Help/Help";
@@ -54,7 +54,7 @@ export const ControlsTopButtons = () => {
 
   const handleResetScene = () => {
     editor?.cameraController.changeRenderCameraAspectRatio(
-      CameraAspectRatio.HORIZONTAL_3_2,
+      DEFAULT_CAMERA_ASPECT_RATIO,
     );
   };
 

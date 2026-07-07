@@ -6,6 +6,7 @@ import {
   AssetFilterOption,
   CameraAspectRatio,
   ClipGroup,
+  DEFAULT_CAMERA_ASPECT_RATIO,
   EditorStates,
 } from "./enums";
 import { MediaItem } from "./models";
@@ -181,6 +182,10 @@ interface PageSceneState {
   timelineDuration: number;
   timelineTracks: TimelineTrack[];
   timelineSelectedKeyframeId: string | null;
+  // Left keyframe of the segment whose easing curve is being edited in the
+  // Motion popover (opened from the curve chip BETWEEN two keyframes).
+  // Distinct from timelineSelectedKeyframeId, which drives selection/delete.
+  timelineEasingKeyframeId: string | null;
 
   // record output
   producedArtifact: ProducedArtifact | null;
@@ -286,6 +291,7 @@ interface PageSceneState {
   setTimelineDuration: (duration: number) => void;
   setTimelineTracks: (tracks: TimelineTrack[]) => void;
   setTimelineSelectedKeyframe: (id: string | null) => void;
+  setTimelineEasingKeyframe: (id: string | null) => void;
   setProducedArtifact: (artifact: ProducedArtifact | null) => void;
   clearProducedArtifact: () => void;
   setRecordingProgress: (progress: RecordingProgress | null) => void;
@@ -361,7 +367,7 @@ export const usePageSceneStore = create<PageSceneState>((set, get) => ({
 
   cameras: DEFAULT_CAMERAS,
   selectedCameraId: "main",
-  cameraAspectRatio: CameraAspectRatio.HORIZONTAL_3_2,
+  cameraAspectRatio: DEFAULT_CAMERA_ASPECT_RATIO,
   focalLengthDragging: { isDragging: false, focalLength: 35 },
   cameraFilter: AssetFilterOption.ALL,
 
@@ -380,6 +386,7 @@ export const usePageSceneStore = create<PageSceneState>((set, get) => ({
   timelineDuration: 10,
   timelineTracks: [],
   timelineSelectedKeyframeId: null,
+  timelineEasingKeyframeId: null,
   producedArtifact: null,
   recordingProgress: null,
   ignoreKeyDelete: false,
@@ -407,7 +414,7 @@ export const usePageSceneStore = create<PageSceneState>((set, get) => ({
 
   outlinerItems: [],
   outlinerSelectedItem: null,
-  outlinerShowing: false,
+  outlinerShowing: true,
 
   precisionSelectorShowing: false,
   precisionSelectorCoords: { x: 0, y: 0 },
@@ -485,6 +492,7 @@ export const usePageSceneStore = create<PageSceneState>((set, get) => ({
   setTimelineDuration: (duration) => set({ timelineDuration: duration }),
   setTimelineTracks: (tracks) => set({ timelineTracks: tracks }),
   setTimelineSelectedKeyframe: (id) => set({ timelineSelectedKeyframeId: id }),
+  setTimelineEasingKeyframe: (id) => set({ timelineEasingKeyframeId: id }),
   setProducedArtifact: (artifact) => set({ producedArtifact: artifact }),
   clearProducedArtifact: () =>
     set((s) => {

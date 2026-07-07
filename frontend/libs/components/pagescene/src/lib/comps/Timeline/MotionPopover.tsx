@@ -70,7 +70,8 @@ export const MotionPopover = ({ keyframe, leftPercent }: MotionPopoverProps) => 
 
   return (
     <div
-      className="glass glass-no-hover absolute bottom-full z-50 mb-2 w-[180px] -translate-x-1/2 rounded-2xl p-3 shadow-xl"
+      id="motion-popover"
+      className="glass glass-no-hover pointer-events-auto absolute bottom-full z-50 mb-2 w-[180px] -translate-x-1/2 select-none rounded-2xl p-3 shadow-xl backdrop-blur-md"
       style={{ left: `${Math.max(12, Math.min(88, leftPercent))}%` }}
       onMouseDown={(e) => e.stopPropagation()}
       onClick={(e) => e.stopPropagation()}

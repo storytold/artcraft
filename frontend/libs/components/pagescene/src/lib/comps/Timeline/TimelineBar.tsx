@@ -25,7 +25,7 @@ export const TimelineBar = ({ readOnly = false }: { readOnly?: boolean }) => {
 
   return (
     <div
-      className="glass glass-no-hover flex w-full items-center gap-3 rounded-2xl px-4 py-2 text-white shadow-xl"
+      className="glass glass-no-hover flex w-full select-none items-center gap-3 rounded-2xl px-4 py-2 text-white shadow-xl"
       onMouseDown={(e) => e.stopPropagation()}
       onClick={(e) => e.stopPropagation()}
     >

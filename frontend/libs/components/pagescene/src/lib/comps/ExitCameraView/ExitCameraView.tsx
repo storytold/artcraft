@@ -1,13 +1,16 @@
 import { useContext } from "react";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faArrowRightFromBracket } from "@fortawesome/pro-solid-svg-icons";
+import { twMerge } from "tailwind-merge";
 import { EngineContext } from "../../contexts/EngineContext";
 import { toggleCameraView } from "../../actions";
 import { usePageSceneStore } from "../../PageSceneStore";
 import { EditorStates } from "../../enums";
 
 // Shown only while looking through a render camera (CAMERA_VIEW). Exits back
-// to the free editing view. Text button is a dev placeholder — a proper icon
-// comes later.
-export const ExitCameraView = () => {
+// to the free editing view. Positionless by default — the host (Stage3DBody)
+// docks it next to the timeline bar via `className`.
+export const ExitCameraView = ({ className }: { className?: string }) => {
   const editor = useContext(EngineContext);
   const editorState = usePageSceneStore((s) => s.editorState);
   const sceneMode = usePageSceneStore((s) => s.sceneMode);
@@ -22,9 +25,13 @@ export const ExitCameraView = () => {
     <button
       type="button"
       onClick={() => editor && toggleCameraView(editor)}
-      className="absolute bottom-6 right-6 z-40 flex h-[72px] w-[72px] flex-col items-center justify-center rounded-full bg-brand-primary px-2 text-center text-[10px] font-semibold uppercase leading-tight tracking-wide text-white shadow-xl transition-transform hover:scale-105"
+      className={twMerge(
+        "flex h-11 items-center gap-2 whitespace-nowrap rounded-xl bg-brand-primary px-4 text-sm font-medium text-white shadow-xl transition-colors hover:bg-brand-primary/90",
+        className,
+      )}
     >
-      Exit Camera View
+      <FontAwesomeIcon icon={faArrowRightFromBracket} className="h-3.5 w-3.5" />
+      Exit
     </button>
   );
 };

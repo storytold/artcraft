@@ -2,7 +2,11 @@ import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import Scene from "./scene";
 import { PointerLockControls } from "three/addons/controls/PointerLockControls.js";
-import { CameraAspectRatio, ClipGroup } from "../enums";
+import {
+  CameraAspectRatio,
+  ClipGroup,
+  DEFAULT_CAMERA_ASPECT_RATIO,
+} from "../enums";
 import { SceneUtils } from "./helper";
 import { MouseControls } from "./keybinds_controls";
 import { SaveManager } from "./save_manager";
@@ -27,6 +31,7 @@ import { ensureAmmoLoaded } from "./ammoLoader";
 import { EngineEventBus } from "./events/EngineEventBus";
 import { EngineStoreBridge } from "./EngineStoreBridge";
 import {
+  CameraAspectRatioChangedEvent,
   EditorStateChangedEvent,
   EngineInitializedEvent,
   GridVisibleChangedEvent,
@@ -632,7 +637,9 @@ class Editor {
   }
 
   public isMovable(): boolean {
-    return this.focused;
+    // A locked viewport (record mode) blocks mouse-look entirely —
+    // playback is read-only, so the camera must not turn.
+    return this.focused && !this.cameraController.locked;
   }
 
   // Toggle the three.js Stats panel (FPS / ms / mb). Bound to the
@@ -718,6 +725,14 @@ class Editor {
     const originalRenderCameraAspect =
       renderCamera?.aspect || originalCameraAspect;
 
+    // The camera-view framing offset maps the render frame into an inset
+    // rect of the viewport canvas — it must not leak into the snapshot,
+    // which renders the frame full-bleed at the target resolution.
+    // CameraController.applyFrameProjection reapplies it afterwards.
+    if (camera.view?.enabled) {
+      camera.clearViewOffset();
+    }
+
     // Temporarily set renderer to high resolution
     this.renderer.setSize(targetWidth, targetHeight, false);
     this.renderer.setPixelRatio(1);
@@ -757,6 +772,10 @@ class Editor {
     // Restore original renderer size and pixel ratio
     this.renderer.setSize(originalWidth, originalHeight, false);
     this.renderer.setPixelRatio(originalPixelRatio);
+
+    // Reapply the camera-view framing offset (if active) before the
+    // restore render so the viewport doesn't flash an unframed frame.
+    this.cameraController.applyFrameProjection();
 
     // Re-render at original resolution
     if (this.postProcessing.composer) {
@@ -798,6 +817,14 @@ class Editor {
     this.activeScene.clear();
     this.cameraController.cam_obj = this.activeScene.get_object_by_name(
       this.cameraController.camera_name,
+    );
+    // Fresh scenes always start at the default aspect ratio — don't
+    // inherit whatever the previously loaded scene used.
+    this.cameraController.changeRenderCameraAspectRatio(
+      DEFAULT_CAMERA_ASPECT_RATIO,
+    );
+    this.bus.emit(
+      new CameraAspectRatioChangedEvent(DEFAULT_CAMERA_ASPECT_RATIO),
     );
     const sceneTitle =
       sceneTitleInput && sceneTitleInput !== ""

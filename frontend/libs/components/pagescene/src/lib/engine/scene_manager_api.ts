@@ -209,11 +209,15 @@ export class SceneManager implements SceneManagerAPI {
   ) {
     let faicon = faCube;
     let name = object.name;
+    // Human-readable kind shown as the outliner row's subtitle.
+    let kind = "3D Object";
     if (object.name == "::CAM::") {
       faicon = faCamera;
       name = "Camera";
+      kind = "Camera";
     } else if (object.uuid in timeline_characters) {
       faicon = faPerson;
+      kind = "Character";
     }
     let locked = object.userData["locked"];
     if (locked == undefined) {
@@ -223,7 +227,7 @@ export class SceneManager implements SceneManagerAPI {
       id: object.uuid,
       icon: faicon,
       name: name.charAt(0).toUpperCase() + name.slice(1),
-      type: object.type,
+      type: kind,
       visible: object.visible,
       locked: object.userData["locked"],
       isCamera: object.name == "::CAM::",

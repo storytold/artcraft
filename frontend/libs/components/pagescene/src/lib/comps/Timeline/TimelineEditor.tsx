@@ -1,4 +1,4 @@
-import { useContext, useRef } from "react";
+import { useContext, useEffect, useRef } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faPlay,
@@ -19,7 +19,14 @@ import {
   seekTimeline,
 } from "../../actions";
 import { usePageSceneStore } from "../../PageSceneStore";
-import { formatTimecode, fractionToTime, timeToFraction } from "./timelineUtils";
+import { DEFAULT_TIMELINE_FPS } from "../../engine/timeline/types";
+import {
+  formatTimecode,
+  formatTimecodeFrames,
+  fractionToTime,
+  quantizeToFrame,
+  timeToFraction,
+} from "./timelineUtils";
 import { TimelineTrackRow } from "./TimelineTrackRow";
 import { MotionPopover } from "./MotionPopover";
 import { DurationLabel } from "./DurationLabel";
@@ -32,28 +39,108 @@ const LANE_RIGHT = "2.5rem";
 export const TimelineEditor = () => {
   const editor = useContext(EngineContext);
   const rulerRef = useRef<HTMLDivElement>(null);
+  const isScrubbing = useRef(false);
 
   const tracks = usePageSceneStore((s) => s.timelineTracks);
   const duration = usePageSceneStore((s) => s.timelineDuration);
   const playhead = usePageSceneStore((s) => s.timelinePlayhead);
   const isPlaying = usePageSceneStore((s) => s.timelineIsPlaying);
   const outlinerItems = usePageSceneStore((s) => s.outlinerItems);
-  const selectedObject = usePageSceneStore((s) => s.selectedObject);
   const selectedKeyframeId = usePageSceneStore(
     (s) => s.timelineSelectedKeyframeId,
   );
   const setExpanded = usePageSceneStore((s) => s.setTimelineExpanded);
 
-  // Rows: any object with keyframes, plus the currently-selected object so
-  // you can always add its first keyframe.
+  // Every scene object gets a track row (empty lanes included), so the
+  // editor never looks blank while the scene has content — no selection
+  // required to see where keyframes can go.
   const trackByUuid = new Map(tracks.map((t) => [t.objectUuid, t]));
-  const rows = outlinerItems.filter(
-    (item) => trackByUuid.has(item.id) || item.id === selectedObject?.id,
-  );
+  const rows = outlinerItems;
 
   const selectedKeyframe = tracks
     .flatMap((t) => t.keyframes)
     .find((k) => k.id === selectedKeyframeId);
+
+  // The Motion popover edits the easing of the segment BETWEEN two
+  // keyframes (stored on the left one) and anchors at the segment midpoint.
+  const easingKeyframeId = usePageSceneStore((s) => s.timelineEasingKeyframeId);
+  let easingAnchor: {
+    keyframe: (typeof tracks)[number]["keyframes"][number];
+    leftPercent: number;
+  } | null = null;
+  if (easingKeyframeId) {
+    for (const track of tracks) {
+      const sorted = [...track.keyframes].sort((a, b) => a.time - b.time);
+      const index = sorted.findIndex((k) => k.id === easingKeyframeId);
+      if (index === -1) continue;
+      if (index < sorted.length - 1) {
+        const mid = (sorted[index].time + sorted[index + 1].time) / 2;
+        easingAnchor = {
+          keyframe: sorted[index],
+          leftPercent: timeToFraction(mid, duration) * 100,
+        };
+      }
+      break;
+    }
+  }
+
+  // Selected keyframe: Delete/Backspace removes it (capture phase, so the
+  // engine's document-level Delete — which deletes the selected scene
+  // object — never sees the key), and clicking anywhere that isn't a
+  // keyframe or the Delete button deselects it.
+  useEffect(() => {
+    if (!selectedKeyframeId) return undefined;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== "Delete" && e.key !== "Backspace") return;
+      const target = e.target as HTMLElement | null;
+      if (
+        target instanceof HTMLInputElement ||
+        target instanceof HTMLTextAreaElement ||
+        target?.isContentEditable
+      ) {
+        return;
+      }
+      e.preventDefault();
+      e.stopPropagation();
+      if (editor) deleteKeyframe(editor, selectedKeyframeId);
+      usePageSceneStore.getState().setTimelineSelectedKeyframe(null);
+    };
+    const onPointerDown = (e: PointerEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (
+        target?.closest("[data-keyframe]") ||
+        target?.closest("[data-keyframe-delete]")
+      ) {
+        return;
+      }
+      usePageSceneStore.getState().setTimelineSelectedKeyframe(null);
+    };
+    document.addEventListener("keydown", onKeyDown, true);
+    document.addEventListener("pointerdown", onPointerDown, true);
+    return () => {
+      document.removeEventListener("keydown", onKeyDown, true);
+      document.removeEventListener("pointerdown", onPointerDown, true);
+    };
+  }, [selectedKeyframeId, editor]);
+
+  // Clicking anywhere outside the popover (canvas included) dismisses it;
+  // the easing chips opt out so they can toggle it themselves.
+  useEffect(() => {
+    if (!easingKeyframeId) return undefined;
+    const onPointerDown = (e: PointerEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (
+        target?.closest("#motion-popover") ||
+        target?.closest("[data-easing-chip]")
+      ) {
+        return;
+      }
+      usePageSceneStore.getState().setTimelineEasingKeyframe(null);
+    };
+    document.addEventListener("pointerdown", onPointerDown, true);
+    return () =>
+      document.removeEventListener("pointerdown", onPointerDown, true);
+  }, [easingKeyframeId]);
 
   const playheadFraction = timeToFraction(playhead, duration);
 
@@ -63,17 +150,29 @@ export const TimelineEditor = () => {
     else playTimeline(editor);
   };
 
+  // The timeline runs on a frame grid (what Record encodes at).
+  const fps = editor?.timelineController.getTimeline()?.fps ?? DEFAULT_TIMELINE_FPS;
+
+  // Scrubbing follows the pointer 1:1 (no magnetism toward keyframes),
+  // quantized to the frame grid so times are never arbitrary floats.
   const seekFromRuler = (clientX: number) => {
     const ruler = rulerRef.current;
     if (!ruler || !editor) return;
     const rect = ruler.getBoundingClientRect();
     pauseTimeline(editor);
-    seekTimeline(editor, fractionToTime((clientX - rect.left) / rect.width, duration));
+    seekTimeline(
+      editor,
+      quantizeToFrame(
+        fractionToTime((clientX - rect.left) / rect.width, duration),
+        fps,
+      ),
+    );
   };
 
   return (
     <div
-      className="glass glass-no-hover absolute bottom-4 left-1/2 w-[90vw] max-w-5xl -translate-x-1/2 rounded-2xl p-3 text-white shadow-xl"
+      id="timeline-editor"
+      className="glass glass-no-hover absolute bottom-4 left-1/2 w-[90vw] max-w-5xl -translate-x-1/2 select-none rounded-2xl p-3 text-white shadow-xl"
       onMouseDown={(e) => e.stopPropagation()}
       onClick={(e) => e.stopPropagation()}
     >
@@ -92,7 +191,10 @@ export const TimelineEditor = () => {
           onClick={togglePlay}
           className="flex h-7 w-7 items-center justify-center rounded-full text-base-fg/90 hover:bg-white/10"
         >
-          <FontAwesomeIcon icon={isPlaying ? faPause : faPlay} className="h-3.5 w-3.5" />
+          <FontAwesomeIcon
+            icon={isPlaying ? faPause : faPlay}
+            className="h-3.5 w-3.5"
+          />
         </button>
         <button
           type="button"
@@ -103,7 +205,7 @@ export const TimelineEditor = () => {
           <FontAwesomeIcon icon={faForwardStep} className="h-3.5 w-3.5" />
         </button>
         <span className="ml-2 tabular-nums text-xs text-base-fg/60">
-          {formatTimecode(playhead)} / {formatTimecode(duration)}
+          {formatTimecodeFrames(playhead, fps)} / {formatTimecode(duration)}
         </span>
         <button
           type="button"
@@ -121,8 +223,21 @@ export const TimelineEditor = () => {
           <div className="w-32 shrink-0" />
           <div
             ref={rulerRef}
-            className="relative h-5 flex-1 cursor-pointer text-[10px] text-base-fg/50"
-            onClick={(e) => seekFromRuler(e.clientX)}
+            className="relative h-5 flex-1 cursor-pointer touch-none text-[10px] text-base-fg/50"
+            onPointerDown={(e) => {
+              isScrubbing.current = true;
+              e.currentTarget.setPointerCapture(e.pointerId);
+              seekFromRuler(e.clientX);
+            }}
+            onPointerMove={(e) => {
+              if (isScrubbing.current) seekFromRuler(e.clientX);
+            }}
+            onPointerUp={() => {
+              isScrubbing.current = false;
+            }}
+            onPointerCancel={() => {
+              isScrubbing.current = false;
+            }}
           >
             <span className="absolute left-0">{formatTimecode(0)}</span>
             <span className="absolute left-1/2 -translate-x-1/2">
@@ -135,20 +250,27 @@ export const TimelineEditor = () => {
 
         {rows.length === 0 ? (
           <div className="py-6 text-center text-xs text-base-fg/40">
-            Select an object, then add a keyframe to start animating.
+            Add objects to the scene to start animating.
           </div>
         ) : (
-          rows.map((item) => (
-            <TimelineTrackRow
-              key={item.id}
-              item={item}
-              track={trackByUuid.get(item.id)}
-              duration={duration}
-            />
-          ))
+          /* Cap at ~3.5 rows (row = 36px lane + 8px padding) so the panel
+             stays compact; the half row hints that the list scrolls. The
+             scrollbar is hidden so the lanes keep the exact same width as
+             the ruler — a visible scrollbar would shift keyframes out of
+             alignment with the ruler-driven playhead. */
+          <div className="max-h-[154px] overflow-y-auto overscroll-contain [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+            {rows.map((item) => (
+              <TimelineTrackRow
+                key={item.id}
+                item={item}
+                track={trackByUuid.get(item.id)}
+                duration={duration}
+              />
+            ))}
+          </div>
         )}
 
-        {/* playhead line over the lane area */}
+        {/* playhead (diamond handle in the ruler + line over the lanes) */}
         <div
           className="pointer-events-none absolute inset-y-0"
           style={{ left: LANE_LEFT, right: LANE_RIGHT }}
@@ -157,32 +279,50 @@ export const TimelineEditor = () => {
             className="absolute inset-y-0 w-px bg-white"
             style={{ left: `${playheadFraction * 100}%` }}
           />
+          <div
+            className="absolute top-0 h-2.5 w-2.5 -translate-x-1/2 rotate-45 rounded-[2px] bg-white"
+            style={{ left: `${playheadFraction * 100}%` }}
+          />
         </div>
 
-        {selectedKeyframe && (
-          <MotionPopover
-            keyframe={selectedKeyframe}
-            leftPercent={timeToFraction(selectedKeyframe.time, duration) * 100}
-          />
+        {/* Anchor the popover in the lane area (same geometry as the
+            playhead overlay) so its left % lines up with the easing chip. */}
+        {easingAnchor && (
+          <div
+            className="pointer-events-none absolute inset-y-0"
+            style={{ left: LANE_LEFT, right: LANE_RIGHT }}
+          >
+            <MotionPopover
+              keyframe={easingAnchor.keyframe}
+              leftPercent={easingAnchor.leftPercent}
+            />
+          </div>
         )}
       </div>
 
       {/* footer */}
       <div className="mt-3 flex items-center justify-between gap-2">
-        <span className="text-[11px] text-base-fg/40">
+        <span className="ms-2 text-[11px] text-base-fg/40">
           Each diamond stores an object's full position, rotation and scale at
           that moment. Tap a diamond to jump to it.
         </span>
         <div className="flex items-center gap-2">
           {selectedKeyframe && (
-            <Button
-              variant="secondary"
-              icon={faTrash}
-              className="flex h-9 items-center border border-ui-controls-border bg-ui-controls/60 px-3 text-sm text-base-fg hover:bg-ui-controls/90"
-              onClick={() => editor && deleteKeyframe(editor, selectedKeyframe.id)}
-            >
-              Delete
-            </Button>
+            /* data-keyframe-delete: exempt from the click-away deselect —
+               pointerdown would otherwise clear the selection before this
+               button's click fires. */
+            <div data-keyframe-delete>
+              <Button
+                variant="secondary"
+                icon={faTrash}
+                className="flex h-9 items-center border border-ui-controls-border bg-ui-controls/60 px-3 text-sm text-base-fg hover:bg-ui-controls/90"
+                onClick={() =>
+                  editor && deleteKeyframe(editor, selectedKeyframe.id)
+                }
+              >
+                Delete
+              </Button>
+            </div>
           )}
           <Button
             variant="secondary"

@@ -227,9 +227,29 @@ export class TimelineController {
 
   private evaluate(): void {
     if (!this.timeline) return;
+    const cameraController = this.editor.cameraController;
     for (const track of this.timeline.tracks) {
       const snap = sampleTrackAt(track, this.playhead);
-      if (snap) writeTransform(this.editor, track.objectUuid, snap);
+      if (!snap) continue;
+      writeTransform(this.editor, track.objectUuid, snap);
+      // In camera view the canvas renders through the viewport camera and
+      // CameraController.tickPerFrame copies camera → cam_obj (the user's
+      // flying drives the proxy). Timeline-driven camera motion goes the
+      // other way, so mirror it onto the viewport camera here — otherwise
+      // playback/scrubbing shows no movement while looking through the
+      // camera (it's only visible as the frustum moving in viewport mode).
+      if (
+        cameraController.getCameraPersonMode() &&
+        cameraController.cam_obj?.uuid === track.objectUuid &&
+        cameraController.camera
+      ) {
+        cameraController.camera.position.copy(
+          cameraController.cam_obj.position,
+        );
+        cameraController.camera.rotation.copy(
+          cameraController.cam_obj.rotation,
+        );
+      }
     }
   }
 

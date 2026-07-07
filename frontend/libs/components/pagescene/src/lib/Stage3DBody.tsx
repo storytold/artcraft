@@ -38,12 +38,12 @@ import {
   useCostBreakdownModalStore,
 } from "@storyteller/ui-pricing-modal";
 import { LoadingDots } from "@storyteller/ui-loading";
-import { commonToCameraAspect } from "@storyteller/ui-promptbox";
 import type { PopoverItem } from "@storyteller/ui-popover";
 import { v4 as uuidv4 } from "uuid";
 
 import { EngineContext } from "./contexts/EngineContext/EngineContext";
 import { AnonHintChip } from "./comps/AnonHintChip";
+import { AspectRatioMenu } from "./comps/AspectRatioMenu";
 import { ControlPanelSceneObject } from "./comps/ControlPanelSceneObject";
 import { Controls3D } from "./comps/Controls3D";
 import { SceneModePill } from "./comps/SceneModePill";
@@ -63,7 +63,7 @@ import { CompletionModal } from "./comps/CompletionModal";
 import { PreviewBox } from "./comps/PreviewBox";
 import { PreviewEngineCamera } from "./comps/PreviewEngineCamera";
 import { SceneContainer } from "./comps/SceneContainer";
-import { addCharacter, addObject, setCameraAspect, createTimeline } from "./actions";
+import { addCharacter, addObject } from "./actions";
 import { TimelineBar, TimelineEditor } from "./comps/Timeline";
 import { useEditorCanvas } from "./hooks/useEditorCanvas";
 import { useFreeCam } from "./hooks/useFreeCam";
@@ -381,28 +381,6 @@ export const Stage3DBody = ({
     }
   };
 
-  const onAspectRatioSelect = (newRatio: CameraAspectRatio) => {
-    if (!editor) return;
-    setCameraAspect(editor, newRatio);
-  };
-
-  // Cold-load sync: align the editor letterbox with the picker's
-  // initial display once when the engine + a `supportsNewAspectRatio()`
-  // model are both ready. Per-model-switch sync is intentionally NOT
-  // done because every model defaults to Square, which would override
-  // the user's pick.
-  const didColdSyncRef = useRef(false);
-  useEffect(() => {
-    if (didColdSyncRef.current) return;
-    if (!editor || !selectedImageModel?.supportsNewAspectRatio()) return;
-    const def = selectedImageModel.defaultAspectRatio;
-    if (!def) return;
-    const mapped = commonToCameraAspect(def);
-    if (!mapped) return;
-    setCameraAspect(editor, mapped);
-    didColdSyncRef.current = true;
-  }, [editor, selectedImageModel]);
-
   // Gallery → 3D scene drop handler. Stage3D mounts only when 3D is
   // active so this is implicitly 3D-only.
   useEffect(() => {
@@ -481,7 +459,6 @@ export const Stage3DBody = ({
             {import.meta.env.DEV && <EntranceDebugPanel />}
             <FocalLengthDisplay />
             <PoseModeSelector />
-            <ExitCameraView />
             <RenderOverlay />
             <CompletionModal />
 
@@ -492,11 +469,6 @@ export const Stage3DBody = ({
               <div className="grid grid-cols-3 gap-4">
                 <div className="flex flex-col items-start gap-2">
                   {!isRecord && <ControlsTopButtons />}
-                  {!isRecord && (
-                    <div className="pl-3">
-                      <CameraStatusPill />
-                    </div>
-                  )}
                   {!isRecord && topBarStartSlot && (
                     <div className="pl-3">{topBarStartSlot}</div>
                   )}
@@ -508,10 +480,24 @@ export const Stage3DBody = ({
                   )}
                 </div>
                 <div className="flex items-start justify-end gap-2 pr-3 pt-3">
+                  {/* Camera cluster: which camera drives the viewport +
+                      the render-frame aspect ratio. */}
+                  {!isRecord && <CameraStatusPill />}
+                  {!isRecord && <AspectRatioMenu />}
                   {!isRecord && topBarEndSlot}
                   {!isRecord && <AnonHintChip />}
                 </div>
               </div>
+            </div>
+
+            {/* Outliner: vertically centered against the viewport. Sized in
+                vh — deliberately independent of the camera aspect ratio. */}
+            <div
+              className={`absolute left-4 top-1/2 -translate-y-1/2${
+                isRecord ? " hidden" : ""
+              }`}
+            >
+              <Outliner />
             </div>
 
             <div
@@ -528,7 +514,6 @@ export const Stage3DBody = ({
                 }`}
                 style={{ transform: `scale(${getScale()})` }}
               >
-                <Outliner />
                 <PreviewEngineCamera />
               </div>
 
@@ -538,13 +523,20 @@ export const Stage3DBody = ({
             {isVisitingOthersScene && <PreviewBox imageUrl={previewImageUrl} />}
 
             {/* Build mode: the animation timeline is the sole bottom UI —
-                collapsed bar by default, expanded editor via the chevron. */}
+                collapsed bar by default, expanded editor via the chevron.
+                The exit-camera-view button docks to the bar's right edge. */}
             {!isRecord && !timelineExpanded && (
               <div className="absolute bottom-4 left-1/2 w-[90vw] max-w-3xl -translate-x-1/2">
                 <TimelineBar />
+                <ExitCameraView className="absolute -right-2 top-1/2 -translate-y-1/2 translate-x-full" />
               </div>
             )}
-            {!isRecord && timelineExpanded && <TimelineEditor />}
+            {!isRecord && timelineExpanded && (
+              <>
+                <TimelineEditor />
+                <ExitCameraView className="absolute bottom-4 right-4" />
+              </>
+            )}
 
             {isRecord && <RecordControls />}
 
