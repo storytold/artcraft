@@ -22,15 +22,15 @@ impl ArtcraftVeo3p1FastCostState {
   }
 
   pub fn estimate_cost(&self) -> VideoGenerationCostEstimate {
-    // Mirrors fal_client veo_3p1_fast: $0.10/sec audio off, $0.15/sec audio on;
-    // 4K renders bill a premium: $0.30/sec audio off, $0.35/sec audio on.
-    let per_second_cents: u64 = match (self.is_4k, self.generate_audio) {
-      (false, false) => 10,
-      (false, true) => 15,
-      (true, false) => 30,
-      (true, true) => 35,
+    // Per-second rates in hundredths of a US cent; 4K renders bill a premium.
+    let rate_hundredth_cents: u64 = match (self.is_4k, self.generate_audio) {
+      (false, false) => 1_100,
+      (false, true) => 1_650,
+      (true, false) => 3_300,
+      (true, true) => 3_850,
     };
-    let cost_in_usd_cents = per_second_cents * self.duration_seconds;
+    // Round up to the next whole cent.
+    let cost_in_usd_cents = (rate_hundredth_cents * self.duration_seconds).div_ceil(100);
 
     VideoGenerationCostEstimate {
       cost_in_credits: Some(cost_in_usd_cents),
@@ -73,35 +73,35 @@ mod tests {
   }
 
   #[test]
-  fn audio_on_4s_is_60() { assert_eq!(cost_cents(Some(4), Some(true)), 60); }
+  fn audio_on_4s_is_66() { assert_eq!(cost_cents(Some(4), Some(true)), 66); }
 
   #[test]
-  fn audio_on_6s_is_90() { assert_eq!(cost_cents(Some(6), Some(true)), 90); }
+  fn audio_on_6s_is_99() { assert_eq!(cost_cents(Some(6), Some(true)), 99); }
 
   #[test]
-  fn audio_on_8s_is_120() { assert_eq!(cost_cents(Some(8), Some(true)), 120); }
+  fn audio_on_8s_is_132() { assert_eq!(cost_cents(Some(8), Some(true)), 132); }
 
   #[test]
-  fn audio_off_4s_is_40() { assert_eq!(cost_cents(Some(4), Some(false)), 40); }
+  fn audio_off_4s_is_44() { assert_eq!(cost_cents(Some(4), Some(false)), 44); }
 
   #[test]
   fn default_duration_is_6s() {
-    assert_eq!(cost_cents(None, Some(true)), 90);
+    assert_eq!(cost_cents(None, Some(true)), 99);
   }
 
   #[test]
   fn audio_default_is_on() {
-    assert_eq!(cost_cents(Some(6), None), 90);
+    assert_eq!(cost_cents(Some(6), None), 99);
   }
 
   #[test]
-  fn four_k_audio_off_4s_is_120() {
-    assert_eq!(cost_cents_at(Some(4), Some(false), Some(RouterResolution::FourK)), 120);
+  fn four_k_audio_off_4s_is_132() {
+    assert_eq!(cost_cents_at(Some(4), Some(false), Some(RouterResolution::FourK)), 132);
   }
 
   #[test]
-  fn four_k_audio_on_4s_is_140() {
-    assert_eq!(cost_cents_at(Some(4), Some(true), Some(RouterResolution::FourK)), 140);
+  fn four_k_audio_on_4s_is_154() {
+    assert_eq!(cost_cents_at(Some(4), Some(true), Some(RouterResolution::FourK)), 154);
   }
 
   #[test]

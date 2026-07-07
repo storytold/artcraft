@@ -5,7 +5,7 @@ use crate::generate::generate_video::providers::artcraft::vidu_q3::request::Artc
 
 /// Per-second rates in hundredths of a US cent.
 const LOW_RES_RATE_HUNDREDTH_CENTS_PER_SEC: u64 = 735;
-const HIGH_RES_RATE_HUNDREDTH_CENTS_PER_SEC: u64 = 1_617;
+const HIGH_RES_RATE_HUNDREDTH_CENTS_PER_SEC: u64 = 1_634;
 
 #[derive(Clone, Debug)]
 pub struct ArtcraftViduQ3CostState {
@@ -84,13 +84,13 @@ mod tests {
   }
 
   #[test]
-  fn default_resolution_5s_is_81() { assert_eq!(cost_cents(Some(5), None), 81); }
+  fn default_resolution_5s_is_82() { assert_eq!(cost_cents(Some(5), None), 82); }
 
   #[test]
-  fn default_duration_is_5s() { assert_eq!(cost_cents(None, None), 81); }
+  fn default_duration_is_5s() { assert_eq!(cost_cents(None, None), 82); }
 
   #[test]
-  fn high_res_10s_is_162() { assert_eq!(cost_cents(Some(10), Some(RouterResolution::TenEightyP)), 162); }
+  fn high_res_10s_is_164() { assert_eq!(cost_cents(Some(10), Some(RouterResolution::TenEightyP)), 164); }
 
   #[test]
   fn low_res_5s_is_37() { assert_eq!(cost_cents(Some(5), Some(RouterResolution::FourEightyP)), 37); }
@@ -100,13 +100,13 @@ mod tests {
 
   #[test]
   fn seven_twenty_p_is_high_res_tier() {
-    assert_eq!(cost_cents(Some(8), Some(RouterResolution::SevenTwentyP)), 130);
+    assert_eq!(cost_cents(Some(8), Some(RouterResolution::SevenTwentyP)), 131);
   }
 
   #[test]
   fn odd_duration_rounds_up_to_whole_cents() {
-    // 7s high res: 1617 * 7 = 11319 hundredth-cents → 114 cents.
-    assert_eq!(cost_cents(Some(7), None), 114);
+    // 7s high res: 1634 * 7 = 11438 hundredth-cents → 115 cents.
+    assert_eq!(cost_cents(Some(7), None), 115);
   }
 
   #[test]

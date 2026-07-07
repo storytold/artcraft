@@ -15,10 +15,8 @@ impl ArtcraftVeo3FastCostState {
   }
 
   pub fn estimate_cost(&self) -> VideoGenerationCostEstimate {
-    // Mirrors fal_client veo_3_fast: $0.10/sec audio off, $0.15/sec audio on.
-    // Legacy handler always bills 8s.
-    let per_second_cents: u64 = if self.generate_audio { 15 } else { 10 };
-    let cost_in_usd_cents = per_second_cents * 8;
+    // Flat per-video price: 88¢ audio off, 132¢ audio on.
+    let cost_in_usd_cents: u64 = if self.generate_audio { 132 } else { 88 };
 
     VideoGenerationCostEstimate {
       cost_in_credits: Some(cost_in_usd_cents),
@@ -51,22 +49,22 @@ mod tests {
   }
 
   #[test]
-  fn audio_off_is_80() { assert_eq!(cost_cents(Some(8), Some(false)), 80); }
+  fn audio_off_is_88() { assert_eq!(cost_cents(Some(8), Some(false)), 88); }
 
   #[test]
-  fn audio_on_is_120() { assert_eq!(cost_cents(Some(8), Some(true)), 120); }
+  fn audio_on_is_132() { assert_eq!(cost_cents(Some(8), Some(true)), 132); }
 
   #[test]
   fn audio_default_is_off() {
-    assert_eq!(cost_cents(Some(8), None), 80);
+    assert_eq!(cost_cents(Some(8), None), 88);
   }
 
   #[test]
   fn duration_does_not_affect_cost() {
     // v1 always bills 8s regardless of duration_seconds.
-    assert_eq!(cost_cents(Some(4), Some(false)), 80);
-    assert_eq!(cost_cents(Some(6), Some(false)), 80);
-    assert_eq!(cost_cents(Some(8), Some(false)), 80);
-    assert_eq!(cost_cents(None, Some(false)), 80);
+    assert_eq!(cost_cents(Some(4), Some(false)), 88);
+    assert_eq!(cost_cents(Some(6), Some(false)), 88);
+    assert_eq!(cost_cents(Some(8), Some(false)), 88);
+    assert_eq!(cost_cents(None, Some(false)), 88);
   }
 }
