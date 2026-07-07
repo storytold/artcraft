@@ -20,6 +20,25 @@ export type {
 } from "./engine/timeline/types";
 import type { TimelineTrack } from "./engine/timeline/types";
 
+// A still (Capture) or video (Record) produced by Record mode, cached
+// locally (object URL) before any upload. Powers the completion modal's
+// preview/playback and the 2D/video handoff.
+export interface ProducedArtifact {
+  kind: "image" | "video";
+  blob: Blob;
+  objectUrl: string;
+  fileName: string;
+  mimeType: string;
+  aspectRatio: CameraAspectRatio;
+}
+
+// Progress of an in-flight Capture/Record so the RenderOverlay can cover the
+// viewport (freeing GPU) and show progress while frames encode.
+export interface RecordingProgress {
+  phase: "capturing" | "encoding";
+  pct: number; // 0..1
+}
+
 // Scene metadata — what host tracks in its `signalScene`. Mirrored
 // into the store so ControlsTopButtons (lib-resident) can read it
 // reactively. Host calls `setSceneMeta` whenever its signal changes.
@@ -87,7 +106,6 @@ export interface SelectedSceneObject {
 }
 
 export type SceneMode = "build" | "record";
-export type BuildMode = "manual" | "prompted";
 export type TransformMode = "move" | "rotate" | "scale";
 export type TransformSpace = "world" | "local";
 export type PoseMode = "select" | "pose";
@@ -144,7 +162,6 @@ interface PageSceneState {
 
   // editor mode
   sceneMode: SceneMode;
-  buildMode: BuildMode;
   editorState: EditorStates;
   transformMode: TransformMode;
   transformSpace: TransformSpace;
@@ -164,6 +181,10 @@ interface PageSceneState {
   timelineDuration: number;
   timelineTracks: TimelineTrack[];
   timelineSelectedKeyframeId: string | null;
+
+  // record output
+  producedArtifact: ProducedArtifact | null;
+  recordingProgress: RecordingProgress | null;
 
   // layout / panels
   assetModalVisible: boolean;
@@ -251,7 +272,6 @@ interface PageSceneState {
 
   // editor mode
   setSceneMode: (mode: SceneMode) => void;
-  setBuildMode: (mode: BuildMode) => void;
   setEditorState: (state: EditorStates) => void;
   setTransformMode: (mode: TransformMode) => void;
   setTransformSpace: (space: TransformSpace) => void;
@@ -266,6 +286,9 @@ interface PageSceneState {
   setTimelineDuration: (duration: number) => void;
   setTimelineTracks: (tracks: TimelineTrack[]) => void;
   setTimelineSelectedKeyframe: (id: string | null) => void;
+  setProducedArtifact: (artifact: ProducedArtifact | null) => void;
+  clearProducedArtifact: () => void;
+  setRecordingProgress: (progress: RecordingProgress | null) => void;
   toggleStats: () => void;
   setIgnoreKeyDelete: (ignore: boolean) => void;
   disableHotkeyInput: (level: DomLevels) => void;
@@ -344,7 +367,6 @@ export const usePageSceneStore = create<PageSceneState>((set, get) => ({
 
   editorState: EditorStates.EDIT,
   sceneMode: "build",
-  buildMode: "manual",
   transformMode: "move",
   transformSpace: "world",
   selectedMode: "move",
@@ -358,6 +380,8 @@ export const usePageSceneStore = create<PageSceneState>((set, get) => ({
   timelineDuration: 10,
   timelineTracks: [],
   timelineSelectedKeyframeId: null,
+  producedArtifact: null,
+  recordingProgress: null,
   ignoreKeyDelete: false,
   hotkeyStatus: { disabled: false, disabledBy: DomLevels.NONE },
   isPromptBoxFocused: false,
@@ -447,7 +471,6 @@ export const usePageSceneStore = create<PageSceneState>((set, get) => ({
 
   // editor mode actions
   setSceneMode: (mode) => set({ sceneMode: mode }),
-  setBuildMode: (mode) => set({ buildMode: mode }),
   setEditorState: (state) => set({ editorState: state }),
   setTransformMode: (mode) => set({ transformMode: mode }),
   setTransformSpace: (space) => set({ transformSpace: space }),
@@ -462,6 +485,13 @@ export const usePageSceneStore = create<PageSceneState>((set, get) => ({
   setTimelineDuration: (duration) => set({ timelineDuration: duration }),
   setTimelineTracks: (tracks) => set({ timelineTracks: tracks }),
   setTimelineSelectedKeyframe: (id) => set({ timelineSelectedKeyframeId: id }),
+  setProducedArtifact: (artifact) => set({ producedArtifact: artifact }),
+  clearProducedArtifact: () =>
+    set((s) => {
+      if (s.producedArtifact) URL.revokeObjectURL(s.producedArtifact.objectUrl);
+      return { producedArtifact: null };
+    }),
+  setRecordingProgress: (progress) => set({ recordingProgress: progress }),
   toggleStats: () => set((s) => ({ statsVisible: !s.statsVisible })),
   setIgnoreKeyDelete: (ignore) => set({ ignoreKeyDelete: ignore }),
   disableHotkeyInput: (level) => {

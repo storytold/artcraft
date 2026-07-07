@@ -2,6 +2,16 @@
 
 Guidance for working in the `pagescene` library — the 3D editor (a.k.a. "pagescene" / "Stage3D").
 
+## ⚠️ Engine-canvas mounting invariant (footgun)
+
+`EngineProvider`'s editor-construction effect depends on three DOM nodes: `sceneContainer`,
+`editorCanvas`, and **`camViewCanvas`** (owned by `PreviewEngineCamera` → `CameraViewCanvas`).
+If ANY of these unmounts, the effect tears down + recreates the whole `Editor` (serializing to
+cache, then reloading) — which wipes a fresh/unsaved scene. **Never conditionally unmount the
+components that host these canvases** (`SceneContainer`, `EditorCanvas`, `PreviewEngineCamera`)
+for mode/chrome gating — hide them with CSS (`hidden`) instead. (Regression fixed: record mode
+had gated `PreviewEngineCamera` behind `!isRecord`, wiping the scene on record→build toggle.)
+
 ## Architecture (existing, do not rebuild)
 
 Strict one-way data flow. Do not violate it.
@@ -37,6 +47,55 @@ A segmented toggle at top-center (above the `Controls3D` toolbar) with two modes
 Rule: a scene with **no animations/keyframes (static)** defaults to **Build**.
 
 This mode does not exist in code today. It needs a new store field (e.g. `sceneMode: "build" | "record"`) and a new component rendered in `Stage3DBody`. Distinct from the existing `editorState` enum (`EDIT` | `CAMERA_VIEW`), which is a different axis — don't overload it.
+
+### Spec revision — 3D delegates generation to 2D/Video (branch `feature/scene-builder`)
+
+The 3D editor no longer generates. It composes; 2D (pagedraw) and the video experiences generate.
+
+- **Build promptbox is now the scene-builder/MCP tool only** — `comps/SceneBuilderPromptBox/`
+  replaced `PromptBox3D` in `Stage3DBody` (the Manual/Prompted toggle + `buildMode` store field are
+  gone; `PromptBox3D` is no longer mounted by 3D). Update is still an MCP stub (records prompt +
+  history on the engine). Hosts the collapsed `TimelineBar` + Add-animation-timeline affordance.
+- **Record mode = Capture (still) / Record (timeline → video)**:
+  - `engine/recording/TimelineRecorder.ts` — deterministic `seekTo`→`renderScene`→`CanvasSource.add`
+    encode via **mediabunny** (already a dep). Capture reuses `snapShotOfCurrentFrame(false)`.
+  - `comps/RenderOverlay/` (opaque `LoadingDots` + progress) covers the viewport while encoding.
+  - Output cached locally as `producedArtifact` in the store (`{kind, blob, objectUrl, ...}`) — no
+    upload from 3D.
+- **`comps/CompletionModal/`** — preview hub: image full-preview / video playback + **Delete**
+  (revokes URL), **Upload** (`adapter.uploadMedia` → library token), **Edit** → 2D for images,
+  Create-Video / Video-editor for videos.
+- **Adapter handoff (new)** in `adapter.ts`: `openImageInEditor`, `openVideoInEditor(target)`,
+  `uploadMedia` + `PageSceneArtifact`. Host-wired in `apps/artcraft-webapp/.../pagescene` :
+  image → eager-upload + `applyEditOnCanvasFromImage` (`/edit-image`); video "generate" →
+  `useCreateVideoStore.setPendingRecreate` reference-video (lazy upload at generate, `/create-video`);
+  video "edit" → upload + `/video-editor` (TODO: auto-drop on timeline).
+- **Camera-view regression fixes** (Phase 0): Esc + viewport double-click exit; double-click the
+  frustum to enter; robust enter/exit pose handling (removed the dead `hot_items` toggle);
+  frustum **pick-proxy mesh** (line raycasting disabled) so selection matches the wireframe;
+  `CameraStatusPill` (top-left) shows Viewport vs render-camera and toggles.
+
+Deferred: real MCP backend; pagedraw file-only (lazy) base image; video-editor timeline
+auto-import; audio in recordings; `snapShotOfCurrentFrame` render-camera reconciliation.
+
+### Persistence + undo (timeline & split camera)
+
+- **Timeline persists in scene JSON**: `save_manager.getSceneJson` now writes `timeline:
+  getTimeline() ?? null` (was a `""` stub); `loadFromJson` restores via `loadTimeline` (guards
+  legacy `""`/null). Flows through both backend save and the unmount→cache→remount roundtrip.
+  Loaded objects keep their saved `object_uuid` (proxy load, `obj.uuid = json_object.object_uuid`),
+  so timeline tracks (keyed by uuid) resolve.
+- **Render camera persists**: at save, the render-camera entry in `cameras[]` is overridden with the
+  **live `::CAM::` transform** (`getRenderCameraTransform` dep) so it reflects gizmo moves (the store
+  config otherwise goes stale). The load path strips `::CAM::` and never recreated it — fixed:
+  `loadFromJson` calls `recreateCameraObject()` (→ `Scene._create_camera_obj()`, now idempotent)
+  AFTER `CamerasReplacedEvent`, so the frustum lands at the restored transform. This also fixes the
+  standalone "load loses the render camera" bug.
+- **Undo/redo**: timeline is **transactional** — `Save` is one undo step (`SaveTimelineAction`;
+  `loadTimeline` re-seeks + emits on undo/redo); `Cancel` reverts to last saved (not history).
+  Render-camera gizmo moves were already undoable (`TransformAction` on `::CAM::`, no special-casing);
+  because save reads the live `cam_obj`, a save after an undo persists the undone position.
+  Per-edit timeline undo remains deferred.
 
 ### Implementation status (branch `feature/scene-builder`)
 

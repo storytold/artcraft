@@ -94,16 +94,20 @@ export class CameraController {
 
   // Look through the render camera. No-op if already in camera view.
   enterCameraView() {
-    if (this.camera_person_mode || !this.cam_obj) return;
+    // Require a live viewport camera: we MUST capture its pose before
+    // flipping state, or exit would restore the default (0,0,0) pose and
+    // leave the viewport pointed at empty space (looks like "everything
+    // disappeared").
+    if (this.camera_person_mode || !this.cam_obj || !this.camera) return;
+
+    this.last_cam_pos.copy(this.camera.position);
+    this.last_cam_rot.copy(this.camera.rotation);
+
     this.camera_person_mode = true;
     if (this.freeCamState) this.freeCamState.velocity.set(0, 0, 0);
 
-    if (this.camera) {
-      this.last_cam_pos.copy(this.camera.position);
-      this.last_cam_rot.copy(this.camera.rotation);
-      this.camera.position.copy(this.cam_obj.position);
-      this.camera.rotation.copy(this.cam_obj.rotation);
-    }
+    this.camera.position.copy(this.cam_obj.position);
+    this.camera.rotation.copy(this.cam_obj.rotation);
 
     if (this.lockControls) {
       this.deps.getThreeScene().add(this.lockControls.getObject());
@@ -113,11 +117,6 @@ export class CameraController {
     this.deps.removeTransformControls();
     this.deps.setSelected(this.cam_obj);
     this.deps.setEditorState(EditorStates.CAMERA_VIEW);
-
-    const hot = this.deps.getHotItems();
-    hot?.forEach((element) => {
-      element.visible = false;
-    });
 
     // Workaround: in camera mode, a right-click should pan rather than
     // open the browser context menu. Defer until the letterbox settles.
@@ -141,16 +140,12 @@ export class CameraController {
     if (this.camera) {
       this.camera.position.copy(this.last_cam_pos);
       this.camera.rotation.copy(this.last_cam_rot);
+      this.camera.updateProjectionMatrix();
     }
     if (this.lockControls) {
       this.deps.getThreeScene().remove(this.lockControls.getObject());
     }
     this.cam_obj.scale.set(1, 1, 1);
-
-    const hot = this.deps.getHotItems();
-    hot?.forEach((element) => {
-      element.visible = true;
-    });
 
     this.deps.hideObjectPanel();
     this.deps.setEditorState(EditorStates.EDIT);

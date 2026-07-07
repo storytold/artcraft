@@ -18,7 +18,11 @@ import {
   UploadImageMedia,
   UsersApi,
 } from "@storyteller/api";
-import type { PageSceneAdapter } from "@storyteller/ui-pagescene";
+import type {
+  PageSceneAdapter,
+  PageSceneArtifact,
+} from "@storyteller/ui-pagescene";
+import { uploadByKind } from "../video-editor/adapters/upload-by-kind";
 import {
   getActiveEditor,
   ToastTypes,
@@ -155,6 +159,14 @@ export interface WebAppPageSceneAdapterOptions {
   userToken: string | undefined;
   initialSceneToken: string | undefined;
   navigateToImageTo3D: () => void;
+  // Record-mode handoff: open a produced still in the 2D editor / a produced
+  // video in create-video or the video editor. Built page-side (they need
+  // `navigate`), passed through here like navigateToImageTo3D.
+  openImageInEditor: (artifact: PageSceneArtifact) => void;
+  openVideoInEditor: (
+    artifact: PageSceneArtifact,
+    target: "generate" | "edit",
+  ) => void;
   // Wrapper size — kept in a ref so the closure sees live values without
   // rebuilding the adapter on every resize.
   getViewportSize: () => { width: number; height: number };
@@ -173,6 +185,8 @@ export const useWebAppPageSceneAdapter = (
     userToken,
     initialSceneToken,
     navigateToImageTo3D,
+    openImageInEditor,
+    openVideoInEditor,
     getViewportSize,
     promptSignup,
     onRequestNewSceneSelector,
@@ -386,6 +400,14 @@ export const useWebAppPageSceneAdapter = (
 
       navigateToImageTo3D,
 
+      openImageInEditor,
+      openVideoInEditor,
+
+      // Persist a produced still/video to the media library (Upload action
+      // in the completion modal). Returns the media token.
+      uploadMedia: ({ kind, blob, fileName, title }) =>
+        uploadByKind({ kind, blob, fileName, title }),
+
       promptSignup,
 
       onRequestNewSceneSelector,
@@ -425,6 +447,8 @@ export const useWebAppPageSceneAdapter = (
       userToken,
       initialSceneToken,
       navigateToImageTo3D,
+      openImageInEditor,
+      openVideoInEditor,
       getViewportSize,
       promptSignup,
       onRequestNewSceneSelector,

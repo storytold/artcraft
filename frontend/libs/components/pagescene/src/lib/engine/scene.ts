@@ -130,6 +130,9 @@ class Scene {
 
   clear() {
     this.scene.children = [];
+    // hot_items held detached keyframe-point refs across reloads; reset it
+    // so it never carries stale objects from a previous scene.
+    this.hot_items = [];
     this._createGrid();
     this._create_base_lighting();
     this._create_skybox();
@@ -422,6 +425,11 @@ class Scene {
     const renderCam = cameras.find((c) => c.id !== "main") ?? cameras[0];
     if (!renderCam) return;
 
+    // Idempotent: drop any existing frustum so callers (initialize, clear,
+    // load-restore) never leave duplicate "::CAM::" objects.
+    const existing = this.scene.getObjectByName("::CAM::");
+    if (existing) this.scene.remove(existing);
+
     const group = this._buildCameraFrustum();
     group.name = "::CAM::";
     group.userData["name"] = "Camera";
@@ -458,7 +466,26 @@ class Scene {
     ];
     const geometry = new THREE.BufferGeometry().setFromPoints(points);
     const material = new THREE.LineBasicMaterial({ color: 0xffffff });
-    group.add(new THREE.LineSegments(geometry, material));
+    const lines = new THREE.LineSegments(geometry, material);
+    // Disable line raycasting: THREE picks LineSegments with a 1-world-unit
+    // threshold, which dwarfs this ~0.7u frustum and selects it from far
+    // away. Selection is instead handled by the invisible pick-proxy below.
+    lines.raycast = () => {};
+    group.add(lines);
+
+    // Invisible pick-proxy sized to the frustum volume so clicks match the
+    // wireframe rather than a 1-unit halo. Raycastable (opacity 0, not
+    // mesh.visible=false) but draws nothing.
+    const proxyGeometry = new THREE.BoxGeometry(halfW * 2, halfH * 2, depth);
+    const proxyMaterial = new THREE.MeshBasicMaterial({
+      transparent: true,
+      opacity: 0,
+      depthWrite: false,
+    });
+    const proxy = new THREE.Mesh(proxyGeometry, proxyMaterial);
+    proxy.position.set(0, 0, -depth / 2);
+    group.add(proxy);
+
     return group;
   }
 

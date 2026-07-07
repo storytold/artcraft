@@ -51,16 +51,31 @@ export const useViewportPointer = (
       editor.mouse_controls?.onMouseClick();
     };
 
+    // Double-click toggles camera view: anywhere exits when active; on the
+    // render-camera frustum (selected by the preceding click) it enters.
+    const onDoubleClick = () => {
+      if (cameraViewActive) {
+        editor.cameraController.exitCameraView();
+        return;
+      }
+      const selected = editor.sceneManager?.selected_objects?.[0];
+      if (selected?.name === "::CAM::") {
+        editor.cameraController.enterCameraView();
+      }
+    };
+
     canvas.addEventListener("pointermove", onPointerMove);
     canvas.addEventListener("pointerdown", onPointerDown);
     canvas.addEventListener("pointerup", onPointerUp);
     canvas.addEventListener("click", onClick);
+    canvas.addEventListener("dblclick", onDoubleClick);
 
     return () => {
       canvas.removeEventListener("pointermove", onPointerMove);
       canvas.removeEventListener("pointerdown", onPointerDown);
       canvas.removeEventListener("pointerup", onPointerUp);
       canvas.removeEventListener("click", onClick);
+      canvas.removeEventListener("dblclick", onDoubleClick);
     };
   }, [canvas, editor, cameraViewActive]);
 };

@@ -10,6 +10,10 @@ import { faDesktop, faHouse } from "@fortawesome/pro-solid-svg-icons";
 import { Button } from "@storyteller/ui-button";
 import { MediaFilesApi } from "@storyteller/api";
 import { Stage3D, usePageSceneStore } from "@storyteller/ui-pagescene";
+import type { PageSceneArtifact } from "@storyteller/ui-pagescene";
+import { applyEditOnCanvasFromImage } from "../pagedraw/edit-on-canvas";
+import { uploadByKind } from "../video-editor/adapters/upload-by-kind";
+import { useCreateVideoStore } from "../create-video/create-video-store";
 import {
   GalleryModal,
   GalleryDragComponent,
@@ -239,6 +243,79 @@ function PageSceneEditor() {
     navigate("/create-image");
   }, [navigate]);
 
+  // Record-mode handoff: a captured still opens in the 2D editor. NO upload
+  // here (2D uploads at generation time) — matches the "don't upload from 3D"
+  // flow and avoids a network call that rejects offline. We hand PageDraw a
+  // self-contained data URL rather than the blob: object URL, which Safari
+  // invalidates across the route change (WebKitBlobResource error). Empty
+  // mediaToken; PageDraw's generate path uploads the base if it lacks a token.
+  const openImageInEditor = useCallback(
+    (artifact: PageSceneArtifact) => {
+      void (async () => {
+        let url = artifact.objectUrl;
+        try {
+          url = await new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result as string);
+            reader.onerror = () => reject(reader.error);
+            reader.readAsDataURL(artifact.blob);
+          });
+        } catch {
+          // fall back to the object URL
+        }
+        applyEditOnCanvasFromImage("", url, navigate);
+      })();
+    },
+    [navigate],
+  );
+
+  // A recorded video either seeds Create-Video as a reference (lazy — the
+  // page uploads it at generation) or lands in the library + opens the video
+  // editor. TODO(scene-builder): auto-drop onto the video-editor timeline.
+  const openVideoInEditor = useCallback(
+    (artifact: PageSceneArtifact, target: "generate" | "edit") => {
+      if (target === "generate") {
+        const file = new File([artifact.blob], artifact.fileName, {
+          type: artifact.mimeType,
+        });
+        useCreateVideoStore.getState().setPendingRecreate({
+          prompt: "",
+          referenceImages: [],
+          referenceVideos: [
+            {
+              id: crypto.randomUUID(),
+              url: artifact.objectUrl,
+              file,
+              mediaToken: "",
+              duration: 0,
+            },
+          ],
+          referenceAudios: [],
+          inputMode: "reference",
+        });
+        navigate("/create-video");
+        return;
+      }
+      void (async () => {
+        // Best-effort upload to the library (so the clip is reachable from the
+        // video editor's asset panel). Swallow failures — offline/no-backend
+        // must not throw an unhandled rejection; navigate regardless.
+        // TODO(scene-builder): auto-drop onto the video-editor timeline.
+        try {
+          await uploadByKind({
+            kind: "video",
+            blob: artifact.blob,
+            fileName: artifact.fileName,
+          });
+        } catch {
+          // ignore — upload is best-effort until auto-import lands
+        }
+        navigate("/video-editor");
+      })();
+    },
+    [navigate],
+  );
+
   const wrapperRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -272,6 +349,8 @@ function PageSceneEditor() {
     userToken: user?.user_token,
     initialSceneToken: sceneToken,
     navigateToImageTo3D,
+    openImageInEditor,
+    openVideoInEditor,
     getViewportSize,
     promptSignup: openSignupCta,
     onRequestNewSceneSelector: openSceneSplash,

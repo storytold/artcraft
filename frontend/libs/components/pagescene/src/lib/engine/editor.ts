@@ -299,6 +299,18 @@ class Editor {
       loadSceneState: (token) => this.adapter.loadScene(token),
       getCameras: () => usePageSceneStore.getState().cameras,
       getSelectedCameraId: () => usePageSceneStore.getState().selectedCameraId,
+      getTimeline: () => this.timelineController.getTimeline(),
+      loadTimeline: (timeline) =>
+        this.timelineController.loadTimeline(timeline),
+      getRenderCameraTransform: () => {
+        const cam = this.cameraController.cam_obj;
+        if (!cam) return null;
+        return {
+          position: { x: cam.position.x, y: cam.position.y, z: cam.position.z },
+          rotation: { x: cam.rotation.x, y: cam.rotation.y, z: cam.rotation.z },
+        };
+      },
+      recreateCameraObject: () => this.activeScene._create_camera_obj(),
       bus: this.bus,
     });
     this.viewport = new ViewportController({

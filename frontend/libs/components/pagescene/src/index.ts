@@ -7,6 +7,7 @@ export type { Stage3DProps } from "./lib/Stage3D";
 // Adapter (platform abstraction)
 export type {
   PageSceneAdapter,
+  PageSceneArtifact,
   PageSceneGenerateRequest,
   PageSceneSavePayload,
   ListMediaFilesQuery,

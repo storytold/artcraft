@@ -38,7 +38,7 @@ import {
   useCostBreakdownModalStore,
 } from "@storyteller/ui-pricing-modal";
 import { LoadingDots } from "@storyteller/ui-loading";
-import { PromptBox3D, commonToCameraAspect } from "@storyteller/ui-promptbox";
+import { commonToCameraAspect } from "@storyteller/ui-promptbox";
 import type { PopoverItem } from "@storyteller/ui-popover";
 import { v4 as uuidv4 } from "uuid";
 
@@ -57,6 +57,10 @@ import { Outliner } from "./comps/Outliner";
 import { PoseModeSelector } from "./comps/PoseModeSelector";
 import { ExitCameraView } from "./comps/ExitCameraView";
 import { RecordControls } from "./comps/RecordControls";
+import { CameraStatusPill } from "./comps/CameraStatusPill";
+import { SceneBuilderPromptBox } from "./comps/SceneBuilderPromptBox";
+import { RenderOverlay } from "./comps/RenderOverlay";
+import { CompletionModal } from "./comps/CompletionModal";
 import { PreviewBox } from "./comps/PreviewBox";
 import { PreviewEngineCamera } from "./comps/PreviewEngineCamera";
 import { SceneContainer } from "./comps/SceneContainer";
@@ -130,8 +134,6 @@ export const Stage3DBody = ({
     (s) => s.setIsPromptBoxFocused,
   );
   const gridVisible = usePageSceneStore((s) => s.gridVisible);
-  const buildMode = usePageSceneStore((s) => s.buildMode);
-  const setBuildMode = usePageSceneStore((s) => s.setBuildMode);
   const timelineExists = usePageSceneStore((s) => s.timelineExists);
   const timelineExpanded = usePageSceneStore((s) => s.timelineExpanded);
   const setTimelineExpanded = usePageSceneStore((s) => s.setTimelineExpanded);
@@ -468,6 +470,8 @@ export const Stage3DBody = ({
             <FocalLengthDisplay />
             <PoseModeSelector />
             <ExitCameraView />
+            <RenderOverlay />
+            <CompletionModal />
 
             <div
               className="absolute left-0 top-0 w-full"
@@ -476,6 +480,11 @@ export const Stage3DBody = ({
               <div className="grid grid-cols-3 gap-4">
                 <div className="flex flex-col items-start gap-2">
                   {!isRecord && <ControlsTopButtons />}
+                  {!isRecord && (
+                    <div className="pl-3">
+                      <CameraStatusPill />
+                    </div>
+                  )}
                   {!isRecord && topBarStartSlot && (
                     <div className="pl-3">{topBarStartSlot}</div>
                   )}
@@ -497,15 +506,19 @@ export const Stage3DBody = ({
               className="absolute bottom-0 left-0 right-0"
               onClick={handleOverlayClick}
             >
-              {!isRecord && (
-                <div
-                  className="absolute bottom-20 mb-4 ml-4 flex origin-bottom-left flex-col gap-2"
-                  style={{ transform: `scale(${getScale()})` }}
-                >
-                  <Outliner />
-                  <PreviewEngineCamera />
-                </div>
-              )}
+              {/* Always mounted: PreviewEngineCamera owns the cam-view canvas
+                  that EngineProvider depends on — unmounting it in record mode
+                  tears down + recreates the whole engine (wiping the scene).
+                  Hide with CSS in record instead. */}
+              <div
+                className={`absolute bottom-20 mb-4 ml-4 flex origin-bottom-left flex-col gap-2${
+                  isRecord ? " hidden" : ""
+                }`}
+                style={{ transform: `scale(${getScale()})` }}
+              >
+                <Outliner />
+                <PreviewEngineCamera />
+              </div>
 
               {!isRecord && <ControlPanelSceneObject />}
             </div>
@@ -516,68 +529,7 @@ export const Stage3DBody = ({
 
             {isRecord && <RecordControls />}
 
-            {!timelineExpanded && !isRecord && (
-            <PromptBox3D
-              cameras={cameras}
-              cameraAspectRatio={camAspect}
-              disableHotkeyInput={disableHotkeyInput}
-              enableHotkeyInput={enableHotkeyInput}
-              gridVisibility={gridVisible}
-              setGridVisibility={(visible: boolean) =>
-                editor?.bus.emit(new GridVisibleChangedEvent(visible))
-              }
-              selectedCameraId={selectedCameraId}
-              deleteCamera={deleteCamera}
-              focalLengthDragging={focalLengthDragging}
-              setFocalLengthDragging={setFocalLengthDragging}
-              isPromptBoxFocused={isPromptBoxFocused}
-              setIsPromptBoxFocused={setIsPromptBoxFocused}
-              uploadImage={
-                editor
-                  ? (((arg: Parameters<typeof editor.adapter.uploadImage>[0]) =>
-                      editor.adapter.uploadImage(arg)) as never)
-                  : undefined
-              }
-              handleCameraSelect={handleCameraSelect}
-              handleAddCamera={handleAddCamera}
-              handleCameraNameChange={handleCameraNameChange}
-              handleCameraFocalLengthChange={handleCameraFocalLengthChange}
-              onAspectRatioSelect={onAspectRatioSelect}
-              selectedImageModel={selectedImageModel}
-              selectedProvider={selectedProvider}
-              credits={imageCredits}
-              setEnginePrompt={(prompt) => {
-                if (!editor) return;
-                editor.positive_prompt = prompt;
-              }}
-              snapshotCurrentFrame={editor?.snapShotOfCurrentFrame.bind(editor)}
-              modelSelector={inlineModelSelector}
-              aboveStackSlot={
-                <>
-                  <OnboardingHelper />
-                  {timelineExists && !timelineExpanded && <TimelineBar />}
-                  {promptboxAboveStackSlot}
-                </>
-              }
-              showAddTimelineButton={!timelineExists}
-              onBeforeSubmit={() => {
-                const currentUserToken =
-                  usePageSceneStore.getState().currentUserToken;
-                if (!currentUserToken && editor?.adapter.promptSignup) {
-                  editor.adapter.promptSignup("generate");
-                  return false;
-                }
-                return true;
-              }}
-              buildMode={buildMode}
-              onBuildModeChange={setBuildMode}
-              onAddTimeline={() => {
-                if (!editor) return;
-                createTimeline(editor);
-                setTimelineExpanded(true);
-              }}
-            />
-            )}
+            {!timelineExpanded && !isRecord && <SceneBuilderPromptBox />}
 
             <LoadingDots
               className="absolute left-0 top-0 z-50"

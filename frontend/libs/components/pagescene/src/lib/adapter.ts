@@ -75,6 +75,16 @@ export interface PageSceneSavePayload {
 
 // ─── Adapter ───────────────────────────────────────────────────────────
 
+// A still (Capture) or video (Record) produced by Record mode, cached
+// locally (object URL) — handed to the 2D/video editor or uploaded on demand.
+export interface PageSceneArtifact {
+  kind: "image" | "video";
+  blob: Blob;
+  objectUrl: string;
+  fileName: string;
+  mimeType: string;
+}
+
 export interface PageSceneAdapter {
   // Generation enqueue. Same shape as PageDrawAdapter.enqueueEditImage.
   enqueueGeneration(
@@ -214,6 +224,26 @@ export interface PageSceneAdapter {
   // named action; add more as the lib grows page-aware UI. Tauri host
   // implements via useTabStore.setActiveTab; web host via router push.
   navigateToImageTo3D(): void;
+
+  // Record-mode handoff: hand a produced still/video to another editor to
+  // prompt/edit + generate there. The lib caches the artifact locally (object
+  // URL) and does NOT upload — the destination uploads at generation time.
+  // Web host: seed the destination store + router push. Tauri host may leave
+  // these undefined (feature is web-first).
+  openImageInEditor?(artifact: PageSceneArtifact): void;
+  openVideoInEditor?(
+    artifact: PageSceneArtifact,
+    target: "generate" | "edit",
+  ): void;
+
+  // Explicitly persist a produced artifact to the user's media library and
+  // return its media token. Backs the completion modal's Upload action.
+  uploadMedia?(args: {
+    kind: "image" | "video";
+    blob: Blob;
+    fileName: string;
+    title?: string;
+  }): Promise<string>;
 
   // Auth/logout — the SettingsModal in Controls3D needs a logout
   // callback. Tauri host: setLogoutStates. Web host: web auth flow.
