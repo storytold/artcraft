@@ -9,4 +9,5 @@ pub enum RouterProvider {
   GmiCloud,
   GrokApi,
   Seedance2Pro,
+  WorldLabs,
 }

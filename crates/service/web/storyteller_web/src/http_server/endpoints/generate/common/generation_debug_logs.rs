@@ -82,6 +82,8 @@ pub fn provider_request_debug_log_type(provider: RouterProvider) -> Option<Debug
     RouterProvider::Artcraft => None,
     // No DebugLogType variant yet; add one if GmiCloud routing is revived.
     RouterProvider::GmiCloud => None,
+    // No DebugLogType variant yet for World Labs outbound requests.
+    RouterProvider::WorldLabs => None,
   }
 }
 
