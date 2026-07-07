@@ -3,7 +3,7 @@ use crate::core::state::data_dir::app_data_root::AppDataRoot;
 use mimetypes::mimetype_info::mimetype_info::MimetypeInfo;
 use std::io::Write;
 use tempfile::NamedTempFile;
-use web_base64::web_base64_decode::web_base64_decode;
+use web_base64::web_base64_decode;
 
 pub async fn save_base64_image_to_temp_dir(app_data_root: &AppDataRoot, base64_image: &str) -> Result<NamedTempFile, ArtcraftError> {
   let bytes = web_base64_decode(base64_image)?;
