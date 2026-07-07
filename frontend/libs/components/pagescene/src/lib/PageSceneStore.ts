@@ -131,11 +131,13 @@ export interface EditorLoader {
 const DEFAULT_CAMERAS: Camera[] = [
   {
     id: "main",
+    // Blender-style default: viewport pulled back + elevated at a 3/4 angle so
+    // the whole render-camera frustum (cam2, below) is visible in the scene.
     label: "Main View",
     focalLength: 17,
-    position: { x: -2.5, y: 2.5, z: 2.5 },
+    position: { x: -4.5, y: 4, z: 6 },
     rotation: { x: 0, y: 0, z: 0 },
-    lookAt: { x: 0, y: 0, z: 0 },
+    lookAt: { x: 0, y: 0.5, z: 0.6 },
   },
   {
     id: "cam2",

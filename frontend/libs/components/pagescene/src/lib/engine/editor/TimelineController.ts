@@ -72,7 +72,16 @@ export class TimelineController {
   // Replace the live timeline wholesale (used by undo/redo of a save).
   loadTimeline(data: TimelineData): void {
     this.timeline = cloneTimeline(data);
-    this.saved = cloneTimeline(data);
+    // Backfill defensively so legacy/partial saved timelines don't break the
+    // frame-quantized UI (which assumes a valid fps) or produce a 0 duration.
+    if (!this.timeline.fps || this.timeline.fps <= 0) {
+      this.timeline.fps = DEFAULT_TIMELINE_FPS;
+    }
+    if (!this.timeline.duration || this.timeline.duration <= 0) {
+      this.timeline.duration = DEFAULT_TIMELINE_DURATION;
+    }
+    if (!Array.isArray(this.timeline.tracks)) this.timeline.tracks = [];
+    this.saved = cloneTimeline(this.timeline);
     this.playhead = Math.min(this.playhead, this.timeline.duration);
     this.evaluate();
     this.emitChanged();
@@ -125,6 +134,19 @@ export class TimelineController {
   }
 
   // ─── keyframe editing ──────────────────────────────────────────────────
+
+  // Auto-key: when an ALREADY-keyframed object is mutated, capture its current
+  // transform at the playhead — replacing the keyframe there or creating one at
+  // the current scrub point. No-op for objects that have never been keyframed
+  // (the first keyframe is always added explicitly).
+  autoKeyIfTracked(objectUuid: string): void {
+    if (!this.timeline) return;
+    const track = this.timeline.tracks.find(
+      (t) => t.objectUuid === objectUuid,
+    );
+    if (!track || track.keyframes.length === 0) return;
+    this.addKeyframe(objectUuid, this.playhead);
+  }
 
   addKeyframe(objectUuid: string, atTime?: number): void {
     if (!this.timeline) return;

@@ -12,6 +12,20 @@ components that host these canvases** (`SceneContainer`, `EditorCanvas`, `Previe
 for mode/chrome gating — hide them with CSS (`hidden`) instead. (Regression fixed: record mode
 had gated `PreviewEngineCamera` behind `!isRecord`, wiping the scene on record→build toggle.)
 
+## Behavior notes (fixes)
+
+- **Record mode is fully immutable.** The viewport lock (`CameraController.locked`, set by the
+  record effect) gates every camera-move path: FreeCam drag/wheel/keyboard (`useFreeCam`),
+  FreeCam integration (`tickPerFrame`), AND `MouseControls` mouse-look + `focus()` (gated via
+  `MouseControlsDeps.isViewportLocked`). If you add a new camera-move path, gate it on `locked`.
+- **Default camera framing** (`DEFAULT_CAMERAS.main`): a Blender-style pulled-back/elevated 3/4
+  view (`pos (-4.5,4,6)`, `lookAt (0,0.5,0.6)`) so the whole render-camera (`cam2`) frustum is
+  visible on a blank scene.
+- **Auto-keyframe**: mutating an **already-keyframed** object (gizmo drag-end or inspector commit)
+  calls `TimelineController.autoKeyIfTracked(uuid)` → `addKeyframe` at the playhead, which
+  replace-or-creates a keyframe at the current scrub point. No-op for never-keyframed objects
+  (first keyframe is always explicit).
+
 ## Architecture (existing, do not rebuild)
 
 Strict one-way data flow. Do not violate it.

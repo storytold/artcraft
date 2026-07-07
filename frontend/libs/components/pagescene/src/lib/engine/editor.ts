@@ -526,6 +526,11 @@ class Editor {
           } else if (this.activeTransform) {
             if (this.activeTransform.commit()) {
               this.history.record(this.activeTransform);
+              // Auto-key: if the dragged object is already keyframed, record
+              // its new transform at the playhead (replaces the keyframe there
+              // or creates one at the current scrub point).
+              const uuid = this.sceneManager?.selected_objects?.[0]?.uuid;
+              if (uuid) this.timelineController.autoKeyIfTracked(uuid);
             }
             this.activeTransform = null;
           }
@@ -575,6 +580,7 @@ class Editor {
       isHotkeyDisabled: () =>
         usePageSceneStore.getState().hotkeyStatus.disabled,
       getTransformSpace: () => usePageSceneStore.getState().transformSpace,
+      isViewportLocked: () => this.cameraController.locked,
     });
 
     this.sceneManager = new SceneManager(
