@@ -6,7 +6,9 @@ use artcraft_router::client::router_fal_client::RouterFalClient;
 use artcraft_router::client::router_gmicloud_client::RouterGmiCloudClient;
 use artcraft_router::client::router_grok_api_client::RouterGrokApiClient;
 use artcraft_router::client::router_seedance2pro_client::RouterSeedance2ProClient;
+use artcraft_router::client::router_worldlabs_client::RouterWorldLabsClient;
 use seedance2pro_client::creds::seedance2pro_session::Seedance2ProSession;
+use worldlabs_api_client::credentials::world_labs_api_creds::WorldLabsApiCreds;
 
 use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::endpoints::omni_gen::generate::video::kinovi_account::KinoviAccount;
@@ -37,6 +39,12 @@ pub fn build_router_client(
       Ok(RouterClient::GrokApi(RouterGrokApiClient::new(
         server_state.inference_providers.grok_api.api_key.clone(),
       )))
+    }
+    RouterProvider::WorldLabs => {
+      let creds = WorldLabsApiCreds::new(
+        server_state.inference_providers.worldlabs.api_key.clone(),
+      );
+      Ok(RouterClient::WorldLabs(RouterWorldLabsClient::new(creds)))
     }
     other => {
       Err(CommonWebError::server_error_with_message(

@@ -72,6 +72,7 @@ fn provider_to_generation_provider(provider: RouterProvider) -> GenerationProvid
     RouterProvider::Seedance2Pro => GenerationProvider::Artcraft ,
     RouterProvider::GmiCloud => GenerationProvider::Artcraft,
     RouterProvider::GrokApi => GenerationProvider::Artcraft,
+    RouterProvider::WorldLabs => GenerationProvider::Artcraft,
   }
 }
 

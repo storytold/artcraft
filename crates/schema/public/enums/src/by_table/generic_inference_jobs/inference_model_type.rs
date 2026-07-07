@@ -257,6 +257,14 @@ pub enum InferenceModelType {
   Marble0p1Mini,
   #[serde(rename = "marble_0p1_plus")]
   Marble0p1Plus,
+  #[serde(rename = "marble_1p0")]
+  Marble1p0,
+  #[serde(rename = "marble_1p0_draft")]
+  Marble1p0Draft,
+  #[serde(rename = "marble_1p1")]
+  Marble1p1,
+  #[serde(rename = "marble_1p1_plus")]
+  Marble1p1Plus,
 }
 
 // TODO(bt, 2022-12-21): This desperately needs MySQL integration tests!
@@ -378,6 +386,10 @@ impl InferenceModelType {
       // Splat generation models (World Labs)
       Self::Marble0p1Mini => "marble_0p1_mini",
       Self::Marble0p1Plus => "marble_0p1_plus",
+      Self::Marble1p0 => "marble_1p0",
+      Self::Marble1p0Draft => "marble_1p0_draft",
+      Self::Marble1p1 => "marble_1p1",
+      Self::Marble1p1Plus => "marble_1p1_plus",
     }
   }
 
@@ -494,6 +506,10 @@ impl InferenceModelType {
       // Splat generation models (World Labs)
       "marble_0p1_mini" => Ok(Self::Marble0p1Mini),
       "marble_0p1_plus" => Ok(Self::Marble0p1Plus),
+      "marble_1p0" => Ok(Self::Marble1p0),
+      "marble_1p0_draft" => Ok(Self::Marble1p0Draft),
+      "marble_1p1" => Ok(Self::Marble1p1),
+      "marble_1p1_plus" => Ok(Self::Marble1p1Plus),
 
       _ => Err(format!("invalid value: {:?}", value)),
     }
@@ -614,6 +630,10 @@ impl InferenceModelType {
       // Splat generation models (World Labs)
       Self::Marble0p1Mini,
       Self::Marble0p1Plus,
+      Self::Marble1p0,
+      Self::Marble1p0Draft,
+      Self::Marble1p1,
+      Self::Marble1p1Plus,
     ])
   }
 
@@ -717,6 +737,10 @@ impl InferenceModelType {
       // Splat generation models (World Labs)
       CommonModelType::Marble0p1Mini => Self::Marble0p1Mini,
       CommonModelType::Marble0p1Plus => Self::Marble0p1Plus,
+      CommonModelType::Marble1p0 => Self::Marble1p0,
+      CommonModelType::Marble1p0Draft => Self::Marble1p0Draft,
+      CommonModelType::Marble1p1 => Self::Marble1p1,
+      CommonModelType::Marble1p1Plus => Self::Marble1p1Plus,
     }
   }
 }
@@ -841,6 +865,10 @@ mod tests {
       // Splat generation models (World Labs)
       assert_serialization(InferenceModelType::Marble0p1Mini, "marble_0p1_mini");
       assert_serialization(InferenceModelType::Marble0p1Plus, "marble_0p1_plus");
+      assert_serialization(InferenceModelType::Marble1p0, "marble_1p0");
+      assert_serialization(InferenceModelType::Marble1p0Draft, "marble_1p0_draft");
+      assert_serialization(InferenceModelType::Marble1p1, "marble_1p1");
+      assert_serialization(InferenceModelType::Marble1p1Plus, "marble_1p1_plus");
     }
 
     #[test]
@@ -956,6 +984,10 @@ mod tests {
       // Splat generation models (World Labs)
       assert_eq!(InferenceModelType::Marble0p1Mini.to_str(), "marble_0p1_mini");
       assert_eq!(InferenceModelType::Marble0p1Plus.to_str(), "marble_0p1_plus");
+      assert_eq!(InferenceModelType::Marble1p0.to_str(), "marble_1p0");
+      assert_eq!(InferenceModelType::Marble1p0Draft.to_str(), "marble_1p0_draft");
+      assert_eq!(InferenceModelType::Marble1p1.to_str(), "marble_1p1");
+      assert_eq!(InferenceModelType::Marble1p1Plus.to_str(), "marble_1p1_plus");
     }
 
     #[test]
@@ -1069,6 +1101,10 @@ mod tests {
       // Splat generation models (World Labs)
       assert_eq!(InferenceModelType::from_str("marble_0p1_mini").unwrap(), InferenceModelType::Marble0p1Mini);
       assert_eq!(InferenceModelType::from_str("marble_0p1_plus").unwrap(), InferenceModelType::Marble0p1Plus);
+      assert_eq!(InferenceModelType::from_str("marble_1p0").unwrap(), InferenceModelType::Marble1p0);
+      assert_eq!(InferenceModelType::from_str("marble_1p0_draft").unwrap(), InferenceModelType::Marble1p0Draft);
+      assert_eq!(InferenceModelType::from_str("marble_1p1").unwrap(), InferenceModelType::Marble1p1);
+      assert_eq!(InferenceModelType::from_str("marble_1p1_plus").unwrap(), InferenceModelType::Marble1p1Plus);
     }
 
     #[test]

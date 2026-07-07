@@ -226,6 +226,14 @@ pub enum CommonModelType {
   Marble0p1Mini,
   #[serde(rename = "marble_0p1_plus")]
   Marble0p1Plus,
+  #[serde(rename = "marble_1p0")]
+  Marble1p0,
+  #[serde(rename = "marble_1p0_draft")]
+  Marble1p0Draft,
+  #[serde(rename = "marble_1p1")]
+  Marble1p1,
+  #[serde(rename = "marble_1p1_plus")]
+  Marble1p1Plus,
 }
 
 impl_enum_display_and_debug_using_to_str!(CommonModelType);
@@ -331,6 +339,10 @@ impl CommonModelType {
       // Splat generation models (World Labs)
       Self::Marble0p1Mini => "marble_0p1_mini",
       Self::Marble0p1Plus => "marble_0p1_plus",
+      Self::Marble1p0 => "marble_1p0",
+      Self::Marble1p0Draft => "marble_1p0_draft",
+      Self::Marble1p1 => "marble_1p1",
+      Self::Marble1p1Plus => "marble_1p1_plus",
     }
   }
 
@@ -430,6 +442,10 @@ impl CommonModelType {
       // Splat generation models (World Labs)
       "marble_0p1_mini" => Ok(Self::Marble0p1Mini),
       "marble_0p1_plus" => Ok(Self::Marble0p1Plus),
+      "marble_1p0" => Ok(Self::Marble1p0),
+      "marble_1p0_draft" => Ok(Self::Marble1p0Draft),
+      "marble_1p1" => Ok(Self::Marble1p1),
+      "marble_1p1_plus" => Ok(Self::Marble1p1Plus),
 
       _ => Err(format!("invalid model_type: {:?}", job_status)),
     }
@@ -533,6 +549,10 @@ impl CommonModelType {
       // Splat generation models (World Labs)
       Self::Marble0p1Mini,
       Self::Marble0p1Plus,
+      Self::Marble1p0,
+      Self::Marble1p0Draft,
+      Self::Marble1p1,
+      Self::Marble1p1Plus,
     ])
   }
 
@@ -633,6 +653,10 @@ impl CommonModelType {
       // Splat generation models (World Labs)
       Self::Marble0p1Mini => CommonModelClass::DimensionalSplat,
       Self::Marble0p1Plus => CommonModelClass::DimensionalSplat,
+      Self::Marble1p0 => CommonModelClass::DimensionalSplat,
+      Self::Marble1p0Draft => CommonModelClass::DimensionalSplat,
+      Self::Marble1p1 => CommonModelClass::DimensionalSplat,
+      Self::Marble1p1Plus => CommonModelClass::DimensionalSplat,
     }
   }
 }
@@ -738,6 +762,10 @@ mod tests {
       // Splat generation models (World Labs)
       assert_serialization(CommonModelType::Marble0p1Mini, "marble_0p1_mini");
       assert_serialization(CommonModelType::Marble0p1Plus, "marble_0p1_plus");
+      assert_serialization(CommonModelType::Marble1p0, "marble_1p0");
+      assert_serialization(CommonModelType::Marble1p0Draft, "marble_1p0_draft");
+      assert_serialization(CommonModelType::Marble1p1, "marble_1p1");
+      assert_serialization(CommonModelType::Marble1p1Plus, "marble_1p1_plus");
     }
 
     #[test]
@@ -835,6 +863,10 @@ mod tests {
       // Splat generation models (World Labs)
       assert_eq!(CommonModelType::Marble0p1Mini.to_str(), "marble_0p1_mini");
       assert_eq!(CommonModelType::Marble0p1Plus.to_str(), "marble_0p1_plus");
+      assert_eq!(CommonModelType::Marble1p0.to_str(), "marble_1p0");
+      assert_eq!(CommonModelType::Marble1p0Draft.to_str(), "marble_1p0_draft");
+      assert_eq!(CommonModelType::Marble1p1.to_str(), "marble_1p1");
+      assert_eq!(CommonModelType::Marble1p1Plus.to_str(), "marble_1p1_plus");
     }
 
     #[test]
@@ -929,12 +961,16 @@ mod tests {
       // Splat generation models (World Labs)
       assert_eq!(CommonModelType::from_str("marble_0p1_mini").unwrap(), CommonModelType::Marble0p1Mini);
       assert_eq!(CommonModelType::from_str("marble_0p1_plus").unwrap(), CommonModelType::Marble0p1Plus);
+      assert_eq!(CommonModelType::from_str("marble_1p0").unwrap(), CommonModelType::Marble1p0);
+      assert_eq!(CommonModelType::from_str("marble_1p0_draft").unwrap(), CommonModelType::Marble1p0Draft);
+      assert_eq!(CommonModelType::from_str("marble_1p1").unwrap(), CommonModelType::Marble1p1);
+      assert_eq!(CommonModelType::from_str("marble_1p1_plus").unwrap(), CommonModelType::Marble1p1Plus);
     }
 
     #[test]
     fn all_variants() {
       let mut variants = CommonModelType::all_variants();
-      assert_eq!(variants.len(), 84);
+      assert_eq!(variants.len(), 88);
       // Image models
       assert_eq!(variants.pop_first(), Some(CommonModelType::Flux1Dev));
       assert_eq!(variants.pop_first(), Some(CommonModelType::Flux1Schnell));
@@ -1024,6 +1060,10 @@ mod tests {
       // Splat generation models (World Labs)
       assert_eq!(variants.pop_first(), Some(CommonModelType::Marble0p1Mini));
       assert_eq!(variants.pop_first(), Some(CommonModelType::Marble0p1Plus));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::Marble1p0));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::Marble1p0Draft));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::Marble1p1));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::Marble1p1Plus));
 
       assert_eq!(variants.pop_first(), None);
     }
@@ -1116,6 +1156,10 @@ mod tests {
       assert_eq!(CommonModelType::Hunyuan3d3.get_model_class(), CommonModelClass::DimensionalMesh);
       assert_eq!(CommonModelType::Marble0p1Mini.get_model_class(), CommonModelClass::DimensionalSplat);
       assert_eq!(CommonModelType::Marble0p1Plus.get_model_class(), CommonModelClass::DimensionalSplat);
+      assert_eq!(CommonModelType::Marble1p0.get_model_class(), CommonModelClass::DimensionalSplat);
+      assert_eq!(CommonModelType::Marble1p0Draft.get_model_class(), CommonModelClass::DimensionalSplat);
+      assert_eq!(CommonModelType::Marble1p1.get_model_class(), CommonModelClass::DimensionalSplat);
+      assert_eq!(CommonModelType::Marble1p1Plus.get_model_class(), CommonModelClass::DimensionalSplat);
     }
   }
 }
