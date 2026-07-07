@@ -1,6 +1,5 @@
-use fal_client::requests_old::webhook::image::angle::enqueue_qwen_edit_2511_edit_image_angle_webhook::{
-  EnqueueQwenEdit2511AngleImageSize, EnqueueQwenEdit2511AngleNumImages,
-  EnqueueQwenEdit2511EditImageAngleRequest,
+use fal_client::requests::api::image::angle::qwen_edit_2511_edit_image_angle::api::{
+  QwenEdit2511AngleImageSize, QwenEdit2511AngleNumImages, QwenEdit2511EditImageAngleRequest,
 };
 
 use crate::api::router_aspect_ratio::RouterAspectRatio;
@@ -27,7 +26,7 @@ pub fn build_fal_qwen_edit_2511_angles(
   let num_images = plan_num_images(builder.image_batch_count, strategy)?;
   let image_size = plan_image_size(builder.aspect_ratio, strategy)?;
 
-  let request = EnqueueQwenEdit2511EditImageAngleRequest {
+  let request = QwenEdit2511EditImageAngleRequest {
     image_urls,
     horizontal_angle: builder.horizontal_angle,
     vertical_angle: builder.vertical_angle,
@@ -58,8 +57,8 @@ fn resolve_image_urls(image_inputs: Option<ImageListRef>) -> Result<Vec<String>,
 fn plan_num_images(
   image_batch_count: Option<u16>,
   strategy: RequestMismatchMitigationStrategy,
-) -> Result<EnqueueQwenEdit2511AngleNumImages, ArtcraftRouterError> {
-  use EnqueueQwenEdit2511AngleNumImages as N;
+) -> Result<QwenEdit2511AngleNumImages, ArtcraftRouterError> {
+  use QwenEdit2511AngleNumImages as N;
   let count = image_batch_count.unwrap_or(1);
   match count {
     0 => Err(ArtcraftRouterError::Client(ClientError::UserRequestedZeroGenerations)),
@@ -82,8 +81,8 @@ fn plan_num_images(
 fn plan_image_size(
   aspect_ratio: Option<RouterAspectRatio>,
   strategy: RequestMismatchMitigationStrategy,
-) -> Result<Option<EnqueueQwenEdit2511AngleImageSize>, ArtcraftRouterError> {
-  use EnqueueQwenEdit2511AngleImageSize as S;
+) -> Result<Option<QwenEdit2511AngleImageSize>, ArtcraftRouterError> {
+  use QwenEdit2511AngleImageSize as S;
   match aspect_ratio {
     None => Ok(None),
 
@@ -119,34 +118,6 @@ mod tests {
   use crate::api::router_image_model::RouterImageModel;
   use crate::api::router_provider::RouterProvider;
 
-  fn base() -> GenerateImageRequestBuilder {
-    GenerateImageRequestBuilder {
-      model: RouterImageModel::QwenEdit2511Angles,
-      provider: RouterProvider::Fal,
-      prompt: Some("test".to_string()),
-      image_inputs: Some(ImageListRef::Urls(vec!["https://example.com/x.jpg".to_string()])),
-      resolution: None,
-      aspect_ratio: None,
-      quality: None,
-      image_batch_count: None,
-      horizontal_angle: Some(45.0),
-      vertical_angle: Some(-15.0),
-      zoom: Some(2.0),
-      request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::ErrorOut,
-      generation_mode_mismatch_strategy: None,
-      idempotency_token: None,
-    }
-  }
-
-  fn unwrap_request(result: Result<ImageGenerationDraftOrRequest, ArtcraftRouterError>) -> EnqueueQwenEdit2511EditImageAngleRequest {
-    let ImageGenerationDraftOrRequest::Request(
-      ImageGenerationRequest::FalQwenEdit2511Angles(state)
-    ) = result.expect("build should succeed") else {
-      panic!("expected FalQwenEdit2511Angles variant")
-    };
-    state.request
-  }
-
   #[test]
   fn passes_through_camera_params() {
     let req = unwrap_request(build_fal_qwen_edit_2511_angles(base()));
@@ -177,7 +148,7 @@ mod tests {
   #[test]
   fn default_num_images_is_one() {
     let req = unwrap_request(build_fal_qwen_edit_2511_angles(base()));
-    assert!(matches!(req.num_images, Some(EnqueueQwenEdit2511AngleNumImages::One)));
+    assert!(matches!(req.num_images, Some(QwenEdit2511AngleNumImages::One)));
   }
 
   #[test]
@@ -197,6 +168,34 @@ mod tests {
       ..base()
     };
     let req = unwrap_request(build_fal_qwen_edit_2511_angles(builder));
-    assert!(matches!(req.num_images, Some(EnqueueQwenEdit2511AngleNumImages::Four)));
+    assert!(matches!(req.num_images, Some(QwenEdit2511AngleNumImages::Four)));
+  }
+
+  fn base() -> GenerateImageRequestBuilder {
+    GenerateImageRequestBuilder {
+      model: RouterImageModel::QwenEdit2511Angles,
+      provider: RouterProvider::Fal,
+      prompt: Some("test".to_string()),
+      image_inputs: Some(ImageListRef::Urls(vec!["https://example.com/x.jpg".to_string()])),
+      resolution: None,
+      aspect_ratio: None,
+      quality: None,
+      image_batch_count: None,
+      horizontal_angle: Some(45.0),
+      vertical_angle: Some(-15.0),
+      zoom: Some(2.0),
+      request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::ErrorOut,
+      generation_mode_mismatch_strategy: None,
+      idempotency_token: None,
+    }
+  }
+
+  fn unwrap_request(result: Result<ImageGenerationDraftOrRequest, ArtcraftRouterError>) -> QwenEdit2511EditImageAngleRequest {
+    let ImageGenerationDraftOrRequest::Request(
+      ImageGenerationRequest::FalQwenEdit2511Angles(state)
+    ) = result.expect("build should succeed") else {
+      panic!("expected FalQwenEdit2511Angles variant")
+    };
+    state.request
   }
 }

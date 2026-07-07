@@ -32,13 +32,39 @@ impl FalQwenEdit2511AnglesCostState {
 #[cfg(test)]
 mod tests {
   use super::*;
-  use fal_client::requests_old::webhook::image::angle::enqueue_qwen_edit_2511_edit_image_angle_webhook::{
-    EnqueueQwenEdit2511AngleNumImages, EnqueueQwenEdit2511EditImageAngleRequest,
+  use fal_client::requests::api::image::angle::qwen_edit_2511_edit_image_angle::api::{
+    QwenEdit2511AngleNumImages, QwenEdit2511EditImageAngleRequest,
   };
 
-  fn cost_for(n: EnqueueQwenEdit2511AngleNumImages) -> ImageGenerationCostEstimate {
+  #[test]
+  fn one_image_is_4_cents() {
+    assert_eq!(cost_for(QwenEdit2511AngleNumImages::One).cost_in_usd_cents, Some(4));
+  }
+
+  #[test]
+  fn two_images_is_8_cents() {
+    assert_eq!(cost_for(QwenEdit2511AngleNumImages::Two).cost_in_usd_cents, Some(8));
+  }
+
+  #[test]
+  fn three_images_is_12_cents() {
+    assert_eq!(cost_for(QwenEdit2511AngleNumImages::Three).cost_in_usd_cents, Some(12));
+  }
+
+  #[test]
+  fn four_images_is_16_cents() {
+    assert_eq!(cost_for(QwenEdit2511AngleNumImages::Four).cost_in_usd_cents, Some(16));
+  }
+
+  #[test]
+  fn credits_equal_cents() {
+    let cost = cost_for(QwenEdit2511AngleNumImages::Two);
+    assert_eq!(cost.cost_in_credits, cost.cost_in_usd_cents);
+  }
+
+  fn cost_for(n: QwenEdit2511AngleNumImages) -> ImageGenerationCostEstimate {
     let state = FalQwenEdit2511AnglesCostState::from_request(&FalQwenEdit2511AnglesRequestState {
-      request: EnqueueQwenEdit2511EditImageAngleRequest {
+      request: QwenEdit2511EditImageAngleRequest {
         image_urls: vec!["https://example.com/x.jpg".to_string()],
         horizontal_angle: None,
         vertical_angle: None,
@@ -52,31 +78,5 @@ mod tests {
       },
     });
     state.estimate_cost()
-  }
-
-  #[test]
-  fn one_image_is_4_cents() {
-    assert_eq!(cost_for(EnqueueQwenEdit2511AngleNumImages::One).cost_in_usd_cents, Some(4));
-  }
-
-  #[test]
-  fn two_images_is_8_cents() {
-    assert_eq!(cost_for(EnqueueQwenEdit2511AngleNumImages::Two).cost_in_usd_cents, Some(8));
-  }
-
-  #[test]
-  fn three_images_is_12_cents() {
-    assert_eq!(cost_for(EnqueueQwenEdit2511AngleNumImages::Three).cost_in_usd_cents, Some(12));
-  }
-
-  #[test]
-  fn four_images_is_16_cents() {
-    assert_eq!(cost_for(EnqueueQwenEdit2511AngleNumImages::Four).cost_in_usd_cents, Some(16));
-  }
-
-  #[test]
-  fn credits_equal_cents() {
-    let cost = cost_for(EnqueueQwenEdit2511AngleNumImages::Two);
-    assert_eq!(cost.cost_in_credits, cost.cost_in_usd_cents);
   }
 }

@@ -218,6 +218,12 @@ pub enum InferenceModelType {
   Veo3p1,
   #[serde(rename = "veo_3p1_fast")]
   Veo3p1Fast,
+  #[serde(rename = "veo_3p1_lite")]
+  Veo3p1Lite,
+  #[serde(rename = "vidu_q3")]
+  ViduQ3,
+  #[serde(rename = "vidu_q3_turbo")]
+  ViduQ3Turbo,
   #[serde(rename = "preview_model")]
   PreviewModel,
   #[serde(rename = "preview_model_fast")]
@@ -336,6 +342,9 @@ impl InferenceModelType {
       Self::Veo3Fast => "veo_3_fast",
       Self::Veo3p1 => "veo_3p1",
       Self::Veo3p1Fast => "veo_3p1_fast",
+      Self::Veo3p1Lite => "veo_3p1_lite",
+      Self::ViduQ3 => "vidu_q3",
+      Self::ViduQ3Turbo => "vidu_q3_turbo",
       Self::PreviewModel => "preview_model",
       Self::PreviewModelFast => "preview_model_fast",
       Self::SwitchX => "switch_x",
@@ -441,6 +450,9 @@ impl InferenceModelType {
       "veo_3_fast" => Ok(Self::Veo3Fast),
       "veo_3p1" => Ok(Self::Veo3p1),
       "veo_3p1_fast" => Ok(Self::Veo3p1Fast),
+      "veo_3p1_lite" => Ok(Self::Veo3p1Lite),
+      "vidu_q3" => Ok(Self::ViduQ3),
+      "vidu_q3_turbo" => Ok(Self::ViduQ3Turbo),
       "preview_model" => Ok(Self::PreviewModel),
       "preview_model_fast" => Ok(Self::PreviewModelFast),
       "switch_x" => Ok(Self::SwitchX),
@@ -550,6 +562,9 @@ impl InferenceModelType {
       Self::Veo3Fast,
       Self::Veo3p1,
       Self::Veo3p1Fast,
+      Self::Veo3p1Lite,
+      Self::ViduQ3,
+      Self::ViduQ3Turbo,
       Self::PreviewModel,
       Self::PreviewModelFast,
       Self::SwitchX,
@@ -642,6 +657,9 @@ impl InferenceModelType {
       CommonModelType::Veo3Fast => Self::Veo3Fast,
       CommonModelType::Veo3p1 => Self::Veo3p1,
       CommonModelType::Veo3p1Fast => Self::Veo3p1Fast,
+      CommonModelType::Veo3p1Lite => Self::Veo3p1Lite,
+      CommonModelType::ViduQ3 => Self::ViduQ3,
+      CommonModelType::ViduQ3Turbo => Self::ViduQ3Turbo,
       CommonModelType::PreviewModel => Self::PreviewModel,
       CommonModelType::PreviewModelFast => Self::PreviewModelFast,
       CommonModelType::SwitchX => Self::SwitchX,
@@ -757,6 +775,9 @@ mod tests {
       assert_serialization(InferenceModelType::Veo3Fast, "veo_3_fast");
       assert_serialization(InferenceModelType::Veo3p1, "veo_3p1");
       assert_serialization(InferenceModelType::Veo3p1Fast, "veo_3p1_fast");
+      assert_serialization(InferenceModelType::Veo3p1Lite, "veo_3p1_lite");
+      assert_serialization(InferenceModelType::ViduQ3, "vidu_q3");
+      assert_serialization(InferenceModelType::ViduQ3Turbo, "vidu_q3_turbo");
       assert_serialization(InferenceModelType::PreviewModel, "preview_model");
       assert_serialization(InferenceModelType::PreviewModelFast, "preview_model_fast");
       assert_serialization(InferenceModelType::SwitchX, "switch_x");
@@ -861,6 +882,9 @@ mod tests {
       assert_eq!(InferenceModelType::Veo3Fast.to_str(), "veo_3_fast");
       assert_eq!(InferenceModelType::Veo3p1.to_str(), "veo_3p1");
       assert_eq!(InferenceModelType::Veo3p1Fast.to_str(), "veo_3p1_fast");
+      assert_eq!(InferenceModelType::Veo3p1Lite.to_str(), "veo_3p1_lite");
+      assert_eq!(InferenceModelType::ViduQ3.to_str(), "vidu_q3");
+      assert_eq!(InferenceModelType::ViduQ3Turbo.to_str(), "vidu_q3_turbo");
       assert_eq!(InferenceModelType::PreviewModel.to_str(), "preview_model");
       assert_eq!(InferenceModelType::PreviewModelFast.to_str(), "preview_model_fast");
       assert_eq!(InferenceModelType::SwitchX.to_str(), "switch_x");
@@ -965,6 +989,9 @@ mod tests {
       assert_eq!(InferenceModelType::from_str("veo_3_fast").unwrap(), InferenceModelType::Veo3Fast);
       assert_eq!(InferenceModelType::from_str("veo_3p1").unwrap(), InferenceModelType::Veo3p1);
       assert_eq!(InferenceModelType::from_str("veo_3p1_fast").unwrap(), InferenceModelType::Veo3p1Fast);
+      assert_eq!(InferenceModelType::from_str("veo_3p1_lite").unwrap(), InferenceModelType::Veo3p1Lite);
+      assert_eq!(InferenceModelType::from_str("vidu_q3").unwrap(), InferenceModelType::ViduQ3);
+      assert_eq!(InferenceModelType::from_str("vidu_q3_turbo").unwrap(), InferenceModelType::ViduQ3Turbo);
       assert_eq!(InferenceModelType::from_str("preview_model").unwrap(), InferenceModelType::PreviewModel);
       assert_eq!(InferenceModelType::from_str("preview_model_fast").unwrap(), InferenceModelType::PreviewModelFast);
       assert_eq!(InferenceModelType::from_str("switch_x").unwrap(), InferenceModelType::SwitchX);

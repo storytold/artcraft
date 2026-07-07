@@ -74,13 +74,16 @@ pub fn veo_video_models() -> Vec<OmniGenVideoModelDetails> {
   });
 
   models.push(OmniGenVideoModelDetails {
-    is_disabled: Some(true), // TODO: Temporarily disable
     model: CommonVideoModel::Veo3p1,
     model_creator: Some(ModelCreator::Google),
     full_name: Some("Veo 3.1".to_string()),
     text_prompt_supported: Some(true),
     starting_keyframe_supported: Some(true),
     ending_keyframe_supported: Some(true),
+    image_references_supported: Some(true),
+    image_references_max: Some(3),
+    video_references_supported: Some(true),
+    video_references_max: Some(1),
     show_generate_with_sound_toggle: Some(true),
     aspect_ratio_options: Some(vec![
       CommonAspectRatio::Auto,
@@ -100,10 +103,38 @@ pub fn veo_video_models() -> Vec<OmniGenVideoModelDetails> {
   });
 
   models.push(OmniGenVideoModelDetails {
-    is_disabled: Some(true), // TODO: Temporarily disable
     model: CommonVideoModel::Veo3p1Fast,
     model_creator: Some(ModelCreator::Google),
     full_name: Some("Veo 3.1 Fast".to_string()),
+    text_prompt_supported: Some(true),
+    starting_keyframe_supported: Some(true),
+    ending_keyframe_supported: Some(true),
+    image_references_supported: Some(true),
+    image_references_max: Some(3),
+    video_references_supported: Some(true),
+    video_references_max: Some(1),
+    show_generate_with_sound_toggle: Some(true),
+    aspect_ratio_options: Some(vec![
+      CommonAspectRatio::Auto,
+      CommonAspectRatio::WideSixteenByNine,
+      CommonAspectRatio::TallNineBySixteen,
+    ]),
+    aspect_ratio_default: Some(CommonAspectRatio::WideSixteenByNine),
+    resolution_options: Some(vec![
+      CommonResolution::SevenTwentyP,
+      CommonResolution::TenEightyP,
+    ]),
+    resolution_default: Some(CommonResolution::TenEightyP),
+    duration_seconds_min: Some(4),
+    duration_seconds_max: Some(8),
+    duration_seconds_default: Some(8),
+    ..Default::default()
+  });
+
+  models.push(OmniGenVideoModelDetails {
+    model: CommonVideoModel::Veo3p1Lite,
+    model_creator: Some(ModelCreator::Google),
+    full_name: Some("Veo 3.1 Lite".to_string()),
     text_prompt_supported: Some(true),
     starting_keyframe_supported: Some(true),
     ending_keyframe_supported: Some(true),
@@ -118,7 +149,7 @@ pub fn veo_video_models() -> Vec<OmniGenVideoModelDetails> {
       CommonResolution::SevenTwentyP,
       CommonResolution::TenEightyP,
     ]),
-    resolution_default: Some(CommonResolution::TenEightyP),
+    resolution_default: Some(CommonResolution::SevenTwentyP),
     duration_seconds_min: Some(4),
     duration_seconds_max: Some(8),
     duration_seconds_default: Some(8),

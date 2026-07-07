@@ -10,6 +10,7 @@ use super::by_type::seedance_1x_video_models::{seedance_1p0_video_models, seedan
 use super::by_type::seedance_2p0_video_models::seedance_2p0_video_models;
 use super::by_type::sora_video_models::sora_video_models;
 use super::by_type::veo_video_models::veo_video_models;
+use super::by_type::vidu_video_models::vidu_video_models;
 
 pub const OMNI_GEN_VIDEO_MODELS_AND_PROVIDERS: Lazy<OmniGenVideoModelsResponse> = Lazy::new(|| {
   let models = build_omni_gen_video_models();
@@ -33,6 +34,7 @@ fn build_omni_gen_video_models() -> Vec<OmniGenVideoModelDetails> {
   models.extend(seedance_2p0_video_models());
   models.extend(sora_video_models());
   models.extend(veo_video_models());
+  models.extend(vidu_video_models());
 
   models
 }
@@ -81,6 +83,18 @@ fn build_omni_gen_video_model_providers() -> Vec<OmniGenVideoModelProviderDetail
       },
       OmniGenVideoProviderModelDetails {
         model: CommonVideoModel::Veo3p1Fast,
+        overrides: None,
+      },
+      OmniGenVideoProviderModelDetails {
+        model: CommonVideoModel::Veo3p1Lite,
+        overrides: None,
+      },
+      OmniGenVideoProviderModelDetails {
+        model: CommonVideoModel::ViduQ3,
+        overrides: None,
+      },
+      OmniGenVideoProviderModelDetails {
+        model: CommonVideoModel::ViduQ3Turbo,
         overrides: None,
       },
       OmniGenVideoProviderModelDetails {

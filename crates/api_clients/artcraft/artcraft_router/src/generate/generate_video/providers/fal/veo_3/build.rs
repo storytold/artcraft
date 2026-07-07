@@ -1,8 +1,10 @@
-use fal_client::requests_old::webhook::video::image::enqueue_veo_3_image_to_video_webhook::{
-  Veo3I2vAspectRatio, Veo3I2vDuration, Veo3I2vResolution, Veo3Request,
+use fal_client::requests::api::video::image::veo_3::api::{
+  Veo3ImageToVideoAspectRatio, Veo3ImageToVideoDuration, Veo3ImageToVideoRequest,
+  Veo3ImageToVideoResolution,
 };
-use fal_client::requests_old::webhook::video::text::enqueue_veo_3_text_to_video_webhook::{
-  Veo3T2vAspectRatio, Veo3T2vDuration, Veo3T2vResolution, Veo3TextToVideoRequest,
+use fal_client::requests::api::video::text::veo_3::api::{
+  Veo3TextToVideoAspectRatio, Veo3TextToVideoDuration, Veo3TextToVideoRequest,
+  Veo3TextToVideoResolution,
 };
 
 use crate::api::router_aspect_ratio::RouterAspectRatio;
@@ -16,18 +18,16 @@ use crate::generate::generate_video::providers::fal::veo_3::request::{FalVeo3Mod
 use crate::generate::generate_video::video_generation_draft_or_request::VideoGenerationDraftOrRequest;
 use crate::generate::generate_video::video_generation_request::VideoGenerationRequest;
 
-/// Router-level resolution shared between both modes — kept here so the cost
-/// calculator can reconstruct it from either mode's request.
+/// Router-level resolution shared between both modes — each mode maps it onto
+/// its own fal resolution enum.
 #[derive(Debug, Clone, Copy)]
 pub(crate) enum PlanResolution {
-  Default,
   SevenTwentyP,
   TenEightyP,
 }
 
 #[derive(Debug, Clone, Copy)]
 pub(crate) enum PlanDuration {
-  Default,
   FourSeconds,
   SixSeconds,
   EightSeconds,
@@ -36,6 +36,13 @@ pub(crate) enum PlanDuration {
 pub fn build_fal_veo_3(
   builder: GenerateVideoRequestBuilder,
 ) -> Result<VideoGenerationDraftOrRequest, ArtcraftRouterError> {
+  let state = build_fal_veo_3_state(builder)?;
+  Ok(VideoGenerationDraftOrRequest::Request(VideoGenerationRequest::FalVeo3(state)))
+}
+
+pub(crate) fn build_fal_veo_3_state(
+  builder: GenerateVideoRequestBuilder,
+) -> Result<FalVeo3RequestState, ArtcraftRouterError> {
   let strategy = builder.request_mismatch_mitigation_strategy;
 
   if builder.end_frame.is_some() {
@@ -46,18 +53,24 @@ pub fn build_fal_veo_3(
   let negative_prompt = builder.negative_prompt.clone();
   let resolution = plan_resolution(builder.resolution, strategy)?;
   let duration = plan_duration(builder.duration_seconds, strategy)?;
-  let generate_audio = builder.generate_audio.unwrap_or(true);
+  // fal's server default is audio-on; keep the explicit `true` the old
+  // endpoint sent so pricing stays deterministic.
+  let generate_audio = Some(builder.generate_audio.unwrap_or(true));
 
   let mode = match builder.start_frame.clone() {
     Some(ImageRef::Url(url)) => {
       let i2v_aspect_ratio = plan_i2v_aspect_ratio(builder.aspect_ratio, strategy)?;
-      FalVeo3Mode::ImageToVideo(Veo3Request {
-        image_url: url,
+      FalVeo3Mode::ImageToVideo(Veo3ImageToVideoRequest {
         prompt,
-        duration: to_i2v_duration(duration),
+        image_url: url,
         aspect_ratio: i2v_aspect_ratio,
-        resolution: to_i2v_resolution(resolution),
+        duration: duration.map(to_i2v_duration),
+        resolution: resolution.map(to_i2v_resolution),
         generate_audio,
+        negative_prompt,
+        seed: None,
+        auto_fix: None,
+        safety_tolerance: None,
       })
     }
     Some(ImageRef::MediaFileToken(_)) => {
@@ -67,35 +80,37 @@ pub fn build_fal_veo_3(
       let t2v_aspect_ratio = plan_t2v_aspect_ratio(builder.aspect_ratio, strategy)?;
       FalVeo3Mode::TextToVideo(Veo3TextToVideoRequest {
         prompt,
-        negative_prompt,
-        duration: to_t2v_duration(duration),
         aspect_ratio: t2v_aspect_ratio,
-        resolution: to_t2v_resolution(resolution),
+        duration: duration.map(to_t2v_duration),
+        resolution: resolution.map(to_t2v_resolution),
+        negative_prompt,
         generate_audio,
+        seed: None,
+        auto_fix: None,
+        safety_tolerance: None,
       })
     }
   };
 
-  Ok(VideoGenerationDraftOrRequest::Request(VideoGenerationRequest::FalVeo3(
-    FalVeo3RequestState { mode },
-  )))
+  Ok(FalVeo3RequestState { mode })
 }
 
-/// Text-to-video: only 16:9 and 9:16 (no Auto, no Square).
+/// Text-to-video: only 16:9 and 9:16 (no Auto, no Square). `None` lets fal
+/// pick its default (16:9).
 fn plan_t2v_aspect_ratio(
   aspect_ratio: Option<RouterAspectRatio>,
   strategy: RequestMismatchMitigationStrategy,
-) -> Result<Veo3T2vAspectRatio, ArtcraftRouterError> {
-  use Veo3T2vAspectRatio as Ar;
+) -> Result<Option<Veo3TextToVideoAspectRatio>, ArtcraftRouterError> {
+  use Veo3TextToVideoAspectRatio as Ar;
   match aspect_ratio {
-    None => Ok(Ar::Default),
-    Some(RouterAspectRatio::WideSixteenByNine) | Some(RouterAspectRatio::Wide) => Ok(Ar::WideSixteenNine),
-    Some(RouterAspectRatio::TallNineBySixteen) | Some(RouterAspectRatio::Tall) => Ok(Ar::TallNineSixteen),
+    None => Ok(None),
+    Some(RouterAspectRatio::WideSixteenByNine) | Some(RouterAspectRatio::Wide) => Ok(Some(Ar::SixteenByNine)),
+    Some(RouterAspectRatio::TallNineBySixteen) | Some(RouterAspectRatio::Tall) => Ok(Some(Ar::NineBySixteen)),
     Some(other) => match strategy {
       RequestMismatchMitigationStrategy::ErrorOut => {
         Err(unsupported("aspect_ratio", &format!("{:?}", other)))
       }
-      _ => Ok(Ar::Default),
+      _ => Ok(None),
     },
   }
 }
@@ -104,23 +119,23 @@ fn plan_t2v_aspect_ratio(
 fn plan_i2v_aspect_ratio(
   aspect_ratio: Option<RouterAspectRatio>,
   strategy: RequestMismatchMitigationStrategy,
-) -> Result<Veo3I2vAspectRatio, ArtcraftRouterError> {
-  use Veo3I2vAspectRatio as Ar;
+) -> Result<Option<Veo3ImageToVideoAspectRatio>, ArtcraftRouterError> {
+  use Veo3ImageToVideoAspectRatio as Ar;
   match aspect_ratio {
     None
     | Some(RouterAspectRatio::Auto)
     | Some(RouterAspectRatio::Auto2k)
     | Some(RouterAspectRatio::Auto3k)
-    | Some(RouterAspectRatio::Auto4k) => Ok(Ar::Auto),
+    | Some(RouterAspectRatio::Auto4k) => Ok(Some(Ar::Auto)),
 
-    Some(RouterAspectRatio::WideSixteenByNine) | Some(RouterAspectRatio::Wide) => Ok(Ar::WideSixteenNine),
-    Some(RouterAspectRatio::TallNineBySixteen) | Some(RouterAspectRatio::Tall) => Ok(Ar::TallNineSixteen),
+    Some(RouterAspectRatio::WideSixteenByNine) | Some(RouterAspectRatio::Wide) => Ok(Some(Ar::SixteenByNine)),
+    Some(RouterAspectRatio::TallNineBySixteen) | Some(RouterAspectRatio::Tall) => Ok(Some(Ar::NineBySixteen)),
 
     Some(other) => match strategy {
       RequestMismatchMitigationStrategy::ErrorOut => {
         Err(unsupported("aspect_ratio", &format!("{:?}", other)))
       }
-      _ => Ok(Ar::Auto),
+      _ => Ok(Some(Ar::Auto)),
     },
   }
 }
@@ -128,17 +143,17 @@ fn plan_i2v_aspect_ratio(
 fn plan_resolution(
   resolution: Option<RouterResolution>,
   strategy: RequestMismatchMitigationStrategy,
-) -> Result<PlanResolution, ArtcraftRouterError> {
+) -> Result<Option<PlanResolution>, ArtcraftRouterError> {
   match resolution {
-    None => Ok(PlanResolution::Default),
-    Some(RouterResolution::SevenTwentyP) => Ok(PlanResolution::SevenTwentyP),
-    Some(RouterResolution::TenEightyP) => Ok(PlanResolution::TenEightyP),
+    None => Ok(None),
+    Some(RouterResolution::SevenTwentyP) => Ok(Some(PlanResolution::SevenTwentyP)),
+    Some(RouterResolution::TenEightyP) => Ok(Some(PlanResolution::TenEightyP)),
     Some(other) => match strategy {
       RequestMismatchMitigationStrategy::ErrorOut => {
         Err(unsupported("resolution", &format!("{:?}", other)))
       }
-      RequestMismatchMitigationStrategy::PayMoreUpgrade => Ok(PlanResolution::TenEightyP),
-      RequestMismatchMitigationStrategy::PayLessDowngrade => Ok(PlanResolution::SevenTwentyP),
+      RequestMismatchMitigationStrategy::PayMoreUpgrade => Ok(Some(PlanResolution::TenEightyP)),
+      RequestMismatchMitigationStrategy::PayLessDowngrade => Ok(Some(PlanResolution::SevenTwentyP)),
     },
   }
 }
@@ -146,18 +161,18 @@ fn plan_resolution(
 fn plan_duration(
   duration_seconds: Option<u16>,
   strategy: RequestMismatchMitigationStrategy,
-) -> Result<PlanDuration, ArtcraftRouterError> {
+) -> Result<Option<PlanDuration>, ArtcraftRouterError> {
   match duration_seconds {
-    None => Ok(PlanDuration::Default),
-    Some(4) => Ok(PlanDuration::FourSeconds),
-    Some(6) => Ok(PlanDuration::SixSeconds),
-    Some(8) => Ok(PlanDuration::EightSeconds),
+    None => Ok(None),
+    Some(4) => Ok(Some(PlanDuration::FourSeconds)),
+    Some(6) => Ok(Some(PlanDuration::SixSeconds)),
+    Some(8) => Ok(Some(PlanDuration::EightSeconds)),
     Some(other) => match strategy {
       RequestMismatchMitigationStrategy::ErrorOut => {
         Err(unsupported("duration_seconds", &format!("{}", other)))
       }
-      RequestMismatchMitigationStrategy::PayMoreUpgrade => Ok(PlanDuration::EightSeconds),
-      RequestMismatchMitigationStrategy::PayLessDowngrade => Ok(PlanDuration::FourSeconds),
+      RequestMismatchMitigationStrategy::PayMoreUpgrade => Ok(Some(PlanDuration::EightSeconds)),
+      RequestMismatchMitigationStrategy::PayLessDowngrade => Ok(Some(PlanDuration::FourSeconds)),
     },
   }
 }
@@ -169,37 +184,33 @@ fn unsupported(field: &'static str, value: &str) -> ArtcraftRouterError {
   })
 }
 
-fn to_t2v_duration(d: PlanDuration) -> Veo3T2vDuration {
+fn to_t2v_duration(d: PlanDuration) -> Veo3TextToVideoDuration {
   match d {
-    PlanDuration::Default => Veo3T2vDuration::Default,
-    PlanDuration::FourSeconds => Veo3T2vDuration::FourSeconds,
-    PlanDuration::SixSeconds => Veo3T2vDuration::SixSeconds,
-    PlanDuration::EightSeconds => Veo3T2vDuration::EightSeconds,
+    PlanDuration::FourSeconds => Veo3TextToVideoDuration::FourSeconds,
+    PlanDuration::SixSeconds => Veo3TextToVideoDuration::SixSeconds,
+    PlanDuration::EightSeconds => Veo3TextToVideoDuration::EightSeconds,
   }
 }
 
-fn to_i2v_duration(d: PlanDuration) -> Veo3I2vDuration {
+fn to_i2v_duration(d: PlanDuration) -> Veo3ImageToVideoDuration {
   match d {
-    PlanDuration::Default => Veo3I2vDuration::Default,
-    PlanDuration::FourSeconds => Veo3I2vDuration::FourSeconds,
-    PlanDuration::SixSeconds => Veo3I2vDuration::SixSeconds,
-    PlanDuration::EightSeconds => Veo3I2vDuration::EightSeconds,
+    PlanDuration::FourSeconds => Veo3ImageToVideoDuration::FourSeconds,
+    PlanDuration::SixSeconds => Veo3ImageToVideoDuration::SixSeconds,
+    PlanDuration::EightSeconds => Veo3ImageToVideoDuration::EightSeconds,
   }
 }
 
-fn to_t2v_resolution(r: PlanResolution) -> Veo3T2vResolution {
+fn to_t2v_resolution(r: PlanResolution) -> Veo3TextToVideoResolution {
   match r {
-    PlanResolution::Default => Veo3T2vResolution::Default,
-    PlanResolution::SevenTwentyP => Veo3T2vResolution::SevenTwentyP,
-    PlanResolution::TenEightyP => Veo3T2vResolution::TenEightyP,
+    PlanResolution::SevenTwentyP => Veo3TextToVideoResolution::SevenTwentyP,
+    PlanResolution::TenEightyP => Veo3TextToVideoResolution::TenEightyP,
   }
 }
 
-fn to_i2v_resolution(r: PlanResolution) -> Veo3I2vResolution {
+fn to_i2v_resolution(r: PlanResolution) -> Veo3ImageToVideoResolution {
   match r {
-    PlanResolution::Default => Veo3I2vResolution::Default,
-    PlanResolution::SevenTwentyP => Veo3I2vResolution::SevenTwentyP,
-    PlanResolution::TenEightyP => Veo3I2vResolution::TenEightyP,
+    PlanResolution::SevenTwentyP => Veo3ImageToVideoResolution::SevenTwentyP,
+    PlanResolution::TenEightyP => Veo3ImageToVideoResolution::TenEightyP,
   }
 }
 
@@ -207,47 +218,8 @@ fn to_i2v_resolution(r: PlanResolution) -> Veo3I2vResolution {
 mod tests {
   use crate::api::router_video_model::RouterVideoModel;
   use crate::api::router_provider::RouterProvider;
-  use crate::generate::generate_video::video_generation_request::VideoGenerationRequest;
 
   use super::*;
-
-  fn base_t2v_builder() -> GenerateVideoRequestBuilder {
-    GenerateVideoRequestBuilder {
-      model: RouterVideoModel::Veo3,
-      provider: RouterProvider::Fal,
-      prompt: Some("test".to_string()),
-      ..Default::default()
-    }
-  }
-
-  fn base_i2v_builder() -> GenerateVideoRequestBuilder {
-    GenerateVideoRequestBuilder {
-      start_frame: Some(ImageRef::Url("https://example.com/a.png".to_string())),
-      ..base_t2v_builder()
-    }
-  }
-
-  fn t2v_request(b: GenerateVideoRequestBuilder) -> Veo3TextToVideoRequest {
-    match build_fal_veo_3(b).expect("build") {
-      VideoGenerationDraftOrRequest::Request(VideoGenerationRequest::FalVeo3(state)) => match state.mode {
-        FalVeo3Mode::TextToVideo(r) => r,
-        FalVeo3Mode::ImageToVideo(_) => panic!("expected TextToVideo"),
-      },
-      _ => panic!("expected FalVeo3"),
-    }
-  }
-
-  fn i2v_request(b: GenerateVideoRequestBuilder) -> Veo3Request {
-    match build_fal_veo_3(b).expect("build") {
-      VideoGenerationDraftOrRequest::Request(VideoGenerationRequest::FalVeo3(state)) => match state.mode {
-        FalVeo3Mode::ImageToVideo(r) => r,
-        FalVeo3Mode::TextToVideo(_) => panic!("expected ImageToVideo"),
-      },
-      _ => panic!("expected FalVeo3"),
-    }
-  }
-
-  use crate::generate::generate_video::providers::fal::veo_3::request::{FalVeo3Mode, FalVeo3RequestState};
 
   mod mode_selection {
     use super::*;
@@ -262,7 +234,7 @@ mod tests {
     fn end_frame_errors() {
       let mut b = base_t2v_builder();
       b.end_frame = Some(ImageRef::Url("https://example.com/end.png".to_string()));
-      assert!(build_fal_veo_3(b).is_err());
+      assert!(build_fal_veo_3_state(b).is_err());
     }
   }
 
@@ -273,14 +245,14 @@ mod tests {
     fn t2v_720p() {
       let mut b = base_t2v_builder();
       b.resolution = Some(RouterResolution::SevenTwentyP);
-      assert!(matches!(t2v_request(b).resolution, Veo3T2vResolution::SevenTwentyP));
+      assert_eq!(t2v_request(b).resolution, Some(Veo3TextToVideoResolution::SevenTwentyP));
     }
 
     #[test]
     fn t2v_1080p() {
       let mut b = base_t2v_builder();
       b.resolution = Some(RouterResolution::TenEightyP);
-      assert!(matches!(t2v_request(b).resolution, Veo3T2vResolution::TenEightyP));
+      assert_eq!(t2v_request(b).resolution, Some(Veo3TextToVideoResolution::TenEightyP));
     }
 
     #[test]
@@ -288,7 +260,7 @@ mod tests {
       let mut b = base_t2v_builder();
       b.resolution = Some(RouterResolution::FourK);
       b.request_mismatch_mitigation_strategy = RequestMismatchMitigationStrategy::PayMoreUpgrade;
-      assert!(matches!(t2v_request(b).resolution, Veo3T2vResolution::TenEightyP));
+      assert_eq!(t2v_request(b).resolution, Some(Veo3TextToVideoResolution::TenEightyP));
     }
   }
 
@@ -298,13 +270,13 @@ mod tests {
     #[test]
     fn t2v_4s_6s_8s() {
       for (s, expected) in [
-        (4, Veo3T2vDuration::FourSeconds),
-        (6, Veo3T2vDuration::SixSeconds),
-        (8, Veo3T2vDuration::EightSeconds),
+        (4, Veo3TextToVideoDuration::FourSeconds),
+        (6, Veo3TextToVideoDuration::SixSeconds),
+        (8, Veo3TextToVideoDuration::EightSeconds),
       ] {
         let mut b = base_t2v_builder();
         b.duration_seconds = Some(s);
-        assert_eq!(format!("{:?}", t2v_request(b).duration), format!("{:?}", expected));
+        assert_eq!(t2v_request(b).duration, Some(expected));
       }
     }
   }
@@ -316,12 +288,12 @@ mod tests {
     fn t2v_sixteen_nine() {
       let mut b = base_t2v_builder();
       b.aspect_ratio = Some(RouterAspectRatio::WideSixteenByNine);
-      assert!(matches!(t2v_request(b).aspect_ratio, Veo3T2vAspectRatio::WideSixteenNine));
+      assert_eq!(t2v_request(b).aspect_ratio, Some(Veo3TextToVideoAspectRatio::SixteenByNine));
     }
 
     #[test]
     fn i2v_auto_when_unspecified() {
-      assert!(matches!(i2v_request(base_i2v_builder()).aspect_ratio, Veo3I2vAspectRatio::Auto));
+      assert_eq!(i2v_request(base_i2v_builder()).aspect_ratio, Some(Veo3ImageToVideoAspectRatio::Auto));
     }
   }
 
@@ -330,14 +302,14 @@ mod tests {
 
     #[test]
     fn audio_defaults_to_true() {
-      assert!(t2v_request(base_t2v_builder()).generate_audio);
+      assert_eq!(t2v_request(base_t2v_builder()).generate_audio, Some(true));
     }
 
     #[test]
     fn audio_false_is_passed_through() {
       let mut b = base_t2v_builder();
       b.generate_audio = Some(false);
-      assert!(!t2v_request(b).generate_audio);
+      assert_eq!(t2v_request(b).generate_audio, Some(false));
     }
   }
 
@@ -359,7 +331,7 @@ mod tests {
               b.duration_seconds = duration;
               b.aspect_ratio = aspect_ratio;
               b.generate_audio = generate_audio;
-              assert!(build_fal_veo_3(b).is_ok());
+              assert!(build_fal_veo_3_state(b).is_ok());
               combos += 1;
             }
           }
@@ -369,7 +341,33 @@ mod tests {
     assert_eq!(combos, 3 * 4 * 4 * 3 * 2);
   }
 
-  // Silence unused warnings for FalVeo3RequestState in this scope.
-  #[allow(dead_code)]
-  fn _silence(_: FalVeo3RequestState) {}
+  fn base_t2v_builder() -> GenerateVideoRequestBuilder {
+    GenerateVideoRequestBuilder {
+      model: RouterVideoModel::Veo3,
+      provider: RouterProvider::Fal,
+      prompt: Some("test".to_string()),
+      ..Default::default()
+    }
+  }
+
+  fn base_i2v_builder() -> GenerateVideoRequestBuilder {
+    GenerateVideoRequestBuilder {
+      start_frame: Some(ImageRef::Url("https://example.com/a.png".to_string())),
+      ..base_t2v_builder()
+    }
+  }
+
+  fn t2v_request(b: GenerateVideoRequestBuilder) -> Veo3TextToVideoRequest {
+    match build_fal_veo_3_state(b).expect("build_fal_veo_3_state").mode {
+      FalVeo3Mode::TextToVideo(r) => r,
+      FalVeo3Mode::ImageToVideo(_) => panic!("expected TextToVideo"),
+    }
+  }
+
+  fn i2v_request(b: GenerateVideoRequestBuilder) -> Veo3ImageToVideoRequest {
+    match build_fal_veo_3_state(b).expect("build_fal_veo_3_state").mode {
+      FalVeo3Mode::ImageToVideo(r) => r,
+      FalVeo3Mode::TextToVideo(_) => panic!("expected ImageToVideo"),
+    }
+  }
 }

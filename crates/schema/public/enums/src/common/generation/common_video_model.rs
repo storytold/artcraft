@@ -101,6 +101,15 @@ pub enum CommonVideoModel {
   #[serde(rename = "veo_3p1_fast")]
   Veo3p1Fast,
 
+  #[serde(rename = "veo_3p1_lite")]
+  Veo3p1Lite,
+
+  #[serde(rename = "vidu_q3")]
+  ViduQ3,
+
+  #[serde(rename = "vidu_q3_turbo")]
+  ViduQ3Turbo,
+
   // NB: Temporary model rollout. Previously used for "Seedance 2.0 BytePlus".
   // This can be reused in the future.
   #[serde(rename = "preview_model")]
@@ -147,6 +156,9 @@ impl CommonVideoModel {
       Self::Veo3Fast => CommonModelType::Veo3Fast,
       Self::Veo3p1 => CommonModelType::Veo3p1,
       Self::Veo3p1Fast => CommonModelType::Veo3p1Fast,
+      Self::Veo3p1Lite => CommonModelType::Veo3p1Lite,
+      Self::ViduQ3 => CommonModelType::ViduQ3,
+      Self::ViduQ3Turbo => CommonModelType::ViduQ3Turbo,
       Self::PreviewModel => CommonModelType::PreviewModel,
       Self::PreviewModelFast => CommonModelType::PreviewModelFast,
     }
@@ -192,6 +204,9 @@ mod tests {
     assert_serialization(CommonVideoModel::Veo3Fast, "veo_3_fast");
     assert_serialization(CommonVideoModel::Veo3p1, "veo_3p1");
     assert_serialization(CommonVideoModel::Veo3p1Fast, "veo_3p1_fast");
+    assert_serialization(CommonVideoModel::Veo3p1Lite, "veo_3p1_lite");
+    assert_serialization(CommonVideoModel::ViduQ3, "vidu_q3");
+    assert_serialization(CommonVideoModel::ViduQ3Turbo, "vidu_q3_turbo");
     assert_serialization(CommonVideoModel::PreviewModel, "preview_model");
     assert_serialization(CommonVideoModel::PreviewModelFast, "preview_model_fast");
   }
@@ -230,6 +245,9 @@ mod tests {
       ("veo_3_fast", CommonVideoModel::Veo3Fast),
       ("veo_3p1", CommonVideoModel::Veo3p1),
       ("veo_3p1_fast", CommonVideoModel::Veo3p1Fast),
+      ("veo_3p1_lite", CommonVideoModel::Veo3p1Lite),
+      ("vidu_q3", CommonVideoModel::ViduQ3),
+      ("vidu_q3_turbo", CommonVideoModel::ViduQ3Turbo),
       ("preview_model", CommonVideoModel::PreviewModel),
       ("preview_model_fast", CommonVideoModel::PreviewModelFast),
     ];
@@ -275,6 +293,9 @@ mod tests {
       CommonVideoModel::Veo3Fast,
       CommonVideoModel::Veo3p1,
       CommonVideoModel::Veo3p1Fast,
+      CommonVideoModel::Veo3p1Lite,
+      CommonVideoModel::ViduQ3,
+      CommonVideoModel::ViduQ3Turbo,
       CommonVideoModel::PreviewModel,
       CommonVideoModel::PreviewModelFast,
     ];
@@ -319,6 +340,9 @@ mod tests {
       (CommonVideoModel::Veo3Fast, CommonModelType::Veo3Fast),
       (CommonVideoModel::Veo3p1, CommonModelType::Veo3p1),
       (CommonVideoModel::Veo3p1Fast, CommonModelType::Veo3p1Fast),
+      (CommonVideoModel::Veo3p1Lite, CommonModelType::Veo3p1Lite),
+      (CommonVideoModel::ViduQ3, CommonModelType::ViduQ3),
+      (CommonVideoModel::ViduQ3Turbo, CommonModelType::ViduQ3Turbo),
       (CommonVideoModel::PreviewModel, CommonModelType::PreviewModel),
       (CommonVideoModel::PreviewModelFast, CommonModelType::PreviewModelFast),
     ];

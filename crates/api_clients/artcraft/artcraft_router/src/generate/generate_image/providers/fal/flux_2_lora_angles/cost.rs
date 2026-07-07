@@ -32,13 +32,33 @@ impl FalFlux2LoraAnglesCostState {
 #[cfg(test)]
 mod tests {
   use super::*;
-  use fal_client::requests_old::webhook::image::angle::enqueue_flux_2_lora_edit_image_angle_webhook::{
-    EnqueueFlux2LoraAngleNumImages, EnqueueFlux2LoraEditImageAngleRequest,
+  use fal_client::requests::api::image::angle::flux_2_lora_edit_image_angle::api::{
+    Flux2LoraAngleNumImages, Flux2LoraEditImageAngleRequest,
   };
 
-  fn cost_for(n: EnqueueFlux2LoraAngleNumImages) -> ImageGenerationCostEstimate {
+  #[test]
+  fn one_image_is_2_cents() {
+    assert_eq!(cost_for(Flux2LoraAngleNumImages::One).cost_in_usd_cents, Some(2));
+  }
+
+  #[test]
+  fn two_images_is_4_cents() {
+    assert_eq!(cost_for(Flux2LoraAngleNumImages::Two).cost_in_usd_cents, Some(4));
+  }
+
+  #[test]
+  fn three_images_is_6_cents() {
+    assert_eq!(cost_for(Flux2LoraAngleNumImages::Three).cost_in_usd_cents, Some(6));
+  }
+
+  #[test]
+  fn four_images_is_8_cents() {
+    assert_eq!(cost_for(Flux2LoraAngleNumImages::Four).cost_in_usd_cents, Some(8));
+  }
+
+  fn cost_for(n: Flux2LoraAngleNumImages) -> ImageGenerationCostEstimate {
     let state = FalFlux2LoraAnglesCostState::from_request(&FalFlux2LoraAnglesRequestState {
-      request: EnqueueFlux2LoraEditImageAngleRequest {
+      request: Flux2LoraEditImageAngleRequest {
         image_urls: vec!["https://example.com/x.jpg".to_string()],
         horizontal_angle: None,
         vertical_angle: None,
@@ -51,25 +71,5 @@ mod tests {
       },
     });
     state.estimate_cost()
-  }
-
-  #[test]
-  fn one_image_is_2_cents() {
-    assert_eq!(cost_for(EnqueueFlux2LoraAngleNumImages::One).cost_in_usd_cents, Some(2));
-  }
-
-  #[test]
-  fn two_images_is_4_cents() {
-    assert_eq!(cost_for(EnqueueFlux2LoraAngleNumImages::Two).cost_in_usd_cents, Some(4));
-  }
-
-  #[test]
-  fn three_images_is_6_cents() {
-    assert_eq!(cost_for(EnqueueFlux2LoraAngleNumImages::Three).cost_in_usd_cents, Some(6));
-  }
-
-  #[test]
-  fn four_images_is_8_cents() {
-    assert_eq!(cost_for(EnqueueFlux2LoraAngleNumImages::Four).cost_in_usd_cents, Some(8));
   }
 }
