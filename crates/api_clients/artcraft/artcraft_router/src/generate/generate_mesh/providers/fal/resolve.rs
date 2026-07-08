@@ -7,6 +7,7 @@ use enums::common::generation::common_mesh_output_type::CommonMeshOutputType;
 
 use crate::api::image_list_ref::ImageListRef;
 use crate::api::image_ref::ImageRef;
+use crate::api::mesh_ref::MeshRef;
 use crate::client::request_mismatch_mitigation_strategy::RequestMismatchMitigationStrategy;
 use crate::errors::artcraft_router_error::ArtcraftRouterError;
 use crate::errors::client_error::ClientError;
@@ -51,6 +52,20 @@ pub(crate) fn plan_side_image_url(
   image_ref: Option<ImageRef>,
 ) -> Result<Option<String>, ArtcraftRouterError> {
   image_ref.map(image_ref_to_url).transpose()
+}
+
+/// Resolve an optional input mesh file to a URL. Fal only takes URLs;
+/// media file tokens are rejected.
+pub(crate) fn plan_input_mesh_url(
+  mesh_ref: Option<MeshRef>,
+) -> Result<Option<String>, ArtcraftRouterError> {
+  match mesh_ref {
+    None => Ok(None),
+    Some(MeshRef::Url(url)) => Ok(Some(url)),
+    Some(MeshRef::MediaFileToken(_)) => {
+      Err(ArtcraftRouterError::Client(ClientError::FalOnlySupportsUrls))
+    }
+  }
 }
 
 /// Narrow a `u64` face count to the `u32` the fal bindings take.

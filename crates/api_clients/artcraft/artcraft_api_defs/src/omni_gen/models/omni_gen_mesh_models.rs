@@ -71,6 +71,11 @@ pub struct OmniGenMeshModelDetails {
   #[serde(skip_serializing_if = "Option::is_none")]
   pub multi_view_supported: Option<bool>,
 
+  /// Whether the model takes an existing mesh file as input
+  /// (mesh-to-mesh models like part splitting and retopology).
+  #[serde(skip_serializing_if = "Option::is_none")]
+  pub mesh_input_supported: Option<bool>,
+
   /// The mesh output types the model supports.
   #[serde(skip_serializing_if = "Option::is_none")]
   pub mesh_output_types: Option<Vec<CommonMeshOutputType>>,
@@ -86,6 +91,18 @@ pub struct OmniGenMeshModelDetails {
   /// Whether PBR (physically based rendering) material generation is supported.
   #[serde(skip_serializing_if = "Option::is_none")]
   pub pbr_supported: Option<bool>,
+
+  /// Whether texture generation can be toggled off (untextured output).
+  #[serde(skip_serializing_if = "Option::is_none")]
+  pub texture_toggle_supported: Option<bool>,
+
+  /// Whether a texture quality level (standard/detailed) can be selected.
+  #[serde(skip_serializing_if = "Option::is_none")]
+  pub texture_quality_supported: Option<bool>,
+
+  /// Whether a geometry quality level (standard/detailed) can be selected.
+  #[serde(skip_serializing_if = "Option::is_none")]
+  pub geometry_quality_supported: Option<bool>,
 
   #[serde(skip_serializing_if = "Option::is_none")]
   pub is_disabled: Option<bool>,
@@ -103,10 +120,14 @@ impl Default for OmniGenMeshModelDetails {
       image_input_supported: None,
       sketch_input_supported: None,
       multi_view_supported: None,
+      mesh_input_supported: None,
       mesh_output_types: None,
       polygon_types: None,
       face_count_supported: None,
       pbr_supported: None,
+      texture_toggle_supported: None,
+      texture_quality_supported: None,
+      geometry_quality_supported: None,
       is_disabled: None,
     }
   }

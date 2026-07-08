@@ -1,6 +1,7 @@
 use artcraft_api_defs::omni_gen::cost_and_generate_requests::omni_gen_mesh_cost_and_generate_request::OmniGenMeshCostAndGenerateRequest;
 use artcraft_router::api::image_list_ref::ImageListRef;
 use artcraft_router::api::image_ref::ImageRef;
+use artcraft_router::api::mesh_ref::MeshRef;
 use artcraft_router::api::router_mesh_model::RouterMeshModel;
 use artcraft_router::api::router_provider::RouterProvider;
 use artcraft_router::client::request_mismatch_mitigation_strategy::RequestMismatchMitigationStrategy;
@@ -34,10 +35,15 @@ pub fn hydrate_to_router_request(
       .map(ImageRef::MediaFileToken),
     right_image: request.right_image_media_token.clone()
       .map(ImageRef::MediaFileToken),
+    input_mesh: request.input_mesh_media_token.clone()
+      .map(MeshRef::MediaFileToken),
     mesh_output_type: request.mesh_output_type,
     polygon_type: request.polygon_type,
     face_count: request.face_count,
     enable_pbr: request.enable_pbr,
+    enable_texture: request.enable_texture,
+    texture_quality: request.texture_quality,
+    geometry_quality: request.geometry_quality,
     request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::PayMoreUpgrade,
     idempotency_token: request.idempotency_token.clone(),
   })

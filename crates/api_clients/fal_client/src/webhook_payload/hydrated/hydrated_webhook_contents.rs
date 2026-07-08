@@ -48,7 +48,13 @@ pub struct ExtractedContents {
 
   /// Parsed from `payload.model_mesh`.
   pub model_mesh: Option<ModelMeshData>,
-  
+
+  /// Parsed from `payload.model_obj` (e.g. Hunyuan 3D v3.1 Rapid's OBJ output).
+  pub model_obj: Option<ModelObjData>,
+
+  /// Parsed from `payload.result_files` (e.g. Hunyuan 3D v3.1 Part's FBX part files).
+  pub result_files: Option<Vec<ResultFileData>>,
+
   /// Parsed from `payload.thumbnail`.
   pub thumbnail: Option<ThumbnailData>,
 }
@@ -96,6 +102,28 @@ pub struct ModelGlbData {
 /// Data under `payload.model_mesh` (there may be other sibling keys too)
 #[derive(Debug, Deserialize)]
 pub struct ModelMeshData {
+  pub content_type: Option<String>,
+  pub file_name: Option<String>,
+  pub file_size: Option<usize>,
+  pub url: Option<String>,
+}
+
+/// Data under `payload.model_obj` (there may be other sibling keys too).
+/// Some endpoints (e.g. Hunyuan 3D v3.1 Rapid text-to-3d) return an OBJ
+/// model instead of (or alongside) a GLB.
+#[derive(Debug, Deserialize)]
+pub struct ModelObjData {
+  pub content_type: Option<String>,
+  pub file_name: Option<String>,
+  pub file_size: Option<usize>,
+  pub url: Option<String>,
+}
+
+/// An entry under `payload.result_files` (a list of these).
+/// Used by endpoints returning multiple output files, e.g. Hunyuan 3D v3.1
+/// Part's per-part FBX files.
+#[derive(Debug, Deserialize)]
+pub struct ResultFileData {
   pub content_type: Option<String>,
   pub file_name: Option<String>,
   pub file_size: Option<usize>,

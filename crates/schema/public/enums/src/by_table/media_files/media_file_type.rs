@@ -35,6 +35,9 @@ pub enum MediaFileType {
   /// FBX files (for Bevy)
   Fbx,
 
+  /// Wavefront OBJ mesh files
+  Obj,
+
   /// glTF binary files (for Bevy)
   Glb,
 
@@ -118,6 +121,9 @@ impl MediaFileType {
       "image/png" => Some(Self::Png),
       "video/mp4" => Some(Self::Mp4),
       "model/gltf-binary" => Some(Self::Glb),
+      "model/fbx" => Some(Self::Fbx),
+      "application/fbx" => Some(Self::Fbx),
+      "model/obj" => Some(Self::Obj),
       //"audio/wav" => Some(Self::Wav), // NB: Not sure if this is correct
       //"audio/mpeg" => Some(Self::Mp3), // NB: Not sure if this is correct
       //"image/gif" => Some(Self::Gif), // NB: Not sure if this is correct
@@ -133,6 +139,7 @@ impl MediaFileType {
       Self::Video => "video",
       Self::Bvh => "bvh",
       Self::Fbx => "fbx",
+      Self::Obj => "obj",
       Self::Glb => "glb",
       Self::Gltf => "gltf",
       Self::Spz => "spz",
@@ -158,6 +165,7 @@ impl MediaFileType {
       "video" => Ok(Self::Video),
       "bvh" => Ok(Self::Bvh),
       "fbx" => Ok(Self::Fbx),
+      "obj" => Ok(Self::Obj),
       "glb" => Ok(Self::Glb),
       "gltf" => Ok(Self::Gltf),
       "spz" => Ok(Self::Spz),
@@ -186,6 +194,7 @@ impl MediaFileType {
       Self::Video,
       Self::Bvh,
       Self::Fbx,
+      Self::Obj,
       Self::Glb,
       Self::Gltf,
       Self::Spz,
@@ -243,6 +252,7 @@ mod tests {
       assert_serialization(MediaFileType::Video, "video");
       assert_serialization(MediaFileType::Bvh, "bvh");
       assert_serialization(MediaFileType::Fbx, "fbx");
+      assert_serialization(MediaFileType::Obj, "obj");
       assert_serialization(MediaFileType::Glb, "glb");
       assert_serialization(MediaFileType::Gltf, "gltf");
       assert_serialization(MediaFileType::Spz, "spz");
@@ -320,12 +330,13 @@ mod tests {
     #[test]
     fn all_variants() {
       let mut variants = MediaFileType::all_variants();
-      assert_eq!(variants.len(), 20);
+      assert_eq!(variants.len(), 21);
       assert_eq!(variants.pop_first(), Some(MediaFileType::Audio));
       assert_eq!(variants.pop_first(), Some(MediaFileType::Image));
       assert_eq!(variants.pop_first(), Some(MediaFileType::Video));
       assert_eq!(variants.pop_first(), Some(MediaFileType::Bvh));
       assert_eq!(variants.pop_first(), Some(MediaFileType::Fbx));
+      assert_eq!(variants.pop_first(), Some(MediaFileType::Obj));
       assert_eq!(variants.pop_first(), Some(MediaFileType::Glb));
       assert_eq!(variants.pop_first(), Some(MediaFileType::Gltf));
       assert_eq!(variants.pop_first(), Some(MediaFileType::Spz));

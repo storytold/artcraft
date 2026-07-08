@@ -86,6 +86,131 @@ fn build_omni_gen_mesh_models() -> Vec<OmniGenMeshModelDetails> {
     ..Default::default()
   });
 
+  // Hunyuan 3D 3.1 Pro: text or (multi-view) image input. No low-poly mode
+  // or polygon type selection (unlike v3).
+  models.push(OmniGenMeshModelDetails {
+    model: CommonMeshModel::Hunyuan3d3p1Pro,
+    model_creator: Some(ModelCreator::Tencent),
+    full_name: Some("Hunyuan 3D 3.1 Pro".to_string()),
+    text_prompt_supported: Some(true),
+    image_input_supported: Some(true),
+    multi_view_supported: Some(true),
+    mesh_output_types: Some(vec![
+      CommonMeshOutputType::Normal,
+      CommonMeshOutputType::Geometry,
+    ]),
+    face_count_supported: Some(true),
+    pbr_supported: Some(true),
+    ..Default::default()
+  });
+
+  // Hunyuan 3D 3.1 Rapid: the fast, low-cost tier. Text or single-image
+  // input with a minimal option set.
+  models.push(OmniGenMeshModelDetails {
+    model: CommonMeshModel::Hunyuan3d3p1Rapid,
+    model_creator: Some(ModelCreator::Tencent),
+    full_name: Some("Hunyuan 3D 3.1 Rapid".to_string()),
+    extra_info_short: Some("Fast".to_string()),
+    text_prompt_supported: Some(true),
+    image_input_supported: Some(true),
+    mesh_output_types: Some(vec![
+      CommonMeshOutputType::Normal,
+      CommonMeshOutputType::Geometry,
+    ]),
+    pbr_supported: Some(true),
+    ..Default::default()
+  });
+
+  // Hunyuan 3D 3.1 Part: splits an existing mesh (FBX) into semantic parts.
+  models.push(OmniGenMeshModelDetails {
+    model: CommonMeshModel::Hunyuan3d3p1Part,
+    model_creator: Some(ModelCreator::Tencent),
+    full_name: Some("Hunyuan 3D 3.1 Part".to_string()),
+    extra_info: Some("Splits an existing 3D mesh into semantically meaningful parts".to_string()),
+    extra_info_short: Some("Mesh splitting".to_string()),
+    mesh_input_supported: Some(true),
+    ..Default::default()
+  });
+
+  // Hunyuan 3D 3.1 Smart Topology: retopologizes an existing mesh (GLB/OBJ).
+  models.push(OmniGenMeshModelDetails {
+    model: CommonMeshModel::Hunyuan3d3p1SmartTopology,
+    model_creator: Some(ModelCreator::Tencent),
+    full_name: Some("Hunyuan 3D 3.1 Smart Topology".to_string()),
+    extra_info: Some("Retopologizes an existing 3D mesh into a cleaner, more efficient topology".to_string()),
+    extra_info_short: Some("Retopology".to_string()),
+    mesh_input_supported: Some(true),
+    polygon_types: Some(vec![
+      CommonPolygonType::Triangle,
+      CommonPolygonType::Quad,
+    ]),
+    ..Default::default()
+  });
+
+  // Tripo3D H3.1: text, single-image, or multi-view image input with
+  // texture/geometry quality tiers and quad output.
+  models.push(OmniGenMeshModelDetails {
+    model: CommonMeshModel::Tripo3dH3p1,
+    model_creator: Some(ModelCreator::Tripo),
+    full_name: Some("Tripo3D H3.1".to_string()),
+    text_prompt_supported: Some(true),
+    image_input_supported: Some(true),
+    multi_view_supported: Some(true),
+    mesh_output_types: Some(vec![
+      CommonMeshOutputType::Normal,
+      CommonMeshOutputType::Geometry,
+    ]),
+    polygon_types: Some(vec![
+      CommonPolygonType::Triangle,
+      CommonPolygonType::Quad,
+    ]),
+    face_count_supported: Some(true),
+    pbr_supported: Some(true),
+    texture_toggle_supported: Some(true),
+    texture_quality_supported: Some(true),
+    geometry_quality_supported: Some(true),
+    ..Default::default()
+  });
+
+  // Meshy 6: text or single-image input with low-poly mode and quad output.
+  models.push(OmniGenMeshModelDetails {
+    model: CommonMeshModel::MeshyV6,
+    model_creator: Some(ModelCreator::Meshy),
+    full_name: Some("Meshy 6".to_string()),
+    text_prompt_supported: Some(true),
+    image_input_supported: Some(true),
+    mesh_output_types: Some(vec![
+      CommonMeshOutputType::Normal,
+      CommonMeshOutputType::LowPoly,
+      CommonMeshOutputType::Geometry,
+    ]),
+    polygon_types: Some(vec![
+      CommonPolygonType::Triangle,
+      CommonPolygonType::Quad,
+    ]),
+    face_count_supported: Some(true),
+    pbr_supported: Some(true),
+    texture_toggle_supported: Some(true),
+    ..Default::default()
+  });
+
+  // Rodin 2.5 Fast: text or image(s) input; fast, low-cost.
+  models.push(OmniGenMeshModelDetails {
+    model: CommonMeshModel::Rodin2p5Fast,
+    model_creator: Some(ModelCreator::Deemos),
+    full_name: Some("Rodin 2.5 Fast".to_string()),
+    extra_info_short: Some("Fast".to_string()),
+    text_prompt_supported: Some(true),
+    image_input_supported: Some(true),
+    mesh_output_types: Some(vec![
+      CommonMeshOutputType::Normal,
+      CommonMeshOutputType::Geometry,
+    ]),
+    pbr_supported: Some(true),
+    texture_toggle_supported: Some(true),
+    ..Default::default()
+  });
+
   models
 }
 
@@ -109,6 +234,34 @@ fn build_omni_gen_mesh_model_providers() -> Vec<OmniGenMeshModelProviderDetails>
       },
       OmniGenMeshProviderModelDetails {
         model: CommonMeshModel::Hunyuan3d3Sketch,
+        overrides: None,
+      },
+      OmniGenMeshProviderModelDetails {
+        model: CommonMeshModel::Hunyuan3d3p1Pro,
+        overrides: None,
+      },
+      OmniGenMeshProviderModelDetails {
+        model: CommonMeshModel::Hunyuan3d3p1Rapid,
+        overrides: None,
+      },
+      OmniGenMeshProviderModelDetails {
+        model: CommonMeshModel::Hunyuan3d3p1Part,
+        overrides: None,
+      },
+      OmniGenMeshProviderModelDetails {
+        model: CommonMeshModel::Hunyuan3d3p1SmartTopology,
+        overrides: None,
+      },
+      OmniGenMeshProviderModelDetails {
+        model: CommonMeshModel::Tripo3dH3p1,
+        overrides: None,
+      },
+      OmniGenMeshProviderModelDetails {
+        model: CommonMeshModel::MeshyV6,
+        overrides: None,
+      },
+      OmniGenMeshProviderModelDetails {
+        model: CommonMeshModel::Rodin2p5Fast,
         overrides: None,
       },
     ],

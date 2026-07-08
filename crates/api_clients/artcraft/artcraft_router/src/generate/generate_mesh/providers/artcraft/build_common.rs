@@ -4,7 +4,7 @@ use enums::common::generation::common_mesh_model::CommonMeshModel as CommonMeshM
 use crate::errors::artcraft_router_error::ArtcraftRouterError;
 use crate::generate::generate_mesh::generate_mesh_request_builder::GenerateMeshRequestBuilder;
 use crate::generate::generate_mesh::providers::artcraft::resolve::{
-  resolve_image_list_ref, resolve_image_ref,
+  resolve_image_list_ref, resolve_image_ref, resolve_mesh_ref,
 };
 
 /// Build an `OmniGenMeshCostAndGenerateRequest` from the builder. The
@@ -20,6 +20,7 @@ pub fn build_artcraft_omni_mesh_request(
   let back_image_media_token = resolve_image_ref(builder.back_image.take())?;
   let left_image_media_token = resolve_image_ref(builder.left_image.take())?;
   let right_image_media_token = resolve_image_ref(builder.right_image.take())?;
+  let input_mesh_media_token = resolve_mesh_ref(builder.input_mesh.take())?;
   let idempotency_token = builder.get_or_generate_idempotency_token();
 
   Ok(OmniGenMeshCostAndGenerateRequest {
@@ -31,10 +32,14 @@ pub fn build_artcraft_omni_mesh_request(
     back_image_media_token,
     left_image_media_token,
     right_image_media_token,
+    input_mesh_media_token,
     mesh_output_type: builder.mesh_output_type,
     polygon_type: builder.polygon_type,
     face_count: builder.face_count,
     enable_pbr: builder.enable_pbr,
+    enable_texture: builder.enable_texture,
+    texture_quality: builder.texture_quality,
+    geometry_quality: builder.geometry_quality,
   })
 }
 

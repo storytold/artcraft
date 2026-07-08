@@ -5,6 +5,7 @@ pub mod common_generation_mode;
 pub mod common_image_model;
 pub mod common_mesh_model;
 pub mod common_mesh_output_type;
+pub mod common_mesh_quality;
 pub mod common_musical_key;
 pub mod common_polygon_type;
 pub mod common_quality;

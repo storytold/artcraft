@@ -6,6 +6,7 @@
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Hash, Ord, PartialOrd)]
 pub enum FileExtension {
   Aac,
+  Fbx,
   Flac,
   Gif,
   Glb,
@@ -13,6 +14,7 @@ pub enum FileExtension {
   Mov,
   Mp3,
   Mp4,
+  Obj,
   Ogg,
   Opus,
   Png,
@@ -25,6 +27,8 @@ impl FileExtension {
   pub fn from_mimetype(mimetype: &str) -> Option<Self> {
     match mimetype {
       "audio/aac" => Some(FileExtension::Aac),
+      "model/fbx" => Some(FileExtension::Fbx),
+      "application/fbx" => Some(FileExtension::Fbx),
       "audio/flac" => Some(FileExtension::Flac),
       "image/gif" => Some(FileExtension::Gif),
       "model/gltf-binary" => Some(FileExtension::Glb),
@@ -32,6 +36,7 @@ impl FileExtension {
       "video/quicktime" => Some(FileExtension::Mov),
       "audio/mpeg" => Some(FileExtension::Mp3),
       "video/mp4" => Some(FileExtension::Mp4),
+      "model/obj" => Some(FileExtension::Obj),
       "audio/ogg" => Some(FileExtension::Ogg),
       "audio/opus" => Some(FileExtension::Opus),
       "image/png" => Some(FileExtension::Png),
@@ -53,6 +58,7 @@ impl FileExtension {
   fn with_and_without_period(&self) -> (&'static str, &'static str) {
     match self {
       FileExtension::Aac => (".aac", "aac"),
+      FileExtension::Fbx => (".fbx", "fbx"),
       FileExtension::Flac => (".flac", "flac"),
       FileExtension::Gif => (".gif", "gif"),
       FileExtension::Glb => (".glb", "glb"),
@@ -60,6 +66,7 @@ impl FileExtension {
       FileExtension::Mov => (".mov", "mov"),
       FileExtension::Mp3 => (".mp3", "mp3"),
       FileExtension::Mp4 => (".mp4", "mp4"),
+      FileExtension::Obj => (".obj", "obj"),
       FileExtension::Ogg => (".ogg", "ogg"),
       FileExtension::Opus => (".opus", "opus"),
       FileExtension::Png => (".png", "png"),
