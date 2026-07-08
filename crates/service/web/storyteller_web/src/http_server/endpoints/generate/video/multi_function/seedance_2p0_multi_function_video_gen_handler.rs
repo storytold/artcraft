@@ -18,6 +18,7 @@ use crate::http_server::web_utils::get_request_platform_type::get_request_platfo
 use crate::state::server_state::ServerState;
 use crate::util::http_download_url_to_bytes::http_download_url_to_bytes;
 use crate::util::lookup::lookup_media_file_urls_as_map::lookup_media_file_urls_as_map;
+use crate::util::text_contains_cjk::text_contains_cjk;
 use actix_web::web::Json;
 use actix_web::{web, HttpRequest, ResponseError};
 use artcraft_api_defs::generate::video::multi_function::seedance_2p0_multi_function_video_gen::{
@@ -61,6 +62,9 @@ use tokens::tokens::users::UserToken;
 use url::Url;
 use url_utils::extension::extract_extension_from_url::{extract_extension_from_url, ExtractExtensions};
 
+const MAX_PROMPT_CHARS: usize = 10_000;
+const MAX_IMAGE_REFERENCES: usize = 9;
+
 // ======================== Result of a successful generation ========================
 
 /// Everything the caller needs after a successful upload + generate cycle.
@@ -96,6 +100,10 @@ pub async fn seedance_2p0_multi_function_video_gen_handler(
   request: Json<Seedance2p0MultiFunctionVideoGenRequest>,
   server_state: web::Data<Arc<ServerState>>,
 ) -> Result<Json<Seedance2p0MultiFunctionVideoGenResponse>, CommonWebError> {
+
+  // Reject requests that exceed Seedance 2.0's upstream limits (prompt length,
+  // reference image count) before any billable or DB-mutating work.
+  validate_seedance_2p0_limits(&request)?;
 
   payments_error_test(&request.prompt.as_deref().unwrap_or(""))?;
 
@@ -538,6 +546,38 @@ pub async fn seedance_2p0_multi_function_video_gen_handler(
 
 // ======================== Helpers ========================
 
+/// Seedance 2.0 fails upstream when the prompt exceeds 10,000 characters
+/// (unless it contains Chinese, Japanese, or Korean text, which the provider
+/// handles differently) or when more than 9 reference images are supplied.
+/// Reject these doomed requests up front so callers see a clean 400 with an
+/// actionable message and we don't charge their wallet for an inference job
+/// we know will fail.
+fn validate_seedance_2p0_limits(
+  request: &Seedance2p0MultiFunctionVideoGenRequest,
+) -> Result<(), CommonWebError> {
+  if let Some(prompt) = request.prompt.as_deref() {
+    let char_count = prompt.chars().count();
+    if char_count > MAX_PROMPT_CHARS && !text_contains_cjk(prompt) {
+      return Err(CommonWebError::BadInputWithSimpleMessage(format!(
+        "Prompt is too long: Seedance 2.0 models accept at most {MAX_PROMPT_CHARS} characters (got {char_count}).",
+      )));
+    }
+  }
+
+  let image_reference_count = request
+    .reference_image_media_tokens
+    .as_ref()
+    .map_or(0, |tokens| tokens.len());
+
+  if image_reference_count > MAX_IMAGE_REFERENCES {
+    return Err(CommonWebError::BadInputWithSimpleMessage(format!(
+      "Too many image references: Seedance 2.0 models accept at most {MAX_IMAGE_REFERENCES} reference images (got {image_reference_count}).",
+    )));
+  }
+
+  Ok(())
+}
+
 fn map_resolution(aspect_ratio: Option<Seedance2p0AspectRatio>) -> KinoviAspectRatio {
   match aspect_ratio {
     Some(Seedance2p0AspectRatio::Landscape16x9) => KinoviAspectRatio::Landscape16x9,
@@ -827,4 +867,87 @@ async fn upload_to_seedance2pro(
       })?;
 
   Ok(upload_result.public_url)
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  mod seedance_limits_tests {
+    use super::*;
+
+    #[test]
+    fn accepts_prompt_at_limit() {
+      let req = Seedance2p0MultiFunctionVideoGenRequest {
+        prompt: Some("a".repeat(MAX_PROMPT_CHARS)),
+        ..base_request()
+      };
+      assert!(validate_seedance_2p0_limits(&req).is_ok());
+    }
+
+    #[test]
+    fn rejects_prompt_over_limit() {
+      let req = Seedance2p0MultiFunctionVideoGenRequest {
+        prompt: Some("a".repeat(MAX_PROMPT_CHARS + 1)),
+        ..base_request()
+      };
+      assert!(matches!(
+        validate_seedance_2p0_limits(&req),
+        Err(CommonWebError::BadInputWithSimpleMessage(_))
+      ));
+    }
+
+    #[test]
+    fn accepts_over_limit_prompt_containing_cjk() {
+      let mut prompt = "a".repeat(MAX_PROMPT_CHARS + 1);
+      prompt.push('猫');
+      let req = Seedance2p0MultiFunctionVideoGenRequest {
+        prompt: Some(prompt),
+        ..base_request()
+      };
+      assert!(validate_seedance_2p0_limits(&req).is_ok());
+    }
+
+    #[test]
+    fn accepts_nine_image_references() {
+      let req = Seedance2p0MultiFunctionVideoGenRequest {
+        reference_image_media_tokens: Some(reference_tokens(MAX_IMAGE_REFERENCES)),
+        ..base_request()
+      };
+      assert!(validate_seedance_2p0_limits(&req).is_ok());
+    }
+
+    #[test]
+    fn rejects_ten_image_references() {
+      let req = Seedance2p0MultiFunctionVideoGenRequest {
+        reference_image_media_tokens: Some(reference_tokens(MAX_IMAGE_REFERENCES + 1)),
+        ..base_request()
+      };
+      assert!(matches!(
+        validate_seedance_2p0_limits(&req),
+        Err(CommonWebError::BadInputWithSimpleMessage(_))
+      ));
+    }
+  }
+
+  fn base_request() -> Seedance2p0MultiFunctionVideoGenRequest {
+    Seedance2p0MultiFunctionVideoGenRequest {
+      uuid_idempotency_token: "a1b2c3d4-e5f6-7890-abcd-ef1234567890".to_string(),
+      prompt: Some("test".to_string()),
+      start_frame_media_token: None,
+      end_frame_media_token: None,
+      reference_image_media_tokens: None,
+      reference_video_media_tokens: None,
+      reference_audio_media_tokens: None,
+      reference_character_tokens: None,
+      aspect_ratio: None,
+      output_resolution: None,
+      duration_seconds: Some(5),
+      batch_count: None,
+    }
+  }
+
+  fn reference_tokens(count: usize) -> Vec<MediaFileToken> {
+    (0..count).map(|i| MediaFileToken::new(format!("mf_{i}"))).collect()
+  }
 }

@@ -13,6 +13,7 @@ pub mod http_download_url_to_tempfile;
 pub mod lookup;
 pub mod placeholder_images;
 pub mod read_toml_file_to_struct;
+pub mod text_contains_cjk;
 pub mod title_to_url_slug;
 pub mod traits;
 pub mod troll_user_bans;
