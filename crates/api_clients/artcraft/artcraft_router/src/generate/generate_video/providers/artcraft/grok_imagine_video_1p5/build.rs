@@ -1,7 +1,6 @@
 use enums::common::generation::common_video_model::CommonVideoModel as CommonVideoModelEnum;
 
 use crate::errors::artcraft_router_error::ArtcraftRouterError;
-use crate::errors::client_error::ClientError;
 use crate::generate::generate_video::generate_video_request_builder::GenerateVideoRequestBuilder;
 use crate::generate::generate_video::providers::artcraft::build_common::{
   build_artcraft_omni_video_request, SupportedResolutions, UltraWideSupport,
@@ -27,17 +26,10 @@ pub fn build_artcraft_grok_imagine_video_1p5(
     UltraWideSupport::Unsupported,
   )?;
 
-  // xAI's v1.5 model rejects text-to-video at the server. Bounce here rather
-  // than spending an upstream call to learn the same thing.
-  if request.start_frame_image_media_token.is_none()
-    && request.reference_image_media_tokens.as_ref().map_or(true, |v| v.is_empty())
-  {
-    return Err(ArtcraftRouterError::Client(ClientError::ModelDoesNotSupportOption {
-      field: "image_inputs",
-      value: "text-to-video isn't supported by grok-imagine-video-1.5; supply a start_frame or at least one reference image".to_string(),
-    }));
-  }
-
+  // NB: xAI's v1.5 model rejects text-to-video at the server, but that is
+  // NOT enforced here — the cost path builds image-less requests to price
+  // them while the user is still composing. The generate endpoints reject
+  // image-less v1.5 requests at the handler layer (validate_when_image_required).
   let state = ArtcraftGrokImagineVideo1p5RequestState { request };
 
   Ok(VideoGenerationDraftOrRequest::Request(
@@ -130,6 +122,15 @@ mod tests {
     use super::*;
 
     #[test]
+    fn builds_without_any_image_inputs() {
+      // The cost path prices image-less requests while the user is still
+      // composing; the generate endpoints enforce the image requirement.
+      let req = unwrap_request(make_builder(|_| {}));
+      assert!(req.request.start_frame_image_media_token.is_none());
+      assert!(req.request.reference_image_media_tokens.is_none());
+    }
+
+    #[test]
     fn start_frame_token_passed_through() {
       let token = MediaFileToken::new("mf_start".to_string());
       let req = unwrap_request(make_builder(|b| {
@@ -180,12 +181,6 @@ mod tests {
   fn make_builder(f: impl FnOnce(&mut GenerateVideoRequestBuilder)) -> GenerateVideoRequestBuilder {
     let mut builder = base_builder();
     f(&mut builder);
-    // v1.5 requires an input image; tests that don't explicitly exercise the
-    // image-handling paths get a default MediaFileToken start_frame so they
-    // sail past the no-image guard in `build()`.
-    if builder.start_frame.is_none() && builder.reference_images.is_none() {
-      builder.start_frame = Some(ImageRef::MediaFileToken(MediaFileToken::new("mf_default".to_string())));
-    }
     builder
   }
 

@@ -5,7 +5,11 @@ use crate::http_server::common_responses::common_web_error::CommonWebError;
 /// World Labs MultiImage input accepts up to this many reference images.
 const MAX_IMAGE_REFERENCES: usize = 4;
 
-/// Validate requests before they incur user costs or send API requests.
+/// Validate generation requests before they incur user costs or send API
+/// requests.
+///
+/// NB: The cost endpoint deliberately does NOT call this — the UI polls for
+/// a price while the user is still composing the request.
 ///
 /// Model presence is enforced later during hydration; the input-shape rules
 /// below apply uniformly to all Marble models.

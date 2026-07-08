@@ -5,11 +5,10 @@ use actix_web::{web, HttpRequest};
 use artcraft_api_defs::omni_gen::cost_and_generate_requests::omni_gen_mesh_cost_and_generate_request::OmniGenMeshCostAndGenerateRequest;
 use artcraft_api_defs::omni_gen::cost_response::omni_gen_mesh_cost_response::OmniGenMeshCostResponse;
 use artcraft_router::api::router_provider::RouterProvider;
-use log::warn;
 
 use crate::http_server::common_responses::common_web_error::CommonWebError;
+use crate::http_server::endpoints::omni_gen::shared_utils::map_router_cost_error::map_router_cost_error;
 use crate::http_server::endpoints::omni_gen::generate::mesh::helpers::hydrate_router_request::hydrate_to_router_request;
-use crate::http_server::endpoints::omni_gen::shared_utils::mesh::validate_mesh_request::validate_mesh_request;
 use crate::state::server_state::ServerState;
 
 /// Estimate the cost of a mesh (3D object) generation.
@@ -29,22 +28,18 @@ pub async fn omni_gen_mesh_cost_handler(
   request: Json<OmniGenMeshCostAndGenerateRequest>,
   _server_state: web::Data<Arc<ServerState>>,
 ) -> Result<Json<OmniGenMeshCostResponse>, CommonWebError> {
-  validate_mesh_request(&request)?;
-
+  // NB: Deliberately no input validation here. The UI polls this endpoint
+  // while the user is still composing the request (no prompt typed, nothing
+  // attached), and pricing is a total function of the model and options.
+  // Bad requests are rejected by the generate endpoint.
   let mut builder = hydrate_to_router_request(&request)?;
 
-  builder.provider = RouterProvider::Artcraft;
+  builder.provider = RouterProvider::Artcraft; // NB: User is paying for ArtCraft credits / generation
 
   let estimate = builder.build2()
-    .map_err(|e| {
-      warn!("Failed to build mesh cost estimate: {}", e);
-      CommonWebError::from_error(e)
-    })?
+    .map_err(map_router_cost_error)?
     .estimate_cost()
-    .map_err(|e| {
-      warn!("Failed to estimate mesh cost: {}", e);
-      CommonWebError::from_error(e)
-    })?;
+    .map_err(map_router_cost_error)?;
 
   Ok(Json(OmniGenMeshCostResponse {
     success: true,
