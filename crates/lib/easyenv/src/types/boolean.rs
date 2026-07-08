@@ -75,3 +75,87 @@ fn get_env_bool_internal(env_name: &str) -> Result<Option<bool>, EnvError> {
     }
   }
 }
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  use crate::tests_common::EnvVarGuard;
+
+  #[test]
+  fn literals_round_trip_through_optional_required_and_or_default() {
+    let _g = EnvVarGuard::set("BOOLEAN_TEST_TRUE_LOWER", "true");
+    assert_eq!(get_env_bool_optional("BOOLEAN_TEST_TRUE_LOWER"), Some(true));
+    assert_eq!(get_env_bool_required("BOOLEAN_TEST_TRUE_LOWER").unwrap(), true);
+    assert_eq!(get_env_bool_or_default("BOOLEAN_TEST_TRUE_LOWER", false), true);
+
+    let _g = EnvVarGuard::set("BOOLEAN_TEST_TRUE_UPPER", "TRUE");
+    assert_eq!(get_env_bool_optional("BOOLEAN_TEST_TRUE_UPPER"), Some(true));
+    assert_eq!(get_env_bool_required("BOOLEAN_TEST_TRUE_UPPER").unwrap(), true);
+    assert_eq!(get_env_bool_or_default("BOOLEAN_TEST_TRUE_UPPER", false), true);
+
+    let _g = EnvVarGuard::set("BOOLEAN_TEST_FALSE_LOWER", "false");
+    assert_eq!(get_env_bool_optional("BOOLEAN_TEST_FALSE_LOWER"), Some(false));
+    assert_eq!(get_env_bool_required("BOOLEAN_TEST_FALSE_LOWER").unwrap(), false);
+    assert_eq!(get_env_bool_or_default("BOOLEAN_TEST_FALSE_LOWER", true), false);
+
+    let _g = EnvVarGuard::set("BOOLEAN_TEST_FALSE_UPPER", "FALSE");
+    assert_eq!(get_env_bool_optional("BOOLEAN_TEST_FALSE_UPPER"), Some(false));
+    assert_eq!(get_env_bool_required("BOOLEAN_TEST_FALSE_UPPER").unwrap(), false);
+    assert_eq!(get_env_bool_or_default("BOOLEAN_TEST_FALSE_UPPER", true), false);
+  }
+
+  #[test]
+  fn missing_returns_none_required_error_and_default() {
+    let _g = EnvVarGuard::unset("BOOLEAN_TEST_MISSING");
+    assert_eq!(get_env_bool_optional("BOOLEAN_TEST_MISSING"), None);
+    assert!(matches!(get_env_bool_required("BOOLEAN_TEST_MISSING"), Err(EnvError::RequiredNotPresent { .. })));
+    assert_eq!(get_env_bool_or_default("BOOLEAN_TEST_MISSING", true), true);
+    assert_eq!(get_env_bool_or_default("BOOLEAN_TEST_MISSING", false), false);
+  }
+
+  #[test]
+  fn yes_is_unparseable() {
+    let _g = EnvVarGuard::set("BOOLEAN_TEST_YES", "yes");
+    assert_eq!(get_env_bool_optional("BOOLEAN_TEST_YES"), None);
+    assert!(matches!(get_env_bool_required("BOOLEAN_TEST_YES"), Err(EnvError::ParseError { .. })));
+    assert_eq!(get_env_bool_or_default("BOOLEAN_TEST_YES", true), true);
+    assert_eq!(get_env_bool_or_default("BOOLEAN_TEST_YES", false), false);
+  }
+
+  #[test]
+  fn one_is_not_treated_as_true() {
+    let _g = EnvVarGuard::set("BOOLEAN_TEST_ONE", "1");
+    assert_eq!(get_env_bool_optional("BOOLEAN_TEST_ONE"), None);
+    assert!(matches!(get_env_bool_required("BOOLEAN_TEST_ONE"), Err(EnvError::ParseError { .. })));
+    assert_eq!(get_env_bool_or_default("BOOLEAN_TEST_ONE", true), true);
+    assert_eq!(get_env_bool_or_default("BOOLEAN_TEST_ONE", false), false);
+  }
+
+  #[test]
+  fn empty_string_is_unparseable() {
+    let _g = EnvVarGuard::set("BOOLEAN_TEST_EMPTY", "");
+    assert_eq!(get_env_bool_optional("BOOLEAN_TEST_EMPTY"), None);
+    assert!(matches!(get_env_bool_required("BOOLEAN_TEST_EMPTY"), Err(EnvError::ParseError { .. })));
+    assert_eq!(get_env_bool_or_default("BOOLEAN_TEST_EMPTY", true), true);
+  }
+
+  #[test]
+  fn mixed_case_true_is_unparseable() {
+    let _g = EnvVarGuard::set("BOOLEAN_TEST_MIXED_CASE", "TrUe");
+    assert_eq!(get_env_bool_optional("BOOLEAN_TEST_MIXED_CASE"), None);
+    assert!(matches!(get_env_bool_required("BOOLEAN_TEST_MIXED_CASE"), Err(EnvError::ParseError { .. })));
+    assert_eq!(get_env_bool_or_default("BOOLEAN_TEST_MIXED_CASE", false), false);
+  }
+
+  #[test]
+  fn required_not_present_carries_env_var_name() {
+    let _g = EnvVarGuard::unset("BOOLEAN_TEST_REQUIRED_NAME");
+    match get_env_bool_required("BOOLEAN_TEST_REQUIRED_NAME") {
+      Err(EnvError::RequiredNotPresent { name }) => {
+        assert_eq!(name, "BOOLEAN_TEST_REQUIRED_NAME");
+      },
+      other => panic!("unexpected result: {:?}", other),
+    }
+  }
+}
