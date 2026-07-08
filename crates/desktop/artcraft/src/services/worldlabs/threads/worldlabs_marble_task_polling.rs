@@ -254,7 +254,6 @@ async fn upload_spz_splat(
     // TODO: media_files.maybe_generation_provider
     // TODO: media_files.maybe_origin_model_type
     // TODO: media_files.maybe_origin_model_token (sref?)
-    // TODO: media_files.is_batch_generated
     // TODO: media_files.maybe_batch_token
     // TODO: media_files.is_user_upload
 

@@ -42,7 +42,6 @@ pub struct MediaFileForElasticsearchRecord {
 
   pub maybe_origin_filename: Option<String>,
 
-  pub is_batch_generated: bool,
   pub maybe_batch_token: Option<BatchGenerationToken>,
 
   pub is_user_upload: bool,
@@ -58,8 +57,6 @@ pub struct MediaFileForElasticsearchRecord {
 
   pub maybe_style_transfer_source_media_file_token: Option<MediaFileToken>,
   pub maybe_scene_source_media_file_token: Option<MediaFileToken>,
-
-  pub nsfw_status: String,
 
   pub media_type: MediaFileType,
   pub media_class: MediaFileClass,
@@ -159,7 +156,6 @@ pub async fn list_media_files_for_elastic_search_backfill_using_cursor(
           maybe_origin_model_type: record.maybe_origin_model_type,
           maybe_origin_model_token: record.maybe_origin_model_token,
           maybe_origin_filename: record.maybe_origin_filename,
-          is_batch_generated: i8_to_bool(record.is_batch_generated),
           maybe_batch_token: record.maybe_batch_token,
           is_user_upload: i8_to_bool(record.is_user_upload),
           is_intermediate_system_file: i8_to_bool(record.is_intermediate_system_file),
@@ -170,7 +166,6 @@ pub async fn list_media_files_for_elastic_search_backfill_using_cursor(
           maybe_cover_image_public_bucket_extension: record.maybe_cover_image_public_bucket_extension,
           maybe_style_transfer_source_media_file_token: record.maybe_style_transfer_source_media_file_token,
           maybe_scene_source_media_file_token: record.maybe_scene_source_media_file_token,
-          nsfw_status: record.nsfw_status,
           media_type: record.media_type,
           media_class: record.media_class,
           maybe_media_subtype: record.maybe_media_subtype,
@@ -222,7 +217,6 @@ SELECT
     m.maybe_origin_model_token,
     m.maybe_origin_filename,
 
-    m.is_batch_generated,
     m.maybe_batch_token,
 
     m.is_user_upload,
@@ -237,8 +231,6 @@ SELECT
 
     m.maybe_style_transfer_source_media_file_token,
     m.maybe_scene_source_media_file_token,
-
-    m.nsfw_status,
 
     m.media_type,
     m.media_class,
@@ -372,7 +364,6 @@ struct RawRecord {
 
   pub maybe_origin_filename: Option<String>,
 
-  pub is_batch_generated: i8,
   pub maybe_batch_token: Option<BatchGenerationToken>,
 
   pub is_user_upload: i8,
@@ -388,8 +379,6 @@ struct RawRecord {
 
   pub maybe_style_transfer_source_media_file_token: Option<MediaFileToken>,
   pub maybe_scene_source_media_file_token: Option<MediaFileToken>,
-
-  pub nsfw_status: String,
 
   pub media_type: MediaFileType,
   pub media_class: MediaFileClass,
@@ -459,7 +448,6 @@ impl FromRow<'_, MySqlRow> for RawRecord {
       maybe_origin_model_token: row.try_get("maybe_origin_model_token")?,
       maybe_origin_filename: row.try_get("maybe_origin_filename")?,
 
-      is_batch_generated: row.try_get("is_batch_generated")?,
       maybe_batch_token: BatchGenerationToken::try_from_mysql_row_nullable(row, "maybe_batch_token")?,
 
       is_user_upload: row.try_get("is_user_upload")?,
@@ -474,8 +462,6 @@ impl FromRow<'_, MySqlRow> for RawRecord {
 
       maybe_style_transfer_source_media_file_token: row.try_get("maybe_style_transfer_source_media_file_token")?,
       maybe_scene_source_media_file_token: row.try_get("maybe_scene_source_media_file_token")?,
-
-      nsfw_status: row.try_get("nsfw_status")?,
 
       media_type: MediaFileType::try_from_mysql_row(row, "media_type")?,
       media_class: MediaFileClass::try_from_mysql_row(row, "media_class")?,
