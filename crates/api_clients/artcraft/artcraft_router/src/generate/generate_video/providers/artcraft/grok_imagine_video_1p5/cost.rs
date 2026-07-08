@@ -318,6 +318,28 @@ mod tests {
         .cost_in_usd_cents.unwrap();
       assert!(p1080 > p720, "1080p ({p1080}) should cost more than 720p ({p720})");
     }
+
+    /// Regression: an image-less v1.5 request must get a quote through the
+    /// full public builder path (build2 → estimate_cost). The cost UI polls
+    /// for a price before the user has attached an image; the image
+    /// requirement is enforced at send time and by the generate endpoints,
+    /// NOT here.
+    #[test]
+    fn image_less_request_gets_a_quote_through_the_builder() {
+      let builder = GenerateVideoRequestBuilder {
+        model: RouterVideoModel::GrokImagineVideo1p5,
+        provider: RouterProvider::Artcraft,
+        duration_seconds: Some(5),
+        video_batch_count: Some(1),
+        ..Default::default()
+      };
+      let cost = builder.build2()
+        .expect("build2 should succeed without an image")
+        .estimate_cost()
+        .expect("estimate_cost should succeed without an image");
+      assert!(cost.cost_in_usd_cents.unwrap() > 0);
+      assert_eq!(cost.cost_in_credits, cost.cost_in_usd_cents);
+    }
   }
 
   // ── Helpers ────────────────────────────────────────────────────────────
@@ -382,8 +404,7 @@ mod tests {
       resolution,
       duration_seconds: Some(duration_seconds),
       video_batch_count: Some(video_batch_count),
-      // v1.5 requires an input image — the no-image guard in build()
-      // rejects T2V.
+      // These cases price the image-to-video tier (one input image).
       start_frame: Some(ImageRef::MediaFileToken(MediaFileToken::new("mf_default".to_string()))),
       ..Default::default()
     };
