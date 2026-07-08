@@ -52,16 +52,18 @@ type NavItem = {
 
 const PRIMARY_ITEMS: NavItem[] = [{ label: "Home", href: "/", icon: faHouse }];
 
-// "Edit 3D" entry's href is computed at render time from the
-// session-scoped scene-cache store (see useCreateItems below). The other
-// entries stay static.
+// Generation entries — make something from a prompt.
 const CREATE_ITEMS_STATIC: NavItem[] = [
   { label: "Image", href: "/create-image", icon: faImage },
   { label: "Video", href: "/create-video", icon: faVideo },
   { label: "Audio", href: "/create-audio", icon: faMusic },
   { label: "3D Object", href: "/create-object", icon: faCube },
   { label: "3D World", href: "/create-world", icon: faGlobe },
-  // Edit Image is hidden from the sidebar for now.
+];
+
+// "Studio" entries — edit, compose, and refine existing content. "Edit 3D"'s
+// href is computed at render time from the scene-cache store (see useStudioItems).
+const STUDIO_ITEMS_STATIC: NavItem[] = [
   { label: "Edit Image", href: "/edit-image", icon: faPencil },
   { label: "Edit 3D", href: "/edit-3d", icon: faCube },
   { label: "Edit Video", href: "/video-editor", icon: faFilm, badge: "BETA" },
@@ -82,11 +84,11 @@ const CREATE_ITEMS_STATIC: NavItem[] = [
 // scene (if any) so returning to the editor from another sidebar page
 // drops them back into the same scene rather than the blank splash.
 // sessionStorage scope — closes when the tab closes.
-function useCreateItems(): NavItem[] {
+function useStudioItems(): NavItem[] {
   const lastSceneToken = useSceneCacheStore((s) => s.lastVisitedSceneToken);
   return useMemo(
     () =>
-      CREATE_ITEMS_STATIC.map((item) =>
+      STUDIO_ITEMS_STATIC.map((item) =>
         item.href === "/edit-3d" && lastSceneToken
           ? { ...item, href: `/edit-3d/${lastSceneToken}` }
           : item,
@@ -243,7 +245,7 @@ export function AppSidebar() {
   const { isMobile, setOpenMobile, state } = useSidebar();
   const { user } = useSession();
   const showSidebarLogo = state === "expanded" || isMobile;
-  const createItems = useCreateItems();
+  const studioItems = useStudioItems();
 
   const hasReferralsFlag = !!user?.maybe_feature_flags?.includes(
     USER_FEATURE_FLAGS.REFERRALS,
@@ -283,7 +285,13 @@ export function AppSidebar() {
         />
         <NavSection
           label="Create"
-          items={createItems}
+          items={CREATE_ITEMS_STATIC}
+          pathname={pathname}
+          onClick={handleNavClick}
+        />
+        <NavSection
+          label="Studio"
+          items={studioItems}
           pathname={pathname}
           onClick={handleNavClick}
         />
