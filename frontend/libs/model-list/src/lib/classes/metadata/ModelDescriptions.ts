@@ -41,6 +41,12 @@ const MODEL_DESCRIPTIONS: Record<string, string> = {
   veo_3p1_fast: "Speed-tuned Veo 3.1",
   // ── Edit / VFX ──
   switch_x: "Swap or relight backgrounds",
+  // ── Audio models ──
+  suno_music: "Full songs from a text prompt",
+  suno_remix: "Remix an existing track",
+  suno_sounds: "Sound effects with beat control",
+  suno_sample: "Build a song from a sample",
+  seed_audio_1p0: "Sound generation with fine tuning",
 };
 
 const MODEL_INFOS: Record<string, string> = {

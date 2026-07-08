@@ -1,10 +1,17 @@
 import { memo, useCallback, type ReactNode } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faCube, faImage, faPlay, faVideo } from "@fortawesome/pro-solid-svg-icons";
+import {
+  faCube,
+  faImage,
+  faMusic,
+  faPlay,
+  faVideo,
+} from "@fortawesome/pro-solid-svg-icons";
 import {
   getCreatorIconPathForModelId,
   getModelDisplayName,
 } from "@storyteller/model-list";
+import { WaveformAudioPlayer } from "@storyteller/ui-audio-player";
 import { GalleryThumbnail } from "./GalleryThumbnail";
 import { CopyPromptButton } from "./CopyPromptButton";
 import { formatTimeAgo } from "./format-time-ago";
@@ -35,8 +42,15 @@ export const GalleryRow = memo(function GalleryRow({
 }: GalleryRowProps) {
   const isVideo = item.mediaClass === "video";
   const is3D = item.mediaClass === "dimensional";
-  const mediaIcon = isVideo ? faVideo : is3D ? faCube : faImage;
-  const mediaLabel = isVideo ? "Video" : is3D ? "3D" : "Image";
+  const isAudio = item.mediaClass === "audio";
+  const mediaIcon = isVideo
+    ? faVideo
+    : is3D
+      ? faCube
+      : isAudio
+        ? faMusic
+        : faImage;
+  const mediaLabel = isVideo ? "Video" : is3D ? "3D" : isAudio ? "Audio" : "Image";
 
   const effectiveModelId = modelId ?? item.modelId;
   const modelDisplayName = effectiveModelId
@@ -106,6 +120,15 @@ export const GalleryRow = memo(function GalleryRow({
                 onCopyResult={onCopyPromptResult}
               />
             )}
+          </div>
+        )}
+        {isAudio && item.fullImage && (
+          <div className="mt-1.5 max-w-md rounded-md bg-white/[0.04]">
+            <WaveformAudioPlayer
+              src={item.fullImage}
+              durationMillis={item.durationMillis}
+              compact
+            />
           </div>
         )}
         <div className="mt-1 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-xs text-white/45">

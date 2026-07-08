@@ -14,6 +14,7 @@ import Media from "../pages/media";
 import { ToastContainer } from "../components/toast/toast";
 import CreateImage from "../pages/create-image";
 import CreateVideo from "../pages/create-video";
+import CreateAudio from "../pages/create-audio";
 import CreateVFX from "../pages/create-vfx";
 import PageScene from "../pages/pagescene";
 import PageDraw from "../pages/pagedraw";
@@ -153,6 +154,7 @@ export function App() {
           <Route path="/" element={<Home />} />
           <Route path="/create-image" element={<CreateImage />} />
           <Route path="/create-video" element={<CreateVideo />} />
+          <Route path="/create-audio" element={<CreateAudio />} />
           <Route path="/background-change" element={<CreateVFX />} />
           <Route path="/moodboard" element={<MoodboardPage />} />
           <Route path="/edit-3d" element={<PageScene />} />

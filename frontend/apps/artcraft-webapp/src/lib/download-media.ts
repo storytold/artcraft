@@ -4,6 +4,7 @@ import { toast } from "../components/toast/toast";
 const EXT_BY_MEDIA_CLASS: Record<string, string> = {
   image: "png",
   video: "mp4",
+  audio: "mp3",
   dimensional: "glb",
 };
 

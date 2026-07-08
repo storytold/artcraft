@@ -9,6 +9,9 @@
       "path": "../loading-spinner"
     },
     {
+      "path": "../audio-player"
+    },
+    {
       "path": "../../common"
     },
     {

@@ -16,6 +16,8 @@ const getLabel = (item: any) => {
       return "Image Generation";
     case "video":
       return "Video Generation";
+    case "audio":
+      return "Audio Generation";
     case "dimensional":
       return "3D Mesh";
     default:
@@ -42,12 +44,15 @@ export function useGalleryData(options: {
   const api = useMemo(() => new GalleryModalApi(), []);
 
   const mapApiItem = useCallback((item: any): GalleryItem => {
-    const isDimensional = item.media_class === "dimensional";
-    const thumbnail = isDimensional
-      ? null
-      : getMediaThumbnail(item.media_links, item.media_class, {
+    // 3D and audio media have no image thumbnail — their cards render a
+    // placeholder icon / waveform player instead.
+    const hasImageThumbnail =
+      item.media_class !== "dimensional" && item.media_class !== "audio";
+    const thumbnail = hasImageThumbnail
+      ? getMediaThumbnail(item.media_links, item.media_class, {
           size: THUMBNAIL_SIZES.LARGE,
-        });
+        })
+      : null;
 
     return {
       id: item.token,
@@ -59,6 +64,7 @@ export function useGalleryData(options: {
       modelId: item.maybe_model_type || undefined,
       batchImageToken: item.maybe_batch_token,
       promptToken: item.maybe_prompt_token || undefined,
+      durationMillis: item.maybe_duration_millis ?? undefined,
     };
   }, []);
 

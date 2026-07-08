@@ -71,6 +71,9 @@
       "path": "../loading-spinner/tsconfig.lib.json"
     },
     {
+      "path": "../audio-player/tsconfig.lib.json"
+    },
+    {
       "path": "../../tauri-api/tsconfig.lib.json"
     },
     {

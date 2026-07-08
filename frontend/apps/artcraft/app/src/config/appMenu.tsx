@@ -3,6 +3,7 @@ import {
   faCube,
   faFilm,
   faImage,
+  faMusic,
   faDroplet,
   faPhotoFilm,
   faGlobe,
@@ -23,6 +24,7 @@ import { useTabStore, TabId } from "~/pages/Stores/TabState";
 export type AppId =
   | "IMAGE"
   | "VIDEO"
+  | "AUDIO"
   | "EDIT"
   | "2D"
   | "3D"
@@ -57,6 +59,11 @@ export const APP_DESCRIPTORS: AppDescriptor[] = [
     id: "VIDEO",
     label: "Create Video",
     icon: faFilm,
+  },
+  {
+    id: "AUDIO",
+    label: "Create Audio",
+    icon: faMusic,
   },
   {
     id: "2D",
@@ -112,6 +119,11 @@ const APP_CARD_PALETTES: Record<string, AppCardPalette> = {
     accent: "from-amber-500/20 to-amber-500/0",
     iconBg: "bg-amber-500/20 border-amber-400/30",
     iconColor: "text-amber-300",
+  },
+  "create-audio": {
+    accent: "from-pink-500/20 to-pink-500/0",
+    iconBg: "bg-pink-500/20 border-pink-400/30",
+    iconColor: "text-pink-300",
   },
   "image-to-3d-object": {
     accent: "from-emerald-500/20 to-emerald-500/0",
@@ -207,6 +219,15 @@ export const ALL_APPS: FullAppItem[] = [
     category: "generate",
     action: "VIDEO",
     color: "bg-amber-500/40",
+  },
+  {
+    id: "create-audio",
+    label: "Create Audio",
+    description: "Generate music and sound effects",
+    icon: faMusic,
+    category: "generate",
+    action: "AUDIO",
+    color: "bg-pink-500/40",
   },
   {
     id: "image-to-3d-object",
@@ -398,6 +419,7 @@ export const goToApp = (action?: string) => {
     [
       "IMAGE",
       "VIDEO",
+      "AUDIO",
       "2D",
       "3D",
       "VIDEO_FRAME_EXTRACTOR",

@@ -22,4 +22,5 @@ export enum ModelCreator {
   Grok = "Grok",
   WorldLabs = "WorldLabs",
   Beeble = "Beeble",
+  Suno = "Suno",
 }

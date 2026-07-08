@@ -66,6 +66,9 @@
       "path": "../../libs/components/generation-list"
     },
     {
+      "path": "../../libs/components/audio-player"
+    },
+    {
       "path": "../../libs/components/tab-selector"
     },
     {

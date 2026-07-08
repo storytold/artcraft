@@ -1,6 +1,20 @@
 // Canonical data shapes for the merged generation feed (in-progress / failed /
 // completed). Hosts (webapp, desktop) map their own job sources into these.
 
+export type GenerationMediaClass = "image" | "video" | "audio";
+
+/** Plural noun for batch captions, e.g. "Generating 4 images". */
+export function batchNoun(mediaClass: GenerationMediaClass): string {
+  switch (mediaClass) {
+    case "video":
+      return "videos";
+    case "audio":
+      return "audio clips";
+    default:
+      return "images";
+  }
+}
+
 export interface GalleryItem {
   id: string;
   label: string;
@@ -13,6 +27,8 @@ export interface GalleryItem {
   // Token for the generation's prompt record. The list view resolves it
   // (via the shared prompts cache) to show the real prompt + model.
   promptToken?: string;
+  // Playback length for audio (and video) items, when the API knows it.
+  durationMillis?: number;
 }
 
 export interface InProgressJob {
@@ -27,7 +43,7 @@ export interface InProgressJob {
   // Prompt token + media class enable the "Recreate" action while the job is
   // still running, mirroring the failed/completed cards.
   promptToken?: string;
-  mediaClass: "image" | "video";
+  mediaClass: GenerationMediaClass;
 }
 
 export interface FailedJob {
@@ -41,5 +57,5 @@ export interface FailedJob {
   createdAt: string;
   promptToken?: string;
   refImageUrl?: string;
-  mediaClass: "image" | "video";
+  mediaClass: GenerationMediaClass;
 }

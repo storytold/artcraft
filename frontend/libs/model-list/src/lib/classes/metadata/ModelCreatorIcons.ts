@@ -26,6 +26,7 @@ const CREATOR_ICON_FILES: Partial<Record<ModelCreator, string>> = {
   [ModelCreator.ArtCraft]: "artcraft.svg",
   [ModelCreator.Grok]: "grok.svg",
   [ModelCreator.WorldLabs]: "worldlabs.svg",
+  [ModelCreator.Suno]: "suno.svg",
 };
 
 export const getCreatorIconPath = (creator: ModelCreator): string => {

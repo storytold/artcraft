@@ -70,6 +70,10 @@ interface PromptBoxProps {
   // Model selector (rendered above the toolbar, typically hidden on desktop via lg:hidden)
   modelSelector?: ReactNode;
 
+  // Secondary prompt row rendered directly under the main textarea
+  // (e.g. the audio style/genre prompt).
+  secondaryPromptRow?: ReactNode;
+
   // @-mention support (enables colored prompt overlay + autocomplete)
   mentionItems?: MentionItem[];
 
@@ -106,6 +110,7 @@ export const PromptBox = forwardRef<HTMLDivElement, PromptBoxProps>(
       onClearAllRefs,
       mediaReferenceRow,
       modelSelector,
+      secondaryPromptRow,
       mentionItems,
       maxPromptLength,
     },
@@ -355,7 +360,18 @@ export const PromptBox = forwardRef<HTMLDivElement, PromptBoxProps>(
         <div className="relative flex flex-col">
           {isImageRowVisible && renderImagePromptRow()}
 
-          {mediaReferenceRow}
+          {/* When the media row is the topmost band (no image row above it —
+              e.g. the audio page), clip it to rounded top corners; mid-stack
+              (video's start-frame row above) it stays square. */}
+          {mediaReferenceRow && (
+            <div
+              className={twMerge(
+                !isImageRowVisible && "sm:overflow-hidden sm:rounded-t-2xl",
+              )}
+            >
+              {mediaReferenceRow}
+            </div>
+          )}
 
           <div
             className={twMerge(
@@ -542,6 +558,10 @@ export const PromptBox = forwardRef<HTMLDivElement, PromptBoxProps>(
                 )}
               </div>
             </div>
+
+            {secondaryPromptRow && (
+              <div className="mt-2">{secondaryPromptRow}</div>
+            )}
 
             {/* Toolbar */}
             <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">

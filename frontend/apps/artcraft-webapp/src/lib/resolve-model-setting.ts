@@ -24,6 +24,22 @@ export function resolveModelOption(
   return options[0];
 }
 
+// Number twin of resolveModelOption for numeric option lists (e.g. audio
+// sample rates). Same semantics: preference when supported, else model
+// default, else first option; passthrough when the model exposes no options.
+export function resolveModelNumberOption(
+  preferred: number | null | undefined,
+  options: readonly number[] | null | undefined,
+  modelDefault: number | null | undefined,
+): number | undefined {
+  if (!options || options.length === 0) {
+    return preferred ?? modelDefault ?? undefined;
+  }
+  if (preferred != null && options.includes(preferred)) return preferred;
+  if (modelDefault != null && options.includes(modelDefault)) return modelDefault;
+  return options[0];
+}
+
 // Resolve a preferred batch count against a model's options/limits. Clamps to
 // [1, max], then snaps to the nearest supported option ≤ the preference (so a
 // user who wanted 4 keeps the highest the model allows), falling back to the

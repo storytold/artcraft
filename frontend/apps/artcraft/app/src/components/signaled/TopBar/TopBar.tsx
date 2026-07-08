@@ -357,6 +357,8 @@ export const TopBar = ({ pageName }: Props) => {
         return "Create Image";
       case "VIDEO":
         return "Create Video";
+      case "AUDIO":
+        return "Create Audio";
       case "EDIT":
         return "Edit Image";
       case "VIDEO_FRAME_EXTRACTOR":
@@ -499,7 +501,8 @@ export const TopBar = ({ pageName }: Props) => {
           <div className="flex justify-end gap-2" data-tauri-drag-region>
             <div className="no-drag flex items-center gap-1.5">
               {(tabStore.activeTabId === "IMAGE" ||
-                tabStore.activeTabId === "VIDEO") && <GalleryViewToggle />}
+                tabStore.activeTabId === "VIDEO" ||
+                tabStore.activeTabId === "AUDIO") && <GalleryViewToggle />}
               <PopoverMenu
                 position="bottom"
                 align="center"

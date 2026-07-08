@@ -100,6 +100,15 @@ export const getModelDisplayName = (
     seedream_4p5: "Seedream 4.5",
     seedream_5_lite: "Seedream 5 Lite",
 
+    // Audio — Suno
+    suno_music: "Suno Music",
+    suno_remix: "Suno Remix",
+    suno_sounds: "Suno Sounds",
+    suno_sample: "Suno Sample",
+
+    // Audio — Seed Audio (ByteDance)
+    seed_audio_1p0: "Seed Audio 1.0",
+
     // Google
     veo_2: "Google Veo 2",
     veo_3: "Google Veo 3",
