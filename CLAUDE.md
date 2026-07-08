@@ -77,3 +77,20 @@ Organize for top-to-bottom reading. Important things first, details later.
 - Private helpers go *below* the methods that call them
 - Among helpers: meatier logic above leaf-level formatters
 - **In test modules**: constants first, then test cases (grouped into sub-modules when 2+), then helper functions last
+
+## Markdown
+
+- **Tables must be space-padded so columns align in plain text.** Markdown
+  tables are read raw (terminals, diffs, editors) at least as often as
+  rendered, and condensed tables are unreadable there. Pad every cell to its
+  column width:
+
+  ```markdown
+  | Model        | Configuration | Credits    | Speed | Score   |
+  |--------------|---------------|--------------------|---------|
+  | Meshy 6      | text or image | 104        | 80.0  | +24     |
+  | Rodin 2.5    | text or image | 13         | 10.0  | +3      |
+  ```
+
+  Not: `| Model | Configuration | Credits | Speed | Score |` packed tight
+  with varying widths per row.
