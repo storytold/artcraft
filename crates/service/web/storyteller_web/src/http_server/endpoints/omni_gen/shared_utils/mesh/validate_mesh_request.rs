@@ -18,7 +18,11 @@ const MESHY_MAX_FACE_COUNT: u64 = 300_000;
 /// Rodin v2.5 Fast accepts up to five input images.
 const RODIN_MAX_REFERENCE_IMAGES: usize = 5;
 
-/// Validate requests before they incur user costs or send API requests.
+/// Validate generation requests before they incur user costs or send API
+/// requests.
+///
+/// NB: The cost endpoint deliberately does NOT call this — the UI polls for
+/// a price while the user is still composing the request.
 pub fn validate_mesh_request(
   request: &OmniGenMeshCostAndGenerateRequest,
 ) -> Result<(), CommonWebError> {

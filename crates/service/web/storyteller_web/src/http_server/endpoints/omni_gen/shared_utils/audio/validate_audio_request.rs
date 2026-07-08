@@ -7,7 +7,11 @@ const SEED_AUDIO_SAMPLE_RATES_HZ: [u32; 6] = [8000, 16000, 24000, 32000, 44100, 
 const SEED_AUDIO_MAX_AUDIO_REFERENCES: usize = 3;
 const SEED_AUDIO_MAX_IMAGE_REFERENCES: usize = 1;
 
-/// Validate requests before they incur user costs or send API requests.
+/// Validate generation requests before they incur user costs or send API
+/// requests.
+///
+/// NB: The cost endpoint deliberately does NOT call this — the UI polls for
+/// a price while the user is still composing the request.
 pub fn validate_audio_request(
   request: &OmniGenAudioCostAndGenerateRequest,
 ) -> Result<(), CommonWebError> {

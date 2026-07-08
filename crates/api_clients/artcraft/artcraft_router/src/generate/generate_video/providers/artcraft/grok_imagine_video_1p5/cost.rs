@@ -9,7 +9,6 @@ use grok_api_client::api::types::video_types::video_model::VideoModel as GrokVid
 use grok_api_client::api::types::video_types::video_resolution::VideoResolution as GrokResolution;
 
 use crate::errors::artcraft_router_error::ArtcraftRouterError;
-use crate::errors::client_error::ClientError;
 use crate::generate::generate_video::video_generation_cost_estimate::VideoGenerationCostEstimate;
 use crate::generate::generate_video::providers::artcraft::grok_imagine_video_1p5::request::ArtcraftGrokImagineVideo1p5RequestState;
 
@@ -65,16 +64,10 @@ impl ArtcraftGrokImagineVideo1p5CostState {
   }
 
   pub fn estimate_cost(&self) -> Result<VideoGenerationCostEstimate, ArtcraftRouterError> {
-    // Defense in depth: `build()` already enforces this, but a state
-    // constructed by hand must not get a quote for an operation xAI will
-    // reject.
-    if self.input_image_count == 0 {
-      return Err(ArtcraftRouterError::Client(ClientError::ModelDoesNotSupportOption {
-        field: "image_inputs",
-        value: "text-to-video isn't supported by grok-imagine-video-1.5; supply a start_frame or at least one reference image".to_string(),
-      }));
-    }
-
+    // NB: Image-less requests DO get a quote even though xAI's v1.5 rejects
+    // text-to-video — the cost path prices requests the user is still
+    // composing. The image requirement is enforced at send time (request.rs)
+    // and by the generate endpoints.
     let base = self.base_cost_in_cents_for_batch();
     // 5% markup, ceil so the user is always charged enough to cover the
     // upstream grok cost regardless of rounding.
@@ -204,24 +197,23 @@ mod tests {
       assert_eq!(state.estimate_cost().expect("estimate_cost").cost_in_usd_cents.unwrap(), 150);
     }
 
-    /// v1.5 doesn't support text-to-video. The cost calculator must refuse
-    /// to quote an image-less request even if a state is constructed
-    /// directly.
+    /// v1.5 doesn't support text-to-video at generation time, but the cost
+    /// calculator still quotes an image-less request — the cost UI prices
+    /// requests before the user has attached an image. The requirement is
+    /// enforced at send time and by the generate endpoints.
     #[test]
-    fn estimate_cost_rejects_text_only_request() {
+    fn estimate_cost_quotes_text_only_request() {
       let state = ArtcraftGrokImagineVideo1p5CostState {
         resolution: CommonResolution::SevenTwentyP,
         duration_seconds: 5,
         batch_count: 1,
         input_image_count: 0,
       };
-      let err = state.estimate_cost().expect_err("text-only should be rejected");
-      match err {
-        ArtcraftRouterError::Client(ClientError::ModelDoesNotSupportOption { field, .. }) => {
-          assert_eq!(field, "image_inputs");
-        }
-        other => panic!("expected Client(ModelDoesNotSupportOption), got {:?}", other),
-      }
+      let base = state.base_cost_in_cents_for_batch();
+      let want = base.saturating_mul(MARKUP_NUMERATOR).div_ceil(MARKUP_DENOMINATOR);
+      let got = state.estimate_cost().expect("estimate_cost").cost_in_usd_cents.unwrap();
+      assert_eq!(got, want);
+      assert!(got > 0);
     }
 
     // (resolution, duration, image_count, batch) — every case has at least
