@@ -20,7 +20,8 @@ pub fn build_artcraft_seedance_1p0_lite(mut builder: GenerateVideoRequestBuilder
   let request = build_artcraft_omni_video_request(
     builder,
     CommonVideoModelEnum::Seedance10Lite,
-    SupportedResolutions::Fast,
+    // The model serves 480p/720p/1080p; 1080p must plan (and price) as 1080p.
+    SupportedResolutions::Full,
     UltraWideSupport::Supported,
   )?;
   let state = ArtcraftSeedance10LiteRequestState { request };
