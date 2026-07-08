@@ -41,6 +41,7 @@ import {
   getMediaThumbnail,
   THUMBNAIL_SIZES,
   PLACEHOLDER_IMAGES,
+  is3DModelUrl,
 } from "@storyteller/common";
 import {
   galleryModalDraggingUnder,
@@ -883,7 +884,14 @@ export const GalleryModal = React.memo(
             setItemsLoadError(null);
             const newItems = response.data
               .filter(
-                (item: any) => item.media_type !== FilterMediaType.SCENE_JSON,
+                (item: any) =>
+                  item.media_type !== FilterMediaType.SCENE_JSON &&
+                  // Drop 3D-model cover screenshots the backend surfaces as
+                  // "dimensional" items whose asset is actually a .png.
+                  !(
+                    item.media_class === "dimensional" &&
+                    !is3DModelUrl(item.media_links?.cdn_url)
+                  ),
               )
               .map(mapApiItem);
 

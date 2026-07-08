@@ -1,6 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import { OmniGenApi } from "@storyteller/api";
-import type { OmniGenImageRequest, OmniGenVideoRequest } from "@storyteller/api";
+import type {
+  OmniGenImageRequest,
+  OmniGenVideoRequest,
+  OmniGenMeshRequest,
+  OmniGenSplatRequest,
+} from "@storyteller/api";
 import {
   ModelPage,
   useSelectedImageModel,
@@ -196,6 +201,141 @@ export function useVideoCostEstimate(params: VideoCostParams): number | null {
     params.isReferenceMode,
     params.referenceImageCount,
     params.generateAudio,
+  ]);
+
+  return credits;
+}
+
+// ── Mesh (3D object) cost estimate hook ──────────────────────────────────
+
+export interface MeshCostParams {
+  model: string;
+  referenceImageCount: number;
+  hasInputMesh: boolean;
+  meshOutputType?: string | null;
+  polygonType?: string | null;
+  faceCount?: number | null;
+  enablePbr?: boolean | null;
+  enableTexture?: boolean | null;
+  textureQuality?: string | null;
+  geometryQuality?: string | null;
+}
+
+export function useMeshCostEstimate(params: MeshCostParams): number | null {
+  const [credits, setCredits] = useState<number | null>(null);
+  const abortRef = useRef(0);
+
+  useEffect(() => {
+    if (!params.model) {
+      setCredits(null);
+      return;
+    }
+
+    const id = ++abortRef.current;
+
+    const body: OmniGenMeshRequest = {
+      model: params.model,
+      reference_image_media_tokens:
+        params.referenceImageCount > 0
+          ? new Array(params.referenceImageCount).fill("placeholder")
+          : null,
+      input_mesh_media_token: params.hasInputMesh ? "placeholder" : null,
+      mesh_output_type: params.meshOutputType ?? null,
+      polygon_type: params.polygonType ?? null,
+      face_count: params.faceCount ?? null,
+      enable_pbr: params.enablePbr ?? null,
+      enable_texture: params.enableTexture ?? null,
+      texture_quality: params.textureQuality ?? null,
+      geometry_quality: params.geometryQuality ?? null,
+    };
+
+    const api = new OmniGenApi();
+    api.estimateMeshCost(body).then(
+      (response) => {
+        if (id !== abortRef.current) return;
+        if (response.success && response.cost_in_credits != null) {
+          setCredits(response.cost_in_credits);
+        } else {
+          setCredits(null);
+        }
+      },
+      () => {
+        if (id !== abortRef.current) return;
+        setCredits(null);
+      },
+    );
+  }, [
+    params.model,
+    params.referenceImageCount,
+    params.hasInputMesh,
+    params.meshOutputType,
+    params.polygonType,
+    params.faceCount,
+    params.enablePbr,
+    params.enableTexture,
+    params.textureQuality,
+    params.geometryQuality,
+  ]);
+
+  return credits;
+}
+
+// ── Splat (3D world) cost estimate hook ──────────────────────────────────
+
+export interface SplatCostParams {
+  model: string;
+  referenceImageCount: number;
+  hasReferenceVideo: boolean;
+  isPanoramic?: boolean | null;
+  disableRecaption?: boolean | null;
+}
+
+export function useSplatCostEstimate(params: SplatCostParams): number | null {
+  const [credits, setCredits] = useState<number | null>(null);
+  const abortRef = useRef(0);
+
+  useEffect(() => {
+    if (!params.model) {
+      setCredits(null);
+      return;
+    }
+
+    const id = ++abortRef.current;
+
+    const body: OmniGenSplatRequest = {
+      model: params.model,
+      reference_image_media_tokens:
+        params.referenceImageCount > 0
+          ? new Array(params.referenceImageCount).fill("placeholder")
+          : null,
+      reference_video_media_token: params.hasReferenceVideo
+        ? "placeholder"
+        : null,
+      is_panoramic: params.isPanoramic ?? null,
+      disable_recaption: params.disableRecaption ?? null,
+    };
+
+    const api = new OmniGenApi();
+    api.estimateSplatCost(body).then(
+      (response) => {
+        if (id !== abortRef.current) return;
+        if (response.success && response.cost_in_credits != null) {
+          setCredits(response.cost_in_credits);
+        } else {
+          setCredits(null);
+        }
+      },
+      () => {
+        if (id !== abortRef.current) return;
+        setCredits(null);
+      },
+    );
+  }, [
+    params.model,
+    params.referenceImageCount,
+    params.hasReferenceVideo,
+    params.isPanoramic,
+    params.disableRecaption,
   ]);
 
   return credits;

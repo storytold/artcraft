@@ -364,11 +364,7 @@ export const PromptBox = forwardRef<HTMLDivElement, PromptBoxProps>(
               e.g. the audio page), clip it to rounded top corners; mid-stack
               (video's start-frame row above) it stays square. */}
           {mediaReferenceRow && (
-            <div
-              className={twMerge(
-                !isImageRowVisible && "sm:overflow-hidden sm:rounded-t-2xl",
-              )}
-            >
+            <div className={twMerge(!isImageRowVisible && "sm:rounded-t-2xl")}>
               {mediaReferenceRow}
             </div>
           )}
@@ -547,7 +543,8 @@ export const PromptBox = forwardRef<HTMLDivElement, PromptBoxProps>(
                     className={twMerge(
                       // right-4 keeps the counter clear of the textarea's resize grip.
                       "pointer-events-none absolute -bottom-1 right-4 text-[10px] tabular-nums",
-                      isFinite(maxPromptLength) && prompt.length > maxPromptLength
+                      isFinite(maxPromptLength) &&
+                        prompt.length > maxPromptLength
                         ? "text-red-500"
                         : "text-base-fg/40",
                     )}

@@ -1,7 +1,11 @@
 // Canonical data shapes for the merged generation feed (in-progress / failed /
 // completed). Hosts (webapp, desktop) map their own job sources into these.
 
-export type GenerationMediaClass = "image" | "video" | "audio";
+export type GenerationMediaClass =
+  | "image"
+  | "video"
+  | "audio"
+  | "dimensional";
 
 /** Plural noun for batch captions, e.g. "Generating 4 images". */
 export function batchNoun(mediaClass: GenerationMediaClass): string {
@@ -10,6 +14,8 @@ export function batchNoun(mediaClass: GenerationMediaClass): string {
       return "videos";
     case "audio":
       return "audio clips";
+    case "dimensional":
+      return "3D models";
     default:
       return "images";
   }

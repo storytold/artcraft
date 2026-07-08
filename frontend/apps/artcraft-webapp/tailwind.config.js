@@ -46,6 +46,7 @@ module.exports = {
       green: { ...colors.green, DEFAULT: "#308752" },
       emerald: colors.emerald,
       teal: colors.teal,
+      cyan: colors.cyan,
       yellow: colors.yellow,
       pink: colors.pink,
       purple: colors.purple,

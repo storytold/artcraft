@@ -7,6 +7,8 @@ const ROUTE_CRUMBS: Record<string, Crumb[]> = {
   "/": [{ label: "Home" }],
   "/create-image": [{ label: "Create", href: "/" }, { label: "Image" }],
   "/create-video": [{ label: "Create", href: "/" }, { label: "Video" }],
+  "/create-object": [{ label: "Create", href: "/" }, { label: "3D Object" }],
+  "/create-world": [{ label: "Create", href: "/" }, { label: "3D World" }],
   "/background-change": [
     { label: "Create", href: "/" },
     { label: "Background Change" },

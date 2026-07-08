@@ -23,7 +23,7 @@ import {
   FOLDER_DROP_EVENT,
   type GalleryItem,
 } from "@storyteller/ui-gallery-modal";
-import { PLACEHOLDER_IMAGES } from "@storyteller/common";
+import { PLACEHOLDER_IMAGES, is3DModelUrl } from "@storyteller/common";
 import {
   showActionReminder,
   isActionReminderOpen,
@@ -285,7 +285,14 @@ export default function Library() {
         if (response.success && response.data) {
           const newItems = response.data
             .filter(
-              (item: any) => item.media_type !== FilterMediaType.SCENE_JSON,
+              (item: any) =>
+                item.media_type !== FilterMediaType.SCENE_JSON &&
+                // Drop 3D-model cover screenshots the backend surfaces as
+                // "dimensional" items whose asset is actually a .png.
+                !(
+                  item.media_class === "dimensional" &&
+                  !is3DModelUrl(item.media_links?.cdn_url)
+                ),
             )
             .map(mapRawToGalleryItem);
           setAllItems((prev) => (reset ? newItems : [...prev, ...newItems]));

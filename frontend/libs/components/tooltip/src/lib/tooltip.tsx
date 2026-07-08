@@ -159,10 +159,16 @@ export const Tooltip = ({
     let current = triggerRef.current.parentElement;
     while (current && current !== document.body) {
       const cs = getComputedStyle(current);
+      // backdrop-filter also establishes a containing block for position:fixed
+      // in Chromium/WebKit (our glass surfaces use backdrop-blur), so a fixed
+      // tooltip inside one would otherwise be positioned/clipped incorrectly.
+      const backdropFilter =
+        cs.backdropFilter || (cs as unknown as Record<string, string>)["webkitBackdropFilter"];
       if (
         cs.transform !== "none" ||
         cs.willChange === "transform" ||
-        (cs.filter && cs.filter !== "none")
+        (cs.filter && cs.filter !== "none") ||
+        (backdropFilter && backdropFilter !== "none")
       ) {
         const r = current.getBoundingClientRect();
         return { x: r.left, y: r.top };
