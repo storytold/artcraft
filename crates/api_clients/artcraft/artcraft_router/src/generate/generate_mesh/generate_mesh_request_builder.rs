@@ -1,8 +1,10 @@
 use enums::common::generation::common_mesh_output_type::CommonMeshOutputType;
+use enums::common::generation::common_mesh_quality::CommonMeshQuality;
 use enums::common::generation::common_polygon_type::CommonPolygonType;
 
 use crate::api::image_list_ref::ImageListRef;
 use crate::api::image_ref::ImageRef;
+use crate::api::mesh_ref::MeshRef;
 use crate::api::router_mesh_model::RouterMeshModel;
 use crate::api::router_provider::RouterProvider;
 use crate::client::request_mismatch_mitigation_strategy::RequestMismatchMitigationStrategy;
@@ -12,10 +14,24 @@ use crate::generate::generate_mesh::providers::artcraft::hunyuan3d_3::build::bui
 use crate::generate::generate_mesh::providers::artcraft::hunyuan3d_3_sketch::build::build_artcraft_hunyuan3d_3_sketch;
 use crate::generate::generate_mesh::providers::artcraft::hunyuan_3d_2p0::build::build_artcraft_hunyuan_3d_2p0;
 use crate::generate::generate_mesh::providers::artcraft::hunyuan_3d_2p1::build::build_artcraft_hunyuan_3d_2p1;
+use crate::generate::generate_mesh::providers::artcraft::hunyuan_3d_3p1_part::build::build_artcraft_hunyuan_3d_3p1_part;
+use crate::generate::generate_mesh::providers::artcraft::hunyuan_3d_3p1_pro::build::build_artcraft_hunyuan_3d_3p1_pro;
+use crate::generate::generate_mesh::providers::artcraft::hunyuan_3d_3p1_rapid::build::build_artcraft_hunyuan_3d_3p1_rapid;
+use crate::generate::generate_mesh::providers::artcraft::hunyuan_3d_3p1_smart_topology::build::build_artcraft_hunyuan_3d_3p1_smart_topology;
+use crate::generate::generate_mesh::providers::artcraft::meshy_v6::build::build_artcraft_meshy_v6;
+use crate::generate::generate_mesh::providers::artcraft::rodin_2p5_fast::build::build_artcraft_rodin_2p5_fast;
+use crate::generate::generate_mesh::providers::artcraft::tripo3d_h3p1::build::build_artcraft_tripo3d_h3p1;
 use crate::generate::generate_mesh::providers::fal::hunyuan3d_3::build::build_fal_hunyuan3d_3;
 use crate::generate::generate_mesh::providers::fal::hunyuan3d_3_sketch::build::build_fal_hunyuan3d_3_sketch;
 use crate::generate::generate_mesh::providers::fal::hunyuan_3d_2p0::build::build_fal_hunyuan_3d_2p0;
 use crate::generate::generate_mesh::providers::fal::hunyuan_3d_2p1::build::build_fal_hunyuan_3d_2p1;
+use crate::generate::generate_mesh::providers::fal::hunyuan_3d_3p1_part::build::build_fal_hunyuan_3d_3p1_part;
+use crate::generate::generate_mesh::providers::fal::hunyuan_3d_3p1_pro::build::build_fal_hunyuan_3d_3p1_pro;
+use crate::generate::generate_mesh::providers::fal::hunyuan_3d_3p1_rapid::build::build_fal_hunyuan_3d_3p1_rapid;
+use crate::generate::generate_mesh::providers::fal::hunyuan_3d_3p1_smart_topology::build::build_fal_hunyuan_3d_3p1_smart_topology;
+use crate::generate::generate_mesh::providers::fal::meshy_v6::build::build_fal_meshy_v6;
+use crate::generate::generate_mesh::providers::fal::rodin_2p5_fast::build::build_fal_rodin_2p5_fast;
+use crate::generate::generate_mesh::providers::fal::tripo3d_h3p1::build::build_fal_tripo3d_h3p1;
 
 /// RouterProvider-agnostic mesh (3D object) generation request. Distilled by
 /// `build2()` into a `MeshGenerationDraftOrRequest` for the selected
@@ -49,6 +65,9 @@ pub struct GenerateMeshRequestBuilder {
   /// Right view image (optional; multi-view input).
   pub right_image: Option<ImageRef>,
 
+  /// Input mesh file for mesh-to-mesh models (part splitting, retopology).
+  pub input_mesh: Option<MeshRef>,
+
   /// The mesh output type to generate (normal, low-poly, or geometry-only).
   pub mesh_output_type: Option<CommonMeshOutputType>,
 
@@ -60,6 +79,16 @@ pub struct GenerateMeshRequestBuilder {
 
   /// Whether to generate PBR (physically based rendering) materials.
   pub enable_pbr: Option<bool>,
+
+  /// Whether to generate textures. Some models (Tripo3D) can skip texturing
+  /// for a cheaper, faster generation.
+  pub enable_texture: Option<bool>,
+
+  /// Texture quality. `Detailed` may cost extra (e.g. Tripo3D's HD tier).
+  pub texture_quality: Option<CommonMeshQuality>,
+
+  /// Geometry quality. `Detailed` may cost extra (e.g. Tripo3D).
+  pub geometry_quality: Option<CommonMeshQuality>,
 
   /// If the request is a mismatch with the (model/provider), how to mitigate it.
   pub request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy,
@@ -81,10 +110,14 @@ impl Default for GenerateMeshRequestBuilder {
       back_image: None,
       left_image: None,
       right_image: None,
+      input_mesh: None,
       mesh_output_type: None,
       polygon_type: None,
       face_count: None,
       enable_pbr: None,
+      enable_texture: None,
+      texture_quality: None,
+      geometry_quality: None,
       idempotency_token: None,
     }
   }
@@ -99,11 +132,25 @@ impl GenerateMeshRequestBuilder {
       (RouterProvider::Artcraft, RouterMeshModel::Hunyuan3d2p1) => build_artcraft_hunyuan_3d_2p1(self),
       (RouterProvider::Artcraft, RouterMeshModel::Hunyuan3d3) => build_artcraft_hunyuan3d_3(self),
       (RouterProvider::Artcraft, RouterMeshModel::Hunyuan3d3Sketch) => build_artcraft_hunyuan3d_3_sketch(self),
+      (RouterProvider::Artcraft, RouterMeshModel::Hunyuan3d3p1Pro) => build_artcraft_hunyuan_3d_3p1_pro(self),
+      (RouterProvider::Artcraft, RouterMeshModel::Hunyuan3d3p1Rapid) => build_artcraft_hunyuan_3d_3p1_rapid(self),
+      (RouterProvider::Artcraft, RouterMeshModel::Hunyuan3d3p1Part) => build_artcraft_hunyuan_3d_3p1_part(self),
+      (RouterProvider::Artcraft, RouterMeshModel::Hunyuan3d3p1SmartTopology) => build_artcraft_hunyuan_3d_3p1_smart_topology(self),
+      (RouterProvider::Artcraft, RouterMeshModel::Tripo3dH3p1) => build_artcraft_tripo3d_h3p1(self),
+      (RouterProvider::Artcraft, RouterMeshModel::MeshyV6) => build_artcraft_meshy_v6(self),
+      (RouterProvider::Artcraft, RouterMeshModel::Rodin2p5Fast) => build_artcraft_rodin_2p5_fast(self),
       // Fal
       (RouterProvider::Fal, RouterMeshModel::Hunyuan3d2p0) => build_fal_hunyuan_3d_2p0(self),
       (RouterProvider::Fal, RouterMeshModel::Hunyuan3d2p1) => build_fal_hunyuan_3d_2p1(self),
       (RouterProvider::Fal, RouterMeshModel::Hunyuan3d3) => build_fal_hunyuan3d_3(self),
       (RouterProvider::Fal, RouterMeshModel::Hunyuan3d3Sketch) => build_fal_hunyuan3d_3_sketch(self),
+      (RouterProvider::Fal, RouterMeshModel::Hunyuan3d3p1Pro) => build_fal_hunyuan_3d_3p1_pro(self),
+      (RouterProvider::Fal, RouterMeshModel::Hunyuan3d3p1Rapid) => build_fal_hunyuan_3d_3p1_rapid(self),
+      (RouterProvider::Fal, RouterMeshModel::Hunyuan3d3p1Part) => build_fal_hunyuan_3d_3p1_part(self),
+      (RouterProvider::Fal, RouterMeshModel::Hunyuan3d3p1SmartTopology) => build_fal_hunyuan_3d_3p1_smart_topology(self),
+      (RouterProvider::Fal, RouterMeshModel::Tripo3dH3p1) => build_fal_tripo3d_h3p1(self),
+      (RouterProvider::Fal, RouterMeshModel::MeshyV6) => build_fal_meshy_v6(self),
+      (RouterProvider::Fal, RouterMeshModel::Rodin2p5Fast) => build_fal_rodin_2p5_fast(self),
       _ => self.unsupported_provider_and_model(),
     }
   }

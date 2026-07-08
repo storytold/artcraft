@@ -220,6 +220,20 @@ pub enum CommonModelType {
   Hunyuan3d2_1,
   #[serde(rename = "hunyuan_3d_3")]
   Hunyuan3d3,
+  #[serde(rename = "hunyuan_3d_3p1_pro")]
+  Hunyuan3d3_1Pro,
+  #[serde(rename = "hunyuan_3d_3p1_rapid")]
+  Hunyuan3d3_1Rapid,
+  #[serde(rename = "hunyuan_3d_3p1_part")]
+  Hunyuan3d3_1Part,
+  #[serde(rename = "hunyuan_3d_3p1_topology")]
+  Hunyuan3d3_1SmartTopology,
+  #[serde(rename = "tripo3d_h3p1")]
+  Tripo3dH3_1,
+  #[serde(rename = "meshy_v6")]
+  MeshyV6,
+  #[serde(rename = "rodin_2p5_fast")]
+  Rodin2_5Fast,
 
   // Splat generation models (World Labs)
   #[serde(rename = "marble_0p1_mini")]
@@ -335,6 +349,13 @@ impl CommonModelType {
       Self::Hunyuan3d2_0 => "hunyuan_3d_2p0",
       Self::Hunyuan3d2_1 => "hunyuan_3d_2p1",
       Self::Hunyuan3d3 => "hunyuan_3d_3",
+      Self::Hunyuan3d3_1Pro => "hunyuan_3d_3p1_pro",
+      Self::Hunyuan3d3_1Rapid => "hunyuan_3d_3p1_rapid",
+      Self::Hunyuan3d3_1Part => "hunyuan_3d_3p1_part",
+      Self::Hunyuan3d3_1SmartTopology => "hunyuan_3d_3p1_topology",
+      Self::Tripo3dH3_1 => "tripo3d_h3p1",
+      Self::MeshyV6 => "meshy_v6",
+      Self::Rodin2_5Fast => "rodin_2p5_fast",
 
       // Splat generation models (World Labs)
       Self::Marble0p1Mini => "marble_0p1_mini",
@@ -438,6 +459,13 @@ impl CommonModelType {
       "hunyuan_3d_2p0" => Ok(Self::Hunyuan3d2_0),
       "hunyuan_3d_2p1" => Ok(Self::Hunyuan3d2_1),
       "hunyuan_3d_3" => Ok(Self::Hunyuan3d3),
+      "hunyuan_3d_3p1_pro" => Ok(Self::Hunyuan3d3_1Pro),
+      "hunyuan_3d_3p1_rapid" => Ok(Self::Hunyuan3d3_1Rapid),
+      "hunyuan_3d_3p1_part" => Ok(Self::Hunyuan3d3_1Part),
+      "hunyuan_3d_3p1_topology" => Ok(Self::Hunyuan3d3_1SmartTopology),
+      "tripo3d_h3p1" => Ok(Self::Tripo3dH3_1),
+      "meshy_v6" => Ok(Self::MeshyV6),
+      "rodin_2p5_fast" => Ok(Self::Rodin2_5Fast),
 
       // Splat generation models (World Labs)
       "marble_0p1_mini" => Ok(Self::Marble0p1Mini),
@@ -545,6 +573,13 @@ impl CommonModelType {
       Self::Hunyuan3d2_0,
       Self::Hunyuan3d2_1,
       Self::Hunyuan3d3,
+      Self::Hunyuan3d3_1Pro,
+      Self::Hunyuan3d3_1Rapid,
+      Self::Hunyuan3d3_1Part,
+      Self::Hunyuan3d3_1SmartTopology,
+      Self::Tripo3dH3_1,
+      Self::MeshyV6,
+      Self::Rodin2_5Fast,
 
       // Splat generation models (World Labs)
       Self::Marble0p1Mini,
@@ -649,6 +684,13 @@ impl CommonModelType {
       Self::Hunyuan3d2_0 => CommonModelClass::DimensionalMesh,
       Self::Hunyuan3d2_1 => CommonModelClass::DimensionalMesh,
       Self::Hunyuan3d3 => CommonModelClass::DimensionalMesh,
+      Self::Hunyuan3d3_1Pro => CommonModelClass::DimensionalMesh,
+      Self::Hunyuan3d3_1Rapid => CommonModelClass::DimensionalMesh,
+      Self::Hunyuan3d3_1Part => CommonModelClass::DimensionalMesh,
+      Self::Hunyuan3d3_1SmartTopology => CommonModelClass::DimensionalMesh,
+      Self::Tripo3dH3_1 => CommonModelClass::DimensionalMesh,
+      Self::MeshyV6 => CommonModelClass::DimensionalMesh,
+      Self::Rodin2_5Fast => CommonModelClass::DimensionalMesh,
 
       // Splat generation models (World Labs)
       Self::Marble0p1Mini => CommonModelClass::DimensionalSplat,
@@ -759,6 +801,13 @@ mod tests {
       assert_serialization(CommonModelType::Hunyuan3d2_0, "hunyuan_3d_2p0");
       assert_serialization(CommonModelType::Hunyuan3d2_1, "hunyuan_3d_2p1");
       assert_serialization(CommonModelType::Hunyuan3d3, "hunyuan_3d_3");
+      assert_serialization(CommonModelType::Hunyuan3d3_1Pro, "hunyuan_3d_3p1_pro");
+      assert_serialization(CommonModelType::Hunyuan3d3_1Rapid, "hunyuan_3d_3p1_rapid");
+      assert_serialization(CommonModelType::Hunyuan3d3_1Part, "hunyuan_3d_3p1_part");
+      assert_serialization(CommonModelType::Hunyuan3d3_1SmartTopology, "hunyuan_3d_3p1_topology");
+      assert_serialization(CommonModelType::Tripo3dH3_1, "tripo3d_h3p1");
+      assert_serialization(CommonModelType::MeshyV6, "meshy_v6");
+      assert_serialization(CommonModelType::Rodin2_5Fast, "rodin_2p5_fast");
       // Splat generation models (World Labs)
       assert_serialization(CommonModelType::Marble0p1Mini, "marble_0p1_mini");
       assert_serialization(CommonModelType::Marble0p1Plus, "marble_0p1_plus");
@@ -860,6 +909,13 @@ mod tests {
       assert_eq!(CommonModelType::Hunyuan3d2_0.to_str(), "hunyuan_3d_2p0");
       assert_eq!(CommonModelType::Hunyuan3d2_1.to_str(), "hunyuan_3d_2p1");
       assert_eq!(CommonModelType::Hunyuan3d3.to_str(), "hunyuan_3d_3");
+      assert_eq!(CommonModelType::Hunyuan3d3_1Pro.to_str(), "hunyuan_3d_3p1_pro");
+      assert_eq!(CommonModelType::Hunyuan3d3_1Rapid.to_str(), "hunyuan_3d_3p1_rapid");
+      assert_eq!(CommonModelType::Hunyuan3d3_1Part.to_str(), "hunyuan_3d_3p1_part");
+      assert_eq!(CommonModelType::Hunyuan3d3_1SmartTopology.to_str(), "hunyuan_3d_3p1_topology");
+      assert_eq!(CommonModelType::Tripo3dH3_1.to_str(), "tripo3d_h3p1");
+      assert_eq!(CommonModelType::MeshyV6.to_str(), "meshy_v6");
+      assert_eq!(CommonModelType::Rodin2_5Fast.to_str(), "rodin_2p5_fast");
       // Splat generation models (World Labs)
       assert_eq!(CommonModelType::Marble0p1Mini.to_str(), "marble_0p1_mini");
       assert_eq!(CommonModelType::Marble0p1Plus.to_str(), "marble_0p1_plus");
@@ -958,6 +1014,13 @@ mod tests {
       assert_eq!(CommonModelType::from_str("hunyuan_3d_2p0").unwrap(), CommonModelType::Hunyuan3d2_0);
       assert_eq!(CommonModelType::from_str("hunyuan_3d_2p1").unwrap(), CommonModelType::Hunyuan3d2_1);
       assert_eq!(CommonModelType::from_str("hunyuan_3d_3").unwrap(), CommonModelType::Hunyuan3d3);
+      assert_eq!(CommonModelType::from_str("hunyuan_3d_3p1_pro").unwrap(), CommonModelType::Hunyuan3d3_1Pro);
+      assert_eq!(CommonModelType::from_str("hunyuan_3d_3p1_rapid").unwrap(), CommonModelType::Hunyuan3d3_1Rapid);
+      assert_eq!(CommonModelType::from_str("hunyuan_3d_3p1_part").unwrap(), CommonModelType::Hunyuan3d3_1Part);
+      assert_eq!(CommonModelType::from_str("hunyuan_3d_3p1_topology").unwrap(), CommonModelType::Hunyuan3d3_1SmartTopology);
+      assert_eq!(CommonModelType::from_str("tripo3d_h3p1").unwrap(), CommonModelType::Tripo3dH3_1);
+      assert_eq!(CommonModelType::from_str("meshy_v6").unwrap(), CommonModelType::MeshyV6);
+      assert_eq!(CommonModelType::from_str("rodin_2p5_fast").unwrap(), CommonModelType::Rodin2_5Fast);
       // Splat generation models (World Labs)
       assert_eq!(CommonModelType::from_str("marble_0p1_mini").unwrap(), CommonModelType::Marble0p1Mini);
       assert_eq!(CommonModelType::from_str("marble_0p1_plus").unwrap(), CommonModelType::Marble0p1Plus);
@@ -970,7 +1033,7 @@ mod tests {
     #[test]
     fn all_variants() {
       let mut variants = CommonModelType::all_variants();
-      assert_eq!(variants.len(), 88);
+      assert_eq!(variants.len(), 95);
       // Image models
       assert_eq!(variants.pop_first(), Some(CommonModelType::Flux1Dev));
       assert_eq!(variants.pop_first(), Some(CommonModelType::Flux1Schnell));
@@ -1057,6 +1120,13 @@ mod tests {
       assert_eq!(variants.pop_first(), Some(CommonModelType::Hunyuan3d2_0));
       assert_eq!(variants.pop_first(), Some(CommonModelType::Hunyuan3d2_1));
       assert_eq!(variants.pop_first(), Some(CommonModelType::Hunyuan3d3));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::Hunyuan3d3_1Pro));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::Hunyuan3d3_1Rapid));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::Hunyuan3d3_1Part));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::Hunyuan3d3_1SmartTopology));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::Tripo3dH3_1));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::MeshyV6));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::Rodin2_5Fast));
       // Splat generation models (World Labs)
       assert_eq!(variants.pop_first(), Some(CommonModelType::Marble0p1Mini));
       assert_eq!(variants.pop_first(), Some(CommonModelType::Marble0p1Plus));
@@ -1154,6 +1224,13 @@ mod tests {
     fn dimensional_models_return_correct_class() {
       assert_eq!(CommonModelType::Hunyuan3d2_0.get_model_class(), CommonModelClass::DimensionalMesh);
       assert_eq!(CommonModelType::Hunyuan3d3.get_model_class(), CommonModelClass::DimensionalMesh);
+      assert_eq!(CommonModelType::Hunyuan3d3_1Pro.get_model_class(), CommonModelClass::DimensionalMesh);
+      assert_eq!(CommonModelType::Hunyuan3d3_1Rapid.get_model_class(), CommonModelClass::DimensionalMesh);
+      assert_eq!(CommonModelType::Hunyuan3d3_1Part.get_model_class(), CommonModelClass::DimensionalMesh);
+      assert_eq!(CommonModelType::Hunyuan3d3_1SmartTopology.get_model_class(), CommonModelClass::DimensionalMesh);
+      assert_eq!(CommonModelType::Tripo3dH3_1.get_model_class(), CommonModelClass::DimensionalMesh);
+      assert_eq!(CommonModelType::MeshyV6.get_model_class(), CommonModelClass::DimensionalMesh);
+      assert_eq!(CommonModelType::Rodin2_5Fast.get_model_class(), CommonModelClass::DimensionalMesh);
       assert_eq!(CommonModelType::Marble0p1Mini.get_model_class(), CommonModelClass::DimensionalSplat);
       assert_eq!(CommonModelType::Marble0p1Plus.get_model_class(), CommonModelClass::DimensionalSplat);
       assert_eq!(CommonModelType::Marble1p0.get_model_class(), CommonModelClass::DimensionalSplat);

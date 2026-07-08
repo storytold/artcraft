@@ -6,6 +6,7 @@ use tokens::tokens::media_files::MediaFileToken;
 
 use crate::api::image_list_ref::ImageListRef;
 use crate::api::image_ref::ImageRef;
+use crate::api::mesh_ref::MeshRef;
 use crate::errors::artcraft_router_error::ArtcraftRouterError;
 use crate::errors::client_error::ClientError;
 
@@ -28,6 +29,18 @@ pub(super) fn resolve_image_ref(
     None => Ok(None),
     Some(ImageRef::MediaFileToken(token)) => Ok(Some(token)),
     Some(ImageRef::Url(_)) => {
+      Err(ArtcraftRouterError::Client(ClientError::ArtcraftOnlySupportsMediaTokens))
+    }
+  }
+}
+
+pub(super) fn resolve_mesh_ref(
+  mesh_ref: Option<MeshRef>,
+) -> Result<Option<MediaFileToken>, ArtcraftRouterError> {
+  match mesh_ref {
+    None => Ok(None),
+    Some(MeshRef::MediaFileToken(token)) => Ok(Some(token)),
+    Some(MeshRef::Url(_)) => {
       Err(ArtcraftRouterError::Client(ClientError::ArtcraftOnlySupportsMediaTokens))
     }
   }

@@ -117,7 +117,10 @@ pub async fn omni_gen_mesh_generate_handler(
 
   // ==================== RESOLVE MEDIA TOKENS ==================== //
 
-  let all_tokens: Vec<MediaFileToken> = collect_image_tokens(&request);
+  let mut all_tokens: Vec<MediaFileToken> = collect_image_tokens(&request);
+  if let Some(token) = &request.input_mesh_media_token {
+    all_tokens.push(token.clone());
+  }
 
   let media_file_to_url_map: Option<HashMap<MediaFileToken, String>> = if all_tokens.is_empty() {
     None
@@ -342,7 +345,7 @@ fn collect_image_tokens(request: &OmniGenMeshCostAndGenerateRequest) -> Vec<Medi
 }
 
 fn determine_generation_mode(request: &OmniGenMeshCostAndGenerateRequest) -> CommonGenerationMode {
-  if !collect_image_tokens(request).is_empty() {
+  if !collect_image_tokens(request).is_empty() || request.input_mesh_media_token.is_some() {
     return CommonGenerationMode::Reference;
   }
 

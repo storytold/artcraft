@@ -251,6 +251,20 @@ pub enum InferenceModelType {
   Hunyuan3d2_1,
   #[serde(rename = "hunyuan_3d_3")]
   Hunyuan3d3,
+  #[serde(rename = "hunyuan_3d_3p1_pro")]
+  Hunyuan3d3_1Pro,
+  #[serde(rename = "hunyuan_3d_3p1_rapid")]
+  Hunyuan3d3_1Rapid,
+  #[serde(rename = "hunyuan_3d_3p1_part")]
+  Hunyuan3d3_1Part,
+  #[serde(rename = "hunyuan_3d_3p1_topology")]
+  Hunyuan3d3_1SmartTopology,
+  #[serde(rename = "tripo3d_h3p1")]
+  Tripo3dH3_1,
+  #[serde(rename = "meshy_v6")]
+  MeshyV6,
+  #[serde(rename = "rodin_2p5_fast")]
+  Rodin2_5Fast,
 
   // Splat generation models (World Labs)
   #[serde(rename = "marble_0p1_mini")]
@@ -382,6 +396,13 @@ impl InferenceModelType {
       Self::Hunyuan3d2_0 => "hunyuan_3d_2p0",
       Self::Hunyuan3d2_1 => "hunyuan_3d_2p1",
       Self::Hunyuan3d3 => "hunyuan_3d_3",
+      Self::Hunyuan3d3_1Pro => "hunyuan_3d_3p1_pro",
+      Self::Hunyuan3d3_1Rapid => "hunyuan_3d_3p1_rapid",
+      Self::Hunyuan3d3_1Part => "hunyuan_3d_3p1_part",
+      Self::Hunyuan3d3_1SmartTopology => "hunyuan_3d_3p1_topology",
+      Self::Tripo3dH3_1 => "tripo3d_h3p1",
+      Self::MeshyV6 => "meshy_v6",
+      Self::Rodin2_5Fast => "rodin_2p5_fast",
 
       // Splat generation models (World Labs)
       Self::Marble0p1Mini => "marble_0p1_mini",
@@ -502,6 +523,13 @@ impl InferenceModelType {
       "hunyuan_3d_2p0" => Ok(Self::Hunyuan3d2_0),
       "hunyuan_3d_2p1" => Ok(Self::Hunyuan3d2_1),
       "hunyuan_3d_3" => Ok(Self::Hunyuan3d3),
+      "hunyuan_3d_3p1_pro" => Ok(Self::Hunyuan3d3_1Pro),
+      "hunyuan_3d_3p1_rapid" => Ok(Self::Hunyuan3d3_1Rapid),
+      "hunyuan_3d_3p1_part" => Ok(Self::Hunyuan3d3_1Part),
+      "hunyuan_3d_3p1_topology" => Ok(Self::Hunyuan3d3_1SmartTopology),
+      "tripo3d_h3p1" => Ok(Self::Tripo3dH3_1),
+      "meshy_v6" => Ok(Self::MeshyV6),
+      "rodin_2p5_fast" => Ok(Self::Rodin2_5Fast),
 
       // Splat generation models (World Labs)
       "marble_0p1_mini" => Ok(Self::Marble0p1Mini),
@@ -626,6 +654,13 @@ impl InferenceModelType {
       Self::Hunyuan3d2_0,
       Self::Hunyuan3d2_1,
       Self::Hunyuan3d3,
+      Self::Hunyuan3d3_1Pro,
+      Self::Hunyuan3d3_1Rapid,
+      Self::Hunyuan3d3_1Part,
+      Self::Hunyuan3d3_1SmartTopology,
+      Self::Tripo3dH3_1,
+      Self::MeshyV6,
+      Self::Rodin2_5Fast,
 
       // Splat generation models (World Labs)
       Self::Marble0p1Mini,
@@ -733,6 +768,13 @@ impl InferenceModelType {
       CommonModelType::Hunyuan3d2_0 => Self::Hunyuan3d2_0,
       CommonModelType::Hunyuan3d2_1 => Self::Hunyuan3d2_1,
       CommonModelType::Hunyuan3d3 => Self::Hunyuan3d3,
+      CommonModelType::Hunyuan3d3_1Pro => Self::Hunyuan3d3_1Pro,
+      CommonModelType::Hunyuan3d3_1Rapid => Self::Hunyuan3d3_1Rapid,
+      CommonModelType::Hunyuan3d3_1Part => Self::Hunyuan3d3_1Part,
+      CommonModelType::Hunyuan3d3_1SmartTopology => Self::Hunyuan3d3_1SmartTopology,
+      CommonModelType::Tripo3dH3_1 => Self::Tripo3dH3_1,
+      CommonModelType::MeshyV6 => Self::MeshyV6,
+      CommonModelType::Rodin2_5Fast => Self::Rodin2_5Fast,
 
       // Splat generation models (World Labs)
       CommonModelType::Marble0p1Mini => Self::Marble0p1Mini,
@@ -861,6 +903,13 @@ mod tests {
       assert_serialization(InferenceModelType::Hunyuan3d2_0, "hunyuan_3d_2p0");
       assert_serialization(InferenceModelType::Hunyuan3d2_1, "hunyuan_3d_2p1");
       assert_serialization(InferenceModelType::Hunyuan3d3, "hunyuan_3d_3");
+      assert_serialization(InferenceModelType::Hunyuan3d3_1Pro, "hunyuan_3d_3p1_pro");
+      assert_serialization(InferenceModelType::Hunyuan3d3_1Rapid, "hunyuan_3d_3p1_rapid");
+      assert_serialization(InferenceModelType::Hunyuan3d3_1Part, "hunyuan_3d_3p1_part");
+      assert_serialization(InferenceModelType::Hunyuan3d3_1SmartTopology, "hunyuan_3d_3p1_topology");
+      assert_serialization(InferenceModelType::Tripo3dH3_1, "tripo3d_h3p1");
+      assert_serialization(InferenceModelType::MeshyV6, "meshy_v6");
+      assert_serialization(InferenceModelType::Rodin2_5Fast, "rodin_2p5_fast");
 
       // Splat generation models (World Labs)
       assert_serialization(InferenceModelType::Marble0p1Mini, "marble_0p1_mini");
@@ -980,6 +1029,13 @@ mod tests {
       assert_eq!(InferenceModelType::Hunyuan3d2_0.to_str(), "hunyuan_3d_2p0");
       assert_eq!(InferenceModelType::Hunyuan3d2_1.to_str(), "hunyuan_3d_2p1");
       assert_eq!(InferenceModelType::Hunyuan3d3.to_str(), "hunyuan_3d_3");
+      assert_eq!(InferenceModelType::Hunyuan3d3_1Pro.to_str(), "hunyuan_3d_3p1_pro");
+      assert_eq!(InferenceModelType::Hunyuan3d3_1Rapid.to_str(), "hunyuan_3d_3p1_rapid");
+      assert_eq!(InferenceModelType::Hunyuan3d3_1Part.to_str(), "hunyuan_3d_3p1_part");
+      assert_eq!(InferenceModelType::Hunyuan3d3_1SmartTopology.to_str(), "hunyuan_3d_3p1_topology");
+      assert_eq!(InferenceModelType::Tripo3dH3_1.to_str(), "tripo3d_h3p1");
+      assert_eq!(InferenceModelType::MeshyV6.to_str(), "meshy_v6");
+      assert_eq!(InferenceModelType::Rodin2_5Fast.to_str(), "rodin_2p5_fast");
 
       // Splat generation models (World Labs)
       assert_eq!(InferenceModelType::Marble0p1Mini.to_str(), "marble_0p1_mini");
@@ -1097,6 +1153,13 @@ mod tests {
       assert_eq!(InferenceModelType::from_str("hunyuan_3d_2p0").unwrap(), InferenceModelType::Hunyuan3d2_0);
       assert_eq!(InferenceModelType::from_str("hunyuan_3d_2p1").unwrap(), InferenceModelType::Hunyuan3d2_1);
       assert_eq!(InferenceModelType::from_str("hunyuan_3d_3").unwrap(), InferenceModelType::Hunyuan3d3);
+      assert_eq!(InferenceModelType::from_str("hunyuan_3d_3p1_pro").unwrap(), InferenceModelType::Hunyuan3d3_1Pro);
+      assert_eq!(InferenceModelType::from_str("hunyuan_3d_3p1_rapid").unwrap(), InferenceModelType::Hunyuan3d3_1Rapid);
+      assert_eq!(InferenceModelType::from_str("hunyuan_3d_3p1_part").unwrap(), InferenceModelType::Hunyuan3d3_1Part);
+      assert_eq!(InferenceModelType::from_str("hunyuan_3d_3p1_topology").unwrap(), InferenceModelType::Hunyuan3d3_1SmartTopology);
+      assert_eq!(InferenceModelType::from_str("tripo3d_h3p1").unwrap(), InferenceModelType::Tripo3dH3_1);
+      assert_eq!(InferenceModelType::from_str("meshy_v6").unwrap(), InferenceModelType::MeshyV6);
+      assert_eq!(InferenceModelType::from_str("rodin_2p5_fast").unwrap(), InferenceModelType::Rodin2_5Fast);
 
       // Splat generation models (World Labs)
       assert_eq!(InferenceModelType::from_str("marble_0p1_mini").unwrap(), InferenceModelType::Marble0p1Mini);

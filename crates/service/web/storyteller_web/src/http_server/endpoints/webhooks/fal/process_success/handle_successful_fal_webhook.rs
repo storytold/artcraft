@@ -16,7 +16,8 @@ use crate::state::server_state::ServerState;
 use super::process_image_payload::process_image_payload;
 use super::process_images_payload::process_images_payload;
 use super::process_model_glb_payload::process_model_glb_payload;
-use super::process_model_mesh_payload::process_model_mesh_payload;
+use super::process_model_mesh_payload::{process_model_mesh_payload, process_model_obj_payload};
+use super::process_result_files_payload::process_result_files_payload;
 use super::process_video_payload::process_video_payload;
 
 pub async fn handle_successful_fal_webhook(
@@ -106,6 +107,21 @@ pub async fn handle_successful_fal_webhook(
       let token = process_model_mesh_payload(model_mesh_data, &job, server_state).await?;
       if maybe_media_token.is_none() {
         maybe_media_token = Some(token);
+      }
+    } else if let Some(ref model_obj_data) = extracted.model_obj {
+      info!("Handling model_obj payload for request_id {} / job {:?}", request_id, job.job_token);
+      let token = process_model_obj_payload(model_obj_data, &job, server_state).await?;
+      if maybe_media_token.is_none() {
+        maybe_media_token = Some(token);
+      }
+    } else if let Some(ref result_files) = extracted.result_files {
+      info!("Handling result_files payload ({} files) for request_id {} / job {:?}", result_files.len(), request_id, job.job_token);
+      let (media_token, batch_token) = process_result_files_payload(result_files, &job, server_state, pager).await?;
+      if maybe_media_token.is_none() {
+        maybe_media_token = media_token;
+      }
+      if maybe_batch_token.is_none() {
+        maybe_batch_token = batch_token;
       }
     }
   }

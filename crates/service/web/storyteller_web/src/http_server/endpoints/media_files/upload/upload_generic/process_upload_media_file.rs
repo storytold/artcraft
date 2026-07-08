@@ -319,6 +319,7 @@ pub async fn process_upload_media_file(
     MediaFileType::Video => MediaFileClass::Video,
     MediaFileType::Bvh => MediaFileClass::Dimensional,
     MediaFileType::Fbx => MediaFileClass::Dimensional,
+    MediaFileType::Obj => MediaFileClass::Dimensional,
     MediaFileType::Glb => MediaFileClass::Dimensional,
     MediaFileType::Gltf => MediaFileClass::Dimensional,
     MediaFileType::Spz => MediaFileClass::Dimensional,

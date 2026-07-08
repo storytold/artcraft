@@ -2,6 +2,7 @@ pub mod audio_list_ref;
 pub mod character_list_ref;
 pub mod image_list_ref;
 pub mod image_ref;
+pub mod mesh_ref;
 pub mod router_aspect_ratio;
 pub mod router_audio_model;
 pub mod router_bitrate;

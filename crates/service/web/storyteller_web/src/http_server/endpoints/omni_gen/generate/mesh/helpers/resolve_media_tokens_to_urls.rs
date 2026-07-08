@@ -2,6 +2,7 @@ use std::collections::HashMap;
 
 use artcraft_router::api::image_list_ref::ImageListRef;
 use artcraft_router::api::image_ref::ImageRef;
+use artcraft_router::api::mesh_ref::MeshRef;
 use artcraft_router::generate::generate_mesh::generate_mesh_request_builder::GenerateMeshRequestBuilder;
 use tokens::tokens::media_files::MediaFileToken;
 
@@ -31,6 +32,13 @@ pub fn resolve_media_tokens_to_urls(
   resolve_image_ref(&mut builder.back_image, map);
   resolve_image_ref(&mut builder.left_image, map);
   resolve_image_ref(&mut builder.right_image, map);
+
+  // input mesh (part splitting / retopology)
+  if let Some(MeshRef::MediaFileToken(ref token)) = builder.input_mesh {
+    if let Some(url) = map.get(token) {
+      builder.input_mesh = Some(MeshRef::Url(url.clone()));
+    }
+  }
 }
 
 fn resolve_image_ref(
