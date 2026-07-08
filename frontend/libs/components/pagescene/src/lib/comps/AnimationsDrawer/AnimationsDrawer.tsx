@@ -11,6 +11,7 @@ import { EngineContext } from "../../contexts/EngineContext";
 import { usePageSceneStore } from "../../PageSceneStore";
 import { addClipToCharacter } from "../../actions";
 import { demoAnimationItems } from "../../signals/demoAssets/demoAnimationItems";
+import { ANIMATION_CLIP_MIME } from "../Timeline/timelineUtils";
 
 export const AnimationsDrawer = () => {
   const editor = useContext(EngineContext);
@@ -32,8 +33,16 @@ export const AnimationsDrawer = () => {
           <button
             key={item.media_id}
             type="button"
-            title={`Add “${item.name}” to ${character.name}`}
+            draggable
+            title={`Add “${item.name}” to ${character.name} — click, or drag onto the timeline`}
             className="group flex flex-col items-stretch gap-1 rounded-lg border border-white/10 bg-black/30 p-1 text-left transition-colors hover:border-white/40"
+            onDragStart={(e) => {
+              e.dataTransfer.setData(
+                ANIMATION_CLIP_MIME,
+                JSON.stringify({ media_id: item.media_id, name: item.name }),
+              );
+              e.dataTransfer.effectAllowed = "copy";
+            }}
             onClick={() =>
               editor && addClipToCharacter(editor, character.id, item)
             }

@@ -1,5 +1,9 @@
 // Shared helpers for the timeline UI.
 
+// DataTransfer MIME for dragging an animation clip from the Animations drawer
+// onto a character's lane in the timeline. Payload is JSON: { media_id, name }.
+export const ANIMATION_CLIP_MIME = "application/x-artcraft-animation-clip";
+
 // Seconds → "m:ss" (e.g. 10 → "0:10", 65 → "1:05").
 export const formatTimecode = (seconds: number): string => {
   const clamped = Math.max(0, seconds);

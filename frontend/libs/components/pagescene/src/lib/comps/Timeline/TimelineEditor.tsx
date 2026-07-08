@@ -11,6 +11,7 @@ import {
 import { Button } from "@storyteller/ui-button";
 import { EngineContext } from "../../contexts/EngineContext/EngineContext";
 import {
+  addClipToCharacter,
   cancelTimeline,
   deleteKeyframe,
   pauseTimeline,
@@ -21,6 +22,7 @@ import {
 import { usePageSceneStore } from "../../PageSceneStore";
 import { DEFAULT_TIMELINE_FPS } from "../../engine/timeline/types";
 import {
+  ANIMATION_CLIP_MIME,
   formatTimecode,
   formatTimecodeFrames,
   fractionToTime,
@@ -28,6 +30,7 @@ import {
   timeToFraction,
 } from "./timelineUtils";
 import { TimelineTrackRow } from "./TimelineTrackRow";
+import { TimelineClipRow } from "./TimelineClipRow";
 import { MotionPopover } from "./MotionPopover";
 import { DurationLabel } from "./DurationLabel";
 
@@ -42,6 +45,8 @@ export const TimelineEditor = () => {
   const isScrubbing = useRef(false);
 
   const tracks = usePageSceneStore((s) => s.timelineTracks);
+  const clipLanes = usePageSceneStore((s) => s.timelineClipLanes);
+  const characters = usePageSceneStore((s) => s.characters);
   const duration = usePageSceneStore((s) => s.timelineDuration);
   const playhead = usePageSceneStore((s) => s.timelinePlayhead);
   const isPlaying = usePageSceneStore((s) => s.timelineIsPlaying);
@@ -56,6 +61,16 @@ export const TimelineEditor = () => {
   // required to see where keyframes can go.
   const trackByUuid = new Map(tracks.map((t) => [t.objectUuid, t]));
   const rows = outlinerItems;
+
+  // Only characters get skeletal-animation clip lanes. Clip drags are accepted
+  // on a character's block; other rows ignore them.
+  const characterIds = new Set(characters.map((c) => c.id));
+  const clipLanesByChar = new Map<string, typeof clipLanes>();
+  for (const lane of clipLanes) {
+    const list = clipLanesByChar.get(lane.objectUuid) ?? [];
+    list.push(lane);
+    clipLanesByChar.set(lane.objectUuid, list);
+  }
 
   const selectedKeyframe = tracks
     .flatMap((t) => t.keyframes)
@@ -169,6 +184,35 @@ export const TimelineEditor = () => {
     );
   };
 
+  // Drop an animation clip (dragged from the Animations drawer) onto a
+  // character at the pointer's time. Lane geometry matches the ruler, so the
+  // ruler rect converts pointer-x → time exactly as scrubbing does.
+  const dropClipOnCharacter = (characterId: string, e: React.DragEvent) => {
+    const ruler = rulerRef.current;
+    if (!ruler || !editor) return;
+    const raw = e.dataTransfer.getData(ANIMATION_CLIP_MIME);
+    if (!raw) return;
+    e.preventDefault();
+    let payload: { media_id?: string; name?: string };
+    try {
+      payload = JSON.parse(raw);
+    } catch {
+      return;
+    }
+    if (!payload.media_id) return;
+    const rect = ruler.getBoundingClientRect();
+    const time = quantizeToFrame(
+      fractionToTime((e.clientX - rect.left) / rect.width, duration),
+      fps,
+    );
+    addClipToCharacter(
+      editor,
+      characterId,
+      { media_id: payload.media_id, name: payload.name },
+      time,
+    );
+  };
+
   return (
     <div
       id="timeline-editor"
@@ -259,14 +303,43 @@ export const TimelineEditor = () => {
              the ruler — a visible scrollbar would shift keyframes out of
              alignment with the ruler-driven playhead. */
           <div className="max-h-[154px] overflow-y-auto overscroll-contain [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-            {rows.map((item) => (
-              <TimelineTrackRow
-                key={item.id}
-                item={item}
-                track={trackByUuid.get(item.id)}
-                duration={duration}
-              />
-            ))}
+            {rows.map((item) => {
+              const isCharacter = characterIds.has(item.id);
+              const lanes = isCharacter ? clipLanesByChar.get(item.id) : undefined;
+              return (
+                <div
+                  key={item.id}
+                  onDragOver={
+                    isCharacter
+                      ? (e) => {
+                          // Allow the drop only when it carries an animation clip.
+                          if (e.dataTransfer.types.includes(ANIMATION_CLIP_MIME)) {
+                            e.preventDefault();
+                          }
+                        }
+                      : undefined
+                  }
+                  onDrop={
+                    isCharacter
+                      ? (e) => dropClipOnCharacter(item.id, e)
+                      : undefined
+                  }
+                >
+                  <TimelineTrackRow
+                    item={item}
+                    track={trackByUuid.get(item.id)}
+                    duration={duration}
+                  />
+                  {lanes?.map((lane) => (
+                    <TimelineClipRow
+                      key={lane.id}
+                      lane={lane}
+                      duration={duration}
+                    />
+                  ))}
+                </div>
+              );
+            })}
           </div>
         )}
 

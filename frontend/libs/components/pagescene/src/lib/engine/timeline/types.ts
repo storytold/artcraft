@@ -37,8 +37,13 @@ export interface ClipStrip {
   sourceMediaId: string; // media id of the animation GLB (reload + retarget)
   name: string; // display label
   startTime: number; // seconds from timeline start
-  duration: number; // seconds (clip length; trimmable later)
+  duration: number; // seconds (clip length on the timeline)
   loop: boolean;
+  // True until the clip GLB has loaded and its real length is known. While
+  // true, `duration` is only a placeholder width and gets replaced by the
+  // clip's natural length on load. A user trim clears this so the natural
+  // length never clobbers a hand-set duration on reload.
+  autoDuration?: boolean;
 }
 
 // One animation lane under a character. Multiple lanes (stacked) = multiple

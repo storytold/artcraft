@@ -201,14 +201,27 @@ default clip source = the 37 curated demo clips.
   relies on the shared `mixorig:*` naming so a clip's tracks resolve against the character's bones
   directly (direct-bind first; `SkeletonUtils.retargetClip` is the documented fallback if a rig uses
   different bone names — **not yet wired**, pending the runtime spike).
-- **Trigger UI (minimal, done)**: `comps/AnimationsDrawer/` — right-docked, only when a character is
-  selected (build mode; hidden via CSS in record). Click a clip → `addClipToCharacter` drops a lane
-  at the playhead. **Deferred until playback is verified**: drag-and-drop onto a specific timeline
-  lane, stacked clip-strip rendering in `TimelineEditor`, trim/move handles, clip-lane undo,
-  updating `strip.duration` from the loaded clip length, character-has-mixamo-rig validation.
-- **⚠️ Runtime unknown to verify first**: whether the demo clips and character rigs share
-  `mixamorig:*` bone names (→ direct bind works) or need retargeting. Verify a dropped clip actually
-  moves the character on scrub/play before building the drawer/DnD/strip UI.
+- **Trigger UI (done)**: `comps/AnimationsDrawer/` — right-docked, only when a character is
+  selected (build mode; hidden via CSS in record). Clips are **click-to-add** (drops at the playhead)
+  **and draggable** onto the timeline (`ANIMATION_CLIP_MIME` payload `{media_id, name}`).
+- **Timeline clip UI (phase C, done)**: `comps/Timeline/TimelineClipRow.tsx` renders each clip lane
+  as a **stacked strip** under its character's keyframe row in `TimelineEditor`. Strip body drags to
+  **move** (`moveClipLane`), the right edge drags to **trim** length (`resizeClipLane`), a loop chip
+  toggles repeat (`setClipLoop`), trash removes it (`removeClipLane`). Each character row is a
+  **drop target** for clip drags (`dropClipOnCharacter` → `addClipToCharacter(…, atTime)`, time from
+  the ruler rect). Non-character rows ignore clip drags. No per-op undo by design — clip edits ride
+  the timeline **Save/Cancel** session exactly like keyframes (`cancel()` restores + re-syncs).
+- **Real clip length (fix, done)**: a fresh drop seeds `strip.duration` with a placeholder and flags
+  `autoDuration`; when the GLB loads, `CharacterAnimationManager` calls
+  `TimelineController.resolveClipDuration(laneId, clip.duration)` to adopt the clip's true length
+  (and re-clamp start). A user trim clears `autoDuration` so the natural length never clobbers a
+  hand-set duration on reload.
+- **Rig-mismatch diagnostic**: `CharacterAnimationManager.clipBindsToCharacter` warns (console) when
+  a clip's tracks resolve to **0** nodes on the character — the signal that `SkeletonUtils.retargetClip`
+  is needed. Retarget itself is still **not wired** (direct-bind first).
+- **⚠️ Runtime unknown to verify**: whether the demo clips and character rigs share `mixamorig:*`
+  bone names (→ direct bind works) or need retargeting. Drop/scrub a clip and watch for motion (and
+  the console warn) to decide whether to wire the retarget fallback.
 
 ### ⚠️ Unverified — compiles but NOT runtime-tested
 

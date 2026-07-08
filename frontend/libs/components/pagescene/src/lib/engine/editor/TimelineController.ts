@@ -270,6 +270,48 @@ export class TimelineController {
     this.emitChanged();
   }
 
+  // User trim (right edge): set the strip's on-timeline length. Clamped to at
+  // least one frame and to the space left before the timeline end. Marks the
+  // duration as hand-set so a later clip (re)load won't overwrite it.
+  resizeClipLane(laneId: string, duration: number): void {
+    if (!this.timeline) return;
+    const lane = this.timeline.clipLanes.find((l) => l.id === laneId);
+    if (!lane) return;
+    const minDur = 1 / (this.timeline.fps || DEFAULT_TIMELINE_FPS);
+    const maxDur = this.timeline.duration - lane.strip.startTime;
+    lane.strip.duration = Math.max(minDur, Math.min(duration, maxDur));
+    lane.strip.autoDuration = false;
+    this.syncClipLanes();
+    this.evaluate();
+    this.emitChanged();
+  }
+
+  // Toggle whether a clip loops for the remainder of its strip.
+  setClipLoop(laneId: string, loop: boolean): void {
+    if (!this.timeline) return;
+    const lane = this.timeline.clipLanes.find((l) => l.id === laneId);
+    if (!lane) return;
+    lane.strip.loop = loop;
+    this.syncClipLanes();
+    this.evaluate();
+    this.emitChanged();
+  }
+
+  // Called by CharacterAnimationManager once a clip GLB has loaded and its
+  // real length is known. Adopts the natural length only for a fresh drop
+  // (autoDuration still set) — a user-trimmed strip keeps its hand-set length.
+  resolveClipDuration(laneId: string, naturalDuration: number): void {
+    if (!this.timeline || !(naturalDuration > 0)) return;
+    const lane = this.timeline.clipLanes.find((l) => l.id === laneId);
+    if (!lane || lane.strip.autoDuration === false) return;
+    lane.strip.duration = Math.min(naturalDuration, this.timeline.duration);
+    lane.strip.autoDuration = false;
+    // Re-clamp start so the now-correctly-sized strip still fits the timeline.
+    const maxStart = Math.max(0, this.timeline.duration - lane.strip.duration);
+    lane.strip.startTime = Math.min(lane.strip.startTime, maxStart);
+    this.emitChanged();
+  }
+
   removeClipLane(laneId: string): void {
     if (!this.timeline) return;
     this.timeline.clipLanes = this.timeline.clipLanes.filter(

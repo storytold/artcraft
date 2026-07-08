@@ -131,6 +131,20 @@ export class CharacterAnimationManager {
     rt.action = action;
     rt.clipDuration = clip.duration;
 
+    // Diagnostic for the direct-bind vs retarget question: if none of the
+    // clip's tracks resolve to a node on the character, the character won't
+    // move — that's the signal to wire SkeletonUtils.retargetClip.
+    if (!this.clipBindsToCharacter(clip, character)) {
+      console.warn(
+        `Animation clip "${clip.name}" bound 0 tracks on character ${lane.objectUuid} — likely a rig/bone-name mismatch (retarget needed).`,
+      );
+    }
+
+    // Adopt the clip's real length into the timeline data (fresh drops only;
+    // user trims are preserved), so the strip width and move/trim clamps are
+    // correct and survive save/reload.
+    this.editor.timelineController.resolveClipDuration(lane.id, clip.duration);
+
     // Pose immediately at the current playhead so the drop is visible even
     // when the timeline isn't playing.
     this.evaluateAt(this.editor.timelineController.getPlayhead());
@@ -167,6 +181,20 @@ export class CharacterAnimationManager {
       this.mixers.set(uuid, mixer);
     }
     return mixer;
+  }
+
+  // True if at least one of the clip's tracks names a node that exists under
+  // `character`. Mixamo clips address bones as "mixamorig:Hips.position"; we
+  // strip the ".property" suffix and look the node up by name.
+  private clipBindsToCharacter(
+    clip: THREE.AnimationClip,
+    character: THREE.Object3D,
+  ): boolean {
+    return clip.tracks.some((track) => {
+      const nodeName = track.name.split(".")[0];
+      if (!nodeName) return false;
+      return character.getObjectByName(nodeName) !== undefined;
+    });
   }
 
   private findObject(uuid: string): THREE.Object3D | undefined {

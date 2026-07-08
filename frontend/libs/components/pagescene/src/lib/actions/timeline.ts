@@ -5,7 +5,13 @@
 
 import type Editor from "../engine/editor";
 import type { EasingSpec } from "../engine/timeline/types";
-import type { MediaItem } from "../models";
+
+// The clip source only needs an id + label — both a full MediaItem (drawer
+// click) and a drag payload (drop) satisfy this.
+interface ClipSource {
+  media_id: string;
+  name?: string;
+}
 
 // Placeholder strip length (seconds) until the clip GLB reports its real
 // duration; playback uses the loaded clip's actual length regardless.
@@ -60,22 +66,50 @@ export function setKeyframeEasing(
 }
 
 // Place a skeletal-animation clip (a Mixamo demo item) as a new stacked lane
-// under `characterUuid`, dropped at the current playhead. The real clip length
-// is resolved after the GLB loads; `length` here seeds the strip width only.
+// under `characterUuid`. Drops at the current playhead by default, or at an
+// explicit `atTime` when dropped onto a specific point in the timeline. The
+// real clip length replaces DEFAULT_CLIP_DURATION once the GLB loads (the
+// strip starts at the placeholder width, flagged autoDuration).
 export function addClipToCharacter(
   editor: Editor,
   characterUuid: string,
-  item: MediaItem,
+  item: ClipSource,
+  atTime?: number,
 ): string | null {
   if (!item.media_id) return null;
-  const startTime = editor.timelineController.getPlayhead();
+  const startTime = atTime ?? editor.timelineController.getPlayhead();
   return editor.timelineController.addClipLane(characterUuid, {
     sourceMediaId: item.media_id,
     name: item.name ?? "Animation",
     startTime,
     duration: DEFAULT_CLIP_DURATION,
     loop: false,
+    autoDuration: true,
   });
+}
+
+export function moveClipLane(
+  editor: Editor,
+  laneId: string,
+  startTime: number,
+): void {
+  editor.timelineController.moveClipLane(laneId, startTime);
+}
+
+export function resizeClipLane(
+  editor: Editor,
+  laneId: string,
+  duration: number,
+): void {
+  editor.timelineController.resizeClipLane(laneId, duration);
+}
+
+export function setClipLoop(
+  editor: Editor,
+  laneId: string,
+  loop: boolean,
+): void {
+  editor.timelineController.setClipLoop(laneId, loop);
 }
 
 export function removeClipLane(editor: Editor, laneId: string): void {
