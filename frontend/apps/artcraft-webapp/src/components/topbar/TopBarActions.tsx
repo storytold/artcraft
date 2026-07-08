@@ -99,7 +99,7 @@ export function TopBarActions({ className }: { className?: string }) {
   return (
     <div
       className={twMerge(
-        "flex items-center gap-1 sm:gap-2 shrink-0",
+        "flex items-center gap-1 sm:gap-1.5 shrink-0",
         className,
       )}
     >
@@ -136,7 +136,7 @@ export function TopBarActions({ className }: { className?: string }) {
 
           <Link
             to="/library"
-            className="hidden sm:flex h-8 items-center gap-1.5 px-3 rounded-lg text-sm font-medium text-white/85 hover:bg-white/[0.04] transition-colors"
+            className="hidden sm:flex h-8 items-center gap-1.5 px-3 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] shadow-none text-sm font-medium text-white/80 transition-colors"
           >
             <FontAwesomeIcon icon={faImages} className="text-[11px]" />
             My Library

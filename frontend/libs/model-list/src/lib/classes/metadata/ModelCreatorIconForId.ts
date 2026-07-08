@@ -25,6 +25,19 @@ export const MODEL_ID_PREFIX_CREATORS: Array<[string, ModelCreator]> = [
   // Beeble SwitchX (background change) has no provider icon — use the ArtCraft
   // mark since it's surfaced as an ArtCraft feature.
   ["switch_x", ModelCreator.ArtCraft],
+  // 3D mesh / splat models (not in ALL_MODELS_LIST).
+  ["hunyuan", ModelCreator.Tencent],
+  ["marble", ModelCreator.WorldLabs],
+];
+
+// Direct model-id-prefix → services icon filename, for 3D brands that don't
+// have a ModelCreator enum value yet. Drop the matching .svg into
+// public/images/services/ (webapp) and resources/images/services/ (desktop).
+const MODEL_ID_PREFIX_ICON_FILES: Array<[string, string]> = [
+  ["tripo", "tripo.svg"],
+  ["meshy", "meshy.svg"],
+  // Rodin is Hyper3D's model.
+  ["rodin", "hyper3d.svg"],
 ];
 
 /**
@@ -36,8 +49,12 @@ export const getCreatorIconPathForModelId = (modelId: string): string => {
     (m) => m.id === modelId || m.tauriId === modelId,
   );
   if (model) return getCreatorIconPath(model.creator);
+  const base = getServicesBasePath();
+  for (const [prefix, file] of MODEL_ID_PREFIX_ICON_FILES) {
+    if (modelId.startsWith(prefix)) return `${base}/${file}`;
+  }
   for (const [prefix, creator] of MODEL_ID_PREFIX_CREATORS) {
     if (modelId.startsWith(prefix)) return getCreatorIconPath(creator);
   }
-  return `${getServicesBasePath()}/generic.svg`;
+  return `${base}/generic.svg`;
 };

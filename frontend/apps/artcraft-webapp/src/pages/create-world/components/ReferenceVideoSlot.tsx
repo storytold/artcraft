@@ -1,6 +1,11 @@
 import { useRef, useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faPlus, faSpinnerThird, faXmark } from "@fortawesome/pro-solid-svg-icons";
+import {
+  faPlus,
+  faSpinnerThird,
+  faXmark,
+  faVideo,
+} from "@fortawesome/pro-solid-svg-icons";
 import { MediaUploadApi, EIntermediateFile } from "@storyteller/api";
 import type { RefVideoAsset } from "../create-world-store";
 
@@ -57,9 +62,14 @@ export function ReferenceVideoSlot({
   };
 
   return (
-    <div className="glass flex items-center gap-3 rounded-2xl px-3 py-2">
-      <div className="flex flex-col">
-        <span className="text-sm font-medium text-white/90">Reference video</span>
+    // Title on the left, upload slot right-aligned + top-aligned (matches
+    // ImagePromptRow). Flat bottom on desktop so it seams into the prompt box.
+    <div className="glass flex items-start gap-3 rounded-2xl px-3 py-2 sm:rounded-t-2xl sm:rounded-b-none">
+      <div className="flex grow flex-col gap-1 min-w-32">
+        <div className="flex items-center gap-2 text-white/90">
+          <FontAwesomeIcon icon={faVideo} className="h-3.5 w-3.5" />
+          <span className="text-sm font-medium">Reference video</span>
+        </div>
         <span className="text-[13px] text-white/60">Guide the world (optional)</span>
       </div>
       <input

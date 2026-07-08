@@ -4,6 +4,7 @@ import {
   faSpinnerThird,
   faXmark,
   faCube,
+  faImage,
 } from "@fortawesome/pro-solid-svg-icons";
 import { MediaUploadApi } from "@storyteller/api";
 import { FilterEngineCategories } from "@storyteller/api";
@@ -52,12 +53,28 @@ export function MeshInputsRow({
 }: MeshInputsRowProps) {
   if (!showMultiView && !showMeshInput) return null;
 
+  // Mesh models are mutually exclusive here (multi-view vs mesh-input), so a
+  // single title reflects whichever slots are shown.
+  const title = showMultiView ? "Multi-view" : "Input mesh";
+  const subtitle = showMultiView
+    ? "Reference angles (optional)"
+    : "Mesh file to process";
+  const titleIcon = showMultiView ? faImage : faCube;
+
   return (
-    // Flat bottom on desktop so it seams into the prompt box glass stacked
-    // below it (matches ImagePromptRow); fully rounded on mobile where it stands
-    // alone in the settings form.
-    <div className="glass flex flex-wrap items-end gap-3 rounded-2xl px-3 py-2 sm:rounded-t-2xl sm:rounded-b-none">
-      {showMultiView && (
+    // Title on the left, upload slots right-aligned + top-aligned (matches
+    // ImagePromptRow). Flat bottom on desktop so it seams into the prompt box
+    // glass stacked below it; fully rounded on mobile (stands alone there).
+    <div className="glass flex items-start gap-3 rounded-2xl px-3 py-2 sm:rounded-t-2xl sm:rounded-b-none">
+      <div className="flex grow flex-col gap-1 min-w-32">
+        <div className="flex items-center gap-2 text-white/90">
+          <FontAwesomeIcon icon={titleIcon} className="h-3.5 w-3.5" />
+          <span className="text-sm font-medium">{title}</span>
+        </div>
+        <span className="text-[13px] text-white/60">{subtitle}</span>
+      </div>
+      <div className="flex flex-wrap items-end justify-end gap-3">
+        {showMultiView && (
         <>
           <ImageSlot
             label="Front"
@@ -101,12 +118,13 @@ export function MeshInputsRow({
           />
         </>
       )}
-      {showMeshInput && (
-        <MeshFileSlot
-          mesh={inputMesh}
-          onChange={(img) => onChange({ inputMesh: img })}
-        />
-      )}
+        {showMeshInput && (
+          <MeshFileSlot
+            mesh={inputMesh}
+            onChange={(img) => onChange({ inputMesh: img })}
+          />
+        )}
+      </div>
     </div>
   );
 }

@@ -27,6 +27,7 @@ import {
   CreateMediaPageShell,
 } from "../../components/generation-gallery";
 import { Lightbox } from "../../components/lightbox/lightbox";
+import { is3DModelUrl } from "../../components/lightbox/shared";
 import { useCreateWorldStore } from "./create-world-store";
 import { enqueueSplatGeneration, startPolling } from "./generate-world-api";
 import { ReferenceVideoSlot } from "./components/ReferenceVideoSlot";
@@ -159,17 +160,60 @@ export default function CreateWorld() {
     excludeUploads: true,
   });
 
+  // A freshly-completed splat job has no cover screenshot in its payload (the
+  // backend renders it a moment later), so its card would be blank. Once the
+  // library re-fetch returns the same world with its cover, adopt that
+  // thumbnail so the card stops showing the placeholder.
+  // The library's dimensional feed can include a world's cover screenshot as
+  // its own entry (surfaced as a "dimensional" media file even though its asset
+  // is a .png). Keep only real 3D/splat files so that stray screenshot doesn't
+  // show up as a separate card.
+  const modelGalleryItems = useMemo(
+    () => gallery.items.filter((i) => !!i.fullImage && is3DModelUrl(i.fullImage)),
+    [gallery.items],
+  );
+
+  const galleryById = useMemo(
+    () => new Map(modelGalleryItems.map((i) => [i.id, i])),
+    [modelGalleryItems],
+  );
+  const enrichedNewlyCompleted = useMemo(
+    () =>
+      jobs.newlyCompleted.map((item) => {
+        if (!item.thumbnail) {
+          const g = galleryById.get(item.id);
+          if (g?.thumbnail) return { ...item, thumbnail: g.thumbnail };
+        }
+        return item;
+      }),
+    [jobs.newlyCompleted, galleryById],
+  );
+
   const newlyCompletedTokens = useMemo(
-    () => new Set(jobs.newlyCompleted.map((i) => i.id)),
-    [jobs.newlyCompleted],
+    () => new Set(enrichedNewlyCompleted.map((i) => i.id)),
+    [enrichedNewlyCompleted],
   );
 
   const flatItems = useMemo(() => {
-    const filtered = gallery.items.filter(
+    const filtered = modelGalleryItems.filter(
       (i) => !newlyCompletedTokens.has(i.id),
     );
-    return [...jobs.newlyCompleted, ...filtered];
-  }, [jobs.newlyCompleted, gallery.items, newlyCompletedTokens]);
+    return [...enrichedNewlyCompleted, ...filtered];
+  }, [enrichedNewlyCompleted, modelGalleryItems, newlyCompletedTokens]);
+
+  // Re-fetch the library shortly after a generation completes so blank
+  // just-finished cards can pick up their cover screenshot once it's attached.
+  const galleryRefreshRef = useRef(gallery.refresh);
+  galleryRefreshRef.current = gallery.refresh;
+  useEffect(() => {
+    if (!jobs.newlyCompleted.some((i) => !i.thumbnail)) return;
+    const t1 = setTimeout(() => galleryRefreshRef.current(), 4000);
+    const t2 = setTimeout(() => galleryRefreshRef.current(), 10000);
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+    };
+  }, [jobs.newlyCompleted]);
 
   const lightbox = useLightboxNav(flatItems);
 
@@ -190,7 +234,7 @@ export default function CreateWorld() {
     jobs.inProgress.length > 0 ||
     jobs.failed.length > 0 ||
     jobs.newlyCompleted.length > 0 ||
-    gallery.items.length > 0 ||
+    modelGalleryItems.length > 0 ||
     gallery.isInitialLoading;
 
   const canGenerate =
@@ -449,8 +493,8 @@ export default function CreateWorld() {
           inProgressJobs={jobs.inProgress}
           failedJobs={jobs.failed}
           onDismissFailed={jobs.dismissFailed}
-          newlyCompletedItems={jobs.newlyCompleted}
-          galleryItems={gallery.items}
+          newlyCompletedItems={enrichedNewlyCompleted}
+          galleryItems={modelGalleryItems}
           newlyCompletedTokens={newlyCompletedTokens}
           hasMore={gallery.hasMore}
           isLoading={gallery.isLoading}
