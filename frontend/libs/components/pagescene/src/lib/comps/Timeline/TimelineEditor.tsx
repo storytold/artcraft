@@ -330,13 +330,9 @@ export const TimelineEditor = () => {
                     track={trackByUuid.get(item.id)}
                     duration={duration}
                   />
-                  {lanes?.map((lane) => (
-                    <TimelineClipRow
-                      key={lane.id}
-                      lane={lane}
-                      duration={duration}
-                    />
-                  ))}
+                  {isCharacter && (
+                    <TimelineClipRow lanes={lanes ?? []} duration={duration} />
+                  )}
                 </div>
               );
             })}

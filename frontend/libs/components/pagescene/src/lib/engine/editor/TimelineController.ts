@@ -241,9 +241,13 @@ export class TimelineController {
   // the new lane id, or null if there is no timeline.
   addClipLane(objectUuid: string, strip: Omit<ClipStrip, "id">): string | null {
     if (!this.timeline) return null;
-    const startTime = Math.max(
-      0,
-      Math.min(strip.startTime, this.timeline.duration),
+    // Characters hold clips on a single row: snap the drop to the nearest free
+    // slot so strips never overlap (see resolveFreeStart).
+    const startTime = this.resolveFreeStart(
+      objectUuid,
+      null,
+      strip.startTime,
+      strip.duration,
     );
     const lane: ClipLane = {
       id: THREE.MathUtils.generateUUID(),
@@ -257,28 +261,37 @@ export class TimelineController {
     return lane.id;
   }
 
-  // Move a clip strip along its lane. Clamped so the strip stays within the
-  // timeline (its start never pushes the clip's end past `duration`).
+  // Move a clip strip along its lane. Snaps to the nearest overlap-free slot so
+  // it never runs into a neighbour, and stays within the timeline.
   moveClipLane(laneId: string, startTime: number): void {
     if (!this.timeline) return;
     const lane = this.timeline.clipLanes.find((l) => l.id === laneId);
     if (!lane) return;
-    const maxStart = Math.max(0, this.timeline.duration - lane.strip.duration);
-    lane.strip.startTime = Math.max(0, Math.min(startTime, maxStart));
+    lane.strip.startTime = this.resolveFreeStart(
+      lane.objectUuid,
+      laneId,
+      startTime,
+      lane.strip.duration,
+    );
     this.syncClipLanes();
     this.evaluate();
     this.emitChanged();
   }
 
   // User trim (right edge): set the strip's on-timeline length. Clamped to at
-  // least one frame and to the space left before the timeline end. Marks the
-  // duration as hand-set so a later clip (re)load won't overwrite it.
+  // least one frame and so its end never crosses the next clip or the timeline
+  // end. Marks the duration as hand-set so a later clip (re)load won't overwrite it.
   resizeClipLane(laneId: string, duration: number): void {
     if (!this.timeline) return;
     const lane = this.timeline.clipLanes.find((l) => l.id === laneId);
     if (!lane) return;
     const minDur = 1 / (this.timeline.fps || DEFAULT_TIMELINE_FPS);
-    const maxDur = this.timeline.duration - lane.strip.startTime;
+    const nextStart = this.nextStartAfter(
+      lane.objectUuid,
+      laneId,
+      lane.strip.startTime,
+    );
+    const maxDur = nextStart - lane.strip.startTime;
     lane.strip.duration = Math.max(minDur, Math.min(duration, maxDur));
     lane.strip.autoDuration = false;
     this.syncClipLanes();
@@ -304,11 +317,16 @@ export class TimelineController {
     if (!this.timeline || !(naturalDuration > 0)) return;
     const lane = this.timeline.clipLanes.find((l) => l.id === laneId);
     if (!lane || lane.strip.autoDuration === false) return;
-    lane.strip.duration = Math.min(naturalDuration, this.timeline.duration);
+    // Adopt the natural length but never let it overrun the next clip or the
+    // timeline end (single-row, non-overlapping).
+    const nextStart = this.nextStartAfter(
+      lane.objectUuid,
+      laneId,
+      lane.strip.startTime,
+    );
+    const maxDur = nextStart - lane.strip.startTime;
+    lane.strip.duration = Math.min(naturalDuration, maxDur);
     lane.strip.autoDuration = false;
-    // Re-clamp start so the now-correctly-sized strip still fits the timeline.
-    const maxStart = Math.max(0, this.timeline.duration - lane.strip.duration);
-    lane.strip.startTime = Math.min(lane.strip.startTime, maxStart);
     this.emitChanged();
   }
 
@@ -380,6 +398,76 @@ export class TimelineController {
     }
     // Pose characters from their skeletal clip lanes at the same playhead.
     this.editor.characterAnimationManager.evaluateAt(this.playhead);
+  }
+
+  // ─── clip-lane overlap guard (single row per character) ─────────────────
+
+  // Snap `desiredStart` to the nearest position where a `duration`-long strip
+  // fits without overlapping the character's other clips, within the timeline.
+  // Used by add + move so a character's clips stay a non-overlapping sequence.
+  private resolveFreeStart(
+    characterUuid: string,
+    exceptLaneId: string | null,
+    desiredStart: number,
+    duration: number,
+  ): number {
+    if (!this.timeline) return desiredStart;
+    const maxStart = Math.max(0, this.timeline.duration - duration);
+    const clamp = (s: number) => Math.max(0, Math.min(s, maxStart));
+    const others = this.otherStripIntervals(characterUuid, exceptLaneId);
+    const desired = clamp(desiredStart);
+    if (!this.overlapsAny(desired, duration, others)) return desired;
+    // Candidate slots: flush before/after each neighbour, plus the two ends.
+    const candidates = [0, maxStart];
+    for (const iv of others) {
+      candidates.push(iv.end);
+      candidates.push(iv.start - duration);
+    }
+    const valid = candidates
+      .map(clamp)
+      .filter((s) => !this.overlapsAny(s, duration, others));
+    if (valid.length === 0) return desired; // no room — accept the clamp
+    valid.sort((a, b) => Math.abs(a - desired) - Math.abs(b - desired));
+    return valid[0];
+  }
+
+  // Start of the nearest clip that begins at/after `start` (excluding
+  // `exceptLaneId`), or the timeline end if there is none. Bounds trim/length.
+  private nextStartAfter(
+    characterUuid: string,
+    exceptLaneId: string | null,
+    start: number,
+  ): number {
+    if (!this.timeline) return start;
+    let next = this.timeline.duration;
+    for (const iv of this.otherStripIntervals(characterUuid, exceptLaneId)) {
+      if (iv.start >= start) next = Math.min(next, iv.start);
+    }
+    return next;
+  }
+
+  // Occupied [start, end] intervals of a character's OTHER clip strips, sorted.
+  private otherStripIntervals(
+    characterUuid: string,
+    exceptLaneId: string | null,
+  ): Array<{ start: number; end: number }> {
+    if (!this.timeline) return [];
+    return this.timeline.clipLanes
+      .filter((l) => l.objectUuid === characterUuid && l.id !== exceptLaneId)
+      .map((l) => ({
+        start: l.strip.startTime,
+        end: l.strip.startTime + l.strip.duration,
+      }))
+      .sort((a, b) => a.start - b.start);
+  }
+
+  private overlapsAny(
+    start: number,
+    duration: number,
+    intervals: Array<{ start: number; end: number }>,
+  ): boolean {
+    const end = start + duration;
+    return intervals.some((iv) => start < iv.end && end > iv.start);
   }
 
   // Reconcile the skeletal-animation runtime whenever the clip-lane set changes.

@@ -180,10 +180,14 @@ auto-import; audio in recordings; `snapShotOfCurrentFrame` render-camera reconci
 
 ### Feature: Mixamo animation clips on the timeline (IN PROGRESS)
 
-Characters can carry skeletal (Mixamo) animation clips as **stacked clip lanes** on the timeline,
-alongside the transform-keyframe tracks. Answers locked with the user: fixed-length strip at the
-drop point; retarget onto the character's skeleton; clips + keyframes coexist; stacked lanes;
-default clip source = the 37 curated demo clips.
+Characters can carry skeletal (Mixamo) animation clips on the timeline, alongside the transform-
+keyframe tracks. Answers locked with the user: retarget onto the character's skeleton; clips +
+keyframes coexist; default clip source = the 37 curated demo clips. **Playback is sequential, one
+clip at a time** — a character's clips live on a **single row** and cannot overlap (see the overlap
+guard below). The earlier "stacked lanes" idea was dropped: stacking only pays off for *additive
+layering* (e.g. a base walk + an upper-body wave playing together), which needs per-lane weights +
+bone masking and is out of scope. If layering is ever wanted, that's the feature to build; until
+then one row per character is the right model.
 
 - **Data model (phase A, done)**: `engine/timeline/types.ts` — `ClipStrip` (`sourceMediaId`,
   `startTime`, `duration`, `loop`) + `ClipLane` (`objectUuid`, `strip`); `TimelineData.clipLanes[]`.
@@ -204,13 +208,19 @@ default clip source = the 37 curated demo clips.
 - **Trigger UI (done)**: `comps/AnimationsDrawer/` — right-docked, only when a character is
   selected (build mode; hidden via CSS in record). Clips are **click-to-add** (drops at the playhead)
   **and draggable** onto the timeline (`ANIMATION_CLIP_MIME` payload `{media_id, name}`).
-- **Timeline clip UI (phase C, done)**: `comps/Timeline/TimelineClipRow.tsx` renders each clip lane
-  as a **stacked strip** under its character's keyframe row in `TimelineEditor`. Strip body drags to
-  **move** (`moveClipLane`), the right edge drags to **trim** length (`resizeClipLane`), a loop chip
-  toggles repeat (`setClipLoop`), trash removes it (`removeClipLane`). Each character row is a
-  **drop target** for clip drags (`dropClipOnCharacter` → `addClipToCharacter(…, atTime)`, time from
-  the ruler rect). Non-character rows ignore clip drags. No per-op undo by design — clip edits ride
-  the timeline **Save/Cancel** session exactly like keyframes (`cancel()` restores + re-syncs).
+- **Timeline clip UI (phase C, done)**: `comps/Timeline/TimelineClipRow.tsx` renders **one row per
+  character** (rendered even when empty, as a drop hint) holding all that character's strips
+  end-to-end under its keyframe row in `TimelineEditor`. Strip body drags to **move**
+  (`moveClipLane`), the right edge drags to **trim** length (`resizeClipLane`), a loop chip toggles
+  repeat (`setClipLoop`), the × removes it (`removeClipLane`). Each character row is a **drop target**
+  for clip drags (`dropClipOnCharacter` → `addClipToCharacter(…, atTime)`, time from the ruler rect).
+  Non-character rows ignore clip drags. No per-op undo by design — clip edits ride the timeline
+  **Save/Cancel** session exactly like keyframes (`cancel()` restores + re-syncs).
+- **Overlap guard (single row)**: `TimelineController.resolveFreeStart` snaps add/move to the nearest
+  gap so a character's strips never overlap; `nextStartAfter` bounds trim (`resizeClipLane`) and
+  auto-length (`resolveClipDuration`) against the following clip. `evaluateAt` then has at most one
+  active clip at any playhead, so playback is an unambiguous sequence (a gap between strips falls
+  back to the bind/T-pose — position strips edge-to-edge to avoid it).
 - **Real clip length (fix, done)**: a fresh drop seeds `strip.duration` with a placeholder and flags
   `autoDuration`; when the GLB loads, `CharacterAnimationManager` calls
   `TimelineController.resolveClipDuration(laneId, clip.duration)` to adopt the clip's true length
