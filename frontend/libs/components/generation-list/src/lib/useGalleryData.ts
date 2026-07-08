@@ -27,12 +27,32 @@ const getLabel = (item: any) => {
 
 // ── Hook ───────────────────────────────────────────────────────────────────
 
+// Pull a cover image / screenshot URL off a dimensional (3D) library item. The
+// item's own cdn_url is the .glb/.spz asset, so 3D cards render the separate
+// cover image the backend attaches instead. Mirrors the gallery-modal logic.
+function get3DCoverThumbnail(item: any): string | null {
+  const cover = item?.cover_image;
+  if (!cover) return null;
+  return (
+    cover.maybe_links?.maybe_thumbnail_template?.replace("{WIDTH}", "512") ??
+    cover.maybe_links?.cdn_url ??
+    cover.maybe_cover_image_public_bucket_url ??
+    null
+  );
+}
+
 export function useGalleryData(options: {
   username: string | null;
   filterMediaClasses: FilterMediaClasses[];
   excludeUploads?: boolean;
+  // When set, dimensional (3D) items are kept only if their model belongs to
+  // this list. The library API filters by media class ("dimensional") but can't
+  // tell mesh objects from splat worlds apart, so the two 3D create pages pass
+  // their own model ids to keep each feed showing only its own product.
+  filterModelIds?: string[];
 }) {
-  const { username, filterMediaClasses, excludeUploads } = options;
+  const { username, filterMediaClasses, excludeUploads, filterModelIds } =
+    options;
 
   const [items, setItems] = useState<GalleryItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -44,15 +64,16 @@ export function useGalleryData(options: {
   const api = useMemo(() => new GalleryModalApi(), []);
 
   const mapApiItem = useCallback((item: any): GalleryItem => {
-    // 3D and audio media have no image thumbnail — their cards render a
-    // placeholder icon / waveform player instead.
-    const hasImageThumbnail =
-      item.media_class !== "dimensional" && item.media_class !== "audio";
-    const thumbnail = hasImageThumbnail
-      ? getMediaThumbnail(item.media_links, item.media_class, {
-          size: THUMBNAIL_SIZES.LARGE,
-        })
-      : null;
+    // 3D uses the cover image / screenshot; audio has no thumbnail (its card
+    // renders a waveform player); everything else uses the media thumbnail.
+    const thumbnail =
+      item.media_class === "audio"
+        ? null
+        : item.media_class === "dimensional"
+          ? get3DCoverThumbnail(item)
+          : getMediaThumbnail(item.media_links, item.media_class, {
+              size: THUMBNAIL_SIZES.LARGE,
+            });
 
     return {
       id: item.token,
@@ -85,11 +106,25 @@ export function useGalleryData(options: {
         });
 
         if (response.success && response.data) {
+          const modelIdSet =
+            filterModelIds && filterModelIds.length
+              ? new Set(filterModelIds)
+              : null;
+
           const newItems = response.data
             .filter(
               (item: any) =>
                 item.media_type !== FilterMediaType.SCENE_JSON &&
-                !(excludeUploads && item.origin_category === "upload"),
+                !(excludeUploads && item.origin_category === "upload") &&
+                // Split 3D history by model so the object and world pages don't
+                // show each other's generations. Non-dimensional items and items
+                // without a known model are left untouched.
+                !(
+                  modelIdSet &&
+                  item.media_class === "dimensional" &&
+                  item.maybe_model_type &&
+                  !modelIdSet.has(item.maybe_model_type)
+                ),
             )
             .map(mapApiItem);
 
@@ -112,7 +147,15 @@ export function useGalleryData(options: {
       setIsInitialLoading(false);
       isLoadingRef.current = false;
     },
-    [username, filterMediaClasses, pageIndex, api, mapApiItem, excludeUploads],
+    [
+      username,
+      filterMediaClasses,
+      pageIndex,
+      api,
+      mapApiItem,
+      excludeUploads,
+      filterModelIds,
+    ],
   );
 
   // Initial load + filter change. When logged out (no username), clear the
@@ -129,7 +172,8 @@ export function useGalleryData(options: {
     setHasMore(true);
     setIsInitialLoading(true);
     loadItems(true);
-  }, [username, JSON.stringify(filterMediaClasses)]); // eslint-disable-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [username, JSON.stringify(filterMediaClasses), JSON.stringify(filterModelIds)]);
 
   const loadMore = useCallback(() => {
     if (hasMore && !isLoadingRef.current) {

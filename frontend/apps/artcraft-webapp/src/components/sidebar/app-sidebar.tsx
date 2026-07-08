@@ -8,6 +8,7 @@ import {
   faImage,
   faMusic,
   faCube,
+  faGlobe,
   faFilm,
   faObjectGroup,
   faWandMagicSparkles,
@@ -58,6 +59,8 @@ const CREATE_ITEMS_STATIC: NavItem[] = [
   { label: "Image", href: "/create-image", icon: faImage },
   { label: "Video", href: "/create-video", icon: faVideo },
   { label: "Audio", href: "/create-audio", icon: faMusic },
+  { label: "3D Object", href: "/create-object", icon: faCube },
+  { label: "3D World", href: "/create-world", icon: faGlobe },
   // Edit Image is hidden from the sidebar for now.
   { label: "Edit Image", href: "/edit-image", icon: faPencil },
   { label: "Edit 3D", href: "/edit-3d", icon: faCube },

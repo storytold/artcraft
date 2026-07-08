@@ -304,6 +304,137 @@ export interface OmniGenProviderEntry {
   models: OmniGenProviderModelEntry[];
 }
 
+// ── Mesh (3D object) request / response types ────────────────────────────
+
+// Shared body for POST /v1/omni_gen/cost/mesh and /v1/omni_gen/generate/mesh.
+export interface OmniGenMeshRequest {
+  // Required despite being nullable (backend rejects when absent).
+  model: string;
+  idempotency_token?: string | null;
+  prompt?: string | null;
+  // Primary/front input image, or the sketch image for sketch-to-3D.
+  reference_image_media_tokens?: string[] | null;
+  // Multi-view input (one image per side).
+  front_image_media_token?: string | null;
+  back_image_media_token?: string | null;
+  left_image_media_token?: string | null;
+  right_image_media_token?: string | null;
+  // Input mesh file for mesh-to-mesh models (part splitting, retopology).
+  input_mesh_media_token?: string | null;
+  // "normal" | "low_poly" | "geometry"
+  mesh_output_type?: string | null;
+  // "triangle" | "quad"
+  polygon_type?: string | null;
+  face_count?: number | null;
+  enable_pbr?: boolean | null;
+  enable_texture?: boolean | null;
+  // "standard" | "detailed"
+  texture_quality?: string | null;
+  geometry_quality?: string | null;
+}
+
+export interface OmniGenMeshCostResponse {
+  success: boolean;
+  cost_in_credits?: number | null;
+  cost_in_usd_cents?: number | null;
+  has_watermark: boolean;
+  is_free: boolean;
+  is_rate_limited: boolean;
+  is_unlimited: boolean;
+  failures_are_refunded?: boolean | null;
+}
+
+export interface OmniGenMeshGenerateResponse {
+  success: boolean;
+  inference_job_token: string;
+  all_job_tokens: string[];
+}
+
+export interface OmniGenMeshModelInfo {
+  model: string;
+  // ModelCreator enum as a snake_case string, e.g. "tencent".
+  model_creator?: string | null;
+  full_name?: string | null;
+  extra_info_short?: string | null;
+  extra_info?: string | null;
+  text_prompt_supported?: boolean | null;
+  image_input_supported?: boolean | null;
+  sketch_input_supported?: boolean | null;
+  multi_view_supported?: boolean | null;
+  mesh_input_supported?: boolean | null;
+  // CommonMeshOutputType values: "normal" | "low_poly" | "geometry".
+  mesh_output_types?: string[] | null;
+  // CommonPolygonType values: "triangle" | "quad".
+  polygon_types?: string[] | null;
+  face_count_supported?: boolean | null;
+  pbr_supported?: boolean | null;
+  texture_toggle_supported?: boolean | null;
+  texture_quality_supported?: boolean | null;
+  geometry_quality_supported?: boolean | null;
+  is_disabled?: boolean | null;
+}
+
+export interface OmniGenMeshModelsResponse {
+  success: boolean;
+  models: OmniGenMeshModelInfo[];
+  providers: OmniGenProviderEntry[];
+}
+
+// ── Splat (3D world) request / response types ────────────────────────────
+
+// Shared body for POST /v1/omni_gen/cost/splat and /v1/omni_gen/generate/splat.
+export interface OmniGenSplatRequest {
+  // Required despite being nullable (backend rejects when absent).
+  model: string;
+  idempotency_token?: string | null;
+  prompt?: string | null;
+  // Multi-view input of the same world.
+  reference_image_media_tokens?: string[] | null;
+  reference_video_media_token?: string | null;
+  // Whether the single reference image is a 360-degree panorama.
+  is_panoramic?: boolean | null;
+  disable_recaption?: boolean | null;
+}
+
+export interface OmniGenSplatCostResponse {
+  success: boolean;
+  cost_in_credits?: number | null;
+  cost_in_usd_cents?: number | null;
+  has_watermark: boolean;
+  is_free: boolean;
+  is_rate_limited: boolean;
+  is_unlimited: boolean;
+  failures_are_refunded?: boolean | null;
+}
+
+export interface OmniGenSplatGenerateResponse {
+  success: boolean;
+  inference_job_token: string;
+  all_job_tokens: string[];
+}
+
+export interface OmniGenSplatModelInfo {
+  model: string;
+  // ModelCreator enum as a snake_case string, e.g. "world_labs".
+  model_creator?: string | null;
+  full_name?: string | null;
+  extra_info_short?: string | null;
+  extra_info?: string | null;
+  text_prompt_supported?: boolean | null;
+  image_references_supported?: boolean | null;
+  image_references_max?: number | null;
+  video_reference_supported?: boolean | null;
+  panorama_supported?: boolean | null;
+  disable_recaption_supported?: boolean | null;
+  is_disabled?: boolean | null;
+}
+
+export interface OmniGenSplatModelsResponse {
+  success: boolean;
+  models: OmniGenSplatModelInfo[];
+  providers: OmniGenProviderEntry[];
+}
+
 // ── Helpers ──────────────────────────────────────────────────────────────
 
 /** Strip keys whose value is null or undefined so the server only sees
@@ -347,6 +478,26 @@ export class OmniGenApi extends ApiManager {
     });
   }
 
+  public async getMeshModels(
+    provider?: string,
+  ): Promise<OmniGenMeshModelsResponse> {
+    const query = provider ? { provider } : undefined;
+    return this.get<OmniGenMeshModelsResponse>({
+      endpoint: `${this.getApiSchemeAndHost()}/v1/omni_gen/models/mesh`,
+      query,
+    });
+  }
+
+  public async getSplatModels(
+    provider?: string,
+  ): Promise<OmniGenSplatModelsResponse> {
+    const query = provider ? { provider } : undefined;
+    return this.get<OmniGenSplatModelsResponse>({
+      endpoint: `${this.getApiSchemeAndHost()}/v1/omni_gen/models/splat`,
+      query,
+    });
+  }
+
   // ── Cost estimates ───────────────────────────────────────────────────
 
   public async estimateImageCost(
@@ -376,6 +527,24 @@ export class OmniGenApi extends ApiManager {
     });
   }
 
+  public async estimateMeshCost(
+    body: OmniGenMeshRequest,
+  ): Promise<OmniGenMeshCostResponse> {
+    return this.post<Record<string, unknown>, OmniGenMeshCostResponse>({
+      endpoint: `${this.getApiSchemeAndHost()}/v1/omni_gen/cost/mesh`,
+      body: stripNulls(body),
+    });
+  }
+
+  public async estimateSplatCost(
+    body: OmniGenSplatRequest,
+  ): Promise<OmniGenSplatCostResponse> {
+    return this.post<Record<string, unknown>, OmniGenSplatCostResponse>({
+      endpoint: `${this.getApiSchemeAndHost()}/v1/omni_gen/cost/splat`,
+      body: stripNulls(body),
+    });
+  }
+
   // ── Generation ───────────────────────────────────────────────────────
 
   public async generateImage(
@@ -401,6 +570,24 @@ export class OmniGenApi extends ApiManager {
   ): Promise<OmniGenAudioGenerateResponse> {
     return this.post<Record<string, unknown>, OmniGenAudioGenerateResponse>({
       endpoint: `${this.getApiSchemeAndHost()}/v1/omni_gen/generate/audio`,
+      body: stripNulls(body),
+    });
+  }
+
+  public async generateMesh(
+    body: OmniGenMeshRequest,
+  ): Promise<OmniGenMeshGenerateResponse> {
+    return this.post<Record<string, unknown>, OmniGenMeshGenerateResponse>({
+      endpoint: `${this.getApiSchemeAndHost()}/v1/omni_gen/generate/mesh`,
+      body: stripNulls(body),
+    });
+  }
+
+  public async generateSplat(
+    body: OmniGenSplatRequest,
+  ): Promise<OmniGenSplatGenerateResponse> {
+    return this.post<Record<string, unknown>, OmniGenSplatGenerateResponse>({
+      endpoint: `${this.getApiSchemeAndHost()}/v1/omni_gen/generate/splat`,
       body: stripNulls(body),
     });
   }

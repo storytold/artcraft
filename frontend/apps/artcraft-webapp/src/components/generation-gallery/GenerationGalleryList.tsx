@@ -81,10 +81,14 @@ function RowRecreateButton({
   mediaClass,
   kind,
 }: RecreateSlotContext) {
+  // Recreate only targets the image/video create pages; 3D generations have no
+  // recreate flow, so map to a valid class for the hook and render nothing.
   const { isRecreating, handleRecreate } = useRecreateFromPromptToken(
     promptToken,
-    mediaClass,
+    mediaClass === "dimensional" ? "image" : mediaClass,
   );
+
+  if (mediaClass === "dimensional") return null;
   return (
     <Tooltip content="Recreate" position="top">
       <button

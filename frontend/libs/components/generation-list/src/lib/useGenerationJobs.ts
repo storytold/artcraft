@@ -50,6 +50,7 @@ const DEFAULT_DURATION_MS: Record<GenerationMediaClass, number> = {
   image: 30000,
   video: 900000,
   audio: 120000,
+  dimensional: 120000,
 };
 
 // Cache per-task durations
@@ -57,11 +58,24 @@ const taskDurationCache = new Map<string, number>();
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
+// The backend `inference_category` strings for 3D are "object_generation"
+// (mesh) and "splat_generation" (gaussian splats). Both render as the
+// "dimensional" media class, but stay distinct here so the two 3D create pages
+// can each filter to only their own generations.
+export type JobMediaFilter =
+  | "image"
+  | "video"
+  | "audio"
+  | "object"
+  | "splat";
+
 function getJobMediaType(
   job: Job,
-): "image" | "video" | "audio" | "other" {
+): JobMediaFilter | "other" {
   const cat = job.request.inference_category?.toLowerCase() ?? "";
   if (cat.includes("video")) return "video";
+  if (cat.includes("object")) return "object";
+  if (cat.includes("splat") || cat.includes("gaussian")) return "splat";
   if (cat.includes("image")) return "image";
   if (cat.includes("audio")) return "audio";
   return "other";
@@ -69,7 +83,23 @@ function getJobMediaType(
 
 function getJobMediaClass(job: Job): GenerationMediaClass {
   const inferred = getJobMediaType(job);
+  if (inferred === "object" || inferred === "splat") return "dimensional";
   return inferred === "other" ? "image" : inferred;
+}
+
+// Pull a cover image / screenshot URL off a 3D result (job result or a batch
+// media file). The raw cdn_url is the .glb/.spz asset itself, so 3D cards use
+// the separate cover image the backend attaches; falls back to null (the card
+// then shows its 3D placeholder).
+function get3DCoverThumbnail(source: any): string | null {
+  const cover = source?.cover_image;
+  if (!cover) return null;
+  return (
+    cover.maybe_links?.maybe_thumbnail_template?.replace("{WIDTH}", "512") ??
+    cover.maybe_links?.cdn_url ??
+    cover.maybe_cover_image_public_bucket_url ??
+    null
+  );
 }
 
 function getModelLabel(job: Job, promptsMap?: Map<string, Prompts>): string {
@@ -204,13 +234,16 @@ function jobToGalleryItem(
   if (!result?.entity_token) return null;
 
   const mediaClass = getJobMediaClass(job);
-  // Audio has no image thumbnail — its card renders a waveform player.
+  // Audio has no image thumbnail — its card renders a waveform player. 3D uses
+  // the result's cover image / screenshot (the cdn_url is the mesh/splat file).
   const thumbnail =
     mediaClass === "audio"
       ? null
-      : getMediaThumbnail(result.media_links, mediaClass, {
-          size: THUMBNAIL_SIZES.LARGE,
-        });
+      : mediaClass === "dimensional"
+        ? get3DCoverThumbnail(result)
+        : getMediaThumbnail(result.media_links, mediaClass, {
+            size: THUMBNAIL_SIZES.LARGE,
+          });
 
   return {
     id: result.entity_token,
@@ -249,9 +282,11 @@ async function expandBatchItems(
         const thumbnail =
           item.mediaClass === "audio"
             ? null
-            : getMediaThumbnail(file.media_links, item.mediaClass, {
-                size: THUMBNAIL_SIZES.LARGE,
-              }) || cdnUrl;
+            : item.mediaClass === "dimensional"
+              ? get3DCoverThumbnail(file)
+              : getMediaThumbnail(file.media_links, item.mediaClass, {
+                  size: THUMBNAIL_SIZES.LARGE,
+                }) || cdnUrl;
         return {
           id: file.token,
           label: item.label,
@@ -273,7 +308,7 @@ async function expandBatchItems(
 // ── Hook ───────────────────────────────────────────────────────────────────
 
 export function useGenerationJobs(options: {
-  mediaType: GenerationMediaClass;
+  mediaType: JobMediaFilter;
   enabled?: boolean;
 }) {
   const { mediaType, enabled = true } = options;
