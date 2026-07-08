@@ -1,7 +1,6 @@
 import { useRef, useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
-  faPlus,
   faSpinnerThird,
   faXmark,
   faCube,
@@ -10,11 +9,14 @@ import { MediaUploadApi } from "@storyteller/api";
 import { FilterEngineCategories } from "@storyteller/api";
 import { UploaderStates } from "@storyteller/common";
 import { uploadImage } from "../../../components/prompt-box/upload-image";
-import type { RefImage } from "../../../components/prompt-box";
+import { AddButton, type RefImage } from "../../../components/prompt-box";
 
 // Multi-view side inputs (front/back/left/right) and the mesh-to-mesh input
 // file, shown above the prompt box when the selected model supports them. Uses
-// the same media upload path as the primary reference image row.
+// the same media upload path (and Upload / Pick-from-library affordance) as the
+// primary reference image row.
+
+export type MultiViewSlot = "front" | "back" | "left" | "right";
 
 interface MeshInputsRowProps {
   showMultiView: boolean;
@@ -31,6 +33,8 @@ interface MeshInputsRowProps {
     rightImage?: RefImage;
     inputMesh?: RefImage;
   }) => void;
+  // Opens the library picker targeting a specific multi-view slot.
+  onPickSlotFromLibrary?: (slot: MultiViewSlot) => void;
 }
 
 const MESH_FILE_ACCEPT = ".glb,.gltf,.fbx,.obj";
@@ -44,32 +48,56 @@ export function MeshInputsRow({
   rightImage,
   inputMesh,
   onChange,
+  onPickSlotFromLibrary,
 }: MeshInputsRowProps) {
   if (!showMultiView && !showMeshInput) return null;
 
   return (
-    <div className="glass flex flex-wrap items-end gap-3 rounded-2xl px-3 py-2">
+    // Flat bottom on desktop so it seams into the prompt box glass stacked
+    // below it (matches ImagePromptRow); fully rounded on mobile where it stands
+    // alone in the settings form.
+    <div className="glass flex flex-wrap items-end gap-3 rounded-2xl px-3 py-2 sm:rounded-t-2xl sm:rounded-b-none">
       {showMultiView && (
         <>
           <ImageSlot
             label="Front"
             image={frontImage}
             onChange={(img) => onChange({ frontImage: img })}
+            onPickFromLibrary={
+              onPickSlotFromLibrary
+                ? () => onPickSlotFromLibrary("front")
+                : undefined
+            }
           />
           <ImageSlot
             label="Back"
             image={backImage}
             onChange={(img) => onChange({ backImage: img })}
+            onPickFromLibrary={
+              onPickSlotFromLibrary
+                ? () => onPickSlotFromLibrary("back")
+                : undefined
+            }
           />
           <ImageSlot
             label="Left"
             image={leftImage}
             onChange={(img) => onChange({ leftImage: img })}
+            onPickFromLibrary={
+              onPickSlotFromLibrary
+                ? () => onPickSlotFromLibrary("left")
+                : undefined
+            }
           />
           <ImageSlot
             label="Right"
             image={rightImage}
             onChange={(img) => onChange({ rightImage: img })}
+            onPickFromLibrary={
+              onPickSlotFromLibrary
+                ? () => onPickSlotFromLibrary("right")
+                : undefined
+            }
           />
         </>
       )}
@@ -107,10 +135,12 @@ function ImageSlot({
   label,
   image,
   onChange,
+  onPickFromLibrary,
 }: {
   label: string;
   image?: RefImage;
   onChange: (img?: RefImage) => void;
+  onPickFromLibrary?: () => void;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
@@ -178,12 +208,10 @@ function ImageSlot({
           />
         </div>
       ) : (
-        <button
-          onClick={() => inputRef.current?.click()}
-          className={SLOT_CLASS}
-        >
-          <FontAwesomeIcon icon={faPlus} className="text-xl text-white/80" />
-        </button>
+        <AddButton
+          onUpload={() => inputRef.current?.click()}
+          onPickFromLibrary={onPickFromLibrary}
+        />
       )}
     </SlotShell>
   );

@@ -410,7 +410,7 @@ const ADD_BUTTON_CLASS =
 // Upload / Pick-from-library affordance. On desktop it's a hover tooltip; on
 // mobile that tooltip auto-opens from the emulated mouseenter fired on
 // navigation, so we use a tap-triggered bottom sheet instead.
-const AddButton = ({
+export const AddButton = ({
   onUpload,
   onPickFromLibrary,
 }: {

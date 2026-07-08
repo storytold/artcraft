@@ -37,7 +37,7 @@ import {
   FaceCountPicker,
   QUALITY_OPTIONS,
 } from "./components/MeshOptionPickers";
-import { MeshInputsRow } from "./components/MeshInputsRow";
+import { MeshInputsRow, type MultiViewSlot } from "./components/MeshInputsRow";
 import { useMeshCostEstimate } from "../../lib/cost-estimate-api";
 import { resolveModelOption } from "../../lib/resolve-model-setting";
 import {
@@ -147,12 +147,16 @@ export default function CreateObject() {
   const setReferenceImages = useCreateObjectStore((s) => s.setReferenceImages);
   const inputs = useCreateObjectStore((s) => s.inputs);
   const setInputs = useCreateObjectStore((s) => s.setInputs);
-  const [isImagePickerOpen, setIsImagePickerOpen] = useState(false);
+  // The library picker is shared: it can target the primary reference image or
+  // any one of the multi-view slots. `null` = closed.
+  const [libraryTarget, setLibraryTarget] = useState<
+    null | "primary" | MultiViewSlot
+  >(null);
   const [pickerSelectedIds, setPickerSelectedIds] = useState<string[]>([]);
 
   useEffect(() => {
-    if (isImagePickerOpen) setPickerSelectedIds([]);
-  }, [isImagePickerOpen]);
+    if (libraryTarget) setPickerSelectedIds([]);
+  }, [libraryTarget]);
 
   // Batch store
   const startBatch = useCreateObjectStore((s) => s.startBatch);
@@ -274,17 +278,30 @@ export default function CreateObject() {
 
   const handleLibraryImageSelect = useCallback(
     (items: GalleryItem[]) => {
-      const newImages: RefImage[] = items.slice(0, 1).map((item) => ({
-        id: Math.random().toString(36).substring(7),
-        url: item.thumbnail || item.fullImage || "",
-        fullUrl: item.fullImage || undefined,
-        file: new File([], "library-image"),
-        mediaToken: item.id,
-      }));
-      setReferenceImages(newImages);
-      setIsImagePickerOpen(false);
+      const item = items[0];
+      if (item && libraryTarget) {
+        const refImage: RefImage = {
+          id: Math.random().toString(36).substring(7),
+          url: item.thumbnail || item.fullImage || "",
+          fullUrl: item.fullImage || undefined,
+          file: new File([], "library-image"),
+          mediaToken: item.id,
+        };
+        if (libraryTarget === "primary") {
+          setReferenceImages([refImage]);
+        } else if (libraryTarget === "front") {
+          setInputs({ frontImage: refImage });
+        } else if (libraryTarget === "back") {
+          setInputs({ backImage: refImage });
+        } else if (libraryTarget === "left") {
+          setInputs({ leftImage: refImage });
+        } else {
+          setInputs({ rightImage: refImage });
+        }
+      }
+      setLibraryTarget(null);
     },
-    [setReferenceImages],
+    [libraryTarget, setReferenceImages, setInputs],
   );
 
   const handleGenerate = useCallback(async () => {
@@ -428,6 +445,7 @@ export default function CreateObject() {
         rightImage={inputs.rightImage}
         inputMesh={inputs.inputMesh}
         onChange={setInputs}
+        onPickSlotFromLibrary={setLibraryTarget}
       />
     ) : undefined;
 
@@ -519,7 +537,7 @@ export default function CreateObject() {
             maxImagePromptCount={1}
             referenceImages={referenceImages}
             setReferenceImages={setReferenceImages}
-            onPickFromLibrary={() => setIsImagePickerOpen(true)}
+            onPickFromLibrary={() => setLibraryTarget("primary")}
           />
         ) : undefined
       }
@@ -589,7 +607,7 @@ export default function CreateObject() {
             maxImagePromptCount={1}
             referenceImages={referenceImages}
             onReferenceImagesChange={setReferenceImages}
-            onPickFromLibrary={() => setIsImagePickerOpen(true)}
+            onPickFromLibrary={() => setLibraryTarget("primary")}
             mediaReferenceRow={meshInputsRow}
             modelSelector={
               <Tooltip content="Model" position="top" className="z-50" closeOnClick>
@@ -618,8 +636,8 @@ export default function CreateObject() {
         <>
           <GalleryModal
             mode="select"
-            isOpen={isImagePickerOpen}
-            onClose={() => setIsImagePickerOpen(false)}
+            isOpen={libraryTarget !== null}
+            onClose={() => setLibraryTarget(null)}
             selectedItemIds={pickerSelectedIds}
             onSelectItem={(id) => setPickerSelectedIds([id])}
             maxSelections={1}
