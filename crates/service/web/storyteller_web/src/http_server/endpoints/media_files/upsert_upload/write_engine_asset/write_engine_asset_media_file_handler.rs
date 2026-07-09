@@ -231,7 +231,6 @@ pub async fn write_engine_asset_media_file_handler(
     media_file_type,
     maybe_engine_category: upload_media_request.maybe_engine_category,
     maybe_animation_type: upload_media_request.maybe_animation_type,
-    maybe_media_subtype: None,
     maybe_creator_user_token: maybe_user_token,
     maybe_creator_anonymous_visitor_token: maybe_avt_token.as_ref(),
     creator_ip_address: &ip_address,

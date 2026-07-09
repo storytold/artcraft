@@ -2,7 +2,6 @@ import { UserDetailsLight } from "./types";
 
 import {
   MediaFileClass,
-  MediaFileSubtype,
   MediaFileType,
   WeightCategory,
   WeightType,
@@ -13,7 +12,6 @@ export interface MediaInfo {
   media_type: MediaFileType;
   media_class: MediaFileClass | null;
   maybe_animation_type: string | null;
-  maybe_media_subtype: MediaFileSubtype | null;
   maybe_engine_extension: string | null;
   maybe_batch_token: string;
   maybe_original_filename: string | null;

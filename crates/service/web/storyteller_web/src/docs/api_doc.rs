@@ -259,7 +259,6 @@ use enums::by_table::media_files::media_file_class::MediaFileClass;
 use enums::by_table::media_files::media_file_engine_category::MediaFileEngineCategory;
 use enums::by_table::media_files::media_file_origin_category::MediaFileOriginCategory;
 use enums::by_table::media_files::media_file_origin_product_category::MediaFileOriginProductCategory;
-use enums::by_table::media_files::media_file_subtype::MediaFileSubtype;
 use enums::by_table::media_files::media_file_type::MediaFileType;
 use enums::by_table::model_weights::{weights_category::WeightsCategory, weights_types::WeightsType};
 use enums::by_table::prompt_context_items::prompt_context_semantic_type::PromptContextSemanticType;
@@ -710,7 +709,6 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     MediaFileEngineCategory,
     MediaFileOriginCategory,
     MediaFileOriginProductCategory,
-    MediaFileSubtype,
     MediaFileType,
     CommonModelClass,
     CommonModelType,

@@ -14,7 +14,6 @@ use enums::by_table::media_files::media_file_engine_category::MediaFileEngineCat
 use enums::by_table::media_files::media_file_origin_category::MediaFileOriginCategory;
 use enums::by_table::media_files::media_file_origin_model_type::MediaFileOriginModelType;
 use enums::by_table::media_files::media_file_origin_product_category::MediaFileOriginProductCategory;
-use enums::by_table::media_files::media_file_subtype::MediaFileSubtype;
 use enums::by_table::media_files::media_file_type::MediaFileType;
 use enums::common::visibility::Visibility;
 use errors::AnyhowResult;
@@ -60,7 +59,6 @@ pub struct MediaFileForElasticsearchRecord {
 
   pub media_type: MediaFileType,
   pub media_class: MediaFileClass,
-  pub maybe_media_subtype: Option<MediaFileSubtype>,
 
   pub maybe_mime_type: Option<String>,
   pub file_size_bytes: u64,
@@ -168,7 +166,6 @@ pub async fn list_media_files_for_elastic_search_backfill_using_cursor(
           maybe_scene_source_media_file_token: record.maybe_scene_source_media_file_token,
           media_type: record.media_type,
           media_class: record.media_class,
-          maybe_media_subtype: record.maybe_media_subtype,
           maybe_mime_type: record.maybe_mime_type,
           file_size_bytes: record.file_size_bytes as u64,
           maybe_duration_millis: record.maybe_duration_millis.map(|d| d as u64),
@@ -234,7 +231,6 @@ SELECT
 
     m.media_type,
     m.media_class,
-    m.maybe_media_subtype,
 
     m.maybe_mime_type,
     m.file_size_bytes,
@@ -382,7 +378,6 @@ struct RawRecord {
 
   pub media_type: MediaFileType,
   pub media_class: MediaFileClass,
-  pub maybe_media_subtype: Option<MediaFileSubtype>,
 
   pub maybe_mime_type: Option<String>,
   pub file_size_bytes: i32,
@@ -465,7 +460,6 @@ impl FromRow<'_, MySqlRow> for RawRecord {
 
       media_type: MediaFileType::try_from_mysql_row(row, "media_type")?,
       media_class: MediaFileClass::try_from_mysql_row(row, "media_class")?,
-      maybe_media_subtype: MediaFileSubtype::try_from_mysql_row_nullable(row, "maybe_media_subtype")?,
 
       maybe_mime_type: row.try_get("maybe_mime_type")?,
       file_size_bytes: row.try_get("file_size_bytes")?,

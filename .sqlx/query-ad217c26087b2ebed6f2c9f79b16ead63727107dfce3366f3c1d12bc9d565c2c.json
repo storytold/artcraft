@@ -1,6 +1,6 @@
 {
   "db_name": "MySQL",
-  "query": "\nSELECT\n    m.token as `token: tokens::tokens::media_files::MediaFileToken`,\n\n    m.media_class as `media_class: enums::by_table::media_files::media_file_class::MediaFileClass`,\n    m.media_type as `media_type: enums::by_table::media_files::media_file_type::MediaFileType`,\n\n    m.maybe_engine_category as `maybe_engine_category: enums::by_table::media_files::media_file_engine_category::MediaFileEngineCategory`,\n    m.maybe_animation_type as `maybe_animation_type: enums::by_table::media_files::media_file_animation_type::MediaFileAnimationType`,\n\n    m.maybe_media_subtype as `maybe_media_subtype: enums::by_table::media_files::media_file_subtype::MediaFileSubtype`,\n\n    m.maybe_mime_type,\n\n    users.token as `maybe_creator_user_token: tokens::tokens::users::UserToken`,\n    users.username as maybe_creator_username,\n    users.display_name as maybe_creator_display_name,\n    users.email_gravatar_hash as maybe_creator_gravatar_hash,\n\n    m.maybe_creator_anonymous_visitor_token as `maybe_creator_anonymous_visitor_token: tokens::tokens::anonymous_visitor_tracking::AnonymousVisitorTrackingToken`,\n\n    m.maybe_batch_token as `maybe_batch_token: tokens::tokens::batch_generations::BatchGenerationToken`,\n\n    m.maybe_style_transfer_source_media_file_token as `maybe_style_transfer_source_media_file_token: tokens::tokens::media_files::MediaFileToken`,\n    m.maybe_scene_source_media_file_token as `maybe_scene_source_media_file_token: tokens::tokens::media_files::MediaFileToken`,\n\n\n    m.maybe_title,\n    m.maybe_text_transcript,\n\n    m.maybe_origin_filename,\n\n    m.maybe_duration_millis,\n\n    m.maybe_prompt_token as `maybe_prompt_token: tokens::tokens::prompts::PromptToken`,\n    prompts.maybe_other_args as maybe_other_prompt_args,\n\n    media_file_cover_image.public_bucket_directory_hash as maybe_file_cover_image_public_bucket_hash,\n    media_file_cover_image.maybe_public_bucket_prefix as maybe_file_cover_image_public_bucket_prefix,\n    media_file_cover_image.maybe_public_bucket_extension as maybe_file_cover_image_public_bucket_extension,\n\n    m.creator_set_visibility as `creator_set_visibility: enums::common::visibility::Visibility`,\n\n    m.is_user_upload,\n    m.is_intermediate_system_file,\n\n    model_weights.token as `maybe_model_weights_token: tokens::tokens::model_weights::ModelWeightToken`,\n    model_weights.title as maybe_model_weights_title,\n    model_weights.weights_type as `maybe_model_weights_type: enums::by_table::model_weights::weights_types::WeightsType`,\n    model_weights.weights_category as `maybe_model_weights_category: enums::by_table::model_weights::weights_category::WeightsCategory`,\n\n    model_weight_cover_image.public_bucket_directory_hash as maybe_model_cover_image_public_bucket_hash,\n    model_weight_cover_image.maybe_public_bucket_prefix as maybe_model_cover_image_public_bucket_prefix,\n    model_weight_cover_image.maybe_public_bucket_extension as maybe_model_cover_image_public_bucket_extension,\n\n    model_weight_creator.token as `maybe_model_weight_creator_user_token: tokens::tokens::users::UserToken`,\n    model_weight_creator.username as maybe_model_weight_creator_username,\n    model_weight_creator.display_name as maybe_model_weight_creator_display_name,\n    model_weight_creator.email_gravatar_hash as maybe_model_weight_creator_gravatar_hash,\n\n    m.extra_file_modification_info,\n\n    m.public_bucket_directory_hash,\n    m.maybe_public_bucket_prefix,\n    m.maybe_public_bucket_extension,\n\n    entity_stats.ratings_positive_count as maybe_ratings_positive_count,\n    entity_stats.ratings_negative_count as maybe_ratings_negative_count,\n    entity_stats.bookmark_count as maybe_bookmark_count,\n\n    featured_items.entity_token IS NOT NULL AS is_featured,\n\n    m.created_at,\n    m.updated_at\n\nFROM media_files AS m\nLEFT OUTER JOIN users\n    ON m.maybe_creator_user_token = users.token\nLEFT OUTER JOIN model_weights\n    ON m.maybe_origin_model_token = model_weights.token\nLEFT OUTER JOIN media_files as media_file_cover_image\n    ON media_file_cover_image.token = m.maybe_cover_image_media_file_token\nLEFT OUTER JOIN media_files as model_weight_cover_image\n    ON model_weight_cover_image.token = model_weights.maybe_cover_image_media_file_token\nLEFT OUTER JOIN users as model_weight_creator\n    ON model_weight_creator.token = model_weights.creator_user_token\nLEFT OUTER JOIN entity_stats\n    ON entity_stats.entity_type = \"media_file\"\n    AND entity_stats.entity_token = m.token\nLEFT OUTER JOIN prompts\n    ON prompts.token = m.maybe_prompt_token\nLEFT OUTER JOIN featured_items\n    ON featured_items.entity_type = 'media_file'\n    AND featured_items.entity_token = m.token\n    AND featured_items.deleted_at IS NULL\nWHERE\n    m.token = ?\n    AND m.user_deleted_at IS NULL\n    AND m.mod_deleted_at IS NULL\n        ",
+  "query": "\nSELECT\n    m.token as `token: tokens::tokens::media_files::MediaFileToken`,\n\n    m.media_class as `media_class: enums::by_table::media_files::media_file_class::MediaFileClass`,\n    m.media_type as `media_type: enums::by_table::media_files::media_file_type::MediaFileType`,\n\n    m.maybe_engine_category as `maybe_engine_category: enums::by_table::media_files::media_file_engine_category::MediaFileEngineCategory`,\n    m.maybe_animation_type as `maybe_animation_type: enums::by_table::media_files::media_file_animation_type::MediaFileAnimationType`,\n\n    m.maybe_mime_type,\n\n    users.token as `maybe_creator_user_token: tokens::tokens::users::UserToken`,\n    users.username as maybe_creator_username,\n    users.display_name as maybe_creator_display_name,\n    users.email_gravatar_hash as maybe_creator_gravatar_hash,\n\n    m.maybe_creator_anonymous_visitor_token as `maybe_creator_anonymous_visitor_token: tokens::tokens::anonymous_visitor_tracking::AnonymousVisitorTrackingToken`,\n\n    m.maybe_batch_token as `maybe_batch_token: tokens::tokens::batch_generations::BatchGenerationToken`,\n\n    m.maybe_style_transfer_source_media_file_token as `maybe_style_transfer_source_media_file_token: tokens::tokens::media_files::MediaFileToken`,\n    m.maybe_scene_source_media_file_token as `maybe_scene_source_media_file_token: tokens::tokens::media_files::MediaFileToken`,\n\n\n    m.maybe_title,\n    m.maybe_text_transcript,\n\n    m.maybe_origin_filename,\n\n    m.maybe_duration_millis,\n\n    m.maybe_prompt_token as `maybe_prompt_token: tokens::tokens::prompts::PromptToken`,\n    prompts.maybe_other_args as maybe_other_prompt_args,\n\n    media_file_cover_image.public_bucket_directory_hash as maybe_file_cover_image_public_bucket_hash,\n    media_file_cover_image.maybe_public_bucket_prefix as maybe_file_cover_image_public_bucket_prefix,\n    media_file_cover_image.maybe_public_bucket_extension as maybe_file_cover_image_public_bucket_extension,\n\n    m.creator_set_visibility as `creator_set_visibility: enums::common::visibility::Visibility`,\n\n    m.is_user_upload,\n    m.is_intermediate_system_file,\n\n    model_weights.token as `maybe_model_weights_token: tokens::tokens::model_weights::ModelWeightToken`,\n    model_weights.title as maybe_model_weights_title,\n    model_weights.weights_type as `maybe_model_weights_type: enums::by_table::model_weights::weights_types::WeightsType`,\n    model_weights.weights_category as `maybe_model_weights_category: enums::by_table::model_weights::weights_category::WeightsCategory`,\n\n    model_weight_cover_image.public_bucket_directory_hash as maybe_model_cover_image_public_bucket_hash,\n    model_weight_cover_image.maybe_public_bucket_prefix as maybe_model_cover_image_public_bucket_prefix,\n    model_weight_cover_image.maybe_public_bucket_extension as maybe_model_cover_image_public_bucket_extension,\n\n    model_weight_creator.token as `maybe_model_weight_creator_user_token: tokens::tokens::users::UserToken`,\n    model_weight_creator.username as maybe_model_weight_creator_username,\n    model_weight_creator.display_name as maybe_model_weight_creator_display_name,\n    model_weight_creator.email_gravatar_hash as maybe_model_weight_creator_gravatar_hash,\n\n    m.extra_file_modification_info,\n\n    m.public_bucket_directory_hash,\n    m.maybe_public_bucket_prefix,\n    m.maybe_public_bucket_extension,\n\n    entity_stats.ratings_positive_count as maybe_ratings_positive_count,\n    entity_stats.ratings_negative_count as maybe_ratings_negative_count,\n    entity_stats.bookmark_count as maybe_bookmark_count,\n\n    featured_items.entity_token IS NOT NULL AS is_featured,\n\n    m.created_at,\n    m.updated_at\n\nFROM media_files AS m\nLEFT OUTER JOIN users\n    ON m.maybe_creator_user_token = users.token\nLEFT OUTER JOIN model_weights\n    ON m.maybe_origin_model_token = model_weights.token\nLEFT OUTER JOIN media_files as media_file_cover_image\n    ON media_file_cover_image.token = m.maybe_cover_image_media_file_token\nLEFT OUTER JOIN media_files as model_weight_cover_image\n    ON model_weight_cover_image.token = model_weights.maybe_cover_image_media_file_token\nLEFT OUTER JOIN users as model_weight_creator\n    ON model_weight_creator.token = model_weights.creator_user_token\nLEFT OUTER JOIN entity_stats\n    ON entity_stats.entity_type = \"media_file\"\n    AND entity_stats.entity_token = m.token\nLEFT OUTER JOIN prompts\n    ON prompts.token = m.maybe_prompt_token\nLEFT OUTER JOIN featured_items\n    ON featured_items.entity_type = 'media_file'\n    AND featured_items.entity_token = m.token\n    AND featured_items.deleted_at IS NULL\nWHERE\n    m.token = ?\n    AND m.user_deleted_at IS NULL\n    AND m.mod_deleted_at IS NULL\n        ",
   "describe": {
     "columns": [
       {
@@ -55,16 +55,6 @@
       },
       {
         "ordinal": 5,
-        "name": "maybe_media_subtype: enums::by_table::media_files::media_file_subtype::MediaFileSubtype",
-        "type_info": {
-          "type": "VarString",
-          "flags": "BINARY",
-          "char_set": 224,
-          "max_size": 128
-        }
-      },
-      {
-        "ordinal": 6,
         "name": "maybe_mime_type",
         "type_info": {
           "type": "VarString",
@@ -74,7 +64,7 @@
         }
       },
       {
-        "ordinal": 7,
+        "ordinal": 6,
         "name": "maybe_creator_user_token: tokens::tokens::users::UserToken",
         "type_info": {
           "type": "VarString",
@@ -84,7 +74,7 @@
         }
       },
       {
-        "ordinal": 8,
+        "ordinal": 7,
         "name": "maybe_creator_username",
         "type_info": {
           "type": "VarString",
@@ -94,7 +84,7 @@
         }
       },
       {
-        "ordinal": 9,
+        "ordinal": 8,
         "name": "maybe_creator_display_name",
         "type_info": {
           "type": "VarString",
@@ -104,7 +94,7 @@
         }
       },
       {
-        "ordinal": 10,
+        "ordinal": 9,
         "name": "maybe_creator_gravatar_hash",
         "type_info": {
           "type": "String",
@@ -114,7 +104,7 @@
         }
       },
       {
-        "ordinal": 11,
+        "ordinal": 10,
         "name": "maybe_creator_anonymous_visitor_token: tokens::tokens::anonymous_visitor_tracking::AnonymousVisitorTrackingToken",
         "type_info": {
           "type": "VarString",
@@ -124,7 +114,7 @@
         }
       },
       {
-        "ordinal": 12,
+        "ordinal": 11,
         "name": "maybe_batch_token: tokens::tokens::batch_generations::BatchGenerationToken",
         "type_info": {
           "type": "VarString",
@@ -134,7 +124,7 @@
         }
       },
       {
-        "ordinal": 13,
+        "ordinal": 12,
         "name": "maybe_style_transfer_source_media_file_token: tokens::tokens::media_files::MediaFileToken",
         "type_info": {
           "type": "VarString",
@@ -144,7 +134,7 @@
         }
       },
       {
-        "ordinal": 14,
+        "ordinal": 13,
         "name": "maybe_scene_source_media_file_token: tokens::tokens::media_files::MediaFileToken",
         "type_info": {
           "type": "VarString",
@@ -154,7 +144,7 @@
         }
       },
       {
-        "ordinal": 15,
+        "ordinal": 14,
         "name": "maybe_title",
         "type_info": {
           "type": "VarString",
@@ -164,7 +154,7 @@
         }
       },
       {
-        "ordinal": 16,
+        "ordinal": 15,
         "name": "maybe_text_transcript",
         "type_info": {
           "type": "Blob",
@@ -174,7 +164,7 @@
         }
       },
       {
-        "ordinal": 17,
+        "ordinal": 16,
         "name": "maybe_origin_filename",
         "type_info": {
           "type": "VarString",
@@ -184,7 +174,7 @@
         }
       },
       {
-        "ordinal": 18,
+        "ordinal": 17,
         "name": "maybe_duration_millis",
         "type_info": {
           "type": "Long",
@@ -194,7 +184,7 @@
         }
       },
       {
-        "ordinal": 19,
+        "ordinal": 18,
         "name": "maybe_prompt_token: tokens::tokens::prompts::PromptToken",
         "type_info": {
           "type": "VarString",
@@ -204,7 +194,7 @@
         }
       },
       {
-        "ordinal": 20,
+        "ordinal": 19,
         "name": "maybe_other_prompt_args",
         "type_info": {
           "type": "Blob",
@@ -214,7 +204,7 @@
         }
       },
       {
-        "ordinal": 21,
+        "ordinal": 20,
         "name": "maybe_file_cover_image_public_bucket_hash",
         "type_info": {
           "type": "VarString",
@@ -224,7 +214,7 @@
         }
       },
       {
-        "ordinal": 22,
+        "ordinal": 21,
         "name": "maybe_file_cover_image_public_bucket_prefix",
         "type_info": {
           "type": "VarString",
@@ -234,7 +224,7 @@
         }
       },
       {
-        "ordinal": 23,
+        "ordinal": 22,
         "name": "maybe_file_cover_image_public_bucket_extension",
         "type_info": {
           "type": "VarString",
@@ -244,7 +234,7 @@
         }
       },
       {
-        "ordinal": 24,
+        "ordinal": 23,
         "name": "creator_set_visibility: enums::common::visibility::Visibility",
         "type_info": {
           "type": "String",
@@ -254,7 +244,7 @@
         }
       },
       {
-        "ordinal": 25,
+        "ordinal": 24,
         "name": "is_user_upload",
         "type_info": {
           "type": "Tiny",
@@ -264,7 +254,7 @@
         }
       },
       {
-        "ordinal": 26,
+        "ordinal": 25,
         "name": "is_intermediate_system_file",
         "type_info": {
           "type": "Tiny",
@@ -274,7 +264,7 @@
         }
       },
       {
-        "ordinal": 27,
+        "ordinal": 26,
         "name": "maybe_model_weights_token: tokens::tokens::model_weights::ModelWeightToken",
         "type_info": {
           "type": "VarString",
@@ -284,7 +274,7 @@
         }
       },
       {
-        "ordinal": 28,
+        "ordinal": 27,
         "name": "maybe_model_weights_title",
         "type_info": {
           "type": "VarString",
@@ -294,7 +284,7 @@
         }
       },
       {
-        "ordinal": 29,
+        "ordinal": 28,
         "name": "maybe_model_weights_type: enums::by_table::model_weights::weights_types::WeightsType",
         "type_info": {
           "type": "VarString",
@@ -304,7 +294,7 @@
         }
       },
       {
-        "ordinal": 30,
+        "ordinal": 29,
         "name": "maybe_model_weights_category: enums::by_table::model_weights::weights_category::WeightsCategory",
         "type_info": {
           "type": "VarString",
@@ -314,7 +304,7 @@
         }
       },
       {
-        "ordinal": 31,
+        "ordinal": 30,
         "name": "maybe_model_cover_image_public_bucket_hash",
         "type_info": {
           "type": "VarString",
@@ -324,7 +314,7 @@
         }
       },
       {
-        "ordinal": 32,
+        "ordinal": 31,
         "name": "maybe_model_cover_image_public_bucket_prefix",
         "type_info": {
           "type": "VarString",
@@ -334,7 +324,7 @@
         }
       },
       {
-        "ordinal": 33,
+        "ordinal": 32,
         "name": "maybe_model_cover_image_public_bucket_extension",
         "type_info": {
           "type": "VarString",
@@ -344,7 +334,7 @@
         }
       },
       {
-        "ordinal": 34,
+        "ordinal": 33,
         "name": "maybe_model_weight_creator_user_token: tokens::tokens::users::UserToken",
         "type_info": {
           "type": "VarString",
@@ -354,7 +344,7 @@
         }
       },
       {
-        "ordinal": 35,
+        "ordinal": 34,
         "name": "maybe_model_weight_creator_username",
         "type_info": {
           "type": "VarString",
@@ -364,7 +354,7 @@
         }
       },
       {
-        "ordinal": 36,
+        "ordinal": 35,
         "name": "maybe_model_weight_creator_display_name",
         "type_info": {
           "type": "VarString",
@@ -374,7 +364,7 @@
         }
       },
       {
-        "ordinal": 37,
+        "ordinal": 36,
         "name": "maybe_model_weight_creator_gravatar_hash",
         "type_info": {
           "type": "String",
@@ -384,7 +374,7 @@
         }
       },
       {
-        "ordinal": 38,
+        "ordinal": 37,
         "name": "extra_file_modification_info",
         "type_info": {
           "type": "Blob",
@@ -394,7 +384,7 @@
         }
       },
       {
-        "ordinal": 39,
+        "ordinal": 38,
         "name": "public_bucket_directory_hash",
         "type_info": {
           "type": "VarString",
@@ -404,7 +394,7 @@
         }
       },
       {
-        "ordinal": 40,
+        "ordinal": 39,
         "name": "maybe_public_bucket_prefix",
         "type_info": {
           "type": "VarString",
@@ -414,7 +404,7 @@
         }
       },
       {
-        "ordinal": 41,
+        "ordinal": 40,
         "name": "maybe_public_bucket_extension",
         "type_info": {
           "type": "VarString",
@@ -424,7 +414,7 @@
         }
       },
       {
-        "ordinal": 42,
+        "ordinal": 41,
         "name": "maybe_ratings_positive_count",
         "type_info": {
           "type": "Long",
@@ -434,7 +424,7 @@
         }
       },
       {
-        "ordinal": 43,
+        "ordinal": 42,
         "name": "maybe_ratings_negative_count",
         "type_info": {
           "type": "Long",
@@ -444,7 +434,7 @@
         }
       },
       {
-        "ordinal": 44,
+        "ordinal": 43,
         "name": "maybe_bookmark_count",
         "type_info": {
           "type": "Long",
@@ -454,7 +444,7 @@
         }
       },
       {
-        "ordinal": 45,
+        "ordinal": 44,
         "name": "is_featured",
         "type_info": {
           "type": "LongLong",
@@ -464,7 +454,7 @@
         }
       },
       {
-        "ordinal": 46,
+        "ordinal": 45,
         "name": "created_at",
         "type_info": {
           "type": "Timestamp",
@@ -474,7 +464,7 @@
         }
       },
       {
-        "ordinal": 47,
+        "ordinal": 46,
         "name": "updated_at",
         "type_info": {
           "type": "Timestamp",
@@ -491,7 +481,6 @@
       false,
       false,
       false,
-      true,
       true,
       true,
       true,
@@ -538,5 +527,5 @@
       false
     ]
   },
-  "hash": "57fa22e6cd4e82b801605c96eac21babd78df3df361b3be566993b78a46efef2"
+  "hash": "ad217c26087b2ebed6f2c9f79b16ead63727107dfce3366f3c1d12bc9d565c2c"
 }
