@@ -1,10 +1,8 @@
 // Animations drawer: when a character is selected, lists the curated Mixamo
-// clips. Clicking one drops it as a stacked clip lane on that character's
-// timeline at the current playhead (the character then animates on scrub/play).
-//
-// This is the first verifiable slice of the Mixamo-drawer feature — click to
-// add. Drag-and-drop onto specific timeline lanes and the stacked strip UI come
-// once retargeting/playback is confirmed correct in the viewport.
+// clips. Click a clip to drop it on the character's timeline at the playhead,
+// or drag it onto a character's timeline row (drop time follows the cursor).
+// While dragging, the shared DragGhost (tilt card) previews the clip's
+// thumbnail — the same pickup motion as object/character drags.
 
 import { useContext } from "react";
 import { EngineContext } from "../../contexts/EngineContext";
@@ -12,6 +10,16 @@ import { usePageSceneStore } from "../../PageSceneStore";
 import { addClipToCharacter } from "../../actions";
 import { demoAnimationItems } from "../../signals/demoAssets/demoAnimationItems";
 import { ANIMATION_CLIP_MIME } from "../Timeline/timelineUtils";
+
+// 1×1 transparent GIF used to suppress the browser's default drag image so only
+// the DragGhost tilt card shows. Created once at module load so it's decoded by
+// the time a drag starts.
+const TRANSPARENT_DRAG_IMAGE =
+  typeof Image !== "undefined" ? new Image() : null;
+if (TRANSPARENT_DRAG_IMAGE) {
+  TRANSPARENT_DRAG_IMAGE.src =
+    "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
+}
 
 export const AnimationsDrawer = () => {
   const editor = useContext(EngineContext);
@@ -42,6 +50,28 @@ export const AnimationsDrawer = () => {
                 JSON.stringify({ media_id: item.media_id, name: item.name }),
               );
               e.dataTransfer.effectAllowed = "copy";
+              // Hide the native drag image; the DragGhost renders the preview.
+              if (TRANSPARENT_DRAG_IMAGE) {
+                e.dataTransfer.setDragImage(TRANSPARENT_DRAG_IMAGE, 0, 0);
+              }
+              const store = usePageSceneStore.getState();
+              store.setDragItem(item);
+              store.setDragPosition({ currX: e.pageX, currY: e.pageY });
+              store.setAssetDraggingUnder(true);
+            }}
+            onDrag={(e) => {
+              // The final native drag event can report (0,0) — ignore it so the
+              // ghost doesn't snap to the corner on release.
+              if (e.pageX === 0 && e.pageY === 0) return;
+              usePageSceneStore
+                .getState()
+                .setDragPosition({ currX: e.pageX, currY: e.pageY });
+            }}
+            onDragEnd={() => {
+              const store = usePageSceneStore.getState();
+              store.setDragItem(null);
+              store.setAssetDraggingUnder(false);
+              store.setDragPosition({ currX: 0, currY: 0 });
             }}
             onClick={() =>
               editor && addClipToCharacter(editor, character.id, item)

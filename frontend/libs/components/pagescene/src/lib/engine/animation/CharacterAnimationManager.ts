@@ -35,6 +35,8 @@ export class CharacterAnimationManager {
   private lanes = new Map<string, LaneRuntime>();
   // laneId → monotonic token, so a superseded async load can't clobber state.
   private loadTokens = new Map<string, number>();
+  // characterUuid → its skeleton(s), cached so bind-pose resets don't re-traverse.
+  private skeletons = new Map<string, THREE.Skeleton[]>();
 
   constructor(private readonly editor: Editor) {}
 
@@ -61,6 +63,9 @@ export class CharacterAnimationManager {
   // Pose every character at `playhead` (seconds). Deterministic: sets each
   // action's absolute time then applies via mixer.update(0).
   evaluateAt(playhead: number): void {
+    // Characters that have a clip covering this playhead. Everyone else is
+    // reset to their bind (T) pose below.
+    const posed = new Set<string>();
     for (const rt of this.lanes.values()) {
       const action = rt.action;
       if (!action) continue;
@@ -77,6 +82,14 @@ export class CharacterAnimationManager {
       action.paused = true; // we drive time ourselves; don't auto-advance
       action.time = local;
       action.setEffectiveWeight(1);
+      posed.add(rt.characterUuid);
+    }
+    // Gaps between strips (and before the first / after the last) have no active
+    // clip. A disabled action leaves the skeleton frozen on its last evaluated
+    // frame, so explicitly restore the bind pose for those characters — the
+    // "default state" when nothing is under the scrubber.
+    for (const uuid of this.mixers.keys()) {
+      if (!posed.has(uuid)) this.resetToBindPose(uuid);
     }
     for (const mixer of this.mixers.values()) mixer.update(0);
   }
@@ -85,6 +98,7 @@ export class CharacterAnimationManager {
     for (const laneId of [...this.lanes.keys()]) this.disposeLane(laneId);
     for (const mixer of this.mixers.values()) mixer.stopAllAction();
     this.mixers.clear();
+    this.skeletons.clear();
   }
 
   // ─── internals ────────────────────────────────────────────────────────
@@ -170,6 +184,7 @@ export class CharacterAnimationManager {
       if (!live.has(uuid)) {
         this.mixers.get(uuid)?.stopAllAction();
         this.mixers.delete(uuid);
+        this.skeletons.delete(uuid);
       }
     }
   }
@@ -179,8 +194,27 @@ export class CharacterAnimationManager {
     if (!mixer) {
       mixer = new THREE.AnimationMixer(root);
       this.mixers.set(uuid, mixer);
+      this.skeletons.set(uuid, this.collectSkeletons(root));
     }
     return mixer;
+  }
+
+  // Reset a character's skeleton(s) to their bind (rest) pose. For Mixamo rigs
+  // the bind pose is the T-pose — the "default state" shown wherever no clip
+  // covers the playhead.
+  private resetToBindPose(characterUuid: string): void {
+    const skeletons = this.skeletons.get(characterUuid);
+    if (!skeletons) return;
+    for (const skeleton of skeletons) skeleton.pose();
+  }
+
+  private collectSkeletons(root: THREE.Object3D): THREE.Skeleton[] {
+    const skeletons: THREE.Skeleton[] = [];
+    root.traverse((o) => {
+      const sm = o as THREE.SkinnedMesh;
+      if (sm.isSkinnedMesh && sm.skeleton) skeletons.push(sm.skeleton);
+    });
+    return skeletons;
   }
 
   // True if at least one of the clip's tracks names a node that exists under

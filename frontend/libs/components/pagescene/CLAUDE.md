@@ -219,8 +219,14 @@ then one row per character is the right model.
 - **Overlap guard (single row)**: `TimelineController.resolveFreeStart` snaps add/move to the nearest
   gap so a character's strips never overlap; `nextStartAfter` bounds trim (`resizeClipLane`) and
   auto-length (`resolveClipDuration`) against the following clip. `evaluateAt` then has at most one
-  active clip at any playhead, so playback is an unambiguous sequence (a gap between strips falls
-  back to the bind/T-pose — position strips edge-to-edge to avoid it).
+  active clip at any playhead, so playback is an unambiguous sequence.
+- **Bind-pose in gaps**: a disabled three.js action leaves the skeleton frozen on its last frame, so
+  `evaluateAt` resets any character with no clip under the playhead to its **bind (T) pose** via
+  `resetToBindPose` → `Skeleton.pose()` (skeletons cached per character in `getMixer`). Gaps between
+  strips, before the first, and after the last therefore show the default T-pose, not a held frame.
+- **Drag preview**: dragging a clip drives the shared `DragGhost` (tilt card) by setting
+  `dragItem`/`dragPosition`/`assetDraggingUnder` on the store in the drawer's native-DnD handlers,
+  and suppresses the browser's default drag image — matching object/character pickup motion.
 - **Real clip length (fix, done)**: a fresh drop seeds `strip.duration` with a placeholder and flags
   `autoDuration`; when the GLB loads, `CharacterAnimationManager` calls
   `TimelineController.resolveClipDuration(laneId, clip.duration)` to adopt the clip's true length
