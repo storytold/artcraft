@@ -171,22 +171,24 @@ impl MediaFileType {
       | Self::Webm
       | Self::Mov => MediaFileClass::Video,
 
-      Self::Bvh
-      | Self::Fbx
+      Self::Fbx
       | Self::Obj
       | Self::Glb
       | Self::Gltf
-      | Self::Spz
-      | Self::SceneRon
-      | Self::SceneJson
       | Self::Pmd
+      | Self::Pmx => MediaFileClass::Mesh,
+
+      Self::Spz => MediaFileClass::Splat,
+
+      // Animation and auxiliary data formats with no dedicated class yet.
+      #[allow(deprecated)]
+      Self::Bvh
       | Self::Vmd
-      | Self::Pmx
       | Self::Csv => MediaFileClass::Dimensional,
 
-      // NB: SceneRon/SceneJson stay Dimensional above until existing rows are
-      // backfilled to the `project` class.
-      Self::Json => MediaFileClass::Project,
+      Self::SceneRon
+      | Self::SceneJson
+      | Self::Json => MediaFileClass::Project,
     }
   }
 
@@ -524,16 +526,16 @@ mod tests {
       assert_eq!(MediaFileType::Image.to_media_class(), MediaFileClass::Image);
       assert_eq!(MediaFileType::Video.to_media_class(), MediaFileClass::Video);
       assert_eq!(MediaFileType::Bvh.to_media_class(), MediaFileClass::Dimensional);
-      assert_eq!(MediaFileType::Fbx.to_media_class(), MediaFileClass::Dimensional);
-      assert_eq!(MediaFileType::Obj.to_media_class(), MediaFileClass::Dimensional);
-      assert_eq!(MediaFileType::Glb.to_media_class(), MediaFileClass::Dimensional);
-      assert_eq!(MediaFileType::Gltf.to_media_class(), MediaFileClass::Dimensional);
-      assert_eq!(MediaFileType::Spz.to_media_class(), MediaFileClass::Dimensional);
-      assert_eq!(MediaFileType::SceneRon.to_media_class(), MediaFileClass::Dimensional);
-      assert_eq!(MediaFileType::SceneJson.to_media_class(), MediaFileClass::Dimensional);
-      assert_eq!(MediaFileType::Pmd.to_media_class(), MediaFileClass::Dimensional);
+      assert_eq!(MediaFileType::Fbx.to_media_class(), MediaFileClass::Mesh);
+      assert_eq!(MediaFileType::Obj.to_media_class(), MediaFileClass::Mesh);
+      assert_eq!(MediaFileType::Glb.to_media_class(), MediaFileClass::Mesh);
+      assert_eq!(MediaFileType::Gltf.to_media_class(), MediaFileClass::Mesh);
+      assert_eq!(MediaFileType::Spz.to_media_class(), MediaFileClass::Splat);
+      assert_eq!(MediaFileType::SceneRon.to_media_class(), MediaFileClass::Project);
+      assert_eq!(MediaFileType::SceneJson.to_media_class(), MediaFileClass::Project);
+      assert_eq!(MediaFileType::Pmd.to_media_class(), MediaFileClass::Mesh);
       assert_eq!(MediaFileType::Vmd.to_media_class(), MediaFileClass::Dimensional);
-      assert_eq!(MediaFileType::Pmx.to_media_class(), MediaFileClass::Dimensional);
+      assert_eq!(MediaFileType::Pmx.to_media_class(), MediaFileClass::Mesh);
       assert_eq!(MediaFileType::Csv.to_media_class(), MediaFileClass::Dimensional);
       assert_eq!(MediaFileType::Jpg.to_media_class(), MediaFileClass::Image);
       assert_eq!(MediaFileType::Png.to_media_class(), MediaFileClass::Image);
