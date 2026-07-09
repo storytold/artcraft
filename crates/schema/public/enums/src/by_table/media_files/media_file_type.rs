@@ -184,8 +184,9 @@ impl MediaFileType {
       | Self::Pmx
       | Self::Csv => MediaFileClass::Dimensional,
 
-      // Generic project documents don't have a class yet.
-      Self::Json => MediaFileClass::Unknown,
+      // NB: SceneRon/SceneJson stay Dimensional above until existing rows are
+      // backfilled to the `project` class.
+      Self::Json => MediaFileClass::Project,
     }
   }
 
@@ -548,7 +549,7 @@ mod tests {
       assert_eq!(MediaFileType::Aac.to_media_class(), MediaFileClass::Audio);
       assert_eq!(MediaFileType::M4a.to_media_class(), MediaFileClass::Audio);
       assert_eq!(MediaFileType::Flac.to_media_class(), MediaFileClass::Audio);
-      assert_eq!(MediaFileType::Json.to_media_class(), MediaFileClass::Unknown);
+      assert_eq!(MediaFileType::Json.to_media_class(), MediaFileClass::Project);
     }
   }
 
