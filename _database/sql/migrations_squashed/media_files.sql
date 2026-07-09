@@ -157,10 +157,19 @@ CREATE TABLE media_files (
   -- This is especially helpful with engine types that map to specific semantics.
   --   * 'unknown' (TODO: This is the default until all records are backfilled.)
   --   * 'audio' for wav, mp3, etc.
-  --   * 'image' for a variety of video types.
+  --   * 'image' for a variety of image types.
   --   * 'video' for a variety of video types.
-  --   * 'dimensional' for a variety of 3d types
+  --   * 'dimensional' (DEPRECATED) split into 'mesh', 'splat', and 'project'; read-only until backfilled
+  --   * 'mesh' for 3d mesh assets (glb, gltf, fbx, obj, pmx, pmd, etc.)
+  --   * 'splat' for Gaussian splats (spz, etc.)
+  --   * 'project' for internal Artcraft project documents (see maybe_project_type)
   media_class VARCHAR(16) NOT NULL DEFAULT "unknown",
+
+  -- Which kind of internal Artcraft project document this media file is
+  -- ('scene_3d', 'mood_board', 'workflow', 'video_timeline', ...).
+  -- Only set when media_class = 'project'. The file format lives in media_type;
+  -- the JSON payload carries its own schema version.
+  maybe_project_type VARCHAR(32) DEFAULT NULL,
 
   -- The file's mime type.
   maybe_mime_type VARCHAR(32) DEFAULT NULL,
@@ -323,6 +332,7 @@ CREATE TABLE media_files (
   KEY index_maybe_scene_source_media_file_token (maybe_scene_source_media_file_token),
   KEY index_media_type (media_type),
   KEY index_media_class (media_class),
+  KEY index_maybe_project_type (maybe_project_type),
   KEY index_maybe_engine_category (maybe_engine_category),
   KEY fk_maybe_prompt_token (maybe_prompt_token),
   KEY index_checksum_sha2 (checksum_sha2),
