@@ -299,8 +299,11 @@ pub async fn upload_image_media_file_handler(
     UploadType::Filesystem
   };
 
+  let maybe_upload_filename = form.file.file_name.as_deref();
+
   let media_file_type = MediaFileType::try_from_mime_type(&mimetype)
-      .unwrap_or(MediaFileType::Image); // Coarse fallback for unrecognized mimes
+      .or_else(|| maybe_upload_filename.and_then(MediaFileType::try_from_filename_or_extension))
+      .unwrap_or(MediaFileType::Image); // Coarse fallback for unrecognized files
 
   let (token, record_id) = insert_media_file_from_file_upload(InsertMediaFileFromUploadArgs {
     maybe_media_class: Some(MediaFileClass::Image),

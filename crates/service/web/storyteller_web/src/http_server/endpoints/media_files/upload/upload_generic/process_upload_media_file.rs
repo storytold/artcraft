@@ -206,7 +206,9 @@ pub async fn process_upload_media_file(
     //  - .avi (video/x-msvideo)
     // NB: mimetypes are gated by the `allowed_mimetypes` check above; this only
     // maps the already-permitted set to concrete media types.
-    media_file_type = MediaFileType::try_from_mime_type(mimetype);
+    let maybe_upload_filename = upload_media_request.file_name.as_deref();
+    media_file_type = MediaFileType::try_from_mime_type(mimetype)
+        .or_else(|| maybe_upload_filename.and_then(MediaFileType::try_from_filename_or_extension));
 
     let do_audio_decode = match mimetype {
       // TODO: Revisit when Safari can send us this metadata consistently
@@ -296,38 +298,7 @@ pub async fn process_upload_media_file(
     },
   };
 
-  let media_file_class = match media_file_type {
-    MediaFileType::Audio => MediaFileClass::Audio,
-    MediaFileType::Image => MediaFileClass::Image,
-    MediaFileType::Video => MediaFileClass::Video,
-    MediaFileType::Bvh => MediaFileClass::Dimensional,
-    MediaFileType::Fbx => MediaFileClass::Dimensional,
-    MediaFileType::Obj => MediaFileClass::Dimensional,
-    MediaFileType::Glb => MediaFileClass::Dimensional,
-    MediaFileType::Gltf => MediaFileClass::Dimensional,
-    MediaFileType::Spz => MediaFileClass::Dimensional,
-    MediaFileType::SceneRon => MediaFileClass::Dimensional,
-    MediaFileType::SceneJson => MediaFileClass::Dimensional,
-    MediaFileType::Pmd => MediaFileClass::Dimensional,
-    MediaFileType::Vmd => MediaFileClass::Dimensional,
-    MediaFileType::Csv => MediaFileClass::Dimensional,
-    MediaFileType::Pmx => MediaFileClass::Dimensional,
-    MediaFileType::Jpg => MediaFileClass::Image,
-    MediaFileType::Png => MediaFileClass::Image,
-    MediaFileType::Gif => MediaFileClass::Image,
-    MediaFileType::Webp => MediaFileClass::Image,
-    MediaFileType::Mp4 => MediaFileClass::Video,
-    MediaFileType::Webm => MediaFileClass::Video,
-    MediaFileType::Mov => MediaFileClass::Video,
-    MediaFileType::Wav => MediaFileClass::Audio,
-    MediaFileType::Mp3 => MediaFileClass::Audio,
-    MediaFileType::Opus => MediaFileClass::Audio,
-    MediaFileType::Ogg => MediaFileClass::Audio,
-    MediaFileType::Aac => MediaFileClass::Audio,
-    MediaFileType::M4a => MediaFileClass::Audio,
-    MediaFileType::Flac => MediaFileClass::Audio,
-    MediaFileType::Json => MediaFileClass::Unknown,
-  };
+  let media_file_class = media_file_type.to_media_class();
 
   let upload_type = match upload_media_request.media_source {
     MediaFileUploadSource::Unknown => UploadType::Filesystem,

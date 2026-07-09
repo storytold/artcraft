@@ -6,6 +6,8 @@ use strum::EnumCount;
 use strum::EnumIter;
 use utoipa::ToSchema;
 
+use crate::by_table::media_files::media_file_class::MediaFileClass;
+
 /// Used in the `media_files` table in a `VARCHAR(16)` field.
 ///
 /// DO NOT CHANGE VALUES WITHOUT A MIGRATION STRATEGY.
@@ -145,7 +147,48 @@ impl MediaFileType {
   pub fn is_image(&self) -> bool {
     matches!(self, Self::Image | Self::Jpg | Self::Png | Self::Gif | Self::Webp)
   }
-  
+
+  /// The broad `media_class` this file format belongs to.
+  pub fn to_media_class(&self) -> MediaFileClass {
+    match self {
+      Self::Audio
+      | Self::Wav
+      | Self::Mp3
+      | Self::Opus
+      | Self::Ogg
+      | Self::Aac
+      | Self::M4a
+      | Self::Flac => MediaFileClass::Audio,
+
+      Self::Image
+      | Self::Jpg
+      | Self::Png
+      | Self::Gif
+      | Self::Webp => MediaFileClass::Image,
+
+      Self::Video
+      | Self::Mp4
+      | Self::Webm
+      | Self::Mov => MediaFileClass::Video,
+
+      Self::Bvh
+      | Self::Fbx
+      | Self::Obj
+      | Self::Glb
+      | Self::Gltf
+      | Self::Spz
+      | Self::SceneRon
+      | Self::SceneJson
+      | Self::Pmd
+      | Self::Vmd
+      | Self::Pmx
+      | Self::Csv => MediaFileClass::Dimensional,
+
+      // Generic project documents don't have a class yet.
+      Self::Json => MediaFileClass::Unknown,
+    }
+  }
+
   /// Returns the `MediaFileType` if the mime type matches one of the known types.
   /// This is not exhaustive.
   /// (NB: In general we shouldn't keep much application logic in the `enums` crate,
@@ -180,7 +223,54 @@ impl MediaFileType {
       _ => None,
     }
   }
-  
+
+  /// Tries the input as a filename first, then as a bare extension.
+  /// Useful as a fallback when `try_from_mime_type` fails.
+  pub fn try_from_filename_or_extension(filename_or_extension: &str) -> Option<Self> {
+    Self::try_from_filename(filename_or_extension)
+        .or_else(|| Self::try_from_extension(filename_or_extension))
+  }
+
+  /// Returns the `MediaFileType` for a filename by examining its extension.
+  pub fn try_from_filename(filename: &str) -> Option<Self> {
+    let (_, extension) = filename.trim().rsplit_once('.')?;
+    Self::try_from_extension(extension)
+  }
+
+  /// Returns the `MediaFileType` for a known file extension.
+  /// Accepts extensions with or without a leading dot, in any letter case.
+  pub fn try_from_extension(extension: &str) -> Option<Self> {
+    let extension = extension.trim().trim_start_matches('.').to_ascii_lowercase();
+    match extension.as_str() {
+      "jpg" | "jpeg" => Some(Self::Jpg),
+      "png" => Some(Self::Png),
+      "gif" => Some(Self::Gif),
+      "webp" => Some(Self::Webp),
+      "mp4" => Some(Self::Mp4),
+      "webm" => Some(Self::Webm),
+      "mov" => Some(Self::Mov),
+      "wav" => Some(Self::Wav),
+      "mp3" => Some(Self::Mp3),
+      "opus" => Some(Self::Opus),
+      "ogg" => Some(Self::Ogg),
+      "aac" => Some(Self::Aac),
+      "m4a" => Some(Self::M4a),
+      "flac" => Some(Self::Flac),
+      "bvh" => Some(Self::Bvh),
+      "fbx" => Some(Self::Fbx),
+      "obj" => Some(Self::Obj),
+      "glb" => Some(Self::Glb),
+      "gltf" => Some(Self::Gltf),
+      "spz" => Some(Self::Spz),
+      "pmd" => Some(Self::Pmd),
+      "vmd" => Some(Self::Vmd),
+      "pmx" => Some(Self::Pmx),
+      "csv" => Some(Self::Csv),
+      "json" => Some(Self::Json),
+      _ => None,
+    }
+  }
+
   pub fn to_str(&self) -> &'static str {
     match self {
       Self::Audio => "audio",
@@ -292,6 +382,7 @@ impl MediaFileType {
 
 #[cfg(test)]
 mod tests {
+  use crate::by_table::media_files::media_file_class::MediaFileClass;
   use crate::by_table::media_files::media_file_type::MediaFileType;
   use crate::test_helpers::assert_serialization;
   
@@ -424,6 +515,174 @@ mod tests {
       assert_eq!(MediaFileType::from_str("flac").unwrap(), MediaFileType::Flac);
       assert_eq!(MediaFileType::from_str("json").unwrap(), MediaFileType::Json);
       assert!(MediaFileType::from_str("foo").is_err());
+    }
+
+    #[test]
+    fn to_media_class() {
+      assert_eq!(MediaFileType::Audio.to_media_class(), MediaFileClass::Audio);
+      assert_eq!(MediaFileType::Image.to_media_class(), MediaFileClass::Image);
+      assert_eq!(MediaFileType::Video.to_media_class(), MediaFileClass::Video);
+      assert_eq!(MediaFileType::Bvh.to_media_class(), MediaFileClass::Dimensional);
+      assert_eq!(MediaFileType::Fbx.to_media_class(), MediaFileClass::Dimensional);
+      assert_eq!(MediaFileType::Obj.to_media_class(), MediaFileClass::Dimensional);
+      assert_eq!(MediaFileType::Glb.to_media_class(), MediaFileClass::Dimensional);
+      assert_eq!(MediaFileType::Gltf.to_media_class(), MediaFileClass::Dimensional);
+      assert_eq!(MediaFileType::Spz.to_media_class(), MediaFileClass::Dimensional);
+      assert_eq!(MediaFileType::SceneRon.to_media_class(), MediaFileClass::Dimensional);
+      assert_eq!(MediaFileType::SceneJson.to_media_class(), MediaFileClass::Dimensional);
+      assert_eq!(MediaFileType::Pmd.to_media_class(), MediaFileClass::Dimensional);
+      assert_eq!(MediaFileType::Vmd.to_media_class(), MediaFileClass::Dimensional);
+      assert_eq!(MediaFileType::Pmx.to_media_class(), MediaFileClass::Dimensional);
+      assert_eq!(MediaFileType::Csv.to_media_class(), MediaFileClass::Dimensional);
+      assert_eq!(MediaFileType::Jpg.to_media_class(), MediaFileClass::Image);
+      assert_eq!(MediaFileType::Png.to_media_class(), MediaFileClass::Image);
+      assert_eq!(MediaFileType::Gif.to_media_class(), MediaFileClass::Image);
+      assert_eq!(MediaFileType::Webp.to_media_class(), MediaFileClass::Image);
+      assert_eq!(MediaFileType::Mp4.to_media_class(), MediaFileClass::Video);
+      assert_eq!(MediaFileType::Webm.to_media_class(), MediaFileClass::Video);
+      assert_eq!(MediaFileType::Mov.to_media_class(), MediaFileClass::Video);
+      assert_eq!(MediaFileType::Wav.to_media_class(), MediaFileClass::Audio);
+      assert_eq!(MediaFileType::Mp3.to_media_class(), MediaFileClass::Audio);
+      assert_eq!(MediaFileType::Opus.to_media_class(), MediaFileClass::Audio);
+      assert_eq!(MediaFileType::Ogg.to_media_class(), MediaFileClass::Audio);
+      assert_eq!(MediaFileType::Aac.to_media_class(), MediaFileClass::Audio);
+      assert_eq!(MediaFileType::M4a.to_media_class(), MediaFileClass::Audio);
+      assert_eq!(MediaFileType::Flac.to_media_class(), MediaFileClass::Audio);
+      assert_eq!(MediaFileType::Json.to_media_class(), MediaFileClass::Unknown);
+    }
+  }
+
+  mod format_detection {
+    use super::*;
+
+    #[test]
+    fn try_from_mime_type() {
+      assert_eq!(MediaFileType::try_from_mime_type("image/jpeg"), Some(MediaFileType::Jpg));
+      assert_eq!(MediaFileType::try_from_mime_type("image/png"), Some(MediaFileType::Png));
+      assert_eq!(MediaFileType::try_from_mime_type("image/gif"), Some(MediaFileType::Gif));
+      assert_eq!(MediaFileType::try_from_mime_type("image/webp"), Some(MediaFileType::Webp));
+      assert_eq!(MediaFileType::try_from_mime_type("video/mp4"), Some(MediaFileType::Mp4));
+      assert_eq!(MediaFileType::try_from_mime_type("video/webm"), Some(MediaFileType::Webm));
+      assert_eq!(MediaFileType::try_from_mime_type("video/quicktime"), Some(MediaFileType::Mov));
+      assert_eq!(MediaFileType::try_from_mime_type("audio/wav"), Some(MediaFileType::Wav));
+      assert_eq!(MediaFileType::try_from_mime_type("audio/x-wav"), Some(MediaFileType::Wav));
+      assert_eq!(MediaFileType::try_from_mime_type("audio/wave"), Some(MediaFileType::Wav));
+      assert_eq!(MediaFileType::try_from_mime_type("audio/mpeg"), Some(MediaFileType::Mp3));
+      assert_eq!(MediaFileType::try_from_mime_type("audio/mp3"), Some(MediaFileType::Mp3));
+      assert_eq!(MediaFileType::try_from_mime_type("audio/opus"), Some(MediaFileType::Opus));
+      assert_eq!(MediaFileType::try_from_mime_type("audio/ogg"), Some(MediaFileType::Ogg));
+      assert_eq!(MediaFileType::try_from_mime_type("audio/aac"), Some(MediaFileType::Aac));
+      assert_eq!(MediaFileType::try_from_mime_type("audio/m4a"), Some(MediaFileType::M4a));
+      assert_eq!(MediaFileType::try_from_mime_type("audio/x-m4a"), Some(MediaFileType::M4a));
+      assert_eq!(MediaFileType::try_from_mime_type("audio/mp4"), Some(MediaFileType::M4a));
+      assert_eq!(MediaFileType::try_from_mime_type("audio/flac"), Some(MediaFileType::Flac));
+      assert_eq!(MediaFileType::try_from_mime_type("audio/x-flac"), Some(MediaFileType::Flac));
+      assert_eq!(MediaFileType::try_from_mime_type("model/gltf-binary"), Some(MediaFileType::Glb));
+      assert_eq!(MediaFileType::try_from_mime_type("model/gltf+json"), Some(MediaFileType::Gltf));
+      assert_eq!(MediaFileType::try_from_mime_type("model/fbx"), Some(MediaFileType::Fbx));
+      assert_eq!(MediaFileType::try_from_mime_type("application/fbx"), Some(MediaFileType::Fbx));
+      assert_eq!(MediaFileType::try_from_mime_type("model/obj"), Some(MediaFileType::Obj));
+    }
+
+    #[test]
+    fn try_from_mime_type_unknown_mimes() {
+      // NB: application/json is deliberately unmapped — scene JSON, mood boards,
+      // and other project files can't be told apart by mime alone.
+      assert_eq!(MediaFileType::try_from_mime_type("application/json"), None);
+      // NB: application/gzip is the mime for spz splats, but gzip isn't
+      // necessarily a splat, so it stays unmapped.
+      assert_eq!(MediaFileType::try_from_mime_type("application/gzip"), None);
+      assert_eq!(MediaFileType::try_from_mime_type("application/octet-stream"), None);
+      assert_eq!(MediaFileType::try_from_mime_type("text/plain"), None);
+      assert_eq!(MediaFileType::try_from_mime_type(""), None);
+      assert_eq!(MediaFileType::try_from_mime_type("IMAGE/PNG"), None);
+    }
+
+    #[test]
+    fn try_from_extension() {
+      assert_eq!(MediaFileType::try_from_extension("jpg"), Some(MediaFileType::Jpg));
+      assert_eq!(MediaFileType::try_from_extension("jpeg"), Some(MediaFileType::Jpg));
+      assert_eq!(MediaFileType::try_from_extension("png"), Some(MediaFileType::Png));
+      assert_eq!(MediaFileType::try_from_extension("gif"), Some(MediaFileType::Gif));
+      assert_eq!(MediaFileType::try_from_extension("webp"), Some(MediaFileType::Webp));
+      assert_eq!(MediaFileType::try_from_extension("mp4"), Some(MediaFileType::Mp4));
+      assert_eq!(MediaFileType::try_from_extension("webm"), Some(MediaFileType::Webm));
+      assert_eq!(MediaFileType::try_from_extension("mov"), Some(MediaFileType::Mov));
+      assert_eq!(MediaFileType::try_from_extension("wav"), Some(MediaFileType::Wav));
+      assert_eq!(MediaFileType::try_from_extension("mp3"), Some(MediaFileType::Mp3));
+      assert_eq!(MediaFileType::try_from_extension("opus"), Some(MediaFileType::Opus));
+      assert_eq!(MediaFileType::try_from_extension("ogg"), Some(MediaFileType::Ogg));
+      assert_eq!(MediaFileType::try_from_extension("aac"), Some(MediaFileType::Aac));
+      assert_eq!(MediaFileType::try_from_extension("m4a"), Some(MediaFileType::M4a));
+      assert_eq!(MediaFileType::try_from_extension("flac"), Some(MediaFileType::Flac));
+      assert_eq!(MediaFileType::try_from_extension("bvh"), Some(MediaFileType::Bvh));
+      assert_eq!(MediaFileType::try_from_extension("fbx"), Some(MediaFileType::Fbx));
+      assert_eq!(MediaFileType::try_from_extension("obj"), Some(MediaFileType::Obj));
+      assert_eq!(MediaFileType::try_from_extension("glb"), Some(MediaFileType::Glb));
+      assert_eq!(MediaFileType::try_from_extension("gltf"), Some(MediaFileType::Gltf));
+      assert_eq!(MediaFileType::try_from_extension("spz"), Some(MediaFileType::Spz));
+      assert_eq!(MediaFileType::try_from_extension("pmd"), Some(MediaFileType::Pmd));
+      assert_eq!(MediaFileType::try_from_extension("vmd"), Some(MediaFileType::Vmd));
+      assert_eq!(MediaFileType::try_from_extension("pmx"), Some(MediaFileType::Pmx));
+      assert_eq!(MediaFileType::try_from_extension("csv"), Some(MediaFileType::Csv));
+      assert_eq!(MediaFileType::try_from_extension("json"), Some(MediaFileType::Json));
+    }
+
+    #[test]
+    fn try_from_extension_normalization() {
+      // Leading dot
+      assert_eq!(MediaFileType::try_from_extension(".mp4"), Some(MediaFileType::Mp4));
+      assert_eq!(MediaFileType::try_from_extension(".spz"), Some(MediaFileType::Spz));
+      // Case insensitivity
+      assert_eq!(MediaFileType::try_from_extension("JPG"), Some(MediaFileType::Jpg));
+      assert_eq!(MediaFileType::try_from_extension(".WebP"), Some(MediaFileType::Webp));
+      // Whitespace
+      assert_eq!(MediaFileType::try_from_extension("  png  "), Some(MediaFileType::Png));
+      assert_eq!(MediaFileType::try_from_extension(" .glb "), Some(MediaFileType::Glb));
+    }
+
+    #[test]
+    fn try_from_extension_unknown_extensions() {
+      assert_eq!(MediaFileType::try_from_extension("ron"), None);
+      assert_eq!(MediaFileType::try_from_extension("exe"), None);
+      assert_eq!(MediaFileType::try_from_extension("scene_json"), None);
+      assert_eq!(MediaFileType::try_from_extension("audio"), None);
+      assert_eq!(MediaFileType::try_from_extension(""), None);
+      assert_eq!(MediaFileType::try_from_extension("."), None);
+    }
+
+    #[test]
+    fn try_from_filename() {
+      assert_eq!(MediaFileType::try_from_filename("photo.jpg"), Some(MediaFileType::Jpg));
+      assert_eq!(MediaFileType::try_from_filename("PHOTO.JPEG"), Some(MediaFileType::Jpg));
+      assert_eq!(MediaFileType::try_from_filename("clip.final.mp4"), Some(MediaFileType::Mp4));
+      assert_eq!(MediaFileType::try_from_filename("model.GLB"), Some(MediaFileType::Glb));
+      assert_eq!(MediaFileType::try_from_filename("scene.spz"), Some(MediaFileType::Spz));
+      assert_eq!(MediaFileType::try_from_filename("data.json"), Some(MediaFileType::Json));
+      assert_eq!(MediaFileType::try_from_filename("  padded.png  "), Some(MediaFileType::Png));
+      // Failures
+      assert_eq!(MediaFileType::try_from_filename("archive.tar.gz"), None);
+      assert_eq!(MediaFileType::try_from_filename("noextension"), None);
+      assert_eq!(MediaFileType::try_from_filename("file."), None);
+      assert_eq!(MediaFileType::try_from_filename(".gitignore"), None);
+      assert_eq!(MediaFileType::try_from_filename(""), None);
+      // NB: a bare extension is not a filename (no dot separator)
+      assert_eq!(MediaFileType::try_from_filename("mp4"), None);
+    }
+
+    #[test]
+    fn try_from_filename_or_extension() {
+      // Filenames
+      assert_eq!(MediaFileType::try_from_filename_or_extension("movie.mp4"), Some(MediaFileType::Mp4));
+      assert_eq!(MediaFileType::try_from_filename_or_extension("track.FLAC"), Some(MediaFileType::Flac));
+      // Bare extensions, with and without a leading dot
+      assert_eq!(MediaFileType::try_from_filename_or_extension("mp4"), Some(MediaFileType::Mp4));
+      assert_eq!(MediaFileType::try_from_filename_or_extension(".mp4"), Some(MediaFileType::Mp4));
+      assert_eq!(MediaFileType::try_from_filename_or_extension("webp"), Some(MediaFileType::Webp));
+      // Failures
+      assert_eq!(MediaFileType::try_from_filename_or_extension("movie.xyz"), None);
+      assert_eq!(MediaFileType::try_from_filename_or_extension("unknown"), None);
+      assert_eq!(MediaFileType::try_from_filename_or_extension(""), None);
     }
   }
 
