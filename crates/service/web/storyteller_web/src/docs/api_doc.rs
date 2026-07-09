@@ -84,7 +84,6 @@ use crate::http_server::endpoints::omni_api::upload::omni_upload_image_media_fil
 use crate::http_server::endpoints::omni_api::upload::omni_upload_video_media_file_handler::*;
 use crate::http_server::endpoints::media_files::upsert_upload::write_engine_asset::write_engine_asset_media_file_handler::*;
 use crate::http_server::endpoints::media_files::upsert_upload::write_error::MediaFileWriteError;
-use crate::http_server::endpoints::media_files::upsert_upload::write_scene_file::write_scene_file_media_file_handler::*;
 use crate::http_server::endpoints::model_download::enqueue_gptsovits_model_download_handler::*;
 use artcraft_api_defs::generate::video::edit::beeble_switchx_edit_video::*;
 use artcraft_api_defs::moderation::debug_logs::debug_log_entry::*;
@@ -483,7 +482,6 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     crate::http_server::endpoints::media_files::upload::upload_video_new::upload_new_video_media_file_handler::upload_new_video_media_file_handler,
     crate::http_server::endpoints::media_files::upload::upload_video_old::upload_video_media_file_handler::upload_video_media_file_handler,
     crate::http_server::endpoints::media_files::upsert_upload::write_engine_asset::write_engine_asset_media_file_handler::write_engine_asset_media_file_handler,
-    crate::http_server::endpoints::media_files::upsert_upload::write_scene_file::write_scene_file_media_file_handler::write_scene_file_media_file_handler,
     crate::http_server::endpoints::model_download::enqueue_gptsovits_model_download_handler::enqueue_gptsovits_model_download_handler,
     crate::http_server::endpoints::moderation::user_feature_flags::moderator_edit_user_feature_flags_handler::moderator_edit_user_feature_flags_handler,
     crate::http_server::endpoints::moderation::user_feature_flags::moderator_list_all_available_user_feature_flags_handler::moderator_list_all_available_user_feature_flags_handler,
@@ -1211,7 +1209,6 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     Weight,
     WeightsData,
     WriteEngineAssetMediaSuccessResponse,
-    WriteSceneFileMediaSuccessResponse,
 
     // Cost Estimate types
     EstimateImageCostRequest,
