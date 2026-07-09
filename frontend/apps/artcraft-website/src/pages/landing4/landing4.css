@@ -1,0 +1,104 @@
+/* Landing4 (brutalist landing) scoped styles. Every class is .l4- prefixed:
+   Vite bundles CSS globally, so unprefixed names would leak into other pages. */
+
+.l4-root {
+  --l4-bg: #0a0a0b;
+  --l4-ink: #f2f1ec;
+  --l4-line: rgba(242, 241, 236, 0.16);
+  --l4-muted: rgba(242, 241, 236, 0.55);
+  background-color: var(--l4-bg);
+  color: var(--l4-ink);
+}
+
+/* Chapter-aware helpers: everything that must recolor when the background
+   scrubs between ink and paper reads these vars instead of fixed colors. */
+.l4-line {
+  border-color: var(--l4-line);
+}
+
+.l4-muted {
+  color: var(--l4-muted);
+}
+
+/* Outlined display type (e.g. "ARTISTS", "ONE CANVAS.") */
+.l4-stroke {
+  -webkit-text-stroke: 2px var(--l4-ink);
+  color: transparent;
+}
+
+@media (max-width: 640px) {
+  .l4-stroke {
+    -webkit-text-stroke-width: 1.2px;
+  }
+}
+
+/* Overflow mask for line-by-line headline reveals. The inner span gets
+   translated by GSAP; padding absorbs Bricolage's descender overhang. */
+.l4-line-mask {
+  overflow: hidden;
+  display: block;
+  padding-bottom: 0.08em;
+  margin-bottom: -0.08em;
+}
+
+.l4-line-mask > span {
+  display: block;
+  will-change: transform;
+}
+
+/* Marquee ticker: two identical copies of the content; -50% = seamless loop.
+   Reuses the marquee-track keyframes defined in src/styles.css. */
+.l4-ticker-track {
+  display: flex;
+  width: max-content;
+  animation: marquee-track 28s linear infinite;
+}
+
+/* Plus-sign grid intersection markers */
+.l4-plus {
+  position: absolute;
+  width: 13px;
+  height: 13px;
+  pointer-events: none;
+}
+
+.l4-plus::before,
+.l4-plus::after {
+  content: "";
+  position: absolute;
+  background: var(--l4-ink);
+  opacity: 0.5;
+}
+
+.l4-plus::before {
+  left: 6px;
+  top: 0;
+  width: 1px;
+  height: 13px;
+}
+
+.l4-plus::after {
+  left: 0;
+  top: 6px;
+  width: 13px;
+  height: 1px;
+}
+
+/* Feature index rows: the + marker rotates to × when the row is active. */
+.l4-index-marker {
+  transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.l4-row-active .l4-index-marker {
+  transform: rotate(45deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .l4-ticker-track {
+    animation: none;
+  }
+
+  .l4-index-marker {
+    transition: none;
+  }
+}

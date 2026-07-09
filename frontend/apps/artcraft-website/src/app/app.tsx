@@ -17,6 +17,7 @@ import CreateVideo from "../pages/create-video";
 import CreateVFX from "../pages/create-vfx";
 //import Landing2 from "../pages/landing2";
 import Landing3 from "../pages/landing3";
+import Landing4 from "../pages/landing4";
 import LandingSD2 from "../pages/landing-sd2";
 import LandingSD25 from "../pages/landing-sd25";
 import TutorialsPage from "../pages/tutorials";
@@ -59,14 +60,19 @@ function appOrWebapp(localElement: ReactNode, webappPath: string): ReactNode {
 }
 
 export function App() {
+  // Landing4 renders its own scoped navbar/footer; hide the global chrome.
+  const { pathname } = useLocation();
+  const hideGlobalChrome = pathname === "/landing4";
+
   return (
     <div className="relative">
       <ScrollToTop />
-      <Navbar />
+      {!hideGlobalChrome && <Navbar />}
 
       <Routes>
         <Route path="/" element={<Landing3 />} />
         <Route path="/landing3" element={<Landing3 />} />
+        <Route path="/landing4" element={<Landing4 />} />
         <Route path="/seedance-2" element={<LandingSD2 />} />
         <Route path="/seedance2-5" element={<LandingSD25 />} />
         <Route path="/download" element={<Download />} />

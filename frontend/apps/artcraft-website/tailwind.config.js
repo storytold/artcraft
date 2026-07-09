@@ -29,6 +29,15 @@ module.exports = {
           "Arial",
           "sans-serif",
         ],
+        // Landing4 (brutalist landing) type system
+        "brut-display": [
+          "Bricolage Grotesque",
+          "Outfit",
+          "system-ui",
+          "sans-serif",
+        ],
+        "brut-body": ["Inter", "system-ui", "sans-serif"],
+        "brut-mono": ["Space Mono", "ui-monospace", "monospace"],
       },
     },
     colors: {
@@ -90,6 +99,18 @@ module.exports = {
         950: "#3E3E41",
       },
       "base-fg": "rgb(255 255 255 / <alpha-value>)",
+      // Landing4 (brutalist landing) palette
+      ink: {
+        DEFAULT: "#0A0A0B",
+        800: "#141416",
+        700: "#1C1C1F",
+      },
+      paper: {
+        DEFAULT: "#F2F1EC",
+        200: "#E8E6DE",
+      },
+      flare: "#00E5FF",
+      ember: "#F0563A",
       ui: {
         // Aligned with artcraft app's theme-gray (frontend/apps/artcraft/app/src/styles/base.css)
         background: "#242424",
