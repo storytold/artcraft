@@ -299,13 +299,8 @@ pub async fn upload_image_media_file_handler(
     UploadType::Filesystem
   };
 
-  let media_file_type = match mimetype.as_str() {
-    "image/jpeg" => MediaFileType::Jpg,
-    "image/png"  => MediaFileType::Png,
-    "image/gif"  => MediaFileType::Gif,
-    "image/webp" => MediaFileType::Image, // Fallback
-    _            => MediaFileType::Image, // fallback
-  };
+  let media_file_type = MediaFileType::try_from_mime_type(&mimetype)
+      .unwrap_or(MediaFileType::Image); // Coarse fallback for unrecognized mimes
 
   let (token, record_id) = insert_media_file_from_file_upload(InsertMediaFileFromUploadArgs {
     maybe_media_class: Some(MediaFileClass::Image),

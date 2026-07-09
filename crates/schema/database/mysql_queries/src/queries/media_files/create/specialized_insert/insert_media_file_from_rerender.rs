@@ -66,7 +66,9 @@ pub async fn insert_media_file_from_rerender(
     const ORIGIN_CATEGORY : MediaFileOriginCategory = MediaFileOriginCategory::Inference;
     const ORIGIN_PRODUCT_CATEGORY : MediaFileOriginProductCategory = MediaFileOriginProductCategory::VideoFilter;
     const ORIGIN_MODEL_TYPE : MediaFileOriginModelType = MediaFileOriginModelType::Rerender;
-    const MEDIA_TYPE : MediaFileType = MediaFileType::Video;
+    let media_type = args.maybe_mime_type
+        .and_then(MediaFileType::try_from_mime_type)
+        .unwrap_or(MediaFileType::Video); // Coarse fallback for unrecognized mimes
 
     let record_id = {
         let query_result = sqlx::query!(
@@ -109,7 +111,7 @@ SET
       ORIGIN_PRODUCT_CATEGORY.to_str(),
       ORIGIN_MODEL_TYPE.to_str(),
 
-      MEDIA_TYPE.to_str(),
+      media_type.to_str(),
       args.maybe_mime_type,
       args.file_size_bytes,
 

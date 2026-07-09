@@ -90,6 +90,36 @@ pub enum MediaFileType {
 
   /// Mp3 audio
   Mp3,
+  
+  // ========================= LESS SUPPORT FOR THE FILES BELOW THIS LINE ========================= //
+
+  /// Webp images
+  Webp,
+
+  /// Webm videos
+  Webm,
+
+  /// QuickTime videos
+  Mov,
+
+  /// Opus audio
+  Opus,
+
+  /// Ogg audio
+  Ogg,
+
+  /// AAC audio
+  Aac,
+
+  /// M4a audio
+  M4a,
+
+  /// FLAC audio
+  Flac,
+
+  /// Generic JSON documents (eg. internal project files).
+  /// NB: 3D scene files predate this and use `scene_json` instead.
+  Json,
 }
 
 // TODO(bt, 2022-12-21): This desperately needs MySQL integration tests!
@@ -110,6 +140,11 @@ impl MediaFileType {
   pub fn is_jpg_or_png_or_legacy_image(&self) -> bool {
     matches!(self, Self::Jpg | Self::Png | Self::Image)
   }
+
+  /// Any image format, including the legacy coarse `Image` type.
+  pub fn is_image(&self) -> bool {
+    matches!(self, Self::Image | Self::Jpg | Self::Png | Self::Gif | Self::Webp)
+  }
   
   /// Returns the `MediaFileType` if the mime type matches one of the known types.
   /// This is not exhaustive.
@@ -119,15 +154,29 @@ impl MediaFileType {
     match mime_type {
       "image/jpeg" => Some(Self::Jpg),
       "image/png" => Some(Self::Png),
+      "image/gif" => Some(Self::Gif),
+      "image/webp" => Some(Self::Webp),
       "video/mp4" => Some(Self::Mp4),
+      "video/webm" => Some(Self::Webm),
+      "video/quicktime" => Some(Self::Mov),
+      "audio/wav" => Some(Self::Wav),
+      "audio/x-wav" => Some(Self::Wav),
+      "audio/wave" => Some(Self::Wav),
+      "audio/mpeg" => Some(Self::Mp3),
+      "audio/mp3" => Some(Self::Mp3),
+      "audio/opus" => Some(Self::Opus),
+      "audio/ogg" => Some(Self::Ogg),
+      "audio/aac" => Some(Self::Aac),
+      "audio/m4a" => Some(Self::M4a),
+      "audio/x-m4a" => Some(Self::M4a),
+      "audio/mp4" => Some(Self::M4a),
+      "audio/flac" => Some(Self::Flac),
+      "audio/x-flac" => Some(Self::Flac),
       "model/gltf-binary" => Some(Self::Glb),
+      "model/gltf+json" => Some(Self::Gltf),
       "model/fbx" => Some(Self::Fbx),
       "application/fbx" => Some(Self::Fbx),
       "model/obj" => Some(Self::Obj),
-      //"audio/wav" => Some(Self::Wav), // NB: Not sure if this is correct
-      //"audio/mpeg" => Some(Self::Mp3), // NB: Not sure if this is correct
-      //"image/gif" => Some(Self::Gif), // NB: Not sure if this is correct
-      //"model/gltf+json" => Some(Self::Gltf), // NB: Not sure if this is correct
       _ => None,
     }
   }
@@ -155,6 +204,15 @@ impl MediaFileType {
       Self::Mp4 => "mp4",
       Self::Wav => "wav",
       Self::Mp3 => "mp3",
+      Self::Webp => "webp",
+      Self::Webm => "webm",
+      Self::Mov => "mov",
+      Self::Opus => "opus",
+      Self::Ogg => "ogg",
+      Self::Aac => "aac",
+      Self::M4a => "m4a",
+      Self::Flac => "flac",
+      Self::Json => "json",
     }
   }
 
@@ -181,6 +239,15 @@ impl MediaFileType {
       "mp4" => Ok(Self::Mp4),
       "wav" => Ok(Self::Wav),
       "mp3" => Ok(Self::Mp3),
+      "webp" => Ok(Self::Webp),
+      "webm" => Ok(Self::Webm),
+      "mov" => Ok(Self::Mov),
+      "opus" => Ok(Self::Opus),
+      "ogg" => Ok(Self::Ogg),
+      "aac" => Ok(Self::Aac),
+      "m4a" => Ok(Self::M4a),
+      "flac" => Ok(Self::Flac),
+      "json" => Ok(Self::Json),
       _ => Err(format!("invalid value: {:?}", value)),
     }
   }
@@ -210,6 +277,15 @@ impl MediaFileType {
       Self::Mp4,
       Self::Wav,
       Self::Mp3,
+      Self::Webp,
+      Self::Webm,
+      Self::Mov,
+      Self::Opus,
+      Self::Ogg,
+      Self::Aac,
+      Self::M4a,
+      Self::Flac,
+      Self::Json,
     ])
   }
 }
@@ -268,6 +344,15 @@ mod tests {
       assert_serialization(MediaFileType::Mp4, "mp4");
       assert_serialization(MediaFileType::Wav, "wav");
       assert_serialization(MediaFileType::Mp3, "mp3");
+      assert_serialization(MediaFileType::Webp, "webp");
+      assert_serialization(MediaFileType::Webm, "webm");
+      assert_serialization(MediaFileType::Mov, "mov");
+      assert_serialization(MediaFileType::Opus, "opus");
+      assert_serialization(MediaFileType::Ogg, "ogg");
+      assert_serialization(MediaFileType::Aac, "aac");
+      assert_serialization(MediaFileType::M4a, "m4a");
+      assert_serialization(MediaFileType::Flac, "flac");
+      assert_serialization(MediaFileType::Json, "json");
     }
   }
 
@@ -296,6 +381,15 @@ mod tests {
       assert_eq!(MediaFileType::Mp4.to_str(), "mp4");
       assert_eq!(MediaFileType::Wav.to_str(), "wav");
       assert_eq!(MediaFileType::Mp3.to_str(), "mp3");
+      assert_eq!(MediaFileType::Webp.to_str(), "webp");
+      assert_eq!(MediaFileType::Webm.to_str(), "webm");
+      assert_eq!(MediaFileType::Mov.to_str(), "mov");
+      assert_eq!(MediaFileType::Opus.to_str(), "opus");
+      assert_eq!(MediaFileType::Ogg.to_str(), "ogg");
+      assert_eq!(MediaFileType::Aac.to_str(), "aac");
+      assert_eq!(MediaFileType::M4a.to_str(), "m4a");
+      assert_eq!(MediaFileType::Flac.to_str(), "flac");
+      assert_eq!(MediaFileType::Json.to_str(), "json");
     }
 
     #[test]
@@ -320,6 +414,15 @@ mod tests {
       assert_eq!(MediaFileType::from_str("mp4").unwrap(), MediaFileType::Mp4);
       assert_eq!(MediaFileType::from_str("wav").unwrap(), MediaFileType::Wav);
       assert_eq!(MediaFileType::from_str("mp3").unwrap(), MediaFileType::Mp3);
+      assert_eq!(MediaFileType::from_str("webp").unwrap(), MediaFileType::Webp);
+      assert_eq!(MediaFileType::from_str("webm").unwrap(), MediaFileType::Webm);
+      assert_eq!(MediaFileType::from_str("mov").unwrap(), MediaFileType::Mov);
+      assert_eq!(MediaFileType::from_str("opus").unwrap(), MediaFileType::Opus);
+      assert_eq!(MediaFileType::from_str("ogg").unwrap(), MediaFileType::Ogg);
+      assert_eq!(MediaFileType::from_str("aac").unwrap(), MediaFileType::Aac);
+      assert_eq!(MediaFileType::from_str("m4a").unwrap(), MediaFileType::M4a);
+      assert_eq!(MediaFileType::from_str("flac").unwrap(), MediaFileType::Flac);
+      assert_eq!(MediaFileType::from_str("json").unwrap(), MediaFileType::Json);
       assert!(MediaFileType::from_str("foo").is_err());
     }
   }
@@ -330,7 +433,7 @@ mod tests {
     #[test]
     fn all_variants() {
       let mut variants = MediaFileType::all_variants();
-      assert_eq!(variants.len(), 21);
+      assert_eq!(variants.len(), 30);
       assert_eq!(variants.pop_first(), Some(MediaFileType::Audio));
       assert_eq!(variants.pop_first(), Some(MediaFileType::Image));
       assert_eq!(variants.pop_first(), Some(MediaFileType::Video));
@@ -352,6 +455,15 @@ mod tests {
       assert_eq!(variants.pop_first(), Some(MediaFileType::Mp4));
       assert_eq!(variants.pop_first(), Some(MediaFileType::Wav));
       assert_eq!(variants.pop_first(), Some(MediaFileType::Mp3));
+      assert_eq!(variants.pop_first(), Some(MediaFileType::Webp));
+      assert_eq!(variants.pop_first(), Some(MediaFileType::Webm));
+      assert_eq!(variants.pop_first(), Some(MediaFileType::Mov));
+      assert_eq!(variants.pop_first(), Some(MediaFileType::Opus));
+      assert_eq!(variants.pop_first(), Some(MediaFileType::Ogg));
+      assert_eq!(variants.pop_first(), Some(MediaFileType::Aac));
+      assert_eq!(variants.pop_first(), Some(MediaFileType::M4a));
+      assert_eq!(variants.pop_first(), Some(MediaFileType::Flac));
+      assert_eq!(variants.pop_first(), Some(MediaFileType::Json));
       assert_eq!(variants.pop_first(), None);
     }
   }

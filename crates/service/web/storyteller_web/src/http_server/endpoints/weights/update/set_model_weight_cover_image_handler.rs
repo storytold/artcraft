@@ -134,9 +134,9 @@ pub async fn set_model_weight_cover_image_handler(
       //let can_use_image = media_file.creator_set_visibility == Visibility::Public
       //    && media_file.media_type == MediaFileType::Image;
 
-      let can_use_image = media_file.media_type == MediaFileType::Image;
+      let can_use_image = media_file.media_type.is_image();
 
-      if  !can_use_image {
+      if !can_use_image {
         return Err(CommonWebError::BadInputWithSimpleMessage("Invalid media file token.".to_string()));
       }
 

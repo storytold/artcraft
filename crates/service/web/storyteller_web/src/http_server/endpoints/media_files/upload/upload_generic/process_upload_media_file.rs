@@ -204,26 +204,9 @@ pub async fn process_upload_media_file(
     //  do not have any open issues filed. They may simply be too old:
     //  - .wma (audio/x-ms-wma)
     //  - .avi (video/x-msvideo)
-    media_file_type = match mimetype {
-      // Audio
-      "audio/aac" /* .aac */ => Some(MediaFileType::Audio),
-      "audio/m4a" /* .m4a */ => Some(MediaFileType::Audio),
-      "audio/mpeg" /* .mp3 */ => Some(MediaFileType::Audio),
-      "audio/ogg" /* .ogg */ => Some(MediaFileType::Audio),
-      "audio/opus" /* .opus */ => Some(MediaFileType::Audio),
-      "audio/x-flac" /* .flac */ => Some(MediaFileType::Audio),
-      "audio/x-wav" /* .wav */ => Some(MediaFileType::Audio),
-      // Image — `webp` has no dedicated variant yet
-      "image/gif" /* .gif */ => Some(MediaFileType::Gif),
-      "image/jpeg" /* .jpg */ => Some(MediaFileType::Jpg),
-      "image/png" /* .png */ => Some(MediaFileType::Png),
-      "image/webp" /* .webp */ => Some(MediaFileType::Image),
-      // Video
-      "video/mp4" /* .mp4 */ => Some(MediaFileType::Video),
-      "video/quicktime" /* .mov */ => Some(MediaFileType::Video),
-      "video/webm" /* .webm */ => Some(MediaFileType::Video),
-      _ => None,
-    };
+    // NB: mimetypes are gated by the `allowed_mimetypes` check above; this only
+    // maps the already-permitted set to concrete media types.
+    media_file_type = MediaFileType::try_from_mime_type(mimetype);
 
     let do_audio_decode = match mimetype {
       // TODO: Revisit when Safari can send us this metadata consistently
@@ -332,9 +315,18 @@ pub async fn process_upload_media_file(
     MediaFileType::Jpg => MediaFileClass::Image,
     MediaFileType::Png => MediaFileClass::Image,
     MediaFileType::Gif => MediaFileClass::Image,
+    MediaFileType::Webp => MediaFileClass::Image,
     MediaFileType::Mp4 => MediaFileClass::Video,
+    MediaFileType::Webm => MediaFileClass::Video,
+    MediaFileType::Mov => MediaFileClass::Video,
     MediaFileType::Wav => MediaFileClass::Audio,
     MediaFileType::Mp3 => MediaFileClass::Audio,
+    MediaFileType::Opus => MediaFileClass::Audio,
+    MediaFileType::Ogg => MediaFileClass::Audio,
+    MediaFileType::Aac => MediaFileClass::Audio,
+    MediaFileType::M4a => MediaFileClass::Audio,
+    MediaFileType::Flac => MediaFileClass::Audio,
+    MediaFileType::Json => MediaFileClass::Unknown,
   };
 
   let upload_type = match upload_media_request.media_source {

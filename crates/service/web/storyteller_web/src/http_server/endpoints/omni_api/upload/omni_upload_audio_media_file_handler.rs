@@ -277,7 +277,8 @@ pub async fn omni_upload_audio_media_file_handler(
 
   let (token, record_id) = insert_media_file_from_file_upload(InsertMediaFileFromUploadArgs {
     maybe_media_class: Some(MediaFileClass::Audio),
-    media_file_type: MediaFileType::Audio,
+    media_file_type: MediaFileType::try_from_mime_type(&mimetype)
+        .unwrap_or(MediaFileType::Audio), // Coarse fallback for unrecognized mimes
     maybe_creator_user_token: maybe_user_token,
     // NB: AVT (anonymous visitor) tokens are a web-session concept; API-key callers have none.
     maybe_creator_anonymous_visitor_token: None,
