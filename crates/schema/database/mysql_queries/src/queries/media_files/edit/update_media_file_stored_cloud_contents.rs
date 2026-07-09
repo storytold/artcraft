@@ -1,5 +1,7 @@
 use sqlx::MySqlPool;
 
+use enums::by_table::media_files::media_file_class::MediaFileClass;
+use enums::by_table::media_files::media_file_project_type::MediaFileProjectType;
 use errors::AnyhowResult;
 use tokens::tokens::media_files::MediaFileToken;
 
@@ -13,6 +15,13 @@ use tokens::tokens::media_files::MediaFileToken;
 
 pub struct UpdateArgs<'a> {
   pub media_file_token: &'a MediaFileToken,
+
+  /// The class the record should hold after the update. Also backfills legacy
+  /// records that were written before the current classification scheme.
+  pub media_class: MediaFileClass,
+
+  /// Only set for internal Artcraft project documents (`media_class = 'project'`).
+  pub maybe_project_type: Option<MediaFileProjectType>,
 
   pub public_bucket_directory_hash: &'a str,
   pub maybe_public_bucket_prefix: Option<&'a str>,
@@ -37,6 +46,9 @@ pub async fn updated_media_file_stored_cloud_contents(args: UpdateArgs<'_>) -> A
         r#"
         UPDATE media_files
         SET
+            media_class = ?,
+            maybe_project_type = ?,
+
             public_bucket_directory_hash = ?,
             maybe_public_bucket_prefix = ?,
             maybe_public_bucket_extension = ?,
@@ -48,6 +60,9 @@ pub async fn updated_media_file_stored_cloud_contents(args: UpdateArgs<'_>) -> A
         WHERE token = ?
         LIMIT 1
         "#,
+        args.media_class.to_str(),
+        args.maybe_project_type.map(|project_type| project_type.to_str()),
+
         args.public_bucket_directory_hash,
         args.maybe_public_bucket_prefix,
         args.maybe_public_bucket_extension,

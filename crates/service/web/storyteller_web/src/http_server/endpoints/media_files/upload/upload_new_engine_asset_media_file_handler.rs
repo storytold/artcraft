@@ -210,6 +210,7 @@ pub async fn upload_new_engine_asset_media_file_handler(
   // TODO(bt, 2024-02-22): This should be a transaction.
   let (token, record_id) = insert_media_file_from_file_upload(InsertMediaFileFromUploadArgs {
     maybe_media_class: Some(file_info.media_class),
+    maybe_project_type: None,
     media_file_type: file_info.media_type,
     maybe_creator_user_token: maybe_user_token,
     maybe_creator_anonymous_visitor_token: maybe_avt_token.as_ref(),
