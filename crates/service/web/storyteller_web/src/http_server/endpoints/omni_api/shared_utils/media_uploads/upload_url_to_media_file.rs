@@ -202,15 +202,12 @@ impl MediaUploadKind {
   }
 
   fn media_file_type(&self, mimetype: &str) -> MediaFileType {
-    match self {
-      MediaUploadKind::Image => match mimetype {
-        "image/jpeg" => MediaFileType::Jpg,
-        "image/png" => MediaFileType::Png,
-        "image/gif" => MediaFileType::Gif,
-        _ => MediaFileType::Image,
-      },
-      MediaUploadKind::Video => MediaFileType::Video,
-      MediaUploadKind::Audio => MediaFileType::Audio,
-    }
+    MediaFileType::try_from_mime_type(mimetype)
+        .unwrap_or(match self {
+          // Coarse fallbacks for unrecognized mimes
+          MediaUploadKind::Image => MediaFileType::Image,
+          MediaUploadKind::Video => MediaFileType::Video,
+          MediaUploadKind::Audio => MediaFileType::Audio,
+        })
   }
 }

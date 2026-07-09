@@ -8,7 +8,6 @@ use enums::by_table::media_files::media_file_class::MediaFileClass;
 use enums::by_table::media_files::media_file_engine_category::MediaFileEngineCategory;
 use enums::by_table::media_files::media_file_origin_category::MediaFileOriginCategory;
 use enums::by_table::media_files::media_file_origin_product_category::MediaFileOriginProductCategory;
-use enums::by_table::media_files::media_file_subtype::MediaFileSubtype;
 use enums::by_table::media_files::media_file_type::MediaFileType;
 use enums::common::visibility::Visibility;
 use errors::AnyhowResult;
@@ -42,8 +41,6 @@ pub struct UpsertMediaFileFromUploadArgs<'a> {
   pub creator_set_visibility: Visibility,
 
   pub upload_type: UploadType,
-
-  pub maybe_media_subtype: Option<MediaFileSubtype>,
 
   pub maybe_mime_type: Option<&'a str>,
   pub file_size_bytes: u64,
@@ -115,7 +112,6 @@ SET
   maybe_engine_category = ?,
   maybe_animation_type = ?,
 
-  maybe_media_subtype = ?,
   maybe_mime_type = ?,
   file_size_bytes = ?,
 
@@ -150,7 +146,6 @@ ON DUPLICATE KEY UPDATE
   maybe_engine_category = ?,
   maybe_animation_type = ?,
 
-  maybe_media_subtype = ?,
   maybe_mime_type = ?,
   file_size_bytes = ?,
 
@@ -185,8 +180,6 @@ ON DUPLICATE KEY UPDATE
       args.maybe_engine_category.map(|s| s.to_str()),
       args.maybe_animation_type.map(|s| s.to_str()),
 
-      args.maybe_media_subtype.map(|s| s.to_str()),
-      
       args.maybe_mime_type,
       args.file_size_bytes,
 
@@ -215,8 +208,6 @@ ON DUPLICATE KEY UPDATE
 
       args.maybe_engine_category.map(|s| s.to_str()),
       args.maybe_animation_type.map(|s| s.to_str()),
-
-      args.maybe_media_subtype.map(|s| s.to_str()),
 
       args.maybe_mime_type,
       args.file_size_bytes,

@@ -389,11 +389,7 @@ fn validate_and_process_form(
     }
   };
 
-  let media_class = match media_type {
-    MediaFileType::Jpg | MediaFileType::Png | MediaFileType::Gif => MediaFileClass::Image,
-    MediaFileType::Mp4 => MediaFileClass::Video,
-    _ => MediaFileClass::Dimensional,
-  };
+  let media_class = media_type.to_media_class();
 
   Ok(FileInfo {
     media_class,

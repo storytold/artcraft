@@ -73,14 +73,14 @@ pub async fn main() -> AnyhowResult<()> {
   match mimetype {
     Some("audio/wav") |
     Some("audio/x-wav") => {
-      media_file_type = MediaFileType::Video;
+      media_file_type = MediaFileType::Wav;
       maybe_mime_type = Some("audio/wav");
       maybe_public_bucket_prefix = Some("dev_upload_");
       maybe_public_bucket_extension = Some(".wav");
 
     }
     Some("video/mp4") => {
-      media_file_type = MediaFileType::Video;
+      media_file_type = MediaFileType::Mp4;
       maybe_mime_type = mimetype;
       maybe_public_bucket_prefix = Some("dev_upload_");
       maybe_public_bucket_extension = Some(".mp4");

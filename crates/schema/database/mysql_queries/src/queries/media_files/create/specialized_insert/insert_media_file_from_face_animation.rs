@@ -68,6 +68,10 @@ pub async fn insert_media_file_from_face_animation(
   const ORIGIN_PRODUCT_CATEGORY : MediaFileOriginProductCategory = MediaFileOriginProductCategory::FaceAnimator;
   const ORIGIN_MODEL_TYPE : MediaFileOriginModelType = MediaFileOriginModelType::SadTalker;
 
+  let media_type = args.maybe_mime_type
+    .and_then(MediaFileType::try_from_mime_type)
+    .unwrap_or(MediaFileType::Video); // Coarse fallback for unrecognized mimes
+
   let record_id = {
     let query_result = sqlx::query!(
         r#"
@@ -108,7 +112,7 @@ SET
       result_token.as_str(),
 
       MediaFileClass::Video.to_str(),
-      MediaFileType::Video.to_str(),
+      media_type.to_str(),
 
       ORIGIN_CATEGORY.to_str(),
       ORIGIN_PRODUCT_CATEGORY.to_str(),

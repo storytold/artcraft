@@ -70,7 +70,9 @@ pub async fn insert_media_file_from_zero_shot(
     // Since fill this out apart of the funtion this seems like the only thing to change.
     const ORIGIN_CATEGORY : MediaFileOriginCategory = MediaFileOriginCategory::Inference;
     const ORIGIN_PRODUCT_CATEGORY : MediaFileOriginProductCategory = MediaFileOriginProductCategory::ZeroShotVoice;
-    const MEDIA_TYPE : MediaFileType = MediaFileType::Audio;
+    let media_type = args.maybe_mime_type
+      .and_then(MediaFileType::try_from_mime_type)
+      .unwrap_or(MediaFileType::Audio); // Coarse fallback for unrecognized mimes
 
     let record_id = {
         let query_result = sqlx::query!(
@@ -118,7 +120,7 @@ pub async fn insert_media_file_from_zero_shot(
 
           args.job.maybe_raw_inference_text,
 
-          MEDIA_TYPE.to_str(),
+          media_type.to_str(),
           args.maybe_mime_type,
           args.file_size_bytes,
     

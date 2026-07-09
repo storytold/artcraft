@@ -236,13 +236,11 @@ pub async fn upload_snapshot_media_file_handler(
         MediaFileUploadError::ServerError
       })?;
 
-  let media_file_type = match mimetype.as_str() {
-    "image/jpeg" => MediaFileType::Jpg,
-    "image/png"  => MediaFileType::Png,
-    "image/gif"  => MediaFileType::Gif,
-    "image/webp" => MediaFileType::Image, // Fallback
-    _            => MediaFileType::Image, // Fallback
-  };
+  let maybe_upload_filename = form.snapshot.file_name.as_deref();
+
+  let media_file_type = MediaFileType::try_from_mime_type(&mimetype)
+      .or_else(|| maybe_upload_filename.and_then(MediaFileType::try_from_filename_or_extension))
+      .unwrap_or(MediaFileType::Image); // Coarse fallback for unrecognized files
 
   let (token, record_id) = insert_media_file_from_file_upload(InsertMediaFileFromUploadArgs {
     maybe_media_class: Some(MediaFileClass::Image),

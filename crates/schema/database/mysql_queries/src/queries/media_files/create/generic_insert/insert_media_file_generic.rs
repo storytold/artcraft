@@ -117,8 +117,6 @@ pub async fn insert_media_file_generic(
     let mut maybe_creator_file_synthetic_id : Option<u64> = None;
     let mut maybe_creator_category_synthetic_id : Option<u64> = None;
 
-    let is_batch_generated = args.maybe_batch_token.is_some();
-
     let mut maybe_generation_provider_str = None;
     let mut is_intermediate_system_file = args.is_intermediate_system_file;
     let mut is_user_upload = args.is_user_upload;
@@ -172,7 +170,6 @@ pub async fn insert_media_file_generic(
             maybe_origin_model_token = ?, 
             maybe_origin_filename = ?,
 
-            is_batch_generated = ?,
             maybe_batch_token = ?,
 
             maybe_mime_type = ?,
@@ -232,7 +229,6 @@ pub async fn insert_media_file_generic(
         args.maybe_origin_model_token.map(|t| t.to_string()),
         args.maybe_origin_filename,
 
-        is_batch_generated,
         args.maybe_batch_token.map(|t| t.as_str()),
 
         args.maybe_mime_type,

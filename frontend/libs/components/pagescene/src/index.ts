@@ -50,7 +50,6 @@ export {
   FilterMediaClasses,
   FilterMediaType,
   MediaFileType,
-  MediaFileSubtype,
   MediaFileClass,
   ToastTypes,
   WeightCategory,

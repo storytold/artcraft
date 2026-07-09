@@ -204,26 +204,11 @@ pub async fn process_upload_media_file(
     //  do not have any open issues filed. They may simply be too old:
     //  - .wma (audio/x-ms-wma)
     //  - .avi (video/x-msvideo)
-    media_file_type = match mimetype {
-      // Audio
-      "audio/aac" /* .aac */ => Some(MediaFileType::Audio),
-      "audio/m4a" /* .m4a */ => Some(MediaFileType::Audio),
-      "audio/mpeg" /* .mp3 */ => Some(MediaFileType::Audio),
-      "audio/ogg" /* .ogg */ => Some(MediaFileType::Audio),
-      "audio/opus" /* .opus */ => Some(MediaFileType::Audio),
-      "audio/x-flac" /* .flac */ => Some(MediaFileType::Audio),
-      "audio/x-wav" /* .wav */ => Some(MediaFileType::Audio),
-      // Image — `webp` has no dedicated variant yet
-      "image/gif" /* .gif */ => Some(MediaFileType::Gif),
-      "image/jpeg" /* .jpg */ => Some(MediaFileType::Jpg),
-      "image/png" /* .png */ => Some(MediaFileType::Png),
-      "image/webp" /* .webp */ => Some(MediaFileType::Image),
-      // Video
-      "video/mp4" /* .mp4 */ => Some(MediaFileType::Video),
-      "video/quicktime" /* .mov */ => Some(MediaFileType::Video),
-      "video/webm" /* .webm */ => Some(MediaFileType::Video),
-      _ => None,
-    };
+    // NB: mimetypes are gated by the `allowed_mimetypes` check above; this only
+    // maps the already-permitted set to concrete media types.
+    let maybe_upload_filename = upload_media_request.file_name.as_deref();
+    media_file_type = MediaFileType::try_from_mime_type(mimetype)
+        .or_else(|| maybe_upload_filename.and_then(MediaFileType::try_from_filename_or_extension));
 
     let do_audio_decode = match mimetype {
       // TODO: Revisit when Safari can send us this metadata consistently
@@ -313,29 +298,7 @@ pub async fn process_upload_media_file(
     },
   };
 
-  let media_file_class = match media_file_type {
-    MediaFileType::Audio => MediaFileClass::Audio,
-    MediaFileType::Image => MediaFileClass::Image,
-    MediaFileType::Video => MediaFileClass::Video,
-    MediaFileType::Bvh => MediaFileClass::Dimensional,
-    MediaFileType::Fbx => MediaFileClass::Dimensional,
-    MediaFileType::Obj => MediaFileClass::Dimensional,
-    MediaFileType::Glb => MediaFileClass::Dimensional,
-    MediaFileType::Gltf => MediaFileClass::Dimensional,
-    MediaFileType::Spz => MediaFileClass::Dimensional,
-    MediaFileType::SceneRon => MediaFileClass::Dimensional,
-    MediaFileType::SceneJson => MediaFileClass::Dimensional,
-    MediaFileType::Pmd => MediaFileClass::Dimensional,
-    MediaFileType::Vmd => MediaFileClass::Dimensional,
-    MediaFileType::Csv => MediaFileClass::Dimensional,
-    MediaFileType::Pmx => MediaFileClass::Dimensional,
-    MediaFileType::Jpg => MediaFileClass::Image,
-    MediaFileType::Png => MediaFileClass::Image,
-    MediaFileType::Gif => MediaFileClass::Image,
-    MediaFileType::Mp4 => MediaFileClass::Video,
-    MediaFileType::Wav => MediaFileClass::Audio,
-    MediaFileType::Mp3 => MediaFileClass::Audio,
-  };
+  let media_file_class = media_file_type.to_media_class();
 
   let upload_type = match upload_media_request.media_source {
     MediaFileUploadSource::Unknown => UploadType::Filesystem,

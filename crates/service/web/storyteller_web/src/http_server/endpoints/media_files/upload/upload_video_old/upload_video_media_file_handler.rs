@@ -221,7 +221,8 @@ pub async fn upload_video_media_file_handler(
   // TODO(bt, 2024-02-22): This should be a transaction.
   let (token, record_id) = insert_media_file_from_file_upload(InsertMediaFileFromUploadArgs {
     maybe_media_class: Some(MediaFileClass::Video),
-    media_file_type: MediaFileType::Video,
+    media_file_type: MediaFileType::try_from_mime_type(mimetype)
+        .unwrap_or(MediaFileType::Video), // Coarse fallback for unrecognized mimes
     maybe_creator_user_token: maybe_user_token,
     maybe_creator_anonymous_visitor_token: maybe_avt_token.as_ref(),
     creator_ip_address: &ip_address,
