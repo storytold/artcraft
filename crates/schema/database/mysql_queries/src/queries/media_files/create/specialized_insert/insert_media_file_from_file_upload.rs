@@ -8,6 +8,7 @@ use enums::by_table::media_files::media_file_class::MediaFileClass;
 use enums::by_table::media_files::media_file_engine_category::MediaFileEngineCategory;
 use enums::by_table::media_files::media_file_origin_category::MediaFileOriginCategory;
 use enums::by_table::media_files::media_file_origin_product_category::MediaFileOriginProductCategory;
+use enums::by_table::media_files::media_file_project_type::MediaFileProjectType;
 use enums::by_table::media_files::media_file_type::MediaFileType;
 use enums::common::generation_provider::GenerationProvider;
 use enums::common::visibility::Visibility;
@@ -32,6 +33,9 @@ pub struct InsertMediaFileFromUploadArgs<'a> {
 
   pub media_file_type: MediaFileType,
   pub maybe_media_class: Option<MediaFileClass>,
+
+  /// Only set for internal Artcraft project documents (`media_class = 'project'`).
+  pub maybe_project_type: Option<MediaFileProjectType>,
 
   pub upload_type: UploadType,
 
@@ -126,6 +130,7 @@ SET
 
   media_class = ?,
   media_type = ?,
+  maybe_project_type = ?,
 
   origin_category = ?,
   origin_product_category = ?,
@@ -174,6 +179,8 @@ SET
         .unwrap_or_else(|| MediaFileClass::Unknown.to_str()),
 
       args.media_file_type.to_str(),
+
+      args.maybe_project_type.map(|project_type| project_type.to_str()),
 
       origin_category.to_str(),
       ORIGIN_PRODUCT_CATEGORY.to_str(),

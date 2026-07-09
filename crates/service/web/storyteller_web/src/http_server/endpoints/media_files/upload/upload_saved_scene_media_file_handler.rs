@@ -11,6 +11,8 @@ use log::{error, info, warn};
 use utoipa::ToSchema;
 
 use bucket_paths::legacy::typified_paths::public::media_files::bucket_file_path::MediaFileBucketPath;
+use enums::by_table::media_files::media_file_class::MediaFileClass;
+use enums::by_table::media_files::media_file_project_type::MediaFileProjectType;
 use enums::common::visibility::Visibility;
 use hashing::sha256::sha256_hash_bytes::sha256_hash_bytes;
 use http_server_common::request::get_request_ip::get_request_ip;
@@ -243,6 +245,8 @@ pub async fn upload_saved_scene_media_file_handler(
 
   updated_media_file_stored_cloud_contents(UpdateArgs {
     media_file_token: &path.token,
+    media_class: MediaFileClass::Project,
+    maybe_project_type: Some(MediaFileProjectType::Scene3d),
     public_bucket_directory_hash: public_upload_path.get_object_hash(),
     maybe_public_bucket_prefix: PREFIX,
     maybe_public_bucket_extension: Some(SUFFIX),

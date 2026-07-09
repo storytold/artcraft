@@ -257,6 +257,7 @@ pub async fn upload_pmx_media_file_handler(
   // TODO(bt, 2024-02-22): This should be a transaction.
   let (token, record_id) = insert_media_file_from_file_upload(InsertMediaFileFromUploadArgs {
     maybe_media_class: Some(MediaFileClass::Dimensional),
+    maybe_project_type: None,
     media_file_type: MediaFileType::Pmx,
     maybe_creator_user_token: Some(user_session.get_user_token()),
     maybe_creator_anonymous_visitor_token: maybe_avt_token.as_ref(),
