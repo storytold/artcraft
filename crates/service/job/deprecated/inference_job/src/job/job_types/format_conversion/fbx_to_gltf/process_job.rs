@@ -187,7 +187,7 @@ pub async fn process_job(args: FbxToGltfJobArgs<'_>) -> Result<JobSuccessResult,
   let (inference_result_token, id) = insert_media_file_generic_from_job(InsertFromJobArgs {
     pool: &args.job_dependencies.db.mysql_pool,
     job: &job,
-    media_class: MediaFileClass::Dimensional,
+    media_class: MediaFileClass::Mesh,
     media_type: upload_details.media_type,
     origin_category: MediaFileOriginCategory::Processed,
     origin_product_category: MediaFileOriginProductCategory::Mocap,

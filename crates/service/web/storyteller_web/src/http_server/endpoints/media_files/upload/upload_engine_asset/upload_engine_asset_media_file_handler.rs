@@ -7,7 +7,7 @@ use log::{error, info, warn};
 use utoipa::ToSchema;
 
 use bucket_paths::legacy::typified_paths::public::media_files::bucket_file_path::MediaFileBucketPath;
-use enums::by_table::media_files::media_file_class::MediaFileClass;
+use enums::by_table::media_files::media_file_project_type::MediaFileProjectType;
 use enums::by_table::media_files::media_file_type::MediaFileType;
 use enums::common::visibility::Visibility;
 use hashing::sha256::sha256_hash_bytes::sha256_hash_bytes;
@@ -204,8 +204,11 @@ pub async fn upload_engine_asset_media_file_handler(
 
   // TODO(bt, 2024-02-22): This should be a transaction.
   let (token, record_id) = insert_media_file_from_file_upload(InsertMediaFileFromUploadArgs {
-    maybe_media_class: Some(MediaFileClass::Dimensional),
-    maybe_project_type: None,
+    maybe_media_class: Some(media_file_type.to_media_class()),
+    maybe_project_type: match media_file_type {
+      MediaFileType::SceneRon | MediaFileType::SceneJson => Some(MediaFileProjectType::Scene3d),
+      _ => None,
+    },
     media_file_type,
     maybe_creator_user_token: maybe_user_token,
     maybe_creator_anonymous_visitor_token: maybe_avt_token.as_ref(),

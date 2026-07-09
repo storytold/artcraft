@@ -253,7 +253,7 @@ pub async fn upload_spz_media_file_handler(
       .and_then(|text| try_parse_generation_provider(text.as_ref()));
 
   let media_token = MediaFileInsertBuilder::new()
-      .media_file_class(MediaFileClass::Dimensional)
+      .media_file_class(MediaFileClass::Splat)
       .media_file_type(MediaFileType::Spz)
       .maybe_creator_user(maybe_user_token)
       .maybe_creator_anonymous_visitor(maybe_avt_token.as_ref())
