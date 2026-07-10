@@ -28,6 +28,13 @@ pub enum FrontendFailureCategory {
   #[serde(rename = "face_not_detected")]
   FaceNotDetected,
 
+  /// No foreground subject could be detected in the input image after
+  /// background removal (fal TripoSplat `input_value_error`). The user should
+  /// provide an image with a clear subject against a plain or distinct
+  /// background.
+  #[serde(rename = "no_foreground_subject_detected")]
+  NoForegroundSubjectDetected,
+
   /// The user stepped away from their device and expected the workload to finish.
   /// Some workloads require that the user keep their browser open.
   #[serde(rename = "keep_alive_elapsed")]
@@ -124,6 +131,7 @@ impl FrontendFailureCategory {
   pub fn to_str(&self) -> &'static str {
     match self {
       Self::FaceNotDetected => "face_not_detected",
+      Self::NoForegroundSubjectDetected => "no_foreground_subject_detected",
       Self::KeepAliveElapsed => "keep_alive_elapsed",
       Self::NotYetImplemented => "not_yet_implemented",
       Self::RetryableWorkerError => "retryable_worker_error",
@@ -145,6 +153,7 @@ impl FrontendFailureCategory {
   pub fn from_str(value: &str) -> Result<Self, String> {
     match value {
       "face_not_detected" => Ok(Self::FaceNotDetected),
+      "no_foreground_subject_detected" => Ok(Self::NoForegroundSubjectDetected),
       "keep_alive_elapsed" => Ok(Self::KeepAliveElapsed),
       "not_yet_implemented" => Ok(Self::NotYetImplemented),
       "retryable_worker_error" => Ok(Self::RetryableWorkerError),
@@ -169,6 +178,7 @@ impl FrontendFailureCategory {
     // NB: BTreeSet::from() isn't const, but not worth using LazyStatic, etc.
     BTreeSet::from([
       Self::FaceNotDetected,
+      Self::NoForegroundSubjectDetected,
       Self::KeepAliveElapsed,
       Self::NotYetImplemented,
       Self::RetryableWorkerError,
@@ -199,6 +209,7 @@ mod tests {
     #[test]
     fn test_serialization() {
       assert_serialization(FrontendFailureCategory::FaceNotDetected, "face_not_detected");
+      assert_serialization(FrontendFailureCategory::NoForegroundSubjectDetected, "no_foreground_subject_detected");
       assert_serialization(FrontendFailureCategory::KeepAliveElapsed, "keep_alive_elapsed");
       assert_serialization(FrontendFailureCategory::NotYetImplemented, "not_yet_implemented");
       assert_serialization(FrontendFailureCategory::RetryableWorkerError, "retryable_worker_error");
@@ -219,6 +230,7 @@ mod tests {
     #[test]
     fn to_str() {
       assert_eq!(FrontendFailureCategory::FaceNotDetected.to_str(), "face_not_detected");
+      assert_eq!(FrontendFailureCategory::NoForegroundSubjectDetected.to_str(), "no_foreground_subject_detected");
       assert_eq!(FrontendFailureCategory::KeepAliveElapsed.to_str(), "keep_alive_elapsed");
       assert_eq!(FrontendFailureCategory::NotYetImplemented.to_str(), "not_yet_implemented");
       assert_eq!(FrontendFailureCategory::RetryableWorkerError.to_str(), "retryable_worker_error");
@@ -239,6 +251,7 @@ mod tests {
     #[test]
     fn from_str() {
       assert_eq!(FrontendFailureCategory::from_str("face_not_detected").unwrap(), FrontendFailureCategory::FaceNotDetected);
+      assert_eq!(FrontendFailureCategory::from_str("no_foreground_subject_detected").unwrap(), FrontendFailureCategory::NoForegroundSubjectDetected);
       assert_eq!(FrontendFailureCategory::from_str("keep_alive_elapsed").unwrap(), FrontendFailureCategory::KeepAliveElapsed);
       assert_eq!(FrontendFailureCategory::from_str("not_yet_implemented").unwrap(), FrontendFailureCategory::NotYetImplemented);
       assert_eq!(FrontendFailureCategory::from_str("retryable_worker_error").unwrap(), FrontendFailureCategory::RetryableWorkerError);
@@ -260,8 +273,9 @@ mod tests {
     #[test]
     fn all_variants() {
       let mut variants = FrontendFailureCategory::all_variants();
-      assert_eq!(variants.len(), 16);
+      assert_eq!(variants.len(), 17);
       assert_eq!(variants.pop_first(), Some(FrontendFailureCategory::FaceNotDetected));
+      assert_eq!(variants.pop_first(), Some(FrontendFailureCategory::NoForegroundSubjectDetected));
       assert_eq!(variants.pop_first(), Some(FrontendFailureCategory::KeepAliveElapsed));
       assert_eq!(variants.pop_first(), Some(FrontendFailureCategory::NotYetImplemented));
       assert_eq!(variants.pop_first(), Some(FrontendFailureCategory::RetryableWorkerError));

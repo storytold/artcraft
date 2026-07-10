@@ -81,7 +81,10 @@ pub async fn handle_failed_fal_webhook(
     error_data.message,
   );
 
-  let failure_category = guess_failure_category(error_data.error_type.as_ref());
+  let failure_category = guess_failure_category(
+    error_data.error_type.as_ref(),
+    error_data.message.as_deref(),
+  );
 
   info!(
     "Marking job {} as failed for request_id {}. Category: {:?}, Reason: {}",
@@ -118,19 +121,87 @@ pub async fn handle_failed_fal_webhook(
 
 // =============== Private helpers ===============
 
-/// Map a FAL WebhookErrorType to a frontend failure category.
+/// Map a FAL WebhookErrorType (and, for generic validation errors, the
+/// human-readable message) to a frontend failure category.
 ///
 /// Returns `GenerationFailed` as the default if the error type is None or unrecognized.
-fn guess_failure_category(error_type: Option<&WebhookErrorType>) -> FrontendFailureCategory {
+fn guess_failure_category(
+  error_type: Option<&WebhookErrorType>,
+  maybe_message: Option<&str>,
+) -> FrontendFailureCategory {
   match error_type {
     Some(WebhookErrorType::ContentPolicyViolation) => FrontendFailureCategory::RuleBansUserContent,
     Some(WebhookErrorType::FaceDetectionError) => FrontendFailureCategory::FaceNotDetected,
     Some(WebhookErrorType::FileTooLarge) => FrontendFailureCategory::FilesizeTooLarge,
     Some(WebhookErrorType::ImageTooLarge) => FrontendFailureCategory::ImageDimensionsTooLarge,
     Some(WebhookErrorType::ImageTooSmall) => FrontendFailureCategory::ImageDimensionsTooSmall,
+    // `input_value_error` is a generic validation error; the message carries
+    // the specifics. TripoSplat reports "No foreground subject could be
+    // detected in the input image after background removal. ..."
+    Some(WebhookErrorType::InputValueError)
+      if message_indicates_no_foreground_subject(maybe_message) =>
+        FrontendFailureCategory::NoForegroundSubjectDetected,
     Some(WebhookErrorType::NoMediaGenerated)
     | Some(WebhookErrorType::ImageLoadError)
     | Some(WebhookErrorType::FileDownloadError) => FrontendFailureCategory::GenerationFailed,
     _ => FrontendFailureCategory::GenerationFailed,
+  }
+}
+
+fn message_indicates_no_foreground_subject(maybe_message: Option<&str>) -> bool {
+  maybe_message
+      .map(|message| message.to_ascii_lowercase().contains("no foreground subject"))
+      .unwrap_or(false)
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  const NO_FOREGROUND_SUBJECT_MESSAGE: &str =
+      "No foreground subject could be detected in the input image after background removal. \
+       Provide an image with a clear, visible subject against a plain or distinct background.";
+
+  mod guess_failure_category_tests {
+    use super::*;
+
+    #[test]
+    fn input_value_error_with_no_foreground_subject_message() {
+      let category = guess_failure_category(
+        Some(&WebhookErrorType::InputValueError),
+        Some(NO_FOREGROUND_SUBJECT_MESSAGE),
+      );
+      assert_eq!(category, FrontendFailureCategory::NoForegroundSubjectDetected);
+    }
+
+    #[test]
+    fn input_value_error_with_other_message() {
+      let category = guess_failure_category(
+        Some(&WebhookErrorType::InputValueError),
+        Some("Field `num_gaussians` must be a positive integer."),
+      );
+      assert_eq!(category, FrontendFailureCategory::GenerationFailed);
+    }
+
+    #[test]
+    fn input_value_error_without_message() {
+      let category = guess_failure_category(Some(&WebhookErrorType::InputValueError), None);
+      assert_eq!(category, FrontendFailureCategory::GenerationFailed);
+    }
+
+    #[test]
+    fn content_policy_violation_ignores_message() {
+      let category = guess_failure_category(
+        Some(&WebhookErrorType::ContentPolicyViolation),
+        Some(NO_FOREGROUND_SUBJECT_MESSAGE),
+      );
+      assert_eq!(category, FrontendFailureCategory::RuleBansUserContent);
+    }
+
+    #[test]
+    fn no_error_type_defaults_to_generation_failed() {
+      let category = guess_failure_category(None, Some(NO_FOREGROUND_SUBJECT_MESSAGE));
+      assert_eq!(category, FrontendFailureCategory::GenerationFailed);
+    }
   }
 }

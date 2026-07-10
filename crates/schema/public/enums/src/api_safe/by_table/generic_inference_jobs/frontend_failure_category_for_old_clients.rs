@@ -60,6 +60,7 @@ mod tests {
 
   #[test]
   fn test_new_variants_return_none() {
+    assert_eq!(FrontendFailureCategoryForOldClients::try_from_db_enum(FrontendFailureCategory::NoForegroundSubjectDetected), None);
     assert_eq!(FrontendFailureCategoryForOldClients::try_from_db_enum(FrontendFailureCategory::ModelRulesViolation), None);
     assert_eq!(FrontendFailureCategoryForOldClients::try_from_db_enum(FrontendFailureCategory::RuleBansUserImage), None);
     assert_eq!(FrontendFailureCategoryForOldClients::try_from_db_enum(FrontendFailureCategory::RuleBansUserImageWithFaces), None);

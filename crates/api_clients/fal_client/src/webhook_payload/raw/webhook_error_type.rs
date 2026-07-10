@@ -19,6 +19,9 @@ pub enum WebhookErrorType {
   ImageLoadError,
   FileDownloadError,
   FaceDetectionError,
+  /// Generic input validation error. The `msg` field carries the specifics
+  /// (e.g. TripoSplat's "No foreground subject could be detected...").
+  InputValueError,
   GreaterThan,
   GreaterThanEqual,
   LessThan,
@@ -64,6 +67,7 @@ mod tests {
       ("\"image_load_error\"", WebhookErrorType::ImageLoadError),
       ("\"file_download_error\"", WebhookErrorType::FileDownloadError),
       ("\"face_detection_error\"", WebhookErrorType::FaceDetectionError),
+      ("\"input_value_error\"", WebhookErrorType::InputValueError),
       ("\"greater_than\"", WebhookErrorType::GreaterThan),
       ("\"greater_than_equal\"", WebhookErrorType::GreaterThanEqual),
       ("\"less_than\"", WebhookErrorType::LessThan),
