@@ -40,6 +40,9 @@ pub enum MediaFileType {
   /// Wavefront OBJ mesh files
   Obj,
 
+  /// PLY (polygon file format) files; also used for Gaussian splats.
+  Ply,
+
   /// glTF binary files (for Bevy)
   Glb,
 
@@ -178,7 +181,8 @@ impl MediaFileType {
       | Self::Pmd
       | Self::Pmx => MediaFileClass::Mesh,
 
-      Self::Spz => MediaFileClass::Splat,
+      Self::Spz
+      | Self::Ply => MediaFileClass::Splat,
 
       // Animation and auxiliary data formats with no dedicated class yet.
       #[allow(deprecated)]
@@ -223,6 +227,7 @@ impl MediaFileType {
       "model/fbx" => Some(Self::Fbx),
       "application/fbx" => Some(Self::Fbx),
       "model/obj" => Some(Self::Obj),
+      "model/ply" => Some(Self::Ply),
       _ => None,
     }
   }
@@ -282,6 +287,7 @@ impl MediaFileType {
       Self::Bvh => "bvh",
       Self::Fbx => "fbx",
       Self::Obj => "obj",
+      Self::Ply => "ply",
       Self::Glb => "glb",
       Self::Gltf => "gltf",
       Self::Spz => "spz",
@@ -317,6 +323,7 @@ impl MediaFileType {
       "bvh" => Ok(Self::Bvh),
       "fbx" => Ok(Self::Fbx),
       "obj" => Ok(Self::Obj),
+      "ply" => Ok(Self::Ply),
       "glb" => Ok(Self::Glb),
       "gltf" => Ok(Self::Gltf),
       "spz" => Ok(Self::Spz),
@@ -355,6 +362,7 @@ impl MediaFileType {
       Self::Bvh,
       Self::Fbx,
       Self::Obj,
+      Self::Ply,
       Self::Glb,
       Self::Gltf,
       Self::Spz,
@@ -423,6 +431,7 @@ mod tests {
       assert_serialization(MediaFileType::Bvh, "bvh");
       assert_serialization(MediaFileType::Fbx, "fbx");
       assert_serialization(MediaFileType::Obj, "obj");
+      assert_serialization(MediaFileType::Ply, "ply");
       assert_serialization(MediaFileType::Glb, "glb");
       assert_serialization(MediaFileType::Gltf, "gltf");
       assert_serialization(MediaFileType::Spz, "spz");
@@ -531,6 +540,7 @@ mod tests {
       assert_eq!(MediaFileType::Glb.to_media_class(), MediaFileClass::Mesh);
       assert_eq!(MediaFileType::Gltf.to_media_class(), MediaFileClass::Mesh);
       assert_eq!(MediaFileType::Spz.to_media_class(), MediaFileClass::Splat);
+      assert_eq!(MediaFileType::Ply.to_media_class(), MediaFileClass::Splat);
       assert_eq!(MediaFileType::SceneRon.to_media_class(), MediaFileClass::Project);
       assert_eq!(MediaFileType::SceneJson.to_media_class(), MediaFileClass::Project);
       assert_eq!(MediaFileType::Pmd.to_media_class(), MediaFileClass::Mesh);
@@ -695,13 +705,14 @@ mod tests {
     #[test]
     fn all_variants() {
       let mut variants = MediaFileType::all_variants();
-      assert_eq!(variants.len(), 30);
+      assert_eq!(variants.len(), 31);
       assert_eq!(variants.pop_first(), Some(MediaFileType::Audio));
       assert_eq!(variants.pop_first(), Some(MediaFileType::Image));
       assert_eq!(variants.pop_first(), Some(MediaFileType::Video));
       assert_eq!(variants.pop_first(), Some(MediaFileType::Bvh));
       assert_eq!(variants.pop_first(), Some(MediaFileType::Fbx));
       assert_eq!(variants.pop_first(), Some(MediaFileType::Obj));
+      assert_eq!(variants.pop_first(), Some(MediaFileType::Ply));
       assert_eq!(variants.pop_first(), Some(MediaFileType::Glb));
       assert_eq!(variants.pop_first(), Some(MediaFileType::Gltf));
       assert_eq!(variants.pop_first(), Some(MediaFileType::Spz));

@@ -86,6 +86,7 @@ pub fn resolve_file_metadata_with_file_name(
   let (mime_type, file_extension) = match extension.as_str() {
     "fbx" => ("model/fbx", FileExtension::Fbx),
     "obj" => ("model/obj", FileExtension::Obj),
+    "ply" => ("model/ply", FileExtension::Ply),
     "glb" => ("model/gltf-binary", FileExtension::Glb),
     _ => return None,
   };

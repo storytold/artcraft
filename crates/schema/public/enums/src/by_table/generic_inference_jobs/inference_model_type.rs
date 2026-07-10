@@ -279,6 +279,8 @@ pub enum InferenceModelType {
   Marble1p1,
   #[serde(rename = "marble_1p1_plus")]
   Marble1p1Plus,
+  #[serde(rename = "triposplat")]
+  TripoSplat,
 }
 
 // TODO(bt, 2022-12-21): This desperately needs MySQL integration tests!
@@ -411,6 +413,7 @@ impl InferenceModelType {
       Self::Marble1p0Draft => "marble_1p0_draft",
       Self::Marble1p1 => "marble_1p1",
       Self::Marble1p1Plus => "marble_1p1_plus",
+      Self::TripoSplat => "triposplat",
     }
   }
 
@@ -538,6 +541,7 @@ impl InferenceModelType {
       "marble_1p0_draft" => Ok(Self::Marble1p0Draft),
       "marble_1p1" => Ok(Self::Marble1p1),
       "marble_1p1_plus" => Ok(Self::Marble1p1Plus),
+      "triposplat" => Ok(Self::TripoSplat),
 
       _ => Err(format!("invalid value: {:?}", value)),
     }
@@ -669,6 +673,7 @@ impl InferenceModelType {
       Self::Marble1p0Draft,
       Self::Marble1p1,
       Self::Marble1p1Plus,
+      Self::TripoSplat,
     ])
   }
 
@@ -783,6 +788,7 @@ impl InferenceModelType {
       CommonModelType::Marble1p0Draft => Self::Marble1p0Draft,
       CommonModelType::Marble1p1 => Self::Marble1p1,
       CommonModelType::Marble1p1Plus => Self::Marble1p1Plus,
+      CommonModelType::TripoSplat => Self::TripoSplat,
     }
   }
 }
@@ -918,6 +924,7 @@ mod tests {
       assert_serialization(InferenceModelType::Marble1p0Draft, "marble_1p0_draft");
       assert_serialization(InferenceModelType::Marble1p1, "marble_1p1");
       assert_serialization(InferenceModelType::Marble1p1Plus, "marble_1p1_plus");
+      assert_serialization(InferenceModelType::TripoSplat, "triposplat");
     }
 
     #[test]
@@ -1044,6 +1051,7 @@ mod tests {
       assert_eq!(InferenceModelType::Marble1p0Draft.to_str(), "marble_1p0_draft");
       assert_eq!(InferenceModelType::Marble1p1.to_str(), "marble_1p1");
       assert_eq!(InferenceModelType::Marble1p1Plus.to_str(), "marble_1p1_plus");
+      assert_eq!(InferenceModelType::TripoSplat.to_str(), "triposplat");
     }
 
     #[test]
@@ -1168,6 +1176,7 @@ mod tests {
       assert_eq!(InferenceModelType::from_str("marble_1p0_draft").unwrap(), InferenceModelType::Marble1p0Draft);
       assert_eq!(InferenceModelType::from_str("marble_1p1").unwrap(), InferenceModelType::Marble1p1);
       assert_eq!(InferenceModelType::from_str("marble_1p1_plus").unwrap(), InferenceModelType::Marble1p1Plus);
+      assert_eq!(InferenceModelType::from_str("triposplat").unwrap(), InferenceModelType::TripoSplat);
     }
 
     #[test]

@@ -248,6 +248,8 @@ pub enum CommonModelType {
   Marble1p1,
   #[serde(rename = "marble_1p1_plus")]
   Marble1p1Plus,
+  #[serde(rename = "triposplat")]
+  TripoSplat,
 }
 
 impl_enum_display_and_debug_using_to_str!(CommonModelType);
@@ -364,6 +366,7 @@ impl CommonModelType {
       Self::Marble1p0Draft => "marble_1p0_draft",
       Self::Marble1p1 => "marble_1p1",
       Self::Marble1p1Plus => "marble_1p1_plus",
+      Self::TripoSplat => "triposplat",
     }
   }
 
@@ -474,6 +477,7 @@ impl CommonModelType {
       "marble_1p0_draft" => Ok(Self::Marble1p0Draft),
       "marble_1p1" => Ok(Self::Marble1p1),
       "marble_1p1_plus" => Ok(Self::Marble1p1Plus),
+      "triposplat" => Ok(Self::TripoSplat),
 
       _ => Err(format!("invalid model_type: {:?}", job_status)),
     }
@@ -588,6 +592,7 @@ impl CommonModelType {
       Self::Marble1p0Draft,
       Self::Marble1p1,
       Self::Marble1p1Plus,
+      Self::TripoSplat,
     ])
   }
 
@@ -699,6 +704,7 @@ impl CommonModelType {
       Self::Marble1p0Draft => CommonModelClass::DimensionalSplat,
       Self::Marble1p1 => CommonModelClass::DimensionalSplat,
       Self::Marble1p1Plus => CommonModelClass::DimensionalSplat,
+      Self::TripoSplat => CommonModelClass::DimensionalSplat,
     }
   }
 }
@@ -815,6 +821,7 @@ mod tests {
       assert_serialization(CommonModelType::Marble1p0Draft, "marble_1p0_draft");
       assert_serialization(CommonModelType::Marble1p1, "marble_1p1");
       assert_serialization(CommonModelType::Marble1p1Plus, "marble_1p1_plus");
+      assert_serialization(CommonModelType::TripoSplat, "triposplat");
     }
 
     #[test]
@@ -923,6 +930,7 @@ mod tests {
       assert_eq!(CommonModelType::Marble1p0Draft.to_str(), "marble_1p0_draft");
       assert_eq!(CommonModelType::Marble1p1.to_str(), "marble_1p1");
       assert_eq!(CommonModelType::Marble1p1Plus.to_str(), "marble_1p1_plus");
+      assert_eq!(CommonModelType::TripoSplat.to_str(), "triposplat");
     }
 
     #[test]
@@ -1028,12 +1036,13 @@ mod tests {
       assert_eq!(CommonModelType::from_str("marble_1p0_draft").unwrap(), CommonModelType::Marble1p0Draft);
       assert_eq!(CommonModelType::from_str("marble_1p1").unwrap(), CommonModelType::Marble1p1);
       assert_eq!(CommonModelType::from_str("marble_1p1_plus").unwrap(), CommonModelType::Marble1p1Plus);
+      assert_eq!(CommonModelType::from_str("triposplat").unwrap(), CommonModelType::TripoSplat);
     }
 
     #[test]
     fn all_variants() {
       let mut variants = CommonModelType::all_variants();
-      assert_eq!(variants.len(), 95);
+      assert_eq!(variants.len(), 96);
       // Image models
       assert_eq!(variants.pop_first(), Some(CommonModelType::Flux1Dev));
       assert_eq!(variants.pop_first(), Some(CommonModelType::Flux1Schnell));
@@ -1134,6 +1143,7 @@ mod tests {
       assert_eq!(variants.pop_first(), Some(CommonModelType::Marble1p0Draft));
       assert_eq!(variants.pop_first(), Some(CommonModelType::Marble1p1));
       assert_eq!(variants.pop_first(), Some(CommonModelType::Marble1p1Plus));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::TripoSplat));
 
       assert_eq!(variants.pop_first(), None);
     }

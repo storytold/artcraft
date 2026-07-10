@@ -28,6 +28,7 @@ fn build_omni_gen_splat_models() -> Vec<OmniGenSplatModelDetails> {
     marble_model(CommonSplatModel::Marble1p0Draft, "Marble 1.0 Draft"),
     marble_model(CommonSplatModel::Marble1p1, "Marble 1.1"),
     marble_model(CommonSplatModel::Marble1p1Plus, "Marble 1.1 Plus"),
+    triposplat_model(),
   ]
 }
 
@@ -53,10 +54,29 @@ fn build_omni_gen_splat_model_providers() -> Vec<OmniGenSplatModelProviderDetail
         model: CommonSplatModel::Marble1p1Plus,
         overrides: None,
       },
+      OmniGenSplatProviderModelDetails {
+        model: CommonSplatModel::TripoSplat,
+        overrides: None,
+      },
     ],
   });
 
   providers
+}
+
+/// TripoSplat reconstructs an object-scale Gaussian splat from exactly one
+/// image. No prompt, video, panorama, or recaption toggle.
+fn triposplat_model() -> OmniGenSplatModelDetails {
+  OmniGenSplatModelDetails {
+    model: CommonSplatModel::TripoSplat,
+    model_creator: Some(ModelCreator::Tripo),
+    full_name: Some("TripoSplat".to_string()),
+    extra_info: Some("Reconstructs a 3D Gaussian splat from a single image".to_string()),
+    extra_info_short: Some("Image to splat".to_string()),
+    image_references_supported: Some(true),
+    image_references_max: Some(1),
+    ..Default::default()
+  }
 }
 
 /// All Marble models share the same capability surface: text prompt, image
