@@ -32,6 +32,7 @@ pub mod prompts;
 pub mod public_event_feed;
 pub mod staff_audit_logs;
 pub mod stats;
+pub mod tags;
 pub mod trending_model_analytics;
 pub mod tts;
 pub mod twitch;

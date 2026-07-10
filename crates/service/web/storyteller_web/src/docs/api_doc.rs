@@ -143,6 +143,24 @@ use artcraft_api_defs::moderation::user_daily_spends::user_daily_spends_list::*;
 use artcraft_api_defs::moderation::top_spenders::list::*;
 use artcraft_api_defs::moderation::user_spend_events::list::*;
 use artcraft_api_defs::folders::subfolder::*;
+use artcraft_api_defs::tags::add_media_file_tags::*;
+use artcraft_api_defs::tags::bulk_add_tags::*;
+use artcraft_api_defs::tags::bulk_list_media_file_tags::*;
+use artcraft_api_defs::tags::bulk_set_tags::*;
+use artcraft_api_defs::tags::clear_media_file_tags::*;
+use artcraft_api_defs::tags::common::*;
+use artcraft_api_defs::tags::delete_tag::*;
+use artcraft_api_defs::tags::list_media_file_tags::*;
+use artcraft_api_defs::tags::list_media_files_with_tag::*;
+use artcraft_api_defs::tags::list_tagged_media_files::*;
+use artcraft_api_defs::tags::list_tags::*;
+use artcraft_api_defs::tags::list_untagged_media_files::*;
+use artcraft_api_defs::tags::rename_tag::*;
+use artcraft_api_defs::tags::set_media_file_tags::*;
+use crate::http_server::endpoints::tags::list_media_files_with_tag_handler::*;
+use crate::http_server::endpoints::tags::list_tagged_media_files_handler::*;
+use crate::http_server::endpoints::tags::list_untagged_media_files_handler::*;
+use crate::http_server::endpoints::tags::tag_media_file_list_item::*;
 use artcraft_api_defs::moderation::user_referrals::list_global_user_referrals::*;
 use artcraft_api_defs::moderation::user_referrals::list_user_referrals_for_user::*;
 use artcraft_api_defs::moderation::user_stripe_data::moderator_get_user_stripe_customer_ids::*;
@@ -663,6 +681,22 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     crate::http_server::endpoints::folders::media_files::bulk_add_folder_media_files_handler::bulk_add_folder_media_files_handler,
     crate::http_server::endpoints::folders::media_files::bulk_move_folder_media_files_handler::bulk_move_folder_media_files_handler,
     crate::http_server::endpoints::folders::media_files::bulk_remove_folder_media_files_handler::bulk_remove_folder_media_files_handler,
+
+    // Tags
+    crate::http_server::endpoints::tags::list_tags_handler::list_tags_handler,
+    crate::http_server::endpoints::tags::list_media_file_tags_handler::list_media_file_tags_handler,
+    crate::http_server::endpoints::tags::list_untagged_media_files_handler::list_untagged_media_files_handler,
+    crate::http_server::endpoints::tags::list_tagged_media_files_handler::list_tagged_media_files_handler,
+    crate::http_server::endpoints::tags::list_media_files_with_tag_handler::list_media_files_with_tag_handler,
+    crate::http_server::endpoints::tags::bulk_list_media_file_tags_handler::bulk_list_media_file_tags_handler,
+    crate::http_server::endpoints::tags::add_media_file_tags_handler::add_media_file_tags_handler,
+    crate::http_server::endpoints::tags::set_media_file_tags_handler::set_media_file_tags_handler,
+    crate::http_server::endpoints::tags::clear_media_file_tags_handler::clear_media_file_tags_handler,
+    crate::http_server::endpoints::tags::bulk_add_tags_handler::bulk_add_tags_handler,
+    crate::http_server::endpoints::tags::bulk_set_tags_handler::bulk_set_tags_handler,
+    crate::http_server::endpoints::tags::delete_tag_handler::delete_tag_handler,
+    crate::http_server::endpoints::tags::rename_tag_handler::rename_tag_handler,
+
     crate::http_server::endpoints::moderation::user_sessions::moderator_list_user_session_impersonation_requests_for_user_handler::moderator_list_user_session_impersonation_requests_for_user_handler,
     crate::http_server::endpoints::moderation::user_sessions::moderator_list_user_session_impersonation_requests_handler::moderator_list_user_session_impersonation_requests_handler,
     crate::http_server::endpoints::moderation::user_sessions::moderator_user_session_impersonation_request_handler::moderator_user_session_impersonation_request_handler,
@@ -1448,6 +1482,41 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     BulkRemoveFolderMediaFilesSuccessResponse,
     BulkMoveFolderMediaFilesRequest,
     BulkMoveFolderMediaFilesSuccessResponse,
+
+    // Tags
+    AddMediaFileTagsPathInfo,
+    AddMediaFileTagsRequest,
+    AddMediaFileTagsSuccessResponse,
+    BulkAddTagsRequest,
+    BulkAddTagsSuccessResponse,
+    BulkListMediaFileTagsRequest,
+    BulkListMediaFileTagsSuccessResponse,
+    BulkSetTagsRequest,
+    BulkSetTagsSuccessResponse,
+    ClearMediaFileTagsPathInfo,
+    ClearMediaFileTagsSuccessResponse,
+    DeleteTagPathInfo,
+    DeleteTagSuccessResponse,
+    ListMediaFileTagsPathInfo,
+    ListMediaFileTagsSuccessResponse,
+    ListMediaFilesWithTagPathInfo,
+    ListMediaFilesWithTagQueryParams,
+    ListMediaFilesWithTagSuccessResponse,
+    ListTaggedMediaFilesQueryParams,
+    ListTaggedMediaFilesSuccessResponse,
+    ListTagsQueryParams,
+    ListTagsSuccessResponse,
+    ListUntaggedMediaFilesQueryParams,
+    ListUntaggedMediaFilesSuccessResponse,
+    MediaFileTagsEntry,
+    RenameTagPathInfo,
+    RenameTagRequest,
+    RenameTagSuccessResponse,
+    SetMediaFileTagsPathInfo,
+    SetMediaFileTagsRequest,
+    SetMediaFileTagsSuccessResponse,
+    TagDetails,
+    TagMediaFileListItem,
   ))
 )]
 pub struct ApiDoc;

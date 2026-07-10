@@ -1,0 +1,12 @@
+{
+  "db_name": "MySQL",
+  "query": "\nUPDATE tags\nSET maybe_deleted_at = NOW(),\n  use_count = 0\nWHERE token = ?\n  AND creator_user_token = ?\n  AND maybe_deleted_at IS NULL\n    ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": []
+  },
+  "hash": "a58fc9050c1fd160e03d6e4932c1b777ea7ab8cbfddca5834faab3e2963d816d"
+}
