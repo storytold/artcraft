@@ -12,7 +12,6 @@ use crate::http_server::common_responses::pagination_cursors::PaginationCursors;
 use crate::http_server::common_responses::pagination_page::PaginationPage;
 use crate::http_server::common_responses::simple_entity_stats::SimpleEntityStats;
 use crate::http_server::common_responses::simple_response::SimpleResponse;
-use crate::http_server::common_responses::tag_info::TagInfo;
 use crate::http_server::common_responses::user_details_lite::{UserDefaultAvatarInfo, UserDetailsLight};
 use crate::http_server::deprecated_endpoints::conversion::enqueue_fbx_to_gltf_handler::*;
 use crate::http_server::deprecated_endpoints::workflows::enqueue::enqueue_face_fusion_workflow_handler::*;
@@ -222,8 +221,6 @@ use billing_component::stripe::http_endpoints::checkout::create::stripe_create_c
 use crate::http_server::endpoints::billing_fakeyou::list_active_user_subscriptions_handler::*;
 use crate::http_server::endpoints::service::status_alert_handler::*;
 use crate::http_server::endpoints::stats::get_unified_queue_stats_handler::*;
-use crate::http_server::endpoints::tags::list_tags_for_entity_handler::*;
-use crate::http_server::endpoints::tags::set_tags_for_entity_handler::*;
 use crate::http_server::endpoints::tts::enqueue_infer_tts_handler::enqueue_infer_tts_handler::*;
 use crate::http_server::endpoints::user_bookmarks::batch_get_user_bookmarks_handler::*;
 use crate::http_server::endpoints::user_bookmarks::create_user_bookmark_handler::*;
@@ -512,8 +509,6 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     crate::http_server::endpoints::prompts::get_prompt_handler::get_prompt_handler,
     crate::http_server::endpoints::service::status_alert_handler::status_alert_handler,
     crate::http_server::endpoints::stats::get_unified_queue_stats_handler::get_unified_queue_stats_handler,
-    crate::http_server::endpoints::tags::list_tags_for_entity_handler::list_tags_for_entity_handler,
-    crate::http_server::endpoints::tags::set_tags_for_entity_handler::set_tags_for_entity_handler,
     crate::http_server::endpoints::tts::enqueue_infer_tts_handler::enqueue_infer_tts_handler::enqueue_infer_tts_handler,
     crate::http_server::endpoints::user_bookmarks::batch_get_user_bookmarks_handler::batch_get_user_bookmarks_handler,
     crate::http_server::endpoints::user_bookmarks::create_user_bookmark_handler::create_user_bookmark_handler,
@@ -762,7 +757,6 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     SimpleEntityStats,
     SimpleGenericJsonSuccess,
     SimpleResponse,
-    TagInfo,
     UserDetailsLight,
     VideoPreviews,
     Visibility,
@@ -1101,8 +1095,6 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     ListSessionRequestDetailsResponse,
     ListSessionResultDetailsResponse,
     ListSessionStatusDetailsResponse,
-    ListTagsForEntityPathInfo,
-    ListTagsForEntitySuccessResponse,
     ListUserBookmarksForEntityError,
     ListUserBookmarksForEntityPathInfo,
     ListUserBookmarksForEntitySuccessResponse,
@@ -1168,9 +1160,6 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     SetModelWeightCoverImagePathInfo,
     SetModelWeightCoverImageRequest,
     SetModelWeightCoverImageResponse,
-    SetTagsForEntityPathInfo,
-    SetTagsForEntityRequest,
-    SetTagsForEntitySuccessResponse,
     SetUserRatingRequest,
     SetUserRatingResponse,
     StatusAlertCategory,

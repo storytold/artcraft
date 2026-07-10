@@ -1,2 +1,0 @@
-pub mod list_tags_for_entity_handler;
-pub mod set_tags_for_entity_handler;

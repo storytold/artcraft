@@ -16,7 +16,6 @@ use crate::http_server::routes::application_routes::omni_gen_routes::add_omni_ge
 use crate::http_server::routes::application_routes::prompts_routes::add_prompts_routes;
 use crate::http_server::routes::application_routes::stripe_artcraft_routes::add_stripe_artcraft_routes;
 use crate::http_server::routes::application_routes::subscription_routes::add_subscription_routes;
-use crate::http_server::routes::application_routes::tag_routes::add_tag_routes;
 use crate::http_server::routes::application_routes::user_bookmarks_routes::add_user_bookmarks_routes;
 use crate::http_server::routes::application_routes::user_rating_routes::add_user_rating_routes;
 use crate::http_server::routes::application_routes::user_referral_code_routes::add_user_referral_code_routes;
@@ -55,7 +54,6 @@ where
   app = add_webhook_routes(app); // /v1/webhooks/... (fal)
   
   // Legacy FakeYou surface area that might be useful again one day
-  app = add_tag_routes(app); // /v1/tags
   app = add_weights_routes(app); // v1/weights
 
   // Media files routes
