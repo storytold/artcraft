@@ -138,6 +138,8 @@ pub struct ModelMeshData {
 pub struct ModelUrlsData {
   /// Untextured base model (Tripo 3D).
   pub base_model: Option<ModelGlbData>,
+  /// Blender project file (Meshy).
+  pub blend: Option<ModelGlbData>,
   pub fbx: Option<ModelGlbData>,
   pub glb: Option<ModelGlbData>,
   /// OBJ material file (Hunyuan 3D 3.1).
@@ -145,6 +147,8 @@ pub struct ModelUrlsData {
   pub obj: Option<ModelGlbData>,
   /// PBR-textured model (Tripo 3D).
   pub pbr_model: Option<ModelGlbData>,
+  /// STL model (Meshy).
+  pub stl: Option<ModelGlbData>,
   /// PBR texture image for the OBJ (Hunyuan 3D 3.1).
   pub texture: Option<ModelGlbData>,
   pub usdz: Option<ModelGlbData>,
