@@ -13,6 +13,7 @@ use sqlx::MySql;
 use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::state::server_state::ServerState;
 
+use super::process_audio_payload::process_audio_payload;
 use super::process_image_payload::process_image_payload;
 use super::process_images_payload::process_images_payload;
 use super::process_model_glb_payload::process_model_glb_payload;
@@ -91,6 +92,14 @@ pub async fn handle_successful_fal_webhook(
     if let Some(ref video_data) = extracted.video {
       info!("Handling video payload for request_id {} / job {:?}", request_id, job.job_token);
       let token = process_video_payload(video_data, &job, server_state).await?;
+      if maybe_media_token.is_none() {
+        maybe_media_token = Some(token);
+      }
+    }
+
+    if let Some(ref audio_data) = extracted.audio {
+      info!("Handling audio payload for request_id {} / job {:?}", request_id, job.job_token);
+      let token = process_audio_payload(audio_data, &job, server_state).await?;
       if maybe_media_token.is_none() {
         maybe_media_token = Some(token);
       }
