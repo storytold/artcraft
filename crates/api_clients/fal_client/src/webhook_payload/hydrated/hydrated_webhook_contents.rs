@@ -46,6 +46,10 @@ pub struct ExtractedContents {
   /// Parsed from `payload.model_glb`.
   pub model_glb: Option<ModelGlbData>,
 
+  /// Parsed from `payload.model_glb_pbr` (e.g. Hunyuan 3D 2.1's PBR-textured
+  /// GLB variant, sent alongside `model_glb`).
+  pub model_glb_pbr: Option<ModelGlbData>,
+
   /// Parsed from `payload.model_mesh`.
   /// NB: `triposplat` ply gaussian splat files also arrive via this payload handler.
   ///     These are decidedly *not* "mesh" files!
@@ -96,7 +100,8 @@ pub struct VideoData {
   pub file_size: Option<u64>,
 }
 
-/// Data under `payload.model_glb` (there may be other sibling keys too)
+/// Data under `payload.model_glb` (there may be other sibling keys too).
+/// Also used for `payload.model_glb_pbr`, which has the same shape.
 #[derive(Debug, Deserialize)]
 pub struct ModelGlbData {
   pub content_type: Option<String>,

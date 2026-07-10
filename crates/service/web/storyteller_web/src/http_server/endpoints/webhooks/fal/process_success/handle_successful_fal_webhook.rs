@@ -96,11 +96,24 @@ pub async fn handle_successful_fal_webhook(
       }
     }
 
+    // NB: `model_glb` takes priority over `model_mesh`. Hunyuan 3D 2.1 sends
+    // both, where `model_mesh` is a zip archive of the whole generation that
+    // we skip in favor of the GLBs (standard + optional PBR variant).
     if let Some(ref model_glb_data) = extracted.model_glb {
       info!("Handling model_glb payload for request_id {} / job {:?}", request_id, job.job_token);
-      let token = process_model_glb_payload(model_glb_data, extracted.thumbnail.as_ref(), &job, server_state).await?;
+      let (token, batch_token) = process_model_glb_payload(
+        model_glb_data,
+        extracted.model_glb_pbr.as_ref(),
+        extracted.thumbnail.as_ref(),
+        &job,
+        server_state,
+        pager,
+      ).await?;
       if maybe_media_token.is_none() {
         maybe_media_token = Some(token);
+      }
+      if maybe_batch_token.is_none() {
+        maybe_batch_token = batch_token;
       }
     } else if let Some(ref model_mesh_data) = extracted.model_mesh {
       // NB: triposplat ply gaussian splat files also arrive via this payload handler.

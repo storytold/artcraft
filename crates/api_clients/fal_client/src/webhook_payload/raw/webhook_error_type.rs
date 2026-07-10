@@ -99,6 +99,7 @@ mod tests {
   fn from_str_known() {
     assert_eq!(WebhookErrorType::from_str("content_policy_violation"), WebhookErrorType::ContentPolicyViolation);
     assert_eq!(WebhookErrorType::from_str("face_detection_error"), WebhookErrorType::FaceDetectionError);
+    assert_eq!(WebhookErrorType::from_str("input_value_error"), WebhookErrorType::InputValueError);
   }
 
   #[test]
