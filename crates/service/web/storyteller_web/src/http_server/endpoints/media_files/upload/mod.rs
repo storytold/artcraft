@@ -1,6 +1,7 @@
 pub mod common_utils;
 pub mod upload_audio_media_file_handler;
 pub mod upload_error;
+pub mod project;
 pub mod upload_generic;
 pub mod upload_image_media_file_handler;
 pub mod upload_new_engine_asset_media_file_handler;

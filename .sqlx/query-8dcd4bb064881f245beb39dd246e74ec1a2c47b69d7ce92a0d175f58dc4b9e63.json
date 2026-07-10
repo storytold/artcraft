@@ -1,0 +1,58 @@
+{
+  "db_name": "MySQL",
+  "query": "\nSELECT\n  maybe_creator_user_token as `maybe_creator_user_token: UserToken`,\n  maybe_creator_anonymous_visitor_token as `maybe_creator_anonymous_visitor_token: AnonymousVisitorTrackingToken`,\n  media_type as `media_type: MediaFileType`,\n  maybe_project_type as `maybe_project_type: MediaFileProjectType`\nFROM media_files\nWHERE token = ?\n  AND user_deleted_at IS NULL\n  AND mod_deleted_at IS NULL\nLIMIT 1\n    ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "maybe_creator_user_token: UserToken",
+        "type_info": {
+          "type": "VarString",
+          "flags": "MULTIPLE_KEY | BINARY",
+          "char_set": 224,
+          "max_size": 128
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "maybe_creator_anonymous_visitor_token: AnonymousVisitorTrackingToken",
+        "type_info": {
+          "type": "VarString",
+          "flags": "BINARY",
+          "char_set": 224,
+          "max_size": 128
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "media_type: MediaFileType",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NOT_NULL | MULTIPLE_KEY | BINARY | NO_DEFAULT_VALUE",
+          "char_set": 224,
+          "max_size": 64
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "maybe_project_type: MediaFileProjectType",
+        "type_info": {
+          "type": "VarString",
+          "flags": "MULTIPLE_KEY | BINARY",
+          "char_set": 224,
+          "max_size": 128
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      true,
+      true,
+      false,
+      true
+    ]
+  },
+  "hash": "8dcd4bb064881f245beb39dd246e74ec1a2c47b69d7ce92a0d175f58dc4b9e63"
+}

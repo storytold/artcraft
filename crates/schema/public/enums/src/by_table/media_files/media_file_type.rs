@@ -61,6 +61,15 @@ pub enum MediaFileType {
   /// Alternate scene files.
   SceneJson,
 
+  /// Mood board project documents (JSON).
+  MoodJson,
+
+  /// Video editor timeline project documents (JSON).
+  TimelineJson,
+
+  /// 2D editor project documents (JSON).
+  EditorJson,
+
   /// "Polygon Model Data", character data for MikuMikuDance
   /// See: https://mikumikudance.fandom.com/wiki/MMD:Polygon_Model_Data
   Pmd,
@@ -192,6 +201,9 @@ impl MediaFileType {
 
       Self::SceneRon
       | Self::SceneJson
+      | Self::MoodJson
+      | Self::TimelineJson
+      | Self::EditorJson
       | Self::Json => MediaFileClass::Project,
     }
   }
@@ -293,6 +305,9 @@ impl MediaFileType {
       Self::Spz => "spz",
       Self::SceneRon => "scene_ron",
       Self::SceneJson => "scene_json",
+      Self::MoodJson => "mood_json",
+      Self::TimelineJson => "timeline_json",
+      Self::EditorJson => "editor_json",
       Self::Pmd => "pmd",
       Self::Vmd => "vmd",
       Self::Pmx => "pmx",
@@ -329,6 +344,9 @@ impl MediaFileType {
       "spz" => Ok(Self::Spz),
       "scene_ron" => Ok(Self::SceneRon),
       "scene_json" => Ok(Self::SceneJson),
+      "mood_json" => Ok(Self::MoodJson),
+      "timeline_json" => Ok(Self::TimelineJson),
+      "editor_json" => Ok(Self::EditorJson),
       "pmd" => Ok(Self::Pmd),
       "vmd" => Ok(Self::Vmd),
       "pmx" => Ok(Self::Pmx),
@@ -368,6 +386,9 @@ impl MediaFileType {
       Self::Spz,
       Self::SceneRon,
       Self::SceneJson,
+      Self::MoodJson,
+      Self::TimelineJson,
+      Self::EditorJson,
       Self::Pmd,
       Self::Vmd,
       Self::Pmx,
@@ -437,6 +458,9 @@ mod tests {
       assert_serialization(MediaFileType::Spz, "spz");
       assert_serialization(MediaFileType::SceneRon, "scene_ron");
       assert_serialization(MediaFileType::SceneJson, "scene_json");
+      assert_serialization(MediaFileType::MoodJson, "mood_json");
+      assert_serialization(MediaFileType::TimelineJson, "timeline_json");
+      assert_serialization(MediaFileType::EditorJson, "editor_json");
       assert_serialization(MediaFileType::Pmd, "pmd");
       assert_serialization(MediaFileType::Vmd, "vmd");
       assert_serialization(MediaFileType::Pmx, "pmx");
@@ -474,6 +498,9 @@ mod tests {
       assert_eq!(MediaFileType::Spz.to_str(), "spz");
       assert_eq!(MediaFileType::SceneRon.to_str(), "scene_ron");
       assert_eq!(MediaFileType::SceneJson.to_str(), "scene_json");
+      assert_eq!(MediaFileType::MoodJson.to_str(), "mood_json");
+      assert_eq!(MediaFileType::TimelineJson.to_str(), "timeline_json");
+      assert_eq!(MediaFileType::EditorJson.to_str(), "editor_json");
       assert_eq!(MediaFileType::Pmd.to_str(), "pmd");
       assert_eq!(MediaFileType::Vmd.to_str(), "vmd");
       assert_eq!(MediaFileType::Pmx.to_str(), "pmx");
@@ -507,6 +534,9 @@ mod tests {
       assert_eq!(MediaFileType::from_str("spz").unwrap(), MediaFileType::Spz);
       assert_eq!(MediaFileType::from_str("scene_ron").unwrap(), MediaFileType::SceneRon);
       assert_eq!(MediaFileType::from_str("scene_json").unwrap(), MediaFileType::SceneJson);
+      assert_eq!(MediaFileType::from_str("mood_json").unwrap(), MediaFileType::MoodJson);
+      assert_eq!(MediaFileType::from_str("timeline_json").unwrap(), MediaFileType::TimelineJson);
+      assert_eq!(MediaFileType::from_str("editor_json").unwrap(), MediaFileType::EditorJson);
       assert_eq!(MediaFileType::from_str("pmd").unwrap(), MediaFileType::Pmd);
       assert_eq!(MediaFileType::from_str("vmd").unwrap(), MediaFileType::Vmd);
       assert_eq!(MediaFileType::from_str("pmx").unwrap(), MediaFileType::Pmx);
@@ -543,6 +573,9 @@ mod tests {
       assert_eq!(MediaFileType::Ply.to_media_class(), MediaFileClass::Splat);
       assert_eq!(MediaFileType::SceneRon.to_media_class(), MediaFileClass::Project);
       assert_eq!(MediaFileType::SceneJson.to_media_class(), MediaFileClass::Project);
+      assert_eq!(MediaFileType::MoodJson.to_media_class(), MediaFileClass::Project);
+      assert_eq!(MediaFileType::TimelineJson.to_media_class(), MediaFileClass::Project);
+      assert_eq!(MediaFileType::EditorJson.to_media_class(), MediaFileClass::Project);
       assert_eq!(MediaFileType::Pmd.to_media_class(), MediaFileClass::Mesh);
       assert_eq!(MediaFileType::Vmd.to_media_class(), MediaFileClass::Dimensional);
       assert_eq!(MediaFileType::Pmx.to_media_class(), MediaFileClass::Mesh);
@@ -705,7 +738,7 @@ mod tests {
     #[test]
     fn all_variants() {
       let mut variants = MediaFileType::all_variants();
-      assert_eq!(variants.len(), 31);
+      assert_eq!(variants.len(), 34);
       assert_eq!(variants.pop_first(), Some(MediaFileType::Audio));
       assert_eq!(variants.pop_first(), Some(MediaFileType::Image));
       assert_eq!(variants.pop_first(), Some(MediaFileType::Video));
@@ -718,6 +751,9 @@ mod tests {
       assert_eq!(variants.pop_first(), Some(MediaFileType::Spz));
       assert_eq!(variants.pop_first(), Some(MediaFileType::SceneRon));
       assert_eq!(variants.pop_first(), Some(MediaFileType::SceneJson));
+      assert_eq!(variants.pop_first(), Some(MediaFileType::MoodJson));
+      assert_eq!(variants.pop_first(), Some(MediaFileType::TimelineJson));
+      assert_eq!(variants.pop_first(), Some(MediaFileType::EditorJson));
       assert_eq!(variants.pop_first(), Some(MediaFileType::Pmd));
       assert_eq!(variants.pop_first(), Some(MediaFileType::Vmd));
       assert_eq!(variants.pop_first(), Some(MediaFileType::Pmx));
