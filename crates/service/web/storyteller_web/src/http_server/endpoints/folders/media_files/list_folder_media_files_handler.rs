@@ -12,6 +12,7 @@ use artcraft_api_defs::common::responses::media_links::MediaLinks;
 use artcraft_api_defs::folders::media_files::{
   FolderMediaFilesPathInfo, ListFolderMediaFilesQueryParams,
 };
+use bucket_paths::legacy::typified_paths::public::media_files::bucket_file_path::MediaFileBucketPath;
 use enums::by_table::media_files::media_file_class::MediaFileClass;
 use enums::by_table::media_files::media_file_type::MediaFileType;
 use enums::common::visibility::Visibility;
@@ -29,7 +30,7 @@ use tokens::tokens::prompts::PromptToken;
 use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::common_responses::media::media_domain::MediaDomain;
 use crate::http_server::common_responses::media::media_file_cover_image_details::MediaFileCoverImageDetails;
-use crate::http_server::common_responses::media::media_file_list_conversion::build_media_links_and_cover;
+use crate::http_server::common_responses::media::media_links_builder::MediaLinksBuilder;
 use crate::http_server::endpoints::media_files::helpers::get_media_domain::get_media_domain;
 use crate::http_server::user_lookup::user_session::require_user_session::require_user_session;
 use crate::state::server_state::ServerState;
@@ -169,7 +170,7 @@ pub async fn list_folder_media_files_handler(
   })?;
 
   let maybe_cursor = rows.last().map(|last| {
-    server_state.opaque_cursors.encode_last_id_cursor(CURSOR_NAME, last.media.media_file_id)
+    server_state.opaque_cursors.encode_last_id_cursor(CURSOR_NAME, last.media_file_id)
   }).transpose().map_err(|err| {
     warn!("Failed to encode cursor: {:?}", err);
     CommonWebError::server_error_with_message("Failed to encode cursor")
@@ -194,28 +195,46 @@ fn folder_media_file_row_to_list_item(
   media_domain: MediaDomain,
   server_environment: server_environment::ServerEnvironment,
 ) -> FolderMediaFileListItem {
-  let (media_links, cover_image) =
-    build_media_links_and_cover(&row.media, media_domain, server_environment);
+  let bucket_path = MediaFileBucketPath::from_object_hash(
+    &row.public_bucket_directory_hash,
+    row.maybe_public_bucket_prefix.as_deref(),
+    row.maybe_public_bucket_extension.as_deref(),
+  );
+
+  let media_links = MediaLinksBuilder::from_media_path_and_env(
+    media_domain,
+    server_environment,
+    &bucket_path,
+  );
+
+  let cover_image = MediaFileCoverImageDetails::from_optional_db_fields(
+    &row.media_file_token,
+    media_domain,
+    server_environment,
+    row.maybe_cover_public_bucket_directory_hash.as_deref(),
+    row.maybe_cover_public_bucket_prefix.as_deref(),
+    row.maybe_cover_public_bucket_extension.as_deref(),
+  );
 
   FolderMediaFileListItem {
-    token: row.media.media_file_token,
+    token: row.media_file_token,
     added_to_folder_at: row.added_to_folder_at,
-    media_class: row.media.media_class,
-    media_type: row.media.media_type,
-    maybe_batch_token: row.media.maybe_batch_token,
+    media_class: row.media_class,
+    media_type: row.media_type,
+    maybe_batch_token: row.maybe_batch_token,
     media_links,
     cover_image,
-    creator_set_visibility: row.media.creator_set_visibility,
-    is_user_upload: row.media.is_user_upload,
+    creator_set_visibility: row.creator_set_visibility,
+    is_user_upload: row.is_user_upload,
     is_intermediate_system_file: row.is_intermediate_system_file,
-    maybe_title: row.media.maybe_title,
-    maybe_prompt_token: row.media.maybe_prompt_token,
-    maybe_original_filename: row.media.maybe_origin_filename,
+    maybe_title: row.maybe_title,
+    maybe_prompt_token: row.maybe_prompt_token,
+    maybe_original_filename: row.maybe_origin_filename,
     // Schema stores `INT(10)`; widen to u64 for the wire shape.
-    maybe_duration_millis: row.media.maybe_duration_millis.map(|n| n as u64),
-    maybe_frame_width: row.media.maybe_frame_width,
-    maybe_frame_height: row.media.maybe_frame_height,
-    created_at: row.media.created_at,
-    updated_at: row.media.updated_at,
+    maybe_duration_millis: row.maybe_duration_millis.map(|n| n as u64),
+    maybe_frame_width: row.maybe_frame_width,
+    maybe_frame_height: row.maybe_frame_height,
+    created_at: row.created_at,
+    updated_at: row.updated_at,
   }
 }

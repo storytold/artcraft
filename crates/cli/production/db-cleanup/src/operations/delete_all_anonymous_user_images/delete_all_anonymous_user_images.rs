@@ -55,7 +55,7 @@ pub async fn delete_all_anonymous_user_images(_args: &Args, mysql: &Pool<MySql>)
       }
 
       info!("Deleting image file: {:?}", &file.token);
-      delete_media_file_as_mod(&file.token, ECHELON_USER_TOKEN, &mysql).await?;
+      delete_media_file_as_mod(&file.token, ECHELON_USER_TOKEN, mysql).await?;
     }
 
     page_index += 1;
