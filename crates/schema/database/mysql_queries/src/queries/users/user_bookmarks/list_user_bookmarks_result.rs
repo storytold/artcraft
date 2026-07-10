@@ -171,6 +171,7 @@ impl RawUserBookmarkRecord {
               MediaFileType::Bvh => Some("3d file".to_string()),
               MediaFileType::Fbx => Some("3d file".to_string()),
               MediaFileType::Obj => Some("3d file".to_string()),
+              MediaFileType::Ply => Some("3d splat".to_string()),
               MediaFileType::Glb => Some("3d file".to_string()),
               MediaFileType::Gltf => Some("3d file".to_string()),
               MediaFileType::Spz => Some("3d splat".to_string()),

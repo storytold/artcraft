@@ -24,6 +24,10 @@ pub enum RouterSplatModel {
 
   #[serde(rename = "marble_1p1_plus")]
   Marble1p1Plus,
+
+  /// TripoSplat: single-image to 3D Gaussian splat (via Fal).
+  #[serde(rename = "triposplat")]
+  TripoSplat,
 }
 
 #[cfg(test)]
@@ -40,6 +44,7 @@ mod tests {
     assert_serde_round_trip(RouterSplatModel::Marble1p0Draft, "marble_1p0_draft");
     assert_serde_round_trip(RouterSplatModel::Marble1p1, "marble_1p1");
     assert_serde_round_trip(RouterSplatModel::Marble1p1Plus, "marble_1p1_plus");
+    assert_serde_round_trip(RouterSplatModel::TripoSplat, "triposplat");
   }
 
   #[test]
@@ -53,6 +58,7 @@ mod tests {
       (RouterSplatModel::Marble1p0Draft, CommonSplatModel::Marble1p0Draft),
       (RouterSplatModel::Marble1p1, CommonSplatModel::Marble1p1),
       (RouterSplatModel::Marble1p1Plus, CommonSplatModel::Marble1p1Plus),
+      (RouterSplatModel::TripoSplat, CommonSplatModel::TripoSplat),
     ];
     for (router_model, expected_common) in cases {
       let json = serde_json::to_string(&router_model).unwrap();

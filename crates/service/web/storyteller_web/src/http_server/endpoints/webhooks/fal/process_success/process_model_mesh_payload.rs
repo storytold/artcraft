@@ -6,6 +6,7 @@ use bucket_paths::legacy::typified_paths::public::media_files::bucket_file_path:
 use enums::by_table::media_files::media_file_class::MediaFileClass;
 use enums::by_table::media_files::media_file_engine_category::MediaFileEngineCategory;
 use enums::by_table::media_files::media_file_origin_category::MediaFileOriginCategory;
+use enums::by_table::media_files::media_file_origin_product_category::MediaFileOriginProductCategory;
 use enums::by_table::media_files::media_file_type::MediaFileType;
 use fal_client::webhook_payload::hydrated::hydrated_webhook_contents::{ModelMeshData, ModelObjData};
 use hashing::sha256::sha256_hash_bytes::sha256_hash_bytes;
@@ -149,6 +150,12 @@ pub(crate) async fn upload_mesh_file(
         CommonWebError::from_anyhow_error(err)
       })?;
 
+  // PLY results are Gaussian splats (e.g. TripoSplat), not meshes: store
+  // them the way the World Labs splat pipeline does — tagged as world
+  // generation, with no `Object` engine category. No fal mesh endpoint
+  // returns PLY, so the file type is a reliable discriminator.
+  let is_gaussian_splat = matches!(media_file_type, MediaFileType::Ply);
+
   let public_upload_path = MediaFileBucketPath::generate_new(PREFIX, Some(&extension_with_period));
 
   info!("Uploading media to bucket path: {}", public_upload_path.get_full_object_path_str());
@@ -163,14 +170,13 @@ pub(crate) async fn upload_mesh_file(
         CommonWebError::from_anyhow_error(err)
       })?;
 
-  let media_token = MediaFileInsertBuilder::new()
+  let mut insert_builder = MediaFileInsertBuilder::new()
       .checksum_sha2(&file_hash)
       .creator_ip_address(&job.creator_ip_address)
       .file_size_bytes(file_size_bytes as u64)
       .maybe_batch_generation_token(maybe_batch_token)
       .maybe_creator_anonymous_visitor(job.maybe_creator_anonymous_visitor_token.as_ref())
       .maybe_creator_user(job.maybe_creator_user_token.as_ref())
-      .maybe_engine_category(Some(MediaFileEngineCategory::Object))
       .maybe_generation_provider(Some(GenerationProvider::Artcraft))
       .maybe_prompt_token(job.maybe_prompt_token.as_ref())
       .maybe_platform_type(job.maybe_platform_type)
@@ -178,7 +184,17 @@ pub(crate) async fn upload_mesh_file(
       .media_file_origin_category(MediaFileOriginCategory::Inference)
       .media_file_type(media_file_type)
       .mime_type(mime_type)
-      .public_bucket_directory_hash(&public_upload_path)
+      .public_bucket_directory_hash(&public_upload_path);
+
+  if is_gaussian_splat {
+    insert_builder = insert_builder
+        .media_file_origin_product_category(MediaFileOriginProductCategory::WorldGeneration);
+  } else {
+    insert_builder = insert_builder
+        .maybe_engine_category(Some(MediaFileEngineCategory::Object));
+  }
+
+  let media_token = insert_builder
       .insert_pool(&server_state.mysql_pool)
       .await
       .map_err(|err| {

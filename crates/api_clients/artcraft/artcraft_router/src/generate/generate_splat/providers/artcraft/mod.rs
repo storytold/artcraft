@@ -6,3 +6,4 @@ pub mod marble_1p0;
 pub mod marble_1p0_draft;
 pub mod marble_1p1;
 pub mod marble_1p1_plus;
+pub mod triposplat;

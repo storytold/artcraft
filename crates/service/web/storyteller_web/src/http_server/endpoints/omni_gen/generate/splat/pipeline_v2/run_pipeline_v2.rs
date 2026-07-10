@@ -4,6 +4,7 @@ use std::convert::TryFrom;
 use log::{error, info, warn};
 
 use artcraft_router::api::router_provider::RouterProvider;
+use artcraft_router::api::router_splat_model::RouterSplatModel;
 use artcraft_router::generate::generate_splat::generate_splat_request_builder::GenerateSplatRequestBuilder;
 use artcraft_router::generate::generate_splat::generate_splat_response::GenerateSplatResponse;
 use artcraft_router::generate::generate_splat::splat_generation_draft_context::SplatGenerationDraftContext;
@@ -18,6 +19,7 @@ use crate::http_server::endpoints::generate::common::generation_debug_logs::{
   insert_provider_request_debug_log, provider_request_debug_log_type, GenerationDebugLogContext,
 };
 use crate::http_server::endpoints::omni_gen::generate::splat::helpers::pipeline_result::PipelineResult;
+use crate::http_server::endpoints::omni_gen::generate::splat::helpers::resolve_media_tokens_to_urls::resolve_media_tokens_to_urls;
 use crate::http_server::endpoints::omni_gen::generate::video::helpers::bill_wallet::bill_wallet;
 use crate::http_server::endpoints::omni_gen::generate::video::helpers::build_router_client::build_router_client;
 use crate::http_server::endpoints::omni_gen::generate::video::kinovi_account::KinoviAccount;
@@ -52,15 +54,23 @@ pub async fn run_pipeline_v2(args: RunPipelineV2Args<'_>) -> Result<PipelineResu
 
   let router_builder = router_builder.clone();
 
-  // All splat models are fulfilled through World Labs.
-  let provider = RouterProvider::WorldLabs;
+  // Marble models are fulfilled through World Labs; TripoSplat through Fal.
+  let provider = match router_builder.model {
+    RouterSplatModel::TripoSplat => RouterProvider::Fal,
+    _ => RouterProvider::WorldLabs,
+  };
 
   // 1. Build execution request.
   //    World Labs media inputs stay token-typed here — requests with media
   //    return a Draft whose finalize step maps tokens to Artcraft URLs via
   //    the draft context (mirroring the audio pipeline's Kinovi drafts).
+  //    Fal takes media URLs directly, so its tokens resolve before building.
   let mut exec_builder = router_builder.clone();
   exec_builder.provider = provider;
+
+  if matches!(provider, RouterProvider::Fal) {
+    resolve_media_tokens_to_urls(&mut exec_builder, media_file_to_url_map.as_ref());
+  }
 
   let draft_or_request = exec_builder.build2()
       .map_err(|e| {

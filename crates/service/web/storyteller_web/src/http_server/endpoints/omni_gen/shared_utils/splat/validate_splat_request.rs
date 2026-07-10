@@ -1,4 +1,5 @@
 use artcraft_api_defs::omni_gen::cost_and_generate_requests::omni_gen_splat_cost_and_generate_request::OmniGenSplatCostAndGenerateRequest;
+use enums::common::generation::common_splat_model::CommonSplatModel;
 
 use crate::http_server::common_responses::common_web_error::CommonWebError;
 
@@ -11,14 +12,35 @@ const MAX_IMAGE_REFERENCES: usize = 4;
 /// NB: The cost endpoint deliberately does NOT call this — the UI polls for
 /// a price while the user is still composing the request.
 ///
-/// Model presence is enforced later during hydration; the input-shape rules
-/// below apply uniformly to all Marble models.
+/// Model presence is enforced later during hydration. The Marble family
+/// shares one set of input-shape rules; TripoSplat is image-only.
 pub fn validate_splat_request(
   request: &OmniGenSplatCostAndGenerateRequest,
 ) -> Result<(), CommonWebError> {
   let image_reference_count = request.reference_image_media_tokens.as_ref().map_or(0, |t| t.len());
   let has_video = request.reference_video_media_token.is_some();
   let has_prompt = request.prompt.as_deref().is_some_and(|p| !p.trim().is_empty());
+
+  // TripoSplat reconstructs a splat from exactly one image; it takes no
+  // prompt, video, or panorama flag.
+  if request.model == Some(CommonSplatModel::TripoSplat) {
+    if image_reference_count != 1 {
+      return Err(bad_input(
+        "model triposplat requires exactly one reference image".to_string(),
+      ));
+    }
+    if has_video {
+      return Err(bad_input(
+        "model triposplat does not support a reference video".to_string(),
+      ));
+    }
+    if request.is_panoramic == Some(true) {
+      return Err(bad_input(
+        "model triposplat does not support panoramic input".to_string(),
+      ));
+    }
+    return Ok(());
+  }
 
   if !has_prompt && image_reference_count == 0 && !has_video {
     return Err(bad_input(

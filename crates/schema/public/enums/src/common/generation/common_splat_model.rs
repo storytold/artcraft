@@ -21,6 +21,10 @@ pub enum CommonSplatModel {
 
   #[serde(rename = "marble_1p1_plus")]
   Marble1p1Plus,
+
+  /// TripoSplat: single-image to 3D Gaussian splat (via Fal).
+  #[serde(rename = "triposplat")]
+  TripoSplat,
 }
 
 impl CommonSplatModel {
@@ -33,6 +37,7 @@ impl CommonSplatModel {
       Self::Marble1p0Draft => CommonModelType::Marble1p0Draft,
       Self::Marble1p1 => CommonModelType::Marble1p1,
       Self::Marble1p1Plus => CommonModelType::Marble1p1Plus,
+      Self::TripoSplat => CommonModelType::TripoSplat,
     }
   }
 }
@@ -51,6 +56,7 @@ mod tests {
     assert_serialization(CommonSplatModel::Marble1p0Draft, "marble_1p0_draft");
     assert_serialization(CommonSplatModel::Marble1p1, "marble_1p1");
     assert_serialization(CommonSplatModel::Marble1p1Plus, "marble_1p1_plus");
+    assert_serialization(CommonSplatModel::TripoSplat, "triposplat");
   }
 
   #[test]
@@ -62,6 +68,7 @@ mod tests {
       ("marble_1p0_draft", CommonSplatModel::Marble1p0Draft),
       ("marble_1p1", CommonSplatModel::Marble1p1),
       ("marble_1p1_plus", CommonSplatModel::Marble1p1Plus),
+      ("triposplat", CommonSplatModel::TripoSplat),
     ];
     for (json_str, expected) in cases {
       let json = format!("\"{}\"", json_str);
@@ -80,6 +87,7 @@ mod tests {
       CommonSplatModel::Marble1p0Draft,
       CommonSplatModel::Marble1p1,
       CommonSplatModel::Marble1p1Plus,
+      CommonSplatModel::TripoSplat,
     ];
     for variant in all {
       let json = serde_json::to_string(&variant).unwrap();
@@ -97,6 +105,7 @@ mod tests {
       (CommonSplatModel::Marble1p0Draft, CommonModelType::Marble1p0Draft),
       (CommonSplatModel::Marble1p1, CommonModelType::Marble1p1),
       (CommonSplatModel::Marble1p1Plus, CommonModelType::Marble1p1Plus),
+      (CommonSplatModel::TripoSplat, CommonModelType::TripoSplat),
     ];
     for (splat_model, expected) in models {
       assert_eq!(splat_model.to_common_model_type(), expected);

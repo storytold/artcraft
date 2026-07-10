@@ -8,6 +8,8 @@ use crate::generate::generate_splat::providers::artcraft::marble_1p0::build::bui
 use crate::generate::generate_splat::providers::artcraft::marble_1p0_draft::build::build_artcraft_marble_1p0_draft;
 use crate::generate::generate_splat::providers::artcraft::marble_1p1::build::build_artcraft_marble_1p1;
 use crate::generate::generate_splat::providers::artcraft::marble_1p1_plus::build::build_artcraft_marble_1p1_plus;
+use crate::generate::generate_splat::providers::artcraft::triposplat::build::build_artcraft_triposplat;
+use crate::generate::generate_splat::providers::fal::triposplat::build::build_fal_triposplat;
 use crate::generate::generate_splat::providers::worldlabs::marble_1p0::build::build_worldlabs_marble_1p0;
 use crate::generate::generate_splat::providers::worldlabs::marble_1p0_draft::build::build_worldlabs_marble_1p0_draft;
 use crate::generate::generate_splat::providers::worldlabs::marble_1p1::build::build_worldlabs_marble_1p1;
@@ -79,6 +81,9 @@ impl GenerateSplatRequestBuilder {
       (RouterProvider::Artcraft, RouterSplatModel::Marble1p0Draft | RouterSplatModel::Marble0p1Mini) => build_artcraft_marble_1p0_draft(self),
       (RouterProvider::Artcraft, RouterSplatModel::Marble1p1) => build_artcraft_marble_1p1(self),
       (RouterProvider::Artcraft, RouterSplatModel::Marble1p1Plus) => build_artcraft_marble_1p1_plus(self),
+      (RouterProvider::Artcraft, RouterSplatModel::TripoSplat) => build_artcraft_triposplat(self),
+      // Fal
+      (RouterProvider::Fal, RouterSplatModel::TripoSplat) => build_fal_triposplat(self),
       // World Labs
       (RouterProvider::WorldLabs, RouterSplatModel::Marble1p0 | RouterSplatModel::Marble0p1Plus) => build_worldlabs_marble_1p0(self),
       (RouterProvider::WorldLabs, RouterSplatModel::Marble1p0Draft | RouterSplatModel::Marble0p1Mini) => build_worldlabs_marble_1p0_draft(self),

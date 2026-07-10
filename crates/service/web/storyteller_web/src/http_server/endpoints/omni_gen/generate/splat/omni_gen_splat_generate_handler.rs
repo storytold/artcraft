@@ -31,6 +31,7 @@ use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::endpoints::generate::common::generation_debug_logs::GenerationDebugLogContext;
 use crate::http_server::endpoints::generate::common::payments_error_test::payments_error_test;
 use crate::http_server::endpoints::omni_gen::generate::splat::helpers::hydrate_router_request::hydrate_to_router_request;
+use crate::http_server::endpoints::omni_gen::generate::splat::insert_db_job::insert_fal_job::{insert_fal_job, InsertFalJobArgs};
 use crate::http_server::endpoints::omni_gen::generate::splat::insert_db_job::insert_worldlabs_job::{insert_worldlabs_job, InsertWorldlabsJobArgs};
 use crate::http_server::endpoints::omni_gen::generate::splat::pipeline_v2::run_pipeline_v2::{run_pipeline_v2, RunPipelineV2Args};
 use crate::http_server::endpoints::omni_gen::generate::video::insert_db_job::shared_job_args::SharedJobArgs;
@@ -292,6 +293,35 @@ pub async fn omni_gen_splat_generate_handler(
         let token = insert_worldlabs_job(InsertWorldlabsJobArgs {
           operation_id: &payload.operation_id,
           maybe_wallet_ledger_entry_token: pipeline_result.billing.maybe_wallet_ledger_entry_token.as_ref(),
+          shared: SharedJobArgs {
+            apriori_job_token: &pipeline_result.billing.apriori_job_token,
+            idempotency_token: &idempotency_token,
+            user_token,
+            maybe_avt_token: maybe_avt_token.as_ref(),
+            maybe_model_type: maybe_prompt_model_type,
+            maybe_prompt_token: prompt_token.as_ref(),
+            maybe_debug_log_event_token: Some(&debug_log_event_token),
+            maybe_platform_type,
+            maybe_cost_estimates: Some(pipeline_result.cost_estimates),
+            ip_address: &ip_address,
+            transaction: &mut transaction,
+          },
+        }).await?;
+
+        (
+          token.clone(),
+          vec![token],
+        )
+      }
+      GenerateSplatResponse::Fal(payload) => {
+        let external_id = payload.request_id.as_deref().ok_or_else(|| {
+          error!("Fal splat generation response missing request_id");
+          CommonWebError::server_error_with_message("Fal generation response missing request_id")
+        })?;
+        info!("Inserting fal splat job with token: {:?}", pipeline_result.billing.apriori_job_token);
+
+        let token = insert_fal_job(InsertFalJobArgs {
+          external_job_id: external_id,
           shared: SharedJobArgs {
             apriori_job_token: &pipeline_result.billing.apriori_job_token,
             idempotency_token: &idempotency_token,
