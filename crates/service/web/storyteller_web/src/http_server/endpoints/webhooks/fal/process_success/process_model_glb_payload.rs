@@ -1,4 +1,5 @@
 use crate::http_server::common_responses::common_web_error::CommonWebError;
+use crate::http_server::endpoints::webhooks::fal::process_success::attach_cover_image::{attach_cover_image, AttachCoverImageArgs};
 use crate::http_server::endpoints::webhooks::fal::process_success::resolve_file_metadata::resolve_file_metadata;
 use crate::state::server_state::ServerState;
 use crate::util::http_download_url_to_bytes::http_download_url_to_bytes;
@@ -10,10 +11,8 @@ use enums::by_table::media_files::media_file_type::MediaFileType;
 use fal_client::webhook_payload::hydrated::hydrated_webhook_contents::{ModelGlbData, ThumbnailData};
 use hashing::sha256::sha256_hash_bytes::sha256_hash_bytes;
 use log::{info, warn};
-use enums::common::generation_provider::GenerationProvider;
 use mysql_queries::queries::generic_inference::api_providers::fal::get_inference_job_by_fal_id::FalJobDetails;
 use mysql_queries::queries::media_files::create::insert_builder::media_file_insert_builder::MediaFileInsertBuilder;
-use mysql_queries::queries::media_files::edit::set_media_file_cover_image::{set_media_file_cover_image, UpdateArgs};
 use tokens::tokens::media_files::MediaFileToken;
 
 const PREFIX : Option<&str> = Some("artcraft_");
@@ -199,108 +198,12 @@ async fn try_to_attach_thumbnail(
         CommonWebError::server_error_with_message("no `url` in thumbnail payload")
       })?;
 
-  // Download with a retry if the first attempt returns suspiciously few bytes.
-  let mut file_bytes = http_download_url_to_bytes(thumbnail_url)
-      .await
-      .map_err(|e| {
-        warn!("Failed to download thumbnail image from {}: {:?}", thumbnail_url, e);
-        CommonWebError::server_error_with_message(
-          &format!("Failed to download thumbnail image: {:?}", e))
-      })?;
-
-  if file_bytes.len() <= 10 {
-    warn!(
-      "Downloaded only {} bytes from {} — retrying once",
-      file_bytes.len(),
-      thumbnail_url,
-    );
-    file_bytes = http_download_url_to_bytes(thumbnail_url)
-        .await
-        .map_err(|e| {
-          warn!("Failed to download thumbnail on retry from {}: {:?}", thumbnail_url, e);
-          CommonWebError::server_error_with_message(
-            &format!("Failed to download thumbnail on retry: {:?}", e))
-        })?;
-  }
-
-  // Resolve mime type: magic bytes first, fal content_type as fallback.
-  let metadata = resolve_file_metadata(&file_bytes, thumbnail_data.content_type.as_deref())
-      .ok_or_else(|| {
-        warn!(
-          "Could not determine file type for thumbnail (bytes: {}, fal content_type: {:?})",
-          file_bytes.len(),
-          thumbnail_data.content_type,
-        );
-        CommonWebError::server_error_with_message(
-          &format!("Could not determine file type for thumbnail (bytes: {}, fal content_type: {:?})",
-            file_bytes.len(), thumbnail_data.content_type))
-      })?;
-
-  let mime_type = metadata.mime_type.as_str();
-
-  info!("Mime type of thumbnail image: {}, source: {:?}", mime_type, metadata.source);
-
-  let media_file_type = MediaFileType::try_from_mime_type(mime_type)
-      .ok_or_else(|| {
-        warn!("Unsupported thumbnail media file type: {}", mime_type);
-        CommonWebError::server_error_with_message(
-          &format!("Unsupported media file type: {}", mime_type))
-      })?;
-
-  let extension_with_period = metadata.file_extension.extension_with_period();
-
-  let file_size_bytes = file_bytes.len();
-  let file_hash = sha256_hash_bytes(&file_bytes)
-      .map_err(|e| {
-        warn!("Failed to hash thumbnail bytes: {:?}", e);
-        CommonWebError::from_anyhow_error(e)
-      })?;
-
-  let public_upload_path = MediaFileBucketPath::generate_new(PREFIX, Some(&extension_with_period));
-
-  info!("Uploading cover image media to bucket path: {}", public_upload_path.get_full_object_path_str());
-
-  server_state.public_bucket_client.upload_file_with_content_type_process(
-    public_upload_path.get_full_object_path_str(),
-    file_bytes.as_ref(),
-    &mime_type)
-      .await
-      .map_err(|e| {
-        warn!("Failed to upload thumbnail to bucket: {:?}", e);
-        CommonWebError::from_anyhow_error(e)
-      })?;
-
-  let thumbnail_media_token = MediaFileInsertBuilder::new()
-      .checksum_sha2(&file_hash)
-      .creator_ip_address(&job.creator_ip_address)
-      .file_size_bytes(file_size_bytes as u64)
-      .is_intermediate_system_file(true)
-      .maybe_creator_anonymous_visitor(job.maybe_creator_anonymous_visitor_token.as_ref())
-      .maybe_creator_user(job.maybe_creator_user_token.as_ref())
-      .maybe_generation_provider(Some(GenerationProvider::Artcraft))
-      .maybe_prompt_token(job.maybe_prompt_token.as_ref())
-      .maybe_platform_type(job.maybe_platform_type)
-      .media_file_class(MediaFileClass::Image)
-      .media_file_origin_category(MediaFileOriginCategory::Inference)
-      .media_file_type(media_file_type)
-      .mime_type(mime_type)
-      .public_bucket_directory_hash(&public_upload_path)
-      .insert_pool(&server_state.mysql_pool)
-      .await
-      .map_err(|e| {
-        warn!("Failed to insert thumbnail media file record: {:?}", e);
-        CommonWebError::from_error(e)
-      })?;
-
-  let query_result = set_media_file_cover_image(UpdateArgs {
-    media_file_token: glb_media_token,
-    maybe_cover_image_media_file_token: Some(&thumbnail_media_token),
-    mysql_pool: &server_state.mysql_pool,
-  }).await;
-
-  if let Err(err) = query_result {
-    warn!("Failed to set cover image on media file {}: {:?}", glb_media_token, err);
-  }
-
-  Ok(())
+  attach_cover_image(AttachCoverImageArgs {
+    image_url: thumbnail_url,
+    maybe_content_type: thumbnail_data.content_type.as_deref(),
+    maybe_origin_product_category: None,
+    target_media_token: glb_media_token,
+    job,
+    server_state,
+  }).await
 }

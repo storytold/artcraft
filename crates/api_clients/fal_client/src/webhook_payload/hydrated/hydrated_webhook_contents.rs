@@ -47,6 +47,8 @@ pub struct ExtractedContents {
   pub model_glb: Option<ModelGlbData>,
 
   /// Parsed from `payload.model_mesh`.
+  /// NB: `triposplat` ply gaussian splat files also arrive via this payload handler.
+  ///     These are decidedly *not* "mesh" files!
   pub model_mesh: Option<ModelMeshData>,
 
   /// Parsed from `payload.model_obj` (e.g. Hunyuan 3D v3.1 Rapid's OBJ output).
@@ -57,6 +59,10 @@ pub struct ExtractedContents {
 
   /// Parsed from `payload.thumbnail`.
   pub thumbnail: Option<ThumbnailData>,
+
+  /// Parsed from `payload.preprocessed_image` (e.g. TripoSplat's segmented
+  /// input image, usable as a cover image for the splat result).
+  pub preprocessed_image: Option<PreprocessedImageData>,
 }
 
 /// Data under `payload.image`:
@@ -100,6 +106,8 @@ pub struct ModelGlbData {
 }
 
 /// Data under `payload.model_mesh` (there may be other sibling keys too)
+/// NB: `triposplat` ply gaussian splat files also arrive via this payload.
+///     These are decidedly *not* "mesh" files!
 #[derive(Debug, Deserialize)]
 pub struct ModelMeshData {
   pub content_type: Option<String>,
@@ -138,6 +146,19 @@ pub struct ThumbnailData {
   pub file_name: Option<String>,
   pub file_size: Option<usize>,
   pub url: Option<String>,
+}
+
+/// Data under `payload.preprocessed_image` (there may be other sibling keys too).
+/// Seen together with `model_mesh` in TripoSplat results: the segmented input
+/// image, which we use as a cover image for the splat.
+#[derive(Debug, Deserialize)]
+pub struct PreprocessedImageData {
+  pub content_type: Option<String>,
+  pub file_name: Option<String>,
+  pub file_size: Option<usize>,
+  pub height: Option<u64>,
+  pub url: Option<String>,
+  pub width: Option<u64>,
 }
 
 #[derive(Debug)]

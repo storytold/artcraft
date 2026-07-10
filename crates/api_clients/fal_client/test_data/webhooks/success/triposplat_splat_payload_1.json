@@ -1,0 +1,28 @@
+{
+  "error": null,
+  "gateway_request_id": "019f4d0f-4cf2-76d3-b99b-c400641b3844",
+  "payload": {
+    "model_mesh": {
+      "content_type": "application/octet-stream",
+      "file_name": "output.ply",
+      "file_size": 17826208,
+      "url": "https://v3b.fal.media/files/b/0aa1b77c/hEzg5xn9A-1qrLsnywjN4_output.ply"
+    },
+    "num_gaussians": 262144,
+    "preprocessed_image": {
+      "content_type": "image/png",
+      "file_name": "61fc73dbe84446b08b1fcce2167b71d5.png",
+      "file_size": 952754,
+      "height": 1024,
+      "url": "https://v3b.fal.media/files/b/0aa1b77c/YyJ19g7lJsRNXmvZvahTE_61fc73dbe84446b08b1fcce2167b71d5.png",
+      "width": 1024
+    },
+    "seed": 1637204116,
+    "timings": {
+      "export": 0.794984320000367,
+      "inference": 4.911052849000043
+    }
+  },
+  "request_id": "019f4d0f-4cf2-76d3-b99b-c400641b3844",
+  "status": "OK"
+}

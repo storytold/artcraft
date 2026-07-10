@@ -103,8 +103,10 @@ pub async fn handle_successful_fal_webhook(
         maybe_media_token = Some(token);
       }
     } else if let Some(ref model_mesh_data) = extracted.model_mesh {
+      // NB: triposplat ply gaussian splat files also arrive via this payload handler.
+      //  These are decidedly *not* "mesh" files!
       info!("Handling model_mesh payload for request_id {} / job {:?}", request_id, job.job_token);
-      let token = process_model_mesh_payload(model_mesh_data, &job, server_state).await?;
+      let token = process_model_mesh_payload(model_mesh_data, extracted.preprocessed_image.as_ref(), &job, server_state).await?;
       if maybe_media_token.is_none() {
         maybe_media_token = Some(token);
       }
