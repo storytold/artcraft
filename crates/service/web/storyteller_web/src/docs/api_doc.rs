@@ -15,7 +15,6 @@ use crate::http_server::common_responses::simple_response::SimpleResponse;
 use crate::http_server::common_responses::tag_info::TagInfo;
 use crate::http_server::common_responses::user_details_lite::{UserDefaultAvatarInfo, UserDetailsLight};
 use crate::http_server::deprecated_endpoints::conversion::enqueue_fbx_to_gltf_handler::*;
-use crate::http_server::deprecated_endpoints::engine::create_scene_handler::*;
 use crate::http_server::deprecated_endpoints::workflows::enqueue::enqueue_face_fusion_workflow_handler::*;
 use crate::http_server::deprecated_endpoints::workflows::enqueue::enqueue_live_portrait_workflow_handler::*;
 use crate::http_server::deprecated_endpoints::workflows::enqueue::vst_common::vst_error::*;
@@ -66,7 +65,6 @@ use crate::http_server::endpoints::media_files::list::list_pinned_media_files_ha
 use crate::http_server::endpoints::media_files::search::search_featured_media_files_handler::*;
 use crate::http_server::endpoints::media_files::search::search_session_media_files_handler::*;
 use crate::http_server::endpoints::media_files::upload::upload_audio_media_file_handler::*;
-use crate::http_server::endpoints::media_files::upload::upload_engine_asset::upload_engine_asset_media_file_handler::*;
 use crate::http_server::endpoints::media_files::upload::upload_error::MediaFileUploadError;
 use crate::http_server::endpoints::media_files::upload::upload_generic::upload_media_file_handler::*;
 use crate::http_server::endpoints::media_files::upload::upload_image_media_file_handler::*;
@@ -82,8 +80,6 @@ use crate::http_server::endpoints::media_files::upload::upload_video_old::upload
 use crate::http_server::endpoints::omni_api::upload::omni_upload_audio_media_file_handler::*;
 use crate::http_server::endpoints::omni_api::upload::omni_upload_image_media_file_handler::*;
 use crate::http_server::endpoints::omni_api::upload::omni_upload_video_media_file_handler::*;
-use crate::http_server::endpoints::media_files::upsert_upload::write_engine_asset::write_engine_asset_media_file_handler::*;
-use crate::http_server::endpoints::media_files::upsert_upload::write_error::MediaFileWriteError;
 use crate::http_server::endpoints::model_download::enqueue_gptsovits_model_download_handler::*;
 use artcraft_api_defs::generate::video::edit::beeble_switchx_edit_video::*;
 use artcraft_api_defs::moderation::debug_logs::debug_log_entry::*;
@@ -412,7 +408,6 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     billing_component::stripe::http_endpoints::checkout::create::stripe_create_checkout_session_json_handler::stripe_create_checkout_session_json_handler,
     crate::http_server::endpoints::billing_fakeyou::list_active_user_subscriptions_handler::list_active_user_subscriptions_handler,
     crate::http_server::deprecated_endpoints::conversion::enqueue_fbx_to_gltf_handler::enqueue_fbx_to_gltf_handler,
-    crate::http_server::deprecated_endpoints::engine::create_scene_handler::create_scene_handler,
     crate::http_server::deprecated_endpoints::workflows::enqueue::enqueue_face_fusion_workflow_handler::enqueue_face_fusion_workflow_handler,
     crate::http_server::deprecated_endpoints::workflows::enqueue::enqueue_live_portrait_workflow_handler::enqueue_live_portrait_workflow_handler,
     crate::http_server::deprecated_endpoints::workflows::enqueue::enqueue_studio_workflow_handler::enqueue_studio_workflow_handler,
@@ -471,7 +466,6 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     crate::http_server::endpoints::media_files::search::search_featured_media_files_handler::search_featured_media_files_handler,
     crate::http_server::endpoints::media_files::search::search_session_media_files_handler::search_session_media_files_handler,
     crate::http_server::endpoints::media_files::upload::upload_audio_media_file_handler::upload_audio_media_file_handler,
-    crate::http_server::endpoints::media_files::upload::upload_engine_asset::upload_engine_asset_media_file_handler::upload_engine_asset_media_file_handler,
     crate::http_server::endpoints::media_files::upload::upload_generic::upload_media_file_handler::upload_media_file_handler,
     crate::http_server::endpoints::media_files::upload::upload_image_media_file_handler::upload_image_media_file_handler,
     crate::http_server::endpoints::media_files::upload::upload_new_engine_asset_media_file_handler::upload_new_engine_asset_media_file_handler,
@@ -483,7 +477,6 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     crate::http_server::endpoints::media_files::upload::upload_studio_shot::upload_studio_shot_media_file_handler::upload_studio_shot_media_file_handler,
     crate::http_server::endpoints::media_files::upload::upload_video_new::upload_new_video_media_file_handler::upload_new_video_media_file_handler,
     crate::http_server::endpoints::media_files::upload::upload_video_old::upload_video_media_file_handler::upload_video_media_file_handler,
-    crate::http_server::endpoints::media_files::upsert_upload::write_engine_asset::write_engine_asset_media_file_handler::write_engine_asset_media_file_handler,
     crate::http_server::endpoints::model_download::enqueue_gptsovits_model_download_handler::enqueue_gptsovits_model_download_handler,
     crate::http_server::endpoints::moderation::user_feature_flags::moderator_edit_user_feature_flags_handler::moderator_edit_user_feature_flags_handler,
     crate::http_server::endpoints::moderation::user_feature_flags::moderator_list_all_available_user_feature_flags_handler::moderator_list_all_available_user_feature_flags_handler,
@@ -737,8 +730,6 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     MediaFileModelDetails,
     MediaFileOriginDetails,
     MediaFileSocialMetaLight,
-    MediaFileWriteError,
-    MediaFileWriteError,
     MediaLinks,
     PaginationCursors,
     PaginationPage,
@@ -817,7 +808,6 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     CreateCommentSuccessResponse,
     CreateFeaturedItemRequest,
     CreateFeaturedItemSuccessResponse,
-    CreateSceneSuccessResponse,
     CreateUserBookmarkError,
     CreateUserBookmarkRequest,
     CreateUserBookmarkSuccessResponse,
@@ -1167,7 +1157,6 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     UpdateWeightRequest,
     UploadAudioMediaFileForm,
     UploadAudioMediaFileSuccessResponse,
-    UploadEngineAssetMediaSuccessResponse,
     UploadImageMediaFileForm,
     UploadImageMediaFileSuccessResponse,
     OmniUploadAudioMediaFileForm,
@@ -1212,7 +1201,6 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     VstSuccessResponse,
     Weight,
     WeightsData,
-    WriteEngineAssetMediaSuccessResponse,
 
     // Cost Estimate types
     EstimateImageCostRequest,

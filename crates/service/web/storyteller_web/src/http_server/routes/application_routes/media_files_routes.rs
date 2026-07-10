@@ -22,7 +22,6 @@ use crate::http_server::endpoints::media_files::list::list_session_project_media
 use crate::http_server::endpoints::media_files::search::search_featured_media_files_handler::search_featured_media_files_handler;
 use crate::http_server::endpoints::media_files::search::search_session_media_files_handler::search_session_media_files_handler;
 use crate::http_server::endpoints::media_files::upload::upload_audio_media_file_handler::upload_audio_media_file_handler;
-use crate::http_server::endpoints::media_files::upload::upload_engine_asset::upload_engine_asset_media_file_handler::upload_engine_asset_media_file_handler;
 use crate::http_server::endpoints::media_files::upload::upload_generic::upload_media_file_handler::upload_media_file_handler;
 use crate::http_server::endpoints::media_files::upload::upload_image_media_file_handler::upload_image_media_file_handler;
 use crate::http_server::endpoints::media_files::upload::upload_new_engine_asset_media_file_handler::upload_new_engine_asset_media_file_handler;
@@ -34,7 +33,6 @@ use crate::http_server::endpoints::media_files::upload::upload_spz_media_file_ha
 use crate::http_server::endpoints::media_files::upload::upload_studio_shot::upload_studio_shot_media_file_handler::upload_studio_shot_media_file_handler;
 use crate::http_server::endpoints::media_files::upload::upload_video_new::upload_new_video_media_file_handler::upload_new_video_media_file_handler;
 use crate::http_server::endpoints::media_files::upload::upload_video_old::upload_video_media_file_handler::upload_video_media_file_handler;
-use crate::http_server::endpoints::media_files::upsert_upload::write_engine_asset::write_engine_asset_media_file_handler::write_engine_asset_media_file_handler;
 
 pub fn add_media_file_routes<T, B> (app: App<T>) -> App<T>
   where
@@ -130,16 +128,8 @@ pub fn add_media_file_routes<T, B> (app: App<T>) -> App<T>
           .route(web::post().to(upload_image_media_file_handler))
           .route(web::head().to(|| HttpResponse::Ok()))
       )
-      .service(web::resource("/upload/engine_asset")
-          .route(web::post().to(upload_engine_asset_media_file_handler))
-          .route(web::head().to(|| HttpResponse::Ok()))
-      )
       .service(web::resource("/upload/pmx")
           .route(web::post().to(upload_pmx_media_file_handler))
-          .route(web::head().to(|| HttpResponse::Ok()))
-      )
-      .service(web::resource("/write/engine_asset")
-          .route(web::post().to(write_engine_asset_media_file_handler))
           .route(web::head().to(|| HttpResponse::Ok()))
       )
       .service(web::resource("/upload/new_engine_asset")

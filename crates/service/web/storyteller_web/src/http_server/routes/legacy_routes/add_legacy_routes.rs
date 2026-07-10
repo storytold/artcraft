@@ -11,9 +11,6 @@ use crate::http_server::deprecated_endpoints::categories::tts::list_fully_comput
 use crate::http_server::deprecated_endpoints::categories::tts::list_tts_categories::list_tts_categories_handler;
 use crate::http_server::deprecated_endpoints::conversion::enqueue_fbx_to_gltf_handler::enqueue_fbx_to_gltf_handler;
 use crate::http_server::deprecated_endpoints::conversion::enqueue_render_engine_scene_to_video_handler::enqueue_render_engine_scene_to_video_handler;
-use crate::http_server::deprecated_endpoints::engine::create_scene_handler::create_scene_handler;
-use crate::http_server::deprecated_endpoints::engine::get_scene_handler::get_scene_handler;
-use crate::http_server::deprecated_endpoints::engine::update_scene_handler::update_scene_handler;
 use crate::http_server::deprecated_endpoints::events::list_events::list_events_handler;
 use crate::http_server::deprecated_endpoints::flags::design_refresh_flag::disable_design_refresh_flag_handler::disable_design_refresh_flag_handler;
 use crate::http_server::deprecated_endpoints::flags::design_refresh_flag::enable_design_refresh_flag_handler::enable_design_refresh_flag_handler;
@@ -63,7 +60,6 @@ where
   app = add_model_download_routes(app);
   app = add_image_studio_routes(app);
   app = add_workflow_routes(app);
-  app = add_engine_routes(app); // /v1/engine/...
   app = add_desktop_vc_app_routes(app); // /v1/vc/...
   app = add_media_upload_routes(app); // /v1/media_upload/...
   app = add_trending_routes(app); // /v1/trending/...
@@ -352,29 +348,5 @@ where
 }
 
 // ==================== Engine Routes ====================
-
-fn add_engine_routes<T, B>(app: App<T>) -> App<T>
-where
-    B: MessageBody,
-    T: ServiceFactory<
-      ServiceRequest,
-      Config = (),
-      Response = ServiceResponse<B>,
-      Error = Error,
-      InitError = ()
-    >
-{
-  app.service(web::scope("/v1/engine")
-      .service(web::resource("/create_scene")
-          .route(web::post().to(create_scene_handler))
-          .route(web::head().to(|| HttpResponse::Ok()))
-      )
-      .service(web::resource("/scene/{token}")
-          .route(web::get().to(get_scene_handler))
-          .route(web::post().to(update_scene_handler))
-      )
-  )
-}
-
 
 
