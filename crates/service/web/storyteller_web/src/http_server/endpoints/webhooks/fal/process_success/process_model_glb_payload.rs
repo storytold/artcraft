@@ -1,5 +1,6 @@
 use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::endpoints::webhooks::fal::process_success::attach_cover_image::{attach_cover_image, AttachCoverImageArgs};
+use crate::http_server::endpoints::webhooks::fal::process_success::attach_prompt_imageref_cover::try_to_attach_prompt_imageref_cover;
 use crate::http_server::endpoints::webhooks::fal::process_success::process_model_mesh_payload::{upload_mesh_file, UploadMeshFileArgs};
 use crate::state::server_state::ServerState;
 use fal_client::webhook_payload::hydrated::hydrated_webhook_contents::{ModelGlbData, ModelUrlsData, ThumbnailData};
@@ -146,16 +147,22 @@ pub async fn process_model_glb_payload(
     }
   }
 
-  let result = try_to_attach_thumbnail(
-    maybe_thumbnail_data,
-    job,
-    server_state,
-    &media_token,
-  ).await;
+  if let Some(thumbnail_data) = maybe_thumbnail_data {
+    let result = try_to_attach_thumbnail(
+      thumbnail_data,
+      job,
+      server_state,
+      &media_token,
+    ).await;
 
-  // NB: Fail open
-  if let Err(err) = result {
-    warn!("Could not attach thumbnail as cover image to media file: {:?}", err);
+    // NB: Fail open
+    if let Err(err) = result {
+      warn!("Could not attach thumbnail as cover image to media file: {:?}", err);
+    }
+  } else {
+    // No thumbnail in the payload (e.g. Hunyuan 3D 2.0 / 2.1): fall back to
+    // the prompt's imageref as the cover image.
+    try_to_attach_prompt_imageref_cover(job, server_state, &media_token).await;
   }
 
   Ok((media_token, maybe_batch_token))
@@ -189,18 +196,11 @@ async fn upload_secondary_glb(
 }
 
 async fn try_to_attach_thumbnail(
-  maybe_thumbnail_data: Option<&ThumbnailData>,
+  thumbnail_data: &ThumbnailData,
   job: &FalJobDetails,
   server_state: &ServerState,
   glb_media_token: &MediaFileToken,
 ) -> Result<(), CommonWebError> {
-  let thumbnail_data = maybe_thumbnail_data
-      .ok_or_else(|| {
-        warn!("No thumbnail data in extracted contents");
-        CommonWebError::server_error_with_message(
-          "no thumbnail data in extracted contents")
-      })?;
-
   info!("Fal Thumbnail Data: {:?}", thumbnail_data);
 
   let thumbnail_url = thumbnail_data.url

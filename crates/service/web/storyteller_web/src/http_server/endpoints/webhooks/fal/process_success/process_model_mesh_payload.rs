@@ -1,5 +1,6 @@
 use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::endpoints::webhooks::fal::process_success::attach_cover_image::{attach_cover_image, AttachCoverImageArgs};
+use crate::http_server::endpoints::webhooks::fal::process_success::attach_prompt_imageref_cover::try_to_attach_prompt_imageref_cover;
 use crate::http_server::endpoints::webhooks::fal::process_success::resolve_file_metadata::resolve_file_metadata_with_file_name;
 use crate::state::server_state::ServerState;
 use crate::util::http_download_url_to_bytes::http_download_url_to_bytes;
@@ -57,6 +58,10 @@ pub async fn process_model_mesh_payload(
     if let Err(err) = result {
       warn!("Could not attach preprocessed image as cover image to media file: {:?}", err);
     }
+  } else {
+    // No image in the payload: fall back to the prompt's imageref as the
+    // cover image.
+    try_to_attach_prompt_imageref_cover(job, server_state, &media_token).await;
   }
 
   Ok(media_token)
@@ -76,14 +81,20 @@ pub async fn process_model_obj_payload(
         CommonWebError::server_error_with_message("no `url` in model obj payload")
       })?;
 
-  upload_mesh_file(UploadMeshFileArgs {
+  let media_token = upload_mesh_file(UploadMeshFileArgs {
     mesh_url,
     maybe_content_type: model_obj_data.content_type.as_deref(),
     maybe_file_name: model_obj_data.file_name.as_deref(),
     maybe_batch_token: None,
     job,
     server_state,
-  }).await
+  }).await?;
+
+  // `model_obj` payloads never carry a thumbnail: fall back to the prompt's
+  // imageref as the cover image.
+  try_to_attach_prompt_imageref_cover(job, server_state, &media_token).await;
+
+  Ok(media_token)
 }
 
 pub(crate) struct UploadMeshFileArgs<'a> {
