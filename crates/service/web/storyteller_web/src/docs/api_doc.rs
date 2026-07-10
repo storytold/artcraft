@@ -332,6 +332,7 @@ use artcraft_api_defs::analytics::log_active_user::*;
 use artcraft_api_defs::credits::get_session_credits::*;
 use artcraft_api_defs::subscriptions::get_session_subscription::*;
 use artcraft_api_defs::media_file::list_batch_generated_media_files::*;
+use artcraft_api_defs::media_file::list_session_project_media_files::*;
 // Handler modules with locally-defined types
 use crate::http_server::endpoints::moderation::info::moderator_token_info_handler::*;
 use artcraft_api_defs::characters::create_character::*;
@@ -466,6 +467,7 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     crate::http_server::endpoints::media_files::list::list_media_files_for_user_handler::list_media_files_for_user_handler,
     crate::http_server::endpoints::media_files::list::list_media_files_handler::list_media_files_handler,
     crate::http_server::endpoints::media_files::list::list_pinned_media_files_handler::list_pinned_media_files_handler,
+    crate::http_server::endpoints::media_files::list::list_session_project_media_files_handler::list_session_project_media_files_handler,
     crate::http_server::endpoints::media_files::search::search_featured_media_files_handler::search_featured_media_files_handler,
     crate::http_server::endpoints::media_files::search::search_session_media_files_handler::search_session_media_files_handler,
     crate::http_server::endpoints::media_files::upload::upload_audio_media_file_handler::upload_audio_media_file_handler,
@@ -1078,6 +1080,7 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     ListPinnedWeightsSuccessResponse,
     ListSessionJobsItem,
     ListSessionJobsQueryParams,
+    ListSessionProjectMediaFilesSuccessResponse,
     ListSessionJobsSuccessResponse,
     ListSessionRequestDetailsResponse,
     ListSessionResultDetailsResponse,
@@ -1121,6 +1124,7 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     ModernInferenceQueueStats,
     PinnedMediaFile,
     PinnedModelWeightForList,
+    ProjectMediaFileInfo,
     PromptInfo,
     RatingRow,
     RedeemBetaKeyRequest,
