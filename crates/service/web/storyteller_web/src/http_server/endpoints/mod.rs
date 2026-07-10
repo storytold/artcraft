@@ -23,7 +23,6 @@ pub mod prompts;
 pub mod service;
 pub mod stats;
 pub mod subscriptions;
-pub mod tags;
 pub mod trending;
 pub mod tts;
 pub mod user_bookmarks;
