@@ -7,12 +7,18 @@ use tokens::tokens::batch_generations::BatchGenerationToken;
 use tokens::tokens::media_files::MediaFileToken;
 use tokens::tokens::prompts::PromptToken;
 
-/// One media file row from the tag-scoped media file lists (untagged /
-/// tagged / with-tag), with the joined fields the endpoints need to
-/// materialize MediaLinks, MediaFileCoverImageDetails, and the rest of
-/// the typed response shape.
+/// The common media-file row shape shared by list queries (folder
+/// listings, tag listings, etc.): the file's own metadata plus the
+/// joined cover-image bucket fields the endpoints need to materialize
+/// MediaLinks, MediaFileCoverImageDetails, and the rest of the typed
+/// response shape.
+///
+/// Queries can `sqlx::query_as!` directly into this struct when they
+/// select exactly these columns (alias `media_files.id` to
+/// `media_file_id`, and the cover LEFT JOIN fields to the
+/// `maybe_cover_*` names).
 #[derive(Debug, Clone)]
-pub struct TagMediaFileRow {
+pub struct MediaFileListRow {
   /// `media_files.id` — used as the pagination cursor.
   pub media_file_id: u64,
 

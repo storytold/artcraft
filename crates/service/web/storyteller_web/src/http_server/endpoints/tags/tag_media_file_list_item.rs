@@ -3,11 +3,10 @@ use serde_derive::Serialize;
 use utoipa::ToSchema;
 
 use artcraft_api_defs::common::responses::media_links::MediaLinks;
-use bucket_paths::legacy::typified_paths::public::media_files::bucket_file_path::MediaFileBucketPath;
 use enums::by_table::media_files::media_file_class::MediaFileClass;
 use enums::by_table::media_files::media_file_type::MediaFileType;
 use enums::common::visibility::Visibility;
-use mysql_queries::queries::tags::tag_media_file_row::TagMediaFileRow;
+use mysql_queries::queries::media_files::list::media_file_list_row::MediaFileListRow;
 use server_environment::ServerEnvironment;
 use tokens::tokens::batch_generations::BatchGenerationToken;
 use tokens::tokens::media_files::MediaFileToken;
@@ -15,7 +14,7 @@ use tokens::tokens::prompts::PromptToken;
 
 use crate::http_server::common_responses::media::media_domain::MediaDomain;
 use crate::http_server::common_responses::media::media_file_cover_image_details::MediaFileCoverImageDetails;
-use crate::http_server::common_responses::media::media_links_builder::MediaLinksBuilder;
+use crate::http_server::common_responses::media::media_file_list_conversion::build_media_links_and_cover;
 
 /// One media file as it appears in the tag-scoped media file lists
 /// (untagged / tagged / with-tag). Same lean shape as the folder list
@@ -65,30 +64,11 @@ pub struct TagMediaFileListItem {
 }
 
 pub fn tag_media_file_row_to_list_item(
-  row: TagMediaFileRow,
+  row: MediaFileListRow,
   media_domain: MediaDomain,
   server_environment: ServerEnvironment,
 ) -> TagMediaFileListItem {
-  let bucket_path = MediaFileBucketPath::from_object_hash(
-    &row.public_bucket_directory_hash,
-    row.maybe_public_bucket_prefix.as_deref(),
-    row.maybe_public_bucket_extension.as_deref(),
-  );
-
-  let media_links = MediaLinksBuilder::from_media_path_and_env(
-    media_domain,
-    server_environment,
-    &bucket_path,
-  );
-
-  let cover_image = MediaFileCoverImageDetails::from_optional_db_fields(
-    &row.media_file_token,
-    media_domain,
-    server_environment,
-    row.maybe_cover_public_bucket_directory_hash.as_deref(),
-    row.maybe_cover_public_bucket_prefix.as_deref(),
-    row.maybe_cover_public_bucket_extension.as_deref(),
-  );
+  let (media_links, cover_image) = build_media_links_and_cover(&row, media_domain, server_environment);
 
   TagMediaFileListItem {
     token: row.media_file_token,

@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::marker::PhantomData;
 use std::sync::Arc;
 
@@ -13,6 +13,9 @@ use artcraft_api_defs::tags::common::TagDetails;
 use mysql_queries::queries::tags::bulk_list_tags_for_media_files::{
   bulk_list_tags_for_media_files, BulkListTagsForMediaFilesArgs,
 };
+use mysql_queries::queries::tags::filter_visible_media_file_tokens::{
+  filter_visible_media_file_tokens, FilterVisibleMediaFileTokensArgs,
+};
 use tokens::tokens::media_files::MediaFileToken;
 
 use crate::http_server::common_responses::common_web_error::CommonWebError;
@@ -22,9 +25,12 @@ use crate::state::server_state::ServerState;
 const MAX_BULK: usize = 500;
 
 /// All tags on each of the supplied media files, in one round-trip.
-/// Tags aren't scoped to the caller (per-file tags are public), but a
-/// login is required. POST because the token list belongs in a request
-/// body — the operation is still a pure read.
+/// Follows the same visibility rule as the single-file listing: tags on
+/// public and hidden files are readable by anyone; a PRIVATE file's
+/// tags only appear for its creator (other requesters see it with an
+/// empty tag list, indistinguishable from an untagged file). POST
+/// because the token list belongs in a request body — the operation is
+/// still a pure read.
 #[utoipa::path(
   post,
   tag = "Tags",
@@ -42,13 +48,8 @@ pub async fn bulk_list_media_file_tags_handler(
   request: Json<BulkListMediaFileTagsRequest>,
   server_state: web::Data<Arc<ServerState>>,
 ) -> Result<Json<BulkListMediaFileTagsSuccessResponse>, CommonWebError> {
-  let mut conn = server_state.mysql_pool.acquire().await.map_err(|err| {
-    warn!("MySQL pool error: {:?}", err);
-    CommonWebError::from_error(err)
-  })?;
-
-  require_user_session(&http_request, &server_state.session_checker, &mut *conn).await?;
-
+  // Cheap validation first — oversized requests shouldn't cost a pool
+  // connection or a session query.
   if request.media_file_tokens.len() > MAX_BULK {
     return Err(CommonWebError::BadInputWithSimpleMessage(
       format!("too many media files in one request (max {})", MAX_BULK),
@@ -56,15 +57,33 @@ pub async fn bulk_list_media_file_tags_handler(
   }
 
   // Dedupe, preserving request order.
+  let mut seen = HashSet::new();
   let mut media_file_tokens: Vec<MediaFileToken> = Vec::new();
   for token in &request.media_file_tokens {
-    if !media_file_tokens.contains(token) {
+    if seen.insert(token.as_str()) {
       media_file_tokens.push(token.clone());
     }
   }
 
+  let mut conn = server_state.mysql_pool.acquire().await.map_err(|err| {
+    warn!("MySQL pool error: {:?}", err);
+    CommonWebError::from_error(err)
+  })?;
+
+  let user_session = require_user_session(&http_request, &server_state.session_checker, &mut *conn).await?;
+
+  let visible_tokens = filter_visible_media_file_tokens(FilterVisibleMediaFileTokensArgs {
+    candidate_tokens: &media_file_tokens,
+    requester_user_token: &user_session.user_token,
+    mysql_executor: &mut *conn,
+    phantom: PhantomData,
+  }).await.map_err(|err| {
+    warn!("filter_visible_media_file_tokens failed: {:?}", err);
+    CommonWebError::from_error(err)
+  })?;
+
   let pair_rows = bulk_list_tags_for_media_files(BulkListTagsForMediaFilesArgs {
-    media_file_tokens: &media_file_tokens,
+    media_file_tokens: &visible_tokens,
     mysql_executor: &mut *conn,
     phantom: PhantomData,
   }).await.map_err(|err| {
@@ -86,7 +105,8 @@ pub async fn bulk_list_media_file_tags_handler(
   }
 
   // One entry per requested token, in request order, empty list when
-  // the file has no tags. Tags sorted by value for stable output.
+  // the file has no tags (or isn't visible to the requester). Tags
+  // sorted by value for stable output.
   let media_files = media_file_tokens.into_iter()
     .map(|media_file_token| {
       let mut tags = tags_by_media_file.remove(&media_file_token).unwrap_or_default();

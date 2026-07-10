@@ -10,7 +10,7 @@ use tokens::tokens::media_files::MediaFileToken;
 use tokens::tokens::prompts::PromptToken;
 use tokens::tokens::users::UserToken;
 
-use crate::queries::tags::tag_media_file_row::TagMediaFileRow;
+use crate::queries::media_files::list::media_file_list_row::MediaFileListRow;
 
 pub struct ListUntaggedMediaFilesForUserArgs<'e, 'c, E>
 where
@@ -29,7 +29,7 @@ where
 /// NOT EXISTS probe is a point lookup on `index_media_file_token`.
 pub async fn list_untagged_media_files_for_user<'e, 'c: 'e, E>(
   args: ListUntaggedMediaFilesForUserArgs<'e, 'c, E>,
-) -> Result<Vec<TagMediaFileRow>, sqlx::Error>
+) -> Result<Vec<MediaFileListRow>, sqlx::Error>
 where
   E: 'e + Executor<'c, Database = MySql>,
 {
@@ -39,7 +39,8 @@ where
   let cursor_id = args.maybe_cursor_id.unwrap_or(i64::MAX as u64);
   let limit = args.limit as i64;
 
-  let rows = sqlx::query!(
+  sqlx::query_as!(
+    MediaFileListRow,
     r#"
 SELECT
   mf.id as `media_file_id: u64`,
@@ -91,31 +92,5 @@ LIMIT ?
     limit,
   )
     .fetch_all(args.mysql_executor)
-    .await?;
-
-  Ok(rows.into_iter()
-    .map(|r| TagMediaFileRow {
-      media_file_id: r.media_file_id,
-      media_file_token: r.media_file_token,
-      media_class: r.media_class,
-      media_type: r.media_type,
-      maybe_batch_token: r.maybe_batch_token,
-      public_bucket_directory_hash: r.public_bucket_directory_hash,
-      maybe_public_bucket_prefix: r.maybe_public_bucket_prefix,
-      maybe_public_bucket_extension: r.maybe_public_bucket_extension,
-      maybe_cover_public_bucket_directory_hash: r.maybe_cover_public_bucket_directory_hash,
-      maybe_cover_public_bucket_prefix: r.maybe_cover_public_bucket_prefix,
-      maybe_cover_public_bucket_extension: r.maybe_cover_public_bucket_extension,
-      creator_set_visibility: r.creator_set_visibility,
-      is_user_upload: r.is_user_upload,
-      maybe_title: r.maybe_title,
-      maybe_prompt_token: r.maybe_prompt_token,
-      maybe_origin_filename: r.maybe_origin_filename,
-      maybe_duration_millis: r.maybe_duration_millis,
-      maybe_frame_width: r.maybe_frame_width,
-      maybe_frame_height: r.maybe_frame_height,
-      created_at: r.created_at,
-      updated_at: r.updated_at,
-    })
-    .collect())
+    .await
 }

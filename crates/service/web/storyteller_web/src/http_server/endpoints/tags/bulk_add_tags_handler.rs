@@ -1,3 +1,4 @@
+use std::collections::HashSet;
 use std::marker::PhantomData;
 use std::sync::Arc;
 
@@ -77,6 +78,16 @@ pub async fn bulk_add_tags_handler(
     CommonWebError::from_error(err)
   })?;
 
+  // Nothing to tag — don't create (or revive) tags that would attach
+  // to no files.
+  if accepted.is_empty() {
+    return Ok(Json(BulkAddTagsSuccessResponse {
+      success: true,
+      accepted_media_file_tokens: Vec::new(),
+      tags: Vec::new(),
+    }));
+  }
+
   let outcome = apply_tags_to_media_files(
     &mut conn,
     &user_session.user_token,
@@ -92,21 +103,24 @@ pub async fn bulk_add_tags_handler(
   }))
 }
 
-/// Dedupe (preserving order) and enforce the bulk size cap. Shared with
+/// Dedupe (preserving order) and enforce the bulk size cap. Bails out
+/// mid-loop the moment the cap is exceeded, so an oversized body costs
+/// O(cap) rather than a full pass over an unbounded input. Shared with
 /// the bulk_set handler.
 pub fn dedupe_and_cap_media_file_tokens(
   input: &[MediaFileToken],
 ) -> Result<Vec<MediaFileToken>, CommonWebError> {
+  let mut seen = HashSet::new();
   let mut deduped: Vec<MediaFileToken> = Vec::new();
   for token in input {
-    if !deduped.contains(token) {
+    if seen.insert(token.as_str()) {
+      if deduped.len() >= MAX_BULK_MEDIA_FILES {
+        return Err(CommonWebError::BadInputWithSimpleMessage(
+          format!("too many media files in one request (max {})", MAX_BULK_MEDIA_FILES),
+        ));
+      }
       deduped.push(token.clone());
     }
-  }
-  if deduped.len() > MAX_BULK_MEDIA_FILES {
-    return Err(CommonWebError::BadInputWithSimpleMessage(
-      format!("too many media files in one request (max {})", MAX_BULK_MEDIA_FILES),
-    ));
   }
   Ok(deduped)
 }

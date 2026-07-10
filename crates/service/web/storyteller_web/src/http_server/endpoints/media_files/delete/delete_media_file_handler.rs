@@ -15,6 +15,9 @@ use http_server_common::response::serialize_as_json_error::serialize_as_json_err
 use log::warn;
 use mysql_queries::queries::media_files::delete::delete_media_file::{delete_media_file_as_mod, delete_media_file_as_user, undelete_media_file_as_mod, undelete_media_file_as_user};
 use mysql_queries::queries::media_files::get::get_media_file::get_media_file;
+use mysql_queries::queries::tags::list_tag_tokens_for_media_file::{list_tag_tokens_for_media_file, ListTagTokensForMediaFileArgs};
+use mysql_queries::queries::tags::recount_tag_use_counts::{recount_tag_use_counts, RecountTagUseCountsArgs};
+use std::marker::PhantomData;
 use tokens::tokens::media_files::MediaFileToken;
 use utoipa::ToSchema;
 
@@ -140,7 +143,39 @@ pub async fn delete_media_file_handler(
         }
     };
 
+    // Tag links survive delete/undelete (so an undelete restores the
+    // user's tags), but `tags.use_count` only counts links to live
+    // files — refresh the affected tags' counts. Best-effort: the
+    // delete already succeeded, and a stale count self-heals on the
+    // tag's next recount.
+    recount_tags_for_media_file(&path.token, &server_state).await;
+
     Ok(Json(SimpleGenericJsonSuccess{
         success: true
     }))
+}
+
+async fn recount_tags_for_media_file(
+    media_file_token: &MediaFileToken,
+    server_state: &ServerState,
+) {
+    let linked_tag_tokens = match list_tag_tokens_for_media_file(ListTagTokensForMediaFileArgs {
+        media_file_token,
+        mysql_executor: &server_state.mysql_pool,
+        phantom: PhantomData,
+    }).await {
+        Ok(tokens) => tokens,
+        Err(err) => {
+            warn!("list_tag_tokens_for_media_file failed after delete/undelete: {:?}", err);
+            return;
+        }
+    };
+
+    if let Err(err) = recount_tag_use_counts(RecountTagUseCountsArgs {
+        tag_tokens: &linked_tag_tokens,
+        mysql_executor: &server_state.mysql_pool,
+        phantom: PhantomData,
+    }).await {
+        warn!("recount_tag_use_counts failed after delete/undelete: {:?}", err);
+    }
 }

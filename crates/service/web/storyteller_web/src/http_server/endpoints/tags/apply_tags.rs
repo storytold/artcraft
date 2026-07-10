@@ -7,6 +7,9 @@ use sqlx::{Acquire, MySql, Transaction};
 use mysql_queries::queries::tags::clear_media_file_tags::{
   clear_media_file_tags, ClearMediaFileTagsArgs,
 };
+use mysql_queries::queries::tags::delete_links_to_soft_deleted_tags::{
+  delete_links_to_soft_deleted_tags, DeleteLinksToSoftDeletedTagsArgs,
+};
 use mysql_queries::queries::tags::delete_media_file_tags_not_in_set::{
   delete_media_file_tags_not_in_set, DeleteMediaFileTagsNotInSetArgs,
 };
@@ -172,6 +175,20 @@ async fn perform_apply_work(
     phantom: PhantomData,
   }).await.map_err(|err| {
     warn!("insert_media_file_tags failed: {:?}", err);
+    CommonWebError::from_error(err)
+  })?;
+
+  // Guard against a concurrent tag delete: our snapshot SELECT above
+  // may have seen the tag as live while another transaction soft-
+  // deleted it (hard-deleting its links). This DELETE is a locking
+  // read, so it observes the committed soft-delete and removes any
+  // links we just re-inserted, instead of leaving orphans.
+  delete_links_to_soft_deleted_tags(DeleteLinksToSoftDeletedTagsArgs {
+    tag_tokens: &tag_tokens,
+    mysql_executor: &mut **tx,
+    phantom: PhantomData,
+  }).await.map_err(|err| {
+    warn!("delete_links_to_soft_deleted_tags failed: {:?}", err);
     CommonWebError::from_error(err)
   })?;
 

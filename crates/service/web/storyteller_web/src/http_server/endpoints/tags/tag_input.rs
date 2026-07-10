@@ -45,13 +45,18 @@ pub fn parse_tag_input(
     if trimmed.is_empty() {
       continue;
     }
-    if trimmed.chars().count() > MAX_TAG_LENGTH_CHARS {
+    // NB: the lowercased form must be length-checked too — Unicode
+    // lowercasing can EXPAND a string (e.g. 'İ' U+0130 lowercases to
+    // "i\u{307}", two chars), and both columns are VARCHAR(255).
+    let lowercase = trimmed.to_lowercase();
+    if trimmed.chars().count() > MAX_TAG_LENGTH_CHARS
+      || lowercase.chars().count() > MAX_TAG_LENGTH_CHARS
+    {
       return Err(CommonWebError::BadInputWithSimpleMessage(
         format!("tag is too long (max {} characters)", MAX_TAG_LENGTH_CHARS),
       ));
     }
 
-    let lowercase = trimmed.to_lowercase();
     if !seen_lowercase.insert(lowercase.clone()) {
       continue;
     }
@@ -80,4 +85,40 @@ pub fn require_non_empty_tags(new_tags: &[NewTagValue]) -> Result<(), CommonWebE
     ));
   }
   Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  #[test]
+  fn parses_csv_with_trimming_and_case_insensitive_dedupe() {
+    let tags = parse_tag_input(Some(" Cats , sci-fi ,Wallpaper,, cats "), None).unwrap();
+    let values: Vec<&str> = tags.iter().map(|t| t.tag_value.as_str()).collect();
+    assert_eq!(values, vec!["Cats", "sci-fi", "Wallpaper"]);
+    assert_eq!(tags[0].tag_value_lowercase, "cats");
+  }
+
+  #[test]
+  fn rejects_both_or_neither_input() {
+    assert!(parse_tag_input(Some("a"), Some(&["b".to_string()])).is_err());
+    assert!(parse_tag_input(None, None).is_err());
+  }
+
+  #[test]
+  fn rejects_tag_whose_lowercase_form_expands_past_the_limit() {
+    // 'İ' (U+0130) is one char but lowercases to two ("i\u{307}"), so
+    // 255 of them pass a naive check while the lowercase form is 510
+    // chars — over the VARCHAR(255) limit.
+    let dotted_capital_i = "İ".repeat(MAX_TAG_LENGTH_CHARS);
+    assert_eq!(dotted_capital_i.chars().count(), MAX_TAG_LENGTH_CHARS);
+    assert!(parse_tag_input(Some(&dotted_capital_i), None).is_err());
+  }
+
+  #[test]
+  fn accepts_tag_at_exactly_the_length_limit() {
+    let max_length_tag = "a".repeat(MAX_TAG_LENGTH_CHARS);
+    let tags = parse_tag_input(Some(&max_length_tag), None).unwrap();
+    assert_eq!(tags.len(), 1);
+  }
 }

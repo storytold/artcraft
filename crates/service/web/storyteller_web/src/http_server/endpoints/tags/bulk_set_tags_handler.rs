@@ -74,6 +74,17 @@ pub async fn bulk_set_tags_handler(
     CommonWebError::from_error(err)
   })?;
 
+  // Nothing to update — don't create (or revive) tags that would
+  // attach to no files.
+  if accepted.is_empty() {
+    return Ok(Json(BulkSetTagsSuccessResponse {
+      success: true,
+      accepted_media_file_tokens: Vec::new(),
+      tags: Vec::new(),
+      removed_count: 0,
+    }));
+  }
+
   let outcome = apply_tags_to_media_files(
     &mut conn,
     &user_session.user_token,
