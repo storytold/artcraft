@@ -1,3 +1,4 @@
+pub mod extract_audio_payload;
 pub mod extract_image_payload;
 pub mod extract_images_payload;
 pub mod extract_video_payload;
@@ -18,8 +19,8 @@ use crate::webhook_payload::hydrated::hydrated_webhook_contents::ExtractedConten
 /// Try to extract known content keys from a success payload.
 ///
 /// Checks the payload (as a JSON object) for any of: `image`, `images`,
-/// `video`, `model_glb`, `model_glb_pbr`, `model_urls`, `model_mesh`,
-/// `model_obj`, `result_files`, `thumbnail`, `rendered_image`,
+/// `video`, `audio`, `model_glb`, `model_glb_pbr`, `model_urls`,
+/// `model_mesh`, `model_obj`, `result_files`, `thumbnail`, `rendered_image`,
 /// `preprocessed_image`. If at least one is found, returns
 /// `Some(ExtractedContents)` with copies of the relevant values. Multiple
 /// keys can be populated simultaneously. Returns `None` if the payload is
@@ -30,6 +31,7 @@ pub fn extract_contents_from_payload(payload: &Value) -> Option<ExtractedContent
   let image = extract_image_payload::extract_image(obj);
   let images = extract_images_payload::extract_images(obj);
   let video = extract_video_payload::extract_video(obj);
+  let audio = extract_audio_payload::extract_audio(obj);
   let model_glb = extract_model_glb_payload::extract_model_glb(obj);
   let model_glb_pbr = extract_model_glb_pbr_payload::extract_model_glb_pbr(obj);
   let model_urls = extract_model_urls_payload::extract_model_urls(obj);
@@ -40,7 +42,7 @@ pub fn extract_contents_from_payload(payload: &Value) -> Option<ExtractedContent
   let rendered_image = extract_rendered_image_payload::extract_rendered_image(obj);
   let preprocessed_image = extract_preprocessed_image_payload::extract_preprocessed_image(obj);
 
-  if image.is_none() && images.is_none() && video.is_none()
+  if image.is_none() && images.is_none() && video.is_none() && audio.is_none()
     && model_glb.is_none() && model_glb_pbr.is_none() && model_urls.is_none()
     && model_mesh.is_none() && model_obj.is_none()
     && result_files.is_none() && thumbnail.is_none() && rendered_image.is_none()
@@ -53,6 +55,7 @@ pub fn extract_contents_from_payload(payload: &Value) -> Option<ExtractedContent
     image,
     images,
     video,
+    audio,
     model_glb,
     model_glb_pbr,
     model_urls,

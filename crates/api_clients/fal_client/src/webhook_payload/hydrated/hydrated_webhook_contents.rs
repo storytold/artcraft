@@ -43,6 +43,9 @@ pub struct ExtractedContents {
   /// Parsed from `payload.video`.
   pub video: Option<VideoData>,
 
+  /// Parsed from `payload.audio` (e.g. Seed Audio 1.0 speech results).
+  pub audio: Option<AudioData>,
+
   /// Parsed from `payload.model_glb`.
   pub model_glb: Option<ModelGlbData>,
 
@@ -106,6 +109,20 @@ pub struct VideoData {
   pub content_type: Option<String>,
   pub file_name: Option<String>,
   pub file_size: Option<u64>,
+}
+
+/// Data under `payload.audio` (e.g. Seed Audio 1.0):
+#[derive(Debug, Deserialize)]
+pub struct AudioData {
+  pub url: Option<String>,
+  pub content_type: Option<String>,
+  pub file_name: Option<String>,
+  pub file_size: Option<u64>,
+  pub bitrate: Option<u64>,
+  pub channels: Option<u64>,
+  /// Duration in seconds.
+  pub duration: Option<f64>,
+  pub sample_rate: Option<u64>,
 }
 
 /// Data under `payload.model_glb` (there may be other sibling keys too).

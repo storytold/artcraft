@@ -1,0 +1,18 @@
+{
+  "error": null,
+  "gateway_request_id": "019f4dc7-e98b-7f90-94c5-a8b131ff2660",
+  "payload": {
+    "audio": {
+      "bitrate": null,
+      "channels": null,
+      "content_type": "audio/mpeg",
+      "duration": 6.63995,
+      "file_name": "speech.mp3",
+      "file_size": 53612,
+      "sample_rate": 24000,
+      "url": "https://v3b.fal.media/files/b/0aa1bc36/vOSCcxsbibkZIiXR9BIZn_speech.mp3"
+    }
+  },
+  "request_id": "019f4dc7-e98b-7f90-94c5-a8b131ff2660",
+  "status": "OK"
+}

@@ -1,5 +1,6 @@
 pub mod handle_successful_fal_webhook;
 mod attach_cover_image;
+mod process_audio_payload;
 mod process_image_payload;
 mod process_images_payload;
 mod process_model_glb_payload;
