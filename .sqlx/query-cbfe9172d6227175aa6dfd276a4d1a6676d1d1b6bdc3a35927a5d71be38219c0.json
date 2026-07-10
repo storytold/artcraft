@@ -1,0 +1,25 @@
+{
+  "db_name": "MySQL",
+  "query": "\nSELECT token as `token: TagToken`\nFROM tags\nWHERE creator_user_token = ?\n  AND tag_value_lowercase = ?\n  AND maybe_deleted_at IS NOT NULL\nLIMIT 1\n    ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "token: TagToken",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NOT_NULL | UNIQUE_KEY | BINARY | NO_DEFAULT_VALUE",
+          "char_set": 224,
+          "max_size": 128
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "cbfe9172d6227175aa6dfd276a4d1a6676d1d1b6bdc3a35927a5d71be38219c0"
+}

@@ -1,0 +1,12 @@
+{
+  "db_name": "MySQL",
+  "query": "\nDELETE FROM tags\nWHERE token = ?\n  AND creator_user_token = ?\n  AND maybe_deleted_at IS NOT NULL\n    ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": []
+  },
+  "hash": "e50d11df0606a12059e13f36daa41fc5aa59d700168425c406e545b535d6d2ba"
+}
