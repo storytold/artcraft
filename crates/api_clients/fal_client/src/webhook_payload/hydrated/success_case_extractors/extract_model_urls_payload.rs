@@ -128,6 +128,62 @@ mod tests {
   }
 
   #[test]
+  fn obj_and_thumbnail_from_hunyuan_3d_3p1_rapid_test_file() {
+    let webhook = load_test_webhook("success/hunyuan_3d_3p1_rapid_obj_payload_1.json");
+    let result = hydrate_webhook_contents(&webhook);
+
+    let HydratedWebhookContents::Success(data) = result else {
+      panic!("Expected Success, got {:?}", result);
+    };
+
+    let contents = data.extracted_contents
+      .expect("extracted_contents should be Some");
+
+    // NB: Hunyuan 3D 3.1 Rapid puts an OBJ under the `model_glb` key. The
+    // key name doesn't matter downstream: the webhook handler resolves the
+    // real file type from content_type / file name, so it uploads as an OBJ
+    // mesh.
+    let glb = contents.model_glb.expect("model_glb should be Some");
+    assert_eq!(glb.url.as_deref(), Some("https://v3b.fal.media/files/b/0aa1bae3/22zStkYp8-q6npG9dsMs5_23dce35fc95b34722f15a7329061d5df.obj"));
+    assert_eq!(glb.content_type.as_deref(), Some("model/obj"));
+    assert_eq!(glb.file_name.as_deref(), Some("23dce35fc95b34722f15a7329061d5df.obj"));
+    assert_eq!(glb.file_size, Some(3258750));
+
+    let model_urls = contents.model_urls.expect("model_urls should be Some");
+
+    // The `glb` slot is null here; `obj` duplicates `model_glb` (same URL).
+    assert!(model_urls.glb.is_none());
+    assert!(model_urls.fbx.is_none());
+    assert!(model_urls.usdz.is_none());
+
+    let urls_obj = model_urls.obj.expect("model_urls.obj should be Some");
+    assert_eq!(urls_obj.url.as_deref(), Some("https://v3b.fal.media/files/b/0aa1bae3/22zStkYp8-q6npG9dsMs5_23dce35fc95b34722f15a7329061d5df.obj"));
+    assert_eq!(urls_obj.content_type.as_deref(), Some("model/obj"));
+    assert_eq!(urls_obj.file_size, Some(3258750));
+
+    let urls_mtl = model_urls.mtl.expect("model_urls.mtl should be Some");
+    assert_eq!(urls_mtl.url.as_deref(), Some("https://v3b.fal.media/files/b/0aa1bae3/5cbE-q28i44GUOO6YeZPH_material.mtl"));
+    assert_eq!(urls_mtl.file_size, Some(229));
+
+    let urls_texture = model_urls.texture.expect("model_urls.texture should be Some");
+    assert_eq!(urls_texture.url.as_deref(), Some("https://v3b.fal.media/files/b/0aa1bae3/7eBRddTHf6U8SUg2QOIHw_texture_pbr_v128.png"));
+    assert_eq!(urls_texture.file_name.as_deref(), Some("texture_pbr_v128.png"));
+    assert_eq!(urls_texture.file_size, Some(5503289));
+
+    // The thumbnail is attached to the mesh as its cover image downstream.
+    let thumbnail = contents.thumbnail.expect("thumbnail should be Some");
+    assert_eq!(thumbnail.url.as_deref(), Some("https://v3b.fal.media/files/b/0aa1bae3/IO3aspD4ijEadoFxSF504_preview.png"));
+    assert_eq!(thumbnail.content_type.as_deref(), Some("image/png"));
+    assert_eq!(thumbnail.file_name.as_deref(), Some("preview.png"));
+    assert_eq!(thumbnail.file_size, Some(120530));
+
+    assert!(contents.model_glb_pbr.is_none());
+    assert!(contents.model_mesh.is_none());
+    assert!(contents.model_obj.is_none());
+    assert!(contents.preprocessed_image.is_none());
+  }
+
+  #[test]
   fn synthetic_model_urls_payload_with_distinct_glb() {
     let obj: serde_json::Map<String, serde_json::Value> = serde_json::from_str(r#"{
       "model_urls": {
