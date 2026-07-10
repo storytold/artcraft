@@ -15,6 +15,8 @@ use log::{error, warn};
 use utoipa::ToSchema;
 
 use enums::by_table::media_files::media_file_class::MediaFileClass;
+use enums::by_table::media_files::media_file_project_type::MediaFileProjectType;
+use enums::by_table::media_files::media_file_type::MediaFileType;
 use http_server_common::request::get_request_ip::get_request_ip;
 use mysql_queries::queries::idepotency_tokens::insert_idempotency_token::insert_idempotency_token;
 use mysql_queries::queries::media_files::edit::update_project_media_file_contents::{update_project_media_file_contents, UpdateProjectMediaFileContentsArgs};
@@ -103,15 +105,26 @@ pub async fn update_project(args: UpdateProjectArgs<'_>) -> Result<(), CommonWeb
       .ok_or(CommonWebError::NotFound)?;
 
   // Only overwrite records that are the right kind of project document.
-  // (Legacy records may predate `maybe_project_type`, so the media type is
-  // the source of truth; the project type just has to not disagree.)
-  let is_expected_media_type = media_file.media_type == config.media_file_type;
-  let project_type_disagrees = media_file.maybe_project_type
-      .is_some_and(|project_type| project_type != config.project_type);
+  match media_file.maybe_project_type {
+    // Modern records declare their project type; it must match exactly.
+    Some(project_type) => {
+      if project_type != config.project_type {
+        return Err(CommonWebError::BadInputWithSimpleMessage(format!(
+          "media file is not a {} project", config.project_type)));
+      }
+    }
+    // Legacy records predate `maybe_project_type`. The only legacy project
+    // documents are 3D scenes, so only the scene_3d endpoint may adopt them,
+    // and the record must actually be a JSON scene file.
+    None => {
+      let is_legacy_scene_update = config.project_type == MediaFileProjectType::Scene3d
+          && media_file.media_type == MediaFileType::SceneJson;
 
-  if !is_expected_media_type || project_type_disagrees {
-    return Err(CommonWebError::BadInputWithSimpleMessage(format!(
-      "media file is not a {} project", config.project_type)));
+      if !is_legacy_scene_update {
+        return Err(CommonWebError::BadInputWithSimpleMessage(format!(
+          "media file is not a {} project", config.project_type)));
+      }
+    }
   }
 
   let creator_check = check_creator_tokens(CheckCreatorTokenArgs {
