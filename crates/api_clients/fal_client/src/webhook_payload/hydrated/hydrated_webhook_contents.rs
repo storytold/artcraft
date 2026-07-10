@@ -125,15 +125,19 @@ pub struct ModelMeshData {
   pub url: Option<String>,
 }
 
-/// Data under `payload.model_urls` (e.g. Hunyuan 3D 3.0): a map of the
-/// generation's output files by format. Any slot may be null. The `glb`
-/// entry frequently duplicates `payload.model_glb` (same URL), but may
+/// Data under `payload.model_urls` (e.g. Hunyuan 3D 3.0 / 3.1): a map of the
+/// generation's output files by format. Any slot may be null or absent. The
+/// `glb` entry frequently duplicates `payload.model_glb` (same URL), but may
 /// point to a different file.
 #[derive(Debug, Deserialize)]
 pub struct ModelUrlsData {
   pub fbx: Option<ModelGlbData>,
   pub glb: Option<ModelGlbData>,
+  /// OBJ material file (Hunyuan 3D 3.1).
+  pub mtl: Option<ModelGlbData>,
   pub obj: Option<ModelGlbData>,
+  /// PBR texture image for the OBJ (Hunyuan 3D 3.1).
+  pub texture: Option<ModelGlbData>,
   pub usdz: Option<ModelGlbData>,
 }
 
