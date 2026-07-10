@@ -183,6 +183,46 @@ mod tests {
   }
 
   #[test]
+  fn hunyuan_3d_part_format_not_supported() {
+    let webhook = load_test_webhook("failure/hunyuan_3d_3p1_part_fail_format_not_supported.json");
+    let result = hydrate_webhook_contents(&webhook);
+
+    match result {
+      HydratedWebhookContents::Error(data) => {
+        assert_eq!(
+          data.error_type,
+          Some(WebhookErrorType::ValueError),
+        );
+        assert_eq!(
+          data.message.as_deref(),
+          Some("Part generation only supports FBX format. Please provide an FBX file or use /convert-format to convert your model to FBX first."),
+        );
+      }
+      other => panic!("Expected HydratedWebhookContents::Error, got {:?}", other),
+    }
+  }
+
+  #[test]
+  fn triposplat_no_foreground_subject() {
+    let webhook = load_test_webhook("failure/triposplat_fail_no_foreground_subject.json");
+    let result = hydrate_webhook_contents(&webhook);
+
+    match result {
+      HydratedWebhookContents::Error(data) => {
+        assert_eq!(
+          data.error_type,
+          Some(WebhookErrorType::InputValueError),
+        );
+        assert_eq!(
+          data.message.as_deref(),
+          Some("No foreground subject could be detected in the input image after background removal. Provide an image with a clear, visible subject against a plain or distinct background."),
+        );
+      }
+      other => panic!("Expected HydratedWebhookContents::Error, got {:?}", other),
+    }
+  }
+
+  #[test]
   fn payload_error_case() {
     let webhook = RawWebhookPayload {
       request_id: "test-123".to_string(),

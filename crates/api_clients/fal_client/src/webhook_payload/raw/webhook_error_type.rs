@@ -19,6 +19,12 @@ pub enum WebhookErrorType {
   ImageLoadError,
   FileDownloadError,
   FaceDetectionError,
+  /// Generic input validation error. The `msg` field carries the specifics
+  /// (e.g. TripoSplat's "No foreground subject could be detected...").
+  InputValueError,
+  /// Generic validation error. The `msg` field carries the specifics (e.g.
+  /// Hunyuan 3D Part's "Part generation only supports FBX format...").
+  ValueError,
   GreaterThan,
   GreaterThanEqual,
   LessThan,
@@ -64,6 +70,8 @@ mod tests {
       ("\"image_load_error\"", WebhookErrorType::ImageLoadError),
       ("\"file_download_error\"", WebhookErrorType::FileDownloadError),
       ("\"face_detection_error\"", WebhookErrorType::FaceDetectionError),
+      ("\"input_value_error\"", WebhookErrorType::InputValueError),
+      ("\"value_error\"", WebhookErrorType::ValueError),
       ("\"greater_than\"", WebhookErrorType::GreaterThan),
       ("\"greater_than_equal\"", WebhookErrorType::GreaterThanEqual),
       ("\"less_than\"", WebhookErrorType::LessThan),
@@ -95,6 +103,8 @@ mod tests {
   fn from_str_known() {
     assert_eq!(WebhookErrorType::from_str("content_policy_violation"), WebhookErrorType::ContentPolicyViolation);
     assert_eq!(WebhookErrorType::from_str("face_detection_error"), WebhookErrorType::FaceDetectionError);
+    assert_eq!(WebhookErrorType::from_str("input_value_error"), WebhookErrorType::InputValueError);
+    assert_eq!(WebhookErrorType::from_str("value_error"), WebhookErrorType::ValueError);
   }
 
   #[test]

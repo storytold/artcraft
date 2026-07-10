@@ -1,0 +1,27 @@
+{
+  "error": null,
+  "gateway_request_id": "019f4d49-6859-77b3-aaac-3b91b248481a",
+  "payload": {
+    "model_glb": {
+      "content_type": "application/octet-stream",
+      "file_name": "demo_textured.glb",
+      "file_size": 1574216,
+      "url": "https://v3b.fal.media/files/b/0aa1b916/QKdBTd8WJW_rtPB3IwlEN_demo_textured.glb"
+    },
+    "model_glb_pbr": {
+      "content_type": "application/octet-stream",
+      "file_name": "demo_textured_pbr.glb",
+      "file_size": 7512760,
+      "url": "https://v3b.fal.media/files/b/0aa1b921/SJw7AARzkc4l9QG5Lrvmu_demo_textured_pbr.glb"
+    },
+    "model_mesh": {
+      "content_type": "application/octet-stream",
+      "file_name": "3d_model.zip",
+      "file_size": 16332900,
+      "url": "https://v3b.fal.media/files/b/0aa1b915/B25DrTdiZJNV-60RaUh4u_3d_model.zip"
+    },
+    "seed": 283904
+  },
+  "request_id": "019f4d49-6859-77b3-aaac-3b91b248481a",
+  "status": "OK"
+}

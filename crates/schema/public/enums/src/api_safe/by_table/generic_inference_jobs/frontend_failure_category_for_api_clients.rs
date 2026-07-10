@@ -9,6 +9,8 @@ use utoipa::ToSchema;
 #[serde(rename_all = "snake_case")]
 pub enum FrontendFailureCategoryForApiClients {
   FaceNotDetected,
+  NoForegroundSubjectDetected,
+  FormatNotSupported,
   KeepAliveElapsed,
   NotYetImplemented,
   RetryableWorkerError,
@@ -35,6 +37,8 @@ impl FrontendFailureCategoryForApiClients {
   pub fn from_db_enum(value: FrontendFailureCategory) -> Self {
     match value {
       FrontendFailureCategory::FaceNotDetected => Self::FaceNotDetected,
+      FrontendFailureCategory::NoForegroundSubjectDetected => Self::NoForegroundSubjectDetected,
+      FrontendFailureCategory::FormatNotSupported => Self::FormatNotSupported,
       FrontendFailureCategory::KeepAliveElapsed => Self::KeepAliveElapsed,
       FrontendFailureCategory::NotYetImplemented => Self::NotYetImplemented,
       FrontendFailureCategory::RetryableWorkerError => Self::RetryableWorkerError,
@@ -62,6 +66,8 @@ mod tests {
   fn test_deserialize_known_variants() {
     let cases = vec![
       ("\"face_not_detected\"", FrontendFailureCategoryForApiClients::FaceNotDetected),
+      ("\"no_foreground_subject_detected\"", FrontendFailureCategoryForApiClients::NoForegroundSubjectDetected),
+      ("\"format_not_supported\"", FrontendFailureCategoryForApiClients::FormatNotSupported),
       ("\"keep_alive_elapsed\"", FrontendFailureCategoryForApiClients::KeepAliveElapsed),
       ("\"not_yet_implemented\"", FrontendFailureCategoryForApiClients::NotYetImplemented),
       ("\"retryable_worker_error\"", FrontendFailureCategoryForApiClients::RetryableWorkerError),

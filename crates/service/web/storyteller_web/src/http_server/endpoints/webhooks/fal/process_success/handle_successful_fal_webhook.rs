@@ -96,15 +96,41 @@ pub async fn handle_successful_fal_webhook(
       }
     }
 
-    if let Some(ref model_glb_data) = extracted.model_glb {
+    // NB: GLBs take priority over `model_mesh`. Hunyuan 3D 2.1 sends both,
+    // where `model_mesh` is a zip archive of the whole generation that we
+    // skip in favor of the GLBs (standard + optional PBR variant). The
+    // primary GLB is `model_glb`, falling back to `model_urls.glb` when the
+    // top-level key is absent (Hunyuan 3D 3.0 sends both, usually the same
+    // file).
+    let maybe_primary_glb = extracted.model_glb.as_ref()
+        .or_else(|| extracted.model_urls.as_ref().and_then(|urls| urls.glb.as_ref()));
+
+    if let Some(model_glb_data) = maybe_primary_glb {
       info!("Handling model_glb payload for request_id {} / job {:?}", request_id, job.job_token);
-      let token = process_model_glb_payload(model_glb_data, extracted.thumbnail.as_ref(), &job, server_state).await?;
+      // The cover image arrives as `thumbnail` (Hunyuan) or `rendered_image`
+      // (Tripo 3D); both have the same shape.
+      let maybe_cover_image = extracted.thumbnail.as_ref()
+          .or(extracted.rendered_image.as_ref());
+      let (token, batch_token) = process_model_glb_payload(
+        model_glb_data,
+        extracted.model_glb_pbr.as_ref(),
+        extracted.model_urls.as_ref(),
+        maybe_cover_image,
+        &job,
+        server_state,
+        pager,
+      ).await?;
       if maybe_media_token.is_none() {
         maybe_media_token = Some(token);
       }
+      if maybe_batch_token.is_none() {
+        maybe_batch_token = batch_token;
+      }
     } else if let Some(ref model_mesh_data) = extracted.model_mesh {
+      // NB: triposplat ply gaussian splat files also arrive via this payload handler.
+      //  These are decidedly *not* "mesh" files!
       info!("Handling model_mesh payload for request_id {} / job {:?}", request_id, job.job_token);
-      let token = process_model_mesh_payload(model_mesh_data, &job, server_state).await?;
+      let token = process_model_mesh_payload(model_mesh_data, extracted.preprocessed_image.as_ref(), &job, server_state).await?;
       if maybe_media_token.is_none() {
         maybe_media_token = Some(token);
       }

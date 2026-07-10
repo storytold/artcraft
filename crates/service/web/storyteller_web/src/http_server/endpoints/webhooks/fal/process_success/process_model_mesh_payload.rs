@@ -1,4 +1,5 @@
 use crate::http_server::common_responses::common_web_error::CommonWebError;
+use crate::http_server::endpoints::webhooks::fal::process_success::attach_cover_image::{attach_cover_image, AttachCoverImageArgs};
 use crate::http_server::endpoints::webhooks::fal::process_success::resolve_file_metadata::resolve_file_metadata_with_file_name;
 use crate::state::server_state::ServerState;
 use crate::util::http_download_url_to_bytes::http_download_url_to_bytes;
@@ -8,7 +9,7 @@ use enums::by_table::media_files::media_file_engine_category::MediaFileEngineCat
 use enums::by_table::media_files::media_file_origin_category::MediaFileOriginCategory;
 use enums::by_table::media_files::media_file_origin_product_category::MediaFileOriginProductCategory;
 use enums::by_table::media_files::media_file_type::MediaFileType;
-use fal_client::webhook_payload::hydrated::hydrated_webhook_contents::{ModelMeshData, ModelObjData};
+use fal_client::webhook_payload::hydrated::hydrated_webhook_contents::{ModelMeshData, ModelObjData, PreprocessedImageData};
 use hashing::sha256::sha256_hash_bytes::sha256_hash_bytes;
 use log::{info, warn};
 use enums::common::generation_provider::GenerationProvider;
@@ -19,8 +20,11 @@ use tokens::tokens::media_files::MediaFileToken;
 
 const PREFIX : Option<&str> = Some("artcraft_");
 
+// NB: triposplat ply gaussian splat files also arrive via this payload handler.
+//  These are decidedly *not* "mesh" files!
 pub async fn process_model_mesh_payload(
   model_mesh_data: &ModelMeshData,
+  maybe_preprocessed_image: Option<&PreprocessedImageData>,
   job: &FalJobDetails,
   server_state: &ServerState,
 ) -> Result<MediaFileToken, CommonWebError> {
@@ -31,14 +35,31 @@ pub async fn process_model_mesh_payload(
         CommonWebError::server_error_with_message("no `url` in model mesh payload")
       })?;
 
-  upload_mesh_file(UploadMeshFileArgs {
+  let media_token = upload_mesh_file(UploadMeshFileArgs {
     mesh_url,
     maybe_content_type: model_mesh_data.content_type.as_deref(),
     maybe_file_name: model_mesh_data.file_name.as_deref(),
     maybe_batch_token: None,
     job,
     server_state,
-  }).await
+  }).await?;
+
+  // TripoSplat sends the segmented input image alongside the splat; attach it
+  // as the cover image. NB: Fail open — the result is usable without a cover.
+  if let Some(preprocessed_image) = maybe_preprocessed_image {
+    let result = try_to_attach_preprocessed_image(
+      preprocessed_image,
+      job,
+      server_state,
+      &media_token,
+    ).await;
+
+    if let Err(err) = result {
+      warn!("Could not attach preprocessed image as cover image to media file: {:?}", err);
+    }
+  }
+
+  Ok(media_token)
 }
 
 /// `model_obj` payloads (e.g. Hunyuan 3D v3.1 Rapid's OBJ output) have the
@@ -151,9 +172,9 @@ pub(crate) async fn upload_mesh_file(
       })?;
 
   // PLY results are Gaussian splats (e.g. TripoSplat), not meshes: store
-  // them the way the World Labs splat pipeline does — tagged as world
-  // generation, with no `Object` engine category. No fal mesh endpoint
-  // returns PLY, so the file type is a reliable discriminator.
+  // them the way the World Labs splat pipeline does — `Splat` media class,
+  // tagged as world generation, with no `Object` engine category. No fal
+  // mesh endpoint returns PLY, so the file type is a reliable discriminator.
   let is_gaussian_splat = matches!(media_file_type, MediaFileType::Ply);
 
   let public_upload_path = MediaFileBucketPath::generate_new(PREFIX, Some(&extension_with_period));
@@ -180,7 +201,6 @@ pub(crate) async fn upload_mesh_file(
       .maybe_generation_provider(Some(GenerationProvider::Artcraft))
       .maybe_prompt_token(job.maybe_prompt_token.as_ref())
       .maybe_platform_type(job.maybe_platform_type)
-      .media_file_class(MediaFileClass::Mesh)
       .media_file_origin_category(MediaFileOriginCategory::Inference)
       .media_file_type(media_file_type)
       .mime_type(mime_type)
@@ -188,9 +208,11 @@ pub(crate) async fn upload_mesh_file(
 
   if is_gaussian_splat {
     insert_builder = insert_builder
+        .media_file_class(MediaFileClass::Splat)
         .media_file_origin_product_category(MediaFileOriginProductCategory::WorldGeneration);
   } else {
     insert_builder = insert_builder
+        .media_file_class(MediaFileClass::Mesh)
         .maybe_engine_category(Some(MediaFileEngineCategory::Object));
   }
 
@@ -205,4 +227,32 @@ pub(crate) async fn upload_mesh_file(
   info!("Mesh media file uploaded with token: {}", media_token);
 
   Ok(media_token)
+}
+
+/// Attach a TripoSplat `preprocessed_image` (the segmented input image) as
+/// the cover image of the uploaded splat, mirroring how `model_glb` results
+/// attach their `thumbnail`.
+async fn try_to_attach_preprocessed_image(
+  preprocessed_image: &PreprocessedImageData,
+  job: &FalJobDetails,
+  server_state: &ServerState,
+  splat_media_token: &MediaFileToken,
+) -> Result<(), CommonWebError> {
+  info!("Fal Preprocessed Image Data: {:?}", preprocessed_image);
+
+  let image_url = preprocessed_image.url
+      .as_deref()
+      .ok_or_else(|| {
+        warn!("No `url` in preprocessed image payload");
+        CommonWebError::server_error_with_message("no `url` in preprocessed image payload")
+      })?;
+
+  attach_cover_image(AttachCoverImageArgs {
+    image_url,
+    maybe_content_type: preprocessed_image.content_type.as_deref(),
+    maybe_origin_product_category: Some(MediaFileOriginProductCategory::WorldGeneration),
+    target_media_token: splat_media_token,
+    job,
+    server_state,
+  }).await
 }
