@@ -50,6 +50,10 @@ pub struct ExtractedContents {
   /// GLB variant, sent alongside `model_glb`).
   pub model_glb_pbr: Option<ModelGlbData>,
 
+  /// Parsed from `payload.model_urls` (e.g. Hunyuan 3D 3.0's per-format file
+  /// map, sent alongside `model_glb`).
+  pub model_urls: Option<ModelUrlsData>,
+
   /// Parsed from `payload.model_mesh`.
   /// NB: `triposplat` ply gaussian splat files also arrive via this payload handler.
   ///     These are decidedly *not* "mesh" files!
@@ -119,6 +123,18 @@ pub struct ModelMeshData {
   pub file_name: Option<String>,
   pub file_size: Option<usize>,
   pub url: Option<String>,
+}
+
+/// Data under `payload.model_urls` (e.g. Hunyuan 3D 3.0): a map of the
+/// generation's output files by format. Any slot may be null. The `glb`
+/// entry frequently duplicates `payload.model_glb` (same URL), but may
+/// point to a different file.
+#[derive(Debug, Deserialize)]
+pub struct ModelUrlsData {
+  pub fbx: Option<ModelGlbData>,
+  pub glb: Option<ModelGlbData>,
+  pub obj: Option<ModelGlbData>,
+  pub usdz: Option<ModelGlbData>,
 }
 
 /// Data under `payload.model_obj` (there may be other sibling keys too).
