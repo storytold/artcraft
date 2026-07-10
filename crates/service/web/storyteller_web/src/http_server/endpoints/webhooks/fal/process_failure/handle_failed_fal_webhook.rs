@@ -135,12 +135,10 @@ fn guess_failure_category(
     Some(WebhookErrorType::FileTooLarge) => FrontendFailureCategory::FilesizeTooLarge,
     Some(WebhookErrorType::ImageTooLarge) => FrontendFailureCategory::ImageDimensionsTooLarge,
     Some(WebhookErrorType::ImageTooSmall) => FrontendFailureCategory::ImageDimensionsTooSmall,
-    // `input_value_error` is a generic validation error; the message carries
-    // the specifics. TripoSplat reports "No foreground subject could be
-    // detected in the input image after background removal. ..."
+    // `input_value_error` / `value_error` are generic validation errors; the
+    // message carries the specifics.
     Some(WebhookErrorType::InputValueError)
-      if message_indicates_no_foreground_subject(maybe_message) =>
-        FrontendFailureCategory::NoForegroundSubjectDetected,
+    | Some(WebhookErrorType::ValueError) => guess_validation_failure_category(maybe_message),
     Some(WebhookErrorType::NoMediaGenerated)
     | Some(WebhookErrorType::ImageLoadError)
     | Some(WebhookErrorType::FileDownloadError) => FrontendFailureCategory::GenerationFailed,
@@ -148,10 +146,29 @@ fn guess_failure_category(
   }
 }
 
-fn message_indicates_no_foreground_subject(maybe_message: Option<&str>) -> bool {
-  maybe_message
-      .map(|message| message.to_ascii_lowercase().contains("no foreground subject"))
-      .unwrap_or(false)
+/// Classify a generic fal validation error (`input_value_error` /
+/// `value_error`) by its human-readable message.
+fn guess_validation_failure_category(maybe_message: Option<&str>) -> FrontendFailureCategory {
+  let Some(message) = maybe_message else {
+    return FrontendFailureCategory::GenerationFailed;
+  };
+
+  let message = message.to_ascii_lowercase();
+
+  // TripoSplat: "No foreground subject could be detected in the input image
+  // after background removal. ..."
+  if message.contains("no foreground subject") {
+    return FrontendFailureCategory::NoForegroundSubjectDetected;
+  }
+
+  // Hunyuan 3D Part: "Part generation only supports FBX format. Please
+  // provide an FBX file or use /convert-format to convert your model to FBX
+  // first."
+  if message.contains("only supports") && message.contains("format") {
+    return FrontendFailureCategory::FormatNotSupported;
+  }
+
+  FrontendFailureCategory::GenerationFailed
 }
 
 #[cfg(test)]
@@ -161,6 +178,10 @@ mod tests {
   const NO_FOREGROUND_SUBJECT_MESSAGE: &str =
       "No foreground subject could be detected in the input image after background removal. \
        Provide an image with a clear, visible subject against a plain or distinct background.";
+
+  const FBX_ONLY_MESSAGE: &str =
+      "Part generation only supports FBX format. Please provide an FBX file or use \
+       /convert-format to convert your model to FBX first.";
 
   mod guess_failure_category_tests {
     use super::*;
@@ -175,10 +196,38 @@ mod tests {
     }
 
     #[test]
+    fn value_error_with_fbx_only_message() {
+      let category = guess_failure_category(
+        Some(&WebhookErrorType::ValueError),
+        Some(FBX_ONLY_MESSAGE),
+      );
+      assert_eq!(category, FrontendFailureCategory::FormatNotSupported);
+    }
+
+    #[test]
+    fn input_value_error_with_fbx_only_message() {
+      // Both generic validation error types share the message classifier.
+      let category = guess_failure_category(
+        Some(&WebhookErrorType::InputValueError),
+        Some(FBX_ONLY_MESSAGE),
+      );
+      assert_eq!(category, FrontendFailureCategory::FormatNotSupported);
+    }
+
+    #[test]
     fn input_value_error_with_other_message() {
       let category = guess_failure_category(
         Some(&WebhookErrorType::InputValueError),
         Some("Field `num_gaussians` must be a positive integer."),
+      );
+      assert_eq!(category, FrontendFailureCategory::GenerationFailed);
+    }
+
+    #[test]
+    fn value_error_with_other_message() {
+      let category = guess_failure_category(
+        Some(&WebhookErrorType::ValueError),
+        Some("Input file could not be parsed."),
       );
       assert_eq!(category, FrontendFailureCategory::GenerationFailed);
     }
@@ -200,7 +249,7 @@ mod tests {
 
     #[test]
     fn no_error_type_defaults_to_generation_failed() {
-      let category = guess_failure_category(None, Some(NO_FOREGROUND_SUBJECT_MESSAGE));
+      let category = guess_failure_category(None, Some(FBX_ONLY_MESSAGE));
       assert_eq!(category, FrontendFailureCategory::GenerationFailed);
     }
   }

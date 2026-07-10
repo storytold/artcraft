@@ -34,6 +34,10 @@ pub enum TaskFailureType {
   /// background removal (e.g. TripoSplat image-to-splat).
   NoForegroundSubjectDetected,
 
+  /// The input file's format isn't supported by the model (e.g. Hunyuan 3D
+  /// Part only accepts FBX input).
+  FormatNotSupported,
+
   /// No reason given for generation failure, but this matches what we were told.
   GenerationFailed,
 }
@@ -55,6 +59,7 @@ impl TaskFailureType {
       FrontendFailureCategory::RuleBansGeneratedAudio => Self::RuleBansGeneratedAudio,
       FrontendFailureCategory::RuleBansGeneratedContent => Self::RuleBansGeneratedContent,
       FrontendFailureCategory::NoForegroundSubjectDetected => Self::NoForegroundSubjectDetected,
+      FrontendFailureCategory::FormatNotSupported => Self::FormatNotSupported,
       FrontendFailureCategory::GenerationFailed => Self::GenerationFailed,
       _ => Self::Unknown,
     }
@@ -73,6 +78,7 @@ impl TaskFailureType {
       FrontendFailureCategoryForApiClients::RuleBansGeneratedAudio => Self::RuleBansGeneratedAudio,
       FrontendFailureCategoryForApiClients::RuleBansGeneratedContent => Self::RuleBansGeneratedContent,
       FrontendFailureCategoryForApiClients::NoForegroundSubjectDetected => Self::NoForegroundSubjectDetected,
+      FrontendFailureCategoryForApiClients::FormatNotSupported => Self::FormatNotSupported,
       FrontendFailureCategoryForApiClients::GenerationFailed => Self::GenerationFailed,
 
       // Types ArtCraft doesn't care about
@@ -103,6 +109,7 @@ impl TaskFailureType {
       Self::RuleBansGeneratedAudio => "rule_bans_generated_audio",
       Self::RuleBansGeneratedContent => "rule_bans_generated_content",
       Self::NoForegroundSubjectDetected => "no_foreground_subject_detected",
+      Self::FormatNotSupported => "format_not_supported",
       Self::GenerationFailed => "generation_failed",
     }
   }
@@ -118,6 +125,7 @@ impl TaskFailureType {
       "rule_bans_generated_audio" => Ok(Self::RuleBansGeneratedAudio),
       "rule_bans_generated_content" => Ok(Self::RuleBansGeneratedContent),
       "no_foreground_subject_detected" => Ok(Self::NoForegroundSubjectDetected),
+      "format_not_supported" => Ok(Self::FormatNotSupported),
       "generation_failed" => Ok(Self::GenerationFailed),
       _ => Err(EnumError::CouldNotConvertFromString(value.to_string())),
     }
@@ -134,6 +142,7 @@ impl TaskFailureType {
       Self::RuleBansGeneratedAudio,
       Self::RuleBansGeneratedContent,
       Self::NoForegroundSubjectDetected,
+      Self::FormatNotSupported,
       Self::GenerationFailed,
     ])
   }
@@ -159,6 +168,7 @@ mod tests {
       assert_serialization(TaskFailureType::RuleBansGeneratedAudio, "rule_bans_generated_audio");
       assert_serialization(TaskFailureType::RuleBansGeneratedContent, "rule_bans_generated_content");
       assert_serialization(TaskFailureType::NoForegroundSubjectDetected, "no_foreground_subject_detected");
+      assert_serialization(TaskFailureType::FormatNotSupported, "format_not_supported");
       assert_serialization(TaskFailureType::GenerationFailed, "generation_failed");
     }
 
@@ -173,6 +183,7 @@ mod tests {
       assert_eq!(TaskFailureType::RuleBansGeneratedAudio.to_str(), "rule_bans_generated_audio");
       assert_eq!(TaskFailureType::RuleBansGeneratedContent.to_str(), "rule_bans_generated_content");
       assert_eq!(TaskFailureType::NoForegroundSubjectDetected.to_str(), "no_foreground_subject_detected");
+      assert_eq!(TaskFailureType::FormatNotSupported.to_str(), "format_not_supported");
       assert_eq!(TaskFailureType::GenerationFailed.to_str(), "generation_failed");
     }
 
@@ -187,6 +198,7 @@ mod tests {
       assert_eq!(TaskFailureType::from_str("rule_bans_generated_audio").unwrap(), TaskFailureType::RuleBansGeneratedAudio);
       assert_eq!(TaskFailureType::from_str("rule_bans_generated_content").unwrap(), TaskFailureType::RuleBansGeneratedContent);
       assert_eq!(TaskFailureType::from_str("no_foreground_subject_detected").unwrap(), TaskFailureType::NoForegroundSubjectDetected);
+      assert_eq!(TaskFailureType::from_str("format_not_supported").unwrap(), TaskFailureType::FormatNotSupported);
       assert_eq!(TaskFailureType::from_str("generation_failed").unwrap(), TaskFailureType::GenerationFailed);
     }
 
@@ -204,7 +216,7 @@ mod tests {
     #[test]
     fn all_variants() {
       let mut variants = TaskFailureType::all_variants();
-      assert_eq!(variants.len(), 10);
+      assert_eq!(variants.len(), 11);
       assert_eq!(variants.pop_first(), Some(TaskFailureType::Unknown));
       assert_eq!(variants.pop_first(), Some(TaskFailureType::RuleBansUserImage));
       assert_eq!(variants.pop_first(), Some(TaskFailureType::RuleBansUserImageWithFaces));
@@ -214,6 +226,7 @@ mod tests {
       assert_eq!(variants.pop_first(), Some(TaskFailureType::RuleBansGeneratedAudio));
       assert_eq!(variants.pop_first(), Some(TaskFailureType::RuleBansGeneratedContent));
       assert_eq!(variants.pop_first(), Some(TaskFailureType::NoForegroundSubjectDetected));
+      assert_eq!(variants.pop_first(), Some(TaskFailureType::FormatNotSupported));
       assert_eq!(variants.pop_first(), Some(TaskFailureType::GenerationFailed));
       assert_eq!(variants.pop_first(), None);
     }

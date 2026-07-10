@@ -35,6 +35,12 @@ pub enum FrontendFailureCategory {
   #[serde(rename = "no_foreground_subject_detected")]
   NoForegroundSubjectDetected,
 
+  /// The input file's format isn't supported by the model (e.g. Hunyuan 3D
+  /// Part only accepts FBX input). The user should convert or pick a
+  /// supported file.
+  #[serde(rename = "format_not_supported")]
+  FormatNotSupported,
+
   /// The user stepped away from their device and expected the workload to finish.
   /// Some workloads require that the user keep their browser open.
   #[serde(rename = "keep_alive_elapsed")]
@@ -132,6 +138,7 @@ impl FrontendFailureCategory {
     match self {
       Self::FaceNotDetected => "face_not_detected",
       Self::NoForegroundSubjectDetected => "no_foreground_subject_detected",
+      Self::FormatNotSupported => "format_not_supported",
       Self::KeepAliveElapsed => "keep_alive_elapsed",
       Self::NotYetImplemented => "not_yet_implemented",
       Self::RetryableWorkerError => "retryable_worker_error",
@@ -154,6 +161,7 @@ impl FrontendFailureCategory {
     match value {
       "face_not_detected" => Ok(Self::FaceNotDetected),
       "no_foreground_subject_detected" => Ok(Self::NoForegroundSubjectDetected),
+      "format_not_supported" => Ok(Self::FormatNotSupported),
       "keep_alive_elapsed" => Ok(Self::KeepAliveElapsed),
       "not_yet_implemented" => Ok(Self::NotYetImplemented),
       "retryable_worker_error" => Ok(Self::RetryableWorkerError),
@@ -179,6 +187,7 @@ impl FrontendFailureCategory {
     BTreeSet::from([
       Self::FaceNotDetected,
       Self::NoForegroundSubjectDetected,
+      Self::FormatNotSupported,
       Self::KeepAliveElapsed,
       Self::NotYetImplemented,
       Self::RetryableWorkerError,
@@ -210,6 +219,7 @@ mod tests {
     fn test_serialization() {
       assert_serialization(FrontendFailureCategory::FaceNotDetected, "face_not_detected");
       assert_serialization(FrontendFailureCategory::NoForegroundSubjectDetected, "no_foreground_subject_detected");
+      assert_serialization(FrontendFailureCategory::FormatNotSupported, "format_not_supported");
       assert_serialization(FrontendFailureCategory::KeepAliveElapsed, "keep_alive_elapsed");
       assert_serialization(FrontendFailureCategory::NotYetImplemented, "not_yet_implemented");
       assert_serialization(FrontendFailureCategory::RetryableWorkerError, "retryable_worker_error");
@@ -231,6 +241,7 @@ mod tests {
     fn to_str() {
       assert_eq!(FrontendFailureCategory::FaceNotDetected.to_str(), "face_not_detected");
       assert_eq!(FrontendFailureCategory::NoForegroundSubjectDetected.to_str(), "no_foreground_subject_detected");
+      assert_eq!(FrontendFailureCategory::FormatNotSupported.to_str(), "format_not_supported");
       assert_eq!(FrontendFailureCategory::KeepAliveElapsed.to_str(), "keep_alive_elapsed");
       assert_eq!(FrontendFailureCategory::NotYetImplemented.to_str(), "not_yet_implemented");
       assert_eq!(FrontendFailureCategory::RetryableWorkerError.to_str(), "retryable_worker_error");
@@ -252,6 +263,7 @@ mod tests {
     fn from_str() {
       assert_eq!(FrontendFailureCategory::from_str("face_not_detected").unwrap(), FrontendFailureCategory::FaceNotDetected);
       assert_eq!(FrontendFailureCategory::from_str("no_foreground_subject_detected").unwrap(), FrontendFailureCategory::NoForegroundSubjectDetected);
+      assert_eq!(FrontendFailureCategory::from_str("format_not_supported").unwrap(), FrontendFailureCategory::FormatNotSupported);
       assert_eq!(FrontendFailureCategory::from_str("keep_alive_elapsed").unwrap(), FrontendFailureCategory::KeepAliveElapsed);
       assert_eq!(FrontendFailureCategory::from_str("not_yet_implemented").unwrap(), FrontendFailureCategory::NotYetImplemented);
       assert_eq!(FrontendFailureCategory::from_str("retryable_worker_error").unwrap(), FrontendFailureCategory::RetryableWorkerError);
@@ -273,9 +285,10 @@ mod tests {
     #[test]
     fn all_variants() {
       let mut variants = FrontendFailureCategory::all_variants();
-      assert_eq!(variants.len(), 17);
+      assert_eq!(variants.len(), 18);
       assert_eq!(variants.pop_first(), Some(FrontendFailureCategory::FaceNotDetected));
       assert_eq!(variants.pop_first(), Some(FrontendFailureCategory::NoForegroundSubjectDetected));
+      assert_eq!(variants.pop_first(), Some(FrontendFailureCategory::FormatNotSupported));
       assert_eq!(variants.pop_first(), Some(FrontendFailureCategory::KeepAliveElapsed));
       assert_eq!(variants.pop_first(), Some(FrontendFailureCategory::NotYetImplemented));
       assert_eq!(variants.pop_first(), Some(FrontendFailureCategory::RetryableWorkerError));
