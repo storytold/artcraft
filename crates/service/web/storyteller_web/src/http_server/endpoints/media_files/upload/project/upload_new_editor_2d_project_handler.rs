@@ -7,7 +7,8 @@ use actix_web::{web, HttpRequest};
 use artcraft_api_defs::media_file::project::upload_new_editor_2d_project::UploadNewEditor2dProjectSuccessResponse;
 
 use crate::http_server::common_responses::common_web_error::CommonWebError;
-use crate::http_server::endpoints::media_files::upload::project::project_upload_shared::{save_new_project, NewProjectMultipartForm, EDITOR_2D_PROJECT_CONFIG};
+use crate::http_server::endpoints::media_files::upload::project::project_upload_config::EDITOR_2D_PROJECT_CONFIG;
+use crate::http_server::endpoints::media_files::upload::project::save_new_project::{save_new_project, NewProjectMultipartForm, SaveNewProjectArgs};
 use crate::state::server_state::ServerState;
 
 /// Save a new 2D editor project (multipart JSON document upload).
@@ -40,8 +41,12 @@ pub async fn upload_new_editor_2d_project_handler(
   server_state: web::Data<Arc<ServerState>>,
   MultipartForm(form): MultipartForm<NewProjectMultipartForm>,
 ) -> Result<Json<UploadNewEditor2dProjectSuccessResponse>, CommonWebError> {
-  let media_file_token = save_new_project(
-    &http_request, &server_state, &EDITOR_2D_PROJECT_CONFIG, form).await?;
+  let media_file_token = save_new_project(SaveNewProjectArgs {
+    http_request: &http_request,
+    server_state: &server_state,
+    config: &EDITOR_2D_PROJECT_CONFIG,
+    form,
+  }).await?;
 
   Ok(Json(UploadNewEditor2dProjectSuccessResponse {
     success: true,

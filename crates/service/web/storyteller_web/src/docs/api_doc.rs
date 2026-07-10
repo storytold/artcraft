@@ -70,15 +70,16 @@ use crate::http_server::endpoints::media_files::upload::upload_generic::upload_m
 use crate::http_server::endpoints::media_files::upload::upload_image_media_file_handler::*;
 use crate::http_server::endpoints::media_files::upload::upload_new_engine_asset_media_file_handler::*;
 use crate::http_server::endpoints::media_files::upload::upload_new_scene_media_file_handler::*;
-use crate::http_server::endpoints::media_files::upload::project::update_mood_board_project_handler::*;
+use crate::http_server::endpoints::media_files::upload::project::upload_updated_mood_board_project_handler::*;
 use crate::http_server::endpoints::media_files::upload::project::upload_new_mood_board_project_handler::*;
-use crate::http_server::endpoints::media_files::upload::project::update_video_timeline_project_handler::*;
+use crate::http_server::endpoints::media_files::upload::project::upload_updated_video_timeline_project_handler::*;
 use crate::http_server::endpoints::media_files::upload::project::upload_new_video_timeline_project_handler::*;
-use crate::http_server::endpoints::media_files::upload::project::update_editor_2d_project_handler::*;
+use crate::http_server::endpoints::media_files::upload::project::upload_updated_editor_2d_project_handler::*;
 use crate::http_server::endpoints::media_files::upload::project::upload_new_editor_2d_project_handler::*;
-use crate::http_server::endpoints::media_files::upload::project::update_scene_3d_project_handler::*;
+use crate::http_server::endpoints::media_files::upload::project::upload_updated_scene_3d_project_handler::*;
 use crate::http_server::endpoints::media_files::upload::project::upload_new_scene_3d_project_handler::*;
-use crate::http_server::endpoints::media_files::upload::project::project_upload_shared::{NewProjectMultipartForm, UpdateProjectMultipartForm};
+use crate::http_server::endpoints::media_files::upload::project::save_new_project::NewProjectMultipartForm;
+use crate::http_server::endpoints::media_files::upload::project::update_project::UpdateProjectMultipartForm;
 use crate::http_server::endpoints::media_files::upload::upload_pmx::upload_pmx_media_file_handler::*;
 use crate::http_server::endpoints::media_files::upload::upload_saved_scene_media_file_handler::*;
 use crate::http_server::endpoints::media_files::upload::upload_scene_snapshot_media_file_handler::*;
@@ -338,13 +339,13 @@ use artcraft_api_defs::credits::get_session_credits::*;
 use artcraft_api_defs::subscriptions::get_session_subscription::*;
 use artcraft_api_defs::media_file::list_batch_generated_media_files::*;
 use artcraft_api_defs::media_file::list_session_project_media_files::*;
-use artcraft_api_defs::media_file::project::update_mood_board_project::*;
+use artcraft_api_defs::media_file::project::upload_updated_mood_board_project::*;
 use artcraft_api_defs::media_file::project::upload_new_mood_board_project::*;
-use artcraft_api_defs::media_file::project::update_video_timeline_project::*;
+use artcraft_api_defs::media_file::project::upload_updated_video_timeline_project::*;
 use artcraft_api_defs::media_file::project::upload_new_video_timeline_project::*;
-use artcraft_api_defs::media_file::project::update_editor_2d_project::*;
+use artcraft_api_defs::media_file::project::upload_updated_editor_2d_project::*;
 use artcraft_api_defs::media_file::project::upload_new_editor_2d_project::*;
-use artcraft_api_defs::media_file::project::update_scene_3d_project::*;
+use artcraft_api_defs::media_file::project::upload_updated_scene_3d_project::*;
 use artcraft_api_defs::media_file::project::upload_new_scene_3d_project::*;
 // Handler modules with locally-defined types
 use crate::http_server::endpoints::moderation::info::moderator_token_info_handler::*;
@@ -488,13 +489,13 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     crate::http_server::endpoints::media_files::upload::upload_new_engine_asset_media_file_handler::upload_new_engine_asset_media_file_handler,
     crate::http_server::endpoints::media_files::upload::upload_new_scene_media_file_handler::upload_new_scene_media_file_handler,
     crate::http_server::endpoints::media_files::upload::project::upload_new_mood_board_project_handler::upload_new_mood_board_project_handler,
-    crate::http_server::endpoints::media_files::upload::project::update_mood_board_project_handler::update_mood_board_project_handler,
+    crate::http_server::endpoints::media_files::upload::project::upload_updated_mood_board_project_handler::upload_updated_mood_board_project_handler,
     crate::http_server::endpoints::media_files::upload::project::upload_new_video_timeline_project_handler::upload_new_video_timeline_project_handler,
-    crate::http_server::endpoints::media_files::upload::project::update_video_timeline_project_handler::update_video_timeline_project_handler,
+    crate::http_server::endpoints::media_files::upload::project::upload_updated_video_timeline_project_handler::upload_updated_video_timeline_project_handler,
     crate::http_server::endpoints::media_files::upload::project::upload_new_editor_2d_project_handler::upload_new_editor_2d_project_handler,
-    crate::http_server::endpoints::media_files::upload::project::update_editor_2d_project_handler::update_editor_2d_project_handler,
+    crate::http_server::endpoints::media_files::upload::project::upload_updated_editor_2d_project_handler::upload_updated_editor_2d_project_handler,
     crate::http_server::endpoints::media_files::upload::project::upload_new_scene_3d_project_handler::upload_new_scene_3d_project_handler,
-    crate::http_server::endpoints::media_files::upload::project::update_scene_3d_project_handler::update_scene_3d_project_handler,
+    crate::http_server::endpoints::media_files::upload::project::upload_updated_scene_3d_project_handler::upload_updated_scene_3d_project_handler,
     crate::http_server::endpoints::media_files::upload::upload_spz_media_file_handler::upload_spz_media_file_handler,
     crate::http_server::endpoints::media_files::upload::upload_pmx::upload_pmx_media_file_handler::upload_pmx_media_file_handler,
     crate::http_server::endpoints::media_files::upload::upload_saved_scene_media_file_handler::upload_saved_scene_media_file_handler,
@@ -1195,15 +1196,15 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     UploadMediaSuccessResponse,
     UploadNewEngineAssetFileForm,
     UploadNewEngineAssetSuccessResponse,
-    UpdateEditor2dProjectPathInfo,
+    UploadUpdatedEditor2dProjectPathInfo,
     UpdateProjectMultipartForm,
-    UpdateEditor2dProjectSuccessResponse,
-    UpdateMoodBoardProjectPathInfo,
-    UpdateMoodBoardProjectSuccessResponse,
-    UpdateScene3dProjectPathInfo,
-    UpdateScene3dProjectSuccessResponse,
-    UpdateVideoTimelineProjectPathInfo,
-    UpdateVideoTimelineProjectSuccessResponse,
+    UploadUpdatedEditor2dProjectSuccessResponse,
+    UploadUpdatedMoodBoardProjectPathInfo,
+    UploadUpdatedMoodBoardProjectSuccessResponse,
+    UploadUpdatedScene3dProjectPathInfo,
+    UploadUpdatedScene3dProjectSuccessResponse,
+    UploadUpdatedVideoTimelineProjectPathInfo,
+    UploadUpdatedVideoTimelineProjectSuccessResponse,
     UploadNewEditor2dProjectSuccessResponse,
     UploadNewMoodBoardProjectSuccessResponse,
     UploadNewScene3dProjectSuccessResponse,

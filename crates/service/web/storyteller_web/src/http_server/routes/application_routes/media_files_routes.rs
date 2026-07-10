@@ -26,13 +26,13 @@ use crate::http_server::endpoints::media_files::upload::upload_generic::upload_m
 use crate::http_server::endpoints::media_files::upload::upload_image_media_file_handler::upload_image_media_file_handler;
 use crate::http_server::endpoints::media_files::upload::upload_new_engine_asset_media_file_handler::upload_new_engine_asset_media_file_handler;
 use crate::http_server::endpoints::media_files::upload::upload_new_scene_media_file_handler::upload_new_scene_media_file_handler;
-use crate::http_server::endpoints::media_files::upload::project::update_mood_board_project_handler::update_mood_board_project_handler;
+use crate::http_server::endpoints::media_files::upload::project::upload_updated_mood_board_project_handler::upload_updated_mood_board_project_handler;
 use crate::http_server::endpoints::media_files::upload::project::upload_new_mood_board_project_handler::upload_new_mood_board_project_handler;
-use crate::http_server::endpoints::media_files::upload::project::update_video_timeline_project_handler::update_video_timeline_project_handler;
+use crate::http_server::endpoints::media_files::upload::project::upload_updated_video_timeline_project_handler::upload_updated_video_timeline_project_handler;
 use crate::http_server::endpoints::media_files::upload::project::upload_new_video_timeline_project_handler::upload_new_video_timeline_project_handler;
-use crate::http_server::endpoints::media_files::upload::project::update_editor_2d_project_handler::update_editor_2d_project_handler;
+use crate::http_server::endpoints::media_files::upload::project::upload_updated_editor_2d_project_handler::upload_updated_editor_2d_project_handler;
 use crate::http_server::endpoints::media_files::upload::project::upload_new_editor_2d_project_handler::upload_new_editor_2d_project_handler;
-use crate::http_server::endpoints::media_files::upload::project::update_scene_3d_project_handler::update_scene_3d_project_handler;
+use crate::http_server::endpoints::media_files::upload::project::upload_updated_scene_3d_project_handler::upload_updated_scene_3d_project_handler;
 use crate::http_server::endpoints::media_files::upload::project::upload_new_scene_3d_project_handler::upload_new_scene_3d_project_handler;
 use crate::http_server::endpoints::media_files::upload::upload_pmx::upload_pmx_media_file_handler::upload_pmx_media_file_handler;
 use crate::http_server::endpoints::media_files::upload::upload_saved_scene_media_file_handler::upload_saved_scene_media_file_handler;
@@ -149,7 +149,7 @@ pub fn add_media_file_routes<T, B> (app: App<T>) -> App<T>
           .route(web::head().to(|| HttpResponse::Ok()))
       )
       .service(web::resource("/upload/project/mood_board/update/{token}")
-          .route(web::post().to(update_mood_board_project_handler))
+          .route(web::post().to(upload_updated_mood_board_project_handler))
           .route(web::head().to(|| HttpResponse::Ok()))
       )
       .service(web::resource("/upload/project/video_timeline/new")
@@ -157,7 +157,7 @@ pub fn add_media_file_routes<T, B> (app: App<T>) -> App<T>
           .route(web::head().to(|| HttpResponse::Ok()))
       )
       .service(web::resource("/upload/project/video_timeline/update/{token}")
-          .route(web::post().to(update_video_timeline_project_handler))
+          .route(web::post().to(upload_updated_video_timeline_project_handler))
           .route(web::head().to(|| HttpResponse::Ok()))
       )
       .service(web::resource("/upload/project/editor_2d/new")
@@ -165,7 +165,7 @@ pub fn add_media_file_routes<T, B> (app: App<T>) -> App<T>
           .route(web::head().to(|| HttpResponse::Ok()))
       )
       .service(web::resource("/upload/project/editor_2d/update/{token}")
-          .route(web::post().to(update_editor_2d_project_handler))
+          .route(web::post().to(upload_updated_editor_2d_project_handler))
           .route(web::head().to(|| HttpResponse::Ok()))
       )
       .service(web::resource("/upload/project/scene_3d/new")
@@ -173,7 +173,7 @@ pub fn add_media_file_routes<T, B> (app: App<T>) -> App<T>
           .route(web::head().to(|| HttpResponse::Ok()))
       )
       .service(web::resource("/upload/project/scene_3d/update/{token}")
-          .route(web::post().to(update_scene_3d_project_handler))
+          .route(web::post().to(upload_updated_scene_3d_project_handler))
           .route(web::head().to(|| HttpResponse::Ok()))
       )
       .service(web::resource("/upload/new_scene")

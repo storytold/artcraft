@@ -26,6 +26,12 @@ pub enum UploadType {
   Filesystem,
   DeviceCaptureApi,
   StorytellerEngine,
+
+  /// Internal project documents (scenes, mood boards, timelines, etc.)
+  /// created by our apps and uploaded by the client. Stored with origin
+  /// `upload`; the project nature is captured by `media_class = 'project'`
+  /// and `maybe_project_type`.
+  ProjectFile,
 }
 
 pub struct InsertMediaFileFromUploadArgs<'a> {
@@ -78,6 +84,7 @@ pub async fn insert_media_file_from_file_upload(
   let mut origin_category = match args.upload_type {
     UploadType::ThirdPartyInference => MediaFileOriginCategory::ThirdPartyInference,
     UploadType::Filesystem => MediaFileOriginCategory::Upload,
+    UploadType::ProjectFile => MediaFileOriginCategory::Upload,
     UploadType::DeviceCaptureApi => MediaFileOriginCategory::DeviceApi,
     UploadType::StorytellerEngine => MediaFileOriginCategory::StorytellerStudio,
   };
