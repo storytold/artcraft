@@ -107,11 +107,15 @@ pub async fn handle_successful_fal_webhook(
 
     if let Some(model_glb_data) = maybe_primary_glb {
       info!("Handling model_glb payload for request_id {} / job {:?}", request_id, job.job_token);
+      // The cover image arrives as `thumbnail` (Hunyuan) or `rendered_image`
+      // (Tripo 3D); both have the same shape.
+      let maybe_cover_image = extracted.thumbnail.as_ref()
+          .or(extracted.rendered_image.as_ref());
       let (token, batch_token) = process_model_glb_payload(
         model_glb_data,
         extracted.model_glb_pbr.as_ref(),
         extracted.model_urls.as_ref(),
-        extracted.thumbnail.as_ref(),
+        maybe_cover_image,
         &job,
         server_state,
         pager,

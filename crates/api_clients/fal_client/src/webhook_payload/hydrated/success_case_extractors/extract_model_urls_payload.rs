@@ -184,6 +184,53 @@ mod tests {
   }
 
   #[test]
+  fn model_urls_and_rendered_image_from_tripo3d_test_file() {
+    let webhook = load_test_webhook("success/tripo3d_model_urls_rendered_image_payload_1.json");
+    let result = hydrate_webhook_contents(&webhook);
+
+    let HydratedWebhookContents::Success(data) = result else {
+      panic!("Expected Success, got {:?}", result);
+    };
+
+    let contents = data.extracted_contents
+      .expect("extracted_contents should be Some");
+
+    // Tripo 3D sends its GLB under `model_mesh` (not `model_glb`); the
+    // webhook handler picks `model_urls.glb` as the primary GLB instead.
+    assert!(contents.model_glb.is_none());
+    let mesh = contents.model_mesh.expect("model_mesh should be Some");
+    assert_eq!(mesh.url.as_deref(), Some("https://v3b.fal.media/files/b/0aa1bbdb/d8ATWvvXYHY-8zj-lQecf_model.glb"));
+    assert_eq!(mesh.content_type.as_deref(), Some("model/gltf-binary"));
+
+    let model_urls = contents.model_urls.expect("model_urls should be Some");
+
+    // `glb` and `pbr_model` duplicate each other (same URL) in this payload;
+    // the webhook handler dedupes by URL and uploads the file only once.
+    let urls_glb = model_urls.glb.expect("model_urls.glb should be Some");
+    assert_eq!(urls_glb.url.as_deref(), Some("https://v3b.fal.media/files/b/0aa1bbdb/d8ATWvvXYHY-8zj-lQecf_model.glb"));
+    assert_eq!(urls_glb.file_size, Some(43981280));
+
+    let urls_pbr_model = model_urls.pbr_model.expect("model_urls.pbr_model should be Some");
+    assert_eq!(urls_pbr_model.url.as_deref(), Some("https://v3b.fal.media/files/b/0aa1bbdb/d8ATWvvXYHY-8zj-lQecf_model.glb"));
+
+    assert!(model_urls.base_model.is_none());
+    assert!(model_urls.fbx.is_none());
+    assert!(model_urls.mtl.is_none());
+    assert!(model_urls.obj.is_none());
+    assert!(model_urls.texture.is_none());
+    assert!(model_urls.usdz.is_none());
+
+    // The preview arrives as `rendered_image` (no `thumbnail` key) and is
+    // attached to the mesh as its cover image downstream.
+    let rendered_image = contents.rendered_image.expect("rendered_image should be Some");
+    assert_eq!(rendered_image.url.as_deref(), Some("https://v3b.fal.media/files/b/0aa1bbd0/MblV2S5R6CeskRABMS7-V_preview.png"));
+    assert!(contents.thumbnail.is_none());
+
+    assert!(contents.model_glb_pbr.is_none());
+    assert!(contents.preprocessed_image.is_none());
+  }
+
+  #[test]
   fn synthetic_model_urls_payload_with_distinct_glb() {
     let obj: serde_json::Map<String, serde_json::Value> = serde_json::from_str(r#"{
       "model_urls": {

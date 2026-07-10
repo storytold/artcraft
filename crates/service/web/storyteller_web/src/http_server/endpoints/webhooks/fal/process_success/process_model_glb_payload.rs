@@ -64,10 +64,11 @@ use tokens::tokens::media_files::MediaFileToken;
 
 /// Process a `model_glb` payload, plus the optional secondary GLBs some
 /// models send: the `model_glb_pbr` variant (Hunyuan 3D 2.1) and the
-/// `model_urls.glb` entry (Hunyuan 3D 3.0; often the same URL as
-/// `model_glb`, in which case it is skipped). All GLBs are uploaded as mesh
-/// media files; when more than one is present they share a batch generation
-/// token, with the standard GLB as the primary media file.
+/// `model_urls` entries `glb` (Hunyuan 3D 3.0), `base_model` and `pbr_model`
+/// (Tripo 3D). Secondary entries frequently repeat the primary's URL, so
+/// only distinct files are uploaded. All GLBs become mesh media files; when
+/// more than one is uploaded they share a batch generation token, with the
+/// standard GLB as the primary media file.
 pub async fn process_model_glb_payload(
   model_glb_data: &ModelGlbData,
   maybe_model_glb_pbr_data: Option<&ModelGlbData>,
@@ -84,15 +85,37 @@ pub async fn process_model_glb_payload(
         CommonWebError::server_error_with_message("no `url` in model glb payload")
       })?;
 
-  // Hunyuan 3D 3.0's `model_urls.glb` usually duplicates `model_glb`; only
-  // treat it as a second GLB when it points at a different file.
-  let maybe_model_urls_glb = maybe_model_urls_data
-      .and_then(|urls| urls.glb.as_ref())
-      .filter(|glb| glb.url.as_deref().is_some_and(|url| url != mesh_url));
+  // Secondary GLB candidates. Slots frequently duplicate URLs — Hunyuan 3D
+  // 3.0's `model_urls.glb` usually matches `model_glb`, and Tripo 3D's `glb`
+  // and `pbr_model` match each other — so each distinct URL uploads once.
+  let candidates = [
+    ("model_glb_pbr", maybe_model_glb_pbr_data),
+    ("model_urls.glb", maybe_model_urls_data.and_then(|urls| urls.glb.as_ref())),
+    ("model_urls.base_model", maybe_model_urls_data.and_then(|urls| urls.base_model.as_ref())),
+    ("model_urls.pbr_model", maybe_model_urls_data.and_then(|urls| urls.pbr_model.as_ref())),
+  ];
+
+  let mut seen_urls = vec![mesh_url];
+  let mut secondary_glbs: Vec<(&str, &ModelGlbData)> = Vec::new();
+
+  for (label, maybe_glb_data) in candidates {
+    let Some(glb_data) = maybe_glb_data else {
+      continue;
+    };
+    let Some(url) = glb_data.url.as_deref() else {
+      warn!("No `url` in {} payload; skipping", label);
+      continue;
+    };
+    if seen_urls.contains(&url) {
+      continue;
+    }
+    seen_urls.push(url);
+    secondary_glbs.push((label, glb_data));
+  }
 
   // NB: We don't create `batch_generations` table records. The foreign key
   // in `media_files` is enough to look up the rest of the batch.
-  let maybe_batch_token = (maybe_model_glb_pbr_data.is_some() || maybe_model_urls_glb.is_some())
+  let maybe_batch_token = (!secondary_glbs.is_empty())
       .then(BatchGenerationToken::generate);
 
   let media_token = upload_mesh_file(UploadMeshFileArgs {
@@ -109,16 +132,7 @@ pub async fn process_model_glb_payload(
   // Upload the secondary GLBs into the same batch. NB: Fail open — the
   // primary GLB is already uploaded, so page ourselves instead of failing
   // the job.
-  let secondary_glbs = [
-    ("PBR", maybe_model_glb_pbr_data),
-    ("model_urls", maybe_model_urls_glb),
-  ];
-
-  for (label, maybe_glb_data) in secondary_glbs {
-    let Some(glb_data) = maybe_glb_data else {
-      continue;
-    };
-
+  for (label, glb_data) in secondary_glbs {
     let result = upload_secondary_glb(
       glb_data,
       maybe_batch_token.as_ref(),

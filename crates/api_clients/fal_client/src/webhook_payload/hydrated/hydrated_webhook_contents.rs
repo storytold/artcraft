@@ -68,6 +68,10 @@ pub struct ExtractedContents {
   /// Parsed from `payload.thumbnail`.
   pub thumbnail: Option<ThumbnailData>,
 
+  /// Parsed from `payload.rendered_image` (e.g. Tripo 3D's preview image,
+  /// used as a cover image like `thumbnail`).
+  pub rendered_image: Option<ThumbnailData>,
+
   /// Parsed from `payload.preprocessed_image` (e.g. TripoSplat's segmented
   /// input image, usable as a cover image for the splat result).
   pub preprocessed_image: Option<PreprocessedImageData>,
@@ -125,17 +129,22 @@ pub struct ModelMeshData {
   pub url: Option<String>,
 }
 
-/// Data under `payload.model_urls` (e.g. Hunyuan 3D 3.0 / 3.1): a map of the
-/// generation's output files by format. Any slot may be null or absent. The
-/// `glb` entry frequently duplicates `payload.model_glb` (same URL), but may
-/// point to a different file.
+/// Data under `payload.model_urls` (e.g. Hunyuan 3D 3.0 / 3.1, Tripo 3D): a
+/// map of the generation's output files by format. Any slot may be null or
+/// absent. The `glb` entry frequently duplicates the top-level model key
+/// (same URL), but may point to a different file. Slots may also duplicate
+/// each other's URLs (e.g. Tripo 3D's `glb` and `pbr_model`).
 #[derive(Debug, Deserialize)]
 pub struct ModelUrlsData {
+  /// Untextured base model (Tripo 3D).
+  pub base_model: Option<ModelGlbData>,
   pub fbx: Option<ModelGlbData>,
   pub glb: Option<ModelGlbData>,
   /// OBJ material file (Hunyuan 3D 3.1).
   pub mtl: Option<ModelGlbData>,
   pub obj: Option<ModelGlbData>,
+  /// PBR-textured model (Tripo 3D).
+  pub pbr_model: Option<ModelGlbData>,
   /// PBR texture image for the OBJ (Hunyuan 3D 3.1).
   pub texture: Option<ModelGlbData>,
   pub usdz: Option<ModelGlbData>,
@@ -165,6 +174,7 @@ pub struct ResultFileData {
 
 /// Data under `payload.thumbnail` (there may be other sibling keys too)
 /// Frequently seen together with `model_glb`.
+/// Also used for `payload.rendered_image` (Tripo 3D), which has the same shape.
 #[derive(Debug, Deserialize)]
 pub struct ThumbnailData {
   pub content_type: Option<String>,
