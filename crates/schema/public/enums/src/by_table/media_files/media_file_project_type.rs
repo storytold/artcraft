@@ -34,6 +34,12 @@ pub enum MediaFileProjectType {
 
   /// Video editor project: a nonlinear video editing timeline.
   VideoTimeline,
+
+  /// 2D editor project: a 2D image editing document.
+  /// NB: serde's snake_case renames this to "editor2d" (no underscore before
+  /// the digit), so the rename must be explicit.
+  #[serde(rename = "editor_2d")]
+  Editor2d,
 }
 
 impl_enum_display_and_debug_using_to_str!(MediaFileProjectType);
@@ -47,6 +53,7 @@ impl MediaFileProjectType {
       Self::MoodBoard => "mood_board",
       Self::Workflow => "workflow",
       Self::VideoTimeline => "video_timeline",
+      Self::Editor2d => "editor_2d",
     }
   }
 
@@ -56,6 +63,7 @@ impl MediaFileProjectType {
       "mood_board" => Ok(Self::MoodBoard),
       "workflow" => Ok(Self::Workflow),
       "video_timeline" => Ok(Self::VideoTimeline),
+      "editor_2d" => Ok(Self::Editor2d),
       _ => Err(format!("invalid value: {:?}", value)),
     }
   }
@@ -67,6 +75,7 @@ impl MediaFileProjectType {
       Self::MoodBoard,
       Self::Workflow,
       Self::VideoTimeline,
+      Self::Editor2d,
     ])
   }
 }
@@ -85,6 +94,7 @@ mod tests {
       assert_serialization(MediaFileProjectType::MoodBoard, "mood_board");
       assert_serialization(MediaFileProjectType::Workflow, "workflow");
       assert_serialization(MediaFileProjectType::VideoTimeline, "video_timeline");
+      assert_serialization(MediaFileProjectType::Editor2d, "editor_2d");
     }
   }
 
@@ -97,6 +107,7 @@ mod tests {
       assert_eq!(MediaFileProjectType::MoodBoard.to_str(), "mood_board");
       assert_eq!(MediaFileProjectType::Workflow.to_str(), "workflow");
       assert_eq!(MediaFileProjectType::VideoTimeline.to_str(), "video_timeline");
+      assert_eq!(MediaFileProjectType::Editor2d.to_str(), "editor_2d");
     }
 
     #[test]
@@ -105,6 +116,7 @@ mod tests {
       assert_eq!(MediaFileProjectType::from_str("mood_board").unwrap(), MediaFileProjectType::MoodBoard);
       assert_eq!(MediaFileProjectType::from_str("workflow").unwrap(), MediaFileProjectType::Workflow);
       assert_eq!(MediaFileProjectType::from_str("video_timeline").unwrap(), MediaFileProjectType::VideoTimeline);
+      assert_eq!(MediaFileProjectType::from_str("editor_2d").unwrap(), MediaFileProjectType::Editor2d);
       assert!(MediaFileProjectType::from_str("foo").is_err());
     }
   }
@@ -115,11 +127,12 @@ mod tests {
     #[test]
     fn all_variants() {
       let mut variants = MediaFileProjectType::all_variants();
-      assert_eq!(variants.len(), 4);
+      assert_eq!(variants.len(), 5);
       assert_eq!(variants.pop_first(), Some(MediaFileProjectType::Scene3d));
       assert_eq!(variants.pop_first(), Some(MediaFileProjectType::MoodBoard));
       assert_eq!(variants.pop_first(), Some(MediaFileProjectType::Workflow));
       assert_eq!(variants.pop_first(), Some(MediaFileProjectType::VideoTimeline));
+      assert_eq!(variants.pop_first(), Some(MediaFileProjectType::Editor2d));
       assert_eq!(variants.pop_first(), None);
     }
   }
