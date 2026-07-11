@@ -1,3 +1,4 @@
+pub mod insert_cover_media_file;
 pub mod insert_media_file_from_cli_tool;
 pub mod insert_media_file_from_comfy_ui;
 pub mod insert_media_file_from_f5_tts;
