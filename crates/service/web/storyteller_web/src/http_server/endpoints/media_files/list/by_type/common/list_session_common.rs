@@ -121,6 +121,7 @@ pub async fn list_session_media_files_of_class(
           media_class: record.media_class,
           media_type: record.media_type,
           creator_set_visibility: record.creator_set_visibility,
+          maybe_prompt_token: record.maybe_prompt_token,
           maybe_title: record.maybe_title,
           created_at: record.created_at,
           updated_at: record.updated_at,

@@ -7,6 +7,17 @@ export type GenerationMediaClass =
   | "audio"
   | "dimensional";
 
+// The backend used to file all 3D media under the (now deprecated) coarse
+// "dimensional" class; new records are written as "mesh" (3D models) or
+// "splat" (gaussian splats). Treat all three as 3D.
+export function is3DMediaClass(mediaClass: string | undefined | null): boolean {
+  return (
+    mediaClass === "dimensional" ||
+    mediaClass === "mesh" ||
+    mediaClass === "splat"
+  );
+}
+
 /** Plural noun for batch captions, e.g. "Generating 4 images". */
 export function batchNoun(mediaClass: GenerationMediaClass): string {
   switch (mediaClass) {

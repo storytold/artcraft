@@ -4,6 +4,7 @@ import { toast } from "../toast/toast";
 import { useEffect, useState, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { MediaFilesApi, PromptsApi, type UserInfo } from "@storyteller/api";
+import { is3DMediaClass } from "@storyteller/ui-generation-list";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faChevronLeft,
@@ -277,7 +278,7 @@ export function Lightbox({
     : propMediaClass === "video";
   const is3D = selectedImageUrl
     ? is3DModelUrl(selectedImageUrl)
-    : propMediaClass === "dimensional";
+    : is3DMediaClass(propMediaClass);
   const isAudio = selectedImageUrl
     ? isAudioUrl(selectedImageUrl) || propMediaClass === "audio"
     : propMediaClass === "audio";

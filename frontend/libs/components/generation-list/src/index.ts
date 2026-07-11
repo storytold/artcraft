@@ -6,6 +6,7 @@ export * from "./lib/media-prompt-token-cache";
 export * from "./lib/gallery-view-store";
 export * from "./lib/GalleryViewToggle";
 export * from "./lib/useGalleryData";
+export * from "./lib/useSessionMediaByClass";
 export * from "./lib/useGalleryEntries";
 export * from "./lib/useGenerationJobs";
 export * from "./lib/GalleryThumbnail";

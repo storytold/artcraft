@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { FilterMediaClasses } from "@storyteller/api";
 import type { OmniGenSplatModelInfo } from "@storyteller/api";
 import { PopoverMenu, type PopoverItem } from "@storyteller/ui-popover";
 import { Tooltip } from "@storyteller/ui-tooltip";
@@ -19,7 +18,7 @@ import {
 } from "../../components/prompt-box";
 import {
   GenerationGallery,
-  useGalleryData,
+  useSessionMediaByClass,
   useGenerationJobs,
   useAuthCheck,
   usePromptHeight,
@@ -27,7 +26,6 @@ import {
   CreateMediaPageShell,
 } from "../../components/generation-gallery";
 import { Lightbox } from "../../components/lightbox/lightbox";
-import { is3DModelUrl } from "../../components/lightbox/shared";
 import { useCreateWorldStore } from "./create-world-store";
 import { enqueueSplatGeneration, startPolling } from "./generate-world-api";
 import { ReferenceVideoSlot } from "./components/ReferenceVideoSlot";
@@ -48,7 +46,6 @@ import { useInsufficientCredits } from "../../components/insufficient-credits-mo
 // ── Constants ────────────────────────────────────────────────────────────
 
 const DEFAULT_MODEL_ID = "marble_1p1";
-const DIMENSIONAL_FILTER = [FilterMediaClasses.DIMENSIONAL];
 
 let _modelLookup = new Map<string, OmniGenSplatModelInfo>();
 
@@ -147,31 +144,16 @@ export default function CreateWorld() {
   const dismissBatch = useCreateWorldStore((s) => s.dismissBatch);
   const pollingCleanupsRef = useRef<Map<string, () => void>>(new Map());
 
-  // Jobs + gallery (only splats, not mesh objects)
-  const splatModelIds = useMemo(
-    () => apiModels.map((m) => m.model),
-    [apiModels],
-  );
+  // Jobs + gallery (only splats, not mesh objects). The splat list endpoint
+  // is scoped server-side (`media_class = 'splat'`), so no client-side model
+  // or screenshot filtering is needed.
   const jobs = useGenerationJobs({ mediaType: "splat", enabled: !!user });
-  const gallery = useGalleryData({
-    username: user?.username ?? null,
-    filterMediaClasses: DIMENSIONAL_FILTER,
-    filterModelIds: splatModelIds,
-    excludeUploads: true,
+  const gallery = useSessionMediaByClass({
+    mediaClass: "splat",
+    enabled: !!user,
   });
 
-  // A freshly-completed splat job has no cover screenshot in its payload (the
-  // backend renders it a moment later), so its card would be blank. Once the
-  // library re-fetch returns the same world with its cover, adopt that
-  // thumbnail so the card stops showing the placeholder.
-  // The library's dimensional feed can include a world's cover screenshot as
-  // its own entry (surfaced as a "dimensional" media file even though its asset
-  // is a .png). Keep only real 3D/splat files so that stray screenshot doesn't
-  // show up as a separate card.
-  const modelGalleryItems = useMemo(
-    () => gallery.items.filter((i) => !!i.fullImage && is3DModelUrl(i.fullImage)),
-    [gallery.items],
-  );
+  const modelGalleryItems = gallery.items;
 
   const galleryById = useMemo(
     () => new Map(modelGalleryItems.map((i) => [i.id, i])),

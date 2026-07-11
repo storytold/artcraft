@@ -1,4 +1,5 @@
 import { useCallback, useState } from "react";
+import { is3DMediaClass } from "@storyteller/ui-generation-list";
 import { useNavigate } from "react-router-dom";
 import type { IconDefinition } from "@fortawesome/fontawesome-svg-core";
 import {
@@ -62,7 +63,7 @@ export function useGalleryItemActions(
   const [isDownloading, setIsDownloading] = useState(false);
 
   const isVideo = item.mediaClass === "video";
-  const is3D = item.mediaClass === "dimensional";
+  const is3D = is3DMediaClass(item.mediaClass);
   const isAudio = item.mediaClass === "audio";
   // Audio v1: no recreate / make-video — download + share only.
   const recreateMediaClass: RecreateMediaClass | null = isVideo

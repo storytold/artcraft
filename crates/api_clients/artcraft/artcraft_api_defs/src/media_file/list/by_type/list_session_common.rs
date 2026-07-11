@@ -9,6 +9,7 @@ use enums::by_table::media_files::media_file_class::MediaFileClass;
 use enums::by_table::media_files::media_file_type::MediaFileType;
 use enums::common::visibility::Visibility;
 use tokens::tokens::media_files::MediaFileToken;
+use tokens::tokens::prompts::PromptToken;
 
 use crate::common::responses::media_file_cover_image_details::MediaFileCoverImageDetails;
 use crate::common::responses::media_links::MediaLinks;
@@ -50,6 +51,10 @@ pub struct SessionMediaFileInfo {
   pub maybe_creator_user: Option<UserDetailsLight>,
 
   pub creator_set_visibility: Visibility,
+
+  /// The generation's prompt record, when there is one. Clients resolve it
+  /// to display the original prompt and model.
+  pub maybe_prompt_token: Option<PromptToken>,
 
   /// The name or title of the media file (optional)
   pub maybe_title: Option<String>,

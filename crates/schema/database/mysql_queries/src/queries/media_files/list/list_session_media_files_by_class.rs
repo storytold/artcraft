@@ -7,6 +7,7 @@ use enums::by_table::media_files::media_file_class::MediaFileClass;
 use enums::by_table::media_files::media_file_type::MediaFileType;
 use enums::common::visibility::Visibility;
 use tokens::tokens::media_files::MediaFileToken;
+use tokens::tokens::prompts::PromptToken;
 use tokens::tokens::users::UserToken;
 
 pub struct SessionMediaFileListPage {
@@ -41,6 +42,7 @@ pub struct SessionMediaFileListItem {
 
   pub creator_set_visibility: Visibility,
 
+  pub maybe_prompt_token: Option<PromptToken>,
   pub maybe_title: Option<String>,
 
   pub created_at: DateTime<Utc>,
@@ -151,6 +153,7 @@ SELECT
 
     m.creator_set_visibility as `creator_set_visibility: enums::common::visibility::Visibility`,
 
+    m.maybe_prompt_token as `maybe_prompt_token: tokens::tokens::prompts::PromptToken`,
     m.maybe_title,
 
     m.created_at,
@@ -215,6 +218,7 @@ SELECT
 
     m.creator_set_visibility as `creator_set_visibility: enums::common::visibility::Visibility`,
 
+    m.maybe_prompt_token as `maybe_prompt_token: tokens::tokens::prompts::PromptToken`,
     m.maybe_title,
 
     m.created_at,

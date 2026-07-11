@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { FilterMediaClasses } from "@storyteller/api";
 import type { OmniGenMeshModelInfo } from "@storyteller/api";
 import { PopoverMenu, type PopoverItem } from "@storyteller/ui-popover";
 import { Tooltip } from "@storyteller/ui-tooltip";
@@ -19,7 +18,7 @@ import {
 } from "../../components/prompt-box";
 import {
   GenerationGallery,
-  useGalleryData,
+  useSessionMediaByClass,
   useGenerationJobs,
   useAuthCheck,
   usePromptHeight,
@@ -27,7 +26,6 @@ import {
   CreateMediaPageShell,
 } from "../../components/generation-gallery";
 import { Lightbox } from "../../components/lightbox/lightbox";
-import { is3DModelUrl } from "../../components/lightbox/shared";
 import { useCreateObjectStore } from "./create-object-store";
 import { enqueueMeshGeneration, startPolling } from "./generate-object-api";
 import {
@@ -57,7 +55,6 @@ import { useInsufficientCredits } from "../../components/insufficient-credits-mo
 // ── Constants ────────────────────────────────────────────────────────────
 
 const DEFAULT_MODEL_ID = "hunyuan_3d_3";
-const DIMENSIONAL_FILTER = [FilterMediaClasses.DIMENSIONAL];
 
 let _modelLookup = new Map<string, OmniGenMeshModelInfo>();
 
@@ -167,27 +164,16 @@ export default function CreateObject() {
   const dismissBatch = useCreateObjectStore((s) => s.dismissBatch);
   const pollingCleanupsRef = useRef<Map<string, () => void>>(new Map());
 
-  // Jobs + gallery (only this page's own — mesh objects, not splats)
-  const meshModelIds = useMemo(
-    () => apiModels.map((m) => m.model),
-    [apiModels],
-  );
+  // Jobs + gallery (only this page's own — mesh objects, not splats). The
+  // mesh list endpoint is scoped server-side (`media_class = 'mesh'`), so no
+  // client-side model or screenshot filtering is needed.
   const jobs = useGenerationJobs({ mediaType: "object", enabled: !!user });
-  const gallery = useGalleryData({
-    username: user?.username ?? null,
-    filterMediaClasses: DIMENSIONAL_FILTER,
-    filterModelIds: meshModelIds,
-    excludeUploads: true,
+  const gallery = useSessionMediaByClass({
+    mediaClass: "mesh",
+    enabled: !!user,
   });
 
-  // The library's dimensional feed can include a 3D model's cover screenshot as
-  // its own entry (the backend surfaces it as a "dimensional" media file even
-  // though its asset is a .png). Keep only real 3D-model files so that stray
-  // screenshot doesn't show up as a separate card.
-  const modelGalleryItems = useMemo(
-    () => gallery.items.filter((i) => !!i.fullImage && is3DModelUrl(i.fullImage)),
-    [gallery.items],
-  );
+  const modelGalleryItems = gallery.items;
 
   // A freshly-completed 3D job has no cover screenshot in its payload (the
   // backend renders it a moment later), so its card would be blank. Once the
