@@ -353,6 +353,9 @@ use artcraft_api_defs::analytics::log_active_user::*;
 use artcraft_api_defs::credits::get_session_credits::*;
 use artcraft_api_defs::subscriptions::get_session_subscription::*;
 use artcraft_api_defs::media_file::list_batch_generated_media_files::*;
+use artcraft_api_defs::media_file::list::by_type::list_session_common::*;
+use artcraft_api_defs::media_file::list::by_type::list_session_mesh_media_files::*;
+use artcraft_api_defs::media_file::list::by_type::list_session_splat_media_files::*;
 use artcraft_api_defs::media_file::list_session_project_media_files::*;
 use artcraft_api_defs::media_file::project::upload_updated_mood_board_project::*;
 use artcraft_api_defs::media_file::project::upload_new_mood_board_project::*;
@@ -495,6 +498,8 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     crate::http_server::endpoints::media_files::list::list_media_files_for_user_handler::list_media_files_for_user_handler,
     crate::http_server::endpoints::media_files::list::list_media_files_handler::list_media_files_handler,
     crate::http_server::endpoints::media_files::list::list_pinned_media_files_handler::list_pinned_media_files_handler,
+    crate::http_server::endpoints::media_files::list::by_type::list_session_mesh_media_files_handler::list_session_mesh_media_files_handler,
+    crate::http_server::endpoints::media_files::list::by_type::list_session_splat_media_files_handler::list_session_splat_media_files_handler,
     crate::http_server::endpoints::media_files::list::list_session_project_media_files_handler::list_session_project_media_files_handler,
     crate::http_server::endpoints::media_files::search::search_featured_media_files_handler::search_featured_media_files_handler,
     crate::http_server::endpoints::media_files::search::search_session_media_files_handler::search_session_media_files_handler,
@@ -1124,7 +1129,9 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     ListPinnedWeightsSuccessResponse,
     ListSessionJobsItem,
     ListSessionJobsQueryParams,
+    ListSessionMeshMediaFilesSuccessResponse,
     ListSessionProjectMediaFilesSuccessResponse,
+    ListSessionSplatMediaFilesSuccessResponse,
     ListSessionJobsSuccessResponse,
     ListSessionRequestDetailsResponse,
     ListSessionResultDetailsResponse,
@@ -1168,6 +1175,7 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     PinnedMediaFile,
     PinnedModelWeightForList,
     ProjectMediaFileInfo,
+    SessionMediaFileInfo,
     PromptInfo,
     RatingRow,
     RedeemBetaKeyRequest,
