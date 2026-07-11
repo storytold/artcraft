@@ -7,15 +7,12 @@ use crate::http_server::endpoints::webhooks::fal::process_success::resolve_file_
 use crate::state::server_state::ServerState;
 use crate::util::http_download_url_to_bytes::http_download_url_to_bytes;
 use bucket_paths::legacy::typified_paths::public::media_files::bucket_file_path::MediaFileBucketPath;
-use enums::by_table::media_files::media_file_class::MediaFileClass;
-use enums::by_table::media_files::media_file_origin_category::MediaFileOriginCategory;
 use enums::by_table::media_files::media_file_origin_product_category::MediaFileOriginProductCategory;
 use enums::by_table::media_files::media_file_type::MediaFileType;
-use enums::common::generation_provider::GenerationProvider;
 use hashing::sha256::sha256_hash_bytes::sha256_hash_bytes;
 use log::{info, warn};
 use mysql_queries::queries::generic_inference::api_providers::fal::get_inference_job_by_fal_id::FalJobDetails;
-use mysql_queries::queries::media_files::create::insert_builder::media_file_insert_builder::MediaFileInsertBuilder;
+use mysql_queries::queries::media_files::create::specialized_insert::insert_cover_media_file::{insert_cover_media_file, InsertCoverMediaFileArgs};
 use mysql_queries::queries::media_files::edit::set_media_file_cover_image::{set_media_file_cover_image, UpdateArgs};
 use tokens::tokens::media_files::MediaFileToken;
 
@@ -120,29 +117,21 @@ pub(crate) async fn attach_cover_image(
         CommonWebError::from_anyhow_error(err)
       })?;
 
-  let mut insert_builder = MediaFileInsertBuilder::new()
-      .checksum_sha2(&file_hash)
-      .creator_ip_address(&job.creator_ip_address)
-      .file_size_bytes(file_size_bytes as u64)
-      .is_intermediate_system_file(true)
-      .maybe_creator_anonymous_visitor(job.maybe_creator_anonymous_visitor_token.as_ref())
-      .maybe_creator_user(job.maybe_creator_user_token.as_ref())
-      .maybe_generation_provider(Some(GenerationProvider::Artcraft))
-      .maybe_prompt_token(job.maybe_prompt_token.as_ref())
-      .maybe_platform_type(job.maybe_platform_type)
-      .media_file_class(MediaFileClass::Image)
-      .media_file_origin_category(MediaFileOriginCategory::Inference)
-      .media_file_type(media_file_type)
-      .mime_type(mime_type)
-      .public_bucket_directory_hash(&public_upload_path);
-
-  if let Some(origin_product_category) = maybe_origin_product_category {
-    insert_builder = insert_builder
-        .media_file_origin_product_category(origin_product_category);
-  }
-
-  let cover_media_token = insert_builder
-      .insert_pool(&server_state.mysql_pool)
+  let cover_media_token = insert_cover_media_file(InsertCoverMediaFileArgs {
+    maybe_creator_user_token: job.maybe_creator_user_token.as_ref(),
+    maybe_creator_anonymous_visitor_token: job.maybe_creator_anonymous_visitor_token.as_ref(),
+    creator_ip_address: &job.creator_ip_address,
+    media_file_type,
+    mime_type,
+    file_size_bytes: file_size_bytes as u64,
+    checksum_sha2: &file_hash,
+    public_bucket_path: &public_upload_path,
+    maybe_origin_product_category,
+    maybe_prompt_token: job.maybe_prompt_token.as_ref(),
+    maybe_platform_type: job.maybe_platform_type,
+    mysql_executor: &server_state.mysql_pool,
+    phantom: Default::default(),
+  })
       .await
       .map_err(|err| {
         warn!("Failed to insert cover image media file record: {:?}", err);
