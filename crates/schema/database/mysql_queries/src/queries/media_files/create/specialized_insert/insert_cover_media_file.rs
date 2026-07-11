@@ -60,47 +60,60 @@ where
   E: 'a + Executor<'c, Database = MySql>,
 {
   let (media_token, _record_id) = insert_media_file_generic_executor(InsertMediaFileGenericExecutorArgs {
+    // User details
     maybe_creator_user_token: args.maybe_creator_user_token,
     maybe_creator_anonymous_visitor_token: args.maybe_creator_anonymous_visitor_token,
     creator_ip_address: args.creator_ip_address,
-    creator_set_visibility: Visibility::Public,
-    media_class: MediaFileClass::Image,
-    media_type: args.media_file_type,
-    is_user_upload: false,
-    is_intermediate_system_file: true,
-    origin_category: MediaFileOriginCategory::Inference,
-    origin_product_category: args.maybe_origin_product_category
-        .unwrap_or(MediaFileOriginProductCategory::Unknown),
-    maybe_origin_model_type: None,
-    maybe_origin_model_token: None,
-    maybe_origin_filename: None,
-    maybe_mime_type: Some(args.mime_type),
-    file_size_bytes: args.file_size_bytes,
-    maybe_duration_millis: None,
-    maybe_audio_encoding: None,
-    maybe_video_encoding: None,
-    maybe_frame_width: None,
-    maybe_frame_height: None,
-    checksum_sha2: args.checksum_sha2,
-    maybe_engine_category: None,
-    maybe_title: None,
-    maybe_text_transcript: None,
-    maybe_scene_source_media_file_token: None,
-    maybe_prompt_token: args.maybe_prompt_token,
-    maybe_batch_token: None,
+    maybe_platform_type: args.maybe_platform_type,
+
+    // Storage
     public_bucket_directory_hash: args.public_bucket_path.get_object_hash(),
     maybe_public_bucket_prefix: args.public_bucket_path.get_optional_prefix(),
     maybe_public_bucket_extension: args.public_bucket_path.get_optional_extension(),
-    maybe_creator_file_synthetic_id: None,
-    maybe_creator_category_synthetic_id: None,
-    maybe_extra_file_modification_info: None,
-    is_generated_on_prem: false,
-    generated_by_worker: None,
-    generated_by_cluster: None,
+
+    // File details
+    checksum_sha2: args.checksum_sha2,
+    file_size_bytes: args.file_size_bytes,
+    maybe_mime_type: Some(args.mime_type),
+    media_class: MediaFileClass::Image,
+
+    // Additional foreign keys and misc
     maybe_generation_provider: Some(GenerationProvider::Artcraft),
-    maybe_platform_type: args.maybe_platform_type,
+    maybe_prompt_token: args.maybe_prompt_token,
+    media_type: args.media_file_type,
+    origin_product_category: args.maybe_origin_product_category // TODO: Not useful here.
+        .unwrap_or(MediaFileOriginProductCategory::Unknown),
+
+    // Essential - this is a hidden file
+    is_intermediate_system_file: true,
+    creator_set_visibility: Visibility::Hidden,
+
+    // Other Constants
+    generated_by_cluster: None,
+    generated_by_worker: None,
+    is_generated_on_prem: false,
+    is_user_upload: false,
+    maybe_audio_encoding: None,
+    maybe_batch_token: None,
     maybe_cover_image_media_file_token: None,
+    maybe_creator_category_synthetic_id: None,
+    maybe_creator_file_synthetic_id: None,
+    maybe_duration_millis: None,
+    maybe_engine_category: None,
+    maybe_extra_file_modification_info: None,
+    maybe_frame_height: None,
+    maybe_frame_width: None,
     maybe_mod_user_token: None,
+    maybe_origin_filename: None,
+    maybe_origin_model_token: None,
+    maybe_origin_model_type: None,
+    maybe_scene_source_media_file_token: None,
+    maybe_text_transcript: None,
+    maybe_title: None,
+    maybe_video_encoding: None,
+    origin_category: MediaFileOriginCategory::Inference, // TODO: Not useful here.
+
+    // Connection
     mysql_executor: args.mysql_executor,
     phantom: Default::default(),
   }).await?;
