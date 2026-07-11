@@ -318,7 +318,6 @@ impl MediaFileInsertBuilder {
         origin_category = MediaFileOriginCategory::ThirdPartyInference;
       }
     }
-    
 
     let result = insert_media_file_generic(InsertArgs {
       pool: mysql_pool,
