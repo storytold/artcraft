@@ -1,6 +1,7 @@
 use serde_derive::{Deserialize, Serialize};
 use utoipa::{IntoParams, ToSchema};
 
+use enums::by_table::media_files::media_file_class::MediaFileClass;
 use tokens::tokens::folders::FolderToken;
 use tokens::tokens::media_files::MediaFileToken;
 
@@ -20,6 +21,28 @@ pub struct FolderMediaFilesPathInfo {
 pub struct ListFolderMediaFilesQueryParams {
   pub cursor: Option<String>,
   pub limit: Option<u32>,
+}
+
+// ── GET /v1/folders/media_files_without_folder ──
+//
+// NB: `ListMediaFilesWithoutFolderSuccessResponse` and its list item live in
+// `storyteller_web`'s handler because the wire shape embeds
+// `MediaFileCoverImageDetails` and `MediaLinks` constructors that depend
+// on the request's `MediaDomain` + `ServerEnvironment`.
+
+#[derive(Deserialize, ToSchema, IntoParams)]
+pub struct ListMediaFilesWithoutFolderQueryParams {
+  pub cursor: Option<String>,
+  pub limit: Option<u32>,
+
+  /// Optional filter on the coarse media class.
+  ///
+  /// Usage:
+  ///   - `?filter_media_class=image`
+  ///   - `?filter_media_class=video`
+  ///   - `?filter_media_class=mesh`
+  ///   - `?filter_media_class=splat`
+  pub filter_media_class: Option<MediaFileClass>,
 }
 
 // ── PUT /v1/folders/media_files/{folder_token}/bulk_add ──

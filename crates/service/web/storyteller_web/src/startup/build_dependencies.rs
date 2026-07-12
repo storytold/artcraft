@@ -14,7 +14,7 @@ use memory_caching::arc_ttl_sieve::ArcTtlSieve;
 use memory_caching::single_item_ttl_cache::SingleItemTtlCache;
 use mysql_queries::mediators::badge_granter::BadgeGranter;
 use mysql_queries::mediators::firehose_publisher::FirehosePublisher;
-use opaque_cursors::v2::opaque_cursor_encoder_v2::OpaqueCursorEncoderV2;
+use crate::http_server::web_utils::web_opaque_cursor_encoder_v2::WebOpaqueCursorEncoderV2;
 use pager::worker::pager_worker::PagerWorker;
 use redis::Client;
 use redis_caching::redis_ttl_cache::RedisTtlCache;
@@ -157,7 +157,7 @@ pub async fn setup_dependencies(server_hostname: &str) -> AnyhowResult<SetupResu
 
   let sort_key_crypto_secret = easyenv::get_env_string_or_default("SORT_KEY_SECRET", "webscale");
   let sort_key_crypto = WebSortKeyCrypto::new(&sort_key_crypto_secret);
-  let opaque_cursor_encoder = OpaqueCursorEncoderV2::new(&sort_key_crypto_secret);
+  let opaque_cursor_encoder = WebOpaqueCursorEncoderV2::new(&sort_key_crypto_secret);
 
   let health_check_interval = easyenv::get_env_duration_seconds_or_default(
     "HEALTH_CHECK_INTERVAL_SECS", Duration::from_secs(3));
