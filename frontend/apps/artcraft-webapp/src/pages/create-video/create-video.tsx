@@ -27,6 +27,7 @@ import {
   SettingsDrawer,
   DrawerOptionList,
   DrawerSection,
+  getVideoDurationFromUrl,
   type RefImage,
   type RefVideo,
   type RefAudio,
@@ -365,10 +366,14 @@ export default function CreateVideo() {
   );
   const [isImagePickerOpen, setIsImagePickerOpen] = useState(false);
   const [isEndFramePickerOpen, setIsEndFramePickerOpen] = useState(false);
+  const [isVideoRefPickerOpen, setIsVideoRefPickerOpen] = useState(false);
   const [isCharactersModalOpen, setIsCharactersModalOpen] = useState(false);
   const [isOutputDrawerOpen, setIsOutputDrawerOpen] = useState(false);
   const [pickerSelectedIds, setPickerSelectedIds] = useState<string[]>([]);
   const [endFramePickerSelectedIds, setEndFramePickerSelectedIds] = useState<
+    string[]
+  >([]);
+  const [videoRefPickerSelectedIds, setVideoRefPickerSelectedIds] = useState<
     string[]
   >([]);
 
@@ -379,6 +384,10 @@ export default function CreateVideo() {
   useEffect(() => {
     if (isEndFramePickerOpen) setEndFramePickerSelectedIds([]);
   }, [isEndFramePickerOpen]);
+
+  useEffect(() => {
+    if (isVideoRefPickerOpen) setVideoRefPickerSelectedIds([]);
+  }, [isVideoRefPickerOpen]);
 
   // Characters store for @-mentions
   const storedCharacters = useCharactersStore((s) => s.characters);
@@ -428,6 +437,9 @@ export default function CreateVideo() {
     !!selectedModel?.image_references_supported;
   const supportsVideoRefs = !!selectedModel?.video_references_supported;
   const supportsAudioRefs = !!selectedModel?.audio_references_supported;
+  const maxVideoRefs = selectedModel?.video_references_max ?? 3;
+  const maxVideoRefDuration =
+    selectedModel?.video_references_max_total_duration_seconds ?? 30;
   const supportsRefMode =
     !!selectedModel?.image_references_supported ||
     supportsVideoRefs ||
@@ -858,6 +870,59 @@ export default function CreateVideo() {
     [referenceImages, isReferenceMode, selectedModel],
   );
 
+  const videoRefPickerMax = Math.max(1, maxVideoRefs - referenceVideos.length);
+
+  const handleVideoRefPickerSelect = useCallback(
+    (id: string) => {
+      setVideoRefPickerSelectedIds((prev) => {
+        if (prev.includes(id)) return prev.filter((x) => x !== id);
+        if (prev.length >= videoRefPickerMax) {
+          return videoRefPickerMax === 1 ? [id] : prev;
+        }
+        return [...prev, id];
+      });
+    },
+    [videoRefPickerMax],
+  );
+
+  const handleLibraryVideoSelect = useCallback(
+    async (items: GalleryItem[]) => {
+      setIsVideoRefPickerOpen(false);
+      const availableSlots = Math.max(0, maxVideoRefs - referenceVideos.length);
+      const picked = items.slice(0, availableSlots);
+
+      const added: RefVideo[] = [];
+      let total = referenceVideos.reduce((sum, v) => sum + v.duration, 0);
+      for (const item of picked) {
+        const url = item.fullImage;
+        if (!url) continue;
+        const duration = await getVideoDurationFromUrl(url);
+        if (duration <= 0) {
+          toast.error("Could not read video file");
+          continue;
+        }
+        if (total + duration > maxVideoRefDuration) {
+          toast.error(
+            `Video too long — max ${maxVideoRefDuration}s total (${maxVideoRefDuration - total}s remaining)`,
+          );
+          continue;
+        }
+        total += duration;
+        added.push({
+          id: Math.random().toString(36).substring(7),
+          url,
+          file: new File([], "library-video"),
+          mediaToken: item.id,
+          duration,
+        });
+      }
+      if (added.length > 0) {
+        setReferenceVideos([...referenceVideos, ...added]);
+      }
+    },
+    [referenceVideos, maxVideoRefs, maxVideoRefDuration, setReferenceVideos],
+  );
+
   const handleEndFrameLibrarySelect = useCallback((items: GalleryItem[]) => {
     const item = items[0];
     if (!item) return;
@@ -1079,6 +1144,26 @@ export default function CreateVideo() {
     dismissBatch,
   ]);
 
+  // Video/audio reference row, shared by the mobile and desktop forms.
+  const mediaReferenceRow =
+    isReferenceMode && (supportsVideoRefs || supportsAudioRefs) ? (
+      <MediaReferenceRow
+        videoSupported={supportsVideoRefs}
+        audioSupported={supportsAudioRefs}
+        referenceVideos={referenceVideos}
+        onReferenceVideosChange={setReferenceVideos}
+        maxVideoCount={maxVideoRefs}
+        maxVideoRefDuration={maxVideoRefDuration}
+        onPickVideoFromLibrary={() => setIsVideoRefPickerOpen(true)}
+        referenceAudios={referenceAudios}
+        onReferenceAudiosChange={setReferenceAudios}
+        maxAudioCount={selectedModel?.audio_references_max ?? 2}
+        maxAudioRefDuration={
+          selectedModel?.audio_references_max_total_duration_seconds ?? 30
+        }
+      />
+    ) : undefined;
+
   // ── Mobile form ───────────────────────────────────────────────────────
 
   const activeResolutionLabel = resolutionItems?.find((i) => i.selected)?.label;
@@ -1172,26 +1257,7 @@ export default function CreateVideo() {
           />
         ) : undefined
       }
-      mediaRefs={
-        isReferenceMode && (supportsVideoRefs || supportsAudioRefs) ? (
-          <MediaReferenceRow
-            videoSupported={supportsVideoRefs}
-            audioSupported={supportsAudioRefs}
-            referenceVideos={referenceVideos}
-            onReferenceVideosChange={setReferenceVideos}
-            maxVideoCount={selectedModel?.video_references_max ?? 3}
-            maxVideoRefDuration={
-              selectedModel?.video_references_max_total_duration_seconds ?? 30
-            }
-            referenceAudios={referenceAudios}
-            onReferenceAudiosChange={setReferenceAudios}
-            maxAudioCount={selectedModel?.audio_references_max ?? 2}
-            maxAudioRefDuration={
-              selectedModel?.audio_references_max_total_duration_seconds ?? 30
-            }
-          />
-        ) : undefined
-      }
+      mediaRefs={mediaReferenceRow}
       settingsFields={
         <>
           {hasSizeOptions && (
@@ -1438,28 +1504,7 @@ export default function CreateVideo() {
               })
             }
             mentionItems={mentionItems.length > 0 ? mentionItems : undefined}
-            mediaReferenceRow={
-              isReferenceMode && (supportsVideoRefs || supportsAudioRefs) ? (
-                <MediaReferenceRow
-                  videoSupported={supportsVideoRefs}
-                  audioSupported={supportsAudioRefs}
-                  referenceVideos={referenceVideos}
-                  onReferenceVideosChange={setReferenceVideos}
-                  maxVideoCount={selectedModel?.video_references_max ?? 3}
-                  maxVideoRefDuration={
-                    selectedModel?.video_references_max_total_duration_seconds ??
-                    30
-                  }
-                  referenceAudios={referenceAudios}
-                  onReferenceAudiosChange={setReferenceAudios}
-                  maxAudioCount={selectedModel?.audio_references_max ?? 2}
-                  maxAudioRefDuration={
-                    selectedModel?.audio_references_max_total_duration_seconds ??
-                    30
-                  }
-                />
-              ) : undefined
-            }
+            mediaReferenceRow={mediaReferenceRow}
             rightToolbar={
               <GenerationCountPicker
                 batchSizeMax={selectedModel?.batch_size_max ?? 4}
@@ -1635,6 +1680,17 @@ export default function CreateVideo() {
             maxSelections={1}
             onUseSelected={handleEndFrameLibrarySelect}
             forceFilter="image"
+            hideFilter
+          />
+          <GalleryModal
+            mode="select"
+            isOpen={isVideoRefPickerOpen}
+            onClose={() => setIsVideoRefPickerOpen(false)}
+            selectedItemIds={videoRefPickerSelectedIds}
+            onSelectItem={handleVideoRefPickerSelect}
+            maxSelections={videoRefPickerMax}
+            onUseSelected={handleLibraryVideoSelect}
+            forceFilter="video"
             hideFilter
           />
           <CharactersModal
