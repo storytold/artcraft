@@ -88,14 +88,7 @@ pub async fn moderator_list_user_session_impersonation_requests_for_user_handler
   let maybe_cursor_id = match &query.cursor {
     None => None,
     Some(cursor_str) => {
-      let decoded = server_state.opaque_cursors
-          .decode_cursor_expecting_name(CURSOR_NAME, cursor_str)
-          .map_err(|err| {
-            warn!("Failed to decode cursor: {:?}", err);
-            CommonWebError::BadInputWithSimpleMessage(
-              "Invalid cursor".to_string())
-          })?;
-      decoded.last_id
+      Some(server_state.opaque_cursors.decode_last_id_cursor(CURSOR_NAME, cursor_str)?)
     }
   };
 
@@ -114,10 +107,7 @@ pub async fn moderator_list_user_session_impersonation_requests_for_user_handler
   let maybe_cursor = records.last().map(|last| {
     server_state.opaque_cursors
         .encode_last_id_cursor(CURSOR_NAME, last.id)
-  }).transpose().map_err(|err| {
-    warn!("Failed to encode cursor: {:?}", err);
-    CommonWebError::server_error_with_message("Failed to encode cursor")
-  })?;
+  }).transpose()?;
 
   let impersonation_requests = records.into_iter().map(|r| {
     UserImpersonationRequestResponse {

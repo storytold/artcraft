@@ -55,13 +55,7 @@ pub async fn list_folders_handler(
   let maybe_cursor_id = match &query.cursor {
     None => None,
     Some(cursor_str) => {
-      let decoded = server_state.opaque_cursors
-        .decode_cursor_expecting_name(CURSOR_NAME, cursor_str)
-        .map_err(|err| {
-          warn!("Failed to decode cursor: {:?}", err);
-          CommonWebError::BadInputWithSimpleMessage("Invalid cursor".to_string())
-        })?;
-      decoded.last_id
+      Some(server_state.opaque_cursors.decode_last_id_cursor(CURSOR_NAME, cursor_str)?)
     }
   };
 
@@ -78,10 +72,7 @@ pub async fn list_folders_handler(
 
   let maybe_cursor = rows.last().map(|last| {
     server_state.opaque_cursors.encode_last_id_cursor(CURSOR_NAME, last.id)
-  }).transpose().map_err(|err| {
-    warn!("Failed to encode cursor: {:?}", err);
-    CommonWebError::server_error_with_message("Failed to encode cursor")
-  })?;
+  }).transpose()?;
 
   let media_domain = get_media_domain(&http_request);
   let server_environment = server_state.server_environment;

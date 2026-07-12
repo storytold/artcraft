@@ -130,6 +130,7 @@ use crate::http_server::endpoints::folders::media_files::bulk_add_folder_media_f
 use crate::http_server::endpoints::folders::media_files::bulk_move_folder_media_files_handler::*;
 use crate::http_server::endpoints::folders::media_files::bulk_remove_folder_media_files_handler::*;
 use crate::http_server::endpoints::folders::media_files::list_folder_media_files_handler::*;
+use crate::http_server::endpoints::folders::media_files::list_media_files_without_folder_handler::*;
 use crate::http_server::endpoints::folders::subfolder::bulk_add_subfolders_handler::*;
 use crate::http_server::endpoints::folders::subfolder::bulk_remove_subfolders_handler::*;
 use crate::http_server::endpoints::folders::subfolder::list_subfolders_handler::*;
@@ -683,6 +684,7 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     crate::http_server::endpoints::folders::subfolder::bulk_add_subfolders_handler::bulk_add_subfolders_handler,
     crate::http_server::endpoints::folders::subfolder::bulk_remove_subfolders_handler::bulk_remove_subfolders_handler,
     crate::http_server::endpoints::folders::media_files::list_folder_media_files_handler::list_folder_media_files_handler,
+    crate::http_server::endpoints::folders::media_files::list_media_files_without_folder_handler::list_media_files_without_folder_handler,
     crate::http_server::endpoints::folders::media_files::bulk_add_folder_media_files_handler::bulk_add_folder_media_files_handler,
     crate::http_server::endpoints::folders::media_files::bulk_move_folder_media_files_handler::bulk_move_folder_media_files_handler,
     crate::http_server::endpoints::folders::media_files::bulk_remove_folder_media_files_handler::bulk_remove_folder_media_files_handler,
@@ -1484,6 +1486,8 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     BulkRemoveSubfoldersSuccessResponse,
     ListFolderMediaFilesQueryParams,
     ListFolderMediaFilesSuccessResponse,
+    ListMediaFilesWithoutFolderQueryParams,
+    ListMediaFilesWithoutFolderSuccessResponse,
     BulkAddFolderMediaFilesRequest,
     BulkAddFolderMediaFilesSuccessResponse,
     BulkRemoveFolderMediaFilesRequest,
@@ -1525,6 +1529,7 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     SetMediaFileTagsSuccessResponse,
     TagDetails,
     TagMediaFileListItem,
+    UnfolderedMediaFileListItem,
   ))
 )]
 pub struct ApiDoc;

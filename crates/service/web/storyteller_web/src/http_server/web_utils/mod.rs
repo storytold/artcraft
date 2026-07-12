@@ -13,4 +13,5 @@ pub mod response_success_helpers;
 pub mod scoped_temp_dir_creator;
 pub mod serialize_as_json_error;
 pub mod try_delete_session_cache;
+pub mod web_opaque_cursor_encoder_v2;
 pub mod web_sort_key_crypto;

@@ -31,7 +31,7 @@ use mysql_queries::mediators::firehose_publisher::FirehosePublisher;
 use mysql_queries::queries::generic_inference::web::get_pending_inference_job_count::InferenceQueueLengthResult;
 use mysql_queries::queries::media_files::list::list_featured_media_files::FeaturedMediaFileListPage;
 use mysql_queries::queries::model_categories::list_categories_query_builder::CategoryList;
-use opaque_cursors::v2::opaque_cursor_encoder_v2::OpaqueCursorEncoderV2;
+use crate::http_server::web_utils::web_opaque_cursor_encoder_v2::WebOpaqueCursorEncoderV2;
 use pager::client::pager::Pager;
 use redis::Client;
 use redis_caching::redis_ttl_cache::RedisTtlCache;
@@ -99,7 +99,7 @@ pub struct ServerState {
   pub audio_uploads_bucket_root: String,
 
   pub sort_key_crypto: WebSortKeyCrypto,
-  pub opaque_cursors: OpaqueCursorEncoderV2,
+  pub opaque_cursors: WebOpaqueCursorEncoderV2,
 
   pub ip_ban_list: IpBanList,
 
