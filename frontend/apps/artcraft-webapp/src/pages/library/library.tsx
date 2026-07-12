@@ -8,6 +8,7 @@ import { LoadingSpinner } from "@storyteller/ui-loading-spinner";
 import {
   UsersApi,
   GalleryModalApi,
+  MediaFilesApi,
   FilterMediaClasses,
   FilterMediaType,
 } from "@storyteller/api";
@@ -24,6 +25,7 @@ import {
   type GalleryItem,
 } from "@storyteller/ui-gallery-modal";
 import { PLACEHOLDER_IMAGES, is3DModelUrl } from "@storyteller/common";
+import { is3DMediaClass } from "@storyteller/ui-generation-list";
 import {
   showActionReminder,
   isActionReminderOpen,
@@ -41,6 +43,7 @@ import {
   faFolderPlus,
   faFolder,
   faFolderOpen,
+  faGlobe,
   faPlus,
   faXmark,
   faStar,
@@ -62,6 +65,7 @@ const FILTERS = [
   { id: "video", label: "Videos", icon: faVideo, route: "/library/videos" },
   { id: "audio", label: "Audio", icon: faMusic, route: "/library/audio" },
   { id: "meshes", label: "Meshes", icon: faCube, route: "/library/meshes" },
+  { id: "splats", label: "Splats", icon: faGlobe, route: "/library/splats" },
 ];
 
 const ROUTE_TO_FILTER: Record<string, string> = {
@@ -69,8 +73,11 @@ const ROUTE_TO_FILTER: Record<string, string> = {
   videos: "video",
   audio: "audio",
   meshes: "meshes",
+  splats: "splats",
 };
 
+// Media classes for the user-list endpoint. The Meshes and Splats tabs don't
+// use it — they call the session mesh/splat list endpoints instead.
 const getFilterMediaClass = (
   filter: string,
 ): FilterMediaClasses[] | undefined => {
@@ -81,14 +88,14 @@ const getFilterMediaClass = (
       return [FilterMediaClasses.VIDEO];
     case "audio":
       return [FilterMediaClasses.AUDIO];
-    case "meshes":
-      return [FilterMediaClasses.DIMENSIONAL];
     default:
       return [
         FilterMediaClasses.IMAGE,
         FilterMediaClasses.VIDEO,
         FilterMediaClasses.AUDIO,
         FilterMediaClasses.DIMENSIONAL,
+        FilterMediaClasses.MESH,
+        FilterMediaClasses.SPLAT,
       ];
   }
 };
@@ -168,6 +175,10 @@ export default function Library() {
   useEffect(() => () => useLibrarySelectionStore.getState().clear(), []);
 
   const api = useMemo(() => new GalleryModalApi(), []);
+  const mediaFilesApi = useMemo(() => new MediaFilesApi(), []);
+  // Keyset cursor for the Meshes / Splats tabs (their endpoints paginate by
+  // cursor, not page index).
+  const meshSplatCursorRef = useRef<string | undefined>(undefined);
 
   // ── Folder store ──────────────────────────────────────────────────────────
   const folders = useLibraryFoldersStore((s) => s.folders);
@@ -275,31 +286,57 @@ export default function Library() {
       isLoadingRef.current = true;
       setLoading(true);
       try {
-        const response = await api.listUserMediaFiles({
-          username,
-          filter_media_classes: getFilterMediaClass(activeFilter),
-          include_user_uploads: true,
-          page_index: reset ? 0 : pageIndex,
-          page_size: PAGE_SIZE,
-        });
-        if (response.success && response.data) {
-          const newItems = response.data
-            .filter(
-              (item: any) =>
-                item.media_type !== FilterMediaType.SCENE_JSON &&
-                // Drop 3D-model cover screenshots the backend surfaces as
-                // "dimensional" items whose asset is actually a .png.
-                !(
-                  item.media_class === "dimensional" &&
-                  !is3DModelUrl(item.media_links?.cdn_url)
-                ),
-            )
-            .map(mapRawToGalleryItem);
-          setAllItems((prev) => (reset ? newItems : [...prev, ...newItems]));
-          const current = response.pagination?.current ?? 0;
-          const total = response.pagination?.total_page_count ?? 1;
-          setPageIndex(current + 1);
-          setHasMore(current + 1 < total);
+        if (activeFilter === "meshes" || activeFilter === "splats") {
+          // The Meshes / Splats tabs use the session by-class list endpoints
+          // (server-scoped, cursor-paginated) instead of the user list.
+          const cursor = reset ? undefined : meshSplatCursorRef.current;
+          const response =
+            activeFilter === "splats"
+              ? await mediaFilesApi.ListSessionSplatMediaFiles({
+                  cursor,
+                  page_size: PAGE_SIZE,
+                })
+              : await mediaFilesApi.ListSessionMeshMediaFiles({
+                  cursor,
+                  page_size: PAGE_SIZE,
+                });
+          if (response.success && response.data) {
+            const newItems = response.data.map(mapRawToGalleryItem);
+            setAllItems((prev) => (reset ? newItems : [...prev, ...newItems]));
+            meshSplatCursorRef.current =
+              response.pagination?.maybe_next ?? undefined;
+            setHasMore(
+              newItems.length >= PAGE_SIZE &&
+                !!response.pagination?.maybe_next,
+            );
+          }
+        } else {
+          const response = await api.listUserMediaFiles({
+            username,
+            filter_media_classes: getFilterMediaClass(activeFilter),
+            include_user_uploads: true,
+            page_index: reset ? 0 : pageIndex,
+            page_size: PAGE_SIZE,
+          });
+          if (response.success && response.data) {
+            const newItems = response.data
+              .filter(
+                (item: any) =>
+                  item.media_type !== FilterMediaType.SCENE_JSON &&
+                  // Drop 3D-model cover screenshots the backend surfaces as
+                  // "dimensional" items whose asset is actually a .png.
+                  !(
+                    item.media_class === "dimensional" &&
+                    !is3DModelUrl(item.media_links?.cdn_url)
+                  ),
+              )
+              .map(mapRawToGalleryItem);
+            setAllItems((prev) => (reset ? newItems : [...prev, ...newItems]));
+            const current = response.pagination?.current ?? 0;
+            const total = response.pagination?.total_page_count ?? 1;
+            setPageIndex(current + 1);
+            setHasMore(current + 1 < total);
+          }
         }
       } catch {
         // ignore
@@ -308,7 +345,7 @@ export default function Library() {
       setInitialLoading(false);
       isLoadingRef.current = false;
     },
-    [username, activeFilter, pageIndex, api],
+    [username, activeFilter, pageIndex, api, mediaFilesApi],
   );
 
   // Initial load + filter change
@@ -316,6 +353,7 @@ export default function Library() {
     if (!username) return;
     setAllItems([]);
     setPageIndex(0);
+    meshSplatCursorRef.current = undefined;
     setHasMore(true);
     setInitialLoading(true);
     isLoadingRef.current = false;
@@ -706,6 +744,7 @@ export default function Library() {
   const refreshRoot = useCallback(() => {
     setAllItems([]);
     setPageIndex(0);
+    meshSplatCursorRef.current = undefined;
     setHasMore(true);
     setInitialLoading(true);
     isLoadingRef.current = false;
@@ -1558,7 +1597,7 @@ function BulkThumb({ item }: { item: GalleryItem }) {
   const placeholderIcon =
     item.mediaClass === "video"
       ? faVideo
-      : item.mediaClass === "dimensional"
+      : is3DMediaClass(item.mediaClass)
         ? faCube
         : item.mediaClass === "audio"
           ? faMusic

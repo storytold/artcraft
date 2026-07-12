@@ -2,7 +2,10 @@ export enum FilterMediaClasses {
   AUDIO = "audio",
   IMAGE = "image",
   VIDEO = "video",
+  /** Deprecated coarse 3D class; legacy records only. New 3D media is MESH or SPLAT. */
   DIMENSIONAL = "dimensional",
+  MESH = "mesh",
+  SPLAT = "splat",
 }
 
 export enum FilterMediaType {
