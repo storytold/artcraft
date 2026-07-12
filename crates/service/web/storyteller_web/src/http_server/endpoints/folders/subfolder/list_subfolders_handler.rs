@@ -93,9 +93,16 @@ pub async fn list_subfolders_handler(
     CommonWebError::from_error(err)
   })?;
 
-  let maybe_cursor = rows.last().map(|last| {
-    server_state.opaque_cursors.encode_last_id_cursor(CURSOR_NAME, last.id)
-  }).transpose()?;
+  // Only hand out a next-page cursor when this page was full. A short page
+  // means the list is exhausted, and emitting a cursor anyway would make
+  // clients fetch one guaranteed-empty trailing page.
+  let maybe_cursor = if rows.len() == limit as usize {
+    rows.last()
+        .map(|last| server_state.opaque_cursors.encode_last_id_cursor(CURSOR_NAME, last.id))
+        .transpose()?
+  } else {
+    None
+  };
 
   let media_domain = get_media_domain(&http_request);
   let server_environment = server_state.server_environment;
