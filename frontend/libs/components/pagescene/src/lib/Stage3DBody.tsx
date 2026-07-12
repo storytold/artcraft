@@ -404,17 +404,35 @@ export const Stage3DBody = ({
             position.y,
           );
           try {
-            if (item.mediaClass === "dimensional") {
+            if (
+              item.mediaClass === "dimensional" ||
+              item.mediaClass === "mesh" ||
+              item.mediaClass === "splat"
+            ) {
               const isCharacter = item.assetType === "character";
+              const isSplat = item.mediaClass === "splat";
               const mediaItem: MediaItem = {
                 version: 1,
-                type: isCharacter ? AssetType.CHARACTER : AssetType.OBJECT,
+                type: isCharacter
+                  ? AssetType.CHARACTER
+                  : isSplat
+                    ? AssetType.SPLAT
+                    : AssetType.OBJECT,
                 media_id: item.id || uuidv4(),
-                name: item.label || (isCharacter ? "Character" : "3D Object"),
+                name:
+                  item.label ||
+                  (isCharacter
+                    ? "Character"
+                    : isSplat
+                      ? "3D World"
+                      : "3D Object"),
               };
               if (isCharacter) {
                 await addCharacter(editor, mediaItem, worldPosition);
               } else {
+                // NB: Splats intentionally route through addObject too — the
+                // engine's sceneManager resolves the media token to a splat
+                // (same as the engine's own DnD in DndAsset.ts).
                 await addObject(editor, mediaItem, worldPosition);
               }
             } else {

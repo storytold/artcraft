@@ -60,6 +60,7 @@ import {
   faImage,
   faVideo,
   faCube,
+  faGlobe,
   faUpload,
   faExpand,
   faCompress,
@@ -88,6 +89,8 @@ interface GalleryCacheEntry {
   pageIndex: number;
   hasMore: boolean;
   timestamp: number;
+  /** Keyset cursor for the mesh/splat tabs (their endpoints paginate by cursor). */
+  cursor?: string;
 }
 
 const galleryCacheMap = new Map<string, GalleryCacheEntry>();
@@ -304,28 +307,36 @@ const SIDEBAR_FILTERS = [
   { id: "all", label: "All Assets", icon: faBorderAll },
   { id: "image", label: "Image", icon: faImage },
   { id: "video", label: "Video", icon: faVideo },
-  { id: "3d", label: "3D", icon: faCube },
+  { id: "mesh", label: "Mesh", icon: faCube },
+  { id: "splat", label: "Splat", icon: faGlobe },
   { id: "uploaded", label: "Uploaded", icon: faUpload },
 ];
 
+// Media classes for the user-list endpoint. The Mesh and Splat tabs don't use
+// it — they call the session mesh/splat list endpoints instead.
 const getFilterMediaClass = (filter: string) => {
   switch (filter) {
     case "image":
       return [FilterMediaClasses.IMAGE];
     case "video":
       return [FilterMediaClasses.VIDEO];
-    case "3d":
-      return [FilterMediaClasses.DIMENSIONAL];
     case "uploaded":
       return [
         FilterMediaClasses.IMAGE,
         FilterMediaClasses.VIDEO,
         FilterMediaClasses.DIMENSIONAL,
+        FilterMediaClasses.MESH,
+        FilterMediaClasses.SPLAT,
       ];
     default:
       return undefined;
   }
 };
+
+// The backend used to file all 3D media under the (now deprecated) coarse
+// "dimensional" class; new records are "mesh" or "splat". Treat all three as 3D.
+const is3DClass = (mediaClass: string | undefined | null): boolean =>
+  mediaClass === "dimensional" || mediaClass === "mesh" || mediaClass === "splat";
 
 const getLabel = (item: any) => {
   if (!!item.maybe_title) {
@@ -337,7 +348,10 @@ const getLabel = (item: any) => {
     case "video":
       return "Video Generation";
     case "dimensional":
+    case "mesh":
       return "3D Object Generation";
+    case "splat":
+      return "3D World Generation";
     default:
       return "Generation";
   }
@@ -791,6 +805,10 @@ export const GalleryModal = React.memo(
       [],
     );
 
+    // Keyset cursors for the mesh/splat tabs (their endpoints paginate by
+    // cursor rather than page index), keyed by filter id.
+    const byClassCursorRef = useRef<Record<string, string | undefined>>({});
+
     // Map raw API item to GalleryItem
     const mapApiItem = useCallback(
       (item: any): GalleryItem => ({
@@ -799,7 +817,7 @@ export const GalleryModal = React.memo(
         thumbnail:
           item.media_class === "video"
             ? item.media_links.maybe_video_previews?.animated
-            : item.media_class === "dimensional"
+            : is3DClass(item.media_class)
               ? // Prefer the modern CDN link; fall back to the deprecated
                 // bucket URL for older responses.
                 (item.cover_image?.maybe_links?.cdn_url ??
@@ -815,13 +833,15 @@ export const GalleryModal = React.memo(
           (item.filter_media_classes ? item.filter_media_classes[0] : "image"),
         isUpload: item.origin_category === "upload",
         assetType:
-          item.media_class === "dimensional"
+          item.media_class === "dimensional" || item.media_class === "mesh"
             ? item.maybe_animation_type ||
               item.origin_product_category === "character" ||
               (item.origin && item.origin.product_category === "character")
               ? "character"
               : "object"
-            : undefined,
+            : item.media_class === "splat"
+              ? "splat"
+              : undefined,
       }),
       [],
     );
@@ -834,7 +854,7 @@ export const GalleryModal = React.memo(
         id: item.token,
         label: getLabel(item),
         thumbnail:
-          item.media_class === "dimensional"
+          is3DClass(item.media_class)
             ? (item.cover_image?.maybe_links?.cdn_url ??
               item.cover_image?.maybe_cover_image_public_bucket_url ??
               null)
@@ -864,6 +884,63 @@ export const GalleryModal = React.memo(
         setLoading(true);
         if (!reset) setPaginationLoading(true);
         try {
+          if (currentFilter === "mesh" || currentFilter === "splat") {
+            // The Mesh / Splat tabs use the session by-class list endpoints
+            // (server-scoped, cursor-paginated) instead of the user list.
+            const cursor = reset
+              ? undefined
+              : byClassCursorRef.current[currentFilter];
+            const response =
+              currentFilter === "splat"
+                ? await mediaFilesApi.ListSessionSplatMediaFiles({
+                    cursor,
+                    page_size: PAGE_SIZE,
+                  })
+                : await mediaFilesApi.ListSessionMeshMediaFiles({
+                    cursor,
+                    page_size: PAGE_SIZE,
+                  });
+
+            if (response.success && response.data) {
+              setItemsLoadError(null);
+              const newItems = response.data.map(mapApiItem);
+
+              if (reset) {
+                setAllItems(newItems);
+              } else {
+                setAllItems((prev) => [...prev, ...newItems]);
+              }
+
+              const nextCursor = response.pagination?.maybe_next ?? undefined;
+              byClassCursorRef.current[currentFilter] = nextCursor;
+              const more = newItems.length >= PAGE_SIZE && !!nextCursor;
+              setPageIndex(0);
+              setHasMore(more);
+
+              const cacheKey = getCacheKey();
+              setAllItems((latest) => {
+                galleryCacheMap.set(cacheKey, {
+                  items: latest,
+                  pageIndex: 0,
+                  hasMore: more,
+                  timestamp: Date.now(),
+                  cursor: nextCursor,
+                });
+                return latest;
+              });
+            } else {
+              setItemsLoadError(
+                response.errorMessage || "Request failed (unknown error)",
+              );
+            }
+
+            setLoading(false);
+            setPaginationLoading(false);
+            setInitialLoading(false);
+            isLoadingRef.current = false;
+            return;
+          }
+
           const filterMediaClasses = getFilterMediaClass(currentFilter);
           const query = {
             filter_media_classes: filterMediaClasses,
@@ -871,7 +948,6 @@ export const GalleryModal = React.memo(
             include_user_uploads:
               currentFilter === "uploaded" ||
               currentFilter === "all" ||
-              currentFilter === "3d" ||
               currentFilter === "image" ||
               currentFilter === "video",
             user_uploads_only: currentFilter === "uploaded",
@@ -970,7 +1046,7 @@ export const GalleryModal = React.memo(
         setInitialLoading(false);
         isLoadingRef.current = false;
       },
-      [api, mapApiItem, getCacheKey],
+      [api, mediaFilesApi, mapApiItem, getCacheKey],
     );
 
     // refresh logic — shows cached items immediately, then background-refreshes
@@ -985,6 +1061,7 @@ export const GalleryModal = React.memo(
         setAllItems(cached.items);
         setPageIndex(cached.pageIndex);
         setHasMore(cached.hasMore);
+        byClassCursorRef.current[activeFilterRef.current] = cached.cursor;
         setInitialLoading(false);
         // Background refresh — silently fetch page 0 and merge new items
         loadItems(true);
@@ -2004,7 +2081,8 @@ export const GalleryModal = React.memo(
         if ((item as any).mediaType === "scene_json") return false;
         if (!showUploads && activeFilter !== "uploaded" && item.isUpload)
           return false;
-        if (activeFilter === "3d") return item.mediaClass === "dimensional";
+        if (activeFilter === "mesh") return item.mediaClass === "mesh";
+        if (activeFilter === "splat") return item.mediaClass === "splat";
         if (activeFilter === "image") return item.mediaClass === "image";
         if (activeFilter === "video") return item.mediaClass === "video";
         if (activeFilter === "all") {
@@ -2341,10 +2419,14 @@ export const GalleryModal = React.memo(
                             ? maxSelections === 1
                               ? "Select Video"
                               : "Select Videos"
-                            : activeFilter === "3d"
+                            : activeFilter === "mesh"
                               ? maxSelections === 1
                                 ? "Select 3D Object"
                                 : "Select 3D Objects"
+                              : activeFilter === "splat"
+                                ? maxSelections === 1
+                                  ? "Select 3D World"
+                                  : "Select 3D Worlds"
                               : activeFilter === "uploaded"
                                 ? maxSelections === 1
                                   ? "Select Upload"
