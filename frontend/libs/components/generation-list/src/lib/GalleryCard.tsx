@@ -12,7 +12,7 @@ import {
 } from "@storyteller/model-list";
 import { WaveformAudioPlayer } from "@storyteller/ui-audio-player";
 import { GalleryThumbnail } from "./GalleryThumbnail";
-import type { GalleryItem } from "./types";
+import { is3DMediaClass, type GalleryItem } from "./types";
 
 // ── Persistent aspect ratio cache ─────────────────────────────────────────
 
@@ -87,7 +87,7 @@ export const GalleryCard = memo(function GalleryCard({
   const [ratio, setRatio] = useState<number | undefined>(cached);
 
   const isVideo = item.mediaClass === "video";
-  const is3D = item.mediaClass === "dimensional";
+  const is3D = is3DMediaClass(item.mediaClass);
   const isAudio = item.mediaClass === "audio";
   const mediaIcon = isVideo
     ? faVideo

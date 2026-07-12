@@ -12,6 +12,7 @@ import {
   mergeCollageUrls,
 } from "@storyteller/ui-gallery-modal";
 import { getMediaThumbnail, THUMBNAIL_SIZES } from "@storyteller/common";
+import { is3DMediaClass } from "@storyteller/ui-generation-list";
 import { toast } from "../../components/toast/toast";
 
 // ── Bulk selection store ────────────────────────────────────────────────────
@@ -141,7 +142,10 @@ const getLabel = (item: any): string => {
     case "video":
       return "Video Generation";
     case "dimensional":
+    case "mesh":
       return "3D Mesh";
+    case "splat":
+      return "3D World";
     default:
       return "Generation";
   }
@@ -149,12 +153,11 @@ const getLabel = (item: any): string => {
 
 /** Map a raw user-media list row (origin_category shape) → GalleryItem (root library). */
 export function mapRawToGalleryItem(item: any): GalleryItem {
-  const thumbnail =
-    item.media_class === "dimensional"
-      ? (item.cover_image?.maybe_cover_image_public_bucket_url ?? null)
-      : getMediaThumbnail(item.media_links, item.media_class, {
-          size: THUMBNAIL_SIZES.LARGE,
-        });
+  const thumbnail = is3DMediaClass(item.media_class)
+    ? (item.cover_image?.maybe_cover_image_public_bucket_url ?? null)
+    : getMediaThumbnail(item.media_links, item.media_class, {
+        size: THUMBNAIL_SIZES.LARGE,
+      });
   return {
     id: item.token,
     label: getLabel(item),
@@ -172,12 +175,11 @@ export function mapRawToGalleryItem(item: any): GalleryItem {
 function mapFolderListItemToGalleryItem(
   item: FolderMediaFileListItem,
 ): GalleryItem {
-  const thumbnail =
-    item.media_class === "dimensional"
-      ? (item.cover_image?.maybe_cover_image_public_bucket_url ?? null)
-      : getMediaThumbnail(item.media_links, item.media_class, {
-          size: THUMBNAIL_SIZES.LARGE,
-        });
+  const thumbnail = is3DMediaClass(item.media_class)
+    ? (item.cover_image?.maybe_cover_image_public_bucket_url ?? null)
+    : getMediaThumbnail(item.media_links, item.media_class, {
+        size: THUMBNAIL_SIZES.LARGE,
+      });
   return {
     id: item.token,
     label: getLabel(item),

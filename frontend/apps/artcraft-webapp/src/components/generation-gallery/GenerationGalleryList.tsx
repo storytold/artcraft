@@ -11,6 +11,7 @@ import { Tooltip } from "@storyteller/ui-tooltip";
 import {
   GenerationListView,
   type GalleryItem,
+  is3DMediaClass,
   type RecreateSlotContext,
 } from "@storyteller/ui-generation-list";
 import { toast } from "../toast/toast";
@@ -85,10 +86,10 @@ function RowRecreateButton({
   // recreate flow, so map to a valid class for the hook and render nothing.
   const { isRecreating, handleRecreate } = useRecreateFromPromptToken(
     promptToken,
-    mediaClass === "dimensional" ? "image" : mediaClass,
+    is3DMediaClass(mediaClass) ? "image" : mediaClass,
   );
 
-  if (mediaClass === "dimensional") return null;
+  if (is3DMediaClass(mediaClass)) return null;
   return (
     <Tooltip content="Recreate" position="top">
       <button

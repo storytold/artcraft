@@ -11,6 +11,7 @@ import { Tooltip } from "@storyteller/ui-tooltip";
 import {
   GenerationGridView,
   type GalleryItem,
+  is3DMediaClass,
   type RecreateSlotContext,
 } from "@storyteller/ui-generation-list";
 import { useRecreateFromPromptToken } from "../../lib/recreate";
@@ -69,10 +70,10 @@ function CardRecreateButton({
   // recreate flow, so map to a valid class for the hook and render nothing.
   const { isRecreating, handleRecreate } = useRecreateFromPromptToken(
     promptToken,
-    mediaClass === "dimensional" ? "image" : mediaClass,
+    is3DMediaClass(mediaClass) ? "image" : mediaClass,
   );
 
-  if (mediaClass === "dimensional") return null;
+  if (is3DMediaClass(mediaClass)) return null;
 
   if (kind === "failed") {
     return (

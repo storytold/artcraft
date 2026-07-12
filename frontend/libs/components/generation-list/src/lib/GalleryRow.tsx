@@ -15,7 +15,7 @@ import { WaveformAudioPlayer } from "@storyteller/ui-audio-player";
 import { GalleryThumbnail } from "./GalleryThumbnail";
 import { CopyPromptButton } from "./CopyPromptButton";
 import { formatTimeAgo } from "./format-time-ago";
-import type { GalleryItem } from "./types";
+import { is3DMediaClass, type GalleryItem } from "./types";
 
 export interface GalleryRowProps {
   item: GalleryItem;
@@ -41,7 +41,7 @@ export const GalleryRow = memo(function GalleryRow({
   onCopyPromptResult,
 }: GalleryRowProps) {
   const isVideo = item.mediaClass === "video";
-  const is3D = item.mediaClass === "dimensional";
+  const is3D = is3DMediaClass(item.mediaClass);
   const isAudio = item.mediaClass === "audio";
   const mediaIcon = isVideo
     ? faVideo

@@ -11,7 +11,7 @@ export const SHARE_URL_BASE = "https://getartcraft.com/media/";
 export const COPY_FEEDBACK_DURATION = 1500;
 
 const VIDEO_EXTENSIONS = [".mp4", ".webm", ".mov", ".avi", ".mkv", ".m4v"];
-const MODEL_3D_EXTENSIONS = [".glb", ".gltf", ".fbx", ".spz"];
+const MODEL_3D_EXTENSIONS = [".glb", ".gltf", ".fbx", ".spz", ".obj", ".ply"];
 const AUDIO_EXTENSIONS = [".mp3", ".wav", ".ogg", ".m4a", ".flac", ".aac"];
 
 export const isVideoUrl = (url: string): boolean =>
