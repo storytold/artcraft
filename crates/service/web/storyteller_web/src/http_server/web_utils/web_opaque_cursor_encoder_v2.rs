@@ -26,7 +26,7 @@ impl WebOpaqueCursorEncoderV2 {
     self.encoder.encode_last_id_cursor(name, id)
         .map_err(|err| {
           warn!("Failed to encode pagination cursor for {:?}: {:?}", name, err);
-          CommonWebError::server_error_with_message("Failed to encode cursor")
+          CommonWebError::from_error(err)
         })
   }
 

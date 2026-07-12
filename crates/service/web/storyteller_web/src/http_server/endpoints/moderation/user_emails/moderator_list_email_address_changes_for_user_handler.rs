@@ -140,10 +140,16 @@ pub async fn moderator_list_email_address_changes_for_user_handler(
   })?;
 
   // 5. Encode the next-page cursor from the last id, if there was one.
-  let maybe_cursor = rows.last().map(|last| {
-    server_state.opaque_cursors
-      .encode_last_id_cursor(CURSOR_NAME, last.id)
-  }).transpose()?;
+  // Only hand out a next-page cursor when this page was full. A short page
+  // means the list is exhausted, and emitting a cursor anyway would make
+  // clients fetch one guaranteed-empty trailing page.
+  let maybe_cursor = if rows.len() == limit as usize {
+    rows.last()
+        .map(|last| server_state.opaque_cursors.encode_last_id_cursor(CURSOR_NAME, last.id))
+        .transpose()?
+  } else {
+    None
+  };
 
   let changes = rows.into_iter().map(to_response_item).collect();
 

@@ -98,10 +98,16 @@ pub async fn moderator_list_staff_audit_logs_handler(
     CommonWebError::from_error(err)
   })?;
 
-  let maybe_cursor = records.last().map(|last| {
-    server_state.opaque_cursors
-        .encode_last_id_cursor(CURSOR_NAME, last.id)
-  }).transpose()?;
+  // Only hand out a next-page cursor when this page was full. A short page
+  // means the list is exhausted, and emitting a cursor anyway would make
+  // clients fetch one guaranteed-empty trailing page.
+  let maybe_cursor = if records.len() == limit as usize {
+    records.last()
+        .map(|last| server_state.opaque_cursors.encode_last_id_cursor(CURSOR_NAME, last.id))
+        .transpose()?
+  } else {
+    None
+  };
 
   let audit_logs = records.into_iter().map(|r| {
     StaffAuditLogResponse {
