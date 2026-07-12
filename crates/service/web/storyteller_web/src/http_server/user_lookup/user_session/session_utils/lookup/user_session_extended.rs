@@ -48,15 +48,6 @@ pub struct UserSessionSubscriptionPlan {
     pub subscription_expires_at: DateTime<Utc>,
 }
 
-impl Default for UserSessionSubscriptionPlan {
-    fn default() -> Self {
-        Self {
-            subscription_expires_at: chrono::MIN_DATETIME,
-            ..Default::default()
-        }
-    }
-}
-
 #[derive(Clone, Default)]
 pub struct UserSessionPreferences {
     pub disable_gravatar: bool,

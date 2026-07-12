@@ -170,7 +170,6 @@ pub async fn process_upload_media_file(
   let file_size_bytes = bytes.len();
 
   let mut maybe_duration_millis = None;
-  let mut maybe_codec_name = None;
   let mut media_file_type = None;
 
   let mut is_spz = false;
@@ -258,7 +257,6 @@ pub async fn process_upload_media_file(
       })?;
 
       maybe_duration_millis = basic_info.duration_millis;
-      maybe_codec_name = basic_info.codec_name;
     }
   }
 
@@ -367,6 +365,7 @@ pub async fn process_upload_media_file(
       .creator_set_visibility(creator_set_visibility)
       .mime_type(mime_type)
       .file_size_bytes(file_size_bytes as u64)
+      .maybe_duration_millis(maybe_duration_millis)
       .checksum_sha2(&hash)
       .maybe_title(upload_media_request.title.as_deref())
       .maybe_origin_filename(upload_media_request.file_name.as_deref())

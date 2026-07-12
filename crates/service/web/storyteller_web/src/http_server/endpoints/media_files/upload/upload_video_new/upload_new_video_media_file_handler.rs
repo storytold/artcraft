@@ -291,8 +291,8 @@ pub async fn upload_new_video_media_file_handler(
 
   // Tempdirs we need to keep alive across the upload step. They get dropped at
   // function exit which cleans up the on-disk files.
-  let mut transcode_tempdir_ref = None;
-  let mut resample_tempdir_ref = None;
+  let mut _transcode_tempdir_ref = None;
+  let mut _resample_tempdir_ref = None;
 
   let mut final_upload_file_path = form.file.file.path().to_path_buf();
 
@@ -324,7 +324,7 @@ pub async fn upload_new_video_media_file_handler(
         })?;
     mimetype = "video/mp4".to_string();
     final_upload_file_path = transcoded_path;
-    transcode_tempdir_ref = Some(transcode_tempdir);
+    _transcode_tempdir_ref = Some(transcode_tempdir);
   }
 
   // ==================== OPTIONAL VIDEO RESAMPLE ==================== //
@@ -374,7 +374,7 @@ pub async fn upload_new_video_media_file_handler(
         })?;
 
     final_upload_file_path = video_output_path;
-    resample_tempdir_ref = Some(frame_temp_dir); // NB: Keep from going out of scope
+    _resample_tempdir_ref = Some(frame_temp_dir); // NB: Keep from going out of scope
   }
 
   // True if we touched the user's file in any way (transcoded, resampled, or both).

@@ -174,9 +174,9 @@ fn db_record_to_response_payload(
 
   let progress_percentage = estimate_job_progress(&record, maybe_polymorphic_args.as_ref());
 
-  /// If the job is currently running, this is how long it has been running in seconds.
-  /// This is heuristic estimate since we don't record the precise start time across runs.
-  /// If the job's updated_at timestamp is updated elsewhere, then this is not accurate at all.
+  // If the job is currently running, this is how long it has been running in seconds.
+  // This is heuristic estimate since we don't record the precise start time across runs.
+  // If the job's updated_at timestamp is updated elsewhere, then this is not accurate at all.
   let maybe_current_execution_duration_seconds = match record.status {
     JobStatusPlus::Started => {
       let now = Utc::now();
