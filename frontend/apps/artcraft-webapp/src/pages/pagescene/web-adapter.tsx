@@ -19,6 +19,7 @@ import {
   UsersApi,
 } from "@storyteller/api";
 import type { PageSceneAdapter } from "@storyteller/ui-pagescene";
+import { uploadByKind } from "../video-editor/adapters/upload-by-kind";
 import {
   getActiveEditor,
   ToastTypes,
@@ -155,6 +156,10 @@ export interface WebAppPageSceneAdapterOptions {
   userToken: string | undefined;
   initialSceneToken: string | undefined;
   navigateToImageTo3D: () => void;
+  // Record-mode handoff: open the app Lightbox on an uploaded media token
+  // (all destinations for the kind). Built page-side (needs local state +
+  // navigate), passed through here like navigateToImageTo3D.
+  openMediaLightbox: (token: string, kind: "image" | "video") => void;
   // Wrapper size — kept in a ref so the closure sees live values without
   // rebuilding the adapter on every resize.
   getViewportSize: () => { width: number; height: number };
@@ -173,6 +178,7 @@ export const useWebAppPageSceneAdapter = (
     userToken,
     initialSceneToken,
     navigateToImageTo3D,
+    openMediaLightbox,
     getViewportSize,
     promptSignup,
     onRequestNewSceneSelector,
@@ -386,6 +392,13 @@ export const useWebAppPageSceneAdapter = (
 
       navigateToImageTo3D,
 
+      openMediaLightbox,
+
+      // Persist a produced still/video to the media library. Images
+      // auto-upload after Capture; videos upload on demand. Returns the token.
+      uploadMedia: ({ kind, blob, fileName, title }) =>
+        uploadByKind({ kind, blob, fileName, title }),
+
       promptSignup,
 
       onRequestNewSceneSelector,
@@ -425,6 +438,7 @@ export const useWebAppPageSceneAdapter = (
       userToken,
       initialSceneToken,
       navigateToImageTo3D,
+      openMediaLightbox,
       getViewportSize,
       promptSignup,
       onRequestNewSceneSelector,

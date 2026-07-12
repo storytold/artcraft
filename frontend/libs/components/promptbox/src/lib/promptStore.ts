@@ -63,15 +63,20 @@ export const usePrompt2DStore = create<Prompt2DStore>()((set) => ({
 export { usePrompt2DStore as usePromptStore };
 
 // ----- 3D Prompt Box Store -----
+// Newest first; capped so the history popover stays tidy.
+const MAX_PROMPT_HISTORY = 20;
+
 interface Prompt3DStore {
   prompt: string;
   resolution: Resolution;
   useSystemPrompt: boolean;
   referenceImages: RefImage[];
+  promptHistory: string[];
   setPrompt: (prompt: string) => void;
   setResolution: (resolution: Resolution) => void;
   setUseSystemPrompt: (value: boolean) => void;
   setReferenceImages: (images: RefImage[]) => void;
+  pushPromptHistory: (prompt: string) => void;
 }
 
 export const usePrompt3DStore = create<Prompt3DStore>()((set) => ({
@@ -79,10 +84,22 @@ export const usePrompt3DStore = create<Prompt3DStore>()((set) => ({
   resolution: "1k",
   useSystemPrompt: true,
   referenceImages: [],
+  promptHistory: [],
   setPrompt: (prompt) => set({ prompt }),
   setResolution: (resolution) => set({ resolution }),
   setUseSystemPrompt: (useSystemPrompt) => set({ useSystemPrompt }),
   setReferenceImages: (referenceImages) => set({ referenceImages }),
+  pushPromptHistory: (prompt) =>
+    set((state) => {
+      const trimmed = prompt.trim();
+      if (!trimmed) return state;
+      // De-dupe: drop any existing copy, then unshift so it's newest-first.
+      const next = [
+        trimmed,
+        ...state.promptHistory.filter((p) => p !== trimmed),
+      ].slice(0, MAX_PROMPT_HISTORY);
+      return { promptHistory: next };
+    }),
 }));
 
 // ----- Image Prompt Box Store -----

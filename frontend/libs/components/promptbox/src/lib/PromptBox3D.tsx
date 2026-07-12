@@ -7,6 +7,10 @@ import {
   faExpand,
   faChevronDown,
   faChevronUp,
+  faArrowPointer,
+  faWandMagicSparkles,
+  faClockRotateLeft,
+  faPlus,
 } from "@fortawesome/pro-solid-svg-icons";
 import {
   faRectangleWide,
@@ -18,6 +22,7 @@ import {
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { PopoverItem, PopoverMenu } from "@storyteller/ui-popover";
 import { Button, ToggleButton, GenerateButton } from "@storyteller/ui-button";
+import { ButtonIconSelect } from "@storyteller/ui-button-icon-select";
 import { Tooltip } from "@storyteller/ui-tooltip";
 import {
   CameraAspectRatio,
@@ -99,6 +104,19 @@ interface PromptBox3DProps {
   // Optional pre-submit gate. Returns false to abort the generation
   // (e.g. host wants to open a signup modal for anon visitors).
   onBeforeSubmit?: () => boolean;
+  /** Build sub-mode. "manual" (default) renders the full manual toolbar;
+   *  "prompted" renders the stripped scene-builder layout (textbox +
+   *  add-animation-timeline + history + Update). */
+  buildMode?: "manual" | "prompted";
+  /** Called when the user flips the in-bar Manual/Prompted toggle. */
+  onBuildModeChange?: (mode: "manual" | "prompted") => void;
+  /** Called when the "Add animation timeline" button is pressed in
+   *  prompted mode. Wired to the timeline feature. */
+  onAddTimeline?: () => void;
+  /** When false, the "Add animation timeline" button is hidden (a timeline
+   *  already exists; the host shows the collapsed timeline bar instead).
+   *  Defaults to true. */
+  showAddTimelineButton?: boolean;
 }
 
 export const PromptBox3D = ({
@@ -128,6 +146,10 @@ export const PromptBox3D = ({
   modelSelector,
   aboveStackSlot,
   onBeforeSubmit,
+  buildMode = "manual",
+  onBuildModeChange,
+  onAddTimeline,
+  showAddTimelineButton = true,
 }: PromptBox3DProps) => {
   //const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -136,6 +158,8 @@ export const PromptBox3D = ({
 
   const prompt = usePrompt3DStore((s) => s.prompt);
   const setPrompt = usePrompt3DStore((s) => s.setPrompt);
+  const promptHistory = usePrompt3DStore((s) => s.promptHistory);
+  const pushPromptHistory = usePrompt3DStore((s) => s.pushPromptHistory);
   const useSystemPrompt = usePrompt3DStore((s) => s.useSystemPrompt);
   const resolution = usePrompt3DStore((s) => s.resolution);
   const setResolution = usePrompt3DStore((s) => s.setResolution);
@@ -303,6 +327,25 @@ export const PromptBox3D = ({
   };
 
   const maxLen = selectedImageModel?.maxPromptLength ?? 1000;
+
+  // Prompted (scene-builder) "Update". Stubbed until the MCP-esque scene
+  // descriptor backend lands: for now it just records the prompt on the
+  // engine + in local history so the flow is exercisable. It intentionally
+  // does NOT enqueue an image generation like the manual "Generate" button.
+  // TODO(scene-builder): send { sceneDescriptor, prompt } to the backend and
+  // apply the returned descriptor to the 3D scene.
+  const handlePromptedUpdate = () => {
+    if (onBeforeSubmit && !onBeforeSubmit()) return;
+    const trimmed = prompt.trim();
+    if (!trimmed) return;
+    if (isFinite(maxLen) && trimmed.length > maxLen) {
+      toast.error(`Prompt exceeds the ${maxLen} character limit for this model`);
+      return;
+    }
+    setEnginePrompt(trimmed);
+    pushPromptHistory(trimmed);
+    toast.success("Scene update saved — applying edits is coming soon.");
+  };
 
   const handleEnqueue = async () => {
     if (onBeforeSubmit && !onBeforeSubmit()) {
@@ -615,6 +658,37 @@ export const PromptBox3D = ({
       </Modal>
       <div className="absolute bottom-4 left-1/2 flex w-[90vw] max-w-5xl -translate-x-1/2 flex-col gap-3">
         {aboveStackSlot}
+        {onBuildModeChange && (
+          <div className="flex">
+            <div
+              className="glass glass-no-hover rounded-full p-1 shadow-xl"
+              onMouseDown={(e) => e.stopPropagation()}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <ButtonIconSelect
+                options={[
+                  {
+                    value: "manual",
+                    icon: faArrowPointer,
+                    text: "Manual",
+                    tooltip: "Manual — place and transform objects yourself",
+                  },
+                  {
+                    value: "prompted",
+                    icon: faWandMagicSparkles,
+                    text: "Prompted",
+                    tooltip:
+                      "Prompted — describe changes and let AI edit the scene",
+                  },
+                ]}
+                selectedOption={buildMode}
+                onOptionChange={(v) =>
+                  onBuildModeChange(v as "manual" | "prompted")
+                }
+              />
+            </div>
+          </div>
+        )}
         {selectedImageModel?.canUseImagePrompt && isImageRowVisible && (
           <ImagePromptRow
             visible={true}
@@ -713,6 +787,7 @@ export const PromptBox3D = ({
               </span>
             </div>
           </div>
+          {buildMode === "manual" && (
           <div className="mt-2 flex items-center justify-between gap-2">
             <div className="flex items-center gap-2">
               {modelSelector}
@@ -850,6 +925,70 @@ export const PromptBox3D = ({
               </GenerateButton>
             </div>
           </div>
+          )}
+          {buildMode === "prompted" && (
+            <div className="mt-3 flex items-center justify-between gap-2">
+              {showAddTimelineButton ? (
+                <Button
+                  variant="secondary"
+                  icon={faPlus}
+                  className="flex h-9 items-center border border-ui-controls-border bg-ui-controls/60 px-3 text-sm text-base-fg backdrop-blur-lg hover:bg-ui-controls/90"
+                  onClick={() => onAddTimeline?.()}
+                >
+                  Add animation timeline
+                </Button>
+              ) : (
+                <span />
+              )}
+              <div className="flex items-center gap-2">
+                <Tooltip
+                  content="Prompt history"
+                  position="top"
+                  className="z-50"
+                  delay={200}
+                  closeOnClick={true}
+                >
+                  <PopoverMenu
+                    mode="toggle"
+                    panelTitle="Recent prompts"
+                    triggerIcon={
+                      <FontAwesomeIcon
+                        icon={faClockRotateLeft}
+                        className="h-4 w-4"
+                      />
+                    }
+                    items={
+                      promptHistory.length
+                        ? promptHistory.map((p) => ({
+                            label: p,
+                            selected: false,
+                          }))
+                        : [
+                            {
+                              label: "No prompts yet",
+                              selected: false,
+                              disabled: true,
+                            },
+                          ]
+                    }
+                    onSelect={(item) => {
+                      if (item.disabled) return;
+                      setPrompt(item.label);
+                    }}
+                  />
+                </Tooltip>
+                <Button
+                  variant="primary"
+                  className="flex items-center border-none bg-brand-primary px-3 text-sm text-white disabled:cursor-not-allowed disabled:opacity-50"
+                  onClick={handlePromptedUpdate}
+                  disabled={!prompt.trim()}
+                >
+                  Update
+                </Button>
+              </div>
+            </div>
+          )}
+          {buildMode === "manual" && (
           <div className="absolute -bottom-1 left-1/2 -translate-x-1/2">
             <Tooltip
               content={isExpanded ? "Collapse" : "Expand"}
@@ -868,6 +1007,7 @@ export const PromptBox3D = ({
               </button>
             </Tooltip>
           </div>
+          )}
         </div>
         <CameraSettingsModal
           isOpen={isCameraSettingsOpen}

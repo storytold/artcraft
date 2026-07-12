@@ -8,4 +8,7 @@ export * from "./setCameraAspect";
 export * from "./setObjectColor";
 export * from "./toggleObjectLock";
 export * from "./toggleObjectVisibility";
+export * from "./openAssetModal";
 export * from "./transformObject";
+export * from "./timeline";
+export * from "./cameraView";

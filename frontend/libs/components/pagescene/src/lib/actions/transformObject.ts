@@ -29,6 +29,9 @@ export function beginTransformSession(
     commit() {
       if (action.commit()) {
         editor.history.record(action);
+        // Auto-key: an already-keyframed object edited via the panel updates
+        // its keyframe at the playhead (or creates one at the scrub point).
+        editor.timelineController.autoKeyIfTracked(uuid);
       }
       // Push the engine's post-edit transform back into the Zustand
       // objectPanel slice so the panel's currentSceneObject vectors
