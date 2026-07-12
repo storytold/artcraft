@@ -9,6 +9,7 @@ import {
   UsersApi,
   GalleryModalApi,
   MediaFilesApi,
+  FoldersApi,
   FilterMediaClasses,
   FilterMediaType,
 } from "@storyteller/api";
@@ -66,6 +67,17 @@ const FILTERS = [
   { id: "audio", label: "Audio", icon: faMusic, route: "/library/audio" },
   { id: "meshes", label: "Meshes", icon: faCube, route: "/library/meshes" },
   { id: "splats", label: "Splats", icon: faGlobe, route: "/library/splats" },
+];
+
+// Class scopes for the Unfoldered tab. Local state (not routes): the tab is
+// one page and the filter maps to the endpoint's `filter_media_class` param.
+const FOLDERLESS_CLASS_FILTERS = [
+  { id: "all", label: "All", icon: faBorderAll },
+  { id: "image", label: "Images", icon: faImage },
+  { id: "video", label: "Videos", icon: faVideo },
+  { id: "audio", label: "Audio", icon: faMusic },
+  { id: "mesh", label: "Meshes", icon: faCube },
+  { id: "splat", label: "Splats", icon: faGlobe },
 ];
 
 const ROUTE_TO_FILTER: Record<string, string> = {
@@ -150,9 +162,15 @@ export default function Library() {
   const activeFilter = filterParam
     ? (ROUTE_TO_FILTER[filterParam] ?? "all")
     : "all";
-  // Top-level tab derived from the route: All Assets (flat library) vs Folders.
+  // Top-level tab derived from the route: All Assets (flat library),
+  // Folders, or Unfoldered (files in no folder at all).
   const onFoldersRoute = pathname === "/library/folders" || !!folderToken;
-  const tab: "unsorted" | "folders" = onFoldersRoute ? "folders" : "unsorted";
+  const onFolderlessRoute = slug === "folderless";
+  const tab: "unsorted" | "folders" | "folderless" = onFoldersRoute
+    ? "folders"
+    : onFolderlessRoute
+      ? "folderless"
+      : "unsorted";
 
   const [username, setUsername] = useState<string | null>(null);
   const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
@@ -176,9 +194,19 @@ export default function Library() {
 
   const api = useMemo(() => new GalleryModalApi(), []);
   const mediaFilesApi = useMemo(() => new MediaFilesApi(), []);
+  const foldersApi = useMemo(() => new FoldersApi(), []);
   // Keyset cursor for the Meshes / Splats tabs (their endpoints paginate by
   // cursor, not page index).
   const meshSplatCursorRef = useRef<string | undefined>(undefined);
+
+  // ── Unfoldered tab ──
+  // Optional media-class scope for the folderless list ("all" = unfiltered).
+  const [folderlessClass, setFolderlessClass] = useState<string>("all");
+  // Keyset cursor for the folderless endpoint.
+  const folderlessCursorRef = useRef<string | undefined>(undefined);
+  // Current tab, readable from stable callbacks without re-binding them.
+  const tabRef = useRef(tab);
+  tabRef.current = tab;
 
   // ── Folder store ──────────────────────────────────────────────────────────
   const folders = useLibraryFoldersStore((s) => s.folders);
@@ -286,6 +314,31 @@ export default function Library() {
       isLoadingRef.current = true;
       setLoading(true);
       try {
+        if (tabRef.current === "folderless") {
+          // The Unfoldered tab lists files in no folder at all via the
+          // dedicated endpoint (server-scoped, cursor-paginated). The server
+          // only returns a cursor when the page was full, so its presence
+          // doubles as the has-more signal.
+          const cursor = reset ? undefined : folderlessCursorRef.current;
+          const response = await foldersApi.ListMediaFilesWithoutFolder({
+            cursor,
+            limit: PAGE_SIZE,
+            filterMediaClass:
+              folderlessClass === "all" ? undefined : folderlessClass,
+          });
+          if (response.success && response.data) {
+            const newItems = response.data.map(mapRawToGalleryItem);
+            setAllItems((prev) => (reset ? newItems : [...prev, ...newItems]));
+            const nextCursor = response.pagination?.maybe_cursor ?? undefined;
+            folderlessCursorRef.current = nextCursor;
+            setHasMore(!!nextCursor);
+          }
+          setLoading(false);
+          setInitialLoading(false);
+          isLoadingRef.current = false;
+          return;
+        }
+
         if (activeFilter === "meshes" || activeFilter === "splats") {
           // The Meshes / Splats tabs use the session by-class list endpoints
           // (server-scoped, cursor-paginated) instead of the user list.
@@ -345,20 +398,22 @@ export default function Library() {
       setInitialLoading(false);
       isLoadingRef.current = false;
     },
-    [username, activeFilter, pageIndex, api, mediaFilesApi],
+    [username, activeFilter, pageIndex, api, mediaFilesApi, foldersApi, folderlessClass],
   );
 
-  // Initial load + filter change
+  // Initial load + filter / tab change
   useEffect(() => {
     if (!username) return;
+    if (tab === "folders") return; // Folder views load via the folders store.
     setAllItems([]);
     setPageIndex(0);
     meshSplatCursorRef.current = undefined;
+    folderlessCursorRef.current = undefined;
     setHasMore(true);
     setInitialLoading(true);
     isLoadingRef.current = false;
     loadItems(true);
-  }, [username, activeFilter]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [username, activeFilter, tab, folderlessClass]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Infinite scroll — listens on the real scroll container. Paginates the open
   // folder's media when inside a folder, otherwise the root library list.
@@ -374,7 +429,11 @@ export default function Library() {
       if (scrollBottom >= 500) return;
       if (activeFolderId) {
         loadFolderMedia(activeFolderId, false);
-      } else if (tab === "unsorted" && hasMore && !isLoadingRef.current) {
+      } else if (
+        (tab === "unsorted" || tab === "folderless") &&
+        hasMore &&
+        !isLoadingRef.current
+      ) {
         loadItems();
       }
     };
@@ -396,16 +455,30 @@ export default function Library() {
       if (itemIds.length === 0) return;
       const source = useLibraryFoldersStore.getState().activeFolderId;
       const known = displayItemsRef.current;
+      // On the Unfoldered tab, items that just landed in a folder no longer
+      // belong in the list — drop them (and their selection) once the add
+      // settles.
+      const pruneIfFolderless = () => {
+        if (tabRef.current !== "folderless") return;
+        const removed = new Set(itemIds);
+        setAllItems((prev) => prev.filter((it) => !removed.has(it.id)));
+        useLibrarySelectionStore.getState().removeIds(itemIds);
+      };
       if (source && source !== targetFolderId) {
         promptFolderDrop({
           count: itemIds.length,
           targetFolderName: folders.find((f) => f.id === targetFolderId)?.name,
           onMove: () =>
             moveMediaToFolder(itemIds, source, targetFolderId, known),
-          onAdd: () => addMediaToFolder(itemIds, targetFolderId, known),
+          onAdd: () =>
+            addMediaToFolder(itemIds, targetFolderId, known).then(
+              pruneIfFolderless,
+            ),
         });
       } else {
-        addMediaToFolder(itemIds, targetFolderId, known);
+        void addMediaToFolder(itemIds, targetFolderId, known).then(
+          pruneIfFolderless,
+        );
       }
     },
     [folders, addMediaToFolder, moveMediaToFolder],
@@ -745,6 +818,7 @@ export default function Library() {
     setAllItems([]);
     setPageIndex(0);
     meshSplatCursorRef.current = undefined;
+    folderlessCursorRef.current = undefined;
     setHasMore(true);
     setInitialLoading(true);
     isLoadingRef.current = false;
@@ -953,8 +1027,29 @@ export default function Library() {
                     />
                     <span className="relative z-10">Folders</span>
                   </Link>
+                  <Link
+                    to="/library/folderless"
+                    className={`relative flex items-center gap-2 px-3 sm:px-4 py-1 sm:py-1.5 rounded-md text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
+                      tab === "folderless"
+                        ? "text-white"
+                        : "text-white/60 hover:text-white"
+                    }`}
+                  >
+                    {tab === "folderless" && (
+                      <motion.span
+                        layoutId="library-tab-indicator"
+                        className="absolute inset-0 rounded-md bg-ui-controls"
+                        transition={{ duration: 0.32, ease: EASE_EMPHASIS }}
+                      />
+                    )}
+                    <FontAwesomeIcon
+                      icon={faFolderOpen}
+                      className="relative z-10 text-xs"
+                    />
+                    <span className="relative z-10">Unfoldered</span>
+                  </Link>
                 </div>
-                {tab === "unsorted" && (
+                {(tab === "unsorted" || tab === "folderless") && (
                   <button
                     onClick={refreshRoot}
                     className="h-8 w-8 flex items-center justify-center rounded-lg text-white/50 hover:text-white hover:bg-ui-controls/40 transition-colors"
@@ -969,6 +1064,36 @@ export default function Library() {
               </div>
 
               <div className="flex items-center gap-2">
+                {tab === "folderless" && (
+                  <div className="flex items-center gap-1 bg-ui-controls/40 rounded-xl p-1 overflow-x-auto">
+                    {FOLDERLESS_CLASS_FILTERS.map((filter) => (
+                      <button
+                        key={filter.id}
+                        onClick={() => setFolderlessClass(filter.id)}
+                        className={`relative flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-4 py-1 sm:py-1.5 rounded-md text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
+                          folderlessClass === filter.id
+                            ? "text-white"
+                            : "text-white/60 hover:text-white"
+                        }`}
+                      >
+                        {folderlessClass === filter.id && (
+                          <motion.span
+                            layoutId="library-folderless-filter-indicator"
+                            className="absolute inset-0 rounded-md bg-ui-controls"
+                            transition={{ duration: 0.32, ease: EASE_EMPHASIS }}
+                          />
+                        )}
+                        <FontAwesomeIcon
+                          icon={filter.icon}
+                          className="relative z-10 text-xs"
+                        />
+                        <span className="relative z-10 hidden sm:inline">
+                          {filter.label}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                )}
                 {tab === "unsorted" && (
                   <div className="flex items-center gap-1 bg-ui-controls/40 rounded-xl p-1 overflow-x-auto">
                     {FILTERS.map((filter) => (
@@ -1177,7 +1302,13 @@ export default function Library() {
             </div>
           ) : rootEmpty ? (
             <div className="flex flex-col items-center justify-center py-20">
-              <p className="text-white/40 text-sm mb-4">No items yet.</p>
+              <p className="text-white/40 text-sm mb-4">
+                {tab === "folderless"
+                  ? folderlessClass === "all"
+                    ? "Everything is in a folder — nothing to organize."
+                    : "No unfoldered files of this type."
+                  : "No items yet."}
+              </p>
               <div className="flex gap-3">
                 <Link to="/create-image">
                   <Button

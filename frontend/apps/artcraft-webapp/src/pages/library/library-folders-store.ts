@@ -166,7 +166,9 @@ export function mapRawToGalleryItem(item: any): GalleryItem {
     fullImage: item.media_links?.cdn_url ?? null,
     createdAt: item.created_at,
     mediaClass: item.media_class || "image",
-    isUpload: item.origin_category === "upload",
+    // The user-media list carries `origin_category`; the folderless list
+    // carries `is_user_upload` instead.
+    isUpload: item.origin_category === "upload" || item.is_user_upload === true,
     batchImageToken: item.maybe_batch_token,
   };
 }

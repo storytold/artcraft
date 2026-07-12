@@ -4,6 +4,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faBorderAll,
   faFolder,
+  faFolderOpen,
   faPlus,
   faStar,
 } from "@fortawesome/pro-solid-svg-icons";
@@ -34,10 +35,12 @@ export function LibraryFoldersNav({
   const onFolders =
     pathname === "/library/folders" ||
     pathname.startsWith("/library/folder_");
+  const onFolderless = pathname === "/library/folderless";
   const onUnsorted =
     !onFolders &&
+    !onFolderless &&
     (pathname === "/library" || pathname.startsWith("/library/"));
-  const inLibraryArea = onUnsorted || onFolders;
+  const inLibraryArea = onUnsorted || onFolders || onFolderless;
 
   const folders = useLibraryFoldersStore((s) => s.folders);
   const activeFolderId = useLibraryFoldersStore((s) => s.activeFolderId);
@@ -101,6 +104,18 @@ export function LibraryFoldersNav({
               <Link to="/library/folders" onClick={onNavClick}>
                 <FontAwesomeIcon icon={faFolder} />
                 <span>Folders</span>
+              </Link>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              asChild
+              isActive={onFolderless}
+              tooltip="Unfoldered"
+            >
+              <Link to="/library/folderless" onClick={onNavClick}>
+                <FontAwesomeIcon icon={faFolderOpen} />
+                <span>Unfoldered</span>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
