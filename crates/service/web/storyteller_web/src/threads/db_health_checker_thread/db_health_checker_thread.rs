@@ -48,6 +48,4 @@ pub async fn db_health_checker_thread(
 
     tokio::time::sleep(check_duration).await;
   }
-
-  warn!("Should never happen: Health Checker Exits");
 }

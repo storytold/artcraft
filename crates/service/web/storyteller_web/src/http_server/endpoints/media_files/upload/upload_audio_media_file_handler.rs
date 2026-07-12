@@ -259,7 +259,6 @@ pub async fn upload_audio_media_file_handler(
   };
 
   let mut maybe_duration_millis = None;
-  let mut maybe_codec_name = None;
 
   if do_audio_decode {
     let basic_info = decode_basic_audio_bytes_info(
@@ -272,7 +271,6 @@ pub async fn upload_audio_media_file_handler(
     })?;
 
     maybe_duration_millis = basic_info.duration_millis;
-    maybe_codec_name = basic_info.codec_name;
   }
 
   // ==================== OTHER FILE METADATA ==================== //
