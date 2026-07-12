@@ -13,6 +13,7 @@ import {
 import { twMerge } from "tailwind-merge";
 import { GalleryItem } from "./gallery-modal";
 import { GalleryFolder } from "./GalleryDraggableItem";
+import { compareFolders } from "./folderUtils";
 
 // Touch-first devices have no hover and narrow viewports — the folder submenu
 // expands inline (accordion) instead of flying out past the screen edge.
@@ -213,7 +214,9 @@ const FolderList = ({
   closeAll: () => void;
 }) => (
   <>
-    {folders.map((folder) => (
+    {/* Same ordering as the sidebar / folder chips: starred first, then
+        alphabetical. */}
+    {[...folders].sort(compareFolders).map((folder) => (
       <button
         key={folder.id}
         type="button"
