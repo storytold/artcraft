@@ -413,9 +413,11 @@ const ADD_BUTTON_CLASS =
 export const AddButton = ({
   onUpload,
   onPickFromLibrary,
+  title = "Add image",
 }: {
   onUpload: () => void;
   onPickFromLibrary?: () => void;
+  title?: string;
 }) => {
   const isMobile = useIsMobile();
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -444,7 +446,7 @@ export const AddButton = ({
         <SettingsDrawer
           open={drawerOpen}
           onOpenChange={setDrawerOpen}
-          title="Add image"
+          title={title}
           // Non-modal: this drawer opens the library modal on top of itself.
           // Two overlapping modal Radix layers each lock <body>, and the
           // sheet's close/cleanup strands a `pointer-events: none` lock on

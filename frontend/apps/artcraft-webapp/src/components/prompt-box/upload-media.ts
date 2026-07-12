@@ -73,20 +73,20 @@ export const uploadAudio: UploadMediaFn = async ({
   }
 };
 
-export const getVideoDuration = (file: File): Promise<number> =>
+// Resolves 0 when metadata can't be loaded.
+export const getVideoDurationFromUrl = (url: string): Promise<number> =>
   new Promise((resolve) => {
     const video = document.createElement("video");
     video.preload = "metadata";
-    video.onloadedmetadata = () => {
-      URL.revokeObjectURL(video.src);
-      resolve(Math.round(video.duration));
-    };
-    video.onerror = () => {
-      URL.revokeObjectURL(video.src);
-      resolve(0);
-    };
-    video.src = URL.createObjectURL(file);
+    video.onloadedmetadata = () => resolve(Math.round(video.duration));
+    video.onerror = () => resolve(0);
+    video.src = url;
   });
+
+export const getVideoDuration = (file: File): Promise<number> => {
+  const url = URL.createObjectURL(file);
+  return getVideoDurationFromUrl(url).finally(() => URL.revokeObjectURL(url));
+};
 
 export const getAudioDuration = (file: File): Promise<number> =>
   new Promise((resolve) => {
