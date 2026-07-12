@@ -284,7 +284,9 @@ function onPointerUp(event: PointerEvent) {
     } else if (
       dragState.modalHidden &&
       (dragState.item.mediaClass === "image" ||
-        dragState.item.mediaClass === "dimensional")
+        dragState.item.mediaClass === "dimensional" ||
+        dragState.item.mediaClass === "mesh" ||
+        dragState.item.mediaClass === "splat")
     ) {
       // The cursor left the modal and dropped onto the canvas (not a folder) —
       // add to the scene. Gated on `modalHidden` so a missed folder drop *inside*

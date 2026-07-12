@@ -426,7 +426,9 @@ export const GalleryDraggableItem: React.FC<GalleryDraggableItemProps> = ({
               <span>
                 <span className="font-bold">Drag</span>
                 <span className="opacity-50">
-                  {item.mediaClass === "dimensional"
+                  {item.mediaClass === "dimensional" ||
+                  item.mediaClass === "mesh" ||
+                  item.mediaClass === "splat"
                     ? " to add to scene"
                     : " to add"}
                 </span>

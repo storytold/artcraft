@@ -73,7 +73,9 @@ export const GalleryItemMenuItems: React.FC<GalleryItemMenuItemsProps> = ({
           <span>
             {item.mediaClass === "video"
               ? "View video"
-              : item.mediaClass === "dimensional"
+              : item.mediaClass === "dimensional" ||
+                  item.mediaClass === "mesh" ||
+                  item.mediaClass === "splat"
                 ? "View 3D"
                 : "View image"}
           </span>
