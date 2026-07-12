@@ -38,9 +38,16 @@ function resolveCrumbs(pathname: string): Crumb[] {
     const onFolders =
       pathname === "/library/folders" ||
       pathname.startsWith("/library/folder_");
+    const onFolderless = pathname === "/library/folderless";
     return [
       { label: "Library", href: "/library" },
-      { label: onFolders ? "Folders" : "All Assets" },
+      {
+        label: onFolders
+          ? "Folders"
+          : onFolderless
+            ? "Unfoldered"
+            : "All Assets",
+      },
     ];
   }
   if (ROUTE_CRUMBS[pathname]) return ROUTE_CRUMBS[pathname];
