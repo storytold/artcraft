@@ -1585,6 +1585,13 @@ function BulkSelectionBar({
   const folderMediaItems = useLibraryFoldersStore((s) => s.folderMediaItems);
   const [popoverOpen, setPopoverOpen] = useState(false);
 
+  // Same ordering as the sidebar / folder cards: starred first, then
+  // alphabetical (the store list arrives in API order).
+  const sortedFolders = useMemo(
+    () => [...folders].sort(compareFolders),
+    [folders],
+  );
+
   // Close the popover when navigating so it doesn't dangle over the new view.
   useEffect(() => {
     setPopoverOpen(false);
@@ -1653,12 +1660,12 @@ function BulkSelectionBar({
               <div className="px-2 py-1 text-[11px] font-semibold uppercase tracking-wider text-white/40">
                 Folders
               </div>
-              {folders.length === 0 ? (
+              {sortedFolders.length === 0 ? (
                 <div className="px-2 py-1.5 text-xs italic text-white/30">
                   No folders yet
                 </div>
               ) : (
-                folders.map((folder) => (
+                sortedFolders.map((folder) => (
                   <button
                     key={folder.id}
                     type="button"

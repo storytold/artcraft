@@ -3057,7 +3057,9 @@ export const GalleryModal = React.memo(
                               No folders yet
                             </div>
                           ) : (
-                            folders.map((folder) => (
+                            // Same ordering as the folder chips: starred
+                            // first, then alphabetical.
+                            [...folders].sort(compareFolders).map((folder) => (
                               <button
                                 key={folder.id}
                                 type="button"
