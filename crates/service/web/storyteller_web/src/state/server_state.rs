@@ -11,7 +11,7 @@ use crate::state::certs::google_sign_in_cert::GoogleSignInCert;
 use crate::state::flags::paging_flags::PagingFlags;
 use crate::state::memory_cache::model_token_to_info_cache::ModelTokenToInfoCache;
 use crate::threads::db_health_checker_thread::db_health_check_status::HealthCheckStatus;
-use crate::util::encrypted_sort_id::SortKeyCrypto;
+use crate::http_server::web_utils::web_sort_key_crypto::WebSortKeyCrypto;
 use crate::util::troll_user_bans::troll_user_ban_list::TrollUserBanList;
 
 use actix_artcraft::sessions::anonymous_visitor_tracking::avt_cookie_manager::AvtCookieManager;
@@ -98,7 +98,7 @@ pub struct ServerState {
   /// Where to store audio uploads for w2l
   pub audio_uploads_bucket_root: String,
 
-  pub sort_key_crypto: SortKeyCrypto,
+  pub sort_key_crypto: WebSortKeyCrypto,
   pub opaque_cursors: OpaqueCursorEncoderV2,
 
   pub ip_ban_list: IpBanList,

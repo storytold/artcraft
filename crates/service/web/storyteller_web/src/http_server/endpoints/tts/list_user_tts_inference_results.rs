@@ -84,11 +84,7 @@ pub async fn list_user_tts_inference_results_handler(
   let cursor_is_reversed = query.cursor_is_reversed.unwrap_or(false);
 
   let cursor = if let Some(cursor) = query.cursor.as_deref() {
-    let cursor = server_state.sort_key_crypto.decrypt_id(cursor)
-        .map_err(|e| {
-          warn!("crypto error: {:?}", e);
-          CommonWebError::from_anyhow_error(e)
-        })?;
+    let cursor = server_state.sort_key_crypto.decrypt_id(cursor)?;
     Some(cursor)
   } else {
     None
@@ -117,22 +113,14 @@ pub async fn list_user_tts_inference_results_handler(
   };
 
   let cursor_next = if let Some(id) = results_page.last_id {
-    let cursor = server_state.sort_key_crypto.encrypt_id(id as u64)
-        .map_err(|e| {
-          warn!("crypto error: {:?}", e);
-          CommonWebError::from_anyhow_error(e)
-        })?;
+    let cursor = server_state.sort_key_crypto.encrypt_id(id as u64)?;
     Some(cursor)
   } else {
     None
   };
 
   let cursor_previous = if let Some(id) = results_page.first_id {
-    let cursor = server_state.sort_key_crypto.encrypt_id(id as u64)
-        .map_err(|e| {
-          warn!("crypto error: {:?}", e);
-          CommonWebError::from_anyhow_error(e)
-        })?;
+    let cursor = server_state.sort_key_crypto.encrypt_id(id as u64)?;
     Some(cursor)
   } else {
     None

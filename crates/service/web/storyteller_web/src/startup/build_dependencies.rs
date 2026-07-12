@@ -46,7 +46,7 @@ use crate::state::server_state::{
   ServerState, TrollBans,
 };
 use crate::threads::db_health_checker_thread::db_health_check_status::HealthCheckStatus;
-use crate::util::encrypted_sort_id::SortKeyCrypto;
+use crate::http_server::web_utils::web_sort_key_crypto::WebSortKeyCrypto;
 
 // Bucket config
 const ENV_ACCESS_KEY: &str = "ACCESS_KEY";
@@ -156,7 +156,7 @@ pub async fn setup_dependencies(server_hostname: &str) -> AnyhowResult<SetupResu
   );
 
   let sort_key_crypto_secret = easyenv::get_env_string_or_default("SORT_KEY_SECRET", "webscale");
-  let sort_key_crypto = SortKeyCrypto::new(&sort_key_crypto_secret);
+  let sort_key_crypto = WebSortKeyCrypto::new(&sort_key_crypto_secret);
   let opaque_cursor_encoder = OpaqueCursorEncoderV2::new(&sort_key_crypto_secret);
 
   let health_check_interval = easyenv::get_env_duration_seconds_or_default(
