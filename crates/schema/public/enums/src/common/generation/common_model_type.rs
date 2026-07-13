@@ -82,6 +82,9 @@ pub enum CommonModelType {
   Seedream4p5,
   #[serde(rename = "seedream_5_lite")]
   Seedream5Lite,
+  /// Seedream 5.0 Pro as routed via kinovi
+  #[serde(rename = "seedream_5p0_pro")]
+  Seedream5p0Pro,
 
   /// Midjourney without distinguishing a model type or version
   #[serde(rename = "midjourney")]
@@ -287,6 +290,7 @@ impl CommonModelType {
       Self::Seedream4 => "seedream_4",
       Self::Seedream4p5 => "seedream_4p5",
       Self::Seedream5Lite => "seedream_5_lite",
+      Self::Seedream5p0Pro => "seedream_5p0_pro",
       Self::Midjourney => "midjourney",
       Self::MidjourneyV6 => "midjourney_v6",
       Self::MidjourneyV6p1 => "midjourney_v6p1",
@@ -398,6 +402,7 @@ impl CommonModelType {
       "seedream_4" => Ok(Self::Seedream4),
       "seedream_4p5" => Ok(Self::Seedream4p5),
       "seedream_5_lite" => Ok(Self::Seedream5Lite),
+      "seedream_5p0_pro" => Ok(Self::Seedream5p0Pro),
       "midjourney" => Ok(Self::Midjourney),
       "midjourney_v6" => Ok(Self::MidjourneyV6),
       "midjourney_v6p1" => Ok(Self::MidjourneyV6p1),
@@ -513,6 +518,7 @@ impl CommonModelType {
       Self::Seedream4,
       Self::Seedream4p5,
       Self::Seedream5Lite,
+      Self::Seedream5p0Pro,
       Self::Midjourney,
       Self::MidjourneyV6,
       Self::MidjourneyV6p1,
@@ -625,6 +631,7 @@ impl CommonModelType {
       Self::Seedream4 => CommonModelClass::Image,
       Self::Seedream4p5 => CommonModelClass::Image,
       Self::Seedream5Lite => CommonModelClass::Image,
+      Self::Seedream5p0Pro => CommonModelClass::Image,
       Self::Midjourney => CommonModelClass::Image,
       Self::MidjourneyV6 => CommonModelClass::Image,
       Self::MidjourneyV6p1 => CommonModelClass::Image,
@@ -747,6 +754,7 @@ mod tests {
       assert_serialization(CommonModelType::Seedream4, "seedream_4");
       assert_serialization(CommonModelType::Seedream4p5, "seedream_4p5");
       assert_serialization(CommonModelType::Seedream5Lite, "seedream_5_lite");
+      assert_serialization(CommonModelType::Seedream5p0Pro, "seedream_5p0_pro");
       assert_serialization(CommonModelType::Midjourney, "midjourney");
       assert_serialization(CommonModelType::MidjourneyV6, "midjourney_v6");
       assert_serialization(CommonModelType::MidjourneyV6p1, "midjourney_v6p1");
@@ -852,6 +860,7 @@ mod tests {
       assert_eq!(CommonModelType::Seedream4.to_str(), "seedream_4");
       assert_eq!(CommonModelType::Seedream4p5.to_str(), "seedream_4p5");
       assert_eq!(CommonModelType::Seedream5Lite.to_str(), "seedream_5_lite");
+      assert_eq!(CommonModelType::Seedream5p0Pro.to_str(), "seedream_5p0_pro");
       assert_eq!(CommonModelType::Midjourney.to_str(), "midjourney");
       assert_eq!(CommonModelType::MidjourneyV6.to_str(), "midjourney_v6");
       assert_eq!(CommonModelType::MidjourneyV6p1.to_str(), "midjourney_v6p1");
@@ -961,6 +970,7 @@ mod tests {
       assert_eq!(CommonModelType::from_str("seedream_4").unwrap(), CommonModelType::Seedream4);
       assert_eq!(CommonModelType::from_str("seedream_4p5").unwrap(), CommonModelType::Seedream4p5);
       assert_eq!(CommonModelType::from_str("seedream_5_lite").unwrap(), CommonModelType::Seedream5Lite);
+      assert_eq!(CommonModelType::from_str("seedream_5p0_pro").unwrap(), CommonModelType::Seedream5p0Pro);
       assert_eq!(CommonModelType::from_str("midjourney").unwrap(), CommonModelType::Midjourney);
       assert_eq!(CommonModelType::from_str("midjourney_v6").unwrap(), CommonModelType::MidjourneyV6);
       assert_eq!(CommonModelType::from_str("midjourney_v6p1").unwrap(), CommonModelType::MidjourneyV6p1);
@@ -1042,7 +1052,7 @@ mod tests {
     #[test]
     fn all_variants() {
       let mut variants = CommonModelType::all_variants();
-      assert_eq!(variants.len(), 96);
+      assert_eq!(variants.len(), 97);
       // Image models
       assert_eq!(variants.pop_first(), Some(CommonModelType::Flux1Dev));
       assert_eq!(variants.pop_first(), Some(CommonModelType::Flux1Schnell));
@@ -1069,6 +1079,7 @@ mod tests {
       assert_eq!(variants.pop_first(), Some(CommonModelType::Seedream4));
       assert_eq!(variants.pop_first(), Some(CommonModelType::Seedream4p5));
       assert_eq!(variants.pop_first(), Some(CommonModelType::Seedream5Lite));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::Seedream5p0Pro));
       assert_eq!(variants.pop_first(), Some(CommonModelType::Midjourney));
       assert_eq!(variants.pop_first(), Some(CommonModelType::MidjourneyV6));
       assert_eq!(variants.pop_first(), Some(CommonModelType::MidjourneyV6p1));

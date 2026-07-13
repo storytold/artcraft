@@ -125,7 +125,8 @@ fn provider_for_model(model: RouterImageModel) -> RouterProvider {
   match model {
     RouterImageModel::Midjourney7
     | RouterImageModel::Midjourney7Niji
-    | RouterImageModel::Midjourney8 => RouterProvider::Seedance2Pro,
+    | RouterImageModel::Midjourney8
+    | RouterImageModel::Seedream5p0Pro => RouterProvider::Seedance2Pro,
     _ => RouterProvider::Fal,
   }
 }

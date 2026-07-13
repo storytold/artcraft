@@ -82,7 +82,8 @@ pub async fn insert_generic_inference_job_for_seedance2pro_queue_with_apriori_jo
   let is_image_model = match args.maybe_model_type {
     Some(CommonModelType::Midjourney7) |
     Some(CommonModelType::Midjourney7Niji) |
-    Some(CommonModelType::Midjourney8) => true,
+    Some(CommonModelType::Midjourney8) |
+    Some(CommonModelType::Seedream5p0Pro) => true,
     _ => false,
   };
 

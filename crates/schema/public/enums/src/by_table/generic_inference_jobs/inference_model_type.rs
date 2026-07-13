@@ -127,6 +127,8 @@ pub enum InferenceModelType {
   Seedream4p5,
   #[serde(rename = "seedream_5_lite")]
   Seedream5Lite,
+  #[serde(rename = "seedream_5p0_pro")]
+  Seedream5p0Pro,
   #[serde(rename = "midjourney")]
   Midjourney,
   #[serde(rename = "midjourney_v6")]
@@ -334,6 +336,7 @@ impl InferenceModelType {
       Self::Seedream4 => "seedream_4",
       Self::Seedream4p5 => "seedream_4p5",
       Self::Seedream5Lite => "seedream_5_lite",
+      Self::Seedream5p0Pro => "seedream_5p0_pro",
       Self::Midjourney => "midjourney",
       Self::MidjourneyV6 => "midjourney_v6",
       Self::MidjourneyV6p1 => "midjourney_v6p1",
@@ -462,6 +465,7 @@ impl InferenceModelType {
       "seedream_4" => Ok(Self::Seedream4),
       "seedream_4p5" => Ok(Self::Seedream4p5),
       "seedream_5_lite" => Ok(Self::Seedream5Lite),
+      "seedream_5p0_pro" => Ok(Self::Seedream5p0Pro),
       "midjourney" => Ok(Self::Midjourney),
       "midjourney_v6" => Ok(Self::MidjourneyV6),
       "midjourney_v6p1" => Ok(Self::MidjourneyV6p1),
@@ -594,6 +598,7 @@ impl InferenceModelType {
       Self::Seedream4,
       Self::Seedream4p5,
       Self::Seedream5Lite,
+      Self::Seedream5p0Pro,
       Self::Midjourney,
       Self::MidjourneyV6,
       Self::MidjourneyV6p1,
@@ -709,6 +714,7 @@ impl InferenceModelType {
       CommonModelType::Seedream4 => Self::Seedream4,
       CommonModelType::Seedream4p5 => Self::Seedream4p5,
       CommonModelType::Seedream5Lite => Self::Seedream5Lite,
+      CommonModelType::Seedream5p0Pro => Self::Seedream5p0Pro,
       CommonModelType::Midjourney => Self::Midjourney,
       CommonModelType::MidjourneyV6 => Self::MidjourneyV6,
       CommonModelType::MidjourneyV6p1 => Self::MidjourneyV6p1,
@@ -847,6 +853,7 @@ mod tests {
       assert_serialization(InferenceModelType::Seedream4, "seedream_4");
       assert_serialization(InferenceModelType::Seedream4p5, "seedream_4p5");
       assert_serialization(InferenceModelType::Seedream5Lite, "seedream_5_lite");
+      assert_serialization(InferenceModelType::Seedream5p0Pro, "seedream_5p0_pro");
       assert_serialization(InferenceModelType::Midjourney, "midjourney");
       assert_serialization(InferenceModelType::MidjourneyV6, "midjourney_v6");
       assert_serialization(InferenceModelType::MidjourneyV6p1, "midjourney_v6p1");
@@ -972,6 +979,7 @@ mod tests {
       assert_eq!(InferenceModelType::Seedream4.to_str(), "seedream_4");
       assert_eq!(InferenceModelType::Seedream4p5.to_str(), "seedream_4p5");
       assert_eq!(InferenceModelType::Seedream5Lite.to_str(), "seedream_5_lite");
+      assert_eq!(InferenceModelType::Seedream5p0Pro.to_str(), "seedream_5p0_pro");
       assert_eq!(InferenceModelType::Midjourney.to_str(), "midjourney");
       assert_eq!(InferenceModelType::MidjourneyV6.to_str(), "midjourney_v6");
       assert_eq!(InferenceModelType::MidjourneyV6p1.to_str(), "midjourney_v6p1");
@@ -1099,6 +1107,7 @@ mod tests {
       assert_eq!(InferenceModelType::from_str("seedream_4").unwrap(), InferenceModelType::Seedream4);
       assert_eq!(InferenceModelType::from_str("seedream_4p5").unwrap(), InferenceModelType::Seedream4p5);
       assert_eq!(InferenceModelType::from_str("seedream_5_lite").unwrap(), InferenceModelType::Seedream5Lite);
+      assert_eq!(InferenceModelType::from_str("seedream_5p0_pro").unwrap(), InferenceModelType::Seedream5p0Pro);
       assert_eq!(InferenceModelType::from_str("midjourney").unwrap(), InferenceModelType::Midjourney);
       assert_eq!(InferenceModelType::from_str("midjourney_v6").unwrap(), InferenceModelType::MidjourneyV6);
       assert_eq!(InferenceModelType::from_str("midjourney_v6p1").unwrap(), InferenceModelType::MidjourneyV6p1);
