@@ -118,14 +118,15 @@ fn build_execution_request(
   })
 }
 
-/// Route each image model to the provider that fulfils it. Midjourney is
-/// served via the Seedance2Pro/Kinovi (Volcengine) backend; everything else
-/// flows through Fal.
+/// Route each image model to the provider that fulfils it. Midjourney and
+/// Seedream 5.0 Pro are served via the Seedance2Pro/Kinovi (Volcengine)
+/// backend; everything else flows through Fal.
 fn provider_for_model(model: RouterImageModel) -> RouterProvider {
   match model {
     RouterImageModel::Midjourney7
     | RouterImageModel::Midjourney7Niji
-    | RouterImageModel::Midjourney8 => RouterProvider::Seedance2Pro,
+    | RouterImageModel::Midjourney8
+    | RouterImageModel::Seedream5p0Pro => RouterProvider::Seedance2Pro,
     _ => RouterProvider::Fal,
   }
 }
