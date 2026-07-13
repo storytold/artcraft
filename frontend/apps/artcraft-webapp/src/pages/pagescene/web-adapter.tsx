@@ -11,14 +11,19 @@
 
 import { useMemo } from "react";
 import {
+  FilterEngineCategories,
   GetCdnOrigin,
   MediaFilesApi,
   MediaUploadApi,
+  ProjectsApi,
   StorytellerApiHostStore,
   UploadImageMedia,
   UsersApi,
 } from "@storyteller/api";
-import type { PageSceneAdapter } from "@storyteller/ui-pagescene";
+import type {
+  PageSceneAdapter,
+  SceneProjectListItem,
+} from "@storyteller/ui-pagescene";
 import { uploadByKind } from "../video-editor/adapters/upload-by-kind";
 import {
   getActiveEditor,
@@ -62,13 +67,24 @@ const saveSceneViaApi = async (
   sceneThumbnail: Blob | undefined,
 ): Promise<string> => {
   const blob = new Blob([saveJson], { type: "application/json" });
-  const uploadApi = new MediaUploadApi();
+  const projectsApi = new ProjectsApi();
   const uuid = crypto.randomUUID();
-  const fileName = `${sceneTitle}.glb`;
+  const fileName = `${sceneTitle}.scn.json`;
 
+  // Scenes persist through the project endpoints
+  // (/v1/media_files/upload/project/scene_3d/*). The update endpoint also
+  // accepts LEGACY rows saved through the old upload/new_scene flow and
+  // upgrades them in place — the token is preserved.
   const uploadResp = sceneToken
-    ? await uploadApi.UploadSavedScene({ blob, fileName, uuid, mediaToken: sceneToken })
-    : await uploadApi.UploadNewScene({
+    ? await projectsApi.UpdateProject({
+        projectType: "scene_3d",
+        token: sceneToken,
+        blob,
+        fileName,
+        uuid,
+      })
+    : await projectsApi.UploadNewProject({
+        projectType: "scene_3d",
         blob,
         fileName,
         uuid,
@@ -85,7 +101,11 @@ const saveSceneViaApi = async (
   // independent mutation — kick it off in the background so the save
   // spinner dismisses immediately after the scene JSON lands.
   if (sceneThumbnail) {
-    void uploadCoverImageInBackground(uploadApi, newToken, sceneThumbnail);
+    void uploadCoverImageInBackground(
+      new MediaUploadApi(),
+      newToken,
+      sceneThumbnail,
+    );
   }
   return newToken;
 };
@@ -148,6 +168,77 @@ const loadSceneViaApi = async (token: string): Promise<unknown> => {
   }
 
   return JSON.parse(text);
+};
+
+// List the user's saved scenes for the scene picker. New saves are project
+// rows (media_class=project, project_type=scene_3d); scenes saved before the
+// project-endpoint migration are engine_category=scene rows. Query both and
+// merge until the backend backfill upgrades the legacy rows. A re-saved
+// legacy scene appears in both lists — dedupe by token, preferring the
+// project row (it has the fresher updated_at).
+const listUserSceneProjectsViaApi = async (
+  username: string | undefined,
+): Promise<{
+  success: boolean;
+  data?: SceneProjectListItem[];
+  errorMessage?: string;
+}> => {
+  if (!username) {
+    return {
+      success: false,
+      errorMessage: "Sign in to load your saved scenes.",
+    };
+  }
+
+  const [projectResp, legacyResp] = await Promise.all([
+    new ProjectsApi().ListSessionProjects({
+      filter_project_type: "scene_3d",
+      page_size: 100,
+    }),
+    new MediaFilesApi().ListUserMediaFiles({
+      username,
+      // Saved scenes are persisted with is_user_upload = TRUE; the list
+      // endpoint excludes uploads unless this is set.
+      include_user_uploads: true,
+      page_size: 100,
+      filter_engine_categories: [FilterEngineCategories.SCENE],
+    }),
+  ]);
+
+  if (!projectResp.success && !legacyResp.success) {
+    return {
+      success: false,
+      errorMessage:
+        projectResp.errorMessage ||
+        legacyResp.errorMessage ||
+        "Failed to load saved scenes.",
+    };
+  }
+
+  const byToken = new Map<string, SceneProjectListItem>();
+  for (const item of legacyResp.data ?? []) {
+    byToken.set(item.token, {
+      token: item.token,
+      maybe_title: item.maybe_title,
+      updated_at: item.updated_at,
+      maybe_cover_image_public_bucket_path:
+        item.cover_image?.maybe_cover_image_public_bucket_path,
+    });
+  }
+  for (const item of projectResp.data ?? []) {
+    byToken.set(item.token, {
+      token: item.token,
+      maybe_title: item.maybe_title,
+      updated_at: item.updated_at,
+      maybe_cover_image_public_bucket_path:
+        item.cover_image?.maybe_cover_image_public_bucket_path,
+    });
+  }
+
+  const merged = [...byToken.values()].sort((a, b) =>
+    b.updated_at.localeCompare(a.updated_at),
+  );
+  return { success: true, data: merged };
 };
 
 // ─── Adapter ───────────────────────────────────────────────────────────────
@@ -284,6 +375,10 @@ export const useWebAppPageSceneAdapter = (
           errorMessage: response.errorMessage,
         };
       },
+
+      // Scene picker listing — merged project + legacy rows (see helper).
+      listUserSceneProjects: () =>
+        listUserSceneProjectsViaApi(getLiveUser()?.username),
 
       listFeaturedMediaFiles: async (query) => {
         const api = new MediaFilesApi();

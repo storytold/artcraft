@@ -64,6 +64,23 @@ export interface ListFeaturedMediaFilesResult {
   errorMessage?: string;
 }
 
+// One saved scene as returned by the host's scene listing (see
+// PageSceneAdapter.listUserSceneProjects). Just what the scene picker
+// renders — hosts map their richer API rows down to this.
+export interface SceneProjectListItem {
+  token: string;
+  maybe_title?: string | null;
+  updated_at: string;
+  /** Bucket path of the scene's cover image, when present. */
+  maybe_cover_image_public_bucket_path?: string | null;
+}
+
+export interface ListUserSceneProjectsResult {
+  success: boolean;
+  data?: SceneProjectListItem[];
+  errorMessage?: string;
+}
+
 // ─── Scene I/O ─────────────────────────────────────────────────────────
 
 export interface PageSceneSavePayload {
@@ -131,6 +148,14 @@ export interface PageSceneAdapter {
   listFeaturedMediaFiles(
     query: ListMediaFilesQuery,
   ): Promise<ListFeaturedMediaFilesResult>;
+
+  // Optional: list the user's saved 3D scenes for the scene picker.
+  // Hosts that have migrated scene persistence to the project endpoints
+  // (`/v1/media_files/upload/project/scene_3d/*`) implement this with the
+  // project list (merged with any legacy engine_category=scene rows).
+  // When absent, the picker falls back to
+  // listUserMediaFiles(engine_category=scene) — the pre-split flow.
+  listUserSceneProjects?(): Promise<ListUserSceneProjectsResult>;
 
   // Toast notifications. Wraps the host's addToast / react-hot-toast
   // pipeline; the lib stays free of toast-library imports.

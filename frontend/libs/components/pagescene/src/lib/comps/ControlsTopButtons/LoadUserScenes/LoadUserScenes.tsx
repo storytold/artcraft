@@ -26,6 +26,30 @@ export const LoadUserScenes = ({ onSceneSelect }: LoadSceneProps) => {
 
   const getScenesByUser = useCallback(async () => {
     if (!editor) return;
+
+    // Hosts that migrated scene persistence to the project endpoints
+    // provide listUserSceneProjects (new saves have media_class=project,
+    // not engine_category=scene, so the legacy filter below misses them).
+    if (editor.adapter.listUserSceneProjects) {
+      const response = await editor.adapter.listUserSceneProjects();
+      if (response.success && response.data) {
+        setScenes(
+          response.data.map((s) => ({
+            token: s.token,
+            name: s.maybe_title ?? "Untitled",
+            updated_at: dayjs(s.updated_at).format("MMM D, YYYY HH:mm:ss"),
+            thumbnail: s.maybe_cover_image_public_bucket_path ?? "",
+          })),
+        );
+        return;
+      }
+      editor.adapter.showToast(
+        ToastTypes.ERROR,
+        response.errorMessage || "Unknown Error in Loading User Scenes",
+      );
+      return;
+    }
+
     const modMediaInfoToScenes = (results: MediaInfo[]): SceneTypes[] =>
       results.map((s) => ({
         token: s.token,
