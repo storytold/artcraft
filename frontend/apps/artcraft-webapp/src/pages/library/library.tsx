@@ -377,9 +377,12 @@ export default function Library() {
                 (item: any) =>
                   item.media_type !== FilterMediaType.SCENE_JSON &&
                   // Drop 3D-model cover screenshots the backend surfaces as
-                  // "dimensional" items whose asset is actually a .png.
+                  // 3D-classed items (mesh/splat, or legacy pre-split
+                  // "dimensional") whose asset is actually a .png.
                   !(
-                    item.media_class === "dimensional" &&
+                    (item.media_class === "dimensional" ||
+                      item.media_class === "mesh" ||
+                      item.media_class === "splat") &&
                     !is3DModelUrl(item.media_links?.cdn_url)
                   ),
               )

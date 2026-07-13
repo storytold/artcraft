@@ -273,7 +273,9 @@ export function Lightbox({
     : propMediaClass === "video";
   const is3D = selectedImageUrl
     ? is3DModelUrl(selectedImageUrl)
-    : propMediaClass === "dimensional";
+    : propMediaClass === "dimensional" ||
+      propMediaClass === "mesh" ||
+      propMediaClass === "splat";
 
   // Keyboard navigation
   useEffect(() => {

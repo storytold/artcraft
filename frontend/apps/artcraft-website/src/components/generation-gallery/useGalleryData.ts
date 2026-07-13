@@ -29,7 +29,10 @@ const getLabel = (item: any) => {
     case "video":
       return "Video Generation";
     case "dimensional":
+    case "mesh":
       return "3D Mesh";
+    case "splat":
+      return "3D World";
     default:
       return "Generation";
   }
@@ -54,8 +57,12 @@ export function useGalleryData(options: {
   const api = useMemo(() => new GalleryModalApi(), []);
 
   const mapApiItem = useCallback((item: any): GalleryItem => {
-    const isDimensional = item.media_class === "dimensional";
-    const thumbnail = isDimensional
+    // 3D classes: mesh/splat, plus the legacy pre-split "dimensional".
+    const is3D =
+      item.media_class === "dimensional" ||
+      item.media_class === "mesh" ||
+      item.media_class === "splat";
+    const thumbnail = is3D
       ? null
       : getMediaThumbnail(item.media_links, item.media_class, {
           size: THUMBNAIL_SIZES.LARGE,
