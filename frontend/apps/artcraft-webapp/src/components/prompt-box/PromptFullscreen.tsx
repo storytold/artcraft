@@ -1,10 +1,4 @@
-import {
-  ReactNode,
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
+import { ReactNode, useCallback, useEffect, useRef, useState } from "react";
 import { Modal } from "@storyteller/ui-modal";
 import { Button } from "@storyteller/ui-button";
 import { Tooltip } from "@storyteller/ui-tooltip";
@@ -86,7 +80,10 @@ export const PromptFullscreenModal = ({
   // Focus the editor and drop the caret at the end once the overlay opens.
   useEffect(() => {
     if (!isOpen) return;
-    const id = window.setTimeout(() => focusEditorAtEnd(contentRef.current), 60);
+    const id = window.setTimeout(
+      () => focusEditorAtEnd(contentRef.current),
+      60,
+    );
     return () => window.clearTimeout(id);
   }, [isOpen]);
 
@@ -123,12 +120,13 @@ export const PromptFullscreenModal = ({
                 overLimit ? "text-red-500" : "text-base-fg/40"
               }`}
             >
-              {promptLength} / {isFinite(maxPromptLength) ? maxPromptLength : "∞"}
+              {promptLength} /{" "}
+              {isFinite(maxPromptLength) ? maxPromptLength : "∞"}
             </span>
           </div>
         )}
         {imagePromptRow && <div className="shrink-0">{imagePromptRow}</div>}
-        <div className="flex shrink-0 items-center justify-between gap-2">
+        <div className="flex shrink-0 items-center justify-between gap-2 mt-1">
           <div className="flex items-center gap-2">{footerControls}</div>
           <Button onClick={onClose}>Done</Button>
         </div>

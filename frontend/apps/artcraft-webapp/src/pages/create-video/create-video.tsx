@@ -647,7 +647,7 @@ export default function CreateVideo() {
               selected: inputMode === "keyframe",
             },
             {
-              label: "Reference",
+              label: "Omni Reference",
               description: "Multi-media ref",
               selected: inputMode === "reference",
             },
@@ -802,7 +802,7 @@ export default function CreateVideo() {
 
   const handleInputModeChange = useCallback(
     (item: PopoverItem) => {
-      const mode = item.label === "Reference" ? "reference" : "keyframe";
+      const mode = item.label === "Omni Reference" ? "reference" : "keyframe";
       if (mode === inputMode) return;
       if (mode === "reference") {
         // Some models (e.g. Grok) cap duration lower in image-reference mode.
@@ -1487,7 +1487,9 @@ export default function CreateVideo() {
                   richList
                   triggerIcon={
                     <img
-                      src={getCreatorIconPathForModelId(selectedModel?.model ?? "")}
+                      src={getCreatorIconPathForModelId(
+                        selectedModel?.model ?? "",
+                      )}
                       alt=""
                       className="h-4 w-4 icon-auto-contrast"
                     />
@@ -1504,7 +1506,23 @@ export default function CreateVideo() {
               })
             }
             mentionItems={mentionItems.length > 0 ? mentionItems : undefined}
-            mediaReferenceRow={mediaReferenceRow}
+            videoRefsSupported={supportsVideoRefs}
+            referenceVideos={referenceVideos}
+            onReferenceVideosChange={setReferenceVideos}
+            maxVideoCount={maxVideoRefs}
+            maxVideoRefDuration={maxVideoRefDuration}
+            onPickVideoFromLibrary={
+              supportsVideoRefs
+                ? () => setIsVideoRefPickerOpen(true)
+                : undefined
+            }
+            audioRefsSupported={supportsAudioRefs}
+            referenceAudios={referenceAudios}
+            onReferenceAudiosChange={setReferenceAudios}
+            maxAudioCount={selectedModel?.audio_references_max ?? 2}
+            maxAudioRefDuration={
+              selectedModel?.audio_references_max_total_duration_seconds ?? 30
+            }
             rightToolbar={
               <GenerationCountPicker
                 batchSizeMax={selectedModel?.batch_size_max ?? 4}

@@ -187,7 +187,7 @@ export const usePromptVideoStore = create<PromptVideoStore>()((set) => ({
   referenceAudios: [],
   generateWithSound: true,
   duration: null,
-  inputMode: "keyframe",
+  inputMode: "reference",
   generationCount: 1,
   setPrompt: (prompt) => set({ prompt }),
   setResolution: (resolution) => set({ resolution }),
