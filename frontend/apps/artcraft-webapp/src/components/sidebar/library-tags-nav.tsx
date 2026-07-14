@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faChevronRight,
+  faEllipsis,
   faTag,
   faTags,
 } from "@fortawesome/pro-solid-svg-icons";
@@ -113,10 +114,27 @@ export function LibraryTagsNav({
                       className="text-violet-400"
                     />
                     <span className="truncate">{tag.value}</span>
-                    <span className="ml-auto text-[10px] text-sidebar-foreground/40">
+                    <span className="ml-auto text-[10px] text-sidebar-foreground/40 transition-opacity group-hover/menu-item:opacity-0">
                       {tag.useCount}
                     </span>
                   </SidebarMenuButton>
+                  {/* Hover-revealed rename/delete menu (swaps with the count). */}
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      const rect = e.currentTarget.getBoundingClientRect();
+                      setContextMenu({
+                        tagToken: tag.token,
+                        x: rect.left,
+                        y: rect.bottom + 4,
+                      });
+                    }}
+                    aria-label={`Options for tag "${tag.value}"`}
+                    className="absolute right-1 top-1/2 -translate-y-1/2 flex h-5 w-5 items-center justify-center rounded text-sidebar-foreground/50 opacity-0 transition-opacity group-hover/menu-item:opacity-100 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+                  >
+                    <FontAwesomeIcon icon={faEllipsis} className="text-xs" />
+                  </button>
                 </SidebarMenuItem>
               ))}
             </ul>

@@ -50,6 +50,7 @@ import {
   faStar,
   faTag,
   faTags,
+  faEllipsis,
 } from "@fortawesome/pro-solid-svg-icons";
 import { Lightbox } from "../../components/lightbox/lightbox";
 import {
@@ -59,7 +60,10 @@ import {
   type UiFolder,
 } from "./library-folders-store";
 import { mapRawToGalleryItem } from "./library-media-map";
-import { compareTagsByUseCount, useLibraryTagsStore } from "./library-tags-store";
+import {
+  compareTagsByUseCount,
+  useLibraryTagsStore,
+} from "./library-tags-store";
 
 const PAGE_SIZE = 60;
 
@@ -410,8 +414,7 @@ export default function Library() {
             meshSplatCursorRef.current =
               response.pagination?.maybe_next ?? undefined;
             setHasMore(
-              newItems.length >= PAGE_SIZE &&
-                !!response.pagination?.maybe_next,
+              newItems.length >= PAGE_SIZE && !!response.pagination?.maybe_next,
             );
           }
         } else {
@@ -452,7 +455,15 @@ export default function Library() {
       setInitialLoading(false);
       isLoadingRef.current = false;
     },
-    [username, activeFilter, pageIndex, api, mediaFilesApi, foldersApi, folderlessClass],
+    [
+      username,
+      activeFilter,
+      pageIndex,
+      api,
+      mediaFilesApi,
+      foldersApi,
+      folderlessClass,
+    ],
   );
 
   // Initial load + filter / tab change
@@ -496,7 +507,15 @@ export default function Library() {
     };
     scroller.addEventListener("scroll", handleScroll, { passive: true });
     return () => scroller.removeEventListener("scroll", handleScroll);
-  }, [activeFolderId, activeTagToken, tab, hasMore, loadItems, loadFolderMedia, loadTagMedia]);
+  }, [
+    activeFolderId,
+    activeTagToken,
+    tab,
+    hasMore,
+    loadItems,
+    loadFolderMedia,
+    loadTagMedia,
+  ]);
 
   // ── Drag media → folder ───────────────────────────────────────────────────
   const displayItems = activeTagToken
@@ -952,8 +971,8 @@ export default function Library() {
       title: `Delete tag "${tag?.value ?? "tag"}"?`,
       message: (
         <p className="text-sm text-white/70">
-          Removes this tag from {count} file{count === 1 ? "" : "s"}. Files
-          stay in your library.
+          Removes this tag from {count} file{count === 1 ? "" : "s"}. Files stay
+          in your library.
         </p>
       ),
       primaryActionText: "Delete",
@@ -1340,7 +1359,7 @@ export default function Library() {
                   {activeTag?.value ?? "Tag"}
                 </h1>
                 {activeTag && (
-                  <span className="text-white/40 text-sm">
+                  <span className="text-white/40 text-sm pt-1 ps-1.5">
                     {activeTag.useCount} file
                     {activeTag.useCount === 1 ? "" : "s"}
                   </span>
@@ -1476,27 +1495,49 @@ export default function Library() {
             ) : (
               <div className="flex flex-wrap gap-2">
                 {sortedTags.map((t) => (
-                  <button
+                  <div
                     key={t.token}
-                    type="button"
-                    onClick={() => navigate(`/library/${t.token}`)}
-                    onContextMenu={(e) => {
-                      e.preventDefault();
-                      setTagContextMenu({
-                        tagToken: t.token,
-                        x: e.clientX,
-                        y: e.clientY,
-                      });
-                    }}
-                    className="flex items-center gap-2 rounded-full bg-ui-controls/40 hover:bg-ui-controls/70 px-4 py-2 text-sm font-medium text-white transition-colors"
+                    className="flex items-center rounded-full bg-ui-controls/40 hover:bg-ui-controls/70 transition-colors"
                   >
-                    <FontAwesomeIcon
-                      icon={faTag}
-                      className="text-xs text-violet-400"
-                    />
-                    <span className="max-w-[14rem] truncate">{t.value}</span>
-                    <span className="text-xs text-white/40">{t.useCount}</span>
-                  </button>
+                    <button
+                      type="button"
+                      onClick={() => navigate(`/library/${t.token}`)}
+                      onContextMenu={(e) => {
+                        e.preventDefault();
+                        setTagContextMenu({
+                          tagToken: t.token,
+                          x: e.clientX,
+                          y: e.clientY,
+                        });
+                      }}
+                      className="flex items-center gap-2 pl-4 pr-1 py-2 text-sm font-medium text-white"
+                    >
+                      <FontAwesomeIcon
+                        icon={faTag}
+                        className="text-xs text-violet-400"
+                      />
+                      <span className="max-w-[14rem] truncate">{t.value}</span>
+                      <span className="text-xs text-white/40">
+                        {t.useCount}
+                      </span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        const rect = e.currentTarget.getBoundingClientRect();
+                        setTagContextMenu({
+                          tagToken: t.token,
+                          x: rect.left,
+                          y: rect.bottom + 4,
+                        });
+                      }}
+                      aria-label={`Options for tag "${t.value}"`}
+                      title="Rename or delete"
+                      className="mr-1.5 flex h-6 w-6 items-center justify-center rounded-full text-white/40 hover:bg-white/10 hover:text-white transition-colors"
+                    >
+                      <FontAwesomeIcon icon={faEllipsis} className="text-xs" />
+                    </button>
+                  </div>
                 ))}
               </div>
             )
@@ -1667,7 +1708,9 @@ export default function Library() {
       <FolderNameDialog
         isOpen={!!tagRenameTarget}
         title="Rename tag"
-        initialValue={tags.find((t) => t.token === tagRenameTarget)?.value ?? ""}
+        initialValue={
+          tags.find((t) => t.token === tagRenameTarget)?.value ?? ""
+        }
         confirmLabel="Rename"
         onConfirm={submitTagRename}
         onClose={() => setTagRenameTarget(null)}
