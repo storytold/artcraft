@@ -98,24 +98,24 @@ export function LibraryFoldersNav({
           <SidebarMenuItem>
             <SidebarMenuButton
               asChild
-              isActive={onFolders && !activeFolderId}
-              tooltip="Folders"
-            >
-              <Link to="/library/folders" onClick={onNavClick}>
-                <FontAwesomeIcon icon={faFolder} />
-                <span>Folders</span>
-              </Link>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-          <SidebarMenuItem>
-            <SidebarMenuButton
-              asChild
               isActive={onFolderless}
               tooltip="Unfoldered"
             >
               <Link to="/library/folderless" onClick={onNavClick}>
                 <FontAwesomeIcon icon={faFolderOpen} />
                 <span>Unfoldered</span>
+              </Link>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              asChild
+              isActive={onFolders && !activeFolderId}
+              tooltip="Folders"
+            >
+              <Link to="/library/folders" onClick={onNavClick}>
+                <FontAwesomeIcon icon={faFolder} />
+                <span>Folders</span>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
