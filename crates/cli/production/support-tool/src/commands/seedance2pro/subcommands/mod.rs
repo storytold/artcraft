@@ -1,3 +1,4 @@
+pub mod audit_credits;
 pub mod audit_orders;
 pub mod audit_payments;
 pub mod failed_job_histogram;
