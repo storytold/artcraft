@@ -13,6 +13,8 @@ export type {
   ListMediaFilesQuery,
   ListUserMediaFilesResult,
   ListFeaturedMediaFilesResult,
+  ListUserSceneProjectsResult,
+  SceneProjectListItem,
 } from "./lib/adapter";
 
 // Store

@@ -52,6 +52,8 @@ const DEFAULT_DURATION_MS: Record<GenerationMediaClass, number> = {
   video: 900000,
   audio: 120000,
   dimensional: 120000,
+  mesh: 120000,
+  splat: 120000,
 };
 
 // Cache per-task durations

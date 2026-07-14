@@ -234,7 +234,7 @@ export class MediaFilesApi extends ApiManager {
       success: boolean;
       results: MediaFile[];
       pagination?: PaginationInfinite;
-    }>({ endpoint, query })
+    }>({ endpoint, query: { ...query } })
       .then((response) => ({
         success: response.success,
         data: response.results ?? [],
@@ -257,7 +257,7 @@ export class MediaFilesApi extends ApiManager {
       success: boolean;
       results: MediaFile[];
       pagination?: PaginationInfinite;
-    }>({ endpoint, query })
+    }>({ endpoint, query: { ...query } })
       .then((response) => ({
         success: response.success,
         data: response.results ?? [],
