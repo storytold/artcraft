@@ -28,6 +28,8 @@ interface MediaCardProps {
 const classIcons: Record<string, typeof IconPhoto> = {
   video: IconVideo,
   dimensional: IconCube,
+  mesh: IconCube,
+  splat: IconCube,
 };
 
 function formatDuration(ms: number): string {
@@ -118,7 +120,9 @@ export function MediaCard({
         {/* Top-left: media class + upload indicator */}
         <div className="absolute top-1.5 left-1.5 z-10 flex items-center gap-1 flex-wrap">
           <span className="px-2 py-1 rounded-md bg-black/40 text-[10px] font-medium text-white backdrop-blur-sm uppercase">
-            {mediaClass === "dimensional" ? "3D" : mediaClass || "Unknown"}
+            {mediaClass === "dimensional" || mediaClass === "mesh" || mediaClass === "splat"
+              ? "3D"
+              : mediaClass || "Unknown"}
           </span>
           {isUserUpload && (
             <span

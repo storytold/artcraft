@@ -6,6 +6,7 @@ import {
 } from "@storyteller/api";
 import { getMediaThumbnail, THUMBNAIL_SIZES } from "@storyteller/common";
 import type { GalleryItem } from "./types";
+import { is3DMediaClass } from "./types";
 
 const PAGE_SIZE = 40;
 
@@ -19,7 +20,10 @@ const getLabel = (item: any) => {
     case "audio":
       return "Audio Generation";
     case "dimensional":
+    case "mesh":
       return "3D Mesh";
+    case "splat":
+      return "3D World";
     default:
       return "Generation";
   }
@@ -69,7 +73,7 @@ export function useGalleryData(options: {
     const thumbnail =
       item.media_class === "audio"
         ? null
-        : item.media_class === "dimensional"
+        : is3DMediaClass(item.media_class)
           ? get3DCoverThumbnail(item)
           : getMediaThumbnail(item.media_links, item.media_class, {
               size: THUMBNAIL_SIZES.LARGE,
@@ -117,11 +121,11 @@ export function useGalleryData(options: {
                 item.media_type !== FilterMediaType.SCENE_JSON &&
                 !(excludeUploads && item.origin_category === "upload") &&
                 // Split 3D history by model so the object and world pages don't
-                // show each other's generations. Non-dimensional items and items
+                // show each other's generations. Non-3D items and items
                 // without a known model are left untouched.
                 !(
                   modelIdSet &&
-                  item.media_class === "dimensional" &&
+                  is3DMediaClass(item.media_class) &&
                   item.maybe_model_type &&
                   !modelIdSet.has(item.maybe_model_type)
                 ),

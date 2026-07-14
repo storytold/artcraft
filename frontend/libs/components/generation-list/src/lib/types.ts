@@ -5,7 +5,10 @@ export type GenerationMediaClass =
   | "image"
   | "video"
   | "audio"
-  | "dimensional";
+  // Deprecated pre-split 3D class; rows persist until the backfill lands.
+  | "dimensional"
+  | "mesh"
+  | "splat";
 
 // The backend used to file all 3D media under the (now deprecated) coarse
 // "dimensional" class; new records are written as "mesh" (3D models) or
@@ -26,7 +29,10 @@ export function batchNoun(mediaClass: GenerationMediaClass): string {
     case "audio":
       return "audio clips";
     case "dimensional":
+    case "mesh":
       return "3D models";
+    case "splat":
+      return "3D worlds";
     default:
       return "images";
   }

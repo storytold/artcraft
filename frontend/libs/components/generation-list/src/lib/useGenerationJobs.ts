@@ -14,6 +14,7 @@ import type {
   GenerationMediaClass,
   InProgressJob,
 } from "./types";
+import { is3DMediaClass } from "./types";
 
 // Maps JobsApi's recent-jobs stream into the canonical feed shapes
 // (InProgressJob / FailedJob / newly-completed GalleryItem). HTTP-based, so
@@ -239,7 +240,7 @@ function jobToGalleryItem(
   const thumbnail =
     mediaClass === "audio"
       ? null
-      : mediaClass === "dimensional"
+      : is3DMediaClass(mediaClass)
         ? get3DCoverThumbnail(result)
         : getMediaThumbnail(result.media_links, mediaClass, {
             size: THUMBNAIL_SIZES.LARGE,
@@ -282,7 +283,7 @@ async function expandBatchItems(
         const thumbnail =
           item.mediaClass === "audio"
             ? null
-            : item.mediaClass === "dimensional"
+            : is3DMediaClass(item.mediaClass)
               ? get3DCoverThumbnail(file)
               : getMediaThumbnail(file.media_links, item.mediaClass, {
                   size: THUMBNAIL_SIZES.LARGE,

@@ -46,7 +46,7 @@ export function UserCreations() {
       const resp = await mediaApi.ListUserMediaFiles(username, {
         page_index: pageIndex,
         page_size: PAGE_SIZE,
-        filter_media_classes: ["image", "video", "dimensional"],
+        filter_media_classes: ["image", "video", "mesh", "splat", "dimensional"],
       });
 
       if (cancelledRef.current) return;
@@ -84,7 +84,7 @@ export function UserCreations() {
         mediaApi.ListUserMediaFiles(username, {
           page_index: 0,
           page_size: PAGE_SIZE,
-          filter_media_classes: ["image", "video", "dimensional"],
+          filter_media_classes: ["image", "video", "mesh", "splat", "dimensional"],
         }),
       ]);
 

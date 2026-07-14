@@ -583,7 +583,9 @@ export function LightboxModal({
               <div className="flex h-full w-full items-center justify-center bg-black/30">
                 <span className="text-base-fg/60">Image not available</span>
               </div>
-            ) : mediaClass === "dimensional" ? (
+            ) : mediaClass === "dimensional" ||
+              mediaClass === "mesh" ||
+              mediaClass === "splat" ? (
               <div className="h-full w-full">
                 <Viewer3D
                   key={selectedImageUrl}
@@ -708,6 +710,8 @@ export function LightboxModal({
             {!mediaLoaded &&
               selectedImageUrl &&
               mediaClass !== "dimensional" &&
+              mediaClass !== "mesh" &&
+              mediaClass !== "splat" &&
               mediaClass !== "audio" && (
                 <div className="absolute inset-0 bg-ui-panel flex items-center justify-center">
                   <LoadingSpinner className="h-12 w-12 text-base-fg" />

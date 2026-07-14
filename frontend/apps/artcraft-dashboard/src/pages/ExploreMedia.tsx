@@ -26,7 +26,9 @@ const MEDIA_CLASS_OPTIONS = [
   { value: "", label: "All" },
   { value: "image", label: "Image" },
   { value: "video", label: "Video" },
-  { value: "dimensional", label: "3D" },
+  // "dimensional" is the deprecated pre-split class; rows persist until the
+  // backfill lands, so the 3D filter matches all three classes.
+  { value: "mesh,splat,dimensional", label: "3D" },
 ] as const;
 
 const PAGE_SIZE = 24;
@@ -74,7 +76,8 @@ export function ExploreMedia() {
         const resp = await api.ListMediaFiles({
           page_size: PAGE_SIZE,
           cursor,
-          filter_media_classes: filterMediaClasses || "image,video,dimensional",
+          filter_media_classes:
+            filterMediaClasses || "image,video,mesh,splat,dimensional",
           filter_media_type: filterMediaType || undefined,
           include_user_uploads: includeUserUploads || undefined,
         });

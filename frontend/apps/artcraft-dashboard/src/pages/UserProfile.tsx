@@ -174,7 +174,7 @@ export function UserProfile() {
           modApi.UserLookup(username),
           mediaApi.ListUserMediaFiles(username, {
             page_size: 24,
-            filter_media_classes: ["image", "video", "dimensional"],
+            filter_media_classes: ["image", "video", "mesh", "splat", "dimensional"],
           }),
         ]);
 

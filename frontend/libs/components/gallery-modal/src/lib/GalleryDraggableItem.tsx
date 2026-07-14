@@ -406,7 +406,11 @@ export const GalleryDraggableItem: React.FC<GalleryDraggableItemProps> = ({
       {/* Media class badge on hover — bottom-left */}
       {!disableTooltipAndBadge && item.mediaClass && (
         <div className="pointer-events-none absolute left-2 bottom-2 z-20 rounded-full bg-black/50 backdrop-blur-lg px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-white opacity-0 group-hover:opacity-100 transition-opacity duration-150">
-          {item.mediaClass === "dimensional" ? "3D" : item.mediaClass}
+          {item.mediaClass === "dimensional" ||
+          item.mediaClass === "mesh" ||
+          item.mediaClass === "splat"
+            ? "3D"
+            : item.mediaClass}
         </div>
       )}
       {/* Upload badge — bottom-right (always visible, even in select mode) */}
