@@ -71,8 +71,12 @@ export interface SceneProjectListItem {
   token: string;
   maybe_title?: string | null;
   updated_at: string;
-  /** Bucket path of the scene's cover image, when present. */
-  maybe_cover_image_public_bucket_path?: string | null;
+  /**
+   * Cover thumbnail: either a CDN bucket path (legacy media rows) or an
+   * absolute URL (project rows expose full cover links, not bucket paths).
+   * SceneCard handles both.
+   */
+  maybe_thumbnail?: string | null;
 }
 
 export interface ListUserSceneProjectsResult {

@@ -221,17 +221,22 @@ const listUserSceneProjectsViaApi = async (
       token: item.token,
       maybe_title: item.maybe_title,
       updated_at: item.updated_at,
-      maybe_cover_image_public_bucket_path:
-        item.cover_image?.maybe_cover_image_public_bucket_path,
+      // Legacy rows expose the cover as a bucket path.
+      maybe_thumbnail: item.cover_image?.maybe_cover_image_public_bucket_path,
     });
   }
   for (const item of projectResp.data ?? []) {
+    // Project rows expose the cover through `maybe_links` only (the
+    // deprecated bucket-path field is never populated). Prefer the sized
+    // thumbnail template; fall back to the raw cdn_url.
+    const coverLinks = item.cover_image?.maybe_links;
     byToken.set(item.token, {
       token: item.token,
       maybe_title: item.maybe_title,
       updated_at: item.updated_at,
-      maybe_cover_image_public_bucket_path:
-        item.cover_image?.maybe_cover_image_public_bucket_path,
+      maybe_thumbnail:
+        coverLinks?.thumbnail_template?.replace("{WIDTH}", "360") ??
+        coverLinks?.cdn_url,
     });
   }
 

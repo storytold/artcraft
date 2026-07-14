@@ -38,7 +38,7 @@ export const LoadUserScenes = ({ onSceneSelect }: LoadSceneProps) => {
             token: s.token,
             name: s.maybe_title ?? "Untitled",
             updated_at: dayjs(s.updated_at).format("MMM D, YYYY HH:mm:ss"),
-            thumbnail: s.maybe_cover_image_public_bucket_path ?? "",
+            thumbnail: s.maybe_thumbnail ?? "",
           })),
         );
         return;

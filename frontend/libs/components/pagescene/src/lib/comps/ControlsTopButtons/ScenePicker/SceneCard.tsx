@@ -29,10 +29,15 @@ export const SceneCard: React.FC<SceneCardProps> = ({
     onSceneSelect(s);
   };
 
-  const imageThumbnailUrl =
-    scene.thumbnail && editor
-      ? editor.adapter.getCdnUrl(scene.thumbnail, 360, 20)
-      : undefined;
+  // `thumbnail` is either a CDN bucket path (legacy media rows) or an
+  // absolute URL (the project list endpoints return full cover links).
+  const imageThumbnailUrl = !scene.thumbnail
+    ? undefined
+    : /^https?:\/\//.test(scene.thumbnail)
+      ? scene.thumbnail
+      : editor
+        ? editor.adapter.getCdnUrl(scene.thumbnail, 360, 20)
+        : undefined;
   const tempThumbnail = "/resources/placeholders/scene_placeholder.png";
 
   return (
