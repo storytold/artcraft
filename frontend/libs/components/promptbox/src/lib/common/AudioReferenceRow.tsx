@@ -1,6 +1,7 @@
 import { useCallback, useRef, useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
+  faFolderOpen,
   faImage,
   faMusic,
   faPlay,
@@ -19,6 +20,8 @@ export interface AudioReferenceRowProps {
   maxAudioCount: number;
   maxAudioRefDuration: number;
   uploadAudio?: UploadMediaFn;
+  // Opens the caller's audio library picker (adds a "From library" button).
+  onPickAudioFromLibrary?: () => void;
   // Whether the audio reference is required (remix/sample source).
   audioRequired?: boolean;
   // Optional single-image reference section (Seed Audio).
@@ -39,6 +42,7 @@ export function AudioReferenceRow({
   maxAudioCount,
   maxAudioRefDuration,
   uploadAudio,
+  onPickAudioFromLibrary,
   audioRequired = false,
   imageSupported = false,
   referenceImages = [],
@@ -197,15 +201,28 @@ export function AudioReferenceRow({
         ))}
 
         {referenceAudios.length < maxAudioCount && (
-          <button
-            type="button"
-            onClick={() => audioInputRef.current?.click()}
-            disabled={isUploadingAudio}
-            className="flex h-9 items-center gap-1.5 rounded-lg border border-dashed border-ui-controls-border bg-ui-controls/50 px-3 text-sm text-base-fg/70 transition-colors hover:bg-ui-controls hover:text-base-fg disabled:cursor-wait disabled:opacity-60"
-          >
-            <FontAwesomeIcon icon={faPlus} className="h-3 w-3" />
-            {isUploadingAudio ? "Uploading…" : "Add audio"}
-          </button>
+          <>
+            <button
+              type="button"
+              onClick={() => audioInputRef.current?.click()}
+              disabled={isUploadingAudio}
+              className="flex h-9 items-center gap-1.5 rounded-lg border border-dashed border-ui-controls-border bg-ui-controls/50 px-3 text-sm text-base-fg/70 transition-colors hover:bg-ui-controls hover:text-base-fg disabled:cursor-wait disabled:opacity-60"
+            >
+              <FontAwesomeIcon icon={faPlus} className="h-3 w-3" />
+              {isUploadingAudio ? "Uploading…" : "Add audio"}
+            </button>
+            {onPickAudioFromLibrary && (
+              <button
+                type="button"
+                onClick={onPickAudioFromLibrary}
+                disabled={isUploadingAudio}
+                className="flex h-9 items-center gap-1.5 rounded-lg border border-dashed border-ui-controls-border bg-ui-controls/50 px-3 text-sm text-base-fg/70 transition-colors hover:bg-ui-controls hover:text-base-fg disabled:cursor-wait disabled:opacity-60"
+              >
+                <FontAwesomeIcon icon={faFolderOpen} className="h-3 w-3" />
+                From library
+              </button>
+            )}
+          </>
         )}
 
         {imageSupported && (

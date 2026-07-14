@@ -50,22 +50,19 @@
       "path": "../slider-v2/tsconfig.lib.json"
     },
     {
-      "path": "../../common/tsconfig.lib.json"
-    },
-    {
-      "path": "../../api/tsconfig.lib.json"
+      "path": "../generation-list/tsconfig.lib.json"
     },
     {
       "path": "../close-button/tsconfig.lib.json"
     },
     {
-      "path": "../button/tsconfig.lib.json"
-    },
-    {
       "path": "../lightbox-modal/tsconfig.lib.json"
     },
     {
-      "path": "../modal/tsconfig.lib.json"
+      "path": "../../common/tsconfig.lib.json"
+    },
+    {
+      "path": "../../api/tsconfig.lib.json"
     },
     {
       "path": "../toaster/tsconfig.lib.json"
@@ -81,6 +78,12 @@
     },
     {
       "path": "../loading-spinner/tsconfig.lib.json"
+    },
+    {
+      "path": "../button/tsconfig.lib.json"
+    },
+    {
+      "path": "../modal/tsconfig.lib.json"
     }
   ]
 }

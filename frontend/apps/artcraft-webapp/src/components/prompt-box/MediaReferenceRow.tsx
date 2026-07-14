@@ -32,6 +32,7 @@ interface MediaReferenceRowProps {
   onReferenceAudiosChange: (audios: RefAudio[]) => void;
   maxAudioCount: number;
   maxAudioRefDuration: number;
+  onPickAudioFromLibrary?: () => void;
   className?: string;
 }
 
@@ -47,6 +48,7 @@ export const MediaReferenceRow = ({
   onReferenceAudiosChange,
   maxAudioCount,
   maxAudioRefDuration,
+  onPickAudioFromLibrary,
   className,
 }: MediaReferenceRowProps) => {
   const videoInputRef = useRef<HTMLInputElement>(null);
@@ -303,7 +305,11 @@ export const MediaReferenceRow = ({
                 </div>
               )}
               {canAddAudio && (
-                <AddButton onUpload={() => audioInputRef.current?.click()} />
+                <AddButton
+                  onUpload={() => audioInputRef.current?.click()}
+                  onPickFromLibrary={onPickAudioFromLibrary}
+                  title="Add audio"
+                />
               )}
             </div>
           </div>

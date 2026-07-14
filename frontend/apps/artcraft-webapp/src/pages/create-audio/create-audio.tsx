@@ -31,6 +31,8 @@ import {
   SettingsDrawer,
   DrawerOptionList,
   DrawerSection,
+  getAudioDurationFromUrl,
+  type RefAudio,
   type RefImage,
 } from "../../components/prompt-box";
 import {
@@ -190,12 +192,20 @@ export default function CreateAudio() {
   const setReferenceImages = useCreateAudioStore((s) => s.setReferenceImages);
   const [isImagePickerOpen, setIsImagePickerOpen] = useState(false);
   const [pickerSelectedIds, setPickerSelectedIds] = useState<string[]>([]);
+  const [isAudioPickerOpen, setIsAudioPickerOpen] = useState(false);
+  const [audioPickerSelectedIds, setAudioPickerSelectedIds] = useState<
+    string[]
+  >([]);
   const [isBeatDrawerOpen, setIsBeatDrawerOpen] = useState(false);
   const [isTuningDrawerOpen, setIsTuningDrawerOpen] = useState(false);
 
   useEffect(() => {
     if (isImagePickerOpen) setPickerSelectedIds([]);
   }, [isImagePickerOpen]);
+
+  useEffect(() => {
+    if (isAudioPickerOpen) setAudioPickerSelectedIds([]);
+  }, [isAudioPickerOpen]);
 
   const handlePickerSelect = useCallback(
     (id: string) => {
@@ -293,6 +303,62 @@ export default function CreateAudio() {
       setReferenceImages(images);
     },
     [referenceAudios, setReferenceAudios, setReferenceImages],
+  );
+
+  const audioPickerMax = Math.max(1, maxAudioRefs - referenceAudios.length);
+
+  const handleAudioPickerSelect = useCallback(
+    (id: string) => {
+      setAudioPickerSelectedIds((prev) => {
+        if (prev.includes(id)) return prev.filter((x) => x !== id);
+        if (prev.length >= audioPickerMax) {
+          return audioPickerMax === 1 ? [id] : prev;
+        }
+        return [...prev, id];
+      });
+    },
+    [audioPickerMax],
+  );
+
+  const handleLibraryAudioSelect = useCallback(
+    async (items: GalleryItem[]) => {
+      setIsAudioPickerOpen(false);
+      const availableSlots = Math.max(0, maxAudioRefs - referenceAudios.length);
+      const picked = items.slice(0, availableSlots);
+
+      const added: RefAudio[] = [];
+      let total = referenceAudios.reduce((sum, a) => sum + a.duration, 0);
+      for (const item of picked) {
+        const url = item.fullImage;
+        if (!url) continue;
+        const duration =
+          item.durationMillis != null
+            ? Math.round(item.durationMillis / 1000)
+            : await getAudioDurationFromUrl(url);
+        if (duration <= 0) {
+          toast.error("Could not read audio file");
+          continue;
+        }
+        if (total + duration > AUDIO_REF_MAX_DURATION_SECONDS) {
+          toast.error(
+            `Total audio duration cannot exceed ${AUDIO_REF_MAX_DURATION_SECONDS}s`,
+          );
+          continue;
+        }
+        total += duration;
+        added.push({
+          id: Math.random().toString(36).substring(7),
+          url,
+          file: new File([], "library-audio"),
+          mediaToken: item.id,
+          duration,
+        });
+      }
+      if (added.length > 0) {
+        handleReferenceAudiosChange([...referenceAudios, ...added]);
+      }
+    },
+    [referenceAudios, maxAudioRefs, handleReferenceAudiosChange],
   );
 
   const handleLibraryImageSelect = useCallback(
@@ -493,6 +559,7 @@ export default function CreateAudio() {
       onReferenceAudiosChange={handleReferenceAudiosChange}
       maxAudioCount={maxAudioRefs}
       maxAudioRefDuration={AUDIO_REF_MAX_DURATION_SECONDS}
+      onPickAudioFromLibrary={() => setIsAudioPickerOpen(true)}
     />
   ) : undefined;
 
@@ -796,6 +863,17 @@ export default function CreateAudio() {
             maxSelections={maxImageRefs}
             onUseSelected={handleLibraryImageSelect}
             forceFilter="image"
+            hideFilter
+          />
+          <GalleryModal
+            mode="select"
+            isOpen={isAudioPickerOpen}
+            onClose={() => setIsAudioPickerOpen(false)}
+            selectedItemIds={audioPickerSelectedIds}
+            onSelectItem={handleAudioPickerSelect}
+            maxSelections={audioPickerMax}
+            onUseSelected={handleLibraryAudioSelect}
+            forceFilter="audio"
             hideFilter
           />
           <Lightbox

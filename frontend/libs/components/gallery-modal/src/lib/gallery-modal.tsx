@@ -58,6 +58,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faBorderAll,
   faImage,
+  faMusic,
   faVideo,
   faCube,
   faGlobe,
@@ -74,6 +75,10 @@ import {
   faPencil,
   faStar,
 } from "@fortawesome/pro-solid-svg-icons";
+import {
+  useMediaPromptTokens,
+  usePrompts,
+} from "@storyteller/ui-generation-list";
 import { SliderV2 } from "@storyteller/ui-sliderv2";
 import { Tooltip } from "@storyteller/ui-tooltip";
 import {
@@ -240,6 +245,10 @@ export interface GalleryItem {
   batchImageToken?: string;
   mediaTokens?: string[];
   imageUrls?: string[];
+  /** Prompt token, when the list endpoint returns one (used by audio tiles). */
+  promptToken?: string;
+  /** Duration for audio/video items, when known. */
+  durationMillis?: number;
 }
 
 interface GroupedItems {
@@ -307,6 +316,7 @@ const SIDEBAR_FILTERS = [
   { id: "all", label: "All Assets", icon: faBorderAll },
   { id: "image", label: "Image", icon: faImage },
   { id: "video", label: "Video", icon: faVideo },
+  { id: "audio", label: "Audio", icon: faMusic },
   { id: "mesh", label: "Mesh", icon: faCube },
   { id: "splat", label: "Splat", icon: faGlobe },
   { id: "uploaded", label: "Uploaded", icon: faUpload },
@@ -320,6 +330,8 @@ const getFilterMediaClass = (filter: string) => {
       return [FilterMediaClasses.IMAGE];
     case "video":
       return [FilterMediaClasses.VIDEO];
+    case "audio":
+      return [FilterMediaClasses.AUDIO];
     case "uploaded":
       return [
         FilterMediaClasses.IMAGE,
@@ -347,6 +359,8 @@ const getLabel = (item: any) => {
       return "Image Generation";
     case "video":
       return "Video Generation";
+    case "audio":
+      return "Audio Generation";
     case "dimensional":
     case "mesh":
       return "3D Object Generation";
@@ -741,6 +755,52 @@ export const GalleryModal = React.memo(
       [activeFolderItems, groupItemsByDate],
     );
 
+    // Audio tiles have no thumbnail, so they show their prompt text instead.
+    // Resolve it via the shared batched caches (media token → prompt token →
+    // prompt text) for audio items only; image/video walls skip the lookups.
+    const audioMediaTokensNeedingPrompt = useMemo(() => {
+      const tokens: string[] = [];
+      const collect = (item: GalleryItem) => {
+        if (item.mediaClass === "audio" && !item.promptToken) {
+          tokens.push(item.id);
+        }
+      };
+      allItems.forEach(collect);
+      activeFolderItems.forEach(collect);
+      return tokens;
+    }, [allItems, activeFolderItems]);
+    const resolvedAudioPromptTokens = useMediaPromptTokens(
+      audioMediaTokensNeedingPrompt,
+    );
+
+    const audioPromptTokens = useMemo(() => {
+      const tokens: string[] = [];
+      const collect = (item: GalleryItem) => {
+        if (item.mediaClass !== "audio") return;
+        const token =
+          item.promptToken || resolvedAudioPromptTokens.get(item.id);
+        if (token) tokens.push(token);
+      };
+      allItems.forEach(collect);
+      activeFolderItems.forEach(collect);
+      return tokens;
+    }, [allItems, activeFolderItems, resolvedAudioPromptTokens]);
+    const audioPromptsMap = usePrompts(audioPromptTokens);
+
+    const audioPromptTextFor = useCallback(
+      (item: GalleryItem): string | undefined => {
+        if (item.mediaClass !== "audio") return undefined;
+        const token =
+          item.promptToken || resolvedAudioPromptTokens.get(item.id);
+        return (
+          (token
+            ? audioPromptsMap.get(token)?.maybe_positive_prompt
+            : undefined) || undefined
+        );
+      },
+      [resolvedAudioPromptTokens, audioPromptsMap],
+    );
+
     const handleImageError = useCallback((url: string) => {
       console.error(`Failed to load gallery modal image: ${url}`);
       failedImageUrls.current.add(url);
@@ -815,7 +875,9 @@ export const GalleryModal = React.memo(
         id: item.token,
         label: getLabel(item),
         thumbnail:
-          item.media_class === "video"
+          item.media_class === "audio"
+            ? null
+            : item.media_class === "video"
             ? item.media_links.maybe_video_previews?.animated
             : is3DClass(item.media_class)
               ? // Prefer the modern CDN link; fall back to the deprecated
@@ -842,6 +904,8 @@ export const GalleryModal = React.memo(
             : item.media_class === "splat"
               ? "splat"
               : undefined,
+        promptToken: item.maybe_prompt_token ?? undefined,
+        durationMillis: item.maybe_duration_millis ?? undefined,
       }),
       [],
     );
@@ -854,13 +918,15 @@ export const GalleryModal = React.memo(
         id: item.token,
         label: getLabel(item),
         thumbnail:
-          is3DClass(item.media_class)
-            ? (item.cover_image?.maybe_links?.cdn_url ??
-              item.cover_image?.maybe_cover_image_public_bucket_url ??
-              null)
-            : getMediaThumbnail(item.media_links, item.media_class, {
-                size: THUMBNAIL_SIZES.MEDIUM,
-              }),
+          item.media_class === "audio"
+            ? null
+            : is3DClass(item.media_class)
+              ? (item.cover_image?.maybe_links?.cdn_url ??
+                item.cover_image?.maybe_cover_image_public_bucket_url ??
+                null)
+              : getMediaThumbnail(item.media_links, item.media_class, {
+                  size: THUMBNAIL_SIZES.MEDIUM,
+                }),
         thumbnailUrlTemplate:
           item.media_links?.maybe_thumbnail_template ?? undefined,
         fullImage: item.media_links?.cdn_url ?? null,
@@ -868,6 +934,8 @@ export const GalleryModal = React.memo(
         mediaClass: item.media_class || "image",
         isUpload: !!item.is_user_upload,
         batchImageToken: item.maybe_batch_token ?? undefined,
+        promptToken: item.maybe_prompt_token ?? undefined,
+        durationMillis: item.maybe_duration_millis ?? undefined,
       }),
       [],
     );
@@ -949,7 +1017,8 @@ export const GalleryModal = React.memo(
               currentFilter === "uploaded" ||
               currentFilter === "all" ||
               currentFilter === "image" ||
-              currentFilter === "video",
+              currentFilter === "video" ||
+              currentFilter === "audio",
             user_uploads_only: currentFilter === "uploaded",
             page_index: reset ? 0 : pageIndexRef.current,
             page_size: PAGE_SIZE,
@@ -2088,11 +2157,9 @@ export const GalleryModal = React.memo(
         if (activeFilter === "splat") return item.mediaClass === "splat";
         if (activeFilter === "image") return item.mediaClass === "image";
         if (activeFilter === "video") return item.mediaClass === "video";
+        if (activeFilter === "audio") return item.mediaClass === "audio";
         if (activeFilter === "all") {
-          return (
-            item.mediaClass !== "audio" &&
-            (item as any).mediaType !== "scene_json"
-          );
+          return (item as any).mediaType !== "scene_json";
         }
         return true;
       },
@@ -2765,6 +2832,7 @@ export const GalleryModal = React.memo(
                                     item={item}
                                     mode={mode}
                                     activeFilter={activeFilter}
+                                    audioPromptText={audioPromptTextFor(item)}
                                     selected={selectedItemIds.includes(item.id)}
                                     onClick={() => handleItemClick(item)}
                                     onImageError={(e) => {
@@ -2909,6 +2977,9 @@ export const GalleryModal = React.memo(
                                       item={item}
                                       mode={mode}
                                       activeFilter={activeFilter}
+                                      audioPromptText={audioPromptTextFor(
+                                        item,
+                                      )}
                                       selected={selectedItemIds.includes(
                                         item.id,
                                       )}
@@ -3009,11 +3080,13 @@ export const GalleryModal = React.memo(
                       const placeholderIcon =
                         si.mediaClass === "video"
                           ? faVideo
-                          : si.mediaClass === "dimensional" ||
-                              si.mediaClass === "mesh" ||
-                              si.mediaClass === "splat"
-                            ? faCube
-                            : faImage;
+                          : si.mediaClass === "audio"
+                            ? faMusic
+                            : si.mediaClass === "dimensional" ||
+                                si.mediaClass === "mesh" ||
+                                si.mediaClass === "splat"
+                              ? faCube
+                              : faImage;
                       return (
                         <BulkThumb
                           key={si.id}

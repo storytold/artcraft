@@ -67,6 +67,15 @@ const getVideoDuration = (file: File): Promise<number> => {
   return getVideoDurationFromSrc(src).finally(() => URL.revokeObjectURL(src));
 };
 
+const getAudioDurationFromSrc = (src: string): Promise<number> =>
+  new Promise((resolve) => {
+    const audio = document.createElement("audio");
+    audio.preload = "metadata";
+    audio.onloadedmetadata = () => resolve(Math.round(audio.duration));
+    audio.onerror = () => resolve(0);
+    audio.src = src;
+  });
+
 const getAudioDuration = (file: File): Promise<number> =>
   new Promise((resolve) => {
     const audio = document.createElement("audio");
@@ -127,9 +136,9 @@ export function useDeckMedia<
   );
 
   const [isGalleryModalOpen, setIsGalleryModalOpen] = useState(false);
-  const [galleryTarget, setGalleryTarget] = useState<"start" | "end" | "video">(
-    "start",
-  );
+  const [galleryTarget, setGalleryTarget] = useState<
+    "start" | "end" | "video" | "audio"
+  >("start");
   const [selectedGalleryImages, setSelectedGalleryImages] = useState<string[]>(
     [],
   );
@@ -191,7 +200,7 @@ export function useDeckMedia<
   const openAudioUpload = () => audioFileInputRef.current?.click();
   const openAnyUpload = () => anyFileInputRef.current?.click();
 
-  const openGallery = (target: "start" | "end" | "video") => {
+  const openGallery = (target: "start" | "end" | "video" | "audio") => {
     setGalleryTarget(target);
     setIsGalleryModalOpen(true);
   };
@@ -451,9 +460,11 @@ export function useDeckMedia<
       const maxSelections =
         galleryTarget === "video"
           ? Math.max(1, maxVideos - referenceVideos.length)
-          : galleryTarget === "end"
-            ? 1
-            : Math.max(1, maxImages);
+          : galleryTarget === "audio"
+            ? Math.max(1, maxAudios - referenceAudios.length)
+            : galleryTarget === "end"
+              ? 1
+              : Math.max(1, maxImages);
       if (prev.length >= maxSelections) {
         return maxSelections === 1 ? [id] : prev;
       }
@@ -517,6 +528,70 @@ export function useDeckMedia<
         }
         if (newVideos.length > 0) {
           setReferenceVideos?.([...baseVideos, ...newVideos]);
+        }
+      } finally {
+        setIsProcessingGallery(false);
+      }
+      handleGalleryClose();
+      return;
+    }
+    if (galleryTarget === "audio") {
+      const baseAudios = [...referenceAudios];
+      const availableSlots = Math.max(0, maxAudios - baseAudios.length);
+      if (availableSlots <= 0) {
+        toast.error(`Max ${maxAudios} audio tracks / ${maxAudioTotalSec}s total`, {
+          id: "audio-ref-limit",
+        });
+        handleGalleryClose();
+        return;
+      }
+      const itemsToProcess = selectedItems
+        .slice(0, availableSlots)
+        .filter((item): item is GalleryItem & { fullImage: string } =>
+          Boolean(item.fullImage),
+        );
+
+      setIsProcessingGallery(true);
+      try {
+        // Use the duration the list endpoint already knows; probe the file's
+        // metadata only when it doesn't.
+        const durations = await Promise.all(
+          itemsToProcess.map((item) =>
+            item.durationMillis != null
+              ? Promise.resolve(Math.round(item.durationMillis / 1000))
+              : getAudioDurationFromSrc(item.fullImage),
+          ),
+        );
+
+        const newAudios: TAudio[] = [];
+        let currentTotal = baseAudios.reduce((sum, a) => sum + a.duration, 0);
+        let exceeded = false;
+        for (let i = 0; i < itemsToProcess.length; i++) {
+          const item = itemsToProcess[i]!;
+          const duration = durations[i]!;
+          if (currentTotal + duration > maxAudioTotalSec) {
+            exceeded = true;
+            break;
+          }
+          currentTotal += duration;
+          newAudios.push(
+            asAudio({
+              id: randomId(),
+              url: item.fullImage,
+              file: new File([], "library-audio"),
+              mediaToken: item.id,
+              duration,
+            }),
+          );
+        }
+        if (exceeded) {
+          toast.error(
+            `Total audio duration cannot exceed ${maxAudioTotalSec}s`,
+            { id: "audio-ref-limit" },
+          );
+        }
+        if (newAudios.length > 0) {
+          setReferenceAudios?.([...baseAudios, ...newAudios]);
         }
       } finally {
         setIsProcessingGallery(false);
@@ -609,7 +684,13 @@ export function useDeckMedia<
 
   const galleryModal: ReactNode = ownGalleryModal ? (
     <GalleryModal
-      key={galleryTarget === "video" ? "video" : "image"}
+      key={
+        galleryTarget === "video"
+          ? "video"
+          : galleryTarget === "audio"
+            ? "audio"
+            : "image"
+      }
       isOpen={!!isGalleryModalOpen}
       onClose={handleGalleryClose}
       mode="select"
@@ -620,12 +701,20 @@ export function useDeckMedia<
           ? 1
           : galleryTarget === "video"
             ? Math.max(1, maxVideos - referenceVideos.length)
-            : Math.max(1, availableImageSlots)
+            : galleryTarget === "audio"
+              ? Math.max(1, maxAudios - referenceAudios.length)
+              : Math.max(1, availableImageSlots)
       }
       onUseSelected={handleGalleryImages}
       onDownloadClicked={downloadFileFromUrl}
       useSelectedLoading={isProcessingGallery}
-      forceFilter={galleryTarget === "video" ? "video" : "image"}
+      forceFilter={
+        galleryTarget === "video"
+          ? "video"
+          : galleryTarget === "audio"
+            ? "audio"
+            : "image"
+      }
     />
   ) : null;
 

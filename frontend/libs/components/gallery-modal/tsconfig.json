@@ -9,22 +9,19 @@
       "path": "../slider-v2"
     },
     {
-      "path": "../../common"
-    },
-    {
-      "path": "../../api"
+      "path": "../generation-list"
     },
     {
       "path": "../close-button"
     },
     {
-      "path": "../button"
-    },
-    {
       "path": "../lightbox-modal"
     },
     {
-      "path": "../modal"
+      "path": "../../common"
+    },
+    {
+      "path": "../../api"
     },
     {
       "path": "../toaster"
@@ -40,6 +37,12 @@
     },
     {
       "path": "../loading-spinner"
+    },
+    {
+      "path": "../button"
+    },
+    {
+      "path": "../modal"
     },
     {
       "path": "./tsconfig.lib.json"

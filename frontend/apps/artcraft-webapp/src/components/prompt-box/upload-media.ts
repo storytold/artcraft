@@ -83,6 +83,16 @@ export const getVideoDurationFromUrl = (url: string): Promise<number> =>
     video.src = url;
   });
 
+// Resolves 0 when metadata can't be loaded.
+export const getAudioDurationFromUrl = (url: string): Promise<number> =>
+  new Promise((resolve) => {
+    const audio = document.createElement("audio");
+    audio.preload = "metadata";
+    audio.onloadedmetadata = () => resolve(Math.round(audio.duration));
+    audio.onerror = () => resolve(0);
+    audio.src = url;
+  });
+
 export const getVideoDuration = (file: File): Promise<number> => {
   const url = URL.createObjectURL(file);
   return getVideoDurationFromUrl(url).finally(() => URL.revokeObjectURL(url));

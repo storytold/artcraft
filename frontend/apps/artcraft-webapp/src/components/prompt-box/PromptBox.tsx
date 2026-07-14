@@ -70,6 +70,7 @@ interface PromptBoxProps {
   onPickFromLibrary?: () => void;
   onPickEndFrameFromLibrary?: () => void;
   onPickVideoFromLibrary?: () => void;
+  onPickAudioFromLibrary?: () => void;
   // Clear all references (images, end frame, videos, audios)
   onClearAllRefs?: () => void;
 
@@ -129,6 +130,7 @@ export const PromptBox = forwardRef<HTMLDivElement, PromptBoxProps>(
       onPickFromLibrary,
       onPickEndFrameFromLibrary,
       onPickVideoFromLibrary,
+      onPickAudioFromLibrary,
       onClearAllRefs,
       videoRefsSupported,
       referenceVideos = [],
@@ -320,6 +322,14 @@ export const PromptBox = forwardRef<HTMLDivElement, PromptBoxProps>(
         group: "audio",
         onSelect: deck.openAudioUpload,
       });
+      if (onPickAudioFromLibrary) {
+        deckAddActions.push({
+          key: "library-audio",
+          label: "From library",
+          group: "audio",
+          onSelect: onPickAudioFromLibrary,
+        });
+      }
     }
 
     const handleRemoveDeckItem = (id: string) => {

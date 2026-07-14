@@ -595,12 +595,20 @@ export const PromptBoxVideo = ({
     );
   }
   if (referenceAudios.length < maxAudioCount && !deck.uploadingAudio) {
-    refDeckAddActions.push({
-      key: "upload-audio",
-      label: "Upload",
-      group: "audio",
-      onSelect: deck.openAudioUpload,
-    });
+    refDeckAddActions.push(
+      {
+        key: "upload-audio",
+        label: "Upload",
+        group: "audio",
+        onSelect: deck.openAudioUpload,
+      },
+      {
+        key: "library-audio",
+        label: "From library",
+        group: "audio",
+        onSelect: () => deck.openGallery("audio"),
+      },
+    );
   }
 
   const handleRemoveDeckItem = (id: string) => {
