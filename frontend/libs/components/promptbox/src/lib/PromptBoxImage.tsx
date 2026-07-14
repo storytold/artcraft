@@ -1,11 +1,10 @@
-import { useState, useRef, useEffect, ReactNode } from "react";
+import { useState, useRef, useEffect, useMemo, ReactNode } from "react";
 import { useSignals } from "@preact/signals-react/runtime";
 import { JobContextType, UploaderState } from "@storyteller/common";
 import { toast } from "@storyteller/ui-toaster";
 import { PopoverMenu, PopoverItem } from "@storyteller/ui-popover";
 import { Tooltip } from "@storyteller/ui-tooltip";
-import { Button, GenerateButton } from "@storyteller/ui-button";
-import { Modal } from "@storyteller/ui-modal";
+import { GenerateIconButton } from "@storyteller/ui-button";
 import { GenerateImage, GenerateImageRequest } from "@storyteller/tauri-api";
 import {
   faExpand,
@@ -14,6 +13,8 @@ import {
 } from "@fortawesome/pro-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { ImageModel } from "@storyteller/model-list";
+import { arrayMove } from "@dnd-kit/sortable";
+import type { UploadMediaFn } from "@storyteller/api";
 import {
   usePromptImageStore,
   RefImage,
@@ -24,13 +25,15 @@ import { PromptFullscreenModal, useFullscreenPrompt } from "./PromptFullscreenMo
 import { PromptFullscreenButton } from "./PromptFullscreenButton";
 import { gtagEvent } from "@storyteller/google-analytics";
 import { twMerge } from "tailwind-merge";
-import { ImagePromptRow } from "./ImagePromptRow";
 import { GenerationProvider } from "@storyteller/api-enums";
 import { AspectRatioPicker } from "./common/AspectRatioPicker";
 import { AspectRatioIcon } from "./common/AspectRatioIcon";
 import { GenerationCountPicker } from "./common/GenerationCountPicker";
 import { ResolutionPicker } from "./common/ResolutionPicker";
 import { QualityPicker } from "./common/QualityPicker";
+import { ReferenceDeck } from "./deck/ReferenceDeck";
+import { useDeckMedia } from "./deck/useDeckMedia";
+import { DeckAddAction, DeckItem } from "./deck/deckTypes";
 
 interface PromptBoxImageProps {
   useJobContext: () => JobContextType;
@@ -67,7 +70,6 @@ export const PromptBoxImage = ({
   selectedProvider,
   imageMediaId,
   url,
-  onImageRowVisibilityChange,
   credits,
   modelSelector,
 }: PromptBoxImageProps) => {
@@ -90,9 +92,6 @@ export const PromptBoxImage = ({
       setReferenceImages([referenceImage]);
     }
   }, [imageMediaId, url]);
-
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [content, setContent] = useState<ReactNode>(null);
 
   const prompt = usePromptImageStore((s) => s.prompt);
   const setPrompt = usePromptImageStore((s) => s.setPrompt);
@@ -118,14 +117,74 @@ export const PromptBoxImage = ({
   const referenceImages = usePromptImageStore((s) => s.referenceImages);
   const setReferenceImages = usePromptImageStore((s) => s.setReferenceImages);
   const enterToGenerate = useEnterToGenerateStore((s) => s.enabled);
-  const [uploadingImages, _setUploadingImages] = useState<
-    { id: string; file: File }[]
-  >([]);
-  const [showImagePrompts, setShowImagePrompts] = useState(false);
-  const isImageRowVisible =
-    showImagePrompts ||
-    referenceImages.length > 0 ||
-    uploadingImages.length > 0;
+
+  const maxImagePromptCount = Math.max(
+    1,
+    selectedModel?.maxImagePromptCount ?? 1,
+  );
+
+  const deck = useDeckMedia({
+    referenceImages,
+    setReferenceImages,
+    maxImages: maxImagePromptCount,
+    uploadImage: uploadImage as UploadMediaFn | undefined,
+    ownGalleryModal: true,
+  });
+
+  const deckItems: DeckItem[] = useMemo(
+    () => [
+      ...referenceImages.map((img, i) => ({
+        id: img.id,
+        kind: "image" as const,
+        url: img.url,
+        name: `Image ${i + 1}`,
+      })),
+      ...deck.uploadingImages.map((entry, i) => ({
+        id: entry.id,
+        kind: "image" as const,
+        url: entry.previewUrl,
+        name: `Image ${referenceImages.length + i + 1}`,
+        uploading: true,
+      })),
+    ],
+    [referenceImages, deck.uploadingImages],
+  );
+
+  const deckAddActions: DeckAddAction[] = [
+    {
+      key: "upload-image",
+      label: "Upload",
+      group: "image",
+      onSelect: deck.openImageUpload,
+    },
+    {
+      key: "library-image",
+      label: "Pick from library",
+      group: "image",
+      onSelect: () => deck.openGallery("start"),
+    },
+  ];
+
+  const renderReferenceDeck = (alwaysExpanded?: boolean) =>
+    selectedModel?.canUseImagePrompt ? (
+      <ReferenceDeck
+        items={deckItems}
+        canAdd={deckItems.length < maxImagePromptCount}
+        addActions={deckAddActions}
+        addMenuGroupHints={{
+          image: `${referenceImages.length}/${maxImagePromptCount}`,
+        }}
+        onAddClick={deck.openAnyUpload}
+        onRemove={(id) =>
+          setReferenceImages(referenceImages.filter((img) => img.id !== id))
+        }
+        onReorderImages={(from, to) =>
+          setReferenceImages(arrayMove(referenceImages, from, to))
+        }
+        onClearAll={() => setReferenceImages([])}
+        alwaysExpanded={alwaysExpanded}
+      />
+    ) : null;
 
   // New aspect ratio and resolution — stored globally so cost estimates can observe them
   const commonAspectRatio = usePromptImageStore((s) => s.commonAspectRatio);
@@ -137,9 +196,6 @@ export const PromptBoxImage = ({
   const commonQuality = usePromptImageStore((s) => s.commonQuality);
   const setCommonQuality = usePromptImageStore((s) => s.setCommonQuality);
 
-  useEffect(() => {
-    onImageRowVisibilityChange?.(isImageRowVisible);
-  }, [isImageRowVisible, onImageRowVisibilityChange]);
   const [aspectRatioList, setAspectRatioList] = useState<PopoverItem[]>([
     {
       label: "Wide",
@@ -362,88 +418,20 @@ export const PromptBoxImage = ({
 
   return (
     <>
-      <Modal
-        isOpen={isModalOpen}
-        onClose={() => {
-          setIsModalOpen(false);
-          setContent(null);
-        }}
-        className="max-w-4xl max-h-[80vh]"
-      >
-        {content}
-      </Modal>
+      {deck.fileInputs}
+      {deck.galleryModal}
 
       <div className="relative z-20 flex flex-col">
-        {isImageRowVisible && selectedModel?.canUseImagePrompt && (
-          <ImagePromptRow
-            visible={true}
-            maxImagePromptCount={Math.max(
-              1,
-              selectedModel?.maxImagePromptCount ?? 1,
-            )}
-            allowUpload={true}
-            referenceImages={referenceImages}
-            setReferenceImages={setReferenceImages}
-            onVisibilityChange={onImageRowVisibilityChange}
-            className=""
-            uploadImage={uploadImage as any}
-            onImageClick={(image) => {
-              setContent(
-                <img
-                  src={image.url}
-                  alt="Reference preview"
-                  className="w-full h-full object-contain"
-                />,
-              );
-              setIsModalOpen(true);
-            }}
-          />
-        )}
-
         <div
           className={twMerge(
             "glass relative w-full rounded-2xl p-4",
-            isImageRowVisible &&
-              selectedModel?.canUseImagePrompt &&
-              "rounded-t-none",
             isFocused
               ? "ring-1 ring-primary border-primary"
               : "ring-1 ring-transparent",
           )}
         >
           <div className="flex justify-center gap-2">
-            {selectedModel?.canUseImagePrompt && (
-              <Tooltip
-                content="Add Image"
-                position="top"
-                closeOnClick={true}
-                className={twMerge(isImageRowVisible && "hidden opacity-0")}
-              >
-                <Button
-                  variant="action"
-                  className={twMerge(
-                    "h-8 w-8 p-0 bg-transparent hover:bg-transparent group transition-all border-0 shadow-none",
-                    isImageRowVisible && "text-primary",
-                  )}
-                  onClick={() => setShowImagePrompts((prev) => !prev)}
-                >
-                  <svg
-                    width="24"
-                    height="20"
-                    viewBox="0 0 24 20"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="group-hover:opacity-100 opacity-80 transition-all"
-                  >
-                    <path
-                      opacity="1"
-                      d="M2.66667 2H16C16.3667 2 16.6667 2.3 16.6667 2.66667V6.1125C17.1 6.04167 17.5458 6 18 6C18.225 6 18.4458 6.00833 18.6667 6.02917V2.66667C18.6667 1.19583 17.4708 0 16 0H2.66667C1.19583 0 0 1.19583 0 2.66667V16C0 17.4708 1.19583 18.6667 2.66667 18.6667H11.5C11.0625 18.0583 10.7083 17.3875 10.4542 16.6667H2.66667C2.3 16.6667 2 16.3667 2 16V2.66667C2 2.3 2.3 2 2.66667 2ZM11.8625 7.49167C11.6833 7.1875 11.3542 7 11 7C10.6458 7 10.3167 7.1875 10.1375 7.49167L8.2 10.7833L7.48333 9.75833C7.29583 9.49167 6.99167 9.33333 6.6625 9.33333C6.33333 9.33333 6.02917 9.49167 5.84167 9.75833L3.50833 13.0917C3.29583 13.3958 3.26667 13.7958 3.44167 14.125C3.61667 14.4542 3.9625 14.6667 4.33333 14.6667H10.0292C10.0125 14.4458 10 14.225 10 14C10 11.7833 10.9 9.77917 12.3542 8.33333L11.8625 7.49583V7.49167ZM5.33333 6.66667C6.07083 6.66667 6.66667 6.07083 6.66667 5.33333C6.66667 4.59583 6.07083 4 5.33333 4C4.59583 4 4 4.59583 4 5.33333C4 6.07083 4.59583 6.66667 5.33333 6.66667ZM18 20C21.3125 20 24 17.3125 24 14C24 10.6875 21.3125 8 18 8C14.6875 8 12 10.6875 12 14C12 17.3125 14.6875 20 18 20ZM18.6667 11.3333V13.3333H20.6667C21.0333 13.3333 21.3333 13.6333 21.3333 14C21.3333 14.3667 21.0333 14.6667 20.6667 14.6667H18.6667V16.6667C18.6667 17.0333 18.3667 17.3333 18 17.3333C17.6333 17.3333 17.3333 17.0333 17.3333 16.6667V14.6667H15.3333C14.9667 14.6667 14.6667 14.3667 14.6667 14C14.6667 13.6333 14.9667 13.3333 15.3333 13.3333H17.3333V11.3333C17.3333 10.9667 17.6333 10.6667 18 10.6667C18.3667 10.6667 18.6667 10.9667 18.6667 11.3333Z"
-                      fill="currentColor"
-                    />
-                  </svg>
-                </Button>
-              </Tooltip>
-            )}
+            {renderReferenceDeck()}
 
             <div className="promptbox-resize-wrap relative flex-1">
               <textarea
@@ -537,16 +525,12 @@ export const PromptBoxImage = ({
                   setGenerationCount(count);
                 }}
               />
-              <GenerateButton
-                className="flex items-center border-none bg-primary px-3 text-sm text-white disabled:cursor-not-allowed disabled:opacity-50"
-                icon={undefined}
+              <GenerateIconButton
                 onClick={handleEnqueue}
                 disabled={!prompt.trim()}
                 loading={isEnqueueing}
                 credits={credits}
-              >
-                Generate
-              </GenerateButton>
+              />
             </div>
           </div>
           <div className="absolute -bottom-1 left-1/2 -translate-x-1/2">
@@ -575,24 +559,7 @@ export const PromptBoxImage = ({
         promptLength={prompt.length}
         maxLength={maxLen}
         footerControls={modelSelector}
-        imagePromptRow={
-          selectedModel?.canUseImagePrompt ? (
-            <ImagePromptRow
-              visible={true}
-              maxImagePromptCount={Math.max(
-                1,
-                selectedModel?.maxImagePromptCount ?? 1,
-              )}
-              allowUpload={true}
-              referenceImages={referenceImages}
-              setReferenceImages={setReferenceImages}
-              uploadImage={uploadImage as any}
-              // Reset the inline row's absolute "float above the box"
-              // positioning so it sits in-flow in the modal, with rounded corners.
-              className="relative top-auto rounded-2xl"
-            />
-          ) : undefined
-        }
+        imagePromptRow={renderReferenceDeck(true) ?? undefined}
       >
         <textarea
           placeholder="Describe what you want in the image..."

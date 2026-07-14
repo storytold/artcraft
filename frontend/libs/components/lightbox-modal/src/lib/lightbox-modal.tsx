@@ -614,11 +614,13 @@ export function LightboxModal({
               </video>
             ) : mediaClass === "audio" ? (
               <div className="flex h-full w-full items-center justify-center px-4 sm:px-8">
-                <div className="w-full max-w-xl rounded-2xl border border-white/10 bg-white/[0.04] px-2 py-8">
-                  <FontAwesomeIcon
-                    icon={faMusic}
-                    className="mx-auto mb-5 block text-3xl text-white/20"
-                  />
+                <div className="w-full max-w-xl rounded-2xl border border-white/10 bg-gradient-to-br from-white/[0.08] via-white/[0.04] to-white/[0.02] px-4 py-10 sm:px-6">
+                  <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-white/10 ring-1 ring-white/15">
+                    <FontAwesomeIcon
+                      icon={faMusic}
+                      className="text-2xl text-white/70"
+                    />
+                  </div>
                   <WaveformAudioPlayer
                     key={selectedImageUrl as string}
                     src={selectedImageUrl as string}

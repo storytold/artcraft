@@ -161,30 +161,25 @@ export const GalleryCard = memo(function GalleryCard({
         style={{ contentVisibility: "auto", containIntrinsicSize: "auto 200px" }}
       >
         {isAudio ? (
-          <div className="flex h-full flex-col bg-gradient-to-br from-white/[0.07] to-white/[0.02] p-3">
-            <div className="flex items-start gap-2">
-              <p className="line-clamp-3 min-w-0 flex-1 text-sm leading-snug text-white/85">
-                {title || item.label}
-              </p>
-              <FontAwesomeIcon
-                icon={faMusic}
-                className="pointer-events-none mt-0.5 shrink-0 text-base text-white/15"
-              />
-            </div>
-            {item.fullImage ? (
-              <div className="flex min-h-0 flex-1 items-center">
-                <div className="w-full">
-                  <WaveformAudioPlayer
-                    src={item.fullImage}
-                    durationMillis={item.durationMillis}
-                  />
-                </div>
+          <div className="flex h-full flex-col bg-gradient-to-br from-white/[0.08] via-white/[0.04] to-white/[0.02] p-3">
+            <p className="line-clamp-2 shrink-0 text-sm leading-snug text-white/85">
+              {title || item.label}
+            </p>
+            <div className="flex min-h-0 flex-1 items-center justify-center">
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white/10 ring-1 ring-white/15">
+                <FontAwesomeIcon
+                  icon={faMusic}
+                  className="text-xl text-white/70"
+                />
               </div>
-            ) : (
-              <FontAwesomeIcon
-                icon={faMusic}
-                className="m-auto text-2xl text-white/20"
-              />
+            </div>
+            {item.fullImage && (
+              <div className="w-full shrink-0">
+                <WaveformAudioPlayer
+                  src={item.fullImage}
+                  durationMillis={item.durationMillis}
+                />
+              </div>
             )}
           </div>
         ) : (

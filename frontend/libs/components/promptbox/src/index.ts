@@ -13,3 +13,8 @@ export * from "./lib/PromptBoxErrorBoundary";
 export * from "./lib/common/AudioTuningPopover";
 export * from "./lib/common/SoundsSettingsPopover";
 export * from "./lib/common/StylePromptRow";
+export * from "./lib/deck/deckTypes";
+export * from "./lib/deck/DeckCard";
+export * from "./lib/deck/ReferenceDeck";
+export * from "./lib/deck/KeyframeCards";
+export * from "./lib/deck/useDeckMedia";

@@ -1,12 +1,10 @@
 import { useState, useRef, useEffect, useMemo } from "react";
 import { useSignals } from "@preact/signals-react/runtime";
 import { JobContextType } from "@storyteller/common";
-import { downloadFileFromUrl } from "@storyteller/api";
 import { PopoverMenu, PopoverItem } from "@storyteller/ui-popover";
 import { SliderV2 } from "@storyteller/ui-sliderv2";
 import { Tooltip } from "@storyteller/ui-tooltip";
-import { ToggleButton, GenerateButton } from "@storyteller/ui-button";
-import { Modal } from "@storyteller/ui-modal";
+import { ToggleButton, GenerateIconButton } from "@storyteller/ui-button";
 import { GenerateVideo, GenerateVideoRequest } from "@storyteller/tauri-api";
 import {
   faWaveformLines,
@@ -16,7 +14,7 @@ import {
 } from "@fortawesome/pro-solid-svg-icons";
 import { faCircleInfo } from "@fortawesome/pro-regular-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { GalleryItem, GalleryModal } from "@storyteller/ui-gallery-modal";
+import { arrayMove } from "@dnd-kit/sortable";
 import {
   CommonResolution,
   effectivePromptMaxLength,
@@ -33,8 +31,11 @@ import {
   useEnterToGenerateStore,
 } from "./promptStore";
 import { gtagEvent } from "@storyteller/google-analytics";
-import { ImagePromptRow } from "./ImagePromptRow";
 import type { UploadImageFn } from "./ImagePromptRow";
+import { ReferenceDeck } from "./deck/ReferenceDeck";
+import { KeyframeCards } from "./deck/KeyframeCards";
+import { useDeckMedia } from "./deck/useDeckMedia";
+import { DeckAddAction, DeckItem } from "./deck/deckTypes";
 import { AspectRatioIcon } from "./common/AspectRatioIcon";
 import { VideoGenerationCountPicker } from "./common/VideoGenerationCountPicker";
 import { twMerge } from "tailwind-merge";
@@ -127,7 +128,6 @@ export const PromptBoxVideo = ({
   selectedProvider,
   imageMediaId,
   url,
-  onImageRowVisibilityChange,
   uploadImage,
   uploadVideo,
   uploadAudio,
@@ -149,8 +149,6 @@ export const PromptBoxVideo = ({
     }
   }, [imageMediaId, url]);
 
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [content, setContent] = useState<React.ReactNode>(null);
   const prompt = usePromptVideoStore((s) => s.prompt);
   const setPrompt = usePromptVideoStore((s) => s.setPrompt);
   const generateWithSound = usePromptVideoStore((s) => s.generateWithSound);
@@ -239,9 +237,6 @@ export const PromptBoxVideo = ({
     });
   };
 
-  const [selectedGalleryImages, setSelectedGalleryImages] = useState<string[]>(
-    [],
-  );
   const referenceImages = usePromptVideoStore((s) => s.referenceImages);
   const setReferenceImages = usePromptVideoStore((s) => s.setReferenceImages);
   const endFrameImage = usePromptVideoStore((s) => s.endFrameImage);
@@ -250,14 +245,6 @@ export const PromptBoxVideo = ({
   const setReferenceVideos = usePromptVideoStore((s) => s.setReferenceVideos);
   const referenceAudios = usePromptVideoStore((s) => s.referenceAudios);
   const setReferenceAudios = usePromptVideoStore((s) => s.setReferenceAudios);
-  const [uploadingImages, _setUploadingImages] = useState<
-    { id: string; file: File }[]
-  >([]);
-  const [showImagePrompts, _setShowImagePrompts] = useState(true);
-  const isImageRowVisible =
-    showImagePrompts ||
-    referenceImages.length > 0 ||
-    uploadingImages.length > 0;
 
   // TODO: Get rid of default resolutions. Just disable it if not present.
   let aspectRatioOptions: PopoverItem[];
@@ -282,8 +269,7 @@ export const PromptBoxVideo = ({
     aspectRatioOptions = buildAspectRatioOptions(DEFAULT_RESOLUTIONS);
   }
 
-  const [, setAspectRatioList] =
-    useState<PopoverItem[]>(aspectRatioOptions);
+  const [, setAspectRatioList] = useState<PopoverItem[]>(aspectRatioOptions);
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const mentionEditorRef = useRef<HTMLDivElement>(null);
@@ -355,10 +341,6 @@ export const PromptBoxVideo = ({
       setReferenceImages([referenceImage]);
     }
   }, [imageMediaId, url]);
-
-  useEffect(() => {
-    onImageRowVisibilityChange?.(isImageRowVisible);
-  }, [isImageRowVisible, onImageRowVisibilityChange]);
 
   const handleAspectRatioSelect = (selectedItem: PopoverItem) => {
     setAspectRatio(selectedItem.label);
@@ -467,7 +449,7 @@ export const PromptBoxVideo = ({
             selected: inputMode === "keyframe",
           },
           {
-            label: "Reference",
+            label: "Omni Reference",
             description: "Multi-media ref",
             selected: inputMode === "reference",
           },
@@ -476,7 +458,7 @@ export const PromptBoxVideo = ({
 
   const handleInputModeSelect = (selectedItem: PopoverItem) => {
     const mode: VideoInputMode =
-      selectedItem.label === "Reference" ? "reference" : "keyframe";
+      selectedItem.label === "Omni Reference" ? "reference" : "keyframe";
     setInputMode(mode);
     // Clear images/videos when switching modes to avoid stale state
     if (mode === "reference") {
@@ -492,6 +474,265 @@ export const PromptBoxVideo = ({
   const maxImageCount = isReferenceMode
     ? (selectedModel?.maxReferenceImages ?? 3)
     : 1;
+
+  const maxVideoCount = selectedModel?.maxReferenceVideos ?? 3;
+  const maxAudioCount = selectedModel?.maxReferenceAudios ?? 2;
+
+  const deck = useDeckMedia({
+    referenceImages,
+    setReferenceImages,
+    maxImages: maxImageCount,
+    setEndFrameImage,
+    referenceVideos,
+    setReferenceVideos,
+    maxVideos: maxVideoCount,
+    maxVideoTotalSec: selectedModel?.maxVideoRefDuration ?? 15,
+    referenceAudios,
+    setReferenceAudios,
+    maxAudios: maxAudioCount,
+    maxAudioTotalSec: selectedModel?.maxAudioRefDuration ?? 15,
+    uploadImage,
+    uploadVideo,
+    uploadAudio,
+    ownGalleryModal: true,
+  });
+
+  // Mixed deck items ordered images → videos → audios: the @ImageN/@VideoN/
+  // @AudioN mention labels are index-derived per type, so this ordering (and
+  // image-only reordering) is load-bearing.
+  const deckItems: DeckItem[] = useMemo(
+    () => [
+      ...referenceImages.map((img, i) => ({
+        id: img.id,
+        kind: "image" as const,
+        url: img.url,
+        name: `Image ${i + 1}`,
+      })),
+      ...deck.uploadingImages.map((entry, i) => ({
+        id: entry.id,
+        kind: "image" as const,
+        url: entry.previewUrl,
+        name: `Image ${referenceImages.length + i + 1}`,
+        uploading: true,
+      })),
+      ...referenceVideos.map((video, i) => ({
+        id: video.id,
+        kind: "video" as const,
+        url: video.url,
+        name: `Video ${i + 1}`,
+        duration: video.duration,
+      })),
+      ...(deck.uploadingVideo
+        ? [
+            {
+              id: deck.uploadingVideo.id,
+              kind: "video" as const,
+              url: deck.uploadingVideo.previewUrl,
+              name: `Video ${referenceVideos.length + 1}`,
+              uploading: true,
+            },
+          ]
+        : []),
+      ...referenceAudios.map((audio, i) => ({
+        id: audio.id,
+        kind: "audio" as const,
+        url: audio.url,
+        name: `Audio ${i + 1}`,
+        duration: audio.duration,
+      })),
+      ...(deck.uploadingAudio
+        ? [
+            {
+              id: deck.uploadingAudio.id,
+              kind: "audio" as const,
+              name: `Audio ${referenceAudios.length + 1}`,
+              uploading: true,
+            },
+          ]
+        : []),
+    ],
+    [
+      referenceImages,
+      referenceVideos,
+      referenceAudios,
+      deck.uploadingImages,
+      deck.uploadingVideo,
+      deck.uploadingAudio,
+    ],
+  );
+
+  const refDeckAddActions: DeckAddAction[] = [];
+  if (referenceImages.length + deck.uploadingImages.length < maxImageCount) {
+    refDeckAddActions.push(
+      {
+        key: "upload-image",
+        label: "Upload",
+        group: "image",
+        onSelect: deck.openImageUpload,
+      },
+      {
+        key: "library-image",
+        label: "From library",
+        group: "image",
+        onSelect: () => deck.openGallery("start"),
+      },
+    );
+  }
+  if (referenceVideos.length < maxVideoCount && !deck.uploadingVideo) {
+    refDeckAddActions.push(
+      {
+        key: "upload-video",
+        label: "Upload",
+        group: "video",
+        onSelect: deck.openVideoUpload,
+      },
+      {
+        key: "library-video",
+        label: "From library",
+        group: "video",
+        onSelect: () => deck.openGallery("video"),
+      },
+    );
+  }
+  if (referenceAudios.length < maxAudioCount && !deck.uploadingAudio) {
+    refDeckAddActions.push(
+      {
+        key: "upload-audio",
+        label: "Upload",
+        group: "audio",
+        onSelect: deck.openAudioUpload,
+      },
+      {
+        key: "library-audio",
+        label: "From library",
+        group: "audio",
+        onSelect: () => deck.openGallery("audio"),
+      },
+    );
+  }
+
+  const handleRemoveDeckItem = (id: string) => {
+    if (referenceImages.some((img) => img.id === id)) {
+      setReferenceImages(referenceImages.filter((img) => img.id !== id));
+    } else if (referenceVideos.some((video) => video.id === id)) {
+      setReferenceVideos(referenceVideos.filter((video) => video.id !== id));
+    } else if (referenceAudios.some((audio) => audio.id === id)) {
+      setReferenceAudios(referenceAudios.filter((audio) => audio.id !== id));
+    }
+  };
+
+  const maxVideoTotalSec = selectedModel?.maxVideoRefDuration ?? 15;
+  const maxAudioTotalSec = selectedModel?.maxAudioRefDuration ?? 15;
+  const totalVideoRefSeconds = referenceVideos.reduce(
+    (sum, video) => sum + video.duration,
+    0,
+  );
+  const totalAudioRefSeconds = referenceAudios.reduce(
+    (sum, audio) => sum + audio.duration,
+    0,
+  );
+
+  const refDeckGroupHints = {
+    image: `${referenceImages.length}/${maxImageCount}`,
+    video: `${referenceVideos.length}/${maxVideoCount} · ${totalVideoRefSeconds}/${maxVideoTotalSec}s`,
+    audio: `${referenceAudios.length}/${maxAudioCount} · ${totalAudioRefSeconds}/${maxAudioTotalSec}s`,
+  };
+
+  const renderReferenceDeck = (alwaysExpanded?: boolean) => (
+    <ReferenceDeck
+      items={deckItems}
+      canAdd={refDeckAddActions.length > 0}
+      addActions={refDeckAddActions}
+      addMenuGroupHints={refDeckGroupHints}
+      onAddClick={deck.openAnyUpload}
+      onRemove={handleRemoveDeckItem}
+      onReorderImages={(from, to) =>
+        setReferenceImages(arrayMove(referenceImages, from, to))
+      }
+      onClearAll={() => {
+        setReferenceImages([]);
+        setReferenceVideos([]);
+        setReferenceAudios([]);
+      }}
+      alwaysExpanded={alwaysExpanded}
+    />
+  );
+
+  const firstFrameItem: DeckItem | undefined = referenceImages[0]
+    ? {
+        id: referenceImages[0].id,
+        kind: "image",
+        url: referenceImages[0].url,
+        name: "First frame",
+      }
+    : deck.uploadingImages[0]
+      ? {
+          id: deck.uploadingImages[0].id,
+          kind: "image",
+          url: deck.uploadingImages[0].previewUrl,
+          name: "First frame",
+          uploading: true,
+        }
+      : undefined;
+
+  const lastFrameItem: DeckItem | undefined = endFrameImage
+    ? {
+        id: endFrameImage.id,
+        kind: "image",
+        url: endFrameImage.url,
+        name: "Last frame",
+      }
+    : deck.uploadingEnd
+      ? {
+          id: deck.uploadingEnd.id,
+          kind: "image",
+          url: deck.uploadingEnd.previewUrl,
+          name: "Last frame",
+          uploading: true,
+        }
+      : undefined;
+
+  const handleSwapFrames = () => {
+    const first = referenceImages[0];
+    if (!first || !endFrameImage) return;
+    setReferenceImages([endFrameImage]);
+    setEndFrameImage(first);
+  };
+
+  const renderKeyframeCards = () => (
+    <KeyframeCards
+      firstFrame={firstFrameItem}
+      lastFrame={lastFrameItem}
+      showLastFrame={!!selectedModel?.endFrame}
+      onFirstAddActions={[
+        {
+          key: "upload-first",
+          label: "Upload",
+          onSelect: deck.openImageUpload,
+        },
+        {
+          key: "library-first",
+          label: "Pick from library",
+          onSelect: () => deck.openGallery("start"),
+        },
+      ]}
+      onLastAddActions={[
+        {
+          key: "upload-last",
+          label: "Upload",
+          onSelect: deck.openEndUpload,
+        },
+        {
+          key: "library-last",
+          label: "Pick from library",
+          onSelect: () => deck.openGallery("end"),
+        },
+      ]}
+      onRemoveFirst={() => setReferenceImages([])}
+      onRemoveLast={() => setEndFrameImage(undefined)}
+      onSwap={handleSwapFrames}
+    />
+  );
 
   // Color palettes for @-mention highlights
   const IMAGE_COLORS = [
@@ -962,8 +1203,6 @@ export const PromptBoxVideo = ({
     }
   };
 
-  const [isGalleryModalOpen, setIsGalleryModalOpen] = useState(false);
-
   const modelNeedsAnImageButNoneAreSelected =
     selectedModel?.requiresImage && referenceImages.length === 0;
 
@@ -973,48 +1212,6 @@ export const PromptBoxVideo = ({
       setEndFrameImage(undefined);
     }
   }, [selectedModel, endFrameImage, setEndFrameImage]);
-
-  // Shared reference-image row. Inline it floats above the box (default absolute
-  // positioning); the fullscreen modal passes a className to reset that so it
-  // sits in-flow above the controls with rounded corners.
-  const renderImagePromptRow = (className?: string) => (
-    <ImagePromptRow
-      visible={true}
-      isVideo={true}
-      isReferenceMode={isReferenceMode}
-      maxImagePromptCount={maxImageCount}
-      allowUpload={true}
-      referenceImages={referenceImages}
-      setReferenceImages={setReferenceImages}
-      onImageClick={(image) => {
-        setContent(
-          <img
-            src={image.url}
-            alt="Reference preview"
-            className="h-full w-full object-contain"
-          />,
-        );
-        setIsModalOpen(true);
-      }}
-      uploadImage={uploadImage}
-      endFrameImage={isReferenceMode ? undefined : endFrameImage}
-      setEndFrameImage={isReferenceMode ? undefined : setEndFrameImage}
-      allowUploadEnd={!isReferenceMode && !!selectedModel?.endFrame}
-      showEndFrameSection={!isReferenceMode && !!selectedModel?.endFrame}
-      referenceVideos={isReferenceMode ? referenceVideos : undefined}
-      setReferenceVideos={isReferenceMode ? setReferenceVideos : undefined}
-      maxVideoCount={selectedModel?.maxReferenceVideos ?? 3}
-      maxVideoRefDuration={selectedModel?.maxVideoRefDuration ?? 15}
-      showVideoReferenceSection={isReferenceMode}
-      uploadVideo={uploadVideo}
-      referenceAudios={isReferenceMode ? referenceAudios : undefined}
-      setReferenceAudios={isReferenceMode ? setReferenceAudios : undefined}
-      maxAudioCount={selectedModel?.maxReferenceAudios ?? 2}
-      maxAudioRefDuration={selectedModel?.maxAudioRefDuration ?? 15}
-      uploadAudio={uploadAudio}
-      className={className}
-    />
-  );
 
   // Character button (seedance_2p0 only), reused in the fullscreen footer.
   const characterButtonEl =
@@ -1042,21 +1239,12 @@ export const PromptBoxVideo = ({
 
   return (
     <>
-      <Modal
-        isOpen={isModalOpen}
-        onClose={() => {
-          setIsModalOpen(false);
-          setContent(null);
-        }}
-      >
-        {content}
-      </Modal>
+      {deck.fileInputs}
+      {deck.galleryModal}
       <div className="relative z-20 flex flex-col gap-3">
-        {isImageRowVisible && renderImagePromptRow()}
         <div
           className={twMerge(
             "glass relative w-full rounded-2xl p-4",
-            isImageRowVisible && "rounded-t-none",
             isFocused
               ? "ring-1 ring-primary border-primary"
               : "ring-1 ring-transparent",
@@ -1075,6 +1263,7 @@ export const PromptBoxVideo = ({
             </div>
           )}
           <div className="relative flex justify-center gap-2">
+            {isReferenceMode ? renderReferenceDeck() : renderKeyframeCards()}
             <div className="promptbox-resize-wrap relative flex-1 min-w-0">
               {hasAnyMentionables ? (
                 <MentionTextarea
@@ -1243,18 +1432,14 @@ export const PromptBoxVideo = ({
                 disabled={!modelNeedsAnImageButNoneAreSelected}
               >
                 <div>
-                  <GenerateButton
-                    className="flex items-center border-none bg-primary px-3 text-sm text-white disabled:cursor-not-allowed disabled:opacity-50"
-                    icon={undefined}
+                  <GenerateIconButton
                     onClick={handleEnqueue}
                     disabled={!prompt.trim()}
                     loading={isEnqueueing}
                     credits={
                       credits != null ? credits * generationCount : credits
                     }
-                  >
-                    Generate
-                  </GenerateButton>
+                  />
                 </div>
               </Tooltip>
             </div>
@@ -1314,34 +1499,6 @@ export const PromptBoxVideo = ({
           });
         }}
       />
-      <GalleryModal
-        isOpen={!!isGalleryModalOpen}
-        onClose={() => {
-          setIsGalleryModalOpen(false);
-          setSelectedGalleryImages([]);
-        }}
-        mode="select"
-        selectedItemIds={selectedGalleryImages}
-        onSelectItem={(id) => {
-          setSelectedGalleryImages((prev) => (prev.includes(id) ? [] : [id]));
-        }}
-        maxSelections={1}
-        onUseSelected={(selectedItems: GalleryItem[]) => {
-          const item = selectedItems[0];
-          if (!item || !item.fullImage) return;
-          const referenceImage: RefImage = {
-            id: Math.random().toString(36).substring(7),
-            url: item.fullImage,
-            file: new File([], "library-image"),
-            mediaToken: item.id,
-          };
-          setReferenceImages([referenceImage]);
-          setIsGalleryModalOpen(false);
-          setSelectedGalleryImages([]);
-        }}
-        onDownloadClicked={downloadFileFromUrl}
-        forceFilter="image"
-      />
       <PromptFullscreenModal
         isOpen={isFullscreen}
         onClose={closeFullscreen}
@@ -1354,7 +1511,9 @@ export const PromptBoxVideo = ({
             {characterButtonEl}
           </>
         }
-        imagePromptRow={renderImagePromptRow("relative top-auto rounded-2xl")}
+        imagePromptRow={
+          isReferenceMode ? renderReferenceDeck(true) : renderKeyframeCards()
+        }
       >
         {hasAnyMentionables ? (
           <MentionTextarea

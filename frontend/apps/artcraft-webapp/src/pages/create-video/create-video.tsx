@@ -27,6 +27,7 @@ import {
   SettingsDrawer,
   DrawerOptionList,
   DrawerSection,
+  getAudioDurationFromUrl,
   getVideoDurationFromUrl,
   type RefImage,
   type RefVideo,
@@ -367,6 +368,7 @@ export default function CreateVideo() {
   const [isImagePickerOpen, setIsImagePickerOpen] = useState(false);
   const [isEndFramePickerOpen, setIsEndFramePickerOpen] = useState(false);
   const [isVideoRefPickerOpen, setIsVideoRefPickerOpen] = useState(false);
+  const [isAudioRefPickerOpen, setIsAudioRefPickerOpen] = useState(false);
   const [isCharactersModalOpen, setIsCharactersModalOpen] = useState(false);
   const [isOutputDrawerOpen, setIsOutputDrawerOpen] = useState(false);
   const [pickerSelectedIds, setPickerSelectedIds] = useState<string[]>([]);
@@ -374,6 +376,9 @@ export default function CreateVideo() {
     string[]
   >([]);
   const [videoRefPickerSelectedIds, setVideoRefPickerSelectedIds] = useState<
+    string[]
+  >([]);
+  const [audioRefPickerSelectedIds, setAudioRefPickerSelectedIds] = useState<
     string[]
   >([]);
 
@@ -388,6 +393,10 @@ export default function CreateVideo() {
   useEffect(() => {
     if (isVideoRefPickerOpen) setVideoRefPickerSelectedIds([]);
   }, [isVideoRefPickerOpen]);
+
+  useEffect(() => {
+    if (isAudioRefPickerOpen) setAudioRefPickerSelectedIds([]);
+  }, [isAudioRefPickerOpen]);
 
   // Characters store for @-mentions
   const storedCharacters = useCharactersStore((s) => s.characters);
@@ -647,7 +656,7 @@ export default function CreateVideo() {
               selected: inputMode === "keyframe",
             },
             {
-              label: "Reference",
+              label: "Omni Reference",
               description: "Multi-media ref",
               selected: inputMode === "reference",
             },
@@ -802,7 +811,7 @@ export default function CreateVideo() {
 
   const handleInputModeChange = useCallback(
     (item: PopoverItem) => {
-      const mode = item.label === "Reference" ? "reference" : "keyframe";
+      const mode = item.label === "Omni Reference" ? "reference" : "keyframe";
       if (mode === inputMode) return;
       if (mode === "reference") {
         // Some models (e.g. Grok) cap duration lower in image-reference mode.
@@ -921,6 +930,70 @@ export default function CreateVideo() {
       }
     },
     [referenceVideos, maxVideoRefs, maxVideoRefDuration, setReferenceVideos],
+  );
+
+  const maxAudioRefs = selectedModel?.audio_references_max ?? 2;
+  const maxAudioRefDurationTotal =
+    selectedModel?.audio_references_max_total_duration_seconds ?? 30;
+  const audioRefPickerMax = Math.max(1, maxAudioRefs - referenceAudios.length);
+
+  const handleAudioRefPickerSelect = useCallback(
+    (id: string) => {
+      setAudioRefPickerSelectedIds((prev) => {
+        if (prev.includes(id)) return prev.filter((x) => x !== id);
+        if (prev.length >= audioRefPickerMax) {
+          return audioRefPickerMax === 1 ? [id] : prev;
+        }
+        return [...prev, id];
+      });
+    },
+    [audioRefPickerMax],
+  );
+
+  const handleLibraryAudioSelect = useCallback(
+    async (items: GalleryItem[]) => {
+      setIsAudioRefPickerOpen(false);
+      const availableSlots = Math.max(0, maxAudioRefs - referenceAudios.length);
+      const picked = items.slice(0, availableSlots);
+
+      const added: RefAudio[] = [];
+      let total = referenceAudios.reduce((sum, a) => sum + a.duration, 0);
+      for (const item of picked) {
+        const url = item.fullImage;
+        if (!url) continue;
+        const duration =
+          item.durationMillis != null
+            ? Math.round(item.durationMillis / 1000)
+            : await getAudioDurationFromUrl(url);
+        if (duration <= 0) {
+          toast.error("Could not read audio file");
+          continue;
+        }
+        if (total + duration > maxAudioRefDurationTotal) {
+          toast.error(
+            `Audio too long — max ${maxAudioRefDurationTotal}s total (${maxAudioRefDurationTotal - total}s remaining)`,
+          );
+          continue;
+        }
+        total += duration;
+        added.push({
+          id: Math.random().toString(36).substring(7),
+          url,
+          file: new File([], "library-audio"),
+          mediaToken: item.id,
+          duration,
+        });
+      }
+      if (added.length > 0) {
+        setReferenceAudios([...referenceAudios, ...added]);
+      }
+    },
+    [
+      referenceAudios,
+      maxAudioRefs,
+      maxAudioRefDurationTotal,
+      setReferenceAudios,
+    ],
   );
 
   const handleEndFrameLibrarySelect = useCallback((items: GalleryItem[]) => {
@@ -1161,6 +1234,7 @@ export default function CreateVideo() {
         maxAudioRefDuration={
           selectedModel?.audio_references_max_total_duration_seconds ?? 30
         }
+        onPickAudioFromLibrary={() => setIsAudioRefPickerOpen(true)}
       />
     ) : undefined;
 
@@ -1487,7 +1561,9 @@ export default function CreateVideo() {
                   richList
                   triggerIcon={
                     <img
-                      src={getCreatorIconPathForModelId(selectedModel?.model ?? "")}
+                      src={getCreatorIconPathForModelId(
+                        selectedModel?.model ?? "",
+                      )}
                       alt=""
                       className="h-4 w-4 icon-auto-contrast"
                     />
@@ -1504,7 +1580,28 @@ export default function CreateVideo() {
               })
             }
             mentionItems={mentionItems.length > 0 ? mentionItems : undefined}
-            mediaReferenceRow={mediaReferenceRow}
+            videoRefsSupported={supportsVideoRefs}
+            referenceVideos={referenceVideos}
+            onReferenceVideosChange={setReferenceVideos}
+            maxVideoCount={maxVideoRefs}
+            maxVideoRefDuration={maxVideoRefDuration}
+            onPickVideoFromLibrary={
+              supportsVideoRefs
+                ? () => setIsVideoRefPickerOpen(true)
+                : undefined
+            }
+            audioRefsSupported={supportsAudioRefs}
+            referenceAudios={referenceAudios}
+            onReferenceAudiosChange={setReferenceAudios}
+            maxAudioCount={selectedModel?.audio_references_max ?? 2}
+            maxAudioRefDuration={
+              selectedModel?.audio_references_max_total_duration_seconds ?? 30
+            }
+            onPickAudioFromLibrary={
+              supportsAudioRefs
+                ? () => setIsAudioRefPickerOpen(true)
+                : undefined
+            }
             rightToolbar={
               <GenerationCountPicker
                 batchSizeMax={selectedModel?.batch_size_max ?? 4}
@@ -1691,6 +1788,17 @@ export default function CreateVideo() {
             maxSelections={videoRefPickerMax}
             onUseSelected={handleLibraryVideoSelect}
             forceFilter="video"
+            hideFilter
+          />
+          <GalleryModal
+            mode="select"
+            isOpen={isAudioRefPickerOpen}
+            onClose={() => setIsAudioRefPickerOpen(false)}
+            selectedItemIds={audioRefPickerSelectedIds}
+            onSelectItem={handleAudioRefPickerSelect}
+            maxSelections={audioRefPickerMax}
+            onUseSelected={handleLibraryAudioSelect}
+            forceFilter="audio"
             hideFilter
           />
           <CharactersModal

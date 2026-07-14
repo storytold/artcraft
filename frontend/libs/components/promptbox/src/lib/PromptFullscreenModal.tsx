@@ -49,7 +49,10 @@ export const PromptFullscreenModal = ({
   // Focus the editor and drop the caret at the end once the overlay opens.
   useEffect(() => {
     if (!isOpen) return;
-    const id = window.setTimeout(() => focusEditorAtEnd(contentRef.current), 60);
+    const id = window.setTimeout(
+      () => focusEditorAtEnd(contentRef.current),
+      60,
+    );
     return () => window.clearTimeout(id);
   }, [isOpen]);
 
@@ -89,7 +92,7 @@ export const PromptFullscreenModal = ({
           </span>
         </div>
         {imagePromptRow && <div className="shrink-0">{imagePromptRow}</div>}
-        <div className="flex shrink-0 items-center justify-between gap-2">
+        <div className="flex shrink-0 items-center justify-between gap-2 mt-1">
           <div className="flex items-center gap-2">{footerControls}</div>
           <Button onClick={onClose}>Done</Button>
         </div>

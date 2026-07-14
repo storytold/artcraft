@@ -16,12 +16,21 @@ import {
   faUserGroup,
   faVideo,
 } from "@fortawesome/pro-solid-svg-icons";
-import { GenerateButton } from "@storyteller/ui-button";
+import { GenerateIconButton } from "@storyteller/ui-button";
 import { Tooltip } from "@storyteller/ui-tooltip";
-import { ImagePromptRow } from "./ImagePromptRow";
+import {
+  KeyframeCards,
+  ReferenceDeck,
+  useDeckMedia,
+  type DeckAddAction,
+  type DeckItem,
+} from "@storyteller/ui-promptbox";
+import { arrayMove } from "@dnd-kit/sortable";
 import { MentionTextarea } from "./MentionTextarea";
 import { getMentionColor, buildMentionColorMap } from "./mention-colors";
-import type { RefImage, MentionItem } from "./types";
+import { uploadImage } from "./upload-image";
+import { uploadVideo, uploadAudio } from "./upload-media";
+import type { RefImage, RefVideo, RefAudio, MentionItem } from "./types";
 import { useEnterToGenerateStore } from "../../lib/enter-to-generate-store";
 import {
   PromptFullscreenButton,
@@ -36,7 +45,6 @@ interface PromptBoxProps {
   onPromptChange: (prompt: string) => void;
   onSubmit: () => void;
   isSubmitting: boolean;
-  submitLabel?: string;
   placeholder?: string;
   disabled?: boolean;
   credits?: number | null;
@@ -61,10 +69,25 @@ interface PromptBoxProps {
   // Pick from library
   onPickFromLibrary?: () => void;
   onPickEndFrameFromLibrary?: () => void;
+  onPickVideoFromLibrary?: () => void;
+  onPickAudioFromLibrary?: () => void;
   // Clear all references (images, end frame, videos, audios)
   onClearAllRefs?: () => void;
 
-  // Media reference row (video/audio refs, rendered between image row and prompt)
+  // Reference-mode media (video page passes these; other pages omit)
+  videoRefsSupported?: boolean;
+  referenceVideos?: RefVideo[];
+  onReferenceVideosChange?: (videos: RefVideo[]) => void;
+  maxVideoCount?: number;
+  maxVideoRefDuration?: number;
+  audioRefsSupported?: boolean;
+  referenceAudios?: RefAudio[];
+  onReferenceAudiosChange?: (audios: RefAudio[]) => void;
+  maxAudioCount?: number;
+  maxAudioRefDuration?: number;
+
+  // Legacy band rendered above the box (audio/object/world pages still use
+  // this; the image/video pages moved to the inline reference deck).
   mediaReferenceRow?: ReactNode;
 
   // Model selector (rendered above the toolbar, typically hidden on desktop via lg:hidden)
@@ -90,7 +113,6 @@ export const PromptBox = forwardRef<HTMLDivElement, PromptBoxProps>(
       onPromptChange,
       onSubmit,
       isSubmitting,
-      submitLabel = "Generate",
       placeholder = "Describe what you want...",
       disabled,
       credits,
@@ -107,7 +129,19 @@ export const PromptBox = forwardRef<HTMLDivElement, PromptBoxProps>(
       rightToolbar,
       onPickFromLibrary,
       onPickEndFrameFromLibrary,
+      onPickVideoFromLibrary,
+      onPickAudioFromLibrary,
       onClearAllRefs,
+      videoRefsSupported,
+      referenceVideos = [],
+      onReferenceVideosChange,
+      maxVideoCount = 3,
+      maxVideoRefDuration = 30,
+      audioRefsSupported,
+      referenceAudios = [],
+      onReferenceAudiosChange,
+      maxAudioCount = 2,
+      maxAudioRefDuration = 30,
       mediaReferenceRow,
       modelSelector,
       secondaryPromptRow,
@@ -122,7 +156,6 @@ export const PromptBox = forwardRef<HTMLDivElement, PromptBoxProps>(
     const enterToGenerate = useEnterToGenerateStore((s) => s.enabled);
     const [isFocused, setIsFocused] = useState(false);
     const [isExpanded, setIsExpanded] = useState(false);
-    const [showImagePrompts, setShowImagePrompts] = useState(false);
     const { isFullscreen, openFullscreen, closeFullscreen } =
       useFullscreenPrompt();
 
@@ -148,12 +181,298 @@ export const PromptBox = forwardRef<HTMLDivElement, PromptBoxProps>(
     const [mentionIndex, setMentionIndex] = useState(0);
     const mentionAnchorRef = useRef<number | null>(null);
 
-    const isImageRowVisible =
-      supportsImagePrompts &&
-      (isVideo || showImagePrompts || referenceImages.length > 0);
-
     const hasMentionItems = (mentionItems?.length ?? 0) > 0;
-    const hasAnyRowAbove = isImageRowVisible || !!mediaReferenceRow;
+
+    const deck = useDeckMedia({
+      referenceImages,
+      setReferenceImages: onReferenceImagesChange,
+      maxImages: maxImagePromptCount,
+      setEndFrameImage: onEndFrameImageChange,
+      referenceVideos,
+      setReferenceVideos: onReferenceVideosChange,
+      maxVideos: maxVideoCount,
+      maxVideoTotalSec: maxVideoRefDuration,
+      referenceAudios,
+      setReferenceAudios: onReferenceAudiosChange,
+      maxAudios: maxAudioCount,
+      maxAudioTotalSec: maxAudioRefDuration,
+      uploadImage,
+      uploadVideo,
+      uploadAudio,
+      // Library picking stays with the page-level GalleryModals.
+      ownGalleryModal: false,
+    });
+
+    // Mixed deck items ordered images → videos → audios so the page's
+    // index-derived @ImageN/@VideoN/@AudioN mention labels stay aligned.
+    const deckItems: DeckItem[] = useMemo(
+      () => [
+        ...referenceImages.map((img, i) => ({
+          id: img.id,
+          kind: "image" as const,
+          url: img.url,
+          previewUrl: img.fullUrl ?? img.url,
+          name: `Image ${i + 1}`,
+        })),
+        ...deck.uploadingImages.map((entry, i) => ({
+          id: entry.id,
+          kind: "image" as const,
+          url: entry.previewUrl,
+          name: `Image ${referenceImages.length + i + 1}`,
+          uploading: true,
+        })),
+        ...referenceVideos.map((video, i) => ({
+          id: video.id,
+          kind: "video" as const,
+          url: video.url,
+          name: `Video ${i + 1}`,
+          duration: video.duration,
+        })),
+        ...(deck.uploadingVideo
+          ? [
+              {
+                id: deck.uploadingVideo.id,
+                kind: "video" as const,
+                url: deck.uploadingVideo.previewUrl,
+                name: `Video ${referenceVideos.length + 1}`,
+                uploading: true,
+              },
+            ]
+          : []),
+        ...referenceAudios.map((audio, i) => ({
+          id: audio.id,
+          kind: "audio" as const,
+          url: audio.url,
+          name: `Audio ${i + 1}`,
+          duration: audio.duration,
+        })),
+        ...(deck.uploadingAudio
+          ? [
+              {
+                id: deck.uploadingAudio.id,
+                kind: "audio" as const,
+                name: `Audio ${referenceAudios.length + 1}`,
+                uploading: true,
+              },
+            ]
+          : []),
+      ],
+      [
+        referenceImages,
+        referenceVideos,
+        referenceAudios,
+        deck.uploadingImages,
+        deck.uploadingVideo,
+        deck.uploadingAudio,
+      ],
+    );
+
+    const deckAddActions: DeckAddAction[] = [];
+    if (
+      referenceImages.length + deck.uploadingImages.length <
+      maxImagePromptCount
+    ) {
+      deckAddActions.push({
+        key: "upload-image",
+        label: "Upload",
+        group: "image",
+        onSelect: deck.openImageUpload,
+      });
+      if (onPickFromLibrary) {
+        deckAddActions.push({
+          key: "library-image",
+          label: isVideo ? "From library" : "Pick from library",
+          group: "image",
+          onSelect: onPickFromLibrary,
+        });
+      }
+    }
+    if (
+      isVideo &&
+      isReferenceMode &&
+      videoRefsSupported &&
+      referenceVideos.length < maxVideoCount &&
+      !deck.uploadingVideo
+    ) {
+      deckAddActions.push({
+        key: "upload-video",
+        label: "Upload",
+        group: "video",
+        onSelect: deck.openVideoUpload,
+      });
+      if (onPickVideoFromLibrary) {
+        deckAddActions.push({
+          key: "library-video",
+          label: "From library",
+          group: "video",
+          onSelect: onPickVideoFromLibrary,
+        });
+      }
+    }
+    if (
+      isVideo &&
+      isReferenceMode &&
+      audioRefsSupported &&
+      referenceAudios.length < maxAudioCount &&
+      !deck.uploadingAudio
+    ) {
+      deckAddActions.push({
+        key: "upload-audio",
+        label: "Upload",
+        group: "audio",
+        onSelect: deck.openAudioUpload,
+      });
+      if (onPickAudioFromLibrary) {
+        deckAddActions.push({
+          key: "library-audio",
+          label: "From library",
+          group: "audio",
+          onSelect: onPickAudioFromLibrary,
+        });
+      }
+    }
+
+    const handleRemoveDeckItem = (id: string) => {
+      if (referenceImages.some((img) => img.id === id)) {
+        onReferenceImagesChange(referenceImages.filter((img) => img.id !== id));
+      } else if (referenceVideos.some((video) => video.id === id)) {
+        onReferenceVideosChange?.(
+          referenceVideos.filter((video) => video.id !== id),
+        );
+      } else if (referenceAudios.some((audio) => audio.id === id)) {
+        onReferenceAudiosChange?.(
+          referenceAudios.filter((audio) => audio.id !== id),
+        );
+      }
+    };
+
+    const firstFrameItem: DeckItem | undefined = referenceImages[0]
+      ? {
+          id: referenceImages[0].id,
+          kind: "image",
+          url: referenceImages[0].url,
+          previewUrl: referenceImages[0].fullUrl ?? referenceImages[0].url,
+          name: "First frame",
+        }
+      : deck.uploadingImages[0]
+        ? {
+            id: deck.uploadingImages[0].id,
+            kind: "image",
+            url: deck.uploadingImages[0].previewUrl,
+            name: "First frame",
+            uploading: true,
+          }
+        : undefined;
+
+    const lastFrameItem: DeckItem | undefined = endFrameImage
+      ? {
+          id: endFrameImage.id,
+          kind: "image",
+          url: endFrameImage.url,
+          previewUrl: endFrameImage.fullUrl ?? endFrameImage.url,
+          name: "Last frame",
+        }
+      : deck.uploadingEnd
+        ? {
+            id: deck.uploadingEnd.id,
+            kind: "image",
+            url: deck.uploadingEnd.previewUrl,
+            name: "Last frame",
+            uploading: true,
+          }
+        : undefined;
+
+    const handleSwapFrames = () => {
+      const first = referenceImages[0];
+      if (!first || !endFrameImage) return;
+      onReferenceImagesChange([endFrameImage]);
+      onEndFrameImageChange?.(first);
+    };
+
+    // Left-of-textarea reference widget: image deck, keyframe cards, or the
+    // mixed reference-mode deck depending on page/mode.
+    const renderReferenceWidget = (alwaysExpanded?: boolean) => {
+      if (!supportsImagePrompts) return null;
+      if (isVideo && !isReferenceMode) {
+        return (
+          <KeyframeCards
+            firstFrame={firstFrameItem}
+            lastFrame={lastFrameItem}
+            showLastFrame={!!showEndFrameSection}
+            onFirstAddActions={[
+              {
+                key: "upload-first",
+                label: "Upload",
+                onSelect: deck.openImageUpload,
+              },
+              ...(onPickFromLibrary
+                ? [
+                    {
+                      key: "library-first",
+                      label: "Pick from library",
+                      onSelect: onPickFromLibrary,
+                    },
+                  ]
+                : []),
+            ]}
+            onLastAddActions={[
+              {
+                key: "upload-last",
+                label: "Upload",
+                onSelect: deck.openEndUpload,
+              },
+              ...(onPickEndFrameFromLibrary
+                ? [
+                    {
+                      key: "library-last",
+                      label: "Pick from library",
+                      onSelect: onPickEndFrameFromLibrary,
+                    },
+                  ]
+                : []),
+            ]}
+            onRemoveFirst={() => onReferenceImagesChange([])}
+            onRemoveLast={() => onEndFrameImageChange?.(undefined)}
+            onSwap={handleSwapFrames}
+          />
+        );
+      }
+      const totalVideoRefSeconds = referenceVideos.reduce(
+        (sum, video) => sum + video.duration,
+        0,
+      );
+      const totalAudioRefSeconds = referenceAudios.reduce(
+        (sum, audio) => sum + audio.duration,
+        0,
+      );
+      const groupHints: Record<string, string> = {
+        image: `${referenceImages.length}/${maxImagePromptCount}`,
+      };
+      if (isVideo && isReferenceMode) {
+        if (videoRefsSupported) {
+          groupHints.video = `${referenceVideos.length}/${maxVideoCount} · ${totalVideoRefSeconds}/${maxVideoRefDuration}s`;
+        }
+        if (audioRefsSupported) {
+          groupHints.audio = `${referenceAudios.length}/${maxAudioCount} · ${totalAudioRefSeconds}/${maxAudioRefDuration}s`;
+        }
+      }
+
+      return (
+        <ReferenceDeck
+          items={deckItems}
+          canAdd={deckAddActions.length > 0}
+          addActions={deckAddActions}
+          addMenuGroupHints={groupHints}
+          onAddClick={deck.openAnyUpload}
+          onRemove={handleRemoveDeckItem}
+          onReorderImages={(from, to) =>
+            onReferenceImagesChange(arrayMove(referenceImages, from, to))
+          }
+          onClearAll={onClearAllRefs}
+          alwaysExpanded={alwaysExpanded}
+        />
+      );
+    };
 
     // Filtered mention items for autocomplete
     const filteredMentionItems = useMemo(() => {
@@ -334,80 +653,24 @@ export const PromptBox = forwardRef<HTMLDivElement, PromptBoxProps>(
       });
     }, [prompt, hasMentionItems, mentionRegex, mentionLabelMap, mentionItems]);
 
-    // Shared reference-image row. Inline it attaches to the top of the box
-    // (square bottom); the fullscreen modal passes a className to round the
-    // bottom corners since it sits in-flow above the controls there.
-    const renderImagePromptRow = (className?: string) =>
-      supportsImagePrompts ? (
-        <ImagePromptRow
-          maxImagePromptCount={maxImagePromptCount}
-          referenceImages={referenceImages}
-          setReferenceImages={onReferenceImagesChange}
-          onPickFromLibrary={onPickFromLibrary}
-          onClearAll={onClearAllRefs}
-          isVideo={isVideo}
-          isReferenceMode={isReferenceMode}
-          endFrameImage={endFrameImage}
-          setEndFrameImage={onEndFrameImageChange}
-          showEndFrameSection={showEndFrameSection}
-          onPickEndFrameFromLibrary={onPickEndFrameFromLibrary}
-          className={className}
-        />
-      ) : null;
-
     return (
       <div ref={ref} className="prompt-box-root">
         <div className="relative flex flex-col">
-          {isImageRowVisible && renderImagePromptRow()}
+          {deck.fileInputs}
 
-          {/* When the media row is the topmost band (no image row above it —
-              e.g. the audio page), clip it to rounded top corners; mid-stack
-              (video's start-frame row above) it stays square. */}
           {mediaReferenceRow && (
-            <div className={twMerge(!isImageRowVisible && "sm:rounded-t-2xl")}>
-              {mediaReferenceRow}
-            </div>
+            <div className="sm:rounded-t-2xl">{mediaReferenceRow}</div>
           )}
 
           <div
             className={twMerge(
               "glass rounded-2xl p-3 sm:p-4 !transition-all duration-200",
-              hasAnyRowAbove && "rounded-t-none border-t-0",
+              mediaReferenceRow && "rounded-t-none border-t-0",
               isFocused && "ring-1 ring-primary",
             )}
           >
             <div className="flex gap-3">
-              {supportsImagePrompts && !isVideo && (
-                <Tooltip
-                  content="Add Image"
-                  position="top"
-                  closeOnClick={true}
-                  className={twMerge(isImageRowVisible && "hidden opacity-0")}
-                >
-                  <button
-                    type="button"
-                    className={twMerge(
-                      "flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-transparent p-0 transition-all hover:text-primary-500",
-                      isImageRowVisible && "text-primary",
-                    )}
-                    onClick={() => setShowImagePrompts((prev) => !prev)}
-                  >
-                    <svg
-                      width="24"
-                      height="20"
-                      viewBox="0 0 24 20"
-                      fill="none"
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="opacity-80 transition-all hover:opacity-100"
-                    >
-                      <path
-                        d="M2.66667 2H16C16.3667 2 16.6667 2.3 16.6667 2.66667V6.1125C17.1 6.04167 17.5458 6 18 6C18.225 6 18.4458 6.00833 18.6667 6.02917V2.66667C18.6667 1.19583 17.4708 0 16 0H2.66667C1.19583 0 0 1.19583 0 2.66667V16C0 17.4708 1.19583 18.6667 2.66667 18.6667H11.5C11.0625 18.0583 10.7083 17.3875 10.4542 16.6667H2.66667C2.3 16.6667 2 16.3667 2 16V2.66667C2 2.3 2.3 2 2.66667 2ZM11.8625 7.49167C11.6833 7.1875 11.3542 7 11 7C10.6458 7 10.3167 7.1875 10.1375 7.49167L8.2 10.7833L7.48333 9.75833C7.29583 9.49167 6.99167 9.33333 6.6625 9.33333C6.33333 9.33333 6.02917 9.49167 5.84167 9.75833L3.50833 13.0917C3.29583 13.3958 3.26667 13.7958 3.44167 14.125C3.61667 14.4542 3.9625 14.6667 4.33333 14.6667H10.0292C10.0125 14.4458 10 14.225 10 14C10 11.7833 10.9 9.77917 12.3542 8.33333L11.8625 7.49583V7.49167ZM5.33333 6.66667C6.07083 6.66667 6.66667 6.07083 6.66667 5.33333C6.66667 4.59583 6.07083 4 5.33333 4C4.59583 4 4 4.59583 4 5.33333C4 6.07083 4.59583 6.66667 5.33333 6.66667ZM18 20C21.3125 20 24 17.3125 24 14C24 10.6875 21.3125 8 18 8C14.6875 8 12 10.6875 12 14C12 17.3125 14.6875 20 18 20ZM18.6667 11.3333V13.3333H20.6667C21.0333 13.3333 21.3333 13.6333 21.3333 14C21.3333 14.3667 21.0333 14.6667 20.6667 14.6667H18.6667V16.6667C18.6667 17.0333 18.3667 17.3333 18 17.3333C17.6333 17.3333 17.3333 17.0333 17.3333 16.6667V14.6667H15.3333C14.9667 14.6667 14.6667 14.3667 14.6667 14C14.6667 13.6333 14.9667 13.3333 15.3333 13.3333H17.3333V11.3333C17.3333 10.9667 17.6333 10.6667 18 10.6667C18.3667 10.6667 18.6667 10.9667 18.6667 11.3333Z"
-                        fill="currentColor"
-                      />
-                    </svg>
-                  </button>
-                </Tooltip>
-              )}
+              {renderReferenceWidget()}
 
               <div className="promptbox-resize-wrap relative flex-1">
                 {hasMentionItems && mentionItems ? (
@@ -561,22 +824,19 @@ export const PromptBox = forwardRef<HTMLDivElement, PromptBoxProps>(
             )}
 
             {/* Toolbar */}
-            <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div className="mt-3.5 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
                 {modelSelector}
                 {leftToolbar}
               </div>
               <div className="flex items-center gap-2 sm:shrink-0">
                 {rightToolbar}
-                <GenerateButton
-                  className="flex flex-1 sm:flex-none items-center justify-center border-none bg-primary px-3 text-sm text-white disabled:cursor-not-allowed disabled:opacity-50"
+                <GenerateIconButton
                   onClick={onSubmit}
                   disabled={disabled ?? (!prompt.trim() || isSubmitting)}
                   loading={isSubmitting}
                   credits={credits}
-                >
-                  {submitLabel}
-                </GenerateButton>
+                />
               </div>
             </div>
 
@@ -611,7 +871,7 @@ export const PromptBox = forwardRef<HTMLDivElement, PromptBoxProps>(
               {leftToolbar}
             </>
           }
-          imagePromptRow={renderImagePromptRow("rounded-2xl sm:rounded-b-2xl")}
+          imagePromptRow={renderReferenceWidget(true) ?? undefined}
         >
           {hasMentionItems && mentionItems ? (
             <MentionTextarea

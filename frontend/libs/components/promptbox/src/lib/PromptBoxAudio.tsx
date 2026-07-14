@@ -1,5 +1,9 @@
 import { useMemo, useRef, useState, ReactNode } from "react";
 import { toast } from "@storyteller/ui-toaster";
+import {
+  GalleryModal,
+  type GalleryItem,
+} from "@storyteller/ui-gallery-modal";
 import { PopoverMenu, PopoverItem } from "@storyteller/ui-popover";
 import { Tooltip } from "@storyteller/ui-tooltip";
 import { GenerateButton, ToggleButton } from "@storyteller/ui-button";
@@ -23,7 +27,11 @@ import {
   getModelDescription,
   getModelInfo,
 } from "@storyteller/model-list";
-import { usePromptAudioStore, useEnterToGenerateStore } from "./promptStore";
+import {
+  usePromptAudioStore,
+  useEnterToGenerateStore,
+  type RefAudio,
+} from "./promptStore";
 import { useAutoGrowEditorHeight } from "./useAutoGrowEditorHeight";
 import {
   PromptFullscreenModal,
@@ -43,6 +51,16 @@ const AUDIO_REF_MAX_DURATION_SECONDS = 600;
 
 // Capability flags are serde-skipped when absent — only `true` counts.
 const supports = (flag: boolean | null | undefined): boolean => flag === true;
+
+// Resolves 0 when metadata can't be loaded.
+const getAudioDurationFromSrc = (src: string): Promise<number> =>
+  new Promise((resolve) => {
+    const audio = document.createElement("audio");
+    audio.preload = "metadata";
+    audio.onloadedmetadata = () => resolve(Math.round(audio.duration));
+    audio.onerror = () => resolve(0);
+    audio.src = src;
+  });
 
 interface PromptBoxAudioProps {
   // Audio models from GET /v1/omni_gen/models/audio (useOmniGenAudioModels).
@@ -94,6 +112,14 @@ export const PromptBoxAudio = ({
   const [isEnqueueing, setIsEnqueueing] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
   const enterToGenerate = useEnterToGenerateStore((s) => s.enabled);
+
+  // Audio library picker (the "From library" button in the reference row).
+  const [isAudioLibraryOpen, setIsAudioLibraryOpen] = useState(false);
+  const [audioLibrarySelectedIds, setAudioLibrarySelectedIds] = useState<
+    string[]
+  >([]);
+  const [isAudioLibraryProcessing, setIsAudioLibraryProcessing] =
+    useState(false);
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { isExpanded, toggleExpand } = useAutoGrowEditorHeight(
@@ -176,6 +202,75 @@ export const PromptBoxAudio = ({
       toast.error("Removed image reference — it can't be combined with audio");
     }
     setReferenceAudios(audios);
+  };
+
+  const maxAudioLibrarySelections = Math.max(
+    1,
+    maxAudioRefs - referenceAudios.length,
+  );
+
+  const handleAudioLibrarySelectToggle = (id: string) => {
+    setAudioLibrarySelectedIds((prev) => {
+      if (prev.includes(id)) return prev.filter((x) => x !== id);
+      if (prev.length >= maxAudioLibrarySelections) {
+        return maxAudioLibrarySelections === 1 ? [id] : prev;
+      }
+      return [...prev, id];
+    });
+  };
+
+  const closeAudioLibrary = () => {
+    setIsAudioLibraryOpen(false);
+    setAudioLibrarySelectedIds([]);
+  };
+
+  const handleAudioLibraryUseSelected = async (items: GalleryItem[]) => {
+    const availableSlots = Math.max(0, maxAudioRefs - referenceAudios.length);
+    const picked = items
+      .slice(0, availableSlots)
+      .filter((item): item is GalleryItem & { fullImage: string } =>
+        Boolean(item.fullImage),
+      );
+
+    setIsAudioLibraryProcessing(true);
+    try {
+      // Use the duration the list endpoint already knows; probe the file's
+      // metadata only when it doesn't.
+      const durations = await Promise.all(
+        picked.map((item) =>
+          item.durationMillis != null
+            ? Promise.resolve(Math.round(item.durationMillis / 1000))
+            : getAudioDurationFromSrc(item.fullImage),
+        ),
+      );
+
+      const added: RefAudio[] = [];
+      let total = referenceAudios.reduce((sum, a) => sum + a.duration, 0);
+      for (let i = 0; i < picked.length; i++) {
+        const item = picked[i]!;
+        const duration = durations[i]!;
+        if (total + duration > AUDIO_REF_MAX_DURATION_SECONDS) {
+          toast.error(
+            `Total audio duration cannot exceed ${AUDIO_REF_MAX_DURATION_SECONDS}s`,
+          );
+          break;
+        }
+        total += duration;
+        added.push({
+          id: Math.random().toString(36).substring(7),
+          url: item.fullImage,
+          file: new File([], "library-audio"),
+          mediaToken: item.id,
+          duration,
+        });
+      }
+      if (added.length > 0) {
+        handleReferenceAudiosChange([...referenceAudios, ...added]);
+      }
+    } finally {
+      setIsAudioLibraryProcessing(false);
+    }
+    closeAudioLibrary();
   };
 
   const handleReferenceImagesChange = (images: typeof referenceImages) => {
@@ -383,6 +478,9 @@ export const PromptBoxAudio = ({
         maxAudioCount={audioRefsSupported ? maxAudioRefs : 0}
         maxAudioRefDuration={AUDIO_REF_MAX_DURATION_SECONDS}
         uploadAudio={uploadAudio}
+        onPickAudioFromLibrary={
+          audioRefsSupported ? () => setIsAudioLibraryOpen(true) : undefined
+        }
         audioRequired={requiresAudioRef}
         imageSupported={imageRefsSupported}
         referenceImages={referenceImages}
@@ -471,6 +569,18 @@ export const PromptBoxAudio = ({
           </div>
         </div>
       </div>
+      <GalleryModal
+        mode="select"
+        isOpen={isAudioLibraryOpen}
+        onClose={closeAudioLibrary}
+        selectedItemIds={audioLibrarySelectedIds}
+        onSelectItem={handleAudioLibrarySelectToggle}
+        maxSelections={maxAudioLibrarySelections}
+        onUseSelected={handleAudioLibraryUseSelected}
+        useSelectedLoading={isAudioLibraryProcessing}
+        forceFilter="audio"
+        hideFilter
+      />
       <PromptFullscreenModal
         isOpen={isFullscreen}
         onClose={closeFullscreen}

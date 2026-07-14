@@ -6,7 +6,12 @@ import React, {
 } from "react";
 import { createPortal } from "react-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faCheck, faEllipsis, faUpload } from "@fortawesome/pro-solid-svg-icons";
+import {
+  faCheck,
+  faEllipsis,
+  faMusic,
+  faUpload,
+} from "@fortawesome/pro-solid-svg-icons";
 import { LoadingSpinner } from "@storyteller/ui-loading-spinner";
 import { twMerge } from "tailwind-merge";
 import galleryDnd from "./galleryDnd";
@@ -43,6 +48,9 @@ interface GalleryDraggableItemProps {
   selected: boolean;
   onClick: () => void;
   onImageError: (e: React.SyntheticEvent<HTMLImageElement>) => void;
+  /** Resolved prompt text for audio items — shown on the tile since audio has
+   *  no thumbnail to speak for itself. */
+  audioPromptText?: string;
   disableTooltipAndBadge?: boolean;
   imageFit?: "cover" | "contain";
   onDeleted?: (id: string) => void;
@@ -68,6 +76,7 @@ export const GalleryDraggableItem: React.FC<GalleryDraggableItemProps> = ({
   selected,
   onClick,
   onImageError,
+  audioPromptText,
   disableTooltipAndBadge = false,
   imageFit = "cover",
   onDeleted,
@@ -92,6 +101,9 @@ export const GalleryDraggableItem: React.FC<GalleryDraggableItemProps> = ({
   // preview GIF, so the thumbnail URL 404s for a while. Show a spinner and
   // refresh the image every 5s until it loads.
   const isVideo = item.mediaClass === "video";
+  // Audio tiles are click-only: there is no canvas drop target for audio, so
+  // they never start a gallery drag.
+  const isAudio = item.mediaClass === "audio";
   const [retryAttempt, setRetryAttempt] = useState(0);
   const [videoLoaded, setVideoLoaded] = useState(false);
 
@@ -191,6 +203,7 @@ export const GalleryDraggableItem: React.FC<GalleryDraggableItemProps> = ({
     // No drag tracking on touch: a finger drag should scroll the page, and a
     // tap still clicks via the button's onClick.
     if (event.pointerType === "touch") return;
+    if (isAudio) return;
     dragStarted.current = false;
     const moveListener = (moveEvent: PointerEvent) => {
       const dx = moveEvent.pageX - event.pageX;
@@ -244,7 +257,7 @@ export const GalleryDraggableItem: React.FC<GalleryDraggableItemProps> = ({
             : "border-transparent hover:border-primary",
         mode === "select"
           ? "cursor-pointer"
-          : disableTooltipAndBadge && !bulkSelectionMode
+          : (disableTooltipAndBadge && !bulkSelectionMode) || isAudio
             ? "cursor-pointer"
             : "cursor-grab hover:cursor-grab active:cursor-grabbing",
       )}
@@ -253,7 +266,21 @@ export const GalleryDraggableItem: React.FC<GalleryDraggableItemProps> = ({
       aria-label={item.label}
     >
       <div className="relative h-full w-full">
-        {!item.thumbnail ? (
+        {isAudio ? (
+          <div className="flex h-full w-full flex-col bg-gradient-to-br from-white/[0.08] via-white/[0.04] to-white/[0.02]">
+            <div className="flex min-h-0 flex-1 items-center justify-center">
+              <div className="flex h-11 w-11 items-center justify-center rounded-full bg-white/10 ring-1 ring-white/15">
+                <FontAwesomeIcon
+                  icon={faMusic}
+                  className="text-lg text-white/70"
+                />
+              </div>
+            </div>
+            <p className="line-clamp-2 shrink-0 px-2.5 pb-2.5 text-left text-xs leading-snug text-white/75">
+              {audioPromptText || item.label}
+            </p>
+          </div>
+        ) : !item.thumbnail ? (
           <div className="flex h-full w-full items-center justify-center bg-black/30">
             <span className="text-white/60">Image not available</span>
           </div>
@@ -427,16 +454,18 @@ export const GalleryDraggableItem: React.FC<GalleryDraggableItemProps> = ({
           className="-mt-3 bg-ui-controls text-base-fg border border-ui-panel-border"
           content={
             <div className="flex flex-col items-center text-xs whitespace-nowrap">
-              <span>
-                <span className="font-bold">Drag</span>
-                <span className="opacity-50">
-                  {item.mediaClass === "dimensional" ||
-                  item.mediaClass === "mesh" ||
-                  item.mediaClass === "splat"
-                    ? " to add to scene"
-                    : " to add"}
+              {!isAudio && (
+                <span>
+                  <span className="font-bold">Drag</span>
+                  <span className="opacity-50">
+                    {item.mediaClass === "dimensional" ||
+                    item.mediaClass === "mesh" ||
+                    item.mediaClass === "splat"
+                      ? " to add to scene"
+                      : " to add"}
+                  </span>
                 </span>
-              </span>
+              )}
               <span>
                 <span className="font-bold">Click</span>
                 <span className="opacity-50"> to view</span>
