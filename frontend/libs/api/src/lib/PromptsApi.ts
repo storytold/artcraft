@@ -3,57 +3,6 @@ import { Prompts } from "./models/Prompts.js";
 import { FetchProxy as fetch } from "@storyteller/tauri-utils";
 
 export class PromptsApi extends ApiManager {
-  public async enqueueImageGeneration({
-    disableSystemPrompt,
-    prompt,
-    snapshotMediaToken,
-    additionalImages,
-  }: {
-    disableSystemPrompt: boolean;
-    prompt: string;
-    snapshotMediaToken: string;
-    additionalImages?: string[];
-  }): Promise<ApiResponse<string>> {
-    const endpoint = `${this.getApiSchemeAndHost()}/v1/image_studio/prompt`;
-
-    const uuidIdempotencyToken = crypto.randomUUID(); // Generate a new UUID
-    const body = {
-      uuid_idempotency_token: uuidIdempotencyToken,
-      disable_system_prompt: disableSystemPrompt,
-      prompt,
-      snapshot_media_token: snapshotMediaToken, // Changed from scene_media_token to snapshot_media_token
-      additional_images: additionalImages,
-    };
-
-    const postResponse = await this.post<
-      {
-        uuid_idempotency_token: string;
-        disable_system_prompt: boolean;
-        prompt: string;
-        snapshot_media_token: string;
-        additional_images?: string[];
-      },
-      { success?: boolean; job_token?: string; BadInput?: string }
-    >({
-      endpoint,
-      body,
-    });
-
-    // Check if the response is successful
-    const isSuccess = postResponse.success ?? false;
-    // Prepare the result object
-    console.log("postResponse FOR ENQUEUE IMAGE GENERATION");
-    console.log(postResponse);
-
-    const result = {
-      success: isSuccess,
-      data: isSuccess ? postResponse.job_token : undefined,
-      errorMessage: isSuccess ? undefined : postResponse.BadInput,
-    };
-
-    return result;
-  }
-
   public async pollJobSession(
     jobToken: string,
     thumbnailWidth = 256
@@ -126,44 +75,6 @@ export class PromptsApi extends ApiManager {
           progress_percentage: progress_percentage,
         },
       },
-      errorMessage,
-    };
-  }
-
-  public async pollStudioSessionJobs(jobToken: string): Promise<
-    ApiResponse<{
-      status: string;
-      result: {
-        generated_images?: string[];
-        error?: string;
-      };
-    }>
-  > {
-    const endpoint = `${this.getApiSchemeAndHost()}/v1/image_studio/session_jobs/${jobToken}`;
-
-    const response = await this.get<{
-      success?: boolean;
-      status?: string;
-      result?: {
-        generated_images?: string[];
-        error?: string;
-      };
-      BadInput?: string;
-    }>({
-      endpoint,
-    });
-
-    const success = response.success ?? false;
-    const status = response.status ?? "";
-    const result = response.result ?? {
-      generated_images: [],
-      error: undefined,
-    };
-    const errorMessage = response.BadInput;
-
-    return {
-      success,
-      data: { status, result },
       errorMessage,
     };
   }
