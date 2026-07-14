@@ -2489,6 +2489,8 @@ export const GalleryModal = React.memo(
                             ? maxSelections === 1
                               ? "Select Video"
                               : "Select Videos"
+                            : activeFilter === "audio"
+                              ? "Select Audio"
                             : activeFilter === "mesh"
                               ? maxSelections === 1
                                 ? "Select 3D Object"
