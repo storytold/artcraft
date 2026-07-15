@@ -806,6 +806,13 @@ export default function CreateAudio() {
             referenceImages={referenceImages}
             onReferenceImagesChange={handleReferenceImagesChange}
             onPickFromLibrary={() => setIsImagePickerOpen(true)}
+            onClearAllExtras={() => {
+              setStylePrompt("");
+              setReferenceAudios([]);
+            }}
+            hasClearableExtras={
+              ui.stylePrompt.length > 0 || referenceAudios.length > 0
+            }
             mediaReferenceRow={audioReferenceRow}
             secondaryPromptRow={
               styleSupported ? (

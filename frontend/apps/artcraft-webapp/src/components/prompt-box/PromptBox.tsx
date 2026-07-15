@@ -20,6 +20,7 @@ import { GenerateIconButton } from "@storyteller/ui-button";
 import { Tooltip } from "@storyteller/ui-tooltip";
 import {
   KeyframeCards,
+  PromptClearAllButton,
   ReferenceDeck,
   useDeckMedia,
   type DeckAddAction,
@@ -73,6 +74,12 @@ interface PromptBoxProps {
   onPickAudioFromLibrary?: () => void;
   // Clear all references (images, end frame, videos, audios)
   onClearAllRefs?: () => void;
+  // Toolbar clear-all support. The button wipes the prompt and every
+  // reference the box renders; pages holding extra state outside the box
+  // (media reference row, secondary prompts) clear it via onClearAllExtras
+  // and report its presence via hasClearableExtras so the button enables.
+  onClearAllExtras?: () => void;
+  hasClearableExtras?: boolean;
 
   // Reference-mode media (video page passes these; other pages omit)
   videoRefsSupported?: boolean;
@@ -132,6 +139,8 @@ export const PromptBox = forwardRef<HTMLDivElement, PromptBoxProps>(
       onPickVideoFromLibrary,
       onPickAudioFromLibrary,
       onClearAllRefs,
+      onClearAllExtras,
+      hasClearableExtras,
       videoRefsSupported,
       referenceVideos = [],
       onReferenceVideosChange,
@@ -381,6 +390,29 @@ export const PromptBox = forwardRef<HTMLDivElement, PromptBoxProps>(
             uploading: true,
           }
         : undefined;
+
+    const hasAttachedRefs =
+      referenceImages.length > 0 ||
+      !!endFrameImage ||
+      referenceVideos.length > 0 ||
+      referenceAudios.length > 0 ||
+      !!hasClearableExtras;
+    const hasClearableContent = prompt.length > 0 || hasAttachedRefs;
+
+    const handleClearAll = () => {
+      onPromptChange("");
+      // Prefer the page's single-shot clear (pages that keep all refs in one
+      // state object need it to avoid stale-closure partial updates).
+      if (onClearAllRefs) {
+        onClearAllRefs();
+      } else {
+        onReferenceImagesChange([]);
+        onEndFrameImageChange?.(undefined);
+        onReferenceVideosChange?.([]);
+        onReferenceAudiosChange?.([]);
+      }
+      onClearAllExtras?.();
+    };
 
     const handleSwapFrames = () => {
       const first = referenceImages[0];
@@ -829,8 +861,13 @@ export const PromptBox = forwardRef<HTMLDivElement, PromptBoxProps>(
                 {modelSelector}
                 {leftToolbar}
               </div>
-              <div className="flex items-center gap-2 sm:shrink-0">
+              <div className="flex items-center gap-1.5 sm:shrink-0">
                 {rightToolbar}
+                <PromptClearAllButton
+                  onClick={handleClearAll}
+                  disabled={!hasClearableContent}
+                  confirmClear={hasAttachedRefs}
+                />
                 <GenerateIconButton
                   onClick={onSubmit}
                   disabled={disabled ?? (!prompt.trim() || isSubmitting)}
@@ -872,6 +909,13 @@ export const PromptBox = forwardRef<HTMLDivElement, PromptBoxProps>(
             </>
           }
           imagePromptRow={renderReferenceWidget(true) ?? undefined}
+          clearAllButton={
+            <PromptClearAllButton
+              onClick={handleClearAll}
+              disabled={!hasClearableContent}
+              confirmClear={hasAttachedRefs}
+            />
+          }
         >
           {hasMentionItems && mentionItems ? (
             <MentionTextarea

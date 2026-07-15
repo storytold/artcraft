@@ -33,6 +33,7 @@ import {
   useFullscreenPrompt,
 } from "./PromptFullscreenModal";
 import { PromptFullscreenButton } from "./PromptFullscreenButton";
+import { PromptClearAllButton } from "./PromptClearAllButton";
 import { StoreApi, UseBoundStore } from "zustand";
 import { toast } from "@storyteller/ui-toaster";
 
@@ -280,6 +281,13 @@ export const PromptBox2D = ({
 
   const maxLen = selectedImageModel?.maxPromptLength ?? 1000;
 
+  const hasClearableContent = prompt.length > 0 || referenceImages.length > 0;
+
+  const handleClearAll = () => {
+    setPrompt("");
+    setReferenceImages([]);
+  };
+
   const handleGenerate = async () => {
     const busy = Boolean(isEnqueueing ?? internalEnqueueing);
     if (busy || isDisabled || !prompt.trim()) return;
@@ -498,6 +506,11 @@ export const PromptBox2D = ({
               )}
             </div>
             <div className="flex items-center gap-2">
+              <PromptClearAllButton
+                onClick={handleClearAll}
+                disabled={!hasClearableContent}
+                confirmClear={referenceImages.length > 0}
+              />
               {onFitPressed && (
                 <Tooltip
                   content={"Fit canvas to screen"}
@@ -559,6 +572,13 @@ export const PromptBox2D = ({
         promptLength={prompt.length}
         maxLength={maxLen}
         footerControls={modelSelector}
+        clearAllButton={
+          <PromptClearAllButton
+            onClick={handleClearAll}
+            disabled={!hasClearableContent}
+            confirmClear={referenceImages.length > 0}
+          />
+        }
         imagePromptRow={
           selectedImageModel?.canUseImagePrompt ? (
             <ImagePromptRow

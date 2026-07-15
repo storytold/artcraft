@@ -50,6 +50,7 @@ import {
   useFullscreenPrompt,
 } from "./PromptFullscreenModal";
 import { PromptFullscreenButton } from "./PromptFullscreenButton";
+import { PromptClearAllButton } from "./PromptClearAllButton";
 
 declare global {
   interface Window {
@@ -939,6 +940,21 @@ export const PromptBoxVideo = ({
     mentionAnchorRef.current = null;
   };
 
+  const hasAttachedRefs =
+    referenceImages.length > 0 ||
+    !!endFrameImage ||
+    referenceVideos.length > 0 ||
+    referenceAudios.length > 0;
+  const hasClearableContent = prompt.length > 0 || hasAttachedRefs;
+
+  const handleClearAll = () => {
+    setPrompt("");
+    setReferenceImages([]);
+    setEndFrameImage(undefined);
+    setReferenceVideos([]);
+    setReferenceAudios([]);
+  };
+
   const maxLen =
     effectivePromptMaxLength(
       selectedModel?.tauriId ?? "",
@@ -1417,6 +1433,11 @@ export const PromptBoxVideo = ({
                   Starting frame required
                 </span>
               )}
+              <PromptClearAllButton
+                onClick={handleClearAll}
+                disabled={!hasClearableContent}
+                confirmClear={hasAttachedRefs}
+              />
               {selectedModel?.id === "seedance_2p0" && (
                 <VideoGenerationCountPicker
                   maxCount={4}
@@ -1504,6 +1525,13 @@ export const PromptBoxVideo = ({
         onClose={closeFullscreen}
         promptLength={prompt.length}
         maxLength={maxLen}
+        clearAllButton={
+          <PromptClearAllButton
+            onClick={handleClearAll}
+            disabled={!hasClearableContent}
+            confirmClear={hasAttachedRefs}
+          />
+        }
         footerControls={
           <>
             {modelSelector}

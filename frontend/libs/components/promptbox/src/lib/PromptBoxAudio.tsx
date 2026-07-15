@@ -38,6 +38,7 @@ import {
   useFullscreenPrompt,
 } from "./PromptFullscreenModal";
 import { PromptFullscreenButton } from "./PromptFullscreenButton";
+import { PromptClearAllButton } from "./PromptClearAllButton";
 import { gtagEvent } from "@storyteller/google-analytics";
 import { twMerge } from "tailwind-merge";
 import { AudioReferenceRow } from "./common/AudioReferenceRow";
@@ -307,6 +308,18 @@ export const PromptBoxAudio = ({
     }
   };
 
+  const hasAttachedRefs =
+    referenceAudios.length > 0 || referenceImages.length > 0;
+  const hasClearableContent =
+    prompt.length > 0 || stylePrompt.length > 0 || hasAttachedRefs;
+
+  const handleClearAll = () => {
+    setPrompt("");
+    setStylePrompt("");
+    setReferenceAudios([]);
+    setReferenceImages([]);
+  };
+
   const handleEnqueue = async () => {
     if (!prompt.trim() || !selectedModel || isEnqueueing) return;
 
@@ -536,6 +549,11 @@ export const PromptBoxAudio = ({
                   Audio track required
                 </span>
               )}
+              <PromptClearAllButton
+                onClick={handleClearAll}
+                disabled={!hasClearableContent}
+                confirmClear={hasAttachedRefs}
+              />
               <GenerateButton
                 className="flex items-center border-none bg-primary px-3 text-sm text-white disabled:cursor-not-allowed disabled:opacity-50"
                 icon={undefined}
@@ -586,6 +604,13 @@ export const PromptBoxAudio = ({
         onClose={closeFullscreen}
         promptLength={prompt.length}
         maxLength={Infinity}
+        clearAllButton={
+          <PromptClearAllButton
+            onClick={handleClearAll}
+            disabled={!hasClearableContent}
+            confirmClear={hasAttachedRefs}
+          />
+        }
         footerControls={
           <>
             {modelSelector}

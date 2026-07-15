@@ -6,9 +6,12 @@ import {
 } from "@fortawesome/pro-solid-svg-icons";
 import { ButtonHTMLAttributes } from "react";
 import { twMerge } from "tailwind-merge";
+import { Tooltip } from "@storyteller/ui-tooltip";
 
-interface GenerateIconButtonProps
-  extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, "children"> {
+interface GenerateIconButtonProps extends Omit<
+  ButtonHTMLAttributes<HTMLButtonElement>,
+  "children"
+> {
   credits?: number | null;
   loading?: boolean;
 }
@@ -30,16 +33,21 @@ export const GenerateIconButton = ({
   return (
     <div className={twMerge("flex shrink-0 items-center gap-2.5", className)}>
       {credits != null && (
-        <span
-          className={twMerge(
-            "flex items-center gap-1.5 text-[13px] font-semibold tabular-nums text-base-fg/80 transition-opacity",
-            isDisabled && "opacity-50",
-          )}
-          title={`${credits} credit${credits !== 1 ? "s" : ""} cost`}
+        <Tooltip
+          content={`${credits} credit${credits !== 1 ? "s" : ""} cost`}
+          position="top"
+          className="z-50"
         >
-          <FontAwesomeIcon icon={faCoins} className="text-xs" />
-          {credits}
-        </span>
+          <span
+            className={twMerge(
+              "flex items-center gap-1.5 ms-1.5 text-[13px] font-semibold tabular-nums text-base-fg/80 transition-opacity",
+              isDisabled && "opacity-50",
+            )}
+          >
+            <FontAwesomeIcon icon={faCoins} className="text-xs" />
+            {credits}
+          </span>
+        </Tooltip>
       )}
 
       <button
