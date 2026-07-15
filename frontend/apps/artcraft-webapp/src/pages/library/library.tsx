@@ -51,6 +51,8 @@ import {
   faTag,
   faTags,
   faEllipsis,
+  faCloud,
+  faList,
 } from "@fortawesome/pro-solid-svg-icons";
 import { Lightbox } from "../../components/lightbox/lightbox";
 import {
@@ -63,6 +65,7 @@ import { mapRawToGalleryItem } from "./library-media-map";
 import {
   compareTagsByUseCount,
   useLibraryTagsStore,
+  type UiTag,
 } from "./library-tags-store";
 
 const PAGE_SIZE = 60;
@@ -274,7 +277,9 @@ export default function Library() {
     ? (tags.find((t) => t.token === activeTagToken) ?? null)
     : null;
 
-  // Sort for the all-tags view; local state, not a route.
+  // All-tags view mode + sort; local state, not routes. The cloud is the
+  // default — size encodes use count, so the sort toggle only applies to list.
+  const [tagView, setTagView] = useState<"cloud" | "list">("cloud");
   const [tagSort, setTagSort] = useState<"count" | "name">("count");
   const sortedTags = useMemo(
     () =>
@@ -1273,33 +1278,77 @@ export default function Library() {
                   </Button>
                 )}
                 {tab === "tags" && !activeTagToken && tags.length > 0 && (
-                  <div className="flex items-center gap-1 bg-ui-controls/40 rounded-xl p-1">
-                    {(
-                      [
-                        ["count", "Most used"],
-                        ["name", "Name"],
-                      ] as const
-                    ).map(([id, label]) => (
-                      <button
-                        key={id}
-                        onClick={() => setTagSort(id)}
-                        className={`relative px-2.5 sm:px-4 py-1 sm:py-1.5 rounded-md text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
-                          tagSort === id
-                            ? "text-white"
-                            : "text-white/60 hover:text-white"
-                        }`}
-                      >
-                        {tagSort === id && (
-                          <motion.span
-                            layoutId="library-tag-sort-indicator"
-                            className="absolute inset-0 rounded-md bg-ui-controls"
-                            transition={{ duration: 0.32, ease: EASE_EMPHASIS }}
+                  <>
+                    {tagView === "list" && (
+                      <div className="flex items-center gap-1 bg-ui-controls/40 rounded-xl p-1 overflow-x-auto">
+                        {(
+                          [
+                            ["count", "Most used"],
+                            ["name", "Name"],
+                          ] as const
+                        ).map(([id, label]) => (
+                          <button
+                            key={id}
+                            onClick={() => setTagSort(id)}
+                            className={`relative px-2.5 sm:px-4 py-1 sm:py-1.5 rounded-md text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
+                              tagSort === id
+                                ? "text-white"
+                                : "text-white/60 hover:text-white"
+                            }`}
+                          >
+                            {tagSort === id && (
+                              <motion.span
+                                layoutId="library-tag-sort-indicator"
+                                className="absolute inset-0 rounded-md bg-ui-controls"
+                                transition={{
+                                  duration: 0.32,
+                                  ease: EASE_EMPHASIS,
+                                }}
+                              />
+                            )}
+                            <span className="relative z-10">{label}</span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                    <div className="flex items-center gap-1 bg-ui-controls/40 rounded-xl p-1">
+                      {(
+                        [
+                          ["cloud", faCloud, "Cloud"],
+                          ["list", faList, "List"],
+                        ] as const
+                      ).map(([id, icon, label]) => (
+                        <button
+                          key={id}
+                          onClick={() => setTagView(id)}
+                          title={label}
+                          className={`relative flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-4 py-1 sm:py-1.5 rounded-md text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
+                            tagView === id
+                              ? "text-white"
+                              : "text-white/60 hover:text-white"
+                          }`}
+                        >
+                          {tagView === id && (
+                            <motion.span
+                              layoutId="library-tag-view-indicator"
+                              className="absolute inset-0 rounded-md bg-ui-controls"
+                              transition={{
+                                duration: 0.32,
+                                ease: EASE_EMPHASIS,
+                              }}
+                            />
+                          )}
+                          <FontAwesomeIcon
+                            icon={icon}
+                            className="relative z-10 text-xs"
                           />
-                        )}
-                        <span className="relative z-10">{label}</span>
-                      </button>
-                    ))}
-                  </div>
+                          <span className="relative z-10 hidden sm:inline">
+                            {label}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  </>
                 )}
               </div>
             </div>
@@ -1492,6 +1541,14 @@ export default function Library() {
                   they'll show up here.
                 </p>
               </div>
+            ) : tagView === "cloud" ? (
+              <TagCloud
+                tags={tags}
+                onOpen={(token) => navigate(`/library/${token}`)}
+                onMenu={(cloudTagToken, x, y) =>
+                  setTagContextMenu({ tagToken: cloudTagToken, x, y })
+                }
+              />
             ) : (
               <div className="flex flex-wrap gap-2">
                 {sortedTags.map((t) => (
@@ -1840,6 +1897,92 @@ export default function Library() {
           </>,
           document.body,
         )}
+    </div>
+  );
+}
+
+// ── Tag cloud ─────────────────────────────────────────────────────────────────
+// The default all-tags view: font size and emphasis encode use count, and a
+// deterministic hash shuffle spreads big words among small ones (a stable
+// order — no reflow between renders) for the classic word-cloud look.
+
+const hashString = (s: string): number => {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0;
+  return h;
+};
+
+function TagCloud({
+  tags,
+  onOpen,
+  onMenu,
+}: {
+  tags: UiTag[];
+  onOpen: (token: string) => void;
+  onMenu: (tagToken: string, x: number, y: number) => void;
+}) {
+  const words = useMemo(() => {
+    const counts = tags.map((t) => t.useCount);
+    const min = Math.min(...counts);
+    const span = Math.max(1, Math.max(...counts) - min);
+    return [...tags]
+      .sort((a, b) => hashString(a.token) - hashString(b.token))
+      .map((tag) => ({
+        tag,
+        // sqrt compresses the top end so one mega-tag doesn't dwarf the rest.
+        weight: Math.sqrt((tag.useCount - min) / span),
+      }));
+  }, [tags]);
+
+  return (
+    <div className="mx-auto flex max-w-4xl flex-wrap items-baseline justify-center gap-x-4 gap-y-2.5 sm:gap-x-5 sm:gap-y-3 px-4 py-10 sm:py-16 select-none">
+      {words.map(({ tag, weight }, index) => (
+        <motion.button
+          key={tag.token}
+          type="button"
+          // Staggered pop-in on mount (delay capped so huge clouds don't drag),
+          // then a springy lift + tilt on hover. Transitions live on the
+          // targets so the entrance delay never slows down hover response.
+          initial={{ opacity: 0, scale: 0.5 }}
+          animate={{
+            opacity: 1,
+            scale: 1,
+            transition: {
+              delay: Math.min(index * 0.025, 0.6),
+              duration: 0.3,
+              ease: EASE_EMPHASIS,
+            },
+          }}
+          whileHover={{
+            scale: 1.15,
+            y: -3,
+            // Alternate tilt direction per word so neighbors don't sync up.
+            rotate: hashString(tag.token) % 2 === 0 ? 2.5 : -2.5,
+            transition: { type: "spring", stiffness: 400, damping: 15 },
+          }}
+          whileTap={{ scale: 0.92 }}
+          onClick={() => onOpen(tag.token)}
+          onContextMenu={(e) => {
+            e.preventDefault();
+            onMenu(tag.token, e.clientX, e.clientY);
+          }}
+          title={`${tag.useCount} file${tag.useCount === 1 ? "" : "s"} — right-click to rename or delete`}
+          // vw cap keeps the biggest words from overflowing narrow screens;
+          // on desktop widths the px size always wins the min().
+          style={{
+            fontSize: `min(${Math.round(16 + weight * 40)}px, ${(5 + weight * 7).toFixed(1)}vw)`,
+          }}
+          className={`max-w-full truncate leading-none transition-colors hover:text-violet-400 ${
+            weight > 0.66
+              ? "font-bold text-white"
+              : weight > 0.33
+                ? "font-semibold text-white/70"
+                : "font-medium text-white/40"
+          }`}
+        >
+          {tag.value}
+        </motion.button>
+      ))}
     </div>
   );
 }
