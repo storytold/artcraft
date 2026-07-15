@@ -507,6 +507,8 @@ export default function CreateWorld() {
             referenceImages={referenceImages}
             onReferenceImagesChange={setReferenceImages}
             onPickFromLibrary={() => setIsImagePickerOpen(true)}
+            onClearAllExtras={() => setReferenceVideo(undefined)}
+            hasClearableExtras={!!referenceVideo}
             mediaReferenceRow={videoRow}
             modelSelector={
               <Tooltip content="Model" position="top" className="z-50" closeOnClick>

@@ -35,6 +35,7 @@ import {
   useFullscreenPrompt,
 } from "./PromptFullscreenModal";
 import { PromptFullscreenButton } from "./PromptFullscreenButton";
+import { PromptClearAllButton } from "./PromptClearAllButton";
 
 export interface PromptBoxEditProps {
   onModeChange?: (mode: string) => void;
@@ -265,6 +266,13 @@ export const PromptBoxEdit = ({
   // };
 
   const maxLen = selectedImageModel?.maxPromptLength ?? 1000;
+
+  const hasClearableContent = prompt.length > 0 || referenceImages.length > 0;
+
+  const handleClearAll = () => {
+    setPrompt("");
+    setReferenceImages([]);
+  };
 
   const handleGenerate = async () => {
     const busy = Boolean(isEnqueueing ?? internalEnqueueing);
@@ -506,6 +514,11 @@ export const PromptBoxEdit = ({
                 )}
               </div>
               <div className="flex items-center gap-2">
+                <PromptClearAllButton
+                  onClick={handleClearAll}
+                  disabled={!hasClearableContent}
+                  confirmClear={referenceImages.length > 0}
+                />
                 {onFitPressed && (
                   <Tooltip
                     content={"Fit canvas to screen"}
@@ -568,6 +581,13 @@ export const PromptBoxEdit = ({
         onClose={closeFullscreen}
         promptLength={prompt.length}
         maxLength={maxLen}
+        clearAllButton={
+          <PromptClearAllButton
+            onClick={handleClearAll}
+            disabled={!hasClearableContent}
+            confirmClear={referenceImages.length > 0}
+          />
+        }
         imagePromptRow={
           selectedImageModel?.canUseImagePrompt ? (
             <ImagePromptRow

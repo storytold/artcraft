@@ -2,6 +2,7 @@ import { Button, ButtonProps } from "./button";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCoins } from "@fortawesome/pro-solid-svg-icons";
 import { twMerge } from "tailwind-merge";
+import { Tooltip } from "@storyteller/ui-tooltip";
 
 interface GenerateButtonProps extends ButtonProps {
   credits?: number | null;
@@ -26,16 +27,23 @@ export const GenerateButton = ({
       <span className="truncate">{children}</span>
 
       {credits != null && (
-        <div
-          className={twMerge(
-            "flex items-center gap-1.5 opacity-80 group-hover:opacity-100 transition-opacity pointer-events-none",
-            disabled && "opacity-50",
-          )}
-          title={`${credits} credit${credits !== 1 ? "s" : ""} cost`}
+        <Tooltip
+          content={`${credits} credit${credits !== 1 ? "s" : ""} cost`}
+          position="top"
+          className="z-50"
         >
-          <FontAwesomeIcon icon={faCoins} className="text-xs text-white" />
-          <span className="text-[13px] font-bold text-white/90">{credits}</span>
-        </div>
+          <div
+            className={twMerge(
+              "flex items-center gap-1.5 opacity-80 group-hover:opacity-100 transition-opacity",
+              disabled && "opacity-50",
+            )}
+          >
+            <FontAwesomeIcon icon={faCoins} className="text-xs text-white" />
+            <span className="text-[13px] font-bold text-white/90">
+              {credits}
+            </span>
+          </div>
+        </Tooltip>
       )}
     </Button>
   );

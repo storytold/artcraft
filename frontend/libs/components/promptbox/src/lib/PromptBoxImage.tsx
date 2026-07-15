@@ -23,6 +23,7 @@ import {
 import { useAutoGrowEditorHeight } from "./useAutoGrowEditorHeight";
 import { PromptFullscreenModal, useFullscreenPrompt } from "./PromptFullscreenModal";
 import { PromptFullscreenButton } from "./PromptFullscreenButton";
+import { PromptClearAllButton } from "./PromptClearAllButton";
 import { gtagEvent } from "@storyteller/google-analytics";
 import { twMerge } from "tailwind-merge";
 import { GenerationProvider } from "@storyteller/api-enums";
@@ -301,6 +302,13 @@ export const PromptBoxImage = ({
     setPrompt(e.target.value);
   };
 
+  const hasClearableContent = prompt.length > 0 || referenceImages.length > 0;
+
+  const handleClearAll = () => {
+    setPrompt("");
+    setReferenceImages([]);
+  };
+
   const maxLen = selectedModel?.maxPromptLength ?? 1000;
 
   const handleEnqueue = async () => {
@@ -518,6 +526,11 @@ export const PromptBoxImage = ({
               )}
             </div>
             <div className="flex items-center gap-2">
+              <PromptClearAllButton
+                onClick={handleClearAll}
+                disabled={!hasClearableContent}
+                confirmClear={referenceImages.length > 0}
+              />
               <GenerationCountPicker
                 currentModel={selectedModel}
                 currentCount={generationCount}
@@ -560,6 +573,13 @@ export const PromptBoxImage = ({
         maxLength={maxLen}
         footerControls={modelSelector}
         imagePromptRow={renderReferenceDeck(true) ?? undefined}
+        clearAllButton={
+          <PromptClearAllButton
+            onClick={handleClearAll}
+            disabled={!hasClearableContent}
+            confirmClear={referenceImages.length > 0}
+          />
+        }
       >
         <textarea
           placeholder="Describe what you want in the image..."

@@ -59,6 +59,7 @@ import {
   useFullscreenPrompt,
 } from "./PromptFullscreenModal";
 import { PromptFullscreenButton } from "./PromptFullscreenButton";
+import { PromptClearAllButton } from "./PromptClearAllButton";
 
 interface PromptBox3DProps {
   cameras: Camera[];
@@ -327,6 +328,13 @@ export const PromptBox3D = ({
   };
 
   const maxLen = selectedImageModel?.maxPromptLength ?? 1000;
+
+  const hasClearableContent = prompt.length > 0 || referenceImages.length > 0;
+
+  const handleClearAll = () => {
+    setPrompt("");
+    setReferenceImages([]);
+  };
 
   // Prompted (scene-builder) "Update". Stubbed until the MCP-esque scene
   // descriptor backend lands: for now it just records the prompt on the
@@ -890,6 +898,11 @@ export const PromptBox3D = ({
               </Tooltip>
             </div>
             <div className="flex items-center gap-2">
+              <PromptClearAllButton
+                onClick={handleClearAll}
+                disabled={!hasClearableContent}
+                confirmClear={referenceImages.length > 0}
+              />
               <Tooltip
                 content="Download frame"
                 position="top"
@@ -1039,6 +1052,13 @@ export const PromptBox3D = ({
         promptLength={prompt.length}
         maxLength={maxLen}
         footerControls={modelSelector}
+        clearAllButton={
+          <PromptClearAllButton
+            onClick={handleClearAll}
+            disabled={!hasClearableContent}
+            confirmClear={referenceImages.length > 0}
+          />
+        }
         imagePromptRow={
           selectedImageModel?.canUseImagePrompt ? (
             <ImagePromptRow

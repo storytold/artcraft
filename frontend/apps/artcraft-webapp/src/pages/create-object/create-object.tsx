@@ -638,6 +638,16 @@ export default function CreateObject() {
             referenceImages={referenceImages}
             onReferenceImagesChange={setReferenceImages}
             onPickFromLibrary={() => setLibraryTarget("primary")}
+            onClearAllExtras={() =>
+              setInputs({
+                frontImage: undefined,
+                backImage: undefined,
+                leftImage: undefined,
+                rightImage: undefined,
+                inputMesh: undefined,
+              })
+            }
+            hasClearableExtras={Object.values(inputs).some(Boolean)}
             mediaReferenceRow={meshInputsRow}
             modelSelector={
               <Tooltip content="Model" position="top" className="z-50" closeOnClick>

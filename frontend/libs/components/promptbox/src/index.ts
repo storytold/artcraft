@@ -8,6 +8,7 @@ export * from "./lib/PromptBoxAudio";
 export * from "./lib/useAutoGrowEditorHeight";
 export * from "./lib/PromptFullscreenModal";
 export * from "./lib/PromptFullscreenButton";
+export * from "./lib/PromptClearAllButton";
 export * from "./lib/promptStore";
 export * from "./lib/PromptBoxErrorBoundary";
 export * from "./lib/common/AudioTuningPopover";

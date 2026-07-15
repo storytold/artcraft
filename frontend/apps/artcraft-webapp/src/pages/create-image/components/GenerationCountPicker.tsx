@@ -2,6 +2,8 @@ import { faCopy } from "@fortawesome/pro-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { PopoverMenu, PopoverItem } from "@storyteller/ui-popover";
 import { Tooltip } from "@storyteller/ui-tooltip";
+import { PROMPT_TOOLBAR_ICON_BUTTON_CLASSES } from "@storyteller/ui-promptbox";
+import { twMerge } from "tailwind-merge";
 
 const DEFAULT_GENERATION_COUNT = 4;
 
@@ -33,7 +35,10 @@ export function buildCountItems(
   return items;
 }
 
-export function countFromLabel(label: string, batchSizeMax?: number): number | null {
+export function countFromLabel(
+  label: string,
+  batchSizeMax?: number,
+): number | null {
   const maxCount = batchSizeMax ?? DEFAULT_GENERATION_COUNT;
   let count = parseInt(label, 10);
   if (isNaN(count)) return null;
@@ -75,7 +80,7 @@ export const GenerationCountPicker = ({
         mode="toggle"
         panelTitle={panelTitle}
         triggerIcon={<FontAwesomeIcon icon={faCopy} className="h-4 w-4" />}
-        buttonClassName="h-9"
+        buttonClassName={twMerge(PROMPT_TOOLBAR_ICON_BUTTON_CLASSES, "w-11")}
       />
     </Tooltip>
   );

@@ -32,6 +32,11 @@ interface PromptFullscreenModalProps {
    * focus mode regardless of the inline row's collapse state.
    */
   imagePromptRow?: ReactNode;
+  /**
+   * Optional clear-all control rendered on the footer's right side, left of
+   * the Done button (pass the box's PromptClearAllButton).
+   */
+  clearAllButton?: ReactNode;
 }
 
 export const PromptFullscreenModal = ({
@@ -42,6 +47,7 @@ export const PromptFullscreenModal = ({
   children,
   footerControls,
   imagePromptRow,
+  clearAllButton,
 }: PromptFullscreenModalProps) => {
   const overLimit = isFinite(maxLength) && promptLength > maxLength;
   const contentRef = useRef<HTMLDivElement>(null);
@@ -94,7 +100,10 @@ export const PromptFullscreenModal = ({
         {imagePromptRow && <div className="shrink-0">{imagePromptRow}</div>}
         <div className="flex shrink-0 items-center justify-between gap-2 mt-1">
           <div className="flex items-center gap-2">{footerControls}</div>
-          <Button onClick={onClose}>Done</Button>
+          <div className="flex items-center gap-2">
+            {clearAllButton}
+            <Button onClick={onClose}>Done</Button>
+          </div>
         </div>
       </div>
     </Modal>
