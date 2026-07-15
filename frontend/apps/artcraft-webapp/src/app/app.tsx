@@ -183,8 +183,9 @@ export function App() {
             <Route path="/media/:id" element={<Media />} />
             <Route path="/library" element={<Library />} />
             <Route path="/library/folders" element={<Library />} />
-            {/* `:slug` is a media-class filter (images/videos/meshes) OR a
-                folder token (prefixed `folder_`); the page disambiguates. */}
+            {/* `:slug` is a media-class filter (images/videos/meshes), a
+                folder token (prefixed `folder_`), the static `tags` tab, or
+                a tag token (prefixed `tag_`); the page disambiguates. */}
             <Route path="/library/:slug" element={<Library />} />
             <Route path="/referrals" element={<Referrals />} />
             <Route path="/onboarding" element={<Onboarding />} />

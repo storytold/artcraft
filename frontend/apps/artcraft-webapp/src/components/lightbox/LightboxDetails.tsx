@@ -34,6 +34,7 @@ import {
   getProviderIconByName,
 } from "@storyteller/model-list";
 import { downloadMediaFile } from "../../lib/download-media";
+import { TagsSection } from "../tags/TagsSection";
 import {
   formatAspectRatio,
   formatDuration,
@@ -430,6 +431,8 @@ export function LightboxDetails({
                 </div>
               </div>
             )}
+
+            <TagsSection mediaToken={mediaToken} creator={creator} />
           </>
         )}
       </div>

@@ -32,13 +32,15 @@ const ROUTE_CRUMBS: Record<string, Crumb[]> = {
 };
 
 function resolveCrumbs(pathname: string): Crumb[] {
-  // Library has sub-tabs (Unsorted / Folders) that live under /library/* rather
-  // than being separate top-level pages.
+  // Library has sub-tabs (Unsorted / Folders / Tags) that live under /library/*
+  // rather than being separate top-level pages.
   if (pathname === "/library" || pathname.startsWith("/library/")) {
     const onFolders =
       pathname === "/library/folders" ||
       pathname.startsWith("/library/folder_");
     const onFolderless = pathname === "/library/folderless";
+    const onTags =
+      pathname === "/library/tags" || pathname.startsWith("/library/tag_");
     return [
       { label: "Library", href: "/library" },
       {
@@ -46,7 +48,9 @@ function resolveCrumbs(pathname: string): Crumb[] {
           ? "Folders"
           : onFolderless
             ? "Unfoldered"
-            : "All Assets",
+            : onTags
+              ? "Tags"
+              : "All Assets",
       },
     ];
   }
