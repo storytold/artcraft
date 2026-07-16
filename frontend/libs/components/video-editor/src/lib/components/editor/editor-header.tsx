@@ -26,13 +26,16 @@ export interface EditorHeaderProps {
   // the webapp's pricing/credits/task queue/profile cluster when the
   // global topbar is hidden).
   endSlot?: ReactNode;
+  // Host route to navigate to when the user exits or deletes the open
+  // project (the host owns routing; the editor shell has no routes).
+  exitTo?: string;
 }
 
-export function EditorHeader({ endSlot }: EditorHeaderProps) {
+export function EditorHeader({ endSlot, exitTo = "/projects" }: EditorHeaderProps) {
   return (
     <header className="bg-background flex h-[3.4rem] items-center justify-between px-3 pt-0.5">
       <div className="flex items-center gap-1">
-        <ProjectDropdown />
+        <ProjectDropdown exitTo={exitTo} />
         <EditableProjectName />
       </div>
       <nav className="flex items-center gap-2">
@@ -59,7 +62,7 @@ function CurrentUserBadge() {
   );
 }
 
-function ProjectDropdown() {
+function ProjectDropdown({ exitTo }: { exitTo: string }) {
   const [openDialog, setOpenDialog] = useState<
     "delete" | "rename" | "shortcuts" | null
   >(null);
@@ -79,9 +82,7 @@ function ProjectDropdown() {
     } catch (error) {
       console.error("Failed to prepare project exit:", error);
     } finally {
-      // The /projects route is host-owned. Hosts can intercept this with
-      // their own router or override the editor shell.
-      navigate("/projects");
+      navigate(exitTo);
     }
   };
 
@@ -113,7 +114,7 @@ function ProjectDropdown() {
         await editor.project.deleteProjects({
           ids: [activeProject.metadata.id],
         });
-        navigate("/projects");
+        navigate(exitTo);
       } catch (error) {
         toast.error("Failed to delete project", {
           description:
