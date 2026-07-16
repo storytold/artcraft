@@ -163,6 +163,9 @@ function VideoEditorSession({
         scenes: project.scenes,
         currentSceneId: project.currentSceneId,
       });
+      // A previous session's exit stopped the autosave subscriptions
+      // (closeProject → save.stop()); re-arm them — start() is idempotent.
+      editor.save.start();
       setStatus("ready");
       return;
     }

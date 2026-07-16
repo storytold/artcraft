@@ -142,6 +142,9 @@ export class ProjectManager {
         scenes: project.scenes,
         currentSceneId: project.currentSceneId,
       });
+      // closeProject() stops the autosave subscriptions; re-arm them for
+      // the newly opened project (start() is idempotent).
+      this.editor.save.start();
 
       if (media.length > 0) {
         const assets = await rehydrateProjectMedia({
