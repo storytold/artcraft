@@ -2,14 +2,17 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import { UploaderStates } from "@storyteller/common";
+import { MediaFilesApi, ProjectsApi } from "@storyteller/api";
 import { GalleryModal, GalleryItem } from "@storyteller/ui-gallery-modal";
 import type {
   MoodboardAdapter,
+  MoodboardPersistenceAdapter,
   MoodboardReference,
   MoodboardLibraryPickerProps,
 } from "@storyteller/ui-moodboard";
 import { uploadImage as webappUploadImage } from "../../components/prompt-box/upload-image";
 import { useCreateImageStore } from "../create-image/create-image-store";
+import { useSessionStore } from "../../lib/session";
 import type { RefImage } from "../../components/prompt-box/types";
 
 // Web (artcraft-webapp) implementation of the moodboard's platform seams.
@@ -100,10 +103,97 @@ const WebappLibraryPicker = ({
   );
 };
 
+// Server persistence over the project-document endpoints: each board is one
+// mood_board project (multipart JSON upload; save-new returns the media file
+// token that links the board to its server row).
+const persistence: MoodboardPersistenceAdapter = {
+  isLoggedIn: () => Boolean(useSessionStore.getState().user),
+  subscribeLoginState: (onChange) => useSessionStore.subscribe(onChange),
+
+  saveBoard: async ({ token, name, documentJson }) => {
+    const api = new ProjectsApi();
+    const blob = new Blob([documentJson], { type: "application/json" });
+    const fileName = `${name || "Untitled board"}.mood.json`;
+    const uuid = crypto.randomUUID();
+    const response = token
+      ? await api.UpdateProject({
+          projectType: "mood_board",
+          token,
+          blob,
+          fileName,
+          uuid,
+          maybe_title: name,
+        })
+      : await api.UploadNewProject({
+          projectType: "mood_board",
+          blob,
+          fileName,
+          uuid,
+          maybe_title: name,
+        });
+    return {
+      success: response.success,
+      token: response.data ?? token ?? undefined,
+      errorMessage: response.errorMessage,
+    };
+  },
+
+  listBoards: async () => {
+    const response = await new ProjectsApi().ListSessionProjects({
+      filter_project_type: "mood_board",
+      page_size: 100,
+    });
+    if (!response.success || !response.data) return { success: false };
+    return {
+      success: true,
+      boards: response.data.map((row) => ({
+        token: row.token,
+        name: row.maybe_title ?? "Untitled board",
+        updatedAt: row.updated_at,
+      })),
+    };
+  },
+
+  loadBoard: async (token) => {
+    const response = await new MediaFilesApi().GetMediaFileByToken({
+      mediaFileToken: token,
+    });
+    const cdnUrl = response.success
+      ? response.data?.media_links?.cdn_url
+      : undefined;
+    if (!cdnUrl) return { success: false };
+    const documentResponse = await fetch(cdnUrl);
+    if (!documentResponse.ok) return { success: false };
+    return { success: true, documentJson: await documentResponse.text() };
+  },
+
+  deleteBoard: async (token) => {
+    const response = await new MediaFilesApi().DeleteMediaFileByToken({
+      mediaFileToken: token,
+      asMod: false,
+    });
+    return response.success;
+  },
+
+  resolveMediaUrls: async (tokens) => {
+    const response = await new MediaFilesApi().ListMediaFilesByTokens({
+      mediaTokens: tokens,
+    });
+    const urlByToken: Record<string, string> = {};
+    for (const media of response.data ?? []) {
+      if (media.media_links?.cdn_url) {
+        urlByToken[media.token] = media.media_links.cdn_url;
+      }
+    }
+    return urlByToken;
+  },
+};
+
 export const webappMoodboardAdapter: MoodboardAdapter = {
   uploadImage,
   sendToGeneration,
   renderLibraryPicker: (props) => <WebappLibraryPicker {...props} />,
+  persistence,
 };
 
 // Dedupe by token but keep tokenless refs (a manually-added prompt reference
