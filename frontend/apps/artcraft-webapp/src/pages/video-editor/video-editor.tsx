@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import { LoadingSpinner } from "@storyteller/ui-loading-spinner";
 import {
   VideoEditor,
   EditorCore,
@@ -14,15 +15,26 @@ import { webappAuthUserAdapter } from "./adapters/auth-user-adapter";
 import { webappMediaSourceAdapter } from "./adapters/media-source-adapter";
 import { webappExportSinkAdapter } from "./adapters/export-sink-adapter";
 import { useWebappAssetGalleryAdapter } from "./adapters/asset-gallery-adapter";
+import {
+  createWebappProjectStorage,
+  isLocalProjectId,
+  makeLocalProjectId,
+} from "./adapters/project-storage-adapter";
+import { VideoEditorProjectsLanding } from "./VideoEditorProjectsLanding";
 import { TopBarActions } from "../../components/topbar/TopBarActions";
 
 // Webapp host for the @storyteller/ui-video-editor lib.
 //
-// Bootstraps a default in-memory project so the editor shell can mount
-// with an active scene (replace with a real load via
-// ProjectStorageAdapter once the backend exists), and injects the
-// webapp adapters that route through Artcraft's MediaUploadApi /
-// MediaFilesApi / gallery modal / session store / toast event bus.
+// Routing:
+//   /video-editor                → saved-projects landing (list + new)
+//   /video-editor/local-{uuid}   → fresh in-memory project; the first
+//                                  autosave creates the server row and
+//                                  rewrites the URL to the token
+//   /video-editor/{token}        → load the project document from the
+//                                  server (ProjectsApi / video_timeline)
+//
+// Persistence goes through createWebappProjectStorage; the remaining
+// adapters route uploads/gallery/toasts/session through the webapp.
 
 function buildBootstrapProject({ id }: { id: string }): TProject {
   const scene = buildDefaultScene({ name: "Main scene", isMain: true });
@@ -48,10 +60,36 @@ function buildBootstrapProject({ id }: { id: string }): TProject {
 
 export default function VideoEditorPage() {
   const { projectId } = useParams<{ projectId?: string }>();
-  const [ready, setReady] = useState(false);
+  const navigate = useNavigate();
+  const navigateRef = useRef(navigate);
+  navigateRef.current = navigate;
 
   const { adapter: assetGalleryAdapter, modal: galleryModal } =
     useWebappAssetGalleryAdapter();
+
+  const projectStorage = useMemo(
+    () =>
+      createWebappProjectStorage({
+        onProjectCreated: ({ token }) => {
+          // First save of a fresh project: re-key the active project to
+          // the server token, then swap the URL. The session effect's
+          // "active id already matches the route" check makes the
+          // navigation a no-op instead of a re-bootstrap.
+          const editor = EditorCore.getInstance();
+          const active = editor.project.getActive();
+          if (active && isLocalProjectId(active.metadata.id)) {
+            editor.project.setActiveProject({
+              project: {
+                ...active,
+                metadata: { ...active.metadata, id: token },
+              },
+            });
+          }
+          navigateRef.current(`/video-editor/${token}`, { replace: true });
+        },
+      }),
+    [],
+  );
 
   const adapters = useMemo<Partial<VideoEditorAdapters>>(
     () => ({
@@ -60,16 +98,46 @@ export default function VideoEditorPage() {
       mediaSource: webappMediaSourceAdapter,
       assetGallery: assetGalleryAdapter,
       exportSink: webappExportSinkAdapter,
+      projectStorage,
     }),
-    [assetGalleryAdapter],
+    [assetGalleryAdapter, projectStorage],
   );
 
-  // Stable transient id for the "no projectId in route" case. Computed
-  // once on first mount and reused across StrictMode double-mount,
-  // adapter ref churn, and any other dep change so we never overwrite
-  // the in-memory project with a fresh bootstrap.
-  const transientIdRef = useRef<string>(`local-${crypto.randomUUID()}`);
-  const resolvedProjectId = projectId ?? transientIdRef.current;
+  if (!projectId) {
+    return (
+      <VideoEditorProjectsLanding
+        projectStorage={projectStorage}
+        onNewProject={() =>
+          navigate(`/video-editor/${makeLocalProjectId()}`)
+        }
+        onOpenProject={(token) => navigate(`/video-editor/${token}`)}
+      />
+    );
+  }
+
+  return (
+    <VideoEditorSession
+      key={projectId}
+      projectId={projectId}
+      adapters={adapters}
+      galleryModal={galleryModal}
+    />
+  );
+}
+
+function VideoEditorSession({
+  projectId,
+  adapters,
+  galleryModal,
+}: {
+  projectId: string;
+  adapters: Partial<VideoEditorAdapters>;
+  galleryModal: ReactNode;
+}) {
+  const navigate = useNavigate();
+  const [status, setStatus] = useState<"pending" | "ready" | "missing">(
+    "pending",
+  );
 
   useEffect(() => {
     // Explicit initialize ensures the webapp adapters are installed
@@ -81,21 +149,65 @@ export default function VideoEditorPage() {
     });
     const editor = EditorCore.getInstance();
 
-    // Bootstrap only when the active project doesn't already match the
-    // requested id. StrictMode mount → unmount → re-mount with the same
-    // id is a no-op; a route nav to a different :projectId reloads.
-    if (editor.project.getActive()?.metadata.id !== resolvedProjectId) {
-      const project = buildBootstrapProject({ id: resolvedProjectId });
+    // Already active (StrictMode remount, or the post-first-save URL
+    // rewrite from local id to token): nothing to do.
+    if (editor.project.getActive()?.metadata.id === projectId) {
+      setStatus("ready");
+      return;
+    }
+
+    if (isLocalProjectId(projectId)) {
+      const project = buildBootstrapProject({ id: projectId });
       editor.project.setActiveProject({ project });
       editor.scenes.initializeScenes({
         scenes: project.scenes,
         currentSceneId: project.currentSceneId,
       });
+      setStatus("ready");
+      return;
     }
-    setReady(true);
-  }, [resolvedProjectId, adapters]);
 
-  if (!ready) return null;
+    let cancelled = false;
+    setStatus("pending");
+    editor.project
+      .openProject({ id: projectId })
+      .then((project) => {
+        if (!cancelled) setStatus(project ? "ready" : "missing");
+      })
+      .catch((error) => {
+        console.error("Failed to open project:", projectId, error);
+        if (!cancelled) setStatus("missing");
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [projectId, adapters]);
+
+  if (status === "missing") {
+    return (
+      <div className="flex h-full w-full flex-col items-center justify-center gap-4">
+        <div className="text-lg font-medium">Couldn't open this project</div>
+        <p className="max-w-sm text-center text-sm opacity-60">
+          It may have been deleted, or it belongs to another account.
+        </p>
+        <button
+          onClick={() => navigate("/video-editor")}
+          className="rounded-lg border border-white/15 px-4 py-2 text-sm transition-colors hover:bg-white/10"
+        >
+          Back to projects
+        </button>
+      </div>
+    );
+  }
+
+  if (status === "pending") {
+    return (
+      <div className="flex h-full w-full items-center justify-center gap-3">
+        <LoadingSpinner />
+        <span className="font-medium opacity-70">Loading project...</span>
+      </div>
+    );
+  }
 
   return (
     <div className="h-full w-full overflow-hidden">
@@ -103,6 +215,7 @@ export default function VideoEditorPage() {
         projectId={projectId}
         adapters={adapters}
         headerEndSlot={<TopBarActions />}
+        exitTo="/video-editor"
       />
       {galleryModal}
     </div>
