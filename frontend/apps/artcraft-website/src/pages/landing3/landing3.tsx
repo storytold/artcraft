@@ -95,7 +95,7 @@ const FEATURES = [
     title: "Character Posing",
     description:
       'Dynamically pose your characters to nail the precise character, scene, and camera blocking before calling "action".',
-    src: "/videos/features/Pose_Second_Version.webm",
+    src: "/videos/features/Character-Pose.webm",
   },
   {
     icon: faEraser,
