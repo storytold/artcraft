@@ -23,7 +23,23 @@ export type {
   MoodboardReference,
   MoodboardPickedItem,
   MoodboardLibraryPickerProps,
+  MoodboardPersistenceAdapter,
+  RemoteBoardMeta,
 } from "./lib/adapter";
+
+// Server persistence — document shape + sync status, for hosts that
+// implement MoodboardPersistenceAdapter or build tooling around the
+// persisted mood_board documents.
+export {
+  serializeMoodboardDocument,
+  deserializeMoodboardDocument,
+} from "./lib/persistence/documents";
+export type {
+  MoodboardDocument,
+  MoodboardCanvasDocument,
+} from "./lib/persistence/documents";
+export { useMoodboardSyncStore } from "./lib/persistence/moodboardSync";
+export type { MoodboardSaveStatus } from "./lib/persistence/moodboardSync";
 
 // Gallery → board drop bridge. Host apps wire their gallery's drop callback to
 // this; the grid + canvas views listen for the event it dispatches.

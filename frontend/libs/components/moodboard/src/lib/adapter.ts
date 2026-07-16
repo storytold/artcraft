@@ -21,6 +21,40 @@ export interface MoodboardLibraryPickerProps {
   onPick: (items: MoodboardPickedItem[]) => void;
 }
 
+/** Summary row for a remotely persisted board (one mood_board project). */
+export interface RemoteBoardMeta {
+  token: string;
+  name: string;
+  /** ISO timestamp of the server row's last update. */
+  updatedAt: string;
+}
+
+// Server persistence seam for boards. Each board maps to one mood_board
+// project document on the backend; `saveBoard` creates the row when `token`
+// is null and overwrites it otherwise. All members are promise-based and
+// non-throwing (failures come back as { success: false }).
+export interface MoodboardPersistenceAdapter {
+  /** Gate: remote sync only runs for signed-in users. */
+  isLoggedIn: () => boolean;
+  /** Notify when the login state may have changed (session fetch resolving,
+   *  logout). Returns an unsubscribe. Without this, a session that resolves
+   *  after the workspace mounts would never enable sync. */
+  subscribeLoginState?: (onChange: () => void) => () => void;
+  saveBoard: (args: {
+    token: string | null;
+    name: string;
+    documentJson: string;
+  }) => Promise<{ success: boolean; token?: string; errorMessage?: string }>;
+  listBoards: () => Promise<{ success: boolean; boards?: RemoteBoardMeta[] }>;
+  loadBoard: (
+    token: string,
+  ) => Promise<{ success: boolean; documentJson?: string }>;
+  deleteBoard?: (token: string) => Promise<boolean>;
+  /** Batch-resolve media tokens to display URLs, for items whose blob src
+   *  couldn't be persisted. Missing tokens are simply absent from the map. */
+  resolveMediaUrls?: (tokens: string[]) => Promise<Record<string, string>>;
+}
+
 export interface MoodboardAdapter {
   /** Upload a file, resolving to a durable media token (or null if the platform
    *  can't provide one). When present, uploaded images become reference-capable
@@ -34,4 +68,9 @@ export interface MoodboardAdapter {
   /** Optional library/gallery picker as a render-prop. Omit to disable the
    *  "From library" action (e.g. when a platform's picker isn't wired yet). */
   renderLibraryPicker?: (props: MoodboardLibraryPickerProps) => ReactNode;
+
+  /** Optional server persistence. When present (and the user is signed in),
+   *  the workspace autosaves boards as mood_board project documents and
+   *  hydrates remote boards on mount. Omit for localStorage-only platforms. */
+  persistence?: MoodboardPersistenceAdapter;
 }

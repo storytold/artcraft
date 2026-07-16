@@ -10,6 +10,9 @@ interface UseReturn {
   triggerGallery: () => void;
   /** Adds an empty note and returns its id so the grid can open it for editing. */
   addNote: () => string;
+  /** Add a local image file: places it from a blob URL, then uploads to
+   *  capture a durable mediaToken. Also used by the grid's OS file drop. */
+  addImageFile: (file: File) => Promise<void>;
   modals: ReactNode;
 }
 
@@ -164,7 +167,7 @@ export const useBoardItemEntry = (
     </>
   );
 
-  return { triggerUpload, triggerGallery, addNote, modals };
+  return { triggerUpload, triggerGallery, addNote, addImageFile, modals };
 };
 
 // ---------- helpers ----------

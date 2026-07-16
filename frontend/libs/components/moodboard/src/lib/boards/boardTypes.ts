@@ -82,6 +82,10 @@ export interface Board {
   itemOrder: string[];
   items: Record<string, BoardItem>;
   sections: BoardSection[];
+  // Server-side project token (media_file_token of the mood_board document),
+  // set by the first successful remote save. Absent/null for local-only
+  // boards and for library payloads persisted before remote sync existed.
+  remoteToken?: string | null;
 }
 
 // Nominal aspect ratios for non-media items, so masonry stays deterministic.

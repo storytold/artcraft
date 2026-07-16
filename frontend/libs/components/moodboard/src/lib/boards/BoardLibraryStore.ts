@@ -42,6 +42,19 @@ interface BoardLibraryState extends PersistedLibrary {
   deleteBoard: (id: string) => void;
   setActiveBoard: (id: string) => void;
 
+  // Remote sync bookkeeping (used by the persistence layer, not views).
+  setBoardRemoteToken: (id: string, token: string) => void;
+  // Insert a remotely loaded board, or replace the content of the local
+  // board already linked to the token. Does not change the active board.
+  // Returns the (existing or new) local board id.
+  upsertRemoteBoard: (args: {
+    token: string;
+    name: string;
+    itemOrder: string[];
+    items: Record<string, BoardItem>;
+    sections: Board["sections"];
+  }) => string;
+
   // Item entry — typed creators that fill base fields + aspect.
   addImageItem: (
     boardId: string,
@@ -180,6 +193,56 @@ export const useBoardLibraryStore = create<BoardLibraryState>()(
       setActiveBoard: (id) => {
         if (!get().boards[id]) return;
         set({ activeBoardId: id, selectedItemIds: new Set() });
+      },
+
+      setBoardRemoteToken: (id, token) => {
+        set((s) => {
+          const board = s.boards[id];
+          if (!board || board.remoteToken === token) return s;
+          return {
+            boards: { ...s.boards, [id]: { ...board, remoteToken: token } },
+          };
+        });
+      },
+
+      upsertRemoteBoard: ({ token, name, itemOrder, items, sections }) => {
+        const existing = Object.values(get().boards).find(
+          (b) => b.remoteToken === token,
+        );
+        if (existing) {
+          set((s) => ({
+            boards: {
+              ...s.boards,
+              [existing.id]: {
+                ...existing,
+                name,
+                itemOrder,
+                items,
+                sections,
+                updatedAt: nextSeq(),
+              },
+            },
+          }));
+          return existing.id;
+        }
+
+        const id = uuidv4();
+        const order = nextSeq();
+        const board: Board = {
+          id,
+          name,
+          createdAt: order,
+          updatedAt: order,
+          itemOrder,
+          items,
+          sections,
+          remoteToken: token,
+        };
+        set((s) => ({
+          boards: { ...s.boards, [id]: board },
+          boardOrder: [...s.boardOrder, id],
+        }));
+        return id;
       },
 
       addImageItem: (boardId, data) =>

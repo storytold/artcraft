@@ -8,7 +8,6 @@ import {
 } from "../boards/boardSelectors";
 import toast from "react-hot-toast";
 import { useBoardItemEntry } from "../boards/useBoardItemEntry";
-import { measureImage } from "../boards/measureMedia";
 import { useGalleryBoardDrop } from "./useGalleryBoardDrop";
 import { BoardImageItem, BoardItem } from "../boards/boardTypes";
 import type { MoodboardAdapter } from "../adapter";
@@ -62,7 +61,7 @@ export const BoardGridView = ({ active, adapter }: Props) => {
     (s) => s.assignItemsToSection,
   );
 
-  const { triggerUpload, triggerGallery, addNote, modals } =
+  const { triggerUpload, triggerGallery, addNote, addImageFile, modals } =
     useBoardItemEntry(adapter, active);
 
   const [dragOver, setDragOver] = useState(false);
@@ -200,17 +199,10 @@ export const BoardGridView = ({ active, adapter }: Props) => {
       f.type.startsWith("image/"),
     );
     if (files.length === 0) return;
-    const store = useBoardLibraryStore.getState();
-    const boardId = store.ensureActiveBoard();
+    // Same path as the upload button: place from a blob URL, then upload in
+    // the background so the item gains a durable mediaToken.
     for (const file of files) {
-      const url = URL.createObjectURL(file);
-      const dims = await measureImage(url);
-      store.addImageItem(boardId, {
-        src: url,
-        mediaId: null,
-        naturalW: dims.w,
-        naturalH: dims.h,
-      });
+      await addImageFile(file);
     }
   };
 
