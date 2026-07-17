@@ -18,9 +18,15 @@ import {
   FoldersApi,
   GalleryModalApi,
   MediaFilesApi,
+  TagsApi,
   UsersApi,
 } from "@storyteller/api";
-import type { FolderInfo, FolderMediaFileListItem } from "@storyteller/api";
+import type {
+  FolderInfo,
+  FolderMediaFileListItem,
+  TagDetails,
+  TagMediaFileListItem,
+} from "@storyteller/api";
 import type { GalleryFolder } from "./GalleryDraggableItem";
 import { compareFolders } from "./folderUtils";
 import {
@@ -74,6 +80,7 @@ import {
   faEllipsis,
   faPencil,
   faStar,
+  faTag,
 } from "@fortawesome/pro-solid-svg-icons";
 import {
   useMediaPromptTokens,
@@ -385,6 +392,71 @@ const PAGE_SIZE = 100;
 // Folder media is paginated via cursor; one scroll page at a time.
 const FOLDER_PAGE_SIZE = 60;
 
+// The sidebar shows the five most-used tags; "All tags" opens the word cloud.
+const SIDEBAR_TAG_LIMIT = 5;
+
+const hashString = (s: string): number => {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0;
+  return h;
+};
+
+/**
+ * The all-tags browser view: a word cloud where font size and emphasis encode
+ * use count, and a deterministic hash shuffle spreads big words among small
+ * ones (stable order — no reflow between renders). Mirrors the webapp's
+ * library Tags tab.
+ */
+function TagCloudView({
+  tags,
+  onOpen,
+}: {
+  tags: TagDetails[];
+  onOpen: (tagToken: string) => void;
+}) {
+  const words = useMemo(() => {
+    const counts = tags.map((t) => t.use_count);
+    const min = Math.min(...counts);
+    const span = Math.max(1, Math.max(...counts) - min);
+    return [...tags]
+      .sort((a, b) => hashString(a.tag_token) - hashString(b.tag_token))
+      .map((tag) => ({
+        tag,
+        // sqrt compresses the top end so one mega-tag doesn't dwarf the rest.
+        weight: Math.sqrt((tag.use_count - min) / span),
+      }));
+  }, [tags]);
+
+  return (
+    <div className="flex min-h-full items-center justify-center p-8">
+      <div className="flex max-w-3xl flex-wrap items-baseline justify-center gap-x-5 gap-y-3 select-none">
+        {words.map(({ tag, weight }) => (
+          <button
+            key={tag.tag_token}
+            type="button"
+            onClick={() => onOpen(tag.tag_token)}
+            title={`${tag.use_count} file${tag.use_count === 1 ? "" : "s"}`}
+            style={{ fontSize: `${Math.round(15 + weight * 33)}px` }}
+            className={twMerge(
+              "max-w-full truncate leading-none transition-all duration-200 hover:scale-110 hover:text-violet-400",
+              hashString(tag.tag_token) % 2 === 0
+                ? "hover:rotate-2"
+                : "hover:-rotate-2",
+              weight > 0.66
+                ? "font-bold text-base-fg"
+                : weight > 0.33
+                  ? "font-semibold text-base-fg/70"
+                  : "font-medium text-base-fg/40",
+            )}
+          >
+            {tag.tag_value}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 const SHOW_UPLOADS_STORAGE_KEY = "gallery-modal-show-uploads";
 
 /** Small thumbnail used in the bulk-selection footer bar. */
@@ -618,6 +690,21 @@ export const GalleryModal = React.memo(
     const folderCursorRef = useRef<Record<string, string | undefined>>({});
     const folderHasMoreRef = useRef<Record<string, boolean>>({});
     const folderLoadingRef = useRef<Record<string, boolean>>({});
+
+    // Tags state — sidebar tag browsing (mirrors the folder plumbing). Both
+    // tag views live on the assets tab: `activeTagToken` swaps the grid to
+    // that tag's media, `tagBrowserOpen` shows the all-tags word cloud.
+    const [userTags, setUserTags] = useState<TagDetails[]>([]);
+    const [tagBrowserOpen, setTagBrowserOpen] = useState(false);
+    const [activeTagToken, setActiveTagToken] = useState<string | null>(null);
+    const [tagMediaItems, setTagMediaItems] = useState<
+      Record<string, GalleryItem[]>
+    >({});
+    const [tagContentLoading, setTagContentLoading] = useState(false);
+    const [tagLoadingMore, setTagLoadingMore] = useState(false);
+    const tagCursorRef = useRef<Record<string, string | undefined>>({});
+    const tagHasMoreRef = useRef<Record<string, boolean>>({});
+    const tagLoadingRef = useRef<Record<string, boolean>>({});
     // Rename state — shared by inline (header) and modal (sidebar) flows
     const [renamingFolderId, setRenamingFolderId] = useState<string | null>(
       null,
@@ -714,6 +801,7 @@ export const GalleryModal = React.memo(
     const api = useMemo(() => new GalleryModalApi(), []);
     const mediaFilesApi = useMemo(() => new MediaFilesApi(), []);
     const foldersApi = useMemo(() => new FoldersApi(), []);
+    const tagsApi = useMemo(() => new TagsApi(), []);
 
     // Shared API-folder → UI-folder mapper (see folderMapping.ts).
     const mapFolder = mapFolderInfo;
@@ -754,6 +842,30 @@ export const GalleryModal = React.memo(
       () => groupItemsByDate(activeFolderItems),
       [activeFolderItems, groupItemsByDate],
     );
+
+    // Tag view memos — backed by the per-tag media cache.
+    const activeTagItems = useMemo(
+      () => (activeTagToken ? (tagMediaItems[activeTagToken] ?? []) : []),
+      [activeTagToken, tagMediaItems],
+    );
+    const tagGroupedItems = useMemo(
+      () => groupItemsByDate(activeTagItems),
+      [activeTagItems, groupItemsByDate],
+    );
+    const activeTag = activeTagToken
+      ? (userTags.find((t) => t.tag_token === activeTagToken) ?? null)
+      : null;
+    // Most-used-first ordering for the sidebar tag list.
+    const sortedTags = useMemo(
+      () =>
+        [...userTags].sort(
+          (a, b) =>
+            b.use_count - a.use_count ||
+            a.tag_value_lowercase.localeCompare(b.tag_value_lowercase),
+        ),
+      [userTags],
+    );
+    const sidebarTags = sortedTags.slice(0, SIDEBAR_TAG_LIMIT);
 
     // Audio tiles have no thumbnail, so they show their prompt text instead.
     // Resolve it via the shared batched caches (media token → prompt token →
@@ -910,11 +1022,12 @@ export const GalleryModal = React.memo(
       [],
     );
 
-    // Map a folder media-file list item → GalleryItem. The list item already
-    // carries media_links/cover, so no batch-get is needed (unlike `mapApiItem`,
-    // which reads the raw user-media list shape: origin_category / no batch token).
+    // Map a folder/tag media-file list item → GalleryItem (same lean wire
+    // shape). The list item already carries media_links/cover, so no batch-get
+    // is needed (unlike `mapApiItem`, which reads the raw user-media list
+    // shape: origin_category / no batch token).
     const mapFolderListItem = useCallback(
-      (item: FolderMediaFileListItem): GalleryItem => ({
+      (item: FolderMediaFileListItem | TagMediaFileListItem): GalleryItem => ({
         id: item.token,
         label: getLabel(item),
         thumbnail:
@@ -1615,6 +1728,69 @@ export const GalleryModal = React.memo(
       [foldersApi],
     );
 
+    // Load the user's tag list for the sidebar (same paging cap as folders).
+    const loadTags = useCallback(async () => {
+      try {
+        const all: TagDetails[] = [];
+        let cursor: string | undefined = undefined;
+        for (let page = 0; page < 50; page++) {
+          const res = await tagsApi.ListTags({ cursor });
+          if (!res.success || !res.data) break;
+          all.push(...res.data);
+          const next = res.pagination?.maybe_cursor;
+          if (!next) break;
+          cursor = next;
+        }
+        setUserTags(all);
+      } catch (err) {
+        console.error("Failed to load tags:", err);
+      }
+    }, [tagsApi]);
+
+    // Resolve a tag's media one page at a time — mirrors `loadFolderMedia`.
+    const loadTagMedia = useCallback(
+      async (tagToken: string, reset = false) => {
+        if (tagLoadingRef.current[tagToken]) return;
+        if (!reset && tagHasMoreRef.current[tagToken] === false) return;
+        tagLoadingRef.current[tagToken] = true;
+        if (reset) {
+          tagCursorRef.current[tagToken] = undefined;
+          tagHasMoreRef.current[tagToken] = true;
+          setTagContentLoading(true);
+        } else {
+          setTagLoadingMore(true);
+        }
+        try {
+          const listRes = await tagsApi.ListMediaFilesWithTag({
+            tagToken,
+            cursor: reset ? undefined : tagCursorRef.current[tagToken],
+            limit: FOLDER_PAGE_SIZE,
+          });
+          if (!listRes.success || !listRes.data) return;
+          const nextCursor = listRes.pagination?.maybe_cursor ?? undefined;
+          tagCursorRef.current[tagToken] = nextCursor;
+          tagHasMoreRef.current[tagToken] = !!nextCursor;
+          const ordered = listRes.data.map(mapFolderListItem);
+          setTagMediaItems((prev) => {
+            const existing = reset ? [] : (prev[tagToken] ?? []);
+            const seen = new Set(existing.map((i) => i.id));
+            const merged = [
+              ...existing,
+              ...ordered.filter((i) => !seen.has(i.id)),
+            ];
+            return { ...prev, [tagToken]: merged };
+          });
+        } catch (err) {
+          console.error("Failed to load tag media:", err);
+        } finally {
+          tagLoadingRef.current[tagToken] = false;
+          setTagContentLoading(false);
+          setTagLoadingMore(false);
+        }
+      },
+      [tagsApi, mapFolderListItem],
+    );
+
     // `handleAddToFolder` is defined further down; reach it through a ref so the
     // earlier `handleCreateFolder` can add the just-created folder's seed items.
     const addToFolderRef = useRef<
@@ -1674,6 +1850,8 @@ export const GalleryModal = React.memo(
     const handleOpenFolder = useCallback(
       (folderId: string | null) => {
         setActiveFolderId(folderId);
+        setActiveTagToken(null);
+        setTagBrowserOpen(false);
         setRenamingFolderId(null);
         setBulkSelectedIds(new Set());
         setFolderMenuOpen(false);
@@ -1688,10 +1866,13 @@ export const GalleryModal = React.memo(
       handleOpenFolder(null);
     }, [handleOpenFolder]);
 
-    // Switch top-level tab; leaving the folder browser exits any open folder.
+    // Switch top-level tab; leaving the folder browser exits any open folder
+    // (and any open tag view).
     const switchGalleryTab = useCallback((tab: "unsorted" | "folders") => {
       setGalleryTab(tab);
       setActiveFolderId(null);
+      setActiveTagToken(null);
+      setTagBrowserOpen(false);
       setBulkSelectedIds(new Set());
       setFolderMenuOpen(false);
       setContextMenu(null);
@@ -1706,6 +1887,37 @@ export const GalleryModal = React.memo(
       },
       [handleOpenFolder],
     );
+
+    // Open a tag view from the sidebar or the tag browser: the tag's media
+    // takes over the grid on the assets tab until dismissed.
+    const handleOpenTagFromSidebar = useCallback(
+      (tagToken: string) => {
+        setGalleryTab("unsorted");
+        setActiveFolderId(null);
+        setActiveTagToken(tagToken);
+        setBulkSelectedIds(new Set());
+        setFolderMenuOpen(false);
+        setContextMenu(null);
+        loadTagMedia(tagToken, true);
+      },
+      [loadTagMedia],
+    );
+
+    // Open the all-tags word cloud (the "Tags" browser view).
+    const handleOpenTagBrowser = useCallback(() => {
+      setGalleryTab("unsorted");
+      setActiveFolderId(null);
+      setActiveTagToken(null);
+      setTagBrowserOpen(true);
+      setBulkSelectedIds(new Set());
+      setFolderMenuOpen(false);
+      setContextMenu(null);
+    }, []);
+
+    const handleCloseTagView = useCallback(() => {
+      setActiveTagToken(null);
+      setTagBrowserOpen(false);
+    }, []);
 
     // Close any open folder menus
     const closeFolderMenus = useCallback(() => {
@@ -2118,6 +2330,7 @@ export const GalleryModal = React.memo(
             : true;
       if (modalIsOpen && username) {
         loadFolders();
+        loadTags();
       }
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [mode, isOpen, galleryModalVisibleViewMode.value, username]);
@@ -2250,7 +2463,15 @@ export const GalleryModal = React.memo(
       (e: React.UIEvent<HTMLDivElement>) => {
         const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
         if (scrollHeight - scrollTop - clientHeight >= 100) return;
-        if (activeFolderId) {
+        if (activeTagToken) {
+          // Infinite-scroll the open tag's media.
+          if (
+            tagHasMoreRef.current[activeTagToken] !== false &&
+            !tagLoadingRef.current[activeTagToken]
+          ) {
+            loadTagMedia(activeTagToken, false);
+          }
+        } else if (activeFolderId) {
           // Infinite-scroll the open folder's media.
           if (
             folderHasMoreRef.current[activeFolderId] !== false &&
@@ -2266,7 +2487,7 @@ export const GalleryModal = React.memo(
           loadItems();
         }
       },
-      [activeFolderId, hasMore, loadItems, loadFolderMedia],
+      [activeTagToken, activeFolderId, hasMore, loadItems, loadFolderMedia, loadTagMedia],
     );
 
     // Folder tiles for the current location, rendered on the same grid as media
@@ -2390,7 +2611,55 @@ export const GalleryModal = React.memo(
                         New folder
                       </button>
                     )}
-                  {galleryTab === "folders" && activeFolder ? (
+                  {activeTag ? (
+                    /* ── Tag view header (Tags / name) ── */
+                    <div className="flex items-center gap-1.5 relative z-[51]">
+                      <button
+                        type="button"
+                        onClick={handleOpenTagBrowser}
+                        className="text-base-fg/50 hover:text-base-fg text-sm transition-colors"
+                      >
+                        Tags
+                      </button>
+                      <span className="text-base-fg/30">/</span>
+                      <FontAwesomeIcon
+                        icon={faTag}
+                        className="text-sm text-violet-400"
+                      />
+                      <h2 className="text-lg font-semibold truncate max-w-[16rem]">
+                        {activeTag.tag_value}
+                      </h2>
+                      <span className="text-base-fg/40 text-sm">
+                        {activeTag.use_count} file
+                        {activeTag.use_count === 1 ? "" : "s"}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={handleCloseTagView}
+                        aria-label="Close tag view"
+                        className="flex h-7 w-7 items-center justify-center rounded-full hover:bg-ui-controls/60 text-base-fg/60 hover:text-base-fg transition-colors"
+                      >
+                        <FontAwesomeIcon icon={faXmark} className="text-sm" />
+                      </button>
+                    </div>
+                  ) : tagBrowserOpen ? (
+                    /* ── All-tags browser header ── */
+                    <div className="flex items-center gap-2 relative z-[51]">
+                      <FontAwesomeIcon
+                        icon={faTag}
+                        className="text-sm text-violet-400"
+                      />
+                      <h2 className="text-lg font-semibold">Tags</h2>
+                      <button
+                        type="button"
+                        onClick={handleCloseTagView}
+                        aria-label="Close tags"
+                        className="flex h-7 w-7 items-center justify-center rounded-full hover:bg-ui-controls/60 text-base-fg/60 hover:text-base-fg transition-colors"
+                      >
+                        <FontAwesomeIcon icon={faXmark} className="text-sm" />
+                      </button>
+                    </div>
+                  ) : galleryTab === "folders" && activeFolder ? (
                     /* ── Folder header (breadcrumb trail) ── */
                     <div className="flex items-center gap-1.5 relative z-[51] flex-wrap">
                       <button
@@ -2525,7 +2794,10 @@ export const GalleryModal = React.memo(
                       )}
                     </>
                   )}
-                  {galleryTab === "unsorted" && activeFilter !== "uploaded" && (
+                  {galleryTab === "unsorted" &&
+                    !activeTagToken &&
+                    !tagBrowserOpen &&
+                    activeFilter !== "uploaded" && (
                     <div className="relative z-[51] flex items-center">
                       <Checkbox
                         id="gallery-show-uploads"
@@ -2633,7 +2905,10 @@ export const GalleryModal = React.memo(
                           }}
                           className={twMerge(
                             "flex items-center justify-between gap-2 rounded-md px-2.5 py-1.5 text-sm transition-colors",
-                            isActive && !activeFolderId
+                            isActive &&
+                              !activeFolderId &&
+                              !activeTagToken &&
+                              !tagBrowserOpen
                               ? "bg-ui-controls/60 text-base-fg font-medium"
                               : "text-base-fg/70 hover:bg-ui-controls/30 hover:text-base-fg",
                             forceFilter &&
@@ -2723,6 +2998,62 @@ export const GalleryModal = React.memo(
                         </button>
                       ))
                     )}
+
+                    {/* Tags — most-used first, capped until "Show all". Hidden
+                        entirely until the user has tags (they're created from
+                        the item view's Tags section). */}
+                    {userTags.length > 0 && (
+                      <>
+                        <div className="flex items-center justify-between px-1.5 pt-3 pb-1 flex-shrink-0">
+                          <span className="text-[11px] font-semibold uppercase tracking-wider text-base-fg/40">
+                            Tags
+                          </span>
+                        </div>
+                        {sidebarTags.map((tag) => (
+                          <button
+                            key={tag.tag_token}
+                            type="button"
+                            onClick={() =>
+                              handleOpenTagFromSidebar(tag.tag_token)
+                            }
+                            className={twMerge(
+                              "flex w-full flex-shrink-0 items-center gap-2.5 rounded-md px-2.5 py-1.5 text-sm transition-colors",
+                              activeTagToken === tag.tag_token
+                                ? "bg-ui-controls/60 text-base-fg font-medium"
+                                : "text-base-fg/70 hover:bg-ui-controls/30 hover:text-base-fg",
+                            )}
+                          >
+                            <FontAwesomeIcon
+                              icon={faTag}
+                              className="text-xs w-4 text-violet-400"
+                            />
+                            <span className="truncate">{tag.tag_value}</span>
+                            <span className="ml-auto text-[10px] text-base-fg/40">
+                              {tag.use_count}
+                            </span>
+                          </button>
+                        ))}
+                        <button
+                          type="button"
+                          onClick={handleOpenTagBrowser}
+                          className={twMerge(
+                            "flex w-full flex-shrink-0 items-center gap-2.5 rounded-md px-2.5 py-1.5 text-sm transition-colors",
+                            tagBrowserOpen && !activeTagToken
+                              ? "bg-ui-controls/60 text-base-fg font-medium"
+                              : "text-base-fg/50 hover:bg-ui-controls/30 hover:text-base-fg",
+                          )}
+                        >
+                          <FontAwesomeIcon
+                            icon={faEllipsis}
+                            className="text-xs w-4"
+                          />
+                          <span>All tags</span>
+                          <span className="ml-auto text-[10px] text-base-fg/40">
+                            {sortedTags.length}
+                          </span>
+                        </button>
+                      </>
+                    )}
                   </div>
                 </div>
               )}
@@ -2738,7 +3069,125 @@ export const GalleryModal = React.memo(
               >
                 {/* Subfolder tiles for the current location (root or open folder) */}
                 {folderChipsSection}
-                {galleryTab === "folders" && !activeFolderId ? (
+                {activeTagToken ? (
+                  /* ── Tag view ── */
+                  tagContentLoading && activeTagItems.length === 0 ? (
+                    <div className="flex h-full items-center justify-center">
+                      <LoadingSpinner className="h-8 w-8" />
+                    </div>
+                  ) : activeTagItems.length === 0 ? (
+                    <div className="flex h-full flex-col items-center justify-center gap-3">
+                      <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-violet-400/10">
+                        <FontAwesomeIcon
+                          icon={faTag}
+                          className="text-violet-400 text-2xl"
+                        />
+                      </div>
+                      <div className="text-base-fg font-semibold">
+                        No files carry this tag
+                      </div>
+                      <div className="text-base-fg/40 text-sm text-center max-w-[16rem]">
+                        Add tags to media from the item view's Tags section.
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-6 p-4">
+                      {Object.entries(tagGroupedItems).map(
+                        ([date, dateItems], groupIndex) => {
+                          const filteredItems = dateItems.filter(filterItem);
+                          if (filteredItems.length === 0) return null;
+                          return (
+                            <LazyDateGroup
+                              key={date}
+                              eager={groupIndex < 2}
+                              itemCount={filteredItems.length}
+                              gridColumns={gridColumns}
+                              scrollRoot={scrollContainerRef.current}
+                            >
+                              <h3 className="text-md mb-2 font-medium text-base-fg/60">
+                                {date}
+                              </h3>
+                              <div
+                                className={twMerge("grid", gapClass)}
+                                style={{
+                                  gridTemplateColumns: `repeat(${gridColumns}, minmax(0, 1fr))`,
+                                }}
+                              >
+                                {filteredItems.map((item) => (
+                                  <GalleryDraggableItem
+                                    key={item.id}
+                                    item={item}
+                                    mode={mode}
+                                    activeFilter={activeFilter}
+                                    audioPromptText={audioPromptTextFor(item)}
+                                    selected={selectedItemIds.includes(item.id)}
+                                    onClick={() => handleItemClick(item)}
+                                    onImageError={(e) => {
+                                      e.currentTarget.src =
+                                        PLACEHOLDER_IMAGES.DEFAULT;
+                                      e.currentTarget.style.opacity = "0.3";
+                                      (
+                                        e.currentTarget as HTMLImageElement
+                                      ).dataset.brokenurl =
+                                        item.thumbnail || "";
+                                      handleImageError(item.thumbnail!);
+                                    }}
+                                    disableTooltipAndBadge={mode === "select"}
+                                    imageFit={imageFit}
+                                    onDeleted={handleItemDeleted}
+                                    onDelete={onDeleteMedia}
+                                    onEditClicked={onEditClicked}
+                                    maxSelections={maxSelections}
+                                    bulkSelected={bulkSelectedIds.has(item.id)}
+                                    onBulkSelectToggle={() =>
+                                      toggleBulkSelect(item.id)
+                                    }
+                                    bulkSelectionMode={bulkSelectionMode}
+                                    getBulkDragItems={getBulkDragItems}
+                                    folders={folders}
+                                    onAddToFolder={requestFolderDrop}
+                                    onCreateFolderFromMenu={
+                                      handleOpenNewFolderModal
+                                    }
+                                  />
+                                ))}
+                              </div>
+                            </LazyDateGroup>
+                          );
+                        },
+                      )}
+                      {tagLoadingMore && (
+                        <div className="flex justify-center py-4">
+                          <LoadingSpinner className="h-8 w-8" />
+                        </div>
+                      )}
+                    </div>
+                  )
+                ) : tagBrowserOpen ? (
+                  /* ── All-tags word cloud ── */
+                  userTags.length === 0 ? (
+                    <div className="flex h-full flex-col items-center justify-center gap-3">
+                      <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-violet-400/10">
+                        <FontAwesomeIcon
+                          icon={faTag}
+                          className="text-violet-400 text-2xl"
+                        />
+                      </div>
+                      <div className="text-base-fg font-semibold">
+                        No tags yet
+                      </div>
+                      <div className="text-base-fg/40 text-sm text-center max-w-[16rem]">
+                        Open any item and add tags in its details panel —
+                        they'll show up here.
+                      </div>
+                    </div>
+                  ) : (
+                    <TagCloudView
+                      tags={sortedTags}
+                      onOpen={handleOpenTagFromSidebar}
+                    />
+                  )
+                ) : galleryTab === "folders" && !activeFolderId ? (
                   /* ── Folders tab, root: folder cards only (above) ── */
                   currentSubfolders.length === 0 ? (
                     <div className="flex h-full flex-col items-center justify-center gap-3">

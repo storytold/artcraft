@@ -61,6 +61,7 @@ import {
   formatDuration,
   formatResolution,
 } from "@storyteller/common";
+import { TagsSection } from "./tags/TagsSection";
 
 interface LightboxModalProps {
   isOpen: boolean;
@@ -1054,6 +1055,8 @@ export function LightboxModal({
                   createdAt={createdAt}
                 />
               )}
+
+              <TagsSection mediaToken={mediaId} creator={creator} />
 
               {additionalInfo}
             </div>

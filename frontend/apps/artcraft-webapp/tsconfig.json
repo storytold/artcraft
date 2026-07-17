@@ -42,6 +42,9 @@
       "path": "../../libs/components/gallery-modal"
     },
     {
+      "path": "../../libs/components/lightbox-modal"
+    },
+    {
       "path": "../../libs/components/switch"
     },
     {

@@ -131,7 +131,7 @@ export function TagChipInput({
   };
 
   const chipClass = (value: string) =>
-    `flex items-center gap-1 rounded-full bg-white/10 px-2.5 py-1 text-[11px] font-medium text-white/80 transition-all ${
+    `flex items-center gap-1 rounded-full bg-white/10 px-2.5 py-1 text-[11px] font-medium text-base-fg/80 transition-all ${
       flashValue === value ? "ring-2 ring-primary" : ""
     }`;
 
@@ -146,7 +146,7 @@ export function TagChipInput({
         {chips.map((value) =>
           disabled ? (
             <span key={value.toLowerCase()} className={chipClass(value)}>
-              <FontAwesomeIcon icon={faTag} className="h-2.5 w-2.5 text-white/40" />
+              <FontAwesomeIcon icon={faTag} className="h-2.5 w-2.5 text-base-fg/40" />
               {value}
             </span>
           ) : (
@@ -181,7 +181,7 @@ export function TagChipInput({
               if (draft.trim()) commit(draft);
             }}
             placeholder={chips.length === 0 ? "Add tags (comma separated)" : "Add tag"}
-            className="min-w-[7rem] flex-1 bg-transparent py-0.5 text-sm text-white placeholder:text-white/40 focus:outline-none"
+            className="min-w-[7rem] flex-1 bg-transparent py-0.5 text-sm text-base-fg placeholder:text-base-fg/40 focus:outline-none"
           />
         )}
       </div>
@@ -196,13 +196,13 @@ export function TagChipInput({
               onMouseDown={(e) => e.preventDefault()}
               onClick={() => pickSuggestion(suggestion.value)}
               onMouseEnter={() => setHighlightIndex(index)}
-              className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm text-white transition-colors ${
+              className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm text-base-fg transition-colors ${
                 highlight === index ? "bg-ui-controls/60" : "hover:bg-ui-controls/40"
               }`}
             >
-              <FontAwesomeIcon icon={faTag} className="text-[10px] text-white/40" />
+              <FontAwesomeIcon icon={faTag} className="text-[10px] text-base-fg/40" />
               <span className="truncate">{suggestion.value}</span>
-              <span className="ml-auto text-[11px] text-white/40">
+              <span className="ml-auto text-[11px] text-base-fg/40">
                 {suggestion.useCount}
               </span>
             </button>
