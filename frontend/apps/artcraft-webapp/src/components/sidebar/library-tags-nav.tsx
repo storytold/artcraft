@@ -15,7 +15,7 @@ import {
 } from "../../pages/library/library-tags-store";
 import { EASE_EMPHASIS } from "../../lib/motion";
 
-const MAX_SIDEBAR_TAGS = 10;
+const MAX_SIDEBAR_TAGS = 5;
 
 /**
  * The "Tags" rows of the Assets sidebar group, rendered below the folders
@@ -137,6 +137,23 @@ export function LibraryTagsNav({
                   </button>
                 </SidebarMenuItem>
               ))}
+              {tags.length > MAX_SIDEBAR_TAGS && (
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild tooltip="See all tags">
+                    <Link
+                      to="/library/tags"
+                      onClick={onNavClick}
+                      className="pl-5 text-sidebar-foreground/60"
+                    >
+                      <FontAwesomeIcon icon={faEllipsis} />
+                      <span>See all tags</span>
+                      <span className="ml-auto text-[10px] text-sidebar-foreground/40">
+                        {tags.length}
+                      </span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              )}
             </ul>
           </motion.li>
         )}

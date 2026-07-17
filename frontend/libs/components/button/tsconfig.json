@@ -3,6 +3,9 @@
   "include": [],
   "references": [
     {
+      "path": "../tooltip"
+    },
+    {
       "path": "../../common"
     },
     {
