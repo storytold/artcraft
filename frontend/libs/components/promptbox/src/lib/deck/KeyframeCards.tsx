@@ -55,7 +55,7 @@ export const KeyframeCards = ({
     >
       <DeckStyles />
 
-      <KeyframeSlot
+      <DeckSlotCard
         item={firstFrame}
         label="First frame"
         tiltClass={showLastFrame ? "-rotate-6" : ""}
@@ -83,7 +83,7 @@ export const KeyframeCards = ({
             )}
           </div>
 
-          <KeyframeSlot
+          <DeckSlotCard
             item={lastFrame}
             label="Last frame"
             tiltClass="rotate-6"
@@ -102,17 +102,23 @@ export const KeyframeCards = ({
   );
 };
 
-const KeyframeSlot = ({
+/**
+ * One always-visible labeled reference slot: a dashed add card (with a
+ * per-slot add menu when there are multiple actions) that becomes a DeckCard
+ * once filled. Used for keyframes and for fixed named slots like the 3D
+ * multi-view angles; the caller owns the DeckPreviewModal fed by onPreview.
+ */
+export const DeckSlotCard = ({
   item,
   label,
-  tiltClass,
+  tiltClass = "",
   addActions,
   onRemove,
   onPreview,
 }: {
   item?: DeckItem;
   label: string;
-  tiltClass: string;
+  tiltClass?: string;
   addActions: DeckAddAction[];
   onRemove?: () => void;
   onPreview: (item: DeckItem) => void;

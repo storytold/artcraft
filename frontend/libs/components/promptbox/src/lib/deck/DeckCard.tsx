@@ -8,6 +8,7 @@ import {
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faArrowUpFromBracket,
+  faCube,
   faImages,
   faPlay,
   faSpinnerThird,
@@ -87,7 +88,8 @@ export const DeckCard = ({
     if (item.uploading) return;
     if (item.kind === "audio") {
       handleToggleAudio();
-    } else {
+    } else if (item.kind !== "mesh") {
+      // Mesh files have nothing to preview.
       onClick?.();
     }
   };
@@ -99,6 +101,7 @@ export const DeckCard = ({
         !item.uploading &&
           "cursor-pointer hover:border-white/80 hover:cursor-zoom-in",
         item.kind === "audio" && "hover:cursor-pointer",
+        item.kind === "mesh" && "hover:cursor-default",
         animateIn && "animate-[deck-pop_180ms_ease-out]",
         className,
       )}
@@ -126,6 +129,14 @@ export const DeckCard = ({
             item.uploading && "blur-sm",
           )}
         />
+      )}
+      {item.kind === "mesh" && (
+        <div className="flex h-full w-full items-center justify-center">
+          <FontAwesomeIcon
+            icon={faCube}
+            className="h-5 w-5 text-base-fg/60 transition-colors group-hover:text-base-fg"
+          />
+        </div>
       )}
       {item.kind === "audio" && (
         <div className="flex h-full w-full items-center justify-center">

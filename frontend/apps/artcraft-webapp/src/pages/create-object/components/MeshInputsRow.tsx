@@ -6,16 +6,12 @@ import {
   faCube,
   faImage,
 } from "@fortawesome/pro-solid-svg-icons";
-import { MediaUploadApi } from "@storyteller/api";
-import { FilterEngineCategories } from "@storyteller/api";
-import { UploaderStates } from "@storyteller/common";
-import { uploadImage } from "../../../components/prompt-box/upload-image";
 import { AddButton, type RefImage } from "../../../components/prompt-box";
+import { MESH_FILE_ACCEPT, uploadMeshFile, uploadViewImage } from "./mesh-upload";
 
 // Multi-view side inputs (front/back/left/right) and the mesh-to-mesh input
-// file, shown above the prompt box when the selected model supports them. Uses
-// the same media upload path (and Upload / Pick-from-library affordance) as the
-// primary reference image row.
+// file — the mobile form band. The desktop prompt box renders the same store
+// slice as reference-deck cards via useMeshDeckRefs.
 
 export type MultiViewSlot = "front" | "back" | "left" | "right";
 
@@ -37,8 +33,6 @@ interface MeshInputsRowProps {
   // Opens the library picker targeting a specific multi-view slot.
   onPickSlotFromLibrary?: (slot: MultiViewSlot) => void;
 }
-
-const MESH_FILE_ACCEPT = ".glb,.gltf,.fbx,.obj";
 
 export function MeshInputsRow({
   showMultiView,
@@ -63,9 +57,8 @@ export function MeshInputsRow({
 
   return (
     // Title on the left, upload slots right-aligned + top-aligned (matches
-    // ImagePromptRow). Flat bottom on desktop so it seams into the prompt box
-    // glass stacked below it; fully rounded on mobile (stands alone there).
-    <div className="glass flex items-start gap-3 rounded-2xl px-3 py-2 sm:rounded-t-2xl sm:rounded-b-none">
+    // ImagePromptRow).
+    <div className="glass flex items-start gap-3 rounded-2xl px-3 py-2">
       <div className="flex grow flex-col gap-1 min-w-32">
         <div className="flex items-center gap-2 text-white/90">
           <FontAwesomeIcon icon={titleIcon} className="h-3.5 w-3.5" />
@@ -163,35 +156,14 @@ function ImageSlot({
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
 
-  const handleUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
+    if (inputRef.current) inputRef.current.value = "";
     if (!file) return;
     setUploading(true);
-    const reader = new FileReader();
-    reader.onloadend = async () => {
-      await uploadImage({
-        title: `${label.toLowerCase()}-view-${Math.random().toString(36).substring(2, 10)}`,
-        assetFile: file,
-        progressCallback: (state) => {
-          if (state.status === UploaderStates.success && state.data) {
-            onChange({
-              id: Math.random().toString(36).substring(7),
-              url: reader.result as string,
-              file,
-              mediaToken: state.data,
-            });
-            setUploading(false);
-          } else if (
-            state.status === UploaderStates.assetError ||
-            state.status === UploaderStates.imageCreateError
-          ) {
-            setUploading(false);
-          }
-        },
-      });
-      if (inputRef.current) inputRef.current.value = "";
-    };
-    reader.readAsDataURL(file);
+    const image = await uploadViewImage(label, file);
+    setUploading(false);
+    if (image) onChange(image);
   };
 
   return (
@@ -247,31 +219,12 @@ function MeshFileSlot({
 
   const handleUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
+    if (inputRef.current) inputRef.current.value = "";
     if (!file) return;
     setUploading(true);
-    try {
-      const api = new MediaUploadApi();
-      const response = await api.UploadNewEngineAsset({
-        file,
-        fileName: file.name || `input-mesh-${Date.now()}`,
-        uuid: crypto.randomUUID(),
-        engine_category: FilterEngineCategories.OBJECT,
-        maybe_title: "input_mesh",
-      });
-      if (response?.success && response.data) {
-        onChange({
-          id: Math.random().toString(36).substring(7),
-          url: "",
-          file,
-          mediaToken: response.data,
-        });
-      }
-    } catch {
-      // ignore — user can retry
-    } finally {
-      setUploading(false);
-      if (inputRef.current) inputRef.current.value = "";
-    }
+    const mesh = await uploadMeshFile(file);
+    setUploading(false);
+    if (mesh) onChange(mesh);
   };
 
   return (

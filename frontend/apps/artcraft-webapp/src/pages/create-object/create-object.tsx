@@ -4,11 +4,7 @@ import { PopoverMenu, type PopoverItem } from "@storyteller/ui-popover";
 import { Tooltip } from "@storyteller/ui-tooltip";
 import { Button, ToggleButton } from "@storyteller/ui-button";
 import { GalleryModal, type GalleryItem } from "@storyteller/ui-gallery-modal";
-import {
-  faSparkles,
-  faGem,
-  faImage,
-} from "@fortawesome/pro-solid-svg-icons";
+import { faSparkles, faGem, faImage } from "@fortawesome/pro-solid-svg-icons";
 import {
   PromptBox,
   ImagePromptRow,
@@ -37,6 +33,7 @@ import {
   QUALITY_OPTIONS,
 } from "./components/MeshOptionPickers";
 import { MeshInputsRow, type MultiViewSlot } from "./components/MeshInputsRow";
+import { MeshDeckSlots } from "./components/MeshDeckSlots";
 import { useMeshCostEstimate } from "../../lib/cost-estimate-api";
 import { resolveModelOption } from "../../lib/resolve-model-setting";
 import {
@@ -124,8 +121,16 @@ export default function CreateObject() {
 
   // Settings are sticky across model switches, resolved against the current
   // model's supported options at read time (see lib/resolve-model-setting).
-  const meshOutputType = resolveModelOption(ui.meshOutputType, outputTypes, outputTypes[0]);
-  const polygonType = resolveModelOption(ui.polygonType, polygonTypes, polygonTypes[0]);
+  const meshOutputType = resolveModelOption(
+    ui.meshOutputType,
+    outputTypes,
+    outputTypes[0],
+  );
+  const polygonType = resolveModelOption(
+    ui.polygonType,
+    polygonTypes,
+    polygonTypes[0],
+  );
   const geometryQuality = resolveModelOption(
     ui.geometryQuality,
     supportsGeometryQuality ? QUALITY_OPTIONS : [],
@@ -138,7 +143,9 @@ export default function CreateObject() {
   );
   // Toggles default on when supported unless the user turned them off.
   const enablePbr = supportsPbr ? (ui.enablePbr ?? false) : false;
-  const enableTexture = supportsTextureToggle ? (ui.enableTexture ?? true) : true;
+  const enableTexture = supportsTextureToggle
+    ? (ui.enableTexture ?? true)
+    : true;
 
   const [isGenerating, setIsGenerating] = useState(false);
   const referenceImages = useCreateObjectStore((s) => s.referenceImages);
@@ -458,12 +465,23 @@ export default function CreateObject() {
   const placeholder = supportsText
     ? "Describe the 3D object you want..."
     : supportsMeshInput
-      ? "Upload a mesh file below to process"
-      : "Add a reference image below";
+      ? "Upload a mesh file to process"
+      : "Add a reference image";
 
-  // Only render the extra-inputs row when the model actually supports one of its
-  // slots, otherwise it renders empty but still flags a "row above" the prompt
-  // box (flat-top visual glitch).
+  // Desktop: multi-view angles + input mesh render as always-visible slot
+  // cards beside the reference deck (like the video page's keyframe cards).
+  const meshDeckSlots =
+    supportsMultiView || supportsMeshInput ? (
+      <MeshDeckSlots
+        showMultiView={supportsMultiView}
+        showMeshInput={supportsMeshInput}
+        inputs={inputs}
+        setInputs={setInputs}
+        onPickSlotFromLibrary={setLibraryTarget}
+      />
+    ) : undefined;
+
+  // Mobile-only band over the same store slice.
   const meshInputsRow =
     supportsMultiView || supportsMeshInput ? (
       <MeshInputsRow
@@ -619,7 +637,7 @@ export default function CreateObject() {
       promptBox={
         <div
           ref={promptBoxRef}
-          className="animate-fade-in-up fixed bottom-2 sm:bottom-3 right-0 z-30 mx-auto max-w-5xl px-2 sm:px-4 transition-[left] duration-200 ease-linear"
+          className="animate-fade-in-up fixed bottom-2 sm:bottom-3 right-0 z-30 mx-auto max-w-6xl px-2 sm:px-4 transition-[left] duration-200 ease-linear"
           style={{
             animationDelay: "150ms",
             left: "var(--ac-sidebar-offset, 0px)",
@@ -648,9 +666,14 @@ export default function CreateObject() {
               })
             }
             hasClearableExtras={Object.values(inputs).some(Boolean)}
-            mediaReferenceRow={meshInputsRow}
+            referenceSlots={meshDeckSlots}
             modelSelector={
-              <Tooltip content="Model" position="top" className="z-50" closeOnClick>
+              <Tooltip
+                content="Model"
+                position="top"
+                className="z-50"
+                closeOnClick
+              >
                 <PopoverMenu
                   items={modelItems}
                   onSelect={handleModelChange}
@@ -660,7 +683,9 @@ export default function CreateObject() {
                   richList
                   triggerIcon={
                     <img
-                      src={getCreatorIconPathForModelId(selectedModel?.model ?? "")}
+                      src={getCreatorIconPathForModelId(
+                        selectedModel?.model ?? "",
+                      )}
                       alt=""
                       className="h-4 w-4 icon-auto-contrast"
                     />

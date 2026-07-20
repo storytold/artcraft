@@ -113,8 +113,8 @@ export default function CreateWorld() {
   const [isGenerating, setIsGenerating] = useState(false);
   const referenceImages = useCreateWorldStore((s) => s.referenceImages);
   const setReferenceImages = useCreateWorldStore((s) => s.setReferenceImages);
-  const referenceVideo = useCreateWorldStore((s) => s.referenceVideo);
-  const setReferenceVideo = useCreateWorldStore((s) => s.setReferenceVideo);
+  const referenceVideos = useCreateWorldStore((s) => s.referenceVideos);
+  const setReferenceVideos = useCreateWorldStore((s) => s.setReferenceVideos);
   const [isImagePickerOpen, setIsImagePickerOpen] = useState(false);
   const [pickerSelectedIds, setPickerSelectedIds] = useState<string[]>([]);
 
@@ -202,7 +202,7 @@ export default function CreateWorld() {
   const estimatedCredits = useSplatCostEstimate({
     model: selectedModel?.model ?? "",
     referenceImageCount: referenceImages.length,
-    hasReferenceVideo: !!referenceVideo,
+    hasReferenceVideo: referenceVideos.length > 0,
     isPanoramic: supportsPanorama ? isPanoramic : undefined,
     disableRecaption: supportsDisableRecaption ? disableRecaption : undefined,
   });
@@ -222,7 +222,9 @@ export default function CreateWorld() {
   const canGenerate =
     !!selectedModel &&
     !isGenerating &&
-    (prompt.trim().length > 0 || referenceImages.length > 0 || !!referenceVideo);
+    (prompt.trim().length > 0 ||
+      referenceImages.length > 0 ||
+      referenceVideos.length > 0);
 
   // ── Effects ──────────────────────────────────────────────────────────────
 
@@ -312,10 +314,12 @@ export default function CreateWorld() {
           ? referenceImageMediaTokens
           : undefined,
         referenceVideoMediaToken: supportsVideo
-          ? referenceVideo?.mediaToken
+          ? referenceVideos[0]?.mediaToken
           : undefined,
         isPanoramic: supportsPanorama ? isPanoramic : undefined,
-        disableRecaption: supportsDisableRecaption ? disableRecaption : undefined,
+        disableRecaption: supportsDisableRecaption
+          ? disableRecaption
+          : undefined,
       });
 
       if (!result.success || !result.jobToken) {
@@ -368,7 +372,7 @@ export default function CreateWorld() {
     supportsPanorama,
     supportsDisableRecaption,
     referenceImages,
-    referenceVideo,
+    referenceVideos,
     isPanoramic,
     disableRecaption,
     startBatch,
@@ -394,7 +398,11 @@ export default function CreateWorld() {
         </Tooltip>
       )}
       {supportsDisableRecaption && (
-        <Tooltip content="Use prompt exactly (skip recaption)" position="top" closeOnClick>
+        <Tooltip
+          content="Use prompt exactly (skip recaption)"
+          position="top"
+          closeOnClick
+        >
           <ToggleButton
             isActive={disableRecaption}
             icon={faWandMagicSparkles}
@@ -407,8 +415,12 @@ export default function CreateWorld() {
     </>
   );
 
+  // Mobile-only band; on desktop the guide video lives in the reference deck.
   const videoRow = supportsVideo ? (
-    <ReferenceVideoSlot video={referenceVideo} onChange={setReferenceVideo} />
+    <ReferenceVideoSlot
+      video={referenceVideos[0]}
+      onChange={(video) => setReferenceVideos(video ? [video] : [])}
+    />
   ) : undefined;
 
   // ── Mobile form ─────────────────────────────────────────────────────────
@@ -488,7 +500,7 @@ export default function CreateWorld() {
       promptBox={
         <div
           ref={promptBoxRef}
-          className="animate-fade-in-up fixed bottom-2 sm:bottom-3 right-0 z-30 mx-auto max-w-5xl px-2 sm:px-4 transition-[left] duration-200 ease-linear"
+          className="animate-fade-in-up fixed bottom-2 sm:bottom-3 right-0 z-30 mx-auto max-w-6xl px-2 sm:px-4 transition-[left] duration-200 ease-linear"
           style={{
             animationDelay: "150ms",
             left: "var(--ac-sidebar-offset, 0px)",
@@ -507,11 +519,18 @@ export default function CreateWorld() {
             referenceImages={referenceImages}
             onReferenceImagesChange={setReferenceImages}
             onPickFromLibrary={() => setIsImagePickerOpen(true)}
-            onClearAllExtras={() => setReferenceVideo(undefined)}
-            hasClearableExtras={!!referenceVideo}
-            mediaReferenceRow={videoRow}
+            videoRefsSupported={supportsVideo}
+            referenceVideos={referenceVideos}
+            onReferenceVideosChange={setReferenceVideos}
+            maxVideoCount={1}
+            maxVideoRefDuration={Infinity}
             modelSelector={
-              <Tooltip content="Model" position="top" className="z-50" closeOnClick>
+              <Tooltip
+                content="Model"
+                position="top"
+                className="z-50"
+                closeOnClick
+              >
                 <PopoverMenu
                   items={modelItems}
                   onSelect={handleModelChange}
@@ -521,7 +540,9 @@ export default function CreateWorld() {
                   richList
                   triggerIcon={
                     <img
-                      src={getCreatorIconPathForModelId(selectedModel?.model ?? "")}
+                      src={getCreatorIconPathForModelId(
+                        selectedModel?.model ?? "",
+                      )}
                       alt=""
                       className="h-4 w-4 icon-auto-contrast"
                     />
