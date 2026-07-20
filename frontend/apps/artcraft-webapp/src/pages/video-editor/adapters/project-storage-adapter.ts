@@ -5,6 +5,7 @@ import type {
   ProjectStorageAdapter,
 } from "@storyteller/ui-video-editor";
 import { webappToastAdapter } from "./toast-adapter";
+import { captureAndUploadProjectCover } from "./thumbnail-capture";
 
 // Server-backed ProjectStorageAdapter over the project-document endpoints
 // (`/v1/media_files/upload/project/video_timeline/{new,update/{token}}` +
@@ -20,6 +21,13 @@ import { webappToastAdapter } from "./toast-adapter";
 
 const LOCAL_ID_PREFIX = "local-";
 const UNTITLED_PROJECT_NAME = "Untitled project";
+const COVER_CAPTURE_THROTTLE_MS = 60_000;
+
+// The lib's ProjectStorageAdapter plus webapp-only operations the projects
+// landing needs (rename without opening the editor).
+export type WebappProjectStorage = ProjectStorageAdapter & {
+  renameProject(id: string, name: string): Promise<void>;
+};
 
 export function isLocalProjectId(id: string): boolean {
   return id.startsWith(LOCAL_ID_PREFIX);
@@ -33,7 +41,7 @@ export function createWebappProjectStorage({
   onProjectCreated,
 }: {
   onProjectCreated?: (args: { localId: string; token: string }) => void;
-} = {}): ProjectStorageAdapter {
+} = {}): WebappProjectStorage {
   const projectsApi = new ProjectsApi();
   const filesApi = new MediaFilesApi();
 
@@ -43,8 +51,20 @@ export function createWebappProjectStorage({
   // renames call saveCurrentProject directly — the chain guarantees a
   // create can never race a second create for the same project.
   const saveQueues = new Map<string, Promise<void>>();
+  // Last cover capture per token: covers refresh on the first save of a
+  // session and then at most once a minute.
+  const coverCapturedAt = new Map<string, number>();
 
   const resolveId = (id: string): string => localToRemote.get(id) ?? id;
+
+  const maybeCaptureCover = (id: string): void => {
+    const token = resolveId(id);
+    if (isLocalProjectId(token)) return;
+    const last = coverCapturedAt.get(token) ?? 0;
+    if (Date.now() - last < COVER_CAPTURE_THROTTLE_MS) return;
+    coverCapturedAt.set(token, Date.now());
+    void captureAndUploadProjectCover({ token });
+  };
 
   const uploadDocument = async (envelope: EditorProject): Promise<void> => {
     const name = envelope.name || UNTITLED_PROJECT_NAME;
@@ -89,6 +109,9 @@ export function createWebappProjectStorage({
       const task = async () => {
         try {
           await uploadDocument(envelope);
+          // Fire-and-forget: by now a first save has filled localToRemote,
+          // so brand-new projects get a cover immediately.
+          maybeCaptureCover(envelope.id);
         } catch (error) {
           // Saves ship the full document, so a failed save is fully
           // recovered by the next successful one — surface it and move
@@ -161,6 +184,21 @@ export function createWebappProjectStorage({
       });
       if (!response.success) {
         throw new Error(response.errorMessage || "Delete failed");
+      }
+    },
+
+    async renameProject(id, name) {
+      const token = resolveId(id);
+      if (isLocalProjectId(token)) return;
+      // Title-only endpoint — no document re-upload. Known edge: an editor
+      // session open in another tab still autosaves its stale in-memory
+      // title and can overwrite this rename on its next save.
+      const response = await filesApi.RenameMediaFileByToken({
+        mediaToken: token,
+        name,
+      });
+      if (!response.success) {
+        throw new Error(response.errorMessage || "Rename failed");
       }
     },
 
