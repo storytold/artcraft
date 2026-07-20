@@ -129,7 +129,10 @@ export const ReferenceDeck = ({
   );
 
   const imageItems = useMemo(
-    () => items.filter((i) => i.kind === "image" && !i.uploading),
+    () =>
+      items.filter(
+        (i) => i.kind === "image" && !i.uploading && i.sortable !== false,
+      ),
     [items],
   );
   const allowReorder = !!onReorderImages && imageItems.length > 1;
@@ -308,7 +311,10 @@ export const ReferenceDeck = ({
             strategy={rectSortingStrategy}
           >
             {items.map((item) =>
-              allowReorder && item.kind === "image" && !item.uploading ? (
+              allowReorder &&
+              item.kind === "image" &&
+              !item.uploading &&
+              item.sortable !== false ? (
                 <SortableDeckCard
                   key={item.id}
                   item={item}
@@ -378,14 +384,17 @@ export const ReferenceDeck = ({
     >
       <DeckStyles />
 
-      {/* Collapsed fan — fixed footprint so the textarea never reflows.
-          Only the card stack expands the panel on hover; the circular +
-          in front has its own hover menu. */}
+      {/* Collapsed fan — footprint tracks the card count (stack width plus
+          the circular +'s 12px overhang) so a single card doesn't reserve
+          the full 3-card fan width and push the textarea away. Only the
+          card stack expands the panel on hover; the circular + in front has
+          its own hover menu. */}
       <div
         className={twMerge(
-          "relative h-14 w-[92px] transition-opacity duration-150",
+          "relative h-14 transition-opacity duration-150",
           expanded && "pointer-events-none opacity-0",
         )}
+        style={{ width: `${(collapsedItems.length - 1) * 12 + 68}px` }}
       >
         <div
           className="absolute inset-y-0 left-0"

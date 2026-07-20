@@ -213,7 +213,7 @@ export const MediaReferenceRow = ({
       />
       <div
         className={twMerge(
-          "glass flex flex-col sm:flex-row rounded-2xl sm:rounded-none",
+          "glass flex flex-col sm:flex-row rounded-2xl",
           className,
         )}
         onMouseDown={(e) => e.stopPropagation()}

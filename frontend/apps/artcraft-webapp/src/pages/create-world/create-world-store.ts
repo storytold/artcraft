@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type { RecreatePayload } from "../../lib/recreate";
-import type { RefImage } from "../../components/prompt-box";
+import type { RefImage, RefVideo } from "../../components/prompt-box";
 
 // A generated splat (3D world). `cdn_url` here is the .spz file.
 export interface GeneratedAsset {
@@ -28,23 +28,17 @@ export type SplatUiState = {
   disableRecaption: boolean | undefined;
 };
 
-// A stored reference video: media token + a local object-URL for preview. Not
-// persisted (File handles / blob URLs aren't serializable).
-export type RefVideoAsset = {
-  id: string;
-  previewUrl: string;
-  mediaToken: string;
-};
-
 type CreateWorldState = {
   batches: SplatBatch[];
   ui: SplatUiState;
   referenceImages: RefImage[];
-  referenceVideo: RefVideoAsset | undefined;
+  // At most one guide video. Not persisted (File handles / blob URLs aren't
+  // serializable).
+  referenceVideos: RefVideo[];
   pendingRecreate: RecreatePayload | null;
   setUi: (patch: Partial<SplatUiState>) => void;
   setReferenceImages: (images: RefImage[]) => void;
-  setReferenceVideo: (video: RefVideoAsset | undefined) => void;
+  setReferenceVideos: (videos: RefVideo[]) => void;
   setPendingRecreate: (payload: RecreatePayload | null) => void;
   consumePendingRecreate: () => RecreatePayload | null;
   startBatch: (prompt: string, modelLabel: string) => string;
@@ -68,14 +62,14 @@ export const useCreateWorldStore = create<CreateWorldState>()(
       batches: [],
       ui: { ...DEFAULT_UI },
       referenceImages: [],
-      referenceVideo: undefined,
+      referenceVideos: [],
       pendingRecreate: null,
 
       setUi: (patch) => set((s) => ({ ui: { ...s.ui, ...patch } })),
 
       setReferenceImages: (images) => set({ referenceImages: images }),
 
-      setReferenceVideo: (video) => set({ referenceVideo: video }),
+      setReferenceVideos: (videos) => set({ referenceVideos: videos }),
 
       setPendingRecreate: (payload) => set({ pendingRecreate: payload }),
 

@@ -617,7 +617,7 @@ export default function CreateImage() {
       promptBox={
         <div
           ref={promptBoxRef}
-          className="animate-fade-in-up fixed bottom-2 sm:bottom-3 right-0 z-30 mx-auto max-w-5xl px-2 sm:px-4 transition-[left] duration-200 ease-linear"
+          className="animate-fade-in-up fixed bottom-2 sm:bottom-3 right-0 z-30 mx-auto max-w-6xl px-2 sm:px-4 transition-[left] duration-200 ease-linear"
           style={{
             animationDelay: "150ms",
             left: "var(--ac-sidebar-offset, 0px)",
@@ -652,7 +652,9 @@ export default function CreateImage() {
                   richList
                   triggerIcon={
                     <img
-                      src={getCreatorIconPathForModelId(selectedModel?.model ?? "")}
+                      src={getCreatorIconPathForModelId(
+                        selectedModel?.model ?? "",
+                      )}
                       alt=""
                       className="h-4 w-4 icon-auto-contrast"
                     />

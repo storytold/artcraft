@@ -50,6 +50,12 @@ export interface UseDeckMediaOptions<
 
 const randomId = () => Math.random().toString(36).substring(7);
 
+// A non-finite duration cap means "no limit" — leave it out of the message.
+const videoLimitMessage = (maxVideos: number, maxTotalSec: number) =>
+  isFinite(maxTotalSec)
+    ? `Max ${maxVideos} videos / ${maxTotalSec}s total`
+    : `Max ${maxVideos} video${maxVideos === 1 ? "" : "s"}`;
+
 const randomTitle = (prefix: string) =>
   `${prefix}-${Math.random().toString(36).substring(2, 15)}`;
 
@@ -291,7 +297,7 @@ export function useDeckMedia<
     const baseVideos = [...referenceVideos];
     const availableSlots = Math.max(0, maxVideos - baseVideos.length);
     if (availableSlots <= 0) {
-      toast.error(`Max ${maxVideos} videos / ${maxVideoTotalSec}s total`, {
+      toast.error(videoLimitMessage(maxVideos, maxVideoTotalSec), {
         id: "video-ref-limit",
       });
       return;
@@ -443,8 +449,9 @@ export function useDeckMedia<
     if (audios.length > 0 && setReferenceAudios) processAudioFiles(audios);
   };
 
+  // maxImages of 0 means the page's model takes no image refs at all.
   const anyUploadAccept = [
-    "image/*",
+    ...(maxImages > 0 ? ["image/*"] : []),
     ...(setReferenceVideos ? ["video/mp4", ".mp4"] : []),
     ...(setReferenceAudios ? ["audio/*"] : []),
   ].join(",");
@@ -479,7 +486,7 @@ export function useDeckMedia<
       const baseVideos = [...referenceVideos];
       const availableSlots = Math.max(0, maxVideos - baseVideos.length);
       if (availableSlots <= 0) {
-        toast.error(`Max ${maxVideos} videos / ${maxVideoTotalSec}s total`, {
+        toast.error(videoLimitMessage(maxVideos, maxVideoTotalSec), {
           id: "video-ref-limit",
         });
         handleGalleryClose();

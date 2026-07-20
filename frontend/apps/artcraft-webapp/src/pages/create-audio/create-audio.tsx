@@ -121,22 +121,17 @@ export default function CreateAudio() {
   const ui = useCreateAudioStore((s) => s.ui);
   const setUi = useCreateAudioStore((s) => s.setUi);
 
-  const selectedModel = useMemo(
-    (): OmniGenAudioModelDetails | undefined => {
-      if (!apiModels.length) return undefined;
-      if (ui.selectedModelId) {
-        return (
-          apiModels.find((m) => m.model === ui.selectedModelId) ??
-          apiModels.find((m) => m.model === DEFAULT_MODEL_ID) ??
-          apiModels[0]
-        );
-      }
+  const selectedModel = useMemo((): OmniGenAudioModelDetails | undefined => {
+    if (!apiModels.length) return undefined;
+    if (ui.selectedModelId) {
       return (
-        apiModels.find((m) => m.model === DEFAULT_MODEL_ID) ?? apiModels[0]
+        apiModels.find((m) => m.model === ui.selectedModelId) ??
+        apiModels.find((m) => m.model === DEFAULT_MODEL_ID) ??
+        apiModels[0]
       );
-    },
-    [apiModels, ui.selectedModelId],
-  );
+    }
+    return apiModels.find((m) => m.model === DEFAULT_MODEL_ID) ?? apiModels[0];
+  }, [apiModels, ui.selectedModelId]);
 
   const prompt = ui.prompt;
   const setPrompt = useCallback((v: string) => setUi({ prompt: v }), [setUi]);
@@ -287,7 +282,9 @@ export default function CreateAudio() {
     (audios: typeof referenceAudios) => {
       if (audios.length > 0 && referenceImages.length > 0) {
         setReferenceImages([]);
-        toast.error("Removed image reference — it can't be combined with audio");
+        toast.error(
+          "Removed image reference — it can't be combined with audio",
+        );
       }
       setReferenceAudios(audios);
     },
@@ -298,7 +295,9 @@ export default function CreateAudio() {
     (images: RefImage[]) => {
       if (images.length > 0 && referenceAudios.length > 0) {
         setReferenceAudios([]);
-        toast.error("Removed audio reference — it can't be combined with an image");
+        toast.error(
+          "Removed audio reference — it can't be combined with an image",
+        );
       }
       setReferenceImages(images);
     },
@@ -363,13 +362,15 @@ export default function CreateAudio() {
 
   const handleLibraryImageSelect = useCallback(
     (items: GalleryItem[]) => {
-      const newImages: RefImage[] = items.slice(0, maxImageRefs).map((item) => ({
-        id: Math.random().toString(36).substring(7),
-        url: item.thumbnail || item.fullImage || "",
-        fullUrl: item.fullImage || undefined,
-        file: new File([], "library-image"),
-        mediaToken: item.id,
-      }));
+      const newImages: RefImage[] = items
+        .slice(0, maxImageRefs)
+        .map((item) => ({
+          id: Math.random().toString(36).substring(7),
+          url: item.thumbnail || item.fullImage || "",
+          fullUrl: item.fullImage || undefined,
+          file: new File([], "library-image"),
+          mediaToken: item.id,
+        }));
       handleReferenceImagesChange(newImages);
       setIsImagePickerOpen(false);
     },
@@ -547,6 +548,7 @@ export default function CreateAudio() {
     </>
   );
 
+  // Mobile-only band; on desktop the audio refs live in the reference deck.
   const audioReferenceRow = audioRefsSupported ? (
     <MediaReferenceRow
       videoSupported={false}
@@ -787,7 +789,7 @@ export default function CreateAudio() {
       promptBox={
         <div
           ref={promptBoxRef}
-          className="animate-fade-in-up fixed bottom-2 sm:bottom-3 right-0 z-30 mx-auto max-w-5xl px-2 sm:px-4 transition-[left] duration-200 ease-linear"
+          className="animate-fade-in-up fixed bottom-2 sm:bottom-3 right-0 z-30 mx-auto max-w-6xl px-2 sm:px-4 transition-[left] duration-200 ease-linear"
           style={{
             animationDelay: "150ms",
             left: "var(--ac-sidebar-offset, 0px)",
@@ -806,14 +808,14 @@ export default function CreateAudio() {
             referenceImages={referenceImages}
             onReferenceImagesChange={handleReferenceImagesChange}
             onPickFromLibrary={() => setIsImagePickerOpen(true)}
-            onClearAllExtras={() => {
-              setStylePrompt("");
-              setReferenceAudios([]);
-            }}
-            hasClearableExtras={
-              ui.stylePrompt.length > 0 || referenceAudios.length > 0
-            }
-            mediaReferenceRow={audioReferenceRow}
+            audioRefsSupported={audioRefsSupported}
+            referenceAudios={referenceAudios}
+            onReferenceAudiosChange={handleReferenceAudiosChange}
+            maxAudioCount={maxAudioRefs}
+            maxAudioRefDuration={AUDIO_REF_MAX_DURATION_SECONDS}
+            onPickAudioFromLibrary={() => setIsAudioPickerOpen(true)}
+            onClearAllExtras={() => setStylePrompt("")}
+            hasClearableExtras={ui.stylePrompt.length > 0}
             secondaryPromptRow={
               styleSupported ? (
                 <StylePromptRow

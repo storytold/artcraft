@@ -81,7 +81,8 @@ interface PromptBoxProps {
   onClearAllExtras?: () => void;
   hasClearableExtras?: boolean;
 
-  // Reference-mode media (video page passes these; other pages omit)
+  // Video/audio references, rendered as cards in the reference deck (video
+  // page in reference mode, world page's guide video, audio page's tracks).
   videoRefsSupported?: boolean;
   referenceVideos?: RefVideo[];
   onReferenceVideosChange?: (videos: RefVideo[]) => void;
@@ -93,9 +94,9 @@ interface PromptBoxProps {
   maxAudioCount?: number;
   maxAudioRefDuration?: number;
 
-  // Legacy band rendered above the box (audio/object/world pages still use
-  // this; the image/video pages moved to the inline reference deck).
-  mediaReferenceRow?: ReactNode;
+  // Always-visible named slot cards rendered beside the reference deck
+  // (object page's multi-view angles + input mesh), built from DeckSlotCard.
+  referenceSlots?: ReactNode;
 
   // Model selector (rendered above the toolbar, typically hidden on desktop via lg:hidden)
   modelSelector?: ReactNode;
@@ -151,7 +152,7 @@ export const PromptBox = forwardRef<HTMLDivElement, PromptBoxProps>(
       onReferenceAudiosChange,
       maxAudioCount = 2,
       maxAudioRefDuration = 30,
-      mediaReferenceRow,
+      referenceSlots,
       modelSelector,
       secondaryPromptRow,
       mentionItems,
@@ -195,7 +196,9 @@ export const PromptBox = forwardRef<HTMLDivElement, PromptBoxProps>(
     const deck = useDeckMedia({
       referenceImages,
       setReferenceImages: onReferenceImagesChange,
-      maxImages: maxImagePromptCount,
+      // 0 blocks image uploads (incl. via the combined picker) on pages whose
+      // model only takes audio/video/mesh refs.
+      maxImages: supportsImagePrompts ? maxImagePromptCount : 0,
       setEndFrameImage: onEndFrameImageChange,
       referenceVideos,
       setReferenceVideos: onReferenceVideosChange,
@@ -278,8 +281,9 @@ export const PromptBox = forwardRef<HTMLDivElement, PromptBoxProps>(
 
     const deckAddActions: DeckAddAction[] = [];
     if (
+      supportsImagePrompts &&
       referenceImages.length + deck.uploadingImages.length <
-      maxImagePromptCount
+        maxImagePromptCount
     ) {
       deckAddActions.push({
         key: "upload-image",
@@ -297,8 +301,6 @@ export const PromptBox = forwardRef<HTMLDivElement, PromptBoxProps>(
       }
     }
     if (
-      isVideo &&
-      isReferenceMode &&
       videoRefsSupported &&
       referenceVideos.length < maxVideoCount &&
       !deck.uploadingVideo
@@ -319,8 +321,6 @@ export const PromptBox = forwardRef<HTMLDivElement, PromptBoxProps>(
       }
     }
     if (
-      isVideo &&
-      isReferenceMode &&
       audioRefsSupported &&
       referenceAudios.length < maxAudioCount &&
       !deck.uploadingAudio
@@ -422,10 +422,10 @@ export const PromptBox = forwardRef<HTMLDivElement, PromptBoxProps>(
     };
 
     // Left-of-textarea reference widget: image deck, keyframe cards, or the
-    // mixed reference-mode deck depending on page/mode.
+    // mixed deck depending on page/mode.
     const renderReferenceWidget = (alwaysExpanded?: boolean) => {
-      if (!supportsImagePrompts) return null;
       if (isVideo && !isReferenceMode) {
+        if (!supportsImagePrompts) return null;
         return (
           <KeyframeCards
             firstFrame={firstFrameItem}
@@ -469,6 +469,9 @@ export const PromptBox = forwardRef<HTMLDivElement, PromptBoxProps>(
           />
         );
       }
+      if (!supportsImagePrompts && !videoRefsSupported && !audioRefsSupported) {
+        return null;
+      }
       const totalVideoRefSeconds = referenceVideos.reduce(
         (sum, video) => sum + video.duration,
         0,
@@ -477,16 +480,24 @@ export const PromptBox = forwardRef<HTMLDivElement, PromptBoxProps>(
         (sum, audio) => sum + audio.duration,
         0,
       );
-      const groupHints: Record<string, string> = {
-        image: `${referenceImages.length}/${maxImagePromptCount}`,
-      };
-      if (isVideo && isReferenceMode) {
-        if (videoRefsSupported) {
-          groupHints.video = `${referenceVideos.length}/${maxVideoCount} · ${totalVideoRefSeconds}/${maxVideoRefDuration}s`;
-        }
-        if (audioRefsSupported) {
-          groupHints.audio = `${referenceAudios.length}/${maxAudioCount} · ${totalAudioRefSeconds}/${maxAudioRefDuration}s`;
-        }
+      const groupHints: Record<string, string> = {};
+      if (supportsImagePrompts) {
+        groupHints.image = `${referenceImages.length}/${maxImagePromptCount}`;
+      }
+      // A non-finite duration cap means "no limit" — show counts only.
+      if (videoRefsSupported) {
+        groupHints.video =
+          `${referenceVideos.length}/${maxVideoCount}` +
+          (isFinite(maxVideoRefDuration)
+            ? ` · ${totalVideoRefSeconds}/${maxVideoRefDuration}s`
+            : "");
+      }
+      if (audioRefsSupported) {
+        groupHints.audio =
+          `${referenceAudios.length}/${maxAudioCount}` +
+          (isFinite(maxAudioRefDuration)
+            ? ` · ${totalAudioRefSeconds}/${maxAudioRefDuration}s`
+            : "");
       }
 
       return (
@@ -495,7 +506,11 @@ export const PromptBox = forwardRef<HTMLDivElement, PromptBoxProps>(
           canAdd={deckAddActions.length > 0}
           addActions={deckAddActions}
           addMenuGroupHints={groupHints}
-          onAddClick={deck.openAnyUpload}
+          onAddClick={
+            supportsImagePrompts || videoRefsSupported || audioRefsSupported
+              ? deck.openAnyUpload
+              : undefined
+          }
           onRemove={handleRemoveDeckItem}
           onReorderImages={(from, to) =>
             onReferenceImagesChange(arrayMove(referenceImages, from, to))
@@ -690,19 +705,15 @@ export const PromptBox = forwardRef<HTMLDivElement, PromptBoxProps>(
         <div className="relative flex flex-col">
           {deck.fileInputs}
 
-          {mediaReferenceRow && (
-            <div className="sm:rounded-t-2xl">{mediaReferenceRow}</div>
-          )}
-
           <div
             className={twMerge(
               "glass rounded-2xl p-3 sm:p-4 !transition-all duration-200",
-              mediaReferenceRow && "rounded-t-none border-t-0",
               isFocused && "ring-1 ring-primary",
             )}
           >
             <div className="flex gap-3">
               {renderReferenceWidget()}
+              {referenceSlots}
 
               <div className="promptbox-resize-wrap relative flex-1">
                 {hasMentionItems && mentionItems ? (
@@ -908,7 +919,14 @@ export const PromptBox = forwardRef<HTMLDivElement, PromptBoxProps>(
               {leftToolbar}
             </>
           }
-          imagePromptRow={renderReferenceWidget(true) ?? undefined}
+          imagePromptRow={
+            renderReferenceWidget(true) || referenceSlots ? (
+              <div className="flex flex-wrap items-center gap-3">
+                {renderReferenceWidget(true)}
+                {referenceSlots}
+              </div>
+            ) : undefined
+          }
           clearAllButton={
             <PromptClearAllButton
               onClick={handleClearAll}

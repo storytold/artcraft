@@ -1,6 +1,6 @@
 import type { IconDefinition } from "@fortawesome/fontawesome-svg-core";
 
-export type DeckItemKind = "image" | "video" | "audio";
+export type DeckItemKind = "image" | "video" | "audio" | "mesh";
 
 /**
  * Neutral reference item consumed by the deck UI. Callers adapt their own
@@ -20,6 +20,9 @@ export interface DeckItem {
   duration?: number;
   /** True while its upload is in flight — blurred thumb + spinner overlay. */
   uploading?: boolean;
+  /** False excludes an image card from drag-reorder (fixed slots like
+   *  multi-view angles whose position is meaningful). Default true. */
+  sortable?: boolean;
 }
 
 /** One entry in a deck "+" add menu (upload, pick from library, ...). */
