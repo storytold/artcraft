@@ -185,6 +185,7 @@ export const GalleryCard = memo(function GalleryCard({
         ) : (
           <GalleryThumbnail
             thumbnail={item.thumbnail}
+            stillThumbnail={item.stillThumbnail}
             alt={item.label}
             isVideo={isVideo}
             fallbackIcon={mediaIcon}

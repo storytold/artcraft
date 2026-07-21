@@ -1,7 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { JobsApi, JobStatus, MediaFilesApi } from "@storyteller/api";
 import type { Job, Prompts } from "@storyteller/api";
-import { getMediaThumbnail, THUMBNAIL_SIZES } from "@storyteller/common";
+import {
+  getMediaStillThumbnail,
+  getMediaThumbnail,
+  THUMBNAIL_SIZES,
+} from "@storyteller/common";
 import {
   getModelDisplayName,
   getProviderDisplayName,
@@ -252,6 +256,12 @@ function jobToGalleryItem(
     id: result.entity_token,
     label: getPrompt(job, promptsMap) || "Generation",
     thumbnail,
+    stillThumbnail:
+      mediaClass === "video"
+        ? getMediaStillThumbnail(result.media_links, {
+            size: THUMBNAIL_SIZES.LARGE,
+          })
+        : null,
     fullImage: result.media_links?.cdn_url || null,
     // Sort by job creation time (not completion time) so the completed card
     // occupies the same Masonry slot the pending card held — no layout shift.
@@ -294,6 +304,12 @@ async function expandBatchItems(
           id: file.token,
           label: item.label,
           thumbnail,
+          stillThumbnail:
+            item.mediaClass === "video"
+              ? getMediaStillThumbnail(file.media_links, {
+                  size: THUMBNAIL_SIZES.LARGE,
+                })
+              : null,
           fullImage: cdnUrl,
           createdAt: item.createdAt,
           mediaClass: item.mediaClass,

@@ -32,6 +32,7 @@ import {
   applyMakeVideoFromImage,
   applyRecreateFromMediaToken,
 } from "../../lib/recreate";
+import { useLightboxSoundStore } from "../../lib/lightbox-sound-store";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -80,6 +81,7 @@ export function Lightbox({
   showBatchCarousel = true,
 }: LightboxProps) {
   const navigate = useNavigate();
+  const soundEnabled = useLightboxSoundStore((s) => s.soundEnabled);
   const [mediaLoaded, setMediaLoaded] = useState(false);
   const [promptData, setPromptData] = useState<PromptData>(EMPTY_PROMPT);
   const [creator, setCreator] = useState<UserInfo | null>(null);
@@ -379,7 +381,7 @@ export function Lightbox({
                 controls
                 loop
                 autoPlay
-                muted
+                muted={!soundEnabled}
                 playsInline
                 disablePictureInPicture
                 controlsList="nodownload noplaybackrate nofullscreen"
@@ -389,6 +391,22 @@ export function Lightbox({
                   const el = e.currentTarget;
                   setMediaWidth(el.videoWidth);
                   setMediaHeight(el.videoHeight);
+                  // Restore the user's last volume (getState: subscribing
+                  // would re-render on every tick of a volume drag).
+                  el.volume = useLightboxSoundStore.getState().volume;
+                  // If the browser blocked unmuted autoplay, fall back to
+                  // muted playback rather than leaving the video frozen.
+                  if (soundEnabled && el.paused) {
+                    el.play().catch(() => {
+                      el.muted = true;
+                      el.play().catch(() => {});
+                    });
+                  }
+                }}
+                onVolumeChange={(e) => {
+                  useLightboxSoundStore
+                    .getState()
+                    .setVolume(e.currentTarget.volume);
                 }}
                 ref={(el) => {
                   if (el) {

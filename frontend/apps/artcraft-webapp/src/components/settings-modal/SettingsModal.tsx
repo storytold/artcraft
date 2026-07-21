@@ -6,6 +6,7 @@ import { Switch } from "@storyteller/ui-switch";
 import { USER_FEATURE_FLAGS } from "@storyteller/api";
 import { twMerge } from "tailwind-merge";
 import { useEnterToGenerateStore } from "../../lib/enter-to-generate-store";
+import { useLightboxSoundStore } from "../../lib/lightbox-sound-store";
 import { useSession } from "../../lib/session";
 import { AccountSection } from "./AccountSection";
 import { ApiKeySection } from "./ApiKeySection";
@@ -105,6 +106,8 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
 function GeneralPanel() {
   const enterToGenerate = useEnterToGenerateStore((s) => s.enabled);
   const setEnterToGenerate = useEnterToGenerateStore((s) => s.setEnabled);
+  const lightboxSound = useLightboxSoundStore((s) => s.soundEnabled);
+  const setLightboxSound = useLightboxSoundStore((s) => s.setSoundEnabled);
 
   return (
     <div className="space-y-4 text-base-fg">
@@ -120,6 +123,20 @@ function GeneralPanel() {
         <Switch
           enabled={enterToGenerate}
           setEnabled={setEnterToGenerate}
+          offClassName="bg-white/20"
+        />
+      </div>
+      <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-0.5">
+          <p className="text-sm font-medium">Play videos with sound</p>
+          <p className="text-xs opacity-70">
+            When on, videos in the media viewer start unmuted so you don't have
+            to click unmute every time. When off (default), they start muted.
+          </p>
+        </div>
+        <Switch
+          enabled={lightboxSound}
+          setEnabled={setLightboxSound}
           offClassName="bg-white/20"
         />
       </div>
