@@ -107,8 +107,8 @@ const WebappLibraryPicker = ({
 // mood_board project (multipart JSON upload; save-new returns the media file
 // token that links the board to its server row).
 const persistence: MoodboardPersistenceAdapter = {
-  isLoggedIn: () => Boolean(useSessionStore.getState().user),
-  subscribeLoginState: (onChange) => useSessionStore.subscribe(onChange),
+  getUserId: () => useSessionStore.getState().user?.user_token ?? null,
+  subscribeAuthState: (onChange) => useSessionStore.subscribe(onChange),
 
   saveBoard: async ({ token, name, documentJson }) => {
     const api = new ProjectsApi();
@@ -154,38 +154,56 @@ const persistence: MoodboardPersistenceAdapter = {
     };
   },
 
+  // The adapter contract is non-throwing; the raw fetch()es here reject on
+  // network failure, so wrap them — an escaped rejection would tear down
+  // the caller's whole hydration pass, not just this board.
   loadBoard: async (token) => {
-    const response = await new MediaFilesApi().GetMediaFileByToken({
-      mediaFileToken: token,
-    });
-    const cdnUrl = response.success
-      ? response.data?.media_links?.cdn_url
-      : undefined;
-    if (!cdnUrl) return { success: false };
-    const documentResponse = await fetch(cdnUrl);
-    if (!documentResponse.ok) return { success: false };
-    return { success: true, documentJson: await documentResponse.text() };
+    try {
+      const response = await new MediaFilesApi().GetMediaFileByToken({
+        mediaFileToken: token,
+      });
+      const cdnUrl = response.success
+        ? response.data?.media_links?.cdn_url
+        : undefined;
+      if (!cdnUrl) return { success: false };
+      const documentResponse = await fetch(cdnUrl);
+      if (!documentResponse.ok) return { success: false };
+      return { success: true, documentJson: await documentResponse.text() };
+    } catch (error) {
+      console.error("[Moodboard] board document fetch failed:", error);
+      return { success: false };
+    }
   },
 
   deleteBoard: async (token) => {
-    const response = await new MediaFilesApi().DeleteMediaFileByToken({
-      mediaFileToken: token,
-      asMod: false,
-    });
-    return response.success;
+    try {
+      const response = await new MediaFilesApi().DeleteMediaFileByToken({
+        mediaFileToken: token,
+        asMod: false,
+      });
+      return response.success;
+    } catch (error) {
+      console.error("[Moodboard] board delete failed:", error);
+      return false;
+    }
   },
 
   resolveMediaUrls: async (tokens) => {
-    const response = await new MediaFilesApi().ListMediaFilesByTokens({
-      mediaTokens: tokens,
-    });
-    const urlByToken: Record<string, string> = {};
-    for (const media of response.data ?? []) {
-      if (media.media_links?.cdn_url) {
-        urlByToken[media.token] = media.media_links.cdn_url;
+    try {
+      const response = await new MediaFilesApi().ListMediaFilesByTokens({
+        mediaTokens: tokens,
+      });
+      const urlByToken: Record<string, string> = {};
+      for (const media of response.data ?? []) {
+        if (media.media_links?.cdn_url) {
+          urlByToken[media.token] = media.media_links.cdn_url;
+        }
       }
+      return urlByToken;
+    } catch (error) {
+      console.error("[Moodboard] media URL resolution failed:", error);
+      return {};
     }
-    return urlByToken;
   },
 };
 

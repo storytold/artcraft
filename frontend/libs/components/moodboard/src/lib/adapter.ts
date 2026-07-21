@@ -32,14 +32,18 @@ export interface RemoteBoardMeta {
 // Server persistence seam for boards. Each board maps to one mood_board
 // project document on the backend; `saveBoard` creates the row when `token`
 // is null and overwrites it otherwise. All members are promise-based and
-// non-throwing (failures come back as { success: false }).
+// MUST NOT throw (failures come back as { success: false } / empty results)
+// — the sync layer treats a rejection as an implementation bug.
 export interface MoodboardPersistenceAdapter {
-  /** Gate: remote sync only runs for signed-in users. */
-  isLoggedIn: () => boolean;
-  /** Notify when the login state may have changed (session fetch resolving,
-   *  logout). Returns an unsubscribe. Without this, a session that resolves
-   *  after the workspace mounts would never enable sync. */
-  subscribeLoginState?: (onChange: () => void) => () => void;
+  /** Stable id of the signed-in account, or null when logged out. Sync only
+   *  runs for signed-in users, hydration is keyed per account, and boards
+   *  are stamped with this id to block cross-account pushes. */
+  getUserId: () => string | null;
+  /** Notify when the auth state may have changed (session fetch resolving,
+   *  logout, account switch). Returns an unsubscribe. Without this, a
+   *  session that resolves after mount would never enable sync, and an
+   *  account switch would keep syncing as the previous user. */
+  subscribeAuthState?: (onChange: () => void) => () => void;
   saveBoard: (args: {
     token: string | null;
     name: string;

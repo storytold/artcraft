@@ -7,6 +7,7 @@ import {
   deserializeMoodboardDocument,
   serializeMoodboardDocument,
   EMPTY_CANVAS_DOCUMENT,
+  UNRESOLVED_MEDIA_SRC,
   type MoodboardCanvasDocument,
 } from "./documents";
 
@@ -77,6 +78,39 @@ describe("moodboard document serialization", () => {
     expect(deserializeMoodboardDocument("not json")).toBeNull();
     expect(deserializeMoodboardDocument("42")).toBeNull();
     expect(deserializeMoodboardDocument("{}")).toBeNull();
+  });
+
+  it("gives unresolved tokens a visible placeholder that stays self-healing", () => {
+    const document = serializeMoodboardDocument({
+      board: buildBoard(),
+      canvas: buildCanvas(),
+    });
+
+    // Backend returned nothing for these tokens (media deleted): the item
+    // stays visible with the placeholder instead of an invisible tile.
+    const patched = applyResolvedMediaUrls(document, {});
+    expect(
+      (patched.board.items["item-blob-tokened"] as { src: string }).src,
+    ).toBe(UNRESOLVED_MEDIA_SRC);
+    expect((patched.canvas.nodes["node-blob-tokened"] as ImageNode).src).toBe(
+      UNRESOLVED_MEDIA_SRC,
+    );
+
+    // The placeholder is never persisted: a re-serialize clears it back to
+    // "" so every future load re-attempts resolution (self-healing if the
+    // media comes back), and the token stays collectable.
+    const reserialized = serializeMoodboardDocument({
+      board: {
+        ...buildBoard(),
+        items: patched.board.items,
+        itemOrder: patched.board.itemOrder,
+      },
+      canvas: { ...buildCanvas(), nodes: patched.canvas.nodes },
+    });
+    expect(
+      (reserialized.board.items["item-blob-tokened"] as { src: string }).src,
+    ).toBe("");
+    expect(collectUnresolvedMediaTokens(reserialized)).toContain("m_board1");
   });
 });
 

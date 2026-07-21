@@ -44,12 +44,18 @@ interface BoardLibraryState extends PersistedLibrary {
 
   // Remote sync bookkeeping (used by the persistence layer, not views).
   setBoardRemoteToken: (id: string, token: string) => void;
+  // Flag local edits pending a server push (no-op if already flagged, so
+  // repeat edits don't churn board identity).
+  markBoardNeedsSync: (id: string) => void;
+  // Record a completed push/pull: clears needsSync and stamps ownership.
+  markBoardSynced: (id: string, args: { ownerId: string }) => void;
   // Insert a remotely loaded board, or replace the content of the local
   // board already linked to the token. Does not change the active board.
   // Returns the (existing or new) local board id.
   upsertRemoteBoard: (args: {
     token: string;
     name: string;
+    ownerId: string;
     itemOrder: string[];
     items: Record<string, BoardItem>;
     sections: Board["sections"];
@@ -205,7 +211,38 @@ export const useBoardLibraryStore = create<BoardLibraryState>()(
         });
       },
 
-      upsertRemoteBoard: ({ token, name, itemOrder, items, sections }) => {
+      markBoardNeedsSync: (id) => {
+        set((s) => {
+          const board = s.boards[id];
+          if (!board || board.needsSync === true) return s;
+          return {
+            boards: { ...s.boards, [id]: { ...board, needsSync: true } },
+          };
+        });
+      },
+
+      markBoardSynced: (id, { ownerId }) => {
+        set((s) => {
+          const board = s.boards[id];
+          if (!board) return s;
+          if (board.needsSync !== true && board.ownerId === ownerId) return s;
+          return {
+            boards: {
+              ...s.boards,
+              [id]: { ...board, needsSync: false, ownerId },
+            },
+          };
+        });
+      },
+
+      upsertRemoteBoard: ({
+        token,
+        name,
+        ownerId,
+        itemOrder,
+        items,
+        sections,
+      }) => {
         const existing = Object.values(get().boards).find(
           (b) => b.remoteToken === token,
         );
@@ -219,6 +256,8 @@ export const useBoardLibraryStore = create<BoardLibraryState>()(
                 itemOrder,
                 items,
                 sections,
+                ownerId,
+                needsSync: false,
                 updatedAt: nextSeq(),
               },
             },
@@ -237,6 +276,8 @@ export const useBoardLibraryStore = create<BoardLibraryState>()(
           items,
           sections,
           remoteToken: token,
+          ownerId,
+          needsSync: false,
         };
         set((s) => ({
           boards: { ...s.boards, [id]: board },
