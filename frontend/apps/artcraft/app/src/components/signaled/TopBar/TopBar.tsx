@@ -8,7 +8,6 @@ import {
   faCoins,
   faGear,
   faGem,
-  faGrid2,
   faHouse,
   faImages,
   faCalculator,
@@ -51,7 +50,10 @@ import {
   useCostBreakdownModalStore,
   CreditsModal,
 } from "@storyteller/ui-pricing-modal";
-import { GalleryViewToggle } from "@storyteller/ui-generation-list";
+import {
+  GalleryAutoplayToggle,
+  GalleryViewToggle,
+} from "@storyteller/ui-generation-list";
 import { SettingsModal } from "@storyteller/ui-settings-modal";
 import { Tooltip } from "@storyteller/ui-tooltip";
 import { useEffect, useRef, useState } from "react";
@@ -500,6 +502,7 @@ export const TopBar = ({ pageName }: Props) => {
 
           <div className="flex justify-end gap-2" data-tauri-drag-region>
             <div className="no-drag flex items-center gap-1.5">
+              {tabStore.activeTabId === "VIDEO" && <GalleryAutoplayToggle />}
               {(tabStore.activeTabId === "IMAGE" ||
                 tabStore.activeTabId === "VIDEO" ||
                 tabStore.activeTabId === "AUDIO") && <GalleryViewToggle />}
