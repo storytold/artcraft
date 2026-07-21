@@ -9,6 +9,12 @@ import type {
 } from "../../export";
 import { UpdateProjectSettingsCommand } from "../../commands/project";
 import { getRaisedProjectFpsForImportedMedia } from "../../fps/utils";
+import { rehydrateProjectMedia } from "../../media/rehydrate";
+import {
+  deserializeProjectDocument,
+  mediaAssetToData,
+  serializeProjectDocument,
+} from "../../services/storage/serialization";
 
 // Thin adapter-delegating ProjectManager. The OpenCut original (707
 // LOC) handled IndexedDB CRUD, autosave migrations, project bytes
@@ -86,7 +92,10 @@ export class ProjectManager {
       id: this.active.metadata.id,
       name: this.active.metadata.name,
       updatedAt: this.active.metadata.updatedAt.getTime(),
-      data: this.active,
+      data: serializeProjectDocument({
+        project: this.active,
+        media: this.editor.media.getAssets().map(mediaAssetToData),
+      }),
     });
   }
 
@@ -96,9 +105,62 @@ export class ProjectManager {
     try {
       const envelope =
         await this.editor.adapters.projectStorage.loadProject(id);
-      const project = (envelope?.data as TProject | null) ?? null;
+      const document = envelope
+        ? deserializeProjectDocument(envelope.data)
+        : null;
+      this.active = document?.project ?? null;
+      this.notify();
+      return this.active;
+    } finally {
+      this.isLoading = false;
+      this.notify();
+    }
+  }
+
+  // Full open flow for hosts: load the document, activate its scenes,
+  // and rebuild the media bin from the manifest. Returns null when the
+  // storage adapter has no (readable) project for the id.
+  //
+  // Always begins with a full closeProject(): hosts reach here through
+  // routes (Back button, project cards, deep links) that never run the
+  // header's explicit exit flow, so any previously open project's media
+  // bin, undo stack, caches, and autosave subscriptions must be torn
+  // down here — otherwise they leak into the newly opened project and
+  // its next autosave persists the contamination.
+  async openProject({ id }: { id: string }): Promise<TProject | null> {
+    this.closeProject();
+    this.isLoading = true;
+    this.notify();
+    try {
+      const envelope =
+        await this.editor.adapters.projectStorage.loadProject(id);
+      const document = envelope
+        ? deserializeProjectDocument(envelope.data)
+        : null;
+      if (!document) {
+        return null;
+      }
+
+      const { project, media } = document;
       this.active = project;
       this.notify();
+      this.editor.scenes.initializeScenes({
+        scenes: project.scenes,
+        currentSceneId: project.currentSceneId,
+      });
+      // closeProject() stopped the autosave subscriptions; re-arm them
+      // for the newly opened project (start() is idempotent).
+      this.editor.save.start();
+
+      if (media.length > 0) {
+        const assets = await rehydrateProjectMedia({
+          manifest: media,
+          mediaSource: this.editor.adapters.mediaSource,
+          toast: this.editor.adapters.toast,
+        });
+        this.editor.media.loadProjectMedia({ assets });
+      }
+
       return project;
     } finally {
       this.isLoading = false;
@@ -190,13 +252,30 @@ export class ProjectManager {
     id: string;
     name: string;
   }): Promise<void> {
+    // Active project: the in-memory state is authoritative (the stored
+    // row can lag behind the autosave debounce, and may not exist at all
+    // before the first save) — rename in place and persist.
+    if (this.active?.metadata.id === id) {
+      this.active = {
+        ...this.active,
+        metadata: { ...this.active.metadata, name, updatedAt: new Date() },
+      };
+      this.notify();
+      await this.saveCurrentProject();
+      return;
+    }
+
+    // Background project: rewrite its stored document.
     const envelope = await this.editor.adapters.projectStorage.loadProject(id);
-    if (!envelope) return;
-    const project = envelope.data as TProject;
+    const document = envelope
+      ? deserializeProjectDocument(envelope.data)
+      : null;
+    if (!document) return;
+
     const renamed: TProject = {
-      ...project,
+      ...document.project,
       metadata: {
-        ...project.metadata,
+        ...document.project.metadata,
         name,
         updatedAt: new Date(),
       },
@@ -205,12 +284,11 @@ export class ProjectManager {
       id: renamed.metadata.id,
       name: renamed.metadata.name,
       updatedAt: renamed.metadata.updatedAt.getTime(),
-      data: renamed,
+      data: serializeProjectDocument({
+        project: renamed,
+        media: document.media,
+      }),
     });
-    if (this.active?.metadata.id === id) {
-      this.active = renamed;
-      this.notify();
-    }
   }
 
   async deleteProjects({ ids }: { ids: string[] }): Promise<void> {

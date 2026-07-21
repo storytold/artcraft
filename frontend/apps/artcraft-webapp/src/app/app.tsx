@@ -164,11 +164,6 @@ export function App() {
           <Route path="/edit-3d" element={<PageScene />} />
           <Route path="/edit-3d/:sceneToken" element={<PageScene />} />
           <Route path="/edit-image" element={<PageDraw />} />
-          <Route path="/video-editor" element={<VideoEditorPage />} />
-          <Route
-            path="/video-editor/:projectId"
-            element={<VideoEditorPage />}
-          />
           <Route path="/support" element={<Support />} />
           <Route path="/pricing" element={<Pricing />} />
           {/* Welcome is public so it stays reachable right after signup
@@ -179,6 +174,14 @@ export function App() {
 
           {/* Protected — sign-in required (user-owned content / billing flows) */}
           <Route element={<RequireAuth />}>
+            {/* Video projects persist server-side, so the whole editor is
+                sign-in gated: logged-out visits bounce to /login?from=...
+                and return here after auth. */}
+            <Route path="/video-editor" element={<VideoEditorPage />} />
+            <Route
+              path="/video-editor/:projectId"
+              element={<VideoEditorPage />}
+            />
             <Route path="/media" element={<Media />} />
             <Route path="/media/:id" element={<Media />} />
             <Route path="/library" element={<Library />} />
