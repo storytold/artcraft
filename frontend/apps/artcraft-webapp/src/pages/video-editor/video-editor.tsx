@@ -70,14 +70,18 @@ export default function VideoEditorPage() {
   const projectStorage = useMemo(
     () =>
       createWebappProjectStorage({
-        onProjectCreated: ({ token }) => {
+        onProjectCreated: ({ localId, token }) => {
           // First save of a fresh project: re-key the active project to
           // the server token, then swap the URL. The session effect's
           // "active id already matches the route" check makes the
           // navigation a no-op instead of a re-bootstrap.
           const editor = EditorCore.getInstance();
           const active = editor.project.getActive();
-          if (active && isLocalProjectId(active.metadata.id)) {
+          if (
+            active &&
+            isLocalProjectId(active.metadata.id) &&
+            active.metadata.id === localId
+          ) {
             editor.project.setActiveProject({
               project: {
                 ...active,
@@ -85,7 +89,13 @@ export default function VideoEditorPage() {
               },
             });
           }
-          navigateRef.current(`/video-editor/${token}`, { replace: true });
+          // Only rewrite the URL if the user is still on this project's
+          // route — a teardown flush can finish after they navigated
+          // elsewhere, and yanking them back into the editor would be
+          // hostile. The landing lists the project either way.
+          if (window.location.pathname === `/video-editor/${localId}`) {
+            navigateRef.current(`/video-editor/${token}`, { replace: true });
+          }
         },
       }),
     [],
@@ -149,42 +159,52 @@ function VideoEditorSession({
     });
     const editor = EditorCore.getInstance();
 
+    let cancelled = false;
+
     // Already active (StrictMode remount, or the post-first-save URL
     // rewrite from local id to token): nothing to do.
     if (editor.project.getActive()?.metadata.id === projectId) {
       setStatus("ready");
-      return;
-    }
-
-    if (isLocalProjectId(projectId)) {
+    } else if (isLocalProjectId(projectId)) {
+      // Tear down whatever project was open before bootstrapping — this
+      // path is reachable without the header's exit flow (Back button,
+      // "New project"), and a leftover media bin or undo stack would
+      // bleed into the fresh project and persist on its first save.
+      editor.project.closeProject();
       const project = buildBootstrapProject({ id: projectId });
       editor.project.setActiveProject({ project });
       editor.scenes.initializeScenes({
         scenes: project.scenes,
         currentSceneId: project.currentSceneId,
       });
-      // A previous session's exit stopped the autosave subscriptions
-      // (closeProject → save.stop()); re-arm them — start() is idempotent.
+      // closeProject stopped the autosave subscriptions; re-arm them.
       editor.save.start();
       setStatus("ready");
-      return;
+    } else {
+      setStatus("pending");
+      // openProject performs its own full teardown of any prior project.
+      editor.project
+        .openProject({ id: projectId })
+        .then((project) => {
+          if (!cancelled) setStatus(project ? "ready" : "missing");
+        })
+        .catch((error) => {
+          console.error("Failed to open project:", projectId, error);
+          if (!cancelled) setStatus("missing");
+        });
     }
 
-    let cancelled = false;
-    setStatus("pending");
-    editor.project
-      .openProject({ id: projectId })
-      .then((project) => {
-        if (!cancelled) setStatus(project ? "ready" : "missing");
-      })
-      .catch((error) => {
-        console.error("Failed to open project:", projectId, error);
-        if (!cancelled) setStatus("missing");
-      });
     return () => {
       cancelled = true;
     };
   }, [projectId, adapters]);
+
+  // Teardown is keyed on projectId alone so it fires exactly once, on
+  // true unmount (key={projectId} remounts the component per project) —
+  // never on an incidental adapter identity change mid-session.
+  useEffect(() => {
+    return () => teardownEditorSession(projectId);
+  }, [projectId]);
 
   if (status === "missing") {
     return (
@@ -223,4 +243,30 @@ function VideoEditorSession({
       {galleryModal}
     </div>
   );
+}
+
+// Unmount teardown for a session. EditorCore is a singleton, so leaving the
+// route (sidebar link, Back button) without this would keep the project
+// active with live autosave subscriptions — a stale debounce could fire a
+// server write long after the user left, and the next session would open on
+// top of leaked state.
+//
+// Ordering matters: saveCurrentProject serializes the document synchronously
+// (before its first await), so pending edits are captured even though
+// closeProject clears the editor immediately after — the upload continues in
+// the background against the captured snapshot. Skipped when nothing is
+// dirty so an untouched bootstrap project never creates an empty server row.
+function teardownEditorSession(projectId: string): void {
+  const editor = EditorCore.getInstance();
+  if (editor.project.getActive()?.metadata.id !== projectId) {
+    // Another session (different :projectId key) already took over the
+    // singleton — it owns teardown now.
+    return;
+  }
+  if (editor.save.getIsDirty()) {
+    editor.project.saveCurrentProject().catch((error) => {
+      console.error("Final save on editor exit failed:", error);
+    });
+  }
+  editor.project.closeProject();
 }

@@ -120,7 +120,15 @@ export class ProjectManager {
   // Full open flow for hosts: load the document, activate its scenes,
   // and rebuild the media bin from the manifest. Returns null when the
   // storage adapter has no (readable) project for the id.
+  //
+  // Always begins with a full closeProject(): hosts reach here through
+  // routes (Back button, project cards, deep links) that never run the
+  // header's explicit exit flow, so any previously open project's media
+  // bin, undo stack, caches, and autosave subscriptions must be torn
+  // down here — otherwise they leak into the newly opened project and
+  // its next autosave persists the contamination.
   async openProject({ id }: { id: string }): Promise<TProject | null> {
+    this.closeProject();
     this.isLoading = true;
     this.notify();
     try {
@@ -130,8 +138,6 @@ export class ProjectManager {
         ? deserializeProjectDocument(envelope.data)
         : null;
       if (!document) {
-        this.active = null;
-        this.notify();
         return null;
       }
 
@@ -142,8 +148,8 @@ export class ProjectManager {
         scenes: project.scenes,
         currentSceneId: project.currentSceneId,
       });
-      // closeProject() stops the autosave subscriptions; re-arm them for
-      // the newly opened project (start() is idempotent).
+      // closeProject() stopped the autosave subscriptions; re-arm them
+      // for the newly opened project (start() is idempotent).
       this.editor.save.start();
 
       if (media.length > 0) {

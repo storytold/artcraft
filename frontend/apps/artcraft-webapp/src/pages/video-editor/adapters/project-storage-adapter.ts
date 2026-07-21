@@ -1,4 +1,5 @@
 import { MediaFilesApi, ProjectsApi } from "@storyteller/api";
+import { getThumbnailUrl } from "@storyteller/common";
 import type {
   EditorProject,
   ProjectMeta,
@@ -127,6 +128,11 @@ export function createWebappProjectStorage({
       const prior = saveQueues.get(queueKey) ?? Promise.resolve();
       const next = prior.then(task, task);
       saveQueues.set(queueKey, next);
+      // Drop the chain entry once it settles with no successor queued, so
+      // ids (especially one-shot local-{uuid}s) don't accumulate forever.
+      void next.finally(() => {
+        if (saveQueues.get(queueKey) === next) saveQueues.delete(queueKey);
+      });
       await next;
     },
 
@@ -166,10 +172,9 @@ export function createWebappProjectStorage({
         name: row.maybe_title ?? UNTITLED_PROJECT_NAME,
         updatedAt: new Date(row.updated_at).getTime(),
         thumbnailUrl:
-          row.cover_image?.maybe_links?.thumbnail_template?.replace(
-            "{WIDTH}",
-            "600",
-          ) ??
+          getThumbnailUrl(row.cover_image?.maybe_links?.thumbnail_template, {
+            width: 600,
+          }) ??
           row.cover_image?.maybe_links?.cdn_url ??
           undefined,
       }));

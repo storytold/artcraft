@@ -18,6 +18,11 @@ interface FetchedEntry {
   resolved: ResolvedMedia;
 }
 
+// Cap on simultaneous asset downloads. An unbounded Promise.all over a
+// media-heavy project would open one connection (and buffer one Blob) per
+// asset at once — slow to first-usable and a real memory spike.
+const MAX_CONCURRENT_FETCHES = 4;
+
 export async function rehydrateProjectMedia({
   manifest,
   mediaSource,
@@ -27,9 +32,11 @@ export async function rehydrateProjectMedia({
   mediaSource: MediaSourceAdapter;
   toast: ToastAdapter;
 }): Promise<ProcessedMediaAsset[]> {
-  const fetched = await Promise.all(
-    manifest.map((entry) => fetchEntry({ entry, mediaSource, toast })),
-  );
+  const fetched = await mapWithConcurrency({
+    items: manifest,
+    limit: MAX_CONCURRENT_FETCHES,
+    run: (entry) => fetchEntry({ entry, mediaSource, toast }),
+  });
   const entries = fetched.filter((entry): entry is FetchedEntry => !!entry);
   if (entries.length === 0) return [];
 
@@ -40,6 +47,31 @@ export async function rehydrateProjectMedia({
     existingHandles: entries.map((entry) => entry.handle),
     existingResolved: entries.map((entry) => entry.resolved),
   });
+}
+
+// Order-preserving concurrent map: at most `limit` `run` calls in flight.
+async function mapWithConcurrency<T, R>({
+  items,
+  limit,
+  run,
+}: {
+  items: T[];
+  limit: number;
+  run: (item: T) => Promise<R>;
+}): Promise<R[]> {
+  const results: R[] = new Array(items.length);
+  let nextIndex = 0;
+  const workers = Array.from(
+    { length: Math.min(limit, items.length) },
+    async () => {
+      while (nextIndex < items.length) {
+        const index = nextIndex++;
+        results[index] = await run(items[index]);
+      }
+    },
+  );
+  await Promise.all(workers);
+  return results;
 }
 
 async function fetchEntry({
