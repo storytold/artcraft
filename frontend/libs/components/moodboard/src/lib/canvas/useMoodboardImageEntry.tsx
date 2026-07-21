@@ -4,6 +4,7 @@ import toast from "react-hot-toast";
 import { useMoodboardStore } from "./MoodboardStore";
 import { Vec2 } from "./types";
 import { measureImage, measureVideo } from "../boards/measureMedia";
+import { addCanvasImageFromFile } from "./addCanvasImageFile";
 import type { MoodboardAdapter, MoodboardPickedItem } from "../adapter";
 
 const stageCenter = (stage: Konva.Stage | null): Vec2 => {
@@ -47,16 +48,12 @@ export const useMoodboardImageEntry = (
       const center = stageCenter(stageRef.current);
       for (const file of Array.from(files)) {
         if (!file.type.startsWith("image/")) continue;
-        const blobUrl = URL.createObjectURL(file);
-        const dims = await measureImage(blobUrl);
-        addImage(blobUrl, center, dims.w, dims.h, null);
-        // Background upload so the image also lands in the user's library.
-        adapter.uploadImage?.(file).catch((err) => {
-          console.error("[Moodboard] background upload failed", err);
-        });
+        // Places the node from a blob URL, uploads in the background, and
+        // writes the returned media token onto the node.
+        await addCanvasImageFromFile({ file, position: center, adapter });
       }
     },
-    [addImage, stageRef, adapter],
+    [stageRef, adapter],
   );
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {

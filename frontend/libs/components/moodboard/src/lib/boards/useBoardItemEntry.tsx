@@ -10,6 +10,9 @@ interface UseReturn {
   triggerGallery: () => void;
   /** Adds an empty note and returns its id so the grid can open it for editing. */
   addNote: () => string;
+  /** Add a local image file: places it from a blob URL, then uploads to
+   *  capture a durable mediaToken. Also used by the grid's OS file drop. */
+  addImageFile: (file: File) => Promise<void>;
   modals: ReactNode;
 }
 
@@ -42,8 +45,10 @@ export const useBoardItemEntry = (
     return id;
   }, []);
 
-  // Place the image immediately from a blob, then (if the platform supports it)
-  // upload to capture a durable mediaToken so it becomes reference-capable.
+  // Place the image immediately from a blob; the upload that captures a
+  // durable mediaToken runs in the background with a write-back, so a
+  // multi-file add/drop places every tile at once instead of gating each
+  // placement behind the previous file's upload roundtrip.
   const addImageFile = useCallback(
     async (file: File) => {
       const store = useBoardLibraryStore.getState();
@@ -57,15 +62,19 @@ export const useBoardItemEntry = (
         naturalH: dims.h,
       });
       if (!adapter.uploadImage) return;
-      try {
-        const token = await adapter.uploadImage(file);
-        if (token) {
+      adapter.uploadImage(file).then(
+        (token) => {
+          if (!token) return;
+          const current = useBoardLibraryStore.getState();
+          // The item may have been deleted while the upload was in flight.
+          if (!current.boards[boardId]?.items[itemId]) return;
           const patch: Partial<BoardImageItem> = { mediaId: token };
-          useBoardLibraryStore.getState().updateItem(boardId, itemId, patch);
-        }
-      } catch (err) {
-        console.error("[Moodboard] upload failed", err);
-      }
+          current.updateItem(boardId, itemId, patch);
+        },
+        (err) => {
+          console.error("[Moodboard] upload failed", err);
+        },
+      );
     },
     [adapter],
   );
@@ -164,7 +173,7 @@ export const useBoardItemEntry = (
     </>
   );
 
-  return { triggerUpload, triggerGallery, addNote, modals };
+  return { triggerUpload, triggerGallery, addNote, addImageFile, modals };
 };
 
 // ---------- helpers ----------
