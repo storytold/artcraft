@@ -341,6 +341,39 @@
   animation: toast-in 0.2s ease-out both;
 }
 
+/* Prompt box drag & drop overlay */
+@keyframes promptbox-drop-overlay-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+.promptbox-drop-overlay {
+  animation: promptbox-drop-overlay-in 0.15s ease-out both;
+}
+
+@keyframes promptbox-drop-chip-in {
+  from {
+    opacity: 0;
+    translate: 0 6px;
+    scale: 0.9;
+  }
+
+  to {
+    opacity: 1;
+    translate: 0 0;
+    scale: 1;
+  }
+}
+
+.promptbox-drop-chip {
+  animation: promptbox-drop-chip-in 0.25s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
 @keyframes marquee {
   0% {
     transform: translateX(0);
