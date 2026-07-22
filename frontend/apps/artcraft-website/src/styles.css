@@ -73,6 +73,21 @@
     font-weight: 400;
     letter-spacing: -0.01em;
   }
+
+  /* Condensed uppercase display type (landing + navbar design system) */
+  .font-condensed {
+    font-family: "Oswald", "Arial Narrow", "Helvetica Neue", sans-serif;
+    text-transform: uppercase;
+    letter-spacing: -0.01em;
+    line-height: 0.95;
+  }
+
+  /* Mono micro-label type ("// EYEBROW" labels, nav links, captions) */
+  .font-mono-ui {
+    font-family: "JetBrains Mono", "Cascadia Mono", "Courier New", monospace;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+  }
 }
 
 /* Shared component utilities (matching desktop app theme) */
@@ -280,6 +295,26 @@
   border-radius: inherit;
   animation: rotate 2.2s linear infinite;
   z-index: -1;
+}
+
+/* Landing feature index — active row is toggled by a ScrollTrigger as the
+   matching feature panel crosses the viewport center. */
+.landing-index-item {
+  transition: color 0.25s ease;
+}
+
+.landing-index-item .landing-index-marker {
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.35s ease;
+}
+
+.landing-index-item.is-active {
+  color: #fff;
+}
+
+.landing-index-item.is-active .landing-index-marker {
+  transform: scaleX(1);
 }
 
 .glow-border-animated::after {
