@@ -1,4 +1,4 @@
-import { JobsApi, OmniGenApi } from "@storyteller/api";
+import { HttpApiError, JobsApi, OmniGenApi } from "@storyteller/api";
 import type { OmniGenVideoRequest } from "@storyteller/api";
 import type { GeneratedVideo } from "./create-video-store";
 
@@ -24,7 +24,12 @@ export interface GenerateVideoParams {
 
 export async function enqueueVideoGeneration(
   params: GenerateVideoParams,
-): Promise<{ success: boolean; jobToken?: string; error?: string }> {
+): Promise<{
+  success: boolean;
+  jobToken?: string;
+  error?: string;
+  errorCode?: number;
+}> {
   const body: OmniGenVideoRequest = {
     model: params.model,
     prompt: params.prompt,
@@ -60,6 +65,16 @@ export async function enqueueVideoGeneration(
     }
     return { success: false, error: "Generation failed" };
   } catch (err: any) {
+    // ApiManager throws HttpApiError on non-2xx responses, carrying the
+    // server's `message` (e.g. "Image is required") so it can be shown to
+    // the user instead of a bare status code.
+    if (err instanceof HttpApiError) {
+      return {
+        success: false,
+        error: err.serverMessage ?? err.message,
+        errorCode: err.status,
+      };
+    }
     return { success: false, error: err.message ?? "Request failed" };
   }
 }

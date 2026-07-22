@@ -282,6 +282,24 @@ export default function CreateImage() {
   // Consume a pending recreate payload (set by the lightbox Recreate button)
   // and populate the promptbox fields. Does NOT trigger generation. Subscribes
   // to the store so it fires even when the user is already on this route.
+  // Warn when a recreated generation's model is missing from the current
+  // model list: selectedModel silently falls back to the default model, and
+  // the restored prompt/settings may not be valid for it. Verified in its own
+  // effect because the model list may still be loading when the recreate
+  // payload is consumed.
+  const [recreateModelIdToVerify, setRecreateModelIdToVerify] = useState<
+    string | null
+  >(null);
+  useEffect(() => {
+    if (!recreateModelIdToVerify || apiModels.length === 0) return;
+    if (!apiModels.some((m) => m.model === recreateModelIdToVerify)) {
+      toast.error(
+        "The model used for this generation isn't available anymore. Using the default model instead.",
+      );
+    }
+    setRecreateModelIdToVerify(null);
+  }, [recreateModelIdToVerify, apiModels]);
+
   const pendingRecreate = useCreateImageStore((s) => s.pendingRecreate);
   useEffect(() => {
     if (!pendingRecreate) return;
@@ -294,6 +312,7 @@ export default function CreateImage() {
       ...(payload.resolution ? { resolution: payload.resolution } : {}),
       ...(payload.modelId ? { selectedModelId: payload.modelId } : {}),
     });
+    if (payload.modelId) setRecreateModelIdToVerify(payload.modelId);
   }, [pendingRecreate, setUi]);
 
   // Resume polling for pending batches
@@ -364,7 +383,13 @@ export default function CreateImage() {
       openSignupCta();
       return;
     }
-    if (!prompt.trim() || isGenerating || !selectedModel) return;
+    if (!prompt.trim() || isGenerating) return;
+    if (!selectedModel) {
+      // Models come from an API fetch; without one the submit would be a
+      // silent no-op, which reads as a dead button.
+      toast.error("Models are still loading. Try again in a moment.");
+      return;
+    }
 
     if (maxPromptLength !== undefined && prompt.length > maxPromptLength) {
       toast.error(
@@ -406,8 +431,13 @@ export default function CreateImage() {
           dismissBatch(batchId);
           openInsufficientCredits();
         } else {
+          // Always toast: batches that fail at enqueue never got a job token,
+          // so the gallery's failed-card rendering never shows them, and a
+          // silent failBatch here looks like the button did nothing.
           if (result.errorCode != null && result.errorCode >= 500) {
             toast.error(OMNI_GENERATE_OUTAGE_MESSAGE);
+          } else {
+            toast.error(result.error ?? "Failed to start generation");
           }
           failBatch(batchId, result.error ?? "Failed to start generation");
         }
@@ -434,6 +464,7 @@ export default function CreateImage() {
       );
       pollingCleanupsRef.current.set(batchId, stopPolling);
     } catch {
+      toast.error("Network error - please try again");
       failBatch(batchId, "Network error - please try again");
     } finally {
       setIsGenerating(false);
