@@ -28,6 +28,12 @@ import {
 } from "@storyteller/ui-promptbox";
 import { arrayMove } from "@dnd-kit/sortable";
 import { MentionTextarea } from "./MentionTextarea";
+import {
+  PromptBoxDropOverlay,
+  usePromptBoxDrop,
+  type DroppedFiles,
+} from "./PromptBoxDropZone";
+import { toast } from "../toast/toast";
 import { getMentionColor, buildMentionColorMap } from "./mention-colors";
 import { uploadImage } from "./upload-image";
 import { uploadVideo, uploadAudio } from "./upload-media";
@@ -213,6 +219,57 @@ export const PromptBox = forwardRef<HTMLDivElement, PromptBoxProps>(
       uploadAudio,
       // Library picking stays with the page-level GalleryModals.
       ownGalleryModal: false,
+    });
+
+    // Drag & drop onto the box bounds: files route to the reference kind
+    // their MIME matches, gated on what the page's model supports. Keyframe
+    // mode renders no video/audio deck, so those kinds only land in
+    // reference mode where the user can see (and remove) them.
+    const isKeyframeMode = !!isVideo && !isReferenceMode;
+    const dropAcceptsImages =
+      !!supportsImagePrompts && maxImagePromptCount > 0;
+    const dropAcceptsVideos =
+      !isKeyframeMode && !!videoRefsSupported && !!onReferenceVideosChange;
+    const dropAcceptsAudio =
+      !isKeyframeMode && !!audioRefsSupported && !!onReferenceAudiosChange;
+
+    const handleDroppedFiles = ({ images, videos, audios }: DroppedFiles) => {
+      if (images.length > 0) {
+        if (isKeyframeMode) {
+          // Fill the empty keyframe slots in order: start frame, then end.
+          const queue = [...images];
+          const startOpen =
+            referenceImages.length === 0 && deck.uploadingImages.length === 0;
+          const endOpen =
+            !!showEndFrameSection && !endFrameImage && !deck.uploadingEnd;
+          if (startOpen) deck.processImageFiles([queue.shift()!], "start");
+          if (endOpen && queue.length > 0) {
+            deck.processImageFiles([queue.shift()!], "end");
+          }
+          if (!startOpen && !endOpen) {
+            toast.error(
+              showEndFrameSection
+                ? "Start and end frames are already set"
+                : "The start frame is already set",
+            );
+          }
+        } else if (deck.availableImageSlots <= 0) {
+          toast.error(
+            `Max ${maxImagePromptCount} image reference${maxImagePromptCount === 1 ? "" : "s"}`,
+          );
+        } else {
+          deck.processImageFiles(images, "start");
+        }
+      }
+      if (videos.length > 0) deck.processVideoFiles(videos);
+      if (audios.length > 0) deck.processAudioFiles(audios);
+    };
+
+    const drop = usePromptBoxDrop({
+      acceptsImages: dropAcceptsImages,
+      acceptsVideos: dropAcceptsVideos,
+      acceptsAudio: dropAcceptsAudio,
+      onDropFiles: handleDroppedFiles,
     });
 
     // Mixed deck items ordered images → videos → audios so the page's
@@ -424,7 +481,7 @@ export const PromptBox = forwardRef<HTMLDivElement, PromptBoxProps>(
     // Left-of-textarea reference widget: image deck, keyframe cards, or the
     // mixed deck depending on page/mode.
     const renderReferenceWidget = (alwaysExpanded?: boolean) => {
-      if (isVideo && !isReferenceMode) {
+      if (isKeyframeMode) {
         if (!supportsImagePrompts) return null;
         return (
           <KeyframeCards
@@ -710,7 +767,15 @@ export const PromptBox = forwardRef<HTMLDivElement, PromptBoxProps>(
               "glass rounded-2xl p-3 sm:p-4 !transition-all duration-200",
               isFocused && "ring-1 ring-primary",
             )}
+            {...drop.dropZoneProps}
           >
+            <PromptBoxDropOverlay
+              dragState={drop.dragState}
+              acceptsImages={dropAcceptsImages}
+              acceptsVideos={dropAcceptsVideos}
+              acceptsAudio={dropAcceptsAudio}
+              keyframeMode={isKeyframeMode}
+            />
             <div className="flex gap-3">
               {renderReferenceWidget()}
               {referenceSlots}
