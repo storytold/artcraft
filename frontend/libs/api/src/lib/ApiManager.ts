@@ -47,6 +47,30 @@ export interface ApiResponse<T, P = undefined> {
   pagination?: P;
 }
 
+/**
+ * Thrown on non-2xx responses. Carries the HTTP status and, when the server
+ * returned the standard `{ success, error_code, message }` error envelope,
+ * the human-readable `message` so callers can surface it to the user.
+ *
+ * The `message` string keeps the legacy `HTTP error! status: N` prefix so
+ * existing callers that regex the status out of `err.message` keep working.
+ */
+export class HttpApiError extends Error {
+  readonly status: number;
+  readonly serverMessage?: string;
+
+  constructor(status: number, serverMessage?: string) {
+    super(
+      serverMessage
+        ? `HTTP error! status: ${status} - ${serverMessage}`
+        : `HTTP error! status: ${status}`,
+    );
+    this.name = "HttpApiError";
+    this.status = status;
+    this.serverMessage = serverMessage;
+  }
+}
+
 export class ApiManager {
   ApiTargets: Record<string, string> = {};
 
@@ -105,7 +129,20 @@ export class ApiManager {
     });
 
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+      let serverMessage: string | undefined;
+      try {
+        const errorBody = await response.json();
+        if (
+          errorBody &&
+          typeof errorBody.message === "string" &&
+          errorBody.message.length > 0
+        ) {
+          serverMessage = errorBody.message;
+        }
+      } catch {
+        // Non-JSON error body; fall back to the bare status.
+      }
+      throw new HttpApiError(response.status, serverMessage);
     }
 
     return response.json();

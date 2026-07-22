@@ -682,6 +682,24 @@ export default function CreateVideo() {
   // builds its label regex from `referenceImages`/`referenceVideos`/etc.) knows
   // about every `@ImageN` before the contentEditable does its DOM sync. Without
   // this ordering, only the last reference's mention would end up colored.
+  // Warn when a recreated generation's model is missing from the current
+  // model list: selectedModel silently falls back to the default model, and
+  // the restored prompt/settings may not be valid for it. Verified in its own
+  // effect because the model list may still be loading when the recreate
+  // payload is consumed.
+  const [recreateModelIdToVerify, setRecreateModelIdToVerify] = useState<
+    string | null
+  >(null);
+  useEffect(() => {
+    if (!recreateModelIdToVerify || apiModels.length === 0) return;
+    if (!apiModels.some((m) => m.model === recreateModelIdToVerify)) {
+      toast.error(
+        "The model used for this generation isn't available anymore. Using the default model instead.",
+      );
+    }
+    setRecreateModelIdToVerify(null);
+  }, [recreateModelIdToVerify, apiModels]);
+
   const pendingRecreate = useCreateVideoStore((s) => s.pendingRecreate);
   useEffect(() => {
     if (!pendingRecreate) return;
@@ -700,6 +718,7 @@ export default function CreateVideo() {
         ...(payload.inputMode ? { inputMode: payload.inputMode } : {}),
       });
     });
+    if (payload.modelId) setRecreateModelIdToVerify(payload.modelId);
 
     setUi({
       prompt: payload.prompt,
@@ -1020,12 +1039,17 @@ export default function CreateVideo() {
       );
       return;
     }
-    if (!prompt.trim() || isGeneratingRef.current || !selectedModel) {
+    if (!prompt.trim() || isGeneratingRef.current) {
       console.log("[generate-video] blocked", {
         hasPrompt: !!prompt.trim(),
         isGenerating: isGeneratingRef.current,
-        hasModel: !!selectedModel,
       });
+      return;
+    }
+    if (!selectedModel) {
+      // Models come from an API fetch; without one the submit would be a
+      // silent no-op, which reads as a dead button.
+      toast.error("Models are still loading. Try again in a moment.");
       return;
     }
     if (maxPromptLength !== undefined && prompt.length > maxPromptLength) {
@@ -1144,8 +1168,13 @@ export default function CreateVideo() {
           dismissBatch(batchId);
           openInsufficientCredits();
         } else {
+          // Always toast: batches that fail at enqueue never got a job token,
+          // so the gallery's failed-card rendering never shows them, and a
+          // silent failBatch here looks like the button did nothing.
           if (result.errorCode != null && result.errorCode >= 500) {
             toast.error(OMNI_GENERATE_OUTAGE_MESSAGE);
+          } else {
+            toast.error(result.error ?? "Failed to start generation");
           }
           failBatch(batchId, result.error ?? "Failed to start generation");
         }
@@ -1177,6 +1206,7 @@ export default function CreateVideo() {
       }
     } catch (err) {
       console.error("[generate-video] unexpected error", err);
+      toast.error("Network error - please try again");
       failBatch(batchId, "Network error - please try again");
     }
 
