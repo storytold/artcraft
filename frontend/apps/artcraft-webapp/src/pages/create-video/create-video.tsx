@@ -1454,6 +1454,7 @@ export default function CreateVideo() {
       description="Generate stunning AI videos with ArtCraft"
       authChecked={authChecked}
       hasContent={hasContent}
+      showAutoplayToggle
       emptyStateTitle="Create Video"
       emptyStateSubtitle="Describe a scene. See it in motion."
       emptyStateCta={

@@ -3,6 +3,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSpinnerThird } from "@fortawesome/pro-solid-svg-icons";
 import type { IconDefinition } from "@fortawesome/fontawesome-svg-core";
 import { PLACEHOLDER_IMAGES } from "@storyteller/common";
+import { useGalleryViewStore } from "./gallery-view-store";
 
 // Media thumbnail shared by the masonry GalleryCard and the list GalleryRow.
 // Encapsulates the two awkward bits of thumbnail rendering: freshly generated
@@ -40,6 +41,9 @@ const RETRY_INTERVAL = 5000;
 
 interface GalleryThumbnailProps {
   thumbnail: string | null;
+  // Still first-frame variant for videos. Shown instead of the (animated)
+  // thumbnail when the user turns off autoplay in useGalleryViewStore.
+  stillThumbnail?: string | null;
   alt: string;
   isVideo: boolean;
   // Icon shown when there is no thumbnail at all (e.g. 3D meshes).
@@ -54,7 +58,8 @@ interface GalleryThumbnailProps {
 }
 
 export function GalleryThumbnail({
-  thumbnail,
+  thumbnail: animatedThumbnail,
+  stillThumbnail,
   alt,
   isVideo,
   fallbackIcon,
@@ -63,6 +68,13 @@ export function GalleryThumbnail({
   showRetryLabel = true,
   onLoad,
 }: GalleryThumbnailProps) {
+  const autoplayVideos = useGalleryViewStore((s) => s.autoplayVideos);
+  // With autoplay off, videos freeze on their still first frame. The still is
+  // also what the retry machinery below polls in that mode.
+  const thumbnail =
+    isVideo && !autoplayVideos && stillThumbnail
+      ? stillThumbnail
+      : animatedThumbnail;
   // "retrying" flips to true only after the first error, so videos with ready
   // thumbnails render the normal <img> path with zero overhead. While retrying,
   // a hidden <img> loads via ref (no re-renders) and the spinner stays stable.

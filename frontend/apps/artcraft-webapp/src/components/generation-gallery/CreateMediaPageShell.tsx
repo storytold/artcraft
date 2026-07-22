@@ -7,7 +7,7 @@ import { TabSelector } from "@storyteller/ui-tab-selector";
 import { TruchetPattern } from "@storyteller/ui-vfx";
 import Seo from "../../components/seo";
 import { useIsMobile } from "../ui/use-mobile";
-import { GalleryViewToggle } from "./GalleryViewToggle";
+import { GalleryAutoplayToggle, GalleryViewToggle } from "./GalleryViewToggle";
 import {
   MobileCreateTabsProvider,
   type MobileCreateTab,
@@ -23,6 +23,9 @@ interface CreateMediaPageShellProps {
   authChecked: boolean;
   // Content
   hasContent: boolean;
+  // Video page only: playing/still toggle for video preview thumbnails,
+  // rendered next to the grid/list toggle on the mobile History tab.
+  showAutoplayToggle?: boolean;
   emptyStateTitle: string;
   emptyStateSubtitle: string;
   // Optional CTA rendered under the empty-state subtitle (e.g. a signup button
@@ -54,6 +57,7 @@ export function CreateMediaPageShell({
   description,
   authChecked,
   hasContent,
+  showAutoplayToggle = false,
   emptyStateTitle,
   emptyStateSubtitle,
   emptyStateCta,
@@ -100,7 +104,8 @@ export function CreateMediaPageShell({
               className="w-auto"
             />
             {mobileTab === "history" && hasContent && (
-              <div className="absolute right-3 top-1/2 -translate-y-1/2">
+              <div className="absolute right-3 top-1/2 flex -translate-y-1/2 items-center gap-1.5">
+                {showAutoplayToggle && <GalleryAutoplayToggle />}
                 <GalleryViewToggle />
               </div>
             )}

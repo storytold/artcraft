@@ -10,6 +10,10 @@ export type GalleryViewMode = "grid" | "list";
 interface GalleryViewState {
   viewMode: GalleryViewMode;
   setViewMode: (mode: GalleryViewMode) => void;
+  // Whether video cards play their animated previews. When off, they show the
+  // still first-frame thumbnail instead (toggled from the video page TopBar).
+  autoplayVideos: boolean;
+  setAutoplayVideos: (autoplay: boolean) => void;
 }
 
 export const useGalleryViewStore = create<GalleryViewState>()(
@@ -17,6 +21,8 @@ export const useGalleryViewStore = create<GalleryViewState>()(
     (set) => ({
       viewMode: "grid",
       setViewMode: (viewMode) => set({ viewMode }),
+      autoplayVideos: true,
+      setAutoplayVideos: (autoplayVideos) => set({ autoplayVideos }),
     }),
     { name: "artcraft-gallery-view" },
   ),

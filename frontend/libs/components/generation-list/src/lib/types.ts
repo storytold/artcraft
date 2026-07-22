@@ -42,6 +42,9 @@ export interface GalleryItem {
   id: string;
   label: string;
   thumbnail: string | null;
+  // Still first-frame thumbnail for videos, shown when the user turns off
+  // animated previews (thumbnail holds the animated one).
+  stillThumbnail?: string | null;
   fullImage: string | null;
   createdAt: string;
   mediaClass: string;

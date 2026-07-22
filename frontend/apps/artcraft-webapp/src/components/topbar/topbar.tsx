@@ -1,6 +1,9 @@
 import { Link, useLocation } from "react-router-dom";
 import { SidebarTrigger, useSidebar } from "../ui/sidebar";
-import { GalleryViewToggle } from "../generation-gallery/GalleryViewToggle";
+import {
+  GalleryAutoplayToggle,
+  GalleryViewToggle,
+} from "../generation-gallery/GalleryViewToggle";
 import { Breadcrumbs } from "./breadcrumbs";
 import { TopBarActions } from "./TopBarActions";
 
@@ -14,6 +17,8 @@ export function TopBar() {
   // On mobile the toggle lives next to the Generate/History tabs (see
   // CreateMediaPageShell), so keep it out of the top bar there.
   const showViewToggle = !isMobile && GALLERY_VIEW_ROUTES.has(pathname);
+  // Playing/still video previews only matter where the feed has videos.
+  const showAutoplayToggle = showViewToggle && pathname === "/create-video";
 
   return (
     <header className="sticky top-0 z-20 flex items-center gap-3 border-b border-white/[0.06] bg-[#121212]/80 backdrop-blur-md px-3 pb-4 pt-3 sm:pt-6">
@@ -41,6 +46,7 @@ export function TopBar() {
 
       {/* Right: gallery layout toggle (create pages) + credits / upgrade / task queue / avatar */}
       <div className="ml-auto flex items-center gap-1.5 sm:gap-2">
+        {showAutoplayToggle && <GalleryAutoplayToggle />}
         {showViewToggle && <GalleryViewToggle />}
         <TopBarActions />
       </div>

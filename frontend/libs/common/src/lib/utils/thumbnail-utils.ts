@@ -84,6 +84,41 @@ export function getMediaThumbnail(
   return thumbnailUrl;
 }
 
+// Still-frame thumbnail for a video (first frame), for hosts that let the
+// user turn off animated previews. Falls back to the regular thumbnail
+// template when the backend hasn't attached still previews.
+export function getMediaStillThumbnail(
+  mediaLinks:
+    | {
+        maybe_thumbnail_template?: string | null;
+        maybe_video_previews?: {
+          still?: string | null;
+          still_thumbnail_template?: string | null;
+        } | null;
+      }
+    | null
+    | undefined,
+  options: MediaThumbnailOptions = {},
+): string | null {
+  if (!mediaLinks) return null;
+
+  const { size = THUMBNAIL_SIZES.MEDIUM } = options;
+  const previews = mediaLinks.maybe_video_previews;
+
+  if (previews?.still_thumbnail_template) {
+    return getThumbnailUrl(previews.still_thumbnail_template, { width: size });
+  }
+  if (previews?.still) {
+    return previews.still;
+  }
+  if (mediaLinks.maybe_thumbnail_template) {
+    return getThumbnailUrl(mediaLinks.maybe_thumbnail_template, {
+      width: size,
+    });
+  }
+  return null;
+}
+
 export function getContextImageThumbnail(
   contextImage: {
     media_links: {

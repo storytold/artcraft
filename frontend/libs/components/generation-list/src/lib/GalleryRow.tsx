@@ -85,6 +85,7 @@ export const GalleryRow = memo(function GalleryRow({
       <div className="relative size-[100px] shrink-0 overflow-hidden rounded-md bg-ui-controls/40 leading-none">
         <GalleryThumbnail
           thumbnail={item.thumbnail}
+          stillThumbnail={item.stillThumbnail}
           alt={item.label}
           isVideo={isVideo}
           fallbackIcon={mediaIcon}

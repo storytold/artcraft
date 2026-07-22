@@ -4,7 +4,11 @@ import {
   FilterMediaClasses,
   FilterMediaType,
 } from "@storyteller/api";
-import { getMediaThumbnail, THUMBNAIL_SIZES } from "@storyteller/common";
+import {
+  getMediaStillThumbnail,
+  getMediaThumbnail,
+  THUMBNAIL_SIZES,
+} from "@storyteller/common";
 import type { GalleryItem } from "./types";
 import { is3DMediaClass } from "./types";
 
@@ -83,6 +87,12 @@ export function useGalleryData(options: {
       id: item.token,
       label: getLabel(item),
       thumbnail,
+      stillThumbnail:
+        item.media_class === "video"
+          ? getMediaStillThumbnail(item.media_links, {
+              size: THUMBNAIL_SIZES.LARGE,
+            })
+          : null,
       fullImage: item.media_links?.cdn_url || null,
       createdAt: item.created_at,
       mediaClass: item.media_class || "image",
