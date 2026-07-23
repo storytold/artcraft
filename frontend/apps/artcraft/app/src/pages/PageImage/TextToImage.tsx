@@ -170,6 +170,8 @@ const TextToImage = ({ imageMediaId, imageUrl }: TextToImageProps) => {
           onLoadMore={gallery.loadMore}
           onGalleryItemClick={openInLightbox}
           enableMakeVideo
+          selectable
+          selectionBarBottomOffset={promptHeight + 32}
         />
       }
       promptBox={

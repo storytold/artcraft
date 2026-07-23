@@ -515,7 +515,8 @@ export const TopBar = ({ pageName }: Props) => {
 
           <div className="flex justify-end gap-2" data-tauri-drag-region>
             <div className="no-drag flex items-center gap-1.5">
-              {tabStore.activeTabId === "VIDEO" && <GallerySelectToggle />}
+              {(tabStore.activeTabId === "IMAGE" ||
+                tabStore.activeTabId === "VIDEO") && <GallerySelectToggle />}
               {tabStore.activeTabId === "VIDEO" && <GalleryAutoplayToggle />}
               {(tabStore.activeTabId === "IMAGE" ||
                 tabStore.activeTabId === "VIDEO" ||
