@@ -1104,7 +1104,10 @@ export default function Library() {
         {/* Header — sticky below navbar */}
         <div
           data-no-marquee
-          className="sticky top-0 z-50 -mx-3 sm:-mx-4 md:-mx-8 lg:-mx-12 px-3 sm:px-4 md:px-8 lg:px-12 pb-3 pt-3 bg-[#101014] mb-4 sm:mb-6"
+          // z-10 keeps the sticky header above the (static) grid tiles while
+          // staying below the app topbar (z-20), so topbar popovers (credits,
+          // avatar) aren't painted under this bar.
+          className="sticky top-0 z-10 -mx-3 sm:-mx-4 md:-mx-8 lg:-mx-12 px-3 sm:px-4 md:px-8 lg:px-12 pb-3 pt-3 bg-[#101014] mb-4 sm:mb-6"
         >
           <div className="flex flex-col gap-6">
             {/* Tabs + actions */}

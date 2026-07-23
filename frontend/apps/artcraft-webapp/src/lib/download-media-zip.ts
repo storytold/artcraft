@@ -17,12 +17,27 @@ export interface ZipDownloadResult {
 }
 
 // Fetches each item (same CORS/dl params as downloadMediaFile) and saves them
-// all as a single zip. Items that fail to fetch are skipped — the zip is still
+// all as a single zip. A single-item selection skips the zip and saves the
+// file directly. Items that fail to fetch are skipped — the zip is still
 // produced as long as at least one item succeeded. Callers surface the counts.
 export async function downloadItemsAsZip(
   items: ZipDownloadItem[],
   opts?: { onProgress?: (done: number, total: number) => void },
 ): Promise<ZipDownloadResult> {
+  if (items.length === 1) {
+    const item = items[0];
+    try {
+      const blob = await fetchItemBlob(item);
+      const ext = extensionForUrl(item.url, item.mediaClass);
+      saveBlob(blob, `artcraft-${item.id}.${ext}`);
+      opts?.onProgress?.(1, 1);
+      return { succeeded: 1, failed: 0 };
+    } catch {
+      opts?.onProgress?.(1, 1);
+      return { succeeded: 0, failed: 1 };
+    }
+  }
+
   const zip = new JSZip();
   let succeeded = 0;
   let failed = 0;
@@ -34,12 +49,7 @@ export async function downloadItemsAsZip(
       const item = items[next];
       next += 1;
       try {
-        const corsUrl = addCorsParam(item.url) || item.url;
-        const response = await fetch(`${corsUrl}&dl=1`, {
-          credentials: "omit",
-        });
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        const blob = await response.blob();
+        const blob = await fetchItemBlob(item);
         const ext = extensionForUrl(item.url, item.mediaClass);
         zip.file(`artcraft-${item.id}.${ext}`, blob);
         succeeded += 1;
@@ -58,19 +68,30 @@ export async function downloadItemsAsZip(
   if (succeeded > 0) {
     // Media files are already compressed — STORE skips pointless deflate work.
     const blob = await zip.generateAsync({ type: "blob", compression: "STORE" });
-    const blobUrl = window.URL.createObjectURL(blob);
-    try {
-      const a = document.createElement("a");
-      a.style.display = "none";
-      a.href = blobUrl;
-      a.download = `artcraft-videos-${Date.now()}.zip`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-    } finally {
-      window.URL.revokeObjectURL(blobUrl);
-    }
+    saveBlob(blob, `artcraft-videos-${Date.now()}.zip`);
   }
 
   return { succeeded, failed };
+}
+
+async function fetchItemBlob(item: ZipDownloadItem): Promise<Blob> {
+  const corsUrl = addCorsParam(item.url) || item.url;
+  const response = await fetch(`${corsUrl}&dl=1`, { credentials: "omit" });
+  if (!response.ok) throw new Error(`HTTP ${response.status}`);
+  return response.blob();
+}
+
+function saveBlob(blob: Blob, filename: string) {
+  const blobUrl = window.URL.createObjectURL(blob);
+  try {
+    const a = document.createElement("a");
+    a.style.display = "none";
+    a.href = blobUrl;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  } finally {
+    window.URL.revokeObjectURL(blobUrl);
+  }
 }
