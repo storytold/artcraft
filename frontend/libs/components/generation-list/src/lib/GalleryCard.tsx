@@ -1,6 +1,7 @@
 import { memo, useCallback, useState, type ReactNode } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
+  faCheck,
   faCube,
   faImage,
   faMusic,
@@ -73,6 +74,11 @@ export interface GalleryCardProps {
   title?: string;
   /** Hover-revealed quick-action cluster (recreate / share / download …). */
   actionsSlot?: ReactNode;
+  /** Multi-select mode: clicking toggles selection instead of opening the
+   *  item, a checkbox chip is shown, and the actions pill is hidden. */
+  selectMode?: boolean;
+  selected?: boolean;
+  onToggleSelect?: (item: GalleryItem) => void;
 }
 
 export const GalleryCard = memo(function GalleryCard({
@@ -81,6 +87,9 @@ export const GalleryCard = memo(function GalleryCard({
   shape = "auto",
   title,
   actionsSlot,
+  selectMode = false,
+  selected = false,
+  onToggleSelect,
 }: GalleryCardProps) {
   const isSquare = shape === "square";
   const cached = aspectRatioCache.get(item.id);
@@ -131,24 +140,29 @@ export const GalleryCard = memo(function GalleryCard({
   );
 
   const handleCardClick = useCallback(() => {
+    if (selectMode) {
+      // Only downloadable (completed, URL-bearing) items are selectable.
+      if (item.fullImage) onToggleSelect?.(item);
+      return;
+    }
     onClick(item);
-  }, [item, onClick]);
+  }, [item, onClick, selectMode, onToggleSelect]);
 
   const handleCardKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
       if (e.key === "Enter" || e.key === " ") {
         e.preventDefault();
-        onClick(item);
+        handleCardClick();
       }
     },
-    [item, onClick],
+    [handleCardClick],
   );
 
   return (
     <div
       role="button"
       tabIndex={0}
-      className={`group relative block w-full rounded-lg bg-ui-controls/40 leading-none transition-shadow hover:ring-2 hover:ring-primary-400/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-400 cursor-pointer ${isSquare ? "aspect-square" : ""}`}
+      className={`group relative block w-full rounded-lg bg-ui-controls/40 leading-none transition-shadow hover:ring-2 hover:ring-primary-400/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-400 cursor-pointer ${isSquare ? "aspect-square" : ""} ${selected ? "ring-2 ring-primary-400" : ""}`}
       style={outerStyle}
       onClick={handleCardClick}
       onKeyDown={handleCardKeyDown}
@@ -194,6 +208,19 @@ export const GalleryCard = memo(function GalleryCard({
         )}
       </div>
 
+      {/* Selection checkbox chip (select mode only) */}
+      {selectMode && item.fullImage && (
+        <div
+          className={`pointer-events-none absolute left-2 top-2 z-10 flex h-5 w-5 items-center justify-center rounded-md border transition-colors ${
+            selected
+              ? "border-primary-400 bg-primary-400 text-white"
+              : "border-white/60 bg-black/40 text-transparent"
+          }`}
+        >
+          <FontAwesomeIcon icon={faCheck} className="text-[10px]" />
+        </div>
+      )}
+
       {/* Hover overlay with media type + model badges and quick actions */}
       <div className="pointer-events-none absolute inset-x-0 bottom-0 flex items-end justify-between gap-2 bg-gradient-to-t from-black/70 to-transparent px-2 pb-2 pt-6 opacity-0 transition-opacity group-hover:opacity-100">
         <div className="pointer-events-auto flex min-w-0 flex-wrap items-center gap-1.5">
@@ -213,7 +240,7 @@ export const GalleryCard = memo(function GalleryCard({
           )}
         </div>
 
-        {actionsSlot && (
+        {actionsSlot && !selectMode && (
           <div className="pointer-events-auto flex shrink-0 items-center gap-0.5 rounded-lg bg-black/60 p-1 backdrop-blur-sm">
             {actionsSlot}
           </div>

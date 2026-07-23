@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
-// Audio behavior for lightbox videos: whether they open with sound (off by
+// Audio behavior for lightbox videos: whether they open with sound (on by
 // default, toggled in the settings modal's General tab) and the last volume
 // the user picked, so each video doesn't reset to 100%.
 
@@ -16,7 +16,7 @@ interface LightboxSoundStore {
 export const useLightboxSoundStore = create<LightboxSoundStore>()(
   persist(
     (set) => ({
-      soundEnabled: false,
+      soundEnabled: true,
       setSoundEnabled: (soundEnabled) => set({ soundEnabled }),
       volume: 1,
       setVolume: (volume) => set({ volume }),

@@ -16,4 +16,10 @@ export interface GenerationGalleryProps {
   onLoadMore: () => void;
   onGalleryItemClick: (item: GalleryItem) => void;
   enableMakeVideo?: boolean;
+  /** Enables the multi-select + batch download flow (select toggle in the
+   *  TopBar, checkboxes on completed items, floating download bar). */
+  selectable?: boolean;
+  /** Pixel offset that keeps the floating download bar above the page's
+   *  fixed prompt box (pass the measured promptbox height + gap). */
+  selectionBarBottomOffset?: number;
 }

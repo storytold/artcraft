@@ -13,6 +13,7 @@ import {
   type GalleryItem,
   is3DMediaClass,
   type RecreateSlotContext,
+  useGallerySelectionStore,
 } from "@storyteller/ui-generation-list";
 import { toast } from "../toast/toast";
 import { useRecreateFromPromptToken } from "../../lib/recreate";
@@ -40,7 +41,10 @@ export function GenerationGalleryList({
   onLoadMore,
   onGalleryItemClick,
   enableMakeVideo,
+  selectable,
 }: GenerationGalleryProps) {
+  const selectionActive = useGallerySelectionStore((s) => s.active);
+  const selectedIds = useGallerySelectionStore((s) => s.ids);
   return (
     <GenerationListView
       inProgressJobs={inProgressJobs}
@@ -63,8 +67,15 @@ export function GenerationGalleryList({
         />
       )}
       onCopyPromptResult={handleCopyResult}
+      selectionMode={!!selectable && selectionActive}
+      selectedIds={selectedIds}
+      onToggleSelect={handleToggleSelect}
     />
   );
+}
+
+function handleToggleSelect(item: GalleryItem) {
+  useGallerySelectionStore.getState().toggle(item.id);
 }
 
 function handleCopyResult(success: boolean) {

@@ -13,6 +13,7 @@ import {
   type GalleryItem,
   is3DMediaClass,
   type RecreateSlotContext,
+  useGallerySelectionStore,
 } from "@storyteller/ui-generation-list";
 import { useRecreateFromPromptToken } from "../../lib/recreate";
 import { useGalleryItemActions } from "./useGalleryItemActions";
@@ -36,7 +37,10 @@ export function GenerationGalleryGrid({
   onLoadMore,
   onGalleryItemClick,
   enableMakeVideo,
+  selectable,
 }: GenerationGalleryProps) {
+  const selectionActive = useGallerySelectionStore((s) => s.active);
+  const selectedIds = useGallerySelectionStore((s) => s.ids);
   return (
     <GenerationGridView
       inProgressJobs={inProgressJobs}
@@ -54,8 +58,15 @@ export function GenerationGalleryGrid({
       renderGalleryActions={(item) => (
         <CardActions item={item} enableMakeVideo={enableMakeVideo} />
       )}
+      selectionMode={!!selectable && selectionActive}
+      selectedIds={selectedIds}
+      onToggleSelect={handleToggleSelect}
     />
   );
+}
+
+function handleToggleSelect(item: GalleryItem) {
+  useGallerySelectionStore.getState().toggle(item.id);
 }
 
 // Recreate affordance for pending + failed cards. The pending card shows a

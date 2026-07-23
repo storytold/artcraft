@@ -52,6 +52,7 @@ import {
 } from "@storyteller/ui-pricing-modal";
 import {
   GalleryAutoplayToggle,
+  GallerySelectToggle,
   GalleryViewToggle,
 } from "@storyteller/ui-generation-list";
 import { SettingsModal } from "@storyteller/ui-settings-modal";
@@ -250,7 +251,19 @@ export const TopBar = ({ pageName }: Props) => {
       void useCreditsState.getState().fetchFromServer();
       console.log("TopBar: Polled credits");
     }, CREDITS_POLL_INTERVAL);
-    return () => clearInterval(interval);
+
+    // Imperative refresh requests, e.g. dispatched by the shared
+    // useGenerationJobs hook when it observes a newly-failed job (the server
+    // may have refunded the charge).
+    const handleCreditsChange = () => {
+      void useCreditsState.getState().fetchFromServer();
+    };
+    window.addEventListener("credits-change", handleCreditsChange);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener("credits-change", handleCreditsChange);
+    };
   }, [authStatus]);
 
   useCreditsBalanceChangedEvent(async () => {
@@ -502,6 +515,7 @@ export const TopBar = ({ pageName }: Props) => {
 
           <div className="flex justify-end gap-2" data-tauri-drag-region>
             <div className="no-drag flex items-center gap-1.5">
+              {tabStore.activeTabId === "VIDEO" && <GallerySelectToggle />}
               {tabStore.activeTabId === "VIDEO" && <GalleryAutoplayToggle />}
               {(tabStore.activeTabId === "IMAGE" ||
                 tabStore.activeTabId === "VIDEO" ||

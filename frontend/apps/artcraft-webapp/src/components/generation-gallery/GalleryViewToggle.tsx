@@ -2,4 +2,5 @@
 export {
   GalleryViewToggle,
   GalleryAutoplayToggle,
+  GallerySelectToggle,
 } from "@storyteller/ui-generation-list";

@@ -1485,6 +1485,7 @@ export default function CreateVideo() {
       authChecked={authChecked}
       hasContent={hasContent}
       showAutoplayToggle
+      showSelectToggle
       emptyStateTitle="Create Video"
       emptyStateSubtitle="Describe a scene. See it in motion."
       emptyStateCta={
@@ -1517,6 +1518,8 @@ export default function CreateVideo() {
           isInitialLoading={gallery.isInitialLoading}
           onLoadMore={gallery.loadMore}
           onGalleryItemClick={lightbox.handleGalleryItemClick}
+          selectable
+          selectionBarBottomOffset={promptHeight + 24}
         />
       }
       promptBox={

@@ -530,6 +530,10 @@ export const TaskQueue = () => {
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
   const [unreadCompletedIds, setUnreadCompletedIds] = useState<string[]>([]);
   const prevCompletedIdsRef = useRef<Set<string>>(new Set());
+  // Failed-task ids already seen by the poll — seeded on first load so
+  // failures from previous sessions don't trigger a credits refresh.
+  const prevFailedIdsRef = useRef<Set<string>>(new Set());
+  const failedSeenInitializedRef = useRef(false);
   // Confirmation state
   const [confirmationConfig, setConfirmationConfig] = useState<{
     isOpen: boolean;
@@ -837,6 +841,21 @@ export const TaskQueue = () => {
         setInProgress(inProg);
         setCompleted(done);
         setFailed(failedTasks);
+
+        // Refresh credits when a task newly enters a failed status via the
+        // poll — the "generation-failed-event" push below can be missed.
+        const newFailedIdSet = new Set(failedTasks.map((t) => t.id));
+        if (!failedSeenInitializedRef.current) {
+          failedSeenInitializedRef.current = true;
+        } else if (
+          failedTasks.some((t) => !prevFailedIdsRef.current.has(t.id))
+        ) {
+          // Refunded credits may take a moment to settle in the database
+          setTimeout(() => {
+            useCreditsState.getState().fetchFromServer();
+          }, 2000);
+        }
+        prevFailedIdsRef.current = newFailedIdSet;
 
         // Track newly completed IDs when popover is closed
         const newCompletedIdSet = new Set(done.map((d) => d.id));

@@ -33,6 +33,7 @@ import {
 } from "@storyteller/ui-action-reminder-modal";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
+  faArrowDownToLine,
   faArrowsRotate,
   faBorderAll,
   faCube,
@@ -53,8 +54,11 @@ import {
   faEllipsis,
   faCloud,
   faList,
+  faSpinnerThird,
 } from "@fortawesome/pro-solid-svg-icons";
 import { Lightbox } from "../../components/lightbox/lightbox";
+import { toast } from "../../components/toast/toast";
+import { downloadItemsAsZip } from "../../lib/download-media-zip";
 import {
   useLibraryFoldersStore,
   useLibrarySelectionStore,
@@ -2075,6 +2079,11 @@ function BulkSelectionBar({
   const folderMediaItems = useLibraryFoldersStore((s) => s.folderMediaItems);
   const tagMediaItems = useLibraryTagsStore((s) => s.tagMediaItems);
   const [popoverOpen, setPopoverOpen] = useState(false);
+  const [downloadProgress, setDownloadProgress] = useState<{
+    done: number;
+    total: number;
+  } | null>(null);
+  const isDownloading = downloadProgress !== null;
 
   // Same ordering as the sidebar / folder cards: starred first, then
   // alphabetical (the store list arrives in API order).
@@ -2108,6 +2117,38 @@ function BulkSelectionBar({
 
   if (ids.size === 0) return null;
   const clear = () => useLibrarySelectionStore.getState().clear();
+
+  const handleDownloadSelected = async () => {
+    const downloadable = selectedItems.filter(
+      (it): it is GalleryItem & { fullImage: string } => !!it.fullImage,
+    );
+    if (isDownloading || downloadable.length === 0) return;
+    setDownloadProgress({ done: 0, total: downloadable.length });
+    try {
+      const { succeeded, failed } = await downloadItemsAsZip(
+        downloadable.map((it) => ({
+          id: it.id,
+          url: it.fullImage,
+          mediaClass: it.mediaClass,
+        })),
+        { onProgress: (done, total) => setDownloadProgress({ done, total }) },
+      );
+      if (failed === 0) {
+        toast.success(
+          `Downloaded ${succeeded} ${succeeded === 1 ? "file" : "files"}`,
+        );
+      } else if (succeeded > 0) {
+        toast.error(
+          `${failed} of ${succeeded + failed} files failed to download`,
+        );
+      } else {
+        toast.error("Could not download the selected files.");
+      }
+      if (succeeded > 0) clear();
+    } finally {
+      setDownloadProgress(null);
+    }
+  };
 
   return (
     <div
@@ -2201,6 +2242,21 @@ function BulkSelectionBar({
           </>
         )}
       </div>
+
+      <button
+        type="button"
+        onClick={handleDownloadSelected}
+        disabled={isDownloading}
+        className="flex items-center gap-2 rounded-full bg-ui-controls/60 px-3 py-1.5 text-sm font-medium text-white hover:bg-ui-controls/90 transition-colors disabled:opacity-60"
+      >
+        <FontAwesomeIcon
+          icon={isDownloading ? faSpinnerThird : faArrowDownToLine}
+          className={`text-xs ${isDownloading ? "animate-spin" : ""}`}
+        />
+        {isDownloading && downloadProgress
+          ? `Downloading ${downloadProgress.done}/${downloadProgress.total}…`
+          : "Download"}
+      </button>
 
       <button
         type="button"
