@@ -611,6 +611,7 @@ export default function CreateImage() {
       description="Generate stunning AI images with ArtCraft"
       authChecked={authChecked}
       hasContent={hasContent}
+      showSelectToggle
       emptyStateTitle="Create Image"
       emptyStateSubtitle="Describe anything. See it in seconds."
       emptyStateCta={
@@ -643,6 +644,8 @@ export default function CreateImage() {
           onLoadMore={gallery.loadMore}
           onGalleryItemClick={lightbox.handleGalleryItemClick}
           enableMakeVideo
+          selectable
+          selectionBarBottomOffset={promptHeight + 24}
         />
       }
       promptBox={

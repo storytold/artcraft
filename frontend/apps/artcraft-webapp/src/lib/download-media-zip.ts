@@ -68,7 +68,7 @@ export async function downloadItemsAsZip(
   if (succeeded > 0) {
     // Media files are already compressed — STORE skips pointless deflate work.
     const blob = await zip.generateAsync({ type: "blob", compression: "STORE" });
-    saveBlob(blob, `artcraft-videos-${Date.now()}.zip`);
+    saveBlob(blob, `artcraft-media-${Date.now()}.zip`);
   }
 
   return { succeeded, failed };

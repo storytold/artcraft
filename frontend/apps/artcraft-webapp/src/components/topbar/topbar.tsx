@@ -20,8 +20,8 @@ export function TopBar() {
   const showViewToggle = !isMobile && GALLERY_VIEW_ROUTES.has(pathname);
   // Playing/still video previews only matter where the feed has videos.
   const showAutoplayToggle = showViewToggle && pathname === "/create-video";
-  // Multi-select + batch download is wired up on the video feed only for now.
-  const showSelectToggle = showViewToggle && pathname === "/create-video";
+  // Multi-select + batch download on the create feeds (image + video).
+  const showSelectToggle = showViewToggle;
 
   return (
     <header className="sticky top-0 z-20 flex items-center gap-3 border-b border-white/[0.06] bg-[#121212]/80 backdrop-blur-md px-3 pb-4 pt-3 sm:pt-6">
