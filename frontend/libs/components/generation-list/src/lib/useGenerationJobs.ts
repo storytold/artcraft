@@ -339,6 +339,7 @@ export function useGenerationJobs(options: {
   const [newlyCompleted, setNewlyCompleted] = useState<GalleryItem[]>([]);
 
   const prevCompletedIdsRef = useRef<Set<string>>(new Set());
+  const prevFailedIdsRef = useRef<Set<string>>(new Set());
   const initialLoadDoneRef = useRef(false);
 
   const promptTokens = useMemo(() => {
@@ -395,6 +396,22 @@ export function useGenerationJobs(options: {
       const newFailed = filtered.filter((j) =>
         FAILED_STATUSES.has(j.status.status),
       );
+
+      // A newly-observed failure may have triggered a server-side refund, so
+      // nudge the credits display — once now, and again after the refund has
+      // had a moment to settle in the database. (Skip on first load: those
+      // failures happened in a previous session.)
+      const failedIdSet = new Set(newFailed.map((j) => j.job_token));
+      if (
+        initialLoadDoneRef.current &&
+        newFailed.some((j) => !prevFailedIdsRef.current.has(j.job_token))
+      ) {
+        window.dispatchEvent(new Event("credits-change"));
+        setTimeout(() => {
+          window.dispatchEvent(new Event("credits-change"));
+        }, 2500);
+      }
+      prevFailedIdsRef.current = failedIdSet;
 
       // Completed
       const completedJobs = filtered.filter((j) =>

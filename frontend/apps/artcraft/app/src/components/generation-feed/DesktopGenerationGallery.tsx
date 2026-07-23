@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faArrowDownToLine,
@@ -13,6 +13,8 @@ import { toast } from "@storyteller/ui-toaster";
 import {
   GenerationListView,
   GenerationGridView,
+  SelectionActionBar,
+  useGallerySelectionStore,
   useGalleryViewStore,
   type FailedJob,
   type GalleryItem,
@@ -23,6 +25,7 @@ import {
   applyRecreateFromPromptToken,
   copyShareLink,
   downloadMediaFileToDisk,
+  downloadMediaFilesToFolder,
 } from "./desktopMediaActions";
 
 // Desktop twin of the webapp's GenerationGallery: renders the shared feed in
@@ -44,13 +47,30 @@ export interface DesktopGenerationGalleryProps {
   onGalleryItemClick: (item: GalleryItem) => void;
   /** Image page only: show a "Make Video" quick action on image items. */
   enableMakeVideo?: boolean;
+  /** Enables the multi-select + batch download flow (select toggle in the
+   *  TopBar, checkboxes on completed items, floating download bar). */
+  selectable?: boolean;
+  /** Pixel offset that keeps the floating download bar above the page's
+   *  fixed prompt box (pass the measured promptbox height + gap). */
+  selectionBarBottomOffset?: number;
 }
 
 export function DesktopGenerationGallery({
   enableMakeVideo,
+  selectable,
+  selectionBarBottomOffset,
   ...feedProps
 }: DesktopGenerationGalleryProps) {
   const viewMode = useGalleryViewStore((s) => s.viewMode);
+  const selectionActive = useGallerySelectionStore((s) => s.active);
+  const selectedIds = useGallerySelectionStore((s) => s.ids);
+
+  // The selection store is global (like the view-mode store) — drop select
+  // mode when the page unmounts (tab switch) so it can't leak elsewhere.
+  useEffect(() => {
+    if (!selectable) return;
+    return () => useGallerySelectionStore.getState().setActive(false);
+  }, [selectable]);
 
   const handleCopyResult = useCallback((success: boolean) => {
     if (success) {
@@ -60,20 +80,37 @@ export function DesktopGenerationGallery({
     }
   }, []);
 
+  const selectionProps = {
+    selectionMode: !!selectable && selectionActive,
+    selectedIds,
+    onToggleSelect: handleToggleSelect,
+  };
+  const selectionBar = selectable && (
+    <SelectionDownloadBar
+      newlyCompletedItems={feedProps.newlyCompletedItems}
+      galleryItems={feedProps.galleryItems}
+      bottomOffset={selectionBarBottomOffset}
+    />
+  );
+
   if (viewMode === "list") {
     return (
-      <GenerationListView
-        {...feedProps}
-        renderGalleryActions={(item, ctx) => (
-          <ItemActions
-            item={item}
-            promptToken={ctx.promptToken ?? item.promptToken}
-            enableMakeVideo={enableMakeVideo}
-            variant="row"
-          />
-        )}
-        onCopyPromptResult={handleCopyResult}
-      />
+      <>
+        <GenerationListView
+          {...feedProps}
+          {...selectionProps}
+          renderGalleryActions={(item, ctx) => (
+            <ItemActions
+              item={item}
+              promptToken={ctx.promptToken ?? item.promptToken}
+              enableMakeVideo={enableMakeVideo}
+              variant="row"
+            />
+          )}
+          onCopyPromptResult={handleCopyResult}
+        />
+        {selectionBar}
+      </>
     );
   }
 
@@ -81,6 +118,7 @@ export function DesktopGenerationGallery({
     <div className="px-3">
       <GenerationGridView
         {...feedProps}
+        {...selectionProps}
         renderGalleryActions={(item, ctx) => (
           <ItemActions
             item={item}
@@ -90,7 +128,71 @@ export function DesktopGenerationGallery({
           />
         )}
       />
+      {selectionBar}
     </div>
+  );
+}
+
+function handleToggleSelect(item: GalleryItem) {
+  useGallerySelectionStore.getState().toggle(item.id);
+}
+
+// Floating bar shown in select mode: "Download" prompts for a folder and
+// saves each selected item as its own file (native flow — no zip). Sits
+// above the floating promptbox.
+function SelectionDownloadBar({
+  newlyCompletedItems,
+  galleryItems,
+  bottomOffset,
+}: {
+  newlyCompletedItems: GalleryItem[];
+  galleryItems: GalleryItem[];
+  bottomOffset?: number;
+}) {
+  const ids = useGallerySelectionStore((s) => s.ids);
+  const [isDownloading, setIsDownloading] = useState(false);
+
+  const selectedItems = useMemo(() => {
+    const byId = new Map(
+      [...newlyCompletedItems, ...galleryItems].map(
+        (it) => [it.id, it] as const,
+      ),
+    );
+    return Array.from(ids)
+      .map((id) => byId.get(id))
+      .filter((it): it is GalleryItem => !!it?.fullImage);
+  }, [newlyCompletedItems, galleryItems, ids]);
+
+  const handleDownload = useCallback(async () => {
+    if (isDownloading || selectedItems.length === 0) return;
+    setIsDownloading(true);
+    try {
+      const anySaved = await downloadMediaFilesToFolder(selectedItems);
+      if (anySaved) useGallerySelectionStore.getState().setActive(false);
+    } finally {
+      setIsDownloading(false);
+    }
+  }, [isDownloading, selectedItems]);
+
+  return (
+    // Sit above the fixed promptbox whatever its measured height is.
+    <SelectionActionBar
+      className={bottomOffset != null ? "" : "bottom-24"}
+      style={bottomOffset != null ? { bottom: bottomOffset } : undefined}
+    >
+      <button
+        type="button"
+        onClick={handleDownload}
+        disabled={isDownloading || selectedItems.length === 0}
+        className="flex items-center gap-2 rounded-full bg-ui-controls/60 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-ui-controls/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary disabled:opacity-60"
+      >
+        <FontAwesomeIcon
+          icon={isDownloading ? faSpinnerThird : faArrowDownToLine}
+          className={`text-xs ${isDownloading ? "animate-spin" : ""}`}
+        />
+        Download
+      </button>
+    </SelectionActionBar>
   );
 }
 

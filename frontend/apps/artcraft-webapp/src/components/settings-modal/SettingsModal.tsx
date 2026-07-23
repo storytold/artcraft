@@ -130,8 +130,8 @@ function GeneralPanel() {
         <div className="flex flex-col gap-0.5">
           <p className="text-sm font-medium">Play videos with sound</p>
           <p className="text-xs opacity-70">
-            When on, videos in the media viewer start unmuted so you don't have
-            to click unmute every time. When off (default), they start muted.
+            When on (default), videos in the media viewer start unmuted so you
+            don't have to click unmute every time. When off, they start muted.
           </p>
         </div>
         <Switch

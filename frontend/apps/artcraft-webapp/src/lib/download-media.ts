@@ -12,7 +12,7 @@ const EXT_BY_MEDIA_CLASS: Record<string, string> = {
   splat: "spz",
 };
 
-function extensionForUrl(url: string, mediaClass?: string | null): string {
+export function extensionForUrl(url: string, mediaClass?: string | null): string {
   try {
     const pathname = new URL(url, window.location.href).pathname;
     const match = pathname.match(/\.([a-z0-9]{2,5})$/i);

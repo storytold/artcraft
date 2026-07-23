@@ -1,7 +1,7 @@
 
 import { download } from "@tauri-apps/plugin-upload";
 import { downloadDir } from "@tauri-apps/api/path";
-import { save } from "@tauri-apps/plugin-dialog";
+import { open, save } from "@tauri-apps/plugin-dialog";
 
 const ASK_LOCATION_BEFORE_DOWNLOAD_KEY = "artcraft_ask_location_before_download";
 
@@ -54,6 +54,15 @@ export const promptDownloadLocationIfNeeded = async (
   const filename = deriveDownloadFilename(url);
   const chosen = await save({ defaultPath: filename });
   return chosen ?? null;
+};
+
+/**
+ * Prompts the user to pick a directory (e.g. for batch downloads).
+ * Returns the chosen absolute path, or `null` when dismissed.
+ */
+export const pickDownloadDirectory = async (): Promise<string | null> => {
+  const chosen = await open({ directory: true, multiple: false });
+  return typeof chosen === "string" ? chosen : null;
 };
 
 /** Downloads `url` to an explicit absolute filesystem path. */

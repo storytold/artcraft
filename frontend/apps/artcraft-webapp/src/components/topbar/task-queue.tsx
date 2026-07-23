@@ -905,6 +905,15 @@ export const TaskQueue = () => {
           );
           prevFailedIdsRef.current = newFailedIdSet;
 
+          if (newlyFailedJobs.length > 0) {
+            // A failure may have triggered a server-side refund — nudge the
+            // credits chip now, and again once the refund has settled.
+            window.dispatchEvent(new Event("credits-change"));
+            setTimeout(() => {
+              window.dispatchEvent(new Event("credits-change"));
+            }, 2500);
+          }
+
           for (const job of newlyFailedJobs) {
             const parts = formatTitleParts(job);
             const failureCategory =

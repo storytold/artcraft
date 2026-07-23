@@ -48,6 +48,11 @@ export interface GenerationGridViewProps {
     item: GalleryItem,
     ctx: { modelId?: string; promptToken?: string },
   ) => ReactNode;
+  /** Multi-select mode for completed cards (pending/failed cards are never
+   *  selectable). See useGallerySelectionStore for the shared state. */
+  selectionMode?: boolean;
+  selectedIds?: ReadonlySet<string>;
+  onToggleSelect?: (item: GalleryItem) => void;
 }
 
 export function GenerationGridView({
@@ -63,6 +68,9 @@ export function GenerationGridView({
   onGalleryItemClick,
   renderRecreate,
   renderGalleryActions,
+  selectionMode = false,
+  selectedIds,
+  onToggleSelect,
 }: GenerationGridViewProps) {
   const sentinelRef = useInfiniteScrollSentinel(hasMore, onLoadMore);
 
@@ -187,6 +195,9 @@ export function GenerationGridView({
                   modelId: entry.item.modelId,
                   promptToken: entry.item.promptToken,
                 })}
+                selectMode={selectionMode}
+                selected={selectionMode && selectedIds?.has(entry.item.id)}
+                onToggleSelect={onToggleSelect}
               />
             )}
           </div>

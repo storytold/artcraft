@@ -49,7 +49,7 @@ export const KeyframeCards = ({
   return (
     <div
       className={twMerge(
-        "relative flex shrink-0 items-center self-center",
+        "relative flex shrink-0 items-center self-start",
         className,
       )}
     >

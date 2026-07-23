@@ -33,6 +33,7 @@ import {
 } from "@storyteller/ui-action-reminder-modal";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
+  faArrowDownToLine,
   faArrowsRotate,
   faBorderAll,
   faCube,
@@ -53,8 +54,11 @@ import {
   faEllipsis,
   faCloud,
   faList,
+  faSpinnerThird,
 } from "@fortawesome/pro-solid-svg-icons";
 import { Lightbox } from "../../components/lightbox/lightbox";
+import { toast } from "../../components/toast/toast";
+import { downloadItemsAsZip } from "../../lib/download-media-zip";
 import {
   useLibraryFoldersStore,
   useLibrarySelectionStore,
@@ -1100,7 +1104,10 @@ export default function Library() {
         {/* Header — sticky below navbar */}
         <div
           data-no-marquee
-          className="sticky top-0 z-50 -mx-3 sm:-mx-4 md:-mx-8 lg:-mx-12 px-3 sm:px-4 md:px-8 lg:px-12 pb-3 pt-3 bg-[#101014] mb-4 sm:mb-6"
+          // z-10 keeps the sticky header above the (static) grid tiles while
+          // staying below the app topbar (z-20), so topbar popovers (credits,
+          // avatar) aren't painted under this bar.
+          className="sticky top-0 z-10 -mx-3 sm:-mx-4 md:-mx-8 lg:-mx-12 px-3 sm:px-4 md:px-8 lg:px-12 pb-3 pt-3 bg-[#101014] mb-4 sm:mb-6"
         >
           <div className="flex flex-col gap-6">
             {/* Tabs + actions */}
@@ -2075,6 +2082,11 @@ function BulkSelectionBar({
   const folderMediaItems = useLibraryFoldersStore((s) => s.folderMediaItems);
   const tagMediaItems = useLibraryTagsStore((s) => s.tagMediaItems);
   const [popoverOpen, setPopoverOpen] = useState(false);
+  const [downloadProgress, setDownloadProgress] = useState<{
+    done: number;
+    total: number;
+  } | null>(null);
+  const isDownloading = downloadProgress !== null;
 
   // Same ordering as the sidebar / folder cards: starred first, then
   // alphabetical (the store list arrives in API order).
@@ -2108,6 +2120,38 @@ function BulkSelectionBar({
 
   if (ids.size === 0) return null;
   const clear = () => useLibrarySelectionStore.getState().clear();
+
+  const handleDownloadSelected = async () => {
+    const downloadable = selectedItems.filter(
+      (it): it is GalleryItem & { fullImage: string } => !!it.fullImage,
+    );
+    if (isDownloading || downloadable.length === 0) return;
+    setDownloadProgress({ done: 0, total: downloadable.length });
+    try {
+      const { succeeded, failed } = await downloadItemsAsZip(
+        downloadable.map((it) => ({
+          id: it.id,
+          url: it.fullImage,
+          mediaClass: it.mediaClass,
+        })),
+        { onProgress: (done, total) => setDownloadProgress({ done, total }) },
+      );
+      if (failed === 0) {
+        toast.success(
+          `Downloaded ${succeeded} ${succeeded === 1 ? "file" : "files"}`,
+        );
+      } else if (succeeded > 0) {
+        toast.error(
+          `${failed} of ${succeeded + failed} files failed to download`,
+        );
+      } else {
+        toast.error("Could not download the selected files.");
+      }
+      if (succeeded > 0) clear();
+    } finally {
+      setDownloadProgress(null);
+    }
+  };
 
   return (
     <div
@@ -2201,6 +2245,21 @@ function BulkSelectionBar({
           </>
         )}
       </div>
+
+      <button
+        type="button"
+        onClick={handleDownloadSelected}
+        disabled={isDownloading}
+        className="flex items-center gap-2 rounded-full bg-ui-controls/60 px-3 py-1.5 text-sm font-medium text-white hover:bg-ui-controls/90 transition-colors disabled:opacity-60"
+      >
+        <FontAwesomeIcon
+          icon={isDownloading ? faSpinnerThird : faArrowDownToLine}
+          className={`text-xs ${isDownloading ? "animate-spin" : ""}`}
+        />
+        {isDownloading && downloadProgress
+          ? `Downloading ${downloadProgress.done}/${downloadProgress.total}…`
+          : "Download"}
+      </button>
 
       <button
         type="button"

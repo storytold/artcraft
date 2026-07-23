@@ -1,6 +1,7 @@
 import { memo, useCallback, type ReactNode } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
+  faCheck,
   faCube,
   faImage,
   faMusic,
@@ -29,6 +30,11 @@ export interface GalleryRowProps {
   /** Hover-revealed quick-action cluster (recreate / share / download …). */
   actionsSlot?: ReactNode;
   onCopyPromptResult?: (success: boolean) => void;
+  /** Multi-select mode: clicking toggles selection instead of opening the
+   *  item, a leading checkbox is shown, and the actions cluster is hidden. */
+  selectMode?: boolean;
+  selected?: boolean;
+  onToggleSelect?: (item: GalleryItem) => void;
 }
 
 export const GalleryRow = memo(function GalleryRow({
@@ -39,6 +45,9 @@ export const GalleryRow = memo(function GalleryRow({
   loading = false,
   actionsSlot,
   onCopyPromptResult,
+  selectMode = false,
+  selected = false,
+  onToggleSelect,
 }: GalleryRowProps) {
   const isVideo = item.mediaClass === "video";
   const is3D = is3DMediaClass(item.mediaClass);
@@ -60,15 +69,22 @@ export const GalleryRow = memo(function GalleryRow({
     ? getCreatorIconPathForModelId(effectiveModelId)
     : null;
 
-  const handleRowClick = useCallback(() => onClick(item), [item, onClick]);
+  const handleRowClick = useCallback(() => {
+    if (selectMode) {
+      // Only downloadable (completed, URL-bearing) items are selectable.
+      if (item.fullImage) onToggleSelect?.(item);
+      return;
+    }
+    onClick(item);
+  }, [item, onClick, selectMode, onToggleSelect]);
   const handleRowKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
       if (e.key === "Enter" || e.key === " ") {
         e.preventDefault();
-        onClick(item);
+        handleRowClick();
       }
     },
-    [item, onClick],
+    [handleRowClick],
   );
 
   const timeAgo = formatTimeAgo(item.createdAt);
@@ -79,8 +95,21 @@ export const GalleryRow = memo(function GalleryRow({
       tabIndex={0}
       onClick={handleRowClick}
       onKeyDown={handleRowKeyDown}
-      className="group flex cursor-pointer items-center gap-3 rounded-lg px-2.5 py-2 transition-colors hover:bg-white/[0.04] focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-400/60"
+      className={`group flex cursor-pointer items-center gap-3 rounded-lg px-2.5 py-2 transition-colors hover:bg-white/[0.04] focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-400/60 ${selected ? "bg-primary-400/10" : ""}`}
     >
+      {/* Selection checkbox (select mode only) */}
+      {selectMode && (
+        <div
+          className={`pointer-events-none flex h-5 w-5 shrink-0 items-center justify-center rounded-md border transition-colors ${
+            selected
+              ? "border-primary-400 bg-primary-400 text-white"
+              : "border-white/60 bg-black/40 text-transparent"
+          } ${item.fullImage ? "" : "invisible"}`}
+        >
+          <FontAwesomeIcon icon={faCheck} className="text-[10px]" />
+        </div>
+      )}
+
       {/* Thumbnail */}
       <div className="relative size-[100px] shrink-0 overflow-hidden rounded-md bg-ui-controls/40 leading-none">
         <GalleryThumbnail
@@ -153,7 +182,7 @@ export const GalleryRow = memo(function GalleryRow({
           {/* Quick actions, right after the media type. Always visible on
               mobile (no hover); hover-revealed on desktop. The prompt above
               spans the full row width either way. */}
-          {actionsSlot && (
+          {actionsSlot && !selectMode && (
             <div className="flex shrink-0 items-center gap-0.5 sm:ms-1.5 transition-opacity sm:opacity-0 sm:group-hover:opacity-100 sm:focus-within:opacity-100">
               {actionsSlot}
             </div>

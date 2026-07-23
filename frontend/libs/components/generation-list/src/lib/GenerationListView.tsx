@@ -51,6 +51,11 @@ export interface GenerationListViewProps {
   ) => ReactNode;
   /** Copy-prompt feedback (e.g. host toast). */
   onCopyPromptResult?: (success: boolean) => void;
+  /** Multi-select mode for completed rows (pending/failed rows are never
+   *  selectable). See useGallerySelectionStore for the shared state. */
+  selectionMode?: boolean;
+  selectedIds?: ReadonlySet<string>;
+  onToggleSelect?: (item: GalleryItem) => void;
 }
 
 export function GenerationListView({
@@ -67,6 +72,9 @@ export function GenerationListView({
   renderRecreate,
   renderGalleryActions,
   onCopyPromptResult,
+  selectionMode = false,
+  selectedIds,
+  onToggleSelect,
 }: GenerationListViewProps) {
   const sentinelRef = useInfiniteScrollSentinel(hasMore, onLoadMore);
 
@@ -200,6 +208,9 @@ export function GenerationListView({
                 promptToken: promptToken || undefined,
               })}
               onCopyPromptResult={onCopyPromptResult}
+              selectMode={selectionMode}
+              selected={selectionMode && selectedIds?.has(entry.item.id)}
+              onToggleSelect={onToggleSelect}
             />
           );
         })}

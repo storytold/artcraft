@@ -336,7 +336,10 @@ export const GalleryDraggableItem: React.FC<GalleryDraggableItemProps> = ({
       {/* dropdown menu */}
       {mode !== "select" && (
         <div
-          className="absolute right-2 top-2 z-30 opacity-0 group-hover:opacity-100 [@media(pointer:coarse)]:opacity-100 transition-opacity duration-75"
+          // Tile chrome stays under sticky page headers (e.g. the library
+          // filter bar at z-10): z-[2]/z-[1] keep the in-tile ordering
+          // (menu/checkbox above badges) without escaping the page layers.
+          className="absolute right-2 top-2 z-[2] opacity-0 group-hover:opacity-100 [@media(pointer:coarse)]:opacity-100 transition-opacity duration-75"
           onPointerDown={(e) => e.stopPropagation()}
           onClick={(e) => {
             e.stopPropagation();
@@ -408,7 +411,7 @@ export const GalleryDraggableItem: React.FC<GalleryDraggableItemProps> = ({
       {mode !== "select" && onBulkSelectToggle && (
         <div
           className={twMerge(
-            "absolute left-2 top-2 z-30 flex h-5 w-5 items-center justify-center rounded border-2 cursor-pointer transition-all duration-100",
+            "absolute left-2 top-2 z-[2] flex h-5 w-5 items-center justify-center rounded border-2 cursor-pointer transition-all duration-100",
             bulkSelected
               ? "bg-primary border-primary"
               : "border-white/60 bg-black/40 hover:border-white",
@@ -432,7 +435,7 @@ export const GalleryDraggableItem: React.FC<GalleryDraggableItemProps> = ({
       )}
       {/* Media class badge on hover — bottom-left */}
       {!disableTooltipAndBadge && item.mediaClass && (
-        <div className="pointer-events-none absolute left-2 bottom-2 z-20 rounded-full bg-black/50 backdrop-blur-lg px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-white opacity-0 group-hover:opacity-100 transition-opacity duration-150">
+        <div className="pointer-events-none absolute left-2 bottom-2 z-[1] rounded-full bg-black/50 backdrop-blur-lg px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-white opacity-0 group-hover:opacity-100 transition-opacity duration-150">
           {item.mediaClass === "dimensional" ||
           item.mediaClass === "mesh" ||
           item.mediaClass === "splat"
@@ -442,7 +445,7 @@ export const GalleryDraggableItem: React.FC<GalleryDraggableItemProps> = ({
       )}
       {/* Upload badge — bottom-right (always visible, even in select mode) */}
       {item.isUpload && (
-        <div className="pointer-events-none absolute right-2 bottom-2 z-20 flex h-5 w-5 items-center justify-center rounded-full bg-black/50 backdrop-blur-lg text-white">
+        <div className="pointer-events-none absolute right-2 bottom-2 z-[1] flex h-5 w-5 items-center justify-center rounded-full bg-black/50 backdrop-blur-lg text-white">
           <FontAwesomeIcon icon={faUpload} className="text-[10px]" />
         </div>
       )}

@@ -197,6 +197,8 @@ const ImageToVideo = ({ imageMediaId, imageUrl }: ImageToVideoProps) => {
           isInitialLoading={gallery.isInitialLoading}
           onLoadMore={gallery.loadMore}
           onGalleryItemClick={openInLightbox}
+          selectable
+          selectionBarBottomOffset={promptHeight + 32}
         />
       }
       promptBox={
