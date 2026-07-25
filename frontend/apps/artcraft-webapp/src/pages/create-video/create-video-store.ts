@@ -51,10 +51,18 @@ type CreateVideoState = {
   ui: VideoUiState;
   refs: VideoRefsState;
   pendingRecreate: RecreatePayload | null;
+  // Reference media sent from another page (library "Send to prompt").
+  // Consumed by the create-video page, which applies the real per-model caps.
+  pendingRefImages: RefImage[] | null;
+  pendingRefVideos: RefVideo[] | null;
   setUi: (patch: Partial<VideoUiState>) => void;
   setRefs: (patch: Partial<VideoRefsState>) => void;
   setPendingRecreate: (payload: RecreatePayload | null) => void;
   consumePendingRecreate: () => RecreatePayload | null;
+  setPendingRefImages: (refs: RefImage[] | null) => void;
+  consumePendingRefImages: () => RefImage[] | null;
+  setPendingRefVideos: (refs: RefVideo[] | null) => void;
+  consumePendingRefVideos: () => RefVideo[] | null;
   startBatch: (prompt: string, modelLabel: string, batchCount?: number) => string;
   setBatchJobToken: (batchId: string, jobToken: string) => void;
   completeBatch: (batchId: string, video: GeneratedVideo) => void;
@@ -90,6 +98,8 @@ export const useCreateVideoStore = create<CreateVideoState>()(
       ui: { ...DEFAULT_UI },
       refs: { ...DEFAULT_REFS },
       pendingRecreate: null,
+      pendingRefImages: null,
+      pendingRefVideos: null,
 
       setUi: (patch) =>
         set((s) => ({ ui: { ...s.ui, ...patch } })),
@@ -103,6 +113,22 @@ export const useCreateVideoStore = create<CreateVideoState>()(
         const payload = get().pendingRecreate;
         if (payload) set({ pendingRecreate: null });
         return payload;
+      },
+
+      setPendingRefImages: (refs) => set({ pendingRefImages: refs }),
+
+      consumePendingRefImages: () => {
+        const refs = get().pendingRefImages;
+        if (refs) set({ pendingRefImages: null });
+        return refs;
+      },
+
+      setPendingRefVideos: (refs) => set({ pendingRefVideos: refs }),
+
+      consumePendingRefVideos: () => {
+        const refs = get().pendingRefVideos;
+        if (refs) set({ pendingRefVideos: null });
+        return refs;
       },
 
       startBatch: (prompt, modelLabel, batchCount) => {

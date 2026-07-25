@@ -56,6 +56,10 @@ import {
 import { GenerationCountPicker } from "../create-image/components/GenerationCountPicker";
 import { useVideoCostEstimate } from "../../lib/cost-estimate-api";
 import {
+  mergeRefImages,
+  toastMergeRefImagesOutcome,
+} from "../../lib/send-to-prompt";
+import {
   resolveModelOption,
   resolveModelCount,
 } from "../../lib/resolve-model-setting";
@@ -201,6 +205,41 @@ function buildSizePopoverItems(
     ),
     action: ar,
   }));
+}
+
+// Caps candidate reference videos against the deck's slot and total-duration
+// limits, probing each file's duration when it isn't known yet. Rejections
+// toast per video. Shared by the library video picker and the "Send to
+// prompt" consume flow.
+async function buildVideoRefsToAdd(
+  candidates: RefVideo[],
+  existing: RefVideo[],
+  maxRefs: number,
+  maxTotalDuration: number,
+): Promise<RefVideo[]> {
+  const slots = Math.max(0, maxRefs - existing.length);
+  const picked = candidates.slice(0, slots);
+  const added: RefVideo[] = [];
+  let total = existing.reduce((sum, v) => sum + v.duration, 0);
+  for (const candidate of picked) {
+    const duration =
+      candidate.duration > 0
+        ? candidate.duration
+        : await getVideoDurationFromUrl(candidate.url);
+    if (duration <= 0) {
+      toast.error("Could not read video file");
+      continue;
+    }
+    if (total + duration > maxTotalDuration) {
+      toast.error(
+        `Video too long — max ${maxTotalDuration}s total (${maxTotalDuration - total}s remaining)`,
+      );
+      continue;
+    }
+    total += duration;
+    added.push({ ...candidate, duration });
+  }
+  return added;
 }
 
 // Effective max duration for the active input mode. Some models (e.g. Grok)
@@ -747,6 +786,79 @@ export default function CreateVideo() {
     });
   }, [pendingRecreate, setUi]);
 
+  // Consume reference images sent from the library ("Send to prompt").
+  // Waits for the model list so the merge applies the real per-model cap —
+  // the sender doesn't know which model is selected here. Reference-capable
+  // models take the images as references (switching into reference mode so
+  // they're visible); keyframe-only models take the first as the start frame.
+  const pendingRefImages = useCreateVideoStore((s) => s.pendingRefImages);
+  useEffect(() => {
+    if (!pendingRefImages || apiModels.length === 0) return;
+    const incoming = useCreateVideoStore.getState().consumePendingRefImages();
+    if (!incoming || incoming.length === 0) return;
+    const supportsRefs = !!selectedModel?.image_references_supported;
+    const supportsKeyframe =
+      !!selectedModel?.starting_keyframe_supported ||
+      !!selectedModel?.starting_keyframe_required;
+    const maxImages = supportsRefs
+      ? (selectedModel?.image_references_max ?? 3)
+      : supportsKeyframe
+        ? 1
+        : 0;
+    const result = mergeRefImages(referenceImages, incoming, maxImages);
+    if (result.added > 0) {
+      setReferenceImages(result.next);
+      if (supportsRefs) setUi({ inputMode: "reference" });
+    }
+    toastMergeRefImagesOutcome(result, maxImages);
+  }, [
+    pendingRefImages,
+    apiModels,
+    selectedModel,
+    referenceImages,
+    setReferenceImages,
+    setUi,
+  ]);
+
+  // Consume reference videos sent from the library ("Send to prompt").
+  // Only some models (e.g. Seedance) take video references — anything else
+  // gets a toast instead of a silently hidden deck.
+  const pendingRefVideos = useCreateVideoStore((s) => s.pendingRefVideos);
+  useEffect(() => {
+    if (!pendingRefVideos || apiModels.length === 0) return;
+    const incoming = useCreateVideoStore.getState().consumePendingRefVideos();
+    if (!incoming || incoming.length === 0) return;
+    if (!supportsVideoRefs) {
+      toast.error(
+        "The selected model doesn't support video references — pick one that does (e.g. Seedance)",
+      );
+      return;
+    }
+    const existingTokens = new Set(referenceVideos.map((v) => v.mediaToken));
+    const fresh = incoming.filter((v) => !existingTokens.has(v.mediaToken));
+    void (async () => {
+      const added = await buildVideoRefsToAdd(
+        fresh,
+        referenceVideos,
+        maxVideoRefs,
+        maxVideoRefDuration,
+      );
+      if (added.length > 0) {
+        setReferenceVideos([...referenceVideos, ...added]);
+        setUi({ inputMode: "reference" });
+      }
+    })();
+  }, [
+    pendingRefVideos,
+    apiModels,
+    supportsVideoRefs,
+    referenceVideos,
+    maxVideoRefs,
+    maxVideoRefDuration,
+    setReferenceVideos,
+    setUi,
+  ]);
+
   useEffect(() => {
     const cleanups = pollingCleanupsRef.current;
     const pendingBatches = useCreateVideoStore
@@ -930,34 +1042,21 @@ export default function CreateVideo() {
   const handleLibraryVideoSelect = useCallback(
     async (items: GalleryItem[]) => {
       setIsVideoRefPickerOpen(false);
-      const availableSlots = Math.max(0, maxVideoRefs - referenceVideos.length);
-      const picked = items.slice(0, availableSlots);
-
-      const added: RefVideo[] = [];
-      let total = referenceVideos.reduce((sum, v) => sum + v.duration, 0);
-      for (const item of picked) {
-        const url = item.fullImage;
-        if (!url) continue;
-        const duration = await getVideoDurationFromUrl(url);
-        if (duration <= 0) {
-          toast.error("Could not read video file");
-          continue;
-        }
-        if (total + duration > maxVideoRefDuration) {
-          toast.error(
-            `Video too long — max ${maxVideoRefDuration}s total (${maxVideoRefDuration - total}s remaining)`,
-          );
-          continue;
-        }
-        total += duration;
-        added.push({
+      const candidates: RefVideo[] = items
+        .filter((item) => !!item.fullImage)
+        .map((item) => ({
           id: Math.random().toString(36).substring(7),
-          url,
+          url: item.fullImage!,
           file: new File([], "library-video"),
           mediaToken: item.id,
-          duration,
-        });
-      }
+          duration: 0,
+        }));
+      const added = await buildVideoRefsToAdd(
+        candidates,
+        referenceVideos,
+        maxVideoRefs,
+        maxVideoRefDuration,
+      );
       if (added.length > 0) {
         setReferenceVideos([...referenceVideos, ...added]);
       }
