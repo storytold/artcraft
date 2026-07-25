@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { twMerge } from "tailwind-merge";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faImages, faMusic, faVideo } from "@fortawesome/pro-solid-svg-icons";
@@ -51,9 +51,10 @@ const listKinds = (labels: string[]) =>
     : `${labels.slice(0, -1).join(", ")} or ${labels[labels.length - 1]}`;
 
 /**
- * Makes the prompt box a drop target for reference media. Files are routed
- * by MIME type; kinds the current model doesn't take are rejected with a
- * toast instead of silently vanishing.
+ * Makes the prompt box a drop target for reference media, and catches
+ * clipboard pastes of files anywhere on the page (focus-independent). Files
+ * are routed by MIME type; kinds the current model doesn't take are
+ * rejected with a toast instead of silently vanishing.
  */
 export function usePromptBoxDrop({
   acceptsImages,
@@ -134,15 +135,7 @@ export function usePromptBoxDrop({
     }
   };
 
-  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
-    if (!enabled || !e.dataTransfer.types.includes("Files")) return;
-    e.preventDefault();
-    e.stopPropagation();
-    setDragState("idle");
-
-    const files = Array.from(e.dataTransfer.files);
-    if (files.length === 0) return;
-
+  const routeFiles = (files: File[]) => {
     const accepted: DroppedFiles = { images: [], videos: [], audios: [] };
     const rejectedKinds = new Set<DropKind>();
     let unknownCount = 0;
@@ -175,10 +168,46 @@ export function usePromptBoxDrop({
       );
     } else if (unknownCount > 0 && !anyAccepted) {
       toast.error(
-        `Only ${listKinds(acceptedKindLabels(acceptsImages, acceptsVideos, acceptsAudio))} files can be dropped here`,
+        `Only ${listKinds(acceptedKindLabels(acceptsImages, acceptsVideos, acceptsAudio))} files can be added here`,
       );
     }
   };
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    if (!enabled || !e.dataTransfer.types.includes("Files")) return;
+    e.preventDefault();
+    e.stopPropagation();
+    setDragState("idle");
+
+    const files = Array.from(e.dataTransfer.files);
+    if (files.length > 0) routeFiles(files);
+  };
+
+  // Paste-to-add: a copied image (or media file) pasted anywhere on the
+  // page lands in the deck, whether or not the textarea is focused. The
+  // listener re-reads the freshest router through a ref so it can stay
+  // subscribed once.
+  const routeFilesRef = useRef(routeFiles);
+  useEffect(() => {
+    routeFilesRef.current = routeFiles;
+  });
+  useEffect(() => {
+    if (!enabled) return;
+    const handlePaste = (e: ClipboardEvent) => {
+      const files = Array.from(e.clipboardData?.files ?? []);
+      // Plain text pastes carry no files — leave them entirely alone.
+      if (files.length === 0) return;
+      // Guard against double-adding if more than one box ever mounts.
+      const marked = e as ClipboardEvent & { promptBoxHandled?: boolean };
+      if (marked.promptBoxHandled) return;
+      marked.promptBoxHandled = true;
+      // No preventDefault: any text alongside the file still pastes into
+      // whichever field is focused.
+      routeFilesRef.current(files);
+    };
+    window.addEventListener("paste", handlePaste);
+    return () => window.removeEventListener("paste", handlePaste);
+  }, [enabled]);
 
   return {
     dragState,

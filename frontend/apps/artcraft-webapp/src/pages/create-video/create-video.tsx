@@ -572,6 +572,20 @@ export default function CreateVideo() {
     activeCharacters,
   ]);
 
+  // Seedance 2.0 models support @-mention references in the prompt — once at
+  // least one ref is attached, surface that in the placeholder.
+  const isSeedance2Model = (selectedModel?.model ?? "").startsWith(
+    "seedance_2p0",
+  );
+  const hasUploadedRefs =
+    referenceImages.length > 0 ||
+    referenceVideos.length > 0 ||
+    referenceAudios.length > 0;
+  const promptPlaceholder =
+    isSeedance2Model && isReferenceMode && hasUploadedRefs
+      ? "Describe your video. Use @Image1, @Video1... to reference your uploads"
+      : "Describe the video you want to generate...";
+
   const modelItems = useMemo(
     () => buildModelPopoverItems(apiModels, selectedModel?.model ?? ""),
     [apiModels, selectedModel?.model],
@@ -1287,7 +1301,7 @@ export default function CreateVideo() {
       onSubmit={handleGenerate}
       isSubmitting={isGenerating}
       credits={estimatedCredits}
-      placeholder="Describe the video you want to generate..."
+      placeholder={promptPlaceholder}
       mentionItems={mentionItems.length > 0 ? mentionItems : undefined}
       autoAdvance={loggedIn && !!prompt.trim() && !isGenerating && !needsImage}
       banner={
@@ -1559,7 +1573,7 @@ export default function CreateVideo() {
             isSubmitting={isGenerating}
             credits={estimatedCredits}
             maxPromptLength={maxPromptLength}
-            placeholder="Describe the video you want to generate..."
+            placeholder={promptPlaceholder}
             supportsImagePrompts={supportsImagePrompts}
             maxImagePromptCount={
               isReferenceMode ? (selectedModel?.image_references_max ?? 3) : 1
