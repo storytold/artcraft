@@ -1,7 +1,7 @@
 import type { NavigateFunction } from "react-router-dom";
 import type { GalleryItem } from "@storyteller/ui-gallery-modal";
 import { toast } from "../components/toast/toast";
-import type { RefImage } from "../components/prompt-box/types";
+import type { RefImage, RefVideo } from "../components/prompt-box/types";
 import { useCreateImageStore } from "../pages/create-image/create-image-store";
 import { useCreateVideoStore } from "../pages/create-video/create-video-store";
 
@@ -16,25 +16,45 @@ export function isImagePromptable(item: GalleryItem): boolean {
   return item.mediaClass === "image" && !!(item.thumbnail || item.fullImage);
 }
 
-// Parks library images for a create page's reference deck and navigates
-// there. The reference cap is per-model and only known on the receiving page,
-// so the images travel via the store's `pendingRefImages` slot and the page
-// merges them (dedupe + real cap) once its model list is loaded.
+// Videos can only be prompted from on the video page (as reference videos,
+// model permitting).
+export function isVideoPromptable(item: GalleryItem): boolean {
+  return item.mediaClass === "video" && !!item.fullImage;
+}
+
+// Parks library media for a create page's reference deck and navigates
+// there. The reference caps are per-model and only known on the receiving
+// page, so the media travels via the store's pending slots and the page
+// merges it (dedupe + real caps) once its model list is loaded.
 export function sendToPrompt(
   items: GalleryItem[],
   destination: PromptDestination,
   navigate: NavigateFunction,
 ): void {
   const images = items.filter(isImagePromptable);
-  if (images.length === 0) {
+  const videos = destination === "video" ? items.filter(isVideoPromptable) : [];
+  if (images.length === 0 && videos.length === 0) {
     toast.error("Select at least one image to use as a reference");
     return;
   }
-  const refs = images.map(galleryItemToRefImage);
+
   if (destination === "image") {
-    useCreateImageStore.getState().setPendingRefImages(refs);
+    useCreateImageStore
+      .getState()
+      .setPendingRefImages(images.map(galleryItemToRefImage));
+    if (items.some(isVideoPromptable)) {
+      toast.success(
+        `Sent ${images.length} ${images.length === 1 ? "image" : "images"} — videos can't be image references`,
+      );
+    }
   } else {
-    useCreateVideoStore.getState().setPendingRefImages(refs);
+    const store = useCreateVideoStore.getState();
+    if (images.length > 0) {
+      store.setPendingRefImages(images.map(galleryItemToRefImage));
+    }
+    if (videos.length > 0) {
+      store.setPendingRefVideos(videos.map(galleryItemToRefVideo));
+    }
   }
   navigate(DESTINATION_ROUTES[destination]);
 }
@@ -46,6 +66,17 @@ export function galleryItemToRefImage(item: GalleryItem): RefImage {
     fullUrl: item.fullImage || undefined,
     file: new File([], "library-image"),
     mediaToken: item.id,
+  };
+}
+
+function galleryItemToRefVideo(item: GalleryItem): RefVideo {
+  return {
+    id: crypto.randomUUID(),
+    url: item.fullImage || "",
+    file: new File([], "library-video"),
+    mediaToken: item.id,
+    // 0 = unknown; the video page probes the file before adding it.
+    duration: item.durationMillis ? item.durationMillis / 1000 : 0,
   };
 }
 

@@ -61,6 +61,7 @@ import { toast } from "../../components/toast/toast";
 import { downloadItemsAsZip } from "../../lib/download-media-zip";
 import {
   isImagePromptable,
+  isVideoPromptable,
   sendToPrompt,
   type PromptDestination,
 } from "../../lib/send-to-prompt";
@@ -2136,6 +2137,8 @@ function BulkSelectionBar({
 
   if (ids.size === 0) return null;
   const clear = () => useLibrarySelectionStore.getState().clear();
+  const hasPromptImages = selectedItems.some(isImagePromptable);
+  const hasPromptVideos = selectedItems.some(isVideoPromptable);
 
   const handleDownloadSelected = async () => {
     const downloadable = selectedItems.filter(
@@ -2194,8 +2197,9 @@ function BulkSelectionBar({
         {ids.size} selected
       </span>
 
-      {/* Send to prompt (only when the selection contains images) */}
-      {selectedItems.some(isImagePromptable) && (
+      {/* Send to prompt (only when the selection contains images or videos).
+          Images can go to either prompt; videos only to the video prompt. */}
+      {(hasPromptImages || hasPromptVideos) && (
         <div className="relative">
           <button
             type="button"
@@ -2203,7 +2207,10 @@ function BulkSelectionBar({
             onClick={() => setSendToOpen((v) => !v)}
             className="flex items-center gap-2 rounded-full bg-ui-controls/60 px-3 py-1.5 text-sm font-medium text-white hover:bg-ui-controls/90 transition-colors"
           >
-            <FontAwesomeIcon icon={faImage} className="text-xs" />
+            <FontAwesomeIcon
+              icon={hasPromptImages ? faImage : faVideo}
+              className="text-xs"
+            />
             {/* Icon-only on phones — a fourth labeled button overflows the bar. */}
             <span className="hidden sm:inline">Send to prompt</span>
           </button>
@@ -2217,17 +2224,15 @@ function BulkSelectionBar({
                 <div className="px-2 py-1 text-[11px] font-semibold uppercase tracking-wider text-white/40">
                   Use as reference in
                 </div>
-                {SEND_TO_TARGETS.map((target) => (
+                {SEND_TO_TARGETS.filter(
+                  (target) => target.destination === "video" || hasPromptImages,
+                ).map((target) => (
                   <button
                     key={target.destination}
                     type="button"
                     onClick={() => {
                       setSendToOpen(false);
-                      sendToPrompt(
-                        selectedItems.filter(isImagePromptable),
-                        target.destination,
-                        navigate,
-                      );
+                      sendToPrompt(selectedItems, target.destination, navigate);
                       clear();
                     }}
                     className="flex w-full items-center gap-2.5 rounded-md px-2 py-1.5 text-sm text-white hover:bg-ui-controls/50 transition-colors"
