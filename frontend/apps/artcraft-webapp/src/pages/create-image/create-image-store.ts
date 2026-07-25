@@ -35,10 +35,15 @@ type CreateImageState = {
   ui: ImageUiState;
   referenceImages: RefImage[];
   pendingRecreate: RecreatePayload | null;
+  // Reference images sent from another page (library "Send to prompt").
+  // Consumed by the create-image page, which applies the real per-model cap.
+  pendingRefImages: RefImage[] | null;
   setUi: (patch: Partial<ImageUiState>) => void;
   setReferenceImages: (images: RefImage[]) => void;
   setPendingRecreate: (payload: RecreatePayload | null) => void;
   consumePendingRecreate: () => RecreatePayload | null;
+  setPendingRefImages: (refs: RefImage[] | null) => void;
+  consumePendingRefImages: () => RefImage[] | null;
   startBatch: (
     prompt: string,
     requestedCount: number,
@@ -68,6 +73,7 @@ export const useCreateImageStore = create<CreateImageState>()(
       ui: { ...DEFAULT_UI },
       referenceImages: [],
       pendingRecreate: null,
+      pendingRefImages: null,
 
       setUi: (patch) =>
         set((s) => ({ ui: { ...s.ui, ...patch } })),
@@ -80,6 +86,14 @@ export const useCreateImageStore = create<CreateImageState>()(
         const payload = get().pendingRecreate;
         if (payload) set({ pendingRecreate: null });
         return payload;
+      },
+
+      setPendingRefImages: (refs) => set({ pendingRefImages: refs }),
+
+      consumePendingRefImages: () => {
+        const refs = get().pendingRefImages;
+        if (refs) set({ pendingRefImages: null });
+        return refs;
       },
 
       startBatch: (prompt, requestedCount, modelLabel) => {

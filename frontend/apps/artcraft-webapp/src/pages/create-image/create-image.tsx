@@ -47,6 +47,11 @@ import {
 } from "./components/QualityPicker";
 import { useImageCostEstimate } from "../../lib/cost-estimate-api";
 import {
+  galleryItemToRefImage,
+  mergeRefImages,
+  toastMergeRefImagesOutcome,
+} from "../../lib/send-to-prompt";
+import {
   resolveModelOption,
   resolveModelCount,
 } from "../../lib/resolve-model-setting";
@@ -315,6 +320,25 @@ export default function CreateImage() {
     if (payload.modelId) setRecreateModelIdToVerify(payload.modelId);
   }, [pendingRecreate, setUi]);
 
+  // Consume reference images sent from the library ("Send to prompt").
+  // Waits for the model list so the merge applies the real per-model cap —
+  // the sender doesn't know which model is selected here.
+  const pendingRefImages = useCreateImageStore((s) => s.pendingRefImages);
+  useEffect(() => {
+    if (!pendingRefImages || apiModels.length === 0) return;
+    const incoming = useCreateImageStore.getState().consumePendingRefImages();
+    if (!incoming || incoming.length === 0) return;
+    const result = mergeRefImages(referenceImages, incoming, maxImageRefs);
+    if (result.added > 0) setReferenceImages(result.next);
+    toastMergeRefImagesOutcome(result, maxImageRefs);
+  }, [
+    pendingRefImages,
+    apiModels,
+    referenceImages,
+    maxImageRefs,
+    setReferenceImages,
+  ]);
+
   // Resume polling for pending batches
   useEffect(() => {
     const cleanups = pollingCleanupsRef.current;
@@ -365,13 +389,7 @@ export default function CreateImage() {
       const availableSlots = Math.max(0, maxImageRefs - referenceImages.length);
       const newImages: RefImage[] = items
         .slice(0, availableSlots)
-        .map((item) => ({
-          id: Math.random().toString(36).substring(7),
-          url: item.thumbnail || item.fullImage || "",
-          fullUrl: item.fullImage || undefined,
-          file: new File([], "library-image"),
-          mediaToken: item.id,
-        }));
+        .map(galleryItemToRefImage);
       setReferenceImages([...referenceImages, ...newImages]);
       setIsImagePickerOpen(false);
     },

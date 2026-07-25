@@ -56,6 +56,10 @@ import {
 import { GenerationCountPicker } from "../create-image/components/GenerationCountPicker";
 import { useVideoCostEstimate } from "../../lib/cost-estimate-api";
 import {
+  mergeRefImages,
+  toastMergeRefImagesOutcome,
+} from "../../lib/send-to-prompt";
+import {
   resolveModelOption,
   resolveModelCount,
 } from "../../lib/resolve-model-setting";
@@ -746,6 +750,40 @@ export default function CreateVideo() {
         : {}),
     });
   }, [pendingRecreate, setUi]);
+
+  // Consume reference images sent from the library ("Send to prompt").
+  // Waits for the model list so the merge applies the real per-model cap —
+  // the sender doesn't know which model is selected here. Reference-capable
+  // models take the images as references (switching into reference mode so
+  // they're visible); keyframe-only models take the first as the start frame.
+  const pendingRefImages = useCreateVideoStore((s) => s.pendingRefImages);
+  useEffect(() => {
+    if (!pendingRefImages || apiModels.length === 0) return;
+    const incoming = useCreateVideoStore.getState().consumePendingRefImages();
+    if (!incoming || incoming.length === 0) return;
+    const supportsRefs = !!selectedModel?.image_references_supported;
+    const supportsKeyframe =
+      !!selectedModel?.starting_keyframe_supported ||
+      !!selectedModel?.starting_keyframe_required;
+    const maxImages = supportsRefs
+      ? (selectedModel?.image_references_max ?? 3)
+      : supportsKeyframe
+        ? 1
+        : 0;
+    const result = mergeRefImages(referenceImages, incoming, maxImages);
+    if (result.added > 0) {
+      setReferenceImages(result.next);
+      if (supportsRefs) setUi({ inputMode: "reference" });
+    }
+    toastMergeRefImagesOutcome(result, maxImages);
+  }, [
+    pendingRefImages,
+    apiModels,
+    selectedModel,
+    referenceImages,
+    setReferenceImages,
+    setUi,
+  ]);
 
   useEffect(() => {
     const cleanups = pollingCleanupsRef.current;

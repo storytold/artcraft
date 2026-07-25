@@ -60,6 +60,11 @@ import { Lightbox } from "../../components/lightbox/lightbox";
 import { toast } from "../../components/toast/toast";
 import { downloadItemsAsZip } from "../../lib/download-media-zip";
 import {
+  isImagePromptable,
+  sendToPrompt,
+  type PromptDestination,
+} from "../../lib/send-to-prompt";
+import {
   useLibraryFoldersStore,
   useLibrarySelectionStore,
   deleteLibraryMedia,
@@ -2061,6 +2066,15 @@ const LibraryTile = memo(function LibraryTile({
 // Owns its own subscription to the selection store (and the folder popover
 // state), so selection changes re-render only this small bar, never the page.
 
+const SEND_TO_TARGETS: {
+  destination: PromptDestination;
+  label: string;
+  icon: typeof faImage;
+}[] = [
+  { destination: "image", label: "Create image", icon: faImage },
+  { destination: "video", label: "Create video", icon: faVideo },
+];
+
 interface BulkSelectionBarProps {
   allItems: GalleryItem[];
   folders: UiFolder[];
@@ -2081,7 +2095,9 @@ function BulkSelectionBar({
   const ids = useLibrarySelectionStore((s) => s.ids);
   const folderMediaItems = useLibraryFoldersStore((s) => s.folderMediaItems);
   const tagMediaItems = useLibraryTagsStore((s) => s.tagMediaItems);
+  const navigate = useNavigate();
   const [popoverOpen, setPopoverOpen] = useState(false);
+  const [sendToOpen, setSendToOpen] = useState(false);
   const [downloadProgress, setDownloadProgress] = useState<{
     done: number;
     total: number;
@@ -2177,6 +2193,54 @@ function BulkSelectionBar({
       <span className="px-1 text-sm font-medium text-white/80">
         {ids.size} selected
       </span>
+
+      {/* Send to prompt (only when the selection contains images) */}
+      {selectedItems.some(isImagePromptable) && (
+        <div className="relative">
+          <button
+            type="button"
+            title="Send to prompt"
+            onClick={() => setSendToOpen((v) => !v)}
+            className="flex items-center gap-2 rounded-full bg-ui-controls/60 px-3 py-1.5 text-sm font-medium text-white hover:bg-ui-controls/90 transition-colors"
+          >
+            <FontAwesomeIcon icon={faImage} className="text-xs" />
+            {/* Icon-only on phones — a fourth labeled button overflows the bar. */}
+            <span className="hidden sm:inline">Send to prompt</span>
+          </button>
+          {sendToOpen && (
+            <>
+              <div
+                className="fixed inset-0 z-[59]"
+                onClick={() => setSendToOpen(false)}
+              />
+              <div className="absolute bottom-full left-0 z-[60] mb-2 w-44 rounded-lg border border-ui-panel-border bg-ui-panel p-2 shadow-xl">
+                <div className="px-2 py-1 text-[11px] font-semibold uppercase tracking-wider text-white/40">
+                  Use as reference in
+                </div>
+                {SEND_TO_TARGETS.map((target) => (
+                  <button
+                    key={target.destination}
+                    type="button"
+                    onClick={() => {
+                      setSendToOpen(false);
+                      sendToPrompt(
+                        selectedItems.filter(isImagePromptable),
+                        target.destination,
+                        navigate,
+                      );
+                      clear();
+                    }}
+                    className="flex w-full items-center gap-2.5 rounded-md px-2 py-1.5 text-sm text-white hover:bg-ui-controls/50 transition-colors"
+                  >
+                    <FontAwesomeIcon icon={target.icon} className="w-4 text-xs" />
+                    <span>{target.label}</span>
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+      )}
 
       {/* Add to folder */}
       <div className="relative">
