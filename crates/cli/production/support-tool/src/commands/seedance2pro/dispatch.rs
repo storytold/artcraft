@@ -7,6 +7,7 @@ use super::subcommands;
 /// All canonical subcommand names for this module.
 /// Used by the underscore-insensitive arg normalizer.
 pub const SUBCOMMAND_NAMES: &[&str] = &[
+  "account_info",
   "audit_credits",
   "audit_orders",
   "audit_payments",
@@ -18,6 +19,9 @@ pub const SUBCOMMAND_NAMES: &[&str] = &[
 #[derive(Subcommand)]
 #[command(rename_all = "snake_case")]
 pub enum Seedance2proCommand {
+  /// Print the account's current credit balances as one CSV line
+  AccountInfo(subcommands::account_info::AccountInfoArgs),
+
   /// Dump the account's credits ledger (credits.getCreditHistory) to CSV
   /// back to a start date, for refund-entry auditing
   AuditCredits(subcommands::audit_credits::AuditCreditsArgs),
@@ -47,6 +51,7 @@ pub async fn run(command: Seedance2proCommand) -> anyhow::Result<()> {
   let state = Seedance2ProState { cookies };
 
   match command {
+    Seedance2proCommand::AccountInfo(args) => subcommands::account_info::run(&state, args).await,
     Seedance2proCommand::AuditCredits(args) => subcommands::audit_credits::run(&state, args).await,
     Seedance2proCommand::AuditOrders(args) => subcommands::audit_orders::run(&state, args).await,
     Seedance2proCommand::AuditPayments(args) => subcommands::audit_payments::run(&state, args).await,
