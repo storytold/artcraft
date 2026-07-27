@@ -28,6 +28,20 @@ fn coerce_to_u32(number: &Number) -> u32 {
   coerce_to_u64(number).min(u32::MAX as u64) as u32
 }
 
+/// Coerce a parsed JSON number to `i64`. Exact integers pass through; floats
+/// are rounded; non-finite values become `0`.
+fn coerce_to_i64(number: &Number) -> i64 {
+  if let Some(signed) = number.as_i64() {
+    return signed;
+  }
+  if let Some(float) = number.as_f64() {
+    if float.is_finite() {
+      return float.round() as i64;
+    }
+  }
+  0
+}
+
 /// `#[serde(deserialize_with = "...")]` for a required `u64` field that may
 /// arrive as an integer or a float.
 pub fn de_u64_int_or_float<'de, D>(deserializer: D) -> Result<u64, D::Error>
@@ -36,6 +50,16 @@ where
 {
   let number = Number::deserialize(deserializer)?;
   Ok(coerce_to_u64(&number))
+}
+
+/// `#[serde(deserialize_with = "...")]` for a required `i64` field that may
+/// arrive as an integer or a float (e.g. signed credit deltas).
+pub fn de_i64_int_or_float<'de, D>(deserializer: D) -> Result<i64, D::Error>
+where
+  D: Deserializer<'de>,
+{
+  let number = Number::deserialize(deserializer)?;
+  Ok(coerce_to_i64(&number))
 }
 
 /// `#[serde(deserialize_with = "...")]` for an optional `u64` field (handles
@@ -90,12 +114,22 @@ mod tests {
     value: Option<u32>,
   }
 
+  #[derive(Deserialize)]
+  struct I64Holder {
+    #[serde(deserialize_with = "de_i64_int_or_float")]
+    value: i64,
+  }
+
   fn parse_u32(json: &str) -> u32 {
     serde_json::from_str::<U32Holder>(json).unwrap().value
   }
 
   fn parse_u64(json: &str) -> u64 {
     serde_json::from_str::<U64Holder>(json).unwrap().value
+  }
+
+  fn parse_i64(json: &str) -> i64 {
+    serde_json::from_str::<I64Holder>(json).unwrap().value
   }
 
   #[test]
@@ -124,6 +158,13 @@ mod tests {
   fn negative_and_nonfinite_clamp_to_zero() {
     assert_eq!(parse_u64(r#"{"value": -5}"#), 0);
     assert_eq!(parse_u64(r#"{"value": -5.5}"#), 0);
+  }
+
+  #[test]
+  fn i64_accepts_negative_integers_and_floats() {
+    assert_eq!(parse_i64(r#"{"value": -454}"#), -454);
+    assert_eq!(parse_i64(r#"{"value": -454.6}"#), -455);
+    assert_eq!(parse_i64(r#"{"value": 25000}"#), 25000);
   }
 
   #[test]

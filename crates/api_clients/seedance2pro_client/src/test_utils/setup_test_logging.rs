@@ -19,7 +19,9 @@ pub fn setup_test_logging(level: LevelFilter) {
 
   println!("Log level: {:?}", env::var(RUST_LOG));
 
-  Builder::new()
+  // try_init: several #[ignore] live tests may run in one process, and only
+  // the first can install the logger.
+  let _ = Builder::new()
     .is_test(true)
     .format(|buf, record| {
       writeln!(buf,
@@ -31,7 +33,7 @@ pub fn setup_test_logging(level: LevelFilter) {
     })
     .filter(None, level)
     .filter_level(level)
-    .init();
+    .try_init();
 
   trace!("Test trace log");
   debug!("Test debug log");
