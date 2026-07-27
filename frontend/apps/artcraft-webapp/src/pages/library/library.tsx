@@ -55,6 +55,7 @@ import {
   faCloud,
   faList,
   faSpinnerThird,
+  faPhotoFilm,
 } from "@fortawesome/pro-solid-svg-icons";
 import { Lightbox } from "../../components/lightbox/lightbox";
 import { toast } from "../../components/toast/toast";
@@ -2246,6 +2247,24 @@ function BulkSelectionBar({
           )}
         </div>
       )}
+
+      {/* Extract frames (single selected video → frame extractor tool). */}
+      {selectedItems.length === 1 &&
+        selectedItems[0].mediaClass === "video" && (
+          <button
+            type="button"
+            title="Extract frames"
+            onClick={() => {
+              const token = selectedItems[0].id;
+              clear();
+              navigate(`/frame-extractor?media=${token}`);
+            }}
+            className="flex items-center gap-2 rounded-full bg-ui-controls/60 px-3 py-1.5 text-sm font-medium text-white hover:bg-ui-controls/90 transition-colors"
+          >
+            <FontAwesomeIcon icon={faPhotoFilm} className="text-xs" />
+            <span className="hidden sm:inline">Extract frames</span>
+          </button>
+        )}
 
       {/* Add to folder */}
       <div className="relative">

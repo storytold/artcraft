@@ -18,6 +18,7 @@ import CreateAudio from "../pages/create-audio";
 import CreateObject from "../pages/create-object";
 import CreateWorld from "../pages/create-world";
 import CreateVFX from "../pages/create-vfx";
+import FrameExtractor from "../pages/frame-extractor";
 import PageScene from "../pages/pagescene";
 import PageDraw from "../pages/pagedraw";
 import VideoEditorPage from "../pages/video-editor";
@@ -160,6 +161,7 @@ export function App() {
           <Route path="/create-object" element={<CreateObject />} />
           <Route path="/create-world" element={<CreateWorld />} />
           <Route path="/background-change" element={<CreateVFX />} />
+          <Route path="/frame-extractor" element={<FrameExtractor />} />
           <Route path="/moodboard" element={<MoodboardPage />} />
           <Route path="/edit-3d" element={<PageScene />} />
           <Route path="/edit-3d/:sceneToken" element={<PageScene />} />

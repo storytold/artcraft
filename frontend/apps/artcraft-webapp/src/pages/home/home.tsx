@@ -10,6 +10,7 @@ import {
   faGlobe,
   faFilm,
   faObjectGroup,
+  faPhotoFilm,
   faArrowRight,
 } from "@fortawesome/pro-solid-svg-icons";
 import type { IconDefinition } from "@fortawesome/fontawesome-svg-core";
@@ -113,6 +114,16 @@ const APPS: AppCard[] = [
     iconBg: "bg-indigo-500/25 border-indigo-400/30",
     iconColor: "text-indigo-300",
     badge: "BETA",
+  },
+  {
+    label: "Frame Extractor",
+    description: "Grab a still frame from any video.",
+    href: "/frame-extractor",
+    icon: faPhotoFilm,
+    accent: "from-orange-500/20 to-orange-500/0",
+    iconBg: "bg-orange-500/25 border-orange-400/30",
+    iconColor: "text-orange-300",
+    badge: "NEW",
   },
 ];
 

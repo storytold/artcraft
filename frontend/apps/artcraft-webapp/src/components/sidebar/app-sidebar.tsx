@@ -18,6 +18,7 @@ import {
   faDownload,
   faGift,
   faPencil,
+  faPhotoFilm,
 } from "@fortawesome/pro-solid-svg-icons";
 import { faDiscord } from "@fortawesome/free-brands-svg-icons";
 import { Button } from "@storyteller/ui-button";
@@ -77,6 +78,12 @@ const STUDIO_ITEMS_STATIC: NavItem[] = [
     href: "/moodboard",
     icon: faObjectGroup,
     badge: "BETA",
+  },
+  {
+    label: "Frame Extract",
+    href: "/frame-extractor",
+    icon: faPhotoFilm,
+    badge: "NEW",
   },
 ];
 
@@ -165,7 +172,11 @@ function NavMenuItem({
       />
       <span className="group-data-[collapsible=icon]:hidden">{item.label}</span>
       {item.badge && (
-        <span className="ml-auto bg-amber-600 px-1.5 py-0.5 text-[10px] font-semibold uppercase leading-none text-white group-data-[collapsible=icon]:hidden rounded-full">
+        <span
+          className={`ml-auto px-1.5 py-0.5 text-[10px] font-semibold uppercase leading-none text-white group-data-[collapsible=icon]:hidden rounded-full ${
+            item.badge === "NEW" ? "bg-purple-600" : "bg-amber-600"
+          }`}
+        >
           {item.badge}
         </span>
       )}
