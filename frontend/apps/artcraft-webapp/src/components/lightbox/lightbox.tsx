@@ -352,6 +352,12 @@ export function Lightbox({
     applyEditOnCanvasFromImage(selectedMediaToken, selectedImageUrl, navigate);
   }, [selectedMediaToken, selectedImageUrl, canEditOnCanvas, navigate, onClose]);
 
+  const handleExtractFrames = useCallback(() => {
+    if (!selectedMediaToken) return;
+    onClose();
+    navigate(`/frame-extractor?media=${selectedMediaToken}`);
+  }, [selectedMediaToken, navigate, onClose]);
+
   return (
     <>
       <Modal
@@ -558,6 +564,9 @@ export function Lightbox({
               canEditOnCanvas && selectedMediaToken && selectedImageUrl
                 ? handleEditOnCanvas
                 : undefined
+            }
+            onExtractFrames={
+              isVideo && selectedMediaToken ? handleExtractFrames : undefined
             }
             onDelete={
               selectedMediaToken

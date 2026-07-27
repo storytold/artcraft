@@ -15,12 +15,12 @@ import {
   faLink,
   faPause,
   faPencil,
+  faPhotoFilm,
   faPlay,
   faSpinnerThird,
   faTrashCan,
   faUser,
   faVideo,
-  faWaveformLines,
   faXmark,
 } from "@fortawesome/pro-solid-svg-icons";
 import {
@@ -77,6 +77,7 @@ export interface LightboxDetailsProps {
   onRecreate?: () => void;
   onMakeVideo?: () => void;
   onEditOnCanvas?: () => void;
+  onExtractFrames?: () => void;
   onDelete?: () => void;
   showDownloadAppCta?: boolean;
 }
@@ -93,6 +94,7 @@ export function LightboxDetails({
   onRecreate,
   onMakeVideo,
   onEditOnCanvas,
+  onExtractFrames,
   onDelete,
   showDownloadAppCta,
 }: LightboxDetailsProps) {
@@ -493,6 +495,16 @@ export function LightboxDetails({
             onClick={onEditOnCanvas}
           >
             Edit on Canvas
+          </Button>
+        )}
+        {onExtractFrames && (
+          <Button
+            icon={faPhotoFilm}
+            className="w-full border border-ui-panel-border bg-ui-controls/40 hover:bg-ui-controls/60 text-white"
+            variant="secondary"
+            onClick={onExtractFrames}
+          >
+            Extract Frames
           </Button>
         )}
         {onRecreate && promptData.hasToken && (
