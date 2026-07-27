@@ -1,9 +1,8 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { Modal } from "@storyteller/ui-modal";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCog, faUser, faKey } from "@fortawesome/pro-solid-svg-icons";
 import { Switch } from "@storyteller/ui-switch";
-import { USER_FEATURE_FLAGS } from "@storyteller/api";
 import { twMerge } from "tailwind-merge";
 import { useEnterToGenerateStore } from "../../lib/enter-to-generate-store";
 import { useLightboxSoundStore } from "../../lib/lightbox-sound-store";
@@ -18,41 +17,20 @@ interface SettingsModalProps {
   onClose: () => void;
 }
 
-const BASE_TABS: { id: Tab; label: string; icon: typeof faCog }[] = [
+const TABS: { id: Tab; label: string; icon: typeof faCog }[] = [
   { id: "general", label: "General", icon: faCog },
   { id: "account", label: "Account", icon: faUser },
+  { id: "apiKeys", label: "API Keys", icon: faKey },
 ];
 
-const API_KEYS_TAB: { id: Tab; label: string; icon: typeof faCog } = {
-  id: "apiKeys",
-  label: "API Keys",
-  icon: faKey,
-};
-
 export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
-  const { user } = useSession();
   const [tab, setTab] = useState<Tab>("general");
-
-  const hasApiKeyFlag = !!user?.maybe_feature_flags?.includes(
-    USER_FEATURE_FLAGS.API_KEY,
-  );
-
-  const tabs = useMemo(
-    () => (hasApiKeyFlag ? [...BASE_TABS, API_KEYS_TAB] : BASE_TABS),
-    [hasApiKeyFlag],
-  );
 
   useEffect(() => {
     if (isOpen) setTab("general");
   }, [isOpen]);
 
-  // If the only-conditional tab disappears (e.g. flag revoked while open),
-  // fall back to a visible tab.
-  useEffect(() => {
-    if (!tabs.some((t) => t.id === tab)) setTab("general");
-  }, [tabs, tab]);
-
-  const activeLabel = tabs.find((t) => t.id === tab)?.label ?? "";
+  const activeLabel = TABS.find((t) => t.id === tab)?.label ?? "";
 
   return (
     <Modal
@@ -69,7 +47,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
             </div>
             <hr className="my-2 hidden w-full border-ui-panel-border sm:block" />
             <div className="flex gap-2 overflow-x-auto pe-10 sm:block sm:space-y-1 sm:overflow-visible sm:pe-0">
-              {tabs.map((t) => (
+              {TABS.map((t) => (
                 <button
                   key={t.id}
                   onClick={() => setTab(t.id)}
