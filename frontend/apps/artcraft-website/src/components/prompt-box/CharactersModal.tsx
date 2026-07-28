@@ -89,11 +89,13 @@ export const CharactersModal = ({
     setPendingCharacters((prev) => prev.filter((p) => p.name !== name));
   }, []);
 
-  // Poll the server while the modal is open and any creation is pending, so
-  // a creation that finishes while the user is on the create/edit view still
-  // gets cleaned up — preventing the duplicate (real + pending) card.
+  // Poll the server while any creation is pending (even with the modal
+  // closed), so the pending card gets cleaned up and — once the character is
+  // active — the mention store learns its real character token. The create
+  // response only carries an inference job token, so @-mentions must wait for
+  // the server list to include the character before it can be referenced.
   useEffect(() => {
-    if (!isOpen || pendingCharacters.length === 0) return;
+    if (pendingCharacters.length === 0) return;
 
     const interval = setInterval(async () => {
       try {
@@ -112,14 +114,25 @@ export const CharactersModal = ({
             return true;
           }),
         );
-        if (resolved) setRefreshKey((k) => k + 1);
+        if (resolved) {
+          const store = useCharactersStore.getState();
+          store.setCharacters(
+            res.data.map((c) => ({
+              character_token: c.token,
+              name: c.name,
+              avatar_image_url: c.maybe_avatar?.cdn_url,
+            })),
+          );
+          store.setLoaded(true);
+          setRefreshKey((k) => k + 1);
+        }
       } catch {
         // retry next tick
       }
     }, POLL_INTERVAL_MS);
 
     return () => clearInterval(interval);
-  }, [isOpen, pendingCharacters.length]);
+  }, [pendingCharacters.length]);
 
   // Time out failed creations so the "Creating..." card never sticks forever.
   useEffect(() => {
@@ -610,7 +623,6 @@ const NewCharacterView = ({
   onBack: () => void;
   onCreated: (pending: { name: string; previewUrl?: string }) => void;
 }) => {
-  const addCharacterToStore = useCharactersStore((s) => s.addCharacter);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [images, setImages] = useState<UploadedImage[]>([]);
@@ -753,11 +765,6 @@ const NewCharacterView = ({
 
       if (res.success && res.data) {
         toast.success(`Character "${name.trim()}" is being created`);
-        addCharacterToStore({
-          character_token: res.data.inference_job_token,
-          name: name.trim(),
-          avatar_image_url: uploadedImages[0]!.url,
-        });
         onCreated({
           name: name.trim(),
           previewUrl: uploadedImages[0]!.url,
