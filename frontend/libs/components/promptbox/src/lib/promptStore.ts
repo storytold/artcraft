@@ -346,7 +346,6 @@ interface CharactersStore {
   characters: StoredCharacter[];
   loaded: boolean;
   setCharacters: (characters: StoredCharacter[]) => void;
-  addCharacter: (character: StoredCharacter) => void;
   updateCharacter: (token: string, updates: Partial<StoredCharacter>) => void;
   removeCharacter: (token: string) => void;
   setLoaded: (loaded: boolean) => void;
@@ -356,8 +355,6 @@ export const useCharactersStore = create<CharactersStore>()((set) => ({
   characters: [],
   loaded: false,
   setCharacters: (characters) => set({ characters }),
-  addCharacter: (character) =>
-    set((state) => ({ characters: [...state.characters, character] })),
   updateCharacter: (token, updates) =>
     set((state) => ({
       characters: state.characters.map((c) =>
