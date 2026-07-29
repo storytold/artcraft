@@ -1,4 +1,5 @@
 export * from "./lib/common/AspectRatioIcon";
+export * from "./lib/common/audioFiles";
 export * from "./lib/PromptBox2D";
 export * from "./lib/PromptBox3D";
 export * from "./lib/PromptBoxEdit";

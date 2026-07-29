@@ -20,6 +20,48 @@ import {
   getAudioDuration,
 } from "./upload-media";
 
+// iOS Safari has no system audio library, so a bare `accept="audio/*"` falls
+// back to the Photos picker (photos and videos only). Concrete MIME types and
+// extensions make iOS open the Files picker filtered to audio instead.
+const AUDIO_FILE_ACCEPT = [
+  "audio/mpeg",
+  "audio/wav",
+  "audio/x-wav",
+  "audio/mp4",
+  "audio/x-m4a",
+  "audio/aac",
+  "audio/ogg",
+  "audio/opus",
+  "audio/flac",
+  "audio/webm",
+  ".mp3",
+  ".wav",
+  ".m4a",
+  ".aac",
+  ".ogg",
+  ".oga",
+  ".opus",
+  ".flac",
+].join(",");
+
+const AUDIO_FILE_EXTENSIONS = new Set([
+  "mp3",
+  "wav",
+  "m4a",
+  "aac",
+  "ogg",
+  "oga",
+  "opus",
+  "flac",
+]);
+
+// Some platforms report .m4a as `video/mp4`, so check the extension too.
+const isAudioFile = (file: File): boolean => {
+  if (file.type.startsWith("audio/")) return true;
+  const extension = file.name.split(".").pop()?.toLowerCase() ?? "";
+  return AUDIO_FILE_EXTENSIONS.has(extension);
+};
+
 interface MediaReferenceRowProps {
   referenceVideos: RefVideo[];
   onReferenceVideosChange: (videos: RefVideo[]) => void;
@@ -133,6 +175,10 @@ export const MediaReferenceRow = ({
     const baseAudios = [...referenceAudios];
 
     const file = files[0];
+    if (!isAudioFile(file)) {
+      toast.error("Please choose an audio file (MP3, WAV, M4A, FLAC…)");
+      return;
+    }
     const duration = await getAudioDuration(file);
 
     if (duration <= 0) {
@@ -204,7 +250,7 @@ export const MediaReferenceRow = ({
         type="file"
         ref={audioInputRef}
         className="hidden"
-        accept="audio/*"
+        accept={AUDIO_FILE_ACCEPT}
         onChange={handleAudioUpload}
       />
       <div

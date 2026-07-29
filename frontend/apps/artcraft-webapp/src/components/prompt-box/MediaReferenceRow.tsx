@@ -10,6 +10,11 @@ import {
 } from "@fortawesome/pro-solid-svg-icons";
 import { twMerge } from "tailwind-merge";
 import { UploaderStates } from "@storyteller/common";
+import {
+  AUDIO_FILE_ACCEPT,
+  AUDIO_FILE_TYPE_ERROR,
+  isAudioFile,
+} from "@storyteller/ui-promptbox";
 import { toast } from "../toast/toast";
 import { AddButton } from "./ImagePromptRow";
 import type { RefVideo, RefAudio } from "./types";
@@ -137,6 +142,10 @@ export const MediaReferenceRow = ({
     const baseAudios = [...referenceAudios];
 
     const file = files[0];
+    if (!isAudioFile(file)) {
+      toast.error(AUDIO_FILE_TYPE_ERROR);
+      return;
+    }
     const duration = await getAudioDuration(file);
 
     if (duration <= 0) {
@@ -208,7 +217,7 @@ export const MediaReferenceRow = ({
         type="file"
         ref={audioInputRef}
         className="hidden"
-        accept="audio/*"
+        accept={AUDIO_FILE_ACCEPT}
         onChange={handleAudioUpload}
       />
       <div

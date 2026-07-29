@@ -13,6 +13,11 @@ import { toast } from "@storyteller/ui-toaster";
 import { UploaderStates } from "@storyteller/common";
 import type { UploadMediaFn } from "@storyteller/api";
 import type { RefAudio, RefImage } from "../promptStore";
+import {
+  AUDIO_FILE_ACCEPT,
+  AUDIO_FILE_TYPE_ERROR,
+  isAudioFile,
+} from "./audioFiles";
 
 export interface AudioReferenceRowProps {
   referenceAudios: RefAudio[];
@@ -67,8 +72,13 @@ export function AudioReferenceRow({
     const files = Array.from(event.target.files || []);
     if (files.length === 0) return;
 
+    const audioFiles = files.filter(isAudioFile);
+    if (audioFiles.length < files.length) {
+      toast.error(AUDIO_FILE_TYPE_ERROR);
+    }
+
     const availableSlots = Math.max(0, maxAudioCount - referenceAudios.length);
-    const filesToProcess = files.slice(0, availableSlots);
+    const filesToProcess = audioFiles.slice(0, availableSlots);
 
     for (const file of filesToProcess) {
       const duration = await getAudioFileDuration(file);
@@ -160,7 +170,7 @@ export function AudioReferenceRow({
       <input
         ref={audioInputRef}
         type="file"
-        accept="audio/*"
+        accept={AUDIO_FILE_ACCEPT}
         className="hidden"
         multiple={maxAudioCount > 1}
         onChange={handleAudioFileUpload}

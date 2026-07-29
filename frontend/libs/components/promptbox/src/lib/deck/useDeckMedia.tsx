@@ -3,6 +3,11 @@ import { GalleryItem, GalleryModal } from "@storyteller/ui-gallery-modal";
 import { downloadFileFromUrl, type UploadMediaFn } from "@storyteller/api";
 import { toast } from "@storyteller/ui-toaster";
 import { UploaderStates } from "@storyteller/common";
+import {
+  AUDIO_FILE_ACCEPT,
+  AUDIO_FILE_TYPE_ERROR,
+  isAudioFile,
+} from "../common/audioFiles";
 
 /** Minimal structural shapes so both apps' ref types fit. */
 export interface DeckRefLike {
@@ -368,12 +373,18 @@ export function useDeckMedia<
   };
 
   const processAudioFiles = async (files: File[]) => {
+    const audioFiles = files.filter(isAudioFile);
+    if (audioFiles.length < files.length) {
+      toast.error(AUDIO_FILE_TYPE_ERROR, { id: "audio-ref-type" });
+    }
+    if (audioFiles.length === 0) return;
+
     const availableSlots = Math.max(0, maxAudios - referenceAudios.length);
     if (availableSlots <= 0) {
       return;
     }
 
-    const filesToProcess = files.slice(0, availableSlots);
+    const filesToProcess = audioFiles.slice(0, availableSlots);
 
     for (const file of filesToProcess) {
       const duration = await getAudioDuration(file);
@@ -441,8 +452,12 @@ export function useDeckMedia<
     if (files.length === 0) return;
 
     const images = files.filter((f) => f.type.startsWith("image/"));
-    const videos = files.filter((f) => f.type.startsWith("video/"));
-    const audios = files.filter((f) => f.type.startsWith("audio/"));
+    // isAudioFile also claims .m4a files that platforms report as video/mp4,
+    // so exclude them from the video bucket.
+    const audios = files.filter(isAudioFile);
+    const videos = files.filter(
+      (f) => f.type.startsWith("video/") && !isAudioFile(f),
+    );
 
     if (images.length > 0) processImageFiles(images, "start");
     if (videos.length > 0 && setReferenceVideos) processVideoFiles(videos);
@@ -453,7 +468,7 @@ export function useDeckMedia<
   const anyUploadAccept = [
     ...(maxImages > 0 ? ["image/*"] : []),
     ...(setReferenceVideos ? ["video/mp4", ".mp4"] : []),
-    ...(setReferenceAudios ? ["audio/*"] : []),
+    ...(setReferenceAudios ? [AUDIO_FILE_ACCEPT] : []),
   ].join(",");
 
   const handleGalleryClose = () => {
@@ -681,7 +696,7 @@ export function useDeckMedia<
           type="file"
           ref={audioFileInputRef}
           className="hidden"
-          accept="audio/*"
+          accept={AUDIO_FILE_ACCEPT}
           onChange={handleAudioFileUpload}
           multiple={maxAudios > 1}
         />
