@@ -5,7 +5,19 @@ How to run the full ArtCraft dev stack **entirely locally** — the
 to production servers. Scope: webapp-first; the Tauri desktop app is a later
 phase.
 
-The automated path is:
+The automated path on **Windows** (primary platform, native — no WSL, no
+Docker, no admin rights for the stack itself):
+
+```powershell
+.\script\bootstrap\windows\bootstrap_dev_stack.ps1   # one-time setup, idempotent, re-run anytime
+.\script\bootstrap\windows\run_backend_dev.ps1       # terminal 1: API on http://localhost:12345
+.\script\bootstrap\windows\seed_demo_user.ps1        # terminal 2: create demo login (localdev1 / localdev1pass)
+cd frontend; npx nx dev artcraft-webapp              # terminal 2: webapp on http://localhost:4201
+.\script\bootstrap\windows\dev_stack_doctor.ps1      # health check, any time
+.\script\bootstrap\windows\stop_dev_services.ps1     # stop MySQL/Redis when done
+```
+
+The equivalent on **Linux** (Ubuntu 22.04+ — native, WSL2, or CI):
 
 ```bash
 ./script/bootstrap/bootstrap_dev_stack.sh    # one-time setup, idempotent, re-run anytime
@@ -22,9 +34,29 @@ black box, and corrects some stale claims in older docs.
 
 | Platform            | Status                                                                    |
 |---------------------|---------------------------------------------------------------------------|
-| Ubuntu 22.04+       | Supported by the bootstrap scripts (native, WSL2, or CI runner/container) |
-| Windows             | Use WSL2: `wsl --install -d Ubuntu-22.04`, then run the scripts inside it. Prefer cloning inside the WSL filesystem (`~/...`), not `/mnt/c` — Rust/npm builds through `/mnt` are much slower |
+| Windows 10/11       | Primary. `script/bootstrap/windows/*.ps1` run a **portable stack**: MySQL 8.4 (official zip) and Redis live under the gitignored `.devstack/` and run as plain user processes — no admin, no services, no WSL, no Docker. Build tools (cmake, perl, nasm, llvm) are offered via winget |
+| Ubuntu 22.04+       | Supported by `script/bootstrap/*.sh` (native, WSL2, or CI runner/container); services via apt |
 | macOS               | Not covered by the scripts; follow `_docs/dev_setup_server.md` manually   |
+
+### Windows specifics
+
+- Everything stateful lives in `.devstack/` (gitignored): `mysql/` (extracted
+  zip), `mysql-data/`, `redis/`, `logs/`, `pids/`, `downloads/` (cached zips),
+  `my.ini`. Delete the directory to fully reset; re-run bootstrap to rebuild.
+- Pinned services: MySQL **8.4.11** from `cdn.mysql.com` (the 8.x series is
+  required; only some patch versions exist on the CDN) and Redis **5.0.14.1**
+  (tporadowski build — old but sufficient for the backend's keepalive/TTL/
+  rate-limit usage; override `REDIS_ZIP_URL` to use Memurai/Garnet instead).
+- The portable MySQL root user has **no password** (`--initialize-insecure`) —
+  local dev only, bound to 127.0.0.1.
+- diesel-cli is compiled against the portable MySQL's own client library
+  (`MYSQLCLIENT_LIB_DIR`/`MYSQLCLIENT_VERSION`); `libmysql.dll` must be on
+  `PATH` to *run* it — the scripts handle both.
+- Compiling the backend needs cmake, Strawberry Perl, NASM, and LLVM/libclang
+  (the `wreq` HTTP client builds BoringSSL, and `aws-lc-sys`/`ring` need
+  NASM/clang on MSVC). The bootstrap checks and offers winget installs.
+- The generated secrets file additionally sets `TEMP_DIR` (the upload temp-dir
+  helper defaults to `/tmp`, which doesn't exist on Windows).
 
 ## Requirements matrix
 

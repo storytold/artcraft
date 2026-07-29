@@ -2,8 +2,9 @@
 # Bootstrap the full local dev stack (backend + frontend) on a fresh clone.
 #
 # Target platform: Ubuntu 22.04+ — native, WSL2, or a CI runner/container.
-# (macOS users: follow _docs/dev_setup_server.md manually; Windows users: run
-# this inside WSL2. See _docs/dev_setup_local_stack.md.)
+# (Windows users: the native PowerShell variant in script/bootstrap/windows/
+# is the primary path — no WSL needed. macOS users: follow
+# _docs/dev_setup_server.md manually. See _docs/dev_setup_local_stack.md.)
 #
 # Idempotent: safe to re-run at any time; each step detects work already done.
 #
@@ -94,7 +95,7 @@ ensure_supported_platform() {
       die "This script targets Ubuntu/WSL2. On macOS, follow _docs/dev_setup_server.md."
       ;;
     *)
-      die "Unsupported platform '$(uname -s)'. Run inside WSL2 Ubuntu (wsl --install -d Ubuntu-22.04)."
+      die "Unsupported platform '$(uname -s)'. On Windows use script/bootstrap/windows/bootstrap_dev_stack.ps1 (native), or WSL2 Ubuntu for this script."
       ;;
   esac
 
