@@ -33,6 +33,7 @@ import {
   type RefVideo,
   type RefAudio,
   type MentionItem,
+  type StoredCharacter,
 } from "../../components/prompt-box";
 import {
   GenerationGallery,
@@ -443,6 +444,19 @@ export default function CreateVideo() {
   const storeSetCharacters = useCharactersStore((s) => s.setCharacters);
   const storeSetLoaded = useCharactersStore((s) => s.setLoaded);
 
+  // Mentions are plain text: with several characters sharing a name,
+  // "@Robot" alone can't identify one. Records which token the user actually
+  // picked (dropdown, modal, or chip-menu replace), keyed by name.
+  const [mentionSelections, setMentionSelections] = useState<
+    Record<string, string>
+  >({});
+
+  const handleMentionSelect = useCallback((item: MentionItem) => {
+    if (item.type !== "character" || !item.token) return;
+    const name = item.label.replace(/^@/, "");
+    setMentionSelections((prev) => ({ ...prev, [name]: item.token! }));
+  }, []);
+
   // Load characters on mount if not already loaded
   useEffect(() => {
     if (charactersLoaded) return;
@@ -456,6 +470,7 @@ export default function CreateVideo() {
               character_token: c.token,
               name: c.name,
               avatar_image_url: c.maybe_avatar?.cdn_url,
+              full_image_url: c.maybe_full_image?.cdn_url,
             })),
           );
         }
@@ -601,6 +616,8 @@ export default function CreateVideo() {
       label: `@${char.name}`,
       type: "character" as const,
       preview: char.avatar_image_url,
+      token: char.character_token,
+      fullPreview: char.full_image_url ?? char.avatar_image_url,
     }));
     return [...refItems, ...charItems];
   }, [
@@ -1207,27 +1224,35 @@ export default function CreateVideo() {
             .filter((t): t is string => typeof t === "string" && t.length > 0)
         : undefined;
 
-    // Extract character tokens from @-mentions in the prompt. Match longest
-    // names first and require a non-word boundary after so `@Bob` doesn't
-    // false-match inside `@Bobby`, and only pick up characters that still
-    // exist in the current store (stale names are ignored).
-    const mentionedCharacters = (() => {
+    // Extract character tokens from @-mentions in the prompt, resolving to
+    // exactly one token per mentioned name. Match longest names first and
+    // require a non-word boundary after so `@Bob` doesn't false-match inside
+    // `@Bobby`, and only pick up characters that still exist in the current
+    // store (stale names are ignored). Several characters can share a name;
+    // prefer the user's explicit pick (mentionSelections), else the newest
+    // (store is newest-first).
+    const mentionedTokens = (() => {
       if (activeCharacters.length === 0) return [];
-      const sorted = [...activeCharacters].sort(
-        (a, b) => b.name.length - a.name.length,
-      );
-      const matched = new Set<string>();
-      for (const c of sorted) {
-        const escaped = c.name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-        const regex = new RegExp(`@${escaped}(?![\\w])`);
-        if (regex.test(prompt)) matched.add(c.character_token);
+      const byName = new Map<string, StoredCharacter[]>();
+      for (const c of activeCharacters) {
+        byName.set(c.name, [...(byName.get(c.name) ?? []), c]);
       }
-      return activeCharacters.filter((c) => matched.has(c.character_token));
+      const names = [...byName.keys()].sort((a, b) => b.length - a.length);
+      const tokens: string[] = [];
+      for (const name of names) {
+        const escaped = name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        if (!new RegExp(`@${escaped}(?![\\w])`).test(prompt)) continue;
+        const candidates = byName.get(name)!;
+        const chosen =
+          candidates.find(
+            (c) => c.character_token === mentionSelections[name],
+          ) ?? candidates[0];
+        tokens.push(chosen.character_token);
+      }
+      return tokens;
     })();
     const referenceCharacterTokens =
-      mentionedCharacters.length > 0
-        ? mentionedCharacters.map((c) => c.character_token)
-        : undefined;
+      mentionedTokens.length > 0 ? mentionedTokens : undefined;
 
     const baseParams = {
       prompt: prompt.trim(),
@@ -1402,6 +1427,8 @@ export default function CreateVideo() {
       credits={estimatedCredits}
       placeholder={promptPlaceholder}
       mentionItems={mentionItems.length > 0 ? mentionItems : undefined}
+      onMentionSelect={handleMentionSelect}
+      mentionSelections={mentionSelections}
       autoAdvance={loggedIn && !!prompt.trim() && !isGenerating && !needsImage}
       banner={
         requiresImageInput ? (
@@ -1727,6 +1754,8 @@ export default function CreateVideo() {
               })
             }
             mentionItems={mentionItems.length > 0 ? mentionItems : undefined}
+            onMentionSelect={handleMentionSelect}
+            mentionSelections={mentionSelections}
             videoRefsSupported={supportsVideoRefs}
             referenceVideos={referenceVideos}
             onReferenceVideosChange={setReferenceVideos}
@@ -1956,6 +1985,10 @@ export default function CreateVideo() {
               const spaceBefore =
                 prompt.length > 0 && !prompt.endsWith(" ") ? " " : "";
               setPrompt(prompt + spaceBefore + mention + " ");
+              setMentionSelections((prev) => ({
+                ...prev,
+                [character.name]: character.token,
+              }));
               setIsCharactersModalOpen(false);
             }}
           />
