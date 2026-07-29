@@ -63,11 +63,11 @@ Copy the `skills/` folder to your skills directory for AI assistant guidance.
 
 ## Development Notes
 
-Source code is in: `c:/Users/richk/CascadeProjects/artcraft/repo/`
+Source code is in the main ArtCraft repository root.
 
 To rebuild from source:
 ```bash
-cd c:/Users/richk/CascadeProjects/artcraft/repo
+cd <path-to-artcraft-repo>
 cargo build --release --bin artcraft-mcp-server
 ```
 

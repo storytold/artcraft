@@ -32,9 +32,7 @@ def find_mcp_executable():
             return os.path.abspath(c)
     return "artcraft-mcp-server.exe"
 
-DEFAULT_3D_OUT = os.environ.get("ARTCRAFT_3D_OUT") or (
-    r"F:\AI_Art\3D_Assets" if os.path.exists(r"F:\AI_Art\3D_Assets") else os.path.expanduser("~/ArtCraft/3D_Assets")
-)
+DEFAULT_3D_OUT = os.environ.get("ARTCRAFT_3D_OUT") or os.path.expanduser("~/ArtCraft/3D_Assets")
 
 class ArtCraft3DClient:
     def __init__(self, exe_path=None):

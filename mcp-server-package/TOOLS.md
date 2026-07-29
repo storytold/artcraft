@@ -30,7 +30,7 @@ Converts 2D images into 3D meshes (Hunyuan 3D 2.0/2.1) or Gaussian Splat environ
 python tools/artcraft_3d_runner.py `
   --image "C:\path\to\anomaly.jpg" `
   --mode both `
-  --out-dir "F:\AI_Art\3D_Assets"
+  --out-dir "./outputs/3d_assets"
 ```
 
 ---
