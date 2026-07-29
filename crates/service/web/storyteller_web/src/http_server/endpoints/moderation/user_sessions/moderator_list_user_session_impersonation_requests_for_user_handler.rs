@@ -12,9 +12,7 @@ use mysql_queries::queries::user_impersonation_requests::list_user_impersonation
 use tokens::tokens::users::UserToken;
 
 use crate::http_server::common_responses::common_web_error::CommonWebError;
-use crate::http_server::web_utils::user_session::require_moderator::{
-  require_moderator, UseDatabase,
-};
+use crate::http_server::user_lookup::user_session::require_moderator::require_moderator;
 use crate::state::server_state::ServerState;
 
 const CURSOR_NAME: &str = "moduserimp";
@@ -81,14 +79,7 @@ pub async fn moderator_list_user_session_impersonation_requests_for_user_handler
   server_state: web::Data<Arc<ServerState>>,
 ) -> Result<Json<ListUserImpersonationRequestsSuccessResponse>, CommonWebError> {
 
-  let _user_session = require_moderator(
-    &http_request,
-    &server_state,
-    UseDatabase::GrabNewConnection,
-  ).await.map_err(|err| {
-    warn!("Moderator check failed: {:?}", err);
-    CommonWebError::NotAuthorized
-  })?;
+  let _user_session = require_moderator(&http_request, &server_state.session_checker, &server_state.mysql_pool).await?;
 
   let limit = query.limit
       .unwrap_or(DEFAULT_LIMIT)
@@ -97,14 +88,7 @@ pub async fn moderator_list_user_session_impersonation_requests_for_user_handler
   let maybe_cursor_id = match &query.cursor {
     None => None,
     Some(cursor_str) => {
-      let decoded = server_state.opaque_cursors
-          .decode_cursor_expecting_name(CURSOR_NAME, cursor_str)
-          .map_err(|err| {
-            warn!("Failed to decode cursor: {:?}", err);
-            CommonWebError::BadInputWithSimpleMessage(
-              "Invalid cursor".to_string())
-          })?;
-      decoded.last_id
+      Some(server_state.opaque_cursors.decode_last_id_cursor(CURSOR_NAME, cursor_str)?)
     }
   };
 
@@ -120,13 +104,16 @@ pub async fn moderator_list_user_session_impersonation_requests_for_user_handler
     CommonWebError::from_error(err)
   })?;
 
-  let maybe_cursor = records.last().map(|last| {
-    server_state.opaque_cursors
-        .encode_last_id_cursor(CURSOR_NAME, last.id)
-  }).transpose().map_err(|err| {
-    warn!("Failed to encode cursor: {:?}", err);
-    CommonWebError::server_error_with_message("Failed to encode cursor")
-  })?;
+  // Only hand out a next-page cursor when this page was full. A short page
+  // means the list is exhausted, and emitting a cursor anyway would make
+  // clients fetch one guaranteed-empty trailing page.
+  let maybe_cursor = if records.len() == limit as usize {
+    records.last()
+        .map(|last| server_state.opaque_cursors.encode_last_id_cursor(CURSOR_NAME, last.id))
+        .transpose()?
+  } else {
+    None
+  };
 
   let impersonation_requests = records.into_iter().map(|r| {
     UserImpersonationRequestResponse {

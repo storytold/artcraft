@@ -1,9 +1,10 @@
 use std::sync::Arc;
 
 use actix_web::error::ResponseError;
+use actix_web::web::Json;
 use actix_web::http::StatusCode;
 use actix_web::web::Query;
-use actix_web::{web, HttpRequest, HttpResponse};
+use actix_web::{web, HttpRequest};
 use chrono::{DateTime, Utc};
 use log::warn;
 use utoipa::{IntoParams, ToSchema};
@@ -17,7 +18,7 @@ use tokens::tokens::beta_keys::BetaKeyToken;
 use crate::http_server::common_responses::pagination_page::PaginationPage;
 use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::common_responses::user_details_lite::UserDetailsLight;
-use crate::http_server::web_utils::user_session::require_user_session::{require_user_session, RequireUserSessionError};
+use crate::http_server::user_lookup::user_session::require_user_session::require_user_session;
 use crate::state::server_state::ServerState;
 
 #[derive(Copy, Clone, Deserialize, ToSchema)]
@@ -107,13 +108,9 @@ pub async fn list_beta_keys_handler(
   http_request: HttpRequest,
   query: Query<ListBetaKeysQueryParams>,
   server_state: web::Data<Arc<ServerState>>
-) -> Result<HttpResponse, CommonWebError> {
-  let user_session = require_user_session(&http_request, &server_state)
-      .await
-      .map_err(|err| match err {
-        RequireUserSessionError::ServerError => CommonWebError::from_error(err),
-        RequireUserSessionError::NotAuthorized => CommonWebError::NotAuthorized,
-      })?;
+) -> Result<Json<ListBetaKeysSuccessResponse>, CommonWebError> {
+  let user_session = require_user_session(&http_request, &server_state.session_checker, &server_state.mysql_pool)
+      .await?;
 
   let mut is_mod = user_session.can_ban_users;
 
@@ -216,10 +213,5 @@ pub async fn list_beta_keys_handler(
     }
   };
 
-  let body = serde_json::to_string(&response)
-      .map_err(CommonWebError::from_error)?;
-
-  Ok(HttpResponse::Ok()
-      .content_type("application/json")
-      .body(body))
+  Ok(Json(response))
 }

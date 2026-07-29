@@ -129,7 +129,8 @@ pub async fn handle_upload(
   let ip_address = get_request_ip(&http_request);
 
   let maybe_user_token = maybe_user_session
-      .map(|session| session.get_strongly_typed_user_token());
+      .as_ref()
+      .map(|session| session.get_user_token());
 
   let maybe_file_size_bytes = upload_media_request.file_bytes
       .as_ref()
@@ -300,7 +301,7 @@ pub async fn handle_upload(
     checksum_sha2: &hash,
     public_upload_path: &public_upload_path,
     maybe_extra_file_modification_info: None,
-    maybe_creator_user_token: maybe_user_token.as_ref(),
+    maybe_creator_user_token: maybe_user_token,
     maybe_creator_anonymous_visitor_token: None,
     creator_ip_address: &ip_address,
     creator_set_visibility,
@@ -317,12 +318,12 @@ pub async fn handle_upload(
   let firehose_result = match media_upload_source {
     MediaUploadSource::DeviceApi => {
       server_state.firehose_publisher.publish_device_media_recorded(
-        maybe_user_token.as_ref(),
+        maybe_user_token,
         &token).await
     }
     _ => {
       server_state.firehose_publisher.publish_media_uploaded(
-        maybe_user_token.as_ref(),
+        maybe_user_token,
         &token).await
     }
   };

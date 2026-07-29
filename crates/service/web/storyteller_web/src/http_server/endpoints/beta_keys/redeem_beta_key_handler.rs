@@ -1,11 +1,12 @@
 use std::sync::Arc;
 
-use actix_web::{web, HttpRequest, HttpResponse};
+use actix_web::{web, HttpRequest};
+use actix_web::web::Json;
 use log::warn;
 use utoipa::ToSchema;
 
 use crate::http_server::common_responses::common_web_error::CommonWebError;
-use crate::http_server::session::lookup::user_session_feature_flags::UserSessionFeatureFlags;
+use crate::http_server::user_lookup::user_session::session_utils::lookup::user_session_feature_flags::UserSessionFeatureFlags;
 use enums::by_table::beta_keys::beta_key_product::BetaKeyProduct;
 use enums::by_table::users::user_feature_flag::UserFeatureFlag;
 use http_server_common::request::get_request_ip::get_request_ip;
@@ -16,7 +17,7 @@ use mysql_queries::queries::users::user::update::set_user_feature_flags_transact
 use mysql_queries::queries::users::user_sessions::get_user_session_by_token::SessionUserRecord;
 
 use crate::http_server::web_utils::try_delete_session_cache::try_delete_session_cache;
-use crate::http_server::web_utils::user_session::require_user_session::require_user_session;
+use crate::http_server::user_lookup::user_session::require_user_session::require_user_session;
 use crate::state::server_state::ServerState;
 
 #[derive(Deserialize, ToSchema)]
@@ -48,11 +49,11 @@ pub struct RedeemBetaKeySuccessResponse {
 )]
 pub async fn redeem_beta_key_handler(
   http_request: HttpRequest,
-  request: web::Json<RedeemBetaKeyRequest>,
+  request: Json<RedeemBetaKeyRequest>,
   server_state: web::Data<Arc<ServerState>>,
-) -> Result<HttpResponse, CommonWebError>
+) -> Result<Json<RedeemBetaKeySuccessResponse>, CommonWebError>
 {
-  let user_session = require_user_session(&http_request, &server_state).await?;
+  let user_session = require_user_session(&http_request, &server_state.session_checker, &server_state.mysql_pool).await?;
 
   let rate_limiter = &server_state.redis_rate_limiters.logged_out;
 
@@ -90,12 +91,7 @@ pub async fn redeem_beta_key_handler(
     success: true,
   };
 
-  // `?` via the `From<serde_json::Error>` impl on CommonWebError.
-  let body = serde_json::to_string(&response)?;
-
-  Ok(HttpResponse::Ok()
-      .content_type("application/json")
-      .body(body))
+  Ok(Json(response))
 }
 
 async fn enroll_in_studio(

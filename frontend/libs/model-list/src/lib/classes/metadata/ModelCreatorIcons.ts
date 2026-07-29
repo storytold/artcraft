@@ -2,7 +2,7 @@ import React, { ReactNode } from "react";
 import { ModelCreator } from "./ModelCreator.js";
 import { IsDesktopApp } from "@storyteller/tauri-utils";
 
-const getServicesBasePath = (): string => {
+export const getServicesBasePath = (): string => {
   return IsDesktopApp() ? "/resources/images/services" : "/images/services";
 };
 
@@ -26,6 +26,7 @@ const CREATOR_ICON_FILES: Partial<Record<ModelCreator, string>> = {
   [ModelCreator.ArtCraft]: "artcraft.svg",
   [ModelCreator.Grok]: "grok.svg",
   [ModelCreator.WorldLabs]: "worldlabs.svg",
+  [ModelCreator.Suno]: "suno.svg",
 };
 
 export const getCreatorIconPath = (creator: ModelCreator): string => {

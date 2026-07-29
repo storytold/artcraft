@@ -17,6 +17,7 @@ use crate::queries::generic_inference::api_providers::fal::insert_generic_infere
 pub enum FalCategory {
   ImageGeneration,
   VideoGeneration,
+  AudioGeneration,
   BackgroundRemoval,
   ObjectGeneration,
 }

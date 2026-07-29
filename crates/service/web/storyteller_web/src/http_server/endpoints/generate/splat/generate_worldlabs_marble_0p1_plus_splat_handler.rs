@@ -175,6 +175,7 @@ pub async fn generate_worldlabs_marble_0p1_plus_splat_handler(
       })?;
 
   let prompt_result = insert_prompt(InsertPromptArgs {
+    maybe_bitrate: None,
     maybe_apriori_prompt_token: None,
     prompt_type: PromptType::ArtcraftApp,
     maybe_creator_user_token: Some(user_token),
@@ -234,6 +235,8 @@ pub async fn generate_worldlabs_marble_0p1_plus_splat_handler(
     creator_ip_address: &ip_address,
     creator_set_visibility: Visibility::Public,
     maybe_platform_type: get_request_platform_type(&http_request),
+    maybe_cost_estimates: None,
+    maybe_debug_log_event_token: None,
     mysql_executor: &mut *transaction,
     phantom: Default::default(),
   }).await;

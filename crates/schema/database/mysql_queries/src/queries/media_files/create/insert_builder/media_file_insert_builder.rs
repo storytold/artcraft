@@ -302,19 +302,22 @@ impl MediaFileInsertBuilder {
           "Origin category is required".to_string()))?;
 
     let mut maybe_generation_provider_str = None;
-    let mut is_intermediate_system_file = self.is_intermediate_system_file;
+    let is_intermediate_system_file = self.is_intermediate_system_file;
     let mut is_user_upload = self.is_user_upload;
 
     if let Some(generation_provider) = self.maybe_generation_provider {
-      // Overrides if we're using a generation provider
+      // Overrides if we're using a generation provider.
+      // NB: `is_intermediate_system_file` is deliberately NOT reset here:
+      // generated cover images / thumbnails set both a generation provider
+      // and the intermediate flag, and clobbering the flag made them appear
+      // in users' asset collections. The flag defaults to false, so honoring
+      // the explicit setter is always correct.
       maybe_generation_provider_str = Some(generation_provider.to_str());
-      is_intermediate_system_file = false;
       is_user_upload = false;
       if generation_provider != GenerationProvider::Artcraft {
         origin_category = MediaFileOriginCategory::ThirdPartyInference;
       }
     }
-    
 
     let result = insert_media_file_generic(InsertArgs {
       pool: mysql_pool,

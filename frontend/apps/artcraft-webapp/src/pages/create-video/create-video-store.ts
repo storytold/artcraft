@@ -33,6 +33,7 @@ export type VideoUiState = {
   selectedSize: string;
   duration: number | null;
   resolution: string | null;
+  bitrate: string | null;
   generateWithSound: boolean;
   inputMode: VideoInputMode;
   numVideos: number;
@@ -50,10 +51,18 @@ type CreateVideoState = {
   ui: VideoUiState;
   refs: VideoRefsState;
   pendingRecreate: RecreatePayload | null;
+  // Reference media sent from another page (library "Send to prompt").
+  // Consumed by the create-video page, which applies the real per-model caps.
+  pendingRefImages: RefImage[] | null;
+  pendingRefVideos: RefVideo[] | null;
   setUi: (patch: Partial<VideoUiState>) => void;
   setRefs: (patch: Partial<VideoRefsState>) => void;
   setPendingRecreate: (payload: RecreatePayload | null) => void;
   consumePendingRecreate: () => RecreatePayload | null;
+  setPendingRefImages: (refs: RefImage[] | null) => void;
+  consumePendingRefImages: () => RefImage[] | null;
+  setPendingRefVideos: (refs: RefVideo[] | null) => void;
+  consumePendingRefVideos: () => RefVideo[] | null;
   startBatch: (prompt: string, modelLabel: string, batchCount?: number) => string;
   setBatchJobToken: (batchId: string, jobToken: string) => void;
   completeBatch: (batchId: string, video: GeneratedVideo) => void;
@@ -69,8 +78,9 @@ const DEFAULT_UI: VideoUiState = {
   selectedSize: "wide_sixteen_by_nine",
   duration: null,
   resolution: null,
+  bitrate: null,
   generateWithSound: false,
-  inputMode: "keyframe",
+  inputMode: "reference",
   numVideos: 1,
 };
 
@@ -88,6 +98,8 @@ export const useCreateVideoStore = create<CreateVideoState>()(
       ui: { ...DEFAULT_UI },
       refs: { ...DEFAULT_REFS },
       pendingRecreate: null,
+      pendingRefImages: null,
+      pendingRefVideos: null,
 
       setUi: (patch) =>
         set((s) => ({ ui: { ...s.ui, ...patch } })),
@@ -101,6 +113,22 @@ export const useCreateVideoStore = create<CreateVideoState>()(
         const payload = get().pendingRecreate;
         if (payload) set({ pendingRecreate: null });
         return payload;
+      },
+
+      setPendingRefImages: (refs) => set({ pendingRefImages: refs }),
+
+      consumePendingRefImages: () => {
+        const refs = get().pendingRefImages;
+        if (refs) set({ pendingRefImages: null });
+        return refs;
+      },
+
+      setPendingRefVideos: (refs) => set({ pendingRefVideos: refs }),
+
+      consumePendingRefVideos: () => {
+        const refs = get().pendingRefVideos;
+        if (refs) set({ pendingRefVideos: null });
+        return refs;
       },
 
       startBatch: (prompt, modelLabel, batchCount) => {
@@ -159,6 +187,21 @@ export const useCreateVideoStore = create<CreateVideoState>()(
     }),
     {
       name: "artcraft-video-batches",
+      // Bumped to 1 when reference became the default input mode: the
+      // migration runs once for pre-existing persisted state and resets the
+      // stored mode so everyone lands on the new default.
+      version: 1,
+      migrate: (persisted, version) => {
+        const p = (persisted ?? {}) as {
+          batches?: VideoBatch[];
+          ui?: VideoUiState;
+        };
+        const ui = { ...DEFAULT_UI, ...(p.ui ?? {}) };
+        if (version < 1) {
+          ui.inputMode = "reference";
+        }
+        return { batches: p.batches ?? [], ui };
+      },
       // Persist prompt + lightweight settings alongside pending batches so a
       // full page reload (e.g. returning from a credit top-up) keeps the
       // user's draft. Reference media (refs) is excluded for the same reason

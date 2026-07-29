@@ -17,7 +17,8 @@ const PromptEditor: React.FC<PromptBox2DProps> = ({
   onGenerationCountChange,
   onAspectRatioChange,
   onFitPressed,
-  usePrompt2DStore
+  usePrompt2DStore,
+  modelSelector,
 }) => {
   const [images, setImages] = useState<ImageStyle[]>([]);
 
@@ -53,6 +54,7 @@ const PromptEditor: React.FC<PromptBox2DProps> = ({
           onGenerationCountChange={onGenerationCountChange}
           onAspectRatioChange={onAspectRatioChange}
           onFitPressed={onFitPressed}
+          modelSelector={modelSelector}
         />
       </JobProvider>
 

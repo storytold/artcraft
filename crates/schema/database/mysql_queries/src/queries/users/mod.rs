@@ -1,3 +1,4 @@
+pub mod api_or_web_sessions;
 pub mod user;
 pub mod user_badges;
 pub mod user_bookmarks;

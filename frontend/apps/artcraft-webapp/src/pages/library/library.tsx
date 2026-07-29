@@ -1,11 +1,15 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Link, useParams, useNavigate, useLocation } from "react-router-dom";
+import { motion } from "framer-motion";
+import { EASE_EMPHASIS } from "../../lib/motion";
 import { Button } from "@storyteller/ui-button";
 import { LoadingSpinner } from "@storyteller/ui-loading-spinner";
 import {
   UsersApi,
   GalleryModalApi,
+  MediaFilesApi,
+  FoldersApi,
   FilterMediaClasses,
   FilterMediaType,
 } from "@storyteller/api";
@@ -21,35 +25,59 @@ import {
   FOLDER_DROP_EVENT,
   type GalleryItem,
 } from "@storyteller/ui-gallery-modal";
-import { PLACEHOLDER_IMAGES } from "@storyteller/common";
+import { PLACEHOLDER_IMAGES, is3DModelUrl } from "@storyteller/common";
+import { is3DMediaClass } from "@storyteller/ui-generation-list";
 import {
   showActionReminder,
   isActionReminderOpen,
 } from "@storyteller/ui-action-reminder-modal";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
+  faArrowDownToLine,
   faArrowsRotate,
   faBorderAll,
   faCube,
   faImage,
+  faMusic,
   faVideo,
   faPencil,
   faTrashCan,
   faFolderPlus,
   faFolder,
   faFolderOpen,
+  faGlobe,
   faPlus,
   faXmark,
   faStar,
+  faTag,
+  faTags,
+  faEllipsis,
+  faCloud,
+  faList,
+  faSpinnerThird,
+  faPhotoFilm,
 } from "@fortawesome/pro-solid-svg-icons";
 import { Lightbox } from "../../components/lightbox/lightbox";
+import { toast } from "../../components/toast/toast";
+import { downloadItemsAsZip } from "../../lib/download-media-zip";
+import {
+  isImagePromptable,
+  isVideoPromptable,
+  sendToPrompt,
+  type PromptDestination,
+} from "../../lib/send-to-prompt";
 import {
   useLibraryFoldersStore,
   useLibrarySelectionStore,
-  mapRawToGalleryItem,
   deleteLibraryMedia,
   type UiFolder,
 } from "./library-folders-store";
+import { mapRawToGalleryItem } from "./library-media-map";
+import {
+  compareTagsByUseCount,
+  useLibraryTagsStore,
+  type UiTag,
+} from "./library-tags-store";
 
 const PAGE_SIZE = 60;
 
@@ -57,15 +85,32 @@ const FILTERS = [
   { id: "all", label: "All", icon: faBorderAll, route: "/library" },
   { id: "image", label: "Images", icon: faImage, route: "/library/images" },
   { id: "video", label: "Videos", icon: faVideo, route: "/library/videos" },
+  { id: "audio", label: "Audio", icon: faMusic, route: "/library/audio" },
   { id: "meshes", label: "Meshes", icon: faCube, route: "/library/meshes" },
+  { id: "splats", label: "Splats", icon: faGlobe, route: "/library/splats" },
+];
+
+// Class scopes for the Unfoldered tab. Local state (not routes): the tab is
+// one page and the filter maps to the endpoint's `filter_media_class` param.
+const FOLDERLESS_CLASS_FILTERS = [
+  { id: "all", label: "All", icon: faBorderAll },
+  { id: "image", label: "Images", icon: faImage },
+  { id: "video", label: "Videos", icon: faVideo },
+  { id: "audio", label: "Audio", icon: faMusic },
+  { id: "mesh", label: "Meshes", icon: faCube },
+  { id: "splat", label: "Splats", icon: faGlobe },
 ];
 
 const ROUTE_TO_FILTER: Record<string, string> = {
   images: "image",
   videos: "video",
+  audio: "audio",
   meshes: "meshes",
+  splats: "splats",
 };
 
+// Media classes for the user-list endpoint. The Meshes and Splats tabs don't
+// use it — they call the session mesh/splat list endpoints instead.
 const getFilterMediaClass = (
   filter: string,
 ): FilterMediaClasses[] | undefined => {
@@ -74,13 +119,16 @@ const getFilterMediaClass = (
       return [FilterMediaClasses.IMAGE];
     case "video":
       return [FilterMediaClasses.VIDEO];
-    case "meshes":
-      return [FilterMediaClasses.DIMENSIONAL];
+    case "audio":
+      return [FilterMediaClasses.AUDIO];
     default:
       return [
         FilterMediaClasses.IMAGE,
         FilterMediaClasses.VIDEO,
+        FilterMediaClasses.AUDIO,
         FilterMediaClasses.DIMENSIONAL,
+        FilterMediaClasses.MESH,
+        FilterMediaClasses.SPLAT,
       ];
   }
 };
@@ -125,19 +173,30 @@ const GRID_CLASS =
 // ── Component ──────────────────────────────────────────────────────────────
 
 export default function Library() {
-  // `:slug` is either a media-class filter (images/videos/meshes) or a folder
-  // token (prefixed `folder_`). `/library/folders` (static) has no slug.
+  // `:slug` is either a media-class filter (images/videos/meshes), a folder
+  // token (prefixed `folder_`), the static `tags` tab, or a tag token
+  // (prefixed `tag_`). `/library/folders` (static) has no slug.
   const { slug } = useParams<{ slug?: string }>();
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const folderToken = slug?.startsWith("folder_") ? slug : undefined;
-  const filterParam = slug && !folderToken ? slug : undefined;
+  const tagToken = slug?.startsWith("tag_") ? slug : undefined;
+  const onTagsRoute = slug === "tags" || !!tagToken;
+  const filterParam = slug && !folderToken && !onTagsRoute ? slug : undefined;
   const activeFilter = filterParam
     ? (ROUTE_TO_FILTER[filterParam] ?? "all")
     : "all";
-  // Top-level tab derived from the route: All Assets (flat library) vs Folders.
+  // Top-level tab derived from the route: All Assets (flat library), Folders,
+  // Unfoldered (files in no folder at all), or Tags.
   const onFoldersRoute = pathname === "/library/folders" || !!folderToken;
-  const tab: "unsorted" | "folders" = onFoldersRoute ? "folders" : "unsorted";
+  const onFolderlessRoute = slug === "folderless";
+  const tab: "unsorted" | "folders" | "folderless" | "tags" = onFoldersRoute
+    ? "folders"
+    : onFolderlessRoute
+      ? "folderless"
+      : onTagsRoute
+        ? "tags"
+        : "unsorted";
 
   const [username, setUsername] = useState<string | null>(null);
   const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
@@ -160,6 +219,20 @@ export default function Library() {
   useEffect(() => () => useLibrarySelectionStore.getState().clear(), []);
 
   const api = useMemo(() => new GalleryModalApi(), []);
+  const mediaFilesApi = useMemo(() => new MediaFilesApi(), []);
+  const foldersApi = useMemo(() => new FoldersApi(), []);
+  // Keyset cursor for the Meshes / Splats tabs (their endpoints paginate by
+  // cursor, not page index).
+  const meshSplatCursorRef = useRef<string | undefined>(undefined);
+
+  // ── Unfoldered tab ──
+  // Optional media-class scope for the folderless list ("all" = unfiltered).
+  const [folderlessClass, setFolderlessClass] = useState<string>("all");
+  // Keyset cursor for the folderless endpoint.
+  const folderlessCursorRef = useRef<string | undefined>(undefined);
+  // Current tab, readable from stable callbacks without re-binding them.
+  const tabRef = useRef(tab);
+  tabRef.current = tab;
 
   // ── Folder store ──────────────────────────────────────────────────────────
   const folders = useLibraryFoldersStore((s) => s.folders);
@@ -193,6 +266,39 @@ export default function Library() {
   );
   const setRenameTarget = useLibraryFoldersStore((s) => s.setRenameTarget);
   const setContextMenu = useLibraryFoldersStore((s) => s.setContextMenu);
+
+  // ── Tags store ────────────────────────────────────────────────────────────
+  const tags = useLibraryTagsStore((s) => s.tags);
+  const tagsLoaded = useLibraryTagsStore((s) => s.tagsLoaded);
+  const activeTagToken = useLibraryTagsStore((s) => s.activeTagToken);
+  const tagMediaItems = useLibraryTagsStore((s) => s.tagMediaItems);
+  const tagContentLoading = useLibraryTagsStore((s) => s.tagContentLoading);
+  const tagLoadingMore = useLibraryTagsStore((s) => s.tagLoadingMore);
+  const loadTags = useLibraryTagsStore((s) => s.loadTags);
+  const setActiveTag = useLibraryTagsStore((s) => s.setActiveTag);
+  const loadTagMedia = useLibraryTagsStore((s) => s.loadTagMedia);
+  const renameTagAction = useLibraryTagsStore((s) => s.renameTag);
+  const deleteTagAction = useLibraryTagsStore((s) => s.deleteTag);
+  const tagRenameTarget = useLibraryTagsStore((s) => s.renameTarget);
+  const tagContextMenu = useLibraryTagsStore((s) => s.contextMenu);
+  const setTagRenameTarget = useLibraryTagsStore((s) => s.setRenameTarget);
+  const setTagContextMenu = useLibraryTagsStore((s) => s.setContextMenu);
+
+  const activeTag = activeTagToken
+    ? (tags.find((t) => t.token === activeTagToken) ?? null)
+    : null;
+
+  // All-tags view mode + sort; local state, not routes. The cloud is the
+  // default — size encodes use count, so the sort toggle only applies to list.
+  const [tagView, setTagView] = useState<"cloud" | "list">("cloud");
+  const [tagSort, setTagSort] = useState<"count" | "name">("count");
+  const sortedTags = useMemo(
+    () =>
+      tagSort === "count"
+        ? [...tags].sort(compareTagsByUseCount)
+        : [...tags].sort((a, b) => a.valueLower.localeCompare(b.valueLower)),
+    [tags, tagSort],
+  );
 
   const activeFolder = activeFolderId
     ? (folders.find((f) => f.id === activeFolderId) ?? null)
@@ -245,10 +351,14 @@ export default function Library() {
     })();
   }, []);
 
-  // Load the folder tree once we know who the user is.
+  // Load the folder tree + tag list once we know who the user is (the tag
+  // list also feeds the sidebar nav and the editor's autocomplete).
   useEffect(() => {
-    if (username) loadFolders();
-  }, [username, loadFolders]);
+    if (username) {
+      loadFolders();
+      loadTags();
+    }
+  }, [username, loadFolders, loadTags]);
 
   // The URL owns *which* folder is open (`/library/:token`); mirror it into the
   // store. Read via getState() + inequality guard so this never loops.
@@ -259,6 +369,14 @@ export default function Library() {
     }
   }, [folderToken, setActiveFolder]);
 
+  // Same for the open tag (`/library/tag_…`).
+  useEffect(() => {
+    const target = tagToken ?? null;
+    if (useLibraryTagsStore.getState().activeTagToken !== target) {
+      setActiveTag(target);
+    }
+  }, [tagToken, setActiveTag]);
+
   // ── Root media loading (library view, no folder open) ─────────────────────
   const loadItems = useCallback(
     async (reset = false) => {
@@ -267,24 +385,84 @@ export default function Library() {
       isLoadingRef.current = true;
       setLoading(true);
       try {
-        const response = await api.listUserMediaFiles({
-          username,
-          filter_media_classes: getFilterMediaClass(activeFilter),
-          include_user_uploads: true,
-          page_index: reset ? 0 : pageIndex,
-          page_size: PAGE_SIZE,
-        });
-        if (response.success && response.data) {
-          const newItems = response.data
-            .filter(
-              (item: any) => item.media_type !== FilterMediaType.SCENE_JSON,
-            )
-            .map(mapRawToGalleryItem);
-          setAllItems((prev) => (reset ? newItems : [...prev, ...newItems]));
-          const current = response.pagination?.current ?? 0;
-          const total = response.pagination?.total_page_count ?? 1;
-          setPageIndex(current + 1);
-          setHasMore(current + 1 < total);
+        if (tabRef.current === "folderless") {
+          // The Unfoldered tab lists files in no folder at all via the
+          // dedicated endpoint (server-scoped, cursor-paginated). The server
+          // only returns a cursor when the page was full, so its presence
+          // doubles as the has-more signal.
+          const cursor = reset ? undefined : folderlessCursorRef.current;
+          const response = await foldersApi.ListMediaFilesWithoutFolder({
+            cursor,
+            limit: PAGE_SIZE,
+            filterMediaClass:
+              folderlessClass === "all" ? undefined : folderlessClass,
+          });
+          if (response.success && response.data) {
+            const newItems = response.data.map(mapRawToGalleryItem);
+            setAllItems((prev) => (reset ? newItems : [...prev, ...newItems]));
+            const nextCursor = response.pagination?.maybe_cursor ?? undefined;
+            folderlessCursorRef.current = nextCursor;
+            setHasMore(!!nextCursor);
+          }
+          setLoading(false);
+          setInitialLoading(false);
+          isLoadingRef.current = false;
+          return;
+        }
+
+        if (activeFilter === "meshes" || activeFilter === "splats") {
+          // The Meshes / Splats tabs use the session by-class list endpoints
+          // (server-scoped, cursor-paginated) instead of the user list.
+          const cursor = reset ? undefined : meshSplatCursorRef.current;
+          const response =
+            activeFilter === "splats"
+              ? await mediaFilesApi.ListSessionSplatMediaFiles({
+                  cursor,
+                  page_size: PAGE_SIZE,
+                })
+              : await mediaFilesApi.ListSessionMeshMediaFiles({
+                  cursor,
+                  page_size: PAGE_SIZE,
+                });
+          if (response.success && response.data) {
+            const newItems = response.data.map(mapRawToGalleryItem);
+            setAllItems((prev) => (reset ? newItems : [...prev, ...newItems]));
+            meshSplatCursorRef.current =
+              response.pagination?.maybe_next ?? undefined;
+            setHasMore(
+              newItems.length >= PAGE_SIZE && !!response.pagination?.maybe_next,
+            );
+          }
+        } else {
+          const response = await api.listUserMediaFiles({
+            username,
+            filter_media_classes: getFilterMediaClass(activeFilter),
+            include_user_uploads: true,
+            page_index: reset ? 0 : pageIndex,
+            page_size: PAGE_SIZE,
+          });
+          if (response.success && response.data) {
+            const newItems = response.data
+              .filter(
+                (item: any) =>
+                  item.media_type !== FilterMediaType.SCENE_JSON &&
+                  // Drop 3D-model cover screenshots the backend surfaces as
+                  // 3D-classed items (mesh/splat, or legacy pre-split
+                  // "dimensional") whose asset is actually a .png.
+                  !(
+                    (item.media_class === "dimensional" ||
+                      item.media_class === "mesh" ||
+                      item.media_class === "splat") &&
+                    !is3DModelUrl(item.media_links?.cdn_url)
+                  ),
+              )
+              .map(mapRawToGalleryItem);
+            setAllItems((prev) => (reset ? newItems : [...prev, ...newItems]));
+            const current = response.pagination?.current ?? 0;
+            const total = response.pagination?.total_page_count ?? 1;
+            setPageIndex(current + 1);
+            setHasMore(current + 1 < total);
+          }
         }
       } catch {
         // ignore
@@ -293,19 +471,31 @@ export default function Library() {
       setInitialLoading(false);
       isLoadingRef.current = false;
     },
-    [username, activeFilter, pageIndex, api],
+    [
+      username,
+      activeFilter,
+      pageIndex,
+      api,
+      mediaFilesApi,
+      foldersApi,
+      folderlessClass,
+    ],
   );
 
-  // Initial load + filter change
+  // Initial load + filter / tab change
   useEffect(() => {
     if (!username) return;
+    // Folder / tag views load via their own stores.
+    if (tab === "folders" || tab === "tags") return;
     setAllItems([]);
     setPageIndex(0);
+    meshSplatCursorRef.current = undefined;
+    folderlessCursorRef.current = undefined;
     setHasMore(true);
     setInitialLoading(true);
     isLoadingRef.current = false;
     loadItems(true);
-  }, [username, activeFilter]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [username, activeFilter, tab, folderlessClass]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Infinite scroll — listens on the real scroll container. Paginates the open
   // folder's media when inside a folder, otherwise the root library list.
@@ -319,20 +509,36 @@ export default function Library() {
           : (scroller as HTMLElement);
       const scrollBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
       if (scrollBottom >= 500) return;
-      if (activeFolderId) {
+      if (activeTagToken) {
+        loadTagMedia(activeTagToken, false);
+      } else if (activeFolderId) {
         loadFolderMedia(activeFolderId, false);
-      } else if (tab === "unsorted" && hasMore && !isLoadingRef.current) {
+      } else if (
+        (tab === "unsorted" || tab === "folderless") &&
+        hasMore &&
+        !isLoadingRef.current
+      ) {
         loadItems();
       }
     };
     scroller.addEventListener("scroll", handleScroll, { passive: true });
     return () => scroller.removeEventListener("scroll", handleScroll);
-  }, [activeFolderId, tab, hasMore, loadItems, loadFolderMedia]);
+  }, [
+    activeFolderId,
+    activeTagToken,
+    tab,
+    hasMore,
+    loadItems,
+    loadFolderMedia,
+    loadTagMedia,
+  ]);
 
   // ── Drag media → folder ───────────────────────────────────────────────────
-  const displayItems = activeFolderId
-    ? (folderMediaItems[activeFolderId] ?? [])
-    : allItems;
+  const displayItems = activeTagToken
+    ? (tagMediaItems[activeTagToken] ?? [])
+    : activeFolderId
+      ? (folderMediaItems[activeFolderId] ?? [])
+      : allItems;
   const displayItemsRef = useRef(displayItems);
   displayItemsRef.current = displayItems;
 
@@ -343,16 +549,30 @@ export default function Library() {
       if (itemIds.length === 0) return;
       const source = useLibraryFoldersStore.getState().activeFolderId;
       const known = displayItemsRef.current;
+      // On the Unfoldered tab, items that just landed in a folder no longer
+      // belong in the list — drop them (and their selection) once the add
+      // settles.
+      const pruneIfFolderless = () => {
+        if (tabRef.current !== "folderless") return;
+        const removed = new Set(itemIds);
+        setAllItems((prev) => prev.filter((it) => !removed.has(it.id)));
+        useLibrarySelectionStore.getState().removeIds(itemIds);
+      };
       if (source && source !== targetFolderId) {
         promptFolderDrop({
           count: itemIds.length,
           targetFolderName: folders.find((f) => f.id === targetFolderId)?.name,
           onMove: () =>
             moveMediaToFolder(itemIds, source, targetFolderId, known),
-          onAdd: () => addMediaToFolder(itemIds, targetFolderId, known),
+          onAdd: () =>
+            addMediaToFolder(itemIds, targetFolderId, known).then(
+              pruneIfFolderless,
+            ),
         });
       } else {
-        addMediaToFolder(itemIds, targetFolderId, known);
+        void addMediaToFolder(itemIds, targetFolderId, known).then(
+          pruneIfFolderless,
+        );
       }
     },
     [folders, addMediaToFolder, moveMediaToFolder],
@@ -660,13 +880,20 @@ export default function Library() {
   const handleItemDeleted = useCallback((id: string) => {
     setAllItems((prev) => prev.filter((item) => item.id !== id));
     useLibrarySelectionStore.getState().removeIds([id]);
-    // Also drop it from any cached folder views (e.g. deleted via the lightbox).
+    // Also drop it from any cached folder/tag views (e.g. deleted via the lightbox).
     useLibraryFoldersStore.setState((s) => {
       const next: Record<string, GalleryItem[]> = {};
       for (const [k, items] of Object.entries(s.folderMediaItems)) {
         next[k] = items.filter((it) => it.id !== id);
       }
       return { folderMediaItems: next };
+    });
+    useLibraryTagsStore.setState((s) => {
+      const next: Record<string, GalleryItem[]> = {};
+      for (const [k, items] of Object.entries(s.tagMediaItems)) {
+        next[k] = items.filter((it) => it.id !== id);
+      }
+      return { tagMediaItems: next };
     });
   }, []);
 
@@ -691,6 +918,8 @@ export default function Library() {
   const refreshRoot = useCallback(() => {
     setAllItems([]);
     setPageIndex(0);
+    meshSplatCursorRef.current = undefined;
+    folderlessCursorRef.current = undefined;
     setHasMore(true);
     setInitialLoading(true);
     isLoadingRef.current = false;
@@ -737,6 +966,38 @@ export default function Library() {
       onPrimaryAction: async () => {
         try {
           await deleteFolderAction(folderId);
+        } finally {
+          isActionReminderOpen.value = false;
+        }
+      },
+    });
+  };
+
+  // ── Tag dialog handlers ───────────────────────────────────────────────────
+  const submitTagRename = (name: string) => {
+    if (tagRenameTarget) renameTagAction(tagRenameTarget, name);
+    setTagRenameTarget(null);
+  };
+
+  const confirmDeleteTag = (tagTokenToDelete: string) => {
+    const tag = tags.find((t) => t.token === tagTokenToDelete);
+    const count = tag?.useCount ?? 0;
+    showActionReminder({
+      reminderType: "default",
+      title: `Delete tag "${tag?.value ?? "tag"}"?`,
+      message: (
+        <p className="text-sm text-white/70">
+          Removes this tag from {count} file{count === 1 ? "" : "s"}. Files stay
+          in your library.
+        </p>
+      ),
+      primaryActionText: "Delete",
+      secondaryActionText: "Cancel",
+      primaryActionBtnClassName: "bg-red text-white hover:bg-red/90",
+      onPrimaryAction: async () => {
+        try {
+          await deleteTagAction(tagTokenToDelete);
+          if (tagToken === tagTokenToDelete) navigate("/library/tags");
         } finally {
           isActionReminderOpen.value = false;
         }
@@ -850,37 +1111,102 @@ export default function Library() {
         {/* Header — sticky below navbar */}
         <div
           data-no-marquee
-          className="sticky top-0 z-50 -mx-3 sm:-mx-4 md:-mx-8 lg:-mx-12 px-3 sm:px-4 md:px-8 lg:px-12 pb-3 pt-3 bg-[#101014] mb-4 sm:mb-6"
+          // z-10 keeps the sticky header above the (static) grid tiles while
+          // staying below the app topbar (z-20), so topbar popovers (credits,
+          // avatar) aren't painted under this bar.
+          className="sticky top-0 z-10 -mx-3 sm:-mx-4 md:-mx-8 lg:-mx-12 px-3 sm:px-4 md:px-8 lg:px-12 pb-3 pt-3 bg-[#101014] mb-4 sm:mb-6"
         >
           <div className="flex flex-col gap-6">
             {/* Tabs + actions */}
             <div className="flex items-center justify-between gap-3">
               <div className="flex items-center gap-2">
-                <div className="flex items-center gap-1 bg-ui-controls/40 rounded-lg p-1">
+                <div className="flex items-center gap-1 bg-ui-controls/40 rounded-xl p-1">
                   <Link
                     to="/library"
-                    className={`flex items-center gap-2 px-3 sm:px-4 py-1 sm:py-1.5 rounded-md text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
+                    className={`relative flex items-center gap-2 px-3 sm:px-4 py-1 sm:py-1.5 rounded-md text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
                       tab === "unsorted"
-                        ? "bg-ui-controls text-white"
+                        ? "text-white"
                         : "text-white/60 hover:text-white"
                     }`}
                   >
-                    <FontAwesomeIcon icon={faBorderAll} className="text-xs" />
-                    <span>All Assets</span>
+                    {tab === "unsorted" && (
+                      <motion.span
+                        layoutId="library-tab-indicator"
+                        className="absolute inset-0 rounded-md bg-ui-controls"
+                        transition={{ duration: 0.32, ease: EASE_EMPHASIS }}
+                      />
+                    )}
+                    <FontAwesomeIcon
+                      icon={faBorderAll}
+                      className="relative z-10 text-xs"
+                    />
+                    <span className="relative z-10">All Assets</span>
                   </Link>
                   <Link
                     to="/library/folders"
-                    className={`flex items-center gap-2 px-3 sm:px-4 py-1 sm:py-1.5 rounded-md text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
+                    className={`relative flex items-center gap-2 px-3 sm:px-4 py-1 sm:py-1.5 rounded-md text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
                       tab === "folders"
-                        ? "bg-ui-controls text-white"
+                        ? "text-white"
                         : "text-white/60 hover:text-white"
                     }`}
                   >
-                    <FontAwesomeIcon icon={faFolder} className="text-xs" />
-                    <span>Folders</span>
+                    {tab === "folders" && (
+                      <motion.span
+                        layoutId="library-tab-indicator"
+                        className="absolute inset-0 rounded-md bg-ui-controls"
+                        transition={{ duration: 0.32, ease: EASE_EMPHASIS }}
+                      />
+                    )}
+                    <FontAwesomeIcon
+                      icon={faFolder}
+                      className="relative z-10 text-xs"
+                    />
+                    <span className="relative z-10">Folders</span>
+                  </Link>
+                  <Link
+                    to="/library/folderless"
+                    className={`relative flex items-center gap-2 px-3 sm:px-4 py-1 sm:py-1.5 rounded-md text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
+                      tab === "folderless"
+                        ? "text-white"
+                        : "text-white/60 hover:text-white"
+                    }`}
+                  >
+                    {tab === "folderless" && (
+                      <motion.span
+                        layoutId="library-tab-indicator"
+                        className="absolute inset-0 rounded-md bg-ui-controls"
+                        transition={{ duration: 0.32, ease: EASE_EMPHASIS }}
+                      />
+                    )}
+                    <FontAwesomeIcon
+                      icon={faFolderOpen}
+                      className="relative z-10 text-xs"
+                    />
+                    <span className="relative z-10">Unfoldered</span>
+                  </Link>
+                  <Link
+                    to="/library/tags"
+                    className={`relative flex items-center gap-2 px-3 sm:px-4 py-1 sm:py-1.5 rounded-md text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
+                      tab === "tags"
+                        ? "text-white"
+                        : "text-white/60 hover:text-white"
+                    }`}
+                  >
+                    {tab === "tags" && (
+                      <motion.span
+                        layoutId="library-tab-indicator"
+                        className="absolute inset-0 rounded-md bg-ui-controls"
+                        transition={{ duration: 0.32, ease: EASE_EMPHASIS }}
+                      />
+                    )}
+                    <FontAwesomeIcon
+                      icon={faTag}
+                      className="relative z-10 text-xs"
+                    />
+                    <span className="relative z-10">Tags</span>
                   </Link>
                 </div>
-                {tab === "unsorted" && (
+                {(tab === "unsorted" || tab === "folderless") && (
                   <button
                     onClick={refreshRoot}
                     className="h-8 w-8 flex items-center justify-center rounded-lg text-white/50 hover:text-white hover:bg-ui-controls/40 transition-colors"
@@ -895,23 +1221,62 @@ export default function Library() {
               </div>
 
               <div className="flex items-center gap-2">
+                {tab === "folderless" && (
+                  <div className="flex items-center gap-1 bg-ui-controls/40 rounded-xl p-1 overflow-x-auto">
+                    {FOLDERLESS_CLASS_FILTERS.map((filter) => (
+                      <button
+                        key={filter.id}
+                        onClick={() => setFolderlessClass(filter.id)}
+                        className={`relative flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-4 py-1 sm:py-1.5 rounded-md text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
+                          folderlessClass === filter.id
+                            ? "text-white"
+                            : "text-white/60 hover:text-white"
+                        }`}
+                      >
+                        {folderlessClass === filter.id && (
+                          <motion.span
+                            layoutId="library-folderless-filter-indicator"
+                            className="absolute inset-0 rounded-md bg-ui-controls"
+                            transition={{ duration: 0.32, ease: EASE_EMPHASIS }}
+                          />
+                        )}
+                        <FontAwesomeIcon
+                          icon={filter.icon}
+                          className="relative z-10 text-xs"
+                        />
+                        <span className="relative z-10 hidden sm:inline">
+                          {filter.label}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                )}
                 {tab === "unsorted" && (
-                  <div className="flex items-center gap-1 bg-ui-controls/40 rounded-lg p-1 overflow-x-auto">
+                  <div className="flex items-center gap-1 bg-ui-controls/40 rounded-xl p-1 overflow-x-auto">
                     {FILTERS.map((filter) => (
                       <button
                         key={filter.id}
                         onClick={() => navigate(filter.route)}
-                        className={`flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-4 py-1 sm:py-1.5 rounded-md text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
+                        className={`relative flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-4 py-1 sm:py-1.5 rounded-md text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
                           activeFilter === filter.id
-                            ? "bg-ui-controls text-white"
+                            ? "text-white"
                             : "text-white/60 hover:text-white"
                         }`}
                       >
+                        {activeFilter === filter.id && (
+                          <motion.span
+                            layoutId="library-filter-indicator"
+                            className="absolute inset-0 rounded-md bg-ui-controls"
+                            transition={{ duration: 0.32, ease: EASE_EMPHASIS }}
+                          />
+                        )}
                         <FontAwesomeIcon
                           icon={filter.icon}
-                          className="text-xs"
+                          className="relative z-10 text-xs"
                         />
-                        <span className="hidden sm:inline">{filter.label}</span>
+                        <span className="relative z-10 hidden sm:inline">
+                          {filter.label}
+                        </span>
                       </button>
                     ))}
                   </div>
@@ -925,6 +1290,79 @@ export default function Library() {
                   >
                     New folder
                   </Button>
+                )}
+                {tab === "tags" && !activeTagToken && tags.length > 0 && (
+                  <>
+                    {tagView === "list" && (
+                      <div className="flex items-center gap-1 bg-ui-controls/40 rounded-xl p-1 overflow-x-auto">
+                        {(
+                          [
+                            ["count", "Most used"],
+                            ["name", "Name"],
+                          ] as const
+                        ).map(([id, label]) => (
+                          <button
+                            key={id}
+                            onClick={() => setTagSort(id)}
+                            className={`relative px-2.5 sm:px-4 py-1 sm:py-1.5 rounded-md text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
+                              tagSort === id
+                                ? "text-white"
+                                : "text-white/60 hover:text-white"
+                            }`}
+                          >
+                            {tagSort === id && (
+                              <motion.span
+                                layoutId="library-tag-sort-indicator"
+                                className="absolute inset-0 rounded-md bg-ui-controls"
+                                transition={{
+                                  duration: 0.32,
+                                  ease: EASE_EMPHASIS,
+                                }}
+                              />
+                            )}
+                            <span className="relative z-10">{label}</span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                    <div className="flex items-center gap-1 bg-ui-controls/40 rounded-xl p-1">
+                      {(
+                        [
+                          ["cloud", faCloud, "Cloud"],
+                          ["list", faList, "List"],
+                        ] as const
+                      ).map(([id, icon, label]) => (
+                        <button
+                          key={id}
+                          onClick={() => setTagView(id)}
+                          title={label}
+                          className={`relative flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-4 py-1 sm:py-1.5 rounded-md text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
+                            tagView === id
+                              ? "text-white"
+                              : "text-white/60 hover:text-white"
+                          }`}
+                        >
+                          {tagView === id && (
+                            <motion.span
+                              layoutId="library-tag-view-indicator"
+                              className="absolute inset-0 rounded-md bg-ui-controls"
+                              transition={{
+                                duration: 0.32,
+                                ease: EASE_EMPHASIS,
+                              }}
+                            />
+                          )}
+                          <FontAwesomeIcon
+                            icon={icon}
+                            className="relative z-10 text-xs"
+                          />
+                          <span className="relative z-10 hidden sm:inline">
+                            {label}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  </>
                 )}
               </div>
             </div>
@@ -966,6 +1404,42 @@ export default function Library() {
                   title="New subfolder"
                 >
                   <FontAwesomeIcon icon={faFolderPlus} className="text-xs" />
+                </button>
+              </div>
+            )}
+
+            {/* Breadcrumb (inside a tag) */}
+            {tab === "tags" && activeTagToken && (
+              <div className="flex items-center gap-1.5 flex-wrap min-w-0">
+                <button
+                  onClick={() => navigate("/library/tags")}
+                  className="text-white/50 hover:text-white text-sm transition-colors"
+                >
+                  Tags
+                </button>
+                <span className="text-white/30">/</span>
+                <h1 className="text-lg sm:text-xl font-medium text-white truncate max-w-[16rem]">
+                  {activeTag?.value ?? "Tag"}
+                </h1>
+                {activeTag && (
+                  <span className="text-white/40 text-sm pt-1 ps-1.5">
+                    {activeTag.useCount} file
+                    {activeTag.useCount === 1 ? "" : "s"}
+                  </span>
+                )}
+                <button
+                  onClick={() => setTagRenameTarget(activeTagToken)}
+                  className="h-7 w-7 flex items-center justify-center rounded-lg text-white/50 hover:text-white hover:bg-ui-controls/40 transition-colors"
+                  title="Rename tag"
+                >
+                  <FontAwesomeIcon icon={faPencil} className="text-xs" />
+                </button>
+                <button
+                  onClick={() => confirmDeleteTag(activeTagToken)}
+                  className="h-7 w-7 flex items-center justify-center rounded-lg text-white/50 hover:text-red hover:bg-ui-controls/40 transition-colors"
+                  title="Delete tag"
+                >
+                  <FontAwesomeIcon icon={faTrashCan} className="text-xs" />
                 </button>
               </div>
             )}
@@ -1061,9 +1535,116 @@ export default function Library() {
                 )}
               </>
             )
+          ) : tab === "tags" && !activeTagToken ? (
+            /* ── Tags tab: all tags ── */
+            !tagsLoaded ? (
+              <div className="flex justify-center py-20">
+                <LoadingSpinner className="h-8 w-8 text-white/60" />
+              </div>
+            ) : tags.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-20 gap-3">
+                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-ui-controls/30">
+                  <FontAwesomeIcon
+                    icon={faTags}
+                    className="text-2xl text-white/40"
+                  />
+                </div>
+                <p className="text-white/40 text-sm">No tags yet.</p>
+                <p className="text-white/30 text-xs max-w-xs text-center">
+                  Open any image or video and add tags in the details panel —
+                  they'll show up here.
+                </p>
+              </div>
+            ) : tagView === "cloud" ? (
+              <TagCloud
+                tags={tags}
+                onOpen={(token) => navigate(`/library/${token}`)}
+                onMenu={(cloudTagToken, x, y) =>
+                  setTagContextMenu({ tagToken: cloudTagToken, x, y })
+                }
+              />
+            ) : (
+              <div className="flex flex-wrap gap-2">
+                {sortedTags.map((t) => (
+                  <div
+                    key={t.token}
+                    className="flex items-center rounded-full bg-ui-controls/40 hover:bg-ui-controls/70 transition-colors"
+                  >
+                    <button
+                      type="button"
+                      onClick={() => navigate(`/library/${t.token}`)}
+                      onContextMenu={(e) => {
+                        e.preventDefault();
+                        setTagContextMenu({
+                          tagToken: t.token,
+                          x: e.clientX,
+                          y: e.clientY,
+                        });
+                      }}
+                      className="flex items-center gap-2 pl-4 pr-1 py-2 text-sm font-medium text-white"
+                    >
+                      <FontAwesomeIcon
+                        icon={faTag}
+                        className="text-xs text-violet-400"
+                      />
+                      <span className="max-w-[14rem] truncate">{t.value}</span>
+                      <span className="text-xs text-white/40">
+                        {t.useCount}
+                      </span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        const rect = e.currentTarget.getBoundingClientRect();
+                        setTagContextMenu({
+                          tagToken: t.token,
+                          x: rect.left,
+                          y: rect.bottom + 4,
+                        });
+                      }}
+                      aria-label={`Options for tag "${t.value}"`}
+                      title="Rename or delete"
+                      className="mr-1.5 flex h-6 w-6 items-center justify-center rounded-full text-white/40 hover:bg-white/10 hover:text-white transition-colors"
+                    >
+                      <FontAwesomeIcon icon={faEllipsis} className="text-xs" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )
+          ) : tab === "tags" && activeTagToken ? (
+            /* ── Inside a tag ── */
+            tagContentLoading && displayItems.length === 0 ? (
+              <div className="flex justify-center py-20">
+                <LoadingSpinner className="h-8 w-8 text-white/60" />
+              </div>
+            ) : displayItems.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-20">
+                <p className="text-white/40 text-sm">
+                  No files carry this tag.
+                </p>
+              </div>
+            ) : (
+              <>
+                {mediaGrid}
+                {tagLoadingMore && (
+                  <div className="flex justify-center py-4">
+                    <LoadingSpinner className="h-8 w-8 text-white/60" />
+                  </div>
+                )}
+              </>
+            )
           ) : /* ── Unsorted ── */ initialLoading && allItems.length === 0 ? (
             <div>
-              <div className="h-4 w-24 rounded bg-white/[0.06] mb-3" />
+              <div
+                className="h-4 w-24 rounded mb-3"
+                style={{
+                  background:
+                    "linear-gradient(100deg, rgba(255,255,255,0.05) 30%, rgba(255,255,255,0.1) 50%, rgba(255,255,255,0.05) 70%)",
+                  backgroundSize: "200% 100%",
+                  animation: "lib-shimmer 1.6s ease-in-out infinite",
+                }}
+              />
               <div className={GRID_CLASS}>
                 {Array.from({ length: 15 }).map((_, i) => (
                   <div
@@ -1071,19 +1652,28 @@ export default function Library() {
                     className="aspect-square rounded-lg overflow-hidden"
                   >
                     <div
-                      className="h-full w-full bg-white/[0.06]"
+                      className="h-full w-full"
                       style={{
-                        animation: `pulse 1.8s ease-in-out ${i * 0.07}s infinite`,
+                        background:
+                          "linear-gradient(100deg, rgba(255,255,255,0.04) 30%, rgba(255,255,255,0.09) 50%, rgba(255,255,255,0.04) 70%)",
+                        backgroundSize: "200% 100%",
+                        animation: `lib-shimmer 1.6s ease-in-out ${i * 0.08}s infinite`,
                       }}
                     />
                   </div>
                 ))}
               </div>
-              <style>{`@keyframes pulse {0%,100%{opacity:.4}50%{opacity:.8}}`}</style>
+              <style>{`@keyframes lib-shimmer {0%{background-position:200% 0}100%{background-position:-200% 0}}`}</style>
             </div>
           ) : rootEmpty ? (
             <div className="flex flex-col items-center justify-center py-20">
-              <p className="text-white/40 text-sm mb-4">No items yet.</p>
+              <p className="text-white/40 text-sm mb-4">
+                {tab === "folderless"
+                  ? folderlessClass === "all"
+                    ? "Everything is in a folder — nothing to organize."
+                    : "No unfoldered files of this type."
+                  : "No items yet."}
+              </p>
               <div className="flex gap-3">
                 <Link to="/create-image">
                   <Button
@@ -1185,6 +1775,18 @@ export default function Library() {
         onClose={() => setRenameTarget(null)}
       />
 
+      {/* Rename tag dialog */}
+      <FolderNameDialog
+        isOpen={!!tagRenameTarget}
+        title="Rename tag"
+        initialValue={
+          tags.find((t) => t.token === tagRenameTarget)?.value ?? ""
+        }
+        confirmLabel="Rename"
+        onConfirm={submitTagRename}
+        onClose={() => setTagRenameTarget(null)}
+      />
+
       {/* Folder context menu (portaled) */}
       {contextMenu &&
         createPortal(
@@ -1268,6 +1870,133 @@ export default function Library() {
           </>,
           document.body,
         )}
+
+      {/* Tag context menu (portaled) */}
+      {tagContextMenu &&
+        createPortal(
+          <>
+            <div
+              className="fixed inset-0 z-[9998]"
+              onClick={() => setTagContextMenu(null)}
+              onContextMenu={(e) => {
+                e.preventDefault();
+                setTagContextMenu(null);
+              }}
+            />
+            <div
+              className="fixed z-[9999] min-w-44 rounded-lg border border-ui-panel-border bg-ui-panel p-1 shadow-xl"
+              style={{ left: tagContextMenu.x, top: tagContextMenu.y }}
+            >
+              <button
+                type="button"
+                className="flex w-full items-center gap-2 px-2 py-2 rounded-md hover:bg-ui-controls/60 text-sm text-base-fg"
+                onClick={() => setTagRenameTarget(tagContextMenu.tagToken)}
+              >
+                <FontAwesomeIcon icon={faPencil} className="w-4" />
+                <span>Rename</span>
+              </button>
+              <button
+                type="button"
+                className="flex w-full items-center gap-2 px-2 py-2 rounded-md hover:bg-ui-controls/60 text-sm text-red"
+                onClick={() => {
+                  const token = tagContextMenu.tagToken;
+                  setTagContextMenu(null);
+                  confirmDeleteTag(token);
+                }}
+              >
+                <FontAwesomeIcon icon={faTrashCan} className="w-4" />
+                <span>Delete tag</span>
+              </button>
+            </div>
+          </>,
+          document.body,
+        )}
+    </div>
+  );
+}
+
+// ── Tag cloud ─────────────────────────────────────────────────────────────────
+// The default all-tags view: font size and emphasis encode use count, and a
+// deterministic hash shuffle spreads big words among small ones (a stable
+// order — no reflow between renders) for the classic word-cloud look.
+
+const hashString = (s: string): number => {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0;
+  return h;
+};
+
+function TagCloud({
+  tags,
+  onOpen,
+  onMenu,
+}: {
+  tags: UiTag[];
+  onOpen: (token: string) => void;
+  onMenu: (tagToken: string, x: number, y: number) => void;
+}) {
+  const words = useMemo(() => {
+    const counts = tags.map((t) => t.useCount);
+    const min = Math.min(...counts);
+    const span = Math.max(1, Math.max(...counts) - min);
+    return [...tags]
+      .sort((a, b) => hashString(a.token) - hashString(b.token))
+      .map((tag) => ({
+        tag,
+        // sqrt compresses the top end so one mega-tag doesn't dwarf the rest.
+        weight: Math.sqrt((tag.useCount - min) / span),
+      }));
+  }, [tags]);
+
+  return (
+    <div className="mx-auto flex max-w-4xl flex-wrap items-baseline justify-center gap-x-4 gap-y-2.5 sm:gap-x-5 sm:gap-y-3 px-4 py-10 sm:py-16 select-none">
+      {words.map(({ tag, weight }, index) => (
+        <motion.button
+          key={tag.token}
+          type="button"
+          // Staggered pop-in on mount (delay capped so huge clouds don't drag),
+          // then a springy lift + tilt on hover. Transitions live on the
+          // targets so the entrance delay never slows down hover response.
+          initial={{ opacity: 0, scale: 0.5 }}
+          animate={{
+            opacity: 1,
+            scale: 1,
+            transition: {
+              delay: Math.min(index * 0.025, 0.6),
+              duration: 0.3,
+              ease: EASE_EMPHASIS,
+            },
+          }}
+          whileHover={{
+            scale: 1.15,
+            y: -3,
+            // Alternate tilt direction per word so neighbors don't sync up.
+            rotate: hashString(tag.token) % 2 === 0 ? 2.5 : -2.5,
+            transition: { type: "spring", stiffness: 400, damping: 15 },
+          }}
+          whileTap={{ scale: 0.92 }}
+          onClick={() => onOpen(tag.token)}
+          onContextMenu={(e) => {
+            e.preventDefault();
+            onMenu(tag.token, e.clientX, e.clientY);
+          }}
+          title={`${tag.useCount} file${tag.useCount === 1 ? "" : "s"} — right-click to rename or delete`}
+          // vw cap keeps the biggest words from overflowing narrow screens;
+          // on desktop widths the px size always wins the min().
+          style={{
+            fontSize: `min(${Math.round(16 + weight * 40)}px, ${(5 + weight * 7).toFixed(1)}vw)`,
+          }}
+          className={`max-w-full truncate leading-none transition-colors hover:text-violet-400 ${
+            weight > 0.66
+              ? "font-bold text-white"
+              : weight > 0.33
+                ? "font-semibold text-white/70"
+                : "font-medium text-white/40"
+          }`}
+        >
+          {tag.value}
+        </motion.button>
+      ))}
     </div>
   );
 }
@@ -1339,6 +2068,15 @@ const LibraryTile = memo(function LibraryTile({
 // Owns its own subscription to the selection store (and the folder popover
 // state), so selection changes re-render only this small bar, never the page.
 
+const SEND_TO_TARGETS: {
+  destination: PromptDestination;
+  label: string;
+  icon: typeof faImage;
+}[] = [
+  { destination: "image", label: "Create image", icon: faImage },
+  { destination: "video", label: "Create video", icon: faVideo },
+];
+
 interface BulkSelectionBarProps {
   allItems: GalleryItem[];
   folders: UiFolder[];
@@ -1358,19 +2096,37 @@ function BulkSelectionBar({
 }: BulkSelectionBarProps) {
   const ids = useLibrarySelectionStore((s) => s.ids);
   const folderMediaItems = useLibraryFoldersStore((s) => s.folderMediaItems);
+  const tagMediaItems = useLibraryTagsStore((s) => s.tagMediaItems);
+  const navigate = useNavigate();
   const [popoverOpen, setPopoverOpen] = useState(false);
+  const [sendToOpen, setSendToOpen] = useState(false);
+  const [downloadProgress, setDownloadProgress] = useState<{
+    done: number;
+    total: number;
+  } | null>(null);
+  const isDownloading = downloadProgress !== null;
+
+  // Same ordering as the sidebar / folder cards: starred first, then
+  // alphabetical (the store list arrives in API order).
+  const sortedFolders = useMemo(
+    () => [...folders].sort(compareFolders),
+    [folders],
+  );
 
   // Close the popover when navigating so it doesn't dangle over the new view.
   useEffect(() => {
     setPopoverOpen(false);
   }, [activeFolderId]);
 
-  // Resolve selected items from everything loaded (root library + folder
+  // Resolve selected items from everything loaded (root library + folder/tag
   // caches) — the selection survives navigation, so selected items may not be
   // part of the currently displayed view.
   const selectedItems = useMemo(() => {
     const byId = new Map(allItems.map((it) => [it.id, it] as const));
-    for (const arr of Object.values(folderMediaItems)) {
+    for (const arr of [
+      ...Object.values(folderMediaItems),
+      ...Object.values(tagMediaItems),
+    ]) {
       for (const it of arr) {
         if (!byId.has(it.id)) byId.set(it.id, it);
       }
@@ -1378,10 +2134,44 @@ function BulkSelectionBar({
     return Array.from(ids)
       .map((id) => byId.get(id))
       .filter((it): it is GalleryItem => !!it);
-  }, [allItems, folderMediaItems, ids]);
+  }, [allItems, folderMediaItems, tagMediaItems, ids]);
 
   if (ids.size === 0) return null;
   const clear = () => useLibrarySelectionStore.getState().clear();
+  const hasPromptImages = selectedItems.some(isImagePromptable);
+  const hasPromptVideos = selectedItems.some(isVideoPromptable);
+
+  const handleDownloadSelected = async () => {
+    const downloadable = selectedItems.filter(
+      (it): it is GalleryItem & { fullImage: string } => !!it.fullImage,
+    );
+    if (isDownloading || downloadable.length === 0) return;
+    setDownloadProgress({ done: 0, total: downloadable.length });
+    try {
+      const { succeeded, failed } = await downloadItemsAsZip(
+        downloadable.map((it) => ({
+          id: it.id,
+          url: it.fullImage,
+          mediaClass: it.mediaClass,
+        })),
+        { onProgress: (done, total) => setDownloadProgress({ done, total }) },
+      );
+      if (failed === 0) {
+        toast.success(
+          `Downloaded ${succeeded} ${succeeded === 1 ? "file" : "files"}`,
+        );
+      } else if (succeeded > 0) {
+        toast.error(
+          `${failed} of ${succeeded + failed} files failed to download`,
+        );
+      } else {
+        toast.error("Could not download the selected files.");
+      }
+      if (succeeded > 0) clear();
+    } finally {
+      setDownloadProgress(null);
+    }
+  };
 
   return (
     <div
@@ -1408,6 +2198,74 @@ function BulkSelectionBar({
         {ids.size} selected
       </span>
 
+      {/* Send to prompt (only when the selection contains images or videos).
+          Images can go to either prompt; videos only to the video prompt. */}
+      {(hasPromptImages || hasPromptVideos) && (
+        <div className="relative">
+          <button
+            type="button"
+            title="Send to prompt"
+            onClick={() => setSendToOpen((v) => !v)}
+            className="flex items-center gap-2 rounded-full bg-ui-controls/60 px-3 py-1.5 text-sm font-medium text-white hover:bg-ui-controls/90 transition-colors"
+          >
+            <FontAwesomeIcon
+              icon={hasPromptImages ? faImage : faVideo}
+              className="text-xs"
+            />
+            {/* Icon-only on phones — a fourth labeled button overflows the bar. */}
+            <span className="hidden sm:inline">Send to prompt</span>
+          </button>
+          {sendToOpen && (
+            <>
+              <div
+                className="fixed inset-0 z-[59]"
+                onClick={() => setSendToOpen(false)}
+              />
+              <div className="absolute bottom-full left-0 z-[60] mb-2 w-44 rounded-lg border border-ui-panel-border bg-ui-panel p-2 shadow-xl">
+                <div className="px-2 py-1 text-[11px] font-semibold uppercase tracking-wider text-white/40">
+                  Use as reference in
+                </div>
+                {SEND_TO_TARGETS.filter(
+                  (target) => target.destination === "video" || hasPromptImages,
+                ).map((target) => (
+                  <button
+                    key={target.destination}
+                    type="button"
+                    onClick={() => {
+                      setSendToOpen(false);
+                      sendToPrompt(selectedItems, target.destination, navigate);
+                      clear();
+                    }}
+                    className="flex w-full items-center gap-2.5 rounded-md px-2 py-1.5 text-sm text-white hover:bg-ui-controls/50 transition-colors"
+                  >
+                    <FontAwesomeIcon icon={target.icon} className="w-4 text-xs" />
+                    <span>{target.label}</span>
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+      )}
+
+      {/* Extract frames (single selected video → frame extractor tool). */}
+      {selectedItems.length === 1 &&
+        selectedItems[0].mediaClass === "video" && (
+          <button
+            type="button"
+            title="Extract frames"
+            onClick={() => {
+              const token = selectedItems[0].id;
+              clear();
+              navigate(`/frame-extractor?media=${token}`);
+            }}
+            className="flex items-center gap-2 rounded-full bg-ui-controls/60 px-3 py-1.5 text-sm font-medium text-white hover:bg-ui-controls/90 transition-colors"
+          >
+            <FontAwesomeIcon icon={faPhotoFilm} className="text-xs" />
+            <span className="hidden sm:inline">Extract frames</span>
+          </button>
+        )}
+
       {/* Add to folder */}
       <div className="relative">
         <button
@@ -1428,12 +2286,12 @@ function BulkSelectionBar({
               <div className="px-2 py-1 text-[11px] font-semibold uppercase tracking-wider text-white/40">
                 Folders
               </div>
-              {folders.length === 0 ? (
+              {sortedFolders.length === 0 ? (
                 <div className="px-2 py-1.5 text-xs italic text-white/30">
                   No folders yet
                 </div>
               ) : (
-                folders.map((folder) => (
+                sortedFolders.map((folder) => (
                   <button
                     key={folder.id}
                     type="button"
@@ -1478,6 +2336,21 @@ function BulkSelectionBar({
 
       <button
         type="button"
+        onClick={handleDownloadSelected}
+        disabled={isDownloading}
+        className="flex items-center gap-2 rounded-full bg-ui-controls/60 px-3 py-1.5 text-sm font-medium text-white hover:bg-ui-controls/90 transition-colors disabled:opacity-60"
+      >
+        <FontAwesomeIcon
+          icon={isDownloading ? faSpinnerThird : faArrowDownToLine}
+          className={`text-xs ${isDownloading ? "animate-spin" : ""}`}
+        />
+        {isDownloading && downloadProgress
+          ? `Downloading ${downloadProgress.done}/${downloadProgress.total}…`
+          : "Download"}
+      </button>
+
+      <button
+        type="button"
         onClick={onDeleteSelected}
         className="flex items-center gap-2 rounded-full bg-red/90 px-3 py-1.5 text-sm font-medium text-white hover:bg-red transition-colors"
       >
@@ -1503,9 +2376,11 @@ function BulkThumb({ item }: { item: GalleryItem }) {
   const placeholderIcon =
     item.mediaClass === "video"
       ? faVideo
-      : item.mediaClass === "dimensional"
+      : is3DMediaClass(item.mediaClass)
         ? faCube
-        : faImage;
+        : item.mediaClass === "audio"
+          ? faMusic
+          : faImage;
   const showImage = !!item.thumbnail && !failed;
   return (
     <div className="-ml-2 h-8 w-8 flex-shrink-0 overflow-hidden rounded border-2 border-ui-panel bg-black/30 first:ml-0">

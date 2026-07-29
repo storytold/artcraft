@@ -4,29 +4,35 @@ import { toast } from "../toast/toast";
 import { useEffect, useState, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { MediaFilesApi, PromptsApi, type UserInfo } from "@storyteller/api";
+import { is3DMediaClass } from "@storyteller/ui-generation-list";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faChevronLeft,
   faChevronRight,
+  faMusic,
   faTrashCan,
 } from "@fortawesome/pro-solid-svg-icons";
 import { addCorsParam, PLACEHOLDER_IMAGES } from "@storyteller/common";
 import { ActionReminderModal } from "@storyteller/ui-action-reminder-modal";
 import { Viewer3D } from "@storyteller/ui-viewer-3d";
+import { WaveformAudioPlayer } from "@storyteller/ui-audio-player";
 import useEmblaCarousel from "embla-carousel-react";
 import type { EmblaOptionsType } from "embla-carousel";
 import {
   createPromptData,
   EMPTY_PROMPT,
   is3DModelUrl,
+  isAudioUrl,
   isVideoUrl,
   type PromptData,
 } from "./shared";
 import { LightboxDetails } from "./LightboxDetails";
+import { applyEditOnCanvasFromImage } from "../../pages/pagedraw/edit-on-canvas";
 import {
   applyMakeVideoFromImage,
   applyRecreateFromMediaToken,
 } from "../../lib/recreate";
+import { useLightboxSoundStore } from "../../lib/lightbox-sound-store";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -75,6 +81,7 @@ export function Lightbox({
   showBatchCarousel = true,
 }: LightboxProps) {
   const navigate = useNavigate();
+  const soundEnabled = useLightboxSoundStore((s) => s.soundEnabled);
   const [mediaLoaded, setMediaLoaded] = useState(false);
   const [promptData, setPromptData] = useState<PromptData>(EMPTY_PROMPT);
   const [creator, setCreator] = useState<UserInfo | null>(null);
@@ -273,7 +280,10 @@ export function Lightbox({
     : propMediaClass === "video";
   const is3D = selectedImageUrl
     ? is3DModelUrl(selectedImageUrl)
-    : propMediaClass === "dimensional";
+    : is3DMediaClass(propMediaClass);
+  const isAudio = selectedImageUrl
+    ? isAudioUrl(selectedImageUrl) || propMediaClass === "audio"
+    : propMediaClass === "audio";
 
   // Keyboard navigation
   useEffect(() => {
@@ -311,9 +321,10 @@ export function Lightbox({
     }
   }, [selectedMediaToken, mediaFilesApi, onDeleted, onClose]);
 
+  // Audio v1: no recreate / make-video / edit-on-canvas.
   const recreateMediaClass: "image" | "video" | null = isVideo
     ? "video"
-    : is3D
+    : is3D || isAudio
       ? null
       : "image";
 
@@ -327,12 +338,25 @@ export function Lightbox({
     );
   }, [selectedMediaToken, recreateMediaClass, navigate, onClose]);
 
-  const canMakeVideo = !isVideo && !is3D;
+  const canMakeVideo = !isVideo && !is3D && !isAudio;
   const handleMakeVideo = useCallback(() => {
     if (!selectedMediaToken || !selectedImageUrl || !canMakeVideo) return;
     onClose();
     applyMakeVideoFromImage(selectedMediaToken, selectedImageUrl, navigate);
   }, [selectedMediaToken, selectedImageUrl, canMakeVideo, navigate, onClose]);
+
+  const canEditOnCanvas = !isVideo && !is3D && !isAudio;
+  const handleEditOnCanvas = useCallback(() => {
+    if (!selectedMediaToken || !selectedImageUrl || !canEditOnCanvas) return;
+    onClose();
+    applyEditOnCanvasFromImage(selectedMediaToken, selectedImageUrl, navigate);
+  }, [selectedMediaToken, selectedImageUrl, canEditOnCanvas, navigate, onClose]);
+
+  const handleExtractFrames = useCallback(() => {
+    if (!selectedMediaToken) return;
+    onClose();
+    navigate(`/frame-extractor?media=${selectedMediaToken}`);
+  }, [selectedMediaToken, navigate, onClose]);
 
   return (
     <>
@@ -363,7 +387,7 @@ export function Lightbox({
                 controls
                 loop
                 autoPlay
-                muted
+                muted={!soundEnabled}
                 playsInline
                 disablePictureInPicture
                 controlsList="nodownload noplaybackrate nofullscreen"
@@ -373,6 +397,22 @@ export function Lightbox({
                   const el = e.currentTarget;
                   setMediaWidth(el.videoWidth);
                   setMediaHeight(el.videoHeight);
+                  // Restore the user's last volume (getState: subscribing
+                  // would re-render on every tick of a volume drag).
+                  el.volume = useLightboxSoundStore.getState().volume;
+                  // If the browser blocked unmuted autoplay, fall back to
+                  // muted playback rather than leaving the video frozen.
+                  if (soundEnabled && el.paused) {
+                    el.play().catch(() => {
+                      el.muted = true;
+                      el.play().catch(() => {});
+                    });
+                  }
+                }}
+                onVolumeChange={(e) => {
+                  useLightboxSoundStore
+                    .getState()
+                    .setVolume(e.currentTarget.volume);
                 }}
                 ref={(el) => {
                   if (el) {
@@ -383,6 +423,21 @@ export function Lightbox({
               >
                 <source src={selectedImageUrl} type="video/mp4" />
               </video>
+            ) : isAudio ? (
+              <div className="flex h-full w-full items-center justify-center px-4 sm:px-8">
+                <div className="w-full max-w-xl rounded-2xl border border-white/10 bg-gradient-to-br from-white/[0.08] via-white/[0.04] to-white/[0.02] px-4 py-10 sm:px-6">
+                  <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-white/10 ring-1 ring-white/15">
+                    <FontAwesomeIcon
+                      icon={faMusic}
+                      className="text-2xl text-white/70"
+                    />
+                  </div>
+                  <WaveformAudioPlayer
+                    key={selectedImageUrl}
+                    src={selectedImageUrl}
+                  />
+                </div>
+              </div>
             ) : (
               <div className="flex h-full w-full flex-col justify-center">
                 <div
@@ -457,7 +512,7 @@ export function Lightbox({
               </div>
             )}
 
-            {!mediaLoaded && selectedImageUrl && !isVideo && !is3D && (
+            {!mediaLoaded && selectedImageUrl && !isVideo && !is3D && !isAudio && (
               <div className="absolute inset-0 flex items-center justify-center bg-black">
                 <LoadingSpinner className="h-12 w-12 text-base-fg" />
               </div>
@@ -504,6 +559,14 @@ export function Lightbox({
               canMakeVideo && selectedMediaToken && selectedImageUrl
                 ? handleMakeVideo
                 : undefined
+            }
+            onEditOnCanvas={
+              canEditOnCanvas && selectedMediaToken && selectedImageUrl
+                ? handleEditOnCanvas
+                : undefined
+            }
+            onExtractFrames={
+              isVideo && selectedMediaToken ? handleExtractFrames : undefined
             }
             onDelete={
               selectedMediaToken

@@ -7,7 +7,7 @@ use once_cell::sync::Lazy;
 use zip::ZipArchive;
 
 use bucket_paths::legacy::typified_paths::public::media_files::bucket_file_path::MediaFileBucketPath;
-use cloud_storage::bucket_client::BucketClient;
+use cloud_storage::legacy_bucket_client::LegacyBucketClient;
 use filesys::path_to_string::path_to_string;
 use hashing::sha256::sha256_hash_bytes::sha256_hash_bytes;
 use mimetypes::mimetype_for_bytes::get_mimetype_for_bytes;
@@ -40,7 +40,7 @@ pub struct PmxDetails {
 
 pub async fn extract_and_upload_pmx_files(
   zip_container_file_bytes: &[u8],
-  bucket_client: &BucketClient,
+  bucket_client: &LegacyBucketClient,
   prefix: Option<&str>,
   suffix: Option<&str>
 ) -> Result<PmxDetails, PmxError> {
@@ -244,20 +244,16 @@ fn keep_only_largest_pmx_file(mut entries: Vec<PmxZipEntryDetail>) -> Result<Vec
 
 // Some zip files have entries with useless leading directories. This will remove them.
 fn remove_useless_leading_directories(mut entries: Vec<PmxZipEntryDetail>) -> Result<Vec<PmxZipEntryDetail>, PmxError> {
-  let mut maybe_parent_directory_to_remove = None;
-
-  {
+  let maybe_parent_directory_to_remove = {
     let pmx_entries = entries.iter()
         .filter(|entry| entry.is_pmx)
         .collect::<Vec<&PmxZipEntryDetail>>();
 
     match pmx_entries.get(0) {
       None => return Err(PmxError::NoPmxFile),
-      Some(pmx_file) => {
-        maybe_parent_directory_to_remove = pmx_file.enclosed_name.parent().map(|p| p.to_path_buf());
-      }
+      Some(pmx_file) => pmx_file.enclosed_name.parent().map(|p| p.to_path_buf()),
     }
-  }
+  };
 
   if let Some(parent) = maybe_parent_directory_to_remove {
     info!("Common parent: {:?}", parent);

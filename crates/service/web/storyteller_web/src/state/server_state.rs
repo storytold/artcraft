@@ -1,12 +1,9 @@
 use crate::configs::app_startup::username_set::UsernameSet;
 use crate::configs::static_api_tokens::StaticApiTokenSet;
 use crate::http_server::deprecated_endpoints::categories::tts::list_fully_computed_assigned_tts_categories::list_fully_computed_assigned_tts_categories::ModelTokensByCategoryToken;
-use crate::http_server::deprecated_endpoints::leaderboard::get_leaderboard::LeaderboardInfo;
 use crate::http_server::endpoints::media_files::list::list_featured_media_files_handler::ListFeaturedMediaFilesQueryParams;
-use crate::http_server::endpoints::stats::result_transformer::CacheableQueueStats;
 use crate::http_server::endpoints::tts::list_tts_models::TtsModelRecordForResponse;
-use crate::http_server::endpoints::voice_conversion::list_voice_conversion_models_handler::VoiceConversionModel;
-use crate::http_server::session::session_checker::SessionChecker;
+use crate::http_server::user_lookup::user_session::session_utils::session_checker::SessionChecker;
 use crate::http_server::web_utils::redis_rate_limiter::RedisRateLimiter;
 use crate::http_server::web_utils::scoped_temp_dir_creator::ScopedTempDirCreator;
 use crate::startup::setup_inference_providers::InferenceProviders;
@@ -14,7 +11,7 @@ use crate::state::certs::google_sign_in_cert::GoogleSignInCert;
 use crate::state::flags::paging_flags::PagingFlags;
 use crate::state::memory_cache::model_token_to_info_cache::ModelTokenToInfoCache;
 use crate::threads::db_health_checker_thread::db_health_check_status::HealthCheckStatus;
-use crate::util::encrypted_sort_id::SortKeyCrypto;
+use crate::http_server::web_utils::web_sort_key_crypto::WebSortKeyCrypto;
 use crate::util::troll_user_bans::troll_user_ban_list::TrollUserBanList;
 
 use actix_artcraft::sessions::anonymous_visitor_tracking::avt_cookie_manager::AvtCookieManager;
@@ -24,7 +21,8 @@ use actix_helpers::middleware::banned_ip_filter::ip_ban_list::ip_ban_list::IpBan
 use billing_artcraft_component::utils::artcraft_stripe_config::ArtcraftStripeConfigWithClient;
 use billing_component::stripe::stripe_config::StripeConfig;
 use chrono::{DateTime, Utc};
-use cloud_storage::bucket_client::BucketClient;
+use cloud_storage::legacy_bucket_client::LegacyBucketClient;
+use bucket_client::BucketClient as SeedanceVideoBucketClient;
 use elasticsearch::Elasticsearch;
 use memory_caching::arc_ttl_sieve::ArcTtlSieve;
 use memory_caching::single_item_ttl_cache::SingleItemTtlCache;
@@ -33,8 +31,7 @@ use mysql_queries::mediators::firehose_publisher::FirehosePublisher;
 use mysql_queries::queries::generic_inference::web::get_pending_inference_job_count::InferenceQueueLengthResult;
 use mysql_queries::queries::media_files::list::list_featured_media_files::FeaturedMediaFileListPage;
 use mysql_queries::queries::model_categories::list_categories_query_builder::CategoryList;
-use mysql_queries::queries::tts::tts_inference_jobs::get_pending_tts_inference_job_count::TtsQueueLengthResult;
-use opaque_cursors::v2::opaque_cursor_encoder_v2::OpaqueCursorEncoderV2;
+use crate::http_server::web_utils::web_opaque_cursor_encoder_v2::WebOpaqueCursorEncoderV2;
 use pager::client::pager::Pager;
 use redis::Client;
 use redis_caching::redis_ttl_cache::RedisTtlCache;
@@ -84,9 +81,13 @@ pub struct ServerState {
   pub firehose_publisher: FirehosePublisher,
   pub badge_granter: BadgeGranter,
 
-  pub private_bucket_client: BucketClient,
-  pub public_bucket_client: BucketClient,
-  pub auto_gc_bucket_client: BucketClient,
+  pub private_bucket_client: LegacyBucketClient,
+  pub public_bucket_client: LegacyBucketClient,
+  pub auto_gc_bucket_client: LegacyBucketClient,
+
+  /// Optional archive bucket for uploaded Seedance videos. `None` when the
+  /// `SEEDANCE_VIDEO_BUCKET_*` env vars aren't configured.
+  pub seedance_video_bucket: Option<SeedanceVideoBucketClient>,
 
   pub inference_providers: InferenceProviders,
 
@@ -97,8 +98,8 @@ pub struct ServerState {
   /// Where to store audio uploads for w2l
   pub audio_uploads_bucket_root: String,
 
-  pub sort_key_crypto: SortKeyCrypto,
-  pub opaque_cursors: OpaqueCursorEncoderV2,
+  pub sort_key_crypto: WebSortKeyCrypto,
+  pub opaque_cursors: WebOpaqueCursorEncoderV2,
 
   pub ip_ban_list: IpBanList,
 
@@ -160,6 +161,9 @@ pub struct RedisRateLimiters {
 
   /// For uploading files for voice conversion, face animator, etc.
   pub file_upload_logged_in: RedisRateLimiter,
+
+  /// IP-based limiter for the read-only video-info upload endpoint. Fails open.
+  pub video_info_read_only: RedisRateLimiter,
 }
 
 /// In-memory caches of several types.
@@ -182,9 +186,6 @@ pub struct EphemeralInMemoryCaches {
   /// Contains a list of all TTS models.
   pub tts_model_list: SingleItemTtlCache<Vec<TtsModelRecordForResponse>>,
 
-  /// Contains a list of all voice conversion models.
-  pub voice_conversion_model_list: SingleItemTtlCache<Vec<VoiceConversionModel>>,
-
   /// Contains a list of all TTS categories in the database
   /// (before any enrichment with synthetic categories)
   /// This is used in several places (list categories, computed category assignments)
@@ -194,22 +195,10 @@ pub struct EphemeralInMemoryCaches {
   /// This is approximately O(n^3) and recursively generates all super-category membership.
   pub tts_model_category_assignments: SingleItemTtlCache<ModelTokensByCategoryToken>,
 
-  /// Stats on generic inference queue and legacy TTS queue (combined).
-  /// The frontend will consult a distributed cache and use the monotonic DB time as a
-  /// vector clock.
-  pub queue_stats: SingleItemTtlCache<CacheableQueueStats>,
-
   /// Generic inference queue length
   /// The frontend will consult a distributed cache and use the monotonic DB time as a
   /// vector clock.
   pub inference_queue_length: SingleItemTtlCache<InferenceQueueLengthResult>,
-
-  /// TTS queue length
-  /// The frontend will consult a distributed cache and use the monotonic DB time as a
-  /// vector clock.
-  pub tts_queue_length: SingleItemTtlCache<TtsQueueLengthResult>,
-
-  pub leaderboard: SingleItemTtlCache<LeaderboardInfo>,
 
   /// Cache of featured media files
   pub featured_media_files_sieve: ArcTtlSieve<ListFeaturedMediaFilesQueryParams, FeaturedMediaFileListPage>,
@@ -237,32 +226,15 @@ pub struct StaticFeatureFlags {
   /// If we're suffering an outage, set custom text for the alert message.
   pub maybe_status_alert_custom_message: Option<String>,
 
-  /// Disable the live `/v1/stats/queues` endpoint for all users and serve a static value instead.
-  pub disable_unified_queue_stats_endpoint: bool,
-
   /// Disable the live `/v1/model_inference/queue_length` endpoint for all users and serve a static value instead.
   pub disable_inference_queue_length_endpoint: bool,
-
-  /// Disable the live `/tts/queue_length` endpoint for all users and serve a static value instead.
-  pub disable_tts_queue_length_endpoint: bool,
 
   /// Disable the live `/tts/list` endpoint for all users and serve a static value instead.
   pub disable_tts_model_list_endpoint: bool,
 
-  /// Disable the live `/v1/voice_conversion/model_list` endpoint for all users and serve a static value instead.
-  pub disable_voice_conversion_model_list_endpoint: bool,
-
-  /// Tell the frontend client how fast to refresh their view of queue stats.
-  /// During an attack, we may want this to go extremely slow.
-  pub frontend_unified_queue_stats_refresh_interval_millis: u64,
-
   /// Tell the frontend client how fast to refresh their view of the pending inference count.
   /// During an attack, we may want this to go extremely slow.
   pub frontend_pending_inference_refresh_interval_millis: u64,
-
-  /// Tell the frontend client how fast to refresh their view of the pending TTS count.
-  /// During an attack, we may want this to go extremely slow.
-  pub frontend_pending_tts_refresh_interval_millis: u64,
 
   /// For "troll banned" users, what percentage of the time will the service misbehave?
   /// This should be a number over 100.
@@ -286,10 +258,6 @@ pub struct StaticFeatureFlags {
   /// Disable TTS endpoints
   /// If true, respond with 429.
   pub disable_tts: bool,
-
-  /// Disable voice conversion endpoints
-  /// If true, respond with 429.
-  pub disable_voice_conversion: bool,
 
   /// Paging system flags.
   pub paging: PagingFlags,

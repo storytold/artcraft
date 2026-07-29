@@ -72,7 +72,10 @@ const getLabel = (item: any) => {
     case "video":
       return "Video Generation";
     case "dimensional":
+    case "mesh":
       return "3D Mesh";
+    case "splat":
+      return "3D World";
     default:
       return "Generation";
   }
@@ -119,10 +122,14 @@ export default function Library() {
 
   // Map API item to GalleryItem
   const mapApiItem = useCallback((item: any): GalleryItem => {
-    const isDimensional = item.media_class === "dimensional";
-    // Meshes don't have image thumbnails — show cube icon instead
+    // 3D classes: mesh/splat, plus the legacy pre-split "dimensional".
+    const is3D =
+      item.media_class === "dimensional" ||
+      item.media_class === "mesh" ||
+      item.media_class === "splat";
+    // 3D assets don't have image thumbnails — show cube icon instead
     // For videos, getMediaThumbnail tries animated preview first, then template, then cdn_url
-    const thumbnail = isDimensional
+    const thumbnail = is3D
       ? null
       : getMediaThumbnail(item.media_links, item.media_class, {
           size: THUMBNAIL_SIZES.LARGE,
@@ -336,7 +343,7 @@ export default function Library() {
             </div>
 
             {/* Filter tabs */}
-            <div className="flex items-center gap-1 bg-ui-controls/40 rounded-lg p-1 overflow-x-auto">
+            <div className="flex items-center gap-1 bg-ui-controls/40 rounded-xl p-1 overflow-x-auto">
               {FILTERS.map((filter) => (
                 <button
                   key={filter.id}
@@ -390,7 +397,10 @@ export default function Library() {
               <p className="text-white/40 text-sm mb-4">No items yet.</p>
               <div className="flex gap-3">
                 <Link to="/create-image">
-                  <Button variant="primary" className="rounded-full text-sm px-4 py-2">
+                  <Button
+                    variant="primary"
+                    className="rounded-full text-sm px-4 py-2"
+                  >
                     Create Image
                   </Button>
                 </Link>

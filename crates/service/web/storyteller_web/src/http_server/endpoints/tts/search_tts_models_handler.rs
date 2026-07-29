@@ -6,7 +6,8 @@
 use std::collections::HashSet;
 use std::sync::Arc;
 
-use actix_web::{web, HttpRequest, HttpResponse};
+use actix_web::{web, HttpRequest};
+use actix_web::web::Json;
 use chrono::{DateTime, Utc};
 use log::error;
 
@@ -66,8 +67,8 @@ pub struct SearchTtsModelsSuccessResponse {
 // NB: Not using derive_more::Display since Clion doesn't understand it.
 pub async fn search_tts_models_handler(
   _http_request: HttpRequest,
-  request: web::Json<SearchTtsModelsRequest>,
-  server_state: web::Data<Arc<ServerState>>) -> Result<HttpResponse, CommonWebError>
+  request: Json<SearchTtsModelsRequest>,
+  server_state: web::Data<Arc<ServerState>>) -> Result<Json<SearchTtsModelsSuccessResponse>, CommonWebError>
 {
   let results = search_tts_models(
     &server_state.elasticsearch,
@@ -109,16 +110,9 @@ pub async fn search_tts_models_handler(
     new_results.push(result);
   }
 
-  let response = SearchTtsModelsSuccessResponse {
+  Ok(Json(SearchTtsModelsSuccessResponse {
     success: true,
     models: new_results,
-  };
-
-  let body = serde_json::to_string(&response)
-      .map_err(CommonWebError::from_error)?;
-
-  Ok(HttpResponse::Ok()
-      .content_type("application/json")
-      .body(body))
+  }))
 }
 

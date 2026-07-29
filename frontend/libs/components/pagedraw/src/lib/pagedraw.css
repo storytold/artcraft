@@ -3,11 +3,20 @@
 .pegboard-bg {
   inset: 0;
   z-index: 0;
+  /* Soft center lift + edge vignette so the workspace reads as a lit stage
+     with depth instead of a flat slab. Static and GPU-cheap (no animation). */
   background-color: #1b1b1b;
-  background-size: 50px 50px;
-  background-position:
-    0 0,
-    15px 15px;
+  background-image:
+    radial-gradient(
+      130% 100% at 50% 28%,
+      rgba(255, 255, 255, 0.045) 0%,
+      rgba(255, 255, 255, 0) 50%
+    ),
+    radial-gradient(
+      120% 120% at 50% 125%,
+      rgba(0, 0, 0, 0.5) 0%,
+      rgba(0, 0, 0, 0) 55%
+    );
 }
 
 /* react-colorful overrides for the brush color picker in SideToolbar */

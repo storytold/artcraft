@@ -18,9 +18,7 @@ use mysql_queries::queries::users::user::update::set_user_ban_status::{
 use mysql_queries::queries::users::user_profiles::get_user_profile_by_username::get_user_profile_by_username;
 
 use crate::http_server::common_responses::common_web_error::CommonWebError;
-use crate::http_server::web_utils::user_session::require_moderator::{
-  require_moderator, UseDatabase,
-};
+use crate::http_server::user_lookup::user_session::require_moderator::require_moderator;
 use crate::state::server_state::ServerState;
 
 // --- Request ---
@@ -61,14 +59,7 @@ pub async fn moderation_ban_user_handler(
 ) -> Result<Json<ModerationBanUserSuccessResponse>, CommonWebError> {
 
   // 1. Require moderator with ban permissions.
-  let user_session = require_moderator(
-    &http_request,
-    &server_state,
-    UseDatabase::GrabNewConnection,
-  ).await.map_err(|err| {
-    warn!("Moderator check failed: {:?}", err);
-    CommonWebError::NotAuthorized
-  })?;
+  let user_session = require_moderator(&http_request, &server_state.session_checker, &server_state.mysql_pool).await?;
 
   if !user_session.can_ban_users {
     warn!("User {} is not allowed to ban users", user_session.user_token.as_str());

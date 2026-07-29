@@ -63,15 +63,20 @@ export const usePrompt2DStore = create<Prompt2DStore>()((set) => ({
 export { usePrompt2DStore as usePromptStore };
 
 // ----- 3D Prompt Box Store -----
+// Newest first; capped so the history popover stays tidy.
+const MAX_PROMPT_HISTORY = 20;
+
 interface Prompt3DStore {
   prompt: string;
   resolution: Resolution;
   useSystemPrompt: boolean;
   referenceImages: RefImage[];
+  promptHistory: string[];
   setPrompt: (prompt: string) => void;
   setResolution: (resolution: Resolution) => void;
   setUseSystemPrompt: (value: boolean) => void;
   setReferenceImages: (images: RefImage[]) => void;
+  pushPromptHistory: (prompt: string) => void;
 }
 
 export const usePrompt3DStore = create<Prompt3DStore>()((set) => ({
@@ -79,10 +84,22 @@ export const usePrompt3DStore = create<Prompt3DStore>()((set) => ({
   resolution: "1k",
   useSystemPrompt: true,
   referenceImages: [],
+  promptHistory: [],
   setPrompt: (prompt) => set({ prompt }),
   setResolution: (resolution) => set({ resolution }),
   setUseSystemPrompt: (useSystemPrompt) => set({ useSystemPrompt }),
   setReferenceImages: (referenceImages) => set({ referenceImages }),
+  pushPromptHistory: (prompt) =>
+    set((state) => {
+      const trimmed = prompt.trim();
+      if (!trimmed) return state;
+      // De-dupe: drop any existing copy, then unshift so it's newest-first.
+      const next = [
+        trimmed,
+        ...state.promptHistory.filter((p) => p !== trimmed),
+      ].slice(0, MAX_PROMPT_HISTORY);
+      return { promptHistory: next };
+    }),
 }));
 
 // ----- Image Prompt Box Store -----
@@ -170,7 +187,7 @@ export const usePromptVideoStore = create<PromptVideoStore>()((set) => ({
   referenceAudios: [],
   generateWithSound: true,
   duration: null,
-  inputMode: "keyframe",
+  inputMode: "reference",
   generationCount: 1,
   setPrompt: (prompt) => set({ prompt }),
   setResolution: (resolution) => set({ resolution }),
@@ -184,6 +201,75 @@ export const usePromptVideoStore = create<PromptVideoStore>()((set) => ({
   setDuration: (duration) => set({ duration }),
   setInputMode: (inputMode) => set({ inputMode }),
   setGenerationCount: (generationCount) => set({ generationCount }),
+}));
+
+// ----- Audio Prompt Box Store -----
+interface PromptAudioStore {
+  prompt: string;
+  // Style/genre direction (Suno's "tags").
+  stylePrompt: string;
+  // Model id ("suno_music", ...) — audio models come from the omni HTTP API,
+  // not the ClassyModelSelector store.
+  selectedModelId: string | null;
+  // Suno toggles
+  isInstrumental: boolean;
+  keepLyrics: boolean;
+  isLoopable: boolean;
+  // Suno Sounds beat controls. bpm null = "Auto" (omitted from the request).
+  bpm: number | null;
+  musicalKey: string;
+  // Seed Audio output shaping.
+  sampleRateHz: number | null;
+  speed: number;
+  volume: number;
+  pitch: number;
+  referenceAudios: RefAudio[];
+  referenceImages: RefImage[];
+  setPrompt: (prompt: string) => void;
+  setStylePrompt: (stylePrompt: string) => void;
+  setSelectedModelId: (modelId: string | null) => void;
+  setIsInstrumental: (value: boolean) => void;
+  setKeepLyrics: (value: boolean) => void;
+  setIsLoopable: (value: boolean) => void;
+  setBpm: (bpm: number | null) => void;
+  setMusicalKey: (musicalKey: string) => void;
+  setSampleRateHz: (sampleRateHz: number | null) => void;
+  setSpeed: (speed: number) => void;
+  setVolume: (volume: number) => void;
+  setPitch: (pitch: number) => void;
+  setReferenceAudios: (audios: RefAudio[]) => void;
+  setReferenceImages: (images: RefImage[]) => void;
+}
+
+export const usePromptAudioStore = create<PromptAudioStore>()((set) => ({
+  prompt: "",
+  stylePrompt: "",
+  selectedModelId: null,
+  isInstrumental: false,
+  keepLyrics: false,
+  isLoopable: false,
+  bpm: null,
+  musicalKey: "auto",
+  sampleRateHz: null,
+  speed: 1,
+  volume: 1,
+  pitch: 0,
+  referenceAudios: [],
+  referenceImages: [],
+  setPrompt: (prompt) => set({ prompt }),
+  setStylePrompt: (stylePrompt) => set({ stylePrompt }),
+  setSelectedModelId: (selectedModelId) => set({ selectedModelId }),
+  setIsInstrumental: (isInstrumental) => set({ isInstrumental }),
+  setKeepLyrics: (keepLyrics) => set({ keepLyrics }),
+  setIsLoopable: (isLoopable) => set({ isLoopable }),
+  setBpm: (bpm) => set({ bpm }),
+  setMusicalKey: (musicalKey) => set({ musicalKey }),
+  setSampleRateHz: (sampleRateHz) => set({ sampleRateHz }),
+  setSpeed: (speed) => set({ speed }),
+  setVolume: (volume) => set({ volume }),
+  setPitch: (pitch) => set({ pitch }),
+  setReferenceAudios: (referenceAudios) => set({ referenceAudios }),
+  setReferenceImages: (referenceImages) => set({ referenceImages }),
 }));
 
 // ----- Edit Prompt Box Store -----
@@ -260,7 +346,6 @@ interface CharactersStore {
   characters: StoredCharacter[];
   loaded: boolean;
   setCharacters: (characters: StoredCharacter[]) => void;
-  addCharacter: (character: StoredCharacter) => void;
   updateCharacter: (token: string, updates: Partial<StoredCharacter>) => void;
   removeCharacter: (token: string) => void;
   setLoaded: (loaded: boolean) => void;
@@ -270,8 +355,6 @@ export const useCharactersStore = create<CharactersStore>()((set) => ({
   characters: [],
   loaded: false,
   setCharacters: (characters) => set({ characters }),
-  addCharacter: (character) =>
-    set((state) => ({ characters: [...state.characters, character] })),
   updateCharacter: (token, updates) =>
     set((state) => ({
       characters: state.characters.map((c) =>

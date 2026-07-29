@@ -6,16 +6,17 @@
 use std::sync::Arc;
 
 use actix_web::web::Path;
-use actix_web::{web, HttpRequest, HttpResponse};
+use actix_web::web::Json;
+use actix_web::{web, HttpRequest};
 use log::{error, warn};
 
+use artcraft_api_defs::common::responses::simple_generic_json_success::SimpleGenericJsonSuccess;
 use enums::common::visibility::Visibility;
 use http_server_common::request::get_request_ip::get_request_ip;
 use mysql_queries::queries::tts::tts_results::edit_tts_result::{edit_tts_result, CreatorOrModFields, EditTtsResultArgs};
 use mysql_queries::queries::tts::tts_results::query_tts_result::select_tts_result_by_token;
 
 use crate::http_server::common_responses::common_web_error::CommonWebError;
-use crate::http_server::web_utils::response_success_helpers::simple_json_success;
 use crate::state::server_state::ServerState;
 
 /// For the URL PathInfo
@@ -33,8 +34,8 @@ pub struct EditTtsResultRequest {
 pub async fn edit_tts_inference_result_handler(
   http_request: HttpRequest,
   path: Path<EditTtsResultPathInfo>,
-  request: web::Json<EditTtsResultRequest>,
-  server_state: web::Data<Arc<ServerState>>) -> Result<HttpResponse, CommonWebError>
+  request: Json<EditTtsResultRequest>,
+  server_state: web::Data<Arc<ServerState>>) -> Result<Json<SimpleGenericJsonSuccess>, CommonWebError>
 {
   let maybe_user_session = server_state
       .session_checker
@@ -120,5 +121,5 @@ pub async fn edit_tts_inference_result_handler(
         CommonWebError::from_anyhow_error(err)
       })?;
 
-  Ok(simple_json_success())
+  Ok(Json(SimpleGenericJsonSuccess { success: true }))
 }

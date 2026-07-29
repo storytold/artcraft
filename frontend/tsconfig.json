@@ -55,6 +55,9 @@
       "path": "./apps/artcraft-website"
     },
     {
+      "path": "./apps/video-info-website"
+    },
+    {
       "path": "./apps/artcraft-webapp"
     },
     {
@@ -203,6 +206,18 @@
     },
     {
       "path": "./libs/components/video-editor"
+    },
+    {
+      "path": "./libs/components/generation-list"
+    },
+    {
+      "path": "./libs/components/moodboard"
+    },
+    {
+      "path": "./libs/omni-gen"
+    },
+    {
+      "path": "./libs/components/audio-player"
     }
   ]
 }

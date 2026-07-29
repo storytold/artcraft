@@ -10,7 +10,7 @@ use utoipa::ToSchema;
 
 use http_server_common::response::response_error_helpers::to_simple_json_error;
 
-use crate::http_server::session::session_checker::SessionChecker;
+use crate::http_server::user_lookup::user_session::session_utils::session_checker::SessionChecker;
 use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::state::server_state::ServerState;
 

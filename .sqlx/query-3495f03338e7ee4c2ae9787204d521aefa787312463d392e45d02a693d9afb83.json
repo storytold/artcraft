@@ -1,0 +1,12 @@
+{
+  "db_name": "MySQL",
+  "query": "DELETE FROM media_file_tags WHERE tag_token = ?",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": []
+  },
+  "hash": "3495f03338e7ee4c2ae9787204d521aefa787312463d392e45d02a693d9afb83"
+}

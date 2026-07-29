@@ -17,7 +17,7 @@ use crate::http_server::endpoints::folders::folder::folder_info_conversion::{
   build_folder_thumbnails_lookup, folder_row_to_info,
 };
 use crate::http_server::endpoints::media_files::helpers::get_media_domain::get_media_domain;
-use crate::http_server::web_utils::user_session::require_user_session_using_connection::require_user_session_using_connection;
+use crate::http_server::user_lookup::user_session::require_user_session::require_user_session;
 use crate::state::server_state::ServerState;
 
 const CURSOR_NAME: &str = "folders_all";
@@ -48,22 +48,14 @@ pub async fn list_folders_handler(
     CommonWebError::from_error(err)
   })?;
 
-  let user_session = require_user_session_using_connection(
-    &http_request, &server_state.session_checker, &mut conn,
-  ).await.map_err(|_| CommonWebError::NotAuthorized)?;
+  let user_session = require_user_session(&http_request, &server_state.session_checker, &mut *conn).await?;
 
   let limit = query.limit.unwrap_or(DEFAULT_LIMIT).min(MAX_LIMIT);
 
   let maybe_cursor_id = match &query.cursor {
     None => None,
     Some(cursor_str) => {
-      let decoded = server_state.opaque_cursors
-        .decode_cursor_expecting_name(CURSOR_NAME, cursor_str)
-        .map_err(|err| {
-          warn!("Failed to decode cursor: {:?}", err);
-          CommonWebError::BadInputWithSimpleMessage("Invalid cursor".to_string())
-        })?;
-      decoded.last_id
+      Some(server_state.opaque_cursors.decode_last_id_cursor(CURSOR_NAME, cursor_str)?)
     }
   };
 
@@ -78,12 +70,16 @@ pub async fn list_folders_handler(
     CommonWebError::from_error(err)
   })?;
 
-  let maybe_cursor = rows.last().map(|last| {
-    server_state.opaque_cursors.encode_last_id_cursor(CURSOR_NAME, last.id)
-  }).transpose().map_err(|err| {
-    warn!("Failed to encode cursor: {:?}", err);
-    CommonWebError::server_error_with_message("Failed to encode cursor")
-  })?;
+  // Only hand out a next-page cursor when this page was full. A short page
+  // means the list is exhausted, and emitting a cursor anyway would make
+  // clients fetch one guaranteed-empty trailing page.
+  let maybe_cursor = if rows.len() == limit as usize {
+    rows.last()
+        .map(|last| server_state.opaque_cursors.encode_last_id_cursor(CURSOR_NAME, last.id))
+        .transpose()?
+  } else {
+    None
+  };
 
   let media_domain = get_media_domain(&http_request);
   let server_environment = server_state.server_environment;

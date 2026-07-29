@@ -19,7 +19,7 @@ name = "artcraft_app_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]
-tauri-build = { version = "2.1.1", features = [] }
+tauri-build = { version = "2.6.2", features = [] }
 
 [dependencies]
 # Workspace hack (faster compile times)

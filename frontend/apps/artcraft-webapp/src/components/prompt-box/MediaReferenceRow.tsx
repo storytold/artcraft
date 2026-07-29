@@ -3,7 +3,6 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faMusic,
   faPlay,
-  faPlus,
   faSpinnerThird,
   faStop,
   faVideo,
@@ -12,6 +11,7 @@ import {
 import { twMerge } from "tailwind-merge";
 import { UploaderStates } from "@storyteller/common";
 import { toast } from "../toast/toast";
+import { AddButton } from "./ImagePromptRow";
 import type { RefVideo, RefAudio } from "./types";
 import {
   uploadVideo,
@@ -27,10 +27,12 @@ interface MediaReferenceRowProps {
   onReferenceVideosChange: (videos: RefVideo[]) => void;
   maxVideoCount: number;
   maxVideoRefDuration: number;
+  onPickVideoFromLibrary?: () => void;
   referenceAudios: RefAudio[];
   onReferenceAudiosChange: (audios: RefAudio[]) => void;
   maxAudioCount: number;
   maxAudioRefDuration: number;
+  onPickAudioFromLibrary?: () => void;
   className?: string;
 }
 
@@ -41,10 +43,12 @@ export const MediaReferenceRow = ({
   onReferenceVideosChange,
   maxVideoCount,
   maxVideoRefDuration,
+  onPickVideoFromLibrary,
   referenceAudios,
   onReferenceAudiosChange,
   maxAudioCount,
   maxAudioRefDuration,
+  onPickAudioFromLibrary,
   className,
 }: MediaReferenceRowProps) => {
   const videoInputRef = useRef<HTMLInputElement>(null);
@@ -209,7 +213,7 @@ export const MediaReferenceRow = ({
       />
       <div
         className={twMerge(
-          "glass flex flex-col sm:flex-row rounded-2xl sm:rounded-none",
+          "glass flex flex-col sm:flex-row rounded-2xl",
           className,
         )}
         onMouseDown={(e) => e.stopPropagation()}
@@ -251,15 +255,11 @@ export const MediaReferenceRow = ({
                 </div>
               )}
               {canAddVideo && (
-                <button
-                  onClick={() => videoInputRef.current?.click()}
-                  className="flex aspect-square w-10 sm:w-14 items-center justify-center overflow-hidden rounded-lg border-2 border-dashed border-white/25 bg-white/5 transition-all hover:border-white/40 hover:bg-white/10"
-                >
-                  <FontAwesomeIcon
-                    icon={faPlus}
-                    className="text-2xl text-white/80"
-                  />
-                </button>
+                <AddButton
+                  onUpload={() => videoInputRef.current?.click()}
+                  onPickFromLibrary={onPickVideoFromLibrary}
+                  title="Add video"
+                />
               )}
             </div>
           </div>
@@ -305,15 +305,11 @@ export const MediaReferenceRow = ({
                 </div>
               )}
               {canAddAudio && (
-                <button
-                  onClick={() => audioInputRef.current?.click()}
-                  className="flex aspect-square w-10 sm:w-14 items-center justify-center overflow-hidden rounded-lg border-2 border-dashed border-white/25 bg-white/5 transition-all hover:border-white/40 hover:bg-white/10"
-                >
-                  <FontAwesomeIcon
-                    icon={faPlus}
-                    className="text-2xl text-white/80"
-                  />
-                </button>
+                <AddButton
+                  onUpload={() => audioInputRef.current?.click()}
+                  onPickFromLibrary={onPickAudioFromLibrary}
+                  title="Add audio"
+                />
               )}
             </div>
           </div>

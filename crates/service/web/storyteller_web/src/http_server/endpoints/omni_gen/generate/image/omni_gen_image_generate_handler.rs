@@ -15,6 +15,7 @@ use enums::common::generation::common_generation_mode::CommonGenerationMode;
 use enums::common::generation::common_model_type::CommonModelType;
 use enums::common::generation_provider::GenerationProvider;
 use http_server_common::request::get_request_ip::get_request_ip;
+use enums::by_table::debug_logs::debug_log_level::DebugLogLevel;
 use mysql_queries::queries::debug_logs::insert_debug_log::{insert_debug_log, InsertDebugLogArgs};
 use mysql_queries::queries::generic_inference::api_providers::seedance2pro::insert_generic_inference_job_for_seedance2pro_queue_with_apriori_job_token::KinoviVersion;
 use mysql_queries::queries::idepotency_tokens::insert_idempotency_token::insert_idempotency_token;
@@ -26,13 +27,14 @@ use tokens::tokens::generic_inference_jobs::InferenceJobToken;
 use tokens::tokens::non_unique::debug_logs_event_token::DebugLogEventToken;
 
 use crate::http_server::common_responses::common_web_error::CommonWebError;
+use crate::http_server::endpoints::generate::common::generation_debug_logs::GenerationDebugLogContext;
 use crate::http_server::endpoints::generate::common::payments_error_test::payments_error_test;
 use crate::http_server::endpoints::omni_gen::generate::image::hydrate_to_router_request::hydrate_to_router_request;
 use crate::http_server::endpoints::omni_gen::generate::image::insert_db_job::insert_fal_job::{insert_fal_job, InsertFalJobArgs};
 use crate::http_server::endpoints::omni_gen::generate::image::insert_db_job::insert_seedance2pro_jobs::{insert_seedance2pro_jobs, InsertSeedance2proJobsArgs};
 use crate::http_server::endpoints::omni_gen::generate::image::insert_db_job::shared_job_args::SharedJobArgs;
 use crate::http_server::endpoints::omni_gen::generate::image::pipeline_v2::run_pipeline_v2::{run_pipeline_v2, RunPipelineV2Args};
-use crate::http_server::session::lookup::user_session_feature_flags::UserSessionFeatureFlags;
+use crate::http_server::user_lookup::user_session::session_utils::lookup::user_session_feature_flags::UserSessionFeatureFlags;
 use crate::http_server::validations::validate_idempotency_token_format::validate_idempotency_token_format;
 use crate::http_server::web_utils::get_request_platform_type::get_request_platform_type;
 use crate::state::server_state::ServerState;
@@ -130,10 +132,16 @@ pub async fn omni_gen_image_generate_handler(
 
   // ==================== DEBUG LOG: HTTP REQUEST ==================== //
 
+  let ip_address = get_request_ip(&http_request);
+  let request_url = http_request.uri().to_string();
+
   if let Err(err) = insert_debug_log(InsertDebugLogArgs {
     apriori_debug_log_event_token: Some(&debug_log_event_token),
     maybe_creator_user_token: Some(user_token),
     debug_log_type: DebugLogType::HttpRequest,
+    maybe_log_level: Some(DebugLogLevel::Info),
+    maybe_ip_address: Some(&ip_address),
+    maybe_url: Some(&request_url),
     message: &serde_json::to_string(&*request).unwrap_or_default(),
     mysql_executor: &mut *mysql_connection,
     phantom: Default::default(),
@@ -143,34 +151,59 @@ pub async fn omni_gen_image_generate_handler(
 
   // ==================== PIPELINE ==================== //
 
+  // NB: The pipeline takes over the connection for its remaining pre-request DB writes (billing,
+  // outbound provider request debug log) and releases it before the (slow, external) generation
+  // call — holding a pool slot across that call is what starves the pool and causes PoolTimedOut
+  // on unrelated endpoints. We re-acquire below to write the result.
+
+  let debug_log_context = GenerationDebugLogContext {
+    event_token: &debug_log_event_token,
+    user_token,
+    ip_address: &ip_address,
+    request_url: &request_url,
+  };
+
   let pipeline_result = run_pipeline_v2(RunPipelineV2Args {
     router_builder: &router_builder,
     server_state: &server_state,
-    mysql_connection: &mut mysql_connection,
     user_token,
     resolved_media: &resolved_media,
-  }).await?;
+    debug_log_context: &debug_log_context,
+    mysql_connection,
+  }).await;
 
-  // ==================== DEBUG LOG: FAL REQUEST ==================== //
+  // ==================== DEBUG LOG: PIPELINE ERROR ==================== //
 
-  if let GenerateImageResponse::Fal(ref fal_payload) = pipeline_result.response {
-    if let Some(ref outbound_request) = fal_payload.maybe_outbound_request {
-      if let Err(err) = insert_debug_log(InsertDebugLogArgs {
-        apriori_debug_log_event_token: Some(&debug_log_event_token),
-        maybe_creator_user_token: Some(user_token),
-        debug_log_type: DebugLogType::FalRequest,
-        message: &format!("{:#?}", outbound_request),
-        mysql_executor: &mut *mysql_connection,
-        phantom: Default::default(),
-      }).await {
-        warn!("Failed to insert Fal request debug log: {:?}", err);
+  let pipeline_result = match pipeline_result {
+    Ok(result) => result,
+    Err(err) => {
+      // Best-effort error log; never mask the original error.
+      if let Ok(mut error_log_connection) = server_state.mysql_pool.acquire().await {
+        if let Err(log_err) = insert_debug_log(InsertDebugLogArgs {
+          apriori_debug_log_event_token: Some(&debug_log_event_token),
+          maybe_creator_user_token: Some(user_token),
+          debug_log_type: DebugLogType::BackendFailure,
+          maybe_log_level: Some(DebugLogLevel::Error),
+          maybe_ip_address: Some(&ip_address),
+          maybe_url: Some(&request_url),
+          message: &format!("Image generation pipeline failed: {:?}", err),
+          mysql_executor: &mut *error_log_connection,
+          phantom: Default::default(),
+        }).await {
+          warn!("Failed to insert pipeline error debug log: {:?}", log_err);
+        }
       }
+      return Err(err);
     }
-  }
+  };
+
+  let mut mysql_connection = server_state.mysql_pool.acquire().await?;
+
+  // NB: Outbound provider requests (Fal/Grok/Kinovi) are debug-logged inside
+  // the pipeline BEFORE the send, so the payload is captured even on failure.
 
   // ==================== WRITE RESULT ==================== //
 
-  let ip_address = get_request_ip(&http_request);
   let maybe_platform_type = get_request_platform_type(&http_request);
 
   let mut transaction = mysql_connection
@@ -190,6 +223,7 @@ pub async fn omni_gen_image_generate_handler(
   };
 
   let prompt_result = insert_prompt(InsertPromptArgs {
+    maybe_bitrate: None,
     maybe_apriori_prompt_token: None,
     prompt_type: PromptType::ArtcraftApp,
     maybe_creator_user_token: Some(user_token),

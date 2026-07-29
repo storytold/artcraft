@@ -142,7 +142,8 @@ pub async fn process_upload_media_file(
   let ip_address = get_request_ip(&http_request);
 
   let maybe_user_token = maybe_user_session
-      .map(|session| session.get_strongly_typed_user_token());
+      .as_ref()
+      .map(|session| session.get_user_token());
 
   let maybe_file_size_bytes = upload_media_request.file_bytes
       .as_ref()
@@ -169,7 +170,6 @@ pub async fn process_upload_media_file(
   let file_size_bytes = bytes.len();
 
   let mut maybe_duration_millis = None;
-  let mut maybe_codec_name = None;
   let mut media_file_type = None;
 
   let mut is_spz = false;
@@ -203,26 +203,11 @@ pub async fn process_upload_media_file(
     //  do not have any open issues filed. They may simply be too old:
     //  - .wma (audio/x-ms-wma)
     //  - .avi (video/x-msvideo)
-    media_file_type = match mimetype {
-      // Audio
-      "audio/aac" /* .aac */ => Some(MediaFileType::Audio),
-      "audio/m4a" /* .m4a */ => Some(MediaFileType::Audio),
-      "audio/mpeg" /* .mp3 */ => Some(MediaFileType::Audio),
-      "audio/ogg" /* .ogg */ => Some(MediaFileType::Audio),
-      "audio/opus" /* .opus */ => Some(MediaFileType::Audio),
-      "audio/x-flac" /* .flac */ => Some(MediaFileType::Audio),
-      "audio/x-wav" /* .wav */ => Some(MediaFileType::Audio),
-      // Image — `webp` has no dedicated variant yet
-      "image/gif" /* .gif */ => Some(MediaFileType::Gif),
-      "image/jpeg" /* .jpg */ => Some(MediaFileType::Jpg),
-      "image/png" /* .png */ => Some(MediaFileType::Png),
-      "image/webp" /* .webp */ => Some(MediaFileType::Image),
-      // Video
-      "video/mp4" /* .mp4 */ => Some(MediaFileType::Video),
-      "video/quicktime" /* .mov */ => Some(MediaFileType::Video),
-      "video/webm" /* .webm */ => Some(MediaFileType::Video),
-      _ => None,
-    };
+    // NB: mimetypes are gated by the `allowed_mimetypes` check above; this only
+    // maps the already-permitted set to concrete media types.
+    let maybe_upload_filename = upload_media_request.file_name.as_deref();
+    media_file_type = MediaFileType::try_from_mime_type(mimetype)
+        .or_else(|| maybe_upload_filename.and_then(MediaFileType::try_from_filename_or_extension));
 
     let do_audio_decode = match mimetype {
       // TODO: Revisit when Safari can send us this metadata consistently
@@ -272,7 +257,6 @@ pub async fn process_upload_media_file(
       })?;
 
       maybe_duration_millis = basic_info.duration_millis;
-      maybe_codec_name = basic_info.codec_name;
     }
   }
 
@@ -312,28 +296,7 @@ pub async fn process_upload_media_file(
     },
   };
 
-  let media_file_class = match media_file_type {
-    MediaFileType::Audio => MediaFileClass::Audio,
-    MediaFileType::Image => MediaFileClass::Image,
-    MediaFileType::Video => MediaFileClass::Video,
-    MediaFileType::Bvh => MediaFileClass::Dimensional,
-    MediaFileType::Fbx => MediaFileClass::Dimensional,
-    MediaFileType::Glb => MediaFileClass::Dimensional,
-    MediaFileType::Gltf => MediaFileClass::Dimensional,
-    MediaFileType::Spz => MediaFileClass::Dimensional,
-    MediaFileType::SceneRon => MediaFileClass::Dimensional,
-    MediaFileType::SceneJson => MediaFileClass::Dimensional,
-    MediaFileType::Pmd => MediaFileClass::Dimensional,
-    MediaFileType::Vmd => MediaFileClass::Dimensional,
-    MediaFileType::Csv => MediaFileClass::Dimensional,
-    MediaFileType::Pmx => MediaFileClass::Dimensional,
-    MediaFileType::Jpg => MediaFileClass::Image,
-    MediaFileType::Png => MediaFileClass::Image,
-    MediaFileType::Gif => MediaFileClass::Image,
-    MediaFileType::Mp4 => MediaFileClass::Video,
-    MediaFileType::Wav => MediaFileClass::Audio,
-    MediaFileType::Mp3 => MediaFileClass::Audio,
-  };
+  let media_file_class = media_file_type.to_media_class();
 
   let upload_type = match upload_media_request.media_source {
     MediaFileUploadSource::Unknown => UploadType::Filesystem,
@@ -392,7 +355,7 @@ pub async fn process_upload_media_file(
       })?;
 
   let media_token = MediaFileInsertBuilder::new()
-      .maybe_creator_user(maybe_user_token.as_ref())
+      .maybe_creator_user(maybe_user_token)
       .maybe_creator_anonymous_visitor(maybe_avt_token.as_ref())
       .creator_ip_address(&ip_address)
       .public_bucket_directory_hash(&public_upload_path)
@@ -402,6 +365,7 @@ pub async fn process_upload_media_file(
       .creator_set_visibility(creator_set_visibility)
       .mime_type(mime_type)
       .file_size_bytes(file_size_bytes as u64)
+      .maybe_duration_millis(maybe_duration_millis)
       .checksum_sha2(&hash)
       .maybe_title(upload_media_request.title.as_deref())
       .maybe_origin_filename(upload_media_request.file_name.as_deref())
@@ -417,7 +381,7 @@ pub async fn process_upload_media_file(
   //let (token, record_id) = insert_media_file_from_file_upload(InsertMediaFileFromUploadArgs {
   //  maybe_media_class: Some(media_file_class), // DONE
   //  media_file_type, // DONE
-  //  maybe_creator_user_token: maybe_user_token.as_ref(), // DONE
+  //  maybe_creator_user_token: maybe_user_token, // DONE
   //  maybe_creator_anonymous_visitor_token: maybe_avt_token.as_ref(), // DONE
   //  creator_ip_address: &ip_address, // DONE
   //  creator_set_visibility, // DONE

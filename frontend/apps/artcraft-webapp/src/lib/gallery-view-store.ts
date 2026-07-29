@@ -1,23 +1,6 @@
-import { create } from "zustand";
-import { persist } from "zustand/middleware";
-
-// View mode for the create-page generation galleries. Shared between the
-// create-image / create-video pages and the TopBar toggle, and persisted so
-// the user's preference survives reloads and carries across both pages.
-
-export type GalleryViewMode = "grid" | "list";
-
-interface GalleryViewState {
-  viewMode: GalleryViewMode;
-  setViewMode: (mode: GalleryViewMode) => void;
-}
-
-export const useGalleryViewStore = create<GalleryViewState>()(
-  persist(
-    (set) => ({
-      viewMode: "grid",
-      setViewMode: (viewMode) => set({ viewMode }),
-    }),
-    { name: "artcraft-gallery-view" },
-  ),
-);
+// Moved to the shared generation-list lib (used by both webapp and desktop).
+// Re-exported so every webapp consumer shares the lib's store instance.
+export {
+  useGalleryViewStore,
+  type GalleryViewMode,
+} from "@storyteller/ui-generation-list";

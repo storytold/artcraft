@@ -1,0 +1,146 @@
+{
+  "db_name": "MySQL",
+  "query": "\nSELECT\n  d.id as `id: u64`,\n  d.event_token as `event_token: tokens::tokens::non_unique::debug_logs_event_token::DebugLogEventToken`,\n  d.debug_log_type as `debug_log_type: enums::by_table::debug_logs::debug_log_type::DebugLogType`,\n  d.maybe_log_level as `maybe_log_level: enums::by_table::debug_logs::debug_log_level::DebugLogLevel`,\n  d.maybe_creator_user_token as `maybe_creator_user_token: tokens::tokens::users::UserToken`,\n  d.maybe_ip_address,\n  d.maybe_url,\n  d.message,\n  d.created_at,\n  u.display_name as `maybe_user_display_name?`,\n  u.username as `maybe_user_username?`,\n  u.email_gravatar_hash as `maybe_user_gravatar_hash?`\nFROM debug_logs d\nLEFT OUTER JOIN users u\n  ON u.token = d.maybe_creator_user_token\nWHERE d.event_token = ?\nORDER BY d.id ASC\nLIMIT ?\n    ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id: u64",
+        "type_info": {
+          "type": "LongLong",
+          "flags": "NOT_NULL | PRIMARY_KEY | UNSIGNED | AUTO_INCREMENT",
+          "char_set": 63,
+          "max_size": 20
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "event_token: tokens::tokens::non_unique::debug_logs_event_token::DebugLogEventToken",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NOT_NULL | MULTIPLE_KEY | BINARY | NO_DEFAULT_VALUE",
+          "char_set": 224,
+          "max_size": 128
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "debug_log_type: enums::by_table::debug_logs::debug_log_type::DebugLogType",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NOT_NULL | MULTIPLE_KEY | BINARY | NO_DEFAULT_VALUE",
+          "char_set": 224,
+          "max_size": 96
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "maybe_log_level: enums::by_table::debug_logs::debug_log_level::DebugLogLevel",
+        "type_info": {
+          "type": "VarString",
+          "flags": "MULTIPLE_KEY | BINARY",
+          "char_set": 224,
+          "max_size": 64
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "maybe_creator_user_token: tokens::tokens::users::UserToken",
+        "type_info": {
+          "type": "VarString",
+          "flags": "MULTIPLE_KEY | BINARY",
+          "char_set": 224,
+          "max_size": 128
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "maybe_ip_address",
+        "type_info": {
+          "type": "VarString",
+          "flags": "BINARY",
+          "char_set": 224,
+          "max_size": 160
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "maybe_url",
+        "type_info": {
+          "type": "VarString",
+          "flags": "BINARY",
+          "char_set": 224,
+          "max_size": 1020
+        }
+      },
+      {
+        "ordinal": 7,
+        "name": "message",
+        "type_info": {
+          "type": "Blob",
+          "flags": "NOT_NULL | BLOB | BINARY | NO_DEFAULT_VALUE",
+          "char_set": 224,
+          "max_size": 67108860
+        }
+      },
+      {
+        "ordinal": 8,
+        "name": "created_at",
+        "type_info": {
+          "type": "Datetime",
+          "flags": "NOT_NULL | MULTIPLE_KEY | BINARY",
+          "char_set": 63,
+          "max_size": 19
+        }
+      },
+      {
+        "ordinal": 9,
+        "name": "maybe_user_display_name?",
+        "type_info": {
+          "type": "VarString",
+          "flags": "BINARY | NO_DEFAULT_VALUE",
+          "char_set": 224,
+          "max_size": 80
+        }
+      },
+      {
+        "ordinal": 10,
+        "name": "maybe_user_username?",
+        "type_info": {
+          "type": "VarString",
+          "flags": "UNIQUE_KEY | BINARY | NO_DEFAULT_VALUE",
+          "char_set": 224,
+          "max_size": 80
+        }
+      },
+      {
+        "ordinal": 11,
+        "name": "maybe_user_gravatar_hash?",
+        "type_info": {
+          "type": "String",
+          "flags": "BINARY | NO_DEFAULT_VALUE",
+          "char_set": 224,
+          "max_size": 128
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      true,
+      true,
+      true,
+      true,
+      false,
+      false,
+      true,
+      true,
+      true
+    ]
+  },
+  "hash": "e9a149ffc963a59019fdd69bd53128fad946856d432108bf9b923dfeaf2442c5"
+}

@@ -30,6 +30,9 @@
       "path": "../loading-spinner"
     },
     {
+      "path": "../audio-player"
+    },
+    {
       "path": "../../tauri-api"
     },
     {

@@ -1,7 +1,6 @@
 use enums::common::generation::common_video_model::CommonVideoModel as CommonVideoModelEnum;
 
 use crate::errors::artcraft_router_error::ArtcraftRouterError;
-use crate::errors::client_error::ClientError;
 use crate::generate::generate_video::generate_video_request_builder::GenerateVideoRequestBuilder;
 use crate::generate::generate_video::providers::artcraft::build_common::{
   build_artcraft_omni_video_request, SupportedResolutions, UltraWideSupport,
@@ -14,7 +13,7 @@ use crate::generate::generate_video::video_generation_request::VideoGenerationRe
 ///
 /// Same constraints as the v1 variant — xAI v1.5 still supports only 480p
 /// and 720p and no 21:9 ultra-wide. The on-wire model identifier is
-/// `grok-imagine-video-1.5-preview`; the cost calculator in
+/// `grok-imagine-video-1.5`; the cost calculator in
 /// [`super::cost`] keys off that to apply the v1.5 pricing tier (with a 5%
 /// ArtCraft markup on top of the upstream rates).
 pub fn build_artcraft_grok_imagine_video_1p5(
@@ -23,21 +22,14 @@ pub fn build_artcraft_grok_imagine_video_1p5(
   let request = build_artcraft_omni_video_request(
     builder,
     CommonVideoModelEnum::GrokImagineVideo1p5,
-    SupportedResolutions::Fast,
+    SupportedResolutions::Full,
     UltraWideSupport::Unsupported,
   )?;
 
-  // xAI's v1.5 model rejects text-to-video at the server. Bounce here rather
-  // than spending an upstream call to learn the same thing.
-  if request.start_frame_image_media_token.is_none()
-    && request.reference_image_media_tokens.as_ref().map_or(true, |v| v.is_empty())
-  {
-    return Err(ArtcraftRouterError::Client(ClientError::ModelDoesNotSupportOption {
-      field: "image_inputs",
-      value: "text-to-video isn't supported by grok-imagine-video-1.5-preview; supply a start_frame or at least one reference image".to_string(),
-    }));
-  }
-
+  // NB: xAI's v1.5 model rejects text-to-video at the server, but that is
+  // NOT enforced here — the cost path builds image-less requests to price
+  // them while the user is still composing. The generate endpoints reject
+  // image-less v1.5 requests at the handler layer (validate_when_image_required).
   let state = ArtcraftGrokImagineVideo1p5RequestState { request };
 
   Ok(VideoGenerationDraftOrRequest::Request(
@@ -113,10 +105,10 @@ mod tests {
     }
 
     #[test]
-    fn res_1080p_downgrades_to_720p() {
-      // SupportedResolutions::Fast caps at 720p (Grok Imagine doesn't render 1080p output).
+    fn res_1080p_is_supported() {
+      // Grok Imagine 1.5 produces genuine 1080p output.
       let req = unwrap_request(make_builder(|b| { b.resolution = Some(RouterResolution::TenEightyP); }));
-      assert_eq!(req.request.resolution, Some(CommonResolutionEnum::SevenTwentyP));
+      assert_eq!(req.request.resolution, Some(CommonResolutionEnum::TenEightyP));
     }
 
     #[test]
@@ -128,6 +120,15 @@ mod tests {
 
   mod media_token_tests {
     use super::*;
+
+    #[test]
+    fn builds_without_any_image_inputs() {
+      // The cost path prices image-less requests while the user is still
+      // composing; the generate endpoints enforce the image requirement.
+      let req = unwrap_request(make_builder(|_| {}));
+      assert!(req.request.start_frame_image_media_token.is_none());
+      assert!(req.request.reference_image_media_tokens.is_none());
+    }
 
     #[test]
     fn start_frame_token_passed_through() {
@@ -180,12 +181,6 @@ mod tests {
   fn make_builder(f: impl FnOnce(&mut GenerateVideoRequestBuilder)) -> GenerateVideoRequestBuilder {
     let mut builder = base_builder();
     f(&mut builder);
-    // v1.5 requires an input image; tests that don't explicitly exercise the
-    // image-handling paths get a default MediaFileToken start_frame so they
-    // sail past the no-image guard in `build()`.
-    if builder.start_frame.is_none() && builder.reference_images.is_none() {
-      builder.start_frame = Some(ImageRef::MediaFileToken(MediaFileToken::new("mf_default".to_string())));
-    }
     builder
   }
 

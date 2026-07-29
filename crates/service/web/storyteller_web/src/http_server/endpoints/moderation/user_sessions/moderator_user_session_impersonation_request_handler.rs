@@ -25,9 +25,7 @@ use mysql_queries::queries::users::user::get::lookup_user_for_moderation::{
 };
 
 use crate::http_server::common_responses::common_web_error::CommonWebError;
-use crate::http_server::web_utils::user_session::require_moderator::{
-  require_moderator, UseDatabase,
-};
+use crate::http_server::user_lookup::user_session::require_moderator::require_moderator;
 use crate::state::server_state::ServerState;
 
 // --- Request ---
@@ -71,14 +69,7 @@ pub async fn moderator_user_session_impersonation_request_handler(
 ) -> Result<Json<ModerationImpersonateSuccessResponse>, CommonWebError> {
 
   // 1. Require moderator session.
-  let user_session = require_moderator(
-    &http_request,
-    &server_state,
-    UseDatabase::GrabNewConnection,
-  ).await.map_err(|err| {
-    warn!("Moderator check failed: {:?}", err);
-    CommonWebError::NotAuthorized
-  })?;
+  let user_session = require_moderator(&http_request, &server_state.session_checker, &server_state.mysql_pool).await?;
 
   if user_session.is_banned {
     warn!("Banned moderator tried to impersonate: {}", user_session.user_token.as_str());

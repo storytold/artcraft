@@ -1,4 +1,4 @@
-import { JobsApi, OmniGenApi } from "@storyteller/api";
+import { HttpApiError, JobsApi, OmniGenApi } from "@storyteller/api";
 import type { OmniGenVideoRequest } from "@storyteller/api";
 import type { GeneratedVideo } from "./create-video-store";
 
@@ -11,6 +11,7 @@ export interface GenerateVideoParams {
   aspectRatio?: string;
   duration?: number;
   resolution?: string;
+  bitrate?: string;
   generateAudio?: boolean;
   startFrameImageMediaToken?: string;
   endFrameImageMediaToken?: string;
@@ -36,6 +37,7 @@ export async function enqueueVideoGeneration(
     idempotency_token: crypto.randomUUID(),
     aspect_ratio: params.aspectRatio ?? null,
     resolution: params.resolution ?? null,
+    bitrate: params.bitrate ?? null,
     duration_seconds: params.duration ?? null,
     generate_audio: params.generateAudio ?? null,
     video_batch_count: params.numVideos ?? 1,
@@ -65,21 +67,22 @@ export async function enqueueVideoGeneration(
     }
     return { success: false, error: "Generation failed" };
   } catch (err: any) {
+    // ApiManager throws HttpApiError on non-2xx responses, carrying the
+    // server's `message` (e.g. "Image is required") so it can be shown to
+    // the user instead of a bare status code.
+    if (err instanceof HttpApiError) {
+      return {
+        success: false,
+        error: err.serverMessage ?? err.message,
+        errorCode: err.status,
+      };
+    }
     return {
       success: false,
       error: err.message ?? "Request failed",
-      errorCode: parseHttpStatusCode(err),
+      errorCode: undefined,
     };
   }
-}
-
-// Pull the HTTP status out of an ApiManager error. ApiManager throws
-// `Error("HTTP error! status: 402")` on a non-2xx response (the JSON body is
-// not surfaced), so callers can special-case codes like 402 Payment Required.
-function parseHttpStatusCode(err: unknown): number | undefined {
-  const message = err instanceof Error ? err.message : String(err);
-  const match = /status:\s*(\d+)/.exec(message);
-  return match ? Number(match[1]) : undefined;
 }
 
 // ── Poll for completion ──────────────────────────────────────────────────

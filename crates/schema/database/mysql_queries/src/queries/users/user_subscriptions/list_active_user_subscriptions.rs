@@ -1,8 +1,7 @@
 use chrono::{DateTime, Utc};
 use enums::common::payments_namespace::PaymentsNamespace;
 use errors::AnyhowResult;
-use sqlx::pool::PoolConnection;
-use sqlx::MySql;
+use sqlx::{Executor, MySql};
 
 pub struct ActiveUserSubscription {
     pub user_token: String,
@@ -19,10 +18,12 @@ pub struct ActiveUserSubscription {
     pub subscription_expires_at: DateTime<Utc>,
 }
 
-pub async fn list_active_user_subscriptions(
-    mysql_connection: &mut PoolConnection<MySql>,
+pub async fn list_active_user_subscriptions<'e, 'c : 'e, E>(
+    mysql_executor: E,
     user_token: &str
-) -> AnyhowResult<Vec<ActiveUserSubscription>> {
+) -> AnyhowResult<Vec<ActiveUserSubscription>>
+  where E: 'e + Executor<'c, Database = MySql>
+{
     // NB: "status=incomplete" subscriptions can happen when a user submits credit card info,
     //  but the CRC is wrong. Eg. what happened with ftx on 2022.11.18.
     //
@@ -45,7 +46,7 @@ WHERE
         "#,
       user_token,
     )
-        .fetch_all(&mut **mysql_connection)
+        .fetch_all(mysql_executor)
         .await?;
 
     let records = records.into_iter()

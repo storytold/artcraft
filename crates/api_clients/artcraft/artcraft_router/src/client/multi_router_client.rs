@@ -3,6 +3,7 @@ use crate::client::router_fal_client::RouterFalClient;
 use crate::client::router_gmicloud_client::RouterGmiCloudClient;
 use crate::client::router_grok_api_client::RouterGrokApiClient;
 use crate::client::router_seedance2pro_client::RouterSeedance2ProClient;
+use crate::client::router_worldlabs_client::RouterWorldLabsClient;
 use crate::errors::client_error::{ClientError, ClientType};
 
 pub struct MultiRouterClient {
@@ -11,6 +12,7 @@ pub struct MultiRouterClient {
   pub(crate) gmicloud_client: Option<RouterGmiCloudClient>,
   pub(crate) grok_api_client: Option<RouterGrokApiClient>,
   pub(crate) seedance2pro_client: Option<RouterSeedance2ProClient>,
+  pub(crate) worldlabs_client: Option<RouterWorldLabsClient>,
 }
 
 impl MultiRouterClient {
@@ -37,5 +39,10 @@ impl MultiRouterClient {
   pub fn get_seedance2pro_client_ref(&self) -> Result<&RouterSeedance2ProClient, ClientError> {
     self.seedance2pro_client.as_ref()
       .ok_or(ClientError::ClientNotConfigured(ClientType::Seedance2Pro))
+  }
+
+  pub fn get_worldlabs_client_ref(&self) -> Result<&RouterWorldLabsClient, ClientError> {
+    self.worldlabs_client.as_ref()
+      .ok_or(ClientError::ClientNotConfigured(ClientType::WorldLabs))
   }
 }

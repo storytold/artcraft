@@ -2,6 +2,7 @@ import { faCopy } from "@fortawesome/pro-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { PopoverMenu, PopoverItem } from "@storyteller/ui-popover";
 import { Tooltip } from "@storyteller/ui-tooltip";
+import { PROMPT_TOOLBAR_ICON_BUTTON_CLASSES } from "../PromptClearAllButton";
 
 interface VideoGenerationCountPickerProps {
   maxCount: number;
@@ -43,7 +44,7 @@ export const VideoGenerationCountPicker = ({
         mode="toggle"
         panelTitle="No. of videos"
         triggerIcon={<FontAwesomeIcon icon={faCopy} className="h-4 w-4" />}
-        buttonClassName="h-9"
+        buttonClassName={PROMPT_TOOLBAR_ICON_BUTTON_CLASSES}
       />
     </Tooltip>
   );

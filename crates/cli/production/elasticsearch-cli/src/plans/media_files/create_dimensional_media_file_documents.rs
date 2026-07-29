@@ -105,7 +105,6 @@ async fn create_document_from_record(elasticsearch: &Elasticsearch, record: Medi
 
     media_class: record.media_class,
     media_type: record.media_type,
-    maybe_media_subtype: record.maybe_media_subtype,
     maybe_engine_category: record.maybe_engine_category,
     maybe_animation_type: record.maybe_animation_type,
 

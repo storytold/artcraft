@@ -1,0 +1,47 @@
+[package]
+name = "user-spend-analytics-job"
+edition = "2021"
+version = "0.0.1"
+authors = [
+    "Brandon Thomas <bt@brand.io>",
+    "Brandon Thomas <echelon@gmail.com>",
+]
+publish = false
+
+[[bin]]
+name = "user-spend-analytics-job"
+path = "src/main.rs"
+
+[package.metadata.cargo-udeps.ignore]
+normal = ["workspace-build-acceleration"]
+
+[dependencies]
+# cargo-hakari workspace hack (faster compile times)
+workspace-build-acceleration.workspace = true
+
+# Internal
+actix_helpers.workspace = true
+bootstrap.workspace = true
+concurrency.workspace = true
+easyenv.workspace = true
+enums.workspace = true
+errors.workspace = true
+jobs_common.workspace = true
+mysql_queries.workspace = true
+pager = { path = "../../../lib/pager" }
+rootly_client.workspace = true
+rootly_config.workspace = true
+shared_env_var_config.workspace = true
+server_environment = { path = "../../../lib/server_environment" }
+tokens.workspace = true
+
+# External
+actix-web.workspace = true
+anyhow.workspace = true
+chrono.workspace = true
+log.workspace = true
+serde.workspace = true
+serde_derive.workspace = true
+serde_json.workspace = true
+sqlx = { version = "0.7.4", features = [ "mysql", "runtime-tokio-rustls", "chrono" ] }
+tokio.workspace = true

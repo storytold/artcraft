@@ -41,6 +41,8 @@ pub enum RouterImageModel {
   Seedream4p5,
   #[serde(rename = "seedream_5_lite")]
   Seedream5Lite,
+  #[serde(rename = "seedream_5p0_pro")]
+  Seedream5p0Pro,
   #[serde(rename = "qwen_edit_2511_angles")]
   QwenEdit2511Angles,
   #[serde(rename = "flux_2_lora_angles")]
@@ -72,5 +74,10 @@ mod tests {
   #[test]
   fn midjourney_8_serializes_to_midjourney_8() {
     assert_round_trip(RouterImageModel::Midjourney8, "midjourney_8");
+  }
+
+  #[test]
+  fn seedream_5p0_pro_serializes_to_seedream_5p0_pro() {
+    assert_round_trip(RouterImageModel::Seedream5p0Pro, "seedream_5p0_pro");
   }
 }

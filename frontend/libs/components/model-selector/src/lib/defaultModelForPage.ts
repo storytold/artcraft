@@ -6,35 +6,37 @@ import {
 } from "@storyteller/model-list";
 import { ModelPage } from "./model-pages";
 
+const DEFAULT_MODEL_ID_FOR_PAGE: Partial<Record<ModelPage, string>> = {
+  [ModelPage.TextToImage]: "nano_banana_pro",
+  [ModelPage.ImageToVideo]: "seedance_2p0",
+  [ModelPage.Canvas2D]: "gpt_image_1p5",
+  [ModelPage.Stage3D]: "gpt_image_1p5",
+  [ModelPage.ImageEditor]: "nano_banana_pro",
+  [ModelPage.ImageTo3DWorld]: "marble_0p1_mini",
+  [ModelPage.Angles]: "flux_2_lora_angles",
+};
+
 export const defaultModelForPage = (
   models: Model[],
   page: ModelPage,
 ): Model => {
-  let imageModel: Model | undefined;
+  const defaultId = DEFAULT_MODEL_ID_FOR_PAGE[page];
 
-  switch (page) {
-    case ModelPage.TextToImage:
-      imageModel = IMAGE_MODELS_BY_ID.get("nano_banana_pro");
-      break;
-    case ModelPage.ImageToVideo:
-      imageModel = VIDEO_MODELS_BY_ID.get("seedance_2p0");
-      break;
-    case ModelPage.Canvas2D:
-      imageModel = IMAGE_MODELS_BY_ID.get("gpt_image_1p5");
-      break;
-    case ModelPage.Stage3D:
-      imageModel = IMAGE_MODELS_BY_ID.get("gpt_image_1p5");
-      break;
-    case ModelPage.ImageEditor:
-      imageModel = IMAGE_MODELS_BY_ID.get("nano_banana_pro");
-      break;
-    case ModelPage.ImageTo3DWorld:
-      imageModel = SPLAT_MODELS_BY_ID.get("marble_0p1_mini");
-      break;
-    case ModelPage.Angles:
-      imageModel = IMAGE_MODELS_BY_ID.get("flux_2_lora_angles");
-      break;
+  if (defaultId) {
+    // Prefer the instance from the caller's (backend-hydrated) list — the
+    // static map instances are presentation-only fallbacks without the API's
+    // capability data.
+    const fromList = models.find(
+      (m) => m.id === defaultId || m.tauriId === defaultId,
+    );
+    if (fromList) return fromList;
+
+    const fromStaticMaps =
+      IMAGE_MODELS_BY_ID.get(defaultId) ??
+      VIDEO_MODELS_BY_ID.get(defaultId) ??
+      SPLAT_MODELS_BY_ID.get(defaultId);
+    if (fromStaticMaps) return fromStaticMaps;
   }
 
-  return imageModel || models[0];
+  return models[0];
 };

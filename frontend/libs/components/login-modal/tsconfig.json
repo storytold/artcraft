@@ -6,9 +6,6 @@
       "path": "../../api"
     },
     {
-      "path": "../../tauri-api"
-    },
-    {
       "path": "../button"
     },
     {

@@ -1,141 +1,105 @@
-import { ReactNode } from "react";
-import { twMerge } from "tailwind-merge";
+import {
+  getCreatorIconPath,
+  IMAGE_MODELS,
+  VIDEO_MODELS,
+} from "@storyteller/model-list";
 
 interface BadgeInfo {
   id: string;
-  label?: string | ReactNode;
-  svg?: ReactNode | null;
+  label: string;
+  iconSrc: string;
 }
 
 interface ModelBadgeGridProps {
   className?: string;
-  highlight?: string;
-  rowOffsets?: number[];
 }
 
-const baseBadgeClasses =
-  "rounded-2xl px-6 py-3 text-2xl font-normal flex-shrink-0 bg-[#121212] text-white/90 text-center h-[58px] flex items-center justify-center gap-1.5";
-const highlightClasses =
-  "bg-primary/30 text-white font-semibold shadow-lg border-2 border-primary/60";
+const ROW_COUNT = 3;
+// Per-row marquee durations (seconds). Deliberately mismatched so the three
+// rows never move in lockstep.
+const ROW_DURATIONS = [56, 68, 62];
 
-const rows: BadgeInfo[][] = [
-  [
-    { id: "empty1", svg: null },
-    { id: "empty2", svg: null },
-    { id: "empty3", svg: null },
-    {
-      id: "seedance-2",
-      label: "Seedance 2.0",
-      svg: (
-        <img
-          src="/model-logos/bytedance.svg"
-          alt="Seedance logo"
-          className="w-full h-full invert"
-        />
-      ),
-    },
-    { id: "empty4", svg: null },
+// Transparent border in the base keeps the box size constant when the hover
+// highlight border appears, so the marquee doesn't jitter. The chip lights up
+// only while the pointer is over it.
+const badgeClasses =
+  "rounded-2xl px-6 py-3 text-2xl font-normal flex-shrink-0 bg-[#121212] text-white/90 text-center h-[58px] flex items-center justify-center gap-1.5 border-2 border-transparent transition-all duration-300 hover:bg-primary/30 hover:text-white hover:font-semibold hover:shadow-lg hover:border-primary/60";
 
-    { id: "empty6", svg: null },
-    { id: "empty7", svg: null },
-    { id: "empty8", svg: null },
-  ],
-  [
-    { id: "empty9", svg: null },
-    {
-      id: "midjourney",
-      label: "Midjourney",
-      svg: (
-        <img
-          src="/model-logos/midjourney.svg"
-          alt="Midjourney logo"
-          className="w-full h-full invert"
-        />
-      ),
-    },
-    {
-      id: "nano-banana-2",
-      label: "Nano Banana 2",
-      svg: (
-        <img
-          src="/model-logos/google.svg"
-          alt="Google gemini icon"
-          className="w-full h-full invert"
-        />
-      ),
-    },
-    { id: "empty10", svg: null },
+// Build one badge per unique model (deduped by display name so e.g. an
+// image+video pair like "Grok" only shows once), pulling the correct brand
+// icon from the canonical model mapping.
+const BADGES: BadgeInfo[] = (() => {
+  const seen = new Set<string>();
+  const badges: BadgeInfo[] = [];
+  for (const model of [...IMAGE_MODELS, ...VIDEO_MODELS]) {
+    if (seen.has(model.fullName)) continue;
+    seen.add(model.fullName);
+    badges.push({
+      id: model.id,
+      label: model.fullName,
+      iconSrc: getCreatorIconPath(model.creator),
+    });
+  }
+  return badges;
+})();
 
-    { id: "empty11", svg: null },
-    { id: "empty12", svg: null },
-    { id: "empty13", svg: null },
-    { id: "empty14", svg: null },
-  ],
-  [
-    { id: "empty15", svg: null },
-    { id: "empty16", svg: null },
-    { id: "empty17", svg: null },
-    {
-      id: "kling",
-      label: "Kling 3.0 Pro",
-      svg: (
-        <img
-          src="/model-logos/kling.svg"
-          alt="Kling AI logo"
-          className="w-full h-full invert"
-        />
-      ),
-    },
-    { id: "empty18", svg: null },
-    { id: "empty19", svg: null },
-    { id: "empty20", svg: null },
-    { id: "empty21", svg: null },
-  ],
-];
+// Distribute badges round-robin across the rows so each row carries a mix of
+// brands rather than all of one creator clumping together.
+const ROWS: BadgeInfo[][] = Array.from({ length: ROW_COUNT }, () => []);
+BADGES.forEach((badge, i) => {
+  ROWS[i % ROW_COUNT].push(badge);
+});
 
 export default function ModelBadgeGrid({
   className = "",
-  highlight,
-  rowOffsets = [],
 }: ModelBadgeGridProps) {
   return (
     <div
       className={`select-none relative z-10 h-full overflow-hidden ${className}`}
     >
-      {/* Gradient fade overlays */}
+      {/* Gradient fade overlays mask the marquee edges */}
       <div className="absolute left-0 top-0 w-32 xl:w-96 h-full bg-gradient-to-r from-[#080808] to-transparent z-10 pointer-events-none" />
       <div className="absolute right-0 top-0 w-32 xl:w-96 h-full bg-gradient-to-l from-[#080808] to-transparent z-10 pointer-events-none" />
 
-      <div className="flex flex-col gap-4 h-full -mx-[280px] xl:-mx-8">
-        {rows.map((row, rowIdx) => {
-          const offset = rowOffsets[rowIdx] ?? 0;
-          return (
+      <div className="flex flex-col gap-4 h-full justify-center py-4">
+        {ROWS.map((row, rowIdx) => (
+          <div key={rowIdx} className="overflow-hidden">
             <div
-              key={rowIdx}
-              className="flex gap-4 whitespace-nowrap"
-              style={{ marginLeft: offset }}
+              className="flex w-max motion-reduce:[animation:none]"
+              style={{
+                animationName: "marquee-track",
+                animationDuration: `${ROW_DURATIONS[rowIdx]}s`,
+                animationTimingFunction: "linear",
+                animationIterationCount: "infinite",
+                // Even rows scroll right (reversed), odd rows scroll left.
+                animationDirection: rowIdx % 2 === 0 ? "reverse" : "normal",
+              }}
             >
-              {row.map(({ id, label, svg }, idx) => {
-                const isHighlight = highlight && highlight.toLowerCase() === id;
-                return (
-                  <div
-                    key={idx}
-                    className={twMerge(
-                      baseBadgeClasses,
-                      label ? "" : "min-w-[180px]",
-                      isHighlight ? highlightClasses : "",
-                    )}
-                  >
-                    {svg ? (
-                      <span className="mr-2 w-6 h-6 inline-flex ">{svg}</span>
-                    ) : null}
-                    {label}
-                  </div>
-                );
-              })}
+              {/* Two identical copies make the loop seamless: translating the
+                  track by -50% lands exactly on the start of the second copy. */}
+              {[0, 1].map((copy) => (
+                <div
+                  key={copy}
+                  className="flex gap-4 pr-4 flex-shrink-0"
+                  aria-hidden={copy === 1}
+                >
+                  {row.map((badge) => (
+                    <div key={`${copy}-${badge.id}`} className={badgeClasses}>
+                      <span className="mr-2 w-6 h-6 inline-flex">
+                        <img
+                          src={badge.iconSrc}
+                          alt=""
+                          className="w-full h-full invert"
+                        />
+                      </span>
+                      {badge.label}
+                    </div>
+                  ))}
+                </div>
+              ))}
             </div>
-          );
-        })}
+          </div>
+        ))}
       </div>
     </div>
   );

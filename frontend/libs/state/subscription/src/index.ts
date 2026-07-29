@@ -1,4 +1,4 @@
-export * from './lib/subscription-plan-details';
-export * from './lib/subscription-plans';
-export * from './lib/subscription-state';
+export * from './lib/subscription-plan-details.js';
+export * from './lib/subscription-plans.js';
+export * from './lib/subscription-state.js';
 

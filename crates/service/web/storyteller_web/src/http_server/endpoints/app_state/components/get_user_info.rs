@@ -1,5 +1,5 @@
 use crate::http_server::common_responses::user_details_lite::UserDefaultAvatarInfo;
-use crate::http_server::session::lookup::user_session_extended::UserSessionExtended;
+use crate::http_server::user_lookup::user_session::session_utils::lookup::user_session_extended::UserSessionExtended;
 use tokens::tokens::users::UserToken;
 use utoipa::ToSchema;
 

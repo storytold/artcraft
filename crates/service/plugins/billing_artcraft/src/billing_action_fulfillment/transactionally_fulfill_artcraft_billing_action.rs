@@ -26,6 +26,11 @@ pub async fn transactionally_fulfill_artcraft_billing_action(
         purchase.quantity,
         purchase.ledger_event_ref.as_deref(),
         purchase.maybe_stripe_customer_id.as_deref(),
+        purchase.maybe_stripe_charge_id.as_deref(),
+        purchase.maybe_stripe_event_id.as_deref(),
+        purchase.amount_usd_cents,
+        purchase.is_production,
+        purchase.payment_occurred_at,
         transaction,
       ).await?;
     }

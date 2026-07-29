@@ -1,0 +1,12 @@
+{
+  "db_name": "MySQL",
+  "query": "\nINSERT INTO api_keys\nSET\n  token = ?,\n  api_key = ?,\n  name = ?,\n  maybe_description = ?,\n  owner_user_token = ?,\n  ip_address_creation = ?,\n  ip_address_update = ?,\n  created_at = NOW()\n    ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 7
+    },
+    "nullable": []
+  },
+  "hash": "bb39045ffcc9d3a9e150b32e7ff884dccbae60101deeaaad23ccd430b25bb5a4"
+}

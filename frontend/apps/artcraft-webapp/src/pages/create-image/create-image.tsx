@@ -47,16 +47,23 @@ import {
 } from "./components/QualityPicker";
 import { useImageCostEstimate } from "../../lib/cost-estimate-api";
 import {
+  galleryItemToRefImage,
+  mergeRefImages,
+  toastMergeRefImagesOutcome,
+} from "../../lib/send-to-prompt";
+import {
   resolveModelOption,
   resolveModelCount,
 } from "../../lib/resolve-model-setting";
 import {
   useOmniGenImageModels,
-  getModelCreatorIconPath,
+  OMNI_GENERATE_OUTAGE_MESSAGE,
+} from "@storyteller/omni-gen";
+import {
+  getCreatorIconPathForModelId,
   getModelDescription,
   getModelInfo,
-  OMNI_GENERATE_OUTAGE_MESSAGE,
-} from "../../lib/omni-gen-hooks";
+} from "@storyteller/model-list";
 import { toast } from "../../components/toast/toast";
 import { useSignupCta } from "../../components/signup-cta-modal";
 import { useInsufficientCredits } from "../../components/insufficient-credits-modal";
@@ -83,7 +90,7 @@ function buildModelPopoverItems(
     info: getModelInfo(model.model, model.extra_info) || undefined,
     icon: (
       <img
-        src={getModelCreatorIconPath(model.model)}
+        src={getCreatorIconPathForModelId(model.model)}
         alt={`${model.model} logo`}
         className="h-4 w-4 icon-auto-contrast"
       />
@@ -118,6 +125,9 @@ export default function CreateImage() {
     }
     return apiModels.find((m) => m.model === DEFAULT_MODEL_ID) ?? apiModels[0];
   }, [apiModels, ui.selectedModelId]);
+
+  // Soft prompt limit from the API; undefined (no model / unset) = unlimited.
+  const maxPromptLength = selectedModel?.text_prompt_max_length ?? undefined;
 
   const prompt = ui.prompt;
   const setPrompt = useCallback((v: string) => setUi({ prompt: v }), [setUi]);
@@ -208,6 +218,28 @@ export default function CreateImage() {
     excludeUploads: true,
   });
 
+  // Map job token → batch count so the pending card/row can show
+  // "Generating N images" — the batch runs as a single job chip.
+  const batches = useCreateImageStore((s) => s.batches);
+  const jobTokenToBatchCount = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const batch of batches) {
+      if (batch.jobToken && batch.requestedCount > 1) {
+        map.set(batch.jobToken, batch.requestedCount);
+      }
+    }
+    return map;
+  }, [batches]);
+
+  const enrichedInProgress = useMemo(
+    () =>
+      jobs.inProgress.map((job) => {
+        const batchCount = jobTokenToBatchCount.get(job.id);
+        return batchCount ? { ...job, batchCount } : job;
+      }),
+    [jobs.inProgress, jobTokenToBatchCount],
+  );
+
   const newlyCompletedTokens = useMemo(
     () => new Set(jobs.newlyCompleted.map((i) => i.id)),
     [jobs.newlyCompleted],
@@ -255,6 +287,24 @@ export default function CreateImage() {
   // Consume a pending recreate payload (set by the lightbox Recreate button)
   // and populate the promptbox fields. Does NOT trigger generation. Subscribes
   // to the store so it fires even when the user is already on this route.
+  // Warn when a recreated generation's model is missing from the current
+  // model list: selectedModel silently falls back to the default model, and
+  // the restored prompt/settings may not be valid for it. Verified in its own
+  // effect because the model list may still be loading when the recreate
+  // payload is consumed.
+  const [recreateModelIdToVerify, setRecreateModelIdToVerify] = useState<
+    string | null
+  >(null);
+  useEffect(() => {
+    if (!recreateModelIdToVerify || apiModels.length === 0) return;
+    if (!apiModels.some((m) => m.model === recreateModelIdToVerify)) {
+      toast.error(
+        "The model used for this generation isn't available anymore. Using the default model instead.",
+      );
+    }
+    setRecreateModelIdToVerify(null);
+  }, [recreateModelIdToVerify, apiModels]);
+
   const pendingRecreate = useCreateImageStore((s) => s.pendingRecreate);
   useEffect(() => {
     if (!pendingRecreate) return;
@@ -267,7 +317,27 @@ export default function CreateImage() {
       ...(payload.resolution ? { resolution: payload.resolution } : {}),
       ...(payload.modelId ? { selectedModelId: payload.modelId } : {}),
     });
+    if (payload.modelId) setRecreateModelIdToVerify(payload.modelId);
   }, [pendingRecreate, setUi]);
+
+  // Consume reference images sent from the library ("Send to prompt").
+  // Waits for the model list so the merge applies the real per-model cap —
+  // the sender doesn't know which model is selected here.
+  const pendingRefImages = useCreateImageStore((s) => s.pendingRefImages);
+  useEffect(() => {
+    if (!pendingRefImages || apiModels.length === 0) return;
+    const incoming = useCreateImageStore.getState().consumePendingRefImages();
+    if (!incoming || incoming.length === 0) return;
+    const result = mergeRefImages(referenceImages, incoming, maxImageRefs);
+    if (result.added > 0) setReferenceImages(result.next);
+    toastMergeRefImagesOutcome(result, maxImageRefs);
+  }, [
+    pendingRefImages,
+    apiModels,
+    referenceImages,
+    maxImageRefs,
+    setReferenceImages,
+  ]);
 
   // Resume polling for pending batches
   useEffect(() => {
@@ -319,13 +389,7 @@ export default function CreateImage() {
       const availableSlots = Math.max(0, maxImageRefs - referenceImages.length);
       const newImages: RefImage[] = items
         .slice(0, availableSlots)
-        .map((item) => ({
-          id: Math.random().toString(36).substring(7),
-          url: item.thumbnail || item.fullImage || "",
-          fullUrl: item.fullImage || undefined,
-          file: new File([], "library-image"),
-          mediaToken: item.id,
-        }));
+        .map(galleryItemToRefImage);
       setReferenceImages([...referenceImages, ...newImages]);
       setIsImagePickerOpen(false);
     },
@@ -337,7 +401,20 @@ export default function CreateImage() {
       openSignupCta();
       return;
     }
-    if (!prompt.trim() || isGenerating || !selectedModel) return;
+    if (!prompt.trim() || isGenerating) return;
+    if (!selectedModel) {
+      // Models come from an API fetch; without one the submit would be a
+      // silent no-op, which reads as a dead button.
+      toast.error("Models are still loading. Try again in a moment.");
+      return;
+    }
+
+    if (maxPromptLength !== undefined && prompt.length > maxPromptLength) {
+      toast.error(
+        `Prompt exceeds the ${maxPromptLength} character limit for this model`,
+      );
+      return;
+    }
 
     setIsGenerating(true);
     const batchId = startBatch(
@@ -372,8 +449,13 @@ export default function CreateImage() {
           dismissBatch(batchId);
           openInsufficientCredits();
         } else {
+          // Always toast: batches that fail at enqueue never got a job token,
+          // so the gallery's failed-card rendering never shows them, and a
+          // silent failBatch here looks like the button did nothing.
           if (result.errorCode != null && result.errorCode >= 500) {
             toast.error(OMNI_GENERATE_OUTAGE_MESSAGE);
+          } else {
+            toast.error(result.error ?? "Failed to start generation");
           }
           failBatch(batchId, result.error ?? "Failed to start generation");
         }
@@ -400,6 +482,7 @@ export default function CreateImage() {
       );
       pollingCleanupsRef.current.set(batchId, stopPolling);
     } catch {
+      toast.error("Network error - please try again");
       failBatch(batchId, "Network error - please try again");
     } finally {
       setIsGenerating(false);
@@ -411,6 +494,7 @@ export default function CreateImage() {
     prompt,
     isGenerating,
     selectedModel,
+    maxPromptLength,
     numImages,
     aspectRatio,
     resolution,
@@ -545,6 +629,7 @@ export default function CreateImage() {
       description="Generate stunning AI images with ArtCraft"
       authChecked={authChecked}
       hasContent={hasContent}
+      showSelectToggle
       emptyStateTitle="Create Image"
       emptyStateSubtitle="Describe anything. See it in seconds."
       emptyStateCta={
@@ -565,7 +650,7 @@ export default function CreateImage() {
       promptForm={mobileForm}
       gridContent={
         <GenerationGallery
-          inProgressJobs={jobs.inProgress}
+          inProgressJobs={enrichedInProgress}
           failedJobs={jobs.failed}
           onDismissFailed={jobs.dismissFailed}
           newlyCompletedItems={jobs.newlyCompleted}
@@ -577,12 +662,14 @@ export default function CreateImage() {
           onLoadMore={gallery.loadMore}
           onGalleryItemClick={lightbox.handleGalleryItemClick}
           enableMakeVideo
+          selectable
+          selectionBarBottomOffset={promptHeight + 24}
         />
       }
       promptBox={
         <div
           ref={promptBoxRef}
-          className="animate-fade-in-up fixed bottom-2 sm:bottom-3 right-0 z-30 mx-auto max-w-5xl px-2 sm:px-4 transition-[left] duration-200 ease-linear"
+          className="animate-fade-in-up fixed bottom-2 sm:bottom-3 right-0 z-30 mx-auto max-w-6xl px-2 sm:px-4 transition-[left] duration-200 ease-linear"
           style={{
             animationDelay: "150ms",
             left: "var(--ac-sidebar-offset, 0px)",
@@ -594,6 +681,7 @@ export default function CreateImage() {
             onSubmit={handleGenerate}
             isSubmitting={isGenerating}
             credits={estimatedCredits}
+            maxPromptLength={maxPromptLength}
             placeholder="Describe what you want in the image..."
             supportsImagePrompts={!!selectedModel?.image_refs_supported}
             maxImagePromptCount={maxImageRefs}
@@ -616,7 +704,9 @@ export default function CreateImage() {
                   richList
                   triggerIcon={
                     <img
-                      src={getModelCreatorIconPath(selectedModel?.model ?? "")}
+                      src={getCreatorIconPathForModelId(
+                        selectedModel?.model ?? "",
+                      )}
                       alt=""
                       className="h-4 w-4 icon-auto-contrast"
                     />

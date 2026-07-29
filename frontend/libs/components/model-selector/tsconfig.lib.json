@@ -50,6 +50,9 @@
       "path": "../popover/tsconfig.lib.json"
     },
     {
+      "path": "../tooltip/tsconfig.lib.json"
+    },
+    {
       "path": "../../tauri-api/tsconfig.lib.json"
     },
     {

@@ -18,6 +18,7 @@ import {
 import { refreshSession } from "../../lib/session";
 import { hasActiveSubscription } from "../../lib/billing";
 import { GoogleLoginButton } from "./GoogleLoginButton";
+import { Reveal, RevealGroup } from "../motion/reveal";
 
 interface SignupFormProps {
   onSuccess: (isNewUser?: boolean) => void;
@@ -115,74 +116,97 @@ export const SignupForm = ({
           </div>
         )}
 
-        <div className="space-y-2">
-          <label className="text-xs font-semibold text-white/70 ml-1">
-            Email
-          </label>
-          <Input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="you@example.com"
-            autoFocus={autoFocus}
-            inputClassName="w-full bg-black/40 border border-white/10 focus:border-primary/50 rounded-xl px-4 py-3 text-white placeholder-white/20 outline-none transition-colors"
-          />
-        </div>
-
-        <div className="space-y-2">
-          <div className="flex justify-between items-center ml-1">
-            <label className="text-xs font-semibold text-white/70">
-              Password
+        {/* Fields cascade in as their own beat, leading with the email field on
+            an almost-zero delay so the primary input lands immediately — the
+            entrance never gates typing (inputs stay focusable mid-cascade).
+            Mirrors the login page. */}
+        <RevealGroup
+          inView={false}
+          delayChildren={0.04}
+          stagger={0.08}
+          className="space-y-4"
+        >
+          <Reveal className="space-y-2">
+            <label className="text-xs font-semibold text-white/70 ml-1">
+              Email
             </label>
-          </div>
-          <div className="relative">
             <Input
-              type={showPassword ? "text" : "password"}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Min. 8 characters"
-              inputClassName="w-full bg-black/40 border border-white/10 focus:border-primary/50 rounded-xl px-4 py-3 text-white placeholder-white/20 outline-none transition-colors pr-12"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="you@example.com"
+              autoFocus={autoFocus}
+              inputClassName="w-full bg-black/40 border border-white/10 focus:border-primary/50 rounded-xl px-4 py-3 text-white placeholder-white/20 outline-none transition-colors"
             />
-            <button
-              type="button"
-              onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-4 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60 transition-colors"
-              tabIndex={-1}
-            >
-              <FontAwesomeIcon icon={showPassword ? faEyeSlash : faEye} />
-            </button>
-          </div>
-        </div>
+          </Reveal>
 
-        <div className="pt-2">
-          <Button
-            className="rounded-full w-full bg-primary hover:bg-primary-600 text-white border-none justify-center font-bold h-10"
-            type="submit"
-            disabled={isLoading}
-          >
-            {isLoading ? (
-              <FontAwesomeIcon icon={faSpinnerThird} className="animate-spin" />
-            ) : (
-              "Create account"
-            )}
-          </Button>
-        </div>
+          <Reveal className="space-y-2">
+            <div className="flex justify-between items-center ml-1">
+              <label className="text-xs font-semibold text-white/70">
+                Password
+              </label>
+            </div>
+            <div className="relative">
+              <Input
+                type={showPassword ? "text" : "password"}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Min. 8 characters"
+                inputClassName="w-full bg-black/40 border border-white/10 focus:border-primary/50 rounded-xl px-4 py-3 text-white placeholder-white/20 outline-none transition-colors pr-12"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60 transition-colors"
+                tabIndex={-1}
+              >
+                <FontAwesomeIcon icon={showPassword ? faEyeSlash : faEye} />
+              </button>
+            </div>
+          </Reveal>
+
+          <Reveal className="pt-2">
+            <Button
+              className="rounded-full w-full bg-primary hover:bg-primary-600 text-white border-none justify-center font-bold h-10"
+              type="submit"
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <FontAwesomeIcon icon={faSpinnerThird} className="animate-spin" />
+              ) : (
+                "Create account"
+              )}
+            </Button>
+          </Reveal>
+        </RevealGroup>
       </form>
 
-      <div className="relative flex items-center justify-center py-2">
-        <div className="absolute inset-0 flex items-center">
-          <div className="w-full border-t border-white/10" />
-        </div>
-        <span className="relative bg-[#1C1C20] px-4 text-xs uppercase tracking-widest text-white/40">
-          or
-        </span>
-      </div>
+      {/* Secondary sign-up options continue the same cascade just after the
+          fields (delay continues from the form group's three children above:
+          0.04 + 3 × 0.08). */}
+      <RevealGroup
+        inView={false}
+        delayChildren={0.28}
+        stagger={0.08}
+        className="space-y-4"
+      >
+        <Reveal className="relative flex items-center justify-center py-2">
+          <div className="absolute inset-0 flex items-center">
+            <div className="w-full border-t border-white/10" />
+          </div>
+          <span className="relative bg-[#1C1C20] px-4 text-xs uppercase tracking-widest text-white/40">
+            or
+          </span>
+        </Reveal>
 
-      <GoogleLoginButton
-        mode="signup"
-        onSuccess={handleGoogleSuccess}
-        onError={handleGoogleError}
-      />
+        <Reveal>
+          <GoogleLoginButton
+            mode="signup"
+            onSuccess={handleGoogleSuccess}
+            onError={handleGoogleError}
+          />
+        </Reveal>
+      </RevealGroup>
     </div>
   );
 };

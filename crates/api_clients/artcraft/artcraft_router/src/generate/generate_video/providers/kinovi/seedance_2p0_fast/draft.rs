@@ -1,5 +1,5 @@
 use seedance2pro_client::generate::video::generate_seedance_2p0_fast::{
-  GenerateSeedance2p0FastRequest, KinoviSeedance2p0FastAspectRatio,
+  GenerateSeedance2p0FastRequest, KinoviSeedance2p0FastAspectRatio, KinoviSeedance2p0FastBitrate,
   KinoviSeedance2p0FastBatchCount, KinoviSeedance2p0FastOutputResolution,
 };
 
@@ -24,6 +24,7 @@ pub struct KinoviSeedance2p0FastDraftState {
   pub resolution: Option<KinoviSeedance2p0FastOutputResolution>,
   pub duration_seconds: u8,
   pub batch_count: KinoviSeedance2p0FastBatchCount,
+  pub bitrate: Option<KinoviSeedance2p0FastBitrate>,
 
   pub unhandled_request_state: Option<KinoviSeedance2p0FastRemainingItems>,
 }
@@ -90,6 +91,7 @@ impl KinoviSeedance2p0FastDraftState {
       reference_audio_urls,
       character_ids,
       use_face_blur_hack: None,
+      bitrate: self.bitrate,
     };
 
     Ok(KinoviSeedance2p0FastRequestState { request })

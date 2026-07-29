@@ -23,7 +23,8 @@ use tokens::tokens::media_files::MediaFileToken;
 use crate::http_server::endpoints::media_files::upload::upload_error::MediaFileUploadError;
 use crate::http_server::endpoints::media_files::upload::upload_pmx::extract_and_upload_pmx_files::{extract_and_upload_pmx_files, PmxError};
 use crate::http_server::validations::validate_idempotency_token_format::validate_idempotency_token_format;
-use crate::http_server::web_utils::user_session::require_moderator::{require_moderator, RequireModeratorError, UseDatabase};
+use crate::http_server::common_responses::common_web_error::CommonWebError;
+use crate::http_server::user_lookup::user_session::require_moderator::require_moderator;
 use crate::state::server_state::ServerState;
 
 /// Form-multipart request fields.
@@ -115,11 +116,11 @@ pub async fn upload_pmx_media_file_handler(
   // ==================== READ SESSION ==================== //
 
   // NB: We require a moderator to upload PMX files.
-  let user_session = require_moderator(&http_request, &server_state, UseDatabase::FromPool(&mut mysql_connection))
+  let user_session = require_moderator(&http_request, &server_state.session_checker, &mut *mysql_connection)
       .await
       .map_err(|err| match err {
-        RequireModeratorError::ServerError => MediaFileUploadError::ServerError,
-        RequireModeratorError::NotAuthorized => MediaFileUploadError::NotAuthorized,
+        CommonWebError::NotAuthorized => MediaFileUploadError::NotAuthorized,
+        _ => MediaFileUploadError::ServerError,
       })?;
 
   let maybe_avt_token = server_state
@@ -206,7 +207,7 @@ pub async fn upload_pmx_media_file_handler(
   let ip_address = get_request_ip(&http_request);
 
   //let maybe_user_token = maybe_user_session
-  //    .map(|session| session.get_strongly_typed_user_token());
+  //    .map(|session| session.get_user_token());
 
   // ==================== FILE DATA ==================== //
 
@@ -255,9 +256,10 @@ pub async fn upload_pmx_media_file_handler(
 
   // TODO(bt, 2024-02-22): This should be a transaction.
   let (token, record_id) = insert_media_file_from_file_upload(InsertMediaFileFromUploadArgs {
-    maybe_media_class: Some(MediaFileClass::Dimensional),
+    maybe_media_class: Some(MediaFileClass::Mesh),
+    maybe_project_type: None,
     media_file_type: MediaFileType::Pmx,
-    maybe_creator_user_token: Some(&user_session.get_strongly_typed_user_token()),
+    maybe_creator_user_token: Some(user_session.get_user_token()),
     maybe_creator_anonymous_visitor_token: maybe_avt_token.as_ref(),
     creator_ip_address: &ip_address,
     creator_set_visibility,

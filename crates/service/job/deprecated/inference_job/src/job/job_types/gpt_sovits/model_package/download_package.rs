@@ -5,7 +5,7 @@ use log::{debug, error, info, warn};
 use tempdir::TempDir;
 use bucket_paths::legacy::typified_paths::public::weight_files::bucket_directory::WeightFileBucketDirectory;
 use bucket_paths::legacy::typified_paths::public::weight_files::bucket_file_path::WeightFileBucketPath;
-use cloud_storage::bucket_client::BucketClient;
+use cloud_storage::legacy_bucket_client::LegacyBucketClient;
 use filesys::rename_across_devices::{rename_across_devices, RenameError};
 use filesys::file_deletion::safe_delete_directory::safe_delete_directory;
 use tokens::tokens::model_weights::ModelWeightToken;
@@ -18,7 +18,7 @@ pub async fn download_package(
   model_weight_token: ModelWeightToken,
   weights_file_bucket_directory: &WeightFileBucketDirectory,
   download_directory: &Path,
-  bucket_client: &BucketClient,
+  bucket_client: &LegacyBucketClient,
   scoped_tempdir_creator: &ScopedTempDirCreator,
   force_download: bool,
 ) -> Result<(), ProcessSingleJobError> {
@@ -69,7 +69,7 @@ pub async fn do_download_package(
   model_weight_token: ModelWeightToken,
   weights_file_bucket_directory: &WeightFileBucketDirectory,
   download_directory: &Path,
-  bucket_client: &BucketClient,
+  bucket_client: &LegacyBucketClient,
   temp_dir: &TempDir,
   force_download: bool,
   entry: GptSovitsPackageFileType,

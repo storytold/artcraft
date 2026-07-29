@@ -11,7 +11,7 @@ use seedance2pro_client::creds::seedance2pro_session::Seedance2ProSession;
 use seedance2pro_client::requests::update_character::update_character::{update_character, UpdateCharacterArgs};
 
 use crate::http_server::common_responses::common_web_error::CommonWebError;
-use crate::http_server::web_utils::user_session::require_user_session_using_connection::require_user_session_using_connection;
+use crate::http_server::user_lookup::api_or_web_session::require_api_or_web_session::require_api_or_web_session;
 use crate::state::server_state::ServerState;
 
 /// Edit a character's name or description.
@@ -38,10 +38,11 @@ pub async fn edit_character_handler(
 
   let mut mysql_connection = server_state.mysql_pool.acquire().await?;
 
-  let user_session = require_user_session_using_connection(
+  let user_session = require_api_or_web_session(
     &http_request,
     &server_state.session_checker,
-    &mut mysql_connection,
+    &server_state.avt_cookie_manager,
+    &mut *mysql_connection,
   ).await?;
 
   let user_token = &user_session.user_token;

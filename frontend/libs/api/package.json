@@ -16,7 +16,7 @@
     }
   },
   "dependencies": {
-    "@tauri-apps/plugin-dialog": "^2.2.1",
-    "@tauri-apps/plugin-upload": "2.2.1"
+    "@tauri-apps/plugin-dialog": "^2.7.1",
+    "@tauri-apps/plugin-upload": "2.4.0"
   }
 }

@@ -297,6 +297,40 @@ export class FoldersApi extends ApiManager {
   }
 
   /**
+   * List the session user's media files that sit in no folder at all
+   * (memberships pointing at soft-deleted folders count as unfoldered).
+   * Newest first. Cursor-based — pass the previous response's `maybe_cursor`
+   * back as `cursor`; an absent cursor means the list is exhausted.
+   */
+  public ListMediaFilesWithoutFolder({
+    cursor,
+    limit,
+    filterMediaClass,
+  }: {
+    cursor?: string;
+    limit?: number;
+    /** Optional media class scope (image / video / audio / mesh / splat / ...). */
+    filterMediaClass?: string;
+  } = {}): Promise<ApiResponse<FolderMediaFileListItem[], FolderCursor>> {
+    const endpoint = `${this.getApiSchemeAndHost()}/v1/folders/media_files_without_folder`;
+    const query: Record<string, string | number> = {};
+    if (cursor) query.cursor = cursor;
+    if (limit) query.limit = limit;
+    if (filterMediaClass) query.filter_media_class = filterMediaClass;
+    return this.get<{
+      success: boolean;
+      media_files: FolderMediaFileListItem[];
+      maybe_cursor?: string | null;
+    }>({ endpoint, query })
+      .then((response) => ({
+        success: response.success,
+        data: response.media_files ?? [],
+        pagination: { maybe_cursor: response.maybe_cursor },
+      }))
+      .catch((err) => ({ success: false, errorMessage: err.message }));
+  }
+
+  /**
    * Add media files to a folder. Idempotent (INSERT IGNORE); tokens that don't
    * exist or are soft-deleted are silently skipped — returns the accepted tokens.
    */

@@ -4,7 +4,7 @@ use tokio::time::Duration;
 
 use errors::AnyhowResult;
 
-use crate::bucket_client::BucketClient;
+use crate::legacy_bucket_client::LegacyBucketClient;
 
 #[async_trait]
 #[deprecated(note="this abstraction is too complicated, use another bucket client")]
@@ -106,13 +106,13 @@ impl BucketOrchestration {
     }
 
     #[deprecated(note="this abstraction is too complicated, use another bucket client")]
-    async fn get_bucket_with_visibility(&self, public: bool) -> AnyhowResult<BucketClient> {
+    async fn get_bucket_with_visibility(&self, public: bool) -> AnyhowResult<LegacyBucketClient> {
         let bucket_timeout = easyenv::get_env_duration_seconds_or_default(
             "BUCKET_TIMEOUT_SECONDS", Duration::from_secs(60 * 10));
         let bucket_client = if public {
             // use public bucket client
             info!("Configuring public GCS bucket...");
-            BucketClient::create(
+            LegacyBucketClient::create(
                 &self.access_key,
                 &self.secret_key,
                 &self.region_name,
@@ -123,7 +123,7 @@ impl BucketOrchestration {
             )?
         } else {
             info!("Configuring private GCS bucket...");
-            BucketClient::create(
+            LegacyBucketClient::create(
                 &self.access_key,
                 &self.secret_key,
                 &self.region_name,

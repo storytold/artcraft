@@ -19,6 +19,9 @@ interface MentionTextareaProps {
   mentionItems: MentionItem[];
   placeholder?: string;
   className?: string;
+  /** Inline style applied to the editable element (e.g. a maxHeight cap or
+   *  resize override for the fullscreen modal). */
+  style?: React.CSSProperties;
   onKeyDown?: (e: React.KeyboardEvent<HTMLDivElement>) => void;
   onFocus?: () => void;
   onBlur?: () => void;
@@ -294,6 +297,7 @@ export const MentionTextarea = forwardRef<HTMLDivElement, MentionTextareaProps>(
       mentionItems,
       placeholder,
       className,
+      style,
       onKeyDown: externalOnKeyDown,
       onFocus,
       onBlur,
@@ -665,6 +669,7 @@ export const MentionTextarea = forwardRef<HTMLDivElement, MentionTextareaProps>(
           onPaste={handlePaste}
           onFocus={onFocus}
           onBlur={onBlur}
+          style={style}
           className={twMerge(
             className,
             "outline-none whitespace-pre-wrap break-words overflow-y-auto resize-y",

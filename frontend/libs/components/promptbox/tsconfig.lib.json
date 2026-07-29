@@ -50,6 +50,9 @@
       "path": "../button-icon-select/tsconfig.lib.json"
     },
     {
+      "path": "../../omni-gen/tsconfig.lib.json"
+    },
+    {
       "path": "../../analytics/google-analytics/tsconfig.lib.json"
     },
     {

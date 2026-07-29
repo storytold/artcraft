@@ -309,6 +309,7 @@ pub async fn generate_hunyuan3d_v3_multi_function_object_handler(
 
   // Insert prompt record if we have a prompt
   let prompt_result = insert_prompt(InsertPromptArgs {
+    maybe_bitrate: None,
     maybe_apriori_prompt_token: None,
     prompt_type: PromptType::ArtcraftApp,
     maybe_creator_user_token: maybe_user_session.as_ref().map(|s| &s.user_token),

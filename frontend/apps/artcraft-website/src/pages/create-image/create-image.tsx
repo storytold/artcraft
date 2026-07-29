@@ -20,6 +20,7 @@ import {
 } from "../../components/generation-gallery";
 import { Lightbox } from "../../components/lightbox/lightbox";
 import { AppDownloadCta } from "../../components/app-download-cta/AppDownloadCta";
+import { toast } from "../../components/toast/toast";
 import { useCreateImageStore } from "./create-image-store";
 import { enqueueImageGeneration, startPolling } from "./generate-image-api";
 import { AspectRatioPicker } from "./components/AspectRatioPicker";
@@ -27,10 +28,8 @@ import { GenerationCountPicker } from "./components/GenerationCountPicker";
 import { ResolutionPicker } from "./components/ResolutionPicker";
 import { QualityPicker } from "./components/QualityPicker";
 import { useImageCostEstimate } from "../../lib/cost-estimate-api";
-import {
-  useOmniGenImageModels,
-  getModelCreatorIconPath,
-} from "../../lib/omni-gen-hooks";
+import { useOmniGenImageModels } from "@storyteller/omni-gen";
+import { getCreatorIconPathForModelId } from "@storyteller/model-list";
 
 // ── Constants ────────────────────────────────────────────────────────────
 
@@ -51,7 +50,7 @@ function buildModelPopoverItems(
     selected: model.model === selectedId,
     icon: (
       <img
-        src={getModelCreatorIconPath(model.model)}
+        src={getCreatorIconPathForModelId(model.model)}
         alt={`${model.model} logo`}
         className="h-4 w-4 icon-auto-contrast"
       />
@@ -84,6 +83,9 @@ export default function CreateImage() {
     }
     return apiModels.find((m) => m.model === DEFAULT_MODEL_ID) ?? apiModels[0];
   }, [apiModels, ui.selectedModelId]);
+
+  // Soft prompt limit from the API; undefined (no model / unset) = unlimited.
+  const maxPromptLength = selectedModel?.text_prompt_max_length ?? undefined;
 
   const prompt = ui.prompt;
   const setPrompt = useCallback((v: string) => setUi({ prompt: v }), [setUi]);
@@ -195,6 +197,24 @@ export default function CreateImage() {
   // Consume a pending recreate payload (set by the lightbox Recreate button)
   // and populate the promptbox fields. Does NOT trigger generation. Subscribes
   // to the store so it fires even when the user is already on this route.
+  // Warn when a recreated generation's model is missing from the current
+  // model list: selectedModel silently falls back to the default model, and
+  // the restored prompt/settings may not be valid for it. Verified in its own
+  // effect because the model list may still be loading when the recreate
+  // payload is consumed.
+  const [recreateModelIdToVerify, setRecreateModelIdToVerify] = useState<
+    string | null
+  >(null);
+  useEffect(() => {
+    if (!recreateModelIdToVerify || apiModels.length === 0) return;
+    if (!apiModels.some((m) => m.model === recreateModelIdToVerify)) {
+      toast.error(
+        "The model used for this generation isn't available anymore. Using the default model instead.",
+      );
+    }
+    setRecreateModelIdToVerify(null);
+  }, [recreateModelIdToVerify, apiModels]);
+
   const pendingRecreate = useCreateImageStore((s) => s.pendingRecreate);
   useEffect(() => {
     if (!pendingRecreate) return;
@@ -207,6 +227,7 @@ export default function CreateImage() {
       ...(payload.resolution ? { resolution: payload.resolution } : {}),
       ...(payload.modelId ? { selectedModelId: payload.modelId } : {}),
     });
+    if (payload.modelId) setRecreateModelIdToVerify(payload.modelId);
   }, [pendingRecreate, setUi]);
 
   // Resume polling for pending batches
@@ -278,7 +299,20 @@ export default function CreateImage() {
   );
 
   const handleGenerate = useCallback(async () => {
-    if (!prompt.trim() || isGenerating || !selectedModel) return;
+    if (!prompt.trim() || isGenerating) return;
+    if (!selectedModel) {
+      // Models come from an API fetch; without one the submit would be a
+      // silent no-op, which reads as a dead button.
+      toast.error("Models are still loading. Try again in a moment.");
+      return;
+    }
+
+    if (maxPromptLength !== undefined && prompt.length > maxPromptLength) {
+      toast.error(
+        `Prompt exceeds the ${maxPromptLength} character limit for this model`,
+      );
+      return;
+    }
 
     setIsGenerating(true);
     const batchId = startBatch(
@@ -307,6 +341,14 @@ export default function CreateImage() {
       });
 
       if (!result.success || !result.jobToken) {
+        // Always toast: batches that fail at enqueue never got a job token,
+        // so the gallery's failed-card rendering never shows them, and a
+        // silent failBatch here looks like the button did nothing.
+        if (result.errorCode === 402) {
+          toast.error("You're out of credits. Top up to keep generating.");
+        } else {
+          toast.error(result.error ?? "Failed to start generation");
+        }
         failBatch(batchId, result.error ?? "Failed to start generation");
         setIsGenerating(false);
         return;
@@ -331,6 +373,7 @@ export default function CreateImage() {
       );
       pollingCleanupsRef.current.set(batchId, stopPolling);
     } catch {
+      toast.error("Network error - please try again");
       failBatch(batchId, "Network error - please try again");
     } finally {
       setIsGenerating(false);
@@ -339,6 +382,7 @@ export default function CreateImage() {
     prompt,
     isGenerating,
     selectedModel,
+    maxPromptLength,
     numImages,
     aspectRatio,
     resolution,
@@ -398,6 +442,7 @@ export default function CreateImage() {
             onSubmit={handleGenerate}
             isSubmitting={isGenerating}
             credits={estimatedCredits}
+            maxPromptLength={maxPromptLength}
             placeholder="Describe what you want in the image..."
             supportsImagePrompts={!!selectedModel?.image_refs_supported}
             maxImagePromptCount={maxImageRefs}
@@ -414,7 +459,7 @@ export default function CreateImage() {
                   showIconsInList
                   triggerIcon={
                     <img
-                      src={getModelCreatorIconPath(selectedModel?.model ?? "")}
+                      src={getCreatorIconPathForModelId(selectedModel?.model ?? "")}
                       alt=""
                       className="h-4 w-4 icon-auto-contrast"
                     />

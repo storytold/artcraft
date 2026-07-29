@@ -12,11 +12,8 @@ use crate::http_server::common_responses::pagination_cursors::PaginationCursors;
 use crate::http_server::common_responses::pagination_page::PaginationPage;
 use crate::http_server::common_responses::simple_entity_stats::SimpleEntityStats;
 use crate::http_server::common_responses::simple_response::SimpleResponse;
-use crate::http_server::common_responses::tag_info::TagInfo;
 use crate::http_server::common_responses::user_details_lite::{UserDefaultAvatarInfo, UserDetailsLight};
 use crate::http_server::deprecated_endpoints::conversion::enqueue_fbx_to_gltf_handler::*;
-use crate::http_server::deprecated_endpoints::engine::create_scene_handler::*;
-use crate::http_server::deprecated_endpoints::image_gen::enqueue_image_generation::EnqueueImageGenRequestSuccessResponse;
 use crate::http_server::deprecated_endpoints::workflows::enqueue::enqueue_face_fusion_workflow_handler::*;
 use crate::http_server::deprecated_endpoints::workflows::enqueue::enqueue_live_portrait_workflow_handler::*;
 use crate::http_server::deprecated_endpoints::workflows::enqueue::vst_common::vst_error::*;
@@ -67,12 +64,21 @@ use crate::http_server::endpoints::media_files::list::list_pinned_media_files_ha
 use crate::http_server::endpoints::media_files::search::search_featured_media_files_handler::*;
 use crate::http_server::endpoints::media_files::search::search_session_media_files_handler::*;
 use crate::http_server::endpoints::media_files::upload::upload_audio_media_file_handler::*;
-use crate::http_server::endpoints::media_files::upload::upload_engine_asset::upload_engine_asset_media_file_handler::*;
 use crate::http_server::endpoints::media_files::upload::upload_error::MediaFileUploadError;
 use crate::http_server::endpoints::media_files::upload::upload_generic::upload_media_file_handler::*;
 use crate::http_server::endpoints::media_files::upload::upload_image_media_file_handler::*;
 use crate::http_server::endpoints::media_files::upload::upload_new_engine_asset_media_file_handler::*;
 use crate::http_server::endpoints::media_files::upload::upload_new_scene_media_file_handler::*;
+use crate::http_server::endpoints::media_files::upload::project::upload_updated_mood_board_project_handler::*;
+use crate::http_server::endpoints::media_files::upload::project::upload_new_mood_board_project_handler::*;
+use crate::http_server::endpoints::media_files::upload::project::upload_updated_video_timeline_project_handler::*;
+use crate::http_server::endpoints::media_files::upload::project::upload_new_video_timeline_project_handler::*;
+use crate::http_server::endpoints::media_files::upload::project::upload_updated_editor_2d_project_handler::*;
+use crate::http_server::endpoints::media_files::upload::project::upload_new_editor_2d_project_handler::*;
+use crate::http_server::endpoints::media_files::upload::project::upload_updated_scene_3d_project_handler::*;
+use crate::http_server::endpoints::media_files::upload::project::upload_new_scene_3d_project_handler::*;
+use crate::http_server::endpoints::media_files::upload::project::save_new_project::NewProjectMultipartForm;
+use crate::http_server::endpoints::media_files::upload::project::update_project::UpdateProjectMultipartForm;
 use crate::http_server::endpoints::media_files::upload::upload_pmx::upload_pmx_media_file_handler::*;
 use crate::http_server::endpoints::media_files::upload::upload_saved_scene_media_file_handler::*;
 use crate::http_server::endpoints::media_files::upload::upload_scene_snapshot_media_file_handler::*;
@@ -80,12 +86,15 @@ use crate::http_server::endpoints::media_files::upload::upload_spz_media_file_ha
 use crate::http_server::endpoints::media_files::upload::upload_studio_shot::upload_studio_shot_media_file_handler::*;
 use crate::http_server::endpoints::media_files::upload::upload_video_new::upload_new_video_media_file_handler::*;
 use crate::http_server::endpoints::media_files::upload::upload_video_old::upload_video_media_file_handler::*;
-use crate::http_server::endpoints::media_files::upsert_upload::write_engine_asset::write_engine_asset_media_file_handler::*;
-use crate::http_server::endpoints::media_files::upsert_upload::write_error::MediaFileWriteError;
-use crate::http_server::endpoints::media_files::upsert_upload::write_scene_file::write_scene_file_media_file_handler::*;
+use crate::http_server::endpoints::omni_api::upload::omni_upload_audio_media_file_handler::*;
+use crate::http_server::endpoints::omni_api::upload::omni_upload_image_media_file_handler::*;
+use crate::http_server::endpoints::omni_api::upload::omni_upload_video_media_file_handler::*;
 use crate::http_server::endpoints::model_download::enqueue_gptsovits_model_download_handler::*;
 use artcraft_api_defs::generate::video::edit::beeble_switchx_edit_video::*;
-use crate::http_server::endpoints::moderation::debug_logs::moderation_list_debug_logs_for_token_handler::*;
+use artcraft_api_defs::moderation::debug_logs::debug_log_entry::*;
+use artcraft_api_defs::moderation::debug_logs::moderation_list_all_debug_logs::*;
+use artcraft_api_defs::moderation::debug_logs::moderation_list_debug_logs_for_token::*;
+use artcraft_api_defs::moderation::debug_logs::moderation_list_debug_logs_for_user::*;
 use crate::http_server::endpoints::moderation::jobs::moderation_get_job_by_token_handler::*;
 use crate::http_server::endpoints::moderation::user_feature_flags::moderator_edit_user_feature_flags_handler::*;
 use crate::http_server::endpoints::moderation::user_feature_flags::moderator_list_all_available_user_feature_flags_handler::*;
@@ -94,6 +103,19 @@ use crate::http_server::endpoints::moderation::staff_audit_logs::moderator_list_
 use crate::http_server::endpoints::moderation::user_bans::moderation_ban_user_handler::*;
 use crate::http_server::endpoints::moderation::user_emails::moderator_change_user_email_handler::*;
 use crate::http_server::endpoints::moderation::user_emails::moderator_list_email_address_changes_for_user_handler::*;
+
+// API key endpoints
+use crate::http_server::endpoints::api_keys::create_api_key_handler::*;
+use crate::http_server::endpoints::api_keys::list_api_keys_handler::*;
+use crate::http_server::endpoints::api_keys::get_api_key_handler::*;
+use crate::http_server::endpoints::api_keys::delete_api_key_handler::*;
+use crate::http_server::endpoints::api_keys::update_api_key_handler::*;
+use artcraft_api_defs::api_keys::common::*;
+use artcraft_api_defs::api_keys::create_api_key::*;
+use artcraft_api_defs::api_keys::list_api_keys::*;
+use artcraft_api_defs::api_keys::get_api_key::*;
+use artcraft_api_defs::api_keys::delete_api_key::*;
+use artcraft_api_defs::api_keys::update_api_key::*;
 
 // Folder endpoints
 use crate::http_server::endpoints::folders::folder::color_code_folder_handler::*;
@@ -108,13 +130,38 @@ use crate::http_server::endpoints::folders::media_files::bulk_add_folder_media_f
 use crate::http_server::endpoints::folders::media_files::bulk_move_folder_media_files_handler::*;
 use crate::http_server::endpoints::folders::media_files::bulk_remove_folder_media_files_handler::*;
 use crate::http_server::endpoints::folders::media_files::list_folder_media_files_handler::*;
+use crate::http_server::endpoints::folders::media_files::list_media_files_without_folder_handler::*;
 use crate::http_server::endpoints::folders::subfolder::bulk_add_subfolders_handler::*;
 use crate::http_server::endpoints::folders::subfolder::bulk_remove_subfolders_handler::*;
 use crate::http_server::endpoints::folders::subfolder::list_subfolders_handler::*;
 use artcraft_api_defs::folders::common::*;
 use artcraft_api_defs::folders::folder::*;
 use artcraft_api_defs::folders::media_files::*;
+use artcraft_api_defs::moderation::user_spend_summaries::get_summary::*;
+use artcraft_api_defs::moderation::user_spend_summaries::reengagement_list::*;
+use artcraft_api_defs::moderation::user_spend_summaries::top_users_list::*;
+use artcraft_api_defs::moderation::user_daily_spends::user_daily_spends_list::*;
+use artcraft_api_defs::moderation::top_spenders::list::*;
+use artcraft_api_defs::moderation::user_spend_events::list::*;
 use artcraft_api_defs::folders::subfolder::*;
+use artcraft_api_defs::tags::add_media_file_tags::*;
+use artcraft_api_defs::tags::bulk_add_tags::*;
+use artcraft_api_defs::tags::bulk_list_media_file_tags::*;
+use artcraft_api_defs::tags::bulk_set_tags::*;
+use artcraft_api_defs::tags::clear_media_file_tags::*;
+use artcraft_api_defs::tags::common::*;
+use artcraft_api_defs::tags::delete_tag::*;
+use artcraft_api_defs::tags::list_media_file_tags::*;
+use artcraft_api_defs::tags::list_media_files_with_tag::*;
+use artcraft_api_defs::tags::list_tagged_media_files::*;
+use artcraft_api_defs::tags::list_tags::*;
+use artcraft_api_defs::tags::list_untagged_media_files::*;
+use artcraft_api_defs::tags::rename_tag::*;
+use artcraft_api_defs::tags::set_media_file_tags::*;
+use crate::http_server::endpoints::tags::list_media_files_with_tag_handler::*;
+use crate::http_server::endpoints::tags::list_tagged_media_files_handler::*;
+use crate::http_server::endpoints::tags::list_untagged_media_files_handler::*;
+use crate::http_server::endpoints::tags::tag_media_file_list_item::*;
 use artcraft_api_defs::moderation::user_referrals::list_global_user_referrals::*;
 use artcraft_api_defs::moderation::user_referrals::list_user_referrals_for_user::*;
 use artcraft_api_defs::moderation::user_stripe_data::moderator_get_user_stripe_customer_ids::*;
@@ -193,10 +240,6 @@ use billing_component::stripe::http_endpoints::checkout::create::stripe_create_c
 use crate::http_server::endpoints::billing_fakeyou::list_active_user_subscriptions_handler::*;
 use crate::http_server::endpoints::service::status_alert_handler::*;
 use crate::http_server::endpoints::stats::get_unified_queue_stats_handler::*;
-use crate::http_server::endpoints::studio_gen2::enqueue_studio_gen2_handler::*;
-use crate::http_server::endpoints::studio_gen2::enqueue_studio_gen2_handler::EnqueueStudioGen2Request;
-use crate::http_server::endpoints::tags::list_tags_for_entity_handler::*;
-use crate::http_server::endpoints::tags::set_tags_for_entity_handler::*;
 use crate::http_server::endpoints::tts::enqueue_infer_tts_handler::enqueue_infer_tts_handler::*;
 use crate::http_server::endpoints::user_bookmarks::batch_get_user_bookmarks_handler::*;
 use crate::http_server::endpoints::user_bookmarks::create_user_bookmark_handler::*;
@@ -217,9 +260,6 @@ use crate::http_server::endpoints::users::login_handler::LoginErrorResponse;
 use crate::http_server::endpoints::users::logout_handler::*;
 use crate::http_server::endpoints::users::session_info_handler::*;
 use crate::http_server::endpoints::users::session_token_info_handler::*;
-use crate::http_server::endpoints::voice_conversion::enqueue_voice_conversion_inference_handler::*;
-use crate::http_server::endpoints::voice_designer::inference::enqueue_tts_request::*;
-use crate::http_server::endpoints::voice_designer::voice_datasets::list_datasets_by_user::*;
 use crate::http_server::endpoints::weights::delete::delete_weight_handler::*;
 use crate::http_server::endpoints::weights::get::get_weight_handler::*;
 use crate::http_server::endpoints::weights::list::list_available_weights_handler::*;
@@ -240,7 +280,6 @@ use enums::by_table::media_files::media_file_class::MediaFileClass;
 use enums::by_table::media_files::media_file_engine_category::MediaFileEngineCategory;
 use enums::by_table::media_files::media_file_origin_category::MediaFileOriginCategory;
 use enums::by_table::media_files::media_file_origin_product_category::MediaFileOriginProductCategory;
-use enums::by_table::media_files::media_file_subtype::MediaFileSubtype;
 use enums::by_table::media_files::media_file_type::MediaFileType;
 use enums::by_table::model_weights::{weights_category::WeightsCategory, weights_types::WeightsType};
 use enums::by_table::prompt_context_items::prompt_context_semantic_type::PromptContextSemanticType;
@@ -252,6 +291,7 @@ use enums::by_table::users::user_feature_flag::UserFeatureFlag;
 use enums::common::generation::common_model_class::CommonModelClass;
 use enums::common::generation::common_model_type::CommonModelType;
 use enums::common::generation::common_aspect_ratio::CommonAspectRatio;
+use enums::common::generation::common_bitrate::CommonBitrate;
 use enums::common::generation::common_generation_mode::CommonGenerationMode;
 use enums::common::generation::common_resolution::CommonResolution;
 use enums::common::generation_provider::GenerationProvider;
@@ -314,6 +354,18 @@ use artcraft_api_defs::analytics::log_active_user::*;
 use artcraft_api_defs::credits::get_session_credits::*;
 use artcraft_api_defs::subscriptions::get_session_subscription::*;
 use artcraft_api_defs::media_file::list_batch_generated_media_files::*;
+use artcraft_api_defs::media_file::list::by_type::list_session_common::*;
+use artcraft_api_defs::media_file::list::by_type::list_session_mesh_media_files::*;
+use artcraft_api_defs::media_file::list::by_type::list_session_splat_media_files::*;
+use artcraft_api_defs::media_file::list_session_project_media_files::*;
+use artcraft_api_defs::media_file::project::upload_updated_mood_board_project::*;
+use artcraft_api_defs::media_file::project::upload_new_mood_board_project::*;
+use artcraft_api_defs::media_file::project::upload_updated_video_timeline_project::*;
+use artcraft_api_defs::media_file::project::upload_new_video_timeline_project::*;
+use artcraft_api_defs::media_file::project::upload_updated_editor_2d_project::*;
+use artcraft_api_defs::media_file::project::upload_new_editor_2d_project::*;
+use artcraft_api_defs::media_file::project::upload_updated_scene_3d_project::*;
+use artcraft_api_defs::media_file::project::upload_new_scene_3d_project::*;
 // Handler modules with locally-defined types
 use crate::http_server::endpoints::moderation::info::moderator_token_info_handler::*;
 use artcraft_api_defs::characters::create_character::*;
@@ -322,14 +374,34 @@ use artcraft_api_defs::characters::edit_character::*;
 use artcraft_api_defs::characters::get_character::*;
 use artcraft_api_defs::characters::list_characters::*;
 use artcraft_api_defs::moderation::alerts::moderation_send_alert::*;
+use artcraft_api_defs::omni_api::generate_requests::omni_api_image_generate_request::*;
+use artcraft_api_defs::omni_api::generate_requests::omni_api_video_generate_request::*;
+use artcraft_api_defs::omni_gen::cost_and_generate_requests::omni_gen_audio_cost_and_generate_request::*;
 use artcraft_api_defs::omni_gen::cost_and_generate_requests::omni_gen_image_cost_and_generate_request::*;
+use artcraft_api_defs::omni_gen::cost_and_generate_requests::omni_gen_mesh_cost_and_generate_request::*;
+use artcraft_api_defs::omni_gen::cost_and_generate_requests::omni_gen_splat_cost_and_generate_request::*;
 use artcraft_api_defs::omni_gen::cost_and_generate_requests::omni_gen_video_cost_and_generate_request::*;
+use artcraft_api_defs::omni_gen::cost_response::omni_gen_audio_cost_response::*;
 use artcraft_api_defs::omni_gen::cost_response::omni_gen_image_cost_response::*;
+use artcraft_api_defs::omni_gen::cost_response::omni_gen_mesh_cost_response::*;
+use artcraft_api_defs::omni_gen::cost_response::omni_gen_splat_cost_response::*;
 use artcraft_api_defs::omni_gen::cost_response::omni_gen_video_cost_response::*;
+use artcraft_api_defs::omni_gen::generate_response::omni_gen_audio_generate_response::*;
 use artcraft_api_defs::omni_gen::generate_response::omni_gen_image_generate_response::*;
+use artcraft_api_defs::omni_gen::generate_response::omni_gen_mesh_generate_response::*;
+use artcraft_api_defs::omni_gen::generate_response::omni_gen_splat_generate_response::*;
 use artcraft_api_defs::omni_gen::generate_response::omni_gen_video_generate_response::*;
+use artcraft_api_defs::omni_gen::models::omni_gen_audio_models::*;
 use artcraft_api_defs::omni_gen::models::omni_gen_image_models::*;
+use artcraft_api_defs::omni_gen::models::omni_gen_mesh_models::*;
+use artcraft_api_defs::omni_gen::models::omni_gen_splat_models::*;
 use artcraft_api_defs::omni_gen::models::omni_gen_video_models::*;
+use artcraft_api_defs::omni_api::job_status::omni_api_batch_get_job_status::*;
+use artcraft_api_defs::omni_api::job_status::omni_api_get_job_status::*;
+use artcraft_api_defs::omni_api::job_status::omni_api_job_status_payload::*;
+use artcraft_api_defs::omni_api::omni_upload_audio::*;
+use artcraft_api_defs::omni_api::omni_upload_image::*;
+use artcraft_api_defs::omni_api::omni_upload_video::*;
 use artcraft_api_defs::moderation::user::list_subscribing_users_by_signup_date::*;
 use artcraft_api_defs::moderation::user::list_users_by_signup_date::*;
 use artcraft_api_defs::moderation::user::user_lookup::*;
@@ -345,9 +417,16 @@ use artcraft_api_defs::user_referral_codes::create_referral_code::*;
 use artcraft_api_defs::user_referral_codes::delete_referral_code::*;
 use artcraft_api_defs::user_referral_codes::list_referral_codes::*;
 use artcraft_api_defs::web_referrals::log_web_referral::*;
+use artcraft_api_defs::video_info::read_only::*;
+use artcraft_api_defs::video_info::upload::*;
+use artcraft_api_defs::video_info::notes::*;
+use enums::by_table::uploaded_video_notes::uploaded_video_note_reported_model_type::UploadedVideoNoteReportedModelType;
+use enums::by_table::uploaded_video_notes::uploaded_video_note_reported_website::UploadedVideoNoteReportedWebsite;
+use crate::http_server::endpoints::video_info::video_info_read_info_handler::*;
+use crate::http_server::endpoints::video_info::video_info_upload_handler::*;
+use crate::http_server::endpoints::video_info::video_info_notes_handler::*;
 use crate::http_server::endpoints::web_referrals::log_web_referral_handler::*;
 use crate::http_server::endpoints::image_studio::update_gpt_image_job_status_handler::*;
-use crate::http_server::endpoints::voice_conversion::enqueue_seed_vc_inference_handler::*;
 use crate::http_server::endpoints::credits::get_session_credits_handler::*;
 use crate::http_server::endpoints::subscriptions::get_session_subscription_handler::*;
 use crate::http_server::endpoints::analytics::log_app_active_user_handler::*;
@@ -357,10 +436,15 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
 #[derive(OpenApi)]
 #[openapi(
   paths(
+    crate::http_server::endpoints::moderation::user_spend_summaries::moderator_get_user_spend_summary_handler::moderator_get_user_spend_summary_handler,
+    crate::http_server::endpoints::moderation::user_spend_summaries::moderator_reengagement_list_handler::moderator_reengagement_list_handler,
+    crate::http_server::endpoints::moderation::user_spend_summaries::moderator_top_users_list_handler::moderator_top_users_list_handler,
+    crate::http_server::endpoints::moderation::user_daily_spends::moderator_user_daily_spends_handler::moderator_user_daily_spends_handler,
+    crate::http_server::endpoints::moderation::top_spenders::moderator_list_top_spenders_handler::moderator_list_top_spenders_handler,
+    crate::http_server::endpoints::moderation::user_spend_events::moderator_list_user_spend_events_handler::moderator_list_user_spend_events_handler,
     billing_component::stripe::http_endpoints::checkout::create::stripe_create_checkout_session_json_handler::stripe_create_checkout_session_json_handler,
     crate::http_server::endpoints::billing_fakeyou::list_active_user_subscriptions_handler::list_active_user_subscriptions_handler,
     crate::http_server::deprecated_endpoints::conversion::enqueue_fbx_to_gltf_handler::enqueue_fbx_to_gltf_handler,
-    crate::http_server::deprecated_endpoints::engine::create_scene_handler::create_scene_handler,
     crate::http_server::deprecated_endpoints::workflows::enqueue::enqueue_face_fusion_workflow_handler::enqueue_face_fusion_workflow_handler,
     crate::http_server::deprecated_endpoints::workflows::enqueue::enqueue_live_portrait_workflow_handler::enqueue_live_portrait_workflow_handler,
     crate::http_server::deprecated_endpoints::workflows::enqueue::enqueue_studio_workflow_handler::enqueue_studio_workflow_handler,
@@ -415,14 +499,24 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     crate::http_server::endpoints::media_files::list::list_media_files_for_user_handler::list_media_files_for_user_handler,
     crate::http_server::endpoints::media_files::list::list_media_files_handler::list_media_files_handler,
     crate::http_server::endpoints::media_files::list::list_pinned_media_files_handler::list_pinned_media_files_handler,
+    crate::http_server::endpoints::media_files::list::by_type::list_session_mesh_media_files_handler::list_session_mesh_media_files_handler,
+    crate::http_server::endpoints::media_files::list::by_type::list_session_splat_media_files_handler::list_session_splat_media_files_handler,
+    crate::http_server::endpoints::media_files::list::list_session_project_media_files_handler::list_session_project_media_files_handler,
     crate::http_server::endpoints::media_files::search::search_featured_media_files_handler::search_featured_media_files_handler,
     crate::http_server::endpoints::media_files::search::search_session_media_files_handler::search_session_media_files_handler,
     crate::http_server::endpoints::media_files::upload::upload_audio_media_file_handler::upload_audio_media_file_handler,
-    crate::http_server::endpoints::media_files::upload::upload_engine_asset::upload_engine_asset_media_file_handler::upload_engine_asset_media_file_handler,
     crate::http_server::endpoints::media_files::upload::upload_generic::upload_media_file_handler::upload_media_file_handler,
     crate::http_server::endpoints::media_files::upload::upload_image_media_file_handler::upload_image_media_file_handler,
     crate::http_server::endpoints::media_files::upload::upload_new_engine_asset_media_file_handler::upload_new_engine_asset_media_file_handler,
     crate::http_server::endpoints::media_files::upload::upload_new_scene_media_file_handler::upload_new_scene_media_file_handler,
+    crate::http_server::endpoints::media_files::upload::project::upload_new_mood_board_project_handler::upload_new_mood_board_project_handler,
+    crate::http_server::endpoints::media_files::upload::project::upload_updated_mood_board_project_handler::upload_updated_mood_board_project_handler,
+    crate::http_server::endpoints::media_files::upload::project::upload_new_video_timeline_project_handler::upload_new_video_timeline_project_handler,
+    crate::http_server::endpoints::media_files::upload::project::upload_updated_video_timeline_project_handler::upload_updated_video_timeline_project_handler,
+    crate::http_server::endpoints::media_files::upload::project::upload_new_editor_2d_project_handler::upload_new_editor_2d_project_handler,
+    crate::http_server::endpoints::media_files::upload::project::upload_updated_editor_2d_project_handler::upload_updated_editor_2d_project_handler,
+    crate::http_server::endpoints::media_files::upload::project::upload_new_scene_3d_project_handler::upload_new_scene_3d_project_handler,
+    crate::http_server::endpoints::media_files::upload::project::upload_updated_scene_3d_project_handler::upload_updated_scene_3d_project_handler,
     crate::http_server::endpoints::media_files::upload::upload_spz_media_file_handler::upload_spz_media_file_handler,
     crate::http_server::endpoints::media_files::upload::upload_pmx::upload_pmx_media_file_handler::upload_pmx_media_file_handler,
     crate::http_server::endpoints::media_files::upload::upload_saved_scene_media_file_handler::upload_saved_scene_media_file_handler,
@@ -430,8 +524,6 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     crate::http_server::endpoints::media_files::upload::upload_studio_shot::upload_studio_shot_media_file_handler::upload_studio_shot_media_file_handler,
     crate::http_server::endpoints::media_files::upload::upload_video_new::upload_new_video_media_file_handler::upload_new_video_media_file_handler,
     crate::http_server::endpoints::media_files::upload::upload_video_old::upload_video_media_file_handler::upload_video_media_file_handler,
-    crate::http_server::endpoints::media_files::upsert_upload::write_engine_asset::write_engine_asset_media_file_handler::write_engine_asset_media_file_handler,
-    crate::http_server::endpoints::media_files::upsert_upload::write_scene_file::write_scene_file_media_file_handler::write_scene_file_media_file_handler,
     crate::http_server::endpoints::model_download::enqueue_gptsovits_model_download_handler::enqueue_gptsovits_model_download_handler,
     crate::http_server::endpoints::moderation::user_feature_flags::moderator_edit_user_feature_flags_handler::moderator_edit_user_feature_flags_handler,
     crate::http_server::endpoints::moderation::user_feature_flags::moderator_list_all_available_user_feature_flags_handler::moderator_list_all_available_user_feature_flags_handler,
@@ -441,9 +533,6 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     crate::http_server::endpoints::prompts::get_prompt_handler::get_prompt_handler,
     crate::http_server::endpoints::service::status_alert_handler::status_alert_handler,
     crate::http_server::endpoints::stats::get_unified_queue_stats_handler::get_unified_queue_stats_handler,
-    crate::http_server::endpoints::studio_gen2::enqueue_studio_gen2_handler::enqueue_studio_gen2_handler,
-    crate::http_server::endpoints::tags::list_tags_for_entity_handler::list_tags_for_entity_handler,
-    crate::http_server::endpoints::tags::set_tags_for_entity_handler::set_tags_for_entity_handler,
     crate::http_server::endpoints::tts::enqueue_infer_tts_handler::enqueue_infer_tts_handler::enqueue_infer_tts_handler,
     crate::http_server::endpoints::user_bookmarks::batch_get_user_bookmarks_handler::batch_get_user_bookmarks_handler,
     crate::http_server::endpoints::user_bookmarks::create_user_bookmark_handler::create_user_bookmark_handler,
@@ -463,9 +552,6 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     crate::http_server::endpoints::users::logout_handler::logout_handler,
     crate::http_server::endpoints::users::session_info_handler::session_info_handler,
     crate::http_server::endpoints::users::session_token_info_handler::session_token_info_handler,
-    crate::http_server::endpoints::voice_conversion::enqueue_voice_conversion_inference_handler::enqueue_voice_conversion_inference_handler,
-    crate::http_server::endpoints::voice_designer::inference::enqueue_tts_request::enqueue_tts_request,
-    crate::http_server::endpoints::voice_designer::voice_datasets::list_datasets_by_user::list_datasets_by_user_handler,
     crate::http_server::endpoints::weights::delete::delete_weight_handler::delete_weight_handler,
     crate::http_server::endpoints::weights::get::get_weight_handler::get_weight_handler,
     crate::http_server::endpoints::weights::list::list_available_weights_handler::list_available_weights_handler,
@@ -521,9 +607,7 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     crate::http_server::endpoints::analytics::log_app_active_user_handler::log_app_active_user_handler,
     crate::http_server::endpoints::analytics::log_app_active_user_json_handler::log_app_active_user_json_handler,
     // Voice Conversion
-    crate::http_server::endpoints::voice_conversion::enqueue_seed_vc_inference_handler::enqueue_infer_seed_vc_handler,
     // TTS
-    crate::http_server::endpoints::tts::enqueue_infer_f5_tts_handler::enqueue_infer_f5_tts_handler::enqueue_infer_f5_tts_handler,
     // Characters
     crate::http_server::endpoints::characters::list_characters_handler::list_characters_handler,
     crate::http_server::endpoints::characters::create_character_handler::create_character_handler,
@@ -531,12 +615,29 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     crate::http_server::endpoints::characters::edit_character_handler::edit_character_handler,
     crate::http_server::endpoints::characters::delete_character_handler::delete_character_handler,
     // Omni Gen
+    crate::http_server::endpoints::omni_gen::cost::audio::omni_gen_audio_cost_handler::omni_gen_audio_cost_handler,
     crate::http_server::endpoints::omni_gen::cost::image::omni_gen_image_cost_handler::omni_gen_image_cost_handler,
+    crate::http_server::endpoints::omni_gen::cost::mesh::omni_gen_mesh_cost_handler::omni_gen_mesh_cost_handler,
+    crate::http_server::endpoints::omni_gen::cost::splat::omni_gen_splat_cost_handler::omni_gen_splat_cost_handler,
     crate::http_server::endpoints::omni_gen::cost::video::omni_gen_video_cost_handler::omni_gen_video_cost_handler,
+    crate::http_server::endpoints::omni_gen::generate::audio::omni_gen_audio_generate_handler::omni_gen_audio_generate_handler,
     crate::http_server::endpoints::omni_gen::generate::image::omni_gen_image_generate_handler::omni_gen_image_generate_handler,
+    crate::http_server::endpoints::omni_gen::generate::mesh::omni_gen_mesh_generate_handler::omni_gen_mesh_generate_handler,
+    crate::http_server::endpoints::omni_gen::generate::splat::omni_gen_splat_generate_handler::omni_gen_splat_generate_handler,
     crate::http_server::endpoints::omni_gen::generate::video::omni_gen_video_generate_handler::omni_gen_video_generate_handler,
+    crate::http_server::endpoints::omni_gen::models::audio::omni_gen_audio_models_handler::omni_gen_audio_models_handler,
     crate::http_server::endpoints::omni_gen::models::image::omni_gen_image_models_handler::omni_gen_image_models_handler,
+    crate::http_server::endpoints::omni_gen::models::mesh::omni_gen_mesh_models_handler::omni_gen_mesh_models_handler,
+    crate::http_server::endpoints::omni_gen::models::splat::omni_gen_splat_models_handler::omni_gen_splat_models_handler,
     crate::http_server::endpoints::omni_gen::models::video::omni_gen_video_models_handler::omni_gen_video_models_handler,
+    // Omni API (API-key authenticated generate)
+    crate::http_server::endpoints::omni_api::generate::image::omni_api_image_generate_handler::omni_api_image_generate_handler,
+    crate::http_server::endpoints::omni_api::generate::video::omni_api_video_generate_handler::omni_api_video_generate_handler,
+    crate::http_server::endpoints::omni_api::upload::omni_upload_audio_media_file_handler::omni_upload_audio_media_file_handler,
+    crate::http_server::endpoints::omni_api::upload::omni_upload_image_media_file_handler::omni_upload_image_media_file_handler,
+    crate::http_server::endpoints::omni_api::upload::omni_upload_video_media_file_handler::omni_upload_video_media_file_handler,
+    crate::http_server::endpoints::omni_api::job_status::get_job_status_handler::omni_api_get_job_status_handler,
+    crate::http_server::endpoints::omni_api::job_status::batch_get_job_status_handler::omni_api_batch_get_job_status_handler,
     // Moderation
     crate::http_server::endpoints::moderation::alerts::moderation_send_alert_handler::moderation_send_alert_handler,
     crate::http_server::endpoints::moderation::info::moderator_token_info_handler::moderator_get_token_info_handler,
@@ -551,7 +652,9 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     crate::http_server::endpoints::moderation::wallets::moderator_add_banked_balance_to_wallet_handler::moderator_add_banked_balance_to_wallet_handler,
     crate::http_server::endpoints::moderation::wallets::moderator_create_wallet_for_user_handler::moderator_create_wallet_for_user_handler,
     crate::http_server::endpoints::moderation::wallets::moderator_get_wallet_handler::moderator_get_wallet_handler,
+    crate::http_server::endpoints::moderation::debug_logs::moderation_list_all_debug_logs_handler::moderation_list_all_debug_logs_handler,
     crate::http_server::endpoints::moderation::debug_logs::moderation_list_debug_logs_for_token_handler::moderation_list_debug_logs_for_token_handler,
+    crate::http_server::endpoints::moderation::debug_logs::moderation_list_debug_logs_for_user_handler::moderation_list_debug_logs_for_user_handler,
     crate::http_server::endpoints::moderation::jobs::moderation_get_job_by_token_handler::moderation_get_job_by_token_handler,
     crate::http_server::endpoints::moderation::staff_audit_logs::moderator_list_staff_audit_logs_handler::moderator_list_staff_audit_logs_handler,
     crate::http_server::endpoints::moderation::user_referrals::moderator_list_global_user_referrals_handler::moderator_list_global_user_referrals_handler,
@@ -560,6 +663,13 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     crate::http_server::endpoints::moderation::user_emails::moderator_change_user_email_handler::moderator_change_user_email_handler,
     crate::http_server::endpoints::moderation::user_emails::moderator_list_email_address_changes_for_user_handler::moderator_list_email_address_changes_for_user_handler,
     crate::http_server::endpoints::moderation::user_stripe_data::moderator_get_user_stripe_customer_ids_handler::moderator_get_user_stripe_customer_ids_handler,
+
+    // API keys
+    crate::http_server::endpoints::api_keys::create_api_key_handler::create_api_key_handler,
+    crate::http_server::endpoints::api_keys::list_api_keys_handler::list_api_keys_handler,
+    crate::http_server::endpoints::api_keys::get_api_key_handler::get_api_key_handler,
+    crate::http_server::endpoints::api_keys::delete_api_key_handler::delete_api_key_handler,
+    crate::http_server::endpoints::api_keys::update_api_key_handler::update_api_key_handler,
 
     // Folders
     crate::http_server::endpoints::folders::folder::create_folder_handler::create_folder_handler,
@@ -574,9 +684,26 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     crate::http_server::endpoints::folders::subfolder::bulk_add_subfolders_handler::bulk_add_subfolders_handler,
     crate::http_server::endpoints::folders::subfolder::bulk_remove_subfolders_handler::bulk_remove_subfolders_handler,
     crate::http_server::endpoints::folders::media_files::list_folder_media_files_handler::list_folder_media_files_handler,
+    crate::http_server::endpoints::folders::media_files::list_media_files_without_folder_handler::list_media_files_without_folder_handler,
     crate::http_server::endpoints::folders::media_files::bulk_add_folder_media_files_handler::bulk_add_folder_media_files_handler,
     crate::http_server::endpoints::folders::media_files::bulk_move_folder_media_files_handler::bulk_move_folder_media_files_handler,
     crate::http_server::endpoints::folders::media_files::bulk_remove_folder_media_files_handler::bulk_remove_folder_media_files_handler,
+
+    // Tags
+    crate::http_server::endpoints::tags::list_tags_handler::list_tags_handler,
+    crate::http_server::endpoints::tags::list_media_file_tags_handler::list_media_file_tags_handler,
+    crate::http_server::endpoints::tags::list_untagged_media_files_handler::list_untagged_media_files_handler,
+    crate::http_server::endpoints::tags::list_tagged_media_files_handler::list_tagged_media_files_handler,
+    crate::http_server::endpoints::tags::list_media_files_with_tag_handler::list_media_files_with_tag_handler,
+    crate::http_server::endpoints::tags::bulk_list_media_file_tags_handler::bulk_list_media_file_tags_handler,
+    crate::http_server::endpoints::tags::add_media_file_tags_handler::add_media_file_tags_handler,
+    crate::http_server::endpoints::tags::set_media_file_tags_handler::set_media_file_tags_handler,
+    crate::http_server::endpoints::tags::clear_media_file_tags_handler::clear_media_file_tags_handler,
+    crate::http_server::endpoints::tags::bulk_add_tags_handler::bulk_add_tags_handler,
+    crate::http_server::endpoints::tags::bulk_set_tags_handler::bulk_set_tags_handler,
+    crate::http_server::endpoints::tags::delete_tag_handler::delete_tag_handler,
+    crate::http_server::endpoints::tags::rename_tag_handler::rename_tag_handler,
+
     crate::http_server::endpoints::moderation::user_sessions::moderator_list_user_session_impersonation_requests_for_user_handler::moderator_list_user_session_impersonation_requests_for_user_handler,
     crate::http_server::endpoints::moderation::user_sessions::moderator_list_user_session_impersonation_requests_handler::moderator_list_user_session_impersonation_requests_handler,
     crate::http_server::endpoints::moderation::user_sessions::moderator_user_session_impersonation_request_handler::moderator_user_session_impersonation_request_handler,
@@ -585,6 +712,9 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     // Subscriptions
     crate::http_server::endpoints::subscriptions::get_session_subscription_handler::get_session_subscription_handler,
     // Web Referrals
+    crate::http_server::endpoints::video_info::video_info_read_info_handler::video_info_read_info_handler,
+    crate::http_server::endpoints::video_info::video_info_upload_handler::video_info_upload_handler,
+    crate::http_server::endpoints::video_info::video_info_notes_handler::video_info_notes_handler,
     crate::http_server::endpoints::web_referrals::log_web_referral_handler::log_web_referral_handler,
     // User Referral Codes
     crate::http_server::endpoints::user_referral_codes::create_referral_code_handler::create_referral_code_handler,
@@ -594,6 +724,20 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     crate::http_server::endpoints::image_studio::update_gpt_image_job_status_handler::update_gpt_image_job_status_handler,
   ),
   components(schemas(
+    ModeratorGetUserSpendSummaryResponse,
+    UserSpendSummaryView,
+    ModeratorReengagementListResponse,
+    ReengagementCandidateEntry,
+    ModeratorTopUsersListResponse,
+    TopUserEntry,
+    TopUsersWindow,
+    ModeratorUserDailySpendsResponse,
+    ModeratorListTopSpendersResponse,
+    TopSpenderEntry,
+    TopSpendersWindow,
+    ModeratorListUserSpendEventsResponse,
+    UserSpendEventListEntry,
+    UserDailySpendEntry,
     // Tokens
     BatchGenerationToken,
     BetaKeyToken,
@@ -620,11 +764,11 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     MediaFileEngineCategory,
     MediaFileOriginCategory,
     MediaFileOriginProductCategory,
-    MediaFileSubtype,
     MediaFileType,
     CommonModelClass,
     CommonModelType,
     CommonAspectRatio,
+    CommonBitrate,
     CommonGenerationMode,
     CommonResolution,
     PromptContextSemanticType,
@@ -648,15 +792,12 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     MediaFileModelDetails,
     MediaFileOriginDetails,
     MediaFileSocialMetaLight,
-    MediaFileWriteError,
-    MediaFileWriteError,
     MediaLinks,
     PaginationCursors,
     PaginationPage,
     SimpleEntityStats,
     SimpleGenericJsonSuccess,
     SimpleResponse,
-    TagInfo,
     UserDetailsLight,
     VideoPreviews,
     Visibility,
@@ -728,7 +869,6 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     CreateCommentSuccessResponse,
     CreateFeaturedItemRequest,
     CreateFeaturedItemSuccessResponse,
-    CreateSceneSuccessResponse,
     CreateUserBookmarkError,
     CreateUserBookmarkRequest,
     CreateUserBookmarkSuccessResponse,
@@ -779,6 +919,21 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     GetCharacterResponse,
     ListCharactersEntry,
     ListCharactersResponse,
+    OmniApiBatchGetJobStatusSuccessResponse,
+    OmniApiGetJobStatusSuccessResponse,
+    OmniApiImageGenerateRequest,
+    OmniApiJobRequestDetails,
+    OmniApiJobResultDetails,
+    OmniApiJobStatusDetails,
+    OmniApiJobStatusPayload,
+    OmniApiVideoGenerateRequest,
+    OmniGenAudioCostAndGenerateRequest,
+    OmniGenAudioCostResponse,
+    OmniGenAudioGenerateResponse,
+    OmniGenAudioModelDetails,
+    OmniGenAudioModelProviderDetails,
+    OmniGenAudioModelsResponse,
+    OmniGenAudioProviderModelDetails,
     OmniGenImageCostAndGenerateRequest,
     OmniGenImageCostResponse,
     OmniGenImageGenerateResponse,
@@ -788,6 +943,20 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     OmniGenImageModelsQuery,
     OmniGenImageModelsResponse,
     OmniGenImageProviderModelDetails,
+    OmniGenMeshCostAndGenerateRequest,
+    OmniGenMeshCostResponse,
+    OmniGenMeshGenerateResponse,
+    OmniGenMeshModelDetails,
+    OmniGenMeshModelProviderDetails,
+    OmniGenMeshModelsResponse,
+    OmniGenMeshProviderModelDetails,
+    OmniGenSplatCostAndGenerateRequest,
+    OmniGenSplatCostResponse,
+    OmniGenSplatGenerateResponse,
+    OmniGenSplatModelDetails,
+    OmniGenSplatModelProviderDetails,
+    OmniGenSplatModelsResponse,
+    OmniGenSplatProviderModelDetails,
     OmniGenVideoCostAndGenerateRequest,
     OmniGenVideoCostResponse,
     OmniGenVideoGenerateResponse,
@@ -841,21 +1010,13 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     EnqueueFbxToGltfRequestSuccessResponse,
     EnqueueGptSovitsModelDownloadRequest,
     EnqueueGptSovitsModelDownloadSuccessResponse,
-    EnqueueImageGenRequestSuccessResponse,
     EnqueueLivePortraitCropDimensions,
     EnqueueLivePortraitWorkflowRequest,
     EnqueueLivePortraitWorkflowSuccessResponse,
-    EnqueueStudioGen2Request,
-    EnqueueStudioGen2Response,
-    EnqueueTTSRequest,
-    EnqueueTTSRequestSuccessResponse,
     EnqueueVideoStyleTransferRequest,
     EnqueueVideoStyleTransferSuccessResponse,
-    EnqueueVoiceConversionInferenceRequest,
-    EnqueueVoiceConversionInferenceSuccessResponse,
     FeaturedMediaFile,
     FeaturedModelWeightForList,
-    FundamentalFrequencyMethod,
     GenerateFlux1DevTextToImageAspectRatio,
     GenerateFlux1DevTextToImageNumImages,
     GenerateFlux1DevTextToImageRequest,
@@ -913,15 +1074,12 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     GetProfilePathInfo,
     GetPromptPathInfo,
     GetPromptSuccessResponse,
-    GetUnifiedQueueStatsError,
     GetUnifiedQueueStatsSuccessResponse,
     GetUserRatingResponse,
     GetWeightPathInfo,
     GetWeightResponse,
     GoogleCreateAccountRequest,
     GoogleCreateAccountSuccessResponse,
-    InferTtsError,
-    InferTtsRequest,
     InferTtsSuccessResponse,
     InferenceJobStatusResponsePayload,
     InferenceJobTokenType,
@@ -935,9 +1093,6 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     ListCommentsError,
     ListCommentsPathInfo,
     ListCommentsSuccessResponse,
-    ListDatasetsByUserError,
-    ListDatasetsByUserPathInfo,
-    ListDatasetsByUserSuccessResponse,
     ListFeaturedMediaFilesQueryParams,
     ListFeaturedMediaFilesSuccessResponse,
     ListFeaturedWeightsError,
@@ -949,10 +1104,17 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     GetJobByTokenPathInfo,
     GetJobByTokenSuccessResponse,
     ModerationJobResponse,
-    ListDebugLogsPathInfo,
-    ListDebugLogsQueryParams,
-    ListDebugLogsSuccessResponse,
-    DebugLogEntry,
+    ModerationDebugLogEntry,
+    ModerationDebugLogUser,
+    ModerationListAllDebugLogsEntry,
+    ModerationListAllDebugLogsQueryParams,
+    ModerationListAllDebugLogsSuccessResponse,
+    ModerationListDebugLogsForTokenPathInfo,
+    ModerationListDebugLogsForTokenQueryParams,
+    ModerationListDebugLogsForTokenSuccessResponse,
+    ModerationListDebugLogsForUserPathInfo,
+    ModerationListDebugLogsForUserQueryParams,
+    ModerationListDebugLogsForUserSuccessResponse,
     ListStaffAuditLogsQueryParams,
     ListStaffAuditLogsSuccessResponse,
     ListImpersonationRequestsQueryParams,
@@ -969,12 +1131,13 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     ListPinnedWeightsSuccessResponse,
     ListSessionJobsItem,
     ListSessionJobsQueryParams,
+    ListSessionMeshMediaFilesSuccessResponse,
+    ListSessionProjectMediaFilesSuccessResponse,
+    ListSessionSplatMediaFilesSuccessResponse,
     ListSessionJobsSuccessResponse,
     ListSessionRequestDetailsResponse,
     ListSessionResultDetailsResponse,
     ListSessionStatusDetailsResponse,
-    ListTagsForEntityPathInfo,
-    ListTagsForEntitySuccessResponse,
     ListUserBookmarksForEntityError,
     ListUserBookmarksForEntityPathInfo,
     ListUserBookmarksForEntitySuccessResponse,
@@ -1010,8 +1173,11 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     ModeratorUserEmailChangeItem,
     ModeratorUserEmailChangeUserSummary,
     ModernInferenceQueueStats,
+    NewProjectMultipartForm,
     PinnedMediaFile,
     PinnedModelWeightForList,
+    ProjectMediaFileInfo,
+    SessionMediaFileInfo,
     PromptInfo,
     RatingRow,
     RedeemBetaKeyRequest,
@@ -1038,9 +1204,6 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     SetModelWeightCoverImagePathInfo,
     SetModelWeightCoverImageRequest,
     SetModelWeightCoverImageResponse,
-    SetTagsForEntityPathInfo,
-    SetTagsForEntityRequest,
-    SetTagsForEntitySuccessResponse,
     SetUserRatingRequest,
     SetUserRatingResponse,
     StatusAlertCategory,
@@ -1054,13 +1217,31 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     UpdateWeightRequest,
     UploadAudioMediaFileForm,
     UploadAudioMediaFileSuccessResponse,
-    UploadEngineAssetMediaSuccessResponse,
     UploadImageMediaFileForm,
     UploadImageMediaFileSuccessResponse,
+    OmniUploadAudioMediaFileForm,
+    OmniUploadAudioMediaFileSuccessResponse,
+    OmniUploadImageMediaFileForm,
+    OmniUploadImageMediaFileSuccessResponse,
+    OmniUploadVideoMediaFileForm,
+    OmniUploadVideoMediaFileSuccessResponse,
     UserImpersonationRequestResponse,
     UploadMediaSuccessResponse,
     UploadNewEngineAssetFileForm,
     UploadNewEngineAssetSuccessResponse,
+    UploadUpdatedEditor2dProjectPathInfo,
+    UpdateProjectMultipartForm,
+    UploadUpdatedEditor2dProjectSuccessResponse,
+    UploadUpdatedMoodBoardProjectPathInfo,
+    UploadUpdatedMoodBoardProjectSuccessResponse,
+    UploadUpdatedScene3dProjectPathInfo,
+    UploadUpdatedScene3dProjectSuccessResponse,
+    UploadUpdatedVideoTimelineProjectPathInfo,
+    UploadUpdatedVideoTimelineProjectSuccessResponse,
+    UploadNewEditor2dProjectSuccessResponse,
+    UploadNewMoodBoardProjectSuccessResponse,
+    UploadNewScene3dProjectSuccessResponse,
+    UploadNewVideoTimelineProjectSuccessResponse,
     UploadNewSceneMediaFileForm,
     UploadNewSceneMediaFileSuccessResponse,
     UploadSpzMediaFileForm,
@@ -1093,9 +1274,6 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     VstSuccessResponse,
     Weight,
     WeightsData,
-    WriteEngineAssetMediaSuccessResponse,
-    WriteSceneFileMediaSuccessResponse,
-    ZsDatasetRecord,
 
     // Cost Estimate types
     EstimateImageCostRequest,
@@ -1211,6 +1389,22 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     Veo3p1FastMultiFunctionVideoGenRequest,
     Veo3p1FastMultiFunctionVideoGenResponse,
 
+    // Video info (provenance detection)
+    VideoInfoReadOnlyForm,
+    VideoInfoReadOnlyResponse,
+    VideoInfoUploadForm,
+    VideoInfoUploadResponse,
+    VideoInfoNoteRequest,
+    VideoInfoNoteResponse,
+    UploadedVideoNoteReportedModelType,
+    UploadedVideoNoteReportedWebsite,
+    VideoProvenanceKind,
+    SeedanceVideoInfo,
+    VeoVideoInfo,
+    SoraVideoInfo,
+    DreaminaVideoInfo,
+    KlingVideoInfo,
+
     // Object Multi-Function types
     Hunyuan3dV3MultiFunctionObjectGenRequest,
     Hunyuan3dV3MultiFunctionObjectGenResponse,
@@ -1250,6 +1444,18 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     // User Emails (Moderation)
     ModeratorListUserEmailChangesQueryParams,
 
+    // API keys
+    ApiKeyInfo,
+    ApiKeyPathInfo,
+    CreateApiKeyRequest,
+    CreateApiKeySuccessResponse,
+    ListApiKeysQueryParams,
+    ListApiKeysSuccessResponse,
+    GetApiKeySuccessResponse,
+    DeleteApiKeySuccessResponse,
+    UpdateApiKeyRequest,
+    UpdateApiKeySuccessResponse,
+
     // Folders
     FolderInfo,
     FolderThumbnail,
@@ -1280,12 +1486,50 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     BulkRemoveSubfoldersSuccessResponse,
     ListFolderMediaFilesQueryParams,
     ListFolderMediaFilesSuccessResponse,
+    ListMediaFilesWithoutFolderQueryParams,
+    ListMediaFilesWithoutFolderSuccessResponse,
     BulkAddFolderMediaFilesRequest,
     BulkAddFolderMediaFilesSuccessResponse,
     BulkRemoveFolderMediaFilesRequest,
     BulkRemoveFolderMediaFilesSuccessResponse,
     BulkMoveFolderMediaFilesRequest,
     BulkMoveFolderMediaFilesSuccessResponse,
+
+    // Tags
+    AddMediaFileTagsPathInfo,
+    AddMediaFileTagsRequest,
+    AddMediaFileTagsSuccessResponse,
+    BulkAddTagsRequest,
+    BulkAddTagsSuccessResponse,
+    BulkListMediaFileTagsRequest,
+    BulkListMediaFileTagsSuccessResponse,
+    BulkSetTagsRequest,
+    BulkSetTagsSuccessResponse,
+    ClearMediaFileTagsPathInfo,
+    ClearMediaFileTagsSuccessResponse,
+    DeleteTagPathInfo,
+    DeleteTagSuccessResponse,
+    ListMediaFileTagsPathInfo,
+    ListMediaFileTagsSuccessResponse,
+    ListMediaFilesWithTagPathInfo,
+    ListMediaFilesWithTagQueryParams,
+    ListMediaFilesWithTagSuccessResponse,
+    ListTaggedMediaFilesQueryParams,
+    ListTaggedMediaFilesSuccessResponse,
+    ListTagsQueryParams,
+    ListTagsSuccessResponse,
+    ListUntaggedMediaFilesQueryParams,
+    ListUntaggedMediaFilesSuccessResponse,
+    MediaFileTagsEntry,
+    RenameTagPathInfo,
+    RenameTagRequest,
+    RenameTagSuccessResponse,
+    SetMediaFileTagsPathInfo,
+    SetMediaFileTagsRequest,
+    SetMediaFileTagsSuccessResponse,
+    TagDetails,
+    TagMediaFileListItem,
+    UnfolderedMediaFileListItem,
   ))
 )]
 pub struct ApiDoc;

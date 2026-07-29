@@ -1,12 +1,15 @@
-use sqlx::MySqlPool;
+use sqlx::{Executor, MySql};
 
 use errors::AnyhowResult;
 use tokens::tokens::media_files::MediaFileToken;
 
-pub async fn delete_media_file_as_user(
+pub async fn delete_media_file_as_user<'e, 'c: 'e, E>(
     media_file_token: &MediaFileToken,
-    mysql_pool: &MySqlPool
-) -> AnyhowResult<()> {
+    mysql_executor: E,
+) -> AnyhowResult<()>
+where
+    E: 'e + Executor<'c, Database = MySql>,
+{
     let _r = sqlx::query!(
         r#"
 UPDATE media_files
@@ -18,16 +21,19 @@ LIMIT 1
         "#,
       media_file_token,
     )
-        .execute(mysql_pool)
+        .execute(mysql_executor)
         .await?;
     Ok(())
 }
 
-pub async fn delete_media_file_as_mod(
+pub async fn delete_media_file_as_mod<'e, 'c: 'e, E>(
     media_file_token: &MediaFileToken,
     mod_user_token: &str,
-    mysql_pool: &MySqlPool
-) -> AnyhowResult<()> {
+    mysql_executor: E,
+) -> AnyhowResult<()>
+where
+    E: 'e + Executor<'c, Database = MySql>,
+{
     let _r = sqlx::query!(
         r#"
 UPDATE media_files
@@ -42,15 +48,18 @@ LIMIT 1
       mod_user_token,
       media_file_token,
     )
-        .execute(mysql_pool)
+        .execute(mysql_executor)
         .await?;
     Ok(())
 }
 
-pub async fn undelete_media_file_as_user(
+pub async fn undelete_media_file_as_user<'e, 'c: 'e, E>(
     media_file_token: &MediaFileToken,
-    mysql_pool: &MySqlPool
-) -> AnyhowResult<()> {
+    mysql_executor: E,
+) -> AnyhowResult<()>
+where
+    E: 'e + Executor<'c, Database = MySql>,
+{
     let _r = sqlx::query!(
         r#"
 UPDATE media_files
@@ -62,16 +71,19 @@ LIMIT 1
         "#,
       media_file_token,
     )
-        .execute(mysql_pool)
+        .execute(mysql_executor)
         .await?;
     Ok(())
 }
 
-pub async fn undelete_media_file_as_mod(
+pub async fn undelete_media_file_as_mod<'e, 'c: 'e, E>(
     media_file_token: &MediaFileToken,
     mod_user_token: &str,
-    mysql_pool: &MySqlPool
-) -> AnyhowResult<()> {
+    mysql_executor: E,
+) -> AnyhowResult<()>
+where
+    E: 'e + Executor<'c, Database = MySql>,
+{
     let _r = sqlx::query!(
         r#"
 UPDATE media_files
@@ -85,7 +97,7 @@ LIMIT 1
       mod_user_token,
       media_file_token,
     )
-        .execute(mysql_pool)
+        .execute(mysql_executor)
         .await?;
     Ok(())
 }

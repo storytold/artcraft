@@ -8,9 +8,7 @@ use utoipa::ToSchema;
 use enums::by_table::users::user_feature_flag::UserFeatureFlag;
 
 use crate::http_server::common_responses::common_web_error::CommonWebError;
-use crate::http_server::web_utils::user_session::require_moderator::{
-  require_moderator, UseDatabase,
-};
+use crate::http_server::user_lookup::user_session::require_moderator::require_moderator;
 use crate::state::server_state::ServerState;
 
 // ── Response ──
@@ -49,14 +47,7 @@ pub async fn moderator_list_all_available_user_feature_flags_handler(
   http_request: HttpRequest,
   server_state: web::Data<Arc<ServerState>>,
 ) -> Result<Json<ModeratorListUserFeatureFlagsResponse>, CommonWebError> {
-  let _user_session = require_moderator(
-    &http_request,
-    &server_state,
-    UseDatabase::GrabNewConnection,
-  ).await.map_err(|err| {
-    warn!("Moderator check failed: {:?}", err);
-    CommonWebError::NotAuthorized
-  })?;
+  let _user_session = require_moderator(&http_request, &server_state.session_checker, &server_state.mysql_pool).await?;
 
   let feature_flags: Vec<FeatureFlagDescriptor> = UserFeatureFlag::all_variants()
     .into_iter()

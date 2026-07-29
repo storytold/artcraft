@@ -1,5 +1,6 @@
 
 pub mod analytics_active_users;
+pub mod api_keys;
 pub mod api_tokens;
 pub mod audit_logs;
 pub mod batch_generations;
@@ -36,12 +37,16 @@ pub mod trending_model_analytics;
 pub mod tts;
 pub mod twitch;
 pub mod unsubscribe_reason;
+pub mod uploaded_video_notes;
+pub mod uploaded_videos;
 pub mod user_impersonation_requests;
 pub mod user_referral_codes;
 pub mod user_referrals;
+pub mod user_daily_spends;
+pub mod user_spend_events;
+pub mod user_spend_summaries;
 pub mod users;
 pub mod vocoder;
-pub mod voice_clone_requests;
 pub mod voice_conversion;
 pub mod voice_designer;
 pub mod wallet_ledger_entries;

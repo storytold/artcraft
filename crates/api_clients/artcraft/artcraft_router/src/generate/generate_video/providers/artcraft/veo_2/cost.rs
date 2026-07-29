@@ -15,9 +15,9 @@ impl ArtcraftVeo2CostState {
   }
 
   pub fn estimate_cost(&self) -> VideoGenerationCostEstimate {
-    // Mirrors fal_client veo_2: 5s = $2.50, +$0.50/s above 5s.
+    // 5s = $2.75, +$0.55/s above 5s.
     let extra = self.duration_seconds.saturating_sub(5);
-    let cost_in_usd_cents = 250 + extra * 50;
+    let cost_in_usd_cents = 275 + extra * 55;
 
     VideoGenerationCostEstimate {
       cost_in_credits: Some(cost_in_usd_cents),
@@ -49,17 +49,17 @@ mod tests {
   }
 
   #[test]
-  fn default_is_5s_priced_at_250() { assert_eq!(cost_cents(None), 250); }
+  fn default_is_5s_priced_at_275() { assert_eq!(cost_cents(None), 275); }
 
   #[test]
-  fn five_seconds_is_250() { assert_eq!(cost_cents(Some(5)), 250); }
+  fn five_seconds_is_275() { assert_eq!(cost_cents(Some(5)), 275); }
 
   #[test]
-  fn six_seconds_is_300() { assert_eq!(cost_cents(Some(6)), 300); }
+  fn six_seconds_is_330() { assert_eq!(cost_cents(Some(6)), 330); }
 
   #[test]
-  fn seven_seconds_is_350() { assert_eq!(cost_cents(Some(7)), 350); }
+  fn seven_seconds_is_385() { assert_eq!(cost_cents(Some(7)), 385); }
 
   #[test]
-  fn eight_seconds_is_400() { assert_eq!(cost_cents(Some(8)), 400); }
+  fn eight_seconds_is_440() { assert_eq!(cost_cents(Some(8)), 440); }
 }

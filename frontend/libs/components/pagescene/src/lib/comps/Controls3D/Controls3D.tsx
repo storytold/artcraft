@@ -20,11 +20,12 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   galleryModalVisibleViewMode,
   galleryModalVisibleDuringDrag,
+  galleryModalDraggingUnder,
 } from "@storyteller/ui-gallery-modal";
 import { twMerge } from "tailwind-merge";
 
 import { EngineContext } from "../../contexts/EngineContext/EngineContext";
-import { setTransformMode } from "../../actions";
+import { openAssetModal, setTransformMode } from "../../actions";
 import { usePageSceneStore, type TransformMode } from "../../PageSceneStore";
 import { AssetModal } from "../AssetMenu";
 
@@ -41,8 +42,6 @@ export const Controls3D = ({
   const editor = useContext(EngineContext);
   const {
     assetModalVisible,
-    setAssetModalVisible,
-    setAssetModalVisibleDuringDrag,
     selectedMode,
     transformSpace,
     currentUserToken,
@@ -50,8 +49,6 @@ export const Controls3D = ({
   } = usePageSceneStore(
     useShallow((s) => ({
       assetModalVisible: s.assetModalVisible,
-      setAssetModalVisible: s.setAssetModalVisible,
-      setAssetModalVisibleDuringDrag: s.setAssetModalVisibleDuringDrag,
       selectedMode: s.selectedMode,
       transformSpace: s.transformSpace,
       currentUserToken: s.currentUserToken,
@@ -97,11 +94,6 @@ export const Controls3D = ({
     }
   };
 
-  const handleOpenModal = () => {
-    setAssetModalVisibleDuringDrag(true);
-    setAssetModalVisible(true);
-  };
-
   const handleOpenCreate3dModal = () => {
     editor?.adapter.navigateToImageTo3D();
   };
@@ -109,6 +101,9 @@ export const Controls3D = ({
   const handleOpenGalleryModal = () => {
     galleryModalVisibleViewMode.value = true;
     galleryModalVisibleDuringDrag.value = true;
+    // Clear any leftover drag-under state so the panel opens fully shown (a
+    // reopen-off drag leaves it faded-hidden until the next open).
+    galleryModalDraggingUnder.value = false;
   };
 
   const handleAddAssetAction = (action: string) => {
@@ -123,7 +118,7 @@ export const Controls3D = ({
     }
     switch (action) {
       case "presets":
-        handleOpenModal();
+        openAssetModal();
         break;
       case "library":
         handleOpenGalleryModal();

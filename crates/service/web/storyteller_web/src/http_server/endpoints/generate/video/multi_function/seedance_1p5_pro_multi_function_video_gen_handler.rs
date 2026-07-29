@@ -3,6 +3,9 @@ use std::sync::Arc;
 
 use crate::billing::wallets::attempt_wallet_deduction::attempt_wallet_deduction_else_common_web_error;
 use crate::http_server::common_responses::common_web_error::CommonWebError;
+use crate::http_server::endpoints::generate::common::generation_debug_logs::{
+  insert_generation_failure_debug_log, insert_generation_request_debug_log,
+};
 use crate::http_server::endpoints::generate::common::payments_error_test::payments_error_test;
 use crate::http_server::validations::validate_idempotency_token_format::validate_idempotency_token_format;
 use crate::http_server::web_utils::get_request_platform_type::get_request_platform_type;
@@ -30,6 +33,7 @@ use mysql_queries::queries::prompt_context_items::insert_batch_prompt_context_it
 use mysql_queries::queries::prompts::insert_prompt::{insert_prompt, InsertPromptArgs};
 use sqlx::Acquire;
 use tokens::tokens::generic_inference_jobs::InferenceJobToken;
+use tokens::tokens::non_unique::debug_logs_event_token::DebugLogEventToken;
 
 
 /// Seedance 1.5 Pro Multi-Function (text and image to video)
@@ -77,6 +81,21 @@ pub async fn seedance_1p5_pro_multi_function_video_gen_handler(
       return Err(CommonWebError::NotAuthorized);
     }
   };
+
+  // ==================== DEBUG LOG: HTTP REQUEST ==================== //
+
+  let debug_log_event_token = DebugLogEventToken::generate();
+  let ip_address = get_request_ip(&http_request);
+  let request_url = http_request.uri().to_string();
+
+  insert_generation_request_debug_log(
+    &debug_log_event_token,
+    user_token,
+    &ip_address,
+    &request_url,
+    &serde_json::to_string(&*request).unwrap_or_default(),
+    &mut *mysql_connection,
+  ).await;
 
   if let Err(reason) = validate_idempotency_token_format(&request.uuid_idempotency_token) {
     return Err(CommonWebError::BadInputWithSimpleMessage(reason));
@@ -177,12 +196,21 @@ pub async fn seedance_1p5_pro_multi_function_video_gen_handler(
       api_key: &server_state.inference_providers.fal.api_key,
     };
 
-    fal_result = enqueue_seedance_1p5_pro_image_to_video_webhook(args)
-        .await
-        .map_err(|err| {
-          warn!("Error calling enqueue_seedance_1p5_pro_image_to_video_webhook: {:?}", err);
-          CommonWebError::from_error(err)
-        })?;
+    fal_result = match enqueue_seedance_1p5_pro_image_to_video_webhook(args).await {
+      Ok(result) => result,
+      Err(err) => {
+        warn!("Error calling enqueue_seedance_1p5_pro_image_to_video_webhook: {:?}", err);
+        insert_generation_failure_debug_log(
+          &debug_log_event_token,
+          user_token,
+          &ip_address,
+          &request_url,
+          &format!("Seedance 1.5 Pro generation failed: {:?}", err),
+          &mut *mysql_connection,
+        ).await;
+        return Err(CommonWebError::from_error(err));
+      }
+    };
 
   } else {
     info!("text-to-video case");
@@ -217,12 +245,21 @@ pub async fn seedance_1p5_pro_multi_function_video_gen_handler(
       &mut mysql_connection,
     ).await?;
 
-    fal_result = enqueue_seedance_1p5_pro_text_to_video_webhook(args)
-        .await
-        .map_err(|err| {
-          warn!("Error calling enqueue_seedance_1p5_pro_text_to_video_webhook: {:?}", err);
-          CommonWebError::from_error(err)
-        })?;
+    fal_result = match enqueue_seedance_1p5_pro_text_to_video_webhook(args).await {
+      Ok(result) => result,
+      Err(err) => {
+        warn!("Error calling enqueue_seedance_1p5_pro_text_to_video_webhook: {:?}", err);
+        insert_generation_failure_debug_log(
+          &debug_log_event_token,
+          user_token,
+          &ip_address,
+          &request_url,
+          &format!("Seedance 1.5 Pro generation failed: {:?}", err),
+          &mut *mysql_connection,
+        ).await;
+        return Err(CommonWebError::from_error(err));
+      }
+    };
   }
 
   let external_job_id = fal_result.request_id
@@ -232,8 +269,6 @@ pub async fn seedance_1p5_pro_multi_function_video_gen_handler(
       })?;
 
   info!("Fal request_id: {}", external_job_id);
-
-  let ip_address = get_request_ip(&http_request);
 
   let mut transaction = mysql_connection
       .begin()
@@ -245,6 +280,7 @@ pub async fn seedance_1p5_pro_multi_function_video_gen_handler(
 
   // NB: Don't fail the job if the query fails.
   let prompt_result = insert_prompt(InsertPromptArgs {
+    maybe_bitrate: None,
     maybe_apriori_prompt_token: None,
     prompt_type: PromptType::ArtcraftApp,
     maybe_creator_user_token: maybe_user_session
@@ -341,7 +377,7 @@ pub async fn seedance_1p5_pro_multi_function_video_gen_handler(
     starting_job_status_override: None,
     maybe_frontend_failure_category: None,
     maybe_failure_reason: None,
-      maybe_debug_log_event_token: None,
+    maybe_debug_log_event_token: Some(&debug_log_event_token),
     phantom: Default::default(),
   }).await;
 

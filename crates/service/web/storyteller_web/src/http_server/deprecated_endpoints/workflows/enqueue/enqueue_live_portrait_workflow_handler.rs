@@ -29,8 +29,7 @@ use crate::http_server::requests::request_headers::get_routing_tag_header::get_r
 use crate::http_server::requests::request_headers::has_debug_header::has_debug_header;
 use crate::http_server::validations::validate_idempotency_token_format::validate_idempotency_token_format;
 use crate::http_server::web_utils::response_error_helpers::to_simple_json_error;
-use crate::http_server::web_utils::user_session::require_user_session::RequireUserSessionError;
-use crate::http_server::web_utils::user_session::require_user_session_extended_using_connection::require_user_session_extended_using_connection;
+use crate::http_server::user_lookup::user_session::require_user_session_extended::require_user_session_extended;
 use crate::state::server_state::ServerState;
 use crate::util::cleaners::empty_media_file_token_to_null::empty_media_file_token_to_null;
 
@@ -122,15 +121,10 @@ pub async fn enqueue_live_portrait_workflow_handler(
   let maybe_avt_token = server_state.avt_cookie_manager
       .get_avt_token_from_request(&http_request);
 
-  let user_session = require_user_session_extended_using_connection(
+  let user_session = require_user_session_extended(
     &http_request,
     &server_state.session_checker,
-    &mut mysql_connection)
-      .await
-      .map_err(|err| match err {
-        RequireUserSessionError::ServerError => CommonWebError::from_error(err),
-        RequireUserSessionError::NotAuthorized => CommonWebError::NotAuthorized,
-      })?;
+    &mut *mysql_connection).await?;
 
   // ==================== PAID PLAN + PRIORITY ==================== //
 

@@ -1,0 +1,25 @@
+[package]
+name = "trace_id"
+edition = "2018"
+version = "0.0.1"
+authors = [
+    "Brandon Thomas <bt@brand.io>",
+    "Brandon Thomas <echelon@gmail.com>",
+]
+publish = false
+
+[package.metadata.cargo-udeps.ignore]
+normal = ["workspace-build-acceleration"]
+
+[lib]
+name = "trace_id"
+path = "src/lib.rs"
+
+[dependencies]
+# Workspace hack (faster compile times)
+workspace-build-acceleration.workspace = true
+
+rand = { version = "0.8.5", features = ["std_rng"] }
+serde.workspace = true
+serde_derive.workspace = true
+tokio.workspace = true

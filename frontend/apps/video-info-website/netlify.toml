@@ -1,0 +1,16 @@
+# Netlify config for the video-info-website (Nx + Vite SPA).
+#
+# All paths are relative to the site's **base directory**, which must be set to
+# `frontend` in the Netlify UI (Site config → Build & deploy → Base directory).
+# That's the Nx workspace root, so `npx nx` and node_modules resolve correctly.
+
+[build]
+command = "./apps/video-info-website/script/netlify_build.sh"
+publish = "apps/video-info-website/dist/"
+
+# Vite emits content-hashed files under dist/assets — safe to cache forever.
+[[headers]]
+for = "/assets/*"
+
+[headers.values]
+"Cache-Control" = "public, max-age=31536000, immutable"

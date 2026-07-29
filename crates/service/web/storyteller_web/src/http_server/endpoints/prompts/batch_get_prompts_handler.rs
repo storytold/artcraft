@@ -139,6 +139,7 @@ pub async fn batch_get_prompts_handler(
         maybe_generation_mode: result.maybe_generation_mode,
         maybe_aspect_ratio: result.maybe_aspect_ratio,
         maybe_resolution: result.maybe_resolution,
+        maybe_bitrate: result.maybe_bitrate,
         maybe_batch_count: result.maybe_batch_count,
         maybe_generate_audio: result.maybe_generate_audio,
         maybe_duration_seconds: result.maybe_duration_seconds,

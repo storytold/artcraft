@@ -1119,10 +1119,21 @@ export const ImageTo3DExperience = ({
 
               <div
                 className={twMerge(
-                  "flex justify-center gap-2.5",
+                  "flex items-center justify-between gap-2.5",
                   hasResults ? "mt-3" : "mt-3",
                 )}
               >
+                <ClassyModelSelector
+                  variant="embedded"
+                  items={
+                    variant === "world"
+                      ? IMAGE_TO_3D_WORLD_PAGE_MODEL_LIST
+                      : IMAGE_TO_3D_OBJECT_PAGE_MODEL_LIST
+                  }
+                  page={
+                    variant === "world" ? WORLD_MODEL_PAGE : OBJECT_MODEL_PAGE
+                  }
+                />
                 <GenerateButton
                   variant="primary"
                   icon={undefined}
@@ -1150,23 +1161,7 @@ export const ImageTo3DExperience = ({
           </div>
         </animated.div>
 
-        <div className="absolute bottom-6 left-6 z-20 flex items-center gap-5">
-          <ClassyModelSelector
-            items={
-              variant === "world"
-                ? IMAGE_TO_3D_WORLD_PAGE_MODEL_LIST
-                : IMAGE_TO_3D_OBJECT_PAGE_MODEL_LIST
-            }
-            page={variant === "world" ? WORLD_MODEL_PAGE : OBJECT_MODEL_PAGE}
-            mode="hoverSelect"
-            panelTitle="Select Model"
-            panelClassName="min-w-[300px]"
-            buttonClassName="bg-transparent p-0 text-lg hover:bg-transparent text-white/80 hover:text-white"
-            showIconsInList
-          />
-        </div>
-
-        <div className="absolute bottom-6 right-6 z-20 flex items-center gap-2">
+        <div className="absolute bottom-4 right-4 z-20 flex items-center gap-2">
           <CostCalculatorButton
             modelPage={
               variant === "world" ? WORLD_MODEL_PAGE : OBJECT_MODEL_PAGE

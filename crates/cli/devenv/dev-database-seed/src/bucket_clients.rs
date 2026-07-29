@@ -2,12 +2,12 @@ use std::time::Duration;
 
 use log::info;
 
-use cloud_storage::bucket_client::BucketClient;
+use cloud_storage::legacy_bucket_client::LegacyBucketClient;
 use errors::AnyhowResult;
 
 pub struct BucketClients {
-  pub public: BucketClient,
-  pub private: BucketClient,
+  pub public: LegacyBucketClient,
+  pub private: LegacyBucketClient,
 }
 
 pub fn get_bucket_clients() -> AnyhowResult<BucketClients> {
@@ -25,7 +25,7 @@ pub fn get_bucket_clients() -> AnyhowResult<BucketClients> {
 
   info!("Configuring public GCS bucket...");
 
-  let public_bucket_client = BucketClient::create(
+  let public_bucket_client = LegacyBucketClient::create(
     &access_key,
     &secret_key,
     &region_name,
@@ -37,7 +37,7 @@ pub fn get_bucket_clients() -> AnyhowResult<BucketClients> {
 
   info!("Configuring private GCS bucket...");
 
-  let private_bucket_client = BucketClient::create(
+  let private_bucket_client = LegacyBucketClient::create(
     &access_key,
     &secret_key,
     &region_name,

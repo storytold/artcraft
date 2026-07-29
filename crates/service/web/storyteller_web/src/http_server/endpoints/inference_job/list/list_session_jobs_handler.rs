@@ -10,6 +10,7 @@ use crate::http_server::endpoints::inference_job::utils::extractors::extract_liv
 use crate::http_server::endpoints::inference_job::utils::extractors::extract_polymorphic_inference_args::extract_polymorphic_inference_args;
 use crate::http_server::endpoints::media_files::helpers::get_media_domain::get_media_domain;
 use crate::http_server::web_utils::filter_model_name::maybe_filter_model_name;
+use crate::http_server::web_utils::job_keepalives::write_job_keepalives;
 use crate::state::server_state::ServerState;
 use actix_web::web::Json;
 use actix_web::{web, HttpRequest};
@@ -22,22 +23,13 @@ use enums::api_safe::by_table::generic_inference_jobs::frontend_failure_category
 use enums::api_safe::by_table::generic_inference_jobs::frontend_failure_category_for_old_clients::FrontendFailureCategoryForOldClients;
 use enums::by_table::generic_inference_jobs::inference_category::InferenceCategory;
 use enums::common::job_status_plus::JobStatusPlus;
-use log::{error, warn};
 use mysql_queries::queries::generic_inference::web::job_status::GenericInferenceJobStatus;
 use mysql_queries::queries::generic_inference::web::list_session_jobs::{list_session_jobs_from_connection, ListSessionJobsForUserArgs, SessionUser};
 use primitives::numerics::i64_to_u64_zero_clamped::i64_to_u64_zero_clamped;
-use redis::Commands;
-use redis_common::redis_keys::RedisKeys;
 use server_environment::ServerEnvironment;
 use tokens::tokens::generic_inference_jobs::InferenceJobToken;
 use tokens::tokens::media_files::MediaFileToken;
 use utoipa::IntoParams;
-
-/// For certain jobs or job classes (eg. non-premium), we kill the jobs if the user hasn't
-/// maintained a keepalive. This prevents wasted work when users who are unlikely to return
-/// navigate away. Premium users have accounts and can always return to the site, so they
-/// typically do not require keepalive.
-const JOB_KEEPALIVE_TTL_SECONDS : u64 = 60 * 3;
 
 /// List job statuses for jobs that are associated with the user's session.
 ///
@@ -74,9 +66,11 @@ pub async fn list_session_jobs_handler(
 
   // NB: SessionCheckerError → CommonWebError maps payload errors (bad cookie) to 401
   //     and DB / cache errors to 500.
+  // NB: The plain (non-extended) lookup is Redis-cached with a short TTL, which matters here:
+  //     this is the hottest polling endpoint in the app, and it only needs the user token.
   let maybe_user_session = server_state
       .session_checker
-      .maybe_get_user_session_extended_from_connection(&http_request, &mut mysql_connection)
+      .maybe_get_user_session_from_connection(&http_request, &mut mysql_connection)
       .await?;
 
   let include_states = query.include_states
@@ -92,7 +86,7 @@ pub async fn list_session_jobs_handler(
           .collect::<HashSet<_>>());
 
   let user = match (maybe_user_session.as_ref(), maybe_avt_token.as_ref()) {
-    (Some(session), _) => SessionUser::User(&session.user_token_typed),
+    (Some(session), _) => SessionUser::User(&session.user_token),
     (None, Some(avt_token)) => SessionUser::Anonymous(avt_token),
     (None, None) => {
       // TODO(bt,2025-04-15): We should install an AVT cookie.
@@ -109,29 +103,18 @@ pub async fn list_session_jobs_handler(
   // NB: Since this is publicly exposed, we don't query sensitive data.
   let records = list_session_jobs_from_connection(args, &mut mysql_connection).await?;
 
-  let mut redis = server_state.redis_pool
-      .get()
-      .map_err(CommonWebError::from_error)?;
+  // The Redis keepalive writes below are blocking I/O; release the pooled MySQL connection
+  // first so it isn't held hostage across Redis round trips (this starves the pool).
+  drop(mysql_connection);
 
   // TODO(bt,2024-04-22): Look up the extra redis statuses per item.
 
-  let keepalive_keys = records.iter()
+  let keepalive_job_tokens = records.iter()
       .filter(|record| record.is_keepalive_required)
-      .map(|record| RedisKeys::generic_inference_keepalive(record.job_token.as_str()))
+      .map(|record| record.job_token.as_str())
       .collect::<Vec<_>>();
 
-  for key in keepalive_keys.iter() {
-    // TODO(bt,2024-04-22): There is no msetex. We'll need to run a Redis pipeline here.
-    //  https://stackoverflow.com/questions/16423342/redis-multi-set-with-a-ttl
-    let _: Option<String> = match redis.set_ex(key, "1", JOB_KEEPALIVE_TTL_SECONDS) {
-      Ok(Some(status)) => Some(status),
-      Ok(None) => None,
-      Err(e) => {
-        error!("redis error setting job keepalive: {:?}", e);
-        None // Fail open (which in this case is bad! it will kill jobs if cluster has many jobs / is slow!)
-      },
-    };
-  }
+  write_job_keepalives(&server_state.redis_pool, &keepalive_job_tokens);
 
   let media_domain = get_media_domain(&http_request);
 
@@ -191,9 +174,9 @@ fn db_record_to_response_payload(
 
   let progress_percentage = estimate_job_progress(&record, maybe_polymorphic_args.as_ref());
 
-  /// If the job is currently running, this is how long it has been running in seconds.
-  /// This is heuristic estimate since we don't record the precise start time across runs.
-  /// If the job's updated_at timestamp is updated elsewhere, then this is not accurate at all.
+  // If the job is currently running, this is how long it has been running in seconds.
+  // This is heuristic estimate since we don't record the precise start time across runs.
+  // If the job's updated_at timestamp is updated elsewhere, then this is not accurate at all.
   let maybe_current_execution_duration_seconds = match record.status {
     JobStatusPlus::Started => {
       let now = Utc::now();

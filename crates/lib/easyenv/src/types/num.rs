@@ -49,3 +49,52 @@ pub fn try_get_env_num_optional<T>(env_name: &str) -> Result<Option<T>, EnvError
     },
   }
 }
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  use crate::tests_common::EnvVarGuard;
+
+  #[test]
+  fn parses_i32() {
+    let _g = EnvVarGuard::set("NUM_TEST_I32", "-42");
+    assert_eq!(get_env_num("NUM_TEST_I32", 0i32).unwrap(), -42);
+    assert_eq!(try_get_env_num_optional::<i32>("NUM_TEST_I32").unwrap(), Some(-42));
+  }
+
+  #[test]
+  fn parses_u64() {
+    let _g = EnvVarGuard::set("NUM_TEST_U64", "18446744073709551615");
+    assert_eq!(get_env_num("NUM_TEST_U64", 0u64).unwrap(), u64::MAX);
+    assert_eq!(try_get_env_num_optional::<u64>("NUM_TEST_U64").unwrap(), Some(u64::MAX));
+  }
+
+  #[test]
+  fn parses_f64() {
+    let _g = EnvVarGuard::set("NUM_TEST_F64", "3.14");
+    assert_eq!(get_env_num("NUM_TEST_F64", 0.0f64).unwrap(), 3.14);
+    assert_eq!(try_get_env_num_optional::<f64>("NUM_TEST_F64").unwrap(), Some(3.14));
+  }
+
+  #[test]
+  fn u8_overflow_returns_parse_error() {
+    let _g = EnvVarGuard::set("NUM_TEST_U8_OVERFLOW", "256");
+    assert!(get_env_num("NUM_TEST_U8_OVERFLOW", 0u8).is_err());
+    assert!(try_get_env_num_optional::<u8>("NUM_TEST_U8_OVERFLOW").is_err());
+  }
+
+  #[test]
+  fn missing_returns_default_and_none() {
+    let _g = EnvVarGuard::unset("NUM_TEST_MISSING");
+    assert_eq!(get_env_num("NUM_TEST_MISSING", 99i32).unwrap(), 99);
+    assert_eq!(try_get_env_num_optional::<i32>("NUM_TEST_MISSING").unwrap(), None);
+  }
+
+  #[test]
+  fn unparseable_returns_parse_error() {
+    let _g = EnvVarGuard::set("NUM_TEST_UNPARSEABLE", "not_a_number");
+    assert!(get_env_num("NUM_TEST_UNPARSEABLE", 0i32).is_err());
+    assert!(try_get_env_num_optional::<i32>("NUM_TEST_UNPARSEABLE").is_err());
+  }
+}

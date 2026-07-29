@@ -10,7 +10,10 @@ import { MouseControls } from "./keybinds_controls";
 import { ClipGroup, AssetType } from "../enums";
 import { XYZ } from "../datastructures/common";
 import type { EngineEventBus } from "./events/EngineEventBus";
-import { ObjectAddedEvent } from "./events/EngineEvent";
+import {
+  CameraViewToggleRequestedEvent,
+  ObjectAddedEvent,
+} from "./events/EngineEvent";
 import { isInternalBbox } from "./internalBbox";
 
 export type SceneObject = {
@@ -20,6 +23,7 @@ export type SceneObject = {
   type: string;
   visible: boolean;
   locked: boolean;
+  isCamera: boolean;
 };
 
 export interface SceneManagerAPI {
@@ -92,6 +96,7 @@ export class SceneManager implements SceneManagerAPI {
     } else {
       return this.scene.instantiate(name, position);
     }
+    return undefined;
   }
 
   updateSkybox(media_id: string) {
@@ -146,6 +151,13 @@ export class SceneManager implements SceneManagerAPI {
   }
 
   public async double_click() {
+    // Double-clicking the render-camera placeholder enters/exits camera view
+    // instead of the usual focus-zoom. editor.ts owns the transition.
+    const selected = this.selected_objects?.[0];
+    if (selected?.name === "::CAM::") {
+      this.bus.emit(new CameraViewToggleRequestedEvent());
+      return;
+    }
     this.mouse_controls.focus();
   }
 
@@ -197,11 +209,15 @@ export class SceneManager implements SceneManagerAPI {
   ) {
     let faicon = faCube;
     let name = object.name;
+    // Human-readable kind shown as the outliner row's subtitle.
+    let kind = "3D Object";
     if (object.name == "::CAM::") {
       faicon = faCamera;
       name = "Camera";
+      kind = "Camera";
     } else if (object.uuid in timeline_characters) {
       faicon = faPerson;
+      kind = "Character";
     }
     let locked = object.userData["locked"];
     if (locked == undefined) {
@@ -211,9 +227,10 @@ export class SceneManager implements SceneManagerAPI {
       id: object.uuid,
       icon: faicon,
       name: name.charAt(0).toUpperCase() + name.slice(1),
-      type: object.type,
+      type: kind,
       visible: object.visible,
       locked: object.userData["locked"],
+      isCamera: object.name == "::CAM::",
     };
   }
 
@@ -238,7 +255,7 @@ export class SceneManager implements SceneManagerAPI {
 
       const obj = await this.create(media_id, name, position);
       if (!obj) {
-        return;
+        return undefined;
       }
       this.scene.setColor(obj.uuid, color);
       obj.position.copy(position.add(new THREE.Vector3(0.5, 0.0, 0.5)));

@@ -4,11 +4,13 @@ use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::common_responses::media::media_domain::MediaDomain;
 use crate::http_server::common_responses::media::media_links_builder::MediaLinksBuilder;
 use crate::http_server::endpoints::inference_job::utils::estimates::estimate_job_progress::estimate_job_progress;
+use crate::http_server::endpoints::tts::enqueue_infer_tts_handler::enqueue_infer_tts_handler::SYNTHETIC_INFERENCE_JOB_TOKEN;
 use crate::http_server::endpoints::inference_job::utils::extractors::extract_lipsync_details::extract_lipsync_details;
 use crate::http_server::endpoints::inference_job::utils::extractors::extract_live_portrait_details::extract_live_portrait_details;
 use crate::http_server::endpoints::inference_job::utils::extractors::extract_polymorphic_inference_args::extract_polymorphic_inference_args;
 use crate::http_server::endpoints::media_files::helpers::get_media_domain::get_media_domain;
 use crate::http_server::web_utils::filter_model_name::maybe_filter_model_name;
+use crate::http_server::web_utils::job_keepalives::write_job_keepalives;
 use crate::state::server_state::ServerState;
 use actix_web::web::{Json, Path};
 use actix_web::{web, HttpRequest};
@@ -30,12 +32,6 @@ use server_environment::ServerEnvironment;
 use tokens::tokens::generic_inference_jobs::InferenceJobToken;
 use tokens::tokens::prompts::PromptToken;
 use utoipa::ToSchema;
-
-/// For certain jobs or job classes (eg. non-premium), we kill the jobs if the user hasn't
-/// maintained a keepalive. This prevents wasted work when users who are unlikely to return
-/// navigate away. Premium users have accounts and can always return to the site, so they
-/// typically do not require keepalive.
-const JOB_KEEPALIVE_TTL_SECONDS : u64 = 60 * 3;
 
 /// For the URL PathInfo
 #[derive(Deserialize, ToSchema)]
@@ -154,12 +150,9 @@ pub async fn get_inference_job_status_handler(
   path: Path<GetInferenceJobStatusPathInfo>,
   server_state: web::Data<Arc<ServerState>>,
 ) -> Result<Json<GetInferenceJobStatusSuccessResponse>, CommonWebError> {
-  if path.token.as_str().trim() == "None" {
-    // NB: A bunch of Python clients use our API and can fail in this manner.
-    // This was a large traffic driver during the 2023-03-08 outage.
-    // Presumably, it's this client: https://github.com/shards-7/fakeyou.py
-    return Err(CommonWebError::NotFound);
-  }
+
+  // Don't serve bad traffic
+  blackhole_jobs(&path.token)?;
 
   // NB: Since this is publicly exposed, we don't query sensitive data.
   let maybe_status = get_inference_job_status(
@@ -204,18 +197,10 @@ pub async fn get_inference_job_status_handler(
   };
 
   if record.is_keepalive_required {
-    // TODO(bt,2023-05-21): Make async.
-    let keepalive_key = RedisKeys::generic_inference_keepalive(path.token.as_str());
-    let _: Option<String> = match redis.set_ex(&extra_status_key, "1", JOB_KEEPALIVE_TTL_SECONDS) {
-      Ok(Some(status)) => {
-        Some(status)
-      },
-      Ok(None) => None,
-      Err(e) => {
-        error!("redis error setting job keepalive: {:?}", e);
-        None // Fail open (which in this case is bad! it will kill jobs if cluster has many jobs / is slow!)
-      },
-    };
+    // NB: This used to SET the *extra status* key instead of the keepalive key — which both
+    // clobbered the extra status with "1" (see the workaround above) and let keepalive-required
+    // jobs get killed while being actively polled.
+    write_job_keepalives(&server_state.redis_pool, &[path.token.as_str()]);
   }
 
   let media_domain = get_media_domain(&http_request);
@@ -231,6 +216,24 @@ pub async fn get_inference_job_status_handler(
     success: true,
     state: record_for_response,
   }))
+}
+
+/// Reject junk job tokens that abusive or broken clients poll in high volume, before they reach
+/// MySQL or Redis. Deliberately not logged — the whole point is to make these requests as cheap
+/// as possible.
+fn blackhole_jobs(token: &InferenceJobToken) -> Result<(), CommonWebError> {
+  match token.as_str().trim() {
+    // NB: The shut-down legacy TTS enqueue endpoint hands this sentinel token to old clients,
+    // and some of them poll it forever.
+    SYNTHETIC_INFERENCE_JOB_TOKEN => Err(CommonWebError::TooManyRequests),
+    // NB: A bunch of Python clients use our API and can fail in this manner.
+    // This was a large traffic driver during the 2023-03-08 outage.
+    // Presumably, it's this client: https://github.com/shards-7/fakeyou.py
+    "None" => Err(CommonWebError::NotFound),
+    // NB: Broken Javascript clients poll with a stringified `undefined` token.
+    "undefined" => Err(CommonWebError::NotFound),
+    _ => Ok(()),
+  }
 }
 
 fn record_to_payload(

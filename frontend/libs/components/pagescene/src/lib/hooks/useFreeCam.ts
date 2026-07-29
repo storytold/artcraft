@@ -89,7 +89,7 @@ export const useFreeCam = (
 
   // Hand the state to the editor so its render loop can integrate it.
   useEffect(() => {
-    if (!editor) return;
+    if (!editor) return undefined;
     editor.cameraController.setFreeCamState(stateRef.current);
     return () => editor.cameraController.setFreeCamState(null);
   }, [editor]);
@@ -98,7 +98,7 @@ export const useFreeCam = (
   // inside the viewport); keys on document so the user doesn't need
   // to click canvas first for WASD to work.
   useEffect(() => {
-    if (!canvas || !editor) return;
+    if (!canvas || !editor) return undefined;
     const state = stateRef.current;
     state.enabled = true;
 
@@ -134,6 +134,8 @@ export const useFreeCam = (
     };
 
     const onPointerDown = (e: PointerEvent) => {
+      // Record mode locks the viewport — no right-drag panning.
+      if (editor.cameraController.locked) return;
       if (e.button !== 2) return;
       dragRef.current = { x: e.clientX, y: e.clientY, pointerId: e.pointerId };
       state.velocity.set(0, 0, 0);
@@ -156,6 +158,7 @@ export const useFreeCam = (
     };
 
     const onPointerMove = (e: PointerEvent) => {
+      if (editor.cameraController.locked) return;
       const drag = dragRef.current;
       const camera = editor.cameraController.camera;
       if (!drag || !camera) return;
@@ -173,6 +176,8 @@ export const useFreeCam = (
     };
 
     const onWheel = (e: WheelEvent) => {
+      // Record mode locks the viewport — no wheel zoom.
+      if (editor.cameraController.locked) return;
       const camera = editor.cameraController.camera;
       if (!camera) return;
       const z = zoomFromWheel(e.deltaY);

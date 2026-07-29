@@ -12,7 +12,6 @@ use enums::by_table::media_files::media_file_animation_type::MediaFileAnimationT
 use enums::traits::mysql_from_row::MySqlFromRow as _;
 use enums::by_table::media_files::media_file_class::MediaFileClass;
 use enums::by_table::media_files::media_file_engine_category::MediaFileEngineCategory;
-use enums::by_table::media_files::media_file_subtype::MediaFileSubtype;
 use enums::by_table::media_files::media_file_type::MediaFileType;
 use enums::by_table::model_weights::weights_category::WeightsCategory;
 use enums::by_table::model_weights::weights_types::WeightsType;
@@ -38,7 +37,6 @@ pub struct MediaFile {
   pub maybe_engine_category: Option<MediaFileEngineCategory>,
   pub maybe_animation_type: Option<MediaFileAnimationType>,
 
-  pub maybe_media_subtype: Option<MediaFileSubtype>,
 
   // TODO: Bucket hash bits.
 
@@ -125,7 +123,6 @@ pub struct MediaFileRaw {
   pub maybe_engine_category: Option<MediaFileEngineCategory>,
   pub maybe_animation_type: Option<MediaFileAnimationType>,
 
-  pub maybe_media_subtype: Option<MediaFileSubtype>,
 
   // TODO: Bucket hash bits.
 
@@ -234,7 +231,6 @@ pub async fn batch_get_media_files(
         media_type: record.media_type,
         maybe_engine_category: record.maybe_engine_category,
         maybe_animation_type: record.maybe_animation_type,
-        maybe_media_subtype: record.maybe_media_subtype,
         maybe_batch_token: record.maybe_batch_token,
         maybe_title: record.maybe_title,
         maybe_text_transcript: record.maybe_text_transcript,
@@ -294,7 +290,6 @@ SELECT
     m.maybe_engine_category,
     m.maybe_animation_type,
 
-    m.maybe_media_subtype,
 
     users.token as maybe_creator_user_token,
     users.username as maybe_creator_username,
@@ -390,7 +385,6 @@ impl FromRow<'_, MySqlRow> for MediaFileRaw {
       maybe_engine_category: MediaFileEngineCategory::try_from_mysql_row_nullable(row, "maybe_engine_category")?,
       maybe_animation_type: MediaFileAnimationType::try_from_mysql_row_nullable(row, "maybe_animation_type")?,
 
-      maybe_media_subtype: MediaFileSubtype::try_from_mysql_row_nullable(row, "maybe_media_subtype")?,
 
       maybe_batch_token: BatchGenerationToken::try_from_mysql_row_nullable(row, "maybe_batch_token")?,
 

@@ -38,6 +38,15 @@ interface SearchFeaturedMediaQuery {
   filter_engine_categories?: FilterEngineCategories[];
 }
 
+// Pagination-only query for the by-class session lists (mesh / splat); the
+// media class is fixed by the endpoint.
+interface ListSessionMediaByClassQuery {
+  sort_ascending?: boolean;
+  page_size?: number;
+  cursor?: string;
+  cursor_is_reversed?: boolean;
+}
+
 export class MediaFilesApi extends ApiManager {
   public async DeleteMediaFileByToken({
     mediaFileToken,
@@ -206,6 +215,52 @@ export class MediaFilesApi extends ApiManager {
       .then((response) => ({
         success: true,
         data: response.results,
+        pagination: response.pagination,
+      }))
+      .catch((err) => {
+        return {
+          success: false,
+          errorMessage: err.message,
+        };
+      });
+  }
+
+  /** List the session user's mesh files (`media_class = 'mesh'`), paginated. */
+  public async ListSessionMeshMediaFiles(
+    query: ListSessionMediaByClassQuery = {}
+  ): Promise<ApiResponse<MediaFile[], PaginationInfinite>> {
+    const endpoint = `${this.getApiSchemeAndHost()}/v1/media_files/mesh/list`;
+    return await this.get<{
+      success: boolean;
+      results: MediaFile[];
+      pagination?: PaginationInfinite;
+    }>({ endpoint, query: { ...query } })
+      .then((response) => ({
+        success: response.success,
+        data: response.results ?? [],
+        pagination: response.pagination,
+      }))
+      .catch((err) => {
+        return {
+          success: false,
+          errorMessage: err.message,
+        };
+      });
+  }
+
+  /** List the session user's gaussian splat files (`media_class = 'splat'`), paginated. */
+  public async ListSessionSplatMediaFiles(
+    query: ListSessionMediaByClassQuery = {}
+  ): Promise<ApiResponse<MediaFile[], PaginationInfinite>> {
+    const endpoint = `${this.getApiSchemeAndHost()}/v1/media_files/splat/list`;
+    return await this.get<{
+      success: boolean;
+      results: MediaFile[];
+      pagination?: PaginationInfinite;
+    }>({ endpoint, query: { ...query } })
+      .then((response) => ({
+        success: response.success,
+        data: response.results ?? [],
         pagination: response.pagination,
       }))
       .catch((err) => {

@@ -17,7 +17,7 @@ use mysql_queries::queries::media_files::get::get_media_file::get_media_file;
 use crate::http_server::common_requests::media_file_token_path_info::MediaFileTokenPathInfo;
 use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::common_responses::simple_response::SimpleResponse;
-use crate::http_server::web_utils::user_session::require_user_session::require_user_session;
+use crate::http_server::user_lookup::user_session::require_user_session::require_user_session;
 use crate::state::server_state::ServerState;
 
 #[derive(Deserialize, ToSchema)]
@@ -56,12 +56,8 @@ pub async fn change_media_file_animation_type_handler(
     server_state: web::Data<Arc<ServerState>>
 ) -> Result<Json<SimpleResponse>, CommonWebError> {
 
-    let user_session = require_user_session(&http_request, &server_state)
-        .await
-        .map_err(|e| {
-            warn!("Not authorized: {:?}", e);
-            CommonWebError::NotAuthorized
-        })?;
+    let user_session = require_user_session(&http_request, &server_state.session_checker, &server_state.mysql_pool)
+        .await?;
 
     let media_file_token = path.token.clone();
     let is_mod = user_session.is_mod();

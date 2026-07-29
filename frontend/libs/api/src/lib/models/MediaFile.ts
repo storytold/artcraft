@@ -1,5 +1,5 @@
 import { MediaFileClass } from "../enums/MediaFileClass";
-import { MediaFileType, MediaFileSubtype } from "../enums/MediaFileType";
+import { MediaFileType } from "../enums/MediaFileType";
 import { WeightCategory } from "../enums/WeightCategory";
 import { WeightType } from "../enums/WeightType";
 import { UserInfo } from "./Users";
@@ -9,7 +9,6 @@ export interface MediaFile {
   media_type: MediaFileType;
   media_class: MediaFileClass | null;
   maybe_animation_type: string | null;
-  maybe_media_subtype: MediaFileSubtype | null;
   maybe_engine_extension: string | null;
   maybe_batch_token: string;
   maybe_original_filename: string | null;

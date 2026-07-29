@@ -84,9 +84,8 @@ pub struct SessionUserRecord {
 }
 
 impl SessionUserRecord {
-  // TODO(bt, 2022-12-20): Convert all users of the bare record to using `UserToken`, then get rid of this method.
-  pub fn get_strongly_typed_user_token(&self) -> UserToken {
-    self.user_token.clone()
+  pub fn get_user_token(&self) -> &UserToken {
+    &self.user_token
   }
 
   pub fn is_mod(&self) -> bool {

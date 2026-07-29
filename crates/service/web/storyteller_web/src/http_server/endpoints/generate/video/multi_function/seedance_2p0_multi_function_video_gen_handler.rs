@@ -5,13 +5,20 @@ use crate::billing::wallets::attempt_wallet_deduction::attempt_wallet_deduction_
 use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::endpoint_helpers::refund_wallet_after_api_failure::refund_wallet_after_api_failure;
 use crate::http_server::endpoints::generate::common::map_seedance2pro_web_errors::map_seedance2pro_error_to_web_error;
+use crate::http_server::endpoints::generate::common::generation_debug_logs::{
+  insert_generation_failure_debug_log, insert_generation_request_debug_log,
+};
+use enums::by_table::debug_logs::debug_log_level::DebugLogLevel;
+use enums::by_table::debug_logs::debug_log_type::DebugLogType;
+use mysql_queries::queries::debug_logs::insert_debug_log::{insert_debug_log, InsertDebugLogArgs};
 use crate::http_server::endpoints::generate::common::payments_error_test::payments_error_test;
-use crate::http_server::session::lookup::user_session_feature_flags::UserSessionFeatureFlags;
+use crate::http_server::user_lookup::user_session::session_utils::lookup::user_session_feature_flags::UserSessionFeatureFlags;
 use crate::http_server::validations::validate_idempotency_token_format::validate_idempotency_token_format;
 use crate::http_server::web_utils::get_request_platform_type::get_request_platform_type;
 use crate::state::server_state::ServerState;
 use crate::util::http_download_url_to_bytes::http_download_url_to_bytes;
 use crate::util::lookup::lookup_media_file_urls_as_map::lookup_media_file_urls_as_map;
+use crate::util::text_contains_cjk::text_contains_cjk;
 use actix_web::web::Json;
 use actix_web::{web, HttpRequest, ResponseError};
 use artcraft_api_defs::generate::video::multi_function::seedance_2p0_multi_function_video_gen::{
@@ -49,8 +56,14 @@ use sqlx::MySql;
 use tokens::tokens::characters::CharacterToken;
 use tokens::tokens::generic_inference_jobs::InferenceJobToken;
 use tokens::tokens::media_files::MediaFileToken;
+use tokens::tokens::non_unique::debug_logs_event_token::DebugLogEventToken;
+use tokens::tokens::users::UserToken;
+
 use url::Url;
 use url_utils::extension::extract_extension_from_url::{extract_extension_from_url, ExtractExtensions};
+
+const MAX_PROMPT_CHARS: usize = 10_000;
+const MAX_IMAGE_REFERENCES: usize = 9;
 
 // ======================== Result of a successful generation ========================
 
@@ -58,6 +71,14 @@ use url_utils::extension::extract_extension_from_url::{extract_extension_from_ur
 struct SeedanceGenerationResult {
   gen_response: GenerateVideoResponse,
   generation_mode: CommonGenerationMode,
+}
+
+/// Request-scoped context for writing `debug_logs` rows.
+struct DebugLogContext<'a> {
+  event_token: &'a DebugLogEventToken,
+  user_token: &'a UserToken,
+  ip_address: &'a str,
+  request_url: &'a str,
 }
 
 // ======================== Handler ========================
@@ -79,6 +100,10 @@ pub async fn seedance_2p0_multi_function_video_gen_handler(
   request: Json<Seedance2p0MultiFunctionVideoGenRequest>,
   server_state: web::Data<Arc<ServerState>>,
 ) -> Result<Json<Seedance2p0MultiFunctionVideoGenResponse>, CommonWebError> {
+
+  // Reject requests that exceed Seedance 2.0's upstream limits (prompt length,
+  // reference image count) before any billable or DB-mutating work.
+  validate_seedance_2p0_limits(&request)?;
 
   payments_error_test(&request.prompt.as_deref().unwrap_or(""))?;
 
@@ -107,6 +132,28 @@ pub async fn seedance_2p0_multi_function_video_gen_handler(
   };
 
   let user_token = &user_session.user_token;
+
+  // ==================== DEBUG LOG: HTTP REQUEST ==================== //
+
+  let debug_log_event_token = DebugLogEventToken::generate();
+  let ip_address = get_request_ip(&http_request);
+  let request_url = http_request.uri().to_string();
+
+  insert_generation_request_debug_log(
+    &debug_log_event_token,
+    user_token,
+    &ip_address,
+    &request_url,
+    &serde_json::to_string(&*request).unwrap_or_default(),
+    &mut *mysql_connection,
+  ).await;
+
+  let debug_log_context = DebugLogContext {
+    event_token: &debug_log_event_token,
+    user_token,
+    ip_address: &ip_address,
+    request_url: &request_url,
+  };
 
   if let Err(reason) = validate_idempotency_token_format(&request.uuid_idempotency_token) {
     return Err(CommonWebError::BadInputWithSimpleMessage(reason));
@@ -203,6 +250,8 @@ pub async fn seedance_2p0_multi_function_video_gen_handler(
       batch_count,
       duration_seconds,
       kinovi_character_ids.clone(),
+      &debug_log_context,
+      &mut mysql_connection,
     ).await;
 
     match result {
@@ -226,6 +275,8 @@ pub async fn seedance_2p0_multi_function_video_gen_handler(
           batch_count,
           duration_seconds,
           kinovi_character_ids.clone(),
+          &debug_log_context,
+          &mut mysql_connection,
         ).await;
 
         match result {
@@ -248,6 +299,14 @@ pub async fn seedance_2p0_multi_function_video_gen_handler(
               }
             }
 
+            insert_generation_failure_debug_log(
+              &debug_log_event_token,
+              user_token,
+              &ip_address,
+              &request_url,
+              &format!("Seedance 2.0 generation failed: {:?}", err),
+              &mut *mysql_connection,
+            ).await;
             refund_wallet_after_api_failure(&deduction_result.ledger_entry_token, &mut mysql_connection).await?;
             return Err(err);
           }
@@ -270,6 +329,8 @@ pub async fn seedance_2p0_multi_function_video_gen_handler(
       batch_count,
       duration_seconds,
       kinovi_character_ids,
+      &debug_log_context,
+      &mut mysql_connection,
     ).await;
 
     match result {
@@ -289,6 +350,14 @@ pub async fn seedance_2p0_multi_function_video_gen_handler(
           }
         }
 
+        insert_generation_failure_debug_log(
+          &debug_log_event_token,
+          user_token,
+          &ip_address,
+          &request_url,
+          &format!("Seedance 2.0 generation failed: {:?}", err),
+          &mut *mysql_connection,
+        ).await;
         refund_wallet_after_api_failure(&deduction_result.ledger_entry_token, &mut mysql_connection).await?;
         return Err(err);
       }
@@ -305,8 +374,6 @@ pub async fn seedance_2p0_multi_function_video_gen_handler(
 
   // --- DB writes in a transaction ---
 
-  let ip_address = get_request_ip(&http_request);
-
   let mut transaction = mysql_connection
       .begin()
       .await
@@ -317,6 +384,7 @@ pub async fn seedance_2p0_multi_function_video_gen_handler(
 
   // NB: Don't fail the job if the prompt insert fails.
   let prompt_result = insert_prompt(InsertPromptArgs {
+    maybe_bitrate: None,
     maybe_apriori_prompt_token: None,
     prompt_type: PromptType::ArtcraftApp,
     maybe_creator_user_token: Some(user_token),
@@ -437,7 +505,7 @@ pub async fn seedance_2p0_multi_function_video_gen_handler(
         creator_set_visibility: Visibility::Public,
         maybe_platform_type: get_request_platform_type(&http_request),
         maybe_cost_estimates: None,
-        maybe_debug_log_event_token: None,
+        maybe_debug_log_event_token: Some(&debug_log_event_token),
         mysql_executor: &mut *transaction,
         phantom: Default::default(),
       }
@@ -477,6 +545,38 @@ pub async fn seedance_2p0_multi_function_video_gen_handler(
 }
 
 // ======================== Helpers ========================
+
+/// Seedance 2.0 fails upstream when the prompt exceeds 10,000 characters
+/// (unless it contains Chinese, Japanese, or Korean text, which the provider
+/// handles differently) or when more than 9 reference images are supplied.
+/// Reject these doomed requests up front so callers see a clean 400 with an
+/// actionable message and we don't charge their wallet for an inference job
+/// we know will fail.
+fn validate_seedance_2p0_limits(
+  request: &Seedance2p0MultiFunctionVideoGenRequest,
+) -> Result<(), CommonWebError> {
+  if let Some(prompt) = request.prompt.as_deref() {
+    let char_count = prompt.chars().count();
+    if char_count > MAX_PROMPT_CHARS && !text_contains_cjk(prompt) {
+      return Err(CommonWebError::BadInputWithSimpleMessage(format!(
+        "Prompt is too long: Seedance 2.0 models accept at most {MAX_PROMPT_CHARS} characters (got {char_count}).",
+      )));
+    }
+  }
+
+  let image_reference_count = request
+    .reference_image_media_tokens
+    .as_ref()
+    .map_or(0, |tokens| tokens.len());
+
+  if image_reference_count > MAX_IMAGE_REFERENCES {
+    return Err(CommonWebError::BadInputWithSimpleMessage(format!(
+      "Too many image references: Seedance 2.0 models accept at most {MAX_IMAGE_REFERENCES} reference images (got {image_reference_count}).",
+    )));
+  }
+
+  Ok(())
+}
 
 fn map_resolution(aspect_ratio: Option<Seedance2p0AspectRatio>) -> KinoviAspectRatio {
   match aspect_ratio {
@@ -542,6 +642,8 @@ async fn upload_and_generate(
   batch_count: KinoviBatchCount,
   duration_seconds: u8,
   kinovi_character_ids: Option<Vec<String>>,
+  debug_log_context: &DebugLogContext<'_>,
+  mysql_connection: &mut sqlx::pool::PoolConnection<MySql>,
 ) -> Result<SeedanceGenerationResult, CommonWebError> {
 
   // --- Upload files to seedance2pro CDN ---
@@ -604,24 +706,44 @@ async fn upload_and_generate(
 
   let prompt = request.prompt.clone().unwrap_or_else(|| "".to_string());
 
+  let kinovi_request = KinoviGenerateVideoRequest {
+    model_type: KinoviModelType::Seedance2Pro,
+    prompt,
+    aspect_ratio,
+    output_resolution,
+    duration_seconds,
+    batch_count,
+    start_frame_url,
+    end_frame_url,
+    reference_image_urls,
+    reference_video_urls,
+    reference_audio_urls,
+    character_ids: kinovi_character_ids,
+    use_face_blur_hack: None,
+  };
+
+  // ==================== DEBUG LOG: KINOVI REQUEST ==================== //
+  // Logged BEFORE the send so the outbound payload is captured even when
+  // the generation call fails.
+
+  if let Err(err) = insert_debug_log(InsertDebugLogArgs {
+    apriori_debug_log_event_token: Some(debug_log_context.event_token),
+    maybe_creator_user_token: Some(debug_log_context.user_token),
+    debug_log_type: DebugLogType::KinoviRequest,
+    maybe_log_level: Some(DebugLogLevel::Info),
+    maybe_ip_address: Some(debug_log_context.ip_address),
+    maybe_url: Some(debug_log_context.request_url),
+    message: &format!("{:#?}", kinovi_request),
+    mysql_executor: &mut **mysql_connection,
+    phantom: Default::default(),
+  }).await {
+    warn!("Failed to insert Kinovi request debug log: {:?}", err);
+  }
+
   let video_gen_args = GenerateVideoArgs {
     session,
     host_override: None,
-    request: KinoviGenerateVideoRequest {
-      model_type: KinoviModelType::Seedance2Pro,
-      prompt,
-      aspect_ratio,
-      output_resolution,
-      duration_seconds,
-      batch_count,
-      start_frame_url,
-      end_frame_url,
-      reference_image_urls,
-      reference_video_urls,
-      reference_audio_urls,
-      character_ids: kinovi_character_ids,
-      use_face_blur_hack: None,
-    },
+    request: kinovi_request,
   };
 
   let gen_response = generate_video(video_gen_args).await
@@ -745,4 +867,87 @@ async fn upload_to_seedance2pro(
       })?;
 
   Ok(upload_result.public_url)
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  mod seedance_limits_tests {
+    use super::*;
+
+    #[test]
+    fn accepts_prompt_at_limit() {
+      let req = Seedance2p0MultiFunctionVideoGenRequest {
+        prompt: Some("a".repeat(MAX_PROMPT_CHARS)),
+        ..base_request()
+      };
+      assert!(validate_seedance_2p0_limits(&req).is_ok());
+    }
+
+    #[test]
+    fn rejects_prompt_over_limit() {
+      let req = Seedance2p0MultiFunctionVideoGenRequest {
+        prompt: Some("a".repeat(MAX_PROMPT_CHARS + 1)),
+        ..base_request()
+      };
+      assert!(matches!(
+        validate_seedance_2p0_limits(&req),
+        Err(CommonWebError::BadInputWithSimpleMessage(_))
+      ));
+    }
+
+    #[test]
+    fn accepts_over_limit_prompt_containing_cjk() {
+      let mut prompt = "a".repeat(MAX_PROMPT_CHARS + 1);
+      prompt.push('猫');
+      let req = Seedance2p0MultiFunctionVideoGenRequest {
+        prompt: Some(prompt),
+        ..base_request()
+      };
+      assert!(validate_seedance_2p0_limits(&req).is_ok());
+    }
+
+    #[test]
+    fn accepts_nine_image_references() {
+      let req = Seedance2p0MultiFunctionVideoGenRequest {
+        reference_image_media_tokens: Some(reference_tokens(MAX_IMAGE_REFERENCES)),
+        ..base_request()
+      };
+      assert!(validate_seedance_2p0_limits(&req).is_ok());
+    }
+
+    #[test]
+    fn rejects_ten_image_references() {
+      let req = Seedance2p0MultiFunctionVideoGenRequest {
+        reference_image_media_tokens: Some(reference_tokens(MAX_IMAGE_REFERENCES + 1)),
+        ..base_request()
+      };
+      assert!(matches!(
+        validate_seedance_2p0_limits(&req),
+        Err(CommonWebError::BadInputWithSimpleMessage(_))
+      ));
+    }
+  }
+
+  fn base_request() -> Seedance2p0MultiFunctionVideoGenRequest {
+    Seedance2p0MultiFunctionVideoGenRequest {
+      uuid_idempotency_token: "a1b2c3d4-e5f6-7890-abcd-ef1234567890".to_string(),
+      prompt: Some("test".to_string()),
+      start_frame_media_token: None,
+      end_frame_media_token: None,
+      reference_image_media_tokens: None,
+      reference_video_media_tokens: None,
+      reference_audio_media_tokens: None,
+      reference_character_tokens: None,
+      aspect_ratio: None,
+      output_resolution: None,
+      duration_seconds: Some(5),
+      batch_count: None,
+    }
+  }
+
+  fn reference_tokens(count: usize) -> Vec<MediaFileToken> {
+    (0..count).map(|i| MediaFileToken::new(format!("mf_{i}"))).collect()
+  }
 }

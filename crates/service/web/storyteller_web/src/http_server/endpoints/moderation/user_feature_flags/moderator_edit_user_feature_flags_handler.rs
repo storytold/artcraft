@@ -6,8 +6,8 @@ use std::sync::Arc;
 
 use actix_web::error::ResponseError;
 use actix_web::http::StatusCode;
-use actix_web::web::{Data, Json, Path};
-use actix_web::{HttpRequest, HttpResponse};
+use actix_web::web::{self, Data, Json, Path};
+use actix_web::HttpRequest;
 use log::warn;
 use redis::{Client, Commands};
 use sqlx::Acquire;
@@ -23,13 +23,10 @@ use mysql_queries::queries::users::user::update::set_user_feature_flags::{set_us
 use mysql_queries::queries::users::user_profiles::get_user_profile_by_token::get_user_profile_by_token;
 use tokens::tokens::users::UserToken;
 
-use crate::http_server::session::lookup::user_session_feature_flags::UserSessionFeatureFlags;
+use crate::http_server::user_lookup::user_session::session_utils::lookup::user_session_feature_flags::UserSessionFeatureFlags;
 use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::web_utils::response_error_helpers::to_simple_json_error;
-use crate::http_server::web_utils::response_success_helpers::simple_json_success;
-use crate::http_server::web_utils::user_session::require_moderator::{
-  require_moderator, UseDatabase,
-};
+use crate::http_server::user_lookup::user_session::require_moderator::require_moderator;
 use crate::state::server_state::ServerState;
 use artcraft_api_defs::common::responses::simple_generic_json_success::SimpleGenericJsonSuccess;
 
@@ -87,16 +84,9 @@ pub async fn moderator_edit_user_feature_flags_handler(
   request: Json<EditUserFeatureFlagsRequest>,
   server_state: Data<Arc<ServerState>>,
   redis_pool: Data<r2d2::Pool<Client>>,
-) -> Result<HttpResponse, CommonWebError> {
+) -> Result<Json<SimpleGenericJsonSuccess>, CommonWebError> {
 
-  let user_session = require_moderator(
-    &http_request,
-    &server_state,
-    UseDatabase::GrabNewConnection,
-  ).await.map_err(|err| {
-    warn!("Moderator check failed: {:?}", err);
-    CommonWebError::NotAuthorized
-  })?;
+  let user_session = require_moderator(&http_request, &server_state.session_checker, &server_state.mysql_pool).await?;
 
   let username_or_token = path.username_or_token.trim();
 
@@ -199,5 +189,5 @@ pub async fn moderator_edit_user_feature_flags_handler(
     let _r: Result<Option<String>, _> = redis.del(&cache_key);
   }
 
-  Ok(simple_json_success())
+  Ok(Json(SimpleGenericJsonSuccess { success: true }))
 }

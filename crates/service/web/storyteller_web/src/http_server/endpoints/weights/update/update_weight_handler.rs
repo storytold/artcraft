@@ -1,24 +1,20 @@
-use std::fmt;
 use std::sync::Arc;
 
-use actix_web::error::ResponseError;
-use actix_web::http::StatusCode;
 use actix_web::web::Path;
-use actix_web::{web, HttpRequest, HttpResponse};
+use actix_web::web::Json;
+use actix_web::{web, HttpRequest};
 use log::warn;
 use sqlx::MySqlPool;
 use utoipa::ToSchema;
 
 use crate::configs::supported_languages_for_models::{get_canonicalized_language_tag_for_model, get_primary_language_subtag};
 use crate::http_server::common_responses::common_web_error::CommonWebError;
-use crate::http_server::web_utils::user_session::require_user_session::RequireUserSessionError;
-use crate::http_server::web_utils::user_session::require_user_session_extended_using_connection::require_user_session_extended_using_connection;
+use crate::http_server::user_lookup::user_session::require_user_session_extended::require_user_session_extended;
 use crate::state::server_state::ServerState;
 use enums::by_table::media_files::media_file_type::MediaFileType;
 use enums::by_table::model_weights::weights_types::WeightsType;
 use enums::common::visibility::Visibility;
-use http_server_common::response::response_success_helpers::{simple_json_success, SimpleGenericJsonSuccess};
-use http_server_common::response::serialize_as_json_error::serialize_as_json_error;
+use http_server_common::response::response_success_helpers::SimpleGenericJsonSuccess;
 use markdown::simple_markdown_to_html::simple_markdown_to_html;
 use mysql_queries::queries::media_files::get::get_media_file::get_media_file;
 use mysql_queries::queries::model_weights::edit::update_weight::{update_weights, CoverImageOption, UpdateWeightArgs};
@@ -83,10 +79,10 @@ pub struct UpdateWeightPathInfo {
 pub async fn update_weight_handler(
     http_request: HttpRequest,
     path: Path<UpdateWeightPathInfo>,
-    request: web::Json<UpdateWeightRequest>,
+    request: Json<UpdateWeightRequest>,
     mysql_pool: web::Data<MySqlPool>,
     server_state: web::Data<Arc<ServerState>>
-) -> Result<HttpResponse, CommonWebError> {
+) -> Result<Json<SimpleGenericJsonSuccess>, CommonWebError> {
     let mut mysql_connection = mysql_pool
         .acquire()
         .await
@@ -95,18 +91,10 @@ pub async fn update_weight_handler(
             CommonWebError::from_error(err)
         })?;
 
-    let user_session = require_user_session_extended_using_connection(
+    let user_session = require_user_session_extended(
         &http_request,
         &server_state.session_checker,
-        &mut mysql_connection)
-        .await
-        .map_err(|err| match err {
-            RequireUserSessionError::NotAuthorized => CommonWebError::NotAuthorized,
-            _ => {
-                warn!("get user session error: {:?}", err);
-                CommonWebError::from_error(err)
-            },
-        })?;
+        &mut *mysql_connection).await?;
 
     let weight_token = path.weight_token.clone();
 
@@ -170,7 +158,7 @@ pub async fn update_weight_handler(
             let maybe_media_file_type = maybe_media_file.map(|media_file| media_file.media_type);
 
             match maybe_media_file_type {
-                Some(MediaFileType::Image) => cover_image = Some(CoverImageOption::SetCoverImage(media_file_token)),
+                Some(media_file_type) if media_file_type.is_image() => cover_image = Some(CoverImageOption::SetCoverImage(media_file_token)),
                 None => return Err(CommonWebError::BadInputWithSimpleMessage("Media file does not exist".to_string())),
                 _ => return Err(CommonWebError::BadInputWithSimpleMessage("Media file is the wrong type".to_string())),
             }
@@ -231,5 +219,5 @@ pub async fn update_weight_handler(
         }
     }
 
-    Ok(simple_json_success())
+    Ok(Json(SimpleGenericJsonSuccess { success: true }))
 }

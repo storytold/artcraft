@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Link,
   useNavigate,
@@ -10,9 +10,11 @@ import { faDesktop, faHouse } from "@fortawesome/pro-solid-svg-icons";
 import { Button } from "@storyteller/ui-button";
 import { MediaFilesApi } from "@storyteller/api";
 import { Stage3D, usePageSceneStore } from "@storyteller/ui-pagescene";
+import { Lightbox } from "../../components/lightbox/lightbox";
 import {
   GalleryModal,
   GalleryDragComponent,
+  galleryDragHidesImmediately,
 } from "@storyteller/ui-gallery-modal";
 import { useSession } from "../../lib/session";
 import { useStage3DCostEstimate } from "../../lib/cost-estimate-api";
@@ -122,6 +124,17 @@ function PageSceneEditor() {
     didAutoCollapseRef.current = true;
   }, [setOpen]);
 
+  // On the 3D editor the primary drop target is the scene behind the gallery
+  // modal, so dragging an asset should hide the gallery immediately (rather than
+  // only once the cursor leaves the modal). This page mounts/unmounts with the
+  // /edit-3d route, so flip the flag back off on leave.
+  useEffect(() => {
+    galleryDragHidesImmediately.value = true;
+    return () => {
+      galleryDragHidesImmediately.value = false;
+    };
+  }, []);
+
   useEffect(() => {
     usePageSceneStore.getState().setCurrentUserToken(user?.user_token);
   }, [user?.user_token]);
@@ -220,12 +233,47 @@ function PageSceneEditor() {
   // that output so the user lands in a working starting point. Without a
   // `?output=`, Stage3DBody's cold-sync handles the default letterbox by
   // reading the selected model's defaultAspectRatio (now 16:9 for the
-  // InstructiveEdit-tagged models that populate STAGE_3D_PAGE_MODEL_LIST).
+  // InstructiveEdit-tagged models that populate the Stage3D page model list).
   usePromptPrefillFromOutput(imageToken);
 
   const navigateToImageTo3D = useCallback(() => {
     navigate("/create-image");
   }, [navigate]);
+
+  // Record-mode handoff: open the app Lightbox on an uploaded media token. The
+  // Lightbox offers every destination for the media kind (Edit-on-Canvas,
+  // Make-Video, Recreate, Share, Download). Resolve the CDN URL from the token
+  // so the preview + actions have a real URL to work with.
+  const [lightbox, setLightbox] = useState<{
+    token: string;
+    cdnUrl: string;
+    mediaClass: string;
+  } | null>(null);
+
+  const openMediaLightbox = useCallback(
+    (token: string, kind: "image" | "video") => {
+      void (async () => {
+        let cdnUrl = "";
+        try {
+          const resp = await new MediaFilesApi().GetMediaFileByToken({
+            mediaFileToken: token,
+          });
+          const links = (
+            resp?.data as { media_links?: { cdn_url?: string } } | undefined
+          )?.media_links;
+          cdnUrl = links?.cdn_url ?? "";
+        } catch {
+          // ignore — open anyway; the sidebar metadata still loads by token
+        }
+        setLightbox({
+          token,
+          cdnUrl,
+          mediaClass: kind === "video" ? "video" : "image",
+        });
+      })();
+    },
+    [],
+  );
 
   const wrapperRef = useRef<HTMLDivElement | null>(null);
 
@@ -260,6 +308,7 @@ function PageSceneEditor() {
     userToken: user?.user_token,
     initialSceneToken: sceneToken,
     navigateToImageTo3D,
+    openMediaLightbox,
     getViewportSize,
     promptSignup: openSignupCta,
     onRequestNewSceneSelector: openSceneSplash,
@@ -316,6 +365,16 @@ function PageSceneEditor() {
           adds. Both components portal themselves out of this wrapper. */}
       <GalleryModal mode="view" />
       <GalleryDragComponent />
+      {/* Capture/Record handoff: the app Lightbox opens on the uploaded token
+          with all destinations for the media kind. */}
+      <Lightbox
+        isOpen={!!lightbox}
+        onClose={() => setLightbox(null)}
+        mediaToken={lightbox?.token}
+        cdnUrl={lightbox?.cdnUrl}
+        mediaClass={lightbox?.mediaClass}
+        showBatchCarousel={false}
+      />
       {demoToken && (
         <DemoOutputOverlay imageToken={imageToken} videoToken={videoToken} />
       )}

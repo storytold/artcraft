@@ -19,6 +19,8 @@ export interface EnqueueMeta {
   refImageUrls?: string[];
   modelType?: string;
   timestamp: number; // Date.now() at enqueue time
+  // Requested generation count when one task produces a batch (image page).
+  batchCount?: number;
 }
 
 interface StoredEntry {
@@ -27,12 +29,14 @@ interface StoredEntry {
   refImageUrls?: string[]; // base64 data-URLs after conversion
   modelType?: string;
   timestamp: number;
+  batchCount?: number;
   matchedTaskId?: string; // set once matched to a specific task
 }
 
 interface TaskMatch {
   prompt?: string;
   refImageUrls?: string[];
+  batchCount?: number;
 }
 
 // In-memory cache of task_id → matched metadata
@@ -113,6 +117,7 @@ export function storeEnqueueMeta(meta: EnqueueMeta) {
     refImageUrls: meta.refImageUrls,
     modelType: meta.modelType,
     timestamp: meta.timestamp,
+    batchCount: meta.batchCount,
   };
   const entries = readEntries();
   entries.push(entry);
@@ -153,6 +158,7 @@ export function getMetaForTask(
     const result: TaskMatch = {
       prompt: previousMatch.prompt,
       refImageUrls: previousMatch.refImageUrls,
+      batchCount: previousMatch.batchCount,
     };
     matchedTasks.set(taskId, result);
     return result;
@@ -187,6 +193,7 @@ export function getMetaForTask(
   const result: TaskMatch = {
     prompt: matched.prompt,
     refImageUrls: matched.refImageUrls,
+    batchCount: matched.batchCount,
   };
   matchedTasks.set(taskId, result);
   return result;

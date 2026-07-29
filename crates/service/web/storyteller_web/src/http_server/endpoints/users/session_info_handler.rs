@@ -13,8 +13,8 @@ use enums::by_table::users::user_feature_flag::UserFeatureFlag;
 use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::common_responses::user_details_lite_builder::UserDetailsLightBuilder;
 use actix_artcraft::sessions::anonymous_visitor_tracking::avt_cookie_manager::AvtCookieManager;
-use crate::http_server::session::lookup::user_session_feature_flags::UserSessionFeatureFlags;
-use crate::http_server::session::session_checker::SessionChecker;
+use crate::http_server::user_lookup::user_session::session_utils::lookup::user_session_feature_flags::UserSessionFeatureFlags;
+use crate::http_server::user_lookup::user_session::session_utils::session_checker::SessionChecker;
 
 #[utoipa::path(
   get,

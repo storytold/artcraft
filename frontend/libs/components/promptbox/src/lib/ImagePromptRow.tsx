@@ -371,9 +371,7 @@ export const ImagePromptRow = ({
 
   const getVideoDuration = (file: File): Promise<number> => {
     const src = URL.createObjectURL(file);
-    return getVideoDurationFromSrc(src).finally(() =>
-      URL.revokeObjectURL(src),
-    );
+    return getVideoDurationFromSrc(src).finally(() => URL.revokeObjectURL(src));
   };
 
   const totalVideoDuration = useMemo(
@@ -720,10 +718,7 @@ export const ImagePromptRow = ({
         );
 
         const newVideos: RefVideo[] = [];
-        let currentTotal = baseVideos.reduce(
-          (sum, v) => sum + v.duration,
-          0,
-        );
+        let currentTotal = baseVideos.reduce((sum, v) => sum + v.duration, 0);
         let exceeded = false;
         for (let i = 0; i < itemsToProcess.length; i++) {
           const item = itemsToProcess[i]!;
@@ -832,7 +827,7 @@ export const ImagePromptRow = ({
       )}
       <div
         className={twMerge(
-          "absolute left-0 glass w-[860px] rounded-t-xl flex",
+          "absolute left-0 glass w-full rounded-t-2xl flex",
           showVideoReferenceSection ? "-top-[144px]" : "-top-[72px]",
           className,
         )}
@@ -961,56 +956,56 @@ export const ImagePromptRow = ({
                   })}
                 {referenceImages.length + uploadingImages.length <
                   maxImagePromptCount && (
-                    <Tooltip
-                      interactive={true}
-                      position="top"
-                      delay={100}
-                      className="bg-ui-controls text-base-fg border border-ui-controls-border p-2 -mb-0.5"
-                      closeOnClick={true}
-                      content={
-                        <div className="flex flex-col gap-1.5">
-                          {allowUpload && (
-                            <Button
-                              variant="primary"
-                              onClick={handleUploadClickStart}
-                              icon={faPlus}
-                              className="w-full"
-                            >
-                              Upload
-                            </Button>
-                          )}
+                  <Tooltip
+                    interactive={true}
+                    position="top"
+                    delay={100}
+                    className="bg-ui-controls text-base-fg border border-ui-controls-border p-2 -mb-0.5"
+                    closeOnClick={true}
+                    content={
+                      <div className="flex flex-col gap-1.5">
+                        {allowUpload && (
                           <Button
-                            variant="action"
-                            onClick={() => {
-                              setGalleryTarget("start");
-                              setIsGalleryModalOpen(true);
-                            }}
-                            icon={faImages}
-                            className="w-full bg-base-fg/10 hover:bg-base-fg/20"
+                            variant="primary"
+                            onClick={handleUploadClickStart}
+                            icon={faPlus}
+                            className="w-full"
                           >
-                            Pick from library
+                            Upload
                           </Button>
-                        </div>
-                      }
-                    >
-                      <Button
-                        variant="action"
-                        className="bg-ui-controls/40 hover:bg-ui-controls/60 aspect-square w-full overflow-hidden rounded-lg w-14 border-dashed border-2 border-black/5 dark:border-white/25 transition-all"
-                        onClick={() => {
-                          if (allowUpload) handleUploadClickStart();
-                          else {
+                        )}
+                        <Button
+                          variant="action"
+                          onClick={() => {
                             setGalleryTarget("start");
                             setIsGalleryModalOpen(true);
-                          }
-                        }}
-                      >
-                        <FontAwesomeIcon
-                          icon={faPlus}
-                          className="text-2xl opacity-80 text-base-fg"
-                        />
-                      </Button>
-                    </Tooltip>
-                  )}
+                          }}
+                          icon={faImages}
+                          className="w-full bg-base-fg/10 hover:bg-base-fg/20"
+                        >
+                          Pick from library
+                        </Button>
+                      </div>
+                    }
+                  >
+                    <Button
+                      variant="action"
+                      className="bg-ui-controls/40 hover:bg-ui-controls/60 aspect-square w-full overflow-hidden rounded-lg w-14 border-dashed border-2 border-black/5 dark:border-white/25 transition-all"
+                      onClick={() => {
+                        if (allowUpload) handleUploadClickStart();
+                        else {
+                          setGalleryTarget("start");
+                          setIsGalleryModalOpen(true);
+                        }
+                      }}
+                    >
+                      <FontAwesomeIcon
+                        icon={faPlus}
+                        className="text-2xl opacity-80 text-base-fg"
+                      />
+                    </Button>
+                  </Tooltip>
+                )}
               </div>
             </div>
             {isVideo && showEndFrameSection && (

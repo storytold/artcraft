@@ -210,7 +210,7 @@
           "type": "Long",
           "flags": "NOT_NULL",
           "char_set": 63,
-          "max_size": 11
+          "max_size": 10
         }
       },
       {
@@ -220,7 +220,7 @@
           "type": "Long",
           "flags": "NOT_NULL",
           "char_set": 63,
-          "max_size": 11
+          "max_size": 10
         }
       },
       {

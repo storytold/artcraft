@@ -1,49 +1,34 @@
 import { CommonVideoModel } from "@storyteller/api-enums";
 
-// TODO(bt): This shouldn't exist. We need to standardize types throughout the frontend.
+// MIGRATION (2026-07): model `tauriId`s are now the storyteller-web omni
+// identifiers, which are exactly the CommonVideoModel values — so the common
+// case is a direct pass-through. The switch below only remains to translate
+// LEGACY tauri ids (old bookmarks/state); do not add new cases.
+
+const COMMON_VIDEO_MODEL_VALUES: Set<string> = new Set(
+  Object.values(CommonVideoModel),
+);
 
 export function videoModelToCommonVideoModel(
   tauriId: string,
 ): CommonVideoModel | null {
+  if (COMMON_VIDEO_MODEL_VALUES.has(tauriId)) {
+    return tauriId as CommonVideoModel;
+  }
+
   switch (tauriId) {
-    case "grok_video":
-      return CommonVideoModel.GrokVideo;
     case "kling_1.6_pro":
       return CommonVideoModel.Kling16Pro;
     case "kling_2.1_pro":
       return CommonVideoModel.Kling21Pro;
     case "kling_2.1_master":
       return CommonVideoModel.Kling21Master;
-    case "kling_2p5_turbo_pro":
-      return CommonVideoModel.Kling2p5TurboPro;
-    case "kling_2p6_pro":
-      return CommonVideoModel.Kling2p6Pro;
-    case "kling_3p0_standard":
-      return CommonVideoModel.Kling3p0Standard;
-    case "kling_3p0_pro":
-      return CommonVideoModel.Kling3p0Pro;
     case "seedance_1.0_lite":
       return CommonVideoModel.Seedance10Lite;
-    case "seedance_1p5_pro":
-      return CommonVideoModel.Seedance1p5Pro;
-    case "seedance_2p0":
-      return CommonVideoModel.Seedance2p0;
-    case "seedance_2p0_fast":
-      return CommonVideoModel.Seedance2p0Fast;
-    case "sora_2":
-      return CommonVideoModel.Sora2;
-    case "sora_2_pro":
-      return CommonVideoModel.Sora2Pro;
-    case "veo_2":
-      return CommonVideoModel.Veo2;
-    case "veo_3":
-      return CommonVideoModel.Veo3;
-    case "veo_3_fast":
-      return CommonVideoModel.Veo3Fast;
-    case "veo_3p1":
-      return CommonVideoModel.Veo3p1;
-    case "veo_3p1_fast":
-      return CommonVideoModel.Veo3p1Fast;
+    case "grok_imagine_video":
+      // The frontend id for the generic Grok video experience; the (stale)
+      // CommonVideoModel enum still spells it "grok_video".
+      return CommonVideoModel.GrokVideo;
     default:
       return null;
   }

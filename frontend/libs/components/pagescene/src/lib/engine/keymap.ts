@@ -52,6 +52,11 @@ const deleteSelected = (editor: Editor) => {
 };
 
 const onEscape = (editor: Editor) => {
+  // Escape leaves camera view first (before touching pose/selection).
+  if (editor.cameraController.getCameraPersonMode()) {
+    editor.cameraController.exitCameraView();
+    return;
+  }
   const poseMode: PoseMode = editor.getPoseMode();
   if (poseMode === "pose") {
     editor.mouse_controls?.toggleFKMode();

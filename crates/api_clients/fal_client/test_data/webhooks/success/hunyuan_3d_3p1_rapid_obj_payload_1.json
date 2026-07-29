@@ -1,0 +1,55 @@
+{
+  "error": null,
+  "gateway_request_id": "019f4d93-5a68-7a23-b2e7-8a1bc55e50f8",
+  "payload": {
+    "material_mtl": {
+      "content_type": "text/plain",
+      "file_name": "material.mtl",
+      "file_size": 229,
+      "url": "https://v3b.fal.media/files/b/0aa1bae3/5cbE-q28i44GUOO6YeZPH_material.mtl"
+    },
+    "model_glb": {
+      "content_type": "model/obj",
+      "file_name": "23dce35fc95b34722f15a7329061d5df.obj",
+      "file_size": 3258750,
+      "url": "https://v3b.fal.media/files/b/0aa1bae3/22zStkYp8-q6npG9dsMs5_23dce35fc95b34722f15a7329061d5df.obj"
+    },
+    "model_urls": {
+      "fbx": null,
+      "glb": null,
+      "mtl": {
+        "content_type": "text/plain",
+        "file_name": "material.mtl",
+        "file_size": 229,
+        "url": "https://v3b.fal.media/files/b/0aa1bae3/5cbE-q28i44GUOO6YeZPH_material.mtl"
+      },
+      "obj": {
+        "content_type": "model/obj",
+        "file_name": "23dce35fc95b34722f15a7329061d5df.obj",
+        "file_size": 3258750,
+        "url": "https://v3b.fal.media/files/b/0aa1bae3/22zStkYp8-q6npG9dsMs5_23dce35fc95b34722f15a7329061d5df.obj"
+      },
+      "texture": {
+        "content_type": "image/png",
+        "file_name": "texture_pbr_v128.png",
+        "file_size": 5503289,
+        "url": "https://v3b.fal.media/files/b/0aa1bae3/7eBRddTHf6U8SUg2QOIHw_texture_pbr_v128.png"
+      },
+      "usdz": null
+    },
+    "texture": {
+      "content_type": "image/png",
+      "file_name": "texture_pbr_v128.png",
+      "file_size": 5503289,
+      "url": "https://v3b.fal.media/files/b/0aa1bae3/7eBRddTHf6U8SUg2QOIHw_texture_pbr_v128.png"
+    },
+    "thumbnail": {
+      "content_type": "image/png",
+      "file_name": "preview.png",
+      "file_size": 120530,
+      "url": "https://v3b.fal.media/files/b/0aa1bae3/IO3aspD4ijEadoFxSF504_preview.png"
+    }
+  },
+  "request_id": "019f4d93-5a68-7a23-b2e7-8a1bc55e50f8",
+  "status": "OK"
+}

@@ -53,6 +53,22 @@ export {
 // exposed so hosts don't re-implement them inconsistently.
 export { kindFromMime } from "./lib/adapters";
 
+// --- Project document serialization ---
+// The JSON shape ProjectStorageAdapter envelopes carry in `data`.
+// Server-backed adapters (and hosts building bootstrap documents for
+// createProject) use these instead of inventing their own format.
+export {
+  serializeProjectDocument,
+  deserializeProjectDocument,
+  mediaAssetToData,
+} from "./lib/services/storage/serialization";
+export type { ProjectDocument } from "./lib/services/storage/serialization";
+export type {
+  MediaAssetData,
+  SerializedProject,
+  SerializedScene,
+} from "./lib/services/storage/types";
+
 // --- MediaTime + frame math (the wasm boundary) ---
 export {
   TICKS_PER_SECOND,

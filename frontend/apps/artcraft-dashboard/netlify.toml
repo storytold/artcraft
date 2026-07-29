@@ -1,0 +1,38 @@
+# Netlify configuration for the ArtCraft admin dashboard.
+#
+# Set up the Netlify site exactly like the other apps in this workspace:
+#   * Base directory:  frontend            (the Nx workspace root)
+#   * Build command:   bash ./apps/artcraft-dashboard/script/netlify_build.sh
+#   * Publish dir:     apps/artcraft-dashboard/dist
+#
+# (These match what's configured in the Netlify UI; paths are relative to the
+# `frontend` base directory.)
+#
+# REQUIRED env var (set in the Netlify UI → Site config → Environment):
+#   * NODE_VERSION = 22
+# Vite 7 (used by this app) requires Node >= 20.19 / 22.12, which is newer than
+# the rest of the workspace needs. The base directory is shared with the other
+# apps, so this can't be pinned via a committed .node-version without affecting
+# them — set it per-site in the UI instead. Netlify does not read this
+# netlify.toml at base `frontend`, so a [build.environment] block here would NOT
+# take effect; it must be a UI env var.
+#
+# The dashboard is deliberately ISOLATED from the Nx/npm workspace: it pins its
+# own React 19 + Vite 7 + Tailwind 4 toolchain and installs with pnpm. The build
+# script builds it standalone inside its own folder. Because the dashboard is
+# excluded from the root npm `workspaces` globs, Netlify's automatic
+# `npm install` at the base directory does NOT pull in its (incompatible) deps —
+# that's what prevents the multi-minute install hangs we saw when it was a
+# workspace member.
+
+[build]
+  command = "bash ./apps/artcraft-dashboard/script/netlify_build.sh"
+  publish = "apps/artcraft-dashboard/dist/"
+
+# Vite emits content-hashed assets under /assets/*, so they can be cached
+# forever — a new deploy produces new filenames.
+[[headers]]
+  for = "/assets/*"
+
+  [headers.values]
+    "Cache-Control" = "public, max-age=31536000, immutable"

@@ -2,6 +2,7 @@ use std::fmt;
 use std::sync::Arc;
 
 use actix_web::error::ResponseError;
+use actix_web::web::Json;
 use actix_web::http::StatusCode;
 use actix_web::web::Path;
 use actix_web::{web, HttpMessage, HttpRequest, HttpResponse};
@@ -87,7 +88,7 @@ impl fmt::Display for GetGenericDownloadJobStatusError {
 pub async fn get_generic_download_job_status_handler(
   http_request: HttpRequest,
   path: Path<GetGenericDownloadJobStatusPathInfo>,
-  server_state: web::Data<Arc<ServerState>>) -> Result<HttpResponse, GetGenericDownloadJobStatusError>
+  server_state: web::Data<Arc<ServerState>>) -> Result<Json<GetGenericDownloadJobStatusSuccessResponse>, GetGenericDownloadJobStatusError>
 {
   let maybe_job_status = get_generic_download_job_status(
     &path.token,
@@ -142,10 +143,5 @@ pub async fn get_generic_download_job_status_handler(
     state: model_for_response,
   };
 
-  let body = serde_json::to_string(&response)
-      .map_err(|e| GetGenericDownloadJobStatusError::ServerError)?;
-
-  Ok(HttpResponse::Ok()
-      .content_type("application/json")
-      .body(body))
+  Ok(Json(response))
 }

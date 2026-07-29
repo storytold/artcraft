@@ -1,0 +1,25 @@
+{
+  "db_name": "MySQL",
+  "query": "\nSELECT DISTINCT payments_namespace AS `payments_namespace!: PaymentsNamespace`\nFROM user_spend_events\nWHERE maybe_user_token IS NOT NULL\n  AND is_production = TRUE\n    ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "payments_namespace!: PaymentsNamespace",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NOT_NULL | MULTIPLE_KEY | BINARY | NO_DEFAULT_VALUE",
+          "char_set": 224,
+          "max_size": 128
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 0
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "cf8c702126bba73cd3abc2ed7202962b6da773460505222a75408dab1d26b70f"
+}

@@ -277,8 +277,23 @@ export function Viewer3D({
       }
     };
 
-    if (modelUrl.endsWith(".spz")) {
-      console.log("[Viewer3D] .spz format detected");
+    // Route by the URL's file extension, ignoring query strings / hashes
+    // (plain endsWith broke on CDN URLs with query params). Gaussian-splat
+    // formats go to Spark's SplatMesh; glTF goes to GLTFLoader; other model
+    // formats (obj/fbx/pmx…) have no loader here — show the fallback shape
+    // instead of letting GLTFLoader choke trying to JSON.parse binary data.
+    let urlExtension = "";
+    try {
+      const pathname = new URL(modelUrl, window.location.href).pathname;
+      urlExtension = (pathname.match(/\.([a-z0-9]+)$/i)?.[1] ?? "").toLowerCase();
+    } catch {
+      // Unparseable URL — fall through to the GLTF attempt below.
+    }
+    const SPLAT_EXTENSIONS = ["spz", "ply", "splat", "ksplat"];
+    const GLTF_EXTENSIONS = ["glb", "gltf", ""];
+
+    if (SPLAT_EXTENSIONS.includes(urlExtension)) {
+      console.log(`[Viewer3D] splat format detected (.${urlExtension})`);
       new SplatMesh({
         url: modelUrl,
         onLoad: (mesh) => {
@@ -303,8 +318,20 @@ export function Viewer3D({
           console.log("Splat loaded");
         },
       });
+    } else if (!GLTF_EXTENSIONS.includes(urlExtension)) {
+      // Known non-glTF model format with no loader wired here (obj, fbx,
+      // pmx, …). Show the fallback shape rather than spamming a parse error.
+      console.warn(
+        `[Viewer3D] unsupported model format ".${urlExtension}" — showing placeholder`,
+      );
+      if (cubeRef.current) {
+        cubeRef.current.visible = true;
+      }
     } else {
       const loader = new GLTFLoader();
+      // Anonymous CORS keeps the WebGL canvas untainted so thumbnail capture
+      // (offscreen toDataURL elsewhere) works on models loaded from the CDN.
+      loader.setCrossOrigin("anonymous");
       loader.load(
         modelUrl,
         (gltf) => {

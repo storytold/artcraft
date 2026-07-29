@@ -3,6 +3,7 @@ use chrono::{DateTime, Utc};
 use enums::by_table::prompt_context_items::prompt_context_semantic_type::PromptContextSemanticType;
 use enums::by_table::prompts::prompt_type::PromptType;
 use enums::common::generation::common_aspect_ratio::CommonAspectRatio;
+use enums::common::generation::common_bitrate::CommonBitrate;
 use enums::common::generation::common_generation_mode::CommonGenerationMode;
 use enums::common::generation::common_model_type::CommonModelType;
 use enums::common::generation::common_resolution::CommonResolution;
@@ -58,6 +59,9 @@ pub struct PromptInfo {
 
   /// OPTIONAL. The resolution (eg. one_k, two_k, four_k, etc.)
   pub maybe_resolution: Option<CommonResolution>,
+
+  /// OPTIONAL. The output bitrate (eg. normal, high).
+  pub maybe_bitrate: Option<CommonBitrate>,
 
   /// OPTIONAL. The number of outputs to generate (0-255).
   pub maybe_batch_count: Option<u8>,

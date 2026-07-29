@@ -1,15 +1,24 @@
 import { Link } from "react-router-dom";
+import { motion, useReducedMotion } from "framer-motion";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faImage,
   faVideo,
+  faMusic,
   faWandMagicSparkles,
   faCube,
+  faGlobe,
   faFilm,
+  faObjectGroup,
+  faPhotoFilm,
   faArrowRight,
 } from "@fortawesome/pro-solid-svg-icons";
 import type { IconDefinition } from "@fortawesome/fontawesome-svg-core";
 import Seo from "../../components/seo";
+import { Reveal, RevealGroup } from "../../components/motion/reveal";
+import { TRANSITION_SPRING } from "../../lib/motion";
+
+const MotionLink = motion(Link);
 
 type AppCard = {
   label: string;
@@ -42,6 +51,33 @@ const APPS: AppCard[] = [
     iconColor: "text-purple-300",
   },
   {
+    label: "Audio",
+    description: "Generate songs and sound effects from prompts.",
+    href: "/create-audio",
+    icon: faMusic,
+    accent: "from-pink-500/20 to-pink-500/0",
+    iconBg: "bg-pink-500/25 border-pink-400/30",
+    iconColor: "text-pink-300",
+  },
+  {
+    label: "3D Object",
+    description: "Turn a prompt or image into a 3D model.",
+    href: "/create-object",
+    icon: faCube,
+    accent: "from-cyan-500/20 to-cyan-500/0",
+    iconBg: "bg-cyan-500/25 border-cyan-400/30",
+    iconColor: "text-cyan-300",
+  },
+  {
+    label: "3D World",
+    description: "Turn a prompt or image into an explorable world.",
+    href: "/create-world",
+    icon: faGlobe,
+    accent: "from-teal-500/20 to-teal-500/0",
+    iconBg: "bg-teal-500/25 border-teal-400/30",
+    iconColor: "text-teal-300",
+  },
+  {
     label: "Edit 3D",
     description: "Compose 3D scenes and render with AI cameras.",
     href: "/edit-3d",
@@ -69,63 +105,94 @@ const APPS: AppCard[] = [
     iconColor: "text-rose-300",
     badge: "BETA",
   },
+  {
+    label: "Moodboard",
+    description: "Collect references and ideas to steer a generation.",
+    href: "/moodboard",
+    icon: faObjectGroup,
+    accent: "from-indigo-500/20 to-indigo-500/0",
+    iconBg: "bg-indigo-500/25 border-indigo-400/30",
+    iconColor: "text-indigo-300",
+    badge: "BETA",
+  },
+  {
+    label: "Frame Extractor",
+    description: "Grab a still frame from any video.",
+    href: "/frame-extractor",
+    icon: faPhotoFilm,
+    accent: "from-orange-500/20 to-orange-500/0",
+    iconBg: "bg-orange-500/25 border-orange-400/30",
+    iconColor: "text-orange-300",
+    badge: "NEW",
+  },
 ];
 
 export function Home() {
+  const reduceMotion = useReducedMotion();
   return (
     <div className="min-h-full px-6 sm:px-10 py-10 sm:py-16 max-w-6xl mx-auto w-full">
       <Seo
         title="ArtCraft - Create AI Images and Video"
         description="Generate AI images and video with ArtCraft."
       />
-      <h1 className="text-center font-display text-4xl sm:text-6xl mx-auto font-semibold tracking-tight">
+      <Reveal as="h1" inView={false} y={20} className="text-center font-display text-4xl sm:text-6xl mx-auto font-semibold tracking-tight">
         What will you <span className="text-primary">craft</span> today?
-      </h1>
+      </Reveal>
 
       <section className="py-12">
-        <h2 className="text-sm font-semibold text-white/85 mb-4">Create</h2>
-        <div className="grid gap-3 auto-rows-fr sm:grid-cols-2 lg:grid-cols-3">
+        <Reveal as="h2" inView={false} delay={0.08} className="text-sm font-semibold text-white/85 mb-4">
+          Create
+        </Reveal>
+        <RevealGroup
+          inView={false}
+          delayChildren={0.12}
+          stagger={0.06}
+          className="grid gap-3 auto-rows-fr sm:grid-cols-2 lg:grid-cols-3"
+        >
           {APPS.map((app) => (
-            <Link
-              key={app.href}
-              to={app.href}
-              className="bg-ui-controls/50 group relative h-full overflow-hidden rounded-2xl p-5 hover:border-white/20 hover:bg-ui-controls"
-            >
-              <div
-                className={`absolute -inset-px rounded-2xl bg-gradient-to-br ${app.accent} opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none`}
-                aria-hidden
-              />
-              <div className="relative flex items-start gap-4">
+            <Reveal key={app.href} y={20}>
+              <MotionLink
+                to={app.href}
+                className="bg-ui-controls/50 group relative flex h-full overflow-hidden rounded-2xl p-5 ring-1 ring-white/[0.06] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.04)] hover:bg-ui-controls hover:ring-white/15"
+                whileHover={reduceMotion ? undefined : { y: -4 }}
+                whileTap={reduceMotion ? undefined : { scale: 0.985 }}
+                transition={TRANSITION_SPRING}
+              >
                 <div
-                  className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border ${app.iconBg} ${app.iconColor}`}
-                >
-                  <FontAwesomeIcon icon={app.icon} className="text-base" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-2 min-w-0">
-                      <h3 className="text-base font-semibold text-white truncate">
-                        {app.label}
-                      </h3>
-                      {app.badge && (
-                        <span className="shrink-0 rounded-full bg-amber-600 px-1.5 py-0.5 text-[9px] font-semibold uppercase leading-none text-white">
-                          {app.badge}
-                        </span>
-                      )}
-                    </div>
-                    <FontAwesomeIcon
-                      icon={faArrowRight}
-                      className="text-sm text-white/40 group-hover:text-white/70 group-hover:translate-x-0.5 transition-all"
-                    />
+                  className={`absolute -inset-px rounded-2xl bg-gradient-to-br ${app.accent} opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none`}
+                  aria-hidden
+                />
+                <div className="relative flex w-full items-start gap-4">
+                  <div
+                    className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border ${app.iconBg} ${app.iconColor} shadow-[inset_0_1px_1px_rgba(255,255,255,0.12)] transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-105`}
+                  >
+                    <FontAwesomeIcon icon={app.icon} className="text-base" />
                   </div>
-                  <p className="mt-1 text-sm text-white/55 leading-snug">
-                    {app.description}
-                  </p>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <h3 className="text-base font-semibold text-white truncate">
+                          {app.label}
+                        </h3>
+                        {app.badge && (
+                          <span className="shrink-0 rounded-full bg-amber-600 px-1.5 py-0.5 text-[9px] font-semibold uppercase leading-none text-white">
+                            {app.badge}
+                          </span>
+                        )}
+                      </div>
+                      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white/[0.04] text-white/40 transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:bg-white/10 group-hover:text-white/80 group-hover:translate-x-0.5">
+                        <FontAwesomeIcon icon={faArrowRight} className="text-xs" />
+                      </span>
+                    </div>
+                    <p className="mt-1 text-sm text-white/55 leading-snug">
+                      {app.description}
+                    </p>
+                  </div>
                 </div>
-              </div>
-            </Link>
+              </MotionLink>
+            </Reveal>
           ))}
-        </div>
+        </RevealGroup>
       </section>
     </div>
   );

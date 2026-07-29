@@ -1,9 +1,11 @@
 use artcraft_api_defs::omni_gen::cost_and_generate_requests::omni_gen_video_cost_and_generate_request::OmniGenVideoCostAndGenerateRequest;
 use enums::common::generation::common_aspect_ratio::CommonAspectRatio as CommonAspectRatioEnum;
+use enums::common::generation::common_bitrate::CommonBitrate as CommonBitrateEnum;
 use enums::common::generation::common_resolution::CommonResolution as CommonResolutionEnum;
 use enums::common::generation::common_video_model::CommonVideoModel as CommonVideoModelEnum;
 
 use crate::api::router_aspect_ratio::RouterAspectRatio;
+use crate::api::router_bitrate::RouterBitrate;
 use crate::api::router_resolution::RouterResolution;
 use crate::client::request_mismatch_mitigation_strategy::RequestMismatchMitigationStrategy;
 use crate::errors::artcraft_router_error::ArtcraftRouterError;
@@ -19,6 +21,8 @@ use crate::generate::generate_video::providers::artcraft::resolve::{
 pub enum SupportedResolutions {
   /// 480p, 720p, 1080p
   Full,
+  /// 480p, 720p, 1080p, 4K
+  FullWith4k,
   /// 480p, 720p only (1080p downgrades to 720p)
   Fast,
   /// 720p, 1080p only (480p upgrades)
@@ -49,6 +53,7 @@ pub fn build_artcraft_omni_video_request(
   let resolution = plan_output_resolution(builder.resolution.take(), strategy, resolutions)?;
   let batch_count = plan_batch_count(builder.video_batch_count.take(), strategy)?;
   let duration_seconds = plan_duration(builder.duration_seconds.take(), strategy)?;
+  let bitrate = plan_bitrate(builder.bitrate.take());
   let prompt = builder.prompt.take();
 
   let start_frame = resolve_image_ref(builder.start_frame.take())?;
@@ -71,6 +76,7 @@ pub fn build_artcraft_omni_video_request(
     reference_character_tokens: reference_characters,
     resolution,
     aspect_ratio,
+    bitrate,
     duration_seconds: duration_seconds.map(|d| d as u16),
     video_batch_count: Some(batch_count),
     negative_prompt: None,
@@ -153,7 +159,7 @@ fn plan_output_resolution(
     None => Ok(None),
 
     Some(RouterResolution::FourEightyP) => match supported {
-      SupportedResolutions::Full | SupportedResolutions::Fast => {
+      SupportedResolutions::Full | SupportedResolutions::FullWith4k | SupportedResolutions::Fast => {
         Ok(Some(CommonResolutionEnum::FourEightyP))
       }
       SupportedResolutions::NoFourEightyP => match strategy {
@@ -171,7 +177,7 @@ fn plan_output_resolution(
     Some(RouterResolution::SevenTwentyP) => Ok(Some(CommonResolutionEnum::SevenTwentyP)),
 
     Some(RouterResolution::TenEightyP) => match supported {
-      SupportedResolutions::Full | SupportedResolutions::NoFourEightyP => {
+      SupportedResolutions::Full | SupportedResolutions::FullWith4k | SupportedResolutions::NoFourEightyP => {
         Ok(Some(CommonResolutionEnum::TenEightyP))
       }
       SupportedResolutions::Fast => match strategy {
@@ -183,6 +189,20 @@ fn plan_output_resolution(
         }
         _ => Ok(Some(CommonResolutionEnum::SevenTwentyP)),
       },
+    },
+
+    // 4K is only available on models flagged `FullWith4k` (the non-Fast Seedance
+    // 2.0 family). Other models error out or fall back to their best resolution.
+    Some(RouterResolution::FourK) => match (supported, strategy) {
+      (SupportedResolutions::FullWith4k, _) => Ok(Some(CommonResolutionEnum::FourK)),
+      (_, RequestMismatchMitigationStrategy::ErrorOut) => {
+        Err(ArtcraftRouterError::Client(ClientError::ModelDoesNotSupportOption {
+          field: "resolution",
+          value: format!("{:?}", RouterResolution::FourK),
+        }))
+      }
+      (SupportedResolutions::Fast, _) => Ok(Some(CommonResolutionEnum::SevenTwentyP)),
+      (_, _) => Ok(Some(CommonResolutionEnum::TenEightyP)),
     },
 
     Some(unsupported) => match strategy {
@@ -234,6 +254,19 @@ pub fn plan_batch_count(
   }
 }
 
+/// Translate the router-facing bitrate into the API `CommonBitrate`.
+///
+/// Bitrate does not affect cost. An unset value leaves the field `None` (the
+/// API applies its default); `Normal` and `High` map to their `CommonBitrate`
+/// counterparts.
+fn plan_bitrate(bitrate: Option<RouterBitrate>) -> Option<CommonBitrateEnum> {
+  match bitrate {
+    None => None,
+    Some(RouterBitrate::Normal) => Some(CommonBitrateEnum::Normal),
+    Some(RouterBitrate::High) => Some(CommonBitrateEnum::High),
+  }
+}
+
 /// Duration: 4-15 seconds.
 pub fn plan_duration(
   duration_seconds: Option<u16>,
@@ -253,5 +286,29 @@ pub fn plan_duration(
       }
       _ => Ok(Some(d.clamp(MIN, MAX) as u8)),
     },
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  mod bitrate_translation {
+    use super::*;
+
+    #[test]
+    fn none_stays_none() {
+      assert_eq!(plan_bitrate(None), None);
+    }
+
+    #[test]
+    fn normal_maps_to_common_normal() {
+      assert_eq!(plan_bitrate(Some(RouterBitrate::Normal)), Some(CommonBitrateEnum::Normal));
+    }
+
+    #[test]
+    fn high_maps_to_common_high() {
+      assert_eq!(plan_bitrate(Some(RouterBitrate::High)), Some(CommonBitrateEnum::High));
+    }
   }
 }

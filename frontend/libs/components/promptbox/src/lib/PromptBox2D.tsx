@@ -18,12 +18,22 @@ import {
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { IconProp } from "@fortawesome/fontawesome-svg-core";
 
-import { Prompt2DStore, RefImage, useEnterToGenerateStore } from "./promptStore";
+import {
+  Prompt2DStore,
+  RefImage,
+  useEnterToGenerateStore,
+} from "./promptStore";
 import { ImageModel } from "@storyteller/model-list";
 import { ImagePromptRow, UploadImageFn } from "./ImagePromptRow";
 import { twMerge } from "tailwind-merge";
 import { GenerationProvider } from "@storyteller/api-enums";
 import { GenerationCountPicker } from "./common/GenerationCountPicker";
+import {
+  PromptFullscreenModal,
+  useFullscreenPrompt,
+} from "./PromptFullscreenModal";
+import { PromptFullscreenButton } from "./PromptFullscreenButton";
+import { PromptClearAllButton } from "./PromptClearAllButton";
 import { StoreApi, UseBoundStore } from "zustand";
 import { toast } from "@storyteller/ui-toaster";
 
@@ -50,6 +60,9 @@ export interface PromptBox2DProps {
   onAspectRatioChange?: (ratio: AspectRatio) => void;
   onFitPressed?: () => void | Promise<void>;
   usePrompt2DStore: UseBoundStore<StoreApi<Prompt2DStore>>;
+  /** Optional model-picker slot rendered at the start of the toolbar
+   *  (left of the aspect-ratio picker). */
+  modelSelector?: React.ReactNode;
 }
 
 export const PromptBox2D = ({
@@ -65,11 +78,14 @@ export const PromptBox2D = ({
   onAspectRatioChange,
   onFitPressed,
   usePrompt2DStore,
+  modelSelector,
 }: PromptBox2DProps) => {
   useSignals();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
+  const { isFullscreen, openFullscreen, closeFullscreen } =
+    useFullscreenPrompt();
 
   // CSS viewport units handle resize reactivity automatically
   const EXPANDED_HEIGHT = "clamp(120px, calc(100vh - 700px), 500px)";
@@ -265,6 +281,13 @@ export const PromptBox2D = ({
 
   const maxLen = selectedImageModel?.maxPromptLength ?? 1000;
 
+  const hasClearableContent = prompt.length > 0 || referenceImages.length > 0;
+
+  const handleClearAll = () => {
+    setPrompt("");
+    setReferenceImages([]);
+  };
+
   const handleGenerate = async () => {
     const busy = Boolean(isEnqueueing ?? internalEnqueueing);
     if (busy || isDisabled || !prompt.trim()) return;
@@ -350,7 +373,7 @@ export const PromptBox2D = ({
       >
         {content}
       </Modal>
-      <div className="absolute bottom-4 left-1/2 flex -translate-x-1/2 flex-col gap-3">
+      <div className="absolute bottom-4 left-1/2 flex w-[90vw] max-w-5xl -translate-x-1/2 flex-col gap-3">
         {selectedImageModel?.canUseImagePrompt && isImageRowVisible && (
           <ImagePromptRow
             visible={true}
@@ -376,7 +399,7 @@ export const PromptBox2D = ({
         )}
         <div
           className={twMerge(
-            "glass relative w-[860px] rounded-xl p-4",
+            "glass relative w-full rounded-2xl p-4",
             selectedImageModel?.canUseImagePrompt &&
               isImageRowVisible &&
               "rounded-t-none",
@@ -421,7 +444,7 @@ export const PromptBox2D = ({
                 ref={textareaRef}
                 rows={1}
                 placeholder="Describe your image..."
-                className={`promptbox-scrollbar text-md mb-2 min-h-[2.5em] w-full resize-y overflow-y-auto rounded bg-transparent pb-2 pr-2 pt-1 text-base-fg placeholder-base-fg/60 focus:outline-none ${isExpanded ? "max-h-[500px]" : "max-h-[5.5em]"}`}
+                className={`promptbox-scrollbar text-md mb-2 min-h-[2.5em] w-full resize-y overflow-y-auto rounded bg-transparent pb-2 pr-8 pt-1 text-base-fg placeholder-base-fg/60 focus:outline-none ${isExpanded ? "max-h-[500px]" : "max-h-[5.5em]"}`}
                 value={prompt}
                 onChange={handleChange}
                 onPaste={handlePaste}
@@ -429,6 +452,7 @@ export const PromptBox2D = ({
                 onFocus={() => {}}
                 onBlur={() => {}}
               />
+              <PromptFullscreenButton onClick={openFullscreen} />
               <span
                 className={`absolute -bottom-1 right-0 text-[10px] tabular-nums ${isFinite(maxLen) && prompt.length > maxLen ? "text-red-500" : "text-base-fg/40"}`}
               >
@@ -438,6 +462,7 @@ export const PromptBox2D = ({
           </div>
           <div className="mt-2 flex items-center justify-between gap-2">
             <div className="flex items-center gap-2">
+              {modelSelector}
               {selectedImageModel?.canChangeAspectRatio && (
                 <Tooltip
                   content="Aspect ratio"
@@ -481,6 +506,11 @@ export const PromptBox2D = ({
               )}
             </div>
             <div className="flex items-center gap-2">
+              <PromptClearAllButton
+                onClick={handleClearAll}
+                disabled={!hasClearableContent}
+                confirmClear={referenceImages.length > 0}
+              />
               {onFitPressed && (
                 <Tooltip
                   content={"Fit canvas to screen"}
@@ -536,6 +566,45 @@ export const PromptBox2D = ({
           </div>
         </div>
       </div>
+      <PromptFullscreenModal
+        isOpen={isFullscreen}
+        onClose={closeFullscreen}
+        promptLength={prompt.length}
+        maxLength={maxLen}
+        footerControls={modelSelector}
+        clearAllButton={
+          <PromptClearAllButton
+            onClick={handleClearAll}
+            disabled={!hasClearableContent}
+            confirmClear={referenceImages.length > 0}
+          />
+        }
+        imagePromptRow={
+          selectedImageModel?.canUseImagePrompt ? (
+            <ImagePromptRow
+              visible={true}
+              maxImagePromptCount={Math.max(
+                1,
+                selectedImageModel?.maxImagePromptCount ?? 1,
+              )}
+              allowUpload={true}
+              referenceImages={referenceImages}
+              setReferenceImages={setReferenceImages}
+              uploadImage={uploadImage as any}
+              className="relative top-auto rounded-2xl"
+            />
+          ) : undefined
+        }
+      >
+        <textarea
+          placeholder="Describe your image..."
+          className="promptbox-scrollbar text-md h-full min-h-0 w-full resize-none overflow-y-auto rounded bg-transparent text-base-fg placeholder-base-fg/60 focus:outline-none"
+          value={prompt}
+          onChange={handleChange}
+          onPaste={handlePaste}
+          onKeyDown={handleKeyDown}
+        />
+      </PromptFullscreenModal>
     </>
   );
 };

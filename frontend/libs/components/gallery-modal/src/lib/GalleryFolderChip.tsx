@@ -68,8 +68,10 @@ export const GalleryFolderChip: React.FC<GalleryFolderChipProps> = ({
       }}
       style={colorCode ? { borderColor: colorCode } : undefined}
       className={twMerge(
-        "group/chip relative w-full aspect-square overflow-hidden rounded-md border-2 border-ui-controls/40 bg-ui-controls/20 transition-colors cursor-pointer hover:border-primary/60",
-        "[&.folder-drag-over]:border-primary/60 [&.folder-drag-over]:bg-primary/20",
+        "group/chip relative w-full aspect-square overflow-hidden rounded-md border-2 border-ui-controls/40 bg-ui-controls/20 transition-[transform,border-color,background-color,box-shadow] duration-200 ease-out cursor-pointer hover:border-primary/60",
+        // A dragged item hovering the folder makes it lift and glow — clear,
+        // tactile "drop here" feedback rather than a flat color swap.
+        "[&.folder-drag-over]:scale-[1.04] [&.folder-drag-over]:border-primary [&.folder-drag-over]:bg-primary/20 [&.folder-drag-over]:ring-2 [&.folder-drag-over]:ring-primary/40",
       )}
       aria-label={name}
     >

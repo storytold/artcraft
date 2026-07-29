@@ -1,0 +1,2 @@
+# SPA fallback: serve index.html for any path so deep links / refreshes work.
+/*  /index.html  200

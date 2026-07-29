@@ -106,14 +106,14 @@ export const AssetModal = () => {
 
   const {
     assetModalVisible,
-    assetModalVisibleDuringDrag,
+    assetDraggingUnder,
     reopenAfterDrag,
     setAssetModalVisible,
     setReopenAfterDrag,
   } = usePageSceneStore(
     useShallow((s) => ({
       assetModalVisible: s.assetModalVisible,
-      assetModalVisibleDuringDrag: s.assetModalVisibleDuringDrag,
+      assetDraggingUnder: s.assetDraggingUnder,
       reopenAfterDrag: s.reopenAfterDrag,
       setAssetModalVisible: s.setAssetModalVisible,
       setReopenAfterDrag: s.setReopenAfterDrag,
@@ -142,6 +142,15 @@ export const AssetModal = () => {
 
   useEffect(() => {
     if (assetModalVisible) {
+      // Whenever the modal becomes visible, clear any leftover drag-under state.
+      // A reopen-off drag closes the panel while keeping `assetDraggingUnder`
+      // true (so its fade-out doesn't flash), so without this a later reopen
+      // would render straight back into the hidden state. Resetting here is the
+      // single safety net covering every open path (toolbar +, asset menu,
+      // upload-reopen). It can't clobber an active drag: `assetModalVisible`
+      // doesn't change mid-drag, so this effect doesn't re-run then.
+      usePageSceneStore.getState().setAssetDraggingUnder(false);
+
       const lastUploadedTab = sessionStorage.getItem("lastUploadedTab");
       if (lastUploadedTab) {
         setActiveAssetTab(lastUploadedTab);
@@ -457,7 +466,7 @@ export const AssetModal = () => {
   return (
     <>
       <Modal
-        isOpen={assetModalVisible && assetModalVisibleDuringDrag}
+        isOpen={assetModalVisible}
         onClose={handleClose}
         className="relative h-[640px] max-w-4xl"
         childPadding={false}
@@ -466,6 +475,13 @@ export const AssetModal = () => {
         draggable={true}
         closeOnOutsideClick={false}
         allowBackgroundInteraction={true}
+        // While dragging an asset out, the panel becomes pointer-transparent so
+        // the drag passes under it onto the canvas. With "Reopen after adding"
+        // on it steps back to translucent; with it off it eases all the way out
+        // (closing after the drop). Same drag-under behavior as the gallery.
+        contentInteractive={!assetDraggingUnder}
+        contentDimmed={assetDraggingUnder && reopenAfterDrag}
+        contentHidden={assetDraggingUnder && !reopenAfterDrag}
       >
         <Modal.DragHandle>
           <div className="absolute left-0 top-0 z-[50] h-[46px] w-full cursor-move" />

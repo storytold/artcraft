@@ -17,6 +17,7 @@ use enums::common::generation::common_model_type::CommonModelType;
 use enums::common::generation::common_video_model::CommonVideoModel;
 use enums::common::generation_provider::GenerationProvider;
 use http_server_common::request::get_request_ip::get_request_ip;
+use enums::by_table::debug_logs::debug_log_level::DebugLogLevel;
 use mysql_queries::queries::debug_logs::insert_debug_log::{insert_debug_log, InsertDebugLogArgs};
 use mysql_queries::queries::generic_inference::api_providers::seedance2pro::insert_generic_inference_job_for_seedance2pro_queue_with_apriori_job_token::KinoviVersion;
 use mysql_queries::queries::idepotency_tokens::insert_idempotency_token::insert_idempotency_token;
@@ -30,6 +31,7 @@ use tokens::tokens::media_files::MediaFileToken;
 use tokens::tokens::non_unique::debug_logs_event_token::DebugLogEventToken;
 
 use crate::http_server::common_responses::common_web_error::CommonWebError;
+use crate::http_server::endpoints::generate::common::generation_debug_logs::GenerationDebugLogContext;
 use crate::http_server::endpoints::generate::common::payments_error_test::payments_error_test;
 use crate::http_server::endpoints::omni_gen::generate::video::helpers::hydrate_router_request::hydrate_to_router_request;
 use crate::http_server::endpoints::omni_gen::generate::video::helpers::resolve_kinovi_character_ids::resolve_kinovi_character_ids;
@@ -41,7 +43,7 @@ use crate::http_server::endpoints::omni_gen::generate::video::insert_db_job::sha
 use crate::http_server::endpoints::omni_gen::generate::video::kinovi_account::KinoviAccount;
 use crate::http_server::endpoints::omni_gen::generate::video::pipeline_v2::run_pipeline_v2::{run_pipeline_v2, RunPipelineV2Args};
 use crate::http_server::endpoints::omni_gen::shared_utils::video::validate_video_request::validate_video_request;
-use crate::http_server::session::lookup::user_session_feature_flags::UserSessionFeatureFlags;
+use crate::http_server::user_lookup::user_session::session_utils::lookup::user_session_feature_flags::UserSessionFeatureFlags;
 use crate::http_server::validations::validate_idempotency_token_format::validate_idempotency_token_format;
 use crate::http_server::web_utils::get_request_platform_type::get_request_platform_type;
 use crate::state::server_state::ServerState;
@@ -178,9 +180,11 @@ pub async fn omni_gen_video_generate_handler(
     // BytePlus Ultra
     Some(CommonVideoModel::Seedance2p0BytePlusUltra) => KinoviAccount::BytePlusUltra,
     Some(CommonVideoModel::Seedance2p0BytePlusUltraFast) => KinoviAccount::BytePlusUltra,
+    Some(CommonVideoModel::Seedance2p0BytePlusUltraMini) => KinoviAccount::BytePlusUltra,
     // BytePlus
     Some(CommonVideoModel::Seedance2p0BytePlus) => KinoviAccount::BytePlus,
     Some(CommonVideoModel::Seedance2p0BytePlusFast) => KinoviAccount::BytePlus,
+    Some(CommonVideoModel::Seedance2p0BytePlusMini) => KinoviAccount::BytePlus,
     Some(CommonVideoModel::PreviewModel) => KinoviAccount::BytePlus,
     Some(CommonVideoModel::PreviewModelFast) => KinoviAccount::BytePlus,
     // Everything else goes through Volcengine
@@ -189,10 +193,16 @@ pub async fn omni_gen_video_generate_handler(
 
   // ==================== DEBUG LOG: HTTP REQUEST ==================== //
 
+  let ip_address = get_request_ip(&http_request);
+  let request_url = http_request.uri().to_string();
+
   if let Err(err) = insert_debug_log(InsertDebugLogArgs {
     apriori_debug_log_event_token: Some(&debug_log_event_token),
     maybe_creator_user_token: Some(user_token),
     debug_log_type: DebugLogType::HttpRequest,
+    maybe_log_level: Some(DebugLogLevel::Info),
+    maybe_ip_address: Some(&ip_address),
+    maybe_url: Some(&request_url),
     message: &serde_json::to_string(&*request).unwrap_or_default(),
     mysql_executor: &mut *mysql_connection,
     phantom: Default::default(),
@@ -200,53 +210,61 @@ pub async fn omni_gen_video_generate_handler(
     warn!("Failed to insert HTTP request debug log: {:?}", err);
   }
 
+  // NB: The pipeline takes over the connection for its remaining pre-request DB writes (billing,
+  // outbound provider request debug log) and releases it before the (slow, external) generation
+  // call — holding a pool slot across that call is what starves the pool and causes PoolTimedOut
+  // on unrelated endpoints. We re-acquire below to write the result.
+
+  let debug_log_context = GenerationDebugLogContext {
+    event_token: &debug_log_event_token,
+    user_token,
+    ip_address: &ip_address,
+    request_url: &request_url,
+  };
+
   let pipeline_result = run_pipeline_v2(RunPipelineV2Args {
     router_builder: &router_builder,
     server_state: &server_state,
-    mysql_connection: &mut mysql_connection,
     user_token,
     media_file_to_url_map: &media_file_to_url_map,
     kinovi_character_id_map: &kinovi_character_id_map,
     kinovi_account,
-  }).await?;
+    debug_log_context: &debug_log_context,
+    mysql_connection,
+  }).await;
 
-  // ==================== DEBUG LOG: FAL REQUEST ==================== //
+  // ==================== DEBUG LOG: PIPELINE ERROR ==================== //
 
-  if let GenerateVideoResponse::Fal(ref fal_payload) = pipeline_result.response {
-    if let Some(ref outbound_request) = fal_payload.maybe_outbound_request {
-      if let Err(err) = insert_debug_log(InsertDebugLogArgs {
-        apriori_debug_log_event_token: Some(&debug_log_event_token),
-        maybe_creator_user_token: Some(user_token),
-        debug_log_type: DebugLogType::FalRequest,
-        message: &format!("{:#?}", outbound_request),
-        mysql_executor: &mut *mysql_connection,
-        phantom: Default::default(),
-      }).await {
-        warn!("Failed to insert Fal request debug log: {:?}", err);
+  let pipeline_result = match pipeline_result {
+    Ok(result) => result,
+    Err(err) => {
+      // Best-effort error log; never mask the original error.
+      if let Ok(mut error_log_connection) = server_state.mysql_pool.acquire().await {
+        if let Err(log_err) = insert_debug_log(InsertDebugLogArgs {
+          apriori_debug_log_event_token: Some(&debug_log_event_token),
+          maybe_creator_user_token: Some(user_token),
+          debug_log_type: DebugLogType::BackendFailure,
+          maybe_log_level: Some(DebugLogLevel::Error),
+          maybe_ip_address: Some(&ip_address),
+          maybe_url: Some(&request_url),
+          message: &format!("Video generation pipeline failed: {:?}", err),
+          mysql_executor: &mut *error_log_connection,
+          phantom: Default::default(),
+        }).await {
+          warn!("Failed to insert pipeline error debug log: {:?}", log_err);
+        }
       }
+      return Err(err);
     }
-  }
+  };
 
-  // ==================== DEBUG LOG: GROK API REQUEST ==================== //
+  let mut mysql_connection = server_state.mysql_pool.acquire().await?;
 
-  if let GenerateVideoResponse::Grok(ref grok_payload) = pipeline_result.response {
-    if let Some(ref outbound_request) = grok_payload.maybe_outbound_request {
-      if let Err(err) = insert_debug_log(InsertDebugLogArgs {
-        apriori_debug_log_event_token: Some(&debug_log_event_token),
-        maybe_creator_user_token: Some(user_token),
-        debug_log_type: DebugLogType::GrokApiRequest,
-        message: &format!("{:#?}", outbound_request),
-        mysql_executor: &mut *mysql_connection,
-        phantom: Default::default(),
-      }).await {
-        warn!("Failed to insert Grok API request debug log: {:?}", err);
-      }
-    }
-  }
+  // NB: Outbound provider requests (Fal/Grok/Kinovi) are debug-logged inside
+  // the pipeline BEFORE the send, so the payload is captured even on failure.
 
   // ==================== WRITE RESULT ==================== //
 
-  let ip_address = get_request_ip(&http_request);
   let maybe_platform_type = get_request_platform_type(&http_request);
 
   let mut transaction = mysql_connection.begin().await.map_err(|err| {
@@ -268,6 +286,7 @@ pub async fn omni_gen_video_generate_handler(
     maybe_generation_mode: Some(determine_generation_mode(&request)),
     maybe_aspect_ratio: request.aspect_ratio,
     maybe_resolution: request.resolution,
+    maybe_bitrate: request.bitrate,
     maybe_batch_count: request.video_batch_count.map(|c| c as u8),
     maybe_generate_audio: request.generate_audio,
     maybe_duration_seconds: request.duration_seconds.map(|d| d as u32),

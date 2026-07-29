@@ -5,7 +5,7 @@ use zip::ZipArchive;
 
 use bucket_paths::legacy::typified_paths::public::weight_files::bucket_directory::WeightFileBucketDirectory;
 use bucket_paths::legacy::typified_paths::public::weight_files::bucket_file_path::WeightFileBucketPath;
-use cloud_storage::bucket_client::BucketClient;
+use cloud_storage::legacy_bucket_client::LegacyBucketClient;
 use filesys::path_to_string::path_to_string;
 use hashing::sha256::sha256_hash_bytes::sha256_hash_bytes;
 
@@ -14,7 +14,7 @@ use crate::job::job_types::gpt_sovits::upload_model::get_gptsovits_zip_entries::
 
 pub async fn extract_and_upload_gpt_sovits_package_files(
   zip_container_file_bytes: &[u8],
-  bucket_client: &BucketClient,
+  bucket_client: &LegacyBucketClient,
   weights_file_bucket_directory: &WeightFileBucketDirectory,
 ) -> Result<GptSovitsPackageDetails, GptSovitsPackageError> {
   let cursor = Cursor::new(zip_container_file_bytes);

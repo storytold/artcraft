@@ -1,0 +1,47 @@
+{
+  "db_name": "MySQL",
+  "query": "\nSELECT\n  maybe_stripe_subscription_status,\n  maybe_stripe_recurring_interval,\n  subscription_expires_at AS `subscription_expires_at!: DateTime<Utc>`\nFROM user_subscriptions\nWHERE user_token = ?\n  AND subscription_namespace = ?\nORDER BY subscription_expires_at DESC\nLIMIT 1\n    ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "maybe_stripe_subscription_status",
+        "type_info": {
+          "type": "VarString",
+          "flags": "MULTIPLE_KEY | BINARY",
+          "char_set": 224,
+          "max_size": 128
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "maybe_stripe_recurring_interval",
+        "type_info": {
+          "type": "VarString",
+          "flags": "BINARY",
+          "char_set": 224,
+          "max_size": 128
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "subscription_expires_at!: DateTime<Utc>",
+        "type_info": {
+          "type": "Timestamp",
+          "flags": "NOT_NULL | MULTIPLE_KEY | BINARY | TIMESTAMP",
+          "char_set": 63,
+          "max_size": 19
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": [
+      true,
+      true,
+      false
+    ]
+  },
+  "hash": "f74615faa4321ec4d583829997e12cb8ae152afefd2574385c120c63278893d2"
+}

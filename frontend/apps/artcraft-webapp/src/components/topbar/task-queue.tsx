@@ -23,6 +23,7 @@ import { Button } from "@storyteller/ui-button";
 import {
   getProviderDisplayName,
   getModelDisplayName,
+  getCreatorIconPathForModelId,
   findModelByKey,
 } from "@storyteller/model-list";
 import { CloseButton } from "@storyteller/ui-close-button";
@@ -30,7 +31,6 @@ import dayjs from "dayjs";
 import { ActionReminderModal } from "@storyteller/ui-action-reminder-modal";
 import { Lightbox } from "../lightbox/lightbox";
 import { showToast } from "../toast/toast";
-import { getModelCreatorIconPath } from "../../lib/omni-gen-hooks";
 import { useRecreateFromPromptToken } from "../../lib/recreate";
 import { getMediaThumbnail, THUMBNAIL_SIZES } from "@storyteller/common";
 import { twMerge } from "tailwind-merge";
@@ -263,7 +263,7 @@ const InProgressCard = ({
       ? formatTimeLeft(task.estimatedTimeLeftMs)
       : null;
   const modelIconPath = task.modelType
-    ? getModelCreatorIconPath(task.modelType)
+    ? getCreatorIconPathForModelId(task.modelType)
     : null;
 
   return (
@@ -904,6 +904,15 @@ export const TaskQueue = () => {
             (j) => !prevFailedIdsRef.current.has(j.job_token),
           );
           prevFailedIdsRef.current = newFailedIdSet;
+
+          if (newlyFailedJobs.length > 0) {
+            // A failure may have triggered a server-side refund — nudge the
+            // credits chip now, and again once the refund has settled.
+            window.dispatchEvent(new Event("credits-change"));
+            setTimeout(() => {
+              window.dispatchEvent(new Event("credits-change"));
+            }, 2500);
+          }
 
           for (const job of newlyFailedJobs) {
             const parts = formatTitleParts(job);

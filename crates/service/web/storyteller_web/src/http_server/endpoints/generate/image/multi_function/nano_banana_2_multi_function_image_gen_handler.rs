@@ -291,6 +291,7 @@ pub async fn nano_banana_2_multi_function_image_gen_handler(
   };
 
   let prompt_result = insert_prompt(InsertPromptArgs {
+    maybe_bitrate: None,
     maybe_apriori_prompt_token: None,
     prompt_type: PromptType::ArtcraftApp,
     maybe_creator_user_token: Some(&user_token),

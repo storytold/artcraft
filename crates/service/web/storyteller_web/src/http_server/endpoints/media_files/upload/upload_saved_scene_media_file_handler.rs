@@ -11,6 +11,8 @@ use log::{error, info, warn};
 use utoipa::ToSchema;
 
 use bucket_paths::legacy::typified_paths::public::media_files::bucket_file_path::MediaFileBucketPath;
+use enums::by_table::media_files::media_file_class::MediaFileClass;
+use enums::by_table::media_files::media_file_project_type::MediaFileProjectType;
 use enums::common::visibility::Visibility;
 use hashing::sha256::sha256_hash_bytes::sha256_hash_bytes;
 use http_server_common::request::get_request_ip::get_request_ip;
@@ -109,7 +111,7 @@ pub async fn upload_saved_scene_media_file_handler(
 
   let maybe_user_token = maybe_user_session
       .as_ref()
-      .map(|session| session.get_strongly_typed_user_token());
+      .map(|session| session.get_user_token());
 
   let maybe_avt_token = server_state
       .avt_cookie_manager
@@ -148,7 +150,7 @@ pub async fn upload_saved_scene_media_file_handler(
 
   let creator_check = check_creator_tokens(CheckCreatorTokenArgs {
     maybe_creator_user_token: media_file.maybe_creator_user_token.as_ref(),
-    maybe_current_request_user_token: maybe_user_token.as_ref(),
+    maybe_current_request_user_token: maybe_user_token,
     maybe_creator_anonymous_visitor_token: media_file.maybe_creator_anonymous_visitor_token.as_ref(),
     maybe_current_request_anonymous_visitor_token: maybe_avt_token.as_ref(),
   });
@@ -243,6 +245,8 @@ pub async fn upload_saved_scene_media_file_handler(
 
   updated_media_file_stored_cloud_contents(UpdateArgs {
     media_file_token: &path.token,
+    media_class: MediaFileClass::Project,
+    maybe_project_type: Some(MediaFileProjectType::Scene3d),
     public_bucket_directory_hash: public_upload_path.get_object_hash(),
     maybe_public_bucket_prefix: PREFIX,
     maybe_public_bucket_extension: Some(SUFFIX),

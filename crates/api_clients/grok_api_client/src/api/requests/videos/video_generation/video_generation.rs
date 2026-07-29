@@ -1,4 +1,4 @@
-use log::info;
+use log::{info, warn};
 use serde_derive::Serialize;
 
 use crate::api::requests::videos::video_generation::request_types::*;
@@ -106,7 +106,7 @@ pub async fn video_generation(args: VideoGenerationArgs<'_>) -> Result<VideoGene
   let req = args.request;
 
   if req.image.is_some() && req.reference_images.as_ref().is_some_and(|v| !v.is_empty()) {
-    return Err(GrokSpecificApiError::BadRequest(
+    return Err(GrokClientError::InvalidRequest(
       "video_generation cannot combine `image` (image-to-video) with `reference_images` (reference-to-video) in the same request".to_string(),
     ).into());
   }
@@ -141,6 +141,14 @@ pub async fn video_generation(args: VideoGenerationArgs<'_>) -> Result<VideoGene
 
   let bearer = format!("Bearer {}", args.api_key.api_key);
 
+  // DEBUG: log exactly what we send (request body has no secrets — the API key
+  // travels in the Authorization header, not the body). Helps confirm the wire
+  // shape when diagnosing 4xx responses.
+  match serde_json::to_string(&request_body) {
+    Ok(body_json) => info!("Grok video_generation request: POST {url} body={body_json}"),
+    Err(err) => warn!("Grok video_generation: failed to serialize request body for logging: {err}"),
+  }
+
   let response = client.post(&url)
     .header("Authorization", bearer)
     .header("Content-Type", "application/json")
@@ -150,11 +158,26 @@ pub async fn video_generation(args: VideoGenerationArgs<'_>) -> Result<VideoGene
     .map_err(GrokGenericApiError::ReqwestError)?;
 
   let status = response.status();
+  // Capture headers BEFORE `.text()` consumes the response. Response headers
+  // reveal WAF/CDN blocks (e.g. `server: cloudflare`, `cf-ray`, `cf-mitigated`)
+  // vs. genuine API errors, and any rate-limit / retry hints.
+  let response_headers = format!("{:#?}", response.headers());
   let response_body = response.text()
     .await
     .map_err(GrokGenericApiError::ReqwestError)?;
 
   info!("Grok video_generation response: status={}", status);
+
+  if !status.is_success() {
+    // The response body now travels in the returned error (`raw_http_body`),
+    // so log the HEADERS here — those aren't captured in the error type and
+    // reveal CDN/WAF context (e.g. `server: cloudflare`, `cf-ray`) vs. a
+    // genuine API rejection.
+    warn!(
+      "Grok video_generation FAILED: status={status} ({} body bytes)\n--- response headers ---\n{response_headers}",
+      response_body.len(),
+    );
+  }
 
   classify_grok_http_error(status, Some(&response_body))?;
 
@@ -283,7 +306,7 @@ mod tests {
       },
     }).await;
     let err = result.unwrap_err();
-    assert!(matches!(err, GrokError::ApiSpecific(GrokSpecificApiError::BadRequest(_))));
+    assert!(matches!(err, GrokError::Client(GrokClientError::InvalidRequest(_))));
   }
 
   #[test]
@@ -414,7 +437,7 @@ mod tests {
         api_key: &api_key,
         request: VideoGenerationRequest {
           prompt: "Timelapse of a flower blooming in a sunlit garden.".to_string(),
-          model: Some(VideoModel::GrokImagineVideo1p5Preview),
+          model: Some(VideoModel::GrokImagineVideo1p5),
           image: None,
           reference_images: None,
           aspect_ratio: Some(VideoAspectRatio::Landscape16x9),
@@ -441,7 +464,7 @@ mod tests {
         api_key: &api_key,
         request: VideoGenerationRequest {
           prompt: "The camera slowly pushes in toward the building as the sun sinks below the horizon. Soft golden light, gentle breeze rustling the trees.".to_string(),
-          model: Some(VideoModel::GrokImagineVideo1p5Preview),
+          model: Some(VideoModel::GrokImagineVideo1p5),
           image: Some(VideoImageSource::Url(WHITE_HOUSE_SUNSET_IMAGE_URL.to_string())),
           reference_images: None,
           aspect_ratio: Some(VideoAspectRatio::Landscape16x9),
@@ -472,7 +495,7 @@ mod tests {
         api_key: &api_key,
         request: VideoGenerationRequest {
           prompt: "The dogs from <IMAGE_1> in the scene from <IMAGE_2>. Make them play together.".to_string(),
-          model: Some(VideoModel::GrokImagineVideo1p5Preview),
+          model: Some(VideoModel::GrokImagineVideo1p5),
           image: None,
           reference_images: Some(vec![
             VideoImageSource::Url(TALL_MOCHI_WITH_GLASSES_IMAGE_URL.to_string()),

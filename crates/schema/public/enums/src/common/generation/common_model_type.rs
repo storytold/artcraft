@@ -82,6 +82,9 @@ pub enum CommonModelType {
   Seedream4p5,
   #[serde(rename = "seedream_5_lite")]
   Seedream5Lite,
+  /// Seedream 5.0 Pro as routed via kinovi
+  #[serde(rename = "seedream_5p0_pro")]
+  Seedream5p0Pro,
 
   /// Midjourney without distinguishing a model type or version
   #[serde(rename = "midjourney")]
@@ -167,6 +170,12 @@ pub enum CommonModelType {
   Seedance2p0BytePlusUltra,
   #[serde(rename = "seedance_2p0_bpu_fast")]
   Seedance2p0BytePlusUltraFast,
+  #[serde(rename = "seedance_2p0_mini")]
+  Seedance2p0Mini,
+  #[serde(rename = "seedance_2p0_bp_mini")]
+  Seedance2p0BytePlusMini,
+  #[serde(rename = "seedance_2p0_bpu_mini")]
+  Seedance2p0BytePlusUltraMini,
   #[serde(rename = "sora_2")]
   Sora2,
   #[serde(rename = "sora_2_pro")]
@@ -181,6 +190,25 @@ pub enum CommonModelType {
   Veo3p1,
   #[serde(rename = "veo_3p1_fast")]
   Veo3p1Fast,
+  #[serde(rename = "veo_3p1_lite")]
+  Veo3p1Lite,
+  #[serde(rename = "vidu_q3")]
+  ViduQ3,
+  #[serde(rename = "vidu_q3_turbo")]
+  ViduQ3Turbo,
+
+  // Audio models
+  #[serde(rename = "suno_music")]
+  SunoMusic,
+  #[serde(rename = "suno_remix")]
+  SunoRemix,
+  #[serde(rename = "suno_sounds")]
+  SunoSounds,
+  #[serde(rename = "suno_sample")]
+  SunoSample,
+  #[serde(rename = "seed_audio_1p0")]
+  SeedAudio1p0,
+
   #[serde(rename = "preview_model")]
   PreviewModel,
   #[serde(rename = "preview_model_fast")]
@@ -195,12 +223,36 @@ pub enum CommonModelType {
   Hunyuan3d2_1,
   #[serde(rename = "hunyuan_3d_3")]
   Hunyuan3d3,
+  #[serde(rename = "hunyuan_3d_3p1_pro")]
+  Hunyuan3d3_1Pro,
+  #[serde(rename = "hunyuan_3d_3p1_rapid")]
+  Hunyuan3d3_1Rapid,
+  #[serde(rename = "hunyuan_3d_3p1_part")]
+  Hunyuan3d3_1Part,
+  #[serde(rename = "hunyuan_3d_3p1_topology")]
+  Hunyuan3d3_1SmartTopology,
+  #[serde(rename = "tripo3d_h3p1")]
+  Tripo3dH3_1,
+  #[serde(rename = "meshy_v6")]
+  MeshyV6,
+  #[serde(rename = "rodin_2p5_fast")]
+  Rodin2_5Fast,
 
   // Splat generation models (World Labs)
   #[serde(rename = "marble_0p1_mini")]
   Marble0p1Mini,
   #[serde(rename = "marble_0p1_plus")]
   Marble0p1Plus,
+  #[serde(rename = "marble_1p0")]
+  Marble1p0,
+  #[serde(rename = "marble_1p0_draft")]
+  Marble1p0Draft,
+  #[serde(rename = "marble_1p1")]
+  Marble1p1,
+  #[serde(rename = "marble_1p1_plus")]
+  Marble1p1Plus,
+  #[serde(rename = "triposplat")]
+  TripoSplat,
 }
 
 impl_enum_display_and_debug_using_to_str!(CommonModelType);
@@ -238,6 +290,7 @@ impl CommonModelType {
       Self::Seedream4 => "seedream_4",
       Self::Seedream4p5 => "seedream_4p5",
       Self::Seedream5Lite => "seedream_5_lite",
+      Self::Seedream5p0Pro => "seedream_5p0_pro",
       Self::Midjourney => "midjourney",
       Self::MidjourneyV6 => "midjourney_v6",
       Self::MidjourneyV6p1 => "midjourney_v6p1",
@@ -273,6 +326,9 @@ impl CommonModelType {
       Self::Seedance2p0UltraFast => "seedance_2p0_u_fast",
       Self::Seedance2p0BytePlusUltra => "seedance_2p0_bpu",
       Self::Seedance2p0BytePlusUltraFast => "seedance_2p0_bpu_fast",
+      Self::Seedance2p0Mini => "seedance_2p0_mini",
+      Self::Seedance2p0BytePlusMini => "seedance_2p0_bp_mini",
+      Self::Seedance2p0BytePlusUltraMini => "seedance_2p0_bpu_mini",
       Self::Sora2 => "sora_2",
       Self::Sora2Pro => "sora_2_pro",
       Self::Veo2 => "veo_2",
@@ -280,6 +336,17 @@ impl CommonModelType {
       Self::Veo3Fast => "veo_3_fast",
       Self::Veo3p1 => "veo_3p1",
       Self::Veo3p1Fast => "veo_3p1_fast",
+      Self::Veo3p1Lite => "veo_3p1_lite",
+      Self::ViduQ3 => "vidu_q3",
+      Self::ViduQ3Turbo => "vidu_q3_turbo",
+
+      // Audio models
+      Self::SunoMusic => "suno_music",
+      Self::SunoRemix => "suno_remix",
+      Self::SunoSounds => "suno_sounds",
+      Self::SunoSample => "suno_sample",
+      Self::SeedAudio1p0 => "seed_audio_1p0",
+
       Self::PreviewModel => "preview_model",
       Self::PreviewModelFast => "preview_model_fast",
       Self::SwitchX => "switch_x",
@@ -288,10 +355,22 @@ impl CommonModelType {
       Self::Hunyuan3d2_0 => "hunyuan_3d_2p0",
       Self::Hunyuan3d2_1 => "hunyuan_3d_2p1",
       Self::Hunyuan3d3 => "hunyuan_3d_3",
+      Self::Hunyuan3d3_1Pro => "hunyuan_3d_3p1_pro",
+      Self::Hunyuan3d3_1Rapid => "hunyuan_3d_3p1_rapid",
+      Self::Hunyuan3d3_1Part => "hunyuan_3d_3p1_part",
+      Self::Hunyuan3d3_1SmartTopology => "hunyuan_3d_3p1_topology",
+      Self::Tripo3dH3_1 => "tripo3d_h3p1",
+      Self::MeshyV6 => "meshy_v6",
+      Self::Rodin2_5Fast => "rodin_2p5_fast",
 
       // Splat generation models (World Labs)
       Self::Marble0p1Mini => "marble_0p1_mini",
       Self::Marble0p1Plus => "marble_0p1_plus",
+      Self::Marble1p0 => "marble_1p0",
+      Self::Marble1p0Draft => "marble_1p0_draft",
+      Self::Marble1p1 => "marble_1p1",
+      Self::Marble1p1Plus => "marble_1p1_plus",
+      Self::TripoSplat => "triposplat",
     }
   }
 
@@ -323,6 +402,7 @@ impl CommonModelType {
       "seedream_4" => Ok(Self::Seedream4),
       "seedream_4p5" => Ok(Self::Seedream4p5),
       "seedream_5_lite" => Ok(Self::Seedream5Lite),
+      "seedream_5p0_pro" => Ok(Self::Seedream5p0Pro),
       "midjourney" => Ok(Self::Midjourney),
       "midjourney_v6" => Ok(Self::MidjourneyV6),
       "midjourney_v6p1" => Ok(Self::MidjourneyV6p1),
@@ -358,6 +438,9 @@ impl CommonModelType {
       "seedance_2p0_u_fast" => Ok(Self::Seedance2p0UltraFast),
       "seedance_2p0_bpu" => Ok(Self::Seedance2p0BytePlusUltra),
       "seedance_2p0_bpu_fast" => Ok(Self::Seedance2p0BytePlusUltraFast),
+      "seedance_2p0_mini" => Ok(Self::Seedance2p0Mini),
+      "seedance_2p0_bp_mini" => Ok(Self::Seedance2p0BytePlusMini),
+      "seedance_2p0_bpu_mini" => Ok(Self::Seedance2p0BytePlusUltraMini),
       "sora_2" => Ok(Self::Sora2),
       "sora_2_pro" => Ok(Self::Sora2Pro),
       "veo_2" => Ok(Self::Veo2),
@@ -365,6 +448,17 @@ impl CommonModelType {
       "veo_3_fast" => Ok(Self::Veo3Fast),
       "veo_3p1" => Ok(Self::Veo3p1),
       "veo_3p1_fast" => Ok(Self::Veo3p1Fast),
+      "veo_3p1_lite" => Ok(Self::Veo3p1Lite),
+      "vidu_q3" => Ok(Self::ViduQ3),
+      "vidu_q3_turbo" => Ok(Self::ViduQ3Turbo),
+
+      // Audio models
+      "suno_music" => Ok(Self::SunoMusic),
+      "suno_remix" => Ok(Self::SunoRemix),
+      "suno_sounds" => Ok(Self::SunoSounds),
+      "suno_sample" => Ok(Self::SunoSample),
+      "seed_audio_1p0" => Ok(Self::SeedAudio1p0),
+
       "preview_model" => Ok(Self::PreviewModel),
       "preview_model_fast" => Ok(Self::PreviewModelFast),
       "switch_x" => Ok(Self::SwitchX),
@@ -373,10 +467,22 @@ impl CommonModelType {
       "hunyuan_3d_2p0" => Ok(Self::Hunyuan3d2_0),
       "hunyuan_3d_2p1" => Ok(Self::Hunyuan3d2_1),
       "hunyuan_3d_3" => Ok(Self::Hunyuan3d3),
+      "hunyuan_3d_3p1_pro" => Ok(Self::Hunyuan3d3_1Pro),
+      "hunyuan_3d_3p1_rapid" => Ok(Self::Hunyuan3d3_1Rapid),
+      "hunyuan_3d_3p1_part" => Ok(Self::Hunyuan3d3_1Part),
+      "hunyuan_3d_3p1_topology" => Ok(Self::Hunyuan3d3_1SmartTopology),
+      "tripo3d_h3p1" => Ok(Self::Tripo3dH3_1),
+      "meshy_v6" => Ok(Self::MeshyV6),
+      "rodin_2p5_fast" => Ok(Self::Rodin2_5Fast),
 
       // Splat generation models (World Labs)
       "marble_0p1_mini" => Ok(Self::Marble0p1Mini),
       "marble_0p1_plus" => Ok(Self::Marble0p1Plus),
+      "marble_1p0" => Ok(Self::Marble1p0),
+      "marble_1p0_draft" => Ok(Self::Marble1p0Draft),
+      "marble_1p1" => Ok(Self::Marble1p1),
+      "marble_1p1_plus" => Ok(Self::Marble1p1Plus),
+      "triposplat" => Ok(Self::TripoSplat),
 
       _ => Err(format!("invalid model_type: {:?}", job_status)),
     }
@@ -412,6 +518,7 @@ impl CommonModelType {
       Self::Seedream4,
       Self::Seedream4p5,
       Self::Seedream5Lite,
+      Self::Seedream5p0Pro,
       Self::Midjourney,
       Self::MidjourneyV6,
       Self::MidjourneyV6p1,
@@ -447,6 +554,9 @@ impl CommonModelType {
       Self::Seedance2p0UltraFast,
       Self::Seedance2p0BytePlusUltra,
       Self::Seedance2p0BytePlusUltraFast,
+      Self::Seedance2p0Mini,
+      Self::Seedance2p0BytePlusMini,
+      Self::Seedance2p0BytePlusUltraMini,
       Self::Sora2,
       Self::Sora2Pro,
       Self::Veo2,
@@ -454,6 +564,17 @@ impl CommonModelType {
       Self::Veo3Fast,
       Self::Veo3p1,
       Self::Veo3p1Fast,
+      Self::Veo3p1Lite,
+      Self::ViduQ3,
+      Self::ViduQ3Turbo,
+
+      // Audio models
+      Self::SunoMusic,
+      Self::SunoRemix,
+      Self::SunoSounds,
+      Self::SunoSample,
+      Self::SeedAudio1p0,
+
       Self::PreviewModel,
       Self::PreviewModelFast,
       Self::SwitchX,
@@ -462,10 +583,22 @@ impl CommonModelType {
       Self::Hunyuan3d2_0,
       Self::Hunyuan3d2_1,
       Self::Hunyuan3d3,
+      Self::Hunyuan3d3_1Pro,
+      Self::Hunyuan3d3_1Rapid,
+      Self::Hunyuan3d3_1Part,
+      Self::Hunyuan3d3_1SmartTopology,
+      Self::Tripo3dH3_1,
+      Self::MeshyV6,
+      Self::Rodin2_5Fast,
 
       // Splat generation models (World Labs)
       Self::Marble0p1Mini,
       Self::Marble0p1Plus,
+      Self::Marble1p0,
+      Self::Marble1p0Draft,
+      Self::Marble1p1,
+      Self::Marble1p1Plus,
+      Self::TripoSplat,
     ])
   }
 
@@ -498,6 +631,7 @@ impl CommonModelType {
       Self::Seedream4 => CommonModelClass::Image,
       Self::Seedream4p5 => CommonModelClass::Image,
       Self::Seedream5Lite => CommonModelClass::Image,
+      Self::Seedream5p0Pro => CommonModelClass::Image,
       Self::Midjourney => CommonModelClass::Image,
       Self::MidjourneyV6 => CommonModelClass::Image,
       Self::MidjourneyV6p1 => CommonModelClass::Image,
@@ -533,6 +667,9 @@ impl CommonModelType {
       Self::Seedance2p0UltraFast => CommonModelClass::Video,
       Self::Seedance2p0BytePlusUltra => CommonModelClass::Video,
       Self::Seedance2p0BytePlusUltraFast => CommonModelClass::Video,
+      Self::Seedance2p0Mini => CommonModelClass::Video,
+      Self::Seedance2p0BytePlusMini => CommonModelClass::Video,
+      Self::Seedance2p0BytePlusUltraMini => CommonModelClass::Video,
       Self::Sora2 => CommonModelClass::Video,
       Self::Sora2Pro => CommonModelClass::Video,
       Self::Veo2 => CommonModelClass::Video,
@@ -540,6 +677,17 @@ impl CommonModelType {
       Self::Veo3Fast => CommonModelClass::Video,
       Self::Veo3p1 => CommonModelClass::Video,
       Self::Veo3p1Fast => CommonModelClass::Video,
+      Self::Veo3p1Lite => CommonModelClass::Video,
+      Self::ViduQ3 => CommonModelClass::Video,
+      Self::ViduQ3Turbo => CommonModelClass::Video,
+
+      // Audio models
+      Self::SunoMusic => CommonModelClass::Audio,
+      Self::SunoRemix => CommonModelClass::Audio,
+      Self::SunoSounds => CommonModelClass::Audio,
+      Self::SunoSample => CommonModelClass::Audio,
+      Self::SeedAudio1p0 => CommonModelClass::Audio,
+
       Self::PreviewModel => CommonModelClass::Video,
       Self::PreviewModelFast => CommonModelClass::Video,
       Self::SwitchX => CommonModelClass::Video,
@@ -548,10 +696,22 @@ impl CommonModelType {
       Self::Hunyuan3d2_0 => CommonModelClass::DimensionalMesh,
       Self::Hunyuan3d2_1 => CommonModelClass::DimensionalMesh,
       Self::Hunyuan3d3 => CommonModelClass::DimensionalMesh,
+      Self::Hunyuan3d3_1Pro => CommonModelClass::DimensionalMesh,
+      Self::Hunyuan3d3_1Rapid => CommonModelClass::DimensionalMesh,
+      Self::Hunyuan3d3_1Part => CommonModelClass::DimensionalMesh,
+      Self::Hunyuan3d3_1SmartTopology => CommonModelClass::DimensionalMesh,
+      Self::Tripo3dH3_1 => CommonModelClass::DimensionalMesh,
+      Self::MeshyV6 => CommonModelClass::DimensionalMesh,
+      Self::Rodin2_5Fast => CommonModelClass::DimensionalMesh,
 
       // Splat generation models (World Labs)
       Self::Marble0p1Mini => CommonModelClass::DimensionalSplat,
       Self::Marble0p1Plus => CommonModelClass::DimensionalSplat,
+      Self::Marble1p0 => CommonModelClass::DimensionalSplat,
+      Self::Marble1p0Draft => CommonModelClass::DimensionalSplat,
+      Self::Marble1p1 => CommonModelClass::DimensionalSplat,
+      Self::Marble1p1Plus => CommonModelClass::DimensionalSplat,
+      Self::TripoSplat => CommonModelClass::DimensionalSplat,
     }
   }
 }
@@ -594,6 +754,7 @@ mod tests {
       assert_serialization(CommonModelType::Seedream4, "seedream_4");
       assert_serialization(CommonModelType::Seedream4p5, "seedream_4p5");
       assert_serialization(CommonModelType::Seedream5Lite, "seedream_5_lite");
+      assert_serialization(CommonModelType::Seedream5p0Pro, "seedream_5p0_pro");
       assert_serialization(CommonModelType::Midjourney, "midjourney");
       assert_serialization(CommonModelType::MidjourneyV6, "midjourney_v6");
       assert_serialization(CommonModelType::MidjourneyV6p1, "midjourney_v6p1");
@@ -628,6 +789,9 @@ mod tests {
       assert_serialization(CommonModelType::Seedance2p0UltraFast, "seedance_2p0_u_fast");
       assert_serialization(CommonModelType::Seedance2p0BytePlusUltra, "seedance_2p0_bpu");
       assert_serialization(CommonModelType::Seedance2p0BytePlusUltraFast, "seedance_2p0_bpu_fast");
+      assert_serialization(CommonModelType::Seedance2p0Mini, "seedance_2p0_mini");
+      assert_serialization(CommonModelType::Seedance2p0BytePlusMini, "seedance_2p0_bp_mini");
+      assert_serialization(CommonModelType::Seedance2p0BytePlusUltraMini, "seedance_2p0_bpu_mini");
       assert_serialization(CommonModelType::Sora2, "sora_2");
       assert_serialization(CommonModelType::Sora2Pro, "sora_2_pro");
       assert_serialization(CommonModelType::Veo2, "veo_2");
@@ -635,6 +799,15 @@ mod tests {
       assert_serialization(CommonModelType::Veo3Fast, "veo_3_fast");
       assert_serialization(CommonModelType::Veo3p1, "veo_3p1");
       assert_serialization(CommonModelType::Veo3p1Fast, "veo_3p1_fast");
+      assert_serialization(CommonModelType::Veo3p1Lite, "veo_3p1_lite");
+      assert_serialization(CommonModelType::ViduQ3, "vidu_q3");
+      assert_serialization(CommonModelType::ViduQ3Turbo, "vidu_q3_turbo");
+      // Audio models
+      assert_serialization(CommonModelType::SunoMusic, "suno_music");
+      assert_serialization(CommonModelType::SunoRemix, "suno_remix");
+      assert_serialization(CommonModelType::SunoSounds, "suno_sounds");
+      assert_serialization(CommonModelType::SunoSample, "suno_sample");
+      assert_serialization(CommonModelType::SeedAudio1p0, "seed_audio_1p0");
       assert_serialization(CommonModelType::PreviewModel, "preview_model");
       assert_serialization(CommonModelType::PreviewModelFast, "preview_model_fast");
       assert_serialization(CommonModelType::SwitchX, "switch_x");
@@ -642,9 +815,21 @@ mod tests {
       assert_serialization(CommonModelType::Hunyuan3d2_0, "hunyuan_3d_2p0");
       assert_serialization(CommonModelType::Hunyuan3d2_1, "hunyuan_3d_2p1");
       assert_serialization(CommonModelType::Hunyuan3d3, "hunyuan_3d_3");
+      assert_serialization(CommonModelType::Hunyuan3d3_1Pro, "hunyuan_3d_3p1_pro");
+      assert_serialization(CommonModelType::Hunyuan3d3_1Rapid, "hunyuan_3d_3p1_rapid");
+      assert_serialization(CommonModelType::Hunyuan3d3_1Part, "hunyuan_3d_3p1_part");
+      assert_serialization(CommonModelType::Hunyuan3d3_1SmartTopology, "hunyuan_3d_3p1_topology");
+      assert_serialization(CommonModelType::Tripo3dH3_1, "tripo3d_h3p1");
+      assert_serialization(CommonModelType::MeshyV6, "meshy_v6");
+      assert_serialization(CommonModelType::Rodin2_5Fast, "rodin_2p5_fast");
       // Splat generation models (World Labs)
       assert_serialization(CommonModelType::Marble0p1Mini, "marble_0p1_mini");
       assert_serialization(CommonModelType::Marble0p1Plus, "marble_0p1_plus");
+      assert_serialization(CommonModelType::Marble1p0, "marble_1p0");
+      assert_serialization(CommonModelType::Marble1p0Draft, "marble_1p0_draft");
+      assert_serialization(CommonModelType::Marble1p1, "marble_1p1");
+      assert_serialization(CommonModelType::Marble1p1Plus, "marble_1p1_plus");
+      assert_serialization(CommonModelType::TripoSplat, "triposplat");
     }
 
     #[test]
@@ -675,6 +860,7 @@ mod tests {
       assert_eq!(CommonModelType::Seedream4.to_str(), "seedream_4");
       assert_eq!(CommonModelType::Seedream4p5.to_str(), "seedream_4p5");
       assert_eq!(CommonModelType::Seedream5Lite.to_str(), "seedream_5_lite");
+      assert_eq!(CommonModelType::Seedream5p0Pro.to_str(), "seedream_5p0_pro");
       assert_eq!(CommonModelType::Midjourney.to_str(), "midjourney");
       assert_eq!(CommonModelType::MidjourneyV6.to_str(), "midjourney_v6");
       assert_eq!(CommonModelType::MidjourneyV6p1.to_str(), "midjourney_v6p1");
@@ -710,6 +896,9 @@ mod tests {
       assert_eq!(CommonModelType::Seedance2p0UltraFast.to_str(), "seedance_2p0_u_fast");
       assert_eq!(CommonModelType::Seedance2p0BytePlusUltra.to_str(), "seedance_2p0_bpu");
       assert_eq!(CommonModelType::Seedance2p0BytePlusUltraFast.to_str(), "seedance_2p0_bpu_fast");
+      assert_eq!(CommonModelType::Seedance2p0Mini.to_str(), "seedance_2p0_mini");
+      assert_eq!(CommonModelType::Seedance2p0BytePlusMini.to_str(), "seedance_2p0_bp_mini");
+      assert_eq!(CommonModelType::Seedance2p0BytePlusUltraMini.to_str(), "seedance_2p0_bpu_mini");
       assert_eq!(CommonModelType::Sora2.to_str(), "sora_2");
       assert_eq!(CommonModelType::Sora2Pro.to_str(), "sora_2_pro");
       assert_eq!(CommonModelType::Veo2.to_str(), "veo_2");
@@ -717,6 +906,17 @@ mod tests {
       assert_eq!(CommonModelType::Veo3Fast.to_str(), "veo_3_fast");
       assert_eq!(CommonModelType::Veo3p1.to_str(), "veo_3p1");
       assert_eq!(CommonModelType::Veo3p1Fast.to_str(), "veo_3p1_fast");
+      assert_eq!(CommonModelType::Veo3p1Lite.to_str(), "veo_3p1_lite");
+      assert_eq!(CommonModelType::ViduQ3.to_str(), "vidu_q3");
+      assert_eq!(CommonModelType::ViduQ3Turbo.to_str(), "vidu_q3_turbo");
+
+      // Audio models
+      assert_eq!(CommonModelType::SunoMusic.to_str(), "suno_music");
+      assert_eq!(CommonModelType::SunoRemix.to_str(), "suno_remix");
+      assert_eq!(CommonModelType::SunoSounds.to_str(), "suno_sounds");
+      assert_eq!(CommonModelType::SunoSample.to_str(), "suno_sample");
+      assert_eq!(CommonModelType::SeedAudio1p0.to_str(), "seed_audio_1p0");
+
       assert_eq!(CommonModelType::PreviewModel.to_str(), "preview_model");
       assert_eq!(CommonModelType::PreviewModelFast.to_str(), "preview_model_fast");
       assert_eq!(CommonModelType::SwitchX.to_str(), "switch_x");
@@ -725,9 +925,21 @@ mod tests {
       assert_eq!(CommonModelType::Hunyuan3d2_0.to_str(), "hunyuan_3d_2p0");
       assert_eq!(CommonModelType::Hunyuan3d2_1.to_str(), "hunyuan_3d_2p1");
       assert_eq!(CommonModelType::Hunyuan3d3.to_str(), "hunyuan_3d_3");
+      assert_eq!(CommonModelType::Hunyuan3d3_1Pro.to_str(), "hunyuan_3d_3p1_pro");
+      assert_eq!(CommonModelType::Hunyuan3d3_1Rapid.to_str(), "hunyuan_3d_3p1_rapid");
+      assert_eq!(CommonModelType::Hunyuan3d3_1Part.to_str(), "hunyuan_3d_3p1_part");
+      assert_eq!(CommonModelType::Hunyuan3d3_1SmartTopology.to_str(), "hunyuan_3d_3p1_topology");
+      assert_eq!(CommonModelType::Tripo3dH3_1.to_str(), "tripo3d_h3p1");
+      assert_eq!(CommonModelType::MeshyV6.to_str(), "meshy_v6");
+      assert_eq!(CommonModelType::Rodin2_5Fast.to_str(), "rodin_2p5_fast");
       // Splat generation models (World Labs)
       assert_eq!(CommonModelType::Marble0p1Mini.to_str(), "marble_0p1_mini");
       assert_eq!(CommonModelType::Marble0p1Plus.to_str(), "marble_0p1_plus");
+      assert_eq!(CommonModelType::Marble1p0.to_str(), "marble_1p0");
+      assert_eq!(CommonModelType::Marble1p0Draft.to_str(), "marble_1p0_draft");
+      assert_eq!(CommonModelType::Marble1p1.to_str(), "marble_1p1");
+      assert_eq!(CommonModelType::Marble1p1Plus.to_str(), "marble_1p1_plus");
+      assert_eq!(CommonModelType::TripoSplat.to_str(), "triposplat");
     }
 
     #[test]
@@ -758,6 +970,7 @@ mod tests {
       assert_eq!(CommonModelType::from_str("seedream_4").unwrap(), CommonModelType::Seedream4);
       assert_eq!(CommonModelType::from_str("seedream_4p5").unwrap(), CommonModelType::Seedream4p5);
       assert_eq!(CommonModelType::from_str("seedream_5_lite").unwrap(), CommonModelType::Seedream5Lite);
+      assert_eq!(CommonModelType::from_str("seedream_5p0_pro").unwrap(), CommonModelType::Seedream5p0Pro);
       assert_eq!(CommonModelType::from_str("midjourney").unwrap(), CommonModelType::Midjourney);
       assert_eq!(CommonModelType::from_str("midjourney_v6").unwrap(), CommonModelType::MidjourneyV6);
       assert_eq!(CommonModelType::from_str("midjourney_v6p1").unwrap(), CommonModelType::MidjourneyV6p1);
@@ -792,6 +1005,9 @@ mod tests {
       assert_eq!(CommonModelType::from_str("seedance_2p0_u_fast").unwrap(), CommonModelType::Seedance2p0UltraFast);
       assert_eq!(CommonModelType::from_str("seedance_2p0_bpu").unwrap(), CommonModelType::Seedance2p0BytePlusUltra);
       assert_eq!(CommonModelType::from_str("seedance_2p0_bpu_fast").unwrap(), CommonModelType::Seedance2p0BytePlusUltraFast);
+      assert_eq!(CommonModelType::from_str("seedance_2p0_mini").unwrap(), CommonModelType::Seedance2p0Mini);
+      assert_eq!(CommonModelType::from_str("seedance_2p0_bp_mini").unwrap(), CommonModelType::Seedance2p0BytePlusMini);
+      assert_eq!(CommonModelType::from_str("seedance_2p0_bpu_mini").unwrap(), CommonModelType::Seedance2p0BytePlusUltraMini);
       assert_eq!(CommonModelType::from_str("sora_2").unwrap(), CommonModelType::Sora2);
       assert_eq!(CommonModelType::from_str("sora_2_pro").unwrap(), CommonModelType::Sora2Pro);
       assert_eq!(CommonModelType::from_str("veo_2").unwrap(), CommonModelType::Veo2);
@@ -799,6 +1015,15 @@ mod tests {
       assert_eq!(CommonModelType::from_str("veo_3_fast").unwrap(), CommonModelType::Veo3Fast);
       assert_eq!(CommonModelType::from_str("veo_3p1").unwrap(), CommonModelType::Veo3p1);
       assert_eq!(CommonModelType::from_str("veo_3p1_fast").unwrap(), CommonModelType::Veo3p1Fast);
+      assert_eq!(CommonModelType::from_str("veo_3p1_lite").unwrap(), CommonModelType::Veo3p1Lite);
+      assert_eq!(CommonModelType::from_str("vidu_q3").unwrap(), CommonModelType::ViduQ3);
+      assert_eq!(CommonModelType::from_str("vidu_q3_turbo").unwrap(), CommonModelType::ViduQ3Turbo);
+      // Audio models
+      assert_eq!(CommonModelType::from_str("suno_music").unwrap(), CommonModelType::SunoMusic);
+      assert_eq!(CommonModelType::from_str("suno_remix").unwrap(), CommonModelType::SunoRemix);
+      assert_eq!(CommonModelType::from_str("suno_sounds").unwrap(), CommonModelType::SunoSounds);
+      assert_eq!(CommonModelType::from_str("suno_sample").unwrap(), CommonModelType::SunoSample);
+      assert_eq!(CommonModelType::from_str("seed_audio_1p0").unwrap(), CommonModelType::SeedAudio1p0);
       assert_eq!(CommonModelType::from_str("preview_model").unwrap(), CommonModelType::PreviewModel);
       assert_eq!(CommonModelType::from_str("preview_model_fast").unwrap(), CommonModelType::PreviewModelFast);
       assert_eq!(CommonModelType::from_str("switch_x").unwrap(), CommonModelType::SwitchX);
@@ -807,15 +1032,27 @@ mod tests {
       assert_eq!(CommonModelType::from_str("hunyuan_3d_2p0").unwrap(), CommonModelType::Hunyuan3d2_0);
       assert_eq!(CommonModelType::from_str("hunyuan_3d_2p1").unwrap(), CommonModelType::Hunyuan3d2_1);
       assert_eq!(CommonModelType::from_str("hunyuan_3d_3").unwrap(), CommonModelType::Hunyuan3d3);
+      assert_eq!(CommonModelType::from_str("hunyuan_3d_3p1_pro").unwrap(), CommonModelType::Hunyuan3d3_1Pro);
+      assert_eq!(CommonModelType::from_str("hunyuan_3d_3p1_rapid").unwrap(), CommonModelType::Hunyuan3d3_1Rapid);
+      assert_eq!(CommonModelType::from_str("hunyuan_3d_3p1_part").unwrap(), CommonModelType::Hunyuan3d3_1Part);
+      assert_eq!(CommonModelType::from_str("hunyuan_3d_3p1_topology").unwrap(), CommonModelType::Hunyuan3d3_1SmartTopology);
+      assert_eq!(CommonModelType::from_str("tripo3d_h3p1").unwrap(), CommonModelType::Tripo3dH3_1);
+      assert_eq!(CommonModelType::from_str("meshy_v6").unwrap(), CommonModelType::MeshyV6);
+      assert_eq!(CommonModelType::from_str("rodin_2p5_fast").unwrap(), CommonModelType::Rodin2_5Fast);
       // Splat generation models (World Labs)
       assert_eq!(CommonModelType::from_str("marble_0p1_mini").unwrap(), CommonModelType::Marble0p1Mini);
       assert_eq!(CommonModelType::from_str("marble_0p1_plus").unwrap(), CommonModelType::Marble0p1Plus);
+      assert_eq!(CommonModelType::from_str("marble_1p0").unwrap(), CommonModelType::Marble1p0);
+      assert_eq!(CommonModelType::from_str("marble_1p0_draft").unwrap(), CommonModelType::Marble1p0Draft);
+      assert_eq!(CommonModelType::from_str("marble_1p1").unwrap(), CommonModelType::Marble1p1);
+      assert_eq!(CommonModelType::from_str("marble_1p1_plus").unwrap(), CommonModelType::Marble1p1Plus);
+      assert_eq!(CommonModelType::from_str("triposplat").unwrap(), CommonModelType::TripoSplat);
     }
 
     #[test]
     fn all_variants() {
       let mut variants = CommonModelType::all_variants();
-      assert_eq!(variants.len(), 73);
+      assert_eq!(variants.len(), 97);
       // Image models
       assert_eq!(variants.pop_first(), Some(CommonModelType::Flux1Dev));
       assert_eq!(variants.pop_first(), Some(CommonModelType::Flux1Schnell));
@@ -842,6 +1079,7 @@ mod tests {
       assert_eq!(variants.pop_first(), Some(CommonModelType::Seedream4));
       assert_eq!(variants.pop_first(), Some(CommonModelType::Seedream4p5));
       assert_eq!(variants.pop_first(), Some(CommonModelType::Seedream5Lite));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::Seedream5p0Pro));
       assert_eq!(variants.pop_first(), Some(CommonModelType::Midjourney));
       assert_eq!(variants.pop_first(), Some(CommonModelType::MidjourneyV6));
       assert_eq!(variants.pop_first(), Some(CommonModelType::MidjourneyV6p1));
@@ -876,6 +1114,9 @@ mod tests {
       assert_eq!(variants.pop_first(), Some(CommonModelType::Seedance2p0UltraFast));
       assert_eq!(variants.pop_first(), Some(CommonModelType::Seedance2p0BytePlusUltra));
       assert_eq!(variants.pop_first(), Some(CommonModelType::Seedance2p0BytePlusUltraFast));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::Seedance2p0Mini));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::Seedance2p0BytePlusMini));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::Seedance2p0BytePlusUltraMini));
       assert_eq!(variants.pop_first(), Some(CommonModelType::Sora2));
       assert_eq!(variants.pop_first(), Some(CommonModelType::Sora2Pro));
       assert_eq!(variants.pop_first(), Some(CommonModelType::Veo2));
@@ -883,6 +1124,15 @@ mod tests {
       assert_eq!(variants.pop_first(), Some(CommonModelType::Veo3Fast));
       assert_eq!(variants.pop_first(), Some(CommonModelType::Veo3p1));
       assert_eq!(variants.pop_first(), Some(CommonModelType::Veo3p1Fast));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::Veo3p1Lite));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::ViduQ3));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::ViduQ3Turbo));
+      // Audio models
+      assert_eq!(variants.pop_first(), Some(CommonModelType::SunoMusic));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::SunoRemix));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::SunoSounds));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::SunoSample));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::SeedAudio1p0));
       assert_eq!(variants.pop_first(), Some(CommonModelType::PreviewModel));
       assert_eq!(variants.pop_first(), Some(CommonModelType::PreviewModelFast));
       assert_eq!(variants.pop_first(), Some(CommonModelType::SwitchX));
@@ -890,9 +1140,21 @@ mod tests {
       assert_eq!(variants.pop_first(), Some(CommonModelType::Hunyuan3d2_0));
       assert_eq!(variants.pop_first(), Some(CommonModelType::Hunyuan3d2_1));
       assert_eq!(variants.pop_first(), Some(CommonModelType::Hunyuan3d3));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::Hunyuan3d3_1Pro));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::Hunyuan3d3_1Rapid));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::Hunyuan3d3_1Part));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::Hunyuan3d3_1SmartTopology));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::Tripo3dH3_1));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::MeshyV6));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::Rodin2_5Fast));
       // Splat generation models (World Labs)
       assert_eq!(variants.pop_first(), Some(CommonModelType::Marble0p1Mini));
       assert_eq!(variants.pop_first(), Some(CommonModelType::Marble0p1Plus));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::Marble1p0));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::Marble1p0Draft));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::Marble1p1));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::Marble1p1Plus));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::TripoSplat));
 
       assert_eq!(variants.pop_first(), None);
     }
@@ -974,14 +1236,28 @@ mod tests {
       assert_eq!(CommonModelType::Veo3.get_model_class(), CommonModelClass::Video);
       assert_eq!(CommonModelType::Sora2.get_model_class(), CommonModelClass::Video);
       assert_eq!(CommonModelType::Kling3p0Pro.get_model_class(), CommonModelClass::Video);
+      assert_eq!(CommonModelType::Seedance2p0Mini.get_model_class(), CommonModelClass::Video);
+      assert_eq!(CommonModelType::Seedance2p0BytePlusMini.get_model_class(), CommonModelClass::Video);
+      assert_eq!(CommonModelType::Seedance2p0BytePlusUltraMini.get_model_class(), CommonModelClass::Video);
     }
 
     #[test]
     fn dimensional_models_return_correct_class() {
       assert_eq!(CommonModelType::Hunyuan3d2_0.get_model_class(), CommonModelClass::DimensionalMesh);
       assert_eq!(CommonModelType::Hunyuan3d3.get_model_class(), CommonModelClass::DimensionalMesh);
+      assert_eq!(CommonModelType::Hunyuan3d3_1Pro.get_model_class(), CommonModelClass::DimensionalMesh);
+      assert_eq!(CommonModelType::Hunyuan3d3_1Rapid.get_model_class(), CommonModelClass::DimensionalMesh);
+      assert_eq!(CommonModelType::Hunyuan3d3_1Part.get_model_class(), CommonModelClass::DimensionalMesh);
+      assert_eq!(CommonModelType::Hunyuan3d3_1SmartTopology.get_model_class(), CommonModelClass::DimensionalMesh);
+      assert_eq!(CommonModelType::Tripo3dH3_1.get_model_class(), CommonModelClass::DimensionalMesh);
+      assert_eq!(CommonModelType::MeshyV6.get_model_class(), CommonModelClass::DimensionalMesh);
+      assert_eq!(CommonModelType::Rodin2_5Fast.get_model_class(), CommonModelClass::DimensionalMesh);
       assert_eq!(CommonModelType::Marble0p1Mini.get_model_class(), CommonModelClass::DimensionalSplat);
       assert_eq!(CommonModelType::Marble0p1Plus.get_model_class(), CommonModelClass::DimensionalSplat);
+      assert_eq!(CommonModelType::Marble1p0.get_model_class(), CommonModelClass::DimensionalSplat);
+      assert_eq!(CommonModelType::Marble1p0Draft.get_model_class(), CommonModelClass::DimensionalSplat);
+      assert_eq!(CommonModelType::Marble1p1.get_model_class(), CommonModelClass::DimensionalSplat);
+      assert_eq!(CommonModelType::Marble1p1Plus.get_model_class(), CommonModelClass::DimensionalSplat);
     }
   }
 }

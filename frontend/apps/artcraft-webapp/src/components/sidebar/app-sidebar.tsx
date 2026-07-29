@@ -1,18 +1,24 @@
 import { useMemo } from "react";
 import { Link, useLocation } from "react-router-dom";
+import { motion, useReducedMotion } from "framer-motion";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faHouse,
   faVideo,
   faImage,
+  faMusic,
   faCube,
+  faGlobe,
   faFilm,
+  faObjectGroup,
   faWandMagicSparkles,
   faGraduationCap,
   faNewspaper,
   faCircleQuestion,
   faDownload,
   faGift,
+  faPencil,
+  faPhotoFilm,
 } from "@fortawesome/pro-solid-svg-icons";
 import { faDiscord } from "@fortawesome/free-brands-svg-icons";
 import { Button } from "@storyteller/ui-button";
@@ -47,12 +53,19 @@ type NavItem = {
 
 const PRIMARY_ITEMS: NavItem[] = [{ label: "Home", href: "/", icon: faHouse }];
 
-// "Edit 3D" entry's href is computed at render time from the
-// session-scoped scene-cache store (see useCreateItems below). The other
-// entries stay static.
+// Generation entries — make something from a prompt.
 const CREATE_ITEMS_STATIC: NavItem[] = [
   { label: "Image", href: "/create-image", icon: faImage },
   { label: "Video", href: "/create-video", icon: faVideo },
+  { label: "Audio", href: "/create-audio", icon: faMusic },
+  { label: "3D Object", href: "/create-object", icon: faCube },
+  { label: "3D World", href: "/create-world", icon: faGlobe },
+];
+
+// "Studio" entries — edit, compose, and refine existing content. "Edit 3D"'s
+// href is computed at render time from the scene-cache store (see useStudioItems).
+const STUDIO_ITEMS_STATIC: NavItem[] = [
+  { label: "Edit Image", href: "/edit-image", icon: faPencil },
   { label: "Edit 3D", href: "/edit-3d", icon: faCube },
   { label: "Edit Video", href: "/video-editor", icon: faFilm, badge: "BETA" },
   {
@@ -60,17 +73,29 @@ const CREATE_ITEMS_STATIC: NavItem[] = [
     href: "/background-change",
     icon: faWandMagicSparkles,
   },
+  {
+    label: "Moodboard",
+    href: "/moodboard",
+    icon: faObjectGroup,
+    badge: "BETA",
+  },
+  {
+    label: "Frame Extract",
+    href: "/frame-extractor",
+    icon: faPhotoFilm,
+    badge: "NEW",
+  },
 ];
 
 // Rewrite the "Edit 3D" item's href to point at the user's last visited
 // scene (if any) so returning to the editor from another sidebar page
 // drops them back into the same scene rather than the blank splash.
 // sessionStorage scope — closes when the tab closes.
-function useCreateItems(): NavItem[] {
+function useStudioItems(): NavItem[] {
   const lastSceneToken = useSceneCacheStore((s) => s.lastVisitedSceneToken);
   return useMemo(
     () =>
-      CREATE_ITEMS_STATIC.map((item) =>
+      STUDIO_ITEMS_STATIC.map((item) =>
         item.href === "/edit-3d" && lastSceneToken
           ? { ...item, href: `/edit-3d/${lastSceneToken}` }
           : item,
@@ -135,12 +160,23 @@ function NavMenuItem({
   pathname: string;
   onClick: () => void;
 }) {
+  const reduceMotion = useReducedMotion();
+  const active = !item.external && isActive(pathname, item.href);
   const inner = (
     <>
-      <FontAwesomeIcon icon={item.icon} />
+      {/* Icon nudges up in scale on hover — a small tactile cue that the row is
+          interactive, kept subtle to stay within the "restrained chrome" lane. */}
+      <FontAwesomeIcon
+        icon={item.icon}
+        className="transition-transform duration-200 ease-out group-hover/menu-item:scale-110"
+      />
       <span className="group-data-[collapsible=icon]:hidden">{item.label}</span>
       {item.badge && (
-        <span className="ml-auto bg-amber-600 px-1.5 py-0.5 text-[10px] font-semibold uppercase leading-none text-white group-data-[collapsible=icon]:hidden rounded-full">
+        <span
+          className={`ml-auto px-1.5 py-0.5 text-[10px] font-semibold uppercase leading-none text-white group-data-[collapsible=icon]:hidden rounded-full ${
+            item.badge === "NEW" ? "bg-purple-600" : "bg-amber-600"
+          }`}
+        >
           {item.badge}
         </span>
       )}
@@ -148,11 +184,22 @@ function NavMenuItem({
   );
   return (
     <SidebarMenuItem>
-      <SidebarMenuButton
-        asChild
-        isActive={!item.external && isActive(pathname, item.href)}
-        tooltip={item.label}
-      >
+      {/* Brand accent bar that glides between nav rows as the active route
+          changes (shared-element layout animation via `layoutId`). One is
+          mounted at a time, so framer-motion tweens it from the old row to the
+          new one. */}
+      {active && (
+        <motion.span
+          layoutId="sidebar-active-indicator"
+          className="pointer-events-none absolute inset-y-1.5 left-0 z-10 w-1 rounded-full bg-primary"
+          transition={
+            reduceMotion
+              ? { duration: 0 }
+              : { type: "spring", stiffness: 520, damping: 40, mass: 0.7 }
+          }
+        />
+      )}
+      <SidebarMenuButton asChild isActive={active} tooltip={item.label}>
         {item.external ? (
           <a
             href={item.href}
@@ -209,7 +256,7 @@ export function AppSidebar() {
   const { isMobile, setOpenMobile, state } = useSidebar();
   const { user } = useSession();
   const showSidebarLogo = state === "expanded" || isMobile;
-  const createItems = useCreateItems();
+  const studioItems = useStudioItems();
 
   const hasReferralsFlag = !!user?.maybe_feature_flags?.includes(
     USER_FEATURE_FLAGS.REFERRALS,
@@ -249,7 +296,13 @@ export function AppSidebar() {
         />
         <NavSection
           label="Create"
-          items={createItems}
+          items={CREATE_ITEMS_STATIC}
+          pathname={pathname}
+          onClick={handleNavClick}
+        />
+        <NavSection
+          label="Studio"
+          items={studioItems}
           pathname={pathname}
           onClick={handleNavClick}
         />

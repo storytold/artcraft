@@ -11,10 +11,8 @@ use mysql_queries::queries::users::user_profiles::get_user_profile_by_token::get
 use tokens::tokens::users::UserToken;
 
 use crate::http_server::common_responses::common_web_error::CommonWebError;
-use crate::http_server::session::lookup::user_session_feature_flags::UserSessionFeatureFlags;
-use crate::http_server::web_utils::user_session::require_moderator::{
-  require_moderator, UseDatabase,
-};
+use crate::http_server::user_lookup::user_session::session_utils::lookup::user_session_feature_flags::UserSessionFeatureFlags;
+use crate::http_server::user_lookup::user_session::require_moderator::require_moderator;
 use crate::state::server_state::ServerState;
 
 // ── Request ──
@@ -56,14 +54,7 @@ pub async fn moderator_list_user_feature_flags_handler(
   path: Path<ListUserFeatureFlagsPathInfo>,
   server_state: web::Data<Arc<ServerState>>,
 ) -> Result<Json<ModeratorListUserFeatureFlagsResponse>, CommonWebError> {
-  let _user_session = require_moderator(
-    &http_request,
-    &server_state,
-    UseDatabase::GrabNewConnection,
-  ).await.map_err(|err| {
-    warn!("Moderator check failed: {:?}", err);
-    CommonWebError::NotAuthorized
-  })?;
+  let _user_session = require_moderator(&http_request, &server_state.session_checker, &server_state.mysql_pool).await?;
 
   let username_or_token = path.username_or_token.trim();
 

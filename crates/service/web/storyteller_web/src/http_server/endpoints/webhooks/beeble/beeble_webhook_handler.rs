@@ -13,6 +13,7 @@ use beeble_client::webhook_api::beeble_webhook_payload::{
   parse_beeble_webhook, BeebleWebhookPayload, BeebleWebhookStatus,
 };
 use bucket_paths::legacy::typified_paths::public::media_files::bucket_file_path::MediaFileBucketPath;
+use enums::by_table::debug_logs::debug_log_level::DebugLogLevel;
 use enums::by_table::debug_logs::debug_log_type::DebugLogType;
 use enums::by_table::generic_inference_jobs::frontend_failure_category::FrontendFailureCategory;
 use enums::by_table::media_files::media_file_class::MediaFileClass;
@@ -101,6 +102,9 @@ pub async fn beeble_webhook_handler(
       apriori_debug_log_event_token: Some(debug_log_event_token),
       maybe_creator_user_token: job.maybe_creator_user_token.as_ref(),
       debug_log_type: DebugLogType::BeebleWebhook,
+      maybe_log_level: Some(DebugLogLevel::Info),
+      maybe_ip_address: None,
+      maybe_url: None,
       message: &raw_body,
       mysql_executor: &mut *mysql_connection,
       phantom: Default::default(),

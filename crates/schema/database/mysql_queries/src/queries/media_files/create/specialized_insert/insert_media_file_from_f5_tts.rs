@@ -69,6 +69,10 @@ pub async fn insert_media_file_from_f5_tts(
   const ORIGIN_CATEGORY : MediaFileOriginCategory = MediaFileOriginCategory::Inference;
   const ORIGIN_PRODUCT_CATEGORY : MediaFileOriginProductCategory = MediaFileOriginProductCategory::TextToSpeech;
 
+  let media_type = args.maybe_mime_type
+    .and_then(MediaFileType::try_from_mime_type)
+    .unwrap_or(MediaFileType::Audio); // Coarse fallback for unrecognized mimes
+
   let record_id = {
     let query_result = sqlx::query!(
         r#"
@@ -116,7 +120,7 @@ SET
       result_token.as_str(),
 
       MediaFileClass::Audio.to_str(),
-      MediaFileType::Audio.to_str(), // TODO(bt,2024-04-30): This needs to become "wav" after a frontend migration
+      media_type.to_str(),
 
       ORIGIN_CATEGORY.to_str(),
       ORIGIN_PRODUCT_CATEGORY.to_str(),

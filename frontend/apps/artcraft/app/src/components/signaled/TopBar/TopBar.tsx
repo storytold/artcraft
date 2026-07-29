@@ -8,7 +8,7 @@ import {
   faCoins,
   faGear,
   faGem,
-  faGrid2,
+  faHouse,
   faImages,
   faCalculator,
   faExclamation,
@@ -17,29 +17,12 @@ import {
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { signal } from "@preact/signals-react";
 import { useSignals } from "@preact/signals-react/runtime";
-import {
-  FilterMediaClasses,
-  downloadUrlToPath,
-  promptDownloadLocationIfNeeded,
-} from "@storyteller/api";
-import {
-  getCreatorIcon,
-  ModelCreator,
-  IMAGE_MODELS_BY_ID,
-  VIDEO_MODELS_BY_ID,
-  CommonAspectRatio,
-  CommonResolution,
-} from "@storyteller/model-list";
-import {
-  useClassyModelSelectorStore,
-  ModelPage,
-} from "@storyteller/ui-model-selector";
+import { getCreatorIcon, ModelCreator } from "@storyteller/model-list";
 import { useCreditsState, type CreditsIconStatus } from "@storyteller/credits";
 import { gtagEvent } from "@storyteller/google-analytics";
 import { ProviderBillingModal } from "@storyteller/provider-billing-modal";
 import { ProviderSetupModal } from "@storyteller/provider-setup-modal";
 import { useSubscriptionState } from "@storyteller/subscription";
-import { DownloadUrl } from "@storyteller/tauri-api";
 import {
   useCreditsBalanceChangedEvent,
   useSubscriptionPlanChangedEvent,
@@ -68,18 +51,19 @@ import {
   CreditsModal,
 } from "@storyteller/ui-pricing-modal";
 import {
-  RefImage,
-  RefVideo,
-  RefAudio,
-  usePromptImageStore,
-  usePromptVideoStore,
-} from "@storyteller/ui-promptbox";
-import type { Prompts } from "@storyteller/api";
+  GalleryAutoplayToggle,
+  GallerySelectToggle,
+  GalleryViewToggle,
+} from "@storyteller/ui-generation-list";
 import { SettingsModal } from "@storyteller/ui-settings-modal";
 import { Tooltip } from "@storyteller/ui-tooltip";
 import { useEffect, useRef, useState } from "react";
-import toast from "react-hot-toast";
 import { APP_DESCRIPTORS, goToApp } from "~/config/appMenu";
+import {
+  applyMakeVideoFromImage,
+  applyRecreateFromPromptData,
+  downloadMediaFileToDisk,
+} from "~/components/generation-feed/desktopMediaActions";
 import { useStoryboardStore } from "~/pages/PageStoryboard";
 import { useSceneStore } from "@storyteller/ui-pagedraw";
 import { usePageSceneStore } from "@storyteller/ui-pagescene";
@@ -117,8 +101,19 @@ type SettingsSection =
 const SWITCHER_THROTTLE_TIME = 500; // milliseconds
 const CREDITS_POLL_INTERVAL = 60_000; // milliseconds
 
-// NB: See `TabState` for the default tab.
+// NB: See `TabState` for the default tab. The Apps ("More") entry is first so
+// it's the landing tab and leftmost in the switcher.
 const appMenuTabs: MenuIconItem[] = [
+  {
+    id: "APPS",
+    label: "Home",
+    icon: <FontAwesomeIcon icon={faHouse} />,
+    description: "Explore all apps and miniapps",
+    large: true,
+    tooltipContent: <AppsQuickMenu />,
+    tooltipInteractive: true,
+    tooltipPosition: "bottom",
+  },
   ...APP_DESCRIPTORS.map((d) => ({
     id: d.id,
     label: d.label,
@@ -127,16 +122,6 @@ const appMenuTabs: MenuIconItem[] = [
     description: d.description,
     large: d.large,
   })),
-  {
-    id: "APPS",
-    label: "More",
-    icon: <FontAwesomeIcon icon={faGrid2} />,
-    description: "Explore more apps and miniapps",
-    large: true,
-    tooltipContent: <AppsQuickMenu />,
-    tooltipInteractive: true,
-    tooltipPosition: "bottom",
-  },
 ];
 
 export const topNavMediaId = signal<string>("");
@@ -266,7 +251,19 @@ export const TopBar = ({ pageName }: Props) => {
       void useCreditsState.getState().fetchFromServer();
       console.log("TopBar: Polled credits");
     }, CREDITS_POLL_INTERVAL);
-    return () => clearInterval(interval);
+
+    // Imperative refresh requests, e.g. dispatched by the shared
+    // useGenerationJobs hook when it observes a newly-failed job (the server
+    // may have refunded the charge).
+    const handleCreditsChange = () => {
+      void useCreditsState.getState().fetchFromServer();
+    };
+    window.addEventListener("credits-change", handleCreditsChange);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener("credits-change", handleCreditsChange);
+    };
   }, [authStatus]);
 
   useCreditsBalanceChangedEvent(async () => {
@@ -286,29 +283,7 @@ export const TopBar = ({ pageName }: Props) => {
     );
   };
 
-  const downloadFile = async (url: string, mediaClass?: string) => {
-    try {
-      const chosenPath = await promptDownloadLocationIfNeeded(url);
-      if (chosenPath === null) {
-        // User dismissed the picker.
-        return;
-      }
-      if (typeof chosenPath === "string") {
-        await downloadUrlToPath(url, chosenPath);
-      } else {
-        await DownloadUrl(url);
-      }
-      if (mediaClass === FilterMediaClasses.DIMENSIONAL) {
-        toast.success(`Downloaded 3D model`);
-      } else {
-        toast.success(`Downloaded ${mediaClass}`);
-      }
-    } catch (error) {
-      console.error(">>> Failed to download file:", error);
-      // NB: Rust/Tauri should now flash a toast instead.
-      //toast.error("Failed to download file");
-    }
-  };
+  const downloadFile = downloadMediaFileToDisk;
 
   const handleEditFromGallery = async (url: string, mediaId?: string) => {
     try {
@@ -337,174 +312,9 @@ export const TopBar = ({ pageName }: Props) => {
     }
   };
 
-  const handleTurnIntoVideoFromGallery = async (
-    url: string,
-    mediaId?: string,
-  ) => {
-    try {
-      const referenceImage: RefImage = {
-        id: Math.random().toString(36).substring(7),
-        url,
-        file: new File([], "library-image"),
-        mediaToken: mediaId || "",
-      };
-      // Update zustand store for Video directly
-      usePromptVideoStore.getState().setReferenceImages([referenceImage]);
-      useTabStore.getState().setActiveTab("VIDEO");
-      galleryModalVisibleViewMode.value = false;
-      galleryModalVisibleDuringDrag.value = false;
-      galleryModalLightboxVisible.value = false;
-    } catch (e) {
-      // no-op
-    }
-  };
+  const handleTurnIntoVideoFromGallery = applyMakeVideoFromImage;
 
-  const handleRecreateFromGallery = (data: {
-    promptData: Prompts;
-    mediaClass: string | undefined;
-  }) => {
-    try {
-      const { promptData, mediaClass: recreateMediaClass } = data;
-      const contextImages = promptData.maybe_context_images || [];
-
-      // Partition context images by semantic type
-      const imgRefs: RefImage[] = [];
-      let endFrameImage: RefImage | undefined;
-      const vidRefs: RefVideo[] = [];
-      const audioRefs: RefAudio[] = [];
-
-      for (const ci of contextImages) {
-        const base = {
-          id: Math.random().toString(36).substring(7),
-          url: ci.media_links.cdn_url,
-          mediaToken: ci.media_token,
-        };
-
-        switch (ci.semantic) {
-          case "vid_end_frame":
-            endFrameImage = { ...base, file: new File([], "recreate-ref") };
-            break;
-          case "vid_ref":
-            vidRefs.push({
-              ...base,
-              file: new File([], "recreate-ref"),
-              duration: 0,
-            });
-            break;
-          case "audioref":
-            audioRefs.push({
-              ...base,
-              file: new File([], "recreate-ref"),
-              duration: 0,
-            });
-            break;
-          default:
-            // imgref, imgref_character, imgref_style, imgref_bg, imgsrc, vid_start_frame, imgmask
-            imgRefs.push({ ...base, file: new File([], "recreate-ref") });
-            break;
-        }
-      }
-
-      // Determine input mode from generation_mode or context image semantics
-      const hasKeyframeSemantics = contextImages.some(
-        (ci) =>
-          ci.semantic === "vid_start_frame" || ci.semantic === "vid_end_frame",
-      );
-      const inputMode: "keyframe" | "reference" =
-        promptData.maybe_generation_mode === "keyframe" || hasKeyframeSemantics
-          ? "keyframe"
-          : promptData.maybe_generation_mode === "reference"
-            ? "reference"
-            : imgRefs.length > 0
-              ? "reference"
-              : "keyframe";
-
-      const modelStore = useClassyModelSelectorStore.getState();
-
-      if (recreateMediaClass === "video") {
-        const videoStore = usePromptVideoStore.getState();
-
-        // Set model first so the UI syncs sizeOptions / durationOptions
-        const videoModel = promptData.maybe_model_type
-          ? VIDEO_MODELS_BY_ID.get(promptData.maybe_model_type)
-          : undefined;
-        if (videoModel) {
-          modelStore.setSelectedModel(ModelPage.ImageToVideo, videoModel);
-        }
-
-        if (promptData.maybe_positive_prompt) {
-          videoStore.setPrompt(promptData.maybe_positive_prompt);
-        }
-        if (imgRefs.length > 0) videoStore.setReferenceImages(imgRefs);
-        if (endFrameImage) videoStore.setEndFrameImage(endFrameImage);
-        if (vidRefs.length > 0) videoStore.setReferenceVideos(vidRefs);
-        if (audioRefs.length > 0) videoStore.setReferenceAudios(audioRefs);
-        if (promptData.maybe_generate_audio !== null) {
-          videoStore.setGenerateWithSound(promptData.maybe_generate_audio);
-        }
-        if (promptData.maybe_duration_seconds !== null) {
-          videoStore.setDuration(promptData.maybe_duration_seconds);
-        }
-
-        // Map API aspect ratio (tauriValue like "wide_sixteen_by_nine") → textLabel (like "16:9")
-        if (promptData.maybe_aspect_ratio && videoModel?.sizeOptions) {
-          const match = videoModel.sizeOptions.find(
-            (opt) => opt.tauriValue === promptData.maybe_aspect_ratio,
-          );
-          if (match) {
-            videoStore.setAspectRatio(match.textLabel);
-          }
-        }
-
-        // Map API resolution (like "one_k") → video store format (like "1080p")
-        if (promptData.maybe_resolution && videoModel?.resolutionOptions) {
-          const resolutionMap: Record<string, string> = {
-            one_k: "1080p",
-            two_k: "2k",
-            three_k: "3k",
-            four_k: "4k",
-          };
-          const mapped = resolutionMap[promptData.maybe_resolution];
-          if (mapped && videoModel.resolutionOptions.includes(mapped)) {
-            videoStore.setResolution(mapped);
-          }
-        }
-
-        videoStore.setInputMode(inputMode);
-        useTabStore.getState().setActiveTab("VIDEO");
-      } else {
-        // Default to image
-        const imageStore = usePromptImageStore.getState();
-
-        if (promptData.maybe_positive_prompt) {
-          imageStore.setPrompt(promptData.maybe_positive_prompt);
-        }
-        if (imgRefs.length > 0) imageStore.setReferenceImages(imgRefs);
-        if (promptData.maybe_aspect_ratio) {
-          imageStore.setCommonAspectRatio(
-            promptData.maybe_aspect_ratio as CommonAspectRatio,
-          );
-        }
-        if (promptData.maybe_resolution) {
-          imageStore.setCommonResolution(
-            promptData.maybe_resolution as CommonResolution,
-          );
-        }
-
-        if (promptData.maybe_model_type) {
-          const model = IMAGE_MODELS_BY_ID.get(promptData.maybe_model_type);
-          if (model) modelStore.setSelectedModel(ModelPage.TextToImage, model);
-        }
-        useTabStore.getState().setActiveTab("IMAGE");
-      }
-
-      galleryModalVisibleViewMode.value = false;
-      galleryModalVisibleDuringDrag.value = false;
-      galleryModalLightboxVisible.value = false;
-    } catch (e) {
-      // no-op
-    }
-  };
+  const handleRecreateFromGallery = applyRecreateFromPromptData;
 
   const handleRemoveBackgroundFromGallery = async (url: string) => {
     try {
@@ -559,9 +369,11 @@ export const TopBar = ({ pageName }: Props) => {
       case "3D":
         return "3D Editor";
       case "IMAGE":
-        return "Text to Image";
+        return "Create Image";
       case "VIDEO":
-        return "Generate Video";
+        return "Create Video";
+      case "AUDIO":
+        return "Create Audio";
       case "EDIT":
         return "Edit Image";
       case "VIDEO_FRAME_EXTRACTOR":
@@ -575,7 +387,7 @@ export const TopBar = ({ pageName }: Props) => {
       case "IMAGE_TO_3D_WORLD":
         return "Image to 3D World";
       case "APPS":
-        return "ArtCraft Apps";
+        return "ArtCraft";
       case "BACKGROUND_CHANGE":
         return "Background Change";
       default:
@@ -703,6 +515,12 @@ export const TopBar = ({ pageName }: Props) => {
 
           <div className="flex justify-end gap-2" data-tauri-drag-region>
             <div className="no-drag flex items-center gap-1.5">
+              {(tabStore.activeTabId === "IMAGE" ||
+                tabStore.activeTabId === "VIDEO") && <GallerySelectToggle />}
+              {tabStore.activeTabId === "VIDEO" && <GalleryAutoplayToggle />}
+              {(tabStore.activeTabId === "IMAGE" ||
+                tabStore.activeTabId === "VIDEO" ||
+                tabStore.activeTabId === "AUDIO") && <GalleryViewToggle />}
               <PopoverMenu
                 position="bottom"
                 align="center"
@@ -786,7 +604,7 @@ export const TopBar = ({ pageName }: Props) => {
                   onClick={toggleSubscriptionModal}
                   className="transition-all duration-300"
                 >
-                  Support
+                  Upgrade
                 </Button>
               )}
 

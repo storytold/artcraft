@@ -24,9 +24,7 @@ use users::email::email_to_gravatar_hash::email_to_gravatar_hash;
 use users::email::validate_email_address_format::validate_email_address_format;
 
 use crate::http_server::common_responses::common_web_error::CommonWebError;
-use crate::http_server::web_utils::user_session::require_moderator::{
-  require_moderator, UseDatabase,
-};
+use crate::http_server::user_lookup::user_session::require_moderator::require_moderator;
 use crate::state::server_state::ServerState;
 
 // --- Request ---
@@ -71,14 +69,7 @@ pub async fn moderator_change_user_email_handler(
 ) -> Result<Json<ModeratorChangeUserEmailSuccessResponse>, CommonWebError> {
 
   // 1. Require moderator.
-  let user_session = require_moderator(
-    &http_request,
-    &server_state,
-    UseDatabase::GrabNewConnection,
-  ).await.map_err(|err| {
-    warn!("Moderator check failed: {:?}", err);
-    CommonWebError::NotAuthorized
-  })?;
+  let user_session = require_moderator(&http_request, &server_state.session_checker, &server_state.mysql_pool).await?;
 
   // 2. Normalize + validate the new email.
   let new_email = request.new_email.trim().to_lowercase();

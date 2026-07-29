@@ -4,10 +4,6 @@ import { ImageStyleSelectorProps } from './types';
 const ImageStyleSelector: React.FC<ImageStyleSelectorProps> = ({ onImageSelect }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   
-  const handleClick = () => {
-    fileInputRef.current?.click();
-  };
-  
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (files && files.length > 0) {

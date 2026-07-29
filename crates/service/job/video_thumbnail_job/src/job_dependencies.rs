@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use cloud_storage::bucket_client::BucketClient;
+use cloud_storage::legacy_bucket_client::LegacyBucketClient;
 use concurrency::relaxed_atomic_bool::RelaxedAtomicBool;
 use jobs_common::job_stats::JobStats;
 use pager::client::pager::Pager;
@@ -17,7 +17,7 @@ pub struct JobDependencies {
   pub mysql_pool: MySqlPool,
 
   /// Public GCS/S3 bucket for downloading source videos and uploading generated thumbnails.
-  pub public_bucket_client: BucketClient,
+  pub public_bucket_client: LegacyBucketClient,
 
   pub server_environment: ServerEnvironment,
 

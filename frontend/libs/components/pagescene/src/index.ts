@@ -7,11 +7,14 @@ export type { Stage3DProps } from "./lib/Stage3D";
 // Adapter (platform abstraction)
 export type {
   PageSceneAdapter,
+  PageSceneArtifact,
   PageSceneGenerateRequest,
   PageSceneSavePayload,
   ListMediaFilesQuery,
   ListUserMediaFilesResult,
   ListFeaturedMediaFilesResult,
+  ListUserSceneProjectsResult,
+  SceneProjectListItem,
 } from "./lib/adapter";
 
 // Store
@@ -50,7 +53,6 @@ export {
   FilterMediaClasses,
   FilterMediaType,
   MediaFileType,
-  MediaFileSubtype,
   MediaFileClass,
   ToastTypes,
   WeightCategory,

@@ -5,9 +5,11 @@
 // The website host mounts the same Stage3D with a web-built adapter
 // and its own router-flavored equivalents of these effects.
 
+import { useEffect } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { useSignalEffect } from "@preact/signals-react/runtime";
 import { Stage3D, usePageSceneStore } from "@storyteller/ui-pagescene";
+import { galleryDragHidesImmediately } from "@storyteller/ui-gallery-modal";
 import { useTabStore } from "~/pages/Stores/TabState";
 import { authentication, scene } from "~/signals";
 import { getCurrentLocationWithoutParams } from "~/utilities";
@@ -35,6 +37,17 @@ export const PageScene = ({ sceneToken }: { sceneToken?: string }) => {
       .getState()
       .setCurrentUserToken(authentication.userInfo.value?.user_token);
   });
+
+  // On the 3D editor the primary drop target is the scene behind the gallery
+  // modal, so dragging an asset should hide the gallery immediately (rather than
+  // only once the cursor leaves the modal). PageScene mounts/unmounts with the
+  // 3D tab, so flip the flag back off on leave.
+  useEffect(() => {
+    galleryDragHidesImmediately.value = true;
+    return () => {
+      galleryDragHidesImmediately.value = false;
+    };
+  }, []);
 
   // URL ↔ loaded scene sync. Lives in the host wrapper so the lib
   // stays router-agnostic.
@@ -70,6 +83,7 @@ export const PageScene = ({ sceneToken }: { sceneToken?: string }) => {
         sceneToken={sceneToken}
         cacheJsonString={cacheJsonString}
         onSceneSerialized={onSceneSerialized}
+        modelSelectorPlacement="prompt-box"
       />
     </div>
   );

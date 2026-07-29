@@ -63,6 +63,7 @@ impl KinoviSeedance2p0CostState {
       reference_audio_urls: None,
       character_ids: None,
       use_face_blur_hack: None,
+      bitrate: None,
     };
 
     let costs = pricing_request.calculate_costs();
@@ -174,6 +175,121 @@ mod tests {
     }
   }
 
+  // ── 4K pricing ──
+  //
+  // Routes to the seedance2pro_client: 4K base is 200 credits/s (vs 90 at 1080p).
+  // Credits → cents at 243 credits/$1, rounded up.
+
+  mod pricing_4k {
+    use super::*;
+
+    #[test]
+    fn cost_4k_batch_1() {
+      assert_eq!(usd_cents(KinoviOutputResolution::FourK, 4, KinoviBatchCount::One), 330);
+      assert_eq!(usd_cents(KinoviOutputResolution::FourK, 5, KinoviBatchCount::One), 412);
+      assert_eq!(usd_cents(KinoviOutputResolution::FourK, 10, KinoviBatchCount::One), 824);
+      assert_eq!(usd_cents(KinoviOutputResolution::FourK, 15, KinoviBatchCount::One), 1235);
+    }
+
+    #[test]
+    fn cost_4k_batch_2() {
+      assert_eq!(usd_cents(KinoviOutputResolution::FourK, 5, KinoviBatchCount::Two), 824);
+    }
+
+    #[test]
+    fn cost_4k_batch_4() {
+      assert_eq!(usd_cents(KinoviOutputResolution::FourK, 5, KinoviBatchCount::Four), 1647);
+    }
+  }
+
+  // ── 4K: router cost must match the seedance2pro_client binding ──
+  //
+  // The router delegates to GenerateSeedance2p0Request::calculate_costs(), so these
+  // assert the exact 4K numbers AND cross-check the router against the binding for
+  // every duration (4/5/10/15s) with and without a video reference.
+  //
+  // 4K base = 200 credits/s; with a video reference = 240 credits/s (+40 surcharge).
+  // USD cents = ceil(total_credits / 243 * 100).
+
+  mod four_k_matches_binding {
+    use super::*;
+    use seedance2pro_client::generate::video::generate_seedance_2p0::GenerateSeedance2p0Request;
+
+    /// Router-side 4K cost (batch 1) for a duration / video-reference combo.
+    fn router(duration_seconds: u8, has_video_reference: bool) -> VideoGenerationCostEstimate {
+      KinoviSeedance2p0CostState {
+        resolution: Some(KinoviOutputResolution::FourK),
+        duration_seconds,
+        batch_count: Some(KinoviBatchCount::One),
+        has_video_reference,
+      }
+      .estimate_cost()
+    }
+
+    /// The seedance2pro_client binding's own 4K cost for the same inputs.
+    /// Returns (kinovi_credits, usd_cents_rounded_up).
+    fn binding(duration_seconds: u8, has_video_reference: bool) -> (u64, u64) {
+      let reference_video_urls = if has_video_reference {
+        Some(vec!["pricing-placeholder".to_string()])
+      } else {
+        None
+      };
+      let costs = GenerateSeedance2p0Request {
+        output_resolution: Some(KinoviOutputResolution::FourK),
+        duration_seconds,
+        batch_count: Some(KinoviBatchCount::One),
+        reference_video_urls,
+        prompt: String::new(),
+        aspect_ratio: None,
+        start_frame_url: None,
+        end_frame_url: None,
+        reference_image_urls: None,
+        reference_audio_urls: None,
+        character_ids: None,
+        use_face_blur_hack: None,
+        bitrate: None,
+      }
+      .calculate_costs();
+      (costs.total_cost.kinovi_credits, costs.total_cost.usd_cents_rounded_up)
+    }
+
+    #[test]
+    fn explicit_values_without_video_reference() {
+      // 200 credits/s.
+      assert_eq!((router(4, false).cost_in_credits, router(4, false).cost_in_usd_cents), (Some(800), Some(330)));
+      assert_eq!((router(5, false).cost_in_credits, router(5, false).cost_in_usd_cents), (Some(1000), Some(412)));
+      assert_eq!((router(10, false).cost_in_credits, router(10, false).cost_in_usd_cents), (Some(2000), Some(824)));
+      assert_eq!((router(15, false).cost_in_credits, router(15, false).cost_in_usd_cents), (Some(3000), Some(1235)));
+    }
+
+    #[test]
+    fn explicit_values_with_video_reference() {
+      // 240 credits/s (200 base + 40 surcharge).
+      assert_eq!((router(4, true).cost_in_credits, router(4, true).cost_in_usd_cents), (Some(960), Some(396)));
+      assert_eq!((router(5, true).cost_in_credits, router(5, true).cost_in_usd_cents), (Some(1200), Some(494)));
+      assert_eq!((router(10, true).cost_in_credits, router(10, true).cost_in_usd_cents), (Some(2400), Some(988)));
+      assert_eq!((router(15, true).cost_in_credits, router(15, true).cost_in_usd_cents), (Some(3600), Some(1482)));
+    }
+
+    #[test]
+    fn router_matches_binding_for_every_duration_and_video_ref() {
+      for &duration in &[4u8, 5, 10, 15] {
+        for &has_ref in &[false, true] {
+          let r = router(duration, has_ref);
+          let (b_credits, b_cents) = binding(duration, has_ref);
+          assert_eq!(
+            r.cost_in_credits, Some(b_credits),
+            "credits differ at {duration}s has_video_reference={has_ref}",
+          );
+          assert_eq!(
+            r.cost_in_usd_cents, Some(b_cents),
+            "usd cents differ at {duration}s has_video_reference={has_ref}",
+          );
+        }
+      }
+    }
+  }
+
   // ── Relative pricing ──
 
   mod relative_pricing_tests {
@@ -186,6 +302,13 @@ mod tests {
       let c1080 = usd_cents(KinoviOutputResolution::TenEightyP, 5, KinoviBatchCount::One);
       assert!(c480 < c720, "480p ({}) should be cheaper than 720p ({})", c480, c720);
       assert!(c720 < c1080, "720p ({}) should be cheaper than 1080p ({})", c720, c1080);
+    }
+
+    #[test]
+    fn cost_1080p_cheaper_than_4k() {
+      let c1080 = usd_cents(KinoviOutputResolution::TenEightyP, 5, KinoviBatchCount::One);
+      let c4k = usd_cents(KinoviOutputResolution::FourK, 5, KinoviBatchCount::One);
+      assert!(c1080 < c4k, "1080p ({}) should be cheaper than 4K ({})", c1080, c4k);
     }
 
     #[test]
@@ -306,6 +429,24 @@ mod tests {
     }
 
     #[test]
+    fn from_draft_4k() {
+      let draft = make_draft(5, 1, Some(RouterResolution::FourK), false);
+      let cost = KinoviSeedance2p0CostState::from_draft(&draft);
+      assert!(matches!(cost.resolution, Some(KinoviOutputResolution::FourK)));
+      assert_eq!(cost.estimate_cost().cost_in_credits, Some(1000));
+      assert_eq!(cost.estimate_cost().cost_in_usd_cents, Some(412));
+    }
+
+    #[test]
+    fn from_draft_4k_with_video_reference() {
+      let draft = make_draft(5, 1, Some(RouterResolution::FourK), true);
+      let cost = KinoviSeedance2p0CostState::from_draft(&draft);
+      // 4K base 200 + video-ref surcharge 40 = 240 credits/s -> 1200 credits for 5s.
+      assert_eq!(cost.estimate_cost().cost_in_credits, Some(1200));
+      assert_eq!(cost.estimate_cost().cost_in_usd_cents, Some(494));
+    }
+
+    #[test]
     fn from_draft_1080p_batch_4() {
       let draft = make_draft(5, 4, Some(RouterResolution::TenEightyP), false);
       let cost = KinoviSeedance2p0CostState::from_draft(&draft);
@@ -386,6 +527,11 @@ mod tests {
     #[test]
     fn credits_1080p() {
       assert_eq!(credits(KinoviOutputResolution::TenEightyP, 5, KinoviBatchCount::One), 450);
+    }
+
+    #[test]
+    fn credits_4k() {
+      assert_eq!(credits(KinoviOutputResolution::FourK, 5, KinoviBatchCount::One), 1000);
     }
   }
 
@@ -476,6 +622,7 @@ mod tests {
         reference_audio_urls: None,
         character_ids: None,
         use_face_blur_hack: None,
+        bitrate: None,
       },
     }
   }

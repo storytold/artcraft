@@ -251,13 +251,8 @@ pub async fn process_job_inference(
       }
     };
 
-    let media_type = match metadata.mimetype.as_ref() {
-      "image/png" => MediaFileType::Png,
-      "image/jpeg" => MediaFileType::Jpg,
-      "image/gif" => MediaFileType::Gif,
-      "image/webp" => MediaFileType::Image, // Fallback
-      _ => MediaFileType::Image, // Fallback
-    };
+    let media_type = MediaFileType::try_from_mime_type(metadata.mimetype.as_ref())
+        .unwrap_or(MediaFileType::Image); // Coarse fallback for unrecognized mimes
 
     // extra_file_modification_info: todo!(), // JSON ENCODED STRUCT
     let (media_file_token, _id) = insert_media_file_generic_from_job(InsertFromJobArgs {
@@ -332,6 +327,7 @@ pub async fn process_job_inference(
 
   // NB: Don't fail the job if the query fails.
   let prompt_result = insert_prompt(InsertPromptArgs {
+    maybe_bitrate: None,
     maybe_apriori_prompt_token: Some(&prompt_token),
     prompt_type: PromptType::StableDiffusion,
     maybe_creator_user_token: job.maybe_creator_user_token_typed.as_ref(),

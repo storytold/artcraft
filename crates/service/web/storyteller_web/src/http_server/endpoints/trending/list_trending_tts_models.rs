@@ -12,8 +12,9 @@ use std::fmt;
 use std::sync::Arc;
 
 use actix_web::error::ResponseError;
+use actix_web::web::Json;
 use actix_web::http::StatusCode;
-use actix_web::{web, HttpRequest, HttpResponse};
+use actix_web::{web, HttpRequest};
 use log::error;
 
 use enums::by_table::trending_model_analytics::window_name::WindowName;
@@ -51,7 +52,7 @@ pub type WindowTrends = HashMap<WindowName, Vec<TtsModelToken>>;
 
 pub async fn list_trending_tts_models_handler(
   _http_request: HttpRequest,
-  server_state: web::Data<Arc<ServerState>>) -> Result<HttpResponse, CommonWebError>
+  server_state: web::Data<Arc<ServerState>>) -> Result<Json<ListTrendingTtsModelsResponse>, CommonWebError>
 {
 
 // TODO: Cache the outputs!
@@ -112,10 +113,5 @@ pub async fn list_trending_tts_models_handler(
     top_trending_by_language_code,
   };
 
-  let body = serde_json::to_string(&response)
-      .map_err(CommonWebError::from_error)?;
-
-  Ok(HttpResponse::Ok()
-      .content_type("application/json")
-      .body(body))
+  Ok(Json(response))
 }

@@ -1,0 +1,12 @@
+{
+  "db_name": "MySQL",
+  "query": "\nUPDATE uploaded_video_notes\nSET\n  maybe_filename = ?,\n  maybe_reported_model_type = ?,\n  maybe_reported_model_name = ?,\n  maybe_website = ?,\n  maybe_other_website = ?,\n  maybe_comments = ?,\n  maybe_email_address = ?,\n  can_share_report = ?,\n  was_scammed = ?,\n  maybe_comment_update_ip_address = ?,\n  version = version + 1\nWHERE token = ?\nLIMIT 1\n    ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 11
+    },
+    "nullable": []
+  },
+  "hash": "4036dfd9d4e9e77e557776468c14b75f49170de1e55a1b9b9e83446a0c356e74"
+}

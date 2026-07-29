@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, useLayoutEffect } from "react";
+import type { ReactNode } from "react";
 import { isMobile, isMacOs } from "react-device-detect";
 import Lenis from "lenis";
 import gsap from "gsap";
@@ -94,7 +95,7 @@ const FEATURES = [
     title: "Character Posing",
     description:
       'Dynamically pose your characters to nail the precise character, scene, and camera blocking before calling "action".',
-    src: "/videos/features/Pose_Second_Version.webm",
+    src: "/videos/features/Character-Pose.webm",
   },
   {
     icon: faEraser,
@@ -115,7 +116,6 @@ const MADE_WITH_VIDEOS = [
 const MANIFESTO_WORDS: ReadonlyArray<string> = [
   "ArtCraft",
   "brings",
-  "3D",
   "control",
   "to",
   "AI",
@@ -133,6 +133,44 @@ const MANIFESTO_WORDS: ReadonlyArray<string> = [
   "every",
   "shot.",
 ];
+
+// Hand-drawn marker stroke (tapered ends, slight middle bulge, gentle tilt)
+// that sits behind an emphasized word like a highlighter pass. The wrapping
+// span carries `data-manifesto-underline` so the GSAP timeline can sweep it
+// in left-to-right; pass `animate={false}` for the static (mobile) version.
+const MarkerHighlight = ({
+  children,
+  animate = true,
+}: {
+  children: ReactNode;
+  animate?: boolean;
+}) => (
+  <span className="relative inline-block">
+    <span
+      data-manifesto-underline={animate ? "" : undefined}
+      aria-hidden
+      className="absolute inset-x-[-0.2em] top-[-0.08em] bottom-[-0.18em]"
+      // Hidden initially via a right-side clip; GSAP wipes the clip open
+      // left-to-right so the full-size stroke is revealed (not stretched).
+      style={animate ? { clipPath: "inset(0 100% 0 0)" } : undefined}
+    >
+      <svg
+        viewBox="0 0 120 26"
+        preserveAspectRatio="none"
+        fill="none"
+        className="absolute inset-0 h-full w-full"
+        style={{ transform: "rotate(-3.5deg)" }}
+      >
+        <path
+          d="M3,13 C3,8.5 5,5.5 10,4.6 C13,4.1 16,5 18,4.4 C46,3.6 78,3.7 104,4.5 C110,4.7 114,4 116,6 C118,8 117.5,11 117,13 C117,15.5 118,18 116,20 C114,22 110,21.4 104,21.6 C78,22.4 46,22.5 18,21.7 C16,21.6 13,22 10,21.5 C5,20.6 3,17.5 3,13 Z"
+          fill="#2d81ff"
+          fillOpacity="0.9"
+        />
+      </svg>
+    </span>
+    <span className="relative">{children}</span>
+  </span>
+);
 
 // Lazy autoplay video — defers the network fetch + decoder spin-up until
 // the element is approaching the viewport. Avoids ~7 simultaneous webm
@@ -353,6 +391,50 @@ const Landing3 = () => {
           }),
       });
 
+      // Feature deck: all cards pin flush at the same top. As the NEXT card
+      // rises past roughly halfway over this one, scale this card down (top
+      // edge stays put) so it reads as receding behind the incoming card.
+      const stackCards = gsap.utils.toArray<HTMLElement>("[data-stack-card]");
+      stackCards.forEach((card, i) => {
+        const next = stackCards[i + 1];
+        if (!next) return; // top card is never covered
+        gsap.fromTo(
+          card,
+          { scale: 1 },
+          {
+            scale: 0.9,
+            ease: "none",
+            transformOrigin: "center top",
+            scrollTrigger: {
+              // Drive off the incoming card: start once it's about halfway up
+              // the viewport (~half over this card), finish when it pins flush.
+              trigger: next,
+              start: "top center",
+              end: "top top+=96",
+              scrub: true,
+            },
+          },
+        );
+        // Only AFTER the next card has fully overlapped this one (it pins flush
+        // at the same top) do we fade this card out. It's hidden behind the
+        // next card by then, so the fade is invisible — it just drops this
+        // card's shadow so the edge shadows don't stack across the deck.
+        gsap.fromTo(
+          card,
+          { opacity: 1 },
+          {
+            opacity: 0,
+            ease: "none",
+            scrollTrigger: {
+              trigger: next,
+              start: "top top+=96",
+              end: "top top-=40",
+              scrub: true,
+            },
+          },
+        );
+      });
+
       // Hero pattern parallax (slower than scroll, drifts upward)
       const heroPattern = document.querySelector<HTMLElement>(
         "[data-hero-pattern]",
@@ -427,6 +509,22 @@ const Landing3 = () => {
             i * 0.5,
           );
         });
+
+        // Phase 1b — once the sentence is fully revealed, sweep a blue
+        // highlighter block across "control" to land the emphasis.
+        const manifestoUnderline = manifestoSection.querySelector<HTMLElement>(
+          "[data-manifesto-underline]",
+        );
+        if (manifestoUnderline) {
+          gsap.set(manifestoUnderline, {
+            clipPath: "inset(0 100% 0 0)",
+          });
+          tl.to(
+            manifestoUnderline,
+            { clipPath: "inset(0 0% 0 0)", duration: 4, ease: "power2.out" },
+            ">",
+          );
+        }
 
         // Phase 2 — hold the fully-revealed manifesto frozen so the user gets
         // a beat to read it before the transition triggers.
@@ -678,7 +776,16 @@ const Landing3 = () => {
               className="text-2xl sm:text-3xl tracking-[-0.035em] font-medium text-white px-4 sm:px-0"
               style={{ lineHeight: 1.4 }}
             >
-              {MANIFESTO_WORDS.join(" ")}
+              {MANIFESTO_WORDS.map((w, i) => (
+                <span key={i}>
+                  {w === "control" ? (
+                    <MarkerHighlight animate={false}>{w}</MarkerHighlight>
+                  ) : (
+                    w
+                  )}
+                  {i < MANIFESTO_WORDS.length - 1 ? " " : ""}
+                </span>
+              ))}
             </h2>
           </div>
         </section>
@@ -727,10 +834,9 @@ const Landing3 = () => {
                 <span
                   key={i}
                   data-manifesto-word
-                  className="inline-block opacity-15 will-change-[opacity,transform]"
+                  className="inline-block mr-[0.25em] opacity-15 will-change-[opacity,transform]"
                 >
-                  {w}
-                  {i < MANIFESTO_WORDS.length - 1 ? " " : ""}
+                  {w === "control" ? <MarkerHighlight>{w}</MarkerHighlight> : w}
                 </span>
               ))}
             </h2>
@@ -758,7 +864,7 @@ const Landing3 = () => {
         </div>
       </section>
       {/* FEATURES: alternating cards */}
-      <section className="relative px-4 sm:px-8 py-16 sm:py-24">
+      <section className="relative px-4 sm:px-8 py-16 sm:pt-24">
         <TruchetBlob
           className="top-[6%] -left-40 w-[640px] h-[640px]"
           variant="content"
@@ -780,45 +886,48 @@ const Landing3 = () => {
           speed={-22}
           rotate={8}
         />
-        <div className="max-w-6xl mx-auto flex flex-col gap-8 sm:gap-16">
+        <div className="max-w-6xl mx-auto">
           {FEATURES.map((feature, i) => (
-            <article
+            <div
               key={feature.title}
-              data-reveal
-              className="grid grid-cols-1 lg:grid-cols-12 gap-0 rounded-2xl sm:rounded-[28px] overflow-hidden bg-[#080808] transition-colors"
+              data-stack-card
+              className="relative lg:sticky"
+              style={!isMobile ? { top: "96px" } : undefined}
             >
-              <div
-                className={`lg:col-span-5 p-7 sm:p-10 lg:p-12 flex flex-col justify-center ${
-                  i % 2 === 1 ? "lg:order-2" : ""
-                }`}
-              >
-                <div className="flex items-center gap-2 mb-5">
-                  <span className="inline-flex h-7 px-2.5 items-center gap-1.5 rounded-full bg-primary/15 text-primary text-[12px] font-semibold border border-primary/20">
-                    <FontAwesomeIcon
-                      icon={feature.icon}
-                      className="text-[10px]"
-                    />
-                    {feature.label}
-                  </span>
+              <article className="grid grid-cols-1 lg:grid-cols-12 gap-0 rounded-2xl sm:rounded-[28px] overflow-hidden bg-[#080808] shadow-[0_-16px_50px_-8px_rgba(0,0,0,0.85)] transition-colors mb-8 lg:mb-[8vh]">
+                <div
+                  className={`lg:col-span-5 p-7 sm:p-10 lg:p-12 flex flex-col justify-center ${
+                    i % 2 === 1 ? "lg:order-2" : ""
+                  }`}
+                >
+                  <div className="flex items-center gap-2 mb-5">
+                    <span className="inline-flex h-7 px-2.5 items-center gap-1.5 rounded-full bg-primary/15 text-primary text-[12px] font-semibold border border-primary/20">
+                      <FontAwesomeIcon
+                        icon={feature.icon}
+                        className="text-[10px]"
+                      />
+                      {feature.label}
+                    </span>
+                  </div>
+                  <h3 className="text-2xl sm:text-3xl md:text-[32px] tracking-[-0.02em] font-medium leading-[1.15] mb-4 text-white">
+                    {feature.title}
+                  </h3>
+                  <p className="text-[15px] sm:text-base text-white/55 leading-relaxed">
+                    {feature.description}
+                  </p>
                 </div>
-                <h3 className="text-2xl sm:text-3xl md:text-[32px] tracking-[-0.02em] font-medium leading-[1.15] mb-4 text-white">
-                  {feature.title}
-                </h3>
-                <p className="text-[15px] sm:text-base text-white/55 leading-relaxed">
-                  {feature.description}
-                </p>
-              </div>
-              <div
-                className={`lg:col-span-7 relative bg-[#080808] aspect-[12/10] lg:self-center ${
-                  i % 2 === 1 ? "lg:order-1" : ""
-                }`}
-              >
-                <LazyAutoplayVideo
-                  src={feature.src}
-                  className="absolute inset-0 w-full h-full object-cover"
-                />
-              </div>
-            </article>
+                <div
+                  className={`lg:col-span-7 relative bg-[#080808] aspect-[12/10] lg:self-center ${
+                    i % 2 === 1 ? "lg:order-1" : ""
+                  }`}
+                >
+                  <LazyAutoplayVideo
+                    src={feature.src}
+                    className="absolute inset-0 w-full h-full object-cover"
+                  />
+                </div>
+              </article>
+            </div>
           ))}
         </div>
       </section>
@@ -837,45 +946,57 @@ const Landing3 = () => {
               Ownership
             </span>
             <h2 className="text-4xl sm:text-5xl md:text-6xl tracking-[-0.035em] font-medium leading-[1.02] mb-5">
-              Stop renting from{" "}
-              <span className="font-serif-italic">websites</span>.
+              Stop <span className="font-serif-italic">renting</span> from
+              websites.
             </h2>
             <p className="max-w-xl mx-auto text-base sm:text-lg text-white/55 leading-relaxed">
-              ArtCraft is yours to own and keep,{" "}
-              <span className="font-serif-italic text-white/75">forever</span>.
-              No subscriptions, no aggregator middleman, no rent payments.
+              ArtCraft is yours to own and keep, forever. No subscriptions
+              needed, no aggregator middleman, no rent payments.
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
-            {/* Websites column */}
-            <div className="rounded-2xl sm:rounded-[28px] bg-[#080808] p-7 sm:p-8">
-              <div className="flex items-center gap-2 mb-9">
-                <span className="text-[12px] font-bold uppercase tracking-wider text-white/40">
-                  Other tools
-                </span>
-              </div>
-              <h3 className="text-xl sm:text-2xl font-medium mb-5 tracking-[-0.01em] text-white/85">
-                The Rental Trap
-              </h3>
-              <p className="text-[15px] text-white/55 leading-relaxed mb-6">
-                With browser-based tools, you're paying for access, not a
-                product. Your work, models, and history live on someone else's
-                servers, and disappear with them.
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {["No ownership", "Monthly fees"].map((tag) => (
-                  <span
-                    key={tag}
-                    className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-red-300/80 bg-red-500/[0.08] border border-red-500/20 rounded-lg px-2.5 py-1.5"
-                  >
+            {/* Websites column — deliberately styled to feel like a downgrade */}
+            <div className="relative overflow-hidden rounded-2xl sm:rounded-[28px] bg-gradient-to-br from-red-500/[0.08] via-[#0a0607] to-[#080808] border border-red-500/20 p-7 sm:p-8">
+              <div
+                className="absolute -top-16 -left-16 w-72 h-72 rounded-full pointer-events-none"
+                style={{
+                  background:
+                    "radial-gradient(circle, rgba(239,68,68,0.18) 0%, transparent 60%)",
+                }}
+              />
+              <div className="relative">
+                <div className="flex items-center gap-2 mb-8">
+                  <span className="inline-flex items-center gap-1.5 text-[12px] font-bold uppercase tracking-wider text-red-300/70">
                     <FontAwesomeIcon
                       icon={faXmark}
-                      className="text-red-400 text-[10px]"
+                      className="text-red-400 text-[11px]"
                     />
-                    {tag}
+                    Other tools
                   </span>
-                ))}
+                </div>
+                <h3 className="text-xl sm:text-2xl font-medium mb-5 tracking-[-0.01em] text-white/70">
+                  The Rental Trap
+                </h3>
+                <p className="text-[15px] text-white/45 leading-relaxed mb-6">
+                  With browser-based tools, you're paying for access, not a
+                  product. Your work, models, and history live on someone else's
+                  servers, and disappear with them.
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {["No ownership", "Monthly fees", "Locked in"].map((tag) => (
+                    <span
+                      key={tag}
+                      className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-red-300/80 bg-red-500/[0.08] border border-red-500/20 rounded-lg px-2.5 py-1.5"
+                    >
+                      <FontAwesomeIcon
+                        icon={faXmark}
+                        className="text-red-400 text-[10px]"
+                      />
+                      {tag}
+                    </span>
+                  ))}
+                </div>
               </div>
             </div>
 
@@ -906,18 +1027,20 @@ const Landing3 = () => {
                   keys, or use ours.
                 </p>
                 <div className="flex flex-wrap gap-2 self-end">
-                  {["Yours forever", "BYO keys"].map((tag) => (
-                    <span
-                      key={tag}
-                      className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-primary-200 bg-primary/[0.12] border border-primary/25 rounded-lg px-2.5 py-1.5"
-                    >
-                      <FontAwesomeIcon
-                        icon={faCheck}
-                        className="text-primary text-[10px]"
-                      />
-                      {tag}
-                    </span>
-                  ))}
+                  {["Yours forever", "BYO keys", "No subscriptions needed"].map(
+                    (tag) => (
+                      <span
+                        key={tag}
+                        className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-primary-200 bg-primary/[0.12] border border-primary/25 rounded-lg px-2.5 py-1.5"
+                      >
+                        <FontAwesomeIcon
+                          icon={faCheck}
+                          className="text-primary text-[10px]"
+                        />
+                        {tag}
+                      </span>
+                    ),
+                  )}
                 </div>
               </div>
             </div>
@@ -957,7 +1080,7 @@ const Landing3 = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-12 gap-4 sm:gap-6">
-            {/* Reason #1: Text Prompting Sucks */}
+            {/* Reason #1: PC - Control Beyond Text Prompting */}
             <div className="xl:col-span-6 rounded-3xl bg-[#080808] p-6 lg:p-8 group">
               <div className="flex xl:flex-col gap-4 lg:gap-8 h-full flex-col-reverse">
                 <div className="grow h-40">
@@ -972,7 +1095,7 @@ const Landing3 = () => {
                 <div className="flex flex-col justify-between">
                   <div>
                     <h3 className="font-medium tracking-[-0.02em] text-xl sm:text-2xl lg:text-3xl mb-3 sm:mb-4 leading-tight text-white">
-                      Text Prompting Sucks
+                      Control Beyond Text Prompting
                     </h3>
                     <p className="text-white/60 text-sm sm:text-base lg:text-lg leading-relaxed">
                       <span className="text-primary-400/80 font-semibold">
@@ -1073,11 +1196,7 @@ const Landing3 = () => {
                     all in one place. Log in with your existing subscriptions.
                   </p>
                 </div>
-                <ModelBadgeGrid
-                  highlight="nano-banana-2"
-                  rowOffsets={[-70, -90, -160]}
-                  className="mt-3"
-                />
+                <ModelBadgeGrid className="mt-3" />
               </div>
             </div>
 
@@ -1191,25 +1310,30 @@ const Landing3 = () => {
       </section>
       {/* COMMUNITY CTA */}
       <section className="relative px-4 sm:px-8 pt-8 sm:pt-12 overflow-hidden">
-        <div className="relative z-10 max-w-3xl mx-auto" data-reveal>
-          <div className="rounded-2xl sm:rounded-3xl bg-white/[0.02] border border-white/[0.08] px-6 py-10 sm:px-10 sm:py-12 text-center">
-            <h2 className="text-2xl sm:text-3xl tracking-[-0.025em] font-medium leading-tight mb-3 text-white">
-              Open source & community-driven
-            </h2>
-            <p className="max-w-xl mx-auto text-base text-white/60 leading-relaxed mb-8">
-              Join the conversation on Discord and star us on GitHub.
-            </p>
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+        <div className="relative z-10 max-w-5xl mx-auto" data-reveal>
+          <div className="relative overflow-hidden flex flex-col gap-7 md:flex-row md:items-center md:justify-between rounded-2xl sm:rounded-[28px] bg-[#080808] border border-white/[0.1] px-7 py-8 sm:px-10 sm:py-10">
+            <div className="flex flex-col sm:flex-row items-center gap-5 text-center sm:text-left">
+              {/* <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-primary/15 border border-primary/25 text-primary">
+                <FontAwesomeIcon icon={faDiscord} className="text-2xl" />
+              </span> */}
+              <div>
+                <h2 className="text-2xl sm:text-3xl tracking-[-0.02em] font-medium leading-tight text-white">
+                  Join our <span className="font-serif-italic">community</span>
+                </h2>
+                <p className="text-sm sm:text-base text-white/55 leading-relaxed mt-2 max-w-md">
+                  ArtCraft is open source and community-driven. Come build with
+                  us.
+                </p>
+              </div>
+            </div>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3 shrink-0">
               <a
                 href={SOCIAL_LINKS.DISCORD}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 h-11 px-5 rounded-full bg-white/[0.06] hover:bg-white/[0.1] text-white text-[14px] font-semibold border border-white/[0.1] transition-all hover:-translate-y-px"
+                className="group inline-flex items-center gap-2 h-11 px-5 rounded-full bg-primary hover:bg-primary-600 text-white text-[14px] font-semibold transition-all shadow-[0_4px_24px_-4px_rgba(45,129,255,0.4)] hover:shadow-[0_8px_32px_-4px_rgba(45,129,255,0.5)] hover:-translate-y-px"
               >
-                <FontAwesomeIcon
-                  icon={faDiscord}
-                  className="text-[13px] text-[#5865F2]"
-                />
+                <FontAwesomeIcon icon={faDiscord} className="text-[13px]" />
                 Join Discord
               </a>
               <a

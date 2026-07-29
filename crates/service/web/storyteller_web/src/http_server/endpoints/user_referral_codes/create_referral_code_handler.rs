@@ -7,7 +7,7 @@ use utoipa::ToSchema;
 
 use artcraft_api_defs::user_referral_codes::create_referral_code::{CreateReferralCodeRequest, CreateReferralCodeResponse};
 use crate::http_server::common_responses::common_web_error::CommonWebError;
-use crate::http_server::session::lookup::user_session_feature_flags::UserSessionFeatureFlags;
+use crate::http_server::user_lookup::user_session::session_utils::lookup::user_session_feature_flags::UserSessionFeatureFlags;
 use crate::state::server_state::ServerState;
 use mysql_queries::errors::database_insert_error::DatabaseInsertError;
 use mysql_queries::queries::user_referral_codes::create_referral_code::{create_referral_code, CreateReferralCodeArgs};

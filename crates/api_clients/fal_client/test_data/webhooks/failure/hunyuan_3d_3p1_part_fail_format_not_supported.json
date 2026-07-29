@@ -1,0 +1,18 @@
+{
+  "error": "Unexpected status code: 422",
+  "gateway_request_id": "019f4dad-7ff7-7902-b206-cb11bf1ef843",
+  "payload": {
+    "detail": [
+      {
+        "loc": [
+          "body",
+          "input_file_url"
+        ],
+        "msg": "Part generation only supports FBX format. Please provide an FBX file or use /convert-format to convert your model to FBX first.",
+        "type": "value_error"
+      }
+    ]
+  },
+  "request_id": "019f4dad-7ff7-7902-b206-cb11bf1ef843",
+  "status": "ERROR"
+}

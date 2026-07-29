@@ -1,0 +1,25 @@
+{
+  "db_name": "MySQL",
+  "query": "\nSELECT DISTINCT maybe_user_token AS `user_token!: UserToken`\nFROM user_spend_events\nWHERE maybe_user_token IS NOT NULL\n  AND is_production = TRUE\n  AND payments_namespace = ?\n  AND maybe_user_token > ?\nORDER BY maybe_user_token\nLIMIT ?\n    ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "user_token!: UserToken",
+        "type_info": {
+          "type": "VarString",
+          "flags": "MULTIPLE_KEY | BINARY",
+          "char_set": 224,
+          "max_size": 128
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 3
+    },
+    "nullable": [
+      true
+    ]
+  },
+  "hash": "bcd07050d5557bf59d6b2691478763b5b067447d295b002f6e766209ea077f42"
+}

@@ -120,6 +120,43 @@
   background-color: rgba(255, 255, 255, 0.35);
 }
 
+/* Hide the native resize grip (Chromium draws different grips for textareas
+   vs contenteditable divs) and draw one consistent grip on the wrapper so the
+   plain and @-mention prompt editors look identical. */
+.promptbox-scrollbar::-webkit-resizer {
+  background: transparent;
+  border: none;
+}
+
+.promptbox-resize-wrap {
+  position: relative;
+}
+
+.promptbox-resize-wrap::after {
+  content: "";
+  position: absolute;
+  bottom: 2px;
+  right: 2px;
+  width: 10px;
+  height: 10px;
+  pointer-events: none;
+  background: linear-gradient(
+    135deg,
+    transparent 40%,
+    rgba(255, 255, 255, 0.5) 40%,
+    rgba(255, 255, 255, 0.5) 45%,
+    transparent 45%,
+    transparent 55%,
+    rgba(255, 255, 255, 0.5) 55%,
+    rgba(255, 255, 255, 0.5) 60%,
+    transparent 60%,
+    transparent 70%,
+    rgba(255, 255, 255, 0.5) 70%,
+    rgba(255, 255, 255, 0.5) 75%,
+    transparent 75%
+  );
+}
+
 @keyframes fade-in-up {
   from {
     opacity: 0;
@@ -160,6 +197,19 @@
 
   100% {
     transform: translateX(-100%);
+  }
+}
+
+/* For marquee tracks that render two identical copies of their content:
+   translating by -50% lands exactly on the start of the second copy, so the
+   loop is seamless. */
+@keyframes marquee-track {
+  from {
+    transform: translateX(0);
+  }
+
+  to {
+    transform: translateX(-50%);
   }
 }
 

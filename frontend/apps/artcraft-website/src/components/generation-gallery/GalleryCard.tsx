@@ -16,9 +16,9 @@ import { Tooltip } from "@storyteller/ui-tooltip";
 import { toast } from "../toast/toast";
 import { downloadMediaFile } from "../../lib/download-media";
 import {
-  getModelCreatorIconPath,
+  getCreatorIconPathForModelId,
   getModelDisplayName,
-} from "../../lib/omni-gen-hooks";
+} from "@storyteller/model-list";
 import {
   applyMakeVideoFromImage,
   applyRecreateFromMediaToken,
@@ -128,7 +128,10 @@ export const GalleryCard = memo(function GalleryCard({
   const [isRecreating, setIsRecreating] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
   const isVideo = item.mediaClass === "video";
-  const is3D = item.mediaClass === "dimensional";
+  const is3D =
+    item.mediaClass === "dimensional" ||
+    item.mediaClass === "mesh" ||
+    item.mediaClass === "splat";
   const recreateMediaClass: RecreateMediaClass | null = isVideo
     ? "video"
     : is3D
@@ -191,21 +194,11 @@ export const GalleryCard = memo(function GalleryCard({
     ? getModelDisplayName(item.modelId)
     : null;
   const modelIconPath = item.modelId
-    ? getModelCreatorIconPath(item.modelId)
+    ? getCreatorIconPathForModelId(item.modelId)
     : null;
 
-  const mediaIcon =
-    item.mediaClass === "video"
-      ? faVideo
-      : item.mediaClass === "dimensional"
-        ? faCube
-        : faImage;
-  const mediaLabel =
-    item.mediaClass === "video"
-      ? "Video"
-      : item.mediaClass === "dimensional"
-        ? "3D"
-        : "Image";
+  const mediaIcon = item.mediaClass === "video" ? faVideo : is3D ? faCube : faImage;
+  const mediaLabel = item.mediaClass === "video" ? "Video" : is3D ? "3D" : "Image";
 
   const handleLoad = useCallback(
     (e: React.SyntheticEvent<HTMLImageElement>) => {

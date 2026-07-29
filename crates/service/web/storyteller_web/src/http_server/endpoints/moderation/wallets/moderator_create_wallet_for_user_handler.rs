@@ -15,7 +15,7 @@ use mysql_queries::queries::wallets::create_new_wallet_for_owner_user::create_ne
 use mysql_queries::queries::wallets::find_primary_wallet_token_for_owner::find_primary_wallet_token_for_owner_using_connection;
 
 use crate::http_server::common_responses::common_web_error::CommonWebError;
-use crate::http_server::web_utils::user_session::require_moderator::{require_moderator, UseDatabase};
+use crate::http_server::user_lookup::user_session::require_moderator::require_moderator;
 use crate::state::server_state::ServerState;
 
 /// Create a wallet for a user (moderation)
@@ -37,9 +37,7 @@ pub async fn moderator_create_wallet_for_user_handler(
   server_state: web::Data<Arc<ServerState>>,
 ) -> Result<Json<ModeratorCreateWalletForUserResponse>, CommonWebError> {
 
-  let _user_session = require_moderator(&http_request, &server_state, UseDatabase::GrabNewConnection)
-    .await
-    .map_err(|_| CommonWebError::NotAuthorized)?;
+  let _user_session = require_moderator(&http_request, &server_state.session_checker, &server_state.mysql_pool).await?;
 
   let user_token = request.user_token.as_ref()
     .ok_or_else(|| CommonWebError::BadInputWithSimpleMessage("user_token is required".to_string()))?;

@@ -36,8 +36,12 @@ actix_artcraft.workspace = true
 actix_cors_configs = { path = "../../../lib/actix_cors_configs" }
 actix_helpers.workspace = true
 artcraft_api_defs.workspace = true
+artcraft_api_keys.workspace = true
 artcraft_router.workspace = true
+sha1_hash.workspace = true
+video_info.workspace = true
 bootstrap.workspace = true
+bucket_client.workspace = true
 bucket_paths.workspace = true
 cloud_storage.workspace = true
 collections.workspace = true
@@ -85,6 +89,7 @@ seedance2pro_client.workspace = true
 server_environment = { path = "../../../lib/server_environment" }
 thumbnail_generator = { path = "../../../api_clients/thumbnail_generator" }
 tokens.workspace = true
+trace_id.workspace = true
 tts_common = { path = "../../../lib/deprecated/tts_common" }
 url_config = { path = "../../../lib/url_config" }
 url_utils = { path = "../../../lib/url_utils" }

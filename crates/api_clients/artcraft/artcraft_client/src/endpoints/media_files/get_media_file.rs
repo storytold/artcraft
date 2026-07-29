@@ -76,11 +76,6 @@ pub struct MediaFileInfo {
   /// this describes the animation regime used or supported.
   pub maybe_animation_type: Option<MediaFileAnimationType>,
 
-  //  /// If the media file has a subtype, we'll report it.
-  //  /// This is mostly used for Bevy engine files.
-  //  #[deprecated(note="This was for the Bevy engine. Do not use.")]
-  //  pub maybe_media_subtype: Option<MediaFileSubtype>,
-
   //  /// Extension for the engine to load over remote:// URLs.
   //  #[deprecated(note="This was for the Bevy engine. Do not use.")]
   //  pub maybe_engine_extension: Option<String>,

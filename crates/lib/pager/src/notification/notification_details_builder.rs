@@ -21,6 +21,11 @@ pub struct NotificationDetailsBuilder {
   pub(crate) http_method: Option<String>,
   pub(crate) http_path: Option<String>,
   pub(crate) http_status_code: Option<u16>,
+  pub(crate) http_host: Option<String>,
+  pub(crate) http_origin: Option<String>,
+  pub(crate) http_referer: Option<String>,
+  pub(crate) http_user_agent: Option<String>,
+  pub(crate) artcraft_version: Option<String>,
 
   pub(crate) user_token: Option<String>,
   pub(crate) media_file_token: Option<String>,
@@ -31,6 +36,10 @@ pub struct NotificationDetailsBuilder {
   pub(crate) avt_cookie_token: Option<String>,
   pub(crate) session_token: Option<String>,
   pub(crate) session_user_token: Option<String>,
+
+  /// The request-scoped trace id, if any. Auto-filled from the tokio
+  /// task-local at `build()` time when not explicitly set.
+  pub(crate) trace_id: Option<String>,
 }
 
 impl NotificationDetailsBuilder {
@@ -49,6 +58,11 @@ impl NotificationDetailsBuilder {
       http_method: None,
       http_path: None,
       http_status_code: None,
+      http_host: None,
+      http_origin: None,
+      http_referer: None,
+      http_user_agent: None,
+      artcraft_version: None,
       user_token: None,
       media_file_token: None,
       inference_job_token: None,
@@ -57,6 +71,7 @@ impl NotificationDetailsBuilder {
       avt_cookie_token: None,
       session_token: None,
       session_user_token: None,
+      trace_id: None,
     }
   }
 
@@ -79,6 +94,11 @@ impl NotificationDetailsBuilder {
       http_method: None,
       http_path: None,
       http_status_code: None,
+      http_host: None,
+      http_origin: None,
+      http_referer: None,
+      http_user_agent: None,
+      artcraft_version: None,
       user_token: None,
       media_file_token: None,
       inference_job_token: None,
@@ -87,6 +107,7 @@ impl NotificationDetailsBuilder {
       avt_cookie_token: None,
       session_token: None,
       session_user_token: None,
+      trace_id: None,
     }
   }
 
@@ -132,6 +153,31 @@ impl NotificationDetailsBuilder {
     self
   }
 
+  pub fn set_http_host(mut self, http_host: Option<String>) -> Self {
+    self.http_host = http_host;
+    self
+  }
+
+  pub fn set_http_origin(mut self, http_origin: Option<String>) -> Self {
+    self.http_origin = http_origin;
+    self
+  }
+
+  pub fn set_http_referer(mut self, http_referer: Option<String>) -> Self {
+    self.http_referer = http_referer;
+    self
+  }
+
+  pub fn set_http_user_agent(mut self, http_user_agent: Option<String>) -> Self {
+    self.http_user_agent = http_user_agent;
+    self
+  }
+
+  pub fn set_artcraft_version(mut self, artcraft_version: Option<String>) -> Self {
+    self.artcraft_version = artcraft_version;
+    self
+  }
+
   pub fn set_user_token(mut self, user_token: Option<String>) -> Self {
     self.user_token = user_token;
     self
@@ -167,6 +213,11 @@ impl NotificationDetailsBuilder {
     self
   }
 
+  pub fn set_trace_id(mut self, trace_id: Option<String>) -> Self {
+    self.trace_id = trace_id;
+    self
+  }
+
   pub fn set_session_user_token(mut self, session_user_token: Option<String>) -> Self {
     self.session_user_token = session_user_token;
     self
@@ -191,6 +242,11 @@ impl NotificationDetailsBuilder {
       http_method: self.http_method,
       http_path: self.http_path,
       http_status_code: self.http_status_code,
+      http_host: self.http_host,
+      http_origin: self.http_origin,
+      http_referer: self.http_referer,
+      http_user_agent: self.http_user_agent,
+      artcraft_version: self.artcraft_version,
       user_token: self.user_token,
       media_file_token: self.media_file_token,
       inference_job_token: self.inference_job_token,
@@ -199,6 +255,11 @@ impl NotificationDetailsBuilder {
       avt_cookie_token: self.avt_cookie_token,
       session_token: self.session_token,
       session_user_token: self.session_user_token,
+      // Auto-fill from the request's task-local so any page fired while
+      // serving a request is correlated even if the caller never set it.
+      trace_id: self.trace_id.or_else(|| {
+        trace_id::current_trace_id().map(|t| t.to_string())
+      }),
     }
   }
 

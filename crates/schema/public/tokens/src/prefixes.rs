@@ -23,6 +23,7 @@ use strum::EnumIter;
 #[cfg_attr(test, derive(EnumIter, EnumCount))]
 pub(crate) enum TokenPrefix {
   AnonymousVisitorTracking, // AVTs are not stored as primary keys in any table, but an index in many tables.
+  ApiKey,
   AppSession, // NB: These are generated client-side (!)
   AuditLog,
   BatchGeneration,
@@ -45,11 +46,14 @@ pub(crate) enum TokenPrefix {
   StaffAuditLog,
   Tag,
   TtsRenderTask, // NB: aichatbot / sqlite
+  UploadedVideo,
+  UploadedVideoNote,
   User,
   UserImpersonationRequest,
   UserBookmark,
   UserReferralCode,
   UserSession,
+  UserSpendEvent,
   UserSubscription,
   VoiceConversionModel,
   VoiceConversionResult,
@@ -112,6 +116,7 @@ impl PrefixGenerator for TokenPrefix {
   fn prefix(self) -> &'static str {
     match self {
       Self::AnonymousVisitorTracking => "avt_",
+      Self::ApiKey => "api_key_",
       Self::AppSession => "app_session_",
       Self::AuditLog => "audit_",
       Self::BatchGeneration => "batch_g_",
@@ -134,11 +139,14 @@ impl PrefixGenerator for TokenPrefix {
       Self::StaffAuditLog => "stfaud_",
       Self::Tag => "tag_",
       Self::TtsRenderTask => "tts_task_",
+      Self::UploadedVideo => "uvt_",
+      Self::UploadedVideoNote => "uvnote_",
       Self::User => "user_", // NB: Previously "U:"
       Self::UserImpersonationRequest => "uimpr_",
       Self::UserBookmark => "ub_",
       Self::UserReferralCode => "urc_",
       Self::UserSession => "session_",
+      Self::UserSpendEvent => "spend_",
       Self::UserSubscription => "subscription_", // NB: Previously "SUB:"
       Self::VoiceConversionModel => "vcm_",
       Self::VoiceConversionResult => "vcr_",
@@ -348,6 +356,7 @@ mod tests {
             || prefix == "INT_API:"
             || prefix == "batch_g_"
             || prefix == "beta_key_"
+            || prefix == "api_key_"
             || prefix == "email_job_"
             || prefix == "pw_reset_"
             || prefix == "tts_task_"

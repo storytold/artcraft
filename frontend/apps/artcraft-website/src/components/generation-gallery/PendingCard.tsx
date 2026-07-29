@@ -1,7 +1,7 @@
 import { memo } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSpinnerThird } from "@fortawesome/pro-solid-svg-icons";
-import { getModelCreatorIconPath } from "../../lib/omni-gen-hooks";
+import { getCreatorIconPathForModelId } from "@storyteller/model-list";
 
 export interface PendingCardProps {
   id: string;
@@ -41,7 +41,7 @@ export const PendingCard = memo(function PendingCard({
       ? formatTimeLeft(estimatedTimeLeftMs)
       : null;
 
-  const iconPath = getModelCreatorIconPath(modelId);
+  const iconPath = getCreatorIconPathForModelId(modelId);
 
   return (
     <div className="relative aspect-square w-full overflow-hidden rounded-lg bg-white/[0.03]">

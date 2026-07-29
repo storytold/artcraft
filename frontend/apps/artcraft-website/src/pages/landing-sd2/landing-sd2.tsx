@@ -643,11 +643,7 @@ const LandingSD2 = () => {
                     all in one place. Log in with your existing subscriptions.
                   </p>
                 </div>
-                <ModelBadgeGrid
-                  highlight="nano-banana-2"
-                  rowOffsets={[-70, -90, -160]}
-                  className="mt-3"
-                />
+                <ModelBadgeGrid className="mt-3" />
               </div>
             </div>
 

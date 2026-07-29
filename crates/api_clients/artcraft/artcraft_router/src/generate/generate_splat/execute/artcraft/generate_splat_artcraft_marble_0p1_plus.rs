@@ -27,6 +27,7 @@ pub async fn execute_artcraft_marble_0p1_plus(
     .map_err(|err| ArtcraftRouterError::Provider(ProviderError::Storyteller(err)))?;
 
   Ok(GenerateSplatResponse::Artcraft(ArtcraftSplatResponsePayload {
-    inference_job_token: response.inference_job_token,
+    inference_job_token: response.inference_job_token.clone(),
+    all_inference_job_tokens: vec![response.inference_job_token],
   }))
 }

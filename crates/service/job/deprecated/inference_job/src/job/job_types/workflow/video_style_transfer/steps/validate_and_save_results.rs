@@ -287,6 +287,7 @@ pub async fn validate_and_save_results(args: SaveResultsArgs<'_>) -> Result<Medi
 
     // NB: Don't fail the job if the query fails.
     let prompt_result = insert_prompt(InsertPromptArgs {
+      maybe_bitrate: None,
       maybe_apriori_prompt_token: Some(&prompt_token),
       prompt_type: PromptType::ComfyUi,
       maybe_creator_user_token: args.job.maybe_creator_user_token_typed.as_ref(),

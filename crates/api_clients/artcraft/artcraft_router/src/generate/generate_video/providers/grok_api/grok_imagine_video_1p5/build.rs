@@ -28,11 +28,11 @@ use crate::generate::generate_video::video_generation_request::VideoGenerationRe
 /// the only material differences are the `model` identifier on the wire and
 /// the steeper pricing in the cost calculator (see `cost.rs`).
 ///
-/// xAI's grok-imagine-video-1.5-preview accepts:
+/// xAI's grok-imagine-video-1.5 accepts:
 /// - `image` (single source image, image-to-video mode) OR `reference_images`
 ///   (multi-image reference-to-video). These two are mutually exclusive per
 ///   xAI's API.
-/// - Aspect ratio, resolution (480p/720p), duration (1–15s), prompt.
+/// - Aspect ratio, resolution (480p/720p/1080p), duration (1–15s), prompt.
 ///
 /// Fields that Grok DOESN'T accept (`end_frame`, `reference_videos`,
 /// `reference_audio`, and `MediaFileToken`-style image refs) are silently
@@ -78,7 +78,7 @@ pub fn build_grok_api_grok_imagine_video_1p5(
   if image.is_none() && reference_images.is_none() {
     return Err(ArtcraftRouterError::Client(ClientError::ModelDoesNotSupportOption {
       field: "image_inputs",
-      value: "text-to-video isn't supported by grok-imagine-video-1.5-preview; supply a start_frame or at least one reference image".to_string(),
+      value: "text-to-video isn't supported by grok-imagine-video-1.5; supply a start_frame or at least one reference image".to_string(),
     }));
   }
 
@@ -86,7 +86,7 @@ pub fn build_grok_api_grok_imagine_video_1p5(
     prompt,
     // Pin to the 1.5 preview identifier so the grok_api_client cost
     // calculator picks the v1.5 pricing tier (see VideoModel::pricing_tier).
-    model: Some(GrokVideoModel::GrokImagineVideo1p5Preview),
+    model: Some(GrokVideoModel::GrokImagineVideo1p5),
     image,
     reference_images,
     aspect_ratio,
@@ -146,10 +146,11 @@ fn plan_resolution(
     None => None,
     Some(RouterResolution::FourEightyP) => Some(GrokResolution::FourEightyP),
     Some(RouterResolution::SevenTwentyP) => Some(GrokResolution::SevenTwentyP),
-    Some(RouterResolution::TenEightyP)
-    | Some(RouterResolution::TwoK)
+    Some(RouterResolution::TenEightyP) => Some(GrokResolution::TenEightyP),
+    // 2K/3K/4K aren't produced — cap at the model's max of 1080p.
+    Some(RouterResolution::TwoK)
     | Some(RouterResolution::ThreeK)
-    | Some(RouterResolution::FourK) => Some(GrokResolution::SevenTwentyP),
+    | Some(RouterResolution::FourK) => Some(GrokResolution::TenEightyP),
     Some(RouterResolution::HalfK) | Some(RouterResolution::OneK) => {
       Some(GrokResolution::FourEightyP)
     }
@@ -279,7 +280,7 @@ mod tests {
       let req = unwrap_request(make_builder(|_| {}));
       assert_eq!(
         req.request.model,
-        Some(GrokVideoModel::GrokImagineVideo1p5Preview),
+        Some(GrokVideoModel::GrokImagineVideo1p5),
       );
     }
 
@@ -289,7 +290,7 @@ mod tests {
       // calculator in grok_api_client keys off this string.
       let req = unwrap_request(make_builder(|_| {}));
       let model = req.request.model.as_ref().expect("model should be set");
-      assert_eq!(model.as_str(), "grok-imagine-video-1.5-preview");
+      assert_eq!(model.as_str(), "grok-imagine-video-1.5");
     }
   }
 
@@ -417,15 +418,15 @@ mod tests {
     }
 
     #[test]
-    fn res_1080p_clamps_to_720p() {
+    fn res_1080p_maps_to_1080p() {
       let req = unwrap_request(make_builder(|b| { b.resolution = Some(RouterResolution::TenEightyP); }));
-      assert_eq!(req.request.resolution, Some(GrokResolution::SevenTwentyP));
+      assert_eq!(req.request.resolution, Some(GrokResolution::TenEightyP));
     }
 
     #[test]
-    fn res_4k_clamps_to_720p() {
+    fn res_4k_caps_to_1080p() {
       let req = unwrap_request(make_builder(|b| { b.resolution = Some(RouterResolution::FourK); }));
-      assert_eq!(req.request.resolution, Some(GrokResolution::SevenTwentyP));
+      assert_eq!(req.request.resolution, Some(GrokResolution::TenEightyP));
     }
 
     #[test]
@@ -542,7 +543,7 @@ mod tests {
       assert_eq!(req.request.resolution, Some(GrokResolution::SevenTwentyP));
       assert_eq!(req.request.aspect_ratio, Some(GrokAspectRatio::Landscape16x9));
       assert_eq!(req.request.duration, Some(5));
-      assert_eq!(req.request.model, Some(GrokVideoModel::GrokImagineVideo1p5Preview));
+      assert_eq!(req.request.model, Some(GrokVideoModel::GrokImagineVideo1p5));
     }
 
     #[test]
@@ -660,7 +661,7 @@ mod tests {
       assert_eq!(req.request.aspect_ratio, Some(GrokAspectRatio::Landscape16x9));
       assert_eq!(req.request.duration, Some(8));
       // Still pinned to the 1.5 model regardless of kitchen-sink inputs.
-      assert_eq!(req.request.model, Some(GrokVideoModel::GrokImagineVideo1p5Preview));
+      assert_eq!(req.request.model, Some(GrokVideoModel::GrokImagineVideo1p5));
     }
   }
 

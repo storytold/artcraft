@@ -5,7 +5,7 @@ use actix_artcraft::sessions::anonymous_visitor_tracking::avt_cookie_manager::Av
 use actix_artcraft::sessions::user_sessions::http_user_session_manager::HttpUserSessionManager;
 use anyhow::anyhow;
 use chrono::Utc;
-use cloud_storage::bucket_client::BucketClient;
+use cloud_storage::legacy_bucket_client::LegacyBucketClient;
 use elasticsearch::http::transport::Transport;
 use elasticsearch::Elasticsearch;
 use errors::AnyhowResult;
@@ -14,7 +14,7 @@ use memory_caching::arc_ttl_sieve::ArcTtlSieve;
 use memory_caching::single_item_ttl_cache::SingleItemTtlCache;
 use mysql_queries::mediators::badge_granter::BadgeGranter;
 use mysql_queries::mediators::firehose_publisher::FirehosePublisher;
-use opaque_cursors::v2::opaque_cursor_encoder_v2::OpaqueCursorEncoderV2;
+use crate::http_server::web_utils::web_opaque_cursor_encoder_v2::WebOpaqueCursorEncoderV2;
 use pager::worker::pager_worker::PagerWorker;
 use redis::Client;
 use redis_caching::redis_ttl_cache::RedisTtlCache;
@@ -26,7 +26,7 @@ use url_config::third_party_url_redirector::ThirdPartyUrlRedirector;
 use crate::configs::app_startup::redis_rate_limiters::configure_redis_rate_limiters;
 use crate::configs::connect_to_database::connect_to_database;
 use crate::configs::static_api_tokens::StaticApiTokenSet;
-use crate::http_server::session::session_checker::SessionChecker;
+use crate::http_server::user_lookup::user_session::session_utils::session_checker::SessionChecker;
 use crate::http_server::web_utils::scoped_temp_dir_creator::ScopedTempDirCreator;
 use crate::startup::setup_pager::build_pager;
 use crate::startup::setup_bans::{
@@ -34,6 +34,7 @@ use crate::startup::setup_bans::{
   load_static_container_ip_bans, load_troll_user_token_bans,
 };
 use crate::startup::setup_inference_providers::setup_inference_providers;
+use crate::startup::setup_seedance_video_bucket::setup_seedance_video_bucket;
 use crate::startup::setup_static_feature_flags::setup_static_feature_flags;
 use crate::startup::setup_stripe_artcraft::setup_stripe_artcraft;
 use crate::startup::setup_stripe_fakeyou::setup_stripe_fakeyou;
@@ -45,7 +46,7 @@ use crate::state::server_state::{
   ServerState, TrollBans,
 };
 use crate::threads::db_health_checker_thread::db_health_check_status::HealthCheckStatus;
-use crate::util::encrypted_sort_id::SortKeyCrypto;
+use crate::http_server::web_utils::web_sort_key_crypto::WebSortKeyCrypto;
 
 // Bucket config
 const ENV_ACCESS_KEY: &str = "ACCESS_KEY";
@@ -123,17 +124,17 @@ pub async fn setup_dependencies(server_hostname: &str) -> AnyhowResult<SetupResu
   let s3_compatible_endpoint_url = easyenv::get_env_string_or_default("S3_COMPATIBLE_ENDPOINT_URL", "https://storage.googleapis.com");
   let bucket_timeout = easyenv::get_env_duration_seconds_or_default("BUCKET_TIMEOUT_SECONDS", Duration::from_secs(60 * 5));
 
-  let private_bucket_client = BucketClient::create(
+  let private_bucket_client = LegacyBucketClient::create(
     &access_key, &secret_key, &region_name, &private_bucket_name,
     &s3_compatible_endpoint_url, None, Some(bucket_timeout),
   )?;
 
-  let public_bucket_client = BucketClient::create(
+  let public_bucket_client = LegacyBucketClient::create(
     &access_key, &secret_key, &region_name, &public_bucket_name,
     &s3_compatible_endpoint_url, None, Some(bucket_timeout),
   )?;
 
-  let auto_gc_bucket_client = BucketClient::create(
+  let auto_gc_bucket_client = LegacyBucketClient::create(
     &access_key, &secret_key, &region_name, &gc_enabled_public_bucket_name,
     &s3_compatible_endpoint_url, None, Some(bucket_timeout),
   )?;
@@ -146,16 +147,8 @@ pub async fn setup_dependencies(server_hostname: &str) -> AnyhowResult<SetupResu
     easyenv::get_env_duration_seconds_or_default("DATABASE_TTS_CATEGORY_LIST_CACHE_TTL_SECONDS", Duration::from_secs(60))
   );
 
-  let tts_queue_length_cache = SingleItemTtlCache::create_with_duration(
-    easyenv::get_env_duration_seconds_or_default("TTS_QUEUE_LENGTH_CACHE_TTL_SECONDS", Duration::from_secs(30))
-  );
-
   let tts_model_category_assignments_cache = SingleItemTtlCache::create_with_duration(
     easyenv::get_env_duration_seconds_or_default("TTS_MODEL_CATEGORY_ASSIGNMENTS_CACHE_TTL_SECONDS", Duration::from_secs(60))
-  );
-
-  let leaderboard_cache = SingleItemTtlCache::create_with_duration(
-    easyenv::get_env_duration_seconds_or_default("LEADERBOARD_CACHE_TTL_SECONDS", Duration::from_secs(60))
   );
 
   let inference_queue_length_cache = SingleItemTtlCache::create_with_duration(
@@ -163,8 +156,8 @@ pub async fn setup_dependencies(server_hostname: &str) -> AnyhowResult<SetupResu
   );
 
   let sort_key_crypto_secret = easyenv::get_env_string_or_default("SORT_KEY_SECRET", "webscale");
-  let sort_key_crypto = SortKeyCrypto::new(&sort_key_crypto_secret);
-  let opaque_cursor_encoder = OpaqueCursorEncoderV2::new(&sort_key_crypto_secret);
+  let sort_key_crypto = WebSortKeyCrypto::new(&sort_key_crypto_secret);
+  let opaque_cursor_encoder = WebOpaqueCursorEncoderV2::new(&sort_key_crypto_secret);
 
   let health_check_interval = easyenv::get_env_duration_seconds_or_default(
     "HEALTH_CHECK_INTERVAL_SECS", Duration::from_secs(3));
@@ -236,6 +229,7 @@ pub async fn setup_dependencies(server_hostname: &str) -> AnyhowResult<SetupResu
     private_bucket_client,
     public_bucket_client,
     auto_gc_bucket_client,
+    seedance_video_bucket: setup_seedance_video_bucket(),
     audio_uploads_bucket_root,
     sort_key_crypto,
     opaque_cursors: opaque_cursor_encoder,
@@ -251,19 +245,9 @@ pub async fn setup_dependencies(server_hostname: &str) -> AnyhowResult<SetupResu
       },
       ephemeral: EphemeralInMemoryCaches {
         tts_model_list: voice_list_cache,
-        voice_conversion_model_list: SingleItemTtlCache::create_with_duration(
-          easyenv::get_env_duration_seconds_or_default(
-            "VOICE_CONVERSION_MODEL_LIST_CACHE_TTL_SECONDS",
-            Duration::from_secs(60))),
         database_tts_category_list: database_tts_category_list_cache,
-        tts_queue_length: tts_queue_length_cache,
         tts_model_category_assignments: tts_model_category_assignments_cache,
-        leaderboard: leaderboard_cache,
         inference_queue_length: inference_queue_length_cache,
-        queue_stats: SingleItemTtlCache::create_with_duration(
-          easyenv::get_env_duration_seconds_or_default(
-            "QUEUE_STATS_CACHE_TTL_SECONDS",
-            Duration::from_secs(60))),
         featured_media_files_sieve: ArcTtlSieve::with_capacity_and_ttl_duration(
           easyenv::get_env_num("FEATURED_MEDIA_FILES_CACHE_SIZE", 25)?,
           easyenv::get_env_duration_seconds_or_default("FEATURED_MEDIA_FILES_TTL_SECONDS", Duration::from_secs(60)),

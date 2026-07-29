@@ -741,8 +741,17 @@ export const PopoverMenu = ({
                           className="flex flex-col gap-0.5 overflow-y-auto text-sm text-base-fg [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
                           style={{ maxHeight: maxListHeight ?? "60vh" }}
                         >
-                          {items.map((item, index) => (
-                            <div key={index}>
+                          {items.map((item, index) => {
+                            const tooltipContent =
+                              typeof item.hoverTooltip === "function"
+                                ? (
+                                    item.hoverTooltip as (
+                                      close: () => void,
+                                    ) => ReactNode
+                                  )(close)
+                                : item.hoverTooltip;
+
+                            const itemRow = (
                               <div
                                 data-selected={
                                   item.selected ? "true" : undefined
@@ -756,6 +765,9 @@ export const PopoverMenu = ({
                                   item.selected
                                     ? "bg-ui-controls/70"
                                     : "hover:bg-ui-controls/50",
+                                  !item.selected && openTooltipIdx === index
+                                    ? "bg-ui-controls/50"
+                                    : "",
                                   item.disabled
                                     ? "!cursor-not-allowed opacity-50"
                                     : "",
@@ -825,11 +837,36 @@ export const PopoverMenu = ({
                                     </span>
                                   ))}
                               </div>
-                              {item.divider && (
-                                <div className="my-1 border-t border-white/10" />
-                              )}
-                            </div>
-                          ))}
+                            );
+
+                            return (
+                              <div key={index}>
+                                {item.hoverTooltip ? (
+                                  <PortalTooltip
+                                    content={tooltipContent}
+                                    delay={item.tooltipDelayMs ?? 300}
+                                    className="min-w-48"
+                                    onOpenChange={(open) =>
+                                      setOpenTooltipIdx((prev) =>
+                                        open
+                                          ? index
+                                          : prev === index
+                                            ? null
+                                            : prev,
+                                      )
+                                    }
+                                  >
+                                    {itemRow}
+                                  </PortalTooltip>
+                                ) : (
+                                  itemRow
+                                )}
+                                {item.divider && (
+                                  <div className="my-1 border-t border-white/10" />
+                                )}
+                              </div>
+                            );
+                          })}
                         </div>
                         {/* Bottom fade — appears only when there's more below,
                             with a slow bouncing arrow hinting to scroll down. */}

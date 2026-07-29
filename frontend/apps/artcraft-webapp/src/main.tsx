@@ -5,6 +5,8 @@ import { GoogleOAuthProvider } from "@react-oauth/google";
 import App from "./app/app";
 import { StorytellerApiHostStore, UsersApi } from "@storyteller/api";
 import { captureLandingContext, getReferrer } from "@storyteller/common";
+import { setOmniGenErrorNotifier } from "@storyteller/omni-gen";
+import { toast } from "./components/toast/toast";
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
@@ -19,11 +21,17 @@ if (import.meta.env.DEV) {
       window.location.origin,
     );
     // NB: This is for Brandon to test with storyteller-web locally:
+    // (disabled — it overrides the origin above and points at localhost:12345,
+    // which breaks dev unless a local backend is running. Re-enable only when
+    // testing against a local storyteller-web.)
     StorytellerApiHostStore.getInstance().setDevelopment();
   } catch (e) {
     console.warn("Failed to set dev API host override", e);
   }
 }
+
+// Surface omni model/generation outages through this app's toast component.
+setOmniGenErrorNotifier((message) => toast.error(message));
 
 // Persist landing context (referral username, landing URL, referrer) to apex-
 // domain cookies so attribution survives the getartcraft.com →

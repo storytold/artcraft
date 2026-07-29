@@ -13,7 +13,7 @@ pub fn build_artcraft_seedance_2p0_bpu(builder: GenerateVideoRequestBuilder) -> 
   let request = build_artcraft_omni_video_request(
     builder,
     CommonVideoModelEnum::Seedance2p0BytePlusUltra,
-    SupportedResolutions::Full,
+    SupportedResolutions::FullWith4k,
     UltraWideSupport::Supported,
   )?;
   let state = ArtcraftSeedance2p0BytePlusUltraRequestState { request };
@@ -24,6 +24,8 @@ pub fn build_artcraft_seedance_2p0_bpu(builder: GenerateVideoRequestBuilder) -> 
 mod tests {
   use enums::common::generation::common_resolution::CommonResolution as CommonResolutionEnum;
   use enums::common::generation::common_video_model::CommonVideoModel as CommonVideoModelEnum;
+  use enums::common::generation::common_bitrate::CommonBitrate as CommonBitrateEnum;
+  use crate::api::router_bitrate::RouterBitrate;
   use tokens::tokens::characters::CharacterToken;
   use tokens::tokens::media_files::MediaFileToken;
 
@@ -70,6 +72,12 @@ mod tests {
       let req = unwrap_request(make_builder(|b| { b.video_batch_count = Some(4); }));
       assert_eq!(req.request.video_batch_count, Some(4));
     }
+
+    #[test]
+    fn bitrate_passed_through() {
+      let req = unwrap_request(make_builder(|b| { b.bitrate = Some(RouterBitrate::High); }));
+      assert_eq!(req.request.bitrate, Some(CommonBitrateEnum::High));
+    }
   }
 
   mod resolution_tests {
@@ -91,6 +99,12 @@ mod tests {
     fn res_1080p() {
       let req = unwrap_request(make_builder(|b| { b.resolution = Some(RouterResolution::TenEightyP); }));
       assert_eq!(req.request.resolution, Some(CommonResolutionEnum::TenEightyP));
+    }
+
+    #[test]
+    fn res_4k() {
+      let req = unwrap_request(make_builder(|b| { b.resolution = Some(RouterResolution::FourK); }));
+      assert_eq!(req.request.resolution, Some(CommonResolutionEnum::FourK));
     }
 
     #[test]

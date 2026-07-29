@@ -11,6 +11,7 @@ import { Model } from "@storyteller/model-list";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCircleCheck, faChevronUp } from "@fortawesome/pro-solid-svg-icons";
 import { GenerationProvider } from "@storyteller/api-enums";
+import { Tooltip } from "@storyteller/ui-tooltip";
 import { defaultModelForPage } from "./defaultModelForPage";
 
 interface ClassyModelSelectorProps {
@@ -25,7 +26,28 @@ interface ClassyModelSelectorProps {
   providersByModel?: Partial<Record<string, Provider[]>>;
   providerTooltipDelayMs?: number;
   maxListHeight?: number | string;
+  /**
+   * "floating": the original standalone selector (large two-line trigger with
+   * model name + provider, hover-to-open list). "embedded": a compact pill
+   * (creator icon + model name) for use inside a promptbox option row; opens
+   * a webapp-style rich list on click. Both share the same store wiring and
+   * provider-selection rows.
+   */
+  variant?: "floating" | "embedded";
+  /**
+   * Whether models that support multiple providers expose the provider-picker
+   * submenu (hover panel) and the per-row provider icon chips. Defaults to
+   * true. Pages locked to a single provider (e.g. PageDraw) pass false to show
+   * only the model name — the default provider is still resolved into the
+   * store so downstream generation calls keep working.
+   */
+  showProviderSelection?: boolean;
 }
+
+// Model instances are rebuilt when the backend listing hydrates, so compare by
+// tauriId rather than object identity.
+const isSameModel = (a: Model | undefined, b: Model | undefined): boolean =>
+  a !== undefined && b !== undefined && a.tauriId === b.tauriId;
 
 const DEFAULT_PROVIDER_OPTIONS: GenerationProvider[] = [GenerationProvider.Artcraft];
 
@@ -103,6 +125,8 @@ export function ClassyModelSelector({
   providersByModel,
   providerTooltipDelayMs = 300,
   maxListHeight = "60vh",
+  variant = "floating",
+  showProviderSelection = true,
   ...popoverProps
 }: ClassyModelSelectorProps) {
   const { selectedModels, setSelectedModel, setSelectedProvider } =
@@ -123,6 +147,20 @@ export function ClassyModelSelector({
       setSelectedModel(page, defaultModelForPage(itemModels, page));
     }
   }, []);
+
+  // The backend listing hydrates asynchronously and rebuilds the model
+  // instances with API capabilities. Swap a stale selected instance for the
+  // fresh one so capability-driven UI (keyframes, references, pickers)
+  // reflects the API data without needing a manual re-select.
+  useEffect(() => {
+    const selected = selectedModels[page];
+    if (!selected) return;
+    const fresh = itemModels.find((m) => m.tauriId === selected.tauriId);
+    if (fresh !== undefined && fresh !== selected) {
+      setSelectedModel(page, fresh);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [items, selectedModels, page]);
 
   // Initialize a default provider for each model so we can render icons even when not selected
   useEffect(() => {
@@ -149,11 +187,14 @@ export function ClassyModelSelector({
         const modelId = item.model?.id;
         const allowedProviders = item.model?.getProviders() || DEFAULT_PROVIDER_OPTIONS;
 
-        const hasMultipleProviders = allowedProviders.length >= 2;
+        // When provider selection is hidden, treat every model as
+        // single-provider so the submenu and provider chips never render.
+        const hasMultipleProviders =
+          showProviderSelection && allowedProviders.length >= 2;
 
         return {
           ...item,
-          selected: item.model === selectedModel,
+          selected: isSameModel(item.model as Model | undefined, selectedModel),
           hoverTooltip: hasMultipleProviders
             ? (close: () => void) => (
                 <ProviderTooltipContent
@@ -168,7 +209,7 @@ export function ClassyModelSelector({
             : undefined,
           tooltipDelayMs: providerTooltipDelayMs,
           trailing:
-            item.model !== selectedModel && hasMultipleProviders
+            !isSameModel(item.model as Model | undefined, selectedModel) && hasMultipleProviders
               ? (() => {
                   const prov = modelId
                     ? selectedProvidersByModel[modelId]
@@ -184,7 +225,7 @@ export function ClassyModelSelector({
                 })()
               : undefined,
           selectedRight:
-            item.model === selectedModel &&
+            isSameModel(item.model as Model | undefined, selectedModel) &&
             selectedProvider &&
             hasMultipleProviders ? (
               <div className="mr-1 rounded-md p-1.5 bg-primary/60 group-hover:bg-primary/80 transition-colors">
@@ -203,8 +244,34 @@ export function ClassyModelSelector({
       page,
       providersByModel,
       providerTooltipDelayMs,
+      showProviderSelection,
     ],
   );
+
+  if (variant === "embedded") {
+    const selectedIcon = modelList.find((i) => i.selected)?.icon;
+    return (
+      <Tooltip content="Model" position="top" className="z-50" closeOnClick>
+        <PopoverMenu
+          items={modelList}
+          onSelect={handleModelSelect}
+          mode="toggle"
+          richList
+          panelTitle="Select Model"
+          panelClassName="w-[360px]"
+          maxListHeight={maxListHeight}
+          buttonClassName="max-w-48"
+          triggerIcon={
+            selectedIcon ? (
+              <span className="flex h-4 w-4 shrink-0 items-center justify-center">
+                {selectedIcon}
+              </span>
+            ) : undefined
+          }
+        />
+      </Tooltip>
+    );
+  }
 
   return (
     <div className="flex items-center gap-3">
@@ -217,7 +284,7 @@ export function ClassyModelSelector({
         {...popoverProps}
         buttonClassName="rounded-xl bg-ui-controls/90 hover:bg-ui-controls text-left shadow-sm px-3 py-1 gap-3 border border-ui-controls-border"
         renderTrigger={(selectedItem) => {
-          const modelTitle = selectedItem?.label ?? "";
+          const modelTitle = selectedItem?.label ?? selectedModel?.selectorName ?? "";
           const providerIcon = selectedProvider
             ? getProviderIcon(selectedProvider)
             : null;

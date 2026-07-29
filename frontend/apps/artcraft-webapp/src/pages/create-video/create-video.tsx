@@ -27,6 +27,8 @@ import {
   SettingsDrawer,
   DrawerOptionList,
   DrawerSection,
+  getAudioDurationFromUrl,
+  getVideoDurationFromUrl,
   type RefImage,
   type RefVideo,
   type RefAudio,
@@ -54,16 +56,23 @@ import {
 import { GenerationCountPicker } from "../create-image/components/GenerationCountPicker";
 import { useVideoCostEstimate } from "../../lib/cost-estimate-api";
 import {
+  mergeRefImages,
+  toastMergeRefImagesOutcome,
+} from "../../lib/send-to-prompt";
+import {
   resolveModelOption,
   resolveModelCount,
 } from "../../lib/resolve-model-setting";
 import {
   useOmniGenVideoModels,
-  getModelCreatorIconPath,
+  OMNI_GENERATE_OUTAGE_MESSAGE,
+} from "@storyteller/omni-gen";
+import {
+  effectivePromptMaxLength,
+  getCreatorIconPathForModelId,
   getModelDescription,
   getModelInfo,
-  OMNI_GENERATE_OUTAGE_MESSAGE,
-} from "../../lib/omni-gen-hooks";
+} from "@storyteller/model-list";
 import { useSignupCta } from "../../components/signup-cta-modal";
 import { useInsufficientCredits } from "../../components/insufficient-credits-modal";
 import { toast } from "../../components/toast/toast";
@@ -121,13 +130,22 @@ const LABEL_TO_RES: Record<string, string> = Object.fromEntries(
   Object.entries(RES_LABELS).map(([k, v]) => [v, k]),
 );
 
+const BITRATE_LABELS: Record<string, string> = {
+  normal: "Normal",
+  high: "High",
+};
+
+const LABEL_TO_BITRATE: Record<string, string> = Object.fromEntries(
+  Object.entries(BITRATE_LABELS).map(([k, v]) => [v, k]),
+);
+
 // ── Model lookup ─────────────────────────────────────────────────────────
 
 // Placeholder entries shown in the picker as disabled "SOON" items. These are
 // UI-only — they are not in `_modelLookup`, so the click handler is a no-op
 // (the `disabled` flag also prevents the row from firing).
 const COMING_SOON_MODELS: ReadonlyArray<{ id: string; label: string }> = [
-  { id: "seedance_2p1", label: "Seedance 2.1" },
+  { id: "seedance_2p1", label: "Seedance 2.5" },
 ];
 
 let _modelLookup = new Map<string, OmniGenVideoModelInfo>();
@@ -144,7 +162,7 @@ function buildModelPopoverItems(
     info: getModelInfo(model.model, model.extra_info) || undefined,
     icon: (
       <img
-        src={getModelCreatorIconPath(model.model)}
+        src={getCreatorIconPathForModelId(model.model)}
         alt={`${model.model} logo`}
         className="h-4 w-4 icon-auto-contrast"
       />
@@ -158,7 +176,7 @@ function buildModelPopoverItems(
       disabled: true,
       icon: (
         <img
-          src={getModelCreatorIconPath(id)}
+          src={getCreatorIconPathForModelId(id)}
           alt={`${id} logo`}
           className="h-5 w-5 icon-auto-contrast"
         />
@@ -187,6 +205,41 @@ function buildSizePopoverItems(
     ),
     action: ar,
   }));
+}
+
+// Caps candidate reference videos against the deck's slot and total-duration
+// limits, probing each file's duration when it isn't known yet. Rejections
+// toast per video. Shared by the library video picker and the "Send to
+// prompt" consume flow.
+async function buildVideoRefsToAdd(
+  candidates: RefVideo[],
+  existing: RefVideo[],
+  maxRefs: number,
+  maxTotalDuration: number,
+): Promise<RefVideo[]> {
+  const slots = Math.max(0, maxRefs - existing.length);
+  const picked = candidates.slice(0, slots);
+  const added: RefVideo[] = [];
+  let total = existing.reduce((sum, v) => sum + v.duration, 0);
+  for (const candidate of picked) {
+    const duration =
+      candidate.duration > 0
+        ? candidate.duration
+        : await getVideoDurationFromUrl(candidate.url);
+    if (duration <= 0) {
+      toast.error("Could not read video file");
+      continue;
+    }
+    if (total + duration > maxTotalDuration) {
+      toast.error(
+        `Video too long — max ${maxTotalDuration}s total (${maxTotalDuration - total}s remaining)`,
+      );
+      continue;
+    }
+    total += duration;
+    added.push({ ...candidate, duration });
+  }
+  return added;
 }
 
 // Effective max duration for the active input mode. Some models (e.g. Grok)
@@ -262,6 +315,18 @@ export default function CreateVideo() {
 
   const requiresImageInput = selectedModel?.text_to_video_supported === false;
 
+  // Soft prompt limit from the API; undefined = unlimited. Seedance waives
+  // the limit (Infinity) when the prompt contains Chinese characters: the
+  // server counts CJK as more than one unit, so a client-side character
+  // count would false-positive.
+  const maxPromptLength = selectedModel
+    ? effectivePromptMaxLength(
+        selectedModel.model,
+        selectedModel.text_prompt_max_length ?? undefined,
+        ui.prompt,
+      )
+    : undefined;
+
   const prompt = ui.prompt;
   const setPrompt = useCallback((v: string) => setUi({ prompt: v }), [setUi]);
 
@@ -292,6 +357,16 @@ export default function CreateVideo() {
     ) ?? null;
   const setResolution = useCallback(
     (v: string | null) => setUi({ resolution: v }),
+    [setUi],
+  );
+  const bitrate =
+    resolveModelOption(
+      ui.bitrate ?? undefined,
+      selectedModel?.bitrate_options,
+      selectedModel?.bitrate_default,
+    ) ?? null;
+  const setBitrate = useCallback(
+    (v: string | null) => setUi({ bitrate: v }),
     [setUi],
   );
   const generateWithSound = ui.generateWithSound;
@@ -331,10 +406,18 @@ export default function CreateVideo() {
   );
   const [isImagePickerOpen, setIsImagePickerOpen] = useState(false);
   const [isEndFramePickerOpen, setIsEndFramePickerOpen] = useState(false);
+  const [isVideoRefPickerOpen, setIsVideoRefPickerOpen] = useState(false);
+  const [isAudioRefPickerOpen, setIsAudioRefPickerOpen] = useState(false);
   const [isCharactersModalOpen, setIsCharactersModalOpen] = useState(false);
   const [isOutputDrawerOpen, setIsOutputDrawerOpen] = useState(false);
   const [pickerSelectedIds, setPickerSelectedIds] = useState<string[]>([]);
   const [endFramePickerSelectedIds, setEndFramePickerSelectedIds] = useState<
+    string[]
+  >([]);
+  const [videoRefPickerSelectedIds, setVideoRefPickerSelectedIds] = useState<
+    string[]
+  >([]);
+  const [audioRefPickerSelectedIds, setAudioRefPickerSelectedIds] = useState<
     string[]
   >([]);
 
@@ -345,6 +428,14 @@ export default function CreateVideo() {
   useEffect(() => {
     if (isEndFramePickerOpen) setEndFramePickerSelectedIds([]);
   }, [isEndFramePickerOpen]);
+
+  useEffect(() => {
+    if (isVideoRefPickerOpen) setVideoRefPickerSelectedIds([]);
+  }, [isVideoRefPickerOpen]);
+
+  useEffect(() => {
+    if (isAudioRefPickerOpen) setAudioRefPickerSelectedIds([]);
+  }, [isAudioRefPickerOpen]);
 
   // Characters store for @-mentions
   const storedCharacters = useCharactersStore((s) => s.characters);
@@ -386,6 +477,7 @@ export default function CreateVideo() {
   const hasSizeOptions = (selectedModel?.aspect_ratio_options?.length ?? 0) > 0;
   const hasResolutionOptions =
     (selectedModel?.resolution_options?.length ?? 0) > 0;
+  const hasBitrateOptions = (selectedModel?.bitrate_options?.length ?? 0) > 0;
   const hasSound = !!selectedModel?.show_generate_with_sound_toggle;
   const supportsImagePrompts =
     !!selectedModel?.starting_keyframe_supported ||
@@ -393,6 +485,9 @@ export default function CreateVideo() {
     !!selectedModel?.image_references_supported;
   const supportsVideoRefs = !!selectedModel?.video_references_supported;
   const supportsAudioRefs = !!selectedModel?.audio_references_supported;
+  const maxVideoRefs = selectedModel?.video_references_max ?? 3;
+  const maxVideoRefDuration =
+    selectedModel?.video_references_max_total_duration_seconds ?? 30;
   const supportsRefMode =
     !!selectedModel?.image_references_supported ||
     supportsVideoRefs ||
@@ -463,6 +558,7 @@ export default function CreateVideo() {
     model: selectedModel?.model ?? "",
     aspectRatio: selectedSize,
     resolution,
+    bitrate,
     duration: effectiveDuration,
     numVideos,
     hasStartFrame: !isReferenceMode && referenceImages.length > 0,
@@ -514,6 +610,20 @@ export default function CreateVideo() {
     referenceAudios,
     activeCharacters,
   ]);
+
+  // Seedance 2.0 models support @-mention references in the prompt — once at
+  // least one ref is attached, surface that in the placeholder.
+  const isSeedance2Model = (selectedModel?.model ?? "").startsWith(
+    "seedance_2p0",
+  );
+  const hasUploadedRefs =
+    referenceImages.length > 0 ||
+    referenceVideos.length > 0 ||
+    referenceAudios.length > 0;
+  const promptPlaceholder =
+    isSeedance2Model && isReferenceMode && hasUploadedRefs
+      ? "Describe your video. Use @Image1, @Video1... to reference your uploads"
+      : "Describe the video you want to generate...";
 
   const modelItems = useMemo(
     () => buildModelPopoverItems(apiModels, selectedModel?.model ?? ""),
@@ -579,6 +689,16 @@ export default function CreateVideo() {
         : null,
     [selectedModel, resolution],
   );
+  const bitrateItems = useMemo(
+    (): PopoverItem[] | null =>
+      selectedModel?.bitrate_options
+        ? selectedModel.bitrate_options.map((b) => ({
+            label: BITRATE_LABELS[b] ?? b,
+            selected: b === (bitrate ?? selectedModel.bitrate_default),
+          }))
+        : null,
+    [selectedModel, bitrate],
+  );
   const inputModeItems = useMemo(
     (): PopoverItem[] | null =>
       supportsRefMode
@@ -589,7 +709,7 @@ export default function CreateVideo() {
               selected: inputMode === "keyframe",
             },
             {
-              label: "Reference",
+              label: "Omni Reference",
               description: "Multi-media ref",
               selected: inputMode === "reference",
             },
@@ -615,6 +735,24 @@ export default function CreateVideo() {
   // builds its label regex from `referenceImages`/`referenceVideos`/etc.) knows
   // about every `@ImageN` before the contentEditable does its DOM sync. Without
   // this ordering, only the last reference's mention would end up colored.
+  // Warn when a recreated generation's model is missing from the current
+  // model list: selectedModel silently falls back to the default model, and
+  // the restored prompt/settings may not be valid for it. Verified in its own
+  // effect because the model list may still be loading when the recreate
+  // payload is consumed.
+  const [recreateModelIdToVerify, setRecreateModelIdToVerify] = useState<
+    string | null
+  >(null);
+  useEffect(() => {
+    if (!recreateModelIdToVerify || apiModels.length === 0) return;
+    if (!apiModels.some((m) => m.model === recreateModelIdToVerify)) {
+      toast.error(
+        "The model used for this generation isn't available anymore. Using the default model instead.",
+      );
+    }
+    setRecreateModelIdToVerify(null);
+  }, [recreateModelIdToVerify, apiModels]);
+
   const pendingRecreate = useCreateVideoStore((s) => s.pendingRecreate);
   useEffect(() => {
     if (!pendingRecreate) return;
@@ -633,6 +771,7 @@ export default function CreateVideo() {
         ...(payload.inputMode ? { inputMode: payload.inputMode } : {}),
       });
     });
+    if (payload.modelId) setRecreateModelIdToVerify(payload.modelId);
 
     setUi({
       prompt: payload.prompt,
@@ -646,6 +785,79 @@ export default function CreateVideo() {
         : {}),
     });
   }, [pendingRecreate, setUi]);
+
+  // Consume reference images sent from the library ("Send to prompt").
+  // Waits for the model list so the merge applies the real per-model cap —
+  // the sender doesn't know which model is selected here. Reference-capable
+  // models take the images as references (switching into reference mode so
+  // they're visible); keyframe-only models take the first as the start frame.
+  const pendingRefImages = useCreateVideoStore((s) => s.pendingRefImages);
+  useEffect(() => {
+    if (!pendingRefImages || apiModels.length === 0) return;
+    const incoming = useCreateVideoStore.getState().consumePendingRefImages();
+    if (!incoming || incoming.length === 0) return;
+    const supportsRefs = !!selectedModel?.image_references_supported;
+    const supportsKeyframe =
+      !!selectedModel?.starting_keyframe_supported ||
+      !!selectedModel?.starting_keyframe_required;
+    const maxImages = supportsRefs
+      ? (selectedModel?.image_references_max ?? 3)
+      : supportsKeyframe
+        ? 1
+        : 0;
+    const result = mergeRefImages(referenceImages, incoming, maxImages);
+    if (result.added > 0) {
+      setReferenceImages(result.next);
+      if (supportsRefs) setUi({ inputMode: "reference" });
+    }
+    toastMergeRefImagesOutcome(result, maxImages);
+  }, [
+    pendingRefImages,
+    apiModels,
+    selectedModel,
+    referenceImages,
+    setReferenceImages,
+    setUi,
+  ]);
+
+  // Consume reference videos sent from the library ("Send to prompt").
+  // Only some models (e.g. Seedance) take video references — anything else
+  // gets a toast instead of a silently hidden deck.
+  const pendingRefVideos = useCreateVideoStore((s) => s.pendingRefVideos);
+  useEffect(() => {
+    if (!pendingRefVideos || apiModels.length === 0) return;
+    const incoming = useCreateVideoStore.getState().consumePendingRefVideos();
+    if (!incoming || incoming.length === 0) return;
+    if (!supportsVideoRefs) {
+      toast.error(
+        "The selected model doesn't support video references — pick one that does (e.g. Seedance)",
+      );
+      return;
+    }
+    const existingTokens = new Set(referenceVideos.map((v) => v.mediaToken));
+    const fresh = incoming.filter((v) => !existingTokens.has(v.mediaToken));
+    void (async () => {
+      const added = await buildVideoRefsToAdd(
+        fresh,
+        referenceVideos,
+        maxVideoRefs,
+        maxVideoRefDuration,
+      );
+      if (added.length > 0) {
+        setReferenceVideos([...referenceVideos, ...added]);
+        setUi({ inputMode: "reference" });
+      }
+    })();
+  }, [
+    pendingRefVideos,
+    apiModels,
+    supportsVideoRefs,
+    referenceVideos,
+    maxVideoRefs,
+    maxVideoRefDuration,
+    setReferenceVideos,
+    setUi,
+  ]);
 
   useEffect(() => {
     const cleanups = pollingCleanupsRef.current;
@@ -736,9 +948,15 @@ export default function CreateVideo() {
     [setResolution],
   );
 
+  const handleBitrateChange = useCallback(
+    (item: PopoverItem) =>
+      setBitrate(LABEL_TO_BITRATE[item.label] ?? item.label),
+    [setBitrate],
+  );
+
   const handleInputModeChange = useCallback(
     (item: PopoverItem) => {
-      const mode = item.label === "Reference" ? "reference" : "keyframe";
+      const mode = item.label === "Omni Reference" ? "reference" : "keyframe";
       if (mode === inputMode) return;
       if (mode === "reference") {
         // Some models (e.g. Grok) cap duration lower in image-reference mode.
@@ -806,6 +1024,110 @@ export default function CreateVideo() {
     [referenceImages, isReferenceMode, selectedModel],
   );
 
+  const videoRefPickerMax = Math.max(1, maxVideoRefs - referenceVideos.length);
+
+  const handleVideoRefPickerSelect = useCallback(
+    (id: string) => {
+      setVideoRefPickerSelectedIds((prev) => {
+        if (prev.includes(id)) return prev.filter((x) => x !== id);
+        if (prev.length >= videoRefPickerMax) {
+          return videoRefPickerMax === 1 ? [id] : prev;
+        }
+        return [...prev, id];
+      });
+    },
+    [videoRefPickerMax],
+  );
+
+  const handleLibraryVideoSelect = useCallback(
+    async (items: GalleryItem[]) => {
+      setIsVideoRefPickerOpen(false);
+      const candidates: RefVideo[] = items
+        .filter((item) => !!item.fullImage)
+        .map((item) => ({
+          id: Math.random().toString(36).substring(7),
+          url: item.fullImage!,
+          file: new File([], "library-video"),
+          mediaToken: item.id,
+          duration: 0,
+        }));
+      const added = await buildVideoRefsToAdd(
+        candidates,
+        referenceVideos,
+        maxVideoRefs,
+        maxVideoRefDuration,
+      );
+      if (added.length > 0) {
+        setReferenceVideos([...referenceVideos, ...added]);
+      }
+    },
+    [referenceVideos, maxVideoRefs, maxVideoRefDuration, setReferenceVideos],
+  );
+
+  const maxAudioRefs = selectedModel?.audio_references_max ?? 2;
+  const maxAudioRefDurationTotal =
+    selectedModel?.audio_references_max_total_duration_seconds ?? 30;
+  const audioRefPickerMax = Math.max(1, maxAudioRefs - referenceAudios.length);
+
+  const handleAudioRefPickerSelect = useCallback(
+    (id: string) => {
+      setAudioRefPickerSelectedIds((prev) => {
+        if (prev.includes(id)) return prev.filter((x) => x !== id);
+        if (prev.length >= audioRefPickerMax) {
+          return audioRefPickerMax === 1 ? [id] : prev;
+        }
+        return [...prev, id];
+      });
+    },
+    [audioRefPickerMax],
+  );
+
+  const handleLibraryAudioSelect = useCallback(
+    async (items: GalleryItem[]) => {
+      setIsAudioRefPickerOpen(false);
+      const availableSlots = Math.max(0, maxAudioRefs - referenceAudios.length);
+      const picked = items.slice(0, availableSlots);
+
+      const added: RefAudio[] = [];
+      let total = referenceAudios.reduce((sum, a) => sum + a.duration, 0);
+      for (const item of picked) {
+        const url = item.fullImage;
+        if (!url) continue;
+        const duration =
+          item.durationMillis != null
+            ? Math.round(item.durationMillis / 1000)
+            : await getAudioDurationFromUrl(url);
+        if (duration <= 0) {
+          toast.error("Could not read audio file");
+          continue;
+        }
+        if (total + duration > maxAudioRefDurationTotal) {
+          toast.error(
+            `Audio too long — max ${maxAudioRefDurationTotal}s total (${maxAudioRefDurationTotal - total}s remaining)`,
+          );
+          continue;
+        }
+        total += duration;
+        added.push({
+          id: Math.random().toString(36).substring(7),
+          url,
+          file: new File([], "library-audio"),
+          mediaToken: item.id,
+          duration,
+        });
+      }
+      if (added.length > 0) {
+        setReferenceAudios([...referenceAudios, ...added]);
+      }
+    },
+    [
+      referenceAudios,
+      maxAudioRefs,
+      maxAudioRefDurationTotal,
+      setReferenceAudios,
+    ],
+  );
+
   const handleEndFrameLibrarySelect = useCallback((items: GalleryItem[]) => {
     const item = items[0];
     if (!item) return;
@@ -830,12 +1152,23 @@ export default function CreateVideo() {
       );
       return;
     }
-    if (!prompt.trim() || isGeneratingRef.current || !selectedModel) {
+    if (!prompt.trim() || isGeneratingRef.current) {
       console.log("[generate-video] blocked", {
         hasPrompt: !!prompt.trim(),
         isGenerating: isGeneratingRef.current,
-        hasModel: !!selectedModel,
       });
+      return;
+    }
+    if (!selectedModel) {
+      // Models come from an API fetch; without one the submit would be a
+      // silent no-op, which reads as a dead button.
+      toast.error("Models are still loading. Try again in a moment.");
+      return;
+    }
+    if (maxPromptLength !== undefined && prompt.length > maxPromptLength) {
+      toast.error(
+        `Prompt exceeds the ${maxPromptLength} character limit for this model`,
+      );
       return;
     }
     console.log("[generate-video] starting", {
@@ -905,6 +1238,9 @@ export default function CreateVideo() {
       resolution: hasResolutionOptions
         ? (resolution ?? selectedModel.resolution_default ?? undefined)
         : undefined,
+      bitrate: hasBitrateOptions
+        ? (bitrate ?? selectedModel.bitrate_default ?? undefined)
+        : undefined,
       generateAudio: hasSound ? generateWithSound : undefined,
       startFrameImageMediaToken: startFrameToken?.length
         ? startFrameToken
@@ -945,8 +1281,13 @@ export default function CreateVideo() {
           dismissBatch(batchId);
           openInsufficientCredits();
         } else {
+          // Always toast: batches that fail at enqueue never got a job token,
+          // so the gallery's failed-card rendering never shows them, and a
+          // silent failBatch here looks like the button did nothing.
           if (result.errorCode != null && result.errorCode >= 500) {
             toast.error(OMNI_GENERATE_OUTAGE_MESSAGE);
+          } else {
+            toast.error(result.error ?? "Failed to start generation");
           }
           failBatch(batchId, result.error ?? "Failed to start generation");
         }
@@ -978,6 +1319,7 @@ export default function CreateVideo() {
       }
     } catch (err) {
       console.error("[generate-video] unexpected error", err);
+      toast.error("Network error - please try again");
       failBatch(batchId, "Network error - please try again");
     }
 
@@ -994,12 +1336,15 @@ export default function CreateVideo() {
     needsImage,
     isReferenceMode,
     selectedModel,
+    maxPromptLength,
     selectedSize,
     numVideos,
     effectiveDuration,
     resolution,
+    bitrate,
     generateWithSound,
     hasResolutionOptions,
+    hasBitrateOptions,
     hasSound,
     supportsImagePrompts,
     hasEndFrame,
@@ -1015,10 +1360,36 @@ export default function CreateVideo() {
     dismissBatch,
   ]);
 
+  // Video/audio reference row, shared by the mobile and desktop forms.
+  const mediaReferenceRow =
+    isReferenceMode && (supportsVideoRefs || supportsAudioRefs) ? (
+      <MediaReferenceRow
+        videoSupported={supportsVideoRefs}
+        audioSupported={supportsAudioRefs}
+        referenceVideos={referenceVideos}
+        onReferenceVideosChange={setReferenceVideos}
+        maxVideoCount={maxVideoRefs}
+        maxVideoRefDuration={maxVideoRefDuration}
+        onPickVideoFromLibrary={() => setIsVideoRefPickerOpen(true)}
+        referenceAudios={referenceAudios}
+        onReferenceAudiosChange={setReferenceAudios}
+        maxAudioCount={selectedModel?.audio_references_max ?? 2}
+        maxAudioRefDuration={
+          selectedModel?.audio_references_max_total_duration_seconds ?? 30
+        }
+        onPickAudioFromLibrary={() => setIsAudioRefPickerOpen(true)}
+      />
+    ) : undefined;
+
   // ── Mobile form ───────────────────────────────────────────────────────
 
   const activeResolutionLabel = resolutionItems?.find((i) => i.selected)?.label;
-  const outputSummary = [`${effectiveDuration}s`, activeResolutionLabel]
+  const activeBitrateLabel = bitrateItems?.find((i) => i.selected)?.label;
+  const outputSummary = [
+    `${effectiveDuration}s`,
+    activeResolutionLabel,
+    activeBitrateLabel,
+  ]
     .filter(Boolean)
     .join(" · ");
 
@@ -1029,7 +1400,7 @@ export default function CreateVideo() {
       onSubmit={handleGenerate}
       isSubmitting={isGenerating}
       credits={estimatedCredits}
-      placeholder="Describe the video you want to generate..."
+      placeholder={promptPlaceholder}
       mentionItems={mentionItems.length > 0 ? mentionItems : undefined}
       autoAdvance={loggedIn && !!prompt.trim() && !isGenerating && !needsImage}
       banner={
@@ -1103,26 +1474,7 @@ export default function CreateVideo() {
           />
         ) : undefined
       }
-      mediaRefs={
-        isReferenceMode && (supportsVideoRefs || supportsAudioRefs) ? (
-          <MediaReferenceRow
-            videoSupported={supportsVideoRefs}
-            audioSupported={supportsAudioRefs}
-            referenceVideos={referenceVideos}
-            onReferenceVideosChange={setReferenceVideos}
-            maxVideoCount={selectedModel?.video_references_max ?? 3}
-            maxVideoRefDuration={
-              selectedModel?.video_references_max_total_duration_seconds ?? 30
-            }
-            referenceAudios={referenceAudios}
-            onReferenceAudiosChange={setReferenceAudios}
-            maxAudioCount={selectedModel?.audio_references_max ?? 2}
-            maxAudioRefDuration={
-              selectedModel?.audio_references_max_total_duration_seconds ?? 30
-            }
-          />
-        ) : undefined
-      }
+      mediaRefs={mediaReferenceRow}
       settingsFields={
         <>
           {hasSizeOptions && (
@@ -1147,7 +1499,7 @@ export default function CreateVideo() {
               />
             </div>
           )}
-          {(durationRange || resolutionItems) && (
+          {(durationRange || resolutionItems || bitrateItems) && (
             <>
               <MobileFieldButton
                 label="Output"
@@ -1194,6 +1546,14 @@ export default function CreateVideo() {
                     />
                   </DrawerSection>
                 )}
+                {bitrateItems && (
+                  <DrawerSection label="Bitrate">
+                    <DrawerOptionList
+                      items={bitrateItems}
+                      onSelect={handleBitrateChange}
+                    />
+                  </DrawerSection>
+                )}
               </SettingsDrawer>
             </>
           )}
@@ -1237,6 +1597,8 @@ export default function CreateVideo() {
       description="Generate stunning AI videos with ArtCraft"
       authChecked={authChecked}
       hasContent={hasContent}
+      showAutoplayToggle
+      showSelectToggle
       emptyStateTitle="Create Video"
       emptyStateSubtitle="Describe a scene. See it in motion."
       emptyStateCta={
@@ -1269,12 +1631,14 @@ export default function CreateVideo() {
           isInitialLoading={gallery.isInitialLoading}
           onLoadMore={gallery.loadMore}
           onGalleryItemClick={lightbox.handleGalleryItemClick}
+          selectable
+          selectionBarBottomOffset={promptHeight + 24}
         />
       }
       promptBox={
         <div
           ref={promptBoxRef}
-          className="animate-fade-in-up fixed bottom-2 sm:bottom-3 right-0 z-30 mx-auto max-w-5xl px-2 sm:px-4 transition-[left] duration-200 ease-linear"
+          className="animate-fade-in-up fixed bottom-2 sm:bottom-3 right-0 z-30 mx-auto max-w-6xl px-2 sm:px-4 transition-[left] duration-200 ease-linear"
           style={{
             animationDelay: "150ms",
             left: "var(--ac-sidebar-offset, 0px)",
@@ -1307,7 +1671,8 @@ export default function CreateVideo() {
             onSubmit={handleGenerate}
             isSubmitting={isGenerating}
             credits={estimatedCredits}
-            placeholder="Describe the video you want to generate..."
+            maxPromptLength={maxPromptLength}
+            placeholder={promptPlaceholder}
             supportsImagePrompts={supportsImagePrompts}
             maxImagePromptCount={
               isReferenceMode ? (selectedModel?.image_references_max ?? 3) : 1
@@ -1343,7 +1708,9 @@ export default function CreateVideo() {
                   richList
                   triggerIcon={
                     <img
-                      src={getModelCreatorIconPath(selectedModel?.model ?? "")}
+                      src={getCreatorIconPathForModelId(
+                        selectedModel?.model ?? "",
+                      )}
                       alt=""
                       className="h-4 w-4 icon-auto-contrast"
                     />
@@ -1360,27 +1727,27 @@ export default function CreateVideo() {
               })
             }
             mentionItems={mentionItems.length > 0 ? mentionItems : undefined}
-            mediaReferenceRow={
-              isReferenceMode && (supportsVideoRefs || supportsAudioRefs) ? (
-                <MediaReferenceRow
-                  videoSupported={supportsVideoRefs}
-                  audioSupported={supportsAudioRefs}
-                  referenceVideos={referenceVideos}
-                  onReferenceVideosChange={setReferenceVideos}
-                  maxVideoCount={selectedModel?.video_references_max ?? 3}
-                  maxVideoRefDuration={
-                    selectedModel?.video_references_max_total_duration_seconds ??
-                    30
-                  }
-                  referenceAudios={referenceAudios}
-                  onReferenceAudiosChange={setReferenceAudios}
-                  maxAudioCount={selectedModel?.audio_references_max ?? 2}
-                  maxAudioRefDuration={
-                    selectedModel?.audio_references_max_total_duration_seconds ??
-                    30
-                  }
-                />
-              ) : undefined
+            videoRefsSupported={supportsVideoRefs}
+            referenceVideos={referenceVideos}
+            onReferenceVideosChange={setReferenceVideos}
+            maxVideoCount={maxVideoRefs}
+            maxVideoRefDuration={maxVideoRefDuration}
+            onPickVideoFromLibrary={
+              supportsVideoRefs
+                ? () => setIsVideoRefPickerOpen(true)
+                : undefined
+            }
+            audioRefsSupported={supportsAudioRefs}
+            referenceAudios={referenceAudios}
+            onReferenceAudiosChange={setReferenceAudios}
+            maxAudioCount={selectedModel?.audio_references_max ?? 2}
+            maxAudioRefDuration={
+              selectedModel?.audio_references_max_total_duration_seconds ?? 30
+            }
+            onPickAudioFromLibrary={
+              supportsAudioRefs
+                ? () => setIsAudioRefPickerOpen(true)
+                : undefined
             }
             rightToolbar={
               <GenerationCountPicker
@@ -1428,6 +1795,21 @@ export default function CreateVideo() {
                       onSelect={handleResolutionChange}
                       mode="toggle"
                       panelTitle="Resolution"
+                    />
+                  </Tooltip>
+                )}
+                {bitrateItems && (
+                  <Tooltip
+                    content="Bitrate"
+                    position="top"
+                    className="z-50"
+                    closeOnClick
+                  >
+                    <PopoverMenu
+                      items={bitrateItems}
+                      onSelect={handleBitrateChange}
+                      mode="toggle"
+                      panelTitle="Bitrate"
                     />
                   </Tooltip>
                 )}
@@ -1542,6 +1924,28 @@ export default function CreateVideo() {
             maxSelections={1}
             onUseSelected={handleEndFrameLibrarySelect}
             forceFilter="image"
+            hideFilter
+          />
+          <GalleryModal
+            mode="select"
+            isOpen={isVideoRefPickerOpen}
+            onClose={() => setIsVideoRefPickerOpen(false)}
+            selectedItemIds={videoRefPickerSelectedIds}
+            onSelectItem={handleVideoRefPickerSelect}
+            maxSelections={videoRefPickerMax}
+            onUseSelected={handleLibraryVideoSelect}
+            forceFilter="video"
+            hideFilter
+          />
+          <GalleryModal
+            mode="select"
+            isOpen={isAudioRefPickerOpen}
+            onClose={() => setIsAudioRefPickerOpen(false)}
+            selectedItemIds={audioRefPickerSelectedIds}
+            onSelectItem={handleAudioRefPickerSelect}
+            maxSelections={audioRefPickerMax}
+            onUseSelected={handleLibraryAudioSelect}
+            forceFilter="audio"
             hideFilter
           />
           <CharactersModal

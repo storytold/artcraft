@@ -1,10 +1,12 @@
 use seedance2pro_client::generate::video::generate_seedance_2p0::{
   KinoviSeedance2p0AspectRatio as KinoviAspectRatio,
+  KinoviSeedance2p0Bitrate as KinoviBitrate,
   KinoviSeedance2p0BatchCount as KinoviBatchCount,
   KinoviSeedance2p0OutputResolution as KinoviOutputResolution,
 };
 
 use crate::api::router_aspect_ratio::RouterAspectRatio;
+use crate::api::router_bitrate::RouterBitrate;
 use crate::api::router_resolution::RouterResolution;
 use crate::client::request_mismatch_mitigation_strategy::RequestMismatchMitigationStrategy;
 use crate::errors::artcraft_router_error::ArtcraftRouterError;
@@ -26,6 +28,7 @@ fn do_build_kinovi_seedance_2p0(mut builder: GenerateVideoRequestBuilder) -> Res
   let resolution = plan_output_resolution(builder.resolution.take(), strategy)?;
   let batch_count = plan_batch_count(builder.video_batch_count.take(), strategy)?;
   let duration_seconds = plan_duration(builder.duration_seconds.take(), strategy)?;
+  let bitrate = plan_bitrate(builder.bitrate.take());
   let prompt = builder.prompt.take().unwrap_or_default();
 
   let unhandled_request_state = KinoviSeedance2p0RemainingItems {
@@ -42,6 +45,7 @@ fn do_build_kinovi_seedance_2p0(mut builder: GenerateVideoRequestBuilder) -> Res
     resolution,
     batch_count,
     duration_seconds,
+    bitrate,
     prompt,
     unhandled_request_state: Some(unhandled_request_state),
   })
@@ -107,7 +111,7 @@ fn nearest_aspect_ratio(aspect_ratio: RouterAspectRatio) -> KinoviAspectRatio {
   }
 }
 
-// Seedance 2.0 Pro supports output resolutions: 480p, 720p, 1080p.
+// Seedance 2.0 Pro supports output resolutions: 480p, 720p, 1080p, 4K.
 fn plan_output_resolution(
   resolution: Option<RouterResolution>,
   strategy: RequestMismatchMitigationStrategy,
@@ -119,6 +123,7 @@ fn plan_output_resolution(
     Some(RouterResolution::FourEightyP) => Ok(Some(KinoviOutputResolution::FourEightyP)),
     Some(RouterResolution::SevenTwentyP) => Ok(Some(KinoviOutputResolution::SevenTwentyP)),
     Some(RouterResolution::TenEightyP) => Ok(Some(KinoviOutputResolution::TenEightyP)),
+    Some(RouterResolution::FourK) => Ok(Some(KinoviOutputResolution::FourK)),
 
     // Mismatches
     Some(unsupported) => match strategy {
@@ -192,6 +197,16 @@ fn plan_duration(
       }
       _ => Ok(d.clamp(MIN, MAX) as u8),
     },
+  }
+}
+
+// Seedance 2.0 Pro bitrate: "standard" (default, field omitted) or "high".
+// Bitrate does not affect cost. `Normal` and an unset value both map to the
+// standard bitrate (None); only `High` requests the higher bitrate.
+fn plan_bitrate(bitrate: Option<RouterBitrate>) -> Option<KinoviBitrate> {
+  match bitrate {
+    Some(RouterBitrate::High) => Some(KinoviBitrate::High),
+    Some(RouterBitrate::Normal) | None => None,
   }
 }
 
@@ -363,6 +378,16 @@ mod tests {
     }
 
     #[test]
+    fn resolution_4k() {
+      let builder = GenerateVideoRequestBuilder {
+        resolution: Some(RouterResolution::FourK),
+        ..seedance2pro_builder()
+      };
+      let draft = unwrap_draft(build_kinovi_seedance_2p0(builder));
+      assert!(matches!(draft.resolution, Some(KinoviOutputResolution::FourK)));
+    }
+
+    #[test]
     fn resolution_none() {
       let builder = GenerateVideoRequestBuilder { resolution: None, ..seedance2pro_builder() };
       let draft = unwrap_draft(build_kinovi_seedance_2p0(builder));
@@ -372,7 +397,7 @@ mod tests {
     #[test]
     fn unsupported_resolution_error_out() {
       let builder = GenerateVideoRequestBuilder {
-        resolution: Some(RouterResolution::FourK),
+        resolution: Some(RouterResolution::ThreeK),
         request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::ErrorOut,
         ..seedance2pro_builder()
       };
@@ -382,12 +407,45 @@ mod tests {
     #[test]
     fn unsupported_resolution_rounds_up() {
       let builder = GenerateVideoRequestBuilder {
-        resolution: Some(RouterResolution::FourK),
+        resolution: Some(RouterResolution::ThreeK),
         request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::PayMoreUpgrade,
         ..seedance2pro_builder()
       };
       let draft = unwrap_draft(build_kinovi_seedance_2p0(builder));
       assert!(matches!(draft.resolution, Some(KinoviOutputResolution::TenEightyP)));
+    }
+  }
+
+  // ── Bitrate conversions ──
+
+  mod bitrate_conversions {
+    use super::*;
+
+    #[test]
+    fn bitrate_high() {
+      let builder = GenerateVideoRequestBuilder {
+        bitrate: Some(RouterBitrate::High),
+        ..seedance2pro_builder()
+      };
+      let draft = unwrap_draft(build_kinovi_seedance_2p0(builder));
+      assert!(matches!(draft.bitrate, Some(KinoviBitrate::High)));
+    }
+
+    #[test]
+    fn bitrate_normal_maps_to_standard() {
+      let builder = GenerateVideoRequestBuilder {
+        bitrate: Some(RouterBitrate::Normal),
+        ..seedance2pro_builder()
+      };
+      let draft = unwrap_draft(build_kinovi_seedance_2p0(builder));
+      assert!(draft.bitrate.is_none());
+    }
+
+    #[test]
+    fn bitrate_none_maps_to_standard() {
+      let builder = GenerateVideoRequestBuilder { bitrate: None, ..seedance2pro_builder() };
+      let draft = unwrap_draft(build_kinovi_seedance_2p0(builder));
+      assert!(draft.bitrate.is_none());
     }
   }
 

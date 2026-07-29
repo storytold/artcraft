@@ -9,6 +9,9 @@
       "path": "../popover"
     },
     {
+      "path": "../tooltip"
+    },
+    {
       "path": "../../tauri-api"
     },
     {

@@ -1,0 +1,12 @@
+{
+  "db_name": "MySQL",
+  "query": "\nINSERT INTO user_daily_spends\nSET\n  user_token = ?,\n  payments_namespace = ?,\n  spend_date = ?,\n  subscription_spend_usd_cents = ?,\n  credits_spend_usd_cents = ?,\n  gross_spend_usd_cents = ?,\n  refund_usd_cents = ?,\n  net_spend_usd_cents = ?,\n  payment_count = ?,\n  credits_granted = ?\nON DUPLICATE KEY UPDATE\n  subscription_spend_usd_cents = VALUES(subscription_spend_usd_cents),\n  credits_spend_usd_cents      = VALUES(credits_spend_usd_cents),\n  gross_spend_usd_cents        = VALUES(gross_spend_usd_cents),\n  refund_usd_cents             = VALUES(refund_usd_cents),\n  net_spend_usd_cents          = VALUES(net_spend_usd_cents),\n  payment_count                = VALUES(payment_count),\n  credits_granted              = VALUES(credits_granted)\n    ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 10
+    },
+    "nullable": []
+  },
+  "hash": "b7a5fea76da70c03b8744c985940a5bcdabdb3316aa407c5ca883bca863ee633"
+}

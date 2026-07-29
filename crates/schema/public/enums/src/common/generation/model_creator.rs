@@ -18,6 +18,8 @@ pub enum ModelCreator {
   BlackForestLabs,
   #[serde(rename = "bytedance")]
   Bytedance,
+  #[serde(rename = "deemos")]
+  Deemos,
   #[serde(rename = "fal")]
   Fal,
   #[serde(rename = "google")]
@@ -32,6 +34,8 @@ pub enum ModelCreator {
   Kling,
   #[serde(rename = "krea")]
   Krea,
+  #[serde(rename = "meshy")]
+  Meshy,
   #[serde(rename = "midjourney")]
   Midjourney,
   #[serde(rename = "open_ai")]
@@ -46,10 +50,14 @@ pub enum ModelCreator {
   Runway,
   #[serde(rename = "stability")]
   Stability,
+  #[serde(rename = "suno")]
+  Suno,
   #[serde(rename = "tencent")]
   Tencent,
   #[serde(rename = "tensor_art")]
   TensorArt,
+  #[serde(rename = "tripo")]
+  Tripo,
   #[serde(rename = "vidu")]
   Vidu,
   #[serde(rename = "world_labs")]
@@ -64,6 +72,7 @@ impl ModelCreator {
       Self::ArtCraft => "ArtCraft",
       Self::BlackForestLabs => "Black Forest Labs",
       Self::Bytedance => "ByteDance",
+      Self::Deemos => "Deemos",
       Self::Fal => "fal",
       Self::Google => "Google",
       Self::Grok => "Grok",
@@ -71,6 +80,7 @@ impl ModelCreator {
       Self::Higgsfield => "Higgsfield",
       Self::Kling => "Kling",
       Self::Krea => "Krea",
+      Self::Meshy => "Meshy",
       Self::Midjourney => "Midjourney",
       Self::OpenAi => "OpenAI",
       Self::OpenArt => "OpenArt",
@@ -78,8 +88,10 @@ impl ModelCreator {
       Self::Replicate => "Replicate",
       Self::Runway => "Runway",
       Self::Stability => "Stability AI",
+      Self::Suno => "Suno",
       Self::Tencent => "Tencent",
       Self::TensorArt => "TensorArt",
+      Self::Tripo => "Tripo",
       Self::Vidu => "Vidu",
       Self::WorldLabs => "World Labs",
     }
@@ -91,6 +103,7 @@ impl ModelCreator {
       Self::ArtCraft => "artcraft",
       Self::BlackForestLabs => "black_forest_labs",
       Self::Bytedance => "bytedance",
+      Self::Deemos => "deemos",
       Self::Fal => "fal",
       Self::Google => "google",
       Self::Grok => "grok",
@@ -98,6 +111,7 @@ impl ModelCreator {
       Self::Higgsfield => "higgsfield",
       Self::Kling => "kling",
       Self::Krea => "krea",
+      Self::Meshy => "meshy",
       Self::Midjourney => "midjourney",
       Self::OpenAi => "open_ai",
       Self::OpenArt => "open_art",
@@ -105,8 +119,10 @@ impl ModelCreator {
       Self::Replicate => "replicate",
       Self::Runway => "runway",
       Self::Stability => "stability",
+      Self::Suno => "suno",
       Self::Tencent => "tencent",
       Self::TensorArt => "tensor_art",
+      Self::Tripo => "tripo",
       Self::Vidu => "vidu",
       Self::WorldLabs => "world_labs",
     }
@@ -118,6 +134,7 @@ impl ModelCreator {
       "artcraft" => Ok(Self::ArtCraft),
       "black_forest_labs" => Ok(Self::BlackForestLabs),
       "bytedance" => Ok(Self::Bytedance),
+      "deemos" => Ok(Self::Deemos),
       "fal" => Ok(Self::Fal),
       "google" => Ok(Self::Google),
       "grok" => Ok(Self::Grok),
@@ -125,6 +142,7 @@ impl ModelCreator {
       "higgsfield" => Ok(Self::Higgsfield),
       "kling" => Ok(Self::Kling),
       "krea" => Ok(Self::Krea),
+      "meshy" => Ok(Self::Meshy),
       "midjourney" => Ok(Self::Midjourney),
       "open_ai" => Ok(Self::OpenAi),
       "open_art" => Ok(Self::OpenArt),
@@ -132,8 +150,10 @@ impl ModelCreator {
       "replicate" => Ok(Self::Replicate),
       "runway" => Ok(Self::Runway),
       "stability" => Ok(Self::Stability),
+      "suno" => Ok(Self::Suno),
       "tencent" => Ok(Self::Tencent),
       "tensor_art" => Ok(Self::TensorArt),
+      "tripo" => Ok(Self::Tripo),
       "vidu" => Ok(Self::Vidu),
       "world_labs" => Ok(Self::WorldLabs),
       _ => Err(format!("invalid ModelCreator value: {:?}", value)),
@@ -146,6 +166,7 @@ impl ModelCreator {
       Self::ArtCraft,
       Self::BlackForestLabs,
       Self::Bytedance,
+      Self::Deemos,
       Self::Fal,
       Self::Google,
       Self::Grok,
@@ -153,6 +174,7 @@ impl ModelCreator {
       Self::Higgsfield,
       Self::Kling,
       Self::Krea,
+      Self::Meshy,
       Self::Midjourney,
       Self::OpenAi,
       Self::OpenArt,
@@ -160,8 +182,10 @@ impl ModelCreator {
       Self::Replicate,
       Self::Runway,
       Self::Stability,
+      Self::Suno,
       Self::Tencent,
       Self::TensorArt,
+      Self::Tripo,
       Self::Vidu,
       Self::WorldLabs,
     ])
@@ -198,6 +222,7 @@ mod tests {
       assert_serialization(ModelCreator::Replicate, "replicate");
       assert_serialization(ModelCreator::Runway, "runway");
       assert_serialization(ModelCreator::Stability, "stability");
+      assert_serialization(ModelCreator::Suno, "suno");
       assert_serialization(ModelCreator::Tencent, "tencent");
       assert_serialization(ModelCreator::TensorArt, "tensor_art");
       assert_serialization(ModelCreator::Vidu, "vidu");
@@ -210,6 +235,7 @@ mod tests {
       assert_eq!(ModelCreator::ArtCraft.to_str(), "artcraft");
       assert_eq!(ModelCreator::BlackForestLabs.to_str(), "black_forest_labs");
       assert_eq!(ModelCreator::OpenAi.to_str(), "open_ai");
+      assert_eq!(ModelCreator::Suno.to_str(), "suno");
       assert_eq!(ModelCreator::WorldLabs.to_str(), "world_labs");
     }
 
@@ -219,6 +245,7 @@ mod tests {
       assert_eq!(ModelCreator::from_str("artcraft").unwrap(), ModelCreator::ArtCraft);
       assert_eq!(ModelCreator::from_str("black_forest_labs").unwrap(), ModelCreator::BlackForestLabs);
       assert_eq!(ModelCreator::from_str("open_ai").unwrap(), ModelCreator::OpenAi);
+      assert_eq!(ModelCreator::from_str("suno").unwrap(), ModelCreator::Suno);
       assert_eq!(ModelCreator::from_str("world_labs").unwrap(), ModelCreator::WorldLabs);
       assert!(ModelCreator::from_str("invalid").is_err());
     }
@@ -233,12 +260,13 @@ mod tests {
       assert_eq!(ModelCreator::Google.get_name(), "Google");
       assert_eq!(ModelCreator::OpenAi.get_name(), "OpenAI");
       assert_eq!(ModelCreator::Stability.get_name(), "Stability AI");
+      assert_eq!(ModelCreator::Suno.get_name(), "Suno");
       assert_eq!(ModelCreator::WorldLabs.get_name(), "World Labs");
     }
 
     #[test]
     fn all_variants() {
-      const EXPECTED_COUNT: usize = 22;
+      const EXPECTED_COUNT: usize = 26;
       assert_eq!(ModelCreator::all_variants().len(), EXPECTED_COUNT);
     }
   }

@@ -10,6 +10,7 @@ import {
   PricingPromoBanner,
 } from "@storyteller/ui-pricing-table";
 import { CreditsModal } from "../../components/credits-modal";
+import { Reveal } from "../../components/motion/reveal";
 
 const SeedanceBanner = () => (
   <div className="flex flex-col gap-5">
@@ -152,10 +153,7 @@ const Pricing = () => {
         ) : (
           <div className="max-w-6xl mx-auto">
             <PricingPromoBanner className="mb-10 sm:mb-12" />
-            <div className="text-center mb-14" data-reveal>
-              {/* <span className="inline-block text-sm font-semibold uppercase tracking-[0.18em] text-primary mb-3">
-                Plans
-              </span> */}
+            <Reveal as="div" inView={false} y={20} className="text-center mb-14">
               <h1 className="text-4xl sm:text-5xl md:text-6xl tracking-[-0.035em] font-medium leading-[1.02] mb-5">
                 Invest in <span className="font-serif-italic">yourself</span>.
               </h1>
@@ -164,7 +162,7 @@ const Pricing = () => {
                 Your subscription helps keep ArtCraft free and open for
                 everyone.
               </p>
-            </div>
+            </Reveal>
             {hasPlan && (
               <BuyMoreCreditsCta onClick={() => setCreditsModalOpen(true)} />
             )}

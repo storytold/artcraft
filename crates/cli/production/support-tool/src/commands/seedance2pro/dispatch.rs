@@ -7,6 +7,10 @@ use super::subcommands;
 /// All canonical subcommand names for this module.
 /// Used by the underscore-insensitive arg normalizer.
 pub const SUBCOMMAND_NAMES: &[&str] = &[
+  "account_info",
+  "audit_credits",
+  "audit_orders",
+  "audit_payments",
   "failed_job_histogram",
   "find_job",
   "generate_video",
@@ -15,6 +19,21 @@ pub const SUBCOMMAND_NAMES: &[&str] = &[
 #[derive(Subcommand)]
 #[command(rename_all = "snake_case")]
 pub enum Seedance2proCommand {
+  /// Print the account's current credit balances as one CSV line
+  AccountInfo(subcommands::account_info::AccountInfoArgs),
+
+  /// Dump the account's credits ledger (credits.getCreditHistory) to CSV
+  /// back to a start date, for refund-entry auditing
+  AuditCredits(subcommands::audit_credits::AuditCreditsArgs),
+
+  /// Dump Kinovi's per-order billing records (totalCredits) to CSV for a
+  /// date window, to audit whether failed orders are charged
+  AuditOrders(subcommands::audit_orders::AuditOrdersArgs),
+
+  /// Dump the account's billing payments history (credit-package
+  /// purchases) to CSV, for reconciling refills against invoices
+  AuditPayments(subcommands::audit_payments::AuditPaymentsArgs),
+
   /// Find a job by its order ID across all pages
   FindJob(subcommands::find_job::FindJobArgs),
 
@@ -32,6 +51,10 @@ pub async fn run(command: Seedance2proCommand) -> anyhow::Result<()> {
   let state = Seedance2ProState { cookies };
 
   match command {
+    Seedance2proCommand::AccountInfo(args) => subcommands::account_info::run(&state, args).await,
+    Seedance2proCommand::AuditCredits(args) => subcommands::audit_credits::run(&state, args).await,
+    Seedance2proCommand::AuditOrders(args) => subcommands::audit_orders::run(&state, args).await,
+    Seedance2proCommand::AuditPayments(args) => subcommands::audit_payments::run(&state, args).await,
     Seedance2proCommand::FindJob(args) => subcommands::find_job::run(&state, args).await,
     Seedance2proCommand::FailedJobHistogram => subcommands::failed_job_histogram::run(&state).await,
     Seedance2proCommand::GenerateVideo(args) => subcommands::generate_video::run(&state, args).await,

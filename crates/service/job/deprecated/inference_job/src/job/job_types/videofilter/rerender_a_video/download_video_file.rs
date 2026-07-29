@@ -7,7 +7,7 @@ use tempdir::TempDir;
 
 use bucket_paths::legacy::typified_paths::public::media_files::bucket_file_path::MediaFileBucketPath;
 use bucket_paths::legacy::typified_paths::public::media_uploads::bucket_file_path::MediaUploadOriginalFilePath;
-use cloud_storage::bucket_client::BucketClient;
+use cloud_storage::legacy_bucket_client::LegacyBucketClient;
 use jobs_common::job_progress_reporter::job_progress_reporter::JobProgressReporter;
 use mysql_queries::payloads::generic_inference_args::inner_payloads::videofilter_payload::VideofilterVideoSource;
 use mysql_queries::queries::generic_inference::job::list_available_generic_inference_jobs::AvailableInferenceJob;
@@ -26,7 +26,7 @@ pub struct VideoFile {
 // TODO replace this with remote cloud file manager.
 pub async fn download_video_file(
     video_source: &VideofilterVideoSource,
-    public_bucket_client: &BucketClient,
+    public_bucket_client: &LegacyBucketClient,
     job_progress_reporter: &mut Box<dyn JobProgressReporter>,
     job: &AvailableInferenceJob,
     temp_dir_creator: &ScopedTempDirCreator,

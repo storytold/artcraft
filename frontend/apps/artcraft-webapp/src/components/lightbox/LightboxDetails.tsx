@@ -15,12 +15,12 @@ import {
   faLink,
   faPause,
   faPencil,
+  faPhotoFilm,
   faPlay,
   faSpinnerThird,
   faTrashCan,
   faUser,
   faVideo,
-  faWaveformLines,
   faXmark,
 } from "@fortawesome/pro-solid-svg-icons";
 import {
@@ -28,12 +28,13 @@ import {
   THUMBNAIL_SIZES,
 } from "@storyteller/common";
 import {
-  getModelCreatorIcon,
+  getCreatorIconPathForModelId,
   getModelDisplayName,
   getProviderDisplayName,
   getProviderIconByName,
 } from "@storyteller/model-list";
 import { downloadMediaFile } from "../../lib/download-media";
+import { TagsSection } from "../tags/TagsSection";
 import {
   formatAspectRatio,
   formatDuration,
@@ -75,6 +76,8 @@ export interface LightboxDetailsProps {
   onClose?: () => void;
   onRecreate?: () => void;
   onMakeVideo?: () => void;
+  onEditOnCanvas?: () => void;
+  onExtractFrames?: () => void;
   onDelete?: () => void;
   showDownloadAppCta?: boolean;
 }
@@ -90,6 +93,8 @@ export function LightboxDetails({
   onClose,
   onRecreate,
   onMakeVideo,
+  onEditOnCanvas,
+  onExtractFrames,
   onDelete,
   showDownloadAppCta,
 }: LightboxDetailsProps) {
@@ -359,7 +364,13 @@ export function LightboxDetails({
                       label="Model"
                       value={
                         <>
-                          {getModelCreatorIcon(promptData.modelType)}
+                          <img
+                            src={getCreatorIconPathForModelId(
+                              promptData.modelType,
+                            )}
+                            alt="Model creator logo"
+                            className="h-4 w-4 invert"
+                          />
                           <span>
                             {getModelDisplayName(promptData.modelType)}
                           </span>
@@ -422,6 +433,8 @@ export function LightboxDetails({
                 </div>
               </div>
             )}
+
+            <TagsSection mediaToken={mediaToken} creator={creator} />
           </>
         )}
       </div>
@@ -472,6 +485,26 @@ export function LightboxDetails({
             onClick={onMakeVideo}
           >
             Make Video
+          </Button>
+        )}
+        {onEditOnCanvas && (
+          <Button
+            icon={faPencil}
+            className="w-full border border-ui-panel-border bg-ui-controls/40 hover:bg-ui-controls/60 text-white"
+            variant="secondary"
+            onClick={onEditOnCanvas}
+          >
+            Edit on Canvas
+          </Button>
+        )}
+        {onExtractFrames && (
+          <Button
+            icon={faPhotoFilm}
+            className="w-full border border-ui-panel-border bg-ui-controls/40 hover:bg-ui-controls/60 text-white"
+            variant="secondary"
+            onClick={onExtractFrames}
+          >
+            Extract Frames
           </Button>
         )}
         {onRecreate && promptData.hasToken && (

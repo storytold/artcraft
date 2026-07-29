@@ -125,7 +125,11 @@ export const MenuIconSelector: React.FC<MenuIconSelectorProps> = ({
             : item.description;
           return (
             <Tooltip
-              key={item.id}
+              // Include activeMenu in the key so the tooltip subtree remounts on
+              // tab change and starts closed. Without this, switching tabs while
+              // hovering leaves the trigger's pointerleave unfired and the tooltip
+              // gets stuck open until the user manually hovers + leaves.
+              key={`${item.id}-${activeMenu}`}
               content={content}
               position={position}
               delay={100}

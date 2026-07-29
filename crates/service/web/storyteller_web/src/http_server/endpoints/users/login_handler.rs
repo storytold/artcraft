@@ -33,7 +33,7 @@ use utoipa::ToSchema;
 use artcraft_api_defs::users::login::{LoginErrorType, LoginRequest, LoginSuccessResponse};
 use password::errors::password_confirm_error::PasswordConfirmError;
 use tokens::tokens::users::UserToken;
-use crate::http_server::session::lookup::user_session_feature_flags::UserSessionFeatureFlags;
+use crate::http_server::user_lookup::user_session::session_utils::lookup::user_session_feature_flags::UserSessionFeatureFlags;
 use crate::util::enroll_in_studio::enroll_in_studio;
 
 #[derive(Serialize, Debug, ToSchema)]

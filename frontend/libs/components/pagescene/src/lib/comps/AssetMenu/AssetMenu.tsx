@@ -9,8 +9,12 @@ export const AssetMenu = () => {
   const [, setIsModalOpen] = useState(false);
 
   const handleOpenModal = () => {
-    usePageSceneStore.getState().setAssetModalVisibleDuringDrag(true);
-    usePageSceneStore.getState().setAssetModalVisible(true);
+    const store = usePageSceneStore.getState();
+    store.setAssetModalVisibleDuringDrag(true);
+    store.setAssetModalVisible(true);
+    // Clear any leftover drag-under state so the panel opens fully shown (a
+    // reopen-off drag leaves it faded-hidden until the next open).
+    store.setAssetDraggingUnder(false);
     setIsModalOpen(true);
   };
 

@@ -3,6 +3,7 @@ use crate::generate::generate_splat::splat_generation_cost_estimate::SplatGenera
 use worldlabs_api_client::api::api_types::world_labs_model::WorldLabsModel;
 use worldlabs_api_client::pricing::check_pricing::{calculate_cost, InputType};
 
+#[allow(deprecated)] // legacy marble 0.1 pricing intentionally uses the deprecated variants
 pub(crate) fn estimate_splat_cost_artcraft_marble_0p1_mini(
   plan: &PlanArtcraftMarble0p1Mini,
 ) -> SplatGenerationCostEstimate {

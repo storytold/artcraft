@@ -7,7 +7,11 @@ import { TabSelector } from "@storyteller/ui-tab-selector";
 import { TruchetPattern } from "@storyteller/ui-vfx";
 import Seo from "../../components/seo";
 import { useIsMobile } from "../ui/use-mobile";
-import { GalleryViewToggle } from "./GalleryViewToggle";
+import {
+  GalleryAutoplayToggle,
+  GallerySelectToggle,
+  GalleryViewToggle,
+} from "./GalleryViewToggle";
 import {
   MobileCreateTabsProvider,
   type MobileCreateTab,
@@ -23,6 +27,12 @@ interface CreateMediaPageShellProps {
   authChecked: boolean;
   // Content
   hasContent: boolean;
+  // Video page only: playing/still toggle for video preview thumbnails,
+  // rendered next to the grid/list toggle on the mobile History tab.
+  showAutoplayToggle?: boolean;
+  // Multi-select + batch download toggle, rendered in the same mobile
+  // History-tab cluster (the desktop toggle lives in the TopBar).
+  showSelectToggle?: boolean;
   emptyStateTitle: string;
   emptyStateSubtitle: string;
   // Optional CTA rendered under the empty-state subtitle (e.g. a signup button
@@ -54,6 +64,8 @@ export function CreateMediaPageShell({
   description,
   authChecked,
   hasContent,
+  showAutoplayToggle = false,
+  showSelectToggle = false,
   emptyStateTitle,
   emptyStateSubtitle,
   emptyStateCta,
@@ -92,18 +104,26 @@ export function CreateMediaPageShell({
         <div className="flex h-full w-full flex-col bg-[#101014] text-white">
           <Seo title={title} description={description} />
 
-          <div className="relative flex items-center justify-center border-b border-ui-panel-border px-3 py-2">
+          {/* Flex (not absolute) keeps the toggle cluster from overlapping
+              the tabs — the tabs stay centered via the equal flex-1 sides and
+              just shift left if the cluster outgrows its half. */}
+          <div className="flex items-center border-b border-ui-panel-border px-3 py-2">
+            <div className="flex-1" />
             <TabSelector
               tabs={MOBILE_TABS}
               activeTab={mobileTab}
               onTabChange={(id) => setMobileTab(id as MobileCreateTab)}
-              className="w-auto"
+              className="w-auto shrink-0"
             />
-            {mobileTab === "history" && hasContent && (
-              <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                <GalleryViewToggle />
-              </div>
-            )}
+            <div className="flex flex-1 items-center justify-end gap-1.5">
+              {mobileTab === "history" && hasContent && (
+                <>
+                  {showSelectToggle && <GallerySelectToggle />}
+                  {showAutoplayToggle && <GalleryAutoplayToggle />}
+                  <GalleryViewToggle />
+                </>
+              )}
+            </div>
           </div>
 
           <div className="min-h-0 flex-1 overflow-hidden">
@@ -194,6 +214,16 @@ export function CreateMediaPageShell({
             >
               <div className="px-3">{gridContent}</div>
             </div>
+          )}
+
+          {/* Bottom fade behind the floating prompt box so it stays legible
+              over the feed. Sits under the prompt box (z-30). */}
+          {hasContent && (
+            <div
+              aria-hidden
+              className="pointer-events-none fixed bottom-0 right-0 z-20 h-48 bg-gradient-to-t from-[#101014] to-transparent"
+              style={{ left: "var(--ac-sidebar-offset, 0px)" }}
+            />
           )}
 
           {promptBox}

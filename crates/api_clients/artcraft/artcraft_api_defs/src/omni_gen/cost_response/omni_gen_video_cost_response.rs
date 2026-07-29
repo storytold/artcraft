@@ -2,7 +2,7 @@ use serde_derive::{Deserialize, Serialize};
 use utoipa::ToSchema;
 
 /// Response body for the omni-gen video cost estimate endpoint.
-#[derive(Serialize, Deserialize, ToSchema)]
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct OmniGenVideoCostResponse {
   pub success: bool,
 

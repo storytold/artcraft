@@ -3,6 +3,7 @@ import {
   faCube,
   faFilm,
   faImage,
+  faMusic,
   faDroplet,
   faPhotoFilm,
   faGlobe,
@@ -11,6 +12,7 @@ import {
   faPenNib,
   faCrosshairs,
   faSparkles,
+  faObjectGroup,
 } from "@fortawesome/pro-solid-svg-icons";
 import { useMemo } from "react";
 import {
@@ -22,6 +24,7 @@ import { useTabStore, TabId } from "~/pages/Stores/TabState";
 export type AppId =
   | "IMAGE"
   | "VIDEO"
+  | "AUDIO"
   | "EDIT"
   | "2D"
   | "3D"
@@ -34,7 +37,8 @@ export type AppId =
   | "ANGLES"
   | "STORYBOARD"
   | "BACKGROUND_CHANGE"
-  | "VIDEO_EDITOR";
+  | "VIDEO_EDITOR"
+  | "MOODBOARD";
 
 export interface AppDescriptor {
   id: AppId;
@@ -48,19 +52,24 @@ export interface AppDescriptor {
 export const APP_DESCRIPTORS: AppDescriptor[] = [
   {
     id: "IMAGE",
-    label: "Text to Image",
+    label: "Create Image",
     icon: faImage,
   },
   {
     id: "VIDEO",
-    label: "Generate Video",
+    label: "Create Video",
     icon: faFilm,
+  },
+  {
+    id: "AUDIO",
+    label: "Create Audio",
+    icon: faMusic,
   },
   {
     id: "2D",
     label: "Image Editor",
     icon: faPenNib,
-    imageSrc: "/resources/gifs/2D_CANVAS_DEMO.gif",
+    imageSrc: "/resources/gifs/2D_CANVAS_DEMO.webp",
     description: "Easy edits. Great for graphic design.",
     large: true,
   },
@@ -68,7 +77,7 @@ export const APP_DESCRIPTORS: AppDescriptor[] = [
     id: "3D",
     label: "3D Stage",
     icon: faCube,
-    imageSrc: "/resources/gifs/3D_CANVAS_DEMO.gif",
+    imageSrc: "/resources/gifs/3D_CANVAS_DEMO.webp",
     description: "Precision control. Great for AI film.",
     large: true,
   },
@@ -82,13 +91,120 @@ export interface FullAppItem {
   category: "generate" | "edit";
   badge?: "NEW" | "BEST" | "SOON" | "BETA";
   action?: AppId;
+  /** Legacy single-tone icon-square background (e.g. "bg-blue-600/40"). Still
+   *  used as the fallback for the apps-page card styling. */
   color?: string;
 }
+
+// Per-app card palette for the Apps page (webapp-home-style cards). Derived
+// from each app's Tailwind color family so the icon box, its border, and the
+// hover gradient all share a hue. Keyed by app id; falls back to a neutral
+// slate when an id is missing.
+interface AppCardPalette {
+  /** Hover gradient overlay, e.g. "from-blue-500/20 to-blue-500/0". */
+  accent: string;
+  /** Icon box background + border, e.g. "bg-blue-500/20 border-blue-400/30". */
+  iconBg: string;
+  /** Icon glyph color, e.g. "text-blue-300". */
+  iconColor: string;
+}
+
+const APP_CARD_PALETTES: Record<string, AppCardPalette> = {
+  "text-to-image": {
+    accent: "from-blue-500/20 to-blue-500/0",
+    iconBg: "bg-blue-500/20 border-blue-400/30",
+    iconColor: "text-blue-300",
+  },
+  "image-to-video": {
+    accent: "from-amber-500/20 to-amber-500/0",
+    iconBg: "bg-amber-500/20 border-amber-400/30",
+    iconColor: "text-amber-300",
+  },
+  "create-audio": {
+    accent: "from-pink-500/20 to-pink-500/0",
+    iconBg: "bg-pink-500/20 border-pink-400/30",
+    iconColor: "text-pink-300",
+  },
+  "image-to-3d-object": {
+    accent: "from-emerald-500/20 to-emerald-500/0",
+    iconBg: "bg-emerald-500/20 border-emerald-400/30",
+    iconColor: "text-emerald-300",
+  },
+  "image-to-3d-world": {
+    accent: "from-sky-500/20 to-sky-500/0",
+    iconBg: "bg-sky-500/20 border-sky-400/30",
+    iconColor: "text-sky-300",
+  },
+  angles: {
+    accent: "from-lime-500/20 to-lime-500/0",
+    iconBg: "bg-lime-500/20 border-lime-400/30",
+    iconColor: "text-lime-300",
+  },
+  storyboard: {
+    accent: "from-fuchsia-500/20 to-fuchsia-500/0",
+    iconBg: "bg-fuchsia-500/20 border-fuchsia-400/30",
+    iconColor: "text-fuchsia-300",
+  },
+  "2d-canvas": {
+    accent: "from-sky-500/20 to-sky-500/0",
+    iconBg: "bg-sky-500/20 border-sky-400/30",
+    iconColor: "text-sky-300",
+  },
+  "3d-editor": {
+    accent: "from-emerald-500/20 to-emerald-500/0",
+    iconBg: "bg-emerald-500/20 border-emerald-400/30",
+    iconColor: "text-emerald-300",
+  },
+  "edit-image": {
+    accent: "from-purple-500/20 to-purple-500/0",
+    iconBg: "bg-purple-500/20 border-purple-400/30",
+    iconColor: "text-purple-300",
+  },
+  "remove-background": {
+    accent: "from-violet-500/20 to-violet-500/0",
+    iconBg: "bg-violet-500/20 border-violet-400/30",
+    iconColor: "text-violet-300",
+  },
+  "video-frame-extractor": {
+    accent: "from-rose-500/20 to-rose-500/0",
+    iconBg: "bg-rose-500/20 border-rose-400/30",
+    iconColor: "text-rose-300",
+  },
+  "background-change": {
+    accent: "from-orange-500/20 to-orange-500/0",
+    iconBg: "bg-orange-500/20 border-orange-400/30",
+    iconColor: "text-orange-300",
+  },
+  "video-editor": {
+    accent: "from-teal-500/20 to-teal-500/0",
+    iconBg: "bg-teal-500/20 border-teal-400/30",
+    iconColor: "text-teal-300",
+  },
+  "video-watermark-removal": {
+    accent: "from-cyan-500/20 to-cyan-500/0",
+    iconBg: "bg-cyan-500/20 border-cyan-400/30",
+    iconColor: "text-cyan-300",
+  },
+  "image-watermark-removal": {
+    accent: "from-indigo-500/20 to-indigo-500/0",
+    iconBg: "bg-indigo-500/20 border-indigo-400/30",
+    iconColor: "text-indigo-300",
+  },
+};
+
+const FALLBACK_APP_CARD_PALETTE: AppCardPalette = {
+  accent: "from-white/10 to-white/0",
+  iconBg: "bg-ui-controls border-ui-controls-border",
+  iconColor: "text-base-fg",
+};
+
+export const getAppCardPalette = (id: string): AppCardPalette =>
+  APP_CARD_PALETTES[id] ?? FALLBACK_APP_CARD_PALETTE;
 
 export const ALL_APPS: FullAppItem[] = [
   {
     id: "text-to-image",
-    label: "Text to Image",
+    label: "Create Image",
     description: "Generate AI images",
     icon: faImage,
     category: "generate",
@@ -97,12 +213,21 @@ export const ALL_APPS: FullAppItem[] = [
   },
   {
     id: "image-to-video",
-    label: "Generate Video",
+    label: "Create Video",
     description: "Create video from images",
     icon: faFilm,
     category: "generate",
     action: "VIDEO",
     color: "bg-amber-500/40",
+  },
+  {
+    id: "create-audio",
+    label: "Create Audio",
+    description: "Generate music and sound effects",
+    icon: faMusic,
+    category: "generate",
+    action: "AUDIO",
+    color: "bg-pink-500/40",
   },
   {
     id: "image-to-3d-object",
@@ -189,6 +314,16 @@ export const ALL_APPS: FullAppItem[] = [
     badge: "NEW",
   },
   {
+    id: "moodboard",
+    label: "Moodboard",
+    description: "Collect references and steer generations from a board",
+    icon: faObjectGroup,
+    category: "generate",
+    action: "MOODBOARD",
+    color: "bg-orange-500/40",
+    badge: "BETA",
+  },
+  {
     id: "background-change",
     label: "Background Change",
     description: "Swap the backdrop of a video using a reference image",
@@ -213,7 +348,7 @@ export const ALL_APPS: FullAppItem[] = [
     label: "Image Editor",
     description: "Easy edits. Great for graphic design.",
     icon: faPenNib,
-    category: "generate",
+    category: "edit",
     action: "2D",
     color: "bg-sky-500/40",
   },
@@ -284,6 +419,7 @@ export const goToApp = (action?: string) => {
     [
       "IMAGE",
       "VIDEO",
+      "AUDIO",
       "2D",
       "3D",
       "VIDEO_FRAME_EXTRACTOR",
@@ -296,6 +432,7 @@ export const goToApp = (action?: string) => {
       "STORYBOARD",
       "BACKGROUND_CHANGE",
       "VIDEO_EDITOR",
+      "MOODBOARD",
     ].includes(action)
   ) {
     if (action === "STORYBOARD") {

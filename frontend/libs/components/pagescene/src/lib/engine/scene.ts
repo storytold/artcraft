@@ -108,7 +108,7 @@ class Scene {
     this._createGrid();
     this._create_base_lighting();
     this._create_skybox();
-    // this._create_camera_obj();
+    this._create_camera_obj();
 
     this.helper = new MMDAnimationHelper({ afterglow: 0.0 });
     this.scene.userData["helper"] = this.helper;
@@ -130,10 +130,13 @@ class Scene {
 
   clear() {
     this.scene.children = [];
+    // hot_items held detached keyframe-point refs across reloads; reset it
+    // so it never carries stale objects from a previous scene.
+    this.hot_items = [];
     this._createGrid();
     this._create_base_lighting();
     this._create_skybox();
-    // this._create_camera_obj();
+    this._create_camera_obj();
   }
 
   async instantiate(
@@ -372,7 +375,7 @@ class Scene {
         );
         if (obj_keyframe_uuid === keyframe_uuid) {
           keyframe_point = object;
-          return object;
+          return;
         }
       }
     });
@@ -411,45 +414,79 @@ class Scene {
     //this.scene.background = null;
   }
 
-  async _create_camera_obj() {
+  // Creates the render-camera placeholder — a selectable wireframe frustum
+  // named "::CAM::" that lives in the scene like a Blender camera. Its
+  // transform mirrors the render camera (CameraController.tickPerFrame syncs
+  // cam_obj → render_camera). Placed on layer 1 so the viewport camera sees
+  // it but render_camera (layer 1 disabled) excludes it from output. Has no
+  // userData.media_id, so the save path skips it. Single camera for now.
+  _create_camera_obj() {
     const cameras = this.deps.getCameras();
-    const selectedCameraId = this.deps.getSelectedCameraId();
-    cameras.forEach((cameraConfig) => {
-      const camera_position = new THREE.Vector3(
-        cameraConfig.position.x,
-        cameraConfig.position.y,
-        cameraConfig.position.z,
-      );
+    const renderCam = cameras.find((c) => c.id !== "main") ?? cameras[0];
+    if (!renderCam) return;
 
-      const camera_id = "m_cxh4asqhapdz10j880755dg4yevshb";
+    // Idempotent: drop any existing frustum so callers (initialize, clear,
+    // load-restore) never leave duplicate "::CAM::" objects.
+    const existing = this.scene.getObjectByName("::CAM::");
+    if (existing) this.scene.remove(existing);
 
-      this.loadGlbWithPlaceholder(
-        camera_id,
-        "Camera",
-        false,
-        camera_position,
-      ).then((camera_obj) => {
-        camera_obj.userData["name"] = cameraConfig.label;
-        camera_obj.name = cameraConfig.label;
-        camera_obj.position.set(
-          camera_position.x,
-          camera_position.y,
-          camera_position.z,
-        );
-        camera_obj.layers.set(1);
-        camera_obj.children.forEach((child) => {
-          child.layers.set(1);
-        });
-        this.scene.add(camera_obj);
+    const group = this._buildCameraFrustum();
+    group.name = "::CAM::";
+    group.userData["name"] = "Camera";
+    group.position.set(
+      renderCam.position.x,
+      renderCam.position.y,
+      renderCam.position.z,
+    );
+    group.rotation.set(
+      renderCam.rotation.x,
+      renderCam.rotation.y,
+      renderCam.rotation.z,
+    );
+    group.layers.set(1);
+    group.children.forEach((child) => child.layers.set(1));
+    this.scene.add(group);
+  }
 
-        if (cameraConfig.id === selectedCameraId) {
-          camera_obj.visible = false;
-          camera_obj.layers.disableAll(); // Make the active camera not touchable
-        } else {
-          camera_obj.visible = true;
-        }
-      });
+  // Builds the frustum line geometry: apex at the camera origin opening
+  // toward -Z, with a near rectangle. White lines, matching the design.
+  private _buildCameraFrustum(): THREE.Group {
+    const group = new THREE.Group();
+    const depth = 0.7;
+    const halfW = 0.45;
+    const halfH = 0.3;
+    const apex = new THREE.Vector3(0, 0, 0);
+    const tl = new THREE.Vector3(-halfW, halfH, -depth);
+    const tr = new THREE.Vector3(halfW, halfH, -depth);
+    const br = new THREE.Vector3(halfW, -halfH, -depth);
+    const bl = new THREE.Vector3(-halfW, -halfH, -depth);
+    const points: THREE.Vector3[] = [
+      apex, tl, apex, tr, apex, br, apex, bl, // apex → corners
+      tl, tr, tr, br, br, bl, bl, tl, // near rectangle
+    ];
+    const geometry = new THREE.BufferGeometry().setFromPoints(points);
+    const material = new THREE.LineBasicMaterial({ color: 0xffffff });
+    const lines = new THREE.LineSegments(geometry, material);
+    // Disable line raycasting: THREE picks LineSegments with a 1-world-unit
+    // threshold, which dwarfs this ~0.7u frustum and selects it from far
+    // away. Selection is instead handled by the invisible pick-proxy below.
+    lines.raycast = () => {};
+    group.add(lines);
+
+    // Invisible pick-proxy sized to the frustum volume so clicks match the
+    // wireframe rather than a 1-unit halo. Raycastable (opacity 0, not
+    // mesh.visible=false) but draws nothing.
+    const proxyGeometry = new THREE.BoxGeometry(halfW * 2, halfH * 2, depth);
+    const proxyMaterial = new THREE.MeshBasicMaterial({
+      transparent: true,
+      opacity: 0,
+      depthWrite: false,
     });
+    const proxy = new THREE.Mesh(proxyGeometry, proxyMaterial);
+    proxy.position.set(0, 0, -depth / 2);
+    group.add(proxy);
+
+    return group;
   }
 
   renderMode(enabled: boolean = true) {
@@ -611,7 +648,7 @@ class Scene {
   async loadObjectFromUrl(
     url: string,
     position: THREE.Vector3 = new THREE.Vector3(-0.5, 1.5, 0),
-  ): Promise<THREE.Object3D> {
+  ): Promise<THREE.Object3D | undefined> {
     console.log("loadObjectFromUrl!!!!!!!!", url);
     if (
       url.includes(".png") ||
@@ -628,6 +665,7 @@ class Scene {
       }
       return obj;
     }
+    return undefined;
   }
 
   async loadObject(
@@ -906,12 +944,31 @@ class Scene {
    * @param onComplete
    * @returns
    */
+  // Load a GLB by media id and return the raw GLTF (scene + animations)
+  // WITHOUT adding it to the scene or attaching a loading placeholder. Used to
+  // source skeletal animation clips (their `animations[0]`) for retargeting
+  // onto characters — the clip's own mesh/armature is never rendered.
+  async loadRawGlb(
+    media_id: string,
+    signal?: AbortSignal,
+  ): Promise<GLTF | null> {
+    try {
+      const url = await this.getMediaURL(media_id);
+      return await this.load_glb_wrapped_no_cors(url, () => {}, signal);
+    } catch (error) {
+      if ((error as { name?: string })?.name !== "AbortError") {
+        console.error("loadRawGlb failed:", media_id, error);
+      }
+      return null;
+    }
+  }
+
   private async load_glb_wrapped_no_cors(
     media_url: string,
     onComplete: () => void,
     signal?: AbortSignal,
-  ) {
-    return new Promise(async (resolve, reject) => {
+  ): Promise<GLTF> {
+    return new Promise<GLTF>(async (resolve, reject) => {
       let buffer;
       try {
         // Host-supplied CORS-bypassed binary fetch (FetchProxy under
@@ -1074,12 +1131,12 @@ class Scene {
 
     if (this.skybox == "Default") {
       const texture = loader.load([
-        "/resources/skybox/day/px.png",
-        "/resources/skybox/day/nx.png",
-        "/resources/skybox/day/py.png",
-        "/resources/skybox/day/ny.png",
-        "/resources/skybox/day/pz.png",
-        "/resources/skybox/day/nz.png",
+        "/resources/skybox/day/px.webp",
+        "/resources/skybox/day/nx.webp",
+        "/resources/skybox/day/py.webp",
+        "/resources/skybox/day/ny.webp",
+        "/resources/skybox/day/pz.webp",
+        "/resources/skybox/day/nz.webp",
       ]);
       this.scene.background = texture;
       if (this.ambientLight) this.scene.remove(this.ambientLight);
@@ -1087,12 +1144,12 @@ class Scene {
       if (this.hemisphereLight) this.scene.add(this.hemisphereLight);
     } else if (this.skybox == "m_0") {
       const texture = loader.load([
-        "/resources/skybox/night/Night_Moon_Burst_Cam_2_LeftX.png",
-        "/resources/skybox/night/Night_Moon_Burst_Cam_3_Right-X.png",
-        "/resources/skybox/night/Night_Moon_Burst_Cam_4_UpY.png",
-        "/resources/skybox/night/Night_Moon_Burst_Cam_5_Down-Y.png",
-        "/resources/skybox/night/Night_Moon_Burst_Cam_0_FrontZ.png",
-        "/resources/skybox/night/Night_Moon_Burst_Cam_1_Back-Z.png",
+        "/resources/skybox/night/Night_Moon_Burst_Cam_2_LeftX.webp",
+        "/resources/skybox/night/Night_Moon_Burst_Cam_3_Right-X.webp",
+        "/resources/skybox/night/Night_Moon_Burst_Cam_4_UpY.webp",
+        "/resources/skybox/night/Night_Moon_Burst_Cam_5_Down-Y.webp",
+        "/resources/skybox/night/Night_Moon_Burst_Cam_0_FrontZ.webp",
+        "/resources/skybox/night/Night_Moon_Burst_Cam_1_Back-Z.webp",
       ]);
       this.scene.background = texture;
       if (this.ambientLight) this.scene.remove(this.ambientLight);
@@ -1111,12 +1168,12 @@ class Scene {
       if (this.hemisphereLight) this.scene.remove(this.hemisphereLight);
     } else if (this.skybox == "m_3") {
       const texture = loader.load([
-        "/resources/skybox/gray/Sky_AllSky_Overcast4_Low_Cam_2_LeftX.png",
-        "/resources/skybox/gray/Sky_AllSky_Overcast4_Low_Cam_3_Right-X.png",
-        "/resources/skybox/gray/Sky_AllSky_Overcast4_Low_Cam_4_UpY.png",
-        "/resources/skybox/gray/Sky_AllSky_Overcast4_Low_Cam_5_Down-Y.png",
-        "/resources/skybox/gray/Sky_AllSky_Overcast4_Low_Cam_0_FrontZ.png",
-        "/resources/skybox/gray/Sky_AllSky_Overcast4_Low_Cam_1_Back-Z.png",
+        "/resources/skybox/gray/Sky_AllSky_Overcast4_Low_Cam_2_LeftX.webp",
+        "/resources/skybox/gray/Sky_AllSky_Overcast4_Low_Cam_3_Right-X.webp",
+        "/resources/skybox/gray/Sky_AllSky_Overcast4_Low_Cam_4_UpY.webp",
+        "/resources/skybox/gray/Sky_AllSky_Overcast4_Low_Cam_5_Down-Y.webp",
+        "/resources/skybox/gray/Sky_AllSky_Overcast4_Low_Cam_0_FrontZ.webp",
+        "/resources/skybox/gray/Sky_AllSky_Overcast4_Low_Cam_1_Back-Z.webp",
       ]);
       this.scene.background = texture;
       if (this.ambientLight) this.scene.remove(this.ambientLight);
@@ -1141,7 +1198,7 @@ class Scene {
   // deafult image skybox.
   _create_single_skybox() {
     const loader = new THREE.TextureLoader();
-    const texture = loader.load("/resources/skybox/single.jpg", () => {
+    const texture = loader.load("/resources/skybox/single.webp", () => {
       texture.mapping = THREE.EquirectangularReflectionMapping;
       texture.colorSpace = THREE.SRGBColorSpace;
       this.scene.background = texture;

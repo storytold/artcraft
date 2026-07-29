@@ -1,14 +1,16 @@
 import { useEffect, useState } from "react";
 import { Modal } from "@storyteller/ui-modal";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faCog, faUser } from "@fortawesome/pro-solid-svg-icons";
+import { faCog, faUser, faKey } from "@fortawesome/pro-solid-svg-icons";
 import { Switch } from "@storyteller/ui-switch";
 import { twMerge } from "tailwind-merge";
 import { useEnterToGenerateStore } from "../../lib/enter-to-generate-store";
+import { useLightboxSoundStore } from "../../lib/lightbox-sound-store";
 import { useSession } from "../../lib/session";
 import { AccountSection } from "./AccountSection";
+import { ApiKeySection } from "./ApiKeySection";
 
-type Tab = "general" | "account";
+type Tab = "general" | "account" | "apiKeys";
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -18,6 +20,7 @@ interface SettingsModalProps {
 const TABS: { id: Tab; label: string; icon: typeof faCog }[] = [
   { id: "general", label: "General", icon: faCog },
   { id: "account", label: "Account", icon: faUser },
+  { id: "apiKeys", label: "API Keys", icon: faKey },
 ];
 
 export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
@@ -30,7 +33,12 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   const activeLabel = TABS.find((t) => t.id === tab)?.label ?? "";
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} className="max-w-3xl" childPadding={false}>
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      className="max-w-3xl"
+      childPadding={false}
+    >
       <div className="h-[100dvh] sm:h-[560px]">
         <div className="flex h-full flex-col sm:grid sm:grid-cols-12 sm:gap-3">
           <div className="relative shrink-0 border-b border-ui-panel-border p-4 sm:col-span-4 sm:border-b-0 sm:p-3 sm:pt-2 sm:after:absolute sm:after:right-0 sm:after:top-0 sm:after:h-full sm:after:w-px sm:after:bg-ui-panel-border">
@@ -64,6 +72,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
             <div className="h-full p-4 text-sm sm:p-3 sm:ps-0">
               {tab === "general" && <GeneralPanel />}
               {tab === "account" && <AccountPanel />}
+              {tab === "apiKeys" && <ApiKeysPanel />}
             </div>
           </div>
         </div>
@@ -75,6 +84,8 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
 function GeneralPanel() {
   const enterToGenerate = useEnterToGenerateStore((s) => s.enabled);
   const setEnterToGenerate = useEnterToGenerateStore((s) => s.setEnabled);
+  const lightboxSound = useLightboxSoundStore((s) => s.soundEnabled);
+  const setLightboxSound = useLightboxSoundStore((s) => s.setSoundEnabled);
 
   return (
     <div className="space-y-4 text-base-fg">
@@ -82,12 +93,30 @@ function GeneralPanel() {
         <div className="flex flex-col gap-0.5">
           <p className="text-sm font-medium">Enter to generate</p>
           <p className="text-xs opacity-70">
-            When on, pressing Enter submits the prompt and Shift+Enter
-            adds a new line. When off (default), both Enter and
-            Shift+Enter add a new line, use the button to submit.
+            When on, pressing Enter submits the prompt and Shift+Enter adds a
+            new line. When off (default), both Enter and Shift+Enter add a new
+            line, use the button to submit.
           </p>
         </div>
-        <Switch enabled={enterToGenerate} setEnabled={setEnterToGenerate} offClassName="bg-white/20" />
+        <Switch
+          enabled={enterToGenerate}
+          setEnabled={setEnterToGenerate}
+          offClassName="bg-white/20"
+        />
+      </div>
+      <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-0.5">
+          <p className="text-sm font-medium">Play videos with sound</p>
+          <p className="text-xs opacity-70">
+            When on (default), videos in the media viewer start unmuted so you
+            don't have to click unmute every time. When off, they start muted.
+          </p>
+        </div>
+        <Switch
+          enabled={lightboxSound}
+          setEnabled={setLightboxSound}
+          offClassName="bg-white/20"
+        />
       </div>
     </div>
   );
@@ -113,6 +142,28 @@ function AccountPanel() {
   return (
     <div className="pt-3">
       <AccountSection user={user} passwordNotSet={passwordNotSet} />
+    </div>
+  );
+}
+
+function ApiKeysPanel() {
+  const { user, authChecked } = useSession();
+
+  if (!authChecked) {
+    return <div className="pt-3 text-xs opacity-60">Loading API keys...</div>;
+  }
+
+  if (!user) {
+    return (
+      <div className="pt-3 text-xs opacity-60">
+        You need to be signed in to manage API keys.
+      </div>
+    );
+  }
+
+  return (
+    <div className="pb-4 pt-3">
+      <ApiKeySection user={user} />
     </div>
   );
 }

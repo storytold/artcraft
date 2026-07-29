@@ -1,0 +1,25 @@
+{
+  "db_name": "MySQL",
+  "query": "\nSELECT status as `status: enums::common::job_status_plus::JobStatusPlus`\nFROM generic_inference_jobs\nWHERE token = ?\n    ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "status: enums::common::job_status_plus::JobStatusPlus",
+        "type_info": {
+          "type": "String",
+          "flags": "NOT_NULL | MULTIPLE_KEY | BINARY | ENUM",
+          "char_set": 224,
+          "max_size": 76
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "9312694d1651235b06d1744d904b59f64d66449b8927c1606bb08bd5fdc15c7e"
+}

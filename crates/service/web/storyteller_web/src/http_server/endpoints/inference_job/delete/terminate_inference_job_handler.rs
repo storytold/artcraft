@@ -2,9 +2,10 @@ use std::fmt;
 use std::sync::Arc;
 
 use actix_web::error::ResponseError;
+use actix_web::web::Json;
 use actix_web::http::StatusCode;
 use actix_web::web::Path;
-use actix_web::{web, HttpMessage, HttpRequest, HttpResponse};
+use actix_web::{web, HttpMessage, HttpRequest};
 use log::{error, warn};
 use utoipa::ToSchema;
 
@@ -47,7 +48,7 @@ pub struct TerminateInferenceJobSuccessResponse {
 pub async fn terminate_inference_job_handler(
   http_request: HttpRequest,
   path: Path<TerminateInferenceJobPathInfo>,
-  server_state: web::Data<Arc<ServerState>>) -> Result<HttpResponse, CommonWebError>
+  server_state: web::Data<Arc<ServerState>>) -> Result<Json<TerminateInferenceJobSuccessResponse>, CommonWebError>
 {
   let mut mysql_connection = server_state.mysql_pool.acquire()
       .await
@@ -105,13 +106,5 @@ pub async fn terminate_inference_job_handler(
     success: true,
   };
 
-  let body = serde_json::to_string(&response)
-      .map_err(|e| {
-        error!("error returning response: {:?}",  e);
-        CommonWebError::from_error(e)
-      })?;
-
-  Ok(HttpResponse::Ok()
-      .content_type("application/json")
-      .body(body))
+  Ok(Json(response))
 }

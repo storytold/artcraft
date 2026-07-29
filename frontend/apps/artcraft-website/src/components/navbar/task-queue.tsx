@@ -23,6 +23,7 @@ import { Button } from "@storyteller/ui-button";
 import {
   getProviderDisplayName,
   getModelDisplayName,
+  getCreatorIconPathForModelId,
   findModelByKey,
 } from "@storyteller/model-list";
 import { CloseButton } from "@storyteller/ui-close-button";
@@ -30,7 +31,6 @@ import dayjs from "dayjs";
 import { ActionReminderModal } from "@storyteller/ui-action-reminder-modal";
 import { Lightbox } from "../lightbox/lightbox";
 import { showToast } from "../toast/toast";
-import { getModelCreatorIconPath } from "../../lib/omni-gen-hooks";
 import { getMediaThumbnail, THUMBNAIL_SIZES } from "@storyteller/common";
 import { twMerge } from "tailwind-merge";
 
@@ -219,7 +219,7 @@ const InProgressCard = ({
       : null;
   const isSeedance2 = task.modelType === "seedance_2p0";
   const modelIconPath = task.modelType
-    ? getModelCreatorIconPath(task.modelType)
+    ? getCreatorIconPathForModelId(task.modelType)
     : null;
 
   return (

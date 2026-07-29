@@ -2,7 +2,6 @@
 /// Basic information to display a user and their avatar.
 import {
   MediaFileClass,
-  MediaFileSubtype,
   MediaFileType,
   WeightCategory,
   WeightType,
@@ -29,7 +28,6 @@ export interface MediaFile {
   token: string;
   media_type: MediaFileType;
   media_class: MediaFileClass | null;
-  maybe_media_subtype: MediaFileSubtype | null;
   public_bucket_path: string;
   maybe_engine_extension: string | null;
   maybe_batch_token: string;

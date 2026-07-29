@@ -15,7 +15,7 @@ use mysql_queries::queries::users::user::list::list_users_by_signup_date_for_mod
 };
 
 use crate::http_server::common_responses::common_web_error::CommonWebError;
-use crate::http_server::web_utils::user_session::require_moderator::{require_moderator, UseDatabase};
+use crate::http_server::user_lookup::user_session::require_moderator::require_moderator;
 use crate::state::server_state::ServerState;
 
 /// List users by signup date (descending), for moderators.
@@ -36,9 +36,7 @@ pub async fn moderator_list_users_by_signup_date_handler(
   server_state: web::Data<Arc<ServerState>>,
 ) -> Result<Json<ModeratorListUsersBySignupDateResponse>, CommonWebError> {
 
-  let _user_session = require_moderator(&http_request, &server_state, UseDatabase::GrabNewConnection)
-    .await
-    .map_err(|_| CommonWebError::NotAuthorized)?;
+  let _user_session = require_moderator(&http_request, &server_state.session_checker, &server_state.mysql_pool).await?;
 
   let result = list_users_by_signup_date_for_moderation(
     ListUsersBySignupDateArgs {

@@ -21,6 +21,7 @@ import { useEditor } from "./editor/use-editor";
 import { useEditorActions } from "./actions/use-editor-actions";
 import { useKeybindingsListener } from "./actions/use-keybindings";
 import { Button } from "./components/ui/button";
+import { TooltipProvider } from "./components/ui/tooltip";
 import { Cancel01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
@@ -44,6 +45,9 @@ export interface VideoEditorProps {
   // the export button. Webapp hosts that hide the global topbar inject
   // its actions (pricing/credits/task queue/profile) here.
   headerEndSlot?: ReactNode;
+  // Host route the header's "Exit project" / delete actions navigate to.
+  // Defaults to "/projects" for hosts that own that route.
+  exitTo?: string;
 }
 
 // Public entry. Wraps the inner shell with EditorProvider so callers
@@ -54,27 +58,36 @@ export function VideoEditor({
   projectId: _projectId,
   adapters,
   headerEndSlot,
+  exitTo,
 }: VideoEditorProps) {
   return (
     <EditorProvider adapters={adapters}>
-      <MobileGate>
-        {/* Boundary contains any descendant throw — without this, an
-            unhandled exception in a panel or renderer node propagates
-            to the host shell and the user sees a blank app. The
-            boundary's recovery button remounts the editor subtree
-            (key bump); EditorCore + the host's project state stay
-            alive across the recovery. */}
-        <EditorErrorBoundary>
-          <div className="bg-background flex h-full w-full flex-col overflow-hidden">
-            <DegradedRendererBanner />
-            <EditorHeader endSlot={headerEndSlot} />
-            <div className="min-h-0 min-w-0 flex-1">
-              <EditorLayout />
+      {/* Shell-wide Radix tooltip provider so every descendant tooltip has a
+          provider ancestor regardless of which panel wraps its own. Without
+          this, hosts that don't mount an app-level provider (the Tauri app)
+          crash with "Tooltip must be used within TooltipProvider" the moment a
+          panel renders a tooltip outside its local provider. Nested providers
+          are valid in Radix. */}
+      <TooltipProvider delayDuration={300}>
+        <MobileGate>
+          {/* Boundary contains any descendant throw — without this, an
+              unhandled exception in a panel or renderer node propagates
+              to the host shell and the user sees a blank app. The
+              boundary's recovery button remounts the editor subtree
+              (key bump); EditorCore + the host's project state stay
+              alive across the recovery. */}
+          <EditorErrorBoundary>
+            <div className="bg-background flex h-full w-full flex-col overflow-hidden">
+              <DegradedRendererBanner />
+              <EditorHeader endSlot={headerEndSlot} exitTo={exitTo} />
+              <div className="min-h-0 min-w-0 flex-1">
+                <EditorLayout />
+              </div>
+              <Onboarding />
             </div>
-            <Onboarding />
-          </div>
-        </EditorErrorBoundary>
-      </MobileGate>
+          </EditorErrorBoundary>
+        </MobileGate>
+      </TooltipProvider>
     </EditorProvider>
   );
 }

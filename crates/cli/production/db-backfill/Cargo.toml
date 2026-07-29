@@ -37,7 +37,13 @@ log = "0.4.14"
 # Bigger pieces
 futures = { version = "0.3.17", features = ["thread-pool"] }
 sqlx = { version = "0.7.4", features = [ "mysql", "runtime-tokio-rustls", "chrono" ] }
-tokio = { version = "1.38.0", features = ["macros"] }
+tokio = { version = "1.38.0", features = ["macros", "rt-multi-thread"] }
+
+# Stripe is queried via plain REST (reqwest) with lenient serde structs — the
+# typed SDK's miniserde parsing is too strict for production data variety.
+# rustls 0.23 needs an explicit crypto provider (graph has both ring + aws-lc-rs).
+rustls = { version = "0.23", features = ["ring"] }
+reqwest = { version = "0.12", default-features = false, features = ["rustls-tls"] }
 
 # Serialization
 serde = "1.0.125"

@@ -1,7 +1,7 @@
 use crate::core::commands::enqueue::generate_error::{BadInputReason, GenerateError};
 use crate::core::commands::deprecated::image_edit::enqueue_edit_image_command::EnqueueEditImageCommand;
 use crate::core::commands::deprecated::image_inpaint::enqueue_image_inpaint_command::EnqueueInpaintImageCommand;
-use crate::core::commands::generate::generate_video::request::{TauriGenerateVideoRequest, GrokAspectRatio, SoraOrientation};
+use crate::core::commands::generate::generate_video::request::{TauriGenerateVideoRequest, TauriVideoModel, GrokAspectRatio, SoraOrientation};
 use crate::core::commands::enqueue::task_enqueue_success::TaskEnqueueSuccess;
 use crate::core::events::functional_events::show_provider_login_modal_event::ShowProviderLoginModalEvent;
 use crate::core::events::generation_events::common::GenerationModel;
@@ -91,9 +91,16 @@ pub async fn handle_grok_video(
     }
   };
 
+  // NB: Grok's consumer API doesn't take a version selector; this only affects
+  // which model is recorded for the task queue / events.
+  let generation_model = match request.model {
+    Some(TauriVideoModel::GrokImagineVideo1p5) => GenerationModel::GrokImagineVideo1p5,
+    _ => GenerationModel::GrokVideo,
+  };
+
   Ok(TaskEnqueueSuccess {
     provider: GenerationProvider::Grok,
-    model: Some(GenerationModel::GrokVideo),
+    model: Some(generation_model),
     provider_job_id: Some(post_id.to_string()),
     task_type: TaskType::VideoGeneration,
     maybe_queue_status_url: None,

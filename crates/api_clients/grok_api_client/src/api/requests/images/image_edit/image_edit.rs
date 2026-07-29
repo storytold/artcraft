@@ -105,7 +105,7 @@ pub async fn image_edit(args: ImageEditArgs<'_>) -> Result<ImageEditSuccess, Gro
   let req = args.request;
 
   if req.source_images.is_empty() {
-    return Err(GrokSpecificApiError::BadRequest(
+    return Err(GrokClientError::InvalidRequest(
       "image_edit requires at least one source image".to_string(),
     ).into());
   }
@@ -311,7 +311,7 @@ mod tests {
       },
     }).await;
     let err = result.unwrap_err();
-    assert!(matches!(err, GrokError::ApiSpecific(GrokSpecificApiError::BadRequest(_))));
+    assert!(matches!(err, GrokError::Client(GrokClientError::InvalidRequest(_))));
   }
 
   #[test]

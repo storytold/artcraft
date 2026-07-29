@@ -1,4 +1,4 @@
-use crate::http_server::session::lookup::user_session_extended::UserSessionExtended;
+use crate::http_server::user_lookup::user_session::session_utils::lookup::user_session_extended::UserSessionExtended;
 use utoipa::ToSchema;
 
 #[derive(Serialize, ToSchema)]

@@ -140,7 +140,7 @@
           "type": "Long",
           "flags": "",
           "char_set": 63,
-          "max_size": 11
+          "max_size": 10
         }
       },
       {

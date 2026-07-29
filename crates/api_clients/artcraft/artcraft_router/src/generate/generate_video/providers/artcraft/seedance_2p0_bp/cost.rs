@@ -1,7 +1,8 @@
 use enums::common::generation::common_resolution::CommonResolution;
 
-use crate::generate::generate_video::video_generation_cost_estimate::VideoGenerationCostEstimate;
+use crate::generate::generate_video::providers::artcraft::seedance_common::seedance_2p0_four_k_usd_cents;
 use crate::generate::generate_video::providers::artcraft::seedance_2p0_bp::request::ArtcraftSeedance2p0BytePlusRequestState;
+use crate::generate::generate_video::video_generation_cost_estimate::VideoGenerationCostEstimate;
 
 /// USD cents per second by resolution:
 ///   480p:  $0.10/s = 10.0 ¢/s
@@ -15,6 +16,7 @@ pub struct ArtcraftSeedance2p0BytePlusCostState {
   pub resolution: CommonResolution,
   pub duration_seconds: u16,
   pub batch_count: u16,
+  pub has_video_reference: bool,
 }
 
 impl ArtcraftSeedance2p0BytePlusCostState {
@@ -23,10 +25,30 @@ impl ArtcraftSeedance2p0BytePlusCostState {
       .unwrap_or(CommonResolution::SevenTwentyP);
     let duration_seconds = request.request.duration_seconds.unwrap_or(5);
     let batch_count = request.request.video_batch_count.unwrap_or(1);
-    Self { resolution, duration_seconds, batch_count }
+    let has_video_reference = request.request.reference_video_media_tokens
+      .as_ref()
+      .is_some_and(|tokens| !tokens.is_empty());
+    Self { resolution, duration_seconds, batch_count, has_video_reference }
   }
 
   pub fn estimate_cost(&self) -> VideoGenerationCostEstimate {
+    if self.resolution == CommonResolution::FourK {
+      let usd_cents = seedance_2p0_four_k_usd_cents(
+        self.duration_seconds,
+        self.batch_count,
+        self.has_video_reference,
+      );
+      return VideoGenerationCostEstimate {
+        cost_in_credits: Some(usd_cents),
+        cost_in_usd_cents: Some(usd_cents),
+        is_free: false,
+        is_unlimited: false,
+        is_rate_limited: false,
+        has_watermark: false,
+        failures_are_refunded: None,
+      };
+    }
+
     let cents_per_second = match self.resolution {
       CommonResolution::FourEightyP => CENTS_PER_SECOND_480P,
       CommonResolution::TenEightyP => CENTS_PER_SECOND_1080P,
@@ -49,9 +71,9 @@ impl ArtcraftSeedance2p0BytePlusCostState {
 
 #[cfg(test)]
 mod tests {
+  use crate::api::router_provider::RouterProvider;
   use crate::api::router_resolution::RouterResolution;
   use crate::api::router_video_model::RouterVideoModel;
-  use crate::api::router_provider::RouterProvider;
   use crate::generate::generate_video::generate_video_request_builder::GenerateVideoRequestBuilder;
 
   mod pricing_720p {
@@ -122,6 +144,38 @@ mod tests {
     #[test]
     fn batch_4() {
       assert_eq!(cost_cents(Some(RouterResolution::TenEightyP), 5, 4), 1000);
+    }
+  }
+
+  mod four_k_pricing {
+    use enums::common::generation::common_resolution::CommonResolution;
+
+    fn artcraft_4k_cents(duration_seconds: u16, batch_count: u16, has_video_reference: bool) -> u64 {
+      super::super::ArtcraftSeedance2p0BytePlusCostState {
+        resolution: CommonResolution::FourK,
+        duration_seconds,
+        batch_count,
+        has_video_reference,
+      }
+      .estimate_cost()
+      .cost_in_usd_cents
+      .unwrap()
+    }
+
+    #[test]
+    fn explicit_4k_without_video_reference() {
+      assert_eq!(artcraft_4k_cents(4, 1, false), 347);
+      assert_eq!(artcraft_4k_cents(5, 1, false), 433);
+      assert_eq!(artcraft_4k_cents(10, 1, false), 866);
+      assert_eq!(artcraft_4k_cents(15, 1, false), 1299);
+    }
+
+    #[test]
+    fn explicit_4k_with_video_reference() {
+      assert_eq!(artcraft_4k_cents(4, 1, true), 416);
+      assert_eq!(artcraft_4k_cents(5, 1, true), 519);
+      assert_eq!(artcraft_4k_cents(10, 1, true), 1038);
+      assert_eq!(artcraft_4k_cents(15, 1, true), 1557);
     }
   }
 

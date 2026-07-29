@@ -31,7 +31,7 @@ pub async fn estimate_splat_cost_handler(
   request: Json<EstimateSplatCostRequest>,
 ) -> Result<Json<EstimateSplatCostResponse>, HandlerError> {
   let router_provider = map_provider(request.provider, request.model)?;
-  let router_model = map_splat_model(request.model);
+  let router_model = map_splat_model(request.model)?;
 
   // For cost estimation we only care whether a reference image is present,
   // not the actual image data. We populate a dummy token/url so the plan
@@ -132,9 +132,11 @@ fn map_provider(
   }
 }
 
-fn map_splat_model(model: CommonSplatModel) -> RouterSplatModel {
+fn map_splat_model(model: CommonSplatModel) -> Result<RouterSplatModel, HandlerError> {
   match model {
-    CommonSplatModel::Marble0p1Mini => RouterSplatModel::Marble0p1Mini,
-    CommonSplatModel::Marble0p1Plus => RouterSplatModel::Marble0p1Plus,
+    CommonSplatModel::Marble0p1Mini => Ok(RouterSplatModel::Marble0p1Mini),
+    CommonSplatModel::Marble0p1Plus => Ok(RouterSplatModel::Marble0p1Plus),
+    other => Err(HandlerError::InvalidInput(
+      format!("model {:?} is not supported by this endpoint", other))),
   }
 }

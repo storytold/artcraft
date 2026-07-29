@@ -9,6 +9,9 @@
       "path": "../button-icon-select"
     },
     {
+      "path": "../../omni-gen"
+    },
+    {
       "path": "../../analytics/google-analytics"
     },
     {

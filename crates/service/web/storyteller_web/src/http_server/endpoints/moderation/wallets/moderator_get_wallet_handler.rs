@@ -13,7 +13,7 @@ use mysql_queries::queries::wallets::get_wallet_for_moderation::get_wallet_for_m
 
 use tokens::tokens::wallets::WalletToken;
 use crate::http_server::common_responses::common_web_error::CommonWebError;
-use crate::http_server::web_utils::user_session::require_moderator::{require_moderator, UseDatabase};
+use crate::http_server::user_lookup::user_session::require_moderator::require_moderator;
 use crate::state::server_state::ServerState;
 
 /// Get a single wallet by token (moderation)
@@ -36,9 +36,7 @@ pub async fn moderator_get_wallet_handler(
   server_state: web::Data<Arc<ServerState>>,
 ) -> Result<Json<ModeratorGetWalletResponse>, CommonWebError> {
 
-  let _user_session = require_moderator(&http_request, &server_state, UseDatabase::GrabNewConnection)
-    .await
-    .map_err(|_| CommonWebError::NotAuthorized)?;
+  let _user_session = require_moderator(&http_request, &server_state.session_checker, &server_state.mysql_pool).await?;
 
   let maybe_wallet = get_wallet_for_moderation(&path.wallet_token, &server_state.mysql_pool)
     .await

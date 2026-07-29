@@ -5,8 +5,6 @@ import {
 } from "@fortawesome/pro-regular-svg-icons";
 import {
   faEdit,
-  faMessageCheck,
-  faMessageXmark,
   faMousePointer,
   faFrame,
   faPen,
@@ -19,7 +17,7 @@ import {
   faChevronUp,
 } from "@fortawesome/pro-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Button, ToggleButton, GenerateButton } from "@storyteller/ui-button";
+import { Button, GenerateButton } from "@storyteller/ui-button";
 import { ButtonIconSelect } from "@storyteller/ui-button-icon-select";
 import { PopoverMenu, PopoverItem } from "@storyteller/ui-popover";
 import { Tooltip } from "@storyteller/ui-tooltip";
@@ -32,6 +30,12 @@ import { toast } from "@storyteller/ui-toaster";
 import { GenerationProvider } from "@storyteller/api-enums";
 import { AspectRatioPicker } from "./common/AspectRatioPicker";
 import { GenerationCountPicker } from "./common/GenerationCountPicker";
+import {
+  PromptFullscreenModal,
+  useFullscreenPrompt,
+} from "./PromptFullscreenModal";
+import { PromptFullscreenButton } from "./PromptFullscreenButton";
+import { PromptClearAllButton } from "./PromptClearAllButton";
 
 export interface PromptBoxEditProps {
   onModeChange?: (mode: string) => void;
@@ -83,9 +87,10 @@ export const PromptBoxEdit = ({
   credits,
 }: PromptBoxEditProps) => {
   const [prompt, setPrompt] = useState("");
-  const [useSystemPrompt, setUseSystemPrompt] = useState(true);
   const [isFocused, setIsFocused] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
+  const { isFullscreen, openFullscreen, closeFullscreen } =
+    useFullscreenPrompt();
 
   // CSS viewport units handle resize reactivity automatically
   const EXPANDED_HEIGHT = "clamp(120px, calc(100vh - 700px), 500px)";
@@ -262,6 +267,13 @@ export const PromptBoxEdit = ({
 
   const maxLen = selectedImageModel?.maxPromptLength ?? 1000;
 
+  const hasClearableContent = prompt.length > 0 || referenceImages.length > 0;
+
+  const handleClearAll = () => {
+    setPrompt("");
+    setReferenceImages([]);
+  };
+
   const handleGenerate = async () => {
     const busy = Boolean(isEnqueueing ?? internalEnqueueing);
     if (busy || isDisabled || !prompt.trim()) return;
@@ -433,7 +445,7 @@ export const PromptBoxEdit = ({
                   ref={textareaRef}
                   rows={1}
                   placeholder="Write what you want to change in your image and click generate..."
-                  className={`promptbox-scrollbar text-md mb-2 min-h-[2.5em] w-full resize-y overflow-y-auto rounded bg-transparent pb-2 pr-2 pt-1 text-white placeholder-white placeholder:text-white/60 focus:outline-none ${isExpanded ? "max-h-[500px]" : "max-h-[5.5em]"}`}
+                  className={`promptbox-scrollbar text-md mb-2 min-h-[2.5em] w-full resize-y overflow-y-auto rounded bg-transparent pb-2 pr-8 pt-1 text-white placeholder-white placeholder:text-white/60 focus:outline-none ${isExpanded ? "max-h-[500px]" : "max-h-[5.5em]"}`}
                   value={prompt}
                   onChange={handleChange}
                   onPaste={handlePaste}
@@ -441,6 +453,7 @@ export const PromptBoxEdit = ({
                   onFocus={() => setIsFocused(true)}
                   onBlur={() => setIsFocused(false)}
                 />
+                <PromptFullscreenButton onClick={openFullscreen} />
                 <span
                   className={`absolute -bottom-1 right-0 text-[10px] tabular-nums ${isFinite(maxLen) && prompt.length > maxLen ? "text-red-500" : "text-white/40"}`}
                 >
@@ -501,6 +514,11 @@ export const PromptBoxEdit = ({
                 )}
               </div>
               <div className="flex items-center gap-2">
+                <PromptClearAllButton
+                  onClick={handleClearAll}
+                  disabled={!hasClearableContent}
+                  confirmClear={referenceImages.length > 0}
+                />
                 {onFitPressed && (
                   <Tooltip
                     content={"Fit canvas to screen"}
@@ -558,6 +576,44 @@ export const PromptBoxEdit = ({
           </div>
         </div>
       </div>
+      <PromptFullscreenModal
+        isOpen={isFullscreen}
+        onClose={closeFullscreen}
+        promptLength={prompt.length}
+        maxLength={maxLen}
+        clearAllButton={
+          <PromptClearAllButton
+            onClick={handleClearAll}
+            disabled={!hasClearableContent}
+            confirmClear={referenceImages.length > 0}
+          />
+        }
+        imagePromptRow={
+          selectedImageModel?.canUseImagePrompt ? (
+            <ImagePromptRow
+              visible={true}
+              maxImagePromptCount={Math.max(
+                1,
+                selectedImageModel?.maxImagePromptCount ?? 1,
+              )}
+              allowUpload={true}
+              referenceImages={referenceImages}
+              setReferenceImages={setReferenceImages}
+              uploadImage={uploadImage}
+              className="relative top-auto rounded-2xl"
+            />
+          ) : undefined
+        }
+      >
+        <textarea
+          placeholder="Write what you want to change in your image and click generate..."
+          className="promptbox-scrollbar text-md h-full min-h-0 w-full resize-none overflow-y-auto rounded bg-transparent text-base-fg placeholder-base-fg/60 focus:outline-none"
+          value={prompt}
+          onChange={handleChange}
+          onPaste={handlePaste}
+          onKeyDown={handleKeyDown}
+        />
+      </PromptFullscreenModal>
     </>
   );
 };

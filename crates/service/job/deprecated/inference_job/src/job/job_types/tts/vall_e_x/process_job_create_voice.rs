@@ -8,7 +8,7 @@ use log::{error, info, warn};
 use bucket_paths::legacy::typified_paths::private::zs_voices::bucket_directory::{ModelCategory, ModelType};
 use bucket_paths::legacy::typified_paths::private::zs_voices::bucket_file_path::ZeroShotVoiceEmbeddingBucketPath;
 use bucket_paths::legacy::typified_paths::public::media_files::bucket_file_path::MediaFileBucketPath;
-use cloud_storage::bucket_client::BucketClient;
+use cloud_storage::legacy_bucket_client::LegacyBucketClient;
 use bucket_paths::legacy::old_bespoke_paths::bucket_path_unifier::BucketPathUnifier;
 use enums::by_table::generic_inference_jobs::inference_result_type::InferenceResultType;
 use enums::by_table::zs_voices::encoding_type::ZsVoiceEncodingType;
@@ -316,7 +316,7 @@ pub struct AudioFile {
 pub async fn download_audio_from_hash(
   bucket_hash: &str,
   name: &str,
-  private_bucket_client: &BucketClient,
+  private_bucket_client: &LegacyBucketClient,
   path: &PathBuf
 ) -> Result<AudioFile, ProcessSingleJobError> {
   let unifer = BucketPathUnifier::default_paths();

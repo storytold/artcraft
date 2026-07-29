@@ -10,6 +10,7 @@ import {
   faDownToLine,
   faGlobe,
   faMagnifyingGlass,
+  faMusic,
   faPause,
   faPencil,
   faPlay,
@@ -17,11 +18,11 @@ import {
   faVideo,
   faWandMagicSparkles,
   faArrowRotateRight,
-  faWaveformLines,
 } from "@fortawesome/pro-solid-svg-icons";
 import { MediaFileDelete } from "@storyteller/tauri-api";
 import { LoadingSpinner } from "@storyteller/ui-loading-spinner";
 import { Viewer3D } from "@storyteller/ui-viewer-3d";
+import { WaveformAudioPlayer } from "@storyteller/ui-audio-player";
 import {
   useEffect,
   useState,
@@ -44,7 +45,7 @@ import {
   isActionReminderOpen,
 } from "@storyteller/ui-action-reminder-modal";
 import {
-  getModelCreatorIcon,
+  getCreatorIconPathForModelId,
   getModelDisplayName,
   getProviderDisplayName,
   getProviderIconByName,
@@ -60,6 +61,7 @@ import {
   formatDuration,
   formatResolution,
 } from "@storyteller/common";
+import { TagsSection } from "./tags/TagsSection";
 
 interface LightboxModalProps {
   isOpen: boolean;
@@ -582,7 +584,9 @@ export function LightboxModal({
               <div className="flex h-full w-full items-center justify-center bg-black/30">
                 <span className="text-base-fg/60">Image not available</span>
               </div>
-            ) : mediaClass === "dimensional" ? (
+            ) : mediaClass === "dimensional" ||
+              mediaClass === "mesh" ||
+              mediaClass === "splat" ? (
               <div className="h-full w-full">
                 <Viewer3D
                   key={selectedImageUrl}
@@ -609,6 +613,21 @@ export function LightboxModal({
                 <source src={selectedImageUrl as string} type="video/mp4" />
                 Your browser does not support the video tag.
               </video>
+            ) : mediaClass === "audio" ? (
+              <div className="flex h-full w-full items-center justify-center px-4 sm:px-8">
+                <div className="w-full max-w-xl rounded-2xl border border-white/10 bg-gradient-to-br from-white/[0.08] via-white/[0.04] to-white/[0.02] px-4 py-10 sm:px-6">
+                  <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-white/10 ring-1 ring-white/15">
+                    <FontAwesomeIcon
+                      icon={faMusic}
+                      className="text-2xl text-white/70"
+                    />
+                  </div>
+                  <WaveformAudioPlayer
+                    key={selectedImageUrl as string}
+                    src={selectedImageUrl as string}
+                  />
+                </div>
+              </div>
             ) : (
               <div className="flex h-full w-full flex-col justify-center">
                 <div
@@ -693,7 +712,10 @@ export function LightboxModal({
 
             {!mediaLoaded &&
               selectedImageUrl &&
-              mediaClass !== "dimensional" && (
+              mediaClass !== "dimensional" &&
+              mediaClass !== "mesh" &&
+              mediaClass !== "splat" &&
+              mediaClass !== "audio" && (
                 <div className="absolute inset-0 bg-ui-panel flex items-center justify-center">
                   <LoadingSpinner className="h-12 w-12 text-base-fg" />
                 </div>
@@ -1034,6 +1056,8 @@ export function LightboxModal({
                 />
               )}
 
+              <TagsSection mediaToken={mediaId} creator={creator} />
+
               {additionalInfo}
             </div>
 
@@ -1328,7 +1352,11 @@ function InfoSection({
             label="Model"
             value={
               <>
-                {getModelCreatorIcon(modelType)}
+                <img
+                  src={getCreatorIconPathForModelId(modelType)}
+                  alt="Model creator logo"
+                  className="h-4 w-4 invert"
+                />
                 <span>{getModelDisplayName(modelType)}</span>
               </>
             }

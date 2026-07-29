@@ -69,6 +69,10 @@ pub struct WorkflowRunTaskRequest {
 
   /// Controls the `faceBlurMode` field: true sends "on", false sends "off", None omits it.
   pub use_face_blur_hack: Option<bool>,
+
+  /// Output video bitrate. None defaults to "standard" (the field is omitted);
+  /// `High` sends `bitrate_mode: "high"`. Does not affect cost.
+  pub bitrate: Option<KinoviBitrateRaw>,
 }
 
 impl std::fmt::Debug for WorkflowRunTaskRequest {
@@ -87,6 +91,7 @@ impl std::fmt::Debug for WorkflowRunTaskRequest {
       .field("character_ids", &self.character_ids)
       .field("output_resolution", &self.output_resolution)
       .field("use_face_blur_hack", &self.use_face_blur_hack)
+      .field("bitrate", &self.bitrate)
       .finish()
   }
 }
@@ -97,80 +102,6 @@ impl std::fmt::Debug for WorkflowRunTaskArgs<'_> {
       .field("request", &self.request)
       .field("host_override", &self.host_override)
       .finish()
-  }
-}
-
-impl WorkflowRunTaskRequest {
-  /// Estimates the credit cost for this generation request.
-  ///
-  /// Pricing is per-second × batch count, with the per-second rate
-  /// depending on model type and output resolution:
-  ///
-  /// | Model        | 480p | 720p | 1080p |
-  /// |--------------|------|------|-------|
-  /// | Pro          |   15 |   40 |    90 |
-  /// | Fast         |   10 |   28 |   n/a |
-  /// | HappyHorse   |   15 |   40 |    90 |
-  /// TODO(bt,2026-04-23): Not sure pricing for Happy Horse is correct here.
-  ///
-  /// Input mode (text, keyframe, reference) has no effect on cost.
-  /// Aspect ratio (`resolution` field) has no effect on cost.
-  pub fn estimate_credits(&self) -> u32 {
-    let credits_per_second: u32 = match (self.model_type, self.output_resolution) {
-      // Seedance 2.0 Pro
-      (KinoviModelTypeRaw::Seedance2Pro, Some(KinoviOutputResolutionRaw::FourEightyP)) => 15,
-      (KinoviModelTypeRaw::Seedance2Pro, None)
-      | (KinoviModelTypeRaw::Seedance2Pro, Some(KinoviOutputResolutionRaw::SevenTwentyP)) => 40,
-      (KinoviModelTypeRaw::Seedance2Pro, Some(KinoviOutputResolutionRaw::TenEightyP)) => 90,
-
-      // Seedance 2.0 Fast
-      (KinoviModelTypeRaw::Seedance2Fast, Some(KinoviOutputResolutionRaw::FourEightyP)) => 10,
-      (KinoviModelTypeRaw::Seedance2Fast, None)
-      | (KinoviModelTypeRaw::Seedance2Fast, Some(KinoviOutputResolutionRaw::SevenTwentyP)) => 28,
-      // NB: 1080p not officially supported for Fast, but price as 720p if requested
-      (KinoviModelTypeRaw::Seedance2Fast, Some(KinoviOutputResolutionRaw::TenEightyP)) => 28,
-
-      // TODO(bt,2026-04-23): Not sure pricing for Happy Horse is correct here.
-      // Happy Horse 1.0 — same credit rates as Seedance 2.0 Pro
-      (KinoviModelTypeRaw::HappyHorse1p0, Some(KinoviOutputResolutionRaw::FourEightyP)) => 15,
-      (KinoviModelTypeRaw::HappyHorse1p0, None)
-      | (KinoviModelTypeRaw::HappyHorse1p0, Some(KinoviOutputResolutionRaw::SevenTwentyP)) => 40,
-      (KinoviModelTypeRaw::HappyHorse1p0, Some(KinoviOutputResolutionRaw::TenEightyP)) => 90,
-    };
-
-    let per_video = u32::from(self.duration_seconds) * credits_per_second;
-    let batch_multiplier: u32 = match self.batch_count {
-      KinoviBatchCountRaw::One => 1,
-      KinoviBatchCountRaw::Two => 2,
-      KinoviBatchCountRaw::Four => 4,
-    };
-    per_video * batch_multiplier
-  }
-
-  /// Credits per dollar for billing conversion.
-  ///
-  /// Legacy 720p pricing uses the original Kinovi credit package rates.
-  /// All other model/resolution combos use the newer rate: 525,000 credits / $2,159.0909.
-  fn credits_per_dollar(&self) -> f64 {
-    match (self.model_type, self.output_resolution) {
-      // Legacy: Seedance 2.0 Pro @ 720p — 25,000 credits for $99.99
-      (KinoviModelTypeRaw::Seedance2Pro, None)
-      | (KinoviModelTypeRaw::Seedance2Pro, Some(KinoviOutputResolutionRaw::SevenTwentyP)) => 250.0,
-
-      // Legacy: Seedance 2.0 Fast @ 720p — 22,000 credits for $99.99
-      (KinoviModelTypeRaw::Seedance2Fast, None)
-      | (KinoviModelTypeRaw::Seedance2Fast, Some(KinoviOutputResolutionRaw::SevenTwentyP)) => 220.0,
-
-      // New pricing: 525,000 credits for $2,159.0909 (~243.16 credits/$1)
-      _ => 243.0,
-    }
-  }
-
-  pub fn estimate_cost_in_usd_cents(&self) -> u64 {
-    let credits = self.estimate_credits() as f64;
-    let credits_per_dollar = self.credits_per_dollar();
-    let cost = credits / credits_per_dollar * 100.0;
-    cost.round() as u64
   }
 }
 
@@ -194,14 +125,16 @@ pub enum KinoviAspectRatioRaw {
 }
 
 impl KinoviAspectRatioRaw {
-  fn as_str(&self) -> &'static str {
+  /// The aspect ratio as a ratio string (e.g. "16:9"), used by models that
+  /// send an `aspectRatio` field (Seedance 2.0 Mini) instead of `resolution`.
+  fn as_aspect_ratio_str(&self) -> &'static str {
     match self {
-      Self::Landscape16x9 => "1280x720",
-      Self::UltraWide21x9 => "1280x540",
-      Self::Portrait9x16 => "720x1280",
-      Self::Square1x1 => "720x720",
-      Self::Landscape4x3 => "960x720",
-      Self::Portrait3x4 => "720x960",
+      Self::Landscape16x9 => "16:9",
+      Self::UltraWide21x9 => "21:9",
+      Self::Portrait9x16 => "9:16",
+      Self::Square1x1 => "1:1",
+      Self::Landscape4x3 => "4:3",
+      Self::Portrait3x4 => "3:4",
     }
   }
 }
@@ -215,6 +148,9 @@ pub enum KinoviOutputResolutionRaw {
   SevenTwentyP,
   /// 1080p
   TenEightyP,
+  /// 4K. Only supported by Seedance 2.0 (Pro). Seedance 2.0 Fast does NOT
+  /// offer 4K — requesting it for Fast is not valid upstream.
+  FourK,
 }
 
 impl KinoviOutputResolutionRaw {
@@ -225,6 +161,7 @@ impl KinoviOutputResolutionRaw {
       Self::FourEightyP => Some("480p"),
       Self::SevenTwentyP => None, // Default — omit from request
       Self::TenEightyP => Some("1080p"),
+      Self::FourK => Some("4k"),
     }
   }
 }
@@ -234,7 +171,12 @@ impl KinoviOutputResolutionRaw {
 pub enum KinoviBatchCountRaw {
   One,
   Two,
+  Three,
   Four,
+  Five,
+  Six,
+  Seven,
+  Eight,
 }
 
 impl KinoviBatchCountRaw {
@@ -242,7 +184,12 @@ impl KinoviBatchCountRaw {
     match self {
       Self::One => 1,
       Self::Two => 2,
+      Self::Three => 3,
       Self::Four => 4,
+      Self::Five => 5,
+      Self::Six => 6,
+      Self::Seven => 7,
+      Self::Eight => 8,
     }
   }
 }
@@ -254,6 +201,8 @@ pub enum KinoviModelTypeRaw {
   Seedance2Pro,
   /// Seedance 2.0 Fast (lower quality, faster).
   Seedance2Fast,
+  /// Seedance 2.0 Mini (cheapest; 480p/720p only).
+  Seedance2Mini,
   /// Happy Horse 1.0.
   HappyHorse1p0,
 }
@@ -263,7 +212,47 @@ impl KinoviModelTypeRaw {
     match self {
       Self::Seedance2Pro => "seedance-20",
       Self::Seedance2Fast => "seedance2-fast",
+      Self::Seedance2Mini => "seedance2.0-mini",
       Self::HappyHorse1p0 => "happyhorse1.0",
+    }
+  }
+
+  /// The tRPC `businessType` for this model. Seedance 2.0 Mini uses its
+  /// own business type; every other model uses the shared one.
+  fn business_type(&self) -> &'static str {
+    match self {
+      Self::Seedance2Mini => "seedance20-mini-video-generation",
+      Self::HappyHorse1p0 => "happyhorse-video-generation",
+      Self::Seedance2Pro | Self::Seedance2Fast => "wan22-video-generation",
+    }
+  }
+
+  /// Whether the aspect ratio is sent in an `aspectRatio` field (true)
+  /// rather than the `resolution` field. Mini and Happy Horse use `aspectRatio`.
+  fn uses_aspect_ratio_field(&self) -> bool {
+    matches!(self, Self::Seedance2Mini | Self::HappyHorse1p0)
+  }
+
+  /// Whether this model uses Happy Horse's `happyhorseMode` (t2v/i2v)
+  /// instead of the standard `mode` (keyframe/reference).
+  fn uses_happyhorse_mode(&self) -> bool {
+    matches!(self, Self::HappyHorse1p0)
+  }
+}
+
+/// Output video bitrate. When omitted, defaults to "standard".
+#[derive(Debug, Clone, Copy)]
+pub enum KinoviBitrateRaw {
+  /// High bitrate (`bitrate_mode: "high"`).
+  High,
+}
+
+impl KinoviBitrateRaw {
+  /// Returns the API string to send, or None for "standard" (the default,
+  /// which is expressed by omitting the field entirely).
+  pub fn as_api_str(&self) -> Option<&'static str> {
+    match self {
+      Self::High => Some("high"),
     }
   }
 }
@@ -285,14 +274,133 @@ pub struct WorkflowRunTaskResponse {
 // --- Implementation ---
 
 pub async fn workflow_run_task(args: WorkflowRunTaskArgs<'_>) -> Result<WorkflowRunTaskResponse, Seedance2ProError> {
-  let host = resolve_host(args.host_override.as_ref());
-  let base_url = host.api_base_url();
-  let run_task_url = format!("{}/api/trpc/workflow.runTask?batch=1", base_url);
-
   let req = args.request;
 
   info!("Requesting video from Seedance2Pro (v2): {:?}", req);
 
+  let request_body = build_batch_request(req);
+
+  info!("Seedance2pro request (v2): {:?}", request_body);
+
+  send_run_task_request(args.session, args.host_override, &request_body).await
+}
+
+/// Run a `workflow.runTask` call whose `apiParams` shape differs from the
+/// standard video request — e.g. the Suno audio models, which carry their own
+/// parameter sets. The caller provides the tRPC `businessType` and a
+/// serializable `apiParams` payload; the HTTP plumbing and response handling
+/// are shared with [`workflow_run_task`].
+pub async fn workflow_run_task_custom<T: serde::Serialize + std::fmt::Debug>(
+  args: WorkflowRunTaskCustomArgs<'_, T>,
+) -> Result<WorkflowRunTaskResponse, Seedance2ProError> {
+  info!(
+    "Requesting {} from Seedance2Pro (custom): {:?}",
+    args.business_type, args.api_params,
+  );
+
+  let request_body = serde_json::json!({
+    "0": {
+      "json": {
+        "businessType": args.business_type,
+        "apiParams": args.api_params,
+      }
+    }
+  });
+
+  send_run_task_request(args.session, args.host_override, &request_body).await
+}
+
+/// Bundle for [`workflow_run_task_custom`].
+pub struct WorkflowRunTaskCustomArgs<'a, T: serde::Serialize + std::fmt::Debug> {
+  /// The tRPC `businessType` discriminator (e.g. "suno-music-generation").
+  pub business_type: &'static str,
+  pub api_params: T,
+  pub session: &'a Seedance2ProSession,
+  pub host_override: Option<KinoviHost>,
+}
+
+async fn send_run_task_request<B: serde::Serialize>(
+  session: &Seedance2ProSession,
+  host_override: Option<KinoviHost>,
+  request_body: &B,
+) -> Result<WorkflowRunTaskResponse, Seedance2ProError> {
+  let host = resolve_host(host_override.as_ref());
+  let base_url = host.api_base_url();
+  let run_task_url = format!("{}/api/trpc/workflow.runTask?batch=1", base_url);
+
+  let cookie = session.cookies.as_str();
+
+  let client = Client::builder()
+    .emulation(Emulation::Firefox143)
+    .build()
+    .map_err(|err| Seedance2ProClientError::WreqClientError(err))?;
+
+  let referer = format!("{}/", base_url);
+
+  let response = client.post(&run_task_url)
+    .header("User-Agent", FIREFOX_USER_AGENT)
+    .header("Accept", "*/*")
+    .header("Accept-Language", "en-US,en;q=0.9")
+    .header("Accept-Encoding", "gzip, deflate, br, zstd")
+    .header("Referer", &referer)
+    .header("Content-Type", "application/json")
+    .header("x-trpc-source", "client")
+    .header("Origin", base_url)
+    .header("Connection", "keep-alive")
+    .header("Cookie", cookie)
+    .header("Sec-Fetch-Dest", "empty")
+    .header("Sec-Fetch-Mode", "cors")
+    .header("Sec-Fetch-Site", "same-origin")
+    .header("Priority", "u=4")
+    .header("TE", "trailers")
+    .json(request_body)
+    .send()
+    .await
+    .map_err(|err| Seedance2ProGenericApiError::WreqError(err))?;
+
+  let status = response.status();
+  let response_body = response.text()
+    .await
+    .map_err(|err| Seedance2ProGenericApiError::WreqError(err))?;
+
+  info!("Response status: {}, body: {}", status, response_body);
+
+  if !status.is_success() {
+    return Err(categorize_seedance2pro_error(status, response_body));
+  }
+
+  let batch_response: Vec<BatchResponseItem> = serde_json::from_str(&response_body)
+    .map_err(|err| Seedance2ProGenericApiError::SerdeResponseParseErrorWithBody(err, response_body.clone()))?;
+
+  let task_data = batch_response
+    .into_iter()
+    .next()
+    .ok_or_else(|| Seedance2ProGenericApiError::UnexpectedResponseShape {
+      explanation: "Empty batch response array".to_string(),
+      raw_body: response_body.clone(),
+    })?
+    .result
+    .data
+    .json;
+
+  if task_data.violation_warning {
+    return Err(Seedance2ProBadRequestApiError::VideoGenerationViolation { raw_body: response_body }.into());
+  }
+
+  Ok(WorkflowRunTaskResponse {
+    task_id: task_data.task_id,
+    order_id: task_data.order_id,
+    task_ids: task_data.task_ids,
+    order_ids: task_data.order_ids,
+  })
+}
+
+/// Build the tRPC request body for a workflow run-task call.
+///
+/// Most models carry the aspect ratio as pixel dimensions in `resolution`.
+/// Seedance 2.0 Mini instead sends a ratio string in an `aspectRatio` field
+/// and a different `businessType`.
+fn build_batch_request(req: WorkflowRunTaskRequest) -> BatchRequest {
   let has_reference_images = req.reference_image_urls.as_ref().is_some_and(|urls| !urls.is_empty());
   let has_reference_videos = req.reference_video_urls.as_ref().is_some_and(|urls| !urls.is_empty());
   let has_reference_audio = req.reference_audio_urls.as_ref().is_some_and(|urls| !urls.is_empty());
@@ -339,100 +447,53 @@ pub async fn workflow_run_task(args: WorkflowRunTaskArgs<'_>) -> Result<Workflow
 
   let duration = format!("{}s", req.duration_seconds);
 
+  // The aspect ratio is sent as a ratio string (e.g. "16:9"). Seedance Pro/Fast
+  // carry it in the `resolution` field; Mini and Happy Horse use `aspectRatio`.
+  let aspect_ratio_value = req.aspect_ratio.as_aspect_ratio_str();
+  let (resolution, aspect_ratio) = if req.model_type.uses_aspect_ratio_field() {
+    (None, Some(aspect_ratio_value))
+  } else {
+    (Some(aspect_ratio_value.to_string()), None)
+  };
+
+  // Happy Horse uses `happyhorseMode` (t2v/i2v) instead of the standard `mode`
+  // (keyframe/reference). i2v applies whenever an input image/video is attached.
+  let (mode, happyhorse_mode) = if req.model_type.uses_happyhorse_mode() {
+    let hh = if uploaded_urls.is_some() { "i2v" } else { "t2v" };
+    (None, Some(hh))
+  } else {
+    (Some(video_input_mode), None)
+  };
+
   info!(
-    "Generating video (v2): mode={}, resolution={}, duration={}, batch={}",
-    video_input_mode, req.aspect_ratio.as_str(), duration, batch_count_value
+    "Generating video (v2): mode={}, model={}, duration={}, batch={}",
+    video_input_mode, req.model_type.as_api_str(), duration, batch_count_value
   );
 
-  let request_body = BatchRequest {
+  BatchRequest {
     zero: BatchRequestInner {
       json: BatchRequestJson {
-        business_type: "wan22-video-generation",
+        business_type: req.model_type.business_type(),
         api_params: ApiParams {
           prompt: req.prompt,
-          resolution: req.aspect_ratio.as_str().to_string(),
+          resolution,
+          aspect_ratio,
           content_mode: "normal",
           model: req.model_type.as_api_str(),
           duration,
-          mode: video_input_mode,
+          mode,
+          happyhorse_mode,
           output_resolution: req.output_resolution.and_then(|r| r.as_api_str()),
           face_blur_mode,
           character_ids: req.character_ids,
           uploaded_urls,
           audio_urls,
           batch_count,
+          bitrate_mode: req.bitrate.and_then(|bitrate| bitrate.as_api_str()),
         },
       },
     },
-  };
-
-  info!("Seedance2pro request (v2): {:?}", request_body);
-
-  let cookie = args.session.cookies.as_str();
-
-  let client = Client::builder()
-    .emulation(Emulation::Firefox143)
-    .build()
-    .map_err(|err| Seedance2ProClientError::WreqClientError(err))?;
-
-  let referer = format!("{}/", base_url);
-
-  let response = client.post(&run_task_url)
-    .header("User-Agent", FIREFOX_USER_AGENT)
-    .header("Accept", "*/*")
-    .header("Accept-Language", "en-US,en;q=0.9")
-    .header("Accept-Encoding", "gzip, deflate, br, zstd")
-    .header("Referer", &referer)
-    .header("Content-Type", "application/json")
-    .header("x-trpc-source", "client")
-    .header("Origin", base_url)
-    .header("Connection", "keep-alive")
-    .header("Cookie", cookie)
-    .header("Sec-Fetch-Dest", "empty")
-    .header("Sec-Fetch-Mode", "cors")
-    .header("Sec-Fetch-Site", "same-origin")
-    .header("Priority", "u=4")
-    .header("TE", "trailers")
-    .json(&request_body)
-    .send()
-    .await
-    .map_err(|err| Seedance2ProGenericApiError::WreqError(err))?;
-
-  let status = response.status();
-  let response_body = response.text()
-    .await
-    .map_err(|err| Seedance2ProGenericApiError::WreqError(err))?;
-
-  info!("Response status: {}, body: {}", status, response_body);
-
-  if !status.is_success() {
-    return Err(categorize_seedance2pro_error(status, response_body));
   }
-
-  let batch_response: Vec<BatchResponseItem> = serde_json::from_str(&response_body)
-    .map_err(|err| Seedance2ProGenericApiError::SerdeResponseParseErrorWithBody(err, response_body.clone()))?;
-
-  let task_data = batch_response
-    .into_iter()
-    .next()
-    .ok_or_else(|| Seedance2ProGenericApiError::UnexpectedResponseShape {
-      explanation: "Empty batch response array".to_string(),
-      raw_body: response_body.clone(),
-    })?
-    .result
-    .data
-    .json;
-
-  if task_data.violation_warning {
-    return Err(Seedance2ProBadRequestApiError::VideoGenerationViolation { raw_body: response_body }.into());
-  }
-
-  Ok(WorkflowRunTaskResponse {
-    task_id: task_data.task_id,
-    order_id: task_data.order_id,
-    task_ids: task_data.task_ids,
-    order_ids: task_data.order_ids,
-  })
 }
 
 #[cfg(test)]
@@ -447,20 +508,121 @@ mod tests {
   use crate::requests::prepare_file_upload::prepare_file_upload::{prepare_file_upload, PrepareFileUploadArgs};
   use crate::requests::upload_file::upload_file::{upload_file, UploadFileArgs};
 
-  mod pricing_tests {
+  // ── Bitrate serialization ──
+  //
+  // The optional `bitrate_mode` field is sent only when `High` is requested;
+  // the standard (default) bitrate omits the field entirely.
+
+  mod bitrate_tests {
     use super::*;
 
-    fn make_args(
-      model_type: KinoviModelTypeRaw,
-      duration_seconds: u8,
-      batch_count: KinoviBatchCountRaw,
+    #[test]
+    fn high_bitrate_serializes_to_high() {
+      assert_eq!(KinoviBitrateRaw::High.as_api_str(), Some("high"));
+
+      let api_params = base_api_params(Some("high"));
+      let json = serde_json::to_string(&api_params).unwrap();
+      assert!(json.contains(r#""bitrate_mode":"high""#), "expected bitrate_mode in {json}");
+    }
+
+    #[test]
+    fn standard_bitrate_omits_field() {
+      let api_params = base_api_params(None);
+      let json = serde_json::to_string(&api_params).unwrap();
+      assert!(!json.contains("bitrate_mode"), "expected no bitrate_mode in {json}");
+    }
+
+    fn base_api_params(bitrate_mode: Option<&'static str>) -> ApiParams {
+      ApiParams {
+        prompt: "a corgi".to_string(),
+        resolution: Some("16:9".to_string()),
+        aspect_ratio: None,
+        content_mode: "normal",
+        model: "seedance-20",
+        duration: "5s".to_string(),
+        mode: Some("keyframe"),
+        happyhorse_mode: None,
+        output_resolution: None,
+        face_blur_mode: None,
+        character_ids: None,
+        uploaded_urls: None,
+        audio_urls: None,
+        batch_count: None,
+        bitrate_mode,
+      }
+    }
+  }
+
+  // ── Output-resolution serialization ──
+  //
+  // `outputResolution` is sent only when non-default; 720p (the default) omits
+  // the field. 4K serializes to the literal "4k".
+
+  mod output_resolution_serialization_tests {
+    use super::*;
+
+    #[test]
+    fn four_k_maps_to_4k() {
+      assert_eq!(KinoviOutputResolutionRaw::FourK.as_api_str(), Some("4k"));
+    }
+
+    #[test]
+    fn four_k_serializes_on_the_wire() {
+      let api_params = base_api_params(KinoviOutputResolutionRaw::FourK.as_api_str());
+      let json = serde_json::to_string(&api_params).unwrap();
+      assert!(json.contains(r#""outputResolution":"4k""#), "expected outputResolution in {json}");
+    }
+
+    #[test]
+    fn default_720p_omits_output_resolution() {
+      assert_eq!(KinoviOutputResolutionRaw::SevenTwentyP.as_api_str(), None);
+      let api_params = base_api_params(KinoviOutputResolutionRaw::SevenTwentyP.as_api_str());
+      let json = serde_json::to_string(&api_params).unwrap();
+      assert!(!json.contains("outputResolution"), "expected no outputResolution in {json}");
+    }
+
+    fn base_api_params(output_resolution: Option<&'static str>) -> ApiParams {
+      ApiParams {
+        prompt: "a corgi".to_string(),
+        resolution: Some("16:9".to_string()),
+        aspect_ratio: None,
+        content_mode: "normal",
+        model: "seedance-20",
+        duration: "5s".to_string(),
+        mode: Some("reference"),
+        happyhorse_mode: None,
+        output_resolution,
+        face_blur_mode: None,
+        character_ids: None,
+        uploaded_urls: None,
+        audio_urls: None,
+        batch_count: None,
+        bitrate_mode: None,
+      }
+    }
+  }
+
+  // ── Seedance 2.0 Mini request shape ──
+  //
+  // Mini differs from the other models on the wire: a
+  // `seedance20-mini-video-generation` businessType, a `seedance2.0-mini`
+  // model, and an `aspectRatio` ratio string (e.g. "16:9") in place of the
+  // pixel-dimension `resolution` field.
+
+  mod mini_request_shape_tests {
+    use super::*;
+
+    fn mini_request(
+      aspect_ratio: KinoviAspectRatioRaw,
       output_resolution: Option<KinoviOutputResolutionRaw>,
+      batch_count: KinoviBatchCountRaw,
     ) -> WorkflowRunTaskRequest {
       WorkflowRunTaskRequest {
-        model_type,
-        prompt: String::new(),
-        aspect_ratio: KinoviAspectRatioRaw::Square1x1,
-        duration_seconds,
+        model_type: KinoviModelTypeRaw::Seedance2Mini,
+        prompt: "a corgi".to_string(),
+        aspect_ratio,
+        output_resolution,
+        duration_seconds: 5,
         batch_count,
         start_frame_url: None,
         end_frame_url: None,
@@ -468,273 +630,166 @@ mod tests {
         reference_video_urls: None,
         reference_audio_urls: None,
         character_ids: None,
-        output_resolution,
         use_face_blur_hack: None,
-      }
-    }
-
-    fn pro(dur: u8, batch: KinoviBatchCountRaw) -> WorkflowRunTaskRequest {
-      make_args(KinoviModelTypeRaw::Seedance2Pro, dur, batch, None)
-    }
-
-    fn pro_res(dur: u8, batch: KinoviBatchCountRaw, res: KinoviOutputResolutionRaw) -> WorkflowRunTaskRequest {
-      make_args(KinoviModelTypeRaw::Seedance2Pro, dur, batch, Some(res))
-    }
-
-    fn fast(dur: u8, batch: KinoviBatchCountRaw) -> WorkflowRunTaskRequest {
-      make_args(KinoviModelTypeRaw::Seedance2Fast, dur, batch, None)
-    }
-
-    fn fast_res(dur: u8, batch: KinoviBatchCountRaw, res: KinoviOutputResolutionRaw) -> WorkflowRunTaskRequest {
-      make_args(KinoviModelTypeRaw::Seedance2Fast, dur, batch, Some(res))
-    }
-
-    // ── Spot checks: exact values from the pricing table ──
-
-    #[test]
-    fn spot_check_pro_720p() {
-      assert_eq!(pro(5, KinoviBatchCountRaw::One).estimate_credits(), 200);
-      assert_eq!(pro(10, KinoviBatchCountRaw::One).estimate_credits(), 400);
-      assert_eq!(pro(15, KinoviBatchCountRaw::One).estimate_credits(), 600);
-    }
-
-    #[test]
-    fn spot_check_pro_480p() {
-      assert_eq!(pro_res(5, KinoviBatchCountRaw::One, KinoviOutputResolutionRaw::FourEightyP).estimate_credits(), 75);
-      assert_eq!(pro_res(10, KinoviBatchCountRaw::One, KinoviOutputResolutionRaw::FourEightyP).estimate_credits(), 150);
-      assert_eq!(pro_res(15, KinoviBatchCountRaw::One, KinoviOutputResolutionRaw::FourEightyP).estimate_credits(), 225);
-    }
-
-    #[test]
-    fn spot_check_pro_1080p() {
-      assert_eq!(pro_res(4, KinoviBatchCountRaw::One, KinoviOutputResolutionRaw::TenEightyP).estimate_credits(), 360);
-      assert_eq!(pro_res(5, KinoviBatchCountRaw::One, KinoviOutputResolutionRaw::TenEightyP).estimate_credits(), 450);
-      assert_eq!(pro_res(6, KinoviBatchCountRaw::One, KinoviOutputResolutionRaw::TenEightyP).estimate_credits(), 540);
-      assert_eq!(pro_res(7, KinoviBatchCountRaw::One, KinoviOutputResolutionRaw::TenEightyP).estimate_credits(), 630);
-      assert_eq!(pro_res(8, KinoviBatchCountRaw::One, KinoviOutputResolutionRaw::TenEightyP).estimate_credits(), 720);
-      assert_eq!(pro_res(9, KinoviBatchCountRaw::One, KinoviOutputResolutionRaw::TenEightyP).estimate_credits(), 810);
-      assert_eq!(pro_res(10, KinoviBatchCountRaw::One, KinoviOutputResolutionRaw::TenEightyP).estimate_credits(), 900);
-      assert_eq!(pro_res(11, KinoviBatchCountRaw::One, KinoviOutputResolutionRaw::TenEightyP).estimate_credits(), 990);
-      assert_eq!(pro_res(12, KinoviBatchCountRaw::One, KinoviOutputResolutionRaw::TenEightyP).estimate_credits(), 1080);
-      assert_eq!(pro_res(13, KinoviBatchCountRaw::One, KinoviOutputResolutionRaw::TenEightyP).estimate_credits(), 1170);
-      assert_eq!(pro_res(14, KinoviBatchCountRaw::One, KinoviOutputResolutionRaw::TenEightyP).estimate_credits(), 1260);
-      assert_eq!(pro_res(15, KinoviBatchCountRaw::One, KinoviOutputResolutionRaw::TenEightyP).estimate_credits(), 1350);
-    }
-
-    #[test]
-    fn spot_check_fast_720p() {
-      assert_eq!(fast(5, KinoviBatchCountRaw::One).estimate_credits(), 140);
-      assert_eq!(fast(10, KinoviBatchCountRaw::One).estimate_credits(), 280);
-    }
-
-    #[test]
-    fn spot_check_fast_480p() {
-      assert_eq!(fast_res(5, KinoviBatchCountRaw::One, KinoviOutputResolutionRaw::FourEightyP).estimate_credits(), 50);
-      assert_eq!(fast_res(10, KinoviBatchCountRaw::One, KinoviOutputResolutionRaw::FourEightyP).estimate_credits(), 100);
-    }
-
-    #[test]
-    fn pro_more_expensive_than_fast_720p() {
-      let p = pro(5, KinoviBatchCountRaw::One).estimate_credits();
-      let f = fast(5, KinoviBatchCountRaw::One).estimate_credits();
-      assert!(p > f, "Pro 720p ({}) should be more than Fast 720p ({})", p, f);
-    }
-
-    #[test]
-    fn pro_more_expensive_than_fast_480p() {
-      let p = pro_res(5, KinoviBatchCountRaw::One, KinoviOutputResolutionRaw::FourEightyP).estimate_credits();
-      let f = fast_res(5, KinoviBatchCountRaw::One, KinoviOutputResolutionRaw::FourEightyP).estimate_credits();
-      assert!(p > f, "Pro 480p ({}) should be more than Fast 480p ({})", p, f);
-    }
-
-    #[test]
-    fn pro_1080p_more_than_720p_more_than_480p() {
-      let c480 = pro_res(5, KinoviBatchCountRaw::One, KinoviOutputResolutionRaw::FourEightyP).estimate_credits();
-      let c720 = pro(5, KinoviBatchCountRaw::One).estimate_credits();
-      let c1080 = pro_res(5, KinoviBatchCountRaw::One, KinoviOutputResolutionRaw::TenEightyP).estimate_credits();
-      assert!(c480 < c720, "480p ({}) should be less than 720p ({})", c480, c720);
-      assert!(c720 < c1080, "720p ({}) should be less than 1080p ({})", c720, c1080);
-    }
-
-    #[test]
-    fn fast_720p_more_than_480p() {
-      let c480 = fast_res(5, KinoviBatchCountRaw::One, KinoviOutputResolutionRaw::FourEightyP).estimate_credits();
-      let c720 = fast(5, KinoviBatchCountRaw::One).estimate_credits();
-      assert!(c480 < c720, "Fast 480p ({}) should be less than Fast 720p ({})", c480, c720);
-    }
-
-    #[test]
-    fn pro_none_same_as_720p() {
-      let none = pro(5, KinoviBatchCountRaw::One).estimate_credits();
-      let explicit = pro_res(5, KinoviBatchCountRaw::One, KinoviOutputResolutionRaw::SevenTwentyP).estimate_credits();
-      assert_eq!(none, explicit);
-    }
-
-    #[test]
-    fn fast_none_same_as_720p() {
-      let none = fast(5, KinoviBatchCountRaw::One).estimate_credits();
-      let explicit = fast_res(5, KinoviBatchCountRaw::One, KinoviOutputResolutionRaw::SevenTwentyP).estimate_credits();
-      assert_eq!(none, explicit);
-    }
-
-    #[test]
-    fn table_driven_credits() {
-      let cases: Vec<(KinoviModelTypeRaw, Option<KinoviOutputResolutionRaw>, u8, KinoviBatchCountRaw, u32)> = vec![
-        (KinoviModelTypeRaw::Seedance2Pro, None, 4, KinoviBatchCountRaw::One, 160),
-        (KinoviModelTypeRaw::Seedance2Pro, None, 5, KinoviBatchCountRaw::Two, 400),
-        (KinoviModelTypeRaw::Seedance2Pro, None, 10, KinoviBatchCountRaw::Four, 1600),
-        (KinoviModelTypeRaw::Seedance2Pro, Some(KinoviOutputResolutionRaw::FourEightyP), 5, KinoviBatchCountRaw::One, 75),
-        (KinoviModelTypeRaw::Seedance2Pro, Some(KinoviOutputResolutionRaw::FourEightyP), 10, KinoviBatchCountRaw::Two, 300),
-        (KinoviModelTypeRaw::Seedance2Pro, Some(KinoviOutputResolutionRaw::FourEightyP), 15, KinoviBatchCountRaw::Four, 900),
-        (KinoviModelTypeRaw::Seedance2Pro, Some(KinoviOutputResolutionRaw::TenEightyP), 5, KinoviBatchCountRaw::One, 450),
-        (KinoviModelTypeRaw::Seedance2Pro, Some(KinoviOutputResolutionRaw::TenEightyP), 10, KinoviBatchCountRaw::Two, 1800),
-        (KinoviModelTypeRaw::Seedance2Pro, Some(KinoviOutputResolutionRaw::TenEightyP), 15, KinoviBatchCountRaw::Four, 5400),
-        (KinoviModelTypeRaw::Seedance2Fast, None, 4, KinoviBatchCountRaw::One, 112),
-        (KinoviModelTypeRaw::Seedance2Fast, None, 5, KinoviBatchCountRaw::Two, 280),
-        (KinoviModelTypeRaw::Seedance2Fast, None, 15, KinoviBatchCountRaw::Four, 1680),
-        (KinoviModelTypeRaw::Seedance2Fast, Some(KinoviOutputResolutionRaw::FourEightyP), 5, KinoviBatchCountRaw::One, 50),
-        (KinoviModelTypeRaw::Seedance2Fast, Some(KinoviOutputResolutionRaw::FourEightyP), 10, KinoviBatchCountRaw::Two, 200),
-        (KinoviModelTypeRaw::Seedance2Fast, Some(KinoviOutputResolutionRaw::FourEightyP), 15, KinoviBatchCountRaw::Four, 600),
-      ];
-
-      for (i, (model, res, dur, batch, expected)) in cases.iter().enumerate() {
-        let args = make_args(*model, *dur, *batch, *res);
-        let actual = args.estimate_credits();
-        assert_eq!(
-          actual, *expected,
-          "Case {}: {:?} {:?} {}s batch {:?} — expected {} credits, got {}",
-          i, model, res, dur, batch, expected, actual,
-        );
+        bitrate: None,
       }
     }
 
     #[test]
-    fn aspect_ratio_does_not_affect_credits() {
-      let resolutions = [
-        KinoviAspectRatioRaw::Landscape16x9,
-        KinoviAspectRatioRaw::Portrait9x16,
-        KinoviAspectRatioRaw::Square1x1,
+    fn mini_uses_aspect_ratio_field_and_business_type() {
+      let body = build_batch_request(mini_request(
         KinoviAspectRatioRaw::Landscape4x3,
-        KinoviAspectRatioRaw::Portrait3x4,
-      ];
+        Some(KinoviOutputResolutionRaw::FourEightyP),
+        KinoviBatchCountRaw::One,
+      ));
+      let json = serde_json::to_string(&body).unwrap();
+      assert!(json.contains(r#""businessType":"seedance20-mini-video-generation""#), "{json}");
+      assert!(json.contains(r#""model":"seedance2.0-mini""#), "{json}");
+      assert!(json.contains(r#""aspectRatio":"4:3""#), "{json}");
+      assert!(json.contains(r#""outputResolution":"480p""#), "{json}");
+      // Mini does NOT send the pixel-dimension `resolution` field.
+      assert!(!json.contains(r#""resolution":"#), "{json}");
+    }
 
-      let baseline = pro(5, KinoviBatchCountRaw::One).estimate_credits();
+    #[test]
+    fn mini_720p_omits_output_resolution() {
+      let body = build_batch_request(mini_request(
+        KinoviAspectRatioRaw::Landscape16x9,
+        None,
+        KinoviBatchCountRaw::One,
+      ));
+      let json = serde_json::to_string(&body).unwrap();
+      assert!(json.contains(r#""aspectRatio":"16:9""#), "{json}");
+      assert!(!json.contains("outputResolution"), "{json}");
+    }
 
-      for res in &resolutions {
-        let req = WorkflowRunTaskRequest {
-          model_type: KinoviModelTypeRaw::Seedance2Pro,
-          prompt: String::new(),
-          aspect_ratio: *res,
-          duration_seconds: 5,
-          batch_count: KinoviBatchCountRaw::One,
-          start_frame_url: None,
-          end_frame_url: None,
-          reference_image_urls: None,
-          reference_video_urls: None,
-          reference_audio_urls: None,
-          character_ids: None,
-          output_resolution: None,
-          use_face_blur_hack: None,
-        };
-        assert_eq!(
-          req.estimate_credits(), baseline,
-          "Aspect ratio {:?} should not change credits from baseline {}",
-          res, baseline,
-        );
+    #[test]
+    fn mini_batch_count_eight_serializes() {
+      let body = build_batch_request(mini_request(
+        KinoviAspectRatioRaw::Landscape16x9,
+        None,
+        KinoviBatchCountRaw::Eight,
+      ));
+      let json = serde_json::to_string(&body).unwrap();
+      assert!(json.contains(r#""batchCount":8"#), "{json}");
+    }
+
+    #[test]
+    fn non_mini_still_uses_resolution_field() {
+      let mut req = mini_request(KinoviAspectRatioRaw::Landscape16x9, None, KinoviBatchCountRaw::One);
+      req.model_type = KinoviModelTypeRaw::Seedance2Pro;
+      let body = build_batch_request(req);
+      let json = serde_json::to_string(&body).unwrap();
+      assert!(json.contains(r#""businessType":"wan22-video-generation""#), "{json}");
+      assert!(json.contains(r#""resolution":"16:9""#), "{json}");
+      assert!(!json.contains("aspectRatio"), "{json}");
+    }
+
+    #[test]
+    fn model_strings_and_business_types() {
+      assert_eq!(KinoviModelTypeRaw::Seedance2Mini.as_api_str(), "seedance2.0-mini");
+      assert_eq!(KinoviModelTypeRaw::Seedance2Mini.business_type(), "seedance20-mini-video-generation");
+      assert_eq!(KinoviModelTypeRaw::Seedance2Pro.business_type(), "wan22-video-generation");
+      assert_eq!(KinoviModelTypeRaw::Seedance2Fast.business_type(), "wan22-video-generation");
+      assert_eq!(KinoviModelTypeRaw::HappyHorse1p0.business_type(), "happyhorse-video-generation");
+    }
+
+    #[test]
+    fn aspect_ratio_strings() {
+      assert_eq!(KinoviAspectRatioRaw::Landscape16x9.as_aspect_ratio_str(), "16:9");
+      assert_eq!(KinoviAspectRatioRaw::UltraWide21x9.as_aspect_ratio_str(), "21:9");
+      assert_eq!(KinoviAspectRatioRaw::Portrait9x16.as_aspect_ratio_str(), "9:16");
+      assert_eq!(KinoviAspectRatioRaw::Square1x1.as_aspect_ratio_str(), "1:1");
+      assert_eq!(KinoviAspectRatioRaw::Landscape4x3.as_aspect_ratio_str(), "4:3");
+      assert_eq!(KinoviAspectRatioRaw::Portrait3x4.as_aspect_ratio_str(), "3:4");
+    }
+  }
+
+  // ── 2026-06-24 request-shape change ──
+  //
+  // The aspect ratio is now a ratio string ("16:9"). Seedance Pro/Fast keep it
+  // in `resolution`; Happy Horse moved to its own `businessType`, an
+  // `aspectRatio` field, and a `happyhorseMode` (t2v/i2v) in place of `mode`.
+
+  mod wire_shape_change_tests {
+    use super::*;
+
+    fn request(
+      model_type: KinoviModelTypeRaw,
+      aspect_ratio: KinoviAspectRatioRaw,
+      start_frame_url: Option<String>,
+    ) -> WorkflowRunTaskRequest {
+      WorkflowRunTaskRequest {
+        model_type,
+        prompt: "a corgi".to_string(),
+        aspect_ratio,
+        output_resolution: None,
+        duration_seconds: 5,
+        batch_count: KinoviBatchCountRaw::One,
+        start_frame_url,
+        end_frame_url: None,
+        reference_image_urls: None,
+        reference_video_urls: None,
+        reference_audio_urls: None,
+        character_ids: None,
+        use_face_blur_hack: None,
+        bitrate: None,
       }
     }
 
     #[test]
-    fn usd_cents_legacy_pro_720p() {
-      assert_eq!(pro(5, KinoviBatchCountRaw::One).estimate_cost_in_usd_cents(), 80);
-      assert_eq!(pro(10, KinoviBatchCountRaw::One).estimate_cost_in_usd_cents(), 160);
-      assert_eq!(pro(15, KinoviBatchCountRaw::One).estimate_cost_in_usd_cents(), 240);
-      assert_eq!(pro(5, KinoviBatchCountRaw::Two).estimate_cost_in_usd_cents(), 160);
-      assert_eq!(pro(5, KinoviBatchCountRaw::Four).estimate_cost_in_usd_cents(), 320);
+    fn seedance_pro_resolution_is_a_ratio_string() {
+      let body = build_batch_request(request(
+        KinoviModelTypeRaw::Seedance2Pro, KinoviAspectRatioRaw::Landscape16x9, None));
+      let json = serde_json::to_string(&body).unwrap();
+      assert!(json.contains(r#""businessType":"wan22-video-generation""#), "{json}");
+      assert!(json.contains(r#""resolution":"16:9""#), "{json}");
+      assert!(json.contains(r#""mode":"keyframe""#), "{json}");
+      assert!(!json.contains("aspectRatio"), "{json}");
+      assert!(!json.contains("1280x720"), "{json}");
+      assert!(!json.contains("happyhorseMode"), "{json}");
     }
 
     #[test]
-    fn usd_cents_legacy_fast_720p() {
-      assert_eq!(fast(5, KinoviBatchCountRaw::One).estimate_cost_in_usd_cents(), 64);
-      assert_eq!(fast(10, KinoviBatchCountRaw::One).estimate_cost_in_usd_cents(), 127);
+    fn seedance_fast_resolution_is_a_ratio_string() {
+      let body = build_batch_request(request(
+        KinoviModelTypeRaw::Seedance2Fast, KinoviAspectRatioRaw::Portrait3x4, None));
+      let json = serde_json::to_string(&body).unwrap();
+      assert!(json.contains(r#""model":"seedance2-fast""#), "{json}");
+      assert!(json.contains(r#""resolution":"3:4""#), "{json}");
     }
 
     #[test]
-    fn usd_cents_new_pro_480p() {
-      assert_eq!(pro_res(5, KinoviBatchCountRaw::One, KinoviOutputResolutionRaw::FourEightyP).estimate_cost_in_usd_cents(), 31);
-      assert_eq!(pro_res(10, KinoviBatchCountRaw::One, KinoviOutputResolutionRaw::FourEightyP).estimate_cost_in_usd_cents(), 62);
+    fn happy_horse_text_to_video_shape() {
+      let body = build_batch_request(request(
+        KinoviModelTypeRaw::HappyHorse1p0, KinoviAspectRatioRaw::Portrait9x16, None));
+      let json = serde_json::to_string(&body).unwrap();
+      assert!(json.contains(r#""businessType":"happyhorse-video-generation""#), "{json}");
+      assert!(json.contains(r#""model":"happyhorse1.0""#), "{json}");
+      assert!(json.contains(r#""happyhorseMode":"t2v""#), "{json}");
+      assert!(json.contains(r#""aspectRatio":"9:16""#), "{json}");
+      // Happy Horse omits the standard `mode` and the `resolution` field.
+      assert!(!json.contains(r#""mode":"#), "{json}");
+      assert!(!json.contains(r#""resolution":"#), "{json}");
     }
 
     #[test]
-    fn usd_cents_new_pro_1080p() {
-      assert_eq!(pro_res(5, KinoviBatchCountRaw::One, KinoviOutputResolutionRaw::TenEightyP).estimate_cost_in_usd_cents(), 185);
-      assert_eq!(pro_res(10, KinoviBatchCountRaw::One, KinoviOutputResolutionRaw::TenEightyP).estimate_cost_in_usd_cents(), 370);
+    fn happy_horse_image_to_video_uses_i2v() {
+      let body = build_batch_request(request(
+        KinoviModelTypeRaw::HappyHorse1p0, KinoviAspectRatioRaw::Landscape16x9,
+        Some("https://example.com/start.png".to_string())));
+      let json = serde_json::to_string(&body).unwrap();
+      assert!(json.contains(r#""happyhorseMode":"i2v""#), "{json}");
+      assert!(json.contains(r#""uploadedUrls":["https://example.com/start.png"]"#), "{json}");
+      assert!(!json.contains(r#""mode":"#), "{json}");
     }
 
     #[test]
-    fn usd_cents_new_fast_480p() {
-      assert_eq!(fast_res(5, KinoviBatchCountRaw::One, KinoviOutputResolutionRaw::FourEightyP).estimate_cost_in_usd_cents(), 21);
-      assert_eq!(fast_res(10, KinoviBatchCountRaw::One, KinoviOutputResolutionRaw::FourEightyP).estimate_cost_in_usd_cents(), 41);
-    }
-
-    #[test]
-    fn credits_per_dollar_legacy_rates() {
-      assert_eq!(pro(5, KinoviBatchCountRaw::One).credits_per_dollar(), 250.0);
-      assert_eq!(fast(5, KinoviBatchCountRaw::One).credits_per_dollar(), 220.0);
-      assert_eq!(pro_res(5, KinoviBatchCountRaw::One, KinoviOutputResolutionRaw::SevenTwentyP).credits_per_dollar(), 250.0);
-      assert_eq!(fast_res(5, KinoviBatchCountRaw::One, KinoviOutputResolutionRaw::SevenTwentyP).credits_per_dollar(), 220.0);
-    }
-
-    #[test]
-    fn credits_per_dollar_new_rate() {
-      assert_eq!(pro_res(5, KinoviBatchCountRaw::One, KinoviOutputResolutionRaw::FourEightyP).credits_per_dollar(), 243.0);
-      assert_eq!(pro_res(5, KinoviBatchCountRaw::One, KinoviOutputResolutionRaw::TenEightyP).credits_per_dollar(), 243.0);
-      assert_eq!(fast_res(5, KinoviBatchCountRaw::One, KinoviOutputResolutionRaw::FourEightyP).credits_per_dollar(), 243.0);
-      assert_eq!(fast_res(5, KinoviBatchCountRaw::One, KinoviOutputResolutionRaw::TenEightyP).credits_per_dollar(), 243.0);
-    }
-
-    // ── Happy Horse 1.0 ──
-
-    fn happy_horse(dur: u8, batch: KinoviBatchCountRaw) -> WorkflowRunTaskRequest {
-      make_args(KinoviModelTypeRaw::HappyHorse1p0, dur, batch, None)
-    }
-
-    fn happy_horse_res(dur: u8, batch: KinoviBatchCountRaw, res: KinoviOutputResolutionRaw) -> WorkflowRunTaskRequest {
-      make_args(KinoviModelTypeRaw::HappyHorse1p0, dur, batch, Some(res))
-    }
-
-    #[test]
-    fn spot_check_happy_horse_720p() {
-      // Same as Pro: 40 credits/sec
-      assert_eq!(happy_horse(5, KinoviBatchCountRaw::One).estimate_credits(), 200);
-      assert_eq!(happy_horse(10, KinoviBatchCountRaw::One).estimate_credits(), 400);
-      assert_eq!(happy_horse(15, KinoviBatchCountRaw::One).estimate_credits(), 600);
-    }
-
-    #[test]
-    fn spot_check_happy_horse_480p() {
-      assert_eq!(happy_horse_res(5, KinoviBatchCountRaw::One, KinoviOutputResolutionRaw::FourEightyP).estimate_credits(), 75);
-    }
-
-    #[test]
-    fn spot_check_happy_horse_1080p() {
-      assert_eq!(happy_horse_res(4, KinoviBatchCountRaw::One, KinoviOutputResolutionRaw::TenEightyP).estimate_credits(), 360);
-      assert_eq!(happy_horse_res(15, KinoviBatchCountRaw::One, KinoviOutputResolutionRaw::TenEightyP).estimate_credits(), 1350);
-    }
-
-    #[test]
-    fn happy_horse_uses_new_pricing_rate() {
-      // All Happy Horse resolutions use the new 243 credits/$1 rate (not legacy)
-      assert_eq!(happy_horse(5, KinoviBatchCountRaw::One).credits_per_dollar(), 243.0);
-      assert_eq!(happy_horse_res(5, KinoviBatchCountRaw::One, KinoviOutputResolutionRaw::SevenTwentyP).credits_per_dollar(), 243.0);
-      assert_eq!(happy_horse_res(5, KinoviBatchCountRaw::One, KinoviOutputResolutionRaw::FourEightyP).credits_per_dollar(), 243.0);
-      assert_eq!(happy_horse_res(5, KinoviBatchCountRaw::One, KinoviOutputResolutionRaw::TenEightyP).credits_per_dollar(), 243.0);
-    }
-
-    #[test]
-    fn happy_horse_usd_cents_1080p() {
-      // 243 credits/$1: 360 credits (4s×90) = 148.15 → 148¢
-      assert_eq!(happy_horse_res(4, KinoviBatchCountRaw::One, KinoviOutputResolutionRaw::TenEightyP).estimate_cost_in_usd_cents(), 148);
+    fn business_types() {
+      assert_eq!(KinoviModelTypeRaw::Seedance2Pro.business_type(), "wan22-video-generation");
+      assert_eq!(KinoviModelTypeRaw::Seedance2Fast.business_type(), "wan22-video-generation");
+      assert_eq!(KinoviModelTypeRaw::Seedance2Mini.business_type(), "seedance20-mini-video-generation");
+      assert_eq!(KinoviModelTypeRaw::HappyHorse1p0.business_type(), "happyhorse-video-generation");
     }
   }
 
@@ -767,6 +822,7 @@ mod tests {
           reference_audio_urls: None,
           character_ids: None,
           use_face_blur_hack: None,
+          bitrate: None,
           output_resolution: None,
         },
       };
@@ -800,6 +856,7 @@ mod tests {
           reference_audio_urls: None,
           character_ids: None,
           use_face_blur_hack: None,
+          bitrate: None,
           output_resolution: None,
         },
       };
@@ -835,6 +892,7 @@ mod tests {
           reference_audio_urls: None,
           character_ids: None,
           use_face_blur_hack: None,
+          bitrate: None,
           output_resolution: None,
         },
       };
@@ -869,6 +927,7 @@ mod tests {
           reference_audio_urls: None,
           character_ids: None,
           use_face_blur_hack: None,
+          bitrate: None,
           output_resolution: None,
         },
       };
@@ -905,6 +964,7 @@ mod tests {
           reference_audio_urls: None,
           character_ids: None,
           use_face_blur_hack: None,
+          bitrate: None,
           output_resolution: None,
         },
       };
@@ -958,6 +1018,7 @@ mod tests {
           reference_audio_urls: None,
           character_ids: None,
           use_face_blur_hack: None,
+          bitrate: None,
           output_resolution: None,
         },
       };
@@ -1010,6 +1071,7 @@ mod tests {
           reference_audio_urls: None,
           character_ids: None,
           use_face_blur_hack: None,
+          bitrate: None,
           output_resolution: None,
         },
       };
@@ -1062,6 +1124,7 @@ mod tests {
           reference_audio_urls: None,
           character_ids: None,
           use_face_blur_hack: None,
+          bitrate: None,
           output_resolution: None,
         },
       };
@@ -1123,6 +1186,7 @@ mod tests {
           reference_audio_urls: None,
           character_ids: None,
           use_face_blur_hack: None,
+          bitrate: None,
           output_resolution: None,
         },
       };
@@ -1177,6 +1241,7 @@ mod tests {
           reference_audio_urls: Some(vec![upload_result.public_url]),
           character_ids: None,
           use_face_blur_hack: None,
+          bitrate: None,
           output_resolution: None,
         },
       };
@@ -1216,6 +1281,7 @@ mod tests {
             reference_audio_urls: None,
             character_ids: Some(vec![STEAMPUNK_CLOWN_ID.to_string()]),
             use_face_blur_hack: None,
+            bitrate: None,
             output_resolution: None,
           },
         };
@@ -1249,6 +1315,7 @@ mod tests {
             reference_audio_urls: None,
             character_ids: Some(vec![MOCHI_ID.to_string()]),
             use_face_blur_hack: None,
+            bitrate: None,
             output_resolution: None,
           },
         };
@@ -1284,6 +1351,7 @@ mod tests {
             reference_audio_urls: None,
             character_ids: Some(vec![STEAMPUNK_CLOWN_ID.to_string()]),
             use_face_blur_hack: None,
+            bitrate: None,
             output_resolution: None,
           },
         };
@@ -1320,6 +1388,7 @@ mod tests {
               MOCHI_ID.to_string(),
             ]),
             use_face_blur_hack: None,
+            bitrate: None,
             output_resolution: None,
           },
         };
@@ -1357,6 +1426,7 @@ mod tests {
             reference_audio_urls: None,
             character_ids: None,
             use_face_blur_hack: Some(false),
+            bitrate: None,
             output_resolution: Some(KinoviOutputResolutionRaw::TenEightyP),
           },
         };
@@ -1408,6 +1478,7 @@ mod tests {
             reference_audio_urls: None,
             character_ids: None,
             use_face_blur_hack: Some(false),
+            bitrate: None,
             output_resolution: None,
           },
         };
@@ -1459,6 +1530,7 @@ mod tests {
             reference_audio_urls: None,
             character_ids: None,
             use_face_blur_hack: Some(false),
+            bitrate: None,
             output_resolution: Some(KinoviOutputResolutionRaw::TenEightyP),
           },
         };
@@ -1503,6 +1575,7 @@ mod tests {
           character_ids: None,
           output_resolution,
           use_face_blur_hack: None,
+          bitrate: None,
         },
       }
     }
@@ -1552,6 +1625,69 @@ mod tests {
         let args = make_args_with_prompt(prompt, &session, KinoviModelTypeRaw::Seedance2Pro, Some(KinoviOutputResolutionRaw::TenEightyP));
         let result = workflow_run_task(args).await?;
         println!("Seedance 2.0 @ 1080p — task_id={}, order_id={}", result.task_id, result.order_id);
+        assert_eq!(1, 2, "Inspect output above");
+        Ok(())
+      }
+
+      /// 4K with image references (Seedance 2.0 Pro only), 5-second sample.
+      #[tokio::test]
+      #[ignore]
+      async fn test_4k_image_references() -> AnyhowResult<()> {
+        setup_test_logging(LevelFilter::Trace);
+        let session = test_session()?;
+
+        // Upload a few reference images first, then drive a 5-second 4K job.
+        let image_urls_to_upload = [
+          test_data::web::image_urls::JUNO_AT_LAKE_IMAGE_URL,
+          test_data::web::image_urls::WHITE_HOUSE_SUNSET_IMAGE_URL,
+          test_data::web::image_urls::FOREST_BACKDROP_IMAGE_URL,
+        ];
+
+        let mut uploaded_urls = Vec::new();
+        for (i, source_url) in image_urls_to_upload.iter().enumerate() {
+          let image_bytes = crate::test_utils::http_download::http_download_to_bytes(source_url).await?;
+          let ext = if source_url.ends_with(".png") { "png" } else { "jpg" };
+
+          let prepare_result = prepare_file_upload(PrepareFileUploadArgs {
+            session: &session,
+            extension: ext.to_string(),
+            host_override: None,
+          }).await?;
+
+          let upload_result = upload_file(UploadFileArgs {
+            upload_url: prepare_result.upload_url,
+            file_bytes: image_bytes,
+            host_override: None,
+          }).await?;
+
+          println!("Uploaded ref image {}: {}", i + 1, upload_result.public_url);
+          uploaded_urls.push(upload_result.public_url);
+        }
+
+        let args = WorkflowRunTaskArgs {
+          session: &session,
+          host_override: None,
+          request: WorkflowRunTaskRequest {
+            model_type: KinoviModelTypeRaw::Seedance2Pro,
+            prompt: "The dog in @1 explores the scenery in @3 near the building in @2. Cinematic 4K detail.".to_string(),
+            aspect_ratio: KinoviAspectRatioRaw::Landscape16x9,
+            duration_seconds: 5,
+            batch_count: KinoviBatchCountRaw::One,
+            start_frame_url: None,
+            end_frame_url: None,
+            reference_image_urls: Some(uploaded_urls),
+            reference_video_urls: None,
+            reference_audio_urls: None,
+            character_ids: None,
+            use_face_blur_hack: None,
+            bitrate: None,
+            output_resolution: Some(KinoviOutputResolutionRaw::FourK),
+          },
+        };
+        let result = workflow_run_task(args).await?;
+        println!("Seedance 2.0 @ 4K (image refs) — task_id={}, order_id={}", result.task_id, result.order_id);
+        assert!(!result.task_id.is_empty());
+        assert!(!result.order_id.is_empty());
         assert_eq!(1, 2, "Inspect output above");
         Ok(())
       }

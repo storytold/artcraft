@@ -16,6 +16,7 @@ import { Button, GenerateButton } from "@storyteller/ui-button";
 import { PopoverMenu, type PopoverItem } from "@storyteller/ui-popover";
 import { Tooltip } from "@storyteller/ui-tooltip";
 import { GalleryModal, type GalleryItem } from "@storyteller/ui-gallery-modal";
+import { PromptClearAllButton } from "@storyteller/ui-promptbox";
 import { UploaderStates, type UploaderState } from "@storyteller/common";
 import { useVFXStore } from "./store";
 import {
@@ -54,6 +55,7 @@ export const PromptBoxVFX = ({
   hideResolution = false,
 }: PromptBoxVFXProps) => {
   const source = useVFXStore((s) => s.source);
+  const mask = useVFXStore((s) => s.mask);
   const reference = useVFXStore((s) => s.reference);
   const prompt = useVFXStore((s) => s.prompt);
   const resolution = useVFXStore((s) => s.resolution);
@@ -248,6 +250,16 @@ export const PromptBoxVFX = ({
 
   const hasPrompt = prompt.trim().length > 0;
 
+  const hasAttachedRefs = !!source || !!mask || !!reference;
+  const hasClearableContent = hasAttachedRefs || prompt.length > 0;
+
+  const handleClearAll = useCallback(() => {
+    setSource(undefined);
+    setMask(undefined);
+    setReference(undefined);
+    setPrompt("");
+  }, [setSource, setMask, setReference, setPrompt]);
+
   return (
     <div className="relative w-full">
       {showPromptPopover && (
@@ -397,7 +409,12 @@ export const PromptBoxVFX = ({
             </button>
           </Tooltip>
 
-          <div className="ml-auto">
+          <div className="ml-auto flex items-center gap-2">
+            <PromptClearAllButton
+              onClick={handleClearAll}
+              disabled={!hasClearableContent}
+              confirmClear={hasAttachedRefs}
+            />
             <GenerateButton
               onClick={onSubmit}
               disabled={!canSubmit}

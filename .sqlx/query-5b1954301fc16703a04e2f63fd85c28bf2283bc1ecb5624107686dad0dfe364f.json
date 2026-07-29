@@ -1,0 +1,124 @@
+{
+  "db_name": "MySQL",
+  "query": "\nSELECT\n  s.user_token AS `user_token!: UserToken`,\n  u.username AS `username!`,\n  u.display_name AS `display_name!`,\n  u.email_gravatar_hash AS `email_gravatar_hash!`,\n  s.maybe_reengagement_score AS `reengagement_score!: u32`,\n  s.lifetime_net_spend_usd_cents,\n  s.last_payment_at AS `maybe_last_payment_at: DateTime<Utc>`,\n  s.days_since_last_payment AS `maybe_days_since_last_payment: u32`,\n  s.weeks_since_last_spend AS `maybe_weeks_since_last_spend: u32`,\n  s.is_active_subscriber AS `is_active_subscriber: bool`\nFROM user_spend_summaries s\nJOIN users u ON u.token = s.user_token\nWHERE s.payments_namespace = ?\n  AND s.maybe_reengagement_score > 0\nORDER BY s.maybe_reengagement_score DESC, s.id ASC\nLIMIT ? OFFSET ?\n    ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "user_token!: UserToken",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NOT_NULL | BINARY | NO_DEFAULT_VALUE",
+          "char_set": 224,
+          "max_size": 128
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "username!",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NOT_NULL | UNIQUE_KEY | BINARY | NO_DEFAULT_VALUE",
+          "char_set": 224,
+          "max_size": 80
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "display_name!",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NOT_NULL | BINARY | NO_DEFAULT_VALUE",
+          "char_set": 224,
+          "max_size": 80
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "email_gravatar_hash!",
+        "type_info": {
+          "type": "String",
+          "flags": "NOT_NULL | BINARY | NO_DEFAULT_VALUE",
+          "char_set": 224,
+          "max_size": 128
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "reengagement_score!: u32",
+        "type_info": {
+          "type": "Long",
+          "flags": "UNSIGNED",
+          "char_set": 63,
+          "max_size": 10
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "lifetime_net_spend_usd_cents",
+        "type_info": {
+          "type": "LongLong",
+          "flags": "NOT_NULL | UNSIGNED",
+          "char_set": 63,
+          "max_size": 20
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "maybe_last_payment_at: DateTime<Utc>",
+        "type_info": {
+          "type": "Timestamp",
+          "flags": "BINARY",
+          "char_set": 63,
+          "max_size": 19
+        }
+      },
+      {
+        "ordinal": 7,
+        "name": "maybe_days_since_last_payment: u32",
+        "type_info": {
+          "type": "Long",
+          "flags": "UNSIGNED",
+          "char_set": 63,
+          "max_size": 10
+        }
+      },
+      {
+        "ordinal": 8,
+        "name": "maybe_weeks_since_last_spend: u32",
+        "type_info": {
+          "type": "Long",
+          "flags": "UNSIGNED",
+          "char_set": 63,
+          "max_size": 10
+        }
+      },
+      {
+        "ordinal": 9,
+        "name": "is_active_subscriber: bool",
+        "type_info": {
+          "type": "Tiny",
+          "flags": "NOT_NULL",
+          "char_set": 63,
+          "max_size": 1
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 3
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      true,
+      true,
+      true,
+      false
+    ]
+  },
+  "hash": "5b1954301fc16703a04e2f63fd85c28bf2283bc1ecb5624107686dad0dfe364f"
+}

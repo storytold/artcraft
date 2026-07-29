@@ -4,6 +4,7 @@ use crate::client::router_fal_client::RouterFalClient;
 use crate::client::router_gmicloud_client::RouterGmiCloudClient;
 use crate::client::router_grok_api_client::RouterGrokApiClient;
 use crate::client::router_seedance2pro_client::RouterSeedance2ProClient;
+use crate::client::router_worldlabs_client::RouterWorldLabsClient;
 
 pub struct MultiRouterClientBuilder {
   artcraft_client: Option<RouterArtcraftClient>,
@@ -11,6 +12,7 @@ pub struct MultiRouterClientBuilder {
   gmicloud_client: Option<RouterGmiCloudClient>,
   grok_api_client: Option<RouterGrokApiClient>,
   seedance2pro_client: Option<RouterSeedance2ProClient>,
+  worldlabs_client: Option<RouterWorldLabsClient>,
 }
 
 impl MultiRouterClientBuilder {
@@ -21,6 +23,7 @@ impl MultiRouterClientBuilder {
       gmicloud_client: None,
       grok_api_client: None,
       seedance2pro_client: None,
+      worldlabs_client: None,
     }
   }
 
@@ -49,6 +52,11 @@ impl MultiRouterClientBuilder {
     self
   }
 
+  pub fn set_worldlabs_client(mut self, client: RouterWorldLabsClient) -> Self {
+    self.worldlabs_client = Some(client);
+    self
+  }
+
   pub fn build(self) -> MultiRouterClient {
     MultiRouterClient {
       artcraft_client: self.artcraft_client,
@@ -56,6 +64,7 @@ impl MultiRouterClientBuilder {
       gmicloud_client: self.gmicloud_client,
       grok_api_client: self.grok_api_client,
       seedance2pro_client: self.seedance2pro_client,
+      worldlabs_client: self.worldlabs_client,
     }
   }
 }

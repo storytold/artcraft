@@ -19,13 +19,13 @@ use http_server_common::request::get_request_ip::get_request_ip;
 use mysql_queries::queries::idepotency_tokens::insert_idempotency_token::insert_idempotency_token;
 use mysql_queries::queries::media_files::create::insert_media_file_from_studio_scene_render::{insert_media_file_from_studio_scene_render, InsertStudioSceneRenderArgs};
 use tokens::tokens::media_files::MediaFileToken;
-
+use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::endpoints::media_files::upload::upload_error::MediaFileUploadError;
 use crate::http_server::endpoints::media_files::upload::upload_studio_shot::extract_frames_from_zip::{extract_frames_from_zip, ExtractFramesError};
 use crate::http_server::endpoints::media_files::upload::upload_studio_shot::ffmpeg_frames_to_mp4::ffmpeg_frames_to_mp4;
 use crate::http_server::requests::request_headers::has_debug_header::has_debug_header;
 use crate::http_server::validations::validate_idempotency_token_format::validate_idempotency_token_format;
-use crate::http_server::web_utils::user_session::require_user_session_extended_using_connection::require_user_session_extended_using_connection;
+use crate::http_server::user_lookup::user_session::require_user_session_extended::require_user_session_extended;
 use crate::state::server_state::ServerState;
 
 const DEFAULT_FPS : u8 = 12;
@@ -111,11 +111,14 @@ pub async fn upload_studio_shot_media_file_handler(
   // ==================== READ SESSION ==================== //
 
   // NB: We require a moderator to upload PMX files.
-  let user_session = require_user_session_extended_using_connection(&http_request, &server_state.session_checker, &mut mysql_connection)
+  let user_session = require_user_session_extended(&http_request, &server_state.session_checker, &mut *mysql_connection)
       .await
       .map_err(|e| {
         error!("User session error: {:?}", e);
-        MediaFileUploadError::NotAuthorized
+        match e {
+          CommonWebError::NotAuthorized => MediaFileUploadError::NotAuthorized,
+          _ => MediaFileUploadError::ServerError,
+        }
       })?;
 
   let maybe_avt_token = server_state
@@ -176,7 +179,7 @@ pub async fn upload_studio_shot_media_file_handler(
   let ip_address = get_request_ip(&http_request);
 
   //let maybe_user_token = maybe_user_session
-  //    .map(|session| session.get_strongly_typed_user_token());
+  //    .map(|session| session.get_user_token());
 
   // ==================== FILE DATA ==================== //
 

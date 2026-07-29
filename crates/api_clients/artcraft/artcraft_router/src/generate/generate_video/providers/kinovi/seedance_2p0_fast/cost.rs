@@ -63,6 +63,7 @@ impl KinoviSeedance2p0FastCostState {
       reference_audio_urls: None,
       character_ids: None,
       use_face_blur_hack: None,
+      bitrate: None,
     };
 
     let costs = pricing_request.calculate_costs();
@@ -428,6 +429,7 @@ mod tests {
         reference_audio_urls: None,
         character_ids: None,
         use_face_blur_hack: None,
+        bitrate: None,
       },
     }
   }

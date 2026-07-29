@@ -1,0 +1,12 @@
+{
+  "db_name": "MySQL",
+  "query": "\nUPDATE media_files\nSET\n  media_class = ?,\n  media_type = ?,\n  maybe_project_type = ?,\n\n  public_bucket_directory_hash = ?,\n  maybe_public_bucket_prefix = ?,\n  maybe_public_bucket_extension = ?,\n\n  maybe_mime_type = ?,\n  file_size_bytes = ?,\n  checksum_sha2 = ?,\n\n  creator_ip_address = ?\nWHERE token = ?\nLIMIT 1\n    ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 11
+    },
+    "nullable": []
+  },
+  "hash": "a3a86db1b77af3973bb37751d797a7dc5ed34b0f0fa156845e3b4b805e397f9d"
+}

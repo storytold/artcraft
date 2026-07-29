@@ -1,31 +1,29 @@
-use fal_client::requests_old::webhook::video::image::enqueue_veo_2_image_to_video_webhook::Veo2Duration;
+use fal_client::requests::traits::fal_request_cost_calculator_trait::FalRequestCostCalculator;
 
 use crate::generate::generate_video::video_generation_cost_estimate::VideoGenerationCostEstimate;
 use crate::generate::generate_video::providers::fal::veo_2::request::{FalVeo2Mode, FalVeo2RequestState};
 
 #[derive(Clone, Debug)]
 pub struct FalVeo2CostState {
-  pub duration: Veo2Duration,
+  pub cost_in_usd_cents: u64,
 }
 
 impl FalVeo2CostState {
   pub fn from_request(request: &FalVeo2RequestState) -> Self {
-    let duration = match &request.mode {
-      FalVeo2Mode::TextToVideo(req) => req.duration,
-      FalVeo2Mode::ImageToVideo(req) => req.duration,
+    // Cost math is owned by fal_client's per-endpoint
+    // `FalRequestCostCalculator` implementations. The router state just
+    // forwards the result so router cost ≡ fal_client cost by construction.
+    let cost_in_usd_cents = match &request.mode {
+      FalVeo2Mode::TextToVideo(req) => req.calculate_cost_in_cents(),
+      FalVeo2Mode::ImageToVideo(req) => req.calculate_cost_in_cents(),
     };
-    Self { duration }
+    Self { cost_in_usd_cents }
   }
 
   pub fn estimate_cost(&self) -> VideoGenerationCostEstimate {
-    // 5s = $2.50, +$0.50 per additional second.
-    let seconds = duration_seconds_for_cost(self.duration);
-    let extra = seconds.saturating_sub(5);
-    let cost_in_usd_cents = 250 + extra * 50;
-
     VideoGenerationCostEstimate {
-      cost_in_credits: Some(cost_in_usd_cents),
-      cost_in_usd_cents: Some(cost_in_usd_cents),
+      cost_in_credits: Some(self.cost_in_usd_cents),
+      cost_in_usd_cents: Some(self.cost_in_usd_cents),
       is_free: false,
       is_unlimited: false,
       is_rate_limited: false,
@@ -35,40 +33,18 @@ impl FalVeo2CostState {
   }
 }
 
-fn duration_seconds_for_cost(d: Veo2Duration) -> u64 {
-  match d {
-    Veo2Duration::Default | Veo2Duration::FiveSeconds => 5,
-    Veo2Duration::SixSeconds => 6,
-    Veo2Duration::SevenSeconds => 7,
-    Veo2Duration::EightSeconds => 8,
-  }
-}
-
 #[cfg(test)]
 mod tests {
   use crate::api::router_video_model::RouterVideoModel;
   use crate::api::image_ref::ImageRef;
   use crate::api::router_provider::RouterProvider;
   use crate::generate::generate_video::generate_video_request_builder::GenerateVideoRequestBuilder;
+  use crate::generate::generate_video::providers::fal::veo_2::build::build_fal_veo_2_state;
 
-  fn cost_cents(duration_seconds: Option<u16>, has_start_frame: bool) -> u64 {
-    let mut b = GenerateVideoRequestBuilder {
-      model: RouterVideoModel::Veo2,
-      provider: RouterProvider::Fal,
-      prompt: Some("test".to_string()),
-      duration_seconds,
-      ..Default::default()
-    };
-    if has_start_frame {
-      b.start_frame = Some(ImageRef::Url("https://example.com/a.png".to_string()));
-    }
-    b.build2()
-      .expect("build2")
-      .estimate_cost()
-      .expect("estimate_cost")
-      .cost_in_usd_cents
-      .expect("cost_in_usd_cents")
-  }
+  use super::*;
+
+  // Pricing (fal): 5s = $2.50, +$0.50 per additional second. Flat across
+  // modalities; no audio or resolution knobs.
 
   mod numeric_literal_pricing {
     use super::*;
@@ -111,5 +87,23 @@ mod tests {
     assert!(cost_cents(Some(5), false) < cost_cents(Some(6), false));
     assert!(cost_cents(Some(6), false) < cost_cents(Some(7), false));
     assert!(cost_cents(Some(7), false) < cost_cents(Some(8), false));
+  }
+
+  fn cost_cents(duration_seconds: Option<u16>, has_start_frame: bool) -> u64 {
+    let mut b = GenerateVideoRequestBuilder {
+      model: RouterVideoModel::Veo2,
+      provider: RouterProvider::Fal,
+      prompt: Some("test".to_string()),
+      duration_seconds,
+      ..Default::default()
+    };
+    if has_start_frame {
+      b.start_frame = Some(ImageRef::Url("https://example.com/a.png".to_string()));
+    }
+    let state = build_fal_veo_2_state(b).expect("build_fal_veo_2_state");
+    FalVeo2CostState::from_request(&state)
+      .estimate_cost()
+      .cost_in_usd_cents
+      .expect("cost_in_usd_cents")
   }
 }
