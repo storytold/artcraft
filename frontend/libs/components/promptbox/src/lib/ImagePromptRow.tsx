@@ -26,6 +26,11 @@ import { toast } from "@storyteller/ui-toaster";
 import { twMerge } from "tailwind-merge";
 import { UploaderStates } from "@storyteller/common";
 import {
+  AUDIO_FILE_ACCEPT,
+  AUDIO_FILE_TYPE_ERROR,
+  isAudioFile,
+} from "./common/audioFiles";
+import {
   DndContext,
   closestCenter,
   KeyboardSensor,
@@ -500,13 +505,18 @@ export const ImagePromptRow = ({
     const files = Array.from(event.target.files || []);
     if (files.length === 0) return;
 
+    const audioFiles = files.filter(isAudioFile);
+    if (audioFiles.length < files.length) {
+      toast.error(AUDIO_FILE_TYPE_ERROR);
+    }
+
     const availableSlots = Math.max(0, maxAudioCount - referenceAudios.length);
-    if (availableSlots <= 0) {
+    if (audioFiles.length === 0 || availableSlots <= 0) {
       if (audioFileInputRef.current) audioFileInputRef.current.value = "";
       return;
     }
 
-    const filesToProcess = files.slice(0, availableSlots);
+    const filesToProcess = audioFiles.slice(0, availableSlots);
 
     for (const file of filesToProcess) {
       const duration = await getAudioDuration(file);
@@ -819,7 +829,7 @@ export const ImagePromptRow = ({
             type="file"
             ref={audioFileInputRef}
             className="hidden"
-            accept="audio/*"
+            accept={AUDIO_FILE_ACCEPT}
             onChange={handleAudioFileUpload}
             multiple={maxAudioCount > 1}
           />
