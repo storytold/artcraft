@@ -17,13 +17,16 @@
 import { useMemo } from "react";
 import {
   type PageDrawAdapter,
+  type PageDrawPersistenceAdapter,
   type ImageBundle,
   type BaseSelectorImage,
   useSceneStore,
 } from "@storyteller/ui-pagedraw";
 import { CommonAspectRatio, CommonResolution } from "@storyteller/model-list";
 import {
+  MediaFilesApi,
   OmniGenApi,
+  ProjectsApi,
   StorytellerApiHostStore,
   UploadImageMedia,
   type OmniGenImageRequest,
@@ -31,6 +34,7 @@ import {
 import { UploaderStates } from "@storyteller/common";
 import { showToast } from "../../components/toast/toast";
 import { useInsufficientCredits } from "../../components/insufficient-credits-modal";
+import { useSessionStore } from "../../lib/session";
 import { BaseImageSelector } from "./base-image-selector";
 import { startPolling, type PolledImage } from "./job-polling";
 
@@ -184,6 +188,160 @@ const httpStatusFromError = (e: unknown): number | undefined => {
   return match ? Number(match[1]) : undefined;
 };
 
+// ─── Session persistence (editor_2d project documents) ─────────────────────
+// Server persistence over the project-document endpoints: each pagedraw
+// session is one editor_2d project (multipart JSON upload; save-new returns
+// the media file token linking the session to its server row). Mirrors the
+// moodboard's webapp persistence adapter. All methods are non-throwing per
+// the adapter contract.
+
+export const pageDrawPersistence: PageDrawPersistenceAdapter = {
+  getUserId: () => useSessionStore.getState().user?.user_token ?? null,
+  subscribeAuthState: (onChange) => useSessionStore.subscribe(onChange),
+
+  uploadMedia: async (file) => {
+    let token: string | null = null;
+    try {
+      await UploadImageMedia({
+        title: file.name || "PageDraw image",
+        assetFile: file,
+        progressCallback: (state) => {
+          if (state.status === UploaderStates.success && state.data) {
+            token = String(state.data);
+          }
+        },
+      });
+    } catch (error) {
+      console.error("[PageDraw] media upload failed", error);
+    }
+    return token;
+  },
+
+  createProject: async ({ documentJson, name }) => {
+    try {
+      const response = await new ProjectsApi().UploadNewProject({
+        projectType: "editor_2d",
+        blob: new Blob([documentJson], { type: "application/json" }),
+        fileName: `${name || "Untitled session"}.editor.json`,
+        uuid: crypto.randomUUID(),
+        maybe_title: name,
+      });
+      return {
+        success: response.success && !!response.data,
+        token: response.data,
+        errorMessage: response.errorMessage,
+      };
+    } catch (error) {
+      console.error("[PageDraw] project create failed", error);
+      return { success: false };
+    }
+  },
+
+  updateProject: async ({ token, documentJson, name }) => {
+    try {
+      const response = await new ProjectsApi().UpdateProject({
+        projectType: "editor_2d",
+        token,
+        blob: new Blob([documentJson], { type: "application/json" }),
+        fileName: `${name || "Untitled session"}.editor.json`,
+        uuid: crypto.randomUUID(),
+        maybe_title: name,
+      });
+      return { success: response.success, errorMessage: response.errorMessage };
+    } catch (error) {
+      console.error("[PageDraw] project update failed", error);
+      return { success: false };
+    }
+  },
+
+  getProjectInfo: async (token) => {
+    try {
+      const response = await new MediaFilesApi().GetMediaFileByToken({
+        mediaFileToken: token,
+      });
+      if (!response.success || !response.data) return { success: false };
+      return {
+        success: true,
+        updatedAt: response.data.updated_at,
+        title: response.data.maybe_title ?? null,
+      };
+    } catch (error) {
+      console.error("[PageDraw] project info fetch failed", error);
+      return { success: false };
+    }
+  },
+
+  loadProjectDocument: async (token) => {
+    try {
+      const response = await new MediaFilesApi().GetMediaFileByToken({
+        mediaFileToken: token,
+      });
+      const cdnUrl = response.success
+        ? response.data?.media_links?.cdn_url
+        : undefined;
+      if (!cdnUrl) return { success: false };
+      const documentResponse = await fetch(cdnUrl);
+      if (!documentResponse.ok) return { success: false };
+      return { success: true, documentJson: await documentResponse.text() };
+    } catch (error) {
+      console.error("[PageDraw] session document fetch failed", error);
+      return { success: false };
+    }
+  },
+
+  listProjects: async () => {
+    try {
+      const response = await new ProjectsApi().ListSessionProjects({
+        filter_project_type: "editor_2d",
+        page_size: 100,
+      });
+      if (!response.success || !response.data) return { success: false };
+      return {
+        success: true,
+        projects: response.data.map((row) => ({
+          token: row.token,
+          name: row.maybe_title ?? "Untitled session",
+          updatedAt: row.updated_at,
+        })),
+      };
+    } catch (error) {
+      console.error("[PageDraw] session list failed", error);
+      return { success: false };
+    }
+  },
+
+  deleteProject: async (token) => {
+    try {
+      const response = await new MediaFilesApi().DeleteMediaFileByToken({
+        mediaFileToken: token,
+        asMod: false,
+      });
+      return response.success;
+    } catch (error) {
+      console.error("[PageDraw] session delete failed", error);
+      return false;
+    }
+  },
+
+  resolveMediaUrls: async (tokens) => {
+    try {
+      const response = await new MediaFilesApi().ListMediaFilesByTokens({
+        mediaTokens: tokens,
+      });
+      const urlByToken: Record<string, string> = {};
+      for (const media of response.data ?? []) {
+        if (media.media_links?.cdn_url) {
+          urlByToken[media.token] = media.media_links.cdn_url;
+        }
+      }
+      return urlByToken;
+    } catch (error) {
+      console.error("[PageDraw] media URL resolution failed", error);
+      return {};
+    }
+  },
+};
+
 // ─── Adapter ───────────────────────────────────────────────────────────────────
 
 export const useWebPageDrawAdapter = (): PageDrawAdapter => {
@@ -293,6 +451,8 @@ export const useWebPageDrawAdapter = (): PageDrawAdapter => {
           showLoading={showLoading}
         />
       ),
+
+      persistence: pageDrawPersistence,
     }),
     [openInsufficientCredits],
   );

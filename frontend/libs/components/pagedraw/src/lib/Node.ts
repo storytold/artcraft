@@ -16,6 +16,10 @@ export interface NodeProps {
   imageUrl?: string;
   imageFile?: File;
   imageElement?: HTMLImageElement;
+  /** Durable server media token for this image (upload write-back). Lets the
+   *  persisted document reference the image by token instead of inlining
+   *  base64, and re-resolve a fresh CDN URL on load. */
+  mediaId?: string;
   backgroundColor?: string;
   rotation?: number;
   scaleX?: number;
@@ -44,6 +48,7 @@ export class Node {
   imageUrl?: string;
   imageFile?: File;
   imageElement?: HTMLImageElement;
+  mediaId?: string;
   backgroundColor?: string;
   rotation: number;
   scaleX: number;
@@ -69,6 +74,7 @@ export class Node {
     imageUrl,
     imageFile,
     imageElement,
+    mediaId,
     backgroundColor,
     rotation = 0,
     scaleX = 1,
@@ -93,6 +99,7 @@ export class Node {
     this.imageUrl = imageUrl;
     this.imageFile = imageFile;
     this.imageElement = imageElement;
+    this.mediaId = mediaId;
     this.backgroundColor = backgroundColor;
     this.rotation = rotation;
     this.scaleX = scaleX;

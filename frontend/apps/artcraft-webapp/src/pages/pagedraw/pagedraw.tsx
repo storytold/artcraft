@@ -1,5 +1,9 @@
-import type { CSSProperties } from "react";
-import { PageDraw as PageDrawLib } from "@storyteller/ui-pagedraw";
+import { useEffect, type CSSProperties } from "react";
+import {
+  PageDraw as PageDrawLib,
+  initDrawSessionSync,
+  teardownDrawSessionSync,
+} from "@storyteller/ui-pagedraw";
 import Seo from "../../components/seo";
 import { useSidebar } from "../../components/ui/sidebar";
 import { TopBarActions } from "../../components/topbar/TopBarActions";
@@ -7,6 +11,16 @@ import { useWebPageDrawAdapter } from "./web-adapter";
 
 export default function PageDraw() {
   const adapter = useWebPageDrawAdapter();
+
+  // Session persistence: local replica + server autosave for named sessions.
+  // The controller subscribes to the scene store itself — the page only owns
+  // its lifecycle. Teardown flushes pending local state.
+  useEffect(() => {
+    const persistence = adapter.persistence;
+    if (!persistence) return undefined;
+    initDrawSessionSync(persistence);
+    return () => teardownDrawSessionSync();
+  }, [adapter.persistence]);
   // The global top bar is hidden on this route (desktop) so the editor
   // reclaims the full vertical strip — mirror Edit 3D / Video Editor. On
   // mobile the global bar stays, so don't re-host the actions here.

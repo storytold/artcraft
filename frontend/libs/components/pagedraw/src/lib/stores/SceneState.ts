@@ -69,8 +69,11 @@ export type ActiveTool =
   | "backgroundColor"
   | "shape";
 
-// Serialized shape node for history storage
-type SerializedNodeData = {
+// Serialized shape node for history storage. Exported for the persistence
+// layer, whose local replica stores history entries in this same shape
+// (plain data + File blobs — both IndexedDB structured-cloneable; note the
+// deliberate absence of the non-cloneable HTMLImageElement handle).
+export type SerializedNodeData = {
   id: string;
   x: number;
   y: number;
@@ -83,6 +86,7 @@ type SerializedNodeData = {
   draggable: boolean;
   imageUrl?: string;
   imageFile?: File;
+  mediaId?: string;
   backgroundColor?: string;
   rotation: number;
   scaleX: number;
@@ -95,12 +99,44 @@ type SerializedNodeData = {
 };
 
 // A history draw node is either a serialized shape or an inline LineNode
-type SerializedDrawNode = SerializedNodeData | LineNode;
+export type SerializedDrawNode = SerializedNodeData | LineNode;
 
-interface HistoryNodeData {
+export interface HistoryNodeData {
   drawNodes: SerializedDrawNode[];
   inpaintLineNodes: LineNode[];
 }
+
+/** Serialize one live draw node into its history/replica form. */
+export const serializeDrawNode = (n: Node | LineNode): SerializedDrawNode => {
+  if (n instanceof Node) {
+    return {
+      id: n.id,
+      x: n.x,
+      y: n.y,
+      width: n.width,
+      height: n.height,
+      fill: n.fill,
+      type: n.type,
+      stroke: n.stroke,
+      strokeWidth: n.strokeWidth,
+      draggable: n.draggable,
+      imageUrl: n.imageUrl,
+      imageFile: n.imageFile,
+      mediaId: n.mediaId,
+      backgroundColor: n.backgroundColor,
+      rotation: n.rotation || 0,
+      scaleX: n.scaleX || 1,
+      scaleY: n.scaleY || 1,
+      offsetX: n.offsetX || 0,
+      offsetY: n.offsetY || 0,
+      locked: n.locked || false,
+      modelUrl: n.modelUrl,
+      model3dParams: n.model3dParams,
+    };
+  }
+  // LineNode — plain object, deep copy
+  return JSON.parse(JSON.stringify(n)) as LineNode;
+};
 
 export interface SceneState {
   /**
@@ -533,39 +569,8 @@ export const useSceneStore = create<SceneState>((set, get, store) => ({
     if (isRestoring) return;
 
     set((state) => {
-      const serializableState: {
-        drawNodes: SerializedDrawNode[];
-        inpaintLineNodes: LineNode[];
-      } = {
-        drawNodes: state.drawNodes.map((n) => {
-          if (n instanceof Node) {
-            return {
-              id: n.id,
-              x: n.x,
-              y: n.y,
-              width: n.width,
-              height: n.height,
-              fill: n.fill,
-              type: n.type,
-              stroke: n.stroke,
-              strokeWidth: n.strokeWidth,
-              draggable: n.draggable,
-              imageUrl: n.imageUrl,
-              imageFile: n.imageFile,
-              backgroundColor: n.backgroundColor,
-              rotation: n.rotation || 0,
-              scaleX: n.scaleX || 1,
-              scaleY: n.scaleY || 1,
-              offsetX: n.offsetX || 0,
-              offsetY: n.offsetY || 0,
-              locked: n.locked || false,
-              modelUrl: n.modelUrl,
-              model3dParams: n.model3dParams,
-            } as SerializedNodeData;
-          }
-          // LineNode — plain object, deep copy
-          return JSON.parse(JSON.stringify(n)) as LineNode;
-        }),
+      const serializableState: HistoryNodeData = {
+        drawNodes: state.drawNodes.map(serializeDrawNode),
         inpaintLineNodes: JSON.parse(JSON.stringify(state.inpaintLineNodes)),
       };
 
@@ -1080,6 +1085,7 @@ export const useSceneStore = create<SceneState>((set, get, store) => ({
           strokeWidth: node.strokeWidth,
           draggable: node.draggable,
           imageUrl: node.imageUrl,
+          mediaId: node.mediaId,
           backgroundColor: node.backgroundColor,
           rotation: node.rotation || 0,
           scaleX: node.scaleX || 1,
@@ -1109,7 +1115,11 @@ export const useSceneStore = create<SceneState>((set, get, store) => ({
       brushSize: state.brushSize,
       fillColor: state.fillColor,
       aspectRatioType: state.aspectRatioType,
-      version: "2.0",
+      // 3.0 = nodes may carry a durable `mediaId` media token alongside (or
+      // instead of) inline base64. File exports stay self-contained (base64
+      // kept); server persistence strips base64 when a token exists. Loaders
+      // accept 2.0 and 3.0.
+      version: "3.0",
     };
 
     return JSON.stringify(sceneData, null, 2);
@@ -1317,6 +1327,7 @@ export const useSceneStore = create<SceneState>((set, get, store) => ({
       const updatedNode = new Node({
         ...firstNode,
         imageUrl: imageCdnUrl,
+        mediaId: mediaToken,
       });
       await updatedNode.setImageFromUrl(imageCdnUrl);
       set((state) => ({
@@ -1391,34 +1402,7 @@ export const useSceneStore = create<SceneState>((set, get, store) => ({
     const currentBaseImage = get().baseImageInfo;
     if (currentBaseImage) {
       get().historyImageNodeMap.set(currentBaseImage, {
-        drawNodes: get().drawNodes.map((n) => {
-          if (n instanceof Node) {
-            return {
-              id: n.id,
-              x: n.x,
-              y: n.y,
-              width: n.width,
-              height: n.height,
-              fill: n.fill,
-              type: n.type,
-              stroke: n.stroke,
-              strokeWidth: n.strokeWidth,
-              draggable: n.draggable,
-              imageUrl: n.imageUrl,
-              imageFile: n.imageFile,
-              backgroundColor: n.backgroundColor,
-              rotation: n.rotation || 0,
-              scaleX: n.scaleX || 1,
-              scaleY: n.scaleY || 1,
-              offsetX: n.offsetX || 0,
-              offsetY: n.offsetY || 0,
-              locked: n.locked || false,
-              modelUrl: n.modelUrl,
-              model3dParams: n.model3dParams,
-            } as SerializedNodeData;
-          }
-          return JSON.parse(JSON.stringify(n)) as LineNode;
-        }),
+        drawNodes: get().drawNodes.map(serializeDrawNode),
         inpaintLineNodes: JSON.parse(JSON.stringify(get().inpaintLineNodes)),
       });
     }
