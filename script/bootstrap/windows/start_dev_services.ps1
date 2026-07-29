@@ -20,7 +20,7 @@ function Start-DevMySql {
   }
   Write-Log "Starting mysqld (portable, data in .devstack\mysql-data)..."
   Start-DevProcess -Name "mysqld" -Exe $mysqld -Arguments @("--defaults-file=`"$MySqlIniPath`"") | Out-Null
-  Wait-ForCondition { Test-TcpPort 3306 } 60 "MySQL to listen on 3306" | Out-Null
+  Wait-ForCondition { Test-TcpPort 3306 } 60 "MySQL to listen on 3306 (see $LogsDir\mysqld.err.log and the .err file in $MySqlDataDir)" | Out-Null
   Write-Log "MySQL is up."
 }
 
@@ -42,7 +42,7 @@ function Start-DevRedis {
     "--save", "`"`"",
     "--dir", "`"$RedisDir`""
   ) | Out-Null
-  Wait-ForCondition { Test-TcpPort 6379 } 30 "Redis to listen on 6379" | Out-Null
+  Wait-ForCondition { Test-TcpPort 6379 } 30 "Redis to listen on 6379 (see $LogsDir\redis.err.log)" | Out-Null
   Write-Log "Redis is up."
 }
 

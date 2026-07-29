@@ -22,7 +22,7 @@ Write-Host "--- Toolchains ---"
 Add-SessionPath @((Join-Path $env:USERPROFILE ".cargo\bin"))
 Add-MySqlClientToSession
 # Freshly-installed build tools may not be on this session's PATH yet.
-Add-SessionPath @("$env:ProgramFiles\CMake\bin", "C:\Strawberry\perl\bin", "$env:ProgramFiles\NASM", "$env:ProgramFiles\LLVM\bin")
+Add-BuildToolsToSession
 
 if (Get-Command cargo -ErrorAction SilentlyContinue) {
   Pass "rust: $(rustc --version)"
@@ -31,11 +31,9 @@ if (Get-Command cargo -ErrorAction SilentlyContinue) {
 }
 
 if (Get-Command diesel -ErrorAction SilentlyContinue) {
-  try {
-    $dv = diesel --version 2>$null
-    if ($LASTEXITCODE -eq 0) { Pass "diesel_cli: $dv" }
-    else { Fail "diesel_cli: present but broken (libmysql.dll missing from PATH? re-run bootstrap)" }
-  } catch { Fail "diesel_cli: present but broken (libmysql.dll missing from PATH?)" }
+  $dv = Invoke-Native "diesel --version"
+  if ($LASTEXITCODE -eq 0) { Pass "diesel_cli: $dv" }
+  else { Fail "diesel_cli: present but broken (libmysql.dll missing from PATH? re-run bootstrap)" }
 } else {
   Fail "diesel_cli: not installed (bootstrap installs it against the portable MySQL client lib)"
 }
@@ -72,8 +70,7 @@ if (Test-TcpPort 3306) {
     Pass "mysql: reachable as '$DevMySqlUser' on database '$DevMySqlDb'"
 
     $migrationDirs = (Get-ChildItem -Directory (Join-Path $RootDir "_database\sql\migrations")).Count
-    $applied = 0
-    try { $applied = [int](Invoke-MySqlApp -Sql "SELECT COUNT(*) FROM __diesel_schema_migrations" | Select-Object -First 1) } catch {}
+    $applied = Get-MySqlCount "SELECT COUNT(*) FROM __diesel_schema_migrations"
     if (($applied -ge $migrationDirs) -and ($applied -gt 0)) {
       Pass "migrations: $applied applied ($migrationDirs in _database\sql\migrations)"
     } elseif ($applied -gt 0) {
@@ -82,21 +79,18 @@ if (Test-TcpPort 3306) {
       Fail "migrations: none applied - run 'diesel migration run' (or re-run bootstrap)"
     }
 
-    $roleCount = 0
-    try { $roleCount = [int](Invoke-MySqlApp -Sql "SELECT COUNT(*) FROM user_roles" | Select-Object -First 1) } catch {}
+    $roleCount = Get-MySqlCount "SELECT COUNT(*) FROM user_roles"
     if ($roleCount -ge 3) {
       Pass "seed: user_roles has $roleCount rows (user/mod/admin present)"
     } else {
       Fail "seed: user_roles has $roleCount rows - account creation needs the 'user' role (re-run bootstrap)"
     }
 
-    $badgeCount = 0
-    try { $badgeCount = [int](Invoke-MySqlApp -Sql "SELECT COUNT(*) FROM badges" | Select-Object -First 1) } catch {}
+    $badgeCount = Get-MySqlCount "SELECT COUNT(*) FROM badges"
     if ($badgeCount -gt 0) { Pass "seed: badges has $badgeCount rows" }
     else { WarnCheck "seed: badges table is empty (cosmetic; re-run bootstrap to fill)" }
 
-    $demoCount = 0
-    try { $demoCount = [int](Invoke-MySqlApp -Sql "SELECT COUNT(*) FROM users WHERE username='$DemoUsername'" | Select-Object -First 1) } catch {}
+    $demoCount = Get-MySqlCount "SELECT COUNT(*) FROM users WHERE username='$DemoUsername'"
     if ($demoCount -gt 0) { Pass "demo user: '$DemoUsername' exists" }
     else { WarnCheck "demo user: '$DemoUsername' not created yet (seed_demo_user.ps1, backend must be running)" }
   } else {

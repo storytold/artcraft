@@ -23,17 +23,20 @@ Write-Log "Backend is up."
 
 # curl.exe + ConvertFrom-Json: Invoke-RestMethod in PS 5.1 throws on non-2xx
 # and hides the response body, which we need for the already-exists case.
+# Invoke-Native keeps curl's stderr from becoming a terminating PS error.
 function Invoke-JsonPost([string]$Url, [hashtable]$Body) {
   $json = $Body | ConvertTo-Json -Compress
   $tmp = Join-Path $env:TEMP "bootstrap_post_body.json"
   Set-Content -Path $tmp -Value $json -Encoding ascii
-  $response = curl.exe -sS -X POST $Url -H "Content-Type: application/json" --data "@$tmp"
+  $response = Invoke-Native "curl.exe -sS -X POST `"$Url`" -H `"Content-Type: application/json`" --data `"@$tmp`""
+  $curlExit = $LASTEXITCODE
   Remove-Item $tmp -Force -Confirm:$false -ErrorAction SilentlyContinue
-  if ($LASTEXITCODE -ne 0) { Die "Request to $Url failed (curl exit $LASTEXITCODE)." }
+  $joined = ($response -join "`n")
+  if ($curlExit -ne 0) { Die "Request to $Url failed (curl exit $curlExit): $joined" }
   try {
-    return $response | ConvertFrom-Json
+    return $joined | ConvertFrom-Json
   } catch {
-    Die "Non-JSON response from ${Url}: $response"
+    Die "Non-JSON response from ${Url}: $joined"
   }
 }
 

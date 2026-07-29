@@ -92,10 +92,12 @@ function Get-RedisTool([string]$Name) {
   return $null
 }
 
-# Run SQL as the app user against the dev database. Returns stdout lines.
+# Run SQL as the app user against the dev database. Returns output lines
+# (stdout and stderr merged via Invoke-Native, so a caller capturing our
+# streams can never turn a mysql warning into a terminating error).
 # Password goes via MYSQL_PWD so it stays off the command line.
-# -Quiet merges stderr into the discarded output (for probes that are
-# expected to fail, e.g. Test-MySqlApp before provisioning).
+# -Quiet discards output (for probes that are expected to fail, e.g.
+# Test-MySqlApp before provisioning). Check $LASTEXITCODE for success.
 function Invoke-MySqlApp([string]$Sql, [string]$SourceFile, [switch]$Quiet) {
   $mysql = Get-MySqlTool "mysql"
   if (-not $mysql) { Die "mysql client not found (run bootstrap_dev_stack.ps1 first)." }
@@ -104,15 +106,25 @@ function Invoke-MySqlApp([string]$Sql, [string]$SourceFile, [switch]$Quiet) {
   try {
     if ($SourceFile) {
       $forward = $SourceFile -replace '\\', '/'
-      & $mysql -u $DevMySqlUser -h 127.0.0.1 -D $DevMySqlDb -e "source $forward"
-    } elseif ($Quiet) {
-      & $mysql -u $DevMySqlUser -h 127.0.0.1 -D $DevMySqlDb -N -e $Sql 2>&1 | Out-Null
+      $out = Invoke-Native "`"$mysql`" -u $DevMySqlUser -h 127.0.0.1 -D $DevMySqlDb -e `"source $forward`""
     } else {
-      & $mysql -u $DevMySqlUser -h 127.0.0.1 -D $DevMySqlDb -N -e $Sql
+      $out = Invoke-Native "`"$mysql`" -u $DevMySqlUser -h 127.0.0.1 -D $DevMySqlDb -N -e `"$Sql`""
     }
+    if (-not $Quiet) { return $out }
   } finally {
     $env:MYSQL_PWD = $prev
   }
+}
+
+# Run a query expected to return a single non-negative integer (e.g. COUNT(*)).
+# Returns -1 if the query failed or produced no numeric line, so callers can
+# distinguish "table is empty" (0) from "query failed" (-1).
+function Get-MySqlCount([string]$Sql) {
+  $out = @(Invoke-MySqlApp -Sql $Sql)
+  if ($LASTEXITCODE -ne 0) { return -1 }
+  $line = $out | Where-Object { "$_" -match '^\d+$' } | Select-Object -First 1
+  if ($null -eq $line) { return -1 }
+  return [int]"$line"
 }
 
 function Test-MySqlApp {
@@ -128,7 +140,7 @@ function Test-Redis {
   $cli = Get-RedisTool "redis-cli"
   if (-not $cli) { return $false }
   try {
-    $pong = & $cli -h 127.0.0.1 ping 2>$null
+    $pong = Invoke-Native "`"$cli`" -h 127.0.0.1 ping"
     return ("$pong" -match "PONG")
   } catch {
     return $false
@@ -187,4 +199,21 @@ function Add-SessionPath([string[]]$Dirs) {
 # diesel-cli with the mysql feature.
 function Add-MySqlClientToSession {
   Add-SessionPath @((Join-Path $MySqlBaseDir "bin"), (Join-Path $MySqlBaseDir "lib"))
+}
+
+# Native build tools (cmake/perl/nasm/llvm) land in these dirs when installed
+# via winget; a shell opened before the install won't have them on PATH yet.
+# bindgen (used by boring2 / aws-lc-sys) additionally wants LIBCLANG_PATH.
+function Add-BuildToolsToSession {
+  Add-SessionPath @(
+    "$env:ProgramFiles\CMake\bin",
+    "C:\Strawberry\perl\bin",
+    "$env:ProgramFiles\NASM",
+    "$env:LOCALAPPDATA\bin\NASM",
+    "$env:ProgramFiles\LLVM\bin"
+  )
+  if (-not $env:LIBCLANG_PATH) {
+    $clang = Get-Command clang -ErrorAction SilentlyContinue
+    if ($clang) { $env:LIBCLANG_PATH = Split-Path $clang.Source }
+  }
 }

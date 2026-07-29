@@ -16,6 +16,8 @@ if (-not (Test-MySqlApp)) { Die "MySQL is up but '$DevMySqlUser' cannot reach '$
 if (-not (Test-Path $SecretsEnvFile)) { Die "Missing $SecretsEnvFile. Run bootstrap_dev_stack.ps1." }
 
 Add-SessionPath @((Join-Path $env:USERPROFILE ".cargo\bin"))
+# cargo run may need to (re)compile, which needs the native build toolchain.
+Add-BuildToolsToSession
 Push-Location $RootDir
 try {
   # SERVER_ENVIRONMENT defaults to Development when unset; dev config files are

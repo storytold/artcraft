@@ -99,6 +99,9 @@ function Ensure-CoreTools {
 }
 
 function Ensure-BuildTools {
+  # Tools installed by a previous run land in dirs this shell may not have on
+  # PATH yet - map them in before probing, so we don't re-invoke winget.
+  Add-BuildToolsToSession
   $missing = @($BuildTools | Where-Object { -not (Get-Command $_.Exe -ErrorAction SilentlyContinue) })
   if ($missing.Count -eq 0) {
     Write-Log "All native build tools present (cmake, perl, nasm, clang)."
@@ -116,7 +119,7 @@ function Ensure-BuildTools {
 
   foreach ($tool in $missing) {
     Write-Log "winget install $($tool.WingetId)..."
-    winget install --id $tool.WingetId -e --accept-source-agreements --accept-package-agreements --disable-interactivity
+    Invoke-Native "winget install --id $($tool.WingetId) -e --accept-source-agreements --accept-package-agreements --disable-interactivity"
     if ($LASTEXITCODE -ne 0) {
       Write-Warn2 "winget exited with $LASTEXITCODE for $($tool.Name); checking whether the tool landed anyway..."
     }
@@ -156,13 +159,14 @@ function Install-PortableMySql {
 
   if (-not (Test-Path $MySqlIniPath)) {
     # Minimal config; utf8mb4 collation comes from each migration's DDL.
-    # MySQL's ini parser escape-processes backslashes - use forward slashes.
+    # MySQL's ini parser escape-processes backslashes - use forward slashes,
+    # and quote the values in case the clone path contains spaces.
     $baseForward = $MySqlBaseDir -replace '\\', '/'
     $dataForward = $MySqlDataDir -replace '\\', '/'
     $ini = @"
 [mysqld]
-basedir=$baseForward
-datadir=$dataForward
+basedir="$baseForward"
+datadir="$dataForward"
 port=3306
 bind-address=127.0.0.1
 "@
@@ -185,13 +189,15 @@ function Provision-MySqlDatabase {
   }
 
   $mysql = Get-MySqlTool "mysql"
+  if (-not $mysql) { Die "mysql client not found (portable install missing and none on PATH)." }
   # Portable install: root has no password. External server: honor MYSQL_ROOT_PASSWORD.
   $prev = $env:MYSQL_PWD
   if ($env:MYSQL_ROOT_PASSWORD) { $env:MYSQL_PWD = $env:MYSQL_ROOT_PASSWORD } else { $env:MYSQL_PWD = "" }
   try {
     # Same DDL as _docs/dev_setup_server.md, made idempotent. The extra
     # '127.0.0.1' account covers hosts where reverse-DNS of 127.0.0.1 doesn't
-    # resolve to 'localhost'.
+    # resolve to 'localhost'. Fed through a temp file + `source` so mysql's
+    # stderr can never become a terminating PowerShell error mid-provision.
     $ddl = @"
 CREATE DATABASE IF NOT EXISTS $DevMySqlDb;
 CREATE USER IF NOT EXISTS '$DevMySqlUser'@'localhost' IDENTIFIED BY '$DevMySqlPassword';
@@ -200,8 +206,13 @@ GRANT ALL PRIVILEGES ON $DevMySqlDb.* TO '$DevMySqlUser'@'localhost';
 GRANT ALL PRIVILEGES ON $DevMySqlDb.* TO '$DevMySqlUser'@'127.0.0.1';
 FLUSH PRIVILEGES;
 "@
-    $ddl | & $mysql -u root -h 127.0.0.1
+    $ddlFile = Join-Path $env:TEMP "artcraft_provision_ddl.sql"
+    Set-Content -Path $ddlFile -Value $ddl -Encoding ascii
+    $ddlForward = $ddlFile -replace '\\', '/'
+    $out = Invoke-Native "`"$mysql`" -u root -h 127.0.0.1 -e `"source $ddlForward`""
+    Remove-Item $ddlFile -Force -Confirm:$false -ErrorAction SilentlyContinue
     if ($LASTEXITCODE -ne 0) {
+      if ($out) { Write-Host ($out -join "`n") }
       Die "Provisioning failed. For an external MySQL server, set MYSQL_ROOT_PASSWORD and re-run."
     }
   } finally {
@@ -236,10 +247,22 @@ function Install-PortableRedis {
 
 function Ensure-DieselCli {
   Add-MySqlClientToSession
+  $needInstall = $true
+  $forceFlag = ""
   if (Get-Command diesel -ErrorAction SilentlyContinue) {
-    Write-Log "Found $(diesel --version)."
-    return
+    # A diesel.exe built against a client lib that has since moved fails at
+    # load time - probe it rather than trusting its presence.
+    $version = Invoke-Native "diesel --version"
+    if ($LASTEXITCODE -eq 0) {
+      Write-Log "Found $version."
+      $needInstall = $false
+    } else {
+      Write-Warn2 "diesel is on PATH but broken (missing libmysql.dll?) - reinstalling."
+      $forceFlag = " --force"
+    }
   }
+  if (-not $needInstall) { return }
+
   # diesel_cli's mysql feature links against libmysqlclient. The portable MySQL
   # ships its own client lib - point mysqlclient-sys at it instead of requiring
   # vcpkg. sqlite is bundled so no system sqlite is needed.
@@ -249,9 +272,9 @@ function Ensure-DieselCli {
   Write-Log "Installing diesel_cli (compiles from source; a few minutes)..."
   $env:MYSQLCLIENT_LIB_DIR = Join-Path $MySqlBaseDir "lib"
   $env:MYSQLCLIENT_VERSION = $MySqlVersion
-  Invoke-Native "cargo install diesel_cli --no-default-features --features mysql,sqlite-bundled"
+  Invoke-Native "cargo install diesel_cli --no-default-features --features mysql,sqlite-bundled$forceFlag"
   if ($LASTEXITCODE -ne 0) { Die "cargo install diesel_cli failed (exit $LASTEXITCODE)." }
-  Write-Log "Installed $(diesel --version)."
+  Write-Log "Installed $(Invoke-Native 'diesel --version')."
 }
 
 function Run-Migrations {
@@ -276,7 +299,8 @@ function Seed-RolesAndBadges {
   # Same data as _database/sql/seed/bootstrap_inserts_roles_etc.sh, but guarded
   # so re-runs don't hit duplicate-key errors. The 'user' role is mandatory:
   # account creation hardcodes user_role_slug='user'.
-  $roleCount = [int](Invoke-MySqlApp -Sql "SELECT COUNT(*) FROM user_roles" | Select-Object -First 1)
+  $roleCount = Get-MySqlCount "SELECT COUNT(*) FROM user_roles"
+  if ($roleCount -lt 0) { Die "Could not query user_roles - are migrations applied? (re-run bootstrap)" }
   if ($roleCount -gt 0) {
     Write-Log "user_roles already seeded ($roleCount rows)."
   } else {
@@ -285,7 +309,8 @@ function Seed-RolesAndBadges {
     Write-Log "Inserted system roles (user, mod, admin)."
   }
 
-  $badgeCount = [int](Invoke-MySqlApp -Sql "SELECT COUNT(*) FROM badges" | Select-Object -First 1)
+  $badgeCount = Get-MySqlCount "SELECT COUNT(*) FROM badges"
+  if ($badgeCount -lt 0) { Die "Could not query badges - are migrations applied? (re-run bootstrap)" }
   if ($badgeCount -gt 0) {
     Write-Log "badges already seeded ($badgeCount rows)."
   } else {
@@ -361,13 +386,7 @@ function Build-Backend {
     Write-Log "Skipped (-SkipRustBuild)."
     return
   }
-  # Freshly-installed tools live in dirs this shell may not have on PATH yet;
-  # bindgen (boring2/aws-lc-sys) additionally wants LIBCLANG_PATH.
-  foreach ($tool in $BuildTools) { Add-SessionPath $tool.PathDirs }
-  if (-not $env:LIBCLANG_PATH) {
-    $clang = Get-Command clang -ErrorAction SilentlyContinue
-    if ($clang) { $env:LIBCLANG_PATH = Split-Path $clang.Source }
-  }
+  Add-BuildToolsToSession
   Push-Location $RootDir
   try {
     # SQLX_OFFLINE only affects compile-time query verification (checked-in
@@ -413,8 +432,11 @@ function Setup-Frontend {
 function Download-File([string]$Url, [string]$Destination) {
   # curl.exe ships with Windows 10+ and handles redirects/resume better than
   # Invoke-WebRequest (which is also painfully slow on large files in PS 5.1).
-  curl.exe -fL --retry 3 -o "$Destination.partial" $Url
+  # -sS: no progress meter (it goes to stderr, which pollutes captured logs),
+  # but errors still print.
+  $out = Invoke-Native "curl.exe -fsSL --retry 3 -o `"$Destination.partial`" `"$Url`""
   if ($LASTEXITCODE -ne 0) {
+    if ($out) { Write-Host ($out -join "`n") }
     Remove-Item "$Destination.partial" -Force -Confirm:$false -ErrorAction SilentlyContinue
     Die "Download failed: $Url"
   }
