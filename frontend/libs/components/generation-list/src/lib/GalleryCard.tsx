@@ -105,7 +105,13 @@ export const GalleryCard = memo(function GalleryCard({
       : isAudio
         ? faMusic
         : faImage;
-  const mediaLabel = isVideo ? "Video" : is3D ? "3D" : isAudio ? "Audio" : "Image";
+  const mediaLabel = isVideo
+    ? "Video"
+    : is3D
+      ? "3D"
+      : isAudio
+        ? "Audio"
+        : "Image";
   const modelDisplayName = item.modelId
     ? getModelDisplayName(item.modelId)
     : null;
@@ -172,7 +178,10 @@ export const GalleryCard = memo(function GalleryCard({
           outside the card's rounded corners without being clipped. */}
       <div
         className="absolute inset-0 overflow-hidden rounded-[inherit]"
-        style={{ contentVisibility: "auto", containIntrinsicSize: "auto 200px" }}
+        style={{
+          contentVisibility: "auto",
+          containIntrinsicSize: "auto 200px",
+        }}
       >
         {isAudio ? (
           <div className="flex h-full flex-col bg-gradient-to-br from-white/[0.08] via-white/[0.04] to-white/[0.02] p-3">
@@ -222,7 +231,7 @@ export const GalleryCard = memo(function GalleryCard({
       )}
 
       {/* Hover overlay with media type + model badges and quick actions */}
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 flex items-end justify-between gap-2 bg-gradient-to-t from-black/70 to-transparent px-2 pb-2 pt-6 opacity-0 transition-opacity group-hover:opacity-100">
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 flex items-end justify-between gap-2 bg-gradient-to-t rounded-b-lg from-black/70 to-transparent px-2 pb-2 pt-6 opacity-0 transition-opacity group-hover:opacity-100">
         <div className="pointer-events-auto flex min-w-0 flex-wrap items-center gap-1.5">
           <div className="flex items-center gap-1.5 rounded-lg bg-black/60 px-2.5 py-1 text-xs font-medium text-white/90">
             <FontAwesomeIcon icon={mediaIcon} className="text-[10px]" />

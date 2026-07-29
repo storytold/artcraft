@@ -20,7 +20,7 @@ import {
 import { toast } from "../toast/toast";
 import { v4 as uuidv4 } from "uuid";
 import { Button } from "@storyteller/ui-button";
-import { useCharactersStore } from "./characters-store";
+import { useCharactersStore } from "@storyteller/ui-promptbox";
 
 interface CharactersModalProps {
   isOpen: boolean;

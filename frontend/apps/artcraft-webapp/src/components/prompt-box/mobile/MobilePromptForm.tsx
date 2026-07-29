@@ -1,9 +1,11 @@
 import { type ReactNode, useMemo } from "react";
 import { GenerateButton } from "@storyteller/ui-button";
-import { MentionTextarea } from "../MentionTextarea";
-import { buildMentionColorMap } from "../mention-colors";
+import {
+  MentionTextarea,
+  buildMentionColorMap,
+  type MentionItem,
+} from "@storyteller/ui-promptbox";
 import { useMobileCreateTabs } from "../../generation-gallery/mobile-create-tabs";
-import type { MentionItem } from "../types";
 
 interface MobilePromptFormProps {
   prompt: string;
@@ -14,6 +16,8 @@ interface MobilePromptFormProps {
   submitLabel?: string;
   credits?: number | null;
   mentionItems?: MentionItem[];
+  onMentionSelect?: (item: MentionItem) => void;
+  mentionSelections?: Record<string, string>;
   // Whether tapping Create will actually start a generation (logged in, prompt
   // present, no missing required input). Gates the auto-switch to History.
   autoAdvance?: boolean;
@@ -38,6 +42,8 @@ export function MobilePromptForm({
   submitLabel = "Create",
   credits,
   mentionItems,
+  onMentionSelect,
+  mentionSelections,
   autoAdvance = true,
   banner,
   inputModeSelector,
@@ -79,6 +85,10 @@ export function MobilePromptForm({
               colorMap={colorMap}
               placeholder={placeholder}
               className="min-h-[120px] max-h-[40vh] w-full text-md text-base-fg"
+              // Mobile has no Enter-submit; Enter always inserts a newline.
+              enterToGenerate={false}
+              onMentionSelect={onMentionSelect}
+              selectedTokens={mentionSelections}
             />
           </div>
 

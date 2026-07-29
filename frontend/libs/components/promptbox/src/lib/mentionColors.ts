@@ -1,4 +1,4 @@
-import type { MentionItem } from "./types";
+import type { MentionItem } from "./MentionTextarea";
 
 // ── @-mention color palette ─────────────────────────────────────────────
 

@@ -23,8 +23,4 @@ export interface RefAudio {
   duration: number;
 }
 
-export interface MentionItem {
-  label: string;
-  type: "image" | "video" | "audio" | "character";
-  preview?: string;
-}
+export type { MentionItem } from "@storyteller/ui-promptbox";

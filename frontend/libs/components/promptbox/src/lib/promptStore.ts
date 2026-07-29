@@ -340,6 +340,7 @@ export interface StoredCharacter {
   character_token: string;
   name: string;
   avatar_image_url?: string;
+  full_image_url?: string;
 }
 
 interface CharactersStore {

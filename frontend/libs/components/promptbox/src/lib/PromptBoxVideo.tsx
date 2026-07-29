@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useMemo } from "react";
+import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import { useSignals } from "@preact/signals-react/runtime";
 import { JobContextType } from "@storyteller/common";
 import { PopoverMenu, PopoverItem } from "@storyteller/ui-popover";
@@ -174,6 +174,13 @@ export const PromptBoxVideo = ({
     useFullscreenPrompt();
   const [isCharactersModalOpen, setIsCharactersModalOpen] = useState(false);
 
+  // Mentions are plain text: with several characters sharing a name,
+  // "@Robot" alone can't identify one. Records which token the user actually
+  // picked (dropdown, modal, or chip-menu replace), keyed by name.
+  const [mentionSelections, setMentionSelections] = useState<
+    Record<string, string>
+  >({});
+
   // Characters store for @-mentions
   const storedCharacters = useCharactersStore((s) => s.characters);
   const charactersLoaded = useCharactersStore((s) => s.loaded);
@@ -193,6 +200,7 @@ export const PromptBoxVideo = ({
               character_token: c.token,
               name: c.name,
               avatar_image_url: c.maybe_avatar?.cdn_url,
+              full_image_url: c.maybe_full_image?.cdn_url,
             })),
           );
         }
@@ -837,6 +845,8 @@ export const PromptBoxVideo = ({
         label: `@${char.name}`,
         type: "character" as const,
         preview: char.avatar_image_url,
+        token: char.character_token,
+        fullPreview: char.full_image_url ?? char.avatar_image_url,
       })),
     ],
     [
@@ -847,6 +857,14 @@ export const PromptBoxVideo = ({
       activeCharacters,
     ],
   );
+
+  // Record which token a mention name refers to when the user picks a
+  // character explicitly (dropdown pick or chip-menu replace).
+  const handleMentionSelect = useCallback((item: MentionItem) => {
+    if (item.type !== "character" || !item.token) return;
+    const name = item.label.replace(/^@/, "");
+    setMentionSelections((prev) => ({ ...prev, [name]: item.token! }));
+  }, []);
 
   // Build label → color map for inline mention highlighting
   const mentionColorMap = useMemo(() => {
@@ -1051,25 +1069,33 @@ export const PromptBoxVideo = ({
         );
       }
 
-      // Extract character tokens from @-mentions in prompt.
+      // Extract character tokens from @-mentions in prompt, resolving to
+      // exactly one token per mentioned name. Several characters can share a
+      // name; prefer the user's explicit pick (mentionSelections), else the
+      // newest (store is newest-first).
       // Use a word-boundary regex so `@Bob` doesn't match inside `@Bob2`.
-      const mentionedCharacters = (() => {
+      const mentionedTokens = (() => {
         if (activeCharacters.length === 0) return [];
-        const sorted = [...activeCharacters].sort(
-          (a, b) => b.name.length - a.name.length,
-        );
-        const matched = new Set<string>();
-        for (const c of sorted) {
-          const escaped = c.name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-          const regex = new RegExp(`@${escaped}(?!\\w)`);
-          if (regex.test(prompt)) matched.add(c.character_token);
+        const byName = new Map<string, StoredCharacter[]>();
+        for (const c of activeCharacters) {
+          byName.set(c.name, [...(byName.get(c.name) ?? []), c]);
         }
-        return activeCharacters.filter((c) => matched.has(c.character_token));
+        const names = [...byName.keys()].sort((a, b) => b.length - a.length);
+        const tokens: string[] = [];
+        for (const name of names) {
+          const escaped = name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+          if (!new RegExp(`@${escaped}(?!\\w)`).test(prompt)) continue;
+          const candidates = byName.get(name)!;
+          const chosen =
+            candidates.find(
+              (c) => c.character_token === mentionSelections[name],
+            ) ?? candidates[0];
+          tokens.push(chosen.character_token);
+        }
+        return tokens;
       })();
-      if (mentionedCharacters.length > 0) {
-        request.reference_character_tokens = mentionedCharacters.map(
-          (c) => c.character_token,
-        );
+      if (mentionedTokens.length > 0) {
+        request.reference_character_tokens = mentionedTokens;
       }
 
       // Pass duration if model supports it
@@ -1278,7 +1304,7 @@ export const PromptBoxVideo = ({
               </span>
             </div>
           )}
-          <div className="relative flex justify-center gap-2">
+          <div className="relative flex justify-center gap-3">
             {isReferenceMode ? renderReferenceDeck() : renderKeyframeCards()}
             <div className="promptbox-resize-wrap relative flex-1 min-w-0">
               {hasAnyMentionables ? (
@@ -1288,6 +1314,8 @@ export const PromptBoxVideo = ({
                   onChange={setPrompt}
                   mentionItems={allMentionItems}
                   colorMap={mentionColorMap}
+                  onMentionSelect={handleMentionSelect}
+                  selectedTokens={mentionSelections}
                   placeholder={
                     isReferenceMode
                       ? "Use @Image1, @Video1, @Audio1... to reference uploads in prompt..."
@@ -1506,6 +1534,10 @@ export const PromptBoxVideo = ({
           const spaceBefore =
             prompt.length > 0 && !prompt.endsWith(" ") ? " " : "";
           setPrompt(prompt + spaceBefore + mention + " ");
+          setMentionSelections((prev) => ({
+            ...prev,
+            [character.name]: character.token,
+          }));
           setIsCharactersModalOpen(false);
           requestAnimationFrame(() => {
             const el = mentionEditorRef.current;
@@ -1549,6 +1581,8 @@ export const PromptBoxVideo = ({
             onChange={setPrompt}
             mentionItems={allMentionItems}
             colorMap={mentionColorMap}
+            onMentionSelect={handleMentionSelect}
+            selectedTokens={mentionSelections}
             placeholder={
               isReferenceMode
                 ? "Use @Image1, @Video1, @Audio1... to reference uploads in prompt..."
