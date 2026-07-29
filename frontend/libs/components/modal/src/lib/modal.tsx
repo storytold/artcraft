@@ -66,6 +66,8 @@ if (typeof window !== "undefined" && !window.__modalEscListenerInstalled) {
   window.__modalEscListenerInstalled = true;
   window.addEventListener("keydown", (e: KeyboardEvent) => {
     if (e.key !== "Escape" && e.key !== "Esc") return;
+    // An open outside-safe panel (mention autocomplete etc.) claims Escape.
+    if (document.querySelector(OUTSIDE_SAFE_SELECTOR)) return;
     const top = getTopEscapableModal();
     if (top) {
       e.preventDefault();
@@ -76,6 +78,12 @@ if (typeof window !== "undefined" && !window.__modalEscListenerInstalled) {
 
 // Simple global z-index tracker for stacked modals
 let modalZCounter = 70;
+
+// Body-portaled companions of modal content (e.g. the prompt box's mention
+// autocomplete, which portals to <body> for fixed positioning) mark their
+// root with this attribute. Pointer-downs inside them must not count as
+// outside clicks, and while one is open it claims Escape before the modal.
+const OUTSIDE_SAFE_SELECTOR = "[data-modal-outside-safe]";
 
 const AnimatedBackdrop = ({
   styles,
@@ -1004,12 +1012,23 @@ export const Modal = ({
                       ? {}
                       : ({ "aria-describedby": undefined } as any))}
                     onPointerDownOutside={(e) => {
-                      if (!closeOnOutsideClick || allowBackgroundInteraction) {
+                      const target = e.target as HTMLElement | null;
+                      if (
+                        !closeOnOutsideClick ||
+                        allowBackgroundInteraction ||
+                        target?.closest?.(OUTSIDE_SAFE_SELECTOR)
+                      ) {
                         e.preventDefault();
                       }
                     }}
                     onEscapeKeyDown={(e) => {
-                      if (!closeOnEsc) {
+                      // Radix listens on document in the capture phase, so an
+                      // open outside-safe panel must be checked here too — its
+                      // own Escape handling runs later in the bubble phase.
+                      if (
+                        !closeOnEsc ||
+                        document.querySelector(OUTSIDE_SAFE_SELECTOR)
+                      ) {
                         e.preventDefault();
                       }
                     }}

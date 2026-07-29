@@ -416,16 +416,21 @@ function MentionDropdown({
   return createPortal(
     <div
       ref={listRef}
+      // `data-modal-outside-safe` tells the shared Modal (focus mode) that
+      // clicks here are not outside clicks; `pointerEvents: auto` re-enables
+      // interaction under the Radix modal's body-wide pointer-events lock.
+      data-modal-outside-safe=""
       className="fixed z-[9999] w-64 max-w-[calc(100vw-2rem)] max-h-72 overflow-y-auto rounded-lg border border-white/10 bg-ui-controls shadow-lg backdrop-blur-xl"
-      style={
-        placement
+      style={{
+        pointerEvents: "auto",
+        ...(placement
           ? { left: placement.left, top: placement.top }
           : {
               left: position.left,
               top: position.caretBottom + 4,
               visibility: "hidden",
-            }
-      }
+            }),
+      }}
     >
       <div className="px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-base-fg/50">
         References
@@ -518,6 +523,10 @@ export const MentionTextarea = forwardRef<HTMLDivElement, MentionTextareaProps>(
     const isInternalUpdate = useRef(false);
     const isComposing = useRef(false);
     const pendingCaret = useRef<number | null>(null);
+    // One-shot guard: a programmatic edit (chip replace) leaves the caret
+    // right after a mention label, which detectMention would read as a fresh
+    // "@..." trigger and reopen the dropdown over the already-confirmed chip.
+    const suppressMentionDetect = useRef(false);
     const enterToGenerateStore = useEnterToGenerateStore((s) => s.enabled);
     const enterToGenerate = enterToGenerateProp ?? enterToGenerateStore;
 
@@ -733,6 +742,13 @@ export const MentionTextarea = forwardRef<HTMLDivElement, MentionTextareaProps>(
         const el = editorRef.current;
         if (!el) return null;
 
+        // The measurement below moves the document selection, and in Chrome
+        // setting the selection inside a contentEditable FOCUSES it. If the
+        // editor isn't focused (e.g. the user just opened a toolbar popover),
+        // that focus steal would instantly dismiss whatever they opened —
+        // skip the measurement instead of hijacking focus.
+        if (document.activeElement !== el) return null;
+
         // Temporarily place caret at charOffset to measure position
         const saved = getCaretOffset(el);
         setCaretOffset(el, charOffset);
@@ -745,6 +761,18 @@ export const MentionTextarea = forwardRef<HTMLDivElement, MentionTextareaProps>(
         const rect = range.getBoundingClientRect();
         setCaretOffset(el, saved);
 
+        // A collapsed range adjacent to a non-editable chip span can measure
+        // as an all-zero rect — returning it would pin the dropdown to the
+        // viewport's top-left corner. Anchor to the editor's box instead.
+        if (rect.left === 0 && rect.top === 0 && rect.bottom === 0) {
+          const elRect = el.getBoundingClientRect();
+          return {
+            left: elRect.left,
+            caretTop: elRect.top,
+            caretBottom: elRect.top + 20,
+          };
+        }
+
         return {
           left: rect.left,
           caretTop: rect.top,
@@ -756,6 +784,25 @@ export const MentionTextarea = forwardRef<HTMLDivElement, MentionTextareaProps>(
       }
     }, []);
 
+    // True when [start, start + query.length) is exactly a chip element in
+    // the editor — i.e. the "trigger" the caret sits after is a mention that
+    // is already confirmed, not something the user is still typing.
+    const rangeIsRenderedChip = useCallback((start: number, query: string) => {
+      const el = editorRef.current;
+      if (!el) return false;
+      for (const chip of Array.from(
+        el.querySelectorAll<HTMLElement>("[data-mention]"),
+      )) {
+        if (
+          chip.dataset.mention === query &&
+          getNodeStartOffset(el, chip) === start
+        ) {
+          return true;
+        }
+      }
+      return false;
+    }, []);
+
     // Detect @mention trigger from cursor position
     // Supports multi-word names by scanning back to the nearest @.
     // A valid trigger requires the char before @ to not be an ASCII
@@ -763,7 +810,14 @@ export const MentionTextarea = forwardRef<HTMLDivElement, MentionTextareaProps>(
     // quotes, and punctuation all count as word boundaries, so users can
     // type "@Image1" directly after Chinese text like 从@Image1.
     const detectMention = useCallback(
-      (text: string, cursorPos: number) => {
+      (
+        text: string,
+        cursorPos: number,
+        // Caret-placement calls (clicks) pass true: landing next to an
+        // already-confirmed chip must not reopen the list over it. Typing
+        // keeps the dropdown so Enter can still confirm an exact-typed name.
+        skipConfirmedChips = false,
+      ) => {
         // Find the last @ before cursor
         const textBefore = text.slice(0, cursorPos);
         const lastAt = textBefore.lastIndexOf("@");
@@ -773,7 +827,10 @@ export const MentionTextarea = forwardRef<HTMLDivElement, MentionTextareaProps>(
         ) {
           const query = text.slice(lastAt, cursorPos); // includes @
           // Only open if there's no newline in the query
-          if (!query.includes("\n")) {
+          if (
+            !query.includes("\n") &&
+            !(skipConfirmedChips && rangeIsRenderedChip(lastAt, query))
+          ) {
             const pos = getOffsetRect(lastAt);
             if (pos) setDropdownPos(pos);
             setMentionState({
@@ -789,7 +846,7 @@ export const MentionTextarea = forwardRef<HTMLDivElement, MentionTextareaProps>(
           prev.isOpen ? { ...prev, isOpen: false } : prev,
         );
       },
-      [getOffsetRect],
+      [getOffsetRect, rangeIsRenderedChip],
     );
 
     // The dropdown is body-portaled with fixed positioning, so a scroll or
@@ -835,7 +892,17 @@ export const MentionTextarea = forwardRef<HTMLDivElement, MentionTextareaProps>(
 
         isInternalUpdate.current = true;
         onChange(text);
-        detectMention(text, caret);
+        // The flag is NOT cleared here: execCommand fires a native input event
+        // synchronously, so a chip replace runs handleInput twice (React's
+        // onInput + the explicit call). The setter clears it via microtask
+        // after the whole operation.
+        if (suppressMentionDetect.current) {
+          setMentionState((prev) =>
+            prev.isOpen ? { ...prev, isOpen: false } : prev,
+          );
+        } else {
+          detectMention(text, caret);
+        }
 
         // Keep caret visible when content overflows (contentEditable doesn't auto-scroll)
         requestAnimationFrame(() => {
@@ -955,12 +1022,18 @@ export const MentionTextarea = forwardRef<HTMLDivElement, MentionTextareaProps>(
         if (!chipMenu) return;
         setChipMenu(null);
         if (selectChipRange(chipMenu, false)) {
+          suppressMentionDetect.current = true;
           document.execCommand(
             "insertHTML",
             false,
             buildChipHTML(next, next.label),
           );
           handleInput();
+          // Cleared on a microtask (not inside handleInput) so it covers both
+          // handleInput invocations of this replace — see note in handleInput.
+          queueMicrotask(() => {
+            suppressMentionDetect.current = false;
+          });
         } else {
           // Chip element detached (DOM rebuilt) — splice the value instead.
           const start = chipStart(chipMenu);
@@ -1065,6 +1138,9 @@ export const MentionTextarea = forwardRef<HTMLDivElement, MentionTextareaProps>(
           }
           if (e.key === "Escape") {
             e.preventDefault();
+            // Escape closes only the dropdown — don't let it bubble to the
+            // focus-mode modal's global Escape listener and close that too.
+            e.stopPropagation();
             setMentionState((prev) => ({ ...prev, isOpen: false }));
             return;
           }
@@ -1187,7 +1263,7 @@ export const MentionTextarea = forwardRef<HTMLDivElement, MentionTextareaProps>(
 
         const sel = window.getSelection();
         if (sel && !sel.isCollapsed) return; // preserve text selection
-        detectMention(value, getCaretOffset(el));
+        detectMention(value, getCaretOffset(el), true);
       },
       [value, detectMention],
     );
@@ -1252,7 +1328,15 @@ export const MentionTextarea = forwardRef<HTMLDivElement, MentionTextareaProps>(
           onCopy={handleCopy}
           onCut={handleCut}
           onFocus={onFocus}
-          onBlur={onBlur}
+          onBlur={() => {
+            // Focus left the editor (dropdown item clicks preventDefault
+            // pointerdown, so they never land here) — the trigger context is
+            // gone; close the dropdown instead of leaving it floating.
+            setMentionState((prev) =>
+              prev.isOpen ? { ...prev, isOpen: false } : prev,
+            );
+            onBlur?.();
+          }}
           style={style}
           className={twMerge(
             className,
