@@ -124,20 +124,38 @@ pub async fn setup_dependencies(server_hostname: &str) -> AnyhowResult<SetupResu
   let s3_compatible_endpoint_url = easyenv::get_env_string_or_default("S3_COMPATIBLE_ENDPOINT_URL", "https://storage.googleapis.com");
   let bucket_timeout = easyenv::get_env_duration_seconds_or_default("BUCKET_TIMEOUT_SECONDS", Duration::from_secs(60 * 5));
 
-  let private_bucket_client = LegacyBucketClient::create(
-    &access_key, &secret_key, &region_name, &private_bucket_name,
-    &s3_compatible_endpoint_url, None, Some(bucket_timeout),
-  )?;
+  // NB: read here (before the bucket clients) rather than at first use below —
+  // the fully-local dev storage mode is gated on the environment.
+  let server_environment = ServerEnvironment::from_str(&easyenv::get_env_string_required("SERVER_ENVIRONMENT")?)
+    .ok_or(anyhow!("invalid server environment"))?;
 
-  let public_bucket_client = LegacyBucketClient::create(
-    &access_key, &secret_key, &region_name, &public_bucket_name,
-    &s3_compatible_endpoint_url, None, Some(bucket_timeout),
-  )?;
+  // Dev-only: when LOCAL_MEDIA_ROOT is set (the fully-local dev stack), back
+  // all bucket "uploads" with the local filesystem instead of S3/R2. Objects
+  // land under the same directory the dev server serves at /media, so
+  // uploaded media is immediately viewable via the CDN_BASE_URL override.
+  // Production and dev-against-real-buckets are unaffected (env-gated).
+  let maybe_local_media_root = if server_environment.is_development() {
+    std::env::var("LOCAL_MEDIA_ROOT").ok().filter(|root| !root.trim().is_empty())
+  } else {
+    None
+  };
+  if let Some(root) = maybe_local_media_root.as_deref() {
+    warn!("Local filesystem storage mode is ON: bucket uploads write under {} (LOCAL_MEDIA_ROOT).", root);
+  }
 
-  let auto_gc_bucket_client = LegacyBucketClient::create(
-    &access_key, &secret_key, &region_name, &gc_enabled_public_bucket_name,
-    &s3_compatible_endpoint_url, None, Some(bucket_timeout),
-  )?;
+  let make_bucket_client = |bucket_name: &str| -> AnyhowResult<LegacyBucketClient> {
+    match maybe_local_media_root.as_deref() {
+      Some(root) => Ok(LegacyBucketClient::create_local(root, bucket_name, None)),
+      None => LegacyBucketClient::create(
+        &access_key, &secret_key, &region_name, bucket_name,
+        &s3_compatible_endpoint_url, None, Some(bucket_timeout),
+      ),
+    }
+  };
+
+  let private_bucket_client = make_bucket_client(&private_bucket_name)?;
+  let public_bucket_client = make_bucket_client(&public_bucket_name)?;
+  let auto_gc_bucket_client = make_bucket_client(&gc_enabled_public_bucket_name)?;
 
   // In-Memory Caches
   let voice_list_cache_ttl = easyenv::get_env_duration_seconds_or_default("VOICE_LIST_CACHE_TTL_SECONDS", Duration::from_secs(60));
@@ -174,9 +192,6 @@ pub async fn setup_dependencies(server_hostname: &str) -> AnyhowResult<SetupResu
   let model_token_info_cache = ModelTokenToInfoCache::new();
 
   let health_check_status = HealthCheckStatus::new();
-
-  let server_environment = ServerEnvironment::from_str(&easyenv::get_env_string_required("SERVER_ENVIRONMENT")?)
-    .ok_or(anyhow!("invalid server environment"))?;
 
   let (pager, pager_worker, paging_flags) = build_pager(server_environment, server_hostname);
 

@@ -42,7 +42,12 @@ function cdnProxyPlugin() {
             return;
           }
           const [, host, assetPath = '/', query = ''] = match;
-          const upstream = await fetch(`https://${host}${assetPath}${query}`, {
+          // Localhost upstreams (the fully-local dev backend) are plain
+          // HTTP; everything else (real CDNs) is HTTPS. The web adapter
+          // fetches localhost directly and never proxies it, but don't let
+          // a stray localhost request die on a TLS handshake.
+          const scheme = /^(localhost|127\.0\.0\.1)(:\d+)?$/.test(host) ? 'http' : 'https';
+          const upstream = await fetch(`${scheme}://${host}${assetPath}${query}`, {
             method: req.method === 'HEAD' ? 'HEAD' : 'GET',
             headers: req.headers.range
               ? { range: String(req.headers.range) }
@@ -93,14 +98,14 @@ export default defineConfig(() => ({
     port: 4201,
     host: 'localhost',
     proxy: {
-      // Forward API calls to production API to avoid CORS during local dev
+      // Fallback only: main.tsx calls setDevelopment() in DEV, which points
+      // all API traffic at http://localhost:12345 directly, bypassing this
+      // proxy entirely. Target the local backend too so nothing can silently
+      // fall back to production traffic during local dev.
       '/v1': {
-        target: 'https://api.storyteller.ai',
+        target: 'http://localhost:12345',
         changeOrigin: true,
-        secure: true,
-        headers: {
-          Origin: 'https://api.storyteller.ai',
-        },
+        secure: false,
       },
       // NB: `/__cdn` asset proxying lives in `cdnProxyPlugin` above — it
       // needs per-request host routing, which `server.proxy` can't do.

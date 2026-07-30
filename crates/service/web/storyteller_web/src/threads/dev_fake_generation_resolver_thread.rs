@@ -1,6 +1,7 @@
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::time::Duration;
 
+use cloud_storage::legacy_bucket_client::local_object_disk_path;
 use log::{error, info};
 use sqlx::MySqlPool;
 
@@ -152,7 +153,7 @@ async fn insert_fake_result_media(
         "cannot read placeholder asset {} (server must run from the repo root): {}", source_path, err))?;
 
   let bucket_path = MediaFileBucketPath::generate_new(Some("fake_"), Some(extension));
-  let disk_path = local_disk_path(&media_root, &bucket_path.get_full_object_path_str());
+  let disk_path = local_object_disk_path(Path::new(&media_root), &bucket_path.get_full_object_path_str())?;
 
   if let Some(parent) = disk_path.parent() {
     tokio::fs::create_dir_all(parent).await?;
@@ -190,13 +191,4 @@ async fn insert_fake_result_media(
       .map_err(|err| anyhow::anyhow!("failed to insert fake result media file: {:?}", err))?;
 
   Ok(media_token)
-}
-
-/// {LOCAL_MEDIA_ROOT} + rooted object path (e.g. "/media/a/b/…/fake_….jpg").
-fn local_disk_path(media_root: &str, rooted_object_path: &str) -> PathBuf {
-  let mut path = Path::new(media_root).to_path_buf();
-  for segment in rooted_object_path.split('/').filter(|s| !s.is_empty()) {
-    path.push(segment);
-  }
-  path
 }

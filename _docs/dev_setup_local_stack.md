@@ -133,10 +133,12 @@ were wrong and are corrected:
   Kinovi). Only the legacy polling providers (GmiCloud, Grok, Kinovi orders,
   WorldLabs) are worker-driven. `DEV_FAKE_GENERATION` (below) exists so local
   submits never reach a real provider.
-- **Uploads fail hard with dummy S3 creds**: every media upload endpoint
-  uploads to the bucket *before* inserting the DB row, and `rust-s3` is built
-  with `fail-on-err` — so the first upload returns HTTP 500. (Known seam;
-  uploads are not yet part of the local stack.)
+- **Uploads would fail hard with dummy S3 creds** (every media upload
+  endpoint uploads to the bucket *before* inserting the DB row, and `rust-s3`
+  is built with `fail-on-err`) — which is why `LOCAL_MEDIA_ROOT` (below) also
+  switches the bucket clients into a local filesystem mode: uploads write
+  under `.devstack/media/` and are immediately viewable via the same `/media`
+  mount. No S3/R2/MinIO needed.
 
 ### Fully-local generation and media (`DEV_FAKE_GENERATION`)
 
@@ -147,7 +149,7 @@ automatically on bootstrap re-runs for older stacks):
 |-----------------------|----------------------------------------------------------------------------|
 | `DEV_FAKE_GENERATION` | omni_gen image/video submits skip the external provider and insert a normal **pending** job with a `fake_…` external id. A resolver thread inside `storyteller-web` completes each one after `DEV_FAKE_GENERATION_RESOLVE_SECS` (default 6s, poll every `DEV_FAKE_GENERATION_POLL_SECS`, default 2s) with a placeholder result copied from `test_data/`. Prompts containing `simulate_artcraft_failure` (or `test_artcraft_failure`) fail instead, optionally with a `FrontendFailureCategory` word in the prompt (e.g. `simulate_artcraft_failure face_not_detected`). Hard-disabled outside `SERVER_ENVIRONMENT=Development` |
 | `CDN_BASE_URL`        | Overrides the compiled-in CDN hosts in `cdn_link.rs` for all media URLs in API responses. Must be scheme+host only (no path) — set to `http://localhost:12345` so media resolves against the backend itself |
-| `LOCAL_MEDIA_ROOT`    | Directory the backend serves at `/media` (dev-only actix-files mount), mirroring the public bucket layout: object path `/media/{…}` lives at `{LOCAL_MEDIA_ROOT}/media/{…}`. The bootstrap points it at `.devstack/media/` |
+| `LOCAL_MEDIA_ROOT`    | Directory the backend serves at `/media` (dev-only actix-files mount), mirroring the public bucket layout: object path `/media/{…}` lives at `{LOCAL_MEDIA_ROOT}/media/{…}`. Also switches all three `LegacyBucketClient`s (public/private/gc) into a **local filesystem mode**, so every media upload endpoint writes here instead of S3/R2 — uploads work with dummy cloud creds. The bootstrap points it at `.devstack/media/` |
 
 With all three set, the full loop works offline: submit → pending job →
 polling (`/v1/jobs/session`) → success with a `media_files` row whose URL the
@@ -240,9 +242,9 @@ change runtime behavior:
 | Seam                                          | Today                                                        |
 |-----------------------------------------------|--------------------------------------------------------------|
 | Media/CDN URLs in API responses               | **Closed** when `CDN_BASE_URL` + `LOCAL_MEDIA_ROOT` are set (the bootstrap default): media URLs point at the backend's own `/media` mount. Unset, the compiled-in `cdn_link.rs` constants still point at the public `pub-….r2.dev` bucket |
-| Media uploads                                 | Upload endpoints push to R2/S3 *before* the DB insert and `rust-s3` is `fail-on-err` — with dummy creds every upload endpoint returns HTTP 500. A local S3 (`S3_COMPATIBLE_ENDPOINT_URL` → MinIO) or a filesystem storage mode is the missing piece |
-| Vite `/v1` proxy in webapp/website            | Hardcoded `https://api.storyteller.ai` (bypassed in dev by `setDevelopment()`, but still the fallback path) |
-| `SegmentationApi`, `GetCdnOrigin`, `API_TARGETS` | Hardcoded off-store production hosts (`GetCdnOrigin`/`Api.ts` still hardcode `cdn-2.fakeyou.com` for pagescene/moodboard surfaces, independent of the backend's `CDN_BASE_URL`) |
+| Media uploads                                 | **Closed** when `LOCAL_MEDIA_ROOT` is set: the bucket clients run in local filesystem mode and uploads land under `.devstack/media/`. Unset (or non-Development), uploads still 500 with dummy creds |
+| Vite `/v1` proxy in webapp                    | **Closed**: now targets `http://localhost:12345` (it was already bypassed in dev by `setDevelopment()`, but the fallback could silently hit production). The `/__cdn` dev proxy also no longer intercepts localhost media (it assumed https and broke pagescene GLB/splat loads against a local backend) |
+| `GetCdnOrigin` (pagescene asset thumbnails)   | **Closed** for local dev: returns the API host when it's localhost (the local backend serves media itself), production CDN otherwise; the pagescene adapter also skips the Cloudflare `/cdn-cgi/image` resize path on localhost. `enums/Api.ts` `API_TARGETS` and `SegmentationApi` still hardcode production hosts but are dead code (not exported/reachable from the webapp); moodboard never had a hardcoded host — it consumes `media_links` directly |
 | Elasticsearch-backed search                   | `search_featured` / `search_session` media files, `weights/search`, legacy `tts/search` fail without a local ES + `elasticsearch-cli` reindex (optional) |
 
 ## CI usage
@@ -272,6 +274,8 @@ export MYSQL_ROOT_PASSWORD=root   # GitHub Actions' preinstalled MySQL uses pass
   result (`DEV_FAKE_GENERATION`) — no external provider is contacted. A
   prompt containing `simulate_artcraft_failure` fails with a real error
   toast/category instead.
+- Uploading an image (e.g. a reference image in the prompt box) succeeds and
+  the file lands under `.devstack/media/` — no S3/R2 credentials involved.
 - Nothing hits `api.storyteller.ai` or the r2.dev CDN during the above
   (verify in the browser network tab — media URLs should point at
   `http://localhost:12345/media/…`).

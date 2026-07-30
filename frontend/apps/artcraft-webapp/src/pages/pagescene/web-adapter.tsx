@@ -47,11 +47,15 @@ const apiHost = () =>
 // through the Vite `/__cdn` proxy so they aren't blocked by CORS — the CDN only
 // sends CORS headers for the production origin. In production this is a no-op:
 // the asset is fetched directly from its real URL.
+// Localhost media (the fully-local dev stack's backend serving /media) is
+// fetched directly: the dev backend sends CORS headers for any localhost
+// origin, and the proxy would break it anyway (it assumes https).
 function maybeProxyCdnUrl(url: string): string {
   if (!import.meta.env.DEV) return url;
   try {
     const parsed = new URL(url, window.location.origin);
     if (parsed.origin === window.location.origin) return url;
+    if (parsed.hostname === "localhost" || parsed.hostname === "127.0.0.1") return url;
     return `/__cdn/${parsed.host}${parsed.pathname}${parsed.search}`;
   } catch {
     return url;
@@ -334,6 +338,11 @@ export const useWebAppPageSceneAdapter = (
         const path = bucketPath?.startsWith("/")
           ? bucketPath
           : `/${bucketPath ?? ""}`;
+        // The fully-local dev backend serves media itself and has no
+        // Cloudflare /cdn-cgi/image resizer — serve the original.
+        if (base.includes("localhost") || base.includes("127.0.0.1")) {
+          return `${base}${path}`;
+        }
         const params: string[] = [];
         if (width) params.push(`width=${width}`);
         if (quality) params.push(`quality=${quality}`);
