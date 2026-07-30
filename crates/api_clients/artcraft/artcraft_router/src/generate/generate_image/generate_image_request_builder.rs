@@ -151,8 +151,6 @@ impl GenerateImageRequestBuilder {
       (RouterProvider::Seedance2Pro, RouterImageModel::Midjourney7Niji) => build_kinovi_midjourney_7_niji(self),
       (RouterProvider::Seedance2Pro, RouterImageModel::Midjourney8) => build_kinovi_midjourney_8(self),
       (RouterProvider::Seedance2Pro, RouterImageModel::Seedream5p0Pro) => build_kinovi_seedream_5p0_pro(self),
-      // The Ultra alias sends the exact same Kinovi request; only the Kinovi
-      // account it is billed to differs, and that is chosen by the caller.
       (RouterProvider::Seedance2Pro, RouterImageModel::Seedream5p0ProUltra) => build_kinovi_seedream_5p0_pro(self),
 
       _ => self.unsupported_provider_and_model(),
