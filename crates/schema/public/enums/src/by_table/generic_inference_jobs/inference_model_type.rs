@@ -129,6 +129,8 @@ pub enum InferenceModelType {
   Seedream5Lite,
   #[serde(rename = "seedream_5p0_pro")]
   Seedream5p0Pro,
+  #[serde(rename = "seedream_5p0_pro_u")]
+  Seedream5p0ProUltra,
   #[serde(rename = "midjourney")]
   Midjourney,
   #[serde(rename = "midjourney_v6")]
@@ -337,6 +339,7 @@ impl InferenceModelType {
       Self::Seedream4p5 => "seedream_4p5",
       Self::Seedream5Lite => "seedream_5_lite",
       Self::Seedream5p0Pro => "seedream_5p0_pro",
+      Self::Seedream5p0ProUltra => "seedream_5p0_pro_u",
       Self::Midjourney => "midjourney",
       Self::MidjourneyV6 => "midjourney_v6",
       Self::MidjourneyV6p1 => "midjourney_v6p1",
@@ -466,6 +469,7 @@ impl InferenceModelType {
       "seedream_4p5" => Ok(Self::Seedream4p5),
       "seedream_5_lite" => Ok(Self::Seedream5Lite),
       "seedream_5p0_pro" => Ok(Self::Seedream5p0Pro),
+      "seedream_5p0_pro_u" => Ok(Self::Seedream5p0ProUltra),
       "midjourney" => Ok(Self::Midjourney),
       "midjourney_v6" => Ok(Self::MidjourneyV6),
       "midjourney_v6p1" => Ok(Self::MidjourneyV6p1),
@@ -599,6 +603,7 @@ impl InferenceModelType {
       Self::Seedream4p5,
       Self::Seedream5Lite,
       Self::Seedream5p0Pro,
+      Self::Seedream5p0ProUltra,
       Self::Midjourney,
       Self::MidjourneyV6,
       Self::MidjourneyV6p1,
@@ -715,6 +720,7 @@ impl InferenceModelType {
       CommonModelType::Seedream4p5 => Self::Seedream4p5,
       CommonModelType::Seedream5Lite => Self::Seedream5Lite,
       CommonModelType::Seedream5p0Pro => Self::Seedream5p0Pro,
+      CommonModelType::Seedream5p0ProUltra => Self::Seedream5p0ProUltra,
       CommonModelType::Midjourney => Self::Midjourney,
       CommonModelType::MidjourneyV6 => Self::MidjourneyV6,
       CommonModelType::MidjourneyV6p1 => Self::MidjourneyV6p1,

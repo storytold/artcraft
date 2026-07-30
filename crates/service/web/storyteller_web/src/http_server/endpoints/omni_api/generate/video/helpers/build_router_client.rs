@@ -9,7 +9,7 @@ use artcraft_router::client::router_seedance2pro_client::RouterSeedance2ProClien
 use seedance2pro_client::creds::seedance2pro_session::Seedance2ProSession;
 
 use crate::http_server::common_responses::common_web_error::CommonWebError;
-use crate::http_server::endpoints::omni_api::generate::video::kinovi_account::KinoviAccount;
+use crate::http_server::endpoints::omni_api::shared_utils::kinovi_account::KinoviAccount;
 use crate::state::server_state::ServerState;
 
 pub fn build_router_client(

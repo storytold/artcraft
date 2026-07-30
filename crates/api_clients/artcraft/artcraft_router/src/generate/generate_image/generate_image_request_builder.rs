@@ -27,6 +27,7 @@ use crate::generate::generate_image::providers::artcraft::seedream_4::build::bui
 use crate::generate::generate_image::providers::artcraft::seedream_4p5::build::build_artcraft_seedream_4p5;
 use crate::generate::generate_image::providers::artcraft::seedream_5_lite::build::build_artcraft_seedream_5_lite;
 use crate::generate::generate_image::providers::artcraft::seedream_5p0_pro::build::build_artcraft_seedream_5p0_pro;
+use crate::generate::generate_image::providers::artcraft::seedream_5p0_pro_ultra::build::build_artcraft_seedream_5p0_pro_ultra;
 use crate::generate::generate_image::providers::fal::flux_1_dev::build::build_fal_flux_1_dev;
 use crate::generate::generate_image::providers::fal::flux_1_schnell::build::build_fal_flux_1_schnell;
 use crate::generate::generate_image::providers::fal::flux_2_lora_angles::build::build_fal_flux_2_lora_angles;
@@ -122,6 +123,7 @@ impl GenerateImageRequestBuilder {
       (RouterProvider::Artcraft, RouterImageModel::Seedream4p5) => build_artcraft_seedream_4p5(self),
       (RouterProvider::Artcraft, RouterImageModel::Seedream5Lite) => build_artcraft_seedream_5_lite(self),
       (RouterProvider::Artcraft, RouterImageModel::Seedream5p0Pro) => build_artcraft_seedream_5p0_pro(self),
+      (RouterProvider::Artcraft, RouterImageModel::Seedream5p0ProUltra) => build_artcraft_seedream_5p0_pro_ultra(self),
       (RouterProvider::Artcraft, RouterImageModel::QwenEdit2511Angles) => build_artcraft_qwen_edit_2511_angles(self),
       (RouterProvider::Artcraft, RouterImageModel::Flux2LoraAngles) => build_artcraft_flux_2_lora_angles(self),
       (RouterProvider::Artcraft, RouterImageModel::Midjourney7) => build_artcraft_midjourney_7(self),
@@ -149,6 +151,7 @@ impl GenerateImageRequestBuilder {
       (RouterProvider::Seedance2Pro, RouterImageModel::Midjourney7Niji) => build_kinovi_midjourney_7_niji(self),
       (RouterProvider::Seedance2Pro, RouterImageModel::Midjourney8) => build_kinovi_midjourney_8(self),
       (RouterProvider::Seedance2Pro, RouterImageModel::Seedream5p0Pro) => build_kinovi_seedream_5p0_pro(self),
+      (RouterProvider::Seedance2Pro, RouterImageModel::Seedream5p0ProUltra) => build_kinovi_seedream_5p0_pro(self),
 
       _ => self.unsupported_provider_and_model(),
     }

@@ -11,7 +11,7 @@ use seedance2pro_client::creds::seedance2pro_session::Seedance2ProSession;
 use worldlabs_api_client::credentials::world_labs_api_creds::WorldLabsApiCreds;
 
 use crate::http_server::common_responses::common_web_error::CommonWebError;
-use crate::http_server::endpoints::omni_gen::generate::video::kinovi_account::KinoviAccount;
+use crate::http_server::endpoints::omni_gen::shared_utils::kinovi_account::KinoviAccount;
 use crate::state::server_state::ServerState;
 
 pub fn build_router_client(

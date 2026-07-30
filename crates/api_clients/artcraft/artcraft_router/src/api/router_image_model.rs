@@ -43,6 +43,8 @@ pub enum RouterImageModel {
   Seedream5Lite,
   #[serde(rename = "seedream_5p0_pro")]
   Seedream5p0Pro,
+  #[serde(rename = "seedream_5p0_pro_u")]
+  Seedream5p0ProUltra,
   #[serde(rename = "qwen_edit_2511_angles")]
   QwenEdit2511Angles,
   #[serde(rename = "flux_2_lora_angles")]
@@ -79,5 +81,10 @@ mod tests {
   #[test]
   fn seedream_5p0_pro_serializes_to_seedream_5p0_pro() {
     assert_round_trip(RouterImageModel::Seedream5p0Pro, "seedream_5p0_pro");
+  }
+
+  #[test]
+  fn seedream_5p0_pro_ultra_serializes_to_seedream_5p0_pro_u() {
+    assert_round_trip(RouterImageModel::Seedream5p0ProUltra, "seedream_5p0_pro_u");
   }
 }

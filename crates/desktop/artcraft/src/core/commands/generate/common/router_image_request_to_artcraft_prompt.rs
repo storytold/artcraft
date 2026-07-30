@@ -55,6 +55,7 @@ fn image_model_to_common_model_type(model: RouterImageModel) -> Option<CommonMod
     RouterImageModel::Seedream4p5 => Some(CommonModelType::Seedream4p5),
     RouterImageModel::Seedream5Lite => Some(CommonModelType::Seedream5Lite),
     RouterImageModel::Seedream5p0Pro => Some(CommonModelType::Seedream5p0Pro),
+    RouterImageModel::Seedream5p0ProUltra => Some(CommonModelType::Seedream5p0ProUltra),
     RouterImageModel::QwenEdit2511Angles => Some(CommonModelType::QwenEdit2511Angles),
     RouterImageModel::Flux2LoraAngles => Some(CommonModelType::Flux2LoraAngles),
     RouterImageModel::GrokImagineImage => Some(CommonModelType::GrokImagineImage),
