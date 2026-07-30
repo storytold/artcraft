@@ -23,7 +23,7 @@ use crate::http_server::endpoints::omni_gen::generate::video::helpers::build_rou
 use crate::http_server::endpoints::omni_gen::generate::video::helpers::pipeline_result::PipelineResult;
 use crate::http_server::endpoints::omni_gen::generate::video::helpers::resolve_media_tokens_to_urls::resolve_media_tokens_to_urls;
 use mysql_queries::queries::generic_inference::common::job_cost_estimates::JobCostEstimates;
-use crate::http_server::endpoints::omni_gen::generate::video::kinovi_account::KinoviAccount;
+use crate::http_server::endpoints::omni_gen::shared_utils::kinovi_account::KinoviAccount;
 use crate::http_server::endpoints::omni_gen::shared_utils::map_seedance2pro_router_error::map_router_error_to_web_error;
 use crate::state::server_state::ServerState;
 

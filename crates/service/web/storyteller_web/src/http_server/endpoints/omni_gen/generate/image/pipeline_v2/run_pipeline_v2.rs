@@ -21,6 +21,7 @@ use crate::http_server::endpoints::generate::common::generation_debug_logs::{
   insert_provider_request_debug_log, provider_request_debug_log_type, GenerationDebugLogContext,
 };
 use crate::http_server::endpoints::omni_gen::generate::image::pipeline_result::ImagePipelineResult;
+use crate::http_server::endpoints::omni_gen::shared_utils::kinovi_account::KinoviAccount;
 use crate::http_server::endpoints::omni_gen::shared_utils::map_seedance2pro_router_error::map_router_error_to_web_error;
 use crate::state::server_state::ServerState;
 use crate::util::lookup::lookup_media_files_as_cdn_url_list_and_map::MediaFilesAsCdnUrlListAndMap;
@@ -30,6 +31,7 @@ pub struct RunPipelineV2Args<'a> {
   pub server_state: &'a ServerState,
   pub user_token: &'a UserToken,
   pub resolved_media: &'a MediaFilesAsCdnUrlListAndMap,
+  pub kinovi_account: KinoviAccount,
   pub debug_log_context: &'a GenerationDebugLogContext<'a>,
   /// The handler's open connection. The pipeline uses it for its remaining
   /// pre-request DB writes (billing, outbound-request debug log) and releases
@@ -49,6 +51,7 @@ pub async fn run_pipeline_v2(
     server_state,
     user_token,
     resolved_media,
+    kinovi_account,
     debug_log_context,
     mut mysql_connection,
   } = args;
@@ -97,7 +100,7 @@ pub async fn run_pipeline_v2(
   // across the external generation call below.
   drop(mysql_connection);
 
-  let response = finalize_and_generate(draft_or_request, server_state, resolved_media).await?;
+  let response = finalize_and_generate(draft_or_request, server_state, resolved_media, kinovi_account).await?;
 
   Ok(ImagePipelineResult {
     apriori_job_token,
@@ -119,14 +122,16 @@ fn build_execution_request(
 }
 
 /// Route each image model to the provider that fulfils it. Midjourney and
-/// Seedream 5.0 Pro are served via the Seedance2Pro/Kinovi (Volcengine)
-/// backend; everything else flows through Fal.
+/// Seedream 5.0 Pro (both variants) are served via the Seedance2Pro/Kinovi
+/// backend; everything else flows through Fal. Which Kinovi account fulfils
+/// a Kinovi request is the handler's `kinovi_account` choice.
 fn provider_for_model(model: RouterImageModel) -> RouterProvider {
   match model {
     RouterImageModel::Midjourney7
     | RouterImageModel::Midjourney7Niji
     | RouterImageModel::Midjourney8
-    | RouterImageModel::Seedream5p0Pro => RouterProvider::Seedance2Pro,
+    | RouterImageModel::Seedream5p0Pro
+    | RouterImageModel::Seedream5p0ProUltra => RouterProvider::Seedance2Pro,
     _ => RouterProvider::Fal,
   }
 }
@@ -172,9 +177,10 @@ async fn finalize_and_generate(
   draft_or_request: ImageGenerationDraftOrRequest,
   server_state: &ServerState,
   resolved_media: &MediaFilesAsCdnUrlListAndMap,
+  kinovi_account: KinoviAccount,
 ) -> Result<GenerateImageResponse, CommonWebError> {
   let provider = draft_or_request.get_provider();
-  let client = build_router_client(provider, server_state)?;
+  let client = build_router_client(provider, server_state, kinovi_account)?;
 
   // Inline the draft finalization so the draft context can borrow `client`.
   let request: ImageGenerationRequest = match draft_or_request {
@@ -204,6 +210,7 @@ async fn finalize_and_generate(
 fn build_router_client(
   provider: RouterProvider,
   server_state: &ServerState,
+  kinovi_account: KinoviAccount,
 ) -> Result<RouterClient, CommonWebError> {
   match provider {
     RouterProvider::Fal => {
@@ -214,11 +221,12 @@ fn build_router_client(
       Ok(RouterClient::Fal(fal_client))
     },
     RouterProvider::Seedance2Pro => {
-      // Midjourney image generation always uses the Volcengine account.
-      // Per-request account selection (like the video flow's
-      // `KinoviAccount` enum) isn't needed here yet — if it ever is, plumb
-      // a parallel knob through `RunPipelineV2Args`.
-      let cookies = server_state.inference_providers.seedance2pro.cookies_volcengine.clone();
+      let seedance2pro = &server_state.inference_providers.seedance2pro;
+      let cookies = match kinovi_account {
+        KinoviAccount::Volcengine => seedance2pro.cookies_volcengine.clone(),
+        KinoviAccount::BytePlus => seedance2pro.cookies_byteplus.clone(),
+        KinoviAccount::BytePlusUltra => seedance2pro.cookies_byteplus_ultra.clone(),
+      };
       let session = Seedance2ProSession::from_cookies_string(cookies);
       Ok(RouterClient::Seedance2Pro(RouterSeedance2ProClient::new(session)))
     },

@@ -83,7 +83,8 @@ pub async fn insert_generic_inference_job_for_seedance2pro_queue_with_apriori_jo
     Some(CommonModelType::Midjourney7) |
     Some(CommonModelType::Midjourney7Niji) |
     Some(CommonModelType::Midjourney8) |
-    Some(CommonModelType::Seedream5p0Pro) => true,
+    Some(CommonModelType::Seedream5p0Pro) |
+    Some(CommonModelType::Seedream5p0ProUltra) => true,
     _ => false,
   };
 
@@ -111,7 +112,12 @@ pub async fn insert_generic_inference_job_for_seedance2pro_queue_with_apriori_jo
       InferenceJobExternalThirdParty::Seedance2ProAlt,
       InferenceJobProductCategory::Seedance2ProVideoAlt,
     ),
-    (KinoviVersion::BytePlusUltra, _) => (
+    (KinoviVersion::BytePlusUltra, true) => (
+      InferenceJobType::Seedance2ProBytePlusUltraQueue,
+      InferenceJobExternalThirdParty::Seedance2ProBytePlusUltra,
+      InferenceJobProductCategory::Seedance2ProImageBytePlusUltra,
+    ),
+    (KinoviVersion::BytePlusUltra, false) => (
       InferenceJobType::Seedance2ProBytePlusUltraQueue,
       InferenceJobExternalThirdParty::Seedance2ProBytePlusUltra,
       InferenceJobProductCategory::Seedance2ProVideoBytePlusUltra,

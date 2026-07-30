@@ -22,7 +22,7 @@ use crate::http_server::endpoints::omni_gen::generate::splat::helpers::pipeline_
 use crate::http_server::endpoints::omni_gen::generate::splat::helpers::resolve_media_tokens_to_urls::resolve_media_tokens_to_urls;
 use crate::http_server::endpoints::omni_gen::generate::video::helpers::bill_wallet::bill_wallet;
 use crate::http_server::endpoints::omni_gen::generate::video::helpers::build_router_client::build_router_client;
-use crate::http_server::endpoints::omni_gen::generate::video::kinovi_account::KinoviAccount;
+use crate::http_server::endpoints::omni_gen::shared_utils::kinovi_account::KinoviAccount;
 use crate::http_server::endpoints::omni_gen::shared_utils::splat::map_worldlabs_router_error::map_worldlabs_router_error;
 use crate::state::server_state::ServerState;
 

@@ -41,6 +41,8 @@ use crate::generate::generate_image::providers::artcraft::seedream_5_lite::cost:
 use crate::generate::generate_image::providers::artcraft::seedream_5_lite::request::ArtcraftSeedream5LiteRequestState;
 use crate::generate::generate_image::providers::artcraft::seedream_5p0_pro::cost::ArtcraftSeedream5p0ProCostState;
 use crate::generate::generate_image::providers::artcraft::seedream_5p0_pro::request::ArtcraftSeedream5p0ProRequestState;
+use crate::generate::generate_image::providers::artcraft::seedream_5p0_pro_ultra::cost::ArtcraftSeedream5p0ProUltraCostState;
+use crate::generate::generate_image::providers::artcraft::seedream_5p0_pro_ultra::request::ArtcraftSeedream5p0ProUltraRequestState;
 use crate::generate::generate_image::providers::fal::flux_1_dev::cost::FalFlux1DevCostState;
 use crate::generate::generate_image::providers::fal::flux_1_dev::request::FalFlux1DevRequestState;
 use crate::generate::generate_image::providers::fal::flux_1_schnell::cost::FalFlux1SchnellCostState;
@@ -97,6 +99,7 @@ pub enum ImageGenerationRequest {
   ArtcraftSeedream4p5(ArtcraftSeedream4p5RequestState),
   ArtcraftSeedream5Lite(ArtcraftSeedream5LiteRequestState),
   ArtcraftSeedream5p0Pro(ArtcraftSeedream5p0ProRequestState),
+  ArtcraftSeedream5p0ProUltra(ArtcraftSeedream5p0ProUltraRequestState),
   ArtcraftQwenEdit2511Angles(ArtcraftQwenEdit2511AnglesRequestState),
   ArtcraftFlux2LoraAngles(ArtcraftFlux2LoraAnglesRequestState),
   ArtcraftMidjourney7(ArtcraftMidjourney7RequestState),
@@ -144,6 +147,7 @@ impl ImageGenerationRequest {
       Self::ArtcraftSeedream4p5(_) => RouterProvider::Artcraft,
       Self::ArtcraftSeedream5Lite(_) => RouterProvider::Artcraft,
       Self::ArtcraftSeedream5p0Pro(_) => RouterProvider::Artcraft,
+      Self::ArtcraftSeedream5p0ProUltra(_) => RouterProvider::Artcraft,
       Self::ArtcraftQwenEdit2511Angles(_) => RouterProvider::Artcraft,
       Self::ArtcraftFlux2LoraAngles(_) => RouterProvider::Artcraft,
       Self::ArtcraftMidjourney7(_) => RouterProvider::Artcraft,
@@ -217,6 +221,9 @@ impl ImageGenerationRequest {
       }
       Self::ArtcraftSeedream5p0Pro(request) => {
         Ok(ArtcraftSeedream5p0ProCostState::from_request(request).estimate_cost())
+      }
+      Self::ArtcraftSeedream5p0ProUltra(request) => {
+        Ok(ArtcraftSeedream5p0ProUltraCostState::from_request(request).estimate_cost())
       }
       Self::ArtcraftQwenEdit2511Angles(request) => {
         Ok(ArtcraftQwenEdit2511AnglesCostState::from_request(request).estimate_cost())
@@ -314,6 +321,10 @@ impl ImageGenerationRequest {
         request.send(artcraft_client).await
       }
       Self::ArtcraftSeedream5p0Pro(request) => {
+        let artcraft_client = client.get_artcraft_client_ref()?;
+        request.send(artcraft_client).await
+      }
+      Self::ArtcraftSeedream5p0ProUltra(request) => {
         let artcraft_client = client.get_artcraft_client_ref()?;
         request.send(artcraft_client).await
       }

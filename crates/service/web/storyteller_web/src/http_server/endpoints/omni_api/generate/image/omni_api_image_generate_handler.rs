@@ -13,6 +13,7 @@ use enums::by_table::debug_logs::debug_log_type::DebugLogType;
 use enums::by_table::prompt_context_items::prompt_context_semantic_type::PromptContextSemanticType;
 use enums::by_table::prompts::prompt_type::PromptType;
 use enums::common::generation::common_generation_mode::CommonGenerationMode;
+use enums::common::generation::common_image_model::CommonImageModel;
 use enums::common::generation::common_model_type::CommonModelType;
 use enums::common::generation_provider::GenerationProvider;
 use enums::common::platform_type::PlatformType;
@@ -37,6 +38,7 @@ use crate::http_server::endpoints::omni_api::generate::image::insert_db_job::ins
 use crate::http_server::endpoints::omni_api::generate::image::insert_db_job::insert_seedance2pro_jobs::{insert_seedance2pro_jobs, InsertSeedance2proJobsArgs};
 use crate::http_server::endpoints::omni_api::generate::image::insert_db_job::shared_job_args::SharedJobArgs;
 use crate::http_server::endpoints::omni_api::generate::image::pipeline_v2::run_pipeline_v2::{run_pipeline_v2, RunPipelineV2Args};
+use crate::http_server::endpoints::omni_api::shared_utils::kinovi_account::KinoviAccount;
 use crate::http_server::user_lookup::api_keys::require_api_key_user::require_api_key_user;
 use crate::http_server::user_lookup::user_session::session_utils::lookup::user_session_feature_flags::UserSessionFeatureFlags;
 use crate::http_server::validations::validate_idempotency_token_format::validate_idempotency_token_format;
@@ -135,6 +137,14 @@ pub async fn omni_api_image_generate_handler(
 
   let router_builder = hydrate_to_router_request(&request)?;
 
+  // ==================== PIPELINE DISPATCH ==================== //
+
+  let kinovi_account = match request.model {
+    Some(CommonImageModel::Seedream5p0ProUltra) => KinoviAccount::BytePlusUltra,
+    // Everything else goes through Volcengine
+    _ => KinoviAccount::Volcengine,
+  };
+
   // ==================== DEBUG LOG: HTTP REQUEST ==================== //
 
   if let Err(err) = insert_debug_log(InsertDebugLogArgs {
@@ -170,6 +180,7 @@ pub async fn omni_api_image_generate_handler(
     server_state: &server_state,
     user_token,
     resolved_media: &resolved_media,
+    kinovi_account,
     debug_log_context: &debug_log_context,
     mysql_connection,
   }).await;
@@ -289,10 +300,11 @@ pub async fn omni_api_image_generate_handler(
     GenerateImageResponse::Seedance2Pro(payload) => {
       info!("Inserting seedance2pro image job(s) with token: {:?}", pipeline_result.apriori_job_token);
 
-      // The image-side omni pipeline always dispatches Midjourney via the
-      // Volcengine Kinovi account today. If we ever route to BytePlus /
-      // BytePlus Ultra here, mirror the video-side `kinovi_account` knob.
-      let kinovi_version = KinoviVersion::Volcengine;
+      let kinovi_version = match kinovi_account {
+        KinoviAccount::Volcengine => KinoviVersion::Volcengine,
+        KinoviAccount::BytePlus => KinoviVersion::BytePlus,
+        KinoviAccount::BytePlusUltra => KinoviVersion::BytePlusUltra,
+      };
 
       let result = insert_seedance2pro_jobs(InsertSeedance2proJobsArgs {
         primary_order_id: &payload.order_id,

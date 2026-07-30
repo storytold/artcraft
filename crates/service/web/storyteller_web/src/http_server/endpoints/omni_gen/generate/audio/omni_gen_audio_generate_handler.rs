@@ -36,7 +36,7 @@ use crate::http_server::endpoints::omni_gen::generate::audio::insert_db_job::ins
 use crate::http_server::endpoints::omni_gen::generate::audio::insert_db_job::insert_seedance2pro_job::{insert_seedance2pro_job, InsertSeedance2proJobArgs};
 use crate::http_server::endpoints::omni_gen::generate::audio::pipeline_v2::run_pipeline_v2::{run_pipeline_v2, RunPipelineV2Args};
 use crate::http_server::endpoints::omni_gen::generate::video::insert_db_job::shared_job_args::SharedJobArgs;
-use crate::http_server::endpoints::omni_gen::generate::video::kinovi_account::KinoviAccount;
+use crate::http_server::endpoints::omni_gen::shared_utils::kinovi_account::KinoviAccount;
 use crate::http_server::endpoints::omni_gen::shared_utils::audio::validate_audio_request::validate_audio_request;
 use crate::http_server::validations::validate_idempotency_token_format::validate_idempotency_token_format;
 use crate::http_server::web_utils::get_request_platform_type::get_request_platform_type;
