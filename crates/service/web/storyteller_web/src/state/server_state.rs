@@ -114,6 +114,10 @@ pub struct ServerState {
   pub google_sign_in_cert: GoogleSignInCert,
 
   pub temp_dir_creator: ScopedTempDirCreator,
+
+  /// Embedded metrics dashboards for the admin dashboard, configured from
+  /// optional env vars at startup.
+  pub dashboards: Dashboards,
 }
 
 #[derive(Clone)]
@@ -275,4 +279,18 @@ pub struct TrollBans {
 #[derive(Clone)]
 pub struct ResendData {
   pub api_key: String,
+}
+
+/// Embedded metrics dashboards surfaced to admins/mods.
+#[derive(Clone)]
+pub struct Dashboards {
+  pub databox: DataboxDashboards,
+}
+
+/// Databox datawall IDs. Each is `None` when its env var isn't configured,
+/// in which case the dashboard is simply omitted from the moderation API.
+#[derive(Clone)]
+pub struct DataboxDashboards {
+  pub daus_id: Option<String>,
+  pub daily_generations_id: Option<String>,
 }

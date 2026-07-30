@@ -35,6 +35,7 @@ use crate::http_server::endpoints::moderation::user::moderator_list_users_by_sig
 use crate::http_server::endpoints::moderation::user::moderator_user_lookup_by_stripe_customer_id_handler::moderator_user_lookup_by_stripe_customer_id_handler;
 use crate::http_server::endpoints::moderation::user::moderator_user_lookup_handler::moderator_user_lookup_handler;
 use crate::http_server::endpoints::moderation::alerts::moderation_send_alert_handler::moderation_send_alert_handler;
+use crate::http_server::endpoints::moderation::dashboards::moderator_list_databox_dashboards_handler::moderator_list_databox_dashboards_handler;
 use crate::http_server::endpoints::moderation::staff_audit_logs::moderator_list_staff_audit_logs_handler::moderator_list_staff_audit_logs_handler;
 use crate::http_server::endpoints::moderation::debug_logs::moderation_list_all_debug_logs_handler::moderation_list_all_debug_logs_handler;
 use crate::http_server::endpoints::moderation::debug_logs::moderation_list_debug_logs_for_token_handler::moderation_list_debug_logs_for_token_handler;
@@ -103,6 +104,12 @@ pub fn add_moderator_routes<T, B> (app: App<T>) -> App<T>
         .service(web::scope("/alerts")
             .service(web::resource("/send")
                 .route(web::post().to(moderation_send_alert_handler))
+                .route(web::head().to(|| HttpResponse::Ok()))
+            )
+        )
+        .service(web::scope("/dashboards")
+            .service(web::resource("/databox")
+                .route(web::get().to(moderator_list_databox_dashboards_handler))
                 .route(web::head().to(|| HttpResponse::Ok()))
             )
         )

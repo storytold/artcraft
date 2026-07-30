@@ -57,6 +57,12 @@ export interface UserReferralListItem {
   maybe_referral_code_token: string | null;
 }
 
+/** A Databox datawall configured server-side for the admin home page. */
+export interface DataboxDashboard {
+  name: string;
+  id: string;
+}
+
 /** Which table the customer id was found in. */
 export type ModeratorStripeCustomerIdSource = "customer_link" | "subscription";
 
@@ -473,6 +479,25 @@ export class ModerationApi extends ApiManager {
         success: false,
         errorMessage: err.message,
       }));
+  }
+
+  // Databox metrics dashboards configured server-side, in display order.
+  // Dashboards without a configured id are omitted by the server.
+  public async ListDataboxDashboards(): Promise<
+    ApiResponse<DataboxDashboard[]>
+  > {
+    const endpoint = `${this.getApiSchemeAndHost()}/v1/moderation/dashboards/databox`;
+    return await this.get<{
+      success: boolean;
+      databoards: DataboxDashboard[];
+      error_message?: string;
+    }>({ endpoint })
+      .then((response) => ({
+        success: response.success,
+        data: response.databoards || [],
+        errorMessage: response.error_message,
+      }))
+      .catch((err) => ({ success: false, errorMessage: err.message }));
   }
 
   public async SendAlert(params: {

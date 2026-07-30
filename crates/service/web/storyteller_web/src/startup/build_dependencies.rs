@@ -34,6 +34,7 @@ use crate::startup::setup_bans::{
   load_static_container_ip_bans, load_troll_user_token_bans,
 };
 use crate::startup::setup_inference_providers::setup_inference_providers;
+use crate::startup::setup_dashboards::setup_dashboards;
 use crate::startup::setup_seedance_video_bucket::setup_seedance_video_bucket;
 use crate::startup::setup_static_feature_flags::setup_static_feature_flags;
 use crate::startup::setup_stripe_artcraft::setup_stripe_artcraft;
@@ -262,6 +263,7 @@ pub async fn setup_dependencies(server_hostname: &str) -> AnyhowResult<SetupResu
     },
     temp_dir_creator: ScopedTempDirCreator::auto_setup(),
     google_sign_in_cert: GoogleSignInCert::new(),
+    dashboards: setup_dashboards(),
   };
 
   Ok(SetupResult {
