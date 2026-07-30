@@ -125,6 +125,16 @@ function isChip(node: Node): node is HTMLElement {
   );
 }
 
+/** Nearest chip element enclosing `node` (up to `root`), or null. */
+function chipContaining(root: HTMLElement, node: Node | null): HTMLElement | null {
+  let current: Node | null = node;
+  while (current && current !== root) {
+    if (isChip(current)) return current;
+    current = current.parentNode;
+  }
+  return null;
+}
+
 /**
  * DOM -> plain text. Mention chips contribute their full label ("@Name"),
  * <br> contributes "\n". This replaces `el.innerText` everywhere: with chips
@@ -420,6 +430,12 @@ function MentionDropdown({
       // clicks here are not outside clicks; `pointerEvents: auto` re-enables
       // interaction under the Radix modal's body-wide pointer-events lock.
       data-modal-outside-safe=""
+      // The focus-mode modal's scroll lock (react-remove-scroll) blocks any
+      // wheel/touch event that bubbles to document from outside the dialog —
+      // and this panel is body-portaled, so it counts as outside. Stopping
+      // propagation here keeps the list's native scrolling working.
+      onWheel={(e) => e.stopPropagation()}
+      onTouchMove={(e) => e.stopPropagation()}
       className="fixed z-[9999] w-64 max-w-[calc(100vw-2rem)] max-h-72 overflow-y-auto rounded-lg border border-white/10 bg-ui-controls shadow-lg backdrop-blur-xl"
       style={{
         pointerEvents: "auto",
@@ -653,6 +669,7 @@ export const MentionTextarea = forwardRef<HTMLDivElement, MentionTextareaProps>(
 
         let html = "";
         let lastIndex = 0;
+        let endsWithChip = false;
         const regex = new RegExp(mentionRegex);
         let match: RegExpExecArray | null;
 
@@ -668,10 +685,13 @@ export const MentionTextarea = forwardRef<HTMLDivElement, MentionTextareaProps>(
 
           if (item?.type === "character") {
             html += buildChipHTML(item, fullMatch);
+            endsWithChip = true;
           } else if (color) {
             html += `<span style="color:${color}">${escapeHTML(fullMatch)}</span>`;
+            endsWithChip = false;
           } else {
             html += escapeHTML(fullMatch);
+            endsWithChip = false;
           }
 
           lastIndex = match.index + fullMatch.length;
@@ -679,10 +699,19 @@ export const MentionTextarea = forwardRef<HTMLDivElement, MentionTextareaProps>(
 
         if (lastIndex < text.length) {
           html += escapeHTML(text.slice(lastIndex));
+          endsWithChip = false;
         }
 
         html = html.replace(/\n/g, "<br>");
         if (html.endsWith("<br>")) {
+          html += "<br>";
+        } else if (endsWithChip) {
+          // A chip as the very last node leaves no caret slot after it —
+          // Chrome then renders the caret INSIDE the contenteditable=false
+          // chip and silently swallows every keystroke (easy to hit: delete
+          // the space after a mention, then type). A single trailing <br>
+          // is invisible after inline content but gives the caret a valid
+          // landing spot; serialization strips the "\n" it contributes.
           html += "<br>";
         }
 
@@ -735,6 +764,35 @@ export const MentionTextarea = forwardRef<HTMLDivElement, MentionTextareaProps>(
         el.innerHTML = buildHTML(value);
       }
     }, [value, buildHTML]);
+
+    // Last line of defense for the frozen-input bug: browsers can still drop
+    // the caret INSIDE a contenteditable=false chip (Firefox arrow keys,
+    // drag-selection collapse, IME) — typing is then silently ignored. Eject
+    // the caret to just after the chip. Guarded by activeElement so a stale
+    // selection can't steal focus back from an open popover (Chrome focuses
+    // a contentEditable on addRange into it).
+    useEffect(() => {
+      const handleSelectionChange = () => {
+        const el = editorRef.current;
+        if (!el || document.activeElement !== el) return;
+        const sel = window.getSelection();
+        if (!sel?.rangeCount || !sel.isCollapsed) return;
+        const chip = chipContaining(el, sel.anchorNode);
+        if (!chip) return;
+        try {
+          const range = document.createRange();
+          range.setStartAfter(chip);
+          range.collapse(true);
+          sel.removeAllRanges();
+          sel.addRange(range);
+        } catch (e) {
+          console.debug("chip caret eject: DOM changed during move", e);
+        }
+      };
+      document.addEventListener("selectionchange", handleSelectionChange);
+      return () =>
+        document.removeEventListener("selectionchange", handleSelectionChange);
+    }, []);
 
     // Get pixel coordinates of a text offset relative to the wrapper
     const getOffsetRect = useCallback((charOffset: number) => {

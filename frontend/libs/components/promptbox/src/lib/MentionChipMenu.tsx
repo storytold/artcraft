@@ -127,6 +127,14 @@ export function MentionChipMenu({
   return createPortal(
     <div
       ref={panelRef}
+      // Marks clicks in this body-portaled panel as not-outside for the
+      // focus-mode modal (see OUTSIDE_SAFE_SELECTOR in @storyteller/ui-modal).
+      data-modal-outside-safe=""
+      // Body-portaled, so the focus-mode modal's scroll lock
+      // (react-remove-scroll) would preventDefault wheel/touch events over
+      // this panel — stop propagation so the Replace list stays scrollable.
+      onWheel={(e) => e.stopPropagation()}
+      onTouchMove={(e) => e.stopPropagation()}
       className={twMerge(
         "fixed z-[9999] w-56 rounded-lg border border-ui-panel-border bg-ui-panel p-1 shadow-xl",
         "transform-gpu transition duration-75 ease-out",
@@ -136,15 +144,17 @@ export function MentionChipMenu({
             ? "-translate-y-1 opacity-0"
             : "translate-y-1 opacity-0",
       )}
-      style={
-        placement
+      style={{
+        // Re-enable interaction under the modal's body-wide pointer-events lock.
+        pointerEvents: "auto",
+        ...(placement
           ? { left: placement.left, top: placement.top }
           : {
               left: anchorRect.left,
               top: anchorRect.bottom + ANCHOR_GAP,
               visibility: "hidden",
-            }
-      }
+            }),
+      }}
     >
       {view === "menu" ? (
         <>
