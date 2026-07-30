@@ -79,6 +79,20 @@ if mysql_app_reachable; then
   demo_count="$(mysql_app -N -e "SELECT COUNT(*) FROM users WHERE username='${DEMO_USERNAME}'" 2>/dev/null || echo 0)"
   if [ "${demo_count}" -gt 0 ]; then
     pass "demo user: '${DEMO_USERNAME}' exists"
+
+    credits="$(mysql_app -N -e "SELECT COALESCE(MAX(banked_credits + monthly_credits), 0) FROM wallets WHERE wallet_namespace='artcraft' AND owner_user_token=(SELECT token FROM users WHERE username='${DEMO_USERNAME}')" 2>/dev/null || echo 0)"
+    if [ "${credits}" -gt 0 ]; then
+      pass "demo wallet: '${DEMO_USERNAME}' has ${credits} credits"
+    else
+      warn_check "demo wallet: '${DEMO_USERNAME}' has no credits — generation flows are blocked (re-run seed_demo_user.sh)"
+    fi
+
+    media_count="$(mysql_app -N -e "SELECT COUNT(*) FROM media_files WHERE maybe_creator_user_token=(SELECT token FROM users WHERE username='${DEMO_USERNAME}')" 2>/dev/null || echo 0)"
+    if [ "${media_count}" -gt 0 ]; then
+      pass "demo media: '${DEMO_USERNAME}' has ${media_count} media rows"
+    else
+      warn_check "demo media: gallery is empty (re-run seed_demo_user.sh)"
+    fi
   else
     warn_check "demo user: '${DEMO_USERNAME}' not created yet (./script/bootstrap/seed_demo_user.sh, backend must be running)"
   fi
@@ -97,6 +111,12 @@ echo "--- Backend ---"
 
 if [ -f "${SECRETS_ENV_FILE}" ]; then
   pass "secrets env: ${SECRETS_ENV_FILE#"${root_dir}"/} exists"
+
+  if grep -q '^[[:space:]]*LOCAL_MEDIA_ROOT=' "${SECRETS_ENV_FILE}"; then
+    pass "secrets env: fully-local dev stack keys present (DEV_FAKE_GENERATION, CDN_BASE_URL, LOCAL_MEDIA_ROOT)"
+  else
+    warn_check "secrets env: fully-local dev stack keys missing — generation/gallery use remote CDN and real providers (re-run bootstrap to append)"
+  fi
 else
   fail "secrets env: missing — the server aborts at boot on ~19 required vars (re-run bootstrap)"
 fi

@@ -9,7 +9,7 @@ use cloud_storage::legacy_bucket_client::LegacyBucketClient;
 use elasticsearch::http::transport::Transport;
 use elasticsearch::Elasticsearch;
 use errors::AnyhowResult;
-use log::info;
+use log::{info, warn};
 use memory_caching::arc_ttl_sieve::ArcTtlSieve;
 use memory_caching::single_item_ttl_cache::SingleItemTtlCache;
 use mysql_queries::mediators::badge_granter::BadgeGranter;
@@ -192,6 +192,15 @@ pub async fn setup_dependencies(server_hostname: &str) -> AnyhowResult<SetupResu
 
   let inference_providers = setup_inference_providers()?;
 
+  // Dev-only fake generation (see the field docs on ServerState). The
+  // environment gate is enforced here so the flag can never arm in production
+  // even if the env var leaks into a deployed config.
+  let dev_fake_generation = server_environment.is_development()
+      && easyenv::get_env_bool_or_default("DEV_FAKE_GENERATION", false);
+  if dev_fake_generation {
+    warn!("DEV_FAKE_GENERATION is ON: omni_gen requests will not contact real providers.");
+  }
+
   let resend_api_key = easyenv::get_env_string_required("RESEND_API_KEY")?;
 
   let startup_time = Utc::now();
@@ -213,6 +222,7 @@ pub async fn setup_dependencies(server_hostname: &str) -> AnyhowResult<SetupResu
     hostname: server_hostname.to_string(),
     startup_time,
     server_environment,
+    dev_fake_generation,
     flags: service_feature_flags,
     third_party_url_redirector,
     health_check_status,

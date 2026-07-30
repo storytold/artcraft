@@ -26,6 +26,11 @@ $script:DemoUsername = if ($env:DEMO_USERNAME) { $env:DEMO_USERNAME } else { "lo
 $script:DemoPassword = if ($env:DEMO_PASSWORD) { $env:DEMO_PASSWORD } else { "localdev1pass" }
 $script:DemoEmail    = if ($env:DEMO_EMAIL)    { $env:DEMO_EMAIL }    else { "localdev1@example.com" }
 
+# Banked credits the demo user's artcraft wallet is seeded/topped-up to.
+# Generation submits are gated on wallet balance, so 0 credits means the
+# generate button silently refuses in the webapp.
+$script:DemoCredits = if ($env:DEMO_CREDITS) { [uint32]$env:DEMO_CREDITS } else { 100000 }
+
 # --- Portable service pins -------------------------------------------------
 # MySQL 8.4 LTS (the 8.x series is required; 9.x is unsupported by tooling).
 # cdn.mysql.com hosts only some patch versions; 8.4.11 verified available.
@@ -47,6 +52,11 @@ $script:MySqlIniPath  = Join-Path $DevStackDir "my.ini"
 $script:RedisDir      = Join-Path $DevStackDir "redis"
 $script:LogsDir       = Join-Path $DevStackDir "logs"
 $script:PidsDir       = Join-Path $DevStackDir "pids"
+
+# Local media served by the backend at /media when LOCAL_MEDIA_ROOT points
+# here (fully-local gallery + fake generation results). Mirrors the public
+# bucket layout: object path /media/{...} lives at .devstack\media\media\{...}.
+$script:DevMediaRoot  = Join-Path $DevStackDir "media"
 
 $script:SecretsEnvFile = Join-Path $RootDir "crates\service\web\storyteller_web\config\storyteller-web.development-secrets.env"
 
@@ -90,6 +100,16 @@ function Get-RedisTool([string]$Name) {
   $cmd = Get-Command $Name -ErrorAction SilentlyContinue
   if ($cmd) { return $cmd.Source }
   return $null
+}
+
+# Generate a token in the backend's format: {prefix}{crockford-lower entropy}
+# padded to the same TOTAL length the Rust generators use (tokens crate,
+# impl_crockford_generator!). Alphabet excludes i/l/o/u like Crockford base32.
+function New-DevToken([string]$Prefix, [int]$TotalLength) {
+  $charset = "0123456789abcdefghjkmnpqrstvwxyz"
+  $count = $TotalLength - $Prefix.Length
+  $chars = 1..$count | ForEach-Object { $charset[(Get-Random -Maximum $charset.Length)] }
+  return "$Prefix$(-join $chars)"
 }
 
 # Run SQL as the app user against the dev database. Returns output lines

@@ -121,12 +121,39 @@ live in the generated secrets file: `ACCESS_KEY`, `SECRET_KEY`, `REGION_NAME`,
 `STRIPE_ARTCRAFT_ACCOUNT_ID`, `STRIPE_ARTCRAFT_SECRET_KEY`,
 `STRIPE_ARTCRAFT_SECRET_WEBHOOK_KEY`.
 
-**Placeholder values are safe**: none of these services is contacted at boot
-(clients are constructed offline; Elasticsearch, S3/R2, Stripe, Resend, and
-Google-cert fetches are all lazy). Generation stays safe by construction —
-handlers only validate, bill the wallet, and insert job rows; providers are
-contacted exclusively by separate worker binaries that local dev never runs,
-so enqueued jobs just stay pending at zero cost.
+**Placeholder values are safe at boot**: none of these services is contacted
+at boot (clients are constructed offline; Elasticsearch, S3/R2, Stripe,
+Resend, and Google-cert fetches are all lazy). But two earlier claims here
+were wrong and are corrected:
+
+- **The omni_gen endpoints call providers synchronously in the HTTP handler**
+  (`/v1/omni_gen/generate/{image,video}` — the path the webapp uses). With
+  dummy keys the provider call fails and the submit returns HTTP 500 *after*
+  billing the wallet (the image pipeline has no refund; video refunds only
+  Kinovi). Only the legacy polling providers (GmiCloud, Grok, Kinovi orders,
+  WorldLabs) are worker-driven. `DEV_FAKE_GENERATION` (below) exists so local
+  submits never reach a real provider.
+- **Uploads fail hard with dummy S3 creds**: every media upload endpoint
+  uploads to the bucket *before* inserting the DB row, and `rust-s3` is built
+  with `fail-on-err` — so the first upload returns HTTP 500. (Known seam;
+  uploads are not yet part of the local stack.)
+
+### Fully-local generation and media (`DEV_FAKE_GENERATION`)
+
+The generated secrets file enables three development-only settings (appended
+automatically on bootstrap re-runs for older stacks):
+
+| Env var               | Effect                                                                    |
+|-----------------------|----------------------------------------------------------------------------|
+| `DEV_FAKE_GENERATION` | omni_gen image/video submits skip the external provider and insert a normal **pending** job with a `fake_…` external id. A resolver thread inside `storyteller-web` completes each one after `DEV_FAKE_GENERATION_RESOLVE_SECS` (default 6s, poll every `DEV_FAKE_GENERATION_POLL_SECS`, default 2s) with a placeholder result copied from `test_data/`. Prompts containing `simulate_artcraft_failure` (or `test_artcraft_failure`) fail instead, optionally with a `FrontendFailureCategory` word in the prompt (e.g. `simulate_artcraft_failure face_not_detected`). Hard-disabled outside `SERVER_ENVIRONMENT=Development` |
+| `CDN_BASE_URL`        | Overrides the compiled-in CDN hosts in `cdn_link.rs` for all media URLs in API responses. Must be scheme+host only (no path) — set to `http://localhost:12345` so media resolves against the backend itself |
+| `LOCAL_MEDIA_ROOT`    | Directory the backend serves at `/media` (dev-only actix-files mount), mirroring the public bucket layout: object path `/media/{…}` lives at `{LOCAL_MEDIA_ROOT}/media/{…}`. The bootstrap points it at `.devstack/media/` |
+
+With all three set, the full loop works offline: submit → pending job →
+polling (`/v1/jobs/session`) → success with a `media_files` row whose URL the
+backend itself serves — or a failed job with a real failure category. Credits
+are genuinely deducted from the seeded wallet (no refund on fake results —
+the demo wallet is large enough not to care).
 
 ### Auth on localhost
 
@@ -170,6 +197,18 @@ so enqueued jobs just stay pending at zero cost.
   (`cargo run --bin dev-database-seed`) exists but hard-requires a
   `.env-secrets` file and also seeds model weights, so the HTTP path is
   preferred.
+- Demo credits: signup creates **no wallet**, and the webapp gates the
+  generate button on wallet balance — so `seed_demo_user` also seeds an
+  `artcraft`-namespace wallet with `DEMO_CREDITS` (default 100,000) banked
+  credits, plus matching ledger rows. Idempotent: re-runs top the balance
+  back up to `DEMO_CREDITS` but never lower it. (Raw SQL, because the only
+  real credit-granting paths are Stripe webhooks and moderator tooling.)
+- Demo gallery: `seed_demo_user` also seeds a handful of `media_files` image
+  rows (from `test_data/image/`) with their objects copied under
+  `.devstack/media/`, so the library isn't empty on a fresh stack. Rows mirror
+  what a real image upload writes (`media_class='image'` matters — the
+  library filters on it, and the column default `'unknown'` is invisible in
+  every tab).
 
 ## Frontend: `artcraft-webapp`
 
@@ -200,9 +239,10 @@ change runtime behavior:
 
 | Seam                                          | Today                                                        |
 |-----------------------------------------------|--------------------------------------------------------------|
-| Media/CDN URLs in API responses               | Compiled-in constants (`cdn_link.rs`) point dev builds at a public `pub-….r2.dev` bucket — media loads remotely even with a local backend |
+| Media/CDN URLs in API responses               | **Closed** when `CDN_BASE_URL` + `LOCAL_MEDIA_ROOT` are set (the bootstrap default): media URLs point at the backend's own `/media` mount. Unset, the compiled-in `cdn_link.rs` constants still point at the public `pub-….r2.dev` bucket |
+| Media uploads                                 | Upload endpoints push to R2/S3 *before* the DB insert and `rust-s3` is `fail-on-err` — with dummy creds every upload endpoint returns HTTP 500. A local S3 (`S3_COMPATIBLE_ENDPOINT_URL` → MinIO) or a filesystem storage mode is the missing piece |
 | Vite `/v1` proxy in webapp/website            | Hardcoded `https://api.storyteller.ai` (bypassed in dev by `setDevelopment()`, but still the fallback path) |
-| `SegmentationApi`, `GetCdnOrigin`, `API_TARGETS` | Hardcoded off-store production hosts                      |
+| `SegmentationApi`, `GetCdnOrigin`, `API_TARGETS` | Hardcoded off-store production hosts (`GetCdnOrigin`/`Api.ts` still hardcode `cdn-2.fakeyou.com` for pagescene/moodboard surfaces, independent of the backend's `CDN_BASE_URL`) |
 | Elasticsearch-backed search                   | `search_featured` / `search_session` media files, `weights/search`, legacy `tts/search` fail without a local ES + `elasticsearch-cli` reindex (optional) |
 
 ## CI usage
@@ -225,11 +265,16 @@ export MYSQL_ROOT_PASSWORD=root   # GitHub Actions' preinstalled MySQL uses pass
 - `./script/bootstrap/dev_stack_doctor.sh` exits 0 with no FAILs.
 - `POST /v1/login` with the demo user returns `success: true` plus a
   `signed_session` (done automatically by `seed_demo_user.sh`).
-- Webapp at `http://localhost:4201` can log in as `localdev1`.
-- A generation enqueue returns `{"success": true, "inference_job_token": …}`
-  and no external provider is contacted (no workers running).
-- Nothing hits `api.storyteller.ai` during the above (verify in the browser
-  network tab; media/CDN requests are the known exception — see seams table).
+- Webapp at `http://localhost:4201` can log in as `localdev1`, has credits in
+  the top bar, and sees the seeded images in the library.
+- A generation submit returns `{"success": true, "inference_job_token": …}`,
+  shows as pending for a few seconds, then completes with a placeholder
+  result (`DEV_FAKE_GENERATION`) — no external provider is contacted. A
+  prompt containing `simulate_artcraft_failure` fails with a real error
+  toast/category instead.
+- Nothing hits `api.storyteller.ai` or the r2.dev CDN during the above
+  (verify in the browser network tab — media URLs should point at
+  `http://localhost:12345/media/…`).
 
 ## Corrections to older docs
 

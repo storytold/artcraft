@@ -93,6 +93,16 @@ if (Test-TcpPort 3306) {
     $demoCount = Get-MySqlCount "SELECT COUNT(*) FROM users WHERE username='$DemoUsername'"
     if ($demoCount -gt 0) { Pass "demo user: '$DemoUsername' exists" }
     else { WarnCheck "demo user: '$DemoUsername' not created yet (seed_demo_user.ps1, backend must be running)" }
+
+    if ($demoCount -gt 0) {
+      $credits = Get-MySqlCount "SELECT COALESCE(MAX(banked_credits + monthly_credits), 0) FROM wallets WHERE wallet_namespace='artcraft' AND owner_user_token=(SELECT token FROM users WHERE username='$DemoUsername')"
+      if ($credits -gt 0) { Pass "demo wallet: '$DemoUsername' has $credits credits" }
+      else { WarnCheck "demo wallet: '$DemoUsername' has no credits - generation flows are blocked (re-run seed_demo_user.ps1)" }
+
+      $mediaCount = Get-MySqlCount "SELECT COUNT(*) FROM media_files WHERE maybe_creator_user_token=(SELECT token FROM users WHERE username='$DemoUsername')"
+      if ($mediaCount -gt 0) { Pass "demo media: '$DemoUsername' has $mediaCount media rows" }
+      else { WarnCheck "demo media: gallery is empty (re-run seed_demo_user.ps1)" }
+    }
   } else {
     Fail "mysql: port 3306 is up but '$DevMySqlUser' cannot access '$DevMySqlDb' (re-run bootstrap provisioning)"
   }
@@ -113,6 +123,13 @@ Write-Host "--- Backend ---"
 
 if (Test-Path $SecretsEnvFile) {
   Pass "secrets env: storyteller-web.development-secrets.env exists"
+
+  $secretsContent = Get-Content $SecretsEnvFile -Raw
+  if ($secretsContent -match '(?m)^\s*LOCAL_MEDIA_ROOT=') {
+    Pass "secrets env: fully-local dev stack keys present (DEV_FAKE_GENERATION, CDN_BASE_URL, LOCAL_MEDIA_ROOT)"
+  } else {
+    WarnCheck "secrets env: fully-local dev stack keys missing - generation/gallery use remote CDN and real providers (re-run bootstrap to append)"
+  }
 } else {
   Fail "secrets env: missing - the server aborts at boot on ~19 required vars (re-run bootstrap)"
 }

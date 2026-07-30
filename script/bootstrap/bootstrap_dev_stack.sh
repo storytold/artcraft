@@ -249,6 +249,7 @@ write_secrets_env_if_missing() {
   step "Development secrets file"
   if [ -f "${SECRETS_ENV_FILE}" ]; then
     log "Already exists: ${SECRETS_ENV_FILE} (leaving it untouched)."
+    add_dev_stack_keys_to_existing_secrets_env
     return
   fi
 
@@ -256,9 +257,7 @@ write_secrets_env_if_missing() {
   # (build_dependencies.rs / setup_inference_providers.rs / setup_stripe_*.rs)
   # but is NOT supplied by the checked-in config files. None of them is
   # contacted at boot — placeholder values are enough to run the server; the
-  # endpoints that would use them fail lazily if exercised. Generation is still
-  # safe: providers are only contacted by the separate job worker binaries,
-  # which local dev does not run.
+  # endpoints that would use them fail lazily if exercised.
   #
   # NOTE: config loading is FIRST-VALUE-WINS (dotenv never overrides an
   # already-set key), so values here cannot override anything already set in
@@ -281,8 +280,11 @@ W2L_PUBLIC_DOWNLOAD_BUCKET_NAME=dummy-local-dev-public
 # Email (Resend)
 RESEND_API_KEY=dummy-local-dev
 
-# Generation providers (only job workers ever contact these; workers are not
-# run in local dev, so enqueued jobs simply stay pending)
+# Generation providers. NB: the omni_gen endpoints (webapp image/video
+# generation) contact providers SYNCHRONOUSLY in the request handler, so with
+# dummy keys a real submit would 500 — DEV_FAKE_GENERATION below avoids that.
+# The legacy polling providers are only contacted by worker binaries, which
+# local dev does not run.
 FAL_API_KEY=dummy-local-dev
 GMICLOUD_API_KEY=dummy-local-dev
 GROK_API_KEY=dummy-local-dev
@@ -300,7 +302,38 @@ STRIPE_ARTCRAFT_ACCOUNT_ID=acct_dummylocaldev
 STRIPE_ARTCRAFT_SECRET_KEY=sk_test_dummylocaldev
 STRIPE_ARTCRAFT_SECRET_WEBHOOK_KEY=whsec_dummylocaldev
 EOF
+  dev_stack_keys_block >> "${SECRETS_ENV_FILE}"
   log "Wrote ${SECRETS_ENV_FILE}"
+}
+
+# The fully-local media + fake-generation settings (development-only; the
+# server hard-ignores DEV_FAKE_GENERATION outside SERVER_ENVIRONMENT=Development).
+dev_stack_keys_block() {
+  cat <<EOF
+
+# Fully-local dev stack (see _docs/dev_setup_local_stack.md):
+# - DEV_FAKE_GENERATION: omni_gen image/video submits skip real providers and
+#   a resolver thread completes them a few seconds later with a placeholder
+#   result (or fails them when the prompt contains simulate_artcraft_failure).
+# - CDN_BASE_URL: media URLs in API responses point at this server instead of
+#   the shared r2.dev bucket. Host only — no path suffix.
+# - LOCAL_MEDIA_ROOT: directory served at /media (mirrors the bucket layout);
+#   seeded gallery media and fake generation results live here.
+DEV_FAKE_GENERATION=true
+CDN_BASE_URL=http://localhost:12345
+LOCAL_MEDIA_ROOT=${DEV_MEDIA_ROOT}
+EOF
+}
+
+# Bootstrap re-runs on a stack whose secrets file predates the fully-local
+# media/fake-generation support: append the new keys (first-value-wins never
+# lets these override anything the user already set).
+add_dev_stack_keys_to_existing_secrets_env() {
+  if grep -q '^[[:space:]]*LOCAL_MEDIA_ROOT=' "${SECRETS_ENV_FILE}"; then
+    return
+  fi
+  dev_stack_keys_block >> "${SECRETS_ENV_FILE}"
+  log "Appended fully-local dev stack keys (DEV_FAKE_GENERATION, CDN_BASE_URL, LOCAL_MEDIA_ROOT) to ${SECRETS_ENV_FILE}"
 }
 
 build_backend() {

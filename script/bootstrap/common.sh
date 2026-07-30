@@ -27,6 +27,17 @@ DEMO_USERNAME="${DEMO_USERNAME:-localdev1}"
 DEMO_PASSWORD="${DEMO_PASSWORD:-localdev1pass}"
 DEMO_EMAIL="${DEMO_EMAIL:-localdev1@example.com}"
 
+# Banked credits the demo user's artcraft wallet is seeded/topped-up to.
+# Generation submits are gated on wallet balance, so 0 credits means the
+# generate button silently refuses in the webapp.
+DEMO_CREDITS="${DEMO_CREDITS:-100000}"
+
+# Local media served by the backend at /media when LOCAL_MEDIA_ROOT points
+# here (fully-local gallery + fake generation results). Mirrors the public
+# bucket layout: object path /media/{...} lives at .devstack/media/media/{...}.
+# NB: callers must have set ${root_dir} before sourcing this file.
+DEV_MEDIA_ROOT="${DEV_MEDIA_ROOT:-${root_dir}/.devstack/media}"
+
 log()  { echo "[bootstrap] $*"; }
 warn() { echo "[bootstrap] WARNING: $*" >&2; }
 die()  { echo "[bootstrap] ERROR: $*" >&2; exit 1; }
@@ -53,6 +64,21 @@ confirm() {
   local reply
   read -r -p "${prompt} [y/N] " reply
   [[ "${reply}" =~ ^[Yy] ]]
+}
+
+# Generate a token in the backend's format: {prefix}{crockford-lower entropy}
+# padded to the same TOTAL length the Rust generators use (tokens crate,
+# impl_crockford_generator!). Alphabet excludes i/l/o/u like Crockford base32.
+new_dev_token() {
+  local prefix="$1" total_length="$2"
+  local charset="0123456789abcdefghjkmnpqrstvwxyz"
+  local count=$((total_length - ${#prefix}))
+  local entropy=""
+  local i
+  for ((i = 0; i < count; i++)); do
+    entropy+="${charset:RANDOM%32:1}"
+  done
+  echo "${prefix}${entropy}"
 }
 
 # Run a statement (or stdin) as the storyteller app user against the dev DB.

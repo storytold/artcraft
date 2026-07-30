@@ -323,13 +323,13 @@ function Seed-RolesAndBadges {
 function Write-SecretsEnvIfMissing {
   if (Test-Path $SecretsEnvFile) {
     Write-Log "Already exists: $SecretsEnvFile (leaving it untouched)."
+    Add-DevStackKeysToExistingSecretsEnv
     return
   }
 
   # Every var below is read with get_env_string_required at server startup but
   # is NOT supplied by the checked-in config files. None is contacted at boot -
-  # placeholders are enough to run the server. Providers are only contacted by
-  # job worker binaries, which local dev does not run.
+  # placeholders are enough to run the server.
   #
   # NOTE: config loading is FIRST-VALUE-WINS (dotenv never overrides a set
   # key), so values here cannot override storyteller-web.development.env.
@@ -358,8 +358,11 @@ W2L_PUBLIC_DOWNLOAD_BUCKET_NAME=dummy-local-dev-public
 # Email (Resend)
 RESEND_API_KEY=dummy-local-dev
 
-# Generation providers (only job workers ever contact these; workers are not
-# run in local dev, so enqueued jobs simply stay pending)
+# Generation providers. NB: the omni_gen endpoints (webapp image/video
+# generation) contact providers SYNCHRONOUSLY in the request handler, so with
+# dummy keys a real submit would 500 - DEV_FAKE_GENERATION below avoids that.
+# The legacy polling providers are only contacted by worker binaries, which
+# local dev does not run.
 FAL_API_KEY=dummy-local-dev
 GMICLOUD_API_KEY=dummy-local-dev
 GROK_API_KEY=dummy-local-dev
@@ -376,9 +379,40 @@ STRIPE_FAKEYOU_ACCOUNT_ID=acct_dummylocaldev
 STRIPE_ARTCRAFT_ACCOUNT_ID=acct_dummylocaldev
 STRIPE_ARTCRAFT_SECRET_KEY=sk_test_dummylocaldev
 STRIPE_ARTCRAFT_SECRET_WEBHOOK_KEY=whsec_dummylocaldev
+
+$(Get-DevStackKeysBlock)
 "@
   Set-Content -Path $SecretsEnvFile -Value $content -Encoding ascii
   Write-Log "Wrote $SecretsEnvFile"
+}
+
+# The fully-local media + fake-generation settings (development-only; the
+# server hard-ignores DEV_FAKE_GENERATION outside SERVER_ENVIRONMENT=Development).
+function Get-DevStackKeysBlock {
+  $mediaRootForward = (Join-Path $DevStackDir "media") -replace '\\', '/'
+  return @"
+# Fully-local dev stack (see _docs/dev_setup_local_stack.md):
+# - DEV_FAKE_GENERATION: omni_gen image/video submits skip real providers and
+#   a resolver thread completes them a few seconds later with a placeholder
+#   result (or fails them when the prompt contains simulate_artcraft_failure).
+# - CDN_BASE_URL: media URLs in API responses point at this server instead of
+#   the shared r2.dev bucket. Host only - no path suffix.
+# - LOCAL_MEDIA_ROOT: directory served at /media (mirrors the bucket layout);
+#   seeded gallery media and fake generation results live here.
+DEV_FAKE_GENERATION=true
+CDN_BASE_URL=http://localhost:12345
+LOCAL_MEDIA_ROOT=$mediaRootForward
+"@
+}
+
+# Bootstrap re-runs on a stack whose secrets file predates the fully-local
+# media/fake-generation support: append the new keys (first-value-wins never
+# lets these override anything the user already set).
+function Add-DevStackKeysToExistingSecretsEnv {
+  $existing = Get-Content $SecretsEnvFile -Raw
+  if ($existing -match '(?m)^\s*LOCAL_MEDIA_ROOT=') { return }
+  Add-Content -Path $SecretsEnvFile -Value "`r`n$(Get-DevStackKeysBlock)" -Encoding ascii
+  Write-Log "Appended fully-local dev stack keys (DEV_FAKE_GENERATION, CDN_BASE_URL, LOCAL_MEDIA_ROOT) to $SecretsEnvFile"
 }
 
 function Build-Backend {

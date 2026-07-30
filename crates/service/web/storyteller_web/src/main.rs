@@ -55,6 +55,7 @@ use crate::startup::setup_disabled_endpoints::read_disabled_endpoints;
 use crate::startup::setup_metrics::build_metrics;
 use crate::state::server_state::ServerState;
 use crate::threads::db_health_checker_thread::db_health_checker_thread::db_health_checker_thread;
+use crate::threads::dev_fake_generation_resolver_thread::dev_fake_generation_resolver_thread;
 use crate::threads::poll_ip_banlist_thread::poll_ip_bans;
 use crate::threads::poll_model_token_info_thread::poll_model_token_info_thread;
 
@@ -147,6 +148,16 @@ async fn main() -> AnyhowResult<()> {
   tokio_runtime.spawn(async {
     poll_model_token_info_thread(model_token_info_cache_clone, mysql_pool_clone).await;
   });
+
+  if server_state.dev_fake_generation {
+    info!("Spawning dev fake-generation resolver thread (DEV_FAKE_GENERATION=true).");
+
+    let mysql_pool_clone = server_state.mysql_pool.clone();
+
+    tokio_runtime.spawn(async {
+      dev_fake_generation_resolver_thread(mysql_pool_clone).await;
+    });
+  }
 
   // ==================== Metrics worker ==================== //
 
