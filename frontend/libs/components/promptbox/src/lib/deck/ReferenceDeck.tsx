@@ -174,6 +174,11 @@ export const ReferenceDeck = ({
 
   const handleRootEnter = () => {
     clearCloseTimer();
+    // The add menu is body-portaled, so hovering it counts as leaving the
+    // root and decays `hovered` (the panel stays up via addMenuOpen). Coming
+    // back onto the open panel must re-arm `hovered`, or it would collapse
+    // under the cursor the moment the menu closes.
+    if (expanded) setHovered(true);
   };
 
   const handleRootLeave = () => {
@@ -215,6 +220,11 @@ export const ReferenceDeck = ({
         interactive={true}
         position="top"
         delay={100}
+        // Body-portaled: rendered inline, the menu is trapped in the
+        // promptbox's .glass stacking context and paints under the fixed
+        // z-30 sidebar no matter its own z-index.
+        portal
+        zIndex={9999}
         className="-mb-0.5 border border-ui-controls-border bg-ui-controls p-1.5 text-base-fg"
         closeOnClick={true}
         onOpenChange={holdPanel ? setAddMenuOpen : undefined}
