@@ -104,3 +104,6 @@ windows/sqlite/sqlite3.lib
 crates/desktop/src-tauri/*.dll
 windows_dlls/
 
+
+# Portable local dev stack (script/bootstrap/windows) - MySQL/Redis binaries, data, logs
+.devstack/

@@ -307,6 +307,7 @@ worldlabs_consumer_client = { path = "crates/api_clients/worldlabs_consumer_clie
 # Centrally pinned versions so that we can uniformly upgrade/downgrade versions across the workspace
 # If a crate needs to use an older/newer version, the dependency should be managed in that crate's own Cargo.toml
 actix-cors = "0.7.1"
+actix-files = "0.6.9"
 actix-http = "3.12.1"
 actix-multipart = "0.7.2"
 actix-rt = "2.11.0"

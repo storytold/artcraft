@@ -57,6 +57,13 @@ pub struct ServerState {
   /// Knowing if we're in production will allow us to turn off development-only functionalities.
   pub server_environment: ServerEnvironment,
 
+  /// Dev-only (DEV_FAKE_GENERATION=true, forced off outside Development):
+  /// omni_gen pipelines skip the external provider call and insert a pending
+  /// job with a synthetic `fake_` external id, which the dev fake-job
+  /// resolver thread later completes or fails. Lets a local stack with dummy
+  /// provider secrets exercise the full submit -> pending -> resolve flow.
+  pub dev_fake_generation: bool,
+
   /// Feature flags will allow us to restart the service with different conditions embedded in the code.
   pub flags: StaticFeatureFlags,
 

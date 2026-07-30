@@ -7,13 +7,14 @@ use artcraft_router::client::router_client::RouterClient;
 use artcraft_router::client::router_fal_client::RouterFalClient;
 use artcraft_router::client::router_seedance2pro_client::RouterSeedance2ProClient;
 use artcraft_router::generate::generate_image::generate_image_request_builder::GenerateImageRequestBuilder;
-use artcraft_router::generate::generate_image::generate_image_response::GenerateImageResponse;
+use artcraft_router::generate::generate_image::generate_image_response::{FalImageResponsePayload, GenerateImageResponse};
 use artcraft_router::generate::generate_image::image_generation_draft_context::ImageGenerationDraftContext;
 use artcraft_router::generate::generate_image::image_generation_draft_or_request::ImageGenerationDraftOrRequest;
 use artcraft_router::generate::generate_image::image_generation_request::ImageGenerationRequest;
 use seedance2pro_client::creds::seedance2pro_session::Seedance2ProSession;
 use tokens::tokens::generic_inference_jobs::InferenceJobToken;
 use tokens::tokens::users::UserToken;
+use uuid_utils::uuid::generate_random_uuid;
 
 use crate::billing::wallets::attempt_wallet_deduction::attempt_wallet_deduction_else_common_web_error;
 use crate::http_server::common_responses::common_web_error::CommonWebError;
@@ -173,6 +174,21 @@ async fn finalize_and_generate(
   server_state: &ServerState,
   resolved_media: &MediaFilesAsCdnUrlListAndMap,
 ) -> Result<GenerateImageResponse, CommonWebError> {
+  // Dev-only: skip the external provider entirely and hand back a synthetic
+  // Fal enqueue. The handler then inserts a normal pending job (external id
+  // `fake_…`), which the dev fake-job resolver thread later completes.
+  if server_state.dev_fake_generation {
+    let fake_request_id = format!("fake_{}", generate_random_uuid());
+    info!("DEV_FAKE_GENERATION: skipping image provider call, request_id={}", fake_request_id);
+    return Ok(GenerateImageResponse::Fal(FalImageResponsePayload {
+      request_id: Some(fake_request_id),
+      gateway_request_id: None,
+      maybe_status_url: None,
+      maybe_response_url: None,
+      maybe_outbound_request: None,
+    }));
+  }
+
   let provider = draft_or_request.get_provider();
   let client = build_router_client(provider, server_state)?;
 
