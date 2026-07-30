@@ -632,6 +632,26 @@ export const MentionTextarea = forwardRef<HTMLDivElement, MentionTextareaProps>(
     );
 
     /**
+     * Rewrite recognized mentions to their canonical label casing
+     * ("@nene" -> "@Nene"). Matching is case-insensitive so a hand-typed
+     * lowercase mention still tags, but the VALUE must carry the exact
+     * label: hosts extract mention tokens from it with exact-case matches,
+     * and the backend binds character mentions by exact name. Replacements
+     * are same-length, so caret offsets stay valid.
+     */
+    const canonicalizeMentions = useCallback(
+      (text: string): string => {
+        if (!mentionRegex) return text;
+        const regex = new RegExp(mentionRegex);
+        return text.replace(regex, (matchText) => {
+          const item = resolveItem(matchText);
+          return item ? item.label : matchText;
+        });
+      },
+      [mentionRegex, resolveItem],
+    );
+
+    /**
      * Markup for one atomic character chip. data-mention keeps the exact
      * typed text so serialization is lossless; the visible chip shows the
      * name without the "@".
@@ -940,6 +960,7 @@ export const MentionTextarea = forwardRef<HTMLDivElement, MentionTextareaProps>(
         if (text.endsWith("\n")) {
           text = text.slice(0, -1);
         }
+        text = canonicalizeMentions(text);
 
         const caret = getCaretOffset(el);
         const html = buildHTML(text);
@@ -968,11 +989,13 @@ export const MentionTextarea = forwardRef<HTMLDivElement, MentionTextareaProps>(
         });
       } catch (e) {
         console.debug("handleInput: DOM changed during input processing", e);
-        const text = serializeEditor(el).replace(/\n$/, "");
+        const text = canonicalizeMentions(
+          serializeEditor(el).replace(/\n$/, ""),
+        );
         isInternalUpdate.current = true;
         onChange(text);
       }
-    }, [onChange, buildHTML, detectMention]);
+    }, [onChange, buildHTML, detectMention, canonicalizeMentions]);
 
     const handleCompositionStart = useCallback(() => {
       isComposing.current = true;
