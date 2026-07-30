@@ -4,15 +4,15 @@ use crate::generate::generate_image::image_generation_cost_estimate::ImageGenera
 use crate::generate::generate_image::providers::artcraft::seedream_5p0_pro_ultra::request::ArtcraftSeedream5p0ProUltraRequestState;
 
 /// Customer-facing price per image at 1k resolution (the default), in USD cents.
-const USD_CENTS_PER_IMAGE_1K: u64 = 10;
+const USD_CENTS_PER_IMAGE_1K: u64 = 18;
 
 /// Customer-facing price per image at 2k resolution, in USD cents.
-const USD_CENTS_PER_IMAGE_2K: u64 = 16;
+const USD_CENTS_PER_IMAGE_2K: u64 = 30;
 
 /// Cost state for Artcraft Seedream 5.0 Pro Ultra. Pricing is per image and
 /// resolution-dependent:
 ///
-///   1K (default) → 10¢, 2K → 16¢. 3K/4K fall back to 2K pricing; 0.5K and
+///   1K (default) → 18¢, 2K → 30¢. 3K/4K fall back to 2K pricing; 0.5K and
 ///   legacy video resolutions (480p/720p/1080p) fall back to 1K.
 #[derive(Clone, Debug)]
 pub struct ArtcraftSeedream5p0ProUltraCostState {
@@ -89,24 +89,24 @@ mod tests {
     estimate(resolution, image_batch_count).cost_in_usd_cents.unwrap()
   }
 
-  // ── Default / 1K (10¢) ──
+  // ── Default / 1K (18¢) ──
 
   #[test]
-  fn default_resolution_one_image_is_10c() { assert_eq!(cost_cents(None, 1), 10); }
+  fn default_resolution_one_image_is_18c() { assert_eq!(cost_cents(None, 1), 18); }
 
   #[test]
-  fn one_k_one_image_is_10c() { assert_eq!(cost_cents(Some(RouterResolution::OneK), 1), 10); }
+  fn one_k_one_image_is_18c() { assert_eq!(cost_cents(Some(RouterResolution::OneK), 1), 18); }
 
   #[test]
-  fn one_k_four_images_is_40c() { assert_eq!(cost_cents(Some(RouterResolution::OneK), 4), 40); }
+  fn one_k_four_images_is_72c() { assert_eq!(cost_cents(Some(RouterResolution::OneK), 4), 72); }
 
-  // ── 2K (16¢) ──
-
-  #[test]
-  fn two_k_one_image_is_16c() { assert_eq!(cost_cents(Some(RouterResolution::TwoK), 1), 16); }
+  // ── 2K (30¢) ──
 
   #[test]
-  fn two_k_four_images_is_64c() { assert_eq!(cost_cents(Some(RouterResolution::TwoK), 4), 64); }
+  fn two_k_one_image_is_30c() { assert_eq!(cost_cents(Some(RouterResolution::TwoK), 1), 30); }
+
+  #[test]
+  fn two_k_four_images_is_120c() { assert_eq!(cost_cents(Some(RouterResolution::TwoK), 4), 120); }
 
   // ── Fallbacks ──
 
@@ -117,7 +117,7 @@ mod tests {
         resolution: Some(CommonResolutionEnum::FourK),
         num_images: 1,
       }.estimate_cost().cost_in_usd_cents,
-      Some(16),
+      Some(30),
     );
   }
 
@@ -128,7 +128,7 @@ mod tests {
         resolution: Some(CommonResolutionEnum::HalfK),
         num_images: 1,
       }.estimate_cost().cost_in_usd_cents,
-      Some(10),
+      Some(18),
     );
   }
 
