@@ -35,6 +35,11 @@ import type { UploadImageFn } from "./ImagePromptRow";
 import { ReferenceDeck } from "./deck/ReferenceDeck";
 import { KeyframeCards } from "./deck/KeyframeCards";
 import { useDeckMedia } from "./deck/useDeckMedia";
+import {
+  PromptBoxDropOverlay,
+  usePromptBoxDrop,
+  type DroppedFiles,
+} from "./deck/usePromptBoxDrop";
 import { DeckAddAction, DeckItem } from "./deck/deckTypes";
 import { AspectRatioIcon } from "./common/AspectRatioIcon";
 import { VideoGenerationCountPicker } from "./common/VideoGenerationCountPicker";
@@ -504,6 +509,52 @@ export const PromptBoxVideo = ({
     uploadVideo,
     uploadAudio,
     ownGalleryModal: true,
+  });
+
+  // Drag & drop / paste onto the box bounds: files route to the reference
+  // kind their MIME matches, gated on what the model supports. Keyframe mode
+  // renders no video/audio deck, so those kinds only land in reference mode
+  // where the user can see (and remove) them.
+  const dropAcceptsVideos = isReferenceMode && maxVideoCount > 0;
+  const dropAcceptsAudio = isReferenceMode && maxAudioCount > 0;
+
+  const handleDroppedFiles = ({ images, videos, audios }: DroppedFiles) => {
+    if (images.length > 0) {
+      if (!isReferenceMode) {
+        // Fill the empty keyframe slots in order: first frame, then last.
+        const queue = [...images];
+        const firstOpen =
+          referenceImages.length === 0 && deck.uploadingImages.length === 0;
+        const lastOpen =
+          !!selectedModel?.endFrame && !endFrameImage && !deck.uploadingEnd;
+        if (firstOpen) deck.processImageFiles([queue.shift()!], "start");
+        if (lastOpen && queue.length > 0) {
+          deck.processImageFiles([queue.shift()!], "end");
+        }
+        if (!firstOpen && !lastOpen) {
+          toast.error(
+            selectedModel?.endFrame
+              ? "First and last frames are already set"
+              : "The first frame is already set",
+          );
+        }
+      } else if (deck.availableImageSlots <= 0) {
+        toast.error(
+          `Max ${maxImageCount} image reference${maxImageCount === 1 ? "" : "s"}`,
+        );
+      } else {
+        deck.processImageFiles(images, "start");
+      }
+    }
+    if (videos.length > 0) void deck.processVideoFiles(videos);
+    if (audios.length > 0) void deck.processAudioFiles(audios);
+  };
+
+  const drop = usePromptBoxDrop({
+    acceptsImages: maxImageCount > 0,
+    acceptsVideos: dropAcceptsVideos,
+    acceptsAudio: dropAcceptsAudio,
+    onDropFiles: handleDroppedFiles,
   });
 
   // Mixed deck items ordered images → videos → audios: the @ImageN/@VideoN/
@@ -1291,7 +1342,15 @@ export const PromptBoxVideo = ({
               ? "ring-1 ring-primary border-primary"
               : "ring-1 ring-transparent",
           )}
+          {...drop.dropZoneProps}
         >
+          <PromptBoxDropOverlay
+            dragState={drop.dragState}
+            acceptsImages={maxImageCount > 0}
+            acceptsVideos={dropAcceptsVideos}
+            acceptsAudio={dropAcceptsAudio}
+            keyframeMode={!isReferenceMode}
+          />
           {selectedModel?.textToVideoSupported === false && (
             <div className="mb-2 flex items-center gap-1.5 rounded-md bg-ui-controls/60 px-2.5 py-1.5 text-xs text-base-fg/70">
               <FontAwesomeIcon

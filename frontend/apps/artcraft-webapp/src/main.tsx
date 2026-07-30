@@ -6,6 +6,7 @@ import App from "./app/app";
 import { StorytellerApiHostStore, UsersApi } from "@storyteller/api";
 import { captureLandingContext, getReferrer } from "@storyteller/common";
 import { setOmniGenErrorNotifier } from "@storyteller/omni-gen";
+import { setToastDelegate } from "@storyteller/ui-toaster";
 import { toast } from "./components/toast/toast";
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
@@ -24,7 +25,7 @@ if (import.meta.env.DEV) {
     // (disabled — it overrides the origin above and points at localhost:12345,
     // which breaks dev unless a local backend is running. Re-enable only when
     // testing against a local storyteller-web.)
-    StorytellerApiHostStore.getInstance().setDevelopment();
+    //StorytellerApiHostStore.getInstance().setDevelopment();
   } catch (e) {
     console.warn("Failed to set dev API host override", e);
   }
@@ -32,6 +33,15 @@ if (import.meta.env.DEV) {
 
 // Surface omni model/generation outages through this app's toast component.
 setOmniGenErrorNotifier((message) => toast.error(message));
+
+// Shared libs (promptbox deck, gallery modal, …) fire react-hot-toast toasts,
+// but this app renders its own ToastContainer and never mounts the
+// react-hot-toast container — route those toasts here so limit/validation
+// errors (e.g. "audio too long") actually show up.
+setToastDelegate({
+  success: (message) => toast.success(message),
+  error: (message) => toast.error(message),
+});
 
 // Persist landing context (referral username, landing URL, referrer) to apex-
 // domain cookies so attribution survives the getartcraft.com →

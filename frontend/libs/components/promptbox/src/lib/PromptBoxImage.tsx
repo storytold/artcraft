@@ -34,6 +34,11 @@ import { ResolutionPicker } from "./common/ResolutionPicker";
 import { QualityPicker } from "./common/QualityPicker";
 import { ReferenceDeck } from "./deck/ReferenceDeck";
 import { useDeckMedia } from "./deck/useDeckMedia";
+import {
+  PromptBoxDropOverlay,
+  usePromptBoxDrop,
+  type DroppedFiles,
+} from "./deck/usePromptBoxDrop";
 import { DeckAddAction, DeckItem } from "./deck/deckTypes";
 
 interface PromptBoxImageProps {
@@ -130,6 +135,28 @@ export const PromptBoxImage = ({
     maxImages: maxImagePromptCount,
     uploadImage: uploadImage as UploadMediaFn | undefined,
     ownGalleryModal: true,
+  });
+
+  // Drag & drop / paste onto the box bounds. Images are the only reference
+  // kind this box takes, and only when the model can use them at all.
+  const dropAcceptsImages = !!selectedModel?.canUseImagePrompt;
+
+  const handleDroppedFiles = ({ images }: DroppedFiles) => {
+    if (images.length === 0) return;
+    if (deck.availableImageSlots <= 0) {
+      toast.error(
+        `Max ${maxImagePromptCount} image reference${maxImagePromptCount === 1 ? "" : "s"}`,
+      );
+      return;
+    }
+    deck.processImageFiles(images, "start");
+  };
+
+  const drop = usePromptBoxDrop({
+    acceptsImages: dropAcceptsImages,
+    acceptsVideos: false,
+    acceptsAudio: false,
+    onDropFiles: handleDroppedFiles,
   });
 
   const deckItems: DeckItem[] = useMemo(
@@ -437,7 +464,14 @@ export const PromptBoxImage = ({
               ? "ring-1 ring-primary border-primary"
               : "ring-1 ring-transparent",
           )}
+          {...drop.dropZoneProps}
         >
+          <PromptBoxDropOverlay
+            dragState={drop.dragState}
+            acceptsImages={dropAcceptsImages}
+            acceptsVideos={false}
+            acceptsAudio={false}
+          />
           <div className="flex justify-center gap-2">
             {renderReferenceDeck()}
 

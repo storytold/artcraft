@@ -23,3 +23,4 @@ export * from "./lib/deck/DeckCard";
 export * from "./lib/deck/ReferenceDeck";
 export * from "./lib/deck/KeyframeCards";
 export * from "./lib/deck/useDeckMedia";
+export * from "./lib/deck/usePromptBoxDrop";

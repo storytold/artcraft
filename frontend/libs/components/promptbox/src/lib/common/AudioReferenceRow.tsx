@@ -1,4 +1,10 @@
-import { useCallback, useRef, useState } from "react";
+import {
+  forwardRef,
+  useCallback,
+  useImperativeHandle,
+  useRef,
+  useState,
+} from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faFolderOpen,
@@ -18,6 +24,13 @@ import {
   AUDIO_FILE_TYPE_ERROR,
   isAudioFile,
 } from "./audioFiles";
+
+/** Lets the prompt box push dropped/pasted files through the same upload
+ *  path the row's own file inputs use. */
+export interface AudioReferenceRowHandle {
+  addAudioFiles: (files: File[]) => Promise<void>;
+  addImageFile: (file: File) => Promise<void>;
+}
 
 export interface AudioReferenceRowProps {
   referenceAudios: RefAudio[];
@@ -41,20 +54,26 @@ export interface AudioReferenceRowProps {
 // remix/sample source or Seed Audio refs), plus an optional image reference
 // for models that support one. Rendered inside the glass card, above the
 // prompt textarea.
-export function AudioReferenceRow({
-  referenceAudios,
-  onReferenceAudiosChange,
-  maxAudioCount,
-  maxAudioRefDuration,
-  uploadAudio,
-  onPickAudioFromLibrary,
-  audioRequired = false,
-  imageSupported = false,
-  referenceImages = [],
-  onReferenceImagesChange,
-  uploadImage,
-  className = "",
-}: AudioReferenceRowProps) {
+export const AudioReferenceRow = forwardRef<
+  AudioReferenceRowHandle,
+  AudioReferenceRowProps
+>(function AudioReferenceRow(
+  {
+    referenceAudios,
+    onReferenceAudiosChange,
+    maxAudioCount,
+    maxAudioRefDuration,
+    uploadAudio,
+    onPickAudioFromLibrary,
+    audioRequired = false,
+    imageSupported = false,
+    referenceImages = [],
+    onReferenceImagesChange,
+    uploadImage,
+    className = "",
+  },
+  ref,
+) {
   const audioInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const [isUploadingAudio, setIsUploadingAudio] = useState(false);
@@ -66,10 +85,7 @@ export function AudioReferenceRow({
   const referenceImagesRef = useRef(referenceImages);
   referenceImagesRef.current = referenceImages;
 
-  const handleAudioFileUpload = async (
-    event: React.ChangeEvent<HTMLInputElement>,
-  ) => {
-    const files = Array.from(event.target.files || []);
+  const processAudioFiles = async (files: File[]) => {
     if (files.length === 0) return;
 
     const audioFiles = files.filter(isAudioFile);
@@ -123,15 +139,17 @@ export function AudioReferenceRow({
         });
       }
     }
+  };
 
+  const handleAudioFileUpload = async (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    await processAudioFiles(Array.from(event.target.files || []));
     if (audioInputRef.current) audioInputRef.current.value = "";
   };
 
-  const handleImageFileUpload = async (
-    event: React.ChangeEvent<HTMLInputElement>,
-  ) => {
-    const file = (event.target.files || [])[0];
-    if (!file || !uploadImage) return;
+  const processImageFile = async (file: File) => {
+    if (!uploadImage) return;
 
     setIsUploadingImage(true);
     await uploadImage({
@@ -156,9 +174,25 @@ export function AudioReferenceRow({
         }
       },
     });
+  };
 
+  const handleImageFileUpload = async (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const file = (event.target.files || [])[0];
+    if (file) await processImageFile(file);
     if (imageInputRef.current) imageInputRef.current.value = "";
   };
+
+  useImperativeHandle(
+    ref,
+    () => ({
+      addAudioFiles: processAudioFiles,
+      addImageFile: processImageFile,
+    }),
+    // Recreated each render so the handle always closes over fresh props
+    // (slot counts, current refs) rather than mount-time values.
+  );
 
   const removeAudio = (id: string) => {
     onReferenceAudiosChange(referenceAudios.filter((a) => a.id !== id));
@@ -280,7 +314,7 @@ export function AudioReferenceRow({
       </div>
     </div>
   );
-}
+});
 
 function AudioRefTile({
   audio,
