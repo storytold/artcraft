@@ -1,4 +1,4 @@
-use seedance2pro_web_client::generate::image::generate_midjourney_v8::{
+use kinovi_web_client::generate::image::generate_midjourney_v8::{
   GenerateMidjourneyV8AspectRatio, GenerateMidjourneyV8Request, KinoviMidjourneyBatchCount,
 };
 

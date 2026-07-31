@@ -3,8 +3,8 @@ use std::sync::{Arc, RwLock};
 
 use rand::Rng;
 
-use mysql_queries::queries::generic_inference::api_providers::seedance2pro::list_pending_seedance2pro_video_jobs::PendingSeedance2ProJob;
-use seedance2pro_web_client::requests::poll_orders::poll_orders::OrderStatus;
+use mysql_queries::queries::generic_inference::api_providers::kinovi_web::list_pending_kinovi_web_video_jobs::PendingKinoviWebJob;
+use kinovi_web_client::requests::poll_orders::poll_orders::OrderStatus;
 
 /// Kinovi's `order_id`. Used as the key into the reconciler.
 pub type OrderId = String;
@@ -16,7 +16,7 @@ pub struct OrderDetails {
   /// The order payload fetched from Kinovi (success or failure details).
   pub kinovi_record: OrderStatus,
   /// Our database job that this order fulfills.
-  pub database_record: PendingSeedance2ProJob,
+  pub database_record: PendingKinoviWebJob,
 }
 
 /// Hand-off point between the polling loop and the processing loop.
@@ -52,7 +52,7 @@ impl OrderReconciler {
     &self,
     order_id: OrderId,
     kinovi_order: OrderStatus,
-    database_record: PendingSeedance2ProJob,
+    database_record: PendingKinoviWebJob,
   ) -> bool {
     let mut map = self.inner.write().expect("order reconciler lock poisoned");
 

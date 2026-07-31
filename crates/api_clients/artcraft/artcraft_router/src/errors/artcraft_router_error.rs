@@ -2,8 +2,8 @@ use crate::errors::client_error::ClientError;
 use crate::errors::download_error::DownloadError;
 use crate::errors::provider_error::ProviderError;
 use fal_client::error::fal_error_plus::FalErrorPlus;
-use seedance2pro_web_client::error::seedance2pro_error::Seedance2ProError;
-use seedance2pro_web_client::error::seedance2pro_specific_api_error::Seedance2ProSpecificApiError;
+use kinovi_web_client::error::kinovi_web_error::KinoviWebError;
+use kinovi_web_client::error::kinovi_web_specific_api_error::KinoviWebSpecificApiError;
 use std::error::Error;
 use std::fmt::{Display, Formatter};
 use artcraft_client::error::api_error::ApiError;
@@ -65,7 +65,7 @@ impl From<ProviderError> for ArtcraftRouterError {
   fn from(error: ProviderError) -> Self {
     let is_billing_error = match &error {
       ProviderError::Fal(FalErrorPlus::FalBillingError(_)) => true,
-      ProviderError::Seedance2Pro(Seedance2ProError::ApiSpecific(Seedance2ProSpecificApiError::BillingError { .. })) => true,
+      ProviderError::KinoviWeb(KinoviWebError::ApiSpecific(KinoviWebSpecificApiError::BillingError { .. })) => true,
       ProviderError::Storyteller(StorytellerError::Api(ApiError::PaymentRequired(_))) => true,
       _ => false,
     };

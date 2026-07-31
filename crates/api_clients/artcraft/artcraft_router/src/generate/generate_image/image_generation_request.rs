@@ -123,7 +123,7 @@ pub enum ImageGenerationRequest {
   FalQwenEdit2511Angles(FalQwenEdit2511AnglesRequestState),
   FalFlux2LoraAngles(FalFlux2LoraAnglesRequestState),
 
-  // ── Kinovi / Seedance2Pro provider (Midjourney + Seedream image generation) ──
+  // ── Kinovi / KinoviWeb provider (Midjourney + Seedream image generation) ──
   KinoviMidjourney7(KinoviMidjourney7RequestState),
   KinoviMidjourney7Niji(KinoviMidjourney7NijiRequestState),
   KinoviMidjourney8(KinoviMidjourney8RequestState),
@@ -170,10 +170,10 @@ impl ImageGenerationRequest {
       Self::FalQwenEdit2511Angles(_) => RouterProvider::Fal,
       Self::FalFlux2LoraAngles(_) => RouterProvider::Fal,
 
-      Self::KinoviMidjourney7(_) => RouterProvider::Seedance2Pro,
-      Self::KinoviMidjourney7Niji(_) => RouterProvider::Seedance2Pro,
-      Self::KinoviMidjourney8(_) => RouterProvider::Seedance2Pro,
-      Self::KinoviSeedream5p0Pro(_) => RouterProvider::Seedance2Pro,
+      Self::KinoviMidjourney7(_) => RouterProvider::KinoviWeb,
+      Self::KinoviMidjourney7Niji(_) => RouterProvider::KinoviWeb,
+      Self::KinoviMidjourney8(_) => RouterProvider::KinoviWeb,
+      Self::KinoviSeedream5p0Pro(_) => RouterProvider::KinoviWeb,
     }
   }
 
@@ -416,24 +416,24 @@ impl ImageGenerationRequest {
         request.send(fal_client).await
       }
 
-      // ── Kinovi / Seedance2Pro (Midjourney + Seedream) ──
+      // ── Kinovi / KinoviWeb (Midjourney + Seedream) ──
       Self::KinoviMidjourney7(request) => {
-        let seedance_client = client.get_seedance2pro_web_client_ref()
+        let seedance_client = client.get_kinovi_web_client_ref()
           .map_err(ArtcraftRouterError::Client)?;
         request.send(seedance_client).await
       }
       Self::KinoviMidjourney7Niji(request) => {
-        let seedance_client = client.get_seedance2pro_web_client_ref()
+        let seedance_client = client.get_kinovi_web_client_ref()
           .map_err(ArtcraftRouterError::Client)?;
         request.send(seedance_client).await
       }
       Self::KinoviMidjourney8(request) => {
-        let seedance_client = client.get_seedance2pro_web_client_ref()
+        let seedance_client = client.get_kinovi_web_client_ref()
           .map_err(ArtcraftRouterError::Client)?;
         request.send(seedance_client).await
       }
       Self::KinoviSeedream5p0Pro(request) => {
-        let seedance_client = client.get_seedance2pro_web_client_ref()
+        let seedance_client = client.get_kinovi_web_client_ref()
           .map_err(ArtcraftRouterError::Client)?;
         request.send(seedance_client).await
       }

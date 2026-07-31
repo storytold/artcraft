@@ -1,12 +1,12 @@
-use seedance2pro_web_client::generate::image::generate_seedream_5p0_pro::{
+use kinovi_web_client::generate::image::generate_seedream_5p0_pro::{
   generate_seedream_5p0_pro, GenerateSeedream5p0ProArgs, GenerateSeedream5p0ProRequest,
 };
 
-use crate::client::router_seedance2pro_web_client::RouterSeedance2ProWebClient;
+use crate::client::router_kinovi_web_client::RouterKinoviWebClient;
 use crate::errors::artcraft_router_error::ArtcraftRouterError;
 use crate::errors::provider_error::ProviderError;
 use crate::generate::generate_image::generate_image_response::{
-  GenerateImageResponse, Seedance2proImageResponsePayload,
+  GenerateImageResponse, KinoviWebImageResponsePayload,
 };
 
 #[derive(Debug, Clone)]
@@ -17,7 +17,7 @@ pub struct KinoviSeedream5p0ProRequestState {
 impl KinoviSeedream5p0ProRequestState {
   pub async fn send(
     &self,
-    client: &RouterSeedance2ProWebClient,
+    client: &RouterKinoviWebClient,
   ) -> Result<GenerateImageResponse, ArtcraftRouterError> {
     let args = GenerateSeedream5p0ProArgs {
       session: &client.session,
@@ -27,9 +27,9 @@ impl KinoviSeedream5p0ProRequestState {
 
     let response = generate_seedream_5p0_pro(args)
       .await
-      .map_err(|err| ArtcraftRouterError::Provider(ProviderError::Seedance2Pro(err)))?;
+      .map_err(|err| ArtcraftRouterError::Provider(ProviderError::KinoviWeb(err)))?;
 
-    Ok(GenerateImageResponse::Seedance2Pro(Seedance2proImageResponsePayload {
+    Ok(GenerateImageResponse::KinoviWeb(KinoviWebImageResponsePayload {
       order_id: response.order_id,
       task_id: response.task_id,
       maybe_order_ids: response.order_ids,
@@ -42,7 +42,7 @@ impl KinoviSeedream5p0ProRequestState {
 mod tests {
   use std::collections::HashMap;
 
-  use seedance2pro_web_client::creds::seedance2pro_session::Seedance2ProSession;
+  use kinovi_web_client::creds::kinovi_web_session::KinoviWebSession;
   use tokens::tokens::media_files::MediaFileToken;
 
   use crate::api::image_list_ref::ImageListRef;
@@ -52,7 +52,7 @@ mod tests {
   use crate::api::router_resolution::RouterResolution;
   use crate::client::request_mismatch_mitigation_strategy::RequestMismatchMitigationStrategy;
   use crate::client::router_client::RouterClient;
-  use crate::client::router_seedance2pro_web_client::RouterSeedance2ProWebClient;
+  use crate::client::router_kinovi_web_client::RouterKinoviWebClient;
   use crate::generate::generate_image::generate_image_request_builder::GenerateImageRequestBuilder;
   use crate::generate::generate_image::image_generation_draft::ImageGenerationDraftRequest;
   use crate::generate::generate_image::image_generation_draft_context::ImageGenerationDraftContext;
@@ -63,7 +63,7 @@ mod tests {
   fn base_builder() -> GenerateImageRequestBuilder {
     GenerateImageRequestBuilder {
       model: RouterImageModel::Seedream5p0Pro,
-      provider: RouterProvider::Seedance2Pro,
+      provider: RouterProvider::KinoviWeb,
       prompt: Some("an anime girl riding a dinosaur through a neon city".to_string()),
       image_inputs: None,
       resolution: Some(RouterResolution::OneK),
@@ -81,9 +81,9 @@ mod tests {
 
   fn get_kinovi_client() -> RouterClient {
     let cookies = std::fs::read_to_string("/Users/bt/Artcraft/credentials/seedance2pro_cookies.txt")
-      .expect("Failed to read seedance2pro cookies");
-    let session = Seedance2ProSession::from_cookies_string(cookies.trim().to_string());
-    RouterClient::Seedance2Pro(RouterSeedance2ProWebClient::new(session))
+      .expect("Failed to read kinovi_web cookies");
+    let session = KinoviWebSession::from_cookies_string(cookies.trim().to_string());
+    RouterClient::KinoviWeb(RouterKinoviWebClient::new(session))
   }
 
   #[tokio::test]
@@ -97,9 +97,9 @@ mod tests {
       _ => panic!("expected direct Request for text-to-image"),
     };
 
-    let response = request.send(client.get_seedance2pro_web_client_ref().unwrap())
+    let response = request.send(client.get_kinovi_web_client_ref().unwrap())
       .await.expect("send should succeed");
-    let payload = response.get_seedance2pro_payload().expect("expected seedance2pro payload");
+    let payload = response.get_kinovi_web_payload().expect("expected kinovi_web payload");
     println!("seedream 5.0 pro t2i — task_id={}, order_id={}", payload.task_id, payload.order_id);
     assert!(!payload.task_id.is_empty());
   }
@@ -134,7 +134,7 @@ mod tests {
       .finalize(ctx).await.expect("finalize");
 
     let response = request.send_request(&client).await.expect("send_request");
-    let payload = response.get_seedance2pro_payload().expect("expected seedance2pro payload");
+    let payload = response.get_kinovi_web_payload().expect("expected kinovi_web payload");
     println!("seedream 5.0 pro with ref — task_id={}, order_id={}", payload.task_id, payload.order_id);
     assert!(!payload.task_id.is_empty());
   }

@@ -4,7 +4,7 @@ use artcraft_client::error::storyteller_error::StorytellerError;
 use fal_client::error::fal_error_plus::FalErrorPlus;
 use gmicloud_client::error::gmicloud_error::GmiCloudError;
 use grok_api_client::error::grok_error::GrokError;
-use seedance2pro_web_client::error::seedance2pro_error::Seedance2ProError;
+use kinovi_web_client::error::kinovi_web_error::KinoviWebError;
 use worldlabs_api_client::error::world_labs_error::WorldLabsError;
 
 #[derive(Debug)]
@@ -13,7 +13,7 @@ pub enum ProviderError {
   Fal(FalErrorPlus),
   GmiCloud(GmiCloudError),
   Grok(GrokError),
-  Seedance2Pro(Seedance2ProError),
+  KinoviWeb(KinoviWebError),
   WorldLabs(WorldLabsError),
 }
 
@@ -26,7 +26,7 @@ impl Display for ProviderError {
       Self::Fal(e) => write!(f, "Fal provider error: {}", e),
       Self::GmiCloud(e) => write!(f, "GmiCloud provider error: {}", e),
       Self::Grok(e) => write!(f, "Grok provider error: {}", e),
-      Self::Seedance2Pro(e) => write!(f, "Seedance2Pro provider error: {}", e),
+      Self::KinoviWeb(e) => write!(f, "KinoviWeb provider error: {}", e),
       Self::WorldLabs(e) => write!(f, "WorldLabs provider error: {}", e),
     }
   }
@@ -56,9 +56,9 @@ impl From<GrokError> for ProviderError {
   }
 }
 
-impl From<Seedance2ProError> for ProviderError {
-  fn from(error: Seedance2ProError) -> Self {
-    Self::Seedance2Pro(error)
+impl From<KinoviWebError> for ProviderError {
+  fn from(error: KinoviWebError) -> Self {
+    Self::KinoviWeb(error)
   }
 }
 

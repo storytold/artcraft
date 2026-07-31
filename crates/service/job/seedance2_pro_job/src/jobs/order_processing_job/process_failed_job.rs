@@ -1,14 +1,14 @@
 use log::{error, info, warn};
 
 use enums::by_table::generic_inference_jobs::frontend_failure_category::FrontendFailureCategory;
-use mysql_queries::queries::generic_inference::api_providers::seedance2pro::list_pending_seedance2pro_video_jobs::PendingSeedance2ProJob;
+use mysql_queries::queries::generic_inference::api_providers::kinovi_web::list_pending_kinovi_web_video_jobs::PendingKinoviWebJob;
 use mysql_queries::queries::generic_inference::job::mark_job_failed_by_token::mark_job_failed_by_token_with_executor;
 use mysql_queries::queries::generic_inference::job::select_inference_job_status_for_update::select_inference_job_status_for_update;
 use mysql_queries::queries::wallets::refund::try_to_refund_ledger_entry::{try_to_refund_ledger_entry, WalletRefundOutcome};
 use pager::notification::notification_details_builder::NotificationDetailsBuilder;
 use pager::notification::notification_urgency::NotificationUrgency;
-use seedance2pro_web_client::requests::poll_orders::failure_type::FailureType;
-use seedance2pro_web_client::requests::poll_orders::poll_orders::OrderStatus;
+use kinovi_web_client::requests::poll_orders::failure_type::FailureType;
+use kinovi_web_client::requests::poll_orders::poll_orders::OrderStatus;
 
 use crate::job_dependencies::JobDependencies;
 use crate::jobs::order_processing_job::is_job_status_terminal::is_job_status_terminal;
@@ -23,7 +23,7 @@ use crate::jobs::order_processing_job::is_job_status_terminal::is_job_status_ter
 /// without its refund (or vice versa), and the refund itself is idempotent.
 pub async fn process_failed_job(
   deps: &JobDependencies,
-  job: &PendingSeedance2ProJob,
+  job: &PendingKinoviWebJob,
   order: &OrderStatus,
 ) {
   let reason = order

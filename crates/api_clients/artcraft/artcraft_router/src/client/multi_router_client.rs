@@ -2,7 +2,7 @@ use crate::client::router_artcraft_client::RouterArtcraftClient;
 use crate::client::router_fal_client::RouterFalClient;
 use crate::client::router_gmicloud_client::RouterGmiCloudClient;
 use crate::client::router_grok_api_client::RouterGrokApiClient;
-use crate::client::router_seedance2pro_web_client::RouterSeedance2ProWebClient;
+use crate::client::router_kinovi_web_client::RouterKinoviWebClient;
 use crate::client::router_worldlabs_client::RouterWorldLabsClient;
 use crate::errors::client_error::{ClientError, ClientType};
 
@@ -11,7 +11,7 @@ pub struct MultiRouterClient {
   pub(crate) fal_client: Option<RouterFalClient>,
   pub(crate) gmicloud_client: Option<RouterGmiCloudClient>,
   pub(crate) grok_api_client: Option<RouterGrokApiClient>,
-  pub(crate) seedance2pro_web_client: Option<RouterSeedance2ProWebClient>,
+  pub(crate) kinovi_web_client: Option<RouterKinoviWebClient>,
   pub(crate) worldlabs_client: Option<RouterWorldLabsClient>,
 }
 
@@ -36,9 +36,9 @@ impl MultiRouterClient {
       .ok_or(ClientError::ClientNotConfigured(ClientType::GrokApi))
   }
 
-  pub fn get_seedance2pro_web_client_ref(&self) -> Result<&RouterSeedance2ProWebClient, ClientError> {
-    self.seedance2pro_web_client.as_ref()
-      .ok_or(ClientError::ClientNotConfigured(ClientType::Seedance2Pro))
+  pub fn get_kinovi_web_client_ref(&self) -> Result<&RouterKinoviWebClient, ClientError> {
+    self.kinovi_web_client.as_ref()
+      .ok_or(ClientError::ClientNotConfigured(ClientType::KinoviWeb))
   }
 
   pub fn get_worldlabs_client_ref(&self) -> Result<&RouterWorldLabsClient, ClientError> {

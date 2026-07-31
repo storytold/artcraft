@@ -7,7 +7,7 @@ use cloud_storage::legacy_bucket_client::LegacyBucketClient;
 use concurrency::relaxed_atomic_bool::RelaxedAtomicBool;
 use jobs_common::job_stats::JobStats;
 use pager::client::pager::Pager;
-use seedance2pro_web_client::creds::seedance2pro_session::Seedance2ProSession;
+use kinovi_web_client::creds::kinovi_web_session::KinoviWebSession;
 use server_environment::ServerEnvironment;
 use sqlx::MySqlPool;
 use tokio::sync::Notify;
@@ -20,7 +20,7 @@ pub struct JobDependencies {
   pub public_bucket_client: LegacyBucketClient,
 
   /// Session credentials for polling seedance2-pro.com.
-  pub seedance2pro_session: Seedance2ProSession,
+  pub kinovi_web_session: KinoviWebSession,
 
   /// The kinovi account/version we poll
   pub kinovi_version: KinoviVersion,

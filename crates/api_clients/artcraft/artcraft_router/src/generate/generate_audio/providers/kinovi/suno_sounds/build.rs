@@ -1,5 +1,5 @@
 use enums::common::generation::common_musical_key::CommonMusicalKey;
-use seedance2pro_web_client::generate::audio::generate_suno_sound::{
+use kinovi_web_client::generate::audio::generate_suno_sound::{
   GenerateSunoSoundRequest, KinoviSunoSoundKey, KinoviSunoSoundType,
 };
 
@@ -201,7 +201,7 @@ mod tests {
   fn base_builder() -> GenerateAudioRequestBuilder {
     GenerateAudioRequestBuilder {
       model: RouterAudioModel::SunoSounds,
-      provider: RouterProvider::Seedance2Pro,
+      provider: RouterProvider::KinoviWeb,
       prompt: Some("rain sound effects".to_string()),
       ..Default::default()
     }

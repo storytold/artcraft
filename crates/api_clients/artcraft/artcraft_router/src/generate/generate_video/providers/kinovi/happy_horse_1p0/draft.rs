@@ -1,4 +1,4 @@
-use seedance2pro_web_client::generate::video::generate_happy_horse_1p0::{
+use kinovi_web_client::generate::video::generate_happy_horse_1p0::{
   GenerateHappyHorse1p0Request, KinoviHappyHorse1p0AspectRatio,
   KinoviHappyHorse1p0BatchCount, KinoviHappyHorse1p0OutputResolution,
 };
@@ -30,7 +30,7 @@ impl KinoviHappyHorse1p0DraftState {
     &mut self,
     draft_context: &VideoGenerationDraftContext<'_>,
   ) -> Result<KinoviHappyHorse1p0RequestState, ArtcraftRouterError> {
-    let client = draft_context.get_seedance2pro_web_client_ref()?;
+    let client = draft_context.get_kinovi_web_client_ref()?;
     let session = &client.session;
 
     let mut start_frame_url = None;

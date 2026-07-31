@@ -1,4 +1,4 @@
-use seedance2pro_web_client::generate::video::generate_seedance_2p0::{
+use kinovi_web_client::generate::video::generate_seedance_2p0::{
   GenerateSeedance2p0Request, KinoviSeedance2p0BatchCount,
   KinoviSeedance2p0OutputResolution,
 };
@@ -85,7 +85,7 @@ impl KinoviSeedance2p0CostState {
 #[cfg(test)]
 mod tests {
   use super::*;
-  use seedance2pro_web_client::generate::video::generate_seedance_2p0::{
+  use kinovi_web_client::generate::video::generate_seedance_2p0::{
     KinoviSeedance2p0OutputResolution as KinoviOutputResolution,
     KinoviSeedance2p0BatchCount as KinoviBatchCount,
   };
@@ -177,7 +177,7 @@ mod tests {
 
   // ── 4K pricing ──
   //
-  // Routes to the seedance2pro_web_client: 4K base is 200 credits/s (vs 90 at 1080p).
+  // Routes to the kinovi_web_client: 4K base is 200 credits/s (vs 90 at 1080p).
   // Credits → cents at 243 credits/$1, rounded up.
 
   mod pricing_4k {
@@ -202,7 +202,7 @@ mod tests {
     }
   }
 
-  // ── 4K: router cost must match the seedance2pro_web_client binding ──
+  // ── 4K: router cost must match the kinovi_web_client binding ──
   //
   // The router delegates to GenerateSeedance2p0Request::calculate_costs(), so these
   // assert the exact 4K numbers AND cross-check the router against the binding for
@@ -213,7 +213,7 @@ mod tests {
 
   mod four_k_matches_binding {
     use super::*;
-    use seedance2pro_web_client::generate::video::generate_seedance_2p0::GenerateSeedance2p0Request;
+    use kinovi_web_client::generate::video::generate_seedance_2p0::GenerateSeedance2p0Request;
 
     /// Router-side 4K cost (batch 1) for a duration / video-reference combo.
     fn router(duration_seconds: u8, has_video_reference: bool) -> VideoGenerationCostEstimate {
@@ -226,7 +226,7 @@ mod tests {
       .estimate_cost()
     }
 
-    /// The seedance2pro_web_client binding's own 4K cost for the same inputs.
+    /// The kinovi_web_client binding's own 4K cost for the same inputs.
     /// Returns (kinovi_credits, usd_cents_rounded_up).
     fn binding(duration_seconds: u8, has_video_reference: bool) -> (u64, u64) {
       let reference_video_urls = if has_video_reference {
@@ -579,7 +579,7 @@ mod tests {
     };
 
     let builder = GenerateVideoRequestBuilder {
-      provider: RouterProvider::Seedance2Pro,
+      provider: RouterProvider::KinoviWeb,
       resolution,
       reference_videos,
       duration_seconds: Some(duration_seconds),

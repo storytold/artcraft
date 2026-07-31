@@ -1,4 +1,4 @@
-use seedance2pro_web_client::generate::image::generate_seedream_5p0_pro::{
+use kinovi_web_client::generate::image::generate_seedream_5p0_pro::{
   GenerateSeedream5p0ProRequest, KinoviSeedream5p0ProAspectRatio, KinoviSeedream5p0ProBatchCount,
   KinoviSeedream5p0ProResolution,
 };
@@ -29,7 +29,7 @@ impl KinoviSeedream5p0ProDraftState {
     &mut self,
     draft_context: &ImageGenerationDraftContext<'_>,
   ) -> Result<KinoviSeedream5p0ProRequestState, ArtcraftRouterError> {
-    let client = draft_context.get_seedance2pro_web_client_ref()?;
+    let client = draft_context.get_kinovi_web_client_ref()?;
     let session = &client.session;
 
     let mut reference_image_urls = None;

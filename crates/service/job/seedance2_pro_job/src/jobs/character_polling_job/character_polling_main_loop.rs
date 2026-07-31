@@ -3,8 +3,8 @@ use std::time::{Duration, Instant};
 
 use log::{error, info, warn};
 
-use mysql_queries::queries::generic_inference::api_providers::seedance2pro::list_pending_seedance2pro_character_jobs::list_pending_seedance2pro_character_jobs;
-use seedance2pro_web_client::requests::poll_characters::poll_characters::{
+use mysql_queries::queries::generic_inference::api_providers::kinovi_web::list_pending_kinovi_web_character_jobs::list_pending_kinovi_web_character_jobs;
+use kinovi_web_client::requests::poll_characters::poll_characters::{
   poll_characters, CharacterCreationStatus, CharacterStatus, PollCharactersArgs,
 };
 
@@ -40,7 +40,7 @@ pub async fn character_polling_main_loop(deps: JobDependencies) {
 
 async fn run_poll_iteration(deps: &JobDependencies) -> anyhow::Result<()> {
   // 1. Query all pending character creation jobs from DB.
-  let pending_jobs = list_pending_seedance2pro_character_jobs(&deps.mysql_pool).await?;
+  let pending_jobs = list_pending_kinovi_web_character_jobs(&deps.mysql_pool).await?;
 
   if pending_jobs.is_empty() {
     return Ok(());
@@ -56,7 +56,7 @@ async fn run_poll_iteration(deps: &JobDependencies) -> anyhow::Result<()> {
 
   // 2. Poll characters from Kinovi API.
   let response = poll_characters(PollCharactersArgs {
-    session: &deps.seedance2pro_session,
+    session: &deps.kinovi_web_session,
     cursor: None,
     limit: None,
     host_override: None,

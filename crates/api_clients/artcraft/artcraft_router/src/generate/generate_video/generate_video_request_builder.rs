@@ -230,12 +230,12 @@ impl GenerateVideoRequestBuilder {
       (RouterProvider::GrokApi, RouterVideoModel::GrokImagineVideo) => build_grok_api_grok_imagine_video(self),
       (RouterProvider::GrokApi, RouterVideoModel::GrokImagineVideo1p5) => build_grok_api_grok_imagine_video_1p5(self),
       // Kinovi
-      (RouterProvider::Seedance2Pro, RouterVideoModel::HappyHorse1p0) => build_kinovi_happy_horse_1p0(self),
-      (RouterProvider::Seedance2Pro, RouterVideoModel::Seedance2p0) => build_kinovi_seedance_2p0(self),
-      (RouterProvider::Seedance2Pro, RouterVideoModel::Seedance2p0Fast) => build_kinovi_seedance_2p0_fast(self),
-      (RouterProvider::Seedance2Pro, RouterVideoModel::Seedance2p0Mini) => build_kinovi_seedance_2p0_mini(self),
-      (RouterProvider::Seedance2Pro, RouterVideoModel::Seedance2p0BytePlusMini) => build_kinovi_seedance_2p0_mini(self),
-      (RouterProvider::Seedance2Pro, RouterVideoModel::Seedance2p0BytePlusUltraMini) => build_kinovi_seedance_2p0_mini(self),
+      (RouterProvider::KinoviWeb, RouterVideoModel::HappyHorse1p0) => build_kinovi_happy_horse_1p0(self),
+      (RouterProvider::KinoviWeb, RouterVideoModel::Seedance2p0) => build_kinovi_seedance_2p0(self),
+      (RouterProvider::KinoviWeb, RouterVideoModel::Seedance2p0Fast) => build_kinovi_seedance_2p0_fast(self),
+      (RouterProvider::KinoviWeb, RouterVideoModel::Seedance2p0Mini) => build_kinovi_seedance_2p0_mini(self),
+      (RouterProvider::KinoviWeb, RouterVideoModel::Seedance2p0BytePlusMini) => build_kinovi_seedance_2p0_mini(self),
+      (RouterProvider::KinoviWeb, RouterVideoModel::Seedance2p0BytePlusUltraMini) => build_kinovi_seedance_2p0_mini(self),
       _ => self.unsupported_provider_and_model(),
     }
   }

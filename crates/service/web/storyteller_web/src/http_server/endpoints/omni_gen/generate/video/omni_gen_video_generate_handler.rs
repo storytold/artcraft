@@ -19,7 +19,7 @@ use enums::common::generation_provider::GenerationProvider;
 use http_server_common::request::get_request_ip::get_request_ip;
 use enums::by_table::debug_logs::debug_log_level::DebugLogLevel;
 use mysql_queries::queries::debug_logs::insert_debug_log::{insert_debug_log, InsertDebugLogArgs};
-use mysql_queries::queries::generic_inference::api_providers::seedance2pro::insert_generic_inference_job_for_seedance2pro_queue_with_apriori_job_token::KinoviVersion;
+use mysql_queries::queries::generic_inference::api_providers::kinovi_web::insert_generic_inference_job_for_kinovi_web_queue_with_apriori_job_token::KinoviVersion;
 use mysql_queries::queries::idepotency_tokens::insert_idempotency_token::insert_idempotency_token;
 use mysql_queries::queries::prompt_context_items::insert_batch_prompt_context_items::{
   insert_batch_prompt_context_items, InsertBatchArgs, PromptContextItem,
@@ -38,7 +38,7 @@ use crate::http_server::endpoints::omni_gen::generate::video::helpers::resolve_k
 use crate::http_server::endpoints::omni_gen::generate::video::insert_db_job::insert_fal_job::{insert_fal_job, InsertFalJobArgs};
 use crate::http_server::endpoints::omni_gen::generate::video::insert_db_job::insert_gmicloud_job::{insert_gmicloud_job, InsertGmiCloudJobArgs};
 use crate::http_server::endpoints::omni_gen::generate::video::insert_db_job::insert_grok_api_job::{insert_grok_api_job, InsertGrokApiJobArgs};
-use crate::http_server::endpoints::omni_gen::generate::video::insert_db_job::insert_seedance2pro_jobs::{insert_seedance2pro_jobs, InsertSeedance2proJobsArgs};
+use crate::http_server::endpoints::omni_gen::generate::video::insert_db_job::insert_kinovi_web_jobs::{insert_kinovi_web_jobs, InsertKinoviWebJobsArgs};
 use crate::http_server::endpoints::omni_gen::generate::video::insert_db_job::shared_job_args::SharedJobArgs;
 use crate::http_server::endpoints::omni_gen::shared_utils::kinovi_account::KinoviAccount;
 use crate::http_server::endpoints::omni_gen::generate::video::pipeline_v2::run_pipeline_v2::{run_pipeline_v2, RunPipelineV2Args};
@@ -349,8 +349,8 @@ pub async fn omni_gen_video_generate_handler(
   // -- Inference job --
 
   let (primary_job_token, all_job_tokens) = match &pipeline_result.response {
-    GenerateVideoResponse::Seedance2Pro(payload) => {
-      info!("Inserting seedance2pro job(s) with token: {:?}", pipeline_result.billing.apriori_job_token);
+    GenerateVideoResponse::KinoviWeb(payload) => {
+      info!("Inserting kinovi_web job(s) with token: {:?}", pipeline_result.billing.apriori_job_token);
 
       let kinovi_version = match kinovi_account {
         KinoviAccount::Volcengine => KinoviVersion::Volcengine,
@@ -358,7 +358,7 @@ pub async fn omni_gen_video_generate_handler(
         KinoviAccount::BytePlusUltra => KinoviVersion::BytePlusUltra,
       };
 
-      let result = insert_seedance2pro_jobs(InsertSeedance2proJobsArgs {
+      let result = insert_kinovi_web_jobs(InsertKinoviWebJobsArgs {
         primary_order_id: &payload.order_id,
         maybe_additional_order_ids: payload.maybe_order_ids.as_deref(),
         maybe_wallet_ledger_entry_token: pipeline_result.billing.maybe_wallet_ledger_entry_token.as_ref(),

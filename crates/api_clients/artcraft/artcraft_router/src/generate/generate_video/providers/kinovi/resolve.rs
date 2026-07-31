@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use seedance2pro_web_client::creds::seedance2pro_session::Seedance2ProSession;
+use kinovi_web_client::creds::kinovi_web_session::KinoviWebSession;
 use tokens::tokens::media_files::MediaFileToken;
 
 use crate::api::audio_list_ref::AudioListRef;
@@ -10,7 +10,7 @@ use crate::api::image_ref::ImageRef;
 use crate::api::video_list_ref::VideoListRef;
 use crate::errors::artcraft_router_error::ArtcraftRouterError;
 use crate::errors::client_error::ClientError;
-use crate::generate::generate_video::providers::kinovi::upload::upload_to_seedance2pro;
+use crate::generate::generate_video::providers::kinovi::upload::upload_to_kinovi_web;
 use crate::generate::generate_video::video_generation_draft_context::VideoGenerationDraftContext;
 
 /// Either resolved URLs or unresolved media file tokens.
@@ -40,9 +40,9 @@ pub(crate) fn audio_list_ref_into_urls_or_tokens(list: AudioListRef) -> UrlsOrTo
   }
 }
 
-/// Resolve a single ImageRef and upload to Seedance2Pro CDN.
+/// Resolve a single ImageRef and upload to KinoviWeb CDN.
 pub(crate) async fn resolve_and_upload_single(
-  session: &Seedance2ProSession,
+  session: &KinoviWebSession,
   image_ref: Option<ImageRef>,
   maybe_map: Option<&HashMap<MediaFileToken, String>>,
 ) -> Result<Option<String>, ArtcraftRouterError> {
@@ -51,13 +51,13 @@ pub(crate) async fn resolve_and_upload_single(
     Some(ImageRef::Url(url)) => url,
     Some(ImageRef::MediaFileToken(token)) => resolve_token(maybe_map, &token)?,
   };
-  Ok(Some(upload_to_seedance2pro(session, &source_url).await?))
+  Ok(Some(upload_to_kinovi_web(session, &source_url).await?))
 }
 
-/// Resolve a list of refs to URLs and upload each to Seedance2Pro CDN.
+/// Resolve a list of refs to URLs and upload each to KinoviWeb CDN.
 /// Order is preserved.
 pub(crate) async fn resolve_and_upload_list(
-  session: &Seedance2ProSession,
+  session: &KinoviWebSession,
   urls_or_tokens: Option<UrlsOrTokens>,
   maybe_map: Option<&HashMap<MediaFileToken, String>>,
 ) -> Result<Option<Vec<String>>, ArtcraftRouterError> {
@@ -71,7 +71,7 @@ pub(crate) async fn resolve_and_upload_list(
 
   let mut uploaded = Vec::with_capacity(source_urls.len());
   for url in &source_urls {
-    uploaded.push(upload_to_seedance2pro(session, url).await?);
+    uploaded.push(upload_to_kinovi_web(session, url).await?);
   }
   Ok(Some(uploaded))
 }

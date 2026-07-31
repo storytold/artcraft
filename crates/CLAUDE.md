@@ -51,9 +51,9 @@ helpers go in the parent `mod tests` so sub-modules can `use super::*`.
 
 - `storyteller_web` — main HTTP API monolith (actix-web)
 - `artcraft` (desktop) — Tauri desktop app
-- `artcraft_router` — provider routing for image/video generation (Artcraft, Fal, Seedance2Pro, Muapi)
+- `artcraft_router` — provider routing for image/video generation (Artcraft, Fal, KinoviWeb, Muapi)
 - `artcraft_api_defs` — shared HTTP API type definitions
-- `seedance2pro_web_client` — HTTP client for the Kinovi/Seedance2Pro video generation service
+- `kinovi_web_client` — HTTP client for the Kinovi/KinoviWeb video generation service
 - `enums` — database-backed enums stored as VARCHAR fields
 - `tokens` — primary key identifiers with Stripe-like prefixes (e.g. `user_`, `mf_`)
 - `mysql_queries` — SQLx MySQL queries for the backend

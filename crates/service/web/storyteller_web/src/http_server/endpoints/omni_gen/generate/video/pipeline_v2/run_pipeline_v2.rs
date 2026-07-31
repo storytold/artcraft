@@ -24,7 +24,7 @@ use crate::http_server::endpoints::omni_gen::generate::video::helpers::pipeline_
 use crate::http_server::endpoints::omni_gen::generate::video::helpers::resolve_media_tokens_to_urls::resolve_media_tokens_to_urls;
 use mysql_queries::queries::generic_inference::common::job_cost_estimates::JobCostEstimates;
 use crate::http_server::endpoints::omni_gen::shared_utils::kinovi_account::KinoviAccount;
-use crate::http_server::endpoints::omni_gen::shared_utils::map_seedance2pro_router_error::map_router_error_to_web_error;
+use crate::http_server::endpoints::omni_gen::shared_utils::map_kinovi_web_router_error::map_router_error_to_web_error;
 use crate::state::server_state::ServerState;
 
 pub struct RunPipelineV2Args<'a> {
@@ -74,12 +74,12 @@ pub async fn run_pipeline_v2(args: RunPipelineV2Args<'_>) -> Result<PipelineResu
   }
 
   let provider = match router_builder.model {
-    RouterVideoModel::HappyHorse1p0 => RouterProvider::Seedance2Pro,
-    RouterVideoModel::Seedance2p0 => RouterProvider::Seedance2Pro,
-    RouterVideoModel::Seedance2p0Fast => RouterProvider::Seedance2Pro,
-    RouterVideoModel::Seedance2p0Mini => RouterProvider::Seedance2Pro,
-    RouterVideoModel::Seedance2p0BytePlusMini => RouterProvider::Seedance2Pro,
-    RouterVideoModel::Seedance2p0BytePlusUltraMini => RouterProvider::Seedance2Pro,
+    RouterVideoModel::HappyHorse1p0 => RouterProvider::KinoviWeb,
+    RouterVideoModel::Seedance2p0 => RouterProvider::KinoviWeb,
+    RouterVideoModel::Seedance2p0Fast => RouterProvider::KinoviWeb,
+    RouterVideoModel::Seedance2p0Mini => RouterProvider::KinoviWeb,
+    RouterVideoModel::Seedance2p0BytePlusMini => RouterProvider::KinoviWeb,
+    RouterVideoModel::Seedance2p0BytePlusUltraMini => RouterProvider::KinoviWeb,
     //RouterVideoModel::Seedance2p0Ultra => RouterProvider::GmiCloud,
     //RouterVideoModel::Seedance2p0UltraFast => RouterProvider::GmiCloud,
     RouterVideoModel::GrokImagineVideo => RouterProvider::GrokApi,
@@ -125,7 +125,7 @@ pub async fn run_pipeline_v2(args: RunPipelineV2Args<'_>) -> Result<PipelineResu
   let cost = system_cost_estimate.cost_in_credits.unwrap_or(0);
 
   // Provider-side estimate (what the fulfilling provider charges us). The
-  // router defers to the underlying provider crates (seedance2pro_web_client,
+  // router defers to the underlying provider crates (kinovi_web_client,
   // gmicloud_client, grok_api_client, the fal pricing modules, etc.) per
   // request variant. Bookkeeping only — failures must not block generation.
   let maybe_provider_cost_estimate = match draft_or_request.estimate_cost() {
@@ -184,7 +184,7 @@ pub async fn run_pipeline_v2(args: RunPipelineV2Args<'_>) -> Result<PipelineResu
 
   // 5. On failure, refund wallet for Kinovi requests.
   if let Err(ref err) = result {
-    if matches!(provider, RouterProvider::Seedance2Pro) {
+    if matches!(provider, RouterProvider::KinoviWeb) {
       if let Some(ledger_entry_token) = billing.maybe_wallet_ledger_entry_token.as_ref() {
         warn!("Kinovi v2 generation failed, issuing refund for {}: {:?}", ledger_entry_token.as_str(), err);
 

@@ -5,9 +5,9 @@ use artcraft_router::client::router_client::RouterClient;
 use artcraft_router::client::router_fal_client::RouterFalClient;
 use artcraft_router::client::router_gmicloud_client::RouterGmiCloudClient;
 use artcraft_router::client::router_grok_api_client::RouterGrokApiClient;
-use artcraft_router::client::router_seedance2pro_web_client::RouterSeedance2ProWebClient;
+use artcraft_router::client::router_kinovi_web_client::RouterKinoviWebClient;
 use artcraft_router::client::router_worldlabs_client::RouterWorldLabsClient;
-use seedance2pro_web_client::creds::seedance2pro_session::Seedance2ProSession;
+use kinovi_web_client::creds::kinovi_web_session::KinoviWebSession;
 use worldlabs_api_client::credentials::world_labs_api_creds::WorldLabsApiCreds;
 
 use crate::http_server::common_responses::common_web_error::CommonWebError;
@@ -20,7 +20,7 @@ pub fn build_router_client(
   kinovi_account: KinoviAccount,
 ) -> Result<RouterClient, CommonWebError> {
   match provider {
-    RouterProvider::Seedance2Pro => {
+    RouterProvider::KinoviWeb => {
       kinovi_provider(server_state, kinovi_account)
     }
     RouterProvider::Fal => {
@@ -55,15 +55,15 @@ pub fn build_router_client(
 }
 
 fn kinovi_provider(server_state: &ServerState, kinovi_account: KinoviAccount) -> Result<RouterClient, CommonWebError> {
-  let seedance2pro = &server_state.inference_providers.seedance2pro;
+  let kinovi_web = &server_state.inference_providers.kinovi_web;
   
   let cookies = match kinovi_account {
-    KinoviAccount::Volcengine => seedance2pro.cookies_volcengine.clone(),
-    KinoviAccount::BytePlus => seedance2pro.cookies_byteplus.clone(),
-    KinoviAccount::BytePlusUltra => seedance2pro.cookies_byteplus_ultra.clone(),
+    KinoviAccount::Volcengine => kinovi_web.cookies_volcengine.clone(),
+    KinoviAccount::BytePlus => kinovi_web.cookies_byteplus.clone(),
+    KinoviAccount::BytePlusUltra => kinovi_web.cookies_byteplus_ultra.clone(),
   };
 
-  let session = Seedance2ProSession::from_cookies_string(cookies);
+  let session = KinoviWebSession::from_cookies_string(cookies);
   
-  Ok(RouterClient::Seedance2Pro(RouterSeedance2ProWebClient::new(session)))
+  Ok(RouterClient::KinoviWeb(RouterKinoviWebClient::new(session)))
 }

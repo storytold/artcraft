@@ -48,10 +48,10 @@ impl AudioGenerationRequest {
       Self::ArtcraftSunoSample(_) => RouterProvider::Artcraft,
       Self::ArtcraftSeedAudio1p0(_) => RouterProvider::Artcraft,
       Self::FalSeedAudio1p0(_) => RouterProvider::Fal,
-      Self::KinoviSunoMusic(_) => RouterProvider::Seedance2Pro,
-      Self::KinoviSunoRemix(_) => RouterProvider::Seedance2Pro,
-      Self::KinoviSunoSounds(_) => RouterProvider::Seedance2Pro,
-      Self::KinoviSunoSample(_) => RouterProvider::Seedance2Pro,
+      Self::KinoviSunoMusic(_) => RouterProvider::KinoviWeb,
+      Self::KinoviSunoRemix(_) => RouterProvider::KinoviWeb,
+      Self::KinoviSunoSounds(_) => RouterProvider::KinoviWeb,
+      Self::KinoviSunoSample(_) => RouterProvider::KinoviWeb,
     }
   }
 
@@ -100,19 +100,19 @@ impl AudioGenerationRequest {
         request.send(client_ref).await
       },
       AudioGenerationRequest::KinoviSunoMusic(request) => {
-        let client_ref = client.get_seedance2pro_web_client_ref()?;
+        let client_ref = client.get_kinovi_web_client_ref()?;
         request.send(client_ref).await
       },
       AudioGenerationRequest::KinoviSunoRemix(request) => {
-        let client_ref = client.get_seedance2pro_web_client_ref()?;
+        let client_ref = client.get_kinovi_web_client_ref()?;
         request.send(client_ref).await
       },
       AudioGenerationRequest::KinoviSunoSounds(request) => {
-        let client_ref = client.get_seedance2pro_web_client_ref()?;
+        let client_ref = client.get_kinovi_web_client_ref()?;
         request.send(client_ref).await
       },
       AudioGenerationRequest::KinoviSunoSample(request) => {
-        let client_ref = client.get_seedance2pro_web_client_ref()?;
+        let client_ref = client.get_kinovi_web_client_ref()?;
         request.send(client_ref).await
       },
     }

@@ -1,4 +1,4 @@
-use seedance2pro_web_client::generate::audio::generate_suno_sample::GenerateSunoSampleRequest;
+use kinovi_web_client::generate::audio::generate_suno_sample::GenerateSunoSampleRequest;
 
 use crate::errors::artcraft_router_error::ArtcraftRouterError;
 use crate::generate::generate_audio::audio_generation_draft_context::AudioGenerationDraftContext;
@@ -34,7 +34,7 @@ impl KinoviSunoSampleDraftState {
     &mut self,
     draft_context: &AudioGenerationDraftContext<'_>,
   ) -> Result<KinoviSunoSampleRequestState, ArtcraftRouterError> {
-    let client = draft_context.get_seedance2pro_web_client_ref()?;
+    let client = draft_context.get_kinovi_web_client_ref()?;
     let session = &client.session;
 
     let audio_source = self.audio_source.take().ok_or_else(|| {

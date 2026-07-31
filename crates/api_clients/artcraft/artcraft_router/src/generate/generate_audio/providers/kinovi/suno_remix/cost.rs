@@ -1,4 +1,4 @@
-use seedance2pro_web_client::generate::audio::generate_suno_remix::{
+use kinovi_web_client::generate::audio::generate_suno_remix::{
   GenerateSunoRemixRequest, KinoviSunoRemixSource,
 };
 
@@ -20,7 +20,7 @@ impl KinoviSunoRemixCostState {
   }
 
   pub fn estimate_cost(&self) -> AudioGenerationCostEstimate {
-    // Cost math is owned by seedance2pro_web_client's binding — the router just
+    // Cost math is owned by kinovi_web_client's binding — the router just
     // forwards the result so router cost ≡ binding cost by construction.
     let pricing_request = GenerateSunoRemixRequest {
       prompt: String::new(),
@@ -63,7 +63,7 @@ mod tests {
   fn cost_from_draft_is_seven_cents() {
     let builder = GenerateAudioRequestBuilder {
       model: RouterAudioModel::SunoRemix,
-      provider: RouterProvider::Seedance2Pro,
+      provider: RouterProvider::KinoviWeb,
       prompt: Some("make this electronic".to_string()),
       audio_references: Some(AudioListRef::Urls(vec!["https://example.com/a.mp3".to_string()])),
       ..Default::default()

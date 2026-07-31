@@ -1,4 +1,4 @@
-use seedance2pro_web_client::generate::video::generate_happy_horse_1p0::{
+use kinovi_web_client::generate::video::generate_happy_horse_1p0::{
   KinoviHappyHorse1p0AspectRatio, KinoviHappyHorse1p0BatchCount,
   KinoviHappyHorse1p0OutputResolution,
 };
@@ -441,7 +441,7 @@ mod tests {
 
   fn happy_horse_builder() -> GenerateVideoRequestBuilder {
     GenerateVideoRequestBuilder {
-      provider: RouterProvider::Seedance2Pro,
+      provider: RouterProvider::KinoviWeb,
       prompt: Some("a cat dancing".to_string()),
       duration_seconds: Some(5),
       video_batch_count: Some(1),

@@ -1,11 +1,11 @@
-use seedance2pro_web_client::generate::video::generate_happy_horse_1p0::{
+use kinovi_web_client::generate::video::generate_happy_horse_1p0::{
   generate_happy_horse_1p0, GenerateHappyHorse1p0Args, GenerateHappyHorse1p0Request,
 };
 
-use crate::client::router_seedance2pro_web_client::RouterSeedance2ProWebClient;
+use crate::client::router_kinovi_web_client::RouterKinoviWebClient;
 use crate::errors::artcraft_router_error::ArtcraftRouterError;
 use crate::errors::provider_error::ProviderError;
-use crate::generate::generate_video::generate_video_response::{GenerateVideoResponse, Seedance2proVideoResponsePayload};
+use crate::generate::generate_video::generate_video_response::{GenerateVideoResponse, KinoviWebVideoResponsePayload};
 
 #[derive(Debug, Clone)]
 pub struct KinoviHappyHorse1p0RequestState {
@@ -13,7 +13,7 @@ pub struct KinoviHappyHorse1p0RequestState {
 }
 
 impl KinoviHappyHorse1p0RequestState {
-  pub async fn send(&self, client: &RouterSeedance2ProWebClient) -> Result<GenerateVideoResponse, ArtcraftRouterError> {
+  pub async fn send(&self, client: &RouterKinoviWebClient) -> Result<GenerateVideoResponse, ArtcraftRouterError> {
     let session = &client.session;
 
     let args = GenerateHappyHorse1p0Args {
@@ -24,9 +24,9 @@ impl KinoviHappyHorse1p0RequestState {
 
     let response = generate_happy_horse_1p0(args)
       .await
-      .map_err(|err| ArtcraftRouterError::Provider(ProviderError::Seedance2Pro(err)))?;
+      .map_err(|err| ArtcraftRouterError::Provider(ProviderError::KinoviWeb(err)))?;
 
-    Ok(GenerateVideoResponse::Seedance2Pro(Seedance2proVideoResponsePayload {
+    Ok(GenerateVideoResponse::KinoviWeb(KinoviWebVideoResponsePayload {
       order_id: response.order_id,
       task_id: response.task_id,
       maybe_order_ids: response.order_ids,
@@ -47,12 +47,12 @@ mod tests {
   use crate::api::image_ref::ImageRef;
   use crate::api::router_provider::RouterProvider;
   use crate::client::router_client::RouterClient;
-  use crate::client::router_seedance2pro_web_client::RouterSeedance2ProWebClient;
+  use crate::client::router_kinovi_web_client::RouterKinoviWebClient;
   use crate::generate::generate_video::generate_video_request_builder::GenerateVideoRequestBuilder;
   use crate::generate::generate_video::generate_video_response::GenerateVideoResponse;
   use crate::generate::generate_video::video_generation_draft_context::VideoGenerationDraftContext;
   use crate::generate::generate_video::video_generation_draft_or_request::VideoGenerationDraftOrRequest;
-  use seedance2pro_web_client::creds::seedance2pro_session::Seedance2ProSession;
+  use kinovi_web_client::creds::kinovi_web_session::KinoviWebSession;
   use test_data::web::image_urls::JUNO_AT_LAKE_IMAGE_URL;
 
   mod aspect_ratio_tests {
@@ -66,7 +66,7 @@ mod tests {
         aspect_ratio: Some(RouterAspectRatio::WideSixteenByNine),
         ..happy_horse_builder()
       }).await;
-      assert!(matches!(response, GenerateVideoResponse::Seedance2Pro(_)));
+      assert!(matches!(response, GenerateVideoResponse::KinoviWeb(_)));
       assert_eq!(1, 2, "Inspect output above");
     }
 
@@ -78,7 +78,7 @@ mod tests {
         aspect_ratio: Some(RouterAspectRatio::TallNineBySixteen),
         ..happy_horse_builder()
       }).await;
-      assert!(matches!(response, GenerateVideoResponse::Seedance2Pro(_)));
+      assert!(matches!(response, GenerateVideoResponse::KinoviWeb(_)));
       assert_eq!(1, 2, "Inspect output above");
     }
 
@@ -90,7 +90,7 @@ mod tests {
         aspect_ratio: Some(RouterAspectRatio::Square),
         ..happy_horse_builder()
       }).await;
-      assert!(matches!(response, GenerateVideoResponse::Seedance2Pro(_)));
+      assert!(matches!(response, GenerateVideoResponse::KinoviWeb(_)));
       assert_eq!(1, 2, "Inspect output above");
     }
   }
@@ -106,7 +106,7 @@ mod tests {
         resolution: Some(RouterResolution::SevenTwentyP),
         ..happy_horse_builder()
       }).await;
-      assert!(matches!(response, GenerateVideoResponse::Seedance2Pro(_)));
+      assert!(matches!(response, GenerateVideoResponse::KinoviWeb(_)));
       assert_eq!(1, 2, "Inspect output above");
     }
 
@@ -118,7 +118,7 @@ mod tests {
         resolution: Some(RouterResolution::TenEightyP),
         ..happy_horse_builder()
       }).await;
-      assert!(matches!(response, GenerateVideoResponse::Seedance2Pro(_)));
+      assert!(matches!(response, GenerateVideoResponse::KinoviWeb(_)));
       assert_eq!(1, 2, "Inspect output above");
     }
   }
@@ -134,7 +134,7 @@ mod tests {
         aspect_ratio: Some(RouterAspectRatio::WideSixteenByNine),
         ..happy_horse_builder()
       }).await;
-      assert!(matches!(response, GenerateVideoResponse::Seedance2Pro(_)));
+      assert!(matches!(response, GenerateVideoResponse::KinoviWeb(_)));
       assert_eq!(1, 2, "Inspect output above");
     }
 
@@ -152,7 +152,7 @@ mod tests {
         aspect_ratio: Some(RouterAspectRatio::WideSixteenByNine),
         ..happy_horse_builder()
       }, media_map).await;
-      assert!(matches!(response, GenerateVideoResponse::Seedance2Pro(_)));
+      assert!(matches!(response, GenerateVideoResponse::KinoviWeb(_)));
       assert_eq!(1, 2, "Inspect output above");
     }
 
@@ -172,7 +172,7 @@ mod tests {
         duration_seconds: Some(15),
         ..happy_horse_builder()
       }, media_map).await;
-      assert!(matches!(response, GenerateVideoResponse::Seedance2Pro(_)));
+      assert!(matches!(response, GenerateVideoResponse::KinoviWeb(_)));
       assert_eq!(1, 2, "Inspect output above");
     }
   }
@@ -182,22 +182,22 @@ mod tests {
   fn happy_horse_builder() -> GenerateVideoRequestBuilder {
     GenerateVideoRequestBuilder {
       model: RouterVideoModel::HappyHorse1p0,
-      provider: RouterProvider::Seedance2Pro,
+      provider: RouterProvider::KinoviWeb,
       duration_seconds: Some(4),
       video_batch_count: Some(1),
       ..Default::default()
     }
   }
 
-  fn get_seedance2pro_web_client() -> RouterClient {
+  fn get_kinovi_web_client() -> RouterClient {
     let cookies = std::fs::read_to_string("/Users/bt/Artcraft/credentials/seedance2pro_cookies.txt")
-      .expect("Failed to read seedance2pro cookies");
-    let session = Seedance2ProSession::from_cookies_string(cookies.trim().to_string());
-    RouterClient::Seedance2Pro(RouterSeedance2ProWebClient::new(session))
+      .expect("Failed to read kinovi_web cookies");
+    let session = KinoviWebSession::from_cookies_string(cookies.trim().to_string());
+    RouterClient::KinoviWeb(RouterKinoviWebClient::new(session))
   }
 
   async fn run_pipeline(builder: GenerateVideoRequestBuilder) -> GenerateVideoResponse {
-    let client = get_seedance2pro_web_client();
+    let client = get_kinovi_web_client();
 
     let draft_or_request = builder.build2().expect("build2 should succeed");
     let draft = match draft_or_request {
@@ -214,7 +214,7 @@ mod tests {
     let response = request.send_request(&client).await.expect("send_request should succeed");
 
     match &response {
-      GenerateVideoResponse::Seedance2Pro(p) => {
+      GenerateVideoResponse::KinoviWeb(p) => {
         println!("task_id={}, order_id={}", p.task_id, p.order_id);
       }
       other => println!("response: {:?}", other),
@@ -227,7 +227,7 @@ mod tests {
     builder: GenerateVideoRequestBuilder,
     media_map: HashMap<MediaFileToken, String>,
   ) -> GenerateVideoResponse {
-    let client = get_seedance2pro_web_client();
+    let client = get_kinovi_web_client();
 
     let draft_or_request = builder.build2().expect("build2 should succeed");
     let draft = match draft_or_request {
@@ -245,7 +245,7 @@ mod tests {
     let response = request.send_request(&client).await.expect("send_request should succeed");
 
     match &response {
-      GenerateVideoResponse::Seedance2Pro(p) => {
+      GenerateVideoResponse::KinoviWeb(p) => {
         println!("task_id={}, order_id={}", p.task_id, p.order_id);
       }
       other => println!("response: {:?}", other),

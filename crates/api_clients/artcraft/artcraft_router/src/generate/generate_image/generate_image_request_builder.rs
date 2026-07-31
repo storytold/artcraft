@@ -146,12 +146,12 @@ impl GenerateImageRequestBuilder {
       (RouterProvider::Fal, RouterImageModel::QwenEdit2511Angles) => build_fal_qwen_edit_2511_angles(self),
       (RouterProvider::Fal, RouterImageModel::Flux2LoraAngles) => build_fal_flux_2_lora_angles(self),
 
-      // Kinovi / Seedance2Pro (Midjourney + Seedream)
-      (RouterProvider::Seedance2Pro, RouterImageModel::Midjourney7) => build_kinovi_midjourney_7(self),
-      (RouterProvider::Seedance2Pro, RouterImageModel::Midjourney7Niji) => build_kinovi_midjourney_7_niji(self),
-      (RouterProvider::Seedance2Pro, RouterImageModel::Midjourney8) => build_kinovi_midjourney_8(self),
-      (RouterProvider::Seedance2Pro, RouterImageModel::Seedream5p0Pro) => build_kinovi_seedream_5p0_pro(self),
-      (RouterProvider::Seedance2Pro, RouterImageModel::Seedream5p0ProUltra) => build_kinovi_seedream_5p0_pro(self),
+      // Kinovi / KinoviWeb (Midjourney + Seedream)
+      (RouterProvider::KinoviWeb, RouterImageModel::Midjourney7) => build_kinovi_midjourney_7(self),
+      (RouterProvider::KinoviWeb, RouterImageModel::Midjourney7Niji) => build_kinovi_midjourney_7_niji(self),
+      (RouterProvider::KinoviWeb, RouterImageModel::Midjourney8) => build_kinovi_midjourney_8(self),
+      (RouterProvider::KinoviWeb, RouterImageModel::Seedream5p0Pro) => build_kinovi_seedream_5p0_pro(self),
+      (RouterProvider::KinoviWeb, RouterImageModel::Seedream5p0ProUltra) => build_kinovi_seedream_5p0_pro(self),
 
       _ => self.unsupported_provider_and_model(),
     }

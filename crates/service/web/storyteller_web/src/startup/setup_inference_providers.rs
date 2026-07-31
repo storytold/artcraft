@@ -8,7 +8,7 @@ pub struct InferenceProviders {
   pub gmicloud: GmiCloudData,
   pub grok_api: GrokApiData,
   pub beeble: BeebleData,
-  pub seedance2pro: Seedance2ProData,
+  pub kinovi_web: KinoviWebData,
   pub openai: OpenAiData,
   pub worldlabs: WorldLabsData,
 }
@@ -41,7 +41,7 @@ pub struct BeebleData {
 
 /// Seedance 2 Pro integration
 #[derive(Clone)]
-pub struct Seedance2ProData {
+pub struct KinoviWebData {
   pub cookies_volcengine: String,
 
   pub cookies_byteplus: String,
@@ -81,7 +81,7 @@ pub fn setup_inference_providers() -> AnyhowResult<InferenceProviders> {
       api_key: BeebleApiKey::new(easyenv::get_env_string_required("BEEBLE_API_KEY")?),
       webhook_url: easyenv::get_env_string_required("BEEBLE_WEBHOOK_URL")?,
     },
-    seedance2pro: Seedance2ProData {
+    kinovi_web: KinoviWebData {
       cookies_volcengine: easyenv::get_env_string_required("SEEDANCE2PRO_COOKIES")?,
       cookies_byteplus: easyenv::get_env_string_required("SEEDANCE2PRO_WHITELIST_COOKIES")?,
       cookies_byteplus_ultra: easyenv::get_env_string_required("SEEDANCE2PRO_BYTEPLUS_ULTRA_COOKIES")?,

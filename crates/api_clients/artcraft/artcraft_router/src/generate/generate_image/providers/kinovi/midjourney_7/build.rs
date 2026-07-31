@@ -1,4 +1,4 @@
-use seedance2pro_web_client::generate::image::generate_midjourney_v7::{
+use kinovi_web_client::generate::image::generate_midjourney_v7::{
   GenerateMidjourneyV7AspectRatio, GenerateMidjourneyV7Quality,
   GenerateMidjourneyV7Request, KinoviMidjourneyBatchCount,
 };
@@ -50,7 +50,7 @@ pub fn build_kinovi_midjourney_7(
   }
 
   // Image inputs present → must go through the draft phase so we can
-  // upload each image to the Seedance2Pro CDN before sending.
+  // upload each image to the KinoviWeb CDN before sending.
   let draft = KinoviMidjourney7DraftState {
     prompt,
     aspect_ratio,
@@ -159,7 +159,7 @@ pub(crate) fn plan_batch_count(
 
 #[cfg(test)]
 mod tests {
-  use seedance2pro_web_client::generate::image::generate_midjourney_v7::KinoviMidjourneyBatchCount;
+  use kinovi_web_client::generate::image::generate_midjourney_v7::KinoviMidjourneyBatchCount;
   use tokens::tokens::media_files::MediaFileToken;
 
   use crate::api::image_list_ref::ImageListRef;
@@ -178,7 +178,7 @@ mod tests {
   fn base_builder() -> GenerateImageRequestBuilder {
     GenerateImageRequestBuilder {
       model: RouterImageModel::Midjourney7,
-      provider: RouterProvider::Seedance2Pro,
+      provider: RouterProvider::KinoviWeb,
       prompt: Some("a corgi astronaut".to_string()),
       image_inputs: None,
       resolution: None,
@@ -291,7 +291,7 @@ mod tests {
 
   mod aspect_ratio_tests {
     use super::*;
-    use seedance2pro_web_client::generate::image::generate_midjourney_v7::GenerateMidjourneyV7AspectRatio as Ar;
+    use kinovi_web_client::generate::image::generate_midjourney_v7::GenerateMidjourneyV7AspectRatio as Ar;
 
     fn aspect_ratio_for(input: Option<RouterAspectRatio>) -> Ar {
       let builder = GenerateImageRequestBuilder { aspect_ratio: input, ..base_builder() };
@@ -334,7 +334,7 @@ mod tests {
 
   mod quality_tests {
     use super::*;
-    use seedance2pro_web_client::generate::image::generate_midjourney_v7::GenerateMidjourneyV7Quality as Q;
+    use kinovi_web_client::generate::image::generate_midjourney_v7::GenerateMidjourneyV7Quality as Q;
 
     fn quality_for(input: Option<RouterQuality>) -> Option<Q> {
       let builder = GenerateImageRequestBuilder { quality: input, ..base_builder() };

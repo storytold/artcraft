@@ -27,10 +27,10 @@ impl VideoGenerationDraftRequest {
 
   pub fn get_provider(&self) -> RouterProvider {
     match self {
-      Self::KinoviHappyHorse1p0(_) => RouterProvider::Seedance2Pro,
-      Self::KinoviSeedance2p0(_) => RouterProvider::Seedance2Pro,
-      Self::KinoviSeedance2p0Fast(_) => RouterProvider::Seedance2Pro,
-      Self::KinoviSeedance2p0Mini(_) => RouterProvider::Seedance2Pro,
+      Self::KinoviHappyHorse1p0(_) => RouterProvider::KinoviWeb,
+      Self::KinoviSeedance2p0(_) => RouterProvider::KinoviWeb,
+      Self::KinoviSeedance2p0Fast(_) => RouterProvider::KinoviWeb,
+      Self::KinoviSeedance2p0Mini(_) => RouterProvider::KinoviWeb,
     }
   }
 

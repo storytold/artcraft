@@ -1,4 +1,4 @@
-use seedance2pro_web_client::generate::video::generate_seedance_2p0_mini::{
+use kinovi_web_client::generate::video::generate_seedance_2p0_mini::{
   KinoviSeedance2p0MiniAspectRatio as KinoviAspectRatio,
   KinoviSeedance2p0MiniBitrate as KinoviBitrate,
   KinoviSeedance2p0MiniBatchCount as KinoviBatchCount,
@@ -221,7 +221,7 @@ fn plan_bitrate(bitrate: Option<RouterBitrate>) -> Option<KinoviBitrate> {
 
 #[cfg(test)]
 mod tests {
-  use seedance2pro_web_client::generate::video::generate_seedance_2p0_mini::{
+  use kinovi_web_client::generate::video::generate_seedance_2p0_mini::{
     KinoviSeedance2p0MiniAspectRatio as KinoviAspectRatio,
     KinoviSeedance2p0MiniBatchCount as KinoviBatchCount,
     KinoviSeedance2p0MiniOutputResolution as KinoviOutputResolution,
@@ -491,7 +491,7 @@ mod tests {
   fn mini_builder() -> GenerateVideoRequestBuilder {
     GenerateVideoRequestBuilder {
       model: RouterVideoModel::Seedance2p0Mini,
-      provider: RouterProvider::Seedance2Pro,
+      provider: RouterProvider::KinoviWeb,
       prompt: Some("a cat dancing".to_string()),
       duration_seconds: Some(5),
       video_batch_count: Some(1),

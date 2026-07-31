@@ -168,7 +168,7 @@ mod tests {
   fn base_builder() -> GenerateAudioRequestBuilder {
     GenerateAudioRequestBuilder {
       model: RouterAudioModel::SunoRemix,
-      provider: RouterProvider::Seedance2Pro,
+      provider: RouterProvider::KinoviWeb,
       prompt: Some("make this electronic".to_string()),
       style_prompt: Some("EDM style".to_string()),
       audio_references: Some(AudioListRef::Urls(vec!["https://example.com/a.mp3".to_string()])),

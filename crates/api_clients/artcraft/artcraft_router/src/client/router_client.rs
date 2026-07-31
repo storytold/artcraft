@@ -3,7 +3,7 @@ use crate::client::router_artcraft_client::RouterArtcraftClient;
 use crate::client::router_fal_client::RouterFalClient;
 use crate::client::router_gmicloud_client::RouterGmiCloudClient;
 use crate::client::router_grok_api_client::RouterGrokApiClient;
-use crate::client::router_seedance2pro_web_client::RouterSeedance2ProWebClient;
+use crate::client::router_kinovi_web_client::RouterKinoviWebClient;
 use crate::client::router_worldlabs_client::RouterWorldLabsClient;
 use crate::errors::client_error::{ClientError, ClientType};
 
@@ -13,7 +13,7 @@ pub enum RouterClient {
   Fal(RouterFalClient),
   GmiCloud(RouterGmiCloudClient),
   GrokApi(RouterGrokApiClient),
-  Seedance2Pro(RouterSeedance2ProWebClient),
+  KinoviWeb(RouterKinoviWebClient),
   WorldLabs(RouterWorldLabsClient),
 }
 
@@ -50,11 +50,11 @@ impl RouterClient {
     }
   }
 
-  pub fn get_seedance2pro_web_client_ref(&self) -> Result<&RouterSeedance2ProWebClient, ClientError> {
+  pub fn get_kinovi_web_client_ref(&self) -> Result<&RouterKinoviWebClient, ClientError> {
     match self {
-      RouterClient::Seedance2Pro(client) => Ok(client),
-      RouterClient::Multi(multi) => multi.get_seedance2pro_web_client_ref(),
-      _ => Err(ClientError::ClientNotConfigured(ClientType::Seedance2Pro)),
+      RouterClient::KinoviWeb(client) => Ok(client),
+      RouterClient::Multi(multi) => multi.get_kinovi_web_client_ref(),
+      _ => Err(ClientError::ClientNotConfigured(ClientType::KinoviWeb)),
     }
   }
 
