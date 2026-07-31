@@ -50,21 +50,17 @@ mod tests {
 
   use tokens::tokens::media_files::MediaFileToken;
 
-  // Prices are the supplier's per-combo cost (46.81 / 93.62 Kinovi credits per
-  // second at 243 credits/$) plus a 5% margin, rounded up to whole cents.
-
   mod pricing_480p {
     use super::*;
 
     #[test]
     fn full_duration_table() {
-      // 20.2265 ¢/s
-      assert_eq!(cents(Some(RouterResolution::FourEightyP), 4), 81);
-      assert_eq!(cents(Some(RouterResolution::FourEightyP), 10), 203);
-      assert_eq!(cents(Some(RouterResolution::FourEightyP), 15), 304);
-      assert_eq!(cents(Some(RouterResolution::FourEightyP), 20), 405);
-      assert_eq!(cents(Some(RouterResolution::FourEightyP), 25), 506);
-      assert_eq!(cents(Some(RouterResolution::FourEightyP), 30), 607);
+      assert_eq!(cents(Some(RouterResolution::FourEightyP), 4), 82);
+      assert_eq!(cents(Some(RouterResolution::FourEightyP), 10), 205);
+      assert_eq!(cents(Some(RouterResolution::FourEightyP), 15), 307);
+      assert_eq!(cents(Some(RouterResolution::FourEightyP), 20), 409);
+      assert_eq!(cents(Some(RouterResolution::FourEightyP), 25), 511);
+      assert_eq!(cents(Some(RouterResolution::FourEightyP), 30), 613);
     }
   }
 
@@ -73,13 +69,12 @@ mod tests {
 
     #[test]
     fn full_duration_table() {
-      // 40.4531 ¢/s
-      assert_eq!(cents(Some(RouterResolution::SevenTwentyP), 4), 162);
-      assert_eq!(cents(Some(RouterResolution::SevenTwentyP), 10), 405);
-      assert_eq!(cents(Some(RouterResolution::SevenTwentyP), 15), 607);
-      assert_eq!(cents(Some(RouterResolution::SevenTwentyP), 20), 810);
-      assert_eq!(cents(Some(RouterResolution::SevenTwentyP), 25), 1012);
-      assert_eq!(cents(Some(RouterResolution::SevenTwentyP), 30), 1214);
+      assert_eq!(cents(Some(RouterResolution::SevenTwentyP), 4), 164);
+      assert_eq!(cents(Some(RouterResolution::SevenTwentyP), 10), 409);
+      assert_eq!(cents(Some(RouterResolution::SevenTwentyP), 15), 613);
+      assert_eq!(cents(Some(RouterResolution::SevenTwentyP), 20), 817);
+      assert_eq!(cents(Some(RouterResolution::SevenTwentyP), 25), 1021);
+      assert_eq!(cents(Some(RouterResolution::SevenTwentyP), 30), 1226);
     }
 
     #[test]

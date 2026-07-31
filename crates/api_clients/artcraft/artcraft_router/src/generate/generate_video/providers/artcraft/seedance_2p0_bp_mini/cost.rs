@@ -25,7 +25,7 @@ impl ArtcraftSeedance2p0BytePlusMiniCostState {
   }
 
   pub fn estimate_cost(&self) -> VideoGenerationCostEstimate {
-    // BytePlus / BytePlus Ultra Mini share a higher-margin rate set; see
+    // BytePlus / BytePlus Ultra Mini share a rate set; see
     // seedance_common::seedance_2p0_byteplus_mini_usd_cents.
     let usd_cents = seedance_2p0_byteplus_mini_usd_cents(
       self.resolution,
@@ -58,8 +58,7 @@ mod tests {
   use crate::generate::generate_video::generate_video_request_builder::GenerateVideoRequestBuilder;
   use crate::generate::generate_video::video_generation_cost_estimate::VideoGenerationCostEstimate;
 
-  // Every combination, driven through the full build pipeline. These prices are
-  // the supplier's per-combo cost plus a 5% margin, rounded up to whole cents.
+  // Every combination, driven through the full build pipeline.
 
   mod pricing_480p {
     use super::*;
