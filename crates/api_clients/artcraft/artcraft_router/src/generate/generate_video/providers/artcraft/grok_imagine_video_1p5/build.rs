@@ -14,8 +14,7 @@ use crate::generate::generate_video::video_generation_request::VideoGenerationRe
 /// Same constraints as the v1 variant — xAI v1.5 still supports only 480p
 /// and 720p and no 21:9 ultra-wide. The on-wire model identifier is
 /// `grok-imagine-video-1.5`; the cost calculator in
-/// [`super::cost`] keys off that to apply the v1.5 pricing tier (with a 5%
-/// ArtCraft markup on top of the upstream rates).
+/// [`super::cost`] keys off that to apply the v1.5 pricing tier.
 pub fn build_artcraft_grok_imagine_video_1p5(
   builder: GenerateVideoRequestBuilder,
 ) -> Result<VideoGenerationDraftOrRequest, ArtcraftRouterError> {

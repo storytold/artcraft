@@ -72,6 +72,8 @@ use crate::generate::generate_video::providers::fal::vidu_q3::build::build_fal_v
 use crate::generate::generate_video::providers::fal::vidu_q3_turbo::build::build_fal_vidu_q3_turbo;
 use crate::generate::generate_video::providers::kinovi::seedance_2p0_fast::build::build_kinovi_seedance_2p0_fast;
 use crate::generate::generate_video::providers::kinovi::seedance_2p0_mini::build::build_kinovi_seedance_2p0_mini;
+use crate::generate::generate_video::providers::artcraft::seedance_2p5_preview::build::build_artcraft_seedance_2p5_preview;
+use crate::generate::generate_video::providers::kinovi::seedance_2p5_preview::build::build_kinovi_seedance_2p5_preview;
 use crate::generate::generate_video::video_generation_draft_or_request::VideoGenerationDraftOrRequest;
 
 /// RouterProvider-agnostic video generation request. Distilled by `build2()` into a
@@ -189,6 +191,7 @@ impl GenerateVideoRequestBuilder {
       (RouterProvider::Artcraft, RouterVideoModel::Seedance2p0Mini) => build_artcraft_seedance_2p0_mini(self),
       (RouterProvider::Artcraft, RouterVideoModel::Seedance2p0BytePlusMini) => build_artcraft_seedance_2p0_bp_mini(self),
       (RouterProvider::Artcraft, RouterVideoModel::Seedance2p0BytePlusUltraMini) => build_artcraft_seedance_2p0_bpu_mini(self),
+      (RouterProvider::Artcraft, RouterVideoModel::Seedance2p5Preview) => build_artcraft_seedance_2p5_preview(self),
       (RouterProvider::Artcraft, RouterVideoModel::PreviewModel) => build_artcraft_preview_model(self),
       (RouterProvider::Artcraft, RouterVideoModel::PreviewModelFast) => build_artcraft_preview_model_fast(self),
       (RouterProvider::Artcraft, RouterVideoModel::Seedance10Lite) => build_artcraft_seedance_1p0_lite(self),
@@ -236,6 +239,7 @@ impl GenerateVideoRequestBuilder {
       (RouterProvider::KinoviWeb, RouterVideoModel::Seedance2p0Mini) => build_kinovi_seedance_2p0_mini(self),
       (RouterProvider::KinoviWeb, RouterVideoModel::Seedance2p0BytePlusMini) => build_kinovi_seedance_2p0_mini(self),
       (RouterProvider::KinoviWeb, RouterVideoModel::Seedance2p0BytePlusUltraMini) => build_kinovi_seedance_2p0_mini(self),
+      (RouterProvider::KinoviWeb, RouterVideoModel::Seedance2p5Preview) => build_kinovi_seedance_2p5_preview(self),
       _ => self.unsupported_provider_and_model(),
     }
   }

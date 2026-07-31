@@ -14,10 +14,7 @@ use crate::generate::generate_video::providers::artcraft::grok_imagine_video_1p5
 
 // ── Markup ──
 //
-// ArtCraft adds a modest 5% markup over the underlying xAI v1.5 pricing. The
-// markup is applied at cent granularity with ceiling rounding so the final
-// charge always covers the upstream cost (we never bill the user less than
-// the cost of the API call we forwarded).
+// The markup is applied at cent granularity with ceiling rounding.
 const MARKUP_NUMERATOR: u64 = 105;
 const MARKUP_DENOMINATOR: u64 = 100;
 
@@ -69,8 +66,7 @@ impl ArtcraftGrokImagineVideo1p5CostState {
     // composing. The image requirement is enforced at send time (request.rs)
     // and by the generate endpoints.
     let base = self.base_cost_in_cents_for_batch();
-    // 5% markup, ceil so the user is always charged enough to cover the
-    // upstream grok cost regardless of rounding.
+    // Ceil at cent granularity.
     let usd_cents = base.saturating_mul(MARKUP_NUMERATOR).div_ceil(MARKUP_DENOMINATOR);
 
     Ok(VideoGenerationCostEstimate {

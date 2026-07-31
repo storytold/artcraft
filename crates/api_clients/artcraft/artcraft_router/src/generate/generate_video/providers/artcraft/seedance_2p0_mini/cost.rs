@@ -58,8 +58,7 @@ mod tests {
   use crate::generate::generate_video::generate_video_request_builder::GenerateVideoRequestBuilder;
   use crate::generate::generate_video::video_generation_cost_estimate::VideoGenerationCostEstimate;
 
-  // Every combination, driven through the full build pipeline. These prices are
-  // the supplier's per-combo cost plus a 5% margin, rounded up to whole cents.
+  // Every combination, driven through the full build pipeline.
 
   mod pricing_480p {
     use super::*;

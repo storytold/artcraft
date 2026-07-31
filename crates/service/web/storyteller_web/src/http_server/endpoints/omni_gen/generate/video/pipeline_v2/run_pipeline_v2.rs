@@ -80,6 +80,7 @@ pub async fn run_pipeline_v2(args: RunPipelineV2Args<'_>) -> Result<PipelineResu
     RouterVideoModel::Seedance2p0Mini => RouterProvider::KinoviWeb,
     RouterVideoModel::Seedance2p0BytePlusMini => RouterProvider::KinoviWeb,
     RouterVideoModel::Seedance2p0BytePlusUltraMini => RouterProvider::KinoviWeb,
+    RouterVideoModel::Seedance2p5Preview => RouterProvider::KinoviWeb,
     //RouterVideoModel::Seedance2p0Ultra => RouterProvider::GmiCloud,
     //RouterVideoModel::Seedance2p0UltraFast => RouterProvider::GmiCloud,
     RouterVideoModel::GrokImagineVideo => RouterProvider::GrokApi,

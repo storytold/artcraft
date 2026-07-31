@@ -49,6 +49,8 @@ use crate::generate::generate_video::providers::artcraft::seedance_2p0_bpu_fast:
 use crate::generate::generate_video::providers::artcraft::seedance_2p0_bpu_fast::request::ArtcraftSeedance2p0BytePlusUltraFastRequestState;
 use crate::generate::generate_video::providers::artcraft::seedance_2p0_mini::cost::ArtcraftSeedance2p0MiniCostState;
 use crate::generate::generate_video::providers::artcraft::seedance_2p0_mini::request::ArtcraftSeedance2p0MiniRequestState;
+use crate::generate::generate_video::providers::artcraft::seedance_2p5_preview::cost::ArtcraftSeedance2p5PreviewCostState;
+use crate::generate::generate_video::providers::artcraft::seedance_2p5_preview::request::ArtcraftSeedance2p5PreviewRequestState;
 use crate::generate::generate_video::providers::artcraft::seedance_2p0_bp_mini::cost::ArtcraftSeedance2p0BytePlusMiniCostState;
 use crate::generate::generate_video::providers::artcraft::seedance_2p0_bp_mini::request::ArtcraftSeedance2p0BytePlusMiniRequestState;
 use crate::generate::generate_video::providers::artcraft::seedance_2p0_bpu_mini::cost::ArtcraftSeedance2p0BytePlusUltraMiniCostState;
@@ -127,6 +129,8 @@ use crate::generate::generate_video::providers::kinovi::seedance_2p0_fast::cost:
 use crate::generate::generate_video::providers::kinovi::seedance_2p0_fast::request::KinoviSeedance2p0FastRequestState;
 use crate::generate::generate_video::providers::kinovi::seedance_2p0_mini::cost::KinoviSeedance2p0MiniCostState;
 use crate::generate::generate_video::providers::kinovi::seedance_2p0_mini::request::KinoviSeedance2p0MiniRequestState;
+use crate::generate::generate_video::providers::kinovi::seedance_2p5_preview::cost::KinoviSeedance2p5PreviewCostState;
+use crate::generate::generate_video::providers::kinovi::seedance_2p5_preview::request::KinoviSeedance2p5PreviewRequestState;
 
 #[derive(Clone, Debug)]
 pub enum VideoGenerationRequest {
@@ -153,6 +157,7 @@ pub enum VideoGenerationRequest {
   ArtcraftSeedance2p0BytePlusUltra(ArtcraftSeedance2p0BytePlusUltraRequestState),
   ArtcraftSeedance2p0BytePlusUltraFast(ArtcraftSeedance2p0BytePlusUltraFastRequestState),
   ArtcraftSeedance2p0Mini(ArtcraftSeedance2p0MiniRequestState),
+  ArtcraftSeedance2p5Preview(ArtcraftSeedance2p5PreviewRequestState),
   ArtcraftSeedance2p0BytePlusMini(ArtcraftSeedance2p0BytePlusMiniRequestState),
   ArtcraftSeedance2p0BytePlusUltraMini(ArtcraftSeedance2p0BytePlusUltraMiniRequestState),
   ArtcraftSora2(ArtcraftSora2RequestState),
@@ -192,6 +197,7 @@ pub enum VideoGenerationRequest {
   KinoviSeedance2p0(KinoviSeedance2p0RequestState),
   KinoviSeedance2p0Fast(KinoviSeedance2p0FastRequestState),
   KinoviSeedance2p0Mini(KinoviSeedance2p0MiniRequestState),
+  KinoviSeedance2p5Preview(KinoviSeedance2p5PreviewRequestState),
 }
 
 impl VideoGenerationRequest {
@@ -221,6 +227,7 @@ impl VideoGenerationRequest {
       Self::ArtcraftSeedance2p0BytePlusUltra(_) => RouterProvider::Artcraft,
       Self::ArtcraftSeedance2p0BytePlusUltraFast(_) => RouterProvider::Artcraft,
       Self::ArtcraftSeedance2p0Mini(_) => RouterProvider::Artcraft,
+      Self::ArtcraftSeedance2p5Preview(_) => RouterProvider::Artcraft,
       Self::ArtcraftSeedance2p0BytePlusMini(_) => RouterProvider::Artcraft,
       Self::ArtcraftSeedance2p0BytePlusUltraMini(_) => RouterProvider::Artcraft,
       Self::ArtcraftSora2(_) => RouterProvider::Artcraft,
@@ -260,6 +267,7 @@ impl VideoGenerationRequest {
       Self::KinoviSeedance2p0(_) => RouterProvider::KinoviWeb,
       Self::KinoviSeedance2p0Fast(_) => RouterProvider::KinoviWeb,
       Self::KinoviSeedance2p0Mini(_) => RouterProvider::KinoviWeb,
+      Self::KinoviSeedance2p5Preview(_) => RouterProvider::KinoviWeb,
     }
   }
 
@@ -289,6 +297,7 @@ impl VideoGenerationRequest {
       VideoGenerationRequest::ArtcraftSeedance2p0BytePlusUltra(request) => Ok(ArtcraftSeedance2p0BytePlusUltraCostState::from_request(request).estimate_cost()),
       VideoGenerationRequest::ArtcraftSeedance2p0BytePlusUltraFast(request) => Ok(ArtcraftSeedance2p0BytePlusUltraFastCostState::from_request(request).estimate_cost()),
       VideoGenerationRequest::ArtcraftSeedance2p0Mini(request) => Ok(ArtcraftSeedance2p0MiniCostState::from_request(request).estimate_cost()),
+      VideoGenerationRequest::ArtcraftSeedance2p5Preview(request) => Ok(ArtcraftSeedance2p5PreviewCostState::from_request(request).estimate_cost()),
       VideoGenerationRequest::ArtcraftSeedance2p0BytePlusMini(request) => Ok(ArtcraftSeedance2p0BytePlusMiniCostState::from_request(request).estimate_cost()),
       VideoGenerationRequest::ArtcraftSeedance2p0BytePlusUltraMini(request) => Ok(ArtcraftSeedance2p0BytePlusUltraMiniCostState::from_request(request).estimate_cost()),
       VideoGenerationRequest::ArtcraftSora2(request) => Ok(ArtcraftSora2CostState::from_request(request).estimate_cost()),
@@ -328,6 +337,7 @@ impl VideoGenerationRequest {
       VideoGenerationRequest::KinoviSeedance2p0(request) => Ok(KinoviSeedance2p0CostState::from_request(request).estimate_cost()),
       VideoGenerationRequest::KinoviSeedance2p0Fast(request) => Ok(KinoviSeedance2p0FastCostState::from_request(request).estimate_cost()),
       VideoGenerationRequest::KinoviSeedance2p0Mini(request) => Ok(KinoviSeedance2p0MiniCostState::from_request(request).estimate_cost()),
+      VideoGenerationRequest::KinoviSeedance2p5Preview(request) => Ok(KinoviSeedance2p5PreviewCostState::from_request(request).estimate_cost()),
     }
   }
 
@@ -424,6 +434,10 @@ impl VideoGenerationRequest {
         request.send(client_ref).await
       },
       VideoGenerationRequest::ArtcraftSeedance2p0Mini(request) => {
+        let client_ref = client.get_artcraft_client_ref()?;
+        request.send(client_ref).await
+      },
+      VideoGenerationRequest::ArtcraftSeedance2p5Preview(request) => {
         let client_ref = client.get_artcraft_client_ref()?;
         request.send(client_ref).await
       },
@@ -580,6 +594,10 @@ impl VideoGenerationRequest {
         request.send(client_ref).await
       },
       VideoGenerationRequest::KinoviSeedance2p0Mini(request) => {
+        let client_ref = client.get_kinovi_web_client_ref()?;
+        request.send(client_ref).await
+      },
+      VideoGenerationRequest::KinoviSeedance2p5Preview(request) => {
         let client_ref = client.get_kinovi_web_client_ref()?;
         request.send(client_ref).await
       },

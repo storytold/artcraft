@@ -29,6 +29,7 @@ pub mod seedance_2p0_bpu_fast;
 pub mod seedance_2p0_mini;
 pub mod seedance_2p0_bp_mini;
 pub mod seedance_2p0_bpu_mini;
+pub mod seedance_2p5_preview;
 pub mod sora_2;
 pub mod sora_2_pro;
 pub mod veo_2;

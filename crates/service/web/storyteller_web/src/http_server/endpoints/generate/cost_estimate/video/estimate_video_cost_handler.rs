@@ -153,6 +153,7 @@ fn map_video_model(model: CommonVideoModel) -> Result<RouterVideoModel, HandlerE
     CommonVideoModel::Seedance2p0Mini => RouterVideoModel::Seedance2p0Mini,
     CommonVideoModel::Seedance2p0BytePlusMini => RouterVideoModel::Seedance2p0BytePlusMini,
     CommonVideoModel::Seedance2p0BytePlusUltraMini => RouterVideoModel::Seedance2p0BytePlusUltraMini,
+    CommonVideoModel::Seedance2p5Preview => RouterVideoModel::Seedance2p5Preview,
     CommonVideoModel::HappyHorse1p0 => RouterVideoModel::HappyHorse1p0,
     CommonVideoModel::Sora2 => RouterVideoModel::Sora2,
     CommonVideoModel::Sora2Pro => RouterVideoModel::Sora2Pro,

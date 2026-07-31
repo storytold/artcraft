@@ -164,6 +164,17 @@ impl KinoviOutputResolutionRaw {
       Self::FourK => Some("4k"),
     }
   }
+
+  /// The API string including the "720p" default, for models that always
+  /// send `outputResolution` explicitly (Seedance 2.5 Preview).
+  pub fn as_explicit_api_str(&self) -> &'static str {
+    match self {
+      Self::FourEightyP => "480p",
+      Self::SevenTwentyP => "720p",
+      Self::TenEightyP => "1080p",
+      Self::FourK => "4k",
+    }
+  }
 }
 
 /// Number of videos to generate in a single request.
@@ -203,6 +214,8 @@ pub enum KinoviModelTypeRaw {
   Seedance2Fast,
   /// Seedance 2.0 Mini (cheapest; 480p/720p only).
   Seedance2Mini,
+  /// Seedance 2.5 Preview (480p/720p only).
+  Seedance2p5Preview,
   /// Happy Horse 1.0.
   HappyHorse1p0,
 }
@@ -213,30 +226,55 @@ impl KinoviModelTypeRaw {
       Self::Seedance2Pro => "seedance-20",
       Self::Seedance2Fast => "seedance2-fast",
       Self::Seedance2Mini => "seedance2.0-mini",
+      Self::Seedance2p5Preview => "seedance2-5-preview",
       Self::HappyHorse1p0 => "happyhorse1.0",
     }
   }
 
-  /// The tRPC `businessType` for this model. Seedance 2.0 Mini uses its
-  /// own business type; every other model uses the shared one.
+  /// The tRPC `businessType` for this model. Seedance 2.0 Mini and 2.5
+  /// Preview use their own business types; every other model uses the
+  /// shared one.
   fn business_type(&self) -> &'static str {
     match self {
       Self::Seedance2Mini => "seedance20-mini-video-generation",
+      Self::Seedance2p5Preview => "seedance25-preview-video-generation",
       Self::HappyHorse1p0 => "happyhorse-video-generation",
       Self::Seedance2Pro | Self::Seedance2Fast => "wan22-video-generation",
     }
   }
 
   /// Whether the aspect ratio is sent in an `aspectRatio` field (true)
-  /// rather than the `resolution` field. Mini and Happy Horse use `aspectRatio`.
+  /// rather than the `resolution` field. Mini, 2.5 Preview, and Happy Horse
+  /// use `aspectRatio`.
   fn uses_aspect_ratio_field(&self) -> bool {
-    matches!(self, Self::Seedance2Mini | Self::HappyHorse1p0)
+    matches!(self, Self::Seedance2Mini | Self::Seedance2p5Preview | Self::HappyHorse1p0)
   }
 
   /// Whether this model uses Happy Horse's `happyhorseMode` (t2v/i2v)
   /// instead of the standard `mode` (keyframe/reference).
   fn uses_happyhorse_mode(&self) -> bool {
     matches!(self, Self::HappyHorse1p0)
+  }
+
+  /// Whether reference URLs are sent in split `imageUrls` / `videoUrls`
+  /// fields — with `uploadedUrls` mirroring just the images — rather than
+  /// one combined `uploadedUrls` list. Seedance 2.5 Preview uses the split
+  /// shape.
+  fn uses_split_reference_url_fields(&self) -> bool {
+    matches!(self, Self::Seedance2p5Preview)
+  }
+
+  /// Whether `mode` is always "reference", even with no references attached.
+  /// Seedance 2.5 Preview has no keyframe mode.
+  fn always_uses_reference_mode(&self) -> bool {
+    matches!(self, Self::Seedance2p5Preview)
+  }
+
+  /// Whether the default field values (`outputResolution: "720p"`,
+  /// `faceBlurMode: "off"`) are always sent explicitly rather than omitted.
+  /// Seedance 2.5 Preview always sends both.
+  fn always_sends_default_fields(&self) -> bool {
+    matches!(self, Self::Seedance2p5Preview)
   }
 }
 
@@ -408,9 +446,21 @@ fn build_batch_request(req: WorkflowRunTaskRequest) -> BatchRequest {
 
   let is_reference_mode = has_reference_images || has_reference_videos || has_reference_audio || has_characters;
 
-  let video_input_mode = if is_reference_mode { "reference" } else { "keyframe" };
+  let video_input_mode = if is_reference_mode || req.model_type.always_uses_reference_mode() {
+    "reference"
+  } else {
+    "keyframe"
+  };
 
-  let uploaded_urls: Option<Vec<String>> = if is_reference_mode {
+  // Reference URLs. Seedance 2.5 Preview sends split `imageUrls` /
+  // `videoUrls` fields with `uploadedUrls` mirroring just the images; other
+  // models combine videos + images into `uploadedUrls` in reference mode, or
+  // send the start/end frames there in keyframe mode.
+  let (image_urls, video_urls, uploaded_urls): (Option<Vec<String>>, Option<Vec<String>>, Option<Vec<String>>) = if req.model_type.uses_split_reference_url_fields() {
+    let image_urls = req.reference_image_urls.filter(|urls| !urls.is_empty());
+    let video_urls = req.reference_video_urls.filter(|urls| !urls.is_empty());
+    (image_urls.clone(), video_urls, image_urls)
+  } else if is_reference_mode {
     let mut urls = Vec::new();
     if let Some(video_urls) = req.reference_video_urls {
       urls.extend(video_urls);
@@ -418,7 +468,7 @@ fn build_batch_request(req: WorkflowRunTaskRequest) -> BatchRequest {
     if let Some(image_urls) = req.reference_image_urls {
       urls.extend(image_urls);
     }
-    if urls.is_empty() { None } else { Some(urls) }
+    (None, None, if urls.is_empty() { None } else { Some(urls) })
   } else {
     let mut urls = Vec::new();
     if let Some(url) = req.start_frame_url {
@@ -427,7 +477,7 @@ fn build_batch_request(req: WorkflowRunTaskRequest) -> BatchRequest {
     if let Some(url) = req.end_frame_url {
       urls.push(url);
     }
-    if urls.is_empty() { None } else { Some(urls) }
+    (None, None, if urls.is_empty() { None } else { Some(urls) })
   };
 
   let audio_urls: Option<Vec<String>> = if has_reference_audio {
@@ -439,7 +489,15 @@ fn build_batch_request(req: WorkflowRunTaskRequest) -> BatchRequest {
   let face_blur_mode = match req.use_face_blur_hack {
     Some(true) => Some("on"),
     Some(false) => Some("off"),
+    None if req.model_type.always_sends_default_fields() => Some("off"),
     None => None,
+  };
+
+  let output_resolution = if req.model_type.always_sends_default_fields() {
+    let resolution = req.output_resolution.unwrap_or(KinoviOutputResolutionRaw::SevenTwentyP);
+    Some(resolution.as_explicit_api_str())
+  } else {
+    req.output_resolution.and_then(|r| r.as_api_str())
   };
 
   let batch_count_value = req.batch_count.as_u8();
@@ -483,9 +541,11 @@ fn build_batch_request(req: WorkflowRunTaskRequest) -> BatchRequest {
           duration,
           mode,
           happyhorse_mode,
-          output_resolution: req.output_resolution.and_then(|r| r.as_api_str()),
+          output_resolution,
           face_blur_mode,
           character_ids: req.character_ids,
+          image_urls,
+          video_urls,
           uploaded_urls,
           audio_urls,
           batch_count,
@@ -545,6 +605,8 @@ mod tests {
         output_resolution: None,
         face_blur_mode: None,
         character_ids: None,
+        image_urls: None,
+        video_urls: None,
         uploaded_urls: None,
         audio_urls: None,
         batch_count: None,
@@ -594,6 +656,8 @@ mod tests {
         output_resolution,
         face_blur_mode: None,
         character_ids: None,
+        image_urls: None,
+        video_urls: None,
         uploaded_urls: None,
         audio_urls: None,
         batch_count: None,
@@ -702,6 +766,130 @@ mod tests {
       assert_eq!(KinoviAspectRatioRaw::Square1x1.as_aspect_ratio_str(), "1:1");
       assert_eq!(KinoviAspectRatioRaw::Landscape4x3.as_aspect_ratio_str(), "4:3");
       assert_eq!(KinoviAspectRatioRaw::Portrait3x4.as_aspect_ratio_str(), "3:4");
+    }
+  }
+
+  // ── Seedance 2.5 Preview request shape ──
+  //
+  // 2.5 Preview differs from the other models on the wire: a
+  // `seedance25-preview-video-generation` businessType, a
+  // `seedance2-5-preview` model, an `aspectRatio` ratio string, `mode` always
+  // "reference" (even with no references), `outputResolution` and
+  // `faceBlurMode` always sent (including their "720p" / "off" defaults), and
+  // references split into `imageUrls` / `videoUrls` with `uploadedUrls`
+  // mirroring just the images.
+
+  mod seedance_2p5_preview_shape_tests {
+    use super::*;
+
+    fn preview_request(
+      output_resolution: Option<KinoviOutputResolutionRaw>,
+      reference_image_urls: Option<Vec<String>>,
+      reference_video_urls: Option<Vec<String>>,
+      reference_audio_urls: Option<Vec<String>>,
+    ) -> WorkflowRunTaskRequest {
+      WorkflowRunTaskRequest {
+        model_type: KinoviModelTypeRaw::Seedance2p5Preview,
+        prompt: "A man is running from a t-rex".to_string(),
+        aspect_ratio: KinoviAspectRatioRaw::Landscape16x9,
+        output_resolution,
+        duration_seconds: 4,
+        batch_count: KinoviBatchCountRaw::One,
+        start_frame_url: None,
+        end_frame_url: None,
+        reference_image_urls,
+        reference_video_urls,
+        reference_audio_urls,
+        character_ids: None,
+        use_face_blur_hack: None,
+        bitrate: None,
+      }
+    }
+
+    #[test]
+    fn text_to_video_matches_observed_request() {
+      // Mirrors external/requests/sites/kinovi.ai/2026-07-31-seedance2p5/1_seedance2p5.txt.
+      let body = build_batch_request(preview_request(
+        Some(KinoviOutputResolutionRaw::FourEightyP), None, None, None));
+      let json = serde_json::to_string(&body).unwrap();
+      assert!(json.contains(r#""businessType":"seedance25-preview-video-generation""#), "{json}");
+      assert!(json.contains(r#""model":"seedance2-5-preview""#), "{json}");
+      assert!(json.contains(r#""aspectRatio":"16:9""#), "{json}");
+      assert!(json.contains(r#""duration":"4s""#), "{json}");
+      assert!(json.contains(r#""outputResolution":"480p""#), "{json}");
+      assert!(json.contains(r#""contentMode":"normal""#), "{json}");
+      // 2.5 Preview does NOT send the ratio-string `resolution` field.
+      assert!(!json.contains(r#""resolution":"#), "{json}");
+      // No references attached: no URL fields at all.
+      assert!(!json.contains("imageUrls"), "{json}");
+      assert!(!json.contains("videoUrls"), "{json}");
+      assert!(!json.contains("uploadedUrls"), "{json}");
+      assert!(!json.contains("audioUrls"), "{json}");
+    }
+
+    #[test]
+    fn mode_is_reference_even_without_references() {
+      let body = build_batch_request(preview_request(None, None, None, None));
+      let json = serde_json::to_string(&body).unwrap();
+      assert!(json.contains(r#""mode":"reference""#), "{json}");
+      assert!(!json.contains("keyframe"), "{json}");
+    }
+
+    #[test]
+    fn default_720p_and_face_blur_off_are_sent_explicitly() {
+      let body = build_batch_request(preview_request(None, None, None, None));
+      let json = serde_json::to_string(&body).unwrap();
+      assert!(json.contains(r#""outputResolution":"720p""#), "{json}");
+      assert!(json.contains(r#""faceBlurMode":"off""#), "{json}");
+    }
+
+    #[test]
+    fn image_references_fill_image_urls_and_uploaded_urls() {
+      let images = vec![
+        "https://static.seedance2-pro.com/materials/a.jpg".to_string(),
+        "https://static.seedance2-pro.com/materials/b.png".to_string(),
+      ];
+      let body = build_batch_request(preview_request(
+        Some(KinoviOutputResolutionRaw::SevenTwentyP), Some(images), None, None));
+      let json = serde_json::to_string(&body).unwrap();
+      let expected_urls = r#"["https://static.seedance2-pro.com/materials/a.jpg","https://static.seedance2-pro.com/materials/b.png"]"#;
+      assert!(json.contains(&format!(r#""imageUrls":{expected_urls}"#)), "{json}");
+      // `uploadedUrls` mirrors the images.
+      assert!(json.contains(&format!(r#""uploadedUrls":{expected_urls}"#)), "{json}");
+      assert!(!json.contains("videoUrls"), "{json}");
+    }
+
+    #[test]
+    fn video_and_audio_references_use_their_own_fields() {
+      // Mirrors 3_seedance2p5_third.txt: images + video + audio. The video
+      // and audio URLs are NOT mirrored into `uploadedUrls`.
+      let body = build_batch_request(preview_request(
+        Some(KinoviOutputResolutionRaw::FourEightyP),
+        Some(vec!["https://static.seedance2-pro.com/materials/img.jpg".to_string()]),
+        Some(vec!["https://static.seedance2-pro.com/materials/dog.mp4".to_string()]),
+        Some(vec!["https://static.seedance2-pro.com/materials/bark.wav".to_string()]),
+      ));
+      let json = serde_json::to_string(&body).unwrap();
+      assert!(json.contains(r#""imageUrls":["https://static.seedance2-pro.com/materials/img.jpg"]"#), "{json}");
+      assert!(json.contains(r#""videoUrls":["https://static.seedance2-pro.com/materials/dog.mp4"]"#), "{json}");
+      assert!(json.contains(r#""audioUrls":["https://static.seedance2-pro.com/materials/bark.wav"]"#), "{json}");
+      assert!(json.contains(r#""uploadedUrls":["https://static.seedance2-pro.com/materials/img.jpg"]"#), "{json}");
+    }
+
+    #[test]
+    fn empty_reference_lists_send_no_url_fields() {
+      let body = build_batch_request(preview_request(
+        None, Some(vec![]), Some(vec![]), None));
+      let json = serde_json::to_string(&body).unwrap();
+      assert!(!json.contains("imageUrls"), "{json}");
+      assert!(!json.contains("videoUrls"), "{json}");
+      assert!(!json.contains("uploadedUrls"), "{json}");
+    }
+
+    #[test]
+    fn model_string_and_business_type() {
+      assert_eq!(KinoviModelTypeRaw::Seedance2p5Preview.as_api_str(), "seedance2-5-preview");
+      assert_eq!(KinoviModelTypeRaw::Seedance2p5Preview.business_type(), "seedance25-preview-video-generation");
     }
   }
 
