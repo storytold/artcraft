@@ -1,4 +1,4 @@
-use seedance2pro_client::generate::image::generate_midjourney_v7::{
+use seedance2pro_web_client::generate::image::generate_midjourney_v7::{
   GenerateMidjourneyV7AspectRatio, GenerateMidjourneyV7Request, KinoviMidjourneyBatchCount,
 };
 

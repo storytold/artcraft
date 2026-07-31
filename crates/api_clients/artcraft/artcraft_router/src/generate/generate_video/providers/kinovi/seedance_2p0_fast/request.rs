@@ -1,8 +1,8 @@
-use seedance2pro_client::generate::video::generate_seedance_2p0_fast::{
+use seedance2pro_web_client::generate::video::generate_seedance_2p0_fast::{
   generate_seedance_2p0_fast, GenerateSeedance2p0FastArgs, GenerateSeedance2p0FastRequest,
 };
 
-use crate::client::router_seedance2pro_client::RouterSeedance2ProClient;
+use crate::client::router_seedance2pro_web_client::RouterSeedance2ProWebClient;
 use crate::errors::artcraft_router_error::ArtcraftRouterError;
 use crate::errors::provider_error::ProviderError;
 use crate::generate::generate_video::generate_video_response::{GenerateVideoResponse, Seedance2proVideoResponsePayload};
@@ -14,7 +14,7 @@ pub struct KinoviSeedance2p0FastRequestState {
 }
 
 impl KinoviSeedance2p0FastRequestState {
-  pub async fn send(&self, client: &RouterSeedance2ProClient) -> Result<GenerateVideoResponse, ArtcraftRouterError> {
+  pub async fn send(&self, client: &RouterSeedance2ProWebClient) -> Result<GenerateVideoResponse, ArtcraftRouterError> {
     let session = &client.session;
 
     let args = GenerateSeedance2p0FastArgs {

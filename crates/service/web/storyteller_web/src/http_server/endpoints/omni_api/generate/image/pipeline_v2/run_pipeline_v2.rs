@@ -5,13 +5,13 @@ use artcraft_router::api::router_image_model::RouterImageModel;
 use artcraft_router::api::router_provider::RouterProvider;
 use artcraft_router::client::router_client::RouterClient;
 use artcraft_router::client::router_fal_client::RouterFalClient;
-use artcraft_router::client::router_seedance2pro_client::RouterSeedance2ProClient;
+use artcraft_router::client::router_seedance2pro_web_client::RouterSeedance2ProWebClient;
 use artcraft_router::generate::generate_image::generate_image_request_builder::GenerateImageRequestBuilder;
 use artcraft_router::generate::generate_image::generate_image_response::GenerateImageResponse;
 use artcraft_router::generate::generate_image::image_generation_draft_context::ImageGenerationDraftContext;
 use artcraft_router::generate::generate_image::image_generation_draft_or_request::ImageGenerationDraftOrRequest;
 use artcraft_router::generate::generate_image::image_generation_request::ImageGenerationRequest;
-use seedance2pro_client::creds::seedance2pro_session::Seedance2ProSession;
+use seedance2pro_web_client::creds::seedance2pro_session::Seedance2ProSession;
 use tokens::tokens::generic_inference_jobs::InferenceJobToken;
 use tokens::tokens::users::UserToken;
 
@@ -228,7 +228,7 @@ fn build_router_client(
         KinoviAccount::BytePlusUltra => seedance2pro.cookies_byteplus_ultra.clone(),
       };
       let session = Seedance2ProSession::from_cookies_string(cookies);
-      Ok(RouterClient::Seedance2Pro(RouterSeedance2ProClient::new(session)))
+      Ok(RouterClient::Seedance2Pro(RouterSeedance2ProWebClient::new(session)))
     },
     other => {
       Err(CommonWebError::server_error_with_message(

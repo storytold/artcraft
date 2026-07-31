@@ -1,4 +1,4 @@
-use seedance2pro_client::generate::audio::generate_suno_music::GenerateSunoMusicRequest;
+use seedance2pro_web_client::generate::audio::generate_suno_music::GenerateSunoMusicRequest;
 
 use crate::errors::artcraft_router_error::ArtcraftRouterError;
 use crate::generate::generate_audio::audio_generation_draft_or_request::AudioGenerationDraftOrRequest;

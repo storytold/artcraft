@@ -568,19 +568,19 @@ impl VideoGenerationRequest {
         request.send(client_ref).await
       },
       VideoGenerationRequest::KinoviHappyHorse1p0(request) => {
-        let client_ref = client.get_seedance2pro_client_ref()?;
+        let client_ref = client.get_seedance2pro_web_client_ref()?;
         request.send(client_ref).await
       },
       VideoGenerationRequest::KinoviSeedance2p0(request) => {
-        let client_ref = client.get_seedance2pro_client_ref()?;
+        let client_ref = client.get_seedance2pro_web_client_ref()?;
         request.send(client_ref).await
       },
       VideoGenerationRequest::KinoviSeedance2p0Fast(request) => {
-        let client_ref = client.get_seedance2pro_client_ref()?;
+        let client_ref = client.get_seedance2pro_web_client_ref()?;
         request.send(client_ref).await
       },
       VideoGenerationRequest::KinoviSeedance2p0Mini(request) => {
-        let client_ref = client.get_seedance2pro_client_ref()?;
+        let client_ref = client.get_seedance2pro_web_client_ref()?;
         request.send(client_ref).await
       },
     }

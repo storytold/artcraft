@@ -1,4 +1,4 @@
-use seedance2pro_client::generate::audio::generate_suno_sound::{
+use seedance2pro_web_client::generate::audio::generate_suno_sound::{
   GenerateSunoSoundRequest, KinoviSunoSoundKey, KinoviSunoSoundType,
 };
 
@@ -15,7 +15,7 @@ impl KinoviSunoSoundsCostState {
   }
 
   pub fn estimate_cost(&self) -> AudioGenerationCostEstimate {
-    // Cost math is owned by seedance2pro_client's binding — the router just
+    // Cost math is owned by seedance2pro_web_client's binding — the router just
     // forwards the result so router cost ≡ binding cost by construction.
     let pricing_request = GenerateSunoSoundRequest {
       prompt: String::new(),

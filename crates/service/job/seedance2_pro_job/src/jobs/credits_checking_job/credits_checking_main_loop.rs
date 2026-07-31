@@ -4,7 +4,7 @@ use std::time::Duration;
 use log::{error, info, warn};
 use pager::notification::notification_details_builder::NotificationDetailsBuilder;
 use pager::notification::notification_urgency::NotificationUrgency;
-use seedance2pro_client::requests::get_user_auth_details::get_user_auth_details::{
+use seedance2pro_web_client::requests::get_user_auth_details::get_user_auth_details::{
   get_user_auth_details, GetUserAuthDetailsArgs,
 };
 

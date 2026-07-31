@@ -125,7 +125,7 @@ pub async fn run_pipeline_v2(args: RunPipelineV2Args<'_>) -> Result<PipelineResu
   let cost = system_cost_estimate.cost_in_credits.unwrap_or(0);
 
   // Provider-side estimate (what the fulfilling provider charges us). The
-  // router defers to the underlying provider crates (seedance2pro_client,
+  // router defers to the underlying provider crates (seedance2pro_web_client,
   // gmicloud_client, grok_api_client, the fal pricing modules, etc.) per
   // request variant. Bookkeeping only — failures must not block generation.
   let maybe_provider_cost_estimate = match draft_or_request.estimate_cost() {

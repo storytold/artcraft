@@ -74,7 +74,7 @@ generate_video/
     │   ├── seedance_2p0/              ← Seedance 2.0 Pro model (skips draft, returns Request directly)
     │   │   ├── mod.rs
     │   │   ├── build.rs               ← builder → Request conversion + plan helpers
-    │   │   ├── cost.rs                ← standalone cost estimation (independent of seedance2pro_client)
+    │   │   ├── cost.rs                ← standalone cost estimation (independent of seedance2pro_web_client)
     │   │   └── request.rs             ← request state + send() via Artcraft multi-function API
     │   └── seedance_2p0_fast/         ← Seedance 2.0 Fast model (skips draft, 480p/720p only)
     │       ├── mod.rs

@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use seedance2pro_client::creds::seedance2pro_session::Seedance2ProSession;
+use seedance2pro_web_client::creds::seedance2pro_session::Seedance2ProSession;
 use tokens::tokens::media_files::MediaFileToken;
 
 use crate::api::audio_list_ref::AudioListRef;

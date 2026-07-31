@@ -1,4 +1,4 @@
-use seedance2pro_client::generate::image::generate_seedream_5p0_pro::{
+use seedance2pro_web_client::generate::image::generate_seedream_5p0_pro::{
   GenerateSeedream5p0ProRequest, KinoviSeedream5p0ProAspectRatio, KinoviSeedream5p0ProBatchCount,
   KinoviSeedream5p0ProResolution,
 };

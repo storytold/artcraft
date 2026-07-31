@@ -1,7 +1,7 @@
 use crate::kinovi_version::KinoviVersion;
 use anyhow::anyhow;
 use log::info;
-use seedance2pro_client::creds::seedance2pro_session::Seedance2ProSession;
+use seedance2pro_web_client::creds::seedance2pro_session::Seedance2ProSession;
 
 // Configuration switch
 const ENV_SEEDANCE2PRO_VERSION: &str = "SEEDANCE2PRO_VERSION";

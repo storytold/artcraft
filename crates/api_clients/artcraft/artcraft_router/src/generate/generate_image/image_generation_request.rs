@@ -418,22 +418,22 @@ impl ImageGenerationRequest {
 
       // ── Kinovi / Seedance2Pro (Midjourney + Seedream) ──
       Self::KinoviMidjourney7(request) => {
-        let seedance_client = client.get_seedance2pro_client_ref()
+        let seedance_client = client.get_seedance2pro_web_client_ref()
           .map_err(ArtcraftRouterError::Client)?;
         request.send(seedance_client).await
       }
       Self::KinoviMidjourney7Niji(request) => {
-        let seedance_client = client.get_seedance2pro_client_ref()
+        let seedance_client = client.get_seedance2pro_web_client_ref()
           .map_err(ArtcraftRouterError::Client)?;
         request.send(seedance_client).await
       }
       Self::KinoviMidjourney8(request) => {
-        let seedance_client = client.get_seedance2pro_client_ref()
+        let seedance_client = client.get_seedance2pro_web_client_ref()
           .map_err(ArtcraftRouterError::Client)?;
         request.send(seedance_client).await
       }
       Self::KinoviSeedream5p0Pro(request) => {
-        let seedance_client = client.get_seedance2pro_client_ref()
+        let seedance_client = client.get_seedance2pro_web_client_ref()
           .map_err(ArtcraftRouterError::Client)?;
         request.send(seedance_client).await
       }

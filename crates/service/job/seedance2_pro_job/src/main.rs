@@ -23,7 +23,7 @@ use concurrency::relaxed_atomic_bool::RelaxedAtomicBool;
 use shared_env_var_config::logging::DEFAULT_RUST_LOG;
 use errors::AnyhowResult;
 use jobs_common::job_stats::JobStats;
-use seedance2pro_client::creds::seedance2pro_session::Seedance2ProSession;
+use seedance2pro_web_client::creds::seedance2pro_session::Seedance2ProSession;
 use server_environment::ServerEnvironment;
 use shared_env_var_config::mysql::env_get_mysql_connection_string_or_default;
 

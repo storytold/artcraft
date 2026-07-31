@@ -43,14 +43,14 @@ use mysql_queries::queries::prompt_context_items::insert_batch_prompt_context_it
 use mysql_queries::queries::prompts::insert_prompt::{insert_prompt, InsertPromptArgs};
 use pager::notification::notification_details_builder::NotificationDetailsBuilder;
 use pager::notification::notification_urgency::NotificationUrgency;
-use seedance2pro_client::creds::seedance2pro_session::Seedance2ProSession;
-use seedance2pro_client::requests::generate_video::generate_video::{
+use seedance2pro_web_client::creds::seedance2pro_session::Seedance2ProSession;
+use seedance2pro_web_client::requests::generate_video::generate_video::{
   generate_video, KinoviBatchCount, GenerateVideoArgs, KinoviGenerateVideoRequest, GenerateVideoResponse, KinoviModelType, KinoviOutputResolution, KinoviAspectRatio,
 };
-use seedance2pro_client::requests::prepare_file_upload::prepare_file_upload::{
+use seedance2pro_web_client::requests::prepare_file_upload::prepare_file_upload::{
   prepare_file_upload, PrepareFileUploadArgs,
 };
-use seedance2pro_client::requests::upload_file::upload_file::{upload_file, UploadFileArgs};
+use seedance2pro_web_client::requests::upload_file::upload_file::{upload_file, UploadFileArgs};
 use sqlx::Acquire;
 use sqlx::MySql;
 use tokens::tokens::characters::CharacterToken;

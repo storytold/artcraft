@@ -1,8 +1,8 @@
 use anyhow::anyhow;
 use clap::Args;
 use log::info;
-use seedance2pro_client::creds::seedance2pro_session::Seedance2ProSession;
-use seedance2pro_client::requests::poll_orders::poll_orders::{poll_orders, PollOrdersArgs};
+use seedance2pro_web_client::creds::seedance2pro_session::Seedance2ProSession;
+use seedance2pro_web_client::requests::poll_orders::poll_orders::{poll_orders, PollOrdersArgs};
 
 use super::super::state::Seedance2ProState;
 
@@ -49,7 +49,7 @@ pub async fn run(state: &Seedance2ProState, args: FindJobArgs) -> anyhow::Result
   std::process::exit(1);
 }
 
-fn order_to_json(order: &seedance2pro_client::requests::poll_orders::poll_orders::OrderStatus) -> serde_json::Value {
+fn order_to_json(order: &seedance2pro_web_client::requests::poll_orders::poll_orders::OrderStatus) -> serde_json::Value {
   serde_json::json!({
     "order_id": order.order_id,
     "task_status": format!("{:?}", order.task_status),

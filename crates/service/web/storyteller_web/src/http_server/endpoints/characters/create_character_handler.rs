@@ -16,10 +16,10 @@ use mysql_queries::queries::generic_inference::api_providers::seedance2pro::inse
   InsertGenericInferenceForSeedance2ProCharacterWithAprioriJobTokenArgs,
 };
 use mysql_queries::queries::idepotency_tokens::insert_idempotency_token::insert_idempotency_token;
-use seedance2pro_client::creds::seedance2pro_session::Seedance2ProSession;
-use seedance2pro_client::requests::generate_character::generate_character::{generate_character, GenerateCharacterArgs};
-use seedance2pro_client::requests::prepare_file_upload::prepare_file_upload::{prepare_file_upload, PrepareFileUploadArgs};
-use seedance2pro_client::requests::upload_file::upload_file::{upload_file, UploadFileArgs};
+use seedance2pro_web_client::creds::seedance2pro_session::Seedance2ProSession;
+use seedance2pro_web_client::requests::generate_character::generate_character::{generate_character, GenerateCharacterArgs};
+use seedance2pro_web_client::requests::prepare_file_upload::prepare_file_upload::{prepare_file_upload, PrepareFileUploadArgs};
+use seedance2pro_web_client::requests::upload_file::upload_file::{upload_file, UploadFileArgs};
 use tokens::tokens::generic_inference_jobs::InferenceJobToken;
 use url_utils::extension::extract_extension_from_url::{extract_extension_from_url, ExtractExtensions};
 

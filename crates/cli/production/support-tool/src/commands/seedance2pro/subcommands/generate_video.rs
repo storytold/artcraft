@@ -9,20 +9,20 @@ use artcraft_client::recipes::download_media_file::{
   download_media_file, DownloadMediaFileArgs, DownloadPath,
 };
 use artcraft_client::utils::api_host::ApiHost;
-use seedance2pro_client::creds::seedance2pro_session::Seedance2ProSession;
-use seedance2pro_client::generate::video::generate_happy_horse_1p0::{
+use seedance2pro_web_client::creds::seedance2pro_session::Seedance2ProSession;
+use seedance2pro_web_client::generate::video::generate_happy_horse_1p0::{
   generate_happy_horse_1p0, GenerateHappyHorse1p0Args, GenerateHappyHorse1p0Request,
 };
-use seedance2pro_client::generate::video::generate_seedance_2p0::{
+use seedance2pro_web_client::generate::video::generate_seedance_2p0::{
   generate_seedance_2p0, GenerateSeedance2p0Args, GenerateSeedance2p0Request,
 };
-use seedance2pro_client::generate::video::generate_seedance_2p0_fast::{
+use seedance2pro_web_client::generate::video::generate_seedance_2p0_fast::{
   generate_seedance_2p0_fast, GenerateSeedance2p0FastArgs, GenerateSeedance2p0FastRequest,
 };
-use seedance2pro_client::requests::prepare_file_upload::prepare_file_upload::{
+use seedance2pro_web_client::requests::prepare_file_upload::prepare_file_upload::{
   prepare_file_upload, PrepareFileUploadArgs,
 };
-use seedance2pro_client::requests::upload_file::upload_file::{upload_file, UploadFileArgs};
+use seedance2pro_web_client::requests::upload_file::upload_file::{upload_file, UploadFileArgs};
 use tokens::tokens::media_files::MediaFileToken;
 
 use super::super::state::Seedance2ProState;

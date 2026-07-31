@@ -5,8 +5,8 @@ use artcraft_router::client::router_client::RouterClient;
 use artcraft_router::client::router_fal_client::RouterFalClient;
 use artcraft_router::client::router_gmicloud_client::RouterGmiCloudClient;
 use artcraft_router::client::router_grok_api_client::RouterGrokApiClient;
-use artcraft_router::client::router_seedance2pro_client::RouterSeedance2ProClient;
-use seedance2pro_client::creds::seedance2pro_session::Seedance2ProSession;
+use artcraft_router::client::router_seedance2pro_web_client::RouterSeedance2ProWebClient;
+use seedance2pro_web_client::creds::seedance2pro_session::Seedance2ProSession;
 
 use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::endpoints::omni_api::shared_utils::kinovi_account::KinoviAccount;
@@ -57,5 +57,5 @@ fn kinovi_provider(server_state: &ServerState, kinovi_account: KinoviAccount) ->
 
   let session = Seedance2ProSession::from_cookies_string(cookies);
   
-  Ok(RouterClient::Seedance2Pro(RouterSeedance2ProClient::new(session)))
+  Ok(RouterClient::Seedance2Pro(RouterSeedance2ProWebClient::new(session)))
 }

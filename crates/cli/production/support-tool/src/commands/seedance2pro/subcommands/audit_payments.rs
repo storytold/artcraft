@@ -5,11 +5,11 @@ use std::time::Duration;
 use anyhow::anyhow;
 use clap::Args;
 use log::info;
-use seedance2pro_client::billing::get_billing_payments_history::{
+use seedance2pro_web_client::billing::get_billing_payments_history::{
   get_billing_payments_history, BillingPayment, GetBillingPaymentsHistoryArgs,
   DEFAULT_BILLING_PAGE_LIMIT,
 };
-use seedance2pro_client::creds::seedance2pro_session::Seedance2ProSession;
+use seedance2pro_web_client::creds::seedance2pro_session::Seedance2ProSession;
 
 use super::super::state::Seedance2ProState;
 

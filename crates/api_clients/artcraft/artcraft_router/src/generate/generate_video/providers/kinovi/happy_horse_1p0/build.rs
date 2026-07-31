@@ -1,4 +1,4 @@
-use seedance2pro_client::generate::video::generate_happy_horse_1p0::{
+use seedance2pro_web_client::generate::video::generate_happy_horse_1p0::{
   KinoviHappyHorse1p0AspectRatio, KinoviHappyHorse1p0BatchCount,
   KinoviHappyHorse1p0OutputResolution,
 };

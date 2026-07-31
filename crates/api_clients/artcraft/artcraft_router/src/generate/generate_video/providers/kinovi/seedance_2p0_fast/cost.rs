@@ -1,4 +1,4 @@
-use seedance2pro_client::generate::video::generate_seedance_2p0_fast::{
+use seedance2pro_web_client::generate::video::generate_seedance_2p0_fast::{
   GenerateSeedance2p0FastRequest, KinoviSeedance2p0FastBatchCount,
   KinoviSeedance2p0FastOutputResolution,
 };
@@ -86,7 +86,7 @@ impl KinoviSeedance2p0FastCostState {
 mod tests {
   use super::*;
   use crate::api::router_resolution::RouterResolution;
-  use seedance2pro_client::generate::video::generate_seedance_2p0_fast::{
+  use seedance2pro_web_client::generate::video::generate_seedance_2p0_fast::{
     KinoviSeedance2p0FastOutputResolution as KinoviOutputResolution,
     KinoviSeedance2p0FastBatchCount as KinoviBatchCount,
   };

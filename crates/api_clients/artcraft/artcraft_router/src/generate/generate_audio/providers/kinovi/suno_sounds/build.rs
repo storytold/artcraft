@@ -1,5 +1,5 @@
 use enums::common::generation::common_musical_key::CommonMusicalKey;
-use seedance2pro_client::generate::audio::generate_suno_sound::{
+use seedance2pro_web_client::generate::audio::generate_suno_sound::{
   GenerateSunoSoundRequest, KinoviSunoSoundKey, KinoviSunoSoundType,
 };
 

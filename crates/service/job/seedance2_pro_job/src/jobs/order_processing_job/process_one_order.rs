@@ -1,7 +1,7 @@
 use log::warn;
 
 use errors::AnyhowResult;
-use seedance2pro_client::requests::poll_orders::poll_orders::{OrderMediaType, TaskStatus};
+use seedance2pro_web_client::requests::poll_orders::poll_orders::{OrderMediaType, TaskStatus};
 
 use crate::job_dependencies::JobDependencies;
 use crate::jobs::order_processing_job::process_failed_job::process_failed_job;

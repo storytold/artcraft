@@ -4,7 +4,7 @@ use artcraft_client::error::storyteller_error::StorytellerError;
 use fal_client::error::fal_error_plus::FalErrorPlus;
 use gmicloud_client::error::gmicloud_error::GmiCloudError;
 use grok_api_client::error::grok_error::GrokError;
-use seedance2pro_client::error::seedance2pro_error::Seedance2ProError;
+use seedance2pro_web_client::error::seedance2pro_error::Seedance2ProError;
 use worldlabs_api_client::error::world_labs_error::WorldLabsError;
 
 #[derive(Debug)]

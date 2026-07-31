@@ -4,7 +4,7 @@ use std::fmt::Debug;
 use tokens::tokens::media_files::MediaFileToken;
 
 use crate::client::router_client::RouterClient;
-use crate::client::router_seedance2pro_client::RouterSeedance2ProClient;
+use crate::client::router_seedance2pro_web_client::RouterSeedance2ProWebClient;
 use crate::errors::artcraft_router_error::ArtcraftRouterError;
 use crate::errors::client_error::ClientError;
 
@@ -19,9 +19,9 @@ pub struct AudioGenerationDraftContext<'a> {
 }
 
 impl <'a> AudioGenerationDraftContext<'a> {
-  pub fn get_seedance2pro_client_ref(&self) -> Result<&RouterSeedance2ProClient, ArtcraftRouterError> {
+  pub fn get_seedance2pro_web_client_ref(&self) -> Result<&RouterSeedance2ProWebClient, ArtcraftRouterError> {
     let client = self.client.ok_or(ArtcraftRouterError::Client(ClientError::RouterClientNotProvided))?;
-    client.get_seedance2pro_client_ref()
+    client.get_seedance2pro_web_client_ref()
       .map_err(|err| ArtcraftRouterError::Client(err))
   }
 }

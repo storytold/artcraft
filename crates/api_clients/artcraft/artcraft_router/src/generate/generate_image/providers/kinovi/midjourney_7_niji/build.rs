@@ -1,4 +1,4 @@
-use seedance2pro_client::generate::image::generate_midjourney_v7_niji::{
+use seedance2pro_web_client::generate::image::generate_midjourney_v7_niji::{
   GenerateMidjourneyV7NijiAspectRatio, GenerateMidjourneyV7NijiQuality,
   GenerateMidjourneyV7NijiRequest, KinoviMidjourneyBatchCount,
 };
@@ -147,7 +147,7 @@ pub(crate) fn plan_batch_count(
 
 #[cfg(test)]
 mod tests {
-  use seedance2pro_client::generate::image::generate_midjourney_v7_niji::KinoviMidjourneyBatchCount;
+  use seedance2pro_web_client::generate::image::generate_midjourney_v7_niji::KinoviMidjourneyBatchCount;
   use tokens::tokens::media_files::MediaFileToken;
 
   use crate::api::image_list_ref::ImageListRef;
@@ -235,7 +235,7 @@ mod tests {
 
   #[test]
   fn aspect_ratio_passes_through_to_niji_enum() {
-    use seedance2pro_client::generate::image::generate_midjourney_v7_niji::GenerateMidjourneyV7NijiAspectRatio as Ar;
+    use seedance2pro_web_client::generate::image::generate_midjourney_v7_niji::GenerateMidjourneyV7NijiAspectRatio as Ar;
     let builder = GenerateImageRequestBuilder {
       aspect_ratio: Some(RouterAspectRatio::WideTwentyOneByNine),
       ..base_builder()
@@ -249,7 +249,7 @@ mod tests {
 
   #[test]
   fn quality_high_maps_to_full() {
-    use seedance2pro_client::generate::image::generate_midjourney_v7_niji::GenerateMidjourneyV7NijiQuality as Q;
+    use seedance2pro_web_client::generate::image::generate_midjourney_v7_niji::GenerateMidjourneyV7NijiQuality as Q;
     let builder = GenerateImageRequestBuilder {
       quality: Some(RouterQuality::High),
       ..base_builder()

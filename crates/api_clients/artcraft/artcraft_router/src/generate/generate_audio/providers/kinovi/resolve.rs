@@ -5,7 +5,7 @@
 //! draft `finalize()` phase. The upload plumbing is shared with the Kinovi
 //! video provider (`generate_video::providers::kinovi::upload`).
 
-use seedance2pro_client::creds::seedance2pro_session::Seedance2ProSession;
+use seedance2pro_web_client::creds::seedance2pro_session::Seedance2ProSession;
 use tokens::tokens::media_files::MediaFileToken;
 
 use crate::api::audio_list_ref::AudioListRef;

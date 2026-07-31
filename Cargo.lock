@@ -759,7 +759,7 @@ dependencies = [
  "grok_api_client",
  "log",
  "reqwest 0.12.23",
- "seedance2pro_client",
+ "seedance2pro_web_client",
  "serde",
  "serde_derive",
  "serde_json",
@@ -10526,7 +10526,7 @@ dependencies = [
  "reqwest 0.12.23",
  "rootly_client",
  "rootly_config",
- "seedance2pro_client",
+ "seedance2pro_web_client",
  "serde",
  "serde_derive",
  "serde_json",
@@ -10539,7 +10539,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "seedance2pro_client"
+name = "seedance2pro_web_client"
 version = "0.0.1"
 dependencies = [
  "chrono",
@@ -11663,7 +11663,7 @@ dependencies = [
  "rootly_config",
  "rust-s3",
  "rustls 0.23.36",
- "seedance2pro_client",
+ "seedance2pro_web_client",
  "serde",
  "serde_derive",
  "serde_json",
@@ -11868,7 +11868,7 @@ dependencies = [
  "enums",
  "errors",
  "log",
- "seedance2pro_client",
+ "seedance2pro_web_client",
  "serde_json",
  "tokens",
  "tokio",

@@ -14,7 +14,7 @@ use mysql_queries::queries::generic_inference::api_providers::seedance2pro::list
 use mysql_queries::queries::generic_inference::job::select_inference_job_status_for_update::select_inference_job_status_for_update;
 use mysql_queries::queries::generic_inference::web::mark_generic_inference_job_successfully_done_by_token_with_executor::{mark_generic_inference_job_successfully_done_by_token_with_executor, MarkGenericInferenceJobSuccessfullyDoneByTokenWithExecutorArgs};
 use mysql_queries::queries::media_files::create::insert_builder::media_file_insert_builder::MediaFileInsertBuilder;
-use seedance2pro_client::requests::poll_orders::poll_orders::OrderStatus;
+use seedance2pro_web_client::requests::poll_orders::poll_orders::OrderStatus;
 
 use crate::alert_on_error::alert_pager_and_return_err;
 use crate::job_dependencies::JobDependencies;

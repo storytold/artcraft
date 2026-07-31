@@ -1,4 +1,4 @@
-use seedance2pro_client::generate::image::generate_midjourney_v7_niji::{
+use seedance2pro_web_client::generate::image::generate_midjourney_v7_niji::{
   GenerateMidjourneyV7NijiAspectRatio, GenerateMidjourneyV7NijiRequest, KinoviMidjourneyBatchCount,
 };
 

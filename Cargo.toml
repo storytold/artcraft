@@ -27,7 +27,7 @@ members = [
   "crates/api_clients/openart_client",
   "crates/api_clients/rootly_client",
   "crates/api_clients/runwayml_client",
-  "crates/api_clients/seedance2pro_client",
+  "crates/api_clients/seedance2pro_web_client",
   "crates/api_clients/thumbnail_generator",
   "crates/api_clients/worldlabs_api_client",
   "crates/api_clients/worldlabs_consumer_client",
@@ -285,7 +285,7 @@ mysql_queries = { path = "crates/schema/database/mysql_queries" }
 pager = { path = "crates/lib/pager" }
 openai_sora_client = { path = "crates/api_clients/openai_sora_client" }
 primitives = { path = "crates/lib/data/primitives" }
-seedance2pro_client = { path = "crates/api_clients/seedance2pro_client" }
+seedance2pro_web_client = { path = "crates/api_clients/seedance2pro_web_client" }
 server_environment = { path = "crates/lib/server_environment" }
 sha1_hash = { path = "crates/lib/sha1_hash" }
 shared_service_components = { path = "crates/lib/shared_service_components" }

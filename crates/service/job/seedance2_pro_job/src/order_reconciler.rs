@@ -4,7 +4,7 @@ use std::sync::{Arc, RwLock};
 use rand::Rng;
 
 use mysql_queries::queries::generic_inference::api_providers::seedance2pro::list_pending_seedance2pro_video_jobs::PendingSeedance2ProJob;
-use seedance2pro_client::requests::poll_orders::poll_orders::OrderStatus;
+use seedance2pro_web_client::requests::poll_orders::poll_orders::OrderStatus;
 
 /// Kinovi's `order_id`. Used as the key into the reconciler.
 pub type OrderId = String;

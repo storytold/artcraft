@@ -1,7 +1,7 @@
 use anyhow::anyhow;
 use clap::Args;
-use seedance2pro_client::creds::seedance2pro_session::Seedance2ProSession;
-use seedance2pro_client::requests::get_user_auth_details::get_user_auth_details::{
+use seedance2pro_web_client::creds::seedance2pro_session::Seedance2ProSession;
+use seedance2pro_web_client::requests::get_user_auth_details::get_user_auth_details::{
   get_user_auth_details, GetUserAuthDetailsArgs,
 };
 

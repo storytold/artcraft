@@ -1,9 +1,9 @@
 use crate::errors::artcraft_router_error::ArtcraftRouterError;
 use crate::errors::provider_error::ProviderError;
 use crate::utils::download_file::download_file;
-use seedance2pro_client::creds::seedance2pro_session::Seedance2ProSession;
-use seedance2pro_client::requests::prepare_file_upload::prepare_file_upload::{prepare_file_upload, PrepareFileUploadArgs};
-use seedance2pro_client::requests::upload_file::upload_file::{upload_file, UploadFileArgs};
+use seedance2pro_web_client::creds::seedance2pro_session::Seedance2ProSession;
+use seedance2pro_web_client::requests::prepare_file_upload::prepare_file_upload::{prepare_file_upload, PrepareFileUploadArgs};
+use seedance2pro_web_client::requests::upload_file::upload_file::{upload_file, UploadFileArgs};
 use url_utils::extension::extract_extension_from_url::{extract_extension_from_url_str, ExtractExtensions};
 
 /// Downloads a file from a source URL and re-uploads it to seedance2pro CDN.

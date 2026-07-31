@@ -1,4 +1,4 @@
-use seedance2pro_client::generate::image::generate_midjourney_v8::{
+use seedance2pro_web_client::generate::image::generate_midjourney_v8::{
   GenerateMidjourneyV8AspectRatio, GenerateMidjourneyV8Quality,
   GenerateMidjourneyV8Request, KinoviMidjourneyBatchCount,
 };
@@ -147,7 +147,7 @@ pub(crate) fn plan_batch_count(
 
 #[cfg(test)]
 mod tests {
-  use seedance2pro_client::generate::image::generate_midjourney_v8::KinoviMidjourneyBatchCount;
+  use seedance2pro_web_client::generate::image::generate_midjourney_v8::KinoviMidjourneyBatchCount;
   use tokens::tokens::media_files::MediaFileToken;
 
   use crate::api::image_list_ref::ImageListRef;

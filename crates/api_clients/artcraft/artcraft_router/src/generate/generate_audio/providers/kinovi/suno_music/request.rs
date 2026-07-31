@@ -1,8 +1,8 @@
-use seedance2pro_client::generate::audio::generate_suno_music::{
+use seedance2pro_web_client::generate::audio::generate_suno_music::{
   generate_suno_music, GenerateSunoMusicArgs, GenerateSunoMusicRequest,
 };
 
-use crate::client::router_seedance2pro_client::RouterSeedance2ProClient;
+use crate::client::router_seedance2pro_web_client::RouterSeedance2ProWebClient;
 use crate::errors::artcraft_router_error::ArtcraftRouterError;
 use crate::errors::provider_error::ProviderError;
 use crate::generate::generate_audio::generate_audio_response::{
@@ -16,7 +16,7 @@ pub struct KinoviSunoMusicRequestState {
 }
 
 impl KinoviSunoMusicRequestState {
-  pub async fn send(&self, client: &RouterSeedance2ProClient) -> Result<GenerateAudioResponse, ArtcraftRouterError> {
+  pub async fn send(&self, client: &RouterSeedance2ProWebClient) -> Result<GenerateAudioResponse, ArtcraftRouterError> {
     let session = &client.session;
 
     let args = GenerateSunoMusicArgs {
@@ -38,12 +38,12 @@ impl KinoviSunoMusicRequestState {
 
 #[cfg(test)]
 mod tests {
-  use seedance2pro_client::creds::seedance2pro_session::Seedance2ProSession;
+  use seedance2pro_web_client::creds::seedance2pro_session::Seedance2ProSession;
 
   use crate::api::router_audio_model::RouterAudioModel;
   use crate::api::router_provider::RouterProvider;
   use crate::client::router_client::RouterClient;
-  use crate::client::router_seedance2pro_client::RouterSeedance2ProClient;
+  use crate::client::router_seedance2pro_web_client::RouterSeedance2ProWebClient;
   use crate::generate::generate_audio::audio_generation_draft_or_request::AudioGenerationDraftOrRequest;
   use crate::generate::generate_audio::generate_audio_request_builder::GenerateAudioRequestBuilder;
   use crate::generate::generate_audio::generate_audio_response::GenerateAudioResponse;
@@ -83,15 +83,15 @@ mod tests {
     }
   }
 
-  fn get_seedance2pro_client() -> RouterClient {
+  fn get_seedance2pro_web_client() -> RouterClient {
     let cookies = std::fs::read_to_string("/Users/bt/Artcraft/credentials/seedance2pro_cookies.txt")
       .expect("Failed to read seedance2pro cookies");
     let session = Seedance2ProSession::from_cookies_string(cookies.trim().to_string());
-    RouterClient::Seedance2Pro(RouterSeedance2ProClient::new(session))
+    RouterClient::Seedance2Pro(RouterSeedance2ProWebClient::new(session))
   }
 
   async fn run_pipeline(builder: GenerateAudioRequestBuilder) -> GenerateAudioResponse {
-    let client = get_seedance2pro_client();
+    let client = get_seedance2pro_web_client();
 
     let draft_or_request = builder.build2().expect("build2 should succeed");
     let request = match draft_or_request {

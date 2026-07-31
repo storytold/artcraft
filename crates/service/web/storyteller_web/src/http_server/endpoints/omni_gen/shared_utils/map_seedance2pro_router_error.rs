@@ -6,8 +6,8 @@
 
 use artcraft_router::errors::artcraft_router_error::ArtcraftRouterError;
 use artcraft_router::errors::provider_error::ProviderError;
-use seedance2pro_client::error::seedance2pro_bad_request_api_error::Seedance2ProBadRequestApiError;
-use seedance2pro_client::error::seedance2pro_error::Seedance2ProError;
+use seedance2pro_web_client::error::seedance2pro_bad_request_api_error::Seedance2ProBadRequestApiError;
+use seedance2pro_web_client::error::seedance2pro_error::Seedance2ProError;
 
 use crate::http_server::common_responses::common_web_error::CommonWebError;
 

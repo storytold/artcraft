@@ -1,4 +1,4 @@
-use seedance2pro_client::generate::audio::generate_suno_remix::{
+use seedance2pro_web_client::generate::audio::generate_suno_remix::{
   GenerateSunoRemixRequest, KinoviSunoRemixSource,
 };
 
@@ -20,7 +20,7 @@ impl KinoviSunoRemixCostState {
   }
 
   pub fn estimate_cost(&self) -> AudioGenerationCostEstimate {
-    // Cost math is owned by seedance2pro_client's binding — the router just
+    // Cost math is owned by seedance2pro_web_client's binding — the router just
     // forwards the result so router cost ≡ binding cost by construction.
     let pricing_request = GenerateSunoRemixRequest {
       prompt: String::new(),

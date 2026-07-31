@@ -7,7 +7,7 @@ use cloud_storage::legacy_bucket_client::LegacyBucketClient;
 use concurrency::relaxed_atomic_bool::RelaxedAtomicBool;
 use jobs_common::job_stats::JobStats;
 use pager::client::pager::Pager;
-use seedance2pro_client::creds::seedance2pro_session::Seedance2ProSession;
+use seedance2pro_web_client::creds::seedance2pro_session::Seedance2ProSession;
 use server_environment::ServerEnvironment;
 use sqlx::MySqlPool;
 use tokio::sync::Notify;

@@ -1,4 +1,4 @@
-use seedance2pro_client::generate::video::generate_seedance_2p0::{
+use seedance2pro_web_client::generate::video::generate_seedance_2p0::{
   KinoviSeedance2p0AspectRatio as KinoviAspectRatio,
   KinoviSeedance2p0Bitrate as KinoviBitrate,
   KinoviSeedance2p0BatchCount as KinoviBatchCount,
@@ -212,7 +212,7 @@ fn plan_bitrate(bitrate: Option<RouterBitrate>) -> Option<KinoviBitrate> {
 
 #[cfg(test)]
 mod tests {
-  use seedance2pro_client::generate::video::generate_seedance_2p0::{
+  use seedance2pro_web_client::generate::video::generate_seedance_2p0::{
     KinoviSeedance2p0AspectRatio as KinoviAspectRatio,
     KinoviSeedance2p0BatchCount as KinoviBatchCount,
     KinoviSeedance2p0OutputResolution as KinoviOutputResolution,

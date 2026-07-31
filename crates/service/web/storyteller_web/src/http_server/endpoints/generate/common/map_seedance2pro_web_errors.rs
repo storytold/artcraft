@@ -4,8 +4,8 @@
 //! become 400s with a user-facing message. Everything else is unanticipated
 //! and stays a 500.
 
-use seedance2pro_client::error::seedance2pro_bad_request_api_error::Seedance2ProBadRequestApiError;
-use seedance2pro_client::error::seedance2pro_error::Seedance2ProError;
+use seedance2pro_web_client::error::seedance2pro_bad_request_api_error::Seedance2ProBadRequestApiError;
+use seedance2pro_web_client::error::seedance2pro_error::Seedance2ProError;
 
 use crate::http_server::common_responses::common_web_error::CommonWebError;
 
@@ -38,7 +38,7 @@ fn user_facing_bad_request_message(error: &Seedance2ProBadRequestApiError) -> St
 #[cfg(test)]
 mod tests {
   use actix_web::ResponseError;
-  use seedance2pro_client::error::seedance2pro_specific_api_error::Seedance2ProSpecificApiError;
+  use seedance2pro_web_client::error::seedance2pro_specific_api_error::Seedance2ProSpecificApiError;
 
   use super::*;
 

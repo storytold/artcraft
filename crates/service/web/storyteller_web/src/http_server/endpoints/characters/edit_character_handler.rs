@@ -7,8 +7,8 @@ use log::{error, info, warn};
 use artcraft_api_defs::characters::edit_character::{EditCharacterRequest, EditCharacterResponse};
 use mysql_queries::queries::characters::get_character_by_token::get_character_by_token;
 use mysql_queries::queries::characters::update_character_name_and_description::update_character_name_and_description;
-use seedance2pro_client::creds::seedance2pro_session::Seedance2ProSession;
-use seedance2pro_client::requests::update_character::update_character::{update_character, UpdateCharacterArgs};
+use seedance2pro_web_client::creds::seedance2pro_session::Seedance2ProSession;
+use seedance2pro_web_client::requests::update_character::update_character::{update_character, UpdateCharacterArgs};
 
 use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::user_lookup::api_or_web_session::require_api_or_web_session::require_api_or_web_session;

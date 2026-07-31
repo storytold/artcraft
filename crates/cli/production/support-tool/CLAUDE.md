@@ -43,7 +43,7 @@ Requires a `.env-support-tool-secrets` file (or env vars) with:
 - Use `anyhow::anyhow!()` for ad-hoc errors
 - Get `Seedance2ProSession` from `state.cookies` via `from_cookies_string()`
 - Get `StorytellerCredentialSet` from `state.creds` (parsed from ARTCRAFT_COOKIES)
-- External crates used: `artcraft_client` (media file download, omni API), `seedance2pro_client` (Kinovi direct), `artcraft_api_defs` (request types)
+- External crates used: `artcraft_client` (media file download, omni API), `seedance2pro_web_client` (Kinovi direct), `artcraft_api_defs` (request types)
 
 ## Subcommands
 

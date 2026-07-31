@@ -7,8 +7,8 @@ use mysql_queries::queries::generic_inference::job::select_inference_job_status_
 use mysql_queries::queries::wallets::refund::try_to_refund_ledger_entry::{try_to_refund_ledger_entry, WalletRefundOutcome};
 use pager::notification::notification_details_builder::NotificationDetailsBuilder;
 use pager::notification::notification_urgency::NotificationUrgency;
-use seedance2pro_client::requests::poll_orders::failure_type::FailureType;
-use seedance2pro_client::requests::poll_orders::poll_orders::OrderStatus;
+use seedance2pro_web_client::requests::poll_orders::failure_type::FailureType;
+use seedance2pro_web_client::requests::poll_orders::poll_orders::OrderStatus;
 
 use crate::job_dependencies::JobDependencies;
 use crate::jobs::order_processing_job::is_job_status_terminal::is_job_status_terminal;

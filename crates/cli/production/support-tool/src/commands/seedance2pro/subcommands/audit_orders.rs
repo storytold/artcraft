@@ -5,8 +5,8 @@ use std::time::Duration;
 use anyhow::anyhow;
 use clap::Args;
 use log::{info, warn};
-use seedance2pro_client::creds::seedance2pro_session::Seedance2ProSession;
-use seedance2pro_client::requests::poll_orders::poll_orders::{
+use seedance2pro_web_client::creds::seedance2pro_session::Seedance2ProSession;
+use seedance2pro_web_client::requests::poll_orders::poll_orders::{
   poll_orders, OrderStatus, PollOrdersArgs, TaskStatus,
 };
 

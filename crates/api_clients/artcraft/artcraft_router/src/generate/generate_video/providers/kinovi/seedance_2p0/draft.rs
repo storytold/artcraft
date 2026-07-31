@@ -1,4 +1,4 @@
-use seedance2pro_client::generate::video::generate_seedance_2p0::{
+use seedance2pro_web_client::generate::video::generate_seedance_2p0::{
   GenerateSeedance2p0Request, KinoviSeedance2p0AspectRatio, KinoviSeedance2p0Bitrate,
   KinoviSeedance2p0BatchCount, KinoviSeedance2p0OutputResolution,
 };
@@ -47,7 +47,7 @@ impl KinoviSeedance2p0DraftState {
     &mut self,
     draft_context: &VideoGenerationDraftContext<'_>,
   ) -> Result<KinoviSeedance2p0RequestState, ArtcraftRouterError> {
-    let client = draft_context.get_seedance2pro_client_ref()?;
+    let client = draft_context.get_seedance2pro_web_client_ref()?;
     let session = &client.session;
 
     let mut start_frame_url = None;

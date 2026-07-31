@@ -1,4 +1,4 @@
-use seedance2pro_client::generate::image::generate_midjourney_v7::{
+use seedance2pro_web_client::generate::image::generate_midjourney_v7::{
   GenerateMidjourneyV7AspectRatio, GenerateMidjourneyV7Quality,
   GenerateMidjourneyV7Request, KinoviMidjourneyBatchCount,
 };
@@ -32,7 +32,7 @@ impl KinoviMidjourney7DraftState {
     &mut self,
     draft_context: &ImageGenerationDraftContext<'_>,
   ) -> Result<KinoviMidjourney7RequestState, ArtcraftRouterError> {
-    let client = draft_context.get_seedance2pro_client_ref()?;
+    let client = draft_context.get_seedance2pro_web_client_ref()?;
     let session = &client.session;
 
     let mut reference_image_urls = None;
@@ -63,7 +63,7 @@ impl KinoviMidjourney7DraftState {
 #[cfg(test)]
 mod tests {
   use super::*;
-  use seedance2pro_client::generate::image::generate_midjourney_v7::GenerateMidjourneyV7AspectRatio;
+  use seedance2pro_web_client::generate::image::generate_midjourney_v7::GenerateMidjourneyV7AspectRatio;
 
   // Note: most behavioral tests live in `build.rs` and `cost.rs`. The
   // `to_request()` method requires a live Seedance2Pro client to upload

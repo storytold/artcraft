@@ -1,8 +1,8 @@
-use seedance2pro_client::generate::image::generate_seedream_5p0_pro::{
+use seedance2pro_web_client::generate::image::generate_seedream_5p0_pro::{
   generate_seedream_5p0_pro, GenerateSeedream5p0ProArgs, GenerateSeedream5p0ProRequest,
 };
 
-use crate::client::router_seedance2pro_client::RouterSeedance2ProClient;
+use crate::client::router_seedance2pro_web_client::RouterSeedance2ProWebClient;
 use crate::errors::artcraft_router_error::ArtcraftRouterError;
 use crate::errors::provider_error::ProviderError;
 use crate::generate::generate_image::generate_image_response::{
@@ -17,7 +17,7 @@ pub struct KinoviSeedream5p0ProRequestState {
 impl KinoviSeedream5p0ProRequestState {
   pub async fn send(
     &self,
-    client: &RouterSeedance2ProClient,
+    client: &RouterSeedance2ProWebClient,
   ) -> Result<GenerateImageResponse, ArtcraftRouterError> {
     let args = GenerateSeedream5p0ProArgs {
       session: &client.session,
@@ -42,7 +42,7 @@ impl KinoviSeedream5p0ProRequestState {
 mod tests {
   use std::collections::HashMap;
 
-  use seedance2pro_client::creds::seedance2pro_session::Seedance2ProSession;
+  use seedance2pro_web_client::creds::seedance2pro_session::Seedance2ProSession;
   use tokens::tokens::media_files::MediaFileToken;
 
   use crate::api::image_list_ref::ImageListRef;
@@ -52,7 +52,7 @@ mod tests {
   use crate::api::router_resolution::RouterResolution;
   use crate::client::request_mismatch_mitigation_strategy::RequestMismatchMitigationStrategy;
   use crate::client::router_client::RouterClient;
-  use crate::client::router_seedance2pro_client::RouterSeedance2ProClient;
+  use crate::client::router_seedance2pro_web_client::RouterSeedance2ProWebClient;
   use crate::generate::generate_image::generate_image_request_builder::GenerateImageRequestBuilder;
   use crate::generate::generate_image::image_generation_draft::ImageGenerationDraftRequest;
   use crate::generate::generate_image::image_generation_draft_context::ImageGenerationDraftContext;
@@ -83,7 +83,7 @@ mod tests {
     let cookies = std::fs::read_to_string("/Users/bt/Artcraft/credentials/seedance2pro_cookies.txt")
       .expect("Failed to read seedance2pro cookies");
     let session = Seedance2ProSession::from_cookies_string(cookies.trim().to_string());
-    RouterClient::Seedance2Pro(RouterSeedance2ProClient::new(session))
+    RouterClient::Seedance2Pro(RouterSeedance2ProWebClient::new(session))
   }
 
   #[tokio::test]
@@ -97,7 +97,7 @@ mod tests {
       _ => panic!("expected direct Request for text-to-image"),
     };
 
-    let response = request.send(client.get_seedance2pro_client_ref().unwrap())
+    let response = request.send(client.get_seedance2pro_web_client_ref().unwrap())
       .await.expect("send should succeed");
     let payload = response.get_seedance2pro_payload().expect("expected seedance2pro payload");
     println!("seedream 5.0 pro t2i — task_id={}, order_id={}", payload.task_id, payload.order_id);
