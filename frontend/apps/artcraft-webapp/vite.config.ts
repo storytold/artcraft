@@ -42,7 +42,11 @@ function cdnProxyPlugin() {
             return;
           }
           const [, host, assetPath = '/', query = ''] = match;
-          const upstream = await fetch(`https://${host}${assetPath}${query}`, {
+          // A local backend serves media over http; every real CDN is https.
+          const scheme = /^(localhost|127\.0\.0\.1)(:\d+)?$/.test(host ?? '')
+            ? 'http'
+            : 'https';
+          const upstream = await fetch(`${scheme}://${host}${assetPath}${query}`, {
             method: req.method === 'HEAD' ? 'HEAD' : 'GET',
             headers: req.headers.range
               ? { range: String(req.headers.range) }

@@ -52,6 +52,11 @@ function maybeProxyCdnUrl(url: string): string {
   try {
     const parsed = new URL(url, window.location.origin);
     if (parsed.origin === window.location.origin) return url;
+    // A local backend sends permissive CORS headers already, so proxying it
+    // would only add a hop — and break range requests for video scrubbing.
+    if (parsed.hostname === "localhost" || parsed.hostname === "127.0.0.1") {
+      return url;
+    }
     return `/__cdn/${parsed.host}${parsed.pathname}${parsed.search}`;
   } catch {
     return url;
@@ -338,6 +343,11 @@ export const useWebAppPageSceneAdapter = (
         if (width) params.push(`width=${width}`);
         if (quality) params.push(`quality=${quality}`);
         if (params.length === 0) return `${base}${path}`;
+        // `/cdn-cgi/image` is Cloudflare's resizer. A local backend has no such
+        // endpoint, so ask it for the original instead of a 404.
+        if (base.includes("//localhost") || base.includes("//127.0.0.1")) {
+          return `${base}${path}`;
+        }
         return `${base}/cdn-cgi/image/${params.join(",")}${path}`;
       },
 

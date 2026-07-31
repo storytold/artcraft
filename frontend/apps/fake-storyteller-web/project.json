@@ -1,0 +1,37 @@
+{
+  "name": "fake-storyteller-web",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "sourceRoot": "apps/fake-storyteller-web/src",
+  "tags": ["scope:dev-tooling"],
+  "targets": {
+    "serve": {
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "apps/fake-storyteller-web",
+        "command": "node --disable-warning=ExperimentalWarning src/main.ts"
+      }
+    },
+    "dev": {
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "apps/fake-storyteller-web",
+        "command": "node --watch --disable-warning=ExperimentalWarning src/main.ts"
+      }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "apps/fake-storyteller-web",
+        "command": "tsc --noEmit -p tsconfig.json"
+      }
+    },
+    "smoke": {
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "apps/fake-storyteller-web",
+        "command": "node scripts/smoke_test.mjs"
+      }
+    }
+  }
+}

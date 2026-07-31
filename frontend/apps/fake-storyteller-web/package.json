@@ -1,0 +1,14 @@
+{
+  "name": "@frontend/fake-storyteller-web",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "description": "In-memory fake of the storyteller-web API. Contains no database, cache, or third-party client. Never deployed.",
+  "engines": {
+    "node": ">=22.6.0"
+  },
+  "scripts": {
+    "serve": "node --disable-warning=ExperimentalWarning src/main.ts",
+    "dev": "node --watch --disable-warning=ExperimentalWarning src/main.ts"
+  }
+}

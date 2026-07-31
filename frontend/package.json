@@ -121,6 +121,7 @@
     "apps/**/*",
     "libs/**/*",
     "!apps/artcraft-dashboard",
-    "!apps/artcraft-dashboard/**"
+    "!apps/artcraft-dashboard/**",
+    "!apps/fake-storyteller-web"
   ]
 }
