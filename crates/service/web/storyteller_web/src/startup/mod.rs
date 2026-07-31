@@ -1,5 +1,6 @@
 pub mod build_dependencies;
 pub mod setup_bans;
+pub mod setup_dashboards;
 pub mod setup_metrics;
 pub mod setup_pager;
 pub mod setup_seedance_video_bucket;

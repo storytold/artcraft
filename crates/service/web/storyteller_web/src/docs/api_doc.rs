@@ -95,6 +95,7 @@ use artcraft_api_defs::moderation::debug_logs::debug_log_entry::*;
 use artcraft_api_defs::moderation::debug_logs::moderation_list_all_debug_logs::*;
 use artcraft_api_defs::moderation::debug_logs::moderation_list_debug_logs_for_token::*;
 use artcraft_api_defs::moderation::debug_logs::moderation_list_debug_logs_for_user::*;
+use crate::http_server::endpoints::moderation::dashboards::moderator_list_databox_dashboards_handler::*;
 use crate::http_server::endpoints::moderation::jobs::moderation_get_job_by_token_handler::*;
 use crate::http_server::endpoints::moderation::user_feature_flags::moderator_edit_user_feature_flags_handler::*;
 use crate::http_server::endpoints::moderation::user_feature_flags::moderator_list_all_available_user_feature_flags_handler::*;
@@ -640,6 +641,7 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     crate::http_server::endpoints::omni_api::job_status::batch_get_job_status_handler::omni_api_batch_get_job_status_handler,
     // Moderation
     crate::http_server::endpoints::moderation::alerts::moderation_send_alert_handler::moderation_send_alert_handler,
+    crate::http_server::endpoints::moderation::dashboards::moderator_list_databox_dashboards_handler::moderator_list_databox_dashboards_handler,
     crate::http_server::endpoints::moderation::info::moderator_token_info_handler::moderator_get_token_info_handler,
     crate::http_server::endpoints::moderation::user::moderator_list_subscribing_users_by_signup_date::moderator_list_subscribing_users_by_signup_date_handler,
     crate::http_server::endpoints::moderation::user::moderator_list_users_by_signup_date::moderator_list_users_by_signup_date_handler,
@@ -724,6 +726,8 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     crate::http_server::endpoints::image_studio::update_gpt_image_job_status_handler::update_gpt_image_job_status_handler,
   ),
   components(schemas(
+    DataboxDashboardEntry,
+    ListDataboxDashboardsResponse,
     ModeratorGetUserSpendSummaryResponse,
     UserSpendSummaryView,
     ModeratorReengagementListResponse,
