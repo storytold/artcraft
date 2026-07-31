@@ -34,7 +34,7 @@ mysql_queries = { path = "../../../schema/database/mysql_queries" }
 pager = { path = "../../../lib/pager" }
 rootly_client.workspace = true
 rootly_config.workspace = true
-seedance2pro_client = { path = "../../../api_clients/seedance2pro_client" }
+kinovi_web_client = { path = "../../../api_clients/kinovi_web_client" }
 server_environment = { path = "../../../lib/server_environment" }
 shared_env_var_config.workspace = true
 tokens.workspace = true

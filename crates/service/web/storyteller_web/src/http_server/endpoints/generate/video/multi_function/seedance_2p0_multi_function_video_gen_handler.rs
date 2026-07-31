@@ -4,7 +4,7 @@ use actix_http::StatusCode;
 use crate::billing::wallets::attempt_wallet_deduction::attempt_wallet_deduction_else_common_web_error;
 use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::endpoint_helpers::refund_wallet_after_api_failure::refund_wallet_after_api_failure;
-use crate::http_server::endpoints::generate::common::map_seedance2pro_web_errors::map_seedance2pro_error_to_web_error;
+use crate::http_server::endpoints::generate::common::map_kinovi_web_web_errors::map_kinovi_web_error_to_web_error;
 use crate::http_server::endpoints::generate::common::generation_debug_logs::{
   insert_generation_failure_debug_log, insert_generation_request_debug_log,
 };
@@ -35,7 +35,7 @@ use enums::common::visibility::Visibility;
 use http_server_common::request::get_request_ip::get_request_ip;
 use log::{error, info, warn};
 use mysql_queries::queries::characters::batch_lookup_characters_by_token_for_prompting::batch_lookup_characters_by_token_for_prompting;
-use mysql_queries::queries::generic_inference::api_providers::seedance2pro::insert_generic_inference_job_for_seedance2pro_queue_with_apriori_job_token::{insert_generic_inference_job_for_seedance2pro_queue_with_apriori_job_token, InsertGenericInferenceForSeedance2ProWithAprioriJobTokenArgs, KinoviVersion};
+use mysql_queries::queries::generic_inference::api_providers::kinovi_web::insert_generic_inference_job_for_kinovi_web_queue_with_apriori_job_token::{insert_generic_inference_job_for_kinovi_web_queue_with_apriori_job_token, InsertGenericInferenceForKinoviWebWithAprioriJobTokenArgs, KinoviVersion};
 use mysql_queries::queries::idepotency_tokens::insert_idempotency_token::insert_idempotency_token;
 use mysql_queries::queries::prompt_context_items::insert_batch_prompt_context_items::{
   insert_batch_prompt_context_items, InsertBatchArgs, PromptContextItem,
@@ -43,14 +43,14 @@ use mysql_queries::queries::prompt_context_items::insert_batch_prompt_context_it
 use mysql_queries::queries::prompts::insert_prompt::{insert_prompt, InsertPromptArgs};
 use pager::notification::notification_details_builder::NotificationDetailsBuilder;
 use pager::notification::notification_urgency::NotificationUrgency;
-use seedance2pro_client::creds::seedance2pro_session::Seedance2ProSession;
-use seedance2pro_client::requests::generate_video::generate_video::{
+use kinovi_web_client::creds::kinovi_web_session::KinoviWebSession;
+use kinovi_web_client::requests::generate_video::generate_video::{
   generate_video, KinoviBatchCount, GenerateVideoArgs, KinoviGenerateVideoRequest, GenerateVideoResponse, KinoviModelType, KinoviOutputResolution, KinoviAspectRatio,
 };
-use seedance2pro_client::requests::prepare_file_upload::prepare_file_upload::{
+use kinovi_web_client::requests::prepare_file_upload::prepare_file_upload::{
   prepare_file_upload, PrepareFileUploadArgs,
 };
-use seedance2pro_client::requests::upload_file::upload_file::{upload_file, UploadFileArgs};
+use kinovi_web_client::requests::upload_file::upload_file::{upload_file, UploadFileArgs};
 use sqlx::Acquire;
 use sqlx::MySql;
 use tokens::tokens::characters::CharacterToken;
@@ -237,8 +237,8 @@ pub async fn seedance_2p0_multi_function_video_gen_handler(
   let gen_result = if is_whitelisted {
     info!("User {:?} is seedance-whitelisted, trying whitelist session first", user_token);
 
-    let whitelist_session = Seedance2ProSession::from_cookies_string(
-      server_state.inference_providers.seedance2pro.cookies_byteplus.clone()
+    let whitelist_session = KinoviWebSession::from_cookies_string(
+      server_state.inference_providers.kinovi_web.cookies_byteplus.clone()
     );
 
     let result = upload_and_generate(
@@ -262,8 +262,8 @@ pub async fn seedance_2p0_multi_function_video_gen_handler(
       Err(err) => {
         warn!("Whitelist session failed for user {:?}: {:?}, falling back to regular session", user_token, err);
 
-        let regular_session = Seedance2ProSession::from_cookies_string(
-          server_state.inference_providers.seedance2pro.cookies_volcengine.clone()
+        let regular_session = KinoviWebSession::from_cookies_string(
+          server_state.inference_providers.kinovi_web.cookies_volcengine.clone()
         );
 
         let result = upload_and_generate(
@@ -316,8 +316,8 @@ pub async fn seedance_2p0_multi_function_video_gen_handler(
   } else {
     info!("User {:?} using regular seedance session", user_token);
 
-    let regular_session = Seedance2ProSession::from_cookies_string(
-      server_state.inference_providers.seedance2pro.cookies_volcengine.clone()
+    let regular_session = KinoviWebSession::from_cookies_string(
+      server_state.inference_providers.kinovi_web.cookies_volcengine.clone()
     );
 
     let result = upload_and_generate(
@@ -336,7 +336,7 @@ pub async fn seedance_2p0_multi_function_video_gen_handler(
     match result {
       Ok(result) => result,
       Err(err) => {
-        warn!("Error calling seedance2pro generate_video: {:?}", err);
+        warn!("Error calling kinovi_web generate_video: {:?}", err);
 
         // Client-fault errors (eg. content violations, over-long prompts)
         // surface to the user as 400s and shouldn't page.
@@ -368,7 +368,7 @@ pub async fn seedance_2p0_multi_function_video_gen_handler(
   let generation_mode = gen_result.generation_mode;
 
   info!(
-    "Seedance2pro task_id={}, order_id={}",
+    "KinoviWeb task_id={}, order_id={}",
     gen_response.task_id, gen_response.order_id
   );
 
@@ -489,8 +489,8 @@ pub async fn seedance_2p0_multi_function_video_gen_handler(
       format!("{}-batch-{}", request.uuid_idempotency_token, i)
     };
 
-    let db_result = insert_generic_inference_job_for_seedance2pro_queue_with_apriori_job_token(
-      InsertGenericInferenceForSeedance2ProWithAprioriJobTokenArgs {
+    let db_result = insert_generic_inference_job_for_kinovi_web_queue_with_apriori_job_token(
+      InsertGenericInferenceForKinoviWebWithAprioriJobTokenArgs {
         kinovi_version: KinoviVersion::Volcengine,
         apriori_job_token: &job_token,
         uuid_idempotency_token: &idempotency_str,
@@ -516,7 +516,7 @@ pub async fn seedance_2p0_multi_function_video_gen_handler(
         all_job_tokens.push(token);
       }
       Err(err) => {
-        warn!("Error inserting seedance2pro inference job (order_id={}): {:?}", order_id, err);
+        warn!("Error inserting kinovi_web inference job (order_id={}): {:?}", order_id, err);
         if i == 0 {
           return Err(CommonWebError::from_error(err));
         }
@@ -634,7 +634,7 @@ fn estimate_cost_upfront(
 /// Uploads all media files and calls generate_video using the given session.
 /// Returns the generation response and the computed generation mode.
 async fn upload_and_generate(
-  session: &Seedance2ProSession,
+  session: &KinoviWebSession,
   request: &Seedance2p0MultiFunctionVideoGenRequest,
   file_urls_by_token: &HashMap<MediaFileToken, Url>,
   aspect_ratio: KinoviAspectRatio,
@@ -646,13 +646,13 @@ async fn upload_and_generate(
   mysql_connection: &mut sqlx::pool::PoolConnection<MySql>,
 ) -> Result<SeedanceGenerationResult, CommonWebError> {
 
-  // --- Upload files to seedance2pro CDN ---
+  // --- Upload files to kinovi_web CDN ---
 
   let start_frame_url = match request.start_frame_media_token.as_ref() {
     None => None,
     Some(token) => match file_urls_by_token.get(token) {
       None => return Err(CommonWebError::BadInputWithSimpleMessage("Start frame media not found.".to_string())),
-      Some(url) => Some(upload_to_seedance2pro(session, url).await?),
+      Some(url) => Some(upload_to_kinovi_web(session, url).await?),
     }
   };
 
@@ -660,25 +660,25 @@ async fn upload_and_generate(
     None => None,
     Some(token) => match file_urls_by_token.get(token) {
       None => return Err(CommonWebError::BadInputWithSimpleMessage("End frame media not found.".to_string())),
-      Some(url) => Some(upload_to_seedance2pro(session, url).await?),
+      Some(url) => Some(upload_to_kinovi_web(session, url).await?),
     }
   };
 
-  let reference_image_urls = upload_reference_tokens_to_seedance2pro(
+  let reference_image_urls = upload_reference_tokens_to_kinovi_web(
     session,
     file_urls_by_token,
     request.reference_image_media_tokens.as_deref(),
     "Reference image",
   ).await?;
 
-  let reference_video_urls = upload_reference_tokens_to_seedance2pro(
+  let reference_video_urls = upload_reference_tokens_to_kinovi_web(
     session,
     file_urls_by_token,
     request.reference_video_media_tokens.as_deref(),
     "Reference video",
   ).await?;
 
-  let reference_audio_urls = upload_reference_tokens_to_seedance2pro(
+  let reference_audio_urls = upload_reference_tokens_to_kinovi_web(
     session,
     file_urls_by_token,
     request.reference_audio_media_tokens.as_deref(),
@@ -748,8 +748,8 @@ async fn upload_and_generate(
 
   let gen_response = generate_video(video_gen_args).await
     .map_err(|err| {
-      warn!("Error calling seedance2pro generate_video: {:?}", err);
-      map_seedance2pro_error_to_web_error(err)
+      warn!("Error calling kinovi_web generate_video: {:?}", err);
+      map_kinovi_web_error_to_web_error(err)
     })?;
 
   Ok(SeedanceGenerationResult {
@@ -796,10 +796,10 @@ async fn resolve_kinovi_character_ids(
   if ids.is_empty() { Ok(None) } else { Ok(Some(ids)) }
 }
 
-/// Uploads a list of reference media tokens to seedance2pro, returning the resulting URLs.
+/// Uploads a list of reference media tokens to kinovi_web, returning the resulting URLs.
 /// Returns `None` if the token list is absent or empty.
-async fn upload_reference_tokens_to_seedance2pro(
-  session: &Seedance2ProSession,
+async fn upload_reference_tokens_to_kinovi_web(
+  session: &KinoviWebSession,
   file_urls_by_token: &HashMap<MediaFileToken, Url>,
   maybe_tokens: Option<&[MediaFileToken]>,
   label: &str,
@@ -818,7 +818,7 @@ async fn upload_reference_tokens_to_seedance2pro(
         format!("{} media not found: {:?}", label, token),
       )),
       Some(url) => {
-        let seedance_url = upload_to_seedance2pro(session, url).await?;
+        let seedance_url = upload_to_kinovi_web(session, url).await?;
         urls.push(seedance_url);
       }
     }
@@ -826,8 +826,8 @@ async fn upload_reference_tokens_to_seedance2pro(
   Ok(Some(urls))
 }
 
-async fn upload_to_seedance2pro(
-  session: &Seedance2ProSession,
+async fn upload_to_kinovi_web(
+  session: &KinoviWebSession,
   our_cdn_url: &Url,
 ) -> Result<String, CommonWebError> {
   let extension = extract_extension_from_url(our_cdn_url, &ExtractExtensions::All)
@@ -851,7 +851,7 @@ async fn upload_to_seedance2pro(
   })
       .await
       .map_err(|err| {
-        warn!("Error preparing seedance2pro file upload: {:?}", err);
+        warn!("Error preparing kinovi_web file upload: {:?}", err);
         CommonWebError::from_error(err)
       })?;
 
@@ -862,7 +862,7 @@ async fn upload_to_seedance2pro(
   })
       .await
       .map_err(|err| {
-        warn!("Error uploading file to seedance2pro: {:?}", err);
+        warn!("Error uploading file to kinovi_web: {:?}", err);
         CommonWebError::from_error(err)
       })?;
 

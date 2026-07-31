@@ -5,13 +5,13 @@ use artcraft_router::api::router_image_model::RouterImageModel;
 use artcraft_router::api::router_provider::RouterProvider;
 use artcraft_router::client::router_client::RouterClient;
 use artcraft_router::client::router_fal_client::RouterFalClient;
-use artcraft_router::client::router_seedance2pro_client::RouterSeedance2ProClient;
+use artcraft_router::client::router_kinovi_web_client::RouterKinoviWebClient;
 use artcraft_router::generate::generate_image::generate_image_request_builder::GenerateImageRequestBuilder;
 use artcraft_router::generate::generate_image::generate_image_response::GenerateImageResponse;
 use artcraft_router::generate::generate_image::image_generation_draft_context::ImageGenerationDraftContext;
 use artcraft_router::generate::generate_image::image_generation_draft_or_request::ImageGenerationDraftOrRequest;
 use artcraft_router::generate::generate_image::image_generation_request::ImageGenerationRequest;
-use seedance2pro_client::creds::seedance2pro_session::Seedance2ProSession;
+use kinovi_web_client::creds::kinovi_web_session::KinoviWebSession;
 use tokens::tokens::generic_inference_jobs::InferenceJobToken;
 use tokens::tokens::users::UserToken;
 
@@ -22,7 +22,7 @@ use crate::http_server::endpoints::generate::common::generation_debug_logs::{
 };
 use crate::http_server::endpoints::omni_gen::generate::image::pipeline_result::ImagePipelineResult;
 use crate::http_server::endpoints::omni_gen::shared_utils::kinovi_account::KinoviAccount;
-use crate::http_server::endpoints::omni_gen::shared_utils::map_seedance2pro_router_error::map_router_error_to_web_error;
+use crate::http_server::endpoints::omni_gen::shared_utils::map_kinovi_web_router_error::map_router_error_to_web_error;
 use crate::state::server_state::ServerState;
 use crate::util::lookup::lookup_media_files_as_cdn_url_list_and_map::MediaFilesAsCdnUrlListAndMap;
 
@@ -122,7 +122,7 @@ fn build_execution_request(
 }
 
 /// Route each image model to the provider that fulfils it. Midjourney and
-/// Seedream 5.0 Pro (both variants) are served via the Seedance2Pro/Kinovi
+/// Seedream 5.0 Pro (both variants) are served via the KinoviWeb/Kinovi
 /// backend; everything else flows through Fal. Which Kinovi account fulfils
 /// a Kinovi request is the handler's `kinovi_account` choice.
 fn provider_for_model(model: RouterImageModel) -> RouterProvider {
@@ -131,7 +131,7 @@ fn provider_for_model(model: RouterImageModel) -> RouterProvider {
     | RouterImageModel::Midjourney7Niji
     | RouterImageModel::Midjourney8
     | RouterImageModel::Seedream5p0Pro
-    | RouterImageModel::Seedream5p0ProUltra => RouterProvider::Seedance2Pro,
+    | RouterImageModel::Seedream5p0ProUltra => RouterProvider::KinoviWeb,
     _ => RouterProvider::Fal,
   }
 }
@@ -220,15 +220,15 @@ fn build_router_client(
       );
       Ok(RouterClient::Fal(fal_client))
     },
-    RouterProvider::Seedance2Pro => {
-      let seedance2pro = &server_state.inference_providers.seedance2pro;
+    RouterProvider::KinoviWeb => {
+      let kinovi_web = &server_state.inference_providers.kinovi_web;
       let cookies = match kinovi_account {
-        KinoviAccount::Volcengine => seedance2pro.cookies_volcengine.clone(),
-        KinoviAccount::BytePlus => seedance2pro.cookies_byteplus.clone(),
-        KinoviAccount::BytePlusUltra => seedance2pro.cookies_byteplus_ultra.clone(),
+        KinoviAccount::Volcengine => kinovi_web.cookies_volcengine.clone(),
+        KinoviAccount::BytePlus => kinovi_web.cookies_byteplus.clone(),
+        KinoviAccount::BytePlusUltra => kinovi_web.cookies_byteplus_ultra.clone(),
       };
-      let session = Seedance2ProSession::from_cookies_string(cookies);
-      Ok(RouterClient::Seedance2Pro(RouterSeedance2ProClient::new(session)))
+      let session = KinoviWebSession::from_cookies_string(cookies);
+      Ok(RouterClient::KinoviWeb(RouterKinoviWebClient::new(session)))
     },
     other => {
       Err(CommonWebError::server_error_with_message(

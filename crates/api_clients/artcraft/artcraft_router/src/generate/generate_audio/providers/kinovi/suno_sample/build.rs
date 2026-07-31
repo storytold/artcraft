@@ -162,7 +162,7 @@ mod tests {
   fn base_builder() -> GenerateAudioRequestBuilder {
     GenerateAudioRequestBuilder {
       model: RouterAudioModel::SunoSample,
-      provider: RouterProvider::Seedance2Pro,
+      provider: RouterProvider::KinoviWeb,
       prompt: Some("mystical RPG adventure".to_string()),
       style_prompt: Some("fantasy video game".to_string()),
       audio_references: Some(AudioListRef::Urls(vec!["https://example.com/a.aac".to_string()])),

@@ -22,7 +22,7 @@ use crate::http_server::endpoints::omni_gen::generate::mesh::helpers::resolve_me
 use crate::http_server::endpoints::omni_gen::generate::video::helpers::bill_wallet::bill_wallet;
 use crate::http_server::endpoints::omni_gen::generate::video::helpers::build_router_client::build_router_client;
 use crate::http_server::endpoints::omni_gen::shared_utils::kinovi_account::KinoviAccount;
-use crate::http_server::endpoints::omni_gen::shared_utils::map_seedance2pro_router_error::map_router_error_to_web_error;
+use crate::http_server::endpoints::omni_gen::shared_utils::map_kinovi_web_router_error::map_router_error_to_web_error;
 use crate::state::server_state::ServerState;
 
 pub struct RunPipelineV2Args<'a> {

@@ -1,4 +1,4 @@
-use seedance2pro_client::generate::image::generate_midjourney_v7_niji::{
+use kinovi_web_client::generate::image::generate_midjourney_v7_niji::{
   GenerateMidjourneyV7NijiAspectRatio, GenerateMidjourneyV7NijiQuality,
   GenerateMidjourneyV7NijiRequest, KinoviMidjourneyBatchCount,
 };
@@ -29,7 +29,7 @@ impl KinoviMidjourney7NijiDraftState {
     &mut self,
     draft_context: &ImageGenerationDraftContext<'_>,
   ) -> Result<KinoviMidjourney7NijiRequestState, ArtcraftRouterError> {
-    let client = draft_context.get_seedance2pro_client_ref()?;
+    let client = draft_context.get_kinovi_web_client_ref()?;
     let session = &client.session;
 
     let mut reference_image_urls = None;

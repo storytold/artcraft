@@ -77,7 +77,7 @@ pub fn provider_request_debug_log_type(provider: RouterProvider) -> Option<Debug
   match provider {
     RouterProvider::Fal => Some(DebugLogType::FalRequest),
     RouterProvider::GrokApi => Some(DebugLogType::GrokApiRequest),
-    RouterProvider::Seedance2Pro => Some(DebugLogType::KinoviRequest),
+    RouterProvider::KinoviWeb => Some(DebugLogType::KinoviRequest),
     // First-party: the HttpRequest log already captures the user request.
     RouterProvider::Artcraft => None,
     // No DebugLogType variant yet; add one if GmiCloud routing is revived.

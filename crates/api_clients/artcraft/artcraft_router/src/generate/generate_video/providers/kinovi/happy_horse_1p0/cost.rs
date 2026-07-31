@@ -1,4 +1,4 @@
-use seedance2pro_client::generate::video::generate_happy_horse_1p0::{
+use kinovi_web_client::generate::video::generate_happy_horse_1p0::{
   GenerateHappyHorse1p0Request, KinoviHappyHorse1p0BatchCount,
   KinoviHappyHorse1p0OutputResolution,
 };
@@ -310,7 +310,7 @@ mod tests {
     use crate::api::router_video_model::RouterVideoModel;
     let builder = GenerateVideoRequestBuilder {
       model: RouterVideoModel::HappyHorse1p0,
-      provider: RouterProvider::Seedance2Pro,
+      provider: RouterProvider::KinoviWeb,
       resolution,
       duration_seconds: Some(duration_seconds),
       video_batch_count: Some(video_batch_count),

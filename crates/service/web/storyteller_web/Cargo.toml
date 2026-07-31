@@ -85,7 +85,7 @@ redis_caching = { path = "../../../lib/caching/redis_caching" }
 redis_common = { path = "../../../schema/database/redis_common" }
 redis_schema = { path = "../../../schema/database/redis_schema" }
 reusable_types = { path = "../../../schema/public/reusable_types" }
-seedance2pro_client.workspace = true
+kinovi_web_client.workspace = true
 server_environment = { path = "../../../lib/server_environment" }
 thumbnail_generator = { path = "../../../api_clients/thumbnail_generator" }
 tokens.workspace = true

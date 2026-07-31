@@ -1,12 +1,12 @@
-use seedance2pro_client::generate::audio::generate_suno_sample::{
+use kinovi_web_client::generate::audio::generate_suno_sample::{
   generate_suno_sample, GenerateSunoSampleArgs, GenerateSunoSampleRequest,
 };
 
-use crate::client::router_seedance2pro_client::RouterSeedance2ProClient;
+use crate::client::router_kinovi_web_client::RouterKinoviWebClient;
 use crate::errors::artcraft_router_error::ArtcraftRouterError;
 use crate::errors::provider_error::ProviderError;
 use crate::generate::generate_audio::generate_audio_response::{
-  GenerateAudioResponse, Seedance2proAudioResponsePayload,
+  GenerateAudioResponse, KinoviWebAudioResponsePayload,
 };
 
 #[derive(Debug, Clone)]
@@ -17,7 +17,7 @@ pub struct KinoviSunoSampleRequestState {
 }
 
 impl KinoviSunoSampleRequestState {
-  pub async fn send(&self, client: &RouterSeedance2ProClient) -> Result<GenerateAudioResponse, ArtcraftRouterError> {
+  pub async fn send(&self, client: &RouterKinoviWebClient) -> Result<GenerateAudioResponse, ArtcraftRouterError> {
     let session = &client.session;
 
     let args = GenerateSunoSampleArgs {
@@ -28,9 +28,9 @@ impl KinoviSunoSampleRequestState {
 
     let response = generate_suno_sample(args)
       .await
-      .map_err(|err| ArtcraftRouterError::Provider(ProviderError::Seedance2Pro(err)))?;
+      .map_err(|err| ArtcraftRouterError::Provider(ProviderError::KinoviWeb(err)))?;
 
-    Ok(GenerateAudioResponse::Seedance2Pro(Seedance2proAudioResponsePayload {
+    Ok(GenerateAudioResponse::KinoviWeb(KinoviWebAudioResponsePayload {
       order_id: response.order_id,
       task_id: response.task_id,
     }))
@@ -39,16 +39,16 @@ impl KinoviSunoSampleRequestState {
 
 #[cfg(test)]
 mod tests {
-  use seedance2pro_client::creds::seedance2pro_session::Seedance2ProSession;
-  use seedance2pro_client::requests::prepare_file_upload::prepare_file_upload::{prepare_file_upload, PrepareFileUploadArgs};
-  use seedance2pro_client::requests::upload_file::upload_file::{upload_file, UploadFileArgs};
+  use kinovi_web_client::creds::kinovi_web_session::KinoviWebSession;
+  use kinovi_web_client::requests::prepare_file_upload::prepare_file_upload::{prepare_file_upload, PrepareFileUploadArgs};
+  use kinovi_web_client::requests::upload_file::upload_file::{upload_file, UploadFileArgs};
   use test_utils::test_file_path::test_file_path;
 
   use crate::api::audio_list_ref::AudioListRef;
   use crate::api::router_audio_model::RouterAudioModel;
   use crate::api::router_provider::RouterProvider;
   use crate::client::router_client::RouterClient;
-  use crate::client::router_seedance2pro_client::RouterSeedance2ProClient;
+  use crate::client::router_kinovi_web_client::RouterKinoviWebClient;
   use crate::generate::generate_audio::audio_generation_draft_context::AudioGenerationDraftContext;
   use crate::generate::generate_audio::audio_generation_draft_or_request::AudioGenerationDraftOrRequest;
   use crate::generate::generate_audio::generate_audio_request_builder::GenerateAudioRequestBuilder;
@@ -59,13 +59,13 @@ mod tests {
   #[tokio::test]
   #[ignore] // Sends a real generation to Kinovi; costs credits. Requires a local audio file.
   async fn sample_instrumental() {
-    let client = get_seedance2pro_client();
+    let client = get_kinovi_web_client();
     let audio_url = upload_test_audio(&client).await;
     println!("Uploaded audio: {}", audio_url);
 
     let builder = GenerateAudioRequestBuilder {
       model: RouterAudioModel::SunoSample,
-      provider: RouterProvider::Seedance2Pro,
+      provider: RouterProvider::KinoviWeb,
       prompt: Some("Mystical RPG adventure, make it have a grand climax".to_string()),
       style_prompt: Some("Fantasy video game score".to_string()),
       is_instrumental: Some(true),
@@ -74,17 +74,17 @@ mod tests {
     };
 
     let response = run_pipeline(&client, builder).await;
-    assert!(matches!(response, GenerateAudioResponse::Seedance2Pro(_)));
+    assert!(matches!(response, GenerateAudioResponse::KinoviWeb(_)));
     assert_eq!(1, 2, "Inspect output above");
   }
 
   // ── Helpers ──
 
-  fn get_seedance2pro_client() -> RouterClient {
+  fn get_kinovi_web_client() -> RouterClient {
     let cookies = std::fs::read_to_string("/Users/bt/Artcraft/credentials/seedance2pro_cookies.txt")
-      .expect("Failed to read seedance2pro cookies");
-    let session = Seedance2ProSession::from_cookies_string(cookies.trim().to_string());
-    RouterClient::Seedance2Pro(RouterSeedance2ProClient::new(session))
+      .expect("Failed to read kinovi_web cookies");
+    let session = KinoviWebSession::from_cookies_string(cookies.trim().to_string());
+    RouterClient::KinoviWeb(RouterKinoviWebClient::new(session))
   }
 
   async fn run_pipeline(client: &RouterClient, builder: GenerateAudioRequestBuilder) -> GenerateAudioResponse {
@@ -103,7 +103,7 @@ mod tests {
     let response = request.send_request(client).await.expect("send_request should succeed");
 
     match &response {
-      GenerateAudioResponse::Seedance2Pro(p) => {
+      GenerateAudioResponse::KinoviWeb(p) => {
         println!("task_id={}, order_id={}", p.task_id, p.order_id);
       }
       other => println!("response: {:?}", other),
@@ -113,7 +113,7 @@ mod tests {
   }
 
   async fn upload_test_audio(client: &RouterClient) -> String {
-    let session = &client.get_seedance2pro_client_ref().expect("seedance2pro client").session;
+    let session = &client.get_kinovi_web_client_ref().expect("kinovi_web client").session;
 
     let audio_path = test_file_path(TEST_AUDIO_PATH).expect("test audio should exist");
     let audio_bytes = std::fs::read(&audio_path).expect("read test audio");

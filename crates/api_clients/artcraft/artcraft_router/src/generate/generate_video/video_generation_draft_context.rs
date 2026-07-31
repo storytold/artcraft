@@ -1,5 +1,5 @@
 use crate::client::router_client::RouterClient;
-use crate::client::router_seedance2pro_client::RouterSeedance2ProClient;
+use crate::client::router_kinovi_web_client::RouterKinoviWebClient;
 use crate::errors::artcraft_router_error::ArtcraftRouterError;
 use crate::errors::client_error::ClientError;
 use std::collections::HashMap;
@@ -22,9 +22,9 @@ pub struct VideoGenerationDraftContext<'a> {
 }
 
 impl <'a> VideoGenerationDraftContext<'a> {
-  pub fn get_seedance2pro_client_ref(&self) -> Result<&RouterSeedance2ProClient, ArtcraftRouterError> {
+  pub fn get_kinovi_web_client_ref(&self) -> Result<&RouterKinoviWebClient, ArtcraftRouterError> {
     let client = self.client.ok_or(ArtcraftRouterError::Client(ClientError::RouterClientNotProvided))?;
-    client.get_seedance2pro_client_ref()
+    client.get_kinovi_web_client_ref()
       .map_err(|err| ArtcraftRouterError::Client(err))
   }
 

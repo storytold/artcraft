@@ -18,7 +18,7 @@ use enums::common::generation::common_model_type::CommonModelType;
 use enums::common::generation_provider::GenerationProvider;
 use http_server_common::request::get_request_ip::get_request_ip;
 use mysql_queries::queries::debug_logs::insert_debug_log::{insert_debug_log, InsertDebugLogArgs};
-use mysql_queries::queries::generic_inference::api_providers::seedance2pro::insert_generic_inference_job_for_seedance2pro_queue_with_apriori_job_token::KinoviVersion;
+use mysql_queries::queries::generic_inference::api_providers::kinovi_web::insert_generic_inference_job_for_kinovi_web_queue_with_apriori_job_token::KinoviVersion;
 use mysql_queries::queries::idepotency_tokens::insert_idempotency_token::insert_idempotency_token;
 use mysql_queries::queries::prompt_context_items::insert_batch_prompt_context_items::{
   insert_batch_prompt_context_items, InsertBatchArgs, PromptContextItem,
@@ -33,7 +33,7 @@ use crate::http_server::endpoints::generate::common::generation_debug_logs::Gene
 use crate::http_server::endpoints::generate::common::payments_error_test::payments_error_test;
 use crate::http_server::endpoints::omni_gen::generate::audio::helpers::hydrate_router_request::hydrate_to_router_request;
 use crate::http_server::endpoints::omni_gen::generate::audio::insert_db_job::insert_fal_job::{insert_fal_job, InsertFalJobArgs};
-use crate::http_server::endpoints::omni_gen::generate::audio::insert_db_job::insert_seedance2pro_job::{insert_seedance2pro_job, InsertSeedance2proJobArgs};
+use crate::http_server::endpoints::omni_gen::generate::audio::insert_db_job::insert_kinovi_web_job::{insert_kinovi_web_job, InsertKinoviWebJobArgs};
 use crate::http_server::endpoints::omni_gen::generate::audio::pipeline_v2::run_pipeline_v2::{run_pipeline_v2, RunPipelineV2Args};
 use crate::http_server::endpoints::omni_gen::generate::video::insert_db_job::shared_job_args::SharedJobArgs;
 use crate::http_server::endpoints::omni_gen::shared_utils::kinovi_account::KinoviAccount;
@@ -297,10 +297,10 @@ pub async fn omni_gen_audio_generate_handler(
 
   let (primary_job_token, all_job_tokens): (InferenceJobToken, Vec<InferenceJobToken>) =
     match &pipeline_result.response {
-      GenerateAudioResponse::Seedance2Pro(payload) => {
-        info!("Inserting seedance2pro audio job with token: {:?}", pipeline_result.billing.apriori_job_token);
+      GenerateAudioResponse::KinoviWeb(payload) => {
+        info!("Inserting kinovi_web audio job with token: {:?}", pipeline_result.billing.apriori_job_token);
 
-        let token = insert_seedance2pro_job(InsertSeedance2proJobArgs {
+        let token = insert_kinovi_web_job(InsertKinoviWebJobArgs {
           order_id: &payload.order_id,
           maybe_wallet_ledger_entry_token: pipeline_result.billing.maybe_wallet_ledger_entry_token.as_ref(),
           kinovi_version: KinoviVersion::Volcengine,

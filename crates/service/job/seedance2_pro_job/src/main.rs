@@ -23,7 +23,7 @@ use concurrency::relaxed_atomic_bool::RelaxedAtomicBool;
 use shared_env_var_config::logging::DEFAULT_RUST_LOG;
 use errors::AnyhowResult;
 use jobs_common::job_stats::JobStats;
-use seedance2pro_client::creds::seedance2pro_session::Seedance2ProSession;
+use kinovi_web_client::creds::kinovi_web_session::KinoviWebSession;
 use server_environment::ServerEnvironment;
 use shared_env_var_config::mysql::env_get_mysql_connection_string_or_default;
 
@@ -172,7 +172,7 @@ async fn main() -> AnyhowResult<()> {
   let job_dependencies = JobDependencies {
     mysql_pool,
     public_bucket_client,
-    seedance2pro_session: kinovi_session,
+    kinovi_web_session: kinovi_session,
     kinovi_version,
     server_environment,
     job_stats,
@@ -248,7 +248,7 @@ async fn main() -> AnyhowResult<()> {
   info!("Shutting down pager worker...");
   pager_for_shutdown.shutdown_worker();
 
-  info!("Seedance2Pro job exiting.");
+  info!("KinoviWeb job exiting.");
 
   Ok(())
 }

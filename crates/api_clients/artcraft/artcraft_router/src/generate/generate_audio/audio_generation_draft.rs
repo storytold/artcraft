@@ -26,8 +26,8 @@ impl AudioGenerationDraftRequest {
 
   pub fn get_provider(&self) -> RouterProvider {
     match self {
-      Self::KinoviSunoRemix(_) => RouterProvider::Seedance2Pro,
-      Self::KinoviSunoSample(_) => RouterProvider::Seedance2Pro,
+      Self::KinoviSunoRemix(_) => RouterProvider::KinoviWeb,
+      Self::KinoviSunoSample(_) => RouterProvider::KinoviWeb,
     }
   }
 

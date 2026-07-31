@@ -1,4 +1,4 @@
-use seedance2pro_client::generate::audio::generate_suno_music::GenerateSunoMusicRequest;
+use kinovi_web_client::generate::audio::generate_suno_music::GenerateSunoMusicRequest;
 
 use crate::errors::artcraft_router_error::ArtcraftRouterError;
 use crate::generate::generate_audio::audio_generation_draft_or_request::AudioGenerationDraftOrRequest;
@@ -119,7 +119,7 @@ mod tests {
   fn base_builder() -> GenerateAudioRequestBuilder {
     GenerateAudioRequestBuilder {
       model: RouterAudioModel::SunoMusic,
-      provider: RouterProvider::Seedance2Pro,
+      provider: RouterProvider::KinoviWeb,
       prompt: Some("a song about corgis".to_string()),
       style_prompt: Some("sea shanty".to_string()),
       ..Default::default()

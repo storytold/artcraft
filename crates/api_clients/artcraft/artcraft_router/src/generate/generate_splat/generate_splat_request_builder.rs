@@ -252,7 +252,7 @@ mod tests {
         RouterProvider::Fal,
         RouterProvider::GmiCloud,
         RouterProvider::GrokApi,
-        RouterProvider::Seedance2Pro,
+        RouterProvider::KinoviWeb,
       ] {
         let result = GenerateSplatRequestBuilder {
           provider,

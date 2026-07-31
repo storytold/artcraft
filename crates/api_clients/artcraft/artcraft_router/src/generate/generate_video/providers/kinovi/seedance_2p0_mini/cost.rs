@@ -1,4 +1,4 @@
-use seedance2pro_client::generate::video::generate_seedance_2p0_mini::{
+use kinovi_web_client::generate::video::generate_seedance_2p0_mini::{
   GenerateSeedance2p0MiniRequest, KinoviSeedance2p0MiniBatchCount,
   KinoviSeedance2p0MiniOutputResolution,
 };
@@ -89,7 +89,7 @@ impl KinoviSeedance2p0MiniCostState {
 mod tests {
   use super::*;
   use crate::api::router_resolution::RouterResolution;
-  use seedance2pro_client::generate::video::generate_seedance_2p0_mini::{
+  use kinovi_web_client::generate::video::generate_seedance_2p0_mini::{
     KinoviSeedance2p0MiniOutputResolution as KinoviOutputResolution,
     KinoviSeedance2p0MiniBatchCount as KinoviBatchCount,
   };
@@ -328,7 +328,7 @@ mod tests {
 
     let builder = GenerateVideoRequestBuilder {
       model: RouterVideoModel::Seedance2p0Mini,
-      provider: RouterProvider::Seedance2Pro,
+      provider: RouterProvider::KinoviWeb,
       resolution,
       reference_videos,
       duration_seconds: Some(duration_seconds),

@@ -5,14 +5,14 @@
 //! draft `finalize()` phase. The upload plumbing is shared with the Kinovi
 //! video provider (`generate_video::providers::kinovi::upload`).
 
-use seedance2pro_client::creds::seedance2pro_session::Seedance2ProSession;
+use kinovi_web_client::creds::kinovi_web_session::KinoviWebSession;
 use tokens::tokens::media_files::MediaFileToken;
 
 use crate::api::audio_list_ref::AudioListRef;
 use crate::errors::artcraft_router_error::ArtcraftRouterError;
 use crate::errors::client_error::ClientError;
 use crate::generate::generate_audio::audio_generation_draft_context::AudioGenerationDraftContext;
-use crate::generate::generate_video::providers::kinovi::upload::upload_to_seedance2pro;
+use crate::generate::generate_video::providers::kinovi::upload::upload_to_kinovi_web;
 
 /// A single unresolved audio reference: either an ArtCraft/public URL or a
 /// media file token that resolves to one via the draft context's map.
@@ -55,7 +55,7 @@ pub(crate) fn require_single_audio_ref(
 /// Resolve a single audio reference to a source URL and re-upload it to the
 /// Kinovi CDN, returning the Kinovi CDN URL.
 pub(crate) async fn resolve_and_upload_audio_ref(
-  session: &Seedance2ProSession,
+  session: &KinoviWebSession,
   audio_ref: &SingleAudioRef,
   draft_context: &AudioGenerationDraftContext<'_>,
 ) -> Result<String, ArtcraftRouterError> {
@@ -71,7 +71,7 @@ pub(crate) async fn resolve_and_upload_audio_ref(
       })?
     }
   };
-  upload_to_seedance2pro(session, &source_url).await
+  upload_to_kinovi_web(session, &source_url).await
 }
 
 #[cfg(test)]

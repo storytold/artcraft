@@ -1,4 +1,4 @@
-use seedance2pro_client::generate::image::generate_midjourney_v7::{
+use kinovi_web_client::generate::image::generate_midjourney_v7::{
   GenerateMidjourneyV7AspectRatio, GenerateMidjourneyV7Quality,
   GenerateMidjourneyV7Request, KinoviMidjourneyBatchCount,
 };
@@ -17,7 +17,7 @@ pub struct KinoviMidjourney7DraftState {
   pub quality: Option<GenerateMidjourneyV7Quality>,
   pub batch_count: KinoviMidjourneyBatchCount,
 
-  /// Image references that still need to be uploaded to Seedance2Pro CDN
+  /// Image references that still need to be uploaded to KinoviWeb CDN
   /// before the request is sendable. `None` once `to_request()` has run.
   pub unhandled_request_state: Option<KinoviMidjourney7RemainingItems>,
 }
@@ -32,7 +32,7 @@ impl KinoviMidjourney7DraftState {
     &mut self,
     draft_context: &ImageGenerationDraftContext<'_>,
   ) -> Result<KinoviMidjourney7RequestState, ArtcraftRouterError> {
-    let client = draft_context.get_seedance2pro_client_ref()?;
+    let client = draft_context.get_kinovi_web_client_ref()?;
     let session = &client.session;
 
     let mut reference_image_urls = None;
@@ -63,10 +63,10 @@ impl KinoviMidjourney7DraftState {
 #[cfg(test)]
 mod tests {
   use super::*;
-  use seedance2pro_client::generate::image::generate_midjourney_v7::GenerateMidjourneyV7AspectRatio;
+  use kinovi_web_client::generate::image::generate_midjourney_v7::GenerateMidjourneyV7AspectRatio;
 
   // Note: most behavioral tests live in `build.rs` and `cost.rs`. The
-  // `to_request()` method requires a live Seedance2Pro client to upload
+  // `to_request()` method requires a live KinoviWeb client to upload
   // images, so its end-to-end behavior is exercised by the `request.rs`
   // #[ignore]'d integration tests rather than unit-tested here.
 

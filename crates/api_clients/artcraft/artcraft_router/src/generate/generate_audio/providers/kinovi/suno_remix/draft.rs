@@ -1,4 +1,4 @@
-use seedance2pro_client::generate::audio::generate_suno_remix::{
+use kinovi_web_client::generate::audio::generate_suno_remix::{
   GenerateSunoRemixRequest, KinoviSunoRemixSource,
 };
 
@@ -26,7 +26,7 @@ impl KinoviSunoRemixDraftState {
     &mut self,
     draft_context: &AudioGenerationDraftContext<'_>,
   ) -> Result<KinoviSunoRemixRequestState, ArtcraftRouterError> {
-    let client = draft_context.get_seedance2pro_client_ref()?;
+    let client = draft_context.get_kinovi_web_client_ref()?;
     let session = &client.session;
 
     let audio_source = self.audio_source.take().ok_or_else(|| {
