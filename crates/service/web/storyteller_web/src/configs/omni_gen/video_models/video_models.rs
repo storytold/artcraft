@@ -8,6 +8,7 @@ use super::by_type::happy_horse_video_models::happy_horse_video_models;
 use super::by_type::kling_video_models::{kling_disabled_video_models, kling_video_models};
 use super::by_type::seedance_1x_video_models::{seedance_1p0_video_models, seedance_1p5_video_models};
 use super::by_type::seedance_2p0_video_models::seedance_2p0_video_models;
+use super::by_type::seedance_2p5_video_models::seedance_2p5_video_models;
 use super::by_type::sora_video_models::sora_video_models;
 use super::by_type::veo_video_models::veo_video_models;
 use super::by_type::vidu_video_models::vidu_video_models;
@@ -32,6 +33,7 @@ fn build_omni_gen_video_models() -> Vec<OmniGenVideoModelDetails> {
   models.extend(seedance_1p0_video_models());
   models.extend(seedance_1p5_video_models());
   models.extend(seedance_2p0_video_models());
+  models.extend(seedance_2p5_video_models());
   models.extend(sora_video_models());
   models.extend(veo_video_models());
   models.extend(vidu_video_models());

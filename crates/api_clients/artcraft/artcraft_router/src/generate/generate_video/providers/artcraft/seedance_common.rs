@@ -113,6 +113,37 @@ pub fn seedance_2p0_byteplus_mini_usd_cents(
   )
 }
 
+// ── Seedance 2.5 Preview pricing ──
+//
+// 2.5 Preview offers only 480p and 720p, generates one video per request (no
+// batching), and — unlike the 2.0 family — references of any kind do NOT
+// change the price. The rates below are the per-second USER price in USD
+// cents: the supplier's cost (46.81 / 93.62 Kinovi credits per second at 243
+// credits/$) plus the same 5% margin as the regular Mini.
+
+/// Seedance 2.5 Preview — 480p price, USD cents per second.
+const SEEDANCE_2P5_PREVIEW_CENTS_PER_SECOND_480P: f64 = 20.22654321;
+/// Seedance 2.5 Preview — 720p price, USD cents per second.
+const SEEDANCE_2P5_PREVIEW_CENTS_PER_SECOND_720P: f64 = 40.45308642;
+
+/// ArtCraft's user-facing price (USD cents) for Seedance 2.5 Preview.
+///
+/// Only 480p and 720p are offered; any other resolution prices at 720p.
+/// References never affect the price and there is no batching. The fractional
+/// total is rounded UP to a whole cent.
+pub fn seedance_2p5_preview_usd_cents(
+  resolution: CommonResolution,
+  duration_seconds: u16,
+) -> u64 {
+  let cents_per_second = match resolution {
+    CommonResolution::FourEightyP => SEEDANCE_2P5_PREVIEW_CENTS_PER_SECOND_480P,
+    // Everything else (including 720p and unsupported resolutions) prices at 720p.
+    _ => SEEDANCE_2P5_PREVIEW_CENTS_PER_SECOND_720P,
+  };
+
+  (cents_per_second * duration_seconds as f64).ceil() as u64
+}
+
 #[allow(clippy::too_many_arguments)]
 fn mini_usd_cents(
   resolution: CommonResolution,
