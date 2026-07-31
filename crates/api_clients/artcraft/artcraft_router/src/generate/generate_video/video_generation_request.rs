@@ -127,6 +127,8 @@ use crate::generate::generate_video::providers::kinovi::seedance_2p0_fast::cost:
 use crate::generate::generate_video::providers::kinovi::seedance_2p0_fast::request::KinoviSeedance2p0FastRequestState;
 use crate::generate::generate_video::providers::kinovi::seedance_2p0_mini::cost::KinoviSeedance2p0MiniCostState;
 use crate::generate::generate_video::providers::kinovi::seedance_2p0_mini::request::KinoviSeedance2p0MiniRequestState;
+use crate::generate::generate_video::providers::kinovi::seedance_2p5_preview::cost::KinoviSeedance2p5PreviewCostState;
+use crate::generate::generate_video::providers::kinovi::seedance_2p5_preview::request::KinoviSeedance2p5PreviewRequestState;
 
 #[derive(Clone, Debug)]
 pub enum VideoGenerationRequest {
@@ -192,6 +194,7 @@ pub enum VideoGenerationRequest {
   KinoviSeedance2p0(KinoviSeedance2p0RequestState),
   KinoviSeedance2p0Fast(KinoviSeedance2p0FastRequestState),
   KinoviSeedance2p0Mini(KinoviSeedance2p0MiniRequestState),
+  KinoviSeedance2p5Preview(KinoviSeedance2p5PreviewRequestState),
 }
 
 impl VideoGenerationRequest {
@@ -260,6 +263,7 @@ impl VideoGenerationRequest {
       Self::KinoviSeedance2p0(_) => RouterProvider::KinoviWeb,
       Self::KinoviSeedance2p0Fast(_) => RouterProvider::KinoviWeb,
       Self::KinoviSeedance2p0Mini(_) => RouterProvider::KinoviWeb,
+      Self::KinoviSeedance2p5Preview(_) => RouterProvider::KinoviWeb,
     }
   }
 
@@ -328,6 +332,7 @@ impl VideoGenerationRequest {
       VideoGenerationRequest::KinoviSeedance2p0(request) => Ok(KinoviSeedance2p0CostState::from_request(request).estimate_cost()),
       VideoGenerationRequest::KinoviSeedance2p0Fast(request) => Ok(KinoviSeedance2p0FastCostState::from_request(request).estimate_cost()),
       VideoGenerationRequest::KinoviSeedance2p0Mini(request) => Ok(KinoviSeedance2p0MiniCostState::from_request(request).estimate_cost()),
+      VideoGenerationRequest::KinoviSeedance2p5Preview(request) => Ok(KinoviSeedance2p5PreviewCostState::from_request(request).estimate_cost()),
     }
   }
 
@@ -580,6 +585,10 @@ impl VideoGenerationRequest {
         request.send(client_ref).await
       },
       VideoGenerationRequest::KinoviSeedance2p0Mini(request) => {
+        let client_ref = client.get_kinovi_web_client_ref()?;
+        request.send(client_ref).await
+      },
+      VideoGenerationRequest::KinoviSeedance2p5Preview(request) => {
         let client_ref = client.get_kinovi_web_client_ref()?;
         request.send(client_ref).await
       },

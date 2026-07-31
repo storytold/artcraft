@@ -74,6 +74,9 @@ pub enum RouterVideoModel {
   #[serde(rename = "seedance_2p0_bpu_mini")]
   Seedance2p0BytePlusUltraMini,
 
+  #[serde(rename = "seedance_2p5_preview")]
+  Seedance2p5Preview,
+
   #[serde(rename = "happy_horse_1p0")]
   HappyHorse1p0,
 
@@ -131,6 +134,11 @@ mod tests {
     assert_serde_round_trip(RouterVideoModel::Seedance2p0Mini, "seedance_2p0_mini");
     assert_serde_round_trip(RouterVideoModel::Seedance2p0BytePlusMini, "seedance_2p0_bp_mini");
     assert_serde_round_trip(RouterVideoModel::Seedance2p0BytePlusUltraMini, "seedance_2p0_bpu_mini");
+  }
+
+  #[test]
+  fn seedance_2p5_preview_serializes() {
+    assert_serde_round_trip(RouterVideoModel::Seedance2p5Preview, "seedance_2p5_preview");
   }
 
   #[test]
