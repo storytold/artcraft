@@ -49,6 +49,17 @@ pub (super) struct ApiParams {
   pub face_blur_mode: Option<&'static str>,
   #[serde(rename = "characterIds", skip_serializing_if = "Option::is_none")]
   pub character_ids: Option<Vec<String>>,
+  /// Reference image URLs, for models that send references in split
+  /// `imageUrls` / `videoUrls` fields (Seedance 2.5 Preview). Those models
+  /// also mirror the image URLs into `uploadedUrls`. None for models that
+  /// send a single combined `uploadedUrls` list.
+  #[serde(rename = "imageUrls", skip_serializing_if = "Option::is_none")]
+  pub image_urls: Option<Vec<String>>,
+  /// Reference video URLs, for models that send references in split
+  /// `imageUrls` / `videoUrls` fields (Seedance 2.5 Preview). None for
+  /// models that send videos in the combined `uploadedUrls` list.
+  #[serde(rename = "videoUrls", skip_serializing_if = "Option::is_none")]
+  pub video_urls: Option<Vec<String>>,
   #[serde(rename = "uploadedUrls", skip_serializing_if = "Option::is_none")]
   pub uploaded_urls: Option<Vec<String>>,
   #[serde(rename = "audioUrls", skip_serializing_if = "Option::is_none")]
