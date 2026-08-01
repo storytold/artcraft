@@ -129,7 +129,7 @@ mod tests {
     let result = upload_file(upload_args).await?;
     println!("Public URL: {}", result.public_url);
 
-    assert!(result.public_url.starts_with("https://static.kinovi.ai/materials/"));
+    assert!(result.public_url.starts_with("https://static.seedance2-pro.com/materials/"));
     assert_eq!(1, 2); // NB: Intentional failure to check the response.
 
     Ok(())
@@ -164,7 +164,7 @@ mod tests {
     let result = upload_file(upload_args).await?;
     println!("Public URL: {}", result.public_url);
 
-    assert!(result.public_url.starts_with("https://static.kinovi.ai/materials/"));
+    assert!(result.public_url.starts_with("https://static.seedance2-pro.com/materials/"));
     assert_eq!(1, 2); // NB: Intentional failure to check the response.
 
     Ok(())
