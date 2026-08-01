@@ -19,12 +19,6 @@ pub struct GenerateSeedance2p5PreviewArgs<'a> {
 
 /// Seedance 2.5 Preview only supports reference mode (there is no keyframe
 /// start/end frame mode), 480p/720p output, and durations of 4–30 seconds.
-///
-/// Reference URLs must be Kinovi CDN material URLs: upload via
-/// `prepare_file_upload` + `upload_file`, then register the file with
-/// `create_material` (the site does this for every reference before calling
-/// `workflow.runTask`; registration triggers Kinovi's content detection, and
-/// unregistered video references have been observed to fail).
 #[derive(Clone, Debug)]
 pub struct GenerateSeedance2p5PreviewRequest {
   pub prompt: String,
