@@ -55,12 +55,12 @@ mod tests {
 
     #[test]
     fn full_duration_table() {
-      assert_eq!(cents(Some(RouterResolution::FourEightyP), 4), 82);
-      assert_eq!(cents(Some(RouterResolution::FourEightyP), 10), 205);
-      assert_eq!(cents(Some(RouterResolution::FourEightyP), 15), 307);
-      assert_eq!(cents(Some(RouterResolution::FourEightyP), 20), 409);
-      assert_eq!(cents(Some(RouterResolution::FourEightyP), 25), 511);
-      assert_eq!(cents(Some(RouterResolution::FourEightyP), 30), 613);
+      assert_eq!(cents(Some(RouterResolution::FourEightyP), 4), 86);
+      assert_eq!(cents(Some(RouterResolution::FourEightyP), 10), 214);
+      assert_eq!(cents(Some(RouterResolution::FourEightyP), 15), 321);
+      assert_eq!(cents(Some(RouterResolution::FourEightyP), 20), 428);
+      assert_eq!(cents(Some(RouterResolution::FourEightyP), 25), 535);
+      assert_eq!(cents(Some(RouterResolution::FourEightyP), 30), 642);
     }
   }
 
@@ -69,12 +69,12 @@ mod tests {
 
     #[test]
     fn full_duration_table() {
-      assert_eq!(cents(Some(RouterResolution::SevenTwentyP), 4), 164);
-      assert_eq!(cents(Some(RouterResolution::SevenTwentyP), 10), 409);
-      assert_eq!(cents(Some(RouterResolution::SevenTwentyP), 15), 613);
-      assert_eq!(cents(Some(RouterResolution::SevenTwentyP), 20), 817);
-      assert_eq!(cents(Some(RouterResolution::SevenTwentyP), 25), 1021);
-      assert_eq!(cents(Some(RouterResolution::SevenTwentyP), 30), 1226);
+      assert_eq!(cents(Some(RouterResolution::SevenTwentyP), 4), 172);
+      assert_eq!(cents(Some(RouterResolution::SevenTwentyP), 10), 428);
+      assert_eq!(cents(Some(RouterResolution::SevenTwentyP), 15), 642);
+      assert_eq!(cents(Some(RouterResolution::SevenTwentyP), 20), 856);
+      assert_eq!(cents(Some(RouterResolution::SevenTwentyP), 25), 1070);
+      assert_eq!(cents(Some(RouterResolution::SevenTwentyP), 30), 1283);
     }
 
     #[test]
