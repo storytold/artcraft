@@ -15,8 +15,9 @@ impl ArtcraftSora2CostState {
   }
 
   pub fn estimate_cost(&self) -> VideoGenerationCostEstimate {
-    // Sora 2: $0.10/second. Default duration 4s.
-    let cost_in_usd_cents = self.duration_seconds * 10;
+    // Sora 2: 11.5¢/second (held in hundredths of a cent, rounded up to
+    // whole cents). Default duration 4s.
+    let cost_in_usd_cents = (self.duration_seconds * 1_150).div_ceil(100);
 
     VideoGenerationCostEstimate {
       cost_in_credits: Some(cost_in_usd_cents),
@@ -48,14 +49,14 @@ mod tests {
   }
 
   #[test]
-  fn four_seconds_is_40() { assert_eq!(cost_cents(Some(4)), 40); }
+  fn four_seconds_is_46() { assert_eq!(cost_cents(Some(4)), 46); }
 
   #[test]
-  fn eight_seconds_is_80() { assert_eq!(cost_cents(Some(8)), 80); }
+  fn eight_seconds_is_92() { assert_eq!(cost_cents(Some(8)), 92); }
 
   #[test]
-  fn twelve_seconds_is_120() { assert_eq!(cost_cents(Some(12)), 120); }
+  fn twelve_seconds_is_138() { assert_eq!(cost_cents(Some(12)), 138); }
 
   #[test]
-  fn default_duration_is_4s_priced_at_40() { assert_eq!(cost_cents(None), 40); }
+  fn default_duration_is_4s_priced_at_46() { assert_eq!(cost_cents(None), 46); }
 }

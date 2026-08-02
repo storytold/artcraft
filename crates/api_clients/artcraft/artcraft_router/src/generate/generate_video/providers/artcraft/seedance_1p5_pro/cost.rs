@@ -8,6 +8,10 @@ use fal_client::requests_old::webhook::video::text::enqueue_seedance_1p5_pro_tex
 use crate::generate::generate_video::video_generation_cost_estimate::VideoGenerationCostEstimate;
 use crate::generate::generate_video::providers::artcraft::seedance_1p5_pro::request::ArtcraftSeedance1p5ProRequestState;
 
+// The markup is applied at cent granularity with ceiling rounding.
+const MARKUP_NUMERATOR: u64 = 115;
+const MARKUP_DENOMINATOR: u64 = 100;
+
 #[derive(Clone, Debug)]
 pub struct ArtcraftSeedance1p5ProCostState {
   pub duration: Option<EnqueueSeedance1p5ProTextToVideoDuration>,
@@ -37,7 +41,8 @@ impl ArtcraftSeedance1p5ProCostState {
       aspect_ratio: None,
       generate_audio: self.generate_audio,
     };
-    let cost_in_usd_cents = req.calculate_cost_in_cents();
+    let base = req.calculate_cost_in_cents();
+    let cost_in_usd_cents = base.saturating_mul(MARKUP_NUMERATOR).div_ceil(MARKUP_DENOMINATOR);
 
     VideoGenerationCostEstimate {
       cost_in_credits: Some(cost_in_usd_cents),
@@ -96,14 +101,14 @@ mod tests {
   // Numeric literals mirror the v1 Artcraft Seedance 1.5 Pro tests we deleted:
   // resolution=None + generate_audio=None → fal client defaults (720p, audio on).
   #[test]
-  fn default_5s_is_26() { assert_eq!(cost_cents(Some(5)), 26); }
+  fn default_5s_is_30() { assert_eq!(cost_cents(Some(5)), 30); }
 
   #[test]
-  fn default_4s_is_26() { assert_eq!(cost_cents(Some(4)), 26); }
+  fn default_4s_is_30() { assert_eq!(cost_cents(Some(4)), 30); }
 
   #[test]
-  fn default_10s_is_65() { assert_eq!(cost_cents(Some(10)), 65); }
+  fn default_10s_is_75() { assert_eq!(cost_cents(Some(10)), 75); }
 
   #[test]
-  fn default_12s_is_78() { assert_eq!(cost_cents(Some(12)), 78); }
+  fn default_12s_is_90() { assert_eq!(cost_cents(Some(12)), 90); }
 }

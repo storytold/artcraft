@@ -13,7 +13,7 @@ impl ArtcraftKling2p5TurboProCostState {
 
   pub fn estimate_cost(&self) -> VideoGenerationCostEstimate {
     // Mirrors fal_client kling_v2p5_turbo_pro: 5s = 35¢, 10s = 70¢.
-    let cost_in_usd_cents: u64 = if self.is_ten_seconds { 70 } else { 35 };
+    let cost_in_usd_cents: u64 = if self.is_ten_seconds { 81 } else { 41 };
 
     VideoGenerationCostEstimate {
       cost_in_credits: Some(cost_in_usd_cents),
@@ -45,11 +45,11 @@ mod tests {
   }
 
   #[test]
-  fn five_seconds_is_35() { assert_eq!(cost_cents(Some(5)), 35); }
+  fn five_seconds_is_41() { assert_eq!(cost_cents(Some(5)), 41); }
 
   #[test]
-  fn ten_seconds_is_70() { assert_eq!(cost_cents(Some(10)), 70); }
+  fn ten_seconds_is_81() { assert_eq!(cost_cents(Some(10)), 81); }
 
   #[test]
-  fn default_duration_is_5s_priced_at_35() { assert_eq!(cost_cents(None), 35); }
+  fn default_duration_is_5s_priced_at_41() { assert_eq!(cost_cents(None), 41); }
 }
