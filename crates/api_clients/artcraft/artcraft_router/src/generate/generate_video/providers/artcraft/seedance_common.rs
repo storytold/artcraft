@@ -119,9 +119,9 @@ pub fn seedance_2p0_byteplus_mini_usd_cents(
 // change the price.
 
 /// Seedance 2.5 Preview — 480p price, USD cents per second.
-const SEEDANCE_2P5_PREVIEW_CENTS_PER_SECOND_480P: f64 = 20.41909465;
+const SEEDANCE_2P5_PREVIEW_CENTS_PER_SECOND_480P: f64 = 21.38234568;
 /// Seedance 2.5 Preview — 720p price, USD cents per second.
-const SEEDANCE_2P5_PREVIEW_CENTS_PER_SECOND_720P: f64 = 40.8381893;
+const SEEDANCE_2P5_PREVIEW_CENTS_PER_SECOND_720P: f64 = 42.76469136;
 
 /// ArtCraft's price (USD cents) for Seedance 2.5 Preview.
 ///
