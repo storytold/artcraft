@@ -35,7 +35,10 @@ import { DownloadModal } from "../../components/download-modal";
 import ModelBadgeGrid from "../../components/model-badge-grid";
 import { getSession } from "../../lib/session";
 import { BillingApi } from "@storyteller/api";
-import { DOWNLOAD_LINKS } from "../../config/github_download_links";
+import {
+  DOWNLOAD_LINKS,
+  DOWNLOADS_ENABLED,
+} from "../../config/github_download_links";
 import { webappUrl, SOCIAL_LINKS } from "../../config/links";
 import { Button } from "@storyteller/ui-button";
 import { Tooltip } from "@storyteller/ui-tooltip";
@@ -770,17 +773,19 @@ const LandingSD25 = () => {
                   isLoggedIn={isLoggedIn}
                   hasSubscription={hasSubscription}
                 />
-                <a
-                  href={downloadUrl}
-                  onClick={onDownloadClick}
-                  className="inline-flex items-center gap-2 h-11 px-5 rounded-full bg-white hover:bg-white/90 text-black text-[14px] font-semibold transition-all hover:-translate-y-px shadow-[0_4px_24px_-4px_rgba(255,255,255,0.2)]"
-                >
-                  <FontAwesomeIcon
-                    icon={isMacOs ? faApple : faWindows}
-                    className="text-[13px]"
-                  />
-                  Download for {isMacOs ? "Mac" : "Windows"}
-                </a>
+                {DOWNLOADS_ENABLED && (
+                  <a
+                    href={downloadUrl}
+                    onClick={onDownloadClick}
+                    className="inline-flex items-center gap-2 h-11 px-5 rounded-full bg-white hover:bg-white/90 text-black text-[14px] font-semibold transition-all hover:-translate-y-px shadow-[0_4px_24px_-4px_rgba(255,255,255,0.2)]"
+                  >
+                    <FontAwesomeIcon
+                      icon={isMacOs ? faApple : faWindows}
+                      className="text-[13px]"
+                    />
+                    Download for {isMacOs ? "Mac" : "Windows"}
+                  </a>
+                )}
               </>
             )}
           </div>
@@ -1547,17 +1552,19 @@ const LandingSD25 = () => {
                       isLoggedIn={isLoggedIn}
                       hasSubscription={hasSubscription}
                     />
-                    <a
-                      href={downloadUrl}
-                      onClick={onDownloadClick}
-                      className="inline-flex items-center gap-2 h-11 px-5 rounded-full bg-white hover:bg-white/90 text-black text-[14px] font-semibold transition-all hover:-translate-y-px shadow-[0_4px_24px_-4px_rgba(255,255,255,0.2)]"
-                    >
-                      <FontAwesomeIcon
-                        icon={isMacOs ? faApple : faWindows}
-                        className="text-[13px]"
-                      />
-                      Download for {isMacOs ? "Mac" : "Windows"}
-                    </a>
+                    {DOWNLOADS_ENABLED && (
+                      <a
+                        href={downloadUrl}
+                        onClick={onDownloadClick}
+                        className="inline-flex items-center gap-2 h-11 px-5 rounded-full bg-white hover:bg-white/90 text-black text-[14px] font-semibold transition-all hover:-translate-y-px shadow-[0_4px_24px_-4px_rgba(255,255,255,0.2)]"
+                      >
+                        <FontAwesomeIcon
+                          icon={isMacOs ? faApple : faWindows}
+                          className="text-[13px]"
+                        />
+                        Download for {isMacOs ? "Mac" : "Windows"}
+                      </a>
+                    )}
                   </>
                 )}
               </div>
