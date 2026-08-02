@@ -377,6 +377,24 @@ export default function CreateAudio() {
     [maxImageRefs, handleReferenceImagesChange],
   );
 
+  // Refs already in each slot, greyed out in that slot's picker so the same
+  // media file can't be added twice to one field.
+  const usedImageTokens = useMemo(
+    () =>
+      referenceImages
+        .map((img) => img.mediaToken)
+        .filter((t): t is string => !!t),
+    [referenceImages],
+  );
+
+  const usedAudioTokens = useMemo(
+    () =>
+      referenceAudios
+        .map((audio) => audio.mediaToken)
+        .filter((t): t is string => !!t),
+    [referenceAudios],
+  );
+
   const handleGenerate = useCallback(async () => {
     if (!loggedIn) {
       openSignupCta();
@@ -868,6 +886,7 @@ export default function CreateAudio() {
             isOpen={isImagePickerOpen}
             onClose={() => setIsImagePickerOpen(false)}
             selectedItemIds={pickerSelectedIds}
+            disabledItemIds={usedImageTokens}
             onSelectItem={handlePickerSelect}
             maxSelections={maxImageRefs}
             onUseSelected={handleLibraryImageSelect}
@@ -879,6 +898,7 @@ export default function CreateAudio() {
             isOpen={isAudioPickerOpen}
             onClose={() => setIsAudioPickerOpen(false)}
             selectedItemIds={audioPickerSelectedIds}
+            disabledItemIds={usedAudioTokens}
             onSelectItem={handleAudioPickerSelect}
             maxSelections={audioPickerMax}
             onUseSelected={handleLibraryAudioSelect}

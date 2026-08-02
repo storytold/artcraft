@@ -496,6 +496,7 @@ export const PromptBoxVideo = ({
     referenceImages,
     setReferenceImages,
     maxImages: maxImageCount,
+    endFrameImage,
     setEndFrameImage,
     referenceVideos,
     setReferenceVideos,

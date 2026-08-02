@@ -738,6 +738,22 @@ export default function CreateVideo() {
     setIsEndFramePickerOpen(false);
   }, []);
 
+  // Each picker only greys out tokens already in its own slot, so the same
+  // media file can't be added twice to one field. Reusing an image across
+  // slots (e.g. the same image as start AND end frame) stays allowed.
+  const usedImageTokens = useMemo(
+    () =>
+      referenceImages
+        .map((img) => img.mediaToken)
+        .filter((t): t is string => !!t),
+    [referenceImages],
+  );
+
+  const usedEndFrameTokens = useMemo(
+    () => (endFrameImage?.mediaToken ? [endFrameImage.mediaToken] : []),
+    [endFrameImage],
+  );
+
   const handleGenerate = useCallback(async () => {
     if (!prompt.trim() || isGeneratingRef.current) {
       console.log("[generate-video] blocked", {
@@ -1210,6 +1226,7 @@ export default function CreateVideo() {
             isOpen={isImagePickerOpen}
             onClose={() => setIsImagePickerOpen(false)}
             selectedItemIds={pickerSelectedIds}
+            disabledItemIds={usedImageTokens}
             onSelectItem={handlePickerSelect}
             maxSelections={imagePickerMax}
             onUseSelected={handleLibraryImageSelect}
@@ -1221,6 +1238,7 @@ export default function CreateVideo() {
             isOpen={isEndFramePickerOpen}
             onClose={() => setIsEndFramePickerOpen(false)}
             selectedItemIds={endFramePickerSelectedIds}
+            disabledItemIds={usedEndFrameTokens}
             onSelectItem={handleEndFramePickerSelect}
             maxSelections={1}
             onUseSelected={handleEndFrameLibrarySelect}
