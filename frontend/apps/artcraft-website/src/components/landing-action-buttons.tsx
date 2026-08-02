@@ -3,7 +3,10 @@ import { isMobile, isMacOs } from "react-device-detect";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faWindows, faApple } from "@fortawesome/free-brands-svg-icons";
 import { faRocket } from "@fortawesome/pro-solid-svg-icons";
-import { DOWNLOAD_LINKS } from "../config/github_download_links";
+import {
+  DOWNLOAD_LINKS,
+  DOWNLOADS_ENABLED,
+} from "../config/github_download_links";
 
 interface LandingActionButtonsProps {
   onDownloadClick?: (e: React.MouseEvent) => void;
@@ -40,23 +43,25 @@ export const LandingActionButtons = ({
             <FontAwesomeIcon icon={faRocket} />
             {creditsButtonText}
           </Button>
-          <div className="relative">
-            <Button
-              className="text-md px-8 py-4 text-lg font-semibold rounded-xl shadow-lg gap-3 transition-all duration-300 bg-white hover:bg-white/80 text-black"
-              as="link"
-              href={downloadUrl}
-              onClick={onDownloadClick}
-            >
-              <FontAwesomeIcon icon={isMacOs ? faApple : faWindows} />
-              Download for {isMacOs ? "Mac" : "Windows"}
-            </Button>
-            <a
-              href="/download"
-              className="absolute left-1/2 -translate-x-1/2 top-full mt-2 text-xs text-white/40 hover:text-white/70 transition-colors duration-200 whitespace-nowrap"
-            >
-              More download options
-            </a>
-          </div>
+          {DOWNLOADS_ENABLED && (
+            <div className="relative">
+              <Button
+                className="text-md px-8 py-4 text-lg font-semibold rounded-xl shadow-lg gap-3 transition-all duration-300 bg-white hover:bg-white/80 text-black"
+                as="link"
+                href={downloadUrl}
+                onClick={onDownloadClick}
+              >
+                <FontAwesomeIcon icon={isMacOs ? faApple : faWindows} />
+                Download for {isMacOs ? "Mac" : "Windows"}
+              </Button>
+              <a
+                href="/download"
+                className="absolute left-1/2 -translate-x-1/2 top-full mt-2 text-xs text-white/40 hover:text-white/70 transition-colors duration-200 whitespace-nowrap"
+              >
+                More download options
+              </a>
+            </div>
+          )}
         </>
       )}
     </div>

@@ -9,7 +9,10 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Button } from "@storyteller/ui-button";
 import { Link, useSearchParams } from "react-router-dom";
 import { isMobile, isMacOs } from "react-device-detect";
-import { DOWNLOAD_LINKS } from "../../config/github_download_links";
+import {
+  DOWNLOAD_LINKS,
+  DOWNLOADS_ENABLED,
+} from "../../config/github_download_links";
 import { SOCIAL_LINKS } from "../../config/links";
 import Seo from "../../components/seo";
 import { PagePatternBackdrop } from "../../components/truchet-pattern";
@@ -142,14 +145,16 @@ const CheckoutSuccess = () => {
             {/* CTA Buttons */}
             {!isMobile ? (
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Button
-                  as="link"
-                  href={downloadUrl}
-                  className="rounded-full bg-primary hover:bg-primary-600 px-8 py-3 text-sm font-bold rounded-xl justify-center"
-                >
-                  <FontAwesomeIcon icon={faDownload} className="mr-2" />
-                  Download ArtCraft
-                </Button>
+                {DOWNLOADS_ENABLED && (
+                  <Button
+                    as="link"
+                    href={downloadUrl}
+                    className="rounded-full bg-primary hover:bg-primary-600 px-8 py-3 text-sm font-bold rounded-xl justify-center"
+                  >
+                    <FontAwesomeIcon icon={faDownload} className="mr-2" />
+                    Download ArtCraft
+                  </Button>
+                )}
               </div>
             ) : (
               <div className="bg-[#431407] border border-orange-900/50 rounded-2xl p-6 text-orange-200 text-sm leading-relaxed">
@@ -162,7 +167,7 @@ const CheckoutSuccess = () => {
             )}
 
             {/* Download Links */}
-            {!isMobile && (
+            {!isMobile && DOWNLOADS_ENABLED && (
               <div className="mt-6 flex justify-center gap-6 text-sm font-medium text-white/40">
                 <a
                   href={DOWNLOAD_LINKS.WINDOWS}

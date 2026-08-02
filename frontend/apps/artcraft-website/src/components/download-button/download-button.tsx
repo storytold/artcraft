@@ -5,7 +5,10 @@ import {
   faLinux,
 } from "@fortawesome/free-brands-svg-icons";
 import { isMobile, isWindows, isMacOs } from "react-device-detect";
-import { DOWNLOAD_LINKS } from "../../config/github_download_links";
+import {
+  DOWNLOAD_LINKS,
+  DOWNLOADS_ENABLED,
+} from "../../config/github_download_links";
 
 interface DownloadButtonProps {
   className?: string;
@@ -21,9 +24,11 @@ export const DownloadButton = ({ className = "" }: DownloadButtonProps) => {
   const getDownloadLink = () => {
     if (isWindows) return DOWNLOAD_LINKS.WINDOWS;
     if (isMacOs) return DOWNLOAD_LINKS.MACOS;
-    if (isLinux) return DOWNLOAD_LINKS.LINUX;
+    // No Linux build is published yet.
     return null;
   };
+
+  if (!DOWNLOADS_ENABLED) return null;
 
   const getIcon = () => {
     if (isMobile) return undefined;

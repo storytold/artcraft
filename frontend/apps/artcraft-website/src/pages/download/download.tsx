@@ -7,7 +7,10 @@ import {
 } from "@fortawesome/pro-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Button } from "@storyteller/ui-button";
-import { DOWNLOAD_LINKS } from "../../config/github_download_links";
+import {
+  DOWNLOAD_LINKS,
+  DOWNLOADS_ENABLED,
+} from "../../config/github_download_links";
 import { isMobile, isMacOs } from "react-device-detect";
 import { useState, useEffect } from "react";
 import Lenis from "lenis";
@@ -120,7 +123,7 @@ const Download = () => {
               >
                 Download on a desktop
               </Button>
-            ) : (
+            ) : DOWNLOADS_ENABLED ? (
               <Button
                 className="rounded-full glow-border-animated text-md px-8 py-4 text-lg font-semibold rounded-xl shadow-lg gap-3 transition-all duration-300 hover:scale-105 hover:shadow-primary/25 bg-white text-black hover:bg-white/90"
                 as="link"
@@ -129,6 +132,13 @@ const Download = () => {
               >
                 <FontAwesomeIcon icon={isMacOs ? faApple : faWindows} />
                 Download for {isMacOs ? "Mac" : "Windows"}
+              </Button>
+            ) : (
+              <Button
+                className="rounded-full text-lg font-semibold rounded-xl shadow-lg"
+                disabled
+              >
+                Downloads temporarily unavailable — check back soon
               </Button>
             )}
           </div>
@@ -203,7 +213,7 @@ const Download = () => {
                     >
                       Desktop only
                     </Button>
-                  ) : (
+                  ) : DOWNLOADS_ENABLED ? (
                     <Button
                       className="rounded-full w-full justify-center font-semibold gap-2"
                       as="link"
@@ -212,6 +222,13 @@ const Download = () => {
                       onClick={onDownloadClick}
                     >
                       Download
+                    </Button>
+                  ) : (
+                    <Button
+                      className="rounded-full w-full justify-center font-semibold"
+                      disabled
+                    >
+                      Temporarily unavailable
                     </Button>
                   )}
                 </div>

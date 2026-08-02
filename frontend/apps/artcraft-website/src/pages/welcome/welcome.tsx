@@ -8,7 +8,10 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Button } from "@storyteller/ui-button";
 import { Link } from "react-router-dom";
 import { isMobile, isMacOs } from "react-device-detect";
-import { DOWNLOAD_LINKS } from "../../config/github_download_links";
+import {
+  DOWNLOAD_LINKS,
+  DOWNLOADS_ENABLED,
+} from "../../config/github_download_links";
 import Seo from "../../components/seo";
 import { PricingTable } from "@storyteller/ui-pricing-table";
 import { PagePatternBackdrop } from "../../components/truchet-pattern";
@@ -75,8 +78,9 @@ const Welcome = () => {
             </div>
 
             <p className="text-white/60 mb-6">
-              Your download should have started automatically. Follow these
-              steps to begin creating:
+              {DOWNLOADS_ENABLED
+                ? "Your download should have started automatically. Follow these steps to begin creating:"
+                : "Follow these steps to begin creating:"}
             </p>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
@@ -99,7 +103,7 @@ const Welcome = () => {
             </div>
 
             {/* Download Contingency */}
-            {!isMobile && (
+            {!isMobile && DOWNLOADS_ENABLED && (
               <div className="pt-6 border-t border-white/10">
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
                   <span className="text-white/50 text-sm">
