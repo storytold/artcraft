@@ -46,6 +46,9 @@ interface GalleryDraggableItemProps {
   mode: ModalMode;
   activeFilter: string;
   selected: boolean;
+  /** Select mode: the item is already in the destination (e.g. the reference
+   *  deck), so it's greyed out and can't be picked again. */
+  disabled?: boolean;
   onClick: () => void;
   onImageError: (e: React.SyntheticEvent<HTMLImageElement>) => void;
   /** Resolved prompt text for audio items — shown on the tile since audio has
@@ -74,6 +77,7 @@ export const GalleryDraggableItem: React.FC<GalleryDraggableItemProps> = ({
   mode,
   activeFilter,
   selected,
+  disabled = false,
   onClick,
   onImageError,
   audioPromptText,
@@ -234,6 +238,7 @@ export const GalleryDraggableItem: React.FC<GalleryDraggableItemProps> = ({
   // selection when bulk-selecting / in select mode (handled by the host's onClick).
   const handleButtonClick = (event: React.MouseEvent) => {
     if (event.button !== 0) return;
+    if (disabled) return;
     if (dragStarted.current) return;
     const globalDrag = galleryDnd.getDragState();
     if (globalDrag.isDragging) return;
@@ -252,14 +257,18 @@ export const GalleryDraggableItem: React.FC<GalleryDraggableItemProps> = ({
         "w-full group relative overflow-visible rounded-md border-[3px] transition-colors outline-none focus:outline-none focus-visible:outline-none active:outline-none aspect-square",
         selected || bulkSelected
           ? "border-primary"
-          : disableTooltipAndBadge
-            ? "border-transparent hover:border-primary/80"
-            : "border-transparent hover:border-primary",
-        mode === "select"
-          ? "cursor-pointer"
-          : (disableTooltipAndBadge && !bulkSelectionMode) || isAudio
+          : disabled
+            ? "border-transparent"
+            : disableTooltipAndBadge
+              ? "border-transparent hover:border-primary/80"
+              : "border-transparent hover:border-primary",
+        disabled
+          ? "cursor-not-allowed opacity-40"
+          : mode === "select"
             ? "cursor-pointer"
-            : "cursor-grab hover:cursor-grab active:cursor-grabbing",
+            : (disableTooltipAndBadge && !bulkSelectionMode) || isAudio
+              ? "cursor-pointer"
+              : "cursor-grab hover:cursor-grab active:cursor-grabbing",
       )}
       onPointerDown={handlePointerDown}
       onClick={handleButtonClick}
@@ -316,6 +325,11 @@ export const GalleryDraggableItem: React.FC<GalleryDraggableItemProps> = ({
         {selected && (
           <div className="absolute left-2 top-2 flex h-6 w-6 items-center justify-center rounded-full bg-primary">
             <FontAwesomeIcon icon={faCheck} className="text-sm" />
+          </div>
+        )}
+        {disabled && (
+          <div className="absolute left-2 top-2 rounded-full bg-black/70 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-white/80">
+            Added
           </div>
         )}
       </div>

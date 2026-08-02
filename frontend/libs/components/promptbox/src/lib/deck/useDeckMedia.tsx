@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { GalleryItem, GalleryModal } from "@storyteller/ui-gallery-modal";
 import { downloadFileFromUrl, type UploadMediaFn } from "@storyteller/api";
 import { toast } from "@storyteller/ui-toaster";
@@ -13,6 +13,8 @@ import {
 export interface DeckRefLike {
   id: string;
   url: string;
+  /** Set once the media file exists server-side (uploads fill it in late). */
+  mediaToken?: string;
 }
 export interface DeckMediaRefLike extends DeckRefLike {
   duration: number;
@@ -33,6 +35,9 @@ export interface UseDeckMediaOptions<
   referenceImages: TImage[];
   setReferenceImages: (images: TImage[]) => void;
   maxImages: number;
+  /** Current end keyframe, when the host tracks one — its token is greyed out
+   *  in the end-frame picker so it can't be re-picked into the same slot. */
+  endFrameImage?: TImage;
   setEndFrameImage?: (image?: TImage) => void;
   referenceVideos?: TVideo[];
   setReferenceVideos?: (videos: TVideo[]) => void;
@@ -115,6 +120,7 @@ export function useDeckMedia<
   referenceImages,
   setReferenceImages,
   maxImages,
+  endFrameImage,
   setEndFrameImage,
   referenceVideos = [],
   setReferenceVideos,
@@ -704,6 +710,34 @@ export function useDeckMedia<
     </>
   );
 
+  // Tokens already in the deck slot the picker targets, greyed out in the
+  // gallery so one media file can't be added twice to the same field. Reusing
+  // an image across slots (e.g. start AND end frame) stays allowed.
+  const disabledGalleryIds = useMemo(() => {
+    if (galleryTarget === "video") {
+      return referenceVideos
+        .map((video) => video.mediaToken)
+        .filter((t): t is string => !!t);
+    }
+    if (galleryTarget === "audio") {
+      return referenceAudios
+        .map((audio) => audio.mediaToken)
+        .filter((t): t is string => !!t);
+    }
+    if (galleryTarget === "end") {
+      return endFrameImage?.mediaToken ? [endFrameImage.mediaToken] : [];
+    }
+    return referenceImages
+      .map((img) => img.mediaToken)
+      .filter((t): t is string => !!t);
+  }, [
+    galleryTarget,
+    referenceImages,
+    referenceVideos,
+    referenceAudios,
+    endFrameImage,
+  ]);
+
   const galleryModal: ReactNode = ownGalleryModal ? (
     <GalleryModal
       key={
@@ -717,6 +751,7 @@ export function useDeckMedia<
       onClose={handleGalleryClose}
       mode="select"
       selectedItemIds={selectedGalleryImages}
+      disabledItemIds={disabledGalleryIds}
       onSelectItem={handleImageSelect}
       maxSelections={
         galleryTarget === "end"

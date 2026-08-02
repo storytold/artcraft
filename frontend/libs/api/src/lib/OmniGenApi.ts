@@ -443,6 +443,21 @@ function stripNulls(obj: object): Record<string, unknown> {
   return Object.fromEntries(Object.entries(obj).filter(([, v]) => v != null));
 }
 
+/** Dedupe every `*_media_tokens` list in the request. The backend batch-looks-up
+ *  all media tokens at once and rejects the whole request when the same token
+ *  appears twice (found count != token count), which happens when one file is
+ *  added as two references — or two uploads of the same file hash-dedupe into
+ *  one media token. */
+function dedupeMediaTokenLists(obj: object): Record<string, unknown> {
+  return Object.fromEntries(
+    Object.entries(obj).map(([key, value]) =>
+      key.endsWith("_media_tokens") && Array.isArray(value)
+        ? [key, [...new Set(value)]]
+        : [key, value],
+    ),
+  );
+}
+
 // ── API class ────────────────────────────────────────────────────────────
 
 export class OmniGenApi extends ApiManager {
@@ -552,7 +567,7 @@ export class OmniGenApi extends ApiManager {
   ): Promise<OmniGenImageGenerateResponse> {
     return this.post<Record<string, unknown>, OmniGenImageGenerateResponse>({
       endpoint: `${this.getApiSchemeAndHost()}/v1/omni_gen/generate/image`,
-      body: stripNulls(body),
+      body: stripNulls(dedupeMediaTokenLists(body)),
     });
   }
 
@@ -561,7 +576,7 @@ export class OmniGenApi extends ApiManager {
   ): Promise<OmniGenVideoGenerateResponse> {
     return this.post<Record<string, unknown>, OmniGenVideoGenerateResponse>({
       endpoint: `${this.getApiSchemeAndHost()}/v1/omni_gen/generate/video`,
-      body: stripNulls(body),
+      body: stripNulls(dedupeMediaTokenLists(body)),
     });
   }
 
@@ -570,7 +585,7 @@ export class OmniGenApi extends ApiManager {
   ): Promise<OmniGenAudioGenerateResponse> {
     return this.post<Record<string, unknown>, OmniGenAudioGenerateResponse>({
       endpoint: `${this.getApiSchemeAndHost()}/v1/omni_gen/generate/audio`,
-      body: stripNulls(body),
+      body: stripNulls(dedupeMediaTokenLists(body)),
     });
   }
 
@@ -579,7 +594,7 @@ export class OmniGenApi extends ApiManager {
   ): Promise<OmniGenMeshGenerateResponse> {
     return this.post<Record<string, unknown>, OmniGenMeshGenerateResponse>({
       endpoint: `${this.getApiSchemeAndHost()}/v1/omni_gen/generate/mesh`,
-      body: stripNulls(body),
+      body: stripNulls(dedupeMediaTokenLists(body)),
     });
   }
 
@@ -588,7 +603,7 @@ export class OmniGenApi extends ApiManager {
   ): Promise<OmniGenSplatGenerateResponse> {
     return this.post<Record<string, unknown>, OmniGenSplatGenerateResponse>({
       endpoint: `${this.getApiSchemeAndHost()}/v1/omni_gen/generate/splat`,
-      body: stripNulls(body),
+      body: stripNulls(dedupeMediaTokenLists(body)),
     });
   }
 }

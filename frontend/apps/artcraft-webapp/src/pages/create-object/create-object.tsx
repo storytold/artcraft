@@ -341,6 +341,22 @@ export default function CreateObject() {
     [libraryTarget, setReferenceImages, setInputs],
   );
 
+  // The picker replaces a single-image slot, so only that slot's current image
+  // is greyed out; reusing an image across slots stays allowed.
+  const disabledLibraryTokens = useMemo(() => {
+    const slotToken =
+      libraryTarget === "primary"
+        ? referenceImages[0]?.mediaToken
+        : libraryTarget === "front"
+          ? inputs.frontImage?.mediaToken
+          : libraryTarget === "back"
+            ? inputs.backImage?.mediaToken
+            : libraryTarget === "left"
+              ? inputs.leftImage?.mediaToken
+              : inputs.rightImage?.mediaToken;
+    return slotToken ? [slotToken] : [];
+  }, [libraryTarget, referenceImages, inputs]);
+
   const handleGenerate = useCallback(async () => {
     if (!loggedIn) {
       openSignupCta();
@@ -704,6 +720,7 @@ export default function CreateObject() {
             isOpen={libraryTarget !== null}
             onClose={() => setLibraryTarget(null)}
             selectedItemIds={pickerSelectedIds}
+            disabledItemIds={disabledLibraryTokens}
             onSelectItem={(id) => setPickerSelectedIds([id])}
             maxSelections={1}
             onUseSelected={handleLibraryImageSelect}

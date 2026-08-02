@@ -287,6 +287,16 @@ export default function CreateWorld() {
     [maxImageRefs, referenceImages, setReferenceImages],
   );
 
+  // Refs already in the deck, greyed out in the picker so the same media file
+  // can't be added twice to the reference list.
+  const usedImageTokens = useMemo(
+    () =>
+      referenceImages
+        .map((img) => img.mediaToken)
+        .filter((t): t is string => !!t),
+    [referenceImages],
+  );
+
   const handleGenerate = useCallback(async () => {
     if (!loggedIn) {
       openSignupCta();
@@ -561,6 +571,7 @@ export default function CreateWorld() {
             isOpen={isImagePickerOpen}
             onClose={() => setIsImagePickerOpen(false)}
             selectedItemIds={pickerSelectedIds}
+            disabledItemIds={usedImageTokens}
             onSelectItem={handlePickerSelect}
             maxSelections={imagePickerMax}
             onUseSelected={handleLibraryImageSelect}

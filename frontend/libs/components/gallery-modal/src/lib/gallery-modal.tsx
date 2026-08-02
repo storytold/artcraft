@@ -268,6 +268,10 @@ interface GalleryModalProps {
   onClose?: () => void;
   mode: ModalMode;
   selectedItemIds?: string[];
+  /** Select mode: ids that are already added to the destination (e.g. the
+   *  reference deck). Shown greyed out with an "Added" badge and unclickable,
+   *  so the same media file can't be picked twice. */
+  disabledItemIds?: string[];
   onSelectItem?: (id: string) => void;
   maxSelections?: number;
   onUseSelected?: (selectedItems: GalleryItem[]) => void;
@@ -573,6 +577,7 @@ export const GalleryModal = React.memo(
     onClose,
     mode = "view",
     selectedItemIds = EMPTY_SELECTED_IDS,
+    disabledItemIds = EMPTY_SELECTED_IDS,
     onSelectItem,
     maxSelections = 4,
     onUseSelected,
@@ -1550,6 +1555,7 @@ export const GalleryModal = React.memo(
     const handleItemClick = useCallback(
       (item: GalleryItem) => {
         if (mode === "select" && onSelectItem) {
+          if (disabledItemIds.includes(item.id)) return;
           onSelectItem(item.id);
         } else if (bulkSelectionMode) {
           toggleBulkSelect(item.id);
@@ -1559,7 +1565,7 @@ export const GalleryModal = React.memo(
           galleryModalLightboxMediaId.value = item.id;
         }
       },
-      [mode, onSelectItem, bulkSelectionMode, toggleBulkSelect],
+      [mode, onSelectItem, disabledItemIds, bulkSelectionMode, toggleBulkSelect],
     );
 
     const handleCloseLightbox = useCallback(() => {
@@ -3121,6 +3127,10 @@ export const GalleryModal = React.memo(
                                     activeFilter={activeFilter}
                                     audioPromptText={audioPromptTextFor(item)}
                                     selected={selectedItemIds.includes(item.id)}
+                                    disabled={
+                                      mode === "select" &&
+                                      disabledItemIds.includes(item.id)
+                                    }
                                     onClick={() => handleItemClick(item)}
                                     onImageError={(e) => {
                                       e.currentTarget.src =
@@ -3285,6 +3295,10 @@ export const GalleryModal = React.memo(
                                     activeFilter={activeFilter}
                                     audioPromptText={audioPromptTextFor(item)}
                                     selected={selectedItemIds.includes(item.id)}
+                                    disabled={
+                                      mode === "select" &&
+                                      disabledItemIds.includes(item.id)
+                                    }
                                     onClick={() => handleItemClick(item)}
                                     onImageError={(e) => {
                                       e.currentTarget.src =
@@ -3434,6 +3448,10 @@ export const GalleryModal = React.memo(
                                       selected={selectedItemIds.includes(
                                         item.id,
                                       )}
+                                      disabled={
+                                        mode === "select" &&
+                                        disabledItemIds.includes(item.id)
+                                      }
                                       onClick={() => handleItemClick(item)}
                                       onImageError={(e) => {
                                         e.currentTarget.src =

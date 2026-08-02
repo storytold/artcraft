@@ -1,5 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 import { CommandResult } from "../common/CommandStatus";
+import { uniqueTokens } from "../common/UniqueTokens";
 import {
   CommonAspectRatio,
   CommonResolution,
@@ -127,13 +128,13 @@ export const GenerateVideo = async (
     mutableRequest.end_frame_image_media_token = request.end_frame_image_media_token;
   }
   if (!!request.reference_image_media_tokens && request.reference_image_media_tokens.length > 0) {
-    mutableRequest.reference_image_media_tokens = request.reference_image_media_tokens;
+    mutableRequest.reference_image_media_tokens = uniqueTokens(request.reference_image_media_tokens);
   }
   if (!!request.reference_video_media_tokens && request.reference_video_media_tokens.length > 0) {
-    mutableRequest.reference_video_media_tokens = request.reference_video_media_tokens;
+    mutableRequest.reference_video_media_tokens = uniqueTokens(request.reference_video_media_tokens);
   }
   if (!!request.reference_audio_media_tokens && request.reference_audio_media_tokens.length > 0) {
-    mutableRequest.reference_audio_media_tokens = request.reference_audio_media_tokens;
+    mutableRequest.reference_audio_media_tokens = uniqueTokens(request.reference_audio_media_tokens);
   }
   if (!!request.reference_character_tokens && request.reference_character_tokens.length > 0) {
     mutableRequest.reference_character_tokens = request.reference_character_tokens;

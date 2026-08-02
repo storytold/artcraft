@@ -384,6 +384,23 @@ export const ImagePromptRow = ({
     [referenceVideos],
   );
 
+  // Tokens already in the slot the picker targets, greyed out in the gallery
+  // so one media file can't be added twice to the same field. Reusing an image
+  // across slots (e.g. start AND end frame) stays allowed.
+  const disabledGalleryIds = useMemo(() => {
+    if (galleryTarget === "video") {
+      return referenceVideos
+        .map((video) => video.mediaToken)
+        .filter((t): t is string => !!t);
+    }
+    if (galleryTarget === "end") {
+      return endFrameImage?.mediaToken ? [endFrameImage.mediaToken] : [];
+    }
+    return referenceImages
+      .map((img) => img.mediaToken)
+      .filter((t): t is string => !!t);
+  }, [galleryTarget, referenceImages, referenceVideos, endFrameImage]);
+
   const handleVideoFileUpload = async (
     event: React.ChangeEvent<HTMLInputElement>,
   ) => {
@@ -1320,6 +1337,7 @@ export const ImagePromptRow = ({
         onClose={handleGalleryClose}
         mode="select"
         selectedItemIds={selectedGalleryImages}
+        disabledItemIds={disabledGalleryIds}
         onSelectItem={handleImageSelect}
         maxSelections={
           galleryTarget === "end"

@@ -218,6 +218,17 @@ export const PromptBoxAudio = ({
     maxAudioRefs - referenceAudios.length,
   );
 
+  // Audio refs already in the deck, greyed out in the library picker so one
+  // media file can't be added twice — the backend rejects a generation request
+  // when the same token appears in it twice.
+  const addedAudioTokens = useMemo(
+    () =>
+      referenceAudios
+        .map((audio) => audio.mediaToken)
+        .filter((t): t is string => !!t),
+    [referenceAudios],
+  );
+
   const handleAudioLibrarySelectToggle = (id: string) => {
     setAudioLibrarySelectedIds((prev) => {
       if (prev.includes(id)) return prev.filter((x) => x !== id);
@@ -631,6 +642,7 @@ export const PromptBoxAudio = ({
         isOpen={isAudioLibraryOpen}
         onClose={closeAudioLibrary}
         selectedItemIds={audioLibrarySelectedIds}
+        disabledItemIds={addedAudioTokens}
         onSelectItem={handleAudioLibrarySelectToggle}
         maxSelections={maxAudioLibrarySelections}
         onUseSelected={handleAudioLibraryUseSelected}

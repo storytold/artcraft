@@ -142,13 +142,6 @@ const LABEL_TO_BITRATE: Record<string, string> = Object.fromEntries(
 
 // ── Model lookup ─────────────────────────────────────────────────────────
 
-// Placeholder entries shown in the picker as disabled "SOON" items. These are
-// UI-only — they are not in `_modelLookup`, so the click handler is a no-op
-// (the `disabled` flag also prevents the row from firing).
-const COMING_SOON_MODELS: ReadonlyArray<{ id: string; label: string }> = [
-  { id: "seedance_2p1", label: "Seedance 2.5" },
-];
-
 let _modelLookup = new Map<string, OmniGenVideoModelInfo>();
 
 function buildModelPopoverItems(
@@ -156,7 +149,7 @@ function buildModelPopoverItems(
   selectedId: string,
 ): PopoverItem[] {
   _modelLookup = new Map(models.map((m) => [m.model, m]));
-  const apiItems: PopoverItem[] = models.map((model) => ({
+  return models.map((model) => ({
     label: model.full_name || model.model,
     selected: model.model === selectedId,
     description: getModelDescription(model.model, model.extra_info_short),
@@ -170,26 +163,6 @@ function buildModelPopoverItems(
     ),
     action: model.model,
   }));
-  const comingSoonItems: PopoverItem[] = COMING_SOON_MODELS.map(
-    ({ id, label }) => ({
-      label,
-      selected: false,
-      disabled: true,
-      icon: (
-        <img
-          src={getCreatorIconPathForModelId(id)}
-          alt={`${id} logo`}
-          className="h-5 w-5 icon-auto-contrast"
-        />
-      ),
-      trailing: (
-        <span className="shrink-0 rounded-full bg-white/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white">
-          Soon
-        </span>
-      ),
-    }),
-  );
-  return [...apiItems, ...comingSoonItems];
 }
 
 function buildSizePopoverItems(
@@ -1158,6 +1131,38 @@ export default function CreateVideo() {
     setIsEndFramePickerOpen(false);
   }, []);
 
+  // Each picker only greys out tokens already in its own slot, so the same
+  // media file can't be added twice to one field. Reusing an image across
+  // slots (e.g. the same image as start AND end frame) stays allowed.
+  const usedImageTokens = useMemo(
+    () =>
+      referenceImages
+        .map((img) => img.mediaToken)
+        .filter((t): t is string => !!t),
+    [referenceImages],
+  );
+
+  const usedEndFrameTokens = useMemo(
+    () => (endFrameImage?.mediaToken ? [endFrameImage.mediaToken] : []),
+    [endFrameImage],
+  );
+
+  const usedVideoTokens = useMemo(
+    () =>
+      referenceVideos
+        .map((v) => v.mediaToken)
+        .filter((t): t is string => !!t),
+    [referenceVideos],
+  );
+
+  const usedAudioTokens = useMemo(
+    () =>
+      referenceAudios
+        .map((a) => a.mediaToken)
+        .filter((t): t is string => !!t),
+    [referenceAudios],
+  );
+
   const handleGenerate = useCallback(async () => {
     if (!loggedIn) {
       openSignupCta();
@@ -1938,6 +1943,7 @@ export default function CreateVideo() {
             isOpen={isImagePickerOpen}
             onClose={() => setIsImagePickerOpen(false)}
             selectedItemIds={pickerSelectedIds}
+            disabledItemIds={usedImageTokens}
             onSelectItem={handlePickerSelect}
             maxSelections={imagePickerMax}
             onUseSelected={handleLibraryImageSelect}
@@ -1949,6 +1955,7 @@ export default function CreateVideo() {
             isOpen={isEndFramePickerOpen}
             onClose={() => setIsEndFramePickerOpen(false)}
             selectedItemIds={endFramePickerSelectedIds}
+            disabledItemIds={usedEndFrameTokens}
             onSelectItem={handleEndFramePickerSelect}
             maxSelections={1}
             onUseSelected={handleEndFrameLibrarySelect}
@@ -1960,6 +1967,7 @@ export default function CreateVideo() {
             isOpen={isVideoRefPickerOpen}
             onClose={() => setIsVideoRefPickerOpen(false)}
             selectedItemIds={videoRefPickerSelectedIds}
+            disabledItemIds={usedVideoTokens}
             onSelectItem={handleVideoRefPickerSelect}
             maxSelections={videoRefPickerMax}
             onUseSelected={handleLibraryVideoSelect}
@@ -1971,6 +1979,7 @@ export default function CreateVideo() {
             isOpen={isAudioRefPickerOpen}
             onClose={() => setIsAudioRefPickerOpen(false)}
             selectedItemIds={audioRefPickerSelectedIds}
+            disabledItemIds={usedAudioTokens}
             onSelectItem={handleAudioRefPickerSelect}
             maxSelections={audioRefPickerMax}
             onUseSelected={handleLibraryAudioSelect}
