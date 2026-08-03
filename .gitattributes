@@ -1,3 +1,8 @@
+# Shell scripts and dotenv config files are executed/parsed on Linux (WSL2, CI)
+# even when the repo is cloned on Windows — they must stay LF in the worktree.
+*.sh text eol=lf
+*.env text eol=lf
+
 # Ignore certain code for Github language statistics
 # https://github.com/github/linguist/blob/master/docs/overrides.md
 old_code/trumpet-trumped.com/dictionary/cmudict-0.7b linguist-vendored
